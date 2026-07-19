@@ -1,0 +1,168 @@
+// Dokumentenarchiv — Bauwerksdokumentation als abfragbares, pro Gebäude filterbares Archiv.
+// Ersetzt statische PDF-Listen durch eine durchsuchbare, filterbare Ansicht.
+export default async function render(ctx) {
+  const { mount, query, core, C, setTitle, setCrumbs } = ctx;
+
+  setTitle('Dokumentenarchiv');
+  setCrumbs([
+    { label: 'Startseite', href: '#/' },
+    { label: 'Dokumente & Medien', href: '#/documents' },
+    { label: 'Dokumentenarchiv' },
+  ]);
+
+  const all = core.documents();
+  const buildings = core.buildings();
+  const tiers = core.ref().classificationTiers || [];
+
+  // Distinct facets
+  const types = [...new Set(all.map(d => d.type))].sort((a, b) => a.localeCompare(b, 'de'));
+  const years = [...new Set(all.map(d => d.year))].sort((a, b) => b - a);
+
+  // Filter state — seed from query string so links can deep-link a building.
+  const state = {
+    building: query.get('building') || '',
+    type: query.get('type') || '',
+    year: query.get('year') || '',
+    q: query.get('q') || '',
+  };
+
+  const tierVariant = (id) => {
+    const t = tiers.find(x => x.id === id);
+    return t ? t.variant : 'gray';
+  };
+
+  const fmtSize = (kb) => {
+    const n = Number(kb) || 0;
+    return n >= 1024
+      ? (n / 1024).toLocaleString('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' MB'
+      : n.toLocaleString('de-CH') + ' KB';
+  };
+
+  function filtered() {
+    const q = state.q.trim().toLowerCase();
+    return all.filter(d => {
+      if (state.building && !(d.linkedTo || []).includes(state.building)) return false;
+      if (state.type && d.type !== state.type) return false;
+      if (state.year && String(d.year) !== String(state.year)) return false;
+      if (q && !d.title.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  function selectControl(id, label, value, options) {
+    return `<div class="field" style="margin:0">
+      <label for="${id}">${C.escape(label)}</label>
+      <div class="select-wrap">
+        <select id="${id}">${options.map(o =>
+          `<option value="${C.escape(o.value)}"${String(o.value) === String(value) ? ' selected' : ''}>${C.escape(o.label)}</option>`
+        ).join('')}</select>${C.icon('ChevronDown')}
+      </div>
+    </div>`;
+  }
+
+  function filterBar() {
+    const buildingOpts = [{ value: '', label: 'Alle Gebäude' }]
+      .concat(buildings.map(b => ({ value: b.bbl_id, label: b.name })));
+    const typeOpts = [{ value: '', label: 'Alle Typen' }]
+      .concat(types.map(t => ({ value: t, label: t })));
+    const yearOpts = [{ value: '', label: 'Alle Jahre' }]
+      .concat(years.map(y => ({ value: y, label: String(y) })));
+
+    return `<div class="grid grid--4 mt-6">
+      ${selectControl('flt-building', 'Gebäude', state.building, buildingOpts)}
+      ${selectControl('flt-type', 'Dokumenttyp', state.type, typeOpts)}
+      ${selectControl('flt-year', 'Jahr', state.year, yearOpts)}
+      <div class="field" style="margin:0">
+        <label for="flt-q">Titel durchsuchen</label>
+        <input id="flt-q" type="search" placeholder="z. B. Grundriss…" value="${C.escape(state.q)}" autocomplete="off">
+      </div>
+    </div>`;
+  }
+
+  function resultTable(rows) {
+    return C.table({
+      zebra: true,
+      columns: [
+        {
+          key: 'title', label: 'Dokument',
+          render: r => `${C.icon('File', 'icon--sm')} ${C.escape(r.title)}`,
+        },
+        {
+          key: 'type', label: 'Typ',
+          render: r => C.badge(r.type, 'gray'),
+        },
+        {
+          key: 'building', label: 'Gebäude',
+          render: r => {
+            const bid = (r.linkedTo || [])[0];
+            const b = bid ? core.building(bid) : null;
+            return b
+              ? `<a href="#/app/portfolio/${C.escape(b.bbl_id)}">${C.escape(b.name)}</a>`
+              : '<span class="muted">—</span>';
+          },
+        },
+        { key: 'year', label: 'Jahr', render: r => C.escape(r.year) },
+        { key: 'size', label: 'Grösse', render: r => fmtSize(r.sizeKB) },
+        {
+          key: 'classification', label: 'Klassifizierung',
+          render: r => C.badge(r.classification, tierVariant(r.classification)),
+        },
+        {
+          key: 'download', label: 'Download',
+          render: r => `<a class="btn btn--link" href="${C.escape(r.url || '#')}" aria-label="Download ${C.escape(r.title)}">${C.icon('Download', 'icon--sm')} ${C.escape(r.format || 'Datei')}</a>`,
+        },
+      ],
+      rows,
+    });
+  }
+
+  function draw() {
+    const rows = filtered();
+    const active = state.building || state.type || state.year || state.q.trim();
+
+    mount.innerHTML = `
+    <div class="container section">
+      ${C.pageHeader({
+        title: 'Dokumentenarchiv',
+        lead: 'Bauwerksdokumentation neu gedacht: Statt statischer PDF-Listen ein pro Gebäude abfragbares, filterbares Archiv — nach Gebäude, Dokumenttyp, Jahr und Titel durchsuchbar.',
+      })}
+      ${filterBar()}
+      <div class="row row--between mt-6">
+        <p class="muted" style="margin:0"><strong>${rows.length}</strong> von ${all.length} Dokument(en)${active ? ' (gefiltert)' : ''}</p>
+        ${active ? `<button class="btn btn--bare" id="flt-reset" type="button">${C.icon('Cancel', 'icon--sm')} Filter zurücksetzen</button>` : ''}
+      </div>
+      <div class="mt-4">${rows.length
+        ? resultTable(rows)
+        : C.empty('Keine Dokumente für die gewählten Filter gefunden.')}</div>
+    </div>`;
+
+    wire();
+  }
+
+  function wire() {
+    const bind = (id, key) => {
+      const el = mount.querySelector('#' + id);
+      if (el) el.addEventListener('change', () => { state[key] = el.value; draw(); });
+    };
+    bind('flt-building', 'building');
+    bind('flt-type', 'type');
+    bind('flt-year', 'year');
+
+    const qEl = mount.querySelector('#flt-q');
+    if (qEl) {
+      qEl.addEventListener('input', () => { state.q = qEl.value; draw(); });
+      // keep focus and caret position after re-render
+      const pos = qEl.value.length;
+      qEl.focus();
+      try { qEl.setSelectionRange(pos, pos); } catch (e) { /* search inputs may not support setSelectionRange */ }
+    }
+
+    const reset = mount.querySelector('#flt-reset');
+    if (reset) reset.addEventListener('click', () => {
+      state.building = ''; state.type = ''; state.year = ''; state.q = '';
+      draw();
+    });
+  }
+
+  draw();
+}

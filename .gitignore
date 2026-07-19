@@ -1,0 +1,24 @@
+# Downloaded source material — large saved web pages of the current intranet,
+# kept locally for analysis but not part of the prototype.
+bbl-intranet/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json

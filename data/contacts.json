@@ -1,0 +1,8 @@
+[
+  { "contactId": "dres", "name": "Fachstelle Daten & Anwendungen Bauten (DRES)", "role": "Fachanwendungen BBL Bauten", "email": "dres@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
+  { "contactId": "isbo", "name": "Informationssicherheit BBL (ISBO)", "role": "Integrale Sicherheit & Datenschutz", "email": "isbo@bbl.admin.ch", "phone": "+41 58 46 5 00 01" },
+  { "contactId": "kbb", "name": "Kompetenzzentrum Beschaffungswesen Bund (KBB)", "role": "Beschaffung & Recht", "email": "kbb@bbl.admin.ch", "phone": "+41 58 46 5 00 02" },
+  { "contactId": "support-bil", "name": "Support@BIL", "role": "Anforderungs- & Beschaffungslösung (HBB)", "email": "support.bil@bbl.admin.ch", "phone": "+41 58 46 5 00 03" },
+  { "contactId": "pfm", "name": "Portfoliomanagement BBL (PFM)", "role": "Immobilienportfolio & Bauprojekte", "email": "pfm@bbl.admin.ch", "phone": "+41 58 46 5 00 04" },
+  { "contactId": "campus", "name": "Objektbetrieb / Campus", "role": "Gebäudebetrieb & Störungsmeldungen", "email": "objektbetrieb@bbl.admin.ch", "phone": "+41 58 46 5 00 05" }
+]

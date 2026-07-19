@@ -1,0 +1,56 @@
+[
+  { "instanceId": "seed-1", "defId": "raumbedarf", "defName": "Raumbedarf-Antrag", "reference": "BBL-2026-1042",
+    "title": "Zusätzliche 12 Arbeitsplätze, Campus Guisanplatz", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
+    "audience": "external", "status": "in_pruefung_pfm", "stepIndex": 2, "createdAt": "2026-05-18", "updatedAt": "2026-06-03",
+    "linkedEntities": { "buildingId": "BLD-06" },
+    "history": [
+      { "when": "2026-05-18", "status": "Eingereicht", "note": "Vorgang erstellt" },
+      { "when": "2026-05-22", "status": "In Prüfung (GS)", "note": "Bedarf bestätigt durch Generalsekretariat" },
+      { "when": "2026-06-03", "status": "In Prüfung (PFM)", "note": "Flächenprüfung Portfoliomanagement" }
+    ] },
+  { "instanceId": "seed-2", "defId": "stoerung", "defName": "Störungsmeldung", "reference": "BBL-2026-0931",
+    "title": "Lüftung 4. OG defekt", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
+    "audience": "both", "status": "in_arbeit", "stepIndex": 2, "createdAt": "2026-06-09", "updatedAt": "2026-06-11",
+    "linkedEntities": { "buildingId": "BLD-05" },
+    "history": [
+      { "when": "2026-06-09", "status": "Gemeldet", "note": "Vorgang erstellt" },
+      { "when": "2026-06-10", "status": "Triage", "note": "Dem Objektbetrieb zugewiesen" },
+      { "when": "2026-06-11", "status": "In Arbeit", "note": "Techniker aufgeboten" }
+    ] },
+  { "instanceId": "seed-3", "defId": "bestellung", "defName": "Bestellung", "reference": "BBL-2026-0880",
+    "title": "Büromaterial Q2", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
+    "audience": "both", "status": "geliefert", "stepIndex": 2, "createdAt": "2026-05-30", "updatedAt": "2026-06-05",
+    "linkedEntities": {},
+    "history": [
+      { "when": "2026-05-30", "status": "Bestellt", "note": "Vorgang erstellt" },
+      { "when": "2026-06-02", "status": "In Bearbeitung", "note": "Kommissionierung" },
+      { "when": "2026-06-05", "status": "Geliefert", "note": "Zustellung erfolgt" }
+    ] },
+  { "instanceId": "seed-4", "defId": "sicherheitsvorfall", "defName": "Sicherheits-/Datenschutzvorfall", "reference": "BBL-2026-0777",
+    "title": "Verdächtige E-Mail mit Anhang", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
+    "audience": "both", "status": "erledigt", "stepIndex": 2, "createdAt": "2026-04-14", "updatedAt": "2026-04-16",
+    "linkedEntities": {},
+    "history": [
+      { "when": "2026-04-14", "status": "Gemeldet", "note": "Vorgang erstellt" },
+      { "when": "2026-04-15", "status": "In Bearbeitung", "note": "Analyse durch ISBO" },
+      { "when": "2026-04-16", "status": "Abgeschlossen", "note": "Phishing bestätigt, Absender blockiert" }
+    ] },
+  { "instanceId": "seed-5", "defId": "raumbedarf", "defName": "Raumbedarf-Antrag", "reference": "BBL-2025-2210",
+    "title": "Umnutzung Lager zu Sitzungszone", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
+    "audience": "external", "status": "abgeschlossen", "stepIndex": 5, "createdAt": "2025-09-02", "updatedAt": "2026-02-20",
+    "linkedEntities": { "buildingId": "BLD-07", "projectId": "PRJ-02" },
+    "history": [
+      { "when": "2025-09-02", "status": "Eingereicht", "note": "Vorgang erstellt" },
+      { "when": "2025-09-20", "status": "Genehmigt", "note": "Genehmigt durch Portfoliomanagement" },
+      { "when": "2025-11-10", "status": "In Projekt überführt", "note": "Projekt B-2025-002" },
+      { "when": "2026-02-20", "status": "Abgeschlossen", "note": "Umsetzung abgeschlossen" }
+    ] },
+  { "instanceId": "seed-6", "defId": "buchung", "defName": "Ressourcenbuchung", "reference": "BBL-2026-1099",
+    "title": "Sitzungsraum + 1 Parkplatz, Fellerstrasse", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
+    "audience": "both", "status": "abgeschlossen", "stepIndex": 1, "createdAt": "2026-06-12", "updatedAt": "2026-06-12",
+    "linkedEntities": { "buildingId": "BLD-05" },
+    "history": [
+      { "when": "2026-06-12", "status": "Angefragt", "note": "Vorgang erstellt" },
+      { "when": "2026-06-12", "status": "Bestätigt", "note": "Ressource reserviert" }
+    ] }
+]

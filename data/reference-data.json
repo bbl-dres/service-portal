@@ -1,0 +1,66 @@
+{
+  "domains": [
+    { "key": "A", "label": "Bauten & Bauprojekte", "icon": "Building" },
+    { "key": "B", "label": "Immobilien & Gebäudebetrieb", "icon": "Wrench" },
+    { "key": "C", "label": "Büroausrüstung & Arbeitsplatz", "icon": "ShoppingCart" },
+    { "key": "D", "label": "Informatik & Arbeitsgeräte", "icon": "Cog" },
+    { "key": "E", "label": "Beschaffung", "icon": "Briefcase" },
+    { "key": "F", "label": "Publizieren, Drucken & Versenden", "icon": "File" },
+    { "key": "G", "label": "Sicherheit & Notfall", "icon": "Lock" },
+    { "key": "H", "label": "Personal & Arbeiten beim BBL", "icon": "Users" }
+  ],
+  "statusModel": [
+    { "id": "entwurf", "label": "Entwurf", "variant": "gray" },
+    { "id": "eingereicht", "label": "Eingereicht", "variant": "info" },
+    { "id": "in_pruefung_gs", "label": "In Prüfung (GS)", "variant": "warning" },
+    { "id": "in_pruefung_pfm", "label": "In Prüfung (PFM)", "variant": "warning" },
+    { "id": "rueckfrage", "label": "Rückfrage", "variant": "warning" },
+    { "id": "genehmigt", "label": "Genehmigt", "variant": "success" },
+    { "id": "in_projekt", "label": "In Projekt überführt", "variant": "info" },
+    { "id": "triage", "label": "Triage", "variant": "info" },
+    { "id": "in_arbeit", "label": "In Arbeit", "variant": "warning" },
+    { "id": "in_bearbeitung", "label": "In Bearbeitung", "variant": "warning" },
+    { "id": "geliefert", "label": "Geliefert", "variant": "success" },
+    { "id": "erledigt", "label": "Erledigt", "variant": "success" },
+    { "id": "abgeschlossen", "label": "Abgeschlossen", "variant": "success" },
+    { "id": "abgelehnt", "label": "Abgelehnt", "variant": "error" }
+  ],
+  "projectStatuses": [
+    { "id": "geplant", "label": "Geplant" },
+    { "id": "aktiv", "label": "Aktiv" },
+    { "id": "sistiert", "label": "Sistiert" },
+    { "id": "abgeschlossen", "label": "Abgeschlossen" },
+    { "id": "abgebrochen", "label": "Abgebrochen" }
+  ],
+  "buildingStatuses": [
+    { "id": "in_betrieb", "label": "In Betrieb" },
+    { "id": "in_sanierung", "label": "In Sanierung" },
+    { "id": "in_planung", "label": "In Planung" }
+  ],
+  "siaPhases": [
+    { "id": "11", "label": "Strategische Planung" }, { "id": "21", "label": "Vorstudien" },
+    { "id": "31", "label": "Vorprojekt" }, { "id": "32", "label": "Bauprojekt" },
+    { "id": "33", "label": "Ausschreibung" }, { "id": "41", "label": "Ausführung" },
+    { "id": "51", "label": "Inbetriebnahme" }, { "id": "61", "label": "Betrieb" }
+  ],
+  "nawClasses": [
+    { "id": "naw1", "label": "NAW 1 — Einzelarbeit / Konzentration" },
+    { "id": "naw2", "label": "NAW 2 — Standard Multispace" },
+    { "id": "naw3", "label": "NAW 3 — Kollaboration" },
+    { "id": "naw4", "label": "NAW 4 — Empfang / Publikum" },
+    { "id": "naw5", "label": "NAW 5 — Speziallabor / Technik" },
+    { "id": "naw6", "label": "NAW 6 — Lager / Archiv" }
+  ],
+  "bkpGroups": [
+    { "id": "0", "label": "Grundstück" }, { "id": "1", "label": "Vorbereitungsarbeiten" },
+    { "id": "2", "label": "Gebäude" }, { "id": "3", "label": "Betriebseinrichtungen" },
+    { "id": "4", "label": "Umgebung" }, { "id": "5", "label": "Baunebenkosten" },
+    { "id": "9", "label": "Ausstattung" }
+  ],
+  "classificationTiers": [
+    { "id": "INTERN", "label": "INTERN", "variant": "info" },
+    { "id": "VERTRAULICH", "label": "VERTRAULICH", "variant": "warning" },
+    { "id": "GEHEIM", "label": "GEHEIM", "variant": "error" }
+  ],
+  "deskSharingFactor": 0.8
+}

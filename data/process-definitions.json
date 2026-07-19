@@ -1,0 +1,43 @@
+[
+  { "defId": "raumbedarf", "name": "Raumbedarf-Antrag", "audience": "external", "serviceId": "raumbedarf-melden",
+    "steps": [
+      { "status": "eingereicht", "label": "Eingereicht", "role": "Antragstellende Stelle", "kind": "user" },
+      { "status": "in_pruefung_gs", "label": "In Prüfung (GS)", "role": "Generalsekretariat", "kind": "user" },
+      { "status": "in_pruefung_pfm", "label": "In Prüfung (PFM)", "role": "Portfoliomanagement BBL", "kind": "user" },
+      { "status": "genehmigt", "label": "Genehmigt", "role": "Portfoliomanagement BBL", "kind": "user" },
+      { "status": "in_projekt", "label": "In Projekt überführt", "role": "BBL Bau", "kind": "auto" },
+      { "status": "abgeschlossen", "label": "Abgeschlossen", "role": "BBL", "kind": "auto" }
+    ] },
+  { "defId": "stoerung", "name": "Störungsmeldung", "audience": "both", "serviceId": "stoerung-melden",
+    "steps": [
+      { "status": "eingereicht", "label": "Gemeldet", "role": "Meldende Person", "kind": "user" },
+      { "status": "triage", "label": "Triage", "role": "Objektbetrieb", "kind": "user" },
+      { "status": "in_arbeit", "label": "In Arbeit", "role": "Objektbetrieb", "kind": "user" },
+      { "status": "erledigt", "label": "Erledigt", "role": "Objektbetrieb", "kind": "user" }
+    ] },
+  { "defId": "sicherheitsvorfall", "name": "Sicherheits-/Datenschutzvorfall", "audience": "both", "serviceId": "sicherheitsvorfall-melden",
+    "steps": [
+      { "status": "eingereicht", "label": "Gemeldet", "role": "Meldende Person", "kind": "user" },
+      { "status": "in_bearbeitung", "label": "In Bearbeitung", "role": "Informationssicherheit BBL (ISBO)", "kind": "user" },
+      { "status": "erledigt", "label": "Abgeschlossen", "role": "ISBO", "kind": "user" }
+    ] },
+  { "defId": "bestellung", "name": "Bestellung", "audience": "both", "serviceId": "eshop-bestellen",
+    "steps": [
+      { "status": "eingereicht", "label": "Bestellt", "role": "Bestellende Person", "kind": "user" },
+      { "status": "in_bearbeitung", "label": "In Bearbeitung", "role": "Logistik BBL", "kind": "user" },
+      { "status": "geliefert", "label": "Geliefert", "role": "Logistik BBL", "kind": "user" },
+      { "status": "abgeschlossen", "label": "Abgeschlossen", "role": "BBL", "kind": "auto" }
+    ] },
+  { "defId": "banf", "name": "Bedarfsmeldung BANF", "audience": "internal", "serviceId": "banf-bedarfsmeldung",
+    "steps": [
+      { "status": "eingereicht", "label": "Eingereicht", "role": "Bedarfsstelle", "kind": "user" },
+      { "status": "in_bearbeitung", "label": "In Prüfung", "role": "Informatik BBL", "kind": "user" },
+      { "status": "genehmigt", "label": "Genehmigt", "role": "Informatik BBL", "kind": "user" },
+      { "status": "abgeschlossen", "label": "Beschafft", "role": "Beschaffung", "kind": "auto" }
+    ] },
+  { "defId": "buchung", "name": "Ressourcenbuchung", "audience": "both", "serviceId": "raumbuchung",
+    "steps": [
+      { "status": "eingereicht", "label": "Angefragt", "role": "Buchende Person", "kind": "user" },
+      { "status": "abgeschlossen", "label": "Bestätigt", "role": "Workspace BBL", "kind": "auto" }
+    ] }
+]
