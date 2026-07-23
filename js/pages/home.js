@@ -142,7 +142,7 @@ export default async function render(ctx) {
   mount.querySelector('#home-search').addEventListener('submit', (e) => {
     e.preventDefault();
     const q = mount.querySelector('#home-q').value.trim();
-    location.hash = q ? `#/services?q=${encodeURIComponent(q)}` : '#/services';
+    location.hash = q ? `#/search?q=${encodeURIComponent(q)}` : '#/search';
   });
 }
 

@@ -1,67 +1,45 @@
-import { grundlagenPanel } from './grundlagen.js';
+import { grundlagenPage } from './grundlagen.js';
 
-// News und Wissen — Übersicht (Karten), News, Prozesse und Weisungen.
-// Tabs sind über ?tab=… verlinkbar; ein optionales ?id=… öffnet ein Detail
-// (Weisung / News). Ohne ?tab= erscheint die Abschnitts-Übersicht (CD-Muster).
+// News und Wissen — Abschnitts-Übersicht plus drei eigenständige Unterseiten:
+// News, Prozesse, Gesetzliche Grundlagen und Vorgaben. Diese sind KEINE Tabs
+// (kein tab__controls-Streifen mehr), sondern echte Seiten mit eigenem h1,
+// eigener Brotkrume und Zurück-Link — über ?tab=… verlinkbar. Ein optionales
+// ?id=… öffnet ein Detail (Weisung / News) als eigene Seite.
+const PAGES = {
+  news:       { title: 'News', lead: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.' },
+  prozesse:   { title: 'Prozesse', lead: 'Anleitungen, FAQ sowie Formulare und Vorlagen für die Zusammenarbeit mit dem BBL.' },
+  grundlagen: { title: 'Gesetzliche Grundlagen und Vorgaben', lead: 'Die für das BBL massgebenden Erlasse, übergeordneten Vorgaben des Bundes und internen Weisungen — thematisch gegliedert.' },
+};
+
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-
-  const TABS = [
-    { id: 'news',      label: 'News',                 icon: 'Bell' },
-    { id: 'prozesse',  label: 'Prozesse',             icon: 'InfoCircle' },
-    { id: 'grundlagen', label: 'Gesetzliche Grundlagen und Vorgaben', icon: 'Book' },
-  ];
-  const tabFromQuery = query.get('tab');
-  const active = TABS.some(t => t.id === tabFromQuery) ? tabFromQuery : '';
+  const tab = query.get('tab');
   const id = query.get('id') || '';
 
-  if (!active) return overview(ctx);
+  if (!tab || !PAGES[tab]) return overview(ctx);
 
-  setTitle('News und Wissen');
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' },
-    { label: TABS.find(t => t.id === active).label }]);
+  // Detailseiten mit eigener Identität (h1, Titel, Brotkrume) — Review P1-6.
+  if (tab === 'news' && id) return newsDetail(ctx, id);
+  if (tab === 'grundlagen' && id) {
+    const w = core.weisung(id);
+    if (w) return weisungPage(ctx, w);
+  }
+  // Grundlagen ist eine eigene Ankernavigations-Seite (KBOB-Muster).
+  if (tab === 'grundlagen') return grundlagenPage(ctx, PAGES.grundlagen);
 
-  const tabHref = (t) => `#/knowledge?tab=${t}`;
+  const page = PAGES[tab];
+  setTitle(page.title);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: page.title }]);
 
-  // Das sind Links auf eigene URLs, keine ARIA-Tabs: ohne role="tab" kündigt
-  // assistive Technik keine Pfeiltasten-Bedienung an, die es nicht gibt (P2-5).
-  // Der Container trägt die CD-Scroll-Andeutung (P0-6).
-  const controls = `<div class="tab__controls-container">
-    <nav class="tab__controls" aria-label="Wissensbereiche">
-      ${TABS.map(t => `<a class="tab__control${t.id === active ? " tab__control--active" : ""}"
-          ${t.id === active ? 'aria-current="page" ' : ''}href="${tabHref(t.id)}">${C.icon(t.icon, 'icon--base')} ${C.escape(t.label)}</a>`).join('')}
-    </nav>
-  </div>`;
-
-  const panels = TABS.map(t => `<div class="tab__container" data-tab="${t.id}"${t.id === active ? '' : ' hidden'}>
-      ${t.id === active ? panelHtml(t.id) : ''}
-    </div>`).join('');
-
+  const body = tab === 'news' ? newsList(ctx) : anleitungenPanel(ctx) + formularePanel(ctx);
   mount.innerHTML = `
   <div class="container section">
-    ${C.pageHeader({ title: 'News und Wissen', lead: 'Aktuelles aus dem BBL, die Prozesse und Vorlagen für die Zusammenarbeit sowie die geltenden Weisungen und Vorgaben.' })}
-    ${controls}
-    ${panels}
+    ${C.backLink('#/knowledge', 'News und Wissen')}
+    ${C.pageHeader({ title: page.title, lead: page.lead })}
+    ${body}
   </div>`;
 
-  // Tabs are plain <a href="#/knowledge?tab=…"> links: the hash router re-renders
-  // this module on hashchange, so the active tab is always derived from ?tab.
-  // Only the active panel needs interactivity wired up.
-  if (active === 'prozesse' || active === 'grundlagen') wireAccordion(mount);
-
-  function panelHtml(tab) {
-    // "Prozesse" bündelt Anleitungen/FAQ und die Formulare & Vorlagen —
-    // beides beschreibt, wie ein Ablauf im BBL funktioniert.
-    if (tab === 'prozesse') return anleitungenPanel(ctx) + formularePanel(ctx);
-    if (tab === 'grundlagen') {
-      const w = id ? core.weisung(id) : null;
-      return w ? weisungDetail(ctx, w) : grundlagenPanel(ctx);
-    }
-    if (tab === 'formulare')   return formularePanel(ctx);
-    if (tab === 'anleitungen') return anleitungenPanel(ctx);
-    if (tab === 'news')        return newsPanel(ctx, id);
-    return '';
-  }
+  if (tab === 'prozesse') wireAccordion(mount);
 }
 
 /* ============================ WEISUNGEN & VORGABEN ======================== */
@@ -124,12 +102,17 @@ function statusBadge(C, s) {
 
 
 
-function weisungDetail(ctx, w) {
-  const { core, C } = ctx;
+function weisungPage(ctx, w) {
+  const { mount, core, C, setTitle, setCrumbs } = ctx;
   const related = (w.relatedServices || []).map(sid => ({ sid, s: core.service(sid) })).filter(x => x.s);
   const successor = w.supersededBy ? core.weisung(w.supersededBy) : null;
 
-  return `
+  setTitle(w.title);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' },
+    { label: 'Gesetzliche Grundlagen und Vorgaben', href: '#/knowledge?tab=grundlagen' }, { label: w.title }]);
+
+  mount.innerHTML = `
+  <div class="container section">
     ${C.backLink('#/knowledge?tab=grundlagen', 'Gesetzliche Grundlagen und Vorgaben')}
     <div class="split mt-4">
       <div class="stack">
@@ -139,7 +122,7 @@ function weisungDetail(ctx, w) {
           ${forceBadge(C, w.bindingForce)}
           ${statusBadge(C, w.status)}
         </div>
-        <h2 tabindex="-1" style="margin-bottom:0">${C.escape(w.title)}</h2>
+        <h1 tabindex="-1" style="margin-bottom:0">${C.escape(w.title)}</h1>
         ${w.status === 'aufgehoben' && successor
           ? C.notification(`Diese Weisung ist <strong>aufgehoben</strong>. Abgelöst durch <a href="#/knowledge?tab=grundlagen&id=${encodeURIComponent(successor.directiveId)}">${C.escape(successor.code)} — ${C.escape(successor.title)}</a>.`, 'warning', 'WarningCircle')
           : w.status === 'aufgehoben'
@@ -175,37 +158,51 @@ function weisungDetail(ctx, w) {
           ${related.map(x => `<a class="row gap-sm" style="padding:.35rem 0" href="#/services/${encodeURIComponent(x.sid)}">${C.icon('Briefcase', 'icon--base')}<span class="small">${C.escape(x.s.title)}</span></a>`).join('')}
         </div>` : ''}
       </aside>
-    </div>`;
+    </div>
+  </div>`;
 }
 
 
 /* ================================ AKTUELLES =============================== */
 
-function newsPanel(ctx, id) {
+// Einzelne Meldung als eigene Seite (eigener Titel, h1, Brotkrume).
+function newsDetail(ctx, id) {
+  const { mount, core, C, setTitle, setCrumbs } = ctx;
+  const n = core.newsItem(id);
+  if (!n) {
+    setTitle('Meldung nicht gefunden');
+    setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: 'News', href: '#/knowledge?tab=news' }]);
+    mount.innerHTML = `<div class="container section">
+      ${C.backLink('#/knowledge?tab=news', 'News')}
+      <div class="page-header mt-4"><h1 tabindex="-1">Meldung nicht gefunden</h1></div>
+      <p class="muted">Diese Meldung existiert nicht. <a href="#/knowledge?tab=news">Zur Übersicht «News»</a></p>
+    </div>`;
+    return;
+  }
+  setTitle(n.title);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' },
+    { label: 'News', href: '#/knowledge?tab=news' }, { label: n.title }]);
+  mount.innerHTML = `
+  <div class="container section">
+    ${C.backLink('#/knowledge?tab=news', 'News')}
+    <article class="stack mt-4" style="max-width:60rem">
+      <div class="row gap-sm small muted">
+        <span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
+      </div>
+      <h1 tabindex="-1">${C.escape(n.title)}</h1>
+      ${C.photo({ id: n.photo, color: n.color, alt: '', w: 1200, style: 'aspect-ratio:21/9;max-height:20rem;border-radius:var(--radius-lg)' })}
+      <p class="lead">${C.escape(n.teaser)}</p>
+      <div class="separator separator--md"></div>
+      <p>${C.escape(n.body)}</p>
+    </article>
+  </div>`;
+}
+
+// Meldungsliste als Seiteninhalt (Kopf setzt die Aufrufseite).
+function newsList(ctx) {
   const { core, C } = ctx;
   const items = [...core.news()].sort((a, b) => String(b.date).localeCompare(String(a.date)));
-
-  if (id) {
-    const n = core.newsItem(id);
-    if (n) {
-      return `
-        ${C.backLink('#/knowledge?tab=news', 'News')}
-        <article class="stack mt-4" style="max-width:60rem">
-          <div class="row gap-sm small muted">
-            <span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
-          </div>
-          <h2 tabindex="-1">${C.escape(n.title)}</h2>
-          ${C.photo({ id: n.photo, color: n.color, alt: n.title, w: 1200, style: 'aspect-ratio:21/9;max-height:20rem;border-radius:var(--radius-lg)' })}
-          <p class="lead">${C.escape(n.teaser)}</p>
-          <div class="separator separator--md"></div>
-          <p>${C.escape(n.body)}</p>
-        </article>`;
-    }
-  }
-
   return `
-    ${id ? C.notification('Diese Meldung wurde nicht gefunden. Hier finden Sie alle Meldungen.', 'warning', 'WarningCircle') : ''}
-    <p class="page-intro muted">Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.</p>
     <div class="grid grid--3 mt-6">
       ${items.map(n => `
         <a class="card card--clickable" href="#/knowledge?tab=news&id=${encodeURIComponent(n.id)}">

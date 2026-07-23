@@ -341,7 +341,7 @@ function renderHeader(el) {
   searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const q = sinput.value.trim();
-    location.hash = q ? `#/services?q=${encodeURIComponent(q)}` : '#/services';
+    location.hash = q ? `#/search?q=${encodeURIComponent(q)}` : '#/search';
     openSearch(false);
   });
   document.addEventListener('click', (e) => {

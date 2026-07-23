@@ -52,9 +52,6 @@ function overview(ctx) {
       title: 'Datenportal',
       lead: 'Auswertungen zu den Kennzahlen des BBL — Energie und Klima, Immobilienportfolio, Beschaffung, Personal, Logistik und Mobilität.',
     })}
-    ${C.notification(
-      '<strong>Analyse-Ansicht mit Demo-Daten.</strong> Die Kennzahlen für 2025 stammen aus dem BBL-Nachhaltigkeitsbericht 2025; frühere Jahre sind für den Prototyp interpoliert. Die Abfrage-Schicht ist simuliert (kein Superset, keine Datenbank).',
-      'hint', 'InfoCircle')}
     <div class="grid grid--3 mt-8">${topics.map(topicCard).join('')}</div>
   </div>`;
 }

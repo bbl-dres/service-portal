@@ -1,7 +1,8 @@
-// Gesetzliche Grundlagen und Vorgaben — statische Landing-Page mit Akkordeons.
-// Aufbau nach dem Muster von kbob.admin.ch/de/mustervertraege-und-publikationen:
-// kurze Einleitung, danach thematische Akkordeons mit Dokumentlisten
-// (Titel, Dateityp, Grösse, Stand) und Verweisen auf übergeordnete Vorgaben.
+// Gesetzliche Grundlagen und Vorgaben — Ankernavigations-Seite nach dem Muster
+// von kbob.admin.ch/de/mustervertraege-und-publikationen und dem CD-Beispiel
+// detailPageAnchorNav.vue: links thematische Akkordeons mit Dokumentlisten,
+// rechts ein «Inhaltsverzeichnis» als klebende Navigation, die zu den
+// Abschnitten springt und sie öffnet.
 //
 // Bewusst statisch: die Sammlung ist ein Dokumentenverzeichnis, kein
 // abfragbarer Katalog. Demo-Inhalt — die Dokumente sind Platzhalter.
@@ -79,8 +80,12 @@ const GROUPS = [
   },
 ];
 
-export function grundlagenPanel(ctx) {
-  const { C } = ctx;
+// Eigenständige Seite (setzt Titel/Brotkrume selbst) mit zweispaltigem
+// Ankernavigations-Layout (CD container__main / container__aside).
+export function grundlagenPage(ctx, page) {
+  const { mount, C, setTitle, setCrumbs } = ctx;
+  setTitle(page.title);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: page.title }]);
 
   const item = (it) => {
     const inner = `${C.icon(it.external ? 'External' : 'Download', 'download-item__icon')}
@@ -100,32 +105,86 @@ export function grundlagenPanel(ctx) {
       <span class="sr-only">(im Prototyp nicht verfügbar)</span></span></li>`;
   };
 
-  return `
-    <p class="page-intro muted">Die für das BBL massgebenden Erlasse, übergeordneten Vorgaben des Bundes und internen Weisungen — thematisch gegliedert. Die Dokumente gelten in der jeweils publizierten Fassung; bei Widersprüchen gehen die Vorgaben des Bundes den Weisungen des BBL vor.</p>
+  // Ein Akkordeon, ein Item je Themengruppe. Jedes Item trägt eine id als
+  // Sprungziel für das Inhaltsverzeichnis.
+  const accordion = `<div class="accordion" id="grundlagen-acc">
+    ${GROUPS.map((g, i) => `
+      <div class="accordion__item" id="gr-${g.id}">
+        <h2 class="accordion__heading">
+          <button class="accordion__button" type="button" aria-expanded="${i === 0}" aria-controls="gr-p-${g.id}" id="gr-b-${g.id}">
+            <span class="accordion__title">${C.escape(g.title)}</span>${C.icon('ChevronDown', 'icon--base')}
+          </button>
+        </h2>
+        <div class="accordion__content" id="gr-p-${g.id}" role="region" aria-labelledby="gr-b-${g.id}"${i === 0 ? '' : ' hidden'}>
+          ${g.intro ? `<p class="muted">${C.escape(g.intro)}</p>` : ''}
+          <ul class="download-items">${g.items.map(item).join('')}</ul>
+        </div>
+      </div>`).join('')}
+  </div>`;
 
-    <div class="accordion mt-6" id="grundlagen-acc">
-      ${GROUPS.map((g, i) => `
-        <div class="accordion__item">
-          <h3 style="margin:0">
-            <button class="accordion__button" type="button" aria-expanded="${i === 0}" aria-controls="gr-p-${g.id}" id="gr-b-${g.id}">
-              <span class="accordion__title">${C.escape(g.title)}</span>${C.icon('ChevronDown', 'icon--base')}
-            </button>
-          </h3>
-          <div class="accordion__content" id="gr-p-${g.id}" role="region" aria-labelledby="gr-b-${g.id}"${i === 0 ? '' : ' hidden'}>
-            ${g.intro ? `<p class="muted">${C.escape(g.intro)}</p>` : ''}
-            <ul class="download-items">${g.items.map(item).join('')}</ul>
-          </div>
-        </div>`).join('')}
+  // Inhaltsverzeichnis (CD: Card + menu, detailPageAnchorNav.vue), klebend.
+  const toc = `<div class="anchor-nav sticky--top">
+    <div class="card card--default">
+      <div class="card__content"><div class="card__body">
+        <h2 class="card__title">Inhaltsverzeichnis</h2>
+        <ul class="menu">
+          ${GROUPS.map(g => `<li>
+            <a class="menu__item menu__item--border menu__item--condensed" href="#gr-${g.id}" data-anchor="gr-${g.id}">
+              <span>${C.escape(g.title)}</span>${C.icon('ArrowAngleBottomLeft', 'menu__item__icon')}
+            </a></li>`).join('')}
+        </ul>
+      </div></div>
     </div>
+  </div>`;
 
-    <section class="mt-8">
-      <h2>Weiterführende Informationen</h2>
-      <ul class="list--default mt-4">
-        <li><a href="https://www.bk.admin.ch/de/vorgaben" target="_blank" rel="noopener external">Vorgaben zur digitalen Transformation und IKT-Lenkung der Bundesverwaltung (DTI)</a></li>
-        <li><a href="#/knowledge?tab=prozesse">Prozesse — Anleitungen, FAQ, Formulare und Vorlagen</a></li>
-        <li><a href="#/data/digitalisierung">Digitalisierung — Strategie und Vorhaben des BBL</a></li>
-      </ul>
-    </section>`;
+  mount.innerHTML = `
+  <div class="container section">
+    ${C.pageHeader({ title: page.title, lead: page.lead })}
+    <p class="page-intro muted">Die Dokumente gelten in der jeweils publizierten Fassung; bei Widersprüchen gehen die Vorgaben des Bundes den Weisungen des BBL vor.</p>
+    <div class="container--grid gap--responsive mt-8">
+      <div class="container__main">${accordion}
+        <section class="mt-8">
+          <h2>Weiterführende Informationen</h2>
+          <ul class="list--default mt-4">
+            <li><a href="https://www.bk.admin.ch/de/vorgaben" target="_blank" rel="noopener external">Vorgaben zur digitalen Transformation und IKT-Lenkung der Bundesverwaltung (DTI)</a></li>
+            <li><a href="#/knowledge?tab=prozesse">Prozesse — Anleitungen, FAQ, Formulare und Vorlagen</a></li>
+            <li><a href="#/data/digitalisierung">Digitalisierung — Strategie und Vorhaben des BBL</a></li>
+          </ul>
+        </section>
+      </div>
+      <aside class="container__aside" aria-label="Inhaltsverzeichnis">${toc}</aside>
+    </div>
+  </div>`;
+
+  wireGrundlagen(mount);
 }
 
-export default grundlagenPanel;
+// Akkordeon-Umschaltung plus Sprungnavigation: ein Klick im Inhaltsverzeichnis
+// öffnet das Zielakkordeon und scrollt hin — ohne den Routen-Hash zu ändern.
+function wireGrundlagen(mount) {
+  mount.querySelectorAll('#grundlagen-acc .accordion__button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      const panel = mount.querySelector('#' + btn.getAttribute('aria-controls'));
+      if (panel) panel.hidden = expanded;
+    });
+  });
+  mount.querySelectorAll('.anchor-nav [data-anchor]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = mount.querySelector('#' + link.getAttribute('data-anchor'));
+      if (!target) return;
+      const btn = target.querySelector('.accordion__button');
+      const panel = target.querySelector('.accordion__content');
+      if (btn && panel && btn.getAttribute('aria-expanded') !== 'true') {
+        btn.setAttribute('aria-expanded', 'true');
+        panel.hidden = false;
+      }
+      target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      (btn || target).focus({ preventScroll: true });
+    });
+  });
+}
+
+export default grundlagenPage;

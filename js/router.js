@@ -64,6 +64,7 @@ const PAGES = {
   'data':        './pages/data.js',
   'knowledge':   './pages/knowledge.js',
   'my-cases':    './pages/my-cases.js',
+  'search':      './pages/search.js',
 };
 const APPS = {
   'space-request':   './apps/space-request.js',

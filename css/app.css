@@ -53,12 +53,12 @@ p { margin:0 0 1rem; }
 
 /* Links — CD underlines every content link in main (link.postcss:5-38) */
 a { color:var(--color-link); text-decoration:none; }
-#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link),
+#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):not(.menu__item),
 .notification a, .link {
   color:var(--color-primary-600); text-decoration:underline; text-underline-offset:2px; overflow-wrap:break-word;
 }
-#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):hover,
-#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):focus,
+#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):not(.menu__item):hover,
+#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):not(.menu__item):focus,
 .notification a:hover, .link:hover, .link:focus { color:var(--color-primary-800); }
 .link--negative { color:#fff; text-decoration:underline; text-underline-offset:2px; }
 .link--negative:hover { color:var(--color-gray-300); }
@@ -136,6 +136,17 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 }
 .container__aside > * { margin-bottom:1.75rem; }
 @media (min-width:1024px){ .container__aside > * { margin-bottom:2rem; } }
+/* Responsiver Gitterabstand (CD gap--responsive). */
+.container--grid.gap--responsive { gap:1.5rem; }
+@media (min-width:1024px){ .container--grid.gap--responsive { gap:2rem; } }
+@media (min-width:1280px){ .container--grid.gap--responsive { gap:2.5rem; } }
+/* Klebende Ankernavigation (sticky.postcss: top-4 md:top-10 lg:top-12). */
+.sticky--top { position:sticky; top:1rem; }
+@media (min-width:768px){ .sticky--top { top:2.5rem; } }
+@media (min-width:1024px){ .sticky--top { top:3rem; } }
+/* Inhaltsverzeichnis rechts: erst ab lg neben dem Inhalt, darunter normal. */
+.anchor-nav .card__title { font-size:var(--text-lg); }
+.anchor-nav .menu { margin-top:.5rem; }
 
 /* Section rhythm (section.postcss:5-51) — bare .section has no padding */
 .section { width:100%; }
@@ -167,9 +178,19 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
   .section--default, .section--py, .section[class*="bg--"] { padding-block:8rem; }
   .section--py-half { padding-block:4rem; }
 }
-.section--default + .section--default, .section--default + .section--py,
-.section--py + .section--default, .bg--white + .bg--white,
-.bg--secondary-50 + .bg--secondary-50, .hero + .section--default { padding-top:0; }
+/* Aufeinanderfolgende Abschnitte GLEICHER Hintergrundfarbe: oberen Abstand des
+   zweiten entfernen (section.postcss:31-49, dortige Absicht laut Kommentar:
+   «same background»). Bei Farbwechsel behält der zweite Abschnitt seinen
+   Abstand, sonst klebt der Inhalt eines farbigen Bandes an dessen Oberkante.
+   `section--default` ohne bg-- ist weiss; mit bg-- zählt die bg-Farbe. */
+.section--default:not([class*="bg--"]) + .section--default:not([class*="bg--"]),
+.section--default:not([class*="bg--"]) + .bg--white,
+.bg--white + .section--default:not([class*="bg--"]),
+.bg--white + .bg--white,
+.bg--secondary-50 + .bg--secondary-50,
+.bg--secondary-100 + .bg--secondary-100,
+.hero + .section--default:not([class*="bg--"]),
+.hero + .bg--white { padding-top:0; }
 
 /* Backgrounds (backgrounds.postcss:5-38) */
 .bg--white { background:#fff; }
@@ -449,9 +470,15 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 @media (min-width:1280px){ .desktop-menu__drawer { width:650px; padding:5rem 3rem 3rem; } }
 @media (min-width:1920px){ .desktop-menu__drawer { width:850px; padding:6rem; } }
 @keyframes navMenuIn { from { opacity:0; transform:translateY(-.375rem); } to { opacity:1; transform:translateY(0); } }
-.desktop-menu__close { position:absolute; top:0; right:0; display:inline-flex; align-items:center; gap:.4rem;
+/* Schliessen-Knopf: Position und Icongrösse nach desktop-menu.postcss:75-88
+   (lg:top-4 right-0 → xl:top-6 right-4 → 3xl:top-8 right-20; Icon h-5 = 1.25rem)
+   statt bisher in der Drawer-Ecke (top/right:0) mit zu kleinem Icon (0.75rem). */
+.desktop-menu__close { position:absolute; top:1rem; right:0; display:inline-flex; align-items:center; gap:.4rem;
   padding:.75rem 1rem; color:var(--color-text-muted); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--text-sm); }
 .desktop-menu__close:hover { color:var(--color-secondary-700); background:var(--color-secondary-50); }
+.desktop-menu__close .icon { width:1.25rem; height:1.25rem; }
+@media (min-width:1280px){ .desktop-menu__close { top:1.5rem; right:1rem; } }
+@media (min-width:1920px){ .desktop-menu__close { top:2rem; right:5rem; } }
 .navy { position:relative; }
 .navy__level-0 { list-style:none; margin:0; padding:0; }
 .navy__title { margin:0 0 .5rem; padding:0 .75rem; font-size:var(--text-lg); font-weight:var(--fw-bold);
@@ -891,6 +918,7 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
   text-align:left; cursor:pointer; transition:color .2s; }
 @media (min-width:1544px){ .accordion__button { padding:1.25rem .75rem; } }
 .accordion__button:hover { background:none; color:var(--color-primary-500); }
+.accordion__heading { margin:0; font-size:inherit; font-weight:inherit; }
 .accordion__title { font-size:var(--text-base); text-align:left; padding:.25rem 1rem .25rem 0; margin:0; }
 .accordion__button .icon { transition:transform .2s; }
 .accordion__button[aria-expanded="true"] .icon { transform:rotate(180deg); }
@@ -1040,6 +1068,35 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
   .service-controls__filters { grid-template-columns:1fr; }
 }
 
+/* ===================== Suche (search.postcss «SEARCH RESULTS PAGE») ===================== */
+/* Grosses Suchfeld (search--large): fettes h-16-Feld mit Icon-Knopf rechts. */
+.search--large .search__group { display:flex; align-items:stretch; position:relative; height:4rem; max-width:52rem; }
+.search__field { flex:1 1 auto; min-width:0; width:100%; padding:.75rem 1rem; border:1px solid var(--color-border);
+  background:#fff; font-size:var(--text-xl); font-weight:var(--fw-bold); outline:none; }
+.search__field::placeholder { color:var(--color-secondary-300); font-weight:var(--fw-regular); }
+.search--large .search__submit { position:absolute; top:0; right:0; bottom:0; z-index:2; }
+.search--page-result { padding-top:1rem; }
+@media (min-width:1544px){ .search--page-result { padding-top:2rem; } }
+
+/* Trefferliste (SearchResultsList): schlanke Zeilen mit Meta, Titel, Text. */
+.search-group { margin-top:3rem; }
+.search-group:first-of-type { margin-top:1.5rem; }
+.search-group__title { display:flex; align-items:center; gap:.5rem; font-size:var(--text-xl); margin-bottom:.5rem; }
+.search-group__title .icon { color:var(--color-primary-600); }
+.search-group__count { font-size:var(--text-sm); font-weight:var(--fw-regular); color:var(--color-text-muted); }
+.search-results-list { list-style:none; margin:0; padding:0; }
+.search-result { border-top:1px solid var(--color-secondary-200); }
+.search-result:last-child { border-bottom:1px solid var(--color-secondary-200); }
+.search-result__link { display:block; padding:1rem .25rem; color:inherit; text-decoration:none; }
+.search-result__link:hover .search-result__title,
+.search-result__link:focus-visible .search-result__title { color:var(--color-primary-700); }
+.search-result__meta { margin:0 0 .15rem; }
+.search-result__title { font-size:var(--text-base); font-weight:var(--fw-bold); line-height:var(--lh-snug); margin:0; }
+.search-result__desc { margin:.25rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
+.search-results__no-results h2 { margin-bottom:1.5rem; }
+.search-results__no-results h3 { margin-top:2rem; }
+.search-results__no-results .notification { margin-top:2rem; }
+
 /* Map placeholder + schematic portfolio map */
 .map { width:100%; height:420px; border:1px solid var(--color-border); }
 .pf-map { position:relative; height:440px; overflow:hidden; background:var(--color-secondary-50); }
@@ -1155,9 +1212,13 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .quick-tile:hover, .quick-tile:focus-visible { box-shadow:var(--shadow-2xl);
   border-left-color:var(--color-primary-600); }
 .quick-tile > .icon { flex:none; color:var(--color-primary-600); margin-top:.15rem; }
-.quick-tile__label { display:block; font-weight:var(--fw-bold); line-height:var(--lh-snug); }
+/* Der Text-Wrapper ist ein Flex-Kind: ohne min-width:0 schrumpft er nicht unter
+   seine intrinsische Mindestbreite, und lange Komposita (Datenschutzvorfall,
+   Verbrauchsmaterial) laufen aus der Kachel. */
+.quick-tile > span { min-width:0; }
+.quick-tile__label { display:block; font-weight:var(--fw-bold); line-height:var(--lh-snug); overflow-wrap:anywhere; }
 .quick-tile:hover .quick-tile__label { color:var(--color-primary-700); }
-.quick-tile__meta { display:block; margin-top:.15rem; font-size:var(--text-sm); color:var(--color-text-muted); }
+.quick-tile__meta { display:block; margin-top:.15rem; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
 /* Auf grauen Abschnitten heben sich die weissen Kacheln ab — auf weissen
    Abschnitten brauchen sie eine leichte Tönung, damit sie als Fläche lesbar bleiben. */
 .section--default:not([class*="bg--"]) .quick-tile { background:var(--color-secondary-50); box-shadow:none; }
