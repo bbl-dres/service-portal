@@ -35,11 +35,11 @@ export const NAV = [
     // (#/applications?bereich=bauten) und auf der Übersicht — das Menü bleibt kurz.
     children: [
       { href: '#/data', label: 'Übersicht' },
+      { href: '#/data/digitalisierung', label: 'Digitalisierung' },
       { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/katalog', label: 'Datenbezug' },
       { href: '#/applications?bereich=bauten', label: 'Fachanwendungen Bauten' },
       { href: '#/applications?bereich=logistik', label: 'Fachanwendungen Logistik' },
-      { href: '#/data/digitalisierung', label: 'Digitalisierung' },
     ],
   },
   {
@@ -49,9 +49,10 @@ export const NAV = [
     icon: 'Book',
     children: [
       { href: '#/knowledge', label: 'Übersicht' },
-      { href: '#/knowledge?tab=news', label: 'News' },
-      { href: '#/knowledge?tab=prozesse', label: 'Prozesse' },
       { href: '#/knowledge?tab=grundlagen', label: 'Gesetzliche Grundlagen und Vorgaben' },
+      { href: '#/knowledge?tab=news', label: 'News' },
+      { href: '#/knowledge?tab=prozesse', label: 'Prozessdokumentation' },
+      { href: '#/knowledge?tab=anleitungen', label: 'Anleitungen und Schulungsunterlagen' },
     ],
   },
   // «Meine Vorgänge» steht immer zuletzt.

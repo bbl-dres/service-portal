@@ -6,9 +6,10 @@ import { grundlagenPage, anchorNavPage, docItem } from './grundlagen.js';
 // eigener Brotkrume und Zurück-Link — über ?tab=… verlinkbar. Ein optionales
 // ?id=… öffnet ein Detail (Weisung / News) als eigene Seite.
 const PAGES = {
-  news:       { title: 'News', lead: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.' },
-  prozesse:   { title: 'Prozesse', lead: 'Anleitungen, FAQ sowie Formulare und Vorlagen für die Zusammenarbeit mit dem BBL.' },
-  grundlagen: { title: 'Gesetzliche Grundlagen und Vorgaben', lead: 'Die für das BBL massgebenden Erlasse, übergeordneten Vorgaben des Bundes und internen Weisungen — thematisch gegliedert.' },
+  news:        { title: 'News', lead: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.' },
+  prozesse:    { title: 'Prozessdokumentation', lead: 'Die Prozesslandschaft des BBL im Prozessportal Archimap sowie häufige Fragen zur Zusammenarbeit.' },
+  grundlagen:  { title: 'Gesetzliche Grundlagen und Vorgaben', lead: 'Die für das BBL massgebenden Erlasse, übergeordneten Vorgaben des Bundes und internen Weisungen — thematisch gegliedert.' },
+  anleitungen: { title: 'Anleitungen und Schulungsunterlagen', lead: 'Kurzanleitungen, Schulungsunterlagen und Lernvideos zur Nutzung des Kundenportals und seiner Dienstleistungen.' },
 };
 
 export default async function render(ctx) {
@@ -28,6 +29,7 @@ export default async function render(ctx) {
   // links, Inhaltsverzeichnis rechts, KBOB-/detailPageAnchorNav-Muster).
   if (tab === 'grundlagen') return grundlagenPage(ctx, PAGES.grundlagen);
   if (tab === 'prozesse') return prozessePage(ctx, PAGES.prozesse);
+  if (tab === 'anleitungen') return anleitungenPage(ctx, PAGES.anleitungen);
 
   // Verbleibt: News-Liste.
   const page = PAGES[tab];
@@ -67,15 +69,18 @@ function overview(ctx) {
     </a>`;
 
   const entries = [
-    { title: 'News', icon: 'Bell', href: '#/knowledge?tab=news',
-      desc: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.',
-      meta: `${news.length} Meldungen` },
-    { title: 'Prozesse', icon: 'InfoCircle', href: '#/knowledge?tab=prozesse',
-      desc: 'Anleitungen, FAQ sowie Formulare und Vorlagen für die Zusammenarbeit mit dem BBL.',
-      meta: 'Anleitungen & Vorlagen' },
     { title: 'Gesetzliche Grundlagen und Vorgaben', icon: 'Book', href: '#/knowledge?tab=grundlagen',
       desc: 'Erlasse, übergeordnete Vorgaben des Bundes und die internen Weisungen des BBL — thematisch gegliedert.',
       meta: 'Gesetze, Vorgaben & Weisungen' },
+    { title: 'News', icon: 'Bell', href: '#/knowledge?tab=news',
+      desc: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.',
+      meta: `${news.length} Meldungen` },
+    { title: 'Prozessdokumentation', icon: 'InfoCircle', href: '#/knowledge?tab=prozesse',
+      desc: 'Die Prozesslandschaft des BBL im Prozessportal Archimap sowie häufige Fragen (FAQ).',
+      meta: 'Prozessportal & FAQ' },
+    { title: 'Anleitungen und Schulungsunterlagen', icon: 'Desktop', href: '#/knowledge?tab=anleitungen',
+      desc: 'Kurzanleitungen, Schulungsunterlagen und Lernvideos zur Nutzung der Plattform.',
+      meta: 'Anleitungen & Schulung' },
   ].map(entry).join('');
 
   mount.innerHTML = `
@@ -218,34 +223,21 @@ function newsList(ctx) {
     </div>`;
 }
 
-/* ============================ PROZESSE (Ankernav) ======================== */
+/* =========================== PROZESSDOKUMENTATION ======================= */
 
-// Prozesse teilt das Ankernavigations-Layout mit «Grundlagen»: Abschnitte mit
-// Überschrift + Liste bzw. Akkordeon links, Inhaltsverzeichnis rechts.
+// Prozessdokumentation: Verweis auf das Prozessportal (Archimap) plus häufige
+// Fragen — im selben Ankernavigations-Layout wie die übrigen Wissens-Seiten.
 function prozessePage(ctx, page) {
   const { C, setTitle, setCrumbs } = ctx;
   setTitle(page.title);
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: page.title }]);
 
-  const guides = [
-    { title: 'Erste Schritte im Kundenportal', desc: 'Überblick über Dienstleistungen, Anwendungen, Dokumente und Daten.' },
-    { title: 'Einen Vorgang starten und verfolgen', desc: 'Wie Sie einen Service auslösen und den Status unter «Meine Vorgänge» einsehen.' },
-    { title: 'Gebäude und Dokumente finden', desc: 'Suche im Portfolio sowie im Dokumenten- und Medienarchiv.' },
-  ];
   const faqs = [
     { q: 'Wie melde ich zusätzlichen Raumbedarf an?', a: 'Öffnen Sie unter «Dienstleistungen» den Service «Raumbedarf melden» und folgen Sie dem geführten Antrag. Nach dem Absenden entsteht ein Vorgang, den Sie unter «Meine Vorgänge» verfolgen.' },
     { q: 'Welche Weisung gilt für die Flächenstandards?', a: 'Massgebend ist die Weisung «Neue Arbeitswelten (NAW)». Sie finden sie unter «Gesetzliche Grundlagen und Vorgaben».' },
     { q: 'Wo finde ich Bauwerksdokumentationen zu einem Gebäude?', a: 'Unter «Daten und Digitalisierung» bzw. im Dokumentenarchiv lassen sich Pläne und Dokumentationen pro Gebäude suchen und herunterladen.' },
     { q: 'Wie melde ich einen Sicherheits- oder Datenschutzvorfall?', a: 'Nutzen Sie den Service «Sicherheitsvorfall melden». Grundlagen sind das Informationssicherheitsgesetz (ISG) und das Datenschutzmerkblatt (DSG).' },
     { q: 'An wen wende ich mich bei Rückfragen zu einem Vorgang?', a: 'Verwenden Sie die Referenznummer (Format BBL-JJJJ-XXXX) aus der Detailansicht Ihres Vorgangs für Rückfragen.' },
-  ];
-  const formulare = [
-    { title: 'Antragsformular Raumbedarf', desc: 'Strukturierte Bedarfsmeldung für zusätzliche Flächen und Arbeitsplätze.', fmt: 'PDF' },
-    { title: 'Vorlage Beschaffung (BANF)', desc: 'Bedarfsanforderung für IKT- und Güterbeschaffungen inkl. Pflichtfelder.', fmt: 'DOCX' },
-    { title: 'Checkliste WTO-Verfahren', desc: 'Schwellenwerte, Verfahrenswahl und Fristen für öffentliche Beschaffungen.', fmt: 'PDF' },
-    { title: 'Vorlage Störungsmeldung Gebäude', desc: 'Erfassung von Störungen, Schäden und Reinigungsbedarf je Standort.', fmt: 'PDF' },
-    { title: 'Vorlage Sicherheitsvorfall', desc: 'Meldung von Informationssicherheits- und Datenschutzvorfällen (ISG/DSG).', fmt: 'PDF' },
-    { title: 'Antrag Publikation / Drucksache', desc: 'Bestellung von Publikationen nach Corporate Design des Bundes.', fmt: 'DOCX' },
   ];
 
   const faqHtml = `<div class="accordion" id="faq-acc">
@@ -262,17 +254,53 @@ function prozessePage(ctx, page) {
       </div>`).join('')}
   </div>`;
 
+  const portalHtml = `
+    <p>Die vollständige Prozesslandschaft des BBL — Abläufe, Rollen und Zuständigkeiten — wird im Prozessportal Archimap gepflegt.</p>
+    <div class="row mt-4">
+      <a class="btn btn--outline btn--lg" href="https://prozesse-archimap.admin.ch" target="_blank" rel="noopener external">Zum Prozessportal (Archimap) ${C.icon('External', 'icon--base')}</a>
+    </div>`;
+
+  anchorNavPage(ctx, {
+    title: page.title, lead: page.lead,
+    intro: 'Viele Anliegen können Sie direkt unter <a href="#/services">Dienstleistungen</a> als Vorgang starten.',
+    sections: [
+      { id: 'pr-portal', title: 'Prozessportal', html: portalHtml },
+      { id: 'pr-faq', title: 'Häufige Fragen (FAQ)', html: faqHtml },
+    ],
+    back: { href: '#/knowledge', label: 'News und Wissen' },
+  });
+}
+
+/* ==================== ANLEITUNGEN & SCHULUNGSUNTERLAGEN ================== */
+
+// Eigene Ankernavigations-Seite: Kurzanleitungen und Schulungsmaterial.
+function anleitungenPage(ctx, page) {
+  const { C, setTitle, setCrumbs } = ctx;
+  setTitle(page.title);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: page.title }]);
+
+  const guides = [
+    { title: 'Erste Schritte im Kundenportal', desc: 'Überblick über Dienstleistungen, Anwendungen, Dokumente und Daten.', meta: ['Anleitung'] },
+    { title: 'Einen Vorgang starten und verfolgen', desc: 'Wie Sie einen Service auslösen und den Status unter «Meine Vorgänge» einsehen.', meta: ['Anleitung'] },
+    { title: 'Gebäude und Dokumente finden', desc: 'Suche im Portfolio sowie im Dokumenten- und Medienarchiv.', meta: ['Anleitung'] },
+  ];
+  const schulung = [
+    { title: 'Einführung ins Kundenportal', desc: 'Geführter Rundgang durch die wichtigsten Funktionen.', icon: 'Desktop', meta: ['Video', '8 Min'] },
+    { title: 'Schulung Vorgangsbearbeitung', desc: 'Foliensatz zur Erfassung und Verfolgung von Vorgängen.', meta: ['PDF', '2.1 MB'] },
+    { title: 'Webinar-Aufzeichnung: Dienstleistungen des BBL', desc: 'Aufzeichnung des Einführungswebinars für neue Verwaltungseinheiten.', icon: 'Desktop', meta: ['Video', '45 Min'] },
+    { title: 'Schnellstart-Kurzreferenz', desc: 'Einseitige Übersicht der häufigsten Aufgaben und Wege.', meta: ['PDF', '480 kB'] },
+  ];
+
   const sections = [
-    { id: 'pr-anleitungen', title: 'Anleitungen',
-      html: `<ul class="download-items">${guides.map(g => docItem(C, { title: g.title, desc: g.desc, icon: 'Book', href: '#', meta: ['Anleitung'] })).join('')}</ul>` },
-    { id: 'pr-faq', title: 'Häufige Fragen (FAQ)', html: faqHtml },
-    { id: 'pr-formulare', title: 'Formulare und Vorlagen',
-      html: `<ul class="download-items">${formulare.map(it => docItem(C, { title: it.title, desc: it.desc, meta: [it.fmt], href: '#' })).join('')}</ul>` },
+    { id: 'an-anleitungen', title: 'Anleitungen',
+      html: `<ul class="download-items">${guides.map(g => docItem(C, { ...g, icon: 'Book', href: '#' })).join('')}</ul>` },
+    { id: 'an-schulung', title: 'Schulungsunterlagen und Lernvideos',
+      html: `<ul class="download-items">${schulung.map(s => docItem(C, { ...s, href: '#' })).join('')}</ul>` },
   ];
 
   anchorNavPage(ctx, {
     title: page.title, lead: page.lead,
-    intro: 'Kurzanleitungen, häufige Fragen sowie Formulare und Vorlagen für die Zusammenarbeit mit dem BBL. Viele Anliegen können Sie direkt unter <a href="#/services">Dienstleistungen</a> als Vorgang starten.',
+    intro: 'Kurzanleitungen sowie Schulungsunterlagen und Lernvideos zur Nutzung des Kundenportals. Die Materialien sind im Prototyp Platzhalter.',
     sections,
     back: { href: '#/knowledge', label: 'News und Wissen' },
   });

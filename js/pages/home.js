@@ -14,9 +14,9 @@ const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 // Wichtige Dienstleistungs-Themen mit eigenem Einstieg auf der Startseite —
 // bewusst eine Auswahl, nicht alle Menüpunkte (Nutzerwunsch). `key` = domain.
 const HOME_THEMEN = [
-  { key: 'A', label: 'Bauprojekte und Projektportfolio', color: '#2f4356',
+  { key: 'A', label: 'Bauprojekte und Projektportfolio', photo: '1541888946425-d81bb19240f5', color: '#2f4356',
     desc: 'Bauprojekte melden und verfolgen, Bauwerksdokumentation und Immobilienportfolio einsehen.' },
-  { key: 'U', label: 'Unterbringung', color: '#46596b',
+  { key: 'U', label: 'Unterbringung', photo: '1497366216548-37526070297c', color: '#46596b',
     desc: 'Unterbringungsbedarf anmelden und Flächen bzw. Arbeitsplätze zuweisen.' },
 ];
 
@@ -94,7 +94,7 @@ export default async function render(ctx) {
   //     BBL-Intranet (extern). Bewusst eine Auswahl, nicht jeder Menüpunkt.
   const themaCard = (t) => C.card({
     title: t.label, desc: t.desc, href: `#/services?topic=${encodeURIComponent(t.key)}`,
-    placeholder: 'Platzhalterbild — Demo',
+    photo: { id: t.photo, color: t.color, alt: '' },
     footer: `<span>Dienstleistungen</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
   });
   const areaCard = (a) => C.card({
