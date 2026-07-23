@@ -21,21 +21,6 @@ function overview(ctx) {
   const count = (b) => apps.filter(a => a.bereich === b).length;
   const datasets = core.datasets().length;
 
-  const entry = (o) => `
-    <a class="card card--universal card--clickable" href="${o.href}">
-      <div class="card__content">
-        <div class="card__body">
-          <span class="domain-tile__icon">${C.icon(o.icon, 'icon--2xl')}</span>
-          <div class="card__title">${C.escape(o.title)}</div>
-          <p class="card__description">${C.escape(o.desc)}</p>
-        </div>
-        <div class="card__footer">
-          <span>${C.escape(o.meta)}</span>
-          <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>
-        </div>
-      </div>
-    </a>`;
-
   const entries = [
     { title: 'Datenportal', icon: 'ChartBar', href: '#/app/dataportal',
       desc: 'Auswertungen und Dashboards zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal.',
@@ -61,7 +46,7 @@ function overview(ctx) {
     { title: 'Digitalisierung', icon: 'Book', href: '#/data/digitalisierung',
       desc: 'Strategie, Vorhaben und Grundsätze der Digitalisierung im BBL.',
       meta: 'Strategie & Vorhaben' },
-  ].map(entry).join('');
+  ].map(C.domainTile).join('');
 
   mount.innerHTML = `
   <div class="container section">

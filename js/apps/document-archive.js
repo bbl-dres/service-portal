@@ -26,7 +26,10 @@ export default async function render(ctx) {
     type: query.get('type') || '',
     year: query.get('year') || '',
     q: query.get('q') || '',
+    page: 1,
+    _focusSearch: false,
   };
+  const PER_PAGE = 10;
 
   const tierVariant = (id) => {
     const t = tiers.find(x => x.id === id);
@@ -70,14 +73,16 @@ export default async function render(ctx) {
     const yearOpts = [{ value: '', label: 'Alle Jahre' }]
       .concat(years.map(y => ({ value: y, label: String(y) })));
 
+    // CD-Muster: Das Suchfeld steht in der Filterleiste immer an erster (linker)
+    // Stelle, danach die Facetten-Selects.
     return `<div class="grid grid--4 mt-6">
-      ${selectControl('flt-building', 'Gebäude', state.building, buildingOpts)}
-      ${selectControl('flt-type', 'Dokumenttyp', state.type, typeOpts)}
-      ${selectControl('flt-year', 'Jahr', state.year, yearOpts)}
       <div class="field" style="margin:0">
         <label for="flt-q">Titel durchsuchen</label>
         <input id="flt-q" type="search" placeholder="z. B. Grundriss…" value="${C.escape(state.q)}" autocomplete="off">
       </div>
+      ${selectControl('flt-building', 'Gebäude', state.building, buildingOpts)}
+      ${selectControl('flt-type', 'Dokumenttyp', state.type, typeOpts)}
+      ${selectControl('flt-year', 'Jahr', state.year, yearOpts)}
     </div>`;
   }
 
@@ -122,6 +127,9 @@ export default async function render(ctx) {
   function draw() {
     const rows = filtered();
     const active = state.building || state.type || state.year || state.q.trim();
+    const totalPages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
+    state.page = Math.min(Math.max(1, state.page), totalPages);
+    const visible = rows.slice((state.page - 1) * PER_PAGE, state.page * PER_PAGE);
 
     mount.innerHTML = `
     <div class="container section">
@@ -131,25 +139,32 @@ export default async function render(ctx) {
       })}
       ${filterBar()}
       <div class="row row--between mt-6">
-        <p class="muted" style="margin:0"><strong>${rows.length}</strong> von ${all.length} Dokument(en)${active ? ' (gefiltert)' : ''}</p>
+        <p class="muted" style="margin:0"><strong>${rows.length}</strong> von ${all.length} Dokument(en)${active ? ' (gefiltert)' : ''}${totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}</p>
         ${active ? `<button class="btn btn--bare" id="flt-reset" type="button">${C.icon('Cancel', 'icon--base')} Filter zurücksetzen</button>` : ''}
       </div>
       <div class="mt-4">${rows.length
-        ? resultTable(rows)
+        ? resultTable(visible) + C.pagination({ page: state.page, totalPages, inputId: 'doc-page', label: 'Seitennavigation Bauwerksdokumentation', href: () => '#' })
         : C.empty('Keine Dokumente für die gewählten Filter gefunden.')}</div>
     </div>`;
 
-    wire();
+    wire(totalPages);
   }
 
-  function wire() {
+  function wire(totalPages) {
     const bind = (id, key) => {
       const el = mount.querySelector('#' + id);
-      if (el) el.addEventListener('change', () => { state[key] = el.value; draw(); });
+      if (el) el.addEventListener('change', () => { state[key] = el.value; state.page = 1; draw(); });
     };
     bind('flt-building', 'building');
     bind('flt-type', 'type');
     bind('flt-year', 'year');
+
+    // Pagination (In-Memory): Vor/Zurück-Links abfangen, Seiteneingabe verdrahten.
+    mount.querySelector('.pagination_items a[aria-label="Vorherige Seite"]')
+      ?.addEventListener('click', (e) => { e.preventDefault(); if (state.page > 1) { state.page--; draw(); } });
+    mount.querySelector('.pagination_items a[aria-label="Nächste Seite"]')
+      ?.addEventListener('click', (e) => { e.preventDefault(); if (state.page < totalPages) { state.page++; draw(); } });
+    C.wirePagination(mount, 'doc-page', state.page, totalPages, (t) => { state.page = t; draw(); });
 
     // Titel/Vorschau öffnet den Dokument-Viewer mit der aktuellen Trefferliste
     // als Blätter-Kontext (Vor/Zurück im Viewer).
@@ -163,16 +178,19 @@ export default async function render(ctx) {
 
     const qEl = mount.querySelector('#flt-q');
     if (qEl) {
-      qEl.addEventListener('input', () => { state.q = qEl.value; draw(); });
-      // keep focus and caret position after re-render
-      const pos = qEl.value.length;
-      qEl.focus();
-      try { qEl.setSelectionRange(pos, pos); } catch (e) { /* search inputs may not support setSelectionRange */ }
+      qEl.addEventListener('input', () => { state.q = qEl.value; state.page = 1; state._focusSearch = true; draw(); });
+      // Fokus/Cursor nur nach Tippen zurückholen — nicht beim Blättern.
+      if (state._focusSearch) {
+        const pos = qEl.value.length;
+        qEl.focus();
+        try { qEl.setSelectionRange(pos, pos); } catch (e) { /* search inputs may not support setSelectionRange */ }
+        state._focusSearch = false;
+      }
     }
 
     const reset = mount.querySelector('#flt-reset');
     if (reset) reset.addEventListener('click', () => {
-      state.building = ''; state.type = ''; state.year = ''; state.q = '';
+      state.building = ''; state.type = ''; state.year = ''; state.q = ''; state.page = 1;
       draw();
     });
   }

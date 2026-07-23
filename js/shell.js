@@ -55,6 +55,13 @@ function resolveChildren(item) {
   return [...(item.children || []), ...themen];
 }
 
+// Registry der nav-Zweige (Kinder mit branchKey, z. B. «Digitalisierung») —
+// fillBranch schlägt darüber die L2-Kinder eines Zweigs nach.
+const NAV_BRANCHES = {};
+NAV.forEach(item => (item.children || []).forEach(c => {
+  if (c.branchKey) NAV_BRANCHES[c.branchKey] = { label: c.label, children: c.branches || [] };
+}));
+
 // Site-owned utilities live in the white brand row (meta-navigation);
 // Confederation-wide ones live in the navy top bar (top-bar-navigation).
 const META_LINKS = [
@@ -69,13 +76,21 @@ function headerHTML() {
   const renderNavMenu = (item, scope) => {
     const menuId = `${scope}-menu__drawer-${item.base}`;
     const drawerClass = scope === 'desktop' ? 'desktop-menu__drawer' : 'mobile-menu__drawer';
-    // Nur der Dienstleistungen-Drawer bekommt die Drill-down-Unterzweige.
-    // Ebene 0: «Übersicht» (Direktlink) + Themen als Zweige + Intranet-Bereiche.
-    const withBranches = item.base === 'services';
-    const level0 = withBranches
-      ? `<ul class="menu navy__level-0">${
-          (item.children || []).map(navyRow).join('')}${themaBranchRows()}${areaBranchRows()}</ul>`
-      : `<ul class="menu navy__level-0">${resolveChildren(item).map(navyRow).join('')}</ul>`;
+    // Drill-down bekommen: der Dienstleistungen-Drawer (Themen + Intranet-Bereiche)
+    // sowie jeder Drawer mit als Zweig markierten Kindern (child.branchKey, z. B.
+    // «Digitalisierung» im Daten-Drawer). Ebene 0 mischt Direktlinks und Zweige.
+    const hasNavBranch = (item.children || []).some(c => c.branchKey);
+    const withBranches = item.base === 'services' || hasNavBranch;
+    let level0;
+    if (item.base === 'services') {
+      level0 = `<ul class="menu navy__level-0">${
+        (item.children || []).map(navyRow).join('')}${themaBranchRows()}${areaBranchRows()}</ul>`;
+    } else if (hasNavBranch) {
+      level0 = `<ul class="menu navy__level-0">${(item.children || [])
+        .map(c => c.branchKey ? branchRow('nav:' + c.branchKey, c.label) : navyRow(c)).join('')}</ul>`;
+    } else {
+      level0 = `<ul class="menu navy__level-0">${resolveChildren(item).map(navyRow).join('')}</ul>`;
+    }
 
     const inner = withBranches
       ? `<div class="navy navy--drill" data-level="0">
@@ -378,6 +393,12 @@ function renderHeader(el) {
       title = dom.label;
       rows = [{ href: `#/services?topic=${encodeURIComponent(dk)}`, label: 'Übersicht' },
         ...svcs.map(s => ({ href: `#/services/${s.serviceId}`, label: s.title }))];
+    } else if (key.startsWith('nav:')) {
+      // Nav-Zweig (z. B. «Digitalisierung») → seine L2-Kinder (intern).
+      const b = NAV_BRANCHES[key.slice(4)];
+      if (!b) return;
+      title = b.label;
+      rows = b.children.map(c => ({ href: c.href, label: c.label }));
     } else {
       // Intranet-Bereich → externe Kinder aus INTRANET_AREAS.
       const a = INTRANET_AREAS.find(x => x.key === key);

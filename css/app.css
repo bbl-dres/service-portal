@@ -285,7 +285,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
   background:#d8232a; color:#fff; border-radius:var(--radius-sm); white-space:nowrap; }
 
 /* Top bar (top-bar.postcss + top-bar-navigation.postcss) */
-.top-bar { background:var(--color-secondary-600); color:#fff; font-size:var(--text-sm); }
+.top-bar { background:var(--color-secondary-600); color:#fff; font-size:var(--fs-sm); }
 .top-bar .container--flex { min-height:2.75rem; }
 .top-bar__btn { display:inline-flex; align-items:center; gap:.4rem; min-height:2.75rem; min-width:2.75rem; background:none; border:0;
   color:#fff; cursor:pointer; font:inherit; padding:.25rem 0 .25rem 1rem; margin-left:-1rem; text-decoration:none;
@@ -322,7 +322,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 
 /* Brand / title row (top-header.postcss + logo.postcss) */
 .top-header { background:#fff; border-bottom:1px solid var(--color-border); position:relative;
-  padding:.75rem 0; font-size:var(--text-sm); }
+  padding:.75rem 0; font-size:var(--fs-sm); }
 @media (min-width:768px){ .top-header { padding:1rem 0; } }
 @media (min-width:1024px){ .top-header { padding:1.5rem 0; } }
 @media (min-width:1280px){ .top-header { padding:2rem 0; } }
@@ -531,7 +531,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .menu__item:hover { background:var(--color-secondary-50); }
 .menu__item--condensed { padding:.75rem; }
 .menu__item--border { border-bottom:1px solid var(--color-secondary-100); }
-.menu__item--small { font-size:var(--text-sm); }
+.menu__item--small { font-size:var(--fs-sm); }
 .menu__item--grey { background:var(--color-secondary-50); }
 .menu__item--active::after { content:""; display:block; position:absolute; top:0; bottom:0; left:0;
   width:3px; background:var(--color-primary-500); }
@@ -587,8 +587,16 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
   border-bottom-color:var(--color-secondary-300); }
 .mobile-menu .top-bar-navigation--mobile li > a:hover { background:var(--color-secondary-700); color:#fff; }
 
+/* Share-Bar (share-bar.postcss:5-16) — rechtsbündig nach der Brotkrume. */
+.share-bar { display:flex; flex-direction:row-reverse; align-items:flex-end; margin:1.25rem -.75rem 0 0; }
+@media (min-width:1024px){ .share-bar { margin-top:1rem; } }
+.share-container { display:flex; gap:.25rem; }
+.share-bar__btn { color:var(--color-secondary-700); }
+.share-bar__btn:hover { color:var(--color-primary-600); background:none; }
+@media print { .share-bar { display:none; } }
+
 /* Breadcrumb (breadcrumb.postcss:5-70) */
-.breadcrumb { background:transparent; border-bottom:0; font-size:var(--text-sm); color:var(--color-text-muted);
+.breadcrumb { background:transparent; border-bottom:0; font-size:var(--fs-sm); color:var(--color-text-muted);
   position:relative; z-index:var(--breadcrumb-z); }
 .breadcrumb ul { list-style:none; display:flex; flex-wrap:wrap; align-items:center; padding-block:.5rem; margin-left:-1rem; }
 @media (min-width:1280px){ .breadcrumb ul { padding-block:.75rem; } }
@@ -976,7 +984,7 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 @media (min-width:1544px){ .accordion__button { padding:1.25rem .75rem; } }
 .accordion__button:hover { background:none; color:var(--color-primary-500); }
 .accordion__heading { margin:0; font-size:inherit; font-weight:inherit; }
-.accordion__title { font-size:var(--text-base); text-align:left; padding:.25rem 1rem .25rem 0; margin:0; }
+.accordion__title { font-size:var(--fs-base); text-align:left; padding:.25rem 1rem .25rem 0; margin:0; }
 .accordion__button .icon { transition:transform .2s; }
 .accordion__button[aria-expanded="true"] .icon { transform:rotate(180deg); }
 .accordion__content { width:100%; padding:1rem .5rem 2.5rem; }
@@ -1205,8 +1213,8 @@ body.docviewer-open .back-to-top-wrapper { display:none; }
 /* ---- Datenportal dashboards ---- */
 .dash-hero { margin-top:1.5rem; }
 .dash-hero__label { font-size:var(--text-sm); color:var(--color-text-muted); }
-.dash-hero__value { font-size:3rem; line-height:1.1; font-weight:var(--fw-bold); color:var(--color-text); margin-top:.25rem; }
-@media (min-width:1024px){ .dash-hero__value { font-size:3.5rem; } }
+.dash-hero__value { font-size:var(--fs-6xl); line-height:1.1; font-weight:var(--fw-bold); color:var(--color-text); margin-top:.25rem; }
+@media (min-width:1024px){ .dash-hero__value { font-size:var(--fs-7xl); } }
 .dash-hero__unit { font-size:var(--text-lg); font-weight:var(--fw-regular); color:var(--color-text-muted); margin-left:.5rem; }
 .dash-hero__delta { font-size:var(--text-sm); color:var(--color-text-muted); margin-top:.35rem; }
 .dash-hero__delta.is-good { color:var(--color-success-text); }
@@ -1367,10 +1375,10 @@ body.docviewer-open .back-to-top-wrapper { display:none; }
 /* Dunkle Chrome fest verdrahtet, damit die Vorschau in beiden Skins wie ein
    Viewer wirkt. Portiert aus dem BBL Mieterportal (tenant-portal). */
 body.docviewer-open { overflow:hidden; }
-.docviewer { position:fixed; inset:0; z-index:200; overflow:auto; background:#131b22; }
+.docviewer { position:fixed; inset:0; z-index:200; overflow:auto; background:var(--color-secondary-900); }
 .docviewer__bar { position:sticky; top:0; z-index:5; display:flex; align-items:center;
   justify-content:space-between; gap:1rem; padding:.75rem 1rem;
-  background:#131b22; border-bottom:1px solid rgba(255,255,255,.12); }
+  background:var(--color-secondary-900); border-bottom:1px solid rgba(255,255,255,.12); }
 .docviewer__heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
 .docviewer__heading-icon { color:rgba(255,255,255,.65); flex:none; }
 .docviewer__heading-text { min-width:0; }
@@ -1385,7 +1393,7 @@ body.docviewer-open { overflow:hidden; }
 .docviewer__btn:hover { background:rgba(255,255,255,.12); }
 .docviewer__btn:focus-visible { outline:2px solid #fff; outline-offset:-2px; }
 .docviewer__btn--close:hover { background:var(--color-primary-600); }
-.docviewer__main { position:relative; background:#1c2834; }
+.docviewer__main { position:relative; background:var(--color-secondary-800); }
 .docviewer__stage { padding:2.5rem 1rem; cursor:default; }
 .docviewer__stage:focus-visible { outline:2px solid rgba(255,255,255,.4); outline-offset:-2px; }
 .docviewer__pages { --docpage-w:760px; display:flex; flex-direction:column; align-items:center;

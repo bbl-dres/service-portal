@@ -53,7 +53,7 @@ export default async function render(ctx) {
   function tileMarkup(m) {
     const isVideo = m.mediaType === 'video';
     return `
-      <a class="card card--clickable media-tile" href="#/app/mediathek/${encodeURIComponent(m.mediaId)}" data-media="${C.escape(m.mediaId)}">
+      <a class="card card--default card--clickable media-tile" href="#/app/mediathek/${encodeURIComponent(m.mediaId)}" data-media="${C.escape(m.mediaId)}">
         ${C.photo({
           id: m.photo, color: m.color, alt: m.title, w: 640, gray: isHistoric(m),
           cls: 'media-preview photo--scrim',
@@ -64,7 +64,7 @@ export default async function render(ctx) {
             <span class="badge badge--gray" style="background:rgba(0,0,0,.45);color:#fff;">${C.escape(m.date)}</span>`,
         })}
         <div class="card__body">
-          <div class="card__title" style="font-size:var(--fs-base);">${C.escape(m.title)}</div>
+          <div class="card__title card__title--sm">${C.escape(m.title)}</div>
           <p class="card__description" style="margin:0;">${C.icon('Building', 'icon--base')} ${C.escape(bname(m.buildingId))}</p>
           <div class="pill-row mt-2">${periodBadge(m.historicPeriod)}${m.accessLevel !== 'öffentlich' ? C.badge('Intern', 'gray') : ''}</div>
         </div>
@@ -79,7 +79,7 @@ export default async function render(ctx) {
     const isPublic = m.accessLevel === 'öffentlich';
     return `
     <div class="lightbox" id="lightbox" style="margin-top:2rem;">
-      <div class="card">
+      <div class="card card--default">
         <div class="card__body" style="gap:1.25rem;">
           <div class="row row--between">
             <div class="row gap-sm">${C.badge(isVideo ? 'Video' : 'Foto', 'blue')}${periodBadge(m.historicPeriod)}</div>

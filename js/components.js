@@ -129,6 +129,39 @@ export function table({ columns, rows, zebra, caption, showCaption }) {
 
 export function empty(msg) { return `<div class="empty">${escape(msg)}</div>`; }
 
+// Icon-Kachel (domain-tile): bildlose Karte mit grossem Icon, Titel, Text und
+// «Öffnen»-Fuss. Eine Quelle für die Übersichtskarten (Daten, Wissen,
+// Digitalisierung) — bildlose Karten sind card--default (CD, nicht --universal).
+export function domainTile({ icon: ic, title, desc, meta = '', href, external = false }) {
+  const ext = external ? ' target="_blank" rel="noopener external"' : '';
+  return `<a class="card card--default card--clickable" href="${escape(href)}"${ext}>
+    <div class="card__content">
+      <div class="card__body">
+        <span class="domain-tile__icon">${icon(ic, 'icon--2xl')}</span>
+        <div class="card__title">${escape(title)}</div>
+        <p class="card__description">${escape(desc)}</p>
+      </div>
+      <div class="card__footer">
+        <span>${escape(meta)}</span>
+        <span class="btn btn--link">Öffnen ${icon(external ? 'External' : 'ArrowRight', 'icon--base')}</span>
+      </div>
+    </div>
+  </a>`;
+}
+
+// Share-Bar (share-bar.postcss) — nach der Brotkrume auf Detailseiten: Drucken
+// und Link kopieren. Rechtsbündig (flex-row-reverse) wie im CD.
+export function shareBar() {
+  // CD: nur Icons (aria-label), keine sichtbaren Beschriftungen (ShareBar.vue).
+  return `<div class="share-bar">
+    <div class="share-container">
+      <button class="btn btn--bare share-bar__btn" type="button" onclick="window.print()" aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--xl')}</button>
+      <button class="btn btn--bare share-bar__btn" type="button" aria-label="Link kopieren" title="Teilen"
+        onclick="try{navigator.clipboard.writeText(location.href)}catch(e){}">${icon('Share', 'icon--xl')}</button>
+    </div>
+  </div>`;
+}
+
 // --- Notifications (notification.postcss) ------------------------------------
 // variant: info | success | warning | error | hint | alert
 export function notification(text, variant = 'info', iconName = 'InfoCircle') {
@@ -332,7 +365,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 }
 
 export const C = {
-  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty,
+  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile,
   notification, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
 };

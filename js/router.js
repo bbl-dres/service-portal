@@ -35,7 +35,13 @@ export const NAV = [
     // (#/applications?bereich=bauten) und auf der Übersicht — das Menü bleibt kurz.
     children: [
       { href: '#/data', label: 'Übersicht' },
-      { href: '#/data/digitalisierung', label: 'Digitalisierung' },
+      // «Digitalisierung» ist ein Drill-down-Zweig (CD navy) mit eigenen L2-Seiten.
+      { label: 'Digitalisierung', branchKey: 'digitalisierung', branches: [
+        { href: '#/data/digitalisierung', label: 'Übersicht' },
+        { href: '#/data/digitalisierung/strategie', label: 'Digitalisierungsstrategie' },
+        { href: '#/data/digitalisierung/vision', label: 'Vision' },
+        { href: '#/data/digitalisierung/prinzipien', label: 'Prinzipien' },
+      ] },
       { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/katalog', label: 'Datenbezug' },
       { href: '#/applications?bereich=bauten', label: 'Fachanwendungen Bauten' },

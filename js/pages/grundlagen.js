@@ -131,6 +131,7 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
   mount.innerHTML = `
   <div class="container section">
     ${back ? C.backLink(back.href, back.label) : ''}
+    ${C.shareBar()}
     <div class="container--grid gap--responsive">
       <div class="anchor-page__header">
         ${C.pageHeader({ title, lead })}

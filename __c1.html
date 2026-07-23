@@ -1,0 +1,13 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">
+<iframe id="f" src="index.html#/app/document-archive" style="width:1400px;height:800px;border:0"></iframe><pre id="out" style="position:fixed;bottom:0;left:0;color:red;font:11px monospace;background:#fff;z-index:99">…</pre>
+<script>
+const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const f=document.getElementById('f'),out=document.getElementById('out'),L=[];
+(async()=>{ await wait(2800);const d=f.contentDocument,w=f.contentWindow;
+  // doc-archive pagination + search first
+  const gridKids=[...d.querySelectorAll('.grid--4 > *')];
+  L.push('grid--4 erstes Feld hat search: '+!!gridKids[0].querySelector('input[type=search]'));
+  L.push('Pagination vorhanden: '+!!d.querySelector('.pagination')+' | Tabellenzeilen (Seite 1): '+d.querySelectorAll('#main-content tbody tr').length);
+  const pg=d.querySelector('.pagination__text'); L.push('Pagination-Text: '+(pg?pg.textContent:'-'));
+  out.textContent=L.join('\n');
+})();
+</script></body></html>

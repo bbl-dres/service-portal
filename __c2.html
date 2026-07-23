@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">
+<iframe id="f" src="index.html#/app/document-archive" style="width:1400px;height:800px;border:0"></iframe><pre id="out" style="position:fixed;bottom:0;left:0;color:red;font:11px monospace;background:#fff;z-index:99">…</pre>
+<script>
+const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const f=document.getElementById('f'),out=document.getElementById('out'),L=[];
+const load=(hash)=>new Promise(r=>{f.onload=()=>setTimeout(r,900);f.src='index.html'+hash;});
+(async()=>{ await wait(2800);const d=()=>f.contentDocument;
+  L.push('DocArchive Pagination: '+!!d().querySelector('.pagination')+' | '+(d().querySelector('.pagination__text')||{}).textContent+' | Zeilen: '+d().querySelectorAll('tbody tr').length);
+  await load('#/data'); L.push('Daten-Übersicht domainTile (card--default): '+d().querySelectorAll('#main-content .card--default').length+' Karten');
+  await load('#/data/digitalisierung/strategie');
+  L.push('Strategie Abschnitte: '+[...d().querySelectorAll('.anchor-section__title')].map(h=>h.textContent).join(' | '));
+  L.push('Strategie Download-Items: '+d().querySelectorAll('.download-items .download-item').length);
+  L.push('share-bar Buttons ohne Text: '+[...d().querySelectorAll('.share-bar__btn')].every(b=>!b.querySelector('.btn__text'))+' ('+d().querySelectorAll('.share-bar__btn').length+' Buttons)');
+  out.textContent=L.join('\n');
+})();
+</script></body></html>

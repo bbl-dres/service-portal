@@ -53,21 +53,6 @@ function overview(ctx) {
 
   const news = core.news();
 
-  const entry = (o) => `
-    <a class="card card--universal card--clickable" href="${o.href}"${o.external ? ' target="_blank" rel="noopener external"' : ''}>
-      <div class="card__content">
-        <div class="card__body">
-          <span class="domain-tile__icon">${C.icon(o.icon, 'icon--2xl')}</span>
-          <div class="card__title">${C.escape(o.title)}</div>
-          <p class="card__description">${C.escape(o.desc)}</p>
-        </div>
-        <div class="card__footer">
-          <span>${C.escape(o.meta)}</span>
-          <span class="btn btn--link">Öffnen ${C.icon(o.external ? 'External' : 'ArrowRight', 'icon--base')}</span>
-        </div>
-      </div>
-    </a>`;
-
   const entries = [
     { title: 'Gesetzliche Grundlagen und Vorgaben', icon: 'Book', href: '#/knowledge?tab=grundlagen',
       desc: 'Erlasse, übergeordnete Vorgaben des Bundes und die internen Weisungen des BBL — thematisch gegliedert.',
@@ -81,7 +66,7 @@ function overview(ctx) {
     { title: 'Anleitungen und Schulungsunterlagen', icon: 'Desktop', href: '#/knowledge?tab=anleitungen',
       desc: 'Kurzanleitungen, Schulungsunterlagen und Lernvideos zur Nutzung der Plattform.',
       meta: 'Anleitungen & Schulung' },
-  ].map(entry).join('');
+  ].map(C.domainTile).join('');
 
   mount.innerHTML = `
   <div class="container section">
@@ -209,7 +194,7 @@ function newsList(ctx) {
   return `
     <div class="grid grid--3 mt-6">
       ${items.map(n => `
-        <a class="card card--clickable" href="#/knowledge?tab=news&id=${encodeURIComponent(n.id)}">
+        <a class="card card--default card--clickable" href="#/knowledge?tab=news&id=${encodeURIComponent(n.id)}">
           <div class="card__image">${C.photo({ id: n.photo, color: n.color, alt: n.title, w: 640, style: 'height:100%' })}</div>
           <div class="card__body">
             <div class="row gap-sm small muted">
