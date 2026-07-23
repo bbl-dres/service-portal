@@ -228,6 +228,11 @@ function footerHTML() {
     `<a class="footer__link footer-information__link--icon-right" href="${href}"${ext ? ' target="_blank" rel="noopener external"' : ''}>${icon(ext ? 'External' : 'ArrowRight', 'footer-information__icon')}${escapeHtml(label)}</a>`;
 
   return `
+  <div class="back-to-top-wrapper">
+    <a class="back-to-top-btn back-to-top-btn--outline" href="#main-header" aria-label="Nach oben">
+      ${icon('ChevronUp', 'back-to-top-btn__icon')}
+    </a>
+  </div>
   <div class="bg--secondary-600">
     <div class="container">
       <div class="footer-information">

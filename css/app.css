@@ -26,10 +26,6 @@ body {
   line-height:var(--lh-normal); color:var(--color-text); background:var(--color-bg);
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; word-spacing:.0625em;
   min-height:100vh; display:flex; flex-direction:column; transition:transform .7s;
-  /* Bezugsrahmen für .back-to-top-wrapper (position:absolute) — sonst wäre dessen
-     Bezug der Viewport (~100vh) statt des ganzen Dokuments, und der Knopf würde
-     nur zuoberst erscheinen (back-to-top-btn.postcss: Wrapper liegt im Dokument). */
-  position:relative;
 }
 [hidden] { display:none !important; }
 [id] { scroll-margin-top:2rem; }                       /* global.postcss:88-90 */
@@ -516,7 +512,9 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .navy--drill[data-level="1"] .navy__pane[data-pane="1"] { display:block; animation:navyDrillIn .25s ease; }
 @keyframes navyDrillIn { from { transform:translateX(.75rem); } to { transform:none; } }
 @media (prefers-reduced-motion: reduce){ .navy--drill[data-level="1"] .navy__pane[data-pane="1"] { animation:none; } }
-.navy-branch { background:none; border:0; font:inherit; cursor:pointer; color:inherit; }
+/* Der Zweig-Knopf muss zeichengenau wie die «Übersicht»-Zeile (<a>) ausgerichtet
+   sein — die UA-Vorgabepolsterung des <button> sonst schiebt den Text nach rechts. */
+.navy-branch { background:none; border:0; padding:0; margin:0; text-align:left; font:inherit; cursor:pointer; color:inherit; }
 .navy__back { display:inline-flex; align-items:center; gap:.4rem; margin:0 0 .5rem; padding:.4rem .75rem;
   min-height:2.75rem; background:none; border:0; font:inherit; font-size:var(--text-sm);
   color:var(--color-primary-600); cursor:pointer; }
@@ -1073,20 +1071,22 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 @media (min-width:768px){ .separator--md::before, .separator--md::after { height:.75rem; } }
 @media (min-width:1024px){ .separator--md::before, .separator--md::after { height:1rem; } }
 
-/* Back to top (back-to-top-btn.postcss:5-88) — reines CSS, kein JS. Der Wrapper
-   spannt vom unteren Seitendrittel bis unter das Seitenende; der Knopf klebt
-   (sticky) am unteren Rand des Viewports und verschwindet oben/unten von selbst. */
+/* Back to top — der Knopf schwebt beim Scrollen unten rechts und dockt am oberen
+   rechten Rand der Fussinformationen an; kein Leerraum am Seitenende. Der Wrapper
+   hängt an der Oberkante des Footers (#main-footer ist position:relative) und
+   reicht als schmaler Streifen nach oben; der Knopf ist darin sticky und ruht
+   1.5rem unterhalb der Footer-Oberkante. */
 @media screen and (prefers-reduced-motion: no-preference){ html { scroll-behavior:smooth; } }
-.back-to-top-wrapper { position:absolute; top:80vh; right:.75rem; bottom:-3.5rem; z-index:500; pointer-events:none; }
-@media (min-width:1024px){ .back-to-top-wrapper { bottom:-4rem; } }
-@media (min-width:1280px){ .back-to-top-wrapper { right:1rem; bottom:-5rem; } }
-.back-to-top-btn { position:sticky; top:calc(100vh - 3.5rem); pointer-events:all;
-  display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem;
+.back-to-top-wrapper { position:absolute; right:1rem; bottom:calc(100% - 1.5rem);
+  width:2.75rem; height:1000vh; pointer-events:none; z-index:2;
+  display:flex; flex-direction:column; justify-content:flex-end; }
+@media (min-width:1024px){ .back-to-top-wrapper { width:3rem; } }
+@media (min-width:1280px){ .back-to-top-wrapper { right:1.5rem; width:4rem; } }
+.back-to-top-btn { position:sticky; bottom:1.5rem; pointer-events:all;
+  display:inline-flex; align-items:center; justify-content:center; width:100%; aspect-ratio:1;
   border-radius:var(--radius-sm); box-shadow:var(--shadow-lg); background:#fff;
   transition:box-shadow .15s, border-color .15s; }
 .back-to-top-btn:hover { box-shadow:var(--shadow-xl); }
-@media (min-width:1024px){ .back-to-top-btn { width:3rem; height:3rem; top:calc(100vh - 4.5rem); } }
-@media (min-width:1280px){ .back-to-top-btn { width:4rem; height:4rem; top:calc(100vh - 5rem); } }
 .back-to-top-btn--outline { border:1px solid var(--color-primary-600); }
 .back-to-top-btn--outline:hover { border-color:var(--color-primary-700); }
 .back-to-top-btn__icon { width:50%; height:50%; background-color:var(--color-primary-600); }

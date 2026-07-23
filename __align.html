@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">
+<iframe id="f" src="index.html#/" style="width:1400px;height:900px;border:0"></iframe><pre id="out" style="position:fixed;bottom:0;left:0;color:red;font:11px monospace;background:#fff;z-index:99">…</pre>
+<script>
+const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const f=document.getElementById('f'),out=document.getElementById('out'),L=[];
+(async()=>{ await wait(2600);const d=f.contentDocument;
+  const svc=[...d.querySelectorAll('#desktop-navigation-id [data-menu]')].find(x=>x.getAttribute('data-nav')==='services'); svc.click(); await wait(400);
+  const drw=[...d.querySelectorAll('.desktop-menu__drawer')].find(x=>!x.hidden);
+  const ueber=drw.querySelector('.navy__level-0 > li:first-child a span');
+  const branch=drw.querySelector('.navy-branch span');
+  const title=drw.querySelector('.navy__title');
+  L.push('navy__title left='+Math.round(title.getBoundingClientRect().left));
+  L.push('Übersicht span left='+Math.round(ueber.getBoundingClientRect().left));
+  L.push('Zweig span left='+Math.round(branch.getBoundingClientRect().left));
+  out.textContent=L.join('\n');
+})();
+</script></body></html>
