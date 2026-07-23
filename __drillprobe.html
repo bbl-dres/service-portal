@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">
+<iframe id="f" src="index.html#/" style="width:1440px;height:900px;border:0"></iframe><pre id="out" style="position:fixed;bottom:0;right:0;color:red;font:11px monospace;background:#fff;z-index:99">…</pre>
+<script>
+const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const f=document.getElementById('f'),out=document.getElementById('out'),L=[];
+(async()=>{
+  await wait(2600);const d=f.contentDocument,w=f.contentWindow;
+  const svc=[...d.querySelectorAll('#desktop-navigation-id [data-menu]')].find(x=>x.getAttribute('data-nav')==='services');
+  svc.click(); await wait(400);
+  const drill=[...d.querySelectorAll('.desktop-menu__drawer')].find(x=>!x.hidden).querySelector('.navy--drill');
+  drill.querySelector('.navy-branch[data-branch="bueroausruestung"]').click(); await wait(600);
+  const p1=drill.querySelector('[data-pane="1"]');
+  const cs=(el)=>{const s=w.getComputedStyle(el);const r=el.getBoundingClientRect();return `vis=${s.visibility} col=${s.color} disp=${s.display} rect=${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)}`;};
+  L.push('pane1: '+cs(p1));
+  const back=p1.querySelector('[data-back]'); L.push('back: '+cs(back)+' text="'+back.textContent.trim()+'"');
+  const title=p1.querySelector('[data-branch-title]'); L.push('title: '+cs(title)+' text="'+title.textContent+'"');
+  const span=p1.querySelector('[data-branch-list] a span'); L.push('1st span: '+cs(span)+' text="'+span.textContent+'"');
+  const a=p1.querySelector('[data-branch-list] a'); L.push('1st a: '+cs(a));
+  const li=p1.querySelector('[data-branch-list] li'); L.push('1st li: '+cs(li));
+  out.textContent=L.join('\n');
+})();
+</script></body></html>

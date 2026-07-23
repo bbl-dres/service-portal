@@ -1,5 +1,7 @@
 // Bauwerksdokumentation — Bauwerksdokumentation als abfragbares, pro Gebäude filterbares Archiv.
 // Ersetzt statische PDF-Listen durch eine durchsuchbare, filterbare Ansicht.
+import { openDocumentViewer } from '../doc-viewer.js';
+
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
 
@@ -85,7 +87,8 @@ export default async function render(ctx) {
       columns: [
         {
           key: 'title', label: 'Dokument',
-          render: r => `${C.icon('File', 'icon--base')} ${C.escape(r.title)}`,
+          // Titel öffnet die Vorschau (Mock-Viewer) statt eines statischen PDFs.
+          render: r => `<button type="button" class="doc-open" data-doc="${C.escape(r.docId)}">${C.icon('File', 'icon--base')} <span>${C.escape(r.title)}</span></button>`,
         },
         {
           key: 'type', label: 'Typ',
@@ -108,8 +111,8 @@ export default async function render(ctx) {
           render: r => C.badge(r.classification, tierVariant(r.classification)),
         },
         {
-          key: 'download', label: 'Download',
-          render: r => `<a class="btn btn--link" href="${C.escape(r.url || '#')}" aria-label="Download ${C.escape(r.title)}">${C.icon('Download', 'icon--base')} ${C.escape(r.format || 'Datei')}</a>`,
+          key: 'preview', label: 'Vorschau',
+          render: r => `<button type="button" class="btn btn--link doc-open" data-doc="${C.escape(r.docId)}" aria-label="Vorschau ${C.escape(r.title)}">${C.icon('File', 'icon--base')} Öffnen</button>`,
         },
       ],
       rows,
@@ -147,6 +150,16 @@ export default async function render(ctx) {
     bind('flt-building', 'building');
     bind('flt-type', 'type');
     bind('flt-year', 'year');
+
+    // Titel/Vorschau öffnet den Dokument-Viewer mit der aktuellen Trefferliste
+    // als Blätter-Kontext (Vor/Zurück im Viewer).
+    const rows = filtered();
+    mount.querySelectorAll('.doc-open').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = rows.find(x => x.docId === btn.getAttribute('data-doc'));
+        if (d) openDocumentViewer(d, rows);
+      });
+    });
 
     const qEl = mount.querySelector('#flt-q');
     if (qEl) {

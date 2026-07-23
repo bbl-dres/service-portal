@@ -98,7 +98,7 @@ export default async function render(ctx) {
       : '';
     return `
       <section class="search-group">
-        <h2 class="search-group__title">${C.icon(g.icon, 'icon--base')} ${C.escape(g.label)}
+        <h2 class="search-group__title">${C.escape(g.label)}
           <span class="search-group__count">${g.all.length}</span></h2>
         <ul class="search-results-list">${rows}</ul>
         ${more}

@@ -105,22 +105,15 @@ export function grundlagenPage(ctx, page) {
       <span class="sr-only">(im Prototyp nicht verfügbar)</span></span></li>`;
   };
 
-  // Ein Akkordeon, ein Item je Themengruppe. Jedes Item trägt eine id als
-  // Sprungziel für das Inhaltsverzeichnis.
-  const accordion = `<div class="accordion" id="grundlagen-acc">
-    ${GROUPS.map((g, i) => `
-      <div class="accordion__item" id="gr-${g.id}">
-        <h2 class="accordion__heading">
-          <button class="accordion__button" type="button" aria-expanded="${i === 0}" aria-controls="gr-p-${g.id}" id="gr-b-${g.id}">
-            <span class="accordion__title">${C.escape(g.title)}</span>${C.icon('ChevronDown', 'icon--base')}
-          </button>
-        </h2>
-        <div class="accordion__content" id="gr-p-${g.id}" role="region" aria-labelledby="gr-b-${g.id}"${i === 0 ? '' : ' hidden'}>
-          ${g.intro ? `<p class="muted">${C.escape(g.intro)}</p>` : ''}
-          <ul class="download-items">${g.items.map(item).join('')}</ul>
-        </div>
-      </div>`).join('')}
-  </div>`;
+  // Saubere Abschnitte je Thema (Muster bk.admin.ch/de/vorgaben): sichtbare
+  // Überschrift plus Dokumentliste, nichts eingeklappt. Jeder Abschnitt trägt
+  // eine id als Sprungziel für das Inhaltsverzeichnis.
+  const sections = GROUPS.map(g => `
+    <section class="grundlagen-section" id="gr-${g.id}">
+      <h2 tabindex="-1" class="grundlagen-section__title">${C.escape(g.title)}</h2>
+      ${g.intro ? `<p class="muted">${C.escape(g.intro)}</p>` : ''}
+      <ul class="download-items">${g.items.map(item).join('')}</ul>
+    </section>`).join('');
 
   // Inhaltsverzeichnis (CD: Card + menu, detailPageAnchorNav.vue), klebend.
   const toc = `<div class="anchor-nav sticky--top">
@@ -142,8 +135,8 @@ export function grundlagenPage(ctx, page) {
     ${C.pageHeader({ title: page.title, lead: page.lead })}
     <p class="page-intro muted">Die Dokumente gelten in der jeweils publizierten Fassung; bei Widersprüchen gehen die Vorgaben des Bundes den Weisungen des BBL vor.</p>
     <div class="container--grid gap--responsive mt-8">
-      <div class="container__main">${accordion}
-        <section class="mt-8">
+      <div class="container__main vertical-spacing">${sections}
+        <section>
           <h2>Weiterführende Informationen</h2>
           <ul class="list--default mt-4">
             <li><a href="https://www.bk.admin.ch/de/vorgaben" target="_blank" rel="noopener external">Vorgaben zur digitalen Transformation und IKT-Lenkung der Bundesverwaltung (DTI)</a></li>
@@ -159,30 +152,17 @@ export function grundlagenPage(ctx, page) {
   wireGrundlagen(mount);
 }
 
-// Akkordeon-Umschaltung plus Sprungnavigation: ein Klick im Inhaltsverzeichnis
-// öffnet das Zielakkordeon und scrollt hin — ohne den Routen-Hash zu ändern.
+// Sprungnavigation: ein Klick im Inhaltsverzeichnis scrollt zum Abschnitt und
+// setzt den Fokus auf dessen Überschrift — ohne den Routen-Hash zu ändern.
 function wireGrundlagen(mount) {
-  mount.querySelectorAll('#grundlagen-acc .accordion__button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const expanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', String(!expanded));
-      const panel = mount.querySelector('#' + btn.getAttribute('aria-controls'));
-      if (panel) panel.hidden = expanded;
-    });
-  });
   mount.querySelectorAll('.anchor-nav [data-anchor]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const target = mount.querySelector('#' + link.getAttribute('data-anchor'));
       if (!target) return;
-      const btn = target.querySelector('.accordion__button');
-      const panel = target.querySelector('.accordion__content');
-      if (btn && panel && btn.getAttribute('aria-expanded') !== 'true') {
-        btn.setAttribute('aria-expanded', 'true');
-        panel.hidden = false;
-      }
       target.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      (btn || target).focus({ preventScroll: true });
+      const heading = target.querySelector('.grundlagen-section__title') || target;
+      heading.focus({ preventScroll: true });
     });
   });
 }

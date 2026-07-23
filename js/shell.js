@@ -4,7 +4,28 @@
 import { NAV } from './router.js';
 import { core } from './core.js';
 import { session } from './session.js';
+import { INTRANET_AREAS } from './intranet-areas.js';
 import { icon, escape as escapeHtml, select } from './components.js';
+
+// Zeilen eines navy-Menüs (CD-Anatomie). external → neues Fenster + External-Icon.
+function navyRow(child) {
+  return `<li class="menu__item menu__item--border menu__item--condensed">
+    <a class="menu__item__flex" href="${child.href}"${
+      child.external ? ' target="_blank" rel="noopener external"' : ' data-navsub="' + escapeHtml(child.href) + '"'}>
+      <span>${escapeHtml(child.label)}</span>
+      ${icon(child.external ? 'External' : 'ArrowAngleBottomLeft', 'menu__item__icon')}
+    </a></li>`;
+}
+
+// Drill-down-Unterzweige für den Dienstleistungen-Drawer (CD navy multi-level):
+// die fünf Intranet-Aufgabenbereiche als aufklappbare Zweige. Level 1 wird beim
+// Klick befüllt (js/shell.js renderHeader), die Kinder stammen aus INTRANET_AREAS.
+function areaBranchRows() {
+  return INTRANET_AREAS.map(a => `<li class="menu__item menu__item--border menu__item--condensed">
+    <button class="menu__item__flex navy-branch" type="button" data-branch="${escapeHtml(a.key)}" aria-haspopup="true">
+      <span>${escapeHtml(a.label)}</span>${icon('ChevronRight', 'menu__item__icon')}
+    </button></li>`).join('');
+}
 
 // Some nav items take their children from the data core (loaded before the shell
 // renders), so the menu always matches the catalogue.
@@ -31,24 +52,39 @@ function headerHTML() {
   const renderNavMenu = (item, scope) => {
     const menuId = `${scope}-menu__drawer-${item.base}`;
     const drawerClass = scope === 'desktop' ? 'desktop-menu__drawer' : 'mobile-menu__drawer';
+    // Nur der Dienstleistungen-Drawer bekommt die Drill-down-Unterzweige.
+    const withBranches = item.base === 'services';
+    const level0 = `
+      <ul class="menu navy__level-0">${resolveChildren(item).map(navyRow).join('')}</ul>
+      ${withBranches ? `
+        <p class="navy__group-title">Bestellen und weitere Angebote</p>
+        <ul class="menu">${areaBranchRows()}</ul>` : ''}`;
+
+    const inner = withBranches
+      ? `<div class="navy navy--drill" data-level="0">
+          <div class="navy__slider">
+            <div class="navy__pane" data-pane="0">
+              <h2 class="navy__title">${escapeHtml(item.label)}</h2>
+              ${level0}
+            </div>
+            <div class="navy__pane" data-pane="1">
+              <button class="navy__back" type="button" data-back>${icon('ChevronLeft', 'icon--sm')}<span>Zurück</span></button>
+              <h2 class="navy__title" data-branch-title></h2>
+              <ul class="menu" data-branch-list></ul>
+            </div>
+          </div>
+        </div>`
+      : `<div class="navy">
+          <h2 class="navy__title">${escapeHtml(item.label)}</h2>
+          ${level0}
+        </div>`;
+
     return `
     <div class="${drawerClass}" id="${menuId}" aria-label="${escapeHtml(item.label)}" hidden>
       <button class="desktop-menu__close" type="button" data-menu-close="${menuId}" aria-label="${escapeHtml(item.label)} schliessen">
           <span>Schliessen</span>${icon('Cancel', 'icon--sm')}
       </button>
-      <div class="navy">
-        <h2 class="navy__title">${escapeHtml(item.label)}</h2>
-        <ul class="menu navy__level-0">
-          ${resolveChildren(item).map(child => `
-            <li class="menu__item menu__item--border menu__item--condensed">
-              <a class="menu__item__flex" href="${child.href}"${
-                child.external ? ' target="_blank" rel="noopener external"' : ' data-navsub="' + escapeHtml(child.href) + '"'}>
-                <span>${escapeHtml(child.label)}</span>
-                ${icon(child.external ? 'External' : 'ArrowAngleBottomLeft', 'menu__item__icon')}
-              </a>
-            </li>`).join('')}
-        </ul>
-      </div>
+      ${inner}
     </div>`;
   };
 
@@ -287,6 +323,8 @@ function renderHeader(el) {
     if (!panel) return;
     closeNavMenus(open ? panelId : '');
     panel.hidden = !open;
+    // Beim Öffnen/Schliessen den Drill-down wieder auf die oberste Ebene setzen.
+    panel.querySelectorAll('.navy--drill').forEach(d => d.setAttribute('data-level', '0'));
     button.setAttribute('aria-expanded', String(open));
     button.classList.toggle('clicked', open);
     if (open) positionPanel(button, panel);
@@ -305,8 +343,39 @@ function renderHeader(el) {
       trigger?.focus();
     });
   });
-  el.querySelectorAll('.desktop-menu__drawer a, .mobile-menu__drawer a').forEach((link) => {
-    link.addEventListener('click', () => closeNavMenus());
+
+  // --- Drill-down-Unterzweige (Dienstleistungen → Intranet-Bereiche) ---
+  const fillBranch = (drill, key) => {
+    const a = INTRANET_AREAS.find(x => x.key === key);
+    if (!a) return;
+    const rows = [{ href: a.overview, label: 'Übersicht', external: true },
+      ...(a.children || []).map(c => ({ href: c.href, label: c.label, external: true }))];
+    drill.querySelector('[data-branch-title]').textContent = a.label;
+    drill.querySelector('[data-branch-list]').innerHTML = rows.map(navyRow).join('');
+    drill.dataset.openBranch = key;
+    drill.setAttribute('data-level', '1');
+  };
+  el.querySelectorAll('.navy-branch').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const drill = btn.closest('.navy--drill');
+      fillBranch(drill, btn.getAttribute('data-branch'));
+      drill.querySelector('[data-back]')?.focus();
+    });
+  });
+  el.querySelectorAll('[data-back]').forEach(back => {
+    back.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const drill = back.closest('.navy--drill');
+      drill.setAttribute('data-level', '0');
+      drill.querySelector(`[data-branch="${drill.dataset.openBranch}"]`)?.focus();
+    });
+  });
+
+  // Ein Klick auf einen echten Link im Drawer schliesst ihn (Delegation, damit
+  // auch die per Drill-down nachgeladenen Links erfasst werden).
+  el.querySelectorAll('.desktop-menu__drawer, .mobile-menu__drawer').forEach((drawer) => {
+    drawer.addEventListener('click', (e) => { if (e.target.closest('a')) closeNavMenus(); });
   });
   overlay?.addEventListener('click', () => closeNavMenus());
   document.addEventListener('keydown', (e) => {

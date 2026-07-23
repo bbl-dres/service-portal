@@ -7,8 +7,11 @@ import { engine } from './process-engine.js';
 import { session } from './session.js';
 import C from './components.js';
 
+// «Übersicht» ist bewusst kein L1-Eintrag mehr — die Startseite erreicht man
+// über das Logo. Die fünf Intranet-Aufgabenbereiche (Büroausrüstung, …) sind
+// keine eigenen L1-Einträge, sondern Unterzweige im Dienstleistungen-Drawer
+// (CD navy drill-down, siehe shell.js).
 export const NAV = [
-  { path: '#/',             base: '',             label: 'Übersicht',          icon: 'Home' },
   {
     path: '#/services',
     base: 'services',
@@ -34,7 +37,6 @@ export const NAV = [
       { href: '#/data', label: 'Übersicht' },
       { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/katalog', label: 'Datenbezug' },
-      { href: '#/data/ikt-vorhaben', label: 'IKT-Vorhaben' },
       { href: '#/applications?bereich=bauten', label: 'Fachanwendungen Bauten' },
       { href: '#/applications?bereich=logistik', label: 'Fachanwendungen Logistik' },
       { href: '#/data/digitalisierung', label: 'Digitalisierung' },
@@ -52,6 +54,7 @@ export const NAV = [
       { href: '#/knowledge?tab=grundlagen', label: 'Gesetzliche Grundlagen und Vorgaben' },
     ],
   },
+  // «Meine Vorgänge» steht immer zuletzt.
   { path: '#/my-cases',     base: 'my-cases',     label: 'Meine Vorgänge',     icon: 'List' },
 ];
 

@@ -147,6 +147,9 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 /* Inhaltsverzeichnis rechts: erst ab lg neben dem Inhalt, darunter normal. */
 .anchor-nav .card__title { font-size:var(--text-lg); }
 .anchor-nav .menu { margin-top:.5rem; }
+/* Saubere Themenabschnitte (bk.admin.ch/de/vorgaben): Überschrift + sichtbare
+   Dokumentliste; der Abstand zwischen Abschnitten kommt von .vertical-spacing. */
+.grundlagen-section__title { margin-bottom:1rem; }
 
 /* Section rhythm (section.postcss:5-51) — bare .section has no padding */
 .section { width:100%; }
@@ -428,26 +431,30 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 /* Main navigation (main-navigation.postcss:11-56) */
 .desktop-menu { background:#fff; border-bottom:1px solid var(--color-border); position:relative; z-index:40; }
 .desktop-menu .container--flex { align-items:stretch; }
-.desktop-menu__overlay { position:absolute; top:3.5rem; right:0; bottom:0; left:0; z-index:20; height:120vh;
+/* top:100% = Unterkante der gesamten Navigation (auch wenn sie umbricht),
+   gleich wie der Drawer — sonst tönt der Overlay eine umgebrochene zweite
+   Navigationszeile grau ein und es entsteht eine Lücke über dem Drawer. */
+.desktop-menu__overlay { position:absolute; top:100%; right:0; bottom:0; left:0; z-index:20; height:120vh;
   background:linear-gradient(to bottom, rgba(17,24,39,.2) 0%, rgba(17,24,39,.2) 50%, rgba(17,24,39,0) 100%);
   opacity:1; pointer-events:auto; transition:opacity .3s ease; }
-@media (min-width:1280px){ .desktop-menu__overlay { top:4rem; } }
-@media (min-width:1920px){ .desktop-menu__overlay { top:5rem; } }
 .desktop-menu__overlay.hidden { height:0; overflow:hidden; opacity:0; pointer-events:none; }
 .desktop-menu .main-navigation, .mobile-menu .main-navigation { border-bottom:0; }
 .main-navigation { width:100%; background:#fff; border-bottom:1px solid var(--color-border); position:relative; }
-.main-navigation > ul { list-style:none; display:flex; flex-wrap:nowrap; overflow:hidden; margin-left:-1rem; min-height:3.5rem; }
+/* Neun L1-Einträge passen nicht in eine Reihe — die Leiste darf umbrechen
+   (der Nutzerentscheid zu den fünf Intranet-Bereichen). Kein overflow:hidden
+   mehr, sonst würden überzählige Einträge verschluckt. */
+.main-navigation > ul { list-style:none; display:flex; flex-wrap:wrap; margin-left:-.7rem; min-height:3.5rem; }
 @media (max-width:1023.98px){ .desktop-menu { display:none; } }
 @media (min-width:1280px){ .main-navigation > ul { min-height:4rem; } }
 @media (min-width:1920px){ .main-navigation > ul { min-height:5rem; } }
 .main-navigation > ul > li > a,
 .main-navigation > ul > li > button { position:relative; display:flex; align-items:center; gap:.4rem; color:var(--color-text);
-  height:100%; min-height:3.5rem; padding:1rem; font:inherit; font-size:var(--text-base); line-height:1.2; white-space:nowrap;
+  height:100%; min-height:3.5rem; padding:1rem .7rem; font:inherit; font-size:var(--text-base); line-height:1.2; white-space:nowrap;
   background:none; border:0; cursor:pointer; text-decoration:none; transition:color .12s,box-shadow .2s; }
 @media (min-width:1280px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:4rem; } }
 @media (min-width:1920px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:5rem; } }
 .main-navigation > ul > li > a::after,
-.main-navigation > ul > li > button::after { content:""; position:absolute; left:1rem; right:1rem; bottom:0; height:3px;
+.main-navigation > ul > li > button::after { content:""; position:absolute; left:.7rem; right:.7rem; bottom:0; height:3px;
   background:transparent; transition:background .12s; }
 .main-navigation > ul > li > a:hover,
 .main-navigation > ul > li > button:hover { color:var(--color-primary-600); text-decoration:none; }
@@ -466,10 +473,13 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 /* Desktop drawer (desktop-menu.postcss:9-19 + navy.postcss + menu.postcss) */
 .desktop-menu__drawer { position:absolute; left:0; top:100%; width:450px; max-width:calc(100vw - 1.5rem);
   padding:4rem 2rem 2rem; z-index:45; background:#fff; overflow:hidden;
-  box-shadow:var(--shadow-2xl); animation:navMenuIn .22s ease; }
+  box-shadow:var(--shadow-2xl); opacity:1; animation:navMenuIn .22s ease; }
 @media (min-width:1280px){ .desktop-menu__drawer { width:650px; padding:5rem 3rem 3rem; } }
 @media (min-width:1920px){ .desktop-menu__drawer { width:850px; padding:6rem; } }
-@keyframes navMenuIn { from { opacity:0; transform:translateY(-.375rem); } to { opacity:1; transform:translateY(0); } }
+/* Nur ein dezentes Einschieben — die Sichtbarkeit steuert das hidden-Attribut.
+   Keine Opazität im Keyframe: sonst blieb der Drawer je nach Fill-Mode/Timing
+   durchscheinend hängen. */
+@keyframes navMenuIn { from { transform:translateY(-.375rem); } to { transform:translateY(0); } }
 /* Schliessen-Knopf: Position und Icongrösse nach desktop-menu.postcss:75-88
    (lg:top-4 right-0 → xl:top-6 right-4 → 3xl:top-8 right-20; Icon h-5 = 1.25rem)
    statt bisher in der Drawer-Ecke (top/right:0) mit zu kleinem Icon (0.75rem). */
@@ -480,6 +490,23 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 @media (min-width:1280px){ .desktop-menu__close { top:1.5rem; right:1rem; } }
 @media (min-width:1920px){ .desktop-menu__close { top:2rem; right:5rem; } }
 .navy { position:relative; }
+/* Zwischenüberschrift für die Unterzweig-Gruppe im Drawer. */
+.navy__group-title { margin:1.25rem 0 .25rem; padding:0 .75rem; font-size:var(--text-sm);
+  font-weight:var(--fw-bold); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.04em; }
+/* CD navy multi-level (navy.postcss): zwei Ebenen, die horizontal gleiten.
+   Ebene 0 = Dienstleistungen + Bereichszweige, Ebene 1 = Kinder eines Bereichs. */
+.navy--drill { overflow:hidden; }
+.navy__slider { display:flex; width:200%; transition:transform .3s ease-in-out; }
+.navy__pane { flex:0 0 50%; min-width:0; }
+.navy--drill[data-level="1"] .navy__slider { transform:translateX(-50%); }
+/* Die abseitige Ebene für Tastatur/AT deaktivieren. */
+.navy--drill[data-level="0"] .navy__pane[data-pane="1"],
+.navy--drill[data-level="1"] .navy__pane[data-pane="0"] { visibility:hidden; }
+.navy-branch { background:none; border:0; font:inherit; cursor:pointer; color:inherit; }
+.navy__back { display:inline-flex; align-items:center; gap:.4rem; margin:0 0 .5rem; padding:.4rem .75rem;
+  background:none; border:0; font:inherit; font-size:var(--text-sm); color:var(--color-primary-600); cursor:pointer; }
+.navy__back:hover { color:var(--color-primary-800); }
+@media (prefers-reduced-motion: reduce){ .navy__slider { transition:none; } }
 .navy__level-0 { list-style:none; margin:0; padding:0; }
 .navy__title { margin:0 0 .5rem; padding:0 .75rem; font-size:var(--text-lg); font-weight:var(--fw-bold);
   line-height:var(--lh-tight); color:var(--color-secondary-700); cursor:default; }
@@ -1204,7 +1231,10 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 @media (max-width:640px){ .home-search { flex-direction:column; } }
 
 /* Schnelleinstiege — Text vor Bild: hier zählt das Ziel, nicht die Illustration. */
-.quick-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(20rem,1fr)); gap:1rem; }
+/* min(20rem,100%) statt 20rem als Spalten-Minimum: unter 320px Viewport würde
+   ein festes 20rem-Minimum die Kachel breiter als den Bildschirm machen und die
+   Seite horizontal scrollen lassen. */
+.quick-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(20rem,100%),1fr)); gap:1rem; }
 .quick-tile { display:flex; gap:1rem; align-items:flex-start; padding:1.25rem;
   background:#fff; color:inherit; text-decoration:none;
   border-left:3px solid transparent; box-shadow:var(--shadow-lg);
@@ -1277,3 +1307,88 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
   a { color:#000 !important; text-decoration:underline; }
   #main-content a[href^="http"]::after { content:" (" attr(href) ")"; font-size:.85em; }
 }
+
+/* ===================== Dokumentvorschau (Lightbox) ===================== */
+/* Dunkle Chrome fest verdrahtet, damit die Vorschau in beiden Skins wie ein
+   Viewer wirkt. Portiert aus dem BBL Mieterportal (tenant-portal). */
+body.docviewer-open { overflow:hidden; }
+.docviewer { position:fixed; inset:0; z-index:200; overflow:auto; background:#131b22; }
+.docviewer__bar { position:sticky; top:0; z-index:5; display:flex; align-items:center;
+  justify-content:space-between; gap:1rem; padding:.75rem 1rem;
+  background:#131b22; border-bottom:1px solid rgba(255,255,255,.12); }
+.docviewer__heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
+.docviewer__heading-icon { color:rgba(255,255,255,.65); flex:none; }
+.docviewer__heading-text { min-width:0; }
+.docviewer__title { margin:0; color:#fff; font-weight:var(--fw-bold); font-size:var(--text-base);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.docviewer__sub { margin:0; color:rgba(255,255,255,.65); font-size:var(--text-xs); }
+.docviewer__docnum { white-space:nowrap; }
+.docviewer__actions { display:flex; align-items:center; gap:.25rem; flex:none; }
+.docviewer__btn { display:inline-flex; align-items:center; justify-content:center;
+  width:2.5rem; height:2.5rem; background:none; border:0; border-radius:var(--radius);
+  color:#fff; cursor:pointer; transition:background .15s; }
+.docviewer__btn:hover { background:rgba(255,255,255,.12); }
+.docviewer__btn:focus-visible { outline:2px solid #fff; outline-offset:-2px; }
+.docviewer__btn--close:hover { background:var(--color-primary-600); }
+.docviewer__main { position:relative; background:#1c2834; }
+.docviewer__stage { padding:2.5rem 1rem; cursor:default; }
+.docviewer__stage:focus-visible { outline:2px solid rgba(255,255,255,.4); outline-offset:-2px; }
+.docviewer__pages { --docpage-w:760px; display:flex; flex-direction:column; align-items:center;
+  gap:1.5rem; min-width:min-content; }
+/* Vor/Zurück: am Viewport fixiert, damit sie beim Scrollen stehen bleiben. */
+.docviewer__nav { position:fixed; top:50%; transform:translateY(-50%); z-index:6;
+  display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem;
+  background:rgba(255,255,255,.1); border:0; border-radius:var(--radius-full); color:#fff; cursor:pointer;
+  transition:background .15s; }
+.docviewer__nav:hover { background:rgba(255,255,255,.2); }
+.docviewer__nav:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+.docviewer__nav--prev { left:1rem; }
+.docviewer__nav--next { right:1rem; }
+
+.docpage { width:var(--docpage-w); min-height:calc(var(--docpage-w) * 1.414); flex:none;
+  background:#fff; color:var(--color-text); box-shadow:0 10px 40px rgba(0,0,0,.45);
+  padding:clamp(28px,6%,56px); box-sizing:border-box; display:flex; flex-direction:column; }
+.docpage__footer { display:flex; justify-content:space-between; gap:.75rem; margin-top:auto;
+  padding-top:.75rem; border-top:1px solid var(--color-secondary-200);
+  font-size:var(--text-xs); color:var(--color-text-muted); }
+.docpage__crest { width:38px; height:auto; flex:none; }
+.docpage--text .docpage__letterhead { display:flex; align-items:center; gap:.75rem; margin-bottom:1.5rem; }
+.docpage__org { font-size:var(--text-xs); color:var(--color-text-muted); line-height:var(--lh-snug); }
+.docpage__title { font-size:var(--text-2xl); font-weight:var(--fw-bold); margin:0 0 1rem; }
+.docpage__subtitle { font-size:var(--text-lg); margin:0 0 1rem; color:var(--color-text-muted); }
+.docpage__metagrid { display:grid; grid-template-columns:1fr 1fr; gap:.25rem 1.5rem; margin:0 0 1.5rem;
+  padding:1rem; background:var(--color-secondary-50); }
+.docpage__metagrid div { display:flex; flex-direction:column; }
+.docpage__metagrid dt { font-size:var(--text-xs); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.04em; }
+.docpage__metagrid dd { margin:0; font-size:var(--text-sm); font-weight:var(--fw-bold); }
+.docpage__p { margin:0 0 1rem; font-size:var(--text-sm); line-height:var(--lh-relaxed); text-align:justify; }
+.docpage--plan { padding:clamp(16px,3%,32px); justify-content:center; }
+.docpage__plan { display:block; width:100%; height:auto; }
+.docpage__plan .plan-sheet { fill:var(--color-secondary-50); stroke:var(--color-secondary-200); stroke-width:1; }
+.docpage__plan .plan-wall { fill:none; stroke:var(--color-secondary-700); stroke-width:3; stroke-linecap:square; }
+.docpage__plan .plan-room { fill:#f7f9fb; stroke:var(--color-secondary-300); stroke-width:1; }
+.docpage__plan .plan-label { fill:var(--color-text-muted); font-size:11px; font-weight:var(--fw-bold); text-anchor:middle; }
+.docpage__plan .plan-north line { stroke:var(--color-text-muted); stroke-width:1.5; }
+.docpage__plan .plan-titleblock { fill:#fff; stroke:var(--color-secondary-700); stroke-width:1.5; }
+.docpage__plan .plan-title { fill:var(--color-text); font-size:13px; font-weight:var(--fw-bold); }
+.docpage__plan .plan-meta { fill:var(--color-text-muted); font-size:11px; }
+
+.docviewer__toolbar { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); z-index:6;
+  display:flex; align-items:center; gap:.25rem; padding:.25rem; background:#131b22;
+  border:1px solid rgba(255,255,255,.15); border-radius:var(--radius-full); box-shadow:0 10px 40px rgba(0,0,0,.45); }
+.docviewer__zoom { display:inline-flex; align-items:center; justify-content:center; min-width:2.25rem; height:2.25rem;
+  padding:0 .75rem; background:none; border:0; border-radius:var(--radius-full); color:#fff;
+  font-size:var(--text-sm); cursor:pointer; transition:background .15s; }
+.docviewer__zoom:hover { background:rgba(255,255,255,.12); }
+.docviewer__zoom:focus-visible { outline:2px solid #fff; outline-offset:-2px; }
+.docviewer__zoom--reset { min-width:3.5rem; font-variant-numeric:tabular-nums; }
+
+.docviewer__toast { position:fixed; bottom:5rem; left:50%; transform:translateX(-50%); z-index:7;
+  padding:.6rem 1rem; background:#fff; color:var(--color-text); font-size:var(--text-sm);
+  border-radius:var(--radius); box-shadow:0 10px 40px rgba(0,0,0,.45); }
+
+/* Titel/Vorschau-Auslöser in der Tabelle: sieht aus wie ein Link, ist ein Button. */
+.doc-open { display:inline-flex; align-items:center; gap:.4rem; background:none; border:0; padding:0;
+  font:inherit; color:var(--color-primary-600); cursor:pointer; text-align:left; }
+.doc-open:hover { color:var(--color-primary-800); text-decoration:underline; }
+.doc-open .icon { flex:none; }

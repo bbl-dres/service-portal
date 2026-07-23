@@ -107,7 +107,7 @@ export default async function render(ctx) {
       <div class="service-controls__search">
         <label class="sr-only" for="aq">Anwendung suchen</label>
         <input id="aq" type="search" placeholder="Anwendung suchen..." value="${C.escape(rawQ)}" autocomplete="off">
-        <button class="btn btn--filled" type="submit">Suchen</button>
+        <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </div>
       <div class="service-controls__filters" aria-label="Anwendungen filtern">
         <div class="form__group__select">

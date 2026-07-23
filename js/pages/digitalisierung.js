@@ -37,6 +37,7 @@ const GRUNDSAETZE = [
 ];
 
 const WEITERE = [
+  { label: 'IKT-Vorhaben — laufende und geplante Informatik-Vorhaben des BBL', href: '#/data/ikt-vorhaben' },
   { label: 'Anleitungen und FAQ zur digitalen Zusammenarbeit', href: '#/knowledge?tab=prozesse' },
   { label: 'Weisungen und Vorgaben', href: '#/knowledge?tab=grundlagen' },
   { label: 'Datenportal — Auswertungen und Kennzahlen', href: '#/app/dataportal' },

@@ -100,7 +100,8 @@ export function card(o) {
       ${o.footer ? `<div class="card__footer">${o.footer}</div>` : ''}
     </div>`;
   const cls = `card card--${variant}${o.href ? ' card--clickable' : ''}`;
-  return o.href ? `<a class="${cls}" href="${o.href}">${inner}</a>` : `<div class="${cls}">${inner}</div>`;
+  const ext = o.external ? ' target="_blank" rel="noopener external"' : '';
+  return o.href ? `<a class="${cls}" href="${escape(o.href)}"${ext}>${inner}</a>` : `<div class="${cls}">${inner}</div>`;
 }
 
 // --- Tables (table.postcss) --------------------------------------------------

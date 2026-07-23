@@ -44,34 +44,93 @@ On top of these sit numerous **separate applications**: eGate (SSO), InfoPers (H
 
 > **This supersedes part of §1.** The Kundenplattform is no longer the AEM tile site described above — it has been relaunched on CD Bund at `intranet.bbl.admin.ch/de`, and it uses the *same* component vocabulary this prototype now targets. The IA problems below are therefore genuinely structural, not styling artefacts.
 
-### The tree
+### The tree (complete — extracted from the Nuxt payload of `Bestellen (E-Shop).html`, 2026-07-23)
+
+The eight L1 items each open a **`navy` drawer** that can nest sub-branches
+(CD `navy__level-0 … navy__level-7`, a sliding drill-down). Full tree below;
+all URLs are `https://intranet.bbl.admin.ch/de/<slug>`.
 
 ```
 Kundenplattform BBL   ·   intranet.bbl.admin.ch/de
 │
 ├── Top bar ......................... Jobs · Bundespublikationen · Kontakt
-├── Meta navigation ................. (present in markup, empty)
 │
-├── Main navigation (8 items)
-│   ├── Unterbringung ............... /de/unterbringung
-│   ├── Objektbetrieb ............... /de/objektbetrieb
-│   ├── Büroausrüstung .............. /de/bueroausruestung
-│   │   ├── Bestellen (E-Shop) ...... /de/bestellen-e-shop
-│   │   ├── Büromaterial ............ /de/bueromaterial
-│   │   ├── EDV-Verbrauchsmaterial .. /de/edv-verbrauchsmaterial
-│   │   ├── Bürotechnik ............. /de/buerotechnik
-│   │   ├── Informatik-Sortiment .... /de/informatik-sortiment
-│   │   ├── Mobiliar ................ /de/mobiliar
-│   │   └── Hausdienstmaterial ...... /de/hausdienstmaterial
-│   ├── Produktion .................. /de/produktion
-│   ├── Publikationen ............... /de/publikationen
-│   ├── Informatik .................. /de/informatik
-│   ├── Beschaffen .................. /de/beschaffen
-│   └── Mieterportal ................ /de/mieterportal          ← external system in the content nav
+├── Unterbringung  /unterbringung
+│   ├── Raumbedarf, bauliche Bedürfnisse ...... /raumbedarf-bauliche-beduerfnisse
+│   ├── Standards ............................. /standards
+│   ├── Leistungsverrechnung .................. /leistungsverrechnung
+│   ├── Störungsmeldungen Gebäude / Kleinaufträge  /stoerungsmeldungen-gebaeude-kleinauftraege
+│   └── Dienstleistungskatalog ................ /dienstleistungskatalog
 │
-├── Other pages reached from content ... Reklamationsmeldung · Kontakt
+├── Objektbetrieb  /objektbetrieb
+│   ├── Objektbewirtschaftung und Betrieb ..... /objektbewirtschaftung-und-betrieb
+│   │   ├── Objektverantwortung ............... /objektverantwortung
+│   │   ├── Objektbetrieb (Hauswartung) ....... /objektbetrieb-hauswartung
+│   │   ├── Techn. Gebäudemanagement .......... /techn-gebaeudemanagement
+│   │   └── Reinigung ......................... /reinigung
+│   ├── Anlässe ............................... /anlaesse
+│   │   ├── Fahnenmanagement .................. /fahnenmanagement
+│   │   ├── Blumendekorationen ................ /blumendekorationen
+│   │   ├── Innenbegrünung .................... /innenbegruenung
+│   │   └── Grünflächen ....................... /gruenflaechen
+│   └── Umzüge / Transport / Entsorgung ....... /umzuege-transport-entsorgung
+│       ├── Umzüge ............................ /umzuege
+│       ├── Transport ......................... /transport
+│       ├── Kurierdienst BBL .................. /kurierdienst-bbl
+│       └── Entsorgung ........................ /entsorgung
+│
+├── Büroausrüstung  /bueroausruestung
+│   ├── Bestellen (E-Shop) .................... /bestellen-e-shop
+│   ├── Büromaterial ......................... /bueromaterial
+│   ├── EDV-Verbrauchsmaterial ............... /edv-verbrauchsmaterial
+│   ├── Bürotechnik .......................... /buerotechnik
+│   ├── Informatik-Sortiment ................. /informatik-sortiment
+│   ├── Mobiliar ............................. /mobiliar
+│   │   └── Mobiliarverkauf für Bundesmitarbeitende  /mobiliarverkauf-fuer-bundesmitarbeitende
+│   └── Hausdienstmaterial ................... /hausdienstmaterial
+│
+├── Produktion  /produktion
+│   ├── Arbeitsvorbereitung AVOR ............. /arbeitsvorbereitung-avor
+│   ├── Datenbewirtschaftung / Formularentwicklung  /datenbewirtschaftung-formularentwicklung
+│   │   ├── Elektronische Formulare .......... /elektronische-formulare
+│   │   └── Serienbriefverarbeitung .......... /serienbriefverarbeitung
+│   ├── Projektberatung und Support .......... /projektberatung-und-support
+│   ├── Digital Druck ........................ /digital-druck
+│   └── Versenden ............................ /versenden
+│
+├── Publikationen  /publikationen
+│   ├── Bestellen ............................ /bestellen
+│   └── Warengruppe Publikationen ............ /warengruppe-publikationen
+│
+├── Informatik  /informatik
+│   ├── Einkauf Informatik ................... /einkauf-informatik
+│   ├── Bedarfsmeldung / HBB-Prozess ......... /bedarfsmeldung-hbb-prozess
+│   ├── Delegationen ......................... /delegationen
+│   ├── Werkzeugkasten ....................... /werkzeugkasten
+│   ├── Mustervorlagen für IKT-Beschaffungen . /mustervorlagen-fuer-ikt-beschaffungen
+│   └── Zentral bewirtschaftete Rahmenverträge Informatik  /zentral-bewirtschaftete-rahmenvertraege-informatik
+│
+├── Beschaffen  /beschaffen
+│   ├── Einstieg und Übersicht ............... /einstieg-und-uebersicht
+│   ├── WTO-Verfahren ........................ /wto-verfahren
+│   ├── Dokumente der BKB .................... /dokumente-der-bkb
+│   └── Beschaffungscontrolling Bundesverwaltung  /beschaffungscontrolling-bund
+│       ├── Fachstelle Beschaffungscontrolling FSBC  /fachstelle-beschaffungscontrolling-fsbc
+│       ├── Bekanntgabe der Beschaffungen ab 50'000 Franken  /bekanntgabe-der-beschaffungen-ab-50-000-franken
+│       ├── Beschaffungskategorien ........... /beschaffungskategorien
+│       ├── Vertragsmanagementsystem VM-System  /vertragsmanagementsystem-vm-system
+│       ├── Info-Notizen ..................... /info-notizen
+│       └── Monitoring Beschaffungsstrategie . /monitoring-beschaffungsstrategie
+│
+├── Mieterportal  /mieterportal   ← externes System (eigenes Portal)
+├── Reklamationsmeldung  /reklamationsmeldung
 └── Footer .......................... AGB des Bundes · Rechtliches · Barrierefreiheit
 ```
+
+> Parent–child nesting is inferred from the payload order (Nuxt serialises the
+> menu depth-first). Sub-branches (e.g. Objektbetrieb → Objektbewirtschaftung →
+> Objektverantwortung) confirm the live intranet uses the CD `navy` multi-level
+> drill-down, not flat drawers.
 
 ### Structural problems
 
