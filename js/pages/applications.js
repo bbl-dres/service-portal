@@ -1,8 +1,11 @@
-// Anwendungen — software / application launcher.
+// Anwendungen — Katalog und Landingpage je Anwendung.
 // Reached from "Daten und Digitalisierung": ?bereich=bauten|logistik narrows it
 // to the Fachanwendungen of one Bereich; without it, all groups are listed.
+// Karten führen auf #/applications/<appId> — nicht direkt in die Anwendung:
+// jede Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen.
 export default async function render(ctx) {
-  const { mount, query, core, C, setTitle, setCrumbs } = ctx;
+  const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
+  if (params[0]) return (await import('./application.js')).default(ctx, params[0]);
 
   const GROUP_ORDER = ['Immobilien & Bau', 'Arbeitsplatz & Logistik', 'Zentrale Systeme'];
   const BEREICHE = {
@@ -48,16 +51,16 @@ export default async function render(ctx) {
   };
 
   function appCard(a) {
-    const external = a.link && a.link.kind === 'external';
-    const action = `<span class="btn btn--link">Öffnen ${C.icon(external ? 'External' : 'ArrowRight', 'icon--base')}</span>`;
     const badges = [C.audienceTag(a.audience)];
     if (a.hero) badges.push(C.badge('Schlüsselanwendung', 'info'));
+    if (a.link && a.link.kind === 'external') badges.push(C.badge('Externes System', 'gray'));
     return C.card({
       title: a.name,
       desc: a.description,
-      href: (a.link && a.link.href) || '#',
+      href: `#/applications/${encodeURIComponent(a.appId)}`,
       badges,
-      footer: `<span>${C.escape(a.accessNote || '')}</span>${action}`,
+      footer: `<span>${C.escape(a.accessNote || '')}</span>
+        <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
     });
   }
 

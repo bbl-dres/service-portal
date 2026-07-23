@@ -256,7 +256,7 @@ function detail(ctx, id) {
 
   function tabDokumente() {
     if (!documents.length) {
-      return `${C.empty('Keine Dokumente verknüpft.')}<p class="mt-4"><a class="btn btn--link" href="#/app/document-archive">Im Dokumentenarchiv öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
+      return `${C.empty('Keine Dokumente verknüpft.')}<p class="mt-4"><a class="btn btn--link" href="#/app/document-archive">In der Bauwerksdokumentation öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
     }
     const items = documents.map(d => `
       <div class="row row--between" style="padding:.75rem 0;border-bottom:1px solid var(--color-border)">
@@ -271,7 +271,7 @@ function detail(ctx, id) {
       </div>`).join('');
     return `
       <div class="stack">${items}</div>
-      <p class="mt-6"><a class="btn btn--link" href="#/app/document-archive">Im Dokumentenarchiv öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
+      <p class="mt-6"><a class="btn btn--link" href="#/app/document-archive">In der Bauwerksdokumentation öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
   }
 
   function tabMedien() {

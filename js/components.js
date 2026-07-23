@@ -130,8 +130,16 @@ export function notification(text, variant = 'info', iconName = 'InfoCircle') {
   return `<div class="notification notification--${variant}">${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div></div>`;
 }
 
+// CD back button. Anatomy copied from the design system's own detail pages
+// (app/pages/detailPressRelease.vue, detailPublicationCatalog.vue):
+//   <Btn variant="outline" size="sm" icon="ArrowLeft" iconPos="left"
+//        label="Zurück" class="btn--back" />
+// The visible label is always «Zurück»; `label` names the target for screen
+// readers ("Zurück zu Datenbezug"). `.back-link-row` clears the CD float.
 export function backLink(href, label) {
-  return `<a class="btn btn--link" href="${href}">${icon('ChevronLeft', 'btn__icon')}<span class="btn__text">${escape(label)}</span></a>`;
+  return `<div class="back-link-row"><a class="btn btn--outline btn--sm btn--icon-left btn--back" href="${escape(href)}"${
+    label ? ` aria-label="Zurück zu ${escape(label)}"` : ''}>${
+    icon('ArrowLeft', 'btn__icon')}<span class="btn__text">Zurück</span></a></div>`;
 }
 
 // --- Forms (form.postcss + input.postcss + select.postcss) -------------------
@@ -233,8 +241,51 @@ export function downloadLink(url, label, iconName = 'Download') {
     : `<span class="btn btn--link" aria-disabled="true" title="Im Prototyp nicht verfügbar">${icon(iconName, 'btn__icon')} ${escape(label)}<span class="sr-only"> (im Prototyp nicht verfügbar)</span></span>`;
 }
 
+// --- Pagination (pagination.postcss) -----------------------------------------
+// CD anatomy: an editable current-page field, "von N Seiten", then prev/next as
+// icon-only outline buttons (disabled at the ends). `href(page)` builds the
+// target hash so the caller keeps its own filters; `inputId` is wired by the
+// caller for typed page jumps.
+export function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation' }) {
+  if (totalPages <= 1) return '';
+  const control = (target, text, iconName, disabled) => {
+    const inner = `${icon(iconName, 'btn__icon')}<span class="btn__text">${text}</span>`;
+    return disabled
+      ? `<li><span class="btn btn--outline btn--icon-only" aria-disabled="true" aria-label="${text}">${inner}</span></li>`
+      : `<li><a class="btn btn--outline btn--icon-only" href="${escape(href(target))}" aria-label="${text}">${inner}</a></li>`;
+  };
+  return `
+    <nav class="pagination-wrap" aria-label="${escape(label)}">
+      <div class="pagination">
+        <label class="sr-only" for="${inputId}">Seite</label>
+        <input id="${inputId}" class="pagination__input input--outline input--base" type="text" inputmode="numeric"
+          value="${page}" aria-label="Seite" autocomplete="off">
+        <div class="pagination__text">von ${totalPages} Seiten</div>
+        <ul class="pagination_items">
+          ${control(page - 1, 'Vorherige Seite', 'ChevronLeft', page === 1)}
+          ${control(page + 1, 'Nächste Seite', 'ChevronRight', page === totalPages)}
+        </ul>
+      </div>
+    </nav>`;
+}
+
+// Wires the editable page field of a pagination block. `go(target)` navigates.
+export function wirePagination(mount, inputId, page, totalPages, go) {
+  const input = mount.querySelector('#' + inputId);
+  if (!input) return;
+  const jump = () => {
+    const parsed = Number.parseInt(input.value, 10);
+    const target = Math.min(totalPages, Math.max(1, Number.isFinite(parsed) ? parsed : page));
+    if (target === page) { input.value = String(page); return; }
+    go(target);
+  };
+  input.addEventListener('change', jump);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); jump(); } });
+}
+
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty,
   notification, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
+  pagination, wirePagination,
 };
 export default C;

@@ -64,7 +64,7 @@ function dashboardView(ctx, id) {
   const { mount, C, setTitle, setCrumbs } = ctx;
   const board = sql.dashboard(id);
   if (!board) {
-    mount.innerHTML = `<div class="container section">${C.backLink('#/app/dataportal', 'Zum Datenportal')}${C.empty('Dashboard nicht gefunden.')}</div>`;
+    mount.innerHTML = `<div class="container section">${C.backLink('#/app/dataportal', 'Datenportal')}${C.empty('Dashboard nicht gefunden.')}</div>`;
     return;
   }
   setTitle(board.title);
@@ -81,7 +81,7 @@ function dashboardView(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/app/dataportal', 'Zum Datenportal')}
+    ${C.backLink('#/app/dataportal', 'Datenportal')}
     ${C.pageHeader({ title: board.title, lead: board.lead })}
     <p class="meta-info">
       <span class="meta-info__item">Quelle: ${C.escape(board.source)}</span>

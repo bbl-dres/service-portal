@@ -11,6 +11,7 @@ export default async function render(ctx) {
   const selectedAudience = query.get('audience') || '';
   // `topic` is multi-value (comma-separated) — several Themen can be active at once
   const selectedTopics = (query.get('topic') || '').split(',').map(t => t.trim()).filter(Boolean);
+  const view = query.get('view') === 'liste' ? 'liste' : 'galerie';
   const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
   const perPage = 12;
   const domains = core.ref().domains || [];
@@ -37,14 +38,26 @@ export default async function render(ctx) {
     footer: `<span>${domainLabel(domains, s.domain)}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
   });
 
+  const listView = (list) => C.table({
+    caption: 'Dienstleistungen',
+    zebra: true,
+    columns: [
+      { key: 'title', label: 'Dienstleistung', render: s => `<a href="#/services/${s.serviceId}">${C.escape(s.title)}</a><br><span class="small muted">${C.escape(s.short)}</span>` },
+      { key: 'domain', label: 'Bereich', render: s => C.escape(domainLabel(domains, s.domain)) },
+      { key: 'audience', label: 'Zielgruppe', render: s => C.audienceTag(s.audience) },
+      { key: 'type', label: 'Typ', render: s => s.type === 'action' ? C.badge('Service', 'info') : C.badge('Information', 'gray') },
+    ],
+    rows: list,
+  });
+
   // Active-filter pills. Each pill links to the same view minus that one value,
   // so removing a filter needs no JS and stays deep-linkable.
   const activeFilters = [
-    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: servicesHash({ audience: selectedAudience, topics: selectedTopics, page: 1 }) }] : []),
-    ...(selectedAudience ? [{ label: audienceLabel(selectedAudience), href: servicesHash({ q: rawQ, topics: selectedTopics, page: 1 }) }] : []),
+    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: servicesHash({ audience: selectedAudience, topics: selectedTopics, page: 1, view }) }] : []),
+    ...(selectedAudience ? [{ label: audienceLabel(selectedAudience), href: servicesHash({ q: rawQ, topics: selectedTopics, page: 1, view }) }] : []),
     ...selectedTopics.map(t => ({
       label: domainLabel(domains, t),
-      href: servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics.filter(x => x !== t), page: 1 }),
+      href: servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics.filter(x => x !== t), page: 1, view }),
     })),
   ];
   const filterBar = activeFilters.length ? `
@@ -94,6 +107,15 @@ export default async function render(ctx) {
           </div>
         </div>
       </div>
+      <div class="service-controls__view">
+        <span class="small muted" id="view-label">Ansicht</span>
+        <div class="list list--flex list--wrap" role="group" aria-labelledby="view-label">
+          ${C.tagItem({ label: 'Galerie', iconName: 'Apps', active: view === 'galerie', size: 'sm',
+            attrs: `data-view="galerie"` })}
+          ${C.tagItem({ label: 'Liste', iconName: 'List', active: view === 'liste', size: 'sm',
+            attrs: `data-view="liste"` })}
+        </div>
+      </div>
     </form>
     ${filterBar}
     <section class="mt-6">
@@ -101,38 +123,50 @@ export default async function render(ctx) {
         <p class="muted">${resultText(services.length, all.length, page, totalPages, selectedFilters, rawQ, C)}</p>
         ${relatedHits ? `<p class="muted small">${relatedHits}</p>` : ''}
       </div>
-      ${services.length ? `<div class="grid grid--3 mt-4">${visibleServices.map(card).join('')}</div>${renderPagination(page, totalPages, query, C)}` : C.empty('Keine Services gefunden.')}
+      ${services.length ? `${view === 'liste' ? listView(visibleServices) : `<div class="grid grid--3 mt-4">${visibleServices.map(card).join('')}</div>`}${
+        C.pagination({ page, totalPages, inputId: 'svc-page', label: 'Seitennavigation Dienstleistungen',
+          href: (p) => servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics, page: p, view }) })
+      }` : C.empty('Keine Services gefunden.')}
     </section>
   </div>`;
 
   mount.querySelector('#svc-search').addEventListener('submit', (e) => {
     e.preventDefault();
     const v = mount.querySelector('#sq').value.trim();
-    location.hash = servicesHash({ q: v, audience: selectedAudience, topics: selectedTopics, page: 1 });
+    location.hash = servicesHash({ q: v, audience: selectedAudience, topics: selectedTopics, page: 1, view });
+  });
+  mount.querySelectorAll('.tag-item[data-view]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      location.hash = servicesHash({
+        q: rawQ, audience: selectedAudience, topics: selectedTopics, page,
+        view: btn.getAttribute('data-view'),
+      });
+    });
   });
   mount.querySelector('#audience-filter').addEventListener('change', (e) => {
-    location.hash = servicesHash({ q: rawQ, audience: e.target.value, topics: selectedTopics, page: 1 });
+    location.hash = servicesHash({ q: rawQ, audience: e.target.value, topics: selectedTopics, page: 1, view });
   });
   mount.querySelector('#topic-filter').addEventListener('change', (e) => {
-    location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topics: e.target.value && !selectedTopics.includes(e.target.value) ? [...selectedTopics, e.target.value] : selectedTopics, page: 1 });
+    location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topics: e.target.value && !selectedTopics.includes(e.target.value) ? [...selectedTopics, e.target.value] : selectedTopics, page: 1, view });
   });
-  const pageInput = mount.querySelector('#svc-page');
-  if (pageInput) {
-    const goToPage = () => {
-      const parsed = Number.parseInt(pageInput.value, 10);
-      const target = Math.min(totalPages, Math.max(1, Number.isFinite(parsed) ? parsed : page));
-      if (target === page) { pageInput.value = String(page); return; }
-      location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics, page: target });
-    };
-    pageInput.addEventListener('change', goToPage);
-    pageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); goToPage(); } });
-  }
+  C.wirePagination(mount, 'svc-page', page, totalPages, (target) => {
+    location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics, page: target, view });
+  });
 }
 
 function detail(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
   const s = core.service(id);
-  if (!s) { mount.innerHTML = `<div class="container section">${C.empty('Service nicht gefunden.')}<a href="#/services">Zur Übersicht</a></div>`; return; }
+  if (!s) {
+    setTitle('Dienstleistung nicht gefunden');
+    setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }]);
+    mount.innerHTML = `<div class="container section">
+      ${C.backLink('#/services', 'Dienstleistungen')}
+      <div class="page-header mt-4"><h1 tabindex="-1">Dienstleistung nicht gefunden</h1></div>
+      <p class="muted">Diese Dienstleistung existiert nicht. <a href="#/services">Zur Übersicht «Dienstleistungen»</a></p>
+    </div>`;
+    return;
+  }
   setTitle(s.title);
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }, { label: s.title }]);
 
@@ -143,7 +177,7 @@ function detail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/services', 'Alle Dienstleistungen')}
+    ${C.backLink('#/services', 'Dienstleistungen')}
     <div class="split mt-4">
       <div class="stack">
         <div class="row gap-sm">${C.audienceTag(s.audience)} ${s.type === 'action' ? C.badge('Service', 'info') : C.badge('Information', 'gray')}</div>
@@ -157,7 +191,7 @@ function detail(ctx, id) {
       </div>
       <aside class="stack-lg">
         ${contact ? `<div class="box"><h3>Kontakt</h3><p class="small" style="margin:0"><strong>${C.escape(contact.name)}</strong><br>${C.escape(contact.role)}<br><a href="mailto:${contact.email}">${contact.email}</a><br>${C.escape(contact.phone)}</p></div>` : ''}
-        ${weis.length ? `<div class="box"><h3>Geltende Weisungen</h3>${weis.map(w => `<a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge?tab=weisungen&id=${w.directiveId}">${C.icon('Book', 'icon--base')}<span class="small">${C.escape(w.title)}</span></a>`).join('')}</div>` : ''}
+        ${weis.length ? `<div class="box"><h3>Geltende Weisungen</h3>${weis.map(w => `<a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge?tab=grundlagen&id=${w.directiveId}">${C.icon('Book', 'icon--base')}<span class="small">${C.escape(w.title)}</span></a>`).join('')}</div>` : ''}
       </aside>
     </div>
   </div>`;
@@ -182,41 +216,13 @@ function resultText(count, total, page, totalPages, filters, rawQ, C) {
   return `${count} von ${total} Dienstleistungen${filterText}${searchText}${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`;
 }
 
-// CD pagination: an editable current-page field + "von N Seiten" + prev/next icon buttons.
-function renderPagination(page, totalPages, query, C) {
-  if (totalPages <= 1) return '';
-  const q = query.get('q') || '';
-  const audience = query.get('audience') || '';
-  const topics = (query.get('topic') || '').split(',').filter(Boolean);
-  const href = (targetPage) => servicesHash({ q, audience, topics, page: targetPage });
-  const control = (targetPage, label, iconName, disabled) => {
-    const inner = `${C.icon(iconName, 'icon--base')}<span class="btn__text">${label}</span>`;
-    return disabled
-      ? `<li><span class="btn btn--outline btn--icon-only" aria-disabled="true" aria-label="${label}">${inner}</span></li>`
-      : `<li><a class="btn btn--outline btn--icon-only" href="${href(targetPage)}" aria-label="${label}">${inner}</a></li>`;
-  };
-
-  return `
-    <nav class="pagination-wrap mt-6" aria-label="Seitennavigation Dienstleistungen">
-      <div class="pagination">
-        <label class="sr-only" for="svc-page">Seite</label>
-        <input id="svc-page" class="pagination__input input--outline input--base" type="text" inputmode="numeric"
-          value="${page}" aria-label="Seite" autocomplete="off">
-        <div class="pagination__text">von ${totalPages} Seiten</div>
-        <ul class="pagination_items">
-          ${control(page - 1, 'Vorherige Seite', 'ChevronLeft', page === 1)}
-          ${control(page + 1, 'Nächste Seite', 'ChevronRight', page === totalPages)}
-        </ul>
-      </div>
-    </nav>`;
-}
-
-function servicesHash({ q = '', audience = '', topics = [], page = 1 }) {
+function servicesHash({ q = '', audience = '', topics = [], page = 1, view = '' }) {
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (audience) params.set('audience', audience);
   if (topics.length) params.set('topic', topics.join(','));
   if (page > 1) params.set('page', String(page));
+  if (view === 'liste') params.set('view', view);
   const suffix = params.toString();
   return suffix ? `#/services?${suffix}` : '#/services';
 }

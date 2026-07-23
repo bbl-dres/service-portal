@@ -13,7 +13,7 @@ export default async function render(ctx) {
   setTitle('Mediathek');
   setCrumbs([
     { label: 'Startseite', href: '#/' },
-    { label: 'Dokumente & Medien', href: '#/documents' },
+    { label: 'Daten und Digitalisierung', href: '#/data' },
     { label: 'Mediathek' },
   ]);
 
@@ -196,14 +196,14 @@ function detail(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
   const m = core.media().find(x => x.mediaId === id);
   if (!m) {
-    mount.innerHTML = `<div class="container section">${C.backLink('#/app/mediathek', 'Zur Mediathek')}${C.empty('Medium nicht gefunden.')}</div>`;
+    mount.innerHTML = `<div class="container section">${C.backLink('#/app/mediathek', 'Mediathek')}${C.empty('Medium nicht gefunden.')}</div>`;
     return;
   }
 
   setTitle(m.title);
   setCrumbs([
     { label: 'Startseite', href: '#/' },
-    { label: 'Dokumente & Medien', href: '#/documents' },
+    { label: 'Daten und Digitalisierung', href: '#/data' },
     { label: 'Mediathek', href: '#/app/mediathek' },
     { label: m.title },
   ]);
@@ -218,7 +218,7 @@ function detail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/app/mediathek', 'Zur Mediathek')}
+    ${C.backLink('#/app/mediathek', 'Mediathek')}
     <div class="split mt-4">
       <div class="stack">
         <div class="row gap-sm">${C.badge(isVideo ? 'Video' : 'Foto', 'blue')}${periodBadge}</div>

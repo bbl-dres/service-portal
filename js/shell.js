@@ -27,9 +27,6 @@ const TOP_BAR_LINKS = [
 ];
 
 function headerHTML() {
-  const currentHash = location.hash || '#/';
-  const isActiveSub = (href) => currentHash === href;
-
   const renderNavMenu = (item, scope) => {
     const menuId = `${scope}-menu__drawer-${item.base}`;
     const drawerClass = scope === 'desktop' ? 'desktop-menu__drawer' : 'mobile-menu__drawer';
@@ -41,17 +38,14 @@ function headerHTML() {
       <div class="navy">
         <h2 class="navy__title">${escapeHtml(item.label)}</h2>
         <ul class="menu navy__level-0">
-          ${resolveChildren(item).map(child => {
-            const active = isActiveSub(child.href);
-            return `
-            <li class="menu__item menu__item--border menu__item--condensed${active ? ' menu__item--active' : ''}">
-              <a class="menu__item__flex" href="${child.href}"${active ? ' aria-current="page"' : ''}${
-                child.external ? ' target="_blank" rel="noopener external"' : ''}>
+          ${resolveChildren(item).map(child => `
+            <li class="menu__item menu__item--border menu__item--condensed">
+              <a class="menu__item__flex" href="${child.href}"${
+                child.external ? ' target="_blank" rel="noopener external"' : ' data-navsub="' + escapeHtml(child.href) + '"'}>
                 <span>${escapeHtml(child.label)}</span>
                 ${icon(child.external ? 'External' : 'ArrowAngleBottomLeft', 'menu__item__icon')}
               </a>
-            </li>`;
-          }).join('')}
+            </li>`).join('')}
         </ul>
       </div>
     </div>`;

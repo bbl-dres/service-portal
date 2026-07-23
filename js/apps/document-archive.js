@@ -1,13 +1,13 @@
-// Dokumentenarchiv — Bauwerksdokumentation als abfragbares, pro Gebäude filterbares Archiv.
+// Bauwerksdokumentation — Bauwerksdokumentation als abfragbares, pro Gebäude filterbares Archiv.
 // Ersetzt statische PDF-Listen durch eine durchsuchbare, filterbare Ansicht.
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
 
-  setTitle('Dokumentenarchiv');
+  setTitle('Bauwerksdokumentation');
   setCrumbs([
     { label: 'Startseite', href: '#/' },
-    { label: 'Dokumente & Medien', href: '#/documents' },
-    { label: 'Dokumentenarchiv' },
+    { label: 'Daten und Digitalisierung', href: '#/data' },
+    { label: 'Bauwerksdokumentation' },
   ]);
 
   const all = core.documents();
@@ -123,7 +123,7 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section">
       ${C.pageHeader({
-        title: 'Dokumentenarchiv',
+        title: 'Bauwerksdokumentation',
         lead: 'Bauwerksdokumentation neu gedacht: Statt statischer PDF-Listen ein pro Gebäude abfragbares, filterbares Archiv — nach Gebäude, Dokumenttyp, Jahr und Titel durchsuchbar.',
       })}
       ${filterBar()}

@@ -38,7 +38,7 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section">
       <div class="container__center--xs">
-        ${C.backLink('#/services/raumbedarf-melden', 'Zur Service-Beschreibung')}
+        ${C.backLink('#/services/raumbedarf-melden', 'Service-Beschreibung')}
         <h1 tabindex="-1">Raumbedarf melden</h1>
         <p class="muted">Antrag als <strong>${C.escape(state.org)}</strong> · Prozess: Eingang → Prüfung GS → Prüfung PFM → Entscheid.</p>
         ${stepsBar()}

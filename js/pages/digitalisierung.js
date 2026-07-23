@@ -8,7 +8,7 @@ const TEASERS = [
     date: '2026-04-15',
     photo: '1460925895917-afdab827c52f',
     desc: 'Die Strategie legt fest, wie das BBL seine Leistungen bis 2030 digital erbringt: durchgängige Prozesse statt PDF- und Mailformulare, ein gemeinsamer Datenkern und eine einheitliche Oberfläche nach CD Bund.',
-    href: '#/knowledge?tab=weisungen',
+    href: '#/knowledge?tab=grundlagen',
     cta: 'Zur Strategie',
   },
   {
@@ -37,8 +37,8 @@ const GRUNDSAETZE = [
 ];
 
 const WEITERE = [
-  { label: 'Anleitungen und FAQ zur digitalen Zusammenarbeit', href: '#/knowledge?tab=anleitungen' },
-  { label: 'Weisungen und Vorgaben', href: '#/knowledge?tab=weisungen' },
+  { label: 'Anleitungen und FAQ zur digitalen Zusammenarbeit', href: '#/knowledge?tab=prozesse' },
+  { label: 'Weisungen und Vorgaben', href: '#/knowledge?tab=grundlagen' },
   { label: 'Datenportal — Auswertungen und Kennzahlen', href: '#/app/dataportal' },
   { label: 'Datenbezug — Datenkatalog nach DCAT-AP-CH', href: '#/data/katalog' },
 ];

@@ -1,3 +1,5 @@
+import { grundlagenPanel } from './grundlagen.js';
+
 // News und Wissen — Übersicht (Karten), News, Prozesse und Weisungen.
 // Tabs sind über ?tab=… verlinkbar; ein optionales ?id=… öffnet ein Detail
 // (Weisung / News). Ohne ?tab= erscheint die Abschnitts-Übersicht (CD-Muster).
@@ -7,7 +9,7 @@ export default async function render(ctx) {
   const TABS = [
     { id: 'news',      label: 'News',                 icon: 'Bell' },
     { id: 'prozesse',  label: 'Prozesse',             icon: 'InfoCircle' },
-    { id: 'weisungen', label: 'Weisungen & Vorgaben', icon: 'Book' },
+    { id: 'grundlagen', label: 'Gesetzliche Grundlagen und Vorgaben', icon: 'Book' },
   ];
   const tabFromQuery = query.get('tab');
   const active = TABS.some(t => t.id === tabFromQuery) ? tabFromQuery : '';
@@ -40,14 +42,16 @@ export default async function render(ctx) {
   // Tabs are plain <a href="#/knowledge?tab=…"> links: the hash router re-renders
   // this module on hashchange, so the active tab is always derived from ?tab.
   // Only the active panel needs interactivity wired up.
-  if (active === 'weisungen') wireWeisungen(ctx);
-  if (active === 'prozesse')  wireAccordion(mount);
+  if (active === 'prozesse' || active === 'grundlagen') wireAccordion(mount);
 
   function panelHtml(tab) {
     // "Prozesse" bündelt Anleitungen/FAQ und die Formulare & Vorlagen —
     // beides beschreibt, wie ein Ablauf im BBL funktioniert.
     if (tab === 'prozesse') return anleitungenPanel(ctx) + formularePanel(ctx);
-    if (tab === 'weisungen')   return weisungenPanel(ctx, id);
+    if (tab === 'grundlagen') {
+      const w = id ? core.weisung(id) : null;
+      return w ? weisungDetail(ctx, w) : grundlagenPanel(ctx);
+    }
     if (tab === 'formulare')   return formularePanel(ctx);
     if (tab === 'anleitungen') return anleitungenPanel(ctx);
     if (tab === 'news')        return newsPanel(ctx, id);
@@ -64,7 +68,6 @@ function overview(ctx) {
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen' }]);
 
   const news = core.news();
-  const weisungen = core.weisungen();
 
   const entry = (o) => `
     <a class="card card--universal card--clickable" href="${o.href}"${o.external ? ' target="_blank" rel="noopener external"' : ''}>
@@ -88,12 +91,9 @@ function overview(ctx) {
     { title: 'Prozesse', icon: 'InfoCircle', href: '#/knowledge?tab=prozesse',
       desc: 'Anleitungen, FAQ sowie Formulare und Vorlagen für die Zusammenarbeit mit dem BBL.',
       meta: 'Anleitungen & Vorlagen' },
-    { title: 'Weisungen & Vorgaben', icon: 'Book', href: '#/knowledge?tab=weisungen',
-      desc: 'Die geltenden Weisungen des BBL mit Geltungsbereich, Verbindlichkeit und Rechtsgrundlage.',
-      meta: `${weisungen.length} Weisungen` },
-    { title: 'Vorgaben der Bundeskanzlei', icon: 'External', href: 'https://www.bk.admin.ch/de/vorgaben', external: true,
-      desc: 'Bundesweit geltende Vorgaben der Bundeskanzlei — Grundlage für die Weisungen des BBL.',
-      meta: 'bk.admin.ch' },
+    { title: 'Gesetzliche Grundlagen und Vorgaben', icon: 'Book', href: '#/knowledge?tab=grundlagen',
+      desc: 'Erlasse, übergeordnete Vorgaben des Bundes und die internen Weisungen des BBL — thematisch gegliedert.',
+      meta: 'Gesetze, Vorgaben & Weisungen' },
   ].map(entry).join('');
 
   mount.innerHTML = `
@@ -117,77 +117,7 @@ function statusBadge(C, s) {
   return s === 'in_kraft' ? C.badge('In Kraft', 'success') : C.badge('Aufgehoben', 'gray');
 }
 
-function weisungenPanel(ctx, id) {
-  const { core, C } = ctx;
-  const all = core.weisungen();
 
-  if (id) {
-    const w = core.weisung(id);
-    if (w) return weisungDetail(ctx, w);
-    // unknown id → fall through to the list, with a hint below
-  }
-
-  const topics = [...new Set(all.map(w => w.topic).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
-
-  return `
-    ${id ? C.notification('Diese Weisung wurde nicht gefunden. Hier finden Sie alle Weisungen und Vorgaben.', 'warning', 'WarningCircle') : ''}
-    <p class="page-intro muted">Verbindliche Weisungen, Verordnungen und Richtlinien sowie empfehlende Vorgaben, die für die Dienstleistungen des BBL gelten.</p>
-
-    <div class="stack mt-4">
-      <div>
-        <div class="small muted mb-4">Status</div>
-        <div class="list list--flex list--wrap" id="w-status">
-          ${['alle', 'in_kraft', 'aufgehoben'].map(s =>
-            `<button type="button" class="tag-item${s === 'alle' ? " tag-item--active" : ""}" aria-pressed="${!!(s === 'alle')}" data-status="${s}"><span class="tag-item__inner"><span class="tag-item__text">${
-              s === 'alle' ? 'Alle' : s === 'in_kraft' ? 'In Kraft' : 'Aufgehoben'}</span></span></button>`).join('')}
-        </div>
-      </div>
-      <div>
-        <div class="small muted mb-4">Thema</div>
-        <div class="list list--flex list--wrap" id="w-topic">
-          <button type="button" class="tag-item tag-item--active" aria-pressed="true" data-topic="__all"><span class="tag-item__inner"><span class="tag-item__text">Alle Themen</span></span></button>
-          ${topics.map(t => `<button type="button" class="tag-item" data-topic="${C.escape(t)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(t)}</span></span></button>`).join('')}
-        </div>
-      </div>
-    </div>
-
-    <p class="small muted mt-6" id="w-count" aria-live="polite"></p>
-    <div class="stack mt-2" id="w-list"></div>`;
-}
-
-function weisungCard(ctx, w) {
-  const { core, C } = ctx;
-  const related = (w.relatedServices || [])
-    .map(sid => ({ sid, s: core.service(sid) }))
-    .filter(x => x.s);
-
-  return `
-  <article class="card">
-    <div class="card__body" style="gap:.6rem">
-      <div class="row gap-sm" style="align-items:baseline">
-        <code class="badge badge--gray" style="font-family:ui-monospace,Consolas,monospace">${C.escape(w.code)}</code>
-        <strong style="font-size:var(--fs-lg);line-height:1.25">${C.escape(w.title)}</strong>
-      </div>
-      <div class="pill-row">
-        ${C.badge(w.type, typeVariant(w.type))}
-        ${forceBadge(C, w.bindingForce)}
-        ${statusBadge(C, w.status)}
-      </div>
-      <p class="card__description" style="flex:none">${C.escape(w.summary)}</p>
-      <dl class="kv" style="margin:0">
-        <dt>Erlassen von</dt><dd>${C.escape(w.issuingBody)}</dd>
-        <dt>Gültig ab</dt><dd>${C.escape(w.validFrom)} · Version ${C.escape(w.version)}</dd>
-        ${w.legalBasis && w.legalBasis !== '—' ? `<dt>Rechtsgrundlage</dt><dd>${C.escape(w.legalBasis)}</dd>` : ''}
-      </dl>
-      <div class="row gap-sm mt-2" style="row-gap:.4rem">
-        <a class="btn btn--outline btn--sm" href="#/knowledge?tab=weisungen&id=${encodeURIComponent(w.directiveId)}">Details ${C.icon('ArrowRight', 'icon--base')}</a>
-        <a class="btn btn--bare btn--sm" href="${w.documentUrl || '#'}">${C.icon('Download', 'icon--base')} Download (PDF)</a>
-      </div>
-      ${related.length ? `<div class="small muted mt-2">Gilt für: ${related.map(x =>
-        `<a href="#/services/${encodeURIComponent(x.sid)}">${C.escape(x.s.title)}</a>`).join(' · ')}</div>` : ''}
-    </div>
-  </article>`;
-}
 
 function weisungDetail(ctx, w) {
   const { core, C } = ctx;
@@ -195,7 +125,7 @@ function weisungDetail(ctx, w) {
   const successor = w.supersededBy ? core.weisung(w.supersededBy) : null;
 
   return `
-    ${C.backLink('#/knowledge?tab=weisungen', 'Alle Weisungen & Vorgaben')}
+    ${C.backLink('#/knowledge?tab=grundlagen', 'Gesetzliche Grundlagen und Vorgaben')}
     <div class="split mt-4">
       <div class="stack">
         <div class="row gap-sm" style="align-items:baseline">
@@ -206,7 +136,7 @@ function weisungDetail(ctx, w) {
         </div>
         <h2 tabindex="-1" style="margin-bottom:0">${C.escape(w.title)}</h2>
         ${w.status === 'aufgehoben' && successor
-          ? C.notification(`Diese Weisung ist <strong>aufgehoben</strong>. Abgelöst durch <a href="#/knowledge?tab=weisungen&id=${encodeURIComponent(successor.directiveId)}">${C.escape(successor.code)} — ${C.escape(successor.title)}</a>.`, 'warning', 'WarningCircle')
+          ? C.notification(`Diese Weisung ist <strong>aufgehoben</strong>. Abgelöst durch <a href="#/knowledge?tab=grundlagen&id=${encodeURIComponent(successor.directiveId)}">${C.escape(successor.code)} — ${C.escape(successor.title)}</a>.`, 'warning', 'WarningCircle')
           : w.status === 'aufgehoben'
             ? C.notification('Diese Weisung ist <strong>aufgehoben</strong>.', 'warning', 'WarningCircle')
             : ''}
@@ -243,41 +173,6 @@ function weisungDetail(ctx, w) {
     </div>`;
 }
 
-function wireWeisungen(ctx) {
-  const { mount, core, C } = ctx;
-  const list = mount.querySelector('#w-list');
-  if (!list) return; // detail view: nothing to filter
-  const all = core.weisungen();
-  const state = { status: 'alle', topic: '__all' };
-  const countEl = mount.querySelector('#w-count');
-
-  function draw() {
-    const rows = all.filter(w =>
-      (state.status === 'alle' || w.status === state.status) &&
-      (state.topic === '__all' || w.topic === state.topic));
-    if (countEl) countEl.textContent = `${rows.length} Eintrag${rows.length === 1 ? '' : 'e'}`;
-    list.innerHTML = rows.length
-      ? rows.map(w => weisungCard(ctx, w)).join('')
-      : C.empty('Keine Weisungen für diese Auswahl.');
-  }
-
-  mount.querySelector('#w-status').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-status]');
-    if (!btn) return;
-    state.status = btn.dataset.status;
-    mount.querySelectorAll('#w-status .tag-item').forEach(c => c.classList.toggle('tag-item--active', c === btn));
-    draw();
-  });
-  mount.querySelector('#w-topic').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-topic]');
-    if (!btn) return;
-    state.topic = btn.dataset.topic;
-    mount.querySelectorAll('#w-topic .tag-item').forEach(c => c.classList.toggle('tag-item--active', c === btn));
-    draw();
-  });
-
-  draw();
-}
 
 /* ================================ AKTUELLES =============================== */
 
@@ -289,7 +184,7 @@ function newsPanel(ctx, id) {
     const n = core.newsItem(id);
     if (n) {
       return `
-        ${C.backLink('#/knowledge?tab=news', 'Alle Meldungen')}
+        ${C.backLink('#/knowledge?tab=news', 'News')}
         <article class="stack mt-4" style="max-width:60rem">
           <div class="row gap-sm small muted">
             <span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
@@ -360,7 +255,7 @@ function anleitungenPanel(ctx) {
   const faqs = [
     { q: 'Wie melde ich zusätzlichen Raumbedarf an?', a: 'Öffnen Sie unter «Dienstleistungen» den Service «Raumbedarf melden» und folgen Sie dem geführten Antrag. Nach dem Absenden entsteht ein Vorgang, den Sie unter «Meine Vorgänge» verfolgen.' },
     { q: 'Welche Weisung gilt für die Flächenstandards?', a: 'Massgebend ist die Weisung «Raum- und Flächenstandards der Bundesverwaltung» (W-BBL-001). Sie finden sie im Tab «Weisungen & Vorgaben».' },
-    { q: 'Wo finde ich Bauwerksdokumentationen zu einem Gebäude?', a: 'Im Bereich «Dokumente & Medien» bzw. im Dokumentenarchiv lassen sich Pläne und Dokumentationen pro Gebäude suchen und herunterladen.' },
+    { q: 'Wo finde ich Bauwerksdokumentationen zu einem Gebäude?', a: 'Unter «Daten und Digitalisierung» bzw. im Dokumentenarchiv lassen sich Pläne und Dokumentationen pro Gebäude suchen und herunterladen.' },
     { q: 'Wie melde ich einen Sicherheits- oder Datenschutzvorfall?', a: 'Nutzen Sie den Service «Sicherheitsvorfall melden». Grundlagen sind das Informationssicherheitsgesetz (ISG) und das Datenschutzmerkblatt (DSG).' },
     { q: 'An wen wende ich mich bei Rückfragen zu einem Vorgang?', a: 'Verwenden Sie die Referenznummer (Format BBL-JJJJ-XXXX) aus der Detailansicht Ihres Vorgangs für Rückfragen.' },
   ];
@@ -390,12 +285,10 @@ function anleitungenPanel(ctx) {
     </div>`;
 }
 
-// Accordion wiring — runs after the panel markup is in the DOM (called from
-// the main render only when the «Anleitungen / FAQ» tab is active).
+// Accordion wiring — runs after the panel markup is in the DOM. Wires every
+// accordion in the panel (FAQ, Grundlagen), not just one by id.
 function wireAccordion(mount) {
-  const acc = mount.querySelector('#faq-acc');
-  if (!acc) return;
-  acc.querySelectorAll('.accordion__button').forEach(btn => {
+  mount.querySelectorAll('.accordion .accordion__button').forEach(btn => {
     btn.addEventListener('click', () => {
       const expanded = btn.getAttribute('aria-expanded') === 'true';
       btn.setAttribute('aria-expanded', String(!expanded));

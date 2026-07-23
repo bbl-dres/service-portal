@@ -99,7 +99,7 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section">
       <div class="container__center--xs">
-      ${C.backLink('#/services', 'Alle Dienstleistungen')}
+      ${C.backLink('#/services', 'Dienstleistungen')}
       <h1 tabindex="-1">${C.escape(cfg.title)}</h1>
       <p class="lead">${C.escape(cfg.lead)}</p>
       <p class="muted">Meldung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}</p>

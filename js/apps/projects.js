@@ -267,7 +267,7 @@ function detail(ctx, id) {
   function draw() {
     mount.innerHTML = `
     <div class="container section">
-      ${C.backLink('#/app/projects', 'Alle Bauprojekte')}
+      ${C.backLink('#/app/projects', 'Bauprojekte')}
       <div class="mt-4">
         <div class="pill-row">
           ${projectStatusBadge(C, core, p.status)}

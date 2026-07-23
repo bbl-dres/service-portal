@@ -56,7 +56,7 @@
   { "serviceId": "bautendokumentation-abrufen", "title": "Bautendokumentationen abrufen", "domain": "A", "audience": "both", "type": "action", "icon": "Folder",
     "target": { "kind": "app", "href": "#/app/document-archive" }, "contact": "dres",
     "short": "Bauwerksdokumentationen, Pläne und Dokumente pro Gebäude durchsuchen.",
-    "description": "Durchsuchen Sie das Dokumentenarchiv: Bauwerksdokumentationen, Grundrisse und Pläne — gefiltert nach Gebäude, Typ und Jahr.",
+    "description": "Durchsuchen Sie die Bauwerksdokumentation: Bauwerksdokumentationen, Grundrisse und Pläne — gefiltert nach Gebäude, Typ und Jahr.",
     "voraussetzungen": [] },
 
   { "serviceId": "bauprojekt-informationen", "title": "Bauprojekt-Informationen", "domain": "A", "audience": "both", "type": "info", "icon": "Building",

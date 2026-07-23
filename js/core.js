@@ -8,14 +8,19 @@ const FILES = {
   projects:     'data/projects.json',
   services:     'data/services.json',
   applications: 'data/applications.json',
-  dataProducts: 'data/data-products.json',
   documents:    'data/documents.json',
   media:        'data/media.json',
   weisungen:    'data/weisungen.json',
   news:         'data/news.json',
   contacts:     'data/contacts.json',
   reference:    'data/reference-data.json',
+  datasets:     'data/datasets.json',
+  catalogLabels:'data/catalog-labels.json',
+  appPages:     'data/application-pages.json',
 };
+// data/data-products.json bleibt liegen (DataService- und Concept-Einträge für
+// einen künftigen Metadatenkatalog), wird aber von keiner Ansicht mehr gelesen
+// und daher auch nicht mehr geladen.
 
 async function load() {
   const entries = await Promise.all(Object.entries(FILES).map(async ([k, url]) => {
@@ -25,7 +30,7 @@ async function load() {
       return [k, await r.json()];
     } catch (e) {
       console.warn('[core] could not load', url, e.message);
-      return [k, k === 'reference' ? {} : []];
+      return [k, ['reference', 'catalogLabels', 'appPages'].includes(k) ? {} : []];
     }
   }));
   for (const [k, v] of entries) DATA[k] = v;
@@ -48,8 +53,7 @@ export const core = {
   applications: () => DATA.applications || [],
   applicationsByGroup: () => groupBy(DATA.applications || [], 'group'),
   application: (id) => find(DATA.applications, 'appId', id),
-  dataProducts: () => DATA.dataProducts || [],
-  dataProduct: (id) => find(DATA.dataProducts, 'id', id),
+  appPage: (id) => (DATA.appPages || {})[id] || null,
   documents: () => DATA.documents || [],
   documentsForBuilding: (bid) => (DATA.documents || []).filter(d => (d.linkedTo || []).includes(bid)),
   media: () => DATA.media || [],
@@ -61,6 +65,12 @@ export const core = {
   newsItem: (id) => find(DATA.news, 'id', id),
   contacts: () => DATA.contacts || [],
   ref: () => DATA.reference || {},
+  // DCAT-AP-CH datasets (Datenbezug). Strings are multilingual objects; the
+  // portal is DE-only, so read them through core.t().
+  datasets: () => DATA.datasets || [],
+  dataset: (id) => find(DATA.datasets, 'id', id),
+  t: (v) => (v && typeof v === 'object') ? (v.de ?? v.en ?? '') : (v ?? ''),
+  label: (key, fallback) => (DATA.catalogLabels || {})[key] || fallback || key,
 };
 
 function groupBy(arr, key) {

@@ -20,7 +20,6 @@ export const NAV = [
     children: [{ href: '#/services', label: 'Übersicht' }],
     childrenFrom: 'themen',
   },
-  { path: '#/documents',    base: 'documents',    label: 'Dokumente & Medien', icon: 'Folder' },
   {
     path: '#/data',
     base: 'data',
@@ -29,9 +28,12 @@ export const NAV = [
     // CD pattern: a section "Übersicht" first, then the areas it contains.
     // Datenportal and der vollständige Anwendungskatalog werden über die
     // Übersichtsseite erschlossen, nicht über das Menü.
+    // Bauwerksdokumentation und Mediathek stehen im Anwendungskatalog
+    // (#/applications?bereich=bauten) und auf der Übersicht — das Menü bleibt kurz.
     children: [
       { href: '#/data', label: 'Übersicht' },
       { href: '#/data/katalog', label: 'Datenbezug' },
+      { href: '#/data/ikt-vorhaben', label: 'IKT-Vorhaben' },
       { href: '#/applications?bereich=bauten', label: 'Fachanwendungen Bauten' },
       { href: '#/applications?bereich=logistik', label: 'Fachanwendungen Logistik' },
       { href: '#/data/digitalisierung', label: 'Digitalisierung' },
@@ -44,10 +46,9 @@ export const NAV = [
     icon: 'Book',
     children: [
       { href: '#/knowledge', label: 'Übersicht' },
-      { href: 'https://www.bk.admin.ch/de/vorgaben', label: 'Vorgaben der Bundeskanzlei', external: true },
       { href: '#/knowledge?tab=news', label: 'News' },
       { href: '#/knowledge?tab=prozesse', label: 'Prozesse' },
-      { href: '#/knowledge?tab=weisungen', label: 'Weisungen' },
+      { href: '#/knowledge?tab=grundlagen', label: 'Gesetzliche Grundlagen und Vorgaben' },
     ],
   },
   { path: '#/my-cases',     base: 'my-cases',     label: 'Meine Vorgänge',     icon: 'List' },
@@ -59,7 +60,6 @@ const PAGES = {
   'home':        './pages/home.js',
   'services':    './pages/services.js',
   'applications':'./pages/applications.js',
-  'documents':   './pages/documents-media.js',
   'data':        './pages/data.js',
   'knowledge':   './pages/knowledge.js',
   'my-cases':    './pages/my-cases.js',
@@ -75,14 +75,15 @@ const APPS = {
   'transaction':     './apps/transaction.js',
   'dataportal':      './apps/dataportal.js',
 };
-// which top-nav item to highlight when inside an app
-// Anwendungen is no longer a top-level item — it lives under Daten und
-// Digitalisierung, so the apps highlight that section instead.
-const APP_SECTION = {
+// Which top-nav item to highlight for pages and apps that are not themselves a
+// top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
+// und Digitalisierung, so it and every micro-app highlight that section.
+const SECTION_OF = {
+  'applications': 'data',
   'space-request': 'services', 'fault-report': 'services',
   'portfolio': 'data', 'projects': 'data',
   'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
-  'document-archive': 'documents', 'mediathek': 'documents',
+  'document-archive': 'data', 'mediathek': 'data',
 };
 
 function parseHash() {
@@ -96,6 +97,39 @@ function setActiveNav(base) {
   document.querySelectorAll('[data-nav]').forEach(a => {
     const on = a.getAttribute('data-nav') === base;
     a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  setActiveSubNav();
+}
+
+// Does a dropdown entry describe the route we are on? The header is rendered
+// once, so this has to be recomputed on every dispatch — otherwise the drawer
+// keeps highlighting whatever was open when the page first loaded.
+export function matchesSubNav(childHref, currentHash) {
+  const split = (h) => {
+    const [path, qs] = String(h || '').split('?');
+    return { path, params: new URLSearchParams(qs || '') };
+  };
+  const child = split(childHref);
+  const here = split(currentHash || '#/');
+  if (child.path !== here.path) return false;
+
+  const childKeys = [...child.params.keys()];
+  // "Übersicht" (#/knowledge) must not light up on #/knowledge?tab=news …
+  if (!childKeys.length) return ![...here.params.keys()].length;
+  // … while #/services?topic=bauten stays active once &view=liste is appended.
+  return childKeys.every(k => {
+    const want = (child.params.get(k) || '').split(',').filter(Boolean);
+    const have = (here.params.get(k) || '').split(',').filter(Boolean);
+    return want.every(v => have.includes(v));
+  });
+}
+
+function setActiveSubNav() {
+  const hash = location.hash || '#/';
+  document.querySelectorAll('[data-navsub]').forEach(a => {
+    const on = matchesSubNav(a.getAttribute('data-navsub'), hash);
+    a.closest('.menu__item')?.classList.toggle('menu__item--active', on);
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
 }
@@ -133,7 +167,14 @@ function focusHeading(mount) {
   h.focus({ preventScroll: true });
 }
 
+// Page modules load asynchronously, so two quick hash changes can render out of
+// order. Every dispatch takes a ticket; a stale one drops its result instead of
+// overwriting the newer page.
+let dispatchId = 0;
+
 async function dispatch() {
+  const ticket = ++dispatchId;
+  const stale = () => ticket !== dispatchId;
   const { segs, query } = parseHash();
   const mount = document.getElementById('main-content');
   let modPath, params, navBase;
@@ -142,33 +183,38 @@ async function dispatch() {
     const name = segs[1];
     modPath = APPS[name];
     params = segs.slice(2);
-    navBase = APP_SECTION[name] || '';
+    navBase = SECTION_OF[name] || '';
   } else {
     const base = segs[0] || '';
     modPath = PAGES[base];
     params = segs.slice(1);
-    navBase = base;
+    navBase = SECTION_OF[base] || base;
   }
 
   setActiveNav(navBase);
   document.getElementById('breadcrumb').hidden = true;
 
   if (!modPath) {
+    document.title = 'Seite nicht gefunden · BBL Kundenportal';
     mount.innerHTML = `<div class="container section"><div class="page-header"><h1 tabindex="-1">Seite nicht gefunden</h1></div>
       <p class="muted">Diese Seite existiert nicht. <a href="#/">Zur Übersicht</a></p></div>`;
+    focusHeading(mount);
     return;
   }
 
   mount.innerHTML = `<div class="container section"><p class="muted">Lädt…</p></div>`;
   try {
     const mod = await import(modPath);
+    if (stale()) return;
     const render = mod.default || mod.render;
     if (typeof render !== 'function') throw new Error('Modul exportiert kein render()');
     const ctx = makeCtx(mount, params, query);
     await render(ctx);
+    if (stale()) return;
     window.scrollTo(0, 0);
     focusHeading(mount);
   } catch (e) {
+    if (stale()) return;
     console.error('[router] render failed for', modPath, e);
     mount.innerHTML = `<div class="container section">
       <div class="notification notification--error">${C.icon('WarningCircle', 'icon--lg')}

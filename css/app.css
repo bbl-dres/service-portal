@@ -64,7 +64,8 @@ a { color:var(--color-link); text-decoration:none; }
 .link--negative:hover { color:var(--color-gray-300); }
 /* automatic external-link affordance (link.postcss:21-38) */
 :root { --icon-external-link:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m14.5 2.7v1.9h3.8l.6-.5.3.1-.7.6-6.4 6.4 1.4 1.4 6.4-6.4.6-.7.1.3-.5.7v3.7h1.9v-7.5z'/%3E%3Cpath d='m16.9 19.9h-12v-12.2h5.7v-1.9h-7.6v16h15.9v-7.7h-2z'/%3E%3C/svg%3E"); }
-#main-content a[rel~="external"]:not(.btn):not(.card--clickable)::after,
+/* .download-item und .card--clickable führen ihr Icon bereits selbst */
+#main-content a[rel~="external"]:not(.btn):not(.card--clickable):not(.download-item)::after,
 .link--external::after {
   content:""; display:inline-block; position:relative; width:1em; height:1em; top:.2em; margin:0 .125em;
   background-color:currentColor; -webkit-mask:var(--icon-external-link) no-repeat; mask:var(--icon-external-link) no-repeat;
@@ -138,6 +139,24 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 
 /* Section rhythm (section.postcss:5-51) — bare .section has no padding */
 .section { width:100%; }
+
+/* Seitenwurzel: jede Seite rendert <div class="container section">. Im CD ist
+   ein blankes .section absichtlich abstandslos — den Abstand liefert dort der
+   Hero bzw. ein .section--default. Weil hier Container und Section dasselbe
+   Element sind, bekommt diese Kombination die Werte direkt.
+   Oben schmaler als unten, wie im CD selbst:
+     oben  = .hero            → pt-12 lg:pt-14 3xl:pt-20   (3 / 3.5 / 5rem)
+     unten = .container--pb   → pb-14 lg:pb-20 3xl:pb-32   (3.5 / 5 / 8rem)
+   Der Breadcrumb erzeugt bewusst keinen Abstand
+   (container.postcss:20 `.container:not(.breadcrumb) + .container`). */
+.container.section { padding-top:3rem; padding-bottom:3.5rem; }
+@media (min-width:1024px){ .container.section { padding-top:3.5rem; padding-bottom:5rem; } }
+@media (min-width:1920px){ .container.section { padding-top:5rem;   padding-bottom:8rem; } }
+/* Am Seitenanfang — auch direkt unter dem Zurück-Button — braucht der Hero
+   keinen eigenen oberen Abstand mehr; den liefert bereits die Seitenwurzel. */
+.container.section > .hero:first-child,
+.container.section > .back-link-row:first-child + .hero { padding-top:0; }
+
 .section--default, .section--py, .section[class*="bg--"] { padding-block:3.5rem; }
 .section--py-half { padding-block:1.75rem; }
 @media (min-width:1024px){
@@ -532,7 +551,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 #main-content { min-height:50vh; flex:1 0 auto; position:relative; z-index:10; }
 .page-header { padding:.25rem 0 1.5rem; }
 .page-header h1 { margin-bottom:.25rem; }
-.page-header .lead { font-size:var(--text-lg); color:var(--color-text-muted); max-width:60ch; }
+.page-header .lead { font-size:var(--text-lg); color:var(--color-text-muted); }
 .page-intro { max-width:70ch; }
 
 /* Hero (hero.postcss:5-155) — CD heroes sit on white; tint comes from bg-- sections */
@@ -545,6 +564,19 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
   overflow-wrap:break-word; margin:0; }
 .hero__description { font-size:var(--text-lg); line-height:var(--lh-snug); color:var(--color-text-muted); margin:0; }
 .hero__cta { display:flex; flex-wrap:wrap; gap:1rem; }
+/* hero--main-image (hero.postcss:70-88): content and image share the 12-col
+   grid from md up; below that the content stacks above the image. */
+.hero--main-image { display:grid; gap:1.5rem; padding-top:2rem; padding-bottom:0; }
+.hero--main-image .hero__content { max-width:none; }
+.hero--main-image .hero__title { font-size:var(--text-3xl); }
+@media (min-width:768px){
+  .hero--main-image { grid-template-columns:1fr 1fr; gap:2.5rem; align-items:center; }
+  .hero--main-image .hero__content { justify-content:center; }
+}
+.hero__image { display:block; position:relative; overflow:hidden; width:100%; }
+.hero__image img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover;
+  background:var(--color-secondary-50); }
+.hero__tags { display:flex; flex-wrap:wrap; gap:.5rem; }
 /* flex children must be allowed to shrink below their intrinsic width, or the
    row overflows the container (the old `.container{overflow-x:clip}` hid this) */
 .search__form input, .service-controls__search input { min-width:0; }
@@ -569,6 +601,12 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .btn--link { background:none; border:0; color:var(--color-primary-600); padding:.25rem 0; min-height:0; }
 .btn--link:hover { text-decoration:underline; }
 .btn--sm { min-height:2.125rem; padding:.35rem .8rem; font-size:var(--text-sm); }
+/* btn.postcss:171-191 — icon-left nudges the icon; btn--back floats the button
+   out of the text flow. `.back-link-row` gives that float something to clear. */
+.btn--icon-left .btn__icon { position:relative; right:.1em; margin-right:.2em; }
+.btn--back { float:left; margin-top:.4em; }
+@media (min-width:1024px){ .btn--back { margin-top:.25rem; } }
+.back-link-row { display:flow-root; padding-bottom:1rem; }
 .btn--lg { min-height:3rem; padding:.75rem 1rem; font-size:var(--text-lg); }
 @media (min-width:1280px){ .btn, .btn--base { min-height:3rem; } .btn--sm { min-height:2.5rem; } .btn--lg { min-height:3.25rem; } }
 @media (min-width:1920px){ .btn, .btn--base { min-height:3.25rem; } .btn--sm { min-height:2.75rem; } .btn--lg { min-height:3.5rem; } }
@@ -585,14 +623,41 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .card { background:#fff; border:0; border-radius:0; box-shadow:none;
   overflow:hidden; display:flex; flex-direction:column; height:100%; position:relative; container-type:inline-size; }
 .card--default, .card--universal { box-shadow:var(--shadow-lg); }
-.card__image { aspect-ratio:16/9; background:var(--color-secondary-50); overflow:hidden; }
-.card__image img { width:100%; height:100%; object-fit:cover; }
-.card__image .photo { width:100%; height:100%; }
+/* card.postcss:165 — das CD erzeugt 16/9 über `pb-[56.25%]`, nicht über
+   aspect-ratio. Das ist hier wesentlich: als Flex-Element in der Spalte wird
+   eine aspect-ratio-Box geschrumpft, sobald `.card__content { height:100% }`
+   die volle Kartenhöhe verlangt. Das Bild verlor dadurch seine Proportion und
+   die Differenz landete als Leerraum über dem Footer. Mit padding-bottom hat
+   die Box die Höhe 0 und bleibt unantastbar. */
+.card__image { position:relative; height:0; padding-bottom:56.25%; flex:none;
+  background:var(--color-secondary-50); overflow:hidden; }
+.card__image > img, .card__image > .photo {
+  position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+
+/* Vorschaubild in einer Detailansicht — gleiche Proportion wie das Kartenbild. */
+.detail-image { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; background:var(--color-secondary-50); }
 .card__content { display:flex; flex-direction:column; justify-content:space-between; height:100%; background:transparent; }
-.card__body { padding:2.5rem 1.5rem; flex:1; display:flex; flex-direction:column; gap:1rem; }
+/* card.postcss:210 — px-6 py-10, space-y-4. Kein flex:1 auf Body oder
+   Description: das liess den Textkasten den Resthöhenausgleich der Rasterzeile
+   aufsaugen, statt ihn als eine Lücke über dem Footer stehen zu lassen. */
+.card__body { padding:2.5rem 1.5rem; display:flex; flex-direction:column; gap:1rem; }
 .card__title { font-size:var(--text-lg); font-weight:var(--fw-bold); line-height:1.375; transition:color .2s; overflow-wrap:anywhere; }
 .card__title--sm { font-size:var(--text-base); }
-.card__description { color:var(--color-text-muted); font-size:var(--text-sm); flex:1; overflow-wrap:anywhere; }
+.card__description { color:var(--color-text-muted); font-size:var(--text-sm); overflow-wrap:anywhere; }
+/* card.postcss:226-234 — lange Beschreibungen werden gekappt, damit eine
+   einzelne Karte die Zeilenhöhe nicht sprengt. */
+.card__description, .card__body p { display:-webkit-box; -webkit-box-orient:vertical;
+  -webkit-line-clamp:6; overflow:hidden; }
+@container (min-width:500px){
+  .card__description, .card__body p { -webkit-line-clamp:4; }
+}
+/* Erweiterung über das CD hinaus: In einem 3-spaltigen Raster ist eine Karte
+   ~400px breit; py-10 (2×40px) sind dort 14% der Kartenhöhe. Das CD nutzt
+   500px selbst als Schwelle für „schmale Karte“ (card.postcss:230). */
+@container (max-width:499px){
+  .card__body { padding:1.5rem; }
+  .card__footer { padding:0 1.5rem 1.5rem; }
+}
 .card__footer { padding:0 1.5rem 1.5rem; border-top:0;
   display:flex; align-items:center; justify-content:space-between; gap:.5rem; font-size:var(--text-sm); color:var(--color-text-muted); }
 .card--clickable { cursor:pointer; transition:box-shadow .3s; text-decoration:none; color:inherit; }
@@ -806,6 +871,26 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .accordion__button .icon { transition:transform .2s; }
 .accordion__button[aria-expanded="true"] .icon { transform:rotate(180deg); }
 .accordion__content { width:100%; padding:1rem .5rem 2.5rem; }
+/* right-hand cluster in an accordion header (format badge + chevron) */
+.accordion__meta { display:flex; align-items:center; gap:.75rem; flex:none; }
+
+/* Key/value rows — the detail-page pattern of the Datenkatalog. A definition
+   list would need one grid per pair; these rows stack and wrap on their own. */
+.data-rows { display:flex; flex-direction:column; }
+.data-row { display:grid; grid-template-columns:1fr; gap:.15rem;
+  padding:.6rem 0; border-bottom:1px solid var(--color-secondary-200); font-size:var(--text-sm); }
+.data-row:last-child { border-bottom:0; }
+.data-row__key { color:var(--color-text-muted); }
+.data-row__value { overflow-wrap:anywhere; }
+@media (min-width:768px){
+  .data-row { grid-template-columns:minmax(10rem, 18rem) minmax(0, 1fr); gap:1.5rem; align-items:baseline; }
+}
+.box .data-row { border-bottom-color:var(--color-secondary-200); }
+
+/* Detail page section rhythm (CD vertical-spacing between content blocks) */
+.detail-section { margin-top:3rem; }
+@media (min-width:1024px){ .detail-section { margin-top:3.5rem; } }
+.detail-section__title { margin-bottom:1rem; }
 
 /* Tabs (tab.postcss:12-87) */
 .tab__controls-container { position:relative; margin-bottom:1.5rem; }
@@ -828,11 +913,19 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .tab__container { padding-top:1rem; }
 
 /* Pagination (pagination.postcss:5-31) */
-.pagination-wrap { display:flex; }
+.pagination-wrap { display:flex; padding-block:1.5rem; }
+@media (min-width:1024px){ .pagination-wrap { padding-block:1.75rem; } }
+@media (min-width:1544px){ .pagination-wrap { padding-block:2rem; } }
 .pagination { display:flex; align-items:stretch; gap:.75rem; flex-wrap:wrap; list-style:none; }
 .pagination__input { width:3rem; min-height:2.75rem; text-align:center; padding:.5rem; }
-.pagination__text { display:flex; align-items:center; color:var(--color-text-muted); font-size:var(--text-sm); white-space:nowrap; }
-.pagination_items { display:flex; align-items:center; gap:.25rem; list-style:none; flex-wrap:wrap; }
+.pagination__text { display:flex; align-items:center; white-space:nowrap; }
+.pagination_items { display:flex; align-items:center; gap:.25rem; list-style:none; flex-wrap:wrap; white-space:nowrap; height:100%; }
+@media (min-width:1024px){ .pagination_items { gap:.5rem; } }
+@media (min-width:1280px){ .pagination_items { gap:.75rem; } }
+/* CD right-aligned variant (pagination.postcss:29-31) */
+.pagination--right { display:flex; justify-content:flex-end; padding-block:1.5rem; }
+@media (min-width:1024px){ .pagination--right { padding-block:1.75rem; } }
+@media (min-width:1544px){ .pagination--right { padding-block:2rem; } }
 
 /* Box (box.postcss:5-11) */
 .box { padding:1rem; background:var(--color-secondary-50); border:0; border-radius:0; }
@@ -890,14 +983,18 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .subnav a.active { border-left-color:var(--color-primary-600); font-weight:var(--fw-bold); background:var(--color-secondary-50); }
 
 /* In-page search controls */
-.service-controls { display:grid; grid-template-columns:minmax(18rem, 30rem) 1fr; gap:1rem 1.5rem; align-items:end; }
+.service-controls { display:grid; grid-template-columns:minmax(18rem, 30rem) 1fr auto; gap:1rem 1.5rem; align-items:end; }
+.service-controls__view { display:flex; flex-direction:column; gap:.35rem; }
+.service-controls__view .tag-item { margin-right:.5rem; margin-bottom:0; }
+.service-controls__view .tag-item:last-child { margin-right:0; }
 .service-controls__search { display:flex; gap:.5rem; align-items:end; }
 .service-controls__search input { min-height:3rem; }
 .service-controls__filters { display:grid; grid-template-columns:minmax(12rem, 1fr) minmax(12rem, 1fr); gap:1rem 1.5rem; align-items:end; }
 .service-results { display:flex; flex-direction:column; gap:.25rem; }
 .service-results p { margin-bottom:0; }
-@media (max-width:1023.98px){
+@media (max-width:1279.98px){
   .service-controls { grid-template-columns:1fr; }
+  .service-controls__view { flex-direction:row; align-items:center; gap:.75rem; }
   .service-controls__filters { grid-template-columns:1fr 1fr; }
 }
 @media (max-width:640px){
@@ -983,6 +1080,10 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 
 /* Misc utility */
 .row { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; }
+/* `.row > * { min-width:0 }` lets flex children shrink — icons must not, or a
+   long label next to one squashes it to a sliver. */
+.row > .icon { flex:none; }
+.break-all { overflow-wrap:anywhere; word-break:break-word; }
 .row--between { justify-content:space-between; }
 .row--end { justify-content:flex-end; }
 .more-link { display:flex; justify-content:flex-end; margin-top:1.5rem; }
@@ -994,7 +1095,18 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .pill-row { display:flex; flex-wrap:wrap; gap:.4rem; }
 .kv { display:grid; grid-template-columns:minmax(0,max-content) minmax(0,1fr); gap:.4rem 1rem; font-size:var(--text-sm); }
 .kv dt { color:var(--color-text-muted); }
-.kv dd { margin:0; overflow-wrap:anywhere; }
+/* break-word statt anywhere: lange URLs dürfen umbrechen, normale Wörter nicht
+   mitten im Wort («Fachanwendung|en Bauten»). */
+.kv dd { margin:0; overflow-wrap:break-word; }
+.kv dd code { overflow-wrap:anywhere; }
+/* In der schmalen Seitenspalte reicht die Breite für zwei Spalten nicht — dort
+   steht die Beschriftung über dem Wert, statt Wörter zu zerbrechen. */
+.box { container-type:inline-size; }
+@container (max-width:22rem){
+  .kv { grid-template-columns:minmax(0,1fr); gap:0; }
+  .kv dt { margin-top:.6rem; }
+  .kv dt:first-of-type { margin-top:0; }
+}
 @media (max-width:640px){ .kv { grid-template-columns:1fr; gap:.1rem 0; } .kv dt { margin-top:.5rem; } }
 .empty { text-align:center; color:var(--color-text-muted); padding:3rem 1rem; }
 .swatch { display:inline-block; width:.75rem; height:.75rem; border-radius:2px; vertical-align:middle; margin-right:.35rem; }
