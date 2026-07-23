@@ -97,7 +97,7 @@ export default async function render(ctx) {
           <div class="select">
             <select id="topic-filter" name="topic">
               <option value="">Alle Themen</option>
-              ${domains.map(d => `<option value="${C.escape(d.key)}">${C.escape(d.label)}</option>`).join('')}
+              ${domains.filter(d => d.thema).map(d => `<option value="${C.escape(d.key)}">${C.escape(d.label)}</option>`).join('')}
             </select>
             <span class="select__icon">${C.icon('ChevronDown')}</span>
           </div>

@@ -493,20 +493,21 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 /* Zwischenüberschrift für die Unterzweig-Gruppe im Drawer. */
 .navy__group-title { margin:1.25rem 0 .25rem; padding:0 .75rem; font-size:var(--text-sm);
   font-weight:var(--fw-bold); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.04em; }
-/* CD navy multi-level (navy.postcss): zwei Ebenen, die horizontal gleiten.
-   Ebene 0 = Dienstleistungen + Bereichszweige, Ebene 1 = Kinder eines Bereichs. */
-.navy--drill { overflow:hidden; }
-.navy__slider { display:flex; width:200%; transition:transform .3s ease-in-out; }
-.navy__pane { flex:0 0 50%; min-width:0; }
-.navy--drill[data-level="1"] .navy__slider { transform:translateX(-50%); }
-/* Die abseitige Ebene für Tastatur/AT deaktivieren. */
-.navy--drill[data-level="0"] .navy__pane[data-pane="1"],
-.navy--drill[data-level="1"] .navy__pane[data-pane="0"] { visibility:hidden; }
+/* CD navy multi-level (navy.postcss): Ebene 0 = Dienstleistungen + Bereichszweige,
+   Ebene 1 = Kinder eines Bereichs. Robuster Display-Wechsel statt Slider-Transform
+   (width:200% + flex + translateX rendert je nach Browser Glyphen nicht) — nur die
+   aktive Ebene ist im Layout, die andere ist display:none (auch aus dem AT-Baum). */
+.navy--drill { position:relative; }
+.navy__slider { display:block; }
+.navy__pane[data-pane="1"] { display:none; }
+.navy--drill[data-level="1"] .navy__pane[data-pane="0"] { display:none; }
+.navy--drill[data-level="1"] .navy__pane[data-pane="1"] { display:block; animation:navyDrillIn .25s ease; }
+@keyframes navyDrillIn { from { transform:translateX(.75rem); } to { transform:none; } }
+@media (prefers-reduced-motion: reduce){ .navy--drill[data-level="1"] .navy__pane[data-pane="1"] { animation:none; } }
 .navy-branch { background:none; border:0; font:inherit; cursor:pointer; color:inherit; }
 .navy__back { display:inline-flex; align-items:center; gap:.4rem; margin:0 0 .5rem; padding:.4rem .75rem;
   background:none; border:0; font:inherit; font-size:var(--text-sm); color:var(--color-primary-600); cursor:pointer; }
 .navy__back:hover { color:var(--color-primary-800); }
-@media (prefers-reduced-motion: reduce){ .navy__slider { transition:none; } }
 .navy__level-0 { list-style:none; margin:0; padding:0; }
 .navy__title { margin:0 0 .5rem; padding:0 .75rem; font-size:var(--text-lg); font-weight:var(--fw-bold);
   line-height:var(--lh-tight); color:var(--color-secondary-700); cursor:default; }

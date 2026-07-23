@@ -1,12 +1,14 @@
 {
   "domains": [
-    { "key": "A", "label": "Bauten & Bauprojekte", "icon": "Building" },
-    { "key": "B", "label": "Immobilien & Gebäudebetrieb", "icon": "Wrench" },
+    { "key": "A", "label": "Bauprojekte und Projektportfolio", "icon": "Building", "thema": true },
+    { "key": "B", "label": "Stammdaten & Mutationen", "icon": "MapMarker", "thema": true },
+    { "key": "U", "label": "Unterbringung", "icon": "Home", "thema": true },
+    { "key": "O", "label": "Objektbetrieb", "icon": "UserBrush", "thema": true },
+    { "key": "G", "label": "Sicherheit & Notfall", "icon": "Lock", "thema": true },
     { "key": "C", "label": "Büroausrüstung & Arbeitsplatz", "icon": "ShoppingCart" },
     { "key": "D", "label": "Informatik & Arbeitsgeräte", "icon": "Cog" },
     { "key": "E", "label": "Beschaffung", "icon": "Briefcase" },
     { "key": "F", "label": "Publizieren, Drucken & Versenden", "icon": "File" },
-    { "key": "G", "label": "Sicherheit & Notfall", "icon": "Lock" },
     { "key": "H", "label": "Personal & Arbeiten beim BBL", "icon": "Users" }
   ],
   "statusModel": [

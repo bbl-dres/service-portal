@@ -21,19 +21,36 @@ function navyRow(child) {
 // die fünf Intranet-Aufgabenbereiche als aufklappbare Zweige. Level 1 wird beim
 // Klick befüllt (js/shell.js renderHeader), die Kinder stammen aus INTRANET_AREAS.
 function areaBranchRows() {
-  return INTRANET_AREAS.map(a => `<li class="menu__item menu__item--border menu__item--condensed">
-    <button class="menu__item__flex navy-branch" type="button" data-branch="${escapeHtml(a.key)}" aria-haspopup="true">
-      <span>${escapeHtml(a.label)}</span>${icon('ChevronRight', 'menu__item__icon')}
-    </button></li>`).join('');
+  return INTRANET_AREAS.map(a => branchRow(a.key, a.label)).join('');
+}
+
+// Die Themen sind ebenfalls aufklappbare Zweige (ausser «Übersicht»): Level 2
+// listet die Dienstleistungen des Themas. Schlüssel mit «dom:»-Präfix, damit
+// fillBranch sie von den Intranet-Bereichen unterscheiden kann.
+function themaBranchRows() {
+  return (core.ref().domains || [])
+    .filter(d => d.thema)
+    .map(d => branchRow(`dom:${d.key}`, d.label)).join('');
+}
+
+// Ein aufklappbarer Zweig-Knopf (Übersicht/Themen/Bereiche teilen dieselbe Anatomie).
+function branchRow(branchKey, label) {
+  return `<li class="menu__item menu__item--border menu__item--condensed">
+    <button class="menu__item__flex navy-branch" type="button" data-branch="${escapeHtml(branchKey)}" aria-haspopup="true">
+      <span>${escapeHtml(label)}</span>${icon('ChevronRight', 'menu__item__icon')}
+    </button></li>`;
 }
 
 // Some nav items take their children from the data core (loaded before the shell
 // renders), so the menu always matches the catalogue.
 function resolveChildren(item) {
   if (item.childrenFrom !== 'themen') return item.children || [];
-  const services = core.services();
+  // Die Themen sind eine kuratierte Liste (domains mit `thema: true`), nicht
+  // mehr aus «hat Dienstleistungen» abgeleitet: so erscheinen auch Themen ohne
+  // Services (z. B. Unterbringung, Objektbetrieb), während die Bereiche mit
+  // eigenem Drill-down (Büroausrüstung, Informatik …) nicht doppelt auftauchen.
   const themen = (core.ref().domains || [])
-    .filter(d => services.some(s => s.domain === d.key))
+    .filter(d => d.thema)
     .map(d => ({ href: `#/services?topic=${encodeURIComponent(d.key)}`, label: d.label }));
   return [...(item.children || []), ...themen];
 }
@@ -53,12 +70,12 @@ function headerHTML() {
     const menuId = `${scope}-menu__drawer-${item.base}`;
     const drawerClass = scope === 'desktop' ? 'desktop-menu__drawer' : 'mobile-menu__drawer';
     // Nur der Dienstleistungen-Drawer bekommt die Drill-down-Unterzweige.
+    // Ebene 0: «Übersicht» (Direktlink) + Themen als Zweige + Intranet-Bereiche.
     const withBranches = item.base === 'services';
-    const level0 = `
-      <ul class="menu navy__level-0">${resolveChildren(item).map(navyRow).join('')}</ul>
-      ${withBranches ? `
-        <p class="navy__group-title">Bestellen und weitere Angebote</p>
-        <ul class="menu">${areaBranchRows()}</ul>` : ''}`;
+    const level0 = withBranches
+      ? `<ul class="menu navy__level-0">${
+          (item.children || []).map(navyRow).join('')}${themaBranchRows()}${areaBranchRows()}</ul>`
+      : `<ul class="menu navy__level-0">${resolveChildren(item).map(navyRow).join('')}</ul>`;
 
     const inner = withBranches
       ? `<div class="navy navy--drill" data-level="0">
@@ -346,11 +363,25 @@ function renderHeader(el) {
 
   // --- Drill-down-Unterzweige (Dienstleistungen → Intranet-Bereiche) ---
   const fillBranch = (drill, key) => {
-    const a = INTRANET_AREAS.find(x => x.key === key);
-    if (!a) return;
-    const rows = [{ href: a.overview, label: 'Übersicht', external: true },
-      ...(a.children || []).map(c => ({ href: c.href, label: c.label, external: true }))];
-    drill.querySelector('[data-branch-title]').textContent = a.label;
+    let title, rows;
+    if (key.startsWith('dom:')) {
+      // Thema → seine Dienstleistungen (intern), mit «Übersicht» = gefilterte Liste.
+      const dk = key.slice(4);
+      const dom = (core.ref().domains || []).find(d => d.key === dk);
+      if (!dom) return;
+      const svcs = core.services().filter(s => s.domain === dk);
+      title = dom.label;
+      rows = [{ href: `#/services?topic=${encodeURIComponent(dk)}`, label: 'Übersicht' },
+        ...svcs.map(s => ({ href: `#/services/${s.serviceId}`, label: s.title }))];
+    } else {
+      // Intranet-Bereich → externe Kinder aus INTRANET_AREAS.
+      const a = INTRANET_AREAS.find(x => x.key === key);
+      if (!a) return;
+      title = a.label;
+      rows = [{ href: a.overview, label: 'Übersicht', external: true },
+        ...(a.children || []).map(c => ({ href: c.href, label: c.label, external: true }))];
+    }
+    drill.querySelector('[data-branch-title]').textContent = title;
     drill.querySelector('[data-branch-list]').innerHTML = rows.map(navyRow).join('');
     drill.dataset.openBranch = key;
     drill.setAttribute('data-level', '1');

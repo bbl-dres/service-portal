@@ -1,85 +1,395 @@
 [
-  { "serviceId": "raumbedarf-melden", "title": "Raumbedarf & bauliche Bedürfnisse melden", "domain": "A", "audience": "external", "type": "action", "icon": "Building", "popular": true,
-    "target": { "kind": "app", "href": "#/app/space-request" }, "processDefId": "raumbedarf", "contact": "pfm",
+  {
+    "serviceId": "raumbedarf-melden",
+    "title": "Raumbedarf & bauliche Bedürfnisse melden",
+    "domain": "A",
+    "audience": "external",
+    "type": "action",
+    "icon": "Building",
+    "popular": true,
+    "target": {
+      "kind": "app",
+      "href": "#/app/space-request"
+    },
+    "processDefId": "raumbedarf",
+    "contact": "pfm",
     "short": "Zusätzlichen Raumbedarf oder bauliche Anpassungen für Ihre Verwaltungseinheit anmelden.",
     "description": "Melden Sie zusätzlichen Flächenbedarf, Umnutzungen oder bauliche Anpassungen. Der Antrag durchläuft die Prüfung durch das Generalsekretariat und das Portfoliomanagement BBL und kann in ein Bauprojekt überführt werden.",
-    "voraussetzungen": ["Verwaltungseinheit & Kostenstelle", "Begründung des Bedarfs", "Anzahl Arbeitsplätze / Personen", "Wunschtermin"] },
-
-  { "serviceId": "stoerung-melden", "title": "Störungs-, Reinigungs- & Reparaturmeldung", "domain": "B", "audience": "both", "type": "action", "icon": "Wrench", "popular": true,
-    "target": { "kind": "app", "href": "#/app/fault-report" }, "processDefId": "stoerung", "contact": "campus",
+    "voraussetzungen": [
+      "Verwaltungseinheit & Kostenstelle",
+      "Begründung des Bedarfs",
+      "Anzahl Arbeitsplätze / Personen",
+      "Wunschtermin"
+    ]
+  },
+  {
+    "serviceId": "stoerung-melden",
+    "title": "Störungs-, Reinigungs- & Reparaturmeldung",
+    "domain": "O",
+    "audience": "both",
+    "type": "action",
+    "icon": "Wrench",
+    "popular": true,
+    "target": {
+      "kind": "app",
+      "href": "#/app/fault-report"
+    },
+    "processDefId": "stoerung",
+    "contact": "campus",
     "short": "Defekte, Reinigungs- oder Reparaturbedarf in einem Gebäude melden.",
     "description": "Melden Sie Störungen an Gebäude und Technik, Reinigungsbedarf oder Kleinreparaturen. Die Meldung wird vom Objektbetrieb triagiert und bearbeitet.",
-    "voraussetzungen": ["Gebäude / Standort", "Ort (Stockwerk, Raum)", "Beschreibung"] },
-
-  { "serviceId": "umzug-anmelden", "title": "Umzug, Transport & Entsorgung", "domain": "B", "audience": "both", "type": "action", "icon": "ArrowRight",
-    "target": { "kind": "app", "href": "#/app/fault-report?type=umzug" }, "processDefId": "stoerung", "contact": "campus",
+    "voraussetzungen": [
+      "Gebäude / Standort",
+      "Ort (Stockwerk, Raum)",
+      "Beschreibung"
+    ]
+  },
+  {
+    "serviceId": "umzug-anmelden",
+    "title": "Umzug, Transport & Entsorgung",
+    "domain": "O",
+    "audience": "both",
+    "type": "action",
+    "icon": "ArrowRight",
+    "target": {
+      "kind": "app",
+      "href": "#/app/fault-report?type=umzug"
+    },
+    "processDefId": "stoerung",
+    "contact": "campus",
     "short": "Umzüge, Transporte und Entsorgungen beim Objektbetrieb anmelden.",
     "description": "Beauftragen Sie Umzüge, interne Transporte oder die fachgerechte Entsorgung von Mobiliar und Material.",
-    "voraussetzungen": ["Von / nach (Standort)", "Umfang", "Wunschtermin"] },
-
-  { "serviceId": "reklamation", "title": "Reklamationsmeldung", "domain": "B", "audience": "both", "type": "action", "icon": "WarningCircle",
-    "target": { "kind": "app", "href": "#/app/fault-report?type=reklamation" }, "processDefId": "stoerung", "contact": "campus",
+    "voraussetzungen": [
+      "Von / nach (Standort)",
+      "Umfang",
+      "Wunschtermin"
+    ]
+  },
+  {
+    "serviceId": "reklamation",
+    "title": "Reklamationsmeldung",
+    "domain": "O",
+    "audience": "both",
+    "type": "action",
+    "icon": "WarningCircle",
+    "target": {
+      "kind": "app",
+      "href": "#/app/fault-report?type=reklamation"
+    },
+    "processDefId": "stoerung",
+    "contact": "campus",
     "short": "Eine Reklamation zu einer BBL-Dienstleistung erfassen.",
     "description": "Erfassen Sie eine Reklamation zu einer erbrachten Dienstleistung. Wir nehmen Ihr Anliegen auf und melden uns.",
-    "voraussetzungen": ["Betroffene Dienstleistung", "Beschreibung"] },
-
-  { "serviceId": "raumbuchung", "title": "Raum-, Arbeitsplatz- & Parkplatzbuchung", "domain": "C", "audience": "both", "type": "action", "icon": "Calendar", "popular": true,
-    "target": { "kind": "app", "href": "#/app/workspace" }, "processDefId": "buchung", "contact": "campus",
+    "voraussetzungen": [
+      "Betroffene Dienstleistung",
+      "Beschreibung"
+    ]
+  },
+  {
+    "serviceId": "raumbuchung",
+    "title": "Raum-, Arbeitsplatz- & Parkplatzbuchung",
+    "domain": "C",
+    "audience": "both",
+    "type": "action",
+    "icon": "Calendar",
+    "popular": true,
+    "target": {
+      "kind": "app",
+      "href": "#/app/workspace"
+    },
+    "processDefId": "buchung",
+    "contact": "campus",
     "short": "Sitzungsraum, Arbeitsplatz (Desk-Sharing) oder Parkplatz reservieren.",
     "description": "Buchen Sie Sitzungsräume, flexible Arbeitsplätze oder Parkplätze an den BBL-Standorten.",
-    "voraussetzungen": ["Standort", "Datum & Zeit", "Ressourcentyp"] },
-
-  { "serviceId": "eshop-bestellen", "title": "Büromaterial & Mobiliar bestellen (E-Shop)", "domain": "C", "audience": "both", "type": "action", "icon": "ShoppingCart", "popular": true,
-    "target": { "kind": "external", "href": "#" }, "processDefId": "bestellung", "contact": "campus",
+    "voraussetzungen": [
+      "Standort",
+      "Datum & Zeit",
+      "Ressourcentyp"
+    ]
+  },
+  {
+    "serviceId": "eshop-bestellen",
+    "title": "Büromaterial & Mobiliar bestellen (E-Shop)",
+    "domain": "C",
+    "audience": "both",
+    "type": "action",
+    "icon": "ShoppingCart",
+    "popular": true,
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "processDefId": "bestellung",
+    "contact": "campus",
     "short": "Büromaterial, Mobiliar, IT-Verbrauchsmaterial im Online-Shop der Bundesverwaltung bestellen.",
     "description": "Bestellen Sie ab Lager: Büromaterial, Mobiliar, IT-Verbrauchsmaterial und Hausdienstmaterial. Öffnet den Online-Shop der Bundesverwaltung (Demo).",
-    "voraussetzungen": ["Kostenstelle", "Lieferadresse"] },
-
-  { "serviceId": "banf-bedarfsmeldung", "title": "Bedarfsmeldung «BANF» (IKT-Beschaffung)", "domain": "D", "audience": "internal", "type": "action", "icon": "Cog",
-    "target": { "kind": "external", "href": "#" }, "processDefId": "banf", "contact": "support-bil",
+    "voraussetzungen": [
+      "Kostenstelle",
+      "Lieferadresse"
+    ]
+  },
+  {
+    "serviceId": "banf-bedarfsmeldung",
+    "title": "Bedarfsmeldung «BANF» (IKT-Beschaffung)",
+    "domain": "D",
+    "audience": "internal",
+    "type": "action",
+    "icon": "Cog",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "processDefId": "banf",
+    "contact": "support-bil",
     "short": "Bedarf für eine IKT-Beschaffung des BBL erfassen.",
     "description": "Erfassen Sie eine Bedarfsmeldung für Informatikmittel und IKT-Dienstleistungen. Die Meldung wird durch Informatik BBL geprüft und beschafft.",
-    "voraussetzungen": ["Bedarf & Menge", "Kostenstelle", "Begründung"] },
-
-  { "serviceId": "publikation-bestellen", "title": "Bundespublikationen bestellen", "domain": "F", "audience": "both", "type": "action", "icon": "File",
-    "target": { "kind": "external", "href": "#" }, "processDefId": "bestellung", "contact": "campus",
+    "voraussetzungen": [
+      "Bedarf & Menge",
+      "Kostenstelle",
+      "Begründung"
+    ]
+  },
+  {
+    "serviceId": "publikation-bestellen",
+    "title": "Bundespublikationen bestellen",
+    "domain": "F",
+    "audience": "both",
+    "type": "action",
+    "icon": "File",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "processDefId": "bestellung",
+    "contact": "campus",
     "short": "Bundespublikationen und bedrucktes Büromaterial ab Lager bestellen.",
     "description": "Bestellen Sie Bundespublikationen, Formulare und bedrucktes Büromaterial. Öffnet bundespublikationen.admin.ch (Demo).",
-    "voraussetzungen": ["Artikel", "Menge", "Lieferadresse"] },
-
-  { "serviceId": "sicherheitsvorfall-melden", "title": "Sicherheits-/Datenschutzvorfall melden", "domain": "G", "audience": "both", "type": "action", "icon": "Lock", "popular": true,
-    "target": { "kind": "app", "href": "#/app/fault-report?type=sicherheit" }, "processDefId": "sicherheitsvorfall", "contact": "isbo",
+    "voraussetzungen": [
+      "Artikel",
+      "Menge",
+      "Lieferadresse"
+    ]
+  },
+  {
+    "serviceId": "sicherheitsvorfall-melden",
+    "title": "Sicherheits-/Datenschutzvorfall melden",
+    "domain": "G",
+    "audience": "both",
+    "type": "action",
+    "icon": "Lock",
+    "popular": true,
+    "target": {
+      "kind": "app",
+      "href": "#/app/fault-report?type=sicherheit"
+    },
+    "processDefId": "sicherheitsvorfall",
+    "contact": "isbo",
     "short": "Einen Informationssicherheits- oder Datenschutzvorfall der ISBO melden.",
     "description": "Melden Sie Vorfälle der Informationssicherheit oder des Datenschutzes. Die Meldung geht direkt an die Informationssicherheit BBL (ISBO). Bei akuter Gefahr: Alarmzentrale +41 58 465 65 65.",
-    "voraussetzungen": ["Was ist passiert?", "Betroffene Systeme/Daten", "Zeitpunkt"] },
-
-  { "serviceId": "bautendokumentation-abrufen", "title": "Bautendokumentationen abrufen", "domain": "A", "audience": "both", "type": "action", "icon": "Folder",
-    "target": { "kind": "app", "href": "#/app/document-archive" }, "contact": "dres",
+    "voraussetzungen": [
+      "Was ist passiert?",
+      "Betroffene Systeme/Daten",
+      "Zeitpunkt"
+    ]
+  },
+  {
+    "serviceId": "bautendokumentation-abrufen",
+    "title": "Bautendokumentationen abrufen",
+    "domain": "A",
+    "audience": "both",
+    "type": "action",
+    "icon": "Folder",
+    "target": {
+      "kind": "app",
+      "href": "#/app/document-archive"
+    },
+    "contact": "dres",
     "short": "Bauwerksdokumentationen, Pläne und Dokumente pro Gebäude durchsuchen.",
     "description": "Durchsuchen Sie die Bauwerksdokumentation: Bauwerksdokumentationen, Grundrisse und Pläne — gefiltert nach Gebäude, Typ und Jahr.",
-    "voraussetzungen": [] },
-
-  { "serviceId": "bauprojekt-informationen", "title": "Bauprojekt-Informationen", "domain": "A", "audience": "both", "type": "info", "icon": "Building",
-    "target": { "kind": "app", "href": "#/app/projects" }, "contact": "pfm",
+    "voraussetzungen": []
+  },
+  {
+    "serviceId": "bauprojekt-informationen",
+    "title": "Bauprojekt-Informationen",
+    "domain": "A",
+    "audience": "both",
+    "type": "info",
+    "icon": "Building",
+    "target": {
+      "kind": "app",
+      "href": "#/app/projects"
+    },
+    "contact": "pfm",
     "short": "Laufende und abgeschlossene Bauprojekte einsehen (Bauprojekte / EPPM).",
     "description": "Übersicht über laufende und abgeschlossene Bauprojekte des BBL mit Status, SIA-Phase und Kennzahlen.",
-    "voraussetzungen": [] },
-
-  { "serviceId": "portfolio-einsicht", "title": "Liegenschaften-Portfolio einsehen", "domain": "A", "audience": "internal", "type": "info", "icon": "Map",
-    "target": { "kind": "app", "href": "#/app/portfolio" }, "contact": "pfm",
+    "voraussetzungen": []
+  },
+  {
+    "serviceId": "portfolio-einsicht",
+    "title": "Liegenschaften-Portfolio einsehen",
+    "domain": "A",
+    "audience": "internal",
+    "type": "info",
+    "icon": "Map",
+    "target": {
+      "kind": "app",
+      "href": "#/app/portfolio"
+    },
+    "contact": "pfm",
     "short": "Überblick über das Immobilienportfolio des Bundes (Liegenschaften Inventar).",
     "description": "Karten-, Listen- und Detailansicht des vom BBL bewirtschafteten Immobilienportfolios.",
-    "voraussetzungen": [] },
-
-  { "serviceId": "beschaffung-einstieg", "title": "Beschaffung — Einstieg & Vorlagen", "domain": "E", "audience": "internal", "type": "info", "icon": "Briefcase",
-    "target": { "kind": "route", "href": "#/knowledge" }, "contact": "kbb",
+    "voraussetzungen": []
+  },
+  {
+    "serviceId": "beschaffung-einstieg",
+    "title": "Beschaffung — Einstieg & Vorlagen",
+    "domain": "E",
+    "audience": "internal",
+    "type": "info",
+    "icon": "Briefcase",
+    "target": {
+      "kind": "route",
+      "href": "#/knowledge"
+    },
+    "contact": "kbb",
     "short": "WTO-Verfahren, Vorlagen, BKB-Dokumente und Beratung des KBB.",
     "description": "Einstieg in die Beschaffung: Verfahren, Vorlagen, Dokumente der BKB und Beratung durch das Kompetenzzentrum Beschaffungswesen Bund (KBB).",
-    "voraussetzungen": [] },
-
-  { "serviceId": "leistungsverrechnung", "title": "Leistungsverrechnung & Preiskatalog", "domain": "B", "audience": "both", "type": "info", "icon": "FileDatabase",
-    "target": { "kind": "external", "href": "#" }, "contact": "pfm",
+    "voraussetzungen": []
+  },
+  {
+    "serviceId": "leistungsverrechnung",
+    "title": "Leistungsverrechnung & Preiskatalog",
+    "domain": "O",
+    "audience": "both",
+    "type": "info",
+    "icon": "FileDatabase",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "pfm",
     "short": "Preiskatalog, Nebenkosten und Betreiberleistungen (Demo).",
     "description": "Informationen zur Leistungsverrechnung, zum Preiskatalog und zu den Nebenkosten der bewirtschafteten Objekte.",
-    "voraussetzungen": [] }
+    "voraussetzungen": []
+  },
+  {
+    "serviceId": "gebaeude-erfassen",
+    "title": "Gebäude erfassen",
+    "domain": "B",
+    "audience": "internal",
+    "type": "action",
+    "icon": "Building",
+    "target": {
+      "kind": "app",
+      "href": "#"
+    },
+    "contact": "pfm",
+    "short": "Ein neues Gebäude im Immobilien-Stammdatenbestand anlegen.",
+    "description": "Erfassen Sie ein neues Gebäude mit Adresse, Objekt-ID und Grunddaten. Die Mutation durchläuft die Qualitätssicherung des Portfoliomanagements, bevor sie im Stammdatenbestand publiziert wird.",
+    "voraussetzungen": [
+      "Objektbezeichnung & Adresse",
+      "Parzellen-/Grundstücknummer",
+      "Verantwortliche Organisationseinheit"
+    ]
+  },
+  {
+    "serviceId": "parzelle-erfassen",
+    "title": "Parzelle erfassen",
+    "domain": "B",
+    "audience": "internal",
+    "type": "action",
+    "icon": "MapMarker",
+    "target": {
+      "kind": "app",
+      "href": "#"
+    },
+    "contact": "pfm",
+    "short": "Eine neue Parzelle bzw. ein Grundstück im Stammdatenbestand anlegen.",
+    "description": "Erfassen Sie eine neue Parzelle mit Grundstücknummer, Gemeinde und Fläche. Die Angaben werden mit dem amtlichen Grundbuch abgeglichen.",
+    "voraussetzungen": [
+      "Grundstücknummer & Gemeinde",
+      "Fläche",
+      "Eigentumsverhältnis"
+    ]
+  },
+  {
+    "serviceId": "stammdaten-mutieren",
+    "title": "Stammdaten mutieren",
+    "domain": "B",
+    "audience": "internal",
+    "type": "action",
+    "icon": "UserPen",
+    "target": {
+      "kind": "app",
+      "href": "#"
+    },
+    "contact": "pfm",
+    "short": "Bestehende Objekt- oder Parzellen-Stammdaten ändern.",
+    "description": "Ändern Sie bestehende Stammdaten eines Gebäudes oder einer Parzelle (z. B. Nutzung, Bezeichnung, Zuständigkeit). Jede Mutation wird protokolliert und geprüft.",
+    "voraussetzungen": [
+      "Betroffenes Objekt / Parzelle",
+      "Zu ändernde Felder",
+      "Begründung der Mutation"
+    ]
+  },
+  {
+    "serviceId": "objekt-archivieren",
+    "title": "Objekt archivieren",
+    "domain": "B",
+    "audience": "internal",
+    "type": "action",
+    "icon": "Folder",
+    "target": {
+      "kind": "app",
+      "href": "#"
+    },
+    "contact": "pfm",
+    "short": "Ein Objekt oder eine Parzelle aus dem aktiven Bestand archivieren.",
+    "description": "Setzen Sie ein Gebäude oder eine Parzelle in den Archivstatus (z. B. nach Verkauf oder Rückbau). Die Daten bleiben historisiert erhalten und werden aus den aktiven Auswertungen ausgeblendet.",
+    "voraussetzungen": [
+      "Betroffenes Objekt / Parzelle",
+      "Grund der Archivierung",
+      "Stichtag"
+    ]
+  },
+  {
+    "serviceId": "unterbringungsbedarf",
+    "title": "Unterbringungsbedarf anmelden",
+    "domain": "U",
+    "audience": "external",
+    "type": "action",
+    "icon": "Home",
+    "target": {
+      "kind": "app",
+      "href": "#"
+    },
+    "contact": "pfm",
+    "short": "Bedarf für die Unterbringung einer Verwaltungseinheit anmelden.",
+    "description": "Melden Sie den Unterbringungsbedarf Ihrer Verwaltungseinheit (Erweiterung, Konsolidierung oder neue Fläche). Das Portfoliomanagement prüft mögliche Unterbringungsvarianten.",
+    "voraussetzungen": [
+      "Verwaltungseinheit & Kostenstelle",
+      "Anzahl Arbeitsplätze / Personen",
+      "Wunschregion & Termin"
+    ]
+  },
+  {
+    "serviceId": "flaechenzuweisung",
+    "title": "Arbeitsplatz-/Flächenzuweisung",
+    "domain": "U",
+    "audience": "internal",
+    "type": "action",
+    "icon": "Users",
+    "target": {
+      "kind": "app",
+      "href": "#"
+    },
+    "contact": "pfm",
+    "short": "Flächen und Arbeitsplätze einer Verwaltungseinheit zuweisen.",
+    "description": "Weisen Sie Flächen, Zonen und Arbeitsplätze den Verwaltungseinheiten zu und aktualisieren Sie die Belegung nach dem Desk-Sharing-Modell.",
+    "voraussetzungen": [
+      "Standort & Zone",
+      "Verwaltungseinheit",
+      "Anzahl Arbeitsplätze"
+    ]
+  }
 ]
