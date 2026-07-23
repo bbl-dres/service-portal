@@ -126,19 +126,10 @@ function list(ctx) {
           </div>
         </div>
       </div>
-      <div class="service-controls__view">
-        <span class="small muted" id="ds-view-label">Ansicht</span>
-        <div class="list list--flex list--wrap" role="group" aria-labelledby="ds-view-label">
-          ${C.tagItem({ label: 'Galerie', iconName: 'Apps', active: view === 'galerie', size: 'sm', attrs: 'data-view="galerie"' })}
-          ${C.tagItem({ label: 'Liste', iconName: 'List', active: view === 'liste', size: 'sm', attrs: 'data-view="liste"' })}
-        </div>
-      </div>
     </form>
     ${filterBar}
     <section class="mt-6">
-      <div class="service-results mt-4">
-        <p class="muted">${datasets.length} von ${all.length} Datensätzen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}</p>
-      </div>
+      ${C.resultsHeader({ count: datasets.length, total: all.length, unit: 'Datensätzen', page, totalPages, view })}
       ${datasets.length
         ? `${view === 'liste' ? listView(visible) : `<div class="grid grid--3 mt-4">${visible.map(card).join('')}</div>`}
            ${C.pagination({ page, totalPages, inputId: 'ds-page',
@@ -157,7 +148,7 @@ function list(ctx) {
   mount.querySelector('#klass-filter').addEventListener('change', (e) => {
     location.hash = hash({ ...base, klass: e.target.value });
   });
-  mount.querySelectorAll('.tag-item[data-view]').forEach(btn => {
+  mount.querySelectorAll('.view-switch__btn').forEach(btn => {
     btn.addEventListener('click', () => {
       location.hash = hash({ ...base, page, view: btn.getAttribute('data-view') });
     });
@@ -287,7 +278,7 @@ function detail(ctx, id) {
         </p>
         <h1 class="hero__title" tabindex="-1">${C.escape(t(d.title))}</h1>
         <p class="hero__description">${C.escape(t(d.description))}</p>
-        ${tagPills ? `<div class="hero__tags">${tagPills}</div>` : ''}
+        ${tagPills ? `<div class="pill-row">${tagPills}</div>` : ''}
       </div>
       ${img ? `<div class="hero__image"><img src="${img}" alt="" loading="lazy"></div>` : ''}
     </div>
@@ -311,8 +302,6 @@ function detail(ctx, id) {
     ${section('Publikationen in externen Katalogen', pubs
       ? `<div class="data-rows">${pubs}</div>`
       : '<p class="muted">Dieser Datensatz ist in keinem externen Katalog publiziert.</p>')}
-
-    ${C.backLink('#/data/katalog', 'Datenbezug')}
   </div>`;
 
   // CD-Akkordeon: Panels auf- und zuklappen.

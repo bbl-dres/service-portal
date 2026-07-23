@@ -32,6 +32,7 @@ export const NAV = [
     // (#/applications?bereich=bauten) und auf der Übersicht — das Menü bleibt kurz.
     children: [
       { href: '#/data', label: 'Übersicht' },
+      { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/katalog', label: 'Datenbezug' },
       { href: '#/data/ikt-vorhaben', label: 'IKT-Vorhaben' },
       { href: '#/applications?bereich=bauten', label: 'Fachanwendungen Bauten' },

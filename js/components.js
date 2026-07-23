@@ -283,9 +283,36 @@ export function wirePagination(mount, inputId, page, totalPages, go) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); jump(); } });
 }
 
+// --- Ergebniskopf (search.postcss:208-234) ----------------------------------
+// Die Leiste über der Trefferliste: Anzahl links, Steuerung rechts. Der
+// Ansichtswechsel steht als Icon-Gruppe rechts, abgetrennt durch einen Strich.
+export function resultsHeader({ count, total, unit, page = 1, totalPages = 1, view = 'galerie' }) {
+  const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
+  return `
+    <div class="search-results__header">
+      <div class="search-results__header__left">
+        <strong>${escape(String(count))}</strong>von ${escape(String(total))} ${escape(unit)}${pageInfo}
+      </div>
+      <div class="search-results__header__right">${viewSwitch(view)}</div>
+    </div>`;
+}
+
+// Icon-Umschalter Galerie/Liste — keine Beschriftung, der Zustand steht in
+// aria-pressed und im aria-label.
+export function viewSwitch(view = 'galerie') {
+  const btn = (key, label, iconName) => {
+    const on = view === key;
+    return `<button type="button" class="view-switch__btn" data-view="${key}"
+      aria-pressed="${on}" aria-label="${escape(label)}" title="${escape(label)}">${icon(iconName, 'icon--md')}</button>`;
+  };
+  return `<div class="view-switch" role="group" aria-label="Ansicht">
+    ${btn('galerie', 'Galerieansicht', 'Apps')}${btn('liste', 'Listenansicht', 'List')}
+  </div>`;
+}
+
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty,
   notification, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
-  pagination, wirePagination,
+  pagination, wirePagination, resultsHeader, viewSwitch,
 };
 export default C;

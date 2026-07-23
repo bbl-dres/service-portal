@@ -1,131 +1,178 @@
 // Anwendungen — Katalog und Landingpage je Anwendung.
-// Reached from "Daten und Digitalisierung": ?bereich=bauten|logistik narrows it
-// to the Fachanwendungen of one Bereich; without it, all groups are listed.
-// Karten führen auf #/applications/<appId> — nicht direkt in die Anwendung:
+//
+// Gleiches Muster wie #/services: Suche links, zwei Filter-Dropdowns,
+// Ansichtswechsel rechts, aktive Filter als Pills, Galerie/Liste, Pagination.
+// Die Seite hat immer denselben Kopf — «Fachanwendungen Bauten» ist kein
+// eigener Seitentyp, sondern nur ?bereich=bauten.
+//
+// Karten führen auf #/applications/<appId>, nicht direkt in die Anwendung:
 // jede Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen.
+
+const PER_PAGE = 9;
+
+const BEREICHE = [
+  { key: 'bauten',   label: 'Immobilien & Bau' },
+  { key: 'logistik', label: 'Arbeitsplatz & Logistik' },
+  { key: 'zentral',  label: 'Zentrale Systeme' },
+];
+
+const AUDIENCES = [
+  { value: 'internal', label: 'Intern' },
+  { value: 'external', label: 'Extern' },
+  { value: 'both',     label: 'Intern + Extern' },
+];
+
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
   if (params[0]) return (await import('./application.js')).default(ctx, params[0]);
 
-  const GROUP_ORDER = ['Immobilien & Bau', 'Arbeitsplatz & Logistik', 'Zentrale Systeme'];
-  const BEREICHE = {
-    bauten: { label: 'Fachanwendungen Bauten', lead: 'Fachanwendungen für Immobilien, Bauprojekte und Bauwerksdokumentation.' },
-    logistik: { label: 'Fachanwendungen Logistik', lead: 'Fachanwendungen für Arbeitsplatz, Beschaffung und Logistik.' },
-  };
-
-  const bereich = BEREICHE[query.get('bereich')] ? query.get('bereich') : '';
-  const meta = BEREICHE[bereich];
-
-  setTitle(meta ? meta.label : 'Anwendungen');
+  setTitle('Anwendungen');
   setCrumbs([
     { label: 'Startseite', href: '#/' },
     { label: 'Daten und Digitalisierung', href: '#/data' },
-    ...(meta ? [{ label: 'Anwendungen', href: '#/applications' }, { label: meta.label }] : [{ label: 'Anwendungen' }]),
+    { label: 'Anwendungen' },
   ]);
 
-  // Filter state: 'all' | 'internal' | 'external' | 'both'
-  const FILTERS = [
-    { id: 'all', label: 'Alle' },
-    { id: 'internal', label: 'Intern' },
-    { id: 'external', label: 'Extern' },
-    { id: 'both', label: 'Intern + Extern' },
+  const rawQ = query.get('q') || '';
+  const q = rawQ.toLowerCase();
+  const bereich = BEREICHE.some(b => b.key === query.get('bereich')) ? query.get('bereich') : '';
+  const audience = AUDIENCES.some(a => a.value === query.get('audience')) ? query.get('audience') : '';
+  const view = query.get('view') === 'liste' ? 'liste' : 'galerie';
+  const wanted = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
+
+  const all = core.applications();
+  const matches = (a) =>
+    (!q || (a.name + ' ' + a.description + ' ' + a.group).toLowerCase().includes(q)) &&
+    (!bereich || a.bereich === bereich) &&
+    (!audience || a.audience === audience);
+
+  // Schlüsselanwendungen zuerst, sonst Reihenfolge der Datenquelle
+  const apps = all.filter(matches).sort((a, b) => (b.hero ? 1 : 0) - (a.hero ? 1 : 0));
+  const totalPages = Math.max(1, Math.ceil(apps.length / PER_PAGE));
+  const page = Math.min(wanted, totalPages);
+  const visible = apps.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  const base = { q: rawQ, bereich, audience, view };
+
+  // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert.
+  const active = [
+    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ ...base, q: '' }) }] : []),
+    ...(bereich ? [{ label: bereichLabel(bereich), href: hash({ ...base, bereich: '' }) }] : []),
+    ...(audience ? [{ label: audienceLabel(audience), href: hash({ ...base, audience: '' }) }] : []),
   ];
-  let activeFilter = (() => {
-    const f = query.get('audience');
-    return FILTERS.some(x => x.id === f) ? f : 'all';
-  })();
-
-  const matchesAudience = (a) => activeFilter === 'all' || a.audience === activeFilter;
-  const matchesBereich = (a) => !bereich || a.bereich === bereich;
-  const matches = (a) => matchesAudience(a) && matchesBereich(a);
-
-  // hero apps (Schlüsselanwendungen) lead each group; otherwise keep source order
-  const orderApps = (list) => [...list].sort((a, b) => (b.hero ? 1 : 0) - (a.hero ? 1 : 0));
-
-  const appsHash = ({ b = bereich, audience = activeFilter }) => {
-    const p = new URLSearchParams();
-    if (b) p.set('bereich', b);
-    if (audience && audience !== 'all') p.set('audience', audience);
-    const qs = p.toString();
-    return '#/applications' + (qs ? '?' + qs : '');
-  };
-
-  function appCard(a) {
-    const badges = [C.audienceTag(a.audience)];
-    if (a.hero) badges.push(C.badge('Schlüsselanwendung', 'info'));
-    if (a.link && a.link.kind === 'external') badges.push(C.badge('Externes System', 'gray'));
-    return C.card({
-      title: a.name,
-      desc: a.description,
-      href: `#/applications/${encodeURIComponent(a.appId)}`,
-      badges,
-      footer: `<span>${C.escape(a.accessNote || '')}</span>
-        <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
-    });
-  }
-
-  function groupSections() {
-    const byGroup = core.applicationsByGroup();
-    const sections = GROUP_ORDER.map(g => {
-      const list = orderApps((byGroup[g] || []).filter(matches));
-      if (!list.length) return '';
-      // inside a Bereich the group heading is redundant — the page title says it
-      return `<section class="mt-8">
-        ${bereich ? '' : `<h2>${C.escape(g)}</h2>`}
-        <div class="grid grid--3 mt-4">${list.map(appCard).join('')}</div>
-      </section>`;
-    }).join('');
-    return sections || C.empty('Keine Anwendungen für diese Auswahl.');
-  }
-
-  function chipsRow() {
-    return `<div class="list list--flex list--wrap mt-4" role="group" aria-label="Anwendungen nach Zielgruppe filtern">${FILTERS.map(f =>
-      `<button type="button" class="tag-item${f.id === activeFilter ? ' tag-item--active' : ''}" aria-pressed="${!!(f.id === activeFilter)}" data-filter="${f.id}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(f.label)}</span></span></button>`
-    ).join('')}</div>`;
-  }
-
-  // Active-filter pills, same pattern as Dienstleistungen: each pill links to
-  // the same view minus that one value.
-  function filterBar() {
-    const active = [
-      ...(bereich ? [{ label: BEREICHE[bereich].label, href: appsHash({ b: '' }) }] : []),
-      ...(activeFilter !== 'all' ? [{ label: FILTERS.find(f => f.id === activeFilter).label, href: appsHash({ audience: 'all' }) }] : []),
-    ];
-    if (!active.length) return '';
-    return `<div class="active-filters mt-4" role="group" aria-label="Aktive Filter">
+  const filterBar = active.length ? `
+    <div class="active-filters mt-4" role="group" aria-label="Aktive Filter">
       <span class="small muted">Aktive Filter:</span>
       ${active.map(f => `<a class="badge badge--gray active-filter" href="${f.href}"
          aria-label="Filter „${C.escape(f.label)}“ entfernen">${C.escape(f.label)}${C.icon('Cancel', 'icon--sm')}</a>`).join('')}
       <a class="btn btn--link" href="#/applications">Alle Filter zurücksetzen</a>
-    </div>`;
-  }
+    </div>` : '';
 
-  function draw() {
-    mount.innerHTML = `
-    <div class="container section">
-      ${C.pageHeader({
-        title: meta ? meta.label : 'Anwendungen',
-        lead: meta ? meta.lead
-          : 'Alle Anwendungen des BBL an einem Ort – von den Fachanwendungen für Bauten über Logistik bis zu den zentralen Systemen der Bundesverwaltung.',
-      })}
-      ${chipsRow()}
-      ${filterBar()}
-      <div id="app-groups">${groupSections()}</div>
-    </div>`;
-    wire();
-  }
+  const card = (a) => C.card({
+    title: a.name,
+    desc: a.description,
+    href: `#/applications/${encodeURIComponent(a.appId)}`,
+    photo: { id: a.photo, alt: '' },
+    badges: [
+      C.audienceTag(a.audience),
+      ...(a.hero ? [C.badge('Schlüsselanwendung', 'info')] : []),
+      ...(a.link && a.link.kind === 'external' ? [C.badge('Externes System', 'gray')] : []),
+    ],
+    footer: `<span>${C.escape(a.group)}</span>
+      <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
+  });
 
-  function wire() {
-    mount.querySelectorAll('.tag-item[data-filter]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        activeFilter = btn.getAttribute('data-filter');
-        // keep the URL shareable; setting the same view's hash won't re-route, so re-draw here
-        const next = appsHash({});
-        if (location.hash !== next) history.replaceState(null, '', next);
-        draw();
-      });
+  const listView = (rows) => C.table({
+    caption: 'Anwendungen',
+    zebra: true,
+    columns: [
+      { key: 'name', label: 'Anwendung', render: a =>
+        `<a href="#/applications/${encodeURIComponent(a.appId)}">${C.escape(a.name)}</a>
+         <br><span class="small muted">${C.escape(a.description)}</span>` },
+      { key: 'group', label: 'Bereich', render: a => C.escape(a.group) },
+      { key: 'audience', label: 'Zielgruppe', render: a => C.audienceTag(a.audience) },
+      { key: 'link', label: 'Einstieg', render: a =>
+        a.link && a.link.kind === 'external' ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue') },
+    ],
+    rows,
+  });
+
+  mount.innerHTML = `
+  <div class="container section">
+    ${C.pageHeader({
+      title: 'Anwendungen',
+      lead: 'Alle Anwendungen des BBL an einem Ort — von den Fachanwendungen für Bauten über Logistik bis zu den zentralen Systemen der Bundesverwaltung.',
+    })}
+    <form class="service-controls" id="app-search" role="search">
+      <div class="service-controls__search">
+        <label class="sr-only" for="aq">Anwendung suchen</label>
+        <input id="aq" type="search" placeholder="Anwendung suchen..." value="${C.escape(rawQ)}" autocomplete="off">
+        <button class="btn btn--filled" type="submit">Suchen</button>
+      </div>
+      <div class="service-controls__filters" aria-label="Anwendungen filtern">
+        <div class="form__group__select">
+          <label for="bereich-filter">Bereich</label>
+          <div class="select">
+            <select id="bereich-filter" name="bereich">
+              <option value="">Alle Bereiche</option>
+              ${BEREICHE.map(b => `<option value="${b.key}"${bereich === b.key ? ' selected' : ''}>${C.escape(b.label)}</option>`).join('')}
+            </select>
+            <span class="select__icon">${C.icon('ChevronDown')}</span>
+          </div>
+        </div>
+        <div class="form__group__select">
+          <label for="audience-filter">Zielgruppe</label>
+          <div class="select">
+            <select id="audience-filter" name="audience">
+              <option value="">Alle Zielgruppen</option>
+              ${AUDIENCES.map(a => `<option value="${a.value}"${audience === a.value ? ' selected' : ''}>${C.escape(a.label)}</option>`).join('')}
+            </select>
+            <span class="select__icon">${C.icon('ChevronDown')}</span>
+          </div>
+        </div>
+      </div>
+    </form>
+    ${filterBar}
+    <section class="mt-6">
+      ${C.resultsHeader({ count: apps.length, total: all.length, unit: 'Anwendungen', page, totalPages, view })}
+      ${apps.length
+        ? `${view === 'liste' ? listView(visible) : `<div class="grid grid--3 mt-4">${visible.map(card).join('')}</div>`}
+           ${C.pagination({ page, totalPages, inputId: 'app-page', label: 'Seitennavigation Anwendungen',
+              href: (p) => hash({ ...base, page: p }) })}`
+        : C.empty('Keine Anwendungen gefunden.')}
+    </section>
+  </div>`;
+
+  mount.querySelector('#app-search').addEventListener('submit', (e) => {
+    e.preventDefault();
+    location.hash = hash({ ...base, q: mount.querySelector('#aq').value.trim() });
+  });
+  mount.querySelector('#bereich-filter').addEventListener('change', (e) => {
+    location.hash = hash({ ...base, bereich: e.target.value });
+  });
+  mount.querySelector('#audience-filter').addEventListener('change', (e) => {
+    location.hash = hash({ ...base, audience: e.target.value });
+  });
+  mount.querySelectorAll('.view-switch__btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      location.hash = hash({ ...base, page, view: btn.getAttribute('data-view') });
     });
-  }
+  });
+  C.wirePagination(mount, 'app-page', page, totalPages, (target) => {
+    location.hash = hash({ ...base, page: target });
+  });
+}
 
-  draw();
+function bereichLabel(key) { const b = BEREICHE.find(x => x.key === key); return b ? b.label : key; }
+function audienceLabel(v) { const a = AUDIENCES.find(x => x.value === v); return a ? a.label : v; }
+
+function hash({ q = '', bereich = '', audience = '', page = 1, view = '' } = {}) {
+  const p = new URLSearchParams();
+  if (q) p.set('q', q);
+  if (bereich) p.set('bereich', bereich);
+  if (audience) p.set('audience', audience);
+  if (page > 1) p.set('page', String(page));
+  if (view === 'liste') p.set('view', view);
+  const s = p.toString();
+  return s ? `#/applications?${s}` : '#/applications';
 }

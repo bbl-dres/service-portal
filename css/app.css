@@ -574,9 +574,10 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
   .hero--main-image .hero__content { justify-content:center; }
 }
 .hero__image { display:block; position:relative; overflow:hidden; width:100%; }
-.hero__image img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover;
+.hero__image .photo { width:100%; aspect-ratio:16/9; }
+.hero__image .photo > img { position:absolute; inset:0; width:100%; height:100%; }
+.hero__image > img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover;
   background:var(--color-secondary-50); }
-.hero__tags { display:flex; flex-wrap:wrap; gap:.5rem; }
 /* flex children must be allowed to shrink below their intrinsic width, or the
    row overflows the container (the old `.container{overflow-x:clip}` hid this) */
 .search__form input, .service-controls__search input { min-width:0; }
@@ -983,20 +984,33 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .subnav a.active { border-left-color:var(--color-primary-600); font-weight:var(--fw-bold); background:var(--color-secondary-50); }
 
 /* In-page search controls */
-.service-controls { display:grid; grid-template-columns:minmax(18rem, 30rem) 1fr auto; gap:1rem 1.5rem; align-items:end; }
-.service-controls__view { display:flex; flex-direction:column; gap:.35rem; }
-.service-controls__view .tag-item { margin-right:.5rem; margin-bottom:0; }
-.service-controls__view .tag-item:last-child { margin-right:0; }
+.service-controls { display:grid; grid-template-columns:minmax(18rem, 30rem) 1fr; gap:1rem 1.5rem; align-items:end; }
 .service-controls__search { display:flex; gap:.5rem; align-items:end; }
 .service-controls__search input { min-height:3rem; }
 .service-controls__filters { display:grid; grid-template-columns:minmax(12rem, 1fr) minmax(12rem, 1fr); gap:1rem 1.5rem; align-items:end; }
-.service-results { display:flex; flex-direction:column; gap:.25rem; }
-.service-results p { margin-bottom:0; }
 @media (max-width:1279.98px){
   .service-controls { grid-template-columns:1fr; }
-  .service-controls__view { flex-direction:row; align-items:center; gap:.75rem; }
   .service-controls__filters { grid-template-columns:1fr 1fr; }
 }
+
+/* Ergebniskopf (search.postcss:208-234): Trefferzahl links, Steuerung rechts,
+   auf einer Trennlinie. Der Ansichtswechsel sitzt hier statt in den Filtern. */
+.search-results__header { display:flex; flex-wrap:wrap; gap:1rem; align-items:center;
+  justify-content:space-between; font-size:var(--text-sm);
+  padding-top:1rem; padding-bottom:.5rem; border-bottom:1px solid var(--color-secondary-300); }
+@media (min-width:640px){ .search-results__header { padding-top:1.5rem; padding-bottom:.75rem; } }
+@media (min-width:1544px){ .search-results__header { padding-top:2rem; padding-bottom:1rem; } }
+.search-results__header strong { margin-right:1ex; font-weight:var(--fw-regular); }
+.search-results__header__left { display:flex; align-items:center; color:var(--color-text-muted); }
+.search-results__header__right { display:flex; align-items:center; margin-left:auto; gap:1rem; }
+.view-switch { display:flex; align-items:center; gap:.25rem;
+  border-left:1px solid var(--color-secondary-300); padding-left:1rem; }
+.view-switch__btn { display:inline-flex; align-items:center; justify-content:center;
+  width:2.25rem; height:2.25rem; padding:0; background:none; border:0; border-radius:0;
+  color:var(--color-secondary-500); cursor:pointer; transition:color .2s; }
+.view-switch__btn:hover { color:var(--color-primary-700); }
+.view-switch__btn[aria-pressed="true"] { color:var(--color-text); }
+.view-switch__btn:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 @media (max-width:640px){
   .service-controls__search { flex-direction:column; align-items:stretch; }
   .service-controls__filters { grid-template-columns:1fr; }

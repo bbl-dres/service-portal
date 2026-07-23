@@ -68,10 +68,6 @@ export default async function render(ctx) {
       <a class="btn btn--link" href="#/services">Alle Filter zurücksetzen</a>
     </div>` : '';
 
-  const selectedFilters = [
-    selectedAudience ? audienceLabel(selectedAudience) : '',
-    selectedTopics.map(t => domainLabel(domains, t)).join(', '),
-  ].filter(Boolean);
   const relatedHits = otherHits && (otherHits.apps + otherHits.docs + otherHits.weisungen)
     ? `Auch in: ${otherHits.apps ? `<a href="#/applications">${otherHits.apps} Anwendung(en)</a> · ` : ''}${otherHits.docs ? `<a href="#/app/document-archive">${otherHits.docs} Dokument(e)</a> · ` : ''}${otherHits.weisungen ? `<a href="#/knowledge">${otherHits.weisungen} Weisung(en)</a>` : ''}`
     : '';
@@ -107,22 +103,11 @@ export default async function render(ctx) {
           </div>
         </div>
       </div>
-      <div class="service-controls__view">
-        <span class="small muted" id="view-label">Ansicht</span>
-        <div class="list list--flex list--wrap" role="group" aria-labelledby="view-label">
-          ${C.tagItem({ label: 'Galerie', iconName: 'Apps', active: view === 'galerie', size: 'sm',
-            attrs: `data-view="galerie"` })}
-          ${C.tagItem({ label: 'Liste', iconName: 'List', active: view === 'liste', size: 'sm',
-            attrs: `data-view="liste"` })}
-        </div>
-      </div>
     </form>
     ${filterBar}
     <section class="mt-6">
-      <div class="service-results mt-4">
-        <p class="muted">${resultText(services.length, all.length, page, totalPages, selectedFilters, rawQ, C)}</p>
-        ${relatedHits ? `<p class="muted small">${relatedHits}</p>` : ''}
-      </div>
+      ${C.resultsHeader({ count: services.length, total: all.length, unit: 'Dienstleistungen', page, totalPages, view })}
+      ${relatedHits ? `<p class="muted small mt-4">${relatedHits}</p>` : ''}
       ${services.length ? `${view === 'liste' ? listView(visibleServices) : `<div class="grid grid--3 mt-4">${visibleServices.map(card).join('')}</div>`}${
         C.pagination({ page, totalPages, inputId: 'svc-page', label: 'Seitennavigation Dienstleistungen',
           href: (p) => servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics, page: p, view }) })
@@ -135,7 +120,7 @@ export default async function render(ctx) {
     const v = mount.querySelector('#sq').value.trim();
     location.hash = servicesHash({ q: v, audience: selectedAudience, topics: selectedTopics, page: 1, view });
   });
-  mount.querySelectorAll('.tag-item[data-view]').forEach(btn => {
+  mount.querySelectorAll('.view-switch__btn').forEach(btn => {
     btn.addEventListener('click', () => {
       location.hash = servicesHash({
         q: rawQ, audience: selectedAudience, topics: selectedTopics, page,
@@ -210,11 +195,6 @@ function audienceLabel(key) {
   return option ? option.label : key;
 }
 
-function resultText(count, total, page, totalPages, filters, rawQ, C) {
-  const filterText = filters.length ? ` · ${filters.map(f => C.escape(f)).join(', ')}` : '';
-  const searchText = rawQ ? ` · Suche "${C.escape(rawQ)}"` : '';
-  return `${count} von ${total} Dienstleistungen${filterText}${searchText}${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`;
-}
 
 function servicesHash({ q = '', audience = '', topics = [], page = 1, view = '' }) {
   const params = new URLSearchParams();

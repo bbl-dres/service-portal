@@ -64,7 +64,13 @@ function dashboardView(ctx, id) {
   const { mount, C, setTitle, setCrumbs } = ctx;
   const board = sql.dashboard(id);
   if (!board) {
-    mount.innerHTML = `<div class="container section">${C.backLink('#/app/dataportal', 'Datenportal')}${C.empty('Dashboard nicht gefunden.')}</div>`;
+    setTitle('Dashboard nicht gefunden');
+    setCrumbs([...CRUMB_BASE, { label: 'Datenportal', href: '#/app/dataportal' }]);
+    mount.innerHTML = `<div class="container section">
+      ${C.backLink('#/app/dataportal', 'Datenportal')}
+      <div class="page-header mt-4"><h1 tabindex="-1">Dashboard nicht gefunden</h1></div>
+      <p class="muted">Dieses Dashboard existiert nicht. <a href="#/app/dataportal">Zur Übersicht «Datenportal»</a></p>
+    </div>`;
     return;
   }
   setTitle(board.title);

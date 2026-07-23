@@ -69,9 +69,6 @@ export default function render(ctx, appId) {
       </a></li>`;
   };
 
-  const related = (page.related || [])
-    .map(id => core.application(id)).filter(Boolean);
-
   const contact = page.contact ? core.contacts().find(c => c.contactId === page.contact) : null;
 
   // Ohne echtes Ziel führt der Katalogeintrag ins Leere — das sagen wir hier,
@@ -88,18 +85,21 @@ export default function render(ctx, appId) {
   <div class="container section">
     ${C.backLink('#/applications', 'Anwendungen')}
 
-    <div class="page-header">
-      <p class="meta-info">
-        <span class="meta-info__item">${C.escape(a.group)}</span>
-        ${page.subtitle ? `<span class="meta-info__item">${C.escape(page.subtitle)}</span>` : ''}
-      </p>
-      <h1 tabindex="-1">${C.escape(a.name)}</h1>
-      <p class="lead">${C.escape(a.description)}</p>
-      <div class="pill-row mt-2">
-        ${C.audienceTag(a.audience)}
-        ${a.hero ? C.badge('Schlüsselanwendung', 'info') : ''}
-        ${external ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue')}
+    <div class="hero hero--main-image">
+      <div class="hero__content">
+        <p class="meta-info">
+          <span class="meta-info__item">${C.escape(a.group)}</span>
+          ${page.subtitle ? `<span class="meta-info__item">${C.escape(page.subtitle)}</span>` : ''}
+        </p>
+        <h1 class="hero__title" tabindex="-1">${C.escape(a.name)}</h1>
+        <p class="hero__description">${C.escape(a.description)}</p>
+        <div class="pill-row">
+          ${C.audienceTag(a.audience)}
+          ${a.hero ? C.badge('Schlüsselanwendung', 'info') : ''}
+          ${external ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue')}
+        </div>
       </div>
+      ${a.photo ? `<div class="hero__image">${C.photo({ id: a.photo, alt: '', w: 800 })}</div>` : ''}
     </div>
 
     <div class="split mt-6">
@@ -113,16 +113,6 @@ export default function render(ctx, appId) {
         ${page.resources && page.resources.length
           ? section('Schulung und weitere Informationen',
               `<ul class="download-items">${page.resources.map(resourceItem).join('')}</ul>`)
-          : ''}
-
-        ${related.length
-          ? section('Verwandte Anwendungen', `<div class="grid grid--2">${related.map(r => C.card({
-              title: r.name, desc: r.description,
-              href: `#/applications/${encodeURIComponent(r.appId)}`,
-              badges: [C.audienceTag(r.audience)],
-              footer: `<span>${C.escape(r.group)}</span>
-                <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
-            })).join('')}</div>`)
           : ''}
       </div>
 
@@ -167,8 +157,6 @@ export default function render(ctx, appId) {
         </div>
       </aside>
     </div>
-
-    ${C.backLink('#/applications', 'Anwendungen')}
   </div>`;
 }
 
