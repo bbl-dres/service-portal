@@ -1,8 +1,8 @@
 // Übersicht (Startseite) — Arbeitsfläche, keine Nachrichtenwand.
 //
 // Aufbau nach der Reihenfolge, in der jemand die Seite benutzt:
-//   Suche → offene Vorgänge → Themen → häufige Dienstleistungen →
-//   Anwendungen und Daten → Aktuelles.
+//   Suche → offene Vorgänge → häufige Dienstleistungen →
+//   Bestellen und weitere Angebote → Aktuelles.
 // Begründung siehe docs/design-review.md P1-1: ein Intranet dient der
 // wiederholten Aufgabenerledigung, nicht der Erstorientierung — deshalb
 // ausdrücklich nicht dem Aufbau öffentlicher Bundesauftritte folgend.
@@ -11,13 +11,21 @@ import { INTRANET_AREAS } from '../intranet-areas.js';
 
 const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 
+// Wichtige Dienstleistungs-Themen mit eigenem Einstieg auf der Startseite —
+// bewusst eine Auswahl, nicht alle Menüpunkte (Nutzerwunsch). `key` = domain.
+const HOME_THEMEN = [
+  { key: 'A', label: 'Bauprojekte und Projektportfolio', color: '#2f4356',
+    desc: 'Bauprojekte melden und verfolgen, Bauwerksdokumentation und Immobilienportfolio einsehen.' },
+  { key: 'U', label: 'Unterbringung', color: '#46596b',
+    desc: 'Unterbringungsbedarf anmelden und Flächen bzw. Arbeitsplätze zuweisen.' },
+];
+
 export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs } = ctx;
   setTitle('Übersicht');
   setCrumbs([]);
 
   const services = core.services();
-  const apps = core.applications();
   const news = core.news().slice(0, 3);
   const cases = engine.instances();
   const open = cases.filter(i => !CLOSED.includes(i.status));
@@ -51,15 +59,6 @@ export default async function render(ctx) {
       </span>
     </a>`;
 
-  const linkTile = (o) => `
-    <a class="quick-tile plain-link" href="${o.href}">
-      ${C.icon(o.icon, 'icon--md')}
-      <span>
-        <span class="quick-tile__label">${C.escape(o.label)}</span>
-        <span class="quick-tile__meta">${C.escape(o.meta)}</span>
-      </span>
-    </a>`;
-
   /* ------------------------------------------------------------- Blöcke -- */
 
   const blocks = [];
@@ -90,24 +89,14 @@ export default async function render(ctx) {
     more: { href: '#/services', label: 'Alle Dienstleistungen ansehen' },
   });
 
-  // 3 · Anwendungen und Daten — Schlüsselanwendungen plus die Einstiege.
-  const heroApps = apps.filter(a => a.hero).map(a => ({
-    icon: a.icon || 'Apps', label: a.name, meta: a.group,
-    href: `#/applications/${encodeURIComponent(a.appId)}`,
-  }));
-  const dataEntries = [
-    { icon: 'ChartBar', label: 'Datenportal', meta: '6 Themen mit Auswertungen', href: '#/app/dataportal' },
-    { icon: 'FileDatabase', label: 'Datenbezug', meta: `${core.datasets().length} Datensätze`, href: '#/data/katalog' },
-    { icon: 'Apps', label: 'Alle Anwendungen', meta: `${apps.length} Anwendungen`, href: '#/applications' },
-  ];
-  blocks.push({
-    title: 'Anwendungen und Daten',
-    body: `<div class="quick-grid">${[...heroApps, ...dataEntries].map(linkTile).join('')}</div>`,
-    more: { href: '#/data', label: 'Daten und Digitalisierung ansehen' },
+  // 3 · Bestellen und weitere Angebote — Einstiegsgalerie: zuerst wichtige
+  //     Dienstleistungs-Themen (intern), dann die Aufgabenbereiche im
+  //     BBL-Intranet (extern). Bewusst eine Auswahl, nicht jeder Menüpunkt.
+  const themaCard = (t) => C.card({
+    title: t.label, desc: t.desc, href: `#/services?topic=${encodeURIComponent(t.key)}`,
+    photo: { color: t.color, alt: '' },
+    footer: `<span>Dienstleistungen</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
   });
-
-  // 4 · Bestellen und weitere Angebote — Bildergalerie mit Verweisen auf die
-  //     Aufgabenbereiche im BBL-Intranet (extern).
   const areaCard = (a) => C.card({
     title: a.label, desc: a.desc, href: a.overview, external: true,
     photo: { id: a.photo, alt: '' },
@@ -115,7 +104,7 @@ export default async function render(ctx) {
   });
   blocks.push({
     title: 'Bestellen und weitere Angebote',
-    body: `<div class="grid grid--3">${INTRANET_AREAS.map(areaCard).join('')}</div>`,
+    body: `<div class="grid grid--3">${HOME_THEMEN.map(themaCard).join('')}${INTRANET_AREAS.map(areaCard).join('')}</div>`,
   });
 
   // 5 · Aktuelles — Galerie mit Bildern (CD TopNewsSection).
