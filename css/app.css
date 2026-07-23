@@ -151,9 +151,15 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 /* Inhaltsverzeichnis rechts: erst ab lg neben dem Inhalt, darunter normal. */
 .anchor-nav .card__title { font-size:var(--text-lg); }
 .anchor-nav .menu { margin-top:.5rem; }
+/* Ankernavigations-Seite (CD detailPageAnchorNav): der Kopf sitzt im selben
+   12-Spalten-Raster wie der Inhalt und richtet seine linke Kante ab lg an der
+   Inhaltsspalte (container__main: lg col-start-2) aus, die rechte an der
+   Randspalte des Inhaltsverzeichnisses (container__aside endet bei Spalte 11). */
+.anchor-page__header { grid-column:1 / -1; }
+@media (min-width:1024px){ .anchor-page__header { grid-column:2 / 12; } }
 /* Saubere Themenabschnitte (bk.admin.ch/de/vorgaben): Überschrift + sichtbare
-   Dokumentliste; der Abstand zwischen Abschnitten kommt von .vertical-spacing. */
-.grundlagen-section__title { margin-bottom:1rem; }
+   Liste; der Abstand zwischen Abschnitten kommt von .vertical-spacing. */
+.anchor-section__title { margin-bottom:1rem; }
 
 /* Section rhythm (section.postcss:5-51) — bare .section has no padding */
 .section { width:100%; }

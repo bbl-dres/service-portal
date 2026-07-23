@@ -1,4 +1,4 @@
-import { grundlagenPage } from './grundlagen.js';
+import { grundlagenPage, anchorNavPage, docItem } from './grundlagen.js';
 
 // News und Wissen — Abschnitts-Übersicht plus drei eigenständige Unterseiten:
 // News, Prozesse, Gesetzliche Grundlagen und Vorgaben. Diese sind KEINE Tabs
@@ -24,22 +24,21 @@ export default async function render(ctx) {
     const w = core.weisung(id);
     if (w) return weisungPage(ctx, w);
   }
-  // Grundlagen ist eine eigene Ankernavigations-Seite (KBOB-Muster).
+  // Grundlagen und Prozesse teilen das CD-Ankernavigations-Layout (Abschnitte
+  // links, Inhaltsverzeichnis rechts, KBOB-/detailPageAnchorNav-Muster).
   if (tab === 'grundlagen') return grundlagenPage(ctx, PAGES.grundlagen);
+  if (tab === 'prozesse') return prozessePage(ctx, PAGES.prozesse);
 
+  // Verbleibt: News-Liste.
   const page = PAGES[tab];
   setTitle(page.title);
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: page.title }]);
-
-  const body = tab === 'news' ? newsList(ctx) : anleitungenPanel(ctx) + formularePanel(ctx);
   mount.innerHTML = `
   <div class="container section">
     ${C.backLink('#/knowledge', 'News und Wissen')}
     ${C.pageHeader({ title: page.title, lead: page.lead })}
-    ${body}
+    ${newsList(ctx)}
   </div>`;
-
-  if (tab === 'prozesse') wireAccordion(mount);
 }
 
 /* ============================ WEISUNGEN & VORGABEN ======================== */
@@ -219,11 +218,28 @@ function newsList(ctx) {
     </div>`;
 }
 
-/* ========================= FORMULARE & VORLAGEN ========================== */
+/* ============================ PROZESSE (Ankernav) ======================== */
 
-function formularePanel(ctx) {
-  const { C } = ctx;
-  const items = [
+// Prozesse teilt das Ankernavigations-Layout mit «Grundlagen»: Abschnitte mit
+// Überschrift + Liste bzw. Akkordeon links, Inhaltsverzeichnis rechts.
+function prozessePage(ctx, page) {
+  const { C, setTitle, setCrumbs } = ctx;
+  setTitle(page.title);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: page.title }]);
+
+  const guides = [
+    { title: 'Erste Schritte im Kundenportal', desc: 'Überblick über Dienstleistungen, Anwendungen, Dokumente und Daten.' },
+    { title: 'Einen Vorgang starten und verfolgen', desc: 'Wie Sie einen Service auslösen und den Status unter «Meine Vorgänge» einsehen.' },
+    { title: 'Gebäude und Dokumente finden', desc: 'Suche im Portfolio sowie im Dokumenten- und Medienarchiv.' },
+  ];
+  const faqs = [
+    { q: 'Wie melde ich zusätzlichen Raumbedarf an?', a: 'Öffnen Sie unter «Dienstleistungen» den Service «Raumbedarf melden» und folgen Sie dem geführten Antrag. Nach dem Absenden entsteht ein Vorgang, den Sie unter «Meine Vorgänge» verfolgen.' },
+    { q: 'Welche Weisung gilt für die Flächenstandards?', a: 'Massgebend ist die Weisung «Neue Arbeitswelten (NAW)». Sie finden sie unter «Gesetzliche Grundlagen und Vorgaben».' },
+    { q: 'Wo finde ich Bauwerksdokumentationen zu einem Gebäude?', a: 'Unter «Daten und Digitalisierung» bzw. im Dokumentenarchiv lassen sich Pläne und Dokumentationen pro Gebäude suchen und herunterladen.' },
+    { q: 'Wie melde ich einen Sicherheits- oder Datenschutzvorfall?', a: 'Nutzen Sie den Service «Sicherheitsvorfall melden». Grundlagen sind das Informationssicherheitsgesetz (ISG) und das Datenschutzmerkblatt (DSG).' },
+    { q: 'An wen wende ich mich bei Rückfragen zu einem Vorgang?', a: 'Verwenden Sie die Referenznummer (Format BBL-JJJJ-XXXX) aus der Detailansicht Ihres Vorgangs für Rückfragen.' },
+  ];
+  const formulare = [
     { title: 'Antragsformular Raumbedarf', desc: 'Strukturierte Bedarfsmeldung für zusätzliche Flächen und Arbeitsplätze.', fmt: 'PDF' },
     { title: 'Vorlage Beschaffung (BANF)', desc: 'Bedarfsanforderung für IKT- und Güterbeschaffungen inkl. Pflichtfelder.', fmt: 'DOCX' },
     { title: 'Checkliste WTO-Verfahren', desc: 'Schwellenwerte, Verfahrenswahl und Fristen für öffentliche Beschaffungen.', fmt: 'PDF' },
@@ -232,73 +248,32 @@ function formularePanel(ctx) {
     { title: 'Antrag Publikation / Drucksache', desc: 'Bestellung von Publikationen nach Corporate Design des Bundes.', fmt: 'DOCX' },
   ];
 
-  return `
-    <p class="page-intro muted">Häufig benötigte Formulare und Vorlagen für Anträge, Meldungen und Bestellungen. Viele Anliegen können Sie direkt unter <a href="#/services">Dienstleistungen</a> als Vorgang starten.</p>
-    <div class="grid grid--3 mt-6">
-      ${items.map(it => C.card({
-        title: it.title, desc: it.desc,
-        badges: [C.badge(it.fmt, 'gray')],
-        // downloadLink rendert ohne echtes Ziel einen nicht fokussierbaren
-        // span statt eines toten Links (docs/design-review.md P0-1).
-        footer: `<span>Vorlage</span>${C.downloadLink('#', `${it.title} herunterladen`)}`,
-      })).join('')}
-    </div>`;
-}
+  const faqHtml = `<div class="accordion" id="faq-acc">
+    ${faqs.map((f, i) => `
+      <div class="accordion__item">
+        <h3 style="margin:0">
+          <button class="accordion__button" type="button" aria-expanded="false" aria-controls="faq-p-${i}" id="faq-b-${i}">
+            <span>${C.escape(f.q)}</span>${C.icon('ChevronDown', 'icon--base')}
+          </button>
+        </h3>
+        <div class="accordion__content" id="faq-p-${i}" role="region" aria-labelledby="faq-b-${i}" hidden>
+          <p style="margin:0">${C.escape(f.a)}</p>
+        </div>
+      </div>`).join('')}
+  </div>`;
 
-/* ============================ ANLEITUNGEN / FAQ ========================== */
-
-function anleitungenPanel(ctx) {
-  const { C } = ctx;
-
-  const guides = [
-    { title: 'Erste Schritte im Kundenportal', desc: 'Überblick über Dienstleistungen, Anwendungen, Dokumente und Daten.' },
-    { title: 'Einen Vorgang starten und verfolgen', desc: 'Wie Sie einen Service auslösen und den Status unter «Meine Vorgänge» einsehen.' },
-    { title: 'Gebäude und Dokumente finden', desc: 'Suche im Portfolio sowie im Dokumenten- und Medienarchiv.' },
+  const sections = [
+    { id: 'pr-anleitungen', title: 'Anleitungen',
+      html: `<ul class="download-items">${guides.map(g => docItem(C, { title: g.title, desc: g.desc, icon: 'Book', href: '#', meta: ['Anleitung'] })).join('')}</ul>` },
+    { id: 'pr-faq', title: 'Häufige Fragen (FAQ)', html: faqHtml },
+    { id: 'pr-formulare', title: 'Formulare und Vorlagen',
+      html: `<ul class="download-items">${formulare.map(it => docItem(C, { title: it.title, desc: it.desc, meta: [it.fmt], href: '#' })).join('')}</ul>` },
   ];
 
-  const faqs = [
-    { q: 'Wie melde ich zusätzlichen Raumbedarf an?', a: 'Öffnen Sie unter «Dienstleistungen» den Service «Raumbedarf melden» und folgen Sie dem geführten Antrag. Nach dem Absenden entsteht ein Vorgang, den Sie unter «Meine Vorgänge» verfolgen.' },
-    { q: 'Welche Weisung gilt für die Flächenstandards?', a: 'Massgebend ist die Weisung «Raum- und Flächenstandards der Bundesverwaltung» (W-BBL-001). Sie finden sie im Tab «Weisungen & Vorgaben».' },
-    { q: 'Wo finde ich Bauwerksdokumentationen zu einem Gebäude?', a: 'Unter «Daten und Digitalisierung» bzw. im Dokumentenarchiv lassen sich Pläne und Dokumentationen pro Gebäude suchen und herunterladen.' },
-    { q: 'Wie melde ich einen Sicherheits- oder Datenschutzvorfall?', a: 'Nutzen Sie den Service «Sicherheitsvorfall melden». Grundlagen sind das Informationssicherheitsgesetz (ISG) und das Datenschutzmerkblatt (DSG).' },
-    { q: 'An wen wende ich mich bei Rückfragen zu einem Vorgang?', a: 'Verwenden Sie die Referenznummer (Format BBL-JJJJ-XXXX) aus der Detailansicht Ihres Vorgangs für Rückfragen.' },
-  ];
-
-  return `
-    <p class="page-intro muted">Kurzanleitungen und häufige Fragen zur Nutzung der Plattform und ihrer Dienstleistungen.</p>
-
-    <h2 class="mt-6">Anleitungen</h2>
-    <div class="grid grid--3 mt-4">
-      ${guides.map(g => C.card({ title: g.title, desc: g.desc,
-        footer: `<span>Anleitung</span><span class="btn btn--link" aria-disabled="true"
-          title="Im Prototyp nicht verfügbar">${g.title} öffnen ${C.icon('ArrowRight', 'icon--base')}<span class="sr-only"> (im Prototyp nicht verfügbar)</span></span>` })).join('')}
-    </div>
-
-    <h2 class="mt-8">Häufige Fragen (FAQ)</h2>
-    <div class="accordion mt-4" id="faq-acc">
-      ${faqs.map((f, i) => `
-        <div class="accordion__item">
-          <h3 style="margin:0">
-            <button class="accordion__button" type="button" aria-expanded="false" aria-controls="faq-p-${i}" id="faq-b-${i}">
-              <span>${C.escape(f.q)}</span>${C.icon('ChevronDown', 'icon--base')}
-            </button>
-          </h3>
-          <div class="accordion__content" id="faq-p-${i}" role="region" aria-labelledby="faq-b-${i}" hidden>
-            <p style="margin:0">${C.escape(f.a)}</p>
-          </div>
-        </div>`).join('')}
-    </div>`;
-}
-
-// Accordion wiring — runs after the panel markup is in the DOM. Wires every
-// accordion in the panel (FAQ, Grundlagen), not just one by id.
-function wireAccordion(mount) {
-  mount.querySelectorAll('.accordion .accordion__button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const expanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', String(!expanded));
-      const panel = mount.querySelector('#' + btn.getAttribute('aria-controls'));
-      if (panel) panel.hidden = expanded;
-    });
+  anchorNavPage(ctx, {
+    title: page.title, lead: page.lead,
+    intro: 'Kurzanleitungen, häufige Fragen sowie Formulare und Vorlagen für die Zusammenarbeit mit dem BBL. Viele Anliegen können Sie direkt unter <a href="#/services">Dienstleistungen</a> als Vorgang starten.',
+    sections,
+    back: { href: '#/knowledge', label: 'News und Wissen' },
   });
 }

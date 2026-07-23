@@ -80,89 +80,139 @@ const GROUPS = [
   },
 ];
 
-// Eigenständige Seite (setzt Titel/Brotkrume selbst) mit zweispaltigem
-// Ankernavigations-Layout (CD container__main / container__aside).
-export function grundlagenPage(ctx, page) {
-  const { mount, C, setTitle, setCrumbs } = ctx;
-  setTitle(page.title);
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: page.title }]);
+// Eine Zeile in einer Dokumentliste (CD download-item). Extern → neues Fenster;
+// ohne echtes Ziel («#») ein nicht fokussierbarer, deaktivierter Ersatz.
+export function docItem(C, it) {
+  const inner = `${C.icon(it.icon || (it.external ? 'External' : 'Download'), 'download-item__icon')}
+    <div>
+      <h4 class="download-item__title">${C.escape(it.title)}</h4>
+      ${it.desc ? `<p class="download-item__description">${C.escape(it.desc)}</p>` : ''}
+      ${it.meta && it.meta.length ? `<p class="meta-info download-item__meta-info">${
+        it.meta.map(m => `<span class="meta-info__item">${C.escape(m)}</span>`).join('')}</p>` : ''}
+    </div>`;
+  if (it.external) {
+    return `<li><a class="download-item" href="${it.href}" target="_blank" rel="noopener external">${inner}</a></li>`;
+  }
+  if (it.href && it.href !== '#') {
+    return `<li><a class="download-item" href="${it.href}">${inner}</a></li>`;
+  }
+  return `<li><span class="download-item" aria-disabled="true" title="Im Prototyp nicht verfügbar">${inner}
+    <span class="sr-only">(im Prototyp nicht verfügbar)</span></span></li>`;
+}
 
-  const item = (it) => {
-    const inner = `${C.icon(it.external ? 'External' : 'Download', 'download-item__icon')}
-      <div>
-        <h4 class="download-item__title">${C.escape(it.title)}</h4>
-        ${it.desc ? `<p class="download-item__description">${C.escape(it.desc)}</p>` : ''}
-        ${it.meta && it.meta.length ? `<p class="meta-info download-item__meta-info">${
-          it.meta.map(m => `<span class="meta-info__item">${C.escape(m)}</span>`).join('')}</p>` : ''}
-      </div>`;
-    if (it.external) {
-      return `<li><a class="download-item" href="${it.href}" target="_blank" rel="noopener external">${inner}</a></li>`;
-    }
-    if (it.href && it.href !== '#') {
-      return `<li><a class="download-item" href="${it.href}">${inner}</a></li>`;
-    }
-    return `<li><span class="download-item" aria-disabled="true" title="Im Prototyp nicht verfügbar">${inner}
-      <span class="sr-only">(im Prototyp nicht verfügbar)</span></span></li>`;
-  };
+// Wiederverwendbares CD-Ankernavigations-Layout (detailPageAnchorNav.vue):
+// links thematische Abschnitte mit id, rechts ein klebendes «Inhaltsverzeichnis».
+// `sections` = [{ id, title, html }]. Titel/Brotkrume setzt die aufrufende Seite.
+export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
+  const { mount, C } = ctx;
 
-  // Saubere Abschnitte je Thema (Muster bk.admin.ch/de/vorgaben): sichtbare
-  // Überschrift plus Dokumentliste, nichts eingeklappt. Jeder Abschnitt trägt
-  // eine id als Sprungziel für das Inhaltsverzeichnis.
-  const sections = GROUPS.map(g => `
-    <section class="grundlagen-section" id="gr-${g.id}">
-      <h2 tabindex="-1" class="grundlagen-section__title">${C.escape(g.title)}</h2>
-      ${g.intro ? `<p class="muted">${C.escape(g.intro)}</p>` : ''}
-      <ul class="download-items">${g.items.map(item).join('')}</ul>
+  const sectionHtml = sections.map(s => `
+    <section class="anchor-section" id="${s.id}">
+      <h2 tabindex="-1" class="anchor-section__title">${C.escape(s.title)}</h2>
+      ${s.html}
     </section>`).join('');
 
-  // Inhaltsverzeichnis (CD: Card + menu, detailPageAnchorNav.vue), klebend.
-  const toc = `<div class="anchor-nav sticky--top">
+  // Inhaltsverzeichnis (CD: Card + menu). Ohne Zeilen-Icon — CD-Blattzeilen
+  // tragen keines; der aktive Abschnitt wird per .menu__item--active markiert.
+  const toc = `<nav class="anchor-nav sticky--top" aria-label="Inhaltsverzeichnis">
     <div class="card card--default">
       <div class="card__content"><div class="card__body">
         <h2 class="card__title">Inhaltsverzeichnis</h2>
         <ul class="menu">
-          ${GROUPS.map(g => `<li>
-            <a class="menu__item menu__item--border menu__item--condensed" href="#gr-${g.id}" data-anchor="gr-${g.id}">
-              <span>${C.escape(g.title)}</span>${C.icon('ArrowAngleBottomLeft', 'menu__item__icon')}
+          ${sections.map(s => `<li>
+            <a class="menu__item menu__item--border menu__item--condensed" href="#${s.id}" data-anchor="${s.id}">
+              <span>${C.escape(s.title)}</span>
             </a></li>`).join('')}
         </ul>
       </div></div>
     </div>
-  </div>`;
+  </nav>`;
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.pageHeader({ title: page.title, lead: page.lead })}
-    <p class="page-intro muted">Die Dokumente gelten in der jeweils publizierten Fassung; bei Widersprüchen gehen die Vorgaben des Bundes den Weisungen des BBL vor.</p>
-    <div class="container--grid gap--responsive mt-8">
-      <div class="container__main vertical-spacing">${sections}
-        <section>
-          <h2>Weiterführende Informationen</h2>
-          <ul class="list--default mt-4">
-            <li><a href="https://www.bk.admin.ch/de/vorgaben" target="_blank" rel="noopener external">Vorgaben zur digitalen Transformation und IKT-Lenkung der Bundesverwaltung (DTI)</a></li>
-            <li><a href="#/knowledge?tab=prozesse">Prozesse — Anleitungen, FAQ, Formulare und Vorlagen</a></li>
-            <li><a href="#/data/digitalisierung">Digitalisierung — Strategie und Vorhaben des BBL</a></li>
-          </ul>
-        </section>
+    ${back ? C.backLink(back.href, back.label) : ''}
+    <div class="container--grid gap--responsive">
+      <div class="anchor-page__header">
+        ${C.pageHeader({ title, lead })}
+        ${intro ? `<p class="page-intro muted">${intro}</p>` : ''}
       </div>
-      <aside class="container__aside" aria-label="Inhaltsverzeichnis">${toc}</aside>
+      <div class="container__main vertical-spacing">${sectionHtml}</div>
+      <aside class="container__aside">${toc}</aside>
     </div>
   </div>`;
 
-  wireGrundlagen(mount);
+  wireAnchorNav(mount);
 }
 
-// Sprungnavigation: ein Klick im Inhaltsverzeichnis scrollt zum Abschnitt und
-// setzt den Fokus auf dessen Überschrift — ohne den Routen-Hash zu ändern.
-function wireGrundlagen(mount) {
-  mount.querySelectorAll('.anchor-nav [data-anchor]').forEach(link => {
+// Eigenständige Seite «Gesetzliche Grundlagen und Vorgaben» — nutzt das
+// generische Ankernavigations-Layout mit den thematischen Dokumentgruppen.
+export function grundlagenPage(ctx, page) {
+  const { C, setTitle, setCrumbs } = ctx;
+  setTitle(page.title);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: page.title }]);
+
+  const sections = GROUPS.map(g => ({
+    id: 'gr-' + g.id,
+    title: g.title,
+    html: `${g.intro ? `<p class="muted">${C.escape(g.intro)}</p>` : ''}
+      <ul class="download-items">${g.items.map(it => docItem(C, it)).join('')}</ul>`,
+  }));
+  sections.push({
+    id: 'gr-weitere',
+    title: 'Weiterführende Informationen',
+    html: `<ul class="list--default">
+      <li><a href="https://www.bk.admin.ch/de/vorgaben" target="_blank" rel="noopener external">Vorgaben zur digitalen Transformation und IKT-Lenkung der Bundesverwaltung (DTI)</a></li>
+      <li><a href="#/knowledge?tab=prozesse">Prozesse — Anleitungen, FAQ, Formulare und Vorlagen</a></li>
+      <li><a href="#/data/digitalisierung">Digitalisierung — Strategie und Vorhaben des BBL</a></li>
+    </ul>`,
+  });
+
+  anchorNavPage(ctx, {
+    title: page.title, lead: page.lead,
+    intro: 'Die Dokumente gelten in der jeweils publizierten Fassung; bei Widersprüchen gehen die Vorgaben des Bundes den Weisungen des BBL vor.',
+    sections,
+  });
+}
+
+// Verdrahtung: (1) Klick im Inhaltsverzeichnis scrollt zum Abschnitt und setzt
+// den Fokus auf dessen Überschrift; (2) Scroll-Spy markiert den aktuellen
+// Abschnitt mit .menu__item--active (CD detailPageAnchorNav JS-Beispiel);
+// (3) etwaige Akkordeons im Inhalt werden aktiviert.
+function wireAnchorNav(mount) {
+  const links = [...mount.querySelectorAll('.anchor-nav [data-anchor]')];
+  links.forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      const target = mount.querySelector('#' + link.getAttribute('data-anchor'));
+      const target = mount.querySelector('#' + CSS.escape(link.getAttribute('data-anchor')));
       if (!target) return;
       target.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      const heading = target.querySelector('.grundlagen-section__title') || target;
-      heading.focus({ preventScroll: true });
+      (target.querySelector('.anchor-section__title') || target).focus({ preventScroll: true });
+    });
+  });
+
+  // Scroll-Spy: den zuletzt überschrittenen Abschnitt aktiv setzen. Der
+  // window-Listener entfernt sich selbst, sobald die Seite ausgetauscht wurde.
+  const sections = [...mount.querySelectorAll('.anchor-section[id]')];
+  if (sections.length) {
+    const OFFSET = 140;
+    const onScroll = () => {
+      if (!mount.querySelector('.anchor-nav')) { window.removeEventListener('scroll', onScroll); return; }
+      const y = window.scrollY || document.documentElement.scrollTop;
+      let current = sections[0].id;
+      for (const s of sections) if (s.offsetTop - OFFSET <= y) current = s.id;
+      links.forEach(a => a.classList.toggle('menu__item--active', a.getAttribute('data-anchor') === current));
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
+  // Akkordeons (z. B. FAQ auf der Prozesse-Seite).
+  mount.querySelectorAll('.accordion .accordion__button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      const panel = mount.querySelector('#' + CSS.escape(btn.getAttribute('aria-controls')));
+      if (panel) panel.hidden = expanded;
     });
   });
 }
