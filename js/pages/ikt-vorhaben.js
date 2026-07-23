@@ -8,8 +8,8 @@ const VORHABEN = [
     kuerzel: 'SUPERB',
     status: 'in_umsetzung',
     zeitraum: '2021–2028',
-    lead: 'Informatik BBL / EFD',
-    beschreibung: 'Ablösung der SAP-Systeme der Bundesverwaltung. Für das BBL betrifft das Beschaffung, Logistik und Immobilienbewirtschaftung.',
+    lead: 'EFV / EFD (Programmleitung)',
+    beschreibung: 'Migration der SAP-Systeme der Bundesverwaltung auf SAP S/4HANA (Ablösung der bisherigen Version ECC). Für das BBL betrifft das Beschaffung, Logistik und Immobilienbewirtschaftung.',
     href: '#/applications',
   },
   {

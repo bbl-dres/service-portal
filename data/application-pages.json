@@ -282,7 +282,7 @@
 
   "superb": {
     "subtitle": "SAP S/4HANA der Bundesverwaltung",
-    "long": "Mit SUPERB löst die Bundesverwaltung ihre SAP-Systeme durch S/4HANA ab. Für das BBL betrifft das insbesondere Finanzen, Beschaffung und das Immobilienmanagement — die Stammdaten aus dem Liegenschafteninventar stammen aus diesem System.",
+    "long": "Mit dem Programm SUPERB migriert die Bundesverwaltung ihre bisherigen SAP-Systeme auf SAP S/4HANA. Für das BBL betrifft das insbesondere Finanzen, Beschaffung und das Immobilienmanagement — die Stammdaten aus dem Liegenschafteninventar stammen aus diesem System.",
     "access": {
       "note": "Rollenbasiert für Mitarbeitende mit SAP-Berechtigung.",
       "steps": ["Anmeldung über eIAM.", "SAP-Rollen werden über den Vorgesetzten beantragt."]
