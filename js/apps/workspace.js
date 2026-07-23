@@ -2,7 +2,7 @@
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs } = ctx;
   setTitle('Workspace & Buchung');
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Anwendungen', href: '#/applications' }, { label: 'Workspace' }]);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' }, { label: 'Workspace' }]);
 
   const buildings = core.buildings();
   const totalWorkplaces = buildings.reduce((sum, b) => sum + (b.workplaces || 0), 0);
@@ -44,13 +44,24 @@ export default async function render(ctx) {
 
   // ---- helpers -----------------------------------------------------------
   function field(id, label, control, err, hint) {
-    return `<div class="field${err ? ' input-error' : ''}">
-      <label for="${id}">${label}</label>${control}
-      ${hint ? `<div class="hint">${hint}</div>` : ''}${err ? `<div class="err">${C.escape(err)}</div>` : ''}</div>`;
+    const required = /class="req"/.test(label);
+    const clean = label.replace(/\s*<span class="req">\*<\/span>/, '');
+    const ids = [hint ? `${id}-hint` : '', err ? `${id}-err` : ''].filter(Boolean).join(' ');
+    const attrs = `${required ? ' required aria-required="true"' : ''}${err ? ' aria-invalid="true"' : ''}${ids ? ` aria-describedby="${ids}"` : ''}`;
+    const ctrl = control
+      .replace(/<(input|select|textarea)\b([^>]*?)>/, (m, tag, a) => `<${tag}${a}${attrs}>`)
+      .replace(/<(input|select|textarea)\b([^>]*?)class="([^"]*)"/, (m, tag, a, cls) =>
+        `<${tag}${a}class="${cls}${err ? ' input--error' : ''}"`);
+    return `<div class="form__group__input">
+      <label for="${id}"${required ? ' class="text--asterisk"' : ''}>${clean}${required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
+      ${ctrl}
+      ${hint ? `<div class="badge badge--sm badge--info" id="${id}-hint">${hint}</div>` : ''}
+      ${err ? `<div class="badge badge--sm badge--error" id="${id}-err" role="alert">${C.escape(err)}</div>` : ''}
+    </div>`;
   }
 
   function selectWrap(id, options) {
-    return `<div class="select-wrap"><select id="${id}">${options}</select>${C.icon('ChevronDown')}</div>`;
+    return `<div class="select"><select id="${id}" class="input--outline input--base">${options}</select><div class="select__icon">${C.chevron}</div></div>`;
   }
 
   // ---- tab panels --------------------------------------------------------
@@ -58,18 +69,18 @@ export default async function render(ctx) {
     return `
       <div class="split">
         <div class="stack">
-          <h2>${C.icon('ShoppingCart', 'icon--sm')} Möblierung & Material</h2>
+          <h2>${C.icon('ShoppingCart', 'icon--base')} Möblierung & Material</h2>
           <p>Mobiliar, Büromaterial und Ausstattung für Bundesarbeitsplätze beziehen Sie über den
              zentralen E-Shop des BBL. Standardisierte Sortimente sorgen für einheitliche, ergonomische
              und wirtschaftliche Arbeitsumgebungen über alle Standorte hinweg.</p>
           ${C.notification('<strong>Kreislaufwirtschaft:</strong> Gut erhaltenes Mobiliar wird wiederverwendet statt neu beschafft. Prüfen Sie vor jeder Bestellung das Angebot an aufbereitetem Occasions-Mobiliar im E-Shop – das spart Kosten und Ressourcen.', 'success', 'CheckmarkCircle')}
           <div class="row mt-4">
-            <a class="btn btn--primary btn--lg" href="#" target="_blank" rel="noopener">Zum E-Shop ${C.icon('External', 'icon--sm')}</a>
+            <a class="btn btn--outline btn--lg" href="#" target="_blank" rel="noopener">Zum E-Shop ${C.icon('External', 'icon--base')}</a>
             <a class="btn btn--outline" href="#/services">Verwandte Dienstleistungen</a>
           </div>
         </div>
         <aside class="stack-lg">
-          <div class="aside-box">
+          <div class="box">
             <h3>Sortimente</h3>
             <ul class="stack" style="padding-left:1.1rem; margin:0">
               <li>Büro- und Sitzungsmobiliar</li>
@@ -78,7 +89,7 @@ export default async function render(ctx) {
               <li>Aufbereitetes Occasions-Mobiliar</li>
             </ul>
           </div>
-          <div class="aside-box">
+          <div class="box">
             <h3>Gut zu wissen</h3>
             <p class="small muted" style="margin:0">Bestellungen lösen einen Vorgang vom Typ
               «Bestellung» aus und sind unter <a href="#/my-cases">Meine Vorgänge</a> nachverfolgbar.</p>
@@ -91,14 +102,14 @@ export default async function render(ctx) {
     return `
       <div class="split">
         <div class="stack">
-          <h2>${C.icon('Map', 'icon--sm')} Belegungsplanung</h2>
+          <h2>${C.icon('Map', 'icon--base')} Belegungsplanung</h2>
           <p>Die Belegungs- und Flächenplanung – wer sitzt wo, wie sind Flächen zugeteilt und wie hoch ist
              die Auslastung – erfolgt in der Fachanwendung <strong>GIS/FLM</strong> (Flächen- und
              Liegenschaftsmanagement). Dort stehen Belegungspläne, Flächenbilanzen und Auswertungen je
              Gebäude und Verwaltungseinheit zur Verfügung.</p>
           ${C.notification('Die detaillierte Belegungsplanung ist in der GIS/FLM-Fachanwendung verfügbar. Den Zugang finden Sie unter Anwendungen.', 'info')}
           <div class="row mt-4">
-            <a class="btn btn--primary" href="#/applications">Zu den Anwendungen ${C.icon('ArrowRight', 'icon--sm')}</a>
+            <a class="btn btn--outline" href="#/applications">Zu den Anwendungen ${C.icon('ArrowRight', 'icon--base')}</a>
           </div>
         </div>
         <aside class="stack-lg">
@@ -106,7 +117,7 @@ export default async function render(ctx) {
             <div class="stat__num">${totalWorkplaces.toLocaleString('de-CH')}</div>
             <div class="stat__label">Arbeitsplätze im Portfolio (${buildings.length} Gebäude)</div>
           </div>
-          <div class="aside-box">
+          <div class="box">
             <h3>Belegung planen</h3>
             <p class="small muted" style="margin:0">Belegungspläne, Desk-Sharing-Quoten und
               Flächenauslastung werden zentral in GIS/FLM geführt.</p>
@@ -122,7 +133,7 @@ export default async function render(ctx) {
     return `
       <div class="split">
         <div class="stack">
-          <h2>${C.icon('Calendar', 'icon--sm')} Ressource buchen</h2>
+          <h2>${C.icon('Calendar', 'icon--base')} Ressource buchen</h2>
           <p class="muted">Buchung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.
              Eine Anfrage wird als Vorgang erfasst und durch Workspace BBL bestätigt.</p>
           <form id="buchung-form" class="form">
@@ -141,12 +152,12 @@ export default async function render(ctx) {
             ${field('bemerkung', 'Bemerkung',
               `<textarea id="bemerkung" placeholder="z. B. benötigte Ausstattung, Personenzahl, besondere Wünsche">${C.escape(state.bemerkung)}</textarea>`)}
             <div class="row" style="justify-content:flex-end">
-              <button class="btn btn--primary btn--lg" type="submit">${C.icon('Checkmark', 'icon--sm')} Buchung anfragen</button>
+              <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Buchung anfragen</button>
             </div>
           </form>
         </div>
         <aside class="stack-lg">
-          <div class="aside-box">
+          <div class="box">
             <h3>Ihre Auswahl</h3>
             <dl class="kv">
               <dt>Ressource</dt><dd>${r ? C.escape(r.label) : '—'}</dd>
@@ -155,7 +166,7 @@ export default async function render(ctx) {
               <dt>Zeit</dt><dd>${C.escape(state.zeit || '—')}</dd>
             </dl>
           </div>
-          <div class="aside-box">
+          <div class="box">
             <h3>Hinweis</h3>
             <p class="small muted" style="margin:0">Arbeitsplätze werden im Desk-Sharing-Modell vergeben.
               Buchungen sind unter <a href="#/my-cases">Meine Vorgänge</a> einsehbar.</p>
@@ -175,7 +186,7 @@ export default async function render(ctx) {
              bestätigt. Den Status sehen Sie jederzeit unter «Meine Vorgänge».</p>
         </div>
         <div class="row">
-          <a class="btn btn--primary" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--sm')}</a>
+          <a class="btn btn--outline" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--base')}</a>
           <button class="btn btn--outline" type="button" id="buchung-neu">Weitere Buchung</button>
         </div>
       </div>`;
@@ -184,8 +195,8 @@ export default async function render(ctx) {
   // ---- render ------------------------------------------------------------
   function draw() {
     const controls = TABS.map(t =>
-      `<button class="tab__btn${t.id === state.tab ? ' active' : ''}" type="button" role="tab"
-         aria-selected="${t.id === state.tab}" data-tab="${t.id}">${C.icon(t.icon, 'icon--sm')} ${C.escape(t.label)}</button>`
+      `<button class="tab__control${t.id === state.tab ? " tab__control--active" : ""}" type="button" role="tab"
+         aria-selected="${t.id === state.tab}" data-tab="${t.id}">${C.icon(t.icon, 'icon--base')} ${C.escape(t.label)}</button>`
     ).join('');
 
     const panel = state.tab === 'moeblierung' ? panelMoeblierung()
@@ -196,8 +207,8 @@ export default async function render(ctx) {
     <div class="container section">
       ${C.pageHeader({ title: 'Workspace & Buchung', lead: 'Möblierung und Material, Belegungsplanung sowie Buchung von Räumen, Arbeitsplätzen und Parkplätzen.' })}
       <div class="tabs">
-        <div class="tabs__controls" role="tablist">${controls}</div>
-        <div class="tab__panel" role="tabpanel">${panel}</div>
+        <div class="tab__controls" role="tablist">${controls}</div>
+        <div class="tab__container" role="tabpanel">${panel}</div>
       </div>
     </div>`;
     wire();
@@ -222,7 +233,7 @@ export default async function render(ctx) {
 
   function wire() {
     // tab switching
-    mount.querySelectorAll('.tab__btn').forEach(btn => {
+    mount.querySelectorAll('.tab__control').forEach(btn => {
       btn.addEventListener('click', () => {
         if (state.tab === 'buchung' && !state.created) readForm();
         state.tab = btn.getAttribute('data-tab');

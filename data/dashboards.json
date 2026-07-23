@@ -1,0 +1,224 @@
+{
+  "_note": "Datenportal — Demo. Werte für 2025 stammen aus dem BBL-Nachhaltigkeitsbericht 2025 (NHB 2025); frühere Jahre sind für die Demo interpoliert/synthetisch.",
+  "topics": [
+    { "id": "energie-klima", "title": "Energie & Klima", "icon": "Bolt", "desc": "Treibhausgasemissionen, Energieverbrauch, Ölheizungen und Photovoltaik im Immobilienportfolio.", "owner": "Nachhaltigkeit BBL" },
+    { "id": "immobilien", "title": "Immobilienportfolio", "icon": "Building", "desc": "Flächen, Zertifizierungen (SNBS, Minergie) und Gebäudebestand der Energiestatistik.", "owner": "Portfoliomanagement BBL" },
+    { "id": "beschaffung", "title": "Beschaffung", "icon": "Briefcase", "desc": "Beschaffungsvolumen und Anteil nachhaltiger Vergaben.", "owner": "Beschaffung BBL" },
+    { "id": "personal", "title": "Personal", "icon": "Users", "desc": "Zusammensetzung der Belegschaft, Kaderanteile, Sprachvertretung und Fluktuation.", "owner": "Personal BBL" },
+    { "id": "logistik", "title": "Logistik & Publikationen", "icon": "Archive", "desc": "Papierverbrauch, Recyclinganteil und Sortiment der Bundespublikationen.", "owner": "Logistik BBL" },
+    { "id": "mobilitaet", "title": "Mobilität", "icon": "Car", "desc": "Dienstreisen, Flugreisen und Umstellung des Fuhrparks auf Elektroantrieb.", "owner": "Nachhaltigkeit BBL" }
+  ],
+
+  "datasets": {
+    "thg_jahr": {
+      "label": "Treibhausgasemissionen pro Jahr",
+      "columns": [{ "name": "jahr", "type": "int" }, { "name": "tonnen", "type": "num" }],
+      "rows": [[2019, 21400], [2020, 19850], [2021, 19100], [2022, 18300], [2023, 17600], [2024, 16900], [2025, 16150]]
+    },
+    "thg_kategorie": {
+      "label": "Treibhausgasemissionen nach Kategorie (Anteil)",
+      "columns": [{ "name": "kategorie", "type": "str" }, { "name": "anteil", "type": "num" }],
+      "rows": [["Wärme", 12.6], ["Abfall", 6.6], ["Strom", 5.9], ["Papier", 4.3], ["Übrige", 70.6]]
+    },
+    "oelheizungen": {
+      "label": "Bezogene Energiemenge aus Ölheizungen",
+      "columns": [{ "name": "jahr", "type": "int" }, { "name": "gwh", "type": "num" }, { "name": "reihe", "type": "str" }],
+      "rows": [[2018, 11.4, "Ist"], [2020, 9.8, "Ist"], [2021, 8.9, "Ist"], [2022, 8.1, "Ist"], [2023, 7.4, "Ist"], [2024, 6.7, "Ist"], [2025, 6.1, "Ist"], [2030, 5.0, "Ziel"]]
+    },
+    "energietraeger": {
+      "label": "Energieverbrauch nach Träger",
+      "columns": [{ "name": "jahr", "type": "int" }, { "name": "traeger", "type": "str" }, { "name": "gwh", "type": "num" }],
+      "rows": [
+        [2023, "Strom", 92], [2023, "Wärme", 118], [2023, "Photovoltaik (eigen)", 2.1],
+        [2024, "Strom", 90], [2024, "Wärme", 114], [2024, "Photovoltaik (eigen)", 2.6],
+        [2025, "Strom", 88], [2025, "Wärme", 110], [2025, "Photovoltaik (eigen)", 3.0]
+      ]
+    },
+    "pva_ausbau": {
+      "label": "Photovoltaik — Produktion und Zielpfad",
+      "columns": [{ "name": "jahr", "type": "int" }, { "name": "gwh", "type": "num" }, { "name": "reihe", "type": "str" }],
+      "rows": [[2022, 1.4, "Ist"], [2023, 2.1, "Ist"], [2024, 2.6, "Ist"], [2025, 3.0, "Ist"], [2030, 3.4, "Ziel"], [2034, 3.7, "Ziel"]]
+    },
+    "snbs_gebaeude": {
+      "label": "SNBS-zertifizierte Neubauten",
+      "columns": [{ "name": "objekt", "type": "str" }, { "name": "jahr", "type": "int" }, { "name": "zertifikat", "type": "str" }, { "name": "flaeche", "type": "num" }],
+      "rows": [
+        ["Guisanplatz 1B, Bern", 2019, "Platin", 18127],
+        ["Pulverstrasse 11, Ittigen", 2020, "Gold", 12181],
+        ["Eichenweg 3, Zollikofen", 2022, "Platin", 25573],
+        ["Eichenweg 5, Zollikofen", 2023, "Platin", 23525]
+      ]
+    },
+    "zertifizierte_flaeche": {
+      "label": "Zertifizierte Fläche nach Standard",
+      "columns": [{ "name": "standard", "type": "str" }, { "name": "flaeche", "type": "num" }],
+      "rows": [["Minergie", 380000], ["SNBS", 79406]]
+    },
+    "beschaffung_volumen": {
+      "label": "Beschaffungsvolumen",
+      "columns": [{ "name": "jahr", "type": "int" }, { "name": "mrd_chf", "type": "num" }],
+      "rows": [[2021, 1.32], [2022, 1.41], [2023, 1.54], [2024, 1.62], [2025, 1.70]]
+    },
+    "beschaffung_nachhaltig": {
+      "label": "Anteil Vergaben mit Nachhaltigkeitskriterien",
+      "columns": [{ "name": "jahr", "type": "int" }, { "name": "anteil", "type": "num" }],
+      "rows": [[2021, 18], [2022, 24], [2023, 31], [2024, 37], [2025, 43]]
+    },
+    "personal_anteile": {
+      "label": "Personalkennzahlen gegen Sollwerte EPA",
+      "columns": [{ "name": "kennzahl", "type": "str" }, { "name": "ist", "type": "num" }, { "name": "soll_min", "type": "num" }, { "name": "soll_max", "type": "num" }],
+      "rows": [
+        ["Frauenanteil gesamt", 52, 46, 50],
+        ["Frauenanteil Kader", 32, 39, 44],
+        ["Mitarbeitende mit Behinderung", 0.5, 1.5, 2.5]
+      ]
+    },
+    "sprachen": {
+      "label": "Sprachvertretung",
+      "columns": [{ "name": "sprache", "type": "str" }, { "name": "anteil", "type": "num" }, { "name": "soll_min", "type": "num" }, { "name": "soll_max", "type": "num" }],
+      "rows": [["Deutsch", 74.2, 68.5, 70.5], ["Französisch", 18.9, 21.5, 23.5], ["Italienisch", 6.2, 6.5, 8.5], ["Rätoromanisch", 0.7, 0.5, 1.0]]
+    },
+    "fluktuation": {
+      "label": "Bruttofluktuation",
+      "columns": [{ "name": "jahr", "type": "int" }, { "name": "prozent", "type": "num" }],
+      "rows": [[2023, 10], [2024, 8], [2025, 7]]
+    },
+    "papier": {
+      "label": "Papier — Verbrauch und Recyclinganteil",
+      "columns": [{ "name": "jahr", "type": "int" }, { "name": "tonnen", "type": "num" }, { "name": "recyclinganteil", "type": "num" }],
+      "rows": [[2021, 412], [2022, 386], [2023, 341], [2024, 312], [2025, 288]]
+    },
+    "papier_anteil": {
+      "label": "Anteil Recyclingpapier",
+      "columns": [{ "name": "jahr", "type": "int" }, { "name": "anteil", "type": "num" }],
+      "rows": [[2021, 52], [2022, 58], [2023, 63], [2024, 68], [2025, 71]]
+    },
+    "mobilitaet_thg": {
+      "label": "Dienstreisen — Anteil an den Reise-Emissionen",
+      "columns": [{ "name": "kategorie", "type": "str" }, { "name": "anteil", "type": "num" }],
+      "rows": [["Flugreisen", 37.3], ["Bahn", 8.4], ["Fahrzeugflotte", 41.1], ["Übrige", 13.2]]
+    },
+    "fuhrpark": {
+      "label": "Fuhrpark nach Antrieb",
+      "columns": [{ "name": "antrieb", "type": "str" }, { "name": "anzahl", "type": "num" }],
+      "rows": [["Fossil", 8], ["Elektrisch", 6], ["Hybrid", 3]]
+    }
+  },
+
+  "dashboards": [
+    {
+      "id": "energie-klima",
+      "topicId": "energie-klima",
+      "title": "Energie & Klima",
+      "lead": "Treibhausgasbilanz, Energieverbrauch und der Ausstieg aus fossilen Heizungen im Immobilienportfolio des BBL.",
+      "source": "NHB BBL 2025 · Energiestatistik (358 Gebäude)",
+      "updated": "2026-03-31",
+      "hero": { "label": "Treibhausgasemissionen 2025", "value": "16 150", "unit": "t CO₂e", "deltaLabel": "−4.4 % gegenüber 2024", "deltaGood": true },
+      "charts": [
+        { "id": "thg-trend", "title": "Treibhausgasemissionen", "form": "line", "unit": "t CO₂e",
+          "query": { "dataset": "thg_jahr", "select": ["jahr", "tonnen"], "orderBy": "jahr" },
+          "x": "jahr", "y": "tonnen",
+          "note": "Scope 1 und 2 der Energiestatistik." },
+        { "id": "oel-pfad", "title": "Energie aus Ölheizungen — Ist und Zielpfad", "form": "line", "unit": "GWh/a",
+          "query": { "dataset": "oelheizungen", "select": ["jahr", "gwh", "reihe"], "orderBy": "jahr" },
+          "x": "jahr", "y": "gwh", "series": "reihe",
+          "note": "Ziel: Reduktion von 11,4 GWh/a (2018) auf 5 GWh/a bis 2030." },
+        { "id": "thg-kat", "title": "Emissionen nach Kategorie", "form": "barH", "unit": "%",
+          "query": { "dataset": "thg_kategorie", "select": ["kategorie", "anteil"], "orderBy": "-anteil" },
+          "x": "kategorie", "y": "anteil" },
+        { "id": "pva", "title": "Photovoltaik — Eigenproduktion", "form": "column", "unit": "GWh/a",
+          "query": { "dataset": "pva_ausbau", "select": ["jahr", "gwh", "reihe"], "orderBy": "jahr" },
+          "x": "jahr", "y": "gwh", "series": "reihe" }
+      ]
+    },
+    {
+      "id": "immobilien",
+      "topicId": "immobilien",
+      "title": "Immobilienportfolio",
+      "lead": "Zertifizierte Flächen und Gebäudebestand — Grundlage für Erhaltungsplanung und Energiestatistik.",
+      "source": "NHB BBL 2025 · Portfoliomanagement",
+      "updated": "2026-03-31",
+      "hero": { "label": "SNBS-zertifizierte Fläche", "value": "79 406", "unit": "m²", "deltaLabel": "4 Neubauten seit 2019", "deltaGood": true },
+      "charts": [
+        { "id": "snbs", "title": "SNBS-zertifizierte Neubauten", "form": "barH", "unit": "m²",
+          "query": { "dataset": "snbs_gebaeude", "select": ["objekt", "flaeche"], "orderBy": "-flaeche" },
+          "x": "objekt", "y": "flaeche" },
+        { "id": "zert", "title": "Zertifizierte Fläche nach Standard", "form": "barH", "unit": "m²",
+          "query": { "dataset": "zertifizierte_flaeche", "select": ["standard", "flaeche"], "orderBy": "-flaeche" },
+          "x": "standard", "y": "flaeche" }
+      ]
+    },
+    {
+      "id": "beschaffung",
+      "topicId": "beschaffung",
+      "title": "Beschaffung",
+      "lead": "Volumen und Nachhaltigkeitsanteil der über das BBL abgewickelten Vergaben.",
+      "source": "NHB BBL 2025 · Beschaffungscontrolling",
+      "updated": "2026-02-28",
+      "hero": { "label": "Beschaffungsvolumen 2025", "value": "1,70", "unit": "Mrd. CHF", "deltaLabel": "+4.9 % gegenüber 2024", "deltaGood": null },
+      "charts": [
+        { "id": "vol", "title": "Beschaffungsvolumen", "form": "column", "unit": "Mrd. CHF",
+          "query": { "dataset": "beschaffung_volumen", "select": ["jahr", "mrd_chf"], "orderBy": "jahr" },
+          "x": "jahr", "y": "mrd_chf" },
+        { "id": "nachhaltig", "title": "Anteil Vergaben mit Nachhaltigkeitskriterien", "form": "line", "unit": "%",
+          "query": { "dataset": "beschaffung_nachhaltig", "select": ["jahr", "anteil"], "orderBy": "jahr" },
+          "x": "jahr", "y": "anteil" }
+      ]
+    },
+    {
+      "id": "personal",
+      "topicId": "personal",
+      "title": "Personal",
+      "lead": "Zusammensetzung der Belegschaft im Vergleich zu den Sollwerten des Eidgenössischen Personalamts (EPA).",
+      "source": "NHB BBL 2025 · Personal BBL",
+      "updated": "2026-01-31",
+      "hero": { "label": "Frauenanteil", "value": "52", "unit": "%", "deltaLabel": "Sollwert EPA 46–50 %", "deltaGood": true },
+      "charts": [
+        { "id": "anteile", "title": "Kennzahlen gegen Sollwert", "form": "barH", "unit": "%",
+          "query": { "dataset": "personal_anteile", "select": ["kennzahl", "ist"], "orderBy": "-ist" },
+          "x": "kennzahl", "y": "ist" },
+        { "id": "sprachen", "title": "Sprachvertretung", "form": "barH", "unit": "%",
+          "query": { "dataset": "sprachen", "select": ["sprache", "anteil"], "orderBy": "-anteil" },
+          "x": "sprache", "y": "anteil" },
+        { "id": "flukt", "title": "Bruttofluktuation", "form": "line", "unit": "%",
+          "query": { "dataset": "fluktuation", "select": ["jahr", "prozent"], "orderBy": "jahr" },
+          "x": "jahr", "y": "prozent" }
+      ]
+    },
+    {
+      "id": "logistik",
+      "topicId": "logistik",
+      "title": "Logistik & Publikationen",
+      "lead": "Papierverbrauch und Recyclinganteil im Publikations- und Bürobetrieb.",
+      "source": "NHB BBL 2025 · Logistik BBL",
+      "updated": "2026-02-28",
+      "hero": { "label": "Anteil Recyclingpapier", "value": "71", "unit": "%", "deltaLabel": "+3 Prozentpunkte gegenüber 2024", "deltaGood": true },
+      "charts": [
+        { "id": "verbrauch", "title": "Papierverbrauch", "form": "column", "unit": "t",
+          "query": { "dataset": "papier", "select": ["jahr", "tonnen"], "orderBy": "jahr" },
+          "x": "jahr", "y": "tonnen" },
+        { "id": "recycling", "title": "Anteil Recyclingpapier", "form": "line", "unit": "%",
+          "query": { "dataset": "papier_anteil", "select": ["jahr", "anteil"], "orderBy": "jahr" },
+          "x": "jahr", "y": "anteil" }
+      ]
+    },
+    {
+      "id": "mobilitaet",
+      "topicId": "mobilitaet",
+      "title": "Mobilität",
+      "lead": "Emissionen aus Dienstreisen und Umstellung des Fuhrparks auf Elektroantrieb.",
+      "source": "NHB BBL 2025 · Nachhaltigkeit BBL",
+      "updated": "2026-03-31",
+      "hero": { "label": "Anteil Flugreisen an den Reise-Emissionen", "value": "37,3", "unit": "%", "deltaLabel": "Reduktion seit 2019", "deltaGood": true },
+      "charts": [
+        { "id": "reise", "title": "Emissionen aus Dienstreisen nach Kategorie", "form": "barH", "unit": "%",
+          "query": { "dataset": "mobilitaet_thg", "select": ["kategorie", "anteil"], "orderBy": "-anteil" },
+          "x": "kategorie", "y": "anteil" },
+        { "id": "flotte", "title": "Fuhrpark nach Antrieb", "form": "barH", "unit": "Fahrzeuge",
+          "query": { "dataset": "fuhrpark", "select": ["antrieb", "anzahl"], "orderBy": "-anzahl" },
+          "x": "antrieb", "y": "anzahl",
+          "note": "Bis 2028 sollen acht fossil betriebene Fahrzeuge ersetzt werden." }
+      ]
+    }
+  ]
+}

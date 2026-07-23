@@ -29,7 +29,7 @@ export default async function render(ctx) {
     return `<ol class="steps">${labels.map((l, idx) => {
       const n = idx + 1;
       const cls = state.step > n ? 'done' : state.step === n ? 'active' : '';
-      return `<li class="${cls}"><span class="num">${state.step > n ? '✓' : n}</span> ${l}</li>`;
+      return `<li class="${cls}"><span class="step__indicator-step">${state.step > n ? '✓' : n}</span> ${l}</li>`;
     }).join('')}</ol>`;
   }
 
@@ -37,7 +37,7 @@ export default async function render(ctx) {
     if (state.created) return drawDone();
     mount.innerHTML = `
     <div class="container section">
-      <div class="measure">
+      <div class="container__center--xs">
         ${C.backLink('#/services/raumbedarf-melden', 'Zur Service-Beschreibung')}
         <h1 tabindex="-1">Raumbedarf melden</h1>
         <p class="muted">Antrag als <strong>${C.escape(state.org)}</strong> · Prozess: Eingang → Prüfung GS → Prüfung PFM → Entscheid.</p>
@@ -49,27 +49,38 @@ export default async function render(ctx) {
   }
 
   function field(id, label, control, err, hint) {
-    return `<div class="field${err ? ' input-error' : ''}">
-      <label for="${id}">${label}</label>${control}
-      ${hint ? `<div class="hint">${hint}</div>` : ''}${err ? `<div class="err">${C.escape(err)}</div>` : ''}</div>`;
+    const required = /class="req"/.test(label);
+    const clean = label.replace(/\s*<span class="req">\*<\/span>/, '');
+    const ids = [hint ? `${id}-hint` : '', err ? `${id}-err` : ''].filter(Boolean).join(' ');
+    const attrs = `${required ? ' required aria-required="true"' : ''}${err ? ' aria-invalid="true"' : ''}${ids ? ` aria-describedby="${ids}"` : ''}`;
+    const ctrl = control
+      .replace(/<(input|select|textarea)\b([^>]*?)>/, (m, tag, a) => `<${tag}${a}${attrs}>`)
+      .replace(/<(input|select|textarea)\b([^>]*?)class="([^"]*)"/, (m, tag, a, cls) =>
+        `<${tag}${a}class="${cls}${err ? ' input--error' : ''}"`);
+    return `<div class="form__group__input">
+      <label for="${id}"${required ? ' class="text--asterisk"' : ''}>${clean}${required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
+      ${ctrl}
+      ${hint ? `<div class="badge badge--sm badge--info" id="${id}-hint">${hint}</div>` : ''}
+      ${err ? `<div class="badge badge--sm badge--error" id="${id}-err" role="alert">${C.escape(err)}</div>` : ''}
+    </div>`;
   }
 
   function step1() {
     return `
       ${field('org', 'Verwaltungseinheit <span class="req">*</span>', `<input id="org" value="${C.escape(state.org)}">`, state.errors.org)}
       ${field('cc', 'Kostenstelle <span class="req">*</span>', `<input id="cc" placeholder="z. B. 810.123" value="${C.escape(state.costCenter)}">`, state.errors.costCenter)}
-      ${field('bld', 'Standort / Gebäude', `<div class="select-wrap"><select id="bld">${buildings.map(b => `<option value="${b.bbl_id}"${b.bbl_id === state.buildingId ? ' selected' : ''}>${C.escape(b.name)} — ${C.escape(b.city)}</option>`).join('')}</select>${C.icon('ChevronDown')}</div>`)}
+      ${field('bld', 'Standort / Gebäude', `<div class="select"><select id="bld" class="input--outline input--base">${buildings.map(b => `<option value="${b.bbl_id}"${b.bbl_id === state.buildingId ? ' selected' : ''}>${C.escape(b.name)} — ${C.escape(b.city)}</option>`).join('')}</select><div class="select__icon">${C.chevron}</div></div>`)}
       ${field('persons', 'Anzahl Personen / Arbeitsplätze <span class="req">*</span>', `<input id="persons" type="number" min="1" value="${state.persons}">`, state.errors.persons)}
-      <div class="row" style="justify-content:flex-end"><button class="btn btn--primary" type="submit">Weiter ${C.icon('ArrowRight', 'icon--sm')}</button></div>`;
+      <div class="row" style="justify-content:flex-end"><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
   }
 
   function step2() {
     return `
-      ${field('naw', 'Arbeitswelt (NAW-Klasse)', `<div class="select-wrap"><select id="naw">${naw.map(n => `<option value="${n.id}"${n.id === state.nawClass ? ' selected' : ''}>${C.escape(n.label)}</option>`).join('')}</select>${C.icon('ChevronDown')}</div>`)}
+      ${field('naw', 'Arbeitswelt (NAW-Klasse)', `<div class="select"><select id="naw" class="input--outline input--base">${naw.map(n => `<option value="${n.id}"${n.id === state.nawClass ? ' selected' : ''}>${C.escape(n.label)}</option>`).join('')}</select><div class="select__icon">${C.chevron}</div></div>`)}
       <div class="notification notification--info">${C.icon('InfoCircle', 'icon--lg')}<div>Geschätzter Flächenbedarf: <strong>${area()} m² HNF</strong><br><span class="small">${state.persons} Arbeitsplätze × ${AREA_PER_WORKPLACE} m² × Desk-Sharing-Faktor ${dsf}</span></div></div>
       ${field('termin', 'Gewünschter Termin', `<input id="termin" type="date" value="${C.escape(state.termin)}">`)}
       ${field('beg', 'Begründung <span class="req">*</span>', `<textarea id="beg" placeholder="Weshalb wird der zusätzliche Raum benötigt?">${C.escape(state.begruendung)}</textarea>`, state.errors.begruendung)}
-      <div class="row" style="justify-content:space-between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--sm')} Zurück</button><button class="btn btn--primary" type="submit">Weiter ${C.icon('ArrowRight', 'icon--sm')}</button></div>`;
+      <div class="row" style="justify-content:space-between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')} Zurück</button><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
   }
 
   function step3() {
@@ -88,19 +99,19 @@ export default async function render(ctx) {
         <dt>Begründung</dt><dd>${C.escape(state.begruendung)}</dd>
       </dl>
       ${C.notification('Mit dem Absenden wird ein Vorgang erstellt und an die Prüfung weitergeleitet. Sie können den Status unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
-      <div class="row" style="justify-content:space-between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--sm')} Zurück</button><button class="btn btn--primary btn--lg" type="submit">${C.icon('Checkmark', 'icon--sm')} Antrag absenden</button></div>`;
+      <div class="row" style="justify-content:space-between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')} Zurück</button><button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Antrag absenden</button></div>`;
   }
 
   function drawDone() {
     const i = state.created;
     mount.innerHTML = `
     <div class="container section">
-      <div class="measure">
+      <div class="container__center--xs">
         <div class="notification notification--success">${C.icon('CheckmarkCircle', 'icon--lg')}<div><strong>Antrag eingereicht.</strong> Ihre Referenz: <strong>${C.escape(i.reference)}</strong></div></div>
         <h1 tabindex="-1">Vielen Dank</h1>
         <p>Ihr Raumbedarf-Antrag wurde erfasst und an die Prüfung weitergeleitet. Den Status sehen Sie jederzeit unter «Meine Vorgänge».</p>
         <div class="row mt-4">
-          <a class="btn btn--filled" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--sm')}</a>
+          <a class="btn btn--filled" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--base')}</a>
           <a class="btn btn--outline" href="#/services">Weitere Services</a>
         </div>
       </div>

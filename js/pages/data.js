@@ -6,11 +6,81 @@ const DCAT_LABEL = { Dataset: 'Datensatz', DataService: 'Datendienst', Concept: 
 const DCAT_VARIANT = { Dataset: 'blue', DataService: 'info', Concept: 'gray' };
 
 export default async function render(ctx) {
-  const { mount, params, core, C, setTitle, setCrumbs } = ctx;
-  if (params[0]) return detail(ctx, params[0]);
+  const { params } = ctx;
+  if (!params.length) return overview(ctx);
+  if (params[0] === 'katalog') return katalog(ctx);
+  if (params[0] === 'digitalisierung') return (await import('./digitalisierung.js')).default(ctx);
+  return detail(ctx, params[0]);
+}
 
-  setTitle('Daten');
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten' }]);
+// Section overview — the CD pattern for a top-level area: a short lead plus
+// cards onto everything the section contains. (bbl.admin.ch, swisstopo.admin.ch)
+function overview(ctx) {
+  const { mount, core, C, setTitle, setCrumbs } = ctx;
+  setTitle('Daten und Digitalisierung');
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung' }]);
+
+  const products = core.dataProducts();
+  const apps = core.applications();
+  const count = (b) => apps.filter(a => a.bereich === b).length;
+  const datasets = products.filter(p => p.dcatClass === 'Dataset').length;
+  const services = products.filter(p => p.dcatClass === 'DataService').length;
+
+  const entry = (o) => `
+    <a class="card card--universal card--clickable" href="${o.href}">
+      <div class="card__content">
+        <div class="card__body">
+          <span class="domain-tile__icon">${C.icon(o.icon, 'icon--2xl')}</span>
+          <div class="card__title">${C.escape(o.title)}</div>
+          <p class="card__description">${C.escape(o.desc)}</p>
+        </div>
+        <div class="card__footer">
+          <span>${C.escape(o.meta)}</span>
+          <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>
+        </div>
+      </div>
+    </a>`;
+
+  const entries = [
+    { title: 'Datenportal', icon: 'ChartBar', href: '#/app/dataportal',
+      desc: 'Auswertungen und Dashboards zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal.',
+      meta: '6 Themen' },
+    { title: 'Datenbezug', icon: 'FileDatabase', href: '#/data/katalog',
+      desc: 'Datenkatalog nach DCAT-AP-CH: Datensätze, Datendienste und Codelisten mit Bezugswegen.',
+      meta: `${datasets} Datensätze · ${services} Datendienste` },
+    { title: 'Fachanwendungen Bauten', icon: 'Building', href: '#/applications?bereich=bauten',
+      desc: 'Fachanwendungen für Immobilien, Bauprojekte und Bauwerksdokumentation.',
+      meta: `${count('bauten')} Anwendungen` },
+    { title: 'Fachanwendungen Logistik', icon: 'ShoppingCart', href: '#/applications?bereich=logistik',
+      desc: 'Fachanwendungen für Arbeitsplatz, Beschaffung und Logistik.',
+      meta: `${count('logistik')} Anwendungen` },
+    { title: 'Alle Anwendungen', icon: 'Apps', href: '#/applications',
+      desc: 'Der vollständige Anwendungskatalog, inklusive der zentralen Systeme der Bundesverwaltung.',
+      meta: `${apps.length} Anwendungen` },
+    { title: 'Digitalisierung', icon: 'Book', href: '#/data/digitalisierung',
+      desc: 'Strategie, Vorhaben und Grundsätze der Digitalisierung im BBL.',
+      meta: 'Strategie & Vorhaben' },
+  ].map(entry).join('');
+
+  mount.innerHTML = `
+  <div class="container section">
+    ${C.pageHeader({
+      title: 'Daten und Digitalisierung',
+      lead: 'Auswertungen, Datenbezug und die Fachanwendungen des BBL — an einem Ort.',
+    })}
+    <div class="grid grid--3 mt-8">${entries}</div>
+  </div>`;
+}
+
+// Datenbezug — der DCAT-Katalog (früher direkt unter #/data).
+function katalog(ctx) {
+  const { mount, core, C, setTitle, setCrumbs } = ctx;
+  setTitle('Datenbezug');
+  setCrumbs([
+    { label: 'Startseite', href: '#/' },
+    { label: 'Daten und Digitalisierung', href: '#/data' },
+    { label: 'Datenbezug' },
+  ]);
 
   const products = core.dataProducts();
   const tiers = core.ref().classificationTiers || [];
@@ -31,7 +101,7 @@ export default async function render(ctx) {
     return `<div class="card">
       <div class="card__body">
         <div class="card__title">${C.escape(dk)}</div>
-        <p class="card__desc">${C.escape(parts.join(' · '))}</p>
+        <p class="card__description">${C.escape(parts.join(' · '))}</p>
         <div class="pill-row">${list.slice(0, 4).map(p =>
           `<a class="badge badge--${DCAT_VARIANT[p.dcatClass]}" href="#/data/${encodeURIComponent(p.id)}">${C.escape(p.title)}</a>`
         ).join('')}</div>
@@ -59,7 +129,7 @@ export default async function render(ctx) {
     const isRoadmap = !!p.note;
     const dists = (p.distributions || []).length
       ? `<div class="pill-row mt-2">${p.distributions.map(d =>
-          `<a class="btn btn--link" href="${C.escape(d.href || '#')}">${C.icon('Download', 'icon--sm')} ${C.escape(d.format)}</a>`
+          `<a class="btn btn--link" href="${C.escape(d.href || '#')}">${C.icon('Download', 'icon--base')} ${C.escape(d.format)}</a>`
         ).join('')}</div>`
       : '';
 
@@ -73,7 +143,7 @@ export default async function render(ctx) {
     const conceptRefs = (p.conceptRefs || []).length
       ? `<div class="pill-row mt-2">${p.conceptRefs.map(cid => {
           const c = core.dataProduct(cid);
-          return `<a class="badge badge--gray" href="#/data/${encodeURIComponent(cid)}">${C.icon('Book', 'icon--sm')} ${C.escape(c ? c.title : cid)}</a>`;
+          return `<a class="badge badge--gray" href="#/data/${encodeURIComponent(cid)}">${C.icon('Book', 'icon--base')} ${C.escape(c ? c.title : cid)}</a>`;
         }).join('')}</div>`
       : '';
 
@@ -88,26 +158,26 @@ export default async function render(ctx) {
       <div class="card__body">
         <div class="pill-row">${badges.filter(Boolean).join('')}</div>
         <a class="card__title" href="#/data/${encodeURIComponent(p.id)}" style="color:inherit">${C.escape(p.title)}</a>
-        <p class="card__desc">${C.escape(p.description)}</p>
+        <p class="card__description">${C.escape(p.description)}</p>
         <dl class="kv mt-2">
           <dt>Domäne</dt><dd>${C.escape(p.domain)}</dd>
           <dt>Datenverantw.</dt><dd>${C.escape(p.ownerLabel)}</dd>
           ${(p.format || []).length ? `<dt>Format</dt><dd>${C.escape(p.format.join(', '))}</dd>` : ''}
           <dt>Aktualisiert</dt><dd>${C.escape(p.updated || '—')}</dd>
         </dl>
-        ${isRoadmap ? `<p class="small muted mt-2">${C.icon('InfoCircle', 'icon--sm')} ${C.escape(p.note)}</p>` : ''}
+        ${isRoadmap ? `<p class="small muted mt-2">${C.icon('InfoCircle', 'icon--base')} ${C.escape(p.note)}</p>` : ''}
         ${dists}
         ${conceptRefs}
       </div>
       <div class="card__footer">
-        <a class="btn btn--link" href="#/data/${encodeURIComponent(p.id)}">Details ${C.icon('ArrowRight', 'icon--sm')}</a>
+        <a class="btn btn--link" href="#/data/${encodeURIComponent(p.id)}">Details ${C.icon('ArrowRight', 'icon--base')}</a>
       </div>
     </article>`;
   }
 
   function catalogChips() {
-    return `<div class="chips" id="dcat-chips">${classes.map(c =>
-      `<button type="button" class="chip${c === activeClass ? ' active' : ''}" data-class="${c}">${C.escape(c === 'Alle' ? 'Alle' : DCAT_LABEL[c])} <span class="muted">${counts[c]}</span></button>`
+    return `<div class="list list--flex list--wrap" id="dcat-chips">${classes.map(c =>
+      `<button type="button" class="tag-item${c === activeClass ? " tag-item--active" : ""}" aria-pressed="${!!(c === activeClass)}" data-class="${c}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(c === 'Alle' ? 'Alle' : DCAT_LABEL[c])} <span class="muted">${counts[c]}</span></span></span></button>`
     ).join('')}</div>`;
   }
 
@@ -121,8 +191,8 @@ export default async function render(ctx) {
   function drawCatalog() {
     const host = mount.querySelector('#dcat-grid');
     if (host) host.innerHTML = catalogGrid();
-    mount.querySelectorAll('#dcat-chips .chip').forEach(b =>
-      b.classList.toggle('active', b.getAttribute('data-class') === activeClass));
+    mount.querySelectorAll('#dcat-chips .tag-item').forEach(b =>
+      b.classList.toggle('tag-item--active', b.getAttribute('data-class') === activeClass));
   }
 
   mount.innerHTML = `
@@ -132,13 +202,13 @@ export default async function render(ctx) {
     ${C.notification('Demo mit Mock-Daten. Alle Datenprodukte sind <strong>intern</strong> klassifiziert (ISG: INTERN). Der Datenkatalog folgt dem Modell von «Datenbezug» (BLW) und «I14Y».', 'info')}
 
     <section class="mt-8">
-      <h2>${C.icon('FileDatabase', 'icon--sm')} Datenbezug nach Domäne</h2>
+      <h2>${C.icon('FileDatabase', 'icon--base')} Datenbezug nach Domäne</h2>
       <p class="page-intro muted">Datenprodukte nach Fachdomäne. Wählen Sie ein Datenprodukt, um die enthaltenen Datensätze, Dienste und Konzepte zu sehen.</p>
       <div class="grid grid--3 mt-4">${domainCards || C.empty('Keine Datenprodukte vorhanden.')}</div>
     </section>
 
     <section class="mt-8">
-      <h2>${C.icon('Database', 'icon--sm')} Datenkatalog (DCAT)</h2>
+      <h2>${C.icon('Database', 'icon--base')} Datenkatalog (DCAT)</h2>
       <p class="page-intro muted">Filtern Sie nach DCAT-Klasse: <strong>Datensatz</strong> (Dataset), <strong>Datendienst</strong> (DataService) oder <strong>Konzept</strong> (Concept).</p>
       <div class="mt-4">${catalogChips()}</div>
       <div id="dcat-grid">${catalogGrid()}</div>
@@ -147,7 +217,7 @@ export default async function render(ctx) {
 
   const chipBar = mount.querySelector('#dcat-chips');
   if (chipBar) chipBar.addEventListener('click', (e) => {
-    const btn = e.target.closest('.chip');
+    const btn = e.target.closest('.tag-item');
     if (!btn) return;
     activeClass = btn.getAttribute('data-class');
     drawCatalog();
@@ -160,11 +230,11 @@ function detail(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
   const p = core.dataProduct(id);
   if (!p) {
-    mount.innerHTML = `<div class="container section">${C.backLink('#/data', 'Datenkatalog')}${C.empty('Datenprodukt nicht gefunden.')}</div>`;
+    mount.innerHTML = `<div class="container section">${C.backLink('#/data/katalog', 'Datenbezug')}${C.empty('Datenprodukt nicht gefunden.')}</div>`;
     return;
   }
   setTitle(p.title);
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten', href: '#/data' }, { label: p.title }]);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Datenbezug', href: '#/data/katalog' }, { label: p.title }]);
 
   const tiers = core.ref().classificationTiers || [];
   const tier = tiers.find(t => t.id === p.classification);
@@ -181,15 +251,15 @@ function detail(ctx, id) {
   const distRows = (p.distributions || []).length
     ? `<ul class="stack" style="list-style:none">${p.distributions.map(d =>
         `<li class="row row--between" style="border:1px solid var(--color-border);border-radius:var(--radius);padding:.6rem .85rem;background:#fff">
-          <span class="row gap-sm">${C.icon('File', 'icon--sm')} <strong>${C.escape(d.format)}</strong></span>
-          <a class="btn btn--outline btn--sm" href="${C.escape(d.href || '#')}">${C.icon('Download', 'icon--sm')} Beziehen</a>
+          <span class="row gap-sm">${C.icon('File', 'icon--base')} <strong>${C.escape(d.format)}</strong></span>
+          <a class="btn btn--outline btn--sm" href="${C.escape(d.href || '#')}">${C.icon('Download', 'icon--base')} Beziehen</a>
         </li>`
       ).join('')}</ul>`
-    : `<p class="muted">${C.icon('InfoCircle', 'icon--sm')} Keine Distribution verfügbar${isRoadmap ? ' (Roadmap)' : ''}.</p>`;
+    : `<p class="muted">${C.icon('InfoCircle', 'icon--base')} Keine Distribution verfügbar${isRoadmap ? ' (Roadmap)' : ''}.</p>`;
 
   // DataService Spezifikation
   const specBlock = p.dcatClass === 'DataService'
-    ? `<div class="aside-box">
+    ? `<div class="box">
         <h3>Spezifikation</h3>
         <div class="pill-row">${p.specStatus === 'vorhanden'
           ? C.badge('Spezifikation vorhanden', 'success')
@@ -200,11 +270,11 @@ function detail(ctx, id) {
 
   // Konzeptverweise
   const conceptBlock = (p.conceptRefs || []).length
-    ? `<div class="aside-box">
+    ? `<div class="box">
         <h3>Verwendete Konzepte</h3>
         <div class="stack" style="--space:.4rem">${p.conceptRefs.map(cid => {
           const c = core.dataProduct(cid);
-          return `<a class="row gap-sm" style="padding:.25rem 0" href="#/data/${encodeURIComponent(cid)}">${C.icon('Book', 'icon--sm')} <span class="small">${C.escape(c ? c.title : cid)}</span></a>`;
+          return `<a class="row gap-sm" style="padding:.25rem 0" href="#/data/${encodeURIComponent(cid)}">${C.icon('Book', 'icon--base')} <span class="small">${C.escape(c ? c.title : cid)}</span></a>`;
         }).join('')}</div>
       </div>`
     : '';
@@ -214,10 +284,10 @@ function detail(ctx, id) {
     ? (() => {
         const users = core.dataProducts().filter(x => (x.conceptRefs || []).includes(p.id));
         if (!users.length) return '';
-        return `<div class="aside-box">
+        return `<div class="box">
           <h3>Verwendet in</h3>
           <div class="stack" style="--space:.4rem">${users.map(u =>
-            `<a class="row gap-sm" style="padding:.25rem 0" href="#/data/${encodeURIComponent(u.id)}">${C.icon('FileDatabase', 'icon--sm')} <span class="small">${C.escape(u.title)}</span></a>`
+            `<a class="row gap-sm" style="padding:.25rem 0" href="#/data/${encodeURIComponent(u.id)}">${C.icon('FileDatabase', 'icon--base')} <span class="small">${C.escape(u.title)}</span></a>`
           ).join('')}</div>
         </div>`;
       })()
@@ -225,7 +295,7 @@ function detail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/data', 'Datenkatalog')}
+    ${C.backLink('#/data/katalog', 'Datenbezug')}
     <div class="split mt-4">
       <div class="stack-lg">
         <div>
@@ -258,15 +328,15 @@ function detail(ctx, id) {
       </div>
 
       <aside class="stack-lg">
-        <div class="aside-box">
+        <div class="box">
           <h3>Datenverantwortung</h3>
-          <p class="small" style="margin:0">${C.icon('User', 'icon--sm')} <strong>${C.escape(p.ownerLabel)}</strong></p>
+          <p class="small" style="margin:0">${C.icon('User', 'icon--base')} <strong>${C.escape(p.ownerLabel)}</strong></p>
           <p class="small muted" style="margin:.35rem 0 0">Fragen zu diesem Datenprodukt richten Sie an die zuständige Stelle.</p>
         </div>
         ${specBlock}
         ${conceptBlock}
         ${usedByBlock}
-        <div class="aside-box">
+        <div class="box">
           <h3>Klassifizierung</h3>
           <div class="pill-row">${tierBadge || C.escape(p.classification || '—')}</div>
           <p class="small muted" style="margin:.5rem 0 0">Informationsschutz nach ISG. Nur für berechtigte interne Nutzende.</p>

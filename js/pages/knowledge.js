@@ -1,36 +1,38 @@
-// Wissen — knowledge hub: Weisungen & Vorgaben, Formulare & Vorlagen,
-// Anleitungen / FAQ, Aktuelles (News). Tabs are linkable via ?tab=… ; an
-// optional ?id=… opens a detail (Weisung / News).
+// News und Wissen — Übersicht (Karten), News, Prozesse und Weisungen.
+// Tabs sind über ?tab=… verlinkbar; ein optionales ?id=… öffnet ein Detail
+// (Weisung / News). Ohne ?tab= erscheint die Abschnitts-Übersicht (CD-Muster).
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
 
   const TABS = [
-    { id: 'weisungen',   label: 'Weisungen & Vorgaben', icon: 'Book' },
-    { id: 'formulare',   label: 'Formulare & Vorlagen',  icon: 'File' },
-    { id: 'anleitungen', label: 'Anleitungen / FAQ',     icon: 'InfoCircle' },
-    { id: 'news',        label: 'Aktuelles',             icon: 'Bell' },
+    { id: 'news',      label: 'News',                 icon: 'Bell' },
+    { id: 'prozesse',  label: 'Prozesse',             icon: 'InfoCircle' },
+    { id: 'weisungen', label: 'Weisungen & Vorgaben', icon: 'Book' },
   ];
   const tabFromQuery = query.get('tab');
-  const active = TABS.some(t => t.id === tabFromQuery) ? tabFromQuery : 'weisungen';
+  const active = TABS.some(t => t.id === tabFromQuery) ? tabFromQuery : '';
   const id = query.get('id') || '';
 
-  setTitle('Wissen');
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Wissen' }]);
+  if (!active) return overview(ctx);
+
+  setTitle('News und Wissen');
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' },
+    { label: TABS.find(t => t.id === active).label }]);
 
   const tabHref = (t) => `#/knowledge?tab=${t}`;
 
-  const controls = `<div class="tabs__controls" role="tablist" aria-label="Wissensbereiche">
-    ${TABS.map(t => `<a class="tab__btn${t.id === active ? ' active' : ''}" role="tab"
-        aria-selected="${t.id === active}" href="${tabHref(t.id)}">${C.icon(t.icon, 'icon--sm')} ${C.escape(t.label)}</a>`).join('')}
+  const controls = `<div class="tab__controls" role="tablist" aria-label="Wissensbereiche">
+    ${TABS.map(t => `<a class="tab__control${t.id === active ? " tab__control--active" : ""}" role="tab"
+        aria-selected="${t.id === active}" href="${tabHref(t.id)}">${C.icon(t.icon, 'icon--base')} ${C.escape(t.label)}</a>`).join('')}
   </div>`;
 
-  const panels = TABS.map(t => `<div class="tab__panel" data-tab="${t.id}"${t.id === active ? '' : ' hidden'}>
+  const panels = TABS.map(t => `<div class="tab__container" data-tab="${t.id}"${t.id === active ? '' : ' hidden'}>
       ${t.id === active ? panelHtml(t.id) : ''}
     </div>`).join('');
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.pageHeader({ title: 'Wissen', lead: 'Weisungen und Vorgaben, Formulare und Vorlagen, Anleitungen sowie Aktuelles des BBL — gebündelt an einem Ort.' })}
+    ${C.pageHeader({ title: 'News und Wissen', lead: 'Aktuelles aus dem BBL, die Prozesse und Vorlagen für die Zusammenarbeit sowie die geltenden Weisungen und Vorgaben.' })}
     ${controls}
     ${panels}
   </div>`;
@@ -38,10 +40,13 @@ export default async function render(ctx) {
   // Tabs are plain <a href="#/knowledge?tab=…"> links: the hash router re-renders
   // this module on hashchange, so the active tab is always derived from ?tab.
   // Only the active panel needs interactivity wired up.
-  if (active === 'weisungen')   wireWeisungen(ctx);
-  if (active === 'anleitungen') wireAccordion(mount);
+  if (active === 'weisungen') wireWeisungen(ctx);
+  if (active === 'prozesse')  wireAccordion(mount);
 
   function panelHtml(tab) {
+    // "Prozesse" bündelt Anleitungen/FAQ und die Formulare & Vorlagen —
+    // beides beschreibt, wie ein Ablauf im BBL funktioniert.
+    if (tab === 'prozesse') return anleitungenPanel(ctx) + formularePanel(ctx);
     if (tab === 'weisungen')   return weisungenPanel(ctx, id);
     if (tab === 'formulare')   return formularePanel(ctx);
     if (tab === 'anleitungen') return anleitungenPanel(ctx);
@@ -51,6 +56,55 @@ export default async function render(ctx) {
 }
 
 /* ============================ WEISUNGEN & VORGABEN ======================== */
+
+// Section overview — CD pattern: lead + cards onto everything the section holds.
+function overview(ctx) {
+  const { mount, core, C, setTitle, setCrumbs } = ctx;
+  setTitle('News und Wissen');
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen' }]);
+
+  const news = core.news();
+  const weisungen = core.weisungen();
+
+  const entry = (o) => `
+    <a class="card card--universal card--clickable" href="${o.href}"${o.external ? ' target="_blank" rel="noopener external"' : ''}>
+      <div class="card__content">
+        <div class="card__body">
+          <span class="domain-tile__icon">${C.icon(o.icon, 'icon--2xl')}</span>
+          <div class="card__title">${C.escape(o.title)}</div>
+          <p class="card__description">${C.escape(o.desc)}</p>
+        </div>
+        <div class="card__footer">
+          <span>${C.escape(o.meta)}</span>
+          <span class="btn btn--link">Öffnen ${C.icon(o.external ? 'External' : 'ArrowRight', 'icon--base')}</span>
+        </div>
+      </div>
+    </a>`;
+
+  const entries = [
+    { title: 'News', icon: 'Bell', href: '#/knowledge?tab=news',
+      desc: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.',
+      meta: `${news.length} Meldungen` },
+    { title: 'Prozesse', icon: 'InfoCircle', href: '#/knowledge?tab=prozesse',
+      desc: 'Anleitungen, FAQ sowie Formulare und Vorlagen für die Zusammenarbeit mit dem BBL.',
+      meta: 'Anleitungen & Vorlagen' },
+    { title: 'Weisungen & Vorgaben', icon: 'Book', href: '#/knowledge?tab=weisungen',
+      desc: 'Die geltenden Weisungen des BBL mit Geltungsbereich, Verbindlichkeit und Rechtsgrundlage.',
+      meta: `${weisungen.length} Weisungen` },
+    { title: 'Vorgaben der Bundeskanzlei', icon: 'External', href: 'https://www.bk.admin.ch/de/vorgaben', external: true,
+      desc: 'Bundesweit geltende Vorgaben der Bundeskanzlei — Grundlage für die Weisungen des BBL.',
+      meta: 'bk.admin.ch' },
+  ].map(entry).join('');
+
+  mount.innerHTML = `
+  <div class="container section">
+    ${C.pageHeader({
+      title: 'News und Wissen',
+      lead: 'Aktuelles aus dem BBL, die Prozesse und Vorlagen für die Zusammenarbeit sowie die geltenden Weisungen und Vorgaben.',
+    })}
+    <div class="grid grid--2 mt-8">${entries}</div>
+  </div>`;
+}
 
 function typeVariant(type) {
   const m = { Weisung: 'info', Verordnung: 'blue', Richtlinie: 'gray', Vorgabe: 'gray' };
@@ -82,17 +136,17 @@ function weisungenPanel(ctx, id) {
     <div class="stack mt-4">
       <div>
         <div class="small muted mb-4">Status</div>
-        <div class="chips" id="w-status">
+        <div class="list list--flex list--wrap" id="w-status">
           ${['alle', 'in_kraft', 'aufgehoben'].map(s =>
-            `<button class="chip${s === 'alle' ? ' active' : ''}" type="button" data-status="${s}">${
-              s === 'alle' ? 'Alle' : s === 'in_kraft' ? 'In Kraft' : 'Aufgehoben'}</button>`).join('')}
+            `<button type="button" class="tag-item${s === 'alle' ? " tag-item--active" : ""}" aria-pressed="${!!(s === 'alle')}" data-status="${s}"><span class="tag-item__inner"><span class="tag-item__text">${
+              s === 'alle' ? 'Alle' : s === 'in_kraft' ? 'In Kraft' : 'Aufgehoben'}</span></span></button>`).join('')}
         </div>
       </div>
       <div>
         <div class="small muted mb-4">Thema</div>
-        <div class="chips" id="w-topic">
-          <button class="chip active" type="button" data-topic="__all">Alle Themen</button>
-          ${topics.map(t => `<button class="chip" type="button" data-topic="${C.escape(t)}">${C.escape(t)}</button>`).join('')}
+        <div class="list list--flex list--wrap" id="w-topic">
+          <button type="button" class="tag-item tag-item--active" aria-pressed="true" data-topic="__all"><span class="tag-item__inner"><span class="tag-item__text">Alle Themen</span></span></button>
+          ${topics.map(t => `<button type="button" class="tag-item" data-topic="${C.escape(t)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(t)}</span></span></button>`).join('')}
         </div>
       </div>
     </div>
@@ -119,15 +173,15 @@ function weisungCard(ctx, w) {
         ${forceBadge(C, w.bindingForce)}
         ${statusBadge(C, w.status)}
       </div>
-      <p class="card__desc" style="flex:none">${C.escape(w.summary)}</p>
+      <p class="card__description" style="flex:none">${C.escape(w.summary)}</p>
       <dl class="kv" style="margin:0">
         <dt>Erlassen von</dt><dd>${C.escape(w.issuingBody)}</dd>
         <dt>Gültig ab</dt><dd>${C.escape(w.validFrom)} · Version ${C.escape(w.version)}</dd>
         ${w.legalBasis && w.legalBasis !== '—' ? `<dt>Rechtsgrundlage</dt><dd>${C.escape(w.legalBasis)}</dd>` : ''}
       </dl>
       <div class="row gap-sm mt-2" style="row-gap:.4rem">
-        <a class="btn btn--outline btn--sm" href="#/knowledge?tab=weisungen&id=${encodeURIComponent(w.directiveId)}">Details ${C.icon('ArrowRight', 'icon--sm')}</a>
-        <a class="btn btn--bare btn--sm" href="${w.documentUrl || '#'}">${C.icon('Download', 'icon--sm')} Download (PDF)</a>
+        <a class="btn btn--outline btn--sm" href="#/knowledge?tab=weisungen&id=${encodeURIComponent(w.directiveId)}">Details ${C.icon('ArrowRight', 'icon--base')}</a>
+        <a class="btn btn--bare btn--sm" href="${w.documentUrl || '#'}">${C.icon('Download', 'icon--base')} Download (PDF)</a>
       </div>
       ${related.length ? `<div class="small muted mt-2">Gilt für: ${related.map(x =>
         `<a href="#/services/${encodeURIComponent(x.sid)}">${C.escape(x.s.title)}</a>`).join(' · ')}</div>` : ''}
@@ -163,11 +217,11 @@ function weisungDetail(ctx, w) {
         ${w.scope ? `<div><h3>Geltungsbereich</h3><p style="margin:0">${C.escape(w.scope)}</p></div>` : ''}
         ${w.legalBasis && w.legalBasis !== '—' ? `<div><h3>Rechtsgrundlage</h3><p style="margin:0">${C.escape(w.legalBasis)}</p></div>` : ''}
         <div class="row gap-sm mt-2">
-          <a class="btn btn--primary" href="${w.documentUrl || '#'}">${C.icon('Download', 'icon--sm')} Dokument herunterladen</a>
+          <a class="btn btn--outline" href="${w.documentUrl || '#'}">${C.icon('Download', 'icon--base')} Dokument herunterladen</a>
         </div>
       </div>
       <aside class="stack-lg">
-        <div class="aside-box">
+        <div class="box">
           <h3>Eckdaten</h3>
           <dl class="kv" style="margin:0">
             <dt>Code</dt><dd>${C.escape(w.code)}</dd>
@@ -181,9 +235,9 @@ function weisungDetail(ctx, w) {
             <dt>Geltungsbereich</dt><dd>${C.escape(w.scope || '—')}</dd>
           </dl>
         </div>
-        ${related.length ? `<div class="aside-box">
+        ${related.length ? `<div class="box">
           <h3>Zugehörige Dienstleistungen</h3>
-          ${related.map(x => `<a class="row gap-sm" style="padding:.35rem 0" href="#/services/${encodeURIComponent(x.sid)}">${C.icon('Briefcase', 'icon--sm')}<span class="small">${C.escape(x.s.title)}</span></a>`).join('')}
+          ${related.map(x => `<a class="row gap-sm" style="padding:.35rem 0" href="#/services/${encodeURIComponent(x.sid)}">${C.icon('Briefcase', 'icon--base')}<span class="small">${C.escape(x.s.title)}</span></a>`).join('')}
         </div>` : ''}
       </aside>
     </div>`;
@@ -211,14 +265,14 @@ function wireWeisungen(ctx) {
     const btn = e.target.closest('[data-status]');
     if (!btn) return;
     state.status = btn.dataset.status;
-    mount.querySelectorAll('#w-status .chip').forEach(c => c.classList.toggle('active', c === btn));
+    mount.querySelectorAll('#w-status .tag-item').forEach(c => c.classList.toggle('tag-item--active', c === btn));
     draw();
   });
   mount.querySelector('#w-topic').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-topic]');
     if (!btn) return;
     state.topic = btn.dataset.topic;
-    mount.querySelectorAll('#w-topic .chip').forEach(c => c.classList.toggle('active', c === btn));
+    mount.querySelectorAll('#w-topic .tag-item').forEach(c => c.classList.toggle('tag-item--active', c === btn));
     draw();
   });
 
@@ -238,12 +292,12 @@ function newsPanel(ctx, id) {
         ${C.backLink('#/knowledge?tab=news', 'Alle Meldungen')}
         <article class="stack mt-4" style="max-width:60rem">
           <div class="row gap-sm small muted">
-            <span class="swatch" style="width:.7rem;height:.7rem;background:${C.escape(n.color)}"></span>
             <span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
           </div>
           <h2 tabindex="-1">${C.escape(n.title)}</h2>
+          ${C.photo({ id: n.photo, color: n.color, alt: n.title, w: 1200, style: 'aspect-ratio:21/9;max-height:20rem;border-radius:var(--radius-lg)' })}
           <p class="lead">${C.escape(n.teaser)}</p>
-          <div class="divider"></div>
+          <div class="separator separator--md"></div>
           <p>${C.escape(n.body)}</p>
         </article>`;
     }
@@ -251,19 +305,19 @@ function newsPanel(ctx, id) {
 
   return `
     ${id ? C.notification('Diese Meldung wurde nicht gefunden. Hier finden Sie alle Meldungen.', 'warning', 'WarningCircle') : ''}
-    <p class="page-intro muted">Aktuelle Mitteilungen rund um das BBL, die Service-Plattform und die Bundesverwaltung.</p>
+    <p class="page-intro muted">Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.</p>
     <div class="grid grid--3 mt-6">
       ${items.map(n => `
         <a class="card card--clickable" href="#/knowledge?tab=news&id=${encodeURIComponent(n.id)}">
+          <div class="card__image">${C.photo({ id: n.photo, color: n.color, alt: n.title, w: 640, style: 'height:100%' })}</div>
           <div class="card__body">
             <div class="row gap-sm small muted">
-              <span class="swatch" style="width:.6rem;height:.6rem;background:${C.escape(n.color)}"></span>
               <span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
             </div>
             <div class="card__title">${C.escape(n.title)}</div>
-            <p class="card__desc">${C.escape(n.teaser)}</p>
+            <p class="card__description">${C.escape(n.teaser)}</p>
           </div>
-          <div class="card__footer"><span></span><span class="btn btn--link">Weiterlesen ${C.icon('ArrowRight', 'icon--sm')}</span></div>
+          <div class="card__footer"><span></span><span class="btn btn--link">Weiterlesen ${C.icon('ArrowRight', 'icon--base')}</span></div>
         </a>`).join('')}
     </div>`;
 }
@@ -287,7 +341,7 @@ function formularePanel(ctx) {
       ${items.map(it => C.card({
         title: it.title, desc: it.desc,
         badges: [C.badge(it.fmt, 'gray')],
-        footer: `<span>Vorlage</span><a class="btn btn--link" href="#">${C.icon('Download', 'icon--sm')} Herunterladen</a>`,
+        footer: `<span>Vorlage</span><a class="btn btn--link" href="#">${C.icon('Download', 'icon--base')} Herunterladen</a>`,
       })).join('')}
     </div>`;
 }
@@ -298,7 +352,7 @@ function anleitungenPanel(ctx) {
   const { C } = ctx;
 
   const guides = [
-    { title: 'Erste Schritte auf der Service-Plattform', desc: 'Überblick über Dienstleistungen, Anwendungen, Dokumente und Daten.' },
+    { title: 'Erste Schritte im Kundenportal', desc: 'Überblick über Dienstleistungen, Anwendungen, Dokumente und Daten.' },
     { title: 'Einen Vorgang starten und verfolgen', desc: 'Wie Sie einen Service auslösen und den Status unter «Meine Vorgänge» einsehen.' },
     { title: 'Gebäude und Dokumente finden', desc: 'Suche im Portfolio sowie im Dokumenten- und Medienarchiv.' },
   ];
@@ -317,7 +371,7 @@ function anleitungenPanel(ctx) {
     <h2 class="mt-6">Anleitungen</h2>
     <div class="grid grid--3 mt-4">
       ${guides.map(g => C.card({ title: g.title, desc: g.desc,
-        footer: `<span>Anleitung</span><a class="btn btn--link" href="#">Öffnen ${C.icon('ArrowRight', 'icon--sm')}</a>` })).join('')}
+        footer: `<span>Anleitung</span><a class="btn btn--link" href="#">Öffnen ${C.icon('ArrowRight', 'icon--base')}</a>` })).join('')}
     </div>
 
     <h2 class="mt-8">Häufige Fragen (FAQ)</h2>
@@ -325,11 +379,11 @@ function anleitungenPanel(ctx) {
       ${faqs.map((f, i) => `
         <div class="accordion__item">
           <h3 style="margin:0">
-            <button class="accordion__btn" type="button" aria-expanded="false" aria-controls="faq-p-${i}" id="faq-b-${i}">
-              <span>${C.escape(f.q)}</span>${C.icon('ChevronDown', 'icon--sm')}
+            <button class="accordion__button" type="button" aria-expanded="false" aria-controls="faq-p-${i}" id="faq-b-${i}">
+              <span>${C.escape(f.q)}</span>${C.icon('ChevronDown', 'icon--base')}
             </button>
           </h3>
-          <div class="accordion__panel" id="faq-p-${i}" role="region" aria-labelledby="faq-b-${i}" hidden>
+          <div class="accordion__content" id="faq-p-${i}" role="region" aria-labelledby="faq-b-${i}" hidden>
             <p style="margin:0">${C.escape(f.a)}</p>
           </div>
         </div>`).join('')}
@@ -341,7 +395,7 @@ function anleitungenPanel(ctx) {
 function wireAccordion(mount) {
   const acc = mount.querySelector('#faq-acc');
   if (!acc) return;
-  acc.querySelectorAll('.accordion__btn').forEach(btn => {
+  acc.querySelectorAll('.accordion__button').forEach(btn => {
     btn.addEventListener('click', () => {
       const expanded = btn.getAttribute('aria-expanded') === 'true';
       btn.setAttribute('aria-expanded', String(!expanded));

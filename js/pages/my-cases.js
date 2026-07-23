@@ -63,7 +63,7 @@ function detail(ctx, id) {
         <div>
           <h2>Prozess</h2>
           <ul class="timeline">${pipeline}</ul>
-          ${canAdvance ? `<button class="btn btn--filled" id="advance">${C.icon('ArrowRight', 'icon--sm')} Nächster Schritt (Demo)</button>` : (i.createdLocally ? '<p class="small muted">Vorgang abgeschlossen.</p>' : '<p class="small muted">Seed-Vorgang (Demo) — nicht weiterführbar.</p>')}
+          ${canAdvance ? `<button class="btn btn--filled" id="advance">${C.icon('ArrowRight', 'icon--base')} Nächster Schritt (Demo)</button>` : (i.createdLocally ? '<p class="small muted">Vorgang abgeschlossen.</p>' : '<p class="small muted">Seed-Vorgang (Demo) — nicht weiterführbar.</p>')}
         </div>
         <div>
           <h2>Verlauf</h2>
@@ -71,9 +71,9 @@ function detail(ctx, id) {
         </div>
       </div>
       <aside class="stack-lg">
-        ${b ? `<div class="aside-box"><h3>Verknüpftes Gebäude</h3><a href="#/app/portfolio/${b.bbl_id}">${C.escape(b.name)}</a><br><span class="small muted">${C.escape(b.street)}, ${C.escape(b.city)}</span></div>` : ''}
-        ${p ? `<div class="aside-box"><h3>Verknüpftes Projekt</h3><a href="#/app/projects/${p.projectId}">${C.escape(p.name)}</a><br><span class="small muted">${C.escape(p.projectNumber)}</span></div>` : ''}
-        <div class="aside-box"><h3>Referenz</h3><p style="margin:0"><strong>${C.escape(i.reference)}</strong></p><p class="small muted">Diese Referenz gilt für Rückfragen.</p></div>
+        ${b ? `<div class="box"><h3>Verknüpftes Gebäude</h3><a href="#/app/portfolio/${b.bbl_id}">${C.escape(b.name)}</a><br><span class="small muted">${C.escape(b.street)}, ${C.escape(b.city)}</span></div>` : ''}
+        ${p ? `<div class="box"><h3>Verknüpftes Projekt</h3><a href="#/app/projects/${p.projectId}">${C.escape(p.name)}</a><br><span class="small muted">${C.escape(p.projectNumber)}</span></div>` : ''}
+        <div class="box"><h3>Referenz</h3><p style="margin:0"><strong>${C.escape(i.reference)}</strong></p><p class="small muted">Diese Referenz gilt für Rückfragen.</p></div>
       </aside>
     </div>
   </div>`;

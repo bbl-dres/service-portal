@@ -14,7 +14,7 @@ The downloaded intranet confirms the brief: it is *scattered and chaotic*. Concr
 | # | "Site" | Hostname | Platform | Organized by | Audience |
 |---|--------|----------|----------|--------------|----------|
 | 1 | **Staff intranet** (EFD-BBL) | `intranet.efd-bbl.admin.ch` | Classic AEM, 10-item mega-menu | BBL org & topics | BBL employees |
-| 2 | **Kundenplattform BBL** (customer platform) | `intranet.bbl.admin.ch/bbl_kp` | AEM, category tiles | BBL *services* (the closest thing to a service portal today) | BBL's internal customers (other federal offices) |
+| 2 | **Kundenplattform BBL** (customer platform) | `intranet.bbl.admin.ch/de` | **Nuxt + CD Bund** (relaunched since this doc was written — see §1b) | BBL *services* (the closest thing to a service portal today) | BBL's internal customers (other federal offices) |
 | 3 | **Public website** | `www.bbl.admin.ch` | Newer Nuxt/Vue SPA | BBL's offerings to the world | Public / industry |
 
 On top of these sit numerous **separate applications**: eGate (SSO), InfoPers (HR), PERIMAP/ILIAS (learning), Admin-Directory, BIT Kundenplattform, the E-Shop, plus 8 construction-specific apps (GIS IMMO, DALA/FileNET, CDE, EDM, EHP, FLM, PVA, QualityGate).
@@ -34,6 +34,98 @@ On top of these sit numerous **separate applications**: eGate (SSO), InfoPers (H
 - The **Fachanwendungen** page is already a clean app catalog (icon + name + description + link).
 - Reusable UI patterns already exist: searchable/date-filtered news lists, accordion document libraries (144 Bautendokumentationen PDFs), right-column contact boxes.
 - The admin.ch / Swiss Confederation **design system** gives us a consistent visual language to build on.
+
+---
+
+## 1b. Current sitemap — as captured 2026-07-23
+
+**Source:** saved page `Bestellen (E-Shop).html` from `https://intranet.bbl.admin.ch/de/bestellen-e-shop`.
+**Platform:** Nuxt, rendered with the **official CD Bund design system** (`top-bar-navigation`, `meta-navigation`, `main-navigation--desktop`, `navy__*` drawers, `breadcrumb-navigation`).
+
+> **This supersedes part of §1.** The Kundenplattform is no longer the AEM tile site described above — it has been relaunched on CD Bund at `intranet.bbl.admin.ch/de`, and it uses the *same* component vocabulary this prototype now targets. The IA problems below are therefore genuinely structural, not styling artefacts.
+
+### The tree
+
+```
+Kundenplattform BBL   ·   intranet.bbl.admin.ch/de
+│
+├── Top bar ......................... Jobs · Bundespublikationen · Kontakt
+├── Meta navigation ................. (present in markup, empty)
+│
+├── Main navigation (8 items)
+│   ├── Unterbringung ............... /de/unterbringung
+│   ├── Objektbetrieb ............... /de/objektbetrieb
+│   ├── Büroausrüstung .............. /de/bueroausruestung
+│   │   ├── Bestellen (E-Shop) ...... /de/bestellen-e-shop
+│   │   ├── Büromaterial ............ /de/bueromaterial
+│   │   ├── EDV-Verbrauchsmaterial .. /de/edv-verbrauchsmaterial
+│   │   ├── Bürotechnik ............. /de/buerotechnik
+│   │   ├── Informatik-Sortiment .... /de/informatik-sortiment
+│   │   ├── Mobiliar ................ /de/mobiliar
+│   │   └── Hausdienstmaterial ...... /de/hausdienstmaterial
+│   ├── Produktion .................. /de/produktion
+│   ├── Publikationen ............... /de/publikationen
+│   ├── Informatik .................. /de/informatik
+│   ├── Beschaffen .................. /de/beschaffen
+│   └── Mieterportal ................ /de/mieterportal          ← external system in the content nav
+│
+├── Other pages reached from content ... Reklamationsmeldung · Kontakt
+└── Footer .......................... AGB des Bundes · Rechtliches · Barrierefreiheit
+```
+
+### Structural problems
+
+1. **URLs are flat; the hierarchy is fake.** The breadcrumb claims `Startseite › Büroausrüstung › Bestellen (E-Shop)`, but every page sits at `/de/<slug>`. Nesting exists only in the menu config, so it cannot be relied on, linked to, or reasoned about.
+2. **Catalogue and entry point are siblings.** "Bestellen (E-Shop)" sits at the same level as the six product categories it is the way *into*. A user cannot tell whether to click the action or the category.
+3. **Eight top-level items, and they are not one kind of thing.** Object types (Büroausrüstung, Publikationen), a lifecycle stage (Unterbringung, Objektbetrieb), a verb (Beschaffen), and a *system* (Mieterportal) share one bar. CD's own guidance is *"try to limit main menus to 5"* (`MainNavigation.vue:162`).
+4. **Organised by internal administrative structure, not by task.** The ordering page is split into **"Kreis 1 + 2"** vs **"Kreis 3"** — the user must first work out which administrative circle their office belongs to before they can order a pen.
+5. **Four jobs on one page.** `Bestellen (E-Shop)` is simultaneously: shop access, a registration process (PDF form), an FAQ ("Einkaufshilfe"), and a contact directory.
+6. **The action is buried in prose.** The two shop links sit inside body copy, below explanation. There is no primary call to action.
+7. **Process leaks into content.** "Speichern Sie die Links bitte nicht als Favoriten ab. Dies kann Zugriffsprobleme verursachen." — a workaround for a technical defect, published as user instructions, twice.
+8. **The registration path is a dead end.** Access to the Kreis-3 shop is a downloadable PDF form; nothing in the portal tracks that request.
+
+### Page-level defects (the E-Shop page as a specimen)
+
+| | Finding |
+|---|---|
+| **Two `<h1>`** | "Bestellen (E-Shop)" and "Inhalt teilen" — the share widget competes with the page title |
+| **4 empty headings** | heading tags with no text, which break heading navigation |
+| **Repeated headings** | "Wichtige Anmerkungen:" ×2, "Weiterführende Informationen" ×2, "Kontakt" ×2 — ambiguous in a heading list |
+| **Trailing colons in headings** | "Wichtige Anmerkungen:" — headings are labels, not sentence stems |
+| **TOC at the bottom, and incomplete** | "Inhaltsverzeichnis" is rendered *after* the content and lists only 2 of the 4 `h2` sections |
+| **Duplicated body copy** | the identical "Wichtige Anmerkungen" paragraph appears verbatim under both Kreis sections |
+| **18 PDF links** | Browserverlauf, Neues Passwort, Anmeldeformular — instructions and forms shipped as documents rather than as portal functions |
+
+---
+
+## 1c. Proposed improvement — draft for discussion
+
+The current tree mixes **object types**, **lifecycle stages**, **verbs** and **systems** at one level. The prototype's answer is to separate those into distinct axes:
+
+- **what you want to do** → Dienstleistungen (the service catalogue)
+- **what you want to use** → Anwendungen (systems, incl. Mieterportal and the shops)
+- **what you want to read/find** → Dokumente & Medien, Wissen, Daten
+- **what you already started** → Meine Vorgänge
+
+Applied to this branch, `Bestellen (E-Shop)` stops being a page *about* ordering and becomes a **service** that starts a Vorgang:
+
+```
+Dienstleistungen › Büroausrüstung & Arbeitsplatz
+└── Material bestellen                      ← one entry, audience-tagged, starts a Vorgang
+    ├── (routing replaces "Kreis 1+2 / Kreis 3": the portal knows the user's office
+    │    and sends them to the right shop — the administrative circle is never surfaced)
+    ├── Sortiment: Büromaterial · EDV-Verbrauchsmaterial · Bürotechnik ·
+    │              Informatik-Sortiment · Mobiliar · Hausdienstmaterial   ← the catalogue, one level down
+    ├── Zugang beantragen                   ← replaces the PDF form; becomes a tracked Vorgang
+    └── Einkaufshilfe                       ← moves to Wissen (FAQ), linked from the service
+```
+
+**Open questions for the next pass**
+
+1. Is "Kreis 1+2 / Kreis 3" derivable from the logged-in user, or must it stay a user choice?
+2. Do the six Sortiment pages carry real content, or are they shop deep-links? (Decides whether they are portal pages or app entry points.)
+3. Should `Mieterportal` remain in the main nav, or move to **Anwendungen** with the other systems?
+4. Which of the 8 current top-level items are genuinely top-level for *customers*, and which are staff-facing?
 
 ---
 

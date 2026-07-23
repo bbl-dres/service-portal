@@ -4,6 +4,8 @@ A clickable **prototype** of a unified, process-oriented service platform for th
 
 > ⚠️ **Demo with mock data.** Everything load-bearing — login, the process engine, the shared data core, and all external systems — is **simulated client-side**. No real authentication, data, or integrations. See [docs/expert-review.md](docs/expert-review.md) for the real-vs-mocked register.
 
+> 🖼️ **Placeholder photography.** Buildings, media and news carry stock images from [Unsplash](https://unsplash.com) (a `photo` field = Unsplash photo id, rendered via `C.photo()`); they are **not** photographs of the real federal buildings. They load from `images.unsplash.com`, so the demo needs internet for images — without it every image degrades to the flat colour block the prototype used before, and nothing else changes.
+
 ## Run it
 
 It's a **no-build, vanilla HTML/CSS/JS** app (ES modules), but ES modules + `fetch()` need HTTP — serve it, don't open `index.html` from disk:
@@ -40,7 +42,7 @@ js/       app.js             # bootstrap: load core+engine, render shell, start 
           router.js          # hash router + nav
           core.js            # shared data core accessor (single source of truth)
           process-engine.js  # mock "Camunda": process defs, instances, status
-          components.js       # shared UI helpers (C.*)
+          components.js       # shared UI helpers (C.*), incl. C.photo() placeholder images
           session.js         # mock session
   pages/  home · services · applications · documents-media · data · knowledge · my-cases
   apps/   space-request · fault-report · portfolio · projects · document-archive · mediathek · workspace · transaction

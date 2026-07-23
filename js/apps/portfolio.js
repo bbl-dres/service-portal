@@ -6,7 +6,7 @@ export default async function render(ctx) {
   setTitle('Liegenschaften Inventar');
   setCrumbs([
     { label: 'Startseite', href: '#/' },
-    { label: 'Anwendungen', href: '#/applications' },
+    { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
     { label: 'Liegenschaften Inventar' },
   ]);
 
@@ -51,21 +51,21 @@ export default async function render(ctx) {
   }
 
   function chipsBlock() {
-    const cat = [`<button class="chip${!state.category ? ' active' : ''}" data-cat="">Alle Kategorien</button>`]
-      .concat(categories.map(c => `<button class="chip${state.category === c ? ' active' : ''}" data-cat="${C.escape(c)}">${C.escape(c)}</button>`))
+    const cat = [`<button type="button" class="tag-item${!state.category ? " tag-item--active" : ""}" aria-pressed="${!!(!state.category)}" data-cat=""><span class="tag-item__inner"><span class="tag-item__text">Alle Kategorien</span></span></button>`]
+      .concat(categories.map(c => `<button type="button" class="tag-item${state.category === c ? " tag-item--active" : ""}" aria-pressed="${!!(state.category === c)}" data-cat="${C.escape(c)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(c)}</span></span></button>`))
       .join('');
-    const can = [`<button class="chip${!state.canton ? ' active' : ''}" data-canton="">Alle Kantone</button>`]
-      .concat(cantons.map(c => `<button class="chip${state.canton === c ? ' active' : ''}" data-canton="${C.escape(c)}">${C.escape(c)}</button>`))
+    const can = [`<button type="button" class="tag-item${!state.canton ? " tag-item--active" : ""}" aria-pressed="${!!(!state.canton)}" data-canton=""><span class="tag-item__inner"><span class="tag-item__text">Alle Kantone</span></span></button>`]
+      .concat(cantons.map(c => `<button type="button" class="tag-item${state.canton === c ? " tag-item--active" : ""}" aria-pressed="${!!(state.canton === c)}" data-canton="${C.escape(c)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(c)}</span></span></button>`))
       .join('');
     return `
       <div class="stack mt-6">
         <div>
           <div class="small muted mb-4">Portfolio-Kategorie</div>
-          <div class="chips">${cat}</div>
+          <div class="list list--flex list--wrap">${cat}</div>
         </div>
         <div>
           <div class="small muted mb-4">Kanton</div>
-          <div class="chips">${can}</div>
+          <div class="list list--flex list--wrap">${can}</div>
         </div>
       </div>`;
   }
@@ -76,8 +76,8 @@ export default async function render(ctx) {
       { id: 'galerie', label: 'Galerie', icon: 'Apps' },
       { id: 'karte', label: 'Karte', icon: 'Map' },
     ];
-    return `<div class="chips" role="group" aria-label="Ansicht wählen">${modes.map(m =>
-      `<button class="chip${state.view === m.id ? ' active' : ''}" data-view="${m.id}" aria-pressed="${state.view === m.id}">${C.icon(m.icon, 'icon--sm')} ${m.label}</button>`
+    return `<div class="list list--flex list--wrap" role="group" aria-label="Ansicht wählen">${modes.map(m =>
+      `<button type="button" class="tag-item${state.view === m.id ? " tag-item--active" : ""}" aria-pressed="${!!(state.view === m.id)}" data-view="${m.id}"><span class="tag-item__inner"><span class="tag-item__text">${C.icon(m.icon, 'icon--base')} ${m.label}</span></span></button>`
     ).join('')}</div>`;
   }
 
@@ -103,8 +103,9 @@ export default async function render(ctx) {
       title: b.name,
       desc: b.street + ', ' + b.zip + ' ' + b.city,
       href: `#/app/portfolio/${encodeURIComponent(b.bbl_id)}`,
+      photo: { id: b.photo, color: '#2f4356', alt: `${b.name}, ${b.city}` },
       badges: [C.badge(b.portfolioCategory, 'gray'), statusBadge(C, ref, b.status)],
-      footer: `<span>${C.escape(b.canton)} · ${C.escape(String(b.buildYear))}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--sm')}</span>`,
+      footer: `<span>${C.escape(b.canton)} · ${C.escape(String(b.buildYear))}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
     })).join('')}</div>`;
   }
 
@@ -203,7 +204,7 @@ function detail(ctx, id) {
   setTitle(b.name);
   setCrumbs([
     { label: 'Startseite', href: '#/' },
-    { label: 'Anwendungen', href: '#/applications' },
+    { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
     { label: 'Liegenschaften Inventar', href: '#/app/portfolio' },
     { label: b.name },
   ]);
@@ -255,7 +256,7 @@ function detail(ctx, id) {
 
   function tabDokumente() {
     if (!documents.length) {
-      return `${C.empty('Keine Dokumente verknüpft.')}<p class="mt-4"><a class="btn btn--link" href="#/app/document-archive">Im Dokumentenarchiv öffnen ${C.icon('ArrowRight', 'icon--sm')}</a></p>`;
+      return `${C.empty('Keine Dokumente verknüpft.')}<p class="mt-4"><a class="btn btn--link" href="#/app/document-archive">Im Dokumentenarchiv öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
     }
     const items = documents.map(d => `
       <div class="row row--between" style="padding:.75rem 0;border-bottom:1px solid var(--color-border)">
@@ -266,26 +267,30 @@ function detail(ctx, id) {
             <div class="small muted">${C.escape(d.type)} · ${C.escape(d.format)} · ${C.escape(formatSize(d.sizeKB))} · ${C.escape(String(d.year))} · ${classBadge(C, ref, d.classification)}</div>
           </div>
         </div>
-        <a class="btn btn--outline btn--sm" href="${C.escape(d.url || '#')}">${C.icon('Download', 'icon--sm')} Download</a>
+        <a class="btn btn--outline btn--sm" href="${C.escape(d.url || '#')}">${C.icon('Download', 'icon--base')} Download</a>
       </div>`).join('');
     return `
       <div class="stack">${items}</div>
-      <p class="mt-6"><a class="btn btn--link" href="#/app/document-archive">Im Dokumentenarchiv öffnen ${C.icon('ArrowRight', 'icon--sm')}</a></p>`;
+      <p class="mt-6"><a class="btn btn--link" href="#/app/document-archive">Im Dokumentenarchiv öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
   }
 
   function tabMedien() {
     if (!media.length) {
-      return `${C.empty('Keine Medien verknüpft.')}<p class="mt-4"><a class="btn btn--link" href="#/app/mediathek">Zur Mediathek ${C.icon('ArrowRight', 'icon--sm')}</a></p>`;
+      return `${C.empty('Keine Medien verknüpft.')}<p class="mt-4"><a class="btn btn--link" href="#/app/mediathek">Zur Mediathek ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
     }
     const tiles = media.map(m => `
-      <a class="pf-media" href="#/app/mediathek" title="${C.escape(m.title)}" style="background:${C.escape(m.color || '#3a4a5a')}">
-        <span class="pf-media__type">${C.icon(m.mediaType === 'video' ? 'Video' : 'Image', 'icon--sm')} ${m.mediaType === 'video' ? 'Video' : 'Foto'}</span>
+      <a class="pf-media" href="#/app/mediathek/${encodeURIComponent(m.mediaId)}" title="${C.escape(m.title)}">
+        ${C.photo({
+          id: m.photo, color: m.color || '#3a4a5a', alt: m.title, w: 480,
+          gray: m.historicPeriod === 'historisch', cls: 'pf-media__bg',
+        })}
+        <span class="pf-media__type">${C.icon(m.mediaType === 'video' ? 'Video' : 'Image', 'icon--base')} ${m.mediaType === 'video' ? 'Video' : 'Foto'}</span>
         <span class="pf-media__title">${C.escape(m.title)}</span>
         <span class="pf-media__meta">${C.escape(String(m.date))} · ${C.escape(m.historicPeriod)}</span>
       </a>`).join('');
     return `
       <div class="grid grid--4 mt-2">${tiles}</div>
-      <p class="mt-6"><a class="btn btn--link" href="#/app/mediathek">Zur Mediathek ${C.icon('ArrowRight', 'icon--sm')}</a></p>`;
+      <p class="mt-6"><a class="btn btn--link" href="#/app/mediathek">Zur Mediathek ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
   }
 
   function panelHtml(tabId) {
@@ -296,40 +301,31 @@ function detail(ctx, id) {
   }
 
   mount.innerHTML = `
-  <style>
-    .pf-media { display:flex; flex-direction:column; justify-content:flex-end; gap:.2rem;
-      aspect-ratio:4/3; padding:.7rem .8rem; border-radius:var(--radius-lg); color:#fff;
-      text-decoration:none; box-shadow:var(--shadow-md); position:relative; overflow:hidden;
-      transition:transform .12s; }
-    .pf-media:hover { transform:translateY(-2px); text-decoration:none; }
-    .pf-media::after { content:""; position:absolute; inset:0;
-      background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.45)); }
-    .pf-media > * { position:relative; z-index:1; }
-    .pf-media__type { font-size:var(--fs-xs); font-weight:var(--fw-bold); opacity:.9; display:inline-flex; align-items:center; gap:.25rem; }
-    .pf-media__title { font-size:var(--fs-sm); font-weight:var(--fw-bold); line-height:1.2; }
-    .pf-media__meta { font-size:var(--fs-xs); opacity:.85; }
-  </style>
   <div class="container section">
     ${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}
     <div class="row mt-4" style="gap:.5rem">${classBadge(C, ref, b.classification)} ${statusBadge(C, ref, b.status)} <span class="small muted">${C.escape(b.bbl_id)}</span></div>
     <h1 tabindex="-1">${C.escape(b.name)}</h1>
     <p class="lead">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)} · ${C.escape(b.portfolioCategory)}</p>
+    ${C.photo({
+      id: b.photo, color: '#2f4356', alt: `${b.name}, ${b.city}`, w: 1600,
+      cls: 'pf-hero', style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg)',
+    })}
 
     <div class="tabs mt-6">
-      <div class="tabs__controls" role="tablist">
-        ${tabs.map((t, i) => `<button class="tab__btn${i === 0 ? ' active' : ''}" role="tab" id="tab-${t.id}" aria-controls="panel-${t.id}" aria-selected="${i === 0}" data-tab="${t.id}">${C.escape(t.label)}</button>`).join('')}
+      <div class="tab__controls" role="tablist">
+        ${tabs.map((t, i) => `<button class="tab__control${i === 0 ? " tab__control--active" : ""}" role="tab" id="tab-${t.id}" aria-controls="panel-${t.id}" aria-selected="${i === 0}" data-tab="${t.id}">${C.escape(t.label)}</button>`).join('')}
       </div>
-      ${tabs.map((t, i) => `<div class="tab__panel" id="panel-${t.id}" role="tabpanel" aria-labelledby="tab-${t.id}"${i === 0 ? '' : ' hidden'}>${panelHtml(t.id)}</div>`).join('')}
+      ${tabs.map((t, i) => `<div class="tab__container" id="panel-${t.id}" role="tabpanel" aria-labelledby="tab-${t.id}"${i === 0 ? '' : ' hidden'}>${panelHtml(t.id)}</div>`).join('')}
     </div>
   </div>`;
 
   // tab interactivity (keyboard accessible)
-  const btns = [...mount.querySelectorAll('.tab__btn')];
-  const panels = [...mount.querySelectorAll('.tab__panel')];
+  const btns = [...mount.querySelectorAll('.tab__control')];
+  const panels = [...mount.querySelectorAll('.tab__container')];
   function activate(tabId) {
     btns.forEach(btn => {
       const on = btn.getAttribute('data-tab') === tabId;
-      btn.classList.toggle('active', on);
+      btn.classList.toggle('tag-item--active', on);
       btn.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     panels.forEach(p => { p.hidden = p.id !== 'panel-' + tabId; });

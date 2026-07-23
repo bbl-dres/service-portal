@@ -9,22 +9,47 @@ import C from './components.js';
 
 export const NAV = [
   { path: '#/',             base: '',             label: 'Übersicht',          icon: 'Home' },
-  { path: '#/services',     base: 'services',     label: 'Dienstleistungen',   icon: 'Briefcase' },
-  { path: '#/applications', base: 'applications', label: 'Anwendungen',        icon: 'Apps' },
+  {
+    path: '#/services',
+    base: 'services',
+    label: 'Dienstleistungen',
+    icon: 'Briefcase',
+    // CD drawer: "Übersicht" (the gallery by Bereich), then one row per Thema —
+    // each sets the topic filter on the catalogue. The Themen are resolved from
+    // the data core at render time (see shell.js) so the menu cannot drift.
+    children: [{ href: '#/services', label: 'Übersicht' }],
+    childrenFrom: 'themen',
+  },
   { path: '#/documents',    base: 'documents',    label: 'Dokumente & Medien', icon: 'Folder' },
   {
     path: '#/data',
     base: 'data',
     label: 'Daten und Digitalisierung',
     icon: 'FileDatabase',
+    // CD pattern: a section "Übersicht" first, then the areas it contains.
+    // Datenportal and der vollständige Anwendungskatalog werden über die
+    // Übersichtsseite erschlossen, nicht über das Menü.
     children: [
-      { href: '#/data', label: 'Übersicht', desc: 'Datenkatalog, Datenquellen und Zugänge' },
-      { href: '#/applications', label: 'Anwendungen', desc: 'Fachanwendungen und digitale Werkzeuge' },
-      { href: '#/data', label: 'Datenbezug', desc: 'Datensätze, Schnittstellen und Publikationen' },
-      { href: '#/knowledge?tab=anleitungen', label: 'Digitalisierung', desc: 'Anleitungen und Grundlagen zur digitalen Zusammenarbeit' },
+      { href: '#/data', label: 'Übersicht' },
+      { href: '#/data/katalog', label: 'Datenbezug' },
+      { href: '#/applications?bereich=bauten', label: 'Fachanwendungen Bauten' },
+      { href: '#/applications?bereich=logistik', label: 'Fachanwendungen Logistik' },
+      { href: '#/data/digitalisierung', label: 'Digitalisierung' },
     ],
   },
-  { path: '#/knowledge',    base: 'knowledge',    label: 'Wissen',             icon: 'Book' },
+  {
+    path: '#/knowledge',
+    base: 'knowledge',
+    label: 'News und Wissen',
+    icon: 'Book',
+    children: [
+      { href: '#/knowledge', label: 'Übersicht' },
+      { href: 'https://www.bk.admin.ch/de/vorgaben', label: 'Vorgaben der Bundeskanzlei', external: true },
+      { href: '#/knowledge?tab=news', label: 'News' },
+      { href: '#/knowledge?tab=prozesse', label: 'Prozesse' },
+      { href: '#/knowledge?tab=weisungen', label: 'Weisungen' },
+    ],
+  },
   { path: '#/my-cases',     base: 'my-cases',     label: 'Meine Vorgänge',     icon: 'List' },
 ];
 
@@ -48,12 +73,15 @@ const APPS = {
   'mediathek':       './apps/mediathek.js',
   'workspace':       './apps/workspace.js',
   'transaction':     './apps/transaction.js',
+  'dataportal':      './apps/dataportal.js',
 };
 // which top-nav item to highlight when inside an app
+// Anwendungen is no longer a top-level item — it lives under Daten und
+// Digitalisierung, so the apps highlight that section instead.
 const APP_SECTION = {
   'space-request': 'services', 'fault-report': 'services',
-  'portfolio': 'applications', 'projects': 'applications',
-  'workspace': 'applications', 'transaction': 'applications',
+  'portfolio': 'data', 'projects': 'data',
+  'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
   'document-archive': 'documents', 'mediathek': 'documents',
 };
 
@@ -66,21 +94,25 @@ function parseHash() {
 
 function setActiveNav(base) {
   document.querySelectorAll('[data-nav]').forEach(a => {
-    a.classList.toggle('active', a.getAttribute('data-nav') === base);
+    const on = a.getAttribute('data-nav') === base;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
 }
 
+// CD breadcrumb: <ul> rows, the chevron inside the link (breadcrumb.postcss:5-70).
 function renderCrumbs(crumbs) {
-  const ol = document.getElementById('breadcrumb');
-  const wrap = document.getElementById('breadcrumb-wrap');
-  if (!ol || !wrap) return;
-  if (!crumbs || !crumbs.length) { wrap.hidden = true; ol.innerHTML = ''; return; }
+  const ul = document.getElementById('breadcrumb-list');
+  const wrap = document.getElementById('breadcrumb');
+  if (!ul || !wrap) return;
+  if (!crumbs || !crumbs.length) { wrap.hidden = true; ul.innerHTML = ''; return; }
   wrap.hidden = false;
-  ol.innerHTML = crumbs.map((c, i) => {
+  ul.innerHTML = crumbs.map((c, i) => {
     const last = i === crumbs.length - 1;
-    const sep = i > 0 ? C.icon('ChevronRight') : '';
-    const inner = (!last && c.href) ? `<a href="${c.href}">${C.escape(c.label)}</a>` : C.escape(c.label);
-    return `<li${last ? ' aria-current="page"' : ''}>${sep}${inner}</li>`;
+    const sep = i > 0 ? C.icon('ChevronRight', 'breadcrumb__include-icon') : '';
+    return last
+      ? `<li><span aria-current="page">${sep}${C.escape(c.label)}</span></li>`
+      : `<li><a href="${c.href}">${sep}<span>${C.escape(c.label)}</span></a></li>`;
   }).join('');
 }
 
@@ -88,9 +120,17 @@ function makeCtx(mount, params, query) {
   return {
     mount, params, query, core, engine, session, C,
     navigate: (h) => { location.hash = h; },
-    setTitle: (t) => { document.title = t ? `${t} · BBL Plattform` : 'BBL Plattform'; },
+    setTitle: (t) => { document.title = t ? `${t} · BBL Kundenportal` : 'BBL Kundenportal'; },
     setCrumbs: renderCrumbs,
   };
+}
+
+// SPA route changes are a context change: move focus to the new page heading so
+// screen-reader and keyboard users are not silently returned to the document top.
+function focusHeading(mount) {
+  const h = mount.querySelector('h1') || mount;
+  if (!h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1');
+  h.focus({ preventScroll: true });
 }
 
 async function dispatch() {
@@ -111,7 +151,7 @@ async function dispatch() {
   }
 
   setActiveNav(navBase);
-  document.getElementById('breadcrumb-wrap').hidden = true;
+  document.getElementById('breadcrumb').hidden = true;
 
   if (!modPath) {
     mount.innerHTML = `<div class="container section"><div class="page-header"><h1 tabindex="-1">Seite nicht gefunden</h1></div>
@@ -127,6 +167,7 @@ async function dispatch() {
     const ctx = makeCtx(mount, params, query);
     await render(ctx);
     window.scrollTo(0, 0);
+    focusHeading(mount);
   } catch (e) {
     console.error('[router] render failed for', modPath, e);
     mount.innerHTML = `<div class="container section">
@@ -136,8 +177,13 @@ async function dispatch() {
 }
 
 export function initRouter() {
-  window.addEventListener('hashchange', dispatch);
-  if (!location.hash) location.hash = '#/';
+  // Only `#/…` is a route. Bare `#` and in-page fragments (e.g. the skip link's
+  // `#main-content`) must not dispatch — that used to render a 404 over the page.
+  window.addEventListener('hashchange', () => {
+    if (location.hash && !location.hash.startsWith('#/')) return;
+    dispatch();
+  });
+  if (!location.hash || !location.hash.startsWith('#/')) location.hash = '#/';
   dispatch();
 }
 

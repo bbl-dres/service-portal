@@ -59,15 +59,26 @@ export default async function render(ctx) {
   };
 
   function field(id, label, control, err, hint) {
-    return `<div class="field${err ? ' input-error' : ''}">
-      <label for="${id}">${label}</label>${control}
-      ${hint ? `<div class="hint">${hint}</div>` : ''}${err ? `<div class="err">${C.escape(err)}</div>` : ''}</div>`;
+    const required = /class="req"/.test(label);
+    const clean = label.replace(/\s*<span class="req">\*<\/span>/, '');
+    const ids = [hint ? `${id}-hint` : '', err ? `${id}-err` : ''].filter(Boolean).join(' ');
+    const attrs = `${required ? ' required aria-required="true"' : ''}${err ? ' aria-invalid="true"' : ''}${ids ? ` aria-describedby="${ids}"` : ''}`;
+    const ctrl = control
+      .replace(/<(input|select|textarea)\b([^>]*?)>/, (m, tag, a) => `<${tag}${a}${attrs}>`)
+      .replace(/<(input|select|textarea)\b([^>]*?)class="([^"]*)"/, (m, tag, a, cls) =>
+        `<${tag}${a}class="${cls}${err ? ' input--error' : ''}"`);
+    return `<div class="form__group__input">
+      <label for="${id}"${required ? ' class="text--asterisk"' : ''}>${clean}${required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
+      ${ctrl}
+      ${hint ? `<div class="badge badge--sm badge--info" id="${id}-hint">${hint}</div>` : ''}
+      ${err ? `<div class="badge badge--sm badge--error" id="${id}-err" role="alert">${C.escape(err)}</div>` : ''}
+    </div>`;
   }
 
   function selectControl(id, options, selected) {
-    return `<div class="select-wrap"><select id="${id}">${options.map(o =>
+    return `<div class="select"><select id="${id}" class="input--outline input--base">${options.map(o =>
       `<option value="${C.escape(o.value)}"${o.value === selected ? ' selected' : ''}>${C.escape(o.text)}</option>`
-    ).join('')}</select>${C.icon('ChevronDown')}</div>`;
+    ).join('')}</select><div class="select__icon">${C.chevron}</div></div>`;
   }
 
   function draw() {
@@ -87,7 +98,7 @@ export default async function render(ctx) {
 
     mount.innerHTML = `
     <div class="container section">
-      <div class="measure">
+      <div class="container__center--xs">
       ${C.backLink('#/services', 'Alle Dienstleistungen')}
       <h1 tabindex="-1">${C.escape(cfg.title)}</h1>
       <p class="lead">${C.escape(cfg.lead)}</p>
@@ -111,7 +122,7 @@ export default async function render(ctx) {
         ${C.notification('Mit dem Absenden wird ein Vorgang erstellt. Sie können den Status jederzeit unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
         <div class="row mt-4" style="justify-content:flex-end">
           <a class="btn btn--outline" href="#/services">Abbrechen</a>
-          <button class="btn btn--primary btn--lg" type="submit">${C.icon('Checkmark', 'icon--sm')} Meldung absenden</button>
+          <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Meldung absenden</button>
         </div>
       </form>
       </div>
@@ -123,13 +134,13 @@ export default async function render(ctx) {
     const i = state.created;
     mount.innerHTML = `
     <div class="container section">
-      <div class="measure">
+      <div class="container__center--xs">
       ${C.notification(`<strong>Meldung erfasst.</strong> Ihre Referenz: <strong>${C.escape(i.reference)}</strong>`, 'success', 'CheckmarkCircle')}
       <h1 tabindex="-1">Vielen Dank</h1>
       <p>Ihre Meldung wurde erfasst und an die zuständige Stelle weitergeleitet. Den Bearbeitungsstand sehen Sie jederzeit unter «Meine Vorgänge».</p>
       ${isSecurity ? C.notification('Bei akuter Gefahr wenden Sie sich umgehend an die <strong>Alarmzentrale +41 58 465 65 65</strong>.', 'warning', 'WarningCircle') : ''}
       <div class="row mt-4">
-        <a class="btn btn--primary" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--sm')}</a>
+        <a class="btn btn--outline" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--base')}</a>
         <a class="btn btn--outline" href="#/services">Weitere Services</a>
       </div>
       </div>

@@ -52,10 +52,10 @@ export default async function render(ctx) {
   function selectControl(id, label, value, options) {
     return `<div class="field" style="margin:0">
       <label for="${id}">${C.escape(label)}</label>
-      <div class="select-wrap">
-        <select id="${id}">${options.map(o =>
+      <div class="select">
+        <select id="${id}" class="input--outline input--base">${options.map(o =>
           `<option value="${C.escape(o.value)}"${String(o.value) === String(value) ? ' selected' : ''}>${C.escape(o.label)}</option>`
-        ).join('')}</select>${C.icon('ChevronDown')}
+        ).join('')}</select><div class="select__icon">${C.chevron}</div>
       </div>
     </div>`;
   }
@@ -85,7 +85,7 @@ export default async function render(ctx) {
       columns: [
         {
           key: 'title', label: 'Dokument',
-          render: r => `${C.icon('File', 'icon--sm')} ${C.escape(r.title)}`,
+          render: r => `${C.icon('File', 'icon--base')} ${C.escape(r.title)}`,
         },
         {
           key: 'type', label: 'Typ',
@@ -109,7 +109,7 @@ export default async function render(ctx) {
         },
         {
           key: 'download', label: 'Download',
-          render: r => `<a class="btn btn--link" href="${C.escape(r.url || '#')}" aria-label="Download ${C.escape(r.title)}">${C.icon('Download', 'icon--sm')} ${C.escape(r.format || 'Datei')}</a>`,
+          render: r => `<a class="btn btn--link" href="${C.escape(r.url || '#')}" aria-label="Download ${C.escape(r.title)}">${C.icon('Download', 'icon--base')} ${C.escape(r.format || 'Datei')}</a>`,
         },
       ],
       rows,
@@ -129,7 +129,7 @@ export default async function render(ctx) {
       ${filterBar()}
       <div class="row row--between mt-6">
         <p class="muted" style="margin:0"><strong>${rows.length}</strong> von ${all.length} Dokument(en)${active ? ' (gefiltert)' : ''}</p>
-        ${active ? `<button class="btn btn--bare" id="flt-reset" type="button">${C.icon('Cancel', 'icon--sm')} Filter zurücksetzen</button>` : ''}
+        ${active ? `<button class="btn btn--bare" id="flt-reset" type="button">${C.icon('Cancel', 'icon--base')} Filter zurücksetzen</button>` : ''}
       </div>
       <div class="mt-4">${rows.length
         ? resultTable(rows)

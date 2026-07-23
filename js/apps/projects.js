@@ -36,7 +36,7 @@ function overview(ctx) {
   setTitle('Bauprojekte / EPPM');
   setCrumbs([
     { label: 'Startseite', href: '#/' },
-    { label: 'Anwendungen', href: '#/applications' },
+    { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
     { label: 'Bauprojekte / EPPM' },
   ]);
 
@@ -74,19 +74,19 @@ function overview(ctx) {
       ['abgeschlossen', 'Abgeschlossen'],
       ['alle', 'Alle'],
     ];
-    return `<div class="tabs__controls" role="tablist" aria-label="Projektphase">${tabs.map(([id, label]) =>
-      `<button type="button" role="tab" class="tab__btn${state.phase === id ? ' active' : ''}" aria-selected="${state.phase === id}" data-phase="${id}">${C.escape(label)}</button>`
+    return `<div class="tab__controls" role="tablist" aria-label="Projektphase">${tabs.map(([id, label]) =>
+      `<button type="button" role="tab" class="tab__control${state.phase === id ? " tab__control--active" : ""}" aria-selected="${state.phase === id}" data-phase="${id}">${C.escape(label)}</button>`
     ).join('')}</div>`;
   }
 
   function chipRow() {
-    const sub = `<div class="chips" data-chipgroup="sub" role="group" aria-label="Teilportfolio">
-      <button type="button" class="chip${!state.sub ? ' active' : ''}" data-sub="">Alle Teilportfolios</button>
-      ${subPortfolios.map(s => `<button type="button" class="chip${state.sub === s ? ' active' : ''}" data-sub="${C.escape(s)}">${C.escape(s)}</button>`).join('')}
+    const sub = `<div class="list list--flex list--wrap" data-chipgroup="sub" role="group" aria-label="Teilportfolio">
+      <button type="button" class="tag-item${!state.sub ? " tag-item--active" : ""}" aria-pressed="${!!(!state.sub)}" data-sub=""><span class="tag-item__inner"><span class="tag-item__text">Alle Teilportfolios</span></span></button>
+      ${subPortfolios.map(s => `<button type="button" class="tag-item${state.sub === s ? " tag-item--active" : ""}" aria-pressed="${!!(state.sub === s)}" data-sub="${C.escape(s)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(s)}</span></span></button>`).join('')}
     </div>`;
-    const stat = `<div class="chips mt-2" data-chipgroup="status" role="group" aria-label="Status">
-      <button type="button" class="chip${!state.status ? ' active' : ''}" data-status="">Alle Status</button>
-      ${projectStatuses.map(s => `<button type="button" class="chip${state.status === s.id ? ' active' : ''}" data-status="${s.id}">${C.escape(s.label)}</button>`).join('')}
+    const stat = `<div class="list list--flex list--wrap mt-2" data-chipgroup="status" role="group" aria-label="Status">
+      <button type="button" class="tag-item${!state.status ? " tag-item--active" : ""}" aria-pressed="${!!(!state.status)}" data-status=""><span class="tag-item__inner"><span class="tag-item__text">Alle Status</span></span></button>
+      ${projectStatuses.map(s => `<button type="button" class="tag-item${state.status === s.id ? " tag-item--active" : ""}" aria-pressed="${!!(state.status === s.id)}" data-status="${s.id}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(s.label)}</span></span></button>`).join('')}
     </div>`;
     return sub + stat;
   }
@@ -103,8 +103,8 @@ function overview(ctx) {
 
   function viewToggle() {
     return `<div class="row" role="group" aria-label="Ansicht">
-      <button type="button" class="btn btn--sm ${state.view === 'karten' ? 'btn--filled' : 'btn--outline'}" data-view="karten">${C.icon('Apps', 'icon--sm')} Karten</button>
-      <button type="button" class="btn btn--sm ${state.view === 'liste' ? 'btn--filled' : 'btn--outline'}" data-view="liste">${C.icon('List', 'icon--sm')} Liste</button>
+      <button type="button" class="btn btn--sm ${state.view === 'karten' ? 'btn--filled' : 'btn--outline'}" data-view="karten">${C.icon('Apps', 'icon--base')} Karten</button>
+      <button type="button" class="btn btn--sm ${state.view === 'liste' ? 'btn--filled' : 'btn--outline'}" data-view="liste">${C.icon('List', 'icon--base')} Liste</button>
     </div>`;
   }
 
@@ -114,12 +114,13 @@ function overview(ctx) {
       title: p.name,
       desc: p.teaser,
       href: `#/app/projects/${p.projectId}`,
+      photo: { id: b?.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name },
       badges: [
         projectStatusBadge(C, core, p.status),
         ampelBadge(C, 'Ziele', p.zielAmpel),
         ampelBadge(C, 'Risiko', p.risikoAmpel),
       ],
-      footer: `<span>${C.escape(p.projectNumber)}</span><span>${C.icon('Building', 'icon--sm')} SIA ${C.escape(p.siaPhase)} · ${C.escape(p.siaPhaseLabel)}</span>`,
+      footer: `<span>${C.escape(p.projectNumber)}</span><span>${C.icon('Building', 'icon--base')} SIA ${C.escape(p.siaPhase)} · ${C.escape(p.siaPhaseLabel)}</span>`,
     });
   }
 
@@ -197,7 +198,7 @@ function detail(ctx, id) {
   setTitle(p.name);
   setCrumbs([
     { label: 'Startseite', href: '#/' },
-    { label: 'Anwendungen', href: '#/applications' },
+    { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
     { label: 'Bauprojekte / EPPM', href: '#/app/projects' },
     { label: p.name },
   ]);
@@ -240,7 +241,7 @@ function detail(ctx, id) {
 
   function panelRisiken() {
     const row = (icon, prefix, value, desc) => `
-      <div class="aside-box">
+      <div class="box">
         <div class="row gap-sm">${C.icon(icon, 'icon--lg')}<strong>${C.escape(prefix)}</strong> ${ampelBadge(C, prefix === 'Projektziele' ? 'Ziele' : 'Risiko', value)}</div>
         <p class="small muted mt-2" style="margin-top:.5rem">${C.escape(desc)}</p>
       </div>`;
@@ -276,10 +277,14 @@ function detail(ctx, id) {
         <h1 tabindex="-1" class="mt-2">${C.escape(p.name)}</h1>
         <p class="muted">${C.escape(p.projectNumber)} · ${b ? C.escape(b.name + ', ' + b.city) : C.escape(p.buildingId)}</p>
       </div>
-      <div class="tabs__controls mt-6" role="tablist" aria-label="Projektdetails">
-        ${tabs.map(([t, label]) => `<button type="button" role="tab" class="tab__btn${active === t ? ' active' : ''}" aria-selected="${active === t}" data-tab="${t}">${C.escape(label)}</button>`).join('')}
+      ${C.photo({
+        id: b?.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name, w: 1600,
+        style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg);margin-top:1rem',
+      })}
+      <div class="tab__controls mt-6" role="tablist" aria-label="Projektdetails">
+        ${tabs.map(([t, label]) => `<button type="button" role="tab" class="tab__control${active === t ? " tab__control--active" : ""}" aria-selected="${active === t}" data-tab="${t}">${C.escape(label)}</button>`).join('')}
       </div>
-      ${tabs.map(([t]) => `<div class="tab__panel" data-panel="${t}"${active === t ? '' : ' hidden'}>${panels[t]()}</div>`).join('')}
+      ${tabs.map(([t]) => `<div class="tab__container" data-panel="${t}"${active === t ? '' : ' hidden'}>${panels[t]()}</div>`).join('')}
     </div>`;
     wire();
   }
@@ -289,7 +294,7 @@ function detail(ctx, id) {
       active = btn.dataset.tab;
       mount.querySelectorAll('[data-tab]').forEach(b => {
         const on = b.dataset.tab === active;
-        b.classList.toggle('active', on);
+        b.classList.toggle('tag-item--active', on);
         b.setAttribute('aria-selected', String(on));
       });
       mount.querySelectorAll('[data-panel]').forEach(pan => {

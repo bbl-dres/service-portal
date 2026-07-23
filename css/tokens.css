@@ -1,11 +1,14 @@
 /* ============================================================================
    BBL Plattform — Design Tokens
    Translated from the Swiss Confederation Design System (CD Bund) v1.0.5
-   Sources: css/skins/default.postcss (brand colors), app/tailwind.config.js (scales)
+   Sources: css/skins/default.postcss + css/skins/intranet.postcss (brand colors),
+            app/tailwind.config.js (scales), css/foundations/typography.postcss (ramps)
+
+   Values verified against the compiled CD bundle (postcss css/main.postcss).
    ========================================================================== */
 
 :root {
-  /* --- Brand: primary = Swiss federal red --- */
+  /* --- Brand: primary = Swiss federal red (default skin) --- */
   --color-primary-50:  #ffedee;
   --color-primary-100: #fae1e2;
   --color-primary-200: #ffccce;
@@ -41,36 +44,58 @@
   --color-gray-800: #1f2937;
   --color-gray-900: #111827;
 
-  /* --- Semantic --- */
-  --color-success:    #10b981; --color-success-bg: #d1fae5; --color-success-text: #065f46;
-  --color-warning:    #f97316; --color-warning-bg: #ffedd5; --color-warning-text: #9a3412;
-  --color-error:      #e53940; --color-error-bg:   #ffedee; --color-error-text:   #99191e;
-  --color-info:       #3b82f6; --color-info-bg:    #dbeafe; --color-info-text:    #1e40af;
+  /* --- Semantic ---
+     CD uses two different ramps: badges take the 100/800 pair, notifications the
+     50/700-800 pair (badge.postcss:23-50 vs notification.postcss:29-58). */
+  --color-success: #10b981;
+  --color-success-bg: #d1fae5;   --color-success-bg-subtle: #ecfdf5;   --color-success-text: #065f46;
+  --color-warning: #f97316;
+  --color-warning-bg: #ffedd5;   --color-warning-bg-subtle: #fff7ed;   --color-warning-text: #9a3412;
+  --color-error:   #e53940;
+  --color-error-bg:   #fae1e2;   --color-error-bg-subtle:   #ffedee;   --color-error-text:   #99191e;
+  --color-info:    #3b82f6;
+  --color-info-bg:    #dbeafe;   --color-info-bg-subtle:    #eff6ff;   --color-info-text:    #1e40af;
+  --color-info-text-subtle: #1d4ed8;
+  --color-alert-bg: #801519;     /* notification--alert (danger to life) */
 
   --color-text:        #1f2937;   /* body text = gray-800 */
-  --color-text-muted:  #6b7280;   /* gray-500 */
+  --color-text-muted:  #4b5563;   /* gray-600 — passes AA on white AND on secondary-50 */
   --color-text-light:  #9ca3af;   /* gray-400 */
-  --color-link:        #d8232a;
+  --color-link:        var(--color-primary-600);
   --color-border:      #e5e7eb;
   --color-border-strong:#d1d5db;
   --color-border-input: #6b7280;   /* CD Bund input border = gray-500 (more visible) */
+  --color-placeholder: #596978;    /* secondary-400 — AA on white */
   --color-bg:          #ffffff;
-  --color-bg-subtle:   #f9fafb;
-  --color-bg-muted:    #f0f4f7;   /* secondary-50 */
-  --color-focus-ring:  #8655F6;   /* CD Bund focus purple */
+  --color-bg-subtle:   #f0f4f7;   /* secondary-50 — CD's only neutral surface */
+  --color-bg-muted:    #dfe4e9;   /* secondary-100 */
+  --color-focus-ring:  #8655F6;   /* CD Bund focus purple-500 */
+  --color-focus-ring-negative: #c4b5fd;   /* purple-300 — on dark chrome (global.postcss:78-85) */
 
   /* --- Typography --- */
-  --font-sans: 'Noto Sans', 'Hind', 'Helvetica Neue', Arial, sans-serif;
-  --fs-xs: 0.75rem;  --fs-sm: 0.875rem; --fs-base: 1rem;   --fs-lg: 1.125rem;
-  --fs-xl: 1.25rem;  --fs-2xl: 1.375rem; --fs-3xl: 1.625rem; --fs-4xl: 2rem;
-  --fs-5xl: 2.5rem;  --fs-6xl: 3rem;
-  --lh-tight: 1.2;   --lh-snug: 1.375;  --lh-normal: 1.5;  --lh-relaxed: 1.65;
-  --fw-regular: 400; --fw-bold: 700;
+  --font-sans: 'Noto Sans', 'Hind', 'Fallback-font', sans-serif;
 
-  /* --- Spacing (0.25rem step) --- */
-  --sp-1: 0.25rem; --sp-2: 0.5rem;  --sp-3: 0.75rem; --sp-4: 1rem;   --sp-5: 1.25rem;
-  --sp-6: 1.5rem;  --sp-8: 2rem;    --sp-10: 2.5rem; --sp-12: 3rem;  --sp-16: 4rem;
-  --sp-20: 5rem;   --sp-24: 6rem;
+  /* Immutable scale steps (tailwind.config.js fontSize) */
+  --fs-xs:  0.75rem;  --fs-sm:  0.875rem; --fs-base: 1rem;    --fs-lg:  1.125rem;
+  --fs-xl:  1.25rem;  --fs-2xl: 1.375rem; --fs-3xl:  1.625rem; --fs-4xl: 2rem;
+  --fs-5xl: 2.5rem;   --fs-6xl: 3rem;     --fs-7xl:  3.5rem;   --fs-8xl: 4rem;
+  --fs-9xl: 5rem;
+
+  --lh-tight: 1.25;   --lh-snug: 1.375;  --lh-normal: 1.5;  --lh-relaxed: 1.625;
+  --fw-regular: 400;  --fw-bold: 700;
+
+  /* CD `text--*` responsive ramps (typography.postcss:18-57) — base step.
+     Consume these, not the raw --fs-* steps, for anything that should scale. */
+  --text-xs:  var(--fs-xs);   --text-sm:  var(--fs-sm);   --text-base: var(--fs-base);
+  --text-lg:  var(--fs-lg);   --text-xl:  var(--fs-xl);   --text-2xl:  var(--fs-2xl);
+  --text-3xl: var(--fs-3xl);  --text-4xl: var(--fs-4xl);  --text-5xl:  var(--fs-5xl);
+
+  /* --- Spacing (Tailwind default scale, as CD uses it) --- */
+  --sp-0: 0;        --sp-1: .25rem;   --sp-2: .5rem;    --sp-3: .75rem;
+  --sp-4: 1rem;     --sp-5: 1.25rem;  --sp-6: 1.5rem;   --sp-7: 1.75rem;
+  --sp-8: 2rem;     --sp-9: 2.25rem;  --sp-10: 2.5rem;  --sp-12: 3rem;
+  --sp-14: 3.5rem;  --sp-16: 4rem;    --sp-20: 5rem;    --sp-24: 6rem;
+  --sp-28: 7rem;    --sp-32: 8rem;
 
   /* --- Radius --- */
   --radius-xs: 0.0625rem; --radius-sm: 0.125rem; --radius: 0.1875rem;
@@ -94,9 +119,59 @@
      xs 480 · sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1544 · 3xl 1920 */
 }
 
-/* Responsive type scale — CD Bund headings grow on larger viewports
-   (text--Nxl steps). Base/mobile sizes stay as defined above. */
-@media (min-width:1024px) { :root { --fs-4xl:2.25rem; --fs-2xl:1.625rem; --fs-xl:1.375rem; } }
-@media (min-width:1280px) { :root { --fs-4xl:2.5rem;  --fs-2xl:2rem;     --fs-xl:1.5rem; --fs-base:1.0625rem; --fs-lg:1.25rem; } }
-@media (min-width:1920px) { :root { --fs-4xl:3rem;    --fs-2xl:2.5rem;   --fs-xl:2rem;   --fs-base:1.125rem;  --fs-lg:1.375rem; } }
-@media (min-width:1920px) { :root { --container-max: var(--container-max-3xl); } }
+/* ============================================================================
+   INTRANET SKIN (css/skins/intranet.postcss)
+   Applied via <body class="body--intranet">. Primary becomes the blue ramp;
+   secondary 50-300 stay grey while 400-900 become blue. The "Intranet" badge
+   after the logo title is rendered by CD's own rule (see app.css).
+   ========================================================================== */
+.body--intranet {
+  --color-primary-50:  #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  /* light secondary colors are grey */
+  --color-secondary-50:  #f0f4f7;
+  --color-secondary-100: #dfe4e9;
+  --color-secondary-200: #acb4bd;
+  --color-secondary-300: #828e9a;
+
+  /* dense secondary colors are blue */
+  --color-secondary-400: #5076b3;
+  --color-secondary-500: #234dc2;
+  --color-secondary-600: #1e40af;
+  --color-secondary-700: #1e3a8a;
+  --color-secondary-800: #1c3c7d;
+  --color-secondary-900: #1c3c7d;
+}
+
+/* Responsive type ramps — CD steps at lg 1024 / xl 1280 / 3xl 1920
+   (css/foundations/typography.postcss:18-57, verified against the compiled bundle) */
+@media (min-width:1024px) {          /* lg */
+  :root {
+    --text-xl:  var(--fs-2xl); --text-2xl: var(--fs-3xl); --text-3xl: var(--fs-4xl);
+    --text-4xl: var(--fs-5xl); --text-5xl: var(--fs-6xl);
+  }
+}
+@media (min-width:1280px) {          /* xl */
+  :root {
+    --text-xs:  var(--fs-sm);  --text-sm:  var(--fs-base); --text-base: var(--fs-lg);
+    --text-lg:  var(--fs-xl);  --text-xl:  var(--fs-3xl);  --text-2xl:  var(--fs-4xl);
+    --text-3xl: var(--fs-5xl); --text-4xl: var(--fs-6xl);  --text-5xl:  var(--fs-7xl);
+  }
+}
+@media (min-width:1920px) {          /* 3xl */
+  :root {
+    --text-xs:  var(--fs-base); --text-sm:  var(--fs-lg);  --text-base: var(--fs-xl);
+    --text-lg:  var(--fs-2xl);  --text-xl:  var(--fs-4xl); --text-2xl:  var(--fs-5xl);
+    --text-3xl: var(--fs-6xl);  --text-4xl: var(--fs-7xl); --text-5xl:  var(--fs-8xl);
+    --container-max: var(--container-max-3xl);
+  }
+}

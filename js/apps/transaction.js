@@ -6,7 +6,7 @@ export default async function render(ctx) {
   setTitle('Verkauf / Divestment');
   setCrumbs([
     { label: 'Startseite', href: '#/' },
-    { label: 'Anwendungen', href: '#/applications' },
+    { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
     { label: 'Verkauf / Divestment' },
   ]);
 
@@ -46,7 +46,7 @@ export default async function render(ctx) {
 
   const stepsBar = `<ol class="steps">${LIFECYCLE.map((s, idx) => {
     const cls = idx < CURRENT_STEP ? 'done' : idx === CURRENT_STEP ? 'active' : '';
-    return `<li class="${cls}"><span class="num">${idx < CURRENT_STEP ? '✓' : idx + 1}</span> ${C.escape(s.label)}</li>`;
+    return `<li class="${cls}"><span class="step__indicator-step">${idx < CURRENT_STEP ? '✓' : idx + 1}</span> ${C.escape(s.label)}</li>`;
   }).join('')}</ol>`;
 
   const timeline = `<ul class="timeline">${LIFECYCLE.map((s, idx) => {
@@ -74,23 +74,23 @@ export default async function render(ctx) {
     ${C.notification('Dieses Modul ist im Prototyp ein <strong>Stub</strong>: Die hier gezeigten Objekte, Status und Schritte sind fiktive Demo-Daten. Die produktive Anbindung an die Transaktionsplattform (Auftragsverwaltung, Bieterverfahren, Beurkundung) ist noch nicht umgesetzt.', 'warning', 'WarningCircle')}
 
     <section class="mt-8">
-      <h2>${C.icon('ShoppingCart', 'icon--sm')} Verkaufslebenszyklus</h2>
+      <h2>${C.icon('ShoppingCart', 'icon--base')} Verkaufslebenszyklus</h2>
       <p class="muted">Sieben Phasen vom Veräusserungsauftrag bis zum vollzogenen Verkauf. Hervorgehoben ist der aktuelle Demo-Stand.</p>
       ${stepsBar}
-      <div class="aside-box mt-4" style="max-width:42rem">
+      <div class="box mt-4" style="max-width:42rem">
         <h3>Phasen im Detail</h3>
         ${timeline}
       </div>
     </section>
 
     <section class="mt-8">
-      <h2>${C.icon('Building', 'icon--sm')} Objekte in Veräusserung</h2>
+      <h2>${C.icon('Building', 'icon--base')} Objekte in Veräusserung</h2>
       <p class="muted">Beispielhafte Auswahl von Liegenschaften im Verkaufsprozess (Demo-Daten).</p>
       <div class="mt-4">${tableHtml}</div>
     </section>
 
     <section class="mt-8">
-      <div class="aside-box" style="max-width:42rem">
+      <div class="box" style="max-width:42rem">
         <h3>Beteiligte</h3>
         <ul style="padding-left:1.1rem" class="small">
           <li><strong>Portfoliomanagement BBL</strong> — Priorisierung und Verkaufsfreigabe</li>

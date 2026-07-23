@@ -1,33 +1,54 @@
-// Federal shell: CD-Bund header (confederation bar + brand row + main nav) and footer.
+// Federal shell: CD-Bund header (top bar + brand row + main nav + mobile drawer)
+// and footer. Structure follows app/components/stories/implementation/HtmlStructure.mdx.
 
 import { NAV } from './router.js';
-import { icon, escape as escapeHtml } from './components.js';
+import { core } from './core.js';
+import { icon, escape as escapeHtml, select } from './components.js';
+
+// Some nav items take their children from the data core (loaded before the shell
+// renders), so the menu always matches the catalogue.
+function resolveChildren(item) {
+  if (item.childrenFrom !== 'themen') return item.children || [];
+  const services = core.services();
+  const themen = (core.ref().domains || [])
+    .filter(d => services.some(s => s.domain === d.key))
+    .map(d => ({ href: `#/services?topic=${encodeURIComponent(d.key)}`, label: d.label }));
+  return [...(item.children || []), ...themen];
+}
+
+// Site-owned utilities live in the white brand row (meta-navigation);
+// Confederation-wide ones live in the navy top bar (top-bar-navigation).
+const META_LINKS = [
+  { href: '#/services/sicherheitsvorfall-melden', label: 'Notfall & Vorfälle' },
+  { href: '#/knowledge', label: 'Hilfe' },
+];
+const TOP_BAR_LINKS = [
+  { href: 'https://www.egate.admin.ch/', label: 'eGate', icon: 'External', external: true },
+];
 
 function headerHTML() {
   const currentHash = location.hash || '#/';
-  const isActiveSub = (href) => currentHash === href || currentHash.startsWith(`${href}?`) || currentHash.startsWith(`${href}/`);
+  const isActiveSub = (href) => currentHash === href;
+
   const renderNavMenu = (item, scope) => {
-    const menuId = scope === 'desktop' ? 'desktop-menu__drawer' : `mobile-menu__drawer-${item.base}`;
+    const menuId = `${scope}-menu__drawer-${item.base}`;
     const drawerClass = scope === 'desktop' ? 'desktop-menu__drawer' : 'mobile-menu__drawer';
-    const closeId = scope === 'desktop' ? ' id="desktop-menu-closer"' : '';
     return `
-    <div class="${drawerClass}" id="${menuId}" role="region" aria-label="${escapeHtml(item.label)}" hidden>
-      <button${closeId} class="desktop-menu__close" type="button" data-menu-close="${menuId}" aria-label="${escapeHtml(item.label)} schliessen">
+    <div class="${drawerClass}" id="${menuId}" aria-label="${escapeHtml(item.label)}" hidden>
+      <button class="desktop-menu__close" type="button" data-menu-close="${menuId}" aria-label="${escapeHtml(item.label)} schliessen">
           <span>Schliessen</span>${icon('Cancel', 'icon--sm')}
       </button>
       <div class="navy">
-        <ul class="navy__level-0">
-          <li><h2 class="navy__title">${escapeHtml(item.label)}</h2></li>
-          ${(item.children || []).map(child => {
+        <h2 class="navy__title">${escapeHtml(item.label)}</h2>
+        <ul class="menu navy__level-0">
+          ${resolveChildren(item).map(child => {
             const active = isActiveSub(child.href);
             return `
-            <li>
-              <a class="${active ? 'active' : ''}" href="${child.href}">
-                <span class="menu__item__text">
-                  <span class="menu__item__label">${escapeHtml(child.label)}</span>
-                  ${child.desc ? `<span class="menu__item__description">${escapeHtml(child.desc)}</span>` : ''}
-                </span>
-                ${active ? '' : icon('ArrowRight', 'icon--sm')}
+            <li class="menu__item menu__item--border menu__item--condensed${active ? ' menu__item--active' : ''}">
+              <a class="menu__item__flex" href="${child.href}"${active ? ' aria-current="page"' : ''}${
+                child.external ? ' target="_blank" rel="noopener external"' : ''}>
+                <span>${escapeHtml(child.label)}</span>
+                ${icon(child.external ? 'External' : 'ArrowAngleBottomLeft', 'menu__item__icon')}
               </a>
             </li>`;
           }).join('')}
@@ -37,11 +58,11 @@ function headerHTML() {
   };
 
   const renderNavItem = (item, scope) => {
-    if (item.children?.length) {
-      const menuId = scope === 'desktop' ? 'desktop-menu__drawer' : `mobile-menu__drawer-${item.base}`;
+    if (item.children?.length || item.childrenFrom) {
+      const menuId = `${scope}-menu__drawer-${item.base}`;
       const childIcon = scope === 'mobile' ? icon('ChevronSmallRight', 'icon--sm') : '';
       return `<li>
-        <button class="navy__has-children" type="button" data-nav="${item.base}" data-menu="${menuId}" aria-expanded="false" aria-haspopup="menu" aria-controls="${menuId}">
+        <button class="navy__has-children" type="button" data-nav="${item.base}" data-menu="${menuId}" aria-expanded="false" aria-controls="${menuId}">
           <span>${escapeHtml(item.label)}</span>${childIcon}
         </button>
         ${renderNavMenu(item, scope)}
@@ -53,41 +74,65 @@ function headerHTML() {
   const desktopNavItems = NAV.map(item => renderNavItem(item, 'desktop')).join('');
   const mobileNavItems = NAV.map(item => renderNavItem(item, 'mobile')).join('');
 
+  const topBarNav = TOP_BAR_LINKS.map(l =>
+    `<li><a href="${l.href}"${l.external ? ' target="_blank" rel="noopener external"' : ''}><span>${escapeHtml(l.label)}</span>${icon(l.icon, 'icon--base')}</a></li>`
+  ).join('');
+  const metaNav = META_LINKS.map(l =>
+    `<li><a class="meta-navigation__item" href="${l.href}">${escapeHtml(l.label)}</a></li>`
+  ).join('');
+
+  const langSwitcher = `<div class="language-switcher">${select({
+    id: 'lang', label: 'Sprache wählen — im Prototyp nur Deutsch', hideLabel: true,
+    bare: true, variant: 'negative', size: 'sm', value: 'DE',
+    options: ['DE', { value: 'FR', label: 'FR', disabled: true }, { value: 'IT', label: 'IT', disabled: true },
+              { value: 'RM', label: 'RM', disabled: true }, { value: 'EN', label: 'EN', disabled: true }],
+  })}</div>`;
+
   return `
-  <a href="#main-content" class="skip-to-content skip-link">Zum Inhalt springen</a>
+  <button type="button" class="skip-to-content" id="skip-link">Zum Inhalt springen</button>
   <div class="top-bar">
     <div class="container container--flex">
-      <a class="top-bar__btn" href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener"><span>Alle Schweizer Bundesbehörden</span>${icon('External', 'icon--sm')}</a>
+      <a class="top-bar__btn" href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener external"><span>Alle Schweizer Bundesbehörden</span>${icon('External', 'icon--base')}</a>
       <div class="top-bar__right">
-        <span class="demo-chip" role="status" aria-label="Prototyp mit Demo-Daten — Login, Prozess-Engine, Datenkern und Schnittstellen sind simuliert">Prototyp</span>
-        <a href="#/services/sicherheitsvorfall-melden" title="Notfall &amp; Vorfälle">${icon('WarningCircle', 'icon--sm')} Notfall</a>
-        <a href="https://www.egate.admin.ch/" target="_blank" rel="noopener" title="eGate (extern, Demo)">eGate ${icon('External', 'icon--sm')}</a>
-        <label class="sr-only" for="lang">Sprache wählen</label>
-        <select class="lang-select" id="lang" title="Nur DE im Prototyp">
-          <option selected>DE</option><option>FR</option><option>IT</option><option disabled>RM</option><option>EN</option>
-        </select>
+        <span class="demo-chip" title="Prototyp mit Demo-Daten — Login, Prozess-Engine, Datenkern und Schnittstellen sind simuliert">Prototyp<span class="sr-only"> — Prototyp mit Demo-Daten; Login, Prozess-Engine, Datenkern und Schnittstellen sind simuliert</span></span>
+        <nav class="top-bar-navigation" aria-label="Bundesangebote"><ul>${topBarNav}</ul></nav>
+        ${langSwitcher}
       </div>
     </div>
   </div>
 
-  <div class="top-header">
+  <div class="top-header" id="top-header-id">
     <div class="container container--flex">
-      <a class="logo" href="#/" aria-label="Startseite — Bundesamt für Bauten und Logistik">
+      <a class="logo" href="#/">
         <img class="logo__flag" src="assets/swiss-logo-flag.svg" alt="" aria-hidden="true">
-        <img class="logo__name" src="assets/swiss-logo-name.svg" alt="Schweizerische Eidgenossenschaft" aria-hidden="true">
-        <span class="logo__sep" aria-hidden="true"></span>
-        <span class="logo__title">Bundesamt für Bauten und Logistik <span>Service-Plattform</span></span>
+        <img class="logo__name" src="assets/swiss-logo-name.svg" alt="" aria-hidden="true">
+        <span class="logo__separator" aria-hidden="true"></span>
+        <span class="logo-title__container">
+          <span class="logo__accronym" aria-hidden="true">BBL</span>
+          <span class="logo__title">Bundesamt für Bauten und Logistik <span>Kundenportal</span></span>
+        </span>
+        <span class="sr-only"> — Startseite</span>
       </a>
       <div class="top-header__right">
-        <div class="search--main" id="header-search">
-          <button class="search__toggle" type="button" id="search-toggle" aria-expanded="false" aria-controls="header-search-form" aria-label="Suche öffnen">
-            <span class="label">Suche</span>${icon('Search', 'icon--lg')}
+        <nav class="meta-navigation meta-navigation--desktop" aria-label="Meta"><ul>${metaNav}</ul></nav>
+        <div class="top-header__container-flex">
+          <div class="search search--main" id="header-search">
+            <div class="search__group">
+              <button class="search__button" type="button" id="search-toggle" aria-expanded="false" aria-controls="header-search-form" aria-label="Suche öffnen">
+                <span class="search__button__title">Suche</span>${icon('Search', 'icon--lg')}
+              </button>
+              <form class="search__form" role="search" id="header-search-form" aria-label="Suche auf der Plattform">
+                <label class="sr-only" for="global-search">Suche auf der Plattform</label>
+                <input type="search" id="global-search" placeholder="Suche…" autocomplete="off">
+                <button class="search__submit" type="submit" aria-label="Suchen">${icon('Search', 'icon--base')}</button>
+              </form>
+            </div>
+          </div>
+          <button class="burger" type="button" id="burger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="mobile-menu-id">
+            <span class="burger__icon">
+              <span class="burger__bar"></span><span class="burger__bar"></span><span class="burger__bar"></span>
+            </span>
           </button>
-          <form class="search__form" role="search" id="header-search-form">
-            <label class="sr-only" for="global-search">Suche auf der Plattform</label>
-            <input type="search" id="global-search" placeholder="Suche…" autocomplete="off">
-            <button class="search__submit" type="submit" aria-label="Suchen">${icon('Search', 'icon--sm')}</button>
-          </form>
         </div>
       </div>
     </div>
@@ -98,7 +143,6 @@ function headerHTML() {
     <div id="desktop-navigation-id">
       <div class="container container--flex">
         <nav id="main-navigation" class="main-navigation main-navigation--desktop" aria-label="Hauptnavigation">
-      <button class="nav-toggle" id="nav-toggle" aria-expanded="false">${icon('Apps', 'icon--sm')} Menü</button>
           <ul>${desktopNavItems}</ul>
         </nav>
       </div>
@@ -106,57 +150,66 @@ function headerHTML() {
   </div>
 
   <div id="mobile-menu-id" class="mobile-menu">
-    <div class="container">
-      <button class="nav-toggle" id="nav-toggle-mobile" aria-expanded="false" aria-controls="main-navigation-mobile-list">${icon('Apps', 'icon--sm')} Menu</button>
-      <nav id="main-navigation-mobile" class="main-navigation main-navigation--mobile" aria-label="Hauptnavigation Mobil">
-        <ul id="main-navigation-mobile-list">${mobileNavItems}</ul>
-      </nav>
-    </div>
+    <nav class="main-navigation main-navigation--mobile" aria-label="Hauptnavigation Mobil">
+      <ul>${mobileNavItems}</ul>
+    </nav>
+    <nav class="meta-navigation meta-navigation--mobile" aria-label="Meta Mobil"><ul>${metaNav}</ul></nav>
+    <nav class="top-bar-navigation--mobile" aria-label="Bundesangebote Mobil">
+      <ul>
+        ${TOP_BAR_LINKS.map(l => `<li><a href="${l.href}" target="_blank" rel="noopener external">${escapeHtml(l.label)}</a></li>`).join('')}
+        <li><a href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener external">Alle Schweizer Bundesbehörden</a></li>
+      </ul>
+    </nav>
   </div>
 
-  <div id="breadcrumb-wrap" class="breadcrumb container container--flex" hidden>
-    <nav aria-label="Sie sind hier"><ol id="breadcrumb"></ol></nav>
-    <div id="breadcrumb__drawer" class="breadcrumb__drawer" hidden></div>
+  <div id="breadcrumb" class="breadcrumb container container--flex" hidden>
+    <nav class="breadcrumb-navigation" aria-label="Sie sind hier"><ul id="breadcrumb-list"></ul></nav>
   </div>`;
 }
 
 function footerHTML() {
+  const fLink = (href, label, ext) =>
+    `<a class="footer__link footer-information__link--icon-right" href="${href}"${ext ? ' target="_blank" rel="noopener external"' : ''}>${icon(ext ? 'External' : 'ArrowRight', 'footer-information__icon')}${escapeHtml(label)}</a>`;
+  const sLink = (href, label, ic) =>
+    `<a class="footer__link" href="${href}" target="_blank" rel="noopener external">${icon(ic, 'footer-information__icon')}${escapeHtml(label)}</a>`;
+
   return `
-  <div class="footer-information">
+  <div class="bg--secondary-600">
     <div class="container">
-      <div class="grid grid--3">
+      <div class="footer-information">
         <div class="footer-information__entry">
           <h3>Bundesamt für Bauten und Logistik BBL</h3>
-          <p class="small">Die Service-Plattform bündelt Dienstleistungen, Anwendungen, Dokumente und Daten des BBL an einem Ort. Dies ist ein <strong>Prototyp mit Demo-Daten</strong>.</p>
+          <p class="small">Das Kundenportal bündelt Dienstleistungen, Anwendungen, Dokumente und Daten des BBL an einem Ort. Dies ist ein <strong>Prototyp mit Demo-Daten</strong>.</p>
           <p class="small">Fellerstrasse 21, 3003 Bern</p>
         </div>
         <div class="footer-information__entry">
-          <h3>Weitere Informationen</h3>
-          <ul style="list-style:none">
-            <li><a href="#/knowledge">Wissen &amp; Weisungen</a></li>
-            <li><a href="#/applications">Anwendungen</a></li>
-            <li><a href="#/data">Datenkatalog</a></li>
-            <li><a href="#/my-cases">Meine Vorgänge</a></li>
-          </ul>
-        </div>
-        <div class="footer-information__entry">
           <h3>Bleiben Sie informiert</h3>
-          <ul style="list-style:none">
-            <li><a href="https://www.instagram.com/bundesbauten/" target="_blank" rel="noopener">Instagram ${icon('External', 'icon--sm')}</a></li>
-            <li><a href="#/services/sicherheitsvorfall-melden">Notfall &amp; Vorfälle</a></li>
-            <li><a href="#">Kontakt</a></li>
-          </ul>
+          <div class="footer-information__social">
+            ${sLink('https://www.instagram.com/bundesbauten/', 'Instagram', 'Instagram')}
+            ${sLink('https://www.linkedin.com/', 'LinkedIn', 'LinkedIn')}
+          </div>
+        </div>
+        <div class="footer-information__entry footer-information__entry--big">
+          <h3>Weitere Informationen</h3>
+          <div class="footer-information__links">
+            <div class="footer-information__links-column">
+              ${fLink('#/knowledge', 'Wissen & Weisungen')}${fLink('#/applications', 'Anwendungen')}${fLink('#/data', 'Datenkatalog')}
+            </div>
+            <div class="footer-information__links-column">
+              ${fLink('#/my-cases', 'Meine Vorgänge')}${fLink('#/services/sicherheitsvorfall-melden', 'Notfall & Vorfälle')}${fLink('#/services', 'Dienstleistungen')}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-  <div class="footer-navigation">
+  <div class="bg--secondary-700">
     <nav class="container" aria-label="Rechtliches">
-      <ul>
-        <li><a href="https://www.admin.ch/gov/de/start/rechtliches/impressum.html" target="_blank" rel="noopener">Impressum</a></li>
-        <li><a href="https://www.admin.ch/gov/de/start/rechtliches.html" target="_blank" rel="noopener">Rechtliches</a></li>
-        <li><a href="https://www.admin.ch/gov/de/start/rechtliches/datenschutzerklaerung.html" target="_blank" rel="noopener">Datenschutz</a></li>
-        <li><a href="https://www.admin.ch/gov/de/start/rechtliches/barrierefreiheit-bund.html" target="_blank" rel="noopener">Barrierefreiheit</a></li>
+      <ul class="footer-navigation">
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/impressum.html" target="_blank" rel="noopener external">Impressum</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches.html" target="_blank" rel="noopener external">Rechtliches</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/datenschutzerklaerung.html" target="_blank" rel="noopener external">Datenschutz</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/barrierefreiheit-bund.html" target="_blank" rel="noopener external">Barrierefreiheit</a></li>
       </ul>
     </nav>
   </div>`;
@@ -164,55 +217,67 @@ function footerHTML() {
 
 function renderHeader(el) {
   el.innerHTML = headerHTML();
-  // mobile nav
-  const toggle = el.querySelector('#nav-toggle-mobile');
-  const list = el.querySelector('#main-navigation-mobile-list');
-  toggle.addEventListener('click', () => {
-    const open = list.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', String(open));
-  });
-  list.addEventListener('click', (e) => { if (e.target.closest('a')) list.classList.remove('open'); });
 
+  // Skip link: move focus rather than navigate, so the router never sees the fragment.
+  el.querySelector('#skip-link').addEventListener('click', () => {
+    const main = document.getElementById('main-content');
+    if (!main) return;
+    main.focus();
+    main.scrollIntoView({ block: 'start' });
+  });
+
+  // --- Mobile drawer (CD burger + .mobile-menu) ---
+  const burger = el.querySelector('#burger');
+  const drawer = el.querySelector('#mobile-menu-id');
+  const setMobileMenu = (open) => {
+    document.body.classList.toggle('body--mobile-menu-is-open', open);
+    burger.setAttribute('aria-expanded', String(open));
+    burger.setAttribute('aria-label', open ? 'Menü schliessen' : 'Menü öffnen');
+    if (open) {
+      // the drawer starts below the shell; measure it rather than hard-coding
+      const top = el.querySelector('#top-header-id');
+      if (top) document.documentElement.style.setProperty('--shell-top', `${top.getBoundingClientRect().bottom}px`);
+    }
+  };
+  burger.addEventListener('click', () =>
+    setMobileMenu(!document.body.classList.contains('body--mobile-menu-is-open')));
+  drawer.addEventListener('click', (e) => { if (e.target.closest('a')) setMobileMenu(false); });
+  window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => { if (e.matches) setMobileMenu(false); });
+
+  // --- Flyout drawers (desktop + mobile) ---
   const menuButtons = Array.from(el.querySelectorAll('[data-menu]'));
   const overlay = el.querySelector('.desktop-menu__overlay');
   const desktopQuery = window.matchMedia('(min-width: 1024px)');
   const setOverlayOpen = (open) => {
     if (!overlay) return;
-    if (open) {
-      const menu = el.querySelector('#desktop-menu');
-      if (menu) overlay.style.top = `${menu.getBoundingClientRect().bottom}px`;
-    }
     overlay.classList.toggle('hidden', !(open && desktopQuery.matches));
   };
   const positionPanel = (button, panel) => {
-    if (!desktopQuery.matches) {
-      panel.style.left = '';
-      panel.style.right = '';
-      return;
-    }
+    if (!desktopQuery.matches) { panel.style.left = ''; panel.style.right = ''; return; }
     const nav = button.closest('.main-navigation');
     if (!nav) return;
     const navRect = nav.getBoundingClientRect();
     const buttonRect = button.getBoundingClientRect();
-    const panelWidth = panel.offsetWidth || 480;
+    const panelWidth = panel.offsetWidth || 450;
     let left = buttonRect.left - navRect.left;
-    if (left + panelWidth > navRect.width - 12) {
-      left = Math.max(12, navRect.width - panelWidth - 12);
-    }
+    if (left + panelWidth > navRect.width - 12) left = Math.max(12, navRect.width - panelWidth - 12);
     panel.style.left = `${left}px`;
     panel.style.right = 'auto';
   };
-  const closeNavMenus = (exceptId = '') => {
+  const closeNavMenus = (exceptId = '', restoreFocus = false) => {
+    let toRestore = null;
     menuButtons.forEach((button) => {
       const panelId = button.getAttribute('aria-controls');
       if (panelId === exceptId) return;
       const panel = el.querySelector(`#${panelId}`);
       if (!panel) return;
+      if (button.getAttribute('aria-expanded') === 'true' && panel.contains(document.activeElement)) toRestore = button;
       panel.hidden = true;
       button.setAttribute('aria-expanded', 'false');
       button.classList.remove('clicked');
     });
     setOverlayOpen(Boolean(exceptId));
+    if (restoreFocus && toRestore) toRestore.focus();
   };
   const setMenuOpen = (button, open) => {
     const panelId = button.getAttribute('aria-controls');
@@ -243,7 +308,9 @@ function renderHeader(el) {
   });
   overlay?.addEventListener('click', () => closeNavMenus());
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeNavMenus();
+    if (e.key !== 'Escape') return;
+    closeNavMenus('', true);                       // Escape restores focus to the trigger
+    if (document.body.classList.contains('body--mobile-menu-is-open')) { setMobileMenu(false); burger.focus(); }
   });
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#main-header .navy__has-children, #main-header .desktop-menu__drawer, #main-header .mobile-menu__drawer')) closeNavMenus();
@@ -255,7 +322,8 @@ function renderHeader(el) {
     if (panel) positionPanel(openButton, panel);
     setOverlayOpen(true);
   });
-  // Header search — CD focus search: collapsed magnifier, expand on click.
+
+  // --- Header search (CD focus search) ---
   const searchWrap = el.querySelector('#header-search');
   const searchToggle = el.querySelector('#search-toggle');
   const searchForm = el.querySelector('#header-search-form');
@@ -266,6 +334,7 @@ function renderHeader(el) {
     if (open) setTimeout(() => sinput.focus(), 60);
   };
   searchToggle.addEventListener('click', () => openSearch(true));
+  searchWrap.addEventListener('focusin', () => { if (!searchWrap.classList.contains('open')) openSearch(true); });
   sinput.addEventListener('keydown', (e) => { if (e.key === 'Escape') { openSearch(false); searchToggle.focus(); } });
   searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -278,8 +347,6 @@ function renderHeader(el) {
     if (e.target.closest('#header-search')) return;
     openSearch(false);
   });
-  // language dropdown (stub — DE only in prototype)
-  el.querySelector('#lang').addEventListener('change', (e) => { e.target.value = 'DE'; });
 }
 
 function renderFooter(el) { el.innerHTML = footerHTML(); }

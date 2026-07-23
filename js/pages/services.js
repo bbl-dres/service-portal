@@ -9,7 +9,8 @@ export default async function render(ctx) {
   const rawQ = query.get('q') || '';
   const q = rawQ.toLowerCase();
   const selectedAudience = query.get('audience') || '';
-  const selectedTopic = query.get('topic') || '';
+  // `topic` is multi-value (comma-separated) — several Themen can be active at once
+  const selectedTopics = (query.get('topic') || '').split(',').map(t => t.trim()).filter(Boolean);
   const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
   const perPage = 12;
   const domains = core.ref().domains || [];
@@ -17,7 +18,7 @@ export default async function render(ctx) {
 
   const matches = (s) => !q || (s.title + ' ' + s.short + ' ' + s.description).toLowerCase().includes(q);
   const matchesAudience = (s) => !selectedAudience || s.audience === selectedAudience;
-  const matchesTopic = (s) => !selectedTopic || s.domain === selectedTopic;
+  const matchesTopic = (s) => !selectedTopics.length || selectedTopics.includes(s.domain);
   const services = all.filter(s => matches(s) && matchesAudience(s) && matchesTopic(s));
   const totalPages = Math.max(1, Math.ceil(services.length / perPage));
   const page = Math.min(currentPage, totalPages);
@@ -33,12 +34,30 @@ export default async function render(ctx) {
   const card = (s) => C.card({
     title: s.title, desc: s.short, href: `#/services/${s.serviceId}`,
     badges: [C.audienceTag(s.audience), s.type === 'action' ? C.badge('Service', 'info') : C.badge('Information', 'gray')],
-    footer: `<span>${domainLabel(domains, s.domain)}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--sm')}</span>`,
+    footer: `<span>${domainLabel(domains, s.domain)}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
   });
+
+  // Active-filter pills. Each pill links to the same view minus that one value,
+  // so removing a filter needs no JS and stays deep-linkable.
+  const activeFilters = [
+    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: servicesHash({ audience: selectedAudience, topics: selectedTopics, page: 1 }) }] : []),
+    ...(selectedAudience ? [{ label: audienceLabel(selectedAudience), href: servicesHash({ q: rawQ, topics: selectedTopics, page: 1 }) }] : []),
+    ...selectedTopics.map(t => ({
+      label: domainLabel(domains, t),
+      href: servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics.filter(x => x !== t), page: 1 }),
+    })),
+  ];
+  const filterBar = activeFilters.length ? `
+    <div class="active-filters mt-4" role="group" aria-label="Aktive Filter">
+      <span class="small muted">Aktive Filter:</span>
+      ${activeFilters.map(f => `<a class="badge badge--gray active-filter" href="${f.href}"
+         aria-label="Filter „${C.escape(f.label)}“ entfernen">${C.escape(f.label)}${C.icon('Cancel', 'icon--sm')}</a>`).join('')}
+      <a class="btn btn--link" href="#/services">Alle Filter zurücksetzen</a>
+    </div>` : '';
 
   const selectedFilters = [
     selectedAudience ? audienceLabel(selectedAudience) : '',
-    selectedTopic ? domainLabel(domains, selectedTopic) : '',
+    selectedTopics.map(t => domainLabel(domains, t)).join(', '),
   ].filter(Boolean);
   const relatedHits = otherHits && (otherHits.apps + otherHits.docs + otherHits.weisungen)
     ? `Auch in: ${otherHits.apps ? `<a href="#/applications">${otherHits.apps} Anwendung(en)</a> · ` : ''}${otherHits.docs ? `<a href="#/app/document-archive">${otherHits.docs} Dokument(e)</a> · ` : ''}${otherHits.weisungen ? `<a href="#/knowledge">${otherHits.weisungen} Weisung(en)</a>` : ''}`
@@ -69,30 +88,33 @@ export default async function render(ctx) {
           <div class="select">
             <select id="topic-filter" name="topic">
               <option value="">Alle Themen</option>
-              ${domains.map(d => `<option value="${C.escape(d.key)}"${selectedTopic === d.key ? ' selected' : ''}>${C.escape(d.label)}</option>`).join('')}
+              ${domains.map(d => `<option value="${C.escape(d.key)}">${C.escape(d.label)}</option>`).join('')}
             </select>
             <span class="select__icon">${C.icon('ChevronDown')}</span>
           </div>
         </div>
       </div>
     </form>
-    <div class="service-results mt-4">
-      <p class="muted">${resultText(services.length, all.length, page, totalPages, selectedFilters, rawQ, C)}</p>
-      ${relatedHits ? `<p class="muted small">${relatedHits}</p>` : ''}
-    </div>
-    ${services.length ? `<div class="grid grid--3 mt-4">${visibleServices.map(card).join('')}</div>${renderPagination(page, totalPages, query, C)}` : C.empty('Keine Services gefunden.')}
+    ${filterBar}
+    <section class="mt-6">
+      <div class="service-results mt-4">
+        <p class="muted">${resultText(services.length, all.length, page, totalPages, selectedFilters, rawQ, C)}</p>
+        ${relatedHits ? `<p class="muted small">${relatedHits}</p>` : ''}
+      </div>
+      ${services.length ? `<div class="grid grid--3 mt-4">${visibleServices.map(card).join('')}</div>${renderPagination(page, totalPages, query, C)}` : C.empty('Keine Services gefunden.')}
+    </section>
   </div>`;
 
   mount.querySelector('#svc-search').addEventListener('submit', (e) => {
     e.preventDefault();
     const v = mount.querySelector('#sq').value.trim();
-    location.hash = servicesHash({ q: v, audience: selectedAudience, topic: selectedTopic, page: 1 });
+    location.hash = servicesHash({ q: v, audience: selectedAudience, topics: selectedTopics, page: 1 });
   });
   mount.querySelector('#audience-filter').addEventListener('change', (e) => {
-    location.hash = servicesHash({ q: rawQ, audience: e.target.value, topic: selectedTopic, page: 1 });
+    location.hash = servicesHash({ q: rawQ, audience: e.target.value, topics: selectedTopics, page: 1 });
   });
   mount.querySelector('#topic-filter').addEventListener('change', (e) => {
-    location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topic: e.target.value, page: 1 });
+    location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topics: e.target.value && !selectedTopics.includes(e.target.value) ? [...selectedTopics, e.target.value] : selectedTopics, page: 1 });
   });
   const pageInput = mount.querySelector('#svc-page');
   if (pageInput) {
@@ -100,7 +122,7 @@ export default async function render(ctx) {
       const parsed = Number.parseInt(pageInput.value, 10);
       const target = Math.min(totalPages, Math.max(1, Number.isFinite(parsed) ? parsed : page));
       if (target === page) { pageInput.value = String(page); return; }
-      location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topic: selectedTopic, page: target });
+      location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics, page: target });
     };
     pageInput.addEventListener('change', goToPage);
     pageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); goToPage(); } });
@@ -128,14 +150,14 @@ function detail(ctx, id) {
         <h1 tabindex="-1">${C.escape(s.title)}</h1>
         <p class="lead">${C.escape(s.short)}</p>
         <p>${C.escape(s.description)}</p>
-        ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="aside-box"><h3>Das brauchen Sie</h3><ul style="padding-left:1.1rem">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
+        ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="box"><h3>Das brauchen Sie</h3><ul style="padding-left:1.1rem">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
         <div class="row mt-4">
-          <a class="btn btn--primary btn--lg" href="${s.target.href}">${ctaLabel} ${C.icon(ext ? 'External' : 'ArrowRight', 'icon--sm')}</a>
+          <a class="btn btn--outline btn--lg" href="${s.target.href}">${ctaLabel} ${C.icon(ext ? 'External' : 'ArrowRight', 'icon--base')}</a>
         </div>
       </div>
       <aside class="stack-lg">
-        ${contact ? `<div class="aside-box"><h3>Kontakt</h3><p class="small" style="margin:0"><strong>${C.escape(contact.name)}</strong><br>${C.escape(contact.role)}<br><a href="mailto:${contact.email}">${contact.email}</a><br>${C.escape(contact.phone)}</p></div>` : ''}
-        ${weis.length ? `<div class="aside-box"><h3>Geltende Weisungen</h3>${weis.map(w => `<a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge?tab=weisungen&id=${w.directiveId}">${C.icon('Book', 'icon--sm')}<span class="small">${C.escape(w.title)}</span></a>`).join('')}</div>` : ''}
+        ${contact ? `<div class="box"><h3>Kontakt</h3><p class="small" style="margin:0"><strong>${C.escape(contact.name)}</strong><br>${C.escape(contact.role)}<br><a href="mailto:${contact.email}">${contact.email}</a><br>${C.escape(contact.phone)}</p></div>` : ''}
+        ${weis.length ? `<div class="box"><h3>Geltende Weisungen</h3>${weis.map(w => `<a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge?tab=weisungen&id=${w.directiveId}">${C.icon('Book', 'icon--base')}<span class="small">${C.escape(w.title)}</span></a>`).join('')}</div>` : ''}
       </aside>
     </div>
   </div>`;
@@ -165,10 +187,10 @@ function renderPagination(page, totalPages, query, C) {
   if (totalPages <= 1) return '';
   const q = query.get('q') || '';
   const audience = query.get('audience') || '';
-  const topic = query.get('topic') || '';
-  const href = (targetPage) => servicesHash({ q, audience, topic, page: targetPage });
+  const topics = (query.get('topic') || '').split(',').filter(Boolean);
+  const href = (targetPage) => servicesHash({ q, audience, topics, page: targetPage });
   const control = (targetPage, label, iconName, disabled) => {
-    const inner = `${C.icon(iconName, 'icon--sm')}<span class="btn__text">${label}</span>`;
+    const inner = `${C.icon(iconName, 'icon--base')}<span class="btn__text">${label}</span>`;
     return disabled
       ? `<li><span class="btn btn--outline btn--icon-only" aria-disabled="true" aria-label="${label}">${inner}</span></li>`
       : `<li><a class="btn btn--outline btn--icon-only" href="${href(targetPage)}" aria-label="${label}">${inner}</a></li>`;
@@ -189,11 +211,11 @@ function renderPagination(page, totalPages, query, C) {
     </nav>`;
 }
 
-function servicesHash({ q = '', audience = '', topic = '', page = 1 }) {
+function servicesHash({ q = '', audience = '', topics = [], page = 1 }) {
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (audience) params.set('audience', audience);
-  if (topic) params.set('topic', topic);
+  if (topics.length) params.set('topic', topics.join(','));
   if (page > 1) params.set('page', String(page));
   const suffix = params.toString();
   return suffix ? `#/services?${suffix}` : '#/services';

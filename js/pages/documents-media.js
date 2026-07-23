@@ -13,11 +13,11 @@ export default async function render(ctx) {
     <a class="card card--clickable" href="${o.href}">
       <div class="card__body">
         <div class="card__title">${C.escape(o.title)}</div>
-        <p class="card__desc">${C.escape(o.desc)}</p>
+        <p class="card__description">${C.escape(o.desc)}</p>
       </div>
       <div class="card__footer">
         <span><strong>${o.count}</strong> ${C.escape(o.countLabel)}</span>
-        <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--sm')}</span>
+        <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>
       </div>
     </a>`;
 
@@ -58,8 +58,8 @@ export default async function render(ctx) {
             ${C.badge(d.format, 'info')}
           </div>
           <div class="card__title" style="font-size:var(--fs-base)">${C.escape(d.title)}</div>
-          <p class="card__desc row gap-sm">
-            ${C.icon('Building', 'icon--sm')} <span>${b ? C.escape(b.name) : 'Gebäudeübergreifend'} · ${C.escape(String(d.year))}</span>
+          <p class="card__description row gap-sm">
+            ${C.icon('Building', 'icon--base')} <span>${b ? C.escape(b.name) : 'Gebäudeübergreifend'} · ${C.escape(String(d.year))}</span>
           </p>
         </div>
       </a>`;
@@ -71,8 +71,12 @@ export default async function render(ctx) {
     const swatch = m.color || '#2f4356';
     return `
       <a class="card card--clickable" href="#/app/mediathek?id=${encodeURIComponent(m.mediaId)}">
-        <div class="card__image" style="background:${C.escape(swatch)};display:flex;align-items:center;justify-content:center;color:#fff">
-          ${C.icon(isVideo ? 'Video' : 'Image', 'icon--xl')}
+        <div class="card__image">
+          ${C.photo({
+            id: m.photo, color: swatch, alt: m.title, w: 640, gray: m.historicPeriod === 'historisch',
+            style: 'height:100%;display:flex;align-items:center;justify-content:center;color:#fff',
+            overlay: isVideo ? C.icon('Video', 'icon--xl') : '',
+          })}
         </div>
         <div class="card__body">
           <div class="pill-row">
@@ -80,7 +84,7 @@ export default async function render(ctx) {
             ${C.badge(m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell', 'gray')}
           </div>
           <div class="card__title" style="font-size:var(--fs-base)">${C.escape(m.title)}</div>
-          <p class="card__desc">${b ? C.escape(b.name) + ' · ' : ''}${C.escape(String(m.date))}</p>
+          <p class="card__description">${b ? C.escape(b.name) + ' · ' : ''}${C.escape(String(m.date))}</p>
         </div>
       </a>`;
   };
