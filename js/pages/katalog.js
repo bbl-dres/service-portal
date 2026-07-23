@@ -235,14 +235,14 @@ function detail(ctx, id) {
     return `
       <div class="accordion__item">
         <h3 style="margin:0">
-          <button class="accordion__button" type="button" aria-expanded="${i === 0}" aria-controls="dist-p-${i}" id="dist-b-${i}">
+          <button class="accordion__button" type="button" aria-expanded="false" aria-controls="dist-p-${i}" id="dist-b-${i}">
             <span class="accordion__title">${C.escape(t(dist.name) || dist.titel)}</span>
             <span class="accordion__meta">
               ${format ? C.badge(format, 'gray', 'sm') : ''}${C.icon('ChevronDown', 'icon--base')}
             </span>
           </button>
         </h3>
-        <div class="accordion__content" id="dist-p-${i}" role="region" aria-labelledby="dist-b-${i}"${i === 0 ? '' : ' hidden'}>
+        <div class="accordion__content" id="dist-p-${i}" role="region" aria-labelledby="dist-b-${i}" hidden>
           <div class="data-rows">
             ${DIST_FIELDS.map(f => `<div class="data-row">
               <div class="data-row__key">${f.label}</div>
