@@ -53,12 +53,12 @@ p { margin:0 0 1rem; }
 
 /* Links — CD underlines every content link in main (link.postcss:5-38) */
 a { color:var(--color-link); text-decoration:none; }
-#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter),
+#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link),
 .notification a, .link {
   color:var(--color-primary-600); text-decoration:underline; text-underline-offset:2px; overflow-wrap:break-word;
 }
-#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):hover,
-#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):focus,
+#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):hover,
+#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):focus,
 .notification a:hover, .link:hover, .link:focus { color:var(--color-primary-800); }
 .link--negative { color:#fff; text-decoration:underline; text-underline-offset:2px; }
 .link--negative:hover { color:var(--color-gray-300); }
@@ -344,9 +344,25 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .meta-navigation--desktop { display:none; }
 @media (min-width:1024px){ .meta-navigation--desktop { display:flex; margin-bottom:.75rem; } }
 @media (min-width:1280px){ .meta-navigation--desktop { margin-bottom:1rem; } }
+/* Anmeldestatus (AGOV / FedLogin) rechts in der Meta-Navigation. */
+.meta-navigation__auth { display:flex; align-items:center; gap:.35rem;
+  background:none; border:0; font:inherit; color:var(--color-primary-600);
+  padding-inline:.75rem; cursor:pointer; }
+.meta-navigation__auth:hover { color:var(--color-primary-800); }
+.meta-navigation__user { display:flex; align-items:center; gap:.5rem; padding-inline:.75rem;
+  border-left:1px solid var(--color-secondary-300); }
+.meta-navigation__name { display:flex; align-items:center; gap:.35rem; color:var(--color-text-muted); }
+.meta-navigation__name .icon { color:var(--color-primary-600); }
+
+/* Login-Hinweis dort, wo ein Vorgang ausgelöst würde. */
+.login-gate .btn { margin-top:0; }
+.login-gate__btn { align-self:flex-start; }
 
 /* Burger (burger.postcss:5-76) */
-.burger { display:flex; align-items:center; height:100%; padding:0 1rem; margin-right:-1rem;
+/* `height:100%` kollabierte im zentrierten Flex-Elternteil auf die Icon-Höhe —
+   der einzige Menüzugang unter 1024 px war 20 px hoch (P0-5). */
+.burger { display:flex; align-items:center; justify-content:center;
+  min-height:2.75rem; min-width:2.75rem; padding:0 1rem; margin-right:-1rem;
   background:none; border:0; cursor:pointer; }
 @media (min-width:1024px){ .burger { display:none; } }
 .burger__icon { display:block; position:relative; width:1.75rem; height:1.25rem;
@@ -528,9 +544,6 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .footer__link { display:inline-flex; align-items:center; padding-block:.5rem; color:#fff; cursor:pointer; text-decoration:none; }
 .footer__link:hover { color:var(--color-gray-300); text-decoration:none; }
 .footer-information__icon { display:inline-block; margin-right:.25rem; width:1.4em; height:1.4em; flex:none; }
-.footer-information__social { margin-top:-.5rem; margin-bottom:1.5rem; }
-@media (min-width:1024px){ .footer-information__social { margin-bottom:2rem; } }
-.footer-information__social .footer__link { margin-right:1.25rem; }
 .footer-information__links { display:flex; flex-direction:column; margin-top:-1rem; }
 @media (min-width:640px){ .footer-information__links { flex-direction:row; gap:4rem; } }
 @media (min-width:1024px){ .footer-information__links { flex-direction:column; gap:0; } }
@@ -618,7 +631,17 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .btn--icon-only { gap:0; padding-left:.625rem; padding-right:.625rem; }
 .btn--icon-only .btn__text { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
   clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+/* Nicht verfügbare Ziele werden als <span aria-disabled> gerendert — ein span
+   nimmt kein [disabled], deshalb müssen die Selektoren beides abdecken, sonst
+   sehen tote Links wie lebende aus (docs/design-review.md P0-7). */
 .btn--icon-only[aria-disabled="true"] { opacity:.4; cursor:not-allowed; pointer-events:none; }
+.btn[aria-disabled="true"] { cursor:not-allowed; }
+.btn--link[aria-disabled="true"], .btn--bare[aria-disabled="true"] { color:var(--color-secondary-400); text-decoration:none; }
+.btn--outline[aria-disabled="true"] { color:var(--color-secondary-400); border-color:var(--color-secondary-200); }
+.btn[aria-disabled="true"]:hover { color:var(--color-secondary-400); text-decoration:none; }
+.download-item[aria-disabled="true"] { cursor:not-allowed; opacity:.65; }
+.download-item[aria-disabled="true"]:hover { background:transparent; }
+.download-item[aria-disabled="true"]:hover .download-item__title { color:inherit; text-decoration:none; }
 
 /* Cards (card.postcss:5-248) — the base carries no shadow */
 .card { background:#fff; border:0; border-radius:0; box-shadow:none;
@@ -1006,10 +1029,11 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .view-switch { display:flex; align-items:center; gap:.25rem;
   border-left:1px solid var(--color-secondary-300); padding-left:1rem; }
 .view-switch__btn { display:inline-flex; align-items:center; justify-content:center;
-  width:2.25rem; height:2.25rem; padding:0; background:none; border:0; border-radius:0;
-  color:var(--color-secondary-500); cursor:pointer; transition:color .2s; }
+  min-width:2.75rem; min-height:2.75rem; padding:0; background:none; border:0; border-radius:0;
+  color:var(--color-secondary-500); cursor:pointer; transition:color .2s, background .2s; }
 .view-switch__btn:hover { color:var(--color-primary-700); }
-.view-switch__btn[aria-pressed="true"] { color:var(--color-text); }
+/* Zustand nicht allein über Farbe (WCAG 1.4.1, P2-10) */
+.view-switch__btn[aria-pressed="true"] { color:var(--color-text); background:var(--color-secondary-100); }
 .view-switch__btn:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 @media (max-width:640px){
   .service-controls__search { flex-direction:column; align-items:stretch; }
@@ -1101,6 +1125,43 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .row--between { justify-content:space-between; }
 .row--end { justify-content:flex-end; }
 .more-link { display:flex; justify-content:flex-end; margin-top:1.5rem; }
+
+/* ===================== Startseite (Arbeitsfläche) ===================== */
+/* CD-Abschnittskopf und -aktion (section.postcss:55,89 · ServicesSection.vue):
+   Titel oben, «Alle …»-Verweis unten rechts. */
+.section__title { font-weight:var(--fw-bold); font-size:var(--text-2xl); margin:0 0 2.5rem; }
+.section__action { display:flex; justify-content:flex-end; padding-top:1rem; }
+
+/* Hero mit Suche links, Gebäudebild rechts (CD hero--main-image). Suchen ist
+   im Intranet der häufigste Einstieg, deshalb der erste Block. */
+.home-hero { display:grid; gap:2rem; align-items:center; }
+@media (min-width:900px){ .home-hero { grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:3rem; } }
+.home-hero h1 { margin-bottom:.5rem; }
+.home-hero .lead { font-size:var(--text-lg); color:var(--color-text-muted); margin-bottom:1.5rem; }
+.home-hero__figure { margin:0; }
+.home-hero__figure img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover;
+  background:var(--color-secondary-50); }
+.home-hero__figure figcaption { margin-top:.5rem; font-size:var(--text-sm); color:var(--color-text-muted); }
+.home-search { display:flex; gap:.5rem; align-items:stretch; max-width:40rem; }
+.home-search input { flex:1 1 auto; min-width:0; min-height:3.25rem; font-size:var(--text-base); }
+@media (max-width:640px){ .home-search { flex-direction:column; } }
+
+/* Schnelleinstiege — Text vor Bild: hier zählt das Ziel, nicht die Illustration. */
+.quick-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(20rem,1fr)); gap:1rem; }
+.quick-tile { display:flex; gap:1rem; align-items:flex-start; padding:1.25rem;
+  background:#fff; color:inherit; text-decoration:none;
+  border-left:3px solid transparent; box-shadow:var(--shadow-lg);
+  transition:box-shadow .2s, border-color .2s; }
+.quick-tile:hover, .quick-tile:focus-visible { box-shadow:var(--shadow-2xl);
+  border-left-color:var(--color-primary-600); }
+.quick-tile > .icon { flex:none; color:var(--color-primary-600); margin-top:.15rem; }
+.quick-tile__label { display:block; font-weight:var(--fw-bold); line-height:var(--lh-snug); }
+.quick-tile:hover .quick-tile__label { color:var(--color-primary-700); }
+.quick-tile__meta { display:block; margin-top:.15rem; font-size:var(--text-sm); color:var(--color-text-muted); }
+/* Auf grauen Abschnitten heben sich die weissen Kacheln ab — auf weissen
+   Abschnitten brauchen sie eine leichte Tönung, damit sie als Fläche lesbar bleiben. */
+.section--default:not([class*="bg--"]) .quick-tile { background:var(--color-secondary-50); box-shadow:none; }
+.section--default:not([class*="bg--"]) .quick-tile:hover { background:var(--color-secondary-100); box-shadow:none; }
 .gap-sm { gap:.5rem; }
 .mt-2 { margin-top:var(--sp-2); } .mt-4 { margin-top:var(--sp-4); } .mt-6 { margin-top:var(--sp-6); }
 .mt-8 { margin-top:var(--sp-8); } .mt-12 { margin-top:var(--sp-12); }

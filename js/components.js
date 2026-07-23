@@ -310,9 +310,25 @@ export function viewSwitch(view = 'galerie') {
   </div>`;
 }
 
+// --- Login-Hinweis (AGOV / FedLogin) -----------------------------------------
+// Kein Inhalt wird versteckt; abgemeldet erscheint nur dieser Hinweis dort, wo
+// ein Vorgang ausgelöst würde. Der Button ruft window.__login() (in app.js
+// verdrahtet), das die Session setzt und die Seite neu zeichnet.
+export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.') {
+  return `<div class="notification notification--hint login-gate">
+    ${icon('Lock', 'notification__icon')}
+    <div class="notification__content">
+      <p style="margin:0 0 .75rem">${text}</p>
+      <button type="button" class="btn btn--outline login-gate__btn" onclick="window.__login && window.__login()">
+        ${icon('User', 'btn__icon')}<span class="btn__text">Anmelden mit AGOV / FedLogin</span>
+      </button>
+    </div>
+  </div>`;
+}
+
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty,
   notification, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
-  pagination, wirePagination, resultsHeader, viewSwitch,
+  pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
 };
 export default C;

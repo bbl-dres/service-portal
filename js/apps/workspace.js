@@ -207,7 +207,7 @@ export default async function render(ctx) {
     <div class="container section">
       ${C.pageHeader({ title: 'Workspace & Buchung', lead: 'Möblierung und Material, Belegungsplanung sowie Buchung von Räumen, Arbeitsplätzen und Parkplätzen.' })}
       <div class="tabs">
-        <div class="tab__controls" role="tablist">${controls}</div>
+        <div class="tab__controls-container"><div class="tab__controls" role="tablist">${controls}</div></div>
         <div class="tab__container" role="tabpanel">${panel}</div>
       </div>
     </div>`;

@@ -23,9 +23,14 @@ export default async function render(ctx) {
 
   const tabHref = (t) => `#/knowledge?tab=${t}`;
 
-  const controls = `<div class="tab__controls" role="tablist" aria-label="Wissensbereiche">
-    ${TABS.map(t => `<a class="tab__control${t.id === active ? " tab__control--active" : ""}" role="tab"
-        aria-selected="${t.id === active}" href="${tabHref(t.id)}">${C.icon(t.icon, 'icon--base')} ${C.escape(t.label)}</a>`).join('')}
+  // Das sind Links auf eigene URLs, keine ARIA-Tabs: ohne role="tab" kündigt
+  // assistive Technik keine Pfeiltasten-Bedienung an, die es nicht gibt (P2-5).
+  // Der Container trägt die CD-Scroll-Andeutung (P0-6).
+  const controls = `<div class="tab__controls-container">
+    <nav class="tab__controls" aria-label="Wissensbereiche">
+      ${TABS.map(t => `<a class="tab__control${t.id === active ? " tab__control--active" : ""}"
+          ${t.id === active ? 'aria-current="page" ' : ''}href="${tabHref(t.id)}">${C.icon(t.icon, 'icon--base')} ${C.escape(t.label)}</a>`).join('')}
+    </nav>
   </div>`;
 
   const panels = TABS.map(t => `<div class="tab__container" data-tab="${t.id}"${t.id === active ? '' : ' hidden'}>
@@ -236,7 +241,9 @@ function formularePanel(ctx) {
       ${items.map(it => C.card({
         title: it.title, desc: it.desc,
         badges: [C.badge(it.fmt, 'gray')],
-        footer: `<span>Vorlage</span><a class="btn btn--link" href="#">${C.icon('Download', 'icon--base')} Herunterladen</a>`,
+        // downloadLink rendert ohne echtes Ziel einen nicht fokussierbaren
+        // span statt eines toten Links (docs/design-review.md P0-1).
+        footer: `<span>Vorlage</span>${C.downloadLink('#', `${it.title} herunterladen`)}`,
       })).join('')}
     </div>`;
 }
@@ -266,7 +273,8 @@ function anleitungenPanel(ctx) {
     <h2 class="mt-6">Anleitungen</h2>
     <div class="grid grid--3 mt-4">
       ${guides.map(g => C.card({ title: g.title, desc: g.desc,
-        footer: `<span>Anleitung</span><a class="btn btn--link" href="#">Öffnen ${C.icon('ArrowRight', 'icon--base')}</a>` })).join('')}
+        footer: `<span>Anleitung</span><span class="btn btn--link" aria-disabled="true"
+          title="Im Prototyp nicht verfügbar">${g.title} öffnen ${C.icon('ArrowRight', 'icon--base')}<span class="sr-only"> (im Prototyp nicht verfügbar)</span></span>` })).join('')}
     </div>
 
     <h2 class="mt-8">Häufige Fragen (FAQ)</h2>

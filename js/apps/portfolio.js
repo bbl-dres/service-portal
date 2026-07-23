@@ -312,9 +312,9 @@ function detail(ctx, id) {
     })}
 
     <div class="tabs mt-6">
-      <div class="tab__controls" role="tablist">
+      <div class="tab__controls-container"><div class="tab__controls" role="tablist">
         ${tabs.map((t, i) => `<button class="tab__control${i === 0 ? " tab__control--active" : ""}" role="tab" id="tab-${t.id}" aria-controls="panel-${t.id}" aria-selected="${i === 0}" data-tab="${t.id}">${C.escape(t.label)}</button>`).join('')}
-      </div>
+      </div></div>
       ${tabs.map((t, i) => `<div class="tab__container" id="panel-${t.id}" role="tabpanel" aria-labelledby="tab-${t.id}"${i === 0 ? '' : ' hidden'}>${panelHtml(t.id)}</div>`).join('')}
     </div>
   </div>`;

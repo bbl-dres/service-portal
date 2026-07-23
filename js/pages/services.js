@@ -140,7 +140,7 @@ export default async function render(ctx) {
 }
 
 function detail(ctx, id) {
-  const { mount, core, C, setTitle, setCrumbs } = ctx;
+  const { mount, core, session, C, setTitle, setCrumbs } = ctx;
   const s = core.service(id);
   if (!s) {
     setTitle('Dienstleistung nicht gefunden');
@@ -159,6 +159,25 @@ function detail(ctx, id) {
   const weis = core.weisungenForService(s.serviceId);
   const ext = s.target.kind === 'external';
   const ctaLabel = s.type === 'action' ? (ext ? 'Zum externen System' : 'Vorgang starten') : 'Öffnen';
+  // Ein Ziel «#» ist ein Platzhalter — dann keinen toten Knopf anbieten,
+  // sondern sagen, dass das System im Prototyp nicht angebunden ist.
+  const hasTarget = s.target.href && s.target.href !== '#';
+  // Nur das Auslösen eines Vorgangs (type=action) verlangt eine Anmeldung;
+  // Informationsangebote sind frei. Inhalt wird nie versteckt — abgemeldet
+  // erscheint statt des Knopfs der Login-Hinweis (AGOV / FedLogin).
+  const needsLogin = s.type === 'action' && !session.isLoggedIn();
+
+  const ctaBlock = needsLogin
+    ? C.loginGate(`Zum Starten des Vorgangs «${C.escape(s.title)}» ist eine Anmeldung mit AGOV / FedLogin erforderlich. Alle Informationen auf dieser Seite sind frei einsehbar.`)
+    : `<div class="row mt-4">
+        ${hasTarget
+          ? `<a class="btn btn--outline btn--lg" href="${C.escape(s.target.href)}"${
+              ext ? ' target="_blank" rel="noopener external"' : ''}>${ctaLabel} ${
+              C.icon(ext ? 'External' : 'ArrowRight', 'icon--base')}</a>`
+          : `<span class="btn btn--outline btn--lg" aria-disabled="true">${ctaLabel} ${
+              C.icon(ext ? 'External' : 'ArrowRight', 'icon--base')}</span>
+             <span class="small muted">Im Prototyp ist kein Zielsystem angebunden.</span>`}
+      </div>`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -170,9 +189,7 @@ function detail(ctx, id) {
         <p class="lead">${C.escape(s.short)}</p>
         <p>${C.escape(s.description)}</p>
         ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="box"><h3>Das brauchen Sie</h3><ul style="padding-left:1.1rem">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
-        <div class="row mt-4">
-          <a class="btn btn--outline btn--lg" href="${s.target.href}">${ctaLabel} ${C.icon(ext ? 'External' : 'ArrowRight', 'icon--base')}</a>
-        </div>
+        ${ctaBlock}
       </div>
       <aside class="stack-lg">
         ${contact ? `<div class="box"><h3>Kontakt</h3><p class="small" style="margin:0"><strong>${C.escape(contact.name)}</strong><br>${C.escape(contact.role)}<br><a href="mailto:${contact.email}">${contact.email}</a><br>${C.escape(contact.phone)}</p></div>` : ''}

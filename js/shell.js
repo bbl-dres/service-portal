@@ -3,6 +3,7 @@
 
 import { NAV } from './router.js';
 import { core } from './core.js';
+import { session } from './session.js';
 import { icon, escape as escapeHtml, select } from './components.js';
 
 // Some nav items take their children from the data core (loaded before the shell
@@ -75,6 +76,14 @@ function headerHTML() {
     `<li><a class="meta-navigation__item" href="${l.href}">${escapeHtml(l.label)}</a></li>`
   ).join('');
 
+  // Anmeldestatus (AGOV / FedLogin). Abgemeldet: ein «Anmelden»-Knopf.
+  // Angemeldet: Name plus «Abmelden». Kein Rollen-/Rechtekonzept.
+  const user = session.user();
+  const authNav = user
+    ? `<li class="meta-navigation__user"><span class="meta-navigation__name">${icon('User', 'icon--sm')} ${escapeHtml(user.name)}</span>
+        <button type="button" class="meta-navigation__item meta-navigation__auth" onclick="window.__logout && window.__logout()">Abmelden</button></li>`
+    : `<li><button type="button" class="meta-navigation__item meta-navigation__auth" onclick="window.__login && window.__login()">${icon('User', 'icon--sm')} Anmelden</button></li>`;
+
   const langSwitcher = `<div class="language-switcher">${select({
     id: 'lang', label: 'Sprache wählen — im Prototyp nur Deutsch', hideLabel: true,
     bare: true, variant: 'negative', size: 'sm', value: 'DE',
@@ -108,7 +117,7 @@ function headerHTML() {
         <span class="sr-only"> — Startseite</span>
       </a>
       <div class="top-header__right">
-        <nav class="meta-navigation meta-navigation--desktop" aria-label="Meta"><ul>${metaNav}</ul></nav>
+        <nav class="meta-navigation meta-navigation--desktop" aria-label="Meta"><ul>${metaNav}${authNav}</ul></nav>
         <div class="top-header__container-flex">
           <div class="search search--main" id="header-search">
             <div class="search__group">
@@ -147,7 +156,7 @@ function headerHTML() {
     <nav class="main-navigation main-navigation--mobile" aria-label="Hauptnavigation Mobil">
       <ul>${mobileNavItems}</ul>
     </nav>
-    <nav class="meta-navigation meta-navigation--mobile" aria-label="Meta Mobil"><ul>${metaNav}</ul></nav>
+    <nav class="meta-navigation meta-navigation--mobile" aria-label="Meta Mobil"><ul>${metaNav}${authNav}</ul></nav>
     <nav class="top-bar-navigation--mobile" aria-label="Bundesangebote Mobil">
       <ul>
         ${TOP_BAR_LINKS.map(l => `<li><a href="${l.href}" target="_blank" rel="noopener external">${escapeHtml(l.label)}</a></li>`).join('')}
@@ -164,8 +173,6 @@ function headerHTML() {
 function footerHTML() {
   const fLink = (href, label, ext) =>
     `<a class="footer__link footer-information__link--icon-right" href="${href}"${ext ? ' target="_blank" rel="noopener external"' : ''}>${icon(ext ? 'External' : 'ArrowRight', 'footer-information__icon')}${escapeHtml(label)}</a>`;
-  const sLink = (href, label, ic) =>
-    `<a class="footer__link" href="${href}" target="_blank" rel="noopener external">${icon(ic, 'footer-information__icon')}${escapeHtml(label)}</a>`;
 
   return `
   <div class="bg--secondary-600">
@@ -177,10 +184,11 @@ function footerHTML() {
           <p class="small">Fellerstrasse 21, 3003 Bern</p>
         </div>
         <div class="footer-information__entry">
-          <h3>Bleiben Sie informiert</h3>
-          <div class="footer-information__social">
-            ${sLink('https://www.instagram.com/bundesbauten/', 'Instagram', 'Instagram')}
-            ${sLink('https://www.linkedin.com/', 'LinkedIn', 'LinkedIn')}
+          <h3>Prototyp</h3>
+          <div class="footer-information__links">
+            <div class="footer-information__links-column">
+              ${fLink('https://github.com/bbl-dres/service-portal', 'Quellcode auf GitHub', true)}${fLink('https://www.bk.admin.ch/de/webauftritt-der-bundesverwaltung', 'Webauftritt der Bundesverwaltung', true)}
+            </div>
           </div>
         </div>
         <div class="footer-information__entry footer-information__entry--big">

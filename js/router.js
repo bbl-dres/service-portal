@@ -226,12 +226,19 @@ async function dispatch() {
 export function initRouter() {
   // Only `#/…` is a route. Bare `#` and in-page fragments (e.g. the skip link's
   // `#main-content`) must not dispatch — that used to render a 404 over the page.
+  // Nur `#/…` ist eine Route. Bare `#` (Platzhalter-Links) und Sprungmarken
+  // dürfen nicht dispatchen — ein leerer Hash hat sonst wortlos auf die
+  // Startseite geworfen (docs/design-review.md P0-1).
   window.addEventListener('hashchange', () => {
-    if (location.hash && !location.hash.startsWith('#/')) return;
+    if (!location.hash.startsWith('#/')) return;
     dispatch();
   });
   if (!location.hash || !location.hash.startsWith('#/')) location.hash = '#/';
   dispatch();
 }
 
-export default { initRouter, NAV };
+// Aktuelle Route neu zeichnen, ohne zu navigieren — z. B. nach An-/Abmeldung,
+// damit der Login-Hinweis auf der Seite verschwindet bzw. erscheint.
+export function redraw() { dispatch(); }
+
+export default { initRouter, NAV, redraw };

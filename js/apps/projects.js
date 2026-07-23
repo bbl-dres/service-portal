@@ -74,9 +74,11 @@ function overview(ctx) {
       ['abgeschlossen', 'Abgeschlossen'],
       ['alle', 'Alle'],
     ];
-    return `<div class="tab__controls" role="tablist" aria-label="Projektphase">${tabs.map(([id, label]) =>
-      `<button type="button" role="tab" class="tab__control${state.phase === id ? " tab__control--active" : ""}" aria-selected="${state.phase === id}" data-phase="${id}">${C.escape(label)}</button>`
-    ).join('')}</div>`;
+    // Das sind Filter, keine Tabs — deshalb ohne role="tab"/tablist, sonst
+    // kündigt assistive Technik Panels an, die es nicht gibt (P2-5).
+    return `<div class="tab__controls-container"><div class="tab__controls" role="group" aria-label="Projektphase">${tabs.map(([id, label]) =>
+      `<button type="button" class="tab__control${state.phase === id ? " tab__control--active" : ""}" aria-pressed="${state.phase === id}" data-phase="${id}">${C.escape(label)}</button>`
+    ).join('')}</div></div>`;
   }
 
   function chipRow() {
