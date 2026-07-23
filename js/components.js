@@ -87,9 +87,13 @@ export function tile({ title, desc, href, extra = '' }) {
 export function card(o) {
   const media = o.photo
     ? `<div class="card__image">${photo({ ...o.photo, alt: o.photo.alt || '', w: 640 })}</div>`
-    : o.image ? `<div class="card__image"><img src="${o.image}" alt="${escape(o.imageAlt || '')}" loading="lazy"></div>` : '';
-  // CD: a card without an image is `card--universal`, with one is `card--default`.
-  const variant = o.variant || (media ? 'default' : 'universal');
+    : o.image ? `<div class="card__image"><img src="${o.image}" alt="${escape(o.imageAlt || '')}" loading="lazy"></div>`
+    : o.placeholder ? `<div class="card__image"><div class="photo image__not-available">${icon('Image')}<p class="image__not-available-text">${escape(o.placeholder === true ? 'Bild folgt' : o.placeholder)}</p></div></div>`
+    : '';
+  // CD: `card--default` is the plain shadow card (with or without image);
+  // `card--universal` is the variant whose image is letterboxed (object-contain),
+  // so it stays opt-in via o.variant — image-less cards are default, not universal.
+  const variant = o.variant || 'default';
   const inner = `${media}
     <div class="card__content">
       <div class="card__body">

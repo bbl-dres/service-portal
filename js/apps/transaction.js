@@ -45,8 +45,9 @@ export default async function render(ctx) {
   }
 
   const stepsBar = `<ol class="steps">${LIFECYCLE.map((s, idx) => {
-    const cls = idx < CURRENT_STEP ? 'done' : idx === CURRENT_STEP ? 'active' : '';
-    return `<li class="${cls}"><span class="step__indicator-step">${idx < CURRENT_STEP ? '✓' : idx + 1}</span> ${C.escape(s.label)}</li>`;
+    const done = idx < CURRENT_STEP, active = idx === CURRENT_STEP;
+    const dot = done ? ' step__indicator-step--confirmed' : active ? ' step__indicator-step--active' : '';
+    return `<li class="${done ? 'done' : active ? 'active' : ''}"${active ? ' aria-current="step"' : ''}><span class="step__indicator-step${dot}">${done ? C.icon('CheckmarkBold', 'icon--sm') : idx + 1}</span> ${C.escape(s.label)}</li>`;
   }).join('')}</ol>`;
 
   const timeline = `<ul class="timeline">${LIFECYCLE.map((s, idx) => {

@@ -29,6 +29,49 @@ Reihenfolge der Empfehlung: **erst P0 (Defekte und Sperren), dann P1 (der Portal
 
 ---
 
+## Nachtrag — 2. Review-Runde (23. Juli 2026)
+
+Fünf Fachagenten (Tokens/Hardcoded-Werte · Icons/Typografie · Barrierefreiheit · Mobile/Responsive/Scaling · CD-Komponenten und fehlende Elemente) haben den **aktuellen** Stand erneut gegen die CD-Quelle geprüft — Code gelesen, teils headless bei 320/375/768/1024/1280 px gemessen. Diese Runde fällt in den Stand **nach** dem Umbau von Startseite, Suche, Wissen/Grundlagen und dem neuen Dienstleistungen-Drawer mit CD-Navy-Drill-down. Der Nachtrag ist massgeblich; die ursprünglichen P0–P3 bleiben als Referenz und Begründung darunter stehen.
+
+### In dieser Runde umgesetzt und verifiziert
+
+| Fix | Betrifft | Dateien |
+|---|---|---|
+| **↵ auf Menü-Blattzeilen entfernt** — CD dekoriert interne Blattlinks gar nicht (nur `External` extern); `ArrowAngleBottomLeft` meint «im Dokument springen» | NEU (Icons) | `js/shell.js` `navyRow` |
+| **Schrittanzeige** korrekt: `CheckmarkBold`-Icon statt `✓`-Glyph, `--active`/`--confirmed`-Klassen und `aria-current="step"` gesetzt, CD-Grün `#10b981` | P2-7 · P2-6 · NEU (Icons) | `apps/transaction.js`, `apps/space-request.js`, `app.css:929` |
+| `.menu__item__icon` Grösse 1.5 rem / 1.75 rem ≥768 px (CD `menu.postcss:64`) | P2-6 | `app.css:528` |
+| `.btn__icon` auf `1.4em` (skaliert mit `btn--sm/lg`) | P2-6 | `app.css:683` |
+| `.card__description` erzwingt keine `--text-sm` mehr (erbt `text--base`) | P2-6 | `app.css:725` |
+| `card--universal` nur noch opt-in; bildlose Karten sind `card--default` | P2-6 | `components.js` |
+| **Mobil: Zweigtitel auf Ebene 1 wieder sichtbar** — Selektor traf fälschlich beide Ebenen, `display:none` verbarg den einzigen Kontext im gedrillten Zustand | NEU/P0 (Mobile) | `app.css` `.navy__pane[data-pane="0"] .navy__title` |
+| Touch-Ziele ≥44 px: `.navy__back`, Mobil-«Anmelden/Abmelden»-Button (`&lt;button&gt;` war vom `a`-Selektor ausgenommen), `.top-bar__btn` (`min-width`) | P0-5-Rest · NEU (Mobile) | `app.css` |
+| `overflow-wrap:anywhere` auf `h1` und `.hero__title` (statt `break-word`) | P3 (320 px) | `app.css:35, 632` |
+| **Drill-down-A11y**: `aria-haspopup` entfernt (Panel-Wechsel, kein Menü); Escape geht erst eine Ebene zurück, dann zu; Fokus/Ansage auf den Zweigtitel beim Aufklappen | NEU (A11y) | `js/shell.js` |
+| Projekt-Detail-Tabs: `.tab__controls-container`-Wrapper, `role="tabpanel"`+`id`+`aria-labelledby`+`aria-controls`, falsche Umschaltklasse `tag-item--active`→`tab__control--active` korrigiert | P0-6-Rest · P2-5 | `apps/projects.js` |
+| **Back-to-top-Knopf** ergänzt (CD `back-to-top-btn`, reines CSS, `href="#main-header"`, `ChevronUp`) | NEU (fehlend) | `index.html`, `app.css` |
+
+### Seit Runde 1 bereits erledigt (in dieser Runde bestätigt)
+
+P0-5 und P0-7 (Touch-Ziele Burger/Ansichtsschalter, deaktivierte Elemente greifen), P2-10 (Ansichtszustand nicht mehr nur Farbe), P2-5 teilweise (`knowledge.js` echte Seiten, `projects.js`-Phasenfilter als `role="group"`), P0-6 teilweise (portfolio/projects-Phase/workspace im `.tab__controls-container`). Aus früheren Sitzungen: P1-1 (Startseite als Arbeitsfläche), P1-4 (`#/search`-Seite mit Synonymen), P1-6 (Wissen-Detailseiten mit eigener Identität), P0-1 (leerer Hash im Router-Guard).
+
+### Neue Befunde — noch offen
+
+- **[P0-2 / P0-3] bleibt der grösste Hebel** (A11y): Jede Filteränderung ist weiterhin Kontextwechsel (Fokus auf H1) **und** stille Aktualisierung (keine funktionierende Live-Region — die eine in `search.js:136` wird beim Re-Dispatch neu erzeugt statt mutiert). Router muss Zustand von Navigation trennen; **eine** persistente `role="status"` in `index.html`.
+- **[P2] `.navy--drill` ist eine Eigenimplementierung**, nicht CD-Navy (`navy.postcss` nutzt `.navy__level-0…7` + `.show-level-N` als translateX-Slider). Konzeptuell treu, wegen No-Build vertretbar — bewusst so, dokumentiert.
+- **[P2] Statische CD-Chrome-Typografie** (P2-1) weiter auf der Rampe: `.top-bar`, `.top-header`, `.breadcrumb`, `.menu__item--small`, `.accordion__title` sollen `--fs-*` konsumieren (Breadcrumb/Accordion-Titel rampen nie; Top-Bar/Header/Menü je genau einmal bei 1544/1920 px).
+- **[P2] Erfundene CD-Klassen** (P2-4) verbleibend: `.search__form`, `.search__submit`, `.mobile-menu__drawer`, `.card__title--sm`, `.accordion__meta`, `.pagination-wrap` → `pf-`-Präfix. `.grid--2/3/4/auto` sind bereits Aliase auf `.grid--responsive-cols-N`.
+- **[P2] Akkordeon-Anatomie** (P2-3) weiter `div`/`div` statt `ul`/`li`, ohne `.accordion__drawer`/`.accordion__arrow` — Trigger ist inzwischen ein `h3 > button` (besser).
+- **[P2] `workspace.js`-Tabs**: `role="tabpanel"` ohne `id`/`aria-labelledby`, Tabs ohne `aria-controls`, keine Pfeiltasten.
+- **[P2] Fokus-Suchfeld** (P2-8) öffnet noch bei `focusin`; **Mobiles Menü** (P2-9) setzt kein `inert` auf den verdeckten Inhalt.
+- **[P3] `mediathek.js`** überschreibt `card__title` inline mit fixem `--fs-base` (NEU); Doc-Viewer nutzt Hex-Literale statt `--color-secondary-*` (NEU); `rgba(0,0,0,.45)`-Scrim ohne Token (NEU).
+- **[P3] Kein `share-bar`/Druckeinstieg**, keine **Sticky-Navigation** — beide von der CD vorgesehen und für ein tägliches Werkzeug mit langen Listen/Tabellen einschlägig.
+
+### Korrektur zu Runde 1
+
+- **`.badge--sm` 10 px ist KEINE Abweichung** — CD `badge.postcss:79-82` ist selbst fix `text-[10px] md:text-xs lg:text-sm`; die App (`app.css:783`) trifft das exakt. Der P3-Punkt «Kleinigkeiten … `.badge--sm` mit fixem 10 px» war ein Fehlbefund.
+
+---
+
 ## P0 — Sperren und Defekte
 
 ### P0-1 · `href="#"` wirft Nutzende wortlos auf die Startseite **[V]**

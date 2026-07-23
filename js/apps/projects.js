@@ -283,10 +283,10 @@ function detail(ctx, id) {
         id: b?.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name, w: 1600,
         style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg);margin-top:1rem',
       })}
-      <div class="tab__controls mt-6" role="tablist" aria-label="Projektdetails">
-        ${tabs.map(([t, label]) => `<button type="button" role="tab" class="tab__control${active === t ? " tab__control--active" : ""}" aria-selected="${active === t}" data-tab="${t}">${C.escape(label)}</button>`).join('')}
-      </div>
-      ${tabs.map(([t]) => `<div class="tab__container" data-panel="${t}"${active === t ? '' : ' hidden'}>${panels[t]()}</div>`).join('')}
+      <div class="tab__controls-container"><div class="tab__controls mt-6" role="tablist" aria-label="Projektdetails">
+        ${tabs.map(([t, label]) => `<button type="button" role="tab" id="ptab-${t}" aria-controls="ppanel-${t}" class="tab__control${active === t ? " tab__control--active" : ""}" aria-selected="${active === t}" data-tab="${t}">${C.escape(label)}</button>`).join('')}
+      </div></div>
+      ${tabs.map(([t]) => `<div class="tab__container" role="tabpanel" id="ppanel-${t}" aria-labelledby="ptab-${t}" tabindex="0" data-panel="${t}"${active === t ? '' : ' hidden'}>${panels[t]()}</div>`).join('')}
     </div>`;
     wire();
   }
@@ -296,7 +296,7 @@ function detail(ctx, id) {
       active = btn.dataset.tab;
       mount.querySelectorAll('[data-tab]').forEach(b => {
         const on = b.dataset.tab === active;
-        b.classList.toggle('tag-item--active', on);
+        b.classList.toggle('tab__control--active', on);
         b.setAttribute('aria-selected', String(on));
       });
       mount.querySelectorAll('[data-panel]').forEach(pan => {

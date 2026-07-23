@@ -29,6 +29,13 @@ export const INTRANET_AREAS = [
     desc: 'Druck-, Kopier- und Ausrüstarbeiten sowie Grossauflagen über die Produktion des BBL.',
     photo: '1503694978374-8a2fa686963a',
     overview: BASE + 'produktion',
+    children: [
+      { label: 'Arbeitsvorbereitung AVOR', href: BASE + 'arbeitsvorbereitung-avor' },
+      { label: 'Datenbewirtschaftung / Formularentwicklung', href: BASE + 'datenbewirtschaftung-formularentwicklung' },
+      { label: 'Projektberatung und Support', href: BASE + 'projektberatung-und-support' },
+      { label: 'Digital Druck', href: BASE + 'digital-druck' },
+      { label: 'Versenden', href: BASE + 'versenden' },
+    ],
   },
   {
     key: 'publikationen',
@@ -38,6 +45,7 @@ export const INTRANET_AREAS = [
     overview: BASE + 'publikationen',
     children: [
       { label: 'Bundespublikationen bestellen', href: 'https://www.bundespublikationen.admin.ch/de/' },
+      { label: 'Warengruppe Publikationen', href: BASE + 'warengruppe-publikationen' },
     ],
   },
   {
@@ -46,6 +54,14 @@ export const INTRANET_AREAS = [
     desc: 'IT-Arbeitsgeräte, Support und Informatikdienstleistungen für die Verwaltungseinheiten.',
     photo: '1522071820081-009f0129c71c',
     overview: BASE + 'informatik',
+    children: [
+      { label: 'Einkauf Informatik', href: BASE + 'einkauf-informatik' },
+      { label: 'Bedarfsmeldung / HBB-Prozess', href: BASE + 'bedarfsmeldung-hbb-prozess' },
+      { label: 'Delegationen', href: BASE + 'delegationen' },
+      { label: 'Werkzeugkasten', href: BASE + 'werkzeugkasten' },
+      { label: 'Mustervorlagen für IKT-Beschaffungen', href: BASE + 'mustervorlagen-fuer-ikt-beschaffungen' },
+      { label: 'Zentral bewirtschaftete Rahmenverträge Informatik', href: BASE + 'zentral-bewirtschaftete-rahmenvertraege-informatik' },
+    ],
   },
   {
     key: 'beschaffen',
@@ -53,6 +69,12 @@ export const INTRANET_AREAS = [
     desc: 'Öffentliche Beschaffung: Verfahren, Vorlagen und Unterstützung der Beschaffungsstelle des Bundes.',
     photo: '1454165804606-c3d57bc86b40',
     overview: BASE + 'beschaffen',
+    children: [
+      { label: 'Einstieg und Übersicht', href: BASE + 'einstieg-und-uebersicht' },
+      { label: 'WTO-Verfahren', href: BASE + 'wto-verfahren' },
+      { label: 'Dokumente der BKB', href: BASE + 'dokumente-der-bkb' },
+      { label: 'Beschaffungscontrolling Bundesverwaltung', href: BASE + 'beschaffungscontrolling-bund' },
+    ],
   },
 ];
 

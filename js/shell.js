@@ -13,7 +13,7 @@ function navyRow(child) {
     <a class="menu__item__flex" href="${child.href}"${
       child.external ? ' target="_blank" rel="noopener external"' : ' data-navsub="' + escapeHtml(child.href) + '"'}>
       <span>${escapeHtml(child.label)}</span>
-      ${icon(child.external ? 'External' : 'ArrowAngleBottomLeft', 'menu__item__icon')}
+      ${child.external ? icon('External', 'menu__item__icon') : ''}
     </a></li>`;
 }
 
@@ -36,7 +36,7 @@ function themaBranchRows() {
 // Ein aufklappbarer Zweig-Knopf (Übersicht/Themen/Bereiche teilen dieselbe Anatomie).
 function branchRow(branchKey, label) {
   return `<li class="menu__item menu__item--border menu__item--condensed">
-    <button class="menu__item__flex navy-branch" type="button" data-branch="${escapeHtml(branchKey)}" aria-haspopup="true">
+    <button class="menu__item__flex navy-branch" type="button" data-branch="${escapeHtml(branchKey)}">
       <span>${escapeHtml(label)}</span>${icon('ChevronRight', 'menu__item__icon')}
     </button></li>`;
 }
@@ -86,7 +86,7 @@ function headerHTML() {
             </div>
             <div class="navy__pane" data-pane="1">
               <button class="navy__back" type="button" data-back>${icon('ChevronLeft', 'icon--sm')}<span>Zurück</span></button>
-              <h2 class="navy__title" data-branch-title></h2>
+              <h2 class="navy__title" data-branch-title tabindex="-1"></h2>
               <ul class="menu" data-branch-list></ul>
             </div>
           </div>
@@ -391,7 +391,9 @@ function renderHeader(el) {
       e.stopPropagation();
       const drill = btn.closest('.navy--drill');
       fillBranch(drill, btn.getAttribute('data-branch'));
-      drill.querySelector('[data-back]')?.focus();
+      // Fokus auf die Zweigüberschrift → Screenreader liest an, in welchen
+      // Zweig gewechselt wurde (statt eines nackten «Zurück»).
+      drill.querySelector('[data-branch-title]')?.focus();
     });
   });
   el.querySelectorAll('[data-back]').forEach(back => {
@@ -411,6 +413,14 @@ function renderHeader(el) {
   overlay?.addEventListener('click', () => closeNavMenus());
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    // APG: Escape schliesst zuerst das aufgeklappte Untermenü (eine Ebene),
+    // erst der zweite Escape schliesst das Flyout.
+    const drill = el.querySelector('.navy--drill[data-level="1"]');
+    if (drill && drill.offsetParent !== null) {
+      drill.setAttribute('data-level', '0');
+      drill.querySelector(`[data-branch="${drill.dataset.openBranch}"]`)?.focus();
+      return;
+    }
     closeNavMenus('', true);                       // Escape restores focus to the trigger
     if (document.body.classList.contains('body--mobile-menu-is-open')) { setMobileMenu(false); burger.focus(); }
   });

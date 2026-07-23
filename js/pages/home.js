@@ -94,7 +94,7 @@ export default async function render(ctx) {
   //     BBL-Intranet (extern). Bewusst eine Auswahl, nicht jeder Menüpunkt.
   const themaCard = (t) => C.card({
     title: t.label, desc: t.desc, href: `#/services?topic=${encodeURIComponent(t.key)}`,
-    photo: { color: t.color, alt: '' },
+    placeholder: 'Platzhalterbild — Demo',
     footer: `<span>Dienstleistungen</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
   });
   const areaCard = (a) => C.card({

@@ -28,8 +28,9 @@ export default async function render(ctx) {
     const labels = ['Angaben', 'Bedarf', 'Prüfen & Absenden'];
     return `<ol class="steps">${labels.map((l, idx) => {
       const n = idx + 1;
-      const cls = state.step > n ? 'done' : state.step === n ? 'active' : '';
-      return `<li class="${cls}"><span class="step__indicator-step">${state.step > n ? '✓' : n}</span> ${l}</li>`;
+      const done = state.step > n, active = state.step === n;
+      const dot = done ? ' step__indicator-step--confirmed' : active ? ' step__indicator-step--active' : '';
+      return `<li class="${done ? 'done' : active ? 'active' : ''}"${active ? ' aria-current="step"' : ''}><span class="step__indicator-step${dot}">${done ? C.icon('CheckmarkBold', 'icon--sm') : n}</span> ${l}</li>`;
     }).join('')}</ol>`;
   }
 
