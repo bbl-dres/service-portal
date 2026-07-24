@@ -185,9 +185,9 @@ export function shareBar() {
   // CD: nur Icons (aria-label), keine sichtbaren Beschriftungen, grosse Icons (ShareBar.vue, SvgIcon size="xl").
   return `<div class="share-bar">
     <div class="share-container">
-      <button class="btn btn--bare share-bar__btn" type="button" onclick="window.print()" aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--2xl')}</button>
+      <button class="btn btn--bare share-bar__btn" type="button" onclick="window.print()" aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--xl')}</button>
       <button class="btn btn--bare share-bar__btn" type="button" aria-label="Link kopieren" title="Teilen"
-        onclick="try{navigator.clipboard.writeText(location.href)}catch(e){}">${icon('Share', 'icon--2xl')}</button>
+        onclick="try{navigator.clipboard.writeText(location.href)}catch(e){}">${icon('Share', 'icon--xl')}</button>
     </div>
   </div>`;
 }
@@ -197,6 +197,31 @@ export function shareBar() {
 export function detailBar({ backHref, backLabel } = {}) {
   return `<div class="detail-bar">${
     backHref ? backLink(backHref, backLabel) : '<span></span>'}${shareBar()}</div>`;
+}
+
+// Vereinheitlichter Detailseiten-Kopf (CD detailPage*-Muster): detailBar (Zurück +
+// Share) und danach ein Hero mit Titel, Lead, Auszeichnungen und optionalem
+// Kontextbild (hero--main-image). Ohne `image` fällt der Hero auf die schmale
+// Variante zurück. `tags`/`image` sind fertiges HTML; `title`/`lead` werden escaped.
+export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '' } = {}) {
+  const content = `<div class="hero__content">
+        <h1 class="hero__title" tabindex="-1">${escape(title)}</h1>
+        ${lead ? `<p class="hero__description">${escape(lead)}</p>` : ''}
+        ${tags ? `<div class="pill-row">${tags}</div>` : ''}
+      </div>`;
+  const hero = image
+    ? `<div class="hero hero--main-image">${content}<div class="hero__image">${image}</div></div>`
+    : `<div class="hero">${content}</div>`;
+  return `${detailBar({ backHref, backLabel })}
+    ${hero}`;
+}
+
+// Ein Detailseiten-Abschnitt: H2-Titel + Inhalt. `body` ist fertiges HTML.
+export function detailSection({ title, body = '' }) {
+  return `<section class="detail-section">
+      <h2 class="detail-section__title">${escape(title)}</h2>
+      ${body}
+    </section>`;
 }
 
 // --- Notifications (notification.postcss) ------------------------------------
@@ -403,7 +428,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
-  notFound, activeFilters, detailBar,
+  notFound, activeFilters, detailBar, detailHead, detailSection,
   notification, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
 };
