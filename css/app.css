@@ -53,12 +53,12 @@ p { margin:0 0 1rem; }
 
 /* Links — CD underlines every content link in main (link.postcss:5-38) */
 a { color:var(--color-link); text-decoration:none; }
-#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):not(.menu__item),
+#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):not(.menu__item):not(.badge),
 .notification a, .link {
   color:var(--color-primary-600); text-decoration:underline; text-underline-offset:2px; overflow-wrap:break-word;
 }
-#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):not(.menu__item):hover,
-#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):not(.menu__item):focus,
+#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):not(.menu__item):not(.badge):hover,
+#main-content a:not(.btn):not(.card):not(.tile):not(.card--clickable):not(.tag-item):not(.download-item):not(.active-filter):not(.plain-link):not(.menu__item):not(.badge):focus,
 .notification a:hover, .link:hover, .link:focus { color:var(--color-primary-800); }
 .link--negative { color:#fff; text-decoration:underline; text-underline-offset:2px; }
 .link--negative:hover { color:var(--color-gray-300); }
@@ -492,14 +492,14 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
    (lg:top-4 right-0 → xl:top-6 right-4 → 3xl:top-8 right-20; Icon h-5 = 1.25rem)
    statt bisher in der Drawer-Ecke (top/right:0) mit zu kleinem Icon (0.75rem). */
 .desktop-menu__close { position:absolute; top:1rem; right:0; display:inline-flex; align-items:center; gap:.4rem;
-  padding:.75rem 1rem; color:var(--color-text-muted); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--text-sm); }
+  padding:.75rem 1rem; color:var(--color-text-muted); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
 .desktop-menu__close:hover { color:var(--color-secondary-700); background:var(--color-secondary-50); }
 .desktop-menu__close .icon { width:1.25rem; height:1.25rem; }
 @media (min-width:1280px){ .desktop-menu__close { top:1.5rem; right:1rem; } }
-@media (min-width:1920px){ .desktop-menu__close { top:2rem; right:5rem; } }
+@media (min-width:1920px){ .desktop-menu__close { top:2rem; right:5rem; font-size:var(--fs-base); } }
 .navy { position:relative; }
 /* Zwischenüberschrift für die Unterzweig-Gruppe im Drawer. */
-.navy__group-title { margin:1.25rem 0 .25rem; padding:0 .75rem; font-size:var(--text-sm);
+.navy__group-title { margin:1.25rem 0 .25rem; padding:0 .75rem; font-size:var(--fs-sm);
   font-weight:var(--fw-bold); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.04em; }
 /* CD navy multi-level (navy.postcss): Ebene 0 = Dienstleistungen + Bereichszweige,
    Ebene 1 = Kinder eines Bereichs. Robuster Display-Wechsel statt Slider-Transform
@@ -516,12 +516,27 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
    sein — die UA-Vorgabepolsterung des <button> sonst schiebt den Text nach rechts. */
 .navy-branch { background:none; border:0; padding:0; margin:0; text-align:left; font:inherit; cursor:pointer; color:inherit; }
 .navy__back { display:inline-flex; align-items:center; gap:.4rem; margin:0 0 .5rem; padding:.4rem .75rem;
-  min-height:2.75rem; background:none; border:0; font:inherit; font-size:var(--text-sm);
+  min-height:2.75rem; background:none; border:0; font:inherit; font-size:var(--fs-sm);
   color:var(--color-primary-600); cursor:pointer; }
 .navy__back:hover { color:var(--color-primary-800); }
 .navy__level-0 { list-style:none; margin:0; padding:0; }
-.navy__title { margin:0 0 .5rem; padding:0 .75rem; font-size:var(--text-lg); font-weight:var(--fw-bold);
+.navy__title { margin:0 0 .5rem; padding:0 .75rem; font-size:var(--fs-lg); font-weight:var(--fw-bold);
   line-height:var(--lh-tight); color:var(--color-secondary-700); cursor:default; }
+/* Navy menu rows use CD's fixed row size (menu.postcss:24 menu__item--small =
+   text-sm 3xl:text-base), never the responsive body ramp — otherwise the flyout
+   rows balloon at ≥1280px. */
+.navy .menu__item { font-size:var(--fs-sm); }
+@media (min-width:1920px){ .navy .menu__item { font-size:var(--fs-base); } }
+/* Desktop: the drill-down back button shares the drawer's top row with the close
+   button (CD navy.postcss:56 — lg:absolute -top-12 -left-5, mirroring
+   desktop-menu__close top-right). On mobile it stays inline atop the pane. */
+@media (min-width:1024px){
+  .desktop-menu__drawer .navy,
+  .desktop-menu__drawer .navy--drill { position:static; }
+  .desktop-menu__drawer .navy__back { position:absolute; top:1rem; left:0; margin:0; }
+}
+@media (min-width:1280px){ .desktop-menu__drawer .navy__back { top:1.5rem; left:1rem; font-size:var(--fs-sm); } }
+@media (min-width:1920px){ .desktop-menu__drawer .navy__back { top:2rem; left:5rem; font-size:var(--fs-base); } }
 /* Menu rows (menu.postcss:5-60) — CD's canonical list-row anatomy, as used by
    the live intranet: li.menu__item > a.menu__item__flex > label + icon. */
 .menu { list-style:none; }
@@ -557,7 +572,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .mobile-menu .meta-navigation li > button,
 .mobile-menu .top-bar-navigation--mobile li > a {
   display:flex; align-items:center; justify-content:space-between; width:100%; min-height:2.75rem;
-  padding:.75rem 1rem; position:relative; font:inherit; font-size:var(--text-sm); text-align:left;
+  padding:.75rem 1rem; position:relative; font:inherit; font-size:var(--fs-sm); text-align:left;
   border:0; border-bottom:1px solid var(--color-secondary-100); cursor:pointer; text-decoration:none;
   transition:background .12s; }
 .mobile-menu .main-navigation li > a,

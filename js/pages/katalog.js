@@ -250,10 +250,6 @@ function detail(ctx, id) {
 
     <div class="hero hero--main-image">
       <div class="hero__content">
-        <p class="meta-info">
-          <span class="meta-info__item">${C.escape(t(d.meta.thema))}</span>
-          <span class="meta-info__item">${C.escape(klassLabel(core, d.meta.klassifizierung))}</span>
-        </p>
         <h1 class="hero__title" tabindex="-1">${C.escape(t(d.title))}</h1>
         <p class="hero__description">${C.escape(t(d.description))}</p>
         ${tagPills ? `<div class="pill-row">${tagPills}</div>` : ''}
