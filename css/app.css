@@ -510,7 +510,10 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .navy__pane[data-pane="1"] { display:none; }
 .navy--drill[data-level="1"] .navy__pane[data-pane="0"] { display:none; }
 .navy--drill[data-level="1"] .navy__pane[data-pane="1"] { display:block; animation:navyDrillIn .25s ease; }
-@keyframes navyDrillIn { from { transform:translateX(.75rem); } to { transform:none; } }
+/* Fade, not a translateX slide: a transformed pane becomes a containing block,
+   which would re-anchor the absolutely-positioned .navy__back to the pane instead
+   of the drawer's top row. Opacity has no such side effect. */
+@keyframes navyDrillIn { from { opacity:0; } to { opacity:1; } }
 @media (prefers-reduced-motion: reduce){ .navy--drill[data-level="1"] .navy__pane[data-pane="1"] { animation:none; } }
 /* Der Zweig-Knopf muss zeichengenau wie die «Übersicht»-Zeile (<a>) ausgerichtet
    sein — die UA-Vorgabepolsterung des <button> sonst schiebt den Text nach rechts. */
