@@ -161,11 +161,9 @@ function newsDetail(ctx, id) {
   if (!n) {
     setTitle('Meldung nicht gefunden');
     setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: 'News', href: '#/knowledge?tab=news' }]);
-    mount.innerHTML = `<div class="container section">
-      ${C.backLink('#/knowledge?tab=news', 'News')}
-      <div class="page-header mt-4"><h1 tabindex="-1">Meldung nicht gefunden</h1></div>
-      <p class="muted">Diese Meldung existiert nicht. <a href="#/knowledge?tab=news">Zur Übersicht «News»</a></p>
-    </div>`;
+    mount.innerHTML = C.notFound({ backHref: '#/knowledge?tab=news', backLabel: 'News',
+      title: 'Meldung nicht gefunden',
+      body: 'Diese Meldung existiert nicht. <a href="#/knowledge?tab=news">Zur Übersicht «News»</a>' });
     return;
   }
   setTitle(n.title);

@@ -60,13 +60,7 @@ export default async function render(ctx) {
       href: servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics.filter(x => x !== t), page: 1, view }),
     })),
   ];
-  const filterBar = activeFilters.length ? `
-    <div class="active-filters mt-4" role="group" aria-label="Aktive Filter">
-      <span class="small muted">Aktive Filter:</span>
-      ${activeFilters.map(f => `<a class="badge badge--gray active-filter" href="${f.href}"
-         aria-label="Filter „${C.escape(f.label)}“ entfernen">${C.escape(f.label)}${C.icon('Cancel', 'icon--sm')}</a>`).join('')}
-      <a class="btn btn--link" href="#/services">Alle Filter zurücksetzen</a>
-    </div>` : '';
+  const filterBar = C.activeFilters({ filters: activeFilters, resetHref: '#/services' });
 
   const relatedHits = otherHits && (otherHits.apps + otherHits.docs + otherHits.weisungen)
     ? `Auch in: ${otherHits.apps ? `<a href="#/applications">${otherHits.apps} Anwendung(en)</a> · ` : ''}${otherHits.docs ? `<a href="#/app/document-archive">${otherHits.docs} Dokument(e)</a> · ` : ''}${otherHits.weisungen ? `<a href="#/knowledge">${otherHits.weisungen} Weisung(en)</a>` : ''}`
@@ -82,26 +76,10 @@ export default async function render(ctx) {
         <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </div>
       <div class="service-controls__filters" aria-label="Dienstleistungen filtern">
-        <div class="form__group__select">
-          <label for="audience-filter">Zielgruppe</label>
-          <div class="select">
-            <select id="audience-filter" name="audience">
-              <option value="">Alle Zielgruppen</option>
-              ${audienceOptions().map(o => `<option value="${o.value}"${selectedAudience === o.value ? ' selected' : ''}>${C.escape(o.label)}</option>`).join('')}
-            </select>
-            <span class="select__icon">${C.icon('ChevronDown')}</span>
-          </div>
-        </div>
-        <div class="form__group__select">
-          <label for="topic-filter">Thema</label>
-          <div class="select">
-            <select id="topic-filter" name="topic">
-              <option value="">Alle Themen</option>
-              ${domains.filter(d => d.thema).map(d => `<option value="${C.escape(d.key)}">${C.escape(d.label)}</option>`).join('')}
-            </select>
-            <span class="select__icon">${C.icon('ChevronDown')}</span>
-          </div>
-        </div>
+        ${C.select({ id: 'audience-filter', name: 'audience', label: 'Zielgruppe', value: selectedAudience,
+          options: [{ value: '', label: 'Alle Zielgruppen' }, ...audienceOptions()] })}
+        ${C.select({ id: 'topic-filter', name: 'topic', label: 'Thema', value: '',
+          options: [{ value: '', label: 'Alle Themen' }, ...domains.filter(d => d.thema).map(d => ({ value: d.key, label: d.label }))] })}
       </div>
     </form>
     ${filterBar}
@@ -147,11 +125,9 @@ function detail(ctx, id) {
   if (!s) {
     setTitle('Dienstleistung nicht gefunden');
     setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }]);
-    mount.innerHTML = `<div class="container section">
-      ${C.backLink('#/services', 'Dienstleistungen')}
-      <div class="page-header mt-4"><h1 tabindex="-1">Dienstleistung nicht gefunden</h1></div>
-      <p class="muted">Diese Dienstleistung existiert nicht. <a href="#/services">Zur Übersicht «Dienstleistungen»</a></p>
-    </div>`;
+    mount.innerHTML = C.notFound({ backHref: '#/services', backLabel: 'Dienstleistungen',
+      title: 'Dienstleistung nicht gefunden',
+      body: 'Diese Dienstleistung existiert nicht. <a href="#/services">Zur Übersicht «Dienstleistungen»</a>' });
     return;
   }
   setTitle(s.title);
@@ -192,8 +168,7 @@ function detail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/services', 'Dienstleistungen')}
-    ${C.shareBar()}
+    ${C.detailBar({ backHref: '#/services', backLabel: 'Dienstleistungen' })}
     <div class="hero hero--main-image">
       <div class="hero__content">
         <div class="row gap-sm">${C.audienceTag(s.audience)} ${s.type === 'action' ? C.badge('Service', 'info') : C.badge('Information', 'gray')}</div>

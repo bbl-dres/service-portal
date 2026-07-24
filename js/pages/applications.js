@@ -60,13 +60,7 @@ export default async function render(ctx) {
     ...(bereich ? [{ label: bereichLabel(bereich), href: hash({ ...base, bereich: '' }) }] : []),
     ...(audience ? [{ label: audienceLabel(audience), href: hash({ ...base, audience: '' }) }] : []),
   ];
-  const filterBar = active.length ? `
-    <div class="active-filters mt-4" role="group" aria-label="Aktive Filter">
-      <span class="small muted">Aktive Filter:</span>
-      ${active.map(f => `<a class="badge badge--gray active-filter" href="${f.href}"
-         aria-label="Filter „${C.escape(f.label)}“ entfernen">${C.escape(f.label)}${C.icon('Cancel', 'icon--sm')}</a>`).join('')}
-      <a class="btn btn--link" href="#/applications">Alle Filter zurücksetzen</a>
-    </div>` : '';
+  const filterBar = C.activeFilters({ filters: active, resetHref: '#/applications' });
 
   const card = (a) => C.card({
     title: a.name,
@@ -110,26 +104,10 @@ export default async function render(ctx) {
         <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </div>
       <div class="service-controls__filters" aria-label="Anwendungen filtern">
-        <div class="form__group__select">
-          <label for="bereich-filter">Bereich</label>
-          <div class="select">
-            <select id="bereich-filter" name="bereich">
-              <option value="">Alle Bereiche</option>
-              ${BEREICHE.map(b => `<option value="${b.key}"${bereich === b.key ? ' selected' : ''}>${C.escape(b.label)}</option>`).join('')}
-            </select>
-            <span class="select__icon">${C.icon('ChevronDown')}</span>
-          </div>
-        </div>
-        <div class="form__group__select">
-          <label for="audience-filter">Zielgruppe</label>
-          <div class="select">
-            <select id="audience-filter" name="audience">
-              <option value="">Alle Zielgruppen</option>
-              ${AUDIENCES.map(a => `<option value="${a.value}"${audience === a.value ? ' selected' : ''}>${C.escape(a.label)}</option>`).join('')}
-            </select>
-            <span class="select__icon">${C.icon('ChevronDown')}</span>
-          </div>
-        </div>
+        ${C.select({ id: 'bereich-filter', name: 'bereich', label: 'Bereich', value: bereich,
+          options: [{ value: '', label: 'Alle Bereiche' }, ...BEREICHE.map(b => ({ value: b.key, label: b.label }))] })}
+        ${C.select({ id: 'audience-filter', name: 'audience', label: 'Zielgruppe', value: audience,
+          options: [{ value: '', label: 'Alle Zielgruppen' }, ...AUDIENCES] })}
       </div>
     </form>
     ${filterBar}

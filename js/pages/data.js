@@ -59,11 +59,10 @@ function overview(ctx) {
 }
 
 function notFound(ctx) {
-  const { mount, setTitle, setCrumbs } = ctx;
+  const { mount, C, setTitle, setCrumbs } = ctx;
   setTitle('Seite nicht gefunden');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Nicht gefunden' }]);
-  mount.innerHTML = `<div class="container section">
-    <div class="page-header"><h1 tabindex="-1">Seite nicht gefunden</h1></div>
-    <p class="muted">Diese Seite existiert nicht. <a href="#/data">Zur Übersicht «Daten und Digitalisierung»</a></p>
-  </div>`;
+  mount.innerHTML = C.notFound({ backHref: '#/data', backLabel: 'Daten und Digitalisierung',
+    title: 'Seite nicht gefunden',
+    body: 'Diese Seite existiert nicht. <a href="#/data">Zur Übersicht «Daten und Digitalisierung»</a>' });
 }

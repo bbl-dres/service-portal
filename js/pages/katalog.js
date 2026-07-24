@@ -53,13 +53,7 @@ function list(ctx) {
     ...(klass ? [{ label: klassLabel(core, klass), href: hash({ ...base, klass: '' }) }] : []),
     ...tags.map(x => ({ label: tagLabel(core, x), href: hash({ ...base, tags: tags.filter(y => y !== x) }) })),
   ];
-  const filterBar = active.length ? `
-    <div class="active-filters mt-4" role="group" aria-label="Aktive Filter">
-      <span class="small muted">Aktive Filter:</span>
-      ${active.map(f => `<a class="badge badge--gray active-filter" href="${f.href}"
-         aria-label="Filter „${C.escape(f.label)}“ entfernen">${C.escape(f.label)}${C.icon('Cancel', 'icon--sm')}</a>`).join('')}
-      <a class="btn btn--link" href="#/data/katalog">Alle Filter zurücksetzen</a>
-    </div>` : '';
+  const filterBar = C.activeFilters({ filters: active, resetHref: '#/data/katalog' });
 
   const card = (d) => C.card({
     title: t(d.title),
@@ -105,26 +99,10 @@ function list(ctx) {
         <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </div>
       <div class="service-controls__filters" aria-label="Datensätze filtern">
-        <div class="form__group__select">
-          <label for="thema-filter">Thema</label>
-          <div class="select">
-            <select id="thema-filter" name="thema">
-              <option value="">Alle Themen</option>
-              ${themen.map(x => `<option value="${C.escape(x)}"${thema === x ? ' selected' : ''}>${C.escape(x)}</option>`).join('')}
-            </select>
-            <span class="select__icon">${C.icon('ChevronDown')}</span>
-          </div>
-        </div>
-        <div class="form__group__select">
-          <label for="klass-filter">Klassifizierung</label>
-          <div class="select">
-            <select id="klass-filter" name="klass">
-              <option value="">Alle Klassifizierungen</option>
-              ${klassen.map(x => `<option value="${C.escape(x)}"${klass === x ? ' selected' : ''}>${C.escape(klassLabel(core, x))}</option>`).join('')}
-            </select>
-            <span class="select__icon">${C.icon('ChevronDown')}</span>
-          </div>
-        </div>
+        ${C.select({ id: 'thema-filter', name: 'thema', label: 'Thema', value: thema,
+          options: [{ value: '', label: 'Alle Themen' }, ...themen.map(x => ({ value: x, label: x }))] })}
+        ${C.select({ id: 'klass-filter', name: 'klass', label: 'Klassifizierung', value: klass,
+          options: [{ value: '', label: 'Alle Klassifizierungen' }, ...klassen.map(x => ({ value: x, label: klassLabel(core, x) }))] })}
       </div>
     </form>
     ${filterBar}
@@ -170,11 +148,9 @@ function detail(ctx, id) {
   if (!d) {
     setTitle('Datensatz nicht gefunden');
     setCrumbs(crumbs());
-    mount.innerHTML = `<div class="container section">
-      ${C.backLink('#/data/katalog', 'Datenbezug')}
-      <div class="page-header mt-4"><h1 tabindex="-1">Datensatz nicht gefunden</h1></div>
-      <p class="muted">Dieser Datensatz existiert nicht. <a href="#/data/katalog">Zur Übersicht «Datenbezug»</a></p>
-    </div>`;
+    mount.innerHTML = C.notFound({ backHref: '#/data/katalog', backLabel: 'Datenbezug',
+      title: 'Datensatz nicht gefunden',
+      body: 'Dieser Datensatz existiert nicht. <a href="#/data/katalog">Zur Übersicht «Datenbezug»</a>' });
     return;
   }
   setTitle(t(d.title));
@@ -270,7 +246,7 @@ function detail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/data/katalog', 'Datenbezug')}
+    ${C.detailBar({ backHref: '#/data/katalog', backLabel: 'Datenbezug' })}
 
     <div class="hero hero--main-image">
       <div class="hero__content">

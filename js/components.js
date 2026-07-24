@@ -129,6 +129,28 @@ export function table({ columns, rows, zebra, caption, showCaption }) {
 
 export function empty(msg) { return `<div class="empty">${escape(msg)}</div>`; }
 
+// Standard-«nicht gefunden»-Block für Detailrouten (zuvor mehrfach kopiert).
+// Titel/Brotkrume setzt die aufrufende Seite; `body` ist HTML (mit Rück-Link).
+export function notFound({ backHref, backLabel, title, body }) {
+  return `<div class="container section">
+    ${backLink(backHref, backLabel)}
+    <div class="page-header mt-4"><h1 tabindex="-1">${escape(title)}</h1></div>
+    <p class="muted">${body}</p>
+  </div>`;
+}
+
+// Aktive-Filter-Pillenreihe (zuvor in services/applications/katalog kopiert).
+// filters = [{ label, href }] — href = dieselbe Ansicht ohne diesen einen Filter.
+export function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurücksetzen' }) {
+  if (!filters || !filters.length) return '';
+  return `<div class="active-filters mt-4" role="group" aria-label="Aktive Filter">
+    <span class="small muted">Aktive Filter:</span>
+    ${filters.map(f => `<a class="badge badge--gray active-filter" href="${escape(f.href)}"
+       aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</a>`).join('')}
+    <a class="btn btn--link" href="${escape(resetHref)}">${escape(resetLabel)}</a>
+  </div>`;
+}
+
 // Ansage in die persistente Live-Region (#live in index.html) — für Trefferzahl-,
 // Ansichts- und Seitenwechsel, die sonst still wären (WCAG 4.1.3). Nur Text
 // mutieren, nie den Knoten neu erzeugen, sonst feuert aria-live nicht.
@@ -160,14 +182,21 @@ export function domainTile({ icon: ic, title, desc, meta = '', href, external = 
 // Share-Bar (share-bar.postcss) — nach der Brotkrume auf Detailseiten: Drucken
 // und Link kopieren. Rechtsbündig (flex-row-reverse) wie im CD.
 export function shareBar() {
-  // CD: nur Icons (aria-label), keine sichtbaren Beschriftungen (ShareBar.vue).
+  // CD: nur Icons (aria-label), keine sichtbaren Beschriftungen, grosse Icons (ShareBar.vue, SvgIcon size="xl").
   return `<div class="share-bar">
     <div class="share-container">
-      <button class="btn btn--bare share-bar__btn" type="button" onclick="window.print()" aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--xl')}</button>
+      <button class="btn btn--bare share-bar__btn" type="button" onclick="window.print()" aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--2xl')}</button>
       <button class="btn btn--bare share-bar__btn" type="button" aria-label="Link kopieren" title="Teilen"
-        onclick="try{navigator.clipboard.writeText(location.href)}catch(e){}">${icon('Share', 'icon--xl')}</button>
+        onclick="try{navigator.clipboard.writeText(location.href)}catch(e){}">${icon('Share', 'icon--2xl')}</button>
     </div>
   </div>`;
+}
+
+// Kopfleiste einer Detailseite: Zurück-Link links, Share-Bar rechts — in EINER
+// Zeile (CD: .back-bar + .share-bar auf derselben Höhe nach der Brotkrume).
+export function detailBar({ backHref, backLabel } = {}) {
+  return `<div class="detail-bar">${
+    backHref ? backLink(backHref, backLabel) : '<span></span>'}${shareBar()}</div>`;
 }
 
 // --- Notifications (notification.postcss) ------------------------------------
@@ -374,6 +403,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
+  notFound, activeFilters, detailBar,
   notification, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
 };

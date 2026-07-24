@@ -201,8 +201,7 @@ function infoPage(ctx, { title, lead, note, photo }) {
     : C.pageHeader({ title, lead });
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/data/digitalisierung', 'Digitalisierung')}
-    ${C.shareBar()}
+    ${C.detailBar({ backHref: '#/data/digitalisierung', backLabel: 'Digitalisierung' })}
     ${head}
     <div class="mt-6" style="max-width:60rem">
       ${C.notification(note, 'info', 'InfoCircle')}
@@ -234,9 +233,7 @@ function notFound(ctx) {
   const { mount, C, setTitle, setCrumbs } = ctx;
   setTitle('Seite nicht gefunden');
   setCrumbs([...CRUMB, { label: 'Nicht gefunden' }]);
-  mount.innerHTML = `<div class="container section">
-    ${C.backLink('#/data/digitalisierung', 'Digitalisierung')}
-    <div class="page-header mt-4"><h1 tabindex="-1">Seite nicht gefunden</h1></div>
-    <p class="muted">Diese Seite existiert nicht. <a href="#/data/digitalisierung">Zur Übersicht «Digitalisierung»</a></p>
-  </div>`;
+  mount.innerHTML = C.notFound({ backHref: '#/data/digitalisierung', backLabel: 'Digitalisierung',
+    title: 'Seite nicht gefunden',
+    body: 'Diese Seite existiert nicht. <a href="#/data/digitalisierung">Zur Übersicht «Digitalisierung»</a>' });
 }

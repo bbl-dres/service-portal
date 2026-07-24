@@ -63,11 +63,9 @@ function dashboardView(ctx, id) {
   if (!board) {
     setTitle('Dashboard nicht gefunden');
     setCrumbs([...CRUMB_BASE, { label: 'Datenportal', href: '#/app/dataportal' }]);
-    mount.innerHTML = `<div class="container section">
-      ${C.backLink('#/app/dataportal', 'Datenportal')}
-      <div class="page-header mt-4"><h1 tabindex="-1">Dashboard nicht gefunden</h1></div>
-      <p class="muted">Dieses Dashboard existiert nicht. <a href="#/app/dataportal">Zur Übersicht «Datenportal»</a></p>
-    </div>`;
+    mount.innerHTML = C.notFound({ backHref: '#/app/dataportal', backLabel: 'Datenportal',
+      title: 'Dashboard nicht gefunden',
+      body: 'Dieses Dashboard existiert nicht. <a href="#/app/dataportal">Zur Übersicht «Datenportal»</a>' });
     return;
   }
   setTitle(board.title);
