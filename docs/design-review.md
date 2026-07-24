@@ -29,6 +29,37 @@ Reihenfolge der Empfehlung: **erst P0 (Defekte und Sperren), dann P1 (der Portal
 
 ---
 
+## Nachtrag — 3. Design-Pass (24. Juli 2026)
+
+Vier Fachagenten (CD-Komponententreue/Konsistenz · Barrierefreiheit/Lesbarkeit · Mobile/Responsive · Detailseiten-Bilder/Konsistenz) haben den ganzen Stand geprüft. Umgesetzt und verifiziert:
+
+### Barrierefreiheit
+- **P0-2 und P0-3 erledigt** (der grösste offene Hebel): Der Router unterscheidet jetzt **Zustandswechsel** (nur Query, gleiche Seite) von echter Navigation — bei Filter-/Ansichts-/Seitenwechsel springt der Fokus **nicht** mehr auf die H1 und die Seite scrollt nicht nach oben; stattdessen wird der auslösende Bedienpfad per `id` refokussiert. Persistente `role="status"`-Live-Region in `index.html` + `C.announce()`; die drei Katalogseiten sagen Trefferzahl/Ansicht/Seite an. Verifiziert: Filterwechsel hält den Fokus auf `#topic-filter`, kein Sprung, Live-Region liest «4 von 20 Dienstleistungen, Ansicht Galerie».
+- **workspace.js-Tabs** vollständig verdrahtet (`id`/`aria-controls`/`aria-labelledby`, roving `tabindex`, Pfeil/Home/End) — WCAG 4.1.2/2.1.1.
+- Header-Suche öffnet nicht mehr bei `focusin` (3.2.1); Mobil-Drawer setzt `inert` auf `#main-content`/`#main-footer` (2.4.3); Chart-Tooltip schliesst mit Escape (1.4.13); `.share-bar__btn` 44 px; Back-to-top fokussiert den Seitenkopf.
+
+### Mobile
+- **320-px-Überlauf im FAQ-Akkordeon behoben** (`prozesse`): `overflow-wrap:anywhere` auf `.accordion__title` und `.accordion__button > span`, `flex:none` auf das Chevron. Gemessen 336 → 305 px.
+- **Dokumentenarchiv «Öffnen»-Buttons** (`.doc-open`) von 24 px auf 44 px angehoben.
+- Bestätigt sauber (Agent): Tabellen-Scroll im `.table-wrapper`, Pagination 44 px, Nav-Drill-down, View-Switch, Share-bar, Back-to-top — kein Seitenüberlauf 320–1024 px.
+
+### Konsistenz & Detailseiten-Bilder
+- **Dienstleistungs-Detail** auf das CD-Muster `hero--main-image` umgestellt, mit **kontextuellem Symbolbild je Thema** (verifizierte Unsplash-ids) + **Share-bar**.
+- **SUPERB- und BIM-Landingpages** erhalten Hero-Bilder.
+- **Wiederverwendbare `C.domainTile()`** (früher dieser Sitzung) vereint die dreifach kopierte Icon-Karte (Daten/Wissen/Digitalisierung) und behebt die `card--universal`-Fehlnutzung.
+- Karten-Schatten: News-Liste, Mediathek-Kacheln und Lightbox auf `card--default` (CD `shadow-lg`).
+- **Filled → Outline** (Btn.mdx): Navigations-Link im space-request-Abschluss, «Nächster Schritt» in my-cases, Portfolio-«Suchen» → blanker Icon-Submit.
+- Tokenisiert: Doc-Viewer-Hex → `--color-secondary-800/900`, `.dash-hero__value` → `--fs-6xl/7xl`, Mediathek-`card__title` inline → `.card__title--sm`. Chrome-Typografie (`.top-bar/.top-header/.breadcrumb/.menu__item--small/.accordion__title`) auf feste `--fs-*`.
+
+### Bewusst aufgeschoben (für die technische Review-Runde / nächster Design-Schritt)
+- **Detailseiten-Skelett `C.detailHead()`** — die übrigen Detailseiten (Weisung, Datensatz, Medien) auf ein Muster mit Share-bar + optionalem Bild ziehen; Aside-Namensgebung vereinheitlichen (Kontakt · Eckdaten · Verwandte Inhalte).
+- **Dedup-Helfer**: `C.activeFilters()` (3 Kopien), `C.notFound()` (7 Kopien), `C.accordion()` (CD `ul>li` + `__drawer`/`__arrow`-Anatomie), die ~12 Inline-`.select`-Blöcke über `C.selectBox()` (behebt die zwei unterschiedlichen Chevron-Glyphen), sowie der grosse `C.catalogue()`-Idiom (services/applications/katalog).
+- **`pf-`-Umbenennung** der sechs erfundenen CD-Notationsklassen (`.search__form/__submit`, `.mobile-menu__drawer`, `.accordion__meta`, `.pagination-wrap`, `.card__title--sm`).
+- **`lang="en"`** auf englische Glossen (Digital by Design, Once-Only, Common Data Environment …); `<abbr>` bei Erstnennung.
+- **Produktentscheid Mobile**: Auf langen Ankernavigations-Seiten (z. B. `prinzipien`, 8 Abschnitte) steht das Inhaltsverzeichnis auf dem Handy erst nach allen Abschnitten — ein oben erreichbarer Anker-Picker wäre CD-typischer.
+
+---
+
 ## Nachtrag — 2. Review-Runde (23. Juli 2026)
 
 Fünf Fachagenten (Tokens/Hardcoded-Werte · Icons/Typografie · Barrierefreiheit · Mobile/Responsive/Scaling · CD-Komponenten und fehlende Elemente) haben den **aktuellen** Stand erneut gegen die CD-Quelle geprüft — Code gelesen, teils headless bei 320/375/768/1024/1280 px gemessen. Diese Runde fällt in den Stand **nach** dem Umbau von Startseite, Suche, Wissen/Grundlagen und dem neuen Dienstleistungen-Drawer mit CD-Navy-Drill-down. Der Nachtrag ist massgeblich; die ursprünglichen P0–P3 bleiben als Referenz und Begründung darunter stehen.

@@ -115,6 +115,8 @@ export default async function render(ctx) {
     </section>
   </div>`;
 
+  C.announce(`${services.length} von ${all.length} Dienstleistungen${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'liste' ? 'Liste' : 'Galerie'}`);
+
   mount.querySelector('#svc-search').addEventListener('submit', (e) => {
     e.preventDefault();
     const v = mount.querySelector('#sq').value.trim();
@@ -179,14 +181,32 @@ function detail(ctx, id) {
              <span class="small muted">Im Prototyp ist kein Zielsystem angebunden.</span>`}
       </div>`;
 
+  // Symbolbild je Thema (verifizierte Unsplash-ids aus dem Bestand); Fallback =
+  // Farbfläche. Deckt sich mit den Themen-Bildern der Startseite/Bereiche.
+  const DOMAIN_PHOTO = {
+    A: '1541888946425-d81bb19240f5', B: '1481627834876-b7833e8f5570', U: '1497366216548-37526070297c',
+    O: '1454165804606-c3d57bc86b40', G: '1522071820081-009f0129c71c', C: '1524758631624-e2822e304c36',
+    D: '1522071820081-009f0129c71c', E: '1454165804606-c3d57bc86b40', F: '1481627834876-b7833e8f5570',
+  };
+  const img = DOMAIN_PHOTO[s.domain] || '1454165804606-c3d57bc86b40';
+
   mount.innerHTML = `
   <div class="container section">
     ${C.backLink('#/services', 'Dienstleistungen')}
-    <div class="split mt-4">
-      <div class="stack">
+    ${C.shareBar()}
+    <div class="hero hero--main-image">
+      <div class="hero__content">
         <div class="row gap-sm">${C.audienceTag(s.audience)} ${s.type === 'action' ? C.badge('Service', 'info') : C.badge('Information', 'gray')}</div>
-        <h1 tabindex="-1">${C.escape(s.title)}</h1>
-        <p class="lead">${C.escape(s.short)}</p>
+        <h1 class="hero__title" tabindex="-1">${C.escape(s.title)}</h1>
+        <p class="hero__description">${C.escape(s.short)}</p>
+      </div>
+      <div class="hero__image"><figure>
+        ${C.photo({ id: img, color: '#2f4356', alt: '', w: 800 })}
+        <figcaption class="small muted">Symbolbild — © Unsplash</figcaption>
+      </figure></div>
+    </div>
+    <div class="split mt-6">
+      <div class="stack">
         <p>${C.escape(s.description)}</p>
         ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="box"><h3>Das brauchen Sie</h3><ul style="padding-left:1.1rem">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
         ${ctaBlock}

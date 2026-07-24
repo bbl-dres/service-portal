@@ -183,15 +183,27 @@ function prinzipienPage(ctx) {
 
 /* ===================== INFO-LANDINGPAGES (Platzhalter) ================== */
 
-function infoPage(ctx, { title, lead, note }) {
+function infoPage(ctx, { title, lead, note, photo }) {
   const { mount, C, setTitle, setCrumbs } = ctx;
   setTitle(title);
   setCrumbs([...CRUMB, { label: title }]);
+  const head = photo
+    ? `<div class="hero hero--main-image">
+         <div class="hero__content">
+           <h1 class="hero__title" tabindex="-1">${C.escape(title)}</h1>
+           <p class="hero__description">${C.escape(lead)}</p>
+         </div>
+         <div class="hero__image"><figure>
+           ${C.photo({ id: photo, color: '#2f4356', alt: '', w: 800 })}
+           <figcaption class="small muted">Symbolbild — © Unsplash</figcaption>
+         </figure></div>
+       </div>`
+    : C.pageHeader({ title, lead });
   mount.innerHTML = `
   <div class="container section">
     ${C.backLink('#/data/digitalisierung', 'Digitalisierung')}
     ${C.shareBar()}
-    ${C.pageHeader({ title, lead })}
+    ${head}
     <div class="mt-6" style="max-width:60rem">
       ${C.notification(note, 'info', 'InfoCircle')}
     </div>
@@ -203,6 +215,7 @@ function superbPage(ctx) {
     title: 'Programm SUPERB — SAP S/4HANA',
     lead: 'Mit dem Programm SUPERB migriert die Bundesverwaltung ihre bisherigen SAP-Systeme (ECC) auf die neue Generation SAP S/4HANA. Für das BBL betrifft das Finanzen, Beschaffung, Logistik und die Immobilienbewirtschaftung — und damit die Datenbasis vieler Fachanwendungen.',
     note: 'Diese Info-Landingpage ist im Prototyp ein Platzhalter — der ausführliche Inhalt zum Programm SUPERB folgt.',
+    photo: '1522071820081-009f0129c71c',
   });
 }
 
@@ -211,6 +224,7 @@ function bimPage(ctx) {
     title: 'BIM und Common Data Environment',
     lead: 'Bauprojekte des BBL werden modellbasiert geplant und übergeben. Das Common Data Environment (CDE) ist die gemeinsame Datenumgebung für alle Projektbeteiligten über den ganzen Bauwerkslebenszyklus.',
     note: 'Diese Info-Landingpage ist im Prototyp ein Platzhalter — der ausführliche Inhalt zu BIM und CDE folgt.',
+    photo: '1541888946425-d81bb19240f5',
   });
 }
 

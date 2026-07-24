@@ -138,6 +138,8 @@ function list(ctx) {
     </section>
   </div>`;
 
+  C.announce(`${datasets.length} von ${all.length} Datensätzen${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'liste' ? 'Liste' : 'Galerie'}`);
+
   mount.querySelector('#ds-search').addEventListener('submit', (e) => {
     e.preventDefault();
     location.hash = hash({ ...base, q: mount.querySelector('#dsq').value.trim() });

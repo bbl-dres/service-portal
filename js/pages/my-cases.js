@@ -63,7 +63,7 @@ function detail(ctx, id) {
         <div>
           <h2>Prozess</h2>
           <ul class="timeline">${pipeline}</ul>
-          ${canAdvance ? `<button class="btn btn--filled" id="advance">${C.icon('ArrowRight', 'icon--base')} Nächster Schritt (Demo)</button>` : (i.createdLocally ? '<p class="small muted">Vorgang abgeschlossen.</p>' : '<p class="small muted">Seed-Vorgang (Demo) — nicht weiterführbar.</p>')}
+          ${canAdvance ? `<button class="btn btn--outline" id="advance">${C.icon('ArrowRight', 'icon--base')} Nächster Schritt (Demo)</button>` : (i.createdLocally ? '<p class="small muted">Vorgang abgeschlossen.</p>' : '<p class="small muted">Seed-Vorgang (Demo) — nicht weiterführbar.</p>')}
         </div>
         <div>
           <h2>Verlauf</h2>

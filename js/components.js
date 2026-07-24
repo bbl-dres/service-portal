@@ -129,6 +129,14 @@ export function table({ columns, rows, zebra, caption, showCaption }) {
 
 export function empty(msg) { return `<div class="empty">${escape(msg)}</div>`; }
 
+// Ansage in die persistente Live-Region (#live in index.html) — für Trefferzahl-,
+// Ansichts- und Seitenwechsel, die sonst still wären (WCAG 4.1.3). Nur Text
+// mutieren, nie den Knoten neu erzeugen, sonst feuert aria-live nicht.
+export function announce(msg) {
+  const n = document.getElementById('live');
+  if (n) n.textContent = msg;
+}
+
 // Icon-Kachel (domain-tile): bildlose Karte mit grossem Icon, Titel, Text und
 // «Öffnen»-Fuss. Eine Quelle für die Übersichtskarten (Daten, Wissen,
 // Digitalisierung) — bildlose Karten sind card--default (CD, nicht --universal).
@@ -365,7 +373,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 }
 
 export const C = {
-  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile,
+  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
   notification, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
 };

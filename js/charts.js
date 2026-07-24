@@ -227,6 +227,9 @@ export function wireCharts(root) {
     el.addEventListener('blur', hide);
   });
   root.addEventListener('scroll', hide, { passive: true });
+  // WCAG 1.4.13: der eingeblendete Tooltip muss mit Escape schliessbar sein,
+  // ohne den Fokus zu verlieren.
+  root.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
 }
 
 export default { chart, wireCharts, SERIES };

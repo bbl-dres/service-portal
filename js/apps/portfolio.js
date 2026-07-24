@@ -147,7 +147,7 @@ export default async function render(ctx) {
         ${viewToggle()}
         <form id="pf-search" role="search" class="row" style="margin:0;gap:.5rem">
           <input id="pf-q" type="search" placeholder="Name oder Ort suchen…" value="${C.escape(state.q)}" autocomplete="off" style="min-width:14rem">
-          <button class="btn btn--filled btn--sm" type="submit">Suchen</button>
+          <button class="btn btn--bare btn--icon-only" type="submit" aria-label="Suchen" title="Suchen">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
         </form>
       </div>
       <div id="pf-content" class="mt-6">${content}</div>`;

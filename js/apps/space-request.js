@@ -112,7 +112,7 @@ export default async function render(ctx) {
         <h1 tabindex="-1">Vielen Dank</h1>
         <p>Ihr Raumbedarf-Antrag wurde erfasst und an die Prüfung weitergeleitet. Den Status sehen Sie jederzeit unter «Meine Vorgänge».</p>
         <div class="row mt-4">
-          <a class="btn btn--filled" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--base')}</a>
+          <a class="btn btn--outline" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--base')}</a>
           <a class="btn btn--outline" href="#/services">Weitere Services</a>
         </div>
       </div>

@@ -194,10 +194,12 @@ export default async function render(ctx) {
 
   // ---- render ------------------------------------------------------------
   function draw() {
-    const controls = TABS.map(t =>
-      `<button class="tab__control${t.id === state.tab ? " tab__control--active" : ""}" type="button" role="tab"
-         aria-selected="${t.id === state.tab}" data-tab="${t.id}">${C.icon(t.icon, 'icon--base')} ${C.escape(t.label)}</button>`
-    ).join('');
+    const controls = TABS.map(t => {
+      const on = t.id === state.tab;
+      return `<button class="tab__control${on ? " tab__control--active" : ""}" type="button" role="tab"
+         id="wtab-${t.id}" aria-controls="wpanel" aria-selected="${on}" tabindex="${on ? '0' : '-1'}"
+         data-tab="${t.id}">${C.icon(t.icon, 'icon--base')} ${C.escape(t.label)}</button>`;
+    }).join('');
 
     const panel = state.tab === 'moeblierung' ? panelMoeblierung()
       : state.tab === 'belegung' ? panelBelegung()
@@ -208,7 +210,7 @@ export default async function render(ctx) {
       ${C.pageHeader({ title: 'Workspace & Buchung', lead: 'Möblierung und Material, Belegungsplanung sowie Buchung von Räumen, Arbeitsplätzen und Parkplätzen.' })}
       <div class="tabs">
         <div class="tab__controls-container"><div class="tab__controls" role="tablist">${controls}</div></div>
-        <div class="tab__container" role="tabpanel">${panel}</div>
+        <div class="tab__container" role="tabpanel" id="wpanel" aria-labelledby="wtab-${state.tab}" tabindex="0">${panel}</div>
       </div>
     </div>`;
     wire();
@@ -232,12 +234,24 @@ export default async function render(ctx) {
   }
 
   function wire() {
-    // tab switching
-    mount.querySelectorAll('.tab__control').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (state.tab === 'buchung' && !state.created) readForm();
-        state.tab = btn.getAttribute('data-tab');
-        draw();
+    // tab switching — Klick + Pfeiltasten/Home/End (APG Tabs). Bei Wechsel wird
+    // die neu aktive Registerkarte fokussiert (roving tabindex im Markup).
+    const tabs = [...mount.querySelectorAll('.tab__control')];
+    const goto = (id) => {
+      if (state.tab === 'buchung' && !state.created) readForm();
+      state.tab = id;
+      draw();
+      mount.querySelector('#wtab-' + id)?.focus();
+    };
+    tabs.forEach((btn, i) => {
+      btn.addEventListener('click', () => goto(btn.getAttribute('data-tab')));
+      btn.addEventListener('keydown', (e) => {
+        let ni = null;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') ni = (i + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ni = (i - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') ni = 0;
+        else if (e.key === 'End') ni = tabs.length - 1;
+        if (ni !== null) { e.preventDefault(); goto(tabs[ni].getAttribute('data-tab')); }
       });
     });
 

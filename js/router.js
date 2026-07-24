@@ -183,12 +183,24 @@ function focusHeading(mount) {
 // order. Every dispatch takes a ticket; a stale one drops its result instead of
 // overwriting the newer page.
 let dispatchId = 0;
+let prevPath = null;
 
 async function dispatch() {
   const ticket = ++dispatchId;
   const stale = () => ticket !== dispatchId;
   const { segs, query } = parseHash();
   const mount = document.getElementById('main-content');
+
+  // Zustandswechsel (nur die Query änderte sich, gleiche Seite) von echter
+  // Navigation trennen: bei einem Zustandswechsel darf der Fokus NICHT auf die
+  // H1 springen (WCAG 3.2.2) und die Seite nicht nach oben scrollen — stattdessen
+  // den auslösenden Bedienpfad (per id) wiederherstellen.
+  const pathKey = segs.join('/');
+  const isStateChange = prevPath !== null && prevPath === pathKey;
+  const activeId = isStateChange && document.activeElement && mount.contains(document.activeElement)
+    ? document.activeElement.id : '';
+  prevPath = pathKey;
+
   let modPath, params, navBase;
 
   if (segs[0] === 'app') {
@@ -214,7 +226,8 @@ async function dispatch() {
     return;
   }
 
-  mount.innerHTML = `<div class="container section"><p class="muted">Lädt…</p></div>`;
+  // Kein «Lädt…»-Aufblitzen bei einem reinen Zustandswechsel (Modul ist im Cache).
+  if (!isStateChange) mount.innerHTML = `<div class="container section"><p class="muted">Lädt…</p></div>`;
   try {
     const mod = await import(modPath);
     if (stale()) return;
@@ -223,8 +236,13 @@ async function dispatch() {
     const ctx = makeCtx(mount, params, query);
     await render(ctx);
     if (stale()) return;
-    window.scrollTo(0, 0);
-    focusHeading(mount);
+    if (isStateChange) {
+      const el = activeId ? document.getElementById(activeId) : null;
+      if (el) el.focus({ preventScroll: true });   // Fokus zurück auf den Filter/Schalter
+    } else {
+      window.scrollTo(0, 0);
+      focusHeading(mount);
+    }
   } catch (e) {
     if (stale()) return;
     console.error('[router] render failed for', modPath, e);

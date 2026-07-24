@@ -143,6 +143,8 @@ export default async function render(ctx) {
     </section>
   </div>`;
 
+  C.announce(`${apps.length} von ${all.length} Anwendungen${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'liste' ? 'Liste' : 'Galerie'}`);
+
   mount.querySelector('#app-search').addEventListener('submit', (e) => {
     e.preventDefault();
     location.hash = hash({ ...base, q: mount.querySelector('#aq').value.trim() });

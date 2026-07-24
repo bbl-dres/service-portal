@@ -244,7 +244,8 @@ function footerHTML() {
 
   return `
   <div class="back-to-top-wrapper">
-    <a class="back-to-top-btn back-to-top-btn--outline" href="#main-header" aria-label="Nach oben">
+    <a class="back-to-top-btn back-to-top-btn--outline" href="#main-header" aria-label="Nach oben"
+      onclick="var h=document.getElementById('main-header');if(h){h.setAttribute('tabindex','-1');h.focus()}">
       ${icon('ChevronUp', 'back-to-top-btn__icon')}
     </a>
   </div>
@@ -308,6 +309,12 @@ function renderHeader(el) {
     document.body.classList.toggle('body--mobile-menu-is-open', open);
     burger.setAttribute('aria-expanded', String(open));
     burger.setAttribute('aria-label', open ? 'Menü schliessen' : 'Menü öffnen');
+    // Verdeckten Inhalt bei offenem Drawer inaktiv schalten (WCAG 2.4.3) — sonst
+    // bleiben ~48 fokussierbare Elemente hinter dem Overlay in der Tab-Reihenfolge.
+    const main = document.getElementById('main-content');
+    const foot = document.getElementById('main-footer');
+    if (main) main.inert = open;
+    if (foot) foot.inert = open;
     if (open) {
       // the drawer starts below the shell; measure it rather than hard-coding
       const top = el.querySelector('#top-header-id');
@@ -472,7 +479,9 @@ function renderHeader(el) {
     if (open) setTimeout(() => sinput.focus(), 60);
   };
   searchToggle.addEventListener('click', () => openSearch(true));
-  searchWrap.addEventListener('focusin', () => { if (!searchWrap.classList.contains('open')) openSearch(true); });
+  // Nur per Klick/Tastatur öffnen — reines Fokussieren darf den Kontext nicht
+  // ändern (WCAG 3.2.1). Kein «focusin»-Öffner mehr.
+  searchToggle.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSearch(true); } });
   sinput.addEventListener('keydown', (e) => { if (e.key === 'Escape') { openSearch(false); searchToggle.focus(); } });
   searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
