@@ -1903,5 +1903,239 @@
     ],
     "publications": [],
     "responsiblePersons": []
+  },
+  {
+    "id": "20",
+    "title": {
+      "de": "BBL Kundenportal (Portal-API)",
+      "fr": "Portail clients OFCL (API du portail)",
+      "it": "Portale clienti UFCL (API del portale)",
+      "en": "FOBL Customer Portal (Portal API)"
+    },
+    "description": {
+      "de": "Die REST-Schnittstellen, die das Kundenportal für Vorgänge, Kataloge und Fachdaten benötigt — mit interaktiver API-Dokumentation.",
+      "fr": "Les interfaces REST dont le portail clients a besoin pour les affaires, les catalogues et les données métier — avec documentation API interactive.",
+      "it": "Le interfacce REST di cui il portale clienti ha bisogno per pratiche, cataloghi e dati specialistici — con documentazione API interattiva.",
+      "en": "The REST interfaces the customer portal needs for cases, catalogues and business data — with interactive API documentation."
+    },
+    "fullDescription": {
+      "de": "Das Kundenportal ist eine zusammengesetzte Anwendung, die zahlreiche Fachsysteme des BBL orchestriert. Dieser Eintrag dokumentiert die REST-Schnittstellen, die das Portal-Backend (Backend-for-Frontend) für seine Ansichten benötigt — Vorgänge, Dienstleistungen, Anwendungen, Liegenschaften, Bauprojekte, Dokumente, Datenkatalog und Suche. Jeder Bezugsweg öffnet die interaktive API-Dokumentation (Mock-Swagger) für die jeweilige Ressource. Prototyp: die Endpunkte sind gemockt, «Ausprobieren» liefert wo möglich echte Portaldaten.",
+      "fr": "Le portail clients est une application composite qui orchestre de nombreux systèmes métier de l’OFCL. Cette entrée documente les interfaces REST dont le backend du portail (backend-for-frontend) a besoin pour ses vues — affaires, prestations, applications, biens-fonds, projets de construction, documents, catalogue de données et recherche. Chaque voie d’accès ouvre la documentation API interactive (mock Swagger) pour la ressource concernée. Prototype : les points d’accès sont simulés, « Essayer » renvoie si possible des données réelles du portail.",
+      "it": "Il portale clienti è un’applicazione composita che orchestra numerosi sistemi specialistici dell’UFCL. Questa voce documenta le interfacce REST di cui il backend del portale (backend-for-frontend) ha bisogno per le sue viste — pratiche, prestazioni, applicazioni, fondi, progetti di costruzione, documenti, catalogo dei dati e ricerca. Ogni via di accesso apre la documentazione API interattiva (mock Swagger) per la rispettiva risorsa. Prototipo: gli endpoint sono simulati, «Prova» restituisce dove possibile dati reali del portale.",
+      "en": "The customer portal is a composite application that orchestrates numerous FOBL business systems. This entry documents the REST interfaces the portal backend (backend-for-frontend) needs for its views — cases, services, applications, properties, construction projects, documents, data catalogue and search. Each access path opens the interactive API documentation (mock Swagger) for the respective resource. Prototype: the endpoints are mocked, \"Try it out\" returns real portal data where possible."
+    },
+    "tags": [],
+    "meta": {
+      "kontaktstelle": "digitalisierung@bbl.admin.ch",
+      "ausgabedatum": "25. Juli 2026",
+      "aktualisierungsintervall": "on_change",
+      "status": "published",
+      "klassifizierung": "internal",
+      "personenbezogen": "none",
+      "archivwuerdig": "yes",
+      "thema": {
+        "de": "Plattform",
+        "fr": "Plateforme",
+        "it": "Piattaforma",
+        "en": "Platform"
+      },
+      "rechtsgrundlage": {
+        "de": "Verordnung über das Immobilienmanagement und die Logistik des Bundes VILB",
+        "fr": "Ordonnance sur la gestion immobilière et la logistique de la Confédération OILC",
+        "it": "Ordinanza sulla gestione immobiliare e la logistica della Confederazione OILC",
+        "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
+      },
+      "kommentar": {
+        "de": "Interaktive Dokumentation über die Bezugswege — Prototyp mit gemockten Endpunkten",
+        "fr": "Documentation interactive via les voies d’accès — prototype avec points d’accès simulés",
+        "it": "Documentazione interattiva tramite le vie di accesso — prototipo con endpoint simulati",
+        "en": "Interactive documentation via the access paths — prototype with mocked endpoints"
+      }
+    },
+    "distributions": [
+      {
+        "name": {
+          "de": "Vorgänge API (REST)",
+          "fr": "API Vorgänge (REST)",
+          "it": "API Vorgänge (REST)",
+          "en": "Vorgänge API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "f8c8e66e-3137-482e-ac5a-54bae41ca404",
+        "titel": "Vorgänge API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=vorgaenge",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Geschäftsfälle, die das Portal über die Prozess-Engine auslöst und verfolgt (Raumbedarf, Störungsmeldung, Beschaffung …).",
+          "fr": "Geschäftsfälle, die das Portal über die Prozess-Engine auslöst und verfolgt (Raumbedarf, Störungsmeldung, Beschaffung …).",
+          "it": "Geschäftsfälle, die das Portal über die Prozess-Engine auslöst und verfolgt (Raumbedarf, Störungsmeldung, Beschaffung …).",
+          "en": "Geschäftsfälle, die das Portal über die Prozess-Engine auslöst und verfolgt (Raumbedarf, Störungsmeldung, Beschaffung …)."
+        }
+      },
+      {
+        "name": {
+          "de": "Dienstleistungen API (REST)",
+          "fr": "API Dienstleistungen (REST)",
+          "it": "API Dienstleistungen (REST)",
+          "en": "Dienstleistungen API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "42226422-27da-41fb-a047-261c13e5ce7e",
+        "titel": "Dienstleistungen API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=dienstleistungen",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Der Dienstleistungskatalog des BBL — Einstiegspunkte, Formulare und zugehörige Weisungen.",
+          "fr": "Der Dienstleistungskatalog des BBL — Einstiegspunkte, Formulare und zugehörige Weisungen.",
+          "it": "Der Dienstleistungskatalog des BBL — Einstiegspunkte, Formulare und zugehörige Weisungen.",
+          "en": "Der Dienstleistungskatalog des BBL — Einstiegspunkte, Formulare und zugehörige Weisungen."
+        }
+      },
+      {
+        "name": {
+          "de": "Anwendungen API (REST)",
+          "fr": "API Anwendungen (REST)",
+          "it": "API Anwendungen (REST)",
+          "en": "Anwendungen API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "7c2651d9-2e0d-4891-a827-af5963fddc2f",
+        "titel": "Anwendungen API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=anwendungen",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Das Anwendungsverzeichnis — Fachanwendungen mit Einstieg, Berechtigung und Ansprechstelle.",
+          "fr": "Das Anwendungsverzeichnis — Fachanwendungen mit Einstieg, Berechtigung und Ansprechstelle.",
+          "it": "Das Anwendungsverzeichnis — Fachanwendungen mit Einstieg, Berechtigung und Ansprechstelle.",
+          "en": "Das Anwendungsverzeichnis — Fachanwendungen mit Einstieg, Berechtigung und Ansprechstelle."
+        }
+      },
+      {
+        "name": {
+          "de": "Liegenschaften API (REST)",
+          "fr": "API Liegenschaften (REST)",
+          "it": "API Liegenschaften (REST)",
+          "en": "Liegenschaften API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "d62c4dfa-c474-4635-bb9d-c9a7083d3ed8",
+        "titel": "Liegenschaften API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=liegenschaften",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form.",
+          "fr": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form.",
+          "it": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form.",
+          "en": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form."
+        }
+      },
+      {
+        "name": {
+          "de": "Bauprojekte API (REST)",
+          "fr": "API Bauprojekte (REST)",
+          "it": "API Bauprojekte (REST)",
+          "en": "Bauprojekte API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "9fc04645-23a4-47ee-8435-5996bc2069d8",
+        "titel": "Bauprojekte API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=bauprojekte",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Neu- und Umbauprojekte des Bundes mit SIA-Phase, Kosten und Status.",
+          "fr": "Neu- und Umbauprojekte des Bundes mit SIA-Phase, Kosten und Status.",
+          "it": "Neu- und Umbauprojekte des Bundes mit SIA-Phase, Kosten und Status.",
+          "en": "Neu- und Umbauprojekte des Bundes mit SIA-Phase, Kosten und Status."
+        }
+      },
+      {
+        "name": {
+          "de": "Dokumente API (REST)",
+          "fr": "API Dokumente (REST)",
+          "it": "API Dokumente (REST)",
+          "en": "Dokumente API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "0c3d14e3-57f1-48da-9662-e348836c6f22",
+        "titel": "Dokumente API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=dokumente",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Föderierte Dokumentensuche über die Quellsysteme (ActaNova, Planarchiv DALA, CDE Bund). Liefert Metadaten und Download-URLs.",
+          "fr": "Föderierte Dokumentensuche über die Quellsysteme (ActaNova, Planarchiv DALA, CDE Bund). Liefert Metadaten und Download-URLs.",
+          "it": "Föderierte Dokumentensuche über die Quellsysteme (ActaNova, Planarchiv DALA, CDE Bund). Liefert Metadaten und Download-URLs.",
+          "en": "Föderierte Dokumentensuche über die Quellsysteme (ActaNova, Planarchiv DALA, CDE Bund). Liefert Metadaten und Download-URLs."
+        }
+      },
+      {
+        "name": {
+          "de": "Datenkatalog API (REST)",
+          "fr": "API Datenkatalog (REST)",
+          "it": "API Datenkatalog (REST)",
+          "en": "Datenkatalog API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "1e725dbf-d4e8-45fe-becd-07b5637f848f",
+        "titel": "Datenkatalog API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=datenkatalog",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Die DCAT-AP-CH-Datensätze des Datenbezug- und API-Verzeichnisses — inklusive dieser API-Sammlung selbst.",
+          "fr": "Die DCAT-AP-CH-Datensätze des Datenbezug- und API-Verzeichnisses — inklusive dieser API-Sammlung selbst.",
+          "it": "Die DCAT-AP-CH-Datensätze des Datenbezug- und API-Verzeichnisses — inklusive dieser API-Sammlung selbst.",
+          "en": "Die DCAT-AP-CH-Datensätze des Datenbezug- und API-Verzeichnisses — inklusive dieser API-Sammlung selbst."
+        }
+      },
+      {
+        "name": {
+          "de": "Suche API (REST)",
+          "fr": "API Suche (REST)",
+          "it": "API Suche (REST)",
+          "en": "Suche API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "b7497d40-2866-4ca9-be29-57a40c9c2146",
+        "titel": "Suche API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=suche",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen.",
+          "fr": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen.",
+          "it": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen.",
+          "en": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen."
+        }
+      }
+    ],
+    "publications": [],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Product Owner Kundenportal"
+      }
+    ]
   }
 ]

@@ -78,6 +78,7 @@ function overview(ctx) {
       title: 'Datenportal',
       lead: 'Auswertungen zu den Kennzahlen des BBL — Energie und Klima, Immobilienportfolio, Beschaffung, Personal, Logistik und Mobilität.',
     })}
+    <p class="small muted lead-hint">Behördenübergreifende Kennzahlen und Auswertungen bietet das Management-Informationssystem (MIS) der Bundesverwaltung — aufgebaut im <a href="https://www.bbl.admin.ch/de/programm-superb" target="_blank" rel="noopener external">Programm SUPERB</a> (SAP S/4HANA).</p>
     <div class="grid grid--3 mt-8">${topics.map(topicCard).join('')}</div>
   </div>`;
 }

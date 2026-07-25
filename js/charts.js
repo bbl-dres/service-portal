@@ -189,6 +189,34 @@ function barChart({ id, rows, x, y, unit }) {
     </svg>`, names: [] };
 }
 
+/* ----------------------------------------------------------------- pie ---- */
+// Parts-of-whole for a small set of categories (e.g. Eigentumsverhältnis). Slices
+// use the categorical palette in order so they match the legend the wrapper draws;
+// a 2px surface ring separates them; the share (%) is labelled on slices >= 6%.
+function pieChart({ id, rows, x, y, unit }) {
+  const W = 720, H = 300, cx = W / 2, cy = H / 2 + 2, R = 118;
+  const total = rows.reduce((s, r) => s + (Number(r[y]) || 0), 0) || 1;
+  const at = (a, rad) => `${(cx + rad * Math.cos(a)).toFixed(1)} ${(cy + rad * Math.sin(a)).toFixed(1)}`;
+  let a0 = -Math.PI / 2;
+  const slices = rows.map((r, i) => {
+    const v = Number(r[y]) || 0, frac = v / total, a1 = a0 + frac * 2 * Math.PI, mid = (a0 + a1) / 2;
+    const path = frac >= 0.999
+      ? `M${cx} ${(cy - R).toFixed(1)} A${R} ${R} 0 1 1 ${(cx - 0.01).toFixed(2)} ${(cy - R).toFixed(1)} Z`
+      : `M${cx} ${cy} L${at(a0, R)} A${R} ${R} 0 ${frac > 0.5 ? 1 : 0} 1 ${at(a1, R)} Z`;
+    const s = { path, color: SERIES[i % SERIES.length], v, frac, label: String(r[x]),
+      lx: cx + R * 0.62 * Math.cos(mid), ly: cy + R * 0.62 * Math.sin(mid) };
+    a0 = a1; return s;
+  });
+  const paths = slices.map((s) => {
+    const tip = `${esc(s.label)}: ${esc(fmt(s.v, unit))} (${Math.round(s.frac * 100)}%)`;
+    return `<path d="${s.path}" fill="${s.color}" stroke="${SURFACE}" stroke-width="2" class="chart__bar" tabindex="0" role="img" data-tip="${tip}"><title>${tip}</title></path>`;
+  }).join('');
+  const labels = slices.filter((s) => s.frac >= 0.06).map((s) =>
+    `<text x="${s.lx.toFixed(1)}" y="${s.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="13" font-weight="700">${Math.round(s.frac * 100)}%</text>`).join('');
+  return { svg: `<svg viewBox="0 0 ${W} ${H}" class="chart__svg" role="img" aria-labelledby="${id}-t">${paths}${labels}</svg>`,
+    names: rows.map((r) => String(r[x])) };
+}
+
 /**
  * Render one chart card. `result` is a dashData.query() result ({ columns, rows, label }).
  */
@@ -199,7 +227,7 @@ export function chart(spec, result) {
     return `<figure class="chart card card--universal"><figcaption class="chart__head"><h3 class="chart__title" id="${id}-t">${esc(title)}</h3></figcaption>
       <div class="empty">${esc(result.error || 'Keine Daten für diese Auswahl.')}</div></figure>`;
   }
-  const render = spec.form === 'line' ? lineChart : spec.form === 'column' ? columnChart : barChart;
+  const render = spec.form === 'line' ? lineChart : spec.form === 'column' ? columnChart : spec.form === 'pie' ? pieChart : barChart;
   const { svg, names } = render({ id, rows, x: spec.x, y: spec.y, series: spec.series, unit });
 
   return `<figure class="chart card card--universal" id="${id}">
@@ -301,10 +329,29 @@ export function wireChartMenus(root) {
     if (!figure) return;
     const title = ((figure.querySelector('.chart__title') || {}).textContent || 'Diagramm').trim();
     const name = fileSlug(title, 'diagramm');
+    if (action === 'link') { copyText(location.href).then((ok) => toast(ok ? 'Link kopiert.' : 'Kopieren nicht möglich.')); return; }
+
+    // The map is a WebGL canvas (no SVG/table): Vollbild uses the Fullscreen API,
+    // "Als Bild" reads the canvas (needs preserveDrawingBuffer on the map).
+    if (figure.classList.contains('chart--map')) {
+      if (action === 'fullscreen') { const el = figure.querySelector('.dash-map') || figure; if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); return; }
+      if (action === 'png') {
+        const canvas = figure.querySelector('canvas');
+        if (!canvas || !canvas.toBlob) { toast('Bild-Export fehlgeschlagen.'); return; }
+        canvas.toBlob((blob) => {
+          if (!blob) { toast('Bild-Export fehlgeschlagen.'); return; }
+          const url = URL.createObjectURL(blob), a = document.createElement('a');
+          a.href = url; a.download = name + '.png'; document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1000); toast('Bild heruntergeladen.');
+        }, 'image/png');
+        return;
+      }
+      toast('Für die Karte nicht verfügbar.'); return;
+    }
+
     const table = figure.querySelector('.chart__table table');
     const svg = figure.querySelector('.chart__svg');
     if (action === 'fullscreen') { openChartFullscreen(figure); return; }
-    if (action === 'link') { copyText(location.href).then((ok) => toast(ok ? 'Link kopiert.' : 'Kopieren nicht möglich.')); return; }
     if (action === 'csv' && table) { download(tableToCsv(table), name + '.csv', 'text/csv;charset=utf-8'); toast('CSV heruntergeladen.'); return; }
     if (action === 'xls' && table) { download(tableToXls(table, title), name + '.xls', 'application/vnd.ms-excel'); toast('Excel-Datei heruntergeladen.'); return; }
     if (action === 'png' && svg) { svgToPng(svg, name + '.png').then(() => toast('Bild heruntergeladen.')).catch(() => toast('Bild-Export fehlgeschlagen.')); return; }

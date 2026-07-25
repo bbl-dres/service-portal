@@ -86,6 +86,7 @@ const APPS = {
   'workspace':       './apps/workspace.js',
   'transaction':     './apps/transaction.js',
   'dataportal':      './apps/dataportal.js',
+  'api-docs':        './apps/api-docs.js',
 };
 // Which top-nav item to highlight for pages and apps that are not themselves a
 // top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
@@ -95,7 +96,7 @@ const SECTION_OF = {
   'space-request': 'services', 'fault-report': 'services',
   'portfolio': 'data', 'projects': 'data',
   'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
-  'document-archive': 'data', 'mediathek': 'data',
+  'document-archive': 'data', 'mediathek': 'data', 'api-docs': 'data',
 };
 
 function parseHash() {

@@ -126,11 +126,12 @@ export async function initBuildingsMap(container, buildings) {
 }
 
 // Worldwide estate buildings on CARTO grey — CLUSTERED so dense areas don't
-// overlap. Clusters show a count; single points show a circle (∝ √Geschossfläche)
-// and, from a closer zoom, the bbl_id as a label. The nav control's compass resets
-// the rotation to north. `points` = [{ lat, lon, label, sub?, size?, bblId? }].
+// overlap. Clusters show a count; single points are uniform circles and, from a
+// closer zoom, show the bbl_id as a label. The nav control's compass resets the
+// rotation to north. `points` = [{ lat, lon, label, sub?, bblId?, href? }].
 const BLUE = '#2563eb';
-export async function initEstateMap(container, points) {
+const PARCEL = '#0f766e';   // teal — Grundstücke, distinct from the blue building markers
+export async function initEstateMap(container, points, parcels) {
   const c = (points || []).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon));
   let maplibregl;
   try {
@@ -142,13 +143,12 @@ export async function initEstateMap(container, points) {
   }
   if (!container.isConnected) return null;
 
-  const maxSize = Math.max(...c.map((p) => Number(p.size) || 0), 1);
   const fc = {
     type: 'FeatureCollection',
     features: c.map((p) => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
-      properties: { label: p.label || '', sub: p.sub || '', bbl_id: p.bblId || '', href: p.href || '', radius: Math.round(6 + 10 * Math.sqrt((Number(p.size) || 0) / maxSize)) },
+      properties: { label: p.label || '', sub: p.sub || '', bbl_id: p.bblId || '', href: p.href || '' },
     })),
   };
 
@@ -160,7 +160,7 @@ export async function initEstateMap(container, points) {
     camera = { center: [c[0].lon, c[0].lat], zoom: 9 };
   }
 
-  const map = new maplibregl.Map({ container, style: CARTO_STYLE, attributionControl: { compact: true }, ...camera });
+  const map = new maplibregl.Map({ container, style: CARTO_STYLE, attributionControl: { compact: true }, preserveDrawingBuffer: true, ...camera });
   map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: false }), 'top-right');
   map.scrollZoom.disable();
 
@@ -174,11 +174,20 @@ export async function initEstateMap(container, points) {
         layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 13 },
         paint: { 'text-color': '#fff' } });
       map.addLayer({ id: 'points', type: 'circle', source: 'estate', filter: ['!', ['has', 'point_count']],
-        paint: { 'circle-color': BLUE, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2, 'circle-radius': ['get', 'radius'] } });
+        paint: { 'circle-color': BLUE, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2, 'circle-radius': 7 } });
       // bbl_id above the marker, only from a closer zoom so the overview stays calm
       map.addLayer({ id: 'point-labels', type: 'symbol', source: 'estate', filter: ['!', ['has', 'point_count']], minzoom: 8.5,
         layout: { 'text-field': ['get', 'bbl_id'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, -1.2], 'text-anchor': 'bottom' },
         paint: { 'text-color': '#1f2937', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } });
+      // Parcel polygons — only from a close zoom (plot-sized), like the id labels.
+      // Drawn below the building markers (beforeId 'clusters') so points stay on top.
+      if (parcels && parcels.features && parcels.features.length) {
+        map.addSource('parcels', { type: 'geojson', data: parcels });
+        map.addLayer({ id: 'parcels-fill', type: 'fill', source: 'parcels', minzoom: 13,
+          paint: { 'fill-color': PARCEL, 'fill-opacity': 0.18 } }, 'clusters');
+        map.addLayer({ id: 'parcels-line', type: 'line', source: 'parcels', minzoom: 13,
+          paint: { 'line-color': PARCEL, 'line-width': 1.5, 'line-opacity': 0.85 } }, 'clusters');
+      }
     }
   });
 
@@ -197,10 +206,20 @@ export async function initEstateMap(container, points) {
       + `${p.href ? `<br><a class="link" href="${esc(p.href)}">Objekt ansehen →</a>` : ''}`,
     ).addTo(map);
   });
-  for (const lyr of ['clusters', 'points']) {
+  // Parcel polygon → same basic popup as a building, with the inventory deep-link.
+  map.on('click', 'parcels-fill', (e) => {
+    const p = e.features[0].properties;
+    popup.setLngLat(e.lngLat).setHTML(
+      `<strong>${esc(p.label)}</strong>${p.sub ? `<br><span class="small muted">${esc(p.sub)}</span>` : ''}`
+      + `<br><span class="small muted">Grundstück ${esc(p.id)}${p.area ? ' · ' + Number(p.area).toLocaleString('de-CH') + ' m²' : ''}</span>`
+      + `${p.href ? `<br><a class="link" href="${esc(p.href)}">Objekt ansehen →</a>` : ''}`,
+    ).addTo(map);
+  });
+  for (const lyr of ['clusters', 'points', 'parcels-fill']) {
     map.on('mouseenter', lyr, () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', lyr, () => { map.getCanvas().style.cursor = ''; });
   }
+  container._map = map;   // handle for debugging / headless tests (drive camera, query layers)
   return map;
 }
 

@@ -61,10 +61,11 @@ async function loadData() {
     portfolio: x.bbl_port, typ: x.bbl_gbda1, status: x.bbl_stat, gf: Number(x.garea_gf) || 0,
     lat: Number(x.wgs84_lat), lon: Number(x.wgs84_lon), label: x.bbl_bez, sub: x.adr_conct, id: x.bbl_id,
   }));
-  const parcels = props(p).map((x) => ({
+  const parcels = (p.features || []).map((f) => { const x = f.properties || {}; return {
     land: x.adr_land, region: x.adr_reg, ownership: ownership(x.bbl_eigen), portfolio: x.bbl_port,
     status: x.bbl_stat, gsf: Number(x.larea_gsf) || 0, id: x.bbl_id, label: x.bbl_bez,
-  }));
+    sub: x.adr_conct, geom: f.geometry,   // Polygon-Geometrie für die Kartenanzeige behalten
+  }; });
   const landcovers = props(l).map((x) => ({
     type: x.av_type, label: LC_LABEL[x.av_type] || x.av_type, area: Number(x.lc_area) || 0, parcelId: x.bbl_id,
   }));
@@ -138,10 +139,14 @@ export default async function render(ctx) {
     ${delta ? `<div class="kpi__delta">${C.escape(delta)}</div>` : ''}</div>`;
   const mapFigure = () => `<figure class="chart card card--universal chart--map" id="estate-map">
     <figcaption class="chart__head"><h3 class="chart__title">Standorte weltweit</h3>
-      <div class="chart__actions">${C.menu({ menuId: 'estate-map', label: 'Karten-Aktionen', items: [{ action: 'link', label: 'Link kopieren' }] })}</div>
+      <div class="chart__actions">${C.menu({ menuId: 'estate-map', label: 'Karten-Aktionen', items: [
+        { action: 'fullscreen', label: 'Vollbild' },
+        { separator: true }, { heading: 'Herunterladen' },
+        { action: 'png', label: 'Als Bild (PNG)' },
+        { separator: true }, { action: 'link', label: 'Link kopieren' },
+      ] })}</div>
     </figcaption>
     <div class="dash-map" id="estate-map-el" role="application" aria-label="Weltkarte der Gebäudestandorte"></div>
-    <p class="chart__note">Punktgrösse ∝ Geschossfläche · gruppiert (Cluster) · Kartengrundlage CARTO · Klick öffnet das Objekt im Liegenschaften Inventar</p>
   </figure>`;
 
   // --- per-tab content: { kpis[], figures[] (HTML), source } ---
@@ -158,9 +163,9 @@ export default async function render(ctx) {
           kpi('Im Eigentum', String(pctOf(P.filter((p) => p.ownership === 'Im Eigentum').length, P.length)), '%'),
         ],
         figures: [
+          gchart('p-eigen', 'Grundstücke nach Eigentumsverhältnis', eigen, { x: 'Eigentum', y: 'Anzahl', form: 'pie' }),
           gchart('p-port', 'Grundstücksfläche nach Portfolio', groupSum(P, 'portfolio', 'gsf'), { x: 'Portfolio', y: 'Fläche', unit: 'm²' }),
-          gchart('p-land', 'Grundstücke nach Land', groupCount(P, 'land'), { x: 'Land', y: 'Anzahl', form: 'column' }),
-          gchart('p-eigen', 'Grundstücke nach Eigentumsverhältnis', eigen, { x: 'Eigentum', y: 'Anzahl' }),
+          gchart('p-land', 'Grundstücke nach Land', groupCount(P, 'land'), { x: 'Land', y: 'Anzahl' }),
           gchart('p-dist', 'Verteilung Grundstücksfläche', histogram(P, 'gsf', GSF_BINS), { x: 'Fläche (m²)', y: 'Anzahl', form: 'column' }),
         ],
       };
@@ -196,9 +201,9 @@ export default async function render(ctx) {
       ],
       figures: [
         mapFigure(),
+        gchart('b-eigen', 'Gebäude nach Eigentumsverhältnis', groupCount(B, 'ownership', EIGEN_ORDER), { x: 'Eigentum', y: 'Anzahl', form: 'pie' }),
         gchart('b-port', 'Geschossfläche nach Portfolio', groupSum(B, 'portfolio', 'gf'), { x: 'Portfolio', y: 'Fläche', unit: 'm²' }),
-        gchart('b-land', 'Gebäude nach Land', groupCount(B, 'land'), { x: 'Land', y: 'Anzahl', form: 'column' }),
-        gchart('b-eigen', 'Gebäude nach Eigentumsverhältnis', groupCount(B, 'ownership', EIGEN_ORDER), { x: 'Eigentum', y: 'Anzahl' }),
+        gchart('b-land', 'Gebäude nach Land', groupCount(B, 'land'), { x: 'Land', y: 'Anzahl' }),
         gchart('b-dist', 'Verteilung Geschossfläche', histogram(B, 'gf', GF_BINS), { x: 'Fläche (m²)', y: 'Anzahl', form: 'column' }),
         gchart('b-typ', 'Gebäude nach Gebäudetyp', groupCount(B, 'typ'), { x: 'Gebäudetyp', y: 'Anzahl' }),
       ],
@@ -206,14 +211,40 @@ export default async function render(ctx) {
   }
 
   const mapPoints = () => fB().map((b) => ({
-    lat: b.lat, lon: b.lon, label: b.label, sub: b.sub, size: b.gf, bblId: b.id,
+    lat: b.lat, lon: b.lon, label: b.label, sub: b.sub, bblId: b.id,
     href: `${INVENTORY}?id=${encodeURIComponent(b.id)}`,
   }));
 
-  const fGroup = (key, label) => `<fieldset class="filter-group">
-    <legend class="filter-group__legend">${C.escape(label)}</legend>
-    ${OPTS[key].map((o) => `<label class="filter-check"><input type="checkbox" data-dim="${key}" value="${C.escape(o)}"${state[key].includes(o) ? ' checked' : ''}><span>${C.escape(o)}</span></label>`).join('')}
-  </fieldset>`;
+  // Parcel polygons for the map (shown only at close zoom). Matched to their
+  // building via the WE segment of the bbl_id (1000/4840/01 ↔ 1000/4840/AF) so the
+  // popup deep-links to the object in the Liegenschaften Inventar.
+  const weOf = (id) => String(id || '').split('/')[1] || '';
+  const bldByWe = {};
+  for (const b of data.buildings) bldByWe[weOf(b.id)] = b.id;
+  const parcelFC = () => ({
+    type: 'FeatureCollection',
+    features: fP().filter((p) => p.geom).map((p) => ({
+      type: 'Feature', geometry: p.geom,
+      properties: {
+        label: p.label || p.id, sub: p.sub || '', id: p.id, area: p.gsf,
+        href: bldByWe[weOf(p.id)] ? `${INVENTORY}?id=${encodeURIComponent(bldByWe[weOf(p.id)])}` : INVENTORY,
+      },
+    })),
+  });
+
+  // Long option lists stay compact: show the first 5, the rest behind «Alle
+  // anzeigen». Overflow rows carry .filter-check--more (hidden until expanded).
+  const FILTER_MAX = 5;
+  const fGroup = (key, label) => {
+    const opts = OPTS[key];
+    const many = opts.length > FILTER_MAX;
+    const rows = opts.map((o, i) => `<label class="filter-check${many && i >= FILTER_MAX ? ' filter-check--more' : ''}"><input type="checkbox" data-dim="${key}" value="${C.escape(o)}"${state[key].includes(o) ? ' checked' : ''}><span>${C.escape(o)}</span></label>`).join('');
+    return `<fieldset class="filter-group">
+      <legend class="filter-group__legend">${C.escape(label)}</legend>
+      ${rows}
+      ${many ? `<button type="button" class="filter-group__more" data-more data-count="${opts.length}" aria-expanded="false">Alle anzeigen (${opts.length})</button>` : ''}
+    </fieldset>`;
+  };
 
   let mapPromise = null;
   const freeMap = () => { if (mapPromise && mapPromise.then) mapPromise.then((m) => m && m.remove && m.remove()).catch(() => {}); mapPromise = null; };
@@ -238,7 +269,7 @@ export default async function render(ctx) {
     freeMap();
     if (state.tab === 'gebaeude') {
       const el = grid.querySelector('#estate-map-el');
-      if (el) mapPromise = initEstateMap(el, mapPoints());
+      if (el) mapPromise = initEstateMap(el, mapPoints(), parcelFC());
     }
   }
 
@@ -249,7 +280,7 @@ export default async function render(ctx) {
     <div class="dash-header">
       <div class="dash-header__text">
         ${C.pageHeader({ title: META.title, lead: META.lead })}
-        <p class="small muted lead-hint">Detaillierte Objektinformationen und Bewirtschaftung im <a href="${INVENTORY}">Liegenschaften Inventar</a>.</p>
+        <p class="small muted lead-hint">Detaillierte Objektinformationen und Bewirtschaftung im <a href="${INVENTORY}" target="_blank" rel="noopener">Liegenschaften Inventar</a>.</p>
       </div>
       ${C.menu({ menuId: 'dashboard', label: 'Dashboard-Aktionen', items: DASHBOARD_MENU })}
     </div>
@@ -286,6 +317,14 @@ export default async function render(ctx) {
     if (cb.checked) { if (!state[dim].includes(val)) state[dim].push(val); }
     else state[dim] = state[dim].filter((x) => x !== val);
     syncHash(); update();
+  });
+  // «Alle anzeigen / Weniger anzeigen» — expand a capped option list in place.
+  filterBody.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-more]');
+    if (!btn) return;
+    const open = btn.closest('.filter-group').classList.toggle('filter-group--expanded');
+    btn.setAttribute('aria-expanded', String(open));
+    btn.textContent = open ? 'Weniger anzeigen' : `Alle anzeigen (${btn.dataset.count})`;
   });
   mount.querySelector('#f-reset').addEventListener('click', () => {
     FILTER_KEYS.forEach((k) => { state[k] = []; });

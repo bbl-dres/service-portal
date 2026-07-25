@@ -129,7 +129,7 @@ export default async function render(ctx) {
     return `
       <div class="dash-map" id="pf-map-el" role="group" aria-label="Weltweite Karte der Liegenschaften"
         style="height:32rem;border-radius:var(--radius-lg);overflow:hidden"></div>
-      <p class="small muted mt-2">Weltweites Portfolio · Punktgrösse ∝ Geschossfläche · gruppiert (Cluster) · Kartengrundlage CARTO · Klick öffnet das Objekt.</p>`;
+      <p class="small muted mt-2">Weltweites Portfolio · gruppiert (Cluster) · Kartengrundlage CARTO · Klick öffnet das Objekt.</p>`;
   }
 
   async function mountMap(list) {
