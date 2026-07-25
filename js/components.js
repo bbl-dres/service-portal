@@ -132,7 +132,9 @@ export function card(o) {
 
 // --- Tables (table.postcss) --------------------------------------------------
 // columns: [{ key, label, render?(row) }]; rows: object[]; caption names the table.
-export function table({ columns, rows, zebra, caption, showCaption }) {
+// `foot` = fertiges <tr>…</tr>-HTML für eine <tfoot>-Zeile (z. B. eine Summenzeile);
+// der Aufrufer escaped den Inhalt.
+export function table({ columns, rows, zebra, caption, showCaption, foot }) {
   const head = columns.map(c => `<th scope="col">${escape(c.label)}</th>`).join('');
   const body = (rows || []).map(r =>
     `<tr>${columns.map((c, i) => {
@@ -146,6 +148,7 @@ export function table({ columns, rows, zebra, caption, showCaption }) {
     ${caption ? `<caption>${escape(caption)}</caption>` : ''}
     <thead><tr>${head}</tr></thead>
     <tbody>${body || `<tr><td colspan="${columns.length}" class="muted">Keine Einträge</td></tr>`}</tbody>
+    ${foot ? `<tfoot>${foot}</tfoot>` : ''}
   </table></div>`;
 }
 

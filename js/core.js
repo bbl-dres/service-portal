@@ -18,6 +18,12 @@ const FILES = {
   datasets:     'data/datasets.json',
   catalogLabels:'data/catalog-labels.json',
   appPages:     'data/application-pages.json',
+  // Liegenschaften-Inventar-Detailregister (SAP RE-FX-Untertabellen, re-keyed auf bbl_id):
+  assets:           'data/assets.json',            // Ausstattung
+  contracts:        'data/contracts.json',         // Verträge
+  costs:            'data/costs.json',              // Kosten
+  areas:            'data/area-measurements.json',  // Flächen / Bemessungen
+  buildingContacts: 'data/building-contacts.json',  // Objektkontakte (nicht die Dienstleistungs-Kontakte)
 };
 // data/data-products.json bleibt liegen (DataService- und Concept-Einträge für
 // einen künftigen Metadatenkatalog), wird aber von keiner Ansicht mehr gelesen
@@ -35,6 +41,8 @@ const AREA = {
   applications: 'Anwendungen', documents: 'Dokumente', media: 'Mediathek',
   weisungen: 'Weisungen', news: 'News', contacts: 'Kontakte', reference: 'Referenzdaten',
   datasets: 'Datenkatalog', catalogLabels: 'Katalog-Beschriftungen', appPages: 'Anwendungsseiten',
+  assets: 'Ausstattung', contracts: 'Verträge', costs: 'Kosten', areas: 'Flächen',
+  buildingContacts: 'Objektkontakte', landcovers: 'Bodenbedeckung',
 };
 
 // Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
@@ -80,6 +88,17 @@ function normalizeParcel(f) {
   };
 }
 
+// Bodenbedeckung (AV-Landcover) — Polygone je Grundstück; verknüpft über bbl_id
+// (= Grundstück-ID) bzw. geb_id (= Gebäude-ID). Für das Grundstück-Register «Bodenbedeckung».
+function normalizeLandcover(f) {
+  const p = (f && f.properties) || {};
+  return {
+    parcelId: p.bbl_id, buildingId: p.geb_id, type: p.av_type || '—', area: p.lc_area || 0,
+    status: p.av_stat || '', egid: p.av_egid || '', egrid: p.av_egrid || '',
+    geom: (f && f.geometry) || null, lat: p.wgs84_lat, lng: p.wgs84_lon,
+  };
+}
+
 async function load() {
   const entries = await Promise.all(Object.entries(FILES).map(async ([k, url]) => {
     const isObj = OBJECT_FILES.has(k);
@@ -99,14 +118,17 @@ async function load() {
   // Golden Record (Gebäude + Grundstücke): GeoJSON-Objekte ({type,features}), nicht
   // die Listenform der übrigen Dateien — eigener Pfad mit Normalisierung, aber
   // parallel geladen, damit der Boot (window.__login etc.) nicht unnötig wartet.
-  const [bFc, pFc] = await Promise.all([
+  const [bFc, pFc, lFc] = await Promise.all([
     fetchJSON('data/buildings.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] buildings.geojson', e.message); return null; }),
     fetchJSON('data/parcels.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] parcels.geojson', e.message); return null; }),
+    fetchJSON('data/landcovers.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] landcovers.geojson', e.message); return null; }),
   ]);
   DATA.buildings = bFc ? (bFc.features || []).map(normalizeBuilding).filter((b) => b.bbl_id) : [];
   if (!DATA.buildings.length) FAILED.add('buildings');
   DATA.parcels = pFc ? (pFc.features || []).map(normalizeParcel).filter((p) => p.bbl_id) : [];
   if (!pFc) FAILED.add('parcels');
+  DATA.landcovers = lFc ? (lFc.features || []).map(normalizeLandcover).filter((l) => l.parcelId) : [];
+  if (!lFc) FAILED.add('landcovers');
   return DATA;
 }
 
@@ -124,6 +146,14 @@ export const core = {
   projects: () => DATA.projects || [],
   project: (id) => find(DATA.projects, 'projectId', id),
   projectsForBuilding: (bid) => (DATA.projects || []).filter(p => p.buildingId === bid),
+  // Liegenschaften-Inventar-Detailregister — je Gebäude über buildingId (= bbl_id).
+  assetsForBuilding: (bid) => (DATA.assets || []).filter(a => a.buildingId === bid),
+  contractsForBuilding: (bid) => (DATA.contracts || []).filter(c => c.buildingId === bid),
+  costsForBuilding: (bid) => (DATA.costs || []).filter(c => c.buildingId === bid),
+  areasForBuilding: (bid) => (DATA.areas || []).filter(a => a.buildingId === bid),
+  buildingContactsFor: (bid) => (DATA.buildingContacts || []).filter(c => c.buildingId === bid),
+  // Bodenbedeckung je Grundstück (parcelId = bbl_id des Grundstücks).
+  landcoversForParcel: (pid) => (DATA.landcovers || []).filter(l => l.parcelId === pid),
   services: () => DATA.services || [],
   service: (id) => find(DATA.services, 'serviceId', id),
   servicesByDomain: () => groupBy(DATA.services || [], 'domain'),

@@ -100,24 +100,49 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     writeFileSync(process.env.SHOT || join(tmpdir(), 'bbl-portfolio.png'), Buffer.from(shot.data, 'base64'));
     await p.closeTarget();
 
-    // 2) building detail deep-link ---------------------------------------------
+    // 2) building detail deep-link — Phase-2 tabs (Flächen/Ausstattung/Verträge/Kosten/Kontakte)
     const d = await openPage(cdp, `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1000/4840/AF')}`);
     await new Promise(r => setTimeout(r, 600));
     const D = await d.evaluate(`(async () => { const s = ms => new Promise(r => setTimeout(r, ms)); let n = 0; while (!document.querySelector('.tab__control') && n++ < 100) await s(100);
-      return { h1: (document.querySelector('h1') || {}).textContent, tabs: [...document.querySelectorAll('.tab__control')].map(t => t.textContent.trim()) }; })()`);
+      const r = { h1: (document.querySelector('h1') || {}).textContent, tabs: [...document.querySelectorAll('.tab__control')].map(t => t.textContent.trim()) };
+      // Verträge tab → contracts table rows
+      const vt = [...document.querySelectorAll('.tab__control')].find(t => /Verträge/.test(t.textContent)); if (vt) { vt.click(); await s(200); }
+      const vp = document.querySelector('#pf-tab-panel-vertraege'); r.vertraegeRows = vp ? vp.querySelectorAll('table tbody tr').length : 0;
+      // Kosten tab → body rows + a tfoot total row
+      const kt = [...document.querySelectorAll('.tab__control')].find(t => /Kosten/.test(t.textContent)); if (kt) { kt.click(); await s(200); }
+      const kp = document.querySelector('#pf-tab-panel-kosten'); r.kostenTotalRow = kp ? !!kp.querySelector('tfoot .table__total') : false; r.kostenRows = kp ? kp.querySelectorAll('table tbody tr').length : 0;
+      // Hero photo opens the lightbox gallery; Esc closes it
+      const hero = document.querySelector('#pf-hero-btn'); if (hero) hero.click(); await s(250);
+      r.lightbox = !!document.querySelector('.pf-lightbox'); r.lightboxImg = !!document.querySelector('.pf-lightbox__img'); r.thumbs = document.querySelectorAll('.pf-lightbox__thumb').length;
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); await s(200);
+      r.lightboxClosed = !document.querySelector('.pf-lightbox');
+      return r; })()`);
     console.log('■ Gebäude-Detail:', JSON.stringify(D.h1), '| tabs:', JSON.stringify(D.tabs));
+    console.log('   Verträge rows:', D.vertraegeRows, '| Kosten rows+total:', D.kostenRows, D.kostenTotalRow, '| lightbox:', D.lightbox, 'thumbs', D.thumbs, 'closed', D.lightboxClosed);
     check(/Bundeshaus West/.test(D.h1 || ''), `building deep-link (${D.h1})`);
-    check(D.tabs.length >= 4, `building detail has tabs (${D.tabs.length})`);
+    check(D.tabs.length === 7, `building detail has 7 tabs (${D.tabs.length})`);
+    check(['Flächen', 'Ausstattung', 'Verträge', 'Kosten', 'Dokumente', 'Kontakte'].every(t => D.tabs.some(x => x.includes(t))), 'entity + core tabs present');
+    check(!D.tabs.some(t => /Medien|Bauprojekte/.test(t)), 'Medien + Bauprojekte tabs removed');
+    check(D.vertraegeRows >= 1, `Verträge tab shows contracts (${D.vertraegeRows} rows)`);
+    check(D.kostenTotalRow && D.kostenRows >= 1, `Kosten tab shows table + total row (${D.kostenRows} rows)`);
+    check(D.lightbox && D.lightboxImg && D.thumbs >= 1, `hero opens lightbox gallery (${D.thumbs} thumbs)`);
+    check(D.lightboxClosed, 'Esc closes the lightbox');
     await d.closeTarget();
 
     // 3) parcel detail deep-link -----------------------------------------------
     const pc = await openPage(cdp, `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1000/4840/01')}`);
     await new Promise(r => setTimeout(r, 600));
     const P = await pc.evaluate(`(async () => { const s = ms => new Promise(r => setTimeout(r, ms)); let n = 0; while (!document.querySelector('.kv') && n++ < 100) await s(100);
-      return { h1: (document.querySelector('h1') || {}).textContent, text: document.body.textContent.replace(/\\s+/g, ' ') }; })()`);
-    console.log('■ Grundstück-Detail:', JSON.stringify(P.h1));
+      const r = { h1: (document.querySelector('h1') || {}).textContent, text: document.body.textContent.replace(/\\s+/g, ' '),
+        tabs: [...document.querySelectorAll('.tab__control')].map(t => t.textContent.trim()), hasMap: !!document.querySelector('#pf-parcel-map') };
+      const bt = [...document.querySelectorAll('.tab__control')].find(t => /Bodenbedeckung/.test(t.textContent)); if (bt) { bt.click(); await s(200); }
+      const bp = document.querySelector('#pf-ptab-panel-bodenbedeckung'); r.bodenRows = bp ? bp.querySelectorAll('table tbody tr').length : 0;
+      return r; })()`);
+    console.log('■ Grundstück-Detail:', JSON.stringify(P.h1), '| tabs:', JSON.stringify(P.tabs), '| Bodenbedeckung rows:', P.bodenRows);
     check(!!P.h1 && /Grundstück/.test(P.text), `parcel deep-link renders (${P.h1})`);
     check(/Gebäude auf der Parzelle/.test(P.text), 'parcel links to its building');
+    check(P.tabs.some(t => /Bodenbedeckung/.test(t)) && P.hasMap, 'parcel has Bodenbedeckung tab + mini-map');
+    check(P.bodenRows >= 1, `Bodenbedeckung tab shows landcovers (${P.bodenRows} rows)`);
     check(p.exceptions.length + d.exceptions.length + pc.exceptions.length === 0,
       `no exceptions${(p.exceptions[0] || d.exceptions[0] || pc.exceptions[0]) ? ' — ' + (p.exceptions[0] || d.exceptions[0] || pc.exceptions[0]).split('\n')[0] : ''}`);
     await pc.closeTarget();

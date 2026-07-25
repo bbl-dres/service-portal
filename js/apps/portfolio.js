@@ -351,17 +351,33 @@ function buildingDetail(ctx, b) {
   setTitle(b.name);
   setCrumbs([...CRUMBS, { label: 'Liegenschaften Inventar', href: '#/app/portfolio' }, { label: b.name }]);
 
-  const projects = core.projectsForBuilding(b.bbl_id);
+  const areas = core.areasForBuilding(b.bbl_id);
+  const assets = core.assetsForBuilding(b.bbl_id);
+  const contracts = core.contractsForBuilding(b.bbl_id);
+  const costs = core.costsForBuilding(b.bbl_id);
+  const contacts = core.buildingContactsFor(b.bbl_id);
   const documents = core.documentsForBuilding(b.bbl_id);
   const media = core.mediaForBuilding(b.bbl_id);
+  const parcels = core.parcelsForBuilding(b.bbl_id);
   const regionLabel = [b.land, b.canton].filter(Boolean).join(' · ');
+  // Bildergalerie (Modal auf dem Hero-Bild) statt eines Medien-Registers: Hauptbild + verknüpfte Medien.
+  const galleryItems = [
+    { photo: b.photo, title: b.name, meta: `${b.city} · Hauptansicht`, type: 'foto' },
+    ...media.map((m) => ({ photo: m.photo, title: m.title, meta: `${m.date} · ${m.historicPeriod}`, type: m.mediaType, gray: m.historicPeriod === 'historisch' })),
+  ].filter((g) => g.photo);
 
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
-    { id: 'bauprojekte', label: `Bauprojekte (${projects.length})` },
+    { id: 'flaechen', label: `Flächen (${areas.length})` },
+    { id: 'ausstattung', label: `Ausstattung (${assets.length})` },
+    { id: 'vertraege', label: `Verträge (${contracts.length})` },
+    { id: 'kosten', label: `Kosten (${costs.length})` },
     { id: 'dokumente', label: `Dokumente (${documents.length})` },
-    { id: 'medien', label: `Medien (${media.length})` },
+    { id: 'kontakte', label: `Kontakte (${contacts.length})` },
   ];
+
+  const fmtDate = (iso) => { if (!iso) return '—'; const d = new Date(iso); return isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString('de-CH'); };
+  const fmtMoney = (amount, currency) => `${currency || 'CHF'} ${Number(amount || 0).toLocaleString('de-CH')}`;
 
   function tabUebersicht() {
     return `
@@ -379,19 +395,65 @@ function buildingDetail(ctx, b) {
         <dt>Hauptnutzfläche (HNF)</dt><dd>${Number(b.hnf || 0).toLocaleString('de-CH')} m²</dd>
         ${b.erhaltung ? `<dt>Erhaltungsstrategie</dt><dd>${C.escape(b.erhaltung)}</dd>` : ''}
         ${b.heritage ? '<dt>Baudenkmal</dt><dd>Ja</dd>' : ''}
+        ${parcels.length ? `<dt>Grundstück${parcels.length > 1 ? 'e' : ''}</dt><dd>${parcels.map(pc => `<a href="#/app/portfolio?id=${encodeURIComponent(pc.bbl_id)}">${C.escape(pc.name)}</a>`).join(', ')}</dd>` : ''}
         <dt>Status</dt><dd>${statusBadge(C, ref, b.status)}</dd>
         <dt>Klassifizierung</dt><dd>${classBadge(C, ref, b.classification)}</dd>
       </dl>`;
   }
-  function tabBauprojekte() {
-    if (!projects.length) return C.empty('Keine Bauprojekte zu dieser Liegenschaft.');
+  function tabFlaechen() {
+    if (!areas.length) return C.empty('Keine Flächen- oder Bemessungsdaten erfasst.');
     return C.table({ zebra: true, columns: [
-      { key: 'name', label: 'Projekt', render: (p) => `<a href="#/app/projects/${encodeURIComponent(p.projectId)}">${C.escape(p.name)}</a><br><span class="small muted">${C.escape(p.projectNumber)}</span>` },
-      { key: 'siaPhaseLabel', label: 'SIA-Phase', render: (p) => C.escape(p.siaPhaseLabel) },
-      { key: 'status', label: 'Status', render: (p) => projectStatusBadge(C, ref, p.status) },
-      { key: 'plannedTotalCost', label: 'Gepl. Kosten', render: (p) => 'CHF ' + Number(p.plannedTotalCost || 0).toLocaleString('de-CH') },
-      { key: 'span', label: 'Zeitraum', render: (p) => `${C.escape(String(p.start))}–${C.escape(String(p.end))}` },
-    ], rows: projects });
+      { key: 'type', label: 'Bemessungsart', render: (a) => C.escape(a.type) },
+      { key: 'value', label: 'Wert', render: (a) => `${Number(a.value || 0).toLocaleString('de-CH')} <span class="muted">${C.escape(a.unit || '')}</span>` },
+      { key: 'accuracy', label: 'Genauigkeit', render: (a) => C.escape(a.accuracy || '—') },
+      { key: 'standard', label: 'Standard', render: (a) => C.escape(a.standard || '—') },
+      { key: 'validFrom', label: 'Gültig ab', render: (a) => fmtDate(a.validFrom) },
+    ], rows: areas.slice().sort((x, y) => String(x.type).localeCompare(String(y.type), 'de')) });
+  }
+  function tabAusstattung() {
+    if (!assets.length) return C.empty('Keine Ausstattung erfasst.');
+    return C.table({ zebra: true, columns: [
+      { key: 'name', label: 'Bezeichnung', render: (a) => `<strong>${C.escape(a.name)}</strong>` },
+      { key: 'category', label: 'Kategorie', render: (a) => C.badge(a.category, 'blue') },
+      { key: 'manufacturer', label: 'Hersteller', render: (a) => C.escape(a.manufacturer || '—') },
+      { key: 'installationYear', label: 'Baujahr', render: (a) => C.escape(String(a.installationYear || '—')) },
+      { key: 'location', label: 'Standort', render: (a) => C.escape(a.location || '—') },
+      { key: 'status', label: 'Status', render: (a) => C.badge(a.status, a.status === 'In Betrieb' ? 'success' : 'gray') },
+    ], rows: assets.slice().sort((x, y) => String(x.name).localeCompare(String(y.name), 'de')) });
+  }
+  function tabVertraege() {
+    if (!contracts.length) return C.empty('Keine Verträge erfasst.');
+    return C.table({ zebra: true, columns: [
+      { key: 'type', label: 'Vertragsart', render: (c) => C.escape(c.type) },
+      { key: 'contractPartner', label: 'Vertragspartner', render: (c) => C.escape(c.contractPartner || '—') },
+      { key: 'laufzeit', label: 'Laufzeit', render: (c) => `${fmtDate(c.validFrom)} – ${c.validUntil ? fmtDate(c.validUntil) : 'unbefristet'}` },
+      { key: 'amount', label: 'Betrag/Jahr', render: (c) => fmtMoney(c.amount, c.currency) },
+      { key: 'status', label: 'Status', render: (c) => C.badge(c.status, CONTRACT_STATUS_VARIANT[c.status] || 'gray') },
+    ], rows: contracts });
+  }
+  function tabKosten() {
+    if (!costs.length) return C.empty('Keine Kostendaten erfasst.');
+    const cur = costs[0].currency || 'CHF';
+    const sum = costs.reduce((s, c) => s + (Number(c.amount) || 0), 0);
+    return C.table({ zebra: true, columns: [
+      { key: 'costGroup', label: 'Kostengruppe', render: (c) => C.escape(c.costGroup) },
+      { key: 'costType', label: 'Kostenart', render: (c) => C.escape(c.costType) },
+      { key: 'amount', label: 'Betrag', render: (c) => fmtMoney(c.amount, c.currency) },
+      { key: 'period', label: 'Periode', render: (c) => C.escape(c.period || '—') },
+      { key: 'referenceDate', label: 'Stichtag', render: (c) => fmtDate(c.referenceDate) },
+    ], rows: costs.slice().sort((x, y) => String(x.costGroup).localeCompare(String(y.costGroup))),
+      foot: `<tr class="table__total"><th scope="row">Total</th><td></td><td><strong>${fmtMoney(sum, cur)}</strong></td><td colspan="2" class="small muted">${costs.length} Positionen · jährlich</td></tr>` });
+  }
+  function tabKontakte() {
+    if (!contacts.length) return C.empty('Keine Objektkontakte hinterlegt.');
+    const rows = contacts.slice().sort((a, c) => (c.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0) || String(a.name).localeCompare(String(c.name), 'de'));
+    return C.table({ zebra: true, columns: [
+      { key: 'name', label: 'Name', render: (c) => `<strong>${C.escape(c.name)}</strong>${c.isPrimary ? ' ' + C.badge('Primär', 'info') : ''}` },
+      { key: 'role', label: 'Rolle', render: (c) => C.escape(c.role || '—') },
+      { key: 'organisation', label: 'Organisation', render: (c) => C.escape(c.organisation || '—') },
+      { key: 'phone', label: 'Telefon', render: (c) => c.phone ? `<a href="tel:${C.escape(String(c.phone).replace(/\s/g, ''))}">${C.escape(c.phone)}</a>` : '—' },
+      { key: 'email', label: 'E-Mail', render: (c) => c.email ? `<a href="mailto:${C.escape(c.email)}">${C.escape(c.email)}</a>` : '—' },
+    ], rows });
   }
   function tabDokumente() {
     if (!documents.length) return `${C.empty('Keine Dokumente verknüpft.')}<p class="mt-4"><a class="btn btn--link" href="#/app/document-archive">In der Bauwerksdokumentation öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
@@ -403,17 +465,8 @@ function buildingDetail(ctx, b) {
         <a class="btn btn--outline btn--sm" href="${C.escape(d.url || '#')}">${C.icon('Download', 'icon--base')} Download</a></div>`).join('');
     return `<div class="stack">${items}</div><p class="mt-6"><a class="btn btn--link" href="#/app/document-archive">In der Bauwerksdokumentation öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
   }
-  function tabMedien() {
-    if (!media.length) return `${C.empty('Keine Medien verknüpft.')}<p class="mt-4"><a class="btn btn--link" href="#/app/mediathek">Zur Mediathek ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
-    const tiles = media.map((m) => `
-      <a class="pf-media" href="#/app/mediathek/${encodeURIComponent(m.mediaId)}" title="${C.escape(m.title)}">
-        ${C.photo({ id: m.photo, color: m.color || '#3a4a5a', alt: m.title, w: 480, gray: m.historicPeriod === 'historisch', cls: 'pf-media__bg' })}
-        <span class="pf-media__type">${C.icon(m.mediaType === 'video' ? 'Video' : 'Image', 'icon--base')} ${m.mediaType === 'video' ? 'Video' : 'Foto'}</span>
-        <span class="pf-media__title">${C.escape(m.title)}</span>
-        <span class="pf-media__meta">${C.escape(String(m.date))} · ${C.escape(m.historicPeriod)}</span></a>`).join('');
-    return `<div class="grid grid--4 mt-2">${tiles}</div><p class="mt-6"><a class="btn btn--link" href="#/app/mediathek">Zur Mediathek ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
-  }
-  const panelHtml = (id) => id === 'bauprojekte' ? tabBauprojekte() : id === 'dokumente' ? tabDokumente() : id === 'medien' ? tabMedien() : tabUebersicht();
+  const panels = { uebersicht: tabUebersicht, flaechen: tabFlaechen, ausstattung: tabAusstattung, vertraege: tabVertraege, kosten: tabKosten, dokumente: tabDokumente, kontakte: tabKontakte };
+  const panelHtml = (id) => (panels[id] || tabUebersicht)();
 
   mount.innerHTML = `
   <div class="container section">
@@ -421,13 +474,17 @@ function buildingDetail(ctx, b) {
     <div class="row mt-4" style="gap:.5rem">${classBadge(C, ref, b.classification)} ${statusBadge(C, ref, b.status)} <span class="small muted">${C.escape(b.bbl_id)}</span></div>
     <h1 tabindex="-1">${C.escape(b.name)}</h1>
     <p class="lead">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)} · ${C.escape(b.portfolioCategory)}</p>
-    ${C.photo({ id: b.photo, color: '#2f4356', alt: `${b.name}, ${b.city}`, w: 1600, cls: 'pf-hero', style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg)' })}
+    <button type="button" class="pf-hero-trigger" id="pf-hero-btn" aria-label="Bildergalerie öffnen (${galleryItems.length} Bild${galleryItems.length === 1 ? '' : 'er'})">
+      ${C.photo({ id: b.photo, color: '#2f4356', alt: `${b.name}, ${b.city}`, w: 1600, cls: 'pf-hero', style: 'aspect-ratio:21/9;max-height:22rem', overlay: `<span class="pf-hero__badge">${C.icon('Image', 'icon--base')} ${galleryItems.length} Bild${galleryItems.length === 1 ? '' : 'er'}</span>` })}
+    </button>
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', ariaLabel: 'Gebäudedetails' })}
       ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', render: panelHtml })}
     </div>
   </div>`;
   C.wireTabs(mount);
+  const heroBtn = mount.querySelector('#pf-hero-btn');
+  if (heroBtn) heroBtn.addEventListener('click', () => openGallery(galleryItems, 0, C));
   window.scrollTo(0, 0);
   const h = mount.querySelector('h1');
   if (h) h.focus({ preventScroll: true });
@@ -442,16 +499,16 @@ function parcelDetail(ctx, p) {
   const ref = core.ref();
   const we = p.bbl_we || weOf(p.bbl_id);
   const bld = core.buildings().find((b) => (b.bbl_we || weOf(b.bbl_id)) === we);
+  const covers = core.landcoversForParcel(p.bbl_id);
   setTitle(p.name);
   setCrumbs([...CRUMBS, { label: 'Liegenschaften Inventar', href: '#/app/portfolio' }, { label: p.name }]);
 
-  mount.innerHTML = `
-  <div class="container section">
-    ${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}
-    <div class="row mt-4" style="gap:.5rem">${C.badge('Grundstück', 'gray')} ${statusBadge(C, ref, p.status)} <span class="small muted">${C.escape(p.bbl_id)}</span></div>
-    <h1 tabindex="-1">${C.escape(p.name)}</h1>
-    <p class="lead">${C.escape(p.street)}, ${C.escape(p.zip)} ${C.escape(p.city)} · ${C.escape(p.zone || 'Grundstück')}</p>
-    <dl class="kv mt-6">
+  const tabs = [
+    { id: 'uebersicht', label: 'Übersicht' },
+    { id: 'bodenbedeckung', label: `Bodenbedeckung (${covers.length})` },
+  ];
+  function tabUebersicht() {
+    return `<dl class="kv">
       <dt>Parzellen-ID</dt><dd>${C.escape(p.bbl_id)}</dd>
       <dt>Wirtschaftseinheit (WE)</dt><dd>${C.escape(p.bbl_we)}</dd>
       <dt>Parzellen-Nr.</dt><dd>${C.escape(p.plotNumber || '—')}</dd>
@@ -463,9 +520,42 @@ function parcelDetail(ctx, p) {
       <dt>Eigentumsverhältnis</dt><dd>${C.escape(p.ownership)}</dd>
       <dt>Status</dt><dd>${statusBadge(C, ref, p.status)}</dd>
       ${bld ? `<dt>Gebäude auf der Parzelle</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(bld.bbl_id)}">${C.escape(bld.name)}</a></dd>` : ''}
-    </dl>
-    <p class="small muted mt-6">Weitere Register (Flächen, Bodenbedeckung, Dokumente) folgen in der nächsten Ausbaustufe.</p>
+    </dl>`;
+  }
+  function tabBoden() {
+    if (!covers.length) return C.empty('Keine Bodenbedeckungsdaten (amtliche Vermessung) erfasst.');
+    const total = covers.reduce((s, c) => s + (Number(c.area) || 0), 0);
+    return `<p class="lead" style="margin-top:0">Bedeckte Fläche total: <strong>${total.toLocaleString('de-CH')} m²</strong> <span class="small muted">(${covers.length} Bedeckungen)</span></p>
+      ${C.table({ zebra: true, columns: [
+        { key: 'type', label: 'Bodenbedeckungsart', render: (c) => C.escape(c.type) },
+        { key: 'area', label: 'Fläche', render: (c) => `${Number(c.area || 0).toLocaleString('de-CH')} m²` },
+        { key: 'status', label: 'AV-Status', render: (c) => C.escape(c.status || '—') },
+        { key: 'egrid', label: 'EGRID', render: (c) => `<span class="small">${C.escape(c.egrid || '—')}</span>` },
+      ], rows: covers.slice().sort((a, c) => (c.area || 0) - (a.area || 0)) })}`;
+  }
+  const panelHtml = (id) => id === 'bodenbedeckung' ? tabBoden() : tabUebersicht();
+
+  mount.innerHTML = `
+  <div class="container section">
+    ${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}
+    <div class="row mt-4" style="gap:.5rem">${C.badge('Grundstück', 'gray')} ${statusBadge(C, ref, p.status)} <span class="small muted">${C.escape(p.bbl_id)}</span></div>
+    <h1 tabindex="-1">${C.escape(p.name)}</h1>
+    <p class="lead">${C.escape(p.street)}, ${C.escape(p.zip)} ${C.escape(p.city)} · ${C.escape(p.zone || 'Grundstück')}</p>
+    <div class="pf-map dash-map" id="pf-parcel-map" role="group" aria-label="Bodenbedeckung des Grundstücks" style="height:340px;border-radius:var(--radius-lg)"></div>
+    <div class="tabs mt-6">
+      ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-ptab', ariaLabel: 'Grundstücksdetails' })}
+      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-ptab', render: panelHtml })}
+    </div>
   </div>`;
+  C.wireTabs(mount);
+  // Mini-Karte: die Bodenbedeckungs-Polygone (+ Parzelle) — Grundstücke haben kein
+  // Foto, die Karte ist der räumliche «Hero». Fehler brechen die Seite nicht ab.
+  const mapEl = mount.querySelector('#pf-parcel-map');
+  if (mapEl) {
+    const feats = covers.filter((c) => c.geom).map((c) => ({ type: 'Feature', geometry: c.geom, properties: { label: c.type, sub: `${Number(c.area || 0).toLocaleString('de-CH')} m²`, id: p.bbl_id } }));
+    if (p.geom) feats.push({ type: 'Feature', geometry: p.geom, properties: { label: p.name, sub: 'Parzelle', id: p.bbl_id } });
+    initEstateMap(mapEl, [], { type: 'FeatureCollection', features: feats }, p.bbl_id).then((m) => { pfMap = m; }).catch(() => { /* Karte optional */ });
+  }
   window.scrollTo(0, 0);
   const h = mount.querySelector('h1');
   if (h) h.focus({ preventScroll: true });
@@ -473,8 +563,77 @@ function parcelDetail(ctx, p) {
 
 // ---------------------------------------------------------------------------
 const BUILDING_STATUS_VARIANT = { Aktiv: 'success', Abgang: 'warning', 'Löschvermerk': 'gray' };
-const PROJECT_STATUS_VARIANT = { geplant: 'info', aktiv: 'warning', sistiert: 'gray', abgeschlossen: 'success', abgebrochen: 'error' };
+const CONTRACT_STATUS_VARIANT = { Aktiv: 'success', Ausgelaufen: 'gray', 'Gekündigt': 'warning' };
 function statusBadge(C, ref, statusId) { const m = (ref.buildingStatuses || []).find((s) => s.id === statusId); return C.badge(m ? m.label : statusId, BUILDING_STATUS_VARIANT[statusId] || 'gray'); }
-function projectStatusBadge(C, ref, statusId) { const m = (ref.projectStatuses || []).find((s) => s.id === statusId); return C.badge(m ? m.label : statusId, PROJECT_STATUS_VARIANT[statusId] || 'gray'); }
 function classBadge(C, ref, clsId) { const m = (ref.classificationTiers || []).find((t) => t.id === clsId); return C.badge(m ? m.label : clsId, m ? m.variant : 'gray'); }
 function formatSize(kb) { if (kb == null) return ''; return kb >= 1024 ? (kb / 1024).toFixed(1).replace('.', ',') + ' MB' : kb + ' KB'; }
+
+// ---------------------------------------------------------------------------
+// Bildergalerie-Modal (Lightbox) — geöffnet über das Hero-Bild im Gebäudedetail.
+// Folgt dem CD-Overlay-Muster (vgl. .chart-overlay): Scrim, Box, Schliessen oben
+// rechts, Prev/Next, Zähler, Thumbnail-Leiste. Tastatur: Esc schliesst, ←/→ blättern,
+// Tab bleibt in der Lightbox (Fokusfalle); Klick auf den Scrim schliesst. `items` =
+// [{ photo, title, meta, type, gray }]. C wird durchgereicht (Modul ohne Import auf C).
+function openGallery(items, start, C) {
+  if (!items || !items.length) return;
+  let idx = Math.max(0, Math.min(start || 0, items.length - 1));
+  const multi = items.length > 1;
+  const trigger = document.activeElement;
+  const esc = (s) => C.escape(String(s == null ? '' : s));
+  const overlay = document.createElement('div');
+  overlay.className = 'pf-lightbox';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Bildergalerie');
+
+  const render = () => {
+    const it = items[idx];
+    overlay.innerHTML = `
+      <div class="pf-lightbox__box">
+        <button type="button" class="pf-lightbox__close" data-act="close" aria-label="Galerie schliessen">${C.icon('Cancel', 'icon--md')}</button>
+        <div class="pf-lightbox__stage">
+          ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--prev" data-act="prev" aria-label="Vorheriges Bild">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
+          <img class="pf-lightbox__img" src="${esc(C.photoUrl(it.photo, { w: 1600, gray: it.gray }))}" alt="${esc(it.title)}">
+          ${it.type === 'video' ? `<span class="pf-lightbox__play" aria-hidden="true">${C.icon('Video', 'icon--lg')}</span>` : ''}
+          ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
+        </div>
+        <div class="pf-lightbox__cap">
+          <div><div class="pf-lightbox__title">${esc(it.title)}</div><div class="small muted">${esc(it.meta)}</div></div>
+          ${multi ? `<div class="small muted pf-lightbox__count">${idx + 1} / ${items.length}</div>` : ''}
+        </div>
+        ${multi ? `<div class="pf-lightbox__thumbs">${items.map((m, i) => `<button type="button" class="pf-lightbox__thumb${i === idx ? ' is-active' : ''}" data-thumb="${i}" aria-label="${esc(m.title)}"${i === idx ? ' aria-current="true"' : ''}><img src="${esc(C.photoUrl(m.photo, { w: 200, gray: m.gray }))}" alt=""></button>`).join('')}</div>` : ''}
+      </div>`;
+    const cl = overlay.querySelector('.pf-lightbox__close'); if (cl) cl.focus();
+  };
+  const go = (d) => { idx = (idx + d + items.length) % items.length; render(); };
+  const close = () => {
+    document.removeEventListener('keydown', onKey);
+    overlay.remove();
+    document.body.classList.remove('chart-overlay-open');
+    if (trigger && trigger.focus) trigger.focus();
+  };
+  function onKey(e) {
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
+    else if (multi && e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+    else if (multi && e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+    else if (e.key === 'Tab') {
+      const f = [...overlay.querySelectorAll('button')].filter((el) => el.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) return close();          // Klick auf den Scrim
+    const btn = e.target.closest('[data-act], [data-thumb]'); if (!btn) return;
+    if (btn.dataset.act === 'close') close();
+    else if (btn.dataset.act === 'prev') go(-1);
+    else if (btn.dataset.act === 'next') go(1);
+    else if (btn.dataset.thumb != null) { idx = Number(btn.dataset.thumb); render(); }
+  });
+  document.addEventListener('keydown', onKey);
+  document.body.classList.add('chart-overlay-open');
+  document.body.appendChild(overlay);
+  render();
+}
