@@ -43,7 +43,7 @@ export const NAV = [
         { href: '#/data/digitalisierung/prinzipien', label: 'Prinzipien' },
       ] },
       { href: '#/app/dataportal', label: 'Datenportal' },
-      { href: '#/data/katalog', label: 'Datenbezug' },
+      { href: '#/data/katalog', label: 'Datenbezug und API Verzeichnis' },
       { href: '#/applications?bereich=bauten', label: 'Fachanwendungen Bauten' },
       { href: '#/applications?bereich=logistik', label: 'Fachanwendungen Logistik' },
     ],

@@ -15,7 +15,7 @@ export function katalog(ctx) {
 
 function list(ctx) {
   const { mount, core, C, query, setTitle, setCrumbs } = ctx;
-  setTitle('Datenbezug');
+  setTitle('Datenbezug und API Verzeichnis');
   setCrumbs(crumbs());
 
   const all = core.datasets();
@@ -90,7 +90,7 @@ function list(ctx) {
   mount.innerHTML = `
   <div class="container section">
     ${C.pageHeader({
-      title: 'Datenbezug',
+      title: 'Datenbezug und API Verzeichnis',
       lead: 'Die Datensätze des BBL — beschrieben nach DCAT-AP-CH, mit Bezugswegen, Klassifizierung und Datenverantwortung.',
     })}
     ${C.catalogueControls({
@@ -132,9 +132,9 @@ function detail(ctx, id) {
   if (!d) {
     setTitle('Datensatz nicht gefunden');
     setCrumbs(crumbs());
-    mount.innerHTML = C.notFound({ backHref: '#/data/katalog', backLabel: 'Datenbezug',
+    mount.innerHTML = C.notFound({ backHref: '#/data/katalog', backLabel: 'Datenbezug und API Verzeichnis',
       title: 'Datensatz nicht gefunden',
-      body: 'Dieser Datensatz existiert nicht. <a href="#/data/katalog">Zur Übersicht «Datenbezug»</a>' });
+      body: 'Dieser Datensatz existiert nicht. <a href="#/data/katalog">Zur Übersicht «Datenbezug und API Verzeichnis»</a>' });
     return;
   }
   setTitle(t(d.title));
@@ -218,7 +218,7 @@ function detail(ctx, id) {
   mount.innerHTML = `
   <div class="container section">
     ${C.detailHead({
-      backHref: '#/data/katalog', backLabel: 'Datenbezug',
+      backHref: '#/data/katalog', backLabel: 'Datenbezug und API Verzeichnis',
       title: t(d.title), lead: t(d.description),
       tags: tagPills,
       image: img ? `<img src="${img}" alt="" loading="lazy">` : '',
@@ -255,7 +255,7 @@ function crumbs() {
   return [
     { label: 'Startseite', href: '#/' },
     { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Datenbezug', href: '#/data/katalog' },
+    { label: 'Datenbezug und API Verzeichnis', href: '#/data/katalog' },
   ];
 }
 

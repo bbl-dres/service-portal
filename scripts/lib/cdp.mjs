@@ -5,7 +5,7 @@
 // Why CDP and not puppeteer: this is a no-build vanilla project with no
 // node_modules; a ~100-line driver keeps the test tooling as dependency-free as
 // the app itself. See scripts/README.md for the approach and gotchas.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -71,7 +71,19 @@ export async function launch({ port = 9333, webgl = false } = {}) {
   const on = (fn) => listeners.push(fn);
   const close = () => {
     try { ws.close(); } catch { /* ignore */ }
-    edge.kill();
+    // Edge spawns a tree of child processes (renderer/gpu/utility); edge.kill()
+    // only signals the root and leaves zombies that pile up across runs and starve
+    // the machine. Kill every process of THIS launch — matched by its unique
+    // throwaway profile dir (all children carry --user-data-dir=<userDir>).
+    try {
+      if (process.platform === 'win32') {
+        const tag = userDir.split(/[\\/]/).pop();   // e.g. edge-cdp-Abc123 (unique per launch)
+        spawnSync('taskkill', ['/F', '/T', '/PID', String(edge.pid)], { stdio: 'ignore' });
+        spawnSync('powershell', ['-NoProfile', '-Command',
+          `Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -like '*${tag}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`],
+          { stdio: 'ignore' });
+      } else edge.kill();
+    } catch { try { edge.kill(); } catch { /* ignore */ } }
     try { rmSync(userDir, { recursive: true, force: true }); } catch { /* Edge may still hold it */ }
   };
   return { send, on, close };

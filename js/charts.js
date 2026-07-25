@@ -10,7 +10,22 @@
 // deficiency against a white chart surface (worst adjacent CVD dE 10.1,
 // normal-vision 26.4, all >= 3:1 contrast). Assign slots in order, never cycle.
 
+import { menu, wireMenu, toast } from './components.js';
+import { download, tableToCsv, tableToXls, svgToPng, copyText, fileSlug } from './export.js';
+
 export const SERIES = ['#2563eb', '#ea580c', '#059669', '#7c3aed', '#db2777'];
+
+// Per-chart action menu (Superset-style). Actions are handled in wireChartMenus.
+const CHART_MENU = [
+  { action: 'fullscreen', label: 'Vollbild', icon: 'Expand' },
+  { separator: true },
+  { heading: 'Herunterladen' },
+  { action: 'csv', label: 'Als CSV', icon: 'FileLines' },
+  { action: 'xls', label: 'Als Excel', icon: 'FileExcel' },
+  { action: 'png', label: 'Als Bild (PNG)', icon: 'FileImage' },
+  { separator: true },
+  { action: 'link', label: 'Link kopieren', icon: 'Link' },
+];
 const INK = '#1f2937';        // primary text
 const INK_MUTED = '#4b5563';  // axis / secondary text
 const GRID = '#e5e7eb';       // hairline gridline
@@ -192,7 +207,10 @@ export function chart(spec, result) {
   return `<figure class="chart card card--universal" id="${id}">
     <figcaption class="chart__head">
       <h3 class="chart__title" id="${id}-t">${esc(title)}</h3>
-      ${unit ? `<span class="chart__unit">${esc(unit)}</span>` : ''}
+      <div class="chart__actions">
+        ${unit ? `<span class="chart__unit">${esc(unit)}</span>` : ''}
+        ${menu({ menuId: id, label: 'Diagramm-Aktionen', items: CHART_MENU })}
+      </div>
     </figcaption>
     ${legend(names)}
     <div class="chart__plot">${svg}</div>
@@ -232,4 +250,69 @@ export function wireCharts(root) {
   root.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
 }
 
-export default { chart, wireCharts, SERIES };
+/* -------------------------------------------------------- fullscreen ------- */
+// "Vollbild": clone the chart card into a modal overlay (the SVG scales via its
+// viewBox). Escape / backdrop / close button dismiss it; focus is restored.
+function openChartFullscreen(figure) {
+  const title = (figure.querySelector('.chart__title') || {}).textContent || 'Diagramm';
+  const opener = document.activeElement;
+  const overlay = document.createElement('div');
+  overlay.className = 'chart-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', title);
+
+  const clone = figure.cloneNode(true);
+  clone.querySelectorAll('.menu').forEach((m) => m.remove());       // no nested action menu
+  clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+  clone.querySelectorAll('[aria-labelledby]').forEach((el) => el.removeAttribute('aria-labelledby'));
+  clone.querySelectorAll('details').forEach((d) => d.removeAttribute('open'));
+
+  const box = document.createElement('div');
+  box.className = 'chart-overlay__box';
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'chart-overlay__close';
+  close.setAttribute('aria-label', 'Schliessen');
+  close.innerHTML = '<span class="icon icon--base" style="-webkit-mask-image:url(\'assets/icons/Cancel.svg\');mask-image:url(\'assets/icons/Cancel.svg\')" aria-hidden="true"></span>';
+  box.appendChild(close);
+  box.appendChild(clone);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  document.body.classList.add('chart-overlay-open');
+
+  const dismiss = () => {
+    overlay.remove();
+    document.body.classList.remove('chart-overlay-open');
+    document.removeEventListener('keydown', onKey, true);
+    if (opener && opener.focus) opener.focus();
+  };
+  const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); dismiss(); } };
+  document.addEventListener('keydown', onKey, true);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) dismiss(); });
+  close.addEventListener('click', dismiss);
+  close.focus();
+  wireCharts(clone);   // re-arm the hover tooltip inside the clone
+}
+
+/* ------------------------------------------------- chart action menus ------ */
+// Wire every chart's kebab menu in `root` (call after each grid render). Charts
+// with an SVG get CSV/Excel/PNG/fullscreen; the map figure carries only "Link".
+export function wireChartMenus(root) {
+  wireMenu(root, (action, menuId, trigger) => {
+    const figure = trigger.closest('.chart');
+    if (!figure) return;
+    const title = ((figure.querySelector('.chart__title') || {}).textContent || 'Diagramm').trim();
+    const name = fileSlug(title, 'diagramm');
+    const table = figure.querySelector('.chart__table table');
+    const svg = figure.querySelector('.chart__svg');
+    if (action === 'fullscreen') { openChartFullscreen(figure); return; }
+    if (action === 'link') { copyText(location.href).then((ok) => toast(ok ? 'Link kopiert.' : 'Kopieren nicht möglich.')); return; }
+    if (action === 'csv' && table) { download(tableToCsv(table), name + '.csv', 'text/csv;charset=utf-8'); toast('CSV heruntergeladen.'); return; }
+    if (action === 'xls' && table) { download(tableToXls(table, title), name + '.xls', 'application/vnd.ms-excel'); toast('Excel-Datei heruntergeladen.'); return; }
+    if (action === 'png' && svg) { svgToPng(svg, name + '.png').then(() => toast('Bild heruntergeladen.')).catch(() => toast('Bild-Export fehlgeschlagen.')); return; }
+    toast('Für dieses Diagramm nicht verfügbar.');
+  });
+}
+
+export default { chart, wireCharts, wireChartMenus, SERIES };

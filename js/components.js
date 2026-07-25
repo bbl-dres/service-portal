@@ -702,6 +702,84 @@ export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, t
   if (pageInputId) wirePagination(mount, pageInputId, page, totalPages, (target) => { location.hash = hash({ page: target }); });
 }
 
+// --- Aktionsmenü (Kebab-Dropdown) --------------------------------------------
+// Ein wiederverwendbares Aktionsmenü für die Dashboard-Toolbar und jede Chart-
+// Karte (Superset-Muster). `items` = flache Liste aus `{ action, label, icon }`
+// (Menüpunkt), `{ heading }` (Gruppentitel) oder `{ separator:true }`. Verhalten
+// via C.wireMenu; die Aktion wird per `data-action` an den Aufrufer gereicht (kein
+// inline onclick). `menuId` identifiziert das Menü im gemeinsamen onAction-Handler.
+export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', triggerIcon = 'More', triggerClass = '' }) {
+  const row = (it) => {
+    if (it.separator) return '<div class="menu__sep" role="separator"></div>';
+    if (it.heading) return `<div class="menu__heading">${escape(it.heading)}</div>`;
+    return `<button type="button" role="menuitem" class="menu__item" data-action="${escape(it.action)}" tabindex="-1">`
+      + `${it.icon ? icon(it.icon, 'menu__icon') : ''}<span>${escape(it.label)}</span></button>`;
+  };
+  return `<div class="menu" data-menu="${escape(menuId)}">
+    <button type="button" class="menu__trigger${triggerClass ? ' ' + triggerClass : ''}" aria-haspopup="true" aria-expanded="false" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
+    <div class="menu__popup menu__popup--${align}" role="menu" aria-label="${escape(label)}" hidden>${items.map(row).join('')}</div>
+  </div>`;
+}
+
+// Ein einmaliger globaler Schliesser (Klick ausserhalb schliesst offene Menüs),
+// damit wiederholtes wireMenu() keine Listener anhäuft.
+let menuGlobalWired = false;
+function ensureMenuGlobal() {
+  if (menuGlobalWired || typeof document === 'undefined') return;
+  menuGlobalWired = true;
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('.menu__trigger')) return;
+    const inPopup = e.target.closest && e.target.closest('.menu__popup');
+    document.querySelectorAll('.menu__popup:not([hidden])').forEach((pop) => {
+      if (pop === inPopup) return;
+      pop.hidden = true;
+      const trg = pop.closest('.menu') && pop.closest('.menu').querySelector('.menu__trigger');
+      if (trg) trg.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
+
+// Verdrahtet alle .menu in `root`: Öffnen/Schliessen, Pfeiltasten/Home/End,
+// Escape, Klick ausserhalb. Bei Auswahl → onAction(action, menuId, triggerEl).
+export function wireMenu(root, onAction) {
+  ensureMenuGlobal();
+  root.querySelectorAll('.menu').forEach((m) => {
+    const trigger = m.querySelector('.menu__trigger');
+    const popup = m.querySelector('.menu__popup');
+    const items = [...popup.querySelectorAll('.menu__item')];
+    const open = () => {
+      document.querySelectorAll('.menu__popup:not([hidden])').forEach((p) => { if (p !== popup) p.hidden = true; });
+      popup.hidden = false; trigger.setAttribute('aria-expanded', 'true'); items[0] && items[0].focus();
+    };
+    const close = (focusTrigger) => { popup.hidden = true; trigger.setAttribute('aria-expanded', 'false'); if (focusTrigger) trigger.focus(); };
+    trigger.addEventListener('click', (e) => { e.stopPropagation(); popup.hidden ? open() : close(false); });
+    items.forEach((it, i) => {
+      it.addEventListener('click', () => { const action = it.dataset.action; close(true); if (onAction) onAction(action, m.dataset.menu, trigger); });
+      it.addEventListener('keydown', (e) => {
+        let ni = null;
+        if (e.key === 'ArrowDown') ni = (i + 1) % items.length;
+        else if (e.key === 'ArrowUp') ni = (i - 1 + items.length) % items.length;
+        else if (e.key === 'Home') ni = 0;
+        else if (e.key === 'End') ni = items.length - 1;
+        if (ni !== null) { e.preventDefault(); items[ni].focus(); }
+      });
+    });
+    m.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !popup.hidden) { e.stopPropagation(); close(true); } });
+  });
+}
+
+// Kurze, selbst-verschwindende Statusmeldung (für simulierte/erledigte Aktionen).
+export function toast(msg) {
+  if (typeof document === 'undefined') return;
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.setAttribute('role', 'status');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('toast--in'));
+  setTimeout(() => { t.classList.remove('toast--in'); setTimeout(() => t.remove(), 300); }, 2800);
+}
+
 // --- Login-Hinweis (AGOV / FedLogin) -----------------------------------------
 // Kein Inhalt wird versteckt; abgemeldet erscheint nur dieser Hinweis dort, wo
 // ein Vorgang ausgelöst würde. Der Button ruft window.__login() (in app.js
@@ -722,7 +800,7 @@ export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
   notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueControls, wireCatalogue, pipeline,
-  tabBar, tabPanels, wireTabs,
+  tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
 };

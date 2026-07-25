@@ -63,7 +63,7 @@ function uebersicht(ctx) {
         <li><a href="#/knowledge/grundlagen">Gesetzliche Grundlagen und Vorgaben</a></li>
         <li><a href="https://www.bk.admin.ch/de/digitale-bundesverwaltung" target="_blank" rel="noopener external">Strategie Digitale Bundesverwaltung (Bundeskanzlei)</a></li>
         <li><a href="#/app/dataportal">Datenportal — Auswertungen und Kennzahlen</a></li>
-        <li><a href="#/data/katalog">Datenbezug — Datenkatalog nach DCAT-AP-CH</a></li>
+        <li><a href="#/data/katalog">Datenbezug und API Verzeichnis — Datenkatalog nach DCAT-AP-CH</a></li>
       </ul>
     </section>
   </div>`;

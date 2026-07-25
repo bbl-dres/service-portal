@@ -94,7 +94,7 @@
       "steps": ["Anmeldung über eIAM.", "Änderungen an Konzepten laufen über die Fachstelle Daten."]
     },
     "resources": [
-      { "label": "Datenbezug — Datensatzkatalog", "href": "#/data/katalog" },
+      { "label": "Datenbezug und API Verzeichnis — Datensatzkatalog", "href": "#/data/katalog" },
       { "label": "I14Y Interoperabilitätsplattform", "href": "https://www.i14y.admin.ch/", "kind": "external" }
     ],
     "related": ["gis-immo"],
@@ -288,7 +288,7 @@
       "steps": ["Anmeldung über eIAM.", "SAP-Rollen werden über den Vorgesetzten beantragt."]
     },
     "resources": [
-      { "label": "Datenbezug — Datensätze aus SAP", "href": "#/data/katalog?q=SAP" }
+      { "label": "Datenbezug und API Verzeichnis — Datensätze aus SAP", "href": "#/data/katalog?q=SAP" }
     ],
     "related": ["liegenschaften-inventar", "bauprojekte-eppm"],
     "contact": "support-bil",

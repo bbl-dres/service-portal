@@ -37,10 +37,10 @@ Kundenportal — Startseite  #/           (reached via the logo)
 │
 ├── Daten und Digitalisierung  #/data
 │     Topic hub. Drawer: Übersicht · Digitalisierung (drill-down) · Datenportal ·
-│     Datenbezug · Fachanwendungen Bauten / Logistik (filtered app catalogue).
+│     Datenbezug und API Verzeichnis · Fachanwendungen Bauten / Logistik (filtered app catalogue).
 │     ├── #/data/katalog  (+ /<id>)
-│     │     Datenbezug — DCAT-AP-CH dataset catalogue + dataset detail
-│     │     (distributions, metadata).
+│     │     Datenbezug und API Verzeichnis — DCAT-AP-CH dataset catalogue + dataset
+│     │     detail (distributions, metadata).
 │     ├── #/data/digitalisierung[/<sub>]
 │     │     Strategie · Vision · Prinzipien (anchor-nav pages) · SUPERB · BIM/CDE.
 │     ├── #/data/ikt-vorhaben
@@ -86,7 +86,7 @@ Rechtliches, Datenschutz, Barrierefreiheit; external federal links).
 | `#/services` · `#/services/<id>` | Service catalogue · detail | `q, audience, topic, page, view` |
 | `#/applications` · `#/applications/<id>` | App catalogue · detail | `q, bereich, audience, page, view` |
 | `#/data` | Daten und Digitalisierung (hub) | — |
-| `#/data/katalog` · `#/data/katalog/<id>` | Datenbezug (DCAT) · dataset detail | `q, thema, klass, tags, page, view` |
+| `#/data/katalog` · `#/data/katalog/<id>` | Datenbezug und API Verzeichnis (DCAT) · dataset detail | `q, thema, klass, tags, page, view` |
 | `#/data/digitalisierung[/<sub>]` | Digitalisierung (`strategie/vision/prinzipien/superb/bim`) | — |
 | `#/data/ikt-vorhaben` | IKT-Vorhaben | — |
 | `#/app/<name>[/<id>]` | Micro-apps (portfolio, projects, workspace, mediathek, document-archive, dataportal, space-request, fault-report, transaction) | `?tab=` for real in-page tabs; dashboard also `from, to` |

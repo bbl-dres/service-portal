@@ -8,12 +8,28 @@
 // Superset dataset would have run. Analysis only: no write-back.
 
 import { sql } from '../sql.js';
-import { chart, wireCharts } from '../charts.js';
+import { chart, wireCharts, wireChartMenus } from '../charts.js';
 import { initBuildingsMap } from '../buildings-map.js';
+import { copyText, shareMail } from '../export.js';
 
 const CRUMB_BASE = [
   { label: 'Startseite', href: '#/' },
   { label: 'Daten und Digitalisierung', href: '#/data' },
+];
+
+// Dashboard-Toolbar (Superset-Muster). Aktionen in wireMenu unten. Ganzes-
+// Dashboard-Export (PDF/Bild) bleibt eine simulierte Affordanz (bräuchte einen
+// Rasterisierer); Aktualisieren/Teilen sind echt.
+const DASHBOARD_MENU = [
+  { action: 'refresh', label: 'Dashboard aktualisieren', icon: 'Refresh' },
+  { separator: true },
+  { heading: 'Herunterladen' },
+  { action: 'pdf', label: 'Als PDF', icon: 'FilePDF' },
+  { action: 'img', label: 'Als Bild', icon: 'FileImage' },
+  { separator: true },
+  { heading: 'Teilen' },
+  { action: 'copy', label: 'Link kopieren', icon: 'Link' },
+  { action: 'mail', label: 'Per E-Mail', icon: 'Envelope' },
 ];
 
 export default async function render(ctx) {
@@ -150,14 +166,12 @@ function dashboardView(ctx, id) {
   const tabBar = C.tabBar({ items: tabs, active: state.tab, idPrefix: 'dash-tab', panelId: 'dpanel', ariaLabel: 'Dashboard-Ansichten' });
 
   mount.innerHTML = `
-  <div class="container section">
+  <div class="container section dash-page">
     ${C.backLink('#/app/dataportal', 'Datenportal')}
-    ${C.pageHeader({ title: board.title, lead: board.lead })}
-    <p class="meta-info">
-      <span class="meta-info__item">Quelle: ${C.escape(board.source)}</span>
-      <span class="meta-info__item">Stand: ${C.escape(board.updated)}</span>
-      <span class="meta-info__item">Demo-Daten</span>
-    </p>
+    <div class="dash-header">
+      <div class="dash-header__text">${C.pageHeader({ title: board.title, lead: board.lead })}</div>
+      ${C.menu({ menuId: 'dashboard', label: 'Dashboard-Aktionen', items: DASHBOARD_MENU })}
+    </div>
     <div class="dashboard-layout" id="dashboard">
       ${filterPanel}
       <div class="dashboard-main">
@@ -168,6 +182,11 @@ function dashboardView(ctx, id) {
         </div>
       </div>
     </div>
+    <footer class="dash-footer">
+      <span class="meta-info__item">Quelle: ${C.escape(board.source)}</span>
+      <span class="meta-info__item">Stand: ${C.escape(board.updated)}</span>
+      <span class="meta-info__item">Demo-Daten</span>
+    </footer>
   </div>`;
 
   // --- render the chart grid for the active tab + filters ---
@@ -182,7 +201,10 @@ function dashboardView(ctx, id) {
     grid.innerHTML = specs.map(spec => {
       if (spec.form === 'map') {
         return `<figure class="chart card card--universal chart--map" id="${spec.id}">
-          <figcaption class="chart__head"><h3 class="chart__title">${C.escape(spec.title)}</h3></figcaption>
+          <figcaption class="chart__head">
+            <h3 class="chart__title">${C.escape(spec.title)}</h3>
+            <div class="chart__actions">${C.menu({ menuId: spec.id, label: 'Karten-Aktionen', items: [{ action: 'link', label: 'Link kopieren', icon: 'Link' }] })}</div>
+          </figcaption>
           <div class="dash-map" id="map-${spec.id}" role="application" aria-label="Karte der Gebäudestandorte"></div>
           ${spec.note ? `<p class="chart__note">${C.escape(spec.note)}</p>` : ''}
         </figure>`;
@@ -190,6 +212,7 @@ function dashboardView(ctx, id) {
       return chart(withYearRange(spec, state.from, state.to), sql.query(withYearRange(spec, state.from, state.to).query));
     }).join('');
     wireCharts(grid);
+    wireChartMenus(grid);   // per-chart action menu (re-wired each render)
     // initialise any map in the freshly rendered grid
     specs.filter(s => s.form === 'map').forEach(s => {
       const el = grid.querySelector(`#map-${s.id}`);
@@ -230,5 +253,15 @@ function dashboardView(ctx, id) {
     const collapsed = layout.classList.toggle('dashboard-layout--collapsed');
     toggle.setAttribute('aria-expanded', String(!collapsed));
     toggle.setAttribute('aria-label', collapsed ? 'Filter ausklappen' : 'Filter einklappen');
+  });
+
+  // --- dashboard toolbar menu: Aktualisieren (echt) · Herunterladen (Demo) ·
+  // Teilen (echt: Zwischenablage / E-Mail). Einmal verdrahtet (Toolbar bleibt). ---
+  C.wireMenu(mount.querySelector('.dash-header'), (action) => {
+    if (action === 'refresh') { renderGrid(); C.toast('Dashboard aktualisiert.'); }
+    else if (action === 'pdf') C.toast('Export als PDF — im Prototyp simuliert.');
+    else if (action === 'img') C.toast('Export als Bild — im Prototyp simuliert.');
+    else if (action === 'copy') copyText(location.href).then((ok) => C.toast(ok ? 'Link kopiert.' : 'Kopieren nicht möglich.'));
+    else if (action === 'mail') shareMail(`${board.title} — BBL Datenportal`, location.href);
   });
 }

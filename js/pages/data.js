@@ -26,7 +26,7 @@ function overview(ctx) {
     { title: 'Datenportal', icon: 'ChartBar', href: '#/app/dataportal',
       desc: 'Auswertungen und Dashboards zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal.',
       meta: '6 Themen' },
-    { title: 'Datenbezug', icon: 'FileDatabase', href: '#/data/katalog',
+    { title: 'Datenbezug und API Verzeichnis', icon: 'FileDatabase', href: '#/data/katalog',
       desc: 'Datensatzkatalog nach DCAT-AP-CH: Beschreibung, Klassifizierung und Bezugswege der Datensätze des BBL.',
       meta: `${datasets} Datensätze` },
     { title: 'Bauwerksdokumentation', icon: 'Folder', href: '#/app/document-archive',
@@ -53,7 +53,7 @@ function overview(ctx) {
   <div class="container section">
     ${C.pageHeader({
       title: 'Daten und Digitalisierung',
-      lead: 'Auswertungen, Datenbezug und die Fachanwendungen des BBL — an einem Ort.',
+      lead: 'Auswertungen, Datenbezug und API Verzeichnis sowie die Fachanwendungen des BBL — an einem Ort.',
     })}
     <div class="grid grid--3 mt-8">${entries}</div>
   </div>`;

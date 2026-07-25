@@ -1286,13 +1286,15 @@ body.docviewer-open .back-to-top-wrapper { display:none; }
 @media (min-width:1280px){ .dash-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:2rem; } }
 
 /* Dashboard-Layout (Datenportal, Superset-Muster): linkes Filterpanel + Hauptbereich */
-.dashboard-layout { display:grid; grid-template-columns:1fr; gap:1.5rem; margin-top:1.5rem; align-items:start; }
-@media (min-width:1024px){ .dashboard-layout { grid-template-columns:16rem minmax(0,1fr); gap:2rem; } }
+/* Superset-Rahmung: die ganze Dashboard-Fläche ist eine graue Leinwand, die
+   weisse Karten (Filter, KPIs, Charts) rahmt. align-items:stretch → das Filter-
+   panel füllt die volle Zeilenhöhe (voll-hohe Leiste im Desktop). */
+.dashboard-layout { display:grid; grid-template-columns:1fr; gap:1rem; margin-top:1.25rem; align-items:stretch; }
+@media (min-width:1024px){ .dashboard-layout { grid-template-columns:16rem minmax(0,1fr); gap:1.25rem; } }
 .dashboard-main { min-width:0; }
-/* Filterpanel — links, ab lg klebend, einklappbar */
-.filter-panel { background:var(--color-secondary-50); border:1px solid var(--color-secondary-100);
+/* Filterpanel — links, weisse Leiste (voll-hoch via Grid-Stretch), einklappbar */
+.filter-panel { background:#fff; border:1px solid var(--color-secondary-100);
   border-radius:var(--radius-lg); padding:1.25rem; }
-@media (min-width:1024px){ .filter-panel { position:sticky; top:1.5rem; } }
 .filter-panel__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:1rem; }
 .filter-panel__title { font-size:var(--fs-lg); font-weight:var(--fw-bold); margin:0; }
 .filter-panel__toggle { display:none; align-items:center; justify-content:center; min-width:2.25rem; min-height:2.25rem;
@@ -1328,9 +1330,9 @@ body.docviewer-open .back-to-top-wrapper { display:none; }
   background:rgba(37,99,235,.72); box-shadow:0 0 0 1px rgba(0,0,0,.12); cursor:pointer; transition:background .12s; }
 .map-marker:hover, .map-marker:focus-visible { background:rgba(37,99,235,.95); outline:2px solid var(--color-primary-700); outline-offset:1px; }
 
-.chart { padding:1.25rem; margin:0; overflow:hidden; }
+.chart { padding:1.25rem; margin:0; }
 @media (min-width:1024px){ .chart { padding:1.5rem; } }
-.chart__head { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; }
+.chart__head { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
 .chart__title { font-size:var(--text-base); font-weight:var(--fw-bold); margin:0; }
 .chart__unit { font-size:var(--text-xs); color:var(--color-text-muted); white-space:nowrap; }
 .chart__legend { display:flex; flex-wrap:wrap; gap:1rem; margin-top:.6rem; font-size:var(--text-sm); color:var(--color-text-muted); }
@@ -1349,6 +1351,60 @@ body.docviewer-open .back-to-top-wrapper { display:none; }
   background:var(--color-secondary-800); color:#fff; padding:.3rem .55rem; border-radius:var(--radius-sm);
   font-size:var(--text-xs); white-space:nowrap; box-shadow:var(--shadow-md); }
 @media (prefers-reduced-motion: reduce) { .chart__bar, .chart__dot { transition:none; } }
+
+/* ---- Dashboard-Chrome (Superset-Muster) ---------------------------------- */
+.dash-page { background:var(--color-secondary-50); }
+.dash-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
+.dash-header__text { min-width:0; }
+.dash-footer { margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--color-border);
+  color:var(--color-text-muted); font-size:var(--text-sm); display:flex; flex-wrap:wrap; align-items:center; }
+.dash-footer .meta-info__item:not(:last-child)::after { content:"|"; padding:0 .75rem; color:var(--color-secondary-300); }
+/* weisse Karten auf grauer Leinwand — flacher als der Default-Schatten */
+.dashboard-layout .chart, .dashboard-layout .kpi { box-shadow:var(--shadow-sm); border:1px solid var(--color-secondary-100); }
+.dashboard-layout .tab__container { padding-top:1.25rem; }
+.chart__actions { display:flex; align-items:center; gap:.5rem; flex:none; }
+
+/* ---- Aktionsmenü (Kebab-Dropdown, wiederverwendbar) ---------------------- */
+.menu { position:relative; display:inline-flex; }
+.menu__trigger { display:inline-flex; align-items:center; justify-content:center; min-width:2rem; min-height:2rem;
+  padding:.25rem; border:0; border-radius:var(--radius-sm); background:none; color:var(--color-text-muted); cursor:pointer; }
+.menu__trigger:hover { background:var(--color-secondary-100); color:var(--color-text); }
+.dash-header .menu__trigger { border:1px solid var(--color-secondary-200); background:#fff; min-width:2.5rem; min-height:2.5rem; }
+.dash-header .menu__trigger:hover { background:var(--color-secondary-50); }
+.menu__popup { position:absolute; top:calc(100% + .35rem); min-width:13rem; z-index:40;
+  background:#fff; border:1px solid var(--color-secondary-200); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg); padding:.35rem; }
+.menu__popup--end { right:0; }
+.menu__popup--start { left:0; }
+.menu__item { display:flex; align-items:center; gap:.6rem; width:100%; padding:.5rem .65rem; border:0;
+  border-radius:var(--radius-sm); background:none; text-align:left; cursor:pointer; color:var(--color-text);
+  font-size:var(--text-sm); font-family:inherit; }
+.menu__item:hover, .menu__item:focus-visible { background:var(--color-secondary-50); }
+.menu__icon { width:1.05rem; height:1.05rem; color:var(--color-text-muted); flex:none; }
+.menu__heading { padding:.45rem .65rem .2rem; font-size:var(--text-xs); font-weight:var(--fw-bold);
+  text-transform:uppercase; letter-spacing:.04em; color:var(--color-text-muted); }
+.menu__sep { height:1px; background:var(--color-secondary-100); margin:.35rem .25rem; }
+
+/* ---- Toast (kurze Statusmeldung für erledigte/simulierte Aktionen) ------- */
+.toast { position:fixed; left:50%; bottom:2rem; z-index:100; transform:translate(-50%,1rem);
+  background:var(--color-secondary-800); color:#fff; padding:.7rem 1.1rem; border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg); font-size:var(--text-sm); max-width:calc(100vw - 2rem); text-align:center;
+  opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; }
+.toast--in { opacity:1; transform:translate(-50%,0); }
+@media (prefers-reduced-motion: reduce) { .toast { transition:opacity .01s; } }
+
+/* ---- Chart-Vollbild (Overlay) -------------------------------------------- */
+body.chart-overlay-open { overflow:hidden; }
+.chart-overlay { position:fixed; inset:0; z-index:90; display:flex; align-items:center; justify-content:center;
+  padding:2rem; background:var(--overlay-scrim); }
+.chart-overlay__box { position:relative; width:min(1100px,100%); max-height:90vh; overflow:auto;
+  background:#fff; border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); padding:1.75rem 2rem; }
+.chart-overlay__box .chart { padding:0; box-shadow:none; border:0; }
+.chart-overlay__close { position:absolute; top:.9rem; right:.9rem; z-index:1; display:inline-flex;
+  align-items:center; justify-content:center; min-width:2.25rem; min-height:2.25rem; padding:.35rem;
+  border:1px solid var(--color-secondary-200); border-radius:var(--radius-sm); background:#fff;
+  color:var(--color-text-muted); cursor:pointer; }
+.chart-overlay__close:hover { background:var(--color-secondary-100); color:var(--color-text); }
 
 /* Media tiles / lightbox (portal surfaces built on CD card + photo) */
 .tabs { display:block; }
