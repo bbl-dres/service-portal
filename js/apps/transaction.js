@@ -26,9 +26,9 @@ export default async function render(ctx) {
 
   // Fiktive Status-Zuordnung je Objekt (Demo).
   const FICTIVE = [
-    { id: 'BLD-03', status: 'In Vermarktung', variant: 'warning' },
-    { id: 'BLD-07', status: 'Zum Verkauf freigegeben', variant: 'info' },
-    { id: 'BLD-05', status: 'Auftrag in Prüfung', variant: 'gray' },
+    { id: '1000/4850/AG', status: 'In Vermarktung', variant: 'warning' },       // Ehem. Verwaltungsgebäude Bern Nord (Abgang · Verkauft)
+    { id: '1000/2800/AD', status: 'Zum Verkauf freigegeben', variant: 'info' },  // Wohnliegenschaft Basel
+    { id: '1000/5320/AA', status: 'Auftrag in Prüfung', variant: 'gray' },       // Generalkonsulat New York (Miete)
   ];
 
   // Auf vorhandene Gebäude abbilden; nicht gefundene auslassen, bei Bedarf auffüllen.
@@ -58,7 +58,7 @@ export default async function render(ctx) {
   const tableHtml = C.table({
     zebra: true,
     columns: [
-      { key: 'objekt', label: 'Objekt', render: r => `<a href="#/app/portfolio/${r.b.bbl_id}">${C.escape(r.b.name)}</a><br><span class="small muted">${C.escape(r.b.bbl_id)}</span>` },
+      { key: 'objekt', label: 'Objekt', render: r => `<a href="#/app/portfolio?id=${encodeURIComponent(r.b.bbl_id)}">${C.escape(r.b.name)}</a><br><span class="small muted">${C.escape(r.b.bbl_id)}</span>` },
       { key: 'standort', label: 'Standort', render: r => `${C.escape(r.b.street)}<br><span class="small muted">${C.escape(r.b.zip)} ${C.escape(r.b.city)}</span>` },
       { key: 'status', label: 'Fiktiver Status', render: r => C.badge(r.status, r.variant) },
     ],

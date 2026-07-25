@@ -14,7 +14,7 @@ const VIEWS = [
   { name: 'portfolio (BLD-01)',        url: `${APP_BASE}/app/portfolio/BLD-01`,      tabs: ['uebersicht', 'bauprojekte', 'dokumente', 'medien'], hashSync: false },
   { name: 'projects (PRJ-01)',         url: `${APP_BASE}/app/projects/PRJ-01`,       tabs: ['uebersicht', 'kennzahlen', 'risiken'],             hashSync: true },
   { name: 'workspace [logged out]',    url: `${APP_BASE}/app/workspace`,             tabs: ['moeblierung', 'belegung', 'buchung'],              hashSync: false, gateTab: 'buchung' },
-  { name: 'dataportal (immobilien)',   url: `${APP_BASE}/app/dataportal/immobilien`, tabs: ['ueberblick', 'karte'],                             hashSync: true },
+  { name: 'dataportal (energie-klima)', url: `${APP_BASE}/app/dataportal/energie-klima`, tabs: ['ueberblick', 'energiepfad'],                     hashSync: true },
 ];
 const GATES = [
   { name: 'space-request [logged out]', url: `${APP_BASE}/app/space-request` },

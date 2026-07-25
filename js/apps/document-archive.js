@@ -103,7 +103,7 @@ export default async function render(ctx) {
             const bid = (r.linkedTo || [])[0];
             const b = bid ? core.building(bid) : null;
             return b
-              ? `<a href="#/app/portfolio/${C.escape(b.bbl_id)}">${C.escape(b.name)}</a>`
+              ? `<a href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${C.escape(b.name)}</a>`
               : '<span class="muted">—</span>';
           },
         },

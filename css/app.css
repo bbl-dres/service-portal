@@ -1153,29 +1153,38 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 @media (min-width:768px){ .separator--md::before, .separator--md::after { height:.75rem; } }
 @media (min-width:1024px){ .separator--md::before, .separator--md::after { height:1rem; } }
 
-/* Back to top — der Knopf schwebt beim Scrollen unten rechts und dockt am oberen
-   rechten Rand der Fussinformationen an; kein Leerraum am Seitenende. Der Wrapper
-   hängt an der Oberkante des Footers (#main-footer ist position:relative) und
-   reicht als schmaler Streifen nach oben; der Knopf ist darin sticky und ruht
-   1.5rem unterhalb der Footer-Oberkante. */
+/* Back to top — der Knopf schwebt beim Scrollen unten rechts und dockt am unteren
+   Seitenende an der oberen rechten Ecke der Fussinformationen (CD-Vorgabe). Die
+   Schiene (rail) hängt an der Footer-Oberkante (#main-footer ist position:relative)
+   und reicht als voll­breiter, unsichtbarer Streifen nach oben. Darin liegt ein
+   normaler `.container` — dieselbe zentrierte Max-Breite wie im Footer —, sodass
+   der Knopf mit der rechten Kante von `.footer-information` fluchtet (statt am
+   Viewport-Rand in der Gasse zu kleben). Angedockt sitzt die obere rechte Ecke des
+   Knopfs `--btt-margin` innerhalb der oberen rechten Ecke der Fussinformationen. */
 @media screen and (prefers-reduced-motion: no-preference){ html { scroll-behavior:smooth; } }
-.back-to-top-wrapper { position:absolute; right:1rem; bottom:calc(100% - 1.5rem);
-  width:2.75rem; height:1000vh; pointer-events:none; z-index:2;
-  display:flex; flex-direction:column; justify-content:flex-end; }
-@media (min-width:1024px){ .back-to-top-wrapper { width:3rem; } }
-@media (min-width:1280px){ .back-to-top-wrapper { right:1.5rem; width:4rem; } }
-.back-to-top-btn { position:sticky; bottom:1.5rem; pointer-events:all;
-  display:inline-flex; align-items:center; justify-content:center; width:100%; aspect-ratio:1;
+.back-to-top-rail { position:absolute; left:0; right:0; height:1000vh; pointer-events:none; z-index:2;
+  /* Dock: Knopf-Unterkante = (Rand + Knopfhöhe) unterhalb der Footer-Oberkante,
+     also Knopf-Oberkante = Rand darunter. */
+  bottom:calc(100% - (1rem + 2.75rem)); }
+@media (min-width:1024px){ .back-to-top-rail { bottom:calc(100% - (1rem + 3rem)); } }
+@media (min-width:1280px){ .back-to-top-rail { bottom:calc(100% - (1rem + 4rem)); } }
+.back-to-top-track { height:100%; display:flex; flex-direction:column;
+  justify-content:flex-end; align-items:flex-end; pointer-events:none; }
+.back-to-top-btn { position:sticky; bottom:1.5rem; pointer-events:all; margin-inline-end:1rem;
+  width:2.75rem; height:2.75rem; flex:none;
+  display:inline-flex; align-items:center; justify-content:center;
   border-radius:var(--radius-sm); box-shadow:var(--shadow-lg); background:#fff;
   transition:box-shadow .15s, border-color .15s; }
+@media (min-width:1024px){ .back-to-top-btn { width:3rem; height:3rem; } }
+@media (min-width:1280px){ .back-to-top-btn { width:4rem; height:4rem; } }
 .back-to-top-btn:hover { box-shadow:var(--shadow-xl); }
 .back-to-top-btn--outline { border:1px solid var(--color-primary-600); }
 .back-to-top-btn--outline:hover { border-color:var(--color-primary-700); }
 .back-to-top-btn__icon { width:50%; height:50%; background-color:var(--color-primary-600); }
 .back-to-top-btn--outline:hover .back-to-top-btn__icon { background-color:var(--color-primary-700); }
 /* Bei offenem Mobilmenü oder Dokumentbetrachter ausblenden. */
-.body--mobile-menu-is-open .back-to-top-wrapper,
-body.docviewer-open .back-to-top-wrapper { display:none; }
+.body--mobile-menu-is-open .back-to-top-rail,
+body.docviewer-open .back-to-top-rail { display:none; }
 
 /* Sidebar (sub-nav) */
 .subnav { list-style:none; }
@@ -1363,27 +1372,37 @@ body.docviewer-open .back-to-top-wrapper { display:none; }
 .dashboard-layout .chart, .dashboard-layout .kpi { box-shadow:var(--shadow-sm); border:1px solid var(--color-secondary-100); }
 .dashboard-layout .tab__container { padding-top:1.25rem; }
 .chart__actions { display:flex; align-items:center; gap:.5rem; flex:none; }
+.lead-hint { margin-top:.35rem; }
+/* Multi-select-Filter (Checkbox-Gruppen) im Filterpanel */
+.filter-group { border:0; margin:0 0 1.25rem; padding:0; }
+.filter-group__legend { font-size:var(--fs-sm); font-weight:var(--fw-bold); color:var(--color-text); margin:0 0 .35rem; padding:0; }
+.filter-check { display:flex; align-items:center; gap:.5rem; padding:.18rem 0; font-size:var(--fs-sm); color:var(--color-text); cursor:pointer; }
+.filter-check input { flex:none; width:1rem; height:1rem; margin:0; accent-color:var(--color-primary-600); }
+.filter-check:hover { color:var(--color-primary-700); }
 
-/* ---- Aktionsmenü (Kebab-Dropdown, wiederverwendbar) ---------------------- */
-.menu { position:relative; display:inline-flex; }
-.menu__trigger { display:inline-flex; align-items:center; justify-content:center; min-width:2rem; min-height:2rem;
+/* ---- Aktionsmenü (Kebab-Dropdown, wiederverwendbar) ------------------------
+   Eigener Namensraum `.action-menu` — `.menu`/`.menu__item` gehören der CD-
+   Navigations-Flyout-Komponente (menu.postcss) und dürfen nicht überschrieben
+   werden (sonst kippt das Drawer-Menü von Spalte auf Zeile). */
+.action-menu { position:relative; display:inline-flex; }
+.action-menu__trigger { display:inline-flex; align-items:center; justify-content:center; min-width:2rem; min-height:2rem;
   padding:.25rem; border:0; border-radius:var(--radius-sm); background:none; color:var(--color-text-muted); cursor:pointer; }
-.menu__trigger:hover { background:var(--color-secondary-100); color:var(--color-text); }
-.dash-header .menu__trigger { border:1px solid var(--color-secondary-200); background:#fff; min-width:2.5rem; min-height:2.5rem; }
-.dash-header .menu__trigger:hover { background:var(--color-secondary-50); }
-.menu__popup { position:absolute; top:calc(100% + .35rem); min-width:13rem; z-index:40;
+.action-menu__trigger:hover { background:var(--color-secondary-100); color:var(--color-text); }
+.dash-header .action-menu__trigger { border:1px solid var(--color-secondary-200); background:#fff; min-width:2.5rem; min-height:2.5rem; }
+.dash-header .action-menu__trigger:hover { background:var(--color-secondary-50); }
+.action-menu__popup { position:absolute; top:calc(100% + .35rem); min-width:13rem; z-index:40;
   background:#fff; border:1px solid var(--color-secondary-200); border-radius:var(--radius-lg);
   box-shadow:var(--shadow-lg); padding:.35rem; }
-.menu__popup--end { right:0; }
-.menu__popup--start { left:0; }
-.menu__item { display:flex; align-items:center; gap:.6rem; width:100%; padding:.5rem .65rem; border:0;
+.action-menu__popup--end { right:0; }
+.action-menu__popup--start { left:0; }
+.action-menu__item { display:flex; align-items:center; gap:.6rem; width:100%; padding:.5rem .65rem; border:0;
   border-radius:var(--radius-sm); background:none; text-align:left; cursor:pointer; color:var(--color-text);
   font-size:var(--text-sm); font-family:inherit; }
-.menu__item:hover, .menu__item:focus-visible { background:var(--color-secondary-50); }
-.menu__icon { width:1.05rem; height:1.05rem; color:var(--color-text-muted); flex:none; }
-.menu__heading { padding:.45rem .65rem .2rem; font-size:var(--text-xs); font-weight:var(--fw-bold);
+.action-menu__item:hover, .action-menu__item:focus-visible { background:var(--color-secondary-50); }
+.action-menu__icon { width:1.05rem; height:1.05rem; color:var(--color-text-muted); flex:none; }
+.action-menu__heading { padding:.45rem .65rem .2rem; font-size:var(--text-xs); font-weight:var(--fw-bold);
   text-transform:uppercase; letter-spacing:.04em; color:var(--color-text-muted); }
-.menu__sep { height:1px; background:var(--color-secondary-100); margin:.35rem .25rem; }
+.action-menu__sep { height:1px; background:var(--color-secondary-100); margin:.35rem .25rem; }
 
 /* ---- Toast (kurze Statusmeldung für erledigte/simulierte Aktionen) ------- */
 .toast { position:fixed; left:50%; bottom:2rem; z-index:100; transform:translate(-50%,1rem);

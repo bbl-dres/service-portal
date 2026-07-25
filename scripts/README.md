@@ -35,7 +35,8 @@ exiting non-zero on failure.
 | `test-forms.mjs` | D3 form helpers (`C.field`/`C.select`/`C.val`/`C.readForm`) + the C5 fix across the three wizards: renders, a custom validation error attaches `input--error`+`aria-invalid`+badge to the previously class-less fields (`#org`/`#cc`/`#beschreibung`/`#datum`), and a valid submit creates a Vorgang. Logs in via the stub first. |
 | `test-content.mjs` | D4 download-item + contact-box unification: the pages rendering `C.downloadItem` (grundlagen, anleitungen, digitalisierung, application entries, my-cases attachments) and `C.contactBox` (application, services detail) render with the expected items / mailto links and no exceptions. |
 | `test-race.mjs` | A2 router render-race: rapid navigation between an awaiting page (application detail) and another must always land on the last-requested page (the `ctx.stale()` guard drops stale renders), across several timings and both directions. |
-| `test-dashboard.mjs` | Datenportal redesign: the Superset-style grey-canvas/white-card framing, a full-height filter panel, the footer, the dashboard toolbar menu (`copy link`) and per-chart menu (fullscreen overlay, CSV/PNG export). Saves a screenshot to `$SHOT` (default `dashboard.png`). |
+| `test-dashboard.mjs` | Datenportal redesign on a generic sql-spec dashboard: the Superset-style grey-canvas/white-card framing, full-height filter panel, footer, dashboard toolbar menu (`copy link`) and per-chart menu (fullscreen overlay, CSV/PNG export). Saves a screenshot to `$SHOT`. |
+| `test-estate.mjs` | Immobilienportfolio record-based dashboard (`js/apps/estate.js`): the three tabs (Gebäude/Grundstücke/Bodenbedeckung), KPIs, runtime-aggregated charts, the worldwide CARTO map with markers, and live filtering (Land=CH shrinks the building count). Saves a screenshot to `$SHOT`. |
 
 Run:
 ```

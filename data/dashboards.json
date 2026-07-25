@@ -2,7 +2,7 @@
   "_note": "Datenportal — Demo. Werte für 2025 stammen aus dem BBL-Nachhaltigkeitsbericht 2025 (NHB 2025); frühere Jahre sind für die Demo interpoliert/synthetisch.",
   "topics": [
     { "id": "energie-klima", "title": "Energie & Klima", "icon": "Bolt", "desc": "Treibhausgasemissionen, Energieverbrauch, Ölheizungen und Photovoltaik im Immobilienportfolio.", "owner": "Nachhaltigkeit BBL" },
-    { "id": "immobilien", "title": "Immobilienportfolio", "icon": "Building", "desc": "Flächen, Zertifizierungen (SNBS, Minergie) und Gebäudebestand der Energiestatistik.", "owner": "Portfoliomanagement BBL" },
+    { "id": "immobilien", "title": "Immobilienportfolio", "icon": "Building", "desc": "Gebäude, Grundstücke und Bodenbedeckung des weltweiten Immobilien-Portfolios des BBL.", "owner": "Portfoliomanagement BBL" },
     { "id": "beschaffung", "title": "Beschaffung", "icon": "Briefcase", "desc": "Beschaffungsvolumen und Anteil nachhaltiger Vergaben.", "owner": "Beschaffung BBL" },
     { "id": "personal", "title": "Personal", "icon": "Users", "desc": "Zusammensetzung der Belegschaft, Kaderanteile, Sprachvertretung und Fluktuation.", "owner": "Personal BBL" },
     { "id": "logistik", "title": "Logistik & Publikationen", "icon": "Archive", "desc": "Papierverbrauch, Recyclinganteil und Sortiment der Bundespublikationen.", "owner": "Logistik BBL" },
@@ -145,7 +145,7 @@
       "id": "immobilien",
       "topicId": "immobilien",
       "title": "Immobilienportfolio",
-      "lead": "Zertifizierte Flächen und Gebäudebestand — Grundlage für Erhaltungsplanung und Energiestatistik.",
+      "lead": "Überblick über die Immobilien-Stammdaten des BBL — Gebäude, Grundstücke und Bodenbedeckung des weltweiten Portfolios.",
       "source": "NHB BBL 2025 · Portfoliomanagement",
       "updated": "2026-03-31",
       "hero": { "label": "SNBS-zertifizierte Fläche", "value": "79 406", "unit": "m²", "deltaLabel": "4 Neubauten seit 2019", "deltaGood": true },

@@ -1,0 +1,314 @@
+// Immobilienportfolio — record-based Stammdaten dashboard (Gebäude · Grundstücke ·
+// Bodenbedeckung). Loads the three GeoJSON master-data files, applies the global
+// multi-select dimension filters (Land · Region · Gebäudetyp · Eigentum · Status)
+// and aggregates the charts at runtime, reusing the shared dashboard chrome and SVG
+// chart renderer. The map is worldwide CARTO grey with clustering; its popups link
+// into the Liegenschaften-Inventar app by bbl_id. Filter changes update only the
+// content (KPIs · charts · map · source) so the filter panel keeps focus/scroll.
+
+import { fetchJSON } from '../fetch-json.js';
+import { chart, wireCharts, wireChartMenus } from '../charts.js';
+import { initEstateMap } from '../buildings-map.js';
+import { copyText, shareMail } from '../export.js';
+
+const CRUMB_BASE = [
+  { label: 'Startseite', href: '#/' },
+  { label: 'Daten und Digitalisierung', href: '#/data' },
+  { label: 'Datenportal', href: '#/app/dataportal' },
+];
+const META = {
+  title: 'Immobilienportfolio',
+  lead: 'Überblick über die Immobilien-Stammdaten des BBL — Gebäude, Grundstücke und Bodenbedeckung des weltweiten Portfolios.',
+  updated: '2026-03-18',
+};
+// Quelle je nach angezeigten Daten (SAP RE-FX = Golden Record der Stammdaten,
+// GIS IMMO = amtliche Vermessung / Bodenbedeckung).
+const SOURCE = { gebaeude: 'SAP RE-FX (Stammdaten · Golden Record)', grundstuecke: 'SAP RE-FX (Stammdaten · Golden Record)', bodenbedeckung: 'GIS IMMO (amtliche Vermessung)' };
+// Deeplink-Ziel für die Karte und den Lead-Hinweis: die App selbst (nicht die
+// Anwendungs-Landingpage), damit ?id=<bbl_id> direkt das Objekt öffnet.
+const INVENTORY = '#/app/portfolio';
+const TABS = [
+  { id: 'gebaeude', label: 'Gebäude' },
+  { id: 'grundstuecke', label: 'Grundstücke' },
+  { id: 'bodenbedeckung', label: 'Bodenbedeckung' },
+];
+const DASHBOARD_MENU = [
+  { action: 'refresh', label: 'Dashboard aktualisieren' },
+  { separator: true }, { heading: 'Herunterladen' },
+  { action: 'pdf', label: 'Als PDF' }, { action: 'img', label: 'Als Bild' },
+  { separator: true }, { heading: 'Teilen' },
+  { action: 'copy', label: 'Link kopieren' }, { action: 'mail', label: 'Per E-Mail' },
+];
+const ownership = (v) => (v === 'Eigentum Bund' ? 'Im Eigentum' : v === 'Miete' ? 'Anmieter' : 'Sonderfall');
+const EIGEN_ORDER = ['Im Eigentum', 'Anmieter', 'Sonderfall'];
+const STATUS_ORDER = ['Aktiv', 'Abgang', 'Löschvermerk'];
+const LC_LABEL = { Gebaeude: 'Gebäude', befestigt: 'Befestigt', humusiert: 'Humusiert (grün)', Gewaesser: 'Gewässer' };
+// filter dimension → record field
+const FIELD = { land: 'land', region: 'region', typ: 'typ', eigentum: 'ownership', status: 'status' };
+const FILTER_KEYS = ['land', 'region', 'typ', 'eigentum', 'status'];
+
+let CACHE = null;
+async function loadData() {
+  if (CACHE) return CACHE;
+  const [b, p, l] = await Promise.all([
+    fetchJSON('data/buildings.geojson', { shape: 'object' }),
+    fetchJSON('data/parcels.geojson', { shape: 'object' }),
+    fetchJSON('data/landcovers.geojson', { shape: 'object' }),
+  ]);
+  const props = (g) => (g.features || []).map((f) => f.properties || {});
+  const buildings = props(b).map((x) => ({
+    land: x.adr_land, region: x.adr_reg, ort: x.adr_ort, ownership: ownership(x.bbl_eigen),
+    portfolio: x.bbl_port, typ: x.bbl_gbda1, status: x.bbl_stat, gf: Number(x.garea_gf) || 0,
+    lat: Number(x.wgs84_lat), lon: Number(x.wgs84_lon), label: x.bbl_bez, sub: x.adr_conct, id: x.bbl_id,
+  }));
+  const parcels = props(p).map((x) => ({
+    land: x.adr_land, region: x.adr_reg, ownership: ownership(x.bbl_eigen), portfolio: x.bbl_port,
+    status: x.bbl_stat, gsf: Number(x.larea_gsf) || 0, id: x.bbl_id, label: x.bbl_bez,
+  }));
+  const landcovers = props(l).map((x) => ({
+    type: x.av_type, label: LC_LABEL[x.av_type] || x.av_type, area: Number(x.lc_area) || 0, parcelId: x.bbl_id,
+  }));
+  CACHE = { buildings, parcels, landcovers };
+  return CACHE;
+}
+
+// --- aggregation helpers ---------------------------------------------------
+const CH = (n) => Math.round(n).toLocaleString('de-CH');
+const uniq = (arr, k) => [...new Set(arr.map((x) => x[k]).filter(Boolean))];
+const sumBy = (arr, k) => arr.reduce((s, x) => s + (Number(x[k]) || 0), 0);
+const pctOf = (n, d) => (d ? Math.round((n / d) * 100) : 0);
+function groupSum(recs, key, valKey, order) {
+  const m = new Map();
+  for (const r of recs) m.set(r[key], (m.get(r[key]) || 0) + (Number(r[valKey]) || 0));
+  const a = [...m].map(([k, v]) => ({ k, v }));
+  return order ? a.sort((x, y) => order.indexOf(x.k) - order.indexOf(y.k)) : a.sort((x, y) => y.v - x.v);
+}
+function groupCount(recs, key, order) {
+  const m = new Map();
+  for (const r of recs) m.set(r[key], (m.get(r[key]) || 0) + 1);
+  const a = [...m].map(([k, v]) => ({ k, v }));
+  return order ? a.sort((x, y) => order.indexOf(x.k) - order.indexOf(y.k)) : a.sort((x, y) => y.v - x.v);
+}
+const histogram = (recs, valKey, bins) => bins.map((bn) => ({ k: bn.label, v: recs.filter((r) => { const v = Number(r[valKey]) || 0; return v >= bn.lo && v < bn.hi; }).length }));
+const GF_BINS = [{ label: '< 2 500', lo: 0, hi: 2500 }, { label: '2 500–5 000', lo: 2500, hi: 5000 }, { label: '5 000–10 000', lo: 5000, hi: 10000 }, { label: '10 000–20 000', lo: 10000, hi: 20000 }, { label: '≥ 20 000', lo: 20000, hi: Infinity }];
+const GSF_BINS = [{ label: '< 1 000', lo: 0, hi: 1000 }, { label: '1 000–3 000', lo: 1000, hi: 3000 }, { label: '3 000–5 000', lo: 3000, hi: 5000 }, { label: '≥ 5 000', lo: 5000, hi: Infinity }];
+
+export default async function render(ctx) {
+  const { mount, C, setTitle, setCrumbs, query } = ctx;
+  setTitle(META.title);
+  setCrumbs([...CRUMB_BASE, { label: META.title }]);
+
+  let data;
+  try {
+    data = await loadData();
+    if (ctx.stale && ctx.stale()) return;
+  } catch (e) {
+    mount.innerHTML = `<div class="container section"><div class="notification notification--error">${C.icon('WarningCircle', 'icon--lg')}
+      <div><strong>Die Immobilien-Stammdaten konnten nicht geladen werden.</strong><br><span class="small">${C.escape(e.message)}</span></div></div></div>`;
+    return;
+  }
+
+  const bp = [...data.buildings, ...data.parcels];
+  const OPTS = {
+    land: uniq(bp, 'land').sort(),
+    region: uniq(bp, 'region').sort(),
+    typ: uniq(data.buildings, 'typ').sort(),
+    eigentum: EIGEN_ORDER,
+    status: STATUS_ORDER.filter((s) => uniq(bp, 'status').includes(s)),
+  };
+  const state = {
+    tab: TABS.some((t) => t.id === query.get('tab')) ? query.get('tab') : 'gebaeude',
+    land: split(query.get('land')), region: split(query.get('region')), typ: split(query.get('typ')),
+    eigentum: split(query.get('eigentum')), status: split(query.get('status')),
+  };
+
+  // --- filtering (each dimension: empty selection = all) ---
+  const inSel = (sel, val) => !sel.length || sel.includes(val);
+  const passB = (b) => FILTER_KEYS.every((k) => inSel(state[k], b[FIELD[k]]));
+  const passP = (p) => ['land', 'region', 'eigentum', 'status'].every((k) => inSel(state[k], p[FIELD[k]]));
+  const fB = () => data.buildings.filter(passB);
+  const fP = () => data.parcels.filter(passP);
+  const fL = () => { const ids = new Set(fP().map((p) => p.id)); return data.landcovers.filter((l) => ids.has(l.parcelId)); };
+
+  const gchart = (id, title, groups, { x, y, unit = '', form = 'barH' }) =>
+    chart({ id, title, form, unit, x, y }, { rows: groups.map((g) => ({ [x]: g.k, [y]: g.v })), columns: [x, y] });
+  const kpi = (label, value, unit, delta) => `<div class="kpi">
+    <div class="kpi__label">${C.escape(label)}</div>
+    <div class="kpi__value">${C.escape(value)}${unit ? `<span class="kpi__unit">${C.escape(unit)}</span>` : ''}</div>
+    ${delta ? `<div class="kpi__delta">${C.escape(delta)}</div>` : ''}</div>`;
+  const mapFigure = () => `<figure class="chart card card--universal chart--map" id="estate-map">
+    <figcaption class="chart__head"><h3 class="chart__title">Standorte weltweit</h3>
+      <div class="chart__actions">${C.menu({ menuId: 'estate-map', label: 'Karten-Aktionen', items: [{ action: 'link', label: 'Link kopieren' }] })}</div>
+    </figcaption>
+    <div class="dash-map" id="estate-map-el" role="application" aria-label="Weltkarte der Gebäudestandorte"></div>
+    <p class="chart__note">Punktgrösse ∝ Geschossfläche · gruppiert (Cluster) · Kartengrundlage CARTO · Klick öffnet das Objekt im Liegenschaften Inventar</p>
+  </figure>`;
+
+  // --- per-tab content: { kpis[], figures[] (HTML), source } ---
+  function tabContent() {
+    if (state.tab === 'grundstuecke') {
+      const P = fP();
+      const eigen = groupCount(P, 'ownership', EIGEN_ORDER);
+      return {
+        source: SOURCE.grundstuecke,
+        kpis: [
+          kpi('Grundstücke', CH(P.length)),
+          kpi('Grundstücksfläche', CH(sumBy(P, 'gsf')), 'm²'),
+          kpi('Ø Fläche', CH(P.length ? sumBy(P, 'gsf') / P.length : 0), 'm²'),
+          kpi('Im Eigentum', String(pctOf(P.filter((p) => p.ownership === 'Im Eigentum').length, P.length)), '%'),
+        ],
+        figures: [
+          gchart('p-port', 'Grundstücksfläche nach Portfolio', groupSum(P, 'portfolio', 'gsf'), { x: 'Portfolio', y: 'Fläche', unit: 'm²' }),
+          gchart('p-land', 'Grundstücke nach Land', groupCount(P, 'land'), { x: 'Land', y: 'Anzahl', form: 'column' }),
+          gchart('p-eigen', 'Grundstücke nach Eigentumsverhältnis', eigen, { x: 'Eigentum', y: 'Anzahl' }),
+          gchart('p-dist', 'Verteilung Grundstücksfläche', histogram(P, 'gsf', GSF_BINS), { x: 'Fläche (m²)', y: 'Anzahl', form: 'column' }),
+        ],
+      };
+    }
+    if (state.tab === 'bodenbedeckung') {
+      const L = fL();
+      const total = sumBy(L, 'area');
+      const areaOf = (t) => sumBy(L.filter((x) => x.type === t), 'area');
+      const versiegelt = areaOf('Gebaeude') + areaOf('befestigt');
+      const gruen = areaOf('humusiert') + areaOf('Gewaesser');
+      return {
+        source: SOURCE.bodenbedeckung,
+        kpis: [
+          kpi('Bodenbedeckung', CH(total), 'm²'),
+          kpi('Anteil bebaut', String(pctOf(areaOf('Gebaeude'), total)), '%'),
+          kpi('Anteil versiegelt', String(pctOf(versiegelt, total)), '%'),
+          kpi('Anteil grün', String(pctOf(gruen, total)), '%'),
+        ],
+        figures: [
+          gchart('l-typ', 'Bodenbedeckung nach Typ', groupSum(L, 'label', 'area'), { x: 'Typ', y: 'Fläche', unit: 'm²' }),
+          gchart('l-vers', 'Versiegelung vs. Grünfläche', [{ k: 'Versiegelt', v: versiegelt }, { k: 'Grünfläche', v: gruen }], { x: 'Kategorie', y: 'Fläche', unit: 'm²', form: 'column' }),
+        ],
+      };
+    }
+    const B = fB();
+    return {
+      source: SOURCE.gebaeude,
+      kpis: [
+        kpi('Gebäude', CH(B.length)),
+        kpi('Geschossfläche', CH(sumBy(B, 'gf')), 'm²'),
+        kpi('Ø Geschossfläche', CH(B.length ? sumBy(B, 'gf') / B.length : 0), 'm²'),
+        kpi('Im Eigentum', String(pctOf(B.filter((b) => b.ownership === 'Im Eigentum').length, B.length)), '%'),
+      ],
+      figures: [
+        mapFigure(),
+        gchart('b-port', 'Geschossfläche nach Portfolio', groupSum(B, 'portfolio', 'gf'), { x: 'Portfolio', y: 'Fläche', unit: 'm²' }),
+        gchart('b-land', 'Gebäude nach Land', groupCount(B, 'land'), { x: 'Land', y: 'Anzahl', form: 'column' }),
+        gchart('b-eigen', 'Gebäude nach Eigentumsverhältnis', groupCount(B, 'ownership', EIGEN_ORDER), { x: 'Eigentum', y: 'Anzahl' }),
+        gchart('b-dist', 'Verteilung Geschossfläche', histogram(B, 'gf', GF_BINS), { x: 'Fläche (m²)', y: 'Anzahl', form: 'column' }),
+        gchart('b-typ', 'Gebäude nach Gebäudetyp', groupCount(B, 'typ'), { x: 'Gebäudetyp', y: 'Anzahl' }),
+      ],
+    };
+  }
+
+  const mapPoints = () => fB().map((b) => ({
+    lat: b.lat, lon: b.lon, label: b.label, sub: b.sub, size: b.gf, bblId: b.id,
+    href: `${INVENTORY}?id=${encodeURIComponent(b.id)}`,
+  }));
+
+  const fGroup = (key, label) => `<fieldset class="filter-group">
+    <legend class="filter-group__legend">${C.escape(label)}</legend>
+    ${OPTS[key].map((o) => `<label class="filter-check"><input type="checkbox" data-dim="${key}" value="${C.escape(o)}"${state[key].includes(o) ? ' checked' : ''}><span>${C.escape(o)}</span></label>`).join('')}
+  </fieldset>`;
+
+  let mapPromise = null;
+  const freeMap = () => { if (mapPromise && mapPromise.then) mapPromise.then((m) => m && m.remove && m.remove()).catch(() => {}); mapPromise = null; };
+
+  const syncHash = () => {
+    const qs = new URLSearchParams();
+    if (state.tab !== TABS[0].id) qs.set('tab', state.tab);
+    for (const k of FILTER_KEYS) if (state[k].length) qs.set(k, state[k].join(','));
+    const s = qs.toString();
+    history.replaceState(null, '', `#/app/dataportal/immobilien${s ? '?' + s : ''}`);
+  };
+
+  // --- content update (KPIs · charts · map · source); filter panel persists ---
+  function update() {
+    const { kpis, figures, source } = tabContent();
+    mount.querySelector('#dash-kpis').innerHTML = kpis.join('');
+    const grid = mount.querySelector('#dash-grid');
+    grid.innerHTML = figures.join('');
+    mount.querySelector('#dash-source').textContent = source;
+    wireCharts(grid);
+    wireChartMenus(grid);
+    freeMap();
+    if (state.tab === 'gebaeude') {
+      const el = grid.querySelector('#estate-map-el');
+      if (el) mapPromise = initEstateMap(el, mapPoints());
+    }
+  }
+
+  // --- full chrome, rendered once ---
+  mount.innerHTML = `
+  <div class="container section dash-page">
+    ${C.backLink('#/app/dataportal', 'Datenportal')}
+    <div class="dash-header">
+      <div class="dash-header__text">
+        ${C.pageHeader({ title: META.title, lead: META.lead })}
+        <p class="small muted lead-hint">Detaillierte Objektinformationen und Bewirtschaftung im <a href="${INVENTORY}">Liegenschaften Inventar</a>.</p>
+      </div>
+      ${C.menu({ menuId: 'dashboard', label: 'Dashboard-Aktionen', items: DASHBOARD_MENU })}
+    </div>
+    <div class="dashboard-layout" id="dashboard">
+      <aside class="filter-panel" id="dash-filters" aria-label="Filter">
+        <div class="filter-panel__head"><h2 class="filter-panel__title">Filter</h2>
+          <button type="button" class="filter-panel__toggle btn--bare" id="filter-toggle" aria-label="Filter einklappen" aria-expanded="true">${C.icon('ChevronLeft', 'icon--base')}</button></div>
+        <div class="filter-panel__body" id="filter-body">
+          ${fGroup('land', 'Land')}${fGroup('region', 'Region / Kanton')}${fGroup('typ', 'Gebäudetyp')}${fGroup('eigentum', 'Eigentumsverhältnis')}${fGroup('status', 'Status')}
+          <button type="button" class="btn btn--bare btn--sm mt-2" id="f-reset">${C.icon('Refresh', 'icon--base')} Zurücksetzen</button>
+        </div>
+      </aside>
+      <div class="dashboard-main">
+        ${C.tabBar({ items: TABS, active: state.tab, idPrefix: 'estate-tab', panelId: 'dpanel', ariaLabel: 'Stammdaten-Ansichten' })}
+        <div class="tab__container" role="tabpanel" id="dpanel" aria-labelledby="estate-tab-${state.tab}" tabindex="0">
+          <div class="kpi-row" id="dash-kpis"></div>
+          <div class="dash-grid" id="dash-grid"></div>
+        </div>
+      </div>
+    </div>
+    <footer class="dash-footer">
+      <span class="meta-info__item">Quelle: <span id="dash-source"></span></span>
+      <span class="meta-info__item">Stand: ${C.escape(META.updated)}</span>
+      <span class="meta-info__item">Demo-Daten</span>
+    </footer>
+  </div>`;
+
+  // --- wiring (once) ---
+  const filterBody = mount.querySelector('#filter-body');
+  filterBody.addEventListener('change', (e) => {
+    const cb = e.target.closest('input[type="checkbox"][data-dim]');
+    if (!cb) return;
+    const dim = cb.dataset.dim, val = cb.value;
+    if (cb.checked) { if (!state[dim].includes(val)) state[dim].push(val); }
+    else state[dim] = state[dim].filter((x) => x !== val);
+    syncHash(); update();
+  });
+  mount.querySelector('#f-reset').addEventListener('click', () => {
+    FILTER_KEYS.forEach((k) => { state[k] = []; });
+    filterBody.querySelectorAll('input[type="checkbox"]').forEach((cb) => { cb.checked = false; });
+    syncHash(); update();
+  });
+  C.wireTabs(mount, { onSelect: (id) => { state.tab = id; syncHash(); update(); } });
+  const layout = mount.querySelector('#dashboard');
+  const toggle = mount.querySelector('#filter-toggle');
+  toggle.addEventListener('click', () => {
+    const collapsed = layout.classList.toggle('dashboard-layout--collapsed');
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('aria-label', collapsed ? 'Filter ausklappen' : 'Filter einklappen');
+  });
+  C.wireMenu(mount.querySelector('.dash-header'), (action) => {
+    if (action === 'refresh') { update(); C.toast('Dashboard aktualisiert.'); }
+    else if (action === 'pdf') C.toast('Export als PDF — im Prototyp simuliert.');
+    else if (action === 'img') C.toast('Export als Bild — im Prototyp simuliert.');
+    else if (action === 'copy') copyText(location.href).then((ok) => C.toast(ok ? 'Link kopiert.' : 'Kopieren nicht möglich.'));
+    else if (action === 'mail') shareMail(`${META.title} — BBL Datenportal`, location.href);
+  });
+
+  update();
+}
+
+function split(v) { return (v || '').split(',').map((s) => s.trim()).filter(Boolean); }

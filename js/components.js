@@ -710,45 +710,46 @@ export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, t
 // inline onclick). `menuId` identifiziert das Menü im gemeinsamen onAction-Handler.
 export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', triggerIcon = 'More', triggerClass = '' }) {
   const row = (it) => {
-    if (it.separator) return '<div class="menu__sep" role="separator"></div>';
-    if (it.heading) return `<div class="menu__heading">${escape(it.heading)}</div>`;
-    return `<button type="button" role="menuitem" class="menu__item" data-action="${escape(it.action)}" tabindex="-1">`
-      + `${it.icon ? icon(it.icon, 'menu__icon') : ''}<span>${escape(it.label)}</span></button>`;
+    if (it.separator) return '<div class="action-menu__sep" role="separator"></div>';
+    if (it.heading) return `<div class="action-menu__heading">${escape(it.heading)}</div>`;
+    return `<button type="button" role="menuitem" class="action-menu__item" data-action="${escape(it.action)}" tabindex="-1">`
+      + `${it.icon ? icon(it.icon, 'action-menu__icon') : ''}<span>${escape(it.label)}</span></button>`;
   };
-  return `<div class="menu" data-menu="${escape(menuId)}">
-    <button type="button" class="menu__trigger${triggerClass ? ' ' + triggerClass : ''}" aria-haspopup="true" aria-expanded="false" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
-    <div class="menu__popup menu__popup--${align}" role="menu" aria-label="${escape(label)}" hidden>${items.map(row).join('')}</div>
+  return `<div class="action-menu" data-menu="${escape(menuId)}">
+    <button type="button" class="action-menu__trigger${triggerClass ? ' ' + triggerClass : ''}" aria-haspopup="true" aria-expanded="false" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
+    <div class="action-menu__popup action-menu__popup--${align}" role="menu" aria-label="${escape(label)}" hidden>${items.map(row).join('')}</div>
   </div>`;
 }
 
 // Ein einmaliger globaler Schliesser (Klick ausserhalb schliesst offene Menüs),
-// damit wiederholtes wireMenu() keine Listener anhäuft.
+// damit wiederholtes wireMenu() keine Listener anhäuft. Eigener `.action-menu`-
+// Namensraum — `.menu` gehört der CD-Navigations-Flyout-Komponente.
 let menuGlobalWired = false;
 function ensureMenuGlobal() {
   if (menuGlobalWired || typeof document === 'undefined') return;
   menuGlobalWired = true;
   document.addEventListener('click', (e) => {
-    if (e.target.closest && e.target.closest('.menu__trigger')) return;
-    const inPopup = e.target.closest && e.target.closest('.menu__popup');
-    document.querySelectorAll('.menu__popup:not([hidden])').forEach((pop) => {
+    if (e.target.closest && e.target.closest('.action-menu__trigger')) return;
+    const inPopup = e.target.closest && e.target.closest('.action-menu__popup');
+    document.querySelectorAll('.action-menu__popup:not([hidden])').forEach((pop) => {
       if (pop === inPopup) return;
       pop.hidden = true;
-      const trg = pop.closest('.menu') && pop.closest('.menu').querySelector('.menu__trigger');
+      const trg = pop.closest('.action-menu') && pop.closest('.action-menu').querySelector('.action-menu__trigger');
       if (trg) trg.setAttribute('aria-expanded', 'false');
     });
   });
 }
 
-// Verdrahtet alle .menu in `root`: Öffnen/Schliessen, Pfeiltasten/Home/End,
+// Verdrahtet alle .action-menu in `root`: Öffnen/Schliessen, Pfeiltasten/Home/End,
 // Escape, Klick ausserhalb. Bei Auswahl → onAction(action, menuId, triggerEl).
 export function wireMenu(root, onAction) {
   ensureMenuGlobal();
-  root.querySelectorAll('.menu').forEach((m) => {
-    const trigger = m.querySelector('.menu__trigger');
-    const popup = m.querySelector('.menu__popup');
-    const items = [...popup.querySelectorAll('.menu__item')];
+  root.querySelectorAll('.action-menu').forEach((m) => {
+    const trigger = m.querySelector('.action-menu__trigger');
+    const popup = m.querySelector('.action-menu__popup');
+    const items = [...popup.querySelectorAll('.action-menu__item')];
     const open = () => {
-      document.querySelectorAll('.menu__popup:not([hidden])').forEach((p) => { if (p !== popup) p.hidden = true; });
+      document.querySelectorAll('.action-menu__popup:not([hidden])').forEach((p) => { if (p !== popup) p.hidden = true; });
       popup.hidden = false; trigger.setAttribute('aria-expanded', 'true'); items[0] && items[0].focus();
     };
     const close = (focusTrigger) => { popup.hidden = true; trigger.setAttribute('aria-expanded', 'false'); if (focusTrigger) trigger.focus(); };

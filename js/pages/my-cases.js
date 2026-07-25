@@ -84,7 +84,7 @@ function detail(ctx, id) {
     <p style="margin:0">${C.escape(b.name)}<br>
       <span class="small muted">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)}</span><br>
       <span class="small muted">WE ${C.escape(b.bbl_we || '—')} · EGID ${C.escape(b.egid || '—')}</span></p>
-    <p style="margin:.5rem 0 0"><a class="btn btn--link" href="#/app/portfolio/${encodeURIComponent(b.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')} Gebäude ansehen</a></p></div>` : '';
+    <p style="margin:.5rem 0 0"><a class="btn btn--link" href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')} Gebäude ansehen</a></p></div>` : '';
   const projektCard = p ? `<div class="box"><h3>Verknüpftes Projekt</h3>
     <p style="margin:0">${C.escape(p.name)}${p.projectNumber ? `<br><span class="small muted">${C.escape(p.projectNumber)}</span>` : ''}</p>
     <p style="margin:.5rem 0 0"><a class="btn btn--link" href="#/app/projects/${encodeURIComponent(p.projectId)}">${C.icon('ArrowRight', 'btn__icon')} Projekt ansehen</a></p></div>` : '';

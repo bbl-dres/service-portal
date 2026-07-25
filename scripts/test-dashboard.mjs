@@ -13,10 +13,10 @@ const PROBE = `(async () => {
   const lastToast = () => { const t = [...document.querySelectorAll('.toast')].pop(); return t ? t.textContent : null; };
   const R = {
     dashPage: !!document.querySelector('.dash-page'),
-    headerMenu: !!document.querySelector('.dash-header .menu'),
+    headerMenu: !!document.querySelector('.dash-header .action-menu'),
     footer: !!document.querySelector('.dash-footer'),
     charts: document.querySelectorAll('.dash-grid .chart').length,
-    chartMenus: document.querySelectorAll('.dash-grid .chart .menu').length,
+    chartMenus: document.querySelectorAll('.dash-grid .chart .action-menu').length,
   };
   const fp = document.querySelector('.filter-panel'), dm = document.querySelector('.dashboard-main');
   R.filterH = Math.round(fp.getBoundingClientRect().height);
@@ -24,28 +24,28 @@ const PROBE = `(async () => {
   R.filterFullHeight = Math.abs(R.filterH - R.mainH) <= 2;
 
   // dashboard toolbar menu → open + "Link kopieren"
-  document.querySelector('.dash-header .menu__trigger').click(); await s(60);
-  R.dashPopupOpen = !document.querySelector('.dash-header .menu__popup').hidden;
-  [...document.querySelectorAll('.dash-header .menu__item')].find(i => i.dataset.action === 'copy').click(); await s(150);
+  document.querySelector('.dash-header .action-menu__trigger').click(); await s(60);
+  R.dashPopupOpen = !document.querySelector('.dash-header .action-menu__popup').hidden;
+  [...document.querySelectorAll('.dash-header .action-menu__item')].find(i => i.dataset.action === 'copy').click(); await s(150);
   R.toastCopy = lastToast();
 
   // chart menu → Vollbild
-  const chartMenuTrigger = () => document.querySelector('.dash-grid .chart .menu__trigger');
+  const chartMenuTrigger = () => document.querySelector('.dash-grid .chart .action-menu__trigger');
   chartMenuTrigger().click(); await s(60);
-  R.chartPopupOpen = !document.querySelector('.dash-grid .chart .menu__popup').hidden;
-  [...document.querySelectorAll('.dash-grid .menu__item')].find(i => i.dataset.action === 'fullscreen').click(); await s(180);
+  R.chartPopupOpen = !document.querySelector('.dash-grid .chart .action-menu__popup').hidden;
+  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'fullscreen').click(); await s(180);
   R.overlay = !!document.querySelector('.chart-overlay');
   R.overlaySvg = document.querySelectorAll('.chart-overlay .chart__svg').length;
-  R.overlayHasMenu = !!document.querySelector('.chart-overlay .menu');   // should be false (stripped)
+  R.overlayHasMenu = !!document.querySelector('.chart-overlay .action-menu');   // should be false (stripped)
   document.querySelector('.chart-overlay__close').click(); await s(120);
   R.overlayClosed = !document.querySelector('.chart-overlay');
 
   // chart menu → CSV then PNG
   chartMenuTrigger().click(); await s(60);
-  [...document.querySelectorAll('.dash-grid .menu__item')].find(i => i.dataset.action === 'csv').click(); await s(150);
+  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'csv').click(); await s(150);
   R.toastCsv = lastToast();
   chartMenuTrigger().click(); await s(60);
-  [...document.querySelectorAll('.dash-grid .menu__item')].find(i => i.dataset.action === 'png').click(); await s(400);
+  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'png').click(); await s(400);
   R.toastPng = lastToast();
   return R;
 })()`;
@@ -56,7 +56,8 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
 (async () => {
   const cdp = await launch({ port: 9342, webgl: true });
   try {
-    const page = await openPage(cdp, `${APP_BASE}/app/dataportal/immobilien`);
+    // a generic sql-spec dashboard (immobilien is now the record-based estate one)
+    const page = await openPage(cdp, `${APP_BASE}/app/dataportal/energie-klima`);
     // desktop viewport so the 2-column layout + full-height panel apply
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1400, deviceScaleFactor: 1, mobile: false }, page.sessionId);
     await new Promise(r => setTimeout(r, 900));

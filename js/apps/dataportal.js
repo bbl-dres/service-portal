@@ -21,20 +21,28 @@ const CRUMB_BASE = [
 // Dashboard-Export (PDF/Bild) bleibt eine simulierte Affordanz (bräuchte einen
 // Rasterisierer); Aktualisieren/Teilen sind echt.
 const DASHBOARD_MENU = [
-  { action: 'refresh', label: 'Dashboard aktualisieren', icon: 'Refresh' },
+  { action: 'refresh', label: 'Dashboard aktualisieren' },
   { separator: true },
   { heading: 'Herunterladen' },
-  { action: 'pdf', label: 'Als PDF', icon: 'FilePDF' },
-  { action: 'img', label: 'Als Bild', icon: 'FileImage' },
+  { action: 'pdf', label: 'Als PDF' },
+  { action: 'img', label: 'Als Bild' },
   { separator: true },
   { heading: 'Teilen' },
-  { action: 'copy', label: 'Link kopieren', icon: 'Link' },
-  { action: 'mail', label: 'Per E-Mail', icon: 'Envelope' },
+  { action: 'copy', label: 'Link kopieren' },
+  { action: 'mail', label: 'Per E-Mail' },
 ];
 
 export default async function render(ctx) {
   const { params } = ctx;
+  // Immobilienportfolio ist ein record-basiertes Stammdaten-Dashboard (eigene
+  // GeoJSON-Quellen + Laufzeit-Aggregation) — an das dedizierte Modul delegieren.
+  if (params[0] === 'immobilien') {
+    const mod = await import('./estate.js');
+    if (ctx.stale && ctx.stale()) return;   // A2: überholte Navigation nicht überschreiben
+    return mod.default(ctx);
+  }
   await sql.load();
+  if (ctx.stale && ctx.stale()) return;
   if (params[0]) return dashboardView(ctx, params[0]);
   return overview(ctx);
 }
@@ -203,7 +211,7 @@ function dashboardView(ctx, id) {
         return `<figure class="chart card card--universal chart--map" id="${spec.id}">
           <figcaption class="chart__head">
             <h3 class="chart__title">${C.escape(spec.title)}</h3>
-            <div class="chart__actions">${C.menu({ menuId: spec.id, label: 'Karten-Aktionen', items: [{ action: 'link', label: 'Link kopieren', icon: 'Link' }] })}</div>
+            <div class="chart__actions">${C.menu({ menuId: spec.id, label: 'Karten-Aktionen', items: [{ action: 'link', label: 'Link kopieren' }] })}</div>
           </figcaption>
           <div class="dash-map" id="map-${spec.id}" role="application" aria-label="Karte der Gebäudestandorte"></div>
           ${spec.note ? `<p class="chart__note">${C.escape(spec.note)}</p>` : ''}

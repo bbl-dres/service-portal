@@ -17,14 +17,14 @@ export const SERIES = ['#2563eb', '#ea580c', '#059669', '#7c3aed', '#db2777'];
 
 // Per-chart action menu (Superset-style). Actions are handled in wireChartMenus.
 const CHART_MENU = [
-  { action: 'fullscreen', label: 'Vollbild', icon: 'Expand' },
+  { action: 'fullscreen', label: 'Vollbild' },
   { separator: true },
   { heading: 'Herunterladen' },
-  { action: 'csv', label: 'Als CSV', icon: 'FileLines' },
-  { action: 'xls', label: 'Als Excel', icon: 'FileExcel' },
-  { action: 'png', label: 'Als Bild (PNG)', icon: 'FileImage' },
+  { action: 'csv', label: 'Als CSV' },
+  { action: 'xls', label: 'Als Excel' },
+  { action: 'png', label: 'Als Bild (PNG)' },
   { separator: true },
-  { action: 'link', label: 'Link kopieren', icon: 'Link' },
+  { action: 'link', label: 'Link kopieren' },
 ];
 const INK = '#1f2937';        // primary text
 const INK_MUTED = '#4b5563';  // axis / secondary text
@@ -72,17 +72,15 @@ function legend(names) {
   ).join('')}</div>`;
 }
 
+// Rendered but hidden — the data source for the chart menu's CSV/Excel export.
+// No visible «Datentabelle»-Affordanz (the chart menu offers the download instead).
 function tableView(id, columns, rows, unit) {
   const head = columns.map(c => `<th scope="col">${esc(c)}</th>`).join('');
   const body = rows.map(r => `<tr>${columns.map((c, i) =>
     i === 0 ? `<th scope="row">${esc(r[c])}</th>` : `<td>${esc(typeof r[c] === 'number' ? fmt(r[c], unit) : r[c])}</td>`
   ).join('')}</tr>`).join('');
-  return `<details class="chart__table" id="${id}-table">
-    <summary>Datentabelle anzeigen</summary>
-    <div class="table-wrapper"><table class="table table--compact">
-      <thead><tr>${head}</tr></thead><tbody>${body}</tbody>
-    </table></div>
-  </details>`;
+  return `<div class="chart__table" id="${id}-table" hidden><table class="table table--compact">
+    <thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 /* ---------------------------------------------------------------- line ---- */
@@ -216,7 +214,6 @@ export function chart(spec, result) {
     <div class="chart__plot">${svg}</div>
     ${note ? `<p class="chart__note">${esc(note)}</p>` : ''}
     ${tableView(id, result.columns, rows, unit)}
-    <details class="chart__sql"><summary>Abfrage anzeigen</summary><pre><code>${esc(result.sql)}</code></pre></details>
   </figure>`;
 }
 
@@ -263,7 +260,7 @@ function openChartFullscreen(figure) {
   overlay.setAttribute('aria-label', title);
 
   const clone = figure.cloneNode(true);
-  clone.querySelectorAll('.menu').forEach((m) => m.remove());       // no nested action menu
+  clone.querySelectorAll('.action-menu').forEach((m) => m.remove());   // no nested action menu
   clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
   clone.querySelectorAll('[aria-labelledby]').forEach((el) => el.removeAttribute('aria-labelledby'));
   clone.querySelectorAll('details').forEach((d) => d.removeAttribute('open'));

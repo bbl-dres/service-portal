@@ -1,7 +1,19 @@
 // Liegenschaften Inventar — real-estate portfolio (overview: Liste/Galerie/Karte + detail).
+//
+// Datenquelle ist der SAP-RE-FX-Golden-Record (data/buildings.geojson, via core),
+// dieselbe Quelle und dieselben bbl_id wie das Immobilienportfolio-Dashboard. Ein
+// Objekt wird über die URL angesprochen: #/app/portfolio?id=<bbl_id>. Die id steht
+// bewusst im Query-Parameter, nicht im Pfad — SAP-ids enthalten «/» (1000/4840/AF),
+// was der Hash-Router sonst in mehrere Segmente zerlegen würde.
+
+let pfMap = null;   // aktive MapLibre-Instanz der Kartenansicht (einmalig, App-Singleton)
+function freePfMap() { if (pfMap) { try { pfMap.remove(); } catch { /* schon weg */ } pfMap = null; } }
+
 export default async function render(ctx) {
-  const { mount, params, core, C, setTitle, setCrumbs } = ctx;
-  if (params[0]) return detail(ctx, params[0]);
+  const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
+  const detailId = (query && query.get('id')) || params[0];
+  if (detailId) return detail(ctx, detailId);
+  freePfMap();
 
   setTitle('Liegenschaften Inventar');
   setCrumbs([
@@ -14,14 +26,14 @@ export default async function render(ctx) {
   const ref = core.ref();
 
   // distinct filter values from data
-  const categories = [...new Set(all.map(b => b.portfolioCategory))].sort((a, b) => a.localeCompare(b, 'de'));
-  const cantons = [...new Set(all.map(b => b.canton))].sort();
+  const categories = [...new Set(all.map(b => b.portfolioCategory))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'de'));
+  const regions = [...new Set(all.map(b => b.canton))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'de'));
 
   // local view state
   const state = {
     view: 'liste',      // liste | galerie | karte
     category: '',       // '' = alle
-    canton: '',         // '' = alle
+    region: '',         // '' = alle (Kanton / ausländische Region)
     q: '',
   };
 
@@ -29,7 +41,7 @@ export default async function render(ctx) {
     const q = state.q.trim().toLowerCase();
     return all.filter(b =>
       (!state.category || b.portfolioCategory === state.category) &&
-      (!state.canton || b.canton === state.canton) &&
+      (!state.region || b.canton === state.region) &&
       (!q || (b.name + ' ' + b.city).toLowerCase().includes(q))
     );
   }
@@ -54,8 +66,8 @@ export default async function render(ctx) {
     const cat = [`<button type="button" class="tag-item${!state.category ? " tag-item--active" : ""}" aria-pressed="${!!(!state.category)}" data-cat=""><span class="tag-item__inner"><span class="tag-item__text">Alle Kategorien</span></span></button>`]
       .concat(categories.map(c => `<button type="button" class="tag-item${state.category === c ? " tag-item--active" : ""}" aria-pressed="${!!(state.category === c)}" data-cat="${C.escape(c)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(c)}</span></span></button>`))
       .join('');
-    const can = [`<button type="button" class="tag-item${!state.canton ? " tag-item--active" : ""}" aria-pressed="${!!(!state.canton)}" data-canton=""><span class="tag-item__inner"><span class="tag-item__text">Alle Kantone</span></span></button>`]
-      .concat(cantons.map(c => `<button type="button" class="tag-item${state.canton === c ? " tag-item--active" : ""}" aria-pressed="${!!(state.canton === c)}" data-canton="${C.escape(c)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(c)}</span></span></button>`))
+    const reg = [`<button type="button" class="tag-item${!state.region ? " tag-item--active" : ""}" aria-pressed="${!!(!state.region)}" data-region=""><span class="tag-item__inner"><span class="tag-item__text">Alle Regionen</span></span></button>`]
+      .concat(regions.map(c => `<button type="button" class="tag-item${state.region === c ? " tag-item--active" : ""}" aria-pressed="${!!(state.region === c)}" data-region="${C.escape(c)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(c)}</span></span></button>`))
       .join('');
     return `
       <div class="stack mt-6">
@@ -64,8 +76,8 @@ export default async function render(ctx) {
           <div class="list list--flex list--wrap">${cat}</div>
         </div>
         <div>
-          <div class="small muted mb-4">Kanton</div>
-          <div class="list list--flex list--wrap">${can}</div>
+          <div class="small muted mb-4">Region / Kanton</div>
+          <div class="list list--flex list--wrap">${reg}</div>
         </div>
       </div>`;
   }
@@ -85,11 +97,12 @@ export default async function render(ctx) {
     return C.table({
       zebra: true,
       columns: [
-        { key: 'name', label: 'Name', render: b => `<a href="#/app/portfolio/${encodeURIComponent(b.bbl_id)}">${C.escape(b.name)}</a>` },
+        { key: 'name', label: 'Name', render: b => `<a href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${C.escape(b.name)}</a>` },
         { key: 'standort', label: 'Standort', render: b => `${C.escape(b.street)}<br><span class="small muted">${C.escape(b.zip)} ${C.escape(b.city)}</span>` },
+        { key: 'land', label: 'Land', render: b => C.escape(b.land) },
         { key: 'portfolioCategory', label: 'Kategorie', render: b => C.escape(b.portfolioCategory) },
+        { key: 'ownership', label: 'Eigentum', render: b => C.escape(b.ownership) },
         { key: 'status', label: 'Status', render: b => statusBadge(C, ref, b.status) },
-        { key: 'buildYear', label: 'Baujahr', render: b => C.escape(String(b.buildYear)) },
         { key: 'gf', label: 'GF (m²)', render: b => Number(b.gf || 0).toLocaleString('de-CH') },
         { key: 'classification', label: 'Klassifizierung', render: b => classBadge(C, ref, b.classification) },
       ],
@@ -102,43 +115,43 @@ export default async function render(ctx) {
     return `<div class="grid grid--3 mt-2">${list.map(b => C.card({
       title: b.name,
       desc: b.street + ', ' + b.zip + ' ' + b.city,
-      href: `#/app/portfolio/${encodeURIComponent(b.bbl_id)}`,
+      href: `#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}`,
       photo: { id: b.photo, color: '#2f4356', alt: `${b.name}, ${b.city}` },
       badges: [C.badge(b.portfolioCategory, 'gray'), statusBadge(C, ref, b.status)],
-      footer: `<span>${C.escape(b.canton)} · ${C.escape(String(b.buildYear))}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
+      footer: `<span>${C.escape([b.land, b.canton].filter(Boolean).join(' · '))}${b.buildYear ? ' · ' + C.escape(String(b.buildYear)) : ''}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
     })).join('')}</div>`;
   }
 
-  // Schematic CH map: lng [5.9, 9.6] -> x%, lat [45.8, 47.8] -> y% (inverted)
-  const LNG0 = 5.9, LNG1 = 9.6, LAT0 = 45.8, LAT1 = 47.8;
-  function mapView(list) {
-    const clamp = (v) => Math.max(2, Math.min(98, v));
-    const markers = list.map(b => {
-      const x = clamp(((b.lng - LNG0) / (LNG1 - LNG0)) * 100);
-      const y = clamp((1 - (b.lat - LAT0) / (LAT1 - LAT0)) * 100);
-      const sl = (ref.buildingStatuses || []).find(s => s.id === b.status);
-      const slabel = sl ? sl.label : b.status;
-      return `<a class="pf-marker pf-status--${b.status}" href="#/app/portfolio/${encodeURIComponent(b.bbl_id)}"
-        style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%"
-        title="${C.escape(b.name)} — ${C.escape(b.city)} (${C.escape(slabel)})">
-        <span class="sr-only">${C.escape(b.name)}, ${C.escape(b.city)}, ${C.escape(slabel)}</span></a>`;
-    }).join('');
-    const legend = (ref.buildingStatuses || []).map(s =>
-      `<span class="row" style="gap:.35rem"><span class="swatch pf-status--${s.id}"></span>${C.escape(s.label)}</span>`
-    ).join('');
+  // Weltweite Karte auf CARTO-Grau (dieselbe geclusterte Komponente wie das
+  // Dashboard). Der Container wird hier synchron gerendert; die Karte selbst hängt
+  // MapLibre nach dem Einfügen asynchron ein (mountMap).
+  function mapView() {
     return `
-      <div class="map pf-map mt-2" role="group" aria-label="Schematische Karte der Liegenschaften — Standorte als Marker">
-        <span class="pf-map__hint small muted">Schweiz (schematisch)</span>
-        ${markers}
-      </div>
-      <div class="row mt-4 small" style="gap:1.25rem">${legend}<span class="muted">${list.length} Standort(e)</span></div>`;
+      <div class="dash-map" id="pf-map-el" role="group" aria-label="Weltweite Karte der Liegenschaften"
+        style="height:32rem;border-radius:var(--radius-lg);overflow:hidden"></div>
+      <p class="small muted mt-2">Weltweites Portfolio · Punktgrösse ∝ Geschossfläche · gruppiert (Cluster) · Kartengrundlage CARTO · Klick öffnet das Objekt.</p>`;
+  }
+
+  async function mountMap(list) {
+    freePfMap();
+    const el = mount.querySelector('#pf-map-el');
+    if (!el) return;
+    const { initEstateMap } = await import('../buildings-map.js');
+    const points = list
+      .filter(b => Number.isFinite(b.lat) && Number.isFinite(b.lng))
+      .map(b => ({
+        lat: b.lat, lon: b.lng, label: b.name, size: b.gf, bblId: b.bbl_id,
+        sub: `${b.street}, ${b.zip} ${b.city}`.trim(),
+        href: `#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}`,
+      }));
+    pfMap = await initEstateMap(el, points);
   }
 
   function body() {
     const list = filtered();
     let content;
     if (state.view === 'galerie') content = galleryView(list);
-    else if (state.view === 'karte') content = mapView(list);
+    else if (state.view === 'karte') content = mapView();
     else content = `<div class="mt-2">${listView(list)}</div>`;
     return `
       ${statsRow(list)}
@@ -156,10 +169,12 @@ export default async function render(ctx) {
   function draw() {
     mount.innerHTML = `
     <div class="container section">
-      ${C.pageHeader({ title: 'Liegenschaften Inventar', lead: 'Portfolio des Bundesamts für Bauten und Logistik — Gebäude, Standorte und Kennzahlen.' })}
+      ${C.pageHeader({ title: 'Liegenschaften Inventar', lead: 'Weltweites Immobilienportfolio des Bundesamts für Bauten und Logistik — Gebäude, Standorte und Kennzahlen aus dem SAP-RE-FX-Stammdatenbestand.' })}
       ${body()}
     </div>`;
     wire();
+    if (state.view === 'karte') mountMap(filtered());
+    else freePfMap();
   }
 
   // Full redraw on filter/view change; refocus search box if it was active.
@@ -177,8 +192,8 @@ export default async function render(ctx) {
       btn.addEventListener('click', () => { state.view = btn.getAttribute('data-view'); redraw(); }));
     mount.querySelectorAll('[data-cat]').forEach(btn =>
       btn.addEventListener('click', () => { state.category = btn.getAttribute('data-cat'); redraw(); }));
-    mount.querySelectorAll('[data-canton]').forEach(btn =>
-      btn.addEventListener('click', () => { state.canton = btn.getAttribute('data-canton'); redraw(); }));
+    mount.querySelectorAll('[data-region]').forEach(btn =>
+      btn.addEventListener('click', () => { state.region = btn.getAttribute('data-region'); redraw(); }));
     const form = mount.querySelector('#pf-search');
     if (form) form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -195,6 +210,7 @@ export default async function render(ctx) {
 // ---------------------------------------------------------------------------
 function detail(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
+  freePfMap();
   const b = core.building(id);
   if (!b) {
     mount.innerHTML = `<div class="container section">${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}${C.empty('Liegenschaft nicht gefunden.')}</div>`;
@@ -212,7 +228,7 @@ function detail(ctx, id) {
   const projects = core.projectsForBuilding(b.bbl_id);
   const documents = core.documentsForBuilding(b.bbl_id);
   const media = core.mediaForBuilding(b.bbl_id);
-  const regionLabel = [b.region, b.canton].filter(Boolean).join(' · ');
+  const regionLabel = [b.land, b.canton].filter(Boolean).join(' · ');
 
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
@@ -226,14 +242,17 @@ function detail(ctx, id) {
       <dl class="kv">
         <dt>BBL-ID</dt><dd>${C.escape(b.bbl_id)}</dd>
         <dt>Wirtschaftseinheit (WE)</dt><dd>${C.escape(b.bbl_we)}</dd>
-        <dt>EGID</dt><dd>${C.escape(b.egid)}</dd>
+        <dt>EGID</dt><dd>${C.escape(b.egid || '—')}</dd>
         <dt>Adresse</dt><dd>${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)}</dd>
-        <dt>Region / Kanton</dt><dd>${C.escape(regionLabel)}</dd>
-        <dt>Baujahr</dt><dd>${C.escape(String(b.buildYear))}</dd>
+        <dt>Land / Region</dt><dd>${C.escape(regionLabel)}</dd>
+        <dt>Portfolio-Kategorie</dt><dd>${C.escape(b.portfolioCategory)}</dd>
+        <dt>Gebäudetyp</dt><dd>${C.escape(b.typ || '—')}</dd>
+        <dt>Eigentumsverhältnis</dt><dd>${C.escape(b.ownership)}</dd>
+        <dt>Baujahr</dt><dd>${C.escape(String(b.buildYear || '—'))}</dd>
         <dt>Geschossfläche (GF)</dt><dd>${Number(b.gf || 0).toLocaleString('de-CH')} m²</dd>
         <dt>Hauptnutzfläche (HNF)</dt><dd>${Number(b.hnf || 0).toLocaleString('de-CH')} m²</dd>
-        <dt>Arbeitsplätze</dt><dd>${Number(b.workplaces || 0).toLocaleString('de-CH')}</dd>
-        <dt>Portfolio-Kategorie</dt><dd>${C.escape(b.portfolioCategory)}</dd>
+        ${b.erhaltung ? `<dt>Erhaltungsstrategie</dt><dd>${C.escape(b.erhaltung)}</dd>` : ''}
+        ${b.heritage ? `<dt>Baudenkmal</dt><dd>Ja</dd>` : ''}
         <dt>Status</dt><dd>${statusBadge(C, ref, b.status)}</dd>
         <dt>Klassifizierung</dt><dd>${classBadge(C, ref, b.classification)}</dd>
       </dl>`;
@@ -318,12 +337,19 @@ function detail(ctx, id) {
   </div>`;
 
   C.wireTabs(mount);
+  // Liste→Detail ist für den Router ein Zustandswechsel (gleicher Pfad, andere
+  // Query) — er scrollt/fokussiert dann nicht. Für den Objektwechsel ist das aber
+  // eine echte Navigation, also hier selbst an den Anfang und auf die H1.
+  window.scrollTo(0, 0);
+  const h = mount.querySelector('h1');
+  if (h) h.focus({ preventScroll: true });
 }
 
 // ---------------------------------------------------------------------------
 // shared helpers
 // ---------------------------------------------------------------------------
-const BUILDING_STATUS_VARIANT = { in_betrieb: 'success', in_sanierung: 'warning', in_planung: 'info' };
+// Golden-Record-Status (Datensatz-Lebenszyklus), identisch zum Dashboard.
+const BUILDING_STATUS_VARIANT = { Aktiv: 'success', Abgang: 'warning', 'Löschvermerk': 'gray' };
 const PROJECT_STATUS_VARIANT = { geplant: 'info', aktiv: 'warning', sistiert: 'gray', abgeschlossen: 'success', abgebrochen: 'error' };
 
 function statusBadge(C, ref, statusId) {

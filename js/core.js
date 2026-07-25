@@ -6,7 +6,6 @@ import { fetchJSON } from './fetch-json.js';
 const DATA = {};
 
 const FILES = {
-  buildings:    'data/buildings.json',
   projects:     'data/projects.json',
   services:     'data/services.json',
   applications: 'data/applications.json',
@@ -41,6 +40,30 @@ const AREA = {
 // Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
 const OBJECT_FILES = new Set(['reference', 'catalogLabels', 'appPages']);
 
+// Gebäude kommen aus dem SAP-RE-FX-Golden-Record (data/buildings.geojson) — dieselbe
+// Quelle und dieselben bbl_id wie das Immobilienportfolio-Dashboard, damit die
+// Karten-Deeplinks (#/app/portfolio?id=<bbl_id>) im Inventar aufgehen. Die rohen
+// SAP-Felder werden hier auf die schlanke Gebäudeform normalisiert, die alle
+// Ansichten (Liste, Detail, Formular-Auswahllisten, Verknüpfungen) lesen.
+const OWNERSHIP = (v) => v === 'Eigentum Bund' ? 'Im Eigentum' : v === 'Miete' ? 'Anmieter' : 'Sonderfall';
+function normalizeBuilding(f) {
+  const p = (f && f.properties) || {};
+  const m = String((Array.isArray(p.img_url) ? p.img_url[0] : p.img_url) || '').match(/photo-([\w-]+)/);
+  const isDiplo = /Botschaft|Konsulat|Diplomat|Vertretung/i.test(`${p.bbl_bez || ''} ${p.bbl_port || ''}`);
+  return {
+    bbl_id: p.bbl_id, bbl_we: p.bbl_we || '', egid: p.av_egid || '',
+    name: p.bbl_bez || p.bbl_id, portfolioCategory: p.bbl_port || p.bbl_gbda1 || '—', typ: p.bbl_gbda1 || '',
+    street: [p.adr_str, p.adr_hsnr].filter(Boolean).join(' ').trim(),
+    zip: p.adr_plz || '', city: p.adr_ort || '', land: p.adr_land || '', canton: p.adr_reg || '',
+    lat: p.wgs84_lat, lng: p.wgs84_lon,
+    gf: p.garea_gf || 0, hnf: p.garea_hnf || 0, buildYear: p.bbl_bjahr || '',
+    ownership: OWNERSHIP(p.bbl_eigen), erhaltung: p.bbl_ostr || '', heritage: p.bbl_arch === 'Ja',
+    status: p.bbl_stat || '',                          // Aktiv | Abgang | Löschvermerk (reference.buildingStatuses)
+    classification: isDiplo ? 'VERTRAULICH' : 'INTERN', // im Golden Record nicht geführt → aus dem Portfolio-Typ abgeleitet
+    photo: m ? m[1] : '', color: '#2f4356',
+  };
+}
+
 async function load() {
   const entries = await Promise.all(Object.entries(FILES).map(async ([k, url]) => {
     const isObj = OBJECT_FILES.has(k);
@@ -56,6 +79,18 @@ async function load() {
     }
   }));
   for (const [k, v] of entries) DATA[k] = v;
+
+  // Golden Record separat laden: GeoJSON ist ein Objekt ({type,features}), nicht die
+  // Listenform der übrigen Dateien — daher eigener Pfad mit Normalisierung.
+  try {
+    const fc = await fetchJSON('data/buildings.geojson', { shape: 'object' });
+    DATA.buildings = (fc.features || []).map(normalizeBuilding).filter(b => b.bbl_id);
+    if (!DATA.buildings.length) throw new Error('keine Gebäude im Golden Record');
+  } catch (e) {
+    console.warn('[core] could not load data/buildings.geojson', e.message);
+    FAILED.add('buildings');
+    DATA.buildings = [];
+  }
   return DATA;
 }
 

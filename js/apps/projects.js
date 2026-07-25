@@ -216,7 +216,7 @@ function detail(ctx, id) {
   function panelUebersicht() {
     return `<dl class="kv">
       <dt>Projektnummer</dt><dd>${C.escape(p.projectNumber)}</dd>
-      <dt>Gebäude</dt><dd>${b ? `<a href="#/app/portfolio/${b.bbl_id}">${C.escape(b.name)}</a>` : '—'}</dd>
+      <dt>Gebäude</dt><dd>${b ? `<a href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${C.escape(b.name)}</a>` : '—'}</dd>
       <dt>Projektleitung</dt><dd>${C.escape(p.pm || '—')}</dd>
       <dt>Teilportfolio</dt><dd>${C.escape(p.subPortfolio || '—')}</dd>
       <dt>SIA-Phase</dt><dd>${C.escape(p.siaPhase)} · ${C.escape(p.siaPhaseLabel)}</dd>

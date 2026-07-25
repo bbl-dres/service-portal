@@ -100,7 +100,7 @@ export default async function render(ctx) {
                 <dt>Typ</dt><dd>${isVideo ? 'Video' : 'Foto'}</dd>
                 <dt>Datum</dt><dd>${C.escape(m.date)}</dd>
                 <dt>Epoche</dt><dd>${m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'}</dd>
-                <dt>Gebäude</dt><dd><a href="#/app/portfolio/${encodeURIComponent(m.buildingId)}">${C.escape(bname(m.buildingId))}</a></dd>
+                <dt>Gebäude</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(m.buildingId)}">${C.escape(bname(m.buildingId))}</a></dd>
                 <dt>${isVideo ? 'Quelle' : 'Fotograf:in'}</dt><dd>${C.escape(m.photographer)}</dd>
                 <dt>Copyright</dt><dd>${C.escape(m.copyright)}</dd>
                 <dt>Zugriff</dt><dd>${C.escape(m.accessLevel)}</dd>
@@ -238,7 +238,7 @@ function detail(ctx, id) {
             <dt>Typ</dt><dd>${isVideo ? 'Video' : 'Foto'}</dd>
             <dt>Datum</dt><dd>${C.escape(m.date)}</dd>
             <dt>Epoche</dt><dd>${m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'}</dd>
-            <dt>Gebäude</dt><dd><a href="#/app/portfolio/${encodeURIComponent(m.buildingId)}">${C.escape(bn)}</a></dd>
+            <dt>Gebäude</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(m.buildingId)}">${C.escape(bn)}</a></dd>
             <dt>${isVideo ? 'Quelle' : 'Fotograf:in'}</dt><dd>${C.escape(m.photographer)}</dd>
             <dt>Copyright</dt><dd>${C.escape(m.copyright)}</dd>
             <dt>Zugriff</dt><dd>${C.escape(m.accessLevel)}</dd>
