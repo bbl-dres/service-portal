@@ -1,0 +1,137 @@
+{
+  "kundenportal": {
+    "title": "BBL Kundenportal API",
+    "version": "1.0.0",
+    "format": "REST",
+    "description": "Backend-Schnittstellen des Kundenportals — die REST-Ressourcen, die das Portal für Vorgänge, Kataloge und Fachdaten benötigt. Prototyp-Vision: die Endpunkte sind gemockt, die «Ausprobieren»-Antworten stammen wo möglich aus den echten Portaldaten.",
+    "baseUrl": "https://api.bbl.admin.ch/kundenportal/v1",
+    "auth": "Bearer-Token (eIAM / CH-LOGIN)",
+    "resources": [
+      {
+        "tag": "vorgaenge",
+        "label": "Vorgänge",
+        "description": "Geschäftsfälle, die das Portal über die Prozess-Engine auslöst und verfolgt (Raumbedarf, Störungsmeldung, Beschaffung …).",
+        "endpoints": [
+          { "method": "GET", "path": "/vorgaenge", "summary": "Vorgänge der angemeldeten Person auflisten",
+            "params": [
+              { "name": "status", "in": "query", "type": "string", "desc": "Filter nach Status (offen, in_arbeit, abgeschlossen)" },
+              { "name": "limit", "in": "query", "type": "integer", "desc": "Maximale Anzahl (Default 20)" }
+            ],
+            "responses": { "200": "Liste von Vorgängen" }, "live": "vorgaenge.list" },
+          { "method": "POST", "path": "/vorgaenge", "summary": "Neuen Vorgang aus einer Dienstleistung erstellen",
+            "body": { "serviceId": "raumbedarf-melden", "payload": { "org": "GS-EFD", "flaeche_m2": 40, "begruendung": "Zusätzlicher Arbeitsplatz" } },
+            "responses": { "201": "Vorgang erstellt", "400": "Validierung fehlgeschlagen" },
+            "example": { "id": "V-2026-0042", "serviceId": "raumbedarf-melden", "status": "offen", "created": "2026-07-25T09:12:00Z", "steps": [{ "id": "eingang", "state": "aktiv" }] } },
+          { "method": "GET", "path": "/vorgaenge/{id}", "summary": "Einen Vorgang mit Verlauf abrufen",
+            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "Vorgangs-ID, z. B. V-2026-0042" }],
+            "responses": { "200": "Vorgang", "404": "Nicht gefunden" },
+            "example": { "id": "V-2026-0042", "serviceId": "raumbedarf-melden", "status": "in_arbeit", "steps": [{ "id": "eingang", "state": "erledigt" }, { "id": "pruefung", "state": "aktiv" }] } },
+          { "method": "POST", "path": "/vorgaenge/{id}/aktionen", "summary": "Prozessschritt auslösen (weiterleiten, abschliessen)",
+            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "Vorgangs-ID" }],
+            "body": { "aktion": "weiterleiten", "kommentar": "Freigabe erteilt" },
+            "responses": { "200": "Neuer Status", "409": "Aktion im aktuellen Status nicht erlaubt" },
+            "example": { "id": "V-2026-0042", "status": "in_arbeit", "aktiverSchritt": "pruefung" } }
+        ]
+      },
+      {
+        "tag": "dienstleistungen",
+        "label": "Dienstleistungen",
+        "description": "Der Dienstleistungskatalog des BBL — Einstiegspunkte, Formulare und zugehörige Weisungen.",
+        "endpoints": [
+          { "method": "GET", "path": "/dienstleistungen", "summary": "Dienstleistungen auflisten",
+            "params": [{ "name": "domain", "in": "query", "type": "string", "desc": "Filter nach Themenbereich" }],
+            "responses": { "200": "Liste von Dienstleistungen" }, "live": "dienstleistungen.list" },
+          { "method": "GET", "path": "/dienstleistungen/{id}", "summary": "Eine Dienstleistung mit Details abrufen",
+            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "serviceId" }],
+            "responses": { "200": "Dienstleistung", "404": "Nicht gefunden" }, "live": "dienstleistungen.one" }
+        ]
+      },
+      {
+        "tag": "anwendungen",
+        "label": "Anwendungen",
+        "description": "Das Anwendungsverzeichnis — Fachanwendungen mit Einstieg, Berechtigung und Ansprechstelle.",
+        "endpoints": [
+          { "method": "GET", "path": "/anwendungen", "summary": "Anwendungen auflisten",
+            "params": [{ "name": "bereich", "in": "query", "type": "string", "desc": "bauten | logistik | zentral" }],
+            "responses": { "200": "Liste von Anwendungen" }, "live": "anwendungen.list" },
+          { "method": "GET", "path": "/anwendungen/{id}", "summary": "Eine Anwendung abrufen",
+            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "appId" }],
+            "responses": { "200": "Anwendung", "404": "Nicht gefunden" }, "live": "anwendungen.one" }
+        ]
+      },
+      {
+        "tag": "liegenschaften",
+        "label": "Liegenschaften",
+        "description": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form.",
+        "endpoints": [
+          { "method": "GET", "path": "/liegenschaften", "summary": "Liegenschaften auflisten",
+            "params": [
+              { "name": "land", "in": "query", "type": "string", "desc": "Filter nach Land (CH, DE, US …)" },
+              { "name": "status", "in": "query", "type": "string", "desc": "Aktiv | Abgang | Löschvermerk" },
+              { "name": "limit", "in": "query", "type": "integer", "desc": "Maximale Anzahl" }
+            ],
+            "responses": { "200": "Liste von Liegenschaften" }, "live": "liegenschaften.list" },
+          { "method": "GET", "path": "/liegenschaften/{bblId}", "summary": "Eine Liegenschaft über die BBL-ID abrufen",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID (SAP RE-FX), z. B. 1000/4840/AF" }],
+            "responses": { "200": "Liegenschaft", "404": "Nicht gefunden" }, "live": "liegenschaften.one" },
+          { "method": "GET", "path": "/liegenschaften/{bblId}/dokumente", "summary": "Verknüpfte Dokumente einer Liegenschaft",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
+            "responses": { "200": "Liste von Dokumenten" }, "live": "liegenschaften.docs" }
+        ]
+      },
+      {
+        "tag": "bauprojekte",
+        "label": "Bauprojekte",
+        "description": "Neu- und Umbauprojekte des Bundes mit SIA-Phase, Kosten und Status.",
+        "endpoints": [
+          { "method": "GET", "path": "/bauprojekte", "summary": "Bauprojekte auflisten",
+            "params": [{ "name": "status", "in": "query", "type": "string", "desc": "Filter nach Projektstatus" }],
+            "responses": { "200": "Liste von Bauprojekten" }, "live": "bauprojekte.list" },
+          { "method": "GET", "path": "/bauprojekte/{id}", "summary": "Ein Bauprojekt abrufen",
+            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "projectId" }],
+            "responses": { "200": "Bauprojekt", "404": "Nicht gefunden" }, "live": "bauprojekte.one" }
+        ]
+      },
+      {
+        "tag": "dokumente",
+        "label": "Dokumente",
+        "description": "Föderierte Dokumentensuche über die Quellsysteme (ActaNova, Planarchiv DALA, CDE Bund). Liefert Metadaten und Download-URLs.",
+        "endpoints": [
+          { "method": "GET", "path": "/dokumente", "summary": "Dokumente suchen",
+            "params": [
+              { "name": "q", "in": "query", "type": "string", "desc": "Volltextsuche" },
+              { "name": "quelle", "in": "query", "type": "string", "desc": "actanova | dala | cde" }
+            ],
+            "responses": { "200": "Liste von Dokument-Metadaten" }, "live": "dokumente.list" },
+          { "method": "GET", "path": "/dokumente/{id}/download", "summary": "Download-URL(s) eines Dokuments auflösen",
+            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "Dokument-ID" }],
+            "responses": { "200": "Download-URL oder Dateiliste", "404": "Nicht gefunden" },
+            "example": { "id": "DOC-2043", "titel": "Grundriss EG", "files": [{ "name": "grundriss_eg.pdf", "url": "https://dala.bbl.admin.ch/download/DOC-2043", "format": "PDF", "sizeKB": 2480 }] } }
+        ]
+      },
+      {
+        "tag": "datenkatalog",
+        "label": "Datenkatalog",
+        "description": "Die DCAT-AP-CH-Datensätze des Datenbezug- und API-Verzeichnisses — inklusive dieser API-Sammlung selbst.",
+        "endpoints": [
+          { "method": "GET", "path": "/datensaetze", "summary": "Datensätze auflisten",
+            "params": [{ "name": "thema", "in": "query", "type": "string", "desc": "Filter nach Thema" }],
+            "responses": { "200": "Liste von Datensätzen" }, "live": "datensaetze.list" },
+          { "method": "GET", "path": "/datensaetze/{id}", "summary": "Einen Datensatz mit Bezugswegen abrufen",
+            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "Datensatz-ID" }],
+            "responses": { "200": "Datensatz", "404": "Nicht gefunden" }, "live": "datensaetze.one" }
+        ]
+      },
+      {
+        "tag": "suche",
+        "label": "Suche",
+        "description": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen.",
+        "endpoints": [
+          { "method": "GET", "path": "/suche", "summary": "Portalweite Suche",
+            "params": [{ "name": "q", "in": "query", "type": "string", "required": true, "desc": "Suchbegriff" }],
+            "responses": { "200": "Treffer gruppiert nach Kategorie" }, "live": "suche" }
+        ]
+      }
+    ]
+  }
+}

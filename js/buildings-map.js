@@ -45,10 +45,14 @@ const SWISSTOPO_STYLE = {
 };
 
 // CARTO Positron grey (worldwide) — calm ground for a global portfolio.
-// `glyphs` (openmaptiles fonts) are needed for the cluster counts + id labels.
+// `glyphs` (Noto Sans font PBFs) are needed for the cluster counts + id labels.
+// Served from MapLibre's demotiles host: fonts.openmaptiles.org started returning
+// an HTML landing page (HTTP 200) instead of PBF, which MapLibre parses as protobuf
+// and throws «Unimplemented type: 4» — aborting the whole estate tile (clusters
+// included). demotiles.maplibre.org returns real PBFs for Noto Sans Regular/Bold.
 const CARTO_STYLE = {
   version: 8,
-  glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     carto: {
       type: 'raster',

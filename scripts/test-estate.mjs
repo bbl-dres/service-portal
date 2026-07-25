@@ -11,6 +11,11 @@ import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const PROBE = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
+  // MapLibre reports tile/glyph failures via its 'error' event → console.error,
+  // not as an uncaught exception, so page.exceptions never sees them. Capture them
+  // here (a broken glyph host once killed clustering with «Unimplemented type: 4»).
+  window.__mapErrs = []; const __oe = console.error;
+  console.error = (...a) => { try { window.__mapErrs.push(a.map(x => typeof x === 'string' ? x : ((x && x.message) || '')).join(' ')); } catch (e) {} __oe.apply(console, a); };
   let n = 0; while (!document.querySelector('.dash-grid .chart') && n++ < 150) await s(100);
   const tabLabels = [...document.querySelectorAll('.tab__control')].map(t => t.textContent.trim());
   const kpiVals = () => [...document.querySelectorAll('.kpi__value')].map(v => v.textContent.replace(/\\s+/g, ' ').trim());
@@ -26,6 +31,8 @@ const PROBE = `(async () => {
   // wait for the CARTO map canvas (MapLibre loads from CDN; markers are clustered GeoJSON layers)
   let m = 0; while (!document.querySelector('.dash-map canvas') && m++ < 100) await s(100);
   R.mapCanvas = !!document.querySelector('.dash-map canvas');
+  await s(2500);   // let the basemap tiles + glyph PBFs load so any parse error fires
+  R.mapErrs = (window.__mapErrs || []).filter(e => /Unimplemented|glyph|type: 4/i.test(e));
 
   // multi-select filter Land = CH → building count should drop (worldwide → Swiss)
   const cb = document.querySelector('input[type=checkbox][data-dim="land"][value="CH"]');
@@ -65,6 +72,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(r.chartsGeb >= 5, `Gebäude tab has map + charts (${r.chartsGeb} figures)`);
     check(r.hasMapEl, 'map container present on Gebäude tab');
     check(r.mapCanvas, 'CARTO map canvas renders (clustered layers)');
+    check((r.mapErrs || []).length === 0, `map renders without glyph/tile parse errors${r.mapErrs && r.mapErrs.length ? ' — ' + r.mapErrs[0] : ''}`);
     check(Number(r.kpisCH[0].replace(/\\D/g, '')) < Number(r.kpisAll[0].replace(/\\D/g, '')), `Land=CH reduces building count (${r.kpisAll[0]} → ${r.kpisCH[0]})`);
     check(/land=CH/.test(r.hashAfterFilter), `filter mirrored to hash (${r.hashAfterFilter})`);
     check(r.tab2Active === 'grundstuecke', 'switch to Grundstücke tab');
