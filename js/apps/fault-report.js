@@ -76,9 +76,9 @@ export default async function render(ctx) {
   }
 
   function selectControl(id, options, selected) {
-    return `<div class="select"><select id="${id}" class="input--outline input--base">${options.map(o =>
+    return C.selectBox(`<select id="${id}" class="input--outline input--base">${options.map(o =>
       `<option value="${C.escape(o.value)}"${o.value === selected ? ' selected' : ''}>${C.escape(o.text)}</option>`
-    ).join('')}</select><div class="select__icon">${C.chevron}</div></div>`;
+    ).join('')}</select>`);
   }
 
   function draw() {

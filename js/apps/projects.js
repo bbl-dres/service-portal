@@ -104,10 +104,9 @@ function overview(ctx) {
   }
 
   function viewToggle() {
-    return `<div class="row" role="group" aria-label="Ansicht">
-      <button type="button" class="btn btn--sm ${state.view === 'karten' ? 'btn--filled' : 'btn--outline'}" data-view="karten">${C.icon('Apps', 'icon--base')} Karten</button>
-      <button type="button" class="btn btn--sm ${state.view === 'liste' ? 'btn--filled' : 'btn--outline'}" data-view="liste">${C.icon('List', 'icon--base')} Liste</button>
-    </div>`;
+    // CD-Ansichtsschalter statt gefüllter Umschalt-Buttons (btn--filled ist für
+    // Formularabschluss reserviert, nicht für Ansichtswechsel).
+    return C.viewSwitch(state.view, [['karten', 'Kartenansicht', 'Apps'], ['liste', 'Listenansicht', 'List']]);
   }
 
   function projectCard(p) {

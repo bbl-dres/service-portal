@@ -55,13 +55,13 @@ export default async function render(ctx) {
     return `
       <a class="card card--default card--clickable media-tile" href="#/app/mediathek/${encodeURIComponent(m.mediaId)}" data-media="${C.escape(m.mediaId)}">
         ${C.photo({
-          id: m.photo, color: m.color, alt: m.title, w: 640, gray: isHistoric(m),
+          id: m.photo, color: m.color, alt: '', w: 640, gray: isHistoric(m),
           cls: 'media-preview photo--scrim',
           style: 'height:150px;display:flex;align-items:flex-end;justify-content:space-between;padding:.6rem .75rem',
           overlay: `
             ${isVideo ? `<span class="media-play" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;opacity:.92;">${C.icon('Video', 'icon--xl')}</span>` : ''}
             <span class="media-type-icon" style="color:rgba(255,255,255,.9);">${C.icon(isVideo ? 'Video' : 'Image', 'icon--base')}</span>
-            <span class="badge badge--gray" style="background:rgba(0,0,0,.45);color:#fff;">${C.escape(m.date)}</span>`,
+            <span class="badge badge--gray" style="background:var(--overlay-scrim);color:#fff;">${C.escape(m.date)}</span>`,
         })}
         <div class="card__body">
           <div class="card__title card__title--sm">${C.escape(m.title)}</div>
@@ -88,7 +88,7 @@ export default async function render(ctx) {
           <div class="split">
             <div class="stack">
               ${C.photo({
-                id: m.photo, color: m.color, alt: m.title, w: 1000, gray: isHistoric(m),
+                id: m.photo, color: m.color, alt: '', w: 1000, gray: isHistoric(m),
                 style: 'height:320px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center',
                 overlay: isVideo ? `<span style="color:#fff;opacity:.92;">${C.icon('Video', 'icon--xl')}</span>` : '',
               })}
@@ -142,13 +142,10 @@ export default async function render(ctx) {
         </div>
         <div>
           <label for="med-building" class="small muted" style="display:block;font-weight:var(--fw-bold);margin-bottom:.35rem;">Gebäude</label>
-          <div class="select" style="max-width:24rem;">
-            <select id="med-building" class="input--outline input--base">
+          ${C.selectBox(`<select id="med-building" class="input--outline input--base">
               <option value="alle"${state.building === 'alle' ? ' selected' : ''}>Alle Gebäude</option>
               ${buildings.map(b => `<option value="${C.escape(b.bbl_id)}"${state.building === b.bbl_id ? ' selected' : ''}>${C.escape(b.name)} — ${C.escape(b.city)}</option>`).join('')}
-            </select>
-            <div class="select__icon">${C.chevron}</div>
-          </div>
+            </select>`, '', 'max-width:24rem')}
         </div>
       </div>
 
@@ -218,13 +215,13 @@ function detail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/app/mediathek', 'Mediathek')}
-    <div class="split mt-4">
+    ${C.detailBar({ backHref: '#/app/mediathek', backLabel: 'Mediathek' })}
+    <div class="split">
       <div class="stack">
         <div class="row gap-sm">${C.badge(isVideo ? 'Video' : 'Foto', 'blue')}${periodBadge}</div>
         <h1 tabindex="-1">${C.escape(m.title)}</h1>
         ${C.photo({
-          id: m.photo, color: m.color, alt: m.title, w: 1200, gray: m.historicPeriod === 'historisch',
+          id: m.photo, color: m.color, alt: '', w: 1200, gray: m.historicPeriod === 'historisch',
           style: 'height:380px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center',
           overlay: isVideo ? `<span style="color:#fff;opacity:.92;">${C.icon('Video', 'icon--xl')}</span>` : '',
         })}

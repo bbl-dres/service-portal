@@ -34,7 +34,7 @@ export default async function render(ctx) {
 
   const card = (s) => C.card({
     title: s.title, desc: s.short, href: `#/services/${s.serviceId}`,
-    badges: [C.audienceTag(s.audience), s.type === 'action' ? C.badge('Service', 'info') : C.badge('Information', 'gray')],
+    badges: [C.audienceTag(s.audience), s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')],
     footer: `<span>${domainLabel(domains, s.domain)}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
   });
 
@@ -45,7 +45,7 @@ export default async function render(ctx) {
       { key: 'title', label: 'Dienstleistung', render: s => `<a href="#/services/${s.serviceId}">${C.escape(s.title)}</a><br><span class="small muted">${C.escape(s.short)}</span>` },
       { key: 'domain', label: 'Bereich', render: s => C.escape(domainLabel(domains, s.domain)) },
       { key: 'audience', label: 'Zielgruppe', render: s => C.audienceTag(s.audience) },
-      { key: 'type', label: 'Typ', render: s => s.type === 'action' ? C.badge('Service', 'info') : C.badge('Information', 'gray') },
+      { key: 'type', label: 'Typ', render: s => s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray') },
     ],
     rows: list,
   });
@@ -68,11 +68,11 @@ export default async function render(ctx) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.pageHeader({ title: 'Dienstleistungen', lead: 'Was möchten Sie tun? Services starten einen Vorgang; Informationsangebote führen weiter.' })}
+    ${C.pageHeader({ title: 'Dienstleistungen', lead: 'Was möchten Sie tun? Als «Vorgang» gekennzeichnete Dienstleistungen starten einen Ablauf; Informationsangebote führen weiter.' })}
     <form class="service-controls" id="svc-search" role="search">
       <div class="service-controls__search">
-        <label class="sr-only" for="sq">Service suchen</label>
-        <input id="sq" type="search" placeholder="Service suchen..." value="${C.escape(rawQ)}" autocomplete="off">
+        <label class="sr-only" for="sq">Dienstleistung suchen</label>
+        <input id="sq" type="search" placeholder="Dienstleistung suchen…" value="${C.escape(rawQ)}" autocomplete="off">
         <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </div>
       <div class="service-controls__filters" aria-label="Dienstleistungen filtern">
@@ -83,17 +83,16 @@ export default async function render(ctx) {
       </div>
     </form>
     ${filterBar}
-    <section class="mt-6">
-      ${C.resultsHeader({ count: services.length, total: all.length, unit: 'Dienstleistungen', page, totalPages, view })}
-      ${relatedHits ? `<p class="muted small mt-4">${relatedHits}</p>` : ''}
-      ${services.length ? `${view === 'liste' ? listView(visibleServices) : `<div class="grid grid--3 mt-4">${visibleServices.map(card).join('')}</div>`}${
-        C.pagination({ page, totalPages, inputId: 'svc-page', label: 'Seitennavigation Dienstleistungen',
-          href: (p) => servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics, page: p, view }) })
-      }` : C.empty('Keine Services gefunden.')}
-    </section>
+    ${C.catalogueResults({
+      visible: visibleServices, count: services.length, total: all.length, view, page, totalPages,
+      card, listView, unit: 'Dienstleistungen',
+      paginationInputId: 'svc-page', paginationLabel: 'Seitennavigation Dienstleistungen',
+      paginationHref: (p) => servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics, page: p, view }),
+      available: core.available('services'), note: relatedHits || '',
+    })}
   </div>`;
 
-  C.announce(`${services.length} von ${all.length} Dienstleistungen${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'liste' ? 'Liste' : 'Galerie'}`);
+  C.announceCatalogue({ count: services.length, total: all.length, unit: 'Dienstleistungen', page, totalPages, view });
 
   mount.querySelector('#svc-search').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -168,18 +167,12 @@ function detail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.detailBar({ backHref: '#/services', backLabel: 'Dienstleistungen' })}
-    <div class="hero hero--main-image">
-      <div class="hero__content">
-        <div class="row gap-sm">${C.audienceTag(s.audience)} ${s.type === 'action' ? C.badge('Service', 'info') : C.badge('Information', 'gray')}</div>
-        <h1 class="hero__title" tabindex="-1">${C.escape(s.title)}</h1>
-        <p class="hero__description">${C.escape(s.short)}</p>
-      </div>
-      <div class="hero__image"><figure>
-        ${C.photo({ id: img, color: '#2f4356', alt: '', w: 800 })}
-        <figcaption class="small muted">Symbolbild — © Unsplash</figcaption>
-      </figure></div>
-    </div>
+    ${C.detailHead({
+      backHref: '#/services', backLabel: 'Dienstleistungen',
+      title: s.title, lead: s.short,
+      tags: `${C.audienceTag(s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
+      image: `<figure>${C.photo({ id: img, color: '#2f4356', alt: '', w: 800 })}<figcaption class="small muted">Symbolbild — © Unsplash</figcaption></figure>`,
+    })}
     <div class="split mt-6">
       <div class="stack">
         <p>${C.escape(s.description)}</p>

@@ -70,14 +70,14 @@ export default async function render(ctx) {
     return `
       ${field('org', 'Verwaltungseinheit <span class="req">*</span>', `<input id="org" value="${C.escape(state.org)}">`, state.errors.org)}
       ${field('cc', 'Kostenstelle <span class="req">*</span>', `<input id="cc" placeholder="z. B. 810.123" value="${C.escape(state.costCenter)}">`, state.errors.costCenter)}
-      ${field('bld', 'Standort / Gebäude', `<div class="select"><select id="bld" class="input--outline input--base">${buildings.map(b => `<option value="${b.bbl_id}"${b.bbl_id === state.buildingId ? ' selected' : ''}>${C.escape(b.name)} — ${C.escape(b.city)}</option>`).join('')}</select><div class="select__icon">${C.chevron}</div></div>`)}
+      ${field('bld', 'Standort / Gebäude', C.selectBox(`<select id="bld" class="input--outline input--base">${buildings.map(b => `<option value="${b.bbl_id}"${b.bbl_id === state.buildingId ? ' selected' : ''}>${C.escape(b.name)} — ${C.escape(b.city)}</option>`).join('')}</select>`))}
       ${field('persons', 'Anzahl Personen / Arbeitsplätze <span class="req">*</span>', `<input id="persons" type="number" min="1" value="${state.persons}">`, state.errors.persons)}
       <div class="row" style="justify-content:flex-end"><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
   }
 
   function step2() {
     return `
-      ${field('naw', 'Arbeitswelt (NAW-Klasse)', `<div class="select"><select id="naw" class="input--outline input--base">${naw.map(n => `<option value="${n.id}"${n.id === state.nawClass ? ' selected' : ''}>${C.escape(n.label)}</option>`).join('')}</select><div class="select__icon">${C.chevron}</div></div>`)}
+      ${field('naw', 'Arbeitswelt (NAW-Klasse)', C.selectBox(`<select id="naw" class="input--outline input--base">${naw.map(n => `<option value="${n.id}"${n.id === state.nawClass ? ' selected' : ''}>${C.escape(n.label)}</option>`).join('')}</select>`))}
       <div class="notification notification--info">${C.icon('InfoCircle', 'icon--lg')}<div>Geschätzter Flächenbedarf: <strong>${area()} m² HNF</strong><br><span class="small">${state.persons} Arbeitsplätze × ${AREA_PER_WORKPLACE} m² × Desk-Sharing-Faktor ${dsf}</span></div></div>
       ${field('termin', 'Gewünschter Termin', `<input id="termin" type="date" value="${C.escape(state.termin)}">`)}
       ${field('beg', 'Begründung <span class="req">*</span>', `<textarea id="beg" placeholder="Weshalb wird der zusätzliche Raum benötigt?">${C.escape(state.begruendung)}</textarea>`, state.errors.begruendung)}

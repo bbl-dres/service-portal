@@ -111,17 +111,16 @@ export default async function render(ctx) {
       </div>
     </form>
     ${filterBar}
-    <section class="mt-6">
-      ${C.resultsHeader({ count: apps.length, total: all.length, unit: 'Anwendungen', page, totalPages, view })}
-      ${apps.length
-        ? `${view === 'liste' ? listView(visible) : `<div class="grid grid--3 mt-4">${visible.map(card).join('')}</div>`}
-           ${C.pagination({ page, totalPages, inputId: 'app-page', label: 'Seitennavigation Anwendungen',
-              href: (p) => hash({ ...base, page: p }) })}`
-        : C.empty('Keine Anwendungen gefunden.')}
-    </section>
+    ${C.catalogueResults({
+      visible, count: apps.length, total: all.length, view, page, totalPages,
+      card, listView, unit: 'Anwendungen',
+      paginationInputId: 'app-page', paginationLabel: 'Seitennavigation Anwendungen',
+      paginationHref: (p) => hash({ ...base, page: p }),
+      available: core.available('applications'),
+    })}
   </div>`;
 
-  C.announce(`${apps.length} von ${all.length} Anwendungen${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'liste' ? 'Liste' : 'Galerie'}`);
+  C.announceCatalogue({ count: apps.length, total: all.length, unit: 'Anwendungen', page, totalPages, view });
 
   mount.querySelector('#app-search').addEventListener('submit', (e) => {
     e.preventDefault();

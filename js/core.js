@@ -22,6 +22,20 @@ const FILES = {
 // einen künftigen Metadatenkatalog), wird aber von keiner Ansicht mehr gelesen
 // und daher auch nicht mehr geladen.
 
+// Schlüssel, deren Datei nicht geladen werden konnte. Ohne diese Merkliste würde
+// ein Ausfall als plausible Null durchgehen (leere Liste = «keine Einträge»); die
+// Shell blendet stattdessen ein Fehlerband ein und C.empty() unterscheidet
+// «leer» von «nicht verfügbar» (core.available()).
+const FAILED = new Set();
+
+// Fachlicher Name je Datenschlüssel — für das Fehlerband der Shell.
+const AREA = {
+  buildings: 'Liegenschaften', projects: 'Bauprojekte', services: 'Dienstleistungen',
+  applications: 'Anwendungen', documents: 'Dokumente', media: 'Mediathek',
+  weisungen: 'Weisungen', news: 'News', contacts: 'Kontakte', reference: 'Referenzdaten',
+  datasets: 'Datenkatalog', catalogLabels: 'Katalog-Beschriftungen', appPages: 'Anwendungsseiten',
+};
+
 async function load() {
   const entries = await Promise.all(Object.entries(FILES).map(async ([k, url]) => {
     try {
@@ -30,6 +44,7 @@ async function load() {
       return [k, await r.json()];
     } catch (e) {
       console.warn('[core] could not load', url, e.message);
+      FAILED.add(k);
       return [k, ['reference', 'catalogLabels', 'appPages'].includes(k) ? {} : []];
     }
   }));
@@ -71,6 +86,11 @@ export const core = {
   dataset: (id) => find(DATA.datasets, 'id', id),
   t: (v) => (v && typeof v === 'object') ? (v.de ?? v.en ?? '') : (v ?? ''),
   label: (key, fallback) => (DATA.catalogLabels || {})[key] || fallback || key,
+  // Datenausfall-Status (P0-4): available() sagt, ob ein Schlüssel geladen wurde;
+  // failedAreas() liefert die fachlichen Namen der ausgefallenen Bereiche.
+  available: (key) => !FAILED.has(key),
+  failed: () => Array.from(FAILED),
+  failedAreas: () => Array.from(FAILED).map(k => AREA[k] || k),
 };
 
 function groupBy(arr, key) {

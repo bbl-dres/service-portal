@@ -106,17 +106,18 @@ function list(ctx) {
       </div>
     </form>
     ${filterBar}
-    <section class="mt-6">
-      ${C.resultsHeader({ count: datasets.length, total: all.length, unit: 'Datensätzen', page, totalPages, view })}
-      ${datasets.length
-        ? `${view === 'liste' ? listView(visible) : `<div class="grid grid--3 mt-4">${visible.map(card).join('')}</div>`}
-           ${C.pagination({ page, totalPages, inputId: 'ds-page',
-              href: (p) => hash({ ...base, page: p }), label: 'Seitennavigation Datensätze' })}`
-        : C.empty('Keine Datensätze gefunden.')}
-    </section>
+    ${C.catalogueResults({
+      visible, count: datasets.length, total: all.length, view, page, totalPages,
+      card, listView, unit: 'Datensätzen',
+      paginationInputId: 'ds-page', paginationLabel: 'Seitennavigation Datensätze',
+      paginationHref: (p) => hash({ ...base, page: p }),
+      available: core.available('datasets'),
+      emptyMsg: 'Keine Datensätze gefunden.',
+      unavailableMsg: 'Datensätze konnten nicht geladen werden (Ladefehler).',
+    })}
   </div>`;
 
-  C.announce(`${datasets.length} von ${all.length} Datensätzen${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'liste' ? 'Liste' : 'Galerie'}`);
+  C.announceCatalogue({ count: datasets.length, total: all.length, unit: 'Datensätzen', page, totalPages, view });
 
   mount.querySelector('#ds-search').addEventListener('submit', (e) => {
     e.preventDefault();
@@ -207,30 +208,21 @@ function detail(ctx, id) {
     if (f.key === 'lizenz') return C.escape(licenceLabel(val));
     return C.escape(val);
   };
-  const dists = (d.distributions || []).map((dist, i) => {
+  const dists = (d.distributions || []).map((dist) => {
     const format = dist.dateiformat || dist.format || '';
     const download = dist.downloadUrl || dist.zugriffsUrl || '';
-    return `
-      <div class="accordion__item">
-        <h3 style="margin:0">
-          <button class="accordion__button" type="button" aria-expanded="false" aria-controls="dist-p-${i}" id="dist-b-${i}">
-            <span class="accordion__title">${C.escape(t(dist.name) || dist.titel)}</span>
-            <span class="accordion__meta">
-              ${format ? C.badge(format, 'gray', 'sm') : ''}${C.icon('ChevronDown', 'icon--base')}
-            </span>
-          </button>
-        </h3>
-        <div class="accordion__content" id="dist-p-${i}" role="region" aria-labelledby="dist-b-${i}" hidden>
-          <div class="data-rows">
-            ${DIST_FIELDS.map(f => `<div class="data-row">
-              <div class="data-row__key">${f.label}</div>
-              <div class="data-row__value">${distValue(dist, f)}</div>
-            </div>`).join('')}
-          </div>
-          <div class="row mt-4">${C.downloadLink(download, 'Datensatz beziehen')}</div>
+    return {
+      title: t(dist.name) || dist.titel,
+      meta: format ? C.badge(format, 'gray', 'sm') : '',
+      body: `<div class="data-rows">
+          ${DIST_FIELDS.map(f => `<div class="data-row">
+            <div class="data-row__key">${f.label}</div>
+            <div class="data-row__value">${distValue(dist, f)}</div>
+          </div>`).join('')}
         </div>
-      </div>`;
-  }).join('');
+        <div class="row mt-4">${C.downloadLink(download, 'Datensatz beziehen')}</div>`,
+    };
+  });
 
   const pubs = (d.publications || []).map(p => `
     <div class="data-row">
@@ -238,24 +230,16 @@ function detail(ctx, id) {
       <div class="data-row__value">${C.escape(t(p.value))}</div>
     </div>`).join('');
 
-  const section = (title, body) => `
-    <section class="detail-section">
-      <h2 class="detail-section__title">${C.escape(title)}</h2>
-      ${body}
-    </section>`;
+  const section = (title, body) => C.detailSection({ title, body });
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.detailBar({ backHref: '#/data/katalog', backLabel: 'Datenbezug' })}
-
-    <div class="hero hero--main-image">
-      <div class="hero__content">
-        <h1 class="hero__title" tabindex="-1">${C.escape(t(d.title))}</h1>
-        <p class="hero__description">${C.escape(t(d.description))}</p>
-        ${tagPills ? `<div class="pill-row">${tagPills}</div>` : ''}
-      </div>
-      ${img ? `<div class="hero__image"><img src="${img}" alt="" loading="lazy"></div>` : ''}
-    </div>
+    ${C.detailHead({
+      backHref: '#/data/katalog', backLabel: 'Datenbezug',
+      title: t(d.title), lead: t(d.description),
+      tags: tagPills,
+      image: img ? `<img src="${img}" alt="" loading="lazy">` : '',
+    })}
 
     ${section('Beschreibung', `<p>${C.escape(t(d.fullDescription) || t(d.description))}</p>`)}
 
@@ -269,8 +253,8 @@ function detail(ctx, id) {
         <div class="data-row__value">${v || '<span class="muted">—</span>'}</div>
       </div>`).join('')}</div>`)}
 
-    ${section('Bereitstellungsformen', dists
-      ? `<div class="accordion" id="dist-acc">${dists}</div>`
+    ${section('Bereitstellungsformen', dists.length
+      ? C.accordion(dists, { id: 'dist' })
       : '<p class="muted">Für diesen Datensatz ist keine Bereitstellungsform erfasst.</p>')}
 
     ${section('Publikationen in externen Katalogen', pubs
@@ -278,15 +262,8 @@ function detail(ctx, id) {
       : '<p class="muted">Dieser Datensatz ist in keinem externen Katalog publiziert.</p>')}
   </div>`;
 
-  // CD-Akkordeon: Panels auf- und zuklappen.
-  mount.querySelectorAll('#dist-acc .accordion__button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const expanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', String(!expanded));
-      const panel = mount.querySelector('#' + btn.getAttribute('aria-controls'));
-      if (panel) panel.hidden = expanded;
-    });
-  });
+  // CD-Akkordeon: auf- und zuklappen (gemeinsame Verdrahtung).
+  C.wireAccordion(mount);
 }
 
 // ============================== Helpers ==============================

@@ -45,10 +45,23 @@ function toObjects(ds) {
   return (ds.rows || []).map(r => Object.fromEntries(names.map((n, i) => [n, r[i]])));
 }
 
+// A range predicate is a plain object like { gte, lte, gt, lt } — used by the
+// dashboard year filter (Start Zeitreihe / bis Jahr) to trim time series.
+function isRange(want) {
+  return want && typeof want === 'object' && !Array.isArray(want)
+    && ['gte', 'lte', 'gt', 'lt'].some(k => k in want);
+}
+
 function applyWhere(rows, where) {
   if (!where) return rows;
-  return rows.filter(row => Object.entries(where).every(([col, want]) =>
-    Array.isArray(want) ? want.includes(row[col]) : row[col] === want));
+  return rows.filter(row => Object.entries(where).every(([col, want]) => {
+    const v = row[col];
+    if (isRange(want)) {
+      return (want.gte == null || v >= want.gte) && (want.lte == null || v <= want.lte)
+        && (want.gt == null || v > want.gt) && (want.lt == null || v < want.lt);
+    }
+    return Array.isArray(want) ? want.includes(v) : v === want;
+  }));
 }
 
 function applyGroup(rows, groupBy, agg) {
@@ -89,9 +102,15 @@ function toSQL(spec) {
     : (spec.select || (ds ? ds.columns.map(c => c.name) : ['*']));
   const lines = [`SELECT ${cols.join(', ')}`, `FROM ${spec.dataset}`];
   if (spec.where) {
-    lines.push('WHERE ' + Object.entries(spec.where).map(([c, v]) =>
-      Array.isArray(v) ? `${c} IN (${v.map(x => typeof x === 'number' ? x : `'${x}'`).join(', ')})`
-        : `${c} = ${typeof v === 'number' ? v : `'${v}'`}`).join(' AND '));
+    const lit = (x) => typeof x === 'number' ? x : `'${x}'`;
+    lines.push('WHERE ' + Object.entries(spec.where).map(([c, v]) => {
+      if (isRange(v)) {
+        if (v.gte != null && v.lte != null) return `${c} BETWEEN ${lit(v.gte)} AND ${lit(v.lte)}`;
+        return ['gte', 'gt', 'lte', 'lt'].filter(k => v[k] != null)
+          .map(k => `${c} ${{ gte: '>=', gt: '>', lte: '<=', lt: '<' }[k]} ${lit(v[k])}`).join(' AND ');
+      }
+      return Array.isArray(v) ? `${c} IN (${v.map(lit).join(', ')})` : `${c} = ${lit(v)}`;
+    }).join(' AND '));
   }
   if (spec.groupBy) lines.push(`GROUP BY ${spec.groupBy}`);
   if (spec.orderBy) lines.push(`ORDER BY ${spec.orderBy.replace(/^-/, '')}${spec.orderBy.startsWith('-') ? ' DESC' : ''}`);

@@ -4,12 +4,29 @@ import { engine } from './process-engine.js';
 import { session } from './session.js';
 import { shell } from './shell.js';
 import { initRouter, redraw } from './router.js';
+import { notification, escape } from './components.js';
+
+// Datenausfall-Band (P0-4): Fehlt eine data/*.json, würde die betroffene Liste
+// als leer (statt «nicht verfügbar») erscheinen. Ein persistentes Fehlerband über
+// dem Inhalt macht den Ausfall ehrlich sichtbar, statt eine plausible Null zu zeigen.
+function renderDataStatus() {
+  const el = document.getElementById('data-status');
+  if (!el) return;
+  const areas = core.failedAreas();
+  if (!areas.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="container" style="padding-top:1rem">${notification(
+    `<strong>Einige Daten konnten nicht geladen werden</strong> (${escape(areas.join(', '))}). `
+    + 'Betroffene Listen sind unvollständig oder leer — das ist ein Ladefehler, keine leere Ablage. '
+    + '<button type="button" class="link" onclick="location.reload()">Seite neu laden</button>',
+    'error', 'WarningCircle')}</div>`;
+}
 
 async function boot() {
   await Promise.all([core.load(), engine.load()]);
   const header = document.getElementById('main-header');
   shell.renderHeader(header);
   shell.renderFooter(document.getElementById('main-footer'));
+  renderDataStatus();
   initRouter();
 
   // AGOV / FedLogin-Stub: An- und Abmelden zeichnen Kopfzeile und aktuelle

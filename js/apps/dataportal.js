@@ -1,13 +1,15 @@
 // Datenportal — Analyse-Dashboards über den Kennzahlen des BBL.
 //
 // Modelled on data.finance.admin.ch (Apache Superset): a landing page of topic
-// cards, each opening a dashboard of charts. The query layer is mocked in
-// js/sql.js — every chart declares a query spec, so the "Abfrage anzeigen"
-// panel can show the SQL a real Superset dataset would have run.
-// Analysis only: no write-back, no drill-through to source systems.
+// cards, each opening a dashboard. Every dashboard follows the same pattern — a
+// left filter panel (global year range), tabbed views, an optional KPI row and a
+// grid of chart cards. The query layer is mocked in js/sql.js; every chart
+// declares a query spec, so the «Abfrage anzeigen» panel shows the SQL a real
+// Superset dataset would have run. Analysis only: no write-back.
 
 import { sql } from '../sql.js';
 import { chart, wireCharts } from '../charts.js';
+import { initBuildingsMap } from '../buildings-map.js';
 
 const CRUMB_BASE = [
   { label: 'Startseite', href: '#/' },
@@ -56,9 +58,32 @@ function overview(ctx) {
   </div>`;
 }
 
+/* --------------------------------------------------------- filter helpers -- */
+// Collect the sorted distinct years across every time-series dataset the board
+// touches — the domain for the global «Start Zeitreihe / bis Jahr» range filter.
+function boardYears(board) {
+  const years = new Set();
+  for (const c of board.charts) {
+    const ds = c.query && sql.dataset(c.query.dataset);
+    if (!ds || !(ds.columns || []).some(col => col.name === 'jahr')) continue;
+    const idx = ds.columns.findIndex(col => col.name === 'jahr');
+    for (const row of ds.rows || []) { const y = Number(row[idx]); if (Number.isFinite(y)) years.add(y); }
+  }
+  return [...years].sort((a, b) => a - b);
+}
+
+// Inject the active year range into a chart's query when its dataset is a time
+// series (has a `jahr` column); snapshot/breakdown charts are left untouched.
+function withYearRange(spec, from, to) {
+  const ds = spec.query && sql.dataset(spec.query.dataset);
+  const isTimeSeries = ds && (ds.columns || []).some(col => col.name === 'jahr');
+  if (!isTimeSeries || from == null || to == null) return spec;
+  return { ...spec, query: { ...spec.query, where: { ...spec.query.where, jahr: { gte: from, lte: to } } } };
+}
+
 /* ------------------------------------------------------------ dashboard ---- */
 function dashboardView(ctx, id) {
-  const { mount, C, setTitle, setCrumbs } = ctx;
+  const { mount, core, C, setTitle, setCrumbs, query } = ctx;
   const board = sql.dashboard(id);
   if (!board) {
     setTitle('Dashboard nicht gefunden');
@@ -71,14 +96,61 @@ function dashboardView(ctx, id) {
   setTitle(board.title);
   setCrumbs([...CRUMB_BASE, { label: 'Datenportal', href: '#/app/dataportal' }, { label: board.title }]);
 
-  const hero = board.hero ? `
-    <div class="dash-hero box">
-      <div class="dash-hero__label">${C.escape(board.hero.label)}</div>
-      <div class="dash-hero__value">${C.escape(board.hero.value)}<span class="dash-hero__unit">${C.escape(board.hero.unit || '')}</span></div>
-      ${board.hero.deltaLabel ? `<div class="dash-hero__delta${board.hero.deltaGood ? ' is-good' : ''}">${C.escape(board.hero.deltaLabel)}</div>` : ''}
-    </div>` : '';
+  const years = boardYears(board);
+  const hasYears = years.length > 1;
+  const yMin = years[0], yMax = years[years.length - 1];
+  const chartById = Object.fromEntries(board.charts.map(c => [c.id, c]));
+  const tabs = (board.tabs && board.tabs.length)
+    ? board.tabs
+    : [{ id: 'ueberblick', label: 'Überblick', charts: board.charts.map(c => c.id) }];
+  const buildings = core.buildings();
 
-  const charts = board.charts.map(spec => chart(spec, sql.query(spec.query))).join('');
+  // --- filter/tab state (mirrored in the hash query so it is shareable) ---
+  const clampY = (v) => { const n = Number(v); return Number.isFinite(n) && years.includes(n) ? n : null; };
+  const state = {
+    from: clampY(query.get('from')) ?? yMin,
+    to: clampY(query.get('to')) ?? yMax,
+    tab: tabs.some(t => t.id === query.get('tab')) ? query.get('tab') : tabs[0].id,
+  };
+  if (state.from > state.to) state.from = state.to;
+
+  const yearOpts = (selected) => years.map(y => `<option value="${y}"${y === selected ? ' selected' : ''}>${y}</option>`).join('');
+
+  const kpiTiles = (board.kpis && board.kpis.length ? board.kpis : (board.hero ? [board.hero] : []))
+    .map(k => {
+      const value = String(k.value).replace('{buildingCount}', String(buildings.filter(b => Number.isFinite(b.lat)).length));
+      return `<div class="kpi">
+        <div class="kpi__label">${C.escape(k.label)}</div>
+        <div class="kpi__value">${C.escape(value)}${k.unit ? `<span class="kpi__unit">${C.escape(k.unit)}</span>` : ''}</div>
+        ${k.deltaLabel ? `<div class="kpi__delta${k.deltaGood ? ' is-good' : ''}">${C.escape(k.deltaLabel)}</div>` : ''}
+      </div>`;
+    }).join('');
+
+  const filterPanel = `
+    <aside class="filter-panel" id="dash-filters" aria-label="Filter">
+      <div class="filter-panel__head">
+        <h2 class="filter-panel__title">Filter</h2>
+        <button type="button" class="filter-panel__toggle btn--bare" id="filter-toggle" aria-label="Filter einklappen" aria-expanded="true">${C.icon('ChevronLeft', 'icon--base')}</button>
+      </div>
+      <div class="filter-panel__body">
+        ${hasYears ? `
+          <div class="field" style="margin:0">
+            <label for="f-from">Start Zeitreihe</label>
+            ${C.selectBox(`<select id="f-from" class="input--outline input--base">${yearOpts(state.from)}</select>`)}
+          </div>
+          <div class="field" style="margin:.9rem 0 0">
+            <label for="f-to">bis Jahr</label>
+            ${C.selectBox(`<select id="f-to" class="input--outline input--base">${yearOpts(state.to)}</select>`)}
+          </div>
+          <button type="button" class="btn btn--bare btn--sm mt-4" id="f-reset">${C.icon('Refresh', 'icon--base')} Zurücksetzen</button>
+        ` : '<p class="small muted" style="margin:0">Für dieses Dashboard sind keine Zeitreihen-Filter verfügbar.</p>'}
+      </div>
+    </aside>`;
+
+  const tabBar = `
+    <div class="tab__controls-container"><div class="tab__controls" role="tablist" aria-label="Dashboard-Ansichten">
+      ${tabs.map(t => `<button type="button" role="tab" id="dtab-${t.id}" aria-controls="dpanel" class="tab__control${t.id === state.tab ? ' tab__control--active' : ''}" aria-selected="${t.id === state.tab}" tabindex="${t.id === state.tab ? '0' : '-1'}" data-tab="${t.id}">${C.escape(t.label)}</button>`).join('')}
+    </div></div>`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -89,9 +161,96 @@ function dashboardView(ctx, id) {
       <span class="meta-info__item">Stand: ${C.escape(board.updated)}</span>
       <span class="meta-info__item">Demo-Daten</span>
     </p>
-    ${hero}
-    <div class="dash-grid mt-8">${charts}</div>
+    <div class="dashboard-layout" id="dashboard">
+      ${filterPanel}
+      <div class="dashboard-main">
+        ${tabBar}
+        <div class="tab__container" role="tabpanel" id="dpanel" aria-labelledby="dtab-${state.tab}" tabindex="0">
+          ${kpiTiles ? `<div class="kpi-row">${kpiTiles}</div>` : ''}
+          <div class="dash-grid" id="dash-grid"></div>
+        </div>
+      </div>
+    </div>
   </div>`;
 
-  wireCharts(mount);
+  // --- render the chart grid for the active tab + filters ---
+  const grid = mount.querySelector('#dash-grid');
+  let activeMaps = [];
+  function renderGrid() {
+    // free WebGL contexts from any map rendered in the previous grid
+    activeMaps.forEach(p => p && p.then && p.then(m => m && m.remove()));
+    activeMaps = [];
+    const tab = tabs.find(t => t.id === state.tab) || tabs[0];
+    const specs = tab.charts.map(cid => chartById[cid]).filter(Boolean);
+    grid.innerHTML = specs.map(spec => {
+      if (spec.form === 'map') {
+        return `<figure class="chart card card--universal chart--map" id="${spec.id}">
+          <figcaption class="chart__head"><h3 class="chart__title">${C.escape(spec.title)}</h3></figcaption>
+          <div class="dash-map" id="map-${spec.id}" role="application" aria-label="Karte der Gebäudestandorte"></div>
+          ${spec.note ? `<p class="chart__note">${C.escape(spec.note)}</p>` : ''}
+        </figure>`;
+      }
+      return chart(withYearRange(spec, state.from, state.to), sql.query(withYearRange(spec, state.from, state.to).query));
+    }).join('');
+    wireCharts(grid);
+    // initialise any map in the freshly rendered grid
+    specs.filter(s => s.form === 'map').forEach(s => {
+      const el = grid.querySelector(`#map-${s.id}`);
+      if (el) activeMaps.push(initBuildingsMap(el, buildings));
+    });
+  }
+  renderGrid();
+
+  // --- wiring: filters, tabs, panel collapse ---
+  const syncHash = () => {
+    const qs = new URLSearchParams();
+    if (state.tab !== tabs[0].id) qs.set('tab', state.tab);
+    if (hasYears && state.from !== yMin) qs.set('from', state.from);
+    if (hasYears && state.to !== yMax) qs.set('to', state.to);
+    const s = qs.toString();
+    history.replaceState(null, '', `#/app/dataportal/${encodeURIComponent(id)}${s ? '?' + s : ''}`);
+  };
+
+  const fromSel = mount.querySelector('#f-from');
+  const toSel = mount.querySelector('#f-to');
+  const clampRange = () => { if (state.from > state.to) { if (document.activeElement === fromSel) state.to = state.from; else state.from = state.to; fromSel.value = state.from; toSel.value = state.to; } };
+  if (fromSel) fromSel.addEventListener('change', () => { state.from = Number(fromSel.value); clampRange(); syncHash(); renderGrid(); });
+  if (toSel) toSel.addEventListener('change', () => { state.to = Number(toSel.value); clampRange(); syncHash(); renderGrid(); });
+  const reset = mount.querySelector('#f-reset');
+  if (reset) reset.addEventListener('click', () => { state.from = yMin; state.to = yMax; fromSel.value = yMin; toSel.value = yMax; syncHash(); renderGrid(); });
+
+  const tabBtns = [...mount.querySelectorAll('.tab__control')];
+  const panel = mount.querySelector('#dpanel');
+  const activateTab = (btn, focus) => {
+    state.tab = btn.dataset.tab;
+    tabBtns.forEach(b => {
+      const on = b === btn;
+      b.classList.toggle('tab__control--active', on);
+      b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    panel.setAttribute('aria-labelledby', `dtab-${state.tab}`);
+    syncHash();
+    renderGrid();
+    if (focus) btn.focus();
+  };
+  tabBtns.forEach((btn, idx) => {
+    btn.addEventListener('click', () => activateTab(btn, false));
+    btn.addEventListener('keydown', (e) => {
+      let ni = null;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') ni = (idx + 1) % tabBtns.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ni = (idx - 1 + tabBtns.length) % tabBtns.length;
+      else if (e.key === 'Home') ni = 0;
+      else if (e.key === 'End') ni = tabBtns.length - 1;
+      if (ni !== null) { e.preventDefault(); activateTab(tabBtns[ni], true); }
+    });
+  });
+
+  const layout = mount.querySelector('#dashboard');
+  const toggle = mount.querySelector('#filter-toggle');
+  if (toggle) toggle.addEventListener('click', () => {
+    const collapsed = layout.classList.toggle('dashboard-layout--collapsed');
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('aria-label', collapsed ? 'Filter ausklappen' : 'Filter einklappen');
+  });
 }

@@ -102,25 +102,19 @@ function weisungPage(ctx, w) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/knowledge?tab=grundlagen', 'Gesetzliche Grundlagen und Vorgaben')}
-    <div class="split mt-4">
+    ${C.detailHead({
+      backHref: '#/knowledge?tab=grundlagen', backLabel: 'Gesetzliche Grundlagen und Vorgaben',
+      title: w.title, lead: w.summary,
+      tags: `<code class="badge badge--gray" style="font-family:ui-monospace,Consolas,monospace">${C.escape(w.code)}</code>${C.badge(w.type, typeVariant(w.type))}${forceBadge(C, w.bindingForce)}${statusBadge(C, w.status)}`,
+      image: C.photo({ id: '1522071820081-009f0129c71c', alt: '', w: 800 }),
+    })}
+    ${w.status === 'aufgehoben' && successor
+      ? C.notification(`Diese Weisung ist <strong>aufgehoben</strong>. Abgelöst durch <a href="#/knowledge?tab=grundlagen&id=${encodeURIComponent(successor.directiveId)}">${C.escape(successor.code)} — ${C.escape(successor.title)}</a>.`, 'warning', 'WarningCircle')
+      : w.status === 'aufgehoben'
+        ? C.notification('Diese Weisung ist <strong>aufgehoben</strong>.', 'warning', 'WarningCircle')
+        : ''}
+    <div class="split mt-6">
       <div class="stack">
-        <div class="row gap-sm" style="align-items:baseline">
-          <code class="badge badge--gray" style="font-family:ui-monospace,Consolas,monospace">${C.escape(w.code)}</code>
-          ${C.badge(w.type, typeVariant(w.type))}
-          ${forceBadge(C, w.bindingForce)}
-          ${statusBadge(C, w.status)}
-        </div>
-        <h1 tabindex="-1" style="margin-bottom:0">${C.escape(w.title)}</h1>
-        ${w.status === 'aufgehoben' && successor
-          ? C.notification(`Diese Weisung ist <strong>aufgehoben</strong>. Abgelöst durch <a href="#/knowledge?tab=grundlagen&id=${encodeURIComponent(successor.directiveId)}">${C.escape(successor.code)} — ${C.escape(successor.title)}</a>.`, 'warning', 'WarningCircle')
-          : w.status === 'aufgehoben'
-            ? C.notification('Diese Weisung ist <strong>aufgehoben</strong>.', 'warning', 'WarningCircle')
-            : ''}
-        <div>
-          <h3>Zusammenfassung</h3>
-          <p>${C.escape(w.summary)}</p>
-        </div>
         ${w.scope ? `<div><h3>Geltungsbereich</h3><p style="margin:0">${C.escape(w.scope)}</p></div>` : ''}
         ${w.legalBasis && w.legalBasis !== '—' ? `<div><h3>Rechtsgrundlage</h3><p style="margin:0">${C.escape(w.legalBasis)}</p></div>` : ''}
         <div class="row gap-sm mt-2">
@@ -223,19 +217,7 @@ function prozessePage(ctx, page) {
     { q: 'An wen wende ich mich bei Rückfragen zu einem Vorgang?', a: 'Verwenden Sie die Referenznummer (Format BBL-JJJJ-XXXX) aus der Detailansicht Ihres Vorgangs für Rückfragen.' },
   ];
 
-  const faqHtml = `<div class="accordion" id="faq-acc">
-    ${faqs.map((f, i) => `
-      <div class="accordion__item">
-        <h3 style="margin:0">
-          <button class="accordion__button" type="button" aria-expanded="false" aria-controls="faq-p-${i}" id="faq-b-${i}">
-            <span>${C.escape(f.q)}</span>${C.icon('ChevronDown', 'icon--base')}
-          </button>
-        </h3>
-        <div class="accordion__content" id="faq-p-${i}" role="region" aria-labelledby="faq-b-${i}" hidden>
-          <p style="margin:0">${C.escape(f.a)}</p>
-        </div>
-      </div>`).join('')}
-  </div>`;
+  const faqHtml = C.accordion(faqs.map(f => ({ title: f.q, body: `<p style="margin:0">${C.escape(f.a)}</p>` })), { id: 'faq' });
 
   const portalHtml = `
     <p>Die vollständige Prozesslandschaft des BBL — Abläufe, Rollen und Zuständigkeiten — wird im Prozessportal Archimap gepflegt.</p>

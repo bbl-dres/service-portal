@@ -61,7 +61,7 @@ export default async function render(ctx) {
   }
 
   function selectWrap(id, options) {
-    return `<div class="select"><select id="${id}" class="input--outline input--base">${options}</select><div class="select__icon">${C.chevron}</div></div>`;
+    return C.selectBox(`<select id="${id}" class="input--outline input--base">${options}</select>`);
   }
 
   // ---- tab panels --------------------------------------------------------

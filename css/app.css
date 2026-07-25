@@ -611,6 +611,9 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 @media (min-width:1024px){ .detail-bar { margin-bottom:2.5rem; } }
 .detail-bar .back-link-row { padding-bottom:0; }
 .detail-bar .share-bar { margin:0; }
+/* The detail-bar owns the gap to the following hero (its margin-bottom); the hero
+   must not add its own top padding on top of that, or the title floats too low. */
+.detail-bar + .hero { padding-top:0; }
 /* Share-Bar (share-bar.postcss:5-16) — rechtsbündig nach der Brotkrume. */
 .share-bar { display:flex; flex-direction:row-reverse; align-items:flex-end; margin:1.25rem -.75rem 0 0; }
 @media (min-width:1024px){ .share-bar { margin-top:1rem; } }
@@ -681,6 +684,8 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .page-header { padding:.25rem 0 1.5rem; }
 .page-header h1 { margin-bottom:.25rem; }
 .page-header .lead { font-size:var(--text-lg); color:var(--color-text-muted); }
+/* De-emphasised suffix in a case title: «BBL-2026-1042 — <Titel>» (tenant-portal page-header__count) */
+.case-title-sub { font-weight:var(--fw-regular); color:var(--color-text-muted); }
 .page-intro { max-width:70ch; }
 
 /* Hero (hero.postcss:5-155) — CD heroes sit on white; tint comes from bg-- sections */
@@ -1005,6 +1010,27 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .timeline li.current::before { background:var(--color-gray-400); }
 .timeline .when { font-size:var(--text-xs); color:var(--color-text-muted); }
 
+/* Status-Stepper (C.pipeline) — Chevron-Segmente via clip-path, damit die Pfeile
+   ohne z-index-Tricks ineinandergreifen. Erledigt = grün, aktuell = Primärfarbe,
+   offen = grau. Auf schmalen Viewports horizontal scrollbar. */
+.pipeline { display:flex; list-style:none; margin:0; padding:0; overflow-x:auto; }
+.pipeline__step {
+  --arrow:.7rem;
+  flex:1 0 auto; display:flex; align-items:center; justify-content:center; gap:.4rem;
+  min-height:2.75rem; padding:.5rem 1rem .5rem calc(1rem + var(--arrow)); margin-left:calc(-1 * var(--arrow));
+  background:var(--color-secondary-100); color:var(--color-text-muted);
+  font-size:var(--fs-sm); font-weight:var(--fw-bold); line-height:1.2; white-space:nowrap;
+  clip-path:polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%, var(--arrow) 50%);
+}
+.pipeline__step:first-child { margin-left:0; padding-left:1rem;
+  clip-path:polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%); }
+.pipeline__step:last-child {
+  clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--arrow) 50%); }
+.pipeline__step--done { background:var(--color-success-text); color:#fff; }
+.pipeline__step--active { background:var(--color-primary-600); color:#fff; }
+.pipeline__glyph { flex:none; }
+@media (max-width:640px){ .pipeline__step { flex:1 0 auto; } }
+
 /* Accordion (accordion.postcss:5-78) */
 .accordion { list-style:none; padding-left:0; margin:0; border:0; border-radius:0; background:transparent; }
 .accordion__item { border-top:1px solid var(--color-secondary-200); list-style:none; }
@@ -1021,6 +1047,9 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .accordion__title { font-size:var(--fs-base); text-align:left; padding:.25rem 1rem .25rem 0; margin:0; overflow-wrap:anywhere; }
 .accordion__button .icon { flex:none; transition:transform .2s; }
 .accordion__button[aria-expanded="true"] .icon { transform:rotate(180deg); }
+/* CD accordion.postcss: the drawer wraps the content and is the toggled region;
+   [hidden] collapses it. The .icon rotation rule above also serves .accordion__arrow. */
+.accordion__drawer { width:100%; }
 .accordion__content { width:100%; padding:1rem .5rem 2.5rem; }
 /* right-hand cluster in an accordion header (format badge + chevron) */
 .accordion__meta { display:flex; align-items:center; gap:.75rem; flex:none; }
@@ -1256,7 +1285,50 @@ body.docviewer-open .back-to-top-wrapper { display:none; }
 .dash-grid { display:grid; grid-template-columns:1fr; gap:1.5rem; position:relative; }
 @media (min-width:1280px){ .dash-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:2rem; } }
 
-.chart { padding:1.25rem; margin:0; }
+/* Dashboard-Layout (Datenportal, Superset-Muster): linkes Filterpanel + Hauptbereich */
+.dashboard-layout { display:grid; grid-template-columns:1fr; gap:1.5rem; margin-top:1.5rem; align-items:start; }
+@media (min-width:1024px){ .dashboard-layout { grid-template-columns:16rem minmax(0,1fr); gap:2rem; } }
+.dashboard-main { min-width:0; }
+/* Filterpanel — links, ab lg klebend, einklappbar */
+.filter-panel { background:var(--color-secondary-50); border:1px solid var(--color-secondary-100);
+  border-radius:var(--radius-lg); padding:1.25rem; }
+@media (min-width:1024px){ .filter-panel { position:sticky; top:1.5rem; } }
+.filter-panel__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:1rem; }
+.filter-panel__title { font-size:var(--fs-lg); font-weight:var(--fw-bold); margin:0; }
+.filter-panel__toggle { display:none; align-items:center; justify-content:center; min-width:2.25rem; min-height:2.25rem;
+  color:var(--color-text-muted); }
+@media (min-width:1024px){ .filter-panel__toggle { display:inline-flex; } }
+.filter-panel__toggle:hover { color:var(--color-primary-600); }
+.filter-panel__toggle .icon { transition:transform .2s; }
+@media (min-width:1024px){
+  .dashboard-layout--collapsed { grid-template-columns:3.75rem minmax(0,1fr); }
+  .dashboard-layout--collapsed .filter-panel { padding:.75rem .5rem; }
+  .dashboard-layout--collapsed .filter-panel__body,
+  .dashboard-layout--collapsed .filter-panel__title { display:none; }
+  .dashboard-layout--collapsed .filter-panel__head { margin:0; justify-content:center; }
+  .dashboard-layout--collapsed .filter-panel__toggle .icon { transform:rotate(180deg); }
+}
+/* KPI-Reihe (Big-Number-Kacheln) über dem Chart-Grid */
+.kpi-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-bottom:1.5rem; }
+@media (min-width:768px){ .kpi-row { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+.kpi { background:#fff; border:1px solid var(--color-secondary-100); border-radius:var(--radius-lg);
+  padding:1rem 1.1rem; box-shadow:var(--shadow-sm); }
+.kpi__label { font-size:var(--fs-sm); color:var(--color-text-muted); }
+.kpi__value { font-size:var(--fs-3xl); line-height:1.15; font-weight:var(--fw-bold); color:var(--color-text);
+  margin-top:.2rem; overflow-wrap:anywhere; }
+.kpi__unit { font-size:var(--fs-base); font-weight:var(--fw-regular); color:var(--color-text-muted); margin-left:.3rem; }
+.kpi__delta { font-size:var(--fs-xs); color:var(--color-text-muted); margin-top:.3rem; }
+.kpi__delta.is-good { color:var(--color-success-text); }
+/* Karte im Dashboard (MapLibre) — spannt beide Grid-Spalten */
+.chart--map { grid-column:1 / -1; }
+.dash-map { width:100%; height:30rem; border-radius:var(--radius); overflow:hidden; background:var(--color-secondary-100); }
+.dash-map .maplibregl-popup-content { padding:.75rem .9rem; border-radius:var(--radius-lg); }
+/* HTML-Marker der Gebäude (Kreisgrösse ∝ √Geschossfläche) */
+.map-marker { display:block; padding:0; border:2px solid #fff; border-radius:var(--radius-full);
+  background:rgba(37,99,235,.72); box-shadow:0 0 0 1px rgba(0,0,0,.12); cursor:pointer; transition:background .12s; }
+.map-marker:hover, .map-marker:focus-visible { background:rgba(37,99,235,.95); outline:2px solid var(--color-primary-700); outline-offset:1px; }
+
+.chart { padding:1.25rem; margin:0; overflow:hidden; }
 @media (min-width:1024px){ .chart { padding:1.5rem; } }
 .chart__head { display:flex; align-items:baseline; justify-content:space-between; gap:1rem; }
 .chart__title { font-size:var(--text-base); font-weight:var(--fw-bold); margin:0; }
@@ -1372,6 +1444,13 @@ body.docviewer-open .back-to-top-wrapper { display:none; }
 }
 @media (max-width:640px){ .kv { grid-template-columns:1fr; gap:.1rem 0; } .kv dt { margin-top:.5rem; } }
 .empty { text-align:center; color:var(--color-text-muted); padding:3rem 1rem; }
+.empty__title { margin:0; font-size:var(--fs-lg); color:var(--color-text); }
+.empty__hint { margin:.5rem auto 0; max-width:44ch; font-size:var(--fs-sm); }
+/* «Nicht verfügbar» (Ladefehler) — vom neutralen Leer-Zustand abgesetzt (P0-4). */
+.empty--unavailable { display:flex; align-items:center; justify-content:center; gap:.5rem;
+  padding:2rem 1rem; color:var(--color-error-text); background:var(--color-error-bg);
+  border-radius:var(--radius-lg); text-align:left; }
+.empty--unavailable .icon { flex:none; }
 .swatch { display:inline-block; width:.75rem; height:.75rem; border-radius:2px; vertical-align:middle; margin-right:.35rem; }
 
 /* ============================== MOTION ============================== */
@@ -1403,6 +1482,11 @@ body.docviewer-open .back-to-top-wrapper { display:none; }
   .stat, .notification, table.table { box-shadow:none !important; }
   a { color:#000 !important; text-decoration:underline; }
   #main-content a[href^="http"]::after { content:" (" attr(href) ")"; font-size:.85em; }
+  /* Datensatzblatt & FAQ vollständig drucken: eingeklappte Akkordeon-Panels
+     aufklappen (das globale [hidden]{display:none} unterdrückt sie sonst) und
+     die Auf-/Zu-Pfeile weglassen — sonst fehlt der Inhalt auf dem Ausdruck. */
+  .accordion__drawer[hidden] { display:block !important; }
+  .accordion__button .icon, .accordion__arrow { display:none !important; }
 }
 
 /* ===================== Dokumentvorschau (Lightbox) ===================== */

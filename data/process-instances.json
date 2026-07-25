@@ -3,6 +3,18 @@
     "title": "Zusätzliche 12 Arbeitsplätze, Campus Guisanplatz", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
     "audience": "external", "status": "in_pruefung_pfm", "stepIndex": 2, "createdAt": "2026-05-18", "updatedAt": "2026-06-03",
     "linkedEntities": { "buildingId": "BLD-06" },
+    "data": {
+      "costCenter": "810.140",
+      "persons": "12",
+      "naw": "Kollaborativ-Standard",
+      "area": "≈ 92 m² HNF",
+      "termin": "2026-09-01",
+      "begruendung": "Wachstum im Team Klimaanpassung; für zwölf neue Mitarbeitende werden zusätzliche Arbeitsplätze am Campus Guisanplatz benötigt."
+    },
+    "attachments": [
+      { "name": "Bedarfsnachweis.pdf", "type": "PDF", "size": "240 KB" },
+      { "name": "Organigramm_Team.pdf", "type": "PDF", "size": "88 KB" }
+    ],
     "history": [
       { "when": "2026-05-18", "status": "Eingereicht", "note": "Vorgang erstellt" },
       { "when": "2026-05-22", "status": "In Prüfung (GS)", "note": "Bedarf bestätigt durch Generalsekretariat" },
@@ -12,6 +24,15 @@
     "title": "Lüftung 4. OG defekt", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
     "audience": "both", "status": "in_arbeit", "stepIndex": 2, "createdAt": "2026-06-09", "updatedAt": "2026-06-11",
     "linkedEntities": { "buildingId": "BLD-05" },
+    "data": {
+      "kategorie": "HLK / Lüftung",
+      "prioritaet": "Hoch",
+      "standortDetail": "4. Obergeschoss, Zone B",
+      "beschreibung": "Die Lüftung im 4. OG ist ausgefallen, die Büroräume überhitzen bereits am Vormittag."
+    },
+    "attachments": [
+      { "name": "Foto_Lueftung.jpg", "type": "JPG", "size": "1.4 MB" }
+    ],
     "history": [
       { "when": "2026-06-09", "status": "Gemeldet", "note": "Vorgang erstellt" },
       { "when": "2026-06-10", "status": "Triage", "note": "Dem Objektbetrieb zugewiesen" },
@@ -21,6 +42,12 @@
     "title": "Büromaterial Q2", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
     "audience": "both", "status": "geliefert", "stepIndex": 2, "createdAt": "2026-05-30", "updatedAt": "2026-06-05",
     "linkedEntities": {},
+    "data": {
+      "position": "Büromaterial-Sortiment Q2",
+      "menge": "1 Sammelbestellung",
+      "lieferadresse": "Fellerstrasse 21, 3003 Bern"
+    },
+    "attachments": [],
     "history": [
       { "when": "2026-05-30", "status": "Bestellt", "note": "Vorgang erstellt" },
       { "when": "2026-06-02", "status": "In Bearbeitung", "note": "Kommissionierung" },
@@ -30,6 +57,14 @@
     "title": "Verdächtige E-Mail mit Anhang", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
     "audience": "both", "status": "erledigt", "stepIndex": 2, "createdAt": "2026-04-14", "updatedAt": "2026-04-16",
     "linkedEntities": {},
+    "data": {
+      "art": "Phishing-Verdacht",
+      "betroffeneDaten": "Keine (Verdacht gemeldet)",
+      "beschreibung": "E-Mail mit verdächtigem Anhang von einem unbekannten Absender erhalten und nicht geöffnet."
+    },
+    "attachments": [
+      { "name": "Verdaechtige_Mail.eml", "type": "EML", "size": "32 KB" }
+    ],
     "history": [
       { "when": "2026-04-14", "status": "Gemeldet", "note": "Vorgang erstellt" },
       { "when": "2026-04-15", "status": "In Bearbeitung", "note": "Analyse durch ISBO" },
@@ -39,6 +74,17 @@
     "title": "Umnutzung Lager zu Sitzungszone", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
     "audience": "external", "status": "abgeschlossen", "stepIndex": 5, "createdAt": "2025-09-02", "updatedAt": "2026-02-20",
     "linkedEntities": { "buildingId": "BLD-07", "projectId": "PRJ-02" },
+    "data": {
+      "costCenter": "810.140",
+      "persons": "—",
+      "naw": "Multispace",
+      "area": "≈ 60 m² HNF",
+      "termin": "2025-11-01",
+      "begruendung": "Umnutzung eines nicht mehr benötigten Lagerraums zu einer gemeinsamen Sitzungszone."
+    },
+    "attachments": [
+      { "name": "Umnutzungskonzept.pdf", "type": "PDF", "size": "560 KB" }
+    ],
     "history": [
       { "when": "2025-09-02", "status": "Eingereicht", "note": "Vorgang erstellt" },
       { "when": "2025-09-20", "status": "Genehmigt", "note": "Genehmigt durch Portfoliomanagement" },
@@ -49,6 +95,13 @@
     "title": "Sitzungsraum + 1 Parkplatz, Fellerstrasse", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
     "audience": "both", "status": "abgeschlossen", "stepIndex": 1, "createdAt": "2026-06-12", "updatedAt": "2026-06-12",
     "linkedEntities": { "buildingId": "BLD-05" },
+    "data": {
+      "ressourcentyp": "Sitzungsraum + Parkplatz",
+      "datum": "2026-06-20",
+      "zeit": "09:00–12:00",
+      "bemerkung": "Ein Parkplatz für externe Gäste benötigt."
+    },
+    "attachments": [],
     "history": [
       { "when": "2026-06-12", "status": "Angefragt", "note": "Vorgang erstellt" },
       { "when": "2026-06-12", "status": "Bestätigt", "note": "Ressource reserviert" }

@@ -108,7 +108,7 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
 
   const sectionHtml = sections.map(s => `
     <section class="anchor-section" id="${s.id}">
-      <h2 tabindex="-1" class="anchor-section__title">${C.escape(s.title)}</h2>
+      <h2 tabindex="-1" class="anchor-section__title">${C.markLang(s.title)}</h2>
       ${s.html}
     </section>`).join('');
 
@@ -121,7 +121,7 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
         <ul class="menu">
           ${sections.map(s => `<li>
             <a class="menu__item menu__item--border menu__item--condensed" href="#${s.id}" data-anchor="${s.id}">
-              <span>${C.escape(s.title)}</span>
+              <span>${C.markLang(s.title)}</span>
             </a></li>`).join('')}
         </ul>
       </div></div>

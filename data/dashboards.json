@@ -114,6 +114,12 @@
       "source": "NHB BBL 2025 · Energiestatistik (358 Gebäude)",
       "updated": "2026-03-31",
       "hero": { "label": "Treibhausgasemissionen 2025", "value": "16 150", "unit": "t CO₂e", "deltaLabel": "−4.4 % gegenüber 2024", "deltaGood": true },
+      "kpis": [
+        { "label": "Treibhausgasemissionen", "value": "16 150", "unit": "t CO₂e", "deltaLabel": "−4.4 % ggü. 2024", "deltaGood": true },
+        { "label": "Energie aus Ölheizungen", "value": "6,8", "unit": "GWh/a", "deltaLabel": "Ziel 5 bis 2030", "deltaGood": true },
+        { "label": "Photovoltaik-Produktion", "value": "4,1", "unit": "GWh/a", "deltaLabel": "+38 % ggü. 2022", "deltaGood": true },
+        { "label": "Anteil erneuerbar", "value": "72", "unit": "%", "deltaLabel": "+3 Pp. ggü. 2024", "deltaGood": true }
+      ],
       "charts": [
         { "id": "thg-trend", "title": "Treibhausgasemissionen", "form": "line", "unit": "t CO₂e",
           "query": { "dataset": "thg_jahr", "select": ["jahr", "tonnen"], "orderBy": "jahr" },
@@ -129,6 +135,10 @@
         { "id": "pva", "title": "Photovoltaik — Eigenproduktion", "form": "column", "unit": "GWh/a",
           "query": { "dataset": "pva_ausbau", "select": ["jahr", "gwh", "reihe"], "orderBy": "jahr" },
           "x": "jahr", "y": "gwh", "series": "reihe" }
+      ],
+      "tabs": [
+        { "id": "ueberblick", "label": "Überblick", "charts": ["thg-trend", "thg-kat"] },
+        { "id": "energiepfad", "label": "Energie & Pfad", "charts": ["oel-pfad", "pva"] }
       ]
     },
     {
@@ -139,13 +149,25 @@
       "source": "NHB BBL 2025 · Portfoliomanagement",
       "updated": "2026-03-31",
       "hero": { "label": "SNBS-zertifizierte Fläche", "value": "79 406", "unit": "m²", "deltaLabel": "4 Neubauten seit 2019", "deltaGood": true },
+      "kpis": [
+        { "label": "SNBS-zertifizierte Fläche", "value": "79 406", "unit": "m²", "deltaLabel": "4 Neubauten seit 2019", "deltaGood": true },
+        { "label": "Georeferenzierte Objekte", "value": "{buildingCount}", "unit": "", "deltaLabel": "auf der Karte" },
+        { "label": "Zertifizierte Standards", "value": "2", "unit": "", "deltaLabel": "SNBS · Minergie" },
+        { "label": "Grösster Neubau", "value": "34 200", "unit": "m²", "deltaLabel": "Verwaltungszentrum" }
+      ],
       "charts": [
         { "id": "snbs", "title": "SNBS-zertifizierte Neubauten", "form": "barH", "unit": "m²",
           "query": { "dataset": "snbs_gebaeude", "select": ["objekt", "flaeche"], "orderBy": "-flaeche" },
           "x": "objekt", "y": "flaeche" },
         { "id": "zert", "title": "Zertifizierte Fläche nach Standard", "form": "barH", "unit": "m²",
           "query": { "dataset": "zertifizierte_flaeche", "select": ["standard", "flaeche"], "orderBy": "-flaeche" },
-          "x": "standard", "y": "flaeche" }
+          "x": "standard", "y": "flaeche" },
+        { "id": "portfolio-map", "title": "Standorte im Portfolio", "form": "map",
+          "note": "Georeferenzierte Gebäude aus dem Bestand — Kreisgrösse nach Geschossfläche, Klick öffnet das Objekt. Kartengrundlage © swisstopo." }
+      ],
+      "tabs": [
+        { "id": "ueberblick", "label": "Überblick", "charts": ["snbs", "zert"] },
+        { "id": "karte", "label": "Karte", "charts": ["portfolio-map"] }
       ]
     },
     {

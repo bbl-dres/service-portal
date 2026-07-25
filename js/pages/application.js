@@ -16,11 +16,9 @@ export default function render(ctx, appId) {
   if (!a) {
     setTitle('Anwendung nicht gefunden');
     setCrumbs(crumbs());
-    mount.innerHTML = `<div class="container section">
-      ${C.backLink('#/applications', 'Anwendungen')}
-      <div class="page-header mt-4"><h1 tabindex="-1">Anwendung nicht gefunden</h1></div>
-      <p class="muted">Diese Anwendung existiert nicht. <a href="#/applications">Zur Übersicht «Anwendungen»</a></p>
-    </div>`;
+    mount.innerHTML = C.notFound({ backHref: '#/applications', backLabel: 'Anwendungen',
+      title: 'Anwendung nicht gefunden',
+      body: 'Diese Anwendung existiert nicht. <a href="#/applications">Zur Übersicht «Anwendungen»</a>' });
     return;
   }
 
@@ -75,32 +73,17 @@ export default function render(ctx, appId) {
   // statt einen toten «Öffnen»-Button anzubieten.
   const noTarget = !primary;
 
-  const section = (title, body) => `
-    <section class="detail-section">
-      <h2 class="detail-section__title">${C.escape(title)}</h2>
-      ${body}
-    </section>`;
+  const section = (title, body) => C.detailSection({ title, body });
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/applications', 'Anwendungen')}
-
-    <div class="hero hero--main-image">
-      <div class="hero__content">
-        <p class="meta-info">
-          <span class="meta-info__item">${C.escape(a.group)}</span>
-          ${page.subtitle ? `<span class="meta-info__item">${C.escape(page.subtitle)}</span>` : ''}
-        </p>
-        <h1 class="hero__title" tabindex="-1">${C.escape(a.name)}</h1>
-        <p class="hero__description">${C.escape(a.description)}</p>
-        <div class="pill-row">
-          ${C.audienceTag(a.audience)}
-          ${a.hero ? C.badge('Schlüsselanwendung', 'info') : ''}
-          ${external ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue')}
-        </div>
-      </div>
-      ${a.photo ? `<div class="hero__image">${C.photo({ id: a.photo, alt: '', w: 800 })}</div>` : ''}
-    </div>
+    ${C.detailHead({
+      backHref: '#/applications', backLabel: 'Anwendungen',
+      title: a.name, lead: a.description,
+      tags: `${C.audienceTag(a.audience)}${a.hero ? C.badge('Schlüsselanwendung', 'info') : ''}${
+        external ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue')}`,
+      image: a.photo ? C.photo({ id: a.photo, alt: '', w: 800 }) : '',
+    })}
 
     <div class="split mt-6">
       <div class="stack-lg">

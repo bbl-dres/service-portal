@@ -166,7 +166,7 @@ function prinzipienPage(ctx) {
   setCrumbs([...CRUMB, { label: 'Prinzipien' }]);
 
   const sections = PRINZIPIEN.map(([id, titel, text], i) => ({
-    id, title: `${i + 1}. ${titel}`, html: `<p>${C.escape(text)}</p>`,
+    id, title: `${i + 1}. ${titel}`, html: `<p>${C.markLang(text)}</p>`,
   }));
   sections.push({
     id: 'pr-leitplanken', title: 'Verbindliche Leitplanken',
@@ -187,22 +187,15 @@ function infoPage(ctx, { title, lead, note, photo }) {
   const { mount, C, setTitle, setCrumbs } = ctx;
   setTitle(title);
   setCrumbs([...CRUMB, { label: title }]);
-  const head = photo
-    ? `<div class="hero hero--main-image">
-         <div class="hero__content">
-           <h1 class="hero__title" tabindex="-1">${C.escape(title)}</h1>
-           <p class="hero__description">${C.escape(lead)}</p>
-         </div>
-         <div class="hero__image"><figure>
-           ${C.photo({ id: photo, color: '#2f4356', alt: '', w: 800 })}
-           <figcaption class="small muted">Symbolbild — © Unsplash</figcaption>
-         </figure></div>
-       </div>`
-    : C.pageHeader({ title, lead });
   mount.innerHTML = `
   <div class="container section">
-    ${C.detailBar({ backHref: '#/data/digitalisierung', backLabel: 'Digitalisierung' })}
-    ${head}
+    ${C.detailHead({
+      backHref: '#/data/digitalisierung', backLabel: 'Digitalisierung',
+      title, lead,
+      image: photo
+        ? `<figure>${C.photo({ id: photo, color: '#2f4356', alt: '', w: 800 })}<figcaption class="small muted">Symbolbild — © Unsplash</figcaption></figure>`
+        : '',
+    })}
     <div class="mt-6" style="max-width:60rem">
       ${C.notification(note, 'info', 'InfoCircle')}
     </div>

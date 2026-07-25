@@ -109,6 +109,9 @@
   --shadow-xl: 0 6px 10px -5px rgba(0,0,0,.06), 0 15px 25px -3px rgba(0,0,0,.09);
   --shadow-2xl:0 10px 20px 0 rgba(0,0,0,.06), 1px 10px 70px -8px rgba(0,0,0,.13);
 
+  /* Scrim für Text/Chips über Bildern (Mediathek-Kacheln) */
+  --overlay-scrim: rgba(0,0,0,.45);
+
   /* --- Layout --- */
   --container-max-2xl: 1544px;
   --container-max-3xl: 1676px;

@@ -41,6 +41,22 @@ export function escape(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// Wiederkehrende englische Fachbegriffe im sonst deutschen Text. Für WCAG 3.1.2
+// (Sprache von Teilen) werden sie inline mit lang="en" ausgezeichnet, damit
+// Screenreader sie englisch aussprechen.
+const EN_TERMS = ['Digital by Design', 'Digital First', 'Digital Only', 'Once-Only', 'Common Data Environment'];
+
+// Escaped den Text und zeichnet bekannte fremdsprachige Phrasen mit lang aus.
+// Längere Phrasen zuerst, damit Teilphrasen nicht vorzeitig umschlossen werden.
+export function markLang(text, terms = EN_TERMS) {
+  let out = escape(text);
+  for (const phrase of [...terms].sort((a, b) => b.length - a.length)) {
+    const e = escape(phrase);
+    if (out.includes(e)) out = out.split(e).join(`<span lang="en">${e}</span>`);
+  }
+  return out;
+}
+
 // --- Badges (badge.postcss) --------------------------------------------------
 export function badge(text, variant = 'gray', size = '') {
   return `<span class="badge badge--${variant}${size ? ' badge--' + size : ''}">${escape(text)}</span>`;
@@ -127,7 +143,18 @@ export function table({ columns, rows, zebra, caption, showCaption }) {
   </table></div>`;
 }
 
-export function empty(msg) { return `<div class="empty">${escape(msg)}</div>`; }
+// Leerer Zustand. `unavailable: true` (P0-4) markiert «Daten nicht verfügbar»
+// (Ladefehler) statt «keine Einträge» — mit Warnsymbol und error-Tönung.
+// `hint` ergänzt einen zweiten, helfenden Satz (z. B. «Suche/Filter anpassen»).
+export function empty(msg, opts = {}) {
+  if (opts.unavailable) {
+    return `<div class="empty empty--unavailable">${icon('WarningCircle', 'icon--base')}<span>${escape(msg)}</span></div>`;
+  }
+  // Angereicherter Leerzustand nur mit Hinweis; ohne bleibt es die schlichte Variante.
+  return opts.hint
+    ? `<div class="empty"><p class="empty__title">${escape(msg)}</p><p class="empty__hint">${opts.hint}</p></div>`
+    : `<div class="empty">${escape(msg)}</div>`;
+}
 
 // Standard-«nicht gefunden»-Block für Detailrouten (zuvor mehrfach kopiert).
 // Titel/Brotkrume setzt die aufrufende Seite; `body` ist HTML (mit Rück-Link).
@@ -216,12 +243,64 @@ export function detailHead({ backHref, backLabel, title, lead = '', tags = '', i
     ${hero}`;
 }
 
+// Horizontaler Status-Stepper (CD steps / tenant-portal pipeline): Chevron-Segmente
+// — erledigt (grün, Haken) · aktuell (Primärfarbe, Uhr) · offen (grau). `steps` =
+// [{ label }]; `currentIndex` = Index des aktuellen Schritts. Scrollt horizontal auf Mobil.
+export function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = {}) {
+  const seg = (st, i) => {
+    const state = i < currentIndex ? 'done' : i === currentIndex ? 'active' : 'todo';
+    const glyph = state === 'done' ? icon('Checkmark', 'icon--sm pipeline__glyph')
+      : state === 'active' ? icon('Clock', 'icon--sm pipeline__glyph') : '';
+    const sr = state === 'done' ? '<span class="sr-only">Erledigt: </span>'
+      : state === 'active' ? '<span class="sr-only">Aktueller Schritt: </span>' : '';
+    return `<li class="pipeline__step pipeline__step--${state}"${state === 'active' ? ' aria-current="step"' : ''}>${glyph}<span>${sr}${escape(st.label)}</span></li>`;
+  };
+  return `<ol class="pipeline" aria-label="${escape(label)}">${steps.map(seg).join('')}</ol>`;
+}
+
 // Ein Detailseiten-Abschnitt: H2-Titel + Inhalt. `body` ist fertiges HTML.
 export function detailSection({ title, body = '' }) {
   return `<section class="detail-section">
       <h2 class="detail-section__title">${escape(title)}</h2>
       ${body}
     </section>`;
+}
+
+// CD-Akkordeon (accordion.postcss): ul > li > h3 > button (.accordion__title +
+// optionale .accordion__meta + .accordion__arrow) + .accordion__drawer >
+// .accordion__content. `items` = [{ title, meta?, body, open? }]; `title` wird
+// escaped, `meta`/`body` sind fertiges HTML. Verdrahtung über wireAccordion().
+export function accordion(items, { id = 'acc' } = {}) {
+  const li = ({ title, meta = '', body = '', open = false }, i) => {
+    const bid = `${id}-b-${i}`, pid = `${id}-p-${i}`;
+    return `<li class="accordion__item">
+      <h3 class="accordion__heading">
+        <button class="accordion__button" type="button" id="${bid}" aria-expanded="${open}" aria-controls="${pid}">
+          <span class="accordion__title">${escape(title)}</span>
+          <span class="accordion__meta">${meta}${icon('ChevronDown', 'icon--base accordion__arrow')}</span>
+        </button>
+      </h3>
+      <div class="accordion__drawer" id="${pid}" role="region" aria-labelledby="${bid}"${open ? '' : ' hidden'}>
+        <div class="accordion__content">${body}</div>
+      </div>
+    </li>`;
+  };
+  return `<ul class="accordion" id="${id}-acc">${items.map(li).join('')}</ul>`;
+}
+
+// Klick-Verdrahtung für ein oder mehrere Akkordeons in `root` (aria-expanded +
+// Drawer ein-/ausblenden). Ersetzt die je Seite kopierte Toggle-Logik.
+export function wireAccordion(root) {
+  root.querySelectorAll('.accordion__button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!open));
+      const drawer = root.getElementById
+        ? root.getElementById(btn.getAttribute('aria-controls'))
+        : root.querySelector('#' + CSS.escape(btn.getAttribute('aria-controls')));
+      if (drawer) drawer.hidden = open;
+    });
+  });
 }
 
 // --- Notifications (notification.postcss) ------------------------------------
@@ -291,8 +370,8 @@ export function select(o = {}) {
 // `.select__icon` divider. Use when the label/message layer is supplied elsewhere.
 export const chevron = CHEVRON_SVG;
 
-export function selectBox(inner, extraCls = '') {
-  return `<div class="select${extraCls ? ' ' + extraCls : ''}">${inner}<div class="select__icon">${CHEVRON_SVG}</div></div>`;
+export function selectBox(inner, extraCls = '', style = '') {
+  return `<div class="select${extraCls ? ' ' + extraCls : ''}"${style ? ` style="${style}"` : ''}>${inner}<div class="select__icon">${CHEVRON_SVG}</div></div>`;
 }
 
 // CD field wrapper for input/textarea. `control` receives (classes, attributes)
@@ -391,22 +470,56 @@ export function resultsHeader({ count, total, unit, page = 1, totalPages = 1, vi
   return `
     <div class="search-results__header">
       <div class="search-results__header__left">
-        <strong>${escape(String(count))}</strong>von ${escape(String(total))} ${escape(unit)}${pageInfo}
+        <strong>${escape(String(count))}</strong> von ${escape(String(total))} ${escape(unit)}${pageInfo}
       </div>
       <div class="search-results__header__right">${viewSwitch(view)}</div>
     </div>`;
 }
 
+// Gemeinsamer Ergebnisblock der Katalogseiten (Dienstleistungen/Anwendungen/
+// Datensätze) — bisher 3× kopiert (P1-7). Filterung/Sortierung/Slicing bleibt in
+// der Seite (unterschiedlich); hier vereinheitlicht: Kopf (Trefferzahl + Ansicht),
+// Galerie-/Listenumschaltung, Paginierung und der Leer-/Nicht-verfügbar-Zustand.
+// `visible` = die aktuell sichtbare (bereits geschnittene) Seite; `count` = Anzahl
+// gefilterter Treffer gesamt; `card(item)`/`listView(items)` rendern die Ansicht.
+export function catalogueResults({
+  visible, count, total, view = 'galerie', page = 1, totalPages = 1,
+  card, listView, unit, gridCls = 'grid grid--3',
+  paginationHref, paginationInputId, paginationLabel,
+  available = true, emptyMsg, unavailableMsg, note = '',
+}) {
+  const body = count
+    ? `${view === 'liste'
+        ? listView(visible)
+        : `<div class="${gridCls} mt-4">${visible.map(card).join('')}</div>`}${
+      paginationHref ? pagination({ page, totalPages, inputId: paginationInputId, label: paginationLabel, href: paginationHref }) : ''}`
+    : available
+      ? empty(emptyMsg || `Keine ${escape(unit)} gefunden.`, { hint: 'Passen Sie Ihre Suche oder die Filter an — oben lassen sich aktive Filter zurücksetzen.' })
+      : empty(unavailableMsg || `${unit} konnten nicht geladen werden (Ladefehler).`, { unavailable: true });
+  return `<section class="mt-6">
+      ${resultsHeader({ count, total, unit, page, totalPages, view })}
+      ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
+      ${body}
+    </section>`;
+}
+
+// Standard-Ansage für die Live-Region der Katalogseiten (Trefferzahl · Seite · Ansicht).
+export function announceCatalogue({ count, total, unit, page = 1, totalPages = 1, view = 'galerie' }) {
+  announce(`${count} von ${total} ${unit}${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'liste' ? 'Liste' : 'Galerie'}`);
+}
+
 // Icon-Umschalter Galerie/Liste — keine Beschriftung, der Zustand steht in
 // aria-pressed und im aria-label.
-export function viewSwitch(view = 'galerie') {
-  const btn = (key, label, iconName) => {
+// CD-Ansichtsschalter (Icon-Umschaltgruppe, aria-pressed). `items` erlaubt andere
+// Ansichtspaare (z. B. Karten/Liste bei Projekten) statt harter btn--filled-Betonung.
+export function viewSwitch(view = 'galerie', items = [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']]) {
+  const btn = ([key, label, iconName]) => {
     const on = view === key;
     return `<button type="button" class="view-switch__btn" data-view="${key}"
       aria-pressed="${on}" aria-label="${escape(label)}" title="${escape(label)}">${icon(iconName, 'icon--md')}</button>`;
   };
   return `<div class="view-switch" role="group" aria-label="Ansicht">
-    ${btn('galerie', 'Galerieansicht', 'Apps')}${btn('liste', 'Listenansicht', 'List')}
+    ${items.map(btn).join('')}
   </div>`;
 }
 
@@ -428,7 +541,8 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
-  notFound, activeFilters, detailBar, detailHead, detailSection,
+  notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
+  catalogueResults, announceCatalogue, pipeline,
   notification, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
 };
