@@ -188,6 +188,7 @@ export default async function render(ctx) {
         linkedEntities: state.buildingId ? { buildingId: state.buildingId } : {},
       });
       draw();
+      if (!state.created) C.flashError(mount, 'Die Meldung konnte nicht gespeichert werden — bitte erneut versuchen.');
     });
   }
 

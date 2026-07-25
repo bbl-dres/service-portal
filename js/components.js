@@ -41,6 +41,12 @@ export function escape(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// decodeURIComponent, das bei malformten Sequenzen (roh getippter Hash wie
+// `#/applications/%`) nicht wirft, sondern den Rohwert zurückgibt (code-review A6).
+export function safeDecode(s) {
+  try { return decodeURIComponent(s); } catch { return s; }
+}
+
 // Wiederkehrende englische Fachbegriffe im sonst deutschen Text. Für WCAG 3.1.2
 // (Sprache von Teilen) werden sie inline mit lang="en" ausgezeichnet, damit
 // Screenreader sie englisch aussprechen.
@@ -92,7 +98,7 @@ export function pageHeader({ title, lead }) {
 
 // Flat CD card (card--flat) — used for compact text-led teasers.
 export function tile({ title, desc, href, extra = '' }) {
-  return `<a class="card card--flat card--clickable" href="${href}">
+  return `<a class="card card--flat card--clickable" href="${escape(href)}">
     <div class="card__content"><div class="card__body">
       <span class="card__title">${escape(title)}</span>
       ${desc ? `<span class="card__description">${escape(desc)}</span>` : ''}${extra}
@@ -103,7 +109,7 @@ export function tile({ title, desc, href, extra = '' }) {
 export function card(o) {
   const media = o.photo
     ? `<div class="card__image">${photo({ ...o.photo, alt: o.photo.alt || '', w: 640 })}</div>`
-    : o.image ? `<div class="card__image"><img src="${o.image}" alt="${escape(o.imageAlt || '')}" loading="lazy"></div>`
+    : o.image ? `<div class="card__image"><img src="${escape(o.image)}" alt="${escape(o.imageAlt || '')}" loading="lazy"></div>`
     : o.placeholder ? `<div class="card__image"><div class="photo image__not-available">${icon('Image')}<p class="image__not-available-text">${escape(o.placeholder === true ? 'Bild folgt' : o.placeholder)}</p></div></div>`
     : '';
   // CD: `card--default` is the plain shadow card (with or without image);
@@ -307,6 +313,14 @@ export function wireAccordion(root) {
 // variant: info | success | warning | error | hint | alert
 export function notification(text, variant = 'info', iconName = 'InfoCircle') {
   return `<div class="notification notification--${variant}">${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div></div>`;
+}
+
+// Blendet einen Fehler oben in der Seite ein und sagt ihn an — für clientseitige
+// Aktionsfehler (z. B. localStorage-Speichern fehlgeschlagen, code-review C1).
+export function flashError(mount, msg) {
+  announce(msg);
+  const host = mount && mount.querySelector('.container');
+  if (host) host.insertAdjacentHTML('afterbegin', notification(escape(msg), 'error', 'WarningCircle'));
 }
 
 // CD back button. Anatomy copied from the design system's own detail pages
@@ -543,7 +557,7 @@ export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
   notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, pipeline,
-  notification, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
+  notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
 };
 export default C;

@@ -162,7 +162,7 @@ export function grundlagenPage(ctx, page) {
     title: 'Weiterführende Informationen',
     html: `<ul class="list--default">
       <li><a href="https://www.bk.admin.ch/de/vorgaben" target="_blank" rel="noopener external">Vorgaben zur digitalen Transformation und IKT-Lenkung der Bundesverwaltung (DTI)</a></li>
-      <li><a href="#/knowledge?tab=prozesse">Prozesse — Anleitungen, FAQ, Formulare und Vorlagen</a></li>
+      <li><a href="#/knowledge/prozesse">Prozesse — Anleitungen, FAQ, Formulare und Vorlagen</a></li>
       <li><a href="#/data/digitalisierung">Digitalisierung — Strategie und Vorhaben des BBL</a></li>
     </ul>`,
   });

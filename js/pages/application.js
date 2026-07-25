@@ -11,7 +11,7 @@
 
 export default function render(ctx, appId) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
-  const a = core.application(decodeURIComponent(appId));
+  const a = core.application(C.safeDecode(appId));
 
   if (!a) {
     setTitle('Anwendung nicht gefunden');

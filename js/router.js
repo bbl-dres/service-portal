@@ -55,10 +55,10 @@ export const NAV = [
     icon: 'Book',
     children: [
       { href: '#/knowledge', label: 'Übersicht' },
-      { href: '#/knowledge?tab=grundlagen', label: 'Gesetzliche Grundlagen und Vorgaben' },
-      { href: '#/knowledge?tab=news', label: 'News' },
-      { href: '#/knowledge?tab=prozesse', label: 'Prozessdokumentation' },
-      { href: '#/knowledge?tab=anleitungen', label: 'Anleitungen und Schulungsunterlagen' },
+      { href: '#/knowledge/grundlagen', label: 'Gesetzliche Grundlagen und Vorgaben' },
+      { href: '#/knowledge/news', label: 'News' },
+      { href: '#/knowledge/prozesse', label: 'Prozessdokumentation' },
+      { href: '#/knowledge/anleitungen', label: 'Anleitungen und Schulungsunterlagen' },
     ],
   },
   // «Meine Vorgänge» steht immer zuletzt.
@@ -127,7 +127,7 @@ export function matchesSubNav(childHref, currentHash) {
   if (child.path !== here.path) return false;
 
   const childKeys = [...child.params.keys()];
-  // "Übersicht" (#/knowledge) must not light up on #/knowledge?tab=news …
+  // "Übersicht" (#/knowledge) must not light up on #/knowledge/news …
   if (!childKeys.length) return ![...here.params.keys()].length;
   // … while #/services?topic=bauten stays active once &view=liste is appended.
   return childKeys.every(k => {
@@ -262,8 +262,10 @@ export function initRouter() {
     if (!location.hash.startsWith('#/')) return;
     dispatch();
   });
+  // Setzt `location.hash` neu, feuert das `hashchange` den dispatch (else-Zweig);
+  // ein zusätzliches explizites dispatch() würde die Startseite doppelt rendern.
   if (!location.hash || !location.hash.startsWith('#/')) location.hash = '#/';
-  dispatch();
+  else dispatch();
 }
 
 // Aktuelle Route neu zeichnen, ohne zu navigieren — z. B. nach An-/Abmeldung,

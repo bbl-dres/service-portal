@@ -7,6 +7,11 @@ import { session } from './session.js';
 import { INTRANET_AREAS } from './intranet-areas.js';
 import { icon, escape as escapeHtml, select } from './components.js';
 
+// renderHeader() läuft bei jedem Login/Logout erneut. Pro Render ein
+// AbortController, der die globalen document/window/matchMedia-Listener der
+// Vorrunde abbricht — sonst akkumulieren sie (code-review A3).
+let shellAbort = null;
+
 // Zeilen eines navy-Menüs (CD-Anatomie). external → neues Fenster + External-Icon.
 function navyRow(child) {
   return `<li class="menu__item menu__item--border menu__item--condensed">
@@ -294,6 +299,13 @@ function footerHTML() {
 function renderHeader(el) {
   el.innerHTML = headerHTML();
 
+  // Vorherige globale Listener abwerfen, dann eine frische Runde: `signal` hängt
+  // an jedem document/window/matchMedia-Listener unten (element-scoped Listener
+  // fallen mit dem ersetzten innerHTML ohnehin weg).
+  shellAbort?.abort();
+  shellAbort = new AbortController();
+  const { signal } = shellAbort;
+
   // Skip link: move focus rather than navigate, so the router never sees the fragment.
   el.querySelector('#skip-link').addEventListener('click', () => {
     const main = document.getElementById('main-content');
@@ -324,7 +336,7 @@ function renderHeader(el) {
   burger.addEventListener('click', () =>
     setMobileMenu(!document.body.classList.contains('body--mobile-menu-is-open')));
   drawer.addEventListener('click', (e) => { if (e.target.closest('a')) setMobileMenu(false); });
-  window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => { if (e.matches) setMobileMenu(false); });
+  window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => { if (e.matches) setMobileMenu(false); }, { signal });
 
   // --- Flyout drawers (desktop + mobile) ---
   const menuButtons = Array.from(el.querySelectorAll('[data-menu]'));
@@ -456,17 +468,17 @@ function renderHeader(el) {
     }
     closeNavMenus('', true);                       // Escape restores focus to the trigger
     if (document.body.classList.contains('body--mobile-menu-is-open')) { setMobileMenu(false); burger.focus(); }
-  });
+  }, { signal });
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#main-header .navy__has-children, #main-header .desktop-menu__drawer, #main-header .mobile-menu__drawer')) closeNavMenus();
-  });
+  }, { signal });
   window.addEventListener('resize', () => {
     const openButton = menuButtons.find(button => button.getAttribute('aria-expanded') === 'true');
     if (!openButton) return;
     const panel = el.querySelector(`#${openButton.getAttribute('aria-controls')}`);
     if (panel) positionPanel(openButton, panel);
     setOverlayOpen(true);
-  });
+  }, { signal });
 
   // --- Header search (CD focus search) ---
   const searchWrap = el.querySelector('#header-search');
@@ -493,7 +505,7 @@ function renderHeader(el) {
     if (!searchWrap.classList.contains('open')) return;
     if (e.target.closest('#header-search')) return;
     openSearch(false);
-  });
+  }, { signal });
 }
 
 function renderFooter(el) { el.innerHTML = footerHTML(); }

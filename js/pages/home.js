@@ -112,12 +112,12 @@ export default async function render(ctx) {
     title: 'Aktuelles',
     body: `<div class="grid grid--3">${news.map(n => C.card({
       title: n.title, desc: n.teaser,
-      href: `#/knowledge?tab=news&id=${encodeURIComponent(n.id)}`,
+      href: `#/knowledge/news/${encodeURIComponent(n.id)}`,
       photo: { id: n.photo, color: n.color, alt: '' },
       footer: `<span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
         <span class="btn btn--link">Weiterlesen ${C.icon('ArrowRight', 'icon--base')}</span>`,
     })).join('')}</div>`,
-    more: { href: '#/knowledge?tab=news', label: 'Alle Aktualitäten ansehen' },
+    more: { href: '#/knowledge/news', label: 'Alle Aktualitäten ansehen' },
   });
 
   // Der Hero ist weiss; danach wechseln die Bänder — erstes Band grau.

@@ -1,10 +1,12 @@
 import { grundlagenPage, anchorNavPage, docItem } from './grundlagen.js';
 
-// News und Wissen — Abschnitts-Übersicht plus drei eigenständige Unterseiten:
-// News, Prozesse, Gesetzliche Grundlagen und Vorgaben. Diese sind KEINE Tabs
-// (kein tab__controls-Streifen mehr), sondern echte Seiten mit eigenem h1,
-// eigener Brotkrume und Zurück-Link — über ?tab=… verlinkbar. Ein optionales
-// ?id=… öffnet ein Detail (Weisung / News) als eigene Seite.
+// News und Wissen — Abschnitts-Übersicht plus eigenständige Unterseiten: News,
+// Prozesse, Gesetzliche Grundlagen und Vorgaben, Anleitungen. Diese sind echte
+// Seiten (eigenes h1, Brotkrume, Zurück-Link) und deshalb über einen Pfad
+// adressiert — `#/knowledge/<abschnitt>` — nicht über einen `?tab=`-Parameter
+// (der bleibt echten In-Page-Tabs vorbehalten, siehe docs/sitemap.md). Ein
+// weiteres Pfadsegment öffnet ein Detail: `#/knowledge/grundlagen/<id>` (Weisung),
+// `#/knowledge/news/<id>` (Meldung).
 const PAGES = {
   news:        { title: 'News', lead: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.' },
   prozesse:    { title: 'Prozessdokumentation', lead: 'Die Prozesslandschaft des BBL im Prozessportal Archimap sowie häufige Fragen zur Zusammenarbeit.' },
@@ -13,26 +15,26 @@ const PAGES = {
 };
 
 export default async function render(ctx) {
-  const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  const tab = query.get('tab');
-  const id = query.get('id') || '';
+  const { mount, params, core, C, setTitle, setCrumbs } = ctx;
+  const section = params[0];
+  const id = params[1] ? C.safeDecode(params[1]) : '';
 
-  if (!tab || !PAGES[tab]) return overview(ctx);
+  if (!section || !PAGES[section]) return overview(ctx);
 
   // Detailseiten mit eigener Identität (h1, Titel, Brotkrume) — Review P1-6.
-  if (tab === 'news' && id) return newsDetail(ctx, id);
-  if (tab === 'grundlagen' && id) {
+  if (section === 'news' && id) return newsDetail(ctx, id);
+  if (section === 'grundlagen' && id) {
     const w = core.weisung(id);
     if (w) return weisungPage(ctx, w);
   }
   // Grundlagen und Prozesse teilen das CD-Ankernavigations-Layout (Abschnitte
   // links, Inhaltsverzeichnis rechts, KBOB-/detailPageAnchorNav-Muster).
-  if (tab === 'grundlagen') return grundlagenPage(ctx, PAGES.grundlagen);
-  if (tab === 'prozesse') return prozessePage(ctx, PAGES.prozesse);
-  if (tab === 'anleitungen') return anleitungenPage(ctx, PAGES.anleitungen);
+  if (section === 'grundlagen') return grundlagenPage(ctx, PAGES.grundlagen);
+  if (section === 'prozesse') return prozessePage(ctx, PAGES.prozesse);
+  if (section === 'anleitungen') return anleitungenPage(ctx, PAGES.anleitungen);
 
   // Verbleibt: News-Liste.
-  const page = PAGES[tab];
+  const page = PAGES[section];
   setTitle(page.title);
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: page.title }]);
   mount.innerHTML = `
@@ -54,16 +56,16 @@ function overview(ctx) {
   const news = core.news();
 
   const entries = [
-    { title: 'Gesetzliche Grundlagen und Vorgaben', icon: 'Book', href: '#/knowledge?tab=grundlagen',
+    { title: 'Gesetzliche Grundlagen und Vorgaben', icon: 'Book', href: '#/knowledge/grundlagen',
       desc: 'Erlasse, übergeordnete Vorgaben des Bundes und die internen Weisungen des BBL — thematisch gegliedert.',
       meta: 'Gesetze, Vorgaben & Weisungen' },
-    { title: 'News', icon: 'Bell', href: '#/knowledge?tab=news',
+    { title: 'News', icon: 'Bell', href: '#/knowledge/news',
       desc: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.',
       meta: `${news.length} Meldungen` },
-    { title: 'Prozessdokumentation', icon: 'InfoCircle', href: '#/knowledge?tab=prozesse',
+    { title: 'Prozessdokumentation', icon: 'InfoCircle', href: '#/knowledge/prozesse',
       desc: 'Die Prozesslandschaft des BBL im Prozessportal Archimap sowie häufige Fragen (FAQ).',
       meta: 'Prozessportal & FAQ' },
-    { title: 'Anleitungen und Schulungsunterlagen', icon: 'Desktop', href: '#/knowledge?tab=anleitungen',
+    { title: 'Anleitungen und Schulungsunterlagen', icon: 'Desktop', href: '#/knowledge/anleitungen',
       desc: 'Kurzanleitungen, Schulungsunterlagen und Lernvideos zur Nutzung der Plattform.',
       meta: 'Anleitungen & Schulung' },
   ].map(C.domainTile).join('');
@@ -98,18 +100,18 @@ function weisungPage(ctx, w) {
 
   setTitle(w.title);
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' },
-    { label: 'Gesetzliche Grundlagen und Vorgaben', href: '#/knowledge?tab=grundlagen' }, { label: w.title }]);
+    { label: 'Gesetzliche Grundlagen und Vorgaben', href: '#/knowledge/grundlagen' }, { label: w.title }]);
 
   mount.innerHTML = `
   <div class="container section">
     ${C.detailHead({
-      backHref: '#/knowledge?tab=grundlagen', backLabel: 'Gesetzliche Grundlagen und Vorgaben',
+      backHref: '#/knowledge/grundlagen', backLabel: 'Gesetzliche Grundlagen und Vorgaben',
       title: w.title, lead: w.summary,
       tags: `<code class="badge badge--gray" style="font-family:ui-monospace,Consolas,monospace">${C.escape(w.code)}</code>${C.badge(w.type, typeVariant(w.type))}${forceBadge(C, w.bindingForce)}${statusBadge(C, w.status)}`,
       image: C.photo({ id: '1522071820081-009f0129c71c', alt: '', w: 800 }),
     })}
     ${w.status === 'aufgehoben' && successor
-      ? C.notification(`Diese Weisung ist <strong>aufgehoben</strong>. Abgelöst durch <a href="#/knowledge?tab=grundlagen&id=${encodeURIComponent(successor.directiveId)}">${C.escape(successor.code)} — ${C.escape(successor.title)}</a>.`, 'warning', 'WarningCircle')
+      ? C.notification(`Diese Weisung ist <strong>aufgehoben</strong>. Abgelöst durch <a href="#/knowledge/grundlagen/${encodeURIComponent(successor.directiveId)}">${C.escape(successor.code)} — ${C.escape(successor.title)}</a>.`, 'warning', 'WarningCircle')
       : w.status === 'aufgehoben'
         ? C.notification('Diese Weisung ist <strong>aufgehoben</strong>.', 'warning', 'WarningCircle')
         : ''}
@@ -154,18 +156,18 @@ function newsDetail(ctx, id) {
   const n = core.newsItem(id);
   if (!n) {
     setTitle('Meldung nicht gefunden');
-    setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: 'News', href: '#/knowledge?tab=news' }]);
-    mount.innerHTML = C.notFound({ backHref: '#/knowledge?tab=news', backLabel: 'News',
+    setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' }, { label: 'News', href: '#/knowledge/news' }]);
+    mount.innerHTML = C.notFound({ backHref: '#/knowledge/news', backLabel: 'News',
       title: 'Meldung nicht gefunden',
-      body: 'Diese Meldung existiert nicht. <a href="#/knowledge?tab=news">Zur Übersicht «News»</a>' });
+      body: 'Diese Meldung existiert nicht. <a href="#/knowledge/news">Zur Übersicht «News»</a>' });
     return;
   }
   setTitle(n.title);
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News und Wissen', href: '#/knowledge' },
-    { label: 'News', href: '#/knowledge?tab=news' }, { label: n.title }]);
+    { label: 'News', href: '#/knowledge/news' }, { label: n.title }]);
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/knowledge?tab=news', 'News')}
+    ${C.backLink('#/knowledge/news', 'News')}
     <article class="stack mt-4" style="max-width:60rem">
       <div class="row gap-sm small muted">
         <span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
@@ -186,7 +188,7 @@ function newsList(ctx) {
   return `
     <div class="grid grid--3 mt-6">
       ${items.map(n => `
-        <a class="card card--default card--clickable" href="#/knowledge?tab=news&id=${encodeURIComponent(n.id)}">
+        <a class="card card--default card--clickable" href="#/knowledge/news/${encodeURIComponent(n.id)}">
           <div class="card__image">${C.photo({ id: n.photo, color: n.color, alt: n.title, w: 640, style: 'height:100%' })}</div>
           <div class="card__body">
             <div class="row gap-sm small muted">

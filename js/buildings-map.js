@@ -13,16 +13,17 @@ function loadMapLibre() {
   if (window.maplibregl) return Promise.resolve(window.maplibregl);
   if (mlPromise) return mlPromise;
   mlPromise = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Zeitüberschreitung beim Laden der Karte')), 12000);
     const css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VER}/dist/maplibre-gl.css`;
     document.head.appendChild(css);
     const s = document.createElement('script');
     s.src = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VER}/dist/maplibre-gl.js`;
-    s.onload = () => window.maplibregl ? resolve(window.maplibregl) : reject(new Error('maplibregl fehlt'));
-    s.onerror = () => reject(new Error('MapLibre konnte nicht geladen werden'));
+    s.onload = () => { clearTimeout(timer); window.maplibregl ? resolve(window.maplibregl) : reject(new Error('maplibregl fehlt')); };
+    s.onerror = () => { clearTimeout(timer); reject(new Error('MapLibre konnte nicht geladen werden')); };
     document.head.appendChild(s);
-  });
+  }).catch((e) => { mlPromise = null; throw e; });   // Fehler nicht cachen → späterer Aufruf lädt neu (C2)
   return mlPromise;
 }
 

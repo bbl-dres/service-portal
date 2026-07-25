@@ -5,20 +5,16 @@
 // Inhalte bleiben abgemeldet vollständig sichtbar; nur das Auslösen eines
 // Vorgangs verlangt eine Anmeldung.
 
+import { readJSON, writeJSON, remove } from './storage.js';
+
 const LS_KEY = 'bbl_session_v1';
 const DEMO_USER = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
 
-let user = load();
+let user = readJSON(LS_KEY, null);
 const listeners = new Set();
 
-function load() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch { return null; }
-}
 function save() {
-  try {
-    if (user) localStorage.setItem(LS_KEY, JSON.stringify(user));
-    else localStorage.removeItem(LS_KEY);
-  } catch (e) { console.warn('[session] localStorage unavailable', e); }
+  if (user) writeJSON(LS_KEY, user); else remove(LS_KEY);
 }
 function emit() { listeners.forEach(fn => { try { fn(user); } catch (e) { console.error(e); } }); }
 

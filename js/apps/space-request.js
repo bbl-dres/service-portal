@@ -159,6 +159,7 @@ export default async function render(ctx) {
         linkedEntities: state.buildingId ? { buildingId: state.buildingId } : {},
       });
       draw();
+      if (!state.created) C.flashError(mount, 'Der Vorgang konnte nicht gespeichert werden — bitte erneut versuchen.');
     });
     const back = mount.querySelector('[data-back]');
     if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); });

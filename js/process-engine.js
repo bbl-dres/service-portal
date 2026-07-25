@@ -3,16 +3,25 @@
 // (Vorgänge) live in localStorage so the service->process->Meine-Vorgänge loop works.
 // NOTE: this is the *demo* engine — see docs/expert-review.md for the real-vs-mocked register.
 
+import { readJSON, writeJSON } from './storage.js';
+
 const LS_KEY = 'bbl_vorgaenge_v1';
 let DEFS = [];
 let SEEDED = [];
 
-function loadLS() { try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; } }
-function saveLS(arr) { try { localStorage.setItem(LS_KEY, JSON.stringify(arr)); } catch (e) { console.warn('[engine] localStorage unavailable', e); } }
+function loadLS() { const a = readJSON(LS_KEY, []); return Array.isArray(a) ? a : []; }
+function saveLS(arr) { return writeJSON(LS_KEY, arr); }   // → bool, damit Aufrufer stillen Verlust erkennen (C1)
+
+async function fetchArray(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${r.status} ${url}`);
+  const json = await r.json();
+  return Array.isArray(json) ? json : [];
+}
 
 async function load() {
-  try { DEFS = await (await fetch('data/process-definitions.json')).json(); } catch (e) { DEFS = []; }
-  try { SEEDED = await (await fetch('data/process-instances.json')).json(); } catch (e) { SEEDED = []; }
+  try { DEFS = await fetchArray('data/process-definitions.json'); } catch (e) { console.warn('[engine] definitions', e && e.message); DEFS = []; }
+  try { SEEDED = await fetchArray('data/process-instances.json'); } catch (e) { console.warn('[engine] instances', e && e.message); SEEDED = []; }
 }
 
 const definition = (id) => DEFS.find(d => d.defId === id);
@@ -33,7 +42,7 @@ function start(defId, payload = {}) {
   const steps = (def && def.steps) || [{ status: 'eingereicht', label: 'Eingereicht' }];
   const first = steps[0];
   const inst = {
-    instanceId: 'inst-' + Date.now(),
+    instanceId: 'inst-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
     defId,
     defName: def ? def.name : defId,
     reference: genRef(),
@@ -52,8 +61,7 @@ function start(defId, payload = {}) {
   };
   const arr = loadLS();
   arr.unshift(inst);
-  saveLS(arr);
-  return inst;
+  return saveLS(arr) ? inst : null;   // null = Speichern fehlgeschlagen (kein Schein-Erfolg)
 }
 
 // Demo affordance: advance a locally-created instance to its next step.
@@ -62,14 +70,13 @@ function advance(id) {
   const inst = arr.find(i => i.instanceId === id);
   if (!inst) return null;
   const def = definition(inst.defId);
-  if (!def || inst.stepIndex >= def.steps.length - 1) return inst;
+  if (!def || !Array.isArray(def.steps) || inst.stepIndex >= def.steps.length - 1) return inst;
   inst.stepIndex += 1;
   const step = def.steps[inst.stepIndex];
   inst.status = step.status;
   inst.updatedAt = today();
   inst.history.push({ when: today(), status: step.label, note: step.role ? `Schritt durch ${step.role} (Demo)` : 'Status aktualisiert (Demo)' });
-  saveLS(arr);
-  return inst;
+  return saveLS(arr) ? inst : null;
 }
 
 function reset() { saveLS([]); }

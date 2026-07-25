@@ -143,7 +143,7 @@ function list(ctx) {
 
 function detail(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
-  const d = core.dataset(decodeURIComponent(id));
+  const d = core.dataset(C.safeDecode(id));
   const t = core.t;
 
   if (!d) {

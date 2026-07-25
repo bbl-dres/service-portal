@@ -40,5 +40,5 @@ async function boot() {
 boot().catch(e => {
   console.error('[app] boot failed', e);
   document.getElementById('main-content').innerHTML =
-    `<div class="container section"><div class="notification notification--error">Die Anwendung konnte nicht gestartet werden: ${e.message}</div></div>`;
+    `<div class="container section"><div class="notification notification--error">Die Anwendung konnte nicht gestartet werden: ${escape(e.message)}</div></div>`;
 });

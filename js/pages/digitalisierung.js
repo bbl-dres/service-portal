@@ -60,7 +60,7 @@ function uebersicht(ctx) {
       <h2>Weitere Informationen</h2>
       <ul class="list--default mt-4">
         <li><a href="#/data/ikt-vorhaben">IKT-Vorhaben — laufende und geplante Informatik-Vorhaben des BBL</a></li>
-        <li><a href="#/knowledge?tab=grundlagen">Gesetzliche Grundlagen und Vorgaben</a></li>
+        <li><a href="#/knowledge/grundlagen">Gesetzliche Grundlagen und Vorgaben</a></li>
         <li><a href="https://www.bk.admin.ch/de/digitale-bundesverwaltung" target="_blank" rel="noopener external">Strategie Digitale Bundesverwaltung (Bundeskanzlei)</a></li>
         <li><a href="#/app/dataportal">Datenportal — Auswertungen und Kennzahlen</a></li>
         <li><a href="#/data/katalog">Datenbezug — Datenkatalog nach DCAT-AP-CH</a></li>

@@ -89,7 +89,7 @@ ul,ol { margin:0; padding:0; }
 :focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; border-radius:1px; }
 .top-bar :focus-visible, .footer-information :focus-visible, .footer-navigation :focus-visible,
 .mobile-menu .top-bar-navigation--mobile :focus-visible,
-[class*="bg--secondary-5"] :focus-visible, [class*="bg--secondary-6"] :focus-visible,
+.bg--secondary-500 :focus-visible, [class*="bg--secondary-6"] :focus-visible,
 [class*="bg--secondary-7"] :focus-visible, [class*="bg--secondary-8"] :focus-visible,
 [class*="bg--secondary-9"] :focus-visible { outline-color:var(--color-focus-ring-negative); }
 .card--clickable:focus-visible { outline-offset:-2px; }

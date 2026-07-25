@@ -1,6 +1,20 @@
 // Meine Vorgänge — running cases (driven by the mock process engine).
 export default async function render(ctx) {
-  const { mount, params, core, engine, C, setTitle, setCrumbs } = ctx;
+  const { mount, params, session, core, engine, C, setTitle, setCrumbs } = ctx;
+
+  // «Meine Vorgänge» ist der einzige persönliche Bereich — abgemeldet nicht den
+  // Inhalt zeigen, sondern zur Anmeldung auffordern (Kataloginhalte bleiben frei).
+  if (!session.isLoggedIn()) {
+    setTitle('Meine Vorgänge');
+    setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Meine Vorgänge' }]);
+    mount.innerHTML = `
+    <div class="container section">
+      ${C.pageHeader({ title: 'Meine Vorgänge', lead: 'Ihre persönlichen Anfragen und Bestellungen.' })}
+      ${C.loginGate('«Meine Vorgänge» zeigt die von Ihnen ausgelösten Anfragen und Bestellungen. Bitte melden Sie sich mit AGOV / FedLogin an, um Ihre Vorgänge zu sehen.')}
+    </div>`;
+    return;
+  }
+
   if (params[0]) return detail(ctx, params[0]);
 
   setTitle('Meine Vorgänge');

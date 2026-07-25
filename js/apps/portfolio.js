@@ -325,7 +325,7 @@ function detail(ctx, id) {
   function activate(tabId) {
     btns.forEach(btn => {
       const on = btn.getAttribute('data-tab') === tabId;
-      btn.classList.toggle('tag-item--active', on);
+      btn.classList.toggle('tab__control--active', on);
       btn.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     panels.forEach(p => { p.hidden = p.id !== 'panel-' + tabId; });

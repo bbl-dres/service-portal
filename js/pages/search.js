@@ -64,16 +64,16 @@ export default async function render(ctx) {
     {
       label: 'Gesetzliche Grundlagen und Vorgaben', icon: 'Book',
       all: core.weisungen().filter(w => hit(w.title, w.summary, w.code, w.topic)),
-      more: '#/knowledge?tab=grundlagen',
+      more: '#/knowledge/grundlagen',
       row: w => ({ type: w.type || 'Weisung', title: w.title, desc: w.summary,
-        href: `#/knowledge?tab=grundlagen&id=${encodeURIComponent(w.directiveId)}` }),
+        href: `#/knowledge/grundlagen/${encodeURIComponent(w.directiveId)}` }),
     },
     {
       label: 'News', icon: 'Bell',
       all: core.news().filter(n => hit(n.title, n.teaser, n.body)),
-      more: '#/knowledge?tab=news',
+      more: '#/knowledge/news',
       row: n => ({ type: 'News', title: n.title, desc: n.teaser, date: n.date,
-        href: `#/knowledge?tab=news&id=${encodeURIComponent(n.id)}` }),
+        href: `#/knowledge/news/${encodeURIComponent(n.id)}` }),
     },
   ].filter(g => g.all.length) : [];
 
