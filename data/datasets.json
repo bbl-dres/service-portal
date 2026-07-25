@@ -2,10 +2,10 @@
   {
     "id": "1",
     "title": {
-      "de": "Gebäude (SAP Liegenschafteninventar)",
-      "fr": "Bâtiments (Inventaire immobilier SAP)",
-      "it": "Edifici (Inventario immobiliare SAP)",
-      "en": "Buildings (SAP Property Inventory)"
+      "de": "Gebäude (SAP RE-FX)",
+      "fr": "Bâtiments (SAP RE-FX)",
+      "it": "Edifici (SAP RE-FX)",
+      "en": "Buildings (SAP RE-FX)"
     },
     "description": {
       "de": "Stammdaten aller Gebäude im Portfolio des Bundes mit Adressen, EGID, Nutzungstyp und Zustandsbewertungen.",
@@ -20,7 +20,10 @@
       "en": "This dataset comprises the master data of all buildings in the federal portfolio. It contains fundamental information such as addresses, official building identification numbers (EGID), usage type, year of construction, area specifications and condition assessments. The data serves as the basis for portfolio management, maintenance planning and strategic reporting. The database is updated monthly from the ERP system."
     },
     "image": "assets/datasets/SAP Gebäude.jpg",
-    "tags": ["building", "erp_immo"],
+    "tags": [
+      "building",
+      "erp_immo"
+    ],
     "meta": {
       "kontaktstelle": "info@bbl.admin.ch",
       "ausgabedatum": "10. Mai 2025",
@@ -101,17 +104,23 @@
       }
     ],
     "responsiblePersons": [
-      { "admindirId": "p-1YFBMPWKZ", "role": "Data Owner" },
-      { "admindirId": "p-2560681", "role": "Data Steward" }
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Data Owner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Data Steward"
+      }
     ]
   },
   {
     "id": "2",
     "title": {
-      "de": "Grundstücke (SAP Liegenschafteninventar)",
-      "fr": "Biens-fonds (Inventaire immobilier SAP)",
-      "it": "Fondi (Inventario immobiliare SAP)",
-      "en": "Land Parcels (SAP Property Inventory)"
+      "de": "Grundstücke (SAP RE-FX)",
+      "fr": "Biens-fonds (SAP RE-FX)",
+      "it": "Fondi (SAP RE-FX)",
+      "en": "Land Parcels (SAP RE-FX)"
     },
     "description": {
       "de": "Enthält die Stammdaten aller Grundstücke im Eigentum oder in der Verwaltung des Bundes.",
@@ -126,7 +135,10 @@
       "en": "Contains the master data of all land parcels owned or managed by the federal government. The dataset includes official information such as parcel numbers, area specifications, zone types and ownership details. This data forms the basis for the legal and administrative management of land holdings and portfolio development. The database is updated monthly from the ERP system."
     },
     "image": "assets/datasets/SAP Grundstück.jpg",
-    "tags": ["land_parcel", "erp_immo"],
+    "tags": [
+      "land_parcel",
+      "erp_immo"
+    ],
     "meta": {
       "kontaktstelle": "info@bbl.admin.ch",
       "ausgabedatum": "15. April 2025",
@@ -207,16 +219,19 @@
       }
     ],
     "responsiblePersons": [
-      { "admindirId": "p-3847291", "role": "Data Owner" }
+      {
+        "admindirId": "p-3847291",
+        "role": "Data Owner"
+      }
     ]
   },
   {
     "id": "3",
     "title": {
-      "de": "Bauprojekte (SAP Projektcontrolling)",
-      "fr": "Projets de construction (Controlling de projets SAP)",
-      "it": "Progetti di costruzione (Controlling progetti SAP)",
-      "en": "Construction Projects (SAP Project Controlling)"
+      "de": "Bauprojekte (SAP ePPM)",
+      "fr": "Projets de construction (SAP ePPM)",
+      "it": "Progetti di costruzione (SAP ePPM)",
+      "en": "Construction Projects (SAP ePPM)"
     },
     "description": {
       "de": "Führt alle Neu- und Umbauprojekte, die vom Bund verantwortet werden.",
@@ -231,7 +246,10 @@
       "en": "Lists all new construction and renovation projects managed by the federal government. The dataset contains dynamic information on project designation, location, project type (new build, renovation), budget, schedules (planned/actual) and current project status. It is the central source for project controlling, resource planning and strategic construction planning. The database is updated monthly from the ERP system."
     },
     "image": "assets/datasets/SAP Bauprojekte.jpg",
-    "tags": ["construction_project", "erp_immo"],
+    "tags": [
+      "construction_project",
+      "erp_immo"
+    ],
     "meta": {
       "kontaktstelle": "projekte@bbl.admin.ch",
       "ausgabedatum": "1. Mai 2025",
@@ -302,7 +320,10 @@
     ],
     "publications": [],
     "responsiblePersons": [
-      { "admindirId": "p-5928374", "role": "Data Steward" }
+      {
+        "admindirId": "p-5928374",
+        "role": "Data Steward"
+      }
     ]
   },
   {
@@ -326,13 +347,16 @@
       "en": "This dataset lists all lease and rental agreements in which the federal government acts as tenant or landlord. Contractual details such as parties, rental object, terms, rents and payment conditions are recorded. The data is essential for commercial contract management, financial accounting and occupancy management. The database is updated monthly from the ERP system."
     },
     "image": "assets/datasets/SAP Mietverträge.jpg",
-    "tags": ["lease", "erp_immo"],
+    "tags": [
+      "lease",
+      "erp_immo"
+    ],
     "meta": {
       "kontaktstelle": "vertraege@bbl.admin.ch",
       "ausgabedatum": "20. April 2025",
       "aktualisierungsintervall": "monthly",
       "status": "published",
-      "klassifizierung": "confidential",
+      "klassifizierung": "internal",
       "personenbezogen": "personal",
       "archivwuerdig": "yes",
       "thema": {
@@ -371,10 +395,10 @@
         "dateiformat": "XLSX",
         "lizenz": "terms_by",
         "bemerkungen": {
-          "de": "Vertraulich - nur für berechtigte Benutzer",
-          "fr": "Confidentiel - uniquement pour les utilisateurs autorisés",
-          "it": "Confidenziale - solo per utenti autorizzati",
-          "en": "Confidential - authorised users only"
+          "de": "Zugriff nur mit Berechtigung",
+          "fr": "Accès uniquement avec autorisation",
+          "it": "Accesso solo con autorizzazione",
+          "en": "Authorised access only"
         }
       },
       {
@@ -423,7 +447,10 @@
       "en": "Inventory of major technical systems in federal buildings. The dataset includes systems such as heating, ventilation and air conditioning (HVAC), lifts, security and electrical systems. It contains information on system type, location, manufacturer, commissioning date and maintenance cycles. It serves as the basis for facility management, maintenance planning and operational assurance. The database is updated monthly from the ERP system."
     },
     "image": "assets/datasets/SAP Technische Anlage.jpg",
-    "tags": ["systems_tech", "erp_immo"],
+    "tags": [
+      "systems_tech",
+      "erp_immo"
+    ],
     "meta": {
       "kontaktstelle": "technik@bbl.admin.ch",
       "ausgabedatum": "1. März 2025",
@@ -492,16 +519,16 @@
   {
     "id": "6",
     "title": {
-      "de": "Projektdaten: Bauprojekte (CDE Bund)",
-      "fr": "Données de projet : projets de construction (CDE Confédération)",
-      "it": "Dati di progetto: progetti di costruzione (CDE Confederazione)",
-      "en": "Project Data: Construction Projects (Federal CDE)"
+      "de": "Bauprojekte und Dokumente (CDE Bund)",
+      "fr": "Projets de construction et documents (CDE Confédération)",
+      "it": "Progetti di costruzione e documenti (CDE Confederazione)",
+      "en": "Construction Projects and Documents (Federal CDE)"
     },
     "description": {
-      "de": "Metadaten der Bauprojekte aus der Kollaborationsplattform CDE Bund.",
-      "fr": "Métadonnées des projets de construction issues de la plateforme de collaboration CDE de la Confédération.",
-      "it": "Metadati dei progetti di costruzione dalla piattaforma di collaborazione CDE della Confederazione.",
-      "en": "Metadata of construction projects from the Federal CDE collaboration platform."
+      "de": "Bauprojekt-Metadaten und Dokumente aus der Kollaborationsplattform CDE Bund.",
+      "fr": "Métadonnées des projets de construction et documents issus de la plateforme de collaboration CDE de la Confédération.",
+      "it": "Metadati dei progetti di costruzione e documenti dalla piattaforma di collaborazione CDE della Confederazione.",
+      "en": "Construction project metadata and documents from the Federal CDE collaboration platform."
     },
     "fullDescription": {
       "de": "Stellt die Metadaten der Projekte aus der zentralen Kollaborationsplattform Common Data Environment (CDE) des Bundes bereit. Diese Plattform dient dem Austausch von BIM-Modellen, Plänen und technischen Dokumenten während der Planungs- und Ausführungsphase. Der Datensatz enthält Informationen über Projektstruktur, Beteiligte, Dokumentenstatus und Freigabeprozesse und bildet die Grundlage für das digitale Projektmanagement.",
@@ -510,7 +537,11 @@
       "en": "Provides project metadata from the federal Common Data Environment (CDE) collaboration platform. This platform serves the exchange of BIM models, plans and technical documents during the planning and execution phases. The dataset contains information on project structure, stakeholders, document status and approval processes, and forms the basis for digital project management."
     },
     "photo": "1454165804606-c3d57bc86b40",
-    "tags": ["construction_project", "cde_federal"],
+    "tags": [
+      "construction_project",
+      "document",
+      "cde_federal"
+    ],
     "meta": {
       "kontaktstelle": "bim@bbl.admin.ch",
       "ausgabedatum": "15. Mai 2025",
@@ -536,41 +567,46 @@
     "distributions": [
       {
         "name": {
-          "de": "CDE Projektdaten Export",
-          "fr": "Export des données de projet CDE",
-          "it": "Esportazione dati di progetto CDE",
-          "en": "CDE project data export"
-        },
-        "format": "Excel",
-        "identifikator": "v3w4x5y6-7890-12vw-ef01-3456789012vw",
-        "titel": "CDE Projektdaten Export",
-        "zugriffsUrl": "https://cde.bbl.admin.ch/export/projekte",
-        "downloadUrl": "https://cde.bbl.admin.ch/download/projekte.xlsx",
-        "status": "published",
-        "dateiformat": "XLSX",
-        "lizenz": "terms_by",
-        "bemerkungen": ""
-      },
-      {
-        "name": {
-          "de": "CDE API (REST)",
-          "fr": "API CDE (REST)",
-          "it": "API CDE (REST)",
-          "en": "CDE API (REST)"
+          "de": "CDE Bauprojekte API (REST)",
+          "fr": "API projets de construction CDE (REST)",
+          "it": "API progetti di costruzione CDE (REST)",
+          "en": "CDE Construction Projects API (REST)"
         },
         "format": "REST",
-        "identifikator": "w4x5y6z7-8901-23wx-f012-4567890123wx",
-        "titel": "CDE API (REST)",
-        "zugriffsUrl": "https://api.bbl.admin.ch/v1/cde/projects",
+        "identifikator": "cd6e5de3-cb37-41bf-ac03-dd5a7319999a",
+        "titel": "CDE Bauprojekte API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/cde/bauprojekte",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
         "lizenz": "terms_by",
         "bemerkungen": {
-          "de": "OpenAPI Spec verfügbar",
-          "fr": "Spécification OpenAPI disponible",
-          "it": "Specifica OpenAPI disponibile",
-          "en": "OpenAPI spec available"
+          "de": "Projektstruktur und Metadaten",
+          "fr": "Structure de projet et métadonnées",
+          "it": "Struttura del progetto e metadati",
+          "en": "Project structure and metadata"
+        }
+      },
+      {
+        "name": {
+          "de": "CDE Dokumente API (REST)",
+          "fr": "API documents CDE (REST)",
+          "it": "API documenti CDE (REST)",
+          "en": "CDE Documents API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "cb118e4d-7bfc-4d0b-8cfc-9e9eee2787ce",
+        "titel": "CDE Dokumente API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/cde/dokumente",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Pläne, BIM-Modelle und Dokumente",
+          "fr": "Plans, modèles BIM et documents",
+          "it": "Piani, modelli BIM e documenti",
+          "en": "Plans, BIM models and documents"
         }
       }
     ],
@@ -597,7 +633,10 @@
       "en": "This dataset visualises construction projects as geometries in the geographic information system. The project perimeter, i.e. the spatial scope of a construction project, is recorded. The data enables cartographic representation of current and planned construction sites, analysis of spatial impacts and coordination with other infrastructure projects. It is the geographic view of the project data from the ERP."
     },
     "image": "assets/datasets/GIS Gebäude.jpg",
-    "tags": ["construction_project", "gis_immo"],
+    "tags": [
+      "construction_project",
+      "gis_immo"
+    ],
     "meta": {
       "kontaktstelle": "gis@bbl.admin.ch",
       "ausgabedatum": "1. April 2025",
@@ -641,12 +680,12 @@
       {
         "name": {
           "de": "GIS Bauprojekte WFS",
-          "fr": "WFS GIS projets de construction",
-          "it": "WFS GIS progetti di costruzione",
-          "en": "GIS construction projects WFS"
+          "fr": "WFS GIS bauprojekte",
+          "it": "WFS GIS bauprojekte",
+          "en": "GIS Bauprojekte WFS"
         },
         "format": "WFS",
-        "identifikator": "y6z7a8b9-0123-45yz-1234-6789012345yz",
+        "identifikator": "ff09ff8d-17bb-4e07-ab92-9b857d201329",
         "titel": "GIS Bauprojekte WFS",
         "zugriffsUrl": "https://gis.bbl.admin.ch/wfs/bauprojekte",
         "downloadUrl": "",
@@ -659,6 +698,45 @@
           "it": "Web Feature Service conforme OGC",
           "en": "OGC-compliant Web Feature Service"
         }
+      },
+      {
+        "name": {
+          "de": "GIS Bauprojekte API (REST)",
+          "fr": "API GIS bauprojekte (REST)",
+          "it": "API GIS bauprojekte (REST)",
+          "en": "GIS Bauprojekte API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "4ea5939e-c318-444a-9d99-af0de054e2cf",
+        "titel": "GIS Bauprojekte API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/gis/bauprojekte",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "OpenAPI Spec verfügbar",
+          "fr": "Spécification OpenAPI disponible",
+          "it": "Specifica OpenAPI disponibile",
+          "en": "OpenAPI spec available"
+        }
+      },
+      {
+        "name": {
+          "de": "GIS Bauprojekte Export (XLSX)",
+          "fr": "Export GIS bauprojekte (XLSX)",
+          "it": "Esportazione GIS bauprojekte (XLSX)",
+          "en": "GIS Bauprojekte export (XLSX)"
+        },
+        "format": "Excel",
+        "identifikator": "d3e34176-7978-4dd4-8cbd-b7d028a28eb1",
+        "titel": "GIS Bauprojekte Export (XLSX)",
+        "zugriffsUrl": "https://gis.bbl.admin.ch/export/bauprojekte",
+        "downloadUrl": "https://gis.bbl.admin.ch/download/bauprojekte.xlsx",
+        "status": "published",
+        "dateiformat": "XLSX",
+        "lizenz": "terms_by",
+        "bemerkungen": ""
       }
     ],
     "publications": []
@@ -684,7 +762,10 @@
       "en": "This dataset analyses the land cover area shares on federal land parcels. It is generated by a spatial intersection of the own parcel geometries with the data from the official cadastral survey of Switzerland. The result comprises exact measurements for various usage types such as building footprints, sealed surfaces (e.g. car parks), green spaces and open areas. The data is an important basis for environmental reporting, the calculation of sustainability indicators (e.g. sealing ratio) and operational property management."
     },
     "image": "assets/datasets/SAP Grundstück.jpg",
-    "tags": ["land_cover", "gis_immo"],
+    "tags": [
+      "land_cover",
+      "gis_immo"
+    ],
     "meta": {
       "kontaktstelle": "gis@bbl.admin.ch",
       "ausgabedatum": "1. April 2025",
@@ -733,12 +814,12 @@
       {
         "name": {
           "de": "GIS Bodenabdeckung WFS",
-          "fr": "WFS GIS couverture du sol",
-          "it": "WFS GIS copertura del suolo",
-          "en": "GIS land cover WFS"
+          "fr": "WFS GIS bodenabdeckung",
+          "it": "WFS GIS bodenabdeckung",
+          "en": "GIS Bodenabdeckung WFS"
         },
         "format": "WFS",
-        "identifikator": "a8b9c0d1-2345-67ab-3456-8901234567ab",
+        "identifikator": "275429c9-220c-487f-88cf-65d434b93aa5",
         "titel": "GIS Bodenabdeckung WFS",
         "zugriffsUrl": "https://gis.bbl.admin.ch/wfs/bodenabdeckung",
         "downloadUrl": "",
@@ -751,6 +832,45 @@
           "it": "Web Feature Service conforme OGC",
           "en": "OGC-compliant Web Feature Service"
         }
+      },
+      {
+        "name": {
+          "de": "GIS Bodenabdeckung API (REST)",
+          "fr": "API GIS bodenabdeckung (REST)",
+          "it": "API GIS bodenabdeckung (REST)",
+          "en": "GIS Bodenabdeckung API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "1b9298d4-f575-4e12-a0b3-876a4f2d7cbd",
+        "titel": "GIS Bodenabdeckung API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/gis/bodenabdeckung",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "OpenAPI Spec verfügbar",
+          "fr": "Spécification OpenAPI disponible",
+          "it": "Specifica OpenAPI disponibile",
+          "en": "OpenAPI spec available"
+        }
+      },
+      {
+        "name": {
+          "de": "GIS Bodenabdeckung Export (XLSX)",
+          "fr": "Export GIS bodenabdeckung (XLSX)",
+          "it": "Esportazione GIS bodenabdeckung (XLSX)",
+          "en": "GIS Bodenabdeckung export (XLSX)"
+        },
+        "format": "Excel",
+        "identifikator": "65c57ead-b153-49da-97ed-fc5741b45b12",
+        "titel": "GIS Bodenabdeckung Export (XLSX)",
+        "zugriffsUrl": "https://gis.bbl.admin.ch/export/bodenabdeckung",
+        "downloadUrl": "https://gis.bbl.admin.ch/download/bodenabdeckung.xlsx",
+        "status": "published",
+        "dateiformat": "XLSX",
+        "lizenz": "terms_by",
+        "bemerkungen": ""
       }
     ],
     "publications": []
@@ -764,19 +884,22 @@
       "en": "Building Documentation (Plan Archive DALA)"
     },
     "description": {
-      "de": "Metadaten-Auszug aus dem digitalen Planarchiv DALA.",
-      "fr": "Extrait de métadonnées des archives numériques de plans DALA.",
-      "it": "Estratto di metadati dall'archivio digitale dei piani DALA.",
-      "en": "Metadata extract from the digital plan archive DALA."
+      "de": "Recherche in der Bauwerksdokumentation des Bundes über das digitale Planarchiv DALA — mit direktem Download der Pläne und Dokumente.",
+      "fr": "Recherche dans la documentation des ouvrages de la Confédération via les archives numériques de plans DALA — avec téléchargement direct des plans et documents.",
+      "it": "Ricerca nella documentazione delle opere della Confederazione tramite l’archivio digitale dei piani DALA — con download diretto di piani e documenti.",
+      "en": "Search the federal building documentation via the digital plan archive DALA — with direct download of the plans and documents."
     },
     "fullDescription": {
-      "de": "Dieser Datensatz ist ein Metadaten-Auszug aus dem digitalen Planarchiv \"DALA\". Er enthält beschreibende Informationen zu archivierten Bauwerksdokumenten wie Grundrissen, Schnitten, Ansichten und technischen Schemata. Erfasst sind Attribute wie Dokumententyp, zugehöriges Gebäude/Bauprojekt, Erstellungsdatum und Planverfasser. Der Datensatz dient der Recherche und Identifikation von Plänen; er enthält nicht die Dokumente selbst, sondern den Verweis darauf.",
-      "fr": "Ce jeu de données est un extrait de métadonnées des archives numériques de plans « DALA ». Il contient des informations descriptives sur les documents d'ouvrages archivés tels que les plans d'étage, les coupes, les vues et les schémas techniques. Les attributs saisis comprennent le type de document, le bâtiment/projet de construction associé, la date de création et l'auteur du plan. Le jeu de données sert à la recherche et à l'identification des plans ; il ne contient pas les documents eux-mêmes, mais les références à ceux-ci.",
-      "it": "Questo set di dati è un estratto di metadati dall'archivio digitale dei piani «DALA». Contiene informazioni descrittive sui documenti di opere archiviate come planimetrie, sezioni, prospetti e schemi tecnici. Gli attributi registrati comprendono il tipo di documento, l'edificio/progetto di costruzione associato, la data di creazione e l'autore del piano. Il set di dati serve alla ricerca e all'identificazione dei piani; non contiene i documenti stessi, ma i riferimenti ad essi.",
-      "en": "This dataset is a metadata extract from the digital plan archive \"DALA\". It contains descriptive information on archived building documents such as floor plans, sections, elevations and technical schematics. Recorded attributes include document type, associated building/construction project, creation date and plan author. The dataset serves for research and identification of plans; it does not contain the documents themselves, but references to them."
+      "de": "DALA ist das digitale Planarchiv des Bundes für die Bauwerksdokumentation. Über die Schnittstelle wird anhand von Metadaten — Dokumententyp, zugehöriges Gebäude oder Bauprojekt, Erstellungsdatum und Planverfasser — nach archivierten Dokumenten wie Grundrissen, Schnitten, Ansichten und technischen Schemata gesucht. Als Ergebnis liefert die API die Download-URLs der eigentlichen Dokumente — eine einzelne Datei oder eine Liste von Dateien. So dient DALA sowohl der Recherche als auch dem direkten Bezug der Originaldokumente.",
+      "fr": "DALA est les archives numériques de plans de la Confédération pour la documentation des ouvrages. L’interface permet de rechercher des documents archivés — plans d’étage, coupes, vues et schémas techniques — à l’aide de métadonnées telles que le type de document, le bâtiment ou le projet de construction associé, la date de création et l’auteur du plan. En résultat, l’API fournit les URL de téléchargement des documents eux-mêmes — un fichier unique ou une liste de fichiers. DALA sert ainsi à la fois à la recherche et à l’obtention directe des documents originaux.",
+      "it": "DALA è l’archivio digitale dei piani della Confederazione per la documentazione delle opere. Tramite l’interfaccia si cercano documenti archiviati — planimetrie, sezioni, prospetti e schemi tecnici — in base a metadati come il tipo di documento, l’edificio o il progetto di costruzione associato, la data di creazione e l’autore del piano. Come risultato, l’API fornisce gli URL di download dei documenti stessi — un singolo file o un elenco di file. DALA serve così sia alla ricerca sia all’ottenimento diretto dei documenti originali.",
+      "en": "DALA is the federal digital plan archive for building documentation. Through the interface, archived documents — floor plans, sections, elevations and technical schematics — are searched using metadata such as document type, associated building or construction project, creation date and plan author. As a result, the API returns the download URLs of the actual documents — a single file or a list of files. DALA thus serves both for research and for the direct retrieval of the original documents."
     },
     "image": "assets/datasets/DALA.jpg",
-    "tags": ["document", "plan_archive_dala"],
+    "tags": [
+      "document",
+      "plan_archive_dala"
+    ],
     "meta": {
       "kontaktstelle": "archiv@bbl.admin.ch",
       "ausgabedatum": "1. Februar 2025",
@@ -798,30 +921,13 @@
         "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
       },
       "kommentar": {
-        "de": "Metadaten-Index, keine Originaldokumente",
-        "fr": "Index de métadonnées, pas de documents originaux",
-        "it": "Indice di metadati, nessun documento originale",
-        "en": "Metadata index, no original documents"
+        "de": "Metadaten-Suche mit Download der Originaldokumente",
+        "fr": "Recherche par métadonnées avec téléchargement des documents originaux",
+        "it": "Ricerca tramite metadati con download dei documenti originali",
+        "en": "Metadata search with download of the original documents"
       }
     },
     "distributions": [
-      {
-        "name": {
-          "de": "DALA Metadaten Export",
-          "fr": "Export des métadonnées DALA",
-          "it": "Esportazione metadati DALA",
-          "en": "DALA metadata export"
-        },
-        "format": "Excel",
-        "identifikator": "b9c0d1e2-3456-78bc-4567-9012345678bc",
-        "titel": "DALA Metadaten Export",
-        "zugriffsUrl": "https://dala.bbl.admin.ch/export/metadaten",
-        "downloadUrl": "https://dala.bbl.admin.ch/download/metadaten.xlsx",
-        "status": "published",
-        "dateiformat": "XLSX",
-        "lizenz": "terms_by",
-        "bemerkungen": ""
-      },
       {
         "name": {
           "de": "DALA API (REST)",
@@ -838,10 +944,10 @@
         "dateiformat": "JSON",
         "lizenz": "terms_by",
         "bemerkungen": {
-          "de": "OpenAPI Spec verfügbar",
-          "fr": "Spécification OpenAPI disponible",
-          "it": "Specifica OpenAPI disponibile",
-          "en": "OpenAPI spec available"
+          "de": "Metadaten-Suche; liefert Download-URLs der Dokumente (einzelne Datei oder Dateiliste)",
+          "fr": "Recherche par métadonnées ; fournit les URL de téléchargement des documents (fichier unique ou liste de fichiers)",
+          "it": "Ricerca tramite metadati; fornisce gli URL di download dei documenti (singolo file o elenco di file)",
+          "en": "Metadata search; returns document download URLs (single file or file list)"
         }
       }
     ],
@@ -868,7 +974,10 @@
       "en": "Provides the geometries and geographic location data of all federally owned land parcels. The GIS dataset contains the exact parcel boundaries and is linked to official cadastral survey data. It is used for visual representation of land holdings, strategic site development and spatial analyses."
     },
     "image": "assets/datasets/SAP Grundstück.jpg",
-    "tags": ["land_parcel", "gis_immo"],
+    "tags": [
+      "land_parcel",
+      "gis_immo"
+    ],
     "meta": {
       "kontaktstelle": "gis@bbl.admin.ch",
       "ausgabedatum": "1. April 2025",
@@ -917,12 +1026,12 @@
       {
         "name": {
           "de": "GIS Grundstücke WFS",
-          "fr": "WFS GIS biens-fonds",
-          "it": "WFS GIS fondi",
-          "en": "GIS land parcels WFS"
+          "fr": "WFS GIS grundstücke",
+          "it": "WFS GIS grundstücke",
+          "en": "GIS Grundstücke WFS"
         },
         "format": "WFS",
-        "identifikator": "e2f3g4h5-6789-01ef-7890-2345678901ef",
+        "identifikator": "8eb4a7bc-fc38-41fe-affe-cc3fa2663a29",
         "titel": "GIS Grundstücke WFS",
         "zugriffsUrl": "https://gis.bbl.admin.ch/wfs/grundstuecke",
         "downloadUrl": "",
@@ -935,6 +1044,45 @@
           "it": "Web Feature Service conforme OGC",
           "en": "OGC-compliant Web Feature Service"
         }
+      },
+      {
+        "name": {
+          "de": "GIS Grundstücke API (REST)",
+          "fr": "API GIS grundstücke (REST)",
+          "it": "API GIS grundstücke (REST)",
+          "en": "GIS Grundstücke API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "54a79ca0-552a-48d5-a3f1-ab6904669ccd",
+        "titel": "GIS Grundstücke API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/gis/grundstuecke",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "OpenAPI Spec verfügbar",
+          "fr": "Spécification OpenAPI disponible",
+          "it": "Specifica OpenAPI disponibile",
+          "en": "OpenAPI spec available"
+        }
+      },
+      {
+        "name": {
+          "de": "GIS Grundstücke Export (XLSX)",
+          "fr": "Export GIS grundstücke (XLSX)",
+          "it": "Esportazione GIS grundstücke (XLSX)",
+          "en": "GIS Grundstücke export (XLSX)"
+        },
+        "format": "Excel",
+        "identifikator": "5a24d6c4-f2ca-47a5-8424-daf71be91424",
+        "titel": "GIS Grundstücke Export (XLSX)",
+        "zugriffsUrl": "https://gis.bbl.admin.ch/export/grundstuecke",
+        "downloadUrl": "https://gis.bbl.admin.ch/download/grundstuecke.xlsx",
+        "status": "published",
+        "dateiformat": "XLSX",
+        "lizenz": "terms_by",
+        "bemerkungen": ""
       }
     ],
     "publications": []
@@ -960,7 +1108,10 @@
       "en": "This dataset contains the geodata of all buildings in the federal portfolio from the geographic information system (GIS IMMO). It comprises the exact locations and geometric outlines (building polygons) of the structures. The data serves as the basis for spatial analyses, cartographic representations and site planning. It is the geographic complement to the alphanumeric master data of the buildings from the ERP."
     },
     "image": "assets/datasets/GIS Gebäude.jpg",
-    "tags": ["building", "gis_immo"],
+    "tags": [
+      "building",
+      "gis_immo"
+    ],
     "meta": {
       "kontaktstelle": "gis@bbl.admin.ch",
       "ausgabedatum": "1. April 2025",
@@ -1009,12 +1160,12 @@
       {
         "name": {
           "de": "GIS Gebäude WFS",
-          "fr": "WFS GIS bâtiments",
-          "it": "WFS GIS edifici",
-          "en": "GIS buildings WFS"
+          "fr": "WFS GIS gebäude",
+          "it": "WFS GIS gebäude",
+          "en": "GIS Gebäude WFS"
         },
         "format": "WFS",
-        "identifikator": "g4h5i6j7-8901-23gh-9012-4567890123gh",
+        "identifikator": "b0a8ca86-58d3-4549-aa35-56f04b731a63",
         "titel": "GIS Gebäude WFS",
         "zugriffsUrl": "https://gis.bbl.admin.ch/wfs/gebaeude",
         "downloadUrl": "",
@@ -1027,8 +1178,730 @@
           "it": "Web Feature Service conforme OGC",
           "en": "OGC-compliant Web Feature Service"
         }
+      },
+      {
+        "name": {
+          "de": "GIS Gebäude API (REST)",
+          "fr": "API GIS gebäude (REST)",
+          "it": "API GIS gebäude (REST)",
+          "en": "GIS Gebäude API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "ddd32b22-2c87-4c8f-bbc4-75888237d361",
+        "titel": "GIS Gebäude API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/gis/gebaeude",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "OpenAPI Spec verfügbar",
+          "fr": "Spécification OpenAPI disponible",
+          "it": "Specifica OpenAPI disponibile",
+          "en": "OpenAPI spec available"
+        }
+      },
+      {
+        "name": {
+          "de": "GIS Gebäude Export (XLSX)",
+          "fr": "Export GIS gebäude (XLSX)",
+          "it": "Esportazione GIS gebäude (XLSX)",
+          "en": "GIS Gebäude export (XLSX)"
+        },
+        "format": "Excel",
+        "identifikator": "aec6490e-cf02-44df-88fd-6e4e906b2b46",
+        "titel": "GIS Gebäude Export (XLSX)",
+        "zugriffsUrl": "https://gis.bbl.admin.ch/export/gebaeude",
+        "downloadUrl": "https://gis.bbl.admin.ch/download/gebaeude.xlsx",
+        "status": "published",
+        "dateiformat": "XLSX",
+        "lizenz": "terms_by",
+        "bemerkungen": ""
       }
     ],
     "publications": []
+  },
+  {
+    "id": "12",
+    "title": {
+      "de": "Wirtschaftseinheiten (SAP RE-FX)",
+      "fr": "Unités économiques (SAP RE-FX)",
+      "it": "Unità economiche (SAP RE-FX)",
+      "en": "Economic Units (SAP RE-FX)"
+    },
+    "description": {
+      "de": "Stammdaten der Wirtschaftseinheiten (WE) — die betriebswirtschaftliche Bewirtschaftungsebene über Gebäuden und Grundstücken.",
+      "fr": "Données de base des unités économiques (UE) — le niveau de gestion regroupant bâtiments et biens-fonds.",
+      "it": "Dati di base delle unità economiche (UE) — il livello gestionale che raggruppa edifici e fondi.",
+      "en": "Master data of economic units (WE) — the management layer grouping buildings and land parcels."
+    },
+    "fullDescription": {
+      "de": "Die Wirtschaftseinheit (WE) ist die zentrale organisatorische und betriebswirtschaftliche Bewirtschaftungsebene im SAP RE-FX. Eine WE bündelt zusammengehörende Gebäude, Grundstücke und Mietobjekte eines Standorts und dient als Bezugsgrösse für Kosten, Erträge, Flächen und Bewirtschaftungsaufträge. Der Datensatz enthält Bezeichnung, Zuständigkeiten, Portfolio-Zuordnung und die Verknüpfung zu den zugehörigen Objekten. Die Datenbasis wird monatlich aus dem ERP-System aktualisiert.",
+      "fr": "L’unité économique (UE) est le niveau organisationnel et de gestion central dans SAP RE-FX. Une UE regroupe les bâtiments, biens-fonds et objets loués d’un site et sert de référence pour les coûts, les revenus, les surfaces et les mandats de gestion. Le jeu de données contient la désignation, les responsabilités, l’affectation au portefeuille et le lien avec les objets associés. La base de données est actualisée mensuellement à partir du système ERP.",
+      "it": "L’unità economica (UE) è il livello organizzativo e gestionale centrale in SAP RE-FX. Un’UE raggruppa edifici, fondi e oggetti locati di un sito e funge da riferimento per costi, ricavi, superfici e mandati di gestione. Il set di dati contiene la denominazione, le responsabilità, l’assegnazione al portafoglio e il collegamento agli oggetti associati. La base dati viene aggiornata mensilmente dal sistema ERP.",
+      "en": "The economic unit (WE) is the central organisational and management layer in SAP RE-FX. A WE groups the buildings, land parcels and rental objects of a site and serves as the reference for costs, revenues, areas and management orders. The dataset contains designation, responsibilities, portfolio assignment and the link to the associated objects. The database is updated monthly from the ERP system."
+    },
+    "image": "assets/datasets/SAP Grundstück.jpg",
+    "tags": [
+      "spatial_structure",
+      "erp_immo"
+    ],
+    "meta": {
+      "kontaktstelle": "info@bbl.admin.ch",
+      "ausgabedatum": "1. Juni 2025",
+      "aktualisierungsintervall": "monthly",
+      "status": "published",
+      "klassifizierung": "internal",
+      "personenbezogen": "none",
+      "archivwuerdig": "yes",
+      "thema": {
+        "de": "Immobilienmanagement",
+        "fr": "Gestion immobilière",
+        "it": "Gestione immobiliare",
+        "en": "Real estate management"
+      },
+      "rechtsgrundlage": {
+        "de": "Verordnung über das Immobilienmanagement und die Logistik des Bundes VILB",
+        "fr": "Ordonnance sur la gestion immobilière et la logistique de la Confédération OILC",
+        "it": "Ordinanza sulla gestione immobiliare e la logistica della Confederazione OILC",
+        "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
+      },
+      "kommentar": ""
+    },
+    "distributions": [
+      {
+        "name": {
+          "de": "Wirtschaftseinheiten Export (DE)",
+          "fr": "Export des unités économiques",
+          "it": "Esportazione unità economiche",
+          "en": "Economic units export"
+        },
+        "format": "Excel",
+        "identifikator": "451333f2-06b0-4d2d-94cf-cd128c4157ac",
+        "titel": "Wirtschaftseinheiten Export (DE)",
+        "zugriffsUrl": "https://actanova.bbl.admin.ch/documents/wirtschaftseinheiten.xlsx",
+        "downloadUrl": "https://actanova.bbl.admin.ch/download/wirtschaftseinheiten.xlsx",
+        "status": "published",
+        "dateiformat": "XLSX",
+        "lizenz": "terms_by",
+        "bemerkungen": ""
+      },
+      {
+        "name": {
+          "de": "Wirtschaftseinheiten API (REST)",
+          "fr": "API unités économiques (REST)",
+          "it": "API unità economiche (REST)",
+          "en": "Economic Units API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "3d1eccbb-558e-4711-9c7a-f38d3b7ca009",
+        "titel": "Wirtschaftseinheiten API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/wirtschaftseinheiten",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "OpenAPI Spec verfügbar",
+          "fr": "Spécification OpenAPI disponible",
+          "it": "Specifica OpenAPI disponibile",
+          "en": "OpenAPI spec available"
+        }
+      }
+    ],
+    "publications": [],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Data Owner"
+      }
+    ]
+  },
+  {
+    "id": "13",
+    "title": {
+      "de": "Geschäftspartner (SAP MDG)",
+      "fr": "Partenaires commerciaux (SAP MDG)",
+      "it": "Partner commerciali (SAP MDG)",
+      "en": "Business Partners (SAP MDG)"
+    },
+    "description": {
+      "de": "Zentrale Stammdaten der Geschäftspartner — Mieter, Vermieter, Eigentümer, Lieferanten und weitere Vertragsparteien.",
+      "fr": "Données de base centrales des partenaires commerciaux — locataires, bailleurs, propriétaires, fournisseurs et autres parties contractantes.",
+      "it": "Dati di base centrali dei partner commerciali — locatari, locatori, proprietari, fornitori e altre parti contraenti.",
+      "en": "Central master data of business partners — tenants, landlords, owners, suppliers and other contractual parties."
+    },
+    "fullDescription": {
+      "de": "Dieser Datensatz stellt die zentral in SAP Master Data Governance (MDG) geführten Geschäftspartner bereit: Mieter, Vermieter, Eigentümer, Lieferanten und weitere Vertragsparteien des Bundes. Erfasst sind Name, Adresse, Rollen, Bankverbindungen und Identifikatoren. Als Golden Record der Partnerstammdaten bildet er die Grundlage für Vertrags-, Beschaffungs- und Finanzprozesse. Die Daten werden bei Änderung aktualisiert.",
+      "fr": "Ce jeu de données fournit les partenaires commerciaux gérés de manière centralisée dans SAP Master Data Governance (MDG) : locataires, bailleurs, propriétaires, fournisseurs et autres parties contractantes de la Confédération. Sont saisis le nom, l’adresse, les rôles, les coordonnées bancaires et les identifiants. En tant que golden record des données de base des partenaires, il constitue la base des processus contractuels, d’acquisition et financiers. Les données sont actualisées en cas de modification.",
+      "it": "Questo set di dati fornisce i partner commerciali gestiti centralmente in SAP Master Data Governance (MDG): locatari, locatori, proprietari, fornitori e altre parti contraenti della Confederazione. Sono registrati nome, indirizzo, ruoli, coordinate bancarie e identificatori. Come golden record dei dati di base dei partner, costituisce la base per i processi contrattuali, di acquisto e finanziari. I dati vengono aggiornati in caso di modifica.",
+      "en": "This dataset provides the business partners maintained centrally in SAP Master Data Governance (MDG): tenants, landlords, owners, suppliers and other contractual parties of the federal government. Recorded are name, address, roles, bank details and identifiers. As the golden record of partner master data, it forms the basis for contract, procurement and financial processes. The data is updated on change."
+    },
+    "image": "assets/datasets/SAP Mietverträge.jpg",
+    "tags": [
+      "contractual_view"
+    ],
+    "meta": {
+      "kontaktstelle": "stammdaten@bbl.admin.ch",
+      "ausgabedatum": "1. Juni 2025",
+      "aktualisierungsintervall": "on_change",
+      "status": "published",
+      "klassifizierung": "internal",
+      "personenbezogen": "personal",
+      "archivwuerdig": "yes",
+      "thema": {
+        "de": "Immobilienmanagement",
+        "fr": "Gestion immobilière",
+        "it": "Gestione immobiliare",
+        "en": "Real estate management"
+      },
+      "rechtsgrundlage": {
+        "de": "Verordnung über das Immobilienmanagement und die Logistik des Bundes VILB",
+        "fr": "Ordonnance sur la gestion immobilière et la logistique de la Confédération OILC",
+        "it": "Ordinanza sulla gestione immobiliare e la logistica della Confederazione OILC",
+        "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
+      },
+      "kommentar": {
+        "de": "Enthält personenbezogene Daten zu Geschäftspartnern",
+        "fr": "Contient des données personnelles relatives aux partenaires commerciaux",
+        "it": "Contiene dati personali relativi ai partner commerciali",
+        "en": "Contains personal data relating to business partners"
+      }
+    },
+    "distributions": [
+      {
+        "name": {
+          "de": "Geschäftspartner API (REST)",
+          "fr": "API partenaires commerciaux (REST)",
+          "it": "API partner commerciali (REST)",
+          "en": "Business Partners API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "a4a49287-4a66-446b-b650-0f0a5071926d",
+        "titel": "Geschäftspartner API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/geschaeftspartner",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Authentifizierung erforderlich",
+          "fr": "Authentification requise",
+          "it": "Autenticazione richiesta",
+          "en": "Authentication required"
+        }
+      }
+    ],
+    "publications": [],
+    "responsiblePersons": []
+  },
+  {
+    "id": "14",
+    "title": {
+      "de": "Geschäftsverwaltung (ActaNova)",
+      "fr": "Gestion des affaires (ActaNova)",
+      "it": "Gestione degli affari (ActaNova)",
+      "en": "Records Management (ActaNova)"
+    },
+    "description": {
+      "de": "GEVER-Struktur- und Metadaten aus ActaNova: Registraturplan, Dossiers und Dokumente des BBL.",
+      "fr": "Données de structure et métadonnées GEVER d’ActaNova : plan de classement, dossiers et documents du BBL.",
+      "it": "Dati di struttura e metadati GEVER da ActaNova: piano di classificazione, dossier e documenti dell’UFCL.",
+      "en": "GEVER structure and metadata from ActaNova: file plan, dossiers and documents of the FOBL."
+    },
+    "fullDescription": {
+      "de": "ActaNova ist das GEVER-System (Geschäftsverwaltung) des BBL. Der Datensatz erschliesst die Struktur- und Metadaten der Geschäftsverwaltung über drei REST-Endpunkte: den Registraturplan (Ordnungssystem), die Dossiers (Geschäftsfälle) und die einzelnen Dokumente. Erfasst sind Titel, Klassierung, Status, Fristen und Verknüpfungen — nicht die Dokumenteninhalte selbst. Die Daten dienen der Recherche, dem Records Management und der Nachvollziehbarkeit von Geschäftsprozessen.",
+      "fr": "ActaNova est le système GEVER (gestion des affaires) du BBL. Le jeu de données donne accès aux données de structure et métadonnées de la gestion des affaires via trois points d’accès REST : le plan de classement (système d’ordre), les dossiers (affaires) et les documents individuels. Sont saisis le titre, la classification, le statut, les délais et les liens — pas les contenus des documents eux-mêmes. Les données servent à la recherche, au records management et à la traçabilité des processus.",
+      "it": "ActaNova è il sistema GEVER (gestione degli affari) dell’UFCL. Il set di dati rende accessibili i dati di struttura e i metadati della gestione degli affari tramite tre endpoint REST: il piano di classificazione (sistema d’ordine), i dossier (pratiche) e i singoli documenti. Sono registrati titolo, classificazione, stato, scadenze e collegamenti — non i contenuti dei documenti. I dati servono alla ricerca, al records management e alla tracciabilità dei processi.",
+      "en": "ActaNova is the FOBL’s GEVER (records management) system. The dataset exposes the structure and metadata of records management via three REST endpoints: the file plan (classification scheme), the dossiers (business cases) and the individual documents. Recorded are title, classification, status, deadlines and links — not the document contents themselves. The data serves research, records management and the traceability of business processes."
+    },
+    "image": "assets/datasets/DALA.jpg",
+    "tags": [
+      "document"
+    ],
+    "meta": {
+      "kontaktstelle": "archiv@bbl.admin.ch",
+      "ausgabedatum": "1. Juni 2025",
+      "aktualisierungsintervall": "on_change",
+      "status": "published",
+      "klassifizierung": "internal",
+      "personenbezogen": "none",
+      "archivwuerdig": "yes",
+      "thema": {
+        "de": "Dokumentation",
+        "fr": "Documentation",
+        "it": "Documentazione",
+        "en": "Documentation"
+      },
+      "rechtsgrundlage": {
+        "de": "Verordnung über das Immobilienmanagement und die Logistik des Bundes VILB",
+        "fr": "Ordonnance sur la gestion immobilière et la logistique de la Confédération OILC",
+        "it": "Ordinanza sulla gestione immobiliare e la logistica della Confederazione OILC",
+        "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
+      },
+      "kommentar": {
+        "de": "Metadaten und Struktur, keine Dokumenteninhalte",
+        "fr": "Métadonnées et structure, pas de contenus de documents",
+        "it": "Metadati e struttura, nessun contenuto dei documenti",
+        "en": "Metadata and structure, no document contents"
+      }
+    },
+    "distributions": [
+      {
+        "name": {
+          "de": "ActaNova Registraturplan API (REST)",
+          "fr": "API plan de classement ActaNova (REST)",
+          "it": "API piano di classificazione ActaNova (REST)",
+          "en": "ActaNova File Plan API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "2ad16515-9b5a-4044-b720-46364b48272a",
+        "titel": "ActaNova Registraturplan API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/actanova/registraturplan",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Ordnungssystem / Aktenplan",
+          "fr": "Système d’ordre / plan de classement",
+          "it": "Sistema d’ordine / piano di classificazione",
+          "en": "Classification scheme / file plan"
+        }
+      },
+      {
+        "name": {
+          "de": "ActaNova Dossier API (REST)",
+          "fr": "API dossiers ActaNova (REST)",
+          "it": "API dossier ActaNova (REST)",
+          "en": "ActaNova Dossier API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "60ea6705-0aa0-4192-8a51-1ec3a800e2de",
+        "titel": "ActaNova Dossier API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/actanova/dossiers",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Geschäftsfälle / Dossiers",
+          "fr": "Affaires / dossiers",
+          "it": "Pratiche / dossier",
+          "en": "Business cases / dossiers"
+        }
+      },
+      {
+        "name": {
+          "de": "ActaNova Dokument API (REST)",
+          "fr": "API documents ActaNova (REST)",
+          "it": "API documenti ActaNova (REST)",
+          "en": "ActaNova Document API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "33b8bca7-0657-41f2-b315-ca40967e4d94",
+        "titel": "ActaNova Dokument API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/actanova/dokumente",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Dokument-Metadaten",
+          "fr": "Métadonnées des documents",
+          "it": "Metadati dei documenti",
+          "en": "Document metadata"
+        }
+      }
+    ],
+    "publications": [],
+    "responsiblePersons": []
+  },
+  {
+    "id": "15",
+    "title": {
+      "de": "Gebäude (Energiedatenmanagement EDM)",
+      "fr": "Bâtiments (Gestion des données énergétiques EDM)",
+      "it": "Edifici (Gestione dei dati energetici EDM)",
+      "en": "Buildings (Energy Data Management EDM)"
+    },
+    "description": {
+      "de": "Energetische Stammdaten der Gebäude aus dem Energiedatenmanagement EDM.",
+      "fr": "Données de base énergétiques des bâtiments issues de la gestion des données énergétiques EDM.",
+      "it": "Dati di base energetici degli edifici dalla gestione dei dati energetici EDM.",
+      "en": "Energy master data of buildings from the Energy Data Management EDM."
+    },
+    "fullDescription": {
+      "de": "Der Datensatz stellt die im Energiedatenmanagement (EDM) geführten Gebäude mit ihren energierelevanten Kennwerten bereit — Energiebezugsfläche, Energieträger, Effizienzklassen und Verbrauchszuordnung. Er bildet die energetische Sicht auf den Gebäudebestand und ist die Grundlage für die Energiebuchhaltung, die Betriebsoptimierung und das Reporting zu den Klimazielen des Bundes. Bereitstellung über eine REST-API.",
+      "fr": "Le jeu de données fournit les bâtiments gérés dans la gestion des données énergétiques (EDM) avec leurs indicateurs pertinents sur le plan énergétique — surface de référence énergétique, agents énergétiques, classes d’efficacité et affectation de la consommation. Il constitue la vue énergétique du parc immobilier et sert de base à la comptabilité énergétique, à l’optimisation de l’exploitation et au reporting sur les objectifs climatiques de la Confédération. Mise à disposition via une API REST.",
+      "it": "Il set di dati fornisce gli edifici gestiti nella gestione dei dati energetici (EDM) con i loro indicatori rilevanti dal punto di vista energetico — superficie di riferimento energetico, vettori energetici, classi di efficienza e assegnazione dei consumi. Costituisce la vista energetica del patrimonio edilizio ed è la base per la contabilità energetica, l’ottimizzazione dell’esercizio e il reporting sugli obiettivi climatici della Confederazione. Messa a disposizione tramite un’API REST.",
+      "en": "The dataset provides the buildings maintained in Energy Data Management (EDM) with their energy-relevant key figures — energy reference area, energy carriers, efficiency classes and consumption assignment. It forms the energy view of the building portfolio and is the basis for energy accounting, operational optimisation and reporting on the federal climate targets. Provided via a REST API."
+    },
+    "image": "assets/datasets/SAP Gebäude.jpg",
+    "tags": [
+      "building",
+      "energy"
+    ],
+    "meta": {
+      "kontaktstelle": "energie@bbl.admin.ch",
+      "ausgabedatum": "1. Mai 2025",
+      "aktualisierungsintervall": "monthly",
+      "status": "published",
+      "klassifizierung": "internal",
+      "personenbezogen": "none",
+      "archivwuerdig": "yes",
+      "thema": {
+        "de": "Energie",
+        "fr": "Énergie",
+        "it": "Energia",
+        "en": "Energy"
+      },
+      "rechtsgrundlage": {
+        "de": "Verordnung über das Immobilienmanagement und die Logistik des Bundes VILB",
+        "fr": "Ordonnance sur la gestion immobilière et la logistique de la Confédération OILC",
+        "it": "Ordinanza sulla gestione immobiliare e la logistica della Confederazione OILC",
+        "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
+      },
+      "kommentar": ""
+    },
+    "distributions": [
+      {
+        "name": {
+          "de": "EDM Gebäude API (REST)",
+          "fr": "API EDM bâtiments (REST)",
+          "it": "API EDM edifici (REST)",
+          "en": "EDM Buildings API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "504b321a-922d-41ca-af53-f5eb52c268fc",
+        "titel": "EDM Gebäude API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/edm/gebaeude",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Energetische Gebäudestammdaten",
+          "fr": "Données de base énergétiques des bâtiments",
+          "it": "Dati di base energetici degli edifici",
+          "en": "Energy master data of buildings"
+        }
+      }
+    ],
+    "publications": [],
+    "responsiblePersons": []
+  },
+  {
+    "id": "16",
+    "title": {
+      "de": "Gebäudetechnische Anlagen (Energiedatenmanagement EDM)",
+      "fr": "Installations techniques du bâtiment (Gestion des données énergétiques EDM)",
+      "it": "Impianti tecnici degli edifici (Gestione dei dati energetici EDM)",
+      "en": "Building Technical Systems (Energy Data Management EDM)"
+    },
+    "description": {
+      "de": "Energie- und Betriebsdaten der gebäudetechnischen Anlagen aus dem Energiedatenmanagement EDM.",
+      "fr": "Données énergétiques et d’exploitation des installations techniques du bâtiment issues de la gestion des données énergétiques EDM.",
+      "it": "Dati energetici e di esercizio degli impianti tecnici degli edifici dalla gestione dei dati energetici EDM.",
+      "en": "Energy and operating data of building technical systems from the Energy Data Management EDM."
+    },
+    "fullDescription": {
+      "de": "Der Datensatz umfasst die gebäudetechnischen Anlagen (Heizung, Lüftung, Klima, Wärme- und Kälteerzeuger) aus dem Energiedatenmanagement (EDM) mit ihren energierelevanten Kennwerten und Betriebsdaten. Er verbindet die Anlagen mit ihren Gebäuden und Zählpunkten und dient der Betriebsoptimierung, dem Anlagenmonitoring und der Energiebuchhaltung. Bereitstellung über eine REST-API.",
+      "fr": "Le jeu de données comprend les installations techniques du bâtiment (chauffage, ventilation, climatisation, générateurs de chaleur et de froid) issues de la gestion des données énergétiques (EDM), avec leurs indicateurs énergétiques et données d’exploitation. Il relie les installations à leurs bâtiments et points de comptage et sert à l’optimisation de l’exploitation, au monitoring des installations et à la comptabilité énergétique. Mise à disposition via une API REST.",
+      "it": "Il set di dati comprende gli impianti tecnici degli edifici (riscaldamento, ventilazione, climatizzazione, generatori di calore e di freddo) dalla gestione dei dati energetici (EDM), con i loro indicatori energetici e dati di esercizio. Collega gli impianti ai loro edifici e punti di misura e serve all’ottimizzazione dell’esercizio, al monitoraggio degli impianti e alla contabilità energetica. Messa a disposizione tramite un’API REST.",
+      "en": "The dataset comprises the building technical systems (heating, ventilation, air conditioning, heat and cold generators) from Energy Data Management (EDM), with their energy-relevant key figures and operating data. It links the systems to their buildings and metering points and serves operational optimisation, system monitoring and energy accounting. Provided via a REST API."
+    },
+    "image": "assets/datasets/SAP Technische Anlage.jpg",
+    "tags": [
+      "systems_tech",
+      "energy"
+    ],
+    "meta": {
+      "kontaktstelle": "energie@bbl.admin.ch",
+      "ausgabedatum": "1. Mai 2025",
+      "aktualisierungsintervall": "monthly",
+      "status": "published",
+      "klassifizierung": "internal",
+      "personenbezogen": "none",
+      "archivwuerdig": "yes",
+      "thema": {
+        "de": "Energie",
+        "fr": "Énergie",
+        "it": "Energia",
+        "en": "Energy"
+      },
+      "rechtsgrundlage": {
+        "de": "Verordnung über das Immobilienmanagement und die Logistik des Bundes VILB",
+        "fr": "Ordonnance sur la gestion immobilière et la logistique de la Confédération OILC",
+        "it": "Ordinanza sulla gestione immobiliare e la logistica della Confederazione OILC",
+        "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
+      },
+      "kommentar": ""
+    },
+    "distributions": [
+      {
+        "name": {
+          "de": "EDM Gebäudetechnische Anlagen API (REST)",
+          "fr": "API EDM installations techniques du bâtiment (REST)",
+          "it": "API EDM impianti tecnici degli edifici (REST)",
+          "en": "EDM Building Technical Systems API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "57b2ea84-c921-4d57-8a6a-67339c05e736",
+        "titel": "EDM Gebäudetechnische Anlagen API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/edm/gebaeudetechnische-anlagen",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "HLK, Wärmeerzeuger und weitere Anlagen",
+          "fr": "CVC, générateurs de chaleur et autres installations",
+          "it": "HVAC, generatori di calore e altri impianti",
+          "en": "HVAC, heat generators and other systems"
+        }
+      }
+    ],
+    "publications": [],
+    "responsiblePersons": []
+  },
+  {
+    "id": "17",
+    "title": {
+      "de": "Zählerstruktur (Energiedatenmanagement EDM)",
+      "fr": "Structure des compteurs (Gestion des données énergétiques EDM)",
+      "it": "Struttura dei contatori (Gestione dei dati energetici EDM)",
+      "en": "Metering Structure (Energy Data Management EDM)"
+    },
+    "description": {
+      "de": "Zählpunkte und Zählerstammdaten der Bundesliegenschaften aus dem Energiedatenmanagement EDM.",
+      "fr": "Points de comptage et données de base des compteurs des immeubles de la Confédération issus de la gestion des données énergétiques EDM.",
+      "it": "Punti di misura e dati di base dei contatori degli immobili della Confederazione dalla gestione dei dati energetici EDM.",
+      "en": "Metering points and meter master data of the federal properties from the Energy Data Management EDM."
+    },
+    "fullDescription": {
+      "de": "Der Datensatz beschreibt die Zählerstruktur der Bundesliegenschaften im Energiedatenmanagement (EDM): Zählpunkte, Zählernummern, Medium (Strom, Wärme, Wasser), Messintervall sowie die Zuordnung zu Gebäuden und Anlagen. Er bildet das Gerüst für die Erfassung und Zuordnung der Verbrauchsdaten. Bereitstellung über eine REST-API.",
+      "fr": "Le jeu de données décrit la structure des compteurs des immeubles de la Confédération dans la gestion des données énergétiques (EDM) : points de comptage, numéros de compteur, médium (électricité, chaleur, eau), intervalle de mesure ainsi que l’affectation aux bâtiments et installations. Il constitue l’ossature pour la saisie et l’affectation des données de consommation. Mise à disposition via une API REST.",
+      "it": "Il set di dati descrive la struttura dei contatori degli immobili della Confederazione nella gestione dei dati energetici (EDM): punti di misura, numeri dei contatori, vettore (elettricità, calore, acqua), intervallo di misura nonché l’assegnazione a edifici e impianti. Costituisce l’ossatura per la rilevazione e l’assegnazione dei dati di consumo. Messa a disposizione tramite un’API REST.",
+      "en": "The dataset describes the metering structure of the federal properties in Energy Data Management (EDM): metering points, meter numbers, medium (electricity, heat, water), measurement interval and the assignment to buildings and systems. It forms the framework for capturing and assigning consumption data. Provided via a REST API."
+    },
+    "image": "assets/datasets/SAP Technische Anlage.jpg",
+    "tags": [
+      "measurements",
+      "energy"
+    ],
+    "meta": {
+      "kontaktstelle": "energie@bbl.admin.ch",
+      "ausgabedatum": "1. Mai 2025",
+      "aktualisierungsintervall": "monthly",
+      "status": "published",
+      "klassifizierung": "internal",
+      "personenbezogen": "none",
+      "archivwuerdig": "yes",
+      "thema": {
+        "de": "Energie",
+        "fr": "Énergie",
+        "it": "Energia",
+        "en": "Energy"
+      },
+      "rechtsgrundlage": {
+        "de": "Verordnung über das Immobilienmanagement und die Logistik des Bundes VILB",
+        "fr": "Ordonnance sur la gestion immobilière et la logistique de la Confédération OILC",
+        "it": "Ordinanza sulla gestione immobiliare e la logistica della Confederazione OILC",
+        "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
+      },
+      "kommentar": ""
+    },
+    "distributions": [
+      {
+        "name": {
+          "de": "EDM Zählerstruktur API (REST)",
+          "fr": "API EDM structure des compteurs (REST)",
+          "it": "API EDM struttura dei contatori (REST)",
+          "en": "EDM Metering Structure API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "08dd8b27-e30a-47ce-9166-9ef6a9b0840c",
+        "titel": "EDM Zählerstruktur API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/edm/zaehlerstruktur",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Zählpunkte und Zählerstammdaten",
+          "fr": "Points de comptage et données de base des compteurs",
+          "it": "Punti di misura e dati di base dei contatori",
+          "en": "Metering points and meter master data"
+        }
+      }
+    ],
+    "publications": [],
+    "responsiblePersons": []
+  },
+  {
+    "id": "18",
+    "title": {
+      "de": "Stromverbrauch (Energiedatenmanagement EDM)",
+      "fr": "Consommation d’électricité (Gestion des données énergétiques EDM)",
+      "it": "Consumo di elettricità (Gestione dei dati energetici EDM)",
+      "en": "Electricity Consumption (Energy Data Management EDM)"
+    },
+    "description": {
+      "de": "Verbrauchszeitreihen (Strom) der Bundesliegenschaften aus dem Energiedatenmanagement EDM.",
+      "fr": "Séries chronologiques de consommation (électricité) des immeubles de la Confédération issues de la gestion des données énergétiques EDM.",
+      "it": "Serie temporali di consumo (elettricità) degli immobili della Confederazione dalla gestione dei dati energetici EDM.",
+      "en": "Consumption time series (electricity) of the federal properties from the Energy Data Management EDM."
+    },
+    "fullDescription": {
+      "de": "Der Datensatz enthält die Stromverbrauchszeitreihen der Bundesliegenschaften aus dem Energiedatenmanagement (EDM), je Zählpunkt und Messintervall. Die Daten dienen der Energiebuchhaltung, dem Monitoring von Einsparmassnahmen und dem Nachhaltigkeitsreporting (Vorbildwirkung Energie und Klima). Bereitstellung über eine REST-API.",
+      "fr": "Le jeu de données contient les séries chronologiques de consommation d’électricité des immeubles de la Confédération issues de la gestion des données énergétiques (EDM), par point de comptage et intervalle de mesure. Les données servent à la comptabilité énergétique, au suivi des mesures d’économie et au reporting de durabilité. Mise à disposition via une API REST.",
+      "it": "Il set di dati contiene le serie temporali di consumo di elettricità degli immobili della Confederazione dalla gestione dei dati energetici (EDM), per punto di misura e intervallo di misura. I dati servono alla contabilità energetica, al monitoraggio delle misure di risparmio e al reporting di sostenibilità. Messa a disposizione tramite un’API REST.",
+      "en": "The dataset contains the electricity consumption time series of the federal properties from Energy Data Management (EDM), per metering point and measurement interval. The data serves energy accounting, the monitoring of savings measures and sustainability reporting. Provided via a REST API."
+    },
+    "image": "assets/datasets/SAP Technische Anlage.jpg",
+    "tags": [
+      "measurements",
+      "energy"
+    ],
+    "meta": {
+      "kontaktstelle": "energie@bbl.admin.ch",
+      "ausgabedatum": "1. Mai 2025",
+      "aktualisierungsintervall": "weekly",
+      "status": "published",
+      "klassifizierung": "internal",
+      "personenbezogen": "none",
+      "archivwuerdig": "yes",
+      "thema": {
+        "de": "Energie",
+        "fr": "Énergie",
+        "it": "Energia",
+        "en": "Energy"
+      },
+      "rechtsgrundlage": {
+        "de": "Verordnung über das Immobilienmanagement und die Logistik des Bundes VILB",
+        "fr": "Ordonnance sur la gestion immobilière et la logistique de la Confédération OILC",
+        "it": "Ordinanza sulla gestione immobiliare e la logistica della Confederazione OILC",
+        "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
+      },
+      "kommentar": ""
+    },
+    "distributions": [
+      {
+        "name": {
+          "de": "EDM Stromverbrauch API (REST)",
+          "fr": "API EDM consommation d’électricité (REST)",
+          "it": "API EDM consumo di elettricità (REST)",
+          "en": "EDM Electricity Consumption API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "b6ed8329-4a79-4c51-82fd-b9617cf7ca11",
+        "titel": "EDM Stromverbrauch API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/edm/stromverbrauch",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Verbrauchszeitreihen Strom",
+          "fr": "Séries chronologiques de consommation d’électricité",
+          "it": "Serie temporali di consumo di elettricità",
+          "en": "Electricity consumption time series"
+        }
+      }
+    ],
+    "publications": [],
+    "responsiblePersons": []
+  },
+  {
+    "id": "19",
+    "title": {
+      "de": "Gebäude (Erhaltungsplanung Wüest Dimensions)",
+      "fr": "Bâtiments (Planification de l’entretien Wüest Dimensions)",
+      "it": "Edifici (Pianificazione della manutenzione Wüest Dimensions)",
+      "en": "Buildings (Maintenance Planning Wüest Dimensions)"
+    },
+    "description": {
+      "de": "Zustands- und Erhaltungsdaten der Gebäude aus dem Fachwerkzeug Wüest Dimensions.",
+      "fr": "Données d’état et d’entretien des bâtiments issues de l’outil spécialisé Wüest Dimensions.",
+      "it": "Dati di stato e manutenzione degli edifici dallo strumento specializzato Wüest Dimensions.",
+      "en": "Condition and maintenance data of buildings from the Wüest Dimensions planning tool."
+    },
+    "fullDescription": {
+      "de": "Der Datensatz enthält die Zustandsbewertungen und Erhaltungsplanungsdaten der Gebäude aus dem Fachwerkzeug Wüest Dimensions. Erfasst sind Bauteilzustände, Restnutzungsdauern, Instandsetzungszyklen sowie geschätzte Erhaltungs- und Erneuerungskosten über den Lebenszyklus. Diese Daten bilden die Grundlage für die strategische Erhaltungsplanung, die mittelfristige Investitionsplanung und die Priorisierung von Sanierungen. Bereitstellung als Excel-Export und REST-API.",
+      "fr": "Le jeu de données contient les évaluations de l’état et les données de planification de l’entretien des bâtiments issues de l’outil spécialisé Wüest Dimensions. Sont saisis l’état des composants, les durées d’utilisation résiduelles, les cycles de remise en état ainsi que les coûts estimés d’entretien et de renouvellement sur le cycle de vie. Ces données constituent la base de la planification stratégique de l’entretien, de la planification des investissements à moyen terme et de la priorisation des rénovations. Mise à disposition sous forme d’export Excel et d’API REST.",
+      "it": "Il set di dati contiene le valutazioni dello stato e i dati di pianificazione della manutenzione degli edifici dallo strumento specializzato Wüest Dimensions. Sono registrati lo stato dei componenti, le durate di utilizzo residue, i cicli di ripristino nonché i costi stimati di manutenzione e rinnovo lungo il ciclo di vita. Questi dati costituiscono la base per la pianificazione strategica della manutenzione, la pianificazione degli investimenti a medio termine e la definizione delle priorità dei risanamenti. Messa a disposizione come esportazione Excel e API REST.",
+      "en": "The dataset contains the condition assessments and maintenance planning data of the buildings from the Wüest Dimensions specialist tool. Recorded are component conditions, remaining useful lives, refurbishment cycles as well as estimated maintenance and renewal costs over the lifecycle. This data forms the basis for strategic maintenance planning, medium-term investment planning and the prioritisation of renovations. Provided as an Excel export and REST API."
+    },
+    "image": "assets/datasets/SAP Gebäude.jpg",
+    "tags": [
+      "building",
+      "construction_planning"
+    ],
+    "meta": {
+      "kontaktstelle": "portfolio@bbl.admin.ch",
+      "ausgabedatum": "1. April 2025",
+      "aktualisierungsintervall": "quarterly",
+      "status": "published",
+      "klassifizierung": "internal",
+      "personenbezogen": "none",
+      "archivwuerdig": "yes",
+      "thema": {
+        "de": "Immobilienmanagement",
+        "fr": "Gestion immobilière",
+        "it": "Gestione immobiliare",
+        "en": "Real estate management"
+      },
+      "rechtsgrundlage": {
+        "de": "Verordnung über das Immobilienmanagement und die Logistik des Bundes VILB",
+        "fr": "Ordonnance sur la gestion immobilière et la logistique de la Confédération OILC",
+        "it": "Ordinanza sulla gestione immobiliare e la logistica della Confederazione OILC",
+        "en": "Ordinance on Federal Real Estate Management and Logistics ORELM"
+      },
+      "kommentar": ""
+    },
+    "distributions": [
+      {
+        "name": {
+          "de": "Erhaltungsplanung Export (XLSX)",
+          "fr": "Export planification de l’entretien (XLSX)",
+          "it": "Esportazione pianificazione manutenzione (XLSX)",
+          "en": "Maintenance planning export (XLSX)"
+        },
+        "format": "Excel",
+        "identifikator": "b2a8f85f-acd2-436d-9802-62b93138147e",
+        "titel": "Erhaltungsplanung Export (XLSX)",
+        "zugriffsUrl": "https://dimensions.wuest.ch/export/bbl",
+        "downloadUrl": "https://dimensions.wuest.ch/download/bbl-erhaltung.xlsx",
+        "status": "published",
+        "dateiformat": "XLSX",
+        "lizenz": "terms_by",
+        "bemerkungen": ""
+      },
+      {
+        "name": {
+          "de": "Wüest Dimensions API (REST)",
+          "fr": "API Wüest Dimensions (REST)",
+          "it": "API Wüest Dimensions (REST)",
+          "en": "Wüest Dimensions API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "2d6d2ada-f703-4edb-b1e9-cc5590454125",
+        "titel": "Wüest Dimensions API (REST)",
+        "zugriffsUrl": "https://api.bbl.admin.ch/v1/erhaltungsplanung",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "OpenAPI Spec verfügbar",
+          "fr": "Spécification OpenAPI disponible",
+          "it": "Specifica OpenAPI disponibile",
+          "en": "OpenAPI spec available"
+        }
+      }
+    ],
+    "publications": [],
+    "responsiblePersons": []
   }
 ]
