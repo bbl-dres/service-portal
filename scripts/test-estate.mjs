@@ -5,6 +5,8 @@
 //
 //   node scripts/test-estate.mjs      (dev server must be running; see README)
 import { writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const PROBE = `(async () => {
@@ -70,7 +72,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(page.exceptions.length === 0, `no exceptions${page.exceptions.length ? ' — ' + page.exceptions[0].split('\\n')[0] : ''}`);
 
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, page.sessionId);
-    writeFileSync(process.env.SHOT || 'estate.png', Buffer.from(shot.data, 'base64'));
+    writeFileSync(process.env.SHOT || join(tmpdir(), 'bbl-estate.png'), Buffer.from(shot.data, 'base64'));
     await page.closeTarget();
   } finally {
     cdp.close();

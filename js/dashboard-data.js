@@ -1,14 +1,14 @@
-// Mock analytical query layer — "Superset, but mocked".
+// Dashboard data layer — the Datenportal's analytics provider.
 //
-// Real BI portals (e.g. data.finance.admin.ch, which runs Apache Superset) put a
-// SQL engine between the dashboard and a warehouse. This module stands in for
-// that: datasets are row arrays loaded from data/dashboards.json, and charts
-// declare a *query spec* instead of reaching into the data directly. It also
-// renders the equivalent SQL text so the "Abfrage anzeigen" affordance can show
-// what a chart would have run — the same feel as Superset's "View query".
+// All data comes from data/dashboards.json (plain JSON): each dataset is a small
+// row table, and every chart declares a *query spec* rather than reaching into the
+// rows directly. The spec is evaluated here in memory with plain array operations
+// — the same declarative feel as a BI tool (Superset), but without any query
+// engine: no database, no wasm, only JSON from the data folder.
 //
 // Supported spec: { dataset, select, where, groupBy, agg, orderBy, limit }
 //   where:   { column: value } | { column: [v1, v2] }  (equality / IN)
+//            | { column: { gte, lte, gt, lt } }         (range, used by the year filter)
 //   orderBy: "column" ascending, "-column" descending
 //   groupBy + agg: { sum|avg|count: "column" }
 
@@ -23,7 +23,7 @@ async function load() {
     DATA.topics = json.topics || [];
     DATA.dashboards = json.dashboards || [];
   } catch (e) {
-    console.warn('[sql] could not load data/dashboards.json', e.message);
+    console.warn('[dashboard-data] could not load data/dashboards.json', e.message);
   }
   return DATA;
 }
@@ -34,10 +34,6 @@ const topics = () => DATA.topics;
 const dashboards = () => DATA.dashboards;
 const dashboard = (id) => DATA.dashboards.find(d => d.id === id);
 const topic = (id) => DATA.topics.find(t => t.id === id);
-
-function colIndex(ds, name) {
-  return (ds.columns || []).findIndex(c => c.name === name);
-}
 
 // Turn a dataset's row arrays into objects, so the rest is plain JS.
 function toObjects(ds) {
@@ -94,37 +90,13 @@ function applyOrder(rows, orderBy) {
   });
 }
 
-// The SQL text is for display only — it documents what the spec means.
-function toSQL(spec) {
-  const ds = dataset(spec.dataset);
-  const cols = spec.groupBy
-    ? [spec.groupBy, ...Object.entries(spec.agg || {}).map(([fn, c]) => `${fn.toUpperCase()}(${c}) AS ${c}`)]
-    : (spec.select || (ds ? ds.columns.map(c => c.name) : ['*']));
-  const lines = [`SELECT ${cols.join(', ')}`, `FROM ${spec.dataset}`];
-  if (spec.where) {
-    const lit = (x) => typeof x === 'number' ? x : `'${x}'`;
-    lines.push('WHERE ' + Object.entries(spec.where).map(([c, v]) => {
-      if (isRange(v)) {
-        if (v.gte != null && v.lte != null) return `${c} BETWEEN ${lit(v.gte)} AND ${lit(v.lte)}`;
-        return ['gte', 'gt', 'lte', 'lt'].filter(k => v[k] != null)
-          .map(k => `${c} ${{ gte: '>=', gt: '>', lte: '<=', lt: '<' }[k]} ${lit(v[k])}`).join(' AND ');
-      }
-      return Array.isArray(v) ? `${c} IN (${v.map(lit).join(', ')})` : `${c} = ${lit(v)}`;
-    }).join(' AND '));
-  }
-  if (spec.groupBy) lines.push(`GROUP BY ${spec.groupBy}`);
-  if (spec.orderBy) lines.push(`ORDER BY ${spec.orderBy.replace(/^-/, '')}${spec.orderBy.startsWith('-') ? ' DESC' : ''}`);
-  if (spec.limit) lines.push(`LIMIT ${spec.limit}`);
-  return lines.join('\n') + ';';
-}
-
 /**
- * Run a query spec. Returns { columns, rows, sql, label } where rows are
- * objects keyed by column name.
+ * Evaluate a chart's query spec against its dataset. Returns { columns, rows,
+ * label } where rows are objects keyed by column name.
  */
 function query(spec) {
   const ds = dataset(spec.dataset);
-  if (!ds) return { columns: [], rows: [], sql: toSQL(spec), label: spec.dataset, error: `Unbekanntes Dataset «${spec.dataset}»` };
+  if (!ds) return { columns: [], rows: [], label: spec.dataset, error: `Unbekanntes Dataset «${spec.dataset}»` };
 
   let rows = toObjects(ds);
   rows = applyWhere(rows, spec.where);
@@ -135,10 +107,10 @@ function query(spec) {
     rows = rows.map(r => Object.fromEntries(spec.select.map(c => [c, r[c]])));
   }
   const columns = rows.length ? Object.keys(rows[0]) : (spec.select || []);
-  return { columns, rows, sql: toSQL(spec), label: ds.label || spec.dataset };
+  return { columns, rows, label: ds.label || spec.dataset };
 }
 
-export const sql = {
-  load, datasets, dataset, topics, dashboards, dashboard, topic, query, toSQL, colIndex,
+export const dashData = {
+  load, datasets, dataset, topics, dashboards, dashboard, topic, query,
 };
-export default sql;
+export default dashData;

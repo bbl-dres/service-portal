@@ -69,7 +69,7 @@ async function load() {
     const isObj = OBJECT_FILES.has(k);
     try {
       // Formprüfung (C4): eine Datei, die zwar parst, aber die falsche Grundform
-      // hat (z. B. buildings.json → {}), landet so im Ausfallpfad statt später
+      // hat (z. B. projects.json → {}), landet so im Ausfallpfad statt später
       // beim ersten Accessor (`{}.find`) zu werfen.
       return [k, await fetchJSON(url, { shape: isObj ? 'object' : 'array' })];
     } catch (e) {

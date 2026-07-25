@@ -5,6 +5,8 @@
 //
 //   node scripts/test-portfolio.mjs      (dev server must be running; see README)
 import { writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const LIST = `(async () => {
@@ -84,7 +86,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     console.log('■ Karte | map canvas:', hasMap);
     check(hasMap, 'Karte view renders the CARTO map');
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, m.sessionId);
-    writeFileSync(process.env.SHOT || 'portfolio.png', Buffer.from(shot.data, 'base64'));
+    writeFileSync(process.env.SHOT || join(tmpdir(), 'bbl-portfolio.png'), Buffer.from(shot.data, 'base64'));
     await m.closeTarget();
 
     // 4) unknown id --------------------------------------------------------

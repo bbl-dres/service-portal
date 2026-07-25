@@ -22,3 +22,8 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Test screenshots (headless CDP captures default to the OS temp dir; never commit stray ones)
+/dashboard.png
+/estate.png
+/portfolio.png

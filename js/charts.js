@@ -190,7 +190,7 @@ function barChart({ id, rows, x, y, unit }) {
 }
 
 /**
- * Render one chart card. `result` is a sql.query() result.
+ * Render one chart card. `result` is a dashData.query() result ({ columns, rows, label }).
  */
 export function chart(spec, result) {
   const { id, title, unit, note } = spec;

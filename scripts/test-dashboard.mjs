@@ -5,6 +5,8 @@
 //
 //   node scripts/test-dashboard.mjs      (dev server must be running; see README)
 import { writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const PROBE = `(async () => {
@@ -56,7 +58,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
 (async () => {
   const cdp = await launch({ port: 9342, webgl: true });
   try {
-    // a generic sql-spec dashboard (immobilien is now the record-based estate one)
+    // a generic query-spec dashboard (immobilien is now the record-based estate one)
     const page = await openPage(cdp, `${APP_BASE}/app/dataportal/energie-klima`);
     // desktop viewport so the 2-column layout + full-height panel apply
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1400, deviceScaleFactor: 1, mobile: false }, page.sessionId);
@@ -64,7 +66,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
 
     // screenshot of the clean framing (before opening menus) → scratchpad
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, page.sessionId);
-    const out = process.env.SHOT || 'dashboard.png';
+    const out = process.env.SHOT || join(tmpdir(), 'bbl-dashboard.png');
     writeFileSync(out, Buffer.from(shot.data, 'base64'));
     console.log('■ Datenportal dashboard');
     console.log(`   screenshot → ${out}`);

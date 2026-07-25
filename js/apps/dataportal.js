@@ -3,11 +3,11 @@
 // Modelled on data.finance.admin.ch (Apache Superset): a landing page of topic
 // cards, each opening a dashboard. Every dashboard follows the same pattern — a
 // left filter panel (global year range), tabbed views, an optional KPI row and a
-// grid of chart cards. The query layer is mocked in js/sql.js; every chart
-// declares a query spec, so the «Abfrage anzeigen» panel shows the SQL a real
-// Superset dataset would have run. Analysis only: no write-back.
+// grid of chart cards. Data comes only from data/dashboards.json (js/dashboard-
+// data.js): every chart declares a query spec that is evaluated in memory over
+// the JSON datasets. Analysis only: no write-back.
 
-import { sql } from '../sql.js';
+import { dashData } from '../dashboard-data.js';
 import { chart, wireCharts, wireChartMenus } from '../charts.js';
 import { initBuildingsMap } from '../buildings-map.js';
 import { copyText, shareMail } from '../export.js';
@@ -41,7 +41,7 @@ export default async function render(ctx) {
     if (ctx.stale && ctx.stale()) return;   // A2: überholte Navigation nicht überschreiben
     return mod.default(ctx);
   }
-  await sql.load();
+  await dashData.load();
   if (ctx.stale && ctx.stale()) return;
   if (params[0]) return dashboardView(ctx, params[0]);
   return overview(ctx);
@@ -53,8 +53,8 @@ function overview(ctx) {
   setTitle('Datenportal');
   setCrumbs([...CRUMB_BASE, { label: 'Datenportal' }]);
 
-  const topics = sql.topics();
-  const boards = sql.dashboards();
+  const topics = dashData.topics();
+  const boards = dashData.dashboards();
 
   const topicCard = (t) => {
     const board = boards.find(b => b.topicId === t.id);
@@ -88,7 +88,7 @@ function overview(ctx) {
 function boardYears(board) {
   const years = new Set();
   for (const c of board.charts) {
-    const ds = c.query && sql.dataset(c.query.dataset);
+    const ds = c.query && dashData.dataset(c.query.dataset);
     if (!ds || !(ds.columns || []).some(col => col.name === 'jahr')) continue;
     const idx = ds.columns.findIndex(col => col.name === 'jahr');
     for (const row of ds.rows || []) { const y = Number(row[idx]); if (Number.isFinite(y)) years.add(y); }
@@ -99,7 +99,7 @@ function boardYears(board) {
 // Inject the active year range into a chart's query when its dataset is a time
 // series (has a `jahr` column); snapshot/breakdown charts are left untouched.
 function withYearRange(spec, from, to) {
-  const ds = spec.query && sql.dataset(spec.query.dataset);
+  const ds = spec.query && dashData.dataset(spec.query.dataset);
   const isTimeSeries = ds && (ds.columns || []).some(col => col.name === 'jahr');
   if (!isTimeSeries || from == null || to == null) return spec;
   return { ...spec, query: { ...spec.query, where: { ...spec.query.where, jahr: { gte: from, lte: to } } } };
@@ -108,7 +108,7 @@ function withYearRange(spec, from, to) {
 /* ------------------------------------------------------------ dashboard ---- */
 function dashboardView(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs, query } = ctx;
-  const board = sql.dashboard(id);
+  const board = dashData.dashboard(id);
   if (!board) {
     setTitle('Dashboard nicht gefunden');
     setCrumbs([...CRUMB_BASE, { label: 'Datenportal', href: '#/app/dataportal' }]);
@@ -217,7 +217,7 @@ function dashboardView(ctx, id) {
           ${spec.note ? `<p class="chart__note">${C.escape(spec.note)}</p>` : ''}
         </figure>`;
       }
-      return chart(withYearRange(spec, state.from, state.to), sql.query(withYearRange(spec, state.from, state.to).query));
+      return chart(withYearRange(spec, state.from, state.to), dashData.query(withYearRange(spec, state.from, state.to).query));
     }).join('');
     wireCharts(grid);
     wireChartMenus(grid);   // per-chart action menu (re-wired each render)
