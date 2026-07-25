@@ -1478,6 +1478,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
   padding:1rem 1.25rem; margin:.75rem 0 0; background:var(--color-secondary-50);
   border:1px solid var(--color-border); border-radius:var(--radius-lg); }
 .catbar__panel .filter-group { margin:0; }
+/* Filter-Dropdowns der Katalogseiten (C.select) im Panel: nebeneinander, feste
+   Breite statt vollbreit gestapelt. */
+.catbar__panel .form__group__select { flex:0 1 16rem; min-width:12rem; margin:0; }
 @media (max-width:700px){
   .catbar__controls { margin-left:0; }
   .catbar__sort select { text-align:left; }
