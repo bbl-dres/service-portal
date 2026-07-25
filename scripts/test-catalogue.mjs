@@ -28,10 +28,10 @@ const PROBE_RENDER = `(async () => {
   ${wait}
   const bar = document.querySelector('.catbar');
   const input = bar && bar.querySelector('input[type=search]');
-  const selects = [...document.querySelectorAll('.catbar__panel select')];   // Filter jetzt im einklappbaren Panel
+  const checks = [...document.querySelectorAll('.catbar__panel input[data-fdim]')];   // Mehrfachauswahl-Checkboxen im Panel
   return {
     ok: !!bar, hasSearch: !!input, inputValue: input ? input.value : null,
-    selectCount: selects.length,
+    selectCount: checks.length,
     viewBtns: [...document.querySelectorAll('.view-switch__btn')].map(b => ({ view: b.dataset.view, pressed: b.getAttribute('aria-pressed') })),
     cards: document.querySelectorAll('.card').length,
     tableRows: document.querySelectorAll('table tbody tr').length,
@@ -57,13 +57,11 @@ const probeView = (view) => `(async () => {
 
 const PROBE_FILTER = `(async () => {
   ${wait}
-  const sel = document.querySelector('.catbar__panel select');
-  if (!sel) return { ok: false, err: 'no filter select' };
-  const opt = [...sel.options].find(o => o.value);
-  if (!opt) return { ok: false, err: 'no non-empty option' };
-  sel.value = opt.value;
-  sel.dispatchEvent(new Event('change', { bubbles: true }));
-  return { ok: true, value: opt.value, hash: location.hash };
+  const cb = document.querySelector('.catbar__panel input[data-fdim]');
+  if (!cb) return { ok: false, err: 'no filter checkbox' };
+  cb.checked = true;
+  cb.dispatchEvent(new Event('change', { bubbles: true }));
+  return { ok: true, value: cb.value, hash: location.hash };
 })()`;
 
 // catbar sort: pick the first real option, expect ?sort=<value> in the hash.
@@ -82,16 +80,16 @@ const PROBE_SORT = `(async () => {
 // multi-value case (?topic=a then select b → ?topic=a,b).
 const PROBE_TOPIC_OPTS = `(async () => {
   ${wait}
-  const sel = document.querySelector('#topic-filter');
-  if (!sel) return { ok: false };
-  const vals = [...sel.options].map(o => o.value).filter(Boolean);
+  const cbs = [...document.querySelectorAll('.catbar__panel input[data-fdim="topic"]')];
+  const vals = cbs.map(c => c.value).filter(Boolean);
   return { ok: vals.length >= 2, vals };
 })()`;
 const probeAddTopic = (second) => `(async () => {
   ${wait}
-  const sel = document.querySelector('#topic-filter');
-  sel.value = ${JSON.stringify(second)};
-  sel.dispatchEvent(new Event('change', { bubbles: true }));
+  const cb = document.querySelector('.catbar__panel input[data-fdim="topic"][value=' + ${JSON.stringify(JSON.stringify(second))} + ']');
+  if (!cb) return 'no-checkbox';
+  cb.checked = true;
+  cb.dispatchEvent(new Event('change', { bubbles: true }));
   return location.hash;
 })()`;
 
@@ -109,7 +107,7 @@ const dec = (h) => decodeURIComponent(h);
       let p = await openPage(cdp, cat.base);
       const base = await p.evaluate(PROBE_RENDER);
       check(base.ok && base.hasSearch, 'renders search form');
-      check(base.selectCount >= 1, `has ${base.selectCount} filter select(s)`);
+      check(base.selectCount >= 1, `has ${base.selectCount} filter checkbox(es)`);
       check(base.viewBtns.length === 2, 'has galerie/liste view switch');
       check(base.cards > 0, `renders ${base.cards} result cards`);
       check(p.exceptions.length === 0, `no exceptions${p.exceptions.length ? ' — ' + p.exceptions[0].split('\\n')[0] : ''}`);

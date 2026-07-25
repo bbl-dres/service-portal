@@ -714,10 +714,18 @@ export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, t
     const s = mount.querySelector('#' + sortId);
     if (s) s.addEventListener('change', (e) => { location.hash = hash({ [sortParam]: e.target.value, page: 1 }); });
   }
-  // Filter-Umschalter (catbar): Panel ein-/ausblenden (rein clientseitig, kein Hash).
+  // Filter-Umschalter (catbar): Panel ein-/ausblenden (rein clientseitig, kein Hash)
+  // + Mehrfachauswahl-Checkboxen: bei Änderung alle angehakten Werte der Dimension
+  // (data-fdim = Parametername) komma-verbunden in den Hash, Seite 1.
   if (filterToggleId && panelId) {
     const btn = mount.querySelector('#' + filterToggleId), panel = mount.querySelector('#' + panelId);
     if (btn && panel) btn.addEventListener('click', () => { const open = !panel.hidden; panel.hidden = open; btn.setAttribute('aria-expanded', String(!open)); });
+    if (panel) panel.addEventListener('change', (e) => {
+      const cb = e.target.closest('input[data-fdim]'); if (!cb) return;
+      const dim = cb.dataset.fdim;
+      const values = [...panel.querySelectorAll('input[data-fdim="' + dim + '"]:checked')].map((x) => x.value);
+      location.hash = hash({ [dim]: values, page: 1 });
+    });
   }
   mount.querySelectorAll('.view-switch__btn').forEach((btn) => {
     btn.addEventListener('click', () => { location.hash = hash({ page, view: btn.getAttribute('data-view') }); });
@@ -773,6 +781,16 @@ export function catalogueBar({
       <div class="catbar__controls">${sortHtml}${filterHtml}${viewSwitch(view, views)}</div>
     </div>${filterId ? `
     <div class="catbar__panel" id="${escape(panelId)}"${panelHidden ? ' hidden' : ''}>${panel}</div>` : ''}`;
+}
+
+// Mehrfachauswahl-Filtergruppe (Checkboxen) — dieselbe Optik wie das Portfolio-
+// Panel (.filter-group / .filter-check). `dim` = Hash-Parametername (steht auf jeder
+// Checkbox als data-fdim), `selected` = aktuell angehakte Werte. Verdrahtet über
+// C.wireCatalogue: Panel-Change → alle angehakten Werte der Dimension → Hash.
+export function filterGroup({ dim, legend, options = [], selected = [] }) {
+  return `<fieldset class="filter-group"><legend class="filter-group__legend">${escape(legend)}</legend>${
+    options.map((o) => `<label class="filter-check"><input type="checkbox" data-fdim="${escape(dim)}" value="${escape(o.value)}"${
+      selected.includes(o.value) ? ' checked' : ''}><span>${escape(o.label)}</span></label>`).join('')}</fieldset>`;
 }
 
 // --- Aktionsmenü (Kebab-Dropdown) --------------------------------------------
@@ -873,7 +891,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
   notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
-  catalogueResults, announceCatalogue, catalogueHash, catalogueControls, catalogueBar, wireCatalogue, pipeline,
+  catalogueResults, announceCatalogue, catalogueHash, catalogueControls, catalogueBar, filterGroup, wireCatalogue, pipeline,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,

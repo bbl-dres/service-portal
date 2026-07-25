@@ -46,8 +46,9 @@ export default async function render(ctx) {
 
   const rawQ = query.get('q') || '';
   const q = rawQ.toLowerCase();
-  const bereich = BEREICHE.some(b => b.key === query.get('bereich')) ? query.get('bereich') : '';
-  const audience = AUDIENCES.some(a => a.value === query.get('audience')) ? query.get('audience') : '';
+  // Filter sind mehrwertig (Mehrfachauswahl-Checkboxen): komma-getrennt im Hash.
+  const bereiche = (query.get('bereich') || '').split(',').map(s => s.trim()).filter(k => BEREICHE.some(b => b.key === k));
+  const audiences = (query.get('audience') || '').split(',').map(s => s.trim()).filter(v => AUDIENCES.some(a => a.value === v));
   const view = query.get('view') === 'liste' ? 'liste' : 'galerie';
   const wanted = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
   const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
@@ -55,8 +56,8 @@ export default async function render(ctx) {
   const all = core.applications();
   const matches = (a) =>
     (!q || (a.name + ' ' + a.description + ' ' + a.group).toLowerCase().includes(q)) &&
-    (!bereich || a.bereich === bereich) &&
-    (!audience || a.audience === audience);
+    (!bereiche.length || bereiche.includes(a.bereich)) &&
+    (!audiences.length || audiences.includes(a.audience));
 
   // Standard: Schlüsselanwendungen zuerst; explizite Sortierung überschreibt das.
   const filtered = all.filter(matches);
@@ -65,14 +66,14 @@ export default async function render(ctx) {
   const page = Math.min(wanted, totalPages);
   const visible = apps.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const base = { q: rawQ, bereich, audience, sort: sortKey, view };
+  const base = { q: rawQ, bereich: bereiche, audience: audiences, sort: sortKey, view };
   const hash = (patch = {}) => C.catalogueHash('#/applications', { ...base, ...patch });
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert.
   const active = [
     ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
-    ...(bereich ? [{ label: bereichLabel(bereich), href: hash({ bereich: '' }) }] : []),
-    ...(audience ? [{ label: audienceLabel(audience), href: hash({ audience: '' }) }] : []),
+    ...bereiche.map(x => ({ label: bereichLabel(x), href: hash({ bereich: bereiche.filter(y => y !== x) }) })),
+    ...audiences.map(x => ({ label: audienceLabel(x), href: hash({ audience: audiences.filter(y => y !== x) }) })),
   ];
   const filterBar = C.activeFilters({ filters: active, resetHref: '#/applications' });
 
@@ -115,13 +116,11 @@ export default async function render(ctx) {
       formId: 'app-search', inputId: 'aq', searchLabel: 'Anwendung suchen', placeholder: 'Anwendung suchen...', q: rawQ,
       countId: 'app-count', count: `<strong>${apps.length}</strong> von ${all.length} Anwendungen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'app-sort', value: sortKey, options: SORT_OPTS },
-      filterId: 'app-filter', filterLabel: 'Filter', filterCount: (bereich ? 1 : 0) + (audience ? 1 : 0),
+      filterId: 'app-filter', filterLabel: 'Filter', filterCount: bereiche.length + audiences.length,
       panelId: 'app-filters', panel: `
-        ${C.select({ id: 'bereich-filter', name: 'bereich', label: 'Bereich', value: bereich,
-          options: [{ value: '', label: 'Alle Bereiche' }, ...BEREICHE.map(b => ({ value: b.key, label: b.label }))] })}
-        ${C.select({ id: 'audience-filter', name: 'audience', label: 'Zielgruppe', value: audience,
-          options: [{ value: '', label: 'Alle Zielgruppen' }, ...AUDIENCES] })}
-        <a class="btn btn--bare btn--sm" href="${hash({ bereich: '', audience: '' })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
+        ${C.filterGroup({ dim: 'bereich', legend: 'Bereich', selected: bereiche, options: BEREICHE.map(b => ({ value: b.key, label: b.label })) })}
+        ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: AUDIENCES })}
+        <a class="btn btn--bare btn--sm" href="${hash({ bereich: [], audience: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
       view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
     })}
     ${filterBar}
@@ -138,7 +137,6 @@ export default async function render(ctx) {
 
   C.wireCatalogue(mount, {
     formId: 'app-search', inputId: 'aq', pageInputId: 'app-page', page, totalPages, hash,
-    filters: [{ id: 'bereich-filter', param: 'bereich' }, { id: 'audience-filter', param: 'audience' }],
     sortId: 'app-sort', filterToggleId: 'app-filter', panelId: 'app-filters',
   });
 }

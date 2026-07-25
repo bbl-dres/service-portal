@@ -23,8 +23,9 @@ function list(ctx) {
 
   const rawQ = query.get('q') || '';
   const q = rawQ.toLowerCase();
-  const thema = query.get('thema') || '';
-  const klass = query.get('klass') || '';
+  // Filter sind mehrwertig (Mehrfachauswahl-Checkboxen): komma-getrennt im Hash.
+  const themas = (query.get('thema') || '').split(',').map(s => s.trim()).filter(Boolean);
+  const klasses = (query.get('klass') || '').split(',').map(s => s.trim()).filter(Boolean);
   const tags = (query.get('tag') || '').split(',').map(s => s.trim()).filter(Boolean);
   const view = query.get('view') === 'liste' ? 'liste' : 'galerie';
   const wanted = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
@@ -46,8 +47,8 @@ function list(ctx) {
 
   const matches = (d) =>
     (!q || (t(d.title) + ' ' + t(d.description) + ' ' + t(d.fullDescription)).toLowerCase().includes(q)) &&
-    (!thema || t(d.meta.thema) === thema) &&
-    (!klass || d.meta.klassifizierung === klass) &&
+    (!themas.length || themas.includes(t(d.meta.thema))) &&
+    (!klasses.length || klasses.includes(d.meta.klassifizierung)) &&
     (!tags.length || tags.every(x => (d.tags || []).includes(x)));
 
   const filtered = all.filter(matches);
@@ -56,15 +57,15 @@ function list(ctx) {
   const page = Math.min(wanted, totalPages);
   const visible = datasets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const base = { q: rawQ, thema, klass, tag: tags, sort: sortKey, view };
+  const base = { q: rawQ, thema: themas, klass: klasses, tag: tags, sort: sortKey, view };
   const hash = (patch = {}) => C.catalogueHash('#/data/katalog', { ...base, ...patch });
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert — das
   // Entfernen eines Filters braucht kein JS und bleibt verlinkbar.
   const active = [
     ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
-    ...(thema ? [{ label: thema, href: hash({ thema: '' }) }] : []),
-    ...(klass ? [{ label: klassLabel(core, klass), href: hash({ klass: '' }) }] : []),
+    ...themas.map(x => ({ label: x, href: hash({ thema: themas.filter(y => y !== x) }) })),
+    ...klasses.map(x => ({ label: klassLabel(core, x), href: hash({ klass: klasses.filter(y => y !== x) }) })),
     ...tags.map(x => ({ label: tagLabel(core, x), href: hash({ tag: tags.filter(y => y !== x) }) })),
   ];
   const filterBar = C.activeFilters({ filters: active, resetHref: '#/data/katalog' });
@@ -110,13 +111,11 @@ function list(ctx) {
       formId: 'ds-search', inputId: 'dsq', searchLabel: 'Datensatz suchen', placeholder: 'Datensatz suchen...', q: rawQ,
       countId: 'ds-count', count: `<strong>${datasets.length}</strong> von ${all.length} Datensätzen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'ds-sort', value: sortKey, options: SORT_OPTS },
-      filterId: 'ds-filter', filterLabel: 'Filter', filterCount: (thema ? 1 : 0) + (klass ? 1 : 0) + tags.length,
+      filterId: 'ds-filter', filterLabel: 'Filter', filterCount: themas.length + klasses.length + tags.length,
       panelId: 'ds-filters', panel: `
-        ${C.select({ id: 'thema-filter', name: 'thema', label: 'Thema', value: thema,
-          options: [{ value: '', label: 'Alle Themen' }, ...themen.map(x => ({ value: x, label: x }))] })}
-        ${C.select({ id: 'klass-filter', name: 'klass', label: 'Klassifizierung', value: klass,
-          options: [{ value: '', label: 'Alle Klassifizierungen' }, ...klassen.map(x => ({ value: x, label: klassLabel(core, x) }))] })}
-        <a class="btn btn--bare btn--sm" href="${hash({ thema: '', klass: '', tag: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
+        ${C.filterGroup({ dim: 'thema', legend: 'Thema', selected: themas, options: themen.map(x => ({ value: x, label: x })) })}
+        ${C.filterGroup({ dim: 'klass', legend: 'Klassifizierung', selected: klasses, options: klassen.map(x => ({ value: x, label: klassLabel(core, x) })) })}
+        <a class="btn btn--bare btn--sm" href="${hash({ thema: [], klass: [], tag: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
       view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
     })}
     ${filterBar}
@@ -135,7 +134,6 @@ function list(ctx) {
 
   C.wireCatalogue(mount, {
     formId: 'ds-search', inputId: 'dsq', pageInputId: 'ds-page', page, totalPages, hash,
-    filters: [{ id: 'thema-filter', param: 'thema' }, { id: 'klass-filter', param: 'klass' }],
     sortId: 'ds-sort', filterToggleId: 'ds-filter', panelId: 'ds-filters',
   });
 }

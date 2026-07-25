@@ -8,8 +8,8 @@ export default async function render(ctx) {
 
   const rawQ = query.get('q') || '';
   const q = rawQ.toLowerCase();
-  const selectedAudience = query.get('audience') || '';
-  // `topic` is multi-value (comma-separated) — several Themen can be active at once
+  // Filter sind mehrwertig (Mehrfachauswahl-Checkboxen): komma-getrennt im Hash.
+  const selectedAudiences = (query.get('audience') || '').split(',').map(t => t.trim()).filter(Boolean);
   const selectedTopics = (query.get('topic') || '').split(',').map(t => t.trim()).filter(Boolean);
   const view = query.get('view') === 'liste' ? 'liste' : 'galerie';
   const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
@@ -26,7 +26,7 @@ export default async function render(ctx) {
   const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
 
   const matches = (s) => !q || (s.title + ' ' + s.short + ' ' + s.description).toLowerCase().includes(q);
-  const matchesAudience = (s) => !selectedAudience || s.audience === selectedAudience;
+  const matchesAudience = (s) => !selectedAudiences.length || selectedAudiences.includes(s.audience);
   const matchesTopic = (s) => !selectedTopics.length || selectedTopics.includes(s.domain);
   const filtered = all.filter(s => matches(s) && matchesAudience(s) && matchesTopic(s));
   const services = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
@@ -34,8 +34,7 @@ export default async function render(ctx) {
   const page = Math.min(currentPage, totalPages);
   const visibleServices = services.slice((page - 1) * perPage, page * perPage);
 
-  // `topic` ist mehrwertig (Array) → als Parametername `topic` komma-verbunden.
-  const base = { q: rawQ, audience: selectedAudience, topic: selectedTopics, sort: sortKey, view };
+  const base = { q: rawQ, audience: selectedAudiences, topic: selectedTopics, sort: sortKey, view };
   const hash = (patch = {}) => C.catalogueHash('#/services', { ...base, ...patch });
 
   // also-in hint across other surfaces (services-first, then content)
@@ -67,11 +66,8 @@ export default async function render(ctx) {
   // so removing a filter needs no JS and stays deep-linkable.
   const activeFilters = [
     ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
-    ...(selectedAudience ? [{ label: audienceLabel(selectedAudience), href: hash({ audience: '' }) }] : []),
-    ...selectedTopics.map(t => ({
-      label: domainLabel(domains, t),
-      href: hash({ topic: selectedTopics.filter(x => x !== t) }),
-    })),
+    ...selectedAudiences.map(a => ({ label: audienceLabel(a), href: hash({ audience: selectedAudiences.filter(x => x !== a) }) })),
+    ...selectedTopics.map(t => ({ label: domainLabel(domains, t), href: hash({ topic: selectedTopics.filter(x => x !== t) }) })),
   ];
   const filterBar = C.activeFilters({ filters: activeFilters, resetHref: '#/services' });
 
@@ -81,11 +77,10 @@ export default async function render(ctx) {
 
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   const filterPanel = `
-    ${C.select({ id: 'audience-filter', name: 'audience', label: 'Zielgruppe', value: selectedAudience,
-      options: [{ value: '', label: 'Alle Zielgruppen' }, ...audienceOptions()] })}
-    ${C.select({ id: 'topic-filter', name: 'topic', label: 'Thema', value: '',
-      options: [{ value: '', label: 'Alle Themen' }, ...domains.filter(d => d.thema).map(d => ({ value: d.key, label: d.label }))] })}
-    <a class="btn btn--bare btn--sm" href="${hash({ audience: '', topic: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`;
+    ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: selectedAudiences, options: audienceOptions() })}
+    ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: selectedTopics,
+      options: domains.filter(d => d.thema).map(d => ({ value: d.key, label: d.label })) })}
+    <a class="btn btn--bare btn--sm" href="${hash({ audience: [], topic: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -94,7 +89,7 @@ export default async function render(ctx) {
       formId: 'svc-search', inputId: 'sq', searchLabel: 'Dienstleistung suchen', placeholder: 'Dienstleistung suchen…', q: rawQ,
       countId: 'svc-count', count: `<strong>${services.length}</strong> von ${all.length} Dienstleistungen${pageInfo}`,
       sort: { id: 'svc-sort', value: sortKey, options: SORT_OPTS },
-      filterId: 'svc-filter', filterLabel: 'Filter', filterCount: (selectedAudience ? 1 : 0) + selectedTopics.length,
+      filterId: 'svc-filter', filterLabel: 'Filter', filterCount: selectedAudiences.length + selectedTopics.length,
       panelId: 'svc-filters', panel: filterPanel,
       view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
     })}
@@ -110,15 +105,10 @@ export default async function render(ctx) {
 
   C.announceCatalogue({ count: services.length, total: all.length, unit: 'Dienstleistungen', page, totalPages, view });
 
+  // Mehrfachauswahl-Filter (Zielgruppe/Thema) verdrahtet C.wireCatalogue über das Panel.
   C.wireCatalogue(mount, {
     formId: 'svc-search', inputId: 'sq', pageInputId: 'svc-page', page, totalPages, hash,
-    filters: [{ id: 'audience-filter', param: 'audience' }],
     sortId: 'svc-sort', filterToggleId: 'svc-filter', panelId: 'svc-filters',
-  });
-  // Thema ist mehrwertig — gewähltes Thema zur aktiven Liste hinzufügen (nicht ersetzen).
-  mount.querySelector('#topic-filter').addEventListener('change', (e) => {
-    const next = e.target.value && !selectedTopics.includes(e.target.value) ? [...selectedTopics, e.target.value] : selectedTopics;
-    location.hash = hash({ topic: next, page: 1 });
   });
 }
 

@@ -1467,7 +1467,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Trennlinie ist der View-Switch-Strich zwischen Filter und Ansichtswechsel. */
 .catbar__controls { display:flex; align-items:center; gap:.25rem; margin-left:auto; }
 .catbar__sort { position:relative; }
-.catbar__sort select { min-height:2.75rem; font-size:var(--text-sm); text-align:right; color:var(--color-text); }
+/* CD-Padding (px-4) links; rechts Platz für das Chevron. Kein text-align:right —
+   sonst kleben die kürzeren Optionen (Status/Land) rechtsbündig ohne Rand. */
+.catbar__sort select { min-height:2.75rem; padding-left:1rem; padding-right:1.75rem; font-size:var(--text-sm); color:var(--color-text); }
 .catbar__sort .select__icon { color:var(--color-text-muted); }
 .catbar__filter { min-height:2.75rem; white-space:nowrap; }
 .catbar__fcount { margin-left:.35rem; font-weight:var(--fw-bold); }
@@ -1483,7 +1485,6 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .catbar__panel .form__group__select { flex:0 1 16rem; min-width:12rem; margin:0; }
 @media (max-width:700px){
   .catbar__controls { margin-left:0; }
-  .catbar__sort select { text-align:left; }
 }
 
 /* ── Liegenschaften Inventar — map-first explorer (js/apps/portfolio.js) ── */
