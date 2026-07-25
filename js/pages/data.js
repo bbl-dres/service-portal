@@ -4,10 +4,11 @@
 export default async function render(ctx) {
   const { params } = ctx;
   if (!params.length) return overview(ctx);
-  if (params[0] === 'katalog') return (await import('./katalog.js')).default(ctx);
-  if (params[0] === 'ikt-vorhaben') return (await import('./ikt-vorhaben.js')).default(ctx);
-  if (params[0] === 'digitalisierung') return (await import('./digitalisierung.js')).default(ctx);
-  return notFound(ctx);
+  const sub = { katalog: './katalog.js', 'ikt-vorhaben': './ikt-vorhaben.js', digitalisierung: './digitalisierung.js' }[params[0]];
+  if (!sub) return notFound(ctx);
+  const mod = await import(sub);
+  if (ctx.stale()) return;   // A2: nach dem await keine überholte Navigation überschreiben
+  return mod.default(ctx);
 }
 
 // Section overview — the CD pattern for a top-level area: a short lead plus

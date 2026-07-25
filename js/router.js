@@ -162,9 +162,13 @@ function renderCrumbs(crumbs) {
   }).join('');
 }
 
-function makeCtx(mount, params, query) {
+function makeCtx(mount, params, query, stale) {
   return {
     mount, params, query, core, engine, session, C,
+    // Async-Seiten (die vor dem Schreiben `await`en, z. B. dynamische Import-
+    // Delegatoren) prüfen `ctx.stale()` unmittelbar vor `mount.innerHTML =`, damit
+    // eine überholte Navigation die inzwischen neuere Seite nicht überschreibt (A2).
+    stale: stale || (() => false),
     navigate: (h) => { location.hash = h; },
     setTitle: (t) => { document.title = t ? `${t} · BBL Kundenportal` : 'BBL Kundenportal'; },
     setCrumbs: renderCrumbs,
@@ -180,8 +184,11 @@ function focusHeading(mount) {
 }
 
 // Page modules load asynchronously, so two quick hash changes can render out of
-// order. Every dispatch takes a ticket; a stale one drops its result instead of
-// overwriting the newer page.
+// order. Every dispatch takes a ticket; the router drops a stale render's own
+// post-write steps (module load, focus, scroll). A page that itself `await`s
+// before writing (the dynamic-import delegators applications.js / data.js) must
+// additionally check `ctx.stale()` right before `mount.innerHTML =`, or its late
+// write overwrites the newer page (code-review A2).
 let dispatchId = 0;
 let prevPath = null;
 
@@ -233,7 +240,7 @@ async function dispatch() {
     if (stale()) return;
     const render = mod.default || mod.render;
     if (typeof render !== 'function') throw new Error('Modul exportiert kein render()');
-    const ctx = makeCtx(mount, params, query);
+    const ctx = makeCtx(mount, params, query, stale);
     await render(ctx);
     if (stale()) return;
     if (isStateChange) {

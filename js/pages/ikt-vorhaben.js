@@ -74,7 +74,7 @@ export default function render(ctx) {
     { label: 'IKT-Vorhaben' },
   ]);
 
-  const rows = VORHABEN.map(v => ({ ...v }));
+  const rows = VORHABEN;
 
   mount.innerHTML = `
   <div class="container section">
@@ -92,7 +92,7 @@ export default function render(ctx) {
           { key: 'beschreibung', label: 'Inhalt', render: r => C.escape(r.beschreibung) },
           { key: 'lead', label: 'Federführung', render: r => C.escape(r.lead) },
           { key: 'zeitraum', label: 'Zeitraum', render: r => C.escape(r.zeitraum) },
-          { key: 'status', label: 'Status', render: r => C.badge(...STATUS[r.status]) },
+          { key: 'status', label: 'Status', render: r => C.badge(...(STATUS[r.status] || [r.status, 'gray'])) },
         ],
         rows,
       })}

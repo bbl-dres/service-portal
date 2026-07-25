@@ -147,10 +147,7 @@ function dashboardView(ctx, id) {
       </div>
     </aside>`;
 
-  const tabBar = `
-    <div class="tab__controls-container"><div class="tab__controls" role="tablist" aria-label="Dashboard-Ansichten">
-      ${tabs.map(t => `<button type="button" role="tab" id="dtab-${t.id}" aria-controls="dpanel" class="tab__control${t.id === state.tab ? ' tab__control--active' : ''}" aria-selected="${t.id === state.tab}" tabindex="${t.id === state.tab ? '0' : '-1'}" data-tab="${t.id}">${C.escape(t.label)}</button>`).join('')}
-    </div></div>`;
+  const tabBar = C.tabBar({ items: tabs, active: state.tab, idPrefix: 'dash-tab', panelId: 'dpanel', ariaLabel: 'Dashboard-Ansichten' });
 
   mount.innerHTML = `
   <div class="container section">
@@ -165,7 +162,7 @@ function dashboardView(ctx, id) {
       ${filterPanel}
       <div class="dashboard-main">
         ${tabBar}
-        <div class="tab__container" role="tabpanel" id="dpanel" aria-labelledby="dtab-${state.tab}" tabindex="0">
+        <div class="tab__container" role="tabpanel" id="dpanel" aria-labelledby="dash-tab-${state.tab}" tabindex="0">
           ${kpiTiles ? `<div class="kpi-row">${kpiTiles}</div>` : ''}
           <div class="dash-grid" id="dash-grid"></div>
         </div>
@@ -219,31 +216,12 @@ function dashboardView(ctx, id) {
   const reset = mount.querySelector('#f-reset');
   if (reset) reset.addEventListener('click', () => { state.from = yMin; state.to = yMax; fromSel.value = yMin; toSel.value = yMax; syncHash(); renderGrid(); });
 
-  const tabBtns = [...mount.querySelectorAll('.tab__control')];
-  const panel = mount.querySelector('#dpanel');
-  const activateTab = (btn, focus) => {
-    state.tab = btn.dataset.tab;
-    tabBtns.forEach(b => {
-      const on = b === btn;
-      b.classList.toggle('tab__control--active', on);
-      b.setAttribute('aria-selected', String(on));
-      b.tabIndex = on ? 0 : -1;
-    });
-    panel.setAttribute('aria-labelledby', `dtab-${state.tab}`);
-    syncHash();
-    renderGrid();
-    if (focus) btn.focus();
-  };
-  tabBtns.forEach((btn, idx) => {
-    btn.addEventListener('click', () => activateTab(btn, false));
-    btn.addEventListener('keydown', (e) => {
-      let ni = null;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') ni = (idx + 1) % tabBtns.length;
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ni = (idx - 1 + tabBtns.length) % tabBtns.length;
-      else if (e.key === 'Home') ni = 0;
-      else if (e.key === 'End') ni = tabBtns.length - 1;
-      if (ni !== null) { e.preventDefault(); activateTab(tabBtns[ni], true); }
-    });
+  // Tab-Wechsel via C.wireTabs; onSelect setzt den Zustand + rendert das Chart-
+  // Grid neu, syncHash spiegelt Tab/Zeitraum in die Hash-Query (die aria-
+  // labelledby-Pflege des Einzel-Panels übernimmt wireTabs).
+  C.wireTabs(mount, {
+    onSelect: (id) => { state.tab = id; renderGrid(); },
+    syncHash,
   });
 
   const layout = mount.querySelector('#dashboard');

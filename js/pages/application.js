@@ -38,34 +38,15 @@ export default function render(ctx, appId) {
   // Der Knopf im Zugriff-Kasten führt auf den ersten Einstiegspunkt.
   const primary = entries[0] || null;
 
-  const entryItem = (e) => {
-    const ext = e.kind === 'external';
-    const attrs = ext ? ' target="_blank" rel="noopener external"' : '';
-    return `<li>
-      <a class="download-item" href="${C.escape(e.href)}"${attrs}>
-        ${C.icon(ext ? 'External' : 'ArrowRight', 'download-item__icon')}
-        <div>
-          <h3 class="download-item__title">${C.escape(e.label)}</h3>
-          ${e.note ? `<p class="download-item__description">${C.escape(e.note)}</p>` : ''}
-          <p class="meta-info download-item__meta-info">
-            <span class="meta-info__item">${ext ? 'Externes System' : 'Im Kundenportal'}</span>
-          </p>
-        </div>
-      </a></li>`;
-  };
-
-  const resourceItem = (r) => {
-    const ext = r.kind === 'external';
-    const attrs = ext ? ' target="_blank" rel="noopener external"' : '';
-    return `<li>
-      <a class="download-item" href="${C.escape(r.href)}"${attrs}>
-        ${C.icon(ext ? 'External' : 'Book', 'download-item__icon')}
-        <div>
-          <h3 class="download-item__title">${C.escape(r.label)}</h3>
-          ${r.note ? `<p class="download-item__description">${C.escape(r.note)}</p>` : ''}
-        </div>
-      </a></li>`;
-  };
+  const entryItem = (e) => C.downloadItem({
+    href: e.href, title: e.label, note: e.note, heading: 'h3', wrapLi: true,
+    external: e.kind === 'external', icon: e.kind === 'external' ? 'External' : 'ArrowRight',
+    meta: [e.kind === 'external' ? 'Externes System' : 'Im Kundenportal'],
+  });
+  const resourceItem = (r) => C.downloadItem({
+    href: r.href, title: r.label, note: r.note, heading: 'h3', wrapLi: true,
+    external: r.kind === 'external', icon: r.kind === 'external' ? 'External' : 'Book',
+  });
 
   const contact = page.contact ? core.contacts().find(c => c.contactId === page.contact) : null;
 
@@ -117,15 +98,7 @@ export default function render(ctx, appId) {
           ${noTarget ? `<p class="small muted" style="margin:0">Im Prototyp ist kein Zielsystem verknüpft.</p>` : ''}
         </div>
 
-        ${contact ? `<div class="box">
-          <h3>Kontakt</h3>
-          <p class="small" style="margin:0">
-            <strong>${C.escape(contact.name)}</strong><br>
-            ${C.escape(contact.role)}<br>
-            <a href="mailto:${C.escape(contact.email)}">${C.escape(contact.email)}</a><br>
-            ${C.escape(contact.phone || '')}
-          </p>
-        </div>` : ''}
+        ${C.contactBox(contact)}
 
         <div class="box">
           <h3>Eckdaten</h3>

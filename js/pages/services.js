@@ -25,6 +25,10 @@ export default async function render(ctx) {
   const page = Math.min(currentPage, totalPages);
   const visibleServices = services.slice((page - 1) * perPage, page * perPage);
 
+  // `topic` ist mehrwertig (Array) → als Parametername `topic` komma-verbunden.
+  const base = { q: rawQ, audience: selectedAudience, topic: selectedTopics, view };
+  const hash = (patch = {}) => C.catalogueHash('#/services', { ...base, ...patch });
+
   // also-in hint across other surfaces (services-first, then content)
   const otherHits = q ? {
     apps: core.applications().filter(a => (a.name + a.description).toLowerCase().includes(q)).length,
@@ -35,7 +39,7 @@ export default async function render(ctx) {
   const card = (s) => C.card({
     title: s.title, desc: s.short, href: `#/services/${s.serviceId}`,
     badges: [C.audienceTag(s.audience), s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')],
-    footer: `<span>${domainLabel(domains, s.domain)}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
+    footer: `<span>${C.escape(domainLabel(domains, s.domain))}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
   });
 
   const listView = (list) => C.table({
@@ -53,11 +57,11 @@ export default async function render(ctx) {
   // Active-filter pills. Each pill links to the same view minus that one value,
   // so removing a filter needs no JS and stays deep-linkable.
   const activeFilters = [
-    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: servicesHash({ audience: selectedAudience, topics: selectedTopics, page: 1, view }) }] : []),
-    ...(selectedAudience ? [{ label: audienceLabel(selectedAudience), href: servicesHash({ q: rawQ, topics: selectedTopics, page: 1, view }) }] : []),
+    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
+    ...(selectedAudience ? [{ label: audienceLabel(selectedAudience), href: hash({ audience: '' }) }] : []),
     ...selectedTopics.map(t => ({
       label: domainLabel(domains, t),
-      href: servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics.filter(x => x !== t), page: 1, view }),
+      href: hash({ topic: selectedTopics.filter(x => x !== t) }),
     })),
   ];
   const filterBar = C.activeFilters({ filters: activeFilters, resetHref: '#/services' });
@@ -69,52 +73,35 @@ export default async function render(ctx) {
   mount.innerHTML = `
   <div class="container section">
     ${C.pageHeader({ title: 'Dienstleistungen', lead: 'Was möchten Sie tun? Als «Vorgang» gekennzeichnete Dienstleistungen starten einen Ablauf; Informationsangebote führen weiter.' })}
-    <form class="service-controls" id="svc-search" role="search">
-      <div class="service-controls__search">
-        <label class="sr-only" for="sq">Dienstleistung suchen</label>
-        <input id="sq" type="search" placeholder="Dienstleistung suchen…" value="${C.escape(rawQ)}" autocomplete="off">
-        <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
-      </div>
-      <div class="service-controls__filters" aria-label="Dienstleistungen filtern">
+    ${C.catalogueControls({
+      formId: 'svc-search', inputId: 'sq', searchLabel: 'Dienstleistung suchen', placeholder: 'Dienstleistung suchen…', q: rawQ,
+      filtersLabel: 'Dienstleistungen filtern',
+      filters: `
         ${C.select({ id: 'audience-filter', name: 'audience', label: 'Zielgruppe', value: selectedAudience,
           options: [{ value: '', label: 'Alle Zielgruppen' }, ...audienceOptions()] })}
         ${C.select({ id: 'topic-filter', name: 'topic', label: 'Thema', value: '',
-          options: [{ value: '', label: 'Alle Themen' }, ...domains.filter(d => d.thema).map(d => ({ value: d.key, label: d.label }))] })}
-      </div>
-    </form>
+          options: [{ value: '', label: 'Alle Themen' }, ...domains.filter(d => d.thema).map(d => ({ value: d.key, label: d.label }))] })}`,
+    })}
     ${filterBar}
     ${C.catalogueResults({
       visible: visibleServices, count: services.length, total: all.length, view, page, totalPages,
       card, listView, unit: 'Dienstleistungen',
       paginationInputId: 'svc-page', paginationLabel: 'Seitennavigation Dienstleistungen',
-      paginationHref: (p) => servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics, page: p, view }),
+      paginationHref: (p) => hash({ page: p }),
       available: core.available('services'), note: relatedHits || '',
     })}
   </div>`;
 
   C.announceCatalogue({ count: services.length, total: all.length, unit: 'Dienstleistungen', page, totalPages, view });
 
-  mount.querySelector('#svc-search').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const v = mount.querySelector('#sq').value.trim();
-    location.hash = servicesHash({ q: v, audience: selectedAudience, topics: selectedTopics, page: 1, view });
+  C.wireCatalogue(mount, {
+    formId: 'svc-search', inputId: 'sq', pageInputId: 'svc-page', page, totalPages, hash,
+    filters: [{ id: 'audience-filter', param: 'audience' }],
   });
-  mount.querySelectorAll('.view-switch__btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      location.hash = servicesHash({
-        q: rawQ, audience: selectedAudience, topics: selectedTopics, page,
-        view: btn.getAttribute('data-view'),
-      });
-    });
-  });
-  mount.querySelector('#audience-filter').addEventListener('change', (e) => {
-    location.hash = servicesHash({ q: rawQ, audience: e.target.value, topics: selectedTopics, page: 1, view });
-  });
+  // Thema ist mehrwertig — gewähltes Thema zur aktiven Liste hinzufügen (nicht ersetzen).
   mount.querySelector('#topic-filter').addEventListener('change', (e) => {
-    location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topics: e.target.value && !selectedTopics.includes(e.target.value) ? [...selectedTopics, e.target.value] : selectedTopics, page: 1, view });
-  });
-  C.wirePagination(mount, 'svc-page', page, totalPages, (target) => {
-    location.hash = servicesHash({ q: rawQ, audience: selectedAudience, topics: selectedTopics, page: target, view });
+    const next = e.target.value && !selectedTopics.includes(e.target.value) ? [...selectedTopics, e.target.value] : selectedTopics;
+    location.hash = hash({ topic: next, page: 1 });
   });
 }
 
@@ -181,7 +168,7 @@ function detail(ctx, id) {
         ${ctaBlock}
       </div>
       <aside class="stack-lg">
-        ${contact ? `<div class="box"><h3>Kontakt</h3><p class="small" style="margin:0"><strong>${C.escape(contact.name)}</strong><br>${C.escape(contact.role)}<br><a href="mailto:${contact.email}">${contact.email}</a><br>${C.escape(contact.phone)}</p></div>` : ''}
+        ${C.contactBox(contact)}
         ${weis.length ? `<div class="box"><h3>Geltende Weisungen</h3>${weis.map(w => `<a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge/grundlagen/${w.directiveId}">${C.icon('Book', 'icon--base')}<span class="small">${C.escape(w.title)}</span></a>`).join('')}</div>` : ''}
       </aside>
     </div>
@@ -201,16 +188,5 @@ function audienceLabel(key) {
   return option ? option.label : key;
 }
 
-
-function servicesHash({ q = '', audience = '', topics = [], page = 1, view = '' }) {
-  const params = new URLSearchParams();
-  if (q) params.set('q', q);
-  if (audience) params.set('audience', audience);
-  if (topics.length) params.set('topic', topics.join(','));
-  if (page > 1) params.set('page', String(page));
-  if (view === 'liste') params.set('view', view);
-  const suffix = params.toString();
-  return suffix ? `#/services?${suffix}` : '#/services';
-}
 
 function domainLabel(domains, key) { const d = domains.find(x => x.key === key); return d ? d.label : key; }

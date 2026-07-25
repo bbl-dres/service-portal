@@ -206,12 +206,12 @@ function detail(ctx, id) {
 
   const b = core.building(p.buildingId);
   const tabs = [
-    ['uebersicht', 'Übersicht'],
-    ['kennzahlen', 'Kennzahlen'],
-    ['risiken', 'Risiken & Ziele'],
+    { id: 'uebersicht', label: 'Übersicht' },
+    { id: 'kennzahlen', label: 'Kennzahlen' },
+    { id: 'risiken', label: 'Risiken & Ziele' },
   ];
   let active = query.get('tab') || 'uebersicht';
-  if (!tabs.some(([t]) => t === active)) active = 'uebersicht';
+  if (!tabs.some(t => t.id === active)) active = 'uebersicht';
 
   function panelUebersicht() {
     return `<dl class="kv">
@@ -282,28 +282,16 @@ function detail(ctx, id) {
         id: b?.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name, w: 1600,
         style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg);margin-top:1rem',
       })}
-      <div class="tab__controls-container"><div class="tab__controls mt-6" role="tablist" aria-label="Projektdetails">
-        ${tabs.map(([t, label]) => `<button type="button" role="tab" id="ptab-${t}" aria-controls="ppanel-${t}" class="tab__control${active === t ? " tab__control--active" : ""}" aria-selected="${active === t}" data-tab="${t}">${C.escape(label)}</button>`).join('')}
-      </div></div>
-      ${tabs.map(([t]) => `<div class="tab__container" role="tabpanel" id="ppanel-${t}" aria-labelledby="ptab-${t}" tabindex="0" data-panel="${t}"${active === t ? '' : ' hidden'}>${panels[t]()}</div>`).join('')}
+      ${C.tabBar({ items: tabs, active, idPrefix: 'pj-tab', ariaLabel: 'Projektdetails', controlsClass: 'mt-6' })}
+      ${C.tabPanels({ items: tabs, active, idPrefix: 'pj-tab', render: (t) => panels[t]() })}
     </div>`;
     wire();
   }
 
   function wire() {
-    mount.querySelectorAll('[data-tab]').forEach(btn => btn.addEventListener('click', () => {
-      active = btn.dataset.tab;
-      mount.querySelectorAll('[data-tab]').forEach(b => {
-        const on = b.dataset.tab === active;
-        b.classList.toggle('tab__control--active', on);
-        b.setAttribute('aria-selected', String(on));
-      });
-      mount.querySelectorAll('[data-panel]').forEach(pan => {
-        pan.hidden = pan.dataset.panel !== active;
-      });
-      const qs = active === 'uebersicht' ? '' : '?tab=' + active;
-      history.replaceState(null, '', `#/app/projects/${p.projectId}` + qs);
-    }));
+    C.wireTabs(mount, {
+      syncHash: (tab) => history.replaceState(null, '', `#/app/projects/${p.projectId}${tab === 'uebersicht' ? '' : '?tab=' + tab}`),
+    });
   }
 
   draw();

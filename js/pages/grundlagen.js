@@ -80,25 +80,6 @@ const GROUPS = [
   },
 ];
 
-// Eine Zeile in einer Dokumentliste (CD download-item). Extern → neues Fenster;
-// ohne echtes Ziel («#») ein nicht fokussierbarer, deaktivierter Ersatz.
-export function docItem(C, it) {
-  const inner = `${C.icon(it.icon || (it.external ? 'External' : 'Download'), 'download-item__icon')}
-    <div>
-      <h4 class="download-item__title">${C.escape(it.title)}</h4>
-      ${it.desc ? `<p class="download-item__description">${C.escape(it.desc)}</p>` : ''}
-      ${it.meta && it.meta.length ? `<p class="meta-info download-item__meta-info">${
-        it.meta.map(m => `<span class="meta-info__item">${C.escape(m)}</span>`).join('')}</p>` : ''}
-    </div>`;
-  if (it.external) {
-    return `<li><a class="download-item" href="${it.href}" target="_blank" rel="noopener external">${inner}</a></li>`;
-  }
-  if (it.href && it.href !== '#') {
-    return `<li><a class="download-item" href="${it.href}">${inner}</a></li>`;
-  }
-  return `<li><span class="download-item" aria-disabled="true" title="Im Prototyp nicht verfügbar">${inner}
-    <span class="sr-only">(im Prototyp nicht verfügbar)</span></span></li>`;
-}
 
 // Wiederverwendbares CD-Ankernavigations-Layout (detailPageAnchorNav.vue):
 // links thematische Abschnitte mit id, rechts ein klebendes «Inhaltsverzeichnis».
@@ -155,7 +136,7 @@ export function grundlagenPage(ctx, page) {
     id: 'gr-' + g.id,
     title: g.title,
     html: `${g.intro ? `<p class="muted">${C.escape(g.intro)}</p>` : ''}
-      <ul class="download-items">${g.items.map(it => docItem(C, it)).join('')}</ul>`,
+      <ul class="download-items">${g.items.map(it => C.downloadItem({ ...it, wrapLi: true })).join('')}</ul>`,
   }));
   sections.push({
     id: 'gr-weitere',

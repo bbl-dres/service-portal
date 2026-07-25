@@ -1,6 +1,8 @@
 // Shared domain core — single source of truth (mock).
 // Loads all data/*.json once; pages read via the accessors below.
 
+import { fetchJSON } from './fetch-json.js';
+
 const DATA = {};
 
 const FILES = {
@@ -36,16 +38,21 @@ const AREA = {
   datasets: 'Datenkatalog', catalogLabels: 'Katalog-Beschriftungen', appPages: 'Anwendungsseiten',
 };
 
+// Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
+const OBJECT_FILES = new Set(['reference', 'catalogLabels', 'appPages']);
+
 async function load() {
   const entries = await Promise.all(Object.entries(FILES).map(async ([k, url]) => {
+    const isObj = OBJECT_FILES.has(k);
     try {
-      const r = await fetch(url);
-      if (!r.ok) throw new Error(r.status + ' ' + url);
-      return [k, await r.json()];
+      // Formprüfung (C4): eine Datei, die zwar parst, aber die falsche Grundform
+      // hat (z. B. buildings.json → {}), landet so im Ausfallpfad statt später
+      // beim ersten Accessor (`{}.find`) zu werfen.
+      return [k, await fetchJSON(url, { shape: isObj ? 'object' : 'array' })];
     } catch (e) {
       console.warn('[core] could not load', url, e.message);
       FAILED.add(k);
-      return [k, ['reference', 'catalogLabels', 'appPages'].includes(k) ? {} : []];
+      return [k, isObj ? {} : []];
     }
   }));
   for (const [k, v] of entries) DATA[k] = v;

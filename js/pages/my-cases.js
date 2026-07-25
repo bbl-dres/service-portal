@@ -99,7 +99,7 @@ function detail(ctx, id) {
   // --- Tab «Anhänge»: eingereichte Dateien (Demo, nicht herunterladbar) ---
   const anhaengePanel = atts.length
     ? `<ul class="download-items">${atts.map(a =>
-        `<li>${C.downloadItem({ href: '#', title: a.name, meta: [a.type, a.size].filter(Boolean), heading: 'h3' })}</li>`).join('')}</ul>
+        C.downloadItem({ href: '#', title: a.name, meta: [a.type, a.size].filter(Boolean), heading: 'h3', wrapLi: true })).join('')}</ul>
        <p class="small muted mt-2">Demodateien — im Prototyp nicht herunterladbar.</p>`
     : C.empty('Für diesen Vorgang sind keine Anhänge hinterlegt.');
 
@@ -108,13 +108,14 @@ function detail(ctx, id) {
     `<li class="done"><strong>${C.escape(h.status)}</strong> <span class="when">${C.escape(h.when)}</span>${
       h.note ? `<br><span class="small muted">${C.escape(h.note)}</span>` : ''}</li>`).join('')}</ul>`;
 
-  const tabs = [
-    ['daten', 'Daten', datenPanel],
-    ['anhaenge', `Anhänge${atts.length ? ` · ${atts.length}` : ''}`, anhaengePanel],
-    ['verlauf', 'Verlauf', verlaufPanel],
+  const tabItems = [
+    { id: 'daten', label: 'Daten' },
+    { id: 'anhaenge', label: `Anhänge${atts.length ? ` · ${atts.length}` : ''}` },
+    { id: 'verlauf', label: 'Verlauf' },
   ];
+  const panelsById = { daten: datenPanel, anhaenge: anhaengePanel, verlauf: verlaufPanel };
   const requested = query && query.get('tab');
-  const activeTab = tabs.some(([t]) => t === requested) ? requested : 'daten';
+  const activeTab = tabItems.some(t => t.id === requested) ? requested : 'daten';
 
   mount.innerHTML = `
   <div class="container section">
@@ -128,10 +129,8 @@ function detail(ctx, id) {
     <div class="mt-4">${C.pipeline(steps, i.stepIndex)}</div>
 
     <div class="tabs mt-6">
-      <div class="tab__controls-container"><div class="tab__controls" role="tablist" aria-label="Vorgangsdetails">
-        ${tabs.map(([t, label]) => `<button type="button" role="tab" id="ctab-${t}" aria-controls="cpanel-${t}" class="tab__control${t === activeTab ? ' tab__control--active' : ''}" aria-selected="${t === activeTab}" tabindex="${t === activeTab ? '0' : '-1'}" data-tab="${t}">${C.escape(label)}</button>`).join('')}
-      </div></div>
-      ${tabs.map(([t, , panel]) => `<div class="tab__container" role="tabpanel" id="cpanel-${t}" aria-labelledby="ctab-${t}" tabindex="0" data-panel="${t}"${t === activeTab ? '' : ' hidden'}>${panel}</div>`).join('')}
+      ${C.tabBar({ items: tabItems, active: activeTab, idPrefix: 'case-tab', ariaLabel: 'Vorgangsdetails' })}
+      ${C.tabPanels({ items: tabItems, active: activeTab, idPrefix: 'case-tab', render: (t) => panelsById[t] })}
     </div>
 
     ${canAdvance
@@ -139,38 +138,13 @@ function detail(ctx, id) {
       : i.createdLocally ? '<p class="small muted mt-6">Vorgang abgeschlossen.</p>' : '<p class="small muted mt-6">Seed-Vorgang (Demo) — nicht weiterführbar.</p>'}
   </div>`;
 
-  wireTabs(mount, id);
+  // APG-Tabs (Klick + Pfeil/Home/End, roving tabindex) via C.wireTabs; der aktive
+  // Tab wird in die Hash-Query gespiegelt (teilbar/lesezeichenbar).
+  C.wireTabs(mount, {
+    syncHash: (tab) => history.replaceState(null, '', `#/my-cases/${encodeURIComponent(id)}${tab === 'daten' ? '' : `?tab=${tab}`}`),
+  });
   const adv = mount.querySelector('#advance');
   if (adv) adv.addEventListener('click', () => { engine.advance(i.instanceId); location.reload(); });
-}
-
-// APG-Tabs: Klick + Pfeiltasten/Home/End, roving tabindex, Panels via [hidden];
-// die aktive Registerkarte wird in der Hash-Query gespiegelt (teilbar/lesezeichenbar).
-function wireTabs(mount, id) {
-  const tabs = [...mount.querySelectorAll('.tab__control')];
-  const activate = (btn, focus) => {
-    const tab = btn.dataset.tab;
-    tabs.forEach((b) => {
-      const on = b === btn;
-      b.classList.toggle('tab__control--active', on);
-      b.setAttribute('aria-selected', String(on));
-      b.tabIndex = on ? 0 : -1;
-    });
-    mount.querySelectorAll('[data-panel]').forEach((pan) => { pan.hidden = pan.dataset.panel !== tab; });
-    history.replaceState(null, '', `#/my-cases/${encodeURIComponent(id)}${tab === 'daten' ? '' : `?tab=${tab}`}`);
-    if (focus) btn.focus();
-  };
-  tabs.forEach((btn, idx) => {
-    btn.addEventListener('click', () => activate(btn, false));
-    btn.addEventListener('keydown', (e) => {
-      let ni = null;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') ni = (idx + 1) % tabs.length;
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ni = (idx - 1 + tabs.length) % tabs.length;
-      else if (e.key === 'Home') ni = 0;
-      else if (e.key === 'End') ni = tabs.length - 1;
-      if (ni !== null) { e.preventDefault(); activate(tabs[ni], true); }
-    });
-  });
 }
 
 function sLabel(core, id) { const m = (core.ref().statusModel || []).find(s => s.id === id); return m ? m.label : id; }

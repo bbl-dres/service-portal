@@ -4,6 +4,7 @@
 // NOTE: this is the *demo* engine — see docs/expert-review.md for the real-vs-mocked register.
 
 import { readJSON, writeJSON } from './storage.js';
+import { fetchJSON } from './fetch-json.js';
 
 const LS_KEY = 'bbl_vorgaenge_v1';
 let DEFS = [];
@@ -12,16 +13,9 @@ let SEEDED = [];
 function loadLS() { const a = readJSON(LS_KEY, []); return Array.isArray(a) ? a : []; }
 function saveLS(arr) { return writeJSON(LS_KEY, arr); }   // → bool, damit Aufrufer stillen Verlust erkennen (C1)
 
-async function fetchArray(url) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`${r.status} ${url}`);
-  const json = await r.json();
-  return Array.isArray(json) ? json : [];
-}
-
 async function load() {
-  try { DEFS = await fetchArray('data/process-definitions.json'); } catch (e) { console.warn('[engine] definitions', e && e.message); DEFS = []; }
-  try { SEEDED = await fetchArray('data/process-instances.json'); } catch (e) { console.warn('[engine] instances', e && e.message); SEEDED = []; }
+  try { DEFS = await fetchJSON('data/process-definitions.json', { shape: 'array' }); } catch (e) { console.warn('[engine] definitions', e && e.message); DEFS = []; }
+  try { SEEDED = await fetchJSON('data/process-instances.json', { shape: 'array' }); } catch (e) { console.warn('[engine] instances', e && e.message); SEEDED = []; }
 }
 
 const definition = (id) => DEFS.find(d => d.defId === id);

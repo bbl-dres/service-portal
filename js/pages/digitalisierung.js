@@ -4,7 +4,7 @@
 // stammen aus der «Gesamtstrategie Digitale Immobilien» (BBL Bauten / DRES,
 // Arbeitsentwurf, Stand 15.07.2026); für den Prototyp gekürzt.
 
-import { anchorNavPage, docItem } from './grundlagen.js';
+import { anchorNavPage } from './grundlagen.js';
 
 const CRUMB = [
   { label: 'Startseite', href: '#/' },
@@ -100,8 +100,8 @@ function strategiePage(ctx) {
         <p>Die fachliche Verantwortung verbleibt bei den zuständigen Organisationseinheiten; die Organisationseinheit Digital Real Estate und Support (DRES) koordiniert Strategie und Umsetzungsplan und pflegt die Referenzarchitektur. Der Programmhorizont reicht bis 2034.</p>` },
     { id: 'st-dokumente', title: 'Dokumente',
       html: `<ul class="download-items">
-        ${docItem(C, { title: 'Gesamtstrategie «Digitale Immobilien»', desc: 'Vollständige Strategie des BBL Bauten (Arbeitsentwurf).', href: '#', meta: ['PDF', 'Stand 15.07.2026'] })}
-        ${docItem(C, { title: 'Umsetzungsplan «Digitale Immobilien»', desc: 'Jährlich aktualisierter Umsetzungsplan mit Massnahmen und Indikatoren.', href: '#', meta: ['PDF', 'jährlich'] })}
+        ${C.downloadItem({ title: 'Gesamtstrategie «Digitale Immobilien»', desc: 'Vollständige Strategie des BBL Bauten (Arbeitsentwurf).', href: '#', meta: ['PDF', 'Stand 15.07.2026'], wrapLi: true })}
+        ${C.downloadItem({ title: 'Umsetzungsplan «Digitale Immobilien»', desc: 'Jährlich aktualisierter Umsetzungsplan mit Massnahmen und Indikatoren.', href: '#', meta: ['PDF', 'jährlich'], wrapLi: true })}
       </ul>` },
   ];
 

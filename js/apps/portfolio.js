@@ -312,34 +312,12 @@ function detail(ctx, id) {
     })}
 
     <div class="tabs mt-6">
-      <div class="tab__controls-container"><div class="tab__controls" role="tablist">
-        ${tabs.map((t, i) => `<button class="tab__control${i === 0 ? " tab__control--active" : ""}" role="tab" id="tab-${t.id}" aria-controls="panel-${t.id}" aria-selected="${i === 0}" data-tab="${t.id}">${C.escape(t.label)}</button>`).join('')}
-      </div></div>
-      ${tabs.map((t, i) => `<div class="tab__container" id="panel-${t.id}" role="tabpanel" aria-labelledby="tab-${t.id}"${i === 0 ? '' : ' hidden'}>${panelHtml(t.id)}</div>`).join('')}
+      ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', ariaLabel: 'Gebäudedetails' })}
+      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', render: panelHtml })}
     </div>
   </div>`;
 
-  // tab interactivity (keyboard accessible)
-  const btns = [...mount.querySelectorAll('.tab__control')];
-  const panels = [...mount.querySelectorAll('.tab__container')];
-  function activate(tabId) {
-    btns.forEach(btn => {
-      const on = btn.getAttribute('data-tab') === tabId;
-      btn.classList.toggle('tab__control--active', on);
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
-    panels.forEach(p => { p.hidden = p.id !== 'panel-' + tabId; });
-  }
-  btns.forEach((btn, idx) => {
-    btn.addEventListener('click', () => activate(btn.getAttribute('data-tab')));
-    btn.addEventListener('keydown', (e) => {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      e.preventDefault();
-      const next = e.key === 'ArrowRight' ? (idx + 1) % btns.length : (idx - 1 + btns.length) % btns.length;
-      btns[next].focus();
-      activate(btns[next].getAttribute('data-tab'));
-    });
-  });
+  C.wireTabs(mount);
 }
 
 // ---------------------------------------------------------------------------

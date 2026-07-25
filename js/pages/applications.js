@@ -24,7 +24,11 @@ const AUDIENCES = [
 
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
-  if (params[0]) return (await import('./application.js')).default(ctx, params[0]);
+  if (params[0]) {
+    const mod = await import('./application.js');
+    if (ctx.stale()) return;   // A2: nach dem await keine überholte Navigation überschreiben
+    return mod.default(ctx, params[0]);
+  }
 
   setTitle('Anwendungen');
   setCrumbs([
@@ -53,12 +57,13 @@ export default async function render(ctx) {
   const visible = apps.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const base = { q: rawQ, bereich, audience, view };
+  const hash = (patch = {}) => C.catalogueHash('#/applications', { ...base, ...patch });
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert.
   const active = [
-    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ ...base, q: '' }) }] : []),
-    ...(bereich ? [{ label: bereichLabel(bereich), href: hash({ ...base, bereich: '' }) }] : []),
-    ...(audience ? [{ label: audienceLabel(audience), href: hash({ ...base, audience: '' }) }] : []),
+    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
+    ...(bereich ? [{ label: bereichLabel(bereich), href: hash({ bereich: '' }) }] : []),
+    ...(audience ? [{ label: audienceLabel(audience), href: hash({ audience: '' }) }] : []),
   ];
   const filterBar = C.activeFilters({ filters: active, resetHref: '#/applications' });
 
@@ -97,61 +102,32 @@ export default async function render(ctx) {
       title: 'Anwendungen',
       lead: 'Alle Anwendungen des BBL an einem Ort — von den Fachanwendungen für Bauten über Logistik bis zu den zentralen Systemen der Bundesverwaltung.',
     })}
-    <form class="service-controls" id="app-search" role="search">
-      <div class="service-controls__search">
-        <label class="sr-only" for="aq">Anwendung suchen</label>
-        <input id="aq" type="search" placeholder="Anwendung suchen..." value="${C.escape(rawQ)}" autocomplete="off">
-        <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
-      </div>
-      <div class="service-controls__filters" aria-label="Anwendungen filtern">
+    ${C.catalogueControls({
+      formId: 'app-search', inputId: 'aq', searchLabel: 'Anwendung suchen', placeholder: 'Anwendung suchen...', q: rawQ,
+      filtersLabel: 'Anwendungen filtern',
+      filters: `
         ${C.select({ id: 'bereich-filter', name: 'bereich', label: 'Bereich', value: bereich,
           options: [{ value: '', label: 'Alle Bereiche' }, ...BEREICHE.map(b => ({ value: b.key, label: b.label }))] })}
         ${C.select({ id: 'audience-filter', name: 'audience', label: 'Zielgruppe', value: audience,
-          options: [{ value: '', label: 'Alle Zielgruppen' }, ...AUDIENCES] })}
-      </div>
-    </form>
+          options: [{ value: '', label: 'Alle Zielgruppen' }, ...AUDIENCES] })}`,
+    })}
     ${filterBar}
     ${C.catalogueResults({
       visible, count: apps.length, total: all.length, view, page, totalPages,
       card, listView, unit: 'Anwendungen',
       paginationInputId: 'app-page', paginationLabel: 'Seitennavigation Anwendungen',
-      paginationHref: (p) => hash({ ...base, page: p }),
+      paginationHref: (p) => hash({ page: p }),
       available: core.available('applications'),
     })}
   </div>`;
 
   C.announceCatalogue({ count: apps.length, total: all.length, unit: 'Anwendungen', page, totalPages, view });
 
-  mount.querySelector('#app-search').addEventListener('submit', (e) => {
-    e.preventDefault();
-    location.hash = hash({ ...base, q: mount.querySelector('#aq').value.trim() });
-  });
-  mount.querySelector('#bereich-filter').addEventListener('change', (e) => {
-    location.hash = hash({ ...base, bereich: e.target.value });
-  });
-  mount.querySelector('#audience-filter').addEventListener('change', (e) => {
-    location.hash = hash({ ...base, audience: e.target.value });
-  });
-  mount.querySelectorAll('.view-switch__btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      location.hash = hash({ ...base, page, view: btn.getAttribute('data-view') });
-    });
-  });
-  C.wirePagination(mount, 'app-page', page, totalPages, (target) => {
-    location.hash = hash({ ...base, page: target });
+  C.wireCatalogue(mount, {
+    formId: 'app-search', inputId: 'aq', pageInputId: 'app-page', page, totalPages, hash,
+    filters: [{ id: 'bereich-filter', param: 'bereich' }, { id: 'audience-filter', param: 'audience' }],
   });
 }
 
 function bereichLabel(key) { const b = BEREICHE.find(x => x.key === key); return b ? b.label : key; }
 function audienceLabel(v) { const a = AUDIENCES.find(x => x.value === v); return a ? a.label : v; }
-
-function hash({ q = '', bereich = '', audience = '', page = 1, view = '' } = {}) {
-  const p = new URLSearchParams();
-  if (q) p.set('q', q);
-  if (bereich) p.set('bereich', bereich);
-  if (audience) p.set('audience', audience);
-  if (page > 1) p.set('page', String(page));
-  if (view === 'liste') p.set('view', view);
-  const s = p.toString();
-  return s ? `#/applications?${s}` : '#/applications';
-}

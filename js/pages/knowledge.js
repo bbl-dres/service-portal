@@ -1,4 +1,4 @@
-import { grundlagenPage, anchorNavPage, docItem } from './grundlagen.js';
+import { grundlagenPage, anchorNavPage } from './grundlagen.js';
 
 // News und Wissen — Abschnitts-Übersicht plus eigenständige Unterseiten: News,
 // Prozesse, Gesetzliche Grundlagen und Vorgaben, Anleitungen. Diese sind echte
@@ -260,9 +260,9 @@ function anleitungenPage(ctx, page) {
 
   const sections = [
     { id: 'an-anleitungen', title: 'Anleitungen',
-      html: `<ul class="download-items">${guides.map(g => docItem(C, { ...g, icon: 'Book', href: '#' })).join('')}</ul>` },
+      html: `<ul class="download-items">${guides.map(g => C.downloadItem({ ...g, icon: 'Book', href: '#', wrapLi: true })).join('')}</ul>` },
     { id: 'an-schulung', title: 'Schulungsunterlagen und Lernvideos',
-      html: `<ul class="download-items">${schulung.map(s => docItem(C, { ...s, href: '#' })).join('')}</ul>` },
+      html: `<ul class="download-items">${schulung.map(s => C.downloadItem({ ...s, href: '#', wrapLi: true })).join('')}</ul>` },
   ];
 
   anchorNavPage(ctx, {

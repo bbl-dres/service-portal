@@ -309,6 +309,80 @@ export function wireAccordion(root) {
   });
 }
 
+// --- Tabs (tab.postcss) ------------------------------------------------------
+// Eine APG-Tab-Implementierung (roving tabindex, Klick + Pfeil/Home/End) statt
+// fünf leicht abweichender Kopien — davon eine ohne Tastatur (projects). `items`
+// = [{ id, label, icon? }]; `id` ist ein Entwickler-Slug (dient zugleich als
+// Selektor-/aria-Ziel, daher nicht escaped), `label` wird escaped.
+//
+// tabBar rendert nur die Registerkarten-Leiste. `panelId` verlinkt ALLE Tabs auf
+// EIN gemeinsames Panel (Einzel-Panel-/Neurender-Muster, z. B. dataportal); ohne
+// `panelId` zeigt jeder Tab auf sein eigenes `${idPrefix}-panel-${id}` (Mehr-
+// Panel-Muster, s. tabPanels).
+export function tabBar({ items, active, idPrefix = 'tab', ariaLabel = '', panelId = '', controlsClass = '' } = {}) {
+  const btns = items.map((t) => {
+    const on = t.id === active;
+    const controls = panelId || `${idPrefix}-panel-${t.id}`;
+    return `<button type="button" role="tab" id="${idPrefix}-${t.id}" aria-controls="${controls}"`
+      + ` class="tab__control${on ? ' tab__control--active' : ''}" aria-selected="${on}"`
+      + ` tabindex="${on ? '0' : '-1'}" data-tab="${t.id}">`
+      + `${t.icon ? icon(t.icon, 'icon--base') + ' ' : ''}${escape(t.label)}</button>`;
+  }).join('');
+  return `<div class="tab__controls-container"><div class="tab__controls${controlsClass ? ' ' + controlsClass : ''}"`
+    + ` role="tablist"${ariaLabel ? ` aria-label="${escape(ariaLabel)}"` : ''}>${btns}</div></div>`;
+}
+
+// Mehr-Panel-Markup (Pattern A): ein .tab__container je Tab, inaktive `hidden`.
+// `render(id)` liefert das fertige Panel-HTML. Für das Einzel-Panel-Muster stellt
+// der Aufrufer sein eigenes Panel und lässt wireTabs den Inhalt neu rendern.
+export function tabPanels({ items, active, idPrefix = 'tab', render }) {
+  return items.map((t) =>
+    `<div class="tab__container" role="tabpanel" id="${idPrefix}-panel-${t.id}"`
+    + ` aria-labelledby="${idPrefix}-${t.id}" tabindex="0" data-panel="${t.id}"`
+    + `${t.id === active ? '' : ' hidden'}>${render(t.id)}</div>`).join('');
+}
+
+// Verdrahtet die Tab-Leiste(n) in `root`: Klick + Pfeiltasten/Home/End, roving
+// tabindex, aria-selected. Vorhandene [data-panel]-Panels werden automatisch
+// umgeblendet (Pattern A); `onSelect(id)` rendert bei Einzel-Panel/Neurender den
+// Inhalt (Pattern B). `syncHash(id)` spiegelt optional den Tab in die Hash-Query.
+// Fokus wird nach `onSelect` per Neuabfrage gesetzt, überlebt also ein Neurender.
+export function wireTabs(root, { onSelect, syncHash } = {}) {
+  const btns = [...root.querySelectorAll('.tab__control')];
+  const panels = [...root.querySelectorAll('[data-panel]')];
+  const single = root.querySelectorAll('[role="tabpanel"]');
+  const activate = (id) => {
+    let activeBtn = null;
+    btns.forEach((b) => {
+      const on = b.dataset.tab === id;
+      if (on) activeBtn = b;
+      b.classList.toggle('tab__control--active', on);
+      b.setAttribute('aria-selected', String(on));
+      b.tabIndex = on ? 0 : -1;
+    });
+    panels.forEach((p) => { p.hidden = p.dataset.panel !== id; });
+    if (single.length === 1 && activeBtn) single[0].setAttribute('aria-labelledby', activeBtn.id);
+    if (onSelect) onSelect(id);
+    if (syncHash) syncHash(id);
+    // Fokus per Neuabfrage — überlebt ein Neurender durch onSelect; für Maus-
+    // Klicks unsichtbar (:focus-visible greift nur bei Tastatur), für die Tastatur
+    // korrekt (roving). No-op, wenn die Leiste unverändert bleibt.
+    (root.querySelector(`.tab__control[data-tab="${id}"]`) || activeBtn)?.focus();
+  };
+  btns.forEach((btn, i) => {
+    btn.addEventListener('click', () => activate(btn.dataset.tab));
+    btn.addEventListener('keydown', (e) => {
+      let ni = null;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') ni = (i + 1) % btns.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ni = (i - 1 + btns.length) % btns.length;
+      else if (e.key === 'Home') ni = 0;
+      else if (e.key === 'End') ni = btns.length - 1;
+      if (ni !== null) { e.preventDefault(); activate(btns[ni].dataset.tab); }
+    });
+  });
+  return { activate };
+}
+
 // --- Notifications (notification.postcss) ------------------------------------
 // variant: info | success | warning | error | hint | alert
 export function notification(text, variant = 'info', iconName = 'InfoCircle') {
@@ -410,20 +484,58 @@ export function field(o = {}) {
   </div>`;
 }
 
+// Formularwert aus `mount` lesen (ersetzt das 3× kopierte lokale val()); '' wenn
+// das Feld fehlt.
+export function val(mount, id) { const el = mount.querySelector('#' + id); return el ? el.value : ''; }
+
+// Mehrere Felder in ein Objekt lesen. `map` = { zielSchlüssel: feldId }. Fehlende
+// Felder liefern ''; Coercion (Zahlen) und `|| alt`-Fallbacks macht der Aufrufer.
+// Typisch: Object.assign(state, C.readForm(mount, { buildingId: 'bld', ort: 'ort' })).
+export function readForm(mount, map) {
+  const out = {};
+  for (const [key, id] of Object.entries(map)) out[key] = val(mount, id);
+  return out;
+}
+
 // --- Download items (download-item.postcss) ----------------------------------
-export function downloadItem({ href, title, description, meta = [], heading = 'h4' }) {
-  const real = href && href !== '#';
-  const inner = `${icon('Download', 'download-item__icon')}
+// Eine CD-download-item-Zeile für alle Fälle (Dokument, App-Einstieg, Ressource,
+// Anhang). Ein echtes externes Ziel öffnet ein neues Fenster; `#` degradiert zu
+// einem deaktivierten Ersatz. `note`/`desc` sind austauschbar (Datenobjekte tragen
+// `desc`, App-Einträge `note`); `icon` überschreibt das Standardsymbol (extern →
+// External, sonst Download). `wrapLi` umschliesst mit `<li>` für `.download-items`.
+export function downloadItem({ href, title, note = '', desc = '', meta = [], icon: iconName,
+  external = false, heading = 'h4', wrapLi = false, download = false } = {}) {
+  const text = note || desc;
+  const sym = iconName || (external ? 'External' : 'Download');
+  const inner = `${icon(sym, 'download-item__icon')}
     <div>
       <${heading} class="download-item__title">${escape(title)}</${heading}>
-      ${description ? `<p class="download-item__description">${escape(description)}</p>` : ''}
+      ${text ? `<p class="download-item__description">${escape(text)}</p>` : ''}
       ${meta.length ? `<p class="meta-info download-item__meta-info">${
         meta.filter(Boolean).map(m => `<span class="meta-info__item">${escape(m)}</span>`).join('')}</p>` : ''}
     </div>`;
-  return real
-    ? `<a class="download-item" href="${escape(href)}" download>${inner}</a>`
+  const real = href && href !== '#';
+  const attrs = external ? ' target="_blank" rel="noopener external"' : (download ? ' download' : '');
+  const el = real
+    ? `<a class="download-item" href="${escape(href)}"${attrs}>${inner}</a>`
     : `<span class="download-item" aria-disabled="true" title="Im Prototyp nicht verfügbar">${inner}
        <span class="sr-only">(im Prototyp nicht verfügbar)</span></span>`;
+  return wrapLi ? `<li>${el}</li>` : el;
+}
+
+// CD-Kontaktkasten (.box): Name/Rolle/E-Mail(mailto)/Telefon, alle escaped —
+// ersetzt die je Seite kopierte Kontaktmarkup und schliesst die unescapten
+// mailto-Stellen (code-review B4).
+export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) {
+  if (!contact) return '';
+  const lines = [
+    contact.name ? `<strong>${escape(contact.name)}</strong>` : '',
+    contact.role ? escape(contact.role) : '',
+    contact.email ? `<a href="mailto:${escape(contact.email)}">${escape(contact.email)}</a>` : '',
+    contact.phone ? escape(contact.phone) : '',
+  ].filter(Boolean);
+  return `<div class="box"><${heading}>${escape(title)}</${heading}>
+    <p class="small" style="margin:0">${lines.join('<br>')}</p></div>`;
 }
 
 // Link for a demo download that has no real target yet.
@@ -537,6 +649,59 @@ export function viewSwitch(view = 'galerie', items = [['galerie', 'Galerieansich
   </div>`;
 }
 
+// --- Katalog-Trio (services / applications / katalog teilen dieses Muster) -----
+// Ein Katalog-Hash: q/page/view einheitlich, alle weiteren Filter aus `filters`
+// als Query-Parameter (String → gesetzt wenn truthy; Array → komma-verbunden wenn
+// nicht leer). Default-Werte (page 1, view 'galerie') bleiben aus der URL, damit
+// sie kurz und teilbar bleibt. Schlüssel = Parametername (z. B. `topic`, `tag`).
+export function catalogueHash(base, { q = '', page = 1, view = '', ...filters } = {}) {
+  const p = new URLSearchParams();
+  if (q) p.set('q', q);
+  for (const [k, v] of Object.entries(filters)) {
+    if (Array.isArray(v)) { if (v.length) p.set(k, v.join(',')); }
+    else if (v) p.set(k, String(v));
+  }
+  if (page > 1) p.set('page', String(page));
+  if (view === 'liste') p.set('view', view);
+  const s = p.toString();
+  return s ? `${base}?${s}` : base;
+}
+
+// Katalog-Suchleiste (service-controls): Suchfeld + Submit + Filter-Slot. `filters`
+// ist fertiges HTML (i. d. R. mehrere C.select(...)) — RAW HTML, der Aufrufer escaped.
+export function catalogueControls({ formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', filtersLabel = '', filters = '' }) {
+  return `<form class="service-controls" id="${formId}" role="search">
+    <div class="service-controls__search">
+      <label class="sr-only" for="${inputId}">${escape(searchLabel)}</label>
+      <input id="${inputId}" type="search" placeholder="${escape(placeholder)}" value="${escape(q)}" autocomplete="off">
+      <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
+    </div>
+    ${filters ? `<div class="service-controls__filters"${filtersLabel ? ` aria-label="${escape(filtersLabel)}"` : ''}>${filters}</div>` : ''}
+  </form>`;
+}
+
+// Verdrahtet die gemeinsamen Katalog-Interaktionen: Suchformular (Submit → Seite 1),
+// einfache Filter-Dropdowns (`filters: [{id, param}]` → Wert setzen, Seite 1),
+// Ansichtswechsel (behält die Seite) und Pagination. `hash(patch)` baut den Ziel-
+// Hash aus Basiszustand + patch (Aufrufer bäckt die Basis ein). Mehrwertige Filter
+// (z. B. Themen bei services) verdrahtet der Aufrufer separat.
+export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, totalPages = 1, hash, filters = [] }) {
+  const form = mount.querySelector('#' + formId);
+  if (form) form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = mount.querySelector('#' + inputId);
+    location.hash = hash({ q: input ? input.value.trim() : '', page: 1 });
+  });
+  filters.forEach(({ id, param }) => {
+    const el = mount.querySelector('#' + id);
+    if (el) el.addEventListener('change', (e) => { location.hash = hash({ [param]: e.target.value, page: 1 }); });
+  });
+  mount.querySelectorAll('.view-switch__btn').forEach((btn) => {
+    btn.addEventListener('click', () => { location.hash = hash({ page, view: btn.getAttribute('data-view') }); });
+  });
+  if (pageInputId) wirePagination(mount, pageInputId, page, totalPages, (target) => { location.hash = hash({ page: target }); });
+}
+
 // --- Login-Hinweis (AGOV / FedLogin) -----------------------------------------
 // Kein Inhalt wird versteckt; abgemeldet erscheint nur dieser Hinweis dort, wo
 // ein Vorgang ausgelöst würde. Der Button ruft window.__login() (in app.js
@@ -556,8 +721,9 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
   notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
-  catalogueResults, announceCatalogue, pipeline,
-  notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, tagItem, downloadItem, downloadLink,
+  catalogueResults, announceCatalogue, catalogueHash, catalogueControls, wireCatalogue, pipeline,
+  tabBar, tabPanels, wireTabs,
+  notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
 };
 export default C;

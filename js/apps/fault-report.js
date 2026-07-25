@@ -45,6 +45,21 @@ export default async function render(ctx) {
     { label: cfg.title },
   ]);
 
+  // Meldung = persönlicher Vorgang — abgemeldet zum Login auffordern statt in der
+  // Formularansicht session.user() zu dereferenzieren (Direktaufruf-Schutz).
+  if (!session.isLoggedIn()) {
+    mount.innerHTML = `
+    <div class="container section">
+      <div class="container__center--xs">
+        ${C.backLink('#/services', 'Dienstleistungen')}
+        <h1 tabindex="-1">${C.escape(cfg.title)}</h1>
+        <p class="lead">${C.escape(cfg.lead)}</p>
+        ${C.loginGate('Diese Meldung wird als persönlicher Vorgang unter «Meine Vorgänge» erfasst. Bitte melden Sie sich mit AGOV / FedLogin an, um sie einzureichen.')}
+      </div>
+    </div>`;
+    return;
+  }
+
   const buildings = core.buildings();
   const isbo = core.contacts().find(c => c.contactId === 'isbo');
 
@@ -58,29 +73,6 @@ export default async function render(ctx) {
     created: null,
   };
 
-  function field(id, label, control, err, hint) {
-    const required = /class="req"/.test(label);
-    const clean = label.replace(/\s*<span class="req">\*<\/span>/, '');
-    const ids = [hint ? `${id}-hint` : '', err ? `${id}-err` : ''].filter(Boolean).join(' ');
-    const attrs = `${required ? ' required aria-required="true"' : ''}${err ? ' aria-invalid="true"' : ''}${ids ? ` aria-describedby="${ids}"` : ''}`;
-    const ctrl = control
-      .replace(/<(input|select|textarea)\b([^>]*?)>/, (m, tag, a) => `<${tag}${a}${attrs}>`)
-      .replace(/<(input|select|textarea)\b([^>]*?)class="([^"]*)"/, (m, tag, a, cls) =>
-        `<${tag}${a}class="${cls}${err ? ' input--error' : ''}"`);
-    return `<div class="form__group__input">
-      <label for="${id}"${required ? ' class="text--asterisk"' : ''}>${clean}${required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
-      ${ctrl}
-      ${hint ? `<div class="badge badge--sm badge--info" id="${id}-hint">${hint}</div>` : ''}
-      ${err ? `<div class="badge badge--sm badge--error" id="${id}-err" role="alert">${C.escape(err)}</div>` : ''}
-    </div>`;
-  }
-
-  function selectControl(id, options, selected) {
-    return C.selectBox(`<select id="${id}" class="input--outline input--base">${options.map(o =>
-      `<option value="${C.escape(o.value)}"${o.value === selected ? ' selected' : ''}>${C.escape(o.text)}</option>`
-    ).join('')}</select>`);
-  }
-
   function draw() {
     if (state.created) return drawDone();
 
@@ -93,7 +85,7 @@ export default async function render(ctx) {
 
     const securityNote = isSecurity ? `
       ${C.notification(`<strong>Bei akuter Gefahr: Alarmzentrale +41 58 465 65 65</strong><br>Lebensbedrohliche Lagen sofort telefonisch melden – nicht über dieses Formular.`, 'warning', 'WarningCircle')}
-      ${isbo ? C.notification(`Fachstelle <strong>${C.escape(isbo.name)}</strong> · <a href="mailto:${isbo.email}">${C.escape(isbo.email)}</a> · ${C.escape(isbo.phone)}`, 'info', 'Lock') : ''}
+      ${isbo ? C.notification(`Fachstelle <strong>${C.escape(isbo.name)}</strong> · <a href="mailto:${C.escape(isbo.email)}">${C.escape(isbo.email)}</a> · ${C.escape(isbo.phone)}`, 'info', 'Lock') : ''}
     ` : '';
 
     mount.innerHTML = `
@@ -105,20 +97,17 @@ export default async function render(ctx) {
       <p class="muted">Meldung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}</p>
       ${securityNote}
       <form id="report-form" class="form mt-6">
-        ${field('bld', 'Gebäude / Standort <span class="req">*</span>',
-          buildings.length ? selectControl('bld', buildingOpts, state.buildingId)
-            : `<input id="bld" value="" placeholder="Kein Gebäude verfügbar" disabled>`,
-          state.errors.buildingId)}
-        ${field('ort', 'Ort (Stockwerk / Raum)',
-          `<input id="ort" placeholder="z. B. 3. OG, Raum 312" value="${C.escape(state.ort)}">`,
-          null, 'Optional – hilft bei der Lokalisierung.')}
-        ${field('cat', 'Kategorie',
-          selectControl('cat', categoryOpts, state.category))}
-        ${field('beschreibung', 'Beschreibung <span class="req">*</span>',
-          `<textarea id="beschreibung" placeholder="Beschreiben Sie den Sachverhalt möglichst genau.">${C.escape(state.beschreibung)}</textarea>`,
-          state.errors.beschreibung)}
-        ${field('dringlichkeit', 'Dringlichkeit',
-          selectControl('dringlichkeit', dringlichkeitOpts, state.dringlichkeit))}
+        ${buildings.length
+          ? C.select({ id: 'bld', name: 'bld', label: 'Gebäude / Standort', required: true,
+              value: state.buildingId, message: state.errors.buildingId, options: buildingOpts })
+          : C.field({ id: 'bld', label: 'Gebäude / Standort', required: true, message: state.errors.buildingId,
+              control: (cls, attrs) => `<input id="bld" value="" placeholder="Kein Gebäude verfügbar" disabled class="${cls}"${attrs}>` })}
+        ${C.field({ id: 'ort', label: 'Ort (Stockwerk / Raum)', hint: 'Optional – hilft bei der Lokalisierung.',
+          control: (cls, attrs) => `<input id="ort" placeholder="z. B. 3. OG, Raum 312" value="${C.escape(state.ort)}" class="${cls}"${attrs}>` })}
+        ${C.select({ id: 'cat', name: 'cat', label: 'Kategorie', value: state.category, options: categoryOpts })}
+        ${C.field({ id: 'beschreibung', label: 'Beschreibung', required: true, message: state.errors.beschreibung,
+          control: (cls, attrs) => `<textarea id="beschreibung" placeholder="Beschreiben Sie den Sachverhalt möglichst genau." class="${cls}"${attrs}>${C.escape(state.beschreibung)}</textarea>` })}
+        ${C.select({ id: 'dringlichkeit', name: 'dringlichkeit', label: 'Dringlichkeit', value: state.dringlichkeit, options: dringlichkeitOpts })}
         ${C.notification('Mit dem Absenden wird ein Vorgang erstellt. Sie können den Status jederzeit unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
         <div class="row mt-4" style="justify-content:flex-end">
           <a class="btn btn--outline" href="#/services">Abbrechen</a>
@@ -147,14 +136,10 @@ export default async function render(ctx) {
     </div>`;
   }
 
-  function val(id) { const el = mount.querySelector('#' + id); return el ? el.value : ''; }
-
   function read() {
-    state.buildingId = val('bld');
-    state.ort = val('ort');
-    state.category = val('cat');
-    state.beschreibung = val('beschreibung');
-    state.dringlichkeit = val('dringlichkeit');
+    Object.assign(state, C.readForm(mount, {
+      buildingId: 'bld', ort: 'ort', category: 'cat', beschreibung: 'beschreibung', dringlichkeit: 'dringlichkeit',
+    }));
   }
 
   function validate() {

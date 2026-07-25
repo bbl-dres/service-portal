@@ -4,6 +4,17 @@ export default async function render(ctx) {
   setTitle('Raumbedarf melden');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }, { label: 'Raumbedarf melden' }]);
 
+  // Persönlicher Vorgang — abgemeldet zum Login auffordern (der Zustand unten
+  // liest session.user().org, würde also sonst beim Direktaufruf werfen).
+  if (!session.isLoggedIn()) {
+    mount.innerHTML = `
+    <div class="container section">
+      ${C.pageHeader({ title: 'Raumbedarf melden', lead: 'Ihr Bedarf an Räumen und Flächen — als persönlicher Vorgang erfasst.' })}
+      ${C.loginGate('«Raumbedarf melden» erfasst Ihren Bedarf als Vorgang unter «Meine Vorgänge». Bitte melden Sie sich mit AGOV / FedLogin an, um eine Meldung zu erstellen.')}
+    </div>`;
+    return;
+  }
+
   const buildings = core.buildings();
   const naw = core.ref().nawClasses || [];
   const dsf = core.ref().deskSharingFactor || 0.8;
@@ -49,38 +60,28 @@ export default async function render(ctx) {
     wire();
   }
 
-  function field(id, label, control, err, hint) {
-    const required = /class="req"/.test(label);
-    const clean = label.replace(/\s*<span class="req">\*<\/span>/, '');
-    const ids = [hint ? `${id}-hint` : '', err ? `${id}-err` : ''].filter(Boolean).join(' ');
-    const attrs = `${required ? ' required aria-required="true"' : ''}${err ? ' aria-invalid="true"' : ''}${ids ? ` aria-describedby="${ids}"` : ''}`;
-    const ctrl = control
-      .replace(/<(input|select|textarea)\b([^>]*?)>/, (m, tag, a) => `<${tag}${a}${attrs}>`)
-      .replace(/<(input|select|textarea)\b([^>]*?)class="([^"]*)"/, (m, tag, a, cls) =>
-        `<${tag}${a}class="${cls}${err ? ' input--error' : ''}"`);
-    return `<div class="form__group__input">
-      <label for="${id}"${required ? ' class="text--asterisk"' : ''}>${clean}${required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
-      ${ctrl}
-      ${hint ? `<div class="badge badge--sm badge--info" id="${id}-hint">${hint}</div>` : ''}
-      ${err ? `<div class="badge badge--sm badge--error" id="${id}-err" role="alert">${C.escape(err)}</div>` : ''}
-    </div>`;
-  }
-
   function step1() {
     return `
-      ${field('org', 'Verwaltungseinheit <span class="req">*</span>', `<input id="org" value="${C.escape(state.org)}">`, state.errors.org)}
-      ${field('cc', 'Kostenstelle <span class="req">*</span>', `<input id="cc" placeholder="z. B. 810.123" value="${C.escape(state.costCenter)}">`, state.errors.costCenter)}
-      ${field('bld', 'Standort / Gebäude', C.selectBox(`<select id="bld" class="input--outline input--base">${buildings.map(b => `<option value="${b.bbl_id}"${b.bbl_id === state.buildingId ? ' selected' : ''}>${C.escape(b.name)} — ${C.escape(b.city)}</option>`).join('')}</select>`))}
-      ${field('persons', 'Anzahl Personen / Arbeitsplätze <span class="req">*</span>', `<input id="persons" type="number" min="1" value="${state.persons}">`, state.errors.persons)}
+      ${C.field({ id: 'org', label: 'Verwaltungseinheit', required: true, message: state.errors.org,
+        control: (cls, attrs) => `<input id="org" value="${C.escape(state.org)}" class="${cls}"${attrs}>` })}
+      ${C.field({ id: 'cc', label: 'Kostenstelle', required: true, message: state.errors.costCenter,
+        control: (cls, attrs) => `<input id="cc" placeholder="z. B. 810.123" value="${C.escape(state.costCenter)}" class="${cls}"${attrs}>` })}
+      ${C.select({ id: 'bld', name: 'bld', label: 'Standort / Gebäude', value: state.buildingId,
+        options: buildings.map(b => ({ value: b.bbl_id, label: `${b.name} — ${b.city}` })) })}
+      ${C.field({ id: 'persons', label: 'Anzahl Personen / Arbeitsplätze', required: true, message: state.errors.persons,
+        control: (cls, attrs) => `<input id="persons" type="number" min="1" value="${state.persons}" class="${cls}"${attrs}>` })}
       <div class="row" style="justify-content:flex-end"><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
   }
 
   function step2() {
     return `
-      ${field('naw', 'Arbeitswelt (NAW-Klasse)', C.selectBox(`<select id="naw" class="input--outline input--base">${naw.map(n => `<option value="${n.id}"${n.id === state.nawClass ? ' selected' : ''}>${C.escape(n.label)}</option>`).join('')}</select>`))}
+      ${C.select({ id: 'naw', name: 'naw', label: 'Arbeitswelt (NAW-Klasse)', value: state.nawClass,
+        options: naw.map(n => ({ value: n.id, label: n.label })) })}
       <div class="notification notification--info">${C.icon('InfoCircle', 'icon--lg')}<div>Geschätzter Flächenbedarf: <strong>${area()} m² HNF</strong><br><span class="small">${state.persons} Arbeitsplätze × ${AREA_PER_WORKPLACE} m² × Desk-Sharing-Faktor ${dsf}</span></div></div>
-      ${field('termin', 'Gewünschter Termin', `<input id="termin" type="date" value="${C.escape(state.termin)}">`)}
-      ${field('beg', 'Begründung <span class="req">*</span>', `<textarea id="beg" placeholder="Weshalb wird der zusätzliche Raum benötigt?">${C.escape(state.begruendung)}</textarea>`, state.errors.begruendung)}
+      ${C.field({ id: 'termin', label: 'Gewünschter Termin',
+        control: (cls, attrs) => `<input id="termin" type="date" value="${C.escape(state.termin)}" class="${cls}"${attrs}>` })}
+      ${C.field({ id: 'beg', label: 'Begründung', required: true, message: state.errors.begruendung,
+        control: (cls, attrs) => `<textarea id="beg" placeholder="Weshalb wird der zusätzliche Raum benötigt?" class="${cls}"${attrs}>${C.escape(state.begruendung)}</textarea>` })}
       <div class="row" style="justify-content:space-between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')} Zurück</button><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
   }
 
@@ -121,10 +122,10 @@ export default async function render(ctx) {
 
   function readStep() {
     if (state.step === 1) {
-      state.org = val('org'); state.costCenter = val('cc');
-      state.buildingId = val('bld'); state.persons = Math.max(1, parseInt(val('persons'), 10) || 0);
+      Object.assign(state, C.readForm(mount, { org: 'org', costCenter: 'cc', buildingId: 'bld' }));
+      state.persons = Math.max(1, parseInt(C.val(mount, 'persons'), 10) || 0);
     } else if (state.step === 2) {
-      state.nawClass = val('naw'); state.termin = val('termin'); state.begruendung = val('beg');
+      Object.assign(state, C.readForm(mount, { nawClass: 'naw', termin: 'termin', begruendung: 'beg' }));
     }
   }
   function validate() {
@@ -139,7 +140,6 @@ export default async function render(ctx) {
     state.errors = e;
     return Object.keys(e).length === 0;
   }
-  function val(id) { const el = mount.querySelector('#' + id); return el ? el.value : ''; }
 
   function wire() {
     const form = mount.querySelector('#wiz');

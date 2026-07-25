@@ -195,20 +195,6 @@ export function openDocumentViewer(doc, siblings) {
     zoom = 1;
     applyZoom();
 
-    // Seitenanzeige folgt der Seite nahe der Fenstermitte.
-    let raf = null;
-    backdrop.addEventListener('scroll', () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = null;
-        const ps = backdrop.querySelectorAll('.docpage');
-        const mid = window.innerHeight / 2;
-        let idx = 0;
-        ps.forEach((p, i) => { if (p.getBoundingClientRect().top <= mid) idx = i; });
-        if (indicator) indicator.textContent = `Seite ${idx + 1} / ${total}`;
-      });
-    });
-
     const on = (act, fn) => { const el = backdrop.querySelector(`[data-act="${act}"]`); if (el) el.addEventListener('click', fn); };
     on('close', close);
     on('download', () => toast('Download simuliert: ' + d.title));
@@ -221,6 +207,22 @@ export function openDocumentViewer(doc, siblings) {
     on('prev', () => go(-1));
     on('next', () => go(1));
   }
+
+  // Seitenanzeige folgt der Seite nahe der Fenstermitte. Einmal gebunden (backdrop
+  // ist stabil, total/indicator werden je mount() aktualisiert und hier live
+  // gelesen) — nicht je mount(), sonst ein Scroll-Listener-Leak pro Vor/Zurück (G1).
+  let raf = null;
+  backdrop.addEventListener('scroll', () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      const ps = backdrop.querySelectorAll('.docpage');
+      const mid = window.innerHeight / 2;
+      let idx = 0;
+      ps.forEach((p, i) => { if (p.getBoundingClientRect().top <= mid) idx = i; });
+      if (indicator) indicator.textContent = `Seite ${idx + 1} / ${total}`;
+    });
+  });
 
   document.addEventListener('keydown', onKeydown, true);
   mount();

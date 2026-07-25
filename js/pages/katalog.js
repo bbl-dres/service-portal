@@ -43,15 +43,16 @@ function list(ctx) {
   const page = Math.min(wanted, totalPages);
   const visible = datasets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const base = { q: rawQ, thema, klass, tags, view };
+  const base = { q: rawQ, thema, klass, tag: tags, view };
+  const hash = (patch = {}) => C.catalogueHash('#/data/katalog', { ...base, ...patch });
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert — das
   // Entfernen eines Filters braucht kein JS und bleibt verlinkbar.
   const active = [
-    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ ...base, q: '' }) }] : []),
-    ...(thema ? [{ label: thema, href: hash({ ...base, thema: '' }) }] : []),
-    ...(klass ? [{ label: klassLabel(core, klass), href: hash({ ...base, klass: '' }) }] : []),
-    ...tags.map(x => ({ label: tagLabel(core, x), href: hash({ ...base, tags: tags.filter(y => y !== x) }) })),
+    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
+    ...(thema ? [{ label: thema, href: hash({ thema: '' }) }] : []),
+    ...(klass ? [{ label: klassLabel(core, klass), href: hash({ klass: '' }) }] : []),
+    ...tags.map(x => ({ label: tagLabel(core, x), href: hash({ tag: tags.filter(y => y !== x) }) })),
   ];
   const filterBar = C.activeFilters({ filters: active, resetHref: '#/data/katalog' });
 
@@ -92,25 +93,21 @@ function list(ctx) {
       title: 'Datenbezug',
       lead: 'Die Datensätze des BBL — beschrieben nach DCAT-AP-CH, mit Bezugswegen, Klassifizierung und Datenverantwortung.',
     })}
-    <form class="service-controls" id="ds-search" role="search">
-      <div class="service-controls__search">
-        <label class="sr-only" for="dsq">Datensatz suchen</label>
-        <input id="dsq" type="search" placeholder="Datensatz suchen..." value="${C.escape(rawQ)}" autocomplete="off">
-        <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
-      </div>
-      <div class="service-controls__filters" aria-label="Datensätze filtern">
+    ${C.catalogueControls({
+      formId: 'ds-search', inputId: 'dsq', searchLabel: 'Datensatz suchen', placeholder: 'Datensatz suchen...', q: rawQ,
+      filtersLabel: 'Datensätze filtern',
+      filters: `
         ${C.select({ id: 'thema-filter', name: 'thema', label: 'Thema', value: thema,
           options: [{ value: '', label: 'Alle Themen' }, ...themen.map(x => ({ value: x, label: x }))] })}
         ${C.select({ id: 'klass-filter', name: 'klass', label: 'Klassifizierung', value: klass,
-          options: [{ value: '', label: 'Alle Klassifizierungen' }, ...klassen.map(x => ({ value: x, label: klassLabel(core, x) }))] })}
-      </div>
-    </form>
+          options: [{ value: '', label: 'Alle Klassifizierungen' }, ...klassen.map(x => ({ value: x, label: klassLabel(core, x) }))] })}`,
+    })}
     ${filterBar}
     ${C.catalogueResults({
       visible, count: datasets.length, total: all.length, view, page, totalPages,
       card, listView, unit: 'Datensätzen',
       paginationInputId: 'ds-page', paginationLabel: 'Seitennavigation Datensätze',
-      paginationHref: (p) => hash({ ...base, page: p }),
+      paginationHref: (p) => hash({ page: p }),
       available: core.available('datasets'),
       emptyMsg: 'Keine Datensätze gefunden.',
       unavailableMsg: 'Datensätze konnten nicht geladen werden (Ladefehler).',
@@ -119,23 +116,9 @@ function list(ctx) {
 
   C.announceCatalogue({ count: datasets.length, total: all.length, unit: 'Datensätzen', page, totalPages, view });
 
-  mount.querySelector('#ds-search').addEventListener('submit', (e) => {
-    e.preventDefault();
-    location.hash = hash({ ...base, q: mount.querySelector('#dsq').value.trim() });
-  });
-  mount.querySelector('#thema-filter').addEventListener('change', (e) => {
-    location.hash = hash({ ...base, thema: e.target.value });
-  });
-  mount.querySelector('#klass-filter').addEventListener('change', (e) => {
-    location.hash = hash({ ...base, klass: e.target.value });
-  });
-  mount.querySelectorAll('.view-switch__btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      location.hash = hash({ ...base, page, view: btn.getAttribute('data-view') });
-    });
-  });
-  C.wirePagination(mount, 'ds-page', page, totalPages, (target) => {
-    location.hash = hash({ ...base, page: target });
+  C.wireCatalogue(mount, {
+    formId: 'ds-search', inputId: 'dsq', pageInputId: 'ds-page', page, totalPages, hash,
+    filters: [{ id: 'thema-filter', param: 'thema' }, { id: 'klass-filter', param: 'klass' }],
   });
 }
 
@@ -161,7 +144,7 @@ function detail(ctx, id) {
 
   // Schlagworte führen zurück in den Katalog — als gesetzter Filter.
   const tagPills = (d.tags || []).map(x =>
-    `<a class="badge badge--gray" href="${hash({ tags: [x] })}">${C.escape(tagLabel(core, x))}</a>`).join('');
+    `<a class="badge badge--gray" href="${C.catalogueHash('#/data/katalog', { tag: [x] })}">${C.escape(tagLabel(core, x))}</a>`).join('');
 
   const persons = (d.responsiblePersons || []).map(p => `
     <div class="data-row">
@@ -300,18 +283,6 @@ function tagLabel(core, key) { return core.label(`tag.${key}`, key); }
 function licenceLabel(key) {
   return { terms_by: 'Namensnennung', terms_by_ask: 'Namensnennung / Bewilligung',
     terms_open: 'Frei verwendbar', terms_ask: 'Bewilligung erforderlich' }[key] || key || '';
-}
-
-function hash({ q = '', thema = '', klass = '', tags = [], page = 1, view = '' } = {}) {
-  const p = new URLSearchParams();
-  if (q) p.set('q', q);
-  if (thema) p.set('thema', thema);
-  if (klass) p.set('klass', klass);
-  if (tags.length) p.set('tag', tags.join(','));
-  if (page > 1) p.set('page', String(page));
-  if (view === 'liste') p.set('view', view);
-  const s = p.toString();
-  return s ? `#/data/katalog?${s}` : '#/data/katalog';
 }
 
 export default katalog;

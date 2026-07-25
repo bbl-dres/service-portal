@@ -12,13 +12,13 @@
 //   orderBy: "column" ascending, "-column" descending
 //   groupBy + agg: { sum|avg|count: "column" }
 
+import { fetchJSON } from './fetch-json.js';
+
 const DATA = { datasets: {}, topics: [], dashboards: [] };
 
 async function load() {
   try {
-    const r = await fetch('data/dashboards.json');
-    if (!r.ok) throw new Error(r.status + ' data/dashboards.json');
-    const json = await r.json();
+    const json = await fetchJSON('data/dashboards.json', { shape: 'object' });
     DATA.datasets = json.datasets || {};
     DATA.topics = json.topics || [];
     DATA.dashboards = json.dashboards || [];

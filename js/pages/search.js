@@ -106,7 +106,7 @@ export default async function render(ctx) {
   };
 
   const header = `<div class="search-results__header">
-    <div class="search-results__header__left"><strong>${total}</strong>${total === 1 ? 'Treffer' : 'Treffer'} für „${C.escape(rawQ)}“</div>
+    <div class="search-results__header__left"><strong>${total}</strong> Treffer für „${C.escape(rawQ)}“</div>
   </div>`;
 
   const body = !rawQ

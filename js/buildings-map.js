@@ -86,7 +86,7 @@ export async function initBuildingsMap(container, buildings) {
     el.style.width = el.style.height = `${d}px`;
     el.setAttribute('aria-label', b.name);
     el.title = b.name;
-    const sub = `${b.street || ''}, ${b.zip || ''} ${b.city || ''}`.trim();
+    const sub = [b.street, `${b.zip || ''} ${b.city || ''}`.trim()].filter(Boolean).join(', ');
     el.addEventListener('click', (ev) => {
       ev.stopPropagation();
       popup.setLngLat([b.lng, b.lat]).setHTML(

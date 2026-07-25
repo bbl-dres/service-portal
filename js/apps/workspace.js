@@ -42,28 +42,6 @@ export default async function render(ctx) {
     created: null,
   };
 
-  // ---- helpers -----------------------------------------------------------
-  function field(id, label, control, err, hint) {
-    const required = /class="req"/.test(label);
-    const clean = label.replace(/\s*<span class="req">\*<\/span>/, '');
-    const ids = [hint ? `${id}-hint` : '', err ? `${id}-err` : ''].filter(Boolean).join(' ');
-    const attrs = `${required ? ' required aria-required="true"' : ''}${err ? ' aria-invalid="true"' : ''}${ids ? ` aria-describedby="${ids}"` : ''}`;
-    const ctrl = control
-      .replace(/<(input|select|textarea)\b([^>]*?)>/, (m, tag, a) => `<${tag}${a}${attrs}>`)
-      .replace(/<(input|select|textarea)\b([^>]*?)class="([^"]*)"/, (m, tag, a, cls) =>
-        `<${tag}${a}class="${cls}${err ? ' input--error' : ''}"`);
-    return `<div class="form__group__input">
-      <label for="${id}"${required ? ' class="text--asterisk"' : ''}>${clean}${required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
-      ${ctrl}
-      ${hint ? `<div class="badge badge--sm badge--info" id="${id}-hint">${hint}</div>` : ''}
-      ${err ? `<div class="badge badge--sm badge--error" id="${id}-err" role="alert">${C.escape(err)}</div>` : ''}
-    </div>`;
-  }
-
-  function selectWrap(id, options) {
-    return C.selectBox(`<select id="${id}" class="input--outline input--base">${options}</select>`);
-  }
-
   // ---- tab panels --------------------------------------------------------
   function panelMoeblierung() {
     return `
@@ -128,6 +106,11 @@ export default async function render(ctx) {
 
   function panelBuchung() {
     if (state.created) return doneBuchung();
+    // Buchung ist ein persönlicher Vorgang — abgemeldet zum Login auffordern statt
+    // session.user() zu dereferenzieren (Möblierung/Belegung bleiben frei sichtbar).
+    if (!session.isLoggedIn()) {
+      return C.loginGate('Die Ressourcenbuchung wird als persönlicher Vorgang unter «Meine Vorgänge» erfasst. Bitte melden Sie sich mit AGOV / FedLogin an, um einen Raum, Arbeitsplatz oder Parkplatz zu buchen.');
+    }
     const b = core.building(state.buildingId);
     const r = RESSOURCEN.find(x => x.id === state.ressourcentyp);
     return `
@@ -137,20 +120,17 @@ export default async function render(ctx) {
           <p class="muted">Buchung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.
              Eine Anfrage wird als Vorgang erfasst und durch Workspace BBL bestätigt.</p>
           <form id="buchung-form" class="form">
-            ${field('ressourcentyp', 'Ressourcentyp <span class="req">*</span>',
-              selectWrap('ressourcentyp', RESSOURCEN.map(x =>
-                `<option value="${x.id}"${x.id === state.ressourcentyp ? ' selected' : ''}>${C.escape(x.label)}</option>`).join('')),
-              null, r ? r.hint : '')}
-            ${field('bld', 'Standort <span class="req">*</span>',
-              selectWrap('bld', buildings.map(x =>
-                `<option value="${x.bbl_id}"${x.bbl_id === state.buildingId ? ' selected' : ''}>${C.escape(x.name)} — ${C.escape(x.city)}</option>`).join('')))}
-            ${field('datum', 'Datum <span class="req">*</span>',
-              `<input id="datum" type="date" value="${C.escape(state.datum)}">`, state.errors.datum)}
-            ${field('zeit', 'Zeit',
-              selectWrap('zeit', ZEITEN.map(z =>
-                `<option value="${C.escape(z)}"${z === state.zeit ? ' selected' : ''}>${C.escape(z)}</option>`).join('')))}
-            ${field('bemerkung', 'Bemerkung',
-              `<textarea id="bemerkung" placeholder="z. B. benötigte Ausstattung, Personenzahl, besondere Wünsche">${C.escape(state.bemerkung)}</textarea>`)}
+            ${C.select({ id: 'ressourcentyp', name: 'ressourcentyp', label: 'Ressourcentyp', required: true,
+              value: state.ressourcentyp, hint: r ? r.hint : '',
+              options: RESSOURCEN.map(x => ({ value: x.id, label: x.label })) })}
+            ${C.select({ id: 'bld', name: 'bld', label: 'Standort', required: true, value: state.buildingId,
+              options: buildings.map(x => ({ value: x.bbl_id, label: `${x.name} — ${x.city}` })) })}
+            ${C.field({ id: 'datum', label: 'Datum', required: true, message: state.errors.datum,
+              control: (cls, attrs) => `<input id="datum" type="date" value="${C.escape(state.datum)}" class="${cls}"${attrs}>` })}
+            ${C.select({ id: 'zeit', name: 'zeit', label: 'Zeit', value: state.zeit,
+              options: ZEITEN.map(z => ({ value: z, label: z })) })}
+            ${C.field({ id: 'bemerkung', label: 'Bemerkung',
+              control: (cls, attrs) => `<textarea id="bemerkung" placeholder="z. B. benötigte Ausstattung, Personenzahl, besondere Wünsche" class="${cls}"${attrs}>${C.escape(state.bemerkung)}</textarea>` })}
             <div class="row" style="justify-content:flex-end">
               <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Buchung anfragen</button>
             </div>
@@ -194,13 +174,6 @@ export default async function render(ctx) {
 
   // ---- render ------------------------------------------------------------
   function draw() {
-    const controls = TABS.map(t => {
-      const on = t.id === state.tab;
-      return `<button class="tab__control${on ? " tab__control--active" : ""}" type="button" role="tab"
-         id="wtab-${t.id}" aria-controls="wpanel" aria-selected="${on}" tabindex="${on ? '0' : '-1'}"
-         data-tab="${t.id}">${C.icon(t.icon, 'icon--base')} ${C.escape(t.label)}</button>`;
-    }).join('');
-
     const panel = state.tab === 'moeblierung' ? panelMoeblierung()
       : state.tab === 'belegung' ? panelBelegung()
       : panelBuchung();
@@ -209,21 +182,20 @@ export default async function render(ctx) {
     <div class="container section">
       ${C.pageHeader({ title: 'Workspace & Buchung', lead: 'Möblierung und Material, Belegungsplanung sowie Buchung von Räumen, Arbeitsplätzen und Parkplätzen.' })}
       <div class="tabs">
-        <div class="tab__controls-container"><div class="tab__controls" role="tablist">${controls}</div></div>
-        <div class="tab__container" role="tabpanel" id="wpanel" aria-labelledby="wtab-${state.tab}" tabindex="0">${panel}</div>
+        ${C.tabBar({ items: TABS, active: state.tab, idPrefix: 'ws-tab', panelId: 'wpanel', ariaLabel: 'Workspace-Ansichten' })}
+        <div class="tab__container" role="tabpanel" id="wpanel" aria-labelledby="ws-tab-${state.tab}" tabindex="0">${panel}</div>
       </div>
     </div>`;
     wire();
   }
 
-  function val(id) { const el = mount.querySelector('#' + id); return el ? el.value : ''; }
-
   function readForm() {
-    state.ressourcentyp = val('ressourcentyp') || state.ressourcentyp;
-    state.buildingId = val('bld') || state.buildingId;
-    state.datum = val('datum');
-    state.zeit = val('zeit') || state.zeit;
-    state.bemerkung = val('bemerkung');
+    // Selects behalten bei Abwesenheit ihren Wert (|| alt); Datum/Bemerkung nicht.
+    state.ressourcentyp = C.val(mount, 'ressourcentyp') || state.ressourcentyp;
+    state.buildingId = C.val(mount, 'bld') || state.buildingId;
+    state.datum = C.val(mount, 'datum');
+    state.zeit = C.val(mount, 'zeit') || state.zeit;
+    state.bemerkung = C.val(mount, 'bemerkung');
   }
 
   function validate() {
@@ -234,25 +206,14 @@ export default async function render(ctx) {
   }
 
   function wire() {
-    // tab switching — Klick + Pfeiltasten/Home/End (APG Tabs). Bei Wechsel wird
-    // die neu aktive Registerkarte fokussiert (roving tabindex im Markup).
-    const tabs = [...mount.querySelectorAll('.tab__control')];
-    const goto = (id) => {
-      if (state.tab === 'buchung' && !state.created) readForm();
-      state.tab = id;
-      draw();
-      mount.querySelector('#wtab-' + id)?.focus();
-    };
-    tabs.forEach((btn, i) => {
-      btn.addEventListener('click', () => goto(btn.getAttribute('data-tab')));
-      btn.addEventListener('keydown', (e) => {
-        let ni = null;
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') ni = (i + 1) % tabs.length;
-        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ni = (i - 1 + tabs.length) % tabs.length;
-        else if (e.key === 'Home') ni = 0;
-        else if (e.key === 'End') ni = tabs.length - 1;
-        if (ni !== null) { e.preventDefault(); goto(tabs[ni].getAttribute('data-tab')); }
-      });
+    // Tab-Wechsel via C.wireTabs; onSelect rendert das Einzel-Panel via draw() neu.
+    // Vor dem Verlassen der Buchung deren Eingaben sichern (bleiben so erhalten).
+    C.wireTabs(mount, {
+      onSelect: (id) => {
+        if (state.tab === 'buchung' && !state.created) readForm();
+        state.tab = id;
+        draw();
+      },
     });
 
     // live aside update on the booking tab
