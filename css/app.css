@@ -1273,7 +1273,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
 /* Active filter pills — a portal composition of CD badges. CD ships
    badge-filter, but that is a filter *chooser*; it has no removable pill. */
 .active-filters { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; }
-.active-filter { text-decoration:none; cursor:pointer; transition:background .12s; }
+.active-filter { text-decoration:none; cursor:pointer; transition:background .12s; border:0; font-family:inherit; }
 .active-filter .icon { margin-left:.15rem; opacity:.65; }
 .active-filter:hover { background:var(--color-secondary-200); }
 .active-filter:hover .icon { opacity:1; }
@@ -1447,6 +1447,82 @@ body.docviewer-open .back-to-top-rail { display:none; }
   .api-layout { grid-template-columns:1fr; }
   .api-rail { position:static; flex-direction:row; flex-wrap:wrap; margin-bottom:1rem; }
   .api-rail__title { width:100%; margin-left:0; }
+}
+
+/* ── Kompakte Katalogleiste (catbar) — geteilt: Portfolio, Dienstleistungen,
+   Datenbezug, Anwendungen. Eine Zeile: Suche + Trefferzahl links; hinter EINER
+   Trennlinie rechts Sortierung, Filter-Umschalter und Ansichtswechsel. Der Filter
+   öffnet ein einklappbares Panel darunter (nimmt die früheren Filter-Dropdowns auf). */
+.catbar { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem 1rem; margin-top:1.25rem;
+  padding-bottom:.6rem; border-bottom:1px solid var(--color-secondary-300); font-size:var(--text-sm); }
+.catbar__search { position:relative; flex:1 1 15rem; min-width:11rem; max-width:24rem; }
+.catbar__search input { width:100%; min-height:2.75rem; padding-left:2.75rem; }
+.catbar__submit { position:absolute; left:0; top:0; bottom:0; width:2.75rem; min-height:0; padding:0;
+  justify-content:center; color:var(--color-text-muted); }
+.catbar__submit:hover { color:var(--color-primary-600); background:none; }
+.catbar__count { color:var(--color-text-muted); white-space:nowrap; }
+.catbar__count strong { font-weight:var(--fw-bold); color:var(--color-text); }
+/* Steuerungscluster rechts (bare Controls, CD-Muster): Sortierung · Filter · │ ·
+   Ansichtswechsel. Alle Controls gleich hoch (2.75rem = CD-Touch-Target); die EINE
+   Trennlinie ist der View-Switch-Strich zwischen Filter und Ansichtswechsel. */
+.catbar__controls { display:flex; align-items:center; gap:.25rem; margin-left:auto; }
+.catbar__sort { position:relative; }
+.catbar__sort select { min-height:2.75rem; font-size:var(--text-sm); text-align:right; color:var(--color-text); }
+.catbar__sort .select__icon { color:var(--color-text-muted); }
+.catbar__filter { min-height:2.75rem; white-space:nowrap; }
+.catbar__fcount { margin-left:.35rem; font-weight:var(--fw-bold); }
+.catbar__chev { width:1em; height:1em; margin-left:.1rem; transition:transform .2s; }
+.catbar__filter[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
+.catbar .view-switch__btn { min-height:2.75rem; }
+.catbar__panel { display:flex; flex-wrap:wrap; gap:1.25rem 2rem; align-items:flex-start;
+  padding:1rem 1.25rem; margin:.75rem 0 0; background:var(--color-secondary-50);
+  border:1px solid var(--color-border); border-radius:var(--radius-lg); }
+.catbar__panel .filter-group { margin:0; }
+@media (max-width:700px){
+  .catbar__controls { margin-left:0; }
+  .catbar__sort select { text-align:left; }
+}
+
+/* ── Liegenschaften Inventar — map-first explorer (js/apps/portfolio.js) ── */
+
+.pf-layout { display:grid; grid-template-columns:288px 1fr; gap:1.25rem; align-items:start; margin-top:1rem; }
+.pf-sidebar { position:sticky; top:1rem; max-height:calc(100vh - 7rem); overflow:auto; background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:.5rem; }
+.pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.35rem .5rem .5rem; }
+.pf-sidebar__title { font-size:var(--text-lg); margin:0; }
+
+/* Tree — flat indent; the icon shows the level, the two-tone highlight the path.
+   .is-path (light grey) = an ancestor of the selection · .is-active (blue) = selected. */
+.pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; }   /* no indent — icon + grey path carry the hierarchy */
+.pf-tree__node, .pf-tree__leaf { display:flex; align-items:center; gap:.4rem; width:100%; padding:.36rem .5rem; border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
+.pf-tree__node:hover, .pf-tree__leaf:hover { background:var(--color-secondary-50); color:var(--color-text); text-decoration:none; }
+.pf-tree__node.is-path { background:var(--color-gray-100); }
+.pf-tree__node.is-active, .pf-tree__leaf.is-active { background:var(--color-primary-50); color:var(--color-primary-700); font-weight:var(--fw-bold); box-shadow:inset 3px 0 0 var(--color-primary-600); }
+.pf-tree__chev { flex:none; transition:transform .15s; color:var(--color-text-muted); }
+.pf-tree__node[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
+.pf-tree__ico { flex:none; color:var(--color-text-muted); }
+.pf-tree__leaf > .pf-tree__ico { margin-left:1.4rem; }   /* align the leaf icon under the parent icon (past the chevron column) */
+.pf-tree__node.is-active .pf-tree__ico, .pf-tree__leaf.is-active .pf-tree__ico { color:var(--color-primary-600); }
+.pf-tree__id { flex:none; font-family:Consolas,Menlo,monospace; font-size:var(--fs-xs); color:var(--color-text-muted); }
+.pf-tree__node.is-active .pf-tree__id, .pf-tree__leaf.is-active .pf-tree__id { color:var(--color-primary-700); }
+.pf-tree__label { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pf-tree__n { flex:none; margin-left:.4rem; font-size:var(--fs-xs); color:var(--color-text-muted); }
+.pf-tree__node.is-active .pf-tree__n { color:var(--color-primary-700); }
+
+.pf-main { min-width:0; }
+.pf-map { height:34rem; border-radius:var(--radius-lg); overflow:hidden; }
+.pf-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr)); gap:1rem; align-items:start; }
+.pf-card { display:flex; flex-direction:column; overflow:hidden; }
+.pf-card__vis { position:relative; aspect-ratio:16/10; overflow:hidden; background:var(--color-secondary-100); }
+.pf-card__img { width:100%; height:100%; object-fit:cover; }
+.pf-card__parcel { display:flex; align-items:center; justify-content:center; height:100%; color:var(--color-primary-600);
+  background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
+.pf-card__chips { position:absolute; top:.5rem; left:.5rem; right:.5rem; display:flex; flex-wrap:wrap; gap:.3rem; }
+.pf-card__land { background:rgba(0,0,0,.6); color:#fff; font-size:var(--fs-xs); padding:.12rem .5rem; border-radius:var(--radius-full); }
+.pf-typ { display:inline-flex; color:var(--color-text-muted); }
+
+@media (max-width:800px) {
+  .pf-layout { grid-template-columns:1fr; }
+  .pf-sidebar { position:static; max-height:22rem; }
 }
 
 /* ---- Aktionsmenü (Kebab-Dropdown, wiederverwendbar) ------------------------

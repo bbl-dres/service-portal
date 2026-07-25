@@ -131,7 +131,7 @@ export async function initBuildingsMap(container, buildings) {
 // rotation to north. `points` = [{ lat, lon, label, sub?, bblId?, href? }].
 const BLUE = '#2563eb';
 const PARCEL = '#0f766e';   // teal — Grundstücke, distinct from the blue building markers
-export async function initEstateMap(container, points, parcels) {
+export async function initEstateMap(container, points, parcels, focus) {
   const c = (points || []).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon));
   let maplibregl;
   try {
@@ -187,6 +187,31 @@ export async function initEstateMap(container, points, parcels) {
           paint: { 'fill-color': PARCEL, 'fill-opacity': 0.18 } }, 'clusters');
         map.addLayer({ id: 'parcels-line', type: 'line', source: 'parcels', minzoom: 13,
           paint: { 'line-color': PARCEL, 'line-width': 1.5, 'line-opacity': 0.85 } }, 'clusters');
+      }
+    }
+    // Fokus (Auswahl aus dem Baum): das Objekt heranzoomen und sein Info-Popup öffnen.
+    if (focus) {
+      const bp = c.find((p) => p.bblId === focus);
+      if (bp) {
+        map.easeTo({ center: [bp.lon, bp.lat], zoom: 15 });
+        popup.setLngLat([bp.lon, bp.lat]).setHTML(
+          `<strong>${esc(bp.label)}</strong>${bp.sub ? `<br><span class="small muted">${esc(bp.sub)}</span>` : ''}`
+          + `${bp.bblId ? `<br><span class="small muted">${esc(bp.bblId)}</span>` : ''}`
+          + `${bp.href ? `<br><a class="link" href="${esc(bp.href)}">Objekt ansehen →</a>` : ''}`,
+        ).addTo(map);
+      } else {
+        const pf = ((parcels && parcels.features) || []).find((f) => f.properties && f.properties.id === focus);
+        const ring = pf && pf.geometry && pf.geometry.coordinates && pf.geometry.coordinates[0];
+        if (ring && ring.length) {
+          const ct = [ring.reduce((s, p) => s + p[0], 0) / ring.length, ring.reduce((s, p) => s + p[1], 0) / ring.length];
+          const pr = pf.properties;
+          map.easeTo({ center: ct, zoom: 16 });
+          popup.setLngLat(ct).setHTML(
+            `<strong>${esc(pr.label)}</strong>${pr.sub ? `<br><span class="small muted">${esc(pr.sub)}</span>` : ''}`
+            + `<br><span class="small muted">Grundstück ${esc(pr.id)}${pr.area ? ' · ' + Number(pr.area).toLocaleString('de-CH') + ' m²' : ''}</span>`
+            + `${pr.href ? `<br><a class="link" href="${esc(pr.href)}">Objekt ansehen →</a>` : ''}`,
+          ).addTo(map);
+        }
       }
     }
   });

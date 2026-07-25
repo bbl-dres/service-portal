@@ -13,7 +13,9 @@ import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const LOGIN = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
-  let n = 0; while (!document.body && n++ < 120) await s(100);
+  // __login is exposed at the end of app.js boot() (after core.load()); poll for it
+  // instead of racing boot, or the login silently no-ops and the forms stay gated.
+  let n = 0; while (typeof window.__login !== 'function' && n++ < 120) await s(50);
   if (typeof window.__login !== 'function') return 'no __login';
   window.__login(); return 'ok';
 })()`;

@@ -31,7 +31,7 @@ const FAILED = new Set();
 
 // Fachlicher Name je Datenschlüssel — für das Fehlerband der Shell.
 const AREA = {
-  buildings: 'Liegenschaften', projects: 'Bauprojekte', services: 'Dienstleistungen',
+  buildings: 'Liegenschaften', parcels: 'Grundstücke', projects: 'Bauprojekte', services: 'Dienstleistungen',
   applications: 'Anwendungen', documents: 'Dokumente', media: 'Mediathek',
   weisungen: 'Weisungen', news: 'News', contacts: 'Kontakte', reference: 'Referenzdaten',
   datasets: 'Datenkatalog', catalogLabels: 'Katalog-Beschriftungen', appPages: 'Anwendungsseiten',
@@ -64,6 +64,22 @@ function normalizeBuilding(f) {
   };
 }
 
+// Grundstücke (parcels.geojson) — Polygon-Geometrie, verknüpft mit dem Gebäude über
+// das WE-Segment der bbl_id (1000/4840/01 ↔ 1000/4840/AF). Geometrie bleibt erhalten
+// für die Karten-Polygone und die Detail-Minikarte.
+function normalizeParcel(f) {
+  const p = (f && f.properties) || {};
+  return {
+    bbl_id: p.bbl_id, bbl_we: p.bbl_we || '', name: p.bbl_bez || p.bbl_id, plotNumber: p.av_nr || '',
+    street: [p.adr_str, p.adr_hsnr].filter(Boolean).join(' ').trim(),
+    zip: p.adr_plz || '', city: p.adr_ort || '', land: p.adr_land || '', canton: p.adr_reg || '',
+    gemeinde: p.bfs_gem || p.adr_ort || '', egrid: p.av_egrid || '',
+    gsf: p.larea_gsf || 0, zone: p.av_znut || p.av_zbez || '', portfolio: p.bbl_port || '—',
+    ownership: OWNERSHIP(p.bbl_eigen), status: p.bbl_stat || '',
+    lat: p.wgs84_lat, lng: p.wgs84_lon, geom: (f && f.geometry) || null,
+  };
+}
+
 async function load() {
   const entries = await Promise.all(Object.entries(FILES).map(async ([k, url]) => {
     const isObj = OBJECT_FILES.has(k);
@@ -80,17 +96,17 @@ async function load() {
   }));
   for (const [k, v] of entries) DATA[k] = v;
 
-  // Golden Record separat laden: GeoJSON ist ein Objekt ({type,features}), nicht die
-  // Listenform der übrigen Dateien — daher eigener Pfad mit Normalisierung.
-  try {
-    const fc = await fetchJSON('data/buildings.geojson', { shape: 'object' });
-    DATA.buildings = (fc.features || []).map(normalizeBuilding).filter(b => b.bbl_id);
-    if (!DATA.buildings.length) throw new Error('keine Gebäude im Golden Record');
-  } catch (e) {
-    console.warn('[core] could not load data/buildings.geojson', e.message);
-    FAILED.add('buildings');
-    DATA.buildings = [];
-  }
+  // Golden Record (Gebäude + Grundstücke): GeoJSON-Objekte ({type,features}), nicht
+  // die Listenform der übrigen Dateien — eigener Pfad mit Normalisierung, aber
+  // parallel geladen, damit der Boot (window.__login etc.) nicht unnötig wartet.
+  const [bFc, pFc] = await Promise.all([
+    fetchJSON('data/buildings.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] buildings.geojson', e.message); return null; }),
+    fetchJSON('data/parcels.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] parcels.geojson', e.message); return null; }),
+  ]);
+  DATA.buildings = bFc ? (bFc.features || []).map(normalizeBuilding).filter((b) => b.bbl_id) : [];
+  if (!DATA.buildings.length) FAILED.add('buildings');
+  DATA.parcels = pFc ? (pFc.features || []).map(normalizeParcel).filter((p) => p.bbl_id) : [];
+  if (!pFc) FAILED.add('parcels');
   return DATA;
 }
 
@@ -101,6 +117,10 @@ export const core = {
   data: DATA,
   buildings: () => DATA.buildings || [],
   building: (id) => find(DATA.buildings, 'bbl_id', id),
+  parcels: () => DATA.parcels || [],
+  parcel: (id) => find(DATA.parcels, 'bbl_id', id),
+  // Grundstücke eines Gebäudes (oder umgekehrt) über das WE-Segment der bbl_id.
+  parcelsForBuilding: (bid) => { const we = String(bid || '').split('/')[1]; return (DATA.parcels || []).filter(p => String(p.bbl_id).split('/')[1] === we); },
   projects: () => DATA.projects || [],
   project: (id) => find(DATA.projects, 'projectId', id),
   projectsForBuilding: (bid) => (DATA.projects || []).filter(p => p.buildingId === bid),

@@ -174,13 +174,23 @@ export function notFound({ backHref, backLabel, title, body }) {
 
 // Aktive-Filter-Pillenreihe (zuvor in services/applications/katalog kopiert).
 // filters = [{ label, href }] — href = dieselbe Ansicht ohne diesen einen Filter.
-export function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurücksetzen' }) {
+// Zwei Modi, gleiche Optik (`.active-filters` / `.active-filter`): Katalogseiten
+// geben `href` je Pille + `resetHref` (Hash-Navigation, teilbar); JS-State-Seiten
+// (Portfolio) geben stattdessen `remove` (Daten-Token je Pille) — dann werden die
+// Pillen zu <button data-remove> und der Reset zu <button data-reset>, die der
+// Aufrufer verdrahtet. `label` überschreibt den Vorspann «Aktive Filter:».
+export function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurücksetzen', label = 'Aktive Filter:' }) {
   if (!filters || !filters.length) return '';
+  const pill = (f) => f.href != null
+    ? `<a class="badge badge--gray active-filter" href="${escape(f.href)}" aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</a>`
+    : `<button type="button" class="badge badge--gray active-filter" data-remove="${escape(f.remove == null ? '' : f.remove)}" aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</button>`;
+  const reset = resetHref != null
+    ? `<a class="btn btn--link" href="${escape(resetHref)}">${escape(resetLabel)}</a>`
+    : `<button type="button" class="btn btn--link" data-reset>${escape(resetLabel)}</button>`;
   return `<div class="active-filters mt-4" role="group" aria-label="Aktive Filter">
-    <span class="small muted">Aktive Filter:</span>
-    ${filters.map(f => `<a class="badge badge--gray active-filter" href="${escape(f.href)}"
-       aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</a>`).join('')}
-    <a class="btn btn--link" href="${escape(resetHref)}">${escape(resetLabel)}</a>
+    <span class="small muted">${escape(label)}</span>
+    ${filters.map(pill).join('')}
+    ${reset}
   </div>`;
 }
 
@@ -612,7 +622,7 @@ export function catalogueResults({
   visible, count, total, view = 'galerie', page = 1, totalPages = 1,
   card, listView, unit, gridCls = 'grid grid--3',
   paginationHref, paginationInputId, paginationLabel,
-  available = true, emptyMsg, unavailableMsg, note = '',
+  available = true, emptyMsg, unavailableMsg, note = '', header = true,
 }) {
   const body = count
     ? `${view === 'liste'
@@ -622,8 +632,10 @@ export function catalogueResults({
     : available
       ? empty(emptyMsg || `Keine ${escape(unit)} gefunden.`, { hint: 'Passen Sie Ihre Suche oder die Filter an — oben lassen sich aktive Filter zurücksetzen.' })
       : empty(unavailableMsg || `${unit} konnten nicht geladen werden (Ladefehler).`, { unavailable: true });
+  // header:false, wenn die Seite bereits eine C.catalogueBar rendert (die Trefferzahl
+  // + Ansichtswechsel selbst enthält) — dann nur Hinweis + Trefferkörper.
   return `<section class="mt-6">
-      ${resultsHeader({ count, total, unit, page, totalPages, view })}
+      ${header ? resultsHeader({ count, total, unit, page, totalPages, view }) : ''}
       ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
       ${body}
     </section>`;
@@ -685,7 +697,8 @@ export function catalogueControls({ formId, inputId, searchLabel, placeholder = 
 // Ansichtswechsel (behält die Seite) und Pagination. `hash(patch)` baut den Ziel-
 // Hash aus Basiszustand + patch (Aufrufer bäckt die Basis ein). Mehrwertige Filter
 // (z. B. Themen bei services) verdrahtet der Aufrufer separat.
-export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, totalPages = 1, hash, filters = [] }) {
+export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, totalPages = 1, hash, filters = [],
+  sortId, sortParam = 'sort', filterToggleId, panelId }) {
   const form = mount.querySelector('#' + formId);
   if (form) form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -696,10 +709,70 @@ export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, t
     const el = mount.querySelector('#' + id);
     if (el) el.addEventListener('change', (e) => { location.hash = hash({ [param]: e.target.value, page: 1 }); });
   });
+  // Sortierung (catbar): Wert → Hash, Seite 1.
+  if (sortId) {
+    const s = mount.querySelector('#' + sortId);
+    if (s) s.addEventListener('change', (e) => { location.hash = hash({ [sortParam]: e.target.value, page: 1 }); });
+  }
+  // Filter-Umschalter (catbar): Panel ein-/ausblenden (rein clientseitig, kein Hash).
+  if (filterToggleId && panelId) {
+    const btn = mount.querySelector('#' + filterToggleId), panel = mount.querySelector('#' + panelId);
+    if (btn && panel) btn.addEventListener('click', () => { const open = !panel.hidden; panel.hidden = open; btn.setAttribute('aria-expanded', String(!open)); });
+  }
   mount.querySelectorAll('.view-switch__btn').forEach((btn) => {
     btn.addEventListener('click', () => { location.hash = hash({ page, view: btn.getAttribute('data-view') }); });
   });
   if (pageInputId) wirePagination(mount, pageInputId, page, totalPages, (target) => { location.hash = hash({ page: target }); });
+}
+
+// --- Kompakte Katalogleiste (catbar) ----------------------------------------
+// Einzeilige, wiederverwendbare Toolbar für alle Katalogansichten (Portfolio,
+// Dienstleistungen, Datenbezug, Anwendungen): Suche + Trefferzahl links; dann —
+// hinter EINER Trennlinie rechts — Sortierung, Filter-Umschalter (mit Aktiv-Zähler)
+// und der Ansichtswechsel. Der Filter öffnet ein einklappbares Panel darunter, das
+// die früher fest sichtbaren Filter-Dropdowns aufnimmt. Reines Markup; jede Seite
+// verdrahtet Suche/Sort/Filter/Ansicht selbst (Portfolio: JS-State, Katalogseiten:
+// Hash). `countId` benennt den (per JS gefüllten) Trefferzähler; `sort` = optionales
+// Dropdown {id,name,label,value,options:[{value,label}]}; `views` = viewSwitch-Items;
+// `panel` = fertiges Filter-HTML (RAW, der Aufrufer escaped).
+export function catalogueBar({
+  formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', countId = 'cat-count', count = '',
+  sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
+  panelId = '', panel = '', panelHidden = true,
+  view = 'galerie', views,
+}) {
+  // Sortierung: bare Select, KEIN sichtbares Label (CD-Muster, vgl. indexPage.vue) —
+  // eine deaktivierte «Sortieren»-Option dient als In-Control-Hinweis, ein sr-only-
+  // Label als Zugänglichkeit. Passt keine Option (kein/leerer Sortierwert), zeigt die
+  // Platzhalter-Option «Sortieren»; sonst ist die aktuelle Sortierung selected.
+  const sortHtml = sort ? (() => {
+    const cur = sort.value == null ? '' : String(sort.value);
+    const hasSel = (sort.options || []).some((o) => String(o.value) === cur);
+    return `
+      <label class="sr-only" for="${escape(sort.id)}">${escape(sort.label || 'Sortierung')}</label>
+      <div class="select select--bare catbar__sort">
+        <select id="${escape(sort.id)}" name="${escape(sort.name || 'sort')}" class="input--outline input--sm">
+          <option disabled${hasSel ? '' : ' selected'}>${escape(sort.placeholder || 'Sortieren')}</option>${
+          (sort.options || []).map((o) => `<option value="${escape(o.value)}"${String(o.value) === cur ? ' selected' : ''}>${escape(o.label)}</option>`).join('')}</select>
+        <div class="select__icon">${CHEVRON_SVG}</div>
+      </div>`;
+  })() : '';
+  // Filter-Umschalter: bare Button mit Chevron, der beim Öffnen kippt (CD .search__filters__actions).
+  const filterHtml = filterId ? `
+      <button type="button" class="btn btn--bare btn--sm catbar__filter" id="${escape(filterId)}" aria-expanded="${!panelHidden}"${panelId ? ` aria-controls="${escape(panelId)}"` : ''}>
+        ${icon('Filter', 'btn__icon')}<span class="btn__text">${escape(filterLabel)}</span><span class="catbar__fcount"${filterCount ? '' : ' hidden'}>${filterCount ? `(${filterCount})` : ''}</span>${icon('ChevronDown', 'catbar__chev')}
+      </button>` : '';
+  return `
+    <div class="catbar">
+      <form class="catbar__search" id="${escape(formId)}" role="search">
+        <label class="sr-only" for="${escape(inputId)}">${escape(searchLabel)}</label>
+        <input id="${escape(inputId)}" type="search" placeholder="${escape(placeholder)}" value="${escape(q)}" autocomplete="off">
+        <button class="btn btn--bare btn--icon-only catbar__submit" type="submit" aria-label="Suchen" title="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
+      </form>
+      <div class="catbar__count" id="${escape(countId)}">${count}</div>
+      <div class="catbar__controls">${sortHtml}${filterHtml}${viewSwitch(view, views)}</div>
+    </div>${filterId ? `
+    <div class="catbar__panel" id="${escape(panelId)}"${panelHidden ? ' hidden' : ''}>${panel}</div>` : ''}`;
 }
 
 // --- Aktionsmenü (Kebab-Dropdown) --------------------------------------------
@@ -800,7 +873,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
   notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
-  catalogueResults, announceCatalogue, catalogueHash, catalogueControls, wireCatalogue, pipeline,
+  catalogueResults, announceCatalogue, catalogueHash, catalogueControls, catalogueBar, wireCatalogue, pipeline,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,

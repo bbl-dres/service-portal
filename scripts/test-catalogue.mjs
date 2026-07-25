@@ -22,15 +22,15 @@ const PROBE_DETAIL = `(async () => {
   return { h1: h1 ? h1.textContent.trim() : null, notFound };
 })()`;
 
-const wait = `const sleep = ms => new Promise(r => setTimeout(r, ms)); let n = 0; while (!document.querySelector('.service-controls, .empty') && n++ < 120) await sleep(100);`;
+const wait = `const sleep = ms => new Promise(r => setTimeout(r, ms)); let n = 0; while (!document.querySelector('.catbar, .empty') && n++ < 120) await sleep(100);`;
 
 const PROBE_RENDER = `(async () => {
   ${wait}
-  const form = document.querySelector('.service-controls');
-  const input = form && form.querySelector('input[type=search]');
-  const selects = form ? [...form.querySelectorAll('select')] : [];
+  const bar = document.querySelector('.catbar');
+  const input = bar && bar.querySelector('input[type=search]');
+  const selects = [...document.querySelectorAll('.catbar__panel select')];   // Filter jetzt im einklappbaren Panel
   return {
-    ok: !!form, hasSearch: !!input, inputValue: input ? input.value : null,
+    ok: !!bar, hasSearch: !!input, inputValue: input ? input.value : null,
     selectCount: selects.length,
     viewBtns: [...document.querySelectorAll('.view-switch__btn')].map(b => ({ view: b.dataset.view, pressed: b.getAttribute('aria-pressed') })),
     cards: document.querySelectorAll('.card').length,
@@ -43,9 +43,9 @@ const PROBE_RENDER = `(async () => {
 
 const probeSubmit = (term) => `(async () => {
   ${wait}
-  const input = document.querySelector('.service-controls input[type=search]');
+  const input = document.querySelector('.catbar input[type=search]');
   input.value = ${JSON.stringify(term)};
-  document.querySelector('.service-controls').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+  document.querySelector('.catbar__search').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
   return location.hash;
 })()`;
 
@@ -57,10 +57,22 @@ const probeView = (view) => `(async () => {
 
 const PROBE_FILTER = `(async () => {
   ${wait}
-  const sel = document.querySelector('.service-controls select');
+  const sel = document.querySelector('.catbar__panel select');
   if (!sel) return { ok: false, err: 'no filter select' };
   const opt = [...sel.options].find(o => o.value);
   if (!opt) return { ok: false, err: 'no non-empty option' };
+  sel.value = opt.value;
+  sel.dispatchEvent(new Event('change', { bubbles: true }));
+  return { ok: true, value: opt.value, hash: location.hash };
+})()`;
+
+// catbar sort: pick the first real option, expect ?sort=<value> in the hash.
+const PROBE_SORT = `(async () => {
+  ${wait}
+  const sel = document.querySelector('.catbar__sort select');
+  if (!sel) return { ok: false };
+  const opt = [...sel.options].find(o => o.value && !o.disabled);
+  if (!opt) return { ok: false };
   sel.value = opt.value;
   sel.dispatchEvent(new Event('change', { bubbles: true }));
   return { ok: true, value: opt.value, hash: location.hash };
@@ -127,6 +139,12 @@ const dec = (h) => decodeURIComponent(h);
       p = await openPage(cdp, cat.base);
       const hView = await p.evaluate(probeView('liste'));
       check(/[?&]view=liste/.test(hView), `view switch → ${hView.replace(APP_BASE, '#')}`);
+      await p.closeTarget();
+
+      // 5b. catbar sort interaction → hash gets ?sort=<value>
+      p = await openPage(cdp, cat.base);
+      const so = await p.evaluate(PROBE_SORT);
+      check(so.ok && dec(so.hash).includes('sort=' + so.value), `sort change → hash carries "sort=${so.ok ? so.value : '?'}"`);
       await p.closeTarget();
 
       // 6. filter change → hash carries the chosen value

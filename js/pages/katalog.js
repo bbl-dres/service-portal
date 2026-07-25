@@ -32,18 +32,31 @@ function list(ctx) {
   const themen = uniq(all.map(d => t(d.meta.thema))).sort((a, b) => a.localeCompare(b, 'de'));
   const klassen = uniq(all.map(d => d.meta.klassifizierung));
 
+  // Sortierung (catbar): leer = Datenreihenfolge («Sortieren»-Platzhalter). Das
+  // Ausgabedatum steht als deutscher Text («10. Mai 2025») → Monat parsen zum Sortieren.
+  const DE_MON = { Januar: 1, Februar: 2, 'März': 3, April: 4, Mai: 5, Juni: 6, Juli: 7, August: 8, September: 9, Oktober: 10, November: 11, Dezember: 12 };
+  const dateKey = (s) => { const m = String(s || '').match(/(\d+)\.\s*([A-Za-zäöü]+)\s*(\d{4})/); return m ? Number(m[3]) * 10000 + (DE_MON[m[2]] || 0) * 100 + Number(m[1]) : 0; };
+  const SORT_OPTS = [{ value: 'title', label: 'Titel (A–Z)' }, { value: 'thema', label: 'Thema' }, { value: 'date', label: 'Ausgabedatum (neuste zuerst)' }];
+  const SORTS = {
+    title: (a, b) => t(a.title).localeCompare(t(b.title), 'de'),
+    thema: (a, b) => t(a.meta.thema).localeCompare(t(b.meta.thema), 'de') || t(a.title).localeCompare(t(b.title), 'de'),
+    date: (a, b) => dateKey(b.meta.ausgabedatum) - dateKey(a.meta.ausgabedatum) || t(a.title).localeCompare(t(b.title), 'de'),
+  };
+  const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
+
   const matches = (d) =>
     (!q || (t(d.title) + ' ' + t(d.description) + ' ' + t(d.fullDescription)).toLowerCase().includes(q)) &&
     (!thema || t(d.meta.thema) === thema) &&
     (!klass || d.meta.klassifizierung === klass) &&
     (!tags.length || tags.every(x => (d.tags || []).includes(x)));
 
-  const datasets = all.filter(matches);
+  const filtered = all.filter(matches);
+  const datasets = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
   const totalPages = Math.max(1, Math.ceil(datasets.length / PER_PAGE));
   const page = Math.min(wanted, totalPages);
   const visible = datasets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const base = { q: rawQ, thema, klass, tag: tags, view };
+  const base = { q: rawQ, thema, klass, tag: tags, sort: sortKey, view };
   const hash = (patch = {}) => C.catalogueHash('#/data/katalog', { ...base, ...patch });
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert — das
@@ -93,18 +106,22 @@ function list(ctx) {
       title: 'Datenbezug und API Verzeichnis',
       lead: 'Die Datensätze des BBL — beschrieben nach DCAT-AP-CH, mit Bezugswegen, Klassifizierung und Datenverantwortung.',
     })}
-    ${C.catalogueControls({
+    ${C.catalogueBar({
       formId: 'ds-search', inputId: 'dsq', searchLabel: 'Datensatz suchen', placeholder: 'Datensatz suchen...', q: rawQ,
-      filtersLabel: 'Datensätze filtern',
-      filters: `
+      countId: 'ds-count', count: `<strong>${datasets.length}</strong> von ${all.length} Datensätzen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
+      sort: { id: 'ds-sort', value: sortKey, options: SORT_OPTS },
+      filterId: 'ds-filter', filterLabel: 'Filter', filterCount: (thema ? 1 : 0) + (klass ? 1 : 0) + tags.length,
+      panelId: 'ds-filters', panel: `
         ${C.select({ id: 'thema-filter', name: 'thema', label: 'Thema', value: thema,
           options: [{ value: '', label: 'Alle Themen' }, ...themen.map(x => ({ value: x, label: x }))] })}
         ${C.select({ id: 'klass-filter', name: 'klass', label: 'Klassifizierung', value: klass,
-          options: [{ value: '', label: 'Alle Klassifizierungen' }, ...klassen.map(x => ({ value: x, label: klassLabel(core, x) }))] })}`,
+          options: [{ value: '', label: 'Alle Klassifizierungen' }, ...klassen.map(x => ({ value: x, label: klassLabel(core, x) }))] })}
+        <a class="btn btn--bare btn--sm" href="${hash({ thema: '', klass: '', tag: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
+      view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
     })}
     ${filterBar}
     ${C.catalogueResults({
-      visible, count: datasets.length, total: all.length, view, page, totalPages,
+      visible, count: datasets.length, total: all.length, view, page, totalPages, header: false,
       card, listView, unit: 'Datensätzen',
       paginationInputId: 'ds-page', paginationLabel: 'Seitennavigation Datensätze',
       paginationHref: (p) => hash({ page: p }),
@@ -119,6 +136,7 @@ function list(ctx) {
   C.wireCatalogue(mount, {
     formId: 'ds-search', inputId: 'dsq', pageInputId: 'ds-page', page, totalPages, hash,
     filters: [{ id: 'thema-filter', param: 'thema' }, { id: 'klass-filter', param: 'klass' }],
+    sortId: 'ds-sort', filterToggleId: 'ds-filter', panelId: 'ds-filters',
   });
 }
 

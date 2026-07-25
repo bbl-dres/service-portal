@@ -22,6 +22,13 @@ const AUDIENCES = [
   { value: 'both',     label: 'Intern + Extern' },
 ];
 
+// Sortierung (catbar): leer = Standard (Schlüsselanwendungen zuerst, «Sortieren»-Platzhalter).
+const SORT_OPTS = [{ value: 'name', label: 'Name (A–Z)' }, { value: 'group', label: 'Bereich' }];
+const SORTS = {
+  name: (a, b) => a.name.localeCompare(b.name, 'de'),
+  group: (a, b) => a.group.localeCompare(b.group, 'de') || a.name.localeCompare(b.name, 'de'),
+};
+
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
   if (params[0]) {
@@ -43,6 +50,7 @@ export default async function render(ctx) {
   const audience = AUDIENCES.some(a => a.value === query.get('audience')) ? query.get('audience') : '';
   const view = query.get('view') === 'liste' ? 'liste' : 'galerie';
   const wanted = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
+  const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
 
   const all = core.applications();
   const matches = (a) =>
@@ -50,13 +58,14 @@ export default async function render(ctx) {
     (!bereich || a.bereich === bereich) &&
     (!audience || a.audience === audience);
 
-  // Schlüsselanwendungen zuerst, sonst Reihenfolge der Datenquelle
-  const apps = all.filter(matches).sort((a, b) => (b.hero ? 1 : 0) - (a.hero ? 1 : 0));
+  // Standard: Schlüsselanwendungen zuerst; explizite Sortierung überschreibt das.
+  const filtered = all.filter(matches);
+  const apps = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered.slice().sort((a, b) => (b.hero ? 1 : 0) - (a.hero ? 1 : 0));
   const totalPages = Math.max(1, Math.ceil(apps.length / PER_PAGE));
   const page = Math.min(wanted, totalPages);
   const visible = apps.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const base = { q: rawQ, bereich, audience, view };
+  const base = { q: rawQ, bereich, audience, sort: sortKey, view };
   const hash = (patch = {}) => C.catalogueHash('#/applications', { ...base, ...patch });
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert.
@@ -102,18 +111,22 @@ export default async function render(ctx) {
       title: 'Anwendungen',
       lead: 'Alle Anwendungen des BBL an einem Ort — von den Fachanwendungen für Bauten über Logistik bis zu den zentralen Systemen der Bundesverwaltung.',
     })}
-    ${C.catalogueControls({
+    ${C.catalogueBar({
       formId: 'app-search', inputId: 'aq', searchLabel: 'Anwendung suchen', placeholder: 'Anwendung suchen...', q: rawQ,
-      filtersLabel: 'Anwendungen filtern',
-      filters: `
+      countId: 'app-count', count: `<strong>${apps.length}</strong> von ${all.length} Anwendungen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
+      sort: { id: 'app-sort', value: sortKey, options: SORT_OPTS },
+      filterId: 'app-filter', filterLabel: 'Filter', filterCount: (bereich ? 1 : 0) + (audience ? 1 : 0),
+      panelId: 'app-filters', panel: `
         ${C.select({ id: 'bereich-filter', name: 'bereich', label: 'Bereich', value: bereich,
           options: [{ value: '', label: 'Alle Bereiche' }, ...BEREICHE.map(b => ({ value: b.key, label: b.label }))] })}
         ${C.select({ id: 'audience-filter', name: 'audience', label: 'Zielgruppe', value: audience,
-          options: [{ value: '', label: 'Alle Zielgruppen' }, ...AUDIENCES] })}`,
+          options: [{ value: '', label: 'Alle Zielgruppen' }, ...AUDIENCES] })}
+        <a class="btn btn--bare btn--sm" href="${hash({ bereich: '', audience: '' })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
+      view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
     })}
     ${filterBar}
     ${C.catalogueResults({
-      visible, count: apps.length, total: all.length, view, page, totalPages,
+      visible, count: apps.length, total: all.length, view, page, totalPages, header: false,
       card, listView, unit: 'Anwendungen',
       paginationInputId: 'app-page', paginationLabel: 'Seitennavigation Anwendungen',
       paginationHref: (p) => hash({ page: p }),
@@ -126,6 +139,7 @@ export default async function render(ctx) {
   C.wireCatalogue(mount, {
     formId: 'app-search', inputId: 'aq', pageInputId: 'app-page', page, totalPages, hash,
     filters: [{ id: 'bereich-filter', param: 'bereich' }, { id: 'audience-filter', param: 'audience' }],
+    sortId: 'app-sort', filterToggleId: 'app-filter', panelId: 'app-filters',
   });
 }
 

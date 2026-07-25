@@ -17,16 +17,25 @@ export default async function render(ctx) {
   const domains = core.ref().domains || [];
   const all = core.services();
 
+  // Sortierung (catbar): leer = Datenreihenfolge (Platzhalter «Sortieren»).
+  const SORT_OPTS = [{ value: 'title', label: 'Bezeichnung (A–Z)' }, { value: 'domain', label: 'Bereich' }];
+  const SORTS = {
+    title: (a, b) => a.title.localeCompare(b.title, 'de'),
+    domain: (a, b) => domainLabel(domains, a.domain).localeCompare(domainLabel(domains, b.domain), 'de') || a.title.localeCompare(b.title, 'de'),
+  };
+  const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
+
   const matches = (s) => !q || (s.title + ' ' + s.short + ' ' + s.description).toLowerCase().includes(q);
   const matchesAudience = (s) => !selectedAudience || s.audience === selectedAudience;
   const matchesTopic = (s) => !selectedTopics.length || selectedTopics.includes(s.domain);
-  const services = all.filter(s => matches(s) && matchesAudience(s) && matchesTopic(s));
+  const filtered = all.filter(s => matches(s) && matchesAudience(s) && matchesTopic(s));
+  const services = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
   const totalPages = Math.max(1, Math.ceil(services.length / perPage));
   const page = Math.min(currentPage, totalPages);
   const visibleServices = services.slice((page - 1) * perPage, page * perPage);
 
   // `topic` ist mehrwertig (Array) → als Parametername `topic` komma-verbunden.
-  const base = { q: rawQ, audience: selectedAudience, topic: selectedTopics, view };
+  const base = { q: rawQ, audience: selectedAudience, topic: selectedTopics, sort: sortKey, view };
   const hash = (patch = {}) => C.catalogueHash('#/services', { ...base, ...patch });
 
   // also-in hint across other surfaces (services-first, then content)
@@ -70,21 +79,28 @@ export default async function render(ctx) {
     ? `Auch in: ${otherHits.apps ? `<a href="#/applications">${otherHits.apps} Anwendung(en)</a> · ` : ''}${otherHits.docs ? `<a href="#/app/document-archive">${otherHits.docs} Dokument(e)</a> · ` : ''}${otherHits.weisungen ? `<a href="#/knowledge">${otherHits.weisungen} Weisung(en)</a>` : ''}`
     : '';
 
+  const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
+  const filterPanel = `
+    ${C.select({ id: 'audience-filter', name: 'audience', label: 'Zielgruppe', value: selectedAudience,
+      options: [{ value: '', label: 'Alle Zielgruppen' }, ...audienceOptions()] })}
+    ${C.select({ id: 'topic-filter', name: 'topic', label: 'Thema', value: '',
+      options: [{ value: '', label: 'Alle Themen' }, ...domains.filter(d => d.thema).map(d => ({ value: d.key, label: d.label }))] })}
+    <a class="btn btn--bare btn--sm" href="${hash({ audience: '', topic: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`;
+
   mount.innerHTML = `
   <div class="container section">
     ${C.pageHeader({ title: 'Dienstleistungen', lead: 'Was möchten Sie tun? Als «Vorgang» gekennzeichnete Dienstleistungen starten einen Ablauf; Informationsangebote führen weiter.' })}
-    ${C.catalogueControls({
+    ${C.catalogueBar({
       formId: 'svc-search', inputId: 'sq', searchLabel: 'Dienstleistung suchen', placeholder: 'Dienstleistung suchen…', q: rawQ,
-      filtersLabel: 'Dienstleistungen filtern',
-      filters: `
-        ${C.select({ id: 'audience-filter', name: 'audience', label: 'Zielgruppe', value: selectedAudience,
-          options: [{ value: '', label: 'Alle Zielgruppen' }, ...audienceOptions()] })}
-        ${C.select({ id: 'topic-filter', name: 'topic', label: 'Thema', value: '',
-          options: [{ value: '', label: 'Alle Themen' }, ...domains.filter(d => d.thema).map(d => ({ value: d.key, label: d.label }))] })}`,
+      countId: 'svc-count', count: `<strong>${services.length}</strong> von ${all.length} Dienstleistungen${pageInfo}`,
+      sort: { id: 'svc-sort', value: sortKey, options: SORT_OPTS },
+      filterId: 'svc-filter', filterLabel: 'Filter', filterCount: (selectedAudience ? 1 : 0) + selectedTopics.length,
+      panelId: 'svc-filters', panel: filterPanel,
+      view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
     })}
     ${filterBar}
     ${C.catalogueResults({
-      visible: visibleServices, count: services.length, total: all.length, view, page, totalPages,
+      visible: visibleServices, count: services.length, total: all.length, view, page, totalPages, header: false,
       card, listView, unit: 'Dienstleistungen',
       paginationInputId: 'svc-page', paginationLabel: 'Seitennavigation Dienstleistungen',
       paginationHref: (p) => hash({ page: p }),
@@ -97,6 +113,7 @@ export default async function render(ctx) {
   C.wireCatalogue(mount, {
     formId: 'svc-search', inputId: 'sq', pageInputId: 'svc-page', page, totalPages, hash,
     filters: [{ id: 'audience-filter', param: 'audience' }],
+    sortId: 'svc-sort', filterToggleId: 'svc-filter', panelId: 'svc-filters',
   });
   // Thema ist mehrwertig — gewähltes Thema zur aktiven Liste hinzufügen (nicht ersetzen).
   mount.querySelector('#topic-filter').addEventListener('change', (e) => {
