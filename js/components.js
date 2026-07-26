@@ -853,7 +853,7 @@ export function catalogueBar({
         <button class="btn btn--bare btn--icon-only catbar__submit" type="submit" aria-label="Suchen" title="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </form>
       <div class="catbar__count" id="${escape(countId)}">${count}</div>
-      <div class="catbar__controls">${sortHtml}${filterHtml}${viewSwitch(view, views)}</div>
+      <div class="catbar__controls">${sortHtml}${filterHtml}${views ? viewSwitch(view, views) : ''}</div>
     </div>${filterId ? `
     <div class="catbar__panel" id="${escape(panelId)}"${panelHidden ? ' hidden' : ''}>${panel}</div>` : ''}`;
 }

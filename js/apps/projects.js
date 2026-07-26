@@ -1,208 +1,332 @@
-// Bauprojekte / EPPM — Übersicht (Karten/Liste) + Projektdetail.
+// Bauprojekte / EPPM — map-first Explorer (Karte/Galerie/Liste + räumlicher Baum +
+// catbar), dieselben Muster wie das Liegenschaften Inventar (js/apps/portfolio.js).
+// Projekte erben Ort und Koordinaten von ihrem Gebäude (buildingId → core.building).
+// Ein Projekt wird über #/app/projects/<projectId> angesprochen.
+import { initEstateMap } from '../buildings-map.js';
+
+let pjMap = null;
+function freePjMap() { if (pjMap) { try { pjMap.remove(); } catch { /* schon weg */ } pjMap = null; } }
+const weOf = (id) => String(id || '').split('/')[1] || '';
+const LAND = { CH: 'Schweiz', DE: 'Deutschland', US: 'USA', JP: 'Japan', BR: 'Brasilien', AU: 'Australien' };
+const landName = (l) => LAND[l] || l || '—';
+
+const CRUMBS = [
+  { label: 'Startseite', href: '#/' },
+  { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
+];
+
+const PROJECT_STATUS_VARIANT = { geplant: 'info', aktiv: 'warning', sistiert: 'gray', abgeschlossen: 'success', abgebrochen: 'error' };
+const AMPEL_VARIANT = { gruen: 'success', gelb: 'warning', rot: 'error' };
+const AMPEL_LABEL = { gruen: 'Grün', gelb: 'Gelb', rot: 'Rot' };
+const chf = (x) => 'CHF ' + Number(x || 0).toLocaleString('de-CH');
+
+// Sortierung der Ergebnisliste (Galerie/Liste; die Karte ist reihenfolgeunabhängig).
+const nameCmp = (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de');
+const SORTS = {
+  name: nameCmp,
+  cost: (a, b) => (b.plannedTotalCost || 0) - (a.plannedTotalCost || 0) || nameCmp(a, b),
+  status: (a, b) => String(a.status || '').localeCompare(String(b.status || ''), 'de') || nameCmp(a, b),
+  sia: (a, b) => String(a.siaPhase || '').localeCompare(String(b.siaPhase || '')) || nameCmp(a, b),
+};
+const SORT_OPTS = [
+  { value: 'name', label: 'Bezeichnung (A–Z)' },
+  { value: 'cost', label: 'Investition (grösste zuerst)' },
+  { value: 'status', label: 'Status' },
+  { value: 'sia', label: 'SIA-Phase' },
+];
+
 export default async function render(ctx) {
   const { params } = ctx;
   if (params[0]) return detail(ctx, params[0]);
   return overview(ctx);
 }
 
-// ---- helpers ------------------------------------------------------------
+// ---- shared badges ------------------------------------------------------
+function statusLabel(core, id) { const m = (core.ref().projectStatuses || []).find(s => s.id === id); return m ? m.label : id; }
+function projectStatusBadge(C, core, status) { return C.badge(statusLabel(core, status), PROJECT_STATUS_VARIANT[status] || 'gray'); }
+function ampelBadge(C, prefix, value) { return C.badge(`${prefix}: ${AMPEL_LABEL[value] || value}`, AMPEL_VARIANT[value] || 'gray'); }
 
-const PROJECT_STATUS_VARIANT = {
-  geplant: 'info', aktiv: 'warning', sistiert: 'gray', abgeschlossen: 'success', abgebrochen: 'error',
-};
-const AMPEL_VARIANT = { gruen: 'success', gelb: 'warning', rot: 'error' };
-const AMPEL_LABEL = { gruen: 'Grün', gelb: 'Gelb', rot: 'Rot' };
-
-function statusLabel(core, id) {
-  const m = (core.ref().projectStatuses || []).find(s => s.id === id);
-  return m ? m.label : id;
-}
-function projectStatusBadge(C, core, status) {
-  return C.badge(statusLabel(core, status), PROJECT_STATUS_VARIANT[status] || 'gray');
-}
-function ampelBadge(C, prefix, value) {
-  const v = AMPEL_VARIANT[value] || 'gray';
-  const l = AMPEL_LABEL[value] || value;
-  return C.badge(`${prefix}: ${l}`, v);
-}
-function chf(x) {
-  return 'CHF ' + Number(x || 0).toLocaleString('de-CH');
-}
-
-// ---- overview -----------------------------------------------------------
-
+// ---- overview (map-first explorer) --------------------------------------
 function overview(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
+  freePjMap();
   setTitle('Bauprojekte / EPPM');
-  setCrumbs([
-    { label: 'Startseite', href: '#/' },
-    { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
-    { label: 'Bauprojekte / EPPM' },
-  ]);
+  setCrumbs([...CRUMBS, { label: 'Bauprojekte / EPPM' }]);
 
-  const all = core.projects();
   const projectStatuses = core.ref().projectStatuses || [];
-  const subPortfolios = [...new Set(all.map(p => p.subPortfolio))].sort((a, b) => a.localeCompare(b, 'de'));
-
-  // local UI state (from query, then mutated locally)
-  const PHASE_GROUPS = {
-    laufend: ['geplant', 'aktiv', 'sistiert'],
-    abgeschlossen: ['abgeschlossen', 'abgebrochen'],
-    alle: null,
-  };
-  const state = {
-    phase: PHASE_GROUPS[query.get('phase')] !== undefined ? query.get('phase') : 'laufend',
-    sub: query.get('sub') || '',          // subPortfolio filter
-    status: query.get('status') || '',    // single status filter
-    view: query.get('view') === 'liste' ? 'liste' : 'karten',
-  };
-  if (!(state.phase in PHASE_GROUPS)) state.phase = 'laufend';
-
-  function filtered() {
-    return all.filter(p => {
-      const grp = PHASE_GROUPS[state.phase];
-      if (grp && !grp.includes(p.status)) return false;
-      if (state.sub && p.subPortfolio !== state.sub) return false;
-      if (state.status && p.status !== state.status) return false;
-      return true;
-    });
-  }
-
-  function phaseTabs() {
-    const tabs = [
-      ['laufend', 'Laufend'],
-      ['abgeschlossen', 'Abgeschlossen'],
-      ['alle', 'Alle'],
-    ];
-    // Das sind Filter, keine Tabs — deshalb ohne role="tab"/tablist, sonst
-    // kündigt assistive Technik Panels an, die es nicht gibt (P2-5).
-    return `<div class="tab__controls-container"><div class="tab__controls" role="group" aria-label="Projektphase">${tabs.map(([id, label]) =>
-      `<button type="button" class="tab__control${state.phase === id ? " tab__control--active" : ""}" aria-pressed="${state.phase === id}" data-phase="${id}">${C.escape(label)}</button>`
-    ).join('')}</div></div>`;
-  }
-
-  function chipRow() {
-    const sub = `<div class="list list--flex list--wrap" data-chipgroup="sub" role="group" aria-label="Teilportfolio">
-      <button type="button" class="tag-item${!state.sub ? " tag-item--active" : ""}" aria-pressed="${!!(!state.sub)}" data-sub=""><span class="tag-item__inner"><span class="tag-item__text">Alle Teilportfolios</span></span></button>
-      ${subPortfolios.map(s => `<button type="button" class="tag-item${state.sub === s ? " tag-item--active" : ""}" aria-pressed="${!!(state.sub === s)}" data-sub="${C.escape(s)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(s)}</span></span></button>`).join('')}
-    </div>`;
-    const stat = `<div class="list list--flex list--wrap mt-2" data-chipgroup="status" role="group" aria-label="Status">
-      <button type="button" class="tag-item${!state.status ? " tag-item--active" : ""}" aria-pressed="${!!(!state.status)}" data-status=""><span class="tag-item__inner"><span class="tag-item__text">Alle Status</span></span></button>
-      ${projectStatuses.map(s => `<button type="button" class="tag-item${state.status === s.id ? " tag-item--active" : ""}" aria-pressed="${!!(state.status === s.id)}" data-status="${s.id}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(s.label)}</span></span></button>`).join('')}
-    </div>`;
-    return sub + stat;
-  }
-
-  function statsBlock(list) {
-    const aktiv = list.filter(p => p.status === 'aktiv').length;
-    const invest = list.reduce((sum, p) => sum + (p.plannedTotalCost || 0), 0);
-    return `<div class="stats mt-6">
-      <div class="stat"><div class="stat__num">${list.length}</div><div class="stat__label">Anzahl Projekte</div></div>
-      <div class="stat"><div class="stat__num">${aktiv}</div><div class="stat__label">davon aktiv</div></div>
-      <div class="stat"><div class="stat__num">${C.escape(chf(invest))}</div><div class="stat__label">Gesamtinvestition</div></div>
-    </div>`;
-  }
-
-  function viewToggle() {
-    // CD-Ansichtsschalter statt gefüllter Umschalt-Buttons (btn--filled ist für
-    // Formularabschluss reserviert, nicht für Ansichtswechsel).
-    return C.viewSwitch(state.view, [['karten', 'Kartenansicht', 'Apps'], ['liste', 'Listenansicht', 'List']]);
-  }
-
-  function projectCard(p) {
+  // Projekte mit Ort/Koordinaten des Gebäudes anreichern.
+  const objects = core.projects().map((p) => {
     const b = core.building(p.buildingId);
+    return {
+      ...p, id: p.projectId,
+      land: (b && b.land) || '', region: (b && b.canton) || '', city: (b && b.city) || '', we: p.buildingId ? weOf(p.buildingId) : '',
+      lat: b && b.lat, lon: b && b.lng, buildingName: (b && b.name) || p.buildingId, photo: b && b.photo, street: (b && b.street) || '', zip: (b && b.zip) || '',
+    };
+  });
+  const subPortfolios = [...new Set(objects.map((o) => o.subPortfolio))].filter(Boolean);
+  const phases = [...new Set(objects.map((o) => o.siaPhaseLabel))].filter(Boolean);
+
+  const state = {
+    view: ['karte', 'galerie', 'liste'].includes(query.get('view')) ? query.get('view') : 'karte',
+    sel: {}, focus: null, q: '', sort: 'name', filters: { status: [], sia: [], sub: [] }, page: 1,
+    perPage: { galerie: 9, liste: 25 },
+  };
+
+  const inSel = (o) => (!state.sel.id || o.id === state.sel.id)
+    && (!state.sel.land || o.land === state.sel.land) && (!state.sel.region || o.region === state.sel.region)
+    && (!state.sel.city || o.city === state.sel.city) && (!state.sel.we || o.we === state.sel.we);
+  const inFilters = (o) => (!state.filters.status.length || state.filters.status.includes(o.status))
+    && (!state.filters.sia.length || state.filters.sia.includes(o.siaPhaseLabel))
+    && (!state.filters.sub.length || state.filters.sub.includes(o.subPortfolio));
+  const inSearch = (o) => { const q = state.q.trim().toLowerCase(); return !q || `${o.name} ${o.projectNumber} ${o.pm} ${o.buildingName} ${o.city}`.toLowerCase().includes(q); };
+  const filtered = () => objects.filter((o) => inSel(o) && inFilters(o) && inSearch(o));
+
+  // --- spatial tree: Land › Region › Stadt › WE › Projekte -----------------
+  function buildTree() {
+    const t = {};
+    for (const o of objects) {
+      const L = (t[o.land] = t[o.land] || { n: 0, r: {} });
+      const R = (L.r[o.region] = L.r[o.region] || { n: 0, c: {} });
+      const Ci = (R.c[o.city] = R.c[o.city] || { n: 0, w: {} });
+      const W = (Ci.w[o.we] = Ci.w[o.we] || { n: 0, o: [] });
+      W.o.push(o); L.n++; R.n++; Ci.n++; W.n++;
+    }
+    return t;
+  }
+  const esc = (s) => C.escape(String(s == null ? '' : s));
+  const rowContent = (iconName, idText, label) => `${C.icon(iconName, 'pf-tree__ico')}${idText ? `<span class="pf-tree__id">${esc(idText)}</span>` : ''}<span class="pf-tree__label">${esc(label)}</span>`;
+  const node = (content, count, attrs, children) => `<li class="pf-tree__item">
+      <button type="button" class="pf-tree__node" ${attrs} aria-expanded="false">
+        ${C.icon('ChevronRight', 'pf-tree__chev')}${content}<span class="pf-tree__n">${count}</span>
+      </button>
+      <ul class="pf-tree__children" hidden>${children}</ul></li>`;
+  // Blatt = Auswahl-Button (kein Detail-Sprung): filtert auf das Projekt + öffnet das Karten-Popup.
+  const leaf = (o) => `<li class="pf-tree__item"><button type="button" class="pf-tree__leaf" data-obj="${esc(o.id)}" data-land="${esc(o.land)}" data-region="${esc(o.region)}" data-city="${esc(o.city)}" data-we="${esc(o.we)}">${rowContent('Briefcase', o.projectNumber, o.name)}</button></li>`;
+  function treeHTML() {
+    const tree = buildTree();
+    const byDe = (a, b) => a.localeCompare(b, 'de');
+    return `<ul class="pf-tree">${Object.keys(tree).sort((a, b) => landName(a).localeCompare(landName(b), 'de')).map((L) => {
+      const land = tree[L];
+      const regions = Object.keys(land.r).sort(byDe).map((R) => {
+        const reg = land.r[R];
+        const cities = Object.keys(reg.c).sort(byDe).map((Cy) => {
+          const city = reg.c[Cy];
+          const wes = Object.keys(city.w).sort().map((W) => {
+            const we = city.w[W];
+            const projs = we.o.slice().sort((a, b) => byDe(a.name, b.name)).map(leaf).join('');
+            const bName = (we.o[0] || {}).buildingName || '';
+            return node(rowContent('Building', `WE ${W}`, bName), we.n, `data-land="${esc(L)}" data-region="${esc(R)}" data-city="${esc(Cy)}" data-we="${esc(W)}"`, projs);
+          }).join('');
+          return node(rowContent('MapMarker', '', Cy), city.n, `data-land="${esc(L)}" data-region="${esc(R)}" data-city="${esc(Cy)}"`, wes);
+        }).join('');
+        return node(rowContent('Map', '', R), reg.n, `data-land="${esc(L)}" data-region="${esc(R)}"`, cities);
+      }).join('');
+      return node(rowContent('Globe', '', landName(L)), land.n, `data-land="${esc(L)}"`, regions);
+    }).join('')}</ul>`;
+  }
+
+  // --- views (renderMain slices + appends CD pagination) -------------------
+  function pjCard(o) {
     return C.card({
-      title: p.name,
-      desc: p.teaser,
-      href: `#/app/projects/${p.projectId}`,
-      photo: { id: b?.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name },
-      badges: [
-        projectStatusBadge(C, core, p.status),
-        ampelBadge(C, 'Ziele', p.zielAmpel),
-        ampelBadge(C, 'Risiko', p.risikoAmpel),
-      ],
-      footer: `<span>${C.escape(p.projectNumber)}</span><span>${C.icon('Building', 'icon--base')} SIA ${C.escape(p.siaPhase)} · ${C.escape(p.siaPhaseLabel)}</span>`,
+      title: o.name, desc: o.teaser, href: `#/app/projects/${encodeURIComponent(o.id)}`,
+      photo: { id: o.photo, color: '#2f4356', alt: `${o.name} — ${o.buildingName}` },
+      badges: [projectStatusBadge(C, core, o.status), ampelBadge(C, 'Ziele', o.zielAmpel), ampelBadge(C, 'Risiko', o.risikoAmpel)],
+      footer: `<span>${esc(o.projectNumber)}</span><span>SIA ${esc(o.siaPhase)} · ${esc(o.siaPhaseLabel)}</span>`,
     });
   }
-
-  function listView(list) {
-    return C.table({
-      zebra: true,
-      columns: [
-        { key: 'projectNumber', label: 'Projektnr.', render: r => `<a href="#/app/projects/${r.projectId}">${C.escape(r.projectNumber)}</a>` },
-        { key: 'name', label: 'Name', render: r => `<a href="#/app/projects/${r.projectId}">${C.escape(r.name)}</a>` },
-        { key: 'building', label: 'Gebäude', render: r => { const b = core.building(r.buildingId); return b ? C.escape(b.name) : '—'; } },
-        { key: 'status', label: 'Status', render: r => projectStatusBadge(C, core, r.status) },
-        { key: 'siaPhaseLabel', label: 'SIA-Phase', render: r => `${C.escape(r.siaPhase)} · ${C.escape(r.siaPhaseLabel)}` },
-        { key: 'plannedTotalCost', label: 'Investition', render: r => C.escape(chf(r.plannedTotalCost)) },
-      ],
-      rows: list,
-    });
+  const galleryHTML = (slice) => `<div class="grid grid--3">${slice.map(pjCard).join('')}</div>`;
+  const listHTML = (slice) => C.table({ zebra: true, columns: [
+    { key: 'projectNumber', label: 'Projektnr.', render: (o) => `<a href="#/app/projects/${encodeURIComponent(o.id)}">${esc(o.projectNumber)}</a>` },
+    { key: 'name', label: 'Bezeichnung', render: (o) => `${esc(o.name)}<br><span class="small muted">${esc(o.buildingName)}</span>` },
+    { key: 'ort', label: 'Ort', render: (o) => `${esc(o.city)}<br><span class="small muted">${esc(landName(o.land))}</span>` },
+    { key: 'status', label: 'Status', render: (o) => projectStatusBadge(C, core, o.status) },
+    { key: 'sia', label: 'SIA-Phase', render: (o) => `${esc(o.siaPhase)} · ${esc(o.siaPhaseLabel)}` },
+    { key: 'plannedTotalCost', label: 'Investition', align: 'right', render: (o) => esc(chf(o.plannedTotalCost)) },
+  ], rows: slice });
+  async function mountMap(list, focus) {
+    freePjMap();
+    const el = mount.querySelector('#pj-map-el'); if (!el) return;
+    const points = list.filter((o) => Number.isFinite(o.lat) && Number.isFinite(o.lon))
+      .map((o) => ({ lat: o.lat, lon: o.lon, label: o.name, bblId: o.id, sub: `${o.projectNumber} · ${o.buildingName}`.trim(), href: `#/app/projects/${encodeURIComponent(o.id)}` }));
+    pjMap = await initEstateMap(el, points, { type: 'FeatureCollection', features: [] }, focus);
   }
 
-  function draw() {
-    const list = filtered();
-    const body = list.length
-      ? (state.view === 'karten'
-        ? `<div class="grid grid--3 mt-6">${list.map(projectCard).join('')}</div>`
-        : `<div class="mt-6">${listView(list)}</div>`)
-      : `<div class="mt-6">${C.empty('Keine Projekte für die gewählten Filter.')}</div>`;
-
-    mount.innerHTML = `
-    <div class="container section">
-      ${C.pageHeader({ title: 'Bauprojekte / EPPM', lead: 'Laufende und abgeschlossene Bauprojekte des BBL — Enterprise Project & Portfolio Management.' })}
-      ${phaseTabs()}
-      ${chipRow()}
-      ${statsBlock(list)}
-      <div class="row row--between mt-8">
-        <p class="muted small" style="margin:0">${list.length} Projekt(e)</p>
-        ${viewToggle()}
-      </div>
-      ${body}
-    </div>`;
-    wire();
+  // --- partial render of the main pane ------------------------------------
+  function renderMain() {
+    const list = filtered().sort(SORTS[state.sort] || SORTS.name);
+    const cnt = mount.querySelector('#pj-count');
+    const main = mount.querySelector('#pj-main');
+    freePjMap();
+    if (state.view === 'karte') {
+      if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> ${list.length === 1 ? 'Projekt' : 'Projekte'}`;
+      main.innerHTML = `<div class="pf-map dash-map" id="pj-map-el" role="group" aria-label="Karte der Bauprojekte"></div>`;
+      mountMap(list, state.focus);
+    } else if (!list.length) {
+      if (cnt) cnt.innerHTML = `<strong>0</strong> von ${objects.length} Projekte`;
+      main.innerHTML = C.empty('Keine Projekte für diese Auswahl.');
+    } else {
+      const per = state.perPage[state.view];
+      const pages = Math.max(1, Math.ceil(list.length / per));
+      if (state.page > pages) state.page = pages;
+      const slice = list.slice((state.page - 1) * per, state.page * per);
+      if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Projekte${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
+      main.innerHTML = (state.view === 'galerie' ? galleryHTML(slice) : listHTML(slice))
+        + C.pagination({ page: state.page, totalPages: pages, href: () => '#', inputId: 'pj-page' });
+      if (pages > 1) C.wirePagination(mount, 'pj-page', state.page, pages, (t) => { state.page = t; renderMain(); });
+    }
+    mount.querySelectorAll('.view-switch__btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
+    renderActiveFilters();
+    try { history.replaceState(null, '', `#/app/projects?view=${state.view}`); } catch { /* nicht kritisch */ }
   }
 
-  function syncHash() {
-    const qp = new URLSearchParams();
-    if (state.phase !== 'laufend') qp.set('phase', state.phase);
-    if (state.sub) qp.set('sub', state.sub);
-    if (state.status) qp.set('status', state.status);
-    if (state.view !== 'karten') qp.set('view', state.view);
-    const qs = qp.toString();
-    history.replaceState(null, '', '#/app/projects' + (qs ? '?' + qs : ''));
+  // Active-Filter-Zeile (Suche, Baum-Auswahl, Panel-Filter) — entfernbare Pillen.
+  const selPill = () => {
+    const s = state.sel;
+    if (!Object.keys(s).length) return null;
+    const label = s.id ? ((objects.find((o) => o.id === s.id) || {}).name || s.id) : s.we ? `WE ${s.we}` : s.city || s.region || landName(s.land);
+    return { label: `Auswahl: ${label}`, remove: 'sel' };
+  };
+  function renderActiveFilters() {
+    const box = mount.querySelector('#pj-activefilters'); if (!box) return;
+    const pills = [];
+    if (state.q.trim()) pills.push({ label: `Suche: „${state.q.trim()}“`, remove: 'q' });
+    const sp = selPill(); if (sp) pills.push(sp);
+    state.filters.status.forEach((v) => pills.push({ label: statusLabel(core, v), remove: `status:${v}` }));
+    state.filters.sia.forEach((v) => pills.push({ label: v, remove: `sia:${v}` }));
+    state.filters.sub.forEach((v) => pills.push({ label: v, remove: `sub:${v}` }));
+    box.innerHTML = C.activeFilters({ filters: pills });
   }
 
-  function wire() {
-    mount.querySelectorAll('[data-phase]').forEach(btn =>
-      btn.addEventListener('click', () => { state.phase = btn.dataset.phase; syncHash(); draw(); }));
-    mount.querySelectorAll('[data-sub]').forEach(btn =>
-      btn.addEventListener('click', () => { state.sub = btn.dataset.sub; syncHash(); draw(); }));
-    mount.querySelectorAll('[data-status]').forEach(btn =>
-      btn.addEventListener('click', () => { state.status = btn.dataset.status; syncHash(); draw(); }));
-    mount.querySelectorAll('[data-view]').forEach(btn =>
-      btn.addEventListener('click', () => { state.view = btn.dataset.view; syncHash(); draw(); }));
-  }
+  // --- chrome (once) ------------------------------------------------------
+  const filterPanel = `
+      ${C.filterGroup({ dim: 'status', legend: 'Status', selected: state.filters.status, options: projectStatuses.map((s) => ({ value: s.id, label: s.label })) })}
+      ${C.filterGroup({ dim: 'sia', legend: 'SIA-Phase', selected: state.filters.sia, options: phases.map((p) => ({ value: p, label: p })) })}
+      ${C.filterGroup({ dim: 'sub', legend: 'Teilportfolio', selected: state.filters.sub, options: subPortfolios.map((s) => ({ value: s, label: s })) })}
+      <button type="button" class="btn btn--bare btn--sm" id="pj-freset">${C.icon('Refresh', 'icon--base')} Zurücksetzen</button>`;
 
-  draw();
+  mount.innerHTML = `
+  <div class="container section">
+    ${C.pageHeader({ title: 'Bauprojekte / EPPM', lead: 'Laufende und abgeschlossene Bauprojekte des BBL — Enterprise Project & Portfolio Management, verortet über das SAP-RE-FX-Gebäude.' })}
+    ${C.catalogueBar({
+      formId: 'pj-search', inputId: 'pj-q', searchLabel: 'Projekt, Nummer, Projektleitung oder Gebäude suchen',
+      placeholder: 'Projekt, Nummer, PL oder Gebäude suchen…', countId: 'pj-count',
+      sort: { id: 'pj-sort', label: 'Sortierung', value: state.sort, options: SORT_OPTS },
+      filterId: 'pj-filter-btn', filterLabel: 'Filter', panelId: 'pj-filters', panel: filterPanel,
+      view: state.view, views: [['karte', 'Kartenansicht', 'Map'], ['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
+    })}
+    <div id="pj-activefilters"></div>
+    <div class="pf-layout">
+      <aside class="pf-sidebar" aria-label="Projektstruktur">
+        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Projekte</h2>
+          <button type="button" class="btn btn--bare btn--sm" id="pj-clear" hidden>${C.icon('Cancel', 'icon--base')} Auswahl</button></div>
+        ${treeHTML()}
+      </aside>
+      <div class="pf-main" id="pj-main"></div>
+    </div>
+  </div>`;
+
+  // --- wiring -------------------------------------------------------------
+  let searchT = null;
+  const q = mount.querySelector('#pj-q');
+  const runSearch = () => { state.q = q.value || ''; state.page = 1; renderMain(); };
+  mount.querySelector('#pj-search').addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(searchT); runSearch(); });
+  q.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(runSearch, 250); });
+
+  mount.querySelector('.view-switch').addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-switch__btn'); if (!btn) return;
+    state.view = btn.dataset.view; state.page = 1; renderMain();
+  });
+
+  const sortSel = mount.querySelector('#pj-sort');
+  if (sortSel) sortSel.addEventListener('change', () => { state.sort = sortSel.value; state.page = 1; renderMain(); });
+
+  const fbtn = mount.querySelector('#pj-filter-btn');
+  const fpanel = mount.querySelector('#pj-filters');
+  const fbadge = mount.querySelector('#pj-filter-btn .catbar__fcount');
+  const updateFilterBadge = () => {
+    const total = state.filters.status.length + state.filters.sia.length + state.filters.sub.length;
+    fbadge.textContent = total ? `(${total})` : ''; fbadge.hidden = !total;
+  };
+  const syncFilterChecks = () => fpanel.querySelectorAll('input[data-fdim]').forEach((cb) => { cb.checked = (state.filters[cb.dataset.fdim] || []).includes(cb.value); });
+  const clearFilters = () => { state.filters = { status: [], sia: [], sub: [] }; syncFilterChecks(); updateFilterBadge(); };
+  fbtn.addEventListener('click', () => { const open = !fpanel.hidden; fpanel.hidden = open; fbtn.setAttribute('aria-expanded', String(!open)); });
+  fpanel.addEventListener('change', (e) => {
+    const cb = e.target.closest('input[data-fdim]'); if (!cb) return;
+    const dim = cb.dataset.fdim, arr = state.filters[dim];
+    if (cb.checked) { if (!arr.includes(cb.value)) arr.push(cb.value); } else state.filters[dim] = arr.filter((x) => x !== cb.value);
+    updateFilterBadge(); state.page = 1; renderMain();
+  });
+  mount.querySelector('#pj-freset').addEventListener('click', () => { clearFilters(); state.page = 1; renderMain(); });
+
+  mount.querySelector('#pj-activefilters').addEventListener('click', (e) => {
+    if (e.target.closest('[data-reset]')) { state.q = ''; q.value = ''; clearFilters(); setSelection({}, null, null); return; }
+    const pill = e.target.closest('[data-remove]'); if (!pill) return;
+    const tok = pill.dataset.remove;
+    if (tok === 'q') { state.q = ''; q.value = ''; state.page = 1; renderMain(); }
+    else if (tok === 'sel') { setSelection({}, null, null); }
+    else { const i = tok.indexOf(':'), dim = tok.slice(0, i); state.filters[dim] = (state.filters[dim] || []).filter((x) => x !== tok.slice(i + 1)); syncFilterChecks(); updateFilterBadge(); state.page = 1; renderMain(); }
+  });
+
+  const clearBtn = mount.querySelector('#pj-clear');
+  function markTree(activeNode) {
+    mount.querySelectorAll('.pf-tree__node, .pf-tree__leaf').forEach((n) => n.classList.remove('is-active', 'is-path'));
+    if (!activeNode) return;
+    activeNode.classList.add('is-active');
+    let li = activeNode.closest('.pf-tree__item');
+    while (li) {
+      const ul = li.parentElement;
+      if (!ul || !ul.classList.contains('pf-tree__children')) break;
+      const parentNode = ul.parentElement.querySelector(':scope > .pf-tree__node');
+      if (parentNode) parentNode.classList.add('is-path');
+      li = ul.parentElement;
+    }
+  }
+  function setSelection(sel, activeNode, focus) {
+    state.sel = sel; state.focus = focus || null; markTree(activeNode);
+    clearBtn.hidden = !Object.keys(sel).length; state.page = 1; renderMain();
+  }
+  mount.querySelector('.pf-sidebar').addEventListener('click', (e) => {
+    const leafBtn = e.target.closest('.pf-tree__leaf');
+    if (leafBtn) {
+      const sel = {};
+      for (const k of ['land', 'region', 'city', 'we']) if (leafBtn.dataset[k]) sel[k] = leafBtn.dataset[k];
+      sel.id = leafBtn.dataset.obj;
+      setSelection(sel, leafBtn, leafBtn.dataset.obj);
+      return;
+    }
+    const nd = e.target.closest('.pf-tree__node'); if (!nd) return;
+    const item = nd.closest('.pf-tree__item');
+    const kids = item.querySelector(':scope > .pf-tree__children');
+    const expanded = nd.getAttribute('aria-expanded') === 'true';
+    nd.setAttribute('aria-expanded', String(!expanded));
+    if (kids) kids.hidden = expanded;
+    const sel = {};
+    for (const k of ['land', 'region', 'city', 'we']) if (nd.dataset[k] != null) sel[k] = nd.dataset[k];
+    setSelection(sel, nd, null);
+  });
+  clearBtn.addEventListener('click', () => setSelection({}, null, null));
+
+  mount.querySelector('#pj-main').addEventListener('click', (e) => {
+    const a = e.target.closest('.pagination_items a'); if (!a) return;
+    e.preventDefault();
+    state.page += /Nächste/.test(a.getAttribute('aria-label') || '') ? 1 : -1;
+    renderMain();
+  });
+
+  renderMain();
 }
 
 // ---- detail -------------------------------------------------------------
-
 function detail(ctx, id) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
+  freePjMap();
   const p = core.project(id);
   if (!p) {
-    mount.innerHTML = `<div class="container section">${C.empty('Projekt nicht gefunden.')}<a href="#/app/projects">Zur Übersicht</a></div>`;
+    mount.innerHTML = `<div class="container section">${C.backLink('#/app/projects', 'Bauprojekte')}${C.empty('Projekt nicht gefunden.')}</div>`;
     return;
   }
   setTitle(p.name);
-  setCrumbs([
-    { label: 'Startseite', href: '#/' },
-    { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
-    { label: 'Bauprojekte / EPPM', href: '#/app/projects' },
-    { label: p.name },
-  ]);
+  setCrumbs([...CRUMBS, { label: 'Bauprojekte / EPPM', href: '#/app/projects' }, { label: p.name }]);
 
   const b = core.building(p.buildingId);
   const tabs = [
@@ -226,7 +350,6 @@ function detail(ctx, id) {
     </dl>
     <p class="mt-6">${C.escape(p.teaser || '')}</p>`;
   }
-
   function panelKennzahlen() {
     return `<div class="stats">
       <div class="stat"><div class="stat__num">${C.escape(chf(p.plannedTotalCost))}</div><div class="stat__label">Geplante Gesamtkosten</div></div>
@@ -239,7 +362,6 @@ function detail(ctx, id) {
       <dt>Laufzeit</dt><dd>${C.escape(p.start || '—')} – ${C.escape(p.end || '—')}</dd>
     </dl>`;
   }
-
   function panelRisiken() {
     const row = (icon, prefix, value, desc) => `
       <div class="box">
@@ -262,7 +384,6 @@ function detail(ctx, id) {
     </div>
     ${C.notification('Ampelbewertung gemäss BBL-Projektreporting (Demo-Daten): <strong>Grün</strong> = im Plan, <strong>Gelb</strong> = unter Beobachtung, <strong>Rot</strong> = kritisch.', 'info')}`;
   }
-
   const panels = { uebersicht: panelUebersicht, kennzahlen: panelKennzahlen, risiken: panelRisiken };
 
   function draw() {
@@ -279,20 +400,17 @@ function detail(ctx, id) {
         <p class="muted">${C.escape(p.projectNumber)} · ${b ? C.escape(b.name + ', ' + b.city) : C.escape(p.buildingId)}</p>
       </div>
       ${C.photo({
-        id: b?.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name, w: 1600,
+        id: b && b.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name, w: 1600,
         style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg);margin-top:1rem',
       })}
       ${C.tabBar({ items: tabs, active, idPrefix: 'pj-tab', ariaLabel: 'Projektdetails', controlsClass: 'mt-6' })}
       ${C.tabPanels({ items: tabs, active, idPrefix: 'pj-tab', render: (t) => panels[t]() })}
     </div>`;
-    wire();
-  }
-
-  function wire() {
     C.wireTabs(mount, {
       syncHash: (tab) => history.replaceState(null, '', `#/app/projects/${p.projectId}${tab === 'uebersicht' ? '' : '?tab=' + tab}`),
     });
+    window.scrollTo(0, 0);
+    const h = mount.querySelector('h1'); if (h) h.focus({ preventScroll: true });
   }
-
   draw();
 }
