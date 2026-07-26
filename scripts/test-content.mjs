@@ -29,7 +29,9 @@ const PROBE = `(async () => {
 
 const LOGIN = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
-  let n = 0; while (!document.body && n++ < 120) await s(100);
+  // __login is exposed at the end of app.js boot() (after core.load()); poll for it
+  // instead of racing boot, or the gated my-cases route stays behind the login wall.
+  let n = 0; while (typeof window.__login !== 'function' && n++ < 120) await s(50);
   if (typeof window.__login === 'function') { window.__login(); return 'ok'; }
   return 'no __login';
 })()`;

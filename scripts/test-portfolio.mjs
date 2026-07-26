@@ -111,6 +111,9 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       // Kosten tab → body rows + a tfoot total row
       const kt = [...document.querySelectorAll('.tab__control')].find(t => /Kosten/.test(t.textContent)); if (kt) { kt.click(); await s(200); }
       const kp = document.querySelector('#pf-tab-panel-kosten'); r.kostenTotalRow = kp ? !!kp.querySelector('tfoot .table__total') : false; r.kostenRows = kp ? kp.querySelectorAll('table tbody tr').length : 0;
+      // Hero trigger must exactly cover its image — no dead click zone beside it (bug: 508px right gutter opened the gallery)
+      const hb = document.querySelector('#pf-hero-btn'), hi = document.querySelector('.pf-hero img');
+      r.heroGutter = (hb && hi) ? Math.round(hb.getBoundingClientRect().width - hi.getBoundingClientRect().width) : -1;
       // Hero photo opens the lightbox gallery; Esc closes it
       const hero = document.querySelector('#pf-hero-btn'); if (hero) hero.click(); await s(250);
       r.lightbox = !!document.querySelector('.pf-lightbox'); r.lightboxImg = !!document.querySelector('.pf-lightbox__img'); r.thumbs = document.querySelectorAll('.pf-lightbox__thumb').length;
@@ -125,6 +128,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(!D.tabs.some(t => /Medien|Bauprojekte/.test(t)), 'Medien + Bauprojekte tabs removed');
     check(D.vertraegeRows >= 1, `Verträge tab shows contracts (${D.vertraegeRows} rows)`);
     check(D.kostenTotalRow && D.kostenRows >= 1, `Kosten tab shows table + total row (${D.kostenRows} rows)`);
+    check(D.heroGutter === 0, `hero trigger exactly covers its image, no dead zone (Δwidth = ${D.heroGutter}px)`);
     check(D.lightbox && D.lightboxImg && D.thumbs >= 1, `hero opens lightbox gallery (${D.thumbs} thumbs)`);
     check(D.lightboxClosed, 'Esc closes the lightbox');
     await d.closeTarget();

@@ -44,6 +44,12 @@
   --color-gray-800: #1f2937;
   --color-gray-900: #111827;
 
+  /* CD nennt die neutrale Ramp `text-*` (typography.postcss). Alias der grauen Werte,
+     damit CD-Markup/Regeln die kanonische Vokabel treffen; die Rollen unten zeigen darauf. */
+  --color-text-50:  #f9fafb; --color-text-100: #f3f4f6; --color-text-200: #e5e7eb; --color-text-300: #d1d5db;
+  --color-text-400: #9ca3af; --color-text-500: #6b7280; --color-text-600: #4b5563; --color-text-700: #374151;
+  --color-text-800: #1f2937; --color-text-900: #111827;
+
   /* --- Semantic ---
      CD uses two different ramps: badges take the 100/800 pair, notifications the
      50/700-800 pair (badge.postcss:23-50 vs notification.postcss:29-58). */
@@ -58,9 +64,21 @@
   --color-info-text-subtle: #1d4ed8;
   --color-alert-bg: #801519;     /* notification--alert (danger to life) */
 
-  --color-text:        #1f2937;   /* body text = gray-800 */
-  --color-text-muted:  #4b5563;   /* gray-600 — passes AA on white AND on secondary-50 */
-  --color-text-light:  #9ca3af;   /* gray-400 */
+  /* Dedizierte Rot-Töne für Fehlerzustände — entkoppelt vom (skin-getauschten)
+     Primary-Ramp, damit Fehler auch unter .body--intranet ROT bleiben, nicht blau. */
+  --color-error-400: #fc656b;    --color-error-700: #bf1f25;
+
+  /* CD-Akzent-Hues für Badges/Tags: 100-bg / 800-text (garantiert AA auf Weiss,
+     badge.postcss:23-72). Ergänzt die vier fehlenden Hues + trennt Gelb von Orange. */
+  --color-yellow-bg: #fef3c7;    --color-yellow-text: #92400e;
+  --color-indigo-bg: #e0e7ff;    --color-indigo-text: #3730a3;
+  --color-pink-bg:   #fce7f3;    --color-pink-text:   #9d174d;
+  --color-purple-bg: #ede9fe;    --color-purple-text: #5b21b6;
+  --color-teal-bg:   #cbfbf8;    --color-teal-text:   #11575f;
+
+  --color-text:        var(--color-text-800);   /* body text */
+  --color-text-muted:  var(--color-text-600);   /* passes AA on white AND on secondary-50 */
+  --color-text-light:  var(--color-text-400);
   --color-link:        var(--color-primary-600);
   --color-border:      #e5e7eb;
   --color-border-strong:#d1d5db;
@@ -97,17 +115,25 @@
   --sp-14: 3.5rem;  --sp-16: 4rem;    --sp-20: 5rem;    --sp-24: 6rem;
   --sp-28: 7rem;    --sp-32: 8rem;
 
-  /* --- Radius --- */
-  --radius-xs: 0.0625rem; --radius-sm: 0.125rem; --radius: 0.1875rem;
-  --radius-lg: 0.3125rem; --radius-xl: 0.375rem; --radius-2xl: 0.5rem; --radius-full: 9999px;
+  /* --- Radius (voller CD-Maßstab, tailwind.config.js borderRadius) --- */
+  --radius-none: 0;       --radius-xs: 0.0625rem; --radius-sm: 0.125rem; --radius: 0.1875rem;
+  --radius-lg: 0.3125rem; --radius-xl: 0.375rem;  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.625rem; --radius-4xl: 0.75rem;  --radius-5xl: 0.9375rem; --radius-6xl: 1.5rem;
+  --radius-full: 9999px;
 
   /* --- Shadow --- */
+  --shadow-none: 0 0 0 0 rgba(0,0,0,0);
   --shadow-sm: 0 1px 2px 0 rgba(0,0,0,.05);
   --shadow:    0 1px 2px 0 rgba(0,0,0,.06), 0 1px 5px 0 rgba(0,0,0,.08);
   --shadow-md: 0 2px 4px -1px rgba(0,0,0,.06), 0 4px 10px -1px rgba(0,0,0,.08);
   --shadow-lg: 0 2px 6px -1px rgba(0,0,0,.06), 0 5px 20px -3px rgba(0,0,0,.08);
   --shadow-xl: 0 6px 10px -5px rgba(0,0,0,.06), 0 15px 25px -3px rgba(0,0,0,.09);
   --shadow-2xl:0 10px 20px 0 rgba(0,0,0,.06), 1px 10px 70px -8px rgba(0,0,0,.13);
+
+  /* --- Motion (tailwind.config duration/easing) — eine Quelle, auditierbar für reduced-motion --- */
+  --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms; --duration-slowest: 700ms;
+  --ease-out: cubic-bezier(0,0,.2,1); --ease-in-out: cubic-bezier(.4,0,.2,1);
+  --scale-hover: 1.02;    /* CD scale-102 Hover-Lift */
 
   /* Scrim für Text/Chips über Bildern (Mediathek-Kacheln) */
   --overlay-scrim: rgba(0,0,0,.45);
@@ -116,7 +142,11 @@
   --container-max-2xl: 1544px;
   --container-max-3xl: 1676px;
   --container-max: var(--container-max-2xl);
-  --header-z: 30; --breadcrumb-z: 20; --modal-z: 40; --sticky-z: 1000;
+  /* Z-Index-Skala (statt verstreuter Magic Numbers) — governt Stapelordnung. */
+  --z-dropdown: 10; --z-breadcrumb: 20; --z-header: 30; --z-overlay: 90;
+  --z-modal: 100; --z-toast: 110; --z-sticky: 1000;
+  /* Rückwärtskompatible Aliase */
+  --header-z: var(--z-header); --breadcrumb-z: var(--z-breadcrumb); --modal-z: var(--z-modal); --sticky-z: var(--z-sticky);
 
   /* --- Breakpoints (for reference; used in media queries) ---
      xs 480 · sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1544 · 3xl 1920 */
@@ -153,6 +183,20 @@
   --color-secondary-700: #1e3a8a;
   --color-secondary-800: #1c3c7d;
   --color-secondary-900: #1c3c7d;
+}
+
+/* ============================================================================
+   FREEBRAND SKIN (css/skins/freebrand.postcss) — <body class="body--freebrand">.
+   Green primary + muted-green secondary; completes CD's three-skin architecture
+   so a co-branded tenant switches via one body class exactly as CD does.
+   ========================================================================== */
+.body--freebrand {
+  --color-primary-50:  #eaffe9; --color-primary-100: #d3ebd2; --color-primary-200: #bdd8bc;
+  --color-primary-300: #a7c4a6; --color-primary-400: #91b191; --color-primary-500: #7c9f7c;
+  --color-primary-600: #678d67; --color-primary-700: #537b54; --color-primary-800: #3e6940; --color-primary-900: #2a582e;
+  --color-secondary-50:  #efffee; --color-secondary-100: #b0beb0; --color-secondary-200: #768176;
+  --color-secondary-300: #404941; --color-secondary-400: #758874; --color-secondary-500: #6a7f69;
+  --color-secondary-600: #5f755f; --color-secondary-700: #546c55; --color-secondary-800: #49634b; --color-secondary-900: #3e5a41;
 }
 
 /* Responsive type ramps — CD steps at lg 1024 / xl 1280 / 3xl 1920

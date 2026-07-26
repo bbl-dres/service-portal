@@ -165,7 +165,7 @@ function headerHTML() {
   })}</div>`;
 
   return `
-  <button type="button" class="skip-to-content" id="skip-link">Zum Inhalt springen</button>
+  <a class="skip-to-content" id="skip-link" href="#main-content">Zum Inhalt springen</a>
   <div class="top-bar">
     <div class="container container--flex">
       <a class="top-bar__btn" href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener external"><span>Alle Schweizer Bundesbehörden</span>${icon('External', 'icon--base')}</a>
@@ -308,10 +308,13 @@ function renderHeader(el) {
   shellAbort = new AbortController();
   const { signal } = shellAbort;
 
-  // Skip link: move focus rather than navigate, so the router never sees the fragment.
-  el.querySelector('#skip-link').addEventListener('click', () => {
+  // Skip link (CD: <a href="#main-content">) — preventDefault, damit der Hash-Router
+  // das Fragment nicht als Route sieht; wir setzen den Fokus selbst (#main-content
+  // trägt tabindex="-1").
+  el.querySelector('#skip-link').addEventListener('click', (e) => {
     const main = document.getElementById('main-content');
     if (!main) return;
+    e.preventDefault();
     main.focus();
     main.scrollIntoView({ block: 'start' });
   });

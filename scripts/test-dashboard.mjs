@@ -47,7 +47,9 @@ const PROBE = `(async () => {
   [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'csv').click(); await s(150);
   R.toastCsv = lastToast();
   chartMenuTrigger().click(); await s(60);
-  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'png').click(); await s(400);
+  // PNG export renders the SVG to a canvas asynchronously — give it room (was 400ms, too tight).
+  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'png').click();
+  { let k = 0; while (!/Bild heruntergeladen|fehlgeschlagen/.test(lastToast() || '') && k++ < 40) await s(50); }
   R.toastPng = lastToast();
   return R;
 })()`;

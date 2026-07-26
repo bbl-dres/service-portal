@@ -97,10 +97,10 @@ export function pageHeader({ title, lead }) {
 }
 
 // Flat CD card (card--flat) — used for compact text-led teasers.
-export function tile({ title, desc, href, extra = '' }) {
+export function tile({ title, desc, href, extra = '', titleTag = 'h3' }) {
   return `<a class="card card--flat card--clickable" href="${escape(href)}">
     <div class="card__content"><div class="card__body">
-      <span class="card__title">${escape(title)}</span>
+      <${titleTag} class="card__title">${escape(title)}</${titleTag}>
       ${desc ? `<span class="card__description">${escape(desc)}</span>` : ''}${extra}
     </div></div></a>`;
 }
@@ -116,18 +116,25 @@ export function card(o) {
   // `card--universal` is the variant whose image is letterboxed (object-contain),
   // so it stays opt-in via o.variant — image-less cards are default, not universal.
   const variant = o.variant || 'default';
+  const tag = o.titleTag || 'h3';
+  const ext = o.external ? ' target="_blank" rel="noopener external"' : '';
+  // Stretched-Link-Muster (CD/WAI-ARIA APG): die Karte ist ein <div>, der Titel eine
+  // echte Überschrift mit einem <a>, dessen ::after die ganze Karte klickbar macht.
+  // So behält das Dokument seine Gliederung UND verschachtelte Links (Badges) bleiben
+  // gültig (kein <a> in <a> mehr).
+  const titleInner = o.href
+    ? `<a class="card__link" href="${escape(o.href)}"${ext}>${escape(o.title)}</a>`
+    : escape(o.title);
   const inner = `${media}
     <div class="card__content">
       <div class="card__body">
-        <div class="card__title">${escape(o.title)}</div>
+        <${tag} class="card__title">${titleInner}</${tag}>
         ${o.badges ? `<div class="pill-row">${o.badges.join('')}</div>` : ''}
         ${o.desc ? `<p class="card__description">${escape(o.desc)}</p>` : ''}
       </div>
       ${o.footer ? `<div class="card__footer">${o.footer}</div>` : ''}
     </div>`;
-  const cls = `card card--${variant}${o.href ? ' card--clickable' : ''}`;
-  const ext = o.external ? ' target="_blank" rel="noopener external"' : '';
-  return o.href ? `<a class="${cls}" href="${escape(o.href)}"${ext}>${inner}</a>` : `<div class="${cls}">${inner}</div>`;
+  return `<div class="card card--${variant}${o.href ? ' card--clickable' : ''}">${inner}</div>`;
 }
 
 // --- Tables (table.postcss) --------------------------------------------------
@@ -135,11 +142,13 @@ export function card(o) {
 // `foot` = fertiges <tr>…</tr>-HTML für eine <tfoot>-Zeile (z. B. eine Summenzeile);
 // der Aufrufer escaped den Inhalt.
 export function table({ columns, rows, zebra, caption, showCaption, foot }) {
-  const head = columns.map(c => `<th scope="col">${escape(c.label)}</th>`).join('');
+  // `align: 'right'|'center'|'left'` je Spalte → CD-Ausrichtungs-Utility auf Kopf + Zelle.
+  const al = (c) => c.align ? ` class="text-${c.align}"` : '';
+  const head = columns.map(c => `<th scope="col"${al(c)}>${escape(c.label)}</th>`).join('');
   const body = (rows || []).map(r =>
     `<tr>${columns.map((c, i) => {
       const cell = c.render ? c.render(r) : escape(r[c.key]);
-      return i === 0 ? `<th scope="row">${cell}</th>` : `<td>${cell}</td>`;
+      return i === 0 ? `<th scope="row"${al(c)}>${cell}</th>` : `<td${al(c)}>${cell}</td>`;
     }).join('')}</tr>`
   ).join('');
   const cls = ['table', zebra ? 'table--zebra' : '', showCaption ? 'table--caption' : ''].filter(Boolean).join(' ');
@@ -205,16 +214,71 @@ export function announce(msg) {
   if (n) n.textContent = msg;
 }
 
+// Fokusfalle für modale Overlays (Lightbox, Chart-Vollbild, Dokumentvorschau):
+// Tab/Shift+Tab bleiben innerhalb von `container`. Gibt eine Abmelde-Funktion
+// zurück. Geteilt, damit alle Dialoge identisch fangen (WCAG 2.4.3 / 2.1.2).
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+export function trapFocus(container) {
+  const onKey = (e) => {
+    if (e.key !== 'Tab') return;
+    const f = [...container.querySelectorAll(FOCUSABLE)].filter((el) => el.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  container.addEventListener('keydown', onKey);
+  return () => container.removeEventListener('keydown', onKey);
+}
+
+// Kanonisches Modal (CD modal.postcss BEM). `modal()` liefert das Markup, `openModal()`
+// hängt es an document.body, fängt den Fokus, schliesst bei Escape / Backdrop-Klick /
+// [data-modal-close] und gibt den Fokus zurück. Primitive für neue Dialoge; `body`/
+// `footer` sind RAW-HTML (Aufrufer escaped). `size` = sm|md|lg|xl.
+export function modal({ title = '', body = '', footer = '', size = 'md', id = 'modal' } = {}) {
+  const titleId = `${id}-title`;
+  const closeBtn = `<button type="button" class="modal__close" data-modal-close aria-label="Schliessen">${icon('Cancel', 'icon--md')}</button>`;
+  return `<div class="modal modal--${size}" role="dialog" aria-modal="true"${title ? ` aria-labelledby="${escape(titleId)}"` : ''}>
+    <div class="modal__backdrop" data-modal-close></div>
+    <div class="modal__content">
+      ${title ? `<div class="modal__header"><h2 class="modal__title" id="${escape(titleId)}">${escape(title)}</h2>${closeBtn}</div>` : closeBtn}
+      <div class="modal__body">${body}</div>
+      ${footer ? `<div class="modal__footer">${footer}</div>` : ''}
+    </div>
+  </div>`;
+}
+export function openModal(opts = {}) {
+  const trigger = document.activeElement;
+  const host = document.createElement('div');
+  host.innerHTML = modal(opts);
+  const el = host.firstElementChild;
+  document.body.appendChild(el);
+  document.body.classList.add('chart-overlay-open');   // Scroll-Lock (geteilt mit den Overlays)
+  const untrap = trapFocus(el);
+  const close = () => {
+    document.removeEventListener('keydown', onKey, true);
+    untrap(); el.remove(); document.body.classList.remove('chart-overlay-open');
+    if (trigger && trigger.focus) trigger.focus();
+  };
+  const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } };
+  el.addEventListener('click', (e) => { if (e.target.closest('[data-modal-close]')) close(); });
+  document.addEventListener('keydown', onKey, true);
+  const first = el.querySelector('.modal__close'); if (first) first.focus();
+  return close;
+}
+
 // Icon-Kachel (domain-tile): bildlose Karte mit grossem Icon, Titel, Text und
 // «Öffnen»-Fuss. Eine Quelle für die Übersichtskarten (Daten, Wissen,
 // Digitalisierung) — bildlose Karten sind card--default (CD, nicht --universal).
-export function domainTile({ icon: ic, title, desc, meta = '', href, external = false }) {
+export function domainTile({ icon: ic, title, desc, meta = '', href, external = false, titleTag = 'h3' }) {
   const ext = external ? ' target="_blank" rel="noopener external"' : '';
+  // Bildlose Kachel bleibt eine Ganzkarten-<a> (CD-Ausnahme; kein verschachtelter Link),
+  // aber der Titel ist eine echte Überschrift für die Dokument-Gliederung.
   return `<a class="card card--default card--clickable" href="${escape(href)}"${ext}>
     <div class="card__content">
       <div class="card__body">
         <span class="domain-tile__icon">${icon(ic, 'icon--2xl')}</span>
-        <div class="card__title">${escape(title)}</div>
+        <${titleTag} class="card__title">${escape(title)}</${titleTag}>
         <p class="card__description">${escape(desc)}</p>
       </div>
       <div class="card__footer">
@@ -233,7 +297,7 @@ export function shareBar() {
     <div class="share-container">
       <button class="btn btn--bare share-bar__btn" type="button" onclick="window.print()" aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--xl')}</button>
       <button class="btn btn--bare share-bar__btn" type="button" aria-label="Link kopieren" title="Teilen"
-        onclick="try{navigator.clipboard.writeText(location.href)}catch(e){}">${icon('Share', 'icon--xl')}</button>
+        onclick="navigator.clipboard.writeText(location.href).then(function(){var l=document.getElementById('live');if(l)l.textContent='Link kopiert';this.title='Link kopiert';}.bind(this)).catch(function(){})">${icon('Share', 'icon--xl')}</button>
     </div>
   </div>`;
 }
@@ -398,8 +462,15 @@ export function wireTabs(root, { onSelect, syncHash } = {}) {
 
 // --- Notifications (notification.postcss) ------------------------------------
 // variant: info | success | warning | error | hint | alert
-export function notification(text, variant = 'info', iconName = 'InfoCircle') {
-  return `<div class="notification notification--${variant}">${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div></div>`;
+export function notification(text, variant = 'info', iconName = 'InfoCircle', opts = {}) {
+  // Live-Region-Rolle, damit eine per notification() eingeblendete Meldung von
+  // Screenreadern angesagt wird (error/alert assertiv, sonst höflich).
+  const role = (variant === 'error' || variant === 'alert') ? 'alert' : 'status';
+  const close = opts.dismissible
+    ? `<button type="button" class="notification__close" aria-label="Meldung schliessen" onclick="this.closest('.notification').remove()">${icon('Cancel', 'icon--md')}</button>`
+    : '';
+  const cls = `notification notification--${variant}${opts.dismissible ? ' notification--dismissible' : ''}`;
+  return `<div class="${cls}" role="${role}">${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div>${close}</div>`;
 }
 
 // Blendet einen Fehler oben in der Seite ein und sagt ihn an — für clientseitige
@@ -484,7 +555,8 @@ export function field(o = {}) {
   const hintId = o.hint ? `${id}-hint` : '';
   const msgId = o.message ? `${id}-msg` : '';
   const described = [hintId, msgId].filter(Boolean).join(' ');
-  const lbl = o.required ? ' class="text--asterisk"' : '';
+  const lblCls = [o.required ? 'text--asterisk' : '', o.hideLabel ? 'sr-only' : ''].filter(Boolean).join(' ');
+  const lbl = lblCls ? ` class="${lblCls}"` : '';
   const attrs = `${o.required ? ' required aria-required="true"' : ''}`
     + `${isError ? ' aria-invalid="true"' : ''}`
     + `${described ? ` aria-describedby="${escape(described)}"` : ''}`;
@@ -564,7 +636,7 @@ export function downloadLink(url, label, iconName = 'Download') {
 // icon-only outline buttons (disabled at the ends). `href(page)` builds the
 // target hash so the caller keeps its own filters; `inputId` is wired by the
 // caller for typed page jumps.
-export function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation' }) {
+export function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation', align }) {
   if (totalPages <= 1) return '';
   const control = (target, text, iconName, disabled) => {
     const inner = `${icon(iconName, 'btn__icon')}<span class="btn__text">${text}</span>`;
@@ -573,7 +645,7 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
       : `<li><a class="btn btn--outline btn--icon-only" href="${escape(href(target))}" aria-label="${text}">${inner}</a></li>`;
   };
   return `
-    <nav class="pagination-wrap" aria-label="${escape(label)}">
+    <nav class="pagination-wrap${align === 'right' ? ' pagination-wrap--right' : ''}" aria-label="${escape(label)}">
       <div class="pagination">
         <label class="sr-only" for="${inputId}">Seite</label>
         <input id="${inputId}" class="pagination__input input--outline input--base" type="text" inputmode="numeric"
@@ -892,7 +964,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 }
 
 export const C = {
-  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce,
+  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce, trapFocus, modal, openModal,
   notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueControls, catalogueBar, filterGroup, wireCatalogue, pipeline,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,

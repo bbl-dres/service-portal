@@ -10,7 +10,7 @@
 // deficiency against a white chart surface (worst adjacent CVD dE 10.1,
 // normal-vision 26.4, all >= 3:1 contrast). Assign slots in order, never cycle.
 
-import { menu, wireMenu, toast } from './components.js';
+import { menu, wireMenu, toast, trapFocus } from './components.js';
 import { download, tableToCsv, tableToXls, svgToPng, copyText, fileSlug } from './export.js';
 
 export const SERIES = ['#2563eb', '#ea580c', '#059669', '#7c3aed', '#db2777'];
@@ -305,8 +305,10 @@ function openChartFullscreen(figure) {
   overlay.appendChild(box);
   document.body.appendChild(overlay);
   document.body.classList.add('chart-overlay-open');
+  const untrap = trapFocus(overlay);   // WCAG 2.4.3: Tab bleibt im Dialog
 
   const dismiss = () => {
+    untrap();
     overlay.remove();
     document.body.classList.remove('chart-overlay-open');
     document.removeEventListener('keydown', onKey, true);
