@@ -2166,11 +2166,22 @@ body.docviewer-open .back-to-top-rail { display:none; }
    katalog, portfolio, services und projects: alle Ansichtsknöpfe wieder im
    Viewport, die Leiste wächst um genau eine Zeile. */
 @media (max-width:767.98px){
-  .catbar__count    { flex:1 1 100%; }
+  /* Die Trefferzahl bekommt KEINE eigene Zeile mehr erzwungen: `flex:0 1 auto`
+     lässt sie neben dem Suchfeld sitzen, solange sie dort hinpasst, und erst bei
+     echtem Platzmangel umbrechen. Mit `flex:1 1 100%` stand sie auch dann allein
+     in einer Zeile, wenn rechts neben der 24rem breiten Suche noch 190px frei
+     waren (gemessen bei 630px). `white-space:nowrap` oben hält sie zusammen. */
+  .catbar__count    { flex:0 1 auto; }
   .catbar__controls { flex:1 1 100%; margin-left:0; justify-content:space-between; }
   .catbar__sort     { flex:1 1 8rem; }
   .catbar__sort select { width:100%; }
   .catbar__controls .view-switch { margin-left:auto; }   /* bleibt rechts, wie am Desktop */
+}
+/* Unter 480px reicht die Breite nicht mehr für Suche UND Zahl nebeneinander:
+   das Suchfeld schrumpfte bis an seine min-width und der Platzhalter wurde
+   abgeschnitten. Dort bleibt die Zahl auf ihrer eigenen Zeile. */
+@media (max-width:479.98px){
+  .catbar__count { flex:1 1 100%; }
 }
 @media (max-width:479.98px){
   /* der Trennstrich wirkt am Zeilenanfang falsch, wenn der Schalter allein umbricht */
@@ -2381,13 +2392,22 @@ body.chart-overlay-open { overflow:hidden; }
     grid-template-rows:5rem; }
   .pf-hero__map { height:12rem; }
 }
-/* 640–1279px — Bild und Kacheln nebeneinander, Karte als Band darunter: drei
-   Drittel wären hier je nur ~300px breit. `max-height` deckelt das Bild am oberen
-   Ende des Bandes, sonst wüchse es bei 1279px auf ~500px Höhe. */
+/* 640–1279px — Hauptbild und Karte nebeneinander, die Kacheln als Streifen
+   darunter. Drei Drittel wären hier je nur ~300px breit; Bild und Karte teilen
+   sich dafür eine Zeile und sind damit per Konstruktion gleich hoch — dieselbe
+   Balance wie im Dreispalter darüber.
+   Vorher stand hier 2fr/1fr mit `max-height:22rem` auf dem Bild. Das war der
+   Fehler: `max-height` UND `aspect-ratio` auf demselben Element deckeln nicht
+   nur die Höhe, sie rechnen auch die BREITE zurück (352 × 1.6 = 563px) — bei
+   1268px blieben so ~234px der 797px-Spalte als weisse Lücke stehen. */
 @media (min-width:640px) and (max-width:1279.98px){
-  .pf-mosaic--map { grid-template-columns:2fr 1fr; }
-  .pf-mosaic--map .pf-mosaic__cell--main { max-height:22rem; }
-  .pf-mosaic--map .pf-hero__map { grid-column:1 / -1; height:14rem; }
+  .pf-mosaic--map { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .pf-mosaic--map .pf-mosaic__cell--main { grid-column:1; grid-row:1; }
+  .pf-mosaic--map .pf-hero__map { grid-column:2; grid-row:1; }
+  /* Der Streifen läuft hier über die volle Breite, die Kacheln werden also
+     deutlich breiter als hoch — etwas mehr Zeilenhöhe als auf dem Telefon. */
+  .pf-mosaic--map .pf-mosaic__side { grid-column:1 / -1; grid-row:2;
+    grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:6rem; }
 }
 /* Ab 1280px — drei gleiche Drittel, die Karte wird zur dritten Spalte. */
 @media (min-width:1280px){
@@ -2499,8 +2519,12 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    Startseiten-Block (Item 1.12). */
 .link--block { display:block; }
 .link--block + .link--block { margin-top:.75rem; }
-/* Trefferzahl bricht auf Mobile auf eine eigene Zeile (CD search-results__header) */
-@media (max-width:639px){ .catbar__count strong, .search-results__header strong { display:block; } }
+/* Trefferzahl bricht auf Mobile auf eine eigene Zeile — search.postcss:215-217
+   (`block sm:inline`), unser 639px ist genau CDs sm-Grenze.
+   NUR für .search-results__header: das ist die CD-Komponente mit der grossen
+   Trefferzeile. Die catbar ist unsere eigene kompakte Leiste; dort machte die
+   Regel aus «21 Objekte» zwei Zeilen mitten in einer ohnehin dreizeiligen Leiste. */
+@media (max-width:639px){ .search-results__header strong { display:block; } }
 /* Pagination rechtsbündig unter Trefferlisten (CD) */
 .pagination-wrap--right { justify-content:flex-end; }
 
