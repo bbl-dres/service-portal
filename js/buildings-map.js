@@ -69,6 +69,27 @@ const CARTO_STYLE = {
   layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
 };
 
+// Zentrierter Ladehinweis, bis die Karte wirklich steht. Der Platzhalter im
+// Markup deckt nur die Zeit BIS MapLibre geladen ist; danach dauert es je nach
+// Netz und Clusterberechnung weiter, und der Nutzer sah eine leere graue Fläche.
+// `idle` feuert, wenn Kacheln UND Cluster-Layer fertig gezeichnet sind.
+function showMapSpinner(container, map) {
+  if (!container) return;
+  const sp = document.createElement('div');
+  sp.className = 'map-spinner';
+  sp.setAttribute('role', 'status');
+  sp.innerHTML = '<span class="icon icon--2xl icon--spin" aria-hidden="true"'
+    + ' style="-webkit-mask-image:url(\'assets/icons/Spinner.svg\');mask-image:url(\'assets/icons/Spinner.svg\')"></span>'
+    + '<span class="sr-only">Karte wird geladen …</span>';
+  container.appendChild(sp);
+  let done = false;
+  const clear = () => { if (done) return; done = true; sp.remove(); };
+  map.once('idle', clear);
+  // Sicherheitsnetz: bleibt `idle` aus (blockierte Kachelquelle), soll der Hinweis
+  // nicht dauerhaft stehen.
+  setTimeout(clear, 12000);
+}
+
 // Shared core: render `points` = [{ lat, lon, label, sub?, size?, href? }] on
 // `container` with the given `style` and camera (`{center,zoom}` or `{bounds}`).
 async function pointMap(container, points, style, camera) {
@@ -105,6 +126,9 @@ async function pointMap(container, points, style, camera) {
     },
     ...camera });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+  // Vollbild direkt neben Zoom (Item: Kartenbedienung) — MapLibres eigener Control.
+  map.addControl(new maplibregl.FullscreenControl({ container }), 'top-right');
+  showMapSpinner(container, map);
   // Kein scrollZoom.disable() mehr — cooperativeGestures regelt es sauberer.
 
   const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '260px' });
@@ -189,6 +213,8 @@ export async function initEstateMap(container, points, parcels, focus) {
     },
     ...camera });
   map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: false }), 'top-right');
+  map.addControl(new maplibregl.FullscreenControl({ container }), 'top-right');
+  showMapSpinner(container, map);
 
   map.on('load', () => {
     if (!map.getSource('estate')) {

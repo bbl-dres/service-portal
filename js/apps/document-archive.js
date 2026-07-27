@@ -57,7 +57,7 @@ export default async function render(ctx) {
       { key: 'title', label: 'Dokument', render: r => `<button type="button" class="doc-open" data-doc="${esc(r.docId)}">${C.icon('File', 'icon--base')} <span>${esc(r.title)}</span></button>` },
       { key: 'type', label: 'Typ', render: r => C.badge(r.type, 'gray') },
       { key: 'building', label: 'Gebäude', render: r => { const bid = (r.linkedTo || [])[0]; const b = bid ? core.building(bid) : null; return b ? `<a href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${esc(b.name)}</a>` : '<span class="muted">—</span>'; } },
-      { key: 'year', label: 'Jahr', render: r => esc(r.year) },
+      { key: 'year', label: 'Jahr', align: 'right', render: r => esc(r.year) },
       { key: 'size', label: 'Grösse', align: 'right', render: r => fmtSize(r.sizeKB) },
       { key: 'classification', label: 'Klassifizierung', render: r => C.badge(r.classification, tierVariant(r.classification)) },
       { key: 'preview', label: 'Vorschau', render: r => `<button type="button" class="btn btn--link doc-open" data-doc="${esc(r.docId)}" aria-label="Vorschau ${esc(r.title)}">${C.icon('File', 'icon--base')} Öffnen</button>` },

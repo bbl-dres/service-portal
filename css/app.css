@@ -1764,7 +1764,12 @@ body.docviewer-open .back-to-top-rail { display:none; }
    einem 844px hohen Handybildschirm. clamp() skaliert mit, behält aber die
    Desktop-Höhe (Item 2.27). ACHTUNG: .pf-map ist zweimal deklariert — hier die
    Basis, die zweite bei ~2127 ergänzt nur noch Radius. */
-.pf-map { position:relative; height:clamp(18rem, 70vw, 34rem); overflow:hidden; background:var(--color-secondary-50); }
+/* Die Explorer-Karte trägt im Markup BEIDE Klassen (`pf-map dash-map`), und
+   `.dash-map` steht später im Blatt — ihre 30rem-Obergrenze hat die hiesige Höhe
+   überstimmt (gemessen 480px statt der gewünschten). Darum zusätzlich als
+   `.pf-map.dash-map` (0,2,0) festschreiben. Die Karte ist auf dieser Seite der
+   Hauptinhalt und darf höher sein als eine Dashboard-Kachel. */
+.pf-map, .pf-map.dash-map { position:relative; height:clamp(20rem, 78vw, 44rem); overflow:hidden; background:var(--color-secondary-50); }
 .pf-map__hint { position:absolute; left:.85rem; bottom:.6rem; }
 .pf-marker { position:absolute; width:1.25rem; height:1.25rem; border-radius:50%; border:2px solid var(--color-secondary-800);
   box-shadow:var(--shadow); transform:translate(-50%,-50%); transition:transform .12s; background:var(--color-secondary-400); }
@@ -1874,6 +1879,11 @@ body.docviewer-open .back-to-top-rail { display:none; }
    steht der Platzhalter oben links: rein kosmetisch, kein Funktionsverlust. */
 .dash-map:has(> .dash-map__loading) { display:grid; place-items:center; }
 .dash-map__loading { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+/* Zentrierter Ladehinweis ÜBER der Karte, bis Kacheln und Cluster stehen
+   (showMapSpinner). z-index unter den MapLibre-Bedienelementen (die liegen bei 2). */
+.map-spinner { position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;
+  color:var(--color-text-muted); background:var(--color-secondary-100); pointer-events:none; }
+.dash-map, .pf-map { position:relative; }
 /* Popups auf .pf-map bekamen bisher MapLibre-Defaults — an die Dashboard-Popups
    angleichen (Item 2.5d). */
 .dash-map .maplibregl-popup-content, .pf-map .maplibregl-popup-content {

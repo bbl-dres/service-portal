@@ -143,7 +143,7 @@ export default async function render(ctx) {
     { key: 'name', label: 'Bezeichnung', render: (o) => `<a href="#/app/portfolio?id=${encodeURIComponent(o.id)}">${esc(o.name)}</a><br><span class="small muted">${esc(o.id)}</span>` },
     { key: 'ort', label: 'Ort', render: (o) => `${esc(o.city)}<br><span class="small muted">${esc(landName(o.land))}</span>` },
     { key: 'cat', label: 'Kategorie', render: (o) => esc(o.cat) },
-    { key: 'area', label: 'Fläche', render: (o) => `${Number(o.area || 0).toLocaleString('de-CH')} m²<br><span class="small muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span>` },
+    { key: 'area', label: 'Fläche', align: 'right', render: (o) => `${Number(o.area || 0).toLocaleString('de-CH')} m²<br><span class="small muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span>` },
     { key: 'status', label: 'Status', render: (o) => statusBadge(C, ref, o.status) },
   ], rows: slice });
   async function mountMap(list, focus) {
