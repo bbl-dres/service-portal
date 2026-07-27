@@ -59,6 +59,11 @@ export default async function render(ctx) {
         <h1 tabindex="-1">Raumbedarf melden</h1>
         <p class="muted">Antrag als <strong>${C.escape(state.org)}</strong> · Prozess: Eingang → Prüfung GS → Prüfung PFM → Entscheid.</p>
         ${stepsBar()}
+        ${/* Stufe 2 der Gliederung: die Seite bot Hilfsmitteln ausser der <h1> keinen
+              einzigen Sprungpunkt. sr-only, weil die CD-Schrittanzeige die Position
+              schon sichtbar trägt — und Fokusziel beim Schrittwechsel, damit die
+              Ansage «Schritt N von 3» aus dem Dokument selbst kommt. */''}
+        <h2 class="sr-only" id="wiz-step-head" tabindex="-1">Schritt ${state.step} von 3: ${C.escape(STEP_LABELS[state.step - 1])}</h2>
         ${state.step < 3 ? '<p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>' : ''}
         ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
         <!-- novalidate: ohne das Attribut bricht die HTML-Constraint-Validierung
@@ -103,7 +108,8 @@ export default async function render(ctx) {
     const b = core.building(state.buildingId);
     const n = naw.find(x => x.id === state.nawClass);
     return `
-      <h2>Zusammenfassung</h2>
+      ${/* h3, nicht h2: die Schrittüberschrift oben ist die h2 dieses Abschnitts. */''}
+      <h3>Zusammenfassung</h3>
       <dl class="kv">
         <dt>Verwaltungseinheit</dt><dd>${C.escape(state.org)}</dd>
         <dt>Kostenstelle</dt><dd>${C.escape(state.costCenter)}</dd>
@@ -213,7 +219,7 @@ export default async function render(ctx) {
   // Schrittwechsel ist ein Kontextwechsel: Fokus auf die Seitenüberschrift, damit
   // Screenreader den neuen Schritt ansagen (bisher war er völlig still).
   function focusStepHeading() {
-    const h = mount.querySelector('h1');
+    const h = mount.querySelector('#wiz-step-head') || mount.querySelector('h1');
     if (h) h.focus({ preventScroll: true });
     C.announce(`Schritt ${state.step} von 3`);
   }

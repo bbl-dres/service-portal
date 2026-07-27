@@ -100,6 +100,7 @@ export default async function render(ctx) {
       ${securityNote}
       <!-- novalidate — siehe space-request.js: ohne das Attribut feuert das
            submit-Event nie und validate() bleibt unerreichbar. -->
+      <h2 class="sr-only">Meldung erfassen</h2>
       <form id="report-form" class="form mt-6" novalidate>
         ${buildings.length
           ? C.select({ id: 'bld', name: 'bld', label: 'Gebäude / Standort', required: true,

@@ -43,7 +43,11 @@ export default async function render(ctx) {
     const p = core.parcel(detailId);
     if (p) return parcelDetail(ctx, p);
     freePfMap();
-    mount.innerHTML = `<div class="container section">${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}${C.empty('Objekt nicht gefunden.')}</div>`;
+    setTitle('Objekt nicht gefunden');
+    setCrumbs([...CRUMBS, { label: 'Liegenschaften Inventar', href: '#/app/portfolio' }, { label: 'Nicht gefunden' }]);
+    mount.innerHTML = C.notFound({ backHref: '#/app/portfolio', backLabel: 'Liegenschaften Inventar',
+      title: 'Objekt nicht gefunden',
+      body: `Zu der ID «${C.escape(String(detailId))}» gibt es kein Gebäude und kein Grundstück. <a href="#/app/portfolio">Zur Übersicht «Liegenschaften Inventar»</a>` });
     return;
   }
   freePfMap();
@@ -131,14 +135,14 @@ export default async function render(ctx) {
     return `<a class="card card--universal card--clickable pf-card" href="#/app/portfolio?id=${encodeURIComponent(o.id)}">
       <div class="pf-card__vis">${vis}<div class="pf-card__chips">${chips}</div></div>
       <div class="card__content"><div class="card__body">
-        <div class="card__title">${esc(o.name)}</div>
+        <h3 class="card__title">${esc(o.name)}</h3>
         <p class="card__description">${esc(o.street)}${o.city ? `, ${esc(o.zip)} ${esc(o.city)}` : ''}</p>
       </div>
       <div class="card__footer"><span>${esc(o.cat)}</span><span>${Number(o.area || 0).toLocaleString('de-CH')} m² <span class="muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span></span></div></div></a>`;
   }
   const galleryHTML = (slice) => `<div class="pf-gallery">${slice.map(pfCard).join('')}</div>`;
   // Compact table: Typ as an icon (no label/emoji), Ort merged with Land, GF/GSF unit — fits without a horizontal scrollbar.
-  const listHTML = (slice) => C.table({ zebra: true, columns: [
+  const listHTML = (slice) => C.table({ zebra: true, caption: 'Liegenschaften', columns: [
     { key: 'kind', label: 'Typ', render: (o) => `<span class="pf-typ" title="${o.kind === 'building' ? 'Gebäude' : 'Grundstück'}" aria-label="${o.kind === 'building' ? 'Gebäude' : 'Grundstück'}">${C.icon(o.kind === 'building' ? 'Building' : 'Crop', 'icon--base')}</span>` },
     { key: 'name', label: 'Bezeichnung', render: (o) => `<a href="#/app/portfolio?id=${encodeURIComponent(o.id)}">${esc(o.name)}</a><br><span class="small muted">${esc(o.id)}</span>` },
     { key: 'ort', label: 'Ort', render: (o) => `${esc(o.city)}<br><span class="small muted">${esc(landName(o.land))}</span>` },
@@ -218,7 +222,7 @@ export default async function render(ctx) {
       ${fgroup('status', 'Status', statuses.map((s) => ({ v: s, l: s })))}
       ${fgroup('ownership', 'Eigentumsverhältnis', owns.map((o) => ({ v: o, l: o })))}
       ${fgroup('kind', 'Objekttyp', [{ v: 'building', l: 'Gebäude' }, { v: 'parcel', l: 'Grundstück' }])}
-      <button type="button" class="btn btn--bare btn--sm" id="pf-freset">${C.icon('Refresh', 'icon--base')} Zurücksetzen</button>`;
+      <div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm" id="pf-freset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -234,7 +238,7 @@ export default async function render(ctx) {
     <div class="pf-layout">
       <aside class="pf-sidebar" aria-label="Portfolio-Struktur">
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Portfolio</h2>
-          <button type="button" class="btn btn--bare btn--sm" id="pf-clear" hidden>${C.icon('Cancel', 'icon--base')} Auswahl</button></div>
+          <button type="button" class="btn btn--bare btn--sm" id="pf-clear" hidden>${C.icon('Cancel', 'icon--base')}<span class="btn__text">Auswahl</span></button></div>
         ${treeHTML()}
       </aside>
       <div class="pf-main" id="pf-main"></div>
@@ -552,7 +556,7 @@ function buildingDetail(ctx, b) {
     ${heroMosaic(C, b, galleryItems)}
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', ariaLabel: 'Gebäudedetails' })}
-      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', render: panelHtml })}
+      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', render: panelHtml, heading: true })}
     </div>
   </div>`;
   C.wireTabs(mount);
@@ -608,7 +612,7 @@ function parcelDetail(ctx, p) {
     if (!covers.length) return C.empty('Keine Bodenbedeckungsdaten (amtliche Vermessung) erfasst.');
     const total = covers.reduce((s, c) => s + (Number(c.area) || 0), 0);
     return `<p class="lead" style="margin-top:0">Bedeckte Fläche total: <strong>${total.toLocaleString('de-CH')} m²</strong> <span class="small muted">(${covers.length} Bedeckungen)</span></p>
-      ${C.table({ zebra: true, columns: [
+      ${C.table({ zebra: true, caption: 'Bodenbedeckung (amtliche Vermessung)', columns: [
         { key: 'type', label: 'Bodenbedeckungsart', render: (c) => C.escape(c.type) },
         { key: 'area', label: 'Fläche', render: (c) => `${Number(c.area || 0).toLocaleString('de-CH')} m²` },
         { key: 'status', label: 'AV-Status', render: (c) => C.escape(c.status || '—') },
@@ -626,7 +630,7 @@ function parcelDetail(ctx, p) {
     <div class="pf-map dash-map" id="pf-parcel-map" role="group" aria-label="Bodenbedeckung des Grundstücks" style="height:340px;border-radius:var(--radius-lg)"></div>
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-ptab', ariaLabel: 'Grundstücksdetails' })}
-      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-ptab', render: panelHtml })}
+      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-ptab', render: panelHtml, heading: true })}
     </div>
   </div>`;
   C.wireTabs(mount);

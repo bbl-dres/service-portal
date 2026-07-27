@@ -135,7 +135,7 @@ function overview(ctx) {
     });
   }
   const galleryHTML = (slice) => `<div class="grid grid--3">${slice.map(pjCard).join('')}</div>`;
-  const listHTML = (slice) => C.table({ zebra: true, columns: [
+  const listHTML = (slice) => C.table({ zebra: true, caption: 'Bauprojekte', columns: [
     { key: 'projectNumber', label: 'Projektnr.', render: (o) => `<a href="#/app/projects/${encodeURIComponent(o.id)}">${esc(o.projectNumber)}</a>` },
     { key: 'name', label: 'Bezeichnung', render: (o) => `${esc(o.name)}<br><span class="small muted">${esc(o.buildingName)}</span>` },
     { key: 'ort', label: 'Ort', render: (o) => `${esc(o.city)}<br><span class="small muted">${esc(landName(o.land))}</span>` },
@@ -202,7 +202,7 @@ function overview(ctx) {
       ${C.filterGroup({ dim: 'status', legend: 'Status', selected: state.filters.status, options: projectStatuses.map((s) => ({ value: s.id, label: s.label })) })}
       ${C.filterGroup({ dim: 'sia', legend: 'SIA-Phase', selected: state.filters.sia, options: phases.map((p) => ({ value: p, label: p })) })}
       ${C.filterGroup({ dim: 'sub', legend: 'Teilportfolio', selected: state.filters.sub, options: subPortfolios.map((s) => ({ value: s, label: s })) })}
-      <button type="button" class="btn btn--bare btn--sm" id="pj-freset">${C.icon('Refresh', 'icon--base')} Zurücksetzen</button>`;
+      <div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm" id="pj-freset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -218,7 +218,7 @@ function overview(ctx) {
     <div class="pf-layout">
       <aside class="pf-sidebar" aria-label="Projektstruktur">
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Projekte</h2>
-          <button type="button" class="btn btn--bare btn--sm" id="pj-clear" hidden>${C.icon('Cancel', 'icon--base')} Auswahl</button></div>
+          <button type="button" class="btn btn--bare btn--sm" id="pj-clear" hidden>${C.icon('Cancel', 'icon--base')}<span class="btn__text">Auswahl</span></button></div>
         ${treeHTML()}
       </aside>
       <div class="pf-main" id="pj-main"></div>
@@ -322,7 +322,9 @@ function detail(ctx, id) {
   freePjMap();
   const p = core.project(id);
   if (!p) {
-    mount.innerHTML = `<div class="container section">${C.backLink('#/app/projects', 'Bauprojekte')}${C.empty('Projekt nicht gefunden.')}</div>`;
+    mount.innerHTML = C.notFound({ backHref: '#/app/projects', backLabel: 'Bauprojekte',
+      title: 'Projekt nicht gefunden',
+      body: 'Dieses Bauprojekt existiert nicht. <a href="#/app/projects">Zur Übersicht «Bauprojekte»</a>' });
     return;
   }
   setTitle(p.name);

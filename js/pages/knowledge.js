@@ -76,6 +76,7 @@ function overview(ctx) {
       title: 'News und Wissen',
       lead: 'Aktuelles aus dem BBL, die Prozesse und Vorlagen für die Zusammenarbeit sowie die geltenden Weisungen und Vorgaben.',
     })}
+    <h2 class="sr-only">Bereiche</h2>
     <div class="grid grid--2 mt-8">${entries}</div>
   </div>`;
 }
@@ -186,19 +187,18 @@ function newsList(ctx) {
   const { core, C } = ctx;
   const items = [...core.news()].sort((a, b) => String(b.date).localeCompare(String(a.date)));
   return `
+    <h2 class="sr-only">Aktualitäten</h2>
     <div class="grid grid--3 mt-6">
-      ${items.map(n => `
-        <a class="card card--default card--clickable" href="#/knowledge/news/${encodeURIComponent(n.id)}">
-          <div class="card__image">${C.photo({ id: n.photo, color: n.color, alt: n.title, w: 640, style: 'height:100%' })}</div>
-          <div class="card__body">
-            <div class="row gap-sm small muted">
-              <span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
-            </div>
-            <div class="card__title">${C.escape(n.title)}</div>
-            <p class="card__description">${C.escape(n.teaser)}</p>
-          </div>
-          <div class="card__footer"><span></span><span class="btn btn--link">Weiterlesen ${C.icon('ArrowRight', 'icon--base')}</span></div>
-        </a>`).join('')}
+      ${/* Eine Quelle für die Nachrichtenkarte: C.card liefert das Stretched-Link-
+            Muster (echte <h3> für die Gliederung) und den CD-Kartenfuss. Die
+            bisherige Handverdrahtung hatte einen <div class="card__title">, keinen
+            .card__content-Rahmen und einen leeren <span> als Info-Slot. */''}
+      ${items.map(n => C.card({
+        title: n.title, desc: n.teaser,
+        href: `#/knowledge/news/${encodeURIComponent(n.id)}`,
+        photo: { id: n.photo, color: n.color, alt: '' },
+        footerInfo: `${C.escape(n.date)} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
+      })).join('')}
     </div>`;
 }
 

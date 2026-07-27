@@ -82,8 +82,7 @@ function list(ctx) {
       ...(d.meta.personenbezogen && d.meta.personenbezogen !== 'none'
         ? [C.badge(core.label(`enum.personaldata.${d.meta.personenbezogen}`, 'Personenbezogen'), 'warning')] : []),
     ],
-    footer: `<span>${C.escape(formats(d).join(' · ') || '—')}</span>
-      <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
+    footerInfo: C.escape(formats(d).join(' · ') || '—'), footerAction: C.cardAction(),
   });
 
   const listView = (rows) => C.table({
@@ -120,6 +119,7 @@ function list(ctx) {
     })}
     ${filterBar}
     ${C.catalogueResults({
+      resetHref: '#/data/katalog',
       visible, count: datasets.length, total: all.length, view, page, totalPages, header: false,
       card, listView, unit: 'Datensätzen',
       paginationInputId: 'ds-page', paginationLabel: 'Seitennavigation Datensätze',

@@ -192,6 +192,9 @@ function focusHeading(mount) {
 // write overwrites the newer page (code-review A2).
 let dispatchId = 0;
 let prevPath = null;
+// ResizeObserver der Scrollbereiche der aktuellen Ansicht — beim Ansichtswechsel
+// abmelden, sonst beobachtet er entfernte Knoten weiter.
+let unwireScroll = null;
 
 async function dispatch() {
   const ticket = ++dispatchId;
@@ -248,6 +251,14 @@ async function dispatch() {
     const ctx = makeCtx(mount, params, query, stale);
     await render(ctx);
     if (stale()) return;
+    // Überlaufende Bereiche (Tabellen, Code-/SQL-Kästen) bekommen erst hier ihren
+    // Tastaturzugang: `C.wireScrollRegions` gab es seit Stufe 3, war aber nirgends
+    // aufgerufen — waagrecht scrollende Flächen waren also nur mit der Maus
+    // erreichbar (WCAG 2.1.1). Zentral im Router, damit es für jede Ansicht gilt,
+    // auch für die, die ihre Tabellen später nachrendern (siehe unten: erneuter
+    // Lauf nach Zustandswechseln in mountDataTable/renderMain über den Aufrufer).
+    if (unwireScroll) { unwireScroll(); unwireScroll = null; }
+    unwireScroll = C.wireScrollRegions(mount);
     if (isStateChange) {
       const el = activeId ? document.getElementById(activeId) : null;
       if (el) el.focus({ preventScroll: true });   // Fokus zurück auf den Filter/Schalter

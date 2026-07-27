@@ -87,8 +87,7 @@ export default async function render(ctx) {
       ...(a.hero ? [C.badge('Schlüsselanwendung', 'info')] : []),
       ...(a.link && a.link.kind === 'external' ? [C.badge('Externes System', 'gray')] : []),
     ],
-    footer: `<span>${C.escape(a.group)}</span>
-      <span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
+    footerInfo: C.escape(a.group), footerAction: C.cardAction(),
   });
 
   const listView = (rows) => C.table({
@@ -125,6 +124,7 @@ export default async function render(ctx) {
     })}
     ${filterBar}
     ${C.catalogueResults({
+      resetHref: '#/applications',
       visible, count: apps.length, total: all.length, view, page, totalPages, header: false,
       card, listView, unit: 'Anwendungen',
       paginationInputId: 'app-page', paginationLabel: 'Seitennavigation Anwendungen',

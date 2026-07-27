@@ -1086,6 +1086,15 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 }
 .card__footer { padding:0 1.5rem 1.5rem; border-top:0;
   display:flex; align-items:center; justify-content:space-between; gap:.5rem; font-size:var(--text-sm); color:var(--color-text-muted); }
+/* card.postcss:250-257 — ohne Info-Slot rückt die Aktion nach rechts. */
+.card__footer--icon-only { justify-content:flex-end; }
+.card__footer__info { min-width:0; padding-right:1.5rem; color:var(--color-secondary-500); }
+.card__footer__action { flex:none; }
+/* Der Pfeil im Kartenfuss ist Dekoration (der Kartenlink trägt die Aktion),
+   erbt aber den Hover-Zustand der Karte, damit er nicht toter Rahmen wirkt. */
+.card__footer__action > .btn { pointer-events:none; }
+.card--clickable:hover .card__footer__action > .btn--outline {
+  background:var(--color-primary-600); border-color:var(--color-primary-600); color:#fff; }
 .card--clickable { cursor:pointer; transition:box-shadow var(--duration-slow) var(--ease-in-out); text-decoration:none; color:inherit; }
 .card--clickable::after { content:""; position:absolute; inset:0; border:2px solid transparent; transition:border-color .3s; pointer-events:none; }
 /* Stretched Link: der Titel-<a> überdeckt die ganze Karte (klickbar), ohne die Karte
@@ -1230,6 +1239,14 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 /* Tables (table.postcss:5-135) */
 .table-wrapper { position:relative; overflow-x:auto; }
 .table-wrapper:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+/* Überlauf-Hinweis: nur sichtbar, wenn die Tabelle wirklich breiter ist als ihr
+   Kasten (Klasse von wireScrollRegions). sticky/left:0 hält ihn beim Scrollen. */
+.table-wrapper__hint { display:none; }
+.table-wrapper.is-scrollable > .table-wrapper__hint {
+  display:flex; align-items:center; gap:.35rem;
+  position:sticky; left:0; width:max-content;
+  margin:.5rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); }
+.table-wrapper.is-scrollable > .table-wrapper__hint .icon { flex:none; }
 /* (c) Scroll-Hinweis (dasselbe CD-Idiom wie .tab__controls-container::after) —
    bei 390px stehen AKTUALISIERT und STATUS ohne jeden Hinweis ausserhalb. */
 .table-scroll { position:relative; }
@@ -2123,6 +2140,13 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .catbar__panel .filter-group { margin:0; }
 .catbar__panel__actions { grid-column:1 / -1; display:flex; justify-content:flex-end;
   padding-top:.75rem; border-top:1px solid var(--color-secondary-200); }
+/* Dasselbe für die Seitenleisten-Filter (Dashboards, Portfolio-Karte): der
+   Zurücksetzen-Knopf sass als letztes Geschwister direkt unter der letzten
+   Filtergruppe und las sich wie ein weiterer Filter statt wie die Aktion für
+   alle (Item 5.18). Eigene Zeile mit Trennlinie, hier linksbündig, weil die
+   Leiste schmal ist und ein rechtsbündiger Knopf vom Text weglaufen würde. */
+.filter-panel__actions { display:flex; margin-top:1rem; padding-top:.75rem;
+  border-top:1px solid var(--color-secondary-200); }
 /* Filter-Dropdowns der Katalogseiten (C.select) im Panel. */
 .catbar__panel .form__group__select { min-width:0; margin:0; }
 /* CD-md (767.98) statt der Sonderbreite 700 — live gegengeprüft bei 320/390 auf
@@ -2183,11 +2207,23 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Höhe steht in der Basisregel oben (sonst überschriebe eine tote 34rem-Zeile
    das clamp()). */
 .pf-map { border-radius:var(--radius-lg); }
-.pf-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr)); gap:1rem; align-items:start; }
+.pf-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr)); gap:1.25rem 1rem; align-items:start; }
+/* Ab xl wird die Spaltenzahl fest auf drei begrenzt statt weiter zu füllen:
+   auto-fill ergab bei 1440–1920px vier Karten von 243–298px — für ein Bild,
+   zwei Textzeilen und eine Fusszeile zu dicht. Drei Spalten bleiben über die
+   ganze obere Bandbreite gleich (331px bei 1440 → 405px bei 1920). */
+@media (min-width:1280px){
+  .pf-gallery { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+}
 .pf-card { display:flex; flex-direction:column; overflow:hidden; }
-.pf-card__vis { position:relative; aspect-ratio:16/10; overflow:hidden; background:var(--color-secondary-100); }
-.pf-card__img { width:100%; height:100%; object-fit:cover; }
-.pf-card__parcel { display:flex; align-items:center; justify-content:center; height:100%; color:var(--color-primary-600);
+/* Bildkasten wie .card__image über padding-bottom (16/10 = 62.5%), nicht über
+   aspect-ratio: `.card { height:100% }` streckt die Karte auf die Rasterzeile,
+   und ein aspect-ratio-Flexkind wird dabei gestaucht — das Bild verlor seine
+   Proportion (131px statt 186px) und die Differenz stand als Leerraum über der
+   Fusszeile. Mit height:0 + padding-bottom + flex:none ist der Kasten fix. */
+.pf-card__vis { position:relative; height:0; padding-bottom:62.5%; flex:none; overflow:hidden; background:var(--color-secondary-100); }
+.pf-card__img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.pf-card__parcel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);
   background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
 .pf-card__chips { position:absolute; top:.5rem; left:.5rem; right:.5rem; display:flex; flex-wrap:wrap; gap:.3rem; }
 .pf-card__land { background:rgba(0,0,0,.6); color:#fff; font-size:var(--fs-xs); padding:.12rem .5rem; border-radius:var(--radius-full); }
@@ -2486,8 +2522,11 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* Der Text-Wrapper ist ein Flex-Kind: ohne min-width:0 schrumpft er nicht unter
    seine intrinsische Mindestbreite, und lange Komposita (Datenschutzvorfall,
    Verbrauchsmaterial) laufen aus der Kachel. */
-.quick-tile > span { min-width:0; }
-.quick-tile__label { display:block; font-weight:var(--fw-bold); line-height:var(--lh-snug); overflow-wrap:anywhere; }
+.quick-tile__text { min-width:0; }
+/* Die Beschriftung ist eine <h3> — Grösse und Abstände kommen von der Kachel,
+   nicht von der Überschriftenskala. */
+.quick-tile__label { margin:0; display:block; font-size:var(--text-base);
+  font-weight:var(--fw-bold); line-height:var(--lh-snug); overflow-wrap:anywhere; }
 .quick-tile:hover .quick-tile__label { color:var(--color-primary-700); }
 .quick-tile__meta { display:block; margin-top:.15rem; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
 /* Auf grauen Abschnitten heben sich die weissen Kacheln ab — auf weissen
@@ -2520,6 +2559,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .empty__hint { margin:.5rem auto 0; max-width:44ch; font-size:var(--fs-sm); }
 /* Ausweg aus dem Leerzustand (Item 5.10): «Filter zurücksetzen» / «Alle ansehen». */
 .empty__actions { display:flex; justify-content:center; gap:.75rem; margin-top:1.25rem; flex-wrap:wrap; }
+.empty__action { margin-top:1.25rem; }
 /* «Nicht verfügbar» (Ladefehler) — vom neutralen Leer-Zustand abgesetzt (P0-4). */
 .empty--unavailable { display:flex; align-items:center; justify-content:center; gap:.5rem;
   padding:2rem 1rem; color:var(--color-error-text); background:var(--color-error-bg);

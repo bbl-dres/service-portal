@@ -137,6 +137,7 @@ export default async function render(ctx) {
     title: r.title, desc: r.desc, href: r.href, titleTag: 'h3',
     badges: [C.badge(r.art, 'blue')],
     footerInfo: C.escape(r.type) + (r.date ? ` · ${C.escape(r.date)}` : ''),
+    footerAction: C.cardAction(),
   });
 
   const toolbar = C.catalogueBar({

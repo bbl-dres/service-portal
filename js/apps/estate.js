@@ -303,7 +303,7 @@ export default async function render(ctx) {
           <button type="button" class="filter-panel__toggle btn--bare" id="filter-toggle" aria-label="Filter einklappen" aria-expanded="true">${C.icon('ChevronLeft', 'icon--base')}</button></div>
         <div class="filter-panel__body" id="filter-body">
           ${fGroup('land', 'Land')}${fGroup('region', 'Region / Kanton')}${fGroup('typ', 'Gebäudetyp')}${fGroup('eigentum', 'Eigentumsverhältnis')}${fGroup('status', 'Status')}
-          <button type="button" class="btn btn--bare btn--sm mt-2" id="f-reset">${C.icon('Refresh', 'icon--base')} Zurücksetzen</button>
+          <div class="filter-panel__actions"><button type="button" class="btn btn--bare btn--sm mt-2" id="f-reset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>
         </div>
       </aside>
       <div class="dashboard-main">

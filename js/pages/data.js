@@ -55,6 +55,7 @@ function overview(ctx) {
       title: 'Daten und Digitalisierung',
       lead: 'Auswertungen, Datenbezug und API Verzeichnis sowie die Fachanwendungen des BBL — an einem Ort.',
     })}
+    <h2 class="sr-only">Angebote</h2>
     <div class="grid grid--3 mt-8">${entries}</div>
   </div>`;
 }

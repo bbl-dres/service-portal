@@ -26,10 +26,12 @@ export default async function render(ctx) {
   mount.innerHTML = `
   <div class="container section">
     ${C.pageHeader({ title: 'Meine Vorgänge', lead: 'Status aller von Ihnen ausgelösten Anfragen und Bestellungen.' })}
+    <h2 class="sr-only">Kennzahlen</h2>
     <div class="stats mt-4" style="max-width:34rem">
       <div class="stat"><div class="stat__num">${all.length}</div><div class="stat__label">Vorgänge total</div></div>
       <div class="stat"><div class="stat__num">${openCount}</div><div class="stat__label">offen / in Arbeit</div></div>
     </div>
+    <h2 class="sr-only">Vorgänge</h2>
     <div class="mt-6" id="mc-table"></div>
   </div>`;
 
@@ -146,7 +148,7 @@ function detail(ctx, id) {
 
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabItems, active: activeTab, idPrefix: 'case-tab', ariaLabel: 'Vorgangsdetails' })}
-      ${C.tabPanels({ items: tabItems, active: activeTab, idPrefix: 'case-tab', render: (t) => panelsById[t] })}
+      ${C.tabPanels({ items: tabItems, active: activeTab, idPrefix: 'case-tab', render: (t) => panelsById[t], heading: true })}
     </div>
 
     ${canAdvance

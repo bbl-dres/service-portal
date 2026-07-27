@@ -47,7 +47,7 @@ export default async function render(ctx) {
   const card = (s) => C.card({
     title: s.title, desc: s.short, href: `#/services/${s.serviceId}`,
     badges: [C.audienceTag(s.audience), s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')],
-    footer: `<span>${C.escape(domainLabel(domains, s.domain))}</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
+    footerInfo: C.escape(domainLabel(domains, s.domain)), footerAction: C.cardAction(),
   });
 
   const listView = (list) => C.table({
@@ -95,6 +95,7 @@ export default async function render(ctx) {
     })}
     ${filterBar}
     ${C.catalogueResults({
+      resetHref: '#/services',
       visible: visibleServices, count: services.length, total: all.length, view, page, totalPages, header: false,
       card, listView, unit: 'Dienstleistungen',
       paginationInputId: 'svc-page', paginationLabel: 'Seitennavigation Dienstleistungen',
@@ -170,11 +171,15 @@ function detail(ctx, id) {
     })}
     <div class="split mt-6">
       <div class="stack">
+        ${/* Die Detailseite hatte ausser der <h1> keine Gliederungsstufe: ohne
+              Voraussetzungen und ohne Weisungen blieb sie ganz ohne <h2>/<h3>. */''}
+        <h2 class="sr-only">Beschreibung</h2>
         <p>${C.escape(s.description)}</p>
         ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="box"><h3>Das brauchen Sie</h3><ul style="padding-left:1.1rem">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
         ${ctaBlock}
       </div>
-      <aside class="stack-lg">
+      <aside class="stack-lg" aria-labelledby="svc-aside-head">
+        <h2 class="sr-only" id="svc-aside-head">Kontakt und Grundlagen</h2>
         ${C.contactBox(contact)}
         ${weis.length ? `<div class="box"><h3>Geltende Weisungen</h3>${weis.map(w => `<a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge/grundlagen/${w.directiveId}">${C.icon('Book', 'icon--base')}<span class="small">${C.escape(w.title)}</span></a>`).join('')}</div>` : ''}
       </aside>

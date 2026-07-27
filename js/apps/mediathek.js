@@ -196,7 +196,9 @@ function detail(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
   const m = core.media().find(x => x.mediaId === id);
   if (!m) {
-    mount.innerHTML = `<div class="container section">${C.backLink('#/app/mediathek', 'Mediathek')}${C.empty('Medium nicht gefunden.')}</div>`;
+    mount.innerHTML = C.notFound({ backHref: '#/app/mediathek', backLabel: 'Mediathek',
+      title: 'Medium nicht gefunden',
+      body: 'Dieses Medium existiert nicht (oder wurde zurückgezogen). <a href="#/app/mediathek">Zur Übersicht «Mediathek»</a>' });
     return;
   }
 

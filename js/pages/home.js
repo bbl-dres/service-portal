@@ -50,13 +50,17 @@ export default async function render(ctx) {
 
   // Häufige Dienstleistung — Textkachel, kein Bild: hier zählt das Ziel,
   // nicht die Illustration.
+  // Die Kachelbeschriftung ist eine echte <h3>: sie war ein <span> und fehlte
+  // damit in der Dokumentgliederung — die Startseite bot Hilfsmitteln unter
+  // «Häufig gebraucht» keinen einzigen Sprungpunkt an. <a> hat im HTML5 ein
+  // transparentes Inhaltsmodell, eine Überschrift darin ist gültig.
   const serviceTile = (s) => `
     <a class="quick-tile plain-link" href="#/services/${encodeURIComponent(s.serviceId)}">
       ${C.icon(s.icon || 'ArrowRight', 'icon--md')}
-      <span>
-        <span class="quick-tile__label">${C.escape(s.title)}</span>
+      <div class="quick-tile__text">
+        <h3 class="quick-tile__label">${C.escape(s.title)}</h3>
         <span class="quick-tile__meta">${C.escape(s.short)}</span>
-      </span>
+      </div>
     </a>`;
 
   /* ------------------------------------------------------------- Blöcke -- */
@@ -95,12 +99,12 @@ export default async function render(ctx) {
   const themaCard = (t) => C.card({
     title: t.label, desc: t.desc, href: `#/services?topic=${encodeURIComponent(t.key)}`,
     photo: { id: t.photo, color: t.color, alt: '' },
-    footer: `<span>Dienstleistungen</span><span class="btn btn--link">Öffnen ${C.icon('ArrowRight', 'icon--base')}</span>`,
+    footerInfo: 'Dienstleistungen', footerAction: C.cardAction(),
   });
   const areaCard = (a) => C.card({
     title: a.label, desc: a.desc, href: a.overview, external: true,
     photo: { id: a.photo, alt: '' },
-    footer: `<span>BBL-Intranet</span><span class="btn btn--link">Öffnen ${C.icon('External', 'icon--base')}</span>`,
+    footerInfo: 'BBL-Intranet', footerAction: C.cardAction({ external: true }),
   });
   blocks.push({
     title: 'Bestellen und weitere Angebote',
@@ -114,8 +118,7 @@ export default async function render(ctx) {
       title: n.title, desc: n.teaser,
       href: `#/knowledge/news/${encodeURIComponent(n.id)}`,
       photo: { id: n.photo, color: n.color, alt: '' },
-      footer: `<span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
-        <span class="btn btn--link">Weiterlesen ${C.icon('ArrowRight', 'icon--base')}</span>`,
+      footerInfo: `${C.escape(n.date)} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
     })).join('')}</div>`,
     more: { href: '#/knowledge/news', label: 'Alle Aktualitäten ansehen' },
   });

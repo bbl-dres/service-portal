@@ -172,13 +172,26 @@ export function table({ columns, rows, zebra, caption, showCaption, foot }) {
     }).join('')}</tr>`
   ).join('');
   const cls = ['table', zebra ? 'table--zebra' : '', showCaption ? 'table--caption' : ''].filter(Boolean).join(' ');
-  return `<div class="table-wrapper" tabindex="0" role="region" aria-label="${escape(caption || 'Tabelle')}">
+  // Nur eine benannte Tabelle wird zur benannten Region: `aria-label="Tabelle"`
+  // war für 11 der 15 Tabellen der Name — im Landmarkenbaum standen elf
+  // gleichnamige «Tabelle»-Regionen ohne Unterscheidungsmerkmal (Item 5.6).
+  // Ohne Namen bleibt der Kasten ein reiner Scrollbereich; tabindex/role setzt
+  // `wireScrollRegions` erst, wenn er wirklich überläuft.
+  return `<div class="table-wrapper"${caption ? ` role="region" aria-label="${escape(caption)}"` : ''}>
     <table class="${cls}">
     ${caption ? `<caption>${escape(caption)}</caption>` : ''}
     <thead><tr>${head}</tr></thead>
     <tbody>${body || `<tr><td colspan="${columns.length}" class="muted">Keine Einträge</td></tr>`}</tbody>
     ${foot ? `<tfoot>${foot}</tfoot>` : ''}
-  </table></div>`;
+  </table>
+  ${/* Sichtbarer Hinweis auf den waagrechten Überlauf (Item 5.7): eine Tabelle,
+        die rechts weitergeht, sah bisher aus wie eine Tabelle, die dort endet —
+        die abgeschnittene Spalte fand niemand. `position:sticky; left:0` hält den
+        Hinweis beim Scrollen an seinem Platz; die Klasse `is-scrollable` setzt
+        `wireScrollRegions`, der Hinweis erscheint also nur bei echtem Überlauf.
+        aria-hidden: der Wrapper trägt Name + tabindex, und Hilfsmittel lesen
+        Tabellen zellenweise statt zu scrollen. */''}
+  <p class="table-wrapper__hint" aria-hidden="true">${icon('ArrowRight', 'icon--sm')}Tabelle seitlich scrollbar</p></div>`;
 }
 
 // Leerer Zustand. `unavailable: true` (P0-4) markiert «Daten nicht verfügbar»
@@ -189,8 +202,18 @@ export function empty(msg, opts = {}) {
     return `<div class="empty empty--unavailable">${icon('WarningCircle', 'icon--base')}<span>${escape(msg)}</span></div>`;
   }
   // Angereicherter Leerzustand nur mit Hinweis; ohne bleibt es die schlichte Variante.
-  return opts.hint
-    ? `<div class="empty"><p class="empty__title">${escape(msg)}</p><p class="empty__hint">${opts.hint}</p></div>`
+  // `action` gibt dem Nullzustand ein Bedienelement statt nur eines Rats: bisher
+  // stand dort «Passen Sie Ihre Suche oder die Filter an» und der Weg dahin war
+  // wieder nach oben zu scrollen und die Leiste zu finden. `href` navigiert,
+  // `id` erwartet, dass der Aufrufer den Button verdrahtet.
+  const action = opts.action
+    ? (opts.action.href
+      ? `<a class="btn btn--outline btn--sm empty__action" href="${escape(opts.action.href)}">${icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">${escape(opts.action.label)}</span></a>`
+      : `<button type="button" class="btn btn--outline btn--sm empty__action"${opts.action.id ? ` id="${escape(opts.action.id)}"` : ''}>${icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">${escape(opts.action.label)}</span></button>`)
+    : '';
+  return (opts.hint || action)
+    ? `<div class="empty"><p class="empty__title">${escape(msg)}</p>${
+        opts.hint ? `<p class="empty__hint">${opts.hint}</p>` : ''}${action}</div>`
     : `<div class="empty">${escape(msg)}</div>`;
 }
 
@@ -273,27 +296,41 @@ export function rerender(mount, html) {
 // toten Tab-Stopp. `.table-wrapper` machte das bisher unbedingt; hier ist es
 // gemessen. Ausserdem wird die Region nur dann als Gruppe angesagt, wenn sie
 // wirklich scrollt (Item 3.21).
+const SCROLL_SEL = '[data-scroll-region], .table-wrapper, pre.api-code';
 export function wireScrollRegions(root) {
   const scan = () => {
-    root.querySelectorAll('[data-scroll-region], .table-wrapper').forEach((el) => {
+    root.querySelectorAll(SCROLL_SEL).forEach((el) => {
       const scrolls = el.scrollWidth > el.clientWidth + 1;
       el.classList.toggle('is-scrollable', scrolls);
       if (scrolls) {
         el.setAttribute('tabindex', '0');
-        if (!el.hasAttribute('role')) el.setAttribute('role', 'group');
+        // Eine Region/Gruppe OHNE Namen ist für Hilfsmittel schlechter als keine:
+        // sie erscheint als anonymer Knoten im Landmarken-/Gruppenbaum. Nur wer
+        // einen Namen mitbringt, wird auch zur benannten Gruppe erklärt.
+        const named = el.getAttribute('aria-label') || el.getAttribute('aria-labelledby');
+        if (named && !el.hasAttribute('role')) el.setAttribute('role', 'group');
+        if (!named) el.removeAttribute('role');
       } else {
         el.removeAttribute('tabindex');
+        el.removeAttribute('role');
       }
     });
   };
   scan();
-  // Ein Breitenwechsel kann den Überlauf entstehen oder verschwinden lassen.
-  if (typeof ResizeObserver === 'function') {
-    const ro = new ResizeObserver(scan);
-    root.querySelectorAll('[data-scroll-region], .table-wrapper').forEach((el) => ro.observe(el));
-    return () => ro.disconnect();
-  }
-  return () => {};
+  // Zwei Auslöser: Breitenwechsel (Überlauf entsteht/verschwindet) UND
+  // Nachrendern (mountDataTable, renderMain, Tabwechsel tauschen ganze Teilbäume
+  // aus — die neuen Wrapper waren sonst nie erfasst und blieben ohne tabindex).
+  let pending = 0;
+  const queue = () => { if (pending) return; pending = requestAnimationFrame(() => { pending = 0; scan(); }); };
+  const mo = typeof MutationObserver === 'function' ? new MutationObserver(queue) : null;
+  if (mo) mo.observe(root, { childList: true, subtree: true });
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(queue) : null;
+  if (ro) ro.observe(root);
+  return () => {
+    if (pending) cancelAnimationFrame(pending);
+    if (mo) mo.disconnect();
+    if (ro) ro.disconnect();
+  };
 }
 
 // Fokusfalle für modale Overlays (Lightbox, Chart-Vollbild, Dokumentvorschau):
@@ -349,8 +386,31 @@ export function openModal(opts = {}) {
   return close;
 }
 
+// Kartenfuss in der CD-Anatomie (Card.vue:27-37, card.postcss:245-257):
+// `card__footer__info` links, `card__footer__action` rechts. Die Aktion ist im
+// CD ein Icon-only-Outline-Button — der Pfeil ist sichtbar, die Beschriftung
+// steht sr-only (btn.postcss:160-166). Es gibt im CD also gar keinen sichtbaren
+// «Öffnen»-Text.
+//
+// Hier ist die ganze Karte ein <a>, deshalb darf die Aktion kein zweiter Link
+// sein (verschachtelte <a> sind ungültig und erzeugten bisher einen Pseudolink:
+// ein <span class="btn btn--link">Öffnen</span>, das wie ein Bedienelement
+// aussah, aber weder fokussierbar war noch als Link angekündigt wurde). Sie ist
+// deshalb rein dekorativ und für Hilfsmittel ausgeblendet — den zugänglichen
+// Namen und die Aktion trägt der Kartenlink selbst.
+export function cardAction({ external = false } = {}) {
+  return `<span class="btn btn--outline btn--icon-only" aria-hidden="true">${icon(external ? 'External' : 'ArrowRight', 'btn__icon icon--base')}</span>`;
+}
+
+export function cardFooter(meta = '', opts = {}) {
+  return `<div class="card__footer${meta ? '' : ' card__footer--icon-only'}">
+    ${meta ? `<div class="card__footer__info">${meta}</div>` : ''}
+    <div class="card__footer__action">${cardAction(opts)}</div>
+  </div>`;
+}
+
 // Icon-Kachel (domain-tile): bildlose Karte mit grossem Icon, Titel, Text und
-// «Öffnen»-Fuss. Eine Quelle für die Übersichtskarten (Daten, Wissen,
+// Pfeil-Fuss. Eine Quelle für die Übersichtskarten (Daten, Wissen,
 // Digitalisierung) — bildlose Karten sind card--default (CD, nicht --universal).
 export function domainTile({ icon: ic, title, desc, meta = '', href, external = false, titleTag = 'h3' }) {
   const ext = external ? ' target="_blank" rel="noopener external"' : '';
@@ -363,10 +423,7 @@ export function domainTile({ icon: ic, title, desc, meta = '', href, external = 
         <${titleTag} class="card__title">${escape(title)}</${titleTag}>
         <p class="card__description">${escape(desc)}</p>
       </div>
-      <div class="card__footer">
-        <span>${escape(meta)}</span>
-        <span class="btn btn--link">Öffnen ${icon(external ? 'External' : 'ArrowRight', 'icon--base')}</span>
-      </div>
+      ${cardFooter(escape(meta), { external })}
     </div>
   </a>`;
 }
@@ -507,11 +564,17 @@ export function tabBar({ items, active, idPrefix = 'tab', ariaLabel = '', panelI
 // Mehr-Panel-Markup (Pattern A): ein .tab__container je Tab, inaktive `hidden`.
 // `render(id)` liefert das fertige Panel-HTML. Für das Einzel-Panel-Muster stellt
 // der Aufrufer sein eigenes Panel und lässt wireTabs den Inhalt neu rendern.
-export function tabPanels({ items, active, idPrefix = 'tab', render }) {
+// `heading: true` stellt jedem Panel eine sr-only-<h2> mit der Tab-Beschriftung
+// voran. `aria-labelledby` benennt das Panel nur, sobald der Fokus darin liegt —
+// für die Überschriftennavigation (WCAG 2.4.10) fehlte auf reinen Tab-Seiten
+// jede Stufe zwischen der <h1> und den <h3> im Panelinhalt.
+export function tabPanels({ items, active, idPrefix = 'tab', render, heading = false }) {
   return items.map((t) =>
     `<div class="tab__container" role="tabpanel" id="${idPrefix}-panel-${t.id}"`
     + ` aria-labelledby="${idPrefix}-${t.id}" tabindex="0" data-panel="${t.id}"`
-    + `${t.id === active ? '' : ' hidden'}>${render(t.id)}</div>`).join('');
+    + `${t.id === active ? '' : ' hidden'}>`
+    + `${heading ? `<h2 class="sr-only">${escape(t.label || t.id)}</h2>` : ''}`
+    + `${render(t.id)}</div>`).join('');
 }
 
 // Verdrahtet die Tab-Leiste(n) in `root`: Klick + Pfeiltasten/Home/End, roving
@@ -865,6 +928,7 @@ export function catalogueResults({
   card, listView, unit, gridCls = 'grid grid--3',
   paginationHref, paginationInputId, paginationLabel,
   available = true, emptyMsg, unavailableMsg, note = '', header = true,
+  regionLabel = '', resetHref = '',
 }) {
   const body = count
     ? `${view === 'liste'
@@ -872,11 +936,22 @@ export function catalogueResults({
         : `<div class="${gridCls} mt-4">${visible.map(card).join('')}</div>`}${
       paginationHref ? pagination({ page, totalPages, inputId: paginationInputId, label: paginationLabel, href: paginationHref }) : ''}`
     : available
-      ? empty(emptyMsg || `Keine ${escape(unit)} gefunden.`, { hint: 'Passen Sie Ihre Suche oder die Filter an — oben lassen sich aktive Filter zurücksetzen.' })
+      // Nullzustand mit Ausweg: der Rat «oben lassen sich aktive Filter
+      // zurücksetzen» verlangte, wieder hochzuscrollen und die Leiste zu finden
+      // (Item 5.13). `resetHref` gibt dem Zustand denselben Weg als Bedienelement.
+      ? empty(emptyMsg || `Keine ${escape(unit)} gefunden.`, {
+          hint: 'Passen Sie Ihre Suche oder die Filter an.',
+          action: resetHref ? { label: 'Suche und Filter zurücksetzen', href: resetHref } : null,
+        })
       : empty(unavailableMsg || `${unit} konnten nicht geladen werden (Ladefehler).`, { unavailable: true });
   // header:false, wenn die Seite bereits eine C.catalogueBar rendert (die Trefferzahl
   // + Ansichtswechsel selbst enthält) — dann nur Hinweis + Trefferkörper.
+  // Die Trefferliste braucht eine eigene Überschrift: die Karten darin sind
+  // <h3>, und ohne <h2> sprang die Gliederung von der Seiten-<h1> direkt auf
+  // Stufe 3 (WCAG 1.3.1 / 2.4.10). Sie bleibt sr-only, weil die sichtbare
+  // Trefferzahl in der catalogueBar dieselbe Information trägt.
   return `<section class="mt-6">
+      <h2 class="sr-only">${escape(regionLabel || unit || 'Ergebnisse')}</h2>
       ${header ? resultsHeader({ count, total, unit, page, totalPages, view }) : ''}
       ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
       ${body}
@@ -1273,6 +1348,6 @@ export const C = {
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
   preserveFocus, rerender, wireScrollRegions, wirePipeline, errorSummary, wireErrorSummary, stepIndicator,
-  breakable, mountDataTable,
+  breakable, mountDataTable, cardAction, cardFooter,
 };
 export default C;

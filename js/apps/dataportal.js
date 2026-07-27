@@ -59,17 +59,14 @@ function overview(ctx) {
   const topicCard = (t) => {
     const board = boards.find(b => b.topicId === t.id);
     const n = board ? board.charts.length : 0;
-    return `<a class="card card--universal card--clickable" href="#/app/dataportal/${encodeURIComponent(t.id)}">
-      <div class="card__content"><div class="card__body">
-        <span class="domain-tile__icon">${C.icon(t.icon, 'icon--2xl')}</span>
-        <div class="card__title">${C.escape(t.title)}</div>
-        <p class="card__description">${C.escape(t.desc)}</p>
-      </div>
-      <div class="card__footer">
-        <span>${n} ${n === 1 ? 'Auswertung' : 'Auswertungen'}</span>
-        <span class="btn btn--link">Dashboard öffnen ${C.icon('ArrowRight', 'icon--base')}</span>
-      </div></div>
-    </a>`;
+    // Dieselbe Icon-Kachel wie in Daten/Wissen/Digitalisierung (C.domainTile):
+    // echte <h3> für die Gliederung, CD-Kartenfuss, und bildlose Karten sind
+    // card--default (nicht --universal, das ist die Letterbox-Bildvariante).
+    return C.domainTile({
+      icon: t.icon, title: t.title, desc: t.desc,
+      meta: `${n} ${n === 1 ? 'Auswertung' : 'Auswertungen'}`,
+      href: `#/app/dataportal/${encodeURIComponent(t.id)}`,
+    });
   };
 
   mount.innerHTML = `
@@ -79,6 +76,7 @@ function overview(ctx) {
       lead: 'Auswertungen zu den Kennzahlen des BBL — Energie und Klima, Immobilienportfolio, Beschaffung, Personal, Logistik und Mobilität.',
     })}
     <p class="small muted lead-hint">Behördenübergreifende Kennzahlen und Auswertungen bietet das Management-Informationssystem (MIS) der Bundesverwaltung — aufgebaut im <a href="https://www.bbl.admin.ch/de/programm-superb" target="_blank" rel="noopener external">Programm SUPERB</a> (SAP S/4HANA).</p>
+    <h2 class="sr-only">Themen</h2>
     <div class="grid grid--3 mt-8">${topics.map(topicCard).join('')}</div>
   </div>`;
 }
@@ -174,7 +172,7 @@ function dashboardView(ctx, id) {
             <label for="f-to">bis Jahr</label>
             ${C.selectBox(`<select id="f-to" class="input--outline input--base">${yearOpts(state.to)}</select>`)}
           </div>
-          <button type="button" class="btn btn--bare btn--sm mt-4" id="f-reset">${C.icon('Refresh', 'icon--base')} Zurücksetzen</button>
+          <div class="filter-panel__actions"><button type="button" class="btn btn--bare btn--sm mt-4" id="f-reset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>
         ` : '<p class="small muted" style="margin:0">Für dieses Dashboard sind keine Zeitreihen-Filter verfügbar.</p>'}
       </div>
     </aside>`;

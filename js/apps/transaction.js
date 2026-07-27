@@ -55,6 +55,7 @@ export default async function render(ctx) {
 
   const tableHtml = C.table({
     zebra: true,
+    caption: 'Positionen',
     columns: [
       { key: 'objekt', label: 'Objekt', render: r => `<a href="#/app/portfolio?id=${encodeURIComponent(r.b.bbl_id)}">${C.escape(r.b.name)}</a><br><span class="small muted">${C.escape(r.b.bbl_id)}</span>` },
       { key: 'standort', label: 'Standort', render: r => `${C.escape(r.b.street)}<br><span class="small muted">${C.escape(r.b.zip)} ${C.escape(r.b.city)}</span>` },
