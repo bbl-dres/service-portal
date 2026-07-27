@@ -1275,7 +1275,8 @@ table.table thead th.text-right, table.table tbody th.text-right, table.table td
 table.table tfoot th.text-right, table.table tfoot td.text-right { text-align:right; }
 table.table thead th.text-center, table.table tbody th.text-center, table.table td.text-center,
 table.table tfoot th.text-center, table.table tfoot td.text-center { text-align:center; }
-table.table thead th.text-left, table.table tbody th.text-left, table.table td.text-left { text-align:left; }
+table.table thead th.text-left, table.table tbody th.text-left, table.table td.text-left,
+table.table tfoot th.text-left, table.table tfoot td.text-left { text-align:left; }
 /* `tbody th` ist fett — in den Listenansichten steckt darin aber Titel UND
    Teasertext, sodass jede Beschreibung fett gerendert wurde (Item 2.12). */
 table.table tbody th .small,
@@ -1675,7 +1676,13 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
   bottom:calc(100% - (1rem + 2.75rem)); }
 .back-to-top-track { padding-inline-end:.75rem; }
 @media (min-width:1280px){ .back-to-top-track { padding-inline-end:1rem; } }
-.maplibregl-ctrl-bottom-right { padding-bottom:3.5rem; }  /* MapLibres eigenes Cluster freischieben */
+/* Freiraum unter der Attribution, damit der sticky «Nach oben»-Knopf (unten
+   rechts, 2.75–4rem hoch) sie nicht überdeckt. 3.5rem waren dafür grosszügig
+   gerechnet und schoben die Attribution sichtbar von der Kartenkante weg; der
+   Knopf steht bei `bottom:1.5rem`, ~1.5rem Abstand genügen. Nur auf den grossen
+   Karten im Seitenfluss — der Hero-Karte kommt der Knopf nie in die Quere. */
+.dash-map .maplibregl-ctrl-bottom-right,
+.pf-map .maplibregl-ctrl-bottom-right { padding-bottom:1.5rem; }
 @media (min-width:1024px){ .back-to-top-rail { bottom:calc(100% - (1rem + 3rem)); } }
 @media (min-width:1280px){ .back-to-top-rail { bottom:calc(100% - (1rem + 4rem)); } }
 .back-to-top-track { height:100%; display:flex; flex-direction:column;
@@ -1907,11 +1914,17 @@ body.docviewer-open .back-to-top-rail { display:none; }
   padding:.75rem .9rem; border-radius:var(--radius-lg);
   border:1px solid var(--color-secondary-100); box-shadow:var(--shadow-lg); font-size:var(--text-sm); }
 /* MapLibre liefert seine Bedienknöpfe ungestylt mit 29x29 aus — auf CDs Rampe
-   holen (in diag.json auf dash-immobilien, portfolio und projects bei JEDER Breite). */
+   holen (in diag.json auf dash-immobilien, portfolio und projects bei JEDER Breite).
+   Die Rampe wächst hier BEWUSST nicht mit der Breite wie sonst (--control-h):
+   Kartenknöpfe liegen ÜBER dem Inhalt, den sie verdecken, und ab 1024px zeigt
+   praktisch immer ein feiner Zeiger auf sie — 48px wirkten dort klobig. 44px auf
+   Touch bleiben (WCAG 2.5.5 AAA), 40px am Zeiger liegen weit über der
+   AA-Mindestgrösse von 24px (WCAG 2.5.8). */
 .dash-map .maplibregl-ctrl-group button,
 .pf-map  .maplibregl-ctrl-group button { width:2.75rem; height:2.75rem; }
-@media (min-width:1024px){ .dash-map .maplibregl-ctrl-group button,
-  .pf-map .maplibregl-ctrl-group button { width:3rem; height:3rem; } }
+@media (min-width:1024px) and (pointer:fine){
+  .dash-map .maplibregl-ctrl-group button,
+  .pf-map .maplibregl-ctrl-group button { width:2.5rem; height:2.5rem; } }
 .dash-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon,
 .pf-map  .maplibregl-ctrl-group button .maplibregl-ctrl-icon { background-size:60%; }
 .dash-map .maplibregl-ctrl-attrib-button,
@@ -2339,18 +2352,51 @@ body.chart-overlay-open { overflow:hidden; }
    Links das Hauptbild auf voller Höhe, rechts ein 2x2-Raster. Jede Kachel ist ein
    eigener Knopf und öffnet die Galerie bei genau ihrem Bild; die letzte Nebenkachel
    trägt bei mehr als fünf Bildern die Auflage «Alle Bilder anzeigen». */
+/* EIN Prinzip über alle Breiten: die Zeilenhöhe kommt aus dem Seitenverhältnis
+   des Hauptbilds, nie aus einer festen rem-Zeile. Die Kachelspalte und die Karte
+   ziehen sich auf diese Höhe.
+   Vorher lagen hier drei überlappende Breakpoint-Systeme über einer 22rem-Zeile:
+   bei 700px ergab das einen 800px hohen Hero mit einem 393px hohen Bild (mehr
+   Hero als Inhalt), bei 1024px ein auf 1.74 gedehntes Bild. */
 .pf-mosaic { display:grid; grid-template-columns:1fr; gap:.5rem; }
-@media (min-width:768px){
-  .pf-mosaic { grid-template-columns:2fr 1fr; height:22rem; }
-  .pf-mosaic--single { grid-template-columns:1fr; }
+.pf-mosaic__cell--main { aspect-ratio:16/10; }
+/* Feste Zeilen statt auto: sonst bestimmt der INHALT der Platzhalterkacheln
+   (Symbol + «Kein Bild») die Höhe der Spalte, und sie wächst über das Hauptbild
+   hinaus, statt sich dessen Höhe zu teilen. */
+.pf-mosaic__side { display:grid; gap:.5rem; min-height:0;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr)); }
+.pf-hero__map { position:relative; overflow:hidden;
+  border-radius:var(--radius-lg); background:var(--color-secondary-100); }
+
+/* Bis 640px — gestapelt. Flacheres Hauptbild (16/9) und eine Viererreihe
+   Kacheln: auf dem Telefon zählt, wie schnell man an den Inhalt DARUNTER kommt,
+   nicht wie gross das Bild ist. */
+@media (max-width:639.98px){
+  .pf-mosaic__cell--main { aspect-ratio:16/9; }
+  /* Feste Kachelzeile statt quadratischer Kacheln: quadratisch wuchsen sie mit
+     der Breite mit (120px bei 560px) und machten den gestapelten Hero höher als
+     den zweispaltigen direkt darüber — bei 560px 612px gegen 465px bei 640px. */
+  .pf-mosaic__side { grid-template-columns:repeat(4,minmax(0,1fr));
+    grid-template-rows:5rem; }
+  .pf-hero__map { height:12rem; }
 }
-.pf-mosaic__side { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; min-height:0; }
-@media (max-width:767.98px){
-  /* Auf dem Handy bleibt das Hauptbild gross, die Nebenkacheln werden eine Reihe. */
-  .pf-mosaic__cell--main .pf-mosaic__photo { aspect-ratio:16/10; }
-  .pf-mosaic__side { grid-template-columns:repeat(4,minmax(0,1fr)); }
-  .pf-mosaic__cell--side .pf-mosaic__photo { aspect-ratio:1/1; }
+/* 640–1279px — Bild und Kacheln nebeneinander, Karte als Band darunter: drei
+   Drittel wären hier je nur ~300px breit. `max-height` deckelt das Bild am oberen
+   Ende des Bandes, sonst wüchse es bei 1279px auf ~500px Höhe. */
+@media (min-width:640px) and (max-width:1279.98px){
+  .pf-mosaic--map { grid-template-columns:2fr 1fr; }
+  .pf-mosaic--map .pf-mosaic__cell--main { max-height:22rem; }
+  .pf-mosaic--map .pf-hero__map { grid-column:1 / -1; height:14rem; }
 }
+/* Ab 1280px — drei gleiche Drittel, die Karte wird zur dritten Spalte. */
+@media (min-width:1280px){
+  .pf-mosaic--map { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+}
+/* Platzhalterkachel: gleiche Fläche wie ein Bild, aber ohne Zeigerhand — dahinter
+   liegt nichts, was sich öffnen liesse. */
+.pf-mosaic__cell--empty { cursor:default; background:var(--color-secondary-50); }
+.pf-mosaic__cell--empty .image__not-available { width:100%; height:100%; }
 .pf-mosaic__cell { position:relative; display:block; padding:0; border:0; background:none; cursor:zoom-in;
   border-radius:var(--radius-lg); overflow:hidden; min-height:0; }
 .pf-mosaic__cell:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }

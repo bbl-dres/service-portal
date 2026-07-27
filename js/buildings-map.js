@@ -171,7 +171,15 @@ export async function initBuildingsMap(container, buildings) {
 // rotation to north. `points` = [{ lat, lon, label, sub?, bblId?, href? }].
 const BLUE = '#2563eb';
 const PARCEL = '#0f766e';   // teal — Grundstücke, distinct from the blue building markers
-export async function initEstateMap(container, points, parcels, focus) {
+// `opts.focusPopup: false` zoomt auf das Objekt, öffnet aber KEIN Info-Popup.
+// Nötig für die Hero-Karte der Detailseite: MapLibre setzt den Fokus auf den
+// Schliessen-Knopf des Popups, sobald es angehängt wird — beim Seitenaufbau
+// sprang der Fokus damit von der <h1> in die Karte (WCAG 2.4.3), und die
+// Tastaturtests der Registerleiste wurden dadurch sporadisch rot. Auf der
+// Übersichtskarte bleibt das Popup: dort ist es die Antwort auf eine Auswahl
+// im Baum, also eine bewusste Nutzeraktion.
+export async function initEstateMap(container, points, parcels, focus, opts = {}) {
+  const focusPopup = opts.focusPopup !== false;
   const c = (points || []).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon));
   let maplibregl;
   try {
@@ -246,7 +254,7 @@ export async function initEstateMap(container, points, parcels, focus) {
       const bp = c.find((p) => p.bblId === focus);
       if (bp) {
         map.easeTo({ center: [bp.lon, bp.lat], zoom: 15 });
-        popup.setLngLat([bp.lon, bp.lat]).setHTML(
+        if (focusPopup) popup.setLngLat([bp.lon, bp.lat]).setHTML(
           `<strong>${esc(bp.label)}</strong>${bp.sub ? `<br><span class="small muted">${esc(bp.sub)}</span>` : ''}`
           + `${bp.bblId ? `<br><span class="small muted">${esc(bp.bblId)}</span>` : ''}`
           + `${bp.href ? `<br><a class="link" href="${esc(bp.href)}">Objekt ansehen →</a>` : ''}`,
@@ -258,7 +266,7 @@ export async function initEstateMap(container, points, parcels, focus) {
           const ct = [ring.reduce((s, p) => s + p[0], 0) / ring.length, ring.reduce((s, p) => s + p[1], 0) / ring.length];
           const pr = pf.properties;
           map.easeTo({ center: ct, zoom: 16 });
-          popup.setLngLat(ct).setHTML(
+          if (focusPopup) popup.setLngLat(ct).setHTML(
             `<strong>${esc(pr.label)}</strong>${pr.sub ? `<br><span class="small muted">${esc(pr.sub)}</span>` : ''}`
             + `<br><span class="small muted">Grundstück ${esc(pr.id)}${pr.area ? ' · ' + Number(pr.area).toLocaleString('de-CH') + ' m²' : ''}</span>`
             + `${pr.href ? `<br><a class="link" href="${esc(pr.href)}">Objekt ansehen →</a>` : ''}`,
@@ -272,8 +280,23 @@ export async function initEstateMap(container, points, parcels, focus) {
   map.on('click', 'clusters', (e) => {
     const f = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })[0];
     if (!f) return;
-    Promise.resolve(map.getSource('estate').getClusterExpansionZoom(f.properties.cluster_id))
-      .then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: z })).catch(() => {});
+    const src = map.getSource('estate');
+    const id = f.properties.cluster_id;
+    // Auf die tatsächliche Ausdehnung der enthaltenen Objekte zoomen statt auf den
+    // «expansion zoom». Letzterer sagt nur, ab wann DIESES Cluster zerfällt — bei
+    // sieben über die Schweiz verteilten Objekten in der Weltansicht ist das
+    // Zoom 2. Gemessen: der Klick brachte 1.52 -> 2.0, optisch also nichts, und
+    // wirkte deshalb wie ein toter Klick. fitBounds über die Blätter zeigt
+    // stattdessen immer genau die Objekte, die im Cluster stecken.
+    Promise.resolve(src.getClusterLeaves(id, Infinity, 0)).then((leaves) => {
+      if (!leaves || !leaves.length) throw new Error('keine Blätter');
+      const b = new maplibregl.LngLatBounds();
+      leaves.forEach((l) => b.extend(l.geometry.coordinates));
+      map.fitBounds(b, { padding: 64, maxZoom: 15, duration: 600 });
+    }).catch(() => {
+      Promise.resolve(src.getClusterExpansionZoom(id))
+        .then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: z })).catch(() => {});
+    });
   });
   map.on('click', 'points', (e) => {
     const p = e.features[0].properties;

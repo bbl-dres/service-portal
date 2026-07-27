@@ -487,7 +487,10 @@ function buildingDetail(ctx, b) {
       foot: (visible, filtered) => {
         const cur = (filtered[0] || {}).currency || 'CHF';
         const sum = filtered.reduce((s, c) => s + (Number(c.amount) || 0), 0);
-        return `<tr class="table__total"><th scope="row">Total</th><td></td><td class="text-right"><strong>${fmtMoney(sum, cur)}</strong></td><td colspan="2" class="small muted">${filtered.length} Positionen · jährlich</td></tr>`;
+        // «Total (4)» statt einer zweiten Zelle «4 Positionen · jährlich»: die
+        // Anzahl gehört zur Beschriftung, und die Periode steht bereits in jeder
+        // Zeile der Spalte «Periode».
+        return `<tr class="table__total"><th scope="row" class="text-left">Total (${filtered.length})</th><td></td><td class="text-right"><strong>${fmtMoney(sum, cur)}</strong></td><td colspan="2"></td></tr>`;
       },
     },
     kontakte: !contacts.length ? null : {
@@ -553,7 +556,7 @@ function buildingDetail(ctx, b) {
     <div class="row mt-4" style="gap:.5rem">${classBadge(C, ref, b.classification)} ${statusBadge(C, ref, b.status)} <span class="small muted">${C.escape(b.bbl_id)}</span></div>
     <h1 tabindex="-1">${C.escape(b.name)}</h1>
     <p class="lead">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)} · ${C.escape(b.portfolioCategory)}</p>
-    ${heroMosaic(C, b, galleryItems)}
+    ${heroBlock(C, { items: galleryItems, mapId: 'pf-hero-map', mapLabel: `Standort von ${b.name} auf der Karte` })}
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', ariaLabel: 'Gebäudedetails' })}
       ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', render: panelHtml, heading: true })}
@@ -571,6 +574,17 @@ function buildingDetail(ctx, b) {
   mount.querySelectorAll('#pf-mosaic [data-gallery]').forEach((el) => {
     el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C));
   });
+  // Standortkarte im Hero: ein Punkt, auf das Objekt zentriert. Bisher hatte die
+  // Gebäude-Detailansicht überhaupt keine Karte — die Lage stand nur als Adresse.
+  const bMapEl = mount.querySelector('#pf-hero-map');
+  if (bMapEl && Number.isFinite(b.lat) && Number.isFinite(b.lng)) {
+    initEstateMap(bMapEl, [{ lat: b.lat, lon: b.lng, label: b.name, bblId: b.bbl_id,
+      sub: `${b.street}, ${b.zip} ${b.city}`.trim() }], null, b.bbl_id, { focusPopup: false })
+      .then((m) => { pfMap = m; }).catch(() => { /* Karte optional */ });
+  } else if (bMapEl) {
+    bMapEl.innerHTML = `<div class="empty empty--unavailable" style="height:100%">
+      <span>Für dieses Objekt sind keine Koordinaten erfasst.</span></div>`;
+  }
   window.scrollTo(0, 0);
   const h = mount.querySelector('h1');
   if (h) h.focus({ preventScroll: true });
@@ -586,6 +600,12 @@ function parcelDetail(ctx, p) {
   const we = p.bbl_we || weOf(p.bbl_id);
   const bld = core.buildings().find((b) => (b.bbl_we || weOf(b.bbl_id)) === we);
   const covers = core.landcoversForParcel(p.bbl_id);
+  // Gleiche Bildquelle wie beim Gebäude (core.mediaForObject prüft auf die bbl_id,
+  // egal ob Gebäude oder Parzelle). Ein Grundstück trägt kein eigenes `photo`-Feld,
+  // sein Hauptbild ist deshalb schlicht das erste verknüpfte Medium.
+  const galleryItems = core.mediaForObject(p.bbl_id)
+    .map((m) => ({ photo: m.photo, title: m.title, meta: `${m.date} · ${m.historicPeriod}`, type: m.mediaType, gray: m.historicPeriod === 'historisch' }))
+    .filter((g) => g.photo);
   setTitle(p.name);
   setCrumbs([...CRUMBS, { label: 'Liegenschaften Inventar', href: '#/app/portfolio' }, { label: p.name }]);
 
@@ -627,7 +647,7 @@ function parcelDetail(ctx, p) {
     <div class="row mt-4" style="gap:.5rem">${C.badge('Grundstück', 'gray')} ${statusBadge(C, ref, p.status)} <span class="small muted">${C.escape(p.bbl_id)}</span></div>
     <h1 tabindex="-1">${C.escape(p.name)}</h1>
     <p class="lead">${C.escape(p.street)}, ${C.escape(p.zip)} ${C.escape(p.city)} · ${C.escape(p.zone || 'Grundstück')}</p>
-    <div class="pf-map dash-map" id="pf-parcel-map" role="group" aria-label="Bodenbedeckung des Grundstücks" style="height:340px;border-radius:var(--radius-lg)"></div>
+    ${heroBlock(C, { items: galleryItems, mapId: 'pf-parcel-map', mapLabel: `Bodenbedeckung von ${p.name} auf der Karte` })}
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-ptab', ariaLabel: 'Grundstücksdetails' })}
       ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-ptab', render: panelHtml, heading: true })}
@@ -640,8 +660,13 @@ function parcelDetail(ctx, p) {
   if (mapEl) {
     const feats = covers.filter((c) => c.geom).map((c) => ({ type: 'Feature', geometry: c.geom, properties: { label: c.type, sub: `${Number(c.area || 0).toLocaleString('de-CH')} m²`, id: p.bbl_id } }));
     if (p.geom) feats.push({ type: 'Feature', geometry: p.geom, properties: { label: p.name, sub: 'Parzelle', id: p.bbl_id } });
-    initEstateMap(mapEl, [], { type: 'FeatureCollection', features: feats }, p.bbl_id).then((m) => { pfMap = m; }).catch(() => { /* Karte optional */ });
+    initEstateMap(mapEl, [], { type: 'FeatureCollection', features: feats }, p.bbl_id, { focusPopup: false }).then((m) => { pfMap = m; }).catch(() => { /* Karte optional */ });
   }
+  // Gleiche Galerie-Verdrahtung wie beim Gebäude — sie fehlte hier ganz, weil das
+  // Grundstück bisher gar keine Bilder zeigte.
+  mount.querySelectorAll('#pf-mosaic [data-gallery]').forEach((el) => {
+    el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C));
+  });
   window.scrollTo(0, 0);
   const h = mount.querySelector('h1');
   if (h) h.focus({ preventScroll: true });
@@ -660,48 +685,67 @@ function formatSize(kb) { if (kb == null) return ''; return kb >= 1024 ? (kb / 1
 // rechts, Prev/Next, Zähler, Thumbnail-Leiste. Tastatur: Esc schliesst, ←/→ blättern,
 // Tab bleibt in der Lightbox (Fokusfalle); Klick auf den Scrim schliesst. `items` =
 // [{ photo, title, meta, type, gray }]. C wird durchgereicht (Modul ohne Import auf C).
-// Bild-Mosaik über der Detailansicht: links das Hauptbild auf voller Höhe, rechts
-// ein 2x2-Raster kleinerer Bilder. Trägt die Galerie mehr als fünf Bilder, bekommt
-// die letzte Kachel eine graue Auflage «Alle Bilder anzeigen» mit der Restanzahl.
-// Jede Kachel ist ein eigener Knopf und öffnet die Galerie bei GENAU diesem Bild.
-// Bei nur einem Bild bleibt es beim einzelnen breiten Hauptbild.
-function heroMosaic(C, b, items) {
-  if (!items.length) return '';
+// Detail-Hero — identisch für Gebäude UND Grundstücke: links das Hauptbild auf
+// voller Höhe, daneben ein 2x2-Raster kleinerer Bilder, rechts die Standortkarte.
+// Jede Bildkachel ist ein eigener Knopf und öffnet die Galerie bei GENAU diesem
+// Bild; die letzte trägt die Auflage «Alle Bilder anzeigen» (mit «+N», falls
+// wirklich Bilder verborgen sind).
+//
+// Das Grundstück hatte bisher einen eigenen Hero (nur Karte, «Grundstücke haben
+// kein Foto»). Das stimmt nur für die heutigen Demodaten — Parzellen können
+// ebenso bebildert sein. Beide Objektarten teilen sich deshalb jetzt denselben
+// Baustein; welche Karte darin liegt (Punkt oder Bodenbedeckungs-Polygone),
+// entscheidet der Aufrufer.
+//
+// PLATZHALTER: Haupt- und Nebenkacheln werden immer auf 1 + 4 aufgefüllt, damit
+// der Hero über alle Objekte hinweg dieselbe Fläche einnimmt — auch bei null
+// Bildern. Produktiv tragen die meisten Objekte 10+ Bilder; im Prototyp ist die
+// Lücke die Regel, und ein je nach Datenlage ein- und ausklappender Hero liesse
+// die Detailseiten unruhig wirken. Platzhalter sind KEINE Knöpfe und für
+// Hilfsmittel unsichtbar — dahinter liegt nichts, was sich öffnen liesse.
+const HERO_SIDE_SLOTS = 4;
+
+function heroBlock(C, { items = [], mapId, mapLabel }) {
   const esc = (s) => C.escape(String(s == null ? '' : s));
+  const n = items.length;
   const tile = (it, i, cls, w, overlay = '') =>
     `<button type="button" class="pf-mosaic__cell ${cls}" data-gallery="${i}"
-       aria-label="${esc(it.title)} — in der Galerie öffnen (Bild ${i + 1} von ${items.length})">
+       aria-label="${esc(it.title)} — in der Galerie öffnen (Bild ${i + 1} von ${n})">
       ${C.photo({ id: it.photo, color: '#2f4356', alt: esc(it.title), w, gray: it.gray,
         cls: 'pf-mosaic__photo', overlay })}
     </button>`;
+  const placeholder = (cls) =>
+    `<div class="pf-mosaic__cell ${cls} pf-mosaic__cell--empty" aria-hidden="true">
+      <div class="photo pf-mosaic__photo image__not-available">${C.icon('Image', 'icon--lg')}
+        <p class="image__not-available-text">Kein Bild</p></div>
+    </div>`;
 
-  if (items.length === 1) {
-    return `<div class="pf-mosaic pf-mosaic--single" id="pf-mosaic">
-      ${tile(items[0], 0, 'pf-mosaic__cell--main', 1600)}</div>`;
-  }
-  const side = items.slice(1, 5);                 // maximal vier Nebenkacheln
-  const hidden = items.length - (1 + side.length);
-  // Die letzte Nebenkachel trägt die Auflage «Alle Bilder anzeigen» — als
-  // dauerhafte Affordanz in die Galerie, nicht nur als Überlaufzähler: mit den
-  // heutigen Demodaten passen alle Bilder ins Mosaik, der Einstieg soll aber
-  // trotzdem sichtbar sein. Die Zahl «+N» erscheint nur, wenn wirklich Bilder
-  // verborgen sind. Bei genau zwei Bildern bleibt die Auflage weg — dort würde
-  // sie das einzige Nebenbild komplett verdecken.
+  const side = items.slice(1, 1 + HERO_SIDE_SLOTS);
+  const hidden = n - (1 + side.length);
+  // Auflage auf der letzten ECHTEN Nebenkachel — nie auf einem Platzhalter, der
+  // führt nirgendwohin. Bei genau zwei Bildern bleibt sie weg: dort verdeckte sie
+  // das einzige Nebenbild vollständig.
   const showMore = side.length >= 2 || hidden > 0;
-  const sideTiles = side.map((it, n) => {
-    const i = n + 1;
-    const isLast = n === side.length - 1 && showMore;
+  const sideTiles = side.map((it, i) => {
+    const isLast = i === side.length - 1 && showMore;
     const overlay = isLast
       ? `<span class="pf-mosaic__more">${hidden > 0 ? `<span class="pf-mosaic__more-num">+${hidden}</span>` : ''}
           <span class="pf-mosaic__more-label">Alle Bilder anzeigen</span></span>`
       : '';
-    return tile(it, i, 'pf-mosaic__cell--side', 640, overlay);
-  }).join('');
+    return tile(it, i + 1, 'pf-mosaic__cell--side', 640, overlay);
+  }).join('') + placeholder('pf-mosaic__cell--side').repeat(Math.max(0, HERO_SIDE_SLOTS - side.length));
 
-  return `<div class="pf-mosaic" id="pf-mosaic">
-    ${tile(items[0], 0, 'pf-mosaic__cell--main', 1600,
-      `<span class="pf-hero__badge">${C.icon('Image', 'icon--base')} ${items.length} Bild${items.length === 1 ? '' : 'er'}</span>`)}
+  // Zähler nur, wenn es etwas zu zählen gibt — «0 Bilder» auf einem Platzhalter
+  // wäre doppelt gemoppelt, der Kasten sagt es schon.
+  const mainCell = n
+    ? tile(items[0], 0, 'pf-mosaic__cell--main', 1600,
+        `<span class="pf-hero__badge">${C.icon('Image', 'icon--base')} ${n} Bild${n === 1 ? '' : 'er'}</span>`)
+    : placeholder('pf-mosaic__cell--main');
+
+  return `<div class="pf-mosaic pf-mosaic--map" id="pf-mosaic">
+    ${mainCell}
     <div class="pf-mosaic__side">${sideTiles}</div>
+    <div class="pf-hero__map" id="${esc(mapId)}" role="group" aria-label="${esc(mapLabel)}"></div>
   </div>`;
 }
 

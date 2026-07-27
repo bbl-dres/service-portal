@@ -131,6 +131,15 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
         ? Math.abs(mc.getBoundingClientRect().height - mos.getBoundingClientRect().height) <= 2 : false;
       // Die letzte Nebenkachel trägt die Auflage «Alle Bilder anzeigen».
       r.moreOverlay = !!document.querySelector('.pf-mosaic__more');
+      // Hero = Hauptbild · Kachelraster · Standortkarte (drei Spalten ab 1024px).
+      r.heroCols = mos ? getComputedStyle(mos).gridTemplateColumns.split(' ').length : 0;
+      r.heroMap = !!document.querySelector('#pf-mosaic .pf-hero__map');
+      // Das Kachelraster steht immer auf vier — fehlende Bilder werden mit
+      // Platzhaltern aufgefüllt, damit der Hero nicht je nach Datenlage springt.
+      r.sideTiles = document.querySelectorAll('.pf-mosaic__cell--side').length;
+      // Platzhalter dürfen nicht anklickbar sein: dahinter liegt kein Bild.
+      r.emptyClickable = document.querySelectorAll(
+        '.pf-mosaic__cell--empty[data-gallery], button.pf-mosaic__cell--empty').length;
       // Eine Kachel öffnet den Vollbild-Betrachter bei GENAU ihrem Bild; Esc schliesst.
       const third = cells[2] || cells[0]; if (third) third.click(); await s(300);
       const lb = document.querySelector('.pf-lightbox');
@@ -157,6 +166,10 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(D.mosaicCells >= 2, `image mosaic renders its tiles (${D.mosaicCells})`);
     check(D.heroGutter === 0, `main tile exactly covers its image, no dead zone (Δwidth = ${D.heroGutter}px)`);
     check(D.mainFillsHeight, `main tile fills the mosaic height (${D.dbgMosH}px)`);
+    check(D.heroCols === 3, `hero is three columns at 1440px — image · tiles · map (${D.heroCols})`);
+    check(D.heroMap, 'hero carries the location map');
+    check(D.sideTiles === 4, `side grid is always 4 tiles, padded with placeholders (${D.sideTiles})`);
+    check(D.emptyClickable === 0, `placeholder tiles are not clickable (${D.emptyClickable})`);
     check(D.moreOverlay, '«Alle Bilder anzeigen» overlay on the last side tile');
     check(D.lightbox && D.lightboxImg && D.thumbs >= 1, `mosaic tile opens the gallery (${D.thumbs} thumbs)`);
     check(D.lightboxFullscreen, 'gallery viewer is full-screen');

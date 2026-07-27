@@ -164,6 +164,10 @@ export const core = {
   documents: () => DATA.documents || [],
   documentsForBuilding: (bid) => (DATA.documents || []).filter(d => (d.linkedTo || []).includes(bid)),
   media: () => DATA.media || [],
+  // Medien hängen über `buildingId` am Objekt. Der Name ist historisch: das Feld
+  // trägt eine bbl_id, und die kann ebenso zu einer Parzelle gehören — die
+  // Detailansicht behandelt Gebäude und Grundstücke gleich.
+  mediaForObject: (id) => (DATA.media || []).filter(m => m.buildingId === id),
   mediaForBuilding: (bid) => (DATA.media || []).filter(m => m.buildingId === bid),
   weisungen: () => DATA.weisungen || [],
   weisung: (id) => find(DATA.weisungen, 'directiveId', id),
