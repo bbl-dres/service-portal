@@ -55,7 +55,7 @@ export default async function render(ctx) {
     return `
       <a class="card card--default card--clickable media-tile" href="#/app/mediathek/${encodeURIComponent(m.mediaId)}" data-media="${C.escape(m.mediaId)}">
         ${C.photo({
-          id: m.photo, color: m.color, alt: '', w: 640, gray: isHistoric(m),
+          id: m.photo, color: m.color, alt: m.title, w: 640, gray: isHistoric(m),
           cls: 'media-preview photo--scrim',
           style: 'height:150px;display:flex;align-items:flex-end;justify-content:space-between;padding:.6rem .75rem',
           overlay: `
@@ -88,7 +88,7 @@ export default async function render(ctx) {
           <div class="split">
             <div class="stack">
               ${C.photo({
-                id: m.photo, color: m.color, alt: '', w: 1000, gray: isHistoric(m),
+                id: m.photo, color: m.color, alt: m.title, w: 1000, gray: isHistoric(m),
                 style: 'height:320px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center',
                 overlay: isVideo ? `<span style="color:#fff;opacity:.92;">${C.icon('Video', 'icon--xl')}</span>` : '',
               })}
@@ -116,6 +116,8 @@ export default async function render(ctx) {
 
   function draw() {
     const list = filtered();
+    // Fokus + Schreibmarke über den Filter-Neuaufbau retten (Item 3.2).
+    const restore = C.preserveFocus(mount);
     mount.innerHTML = `
     <div class="container section">
       ${C.pageHeader({
@@ -159,6 +161,7 @@ export default async function render(ctx) {
     </div>`;
 
     wire();
+    restore();
   }
 
   function wire() {
@@ -221,7 +224,7 @@ function detail(ctx, id) {
         <div class="row gap-sm">${C.badge(isVideo ? 'Video' : 'Foto', 'blue')}${periodBadge}</div>
         <h1 tabindex="-1">${C.escape(m.title)}</h1>
         ${C.photo({
-          id: m.photo, color: m.color, alt: '', w: 1200, gray: m.historicPeriod === 'historisch',
+          id: m.photo, color: m.color, alt: m.title, w: 1200, gray: m.historicPeriod === 'historisch',
           style: 'height:380px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center',
           overlay: isVideo ? `<span style="color:#fff;opacity:.92;">${C.icon('Video', 'icon--xl')}</span>` : '',
         })}

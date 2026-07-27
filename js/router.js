@@ -235,7 +235,11 @@ async function dispatch() {
   }
 
   // Kein «Lädt…»-Aufblitzen bei einem reinen Zustandswechsel (Modul ist im Cache).
-  if (!isStateChange) mount.innerHTML = `<div class="container section"><p class="muted">Lädt…</p></div>`;
+  // Ladezustand: statt eines nackten «Lädt…»-Absatzes eine echte Statusregion mit
+  // aria-busy und einer Ladeanzeige (Item 3.17). Der sichtbare Text ist sr-only —
+  // das Spinner-Symbol trägt die Information optisch.
+  if (!isStateChange) mount.innerHTML = `<div class="container section" role="status" aria-busy="true">`
+    + `${C.icon('Spinner', 'icon--2xl icon--spin')}<span class="sr-only">Inhalt wird geladen…</span></div>`;
   try {
     const mod = await import(modPath);
     if (stale()) return;
@@ -247,6 +251,7 @@ async function dispatch() {
     if (isStateChange) {
       const el = activeId ? document.getElementById(activeId) : null;
       if (el) el.focus({ preventScroll: true });   // Fokus zurück auf den Filter/Schalter
+      else focusHeading(mount);                    // A10: nie an <body> verlieren
     } else {
       window.scrollTo(0, 0);
       focusHeading(mount);
@@ -278,6 +283,9 @@ export function initRouter() {
 
 // Aktuelle Route neu zeichnen, ohne zu navigieren — z. B. nach An-/Abmeldung,
 // damit der Login-Hinweis auf der Seite verschwindet bzw. erscheint.
-export function redraw() { dispatch(); }
+// Gibt das dispatch-Promise zurück: `dispatch()` ist async (dynamischer Import),
+// und wer nach einem Neuzeichnen selbst den Fokus setzen will, muss abwarten —
+// sonst überschreibt der Fokus-Schritt des Routers ihn kurz danach wieder.
+export function redraw() { return dispatch(); }
 
 export default { initRouter, NAV, redraw };

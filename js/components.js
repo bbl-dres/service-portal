@@ -41,6 +41,15 @@ export function escape(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// Umbruchstellen für lange deutsche Komposita: UAX#14 erlaubt nach «/» und nach
+// einem Bindestrich von sich aus keinen Umbruch, sodass «Sicherheits-/Datenschutz-
+// vorfall» als ein unteilbares Wort galt und mitten im Wort abriss (sichtbar bei
+// 1440 UND 320). <wbr> gibt die Stelle frei, ohne ein Zeichen hinzuzufügen —
+// `textContent` bleibt identisch, die Tests bleiben also unberührt (Item 5.8).
+export function breakable(s) {
+  return escape(s).replace(/([/–—-])(?=\S)/g, '$1<wbr>');
+}
+
 // decodeURIComponent, das bei malformten Sequenzen (roh getippter Hash wie
 // `#/applications/%`) nicht wirft, sondern den Rohwert zurückgibt (code-review A6).
 export function safeDecode(s) {
@@ -122,9 +131,20 @@ export function card(o) {
   // echte Überschrift mit einem <a>, dessen ::after die ganze Karte klickbar macht.
   // So behält das Dokument seine Gliederung UND verschachtelte Links (Badges) bleiben
   // gültig (kein <a> in <a> mehr).
+  // `breakable`: lange deutsche Komposita dürfen nach «/» und «-» umbrechen, sonst
+  // reisst z. B. «Sicherheits-/Datenschutzvorfall» mitten im Wort (Item 5.8).
   const titleInner = o.href
-    ? `<a class="card__link" href="${escape(o.href)}"${ext}>${escape(o.title)}</a>`
-    : escape(o.title);
+    ? `<a class="card__link" href="${escape(o.href)}"${ext}>${breakable(o.title)}</a>`
+    : breakable(o.title);
+  // CD baut den Fuss aus ZWEI benannten Slots (card.postcss:245-257, Card.vue:27-37):
+  // `footerInfo` (Metazeile) und `footerAction` (CTA). `footer` bleibt als Roh-Slot
+  // für Altaufrufer. Ohne Info-Slot greift CDs --icon-only-Modifier, der den
+  // früheren leeren <span></span>-Trick ersetzt (Item 5.12).
+  const footerSlots = (o.footerInfo || o.footerAction)
+    ? `<div class="card__footer${o.footerInfo ? '' : ' card__footer--icon-only'}">${
+        o.footerInfo ? `<div class="card__footer__info">${o.footerInfo}</div>` : ''}${
+        o.footerAction ? `<div class="card__footer__action">${o.footerAction}</div>` : ''}</div>`
+    : (o.footer ? `<div class="card__footer">${o.footer}</div>` : '');
   const inner = `${media}
     <div class="card__content">
       <div class="card__body">
@@ -132,7 +152,7 @@ export function card(o) {
         ${o.badges ? `<div class="pill-row">${o.badges.join('')}</div>` : ''}
         ${o.desc ? `<p class="card__description">${escape(o.desc)}</p>` : ''}
       </div>
-      ${o.footer ? `<div class="card__footer">${o.footer}</div>` : ''}
+      ${footerSlots}
     </div>`;
   return `<div class="card card--${variant}${o.href ? ' card--clickable' : ''}">${inner}</div>`;
 }
@@ -193,9 +213,10 @@ export function notFound({ backHref, backLabel, title, body }) {
 // Aufrufer verdrahtet. `label` überschreibt den Vorspann «Aktive Filter:».
 export function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurücksetzen', label = 'Aktive Filter:' }) {
   if (!filters || !filters.length) return '';
-  const pill = (f) => f.href != null
-    ? `<a class="badge badge--gray active-filter" href="${escape(f.href)}" aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</a>`
-    : `<button type="button" class="badge badge--gray active-filter" data-remove="${escape(f.remove == null ? '' : f.remove)}" aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</button>`;
+  // id je Pille — sonst verliert das Entfernen einer Pille den Fokus an <body> (Item 3.3).
+  const pill = (f, i) => f.href != null
+    ? `<a class="badge badge--gray active-filter" id="af-${i}" href="${escape(f.href)}" aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</a>`
+    : `<button type="button" class="badge badge--gray active-filter" id="af-${i}" data-remove="${escape(f.remove == null ? '' : f.remove)}" aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</button>`;
   const reset = resetHref != null
     ? `<a class="btn btn--link" href="${escape(resetHref)}">${escape(resetLabel)}</a>`
     : `<button type="button" class="btn btn--link" data-reset>${escape(resetLabel)}</button>`;
@@ -212,6 +233,67 @@ export function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zu
 export function announce(msg) {
   const n = document.getElementById('live');
   if (n) n.textContent = msg;
+}
+
+// Ersetzt `mount.innerHTML` und stellt Fokus + Cursorposition wieder her, sofern
+// das aktive Element eine id trägt. Ein voller innerHTML-Austausch lässt
+// document.activeElement sonst auf <body> zurückfallen: im Buchungsformular ging
+// nach jeder Auswahl Fokus UND Schreibmarke verloren und Tab begann wieder am
+// Seitenkopf (WCAG 2.4.3 / 3.2.2). Rückgabe: true, wenn der Fokus zurückgesetzt wurde.
+// Merkt sich Fokus + Schreibmarke und gibt eine Funktion zurück, die beides nach
+// dem Neuaufbau wiederherstellt. Als Paar (statt als rerender(mount, html)), weil
+// die draw()-Funktionen mehrzeilige Template-Literale mit verschachtelten
+// Backticks schreiben und weil der Fokus so auch das erneute Verdrahten in
+// wire() überlebt:
+//     const restore = C.preserveFocus(mount);
+//     mount.innerHTML = `…`;  wire();  restore();
+export function preserveFocus(mount) {
+  const a = document.activeElement;
+  const id = a && mount.contains(a) ? a.id : '';
+  const sel = a && typeof a.selectionStart === 'number' ? [a.selectionStart, a.selectionEnd] : null;
+  return () => {
+    if (!id) return false;
+    const el = mount.querySelector('#' + CSS.escape(id));
+    if (!el) return false;
+    el.focus({ preventScroll: true });
+    if (sel && el.setSelectionRange) { try { el.setSelectionRange(sel[0], sel[1]); } catch { /* nicht alle Feldtypen */ } }
+    return true;
+  };
+}
+
+// Bequemlichkeitsform für einzeilige Fälle.
+export function rerender(mount, html) {
+  const restore = preserveFocus(mount);
+  mount.innerHTML = html;
+  return restore();
+}
+
+// Macht `tabindex` an Scrollbereichen davon abhängig, dass wirklich etwas
+// überläuft — ein unbedingtes tabindex="0" erzeugt auf breiten Viewports einen
+// toten Tab-Stopp. `.table-wrapper` machte das bisher unbedingt; hier ist es
+// gemessen. Ausserdem wird die Region nur dann als Gruppe angesagt, wenn sie
+// wirklich scrollt (Item 3.21).
+export function wireScrollRegions(root) {
+  const scan = () => {
+    root.querySelectorAll('[data-scroll-region], .table-wrapper').forEach((el) => {
+      const scrolls = el.scrollWidth > el.clientWidth + 1;
+      el.classList.toggle('is-scrollable', scrolls);
+      if (scrolls) {
+        el.setAttribute('tabindex', '0');
+        if (!el.hasAttribute('role')) el.setAttribute('role', 'group');
+      } else {
+        el.removeAttribute('tabindex');
+      }
+    });
+  };
+  scan();
+  // Ein Breitenwechsel kann den Überlauf entstehen oder verschwinden lassen.
+  if (typeof ResizeObserver === 'function') {
+    const ro = new ResizeObserver(scan);
+    root.querySelectorAll('[data-scroll-region], .table-wrapper').forEach((el) => ro.observe(el));
+    return () => ro.disconnect();
+  }
+  return () => {};
 }
 
 // Fokusfalle für modale Overlays (Lightbox, Chart-Vollbild, Dokumentvorschau):
@@ -338,7 +420,20 @@ export function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = 
       : state === 'active' ? '<span class="sr-only">Aktueller Schritt: </span>' : '';
     return `<li class="pipeline__step pipeline__step--${state}"${state === 'active' ? ' aria-current="step"' : ''}>${glyph}<span>${sr}${escape(st.label)}</span></li>`;
   };
-  return `<ol class="pipeline" aria-label="${escape(label)}">${steps.map(seg).join('')}</ol>`;
+  // aria-label wandert auf den Wrapper, das <ol> bleibt eine reine Liste (damit
+  // die Listensemantik erhalten bleibt). KEIN festes tabindex — das setzt
+  // wireScrollRegions() nur, wenn der Streifen wirklich überläuft.
+  return `<div class="pipeline-wrap" data-scroll-region role="group" aria-label="${escape(label)}">`
+    + `<ol class="pipeline">${steps.map(seg).join('')}</ol></div>`;
+}
+
+// Der Stepper soll zeigen, WO man ist — er startete aber immer bei scrollLeft:0,
+// sodass genau das aktive Segment abgeschnitten wurde.
+export function wirePipeline(root) {
+  const w = root.querySelector('.pipeline-wrap');
+  const a = w && w.querySelector('.pipeline__step--active');
+  if (w && a) w.scrollLeft = Math.max(0, a.offsetLeft - (w.clientWidth - a.offsetWidth) / 2);
+  wireScrollRegions(root);
 }
 
 // Ein Detailseiten-Abschnitt: H2-Titel + Inhalt. `body` ist fertiges HTML.
@@ -457,20 +552,44 @@ export function wireTabs(root, { onSelect, syncHash } = {}) {
       if (ni !== null) { e.preventDefault(); activate(btns[ni].dataset.tab); }
     });
   });
+  // Ein per `?tab=` tief verlinkter Tab kann in einer scrollenden Leiste ausserhalb
+  // des Sichtfelds liegen — dann sieht der Nutzer eine Leiste, in der scheinbar
+  // kein Tab aktiv ist (Item 3.18). `nearest` scrollt nur, wenn nötig.
+  const cur = root.querySelector('.tab__control--active');
+  if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   return { activate };
 }
 
 // --- Notifications (notification.postcss) ------------------------------------
 // variant: info | success | warning | error | hint | alert
 export function notification(text, variant = 'info', iconName = 'InfoCircle', opts = {}) {
-  // Live-Region-Rolle, damit eine per notification() eingeblendete Meldung von
-  // Screenreadern angesagt wird (error/alert assertiv, sonst höflich).
-  const role = (variant === 'error' || variant === 'alert') ? 'alert' : 'status';
+  // `live: true` NUR für Meldungen, die als Ergebnis einer Aktion neu eintreffen.
+  // Vorher trug jede Notification eine Live-Rolle — auch die statischen Hinweise,
+  // die schon beim Laden im Markup stehen. Screenreader lasen die Seite dann als
+  // Folge von Statusmeldungen vor, und in einer neu erzeugten Region feuert
+  // aria-live ohnehin nicht (Item 3.9).
+  const role = opts.live ? ((variant === 'error' || variant === 'alert') ? 'alert' : 'status') : '';
   const close = opts.dismissible
     ? `<button type="button" class="notification__close" aria-label="Meldung schliessen" onclick="this.closest('.notification').remove()">${icon('Cancel', 'icon--md')}</button>`
     : '';
   const cls = `notification notification--${variant}${opts.dismissible ? ' notification--dismissible' : ''}`;
-  return `<div class="${cls}" role="${role}">${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div>${close}</div>`;
+  return `<div class="${cls}"${role ? ` role="${role}"` : ''}>${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div>${close}</div>`;
+}
+
+// CD step-indicator.postcss:5-24 / StepIndicator.vue:2-9 — EINE nummerierte
+// Schrittanzeige statt der zwei hand-gerollten Kopien in space-request und
+// transaction (Item 3.10). Liefert CDs `.step__indicator`-Wrapper, auf den die
+// Union-Selektoren aus Item 1.17d/2.3 schon vorbereitet sind.
+export function stepIndicator(labels, current = 0, { label = 'Fortschritt' } = {}) {
+  const li = (l, i) => {
+    const done = i < current, active = i === current;
+    const mod = done ? ' step__indicator-step--confirmed' : active ? ' step__indicator-step--active' : '';
+    const sr = done ? 'Erledigt: ' : active ? 'Aktueller Schritt: ' : 'Offen: ';
+    return `<li class="step__indicator"${active ? ' aria-current="step"' : ''}>`
+      + `<span class="step__indicator-step${mod}">${done ? icon('CheckmarkBold', 'icon--sm') : i + 1}</span>`
+      + `<span><span class="sr-only">${sr}Schritt ${i + 1} von ${labels.length}: </span>${escape(l)}</span></li>`;
+  };
+  return `<ol class="steps" aria-label="${escape(label)}">${labels.map(li).join('')}</ol>`;
 }
 
 // Blendet einen Fehler oben in der Seite ein und sagt ihn an — für clientseitige
@@ -524,6 +643,7 @@ export function select(o = {}) {
   return `<div class="form__group__select${o.wrapClass ? ' ' + o.wrapClass : ''}">
   ${o.label ? `<label for="${escape(id)}"${lbl.length ? ` class="${lbl.join(' ')}"` : ''}>${escape(o.label)}${
       o.required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>` : ''}
+  ${o.hint ? `<p class="form__group__hint" id="${escape(hintId)}">${escape(o.hint)}</p>` : ''}
   <div class="select${o.bare ? ' select--bare' : ''}">
     <select id="${escape(id)}" name="${escape(o.name || id)}" class="${ctrl.join(' ')}"${
       o.required ? ' required aria-required="true"' : ''}${
@@ -532,7 +652,6 @@ export function select(o = {}) {
       described ? ` aria-describedby="${escape(described)}"` : ''}${o.attrs ? ' ' + o.attrs : ''}>${opts}</select>
     <div class="select__icon">${CHEVRON_SVG}</div>
   </div>
-  ${o.hint ? `<div class="badge badge--sm badge--info" id="${escape(hintId)}">${escape(o.hint)}</div>` : ''}
   ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}" role="${
       isError ? 'alert' : 'status'}">${escape(o.message)}</div>` : ''}
 </div>`;
@@ -546,6 +665,40 @@ export function selectBox(inner, extraCls = '', style = '') {
   return `<div class="select${extraCls ? ' ' + extraCls : ''}"${style ? ` style="${style}"` : ''}>${inner}<div class="select__icon">${CHEVRON_SVG}</div></div>`;
 }
 
+// Fehlerübersicht am Formularkopf (WCAG 3.3.1/3.3.3). Bisher gab es nur
+// Feldmeldungen: bei einem mehrseitigen Behördenformular muss der Nutzer nach
+// einer fehlgeschlagenen Absendung an einer Stelle sehen, WAS zu korrigieren ist,
+// und direkt dorthin springen können. `errors` ist nach DOM-id verschlüsselt,
+// damit die Sprungmarken auflösen; `labels` liefert die Klartextnamen.
+export function errorSummary({ errors = {}, labels = {}, id = 'err-summary' } = {}) {
+  const ids = Object.keys(errors);
+  if (!ids.length) return '';
+  const items = ids.map((k) => `<li><a href="#${escape(k)}" data-err-link="${escape(k)}">${
+    escape(labels[k] || k)}: ${escape(errors[k])}</a></li>`).join('');
+  return `<div class="notification notification--error error-summary" id="${escape(id)}" role="alert">
+    ${icon('WarningCircle', 'notification__icon')}
+    <div class="notification__content">
+      <h2 class="error-summary__title" tabindex="-1">${ids.length === 1
+        ? 'Ein Feld muss noch korrigiert werden'
+        : `${ids.length} Felder müssen noch korrigiert werden`}</h2>
+      <ul class="error-summary__list">${items}</ul>
+    </div></div>`;
+}
+
+// Verdrahtet die Sprungmarken der Fehlerübersicht und setzt den Fokus auf ihre
+// Überschrift — ohne das landet der Fokus nach einem Fehlversuch auf <body>.
+export function wireErrorSummary(mount, { focus = true } = {}) {
+  mount.querySelectorAll('[data-err-link]').forEach((a) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const t = mount.querySelector('#' + CSS.escape(a.dataset.errLink));
+    if (t) { t.focus(); t.scrollIntoView({ block: 'center', behavior: 'auto' }); }
+  }));
+  if (!focus) return false;
+  const h = mount.querySelector('.error-summary__title');
+  if (h) { h.focus({ preventScroll: false }); return true; }
+  return false;
+}
+
 // CD field wrapper for input/textarea. `control` receives (classes, attributes)
 // so required/aria-describedby/aria-invalid land on the control itself.
 export function field(o = {}) {
@@ -557,14 +710,24 @@ export function field(o = {}) {
   const described = [hintId, msgId].filter(Boolean).join(' ');
   const lblCls = [o.required ? 'text--asterisk' : '', o.hideLabel ? 'sr-only' : ''].filter(Boolean).join(' ');
   const lbl = lblCls ? ` class="${lblCls}"` : '';
-  const attrs = `${o.required ? ' required aria-required="true"' : ''}`
+  // `name` fehlte durchgängig (ein Formularfeld ohne name ist für Autofill und für
+  // jedes echte Backend unsichtbar); `autocomplete`/`inputmode` steuern auf dem
+  // Handy Tastatur und Vorschläge (Item 3.11).
+  const attrs = ` name="${escape(o.name || id)}"`
+    + `${o.required ? ' required aria-required="true"' : ''}`
+    + `${o.autocomplete ? ` autocomplete="${escape(o.autocomplete)}"` : ''}`
+    + `${o.inputmode ? ` inputmode="${escape(o.inputmode)}"` : ''}`
     + `${isError ? ' aria-invalid="true"' : ''}`
     + `${described ? ` aria-describedby="${escape(described)}"` : ''}`;
   const cls = `input--outline input--base${isError ? ' input--error' : ''}`;
+  // Der Hinweis steht VOR dem Feld (man braucht ihn beim Ausfüllen, nicht danach)
+  // und ist ein Absatz, keine Pille; nur die Fehlermeldung bleibt eine Badge mit
+  // role="alert" — vorher trugen beide dieselbe Optik und der Hinweis erschien
+  // unterhalb des Feldes (Item 3.12).
   return `<div class="form__group__input">
     <label for="${escape(id)}"${lbl}>${escape(o.label)}${o.required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
+    ${o.hint ? `<p class="form__group__hint" id="${escape(hintId)}">${escape(o.hint)}</p>` : ''}
     ${o.control(cls, attrs)}
-    ${o.hint ? `<div class="badge badge--sm badge--info" id="${escape(hintId)}">${escape(o.hint)}</div>` : ''}
     ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}" role="alert">${escape(o.message)}</div>` : ''}
   </div>`;
 }
@@ -638,11 +801,12 @@ export function downloadLink(url, label, iconName = 'Download') {
 // caller for typed page jumps.
 export function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation', align }) {
   if (totalPages <= 1) return '';
-  const control = (target, text, iconName, disabled) => {
+  const control = (target, text, iconName, disabled, key) => {
     const inner = `${icon(iconName, 'btn__icon')}<span class="btn__text">${text}</span>`;
+    const id = inputId ? ` id="${escape(inputId)}-${key}"` : '';   // Fokus-Wiederherstellung (Item 3.3)
     return disabled
       ? `<li><span class="btn btn--outline btn--icon-only" aria-disabled="true" aria-label="${text}">${inner}</span></li>`
-      : `<li><a class="btn btn--outline btn--icon-only" href="${escape(href(target))}" aria-label="${text}">${inner}</a></li>`;
+      : `<li><a class="btn btn--outline btn--icon-only"${id} href="${escape(href(target))}" aria-label="${text}">${inner}</a></li>`;
   };
   return `
     <nav class="pagination-wrap${align === 'right' ? ' pagination-wrap--right' : ''}" aria-label="${escape(label)}">
@@ -652,8 +816,8 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
           value="${page}" aria-label="Seite" autocomplete="off">
         <div class="pagination__text">von ${totalPages} Seiten</div>
         <ul class="pagination_items">
-          ${control(page - 1, 'Vorherige Seite', 'ChevronLeft', page === 1)}
-          ${control(page + 1, 'Nächste Seite', 'ChevronRight', page === totalPages)}
+          ${control(page - 1, 'Vorherige Seite', 'ChevronLeft', page === 1, 'prev')}
+          ${control(page + 1, 'Nächste Seite', 'ChevronRight', page === totalPages, 'next')}
         </ul>
       </div>
     </nav>`;
@@ -728,7 +892,10 @@ export function announceCatalogue({ count, total, unit, page = 1, totalPages = 1
 export function viewSwitch(view = 'galerie', items = [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']]) {
   const btn = ([key, label, iconName]) => {
     const on = view === key;
-    return `<button type="button" class="view-switch__btn" data-view="${key}"
+    // Stabile id (aus den Daten, feste Reihenfolge): der Router stellt den Fokus
+    // nach einem Zustandswechsel per `document.getElementById(activeId)` her —
+    // ohne id war activeId '' und der Fokus fiel auf <body> (WCAG 2.4.3).
+    return `<button type="button" class="view-switch__btn" id="view-${escape(key)}" data-view="${key}"
       aria-pressed="${on}" aria-label="${escape(label)}" title="${escape(label)}">${icon(iconName, 'icon--md')}</button>`;
   };
   return `<div class="view-switch" role="group" aria-label="Ansicht">
@@ -794,7 +961,13 @@ export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, t
   // (data-fdim = Parametername) komma-verbunden in den Hash, Seite 1.
   if (filterToggleId && panelId) {
     const btn = mount.querySelector('#' + filterToggleId), panel = mount.querySelector('#' + panelId);
-    if (btn && panel) btn.addEventListener('click', () => { const open = !panel.hidden; panel.hidden = open; btn.setAttribute('aria-expanded', String(!open)); });
+    if (btn && panel) btn.addEventListener('click', () => {
+      const open = !panel.hidden;
+      panel.hidden = open;
+      btn.setAttribute('aria-expanded', String(!open));
+      // Zustand über den Neuaufbau hinweg merken (Item 3.4).
+      if (open) PANEL_OPEN.delete(panelId); else PANEL_OPEN.add(panelId);
+    });
     if (panel) panel.addEventListener('change', (e) => {
       const cb = e.target.closest('input[data-fdim]'); if (!cb) return;
       const dim = cb.dataset.fdim;
@@ -818,12 +991,23 @@ export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, t
 // Hash). `countId` benennt den (per JS gefüllten) Trefferzähler; `sort` = optionales
 // Dropdown {id,name,label,value,options:[{value,label}]}; `views` = viewSwitch-Items;
 // `panel` = fertiges Filter-HTML (RAW, der Aufrufer escaped).
+// Offene Filter-Panels überleben den Neuaufbau: auf den Katalogseiten schreibt
+// eine Checkbox in den Hash, der Router zeichnet die Seite neu und catalogueBar()
+// gab das Panel wieder mit [hidden] aus — das Panel schlug also nach JEDEM Haken
+// zu. Drei Themen auszuwählen bedeutete, die Schublade dreimal zu öffnen. CDs
+// `filtersAreOpen` ist ebenfalls Zustand, der Filteränderungen überlebt
+// (SearchResultsFilters.vue:42-104). Modulweit, weil der Zustand eine Eigenschaft
+// der Ansicht ist, nicht der Daten.
+const PANEL_OPEN = new Set();
+
 export function catalogueBar({
   formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', countId = 'cat-count', count = '',
   sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
   panelId = '', panel = '', panelHidden = true,
   view = 'galerie', views,
 }) {
+  // Ein einmal geöffnetes Panel bleibt offen, bis der Nutzer es selbst zuklappt.
+  if (panelId && PANEL_OPEN.has(panelId)) panelHidden = false;
   // Sortierung: bare Select, KEIN sichtbares Label (CD-Muster, vgl. indexPage.vue) —
   // eine deaktivierte «Sortieren»-Option dient als In-Control-Hinweis, ein sr-only-
   // Label als Zugänglichkeit. Passt keine Option (kein/leerer Sortierwert), zeigt die
@@ -863,8 +1047,10 @@ export function catalogueBar({
 // Checkbox als data-fdim), `selected` = aktuell angehakte Werte. Verdrahtet über
 // C.wireCatalogue: Panel-Change → alle angehakten Werte der Dimension → Hash.
 export function filterGroup({ dim, legend, options = [], selected = [] }) {
+  // `id="f-${dim}-${i}"` — der Index ist stabil, weil die Optionen aus den Daten
+  // in fester Reihenfolge kommen; nötig für die Fokus-Wiederherstellung (Item 3.3).
   return `<fieldset class="filter-group"><legend class="filter-group__legend">${escape(legend)}</legend>${
-    options.map((o) => `<label class="filter-check"><input type="checkbox" data-fdim="${escape(dim)}" value="${escape(o.value)}"${
+    options.map((o, i) => `<label class="filter-check"><input type="checkbox" id="f-${escape(dim)}-${i}" data-fdim="${escape(dim)}" value="${escape(o.value)}"${
       selected.includes(o.value) ? ' checked' : ''}><span>${escape(o.label)}</span></label>`).join('')}</fieldset>`;
 }
 
@@ -970,5 +1156,6 @@ export const C = {
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
+  preserveFocus, rerender, wireScrollRegions, wirePipeline, errorSummary, wireErrorSummary, stepIndicator,
 };
 export default C;

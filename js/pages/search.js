@@ -133,9 +133,17 @@ export default async function render(ctx) {
     </section>
     <section class="section section--default">
       <div class="container">
-        <div class="search-results" aria-live="polite">${body}</div>
+        <!-- Kein aria-live hier: der Knoten wird bei jedem Rendern NEU erzeugt,
+             und eine frisch eingefügte Live-Region feuert nicht. Die Ansage läuft
+             über die persistente Region #live via C.announce() (Item 3.8). -->
+        <div class="search-results">${body}</div>
       </div>
     </section>`;
+
+  // Trefferzahl ansagen — bisher war das Ergebnis für Screenreader stumm.
+  C.announce(rawQ
+    ? (total ? `${total} Treffer für ${rawQ}` : `Keine Treffer für ${rawQ}`)
+    : 'Suchbegriff eingeben');
 
   const form = mount.querySelector('#search-page-form');
   form.addEventListener('submit', (e) => {

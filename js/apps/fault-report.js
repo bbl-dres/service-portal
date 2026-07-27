@@ -88,6 +88,8 @@ export default async function render(ctx) {
       ${isbo ? C.notification(`Fachstelle <strong>${C.escape(isbo.name)}</strong> · <a href="mailto:${C.escape(isbo.email)}">${C.escape(isbo.email)}</a> · ${C.escape(isbo.phone)}`, 'info', 'Lock') : ''}
     ` : '';
 
+    // Fokus + Schreibmarke über den Neuaufbau retten (Item 3.2).
+    const restore = C.preserveFocus(mount);
     mount.innerHTML = `
     <div class="container section">
       <div class="container__center--xs">
@@ -96,7 +98,9 @@ export default async function render(ctx) {
       <p class="lead">${C.escape(cfg.lead)}</p>
       <p class="muted">Meldung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}</p>
       ${securityNote}
-      <form id="report-form" class="form mt-6">
+      <!-- novalidate — siehe space-request.js: ohne das Attribut feuert das
+           submit-Event nie und validate() bleibt unerreichbar. -->
+      <form id="report-form" class="form mt-6" novalidate>
         ${buildings.length
           ? C.select({ id: 'bld', name: 'bld', label: 'Gebäude / Standort', required: true,
               value: state.buildingId, message: state.errors.buildingId, options: buildingOpts })
@@ -117,6 +121,7 @@ export default async function render(ctx) {
       </div>
     </div>`;
     wire();
+    restore();
   }
 
   function drawDone() {

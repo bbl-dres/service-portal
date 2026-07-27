@@ -119,7 +119,8 @@ export default async function render(ctx) {
           <h2>${C.icon('Calendar', 'icon--base')} Ressource buchen</h2>
           <p class="muted">Buchung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.
              Eine Anfrage wird als Vorgang erfasst und durch Workspace BBL bestätigt.</p>
-          <form id="buchung-form" class="form">
+          <!-- novalidate — siehe space-request.js -->
+          <form id="buchung-form" class="form" novalidate>
             ${C.select({ id: 'ressourcentyp', name: 'ressourcentyp', label: 'Ressourcentyp', required: true,
               value: state.ressourcentyp, hint: r ? r.hint : '',
               options: RESSOURCEN.map(x => ({ value: x.id, label: x.label })) })}
@@ -178,6 +179,8 @@ export default async function render(ctx) {
       : state.tab === 'belegung' ? panelBelegung()
       : panelBuchung();
 
+    // Fokus + Schreibmarke über den kompletten Neuaufbau (inkl. wire()) retten.
+    const restore = C.preserveFocus(mount);
     mount.innerHTML = `
     <div class="container section">
       ${C.pageHeader({ title: 'Workspace & Buchung', lead: 'Möblierung und Material, Belegungsplanung sowie Buchung von Räumen, Arbeitsplätzen und Parkplätzen.' })}
@@ -187,6 +190,7 @@ export default async function render(ctx) {
       </div>
     </div>`;
     wire();
+    restore();
   }
 
   function readForm() {
@@ -201,6 +205,10 @@ export default async function render(ctx) {
   function validate() {
     const e = {};
     if (!state.datum) e.datum = 'Bitte ein Datum wählen';
+    // Defensiv: beide Felder sind required:true im Markup und tragen immer einen
+    // Wert — mit novalidate greift aber keine Browserprüfung mehr, also hier.
+    if (!state.ressourcentyp) e.ressourcentyp = 'Bitte Ressourcentyp wählen';
+    if (!state.bld) e.bld = 'Bitte Standort wählen';
     state.errors = e;
     return Object.keys(e).length === 0;
   }

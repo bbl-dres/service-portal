@@ -145,6 +145,8 @@ function detail(ctx, id) {
   });
   const adv = mount.querySelector('#advance');
   if (adv) adv.addEventListener('click', () => { engine.advance(i.instanceId); location.reload(); });
+  // Stepper auf den aktuellen Schritt scrollen + tabindex nur bei echtem Überlauf.
+  C.wirePipeline(mount);
 }
 
 function sLabel(core, id) { const m = (core.ref().statusModel || []).find(s => s.id === id); return m ? m.label : id; }

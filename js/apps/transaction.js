@@ -44,11 +44,9 @@ export default async function render(ctx) {
     }));
   }
 
-  const stepsBar = `<ol class="steps">${LIFECYCLE.map((s, idx) => {
-    const done = idx < CURRENT_STEP, active = idx === CURRENT_STEP;
-    const dot = done ? ' step__indicator-step--confirmed' : active ? ' step__indicator-step--active' : '';
-    return `<li class="${done ? 'done' : active ? 'active' : ''}"${active ? ' aria-current="step"' : ''}><span class="step__indicator-step${dot}">${done ? C.icon('CheckmarkBold', 'icon--sm') : idx + 1}</span> ${C.escape(s.label)}</li>`;
-  }).join('')}</ol>`;
+  // Eine gemeinsame Schrittanzeige (C.stepIndicator) statt der lokalen Kopie —
+  // trägt CDs .step__indicator-Wrapper und die sr-only-Zustandswörter (Item 3.10).
+  const stepsBar = C.stepIndicator(LIFECYCLE.map((s) => s.label), CURRENT_STEP, { label: 'Verkaufslebenszyklus' });
 
   const timeline = `<ul class="timeline">${LIFECYCLE.map((s, idx) => {
     const cls = idx < CURRENT_STEP ? 'done' : idx === CURRENT_STEP ? 'current' : '';

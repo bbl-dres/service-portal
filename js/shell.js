@@ -38,6 +38,14 @@ function themaBranchRows() {
     .map(d => branchRow(`dom:${d.key}`, d.label)).join('');
 }
 
+// Zwischentitel einer Drawer-Gruppe. `menu__item--title` ist CDs eigener Modifier
+// (menu.postcss: lg:px-0, hover:bg-white, cursor-default) — CD definiert dafür
+// aber KEINE innere Label-Klasse, also nimmt die Beschriftung die bereits im
+// Projekt vorhandene `.navy__group-title` statt einer erfundenen CD-Vokabel.
+function menuTitle(text) {
+  return `<li class="menu__item menu__item--title"><span class="navy__group-title">${escapeHtml(text)}</span></li>`;
+}
+
 // Ein aufklappbarer Zweig-Knopf (Übersicht/Themen/Bereiche teilen dieselbe Anatomie).
 function branchRow(branchKey, label) {
   return `<li class="menu__item menu__item--border menu__item--condensed">
@@ -88,8 +96,14 @@ function headerHTML() {
     const withBranches = item.base === 'services' || hasNavBranch;
     let level0;
     if (item.base === 'services') {
+      // Der Drawer mischte Themen DIESES Portals und Aufgabenbereiche im externen
+      // BBL-Intranet in einer einzigen Liste — ohne Zwischentitel war nicht zu
+      // erkennen, welche Zeile das Portal verlässt (Item 4.10). Zwei benannte
+      // Gruppen; die Intranet-Zeilen tragen zusätzlich das External-Symbol.
       level0 = `<ul class="menu navy__level-0">${
-        (item.children || []).map(navyRow).join('')}${themaBranchRows()}${areaBranchRows()}</ul>`;
+        (item.children || []).map(navyRow).join('')
+      }${menuTitle('Themen im Kundenportal')}${themaBranchRows()
+      }${menuTitle('Weitere Angebote im BBL-Intranet')}${areaBranchRows()}</ul>`;
     } else if (hasNavBranch) {
       level0 = `<ul class="menu navy__level-0">${(item.children || [])
         .map(c => c.branchKey ? branchRow('nav:' + c.branchKey, c.label) : navyRow(c)).join('')}</ul>`;
@@ -101,23 +115,23 @@ function headerHTML() {
       ? `<div class="navy navy--drill" data-level="0">
           <div class="navy__slider">
             <div class="navy__pane" data-pane="0">
-              <h2 class="navy__title">${escapeHtml(item.label)}</h2>
+              <span class="navy__title">${escapeHtml(item.label)}</span>
               ${level0}
             </div>
             <div class="navy__pane" data-pane="1">
               <button class="navy__back" type="button" data-back>${icon('ChevronLeft', 'icon--sm')}<span>Zurück</span></button>
-              <h2 class="navy__title" data-branch-title tabindex="-1"></h2>
+              <span class="navy__title" data-branch-title tabindex="-1"></span>
               <ul class="menu" data-branch-list></ul>
             </div>
           </div>
         </div>`
       : `<div class="navy">
-          <h2 class="navy__title">${escapeHtml(item.label)}</h2>
+          <span class="navy__title">${escapeHtml(item.label)}</span>
           ${level0}
         </div>`;
 
     return `
-    <div class="${drawerClass}" id="${menuId}" aria-label="${escapeHtml(item.label)}" hidden>
+    <div class="${drawerClass}" id="${menuId}" role="group" aria-label="${escapeHtml(item.label)}" hidden>
       <button class="desktop-menu__close" type="button" data-menu-close="${menuId}" aria-label="${escapeHtml(item.label)} schliessen">
           <span>Schliessen</span>${icon('Cancel', 'icon--sm')}
       </button>
@@ -128,7 +142,10 @@ function headerHTML() {
   const renderNavItem = (item, scope) => {
     if (item.children?.length || item.childrenFrom) {
       const menuId = `${scope}-menu__drawer-${item.base}`;
-      const childIcon = scope === 'mobile' ? icon('ChevronSmallRight', 'icon--sm') : '';
+      // icon--md statt --sm: CDs Drawer-Chevron ist 20px (navy.postcss:47-51); mit
+      // 12px war die Aufklapp-Affordanz kaum sichtbar (Item 4.6). Die Rotation beim
+      // Öffnen kommt aus der CSS-Hälfte in Item 2.9c.
+      const childIcon = scope === 'mobile' ? icon('ChevronSmallRight', 'icon--md') : '';
       return `<li>
         <button class="navy__has-children" type="button" data-nav="${item.base}" data-menu="${menuId}" aria-expanded="false" aria-controls="${menuId}">
           <span>${escapeHtml(item.label)}</span>${childIcon}
@@ -152,29 +169,49 @@ function headerHTML() {
   // Anmeldestatus (AGOV / FedLogin). Abgemeldet: ein «Anmelden»-Knopf.
   // Angemeldet: Name plus «Abmelden». Kein Rollen-/Rechtekonzept.
   const user = session.user();
+  // Item 4.2: das User-Icon war `icon--sm` (12px) und las sich neben dem Text wie
+  // ein verrutschtes Diakritikum; angemeldet trennte eine nackte Haarlinie Name
+  // und «Abmelden» und wirkte wie ein Tippfehler. Jetzt CDs md-Grösse und ein
+  // echtes .separator--vertical. Die 44px-Höhe kommt aus Item 2.5b.
   const authNav = user
-    ? `<li class="meta-navigation__user"><span class="meta-navigation__name">${icon('User', 'icon--sm')} ${escapeHtml(user.name)}</span>
+    ? `<li class="meta-navigation__user"><span class="meta-navigation__name">${icon('User', 'icon--md')} ${escapeHtml(user.name)}</span>
+        <span class="separator separator--vertical" aria-hidden="true"></span>
         <button type="button" class="meta-navigation__item meta-navigation__auth" onclick="window.__logout && window.__logout()">Abmelden</button></li>`
-    : `<li><button type="button" class="meta-navigation__item meta-navigation__auth" onclick="window.__login && window.__login()">${icon('User', 'icon--sm')} Anmelden</button></li>`;
+    : `<li><button type="button" class="meta-navigation__item meta-navigation__auth" onclick="window.__login && window.__login()">${icon('User', 'icon--md')} Anmelden</button></li>`;
 
+  // Item 4.11: das Steuerelement war bedienbar, aber jede Option außer DE war
+  // `disabled` — es öffnete also eine Liste, in der nichts wählbar ist. Ein
+  // deaktiviertes Feld mit nur einer Option sagt dasselbe ehrlicher, und das
+  // Label nennt den Grund (statt ihn nur im Titel zu verstecken).
   const langSwitcher = `<div class="language-switcher">${select({
-    id: 'lang', label: 'Sprache wählen — im Prototyp nur Deutsch', hideLabel: true,
-    bare: true, variant: 'negative', size: 'sm', value: 'DE',
-    options: ['DE', { value: 'FR', label: 'FR', disabled: true }, { value: 'IT', label: 'IT', disabled: true },
-              { value: 'RM', label: 'RM', disabled: true }, { value: 'EN', label: 'EN', disabled: true }],
+    id: 'lang', label: 'Sprache: Deutsch — weitere Sprachen sind im Prototyp nicht verfügbar',
+    hideLabel: true, bare: true, variant: 'negative', size: 'sm', value: 'DE',
+    disabled: true, attrs: 'title="Im Prototyp ist nur Deutsch verfügbar"',
+    options: ['DE'],
   })}</div>`;
 
   return `
   <a class="skip-to-content" id="skip-link" href="#main-content">Zum Inhalt springen</a>
   <div class="top-bar">
     <div class="container container--flex">
-      <a class="top-bar__btn" href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener external"><span>Alle Schweizer Bundesbehörden</span>${icon('External', 'icon--base')}</a>
+      <!-- icon--md statt --base: unter 640 ist das Symbol die EINZIGE sichtbare
+           Affordanz dieses Links (die Beschriftung ist dann sr-only, Item 2.4). -->
+      <a class="top-bar__btn" href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener external"><span>Alle Schweizer Bundesbehörden</span>${icon('External', 'icon--md')}</a>
       <div class="top-bar__right">
         <span class="demo-chip" title="Prototyp mit Demo-Daten — Login, Prozess-Engine, Datenkern und Schnittstellen sind simuliert">Prototyp<span class="sr-only"> — Prototyp mit Demo-Daten; Login, Prozess-Engine, Datenkern und Schnittstellen sind simuliert</span></span>
         <nav class="top-bar-navigation" aria-label="Bundesangebote"><ul>${topBarNav}</ul></nav>
         ${langSwitcher}
       </div>
     </div>
+  </div>
+
+  <!-- CD verbirgt den langen Amtstitel unter 480 absichtlich (logo.postcss:76) und
+       kompensiert ihn mit diesem getönten Band (top-header.postcss:13-31,
+       TopHeader.vue:3-8). Ohne das Band bestand die sichtbare Marke bei 320/390
+       nur aus «BBL» plus Intranet-Pille — weder Amt noch Produkt waren zu lesen.
+       aria-hidden, weil .logo__title denselben Text für AT bereits trägt. -->
+  <div class="top-header__mobile-title" aria-hidden="true">
+    <div class="container">Bundesamt für Bauten und Logistik — Kundenportal</div>
   </div>
 
   <div class="top-header" id="top-header-id">
@@ -248,10 +285,15 @@ function footerHTML() {
     `<a class="footer__link footer-information__link--icon-right" href="${href}"${ext ? ' target="_blank" rel="noopener external"' : ''}>${icon(ext ? 'External' : 'ArrowRight', 'footer-information__icon')}${escapeHtml(label)}</a>`;
 
   return `
+  <!-- Kein inneres .container mehr (Item 4.12): der Container richtete den
+       klebenden Knopf an der Inhaltsspalte aus, sodass er bei 1440 mitten auf dem
+       «Öffnen»-Link der dritten Karte lag. CD platziert ihn im Seitengraben
+       (back-to-top-btn.postcss:11-13, right-3). Kein inline-onclick mehr —
+       verdrahtet in renderFooter() mit preventDefault, weil href="#main-header"
+       sonst die Route überschreibt (Item 4.3). -->
   <div class="back-to-top-rail">
-    <div class="container back-to-top-track">
-      <a class="back-to-top-btn back-to-top-btn--outline" href="#main-header" aria-label="Nach oben"
-        onclick="var h=document.getElementById('main-header');if(h){h.setAttribute('tabindex','-1');h.focus()}">
+    <div class="back-to-top-track">
+      <a class="back-to-top-btn back-to-top-btn--outline" href="#main-header" aria-label="Nach oben">
         ${icon('ChevronUp', 'back-to-top-btn__icon')}
       </a>
     </div>
@@ -260,9 +302,12 @@ function footerHTML() {
     <div class="container">
       <div class="footer-information">
         <div class="footer-information__entry">
-          <h3>Bundesamt für Bauten und Logistik BBL</h3>
+          <!-- Ohne das nachgestellte «BBL» bricht die Überschrift in der schmalen
+               ersten Spalte nicht mehr auf drei Zeilen; das Akronym steht in der
+               Adresszeile darunter (Item 4.13). -->
+          <h3>Bundesamt für Bauten und Logistik</h3>
           <p class="small">Das Kundenportal bündelt Dienstleistungen, Anwendungen, Dokumente und Daten des BBL an einem Ort. Dies ist ein <strong>Prototyp mit Demo-Daten</strong>.</p>
-          <p class="small">Fellerstrasse 21, 3003 Bern</p>
+          <p class="small">BBL · Fellerstrasse 21, 3003 Bern</p>
         </div>
         <div class="footer-information__entry">
           <h3>Prototyp</h3>
@@ -358,10 +403,20 @@ function renderHeader(el) {
     const navRect = nav.getBoundingClientRect();
     const buttonRect = button.getBoundingClientRect();
     const panelWidth = panel.offsetWidth || 450;
-    let left = buttonRect.left - navRect.left;
-    if (left + panelWidth > navRect.width - 12) left = Math.max(12, navRect.width - panelWidth - 12);
+    // CD desktop-menu.postcss:33 (.with-offset): die Innenpolsterung des Panels
+    // herausrechnen, damit die erste Menüzeile mit dem Trigger-Label fluchtet —
+    // vorher war der Drawer-Inhalt rund 49px nach rechts versetzt (Item 4.9).
+    const pad = parseFloat(getComputedStyle(panel).paddingLeft || '0') + 12;
+    let left = buttonRect.left - navRect.left - pad;
+    if (navRect.left + left < 0) left = -navRect.left;                            // nicht aus dem Viewport
+    if (left + panelWidth > navRect.width - 12) left = Math.max(-navRect.left, navRect.width - panelWidth - 12);
     panel.style.left = `${left}px`;
     panel.style.right = 'auto';
+    // Gemessener Höhendeckel (Item 4.7): die CSS-Regel aus 2.9d nimmt --shell-top
+    // als Schätzung; hier steht die echte Position, also exakt rechnen. Auf
+    // 1440x800 und 1366x768 waren sonst die letzten Einträge unerreichbar.
+    const rect = panel.getBoundingClientRect();
+    panel.style.maxHeight = `${Math.max(240, window.innerHeight - rect.top - 24)}px`;
   };
   const closeNavMenus = (exceptId = '', restoreFocus = false) => {
     let toRestore = null;
@@ -491,6 +546,11 @@ function renderHeader(el) {
   const searchForm = el.querySelector('#header-search-form');
   const sinput = el.querySelector('#global-search');
   const openSearch = (open) => {
+    // CDs eigener Haken (search.postcss:99-103): unter lg klappt das Suchfeld als
+    // eigene Zeile UNTER den Kopf und das Logo blendet aus — sonst lag das Feld
+    // quer über der Bundesmarke (gemessen 64/173/176px Überlappung). Item 4.5;
+    // die zugehörigen Regeln kamen mit Item 2.8.
+    document.body.classList.toggle('body--search-is-open', open);
     searchWrap.classList.toggle('open', open);
     searchToggle.setAttribute('aria-expanded', String(open));
     if (open) setTimeout(() => sinput.focus(), 60);
@@ -513,7 +573,21 @@ function renderHeader(el) {
   }, { signal });
 }
 
-function renderFooter(el) { el.innerHTML = footerHTML(); }
+function renderFooter(el) {
+  el.innerHTML = footerHTML();
+  // `href="#main-header"` ist die zugängliche Sprungmarke, darf aber nicht in die
+  // Adresse geschrieben werden: der Hash IST hier die Route, also hätte ein Klick
+  // die aktuelle Seite durch «#main-header» ersetzt und den Deep-Link zerstört
+  // (der Router ignoriert Nicht-`#/`-Hashes, die Adresse blieb aber falsch und
+  // Neuladen/Teilen landete auf der Startseite). Item 4.3.
+  const btn = el.querySelector('.back-to-top-btn');
+  if (btn) btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const h = document.getElementById('main-header');
+    if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+    window.scrollTo({ top: 0 });   // html{scroll-behavior} respektiert reduced-motion
+  });
+}
 
 export const shell = { renderHeader, renderFooter };
 export default shell;

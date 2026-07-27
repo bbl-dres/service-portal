@@ -35,18 +35,23 @@ export default async function render(ctx) {
 
   const area = () => Math.round(state.persons * AREA_PER_WORKPLACE * dsf);
 
+  // Klartextnamen für die Fehlerübersicht. Die Schlüssel sind DOM-ids, damit die
+  // Sprungmarken auflösen (Item 3.5).
+  const FIELD_LABELS = {
+    org: 'Verwaltungseinheit', cc: 'Kostenstelle',
+    persons: 'Anzahl Personen / Arbeitsplätze', beg: 'Begründung',
+  };
+
+  // Gemeinsame Schrittanzeige (C.stepIndicator) — `current` ist 0-basiert (Item 3.10).
+  const STEP_LABELS = ['Angaben', 'Bedarf', 'Prüfen & Absenden'];
   function stepsBar() {
-    const labels = ['Angaben', 'Bedarf', 'Prüfen & Absenden'];
-    return `<ol class="steps">${labels.map((l, idx) => {
-      const n = idx + 1;
-      const done = state.step > n, active = state.step === n;
-      const dot = done ? ' step__indicator-step--confirmed' : active ? ' step__indicator-step--active' : '';
-      return `<li class="${done ? 'done' : active ? 'active' : ''}"${active ? ' aria-current="step"' : ''}><span class="step__indicator-step${dot}">${done ? C.icon('CheckmarkBold', 'icon--sm') : n}</span> ${l}</li>`;
-    }).join('')}</ol>`;
+    return C.stepIndicator(STEP_LABELS, state.step - 1, { label: 'Antragsschritte' });
   }
 
   function draw() {
     if (state.created) return drawDone();
+    // Fokus + Schreibmarke über den Schrittwechsel bzw. den Fehler-Neuaufbau retten.
+    const restore = C.preserveFocus(mount);
     mount.innerHTML = `
     <div class="container section">
       <div class="container__center--xs">
@@ -54,17 +59,26 @@ export default async function render(ctx) {
         <h1 tabindex="-1">Raumbedarf melden</h1>
         <p class="muted">Antrag als <strong>${C.escape(state.org)}</strong> · Prozess: Eingang → Prüfung GS → Prüfung PFM → Entscheid.</p>
         ${stepsBar()}
-        <form id="wiz" class="form">${state.step === 1 ? step1() : state.step === 2 ? step2() : step3()}</form>
+        ${state.step < 3 ? '<p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>' : ''}
+        ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
+        <!-- novalidate: ohne das Attribut bricht die HTML-Constraint-Validierung
+             die Absendung ab, BEVOR das submit-Event feuert - validate() lief nie
+             und die gesamte CD-Fehlerebene (.input--error / badge--error /
+             aria-invalid / role=alert) war auf dem echten Nutzerpfad toter Code.
+             required/aria-required bleiben auf den Feldern: sie tragen die
+             Semantik fuer Screenreader und steuern die Pflichtfeld-Markierung. -->
+        <form id="wiz" class="form" novalidate>${state.step === 1 ? step1() : state.step === 2 ? step2() : step3()}</form>
       </div>
     </div>`;
     wire();
+    restore();
   }
 
   function step1() {
     return `
       ${C.field({ id: 'org', label: 'Verwaltungseinheit', required: true, message: state.errors.org,
         control: (cls, attrs) => `<input id="org" value="${C.escape(state.org)}" class="${cls}"${attrs}>` })}
-      ${C.field({ id: 'cc', label: 'Kostenstelle', required: true, message: state.errors.costCenter,
+      ${C.field({ id: 'cc', label: 'Kostenstelle', required: true, message: state.errors.cc,
         control: (cls, attrs) => `<input id="cc" placeholder="z. B. 810.123" value="${C.escape(state.costCenter)}" class="${cls}"${attrs}>` })}
       ${C.select({ id: 'bld', name: 'bld', label: 'Standort / Gebäude', value: state.buildingId,
         options: buildings.map(b => ({ value: b.bbl_id, label: `${b.name} — ${b.city}` })) })}
@@ -80,7 +94,7 @@ export default async function render(ctx) {
       <div class="notification notification--info">${C.icon('InfoCircle', 'icon--lg')}<div>Geschätzter Flächenbedarf: <strong>${area()} m² HNF</strong><br><span class="small">${state.persons} Arbeitsplätze × ${AREA_PER_WORKPLACE} m² × Desk-Sharing-Faktor ${dsf}</span></div></div>
       ${C.field({ id: 'termin', label: 'Gewünschter Termin',
         control: (cls, attrs) => `<input id="termin" type="date" value="${C.escape(state.termin)}" class="${cls}"${attrs}>` })}
-      ${C.field({ id: 'beg', label: 'Begründung', required: true, message: state.errors.begruendung,
+      ${C.field({ id: 'beg', label: 'Begründung', required: true, message: state.errors.beg,
         control: (cls, attrs) => `<textarea id="beg" placeholder="Weshalb wird der zusätzliche Raum benötigt?" class="${cls}"${attrs}>${C.escape(state.begruendung)}</textarea>` })}
       <div class="row" style="justify-content:space-between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')} Zurück</button><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
   }
@@ -123,7 +137,10 @@ export default async function render(ctx) {
   function readStep() {
     if (state.step === 1) {
       Object.assign(state, C.readForm(mount, { org: 'org', costCenter: 'cc', buildingId: 'bld' }));
-      state.persons = Math.max(1, parseInt(C.val(mount, 'persons'), 10) || 0);
+      // Rohwert übernehmen, NICHT stillschweigend auf >=1 klemmen: `Math.max(1, …)`
+      // schrieb die Eingabe des Nutzers um, sodass eine 0 oder ein Tippfehler
+      // unbemerkt zu 1 wurde und validate() nie etwas zu meckern hatte (Item 3.15).
+      state.persons = C.val(mount, 'persons');
     } else if (state.step === 2) {
       Object.assign(state, C.readForm(mount, { nawClass: 'naw', termin: 'termin', begruendung: 'beg' }));
     }
@@ -131,11 +148,18 @@ export default async function render(ctx) {
   function validate() {
     const e = {};
     if (state.step === 1) {
-      if (!state.org.trim()) e.org = 'Pflichtfeld';
-      if (!state.costCenter.trim()) e.costCenter = 'Pflichtfeld';
-      if (!state.persons || state.persons < 1) e.persons = 'Mindestens 1';
+      // Anweisende Formulierung wie in fault-report.js — nicht «Pflichtfeld».
+      if (!state.org.trim()) e.org = 'Bitte Verwaltungseinheit angeben';
+      if (!state.costCenter.trim()) e.cc = 'Bitte Kostenstelle angeben';
+      const n = Number.parseInt(state.persons, 10);
+      if (!Number.isFinite(n) || n < 1) e.persons = 'Bitte eine Anzahl ab 1 angeben';
+      else if (n > 5000) e.persons = 'Bitte einen Wert bis 5000 angeben';
+      else state.persons = n;   // erst nach erfolgreicher Prüfung normalisieren
+      // `bld` (Standort) wird von C.select OHNE required gerendert und ist damit
+      // bewusst optional — hier absichtlich nicht geprüft, damit Markup und
+      // Validierung dieselbe Menge beschreiben.
     } else if (state.step === 2) {
-      if (!state.begruendung.trim()) e.begruendung = 'Bitte begründen Sie den Bedarf';
+      if (!state.begruendung.trim()) e.beg = 'Bitte begründen Sie den Bedarf';
     }
     state.errors = e;
     return Object.keys(e).length === 0;
@@ -147,8 +171,10 @@ export default async function render(ctx) {
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       readStep();
-      if (!validate()) { draw(); return; }
-      if (state.step < 3) { state.step += 1; draw(); return; }
+      // Fehlversuch: neu zeichnen, dann Fokus auf die Fehlerübersicht — sonst
+      // landet er auf <body> und der Nutzer erfährt nichts (WCAG 3.3.1).
+      if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
+      if (state.step < 3) { state.step += 1; draw(); focusStepHeading(); return; }
       // submit
       const b = core.building(state.buildingId);
       state.created = engine.start('raumbedarf', {
@@ -162,10 +188,34 @@ export default async function render(ctx) {
       if (!state.created) C.flashError(mount, 'Der Vorgang konnte nicht gespeichert werden — bitte erneut versuchen.');
     });
     const back = mount.querySelector('[data-back]');
-    if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); });
-    // live area recompute on persons change while on step 2 is handled by re-draw; bind persons on step1 not needed
+    if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); focusStepHeading(); });
+    // `#persons` wird hier gebunden, weil der Wert die Flächenschätzung in Schritt 2
+    // speist (der frühere Kommentar behauptete das Gegenteil direkt über dem Code).
     const personsEl = mount.querySelector('#persons');
-    if (personsEl) personsEl.addEventListener('input', () => { state.persons = Math.max(1, parseInt(personsEl.value, 10) || 0); });
+    // Rohwert halten (siehe readStep) — die Prüfung meldet Ungültiges, statt es
+    // stillschweigend zu korrigieren.
+    if (personsEl) personsEl.addEventListener('input', () => { state.persons = personsEl.value; });
+    // Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert (Item 3.6).
+    Object.keys(state.errors).forEach((id) => {
+      const el = mount.querySelector('#' + id);
+      if (!el) return;
+      el.addEventListener('input', () => {
+        if (!state.errors[id]) return;
+        delete state.errors[id];
+        el.classList.remove('input--error');
+        el.removeAttribute('aria-invalid');
+        const msg = mount.querySelector('#' + id + '-msg');
+        if (msg) msg.remove();
+      }, { once: true });
+    });
+  }
+
+  // Schrittwechsel ist ein Kontextwechsel: Fokus auf die Seitenüberschrift, damit
+  // Screenreader den neuen Schritt ansagen (bisher war er völlig still).
+  function focusStepHeading() {
+    const h = mount.querySelector('h1');
+    if (h) h.focus({ preventScroll: true });
+    C.announce(`Schritt ${state.step} von 3`);
   }
 
   draw();
