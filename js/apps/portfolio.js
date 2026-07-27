@@ -549,9 +549,7 @@ function buildingDetail(ctx, b) {
     <div class="row mt-4" style="gap:.5rem">${classBadge(C, ref, b.classification)} ${statusBadge(C, ref, b.status)} <span class="small muted">${C.escape(b.bbl_id)}</span></div>
     <h1 tabindex="-1">${C.escape(b.name)}</h1>
     <p class="lead">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)} · ${C.escape(b.portfolioCategory)}</p>
-    <button type="button" class="pf-hero-trigger" id="pf-hero-btn" aria-label="Bildergalerie öffnen (${galleryItems.length} Bild${galleryItems.length === 1 ? '' : 'er'})">
-      ${C.photo({ id: b.photo, color: '#2f4356', alt: `${b.name}, ${b.city}`, w: 1600, cls: 'pf-hero', style: 'aspect-ratio:21/9;max-height:22rem', overlay: `<span class="pf-hero__badge">${C.icon('Image', 'icon--base')} ${galleryItems.length} Bild${galleryItems.length === 1 ? '' : 'er'}</span>` })}
-    </button>
+    ${heroMosaic(C, b, galleryItems)}
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', ariaLabel: 'Gebäudedetails' })}
       ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', render: panelHtml })}
@@ -565,8 +563,10 @@ function buildingDetail(ctx, b) {
     const host = mount.querySelector('#' + cfg.id);
     if (host) C.mountDataTable(host, cfg);
   });
-  const heroBtn = mount.querySelector('#pf-hero-btn');
-  if (heroBtn) heroBtn.addEventListener('click', () => openGallery(galleryItems, 0, C));
+  // Jede Mosaik-Kachel öffnet die Galerie bei ihrem eigenen Bild.
+  mount.querySelectorAll('#pf-mosaic [data-gallery]').forEach((el) => {
+    el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C));
+  });
   window.scrollTo(0, 0);
   const h = mount.querySelector('h1');
   if (h) h.focus({ preventScroll: true });
@@ -656,6 +656,51 @@ function formatSize(kb) { if (kb == null) return ''; return kb >= 1024 ? (kb / 1
 // rechts, Prev/Next, Zähler, Thumbnail-Leiste. Tastatur: Esc schliesst, ←/→ blättern,
 // Tab bleibt in der Lightbox (Fokusfalle); Klick auf den Scrim schliesst. `items` =
 // [{ photo, title, meta, type, gray }]. C wird durchgereicht (Modul ohne Import auf C).
+// Bild-Mosaik über der Detailansicht: links das Hauptbild auf voller Höhe, rechts
+// ein 2x2-Raster kleinerer Bilder. Trägt die Galerie mehr als fünf Bilder, bekommt
+// die letzte Kachel eine graue Auflage «Alle Bilder anzeigen» mit der Restanzahl.
+// Jede Kachel ist ein eigener Knopf und öffnet die Galerie bei GENAU diesem Bild.
+// Bei nur einem Bild bleibt es beim einzelnen breiten Hauptbild.
+function heroMosaic(C, b, items) {
+  if (!items.length) return '';
+  const esc = (s) => C.escape(String(s == null ? '' : s));
+  const tile = (it, i, cls, w, overlay = '') =>
+    `<button type="button" class="pf-mosaic__cell ${cls}" data-gallery="${i}"
+       aria-label="${esc(it.title)} — in der Galerie öffnen (Bild ${i + 1} von ${items.length})">
+      ${C.photo({ id: it.photo, color: '#2f4356', alt: esc(it.title), w, gray: it.gray,
+        cls: 'pf-mosaic__photo', overlay })}
+    </button>`;
+
+  if (items.length === 1) {
+    return `<div class="pf-mosaic pf-mosaic--single" id="pf-mosaic">
+      ${tile(items[0], 0, 'pf-mosaic__cell--main', 1600)}</div>`;
+  }
+  const side = items.slice(1, 5);                 // maximal vier Nebenkacheln
+  const hidden = items.length - (1 + side.length);
+  // Die letzte Nebenkachel trägt die Auflage «Alle Bilder anzeigen» — als
+  // dauerhafte Affordanz in die Galerie, nicht nur als Überlaufzähler: mit den
+  // heutigen Demodaten passen alle Bilder ins Mosaik, der Einstieg soll aber
+  // trotzdem sichtbar sein. Die Zahl «+N» erscheint nur, wenn wirklich Bilder
+  // verborgen sind. Bei genau zwei Bildern bleibt die Auflage weg — dort würde
+  // sie das einzige Nebenbild komplett verdecken.
+  const showMore = side.length >= 2 || hidden > 0;
+  const sideTiles = side.map((it, n) => {
+    const i = n + 1;
+    const isLast = n === side.length - 1 && showMore;
+    const overlay = isLast
+      ? `<span class="pf-mosaic__more">${hidden > 0 ? `<span class="pf-mosaic__more-num">+${hidden}</span>` : ''}
+          <span class="pf-mosaic__more-label">Alle Bilder anzeigen</span></span>`
+      : '';
+    return tile(it, i, 'pf-mosaic__cell--side', 640, overlay);
+  }).join('');
+
+  return `<div class="pf-mosaic" id="pf-mosaic">
+    ${tile(items[0], 0, 'pf-mosaic__cell--main', 1600,
+      `<span class="pf-hero__badge">${C.icon('Image', 'icon--base')} ${items.length} Bild${items.length === 1 ? '' : 'er'}</span>`)}
+    <div class="pf-mosaic__side">${sideTiles}</div>
+  </div>`;
+}
+
 function openGallery(items, start, C) {
   if (!items || !items.length) return;
   let idx = Math.max(0, Math.min(start || 0, items.length - 1));
@@ -668,24 +713,36 @@ function openGallery(items, start, C) {
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-label', 'Bildergalerie');
 
+  // Vollbild mit Kopfzeile — dieselbe Anatomie wie die Dokumentvorschau
+  // (js/doc-viewer.js): Titel und Meta links, Aktionen rechts. Auf einem Bild, das
+  // die Hauptinformation ist, war die frühere 70vh-Karte Flächenverschwendung.
   const render = () => {
     const it = items[idx];
+    const full = C.photoUrl(it.photo, { w: 2000, gray: it.gray });
     overlay.innerHTML = `
-      <div class="pf-lightbox__box">
-        <button type="button" class="pf-lightbox__close" data-act="close" aria-label="Galerie schliessen">${C.icon('Cancel', 'icon--md')}</button>
-        <div class="pf-lightbox__stage">
-          ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--prev" data-act="prev" aria-label="Vorheriges Bild">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
-          <img class="pf-lightbox__img" src="${esc(C.photoUrl(it.photo, { w: 1600, gray: it.gray }))}" alt="${esc(it.title)}">
-          ${it.type === 'video' ? `<span class="pf-lightbox__play" aria-hidden="true">${C.icon('Video', 'icon--lg')}</span>` : ''}
-          ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
+      <div class="pf-lightbox__bar">
+        <div class="pf-lightbox__heading">
+          ${C.icon(it.type === 'video' ? 'Video' : 'Image', 'pf-lightbox__heading-icon icon--lg')}
+          <div style="min-width:0">
+            <p class="pf-lightbox__title">${esc(it.title)}</p>
+            <p class="pf-lightbox__sub">${esc(it.meta)}${multi ? ` · Bild ${idx + 1} von ${items.length}` : ''}</p>
+          </div>
         </div>
-        <div class="pf-lightbox__cap">
-          <div><div class="pf-lightbox__title">${esc(it.title)}</div><div class="small muted">${esc(it.meta)}</div></div>
-          ${multi ? `<div class="small muted pf-lightbox__count">${idx + 1} / ${items.length}</div>` : ''}
+        <div class="pf-lightbox__actions">
+          <a class="pf-lightbox__btn" href="${esc(full)}" download target="_blank" rel="noopener"
+             aria-label="Bild herunterladen" title="Herunterladen">${C.icon('Download', 'icon--md')}</a>
+          <button type="button" class="pf-lightbox__btn" data-act="share" aria-label="Bild teilen" title="Teilen">${C.icon('Share', 'icon--md')}</button>
+          <button type="button" class="pf-lightbox__btn" data-act="close" aria-label="Galerie schliessen" title="Schliessen">${C.icon('Cancel', 'icon--md')}</button>
         </div>
-        ${multi ? `<div class="pf-lightbox__thumbs">${items.map((m, i) => `<button type="button" class="pf-lightbox__thumb${i === idx ? ' is-active' : ''}" data-thumb="${i}" aria-label="${esc(m.title)}"${i === idx ? ' aria-current="true"' : ''}><img src="${esc(C.photoUrl(m.photo, { w: 200, gray: m.gray }))}" alt=""></button>`).join('')}</div>` : ''}
-      </div>`;
-    const cl = overlay.querySelector('.pf-lightbox__close'); if (cl) cl.focus();
+      </div>
+      <div class="pf-lightbox__stage">
+        ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--prev" data-act="prev" aria-label="Vorheriges Bild">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
+        <img class="pf-lightbox__img" src="${esc(full)}" alt="${esc(it.title)}">
+        ${it.type === 'video' ? `<span class="pf-lightbox__play" aria-hidden="true">${C.icon('Video', 'icon--lg')}</span>` : ''}
+        ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
+      </div>
+      ${multi ? `<div class="pf-lightbox__thumbs">${items.map((m, i) => `<button type="button" class="pf-lightbox__thumb${i === idx ? ' is-active' : ''}" data-thumb="${i}" aria-label="${esc(m.title)}"${i === idx ? ' aria-current="true"' : ''}><img src="${esc(C.photoUrl(m.photo, { w: 200, gray: m.gray }))}" alt=""></button>`).join('')}</div>` : ''}`;
+    const cl = overlay.querySelector('[data-act="close"]'); if (cl) cl.focus();
   };
   const go = (d) => { idx = (idx + d + items.length) % items.length; render(); };
   const close = () => {
@@ -699,7 +756,9 @@ function openGallery(items, start, C) {
     else if (multi && e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
     else if (multi && e.key === 'ArrowRight') { e.preventDefault(); go(1); }
     else if (e.key === 'Tab') {
-      const f = [...overlay.querySelectorAll('button')].filter((el) => el.offsetParent !== null);
+      // Auch `a[href]` einsammeln — der Herunterladen-Knopf ist ein Link und wäre
+      // sonst aus der Fokusfalle gefallen.
+      const f = [...overlay.querySelectorAll('button, a[href]')].filter((el) => el.offsetParent !== null);
       if (!f.length) return;
       const first = f[0], last = f[f.length - 1];
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -707,12 +766,20 @@ function openGallery(items, start, C) {
     }
   }
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) return close();          // Klick auf den Scrim
+    // Klick auf die dunkle Fläche um das Bild schliesst — bei einem Vollbild ist
+    // das die erwartete Geste. Der Download-Link trägt kein data-act und läuft
+    // deshalb ungehindert durch.
+    if (e.target === overlay || e.target.classList.contains('pf-lightbox__stage')) return close();
     const btn = e.target.closest('[data-act], [data-thumb]'); if (!btn) return;
     if (btn.dataset.act === 'close') close();
     else if (btn.dataset.act === 'prev') go(-1);
     else if (btn.dataset.act === 'next') go(1);
-    else if (btn.dataset.thumb != null) { idx = Number(btn.dataset.thumb); render(); }
+    else if (btn.dataset.act === 'share') {
+      const url = `${location.origin}${location.pathname}${location.hash}`;
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(
+        () => C.toast('Link kopiert.'), () => C.toast('Kopieren nicht möglich.'));
+      else C.toast('Kopieren nicht möglich.');
+    } else if (btn.dataset.thumb != null) { idx = Number(btn.dataset.thumb); render(); }
   });
   document.addEventListener('keydown', onKey);
   document.body.classList.add('chart-overlay-open');

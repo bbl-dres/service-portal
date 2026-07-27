@@ -1249,6 +1249,16 @@ table.table thead th { background:var(--color-secondary-50); text-align:left; pa
 table.table td, table.table tbody th { padding:1rem 1.5rem; border-bottom:1px solid var(--color-border-strong);
   vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
 table.table tbody th { text-align:left; font-weight:var(--fw-bold); color:var(--color-gray-800); }
+/* Die Ausrichtungs-Utilities (.text-right/-center/-left) sind (0,1,0) und
+   verloren gegen `table.table thead th` (0,1,3) bzw. `table.table tbody th` —
+   die Kopfzeile blieb also linksbündig, während die Werte rechts standen.
+   Innerhalb der Tabelle mit passender Spezifität nachziehen, damit `align` in
+   C.table() Kopf UND Zelle gemeinsam ausrichtet. */
+table.table thead th.text-right, table.table tbody th.text-right, table.table td.text-right,
+table.table tfoot th.text-right, table.table tfoot td.text-right { text-align:right; }
+table.table thead th.text-center, table.table tbody th.text-center, table.table td.text-center,
+table.table tfoot th.text-center, table.table tfoot td.text-center { text-align:center; }
+table.table thead th.text-left, table.table tbody th.text-left, table.table td.text-left { text-align:left; }
 /* `tbody th` ist fett — in den Listenansichten steckt darin aber Titel UND
    Teasertext, sodass jede Beschreibung fett gerendert wurde (Item 2.12). */
 table.table tbody th .small,
@@ -1901,7 +1911,6 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .chart__title { min-width:0; flex:1 1 12rem; overflow-wrap:anywhere;
   font-size:var(--text-base); font-weight:var(--fw-bold); margin:0; }
 @media (max-width:479.98px){ .chart__actions { min-height:2.75rem; } }
-.chart__unit { font-size:var(--text-xs); color:var(--color-text-muted); white-space:nowrap; }
 .chart__legend { display:flex; flex-wrap:wrap; gap:1rem; margin-top:.6rem; font-size:var(--text-sm); color:var(--color-text-muted); }
 .chart__legend-item { display:inline-flex; align-items:center; gap:.4rem; }
 .chart__swatch { width:.75rem; height:.75rem; border-radius:2px; flex:none; }
@@ -1910,15 +1919,11 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .chart__bar, .chart__dot { transition:opacity .12s; }
 .chart__bar:hover, .chart__dot:hover, .chart__bar:focus-visible, .chart__dot:focus-visible { opacity:.78; }
 .chart__note { font-size:var(--text-sm); color:var(--color-text-muted); margin:.75rem 0 0; }
-.chart__table, .chart__sql { margin-top:.75rem; font-size:var(--text-sm); }
-.chart__table summary, .chart__sql summary { cursor:pointer; color:var(--color-primary-600); }
-/* Die Datentabelle wird zur echten Aufklapp-Alternative (Item 6.2) — bisher war
-   sie dauerhaft `hidden` und diente nur dem CSV-Export, d. h. kein Diagramm hatte
-   eine erreichbare Textalternative (WCAG 1.1.1). */
-.chart__table > summary { min-height:2.75rem; display:flex; align-items:center; gap:.5rem;
-  cursor:pointer; font-size:var(--text-sm); color:var(--color-primary-700); }
-.chart__table[open] > summary { font-weight:var(--fw-bold); }
-.chart__table > summary:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+.chart__sql { margin-top:.75rem; font-size:var(--text-sm); }
+.chart__sql summary { cursor:pointer; color:var(--color-primary-600); }
+/* `.chart__table` trägt `.sr-only` (Item 6.2): Textalternative für Hilfsmittel,
+   keine sichtbare Aufklappzeile — Sehende exportieren über das Diagrammmenü
+   (CSV/Excel). Darum braucht die Tabelle hier keine eigene Optik. */
 .chart__sql pre { margin:.5rem 0 0; padding:.75rem; overflow-x:auto;
   background:var(--color-secondary-50); font-size:var(--text-xs); line-height:1.5; }
 .chart__tooltip { position:absolute; z-index:5; transform:translate(-50%,-100%); pointer-events:none;
@@ -2077,6 +2082,11 @@ body.docviewer-open .back-to-top-rail { display:none; }
    bereits. Nur dort links, wo wir das Feld auf Mobil vollbreit ziehen. */
 .catbar__sort select { text-align:right; }
 @media (max-width:767.98px){ .catbar__sort select { text-align:left; } }
+/* BEWUSSTE ABWEICHUNG vom CD: rechtsbündige Optionen klebten in der aufgeklappten
+   Liste direkt an der Kante des Popups (das CD setzt `text-right` ohne Polsterung).
+   Chromium respektiert `padding` auf <option> in der Popup-Liste, also gibt es hier
+   denselben optischen Rand wie im geschlossenen Zustand. */
+.catbar__sort select option { padding-right:.75rem; }
 /* CD-Padding (px-4) links; rechts Platz für das Chevron (der zugleich den Abstand
    für die rechtsbündige Ausrichtung oben liefert). */
 .catbar__sort select { min-height:2.75rem; padding-left:1rem; padding-right:1.75rem; font-size:var(--text-sm); color:var(--color-text); }
@@ -2091,7 +2101,12 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Panels leer liess und «Zurücksetzen» wie eine dritte Facetten-Überschrift
    aussehen liess (Item 2.13). */
 .catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:.75rem 2rem;
-  align-items:start; padding:1rem 1.25rem; margin:.75rem 0 0; background:var(--color-secondary-50);
+  /* Das Panel besitzt seinen Abstand nach UNTEN selbst (1.5rem = `mt-6`). Vorher
+     kam der Abstand nur von dem, was folgte: die Katalogseiten setzen `mt-6` auf
+     den Ergebnisblock, C.mountDataTable hängt die Tabelle direkt an — dort klebte
+     die Tabelle am Filterpanel. Bei den Katalogseiten kollabieren die beiden
+     Ränder zu denselben 1.5rem, die Darstellung bleibt dort also unverändert. */
+  align-items:start; padding:1rem 1.25rem; margin:.75rem 0 1.5rem; background:var(--color-secondary-50);
   border:1px solid var(--color-border); border-radius:var(--radius-lg); }
 @media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem 2rem; } }
 @media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); } }
@@ -2274,38 +2289,83 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-media__title { font-size:var(--text-sm); font-weight:var(--fw-bold); line-height:1.2; }
 .pf-media__meta { font-size:var(--text-xs); }
 
-/* ---- Bildergalerie: Hero-Trigger + Lightbox-Modal (CD-Overlay-Muster, vgl. .chart-overlay) ---- */
-.pf-hero-trigger { display:block; width:100%; padding:0; border:0; background:none; cursor:zoom-in;
-  border-radius:var(--radius-lg); overflow:hidden; position:relative; }
-/* Ohne dies leitet der Button-Layoutkontext die Bildbreite aus max-height × aspect-
-   ratio ab (schmaler als der Button) → rechts entsteht eine tote Klickzone, die die
-   Galerie öffnet. width:100% zwingt das Bild, den Button exakt zu füllen. */
-.pf-hero-trigger .pf-hero { width:100%; }
-.pf-hero-trigger:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
-.pf-hero__badge { position:absolute; right:.85rem; bottom:.75rem; display:inline-flex; align-items:center; gap:.35rem;
+/* ---- Bildmosaik über der Objekt-Detailansicht ----------------------------
+   Links das Hauptbild auf voller Höhe, rechts ein 2x2-Raster. Jede Kachel ist ein
+   eigener Knopf und öffnet die Galerie bei genau ihrem Bild; die letzte Nebenkachel
+   trägt bei mehr als fünf Bildern die Auflage «Alle Bilder anzeigen». */
+.pf-mosaic { display:grid; grid-template-columns:1fr; gap:.5rem; }
+@media (min-width:768px){
+  .pf-mosaic { grid-template-columns:2fr 1fr; height:22rem; }
+  .pf-mosaic--single { grid-template-columns:1fr; }
+}
+.pf-mosaic__side { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.5rem; min-height:0; }
+@media (max-width:767.98px){
+  /* Auf dem Handy bleibt das Hauptbild gross, die Nebenkacheln werden eine Reihe. */
+  .pf-mosaic__cell--main .pf-mosaic__photo { aspect-ratio:16/10; }
+  .pf-mosaic__side { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .pf-mosaic__cell--side .pf-mosaic__photo { aspect-ratio:1/1; }
+}
+.pf-mosaic__cell { position:relative; display:block; padding:0; border:0; background:none; cursor:zoom-in;
+  border-radius:var(--radius-lg); overflow:hidden; min-height:0; }
+.pf-mosaic__cell:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+/* Die Kacheln füllen ihre Gitterzelle vollständig — sonst entsteht neben dem Bild
+   eine tote Klickzone, die trotzdem die Galerie öffnet. */
+.pf-mosaic__photo { width:100%; height:100%; }
+.pf-mosaic__photo img { width:100%; height:100%; object-fit:cover; }
+.pf-mosaic__cell:hover .pf-mosaic__photo img { opacity:.92; }
+/* Auflage der letzten Kachel: grau-transparent mit Restanzahl + Beschriftung. */
+/* `.photo > *` als Kindselektor, weil `.photo > :not(img)` (0,1,1) sonst unser
+   `position:absolute` (0,1,0) überstimmt und die Auflage in den normalen Fluss
+   an den Kachelanfang kippt. */
+.photo > .pf-mosaic__more { position:absolute; inset:0; display:flex; flex-direction:column; gap:.15rem;
+  align-items:center; justify-content:center; text-align:center; padding:.5rem;
+  background:rgba(31,41,55,.62); color:#fff; font-weight:var(--fw-bold); }
+.pf-mosaic__cell:hover .pf-mosaic__more { background:rgba(31,41,55,.74); }
+.pf-mosaic__more-num { font-size:var(--fs-2xl); line-height:1.1; }
+.pf-mosaic__more-label { font-size:var(--fs-xs); font-weight:var(--fw-regular); text-decoration:underline;
+  text-underline-offset:2px; }
+@media (max-width:767.98px){ .pf-mosaic__more-label { display:none; } }
+/* Kindselektor, siehe Hinweis oben zu `.photo > :not(img)`. */
+.photo > .pf-hero__badge { position:absolute; right:.85rem; bottom:.75rem; display:inline-flex; align-items:center; gap:.35rem;
   padding:.3rem .7rem; border-radius:var(--radius-full); background:rgba(13,27,42,.72); color:#fff;
   font-size:var(--text-sm); font-weight:var(--fw-bold); }
-.pf-hero-trigger:hover .pf-hero__badge { background:rgba(13,27,42,.9); }
-.pf-lightbox { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center;
-  padding:2rem; background:var(--overlay-scrim); }
-.pf-lightbox__box { position:relative; width:min(1000px,100%); max-height:92vh; display:flex; flex-direction:column;
-  background:#fff; border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); overflow:hidden; }
-.pf-lightbox__stage { position:relative; display:flex; align-items:center; justify-content:center; background:#0d1b2a; min-height:0; }
-.pf-lightbox__img { display:block; max-width:100%; max-height:70vh; object-fit:contain; }
+.pf-mosaic__cell:hover .photo > .pf-hero__badge { background:rgba(13,27,42,.9); }
+
+/* ---- Bildbetrachter: VOLLBILD mit Kopfzeile, analog zur Dokumentvorschau ----
+   Vorher eine zentrierte Karte mit max-height:70vh — auf einem Bild, das die
+   Hauptinformation IST, verschenkt das die Fläche. Jetzt dieselbe Anatomie wie
+   .docviewer: dunkle Vollfläche, Kopfzeile mit Titel/Meta links und Aktionen
+   (Herunterladen · Teilen · Schliessen) rechts. */
+.pf-lightbox { position:fixed; inset:0; z-index:var(--z-modal); display:flex; flex-direction:column;
+  background:var(--color-secondary-900); }
+.pf-lightbox__bar { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex:none;
+  padding:.6rem .75rem; background:var(--color-secondary-800); color:#fff; }
+@media (min-width:768px){ .pf-lightbox__bar { padding:.6rem 1.25rem; } }
+.pf-lightbox__heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
+.pf-lightbox__heading-icon { color:var(--color-secondary-200); flex:none; }
+.pf-lightbox__title { margin:0; font-weight:var(--fw-bold); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pf-lightbox__sub { margin:0; font-size:var(--fs-sm); color:var(--color-secondary-200); }
+.pf-lightbox__actions { display:flex; align-items:center; gap:.25rem; flex:none; }
+.pf-lightbox__btn { display:inline-flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem;
+  padding:0; border:0; border-radius:var(--radius-sm); background:none; color:#fff; cursor:pointer; transition:background .12s; }
+.pf-lightbox__btn:hover { background:rgba(255,255,255,.14); }
+.pf-lightbox__btn:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
+.pf-lightbox__stage { position:relative; flex:1 1 auto; display:flex; align-items:center; justify-content:center;
+  min-height:0; padding:1rem; }
+.pf-lightbox__img { display:block; max-width:100%; max-height:100%; object-fit:contain; }
 .pf-lightbox__play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,.92); pointer-events:none; }
 .pf-lightbox__nav { position:absolute; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; justify-content:center;
   width:2.75rem; height:2.75rem; border:0; border-radius:var(--radius-full); background:rgba(255,255,255,.85); color:var(--color-text); cursor:pointer; transition:background .12s; }
 .pf-lightbox__nav:hover { background:#fff; }
 .pf-lightbox__nav--prev { left:.75rem; } .pf-lightbox__nav--next { right:.75rem; }
-.pf-lightbox__close { position:absolute; top:.75rem; right:.75rem; z-index:2; display:inline-flex; align-items:center; justify-content:center;
-  min-width:2.5rem; min-height:2.5rem; padding:.35rem; border:0; border-radius:var(--radius-sm); background:rgba(255,255,255,.9); color:var(--color-text); cursor:pointer; }
-.pf-lightbox__close:hover { background:#fff; }
-.pf-lightbox__cap { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding:.9rem 1.25rem; }
-.pf-lightbox__title { font-weight:var(--fw-bold); }
-.pf-lightbox__thumbs { display:flex; gap:.5rem; padding:0 1.25rem 1rem; overflow-x:auto; }
+.pf-lightbox__count { flex:none; color:var(--color-secondary-200); font-size:var(--fs-sm); }
+.pf-lightbox__thumbs { display:flex; gap:.5rem; flex:none; padding:.6rem .75rem; overflow-x:auto;
+  background:var(--color-secondary-800); }
+@media (min-width:768px){ .pf-lightbox__thumbs { padding:.6rem 1.25rem; } }
 .pf-lightbox__thumb { flex:none; width:72px; height:52px; padding:0; border:2px solid transparent; border-radius:var(--radius-sm);
   overflow:hidden; background:none; cursor:pointer; }
-.pf-lightbox__thumb.is-active { border-color:var(--color-primary-600); }
+.pf-lightbox__thumb.is-active { border-color:#fff; }
+.pf-lightbox__thumb:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
 .pf-lightbox__thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 /* Summenzeile (tfoot) in Detailtabellen */
 .table__total th, .table__total td { border-top:2px solid var(--color-secondary-300); font-weight:var(--fw-bold); background:var(--color-secondary-50); }

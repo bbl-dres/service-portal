@@ -102,6 +102,10 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
 
     // 2) building detail deep-link — Phase-2 tabs (Flächen/Ausstattung/Verträge/Kosten/Kontakte)
     const d = await openPage(cdp, `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1000/4840/AF')}`);
+    // Viewport auch hier setzen: dieses Target erbt die Override der Shell-Seite
+    // NICHT und lief sonst in der Headless-Standardgrösse — die Detailansicht
+    // wurde also im gestapelten Mobil-Layout geprüft, obwohl der Test 1440 meint.
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1200, deviceScaleFactor: 1, mobile: false }, d.sessionId);
     await new Promise(r => setTimeout(r, 600));
     const D = await d.evaluate(`(async () => { const s = ms => new Promise(r => setTimeout(r, ms)); let n = 0; while (!document.querySelector('.tab__control') && n++ < 100) await s(100);
       const r = { h1: (document.querySelector('h1') || {}).textContent, tabs: [...document.querySelectorAll('.tab__control')].map(t => t.textContent.trim()) };
@@ -111,12 +115,34 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       // Kosten tab → body rows + a tfoot total row
       const kt = [...document.querySelectorAll('.tab__control')].find(t => /Kosten/.test(t.textContent)); if (kt) { kt.click(); await s(200); }
       const kp = document.querySelector('#pf-tab-panel-kosten'); r.kostenTotalRow = kp ? !!kp.querySelector('tfoot .table__total') : false; r.kostenRows = kp ? kp.querySelectorAll('table tbody tr').length : 0;
-      // Hero trigger must exactly cover its image — no dead click zone beside it (bug: 508px right gutter opened the gallery)
-      const hb = document.querySelector('#pf-hero-btn'), hi = document.querySelector('.pf-hero img');
-      r.heroGutter = (hb && hi) ? Math.round(hb.getBoundingClientRect().width - hi.getBoundingClientRect().width) : -1;
-      // Hero photo opens the lightbox gallery; Esc closes it
-      const hero = document.querySelector('#pf-hero-btn'); if (hero) hero.click(); await s(250);
-      r.lightbox = !!document.querySelector('.pf-lightbox'); r.lightboxImg = !!document.querySelector('.pf-lightbox__img'); r.thumbs = document.querySelectorAll('.pf-lightbox__thumb').length;
+      // Bildmosaik: Hauptbild links auf voller Höhe + 2x2-Raster rechts. Jede Kachel
+      // muss ihr Bild exakt bedecken — sonst entsteht neben dem Bild eine tote
+      // Klickzone, die trotzdem die Galerie öffnet (früherer Fehler: 508px rechts).
+      const cells = document.querySelectorAll('#pf-mosaic [data-gallery]');
+      r.mosaicCells = cells.length;
+      const mc = document.querySelector('.pf-mosaic__cell--main');
+      const mi = mc ? mc.querySelector('img') : null;
+      r.heroGutter = (mc && mi) ? Math.round(mc.getBoundingClientRect().width - mi.getBoundingClientRect().width) : -1;
+      // Das Mosaik füllt seine Höhe mit dem Hauptbild (Desktop-Layout).
+      const mos = document.querySelector('#pf-mosaic');
+      r.dbgMosH = mos ? Math.round(mos.getBoundingClientRect().height) : -1;
+      r.dbgMainH = mc ? Math.round(mc.getBoundingClientRect().height) : -1;
+      r.mainFillsHeight = (mos && mc)
+        ? Math.abs(mc.getBoundingClientRect().height - mos.getBoundingClientRect().height) <= 2 : false;
+      // Die letzte Nebenkachel trägt die Auflage «Alle Bilder anzeigen».
+      r.moreOverlay = !!document.querySelector('.pf-mosaic__more');
+      // Eine Kachel öffnet den Vollbild-Betrachter bei GENAU ihrem Bild; Esc schliesst.
+      const third = cells[2] || cells[0]; if (third) third.click(); await s(300);
+      const lb = document.querySelector('.pf-lightbox');
+      r.lightbox = !!lb;
+      r.lightboxImg = !!document.querySelector('.pf-lightbox__img');
+      r.thumbs = document.querySelectorAll('.pf-lightbox__thumb').length;
+      // Vollbild statt zentrierter Karte, mit Kopfzeile und Herunterladen-Aktion.
+      r.lightboxFullscreen = lb
+        ? Math.round(lb.getBoundingClientRect().height) === document.documentElement.clientHeight : false;
+      r.lightboxBar = !!document.querySelector('.pf-lightbox__bar');
+      r.lightboxDownload = !!document.querySelector('.pf-lightbox a[download]');
+      r.lightboxStartsAtClicked = /Bild 3 von/.test((document.querySelector('.pf-lightbox__sub') || {}).textContent || '');
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); await s(200);
       r.lightboxClosed = !document.querySelector('.pf-lightbox');
       return r; })()`);
@@ -128,9 +154,15 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(!D.tabs.some(t => /Medien|Bauprojekte/.test(t)), 'Medien + Bauprojekte tabs removed');
     check(D.vertraegeRows >= 1, `Verträge tab shows contracts (${D.vertraegeRows} rows)`);
     check(D.kostenTotalRow && D.kostenRows >= 1, `Kosten tab shows table + total row (${D.kostenRows} rows)`);
-    check(D.heroGutter === 0, `hero trigger exactly covers its image, no dead zone (Δwidth = ${D.heroGutter}px)`);
-    check(D.lightbox && D.lightboxImg && D.thumbs >= 1, `hero opens lightbox gallery (${D.thumbs} thumbs)`);
-    check(D.lightboxClosed, 'Esc closes the lightbox');
+    check(D.mosaicCells >= 2, `image mosaic renders its tiles (${D.mosaicCells})`);
+    check(D.heroGutter === 0, `main tile exactly covers its image, no dead zone (Δwidth = ${D.heroGutter}px)`);
+    check(D.mainFillsHeight, `main tile fills the mosaic height (${D.dbgMosH}px)`);
+    check(D.moreOverlay, '«Alle Bilder anzeigen» overlay on the last side tile');
+    check(D.lightbox && D.lightboxImg && D.thumbs >= 1, `mosaic tile opens the gallery (${D.thumbs} thumbs)`);
+    check(D.lightboxFullscreen, 'gallery viewer is full-screen');
+    check(D.lightboxBar && D.lightboxDownload, 'viewer has a header bar with a download action');
+    check(D.lightboxStartsAtClicked, 'viewer opens at the clicked image, not the first');
+    check(D.lightboxClosed, 'Esc closes the viewer');
     await d.closeTarget();
 
     // 3) parcel detail deep-link -----------------------------------------------

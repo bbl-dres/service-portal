@@ -8,7 +8,7 @@
 // the JSON datasets. Analysis only: no write-back.
 
 import { dashData } from '../dashboard-data.js';
-import { chart, wireCharts, wireChartMenus } from '../charts.js';
+import { chart, wireCharts, wireChartMenus, paintCharts } from '../charts.js';
 import { initBuildingsMap } from '../buildings-map.js';
 import { copyText, shareMail } from '../export.js';
 
@@ -147,7 +147,14 @@ function dashboardView(ctx, id) {
       return `<div class="kpi">
         <div class="kpi__label">${C.escape(k.label)}</div>
         <div class="kpi__value">${C.escape(value)}${k.unit ? `<span class="kpi__unit">${C.escape(k.unit)}</span>` : ''}</div>
-        ${k.deltaLabel ? `<div class="kpi__delta${k.deltaGood ? ' is-good' : ''}">${C.escape(k.deltaLabel)}</div>` : ''}
+        ${k.deltaLabel ? `<div class="kpi__delta${k.deltaGood === true ? ' is-good' : k.deltaGood === false ? ' is-bad' : ''}">${
+          // Richtung nicht nur über Farbe (WCAG 1.4.1, Item 6.11): Pfeilglyph für
+          // Sehende, sr-only-Wort für Hilfsmittel. `deltaGood` undefined = neutral
+          // (z. B. ein Zielwert), der dann auch nicht wie ein Erfolg aussieht.
+          k.deltaGood === undefined ? ''
+            : `<span class="kpi__arrow" aria-hidden="true">${k.deltaGood ? '▲' : '▼'}</span>`
+              + `<span class="sr-only">${k.deltaGood ? 'positive Entwicklung' : 'negative Entwicklung'}: </span>`
+        }${C.escape(k.deltaLabel)}</div>` : ''}
       </div>`;
     }).join('');
 
@@ -186,8 +193,8 @@ function dashboardView(ctx, id) {
       <div class="dashboard-main">
         ${tabBar}
         <div class="tab__container" role="tabpanel" id="dpanel" aria-labelledby="dash-tab-${state.tab}" tabindex="0">
-          ${kpiTiles ? `<div class="kpi-row">${kpiTiles}</div>` : ''}
-          <div class="dash-grid" id="dash-grid"></div>
+          ${kpiTiles ? `<h2 class="sr-only">Kennzahlen</h2><div class="kpi-row">${kpiTiles}</div>` : ''}
+          <h2 class="sr-only">Auswertungen</h2><div class="dash-grid" id="dash-grid"></div>
         </div>
       </div>
     </div>
@@ -201,6 +208,9 @@ function dashboardView(ctx, id) {
   // --- render the chart grid for the active tab + filters ---
   const grid = mount.querySelector('#dash-grid');
   let activeMaps = [];
+  // Aufräumfunktion des ResizeObserver aus paintCharts — MUSS vor jedem
+  // Neuzeichnen aufgerufen werden, sonst sammeln sich Observer an.
+  let unpaint = null;
   function renderGrid() {
     // free WebGL contexts from any map rendered in the previous grid
     activeMaps.forEach(p => p && p.then && p.then(m => m && m.remove()));
@@ -214,12 +224,24 @@ function dashboardView(ctx, id) {
             <h3 class="chart__title">${C.escape(spec.title)}</h3>
             <div class="chart__actions">${C.menu({ menuId: spec.id, label: 'Karten-Aktionen', items: [{ action: 'link', label: 'Link kopieren' }] })}</div>
           </figcaption>
-          <div class="dash-map" id="map-${spec.id}" role="application" aria-label="Karte der Gebäudestandorte"></div>
+          <div class="dash-map" id="map-${spec.id}" role="group" aria-label="Karte der Gebäudestandorte"><p class="dash-map__loading" role="status">Karte wird geladen …</p></div>
           ${spec.note ? `<p class="chart__note">${C.escape(spec.note)}</p>` : ''}
         </figure>`;
       }
-      return chart(withYearRange(spec, state.from, state.to), dashData.query(withYearRange(spec, state.from, state.to).query));
+      // withYearRange EINMAL berechnen (vorher zweimal pro Chart, code-review G2)
+      const ranged = withYearRange(spec, state.from, state.to);
+      return chart(ranged, dashData.query(ranged.query));
     }).join('');
+    // Zweiter, SYNCHRONER Durchgang: erst jetzt stehen die Karten im Layout und
+    // haben eine messbare Breite (Item 6.1). Synchron, damit Tests, die auf ein
+    // gerendertes SVG pollen, es unmittelbar vorfinden.
+    if (unpaint) unpaint();
+    unpaint = paintCharts(grid, (id) => {
+      const spec = chartById[id];
+      if (!spec) return null;
+      const ranged = withYearRange(spec, state.from, state.to);
+      return { spec: ranged, result: dashData.query(ranged.query) };
+    });
     wireCharts(grid);
     wireChartMenus(grid);   // per-chart action menu (re-wired each render)
     // initialise any map in the freshly rendered grid
@@ -256,13 +278,34 @@ function dashboardView(ctx, id) {
     syncHash,
   });
 
+  // Item 6.13: unter lg trägt `.filter-panel--collapsed` das Einklappen (die
+  // Desktop-Mechanik `.dashboard-layout--collapsed` bleibt unangetastet, damit die
+  // filterFullHeight-Zusicherung in test-dashboard.mjs grün bleibt). Auf dem Handy
+  // stand vorher mehr als ein Bildschirm Checkboxen VOR der ersten Kennzahl, und
+  // der Umschalter war dort `display:none`.
   const layout = mount.querySelector('#dashboard');
+  const panel = mount.querySelector('#dash-filters');
   const toggle = mount.querySelector('#filter-toggle');
-  if (toggle) toggle.addEventListener('click', () => {
-    const collapsed = layout.classList.toggle('dashboard-layout--collapsed');
+  const isDesktop = () => window.matchMedia('(min-width:1024px)').matches;
+  // Unter lg standardmässig zugeklappt — wie CDs Facettenfilter und wie die
+  // .catbar__panel-Schublade auf den Katalogseiten.
+  if (panel && !isDesktop()) panel.classList.add('filter-panel--collapsed');
+  const syncToggle = () => {
+    if (!toggle) return;
+    const collapsed = isDesktop()
+      ? layout.classList.contains('dashboard-layout--collapsed')
+      : panel.classList.contains('filter-panel--collapsed');
     toggle.setAttribute('aria-expanded', String(!collapsed));
     toggle.setAttribute('aria-label', collapsed ? 'Filter ausklappen' : 'Filter einklappen');
+    if (panel) toggle.setAttribute('aria-controls', 'dash-filters');
+  };
+  syncToggle();
+  if (toggle) toggle.addEventListener('click', () => {
+    if (isDesktop()) layout.classList.toggle('dashboard-layout--collapsed');
+    else panel.classList.toggle('filter-panel--collapsed');
+    syncToggle();
   });
+  window.matchMedia('(min-width:1024px)').addEventListener('change', syncToggle);
 
   // --- dashboard toolbar menu: Aktualisieren (echt) · Herunterladen (Demo) ·
   // Teilen (echt: Zwischenablage / E-Mail). Einmal verdrahtet (Toolbar bleibt). ---

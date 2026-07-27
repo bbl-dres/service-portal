@@ -82,14 +82,30 @@ async function pointMap(container, points, style, camera) {
     return null;
   }
   if (!container.isConnected) return null;   // tab switched away during the async gap
+  // Ladeplatzhalter entfernen, BEVOR MapLibre anhängt (Item 6.14).
+  container.textContent = '';
 
-  // Marker diameter ∝ √size: area-proportional, 12–44 px.
+  // Marker diameter ∝ √size: area-proportional. Untergrenze 20px statt 12px
+  // (Item 6.15): bei einem einzelnen kleinen Gebäude war die Marke ein 12px-Punkt
+  // — unter der 24px-Grenze für Bedienelemente und kaum zu treffen. Die
+  // Trefferfläche selbst wächst zusätzlich per .map-marker::before auf 44px.
   const maxSize = Math.max(...pts.map(p => Number(p.size) || 0), 1);
-  const diam = (v) => Math.round(12 + 32 * Math.sqrt((Number(v) || 0) / maxSize));
+  const diam = (v) => Math.round(20 + 24 * Math.sqrt((Number(v) || 0) / maxSize));
 
-  const map = new maplibregl.Map({ container, style, attributionControl: { compact: true }, ...camera });
+  const map = new maplibregl.Map({ container, style, attributionControl: { compact: true },
+    // Item 6.5: `scrollZoom.disable()` allein macht die Karte auf Touch zur
+    // Scroll-Falle — ein Finger zieht die Karte, die Seite bewegt sich nicht mehr.
+    // MapLibres cooperativeGestures verlangt zwei Finger bzw. Strg/⌘ + Scrollen
+    // und zeigt dazu einen Hinweis (hier auf Deutsch).
+    cooperativeGestures: true,
+    locale: {
+      'CooperativeGesturesHandler.WindowsHelpText': 'Strg + Scrollen zum Zoomen',
+      'CooperativeGesturesHandler.MacHelpText': '⌘ + Scrollen zum Zoomen',
+      'CooperativeGesturesHandler.MobileHelpText': 'Mit zwei Fingern verschieben',
+    },
+    ...camera });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-  map.scrollZoom.disable();   // don't hijack page scroll; +/- controls and drag still work
+  // Kein scrollZoom.disable() mehr — cooperativeGestures regelt es sauberer.
 
   const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '260px' });
   for (const p of pts) {
@@ -142,6 +158,9 @@ export async function initEstateMap(container, points, parcels, focus) {
     return null;
   }
   if (!container.isConnected) return null;
+  // Ladeplatzhalter entfernen, BEVOR MapLibre anhängt (Item 6.14).
+  container.textContent = '';
+
 
   const fc = {
     type: 'FeatureCollection',
@@ -160,9 +179,16 @@ export async function initEstateMap(container, points, parcels, focus) {
     camera = { center: [c[0].lon, c[0].lat], zoom: 9 };
   }
 
-  const map = new maplibregl.Map({ container, style: CARTO_STYLE, attributionControl: { compact: true }, preserveDrawingBuffer: true, ...camera });
+  const map = new maplibregl.Map({ container, style: CARTO_STYLE, attributionControl: { compact: true }, preserveDrawingBuffer: true,
+    // siehe oben (Item 6.5)
+    cooperativeGestures: true,
+    locale: {
+      'CooperativeGesturesHandler.WindowsHelpText': 'Strg + Scrollen zum Zoomen',
+      'CooperativeGesturesHandler.MacHelpText': '⌘ + Scrollen zum Zoomen',
+      'CooperativeGesturesHandler.MobileHelpText': 'Mit zwei Fingern verschieben',
+    },
+    ...camera });
   map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: false }), 'top-right');
-  map.scrollZoom.disable();
 
   map.on('load', () => {
     if (!map.getSource('estate')) {

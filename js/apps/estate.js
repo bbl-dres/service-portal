@@ -7,7 +7,7 @@
 // content (KPIs · charts · map · source) so the filter panel keeps focus/scroll.
 
 import { fetchJSON } from '../fetch-json.js';
-import { chart, wireCharts, wireChartMenus } from '../charts.js';
+import { chart, wireCharts, wireChartMenus, paintCharts } from '../charts.js';
 import { initEstateMap } from '../buildings-map.js';
 import { copyText, shareMail } from '../export.js';
 
@@ -131,8 +131,16 @@ export default async function render(ctx) {
   const fP = () => data.parcels.filter(passP);
   const fL = () => { const ids = new Set(fP().map((p) => p.id)); return data.landcovers.filter((l) => ids.has(l.parcelId)); };
 
-  const gchart = (id, title, groups, { x, y, unit = '', form = 'barH' }) =>
-    chart({ id, title, form, unit, x, y }, { rows: groups.map((g) => ({ [x]: g.k, [y]: g.v })), columns: [x, y] });
+  // `chart()` gibt das Feld leer aus; die Breite ist erst nach dem Einsetzen
+  // bekannt. Spec + Ergebnis hier mitschreiben, damit paintCharts sie im zweiten,
+  // synchronen Durchgang nachschlagen kann (Item 6.1).
+  const chartData = new Map();
+  const gchart = (id, title, groups, { x, y, unit = '', form = 'barH' }) => {
+    const spec = { id, title, form, unit, x, y };
+    const result = { rows: groups.map((g) => ({ [x]: g.k, [y]: g.v })), columns: [x, y] };
+    chartData.set(id, { spec, result });
+    return chart(spec, result);
+  };
   const kpi = (label, value, unit, delta) => `<div class="kpi">
     <div class="kpi__label">${C.escape(label)}</div>
     <div class="kpi__value">${C.escape(value)}${unit ? `<span class="kpi__unit">${C.escape(unit)}</span>` : ''}</div>
@@ -146,7 +154,7 @@ export default async function render(ctx) {
         { separator: true }, { action: 'link', label: 'Link kopieren' },
       ] })}</div>
     </figcaption>
-    <div class="dash-map" id="estate-map-el" role="application" aria-label="Weltkarte der Gebäudestandorte"></div>
+    <div class="dash-map" id="estate-map-el" role="group" aria-label="Weltkarte der Gebäudestandorte"><p class="dash-map__loading" role="status">Karte wird geladen …</p></div>
   </figure>`;
 
   // --- per-tab content: { kpis[], figures[] (HTML), source } ---
@@ -246,6 +254,7 @@ export default async function render(ctx) {
     </fieldset>`;
   };
 
+  let unpaint = null;   // Aufräumer des ResizeObserver aus paintCharts
   let mapPromise = null;
   const freeMap = () => { if (mapPromise && mapPromise.then) mapPromise.then((m) => m && m.remove && m.remove()).catch(() => {}); mapPromise = null; };
 
@@ -259,11 +268,15 @@ export default async function render(ctx) {
 
   // --- content update (KPIs · charts · map · source); filter panel persists ---
   function update() {
+    chartData.clear();                 // Specs des vorigen Durchgangs verwerfen
     const { kpis, figures, source } = tabContent();
     mount.querySelector('#dash-kpis').innerHTML = kpis.join('');
     const grid = mount.querySelector('#dash-grid');
     grid.innerHTML = figures.join('');
     mount.querySelector('#dash-source').textContent = source;
+    // Zweiter, synchroner Durchgang mit gemessener Breite (Item 6.1).
+    if (unpaint) unpaint();
+    unpaint = paintCharts(grid, (id) => chartData.get(id));
     wireCharts(grid);
     wireChartMenus(grid);
     freeMap();
@@ -296,8 +309,8 @@ export default async function render(ctx) {
       <div class="dashboard-main">
         ${C.tabBar({ items: TABS, active: state.tab, idPrefix: 'estate-tab', panelId: 'dpanel', ariaLabel: 'Stammdaten-Ansichten' })}
         <div class="tab__container" role="tabpanel" id="dpanel" aria-labelledby="estate-tab-${state.tab}" tabindex="0">
-          <div class="kpi-row" id="dash-kpis"></div>
-          <div class="dash-grid" id="dash-grid"></div>
+          <h2 class="sr-only">Kennzahlen</h2><div class="kpi-row" id="dash-kpis"></div>
+          <h2 class="sr-only">Auswertungen</h2><div class="dash-grid" id="dash-grid"></div>
         </div>
       </div>
     </div>
@@ -332,13 +345,29 @@ export default async function render(ctx) {
     syncHash(); update();
   });
   C.wireTabs(mount, { onSelect: (id) => { state.tab = id; syncHash(); update(); } });
+  // Item 6.13 — identisch zu dataportal.js: unter lg klappt das PANEL, ab lg die
+  // Layoutspalte. Fünf Facettengruppen sind auf dem Handy sonst eine Wand.
   const layout = mount.querySelector('#dashboard');
+  const panel = mount.querySelector('#dash-filters');
   const toggle = mount.querySelector('#filter-toggle');
-  toggle.addEventListener('click', () => {
-    const collapsed = layout.classList.toggle('dashboard-layout--collapsed');
+  const isDesktop = () => window.matchMedia('(min-width:1024px)').matches;
+  if (panel && !isDesktop()) panel.classList.add('filter-panel--collapsed');
+  const syncToggle = () => {
+    if (!toggle) return;
+    const collapsed = isDesktop()
+      ? layout.classList.contains('dashboard-layout--collapsed')
+      : panel.classList.contains('filter-panel--collapsed');
     toggle.setAttribute('aria-expanded', String(!collapsed));
     toggle.setAttribute('aria-label', collapsed ? 'Filter ausklappen' : 'Filter einklappen');
+    if (panel) toggle.setAttribute('aria-controls', panel.id || 'dash-filters');
+  };
+  syncToggle();
+  toggle.addEventListener('click', () => {
+    if (isDesktop()) layout.classList.toggle('dashboard-layout--collapsed');
+    else panel.classList.toggle('filter-panel--collapsed');
+    syncToggle();
   });
+  window.matchMedia('(min-width:1024px)').addEventListener('change', syncToggle);
   C.wireMenu(mount.querySelector('.dash-header'), (action) => {
     if (action === 'refresh') { update(); C.toast('Dashboard aktualisiert.'); }
     else if (action === 'pdf') C.toast('Export als PDF — im Prototyp simuliert.');
