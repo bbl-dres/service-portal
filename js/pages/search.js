@@ -1,12 +1,15 @@
 // Suche — föderierte Ergebnisseite über alle Inhaltsarten (#/search?q=…).
 // Aufbau nach dem CD (searchResults.vue, search.postcss «SEARCH RESULTS PAGE»):
-// grosses Suchfeld (search--large search--page-result), Ergebniskopf mit
-// Trefferzahl, danach die Treffer als Ergebnisliste. Statt CD-Tabs pro
-// Inhaltsart werden die Treffer nach Art gruppiert — bei bis zu sechs Arten
-// übersichtlicher als Reiter — und jede Gruppe verlinkt mit erhaltener
-// Suchanfrage in den jeweiligen Katalog.
+// grosses Suchfeld (search--large search--page-result), darunter der Ergebniskopf
+// mit Trefferzahl links und Sortierung rechts, dann die Treffer.
+//
+// Ein Ergebnisstrom statt Gruppen pro Inhaltsart: die Art ist eine Facette. Damit
+// wirken Sortierung, Filter, Ansichtswechsel und Paginierung über ALLE Treffer —
+// die frühere Gruppierung zeigte pro Art nur vier und schickte für den Rest in
+// den jeweiligen Katalog. CD nutzt dafür Reiter (Webseiten / Dokumente); eine
+// Facette skaliert bei sechs Inhaltsarten besser.
+// Ansicht: Liste ist der Standard (wie im CD), Galerie ist zuschaltbar.
 
-const PER_GROUP = 4;
 
 // Synonyme: die Nutzenden kennen nicht die BBL-Terminologie (Review P1-4).
 const SYNONYMS = {
@@ -91,28 +94,80 @@ export default async function render(ctx) {
       </a>
     </li>`;
 
-  const groupBlock = (g) => {
-    const rows = g.all.slice(0, PER_GROUP).map(g.row).map(resultRow).join('');
-    const more = g.all.length > PER_GROUP
-      ? `<div class="section__action"><a class="btn btn--bare" href="${g.more}">Alle ${g.all.length} in „${C.escape(g.label)}“ ansehen ${C.icon('ArrowRight', 'icon--base')}</a></div>`
-      : '';
-    return `
-      <section class="search-group">
-        <h2 class="search-group__title">${C.escape(g.label)}
-          <span class="search-group__count">${g.all.length}</span></h2>
-        <ul class="search-results-list">${rows}</ul>
-        ${more}
-      </section>`;
-  };
+  // Ergebnisse in EINE Liste zusammenführen: die Inhaltsart wird zur Facette statt
+  // zu einer festen Gruppe mit «Alle N ansehen»-Deckel. Damit greifen Sortierung,
+  // Facettenfilter, Ansichtswechsel und Paginierung über alle Treffer hinweg —
+  // vorher waren pro Art nur vier Treffer erreichbar (PER_GROUP).
+  // Die Reihenfolge der Gruppen ist die Relevanzordnung (Dienstleistungen zuerst).
+  const flat = groups.flatMap((g, gi) => g.all.map((item, ii) => {
+    const r = g.row(item);
+    return { ...r, art: g.label, icon: g.icon, more: g.more, rank: gi * 1000 + ii };
+  }));
 
-  const header = `<div class="search-results__header">
-    <div class="search-results__header__left"><strong>${total}</strong> Treffer für „${C.escape(rawQ)}“</div>
-  </div>`;
+  // --- Zustand aus dem Hash (teilbar), wie beim Katalog-Trio ---
+  const selectedArt = (query.get('art') || '').split(',').map(s => s.trim()).filter(Boolean);
+  // CD zeigt Suchergebnisse zuerst als LISTE (searchResults.vue → SearchResultsList).
+  const view = query.get('view') === 'galerie' ? 'galerie' : 'liste';
+  const SORT_OPTS = [
+    { value: '', label: 'Relevanz' },
+    { value: 'title', label: 'Titel (A–Z)' },
+    { value: 'art', label: 'Inhaltsart' },
+  ];
+  const SORTS = {
+    title: (a, b) => String(a.title).localeCompare(String(b.title), 'de'),
+    art: (a, b) => String(a.art).localeCompare(String(b.art), 'de') || a.rank - b.rank,
+  };
+  const sortKey = SORT_OPTS.some(o => o.value && o.value === query.get('sort')) ? query.get('sort') : '';
+  const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
+  const perPage = 10;
+
+  const filtered = flat.filter(r => !selectedArt.length || selectedArt.includes(r.art));
+  const sorted = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered.slice().sort((a, b) => a.rank - b.rank);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+  const page = Math.min(currentPage, totalPages);
+  const visible = sorted.slice((page - 1) * perPage, page * perPage);
+
+  const base = { q: rawQ, art: selectedArt, sort: sortKey, view };
+  const hash = (patch = {}) => C.catalogueHash('#/search', { ...base, ...patch, defaultView: 'liste' });
+
+  const artOptions = [...new Set(flat.map(r => r.art))].map(a => ({ value: a, label: a }));
+  const listView = (items) => `<ul class="search-results-list">${items.map(resultRow).join('')}</ul>`;
+  // Galerieansicht: dieselben Treffer als CD-Karten.
+  const card = (r) => C.card({
+    title: r.title, desc: r.desc, href: r.href, titleTag: 'h3',
+    badges: [C.badge(r.art, 'blue')],
+    footerInfo: C.escape(r.type) + (r.date ? ` · ${C.escape(r.date)}` : ''),
+  });
+
+  const toolbar = C.catalogueBar({
+    // Kein zweites Suchfeld: die Anfrage kommt aus dem grossen Feld im Hero.
+    showSearch: false, formId: 'sr-form', inputId: 'sr-q', searchLabel: 'Treffer eingrenzen',
+    countId: 'sr-count',
+    count: `<strong>${sorted.length}</strong> von ${total} Treffern für „${C.escape(rawQ)}“${
+      totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
+    sort: { id: 'sr-sort', value: sortKey, options: SORT_OPTS.filter(o => o.value) },
+    filterId: 'sr-filter', filterCount: selectedArt.length,
+    panelId: 'sr-filters',
+    panel: C.filterGroup({ dim: 'art', legend: 'Inhaltsart', selected: selectedArt, options: artOptions })
+      + `<div class="catbar__panel__actions"><a class="btn btn--bare btn--sm" href="${hash({ art: [] })}">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></a></div>`,
+    view, views: [['liste', 'Listenansicht', 'List'], ['galerie', 'Galerieansicht', 'Apps']],
+  });
+
+  const activePills = C.activeFilters({
+    filters: selectedArt.map(a => ({ label: a, href: hash({ art: selectedArt.filter(x => x !== a) }) })),
+    resetHref: hash({ art: [] }),
+  });
 
   const body = !rawQ
     ? `<p class="muted">Geben Sie einen Suchbegriff ein — zum Beispiel «Störung», «Raumbedarf» oder «Bauprojekt».</p>`
     : total
-      ? `${header}${groups.map(groupBlock).join('')}`
+      ? `${toolbar}${activePills}${C.catalogueResults({
+          visible, count: sorted.length, total, view, page, totalPages, header: false,
+          card, listView, unit: 'Treffer',
+          gridCls: 'grid grid--3 catalogue-grid',
+          paginationInputId: 'sr-page', paginationLabel: 'Seitennavigation Suchergebnisse',
+          paginationHref: (p) => hash({ page: p }),
+        })}`
       : noResults(C, rawQ);
 
   mount.innerHTML = `
@@ -151,6 +206,15 @@ export default async function render(ctx) {
     const v = mount.querySelector('#search-page-input').value.trim();
     location.hash = v ? `#/search?q=${encodeURIComponent(v)}` : '#/search';
   });
+
+  // Sortierung, Facette, Ansichtswechsel und Paginierung der Ergebnisleiste —
+  // dieselbe Verdrahtung wie auf den Katalogseiten.
+  if (rawQ && total) {
+    C.wireCatalogue(mount, {
+      formId: 'sr-form', inputId: 'sr-q', pageInputId: 'sr-page', page, totalPages, hash,
+      sortId: 'sr-sort', filterToggleId: 'sr-filter', panelId: 'sr-filters',
+    });
+  }
 }
 
 // CD-Muster (searchResults.vue): Suchbegriff wiederholen, Tipps, Kontakthinweis.

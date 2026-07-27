@@ -804,9 +804,12 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
   const control = (target, text, iconName, disabled, key) => {
     const inner = `${icon(iconName, 'btn__icon')}<span class="btn__text">${text}</span>`;
     const id = inputId ? ` id="${escape(inputId)}-${key}"` : '';   // Fokus-Wiederherstellung (Item 3.3)
-    return disabled
-      ? `<li><span class="btn btn--outline btn--icon-only" aria-disabled="true" aria-label="${text}">${inner}</span></li>`
-      : `<li><a class="btn btn--outline btn--icon-only"${id} href="${escape(href(target))}" aria-label="${text}">${inner}</a></li>`;
+    if (disabled) return `<li><span class="btn btn--outline btn--icon-only" aria-disabled="true" aria-label="${text}">${inner}</span></li>`;
+    // Ohne `href`-Builder: lokaler Zustand statt Hash-Navigation (C.mountDataTable)
+    // — dieselbe CD-Anatomie, aber als <button data-page>.
+    return href
+      ? `<li><a class="btn btn--outline btn--icon-only"${id} href="${escape(href(target))}" aria-label="${text}">${inner}</a></li>`
+      : `<li><button type="button" class="btn btn--outline btn--icon-only"${id} data-page="${target}" aria-label="${text}">${inner}</button></li>`;
   };
   return `
     <nav class="pagination-wrap${align === 'right' ? ' pagination-wrap--right' : ''}" aria-label="${escape(label)}">
@@ -908,7 +911,10 @@ export function viewSwitch(view = 'galerie', items = [['galerie', 'Galerieansich
 // als Query-Parameter (String → gesetzt wenn truthy; Array → komma-verbunden wenn
 // nicht leer). Default-Werte (page 1, view 'galerie') bleiben aus der URL, damit
 // sie kurz und teilbar bleibt. Schlüssel = Parametername (z. B. `topic`, `tag`).
-export function catalogueHash(base, { q = '', page = 1, view = '', ...filters } = {}) {
+// `defaultView` bleibt bei 'galerie' (Katalog-Trio, unverändert). Die Suchseite
+// setzt 'liste' als Standard — CD zeigt Suchergebnisse zuerst als Liste — und
+// braucht die Umkehrung: dort wandert 'galerie' in die URL.
+export function catalogueHash(base, { q = '', page = 1, view = '', defaultView = 'galerie', ...filters } = {}) {
   const p = new URLSearchParams();
   if (q) p.set('q', q);
   for (const [k, v] of Object.entries(filters)) {
@@ -916,7 +922,7 @@ export function catalogueHash(base, { q = '', page = 1, view = '', ...filters } 
     else if (v) p.set(k, String(v));
   }
   if (page > 1) p.set('page', String(page));
-  if (view === 'liste') p.set('view', view);
+  if (view && view !== defaultView) p.set('view', view);
   const s = p.toString();
   return s ? `${base}?${s}` : base;
 }
@@ -1004,7 +1010,7 @@ export function catalogueBar({
   formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', countId = 'cat-count', count = '',
   sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
   panelId = '', panel = '', panelHidden = true,
-  view = 'galerie', views,
+  view = 'galerie', views, showSearch = true,
 }) {
   // Ein einmal geöffnetes Panel bleibt offen, bis der Nutzer es selbst zuklappt.
   if (panelId && PANEL_OPEN.has(panelId)) panelHidden = false;
@@ -1029,17 +1035,127 @@ export function catalogueBar({
       <button type="button" class="btn btn--bare btn--sm catbar__filter" id="${escape(filterId)}" aria-expanded="${!panelHidden}"${panelId ? ` aria-controls="${escape(panelId)}"` : ''}>
         ${icon('Filter', 'btn__icon')}<span class="btn__text">${escape(filterLabel)}</span><span class="catbar__fcount"${filterCount ? '' : ' hidden'}>${filterCount ? `(${filterCount})` : ''}</span>${icon('ChevronDown', 'catbar__chev')}
       </button>` : '';
-  return `
-    <div class="catbar">
+  // `showSearch:false` — die Suchseite bringt ihr Suchfeld schon im Hero mit; CDs
+  // `.search-results__header` trägt dort nur Trefferzahl links und Sortierung
+  // rechts (search.postcss:208-233), kein zweites Feld.
+  const searchHtml = showSearch ? `
       <form class="catbar__search" id="${escape(formId)}" role="search">
         <label class="sr-only" for="${escape(inputId)}">${escape(searchLabel)}</label>
         <input id="${escape(inputId)}" type="search" placeholder="${escape(placeholder)}" value="${escape(q)}" autocomplete="off">
         <button class="btn btn--bare btn--icon-only catbar__submit" type="submit" aria-label="Suchen" title="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
-      </form>
+      </form>` : '';
+  return `
+    <div class="catbar${showSearch ? '' : ' catbar--no-search'}">${searchHtml}
       <div class="catbar__count" id="${escape(countId)}">${count}</div>
       <div class="catbar__controls">${sortHtml}${filterHtml}${views ? viewSwitch(view, views) : ''}</div>
     </div>${filterId ? `
     <div class="catbar__panel" id="${escape(panelId)}"${panelHidden ? ' hidden' : ''}>${panel}</div>` : ''}`;
+}
+
+// --- Datentabelle mit Katalogleiste + Paginierung ---------------------------
+// EIN Baustein für das wiederkehrende Muster «lange Tabelle in einer Detailansicht»:
+// Suche + Trefferzahl + Sortierung (+ optionale Facetten) über der Tabelle,
+// Paginierung darunter. Vorher trug nur das Katalog-Trio eine Leiste, während die
+// Tabellen in «Meine Vorgänge» und in der Objekt-Detailansicht (Bemessungen,
+// Ausstattung, Verträge, Kosten, Kontakte, Dokumente) ungefiltert und unbegrenzt
+// ausgegeben wurden — bei realen Gebäuden werden die sehr lang.
+//
+// Bewusst LOKALER Zustand statt Hash: diese Tabellen sitzen in Registerkarten, und
+// eine Hash-Änderung würde die ganze Seite neu zeichnen und den Tab zurücksetzen.
+// Gezeichnet wird nur der eigene Teilbaum, der Fokus bleibt dadurch erhalten.
+//
+//   host      Element, in das gerendert wird
+//   id        eindeutiges Präfix für alle ids in diesem Block
+//   rows      Datenzeilen
+//   columns   wie bei C.table
+//   unit      Plural für die Trefferzahl («Verträge»)
+//   searchKeys / search  Felder bzw. Prädikat für die Suche
+//   sorts     [{ value, label, cmp }]
+//   facets    [{ dim, legend, options:[{value,label}], match(row, values) }]
+//   perPage   Standard 10
+//   foot(visible, filtered)  optionale <tfoot>-Zeile
+export function mountDataTable(host, opts = {}) {
+  const {
+    id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
+    searchKeys = [], search, searchLabel, placeholder,
+    sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '',
+  } = opts;
+  const state = { q: '', sort: '', page: 1, open: false, sel: {} };
+  facets.forEach((f) => { state.sel[f.dim] = []; });
+
+  const matchQ = (row) => {
+    if (!state.q) return true;
+    const q = state.q.toLowerCase();
+    if (typeof search === 'function') return search(row, q);
+    return searchKeys.some((k) => String(row[k] == null ? '' : row[k]).toLowerCase().includes(q));
+  };
+  const matchFacets = (row) => facets.every((f) => {
+    const vals = state.sel[f.dim] || [];
+    if (!vals.length) return true;
+    return typeof f.match === 'function' ? f.match(row, vals) : vals.includes(String(row[f.dim]));
+  });
+
+  const draw = () => {
+    const filtered = allRows.filter((r) => matchQ(r) && matchFacets(r));
+    const sortDef = sorts.find((s) => s.value === state.sort);
+    const sorted = sortDef && sortDef.cmp ? filtered.slice().sort(sortDef.cmp) : filtered;
+    const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
+    if (state.page > totalPages) state.page = totalPages;
+    const visible = sorted.slice((state.page - 1) * perPage, state.page * perPage);
+    const activeFacetCount = facets.reduce((n, f) => n + (state.sel[f.dim] || []).length, 0);
+
+    const restore = preserveFocus(host);
+    host.innerHTML = `
+      ${catalogueBar({
+        formId: `${id}-form`, inputId: `${id}-q`,
+        searchLabel: searchLabel || `${unit} durchsuchen`,
+        placeholder: placeholder || `${unit} durchsuchen…`, q: state.q,
+        countId: `${id}-count`,
+        count: `<strong>${escape(String(sorted.length))}</strong> von ${escape(String(allRows.length))} ${escape(unit)}${
+          totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`,
+        sort: sorts.length ? { id: `${id}-sort`, value: state.sort, options: sorts.map((s) => ({ value: s.value, label: s.label })) } : null,
+        filterId: facets.length ? `${id}-filter` : '', filterCount: activeFacetCount,
+        panelId: facets.length ? `${id}-panel` : '',
+        panel: facets.map((f) => filterGroup({ dim: f.dim, legend: f.legend, options: f.options, selected: state.sel[f.dim] })).join(''),
+        panelHidden: !state.open,
+      })}
+      ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
+      ${sorted.length
+        ? table({ columns, rows: visible, zebra: true, caption,
+            foot: foot ? foot(visible, sorted) : undefined })
+        : empty(emptyMsg || `Keine ${unit} gefunden.`, { hint: 'Passen Sie Suche oder Filter an.' })}
+      ${pagination({ page: state.page, totalPages, inputId: `${id}-page`, label: `Seitennavigation ${unit}` })}`;
+
+    // --- Verdrahtung (nur innerhalb von host) ---
+    const form = host.querySelector(`#${id}-form`);
+    if (form) form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = host.querySelector(`#${id}-q`);
+      state.q = input ? input.value.trim() : ''; state.page = 1; draw();
+    });
+    const sortEl = host.querySelector(`#${id}-sort`);
+    if (sortEl) sortEl.addEventListener('change', (e) => { state.sort = e.target.value; state.page = 1; draw(); });
+    const fBtn = host.querySelector(`#${id}-filter`);
+    const fPanel = host.querySelector(`#${id}-panel`);
+    if (fBtn && fPanel) {
+      fBtn.addEventListener('click', () => { state.open = !state.open; draw(); });
+      fPanel.addEventListener('change', (e) => {
+        const cb = e.target.closest('input[data-fdim]'); if (!cb) return;
+        const dim = cb.dataset.fdim;
+        state.sel[dim] = [...fPanel.querySelectorAll(`input[data-fdim="${dim}"]:checked`)].map((x) => x.value);
+        state.page = 1; draw();
+      });
+    }
+    host.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => {
+      state.page = Math.min(totalPages, Math.max(1, Number(b.dataset.page) || 1)); draw();
+    }));
+    wirePagination(host, `${id}-page`, state.page, totalPages, (target) => { state.page = target; draw(); });
+    wireScrollRegions(host);
+    restore();
+    announce(`${sorted.length} von ${allRows.length} ${unit}${totalPages > 1 ? `, Seite ${state.page} von ${totalPages}` : ''}`);
+  };
+  draw();
+  return { redraw: draw };
 }
 
 // Mehrfachauswahl-Filtergruppe (Checkboxen) — dieselbe Optik wie das Portfolio-
@@ -1157,5 +1273,6 @@ export const C = {
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
   preserveFocus, rerender, wireScrollRegions, wirePipeline, errorSummary, wireErrorSummary, stepIndicator,
+  breakable, mountDataTable,
 };
 export default C;

@@ -30,18 +30,34 @@ export default async function render(ctx) {
       <div class="stat"><div class="stat__num">${all.length}</div><div class="stat__label">Vorgänge total</div></div>
       <div class="stat"><div class="stat__num">${openCount}</div><div class="stat__label">offen / in Arbeit</div></div>
     </div>
-    <div class="mt-6">${C.table({
-      zebra: true,
-      columns: [
-        { key: 'reference', label: 'Referenz', render: r => `<a href="#/my-cases/${r.instanceId}">${C.escape(r.reference)}</a>` },
-        { key: 'title', label: 'Titel', render: r => C.escape(r.title) },
-        { key: 'defName', label: 'Typ', render: r => C.escape(r.defName) },
-        { key: 'updatedAt', label: 'Aktualisiert', render: r => C.escape(r.updatedAt || r.createdAt) },
-        { key: 'status', label: 'Status', render: r => C.statusBadge(r.status, sLabel(core, r.status)) },
-      ],
-      rows: all,
-    })}</div>
+    <div class="mt-6" id="mc-table"></div>
   </div>`;
+
+  // «Meine Vorgänge» war die einzige Listenfläche ohne Werkzeugleiste: keine Suche,
+  // keine Sortierung, keine Paginierung — bei wachsender Vorgangszahl unbrauchbar.
+  // Gleicher Baustein wie in der Objekt-Detailansicht (C.mountDataTable).
+  const STATUS_OPTS = [...new Set(all.map(i => i.status))]
+    .map(s => ({ value: s, label: sLabel(core, s) }));
+  C.mountDataTable(mount.querySelector('#mc-table'), {
+    id: 'mc', rows: all, unit: 'Vorgänge', caption: 'Meine Vorgänge',
+    searchKeys: ['reference', 'title', 'defName'],
+    searchLabel: 'Vorgang suchen', placeholder: 'Referenz oder Titel suchen…',
+    perPage: 10,
+    sorts: [
+      { value: 'updated', label: 'Zuletzt aktualisiert', cmp: (a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)) },
+      { value: 'ref', label: 'Referenz', cmp: (a, b) => String(a.reference).localeCompare(String(b.reference), 'de') },
+      { value: 'title', label: 'Titel (A–Z)', cmp: (a, b) => String(a.title).localeCompare(String(b.title), 'de') },
+    ],
+    facets: [{ dim: 'status', legend: 'Status', options: STATUS_OPTS,
+      match: (r, vals) => vals.includes(r.status) }],
+    columns: [
+      { key: 'reference', label: 'Referenz', render: r => `<a href="#/my-cases/${encodeURIComponent(r.instanceId)}">${C.escape(r.reference)}</a>` },
+      { key: 'title', label: 'Titel', render: r => C.escape(r.title) },
+      { key: 'defName', label: 'Typ', render: r => C.escape(r.defName) },
+      { key: 'updatedAt', label: 'Aktualisiert', render: r => C.escape(r.updatedAt || r.createdAt) },
+      { key: 'status', label: 'Status', render: r => C.statusBadge(r.status, sLabel(core, r.status)) },
+    ],
+  });
 }
 
 // Beschriftungen für die eingereichten Formularfelder (instance.data), damit die

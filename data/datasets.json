@@ -106,11 +106,11 @@
     "responsiblePersons": [
       {
         "admindirId": "p-1YFBMPWKZ",
-        "role": "Data Owner"
+        "role": "Dateneigner"
       },
       {
         "admindirId": "p-2560681",
-        "role": "Data Steward"
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -221,7 +221,7 @@
     "responsiblePersons": [
       {
         "admindirId": "p-3847291",
-        "role": "Data Owner"
+        "role": "Dateneigner"
       }
     ]
   },
@@ -322,7 +322,7 @@
     "responsiblePersons": [
       {
         "admindirId": "p-5928374",
-        "role": "Data Steward"
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -1313,7 +1313,7 @@
     "responsiblePersons": [
       {
         "admindirId": "p-1YFBMPWKZ",
-        "role": "Data Owner"
+        "role": "Dateneigner"
       }
     ]
   },

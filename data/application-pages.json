@@ -88,9 +88,9 @@
 
   "metadatenkatalog": {
     "subtitle": "Datenarchitektur und Data Governance",
-    "long": "Der Metadatenkatalog dokumentiert die Datenarchitektur des BBL: fachliche Konzepte und Codelisten, ihre Systeme und Verantwortlichkeiten sowie die Beziehungen zwischen den Datenbeständen. Er ist die Referenz für Data Owner und Data Stewards und ergänzt den Datenbezug um die begriffliche Ebene.",
+    "long": "Der Metadatenkatalog dokumentiert die Datenarchitektur des BBL: fachliche Konzepte und Codelisten, ihre Systeme und Verantwortlichkeiten sowie die Beziehungen zwischen den Datenbeständen. Er ist die Referenz für Dateneigner und Datenverwalter und ergänzt den Datenbezug um die begriffliche Ebene.",
     "access": {
-      "note": "Lesend für alle Mitarbeitenden des BBL; Pflege durch die Data Stewards.",
+      "note": "Lesend für alle Mitarbeitenden des BBL; Pflege durch die Datenverwalter.",
       "steps": ["Anmeldung über eIAM.", "Änderungen an Konzepten laufen über die Fachstelle Daten."]
     },
     "resources": [
@@ -297,7 +297,7 @@
 
   "admin-directory": {
     "subtitle": "Personen- und Organisationsverzeichnis",
-    "long": "Das Admin-Directory ist das Verzeichnis der Personen, Organisationseinheiten und Standorte der Bundesverwaltung. Es liefert die Referenz für Zuständigkeiten — unter anderem für die Data Owner und Data Stewards im Datenbezug.",
+    "long": "Das Admin-Directory ist das Verzeichnis der Personen, Organisationseinheiten und Standorte der Bundesverwaltung. Es liefert die Referenz für Zuständigkeiten — unter anderem für die Dateneigner und Datenverwalter im Datenbezug.",
     "access": {
       "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
       "steps": ["Anmeldung über eIAM mit dem Bundeskonto."]

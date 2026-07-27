@@ -400,71 +400,146 @@ function buildingDetail(ctx, b) {
         <dt>Klassifizierung</dt><dd>${classBadge(C, ref, b.classification)}</dd>
       </dl>`;
   }
-  function tabFlaechen() {
-    if (!areas.length) return C.empty('Keine Flächen- oder Bemessungsdaten erfasst.');
-    return C.table({ zebra: true, columns: [
-      { key: 'type', label: 'Bemessungsart', render: (a) => C.escape(a.type) },
-      { key: 'value', label: 'Wert', render: (a) => `${Number(a.value || 0).toLocaleString('de-CH')} <span class="muted">${C.escape(a.unit || '')}</span>` },
-      { key: 'accuracy', label: 'Genauigkeit', render: (a) => C.escape(a.accuracy || '—') },
-      { key: 'standard', label: 'Standard', render: (a) => C.escape(a.standard || '—') },
-      { key: 'validFrom', label: 'Gültig ab', render: (a) => fmtDate(a.validFrom) },
-    ], rows: areas.slice().sort((x, y) => String(x.type).localeCompare(String(y.type), 'de')) });
-  }
-  function tabAusstattung() {
-    if (!assets.length) return C.empty('Keine Ausstattung erfasst.');
-    return C.table({ zebra: true, columns: [
-      { key: 'name', label: 'Bezeichnung', render: (a) => `<strong>${C.escape(a.name)}</strong>` },
-      { key: 'category', label: 'Kategorie', render: (a) => C.badge(a.category, 'blue') },
-      { key: 'manufacturer', label: 'Hersteller', render: (a) => C.escape(a.manufacturer || '—') },
-      { key: 'installationYear', label: 'Baujahr', render: (a) => C.escape(String(a.installationYear || '—')) },
-      { key: 'location', label: 'Standort', render: (a) => C.escape(a.location || '—') },
-      { key: 'status', label: 'Status', render: (a) => C.badge(a.status, a.status === 'In Betrieb' ? 'success' : 'gray') },
-    ], rows: assets.slice().sort((x, y) => String(x.name).localeCompare(String(y.name), 'de')) });
-  }
-  function tabVertraege() {
-    if (!contracts.length) return C.empty('Keine Verträge erfasst.');
-    return C.table({ zebra: true, columns: [
-      { key: 'type', label: 'Vertragsart', render: (c) => C.escape(c.type) },
-      { key: 'contractPartner', label: 'Vertragspartner', render: (c) => C.escape(c.contractPartner || '—') },
-      { key: 'laufzeit', label: 'Laufzeit', render: (c) => `${fmtDate(c.validFrom)} – ${c.validUntil ? fmtDate(c.validUntil) : 'unbefristet'}` },
-      { key: 'amount', label: 'Betrag/Jahr', render: (c) => fmtMoney(c.amount, c.currency) },
-      { key: 'status', label: 'Status', render: (c) => C.badge(c.status, CONTRACT_STATUS_VARIANT[c.status] || 'gray') },
-    ], rows: contracts });
-  }
-  function tabKosten() {
-    if (!costs.length) return C.empty('Keine Kostendaten erfasst.');
-    const cur = costs[0].currency || 'CHF';
-    const sum = costs.reduce((s, c) => s + (Number(c.amount) || 0), 0);
-    return C.table({ zebra: true, columns: [
-      { key: 'costGroup', label: 'Kostengruppe', render: (c) => C.escape(c.costGroup) },
-      { key: 'costType', label: 'Kostenart', render: (c) => C.escape(c.costType) },
-      { key: 'amount', label: 'Betrag', render: (c) => fmtMoney(c.amount, c.currency) },
-      { key: 'period', label: 'Periode', render: (c) => C.escape(c.period || '—') },
-      { key: 'referenceDate', label: 'Stichtag', render: (c) => fmtDate(c.referenceDate) },
-    ], rows: costs.slice().sort((x, y) => String(x.costGroup).localeCompare(String(y.costGroup))),
-      foot: `<tr class="table__total"><th scope="row">Total</th><td></td><td><strong>${fmtMoney(sum, cur)}</strong></td><td colspan="2" class="small muted">${costs.length} Positionen · jährlich</td></tr>` });
-  }
-  function tabKontakte() {
-    if (!contacts.length) return C.empty('Keine Objektkontakte hinterlegt.');
-    const rows = contacts.slice().sort((a, c) => (c.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0) || String(a.name).localeCompare(String(c.name), 'de'));
-    return C.table({ zebra: true, columns: [
-      { key: 'name', label: 'Name', render: (c) => `<strong>${C.escape(c.name)}</strong>${c.isPrimary ? ' ' + C.badge('Primär', 'info') : ''}` },
-      { key: 'role', label: 'Rolle', render: (c) => C.escape(c.role || '—') },
-      { key: 'organisation', label: 'Organisation', render: (c) => C.escape(c.organisation || '—') },
-      { key: 'phone', label: 'Telefon', render: (c) => c.phone ? `<a href="tel:${C.escape(String(c.phone).replace(/\s/g, ''))}">${C.escape(c.phone)}</a>` : '—' },
-      { key: 'email', label: 'E-Mail', render: (c) => c.email ? `<a href="mailto:${C.escape(c.email)}">${C.escape(c.email)}</a>` : '—' },
-    ], rows });
-  }
-  function tabDokumente() {
-    if (!documents.length) return `${C.empty('Keine Dokumente verknüpft.')}<p class="mt-4"><a class="btn btn--link" href="#/app/document-archive">In der Bauwerksdokumentation öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
-    const items = documents.map((d) => `
-      <div class="row row--between" style="padding:.75rem 0;border-bottom:1px solid var(--color-border)">
-        <div class="row" style="gap:.75rem">${C.icon('File', 'icon--lg')}
-          <div><div><strong>${C.escape(d.title)}</strong></div>
-            <div class="small muted">${C.escape(d.type)} · ${C.escape(d.format)} · ${C.escape(formatSize(d.sizeKB))} · ${C.escape(String(d.year))} · ${classBadge(C, ref, d.classification)}</div></div></div>
-        <a class="btn btn--outline btn--sm" href="${C.escape(d.url || '#')}">${C.icon('Download', 'icon--base')} Download</a></div>`).join('');
-    return `<div class="stack">${items}</div><p class="mt-6"><a class="btn btn--link" href="#/app/document-archive">In der Bauwerksdokumentation öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
-  }
+  // Alle Detail-Tabellen folgen demselben Muster (Suche · Sortierung · Facetten ·
+  // Paginierung) und werden darum über EINEN Baustein gerendert: C.mountDataTable.
+  // Bei realen Gebäuden werden diese Listen — besonders Dokumente und Ausstattung —
+  // sehr lang; vorher gab es weder Suche noch Paginierung.
+  const uniqOpts = (arr, key) => [...new Set(arr.map((x) => x[key]).filter(Boolean))]
+    .sort((a, z) => String(a).localeCompare(String(z), 'de'))
+    .map((v) => ({ value: String(v), label: String(v) }));
+
+  const DT = {
+    flaechen: !areas.length ? null : {
+      id: 'pf-dt-flaechen', rows: areas, unit: 'Bemessungen', caption: 'Flächen und Bemessungen',
+      searchKeys: ['type', 'accuracy', 'standard'], perPage: 10,
+      sorts: [
+        { value: 'type', label: 'Bemessungsart', cmp: (x, y) => String(x.type).localeCompare(String(y.type), 'de') },
+        { value: 'value', label: 'Wert (absteigend)', cmp: (x, y) => (Number(y.value) || 0) - (Number(x.value) || 0) },
+      ],
+      facets: [{ dim: 'standard', legend: 'Standard', options: uniqOpts(areas, 'standard'),
+        match: (r, v) => v.includes(String(r.standard)) }],
+      columns: [
+        { key: 'type', label: 'Bemessungsart', render: (a) => C.escape(a.type) },
+        { key: 'value', label: 'Wert', align: 'right', render: (a) => `${Number(a.value || 0).toLocaleString('de-CH')} <span class="muted">${C.escape(a.unit || '')}</span>` },
+        { key: 'accuracy', label: 'Genauigkeit', render: (a) => C.escape(a.accuracy || '—') },
+        { key: 'standard', label: 'Standard', render: (a) => C.escape(a.standard || '—') },
+        { key: 'validFrom', label: 'Gültig ab', render: (a) => fmtDate(a.validFrom) },
+      ],
+    },
+    ausstattung: !assets.length ? null : {
+      id: 'pf-dt-ausstattung', rows: assets, unit: 'Ausstattungsobjekte', caption: 'Ausstattung',
+      searchKeys: ['name', 'manufacturer', 'location', 'category'], perPage: 10,
+      sorts: [
+        { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (x, y) => String(x.name).localeCompare(String(y.name), 'de') },
+        { value: 'year', label: 'Baujahr (neueste zuerst)', cmp: (x, y) => (Number(y.installationYear) || 0) - (Number(x.installationYear) || 0) },
+      ],
+      facets: [
+        { dim: 'category', legend: 'Kategorie', options: uniqOpts(assets, 'category'), match: (r, v) => v.includes(String(r.category)) },
+        { dim: 'status', legend: 'Status', options: uniqOpts(assets, 'status'), match: (r, v) => v.includes(String(r.status)) },
+      ],
+      columns: [
+        { key: 'name', label: 'Bezeichnung', render: (a) => `<strong>${C.escape(a.name)}</strong>` },
+        { key: 'category', label: 'Kategorie', render: (a) => C.badge(a.category, 'blue') },
+        { key: 'manufacturer', label: 'Hersteller', render: (a) => C.escape(a.manufacturer || '—') },
+        { key: 'installationYear', label: 'Baujahr', align: 'right', render: (a) => C.escape(String(a.installationYear || '—')) },
+        { key: 'location', label: 'Standort', render: (a) => C.escape(a.location || '—') },
+        { key: 'status', label: 'Status', render: (a) => C.badge(a.status, a.status === 'In Betrieb' ? 'success' : 'gray') },
+      ],
+    },
+    vertraege: !contracts.length ? null : {
+      id: 'pf-dt-vertraege', rows: contracts, unit: 'Verträge', caption: 'Verträge',
+      searchKeys: ['type', 'contractPartner'], perPage: 10,
+      sorts: [
+        { value: 'type', label: 'Vertragsart', cmp: (x, y) => String(x.type).localeCompare(String(y.type), 'de') },
+        { value: 'amount', label: 'Betrag (absteigend)', cmp: (x, y) => (Number(y.amount) || 0) - (Number(x.amount) || 0) },
+        { value: 'from', label: 'Beginn (neueste zuerst)', cmp: (x, y) => String(y.validFrom || '').localeCompare(String(x.validFrom || '')) },
+      ],
+      facets: [{ dim: 'status', legend: 'Status', options: uniqOpts(contracts, 'status'), match: (r, v) => v.includes(String(r.status)) }],
+      columns: [
+        { key: 'type', label: 'Vertragsart', render: (c) => C.escape(c.type) },
+        { key: 'contractPartner', label: 'Vertragspartner', render: (c) => C.escape(c.contractPartner || '—') },
+        { key: 'laufzeit', label: 'Laufzeit', render: (c) => `${fmtDate(c.validFrom)} – ${c.validUntil ? fmtDate(c.validUntil) : 'unbefristet'}` },
+        { key: 'amount', label: 'Betrag/Jahr', align: 'right', render: (c) => fmtMoney(c.amount, c.currency) },
+        { key: 'status', label: 'Status', render: (c) => C.badge(c.status, CONTRACT_STATUS_VARIANT[c.status] || 'gray') },
+      ],
+    },
+    kosten: !costs.length ? null : {
+      id: 'pf-dt-kosten', rows: costs, unit: 'Kostenpositionen', caption: 'Kosten',
+      searchKeys: ['costGroup', 'costType', 'period'], perPage: 10,
+      sorts: [
+        { value: 'group', label: 'Kostengruppe', cmp: (x, y) => String(x.costGroup).localeCompare(String(y.costGroup), 'de') },
+        { value: 'amount', label: 'Betrag (absteigend)', cmp: (x, y) => (Number(y.amount) || 0) - (Number(x.amount) || 0) },
+      ],
+      facets: [{ dim: 'costGroup', legend: 'Kostengruppe', options: uniqOpts(costs, 'costGroup'), match: (r, v) => v.includes(String(r.costGroup)) }],
+      columns: [
+        { key: 'costGroup', label: 'Kostengruppe', render: (c) => C.escape(c.costGroup) },
+        { key: 'costType', label: 'Kostenart', render: (c) => C.escape(c.costType) },
+        { key: 'amount', label: 'Betrag', align: 'right', render: (c) => fmtMoney(c.amount, c.currency) },
+        { key: 'period', label: 'Periode', render: (c) => C.escape(c.period || '—') },
+        { key: 'referenceDate', label: 'Stichtag', render: (c) => fmtDate(c.referenceDate) },
+      ],
+      // Summe der GEFILTERTEN Menge, nicht der Gesamtmenge — sonst widerspricht
+      // der Fuss der sichtbaren Auswahl.
+      foot: (visible, filtered) => {
+        const cur = (filtered[0] || {}).currency || 'CHF';
+        const sum = filtered.reduce((s, c) => s + (Number(c.amount) || 0), 0);
+        return `<tr class="table__total"><th scope="row">Total</th><td></td><td class="text-right"><strong>${fmtMoney(sum, cur)}</strong></td><td colspan="2" class="small muted">${filtered.length} Positionen · jährlich</td></tr>`;
+      },
+    },
+    kontakte: !contacts.length ? null : {
+      id: 'pf-dt-kontakte', rows: contacts.slice().sort((a, c) => (c.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0) || String(a.name).localeCompare(String(c.name), 'de')),
+      unit: 'Kontakte', caption: 'Objektkontakte',
+      searchKeys: ['name', 'role', 'organisation', 'email'], perPage: 10,
+      sorts: [
+        { value: 'name', label: 'Name (A–Z)', cmp: (x, y) => String(x.name).localeCompare(String(y.name), 'de') },
+        { value: 'role', label: 'Rolle', cmp: (x, y) => String(x.role || '').localeCompare(String(y.role || ''), 'de') },
+      ],
+      columns: [
+        { key: 'name', label: 'Name', render: (c) => `<strong>${C.escape(c.name)}</strong>${c.isPrimary ? ' ' + C.badge('Primär', 'info') : ''}` },
+        { key: 'role', label: 'Rolle', render: (c) => C.escape(c.role || '—') },
+        { key: 'organisation', label: 'Organisation', render: (c) => C.escape(c.organisation || '—') },
+        { key: 'phone', label: 'Telefon', render: (c) => c.phone ? `<a href="tel:${C.escape(String(c.phone).replace(/\s/g, ''))}">${C.escape(c.phone)}</a>` : '—' },
+        { key: 'email', label: 'E-Mail', render: (c) => c.email ? `<a href="mailto:${C.escape(c.email)}">${C.escape(c.email)}</a>` : '—' },
+      ],
+    },
+    // Dokumente war eine handgebaute Zeilenliste — jetzt dieselbe Tabelle wie die
+    // übrigen Reiter (Wunsch: bei realen Gebäuden sehr lang).
+    dokumente: !documents.length ? null : {
+      id: 'pf-dt-dokumente', rows: documents, unit: 'Dokumente', caption: 'Dokumente',
+      searchKeys: ['title', 'type', 'format'], perPage: 10,
+      sorts: [
+        { value: 'title', label: 'Titel (A–Z)', cmp: (x, y) => String(x.title).localeCompare(String(y.title), 'de') },
+        { value: 'year', label: 'Jahr (neueste zuerst)', cmp: (x, y) => (Number(y.year) || 0) - (Number(x.year) || 0) },
+        { value: 'size', label: 'Grösse (absteigend)', cmp: (x, y) => (Number(y.sizeKB) || 0) - (Number(x.sizeKB) || 0) },
+      ],
+      facets: [
+        { dim: 'type', legend: 'Dokumenttyp', options: uniqOpts(documents, 'type'), match: (r, v) => v.includes(String(r.type)) },
+        { dim: 'classification', legend: 'Klassifizierung', options: uniqOpts(documents, 'classification'), match: (r, v) => v.includes(String(r.classification)) },
+      ],
+      columns: [
+        { key: 'title', label: 'Titel', render: (d) => `${C.icon('File', 'icon--base')} <strong>${C.escape(d.title)}</strong>` },
+        { key: 'type', label: 'Typ', render: (d) => C.escape(d.type) },
+        { key: 'format', label: 'Format', render: (d) => C.escape(d.format) },
+        { key: 'sizeKB', label: 'Grösse', align: 'right', render: (d) => C.escape(formatSize(d.sizeKB)) },
+        { key: 'year', label: 'Jahr', align: 'right', render: (d) => C.escape(String(d.year)) },
+        { key: 'classification', label: 'Klassifizierung', render: (d) => classBadge(C, ref, d.classification) },
+        { key: 'url', label: 'Aktion', render: (d) => `<a class="btn btn--outline btn--sm" href="${C.escape(d.url || '#')}">${C.icon('Download', 'icon--base')}<span class="btn__text">Download</span></a>` },
+      ],
+    },
+  };
+
+  // Panel-Inhalt: entweder der Leerzustand oder ein Montagepunkt für die Tabelle.
+  const dtPanel = (key, emptyMsg, after = '') => DT[key]
+    ? `<div id="${DT[key].id}"></div>${after}`
+    : `${C.empty(emptyMsg)}${after}`;
+  const archiveLink = `<p class="mt-6"><a class="btn btn--link" href="#/app/document-archive">In der Bauwerksdokumentation öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
+
+  const tabFlaechen = () => dtPanel('flaechen', 'Keine Flächen- oder Bemessungsdaten erfasst.');
+  const tabAusstattung = () => dtPanel('ausstattung', 'Keine Ausstattung erfasst.');
+  const tabVertraege = () => dtPanel('vertraege', 'Keine Verträge erfasst.');
+  const tabKosten = () => dtPanel('kosten', 'Keine Kostendaten erfasst.');
+  const tabKontakte = () => dtPanel('kontakte', 'Keine Objektkontakte hinterlegt.');
+  const tabDokumente = () => dtPanel('dokumente', 'Keine Dokumente verknüpft.', archiveLink);
   const panels = { uebersicht: tabUebersicht, flaechen: tabFlaechen, ausstattung: tabAusstattung, vertraege: tabVertraege, kosten: tabKosten, dokumente: tabDokumente, kontakte: tabKontakte };
   const panelHtml = (id) => (panels[id] || tabUebersicht)();
 
@@ -483,6 +558,13 @@ function buildingDetail(ctx, b) {
     </div>
   </div>`;
   C.wireTabs(mount);
+  // Jede Detail-Tabelle in ihren Montagepunkt hängen. Alle Panels liegen bereits
+  // im DOM (Mehr-Panel-Muster), inaktive sind `hidden`; wireScrollRegions beobachtet
+  // die Grösse, sodass der Scroll-Hinweis beim Sichtbarwerden nachgezogen wird.
+  Object.values(DT).filter(Boolean).forEach((cfg) => {
+    const host = mount.querySelector('#' + cfg.id);
+    if (host) C.mountDataTable(host, cfg);
+  });
   const heroBtn = mount.querySelector('#pf-hero-btn');
   if (heroBtn) heroBtn.addEventListener('click', () => openGallery(galleryItems, 0, C));
   window.scrollTo(0, 0);

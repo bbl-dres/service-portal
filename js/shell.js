@@ -38,14 +38,6 @@ function themaBranchRows() {
     .map(d => branchRow(`dom:${d.key}`, d.label)).join('');
 }
 
-// Zwischentitel einer Drawer-Gruppe. `menu__item--title` ist CDs eigener Modifier
-// (menu.postcss: lg:px-0, hover:bg-white, cursor-default) — CD definiert dafür
-// aber KEINE innere Label-Klasse, also nimmt die Beschriftung die bereits im
-// Projekt vorhandene `.navy__group-title` statt einer erfundenen CD-Vokabel.
-function menuTitle(text) {
-  return `<li class="menu__item menu__item--title"><span class="navy__group-title">${escapeHtml(text)}</span></li>`;
-}
-
 // Ein aufklappbarer Zweig-Knopf (Übersicht/Themen/Bereiche teilen dieselbe Anatomie).
 function branchRow(branchKey, label) {
   return `<li class="menu__item menu__item--border menu__item--condensed">
@@ -96,14 +88,13 @@ function headerHTML() {
     const withBranches = item.base === 'services' || hasNavBranch;
     let level0;
     if (item.base === 'services') {
-      // Der Drawer mischte Themen DIESES Portals und Aufgabenbereiche im externen
-      // BBL-Intranet in einer einzigen Liste — ohne Zwischentitel war nicht zu
-      // erkennen, welche Zeile das Portal verlässt (Item 4.10). Zwei benannte
-      // Gruppen; die Intranet-Zeilen tragen zusätzlich das External-Symbol.
+      // Flache Liste — CDs Drawer kennt KEINE Zwischentitel (die Klasse
+      // `menu__item--title` existiert in menu.postcss, wird aber von keiner
+      // CD-Komponente verwendet). Die Unterscheidung «bleibt im Portal» vs.
+      // «führt ins BBL-Intranet» trägt die Ebene 2, wo die externen Ziele das
+      // External-Symbol führen.
       level0 = `<ul class="menu navy__level-0">${
-        (item.children || []).map(navyRow).join('')
-      }${menuTitle('Themen im Kundenportal')}${themaBranchRows()
-      }${menuTitle('Weitere Angebote im BBL-Intranet')}${areaBranchRows()}</ul>`;
+        (item.children || []).map(navyRow).join('')}${themaBranchRows()}${areaBranchRows()}</ul>`;
     } else if (hasNavBranch) {
       level0 = `<ul class="menu navy__level-0">${(item.children || [])
         .map(c => c.branchKey ? branchRow('nav:' + c.branchKey, c.label) : navyRow(c)).join('')}</ul>`;

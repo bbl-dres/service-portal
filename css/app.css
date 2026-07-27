@@ -742,18 +742,9 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .navy__level-0 { list-style:none; margin:0; padding:0; }
 .navy__title { display:block; margin:0 0 .5rem; padding:0 .75rem; font-size:var(--fs-lg); font-weight:var(--fw-bold);
   line-height:var(--lh-tight); color:var(--color-secondary-700); cursor:default; }
-/* Zwischenüberschrift einer Drawer-Gruppe (Item 4.10: «Themen im Kundenportal» /
-   «Weitere Angebote im BBL-Intranet»). `menu__item--title` ist CDs eigener
-   Modifier — hier 1:1 übernommen (menu.postcss: `lg:px-0`, `hover:bg-white`,
-   `cursor-default`). Die Beschriftung selbst nutzt die projekteigene
-   `.navy__group-title`; CD definiert für den Text keine eigene Klasse. */
-.menu__item--title { cursor:default; }
-.menu__item--title:hover { background:#fff; }
-@media (min-width:1024px){ .menu__item--title { padding-inline:0; } }
-.menu__item--title .navy__group-title { margin:0; }
-.navy .menu__item--title { padding:.75rem 1rem .25rem; }
-@media (min-width:1024px){ .navy .menu__item--title { padding-inline:0; } }
-.mobile-menu__drawer .menu__item--title { padding-left:2.25rem; }
+/* Item 4.10 zurückgenommen: CDs Drawer hat keine Abschnittstitel. Die Klasse
+   `menu__item--title` existiert in menu.postcss, aber keine CD-Komponente wendet
+   sie an — sie gehört nicht zum Drawer-Muster. Die Liste bleibt flach. */
 /* Navy menu rows use CD's fixed row size (menu.postcss:24 menu__item--small =
    text-sm 3xl:text-base), never the responsive body ramp — otherwise the flyout
    rows balloon at ≥1280px. */
@@ -1741,12 +1732,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .search--page-result { padding-top:1rem; }
 @media (min-width:1544px){ .search--page-result { padding-top:2rem; } }
 
-/* Trefferliste (SearchResultsList): schlanke Zeilen mit Meta, Titel, Text. */
-.search-group { margin-top:3rem; }
-.search-group:first-of-type { margin-top:1.5rem; }
-.search-group__title { display:flex; align-items:center; gap:.5rem; font-size:var(--text-xl); margin-bottom:.5rem; }
-.search-group__title .icon { color:var(--color-primary-600); }
-.search-group__count { font-size:var(--text-sm); font-weight:var(--fw-regular); color:var(--color-text-muted); }
+/* Trefferliste (SearchResultsList): schlanke Zeilen mit Meta, Titel, Text.
+   Die `.search-group*`-Regeln sind mit der Umstellung auf einen Ergebnisstrom
+   mit Art-Facette entfallen (kein Konsument mehr im JS). */
 .search-results-list { list-style:none; margin:0; padding:0; }
 .search-result { border-top:1px solid var(--color-secondary-200); }
 .search-result:last-child { border-bottom:1px solid var(--color-secondary-200); }
@@ -2077,10 +2065,20 @@ body.docviewer-open .back-to-top-rail { display:none; }
    CDs Pendant ist ausdrücklich umbrechend (search.postcss:208-211). */
 .catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem .25rem;
   margin-left:auto; min-width:0; max-width:100%; row-gap:.5rem; }
+/* Ohne Suchfeld (Suchergebnisse): Trefferzahl links, Steuerung rechts — CDs
+   `.search-results__header` (flex, justify-between, ml-auto rechts). */
+.catbar--no-search .catbar__count { flex:1 1 auto; }
 .catbar__sort { position:relative; min-width:0; max-width:100%; }
 .catbar__sort select { max-width:100%; text-overflow:ellipsis; }
-/* CD-Padding (px-4) links; rechts Platz für das Chevron. Kein text-align:right —
-   sonst kleben die kürzeren Optionen (Status/Land) rechtsbündig ohne Rand. */
+/* CD richtet das Sortier-Select im Ergebniskopf RECHTS aus
+   (search.postcss:229-233 `.search-results__header__right select { text-right }`).
+   Der frühere Kommentar entschied dagegen, weil kurze Optionen dann am Rand
+   kleben — das `padding-right` für das Chevron liefert diesen Abstand aber
+   bereits. Nur dort links, wo wir das Feld auf Mobil vollbreit ziehen. */
+.catbar__sort select { text-align:right; }
+@media (max-width:767.98px){ .catbar__sort select { text-align:left; } }
+/* CD-Padding (px-4) links; rechts Platz für das Chevron (der zugleich den Abstand
+   für die rechtsbündige Ausrichtung oben liefert). */
 .catbar__sort select { min-height:2.75rem; padding-left:1rem; padding-right:1.75rem; font-size:var(--text-sm); color:var(--color-text); }
 .catbar__sort .select__icon { color:var(--color-text-muted); }
 .catbar__filter { min-height:2.75rem; white-space:nowrap; }
