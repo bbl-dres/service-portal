@@ -90,6 +90,31 @@
   --color-focus-ring:  #8655F6;   /* CD Bund focus purple-500 */
   --color-focus-ring-negative: #c4b5fd;   /* purple-300 — on dark chrome (global.postcss:78-85) */
 
+  /* Gestufte Control-Höhe (CD btn.postcss:112-127 «.btn--base min-h-[44px]
+     xl:min-h-[48px] 3xl:min-h-[52px]», input.postcss:1-4). EIN Token für die
+     Touch-Rampe aller Bedienelemente; die Konsumenten kommen in Item 2.7.
+     NICHT auf .btn anwenden — .btn führt seine Rampe bereits selbst
+     (app.css:781-782). Die Stufen stehen unten bei den Typo-Rampen. */
+  --control-h: 2.75rem;
+
+  /* --- Kategoriale Chart-Palette — CD-Hue-Stufen, alle ≥4.5:1 auf Weiss, keine
+     kollidiert mit --color-primary-600 (rot #d8232a / intranet-blau #2563eb).
+     Bewusst NIE in einem Skin-Block überschrieben (gleiches Vorgehen wie
+     --color-error-400/700 oben): eine Datenserie ist keine Markenfarbe. --- */
+  --chart-series-1: #0f6b75;  /* teal-700   6.2:1 */
+  --chart-series-2: #c2410c;  /* orange-700 5.2:1 */
+  --chart-series-3: #6d28d9;  /* purple-700 7.1:1 */
+  --chart-series-4: #047857;  /* green-700  5.5:1 */
+  --chart-series-5: #be185d;  /* pink-700   6.0:1 */
+  --chart-series-6: #4b5563;  /* text-600   7.6:1 */
+  --chart-series-7: #b45309;  /* yellow-700 5.0:1 */
+  /* Chart-Tinte: benannte Aliase der bereits vorhandenen Neutralrampe */
+  --chart-ink:       var(--color-text-800);   /* #1f2937 */
+  --chart-ink-muted: var(--color-text-600);   /* #4b5563 */
+  --chart-grid:      var(--color-text-200);   /* #e5e7eb */
+  --chart-axis:      var(--color-text-300);   /* #d1d5db */
+  --chart-surface:   var(--color-bg);         /* #ffffff */
+
   /* --- Typography --- */
   --font-sans: 'Noto Sans', 'Hind', 'Fallback-font', sans-serif;
 
@@ -209,6 +234,7 @@
 }
 @media (min-width:1280px) {          /* xl */
   :root {
+    --control-h: 3rem;               /* CD btn.postcss:112-127 xl:min-h-[48px] */
     --text-xs:  var(--fs-sm);  --text-sm:  var(--fs-base); --text-base: var(--fs-lg);
     --text-lg:  var(--fs-xl);  --text-xl:  var(--fs-3xl);  --text-2xl:  var(--fs-4xl);
     --text-3xl: var(--fs-5xl); --text-4xl: var(--fs-6xl);  --text-5xl:  var(--fs-7xl);
@@ -216,6 +242,7 @@
 }
 @media (min-width:1920px) {          /* 3xl */
   :root {
+    --control-h: 3.25rem;            /* CD btn.postcss:112-127 3xl:min-h-[52px] */
     --text-xs:  var(--fs-base); --text-sm:  var(--fs-lg);  --text-base: var(--fs-xl);
     --text-lg:  var(--fs-2xl);  --text-xl:  var(--fs-4xl); --text-2xl:  var(--fs-5xl);
     --text-3xl: var(--fs-6xl);  --text-4xl: var(--fs-7xl); --text-5xl:  var(--fs-8xl);

@@ -14,9 +14,19 @@
   src:url('../assets/fonts/NotoSans-Italic.ttf') format('truetype'); }
 @font-face { font-family:'Noto Sans'; font-style:italic; font-weight:700; font-display:swap;
   src:url('../assets/fonts/NotoSans-BoldItalic.ttf') format('truetype'); }
-/* Metric-matched fallback so the swap does not reflow (font-face.postcss:37-44) */
+/* Metrisch angeglichener Fallback (CD font-face.postcss:37-44), KORRIGIERT:
+   `advance-override` ist keine CSS-Eigenschaft (abgebrochenes Chrome-Experiment,
+   ersetzt durch `size-adjust`) und `descent-override` verlangt einen
+   nicht-negativen Wert — `-25%` wird verworfen. Ohne size-adjust bleibt die
+   horizontale Vorschubweite, also genau die Achse, die die Zeilenzahl ändert,
+   unangeglichen (gemessen @32px: Verdana 571.9px vs. Noto Sans Regular 537.5px
+   = +6.4 %). Ein eigener Bold-Fallback ist nicht nötig: Verdana Regular 571.9px
+   vs. Noto Sans Bold 573.8px stimmen auf 0.3 % überein. */
 @font-face { font-family:'Fallback-font'; src:local('Verdana');
-  advance-override:125%; ascent-override:95%; descent-override:-25%; line-gap-override:25%; }
+  size-adjust:94%;        /* 537.5 / 571.9 */
+  ascent-override:114%;   /* Noto fontBoundingBoxAscent 107% ÷ 0.94 */
+  descent-override:31%;   /* Noto 29% ÷ 0.94 — muss ≥ 0 sein */
+  line-gap-override:0%; }
 
 /* ============================== BASE ============================== */
 *,*::before,*::after { box-sizing:border-box; }
@@ -64,13 +74,22 @@ p { margin:0 0 1rem; }
 .font--bold { font-weight:var(--fw-bold); }
 .text--bold-italic, .font--bold-italic { font-weight:var(--fw-bold); font-style:italic; }
 .text--default, .color--default { color:var(--color-text); }
-.color--light { color:var(--color-text-light); }
+/* CD `.text--light` ist text-text-500 (typography.postcss:87-89) — die dunkelste
+   Stufe, die AA erreicht. --color-text-400 (#9ca3af) wären 2.54:1 auf Weiss. */
+.color--light { color:var(--color-gray-500); }
 .color--link { color:var(--color-link); }
 .color--negative { color:#fff; }
 .text--asterisk ~ * .text--asterisk::after { content:''; }   /* nur der erste Stern (CD) */
-/* Overtitle/Eyebrow (CD: KEIN uppercase, KEIN letter-spacing) + Bildlegende */
-.overtitle { display:flex; gap:.5rem; align-items:center; font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--color-text-muted); }
-.legend { font-size:var(--text-xs); padding-top:.5rem; color:var(--color-text-light); }
+/* Overtitle/Eyebrow — CD typography.postcss:100-104 hat genau vier Deklarationen:
+   KEIN uppercase, KEIN letter-spacing, KEIN font-weight, KEIN align-items.
+   Konsumenten kommen in Item 2.25. */
+.overtitle { display:flex; gap:.5rem; font-size:var(--text-xs); color:var(--color-text-muted); }
+/* Bildlegende — CD bindet `figcaption { @apply legend }` (typography.postcss:131-137);
+   ohne diese Bindung wird jede figcaption anders gestaltet. Farbe ist CDs
+   text-text-500 (4.83:1 auf Weiss), nicht --color-text-light (2.54:1).
+   CDs `--color-secondary-100` (#dfe4e9) wäre auf unseren weissen Flächen 1.2:1 —
+   CDs Eyebrow/Legende ist für dunkle Hero-Hintergründe entworfen. */
+.legend, figcaption { font-size:var(--text-xs); padding-top:.5rem; color:var(--color-gray-500); }
 
 /* Links — CD underlines every content link in main (link.postcss:5-38) */
 a { color:var(--color-link); text-decoration:none; }
@@ -157,10 +176,50 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 }
 .container__aside > * { margin-bottom:1.75rem; }
 @media (min-width:1024px){ .container__aside > * { margin-bottom:2rem; } }
-/* Responsiver Gitterabstand (CD gap--responsive). */
-.container--grid.gap--responsive { gap:1.5rem; }
-@media (min-width:1024px){ .container--grid.gap--responsive { gap:2rem; } }
-@media (min-width:1280px){ .container--grid.gap--responsive { gap:2.5rem; } }
+
+/* Die `container__center--*`-Klassen sind reine `grid-column`-Regeln und tun
+   ausserhalb von `.container--grid` GAR NICHTS — eine Auslassung, die im Code-
+   Review unsichtbar ist (gemessen: p.container__center--xs mit 148ch bei 1440).
+   Eine schlichte `max-width` als Fallback macht das Versäumnis unmöglich; im
+   Rasterkontext übernimmt wieder die Spaltenregel. Call-Sites: Item 7.2. */
+.container__center--xs { max-width:46rem; }
+.container__center--sm { max-width:60rem; }
+.container__center--md { max-width:76rem; }
+.container--grid > .container__center--xs,
+.container--grid > .container__center--sm,
+.container--grid > .container__center--md { max-width:none; }
+
+/* CD container.postcss:100-101 / :135-141 (detailPageAnchorNav.vue:48) — auf
+   Mobile steht das Inhaltsverzeichnis VOR dem Inhalt, den es indexiert.
+   Adoption + eingeklapptes Mobil-TOC: Item 7.4. */
+.container--reverse-mobile .container__main  { order:2; }
+.container--reverse-mobile .container__aside { order:1; }
+@media (min-width:768px){
+  .container--reverse-mobile .container__main  { order:1; }
+  .container--reverse-mobile .container__aside { order:2; }
+}
+
+/* Abstands-Utilities (CD grids.postcss:9-19, :222-224, :56-58 und
+   container.postcss:29-49). `gap--responsive` war hier auf `.container--grid`
+   verengt UND hatte eine kürzere Rampe als das CD — obwohl `.grid` (unten)
+   dieselbe CD-Rampe korrekt führt. Jetzt eine Quelle für beide. */
+.gap--responsive { gap:1.25rem; }
+.gap--top    { padding-top:1.25rem; }
+.gap--bottom { padding-bottom:1.25rem; }
+.grid + .grid { margin-top:1.25rem; }
+@media (min-width:480px) { .gap--responsive{gap:1.75rem} .gap--top{padding-top:1.75rem} .gap--bottom{padding-bottom:1.75rem} .grid+.grid{margin-top:1.75rem} }
+@media (min-width:640px) { .gap--responsive{gap:2.25rem} .gap--top{padding-top:2.25rem} .gap--bottom{padding-bottom:2.25rem} .grid+.grid{margin-top:2.25rem} }
+@media (min-width:1024px){ .gap--responsive{gap:2.5rem}  .gap--top{padding-top:2.5rem}  .gap--bottom{padding-bottom:2.5rem}  .grid+.grid{margin-top:2.5rem} }
+@media (min-width:1280px){ .gap--responsive{gap:3rem}    .gap--top{padding-top:3rem}    .gap--bottom{padding-bottom:3rem}    .grid+.grid{margin-top:3rem} }
+@media (min-width:1920px){ .gap--responsive{gap:4rem}    .gap--top{padding-top:4rem}    .gap--bottom{padding-bottom:4rem}    .grid+.grid{margin-top:4rem} }
+.container--grid + .container--grid { padding-top:1.25rem; }
+
+.container--py      { padding-block:3.5rem; }
+.container--pt      { padding-block:3.5rem 0; }
+.container--pb      { padding-block:0 3.5rem; }
+.container--py-half { padding-block:1.75rem; }
+@media (min-width:1024px){ .container--py{padding-block:5rem} .container--pt{padding-block:5rem 0} .container--pb{padding-block:0 5rem} .container--py-half{padding-block:2.5rem} }
+@media (min-width:1920px){ .container--py{padding-block:8rem} .container--pt{padding-block:8rem 0} .container--pb{padding-block:0 8rem} .container--py-half{padding-block:4rem} }
 /* Klebende Ankernavigation (sticky.postcss: top-4 md:top-10 lg:top-12). */
 .sticky--top { position:sticky; top:1rem; }
 @media (min-width:768px){ .sticky--top { top:2.5rem; } }
@@ -238,6 +297,15 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .vertical-spacing > * { margin-top:3rem; }
 .vertical-spacing > *:first-child { margin-top:0; }
 @media (min-width:1544px){ .vertical-spacing > * { margin-top:3.5rem; } }
+/* CD spacings.postcss:17-41 — die INTRA-Block-Regeln fehlten. Ohne sie stehen
+   3rem zwischen einer <h2> und ihrem eigenen ersten Absatz, weshalb die Klasse
+   bisher nur dort einsetzbar war, wo alle Kinder <section>-Wrapper sind
+   (js/pages/grundlagen.js:120). Adoption: Item 7.5. */
+.vertical-spacing > :is(h1,h2,h3,h4,h5) { margin-bottom:0; }
+.vertical-spacing > :is(h1,h2,h3,h4,h5) + * { margin-top:1.5em; }
+.vertical-spacing > :is(h1,h2,h3,h4,h5) + p { margin-top:1em; }
+.vertical-spacing > p + p, .vertical-spacing > p + ul, .vertical-spacing > p + ol,
+.vertical-spacing > ul + p, .vertical-spacing > ol + p { margin-top:1em; }
 .stack > * + * { margin-top:1rem; }
 .stack-lg > * + * { margin-top:3rem; }
 @media (min-width:1544px){ .stack-lg > * + * { margin-top:3.5rem; } }
@@ -250,23 +318,54 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 /* Grids — mobile-first, CD breakpoints and responsive gaps (grids.postcss:10,25-56) */
 .grid { display:grid; gap:1.25rem; }
 .grid--2, .grid--3, .grid--4,
-.grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:1fr; }
-.grid--auto { grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
+.grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:minmax(0,1fr); }
+/* min(260px,100%) statt 260px: verschachtelt in einer schmalen Spalte (oder unter
+   320px Viewport) würde ein festes Minimum die Spur breiter als ihren Container
+   machen — dieselbe Absicherung wie bei .quick-grid (app.css unten). */
+.grid--auto { grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr)); }
 @media (min-width:480px) { .grid { gap:1.75rem; } }
 @media (min-width:640px) { .grid { gap:2.25rem; } }
 @media (min-width:768px) {
   .grid--2, .grid--3, .grid--4,
-  .grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:repeat(2,1fr); }
+  .grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media (min-width:1024px){
   .grid { gap:2.5rem; }
-  .grid--3, .grid--responsive-cols-3 { grid-template-columns:repeat(3,1fr); }
-  .grid--4, .grid--responsive-cols-4 { grid-template-columns:repeat(4,1fr); }
+  .grid--3, .grid--responsive-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .grid--4, .grid--responsive-cols-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
 }
 @media (min-width:1280px){ .grid { gap:3rem; } }
 @media (min-width:1920px){ .grid { gap:4rem; } }
-.split { display:grid; grid-template-columns:1fr; gap:2rem; align-items:start; }
-@media (min-width:1024px){ .split { grid-template-columns:1fr 320px; } }
+/* CD grids.postcss:226-271 — `.grid--items-N` balanciert die LETZTE Zeile, indem
+   es das erste (bzw. die ersten zwei) Elemente breiter spannt. `.grid--3` fixiert
+   dagegen drei Spalten unabhängig von der Elementzahl und lässt das letzte
+   Element allein stehen (TopNewsSection.vue:5 nutzt `grid grid--items-5`).
+   Adoption: Item 7.3. */
+.grid--items-1,.grid--items-2,.grid--items-3,.grid--items-4,.grid--items-5 { grid-template-columns:minmax(0,1fr); }
+@media (min-width:768px){
+  .grid--items-1 { grid-template-columns:repeat(1,minmax(0,1fr)); }
+  .grid--items-2,.grid--items-3 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .grid--items-4 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .grid--items-5 { grid-template-columns:repeat(12,minmax(0,1fr)); }
+  .grid--items-3 > *, .grid--items-4 > * { grid-column:span 1; }
+  .grid--items-3 > *:nth-child(1) { grid-column:span 2; }
+  .grid--items-4 > *:nth-child(1) { grid-column:span 3; }
+  .grid--items-5 > * { grid-column:span 6; }
+}
+@media (min-width:1024px){
+  .grid--items-5 > * { grid-column:span 4; }
+  .grid--items-5 > *:nth-child(1),
+  .grid--items-5 > *:nth-child(2) { grid-column:span 6; }
+}
+/* minmax(0,1fr), nicht 1fr: `1fr` ist `minmax(auto,1fr)`, die Spur kann also nicht
+   unter die min-content-Breite ihres Inhalts schrumpfen. Ein <select> mit langen
+   Optionen trieb die einspaltige Spur auf 388px in einem 358px-Container — der
+   Überhang wurde von .container{overflow-x:clip} still abgeschnitten. Dieselbe
+   Absicherung wie CD sie auf jeder generierten Spur setzt (grids.postcss:70,93,119)
+   und wie app.css:140 sie für .container--grid bereits verwendet. */
+.split { display:grid; grid-template-columns:minmax(0,1fr); gap:2rem; align-items:start; }
+.split > * { min-width:0; }
+@media (min-width:1024px){ .split { grid-template-columns:minmax(0,1fr) 320px; } }
 
 /* Ratios (ratio.postcss:5-33) */
 .ratio { position:relative; }
@@ -295,10 +394,24 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 @media (min-width:1024px){
   .icon--xl { width:2.25rem; height:2.25rem; } .icon--2xl{ width:3rem; height:3rem; }
 }
+/* Ladeanzeige (icons.postcss:55 `animate-spin-fast` = spin .5s linear infinite,
+   tailwind.config.js:17). assets/icons/Spinner.svg liegt im Repo und wurde bisher
+   von nichts referenziert; der reduced-motion-Ausstieg steht im Sammelblock unten. */
+@keyframes spin { to { transform:rotate(360deg); } }
+.icon--spin { animation:spin .5s linear infinite; }
+
 /* Masked icons are dropped by forced-colors; repaint them with a system colour */
 @media (forced-colors: active) {
   .icon { forced-color-adjust:none; background-color:CanvasText; }
   .btn .icon, .btn--link .icon, a .icon { background-color:LinkText; }
+  /* appearance:none + SVG-Häkchen in weiss: forced-colors erzwingt die Fläche auf
+     Canvas, behält aber das Hintergrundbild — auf hellen Themes wurde daraus ein
+     weisses Häkchen auf weissem Grund, der Haken-Zustand also unsichtbar. Native
+     Steuerung zeichnen lassen, die Systemfarben tragen den Zustand (Item 2.6). */
+  input[type='checkbox'], input[type='radio'] {
+    -webkit-appearance:auto; appearance:auto; background-image:none; box-shadow:none; }
+  /* Gedrückter Ansichtsschalter braucht eine Form, nicht nur eine Fläche */
+  .view-switch__btn[aria-pressed="true"] { outline:2px solid CanvasText; outline-offset:-2px; }
 }
 
 /* ============================== FEDERAL SHELL ============================== */
@@ -319,25 +432,45 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
   color:#fff; cursor:pointer; font:inherit; padding:.25rem 0 .25rem 1rem; margin-left:-1rem; text-decoration:none;
   transition:color .12s; }
 .top-bar__btn:hover { color:var(--color-gray-300); text-decoration:none; }
-.top-bar__btn > span { display:none; }
-@media (min-width:640px){ .top-bar__btn > span { display:inline; } }
-.top-bar__right { display:flex; align-items:center; gap:1rem; }
+/* C.icon() rendert ein <span class="icon …">, kein <svg> — `> span {display:none}`
+   verbarg deshalb Beschriftung UND Symbol, und `display:none` fällt aus der
+   Berechnung des zugänglichen Namens heraus: unter 640 war das ein leerer,
+   fokussierbarer 44px-Bereich ganz ohne Namen (WCAG 4.1.2 + 2.4.4, Level A).
+   Jetzt nur die Beschriftung visuell ausblenden, für AT erhalten. CDs eigene
+   Regeln sind sicher, weil CD `svg` separat adressiert (top-bar-navigation.postcss:8,12). */
+.top-bar__btn > span:not(.icon) { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+@media (min-width:640px){ .top-bar__btn > span:not(.icon) { position:static; width:auto; height:auto;
+  margin:0; overflow:visible; clip:auto; } }
+/* align-items:stretch statt center: der Sprachwähler soll die volle 44px-Zeile
+   füllen. Mit `center` war das Elternteil auto-hoch, und ein height:100% dagegen
+   löst zu auto auf — genau der Fehler, der bei .burger schon gefunden und
+   behoben wurde (Kommentar app.css:420-421, P0-5); hier war er übersehen. */
+.top-bar__right { display:flex; align-items:stretch; gap:1rem; }
+.top-bar__right > .demo-chip { align-self:center; }
 .top-bar-navigation { display:flex; height:100%; }
 .top-bar-navigation ul { list-style:none; display:flex; }
 .top-bar-navigation a { display:flex; align-items:center; height:100%; min-height:2.75rem;
   padding-inline:.25rem; color:#fff; text-decoration:none; transition:color .12s; }
 .top-bar-navigation a:hover, .top-bar-navigation a:focus { color:var(--color-gray-300); text-decoration:none; }
-.top-bar-navigation span { display:none; padding-left:.5rem; padding-right:.25rem; }
+/* wie oben: nur das Label ausblenden, nie das Icon-<span> (Item 2.4) */
+.top-bar-navigation a > span:not(.icon) { position:absolute; width:1px; height:1px; overflow:hidden;
+  clip:rect(0,0,0,0); white-space:nowrap; }
+@media (min-width:640px){
+  .top-bar-navigation a > span:not(.icon) { position:static; width:auto; height:auto; overflow:visible;
+    clip:auto; padding-left:.5rem; padding-right:.25rem; }
+}
 @media (min-width:1024px){
   .top-bar-navigation a { padding-inline:.5rem; }
-  .top-bar-navigation span { display:block; padding-left:1rem; padding-right:.5rem; }
+  .top-bar-navigation a > span:not(.icon) { padding-left:1rem; padding-right:.5rem; }
 }
 
 /* Language switcher (language-switcher.postcss:5-59) */
-.language-switcher { display:flex; height:100%; cursor:pointer; }
-.language-switcher .select { position:relative; height:100%; }
-.language-switcher select { appearance:none; -webkit-appearance:none; height:100%; min-height:0;
-  width:3.5em; padding:.25rem 1.5rem .25rem .25rem;
+.language-switcher { display:flex; align-self:stretch; height:auto; cursor:pointer; }
+.language-switcher .form__group__select,
+.language-switcher .select { display:flex; align-items:stretch; position:relative; height:auto; }
+.language-switcher select { appearance:none; -webkit-appearance:none; height:100%; min-height:var(--control-h);
+  width:3.5em; padding:.5rem 1.5rem .5rem .25rem;
   background:transparent; border:1px solid transparent; box-shadow:none;
   color:#fff; font:inherit; font-size:var(--text-sm); cursor:pointer; transition:color .12s; }
 @media (min-width:1024px){ .language-switcher select { width:4.5em; padding-left:1rem; } }
@@ -395,7 +528,26 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 @media (min-width:1024px){ .top-header__right { flex-direction:column; align-items:flex-end; margin-right:-.75rem; } }
 .top-header__container-flex { display:flex; align-items:center; }
 
+/* Mobiler Titelstreifen (top-header.postcss:13-31, Markup TopHeader.vue:3-8).
+   Das CD verbirgt den langen Amtstitel unter 480 absichtlich (logo.postcss:76)
+   und kompensiert ihn mit diesem getönten Band unter der Top-Bar — ohne das
+   Band besteht die sichtbare Marke bei 320/390 nur aus «BBL» + Intranet-Pille. */
+.top-header__mobile-title { position:relative; top:-.75rem; overflow:hidden;
+  background:var(--color-secondary-100); color:var(--color-text-muted);
+  font-size:var(--fs-xs); line-height:1.4; transition:max-height var(--duration-slow) var(--ease-out); }
+.top-header__mobile-title .container { padding-block:.5rem; }
+@media (min-width:480px){ .top-header__mobile-title { display:none; } }
+.body--mobile-menu-is-open .top-header__mobile-title { max-height:0; }
+
+/* Anmelde-Slot in CDs eigener top-header__container-flex-Zeile (Item 4.2). */
+.top-header__auth { display:none; }
+@media (min-width:1024px){ .top-header__auth { display:flex; align-items:center; margin-right:.75rem; } }
+.top-header__auth ul { list-style:none; display:flex; align-items:center; margin:0; padding:0; }
+
 /* Meta navigation (meta-navigation.postcss:5-42) */
+/* Der An-/Abmelden-Knopf — der einzige Einstieg in jeden persönlichen Ablauf —
+   mass 109x23px, weil hier gar keine Höhe gesetzt war (Item 2.5b). */
+.meta-navigation a, .meta-navigation__auth, .meta-navigation__user { min-height:var(--control-h); }
 .meta-navigation ul { list-style:none; display:flex; align-items:center; }
 .meta-navigation a { display:flex; align-items:center; padding-inline:.75rem; color:var(--color-text); text-decoration:none; }
 .meta-navigation a:hover { color:var(--color-primary-600); text-decoration:none; }
@@ -403,12 +555,15 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 @media (min-width:1024px){ .meta-navigation--desktop { display:flex; margin-bottom:.75rem; } }
 @media (min-width:1280px){ .meta-navigation--desktop { margin-bottom:1rem; } }
 /* Anmeldestatus (AGOV / FedLogin) rechts in der Meta-Navigation. */
-.meta-navigation__auth { display:flex; align-items:center; gap:.35rem;
+.meta-navigation__auth { display:flex; align-items:center; gap:.4rem;
+  min-height:var(--control-h);
   background:none; border:0; font:inherit; color:var(--color-primary-600);
   padding-inline:.75rem; cursor:pointer; }
 .meta-navigation__auth:hover { color:var(--color-primary-800); }
+/* Die Trennlinie übernimmt .separator--vertical im Markup (Item 4.2) — eine
+   nackte Haarlinie am Zeilenanfang liest sich als Tippfehler. */
 .meta-navigation__user { display:flex; align-items:center; gap:.5rem; padding-inline:.75rem;
-  border-left:1px solid var(--color-secondary-300); }
+  min-height:var(--control-h); border-left:0; }
 .meta-navigation__name { display:flex; align-items:center; gap:.35rem; color:var(--color-text-muted); }
 .meta-navigation__name .icon { color:var(--color-primary-600); }
 
@@ -453,14 +608,40 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .search__form { position:absolute; right:0; top:50%; transform:translateY(-50%); display:flex; align-items:stretch;
   width:0; opacity:0; visibility:hidden; pointer-events:none; overflow:hidden;
   transition:width .3s ease, opacity .2s ease, visibility 0s linear .3s; }
-.search--main.open .search__form, .search--main:focus-within .search__form {
+/* KEIN :focus-within — blosses Tabben auf den «Suche»-Schalter hätte sonst das
+   Feld aufgeklappt, während aria-expanded="false" blieb und der Schalter darunter
+   sichtbar stehenblieb: unangeforderter Kontextwechsel (WCAG 3.2.1) plus falsch
+   angesagter Zustand (4.1.2). Genau die Regression, die der JS-Kommentar in
+   shell.js zu beheben beansprucht. CD koppelt den offenen Zustand ebenfalls nur
+   an die Zustandsklasse (search.postcss:113-146). */
+.search--main.open .search__form {
   width:18rem; max-width:60vw; opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
 .search__form input { width:100%; padding:.625rem 3rem .625rem 1rem; border:1px solid var(--color-border-input);
   border-radius:var(--radius-xs); background:#fff; box-shadow:var(--shadow-2xl); min-height:2.75rem; }
 .search__submit { position:absolute; right:0; top:0; bottom:0; width:3rem; background:none; border:0;
   cursor:pointer; color:var(--color-text); display:inline-flex; align-items:center; justify-content:center; }
 .search__submit:hover { color:var(--color-primary-600); }
-@media (max-width:640px){ .search--main.open .search__form { width:70vw; } }
+/* Das offene Feld lag quer über der Bundesmarke: es überlappte das Logo um 64px
+   bei 320, 173px bei 480 und 176px bei 640. CD legt dafür eine eigene, volle
+   Zeile UNTER den Kopf (search.postcss:37-56) und blendet das Logo aus (:99-103).
+   Unser Markenblock ist breiter als CDs (Amt + Produkt + Intranet-Pille), darum
+   gilt das bis lg statt nur bis xs — ein 35vw breites Feld wäre untippbar.
+   Die Klasse .body--search-is-open setzt Item 4.5. */
+@media (max-width:1023.98px){
+  .search--main { position:static; }
+  .search--main.open .search__form {
+    position:absolute; left:0; right:0; top:100%; transform:none;
+    width:auto; max-width:none; margin-top:.5rem;
+    padding-inline:1rem; z-index:var(--header-z); }
+  .top-header { position:relative; }
+  .logo { transition:opacity var(--duration-slow) var(--ease-out); }
+  .body--search-is-open .logo { opacity:0; pointer-events:none; }
+}
+/* CD search.postcss:88-92 — auf dem Handy war die einzige Suchaffordanz eine 24px-Lupe */
+.search__button .icon { width:2.25rem; height:2.25rem; }
+@media (min-width:1024px){ .search__button .icon { width:1.75rem; height:1.75rem; } }
+.search__submit .icon { width:1.5rem; height:1.5rem; }
+.search__submit { color:var(--color-secondary-700); }
 
 /* Main navigation (main-navigation.postcss:11-56) */
 .desktop-menu { background:#fff; border-bottom:1px solid var(--color-border); position:relative; z-index:40; }
@@ -507,8 +688,13 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .main-navigation--desktop > ul > li > .navy__has-children > .icon { display:none; }
 
 /* Desktop drawer (desktop-menu.postcss:9-19 + navy.postcss + menu.postcss) */
+/* Die Ebene-0-Fläche ist ≈730px hoch und öffnet bei y≈252: auf 1440x800 und
+   1366x768 waren die letzten drei Einträge unerreichbar, weil overflow:hidden
+   ohne inneren Scroll galt. CD deckelt ein Flyout gegen den Viewport
+   (top-bar.postcss:101-108, max-h-[60vh]). overflow-x bleibt hidden. */
 .desktop-menu__drawer { position:absolute; left:0; top:100%; width:450px; max-width:calc(100vw - 1.5rem);
   padding:4rem 2rem 2rem; z-index:45; background:#fff; overflow:hidden;
+  max-height:calc(100vh - var(--shell-top, 14rem) - 1.5rem); overflow-y:auto; overscroll-behavior:contain;
   box-shadow:var(--shadow-2xl); opacity:1; animation:navMenuIn .22s ease; }
 @media (min-width:1280px){ .desktop-menu__drawer { width:650px; padding:5rem 3rem 3rem; } }
 @media (min-width:1920px){ .desktop-menu__drawer { width:850px; padding:6rem; } }
@@ -528,7 +714,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .navy { position:relative; }
 /* Zwischenüberschrift für die Unterzweig-Gruppe im Drawer. */
 .navy__group-title { margin:1.25rem 0 .25rem; padding:0 .75rem; font-size:var(--fs-sm);
-  font-weight:var(--fw-bold); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.04em; }
+  font-weight:var(--fw-bold); color:var(--color-text-muted); }
 /* CD navy multi-level (navy.postcss): Ebene 0 = Dienstleistungen + Bereichszweige,
    Ebene 1 = Kinder eines Bereichs. Robuster Display-Wechsel statt Slider-Transform
    (width:200% + flex + translateX rendert je nach Browser Glyphen nicht) — nur die
@@ -551,12 +737,29 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
   color:var(--color-primary-600); cursor:pointer; }
 .navy__back:hover { color:var(--color-primary-800); }
 .navy__level-0 { list-style:none; margin:0; padding:0; }
-.navy__title { margin:0 0 .5rem; padding:0 .75rem; font-size:var(--fs-lg); font-weight:var(--fw-bold);
+.navy__title { display:block; margin:0 0 .5rem; padding:0 .75rem; font-size:var(--fs-lg); font-weight:var(--fw-bold);
   line-height:var(--lh-tight); color:var(--color-secondary-700); cursor:default; }
+/* Zwischenüberschrift einer Drawer-Gruppe (menu.postcss, navy.postcss:75-79) —
+   Item 4.11 ersetzt damit die heutige nackte Zeile ohne Gruppenbezug. */
+.menu__title { display:block; padding:.75rem 0 .25rem; font-size:var(--text-xs);
+  font-weight:var(--fw-bold); color:var(--color-text-muted); }
 /* Navy menu rows use CD's fixed row size (menu.postcss:24 menu__item--small =
    text-sm 3xl:text-base), never the responsive body ramp — otherwise the flyout
    rows balloon at ≥1280px. */
 .navy .menu__item { font-size:var(--fs-sm); }
+/* navy.postcss:9-16 legt die Zeilenpolsterung auf das INTERAKTIVE Element; wir
+   hatten sie auf dem <li>, sodass Anker/Knopf auf Texthöhe blieben: die Zeilen
+   sahen 44px hoch aus, Trefferfläche und Hover-Hervorhebung waren aber nur die
+   ~28px Textzeile (gemessen: 530x28 für alle zehn Zweig-Knöpfe im Desktop-Drawer).
+   Rund 16px jeder Zeile waren totes Feld unter dem Zeiger. */
+.navy .menu__item { padding:0; }
+.navy .menu__item > .menu__item__flex,
+.navy .menu__item > .navy-branch { padding:.75rem 1rem; min-height:2.75rem; box-sizing:border-box; }
+.navy .menu__item--condensed > .menu__item__flex,
+.navy .menu__item--condensed > .navy-branch { padding:.75rem; }
+.navy .menu__item:hover { background:none; }
+.navy .menu__item > .menu__item__flex:hover,
+.navy .menu__item > .navy-branch:hover { background:var(--color-secondary-50); }
 @media (min-width:1920px){ .navy .menu__item { font-size:var(--fs-base); } }
 /* Desktop: the drill-down back button shares the drawer's top row with the close
    button (CD navy.postcss:56 — lg:absolute -top-12 -left-5, mirroring
@@ -597,8 +800,16 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .mobile-menu ul { list-style:none; }
 .mobile-menu .main-navigation { border-bottom:0; }
 .mobile-menu .main-navigation > ul { flex-direction:column; margin-left:0; min-height:0; }
-.mobile-menu .main-navigation li > a,
-.mobile-menu .main-navigation li > button,
+/* `li > a` griff als Nachfahrenselektor (0,2,2) auch in den geöffneten Drawer
+   hinein und stempelte einen ZWEITEN weissen 44px-Block mit eigener Polsterung
+   und eigener Haarlinie INNERHALB der grauen navy-Zeile — gemessene Zeilenhöhe
+   74px statt 46px, optisch eingerückte schwebende Kärtchen mit doppelten Linien.
+   Mit explizitem Kindpfad `> ul > li >` kann die Regel den Drawer nicht mehr
+   erreichen (CD wendet die Zeilenanatomie ebenfalls nur auf die oberste Ebene an,
+   mobile-menu.postcss:150-160). Gehört zwingend mit der Polsterverschiebung
+   unten zusammen, sonst fallen die Drawer-Ziele auf 28px. */
+.mobile-menu .main-navigation > ul > li > a,
+.mobile-menu .main-navigation > ul > li > button,
 .mobile-menu .meta-navigation li > a,
 .mobile-menu .meta-navigation li > button,
 .mobile-menu .top-bar-navigation--mobile li > a {
@@ -606,22 +817,32 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
   padding:.75rem 1rem; position:relative; font:inherit; font-size:var(--fs-sm); text-align:left;
   border:0; border-bottom:1px solid var(--color-secondary-100); cursor:pointer; text-decoration:none;
   transition:background .12s; }
-.mobile-menu .main-navigation li > a,
-.mobile-menu .main-navigation li > button { background:#fff; color:var(--color-text); }
-.mobile-menu .main-navigation li > a::after,
-.mobile-menu .main-navigation li > button::after { display:none; }
-.mobile-menu .main-navigation li > a:hover,
-.mobile-menu .main-navigation li > button:hover { background:var(--color-secondary-50); color:var(--color-text); }
+.mobile-menu .main-navigation > ul > li > a,
+.mobile-menu .main-navigation > ul > li > button { background:#fff; color:var(--color-text); }
+.mobile-menu .main-navigation > ul > li > a::after,
+.mobile-menu .main-navigation > ul > li > button::after { display:none; }
+.mobile-menu .main-navigation > ul > li > a:hover,
+.mobile-menu .main-navigation > ul > li > button:hover { background:var(--color-secondary-50); color:var(--color-text); }
 .mobile-menu .main-navigation .active { font-weight:var(--fw-bold); }
 .mobile-menu .main-navigation .active::before { content:""; position:absolute; left:0; top:0; bottom:0;
   width:3px; background:var(--color-primary-500); }
-.mobile-menu .navy__has-children .icon { display:inline-block; color:currentColor; }
+/* app.css setzte hier display:inline-block ohne Grösse, sodass icon--sm = 12px
+   stehenblieb (CD: 20px, navy.postcss:47-51) und das Chevron beim Aufklappen nie
+   rotierte. CSS-Hälfte von Item 4.6 — gehört in denselben Block wie oben. */
+.mobile-menu .navy__has-children .icon { display:inline-block; width:1.25rem; height:1.25rem;
+  color:var(--color-text-muted); transition:transform .2s; }
+.mobile-menu .navy__has-children[aria-expanded="true"] .icon { transform:rotate(90deg); }
+@media (prefers-reduced-motion: reduce){ .mobile-menu .navy__has-children .icon { transition:none; } }
+.navy__back .icon { width:1.25rem; height:1.25rem; }
 .mobile-menu__drawer { position:static; width:100%; padding:0; background:var(--color-secondary-50); }
 /* Nur den Drawer-Schliessen-Knopf und den Ebene-0-Titel (redundant zum
    Trigger) ausblenden — der Zweigtitel auf Ebene 1 muss sichtbar bleiben. */
 .mobile-menu__drawer .desktop-menu__close,
 .mobile-menu__drawer .navy__pane[data-pane="0"] .navy__title { display:none; }
-.mobile-menu__drawer .menu__item { padding-left:2.25rem; background:var(--color-secondary-50); }
+/* Einzug wandert mit der Polsterung auf das interaktive Element (Item 2.9b). */
+.mobile-menu__drawer .menu__item { padding-left:0; background:var(--color-secondary-50); }
+.mobile-menu__drawer .menu__item > .menu__item__flex,
+.mobile-menu__drawer .menu__item > .navy-branch { padding-left:2.25rem; }
 .mobile-menu .meta-navigation { display:block; }
 .mobile-menu .meta-navigation ul { display:block; }
 .mobile-menu .meta-navigation li > a,
@@ -677,8 +898,8 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
    ist, ohne Modale zu überdecken. */
 #main-footer { position:relative; z-index:60; }
 .footer-information { display:flex; flex-direction:column; color:#fff; padding-block:3.5rem; }
-@media (min-width:1024px){ .footer-information { display:grid; grid-template-columns:repeat(3,1fr); gap:4rem; padding-block:5rem; } }
-@media (min-width:1280px){ .footer-information { grid-template-columns:repeat(4,1fr); } }
+@media (min-width:1024px){ .footer-information { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4rem; padding-block:5rem; } }
+@media (min-width:1280px){ .footer-information { grid-template-columns:repeat(4,minmax(0,1fr)); } }
 @media (min-width:1920px){ .footer-information { padding-block:8rem; } }
 .footer-information__entry { color:#fff; margin-bottom:4rem; }
 .footer-information__entry:last-child { margin-bottom:0; }
@@ -709,9 +930,23 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 
 /* Page chrome */
 #main-content { min-height:50vh; flex:1 0 auto; position:relative; z-index:10; }
-.page-header { padding:.25rem 0 1.5rem; }
+/* Lesbare Zeilenlänge (Item 2.18). CD erzwingt sie strukturell über
+   container__center--*; .page-header und .detail-section sitzen aber nicht im
+   12-Spalten-Raster, darum hier als Kappung. Gemessen bei 1440: Leads 133ch,
+   Fliesstext 148-166ch — rund das Doppelte des Lesbaren. */
+.page-header { padding:.25rem 0 1.5rem; max-width:60rem; }   /* = .hero__content, CD container__center--sm */
 .page-header h1 { margin-bottom:.25rem; }
 .page-header .lead { font-size:var(--text-lg); color:var(--color-text-muted); }
+.page-header .lead, .home-hero .lead, .lead-hint { max-width:70ch; }
+.detail-section > p, .detail-section > .stack > p,
+.anchor-section > p,
+.detail-section > ul:not([class]), .anchor-section > ul:not([class]) { max-width:70ch; }
+/* die zwei Fälle, die der erste Entwurf nicht erfasste */
+.search-result { max-width:70ch; }                    /* search@1440 mass 148ch */
+.notification__content > p,
+.notification__content > ul { max-width:70ch; }       /* die Login-Gates massen 137ch */
+/* Vorgriff auf die zweispaltigen Detailseiten aus Stufe 7 */
+.container__main > p, .container__main > .stack > p, .container__main > ul:not([class]) { max-width:70ch; }
 /* De-emphasised suffix in a case title: «BBL-2026-1042 — <Titel>» (tenant-portal page-header__count) */
 .case-title-sub { font-weight:var(--fw-regular); color:var(--color-text-muted); }
 .page-intro { max-width:70ch; }
@@ -722,6 +957,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 @media (min-width:1920px){ .hero { padding-top:5rem; padding-bottom:8rem; } }
 .hero__content { display:flex; flex-direction:column; gap:1.5rem; max-width:60rem; }
 @media (min-width:1024px){ .hero__content { gap:2rem; } }
+.hero:not(.hero--main-image) .hero__content { max-width:42rem; }  /* CD hero--title-only = 6/12 Spalten */
 .hero__title { font-size:var(--text-4xl); font-weight:var(--fw-bold); line-height:var(--lh-tight);
   overflow-wrap:anywhere; margin:0; }
 .hero__description { font-size:var(--text-lg); line-height:var(--lh-snug); color:var(--color-text-muted); margin:0; }
@@ -732,7 +968,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .hero--main-image .hero__content { max-width:none; }
 .hero--main-image .hero__title { font-size:var(--text-3xl); }
 @media (min-width:768px){
-  .hero--main-image { grid-template-columns:1fr 1fr; gap:2.5rem; align-items:center; }
+  .hero--main-image { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:2.5rem; align-items:center; }
   .hero--main-image .hero__content { justify-content:center; }
 }
 .hero__image { display:block; position:relative; overflow:hidden; width:100%; }
@@ -748,10 +984,16 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 /* ============================== COMPONENTS ============================== */
 
 /* Buttons (btn.postcss:6-186) */
-.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+/* CD zentriert NICHT pauschal (btn.postcss): der Text sitzt links, zentriert wird
+   nur bei btn--icon-only und btn--full-width. Pauschales Zentrieren fiel bei
+   mehrzeiligen Beschriftungen auf den Login-Gates auseinander (Item 2.21). */
+.btn { display:inline-flex; align-items:center; gap:.5rem;
   min-height:2.75rem; padding:.5rem 1rem; border-radius:var(--radius-sm); border:1px solid transparent;
   font:inherit; font-weight:var(--fw-regular); font-size:var(--text-base); cursor:pointer; text-decoration:none;
   transition:background .12s,color .12s,border-color .12s; line-height:1.2; }
+.btn--icon-only, .btn--full-width { justify-content:center; }
+.btn__text          { padding-block:.5rem; text-align:left;   overflow-wrap:anywhere; }
+.btn__text-centered { padding-block:.5rem; text-align:center; width:100%; overflow-wrap:anywhere; }
 .btn:hover { text-decoration:none; }
 .btn--outline { background:transparent; border-color:var(--color-primary-600); color:var(--color-primary-600); }
 .btn--outline:hover { background:transparent; border-color:var(--color-primary-700); color:var(--color-primary-700); }
@@ -863,6 +1105,43 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .card--flat.card--clickable:hover { box-shadow:none; }
 .card--flat.card--clickable:hover::after { border-color:transparent; }
 
+/* Listenkarte (CD card.postcss:331-400) — die Standarddarstellung von
+   newsList.vue:124-137 und searchResults.vue:44-46. Das Bild ist unter md
+   ABSICHTLICH unterdrückt: bei 390px sind ~450px Scrollweg pro Karte, davon
+   219px dekoratives Bild. Adoption: Item 5.10.
+   ZWEI Klauseln von card.postcss:331-400 sind bewusst NICHT portiert und dürfen
+   nicht nachgezogen werden:
+   1. `.card--list .btn { h-0 min-h-0 border-0 }` — home's areaCard und knowledge's
+      newsList legen `<span class="btn btn--link">` in den `.card__footer`; die
+      CD-Regel würde sie auf Höhe 0 kollabieren.
+   2. CDs Raster ab sm (640), während `.card__image` `hidden md:block` (768) ist —
+      zwischen 640 und 767 reserviert das eine leere 1fr-Spur für ein
+      `display:none`-Bild. Hier steht bei BEIDEN 768, deshalb kann der Fall nicht
+      auftreten. */
+.card--list { padding:1rem .25rem; background:transparent; box-shadow:none;
+  border-bottom:1px solid var(--color-secondary-200); }
+.card--list .card__body, .card--list .card__footer { padding:0; }
+.card--list .card__image { display:none; }
+@media (min-width:768px){
+  .card--list { display:grid; grid-template-columns:4fr 1fr; column-gap:1.5rem; }
+  .card--list .card__image { display:block; grid-column:2; grid-row:1; height:0; padding-bottom:80%; }
+  .card--list .card__image img, .card--list .card__image .photo { object-fit:contain; object-position:right top; }
+  .card--list .card__content { grid-column:1; grid-row:1; align-self:start; }
+}
+.card--list.card--clickable:hover { box-shadow:none; }
+.card--list.card--clickable:hover::after { border-color:transparent; }
+
+/* Katalog-Ergebnisraster: unter md dieselbe Dichte wie CDs card--list, ohne das
+   Karten-Markup anzufassen (die `.card`-Klasse bleibt überall stehen). */
+@media (max-width:767.98px){
+  .catalogue-grid { gap:0; }
+  .catalogue-grid .card__image { display:none; }
+  .catalogue-grid .card--default { box-shadow:none;
+    border-bottom:1px solid var(--color-secondary-200); }
+  .catalogue-grid .card__body   { padding:1rem .25rem; }
+  .catalogue-grid .card__footer { padding:0 .25rem 1rem; }
+}
+
 /* Placeholder photography (C.photo) */
 .photo { position:relative; overflow:hidden; }
 .photo > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
@@ -926,9 +1205,31 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .tag-item:focus-visible .tag-item__inner { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 @media (forced-colors: active) { .tag-item--active .tag-item__inner { outline:2px solid CanvasText; outline-offset:-3px; } }
 
+/* ---- Scroll-Regionen ------------------------------------------------------
+   Jeder horizontale Scroll-Host ist (1) POSITIONIERT, damit kein `.sr-only`
+   daraus entkommt und die Seite seitwärts schiebt, (2) fokussierbar mit
+   sichtbarem Ring, und (3) mit einem Scroll-Hinweis versehen, sobald es
+   tatsächlich etwas zu scrollen gibt. `tabindex`/`role`/`.is-scrollable` setzt
+   ausschliesslich C.wireScrollRegions() (Item 3.21) — NIE das Template, sonst
+   entsteht auf breiten Viewports ein toter Tab-Stop. */
+/* (b) Generischer Scroller für Code-/SQL-Flächen (.api-code, .chart__sql pre,
+   .api-try__pre) — ohne Verblassung, die brauchen sie nicht. */
+.scroll-x { overflow-x:auto; position:relative; }
+.scroll-x:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+/* (d) Nur `.sr-only`-Containment, kein Scroller. */
+.tab__controls, .pf-lightbox__thumbs { position:relative; }
+.text-nowrap { white-space:nowrap; }   /* nur Identifikatorspalten, Item 5.7 */
+
 /* Tables (table.postcss:5-135) */
-.table-wrapper { overflow-x:auto; }
+.table-wrapper { position:relative; overflow-x:auto; }
 .table-wrapper:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+/* (c) Scroll-Hinweis (dasselbe CD-Idiom wie .tab__controls-container::after) —
+   bei 390px stehen AKTUALISIERT und STATUS ohne jeden Hinweis ausserhalb. */
+.table-scroll { position:relative; }
+.table-scroll::after { content:""; position:absolute; top:0; right:0; bottom:0; width:2.5rem;
+  pointer-events:none; background:linear-gradient(to left,#fff 0,rgba(255,255,255,0) 100%); display:none; }
+.table-scroll.is-scrollable::after { display:block; }
+@media (min-width:1024px){ .table-scroll::after { content:none; } }
 table.table { width:100%; border-collapse:collapse; background:#fff; box-shadow:var(--shadow-md);
   border:1px solid var(--color-border); }
 table.table caption { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
@@ -941,9 +1242,29 @@ table.table thead th { background:var(--color-secondary-50); text-align:left; pa
 table.table td, table.table tbody th { padding:1rem 1.5rem; border-bottom:1px solid var(--color-border-strong);
   vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
 table.table tbody th { text-align:left; font-weight:var(--fw-bold); color:var(--color-gray-800); }
-table.table tbody tr:hover { background:var(--color-secondary-50); }
+/* `tbody th` ist fett — in den Listenansichten steckt darin aber Titel UND
+   Teasertext, sodass jede Beschreibung fett gerendert wurde (Item 2.12). */
+table.table tbody th .small,
+table.table tbody th .meta-info,
+table.table tbody th p { font-weight:var(--fw-regular); }
 table.table tbody tr:last-child td, table.table tbody tr:last-child th { border-bottom:0; }
-table.table--zebra tbody tr:nth-child(even) { background:var(--color-secondary-50); }
+/* Reihenfolge ist hier die Korrektur: Zebra und Hover hatten dieselbe Spezifität
+   (0,2,3), Zebra stand zuletzt und gewann — auf den GERADEN Zeilen war Hover
+   wirkungslos. Hover kommt jetzt nach der Zebra-Regel und nutzt die nächste
+   Stufe, damit der Unterschied auch auf getönten Zeilen sichtbar ist. */
+table.table--zebra tbody tr:nth-child(even),
+table.table--zebra tfoot tr:nth-child(even) { background:var(--color-secondary-50); }
+table.table tbody tr:hover,
+table.table--zebra tbody tr:hover { background:var(--color-secondary-100); }
+@media (hover:none){ table.table tbody tr:hover { background:inherit; } }
+/* Dichte + Umbruch auf schmalen Viewports (Item 2.11) */
+@media (max-width:767.98px){
+  .table-wrapper table.table thead th,
+  .table-wrapper table.table td,
+  .table-wrapper table.table tbody th { padding:.5rem .75rem; font-size:var(--text-sm); }
+  .table-wrapper table.table thead th { white-space:normal; }
+  table.table td:first-child a, table.table tbody th a { white-space:nowrap; }
+}
 .table--compact { border:0; box-shadow:none; }
 .table--compact thead th, .table--compact td, .table--compact tbody th { padding:.5rem; font-size:var(--text-sm); }
 
@@ -959,10 +1280,45 @@ table.table--zebra tbody tr:nth-child(even) { background:var(--color-secondary-5
 .form__group__input > label, .form__group__select > label, .form__group__legend {
   display:block; font-weight:var(--fw-regular); font-size:var(--text-base); color:var(--color-text); }
 
-input, select, textarea { font:inherit; width:100%; min-height:2.75rem; padding:.625rem 1rem; line-height:1;
+/* ---- Formular-Ebene für Stage 3 (Items 3.5, 3.12, 3.13, 3.14) -------------- */
+/* (a) Aktionsreihe. `.row` bricht in DOM-Reihenfolge um, also landet «Abbrechen»
+   bei 390px ÜBER «Absenden». `column-reverse` hält die Primäraktion im DOM
+   zuletzt (Tab-Reihenfolge Feld→…→Absenden) und zeigt sie auf Mobile ZUERST und
+   vollbreit — wie CDs eigene Formularaktion (newsletter.postcss:35-39,
+   btn.postcss:193-195). */
+.form__actions { display:flex; flex-direction:column-reverse; gap:.75rem; margin-top:1.5rem; }
+.form__actions .btn { width:100%; justify-content:center; }
+.form__actions .btn .btn__text { text-align:center; }
+@media (min-width:480px){
+  .form__actions { flex-direction:row; justify-content:flex-end; align-items:center; }
+  .form__actions .btn { width:auto; }
+  .form__actions--between { justify-content:space-between; }
+}
+/* (b) Fehlerübersicht. `.notification a` (unten) liefert currentColor +
+   Unterstreichung, also trägt das unter beiden Skins. */
+.error-summary__title { font-size:var(--text-lg); font-weight:var(--fw-bold); margin:0 0 .5rem; }
+.error-summary__list  { margin:0; padding-left:1.25rem; }
+/* (c) Feldhinweis ≠ Validierungsmeldung. CDs Input.vue:24-30 nutzt die Badge NUR
+   für `message`; ein Hinweis ist Prosa und steht VOR dem Control. */
+.form__group__hint { margin:0 0 .35rem; font-size:var(--text-sm); color:var(--color-text-muted); }
+/* (d) Meldungsgrösse. `.badge--sm` startet bei 10px (CD badge.postcss:76) — das
+   ist die kleinste Schrift der App und trägt die folgenreichste Microcopy. Nur
+   dort anheben, wo die Badge Prosa ist; die globale Badge-Skala und die
+   dekorativen Zählmarken (Katalog-Formatchips, .api-rail__n) bleiben unberührt. */
+.form__group__input > .badge--sm,
+.form__group__select > .badge--sm { font-size:var(--text-sm); line-height:1.35rem; padding:.219em .75em; }
+/* (e) Fieldset-Gruppierung (Item 3.14) — vollständig gestaltet, bisher ohne
+   Konsumenten. */
+.form > .form__group > * + * { margin-top:1.5rem; }
+.form__group__legend { font-size:var(--text-lg); font-weight:var(--fw-bold); }
+
+/* EINE Steuerhöhen-Rampe im ganzen Produkt (Item 2.5e). Vorher liefen zwei:
+   hier 2.75rem mit einer Stufe bei 2xl/1544, und --control-h mit CDs Stufen bei
+   xl/1280 und 3xl/1920 (btn.postcss:112-116) — auf demselben Bildschirm wären
+   die Steuerhöhen an unterschiedlichen Breakpoints gesprungen. */
+input, select, textarea { font:inherit; width:100%; min-height:var(--control-h); padding:.625rem 1rem; line-height:1;
   border:1px solid var(--color-border-input); border-radius:var(--radius-xs); background:#fff;
   color:var(--color-text); box-shadow:var(--shadow); }
-@media (min-width:1544px){ input, select, textarea { min-height:3rem; } }
 input::placeholder, textarea::placeholder { color:var(--color-placeholder); }
 textarea { min-height:6rem; resize:vertical; line-height:1.5rem; }
 .textarea--no-resize, textarea.input--no-resize { resize:none; }
@@ -1029,8 +1385,11 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 @media (min-width:1024px){ .notification { padding:1.5rem; } }
 @media (min-width:1544px){ .notification { padding:2rem; } }
 .notification__icon { flex:none; width:2.5rem; height:2.5rem; }
-.notification__content { min-width:0; }
+.notification__content { min-width:0; margin-block:.625rem; }
+@media (min-width:1280px){ .notification__content { margin-block:.5rem; } }
 .notification__content > p { margin:0; overflow-wrap:anywhere; }
+.notification__content > p + p { margin-top:.25rem; }
+.notification__title { margin:0; font-weight:var(--fw-bold); }
 .notification--info    { background:var(--color-info-bg-subtle);    color:var(--color-info-text-subtle); }
 .notification--success { background:var(--color-success-bg-subtle); color:var(--color-success-text); }
 .notification--warning { background:var(--color-warning-bg-subtle); color:var(--color-warning-text); }
@@ -1050,15 +1409,40 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .notification__close:hover { opacity:.7; }
 
 /* Step indicator (step-indicator.postcss:5-23) */
-.steps { display:flex; gap:1rem; list-style:none; margin:0 0 2rem; flex-wrap:wrap; padding:0; }
+/* row-gap kleiner als column-gap: bei 320/390 bricht die Leiste um, und die
+   engere Zeilenlücke lässt den Umbruch als absichtliche Reihe lesen. */
+.steps { display:flex; gap:1rem; row-gap:.75rem; list-style:none; margin:0 0 2rem; flex-wrap:wrap; padding:0; }
 .steps li { display:flex; align-items:center; gap:.5rem; font-size:var(--text-sm); color:var(--color-text-muted); }
 .steps li[aria-current="step"] { color:var(--color-text); font-weight:var(--fw-bold); }
-.step__indicator-step { display:inline-flex; align-items:center; justify-content:center;
+/* CD skopiert jede Step-Regel unter `.step__indicator` (step-indicator.postcss:5-24,
+   StepIndicator.vue:2-9); unser Markup lässt diesen Wrapper heute weg. Deshalb
+   UNION beider Formen: das heutige `<ol class="steps"><li><span …>` UND CDs
+   Wrapper, den Item 3.10 nachliefert. Item 7.8 löscht danach die `.steps > li >`-
+   Hälfte — CD-verbatim, ohne kaputten Zwischenzustand. Item 2.3 nutzt dieselbe
+   Union-Form. */
+/* Kontrast (Item 2.3): die CD-Vorlage selbst ist hier nicht AA-konform
+   (step-indicator.postcss:6-24 nutzt gray-400) — bewusste Abweichung nach
+   BehiG/P028, aber innerhalb von CDs Token-Vokabular. Gemessene Verhältnisse:
+     alt  #9ca3af auf Weiss und Weiss auf #9ca3af  = 2.54:1  (Soll 4.5:1)
+     alt  Weiss auf --color-success #10b981        = 2.54:1  (Soll 3:1)
+     neu  --color-text-600 auf Weiss               = 7.56:1
+     neu  Rahmen --color-secondary-400             = 5.65:1 rot / 4.58:1 intranet
+     neu  Weiss auf --color-primary-600            = 5.01:1 rot / 5.17:1 intranet
+     neu  Weiss auf --color-success-text #065f46   = 7.68:1
+   «Aktuell» ist jetzt primary-600 wie .pipeline__step--active — EINE
+   Du-bist-hier-Farbe im Produkt; vorher war der aktuelle Schritt schwächer als
+   die erledigten. Der primary-100-Ring trägt den Zustand zusätzlich zur Farbe
+   (WCAG 1.4.1). */
+.steps > li > .step__indicator-step,
+.step__indicator .step__indicator-step { display:inline-flex; align-items:center; justify-content:center;
   width:36px; height:36px; flex:none; border-radius:var(--radius-full);
-  background:transparent; color:var(--color-gray-400); border:2px solid var(--color-gray-400);
+  background:transparent; color:var(--color-text-600); border:2px solid var(--color-secondary-400);
   font-size:var(--text-sm); font-weight:var(--fw-regular); }
-.step__indicator-step--active { background:var(--color-gray-400); color:#fff; border:0; }
-.step__indicator-step--confirmed { background:var(--color-success); color:#fff; border:0; }
+.steps > li > .step__indicator-step--active,
+.step__indicator .step__indicator-step--active { background:var(--color-primary-600); color:#fff; border:0;
+  box-shadow:0 0 0 3px var(--color-primary-100); }
+.steps > li > .step__indicator-step--confirmed,
+.step__indicator .step__indicator-step--confirmed { background:var(--color-success-text); color:#fff; border:0; }
 
 /* Status pipeline / timeline (portal extension — no CD counterpart) */
 .timeline { list-style:none; border-left:2px solid var(--color-border); margin-left:.5rem; }
@@ -1072,7 +1456,27 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 /* Status-Stepper (C.pipeline) — Chevron-Segmente via clip-path, damit die Pfeile
    ohne z-index-Tricks ineinandergreifen. Erledigt = grün, aktuell = Primärfarbe,
    offen = grau. Auf schmalen Viewports horizontal scrollbar. */
-.pipeline { display:flex; list-style:none; margin:0; padding:0; overflow-x:auto; }
+/* `position:relative` ist hier der P0-Fix, nicht Kosmetik: ohne einen
+   positionierten Vorfahren lösen die `<span class="sr-only">`-Marker in den
+   Schritten ihren umgebenden Block bis `#main-content{position:relative}` auf —
+   absolut positionierte Nachkommen werden NICHT vom overflow eines
+   unpositionierten Vorfahren beschnitten. Einer landete bei x=338 und trieb
+   documentElement.scrollWidth in einem 320px-Viewport auf 339, d. h. die ganze
+   case-detail-Seite scrollte seitwärts (WCAG 1.4.10). Live gemessen: 339 → 320. */
+.pipeline { position:relative; display:flex; list-style:none; margin:0; padding:0; overflow-x:auto; }
+/* Selbstumschaltend: `.pipeline` behält seinen Scroller, BIS Item 3.20 den
+   Wrapper liefert — sonst gäbe es zwei Stages lang weder Scroller noch Wrapper
+   und `.container{overflow-x:clip}` würde die späteren Segmente unerreichbar
+   amputieren. Danach übernimmt der Wrapper (Spezifität 0,2,0 > 0,1,0). */
+.pipeline-wrap > .pipeline { overflow-x:visible; }
+.pipeline-wrap { position:relative; overflow-x:auto; }
+.pipeline-wrap:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+.pipeline-wrap::after { content:""; position:absolute; top:0; right:0; bottom:0; width:2rem;
+  pointer-events:none; background:linear-gradient(to left,#fff,rgba(255,255,255,0)); display:none; }
+/* `.is-scrollable` setzt C.wireScrollRegions() (Item 3.21) — die Verblassung
+   erscheint nie über einer Leiste, die passt. */
+.pipeline-wrap.is-scrollable::after { display:block; }
+@media (min-width:768px){ .pipeline-wrap::after { display:none; } }
 .pipeline__step {
   --arrow:.7rem;
   flex:1 0 auto; display:flex; align-items:center; justify-content:center; gap:.4rem;
@@ -1116,7 +1520,7 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 /* Key/value rows — the detail-page pattern of the Datenkatalog. A definition
    list would need one grid per pair; these rows stack and wrap on their own. */
 .data-rows { display:flex; flex-direction:column; }
-.data-row { display:grid; grid-template-columns:1fr; gap:.15rem;
+.data-row { display:grid; grid-template-columns:minmax(0,1fr); gap:.15rem;
   padding:.6rem 0; border-bottom:1px solid var(--color-secondary-200); font-size:var(--text-sm); }
 .data-row:last-child { border-bottom:0; }
 .data-row__key { color:var(--color-text-muted); }
@@ -1190,8 +1594,10 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
   border-bottom:1px solid var(--color-secondary-200); text-decoration:none; color:inherit; }
 .download-item:hover { text-decoration:none; }
 .box .download-item { border-bottom-color:var(--color-secondary-300); }
-.download-item__icon { flex:none; margin-right:.5rem; width:1.75rem; height:1.75rem; color:var(--color-primary-600); }
-@media (min-width:768px){ .download-item__icon { width:2rem; height:2rem; } }
+.download-item__icon { flex:none; width:1.75rem; height:1.75rem;
+  margin:-.25rem 0 -.25rem -.25rem; padding-right:.25rem; color:var(--color-primary-600); }
+@media (min-width:768px){ .download-item__icon { width:2rem; height:2rem; padding-right:.5rem; } }
+@media (min-width:1024px){ .download-item__icon { width:2.25rem; height:2.25rem; } }
 .download-item > div { min-width:0; }
 .download-item__title { margin:0; font-size:var(--text-base); font-weight:var(--fw-bold);
   overflow-wrap:anywhere; transition:color .2s; }
@@ -1221,21 +1627,36 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
    Viewport-Rand in der Gasse zu kleben). Angedockt sitzt die obere rechte Ecke des
    Knopfs `--btt-margin` innerhalb der oberen rechten Ecke der Fussinformationen. */
 @media screen and (prefers-reduced-motion: no-preference){ html { scroll-behavior:smooth; } }
-.back-to-top-rail { position:absolute; left:0; right:0; height:1000vh; pointer-events:none; z-index:2;
+/* Das angedockte weisse Kästchen im Footer ist CD-Verhalten und BLEIBT:
+   back-to-top-btn.postcss:11-13 setzt bottom:-3.5rem (−4rem lg, −5rem xl) =
+   genau eine Knopfhöhe Überstand in das folgende Band, auf einem bg-white-Knopf.
+   Zwei echte Symptome bleiben: die Schiene war 1000vh hoch und damit ab dem
+   Seitenanfang sichtbar (auf portfolio/dash-immobilien landete der Knopf auf dem
+   MapLibre-Zoomcluster), und sie richtete sich am Inhaltscontainer statt am
+   Viewport-Rand aus, sodass er bei 1440 auf dem «Öffnen» der dritten Karte lag.
+   200vh ist die CSS-Näherung an CDs top-[80vh]. */
+.back-to-top-rail { position:absolute; left:0; right:0; height:200vh; pointer-events:none; z-index:2;
   /* Dock: Knopf-Unterkante = (Rand + Knopfhöhe) unterhalb der Footer-Oberkante,
      also Knopf-Oberkante = Rand darunter. */
   bottom:calc(100% - (1rem + 2.75rem)); }
+.back-to-top-track { padding-inline-end:.75rem; }
+@media (min-width:1280px){ .back-to-top-track { padding-inline-end:1rem; } }
+.maplibregl-ctrl-bottom-right { padding-bottom:3.5rem; }  /* MapLibres eigenes Cluster freischieben */
 @media (min-width:1024px){ .back-to-top-rail { bottom:calc(100% - (1rem + 3rem)); } }
 @media (min-width:1280px){ .back-to-top-rail { bottom:calc(100% - (1rem + 4rem)); } }
 .back-to-top-track { height:100%; display:flex; flex-direction:column;
   justify-content:flex-end; align-items:flex-end; pointer-events:none; }
-.back-to-top-btn { position:sticky; bottom:1.5rem; pointer-events:all; margin-inline-end:1rem;
+.back-to-top-btn { position:sticky; bottom:1.5rem; pointer-events:all; margin-inline-end:0;
   width:2.75rem; height:2.75rem; flex:none;
   display:inline-flex; align-items:center; justify-content:center;
   border-radius:var(--radius-sm); box-shadow:var(--shadow-lg); background:#fff;
   transition:box-shadow .15s, border-color .15s; }
 @media (min-width:1024px){ .back-to-top-btn { width:3rem; height:3rem; } }
-@media (min-width:1280px){ .back-to-top-btn { width:4rem; height:4rem; } }
+/* CDs xl:w-16 setzt eine Platzierung im Seitengraben voraus, die erst ab 1920 gilt. */
+@media (min-width:1280px){ .back-to-top-btn { width:3rem; height:3rem; } }
+@media (hover:none), (max-width:767.98px){
+  .back-to-top-btn { bottom:1rem; margin-inline-end:.75rem; }
+}
 .back-to-top-btn:hover { box-shadow:var(--shadow-xl); }
 .back-to-top-btn--outline { border:1px solid var(--color-primary-600); }
 .back-to-top-btn--outline:hover { border-color:var(--color-primary-700); }
@@ -1252,7 +1673,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .subnav a.active { border-left-color:var(--color-primary-600); font-weight:var(--fw-bold); background:var(--color-secondary-50); }
 
 /* In-page search controls */
-.service-controls { display:grid; grid-template-columns:minmax(18rem, 30rem) 1fr; gap:1rem 1.5rem; align-items:end; }
+.service-controls { display:grid; grid-template-columns:minmax(18rem, 30rem) minmax(0,1fr); gap:1rem 1.5rem; align-items:end; }
 /* Suchfeld mit Lupe INNERHALB des Rahmens (links); die native Löschen-X sitzt
    rechts im Feld. Das Formular sendet weiterhin per Enter bzw. Klick auf die Lupe. */
 .service-controls__search { position:relative; }
@@ -1262,8 +1683,8 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .service-controls__submit:hover { color:var(--color-primary-600); background:none; }
 .service-controls__filters { display:grid; grid-template-columns:minmax(12rem, 1fr) minmax(12rem, 1fr); gap:1rem 1.5rem; align-items:end; }
 @media (max-width:1279.98px){
-  .service-controls { grid-template-columns:1fr; }
-  .service-controls__filters { grid-template-columns:1fr 1fr; }
+  .service-controls { grid-template-columns:minmax(0,1fr); }
+  .service-controls__filters { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
 }
 
 /* Ergebniskopf (search.postcss:208-234): Trefferzahl links, Steuerung rechts,
@@ -1282,11 +1703,14 @@ body.docviewer-open .back-to-top-rail { display:none; }
   min-width:2.75rem; min-height:2.75rem; padding:0; background:none; border:0; border-radius:0;
   color:var(--color-secondary-500); cursor:pointer; transition:color .2s, background .2s; }
 .view-switch__btn:hover { color:var(--color-primary-700); }
-/* Zustand nicht allein über Farbe (WCAG 1.4.1, P2-10) */
-.view-switch__btn[aria-pressed="true"] { color:var(--color-text); background:var(--color-secondary-100); }
+/* Zustand nicht allein über Farbe (WCAG 1.4.1, P2-10) — die Fläche allein war
+   genau das; forced-colors entfernt sie ersatzlos. Der Unterstrich trägt den
+   Zustand jetzt als Form (Item 2.6). */
+.view-switch__btn[aria-pressed="true"] { color:var(--color-text); background:var(--color-secondary-100);
+  box-shadow:inset 0 -3px 0 var(--color-primary-600); }
 .view-switch__btn:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 @media (max-width:640px){
-  .service-controls__filters { grid-template-columns:1fr; }
+  .service-controls__filters { grid-template-columns:minmax(0,1fr); }
 }
 
 /* ===================== Suche (search.postcss «SEARCH RESULTS PAGE») ===================== */
@@ -1294,7 +1718,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .search--large .search__group { display:flex; align-items:stretch; position:relative; height:4rem; max-width:52rem; }
 .search__field { flex:1 1 auto; min-width:0; width:100%; padding:.75rem 1rem; border:1px solid var(--color-border);
   background:#fff; font-size:var(--text-xl); font-weight:var(--fw-bold); outline:none; }
-.search__field::placeholder { color:var(--color-secondary-300); font-weight:var(--fw-regular); }
+/* war --color-secondary-300 #828e9a auf Weiss = 3.34:1 (Soll 4.5:1) auf dem
+   prominentesten Eingabefeld des Produkts; --color-placeholder = 5.65:1. */
+.search__field::placeholder { color:var(--color-placeholder); font-weight:var(--fw-regular); }
 .search--large .search__submit { position:absolute; top:0; right:0; bottom:0; z-index:2; }
 .search--page-result { padding-top:1rem; }
 @media (min-width:1544px){ .search--page-result { padding-top:2rem; } }
@@ -1320,7 +1746,11 @@ body.docviewer-open .back-to-top-rail { display:none; }
 
 /* Map placeholder + schematic portfolio map */
 .map { width:100%; height:420px; border:1px solid var(--color-border); }
-.pf-map { position:relative; height:440px; overflow:hidden; background:var(--color-secondary-50); }
+/* Feste Kartenhöhen ignorierten den Viewport: 440px/34rem/30rem galten auch auf
+   einem 844px hohen Handybildschirm. clamp() skaliert mit, behält aber die
+   Desktop-Höhe (Item 2.27). ACHTUNG: .pf-map ist zweimal deklariert — hier die
+   Basis, die zweite bei ~2127 ergänzt nur noch Radius. */
+.pf-map { position:relative; height:clamp(18rem, 70vw, 34rem); overflow:hidden; background:var(--color-secondary-50); }
 .pf-map__hint { position:absolute; left:.85rem; bottom:.6rem; }
 .pf-marker { position:absolute; width:1.25rem; height:1.25rem; border-radius:50%; border:2px solid var(--color-secondary-800);
   box-shadow:var(--shadow); transform:translate(-50%,-50%); transition:transform .12s; background:var(--color-secondary-400); }
@@ -1349,15 +1779,16 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .dash-hero__unit { font-size:var(--text-lg); font-weight:var(--fw-regular); color:var(--color-text-muted); margin-left:.5rem; }
 .dash-hero__delta { font-size:var(--text-sm); color:var(--color-text-muted); margin-top:.35rem; }
 .dash-hero__delta.is-good { color:var(--color-success-text); }
+.dash-hero__delta.is-bad { color:var(--color-error-text); }   /* beide Grossziffern-Komponenten im Gleichschritt */
 
-.dash-grid { display:grid; grid-template-columns:1fr; gap:1.5rem; position:relative; }
+.dash-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1.5rem; position:relative; }
 @media (min-width:1280px){ .dash-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:2rem; } }
 
 /* Dashboard-Layout (Datenportal, Superset-Muster): linkes Filterpanel + Hauptbereich */
 /* Superset-Rahmung: die ganze Dashboard-Fläche ist eine graue Leinwand, die
    weisse Karten (Filter, KPIs, Charts) rahmt. align-items:stretch → das Filter-
    panel füllt die volle Zeilenhöhe (voll-hohe Leiste im Desktop). */
-.dashboard-layout { display:grid; grid-template-columns:1fr; gap:1rem; margin-top:1.25rem; align-items:stretch; }
+.dashboard-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; margin-top:1.25rem; align-items:stretch; }
 @media (min-width:1024px){ .dashboard-layout { grid-template-columns:16rem minmax(0,1fr); gap:1.25rem; } }
 .dashboard-main { min-width:0; }
 /* Filterpanel — links, weisse Leiste (voll-hoch via Grid-Stretch), einklappbar */
@@ -1365,11 +1796,30 @@ body.docviewer-open .back-to-top-rail { display:none; }
   border-radius:var(--radius-lg); padding:1.25rem; }
 .filter-panel__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:1rem; }
 .filter-panel__title { font-size:var(--fs-lg); font-weight:var(--fw-bold); margin:0; }
-.filter-panel__toggle { display:none; align-items:center; justify-content:center; min-width:2.25rem; min-height:2.25rem;
+/* Der Umschalter war unter 1024 `display:none` und die Einklapp-Regeln standen
+   INNERHALB derselben ≥1024-Abfrage — die Affordanz existierte also genau dort,
+   wo sie nicht gebraucht wird. Gemessen bei 390: .filter-panel 358×946 in einem
+   844 px hohen Viewport, d. h. mehr als ein Bildschirm Checkboxen vor der ersten
+   Kennzahl. CDs Facettenfilter ist auf jeder Breite ein standardmässig
+   geschlossenes Panel (search.postcss:249-265) — dasselbe Muster, das dieses
+   Repo bei den Katalogseiten (.catbar__panel) schon verwendet. */
+.filter-panel__toggle { display:inline-flex; align-items:center; justify-content:center;
+  min-width:var(--control-h); min-height:var(--control-h);
   color:var(--color-text-muted); }
-@media (min-width:1024px){ .filter-panel__toggle { display:inline-flex; } }
 .filter-panel__toggle:hover { color:var(--color-primary-600); }
 .filter-panel__toggle .icon { transition:transform .2s; }
+/* Unter lg: eigene Klasse .filter-panel--collapsed. Die bestehende
+   .dashboard-layout--collapsed-Desktopmechanik bleibt unangetastet, damit die
+   filterFullHeight-Zusicherung in test-dashboard.mjs grün bleibt. */
+@media (max-width:1023.98px){
+  .filter-panel { padding:.75rem 1rem; }
+  .filter-panel__toggle { width:100%; justify-content:space-between; }
+  .filter-panel--collapsed .filter-panel__body { display:none; }
+  .filter-panel--collapsed .filter-panel__head { margin-bottom:0; }
+  /* offen: auf Tablets in Spalten statt in die Höhe */
+  .filter-panel__body { display:grid; grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));
+    gap:0 1.5rem; }
+}
 @media (min-width:1024px){
   .dashboard-layout--collapsed { grid-template-columns:3.75rem minmax(0,1fr); }
   .dashboard-layout--collapsed .filter-panel { padding:.75rem .5rem; }
@@ -1380,28 +1830,73 @@ body.docviewer-open .back-to-top-rail { display:none; }
 }
 /* KPI-Reihe (Big-Number-Kacheln) über dem Chart-Grid */
 .kpi-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-bottom:1.5rem; }
+@media (max-width:479.98px){ .kpi-row { grid-template-columns:minmax(0,1fr); } }
 @media (min-width:768px){ .kpi-row { grid-template-columns:repeat(4,minmax(0,1fr)); } }
 .kpi { background:#fff; border:1px solid var(--color-secondary-100); border-radius:var(--radius-lg);
   padding:1rem 1.1rem; box-shadow:var(--shadow-sm); }
-.kpi__label { font-size:var(--fs-sm); color:var(--color-text-muted); }
-.kpi__value { font-size:var(--fs-3xl); line-height:1.15; font-weight:var(--fw-bold); color:var(--color-text);
+/* Lange Kennzahlnamen liefen aus der Kachel; Einheit brach allein um (Item 2.16). */
+.kpi__label { font-size:var(--text-sm); color:var(--color-text-muted);
+  overflow-wrap:anywhere; hyphens:auto; }
+.kpi__value { display:flex; flex-wrap:wrap; align-items:baseline; gap:.3rem;
+  font-size:var(--fs-3xl); line-height:1.15; font-weight:var(--fw-bold); color:var(--color-text);
   margin-top:.2rem; overflow-wrap:anywhere; }
-.kpi__unit { font-size:var(--fs-base); font-weight:var(--fw-regular); color:var(--color-text-muted); margin-left:.3rem; }
+.kpi__unit { font-size:var(--fs-base); font-weight:var(--fw-regular); color:var(--color-text-muted); margin-left:0; }
 .kpi__delta { font-size:var(--fs-xs); color:var(--color-text-muted); margin-top:.3rem; }
 .kpi__delta.is-good { color:var(--color-success-text); }
+/* Gegenstück zu .is-good — fehlte, sodass eine Verschlechterung im neutralen Grau
+   erschien. Richtung darf nicht allein über Farbe laufen (WCAG 1.4.1): Item 6.11
+   ergänzt zusätzlich ein Pfeilglyph und ein sr-only-Wort. */
+.kpi__delta.is-bad { color:var(--color-error-text); }
+.kpi__arrow { margin-right:.25rem; font-size:.8em; }
 /* Karte im Dashboard (MapLibre) — spannt beide Grid-Spalten */
 .chart--map { grid-column:1 / -1; }
-.dash-map { width:100%; height:30rem; border-radius:var(--radius); overflow:hidden; background:var(--color-secondary-100); }
-.dash-map .maplibregl-popup-content { padding:.75rem .9rem; border-radius:var(--radius-lg); }
+/* MapLibre wird verzögert vom CDN geladen (12-s-Timeout, buildings-map.js:16) und
+   schreibt den Container nur im Fehlerfall — ohne Platzhalter steht bis dahin ein
+   leeres graues Rechteck ohne Eintrag im Accessibility-Baum (Item 6.14). */
+.dash-map { width:100%; height:clamp(15rem, 60vw, 30rem); border-radius:var(--radius); overflow:hidden; background:var(--color-secondary-100); }
+/* Nur zentrieren, SOLANGE der Platzhalter da ist — MapLibre bekommt den Container
+   danach unverändert als normalen Block zurück (`place-items` auf dem fertigen
+   Kartencontainer wäre ein Eingriff in fremdes Layout). Ohne :has()-Unterstützung
+   steht der Platzhalter oben links: rein kosmetisch, kein Funktionsverlust. */
+.dash-map:has(> .dash-map__loading) { display:grid; place-items:center; }
+.dash-map__loading { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+/* Popups auf .pf-map bekamen bisher MapLibre-Defaults — an die Dashboard-Popups
+   angleichen (Item 2.5d). */
+.dash-map .maplibregl-popup-content, .pf-map .maplibregl-popup-content {
+  padding:.75rem .9rem; border-radius:var(--radius-lg);
+  border:1px solid var(--color-secondary-100); box-shadow:var(--shadow-lg); font-size:var(--text-sm); }
+/* MapLibre liefert seine Bedienknöpfe ungestylt mit 29x29 aus — auf CDs Rampe
+   holen (in diag.json auf dash-immobilien, portfolio und projects bei JEDER Breite). */
+.dash-map .maplibregl-ctrl-group button,
+.pf-map  .maplibregl-ctrl-group button { width:2.75rem; height:2.75rem; }
+@media (min-width:1024px){ .dash-map .maplibregl-ctrl-group button,
+  .pf-map .maplibregl-ctrl-group button { width:3rem; height:3rem; } }
+.dash-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon,
+.pf-map  .maplibregl-ctrl-group button .maplibregl-ctrl-icon { background-size:60%; }
+.dash-map .maplibregl-ctrl-attrib-button,
+.pf-map  .maplibregl-ctrl-attrib-button { width:1.75rem; height:1.75rem; }
+.dash-map .maplibregl-ctrl-group, .pf-map .maplibregl-ctrl-group {
+  border-radius:var(--radius-lg); box-shadow:var(--shadow-md); }
+.dash-map .maplibregl-ctrl-group button:focus-visible,
+.pf-map  .maplibregl-ctrl-group button:focus-visible {
+  outline:2px solid var(--color-focus-ring); outline-offset:1px; }
 /* HTML-Marker der Gebäude (Kreisgrösse ∝ √Geschossfläche) */
-.map-marker { display:block; padding:0; border:2px solid #fff; border-radius:var(--radius-full);
+.map-marker { display:block; position:relative; padding:0; border:2px solid #fff; border-radius:var(--radius-full);
   background:rgba(37,99,235,.72); box-shadow:0 0 0 1px rgba(0,0,0,.12); cursor:pointer; transition:background .12s; }
+/* Trefferfläche auf 44px bringen, ohne die gezeichnete Marke zu vergrössern —
+   die Kreisgrösse trägt Information (∝ √Geschossfläche). */
+.map-marker::before { content:""; position:absolute; inset:calc((2.75rem - 100%) / -2); }
 .map-marker:hover, .map-marker:focus-visible { background:rgba(37,99,235,.95); outline:2px solid var(--color-primary-700); outline-offset:1px; }
 
 .chart { padding:1.25rem; margin:0; }
 @media (min-width:1024px){ .chart { padding:1.5rem; } }
-.chart__head { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
-.chart__title { font-size:var(--text-base); font-weight:var(--fw-bold); margin:0; }
+/* Bei 320 lief der Diagrammkopf aus der Karte und schob den Kebab — den einzigen
+   Weg zu Export und Vollbild — aus dem Bild (Item 2.17). */
+.chart__head { display:flex; align-items:flex-start; justify-content:space-between;
+  gap:.5rem 1rem; flex-wrap:wrap; }
+.chart__title { min-width:0; flex:1 1 12rem; overflow-wrap:anywhere;
+  font-size:var(--text-base); font-weight:var(--fw-bold); margin:0; }
+@media (max-width:479.98px){ .chart__actions { min-height:2.75rem; } }
 .chart__unit { font-size:var(--text-xs); color:var(--color-text-muted); white-space:nowrap; }
 .chart__legend { display:flex; flex-wrap:wrap; gap:1rem; margin-top:.6rem; font-size:var(--text-sm); color:var(--color-text-muted); }
 .chart__legend-item { display:inline-flex; align-items:center; gap:.4rem; }
@@ -1413,6 +1908,13 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .chart__note { font-size:var(--text-sm); color:var(--color-text-muted); margin:.75rem 0 0; }
 .chart__table, .chart__sql { margin-top:.75rem; font-size:var(--text-sm); }
 .chart__table summary, .chart__sql summary { cursor:pointer; color:var(--color-primary-600); }
+/* Die Datentabelle wird zur echten Aufklapp-Alternative (Item 6.2) — bisher war
+   sie dauerhaft `hidden` und diente nur dem CSV-Export, d. h. kein Diagramm hatte
+   eine erreichbare Textalternative (WCAG 1.1.1). */
+.chart__table > summary { min-height:2.75rem; display:flex; align-items:center; gap:.5rem;
+  cursor:pointer; font-size:var(--text-sm); color:var(--color-primary-700); }
+.chart__table[open] > summary { font-weight:var(--fw-bold); }
+.chart__table > summary:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 .chart__sql pre { margin:.5rem 0 0; padding:.75rem; overflow-x:auto;
   background:var(--color-secondary-50); font-size:var(--text-xs); line-height:1.5; }
 .chart__tooltip { position:absolute; z-index:5; transform:translate(-50%,-100%); pointer-events:none;
@@ -1435,12 +1937,22 @@ body.docviewer-open .back-to-top-rail { display:none; }
 /* Multi-select-Filter (Checkbox-Gruppen) im Filterpanel */
 .filter-group { border:0; margin:0 0 1.25rem; padding:0; }
 .filter-group__legend { font-size:var(--fs-sm); font-weight:var(--fw-bold); color:var(--color-text); margin:0 0 .35rem; padding:0; }
-.filter-check { display:flex; align-items:center; gap:.5rem; padding:.18rem 0; font-size:var(--fs-sm); color:var(--color-text); cursor:pointer; }
-.filter-check input { flex:none; width:1rem; height:1rem; margin:0; accent-color:var(--color-primary-600); }
-.filter-check:hover { color:var(--color-primary-700); }
+/* Höchste Tippdichte im Produkt und zugleich die kleinste Trefferfläche: 16x16-Box
+   in .18rem Polsterung ≈ 22-27px, 8-20 Zeilen tief. Ein Fehlgriff schaltet die
+   Nachbarfacette und stellt das ganze Dashboard still neu zusammen. Das negative
+   Aussenmass hält die Textkante an der Legende, während die Trefferfläche in die
+   Panel-Polsterung hineinwächst. Desktop-Dichte bleibt erhalten (Item 2.5c).
+   accent-color entfällt: unter appearance:none ist es wirkungslos (S3-066). */
+.filter-check { display:flex; align-items:center; gap:.625rem; min-height:2.75rem;
+  padding:.35rem .25rem; margin:0 -.25rem; font-size:var(--text-sm);
+  color:var(--color-text); cursor:pointer; border-radius:var(--radius-xs); }
+.filter-check input { flex:none; width:1.15rem; height:1.15rem; margin:0; }
+.filter-check:hover { color:var(--color-primary-700); background:var(--color-secondary-100); }
+@media (min-width:1024px){ .filter-check { min-height:2.25rem; } }   /* Maus: dichter erlaubt */
+@media (min-width:1544px){ .filter-check { min-height:2.5rem; } }
 .filter-check--more { display:none; }
 .filter-group--expanded .filter-check--more { display:flex; }
-.filter-group__more { margin-top:.4rem; padding:.15rem 0; background:none; border:0; color:var(--color-primary-700); font-size:var(--fs-sm); font-weight:var(--fw-bold); cursor:pointer; }
+.filter-group__more { margin-top:.4rem; min-height:2.75rem; padding:.5rem 0; background:none; border:0; color:var(--color-primary-700); font-size:var(--fs-sm); font-weight:var(--fw-bold); cursor:pointer; text-align:left; }
 .filter-group__more:hover { text-decoration:underline; }
 
 /* ── API-Dokumentation (Mock Swagger · js/apps/api-docs.js) ────────────── */
@@ -1452,18 +1964,29 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .api-meta__k { font-weight:var(--fw-bold); color:var(--color-text); display:inline-flex; align-items:center; gap:.35rem; }
 .api-meta code { font-family:Consolas,Menlo,monospace; }
 
-.api-layout { display:grid; grid-template-columns:190px 1fr; gap:1.75rem; align-items:start; }
-.api-rail { position:sticky; top:1rem; display:flex; flex-direction:column; gap:.1rem; }
-.api-rail__title { font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.04em; color:var(--color-text-muted); font-weight:var(--fw-bold); margin:0 0 .4rem .75rem; }
+/* Die Grid-Kinder behielten min-width:auto, sodass die unteilbaren Monospace-Pfade
+   die 1fr-Spur auf ~475px auflösten — in einer 358px-Spalte wurden 101px stumm
+   gelöscht (WCAG 1.4.10). CD entschärft das auf jeder generierten Spur mit
+   minmax(0,1fr) (grids.postcss:70,93,119); app.css:140 tut es für .container--grid
+   bereits, .api-layout war schlicht übersehen. */
+.api-layout { display:grid; grid-template-columns:190px minmax(0,1fr); gap:1.75rem; align-items:start; }
+.api-layout > * { min-width:0; }
+.api-ep__path, .api-try__req code, #api-base { min-width:0; overflow-wrap:anywhere; }
+.api-rail { position:sticky; top:1rem; display:flex; flex-direction:column; gap:.1rem; min-width:0; }
+.api-rail__item { min-width:0; }
+.api-rail__title { font-size:var(--fs-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin:0 0 .4rem .75rem; }
 .api-rail__item { display:flex; justify-content:space-between; align-items:center; gap:.5rem; padding:.4rem .75rem; border-radius:var(--radius-sm); color:var(--color-text); text-decoration:none; font-size:var(--fs-sm); border-left:2px solid transparent; }
 .api-rail__item:hover { background:var(--color-secondary-50); }
 .api-rail__item.is-active { background:var(--color-primary-50); border-left-color:var(--color-primary-600); font-weight:var(--fw-bold); color:var(--color-primary-700); }
 .api-rail__n { font-size:var(--fs-xs); color:var(--color-text-muted); background:var(--color-secondary-100); border-radius:var(--radius-full); padding:0 .4rem; }
 .api-rail__item.is-active .api-rail__n { background:#fff; }
 
-.api-resource { margin-bottom:2rem; scroll-margin-top:1rem; }
-.api-resource__title { margin:0 0 .2rem; font-size:var(--text-lg); }
-.api-resource__desc { margin:0 0 .75rem; font-size:var(--fs-sm); max-width:70ch; }
+/* H2 rendert gegen eine 40px-H1 bei 20px — CDs .h3-Stufe schliesst die Lücke,
+   und der Abschnittstext folgt der responsiven Rampe statt eingefroren 4px unter
+   der Seite zu bleiben (Item 2.22). */
+.api-resource { margin-bottom:2.5rem; scroll-margin-top:1rem; }
+.api-resource__title { margin:0 0 .35rem; font-size:var(--text-xl); }
+.api-resource__desc { margin:0 0 .75rem; font-size:var(--text-sm); max-width:70ch; }
 .api-endpoints { display:flex; flex-direction:column; gap:.5rem; }
 
 .api-ep { border:1px solid var(--color-border); border-radius:var(--radius-lg); overflow:hidden; background:#fff; }
@@ -1483,7 +2006,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .api-method--delete { background:#b91c1c; }
 
 .api-block { margin-top:.9rem; }
-.api-block__label { font-size:var(--fs-xs); text-transform:uppercase; letter-spacing:.03em; color:var(--color-text-muted); font-weight:var(--fw-bold); margin-bottom:.35rem; }
+.api-block__label { font-size:var(--fs-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin-bottom:.35rem; }
 .api-params { width:100%; border-collapse:collapse; font-size:var(--fs-sm); }
 .api-params td { padding:.32rem .6rem .32rem 0; border-bottom:1px solid var(--color-border); vertical-align:top; }
 .api-params code { font-family:Consolas,Menlo,monospace; }
@@ -1502,10 +2025,16 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .api-try__status { margin-bottom:.4rem; }
 .api-try__pre { max-height:22rem; overflow:auto; }
 
-@media (max-width:820px) {
-  .api-layout { grid-template-columns:1fr; }
+/* CD-lg statt der Sonderbreite 820 (Item 1.3 räumt die Leiter auf). */
+@media (max-width:1023.98px) {
+  .api-layout { grid-template-columns:minmax(0,1fr); }
   .api-rail { position:static; flex-direction:row; flex-wrap:wrap; margin-bottom:1rem; }
   .api-rail__title { width:100%; margin-left:0; }
+}
+@media (max-width:479.98px) {
+  /* Methode + Pfad und Zusammenfassung untereinander statt in einer Zeile */
+  .api-ep__head { flex-wrap:wrap; row-gap:.25rem; }
+  .api-ep__summary { flex:1 0 100%; }
 }
 
 /* ── Kompakte Katalogleiste (catbar) — geteilt: Portfolio, Dienstleistungen,
@@ -1524,8 +2053,16 @@ body.docviewer-open .back-to-top-rail { display:none; }
 /* Steuerungscluster rechts (bare Controls, CD-Muster): Sortierung · Filter · │ ·
    Ansichtswechsel. Alle Controls gleich hoch (2.75rem = CD-Touch-Target); die EINE
    Trennlinie ist der View-Switch-Strich zwischen Filter und Ansichtswechsel. */
-.catbar__controls { display:flex; align-items:center; gap:.25rem; margin-left:auto; }
-.catbar__sort { position:relative; }
+/* Die Gruppe hatte kein flex-wrap und kein min-width:0, sodass bares Sort-Select
+   + nowrap-Filter + Ansichtswechsel eine unteilbare 402-520px-Zeile bildeten.
+   .container{overflow-x:clip} (CDs eigene Regel, container.postcss:8) hat den
+   Überhang dann ohne Scrollbalken abgeschnitten — bei 320 lagen BEIDE
+   Ansichtsknöpfe ausserhalb, bei 390 der zweite (WCAG 1.4.10 + 2.1.1).
+   CDs Pendant ist ausdrücklich umbrechend (search.postcss:208-211). */
+.catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem .25rem;
+  margin-left:auto; min-width:0; max-width:100%; row-gap:.5rem; }
+.catbar__sort { position:relative; min-width:0; max-width:100%; }
+.catbar__sort select { max-width:100%; text-overflow:ellipsis; }
 /* CD-Padding (px-4) links; rechts Platz für das Chevron. Kein text-align:right —
    sonst kleben die kürzeren Optionen (Status/Land) rechtsbündig ohne Rand. */
 .catbar__sort select { min-height:2.75rem; padding-left:1rem; padding-right:1.75rem; font-size:var(--text-sm); color:var(--color-text); }
@@ -1535,21 +2072,45 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .catbar__chev { width:1em; height:1em; margin-left:.1rem; transition:transform .2s; }
 .catbar__filter[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
 .catbar .view-switch__btn { min-height:2.75rem; }
-.catbar__panel { display:flex; flex-wrap:wrap; gap:1.25rem 2rem; align-items:flex-start;
-  padding:1rem 1.25rem; margin:.75rem 0 0; background:var(--color-secondary-50);
+/* Die getönte, gerundete Karte ist eine bewusste Entscheidung und BLEIBT —
+   umgestellt wird nur die umbrechende Flex-Zeile, die bei 1440 rund 60% des
+   Panels leer liess und «Zurücksetzen» wie eine dritte Facetten-Überschrift
+   aussehen liess (Item 2.13). */
+.catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:.75rem 2rem;
+  align-items:start; padding:1rem 1.25rem; margin:.75rem 0 0; background:var(--color-secondary-50);
   border:1px solid var(--color-border); border-radius:var(--radius-lg); }
+@media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem 2rem; } }
+@media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 .catbar__panel .filter-group { margin:0; }
-/* Filter-Dropdowns der Katalogseiten (C.select) im Panel: nebeneinander, feste
-   Breite statt vollbreit gestapelt. */
-.catbar__panel .form__group__select { flex:0 1 16rem; min-width:12rem; margin:0; }
-@media (max-width:700px){
-  .catbar__controls { margin-left:0; }
+.catbar__panel__actions { grid-column:1 / -1; display:flex; justify-content:flex-end;
+  padding-top:.75rem; border-top:1px solid var(--color-secondary-200); }
+/* Filter-Dropdowns der Katalogseiten (C.select) im Panel. */
+.catbar__panel .form__group__select { min-width:0; margin:0; }
+/* CD-md (767.98) statt der Sonderbreite 700 — live gegengeprüft bei 320/390 auf
+   katalog, portfolio, services und projects: alle Ansichtsknöpfe wieder im
+   Viewport, die Leiste wächst um genau eine Zeile. */
+@media (max-width:767.98px){
+  .catbar__count    { flex:1 1 100%; }
+  .catbar__controls { flex:1 1 100%; margin-left:0; justify-content:space-between; }
+  .catbar__sort     { flex:1 1 8rem; }
+  .catbar__sort select { width:100%; }
+  .catbar__controls .view-switch { margin-left:auto; }   /* bleibt rechts, wie am Desktop */
+}
+@media (max-width:479.98px){
+  /* der Trennstrich wirkt am Zeilenanfang falsch, wenn der Schalter allein umbricht */
+  .catbar__controls .view-switch { border-left:0; padding-left:0; }
 }
 
 /* ── Liegenschaften Inventar — map-first explorer (js/apps/portfolio.js) ── */
 
-.pf-layout { display:grid; grid-template-columns:288px 1fr; gap:1.25rem; align-items:start; margin-top:1rem; }
-.pf-sidebar { position:sticky; top:1rem; max-height:calc(100vh - 7rem); overflow:auto; background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:.5rem; }
+/* Mobile-first: unter lg steht der Baum ÜBER der Karte statt in einer 288px-Spalte,
+   die auf dem Handy die Karte auf Briefmarkengrösse quetscht (Item 2.15). */
+.pf-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; align-items:start; margin-top:1rem; }
+.pf-sidebar { position:static; max-height:22rem; overflow:auto; background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:.5rem; }
+@media (min-width:1024px){
+  .pf-layout  { grid-template-columns:minmax(15rem,18rem) minmax(0,1fr); }
+  .pf-sidebar { position:sticky; top:1rem; max-height:calc(100vh - 7rem); }
+}
 .pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.35rem .5rem .5rem; }
 .pf-sidebar__title { font-size:var(--text-lg); margin:0; }
 
@@ -1564,6 +2125,13 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .pf-tree__node[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
 .pf-tree__ico { flex:none; color:var(--color-text-muted); }
 .pf-tree__leaf > .pf-tree__ico { margin-left:1.4rem; }   /* align the leaf icon under the parent icon (past the chevron column) */
+/* Touch/ohne Zeigegerät: 44px garantieren, Desktop-Dichte behalten (Item 2.5d). */
+@media (max-width:1023.98px), (hover:none){
+  .pf-tree__node, .pf-tree__leaf { min-height:2.75rem; padding-block:.6rem; }
+  .docviewer__btn  { width:2.75rem; height:2.75rem; }
+  .docviewer__zoom { min-width:2.75rem; height:2.75rem; }
+  .docviewer__zoom--reset { min-width:4rem; }
+}
 .pf-tree__node.is-active .pf-tree__ico, .pf-tree__leaf.is-active .pf-tree__ico { color:var(--color-primary-600); }
 .pf-tree__id { flex:none; font-family:Consolas,Menlo,monospace; font-size:var(--fs-xs); color:var(--color-text-muted); }
 .pf-tree__node.is-active .pf-tree__id, .pf-tree__leaf.is-active .pf-tree__id { color:var(--color-primary-700); }
@@ -1572,7 +2140,10 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .pf-tree__node.is-active .pf-tree__n { color:var(--color-primary-700); }
 
 .pf-main { min-width:0; }
-.pf-map { height:34rem; border-radius:var(--radius-lg); overflow:hidden; }
+/* zweite .pf-map-Deklaration: behält nur noch, was sie wirklich ergänzt — die
+   Höhe steht in der Basisregel oben (sonst überschriebe eine tote 34rem-Zeile
+   das clamp()). */
+.pf-map { border-radius:var(--radius-lg); }
 .pf-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr)); gap:1rem; align-items:start; }
 .pf-card { display:flex; flex-direction:column; overflow:hidden; }
 .pf-card__vis { position:relative; aspect-ratio:16/10; overflow:hidden; background:var(--color-secondary-100); }
@@ -1584,7 +2155,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .pf-typ { display:inline-flex; color:var(--color-text-muted); }
 
 @media (max-width:800px) {
-  .pf-layout { grid-template-columns:1fr; }
+  .pf-layout { grid-template-columns:minmax(0,1fr); }
   .pf-sidebar { position:static; max-height:22rem; }
 }
 
@@ -1593,23 +2164,30 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Navigations-Flyout-Komponente (menu.postcss) und dürfen nicht überschrieben
    werden (sonst kippt das Drawer-Menü von Spalte auf Zeile). */
 .action-menu { position:relative; display:inline-flex; }
-.action-menu__trigger { display:inline-flex; align-items:center; justify-content:center; min-width:2rem; min-height:2rem;
+/* Auf den Dashboards ist dieser Kebab der EINZIGE Weg zu Export und Vollbild
+   eines Diagramms und mass 32x32 bzw. 40x40 (28 Treffer in smallTargets). Die
+   verkleinernde .dash-header-Überschreibung entfällt; nur Rahmen/Fläche bleiben. */
+.action-menu__trigger { display:inline-flex; align-items:center; justify-content:center;
+  min-width:var(--control-h); min-height:var(--control-h);
   padding:.25rem; border:0; border-radius:var(--radius-sm); background:none; color:var(--color-text-muted); cursor:pointer; }
 .action-menu__trigger:hover { background:var(--color-secondary-100); color:var(--color-text); }
-.dash-header .action-menu__trigger { border:1px solid var(--color-secondary-200); background:#fff; min-width:2.5rem; min-height:2.5rem; }
+.dash-header .action-menu__trigger { border:1px solid var(--color-secondary-200); background:#fff; }
 .dash-header .action-menu__trigger:hover { background:var(--color-secondary-50); }
 .action-menu__popup { position:absolute; top:calc(100% + .35rem); min-width:13rem; z-index:40;
   background:#fff; border:1px solid var(--color-secondary-200); border-radius:var(--radius-lg);
   box-shadow:var(--shadow-lg); padding:.35rem; }
+/* min-width:13rem sitzt auf .action-menu__popup: bei 320 öffnete das Menü teils
+   ausserhalb des Bildschirms. Gegen den Viewport klemmen (Item 2.29). */
+.action-menu__popup { max-width:calc(100vw - 1.5rem); }
+@media (max-width:479.98px){ .action-menu__popup { min-width:0; width:max-content; } }
 .action-menu__popup--end { right:0; }
 .action-menu__popup--start { left:0; }
-.action-menu__item { display:flex; align-items:center; gap:.6rem; width:100%; padding:.5rem .65rem; border:0;
+.action-menu__item { display:flex; align-items:center; gap:.6rem; width:100%; min-height:2.75rem; padding:.5rem .65rem; border:0;
   border-radius:var(--radius-sm); background:none; text-align:left; cursor:pointer; color:var(--color-text);
   font-size:var(--text-sm); font-family:inherit; }
 .action-menu__item:hover, .action-menu__item:focus-visible { background:var(--color-secondary-50); }
 .action-menu__icon { width:1.05rem; height:1.05rem; color:var(--color-text-muted); flex:none; }
-.action-menu__heading { padding:.45rem .65rem .2rem; font-size:var(--text-xs); font-weight:var(--fw-bold);
-  text-transform:uppercase; letter-spacing:.04em; color:var(--color-text-muted); }
+.action-menu__heading { padding:.45rem .65rem .2rem; font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--color-text-muted); }
 .action-menu__sep { height:1px; background:var(--color-secondary-100); margin:.35rem .25rem; }
 
 /* ---- Toast (kurze Statusmeldung für erledigte/simulierte Aktionen) ------- */
@@ -1618,7 +2196,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
   box-shadow:var(--shadow-lg); font-size:var(--text-sm); max-width:calc(100vw - 2rem); text-align:center;
   opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; }
 .toast--in { opacity:1; transform:translate(-50%,0); }
-@media (prefers-reduced-motion: reduce) { .toast { transition:opacity .01s; } }
+@media (prefers-reduced-motion: reduce) { .toast { transition:opacity .01s; } .icon--spin { animation:none; } }
 
 /* ---- Chart-Vollbild (Overlay) -------------------------------------------- */
 body.chart-overlay-open { overflow:hidden; }
@@ -1639,6 +2217,12 @@ body.chart-overlay-open { overflow:hidden; }
   padding:1.25rem 1.5rem; border-bottom:1px solid var(--color-secondary-100); }
 .modal__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); }
 .modal__body { padding:1.5rem; }
+/* Item 6.12 baut das Chart-Vollbild auf die .modal-Ebene um; ohne diese Regel
+   würde das Diagramm dort als gerahmte Schattenkarte erscheinen. Übernimmt die
+   Deklarationen von .chart-overlay__box .chart (unten), damit kein Zwischenstand
+   schlechter aussieht als heute. */
+.modal__body .chart { padding:0; box-shadow:none; border:0; }
+.modal--xl .modal__body { overflow:visible; }   /* Endpunkt-Label des Liniencharts nicht abschneiden */
 .modal__footer { display:flex; align-items:center; justify-content:flex-end; gap:.5rem;
   padding:1rem 1.5rem; border-top:1px solid var(--color-secondary-100); }
 .modal__close { flex:none; display:inline-flex; align-items:center; justify-content:center;
@@ -1719,11 +2303,21 @@ body.chart-overlay-open { overflow:hidden; }
 /* Klickbare Pillen erreichen ~2rem (näher an WCAG 2.5.8) statt ~24-30px. */
 .badge--clickable, button.active-filter, a.active-filter { min-height:2rem; }
 /* Hover-Akzente nur auf echten Zeigern — auf Touch bleibt die Farbe sonst „kleben“. */
+/* Auf Touch bleibt :hover nach dem Antippen kleben, bis anderswo getippt wird —
+   der Guard deckte bisher nur Farbwechsel ab, nicht Transforms und Schatten
+   (Item 2.25). */
 @media (hover:none){
   .accordion__button:hover { color:inherit; }
   .tab__control:hover:not(.tab__control--active) { color:inherit; }
   .tab__control:hover:not(.tab__control--active)::after { background:transparent; }
   .card--clickable:hover .card__title { color:inherit; }
+  .card--clickable:hover { box-shadow:var(--shadow-lg); }
+  .card--clickable:hover::after { border-color:transparent; }
+  .card--clickable:hover .photo > img { transform:none; }
+  .pf-marker:hover { transform:translate(-50%,-50%); }
+  .pf-media:hover  { transform:none; }
+  .quick-tile:hover { box-shadow:var(--shadow-lg); border-left-color:transparent; }
+  .back-to-top-btn:hover { box-shadow:var(--shadow-lg); }
 }
 /* Seltene Eingabetypen (CD-Parität) */
 input[type="color"] { height:3rem; padding:.25rem; }
@@ -1734,8 +2328,9 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .separator--vertical { display:inline-block; align-self:stretch; width:0; border-right:1px solid var(--color-secondary-400); margin-inline:1rem; }
 .separator--xl { display:block; height:1rem; }
 .separator--negative { border-color:var(--color-secondary-300); }
-/* Rechtsbündige Abschnitts-CTA (.section__action) + gestapelte Link-Liste (.link--block) */
-.section__action { display:flex; justify-content:flex-end; padding-top:1rem; }
+/* Gestapelte Link-Liste (.link--block). `.section__action` stand hier
+   byte-identisch ein zweites Mal — die eine Definition lebt jetzt unten im
+   Startseiten-Block (Item 1.12). */
 .link--block { display:block; }
 .link--block + .link--block { margin-top:.75rem; }
 /* Trefferzahl bricht auf Mobile auf eine eigene Zeile (CD search-results__header) */
@@ -1757,7 +2352,20 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* CD-Abschnittskopf und -aktion (section.postcss:55,89 · ServicesSection.vue):
    Titel oben, «Alle …»-Verweis unten rechts. */
 .section__title { font-weight:var(--fw-bold); font-size:var(--text-2xl); margin:0 0 2.5rem; }
-.section__action { display:flex; justify-content:flex-end; padding-top:1rem; }
+/* CD section.postcss:89-97 gibt der Abschnitts-CTA `relative; top-6 lg:top-8
+   3xl:top-12` — die Aktion wird in die untere Polsterung des Bandes hineingezogen.
+   Ohne das stehen (gemessen auf home-1440) 50px vor und 97px nach dem Verweis. */
+.section__action { display:flex; justify-content:flex-end; padding-top:1rem;
+  position:relative; top:1.5rem; }
+@media (min-width:1024px){ .section__action { top:2rem; } }
+@media (min-width:1920px){ .section__action { top:3rem; } }
+
+/* CD section.postcss:80-87 — der kanonische Weg, eine Section in zwei benannte
+   Kartengruppen zu teilen (heute erledigt das ein `mt-8`). */
+.section__subtitle { font-weight:var(--fw-bold); font-size:var(--text-lg); margin:0 0 2.5rem; }
+.grid + .section__subtitle { padding-top:3rem; }
+@media (min-width:1024px){ .grid + .section__subtitle { padding-top:4rem; } }
+@media (min-width:1920px){ .grid + .section__subtitle { padding-top:5rem; } }
 
 /* Hero mit Suche links, Gebäudebild rechts (CD hero--main-image). Suchen ist
    im Intranet der häufigste Einstieg, deshalb der erste Block. */
@@ -1768,7 +2376,8 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .home-hero__figure { margin:0; }
 .home-hero__figure img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover;
   background:var(--color-secondary-50); }
-.home-hero__figure figcaption { margin-top:.5rem; font-size:var(--text-sm); color:var(--color-text-muted); }
+/* Bildlegende: `figcaption` erbt jetzt global von `.legend` (Item 1.6) — die
+   bespoke Regel hier war einer von vier verschiedenen Legendenstilen. */
 .home-search { display:flex; gap:.5rem; align-items:stretch; max-width:40rem; }
 .home-search input { flex:1 1 auto; min-width:0; min-height:3.25rem; font-size:var(--text-base); }
 @media (max-width:640px){ .home-search { flex-direction:column; } }
@@ -1816,10 +2425,12 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   .kv dt { margin-top:.6rem; }
   .kv dt:first-of-type { margin-top:0; }
 }
-@media (max-width:640px){ .kv { grid-template-columns:1fr; gap:.1rem 0; } .kv dt { margin-top:.5rem; } }
+@media (max-width:640px){ .kv { grid-template-columns:minmax(0,1fr); gap:.1rem 0; } .kv dt { margin-top:.5rem; } }
 .empty { text-align:center; color:var(--color-text-muted); padding:3rem 1rem; }
 .empty__title { margin:0; font-size:var(--fs-lg); color:var(--color-text); }
 .empty__hint { margin:.5rem auto 0; max-width:44ch; font-size:var(--fs-sm); }
+/* Ausweg aus dem Leerzustand (Item 5.10): «Filter zurücksetzen» / «Alle ansehen». */
+.empty__actions { display:flex; justify-content:center; gap:.75rem; margin-top:1.25rem; flex-wrap:wrap; }
 /* «Nicht verfügbar» (Ladefehler) — vom neutralen Leer-Zustand abgesetzt (P0-4). */
 .empty--unavailable { display:flex; align-items:center; justify-content:center; gap:.5rem;
   padding:2rem 1rem; color:var(--color-error-text); background:var(--color-error-bg);
@@ -1911,18 +2522,23 @@ body.docviewer-open { overflow:hidden; }
 .docpage__org { font-size:var(--text-xs); color:var(--color-text-muted); line-height:var(--lh-snug); }
 .docpage__title { font-size:var(--text-2xl); font-weight:var(--fw-bold); margin:0 0 1rem; }
 .docpage__subtitle { font-size:var(--text-lg); margin:0 0 1rem; color:var(--color-text-muted); }
-.docpage__metagrid { display:grid; grid-template-columns:1fr 1fr; gap:.25rem 1.5rem; margin:0 0 1.5rem;
+.docpage__metagrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:.25rem 1.5rem; margin:0 0 1.5rem;
   padding:1rem; background:var(--color-secondary-50); }
 .docpage__metagrid div { display:flex; flex-direction:column; }
 .docpage__metagrid dt { font-size:var(--text-xs); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.04em; }
 .docpage__metagrid dd { margin:0; font-size:var(--text-sm); font-weight:var(--fw-bold); }
-.docpage__p { margin:0 0 1rem; font-size:var(--text-sm); line-height:var(--lh-relaxed); text-align:justify; }
+/* Blocksatz ohne Silbentrennung erzeugt bei schmalen Spalten «Flüsse» aus
+   Leerraum. Mit hyphens:auto bleibt der Blocksatz sauber; ohne Unterstützung
+   fällt der Absatz auf Flattersatz zurück (Item 2.26). */
+.docpage__p { margin:0 0 1rem; font-size:var(--text-sm); line-height:var(--lh-relaxed);
+  text-align:justify; hyphens:auto; word-spacing:normal; }
+@supports not (hyphens: auto) { .docpage__p { text-align:left; } }
 .docpage--plan { padding:clamp(16px,3%,32px); justify-content:center; }
 .docpage__plan { display:block; width:100%; height:auto; }
 .docpage__plan .plan-sheet { fill:var(--color-secondary-50); stroke:var(--color-secondary-200); stroke-width:1; }
 .docpage__plan .plan-wall { fill:none; stroke:var(--color-secondary-700); stroke-width:3; stroke-linecap:square; }
 .docpage__plan .plan-room { fill:#f7f9fb; stroke:var(--color-secondary-300); stroke-width:1; }
-.docpage__plan .plan-label { fill:var(--color-text-muted); font-size:11px; font-weight:var(--fw-bold); text-anchor:middle; }
+.docpage__plan .plan-label { fill:var(--color-text-muted); font-size:var(--fs-xs); font-weight:var(--fw-bold); text-anchor:middle; }
 .docpage__plan .plan-north line { stroke:var(--color-text-muted); stroke-width:1.5; }
 .docpage__plan .plan-titleblock { fill:#fff; stroke:var(--color-secondary-700); stroke-width:1.5; }
 .docpage__plan .plan-title { fill:var(--color-text); font-size:13px; font-weight:var(--fw-bold); }
@@ -1947,3 +2563,17 @@ body.docviewer-open { overflow:hidden; }
   padding:0; font:inherit; color:var(--color-primary-600); cursor:pointer; text-align:left; }
 .doc-open:hover { color:var(--color-primary-800); text-decoration:underline; }
 .doc-open .icon { flex:none; }
+
+/* Dokumentvorschau auf dem Handy (Item 2.26): die Metadaten-Zweispaltigkeit
+   klemmte bei 40ch, der Blocksatz erzeugte Flüsse, und die fixierten Pfeile
+   lagen mitten auf der Seite statt am unteren Rand. */
+@media (max-width:639.98px){
+  .docviewer__stage  { padding:1.5rem .5rem; }
+  .docpage__metagrid { grid-template-columns:minmax(0,1fr); }
+  .docpage__p        { text-align:left; }
+  .docviewer__nav    { position:sticky; top:auto; bottom:1rem; transform:none; }
+  .docviewer__nav--prev { left:.5rem; }
+  .docviewer__nav--next { right:.5rem; }
+  .docviewer__title  { white-space:normal; overflow:visible; text-overflow:clip;
+                       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+}
