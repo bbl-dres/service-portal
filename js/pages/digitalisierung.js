@@ -56,7 +56,7 @@ function uebersicht(ctx) {
         lead: 'Die Digitalisierung hat für das BBL einen hohen Stellenwert: Sie vereinfacht den Austausch mit den Verwaltungseinheiten, macht Prozesse durchgängig und verbessert die Datengrundlage für Bauten, Immobilien und Logistik.',
       }),
     })}
-    ${C.pageSection({ title: 'Themen', alt: true, body: `<div class="grid grid--items-5">${CARDS.map(C.domainTile).join('')}</div>` })}
+    ${C.pageSection({ title: 'Themen', alt: true, body: `<div class="grid grid--responsive-cols-3">${CARDS.map(C.domainTile).join('')}</div>` })}
     ${C.pageSection({ title: 'Über uns', body: prose(`
       <p>Die Digitalisierung wird im BBL bereichsübergreifend gesteuert: Die Fachbereiche verantworten ihre Prozesse und Daten, die Informatik BBL die Plattformen und den Betrieb. Für die digitale Weiterentwicklung des Immobilienmanagements koordiniert die Organisationseinheit Digital Real Estate und Support (DRES) Strategie und Umsetzung. Für die bundesweiten Vorhaben arbeitet das BBL mit der Bundeskanzlei (Bereich DTI), dem BIT und der Digitalen Verwaltung Schweiz zusammen.</p>`) })}
     ${C.pageSection({ title: 'Weitere Informationen', alt: true, body: prose(`

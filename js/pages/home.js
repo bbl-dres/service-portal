@@ -11,14 +11,11 @@ import { INTRANET_AREAS } from '../intranet-areas.js';
 
 const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 
-// Wichtige Dienstleistungs-Themen mit eigenem Einstieg auf der Startseite —
-// bewusst eine Auswahl, nicht alle Menüpunkte (Nutzerwunsch). `key` = domain.
-const HOME_THEMEN = [
-  { key: 'A', label: 'Bauprojekte und Projektportfolio', photo: '1541888946425-d81bb19240f5', color: '#2f4356',
-    desc: 'Bauprojekte melden und verfolgen, Bauwerksdokumentation und Immobilienportfolio einsehen.' },
-  { key: 'U', label: 'Unterbringung', photo: '1497366216548-37526070297c', color: '#46596b',
-    desc: 'Unterbringungsbedarf anmelden und Flächen bzw. Arbeitsplätze zuweisen.' },
-];
+// Die Themenkacheln (Bauprojekte · Unterbringung · Objektbetrieb · Sicherheit)
+// standen hier als eigener Startseiten-Block. Sie sind entfallen: die Themen
+// erschliesst der Dienstleistungs-Drawer (router.js, `childrenFrom: 'themen'`)
+// und die Katalogseite #/services?topic=… — die Startseite trägt dafür die
+// Aufgaben, nicht die Gliederung.
 
 export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs } = ctx;
@@ -79,38 +76,33 @@ export default async function render(ctx) {
   });
 
   // 2 · Häufig gebrauchte Dienstleistungen
-  const popular = services.filter(s => s.popular);
+  // `popular` ist ein RANG (1 = erste Kachel), keine Fahne. Das Raster ist
+  // gleichmässig — die Gewichtung trägt also allein die Leserichtung, und die
+  // gehört in die Daten, nicht in die Dateireihenfolge von services.json.
+  // Auswahl nach der echten Kundenplattform (Fusszeilen-Kurzwahl: E-Shop,
+  // Reklamationsmeldung, Vorlagen, Störungsmeldungen) — also nach Häufigkeit,
+  // nicht nach redaktioneller Prominenz.
+  const popular = services.filter(s => s.popular).sort((a, b) => a.popular - b.popular);
   if (popular.length) blocks.push({
     title: 'Häufig gebraucht',
-    body: `<div class="grid grid--items-5">${popular.map(serviceTile).join('')}</div>`,
+    body: `<div class="grid grid--responsive-cols-3">${popular.map(serviceTile).join('')}</div>`,
     more: { href: '#/services', label: 'Alle Dienstleistungen ansehen' },
   });
 
   // 3 · Bestellen und weitere Angebote — Einstiegsgalerie: zuerst wichtige
   //     Dienstleistungs-Themen (intern), dann die Aufgabenbereiche im
   //     BBL-Intranet (extern). Bewusst eine Auswahl, nicht jeder Menüpunkt.
-  const themaCard = (t) => C.card({
-    title: t.label, desc: t.desc, href: `#/services?topic=${encodeURIComponent(t.key)}`,
-    photo: { id: t.photo, color: t.color, alt: '' },
-    footerInfo: 'Dienstleistungen', footerAction: C.cardAction(),
-  });
   const areaCard = (a) => C.card({
     title: a.label, desc: a.desc, href: a.overview, external: true,
     photo: { id: a.photo, alt: '' },
     footerInfo: 'BBL-Intranet', footerAction: C.cardAction({ external: true }),
   });
-  // Zwei Blöcke statt eines mit sieben Karten. Die Sieben war das Symptom: hier
-  // standen 2 portalinterne Themen und 5 Links, die den Prototyp in einem neuen
-  // Tab verlassen, in EINEM Raster — in grid--3 ergab das 3+3+1 mit einer
-  // verwaisten Karte. Das Aufteilen balanciert beide Raster (2+2, dann CDs
-  // grid--items-5) UND sagt vorher, wohin ein Link führt (Item 7.3).
+  // Die fünf Aufgabenbereiche des BBL-Intranets. Sie verlassen den Prototyp in
+  // einem neuen Tab; die Fusszeile jeder Karte sagt das vorher (Item 7.3).
+  // Fünf Karten im Dreierraster ergeben 3+2 — keine einzeln verwaiste Karte.
   blocks.push({
     title: 'Bestellen und weitere Angebote',
-    body: `<div class="grid grid--items-2">${HOME_THEMEN.map(themaCard).join('')}</div>`,
-  });
-  blocks.push({
-    title: 'Aufgabenbereiche im BBL-Intranet',
-    body: `<div class="grid grid--items-5">${INTRANET_AREAS.map(areaCard).join('')}</div>`,
+    body: `<div class="grid grid--responsive-cols-3">${INTRANET_AREAS.map(areaCard).join('')}</div>`,
   });
 
   // 5 · Aktuelles — Galerie mit Bildern (CD TopNewsSection).

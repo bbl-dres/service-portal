@@ -6,7 +6,7 @@
     "audience": "external",
     "type": "action",
     "icon": "Building",
-    "popular": true,
+    "popular": 6,
     "target": {
       "kind": "app",
       "href": "#/app/space-request"
@@ -29,7 +29,7 @@
     "audience": "both",
     "type": "action",
     "icon": "Wrench",
-    "popular": true,
+    "popular": 1,
     "target": {
       "kind": "app",
       "href": "#/app/fault-report"
@@ -51,6 +51,7 @@
     "audience": "both",
     "type": "action",
     "icon": "ArrowRight",
+    "popular": 5,
     "target": {
       "kind": "app",
       "href": "#/app/fault-report?type=umzug"
@@ -72,6 +73,7 @@
     "audience": "both",
     "type": "action",
     "icon": "WarningCircle",
+    "popular": 4,
     "target": {
       "kind": "app",
       "href": "#/app/fault-report?type=reklamation"
@@ -92,7 +94,7 @@
     "audience": "both",
     "type": "action",
     "icon": "Calendar",
-    "popular": true,
+    "popular": 3,
     "target": {
       "kind": "app",
       "href": "#/app/workspace"
@@ -114,7 +116,7 @@
     "audience": "both",
     "type": "action",
     "icon": "ShoppingCart",
-    "popular": true,
+    "popular": 2,
     "target": {
       "kind": "external",
       "href": "#"
@@ -135,6 +137,7 @@
     "audience": "internal",
     "type": "action",
     "icon": "Cog",
+    "popular": 7,
     "target": {
       "kind": "external",
       "href": "#"
@@ -156,6 +159,7 @@
     "audience": "both",
     "type": "action",
     "icon": "File",
+    "popular": 8,
     "target": {
       "kind": "external",
       "href": "#"
@@ -177,7 +181,6 @@
     "audience": "both",
     "type": "action",
     "icon": "Lock",
-    "popular": true,
     "target": {
       "kind": "app",
       "href": "#/app/fault-report?type=sicherheit"
