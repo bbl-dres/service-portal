@@ -53,7 +53,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(r.hasForm && !r.hasGate, `  #buchung-form present, no login gate`);
     check(r.active === 'buchung', `  active tab = buchung`);
     check(/·/.test(r.nameLine), `  requester line renders ("${r.nameLine}")`);
-    check(page.exceptions.length === 0, `no uncaught exceptions${page.exceptions.length ? ' — ' + page.exceptions[0].split('\\n')[0] : ''}`);
+    check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
     await page.closeTarget();
   } finally {
     cdp.close();

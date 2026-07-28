@@ -222,8 +222,13 @@ export default async function render(ctx) {
 
   if (view === 'karte') {
     const el = mount.querySelector('#med-map');
-    if (el) initEstateMap(el, mapPoints(), null, null, { focusPopup: false })
-      .catch(() => { /* Karte ist optional; der Fehlertext steht im Container */ });
+    if (el) {
+      // Handle festhalten: ohne ihn ist map.remove() unerreichbar und je Besuch
+      // bleibt ein WebGL-Kontext stehen.
+      const pm = initEstateMap(el, mapPoints(), null, null, { focusPopup: false });
+      ctx.onUnmount(() => pm.then(mp => mp && mp.remove()).catch(() => {}));
+      pm.catch(() => { /* Karte ist optional; der Fehlertext steht im Container */ });
+    }
   }
 }
 
@@ -340,15 +345,25 @@ function detail(ctx, id) {
   // bei genau dieser Aufnahme.
   const items = siblings.filter(x => x.photo).map(galleryItem);
   const startAt = Math.max(0, items.findIndex(x => x.href.endsWith(encodeURIComponent(m.mediaId))));
-  mount.addEventListener('click', (e) => {
+  // NICHT an `mount` hängen: das ist der bestehende #main-content-Knoten des
+  // Routers, der beim Seitenwechsel nur seinen innerHTML tauscht. Ein Listener
+  // darauf überlebt jede Navigation und sammelt sich an — nach drei besuchten
+  // Detailseiten öffnete ein Klick drei Galerien übereinander (gemessen).
+  // Der Container hier wird bei jedem Render neu erzeugt, sein Listener geht
+  // mit ihm.
+  const root = mount.querySelector('.container.section');
+  if (root) root.addEventListener('click', (e) => {
     if (e.target.closest('[data-open-gallery]')) { e.preventDefault(); openGallery(items, startAt, C, { param: 'bild' }); }
   });
 
   if (hasGeo) {
     const el = mount.querySelector('#med-detail-map');
-    if (el) initEstateMap(el, [{ lat: m.lat, lon: m.lon, label: m.title, bblId: m.mediaId,
-      sub: `Aufnahmeort · ${bn}` }], null, m.mediaId, { focusPopup: false })
-      .catch(() => { /* Karte optional */ });
+    if (el) {
+      const pm = initEstateMap(el, [{ lat: m.lat, lon: m.lon, label: m.title, bblId: m.mediaId,
+        sub: `Aufnahmeort · ${bn}` }], null, m.mediaId, { focusPopup: false });
+      ctx.onUnmount(() => pm.then(mp => mp && mp.remove()).catch(() => {}));
+      pm.catch(() => { /* Karte optional */ });
+    }
   }
 
   window.scrollTo(0, 0);

@@ -194,8 +194,8 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(/Gebäude auf der Parzelle/.test(P.text), 'parcel links to its building');
     check(P.tabs.some(t => /Bodenbedeckung/.test(t)) && P.hasMap, 'parcel has Bodenbedeckung tab + mini-map');
     check(P.bodenRows >= 1, `Bodenbedeckung tab shows landcovers (${P.bodenRows} rows)`);
-    check(p.exceptions.length + d.exceptions.length + pc.exceptions.length === 0,
-      `no exceptions${(p.exceptions[0] || d.exceptions[0] || pc.exceptions[0]) ? ' — ' + (p.exceptions[0] || d.exceptions[0] || pc.exceptions[0]).split('\n')[0] : ''}`);
+    check([...(await p.problems()), ...(await d.problems()), ...(await pc.problems())].length === 0,
+      `no exceptions / console errors / error banner${[...(await p.problems()), ...(await d.problems()), ...(await pc.problems())][0] ? ': ' + [...(await p.problems()), ...(await d.problems()), ...(await pc.problems())][0] : ''}`);
     await pc.closeTarget();
   } finally {
     cdp.close();

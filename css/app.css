@@ -305,9 +305,13 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 
 /* Hinweisstreifen (notification-banner.postcss) — CDs Consent-Bauteil. Fix am
    Fensterboden, volle Breite, Inhalt im .container. */
-.notification-banner { padding:1rem 0; font-size:var(--text-sm); box-shadow:none; }
-@media (min-width:640px){ .notification-banner { padding:2rem 0; } }
-@media (min-width:1024px){ .notification-banner { padding:2.5rem 0; } }
+/* Doppelte Klasse auch beim Innenabstand: .notification setzt padding und steht
+   später in der Datei, gewann also bei gleicher Spezifität. Das Band bekam
+   einen umlaufenden Rand statt «Xrem 0», wodurch der __wrapper (der selbst
+   padding:0 1rem mitbringt) doppelt einrückte und nicht mehr zur Seite passte. */
+.notification-banner.notification-banner { padding:1rem 0; font-size:var(--text-sm); box-shadow:none; }
+@media (min-width:640px){ .notification-banner.notification-banner { padding:2rem 0; } }
+@media (min-width:1024px){ .notification-banner.notification-banner { padding:2.5rem 0; } }
 /* Doppelte Klasse, damit die Regel .notification (setzt position:relative und
    steht später in der Datei) nicht gewinnt — das Band lag sonst 3600px unter
    dem Sichtfeld im Dokumentfluss. */
@@ -1081,6 +1085,10 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 @media (min-width:1280px){ .btn, .btn--base { min-height:3rem; } .btn--sm { min-height:2.5rem; } .btn--lg { min-height:3.25rem; } }
 @media (min-width:1920px){ .btn, .btn--base { min-height:3.25rem; } .btn--sm { min-height:2.75rem; } .btn--lg { min-height:3.5rem; } }
 .btn[disabled] { cursor:not-allowed; }
+/* Symbole im Knopf wachsen mit dem Knopf — beabsichtigt und stärker (0,2,0) als
+   jede .icon--*-Grössenklasse (0,1,0). Ein `icon('X','icon--base')` INNERHALB
+   eines Knopfes bleibt darum wirkungslos; wer eine eigene Grösse braucht,
+   überschreibt sie mit einer Regel im Knopf-Kontext (siehe .btn .catbar__chev). */
 .btn .icon, .btn__icon { width:1.4em; height:1.4em; flex:none; }
 .btn--icon-right { flex-direction:row-reverse; }
 .btn--full-width { width:100%; }
@@ -2208,7 +2216,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .catbar__sort .select__icon { color:var(--color-text-muted); }
 .catbar__filter { min-height:2.75rem; white-space:nowrap; }
 .catbar__fcount { margin-left:.35rem; font-weight:var(--fw-bold); }
-.catbar__chev { width:1em; height:1em; margin-left:.1rem; transition:transform .2s; }
+/* Im Knopf-Kontext notiert, sonst gewinnt «.btn .icon» (0,2,0) und der Pfeil
+   erschiene mit 1.4em deutlich zu gross neben der Beschriftung. */
+.btn .catbar__chev, .catbar__chev { width:1em; height:1em; margin-left:.1rem; transition:transform .2s; }
 .catbar__filter[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
 .catbar .view-switch__btn { min-height:2.75rem; }
 /* Die getönte, gerundete Karte ist eine bewusste Entscheidung und BLEIBT —
@@ -2569,12 +2579,13 @@ body.chart-overlay-open { overflow:hidden; }
   border:2px solid #fff; box-shadow:var(--shadow-md); cursor:grab; }
 .map-pin:active { cursor:grabbing; }
 
-/* Platzhalterkachel: gleiche Fläche wie ein Bild, aber ohne Zeigerhand — dahinter
-   liegt nichts, was sich öffnen liesse. */
-.pf-mosaic__cell--empty { cursor:default; background:var(--color-secondary-50); }
-.pf-mosaic__cell--empty .image__not-available { width:100%; height:100%; }
 .pf-mosaic__cell { position:relative; display:block; padding:0; border:0; background:none; cursor:zoom-in;
   border-radius:var(--radius-lg); overflow:hidden; min-height:0; }
+/* Platzhalterkachel: gleiche Fläche wie ein Bild, aber ohne Zeigerhand — dahinter
+   liegt nichts, was sich öffnen liesse. Muss NACH der Grundregel stehen: beide
+   sind (0,1,0), vorher gewann die spätere Grundregel und die Zeigerhand blieb. */
+.pf-mosaic__cell--empty { cursor:default; background:var(--color-secondary-50); }
+.pf-mosaic__cell--empty .image__not-available { width:100%; height:100%; }
 .pf-mosaic__cell:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 /* Die Kacheln füllen ihre Gitterzelle vollständig — sonst entsteht neben dem Bild
    eine tote Klickzone, die trotzdem die Galerie öffnet. */

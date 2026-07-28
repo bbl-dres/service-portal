@@ -15,15 +15,24 @@ const FILES = {
   news:         'data/news.json',
   contacts:     'data/contacts.json',
   reference:    'data/reference-data.json',
-  datasets:     'data/datasets.json',
   catalogLabels:'data/catalog-labels.json',
-  appPages:     'data/application-pages.json',
+};
+
+// Aufschiebbar (H4): gross, aber nur auf wenigen Seiten gebraucht. Zusammen rund
+// 230 KB — mehr als die Hälfte des Bestands —, die der Start bisher jede Sitzung
+// bezahlte, gleichgültig welche Route aufgerufen wurde. Sie werden NICHT beim
+// Start geladen; der Router holt sie über core.ensure() nach, bevor eine Route
+// rendert, die sie in `needs` deklariert.
+const DEFERRED = {
+  datasets:     'data/datasets.json',              // 115 KB, nur Datenkatalog + Suche
+  appPages:     'data/application-pages.json',     // nur die Anwendungs-Detailseite
   // Liegenschaften-Inventar-Detailregister (SAP RE-FX-Untertabellen, re-keyed auf bbl_id):
   assets:           'data/assets.json',            // Ausstattung
   contracts:        'data/contracts.json',         // Verträge
   costs:            'data/costs.json',              // Kosten
   areas:            'data/area-measurements.json',  // Flächen / Bemessungen
   buildingContacts: 'data/building-contacts.json',  // Objektkontakte (nicht die Dienstleistungs-Kontakte)
+  landcovers:       'data/landcovers.geojson',      // Bodenbedeckung, nur im Grundstück-Register
 };
 // data/data-products.json bleibt liegen (DataService- und Concept-Einträge für
 // einen künftigen Metadatenkatalog), wird aber von keiner Ansicht mehr gelesen
@@ -118,24 +127,59 @@ async function load() {
   // Golden Record (Gebäude + Grundstücke): GeoJSON-Objekte ({type,features}), nicht
   // die Listenform der übrigen Dateien — eigener Pfad mit Normalisierung, aber
   // parallel geladen, damit der Boot (window.__login etc.) nicht unnötig wartet.
-  const [bFc, pFc, lFc] = await Promise.all([
+  const [bFc, pFc] = await Promise.all([
     fetchJSON('data/buildings.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] buildings.geojson', e.message); return null; }),
     fetchJSON('data/parcels.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] parcels.geojson', e.message); return null; }),
-    fetchJSON('data/landcovers.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] landcovers.geojson', e.message); return null; }),
   ]);
   DATA.buildings = bFc ? (bFc.features || []).map(normalizeBuilding).filter((b) => b.bbl_id) : [];
   if (!DATA.buildings.length) FAILED.add('buildings');
   DATA.parcels = pFc ? (pFc.features || []).map(normalizeParcel).filter((p) => p.bbl_id) : [];
   if (!pFc) FAILED.add('parcels');
-  DATA.landcovers = lFc ? (lFc.features || []).map(normalizeLandcover).filter((l) => l.parcelId) : [];
-  if (!lFc) FAILED.add('landcovers');
   return DATA;
+}
+
+// --- Nachladen aufschiebbarer Bestände (H4) ---------------------------------
+// Je Schlüssel EIN Versprechen, gemerkt: zehn Aufrufe erzeugen eine Anfrage, und
+// wer später kommt, wartet auf dieselbe. Fehlschläge landen im selben Register
+// wie beim Start, damit das Fehlerband auch nachgeladene Ausfälle zeigt.
+const PENDING = new Map();
+
+async function loadDeferred(key) {
+  const url = DEFERRED[key];
+  const isObj = OBJECT_FILES.has(key);
+  try {
+    if (key === 'landcovers') {
+      const fc = await fetchJSON(url, { shape: 'object' });
+      DATA.landcovers = (fc.features || []).map(normalizeLandcover).filter((l) => l.parcelId);
+    } else {
+      DATA[key] = await fetchJSON(url, { shape: isObj ? 'object' : 'array' });
+    }
+  } catch (e) {
+    console.warn('[core] could not load', url, e.message);
+    FAILED.add(key);
+    DATA[key] = isObj ? {} : [];
+    // Das Fehlerband wurde beim Start gezeichnet und kennt diesen Ausfall noch
+    // nicht — ohne das Ereignis bliebe er unsichtbar.
+    try { window.dispatchEvent(new CustomEvent('core:data-failed', { detail: { key } })); } catch { /* kein DOM */ }
+  }
+}
+
+// ensure('assets','costs') → Promise. Unbekannte oder bereits beim Start
+// geladene Schlüssel werden still übergangen, damit Aufrufer nicht wissen
+// müssen, welcher Bestand aufschiebbar ist.
+function ensure(...keys) {
+  const list = keys.flat().filter((k) => DEFERRED[k]);
+  return Promise.all(list.map((k) => {
+    if (!PENDING.has(k)) PENDING.set(k, loadDeferred(k));
+    return PENDING.get(k);
+  }));
 }
 
 const find = (arr, key, id) => (arr || []).find(x => x[key] === id);
 
 export const core = {
   load,
+  ensure,
   data: DATA,
   buildings: () => DATA.buildings || [],
   building: (id) => find(DATA.buildings, 'bbl_id', id),

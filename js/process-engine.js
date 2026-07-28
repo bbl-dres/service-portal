@@ -10,12 +10,19 @@ const LS_KEY = 'bbl_vorgaenge_v1';
 let DEFS = [];
 let SEEDED = [];
 
+// Ausfallregister — dasselbe Prinzip wie in core.js. Ohne das blieb ein 404 auf
+// process-definitions.json unsichtbar: DEFS = [], keine Meldung, und start()
+// erfand sich eine Ersatzdefinition (H10).
+const FAILED = new Set();
+const AREA = { definitions: 'Prozessdefinitionen', instances: 'Vorgänge' };
+
 function loadLS() { const a = readJSON(LS_KEY, []); return Array.isArray(a) ? a : []; }
 function saveLS(arr) { return writeJSON(LS_KEY, arr); }   // → bool, damit Aufrufer stillen Verlust erkennen (C1)
 
 async function load() {
-  try { DEFS = await fetchJSON('data/process-definitions.json', { shape: 'array' }); } catch (e) { console.warn('[engine] definitions', e && e.message); DEFS = []; }
-  try { SEEDED = await fetchJSON('data/process-instances.json', { shape: 'array' }); } catch (e) { console.warn('[engine] instances', e && e.message); SEEDED = []; }
+  FAILED.clear();
+  try { DEFS = await fetchJSON('data/process-definitions.json', { shape: 'array' }); } catch (e) { console.warn('[engine] definitions', e && e.message); DEFS = []; FAILED.add('definitions'); }
+  try { SEEDED = await fetchJSON('data/process-instances.json', { shape: 'array' }); } catch (e) { console.warn('[engine] instances', e && e.message); SEEDED = []; FAILED.add('instances'); }
 }
 
 const definition = (id) => DEFS.find(d => d.defId === id);
@@ -31,19 +38,29 @@ function genRef() {
 function instances() { return [...loadLS(), ...SEEDED]; }
 const instance = (id) => instances().find(i => i.instanceId === id);
 
+// Gibt die neue Instanz zurück — oder null, wenn sie NICHT angelegt werden konnte.
+// null heisst hier zweierlei: unbekannte Definition oder Speicherfehler. Beides
+// muss der Aufrufer als Fehlschlag zeigen, nie als Erfolg.
 function start(defId, payload = {}) {
   const def = definition(defId);
-  const steps = (def && def.steps) || [{ status: 'eingereicht', label: 'Eingereicht' }];
+  // Ohne Definition KEIN Vorgang. Vorher wurde eine Ersatzdefinition erfunden und
+  // dauerhaft gespeichert — ein Datensatz, der zu keinem Prozess mehr gehört und
+  // beim nächsten Laden auch nicht repariert wird.
+  if (!def || !Array.isArray(def.steps) || !def.steps.length) {
+    console.error(`[engine] unbekannte Prozessdefinition «${defId}» — kein Vorgang angelegt`);
+    return null;
+  }
+  const steps = def.steps;
   const first = steps[0];
   const inst = {
     instanceId: 'inst-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
     defId,
-    defName: def ? def.name : defId,
+    defName: def.name,
     reference: genRef(),
-    title: payload.title || (def ? def.name : 'Vorgang'),
+    title: payload.title || def.name,
     requester: payload.requester || 'Andrea Muster',
     organization: payload.organization || 'Bundesamt (Demo)',
-    audience: def ? def.audience : 'internal',
+    audience: def.audience,
     status: first.status,
     stepIndex: 0,
     createdAt: today(),
@@ -77,6 +94,8 @@ function reset() { saveLS([]); }
 
 export const engine = {
   load,
+  available: (key) => !FAILED.has(key),
+  failedAreas: () => Array.from(FAILED).map(k => AREA[k] || k),
   definitions: () => DEFS,
   definition,
   instances,

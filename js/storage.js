@@ -4,12 +4,22 @@
 // beim Schreiben. `writeJSON`/`remove` melden Erfolg als bool, damit Aufrufer einen
 // stillen Datenverlust nicht als Erfolg verbuchen (code-review C1).
 
-export function readJSON(key, fallback = null) {
+// `valid` prüft die gelesene Form, so wie fetchJSON das für Dateien tut (M20).
+// Ohne diese Prüfung galt JEDER nicht-leere Wert als brauchbar: ein beschädigter
+// bbl_session_v1 (etwa die blosse Zahl 1) machte isLoggedIn() wahr, user().name
+// blieb undefined — und die Assistenten schrieben `requester: undefined` in einen
+// dauerhaft gespeicherten Vorgang.
+export function readJSON(key, fallback = null, valid = null) {
   try {
     const raw = localStorage.getItem(key);
     if (raw == null) return fallback;
     const val = JSON.parse(raw);
-    return val == null ? fallback : val;
+    if (val == null) return fallback;
+    if (typeof valid === 'function' && !valid(val)) {
+      console.warn('[storage] unerwartete Form, verworfen:', key);
+      return fallback;
+    }
+    return val;
   } catch (e) {
     console.warn('[storage] read failed', key, e && e.message);
     return fallback;

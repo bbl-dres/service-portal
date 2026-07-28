@@ -212,7 +212,7 @@ const SUBMIT = `document.querySelector('#bc-form').dispatchEvent(new Event('subm
       check(r.hit, 'Vorgang steht unter «Meine Vorgänge»');
     }
 
-    check(p.exceptions.length === 0, `no uncaught exceptions${p.exceptions.length ? ': ' + p.exceptions[0] : ''}`);
+    check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
   } finally {
     cdp.close();
   }

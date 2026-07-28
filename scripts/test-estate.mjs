@@ -77,7 +77,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(/land=CH/.test(r.hashAfterFilter), `filter mirrored to hash (${r.hashAfterFilter})`);
     check(r.tab2Active === 'grundstuecke', 'switch to Grundstücke tab');
     check(r.tab2Charts.some(t => /Grundstücksfläche/.test(t)), `Grundstücke charts (${JSON.stringify(r.tab2Charts)})`);
-    check(page.exceptions.length === 0, `no exceptions${page.exceptions.length ? ' — ' + page.exceptions[0].split('\\n')[0] : ''}`);
+    check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
 
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, page.sessionId);
     writeFileSync(process.env.SHOT || join(tmpdir(), 'bbl-estate.png'), Buffer.from(shot.data, 'base64'));

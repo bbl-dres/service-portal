@@ -458,6 +458,7 @@ export default async function render(ctx) {
         C.announce('Standort angepasst.');
       },
     }).then((m) => { pickerMap = m; }).catch(() => { /* Karte optional */ });
+    ctx.onUnmount(freeMap);
 
     if (clear) clear.addEventListener('click', () => {
       inp.value = ''; clear.hidden = true; closeList(); inp.focus();

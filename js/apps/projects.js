@@ -36,6 +36,7 @@ const SORT_OPTS = [
 ];
 
 export default async function render(ctx) {
+  ctx.onUnmount(freePjMap);
   const { params } = ctx;
   if (params[0]) return detail(ctx, params[0]);
   return overview(ctx);
@@ -143,12 +144,21 @@ function overview(ctx) {
     { key: 'sia', label: 'SIA-Phase', render: (o) => `${esc(o.siaPhase)} · ${esc(o.siaPhaseLabel)}` },
     { key: 'plannedTotalCost', label: 'Investition', align: 'right', render: (o) => esc(chf(o.plannedTotalCost)) },
   ], rows: slice });
+  // Wettlauf-Schutz: initEstateMap lädt MapLibre erst vom CDN. Ohne Marke
+  // konnte ein zweiter Aufruf (Suche, zweiter Baumknoten) starten, während der
+  // erste noch offen war — free…Map() lief dann gegen null und die zuerst
+  // aufgelöste Karte blieb als WebGL-Kontext auf einem entfernten Knoten liegen.
+  let mapTicket = 0;
   async function mountMap(list, focus) {
+    const ticket = ++mapTicket;
     freePjMap();
     const el = mount.querySelector('#pj-map-el'); if (!el) return;
     const points = list.filter((o) => Number.isFinite(o.lat) && Number.isFinite(o.lon))
       .map((o) => ({ lat: o.lat, lon: o.lon, label: o.name, bblId: o.id, sub: `${o.projectNumber} · ${o.buildingName}`.trim(), href: `#/app/projects/${encodeURIComponent(o.id)}` }));
-    pjMap = await initEstateMap(el, points, { type: 'FeatureCollection', features: [] }, focus);
+    const created = await initEstateMap(el, points, { type: 'FeatureCollection', features: [] }, focus);
+    // Überholt oder Container weg? Sofort abbauen statt zuweisen.
+    if (ticket !== mapTicket || !el.isConnected) { if (created) { try { created.remove(); } catch { /* egal */ } } return; }
+    pjMap = created;
   }
 
   // --- partial render of the main pane ------------------------------------

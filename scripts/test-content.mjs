@@ -55,7 +55,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       check(res.h1 && !res.notFound, `renders ("${res.h1}")`);
       if (r.items) check(res.downloadItems >= r.items, `≥${r.items} download-item(s) (got ${res.downloadItems})`);
       if (r.mailto) check(res.mailto === true, 'renders a contact mailto link');
-      check(p.exceptions.length === 0, `no exceptions${p.exceptions.length ? ' — ' + p.exceptions[0].split('\\n')[0] : ''}`);
+      check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
       await p.closeTarget();
     }
   } finally {

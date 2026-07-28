@@ -87,7 +87,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(r.overlayClosed, 'overlay closes');
     check(r.toastCsv === 'CSV heruntergeladen.', `CSV → toast ("${r.toastCsv}")`);
     check(/Bild heruntergeladen|fehlgeschlagen/.test(r.toastPng || ''), `PNG → toast ("${r.toastPng}")`);
-    check(page.exceptions.length === 0, `no exceptions${page.exceptions.length ? ' — ' + page.exceptions[0].split('\\n')[0] : ''}`);
+    check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
     await page.closeTarget();
   } finally {
     cdp.close();

@@ -15,6 +15,10 @@
 import { fetchJSON } from './fetch-json.js';
 
 const DATA = { datasets: {}, topics: [], dashboards: [] };
+// Fällt die Datei aus, sieht das Datenportal aus wie ein Portal ohne Auswertungen
+// — nicht wie ein Ladefehler (M18). `ok()` unterscheidet beides, so wie
+// core.available() es für die übrigen Bestände tut.
+let loaded = false;
 
 async function load() {
   try {
@@ -22,8 +26,10 @@ async function load() {
     DATA.datasets = json.datasets || {};
     DATA.topics = json.topics || [];
     DATA.dashboards = json.dashboards || [];
+    loaded = true;
   } catch (e) {
     console.warn('[dashboard-data] could not load data/dashboards.json', e.message);
+    loaded = false;
   }
   return DATA;
 }
@@ -111,6 +117,6 @@ function query(spec) {
 }
 
 export const dashData = {
-  load, datasets, dataset, topics, dashboards, dashboard, topic, query,
+  load, ok: () => loaded, datasets, dataset, topics, dashboards, dashboard, topic, query,
 };
 export default dashData;

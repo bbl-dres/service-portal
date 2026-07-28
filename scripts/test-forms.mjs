@@ -84,7 +84,7 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
     const srE = await p.evaluate(probeErrors(['org', 'cc'], ['org', 'cc']));
     check(errOk(srE.fields?.org), 'C5: cleared #org → input--error + aria-invalid + badge');
     check(errOk(srE.fields?.cc), 'C5: cleared #cc → input--error + aria-invalid + badge');
-    check(p.exceptions.length === 0, `no exceptions${p.exceptions.length ? ' — ' + p.exceptions[0].split('\\n')[0] : ''}`);
+    check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
     await p.closeTarget();
 
     // --- fault-report: render + C5 on #beschreibung + success submit ---
@@ -94,14 +94,14 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
     check(fr.ok && fr.groups >= 5, `renders form (${fr.groups} field groups, ${fr.selects} selects)`);
     const frE = await p.evaluate(probeErrors(['beschreibung'], ['beschreibung']));
     check(errOk(frE.fields?.beschreibung), 'C5: cleared #beschreibung → input--error + aria-invalid + badge');
-    check(p.exceptions.length === 0, `no exceptions${p.exceptions.length ? ' — ' + p.exceptions[0].split('\\n')[0] : ''}`);
+    check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
     await p.closeTarget();
 
     console.log('\n■ fault-report (successful submit)');
     p = await openPage(cdp, `${APP_BASE}/app/fault-report`);
     const ok = await p.evaluate(PROBE_SUCCESS);
     check(ok.success && ok.noError, 'valid submit → success screen (Vorgang created)');
-    check(p.exceptions.length === 0, `no exceptions${p.exceptions.length ? ' — ' + p.exceptions[0].split('\\n')[0] : ''}`);
+    check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
     await p.closeTarget();
 
     // --- workspace Buchung: render + C5 on #datum ---
@@ -111,7 +111,7 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
     check(ws.ok && ws.selects >= 3, `renders booking form (${ws.selects} selects)`);
     const wsE = await p.evaluate(probeErrors(['datum'], ['datum']));
     check(errOk(wsE.fields?.datum), 'C5: cleared #datum → input--error + aria-invalid + badge');
-    check(p.exceptions.length === 0, `no exceptions${p.exceptions.length ? ' — ' + p.exceptions[0].split('\\n')[0] : ''}`);
+    check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
     await p.closeTarget();
   } finally {
     cdp.close();

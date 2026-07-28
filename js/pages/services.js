@@ -114,7 +114,7 @@ export default async function render(ctx) {
 }
 
 function detail(ctx, id) {
-  const { mount, core, session, C, setTitle, setCrumbs } = ctx;
+  const { mount, core, engine, session, C, setTitle, setCrumbs } = ctx;
   const s = core.service(id);
   if (!s) {
     setTitle('Dienstleistung nicht gefunden');
@@ -128,6 +128,11 @@ function detail(ctx, id) {
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }, { label: s.title }]);
 
   const contact = core.contacts().find(c => c.contactId === s.contact);
+  // processDefId war reine Deklaration — 10 Dienstleistungen trugen das Feld, kein
+  // Modul las es (H11). Hier wird die Kante benutzt: der Ablauf, den der Vorgang
+  // durchläuft, steht VOR dem Absenden auf der Seite. Fehlt die Definition,
+  // entfällt der Block wortlos — er ist Zusatzinformation, keine Bedingung.
+  const def = s.processDefId ? engine.definition(s.processDefId) : null;
   const weis = core.weisungenForService(s.serviceId);
   const tgt = s.target || {};   // Informationsangebote haben kein `target` — nicht dereferenzieren (A5)
   const ext = tgt.kind === 'external';
@@ -176,6 +181,9 @@ function detail(ctx, id) {
         <h2 class="sr-only">Beschreibung</h2>
         <p>${C.escape(s.description)}</p>
         ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="box"><h3>Das brauchen Sie</h3><ul style="padding-left:1.1rem">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
+        ${def && Array.isArray(def.steps) && def.steps.length ? `<div class="box"><h3>So läuft es ab</h3>
+          <p class="small muted">${C.escape(def.name)} — ${def.steps.length} Schritte. Den Stand sehen Sie danach unter <a href="#/app/my-cases">Meine Vorgänge</a>.</p>
+          ${C.pipeline(def.steps, 0, { label: `Ablauf «${def.name}»` })}</div>` : ''}
         ${ctaBlock}
       </div>
       <aside class="container__aside stack-lg" aria-labelledby="svc-aside-head">

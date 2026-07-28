@@ -94,6 +94,9 @@ const histogram = (recs, valKey, bins) => bins.map((bn) => ({ k: bn.label, v: re
 const GF_BINS = [{ label: '< 2 500', lo: 0, hi: 2500 }, { label: '2 500–5 000', lo: 2500, hi: 5000 }, { label: '5 000–10 000', lo: 5000, hi: 10000 }, { label: '10 000–20 000', lo: 10000, hi: 20000 }, { label: '≥ 20 000', lo: 20000, hi: Infinity }];
 const GSF_BINS = [{ label: '< 1 000', lo: 0, hi: 1000 }, { label: '1 000–3 000', lo: 1000, hi: 3000 }, { label: '3 000–5 000', lo: 3000, hi: 5000 }, { label: '≥ 5 000', lo: 5000, hi: Infinity }];
 
+// Kein `needs`: diese Ansicht holt buildings/parcels/landcovers selbst (siehe
+// CACHE weiter oben) und liest sie nicht über die core-Accessoren.
+
 export default async function render(ctx) {
   const { mount, C, setTitle, setCrumbs, query } = ctx;
   setTitle(META.title);
@@ -282,7 +285,8 @@ export default async function render(ctx) {
     freeMap();
     if (state.tab === 'gebaeude') {
       const el = grid.querySelector('#estate-map-el');
-      if (el) mapPromise = initEstateMap(el, mapPoints(), parcelFC());
+      if (el) { mapPromise = initEstateMap(el, mapPoints(), parcelFC());
+        ctx.onUnmount(() => mapPromise && mapPromise.then(m => m && m.remove()).catch(() => {})); }
     }
   }
 

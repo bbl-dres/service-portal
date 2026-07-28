@@ -164,9 +164,14 @@ function renderCrumbs(crumbs) {
   }).join('');
 }
 
-function makeCtx(mount, params, query, stale) {
+function makeCtx(mount, params, query, stale, cleanups) {
   return {
     mount, params, query, core, engine, session, C,
+    // Aufräumen beim Verlassen der Route. Der Router tauschte bisher nur
+    // `mount.innerHTML` — Karten, Observer, Media-Query-Listener und Overlays
+    // überlebten damit die Route, die sie erzeugt hat. Wer etwas anlegt, das den
+    // DOM-Tausch überdauert, meldet hier seine Abbaufunktion an.
+    onUnmount: (fn) => { if (typeof fn === 'function') cleanups.push(fn); },
     // Async-Seiten (die vor dem Schreiben `await`en, z. B. dynamische Import-
     // Delegatoren) prüfen `ctx.stale()` unmittelbar vor `mount.innerHTML =`, damit
     // eine überholte Navigation die inzwischen neuere Seite nicht überschreibt (A2).
@@ -196,8 +201,15 @@ let prevPath = null;
 // ResizeObserver der Scrollbereiche der aktuellen Ansicht — beim Ansichtswechsel
 // abmelden, sonst beobachtet er entfernte Knoten weiter.
 let unwireScroll = null;
+// Abbaufunktionen der AKTUELLEN Route (ctx.onUnmount). Werden zu Beginn des
+// nächsten Dispatch abgearbeitet — also bevor die neue Ansicht etwas anlegt.
+let routeCleanups = [];
 
 async function dispatch() {
+  // Erst aufräumen, dann neu bauen. Fehler einer einzelnen Abbaufunktion dürfen
+  // die Navigation nicht anhalten.
+  for (const fn of routeCleanups) { try { fn(); } catch (e) { console.warn('[router] cleanup failed', e); } }
+  routeCleanups = [];
   const ticket = ++dispatchId;
   const stale = () => ticket !== dispatchId;
   const { segs, query } = parseHash();
@@ -249,7 +261,15 @@ async function dispatch() {
     if (stale()) return;
     const render = mod.default || mod.render;
     if (typeof render !== 'function') throw new Error('Modul exportiert kein render()');
-    const ctx = makeCtx(mount, params, query, stale);
+    // Aufschiebbare Bestände (H4): das Modul nennt in `needs`, was es lesen will,
+    // und bekommt es VOR dem ersten Zugriff. Ohne diese Sperre läse ein Accessor
+    // die noch leere Liste und die Seite zeigte «keine Einträge» statt Daten.
+    // Beim zweiten Besuch ist das Versprechen erfüllt und die Sperre kostet nichts.
+    if (Array.isArray(mod.needs) && mod.needs.length) {
+      await core.ensure(mod.needs);
+      if (stale()) return;
+    }
+    const ctx = makeCtx(mount, params, query, stale, routeCleanups);
     await render(ctx);
     if (stale()) return;
     // Überlaufende Bereiche (Tabellen, Code-/SQL-Kästen) bekommen erst hier ihren

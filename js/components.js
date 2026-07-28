@@ -1302,6 +1302,7 @@ export function catalogueBar({
 //   perPage   Standard 10
 //   foot(visible, filtered)  optionale <tfoot>-Zeile
 export function mountDataTable(host, opts = {}) {
+  let unwireScroll = null;
   const {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
@@ -1377,11 +1378,20 @@ export function mountDataTable(host, opts = {}) {
       state.page = Math.min(totalPages, Math.max(1, Number(b.dataset.page) || 1)); draw();
     }));
     wirePagination(host, `${id}-page`, state.page, totalPages, (target) => { state.page = target; draw(); });
-    wireScrollRegions(host);
+    // Vorherige Beobachter ABMELDEN. `host` wird nie ersetzt, nur sein
+    // innerHTML — ohne das blieben MutationObserver und ResizeObserver je
+    // Suche/Sortierung/Filter/Seitenwechsel zusätzlich aktiv (quadratisch in
+    // der Zahl der Interaktionen). Der Router macht es an seiner Aufrufstelle
+    // bereits richtig (router.js:261-262).
+    if (unwireScroll) { try { unwireScroll(); } catch { /* schon weg */ } }
+    unwireScroll = wireScrollRegions(host);
     restore();
     announce(`${sorted.length} von ${allRows.length} ${unit}${totalPages > 1 ? `, Seite ${state.page} von ${totalPages}` : ''}`);
   };
   draw();
+  // Abbaufunktion für den Aufrufer (ctx.onUnmount), damit die Beobachter auch
+  // beim Verlassen der Route verschwinden.
+  return () => { if (unwireScroll) { try { unwireScroll(); } catch { /* egal */ } unwireScroll = null; } };
   return { redraw: draw };
 }
 

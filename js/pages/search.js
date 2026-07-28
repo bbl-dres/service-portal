@@ -19,6 +19,10 @@ const SYNONYMS = {
   material: 'bestellen', möbel: 'mobiliar',
 };
 
+// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
+// bevor render() den ersten Accessor aufruft (H4).
+export const needs = ["datasets"];
+
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   const rawQ = (query.get('q') || '').trim();

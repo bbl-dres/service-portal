@@ -54,8 +54,15 @@ const CRUMBS = [
   { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
 ];
 
+// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
+// bevor render() den ersten Accessor aufruft (H4).
+export const needs = ["assets","contracts","costs","areas","buildingContacts","landcovers"];
+
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
+  // Karte beim Verlassen der Route abbauen — sonst bleibt ein WebGL-Kontext je
+  // Besuch stehen (Browser kappen bei ~16 und verwerfen die ältesten).
+  ctx.onUnmount(freePfMap);
   const detailId = (query && query.get('id')) || params[0];
   if (detailId) {
     const b = core.building(detailId);
@@ -170,7 +177,13 @@ export default async function render(ctx) {
     { key: 'area', label: 'Fläche', align: 'right', render: (o) => `${Number(o.area || 0).toLocaleString('de-CH')} m²<br><span class="small muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span>` },
     { key: 'status', label: 'Status', render: (o) => statusBadge(C, ref, o.status) },
   ], rows: slice });
+  // Wettlauf-Schutz: initEstateMap lädt MapLibre erst vom CDN. Ohne Marke
+  // konnte ein zweiter Aufruf (Suche, zweiter Baumknoten) starten, während der
+  // erste noch offen war — free…Map() lief dann gegen null und die zuerst
+  // aufgelöste Karte blieb als WebGL-Kontext auf einem entfernten Knoten liegen.
+  let mapTicket = 0;
   async function mountMap(list, focus) {
+    const ticket = ++mapTicket;
     freePfMap();
     const el = mount.querySelector('#pf-map-el');
     if (!el) return;
@@ -178,7 +191,10 @@ export default async function render(ctx) {
       .map((o) => ({ lat: o.lat, lon: o.lon, label: o.name, bblId: o.id, sub: `${o.street}, ${o.zip} ${o.city}`.trim(), href: `#/app/portfolio?id=${encodeURIComponent(o.id)}` }));
     const parcels = { type: 'FeatureCollection', features: list.filter((o) => o.kind === 'parcel' && o.geom).map((o) => ({
       type: 'Feature', geometry: o.geom, properties: { label: o.name, sub: `${o.street}, ${o.zip} ${o.city}`.trim(), id: o.id, area: o.area, href: `#/app/portfolio?id=${encodeURIComponent(o.id)}` } })) };
-    pfMap = await initEstateMap(el, points, parcels, focus);
+    const created = await initEstateMap(el, points, parcels, focus);
+    // Überholt oder Container weg? Sofort abbauen statt zuweisen.
+    if (ticket !== mapTicket || !el.isConnected) { if (created) { try { created.remove(); } catch { /* egal */ } } return; }
+    pfMap = created;
   }
 
   // --- partial render of the main pane ---------------------------------------

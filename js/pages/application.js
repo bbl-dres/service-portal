@@ -9,6 +9,10 @@
 // externes System), Berechtigung und Ansprechstelle — das gehört auf eine
 // Seite, bevor jemand auf «Öffnen» klickt.
 
+// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
+// bevor render() den ersten Accessor aufruft (H4).
+export const needs = ["appPages"];
+
 export default function render(ctx, appId) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
   const a = core.application(C.safeDecode(appId));

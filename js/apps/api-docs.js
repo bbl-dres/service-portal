@@ -14,6 +14,10 @@ import { copyText } from '../export.js';
 
 const METHOD = { GET: 'get', POST: 'post', PUT: 'put', PATCH: 'patch', DELETE: 'delete' };
 
+// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
+// bevor render() den ersten Accessor aufruft (H4).
+export const needs = ["datasets"];
+
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs, stale } = ctx;
   const specId = C.safeDecode(params[0] || 'kundenportal');
@@ -46,8 +50,11 @@ export default async function render(ctx) {
       { id: 'V-2026-0042', serviceId: 'raumbedarf-melden', status: 'in_arbeit', created: '2026-07-20' },
       { id: 'V-2026-0039', serviceId: 'stoerung-melden', status: 'abgeschlossen', created: '2026-07-14' },
     ],
-    'dienstleistungen.list': () => core.services().slice(0, 5).map((s) => ({ serviceId: s.serviceId, name: s.name, domain: s.domain })),
-    'dienstleistungen.one': () => pick(core.services()[0], ['serviceId', 'name', 'domain', 'description']),
+    // Dienstleistungen heissen `title`, Anwendungen `name` — die beiden Entitäten
+    // stimmen nicht überein. Hier stand `s.name`; JSON.stringify liess das Feld
+    // danach kommentarlos weg, die Antwort kam ohne Bezeichnung (M19).
+    'dienstleistungen.list': () => core.services().slice(0, 5).map((s) => ({ serviceId: s.serviceId, title: s.title, domain: s.domain })),
+    'dienstleistungen.one': () => pick(core.services()[0], ['serviceId', 'title', 'domain', 'description']),
     'anwendungen.list': () => core.applications().slice(0, 5).map((a) => ({ appId: a.appId, name: a.name, group: a.group, audience: a.audience })),
     'anwendungen.one': () => pick(core.applications()[0], ['appId', 'name', 'group', 'audience', 'description']),
     'liegenschaften.list': () => core.buildings().slice(0, 3).map((b) => ({ bblId: b.bbl_id, name: b.name, land: b.land, kanton: b.canton, gf: b.gf, eigentum: b.ownership, status: b.status })),
@@ -68,7 +75,10 @@ export default async function render(ctx) {
 
   // --- markup --------------------------------------------------------------
   const rail = spec.resources.map((r) =>
-    `<a class="api-rail__item${r.tag === activeTag ? ' is-active' : ''}" href="#res-${r.tag}" data-rail="${r.tag}">${C.escape(r.label)}<span class="api-rail__n">${r.endpoints.length}</span></a>`).join('');
+    // plain-link ist der Ausweg aus der :not()-Kette in «#main-content a» — ohne
+    // die Klasse zeichnete die Kette jeden Eintrag farbig und unterstrichen, und
+    // der aktive war vom inaktiven nicht zu unterscheiden (H8).
+    `<a class="api-rail__item plain-link${r.tag === activeTag ? ' is-active' : ''}" href="#res-${r.tag}" data-rail="${r.tag}">${C.escape(r.label)}<span class="api-rail__n">${r.endpoints.length}</span></a>`).join('');
 
   const paramTable = (ep) => (ep.params || []).length ? `
     <div class="api-block"><div class="api-block__label">Parameter</div>

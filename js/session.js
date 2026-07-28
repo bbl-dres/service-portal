@@ -10,7 +10,10 @@ import { readJSON, writeJSON, remove } from './storage.js';
 const LS_KEY = 'bbl_session_v1';
 const DEMO_USER = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
 
-let user = readJSON(LS_KEY, null);
+// Ein Nutzer ohne Namen ist kein Nutzer — lieber abgemeldet starten als mit
+// einem halben Datensatz weiterarbeiten (M20).
+const isUser = (u) => !!u && typeof u === 'object' && typeof u.name === 'string' && u.name.trim() !== '';
+let user = readJSON(LS_KEY, null, isUser);
 const listeners = new Set();
 
 function save() {

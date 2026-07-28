@@ -6,6 +6,10 @@
 
 const PER_PAGE = 9;
 
+// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
+// bevor render() den ersten Accessor aufruft (H4).
+export const needs = ["datasets"];
+
 export function katalog(ctx) {
   const { params } = ctx;
   return params[1] ? detail(ctx, params[1]) : list(ctx);

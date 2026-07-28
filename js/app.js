@@ -12,7 +12,10 @@ import { notification, escape, announce, wireShare, mountBanner } from './compon
 function renderDataStatus() {
   const el = document.getElementById('data-status');
   if (!el) return;
-  const areas = core.failedAreas();
+  // Auch die Prozess-Engine meldet hierher: fehlen die Definitionen, lässt sich
+  // KEIN Vorgang mehr starten — das muss sichtbar sein, bevor jemand ein
+  // Formular ausfüllt (H10).
+  const areas = [...core.failedAreas(), ...engine.failedAreas()];
   if (!areas.length) { el.innerHTML = ''; return; }
   el.innerHTML = `<div class="container" style="padding-top:1rem">${notification(
     `<strong>Einige Daten konnten nicht geladen werden</strong> (${escape(areas.join(', '))}). `
@@ -23,6 +26,9 @@ function renderDataStatus() {
 
 async function boot() {
   await Promise.all([core.load(), engine.load()]);
+  // Nachgeladene Bestände (core.ensure) können später ausfallen — das Band wurde
+  // da längst gezeichnet. Ohne diesen Horcher bliebe so ein Ausfall unsichtbar.
+  window.addEventListener('core:data-failed', renderDataStatus);
   const header = document.getElementById('main-header');
   shell.renderHeader(header);
   shell.renderFooter(document.getElementById('main-footer'));
@@ -62,6 +68,10 @@ async function boot() {
     return refresh(`Angemeldet als ${u ? u.name : ''}. Die Seite wurde aktualisiert.`);
   };
   window.__logout = () => { session.logout(); return refresh('Abgemeldet. Die Seite wurde aktualisiert.'); };
+  // Nur für die Prüfskripte: die Prozess-Engine ohne Formularlauf erreichbar
+  // machen. Anders lässt sich nicht belegen, dass start() eine unbekannte
+  // Definition ablehnt, statt sich eine zu erfinden (H10).
+  window.__engine = engine;
 }
 
 boot().catch(e => {

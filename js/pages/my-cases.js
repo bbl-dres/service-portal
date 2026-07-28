@@ -149,7 +149,14 @@ function detail(ctx, id) {
       <p class="lead">Eingereicht ${C.escape(i.createdAt)} · Typ ${C.escape(i.defName)}${i.organization ? ` · ${C.escape(i.organization)}` : ''}</p>
     </div>
 
-    <div class="mt-4">${C.pipeline(steps, i.stepIndex)}</div>
+    ${/* Ohne Definition gibt es keinen Ablauf zu zeigen. Ein leeres <ol> sähe aus
+          wie ein Vorgang ohne Schritte — und die Fusszeile meldete dazu noch
+          «abgeschlossen», obwohl das Abzeichen «in Arbeit» sagt (M17). */''}
+    ${def ? `<div class="mt-4">${C.pipeline(steps, i.stepIndex)}</div>`
+      : `<div class="mt-4">${C.notification(
+          `<strong>Ablauf nicht verfügbar</strong> — zu diesem Vorgang fehlt die Prozessdefinition «${C.escape(i.defId || '—')}». `
+          + 'Status und Verlauf unten stammen aus dem Vorgang selbst; der Schrittfortschritt lässt sich nicht anzeigen.',
+          'warning', 'WarningCircle')}</div>`}
 
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabItems, active: activeTab, idPrefix: 'case-tab', ariaLabel: 'Vorgangsdetails' })}
@@ -158,6 +165,7 @@ function detail(ctx, id) {
 
     ${canAdvance
       ? `<div class="mt-6"><button class="btn btn--outline" id="advance">${C.icon('ArrowRight', 'icon--base')} Nächster Schritt (Demo)</button></div>`
+      : !def ? ''
       : i.createdLocally ? '<p class="small muted mt-6">Vorgang abgeschlossen.</p>' : '<p class="small muted mt-6">Seed-Vorgang (Demo) — nicht weiterführbar.</p>'}
   </div>`;
 

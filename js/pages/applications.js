@@ -32,7 +32,11 @@ const SORTS = {
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
   if (params[0]) {
-    const mod = await import('./application.js');
+    // application.js wird NICHT vom Router geladen, sondern hier — die
+    // `needs`-Sperre des Routers greift also nicht. Der Detailbestand
+    // (application-pages.json) wird darum hier angefordert, und zwar nur beim
+    // Öffnen eines Details, nicht schon für die Liste (H4).
+    const [mod] = await Promise.all([import('./application.js'), core.ensure('appPages')]);
     if (ctx.stale()) return;   // A2: nach dem await keine überholte Navigation überschreiben
     return mod.default(ctx, params[0]);
   }

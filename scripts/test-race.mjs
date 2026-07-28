@@ -41,7 +41,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       const dir = `${c.first.split('/').pop()} → ${c.second.split('/').pop()} (gap ${c.gap}ms)`;
       check((r.h1 || '').includes(c.want) && !r.err, `${dir} lands on "${c.want}" (got "${r.h1}")`);
     }
-    check(page.exceptions.length === 0, `no uncaught exceptions${page.exceptions.length ? ' — ' + page.exceptions[0].split('\\n')[0] : ''}`);
+    check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
     await page.closeTarget();
   } finally {
     cdp.close();

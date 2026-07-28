@@ -43,6 +43,19 @@ export default async function render(ctx) {
   }
   await dashData.load();
   if (ctx.stale && ctx.stale()) return;
+  // Ohne die Datei bliebe ein leeres Portal stehen, das von einem ungefüllten
+  // nicht zu unterscheiden wäre (M18) — hier stattdessen der Ladefehler.
+  if (!dashData.ok()) {
+    const { mount, C, setTitle, setCrumbs } = ctx;
+    setTitle('Datenportal');
+    setCrumbs([...CRUMB_BASE, { label: 'Datenportal' }]);
+    mount.innerHTML = `<div class="container section">${C.notification(
+      '<strong>Die Auswertungen konnten nicht geladen werden.</strong> '
+      + 'Das ist ein Ladefehler, kein leeres Portal. '
+      + '<button type="button" class="link" onclick="location.reload()">Seite neu laden</button>',
+      'error', 'WarningCircle')}</div>`;
+    return;
+  }
   if (params[0]) return dashboardView(ctx, params[0]);
   return overview(ctx);
 }
@@ -250,7 +263,8 @@ function dashboardView(ctx, id) {
     // initialise any map in the freshly rendered grid
     specs.filter(s => s.form === 'map').forEach(s => {
       const el = grid.querySelector(`#map-${s.id}`);
-      if (el) activeMaps.push(initBuildingsMap(el, buildings));
+      if (el) { const pm = initBuildingsMap(el, buildings); activeMaps.push(pm);
+        ctx.onUnmount(() => pm && pm.then && pm.then(m => m && m.remove()).catch(() => {})); }
     });
   }
   renderGrid();

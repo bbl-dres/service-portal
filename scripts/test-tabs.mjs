@@ -94,7 +94,7 @@ const check = (cond, label) => {
       const last = v.tabs[v.tabs.length - 1];
       check(r.kbd[1].focus === last && r.kbd[1].active === last, `End → "${last}"`);
       check(r.kbd[2].focus === v.tabs[0] && r.kbd[2].active === v.tabs[0], `Home → "${v.tabs[0]}"`);
-      check(page.exceptions.length === 0, `no uncaught exceptions${page.exceptions.length ? ' — ' + page.exceptions[0].split('\\n')[0] : ''}`);
+      check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
       check(page.consoleErrors.length === 0, `no console errors${page.consoleErrors.length ? ' — ' + page.consoleErrors[0] : ''}`);
       await page.closeTarget();
     }
@@ -104,7 +104,7 @@ const check = (cond, label) => {
       const page = await openPage(cdp, g.url);
       const r = await page.evaluate(PROBE_GATE);
       check(r.hasGate === true, `shows login gate (h1: "${r.h1}")`);
-      check(page.exceptions.length === 0, `no uncaught exceptions${page.exceptions.length ? ' — ' + page.exceptions[0].split('\\n')[0] : ''}`);
+      check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
       await page.closeTarget();
     }
   } finally {

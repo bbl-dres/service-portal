@@ -110,7 +110,7 @@ const dec = (h) => decodeURIComponent(h);
       check(base.selectCount >= 1, `has ${base.selectCount} filter checkbox(es)`);
       check(base.viewBtns.length === 2, 'has galerie/liste view switch');
       check(base.cards > 0, `renders ${base.cards} result cards`);
-      check(p.exceptions.length === 0, `no exceptions${p.exceptions.length ? ' — ' + p.exceptions[0].split('\\n')[0] : ''}`);
+      check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
       await p.closeTarget();
 
       // 2. search deep-link: ?q=zzz → input round-trips, 0 results, empty state
@@ -180,7 +180,7 @@ const dec = (h) => decodeURIComponent(h);
       p = await openPage(cdp, cat.detail);
       const det = await p.evaluate(PROBE_DETAIL);
       check(det.h1 && !det.notFound, `detail renders ("${det.h1}")`);
-      check(p.exceptions.length === 0, `detail: no exceptions${p.exceptions.length ? ' — ' + p.exceptions[0].split('\\n')[0] : ''}`);
+      check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
       await p.closeTarget();
     }
   } finally {

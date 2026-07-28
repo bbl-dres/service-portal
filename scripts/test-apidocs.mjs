@@ -74,8 +74,8 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     console.log('■ Katalog-Eintrag:', JSON.stringify(K.h1), '| Links in die Docs:', K.docsLinks);
     check(/Kundenportal/.test(K.h1 || ''), `catalog dataset renders (${K.h1})`);
     check(K.docsLinks >= 8, `distributions deep-link into the docs (${K.docsLinks})`);
-    check(p.exceptions.length + p2.exceptions.length + p3.exceptions.length === 0,
-      `no exceptions${(p.exceptions[0] || p2.exceptions[0] || p3.exceptions[0]) ? ' — ' + (p.exceptions[0] || p2.exceptions[0] || p3.exceptions[0]).split('\n')[0] : ''}`);
+    check([...(await p.problems()), ...(await p2.problems()), ...(await p3.problems())].length === 0,
+      `no exceptions / console errors / error banner${[...(await p.problems()), ...(await p2.problems()), ...(await p3.problems())][0] ? ': ' + [...(await p.problems()), ...(await p2.problems()), ...(await p3.problems())][0] : ''}`);
     await p3.closeTarget();
   } finally {
     cdp.close();

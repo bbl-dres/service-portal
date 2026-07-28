@@ -1,6 +1,10 @@
 // Daten und Digitalisierung — Abschnitts-Übersicht. Die Unterseiten liegen in
 // eigenen Modulen: katalog.js (Datenbezug), ikt-vorhaben.js, digitalisierung.js.
 
+// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
+// bevor render() den ersten Accessor aufruft (H4).
+export const needs = ["datasets"];
+
 export default async function render(ctx) {
   const { params } = ctx;
   if (!params.length) return overview(ctx);

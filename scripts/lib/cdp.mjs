@@ -128,5 +128,24 @@ export async function openPage(cdp, url) {
     }
   };
   const closeTarget = () => cdp.send('Target.closeTarget', { targetId });
-  return { sessionId, evaluate, exceptions, consoleErrors, closeTarget };
+  // Sammelprüfung «nichts kaputt». WICHTIG: `exceptions` allein genügt NICHT —
+  // js/router.js fängt jeden Render-Fehler ab, loggt ihn auf console.error und
+  // malt eine .notification--error. Nichts davon erreicht Runtime.exceptionThrown,
+  // eine geworfene Ansicht lieferte also ein grünes «keine Ausnahmen».
+  // Liefert [] wenn sauber, sonst die Befunde als Text.
+  const problems = async () => {
+    const out = [];
+    if (exceptions.length) out.push(`Ausnahme: ${exceptions[0]}`);
+    if (consoleErrors.length) out.push(`Konsolenfehler: ${consoleErrors[0]}`);
+    try {
+      // .error-summary ist die Fehlerübersicht eines Formulars — sie MELDET eine
+      // Falscheingabe, sie IST kein Defekt. Nur Bannern der Anwendung selbst
+      // (Router, Datenladen, Startfehler) darf ein Test widersprechen.
+      const err = await evaluate(`(function(){var n=document.querySelector('.notification--error:not(.error-summary)');
+        return n ? (n.innerText||'').replace(/\s+/g,' ').slice(0,120) : '';})()`);
+      if (err) out.push(`Fehlerbanner: ${err}`);
+    } catch { /* Seite bereits zu */ }
+    return out;
+  };
+  return { sessionId, evaluate, exceptions, consoleErrors, problems, closeTarget };
 }
