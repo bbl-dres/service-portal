@@ -11,7 +11,9 @@
     "accessLevel": "öffentlich",
     "color": "#2f4356",
     "url": "#",
-    "photo": "1543872084-c7bd3822856f"
+    "photo": "1543872084-c7bd3822856f",
+    "lat": 46.9465,
+    "lon": 7.4441
   },
   {
     "mediaId": "MED-002",
@@ -25,7 +27,9 @@
     "accessLevel": "öffentlich",
     "color": "#46596b",
     "url": "#",
-    "photo": "1502005229762-cf1b2da7c5d6"
+    "photo": "1502005229762-cf1b2da7c5d6",
+    "lat": 46.946662,
+    "lon": 7.444398
   },
   {
     "mediaId": "MED-003",
@@ -39,7 +43,9 @@
     "accessLevel": "öffentlich",
     "color": "#596978",
     "url": "#",
-    "photo": "1449157291145-7efd050a4d0e"
+    "photo": "1449157291145-7efd050a4d0e",
+    "lat": 52.52,
+    "lon": 13.3695
   },
   {
     "mediaId": "MED-004",
@@ -53,7 +59,9 @@
     "accessLevel": "intern",
     "color": "#263645",
     "url": "#",
-    "photo": "1504307651254-35680f356dfd"
+    "photo": "1504307651254-35680f356dfd",
+    "lat": 47.3769,
+    "lon": 8.532
   },
   {
     "mediaId": "MED-005",
@@ -67,7 +75,9 @@
     "accessLevel": "öffentlich",
     "color": "#2f4356",
     "url": "#",
-    "photo": "1515488764276-beab7607c1e6"
+    "photo": "1515488764276-beab7607c1e6",
+    "lat": 40.7528,
+    "lon": -73.9712
   },
   {
     "mediaId": "MED-006",
@@ -81,7 +91,9 @@
     "accessLevel": "öffentlich",
     "color": "#46596b",
     "url": "#",
-    "photo": "1486406146926-c627a92ad1ab"
+    "photo": "1486406146926-c627a92ad1ab",
+    "lat": 35.652,
+    "lon": 139.735
   },
   {
     "mediaId": "MED-007",
@@ -95,7 +107,9 @@
     "accessLevel": "intern",
     "color": "#596978",
     "url": "#",
-    "photo": "1470075801209-17f9ec0cada6"
+    "photo": "1470075801209-17f9ec0cada6",
+    "lat": 47.5596,
+    "lon": 7.5886
   },
   {
     "mediaId": "MED-008",
@@ -109,7 +123,9 @@
     "accessLevel": "öffentlich",
     "color": "#2f4356",
     "url": "#",
-    "photo": "1589829545856-d10d557cf95f"
+    "photo": "1589829545856-d10d557cf95f",
+    "lat": -15.7942,
+    "lon": -47.8825
   },
   {
     "mediaId": "MED-009",
@@ -123,7 +139,9 @@
     "accessLevel": "intern",
     "color": "#263645",
     "url": "#",
-    "photo": "1576086213369-97a306d36557"
+    "photo": "1576086213369-97a306d36557",
+    "lat": 46.0037,
+    "lon": 8.9512
   },
   {
     "mediaId": "MED-010",
@@ -137,7 +155,9 @@
     "accessLevel": "öffentlich",
     "color": "#46596b",
     "url": "#",
-    "photo": "1481627834876-b7833e8f5570"
+    "photo": "1481627834876-b7833e8f5570",
+    "lat": 46.951,
+    "lon": 7.4388
   },
   {
     "mediaId": "MED-011",
@@ -151,7 +171,9 @@
     "accessLevel": "öffentlich",
     "color": "#596978",
     "url": "#",
-    "photo": "1554907984-15263bfd63bd"
+    "photo": "1554907984-15263bfd63bd",
+    "lat": 46.946442,
+    "lon": 7.444471
   },
   {
     "mediaId": "MED-012",
@@ -165,7 +187,9 @@
     "accessLevel": "intern",
     "color": "#2f4356",
     "url": "#",
-    "photo": "1553413077-190dd305871c"
+    "photo": "1553413077-190dd305871c",
+    "lat": 46.946266,
+    "lon": 7.444265
   },
   {
     "mediaId": "MED-013",
@@ -179,7 +203,9 @@
     "accessLevel": "öffentlich",
     "color": "#2f4356",
     "url": "#",
-    "photo": "1446776877081-d282a0f896e2"
+    "photo": "1446776877081-d282a0f896e2",
+    "lat": 46.946266,
+    "lon": 7.443935
   },
   {
     "mediaId": "MED-014",
@@ -193,7 +219,9 @@
     "accessLevel": "öffentlich",
     "color": "#2f4356",
     "url": "#",
-    "photo": "1519681393784-d120267933ba"
+    "photo": "1519681393784-d120267933ba",
+    "lat": 46.946442,
+    "lon": 7.443729
   },
   {
     "mediaId": "MED-015",
@@ -207,7 +235,9 @@
     "accessLevel": "öffentlich",
     "color": "#2f4356",
     "url": "#",
-    "photo": "1470071459604-3b5ec3a7fe05"
+    "photo": "1470071459604-3b5ec3a7fe05",
+    "lat": 46.946662,
+    "lon": 7.443802
   },
   {
     "mediaId": "MED-016",
@@ -221,7 +251,9 @@
     "accessLevel": "öffentlich",
     "color": "#2f4356",
     "url": "#",
-    "photo": "1500382017468-9049fed747ef"
+    "photo": "1500382017468-9049fed747ef",
+    "lat": 52.520162,
+    "lon": 13.369834
   },
   {
     "mediaId": "MED-017",
@@ -235,6 +267,8 @@
     "accessLevel": "öffentlich",
     "color": "#2f4356",
     "url": "#",
-    "photo": "1441974231531-c6227db76b6e"
+    "photo": "1441974231531-c6227db76b6e",
+    "lat": 47.377062,
+    "lon": 8.5323
   }
 ]

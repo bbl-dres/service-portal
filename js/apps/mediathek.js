@@ -1,10 +1,35 @@
 // Mediathek — Immobilien-Medienbibliothek (Fotos & Videos der Bauten), modelliert nach mediathek.admin.ch.
+//
+// Die Übersicht folgt demselben Katalogmuster wie Dienstleistungen, Anwendungen
+// und Datenkatalog: C.catalogueBar (Suche · Trefferzahl · Sortierung · Filter ·
+// Ansichtswechsel) über C.catalogueResults, Zustand vollständig im URL-Hash.
+// Dazu eine dritte Ansicht, die es sonst nur im Liegenschaften-Inventar gibt:
+// die KARTE.
+//
+// Georeferenz: jede Aufnahme trägt ihre EIGENEN Koordinaten (`lat` / `lon` in
+// data/media.json) — so wie ein echtes Foto seine EXIF-Position mitbringt. Kein
+// Zusammenführen über `buildingId` mehr: der Aufnahmeort ist eine Eigenschaft
+// des Mediums, nicht des abgebildeten Objekts, und Aufnahmen desselben Gebäudes
+// stehen dadurch als eigene Punkte auf der Karte.
+// (Demo-Daten: die Positionen wurden aus dem Objektstandort abgeleitet und
+// liegen bis ~30 m um ihn herum — plausibel, aber keine echten Kamerapunkte.)
+
+import { initEstateMap } from '../buildings-map.js';
+import { openGallery } from '../gallery.js';
 
 // Historic material is rendered desaturated, so the archive reads as an archive.
 const isHistoric = (m) => m.historicPeriod === 'historisch';
 // Demo images are Unsplash placeholders — say so rather than passing them off
 // as the (fictional) BBL archive credits shown in the metadata block.
 const PLACEHOLDER_NOTE = '<p class="small muted">Platzhalterbild (Unsplash) — Demo-Daten, nicht das reale Archivbild.</p>';
+
+const PER_PAGE = 12;
+const SORT_OPTS = [
+  ['datum-desc', 'Datum (neuste zuerst)'],
+  ['datum-asc', 'Datum (älteste zuerst)'],
+  ['titel', 'Titel (A–Z)'],
+  ['objekt', 'Objekt (A–Z)'],
+];
 
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
@@ -18,177 +43,184 @@ export default async function render(ctx) {
   ]);
 
   const all = core.media();
-  const buildings = core.buildings();
-  const histCount = all.filter(m => m.historicPeriod === 'historisch').length;
-
-  // Local filter state (re-render driven). Lightbox holds the currently opened mediaId.
-  const state = {
-    typ: query.get('type') || 'alle',     // alle | photo | video
-    epoche: 'alle',                        // alle | historisch | aktuell
-    building: query.get('building') || 'alle',
-    lightbox: query.get('id') || null,
-  };
-
   const bname = (id) => { const b = core.building(id); return b ? b.name : id; };
 
-  function periodBadge(p) {
-    return p === 'historisch'
-      ? C.badge('Historisch', 'warning')
-      : C.badge('Aktuell', 'info');
-  }
+  /* ------------------------------------------------------------- Zustand -- */
+  const rawQ = (query.get('q') || '').trim();
+  const typs = (query.get('typ') || '').split(',').filter(Boolean);
+  const epochen = (query.get('epoche') || '').split(',').filter(Boolean);
+  const objekte = (query.get('objekt') || '').split(',').filter(Boolean);
+  const sortKey = SORT_OPTS.some(([v]) => v === query.get('sort')) ? query.get('sort') : 'datum-desc';
+  const view = ['galerie', 'liste', 'karte'].includes(query.get('view')) ? query.get('view') : 'galerie';
 
-  function filtered() {
-    return all.filter(m =>
-      (state.typ === 'alle' || m.mediaType === state.typ) &&
-      (state.epoche === 'alle' || m.historicPeriod === state.epoche) &&
-      (state.building === 'alle' || m.buildingId === state.building)
-    );
-  }
+  const base = { q: rawQ, typ: typs, epoche: epochen, objekt: objekte, sort: sortKey, view };
+  const hash = (patch = {}) => C.catalogueHash('#/app/mediathek', { ...base, ...patch });
 
-  function chip(label, group, value) {
-    const active = state[group] === value;
-    return `<button type="button" class="tag-item${active ? " tag-item--active" : ""}" aria-pressed="${!!(active)}" data-group="${group}" data-value="${C.escape(value)}"><span class="tag-item__inner"><span class="tag-item__text">${C.escape(label)}</span></span></button>`;
-  }
+  const needle = rawQ.toLowerCase();
+  const matches = (m) => !needle || [m.title, bname(m.buildingId), m.photographer, m.date]
+    .some(v => String(v || '').toLowerCase().includes(needle));
 
-  function tileMarkup(m) {
-    const isVideo = m.mediaType === 'video';
-    return `
-      <a class="card card--default card--clickable media-tile" href="#/app/mediathek/${encodeURIComponent(m.mediaId)}" data-media="${C.escape(m.mediaId)}">
-        ${C.photo({
-          id: m.photo, color: m.color, alt: m.title, w: 640, gray: isHistoric(m),
-          cls: 'media-preview photo--scrim',
-          style: 'height:150px;display:flex;align-items:flex-end;justify-content:space-between;padding:.6rem .75rem',
-          overlay: `
-            ${isVideo ? `<span class="media-play" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;opacity:.92;">${C.icon('Video', 'icon--xl')}</span>` : ''}
-            <span class="media-type-icon" style="color:rgba(255,255,255,.9);">${C.icon(isVideo ? 'Video' : 'Image', 'icon--base')}</span>
-            <span class="badge badge--gray" style="background:var(--overlay-scrim);color:#fff;">${C.escape(m.date)}</span>`,
-        })}
-        <div class="card__body">
-          <div class="card__title card__title--sm">${C.escape(m.title)}</div>
-          <p class="card__description" style="margin:0;">${C.icon('Building', 'icon--base')} ${C.escape(bname(m.buildingId))}</p>
-          <div class="pill-row mt-2">${periodBadge(m.historicPeriod)}${m.accessLevel !== 'öffentlich' ? C.badge('Intern', 'gray') : ''}</div>
-        </div>
-      </a>`;
-  }
+  const hits = all.filter(m => matches(m)
+    && (!typs.length || typs.includes(m.mediaType))
+    && (!epochen.length || epochen.includes(m.historicPeriod))
+    && (!objekte.length || objekte.includes(m.buildingId)));
 
-  function lightboxMarkup() {
-    if (!state.lightbox) return '';
-    const m = core.media().find(x => x.mediaId === state.lightbox);
-    if (!m) return '';
-    const isVideo = m.mediaType === 'video';
-    const isPublic = m.accessLevel === 'öffentlich';
-    return `
-    <div class="lightbox" id="lightbox" style="margin-top:2rem;">
-      <div class="card card--default">
-        <div class="card__body" style="gap:1.25rem;">
-          <div class="row row--between">
-            <div class="row gap-sm">${C.badge(isVideo ? 'Video' : 'Foto', 'blue')}${periodBadge(m.historicPeriod)}</div>
-            <button type="button" class="btn btn--link" id="lb-close">${C.icon('Cancel', 'icon--base')} Schliessen</button>
-          </div>
-          <div class="container--grid gap--responsive">
-            <div class="container__main stack">
-              ${C.photo({
-                id: m.photo, color: m.color, alt: m.title, w: 1000, gray: isHistoric(m),
-                style: 'height:320px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center',
-                overlay: isVideo ? `<span style="color:#fff;opacity:.92;">${C.icon('Video', 'icon--xl')}</span>` : '',
-              })}
-              ${PLACEHOLDER_NOTE}
-            </div>
-            <aside class="container__aside stack">
-              <h2 style="margin:0;font-size:var(--fs-xl);">${C.escape(m.title)}</h2>
-              <dl class="kv">
-                <dt>Typ</dt><dd>${isVideo ? 'Video' : 'Foto'}</dd>
-                <dt>Datum</dt><dd>${C.escape(m.date)}</dd>
-                <dt>Epoche</dt><dd>${m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'}</dd>
-                <dt>Gebäude</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(m.buildingId)}">${C.escape(bname(m.buildingId))}</a></dd>
-                <dt>${isVideo ? 'Quelle' : 'Fotograf:in'}</dt><dd>${C.escape(m.photographer)}</dd>
-                <dt>Copyright</dt><dd>${C.escape(m.copyright)}</dd>
-                <dt>Zugriff</dt><dd>${C.escape(m.accessLevel)}</dd>
-              </dl>
-              <a class="btn btn--outline" href="${C.escape(m.url || '#')}">${C.icon('Download', 'icon--base')} Herunterladen</a>
-              ${!isPublic ? C.notification('Dieses Medium ist als <strong>intern</strong> klassifiziert. Der Download erfordert eine entsprechende Berechtigung.', 'warning', 'Lock') : `<p class="small muted">Frei verwendbar gemäss angegebenem Copyright.</p>`}
-            </aside>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }
+  const SORTS = {
+    'datum-desc': (a, b) => String(b.date).localeCompare(String(a.date)),
+    'datum-asc': (a, b) => String(a.date).localeCompare(String(b.date)),
+    titel: (a, b) => a.title.localeCompare(b.title, 'de-CH'),
+    objekt: (a, b) => bname(a.buildingId).localeCompare(bname(b.buildingId), 'de-CH'),
+  };
+  const sorted = hits.slice().sort(SORTS[sortKey] || SORTS['datum-desc']);
 
-  function draw() {
-    const list = filtered();
-    // Fokus + Schreibmarke über den Filter-Neuaufbau retten (Item 3.2).
-    const restore = C.preserveFocus(mount);
-    mount.innerHTML = `
-    <div class="container section">
-      ${C.pageHeader({
-        title: 'Mediathek',
-        lead: `Fotos und Videos der Bundesbauten — von historischen Aufnahmen bis zu aktuellen Dokumentationen. ${histCount} historische Aufnahmen verfügbar.`,
-      })}
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PER_PAGE));
+  const page = Math.min(Math.max(1, parseInt(query.get('page') || '1', 10) || 1), totalPages);
+  const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-      <div class="box stack" style="margin-bottom:1.5rem;">
-        <div>
-          <div class="small muted" style="font-weight:var(--fw-bold);margin-bottom:.35rem;">Typ</div>
-          <div class="list list--flex list--wrap">
-            ${chip('Alle', 'typ', 'alle')}
-            ${chip('Foto', 'typ', 'photo')}
-            ${chip('Video', 'typ', 'video')}
-          </div>
-        </div>
-        <div>
-          <div class="small muted" style="font-weight:var(--fw-bold);margin-bottom:.35rem;">Epoche</div>
-          <div class="list list--flex list--wrap">
-            ${chip('Alle', 'epoche', 'alle')}
-            ${chip('Historisch', 'epoche', 'historisch')}
-            ${chip('Aktuell', 'epoche', 'aktuell')}
-          </div>
-        </div>
-        <div>
-          <label for="med-building" class="small muted" style="display:block;font-weight:var(--fw-bold);margin-bottom:.35rem;">Gebäude</label>
-          ${C.selectBox(`<select id="med-building" class="input--outline input--base">
-              <option value="alle"${state.building === 'alle' ? ' selected' : ''}>Alle Gebäude</option>
-              ${buildings.map(b => `<option value="${C.escape(b.bbl_id)}"${state.building === b.bbl_id ? ' selected' : ''}>${C.escape(b.name)} — ${C.escape(b.city)}</option>`).join('')}
-            </select>`, '', 'max-width:24rem')}
-        </div>
-      </div>
+  // Einträge für die geteilte Vollbildgalerie (js/gallery.js). Die Reihenfolge
+  // entspricht der Trefferliste, damit Blättern in der Galerie der Sortierung folgt.
+  const galleryItems = () => sorted.filter(m => m.photo).map(m => ({
+    photo: m.photo, title: m.title, meta: `${m.date} · ${bname(m.buildingId)}`,
+    type: m.mediaType, gray: isHistoric(m),
+    href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
+    details: [
+      ['Typ', m.mediaType === 'video' ? 'Video' : 'Foto'],
+      ['Datum', m.date],
+      ['Epoche', m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'],
+      ['Objekt', bname(m.buildingId)],
+      [m.mediaType === 'video' ? 'Quelle' : 'Fotograf:in', m.photographer],
+      ['Copyright', m.copyright],
+      ['Zugriff', m.accessLevel],
+      ['Koordinaten', Number.isFinite(m.lat) ? `${m.lat.toFixed(5)}, ${m.lon.toFixed(5)}` : '—'],
+    ],
+  }));
 
-      <p class="muted small">${list.length} ${list.length === 1 ? 'Eintrag' : 'Einträge'}</p>
+  /* ------------------------------------------------------------ Bausteine -- */
+  const periodBadge = (p) => p === 'historisch' ? C.badge('Historisch', 'warning') : C.badge('Aktuell', 'info');
+  const typLabel = (t) => t === 'video' ? 'Video' : 'Foto';
 
-      ${list.length
-        ? `<div class="grid grid--auto mt-2">${list.map(tileMarkup).join('')}</div>`
-        : C.empty('Keine Medien für die gewählten Filter gefunden.')}
+  const card = (m) => C.card({
+    title: m.title,
+    desc: `${bname(m.buildingId)} · ${m.photographer}`,
+    href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
+    titleTag: 'h3',
+    photo: { id: m.photo, color: m.color, alt: '', gray: isHistoric(m) },
+    badges: [
+      C.badge(typLabel(m.mediaType), m.mediaType === 'video' ? 'purple' : 'blue'),
+      periodBadge(m.historicPeriod),
+      ...(m.accessLevel !== 'öffentlich' ? [C.badge('Intern', 'gray')] : []),
+    ],
+    footerInfo: C.escape(m.date), footerAction: C.cardAction(),
+  });
 
-      ${lightboxMarkup()}
-    </div>`;
+  const listView = (rows) => C.table({
+    caption: 'Aufnahmen',
+    zebra: true,
+    columns: [
+      { key: 'title', label: 'Titel', render: m =>
+        `<a href="#/app/mediathek/${encodeURIComponent(m.mediaId)}">${C.escape(m.title)}</a>` },
+      { key: 'typ', label: 'Typ', render: m => C.escape(typLabel(m.mediaType)) },
+      { key: 'objekt', label: 'Objekt', render: m => C.escape(bname(m.buildingId)) },
+      { key: 'epoche', label: 'Epoche', render: m => periodBadge(m.historicPeriod) },
+      { key: 'urheber', label: 'Urheberschaft', render: m => C.escape(m.photographer) },
+      { key: 'datum', label: 'Datum', align: 'right', render: m => C.escape(m.date) },
+    ],
+    rows,
+  });
 
-    wire();
-    restore();
-  }
+  // Ein Punkt je AUFNAHME, aus deren eigenen Koordinaten.
+  const mapPoints = () => sorted
+    .filter(m => Number.isFinite(m.lat) && Number.isFinite(m.lon))
+    .map(m => ({
+      lat: m.lat, lon: m.lon, bblId: m.mediaId, label: m.title,
+      sub: `${typLabel(m.mediaType)} · ${m.date} · ${bname(m.buildingId)}`,
+      href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
+    }));
+  const mapView = () => {
+    const n = mapPoints().length;
+    return `<div class="pf-map dash-map mt-4" id="med-map" role="group"
+        aria-label="Karte der Aufnahmeorte"></div>
+      <p class="small muted mt-2">${n} von ${sorted.length} Aufnahmen sind georeferenziert.`
+      + ` Demo-Daten: die Positionen liegen bis rund 30 m um das abgebildete Objekt.</p>`;
+  };
 
-  function wire() {
-    mount.querySelectorAll('.tag-item[data-group]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        state[btn.dataset.group] = btn.dataset.value;
-        draw();
-      });
-    });
-    const sel = mount.querySelector('#med-building');
-    if (sel) sel.addEventListener('change', () => { state.building = sel.value; draw(); });
+  const active = [
+    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
+    ...typs.map(x => ({ label: typLabel(x), href: hash({ typ: typs.filter(y => y !== x) }) })),
+    ...epochen.map(x => ({ label: x === 'historisch' ? 'Historisch' : 'Aktuell', href: hash({ epoche: epochen.filter(y => y !== x) }) })),
+    ...objekte.map(x => ({ label: bname(x), href: hash({ objekt: objekte.filter(y => y !== x) }) })),
+  ];
 
-    // Open lightbox inline instead of navigating away.
-    mount.querySelectorAll('.media-tile[data-media]').forEach(tile => {
-      tile.addEventListener('click', (e) => {
+  const objOpts = [...new Set(all.map(m => m.buildingId))]
+    .map(id => ({ value: id, label: bname(id) }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'de-CH'));
+
+  /* ---------------------------------------------------------------- Render */
+  mount.innerHTML = `
+  <div class="container section">
+    ${C.pageHeader({
+      title: 'Mediathek',
+      lead: 'Fotos und Videos der Bundesbauten — von historischen Aufnahmen bis zu aktuellen Dokumentationen.',
+    })}
+    ${C.catalogueBar({
+      formId: 'med-search', inputId: 'medq', searchLabel: 'Aufnahme suchen',
+      placeholder: 'Titel, Objekt oder Urheberschaft…', q: rawQ,
+      countId: 'med-count',
+      // In der Karte ist «Seite x von y» sinnlos: sie zeigt alle Treffer.
+      count: view === 'karte'
+        ? `<strong>${sorted.length}</strong> ${sorted.length === 1 ? 'Aufnahme' : 'Aufnahmen'}`
+        : `<strong>${sorted.length}</strong> von ${all.length} Aufnahmen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
+      sort: { id: 'med-sort', value: sortKey, options: SORT_OPTS },
+      filterId: 'med-filter', filterLabel: 'Filter', filterCount: typs.length + epochen.length + objekte.length,
+      panelId: 'med-filters', panel: `
+        ${C.filterGroup({ dim: 'typ', legend: 'Medientyp', selected: typs, options: [
+          { value: 'photo', label: 'Foto' }, { value: 'video', label: 'Video' }] })}
+        ${C.filterGroup({ dim: 'epoche', legend: 'Epoche', selected: epochen, options: [
+          { value: 'historisch', label: 'Historisch' }, { value: 'aktuell', label: 'Aktuell' }] })}
+        ${C.filterGroup({ dim: 'objekt', legend: 'Objekt', selected: objekte, options: objOpts })}
+        <div class="catbar__panel__actions"><a class="btn btn--bare btn--sm" href="${hash({ typ: [], epoche: [], objekt: [] })}">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></a></div>`,
+      view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List'], ['karte', 'Kartenansicht', 'Map']],
+    })}
+    ${C.activeFilters({ filters: active, resetHref: '#/app/mediathek' })}
+    ${C.catalogueResults({
+      resetHref: '#/app/mediathek',
+      visible, count: sorted.length, total: all.length, view, page, totalPages, header: false,
+      card, listView, mapView, unit: 'Aufnahmen', regionLabel: 'Aufnahmen',
+      paginationInputId: 'med-page', paginationLabel: 'Seitennavigation Mediathek',
+      paginationHref: (p) => hash({ page: p }),
+      available: core.available('media'),
+      emptyMsg: 'Keine Aufnahmen gefunden.',
+      unavailableMsg: 'Medien konnten nicht geladen werden (Ladefehler).',
+    })}
+  </div>`;
+
+  C.announceCatalogue({ count: sorted.length, total: all.length, unit: 'Aufnahmen', page, totalPages, view });
+  C.wireCatalogue(mount, {
+    formId: 'med-search', inputId: 'medq', pageInputId: 'med-page', page, totalPages, hash,
+    sortId: 'med-sort', filterToggleId: 'med-filter', panelId: 'med-filters',
+  });
+
+  if (view === 'galerie') {
+    // Fortschrittliche Verbesserung: der href auf die Detailseite bleibt die
+    // Rückfallebene (und die Tastaturbedienung), der Klick öffnet die Vollbild-
+    // galerie an genau diesem Bild — wie in der Objekt-Detailansicht.
+    const items = galleryItems();
+    mount.querySelectorAll('.catalogue-grid .card__link, main .grid .card__link').forEach((a) => {
+      a.addEventListener('click', (e) => {
+        const id = decodeURIComponent((a.getAttribute('href') || '').split('/').pop());
+        const i = items.findIndex(x => x.href.endsWith(encodeURIComponent(id)));
+        if (i < 0) return;              // ohne Treffer normal navigieren
         e.preventDefault();
-        state.lightbox = tile.dataset.media;
-        draw();
-        const lb = mount.querySelector('#lightbox');
-        if (lb) lb.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        openGallery(items, i, C);
       });
     });
-    const close = mount.querySelector('#lb-close');
-    if (close) close.addEventListener('click', () => { state.lightbox = null; draw(); });
   }
 
-  draw();
+  if (view === 'karte') {
+    const el = mount.querySelector('#med-map');
+    if (el) initEstateMap(el, mapPoints(), null, null, { focusPopup: false })
+      .catch(() => { /* Karte ist optional; der Fehlertext steht im Container */ });
+  }
 }
 
 // Detail view: #/app/mediathek/MED-001

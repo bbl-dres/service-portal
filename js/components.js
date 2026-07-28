@@ -965,13 +965,19 @@ export function resultsHeader({ count, total, unit, page = 1, totalPages = 1, vi
 // gefilterter Treffer gesamt; `card(item)`/`listView(items)` rendern die Ansicht.
 export function catalogueResults({
   visible, count, total, view = 'galerie', page = 1, totalPages = 1,
-  card, listView, unit, gridCls = 'grid grid--3',
+  card, listView, mapView, unit, gridCls = 'grid grid--3',
   paginationHref, paginationInputId, paginationLabel,
   available = true, emptyMsg, unavailableMsg, note = '', header = true,
   regionLabel = '', resetHref = '',
 }) {
+  // Die Kartenansicht zeigt bewusst ALLE Treffer statt einer Seite: eine Karte
+  // mit 10 von 17 Punkten wäre ein falsches Bild der Verteilung. Deshalb bekommt
+  // sie auch keine Blätterleiste — `mapView` erhält die volle gefilterte Menge.
+  const isMap = view === 'karte' && typeof mapView === 'function';
   const body = count
-    ? `${view === 'liste'
+    ? isMap
+      ? mapView()
+      : `${view === 'liste'
         ? listView(visible)
         : `<div class="${gridCls} mt-4">${visible.map(card).join('')}</div>`}${
       paginationHref ? pagination({ page, totalPages, inputId: paginationInputId, label: paginationLabel, href: paginationHref }) : ''}`

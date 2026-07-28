@@ -6,7 +6,26 @@
 // Baum (Land › Region › Stadt › Wirtschaftseinheit › Gebäude/Grundstück), rechts die
 // Ansicht Karte (Default, geclustert) · Galerie · Liste. Siehe docs/portfolio-redesign.md.
 
+import { openGallery } from '../gallery.js';
 import { initEstateMap } from '../buildings-map.js';
+
+// Galerie-Eintrag aus einem Medium. `details` speist das Metadaten-Panel der
+// Vollbildgalerie (js/gallery.js), `href` dessen Verweis auf die Detailseite.
+function mediaGalleryItem(m) {
+  return {
+    photo: m.photo, title: m.title, meta: `${m.date} · ${m.historicPeriod}`,
+    type: m.mediaType, gray: m.historicPeriod === 'historisch',
+    href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
+    details: [
+      ['Typ', m.mediaType === 'video' ? 'Video' : 'Foto'],
+      ['Datum', m.date],
+      ['Epoche', m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'],
+      [m.mediaType === 'video' ? 'Quelle' : 'Fotograf:in', m.photographer],
+      ['Copyright', m.copyright],
+      ['Zugriff', m.accessLevel],
+    ],
+  };
+}
 
 let pfMap = null;
 function freePfMap() { if (pfMap) { try { pfMap.remove(); } catch { /* schon weg */ } pfMap = null; } }
@@ -366,8 +385,9 @@ function buildingDetail(ctx, b) {
   const regionLabel = [b.land, b.canton].filter(Boolean).join(' · ');
   // Bildergalerie (Modal auf dem Hero-Bild) statt eines Medien-Registers: Hauptbild + verknüpfte Medien.
   const galleryItems = [
-    { photo: b.photo, title: b.name, meta: `${b.city} · Hauptansicht`, type: 'foto' },
-    ...media.map((m) => ({ photo: m.photo, title: m.title, meta: `${m.date} · ${m.historicPeriod}`, type: m.mediaType, gray: m.historicPeriod === 'historisch' })),
+    { photo: b.photo, title: b.name, meta: `${b.city} · Hauptansicht`, type: 'foto',
+      details: [['Objekt', b.name], ['Adresse', `${b.street}, ${b.zip} ${b.city}`], ['Objekt-ID', b.bbl_id]] },
+    ...media.map(mediaGalleryItem),
   ].filter((g) => g.photo);
 
   const tabs = [
@@ -604,7 +624,7 @@ function parcelDetail(ctx, p) {
   // egal ob Gebäude oder Parzelle). Ein Grundstück trägt kein eigenes `photo`-Feld,
   // sein Hauptbild ist deshalb schlicht das erste verknüpfte Medium.
   const galleryItems = core.mediaForObject(p.bbl_id)
-    .map((m) => ({ photo: m.photo, title: m.title, meta: `${m.date} · ${m.historicPeriod}`, type: m.mediaType, gray: m.historicPeriod === 'historisch' }))
+    .map(mediaGalleryItem)
     .filter((g) => g.photo);
   setTitle(p.name);
   setCrumbs([...CRUMBS, { label: 'Liegenschaften Inventar', href: '#/app/portfolio' }, { label: p.name }]);
@@ -748,89 +768,4 @@ function heroBlock(C, { items = [], mapId, mapLabel }) {
     <div class="pf-hero__map" id="${esc(mapId)}" role="group" aria-label="${esc(mapLabel)}"></div>
   </div>`;
 }
-
-function openGallery(items, start, C) {
-  if (!items || !items.length) return;
-  let idx = Math.max(0, Math.min(start || 0, items.length - 1));
-  const multi = items.length > 1;
-  const trigger = document.activeElement;
-  const esc = (s) => C.escape(String(s == null ? '' : s));
-  const overlay = document.createElement('div');
-  overlay.className = 'pf-lightbox';
-  overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-label', 'Bildergalerie');
-
-  // Vollbild mit Kopfzeile — dieselbe Anatomie wie die Dokumentvorschau
-  // (js/doc-viewer.js): Titel und Meta links, Aktionen rechts. Auf einem Bild, das
-  // die Hauptinformation ist, war die frühere 70vh-Karte Flächenverschwendung.
-  const render = () => {
-    const it = items[idx];
-    const full = C.photoUrl(it.photo, { w: 2000, gray: it.gray });
-    overlay.innerHTML = `
-      <div class="pf-lightbox__bar">
-        <div class="pf-lightbox__heading">
-          ${C.icon(it.type === 'video' ? 'Video' : 'Image', 'pf-lightbox__heading-icon icon--lg')}
-          <div style="min-width:0">
-            <p class="pf-lightbox__title">${esc(it.title)}</p>
-            <p class="pf-lightbox__sub">${esc(it.meta)}${multi ? ` · Bild ${idx + 1} von ${items.length}` : ''}</p>
-          </div>
-        </div>
-        <div class="pf-lightbox__actions">
-          <a class="pf-lightbox__btn" href="${esc(full)}" download target="_blank" rel="noopener"
-             aria-label="Bild herunterladen" title="Herunterladen">${C.icon('Download', 'icon--md')}</a>
-          <button type="button" class="pf-lightbox__btn" data-act="share" aria-label="Bild teilen" title="Teilen">${C.icon('Share', 'icon--md')}</button>
-          <button type="button" class="pf-lightbox__btn" data-act="close" aria-label="Galerie schliessen" title="Schliessen">${C.icon('Cancel', 'icon--md')}</button>
-        </div>
-      </div>
-      <div class="pf-lightbox__stage">
-        ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--prev" data-act="prev" aria-label="Vorheriges Bild">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
-        <img class="pf-lightbox__img" src="${esc(full)}" alt="${esc(it.title)}">
-        ${it.type === 'video' ? `<span class="pf-lightbox__play" aria-hidden="true">${C.icon('Video', 'icon--lg')}</span>` : ''}
-        ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
-      </div>
-      ${multi ? `<div class="pf-lightbox__thumbs">${items.map((m, i) => `<button type="button" class="pf-lightbox__thumb${i === idx ? ' is-active' : ''}" data-thumb="${i}" aria-label="${esc(m.title)}"${i === idx ? ' aria-current="true"' : ''}><img src="${esc(C.photoUrl(m.photo, { w: 200, gray: m.gray }))}" alt=""></button>`).join('')}</div>` : ''}`;
-    const cl = overlay.querySelector('[data-act="close"]'); if (cl) cl.focus();
-  };
-  const go = (d) => { idx = (idx + d + items.length) % items.length; render(); };
-  const close = () => {
-    document.removeEventListener('keydown', onKey);
-    overlay.remove();
-    document.body.classList.remove('chart-overlay-open');
-    if (trigger && trigger.focus) trigger.focus();
-  };
-  function onKey(e) {
-    if (e.key === 'Escape') { e.preventDefault(); close(); }
-    else if (multi && e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
-    else if (multi && e.key === 'ArrowRight') { e.preventDefault(); go(1); }
-    else if (e.key === 'Tab') {
-      // Auch `a[href]` einsammeln — der Herunterladen-Knopf ist ein Link und wäre
-      // sonst aus der Fokusfalle gefallen.
-      const f = [...overlay.querySelectorAll('button, a[href]')].filter((el) => el.offsetParent !== null);
-      if (!f.length) return;
-      const first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    }
-  }
-  overlay.addEventListener('click', (e) => {
-    // Klick auf die dunkle Fläche um das Bild schliesst — bei einem Vollbild ist
-    // das die erwartete Geste. Der Download-Link trägt kein data-act und läuft
-    // deshalb ungehindert durch.
-    if (e.target === overlay || e.target.classList.contains('pf-lightbox__stage')) return close();
-    const btn = e.target.closest('[data-act], [data-thumb]'); if (!btn) return;
-    if (btn.dataset.act === 'close') close();
-    else if (btn.dataset.act === 'prev') go(-1);
-    else if (btn.dataset.act === 'next') go(1);
-    else if (btn.dataset.act === 'share') {
-      const url = `${location.origin}${location.pathname}${location.hash}`;
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(
-        () => C.toast('Link kopiert.'), () => C.toast('Kopieren nicht möglich.'));
-      else C.toast('Kopieren nicht möglich.');
-    } else if (btn.dataset.thumb != null) { idx = Number(btn.dataset.thumb); render(); }
-  });
-  document.addEventListener('keydown', onKey);
-  document.body.classList.add('chart-overlay-open');
-  document.body.appendChild(overlay);
-  render();
-}
+// Die Vollbild-Galerie liegt in js/gallery.js — dieselbe nutzt die Mediathek.
