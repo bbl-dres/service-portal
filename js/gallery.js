@@ -43,6 +43,11 @@ export function openGallery(items, start, C) {
   // Hauptinformation. Der Zustand bleibt über den Bildwechsel erhalten — wer
   // Metadaten sehen will, will sie meist für mehrere Bilder hintereinander.
   let showMeta = false;
+  // Zoom: 'fit' (Standard — das ganze Bild passt in die Bühne) oder ein Faktor,
+  // wobei 1 = ein Bildpunkt der gelieferten Datei je CSS-Pixel. Jeder Bildwechsel
+  // setzt auf 'fit' zurück; ein mitgeschleppter Zoom vom vorigen Bild wäre bei
+  // abweichenden Seitenverhältnissen desorientierend.
+  let zoom = 'fit';
   const multi = items.length > 1;
   const trigger = document.activeElement;
   const esc = (s) => C.escape(String(s == null ? '' : s));
@@ -103,7 +108,7 @@ export function openGallery(items, start, C) {
             aria-label="Vergrössern" title="Vergrössern">${C.icon('Plus', 'icon--md')}</button>
           <span class="pf-lightbox__zoom-sep" aria-hidden="true"></span>
           <button type="button" class="pf-lightbox__btn" data-act="zoom-fit" data-el="zoomfit"
-            aria-label="An Bildschirm anpassen" title="An Bildschirm anpassen">${C.icon('Fullscreen', 'icon--md')}</button>
+            aria-label="An Bildschirm anpassen" title="An Bildschirm anpassen">${C.icon('Expand', 'icon--md')}</button>
         </div>
       </div>
       ${/* Das Panel existiert IMMER, es wird nur ein-/ausgeblendet: aria-controls
@@ -161,13 +166,67 @@ export function openGallery(items, start, C) {
     if (it && it.photo) { const im = new Image(); im.decoding = 'async'; im.src = fullUrl(it); }
   };
 
+  // Zoomstufen wie in Bildbetrachtern üblich; 1 (=100 %) liegt bewusst drin,
+  // damit «Originalgrösse» genau getroffen wird.
+  const STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 2, 3, 4];
+  // Faktor, bei dem das Bild genau in die Bühne passt — Basis für die
+  // Prozentanzeige im Fit-Modus und Startpunkt beim ersten Zoomschritt.
+  function fitFactor() {
+    const im = el.img;
+    if (!im || !im.naturalWidth || !el.canvas) return 1;
+    const box = el.canvas.getBoundingClientRect();
+    if (!box.width || !box.height) return 1;
+    return Math.min(box.width / im.naturalWidth, box.height / im.naturalHeight, 1);
+  }
+  function applyZoom() {
+    const im = el.img;
+    if (!im) return;
+    const fit = zoom === 'fit';
+    el.stage.classList.toggle('is-zoomed', !fit);
+    if (fit) {
+      im.style.width = ''; im.style.height = '';
+    } else {
+      // Feste Pixelmasse statt transform: so bekommt die Bühne echten
+      // Scroll-Überlauf und damit Tastatur- und Touch-Verschiebung geschenkt.
+      im.style.width = `${Math.round(im.naturalWidth * zoom)}px`;
+      im.style.height = 'auto';
+    }
+    const pct = Math.round((fit ? fitFactor() : zoom) * 100);
+    if (el.zoomval) el.zoomval.textContent = `${pct} %`;
+    if (el.zoomout) el.zoomout.disabled = !fit && zoom <= STEPS[0];
+    if (el.zoomin) el.zoomin.disabled = !fit && zoom >= STEPS[STEPS.length - 1];
+    if (el.zoomfit) {
+      el.zoomfit.disabled = fit;
+      el.zoomfit.classList.toggle('is-active', fit);
+    }
+  }
+  function stepZoom(dir) {
+    const from = zoom === 'fit' ? fitFactor() : zoom;
+    const next = dir > 0
+      ? STEPS.find((s) => s > from + 0.001)
+      : [...STEPS].reverse().find((s) => s < from - 0.001);
+    if (next == null) return;
+    zoom = next;
+    applyZoom();
+    // Nach dem Vergrössern mittig einsteigen, statt oben links.
+    if (el.stage) {
+      el.stage.scrollLeft = (el.stage.scrollWidth - el.stage.clientWidth) / 2;
+      el.stage.scrollTop = (el.stage.scrollHeight - el.stage.clientHeight) / 2;
+    }
+  }
+
   function update(first) {
     const it = items[idx];
     el.icon.innerHTML = C.icon(it.type === 'video' ? 'Video' : 'Image', 'icon--lg');
     el.title.textContent = it.title || '';
     el.sub.textContent = `${it.meta || ''}${multi ? ` · Bild ${idx + 1} von ${items.length}` : ''}`;
+    zoom = 'fit';
+    el.img.style.width = ''; el.img.style.height = '';
     el.img.src = fullUrl(it);
     el.img.alt = it.title || '';
+    // naturalWidth steht erst nach dem Laden fest — die Prozentanzeige im
+    // Fit-Modus braucht sie, also nach dem Ladeereignis nachziehen.
+    if (el.img.complete) applyZoom(); else el.img.addEventListener('load', applyZoom, { once: true });
     el.download.href = fullUrl(it);
     el.play.hidden = it.type !== 'video';
 
@@ -203,12 +262,16 @@ export function openGallery(items, start, C) {
   const go = (d) => { idx = (idx + d + items.length) % items.length; update(false); };
   const close = () => {
     document.removeEventListener('keydown', onKey);
+    window.removeEventListener('resize', onResize);
     overlay.remove();
     document.body.classList.remove('chart-overlay-open');
     if (trigger && trigger.focus) trigger.focus();
   };
   function onKey(e) {
     if (e.key === 'Escape') { e.preventDefault(); close(); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); stepZoom(1); }
+    else if (e.key === '-') { e.preventDefault(); stepZoom(-1); }
+    else if (e.key === '0') { e.preventDefault(); zoom = 'fit'; applyZoom(); }
     else if (multi && e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
     else if (multi && e.key === 'ArrowRight') { e.preventDefault(); go(1); }
     else if (e.key === 'Tab') {
@@ -225,11 +288,16 @@ export function openGallery(items, start, C) {
     // Klick auf die dunkle Fläche um das Bild schliesst — bei einem Vollbild ist
     // das die erwartete Geste. Der Download-Link trägt kein data-act und läuft
     // deshalb ungehindert durch.
-    if (e.target === overlay || e.target.classList.contains('pf-lightbox__stage')) return close();
+    if (e.target === overlay
+      || (zoom === 'fit' && (e.target.classList.contains('pf-lightbox__stage')
+        || e.target.classList.contains('pf-lightbox__canvas')))) return close();
     const btn = e.target.closest('[data-act], [data-thumb]'); if (!btn) return;
     if (btn.dataset.act === 'close') close();
     else if (btn.dataset.act === 'prev') go(-1);
     else if (btn.dataset.act === 'next') go(1);
+    else if (btn.dataset.act === 'zoom-in') { stepZoom(1); }
+    else if (btn.dataset.act === 'zoom-out') { stepZoom(-1); }
+    else if (btn.dataset.act === 'zoom-fit') { zoom = 'fit'; applyZoom(); }
     else if (btn.dataset.act === 'meta') { showMeta = !showMeta; update(false); }
     else if (btn.dataset.act === 'close-nav') { close(); }
     else if (btn.dataset.act === 'share') {
@@ -239,6 +307,8 @@ export function openGallery(items, start, C) {
       else C.toast('Kopieren nicht möglich.');
     } else if (btn.dataset.thumb != null) { idx = Number(btn.dataset.thumb); update(false); }
   });
+  const onResize = () => { if (zoom === 'fit') applyZoom(); };
+  window.addEventListener('resize', onResize);
   document.addEventListener('keydown', onKey);
   document.body.classList.add('chart-overlay-open');
   document.body.appendChild(overlay);

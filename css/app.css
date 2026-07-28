@@ -2562,8 +2562,38 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-lightbox__btn:hover { background:rgba(255,255,255,.14); }
 .pf-lightbox__btn:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
 .pf-lightbox__btn.is-active { background:rgba(255,255,255,.22); }
+.pf-lightbox__btn:disabled { opacity:.35; cursor:default; }
+.pf-lightbox__btn:disabled:hover { background:none; }
+/* Zeile zwischen Kopf und Miniaturen: trägt Bühne und Metadaten-Panel und
+   begrenzt beide der Höhe nach (min-height:0 bricht die Flex-Mindesthöhe auf). */
+.pf-lightbox__body { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
 .pf-lightbox__stage { position:relative; flex:1 1 auto; display:flex; align-items:center; justify-content:center;
-  min-height:0; padding:1rem; }
+  min-height:0; min-width:0; padding:1rem; }
+/* Beim Zoom wird die Bühne zum Scrollrahmen — dadurch gibt es Verschieben per
+   Touch, Rad UND Tastatur geschenkt, ohne eigene Zieh-Logik. */
+.pf-lightbox__stage.is-zoomed { overflow:auto; align-items:flex-start; justify-content:flex-start; cursor:grab; }
+.pf-lightbox__stage.is-zoomed:active { cursor:grabbing; }
+.pf-lightbox__stage:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
+/* Im Fit-Modus braucht der Rahmen eine DEFINITE Höhe: `max-height:100%` am Bild
+   löst gegen die Höhe seines Elternteils auf, und gegen `auto` greift eine
+   Prozentangabe nicht — das Bild stand dann in natürlicher Grösse da (gemessen:
+   1393x923 in einer 762px hohen Bühne). Beim Zoom umgekehrt `auto`, damit der
+   Rahmen mit dem Bild mitwächst und die Bühne echten Scroll-Überlauf bekommt. */
+.pf-lightbox__canvas { position:relative; display:flex; align-items:center; justify-content:center;
+  width:100%; height:100%; min-width:0; min-height:0; }
+.pf-lightbox__stage.is-zoomed .pf-lightbox__canvas { width:auto; height:auto; margin:auto; }
+/* Zoomleiste: unten mittig über der Bühne, dunkel mit hellen Symbolen wie die
+   Kopfzeile. Sie schwebt über dem Bild, deshalb Abstand nach unten. */
+.pf-lightbox__zoom { position:absolute; left:50%; bottom:1rem; transform:translateX(-50%);
+  z-index:2; display:flex; align-items:center; gap:.15rem; padding:.25rem .4rem;
+  border-radius:var(--radius-full); background:rgba(13,27,42,.82);
+  box-shadow:var(--shadow-lg); backdrop-filter:blur(4px); }
+@media (min-width:768px){ .pf-lightbox__zoom { bottom:1.5rem; } }
+.pf-lightbox__zoom .pf-lightbox__btn { width:2.25rem; height:2.25rem; }
+.pf-lightbox__zoom-val { min-width:3.75rem; text-align:center; color:#fff;
+  font-size:var(--text-sm); font-variant-numeric:tabular-nums; }
+.pf-lightbox__zoom-sep { width:1px; align-self:stretch; margin-inline:.2rem;
+  background:rgba(255,255,255,.28); }
 /* Metadaten-Panel — standardmässig eingeklappt, per Knopf in der Kopfzeile.
    Ab 768px als Spalte NEBEN der Bühne (das Bild bleibt sichtbar), darunter als
    Band darüber; auf dem Telefon wäre eine dritte Spalte nicht lesbar. */
@@ -2578,13 +2608,10 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-lightbox__meta .btn--outline { margin-top:.75rem; color:#fff; border-color:rgba(255,255,255,.5); }
 .pf-lightbox__meta .btn--outline:hover { background:rgba(255,255,255,.12); }
 @media (min-width:768px){
-  /* Die Bühne und das Panel teilen sich eine Zeile; `order` schiebt das Panel
-     nach rechts, ohne die DOM-Reihenfolge zu ändern (aria-controls zeigt
-     vorwärts vom Knopf auf das Panel). */
-  .pf-lightbox { flex-flow:row wrap; }
-  .pf-lightbox__bar { flex:1 1 100%; }
-  .pf-lightbox__thumbs { flex:1 1 100%; }
-  .pf-lightbox__meta { order:3; flex:0 0 20rem; max-height:none; max-width:100%;
+  /* Bühne und Panel nebeneinander — im .pf-lightbox__body, NICHT indem das
+     Overlay selbst zur Zeile wird: dann verliert die Bühne ihre feste Höhe. */
+  .pf-lightbox__body { flex-direction:row; }
+  .pf-lightbox__meta { flex:0 0 20rem; max-height:none;
     border-top:0; border-left:1px solid rgba(255,255,255,.16); }
 }
 .pf-lightbox__img { display:block; max-width:100%; max-height:100%; object-fit:contain; }
