@@ -2343,6 +2343,16 @@ body.docviewer-open .back-to-top-rail { display:none; }
 @media (prefers-reduced-motion: reduce) { .toast { transition:opacity .01s; } .icon--spin { animation:none; } }
 
 /* ---- Chart-Vollbild (Overlay) -------------------------------------------- */
+/* Scroll-Sperre für alle Vollbild-Overlays (Diagramm, Modal, Bildergalerie).
+   `overflow:hidden` allein auf dem <body> genügt NICHT: der Dokument-Scroller
+   ist hier das <html>-Element (app.css:33 setzt dort `overflow-y:scroll`, damit
+   die Bildlaufleiste keinen Layout-Sprung verursacht). Die Seitenleiste blieb
+   deshalb hinter dem Overlay aktiv — im Fit-Zustand eine nutzlose Leiste, beim
+   Hineinzoomen zwei senkrechte nebeneinander.
+   `scrollbar-gutter:stable` hält die Rinne beim Sperren frei, sonst würde die
+   Seite darunter um die Leistenbreite springen. */
+html { scrollbar-gutter:stable; }
+html:has(> body.chart-overlay-open) { overflow:hidden; }
 body.chart-overlay-open { overflow:hidden; }
 /* ---- Kanonisches Modal (CD modal.postcss BEM) ----------------------------
    Primitive für neue Dialoge (Bestätigungen, Formulare). Die bestehenden Overlays
@@ -2351,28 +2361,40 @@ body.chart-overlay-open { overflow:hidden; }
    Escape, Backdrop-Klick und Fokus-Rückgabe. */
 .modal { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center; padding:2rem; }
 .modal__backdrop { position:absolute; inset:0; background:var(--overlay-scrim); }
-.modal__content { position:relative; z-index:1; width:min(640px,100%); max-height:90vh; overflow:auto;
-  display:flex; flex-direction:column; background:#fff; border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); }
+/* CD-Anatomie (modal.postcss:31-104): der INHALT ist durchsichtig, die Kopfzeile
+   steht in weisser Schrift auf dem Scrim, und der eigentliche Inhalt sitzt in
+   einer weissen .card darin. Vorher war .modal__content selbst der weisse
+   Kasten mit einer Trennlinie unter dem Titel — das gibt es im CD nicht. */
+.modal__content { position:relative; z-index:1; width:min(640px,100%); max-height:80vh;
+  display:flex; flex-direction:column; align-items:stretch; }
+/* CDs layout="xs" ist max-w-screen-xs = 480px. Mit 340px passte .share-url
+   (min-width 22rem = 352px) nicht hinein — daher die waagrechte Bildlaufleiste. */
+.modal--xs .modal__content { width:min(480px,100%); }
 .modal--sm .modal__content { width:min(420px,100%); }
 .modal--md .modal__content { width:min(640px,100%); }
 .modal--lg .modal__content { width:min(880px,100%); }
 .modal--xl .modal__content { width:min(1100px,100%); }
 .modal__header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
-  padding:1.25rem 1.5rem; border-bottom:1px solid var(--color-secondary-100); }
-.modal__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); }
-.modal__body { padding:1.5rem; }
+  width:100%; margin-bottom:.5rem; color:#fff; }
+@media (min-width:1024px){ .modal__header { margin-bottom:1rem; } }
+.modal__title { margin:0; font-size:var(--text-xl); font-weight:var(--fw-bold); color:#fff; }
+.modal__body { width:100%; overflow:auto; }
 /* Item 6.12 baut das Chart-Vollbild auf die .modal-Ebene um; ohne diese Regel
    würde das Diagramm dort als gerahmte Schattenkarte erscheinen. Übernimmt die
    Deklarationen von .chart-overlay__box .chart (unten), damit kein Zwischenstand
    schlechter aussieht als heute. */
 .modal__body .chart { padding:0; box-shadow:none; border:0; }
+.modal__body > .card { margin:0; }
+.modal__body .card__body { padding:1.5rem; }
 .modal--xl .modal__body { overflow:visible; }   /* Endpunkt-Label des Liniencharts nicht abschneiden */
 .modal__footer { display:flex; align-items:center; justify-content:flex-end; gap:.5rem;
   padding:1rem 1.5rem; border-top:1px solid var(--color-secondary-100); }
 .modal__close { flex:none; display:inline-flex; align-items:center; justify-content:center;
   min-width:2.75rem; min-height:2.75rem; padding:.375rem; border:0; border-radius:var(--radius-sm);
-  background:none; color:var(--color-text-muted); cursor:pointer; }
-.modal__close:hover { background:var(--color-secondary-100); color:var(--color-text); }
+  background:none; color:#fff; cursor:pointer; }
+.modal__close:hover { opacity:.5; }
+.modal__close:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
+/* Der Fuss bleibt am weissen Kasten — er sitzt innerhalb der Karte. */
 
 .chart-overlay { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center;
   padding:2rem; background:var(--overlay-scrim); }
@@ -2561,6 +2583,26 @@ body.chart-overlay-open { overflow:hidden; }
   padding:0; border:0; border-radius:var(--radius-sm); background:none; color:#fff; cursor:pointer; transition:background .12s; }
 .pf-lightbox__btn:hover { background:rgba(255,255,255,.14); }
 .pf-lightbox__btn:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
+/* Aufnahme auf der Medien-Detailseite: volle Breite der Inhaltsspalte, als
+   Knopf (öffnet die Vollbildgalerie). Seitenverhältnis statt fester Höhe —
+   dieselbe Regel wie im Objekt-Hero, damit hohe und breite Aufnahmen gleich
+   behandelt werden. */
+.med-shot { display:block; width:100%; padding:0; border:0; background:none;
+  cursor:zoom-in; border-radius:var(--radius-lg); overflow:hidden; }
+.med-shot:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+.med-shot__photo { width:100%; aspect-ratio:16/10; }
+.med-shot__photo img { width:100%; height:100%; object-fit:cover; }
+.med-shot:hover .med-shot__photo img { opacity:.94; }
+.med-shot__play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  color:rgba(255,255,255,.92); pointer-events:none; }
+
+/* CD share-bar.postcss:16 — Kopierzeile im Teilen-Dialog. */
+.share-url { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; }
+@media (min-width:480px){ .share-url { min-width:22rem; } }
+@media (min-width:1280px){ .share-url { min-width:24rem; } }
+.share-url .badge { display:inline-flex; align-items:center; gap:.3rem; }
+[data-share-url] { width:100%; }
+
 .pf-lightbox__btn.is-active { background:rgba(255,255,255,.22); }
 .pf-lightbox__btn:disabled { opacity:.35; cursor:default; }
 .pf-lightbox__btn:disabled:hover { background:none; }
@@ -2571,8 +2613,13 @@ body.chart-overlay-open { overflow:hidden; }
   min-height:0; min-width:0; padding:1rem; }
 /* Beim Zoom wird die Bühne zum Scrollrahmen — dadurch gibt es Verschieben per
    Touch, Rad UND Tastatur geschenkt, ohne eigene Zieh-Logik. */
-.pf-lightbox__stage.is-zoomed { overflow:auto; align-items:flex-start; justify-content:flex-start; cursor:grab; }
-.pf-lightbox__stage.is-zoomed:active { cursor:grabbing; }
+/* Die Bühne selbst scrollt NIE — sie ist der Bezugsrahmen für Zoomleiste und
+   Blätterpfeile. Den Überlauf trägt .pf-lightbox__scroll darin. */
+.pf-lightbox__scroll { flex:1 1 auto; display:flex; align-items:center; justify-content:center;
+  width:100%; height:100%; min-width:0; min-height:0; }
+.pf-lightbox__stage.is-zoomed .pf-lightbox__scroll { overflow:auto; align-items:flex-start; justify-content:flex-start; cursor:grab; }
+.pf-lightbox__stage.is-zoomed .pf-lightbox__scroll:active { cursor:grabbing; }
+.pf-lightbox__scroll:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
 .pf-lightbox__stage:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
 /* Im Fit-Modus braucht der Rahmen eine DEFINITE Höhe: `max-height:100%` am Bild
    löst gegen die Höhe seines Elternteils auf, und gegen `auto` greift eine
@@ -2582,6 +2629,7 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-lightbox__canvas { position:relative; display:flex; align-items:center; justify-content:center;
   width:100%; height:100%; min-width:0; min-height:0; }
 .pf-lightbox__stage.is-zoomed .pf-lightbox__canvas { width:auto; height:auto; margin:auto; }
+.pf-lightbox__stage { overflow:hidden; }
 /* Zoomleiste: unten mittig über der Bühne, dunkel mit hellen Symbolen wie die
    Kopfzeile. Sie schwebt über dem Bild, deshalb Abstand nach unten. */
 .pf-lightbox__zoom { position:absolute; left:50%; bottom:1rem; transform:translateX(-50%);

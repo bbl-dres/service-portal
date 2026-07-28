@@ -13,6 +13,7 @@ import { initEstateMap } from '../buildings-map.js';
 // Vollbildgalerie (js/gallery.js), `href` dessen Verweis auf die Detailseite.
 function mediaGalleryItem(m) {
   return {
+    id: m.mediaId,
     photo: m.photo, title: m.title, meta: `${m.date} · ${m.historicPeriod}`,
     type: m.mediaType, gray: m.historicPeriod === 'historisch',
     href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
@@ -385,7 +386,7 @@ function buildingDetail(ctx, b) {
   const regionLabel = [b.land, b.canton].filter(Boolean).join(' · ');
   // Bildergalerie (Modal auf dem Hero-Bild) statt eines Medien-Registers: Hauptbild + verknüpfte Medien.
   const galleryItems = [
-    { photo: b.photo, title: b.name, meta: `${b.city} · Hauptansicht`, type: 'foto',
+    { id: 'hauptansicht', photo: b.photo, title: b.name, meta: `${b.city} · Hauptansicht`, type: 'foto',
       details: [['Objekt', b.name], ['Adresse', `${b.street}, ${b.zip} ${b.city}`], ['Objekt-ID', b.bbl_id]] },
     ...media.map(mediaGalleryItem),
   ].filter((g) => g.photo);
@@ -592,7 +593,7 @@ function buildingDetail(ctx, b) {
   });
   // Jede Mosaik-Kachel öffnet die Galerie bei ihrem eigenen Bild.
   mount.querySelectorAll('#pf-mosaic [data-gallery]').forEach((el) => {
-    el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C));
+    el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C, { param: 'bild' }));
   });
   // Standortkarte im Hero: ein Punkt, auf das Objekt zentriert. Bisher hatte die
   // Gebäude-Detailansicht überhaupt keine Karte — die Lage stand nur als Adresse.
@@ -685,7 +686,7 @@ function parcelDetail(ctx, p) {
   // Gleiche Galerie-Verdrahtung wie beim Gebäude — sie fehlte hier ganz, weil das
   // Grundstück bisher gar keine Bilder zeigte.
   mount.querySelectorAll('#pf-mosaic [data-gallery]').forEach((el) => {
-    el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C));
+    el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C, { param: 'bild' }));
   });
   window.scrollTo(0, 0);
   const h = mount.querySelector('h1');

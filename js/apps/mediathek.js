@@ -19,9 +19,6 @@ import { openGallery } from '../gallery.js';
 
 // Historic material is rendered desaturated, so the archive reads as an archive.
 const isHistoric = (m) => m.historicPeriod === 'historisch';
-// Demo images are Unsplash placeholders — say so rather than passing them off
-// as the (fictional) BBL archive credits shown in the metadata block.
-const PLACEHOLDER_NOTE = '<p class="small muted">Platzhalterbild (Unsplash) — Demo-Daten, nicht das reale Archivbild.</p>';
 
 const PER_PAGE = 12;
 const SORT_OPTS = [
@@ -80,6 +77,7 @@ export default async function render(ctx) {
   // Einträge für die geteilte Vollbildgalerie (js/gallery.js). Die Reihenfolge
   // entspricht der Trefferliste, damit Blättern in der Galerie der Sortierung folgt.
   const galleryItems = () => sorted.filter(m => m.photo).map(m => ({
+    id: m.mediaId,
     photo: m.photo, title: m.title, meta: `${m.date} · ${bname(m.buildingId)}`,
     type: m.mediaType, gray: isHistoric(m),
     href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
@@ -205,13 +203,19 @@ export default async function render(ctx) {
     // Rückfallebene (und die Tastaturbedienung), der Klick öffnet die Vollbild-
     // galerie an genau diesem Bild — wie in der Objekt-Detailansicht.
     const items = galleryItems();
+    // Geteilter Link (?bild=MED-007) öffnet die Galerie direkt bei der Aufnahme.
+    const deep = query.get('bild');
+    if (deep) {
+      const di = items.findIndex(x => x.id === deep);
+      if (di >= 0) openGallery(items, di, C, { param: 'bild' });
+    }
     mount.querySelectorAll('.catalogue-grid .card__link, main .grid .card__link').forEach((a) => {
       a.addEventListener('click', (e) => {
         const id = decodeURIComponent((a.getAttribute('href') || '').split('/').pop());
         const i = items.findIndex(x => x.href.endsWith(encodeURIComponent(id)));
         if (i < 0) return;              // ohne Treffer normal navigieren
         e.preventDefault();
-        openGallery(items, i, C);
+        openGallery(items, i, C, { param: 'bild' });
       });
     });
   }
@@ -223,10 +227,17 @@ export default async function render(ctx) {
   }
 }
 
-// Detail view: #/app/mediathek/MED-001
+// Detailansicht: #/app/mediathek/MED-001
+//
+// Gleiche Anatomie wie die Objekt-Detailansicht (js/apps/portfolio.js):
+// Zurück-Leiste → Kennzeichen + Titel + Lead → Hero (Bild neben Standortkarte)
+// → Registerleiste. Vorher war es ein zweispaltiges Ad-hoc-Layout mit einer
+// Metadatenbox in der Randspalte — das einzige Detail im Portal, das nicht dem
+// Registermuster folgte.
 function detail(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
-  const m = core.media().find(x => x.mediaId === id);
+  const all = core.media();
+  const m = all.find(x => x.mediaId === id);
   if (!m) {
     mount.innerHTML = C.notFound({ backHref: '#/app/mediathek', backLabel: 'Mediathek',
       title: 'Medium nicht gefunden',
@@ -246,42 +257,101 @@ function detail(ctx, id) {
   const bn = b ? b.name : m.buildingId;
   const isVideo = m.mediaType === 'video';
   const isPublic = m.accessLevel === 'öffentlich';
-  const periodBadge = m.historicPeriod === 'historisch'
-    ? C.badge('Historisch', 'warning')
-    : C.badge('Aktuell', 'info');
+  const hist = m.historicPeriod === 'historisch';
+  const hasGeo = Number.isFinite(m.lat) && Number.isFinite(m.lon);
+  // Geschwisteraufnahmen desselben Objekts — echte Daten, kein Füllmaterial.
+  const siblings = all.filter(x => x.buildingId === m.buildingId);
+  const galleryItem = (x) => ({
+    id: x.mediaId,
+    photo: x.photo, title: x.title, meta: `${x.date} · ${bn}`,
+    type: x.mediaType, gray: x.historicPeriod === 'historisch',
+    href: `#/app/mediathek/${encodeURIComponent(x.mediaId)}`,
+    details: [
+      ['Typ', x.mediaType === 'video' ? 'Video' : 'Foto'],
+      ['Datum', x.date],
+      ['Epoche', x.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'],
+      ['Objekt', bn],
+      [x.mediaType === 'video' ? 'Quelle' : 'Fotograf:in', x.photographer],
+      ['Copyright', x.copyright],
+      ['Zugriff', x.accessLevel],
+    ],
+  });
+
+  const tabs = [
+    { id: 'uebersicht', label: 'Übersicht' },
+    { id: 'metadaten', label: 'Metadaten' },
+  ];
+
+  const tabUebersicht = () => `
+    ${/* Das Bild steht jetzt HIER statt in einem Hero: auf einer Medien-
+          Detailseite ist es der Inhalt, nicht die Kopfzier — und im Register
+          bekommt es die volle Breite der Inhaltsspalte. */''}
+    <button type="button" class="med-shot" data-open-gallery
+      aria-label="${C.escape(m.title)} — in der Galerie öffnen">
+      ${C.photo({ id: m.photo, color: m.color, alt: '', w: 1600, gray: hist,
+        cls: 'med-shot__photo',
+        overlay: isVideo ? `<span class="med-shot__play" aria-hidden="true">${C.icon('Video', 'icon--xl')}</span>` : '' })}
+    </button>
+    ${/* Der frühere Warnkasten zur internen Einstufung ist weg; die Einstufung
+          steht als Zeile «Zugriff» im Register Metadaten. */''}
+    ${isPublic ? '<p class="small muted">Frei verwendbar gemäss angegebenem Copyright.</p>' : ''}
+    <div class="row mt-4" style="gap:.75rem">
+      <a class="btn btn--filled" href="${C.escape(m.url || '#')}">${C.icon('Download', 'icon--base')}<span class="btn__text">Herunterladen</span></a>
+      <button type="button" class="btn btn--outline" data-open-gallery>${C.icon('Image', 'icon--base')}<span class="btn__text">In der Galerie öffnen</span></button>
+    </div>`;
+
+  const tabMetadaten = () => `
+    <dl class="kv">
+      <dt>Medien-ID</dt><dd>${C.escape(m.mediaId)}</dd>
+      <dt>Typ</dt><dd>${isVideo ? 'Video' : 'Foto'}</dd>
+      <dt>Datum</dt><dd>${C.escape(m.date)}</dd>
+      <dt>Epoche</dt><dd>${hist ? 'Historisch' : 'Aktuell'}</dd>
+      <dt>Objekt</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(m.buildingId)}">${C.escape(bn)}</a>
+        <span class="small muted">${C.escape(m.buildingId)}</span></dd>
+      <dt>${isVideo ? 'Quelle' : 'Fotograf:in'}</dt><dd>${C.escape(m.photographer)}</dd>
+      <dt>Copyright</dt><dd>${C.escape(m.copyright)}</dd>
+      <dt>Zugriff</dt><dd>${C.escape(m.accessLevel)}</dd>
+      <dt>Aufnahmeort</dt><dd>${hasGeo
+        ? `${m.lat.toFixed(5)}, ${m.lon.toFixed(5)} <span class="small muted">WGS 84</span>`
+        : '—'}</dd>
+    </dl>
+    ${/* Die Karte steht dort, wo die Koordinaten stehen — als Hero über einem
+          Foto wäre sie fehl am Platz. */''}
+    ${hasGeo ? '<div class="pf-map dash-map mt-4" id="med-detail-map" role="group" aria-label="Aufnahmeort auf der Karte"></div>' : ''}`;
+
+  const panels = { uebersicht: tabUebersicht, metadaten: tabMetadaten };
+  const panelHtml = (pid) => (panels[pid] || tabUebersicht)();
 
   mount.innerHTML = `
   <div class="container section">
     ${C.detailBar({ backHref: '#/app/mediathek', backLabel: 'Mediathek' })}
-    <div class="container--grid gap--responsive">
-      <div class="container__main stack">
-        <div class="row gap-sm">${C.badge(isVideo ? 'Video' : 'Foto', 'blue')}${periodBadge}</div>
-        <h1 tabindex="-1">${C.escape(m.title)}</h1>
-        ${C.photo({
-          id: m.photo, color: m.color, alt: m.title, w: 1200, gray: m.historicPeriod === 'historisch',
-          style: 'height:380px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center',
-          overlay: isVideo ? `<span style="color:#fff;opacity:.92;">${C.icon('Video', 'icon--xl')}</span>` : '',
-        })}
-        ${PLACEHOLDER_NOTE}
-        <a class="btn btn--outline btn--lg" href="${C.escape(m.url || '#')}">${C.icon('Download', 'icon--base')} Herunterladen</a>
-        ${!isPublic
-          ? C.notification('Dieses Medium ist als <strong>intern</strong> klassifiziert. Der Download erfordert eine entsprechende Berechtigung (Freigabe).', 'warning', 'Lock')
-          : `<p class="small muted">Frei verwendbar gemäss angegebenem Copyright.</p>`}
-      </div>
-      <aside class="container__aside stack-lg">
-        <div class="box">
-          <h3>Metadaten</h3>
-          <dl class="kv">
-            <dt>Typ</dt><dd>${isVideo ? 'Video' : 'Foto'}</dd>
-            <dt>Datum</dt><dd>${C.escape(m.date)}</dd>
-            <dt>Epoche</dt><dd>${m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'}</dd>
-            <dt>Gebäude</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(m.buildingId)}">${C.escape(bn)}</a></dd>
-            <dt>${isVideo ? 'Quelle' : 'Fotograf:in'}</dt><dd>${C.escape(m.photographer)}</dd>
-            <dt>Copyright</dt><dd>${C.escape(m.copyright)}</dd>
-            <dt>Zugriff</dt><dd>${C.escape(m.accessLevel)}</dd>
-          </dl>
-        </div>
-      </aside>
+    <h1 tabindex="-1">${C.escape(m.title)}</h1>
+    <p class="lead">${C.escape(bn)} · ${C.escape(m.date)}</p>
+
+    <div class="tabs mt-6">
+      ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'med-tab', ariaLabel: 'Details zur Aufnahme' })}
+      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'med-tab', render: panelHtml, heading: true })}
     </div>
   </div>`;
+
+  C.wireTabs(mount);
+
+  // Bild und «In der Galerie öffnen» führen zum selben Betrachter, eingestiegen
+  // bei genau dieser Aufnahme.
+  const items = siblings.filter(x => x.photo).map(galleryItem);
+  const startAt = Math.max(0, items.findIndex(x => x.href.endsWith(encodeURIComponent(m.mediaId))));
+  mount.addEventListener('click', (e) => {
+    if (e.target.closest('[data-open-gallery]')) { e.preventDefault(); openGallery(items, startAt, C, { param: 'bild' }); }
+  });
+
+  if (hasGeo) {
+    const el = mount.querySelector('#med-detail-map');
+    if (el) initEstateMap(el, [{ lat: m.lat, lon: m.lon, label: m.title, bblId: m.mediaId,
+      sub: `Aufnahmeort · ${bn}` }], null, m.mediaId, { focusPopup: false })
+      .catch(() => { /* Karte optional */ });
+  }
+
+  window.scrollTo(0, 0);
+  const h = mount.querySelector('h1');
+  if (h) h.focus({ preventScroll: true });
 }

@@ -406,7 +406,15 @@ export function openModal(opts = {}) {
     untrap(); el.remove(); document.body.classList.remove('chart-overlay-open');
     if (trigger && trigger.focus) trigger.focus();
   };
-  const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } };
+  // stopPropagation, nicht nur preventDefault: ein Modal ist modal. Ohne das
+  // erreichte dasselbe Escape auch die Galerie darunter und schloss BEIDE auf
+  // einmal — der Listener des Modals läuft in der Erfassungsphase und damit
+  // zuerst, sodass ein blosser Wächter «liegt ein Modal darüber?» ins Leere lief.
+  const onKey = (e) => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault(); e.stopPropagation();
+    close();
+  };
   el.addEventListener('click', (e) => { if (e.target.closest('[data-modal-close]')) close(); });
   document.addEventListener('keydown', onKey, true);
   const first = el.querySelector('.modal__close'); if (first) first.focus();
@@ -459,13 +467,73 @@ export function domainTile({ icon: ic, title, desc, meta = '', href, external = 
 // und Link kopieren. Rechtsbündig (flex-row-reverse) wie im CD.
 export function shareBar() {
   // CD: nur Icons (aria-label), keine sichtbaren Beschriftungen, grosse Icons (ShareBar.vue, SvgIcon size="xl").
+  // Der Teilen-Knopf öffnet den CD-Dialog (openShareModal) — vorher kopierte er
+  // still in die Zwischenablage: ohne Rückmeldung, ohne sichtbare URL und ohne
+  // Ausweg, wenn die Clipboard-API blockiert ist.
   return `<div class="share-bar">
     <div class="share-container">
       <button class="btn btn--bare share-bar__btn" type="button" onclick="window.print()" aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--xl')}</button>
-      <button class="btn btn--bare share-bar__btn" type="button" aria-label="Link kopieren" title="Teilen"
-        onclick="navigator.clipboard.writeText(location.href).then(function(){var l=document.getElementById('live');if(l)l.textContent='Link kopiert';this.title='Link kopiert';}.bind(this)).catch(function(){})">${icon('Share', 'icon--xl')}</button>
+      <button class="btn btn--bare share-bar__btn share-bar__share-button" type="button" data-share
+        aria-label="Inhalt teilen" title="Teilen">${icon('Share', 'icon--xl')}</button>
     </div>
   </div>`;
+}
+
+// «Inhalt teilen» — CDs Muster (detailPageSimple.vue:810-866): ein Modal in der
+// Grösse xs mit einem SCHREIBGESCHÜTZTEN Eingabefeld, das die URL zeigt, darunter
+// `.share-url` mit dem Kopieren-Knopf und einer Live-Region, die den Erfolg
+// meldet. CDs Vorlage führt darüber noch eine Reihe sozialer Netzwerke
+// (Facebook/X/LinkedIn/Xing/WhatsApp); die lassen wir weg — ein internes
+// Bundesportal teilt seine Inhalte nicht auf kommerziellen Plattformen.
+//
+// Warum ein sichtbares Feld statt nur «kopiert»: die Clipboard-API braucht einen
+// sicheren Kontext und kann blockiert sein. Steht die URL im Feld, lässt sie sich
+// immer noch von Hand markieren — die Funktion fällt also nie ganz aus.
+export function shareUrlBlock(url, { id = 'share-url-input' } = {}) {
+  return `<div class="pt-3">
+    <label class="sr-only" for="${escape(id)}">Link zu diesem Inhalt</label>
+    <input id="${escape(id)}" class="input--outline input--base" type="text" readonly
+      value="${escape(url)}" data-share-url>
+    <div class="share-url">
+      <button type="button" class="btn btn--outline mt-3" data-share-copy>
+        ${icon('Link', 'icon--base')}<span class="btn__text">URL kopieren</span></button>
+      <div aria-live="polite" data-share-done></div>
+    </div>
+  </div>`;
+}
+
+export function openShareModal(url = location.href, title = 'Inhalt teilen') {
+  // CD legt den Inhalt in eine weisse .card (detailPageSimple.vue:817) — die
+  // Kopfzeile steht darüber in weisser Schrift auf dem Scrim.
+  const close = openModal({ title, size: 'xs',
+    body: `<div class="card card--default"><div class="card__content"><div class="card__body">${shareUrlBlock(url)}</div></div></div>` });
+  const root = document.querySelector('.modal--xs') || document;
+  const input = root.querySelector('[data-share-url]');
+  const btn = root.querySelector('[data-share-copy]');
+  const done = root.querySelector('[data-share-done]');
+  if (input) { input.focus(); input.select(); }
+  if (btn) btn.addEventListener('click', () => {
+    const ok = () => { if (done) done.innerHTML = `<span class="badge badge--success badge--sm mt-3">${icon('Checkmark', 'icon--base')} URL wurde kopiert</span>`; };
+    const fail = () => { if (done) done.innerHTML = `<span class="badge badge--warning badge--sm mt-3">${icon('WarningCircle', 'icon--base')} Kopieren nicht möglich — bitte von Hand markieren</span>`; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(ok, fail);
+    } else if (input) {
+      // Rückfallebene ohne Clipboard-API.
+      try { input.select(); document.execCommand('copy'); ok(); } catch { fail(); }
+    } else fail();
+  });
+  return close;
+}
+
+// Ein Klick auf einen Teilen-Knopf öffnet den Dialog — einmal global verdrahtet,
+// damit jede Seite mit einer share-bar ihn bekommt, ohne selbst etwas zu tun.
+export function wireShare(root = document) {
+  root.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-share]');
+    if (!b) return;
+    e.preventDefault();
+    openShareModal(b.dataset.share || location.href);
+  });
 }
 
 // Kopfleiste einer Detailseite: Zurück-Link links, Share-Bar rechts — in EINER
@@ -1387,7 +1455,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 }
 
 export const C = {
-  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, domainTile, announce, trapFocus, modal, openModal,
+  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, shareUrlBlock, openShareModal, wireShare, domainTile, announce, trapFocus, modal, openModal,
   notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueControls, catalogueBar, filterGroup, wireCatalogue, pipeline,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,

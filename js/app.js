@@ -4,7 +4,7 @@ import { engine } from './process-engine.js';
 import { session } from './session.js';
 import { shell } from './shell.js';
 import { initRouter, redraw } from './router.js';
-import { notification, escape, announce } from './components.js';
+import { notification, escape, announce, wireShare } from './components.js';
 
 // Datenausfall-Band (P0-4): Fehlt eine data/*.json, würde die betroffene Liste
 // als leer (statt «nicht verfügbar») erscheinen. Ein persistentes Fehlerband über
@@ -27,6 +27,10 @@ async function boot() {
   shell.renderHeader(header);
   shell.renderFooter(document.getElementById('main-footer'));
   renderDataStatus();
+  // Teilen-Dialog EINMAL global verdrahten (delegiert): jede Seite mit einer
+  // share-bar bekommt ihn, ohne selbst etwas zu tun — und er überlebt jeden
+  // Seitenwechsel, weil der Listener am Dokument hängt.
+  wireShare(document);
   initRouter();
 
   // AGOV / FedLogin-Stub: An- und Abmelden zeichnen Kopfzeile und aktuelle

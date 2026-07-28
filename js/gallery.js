@@ -36,7 +36,13 @@ const THUMB_WINDOW = 24;
 // würde die Leiste bei jedem Schritt neu gebaut.
 const THUMB_EDGE = 4;
 
-export function openGallery(items, start, C) {
+export function openGallery(items, start, C, opts = {}) {
+  // `opts.param`: Name eines Hash-Parameters, in dem das offene Bild steht
+  // (z. B. ?bild=MED-007). Damit zeigt der Teilen-Knopf auf GENAU diese
+  // Aufnahme statt nur auf die Seite. Gesetzt wird er mit history.replaceState —
+  // ein direktes Schreiben auf location.hash löste ein hashchange aus, der
+  // Router würde neu rendern und das Overlay unter sich wegziehen.
+  const param = opts.param || '';
   if (!items || !items.length) return;
   let idx = Math.max(0, Math.min(start || 0, items.length - 1));
   // Metadaten sind standardmässig EINGEKLAPPT: im Vollbild ist das Bild die
@@ -95,9 +101,14 @@ export function openGallery(items, start, C) {
     <div class="pf-lightbox__body">
       <div class="pf-lightbox__stage" data-el="stage">
         ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--prev" data-act="prev" aria-label="Vorheriges Bild">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
-        <div class="pf-lightbox__canvas" data-el="canvas">
-          <img class="pf-lightbox__img" data-el="img" src="" alt="" decoding="async">
-          <span class="pf-lightbox__play" data-el="play" aria-hidden="true" hidden>${C.icon('Video', 'icon--lg')}</span>
+        ${/* Gescrollt wird NUR dieser innere Rahmen. Läge der Überlauf auf der
+              Bühne, wanderten Zoomleiste und Blätterpfeile beim Scrollen mit dem
+              Bild aus dem Blick — sie sind absolut in der Bühne positioniert. */''}
+        <div class="pf-lightbox__scroll" data-el="scroll">
+          <div class="pf-lightbox__canvas" data-el="canvas">
+            <img class="pf-lightbox__img" data-el="img" src="" alt="" decoding="async">
+            <span class="pf-lightbox__play" data-el="play" aria-hidden="true" hidden>${C.icon('Video', 'icon--lg')}</span>
+          </div>
         </div>
         ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
         <div class="pf-lightbox__zoom" role="group" aria-label="Zoom">
@@ -209,9 +220,9 @@ export function openGallery(items, start, C) {
     zoom = next;
     applyZoom();
     // Nach dem Vergrössern mittig einsteigen, statt oben links.
-    if (el.stage) {
-      el.stage.scrollLeft = (el.stage.scrollWidth - el.stage.clientWidth) / 2;
-      el.stage.scrollTop = (el.stage.scrollHeight - el.stage.clientHeight) / 2;
+    if (el.scroll) {
+      el.scroll.scrollLeft = (el.scroll.scrollWidth - el.scroll.clientWidth) / 2;
+      el.scroll.scrollTop = (el.scroll.scrollHeight - el.scroll.clientHeight) / 2;
     }
   }
 
@@ -256,11 +267,23 @@ export function openGallery(items, start, C) {
     // «Schliessen» zurück — wer sich mit den Pfeilknöpfen durch die Galerie
     // klickte, verlor nach jedem Klick den Knopf unter dem Finger.
     if (first) { const cl = overlay.querySelector('[data-act="close"]'); if (cl) cl.focus(); }
+    syncUrl(false);
     if (multi) { warm(idx + 1); warm(idx - 1); }
+  }
+
+  function syncUrl(clear) {
+    if (!param || !history.replaceState) return;
+    const [path, qs] = String(location.hash || '#/').replace(/^#/, '').split('?');
+    const q = new URLSearchParams(qs || '');
+    const id = items[idx] && items[idx].id;
+    if (clear || !id) q.delete(param); else q.set(param, id);
+    const str = q.toString();
+    history.replaceState(null, '', `${location.pathname}${location.search}#${path}${str ? '?' + str : ''}`);
   }
 
   const go = (d) => { idx = (idx + d + items.length) % items.length; update(false); };
   const close = () => {
+    syncUrl(true);
     document.removeEventListener('keydown', onKey);
     window.removeEventListener('resize', onResize);
     overlay.remove();
@@ -268,6 +291,10 @@ export function openGallery(items, start, C) {
     if (trigger && trigger.focus) trigger.focus();
   };
   function onKey(e) {
+    // Liegt ein Modal (Teilen-Dialog) ÜBER der Galerie, gehört ihm die Tastatur:
+    // sonst schlösse ein Escape beides auf einmal und Tab liefe gegen zwei
+    // Fokusfallen gleichzeitig.
+    if (document.querySelector('.modal')) return;
     if (e.key === 'Escape') { e.preventDefault(); close(); }
     else if (e.key === '+' || e.key === '=') { e.preventDefault(); stepZoom(1); }
     else if (e.key === '-') { e.preventDefault(); stepZoom(-1); }
@@ -301,10 +328,11 @@ export function openGallery(items, start, C) {
     else if (btn.dataset.act === 'meta') { showMeta = !showMeta; update(false); }
     else if (btn.dataset.act === 'close-nav') { close(); }
     else if (btn.dataset.act === 'share') {
-      const url = `${location.origin}${location.pathname}${location.hash}`;
-      if (navigator.clipboard) navigator.clipboard.writeText(url).then(
-        () => C.toast('Link kopiert.'), () => C.toast('Kopieren nicht möglich.'));
-      else C.toast('Kopieren nicht möglich.');
+      // Derselbe CD-Dialog wie in der share-bar. location.hash trägt dank
+      // syncUrl() bereits das offene Bild, der geteilte Link öffnet also genau
+      // diese Aufnahme.
+      const url = `${location.origin}${location.pathname}${location.search}${location.hash}`;
+      C.openShareModal(url, 'Aufnahme teilen');
     } else if (btn.dataset.thumb != null) { idx = Number(btn.dataset.thumb); update(false); }
   });
   const onResize = () => { if (zoom === 'fit') applyZoom(); };
