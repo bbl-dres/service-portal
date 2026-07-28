@@ -167,7 +167,7 @@ function detail(ctx, id) {
       backHref: '#/services', backLabel: 'Dienstleistungen',
       title: s.title, lead: s.short,
       tags: `${C.audienceTag(s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
-      image: `<figure>${C.photo({ id: img, color: '#2f4356', alt: '', w: 800 })}<figcaption class="small muted">Symbolbild — © Unsplash</figcaption></figure>`,
+      image: C.heroFigure({ id: img }),
     })}
     <div class="container--grid gap--responsive mt-6">
       <div class="container__main stack">

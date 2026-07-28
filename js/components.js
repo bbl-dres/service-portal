@@ -479,6 +479,19 @@ export function detailBar({ backHref, backLabel } = {}) {
 // Share) und danach ein Hero mit Titel, Lead, Auszeichnungen und optionalem
 // Kontextbild (hero--main-image). Ohne `image` fällt der Hero auf die schmale
 // Variante zurück. `tags`/`image` sind fertiges HTML; `title`/`lead` werden escaped.
+// Kontextbild für den Detailseiten-Hero. Stand wortgleich in services.js und
+// digitalisierung.js — inklusive der `<figure>` ohne Randrücksetzung, die dort
+// den UA-Standardrand (margin:1em 40px) behielt: das Bild füllte seine
+// Rasterspalte nicht und stand links wie rechts 40px eingerückt. Die figcaption
+// trug ausserdem `class="small muted"`, obwohl `figcaption` seit Item 1.6 global
+// von `.legend` erbt — die Klassen setzten also einen fünften Legendenstil.
+export function heroFigure({ id, color = '#2f4356', alt = '', w = 800,
+  credit = 'Symbolbild — © Unsplash' } = {}) {
+  if (!id) return '';
+  return `<figure class="hero__figure">${photo({ id, color, alt, w })}${
+    credit ? `<figcaption>${escape(credit)}</figcaption>` : ''}</figure>`;
+}
+
 export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '' } = {}) {
   const content = `<div class="hero__content">
         <h1 class="hero__title" tabindex="-1">${escape(title)}</h1>
@@ -1375,6 +1388,6 @@ export const C = {
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
   preserveFocus, rerender, wireScrollRegions, wirePipeline, errorSummary, wireErrorSummary, stepIndicator,
-  breakable, mountDataTable, cardAction, cardFooter, pageSection,
+  breakable, mountDataTable, cardAction, cardFooter, pageSection, heroFigure,
 };
 export default C;

@@ -70,6 +70,11 @@ const DATA_LABELS = {
   standortDetail: 'Standortdetail', beschreibung: 'Beschreibung', position: 'Position', menge: 'Menge',
   lieferadresse: 'Lieferadresse', art: 'Art des Vorfalls', betroffeneDaten: 'Betroffene Daten',
   ressourcentyp: 'Ressource', datum: 'Datum', zeit: 'Zeit', bemerkung: 'Bemerkung',
+  // Gebäude-Erfassung (apps/building-create.js)
+  bezeichnung: 'Objektbezeichnung', strasse: 'Strasse / Nr.', plz: 'PLZ', ort: 'Ort',
+  lat: 'Breitengrad (WGS 84)', lng: 'Längengrad (WGS 84)', egid: 'EGID', egrid: 'EGRID',
+  teilportfolio: 'Teilportfolio', gebaeudeart: 'Gebäudeart',
+  eigentum: 'Eigentumsverhältnis', baujahr: 'Baujahr',
 };
 
 function detail(ctx, id) {

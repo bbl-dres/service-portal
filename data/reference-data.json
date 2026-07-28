@@ -39,6 +39,20 @@
     { "id": "Abgang", "label": "Abgang" },
     { "id": "Löschvermerk", "label": "Löschvermerk" }
   ],
+  "teilportfolios": [
+    { "id": "Verwaltungsgebäude", "label": "Verwaltungsgebäude" },
+    { "id": "Diplomatische Vertretung", "label": "Diplomatische Vertretung" },
+    { "id": "Lager / Logistik", "label": "Lager / Logistik" },
+    { "id": "Ausbildung", "label": "Ausbildung" },
+    { "id": "Wohnliegenschaft", "label": "Wohnliegenschaft" },
+    { "id": "Infrastruktur IT", "label": "Infrastruktur IT" }
+  ],
+  "gebaeudearten": [
+    { "id": "Verwaltung", "label": "Verwaltung" },
+    { "id": "Industrie und Gewerbe", "label": "Industrie und Gewerbe" },
+    { "id": "Bildung und Forschung", "label": "Bildung und Forschung" },
+    { "id": "Wohnen", "label": "Wohnen" }
+  ],
   "siaPhases": [
     { "id": "11", "label": "Strategische Planung" }, { "id": "21", "label": "Vorstudien" },
     { "id": "31", "label": "Vorprojekt" }, { "id": "32", "label": "Bauprojekt" },

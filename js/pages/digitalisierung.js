@@ -77,8 +77,8 @@ function strategiePage(ctx) {
   setCrumbs([...CRUMB, { label: 'Digitalisierungsstrategie' }]);
 
   const handlungsfelder = [
-    ['Durchgängige und nutzerorientierte digitale Behördenleistungen',
-      'Die wesentlichen Behördenleistungen des BBL Bauten sind nutzerorientiert gestaltet, durchgängig digital unterstützt und über Organisationsgrenzen hinweg nachvollziehbar. Mehrfacherfassungen und manuelle Übertragungen werden schrittweise reduziert.'],
+    ['Durchgängige und nutzerorientierte digitale Dienstleistungen',
+      'Die wesentlichen Dienstleistungen des BBL Bauten sind nutzerorientiert gestaltet, durchgängig digital unterstützt und über Organisationsgrenzen hinweg nachvollziehbar. Mehrfacherfassungen und manuelle Übertragungen werden schrittweise reduziert.'],
     ['Verlässliche und mehrfach nutzbare Daten und Informationen',
       'Relevante Daten und Informationen sind eindeutig verantwortet, qualitätsgesichert, auffindbar und für berechtigte Aufgaben mehrfach nutzbar. Daten werden dort erfasst und gepflegt, wo sie fachlich entstehen.'],
     ['Interoperable, sichere und wirtschaftliche digitale Lösungen',
@@ -136,7 +136,7 @@ function visionPage(ctx) {
           <li>Immobilien nutzen und betreiben</li>
           <li>Immobilien erneuern, rückbauen oder verkaufen</li>
         </ul>
-        <p>Im Zentrum stehen digitale Behördenleistungen sowie die beteiligten Kunden und Nutzenden, Partner und Lieferanten; Immobilien und Daten bilden die gemeinsame fachliche Grundlage.</p>` },
+        <p>Im Zentrum stehen digitale Dienstleistungen sowie die beteiligten Kunden und Nutzenden, Partner und Lieferanten; Immobilien und Daten bilden die gemeinsame fachliche Grundlage.</p>` },
   ];
 
   anchorNavPage(ctx, {
@@ -192,9 +192,7 @@ function infoPage(ctx, { title, lead, note, photo }) {
     ${C.detailHead({
       backHref: '#/data/digitalisierung', backLabel: 'Digitalisierung',
       title, lead,
-      image: photo
-        ? `<figure>${C.photo({ id: photo, color: '#2f4356', alt: '', w: 800 })}<figcaption class="small muted">Symbolbild — © Unsplash</figcaption></figure>`
-        : '',
+      image: C.heroFigure({ id: photo }),
     })}
     <div class="mt-6" style="max-width:60rem">
       ${C.notification(note, 'info', 'InfoCircle')}

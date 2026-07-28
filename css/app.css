@@ -993,6 +993,13 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
   .hero--main-image .hero__content { justify-content:center; }
 }
 .hero__image { display:block; position:relative; overflow:hidden; width:100%; }
+/* Die <figure> im Hero trägt sonst den UA-Standardrand `margin:1em 40px`: das
+   Bild füllte seine Rasterspalte nicht, sondern stand links wie rechts 40px
+   eingerückt, und die 1em oben/unten verschoben es gegen die mittig gesetzte
+   Textspalte. `.chart` und `.home-hero__figure` nullen genau denselben Rand je
+   für sich — hier strukturell über `.hero__image figure`, damit die nächste
+   Hero-Seite nicht die vierte Einzelfallregel braucht. */
+.hero__image figure, .hero__figure { margin:0; }
 .hero__image .photo { width:100%; aspect-ratio:16/9; }
 .hero__image .photo > img { position:absolute; inset:0; width:100%; height:100%; }
 .hero__image > img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover;
@@ -1357,6 +1364,11 @@ table.table--zebra tbody tr:hover { background:var(--color-secondary-100); }
 }
 /* (b) Fehlerübersicht. `.notification a` (unten) liefert currentColor +
    Unterstreichung, also trägt das unter beiden Skins. */
+/* Die Übersicht steht unmittelbar über dem Formular. `.notification` bringt
+   selbst keinen Aussenabstand mit, also klebte sie am ersten Feldnamen — die
+   Meldung las sich wie dessen Beschriftung. Der Abstand gehört an die
+   Fehlerübersicht, nicht an jede Benachrichtigung. */
+.error-summary { margin-bottom:2rem; }
 .error-summary__title { font-size:var(--text-lg); font-weight:var(--fw-bold); margin:0 0 .5rem; }
 .error-summary__list  { margin:0; padding-left:1.25rem; }
 /* (c) Feldhinweis ≠ Validierungsmeldung. CDs Input.vue:24-30 nutzt die Badge NUR

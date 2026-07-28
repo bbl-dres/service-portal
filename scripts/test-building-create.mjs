@@ -135,12 +135,71 @@ const SUBMIT = `document.querySelector('#bc-form').dispatchEvent(new Event('subm
       check(/^.+\s\d+\w?,\s\d{4}\s.+$/.test(r.val),
         `Objektbezeichnung aus der Adresse abgeleitet («${r.val}»)`);
 
-      await p.evaluate(`(function(){document.querySelector('#bc-baujahr').value='1974';
-        document.querySelector('#bc-gf').value='8500';})()`);
+      console.log('■ Pflichtfelder in Schritt 2');
+      r = await p.evaluate(`(function(){
+        var st=[].slice.call(document.querySelectorAll('#bc-form label.text--asterisk'));
+        return {n:st.length, txt:st.map(function(l){return l.textContent.trim();}).join(' | '),
+          egid:(document.querySelector('#bc-egid')||{}).readOnly,
+          egrid:(document.querySelector('#bc-egrid')||{}).readOnly,
+          gf:!!document.querySelector('#bc-gf'), cls:!!document.querySelector('#bc-classification'),
+          org:!!document.querySelector('#bc-org'),
+          head:(document.querySelector('main .muted')||{}).innerText||''};})()`);
+      // Schritt 2 trug die Legende «Mit * markierte Felder sind Pflichtfelder»,
+      // hatte aber kein einziges Pflichtfeld — die Legende log.
+      check(r.n === 3, `drei Pflichtfelder mit Stern markiert (${r.n}: ${r.txt})`);
+      check(r.egid === true && r.egrid === true, 'EGID und EGRID sind nur lesbar');
+      check(!r.gf && !r.cls, 'Geschossfläche und Klassifizierung stehen nicht mehr im Formular');
+      // Die verantwortliche OE ist kein Feld mehr, muss aber als Kontext sichtbar
+      // bleiben — sonst taucht sie in Schritt 3 ohne Vorankündigung auf.
+      check(!r.org, 'Verantwortliche OE ist kein Formularfeld');
+      check(/Erfassung als/.test(r.head), `OE steht in der Kopfzeile («${r.head.slice(0, 60)}»)`);
+
+      // Leer absenden — alle drei Pflichtfelder müssen reklamiert werden.
+      await p.evaluate(SUBMIT); await sleep(1200);
+      r = await p.evaluate(`(function(){
+        var sum=document.querySelector('.error-summary');
+        var links=sum?[].slice.call(sum.querySelectorAll('a[data-err-link]')):[];
+        return {shown:!!sum, ids:links.map(function(a){return a.getAttribute('data-err-link');}).sort().join(','),
+          focused:!!sum && document.activeElement===sum.querySelector('.error-summary__title'),
+          invalid:document.querySelectorAll('#bc-form [aria-invalid="true"]').length,
+          step:(document.querySelector('#bc-step-head')||{}).innerText||''};})()`);
+      check(r.shown && /Schritt 2/.test(r.step), 'Fehlerübersicht erscheint, Schritt 2 bleibt stehen');
+      check(r.ids === 'bc-baujahr,bc-gebart,bc-portfolio', `die drei leeren Pflichtfelder reklamiert (${r.ids})`);
+      check(r.invalid === 3, `aria-invalid auf genau diesen Feldern (${r.invalid})`);
+      check(r.focused, 'Fokus steht auf der Überschrift der Fehlerübersicht');
+
+      // Sprungmarke der Übersicht muss ins Feld führen (C.wireErrorSummary) —
+      // ohne die Verdrahtung war es ein nackter Anker, der nirgends hinsprang.
+      await p.evaluate(`document.querySelector('.error-summary a[data-err-link="bc-portfolio"]').click()`);
+      await sleep(300);
+      r = await p.evaluate(`({id:(document.activeElement||{}).id||''})`);
+      check(r.id === 'bc-portfolio', `Sprungmarke fokussiert das Feld (${r.id})`);
+
+      // Korrektur räumt die Feldmeldung sofort weg (`change`, weil es ein <select> ist).
+      await p.evaluate(`(function(){var s=document.querySelector('#bc-portfolio');
+        s.selectedIndex=1; s.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+      await sleep(300);
+      r = await p.evaluate(`({msg:!!document.querySelector('#bc-portfolio-msg'),
+        inv:document.querySelector('#bc-portfolio').getAttribute('aria-invalid')})`);
+      check(!r.msg && !r.inv, 'Feldmeldung verschwindet bei Korrektur');
+
+      // Bereichsprüfung ist ein anderer Zweig als die Pflichtprüfung.
+      await p.evaluate(`(function(){document.querySelector('#bc-gebart').selectedIndex=1;
+        document.querySelector('#bc-baujahr').value='3000';})()`);
+      await p.evaluate(SUBMIT); await sleep(1200);
+      r = await p.evaluate(`(function(){var s=document.querySelector('.error-summary');
+        return {n:s?s.querySelectorAll('a[data-err-link]').length:0, txt:s?s.innerText:''};})()`);
+      check(r.n === 1 && /1200/.test(r.txt), `Baujahr 3000 als Bereichsfehler gemeldet (${r.n})`);
+
+      console.log('■ Durchlauf bis zum Vorgang');
+      await p.evaluate(`document.querySelector('#bc-baujahr').value='1974'`);
       await p.evaluate(SUBMIT); await sleep(1500);
-      r = await p.evaluate(`(function(){return {step:(document.querySelector('#bc-step-head')||{}).innerText||'',
-        rows:document.querySelectorAll('main dl.kv dt').length};})()`);
-      check(/Schritt 3/.test(r.step) && r.rows >= 8, `Schritt 3 mit Zusammenfassung (${r.rows} Zeilen)`);
+      r = await p.evaluate(`(function(){var dl=document.querySelector('main dl.kv');
+        return {step:(document.querySelector('#bc-step-head')||{}).innerText||'',
+          rows:document.querySelectorAll('main dl.kv dt').length, txt:dl?dl.innerText:''};})()`);
+      check(/Schritt 3/.test(r.step) && r.rows === 10, `Schritt 3 mit Zusammenfassung (${r.rows} Zeilen)`);
+      check(/Teilportfolio/.test(r.txt) && /Gebäudeart/.test(r.txt) && /EGID/.test(r.txt),
+        'Zusammenfassung führt Teilportfolio, Gebäudeart und EGID');
 
       await p.evaluate(SUBMIT); await sleep(1800);
       r = await p.evaluate(`(function(){var n=document.querySelector('.notification--success');

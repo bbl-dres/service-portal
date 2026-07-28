@@ -4,10 +4,11 @@
 // Kernidee «Datenqualität von Anfang an»: Adresse, Ort, Koordinaten UND die
 // Objektbezeichnung werden nicht abgetippt, sondern aus den offenen
 // swisstopo-Diensten abgeleitet; der Erfassende setzt nur die Lage auf der
-// Karte. Bewusst NICHT übernommen sind dessen
-// Kataster-Verkettungen (EGID über das GWR-Layer, EGRID/Parzelle über
-// MapServer/find) — die brauchen mehrere abhängige Aufrufe je Objekt und tragen
-// für die Demo nichts bei.
+// Karte. EGID und EGRID stehen als Nur-Lese-Felder im Formular, bleiben hier
+// aber leer: sie gehören nicht in die Handeingabe, sondern werden später über
+// REST anhand der Lage aufgelöst (GWR-Layer für die EGID, MapServer/find für
+// EGRID und Parzelle — mehrere abhängige Aufrufe je Objekt, wie in
+// property-inventory/prototype-workflows).
 //
 // Genutzt wird ein einziger Endpunkt, schlüssellos und CORS-freigegeben:
 //   GET https://api3.geo.admin.ch/rest/services/api/SearchServer
@@ -72,19 +73,31 @@ export default async function render(ctx) {
     return;
   }
 
+  // Kontrollierte Vokabulare aus den Referenzdaten statt einer Liste im Formular:
+  // `teilportfolios` (SAP-Feld bbl_port) und `gebaeudearten` (bbl_gbda1) tragen
+  // genau die Werte, die der Golden Record führt — so kann die Erfassung keinen
+  // Wert erzeugen, den das Inventar hinterher nicht kennt.
   const ref = core.ref();
-  const tiers = ref.classificationTiers || [];
-  const PORTFOLIO = ['Verwaltungsgebäude', 'Diplomatische Vertretung', 'Lager / Logistik',
-    'Ausbildung', 'Wohnliegenschaft', 'Infrastruktur IT'];
+  const asOptions = (list) => (list || []).map((x) => ({ value: x.id, label: x.label }));
+  const TEILPORTFOLIO = asOptions(ref.teilportfolios);
+  const GEBAEUDEART = asOptions(ref.gebaeudearten);
   const OWNERSHIP = ['Eigentum Bund', 'Miete'];
+  // Leere Vorauswahl: eine Pflichtauswahl, die schon ausgefüllt ist, ist keine.
+  // Ein stillschweigend gesetztes Teilportfolio wäre erfundenes Stammdatum.
+  const PLEASE_PICK = { value: '', label: 'Bitte wählen …' };
 
   const state = {
     step: 1,
     // Schritt 1 — aus swisstopo abgeleitet, nicht eingetippt
     address: '', street: '', no: '', zip: '', city: '', lat: null, lng: null,
+    // Schritt 2 — abgeleitet; bleibt leer, bis GWR/Kataster angebunden sind
+    egid: '', egrid: '',
     // Schritt 2 — Handeingabe
-    portfolio: PORTFOLIO[0], ownership: OWNERSHIP[0], baujahr: '', gf: '',
-    classification: (tiers[0] || {}).id || 'INTERN',
+    portfolio: '', gebaeudeart: '', ownership: OWNERSHIP[0], baujahr: '',
+    // Kein Formularfeld: die verantwortliche OE steht in der Sitzung. Sie als
+    // Feld anzubieten hiesse, sie zur Debatte zu stellen — der Vorgang wird
+    // ohnehin unter der angemeldeten Einheit geführt. Sichtbar ist sie in der
+    // Kopfzeile und in der Zusammenfassung.
     org: session.user().org,
     errors: {}, created: null,
   };
@@ -104,7 +117,7 @@ export default async function render(ctx) {
 
   const FIELD_LABELS = {
     'bc-address': 'Adresse',
-    'bc-baujahr': 'Baujahr', 'bc-gf': 'Geschossfläche (GF)',
+    'bc-portfolio': 'Teilportfolio', 'bc-gebart': 'Gebäudeart', 'bc-baujahr': 'Baujahr',
   };
 
   /* ------------------------------------------------------------ Schritt 1 -- */
@@ -155,21 +168,28 @@ export default async function render(ctx) {
   /* ------------------------------------------------------------ Schritt 2 -- */
   function step2() {
     return `
+      ${/* Zuerst die abgeleiteten Felder (nur lesbar, gestrichelter Rahmen), dann
+            die Handeingabe. Wer das Formular ausfüllt, sieht so auf einen Blick,
+            was das System bereits weiss und was von ihm erwartet wird. */''}
       ${C.field({ id: 'bc-bez', label: 'Objektbezeichnung',
         hint: 'Wird aus der Adresse übernommen und kann hier nicht geändert werden.',
         control: (cls, attrs) => `<input id="bc-bez" value="${C.escape(bezeichnung())}" class="${cls}" readonly${attrs}>` })}
-      ${C.select({ id: 'bc-portfolio', name: 'bc-portfolio', label: 'Portfolio-Kategorie', value: state.portfolio,
-        options: PORTFOLIO.map(v => ({ value: v, label: v })) })}
+      ${C.field({ id: 'bc-egid', label: 'EGID (Eidg. Gebäudeidentifikator)',
+        hint: 'Wird anhand der Lage aus dem Gebäude- und Wohnungsregister (GWR) ermittelt.',
+        control: (cls, attrs) => `<input id="bc-egid" value="${C.escape(state.egid)}" placeholder="wird ermittelt" class="${cls}" readonly${attrs}>` })}
+      ${C.field({ id: 'bc-egrid', label: 'EGRID (Eidg. Grundstücksidentifikator)',
+        hint: 'Wird anhand der Lage aus der amtlichen Vermessung ermittelt.',
+        control: (cls, attrs) => `<input id="bc-egrid" value="${C.escape(state.egrid)}" placeholder="wird ermittelt" class="${cls}" readonly${attrs}>` })}
+      ${C.select({ id: 'bc-portfolio', name: 'bc-portfolio', label: 'Teilportfolio', required: true,
+        value: state.portfolio, message: state.errors['bc-portfolio'],
+        options: [PLEASE_PICK, ...TEILPORTFOLIO] })}
+      ${C.select({ id: 'bc-gebart', name: 'bc-gebart', label: 'Gebäudeart', required: true,
+        value: state.gebaeudeart, message: state.errors['bc-gebart'],
+        options: [PLEASE_PICK, ...GEBAEUDEART] })}
       ${C.select({ id: 'bc-ownership', name: 'bc-ownership', label: 'Eigentumsverhältnis', value: state.ownership,
         options: OWNERSHIP.map(v => ({ value: v, label: v })) })}
-      ${C.field({ id: 'bc-baujahr', label: 'Baujahr', message: state.errors['bc-baujahr'],
+      ${C.field({ id: 'bc-baujahr', label: 'Baujahr', required: true, message: state.errors['bc-baujahr'],
         control: (cls, attrs) => `<input id="bc-baujahr" type="number" min="1200" max="2100" placeholder="z. B. 1974" value="${C.escape(state.baujahr)}" class="${cls}"${attrs}>` })}
-      ${C.field({ id: 'bc-gf', label: 'Geschossfläche (GF) in m²', message: state.errors['bc-gf'],
-        control: (cls, attrs) => `<input id="bc-gf" type="number" min="0" placeholder="z. B. 8500" value="${C.escape(state.gf)}" class="${cls}"${attrs}>` })}
-      ${C.select({ id: 'bc-classification', name: 'bc-classification', label: 'Klassifizierung', value: state.classification,
-        options: tiers.map(t => ({ value: t.id, label: t.label })) })}
-      ${C.field({ id: 'bc-org', label: 'Verantwortliche Organisationseinheit',
-        control: (cls, attrs) => `<input id="bc-org" value="${C.escape(state.org)}" class="${cls}"${attrs}>` })}
       <div class="row mt-4" style="justify-content:space-between">
         <button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')}<span class="btn__text">Zurück</span></button>
         <button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button>
@@ -178,7 +198,6 @@ export default async function render(ctx) {
 
   /* ------------------------------------------------------------ Schritt 3 -- */
   function step3() {
-    const tier = tiers.find(t => t.id === state.classification);
     return `
       ${/* h3, nicht h2: die Schrittüberschrift oben ist die h2 dieses Abschnitts. */''}
       <h3>Zusammenfassung</h3>
@@ -186,14 +205,15 @@ export default async function render(ctx) {
         <dt>Objektbezeichnung</dt><dd>${C.escape(bezeichnung())}</dd>
         <dt>Adresse</dt><dd>${C.escape(`${state.street} ${state.no}, ${state.zip} ${state.city}`.trim())}</dd>
         <dt>Koordinaten (WGS 84)</dt><dd>${state.lat != null ? `${state.lat.toFixed(5)}, ${state.lng.toFixed(5)}` : '—'}</dd>
-        <dt>Portfolio-Kategorie</dt><dd>${C.escape(state.portfolio)}</dd>
+        <dt>EGID</dt><dd>${C.escape(state.egid) || '<span class="muted">wird ermittelt</span>'}</dd>
+        <dt>EGRID</dt><dd>${C.escape(state.egrid) || '<span class="muted">wird ermittelt</span>'}</dd>
+        <dt>Teilportfolio</dt><dd>${C.escape(state.portfolio)}</dd>
+        <dt>Gebäudeart</dt><dd>${C.escape(state.gebaeudeart)}</dd>
         <dt>Eigentumsverhältnis</dt><dd>${C.escape(state.ownership)}</dd>
-        <dt>Baujahr</dt><dd>${C.escape(state.baujahr || '—')}</dd>
-        <dt>Geschossfläche (GF)</dt><dd>${state.gf ? `${Number(state.gf).toLocaleString('de-CH')} m²` : '—'}</dd>
-        <dt>Klassifizierung</dt><dd>${C.badge(tier ? tier.label : state.classification, tier ? tier.variant : 'gray')}</dd>
+        <dt>Baujahr</dt><dd>${C.escape(state.baujahr)}</dd>
         <dt>Verantwortliche OE</dt><dd>${C.escape(state.org)}</dd>
       </dl>
-      ${C.notification('Mit dem Absenden entsteht ein Vorgang. Die Objekt-ID (bbl_id) und die abgeleiteten Schlüssel (EGID, EGRID) vergibt das Portfoliomanagement bei der Prüfung — im Prototyp bleiben sie leer.', 'info')}
+      ${C.notification('Mit dem Absenden entsteht ein Vorgang. EGID und EGRID löst der Kataster­dienst anhand der Lage auf; die Objekt-ID (bbl_id), die Flächen (GF/HNF) und die Klassifizierung vergibt das Portfoliomanagement bei der Prüfung.', 'info')}
       <div class="row mt-4" style="justify-content:space-between">
         <button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')}<span class="btn__text">Zurück</span></button>
         <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Erfassung einreichen</button>
@@ -207,20 +227,27 @@ export default async function render(ctx) {
       if (state.lat == null) e['bc-address'] = 'Bitte eine Adresse suchen oder die Lage in der Karte anklicken.';
     }
     if (state.step === 2) {
+      // Anweisende Formulierung wie in space-request.js / fault-report.js — der
+      // Fehler sagt, was zu tun ist, nicht bloss «Pflichtfeld».
+      if (!state.portfolio) e['bc-portfolio'] = 'Bitte ein Teilportfolio wählen.';
+      if (!state.gebaeudeart) e['bc-gebart'] = 'Bitte eine Gebäudeart wählen.';
       const y = Number(state.baujahr);
-      if (state.baujahr && (!Number.isInteger(y) || y < 1200 || y > 2100)) e['bc-baujahr'] = 'Bitte ein Jahr zwischen 1200 und 2100 angeben.';
-      if (state.gf && !(Number(state.gf) >= 0)) e['bc-gf'] = 'Bitte eine Fläche in m² angeben (0 oder mehr).';
+      if (!String(state.baujahr).trim()) e['bc-baujahr'] = 'Bitte das Baujahr angeben.';
+      else if (!Number.isInteger(y) || y < 1200 || y > 2100) e['bc-baujahr'] = 'Bitte ein Jahr zwischen 1200 und 2100 angeben.';
+      // `bc-ownership` steht bewusst ohne required: die Auswahl ist zweiwertig und
+      // «Eigentum Bund» ist der belegte Regelfall — Markup und Prüfung beschreiben
+      // damit dieselbe Menge (vgl. space-request.js zum Standort-Feld).
     }
     state.errors = e;
     return !Object.keys(e).length;
   }
 
   function readStep() {
-    const v = (id) => { const el = mount.querySelector('#' + id); return el ? el.value : ''; };
     if (state.step === 2) {
-      state.portfolio = v('bc-portfolio'); state.ownership = v('bc-ownership');
-      state.baujahr = v('bc-baujahr'); state.gf = v('bc-gf');
-      state.classification = v('bc-classification'); state.org = v('bc-org');
+      Object.assign(state, C.readForm(mount, {
+        portfolio: 'bc-portfolio', gebaeudeart: 'bc-gebart', ownership: 'bc-ownership',
+        baujahr: 'bc-baujahr',
+      }));
     }
   }
 
@@ -234,6 +261,9 @@ export default async function render(ctx) {
       <div class="container__center--sm">
         ${C.backLink('#/services/gebaeude-erfassen', 'Service-Beschreibung')}
         <h1 tabindex="-1">Gebäude erfassen</h1>
+        ${/* Wie space-request.js: unter wem erfasst wird und wohin der Vorgang
+              läuft, steht als Kontextzeile — nicht als Formularfeld. */''}
+        <p class="muted">Erfassung als <strong>${C.escape(state.org)}</strong> · Prozess: Eingang → Prüfung PFM → Genehmigung → Publikation.</p>
         ${C.stepIndicator(STEP_LABELS, state.step - 1, { label: 'Erfassungsschritte' })}
         <h2 class="sr-only" id="bc-step-head" tabindex="-1">Schritt ${state.step} von 3: ${C.escape(STEP_LABELS[state.step - 1])}</h2>
         ${/* Nur Schritt 2 hat mit «*» markierte Felder — auf Schritt 1 stand die
@@ -349,7 +379,11 @@ export default async function render(ctx) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       readStep();
-      if (!validate()) { draw(); const s = mount.querySelector('.error-summary a'); if (s) s.focus(); return; }
+      // Fehlversuch: neu zeichnen, dann die Fehlerübersicht verdrahten. C.wireErrorSummary
+      // setzt den Fokus auf ihre Überschrift UND macht ihre Sprungmarken funktionsfähig —
+      // vorher waren es nackte Anker, und der Fokus sprang auf den ersten Link statt auf
+      // die Überschrift, die sagt, wie viele Felder zu korrigieren sind (WCAG 3.3.1).
+      if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
       if (state.step < 3) { state.step += 1; draw(); focusStepHeading(); return; }
       const inst = engine.start('gebaeude-erfassung', {
         title: `Gebäude erfassen — ${bezeichnung()}`.trim(),
@@ -358,10 +392,15 @@ export default async function render(ctx) {
         data: {
           bezeichnung: bezeichnung(), strasse: `${state.street} ${state.no}`.trim(),
           plz: state.zip, ort: state.city, lat: state.lat, lng: state.lng,
-          portfolio: state.portfolio, eigentum: state.ownership,
-          baujahr: state.baujahr, gf: state.gf, klassifizierung: state.classification,
+          egid: state.egid, egrid: state.egrid,
+          teilportfolio: state.portfolio, gebaeudeart: state.gebaeudeart,
+          eigentum: state.ownership, baujahr: state.baujahr,
         },
       });
+      // engine.start() liefert null, wenn localStorage nicht schreiben konnte —
+      // ohne diese Abzweigung liefe drawDone() auf `null.reference` (gleiches
+      // Muster wie in space-request.js).
+      if (!inst) { C.flashError(mount, 'Der Vorgang konnte nicht gespeichert werden — bitte erneut versuchen.'); return; }
       state.created = inst;
       freeMap();
       draw();
@@ -371,18 +410,25 @@ export default async function render(ctx) {
     const back = form.querySelector('[data-back]');
     if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); focusStepHeading(); });
 
-    // Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert.
+    // Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert. `change`
+    // zusätzlich zu `input`, weil zwei der Pflichtfelder <select> sind.
+    // Die Meldung wird über die id-Konvention von C.field/C.select (`<id>-msg`)
+    // gefunden: das frühere `closest('.form__group')` traf nie etwas — die Wrapper
+    // heissen `form__group__input` bzw. `form__group__select`, und ein
+    // Klassenselektor trifft nur ganze Klassennamen. Die Meldung blieb stehen.
     Object.keys(state.errors).forEach((id) => {
       const el = mount.querySelector('#' + id);
-      if (el) el.addEventListener('input', () => {
+      if (!el) return;
+      const clear = () => {
         if (!state.errors[id]) return;
         delete state.errors[id];
-        const grp = el.closest('.form__group');
-        const msg = grp && grp.querySelector('[role="alert"]');
+        const msg = mount.querySelector('#' + id + '-msg');
         if (msg) msg.remove();
         el.classList.remove('input--error');
         el.removeAttribute('aria-invalid');
-      }, { once: true });
+      };
+      el.addEventListener('input', clear, { once: true });
+      el.addEventListener('change', clear, { once: true });
     });
 
     if (state.step !== 1) return;
