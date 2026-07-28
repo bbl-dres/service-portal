@@ -4,7 +4,7 @@ import { engine } from './process-engine.js';
 import { session } from './session.js';
 import { shell } from './shell.js';
 import { initRouter, redraw } from './router.js';
-import { notification, escape, announce, wireShare } from './components.js';
+import { notification, escape, announce, wireShare, mountBanner } from './components.js';
 
 // Datenausfall-Band (P0-4): Fehlt eine data/*.json, würde die betroffene Liste
 // als leer (statt «nicht verfügbar») erscheinen. Ein persistentes Fehlerband über
@@ -31,6 +31,14 @@ async function boot() {
   // share-bar bekommt ihn, ohne selbst etwas zu tun — und er überlebt jeden
   // Seitenwechsel, weil der Listener am Dokument hängt.
   wireShare(document);
+  // Prototyp-Hinweis als CD-Consent-Streifen. Einmal weggeklickt, bleibt er weg.
+  mountBanner(document.getElementById('banner-host'), {
+    id: 'prototyp',
+    html: 'Diese Anwendung ist ein <strong>Prototyp</strong>. Darstellung, Funktionalität und Inhalte dienen ausschliesslich der Demonstration.',
+    actionLabel: 'Verstanden',
+    variant: 'info',   // CD-Vorgabe für dieses Bauteil (NotificationBanner.vue:51)
+    label: 'Hinweis zum Prototyp',
+  });
   initRouter();
 
   // AGOV / FedLogin-Stub: An- und Abmelden zeichnen Kopfzeile und aktuelle

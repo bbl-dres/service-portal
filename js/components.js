@@ -132,6 +132,39 @@ export function pageSection({ title = '', body = '', more = null, alt = false, t
 // Leads mit Auszeichnung — etwa einem Verweis auf ein Nachbarsystem. Sie ist
 // AUSSCHLIESSLICH für autoreneigenes Markup gedacht, nie für Daten aus dem Core
 // oder aus Fremddiensten: dort bleibt `lead` und damit das Escaping Pflicht.
+// Fixierter Hinweisstreifen am Fensterboden — CDs Consent-Bauteil
+// (notification-banner.postcss + NotificationBanner.vue). Anatomie wie dort:
+// `.notification-banner` (+ `--fixed`) trägt zusätzlich die `.notification`-
+// Klassen, darin ein `__wrapper` mit `__infos` und der Aktion.
+export function notificationBanner({ id, html, actionLabel = 'Verstanden', variant = 'info', label = 'Hinweis' }) {
+  return `<div class="notification-banner notification-banner--fixed notification notification--${escape(variant)}"
+      role="region" aria-label="${escape(label)}" data-banner="${escape(id)}">
+    <div class="notification-banner__wrapper">
+      <p class="notification-banner__infos">${html}</p>
+      <button type="button" class="btn btn--outline btn--sm" data-banner-close>
+        <span class="btn__text">${escape(actionLabel)}</span>${icon('Checkmark', 'icon--base')}</button>
+    </div>
+  </div>`;
+}
+
+// Einhängen und das Wegklicken merken. Ohne Merken erschiene der Hinweis bei
+// jedem Seitenwechsel neu — das ist der Grund, weshalb Consent-Bänder überhaupt
+// einen Speicher brauchen.
+export function mountBanner(host, opts) {
+  if (!host) return;
+  const key = 'bbl_banner_' + opts.id;
+  let seen = false;
+  try { seen = localStorage.getItem(key) === '1'; } catch { /* Speicher gesperrt */ }
+  if (seen) return;
+  host.innerHTML = notificationBanner(opts);
+  const btn = host.querySelector('[data-banner-close]');
+  if (btn) btn.addEventListener('click', () => {
+    host.innerHTML = '';
+    try { localStorage.setItem(key, '1'); } catch { /* dann kommt er eben wieder */ }
+    announce('Hinweis geschlossen.');
+  });
+}
+
 export function pageHeader({ title, lead, leadHtml }) {
   const body = leadHtml || (lead ? escape(lead) : '');
   return `<div class="page-header"><h1 tabindex="-1">${escape(title)}</h1>${body ? `<p class="lead">${body}</p>` : ''}</div>`;
@@ -1460,7 +1493,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 }
 
 export const C = {
-  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, shareBar, shareUrlBlock, openShareModal, wireShare, domainTile, announce, trapFocus, modal, openModal,
+  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, notificationBanner, mountBanner, shareBar, shareUrlBlock, openShareModal, wireShare, domainTile, announce, trapFocus, modal, openModal,
   notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueControls, catalogueBar, filterGroup, wireCatalogue, pipeline,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,

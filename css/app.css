@@ -303,6 +303,26 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .hero + .section--default:not([class*="bg--"]),
 .hero + .bg--white { padding-top:0; }
 
+/* Hinweisstreifen (notification-banner.postcss) — CDs Consent-Bauteil. Fix am
+   Fensterboden, volle Breite, Inhalt im .container. */
+.notification-banner { padding:1rem 0; font-size:var(--text-sm); box-shadow:none; }
+@media (min-width:640px){ .notification-banner { padding:2rem 0; } }
+@media (min-width:1024px){ .notification-banner { padding:2.5rem 0; } }
+/* Doppelte Klasse, damit die Regel .notification (setzt position:relative und
+   steht später in der Datei) nicht gewinnt — das Band lag sonst 3600px unter
+   dem Sichtfeld im Dokumentfluss. */
+.notification-banner.notification-banner--fixed { position:fixed; z-index:var(--z-toast); right:0; bottom:0; left:0; width:100%;
+  border-top:1px solid #fff; box-shadow:var(--shadow-2xl); }
+.notification-banner__wrapper { width:100%; max-width:var(--container-max); margin:0 auto; padding:0 1rem;
+  display:flex; flex-direction:column; align-items:flex-start; gap:1rem; }
+@media (min-width:1024px){
+  .notification-banner__wrapper { flex-direction:row; flex-wrap:nowrap; align-items:flex-start;
+    justify-content:space-between; gap:1.5rem; }
+}
+.notification-banner__infos { margin:0; overflow-wrap:break-word; }
+.notification-banner .btn { flex:none; }
+.notification-banner .btn__text { white-space:nowrap; }
+
 /* Backgrounds (backgrounds.postcss:5-38) */
 .bg--white { background:#fff; }
 .bg--secondary-50 { background:var(--color-secondary-50); }
