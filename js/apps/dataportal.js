@@ -71,11 +71,16 @@ function overview(ctx) {
 
   mount.innerHTML = `
   <div class="container section">
+    ${/* Der Hinweis auf das MIS stand als eigener Kleintext-Absatz unter dem
+          Lead. Er beantwortet aber dieselbe Frage wie der Lead — «wofür ist das
+          hier zuständig, und wofür nicht» — und gehört deshalb in denselben
+          Absatz. */''}
     ${C.pageHeader({
       title: 'Datenportal',
-      lead: 'Auswertungen zu den Kennzahlen des BBL — Energie und Klima, Immobilienportfolio, Beschaffung, Personal, Logistik und Mobilität.',
+      leadHtml: 'Auswertungen zu den Kennzahlen des BBL — Energie und Klima, Immobilienportfolio, Beschaffung, Personal, Logistik und Mobilität. '
+        + 'Behördenübergreifende Kennzahlen und Auswertungen bietet das Management-Informationssystem (MIS) der Bundesverwaltung — aufgebaut im '
+        + '<a href="https://www.bbl.admin.ch/de/programm-superb" target="_blank" rel="noopener external">Programm SUPERB</a> (SAP S/4HANA).',
     })}
-    <p class="small muted lead-hint">Behördenübergreifende Kennzahlen und Auswertungen bietet das Management-Informationssystem (MIS) der Bundesverwaltung — aufgebaut im <a href="https://www.bbl.admin.ch/de/programm-superb" target="_blank" rel="noopener external">Programm SUPERB</a> (SAP S/4HANA).</p>
     <h2 class="sr-only">Themen</h2>
     <div class="grid grid--3 mt-8">${topics.map(topicCard).join('')}</div>
   </div>`;

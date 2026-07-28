@@ -128,8 +128,13 @@ export function pageSection({ title = '', body = '', more = null, alt = false, t
     </section>`;
 }
 
-export function pageHeader({ title, lead }) {
-  return `<div class="page-header"><h1 tabindex="-1">${escape(title)}</h1>${lead ? `<p class="lead">${escape(lead)}</p>` : ''}</div>`;
+// `lead` wird escaped (Normalfall). `leadHtml` ist die bewusste Ausnahme für
+// Leads mit Auszeichnung — etwa einem Verweis auf ein Nachbarsystem. Sie ist
+// AUSSCHLIESSLICH für autoreneigenes Markup gedacht, nie für Daten aus dem Core
+// oder aus Fremddiensten: dort bleibt `lead` und damit das Escaping Pflicht.
+export function pageHeader({ title, lead, leadHtml }) {
+  const body = leadHtml || (lead ? escape(lead) : '');
+  return `<div class="page-header"><h1 tabindex="-1">${escape(title)}</h1>${body ? `<p class="lead">${body}</p>` : ''}</div>`;
 }
 
 // Flat CD card (card--flat) — used for compact text-led teasers.

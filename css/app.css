@@ -955,10 +955,20 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
    container__center--*; .page-header und .detail-section sitzen aber nicht im
    12-Spalten-Raster, darum hier als Kappung. Gemessen bei 1440: Leads 133ch,
    Fliesstext 148-166ch — rund das Doppelte des Lesbaren. */
-.page-header { padding:.25rem 0 1.5rem; max-width:60rem; }   /* = .hero__content, CD container__center--sm */
+/* Ohne eigenen Deckel: die 60rem liessen Titel und Lead mitten im Textfluss
+   umbrechen, während der Container ringsum deutlich breiter war — der Umbruch
+   wirkte willkürlich. Das Mass regelt jetzt allein die Spalte, in der der Kopf
+   steht (CD macht es genauso: kein max-width auf Textklassen, sondern
+   container__center--* um den Inhalt). */
+.page-header { padding:.25rem 0 1.5rem; }
 .page-header h1 { margin-bottom:.25rem; }
 .page-header .lead { font-size:var(--text-lg); color:var(--color-text-muted); }
-.page-header .lead, .home-hero .lead, .lead-hint { max-width:70ch; }
+/* Keine max-width-Deckel mehr auf Lead, Seitenkopf oder Lead-Hinweis: sie
+   brachen den Text mitten im Fluss um, während der Container ringsum breiter
+   war. Das Mass kommt jetzt ausschliesslich aus der Spalte, in der der Text
+   steht — genau wie im CD, das keine Deckel auf Textklassen kennt, sondern
+   `container__center--*` um den Inhalt legt. Wo eine Fläche zu breit misst, ist
+   die Antwort das Spaltenraster (Stufe 7), nicht ein Deckel an der Klasse. */
 .detail-section > p, .detail-section > .stack > p,
 .anchor-section > p,
 .detail-section > ul:not([class]), .anchor-section > ul:not([class]) { max-width:70ch; }
