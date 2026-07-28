@@ -45,8 +45,8 @@ export default async function render(ctx) {
   // ---- tab panels --------------------------------------------------------
   function panelMoeblierung() {
     return `
-      <div class="split">
-        <div class="stack">
+      <div class="container--grid gap--responsive">
+        <div class="container__main stack">
           <h2>${C.icon('ShoppingCart', 'icon--base')} Möblierung & Material</h2>
           <p>Mobiliar, Büromaterial und Ausstattung für Bundesarbeitsplätze beziehen Sie über den
              zentralen E-Shop des BBL. Standardisierte Sortimente sorgen für einheitliche, ergonomische
@@ -57,7 +57,7 @@ export default async function render(ctx) {
             <a class="btn btn--outline" href="#/services">Verwandte Dienstleistungen</a>
           </div>
         </div>
-        <aside class="stack-lg">
+        <aside class="container__aside stack-lg">
           <div class="box">
             <h3>Sortimente</h3>
             <ul class="stack" style="padding-left:1.1rem; margin:0">
@@ -78,8 +78,8 @@ export default async function render(ctx) {
 
   function panelBelegung() {
     return `
-      <div class="split">
-        <div class="stack">
+      <div class="container--grid gap--responsive">
+        <div class="container__main stack">
           <h2>${C.icon('Map', 'icon--base')} Belegungsplanung</h2>
           <p>Die Belegungs- und Flächenplanung – wer sitzt wo, wie sind Flächen zugeteilt und wie hoch ist
              die Auslastung – erfolgt in der Fachanwendung <strong>GIS/FLM</strong> (Flächen- und
@@ -90,7 +90,7 @@ export default async function render(ctx) {
             <a class="btn btn--outline" href="#/applications">Zu den Anwendungen ${C.icon('ArrowRight', 'icon--base')}</a>
           </div>
         </div>
-        <aside class="stack-lg">
+        <aside class="container__aside stack-lg">
           <div class="stat">
             <div class="stat__num">${totalWorkplaces.toLocaleString('de-CH')}</div>
             <div class="stat__label">Arbeitsplätze im Portfolio (${buildings.length} Gebäude)</div>
@@ -114,8 +114,8 @@ export default async function render(ctx) {
     const b = core.building(state.buildingId);
     const r = RESSOURCEN.find(x => x.id === state.ressourcentyp);
     return `
-      <div class="split">
-        <div class="stack">
+      <div class="container--grid gap--responsive">
+        <div class="container__main stack">
           <h2>${C.icon('Calendar', 'icon--base')} Ressource buchen</h2>
           <p class="muted">Buchung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.
              Eine Anfrage wird als Vorgang erfasst und durch Workspace BBL bestätigt.</p>
@@ -137,7 +137,7 @@ export default async function render(ctx) {
             </div>
           </form>
         </div>
-        <aside class="stack-lg">
+        <aside class="container__aside stack-lg">
           <div class="box">
             <h3>Ihre Auswahl</h3>
             <dl class="kv">

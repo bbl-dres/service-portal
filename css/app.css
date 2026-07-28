@@ -227,12 +227,34 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 /* Inhaltsverzeichnis rechts: erst ab lg neben dem Inhalt, darunter normal. */
 .anchor-nav .card__title { font-size:var(--text-lg); }
 .anchor-nav .menu { margin-top:.5rem; }
+/* Abschnittstitel im Inhaltsverzeichnis sind lange deutsche Komposita
+   («Informationssicherheitsgesetz»). Bei 200% Textzoom lief die Zeile aus der
+   Karte und wurde von deren `overflow:hidden` abgeschnitten (WCAG 1.4.4). */
+.anchor-nav .menu__item { overflow-wrap:anywhere; }
 /* Ankernavigations-Seite (CD detailPageAnchorNav): der Kopf sitzt im selben
    12-Spalten-Raster wie der Inhalt und richtet seine linke Kante ab lg an der
    Inhaltsspalte (container__main: lg col-start-2) aus, die rechte an der
    Randspalte des Inhaltsverzeichnisses (container__aside endet bei Spalte 11). */
 .anchor-page__header { grid-column:1 / -1; }
 @media (min-width:1024px){ .anchor-page__header { grid-column:2 / 12; } }
+/* Inhaltsverzeichnis als Ausklapper — nur unter 768px. Die <summary> trägt die
+   Überschrift (HTML erlaubt darin genau ein Überschriftenelement), sodass die
+   Gliederung auf jeder Breite dieselbe bleibt. */
+.anchor-nav__summary { display:flex; align-items:center; justify-content:space-between;
+  gap:.5rem; cursor:pointer; list-style:none; min-height:2.75rem; }
+.anchor-nav__summary::-webkit-details-marker { display:none; }
+.anchor-nav__summary:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+.anchor-nav__chev { flex:none; color:var(--color-text-muted); transition:transform var(--duration-slow) var(--ease-in-out); }
+.anchor-nav__disclosure[open] .anchor-nav__chev { transform:rotate(180deg); }
+@media (min-width:768px){
+  /* Ab hier ist es kein Ausklapper mehr: Auslöser weg, Inhalt dauerhaft offen.
+     Das `open`-Attribut setzt JS (wireAnchorNav) — per CSS geht es NICHT:
+     moderne Browser klappen <details> über `::details-content { content-
+     visibility:hidden }` ein, eine `display`-Regel auf dem Kind greift dort
+     nicht (gemessen: Verzeichnis blieb bei 1440px auf 103px zugeklappt). */
+  .anchor-nav__summary { display:block; cursor:auto; min-height:0; }
+  .anchor-nav__chev { display:none; }
+}
 /* Saubere Themenabschnitte (bk.admin.ch/de/vorgaben): Überschrift + sichtbare
    Liste; der Abstand zwischen Abschnitten kommt von .vertical-spacing. */
 .anchor-section__title { margin-bottom:1rem; }
@@ -321,7 +343,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:minmax(0,1fr); }
 /* min(260px,100%) statt 260px: verschachtelt in einer schmalen Spalte (oder unter
    320px Viewport) würde ein festes Minimum die Spur breiter als ihren Container
-   machen — dieselbe Absicherung wie bei .quick-grid (app.css unten). */
+   machen — dieselbe Absicherung wie beim Kachelraster der Startseite. */
 .grid--auto { grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr)); }
 @media (min-width:480px) { .grid { gap:1.75rem; } }
 @media (min-width:640px) { .grid { gap:2.25rem; } }
@@ -363,9 +385,6 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
    Überhang wurde von .container{overflow-x:clip} still abgeschnitten. Dieselbe
    Absicherung wie CD sie auf jeder generierten Spur setzt (grids.postcss:70,93,119)
    und wie app.css:140 sie für .container--grid bereits verwendet. */
-.split { display:grid; grid-template-columns:minmax(0,1fr); gap:2rem; align-items:start; }
-.split > * { min-width:0; }
-@media (min-width:1024px){ .split { grid-template-columns:minmax(0,1fr) 320px; } }
 
 /* Ratios (ratio.postcss:5-33) */
 .ratio { position:relative; }
@@ -1181,6 +1200,13 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
    Feld läuft. Nur in der Feldgruppe umbrechen lassen; echte Pillen bleiben nowrap. */
 .form__group__input > .badge,
 .form__group__select > .badge { white-space:normal; text-align:left; }
+/* Kartenpillen (.pill-row) müssen bei 200% Textzoom umbrechen dürfen (WCAG 1.4.4).
+   Gemessen auf #/data/katalog: das Themen-Badge «Immobilienmanagement» wuchs auf
+   439px in einer 347px breiten Karte und wurde von deren `overflow:hidden`
+   abgeschnitten — ein einzelnes deutsches Kompositum, an dem `white-space:normal`
+   allein nichts ändert, deshalb zusätzlich `overflow-wrap`. Bei normaler
+   Textgrösse passen die Pillen, die Regel ist dort also unsichtbar. */
+.pill-row .badge { white-space:normal; overflow-wrap:anywhere; }
 .badge, .badge--base { font-size:var(--fs-xs); line-height:1.25rem; }
 @media (min-width:768px) { .badge, .badge--base { font-size:var(--fs-sm); } }
 @media (min-width:1024px){ .badge, .badge--base { font-size:var(--fs-base); line-height:1.5rem; } }
@@ -1363,6 +1389,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 input[disabled], select[disabled], textarea[disabled], .input--disabled {
   background:var(--color-gray-50); color:var(--color-gray-400); border-color:var(--color-border-strong);
   pointer-events:none; cursor:not-allowed; }
+/* Nur-Lese-Felder tragen einen ABGELEITETEN Wert (z. B. die Objektbezeichnung
+   aus der Adresse). Sie sehen anders aus als deaktivierte Felder — der Wert ist
+   gültig und wird gespeichert, er lässt sich hier bloss nicht ändern —, bleiben
+   aber fokussierbar und damit für Hilfsmittel lesbar. */
+input[readonly], textarea[readonly] {
+  background:var(--color-secondary-50); color:var(--color-text);
+  border-style:dashed; cursor:default; }
 input[type='search']::-webkit-search-decoration { display:none; }
 /* Native Löschen-Schaltfläche (X) sichtbar lassen, im CD-Stil (Cancel-Icon) —
    erscheint, sobald Text eingegeben ist, und leert das Feld. */
@@ -2413,6 +2446,60 @@ body.chart-overlay-open { overflow:hidden; }
 @media (min-width:1280px){
   .pf-mosaic--map { grid-template-columns:repeat(3, minmax(0, 1fr)); }
 }
+/* ── Standort-Wähler (js/apps/building-create.js) ─────────────────────────
+   Karte mit der Adresssuche als Auflage darin, unten zentriert. Die
+   Vorschlagsliste öffnet deshalb NACH OBEN — nach unten stünde sie ausserhalb
+   des Kartenrahmens. */
+.map-picker { position:relative; height:clamp(18rem, 52vw, 30rem);
+  border-radius:var(--radius-lg); overflow:hidden; background:var(--color-secondary-100); }
+/* Höhe EXPLIZIT, nicht über `inset:0`: MapLibre hängt seine eigene Klasse
+   `.maplibregl-map` an den Container, und deren `position:relative` schlägt
+   unsere gleich spezifische `absolute` (beide 0,1,0) — das MapLibre-Stylesheet
+   wird zur Laufzeit NACH app.css in den <head> gehängt, Quellreihenfolge
+   entscheidet. Der Kasten fiel damit auf Höhe 0 zusammen, das Canvas malte
+   ausserhalb und das `overflow:hidden` des Rahmens schnitt es weg: die Karte
+   blieb grau, obwohl die Kacheln geladen waren. Die übrigen Karten trifft es
+   nicht, weil MapLibre dort an `.pf-map` / `.dash-map` hängt — die haben eine
+   eigene `height`. */
+.map-picker__canvas { position:absolute; inset:0; width:100%; height:100%; }
+/* Der Abstand nach unten hält die Auflage auch von der Attribution (unten links)
+   frei — die stand ihr bei kleineren Werten direkt unter dem Feld. */
+.map-search { position:absolute; left:1rem; right:1rem; bottom:2rem; z-index:2;
+  display:flex; flex-direction:column; gap:.5rem; max-width:32rem; margin-inline:auto; }
+/* Ab 640px (CDs sm) statt erst ab 768px: dort ist die Karte schon ~390px hoch
+   und verträgt den grösseren Abstand — nur auf dem Telefon (288px Karte) bliebe
+   sonst zu wenig Kartenfläche über dem Feld. */
+@media (min-width:640px){ .map-search { bottom:3.5rem; } }
+.map-search__field { position:relative; display:flex; }
+.map-search__field input { width:100%; min-height:var(--control-h);
+  padding-left:2.75rem; padding-right:2.75rem; background:#fff;
+  box-shadow:var(--shadow-lg); border-radius:var(--radius); }
+.map-search__icon { position:absolute; left:.85rem; top:50%; transform:translateY(-50%);
+  color:var(--color-text-muted); pointer-events:none; }
+.map-search__clear { position:absolute; right:.25rem; top:50%; transform:translateY(-50%);
+  display:inline-flex; align-items:center; justify-content:center;
+  width:2.5rem; height:2.5rem; border:0; background:none; cursor:pointer;
+  color:var(--color-text-muted); border-radius:var(--radius); }
+.map-search__clear:hover { color:var(--color-primary-600); }
+.map-search__clear:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+/* Liste über dem Feld: `order` dreht die optische Reihenfolge, ohne die
+   DOM-Reihenfolge zu ändern — Feld zuerst im Quelltext wäre für die
+   Combobox-Semantik falsch (aria-controls zeigt vorwärts auf die Liste). */
+.map-search__list { order:-1; margin:0; padding:.25rem; list-style:none;
+  max-height:13rem; overflow-y:auto; background:#fff;
+  border-radius:var(--radius); box-shadow:var(--shadow-2xl); }
+.map-search__option { display:flex; align-items:center; gap:.5rem;
+  padding:.55rem .7rem; border-radius:var(--radius-sm); cursor:pointer;
+  font-size:var(--text-sm); line-height:var(--lh-snug); }
+.map-search__option .icon { flex:none; color:var(--color-text-muted); }
+.map-search__option.is-active, .map-search__option:hover { background:var(--color-secondary-50); }
+.map-search__option[aria-selected="true"] { background:var(--color-primary-100); }
+/* Stecknadel: Kreis mit Spitze, in der Primärfarbe der aktiven Marke. */
+.map-pin { width:1.5rem; height:1.5rem; border-radius:50% 50% 50% 0;
+  transform:rotate(-45deg); background:var(--color-primary-600);
+  border:2px solid #fff; box-shadow:var(--shadow-md); cursor:grab; }
+.map-pin:active { cursor:grabbing; }
+
 /* Platzhalterkachel: gleiche Fläche wie ein Bild, aber ohne Zeigerhand — dahinter
    liegt nichts, was sich öffnen liesse. */
 .pf-mosaic__cell--empty { cursor:default; background:var(--color-secondary-50); }
@@ -2581,7 +2668,6 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* min(20rem,100%) statt 20rem als Spalten-Minimum: unter 320px Viewport würde
    ein festes 20rem-Minimum die Kachel breiter als den Bildschirm machen und die
    Seite horizontal scrollen lassen. */
-.quick-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(20rem,100%),1fr)); gap:1rem; }
 .quick-tile { display:flex; gap:1rem; align-items:flex-start; padding:1.25rem;
   background:#fff; color:inherit; text-decoration:none;
   border-left:3px solid transparent; box-shadow:var(--shadow-lg);
@@ -2658,7 +2744,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   .top-header { border:0 !important; padding:0 0 1rem !important; }
   .logo { align-items:flex-start !important; }
   .logo__name { display:block !important; }
-  .grid, .grid--2, .grid--3, .grid--4, .grid--auto, .split, .stats, .service-controls,
+  .grid, .grid--2, .grid--3, .grid--4, .grid--auto, .stats, .service-controls,
   .container--grid { display:block !important; }
   p, img, ul, ol, .card, .notification, .box, table.table { position:relative; display:block; break-inside:avoid; }
   table.table { display:table; }

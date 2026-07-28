@@ -53,7 +53,7 @@ export default async function render(ctx) {
     // Fokus + Schreibmarke über den Schrittwechsel bzw. den Fehler-Neuaufbau retten.
     const restore = C.preserveFocus(mount);
     mount.innerHTML = `
-    <div class="container section">
+    <div class="container section container--grid">
       <div class="container__center--xs">
         ${C.backLink('#/services/raumbedarf-melden', 'Service-Beschreibung')}
         <h1 tabindex="-1">Raumbedarf melden</h1>
@@ -127,7 +127,7 @@ export default async function render(ctx) {
   function drawDone() {
     const i = state.created;
     mount.innerHTML = `
-    <div class="container section">
+    <div class="container section container--grid">
       <div class="container__center--xs">
         <div class="notification notification--success">${C.icon('CheckmarkCircle', 'icon--lg')}<div><strong>Antrag eingereicht.</strong> Ihre Referenz: <strong>${C.escape(i.reference)}</strong></div></div>
         <h1 tabindex="-1">Vielen Dank</h1>

@@ -281,16 +281,17 @@
     "icon": "Building",
     "target": {
       "kind": "app",
-      "href": "#"
+      "href": "#/app/building-create"
     },
     "contact": "pfm",
     "short": "Ein neues Gebäude im Immobilien-Stammdatenbestand anlegen.",
     "description": "Erfassen Sie ein neues Gebäude mit Adresse, Objekt-ID und Grunddaten. Die Mutation durchläuft die Qualitätssicherung des Portfoliomanagements, bevor sie im Stammdatenbestand publiziert wird.",
     "voraussetzungen": [
-      "Objektbezeichnung & Adresse",
-      "Parzellen-/Grundstücknummer",
+      "Adresse des Gebäudes (wird über swisstopo gesucht)",
+      "Objektbezeichnung und Portfolio-Kategorie",
       "Verantwortliche Organisationseinheit"
-    ]
+    ],
+    "processDefId": "gebaeude-erfassung"
   },
   {
     "serviceId": "parzelle-erfassen",

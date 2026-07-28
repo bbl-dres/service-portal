@@ -49,15 +49,18 @@ function overview(ctx) {
       meta: 'Strategie & Vorhaben' },
   ].map(C.domainTile).join('');
 
+  // CDs Section-Anatomie: <section> aussen, .container innen — erst dadurch kann
+  // das zweite Band von Rand zu Rand getönt sein. Die Kachelüberschrift war
+  // sr-only, weil sie im weissen Einheitsfeld nichts zu gliedern hatte; als
+  // .section__title eines eigenen Bandes wird sie sichtbar (Item 7.7).
   mount.innerHTML = `
-  <div class="container section">
-    ${C.pageHeader({
-      title: 'Daten und Digitalisierung',
-      lead: 'Auswertungen, Datenbezug und API Verzeichnis sowie die Fachanwendungen des BBL — an einem Ort.',
+    ${C.pageSection({
+      body: C.pageHeader({
+        title: 'Daten und Digitalisierung',
+        lead: 'Auswertungen, Datenbezug und API Verzeichnis sowie die Fachanwendungen des BBL — an einem Ort.',
+      }),
     })}
-    <h2 class="sr-only">Angebote</h2>
-    <div class="grid grid--3 mt-8">${entries}</div>
-  </div>`;
+    ${C.pageSection({ title: 'Angebote', alt: true, body: `<div class="grid grid--3">${entries}</div>` })}`;
 }
 
 function notFound(ctx) {

@@ -49,7 +49,7 @@ export default async function render(ctx) {
   // Formularansicht session.user() zu dereferenzieren (Direktaufruf-Schutz).
   if (!session.isLoggedIn()) {
     mount.innerHTML = `
-    <div class="container section">
+    <div class="container section container--grid">
       <div class="container__center--xs">
         ${C.backLink('#/services', 'Dienstleistungen')}
         <h1 tabindex="-1">${C.escape(cfg.title)}</h1>
@@ -91,7 +91,7 @@ export default async function render(ctx) {
     // Fokus + Schreibmarke über den Neuaufbau retten (Item 3.2).
     const restore = C.preserveFocus(mount);
     mount.innerHTML = `
-    <div class="container section">
+    <div class="container section container--grid">
       <div class="container__center--xs">
       ${C.backLink('#/services', 'Dienstleistungen')}
       <h1 tabindex="-1">${C.escape(cfg.title)}</h1>
@@ -128,7 +128,7 @@ export default async function render(ctx) {
   function drawDone() {
     const i = state.created;
     mount.innerHTML = `
-    <div class="container section">
+    <div class="container section container--grid">
       <div class="container__center--xs">
       ${C.notification(`<strong>Meldung erfasst.</strong> Ihre Referenz: <strong>${C.escape(i.reference)}</strong>`, 'success', 'CheckmarkCircle')}
       <h1 tabindex="-1">Vielen Dank</h1>

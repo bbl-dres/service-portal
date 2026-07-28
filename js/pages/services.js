@@ -169,8 +169,8 @@ function detail(ctx, id) {
       tags: `${C.audienceTag(s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
       image: `<figure>${C.photo({ id: img, color: '#2f4356', alt: '', w: 800 })}<figcaption class="small muted">Symbolbild — © Unsplash</figcaption></figure>`,
     })}
-    <div class="split mt-6">
-      <div class="stack">
+    <div class="container--grid gap--responsive mt-6">
+      <div class="container__main stack">
         ${/* Die Detailseite hatte ausser der <h1> keine Gliederungsstufe: ohne
               Voraussetzungen und ohne Weisungen blieb sie ganz ohne <h2>/<h3>. */''}
         <h2 class="sr-only">Beschreibung</h2>
@@ -178,7 +178,7 @@ function detail(ctx, id) {
         ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="box"><h3>Das brauchen Sie</h3><ul style="padding-left:1.1rem">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
         ${ctaBlock}
       </div>
-      <aside class="stack-lg" aria-labelledby="svc-aside-head">
+      <aside class="container__aside stack-lg" aria-labelledby="svc-aside-head">
         <h2 class="sr-only" id="svc-aside-head">Kontakt und Grundlagen</h2>
         ${C.contactBox(contact)}
         ${weis.length ? `<div class="box"><h3>Geltende Weisungen</h3>${weis.map(w => `<a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge/grundlagen/${w.directiveId}">${C.icon('Book', 'icon--base')}<span class="small">${C.escape(w.title)}</span></a>`).join('')}</div>` : ''}

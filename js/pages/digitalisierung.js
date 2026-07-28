@@ -43,30 +43,30 @@ function uebersicht(ctx) {
   setTitle('Digitalisierung');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Digitalisierung' }]);
 
+  // Vier Bänder statt eines weissen Feldes (Item 7.7). Die beiden Fliesstext-
+  // Bänder liegen in CDs Container-Raster, damit `container__center--xs` wirklich
+  // Spalten zuweist statt sich auf die max-width-Notbremse zu verlassen — und
+  // damit die Aufzählung dasselbe Mass bekommt wie der Absatz darüber. Sie stand
+  // voll ausgestellt bei 1309px (145 Zeichen pro Zeile), doppelt so breit.
+  const prose = (html) => `<div class="container--grid"><div class="container__center--xs">${html}</div></div>`;
   mount.innerHTML = `
-  <div class="container section">
-    ${C.pageHeader({
-      title: 'Digitalisierung',
-      lead: 'Die Digitalisierung hat für das BBL einen hohen Stellenwert: Sie vereinfacht den Austausch mit den Verwaltungseinheiten, macht Prozesse durchgängig und verbessert die Datengrundlage für Bauten, Immobilien und Logistik.',
+    ${C.pageSection({
+      body: C.pageHeader({
+        title: 'Digitalisierung',
+        lead: 'Die Digitalisierung hat für das BBL einen hohen Stellenwert: Sie vereinfacht den Austausch mit den Verwaltungseinheiten, macht Prozesse durchgängig und verbessert die Datengrundlage für Bauten, Immobilien und Logistik.',
+      }),
     })}
-    <div class="grid grid--3 mt-8">${CARDS.map(C.domainTile).join('')}</div>
-
-    <section class="mt-8">
-      <h2>Über uns</h2>
-      <p class="container__center--xs">Die Digitalisierung wird im BBL bereichsübergreifend gesteuert: Die Fachbereiche verantworten ihre Prozesse und Daten, die Informatik BBL die Plattformen und den Betrieb. Für die digitale Weiterentwicklung des Immobilienmanagements koordiniert die Organisationseinheit Digital Real Estate und Support (DRES) Strategie und Umsetzung. Für die bundesweiten Vorhaben arbeitet das BBL mit der Bundeskanzlei (Bereich DTI), dem BIT und der Digitalen Verwaltung Schweiz zusammen.</p>
-    </section>
-
-    <section class="mt-8">
-      <h2>Weitere Informationen</h2>
-      <ul class="list--default mt-4">
+    ${C.pageSection({ title: 'Themen', alt: true, body: `<div class="grid grid--items-5">${CARDS.map(C.domainTile).join('')}</div>` })}
+    ${C.pageSection({ title: 'Über uns', body: prose(`
+      <p>Die Digitalisierung wird im BBL bereichsübergreifend gesteuert: Die Fachbereiche verantworten ihre Prozesse und Daten, die Informatik BBL die Plattformen und den Betrieb. Für die digitale Weiterentwicklung des Immobilienmanagements koordiniert die Organisationseinheit Digital Real Estate und Support (DRES) Strategie und Umsetzung. Für die bundesweiten Vorhaben arbeitet das BBL mit der Bundeskanzlei (Bereich DTI), dem BIT und der Digitalen Verwaltung Schweiz zusammen.</p>`) })}
+    ${C.pageSection({ title: 'Weitere Informationen', alt: true, body: prose(`
+      <ul class="list--default">
         <li><a href="#/data/ikt-vorhaben">IKT-Vorhaben — laufende und geplante Informatik-Vorhaben des BBL</a></li>
         <li><a href="#/knowledge/grundlagen">Gesetzliche Grundlagen und Vorgaben</a></li>
         <li><a href="https://www.bk.admin.ch/de/digitale-bundesverwaltung" target="_blank" rel="noopener external">Strategie Digitale Bundesverwaltung (Bundeskanzlei)</a></li>
         <li><a href="#/app/dataportal">Datenportal — Auswertungen und Kennzahlen</a></li>
         <li><a href="#/data/katalog">Datenbezug und API Verzeichnis — Datenkatalog nach DCAT-AP-CH</a></li>
-      </ul>
-    </section>
-  </div>`;
+      </ul>`) })}`;
 }
 
 /* =========================== STRATEGIE (Ankernav) ======================= */

@@ -85,8 +85,8 @@ export default async function render(ctx) {
             <div class="row gap-sm">${C.badge(isVideo ? 'Video' : 'Foto', 'blue')}${periodBadge(m.historicPeriod)}</div>
             <button type="button" class="btn btn--link" id="lb-close">${C.icon('Cancel', 'icon--base')} Schliessen</button>
           </div>
-          <div class="split">
-            <div class="stack">
+          <div class="container--grid gap--responsive">
+            <div class="container__main stack">
               ${C.photo({
                 id: m.photo, color: m.color, alt: m.title, w: 1000, gray: isHistoric(m),
                 style: 'height:320px;border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center',
@@ -94,7 +94,7 @@ export default async function render(ctx) {
               })}
               ${PLACEHOLDER_NOTE}
             </div>
-            <aside class="stack">
+            <aside class="container__aside stack">
               <h2 style="margin:0;font-size:var(--fs-xl);">${C.escape(m.title)}</h2>
               <dl class="kv">
                 <dt>Typ</dt><dd>${isVideo ? 'Video' : 'Foto'}</dd>
@@ -221,8 +221,8 @@ function detail(ctx, id) {
   mount.innerHTML = `
   <div class="container section">
     ${C.detailBar({ backHref: '#/app/mediathek', backLabel: 'Mediathek' })}
-    <div class="split">
-      <div class="stack">
+    <div class="container--grid gap--responsive">
+      <div class="container__main stack">
         <div class="row gap-sm">${C.badge(isVideo ? 'Video' : 'Foto', 'blue')}${periodBadge}</div>
         <h1 tabindex="-1">${C.escape(m.title)}</h1>
         ${C.photo({
@@ -236,7 +236,7 @@ function detail(ctx, id) {
           ? C.notification('Dieses Medium ist als <strong>intern</strong> klassifiziert. Der Download erfordert eine entsprechende Berechtigung (Freigabe).', 'warning', 'Lock')
           : `<p class="small muted">Frei verwendbar gemäss angegebenem Copyright.</p>`}
       </div>
-      <aside class="stack-lg">
+      <aside class="container__aside stack-lg">
         <div class="box">
           <h3>Metadaten</h3>
           <dl class="kv">

@@ -323,4 +323,75 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
   return map;
 }
 
-export default { initBuildingsMap, initEstateMap };
+// ---------------------------------------------------------------------------
+// Standort-Wähler: eine Karte mit EINEM ziehbaren Stecknadelkopf, für das
+// Erfassen eines neuen Objekts (js/apps/building-create.js). Der Aufrufer
+// bekommt über `onPick(lat, lng)` jede Verschiebung gemeldet — durch Ziehen der
+// Nadel ODER durch Klick in die Karte.
+//
+// CARTO-Graubasis (wie die Portfolio-Karten): ruhiger Untergrund, und der
+// Ausschnitt ist nicht auf die Schweiz begrenzt.
+export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } = {}) {
+  let maplibregl;
+  try {
+    maplibregl = await loadMapLibre();
+  } catch (e) {
+    container.innerHTML = `<div class="empty empty--unavailable" style="height:100%">
+      <span>Die Karte konnte nicht geladen werden (${esc(e.message)}). Im Bundesnetz ist der Kartendienst ggf. gesperrt.</span></div>`;
+    return null;
+  }
+  if (!container.isConnected) return null;
+  // Ladeplatzhalter entfernen, BEVOR MapLibre anhängt — aber NUR die Karte,
+  // nicht die Suchauflage: die ist ein Geschwisterknoten im Wrapper.
+  const holder = container.querySelector('.map-picker__canvas') || container;
+  holder.textContent = '';
+
+  const hasStart = Number.isFinite(lat) && Number.isFinite(lng);
+  const map = new maplibregl.Map({
+    // Attribution NICHT automatisch: unten rechts stiess sie mit der zentrierten
+    // Suchauflage zusammen. Sie kommt unten links dazu (siehe unten).
+    container: holder, style: CARTO_STYLE, attributionControl: false,
+    cooperativeGestures: true,
+    locale: {
+      'CooperativeGesturesHandler.WindowsHelpText': 'Strg + Scrollen zum Zoomen',
+      'CooperativeGesturesHandler.MacHelpText': '⌘ + Scrollen zum Zoomen',
+      'CooperativeGesturesHandler.MobileHelpText': 'Mit zwei Fingern verschieben',
+    },
+    center: hasStart ? [lng, lat] : [8.2275, 46.8182],   // Landesmitte, bis eine Adresse gewählt ist
+    zoom: hasStart ? zoom : 7,
+  });
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+  map.addControl(new maplibregl.FullscreenControl({ container }), 'top-right');
+  map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+  showMapSpinner(holder, map);
+
+  const el = document.createElement('div');
+  el.className = 'map-pin';
+  el.setAttribute('aria-hidden', 'true');
+  const marker = new maplibregl.Marker({ element: el, draggable: true, anchor: 'bottom' })
+    .setLngLat(hasStart ? [lng, lat] : [8.2275, 46.8182])
+    .addTo(map);
+  if (!hasStart) el.style.display = 'none';   // erst zeigen, wenn ein Standort gesetzt ist
+
+  const report = () => { const p = marker.getLngLat(); if (onPick) onPick(p.lat, p.lng); };
+  marker.on('dragend', report);
+  map.on('click', (e) => {
+    el.style.display = '';
+    marker.setLngLat(e.lngLat);
+    report();
+  });
+
+  // Steuer-API für den Aufrufer: Adresse gewählt → Nadel setzen und heranfahren.
+  // `flyTo`, nicht `easeTo`: der Sprung von der Übersicht (Zoom 5) auf die
+  // Hausnummer (Zoom 17) sind zwölf Stufen — easeTo schiebt die Kacheln linear
+  // durch, flyTo zoomt heraus und wieder hinein und bleibt dabei lesbar.
+  map.__setPin = (la, ln, z) => {
+    el.style.display = '';
+    marker.setLngLat([ln, la]);
+    map.flyTo({ center: [ln, la], zoom: z || zoom, duration: 1200, essential: true });
+  };
+  container._map = map;   // Griff für die kopflosen Tests
+  return map;
+}
+
+export default { initBuildingsMap, initEstateMap, initPickerMap };

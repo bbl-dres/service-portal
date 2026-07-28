@@ -87,13 +87,14 @@ const APPS = {
   'transaction':     './apps/transaction.js',
   'dataportal':      './apps/dataportal.js',
   'api-docs':        './apps/api-docs.js',
+  'building-create': './apps/building-create.js',
 };
 // Which top-nav item to highlight for pages and apps that are not themselves a
 // top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
 // und Digitalisierung, so it and every micro-app highlight that section.
 const SECTION_OF = {
   'applications': 'data',
-  'space-request': 'services', 'fault-report': 'services',
+  'space-request': 'services', 'fault-report': 'services', 'building-create': 'services',
   'portfolio': 'data', 'projects': 'data',
   'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
   'document-archive': 'data', 'mediathek': 'data', 'api-docs': 'data',

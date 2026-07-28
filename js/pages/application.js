@@ -66,8 +66,8 @@ export default function render(ctx, appId) {
       image: a.photo ? C.photo({ id: a.photo, alt: '', w: 800 }) : '',
     })}
 
-    <div class="split mt-6">
-      <div class="stack-lg">
+    <div class="container--grid gap--responsive mt-6">
+      <div class="container__main stack-lg">
         ${page.long ? `<div><h2 class="detail-section__title">Über die Anwendung</h2><p>${C.escape(page.long)}</p></div>` : ''}
 
         ${section('Einstieg', entries.length
@@ -80,7 +80,7 @@ export default function render(ctx, appId) {
           : ''}
       </div>
 
-      <aside class="stack-lg">
+      <aside class="container__aside stack-lg">
         <div class="box">
           <h3>Zugriff</h3>
           ${primary ? `<p style="margin:0 0 1rem">

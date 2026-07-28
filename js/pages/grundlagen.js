@@ -95,16 +95,27 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
 
   // Inhaltsverzeichnis (CD: Card + menu). Ohne Zeilen-Icon — CD-Blattzeilen
   // tragen keines; der aktive Abschnitt wird per .menu__item--active markiert.
+  // Unter 768px ist das Verzeichnis eine eingeklappte <details>: dort steht es
+  // (mit container--reverse-mobile) VOR dem Inhalt und kostet so ~48px statt
+  // ~260px. Ab 768px blendet die CSS die <summary> aus und klappt den Inhalt
+  // dauerhaft auf — das Verzeichnis steht dann wie bisher offen in der Randspalte.
   const toc = `<nav class="anchor-nav sticky--top" aria-label="Inhaltsverzeichnis">
     <div class="card card--default">
       <div class="card__content"><div class="card__body">
-        <h2 class="card__title">Inhaltsverzeichnis</h2>
-        <ul class="menu">
-          ${sections.map(s => `<li>
-            <a class="menu__item menu__item--border menu__item--condensed" href="#${s.id}" data-anchor="${s.id}">
-              <span>${C.markLang(s.title)}</span>
-            </a></li>`).join('')}
-        </ul>
+        <details class="anchor-nav__disclosure">
+          <summary class="anchor-nav__summary">
+            <h2 class="card__title">Inhaltsverzeichnis</h2>
+            ${C.icon('ChevronDown', 'anchor-nav__chev')}
+          </summary>
+          <div class="anchor-nav__body">
+            <ul class="menu">
+              ${sections.map(s => `<li>
+                <a class="menu__item menu__item--border menu__item--condensed" href="#${s.id}" data-anchor="${s.id}">
+                  <span>${C.markLang(s.title)}</span>
+                </a></li>`).join('')}
+            </ul>
+          </div>
+        </details>
       </div></div>
     </div>
   </nav>`;
@@ -112,7 +123,10 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
   mount.innerHTML = `
   <div class="container section">
     ${C.detailBar({ backHref: back && back.href, backLabel: back && back.label })}
-    <div class="container--grid gap--responsive">
+    ${/* container--reverse-mobile: unter 768px stand das Inhaltsverzeichnis am
+          Seitenende, direkt über dem Footer — also erst NACHDEM man an allem
+          vorbeigescrollt ist, was es indexiert (CD container.postcss:100-101). */''}
+    <div class="container--grid gap--responsive container--reverse-mobile">
       <div class="anchor-page__header">
         ${C.pageHeader({ title, lead })}
         ${intro ? `<p class="page-intro muted">${intro}</p>` : ''}
@@ -160,6 +174,20 @@ export function grundlagenPage(ctx, page) {
 // Abschnitt mit .menu__item--active (CD detailPageAnchorNav JS-Beispiel);
 // (3) etwaige Akkordeons im Inhalt werden aktiviert.
 function wireAnchorNav(mount) {
+  // Das Inhaltsverzeichnis ist NUR unter 768px ein Ausklapper. Der Zustand muss
+  // vom JS kommen: Browser klappen <details> heute über
+  // `::details-content { content-visibility:hidden }` ein, und dagegen kommt
+  // keine display-Regel auf dem Kind an. Ab 768px also `open` setzen (die CSS
+  // blendet dort die <summary> aus), darunter zuklappen.
+  const details = mount.querySelector('.anchor-nav__disclosure');
+  if (details && window.matchMedia) {
+    const wide = window.matchMedia('(min-width:768px)');
+    const sync = () => { details.open = wide.matches; };
+    sync();
+    // Beim Breitenwechsel nachziehen; auf `change` statt Resize-Sturm.
+    if (wide.addEventListener) wide.addEventListener('change', sync);
+  }
+
   const links = [...mount.querySelectorAll('.anchor-nav [data-anchor]')];
   links.forEach(link => {
     link.addEventListener('click', (e) => {

@@ -37,16 +37,9 @@ export default async function render(ctx) {
   // «Alle …»-Verweis unten rechts als .section__action mit btn--bare. Der
   // Inhalt sitzt im .container. `alt` wird beim Zusammenbau nach Reihenfolge
   // gesetzt, damit die Bänder immer sauber wechseln.
-  const section = ({ title, body, more }, alt) => `
-    <section class="section section--default${alt ? ' bg--secondary-50' : ''}">
-      <div class="container">
-        <h2 class="section__title">${C.escape(title)}</h2>
-        ${body}
-        ${more ? `<div class="section__action">
-          <a class="btn btn--bare" href="${more.href}">${C.escape(more.label)} ${C.icon('ArrowRight', 'icon--base')}</a>
-        </div>` : ''}
-      </div>
-    </section>`;
+  // Derselbe Baustein wie auf den Hub-Seiten (C.pageSection) — die lokale Kopie
+  // war die einzige Stelle, die CDs Section-Anatomie korrekt aufbaute.
+  const section = ({ title, body, more }, alt) => C.pageSection({ title, body, more, alt });
 
   // Häufige Dienstleistung — Textkachel, kein Bild: hier zählt das Ziel,
   // nicht die Illustration.
@@ -89,7 +82,7 @@ export default async function render(ctx) {
   const popular = services.filter(s => s.popular);
   if (popular.length) blocks.push({
     title: 'Häufig gebraucht',
-    body: `<div class="quick-grid">${popular.map(serviceTile).join('')}</div>`,
+    body: `<div class="grid grid--items-5">${popular.map(serviceTile).join('')}</div>`,
     more: { href: '#/services', label: 'Alle Dienstleistungen ansehen' },
   });
 
@@ -106,9 +99,18 @@ export default async function render(ctx) {
     photo: { id: a.photo, alt: '' },
     footerInfo: 'BBL-Intranet', footerAction: C.cardAction({ external: true }),
   });
+  // Zwei Blöcke statt eines mit sieben Karten. Die Sieben war das Symptom: hier
+  // standen 2 portalinterne Themen und 5 Links, die den Prototyp in einem neuen
+  // Tab verlassen, in EINEM Raster — in grid--3 ergab das 3+3+1 mit einer
+  // verwaisten Karte. Das Aufteilen balanciert beide Raster (2+2, dann CDs
+  // grid--items-5) UND sagt vorher, wohin ein Link führt (Item 7.3).
   blocks.push({
     title: 'Bestellen und weitere Angebote',
-    body: `<div class="grid grid--3">${HOME_THEMEN.map(themaCard).join('')}${INTRANET_AREAS.map(areaCard).join('')}</div>`,
+    body: `<div class="grid grid--items-2">${HOME_THEMEN.map(themaCard).join('')}</div>`,
+  });
+  blocks.push({
+    title: 'Aufgabenbereiche im BBL-Intranet',
+    body: `<div class="grid grid--items-5">${INTRANET_AREAS.map(areaCard).join('')}</div>`,
   });
 
   // 5 · Aktuelles — Galerie mit Bildern (CD TopNewsSection).

@@ -70,15 +70,16 @@ function overview(ctx) {
       meta: 'Anleitungen & Schulung' },
   ].map(C.domainTile).join('');
 
+  // Wie data.js: Kopfband weiss, Kachelband getönt (Item 7.7). Die vormals
+  // sr-only-Überschrift trägt jetzt sichtbar das zweite Band.
   mount.innerHTML = `
-  <div class="container section">
-    ${C.pageHeader({
-      title: 'News und Wissen',
-      lead: 'Aktuelles aus dem BBL, die Prozesse und Vorlagen für die Zusammenarbeit sowie die geltenden Weisungen und Vorgaben.',
+    ${C.pageSection({
+      body: C.pageHeader({
+        title: 'News und Wissen',
+        lead: 'Aktuelles aus dem BBL, die Prozesse und Vorlagen für die Zusammenarbeit sowie die geltenden Weisungen und Vorgaben.',
+      }),
     })}
-    <h2 class="sr-only">Bereiche</h2>
-    <div class="grid grid--2 mt-8">${entries}</div>
-  </div>`;
+    ${C.pageSection({ title: 'Bereiche', alt: true, body: `<div class="grid grid--2">${entries}</div>` })}`;
 }
 
 function typeVariant(type) {
@@ -116,15 +117,15 @@ function weisungPage(ctx, w) {
       : w.status === 'aufgehoben'
         ? C.notification('Diese Weisung ist <strong>aufgehoben</strong>.', 'warning', 'WarningCircle')
         : ''}
-    <div class="split mt-6">
-      <div class="stack">
+    <div class="container--grid gap--responsive mt-6">
+      <div class="container__main stack">
         ${w.scope ? `<div><h3>Geltungsbereich</h3><p style="margin:0">${C.escape(w.scope)}</p></div>` : ''}
         ${w.legalBasis && w.legalBasis !== '—' ? `<div><h3>Rechtsgrundlage</h3><p style="margin:0">${C.escape(w.legalBasis)}</p></div>` : ''}
         <div class="row gap-sm mt-2">
           <a class="btn btn--outline" href="${w.documentUrl || '#'}">${C.icon('Download', 'icon--base')} Dokument herunterladen</a>
         </div>
       </div>
-      <aside class="stack-lg">
+      <aside class="container__aside stack-lg">
         <div class="box">
           <h3>Eckdaten</h3>
           <dl class="kv" style="margin:0">
@@ -169,16 +170,25 @@ function newsDetail(ctx, id) {
   mount.innerHTML = `
   <div class="container section">
     ${C.backLink('#/knowledge/news', 'News')}
-    <article class="stack mt-4" style="max-width:60rem">
-      <div class="row gap-sm small muted">
-        <span>${C.escape(n.date)} · ${C.escape(n.source)}</span>
-      </div>
-      <h1 tabindex="-1">${C.escape(n.title)}</h1>
-      ${C.photo({ id: n.photo, color: n.color, alt: '', w: 1200, style: 'aspect-ratio:21/9;max-height:20rem;border-radius:var(--radius-lg)' })}
-      <p class="lead">${C.escape(n.teaser)}</p>
-      <div class="separator separator--md"></div>
-      <p>${C.escape(n.body)}</p>
-    </article>
+    ${/* Die einzige lange Lesefläche der App. Mass und Rhythmus kamen bisher aus
+          einem Inline-`max-width:60rem` und `.stack` (1rem zwischen JEDEM Kind):
+          Datumszeile, Titel, Bild, Lead, Trenner und Fliesstext standen alle
+          gleich weit auseinander — die vertikale Achse trug keine Hierarchie,
+          und bei 1440px mass der Text 107 Zeichen pro Zeile. CDs Antwort für
+          genau diese Seite ist container__center--xs + .vertical-spacing.
+          Datumszeile und Titel bleiben als <header> eng beieinander. */''}
+    <div class="container--grid">
+      <article class="container__center--xs vertical-spacing mt-4">
+        <header>
+          <p class="small muted">${C.escape(n.date)} · ${C.escape(n.source)}</p>
+          <h1 tabindex="-1">${C.escape(n.title)}</h1>
+        </header>
+        ${C.photo({ id: n.photo, color: n.color, alt: '', w: 1200, style: 'aspect-ratio:21/9;max-height:20rem;border-radius:var(--radius-lg)' })}
+        <p class="lead">${C.escape(n.teaser)}</p>
+        <div class="separator separator--md"></div>
+        <p>${C.escape(n.body)}</p>
+      </article>
+    </div>
   </div>`;
 }
 

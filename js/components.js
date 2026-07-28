@@ -101,6 +101,33 @@ export function tagItem({ label, active = false, size = '', iconName = '', attrs
     + `<span class="tag-item__text">${escape(label)}</span></span></button>`;
 }
 
+// Seitenabschnitt in CDs Anatomie (section.postcss): das <section> ist das
+// ÄUSSERE Element, der .container liegt darin. Nur so kann ein Hintergrund von
+// Rand zu Rand laufen — `bg--*` gehört auf die Section, nie auf den Container.
+//
+// 40 von 42 Seiten rendern `<div class="container section">`, verschmelzen also
+// beide Rollen in einem Element. Die Folge ist strukturell, nicht kosmetisch:
+// keine solche Seite kann ein Wechselband, einen getönten Einstieg oder einen
+// vollbreiten Aufruf tragen — sie ist ein einziges weisses Feld von der
+// Brotkrume bis zum Footer. Die Startseite baut es richtig und liest sich
+// dadurch als komponierte Seite.
+//
+// `alt` färbt das Band (secondary-50). Aufrufer wechseln es nach Reihenfolge
+// durch, damit die Bänder sauber alternieren. Kein neues CSS: .section,
+// .section--default, .section__title, .section__action und .bg--secondary-50
+// existieren alle bereits.
+export function pageSection({ title = '', body = '', more = null, alt = false, titleTag = 'h2' }) {
+  return `<section class="section section--default${alt ? ' bg--secondary-50' : ''}">
+      <div class="container">
+        ${title ? `<${titleTag} class="section__title">${escape(title)}</${titleTag}>` : ''}
+        ${body}
+        ${more ? `<div class="section__action">
+          <a class="btn btn--bare" href="${escape(more.href)}">${escape(more.label)} ${icon('ArrowRight', 'icon--base')}</a>
+        </div>` : ''}
+      </div>
+    </section>`;
+}
+
 export function pageHeader({ title, lead }) {
   return `<div class="page-header"><h1 tabindex="-1">${escape(title)}</h1>${lead ? `<p class="lead">${escape(lead)}</p>` : ''}</div>`;
 }
@@ -1348,6 +1375,6 @@ export const C = {
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
   preserveFocus, rerender, wireScrollRegions, wirePipeline, errorSummary, wireErrorSummary, stepIndicator,
-  breakable, mountDataTable, cardAction, cardFooter,
+  breakable, mountDataTable, cardAction, cardFooter, pageSection,
 };
 export default C;
