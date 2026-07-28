@@ -32,7 +32,7 @@ function overview(ctx) {
     { title: 'Bauwerksdokumentation', icon: 'Folder', href: '#/app/document-archive',
       desc: 'Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.',
       meta: 'Dokumentenarchiv' },
-    { title: 'Mediathek', icon: 'Image', href: '#/app/mediathek',
+    { title: 'Mediathek Bauten', icon: 'Image', href: '#/app/mediathek',
       desc: 'Digital-Asset-Management für Fotos und Videos der Bundesbauten, inkl. historischer Aufnahmen.',
       meta: 'DAM' },
     { title: 'Fachanwendungen Bauten', icon: 'Building', href: '#/applications?bereich=bauten',

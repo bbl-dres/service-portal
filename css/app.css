@@ -1266,7 +1266,7 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .scroll-x { overflow-x:auto; position:relative; }
 .scroll-x:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 /* (d) Nur `.sr-only`-Containment, kein Scroller. */
-.tab__controls, .pf-lightbox__thumbs { position:relative; }
+.tab__controls { position:relative; }
 .text-nowrap { white-space:nowrap; }   /* nur Identifikatorspalten, Item 5.7 */
 
 /* Tables (table.postcss:5-135) */
@@ -2353,6 +2353,11 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Seite darunter um die Leistenbreite springen. */
 html { scrollbar-gutter:stable; }
 html:has(> body.chart-overlay-open) { overflow:hidden; }
+/* `overflow:hidden` allein auf dem <body> genügt NICHT: der Dokument-Scroller
+   ist das <html>-Element (app.css:33 setzt dort `overflow-y:scroll`). Die
+   Seitenleiste blieb sonst hinter dem Overlay aktiv — beim Hineinzoomen zwei
+   senkrechte Leisten nebeneinander. */
+html:has(> body.chart-overlay-open) { overflow:hidden; }
 body.chart-overlay-open { overflow:hidden; }
 /* ---- Kanonisches Modal (CD modal.postcss BEM) ----------------------------
    Primitive für neue Dialoge (Bestätigungen, Formulare). Die bestehenden Overlays
@@ -2569,9 +2574,16 @@ body.chart-overlay-open { overflow:hidden; }
    Hauptinformation IST, verschenkt das die Fläche. Jetzt dieselbe Anatomie wie
    .docviewer: dunkle Vollfläche, Kopfzeile mit Titel/Meta links und Aktionen
    (Herunterladen · Teilen · Schliessen) rechts. */
-.pf-lightbox { position:fixed; inset:0; z-index:var(--z-modal); display:flex; flex-direction:column;
+/* Die BILDFLÄCHE füllt das ganze Overlay, die Kopfzeile schwebt darüber — so
+   läuft die Bildlaufleiste über die volle Fensterhöhe am Fensterrand und liest
+   sich als «die Seite scrollt», obwohl weiterhin ein Element im Dialog scrollt
+   (Fokusfalle, Rückkehr an die alte Scrollposition und aria-modal bleiben).
+   --lb-top / --lb-bottom misst syncChrome() in js/gallery.js. */
+.pf-lightbox { position:fixed; inset:0; z-index:var(--z-modal);
+  --lb-top:3.5rem; --lb-bottom:0px;
   background:var(--color-secondary-900); }
-.pf-lightbox__bar { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex:none;
+.pf-lightbox__bar { position:absolute; top:0; left:0; right:0; z-index:3;
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
   padding:.6rem .75rem; background:var(--color-secondary-800); color:#fff; }
 @media (min-width:768px){ .pf-lightbox__bar { padding:.6rem 1.25rem; } }
 .pf-lightbox__heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
@@ -2608,15 +2620,18 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-lightbox__btn:disabled:hover { background:none; }
 /* Zeile zwischen Kopf und Miniaturen: trägt Bühne und Metadaten-Panel und
    begrenzt beide der Höhe nach (min-height:0 bricht die Flex-Mindesthöhe auf). */
-.pf-lightbox__body { flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
-.pf-lightbox__stage { position:relative; flex:1 1 auto; display:flex; align-items:center; justify-content:center;
-  min-height:0; min-width:0; padding:1rem; }
+.pf-lightbox__body { position:absolute; inset:0; display:flex; flex-direction:column; min-height:0; }
+.pf-lightbox__stage { position:relative; flex:1 1 auto; min-height:0; min-width:0; }
 /* Beim Zoom wird die Bühne zum Scrollrahmen — dadurch gibt es Verschieben per
    Touch, Rad UND Tastatur geschenkt, ohne eigene Zieh-Logik. */
 /* Die Bühne selbst scrollt NIE — sie ist der Bezugsrahmen für Zoomleiste und
    Blätterpfeile. Den Überlauf trägt .pf-lightbox__scroll darin. */
-.pf-lightbox__scroll { flex:1 1 auto; display:flex; align-items:center; justify-content:center;
-  width:100%; height:100%; min-width:0; min-height:0; }
+.pf-lightbox__scroll { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  min-width:0; min-height:0;
+  /* Innenabstand = gemessene Chrome-Höhe: im Fit-Zustand bleibt das Bild frei,
+     gescrollt läuft es darunter durch. */
+  padding:calc(var(--lb-top) + 1rem) 1rem calc(var(--lb-bottom) + 1rem);
+  scroll-padding:calc(var(--lb-top) + 1rem) 1rem calc(var(--lb-bottom) + 1rem); }
 .pf-lightbox__stage.is-zoomed .pf-lightbox__scroll { overflow:auto; align-items:flex-start; justify-content:flex-start; cursor:grab; }
 .pf-lightbox__stage.is-zoomed .pf-lightbox__scroll:active { cursor:grabbing; }
 .pf-lightbox__scroll:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
@@ -2628,15 +2643,21 @@ body.chart-overlay-open { overflow:hidden; }
    Rahmen mit dem Bild mitwächst und die Bühne echten Scroll-Überlauf bekommt. */
 .pf-lightbox__canvas { position:relative; display:flex; align-items:center; justify-content:center;
   width:100%; height:100%; min-width:0; min-height:0; }
-.pf-lightbox__stage.is-zoomed .pf-lightbox__canvas { width:auto; height:auto; margin:auto; }
+/* flex:none: als Flex-Element schrumpfte der Rahmen sonst auf die Breite des
+   Scrollrahmens zurück — das Bild lief darüber hinaus, statt den Scrollbereich
+   zu vergrössern, und liess sich seitlich nicht schieben. */
+.pf-lightbox__stage.is-zoomed .pf-lightbox__canvas { flex:none; width:auto; height:auto; margin:auto; }
+/* Im Zoom dürfen die Fit-Deckel nicht mehr greifen, sonst bleibt die Bildbreite
+   an den Rahmen gefesselt und es entsteht nie waagrechter Überlauf. */
+.pf-lightbox__stage.is-zoomed .pf-lightbox__img { max-width:none; max-height:none; }
 .pf-lightbox__stage { overflow:hidden; }
 /* Zoomleiste: unten mittig über der Bühne, dunkel mit hellen Symbolen wie die
    Kopfzeile. Sie schwebt über dem Bild, deshalb Abstand nach unten. */
-.pf-lightbox__zoom { position:absolute; left:50%; bottom:1rem; transform:translateX(-50%);
+.pf-lightbox__zoom { position:absolute; left:50%; bottom:calc(var(--lb-bottom) + 1rem); transform:translateX(-50%);
   z-index:2; display:flex; align-items:center; gap:.15rem; padding:.25rem .4rem;
   border-radius:var(--radius-full); background:rgba(13,27,42,.82);
   box-shadow:var(--shadow-lg); backdrop-filter:blur(4px); }
-@media (min-width:768px){ .pf-lightbox__zoom { bottom:1.5rem; } }
+@media (min-width:768px){ .pf-lightbox__zoom { bottom:calc(var(--lb-bottom) + 1.5rem); } }
 .pf-lightbox__zoom .pf-lightbox__btn { width:2.25rem; height:2.25rem; }
 .pf-lightbox__zoom-val { min-width:3.75rem; text-align:center; color:#fff;
   font-size:var(--text-sm); font-variant-numeric:tabular-nums; }
@@ -2646,7 +2667,7 @@ body.chart-overlay-open { overflow:hidden; }
    Ab 768px als Spalte NEBEN der Bühne (das Bild bleibt sichtbar), darunter als
    Band darüber; auf dem Telefon wäre eine dritte Spalte nicht lesbar. */
 .pf-lightbox__meta { flex:0 0 auto; overflow-y:auto; max-height:40vh;
-  padding:1rem 1.25rem; background:rgba(255,255,255,.06); color:#fff;
+  padding:calc(var(--lb-top) + 1rem) 1.25rem 1rem; background:rgba(255,255,255,.06); color:#fff;
   border-top:1px solid rgba(255,255,255,.16); }
 .pf-lightbox__meta-title { margin:0 0 .5rem; font-size:var(--text-sm); font-weight:var(--fw-bold);
   text-transform:none; color:rgba(255,255,255,.72); }
@@ -2663,20 +2684,13 @@ body.chart-overlay-open { overflow:hidden; }
     border-top:0; border-left:1px solid rgba(255,255,255,.16); }
 }
 .pf-lightbox__img { display:block; max-width:100%; max-height:100%; object-fit:contain; }
-.pf-lightbox__play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:rgba(255,255,255,.92); pointer-events:none; }
-.pf-lightbox__nav { position:absolute; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; justify-content:center;
+/* z-index: .pf-lightbox__canvas ist positioniert und steht im Quelltext NACH
+   dem Zurück-Pfeil — ohne eigene Ebene malte das Bild ihn zu. */
+.pf-lightbox__nav { z-index:2; position:absolute; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; justify-content:center;
   width:2.75rem; height:2.75rem; border:0; border-radius:var(--radius-full); background:rgba(255,255,255,.85); color:var(--color-text); cursor:pointer; transition:background .12s; }
 .pf-lightbox__nav:hover { background:#fff; }
 .pf-lightbox__nav--prev { left:.75rem; } .pf-lightbox__nav--next { right:.75rem; }
 .pf-lightbox__count { flex:none; color:var(--color-secondary-200); font-size:var(--fs-sm); }
-.pf-lightbox__thumbs { display:flex; gap:.5rem; flex:none; padding:.6rem .75rem; overflow-x:auto;
-  background:var(--color-secondary-800); }
-@media (min-width:768px){ .pf-lightbox__thumbs { padding:.6rem 1.25rem; } }
-.pf-lightbox__thumb { flex:none; width:72px; height:52px; padding:0; border:2px solid transparent; border-radius:var(--radius-sm);
-  overflow:hidden; background:none; cursor:pointer; }
-.pf-lightbox__thumb.is-active { border-color:#fff; }
-.pf-lightbox__thumb:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
-.pf-lightbox__thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 /* Summenzeile (tfoot) in Detailtabellen */
 .table__total th, .table__total td { border-top:2px solid var(--color-secondary-300); font-weight:var(--fw-bold); background:var(--color-secondary-50); }
 

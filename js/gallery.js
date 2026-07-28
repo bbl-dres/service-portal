@@ -2,7 +2,7 @@
 // (js/apps/portfolio.js) und der Mediathek (js/apps/mediathek.js).
 //
 // Folgt dem CD-Overlay-Muster wie die Dokumentvorschau (js/doc-viewer.js):
-// Kopfzeile mit Titel und Aktionen, Bühne, Miniaturenleiste. Tastatur: Esc
+// Kopfzeile mit Titel und Aktionen, darunter die Bildfläche. Tastatur: Esc
 // schliesst, Pfeil links/rechts blättert, Tab bleibt in der Galerie gefangen.
 //
 // items = [{ photo, title, meta, type, gray, href?, details? }]
@@ -12,7 +12,7 @@
 //
 // AUFBAU: das Gerüst wird EINMAL gebaut, `update()` schreibt danach nur noch,
 // was sich je Bild ändert. Die frühere Fassung baute bei jedem Blättern das
-// ganze Overlay per innerHTML neu — inklusive aller Miniaturen. Gemessen bei 17
+// ganze Overlay per innerHTML neu. Gemessen bei 17
 // Bildern: 77 DOM-Knoten und 18 <img> pro Tastendruck neu erzeugt (die Bilder
 // kamen aus dem Cache, die Knoten nicht). Beim Halten der Pfeiltaste ist das
 // spürbar, und der Fokus sprang dabei jedes Mal auf «Schliessen» zurück.
@@ -25,16 +25,6 @@ function stageWidth() {
   return WIDTH_STEPS.find((w) => w >= want) || WIDTH_STEPS[WIDTH_STEPS.length - 1];
 }
 
-// Fenstergrösse der Miniaturenleiste. Bis zu dieser Zahl werden ALLE Bilder als
-// Knöpfe gebaut — das ist der Normalfall (ein Objekt hat selten mehr als ein
-// Dutzend Aufnahmen) und bleibt dann völlig statisch. Erst darüber wird ein
-// Ausschnitt um das aktuelle Bild gezeichnet: 500 Aufnahmen ergäben sonst 1000
-// Knoten in einer Flexzeile, die der Browser bei jedem Öffnen umbrechen muss —
-// und zwar unabhängig davon, dass die Bilder selbst schon `loading="lazy"` sind.
-const THUMB_WINDOW = 24;
-// Abstand zum Fensterrand, ab dem nachgeschoben wird. Ohne diese Hysterese
-// würde die Leiste bei jedem Schritt neu gebaut.
-const THUMB_EDGE = 4;
 
 export function openGallery(items, start, C, opts = {}) {
   // `opts.param`: Name eines Hash-Parameters, in dem das offene Bild steht
@@ -69,12 +59,7 @@ export function openGallery(items, start, C, opts = {}) {
   // Gerüst — einmalig. Alles, was sich je Bild ändert, trägt eine id/Klasse und
   // wird in update() beschrieben.
   //
-  // Die Miniaturen bekommen `loading="lazy"`: die Leiste scrollt waagrecht, bei
-  // 17 Bildern sind ~13 davon ausserhalb des Sichtfelds. Ohne das Attribut
-  // forderte das Öffnen der Galerie 18 Bilder auf einmal an (1 Vollbild + 17
-  // Miniaturen) — bei einem echten Archiv mit hunderten Aufnahmen wäre das ein
-  // Anfragensturm für Inhalte, die niemand sieht.
-  overlay.innerHTML = `
+    overlay.innerHTML = `
     <div class="pf-lightbox__bar">
       <div class="pf-lightbox__heading">
         <span class="pf-lightbox__heading-icon" data-el="icon"></span>
@@ -104,10 +89,10 @@ export function openGallery(items, start, C, opts = {}) {
         ${/* Gescrollt wird NUR dieser innere Rahmen. Läge der Überlauf auf der
               Bühne, wanderten Zoomleiste und Blätterpfeile beim Scrollen mit dem
               Bild aus dem Blick — sie sind absolut in der Bühne positioniert. */''}
-        <div class="pf-lightbox__scroll" data-el="scroll">
+        <div class="pf-lightbox__scroll" data-el="scroll" tabindex="0"
+          aria-label="Bildfläche — mit den Bild-auf/ab-Tasten verschieben">
           <div class="pf-lightbox__canvas" data-el="canvas">
             <img class="pf-lightbox__img" data-el="img" src="" alt="" decoding="async">
-            <span class="pf-lightbox__play" data-el="play" aria-hidden="true" hidden>${C.icon('Video', 'icon--lg')}</span>
           </div>
         </div>
         ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
@@ -129,46 +114,11 @@ export function openGallery(items, start, C, opts = {}) {
         <dl class="kv kv--compact" data-el="metakv"></dl>
         <a class="btn btn--outline btn--sm" data-el="metalink" data-act="close-nav" href="#" hidden></a>
       </div>
-    </div>
-    ${multi ? '<div class="pf-lightbox__thumbs" data-el="thumbs"></div>' : ''}`;
+    </div>`;
 
   const el = {};
   overlay.querySelectorAll('[data-el]').forEach((n) => { el[n.dataset.el] = n; });
 
-  // --- Miniaturenleiste: alle Bilder, oder ein Fenster um das aktuelle --------
-  const windowed = multi && items.length > THUMB_WINDOW;
-  let winLo = 0;
-  let thumbs = [];
-
-  const thumbHtml = (m, i) => `
-      <button type="button" class="pf-lightbox__thumb" data-thumb="${i}" aria-label="${esc(m.title)}">
-        <img src="${esc(C.photoUrl(m.photo, { w: 200, gray: m.gray }))}" alt="" loading="lazy" decoding="async">
-      </button>`;
-
-  function drawThumbs(lo) {
-    if (!el.thumbs) return;
-    winLo = lo;
-    const hi = Math.min(items.length, lo + THUMB_WINDOW);
-    // `data-thumb` trägt weiterhin den ABSOLUTEN Index — die Klickbehandlung
-    // kennt kein Fenster.
-    el.thumbs.innerHTML = items.slice(lo, hi).map((m, k) => thumbHtml(m, lo + k)).join('');
-    // Ein Fenster ist ein Ausschnitt, keine vollständige Liste. Für Hilfsmittel
-    // muss das dranstehen, sonst liest sich «Bild 3 von 24» aus einer Leiste,
-    // die in Wahrheit 500 Bilder indexiert.
-    el.thumbs.setAttribute('aria-label', `Miniaturen ${lo + 1} bis ${hi} von ${items.length}`);
-    thumbs = [...el.thumbs.querySelectorAll('[data-thumb]')];
-  }
-
-  function syncThumbs() {
-    if (!el.thumbs) return;
-    if (!windowed) { if (!thumbs.length) drawThumbs(0); return; }
-    // Nachschieben, sobald der Rand in Sichtweite kommt (Hysterese).
-    const max = items.length - THUMB_WINDOW;
-    if (idx < winLo + THUMB_EDGE || idx >= winLo + THUMB_WINDOW - THUMB_EDGE || !thumbs.length) {
-      drawThumbs(Math.max(0, Math.min(max, idx - Math.floor(THUMB_WINDOW / 2))));
-    }
-  }
-  if (multi && !windowed) drawThumbs(0);   // klein genug: einmal bauen, nie wieder
 
   // Nachbarbilder vorwärmen: beim Blättern lag sonst immer eine frische
   // Anfrage zwischen Tastendruck und Bild.
@@ -239,7 +189,6 @@ export function openGallery(items, start, C, opts = {}) {
     // Fit-Modus braucht sie, also nach dem Ladeereignis nachziehen.
     if (el.img.complete) applyZoom(); else el.img.addEventListener('load', applyZoom, { once: true });
     el.download.href = fullUrl(it);
-    el.play.hidden = it.type !== 'video';
 
     el.metabtn.hidden = !hasDetails(it);
     el.metabtn.setAttribute('aria-expanded', String(showMeta && hasDetails(it)));
@@ -252,17 +201,6 @@ export function openGallery(items, start, C, opts = {}) {
       if (it.href) { el.metalink.href = it.href; el.metalink.innerHTML = `Zur Detailseite ${C.icon('ArrowRight', 'icon--base')}`; }
     }
 
-    syncThumbs();
-    thumbs.forEach((t) => {
-      const on = Number(t.dataset.thumb) === idx;
-      t.classList.toggle('is-active', on);
-      if (on) {
-        t.setAttribute('aria-current', 'true');
-        // Beim Blättern mitscrollen, sonst wandert die aktive Miniatur aus der
-        // Leiste. `nearest` scrollt nur, wenn sie wirklich ausserhalb liegt.
-        if (!first) t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      } else t.removeAttribute('aria-current');
-    });
     // Fokus NUR beim Öffnen setzen. Vorher lief er bei jedem Blättern auf
     // «Schliessen» zurück — wer sich mit den Pfeilknöpfen durch die Galerie
     // klickte, verlor nach jedem Klick den Knopf unter dem Finger.
@@ -312,13 +250,12 @@ export function openGallery(items, start, C, opts = {}) {
     }
   }
   overlay.addEventListener('click', (e) => {
-    // Klick auf die dunkle Fläche um das Bild schliesst — bei einem Vollbild ist
-    // das die erwartete Geste. Der Download-Link trägt kein data-act und läuft
-    // deshalb ungehindert durch.
-    if (e.target === overlay
-      || (zoom === 'fit' && (e.target.classList.contains('pf-lightbox__stage')
-        || e.target.classList.contains('pf-lightbox__canvas')))) return close();
-    const btn = e.target.closest('[data-act], [data-thumb]'); if (!btn) return;
+    // Der Hintergrund schliesst NICHT: beim Schieben eines gezoomten Bildes
+    // endet fast jede Geste auf der dunklen Fläche, und ein versehentliches
+    // Schliessen kostet die Zoomstufe und die Position in der Galerie.
+    // Schliessen geht über das Kreuz — und über Esc, das bleibt Pflicht (das
+    // Overlay ist ein Dialog).
+    const btn = e.target.closest('[data-act]'); if (!btn) return;
     if (btn.dataset.act === 'close') close();
     else if (btn.dataset.act === 'prev') go(-1);
     else if (btn.dataset.act === 'next') go(1);
@@ -333,14 +270,27 @@ export function openGallery(items, start, C, opts = {}) {
       // diese Aufnahme.
       const url = `${location.origin}${location.pathname}${location.search}${location.hash}`;
       C.openShareModal(url, 'Aufnahme teilen');
-    } else if (btn.dataset.thumb != null) { idx = Number(btn.dataset.thumb); update(false); }
+    }
   });
-  const onResize = () => { if (zoom === 'fit') applyZoom(); };
+  // Die Kopfzeile liegt ÜBER der Bildfläche; ihre Höhe wird gemessen und als
+  // Innenabstand an den Scrollrahmen gegeben, damit im Fit-Zustand nichts unter
+  // ihr verschwindet und die Bildlaufleiste trotzdem über die volle Fensterhöhe läuft.
+  const syncChrome = () => {
+    const bar = overlay.querySelector('.pf-lightbox__bar');
+    overlay.style.setProperty('--lb-top', `${bar ? Math.round(bar.offsetHeight) : 0}px`);
+    overlay.style.setProperty('--lb-bottom', '0px');
+  };
+  const onResize = () => { syncChrome(); if (zoom === 'fit') applyZoom(); };
   window.addEventListener('resize', onResize);
   document.addEventListener('keydown', onKey);
   document.body.classList.add('chart-overlay-open');
   document.body.appendChild(overlay);
+  syncChrome();
   update(true);
+  // Noch einmal nach dem ersten Bild: beim Anhängen steht die Zeilenhöhe der
+  // Kopfzeile noch nicht endgültig fest (gemessen 63px, final 67px), und der
+  // Innenabstand der Bildfläche hing an diesem Wert.
+  requestAnimationFrame(syncChrome);
 }
 
 export default { openGallery };

@@ -145,7 +145,9 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       const lb = document.querySelector('.pf-lightbox');
       r.lightbox = !!lb;
       r.lightboxImg = !!document.querySelector('.pf-lightbox__img');
-      r.thumbs = document.querySelectorAll('.pf-lightbox__thumb').length;
+      // Die Miniaturenleiste wurde bewusst entfernt; navigiert wird über die
+      // Blätterpfeile und den Zähler in der Kopfzeile.
+      r.zoomBar = !!document.querySelector('.pf-lightbox__zoom');
       // Vollbild statt zentrierter Karte, mit Kopfzeile und Herunterladen-Aktion.
       r.lightboxFullscreen = lb
         ? Math.round(lb.getBoundingClientRect().height) === document.documentElement.clientHeight : false;
@@ -156,7 +158,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       r.lightboxClosed = !document.querySelector('.pf-lightbox');
       return r; })()`);
     console.log('■ Gebäude-Detail:', JSON.stringify(D.h1), '| tabs:', JSON.stringify(D.tabs));
-    console.log('   Verträge rows:', D.vertraegeRows, '| Kosten rows+total:', D.kostenRows, D.kostenTotalRow, '| lightbox:', D.lightbox, 'thumbs', D.thumbs, 'closed', D.lightboxClosed);
+    console.log('   Verträge rows:', D.vertraegeRows, '| Kosten rows+total:', D.kostenRows, D.kostenTotalRow, '| lightbox:', D.lightbox, 'zoom', D.zoomBar, 'closed', D.lightboxClosed);
     check(/Bundeshaus West/.test(D.h1 || ''), `building deep-link (${D.h1})`);
     check(D.tabs.length === 7, `building detail has 7 tabs (${D.tabs.length})`);
     check(['Flächen', 'Ausstattung', 'Verträge', 'Kosten', 'Dokumente', 'Kontakte'].every(t => D.tabs.some(x => x.includes(t))), 'entity + core tabs present');
@@ -171,7 +173,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(D.sideTiles === 4, `side grid is always 4 tiles, padded with placeholders (${D.sideTiles})`);
     check(D.emptyClickable === 0, `placeholder tiles are not clickable (${D.emptyClickable})`);
     check(D.moreOverlay, '«Alle Bilder anzeigen» overlay on the last side tile');
-    check(D.lightbox && D.lightboxImg && D.thumbs >= 1, `mosaic tile opens the gallery (${D.thumbs} thumbs)`);
+    check(D.lightbox && D.lightboxImg && D.zoomBar, `mosaic tile opens the gallery (Zoomleiste: ${D.zoomBar})`);
     check(D.lightboxFullscreen, 'gallery viewer is full-screen');
     check(D.lightboxBar && D.lightboxDownload, 'viewer has a header bar with a download action');
     check(D.lightboxStartsAtClicked, 'viewer opens at the clicked image, not the first');

@@ -32,11 +32,11 @@ export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
   if (params[0]) return detail(ctx, params[0]);
 
-  setTitle('Mediathek');
+  setTitle('Mediathek Bauten');
   setCrumbs([
     { label: 'Startseite', href: '#/' },
     { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Mediathek' },
+    { label: 'Mediathek Bauten' },
   ]);
 
   const all = core.media();
@@ -157,7 +157,7 @@ export default async function render(ctx) {
   mount.innerHTML = `
   <div class="container section">
     ${C.pageHeader({
-      title: 'Mediathek',
+      title: 'Mediathek Bauten',
       lead: 'Fotos und Videos der Bundesbauten — von historischen Aufnahmen bis zu aktuellen Dokumentationen.',
     })}
     ${C.catalogueBar({
@@ -239,7 +239,7 @@ function detail(ctx, id) {
   const all = core.media();
   const m = all.find(x => x.mediaId === id);
   if (!m) {
-    mount.innerHTML = C.notFound({ backHref: '#/app/mediathek', backLabel: 'Mediathek',
+    mount.innerHTML = C.notFound({ backHref: '#/app/mediathek', backLabel: 'Mediathek Bauten',
       title: 'Medium nicht gefunden',
       body: 'Dieses Medium existiert nicht (oder wurde zurückgezogen). <a href="#/app/mediathek">Zur Übersicht «Mediathek»</a>' });
     return;
@@ -249,7 +249,7 @@ function detail(ctx, id) {
   setCrumbs([
     { label: 'Startseite', href: '#/' },
     { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Mediathek', href: '#/app/mediathek' },
+    { label: 'Mediathek Bauten', href: '#/app/mediathek' },
     { label: m.title },
   ]);
 
@@ -324,7 +324,7 @@ function detail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.detailBar({ backHref: '#/app/mediathek', backLabel: 'Mediathek' })}
+    ${C.detailBar({ backHref: '#/app/mediathek', backLabel: 'Mediathek Bauten' })}
     <h1 tabindex="-1">${C.escape(m.title)}</h1>
     <p class="lead">${C.escape(bn)} · ${C.escape(m.date)}</p>
 
