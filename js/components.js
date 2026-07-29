@@ -1094,7 +1094,9 @@ export function catalogueResults({
       ? mapView()
       : `${view === 'list'
         ? listView(visible)
-        : `<div class="${gridCls} mt-4">${visible.map(card).join('')}</div>`}${
+        // Die Galerie behält einen Abstand zur Leiste (CD: `gap--top` über dem
+        // Raster); nur die LISTE schliesst bündig an die Trennlinie an.
+        : `<div class="${gridCls} ${header ? 'mt-4' : 'mt-6'}">${visible.map(card).join('')}</div>`}${
       paginationHref ? pagination({ page, totalPages, inputId: paginationInputId, label: paginationLabel, href: paginationHref }) : ''}`
     : available
       // Nullzustand mit Ausweg: der Rat «oben lassen sich aktive Filter
@@ -1111,7 +1113,12 @@ export function catalogueResults({
   // <h3>, und ohne <h2> sprang die Gliederung von der Seiten-<h1> direkt auf
   // Stufe 3 (WCAG 1.3.1 / 2.4.10). Sie bleibt sr-only, weil die sichtbare
   // Trefferzahl in der catalogueBar dieselbe Information trägt.
-  return `<section class="mt-6">
+  // `header:false` heisst: über uns steht eine C.catalogueBar — und die trägt
+  // bereits `padding-bottom` und `border-bottom`, genau wie CDs
+  // `.search-results__header`. Dort folgt die Liste OHNE weiteren Abstand
+  // (search.postcss:207-217). Der zusätzliche `mt-6` riss zwischen Trennlinie
+  // und erster Zeile eine Lücke auf, die es im CD nicht gibt.
+  return `<section${header ? ' class="mt-6"' : ''}>
       <h2 class="sr-only">${escape(regionLabel || unit || 'Ergebnisse')}</h2>
       ${header ? resultsHeader({ count, total, unit, page, totalPages, view }) : ''}
       ${note ? `<p class="muted small mt-4">${note}</p>` : ''}

@@ -1006,8 +1006,13 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 .detail-section > p, .detail-section > .stack > p,
 .anchor-section > p,
 .detail-section > ul:not([class]), .anchor-section > ul:not([class]) { max-width:70ch; }
-/* die zwei Fälle, die der erste Entwurf nicht erfasste */
-.search-result { max-width:70ch; }                    /* search@1440 mass 148ch */
+/* Der 70ch-Deckel auf `.search-result` ist ENTFALLEN: das CD legt die
+   Ergebnisliste ohne `container__center--*` direkt in den `.container`
+   (searchResults.vue:45-46), die Treffer nehmen also die volle Containerbreite.
+   Der Deckel liess die Zeile bei 70ch enden, während Trennlinie und Umgebung
+   weiterliefen — die Liste wirkte eingerückt statt bündig. Die lange Zeile ist
+   dabei in Kauf genommen: Titel und zweizeiliger Beschreibungstext sind kurz,
+   und das CD kennt für diese Komponente keinen Deckel. */
 .notification__content > p,
 .notification__content > ul { max-width:70ch; }       /* die Login-Gates massen 137ch */
 /* Vorgriff auf die zweispaltigen Detailseiten aus Stufe 7 */
@@ -1759,6 +1764,7 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 /* Meta info (meta-info.postcss:5-18) */
 .meta-info { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
 .meta-info__item:not(:last-child)::after { content:"|"; padding:0 .5rem; }
+@media (min-width:1024px){ .meta-info__item:not(:last-child)::after { padding:0 .75rem; } }  /* CD: px-2 lg:px-3 */
 @media (min-width:1024px){ .meta-info__item:not(:last-child)::after { padding:0 .75rem; } }
 
 /* Separator (separator.postcss:5-53) */
@@ -1886,17 +1892,36 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Die `.search-group*`-Regeln sind mit der Umstellung auf einen Ergebnisstrom
    mit Art-Facette entfallen (kein Konsument mehr im JS). */
 .search-results-list { list-style:none; margin:0; padding:0; }
-.search-result { border-top:1px solid var(--color-secondary-200); }
-.search-result:last-child { border-bottom:1px solid var(--color-secondary-200); }
+/* NUR unten eine Linie — wie die CD-Karte, die diese Zeilen trägt
+   (card.postcss:106-112 `.card--list`: `border-b border-secondary-200`). Vorher
+   trug jede Zeile eine Linie OBEN plus die letzte eine unten. Das erzeugte
+   direkt unter der Katalogleiste, die selbst schon `border-bottom` hat, eine
+   doppelte Trennlinie — die erste Zeile sah aus, als stünde sie in einem
+   eigenen Kasten. */
+.search-result { border-bottom:1px solid var(--color-secondary-200); }
+/* Innenabstand wie `.card--list` (py-4 lg:py-6 2xl:py-8, px-1). */
 .search-result__link { display:block; padding:1rem .25rem; color:inherit; text-decoration:none; }
+@media (min-width:1024px){ .search-result__link { padding-top:1.5rem; padding-bottom:1.5rem; } }
+@media (min-width:1536px){ .search-result__link { padding-top:2rem; padding-bottom:2rem; } }
 .search-result__link:hover .search-result__title,
 .search-result__link:focus-visible .search-result__title { color:var(--color-primary-700); }
 .search-result__meta { margin:0 0 .15rem; }
 .search-result__title { font-size:var(--text-base); font-weight:var(--fw-bold); line-height:var(--lh-snug); margin:0; }
 .search-result__desc { margin:.25rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
-.search-results__no-results h2 { margin-bottom:1.5rem; }
+/* Nulltreffer-Block nach search.postcss:240-247: eigener vertikaler Innenabstand,
+   und der Abstand UNTER Überschrift und Liste wächst mit der Ansicht
+   (`mb-6 lg:mb-8 2xl:mb-10`). Vorher trug nur die h2 einen festen Wert und die
+   Liste gar keinen — Tipps und Hinweisband klebten aneinander. */
+.search-results__no-results { padding-top:2rem; padding-bottom:2rem; }
+@media (min-width:1024px){ .search-results__no-results { padding-top:3rem; padding-bottom:3rem; } }
+.search-results__no-results h2,
+.search-results__no-results ul { margin-bottom:1.5rem; }
+@media (min-width:1024px){ .search-results__no-results h2, .search-results__no-results ul { margin-bottom:2rem; } }
+@media (min-width:1536px){ .search-results__no-results h2, .search-results__no-results ul { margin-bottom:2.5rem; } }
 .search-results__no-results h3 { margin-top:2rem; }
-.search-results__no-results .notification { margin-top:2rem; }
+/* `.search-results .notification { my-16 }` (search.postcss:236-238) — das
+   Hinweisband steht bewusst frei, nicht als Anhängsel der Tippliste. */
+.search-results .notification { margin-top:4rem; margin-bottom:4rem; }
 
 /* Map placeholder + schematic portfolio map */
 .map { width:100%; height:420px; border:1px solid var(--color-border); }
@@ -2888,6 +2913,22 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    umgebrochen. Das Feld wächst, der Knopf behält seine Eigenbreite. */
 .home-search .btn { flex:0 0 auto; }
 @media (max-width:640px){ .home-search { flex-direction:column; } }
+
+/* Suchvorschläge (ARIA-Combobox, js/search-suggest.js). Die Liste hängt
+   ABSOLUT unter dem Formular — als Flex-Element hätte sie sich neben Feld und
+   Knopf gestellt. Optik nach dem CD-Menü (menu__item): flache Zeilen, Trennung
+   nur zwischen den Einträgen, aktive Zeile in der Sekundärfläche. */
+.suggest-anchor { position:relative; }
+.suggest { position:absolute; z-index:30; top:calc(100% + .25rem); left:0; right:0;
+  margin:0; padding:.25rem 0; list-style:none; max-height:22rem; overflow-y:auto;
+  background:#fff; border:1px solid var(--color-secondary-300);
+  box-shadow:0 .5rem 1.25rem rgba(13,27,42,.12); }
+.suggest__item { display:flex; flex-direction:column; gap:.1rem; padding:.55rem .9rem; cursor:pointer; }
+.suggest__item + .suggest__item { border-top:1px solid var(--color-secondary-200); }
+.suggest__item:hover, .suggest__item.is-active { background:var(--color-secondary-50); }
+.suggest__title { font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--color-text); }
+.suggest__meta { font-size:var(--text-xs); color:var(--color-text-muted); }
+@media (max-width:640px){ .suggest { position:static; margin-top:.5rem; max-height:none; } }
 
 /* Schnelleinstiege — Text vor Bild: hier zählt das Ziel, nicht die Illustration. */
 /* min(20rem,100%) statt 20rem als Spalten-Minimum: unter 320px Viewport würde

@@ -7,6 +7,8 @@
 // wiederholten Aufgabenerledigung, nicht der Erstorientierung — deshalb
 // ausdrücklich nicht dem Aufbau öffentlicher Bundesauftritte folgend.
 
+import { attachSuggest } from '../search-suggest.js';
+
 
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
@@ -180,11 +182,19 @@ export default async function render(ctx) {
     </section>
     ${sections}`;
 
-  mount.querySelector('#home-search').addEventListener('submit', (e) => {
+  const searchForm = mount.querySelector('#home-search');
+  searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const q = mount.querySelector('#home-q').value.trim();
     location.hash = q ? `#/search?q=${encodeURIComponent(q)}` : '#/search';
   });
+
+  // Suchvorschläge — nur über Dienstleistungen und «Wissen und Hilfsmittel»,
+  // beide ohne zusätzlichen Request (js/search-suggest.js erklärt, warum nicht
+  // über den vollen Index). Aufräumen über den Unmount-Vertrag des Routers,
+  // sonst bliebe die Liste beim Routenwechsel im DOM.
+  const detach = attachSuggest(mount.querySelector('#home-q'), searchForm, core, C);
+  if (ctx.onUnmount) ctx.onUnmount(detach);
 }
 
 function statusLabel(core, status) {
