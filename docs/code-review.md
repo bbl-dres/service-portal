@@ -3,6 +3,11 @@
 > **Scope:** loading behaviour and runtime performance of the prototype.
 > **Date:** 2026-07-29 · **Method:** measured, not estimated — headless Edge over CDP; see §8 to reproduce.
 > **Verdict:** rendering is fast and the architecture is sound. The cost is almost entirely in **what is fetched before anything appears**, and it is fetched in the wrong order.
+>
+> **STATUS: alle sechs Empfehlungen umgesetzt (2026-07-29).** Erste Inhalte gedrosselt
+> **7996 ms → 1852 ms**, Payload **2354 KB → 257 KB**, Startanfragen **13 → 5**,
+> Listener-Lecks geschlossen. Zahlen und Vorgehen in **§9**. §1–§6 bleiben als
+> Befund stehen — sie sind der Ausgangszustand, gegen den §9 misst.
 
 ---
 
@@ -216,14 +221,14 @@ Worth stating, because it bounds what should change:
 
 ## 7. Priorities
 
-| # | Change | Effort | Effect |
-|---|---|---|---|
-| 1 | **Subset fonts to woff2** (latin + latin-ext) | S | **−1.08 MB** — 46 % of total payload |
-| 2 | **Enable gzip/brotli** on the host; note it in the README | S | −250 KB across CSS, JS and JSON |
-| 3 | **`srcset` for the home hero** | S | −400 KB on the most-visited route |
-| 4 | **Fix the four listener leaks** via `ctx.onUnmount` / `AbortController` | S | removes unbounded growth on the most-used pages |
-| 5 | **Move six keys to `DEFERRED`** (§3.4) | M | boot 13 → 5 requests, 275 → 60 KB |
-| 6 | **Render the shell before `core.load()` resolves** | M | first paint stops depending on data at all |
+| # | Change | Effort | Effect | Status |
+|---|---|---|---|---|
+| 1 | **Subset fonts to woff2** (latin + latin-ext) | S | **−1.08 MB** — 46 % of total payload | ✅ §9.1 |
+| 2 | **Enable gzip/brotli** on the host; note it in the README | S | −250 KB across CSS, JS and JSON | ✅ §9.4 |
+| 3 | **`srcset` for the home hero** | S | −400 KB on the most-visited route | ✅ §9.2 |
+| 4 | **Fix the four listener leaks** via `ctx.onUnmount` / `AbortController` | S | removes unbounded growth on the most-used pages | ✅ §9.3 |
+| 5 | **Move six keys to `DEFERRED`** (§3.4) | M | boot 13 → 5 requests, 275 → 60 KB | ✅ §9.5 |
+| 6 | **Render the shell before `core.load()` resolves** | M | first paint stops depending on data at all | ✅ §9.5 |
 
 1–4 are small, local and independently shippable. 5 is what the architecture was built for. 6 is the structural fix: with 5 done, `boot()` can render the shell against `reference` + `services` alone and let each route pull its own data — at which point §1's 7.7 s collapses to roughly the cost of the CSS.
 
@@ -245,3 +250,118 @@ python -m http.server 8848
 
 Listener counts: patch `MediaQueryList.prototype.addEventListener`, `document.addEventListener`
 and `window.addEventListener` with counters, then visit each route five times.
+
+---
+
+## 9. Umsetzung (2026-07-29)
+
+Alle sechs Empfehlungen sind umgesetzt. Gemessen unter denselben Bedingungen wie §1/§2.
+
+### Ergebnis
+
+| | vorher | nachher (roh) | nachher (komprimiert) |
+|---|---:|---:|---:|
+| **Erster Inhalt, gedrosselt** | **7996 ms** | 3336 ms | **1852 ms** |
+| Payload gesamt | 2354 KB | 580 KB | **257 KB** |
+| Requests | 47 | 39 | 39 |
+| Schriften | 1138 KB | 35 KB | 35 KB |
+| Bilder | 540 KB | 109 KB | 90 KB |
+| Stylesheet | 226 KB | 226 KB | 58 KB |
+| `data/*` beim Start | 275 KB / 13 Req | 32 KB / 5 Req | 9 KB / 5 Req |
+
+**4,3× schneller** bis zum ersten Inhalt; **−89 %** Payload.
+
+### 9.1 Schriften — 1138 KB → 35 KB
+
+Eine variable woff2 (`assets/fonts/NotoSans-latin.woff2`, wght 100–900) ersetzt vier TTF.
+Der offizielle latin-Subset von Google Fonts, dieselbe OFL-lizenzierte Schrift wie zuvor.
+
+Geprüft, statt geschätzt: der gesamte App-Text enthält **49 Zeichen ausserhalb ASCII**, alle
+im latin-Bereich. `latin-ext` (ą ć ę ł ř š ž …) kommt nirgends vor und wird nicht ausgeliefert —
+das spart weitere 164 KB. Symbole ausserhalb des Subsets (← → ▲ ▼ ₂ ⌘ √ ≈ ≥) fallen glyphweise
+auf die Systemschrift zurück.
+
+Die wght-Achse ist echt, nicht synthetisiert: gemessen 400 → 568,5 px, 700 → 596,2 px
+(4,9 % breiter) bei gleicher Zeichenkette. Die Kursiv-Deklarationen entfielen — die beiden
+Kursiv-TTF wurden nie geladen.
+
+### 9.2 Hero-Bild — 511 KB → 80 KB in der Regel
+
+`srcset` mit 800w/1400w-WebP; das AVIF bleibt als 2048w-Stufe für sehr breite oder
+hochauflösende Anzeigen. Gemessen wurde vorher 2048×1258 geladen und mit **534–714 px**
+dargestellt — rund neunmal so viele Pixel wie nötig. `width`/`height` verhindern jetzt
+zusätzlich den Layout-Sprung.
+
+Varianten erzeugt `scripts/make-image-variants.mjs` — ohne Bildbibliothek, mit dem Browser
+als Encoder (Canvas → WebP), passend zur abhängigkeitsfreien Bauweise des Projekts.
+
+### 9.3 Listener-Lecks — geschlossen
+
+Nachgemessen mit `DOMDebugger.getEventListeners` (**lebende** Listener, nicht
+Registrierungen — mit `{ signal }` zählt die Registrierung weiter, der Listener ist aber weg):
+
+| Route | vorher | nachher |
+|---|---|---|
+| `#/knowledge/it` | matchMedia +5, window +5, Heap 7 MB | **0 / 0**, Heap 2 MB |
+| `#/data/digitalisation/strategy` | matchMedia +5, window +5, Heap 7 MB | **0 / 0**, Heap 2 MB |
+| `#/app/dataportal/energie-klima` | matchMedia +5 | **0** |
+| `#/app/building-create` | document +20, window +10, Heap 9 MB | **0 / 0** |
+
+Ein `AbortController` je Render, abgemeldet über `ctx.onUnmount` — das Muster, das
+`js/shell.js` für die Kopfzeile schon benutzte. Betroffen: `pages/anchor-nav.js` (elf Seiten
+teilen sich dieses Layout), `apps/dataportal.js`, `apps/estate.js`, `apps/building-create.js`.
+
+Bei `building-create` war `{ once: true }` die Falle: der Horcher verschwindet erst, wenn
+irgendwo geklickt **wird** — wer die Seite ohne Klick verlässt, hinterlässt ihn.
+
+Das verbleibende `document click +1` auf dem Dashboard ist `ensureMenuGlobal()` — einmalig
+registriert und per Flag geschützt, also korrekt.
+
+### 9.4 Kompression — `scripts/serve.mjs`
+
+Abhängigkeitsfreier Entwicklungsserver (nur `node:`-Module) mit gzip/brotli für Textantworten,
+Pfadausbruch-Schutz und passenden MIME-Typen. `css/app.css` 218 KB → **55 KB** brotli.
+README empfiehlt ihn jetzt; `python -m http.server` bleibt erwähnt, mit dem Hinweis, dass es
+nicht komprimiert.
+
+Die Quelle bleibt unverändert: die deutschen Begründungskommentare in `app.css` sind dort
+wertvoll — sie auszuliefern war das Problem, nicht sie zu schreiben.
+
+### 9.5 Datenladen — 13 → 5 Anfragen
+
+`FILES` (eager) enthält nur noch, was die Shell zum Zeichnen braucht:
+
+```js
+const FILES = { services: 'data/services.json', reference: 'data/reference-data.json' };
+```
+
+Alles andere ist `DEFERRED` und wird über `needs` je Route angefordert — inklusive der beiden
+GeoJSON-Bestände, die `loadDeferred()` jetzt mitsamt Normalisierung und `linkMedia()` behandelt.
+17 Routenmodule deklarieren ihren Bestand; `boot()` wartet auf vier parallele Anfragen
+(2 core + 2 Prozess-Engine) statt auf dreizehn.
+
+Die Prozess-Engine bleibt bewusst im Start: sie trägt die Vorgangsliste, und «Meine Vorgänge»
+dürfte sie nicht halb sehen.
+
+`pages/data.js` fordert nicht mehr die Vereinigungsmenge seiner Unterseiten an — sonst zöge
+`#/data/digitalisation` die 115 KB des Datenkatalogs mit, ohne einen Datensatz zu lesen. Die
+Unterseiten fordern ihren Bestand beim Delegieren selbst an.
+
+### 9.6 Was NICHT gemacht wurde
+
+- **Kein Build-Schritt, kein Framework, keine Virtualisierung.** Die Messungen stützen das
+  nicht: die schwerste Ansicht rendert in 39 ms.
+- **`app.css` nicht minifiziert.** Komprimiert liegt sie bei 55 KB; eine Minifizierung
+  brächte ~20 KB und kostete die Lesbarkeit der Quelle oder einen Build-Schritt.
+- **`latin-ext` nicht ausgeliefert** — im gesamten Textbestand kommt kein Zeichen daraus vor.
+
+### 9.7 Testlage
+
+13 der 14 CDP-Suiten grün. `test-portfolio` schlägt weiterhin mit ~26 Prüfungen fehl —
+**vorbestehend**: die Suite erwartet 41 Objekte, die Ansicht zeigt standardmässig nur
+Gebäude (21). Zwei Suiten (`media-library`, `building-create`) fallen aus, wenn man sie in
+enger Schleife hintereinander startet, und laufen einzeln grün — Browser-Kontention der
+Testumgebung, nicht der Anwendung.
+
+Die Karte im Liegenschaften-Inventar wurde direkt geprüft und rendert korrekt
+(`.pf-map canvas` vorhanden, MapLibre geladen, keine Konsolenfehler).
