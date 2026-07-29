@@ -222,7 +222,7 @@
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
-      "href": "#"
+      "href": "https://gis.bbl.admin.ch/portal"
     },
     "description": "Geoinformationssystem Immobilien (Fachanwendung).",
     "photo": "1541888946425-d81bb19240f5",
@@ -241,6 +241,12 @@
         "href": "https://gis.bbl.admin.ch/portal/apps/experiencebuilder/experience/",
         "kind": "external",
         "note": "Kartenanwendung zum Liegenschaftsinventar."
+      },
+      {
+        "label": "BBL GIS Liegenschaftsinventar",
+        "href": "https://gis.bbl.admin.ch/portal/apps/experiencebuilder/experience/?id=3936123b1cf14bbc832a28fccb48d36d",
+        "kind": "external",
+        "note": "Kartenanwendung zum Liegenschaftsinventar."
       }
     ],
     "access": {
@@ -254,6 +260,12 @@
       {
         "label": "Dokumentation im Confluence",
         "href": "https://confluence.bbl.admin.ch/",
+        "kind": "external",
+        "note": "Anleitungen, Datenmodell und Schulungsunterlagen."
+      },
+      {
+        "label": "Dokumentation im Confluence",
+        "href": "https://confluence.bbl.admin.ch/x/vpAzCg",
         "kind": "external",
         "note": "Anleitungen, Datenmodell und Schulungsunterlagen."
       }
@@ -274,7 +286,7 @@
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
-      "href": "#"
+      "href": "https://dala.admin.ch/bblpvt/"
     },
     "description": "Planverwaltungstool (Fachanwendung).",
     "photo": "1568667256549-094345857637",
@@ -292,13 +304,27 @@
       {
         "label": "Datensatz «Bauwerksdokumentation (Planarchiv DALA)»",
         "href": "#/data/katalog/9"
+      },
+      {
+        "label": "Lerneinheit «Planverwaltung»",
+        "href": "https://bv.enable-now.cloud.sap/pub/_zbv/index.html?show=group%21GR_AC723989F7526D9C",
+        "kind": "external",
+        "note": "Geführte Einführung in die Planverwaltung."
       }
     ],
     "related": [
       "dokumentenarchiv"
     ],
-    "contact": "dres",
-    "updated": "11.03.2026"
+    "contact": "lcdm-bim",
+    "updated": "11.03.2026",
+    "entries": [
+      {
+        "label": "DALA Planverwaltung",
+        "href": "https://dala.admin.ch/bblpvt/",
+        "kind": "external",
+        "note": "Pläne suchen, ablegen und verwalten."
+      }
+    ]
   },
   {
     "appId": "cde",
@@ -309,7 +335,7 @@
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
-      "href": "#"
+      "href": "http://bbl.libal-tech.ch/#/projects"
     },
     "description": "Gemeinsame Datenumgebung / Digital Twin (Fachanwendung).",
     "photo": "1522071820081-009f0129c71c",
@@ -331,6 +357,18 @@
       {
         "label": "Datensatz «Projektdaten: Bauprojekte (CDE Bund)»",
         "href": "#/data/katalog/6"
+      },
+      {
+        "label": "Projekt CDE Bund (Confluence)",
+        "href": "https://confluence.bbl.admin.ch/spaces/IMMO/pages/131600134/Projekt+-+CDE+Bund",
+        "kind": "external",
+        "note": "Projektdokumentation zur Einführung."
+      },
+      {
+        "label": "Beschaffung CDE Bund 2025–2032",
+        "href": "https://www.it-beschaffung.ch/4000/24245-620-common-data-environment-cde-bund-2025-2032",
+        "kind": "external",
+        "note": "Ausschreibung und Vergabe."
       }
     ],
     "related": [
@@ -338,7 +376,15 @@
       "dokumentenarchiv"
     ],
     "contact": "dres",
-    "updated": "24.06.2026"
+    "updated": "24.06.2026",
+    "entries": [
+      {
+        "label": "CDE Libal",
+        "href": "http://bbl.libal-tech.ch/#/projects",
+        "kind": "external",
+        "note": "Gemeinsame Datenumgebung der laufenden Projekte."
+      }
+    ]
   },
   {
     "appId": "ehp",
@@ -349,7 +395,7 @@
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
-      "href": "#"
+      "href": "https://www.wuestdimensions.com/?goIndexHtml&kc_idp_hint=bbl-sso"
     },
     "description": "Erhaltungs- und Instandsetzungsplanung (Fachanwendung).",
     "photo": "1470075801209-17f9ec0cada6",
@@ -369,7 +415,21 @@
       "bauprojekte-eppm"
     ],
     "contact": "pfm",
-    "updated": "19.05.2026"
+    "updated": "19.05.2026",
+    "entries": [
+      {
+        "label": "Wüest Dimensions",
+        "href": "https://www.wuestdimensions.com/?goIndexHtml&kc_idp_hint=bbl-sso",
+        "kind": "external",
+        "note": "Erhaltungsplanung und Zustandsbewertung (Anmeldung via BBL-SSO)."
+      },
+      {
+        "label": "Visits — Zustandserfassung",
+        "href": "https://wuest.visits.ch/property-units",
+        "kind": "external",
+        "note": "Erfassung vor Ort."
+      }
+    ]
   },
   {
     "appId": "flm",
@@ -380,7 +440,7 @@
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
-      "href": "#"
+      "href": "http://intranet.egate.admin.ch/"
     },
     "description": "Flächen- und Belegungsmanagement (Fachanwendung).",
     "photo": "1502005229762-cf1b2da7c5d6",
@@ -409,7 +469,15 @@
       "liegenschaften-inventar"
     ],
     "contact": "pfm",
-    "updated": "03.06.2026"
+    "updated": "03.06.2026",
+    "entries": [
+      {
+        "label": "FLM über eGate",
+        "href": "http://intranet.egate.admin.ch/",
+        "kind": "external",
+        "note": "Zugriff über das eGate-Portal der Bundesverwaltung."
+      }
+    ]
   },
   {
     "appId": "edm",
@@ -420,7 +488,7 @@
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
-      "href": "#"
+      "href": "https://edm.admin.ch/"
     },
     "description": "Energiedaten der Liegenschaften (Fachanwendung).",
     "photo": "1466611653911-95081537e5b7",
@@ -448,8 +516,16 @@
       "pva",
       "liegenschaften-inventar"
     ],
-    "contact": "campus",
-    "updated": "28.05.2026"
+    "contact": "edm",
+    "updated": "28.05.2026",
+    "entries": [
+      {
+        "label": "EDM — Energiedatenmanagement",
+        "href": "https://edm.admin.ch/",
+        "kind": "external",
+        "note": "Energie- und Verbrauchsdaten der Bundesbauten."
+      }
+    ]
   },
   {
     "appId": "pva",
@@ -460,7 +536,7 @@
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
-      "href": "#"
+      "href": "https://abiotpro.abidex.ch/dashboard/e644e040-4bc8-11ee-a5ec-f1931d04d733?publicId=62eedd20-4bb1-11ee-a5ec-f1931d04d733"
     },
     "description": "Monitoring Photovoltaikanlagen (Fachanwendung).",
     "photo": "1509391366360-2e959784a276",
@@ -477,13 +553,27 @@
       {
         "label": "Klima- und Innovationsgesetz (KlG)",
         "href": "#/knowledge?tab=grundlagen"
+      },
+      {
+        "label": "Nachhaltigkeitsbericht BBL",
+        "href": "https://www.bbl.admin.ch/bbl/de/home/nachhaltigkeit/nachhaltigkeitsbericht.html",
+        "kind": "external",
+        "note": "Kennzahlen zur Nachhaltigkeit der Bundesbauten."
       }
     ],
     "related": [
       "edm"
     ],
-    "contact": "campus",
-    "updated": "17.04.2026"
+    "contact": "nachhaltigkeit",
+    "updated": "17.04.2026",
+    "entries": [
+      {
+        "label": "AbiotPRO Dashboard",
+        "href": "https://abiotpro.abidex.ch/dashboard/e644e040-4bc8-11ee-a5ec-f1931d04d733?publicId=62eedd20-4bb1-11ee-a5ec-f1931d04d733",
+        "kind": "external",
+        "note": "Ertrag und Betrieb der Photovoltaikanlagen."
+      }
+    ]
   },
   {
     "appId": "qualitygate",
@@ -494,7 +584,7 @@
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
-      "href": "#"
+      "href": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=3XrianaCOEqIwTqcH5c3Z_bpVBhHeQhDikh1-QT7itdUN0lIMlAzMldRUVY1RkFaRldJU1hHOURMSy4u"
     },
     "description": "Qualitätssicherung Bauprojekte (Fachanwendung).",
     "photo": "1562564055-71e051d33c19",
@@ -519,7 +609,15 @@
       "bauprojekte-eppm"
     ],
     "contact": "dres",
-    "updated": "09.06.2026"
+    "updated": "09.06.2026",
+    "entries": [
+      {
+        "label": "QualityGate — Anmeldung",
+        "href": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=3XrianaCOEqIwTqcH5c3Z_bpVBhHeQhDikh1-QT7itdUN0lIMlAzMldRUVY1RkFaRldJU1hHOURMSy4u",
+        "kind": "external",
+        "note": "Prüfauftrag für ein Bauprojekt anmelden."
+      }
+    ]
   },
   {
     "appId": "workspace",

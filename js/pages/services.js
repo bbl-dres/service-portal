@@ -88,8 +88,14 @@ export default async function render(ctx) {
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   const filterPanel = `
     ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: selectedAudiences, options: audienceOptions() })}
+    ${/* Themen aus den Daten ableiten — dieselbe Regel wie im Drawer (shell.js):
+          ein Thema erscheint, sobald ein Vorgang dahintersteht. Vorher entschied
+          die Fahne `thema` in reference-data.json, und sie war veraltet: der
+          Drawer bot «Alle anzeigen» für Beschaffung oder Publizieren an, im
+          Filter fehlten dieselben Themen — man konnte den Filter setzen, aber
+          nicht sehen und nicht abwählen. Die Fahne ist entfallen. */''}
     ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: selectedTopics,
-      options: domains.filter(d => d.thema).map(d => ({ value: d.key, label: d.label })) })}
+      options: domains.filter(d => all.some(s => s.domain === d.key)).map(d => ({ value: d.key, label: d.label })) })}
     <a class="btn btn--bare btn--sm" href="${hash({ audience: [], topic: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`;
 
   mount.innerHTML = `

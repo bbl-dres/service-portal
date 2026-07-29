@@ -1595,36 +1595,55 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
    unpositionierten Vorfahren beschnitten. Einer landete bei x=338 und trieb
    documentElement.scrollWidth in einem 320px-Viewport auf 339, d. h. die ganze
    case-detail-Seite scrollte seitwärts (WCAG 1.4.10). Live gemessen: 339 → 320. */
-.pipeline { position:relative; display:flex; list-style:none; margin:0; padding:0; overflow-x:auto; }
-/* Selbstumschaltend: `.pipeline` behält seinen Scroller, BIS Item 3.20 den
-   Wrapper liefert — sonst gäbe es zwei Stages lang weder Scroller noch Wrapper
-   und `.container{overflow-x:clip}` würde die späteren Segmente unerreichbar
-   amputieren. Danach übernimmt der Wrapper (Spezifität 0,2,0 > 0,1,0). */
-.pipeline-wrap > .pipeline { overflow-x:visible; }
-.pipeline-wrap { position:relative; overflow-x:auto; }
-.pipeline-wrap:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
-.pipeline-wrap::after { content:""; position:absolute; top:0; right:0; bottom:0; width:2rem;
-  pointer-events:none; background:linear-gradient(to left,#fff,rgba(255,255,255,0)); display:none; }
-/* `.is-scrollable` setzt C.wireScrollRegions() (Item 3.21) — die Verblassung
-   erscheint nie über einer Leiste, die passt. */
-.pipeline-wrap.is-scrollable::after { display:block; }
-@media (min-width:768px){ .pipeline-wrap::after { display:none; } }
-.pipeline__step {
+/* UMBRUCH STATT SEITWÄRTSSCROLLEN: Abläufe mit sechs und mehr Schritten
+   («Raumbedarf-Antrag») passten nie in eine Zeile — die letzten Schritte lagen
+   hinter einem waagrechten Scrollbalken und damit faktisch unsichtbar. Ein
+   Ablauf ist aber genau die Information, die man VOLLSTÄNDIG sehen will.
+   Die Segmente brechen jetzt um; die Chevron-Optik bleibt zeilenweise erhalten.
+
+   `padding-left:var(--arrow)` gleicht den negativen Rand aus, mit dem die
+   Segmente ineinandergreifen — sonst ragte die erste Kachel JEDER Folgezeile
+   um eine Pfeilbreite nach links aus dem Container. */
+/* `--seg-gap` = sichtbarer Spalt zwischen den Segmenten. Vorher griffen die
+   Chevrons exakt ineinander (Überlappung = volle Pfeilbreite): die Kette sah
+   aus wie EIN Balken, die einzelnen Pfeilspitzen verschwanden. Ein paar Pixel
+   Luft lassen den helleren Kastenhintergrund durchscheinen und machen die
+   Pfeilform — und damit die Leserichtung — überhaupt erst sichtbar.
+   Die Überlappung wird um genau diesen Spalt verringert; das
+   `padding-left` gleicht den verbleibenden negativen Rand wieder aus, damit
+   die erste Kachel jeder Zeile bündig am Container beginnt. */
+.pipeline {
   --arrow:.7rem;
-  flex:1 0 auto; display:flex; align-items:center; justify-content:center; gap:.4rem;
-  min-height:2.75rem; padding:.5rem 1rem .5rem calc(1rem + var(--arrow)); margin-left:calc(-1 * var(--arrow));
+  --seg-gap:.25rem;
+  position:relative; display:flex; flex-wrap:wrap; list-style:none;
+  margin:0; padding:0 0 0 calc(var(--arrow) - var(--seg-gap)); row-gap:var(--seg-gap);
+}
+.pipeline-wrap { position:relative; }
+.pipeline-wrap:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+.pipeline__step {
+  /* Die Segmente füllen die Zeile aus (`1 1 auto`): die Kette bleibt ein
+     durchgehender Balken bis zum rechten Rand, statt mit einer Lücke zu enden. */
+  flex:1 1 auto; max-width:100%;
+  display:flex; align-items:center; justify-content:center; gap:.4rem;
+  min-height:2.75rem; padding:.5rem 1rem .5rem calc(1rem + var(--arrow));
+  margin-left:calc(var(--seg-gap) - var(--arrow));
   background:var(--color-secondary-100); color:var(--color-text-muted);
-  font-size:var(--fs-sm); font-weight:var(--fw-bold); line-height:1.2; white-space:nowrap;
+  font-size:var(--fs-sm); font-weight:var(--fw-bold); line-height:1.2;
+  /* Kein `nowrap` mehr: ein langer Schritttitel («In Projekt überführt») darf
+     im Segment umbrechen, statt die Zeile zu sprengen. */
+  text-align:center; hyphens:auto;
   clip-path:polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%, var(--arrow) 50%);
 }
-.pipeline__step:first-child { margin-left:0; padding-left:1rem;
+/* Nur das ERSTE Segment der Liste bekommt eine glatte linke Kante. Das erste
+   Segment einer Folgezeile behält die Einkerbung — sie liest sich als
+   Fortsetzung der Zeile darüber. */
+.pipeline__step:first-child {
   clip-path:polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%); }
 .pipeline__step:last-child {
   clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--arrow) 50%); }
 .pipeline__step--done { background:var(--color-success-text); color:#fff; }
 .pipeline__step--active { background:var(--color-primary-600); color:#fff; }
 .pipeline__glyph { flex:none; }
-@media (max-width:640px){ .pipeline__step { flex:1 0 auto; } }
 
 /* Accordion (accordion.postcss:5-78) */
 .accordion { list-style:none; padding-left:0; margin:0; border:0; border-radius:0; background:transparent; }
@@ -2853,7 +2872,11 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .home-hero h1 { margin-bottom:.5rem; }
 .home-hero .lead { font-size:var(--text-lg); color:var(--color-text-muted); margin-bottom:1.5rem; }
 .home-hero__figure { margin:0; }
-.home-hero__figure img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover;
+/* `height:auto` ist Pflicht, nicht Kosmetik: das `height`-Attribut am Bild wird
+   zur Presentational Hint (`height:1258px`). Wären Breite und Höhe beide
+   definit, ignoriert der Browser `aspect-ratio` — der Hero wuchs dadurch auf
+   Originalhöhe. `auto` gibt die Höhe frei, `aspect-ratio` bestimmt sie. */
+.home-hero__figure img { display:block; width:100%; height:auto; aspect-ratio:4/3; object-fit:cover;
   background:var(--color-secondary-50); }
 /* Bildlegende: `figcaption` erbt jetzt global von `.legend` (Item 1.6) — die
    bespoke Regel hier war einer von vier verschiedenen Legendenstilen. */

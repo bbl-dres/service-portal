@@ -216,5 +216,49 @@
         "kind": "system"
       }
     ]
+  },
+  {
+    "defId": "delegation",
+    "name": "Delegationsgesuch",
+    "audience": "external",
+    "serviceId": "delegation-beantragen",
+    "steps": [
+      {
+        "status": "eingereicht",
+        "label": "Gesuch eingereicht",
+        "role": "Verwaltungseinheit",
+        "kind": "user"
+      },
+      {
+        "status": "erstpruefung",
+        "label": "Erstprüfung",
+        "role": "Einkauf IT BBL",
+        "kind": "user"
+      },
+      {
+        "status": "entscheid",
+        "label": "Entscheid der Prüfinstanz",
+        "role": "Prüfinstanz BBL",
+        "kind": "user"
+      },
+      {
+        "status": "vereinbarung",
+        "label": "Vereinbarung erstellt",
+        "role": "Beschaffung BBL",
+        "kind": "user"
+      },
+      {
+        "status": "gegenzeichnung",
+        "label": "Digital gegengezeichnet",
+        "role": "Verwaltungseinheit",
+        "kind": "user"
+      },
+      {
+        "status": "abgeschlossen",
+        "label": "Im Delegationstool erfasst",
+        "role": "Beschaffung BBL",
+        "kind": "auto"
+      }
+    ]
   }
 ]

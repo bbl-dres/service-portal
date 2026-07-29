@@ -4,5 +4,16 @@
   { "contactId": "kbb", "name": "Kompetenzzentrum Beschaffungswesen Bund (KBB)", "role": "Beschaffung & Recht", "email": "kbb@bbl.admin.ch", "phone": "+41 58 46 5 00 02" },
   { "contactId": "support-bil", "name": "Support@BIL", "role": "Anforderungs- & Beschaffungslösung (HBB)", "email": "support.bil@bbl.admin.ch", "phone": "+41 58 46 5 00 03" },
   { "contactId": "pfm", "name": "Portfoliomanagement BBL (PFM)", "role": "Immobilienportfolio & Bauprojekte", "email": "pfm@bbl.admin.ch", "phone": "+41 58 46 5 00 04" },
-  { "contactId": "campus", "name": "Objektbetrieb / Campus", "role": "Gebäudebetrieb & Störungsmeldungen", "email": "objektbetrieb@bbl.admin.ch", "phone": "+41 58 46 5 00 05" }
+  { "contactId": "campus", "name": "Objektbetrieb / Campus", "role": "Gebäudebetrieb & Störungsmeldungen", "email": "objektbetrieb@bbl.admin.ch", "phone": "+41 58 46 5 00 05" },
+  { "contactId": "ikt", "name": "Informatik BBL (IKT)", "role": "Betrieb und Support der Fachanwendungen", "email": "ikt@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
+  { "contactId": "edm", "name": "Energiedatenmanagement (EDM)", "role": "Energiedaten der Bundesbauten", "email": "edm@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
+  { "contactId": "nachhaltigkeit", "name": "Nachhaltigkeit BBL", "role": "Nachhaltiges Immobilienmanagement", "email": "nachhaltigkeit@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
+  { "contactId": "lcdm-bim", "name": "LCDM / BIM BBL", "role": "Life-Cycle-Data-Management und BIM", "email": "lcdm.bim@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
+  { "contactId": "helpdesk-om", "name": "Helpdesk Objektmanagement (OM)", "role": "Störungsmeldungen und Kleinaufträge", "email": "helpdeskom@bbl.admin.ch", "phone": "+41 58 462 08 10" },
+  { "contactId": "mobiliar-hausdienst", "name": "BBL Mobiliar und Hausdienst", "role": "Mobiliar, Umzüge und Hausdienst", "email": "mobiliar_hausdienst@bbl.admin.ch", "phone": "+41 58 46 5 00 06" },
+  { "contactId": "produktion", "name": "Produktion BBL — Arbeitsvorbereitung (AVOR)", "role": "Druck, Versand und Datenaufbereitung", "email": "produktion@bbl.admin.ch", "phone": "+41 58 465 50 71" },
+  { "contactId": "shop-support", "name": "Hotline BBL Intranetshop", "role": "Berechtigungen, Passwörter und Störungen im Shop", "email": "shopsupportteam@bbl.admin.ch", "phone": "+41 58 46 5 00 07" },
+  { "contactId": "einkauf-it", "name": "Einkauf IT BBL", "role": "IKT-Beschaffung, HBB-Prozess und Delegationen", "email": "einkauf.it@bbl.admin.ch", "phone": "+41 58 46 5 00 08" },
+  { "contactId": "warengruppe-publikationen", "name": "Warengruppe Publikationen", "role": "Zentrale Beschaffung von Publikationen und Agenturleistungen", "email": "publikationen@bbl.admin.ch", "phone": "+41 58 46 5 00 09" },
+  { "contactId": "bkb", "name": "Beschaffungskonferenz des Bundes (BKB)", "role": "Strategieorgan Beschaffungswesen des Bundes", "email": "bkb@bbl.admin.ch", "phone": "+41 58 46 5 00 10" }
 ]

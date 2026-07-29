@@ -1,10 +1,10 @@
 {
   "domains": [
-    { "key": "A", "label": "Bauprojekte und Projektportfolio", "icon": "Building", "thema": true },
-    { "key": "B", "label": "Stammdaten & Mutationen", "icon": "MapMarker", "thema": true },
-    { "key": "U", "label": "Unterbringung", "icon": "Home", "thema": true },
-    { "key": "O", "label": "Objektbetrieb", "icon": "UserBrush", "thema": true },
-    { "key": "G", "label": "Sicherheit & Notfall", "icon": "Lock", "thema": true },
+    { "key": "A", "label": "Bauprojekte und Projektportfolio", "icon": "Building" },
+    { "key": "B", "label": "Stammdaten & Mutationen", "icon": "MapMarker" },
+    { "key": "U", "label": "Unterbringung", "icon": "Home" },
+    { "key": "O", "label": "Objektbetrieb", "icon": "UserBrush" },
+    { "key": "G", "label": "Sicherheit & Notfall", "icon": "Lock" },
     { "key": "C", "label": "Büroausrüstung & Arbeitsplatz", "icon": "ShoppingCart" },
     { "key": "D", "label": "Informatik & Arbeitsgeräte", "icon": "Cog" },
     { "key": "E", "label": "Beschaffung", "icon": "Briefcase" },

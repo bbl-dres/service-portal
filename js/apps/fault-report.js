@@ -1,5 +1,8 @@
 // Meldung erfassen — single-step report form that creates a Vorgang.
-// Variants via ?type=: sicherheit | reklamation | umzug | (default Störung/Reinigung/Reparatur).
+// Variants via ?type=: sicherheit | reklamation | kleinauftrag | umzug |
+// (default Störung/Reinigung/Reparatur). Kleinauftrag teilt sich die Annahme mit
+// der Störungsmeldung, weil der Helpdesk OM laut Kundenplattform die zentrale
+// Annahmestelle für «Störungsmeldung UND Kleinaufträge» ist.
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -22,6 +25,13 @@ export default async function render(ctx) {
       label: 'Reklamation',
       categories: ['Reklamation'],
       lead: 'Erfassen Sie eine Reklamation zu Liegenschaften, Betrieb oder Dienstleistungen.',
+    },
+    kleinauftrag: {
+      title: 'Kleinauftrag am Gebäude',
+      defId: 'stoerung',
+      label: 'Kleinauftrag',
+      categories: ['Bauliche Anpassung', 'Möblierung', 'Beschilderung'],
+      lead: 'Beauftragen Sie eine kleinere bauliche Anpassung ausserhalb eines Bauprojekts.',
     },
     umzug: {
       title: 'Umzug, Transport & Entsorgung',

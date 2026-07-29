@@ -395,5 +395,356 @@
       "Verwaltungseinheit",
       "Anzahl Arbeitsplätze"
     ]
+  },
+  {
+    "serviceId": "kleinauftrag-gebaeude",
+    "title": "Kleinauftrag am Gebäude erteilen",
+    "domain": "O",
+    "audience": "customers",
+    "type": "action",
+    "icon": "Wrench",
+    "target": {
+      "kind": "app",
+      "href": "#/app/fault-report?type=kleinauftrag"
+    },
+    "processDefId": "stoerung",
+    "contact": "helpdesk-om",
+    "short": "Kleinere bauliche Anpassung ausserhalb eines Bauprojekts beauftragen.",
+    "description": "Beauftragen Sie eine kleinere bauliche Anpassung ausserhalb eines Bauprojekts. Der Helpdesk Objektmanagement ist die zentrale Annahmestelle und triagiert den Auftrag an den Fachbereich. Anpassungen unter Fr. 100 000.— laufen über den «Kleinen Antrag»; darüber ist ein Raumbedarfs-Antrag nötig.",
+    "voraussetzungen": [
+      "Gebäude und Standort",
+      "Beschreibung der Massnahme",
+      "Kostenschätzung (unter Fr. 100 000.—)",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "dekoration-bestellen",
+    "title": "Dekorationen bestellen",
+    "domain": "O",
+    "audience": "customers",
+    "type": "action",
+    "icon": "Art",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "helpdesk-om",
+    "short": "Blumenschmuck und Dekorationen für Anlässe und Sitzungszimmer bestellen.",
+    "description": "Bestellen Sie Dekorationen und Blumenschmuck für Anlässe, Empfänge und Sitzungszimmer. Die Ausführung erfolgt über die Bundesgärtnerei; die Kosten werden nach Preiskatalog verrechnet.",
+    "voraussetzungen": [
+      "Gebäude und Raum",
+      "Anlass und Datum",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "innenbegruenung-bestellen",
+    "title": "Innenbegrünung bestellen",
+    "domain": "O",
+    "audience": "customers",
+    "type": "action",
+    "icon": "Home",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "helpdesk-om",
+    "short": "Bepflanzung und Unterhalt der Innenbegrünung bestellen.",
+    "description": "Bestellen Sie die Bepflanzung von Innenräumen und deren laufenden Unterhalt. Die Ausführung erfolgt über die Bundesgärtnerei.",
+    "voraussetzungen": [
+      "Gebäude und Raum",
+      "Umfang der Bepflanzung",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "mobiliarschluessel-bestellen",
+    "title": "Mobiliarschlüssel bestellen",
+    "domain": "C",
+    "audience": "both",
+    "type": "action",
+    "icon": "Key",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "processDefId": "bestellung",
+    "contact": "mobiliar-hausdienst",
+    "short": "Ersatzschlüssel für Büromobiliar wie Rollcontainer und Schränke bestellen.",
+    "description": "Bestellen Sie Ersatzschlüssel für Büromöbel. Massgebend ist die Schlossnummer, die auf dem Schloss oder im Möbelkorpus angebracht ist.",
+    "voraussetzungen": [
+      "Schlossnummer des Möbels",
+      "Anzahl Schlüssel",
+      "Lieferadresse und Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "intranetshop-zugang",
+    "title": "Zugang BBL Intranetshop beantragen (Kreis 3)",
+    "domain": "C",
+    "audience": "customers",
+    "type": "action",
+    "icon": "Login",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "shop-support",
+    "short": "Bestellberechtigung für dezentrale Bundesstellen im BBL Intranetshop beantragen.",
+    "description": "Dezentrale Bundesstellen (Kreis 3) bestellen über den BBL Intranetshop und brauchen dafür eine eigene Bestellberechtigung. Zentrale Stellen (Kreis 1 und 2) bestellen stattdessen über den SRM-Shop im eGate. Für vergessene oder gesperrte Passwörter genügt eine Meldung an die Hotline — dafür braucht es keine Neuanmeldung.",
+    "voraussetzungen": [
+      "Verwaltungseinheit und Lieferadresse",
+      "Name der bestellenden Person",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "hbb-bedarfsmeldung",
+    "title": "IKT-Bedarf melden (HBB-Prozess)",
+    "domain": "D",
+    "audience": "both",
+    "type": "action",
+    "icon": "Desktop",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "einkauf-it",
+    "short": "Bedarf für Hardware, Software oder IKT-Dienstleistungen beim Einkauf IT anmelden.",
+    "description": "Verwaltungseinheiten melden ihren Bedarf an Informations- und Kommunikationstechnik dem BBL, das nach Org-VöB für die IKT-Beschaffung des Bundes zuständig ist. Stellen mit aktivierter Harmonisierter Beschaffungslösung Bund (HBB) starten die Beschaffung direkt in Acta Nova; alle übrigen melden den Bedarf je nach Gegenstand als Hardware, Software oder Dienstleistung.",
+    "voraussetzungen": [
+      "Art des Bedarfs (Hardware, Software, Dienstleistung)",
+      "Beschrieb und geschätztes Volumen",
+      "Bezug zu einem Rahmenvertrag, falls vorhanden",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "delegation-beantragen",
+    "title": "Beschaffungsdelegation beantragen",
+    "domain": "D",
+    "audience": "customers",
+    "type": "action",
+    "icon": "Certificate",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "processDefId": "delegation",
+    "contact": "einkauf-it",
+    "short": "Delegation einer Beschaffung an die eigene Verwaltungseinheit beantragen.",
+    "description": "Nach Org-VöB kann das BBL eine Beschaffung an die Bedarfsstelle delegieren. Es gibt zwei Gesuche: die unterschwellige Delegation für Dienstleistungen und die Projektdelegation. Nach Gutheissung erstellt das BBL eine Delegationsvereinbarung, die beide Seiten digital signieren.",
+    "voraussetzungen": [
+      "Art der Delegation (unterschwellig oder Projekt)",
+      "Beschaffungsgegenstand und Volumen",
+      "Begründung",
+      "Zeichnungsberechtigte Person der Verwaltungseinheit"
+    ]
+  },
+  {
+    "serviceId": "beschaffung-anmelden",
+    "title": "Überschwellige Beschaffung anmelden",
+    "domain": "E",
+    "audience": "customers",
+    "type": "action",
+    "icon": "Balance",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "einkauf-it",
+    "short": "Beschaffung über dem Schwellenwert bei der Beschaffungsstelle des Bundes anmelden.",
+    "description": "Melden Sie eine Beschaffung an, die den WTO-Schwellenwert erreicht. Das BBL als Beschaffungsstelle des Bundes führt das Verfahren — offen, selektiv oder auf Einladung — für Ihre Verwaltungseinheit durch.",
+    "voraussetzungen": [
+      "Beschaffungsgegenstand",
+      "Geschätztes Auftragsvolumen",
+      "Gewünschter Zeitplan",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "druckauftrag",
+    "title": "Digitaldruckauftrag erteilen",
+    "domain": "F",
+    "audience": "both",
+    "type": "action",
+    "icon": "Printer",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "produktion",
+    "short": "Broschüren, Formulare und Grossauflagen bei der Produktion BBL drucken lassen.",
+    "description": "Erteilen Sie der Produktion BBL einen Digitaldruckauftrag. Die Arbeitsvorbereitung erstellt die Offerte, vereinbart die Termine und koordiniert die Ausführung.",
+    "voraussetzungen": [
+      "Druckdaten (PDF)",
+      "Auflage, Format und Ausrüstung",
+      "Liefertermin und Lieferadresse",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "versandauftrag",
+    "title": "Versandauftrag erteilen",
+    "domain": "F",
+    "audience": "both",
+    "type": "action",
+    "icon": "Envelope",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "produktion",
+    "short": "Konfektionierung, Adressierung und Versand einer Sendung beauftragen.",
+    "description": "Beauftragen Sie Kuvertierung, Adressierung, Falzen und Versand. Für wiederkehrende Versände lagert das BBL Ihre Beilagen und Rückantwortkuverts ein und führt sie in einem Verwaltungssystem.",
+    "voraussetzungen": [
+      "Sendungsart und Auflage",
+      "Adressdaten",
+      "Beilagen",
+      "Versandtermin und Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "avor-auftrag",
+    "title": "Layout- oder Output-Design-Auftrag erteilen",
+    "domain": "F",
+    "audience": "both",
+    "type": "action",
+    "icon": "Brush",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "produktion",
+    "short": "Druckvorstufe, Layout und Output-Design bei der Arbeitsvorbereitung beauftragen.",
+    "description": "Die Arbeitsvorbereitung AVOR der Produktion BBL übernimmt Layout, Output-Design, Datenaufbereitung und Ausrüstarbeiten. Sie ist zugleich die Ansprechstelle für Offerten, Termine und Budgetfragen.",
+    "voraussetzungen": [
+      "Art des Auftrags (Layout oder Output Design)",
+      "Ausgangsdaten",
+      "Termin",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "srm-limitbestellung",
+    "title": "SRM-Limitbestellung Auftragsproduktion erfassen",
+    "domain": "F",
+    "audience": "both",
+    "type": "action",
+    "icon": "Calculator",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "produktion",
+    "short": "Wiederkehrende Produktionsleistungen über eine Limitbestellung in SRM abwickeln.",
+    "description": "Erfassen Sie eine Limitbestellung für wiederkehrende Aufträge der Produktion BBL, statt jeden Auftrag einzeln zu bestellen. Unterschieden wird nach Leistungen im Rechenzentrum (RZ) und ausserhalb (NON RZ).",
+    "voraussetzungen": [
+      "Leistungsart (RZ oder NON RZ)",
+      "Limitbetrag und Laufzeit",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "publikationsauftrag",
+    "title": "Publikationsauftrag erteilen",
+    "domain": "F",
+    "audience": "customers",
+    "type": "action",
+    "icon": "Book",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "warengruppe-publikationen",
+    "short": "Eine gedruckte oder elektronische Publikation über die Warengruppe Publikationen beschaffen.",
+    "description": "Die Warengruppe Publikationen ist nach Org-VöB die zentrale Beschaffungsstelle für alle elektronischen und gedruckten Publikationen des Bundes. Sie übernimmt den ganzen Weg von der Konzeption bis zum Vertrieb — unabhängig davon, ob der Schwellenwert erreicht wird.",
+    "voraussetzungen": [
+      "Beschrieb der Publikation",
+      "Auflage und Kanäle",
+      "Termin",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "agenturleistung-beschaffen",
+    "title": "Agenturleistung beschaffen",
+    "domain": "F",
+    "audience": "customers",
+    "type": "action",
+    "icon": "Bullhorn",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "warengruppe-publikationen",
+    "short": "Agentur- und Kommunikationsleistungen über die Warengruppe Publikationen beschaffen.",
+    "description": "Beschaffen Sie Agenturleistungen sowie elektronische Publikationen über die zentrale Beschaffungsstelle. Die Warengruppe bündelt und koordiniert Multichannel-Projekte für die ganze Bundesverwaltung.",
+    "voraussetzungen": [
+      "Leistungsbeschrieb",
+      "Geschätztes Volumen",
+      "Termin",
+      "Kostenstelle"
+    ]
+  },
+  {
+    "serviceId": "sanktionierte-anbieterin-melden",
+    "title": "Sanktionierte Anbieterin melden",
+    "domain": "E",
+    "audience": "both",
+    "type": "action",
+    "icon": "Ban",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "bkb",
+    "short": "Eine rechtskräftig sanktionierte Anbieterin für die Sanktionsliste melden.",
+    "description": "Sanktioniert eine Auftraggeberin des Bundes eine Anbieterin, meldet sie den Entscheid der Beschaffungskonferenz des Bundes zur Aufnahme in die Sanktionsliste. Grundlage sind das Merkblatt «Sanktionsverfügung und Sanktionsliste» und die Vorlage «Verfügung Auftragssperre».",
+    "voraussetzungen": [
+      "Rechtskräftige Sanktionsverfügung",
+      "Angaben zur Anbieterin",
+      "Dauer der Auftragssperre"
+    ]
+  },
+  {
+    "serviceId": "sanktionsliste-abfragen",
+    "title": "Sanktionsliste abfragen",
+    "domain": "E",
+    "audience": "both",
+    "type": "action",
+    "icon": "Search",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "bkb",
+    "short": "Vor einer Vergabe prüfen, ob eine Anbieterin auf der Sanktionsliste steht.",
+    "description": "Fragen Sie vor dem Zuschlag ab, ob die vorgesehene Anbieterin auf der Sanktionsliste des Bundes steht. Die Liste ist nicht öffentlich; die Abfrage läuft über die Beschaffungskonferenz des Bundes.",
+    "voraussetzungen": [
+      "Name und Sitz der Anbieterin",
+      "Beschaffungsvorhaben",
+      "Zuständige Beschaffungsstelle"
+    ]
+  },
+  {
+    "serviceId": "unbefangenheitserklaerung",
+    "title": "Unbefangenheitserklärung abgeben",
+    "domain": "E",
+    "audience": "both",
+    "type": "action",
+    "icon": "UserCheckmark",
+    "target": {
+      "kind": "external",
+      "href": "#"
+    },
+    "contact": "bkb",
+    "short": "Erklären, dass keine privaten Verbindungen zu offerierenden Anbieterinnen bestehen.",
+    "description": "Mitarbeitende der Bundesverwaltung, die in Beschaffungen involviert sind, geben periodisch eine schriftliche Unbefangenheitserklärung ab. Sie kann allgemein oder auf ein bestimmtes Beschaffungsvorhaben bezogen abgegeben werden.",
+    "voraussetzungen": [
+      "Allgemeine oder projektbezogene Erklärung",
+      "Bei projektbezogener Erklärung: das Beschaffungsvorhaben"
+    ]
   }
 ]

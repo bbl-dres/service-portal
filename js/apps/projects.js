@@ -73,7 +73,11 @@ function overview(ctx) {
   const phases = [...new Set(objects.map((o) => o.siaPhaseLabel))].filter(Boolean);
 
   const state = {
-    view: ['map', 'gallery', 'list'].includes(query.get('view')) ? query.get('view') : 'map',
+    // Galerie als Standard — wie im Liegenschaften-Inventar. Die Karte zeigt
+    // Punkte ohne Namen und Kennzahlen; für den Einstieg in eine Projektliste
+    // sind die Kacheln die informativere Ansicht (und die schnellere: kein
+    // WebGL-Kontext beim ersten Aufruf).
+    view: ['map', 'gallery', 'list'].includes(query.get('view')) ? query.get('view') : 'gallery',
     sel: {}, focus: null, q: '', sort: 'name', filters: { status: [], sia: [], sub: [] }, page: 1,
     perPage: { gallery: 9, list: 25 },
   };
@@ -227,7 +231,7 @@ function overview(ctx) {
       placeholder: 'Projekt, Nummer, PL oder Gebäude suchen…', countId: 'pj-count',
       sort: { id: 'pj-sort', label: 'Sortierung', value: state.sort, options: SORT_OPTS },
       filterId: 'pj-filter-btn', filterLabel: 'Filter', panelId: 'pj-filters', panel: filterPanel,
-      view: state.view, views: [['map', 'Kartenansicht', 'Map'], ['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
+      view: state.view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
     })}
     <div id="pj-activefilters"></div>
     <div class="pf-layout">

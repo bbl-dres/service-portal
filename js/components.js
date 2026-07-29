@@ -633,19 +633,19 @@ export function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = 
     return `<li class="pipeline__step pipeline__step--${state}"${state === 'active' ? ' aria-current="step"' : ''}>${glyph}<span>${sr}${escape(st.label)}</span></li>`;
   };
   // aria-label wandert auf den Wrapper, das <ol> bleibt eine reine Liste (damit
-  // die Listensemantik erhalten bleibt). KEIN festes tabindex — das setzt
-  // wireScrollRegions() nur, wenn der Streifen wirklich überläuft.
-  return `<div class="pipeline-wrap" data-scroll-region role="group" aria-label="${escape(label)}">`
+  // die Listensemantik erhalten bleibt). KEIN `data-scroll-region` mehr: der
+  // Streifen bricht um, statt zu scrollen — es gibt also nichts mehr zu
+  // scrollen und damit auch keinen Tastaturzugang zu einer Scrollfläche.
+  return `<div class="pipeline-wrap" role="group" aria-label="${escape(label)}">`
     + `<ol class="pipeline">${steps.map(seg).join('')}</ol></div>`;
 }
 
-// Der Stepper soll zeigen, WO man ist — er startete aber immer bei scrollLeft:0,
-// sodass genau das aktive Segment abgeschnitten wurde.
+// Der Stepper scrollte früher zum aktiven Segment, weil er waagrecht überlief
+// und bei scrollLeft:0 startete. Seit die Segmente umbrechen, ist immer der
+// ganze Ablauf sichtbar — es bleibt nichts zu tun. Die Funktion bleibt als
+// no-op erhalten, damit bestehende Aufrufe nicht brechen.
 export function wirePipeline(root) {
-  const w = root.querySelector('.pipeline-wrap');
-  const a = w && w.querySelector('.pipeline__step--active');
-  if (w && a) w.scrollLeft = Math.max(0, a.offsetLeft - (w.clientWidth - a.offsetWidth) / 2);
-  wireScrollRegions(root);
+  return root;
 }
 
 // Ein Detailseiten-Abschnitt: H2-Titel + Inhalt. `body` ist fertiges HTML.
