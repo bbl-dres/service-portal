@@ -78,7 +78,7 @@ export default async function render(ctx) {
   // entspricht der Trefferliste, damit Blättern in der Galerie der Sortierung folgt.
   const galleryItems = () => sorted.filter(m => m.photo).map(m => ({
     id: m.mediaId,
-    photo: m.photo, title: m.title, meta: `${m.date} · ${bname(m.buildingId)}`,
+    photo: m.photo, photoSrc: m.file || '', title: m.title, meta: `${m.date} · ${bname(m.buildingId)}`,
     type: m.mediaType, gray: isHistoric(m),
     href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
     details: [
@@ -102,7 +102,7 @@ export default async function render(ctx) {
     desc: `${bname(m.buildingId)} · ${m.photographer}`,
     href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
     titleTag: 'h3',
-    photo: { id: m.photo, color: m.color, alt: '', gray: isHistoric(m) },
+    photo: { src: m.file || '', id: m.photo, color: m.color, alt: '', gray: isHistoric(m) },
     badges: [
       C.badge(typLabel(m.mediaType), m.mediaType === 'video' ? 'purple' : 'blue'),
       periodBadge(m.historicPeriod),
@@ -268,7 +268,7 @@ function detail(ctx, id) {
   const siblings = all.filter(x => x.buildingId === m.buildingId);
   const galleryItem = (x) => ({
     id: x.mediaId,
-    photo: x.photo, title: x.title, meta: `${x.date} · ${bn}`,
+    photo: x.photo, photoSrc: x.file || '', title: x.title, meta: `${x.date} · ${bn}`,
     type: x.mediaType, gray: x.historicPeriod === 'historisch',
     href: `#/app/mediathek/${encodeURIComponent(x.mediaId)}`,
     details: [
@@ -293,7 +293,7 @@ function detail(ctx, id) {
           bekommt es die volle Breite der Inhaltsspalte. */''}
     <button type="button" class="med-shot" data-open-gallery
       aria-label="${C.escape(m.title)} — in der Galerie öffnen">
-      ${C.photo({ id: m.photo, color: m.color, alt: '', w: 1600, gray: hist,
+      ${C.photo({ src: m.file || '', id: m.photo, color: m.color, alt: '', w: 1600, gray: hist,
         cls: 'med-shot__photo',
         overlay: isVideo ? `<span class="med-shot__play" aria-hidden="true">${C.icon('Video', 'icon--xl')}</span>` : '' })}
     </button>

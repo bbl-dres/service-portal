@@ -65,7 +65,6 @@ const OBJECT_FILES = new Set(['reference', 'catalogLabels', 'appPages']);
 const OWNERSHIP = (v) => v === 'Eigentum Bund' ? 'Im Eigentum' : v === 'Miete' ? 'Anmieter' : 'Sonderfall';
 function normalizeBuilding(f) {
   const p = (f && f.properties) || {};
-  const m = String((Array.isArray(p.img_url) ? p.img_url[0] : p.img_url) || '').match(/photo-([\w-]+)/);
   const isDiplo = /Botschaft|Konsulat|Diplomat|Vertretung/i.test(`${p.bbl_bez || ''} ${p.bbl_port || ''}`);
   return {
     bbl_id: p.bbl_id, bbl_we: p.bbl_we || '', egid: p.av_egid || '',
@@ -75,9 +74,18 @@ function normalizeBuilding(f) {
     lat: p.wgs84_lat, lng: p.wgs84_lon,
     gf: p.garea_gf || 0, hnf: p.garea_hnf || 0, buildYear: p.bbl_bjahr || '',
     ownership: OWNERSHIP(p.bbl_eigen), erhaltung: p.bbl_ostr || '', heritage: p.bbl_arch === 'Ja',
+    // Recherchierte, belegte Angaben zu den echten Bauten (siehe research/README.md).
+    // Leer bei Objekten, für die nichts publiziert ist — dann entfällt die Zeile.
+    architekt: p.bbl_architekt || '', nutzer: p.bbl_nutzer || '',
+    renovationYear: p.bbl_vjahr || '', kgsKat: p.kgs_kat || '', kgsNr: p.kgs_nr || null,
+    quellen: Array.isArray(p.quellen) ? p.quellen : [],
     status: p.bbl_stat || '',                          // Aktiv | Abgang | Löschvermerk (reference.buildingStatuses)
     classification: isDiplo ? 'VERTRAULICH' : 'INTERN', // im Golden Record nicht geführt → aus dem Portfolio-Typ abgeleitet
-    photo: m ? m[1] : '', color: '#2f4356',
+    // Bilder stehen NICHT mehr am Objekt, sondern im Register data/media.json.
+    // Das Objekt trägt nur noch `media` — eine Auswahl von mediaId. Aufgelöst
+    // wird sie in linkMedia() unten, sobald beide Bestände geladen sind.
+    media: Array.isArray(p.media) ? p.media : [],
+    photoSrc: '', photo: '', bildCredit: '', bildQuelle: '', color: '#2f4356',
   };
 }
 
@@ -135,7 +143,26 @@ async function load() {
   if (!DATA.buildings.length) FAILED.add('buildings');
   DATA.parcels = pFc ? (pFc.features || []).map(normalizeParcel).filter((p) => p.bbl_id) : [];
   if (!pFc) FAILED.add('parcels');
+  linkMedia();
   return DATA;
+}
+
+// Bilder liegen im Register data/media.json; die Objekte tragen nur eine Auswahl
+// von mediaId. Hier wird die Auswahl EINMAL nach dem Laden aufgelöst, damit
+// jede Ansicht direkt `photoSrc` (echte Datei) bzw. `photo` (Platzhalter) lesen
+// kann, ohne bei jedem Rendern das Register zu durchsuchen.
+function linkMedia() {
+  const nach = new Map((DATA.media || []).map((m) => [m.mediaId, m]));
+  const ersteAufnahme = (ids) => (ids || []).map((id) => nach.get(id)).filter(Boolean)[0] || null;
+  for (const o of [...(DATA.buildings || []), ...(DATA.parcels || [])]) {
+    const m = ersteAufnahme(o.media);
+    if (!m) continue;
+    o.photoSrc = m.file || '';
+    o.photo = m.photo || '';
+    o.bildCredit = m.copyright || '';
+    o.bildQuelle = m.sourceUrl || '';
+    o.bildPlatzhalter = !!m.isPlaceholder;
+  }
 }
 
 // --- Nachladen aufschiebbarer Bestände (H4) ---------------------------------

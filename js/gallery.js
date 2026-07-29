@@ -48,7 +48,9 @@ export function openGallery(items, start, C, opts = {}) {
   const trigger = document.activeElement;
   const esc = (s) => C.escape(String(s == null ? '' : s));
   const hasDetails = (it) => !!(it && it.details && it.details.length);
-  const fullUrl = (it) => C.photoUrl(it.photo, { w: stageWidth(), gray: it.gray });
+  // Echte, lokal abgelegte Aufnahme geht vor; sonst das Unsplash-Platzhalterbild.
+  // Lokale Dateien haben eine feste Grösse — stageWidth() gilt nur für Unsplash.
+  const fullUrl = (it) => (it && it.photoSrc) ? it.photoSrc : C.photoUrl(it.photo, { w: stageWidth(), gray: it.gray });
 
   const overlay = document.createElement('div');
   overlay.className = 'pf-lightbox';
@@ -124,7 +126,7 @@ export function openGallery(items, start, C, opts = {}) {
   // Anfrage zwischen Tastendruck und Bild.
   const warm = (i) => {
     const it = items[(i + items.length) % items.length];
-    if (it && it.photo) { const im = new Image(); im.decoding = 'async'; im.src = fullUrl(it); }
+    if (it && (it.photo || it.photoSrc)) { const im = new Image(); im.decoding = 'async'; im.src = fullUrl(it); }
   };
 
   // Zoomstufen wie in Bildbetrachtern üblich; 1 (=100 %) liegt bewusst drin,

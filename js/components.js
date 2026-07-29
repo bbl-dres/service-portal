@@ -23,8 +23,14 @@ export function photoUrl(id, { w = 800, h = 0, q = 70, gray = false } = {}) {
   return u;
 }
 
+// `src` schlägt `id`: liegt eine echte, lokal abgelegte Aufnahme vor
+// (assets/images/buildings/…), wird die genommen; sonst greift wie bisher das
+// Unsplash-Platzhalterbild über die id. Beides fällt bei einem Ladefehler auf
+// die Farbfläche zurück.
+const LOKAL = /^assets\/[A-Za-z0-9/_.-]+$/;
+
 export function photo(o = {}) {
-  const src = photoUrl(o.id, { w: o.w, h: o.h, q: o.q, gray: o.gray });
+  const src = (o.src && LOKAL.test(o.src)) ? o.src : photoUrl(o.id, { w: o.w, h: o.h, q: o.q, gray: o.gray });
   const img = src
     ? `<img src="${src}" alt="${escape(o.alt || '')}" loading="lazy" decoding="async" onerror="this.remove()">`
     : '';

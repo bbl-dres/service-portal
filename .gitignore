@@ -27,3 +27,7 @@ Thumbs.db
 /dashboard.png
 /estate.png
 /portfolio.png
+
+# Recherche-Rohmaterial (BBL-PDFs, abgerufene Katasterdaten, Wegwerf-Sonden).
+# ~60 MB, nicht versioniert — siehe research/README.md
+/research/

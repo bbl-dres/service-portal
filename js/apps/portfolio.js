@@ -84,7 +84,7 @@ export default async function render(ctx) {
   const ref = core.ref();
   // Gebäude + Grundstücke als einheitliche Objektliste
   const objects = [
-    ...core.buildings().map((b) => ({ kind: 'building', id: b.bbl_id, we: b.bbl_we || weOf(b.bbl_id), land: b.land, region: b.canton, city: b.city, name: b.name, cat: b.portfolioCategory, ownership: b.ownership, status: b.status, area: b.gf, lat: b.lat, lon: b.lng, photo: b.photo, street: b.street, zip: b.zip })),
+    ...core.buildings().map((b) => ({ kind: 'building', id: b.bbl_id, we: b.bbl_we || weOf(b.bbl_id), land: b.land, region: b.canton, city: b.city, name: b.name, cat: b.portfolioCategory, ownership: b.ownership, status: b.status, area: b.gf, lat: b.lat, lon: b.lng, photo: b.photo, photoSrc: b.photoSrc, street: b.street, zip: b.zip })),
     ...core.parcels().map((p) => ({ kind: 'parcel', id: p.bbl_id, we: p.bbl_we || weOf(p.bbl_id), land: p.land, region: p.canton, city: p.city, name: p.name, cat: p.zone || 'Grundstück', ownership: p.ownership, status: p.status, area: p.gsf, lat: p.lat, lon: p.lng, geom: p.geom, street: p.street, zip: p.zip })),
   ];
 
@@ -155,7 +155,7 @@ export default async function render(ctx) {
   // --- views (renderMain slices the list + appends the CD pagination) ---------
   function pfCard(o) {
     const vis = o.kind === 'building'
-      ? C.photo({ id: o.photo, color: '#2f4356', alt: `${o.name}, ${o.city}`, w: 480, cls: 'pf-card__img' })
+      ? C.photo({ src: o.photoSrc, id: o.photo, color: '#2f4356', alt: `${o.name}, ${o.city}`, w: 480, cls: 'pf-card__img' })
       : `<div class="pf-card__parcel">${C.icon('Crop', 'icon--2xl')}</div>`;
     const chips = [landName(o.land), o.kind === 'building' ? 'Gebäude' : 'Grundstück', o.status]
       .filter(Boolean).map((c) => `<span class="pf-card__land">${esc(c)}</span>`).join('');
@@ -402,7 +402,7 @@ function buildingDetail(ctx, b) {
   const regionLabel = [b.land, b.canton].filter(Boolean).join(' · ');
   // Bildergalerie (Modal auf dem Hero-Bild) statt eines Medien-Registers: Hauptbild + verknüpfte Medien.
   const galleryItems = [
-    { id: 'hauptansicht', photo: b.photo, title: b.name, meta: `${b.city} · Hauptansicht`, type: 'foto',
+    { id: 'hauptansicht', photo: b.photo, photoSrc: b.photoSrc, title: b.name, meta: `${b.city} · Hauptansicht`, type: 'foto',
       details: [['Objekt', b.name], ['Adresse', `${b.street}, ${b.zip} ${b.city}`], ['Objekt-ID', b.bbl_id]] },
     ...media.map(mediaGalleryItem),
   ].filter((g) => g.photo);
@@ -431,15 +431,31 @@ function buildingDetail(ctx, b) {
         <dt>Portfolio-Kategorie</dt><dd>${C.escape(b.portfolioCategory)}</dd>
         <dt>Gebäudetyp</dt><dd>${C.escape(b.typ || '—')}</dd>
         <dt>Eigentumsverhältnis</dt><dd>${C.escape(b.ownership)}</dd>
-        <dt>Baujahr</dt><dd>${C.escape(String(b.buildYear || '—'))}</dd>
+        <dt>Baujahr</dt><dd>${C.escape(String(b.buildYear || '—'))}${
+          b.renovationYear ? ` <span class="muted">· saniert ${C.escape(String(b.renovationYear))}</span>` : ''}</dd>
+        ${b.architekt ? `<dt>Architektur</dt><dd>${C.escape(b.architekt)}</dd>` : ''}
+        ${b.nutzer ? `<dt>Nutzer</dt><dd>${C.escape(b.nutzer)}</dd>` : ''}
         <dt>Geschossfläche (GF)</dt><dd>${Number(b.gf || 0).toLocaleString('de-CH')} m²</dd>
         <dt>Hauptnutzfläche (HNF)</dt><dd>${Number(b.hnf || 0).toLocaleString('de-CH')} m²</dd>
         ${b.erhaltung ? `<dt>Erhaltungsstrategie</dt><dd>${C.escape(b.erhaltung)}</dd>` : ''}
-        ${b.heritage ? '<dt>Baudenkmal</dt><dd>Ja</dd>' : ''}
+        ${b.heritage || b.kgsKat ? `<dt>Baudenkmal</dt><dd>${b.kgsKat
+          ? `Ja — KGS-Kategorie ${C.escape(b.kgsKat)}${b.kgsNr ? `, Nr. ${C.escape(String(b.kgsNr))}` : ''}`
+          : 'Ja'}</dd>` : ''}
         ${parcels.length ? `<dt>Grundstück${parcels.length > 1 ? 'e' : ''}</dt><dd>${parcels.map(pc => `<a href="#/app/portfolio?id=${encodeURIComponent(pc.bbl_id)}">${C.escape(pc.name)}</a>`).join(', ')}</dd>` : ''}
         <dt>Status</dt><dd>${statusBadge(C, ref, b.status)}</dd>
         <dt>Klassifizierung</dt><dd>${classBadge(C, ref, b.classification)}</dd>
-      </dl>`;
+      </dl>
+      ${/* Herkunft der Angaben. Die Demo-Daten mischen Belegtes (Adresse, Kataster,
+            Bauzeit, Architektur) mit Erfundenem (Werte, Verträge, Ausstattung) —
+            das darf man beim Vorführen nicht verwechseln. */''}
+      ${b.quellen && b.quellen.length ? `<p class="small muted mt-4">Angaben zu Bau und Nutzung aus der
+        <a href="${C.escape(b.quellen[0])}" target="_blank" rel="noopener external">Bautendokumentation des BBL</a>;
+        Kataster (EGID, Parzelle, Geometrie) © Data: swisstopo. Übrige Werte sind Demo-Daten.</p>` : ''}
+      ${/* Bildnachweis. Bei CC-BY und CC-BY-SA ist die Nennung von Urheber und
+            Lizenz Pflicht — sie darf nicht bloss in einer Datei stehen. */''}
+      ${b.bildCredit ? `<p class="small muted">Bild: ${b.bildQuelle
+        ? `<a href="${C.escape(b.bildQuelle)}" target="_blank" rel="noopener external">${C.escape(b.bildCredit)}</a>`
+        : C.escape(b.bildCredit)}</p>` : ''}`;
   }
   // Alle Detail-Tabellen folgen demselben Muster (Suche · Sortierung · Facetten ·
   // Paginierung) und werden darum über EINEN Baustein gerendert: C.mountDataTable.
@@ -748,7 +764,7 @@ function heroBlock(C, { items = [], mapId, mapLabel }) {
   const tile = (it, i, cls, w, overlay = '') =>
     `<button type="button" class="pf-mosaic__cell ${cls}" data-gallery="${i}"
        aria-label="${esc(it.title)} — in der Galerie öffnen (Bild ${i + 1} von ${n})">
-      ${C.photo({ id: it.photo, color: '#2f4356', alt: esc(it.title), w, gray: it.gray,
+      ${C.photo({ src: it.photoSrc, id: it.photo, color: '#2f4356', alt: esc(it.title), w, gray: it.gray,
         cls: 'pf-mosaic__photo', overlay })}
     </button>`;
   const placeholder = (cls) =>

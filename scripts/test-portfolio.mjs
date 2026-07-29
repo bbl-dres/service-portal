@@ -4,13 +4,26 @@
 // deep-link detail views. See docs/portfolio-redesign.md.
 //
 //   node scripts/test-portfolio.mjs      (dev server must be running; see README)
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 let failures = 0;
 const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label}`); if (!cond) failures++; };
+
+// Erwartungswerte aus den Daten ableiten statt festzuschreiben: das Inventar
+// wächst (echte Bauten aus den BBL-Bautendokumentationen kamen dazu), und ein
+// eingetippter Zählwert prüft dann nur noch, dass niemand die Daten angefasst
+// hat — nicht, dass die Ansicht sie vollständig zeigt.
+const geo = (f) => JSON.parse(readFileSync(new URL(`../data/${f}`, import.meta.url), 'utf8')).features;
+const BAUTEN = geo('buildings.geojson');
+const PARZELLEN = geo('parcels.geojson');
+const TOTAL = BAUTEN.length + PARZELLEN.length;
+const CH = [...BAUTEN, ...PARZELLEN].filter((f) => f.properties.adr_land === 'CH').length;
+const LAENDER = new Set(BAUTEN.map((f) => f.properties.adr_land)).size;
+const GAL_SEITEN = Math.ceil(TOTAL / 9);   // Galerie zeigt 9 je Seite
+console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grundstücke = ${TOTAL}, davon CH ${CH}, ${LAENDER} Länder)`);
 
 (async () => {
   const cdp = await launch({ port: 9353, webgl: true });
@@ -81,18 +94,20 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     console.log('   Galerie cards:', R.galCards, `(${R.galPag}) | Liste rows:`, R.listRows, '| Suche "Botschaft":', R.countSearch);
     console.log('   CH tree count:', R.chTreeCount, '| nach CH-Klick:', R.countCH, '| Auswahl-Reset sichtbar:', R.clearShown);
     check(/Liegenschaften Inventar/.test(R.h1 || ''), 'page header');
-    check(R.lands === 6, `6 Länder in the tree (${R.lands})`);
-    check(/^21 /.test(R.count0), `21 objects total (${R.count0})`);
+    check(R.lands === LAENDER, `${LAENDER} Länder in the tree (${R.lands})`);
+    check(new RegExp(`^${TOTAL} `).test(R.count0), `${TOTAL} objects total (${R.count0})`);
     check(R.mapCanvas, 'Karte (default) renders the clustered map');
     check(R.hasCatbar, 'compact catbar: search + sort + filter + view-switch in one bar');
-    check(R.galCards === 9 && /Seite 1 von 3/.test(R.galPag) && R.hasCdPag, `Galerie: 9/page, CD pagination (${R.galCards}, ${JSON.stringify(R.galPag)})`);
+    check(R.galCards === 9 && new RegExp(`Seite 1 von ${GAL_SEITEN}`).test(R.galPag) && R.hasCdPag, `Galerie: 9/page, CD pagination (${R.galCards}, ${JSON.stringify(R.galPag)})`);
     check(R.sortOpts === 4 && !!R.sortNameFirst && R.sortNameFirst !== R.sortAreaFirst, `sort reorders gallery (${R.sortOpts} opts; name:"${R.sortNameFirst}" ≠ area:"${R.sortAreaFirst}")`);
     console.log('   active-filters: pills', R.afPills, '| badge', JSON.stringify(R.afBadge), '| count filtered', R.afCountFiltered, '→ restored', R.afCountRestored);
-    check(R.afPills >= 1 && R.afBadge === '(1)' && R.afCountFiltered < 21, `active-filter pill applies (${R.afPills} pill, badge ${R.afBadge}, ${R.afCountFiltered}/21)`);
-    check(R.afPillsAfter === 0 && R.afCountRestored === 21, `removing pill restores results (${R.afPillsAfter} pills, ${R.afCountRestored}/21)`);
-    check(R.listRows === 21, `Liste shows all 21 objects (${R.listRows})`);
-    check(parseInt(R.countSearch, 10) < 21 && parseInt(R.countSearch, 10) > 0, `search filters (${R.countSearch})`);
-    check(R.chTreeCount === '12' && /^12 /.test(R.countCH), `tree node CH filters to its 12 objects (${R.chTreeCount} → ${R.countCH})`);
+    check(R.afPills >= 1 && R.afBadge === '(1)' && R.afCountFiltered < TOTAL, `active-filter pill applies (${R.afPills} pill, badge ${R.afBadge}, ${R.afCountFiltered}/${TOTAL})`);
+    check(R.afPillsAfter === 0 && R.afCountRestored === TOTAL, `removing pill restores results (${R.afPillsAfter} pills, ${R.afCountRestored}/${TOTAL})`);
+    // Die Liste blättert zu 25 — die frühere Zusicherung «zeigt alle» stimmte nur,
+    // solange der Bestand unter 25 lag. Geprüft wird darum die erste Seite.
+    check(R.listRows === Math.min(TOTAL, 25), `Liste zeigt die erste Seite: ${Math.min(TOTAL, 25)} von ${TOTAL} (${R.listRows})`);
+    check(parseInt(R.countSearch, 10) < TOTAL && parseInt(R.countSearch, 10) > 0, `search filters (${R.countSearch})`);
+    check(R.chTreeCount === String(CH) && new RegExp(`^${CH} `).test(R.countCH), `tree node CH filters to its ${CH} objects (${R.chTreeCount} → ${R.countCH})`);
     check(R.mapCanvas2, 'map re-renders after tree filter');
     check(R.clearShown, 'selection shows the reset control');
     check(R.mapErrs.length === 0, `no glyph/tile parse errors${R.mapErrs[0] ? ' — ' + R.mapErrs[0] : ''}`);

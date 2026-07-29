@@ -1,497 +1,797 @@
 [
-  {
-    "contractId": "VTR-4840-1",
-    "type": "Wartungsvertrag",
-    "validFrom": "2020-01-01T00:00:00Z",
-    "validUntil": "2025-12-31T00:00:00Z",
-    "contractPartner": "Siemens Building Technologies AG",
-    "amount": 85000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/4840/AF"
+ {
+  "contractId": "VTR-4840-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2020-01-01T00:00:00Z",
+  "validUntil": "2025-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 85000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-4840-2",
-    "type": "Reinigungsvertrag",
-    "validFrom": "2021-04-01T00:00:00Z",
-    "validUntil": "2026-03-31T00:00:00Z",
-    "contractPartner": "ISS Facility Services AG",
-    "amount": 120000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/4840/AF"
+  "buildingId": "1000/4840/AF"
+ },
+ {
+  "contractId": "VTR-4840-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2021-04-01T00:00:00Z",
+  "validUntil": "2026-03-31T00:00:00Z",
+  "contractPartner": "ISS Facility Services AG",
+  "amount": 120000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-4840-3",
-    "type": "Sicherheitsdienst",
-    "validFrom": "2019-01-01T00:00:00Z",
-    "validUntil": null,
-    "contractPartner": "Securitas AG",
-    "amount": 95000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": true
-    },
-    "buildingId": "1000/4840/AF"
+  "buildingId": "1000/4840/AF"
+ },
+ {
+  "contractId": "VTR-4840-3",
+  "type": "Sicherheitsdienst",
+  "validFrom": "2019-01-01T00:00:00Z",
+  "validUntil": null,
+  "contractPartner": "Securitas AG",
+  "amount": 95000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": true
   },
-  {
-    "contractId": "VTR-5210-1",
-    "type": "Wartungsvertrag",
-    "validFrom": "2021-01-01T00:00:00Z",
-    "validUntil": "2026-12-31T00:00:00Z",
-    "contractPartner": "Bosch Building Technologies GmbH",
-    "amount": 42000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/5210/AA"
+  "buildingId": "1000/4840/AF"
+ },
+ {
+  "contractId": "VTR-5210-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2021-01-01T00:00:00Z",
+  "validUntil": "2026-12-31T00:00:00Z",
+  "contractPartner": "Bosch Building Technologies GmbH",
+  "amount": 42000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-5210-2",
-    "type": "Sicherheitsdienst",
-    "validFrom": "2020-07-01T00:00:00Z",
-    "validUntil": null,
-    "contractPartner": "Kötter Security GmbH",
-    "amount": 78000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": true
-    },
-    "buildingId": "1000/5210/AA"
+  "buildingId": "1000/5210/AA"
+ },
+ {
+  "contractId": "VTR-5210-2",
+  "type": "Sicherheitsdienst",
+  "validFrom": "2020-07-01T00:00:00Z",
+  "validUntil": null,
+  "contractPartner": "Kötter Security GmbH",
+  "amount": 78000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": true
   },
-  {
-    "contractId": "VTR-3120-1",
-    "type": "Wartungsvertrag",
-    "validFrom": "2018-01-01T00:00:00Z",
-    "validUntil": "2024-12-31T00:00:00Z",
-    "contractPartner": "Johnson Controls AG",
-    "amount": 65000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/3120/AB"
+  "buildingId": "1000/5210/AA"
+ },
+ {
+  "contractId": "VTR-3120-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2018-01-01T00:00:00Z",
+  "validUntil": "2024-12-31T00:00:00Z",
+  "contractPartner": "Johnson Controls AG",
+  "amount": 65000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-3120-2",
-    "type": "Reinigungsvertrag",
-    "validFrom": "2020-01-01T00:00:00Z",
-    "validUntil": "2025-12-31T00:00:00Z",
-    "contractPartner": "Vebego AG",
-    "amount": 48000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/3120/AB"
+  "buildingId": "1000/3120/AB"
+ },
+ {
+  "contractId": "VTR-3120-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2020-01-01T00:00:00Z",
+  "validUntil": "2025-12-31T00:00:00Z",
+  "contractPartner": "Vebego AG",
+  "amount": 48000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-3120-3",
-    "type": "Logistikdienstleistung",
-    "validFrom": "2019-06-01T00:00:00Z",
-    "validUntil": null,
-    "contractPartner": "Planzer Transport AG",
-    "amount": 180000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": true
-    },
-    "buildingId": "1000/3120/AB"
+  "buildingId": "1000/3120/AB"
+ },
+ {
+  "contractId": "VTR-3120-3",
+  "type": "Logistikdienstleistung",
+  "validFrom": "2019-06-01T00:00:00Z",
+  "validUntil": null,
+  "contractPartner": "Planzer Transport AG",
+  "amount": 180000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": true
   },
-  {
-    "contractId": "VTR-3120-4",
-    "type": "Heizungswartung",
-    "validFrom": "2017-01-01T00:00:00Z",
-    "validUntil": "2022-12-31T00:00:00Z",
-    "contractPartner": "Meier Tobler AG",
-    "amount": 12000,
-    "currency": "CHF",
-    "status": "Ausgelaufen",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/3120/AB"
+  "buildingId": "1000/3120/AB"
+ },
+ {
+  "contractId": "VTR-3120-4",
+  "type": "Heizungswartung",
+  "validFrom": "2017-01-01T00:00:00Z",
+  "validUntil": "2022-12-31T00:00:00Z",
+  "contractPartner": "Meier Tobler AG",
+  "amount": 12000,
+  "currency": "CHF",
+  "status": "Ausgelaufen",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-5320-1",
-    "type": "Mietvertrag",
-    "validFrom": "2020-01-01T00:00:00Z",
-    "validUntil": "2030-12-31T00:00:00Z",
-    "contractPartner": "Third Avenue Tower LLC",
-    "amount": 450000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/5320/AA"
+  "buildingId": "1000/3120/AB"
+ },
+ {
+  "contractId": "VTR-5320-1",
+  "type": "Mietvertrag",
+  "validFrom": "2020-01-01T00:00:00Z",
+  "validUntil": "2030-12-31T00:00:00Z",
+  "contractPartner": "Third Avenue Tower LLC",
+  "amount": 450000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-5320-2",
-    "type": "Sicherheitsdienst",
-    "validFrom": "2021-01-01T00:00:00Z",
-    "validUntil": "2025-12-31T00:00:00Z",
-    "contractPartner": "Allied Universal Security",
-    "amount": 125000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/5320/AA"
+  "buildingId": "1000/5320/AA"
+ },
+ {
+  "contractId": "VTR-5320-2",
+  "type": "Sicherheitsdienst",
+  "validFrom": "2021-01-01T00:00:00Z",
+  "validUntil": "2025-12-31T00:00:00Z",
+  "contractPartner": "Allied Universal Security",
+  "amount": 125000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-4100-1",
-    "type": "Sanierungsvertrag",
-    "validFrom": "2024-01-01T00:00:00Z",
-    "validUntil": "2025-12-31T00:00:00Z",
-    "contractPartner": "Implenia Schweiz AG",
-    "amount": 2500000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/4100/AC"
+  "buildingId": "1000/5320/AA"
+ },
+ {
+  "contractId": "VTR-4100-1",
+  "type": "Sanierungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2025-12-31T00:00:00Z",
+  "contractPartner": "Implenia Schweiz AG",
+  "amount": 2500000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-4100-2",
-    "type": "Architekturleistung",
-    "validFrom": "2023-06-01T00:00:00Z",
-    "validUntil": "2025-12-31T00:00:00Z",
-    "contractPartner": "Herzog & de Meuron",
-    "amount": 350000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/4100/AC"
+  "buildingId": "1000/4100/AC"
+ },
+ {
+  "contractId": "VTR-4100-2",
+  "type": "Architekturleistung",
+  "validFrom": "2023-06-01T00:00:00Z",
+  "validUntil": "2025-12-31T00:00:00Z",
+  "contractPartner": "Herzog & de Meuron",
+  "amount": 350000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-4100-3",
-    "type": "Wartungsvertrag",
-    "validFrom": "2018-01-01T00:00:00Z",
-    "validUntil": "2023-12-31T00:00:00Z",
-    "contractPartner": "Honeywell Schweiz AG",
-    "amount": 35000,
-    "currency": "CHF",
-    "status": "Ausgelaufen",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/4100/AC"
+  "buildingId": "1000/4100/AC"
+ },
+ {
+  "contractId": "VTR-4100-3",
+  "type": "Wartungsvertrag",
+  "validFrom": "2018-01-01T00:00:00Z",
+  "validUntil": "2023-12-31T00:00:00Z",
+  "contractPartner": "Honeywell Schweiz AG",
+  "amount": 35000,
+  "currency": "CHF",
+  "status": "Ausgelaufen",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-5410-1",
-    "type": "Wartungsvertrag",
-    "validFrom": "2019-04-01T00:00:00Z",
-    "validUntil": "2025-03-31T00:00:00Z",
-    "contractPartner": "Daikin Industries Ltd",
-    "amount": 55000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/5410/AA"
+  "buildingId": "1000/4100/AC"
+ },
+ {
+  "contractId": "VTR-5410-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2019-04-01T00:00:00Z",
+  "validUntil": "2025-03-31T00:00:00Z",
+  "contractPartner": "Daikin Industries Ltd",
+  "amount": 55000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-5410-2",
-    "type": "Sicherheitsdienst",
-    "validFrom": "2020-01-01T00:00:00Z",
-    "validUntil": null,
-    "contractPartner": "ALSOK Co., Ltd.",
-    "amount": 92000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": true
-    },
-    "buildingId": "1000/5410/AA"
+  "buildingId": "1000/5410/AA"
+ },
+ {
+  "contractId": "VTR-5410-2",
+  "type": "Sicherheitsdienst",
+  "validFrom": "2020-01-01T00:00:00Z",
+  "validUntil": null,
+  "contractPartner": "ALSOK Co., Ltd.",
+  "amount": 92000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": true
   },
-  {
-    "contractId": "VTR-5410-3",
-    "type": "Gartenpflege",
-    "validFrom": "2018-04-01T00:00:00Z",
-    "validUntil": "2024-03-31T00:00:00Z",
-    "contractPartner": "Tokyo Green Service Co.",
-    "amount": 18000,
-    "currency": "CHF",
-    "status": "Gekündigt",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/5410/AA"
+  "buildingId": "1000/5410/AA"
+ },
+ {
+  "contractId": "VTR-5410-3",
+  "type": "Gartenpflege",
+  "validFrom": "2018-04-01T00:00:00Z",
+  "validUntil": "2024-03-31T00:00:00Z",
+  "contractPartner": "Tokyo Green Service Co.",
+  "amount": 18000,
+  "currency": "CHF",
+  "status": "Gekündigt",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-2800-1",
-    "type": "Heizungswartung",
-    "validFrom": "2016-01-01T00:00:00Z",
-    "validUntil": "2026-12-31T00:00:00Z",
-    "contractPartner": "IWB Industrielle Werke Basel",
-    "amount": 8500,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/2800/AD"
+  "buildingId": "1000/5410/AA"
+ },
+ {
+  "contractId": "VTR-2800-1",
+  "type": "Heizungswartung",
+  "validFrom": "2016-01-01T00:00:00Z",
+  "validUntil": "2026-12-31T00:00:00Z",
+  "contractPartner": "IWB Industrielle Werke Basel",
+  "amount": 8500,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-2800-2",
-    "type": "Hauswartung",
-    "validFrom": "2020-07-01T00:00:00Z",
-    "validUntil": null,
-    "contractPartner": "Livit AG",
-    "amount": 42000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": true
-    },
-    "buildingId": "1000/2800/AD"
+  "buildingId": "1000/2800/AD"
+ },
+ {
+  "contractId": "VTR-2800-2",
+  "type": "Hauswartung",
+  "validFrom": "2020-07-01T00:00:00Z",
+  "validUntil": null,
+  "contractPartner": "Livit AG",
+  "amount": 42000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": true
   },
-  {
-    "contractId": "VTR-2800-3",
-    "type": "Reinigungsvertrag",
-    "validFrom": "2021-01-01T00:00:00Z",
-    "validUntil": "2024-12-31T00:00:00Z",
-    "contractPartner": "Clean Expert GmbH",
-    "amount": 28000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/2800/AD"
+  "buildingId": "1000/2800/AD"
+ },
+ {
+  "contractId": "VTR-2800-3",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2021-01-01T00:00:00Z",
+  "validUntil": "2024-12-31T00:00:00Z",
+  "contractPartner": "Clean Expert GmbH",
+  "amount": 28000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-5510-1",
-    "type": "Klimaanlagenwartung",
-    "validFrom": "2022-01-01T00:00:00Z",
-    "validUntil": "2027-12-31T00:00:00Z",
-    "contractPartner": "Carrier do Brasil",
-    "amount": 38000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/5510/AA"
+  "buildingId": "1000/2800/AD"
+ },
+ {
+  "contractId": "VTR-5510-1",
+  "type": "Klimaanlagenwartung",
+  "validFrom": "2022-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Carrier do Brasil",
+  "amount": 38000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-5510-2",
-    "type": "Sicherheitsdienst",
-    "validFrom": "2020-06-01T00:00:00Z",
-    "validUntil": null,
-    "contractPartner": "Prosegur Brasil",
-    "amount": 65000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": true
-    },
-    "buildingId": "1000/5510/AA"
+  "buildingId": "1000/5510/AA"
+ },
+ {
+  "contractId": "VTR-5510-2",
+  "type": "Sicherheitsdienst",
+  "validFrom": "2020-06-01T00:00:00Z",
+  "validUntil": null,
+  "contractPartner": "Prosegur Brasil",
+  "amount": 65000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": true
   },
-  {
-    "contractId": "VTR-5510-3",
-    "type": "Gartenpflege",
-    "validFrom": "2022-01-01T00:00:00Z",
-    "validUntil": "2024-12-31T00:00:00Z",
-    "contractPartner": "Verde Vida Ltda",
-    "amount": 12000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/5510/AA"
+  "buildingId": "1000/5510/AA"
+ },
+ {
+  "contractId": "VTR-5510-3",
+  "type": "Gartenpflege",
+  "validFrom": "2022-01-01T00:00:00Z",
+  "validUntil": "2024-12-31T00:00:00Z",
+  "contractPartner": "Verde Vida Ltda",
+  "amount": 12000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-1950-1",
-    "type": "Bauvertrag",
-    "validFrom": "2023-07-01T00:00:00Z",
-    "validUntil": "2025-12-31T00:00:00Z",
-    "contractPartner": "Marti AG Bauunternehmung",
-    "amount": 45000000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/1950/AE"
+  "buildingId": "1000/5510/AA"
+ },
+ {
+  "contractId": "VTR-1950-1",
+  "type": "Bauvertrag",
+  "validFrom": "2023-07-01T00:00:00Z",
+  "validUntil": "2025-12-31T00:00:00Z",
+  "contractPartner": "Marti AG Bauunternehmung",
+  "amount": 45000000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-1950-2",
-    "type": "IT-Infrastruktur",
-    "validFrom": "2024-01-01T00:00:00Z",
-    "validUntil": "2034-12-31T00:00:00Z",
-    "contractPartner": "Swisscom (Schweiz) AG",
-    "amount": 2500000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/1950/AE"
+  "buildingId": "1000/1950/AE"
+ },
+ {
+  "contractId": "VTR-1950-2",
+  "type": "IT-Infrastruktur",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2034-12-31T00:00:00Z",
+  "contractPartner": "Swisscom (Schweiz) AG",
+  "amount": 2500000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-1950-3",
-    "type": "Kühlanlagenwartung",
-    "validFrom": "2025-01-01T00:00:00Z",
-    "validUntil": "2030-12-31T00:00:00Z",
-    "contractPartner": "Schneider Electric Schweiz AG",
-    "amount": 180000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/1950/AE"
+  "buildingId": "1000/1950/AE"
+ },
+ {
+  "contractId": "VTR-1950-3",
+  "type": "Kühlanlagenwartung",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2030-12-31T00:00:00Z",
+  "contractPartner": "Schneider Electric Schweiz AG",
+  "amount": 180000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-1950-4",
-    "type": "Sicherheitsdienst",
-    "validFrom": "2025-01-01T00:00:00Z",
-    "validUntil": null,
-    "contractPartner": "Protectas SA",
-    "amount": 320000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": true
-    },
-    "buildingId": "1000/1950/AE"
+  "buildingId": "1000/1950/AE"
+ },
+ {
+  "contractId": "VTR-1950-4",
+  "type": "Sicherheitsdienst",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": null,
+  "contractPartner": "Protectas SA",
+  "amount": 320000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": true
   },
-  {
-    "contractId": "VTR-5620-1",
-    "type": "Wartungsvertrag",
-    "validFrom": "2017-01-01T00:00:00Z",
-    "validUntil": "2025-12-31T00:00:00Z",
-    "contractPartner": "Daikin Australia Pty Ltd",
-    "amount": 22000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/5620/AA"
+  "buildingId": "1000/1950/AE"
+ },
+ {
+  "contractId": "VTR-5620-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2017-01-01T00:00:00Z",
+  "validUntil": "2025-12-31T00:00:00Z",
+  "contractPartner": "Daikin Australia Pty Ltd",
+  "amount": 22000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-5620-2",
-    "type": "Sicherheitsdienst",
-    "validFrom": "2018-07-01T00:00:00Z",
-    "validUntil": null,
-    "contractPartner": "Wilson Security",
-    "amount": 48000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": true
-    },
-    "buildingId": "1000/5620/AA"
+  "buildingId": "1000/5620/AA"
+ },
+ {
+  "contractId": "VTR-5620-2",
+  "type": "Sicherheitsdienst",
+  "validFrom": "2018-07-01T00:00:00Z",
+  "validUntil": null,
+  "contractPartner": "Wilson Security",
+  "amount": 48000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": true
   },
-  {
-    "contractId": "VTR-5620-3",
-    "type": "Gartenpflege",
-    "validFrom": "2020-01-01T00:00:00Z",
-    "validUntil": "2024-12-31T00:00:00Z",
-    "contractPartner": "Canberra Landscaping Services",
-    "amount": 15000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/5620/AA"
+  "buildingId": "1000/5620/AA"
+ },
+ {
+  "contractId": "VTR-5620-3",
+  "type": "Gartenpflege",
+  "validFrom": "2020-01-01T00:00:00Z",
+  "validUntil": "2024-12-31T00:00:00Z",
+  "contractPartner": "Canberra Landscaping Services",
+  "amount": 15000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-4850-1",
-    "type": "Wartungsvertrag",
-    "validFrom": "2020-01-01T00:00:00Z",
-    "validUntil": "2025-12-31T00:00:00Z",
-    "contractPartner": "Siemens Building Technologies AG",
-    "amount": 85000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/4850/AG"
+  "buildingId": "1000/5620/AA"
+ },
+ {
+  "contractId": "VTR-4850-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2020-01-01T00:00:00Z",
+  "validUntil": "2025-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 85000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-4850-2",
-    "type": "Reinigungsvertrag",
-    "validFrom": "2021-04-01T00:00:00Z",
-    "validUntil": "2026-03-31T00:00:00Z",
-    "contractPartner": "ISS Facility Services AG",
-    "amount": 120000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": false
-    },
-    "buildingId": "1000/4850/AG"
+  "buildingId": "1000/4850/AG"
+ },
+ {
+  "contractId": "VTR-4850-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2021-04-01T00:00:00Z",
+  "validUntil": "2026-03-31T00:00:00Z",
+  "contractPartner": "ISS Facility Services AG",
+  "amount": 120000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
   },
-  {
-    "contractId": "VTR-4850-3",
-    "type": "Sicherheitsdienst",
-    "validFrom": "2019-01-01T00:00:00Z",
-    "validUntil": null,
-    "contractPartner": "Securitas AG",
-    "amount": 95000,
-    "currency": "CHF",
-    "status": "Aktiv",
-    "extensionData": {
-      "paymentTerms": "Jährlich im Voraus",
-      "autoRenewal": true
-    },
-    "buildingId": "1000/4850/AG"
-  }
+  "buildingId": "1000/4850/AG"
+ },
+ {
+  "contractId": "VTR-4850-3",
+  "type": "Sicherheitsdienst",
+  "validFrom": "2019-01-01T00:00:00Z",
+  "validUntil": null,
+  "contractPartner": "Securitas AG",
+  "amount": 95000,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/4850/AG"
+ },
+ {
+  "contractId": "VTR-6100-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 109960,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/6100/AA"
+ },
+ {
+  "contractId": "VTR-6100-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 259600,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/6100/AA"
+ },
+ {
+  "contractId": "VTR-6210-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 21400,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/6210/AA"
+ },
+ {
+  "contractId": "VTR-6210-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 63030,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/6210/AA"
+ },
+ {
+  "contractId": "VTR-6320-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 330,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/6320/AA"
+ },
+ {
+  "contractId": "VTR-6320-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 1430,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/6320/AA"
+ },
+ {
+  "contractId": "VTR-6430-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 34440,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/6430/AA"
+ },
+ {
+  "contractId": "VTR-6430-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 209066,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/6430/AA"
+ },
+ {
+  "contractId": "VTR-6540-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 108400,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/6540/AA"
+ },
+ {
+  "contractId": "VTR-6540-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 739200,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/6540/AA"
+ },
+ {
+  "contractId": "VTR-6650-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 107825,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/6650/AA"
+ },
+ {
+  "contractId": "VTR-6650-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 657800,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/6650/AA"
+ },
+ {
+  "contractId": "VTR-6760-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 44696,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/6760/AA"
+ },
+ {
+  "contractId": "VTR-6760-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 186868,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/6760/AA"
+ },
+ {
+  "contractId": "VTR-6870-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 15200,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/6870/AA"
+ },
+ {
+  "contractId": "VTR-6870-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 69146,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/6870/AA"
+ },
+ {
+  "contractId": "VTR-6980-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 7684,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/6980/AA"
+ },
+ {
+  "contractId": "VTR-6980-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 10868,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/6980/AA"
+ },
+ {
+  "contractId": "VTR-7090-1",
+  "type": "Wartungsvertrag",
+  "validFrom": "2024-01-01T00:00:00Z",
+  "validUntil": "2028-12-31T00:00:00Z",
+  "contractPartner": "Siemens Building Technologies AG",
+  "amount": 29084,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Jährlich im Voraus",
+   "autoRenewal": false
+  },
+  "buildingId": "1000/7090/AA"
+ },
+ {
+  "contractId": "VTR-7090-2",
+  "type": "Reinigungsvertrag",
+  "validFrom": "2025-01-01T00:00:00Z",
+  "validUntil": "2027-12-31T00:00:00Z",
+  "contractPartner": "Vebego Services AG",
+  "amount": 149556,
+  "currency": "CHF",
+  "status": "Aktiv",
+  "extensionData": {
+   "paymentTerms": "Quartalsweise",
+   "autoRenewal": true
+  },
+  "buildingId": "1000/7090/AA"
+ }
 ]

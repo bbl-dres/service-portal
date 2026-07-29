@@ -1,756 +1,4053 @@
 {
-  "type": "FeatureCollection",
-  "name": "BBL_GIS_IMMO_Parcel",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Aktiv",
-        "bbl_id": "1000/4840/01",
-        "bbl_buch": "1000",
-        "bbl_we": "4840",
-        "bbl_obj": "01",
-        "bbl_bez": "Bundesplatz Parzelle A",
-        "bbl_port": "Verwaltungsgebäude",
-        "bbl_mietm": "Vollkostenmiete",
-        "bbl_eigen": "Eigentum Bund",
-        "bbl_awrt": 35000000,
-        "bbl_bwrt": 12000000,
-        "bbl_hgart": false,
-        "adr_land": "CH",
-        "adr_reg": "BE",
-        "adr_ort": "Bern",
-        "adr_plz": "3003",
-        "adr_str": "Bundesplatz",
-        "adr_hsnr": "3",
-        "adr_conct": "Bundesplatz 3 3003 Bern",
-        "wgs84_lat": 46.9465,
-        "wgs84_lon": 7.4441,
-        "lv95_e": 2600416.2,
-        "lv95_n": 1199490.6,
-        "egm_elev": null,
-        "av_stat": "Gültig",
-        "av_egrid": "CH938391457759",
-        "bfs_gem": "Bern",
-        "bfs_gemnr": "351",
-        "av_nr": "1001",
-        "larea_ggf": 3200,
-        "larea_gsf": 5100,
-        "larea_uf": 1900,
-        "larea_buf": 1200,
-        "larea_uuf": 700,
-        "larea_acu": "AV",
-        "larea_ver": 3800,
-        "larea_gre": 1300,
-        "av_zbez": "Verwaltungszone",
-        "av_znut": "Zone für öffentliche Nutzung",
-        "fid": null,
-        "fid_src": null,
-        "objectid": 1,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              7.4435,
-              46.946
-            ],
-            [
-              7.4447,
-              46.946
-            ],
-            [
-              7.4447,
-              46.947
-            ],
-            [
-              7.4435,
-              46.947
-            ],
-            [
-              7.4435,
-              46.946
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Aktiv",
-        "bbl_id": "1000/5210/01",
-        "bbl_buch": "1000",
-        "bbl_we": "5210",
-        "bbl_obj": "01",
-        "bbl_bez": "Diplomatenviertel Lot 41",
-        "bbl_port": "Diplomatische Vertretung",
-        "bbl_mietm": "Vollkostenmiete",
-        "bbl_eigen": "Eigentum Bund",
-        "bbl_awrt": 18000000,
-        "bbl_bwrt": 5000000,
-        "bbl_hgart": false,
-        "adr_land": "DE",
-        "adr_reg": "Berlin",
-        "adr_ort": "Berlin",
-        "adr_plz": "10557",
-        "adr_str": "Otto-von-Bismarck-Allee",
-        "adr_hsnr": "4A",
-        "adr_conct": "Otto-von-Bismarck-Allee 4A 10557 Berlin",
-        "wgs84_lat": 52.52,
-        "wgs84_lon": 13.3695,
-        "lv95_e": null,
-        "lv95_n": null,
-        "egm_elev": null,
-        "av_stat": null,
-        "av_egrid": null,
-        "bfs_gem": null,
-        "bfs_gemnr": null,
-        "av_nr": null,
-        "larea_ggf": 1400,
-        "larea_gsf": 1800,
-        "larea_uf": 400,
-        "larea_buf": 300,
-        "larea_uuf": 100,
-        "larea_acu": "Geschätzt",
-        "larea_ver": 1500,
-        "larea_gre": 300,
-        "av_zbez": null,
-        "av_znut": null,
-        "fid": null,
-        "fid_src": null,
-        "objectid": 2,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              13.3688,
-              52.5194
-            ],
-            [
-              13.3702,
-              52.5194
-            ],
-            [
-              13.3702,
-              52.5206
-            ],
-            [
-              13.3688,
-              52.5206
-            ],
-            [
-              13.3688,
-              52.5194
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Aktiv",
-        "bbl_id": "1000/3120/01",
-        "bbl_buch": "1000",
-        "bbl_we": "3120",
-        "bbl_obj": "01",
-        "bbl_bez": "Industriegebiet Lagerstrasse",
-        "bbl_port": "Lager / Logistik",
-        "bbl_mietm": "Kostenmiete",
-        "bbl_eigen": "Eigentum Bund",
-        "bbl_awrt": 22000000,
-        "bbl_bwrt": 8500000,
-        "bbl_hgart": false,
-        "adr_land": "CH",
-        "adr_reg": "ZH",
-        "adr_ort": "Zürich",
-        "adr_plz": "8004",
-        "adr_str": "Lagerstrasse",
-        "adr_hsnr": "107",
-        "adr_conct": "Lagerstrasse 107 8004 Zürich",
-        "wgs84_lat": 47.3769,
-        "wgs84_lon": 8.532,
-        "lv95_e": 2682571.5,
-        "lv95_n": 1247915.3,
-        "egm_elev": null,
-        "av_stat": "Gültig",
-        "av_egrid": "CH672819345012",
-        "bfs_gem": "Zürich",
-        "bfs_gemnr": "261",
-        "av_nr": "2045",
-        "larea_ggf": 6500,
-        "larea_gsf": 12500,
-        "larea_uf": 6000,
-        "larea_buf": 4000,
-        "larea_uuf": 2000,
-        "larea_acu": "AV",
-        "larea_ver": 9500,
-        "larea_gre": 3000,
-        "av_zbez": "Industriezone",
-        "av_znut": "Industrie- und Gewerbezone",
-        "fid": null,
-        "fid_src": null,
-        "objectid": 3,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              8.531,
-              47.376
-            ],
-            [
-              8.533,
-              47.376
-            ],
-            [
-              8.533,
-              47.3778
-            ],
-            [
-              8.531,
-              47.3778
-            ],
-            [
-              8.531,
-              47.376
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Aktiv",
-        "bbl_id": "1000/5320/01",
-        "bbl_buch": "1000",
-        "bbl_we": "5320",
-        "bbl_obj": "01",
-        "bbl_bez": "Third Avenue Lot",
-        "bbl_port": "Diplomatische Vertretung",
-        "bbl_mietm": null,
-        "bbl_eigen": "Miete",
-        "bbl_awrt": null,
-        "bbl_bwrt": null,
-        "bbl_hgart": false,
-        "adr_land": "US",
-        "adr_reg": "NY",
-        "adr_ort": "New York",
-        "adr_plz": "10022",
-        "adr_str": "633 Third Avenue",
-        "adr_hsnr": "633",
-        "adr_conct": "633 Third Avenue 633 10022 New York",
-        "wgs84_lat": 40.7528,
-        "wgs84_lon": -73.9712,
-        "lv95_e": null,
-        "lv95_n": null,
-        "egm_elev": null,
-        "av_stat": null,
-        "av_egrid": null,
-        "bfs_gem": null,
-        "bfs_gemnr": null,
-        "av_nr": null,
-        "larea_ggf": null,
-        "larea_gsf": null,
-        "larea_uf": null,
-        "larea_buf": null,
-        "larea_uuf": null,
-        "larea_acu": null,
-        "larea_ver": null,
-        "larea_gre": null,
-        "av_zbez": null,
-        "av_znut": null,
-        "fid": null,
-        "fid_src": null,
-        "objectid": 4,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              -73.972,
-              40.7522
-            ],
-            [
-              -73.9704,
-              40.7522
-            ],
-            [
-              -73.9704,
-              40.7534
-            ],
-            [
-              -73.972,
-              40.7534
-            ],
-            [
-              -73.972,
-              40.7522
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Aktiv",
-        "bbl_id": "1000/4100/01",
-        "bbl_buch": "1000",
-        "bbl_we": "4100",
-        "bbl_obj": "01",
-        "bbl_bez": "Varembé Parzelle",
-        "bbl_port": "Ausbildung",
-        "bbl_mietm": "Vollkostenmiete",
-        "bbl_eigen": "Eigentum Bund",
-        "bbl_awrt": 15000000,
-        "bbl_bwrt": 4500000,
-        "bbl_hgart": false,
-        "adr_land": "CH",
-        "adr_reg": "GE",
-        "adr_ort": "Genf",
-        "adr_plz": "1211",
-        "adr_str": "Rue de Varembé",
-        "adr_hsnr": "9",
-        "adr_conct": "Rue de Varembé 9 1211 Genf",
-        "wgs84_lat": 46.2044,
-        "wgs84_lon": 6.1432,
-        "lv95_e": 2500016.2,
-        "lv95_n": 1117821,
-        "egm_elev": null,
-        "av_stat": "Gültig",
-        "av_egrid": "CH456789123456",
-        "bfs_gem": "Genève",
-        "bfs_gemnr": "6621",
-        "av_nr": "3021",
-        "larea_ggf": 2200,
-        "larea_gsf": 4500,
-        "larea_uf": 2300,
-        "larea_buf": 1500,
-        "larea_uuf": 800,
-        "larea_acu": "AV",
-        "larea_ver": 3000,
-        "larea_gre": 1500,
-        "av_zbez": "Zone mixte",
-        "av_znut": "Mischzone Wohnen/Arbeiten",
-        "fid": null,
-        "fid_src": null,
-        "objectid": 5,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              6.1422,
-              46.2038
-            ],
-            [
-              6.1442,
-              46.2038
-            ],
-            [
-              6.1442,
-              46.205
-            ],
-            [
-              6.1422,
-              46.205
-            ],
-            [
-              6.1422,
-              46.2038
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Löschvermerk",
-        "bbl_id": "1000/5410/01",
-        "bbl_buch": "1000",
-        "bbl_we": "5410",
-        "bbl_obj": "01",
-        "bbl_bez": "Minami-Azabu Lot",
-        "bbl_port": "Diplomatische Vertretung",
-        "bbl_mietm": "Vollkostenmiete",
-        "bbl_eigen": "Eigentum Bund",
-        "bbl_awrt": 60000000,
-        "bbl_bwrt": 15000000,
-        "bbl_hgart": false,
-        "adr_land": "JP",
-        "adr_reg": "Tokyo",
-        "adr_ort": "Minato-ku",
-        "adr_plz": "106-8589",
-        "adr_str": "Minami-Azabu",
-        "adr_hsnr": "5-9-12",
-        "adr_conct": "Minami-Azabu 5-9-12 106-8589 Minato-ku",
-        "wgs84_lat": 35.652,
-        "wgs84_lon": 139.735,
-        "lv95_e": null,
-        "lv95_n": null,
-        "egm_elev": null,
-        "av_stat": null,
-        "av_egrid": null,
-        "bfs_gem": null,
-        "bfs_gemnr": null,
-        "av_nr": null,
-        "larea_ggf": 1200,
-        "larea_gsf": 2100,
-        "larea_uf": 900,
-        "larea_buf": 600,
-        "larea_uuf": 300,
-        "larea_acu": "Geschätzt",
-        "larea_ver": 1500,
-        "larea_gre": 600,
-        "av_zbez": null,
-        "av_znut": null,
-        "fid": null,
-        "fid_src": null,
-        "objectid": 6,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              139.734,
-              35.6514
-            ],
-            [
-              139.736,
-              35.6514
-            ],
-            [
-              139.736,
-              35.6526
-            ],
-            [
-              139.734,
-              35.6526
-            ],
-            [
-              139.734,
-              35.6514
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Aktiv",
-        "bbl_id": "1000/2800/01",
-        "bbl_buch": "1000",
-        "bbl_we": "2800",
-        "bbl_obj": "01",
-        "bbl_bez": "Aeschenvorstadt 36 Parzelle",
-        "bbl_port": "Wohnliegenschaft",
-        "bbl_mietm": "Marktmiete",
-        "bbl_eigen": "Eigentum Bund",
-        "bbl_awrt": 3200000,
-        "bbl_bwrt": 800000,
-        "bbl_hgart": true,
-        "adr_land": "CH",
-        "adr_reg": "BS",
-        "adr_ort": "Basel",
-        "adr_plz": "4051",
-        "adr_str": "Aeschenvorstadt",
-        "adr_hsnr": "36",
-        "adr_conct": "Aeschenvorstadt 36 4051 Basel",
-        "wgs84_lat": 47.5596,
-        "wgs84_lon": 7.5886,
-        "lv95_e": 2611287.9,
-        "lv95_n": 1267665,
-        "egm_elev": null,
-        "av_stat": "Gültig",
-        "av_egrid": "CH789012345678",
-        "bfs_gem": "Basel",
-        "bfs_gemnr": "2701",
-        "av_nr": "456",
-        "larea_ggf": 380,
-        "larea_gsf": 520,
-        "larea_uf": 140,
-        "larea_buf": 100,
-        "larea_uuf": 40,
-        "larea_acu": "AV",
-        "larea_ver": 420,
-        "larea_gre": 100,
-        "av_zbez": "Wohnzone W3",
-        "av_znut": "Wohnzone",
-        "fid": null,
-        "fid_src": null,
-        "objectid": 7,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              7.5878,
-              47.559
-            ],
-            [
-              7.5894,
-              47.559
-            ],
-            [
-              7.5894,
-              47.5602
-            ],
-            [
-              7.5878,
-              47.5602
-            ],
-            [
-              7.5878,
-              47.559
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Aktiv",
-        "bbl_id": "1000/5510/01",
-        "bbl_buch": "1000",
-        "bbl_we": "5510",
-        "bbl_obj": "01",
-        "bbl_bez": "Setor de Embaixadas Sul Lote 44",
-        "bbl_port": "Diplomatische Vertretung",
-        "bbl_mietm": "Vollkostenmiete",
-        "bbl_eigen": "Eigentum Bund",
-        "bbl_awrt": 8000000,
-        "bbl_bwrt": 2000000,
-        "bbl_hgart": false,
-        "adr_land": "BR",
-        "adr_reg": "DF",
-        "adr_ort": "Brasília",
-        "adr_plz": "70443-900",
-        "adr_str": "SES Av. das Nações",
-        "adr_hsnr": "Lote 44",
-        "adr_conct": "SES Av. das Nações Lote 44 70443-900 Brasília",
-        "wgs84_lat": -15.7942,
-        "wgs84_lon": -47.8825,
-        "lv95_e": null,
-        "lv95_n": null,
-        "egm_elev": null,
-        "av_stat": null,
-        "av_egrid": null,
-        "bfs_gem": null,
-        "bfs_gemnr": null,
-        "av_nr": null,
-        "larea_ggf": null,
-        "larea_gsf": null,
-        "larea_uf": null,
-        "larea_buf": null,
-        "larea_uuf": null,
-        "larea_acu": null,
-        "larea_ver": null,
-        "larea_gre": null,
-        "av_zbez": null,
-        "av_znut": null,
-        "fid": null,
-        "fid_src": null,
-        "objectid": 8,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              -47.8835,
-              -15.795
-            ],
-            [
-              -47.8815,
-              -15.795
-            ],
-            [
-              -47.8815,
-              -15.7934
-            ],
-            [
-              -47.8835,
-              -15.7934
-            ],
-            [
-              -47.8835,
-              -15.795
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Aktiv",
-        "bbl_id": "1000/1950/01",
-        "bbl_buch": "1000",
-        "bbl_we": "1950",
-        "bbl_obj": "01",
-        "bbl_bez": "Via Industria Parzelle",
-        "bbl_port": "Infrastruktur IT",
-        "bbl_mietm": "Kostenmiete",
-        "bbl_eigen": "Eigentum Bund",
-        "bbl_awrt": 12000000,
-        "bbl_bwrt": 3000000,
-        "bbl_hgart": false,
-        "adr_land": "CH",
-        "adr_reg": "TI",
-        "adr_ort": "Lugano",
-        "adr_plz": "6900",
-        "adr_str": "Via Industria",
-        "adr_hsnr": "12",
-        "adr_conct": "Via Industria 12 6900 Lugano",
-        "wgs84_lat": 46.0037,
-        "wgs84_lon": 8.9512,
-        "lv95_e": 2717168.7,
-        "lv95_n": 1095811.6,
-        "egm_elev": null,
-        "av_stat": "Gültig",
-        "av_egrid": "CH345678901234",
-        "bfs_gem": "Lugano",
-        "bfs_gemnr": "5192",
-        "av_nr": "789",
-        "larea_ggf": 1500,
-        "larea_gsf": 3200,
-        "larea_uf": 1700,
-        "larea_buf": 1200,
-        "larea_uuf": 500,
-        "larea_acu": "AV",
-        "larea_ver": 2200,
-        "larea_gre": 1000,
-        "av_zbez": "Arbeitszone",
-        "av_znut": "Arbeitszone",
-        "fid": null,
-        "fid_src": null,
-        "objectid": 9,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              8.9502,
-              46.0031
-            ],
-            [
-              8.9522,
-              46.0031
-            ],
-            [
-              8.9522,
-              46.0043
-            ],
-            [
-              8.9502,
-              46.0043
-            ],
-            [
-              8.9502,
-              46.0031
-            ]
-          ]
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "bbl_stat": "Abgang",
-        "bbl_id": "1000/4850/01",
-        "bbl_buch": "1000",
-        "bbl_we": "4850",
-        "bbl_obj": "01",
-        "bbl_bez": "Bollwerk 15 Parzelle",
-        "bbl_port": "Verwaltungsgebäude",
-        "bbl_mietm": null,
-        "bbl_eigen": "Verkauft",
-        "bbl_awrt": 4500000,
-        "bbl_bwrt": 0,
-        "bbl_hgart": false,
-        "adr_land": "CH",
-        "adr_reg": "BE",
-        "adr_ort": "Bern",
-        "adr_plz": "3014",
-        "adr_str": "Bollwerk",
-        "adr_hsnr": "15",
-        "adr_conct": "Bollwerk 15 3014 Bern",
-        "wgs84_lat": 46.951,
-        "wgs84_lon": 7.4388,
-        "lv95_e": 2600012.7,
-        "lv95_n": 1199990.8,
-        "egm_elev": null,
-        "av_stat": "Gültig",
-        "av_egrid": "CH111222333444",
-        "bfs_gem": "Bern",
-        "bfs_gemnr": "351",
-        "av_nr": "1102",
-        "larea_ggf": 750,
-        "larea_gsf": 1100,
-        "larea_uf": 350,
-        "larea_buf": 250,
-        "larea_uuf": 100,
-        "larea_acu": "AV",
-        "larea_ver": 900,
-        "larea_gre": 200,
-        "av_zbez": "Mischzone",
-        "av_znut": "Mischzone Wohnen/Arbeiten",
-        "fid": null,
-        "fid_src": null,
-        "objectid": 10,
-        "etl_ts": "2026-03-18T06:00:00Z"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              7.438,
-              46.9504
-            ],
-            [
-              7.4396,
-              46.9504
-            ],
-            [
-              7.4396,
-              46.9516
-            ],
-            [
-              7.438,
-              46.9516
-            ],
-            [
-              7.438,
-              46.9504
-            ]
-          ]
-        ]
-      }
-    }
-  ]
+ "type": "FeatureCollection",
+ "name": "BBL_GIS_IMMO_Parcel",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/4840/01",
+    "bbl_buch": "1000",
+    "bbl_we": "4840",
+    "bbl_obj": "01",
+    "bbl_bez": "Bundesgasse 1",
+    "bbl_port": "Verwaltungsgebäude",
+    "bbl_mietm": "Vollkostenmiete",
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_awrt": 35000000,
+    "bbl_bwrt": 12000000,
+    "bbl_hgart": false,
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Bern",
+    "adr_plz": "3011",
+    "adr_str": "Bundesgasse",
+    "adr_hsnr": "1",
+    "adr_conct": "Bundesplatz 3 3003 Bern",
+    "wgs84_lat": 46.946346,
+    "wgs84_lon": 7.442977,
+    "lv95_e": 2600416.2,
+    "lv95_n": 1199490.6,
+    "egm_elev": null,
+    "av_stat": "Gültig",
+    "av_egrid": "CH127620463518",
+    "bfs_gem": "Bern",
+    "bfs_gemnr": 351,
+    "av_nr": "1058",
+    "larea_ggf": 3200,
+    "larea_gsf": 9893,
+    "larea_uf": 1900,
+    "larea_buf": 1200,
+    "larea_uuf": 700,
+    "larea_acu": "AV",
+    "larea_ver": 3800,
+    "larea_gre": 1300,
+    "av_zbez": "Verwaltungszone",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "fid": null,
+    "fid_src": null,
+    "objectid": 1,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-134"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.441802474647154,
+       46.94645612192549
+      ],
+      [
+       7.442158527743754,
+       46.94651793833377
+      ],
+      [
+       7.442181395973416,
+       46.946521832729466
+      ],
+      [
+       7.442181645509332,
+       46.94652123004682
+      ],
+      [
+       7.442353768121847,
+       46.946550595269386
+      ],
+      [
+       7.442353610530947,
+       46.94655116196945
+      ],
+      [
+       7.443402598327657,
+       46.946728678614306
+      ],
+      [
+       7.443402834713857,
+       46.94672804894394
+      ],
+      [
+       7.44357505058867,
+       46.94675722342753
+      ],
+      [
+       7.443574879877669,
+       46.946757826110456
+      ],
+      [
+       7.443597800847094,
+       46.94676164825981
+      ],
+      [
+       7.443603618506765,
+       46.94674597845488
+      ],
+      [
+       7.443602751578714,
+       46.946745789586615
+      ],
+      [
+       7.443633599406286,
+       46.94666059516425
+      ],
+      [
+       7.443657531739832,
+       46.94666446224182
+      ],
+      [
+       7.443663152351477,
+       46.946648864402064
+      ],
+      [
+       7.443662272292474,
+       46.94664871151544
+      ],
+      [
+       7.44367318520338,
+       46.94661846933574
+      ],
+      [
+       7.443674078396944,
+       46.94661862222187
+      ],
+      [
+       7.443678976724971,
+       46.946605021336666
+      ],
+      [
+       7.443678096665271,
+       46.946604850459764
+      ],
+      [
+       7.443715628572802,
+       46.946500990778
+      ],
+      [
+       7.443716639981605,
+       46.946501170645064
+      ],
+      [
+       7.44372149888176,
+       46.94648755176883
+      ],
+      [
+       7.443720592549007,
+       46.946487317926994
+      ],
+      [
+       7.443731452862643,
+       46.946457183684956
+      ],
+      [
+       7.443732437993748,
+       46.94645727360104
+      ],
+      [
+       7.443738058552192,
+       46.94644154982455
+      ],
+      [
+       7.443717199923372,
+       46.946438006479184
+      ],
+      [
+       7.443754088165411,
+       46.946335945840815
+      ],
+      [
+       7.443746443518828,
+       46.946334650813306
+      ],
+      [
+       7.443770813215295,
+       46.94622198530599
+      ],
+      [
+       7.443610197461822,
+       46.94619778504095
+      ],
+      [
+       7.44342815860651,
+       46.946170886718164
+      ],
+      [
+       7.443465191812084,
+       46.9460704003197
+      ],
+      [
+       7.443306260346765,
+       46.94589183329334
+      ],
+      [
+       7.443009304416748,
+       46.9458411817128
+      ],
+      [
+       7.442748544862678,
+       46.94594949118313
+      ],
+      [
+       7.442723001385811,
+       46.94601506674561
+      ],
+      [
+       7.442710262620984,
+       46.94605059805328
+      ],
+      [
+       7.442083801713468,
+       46.94593249774756
+      ],
+      [
+       7.44195325667919,
+       46.9459855720842
+      ],
+      [
+       7.441964001135587,
+       46.94598850428981
+      ],
+      [
+       7.441948438282339,
+       46.94603328261604
+      ],
+      [
+       7.441953468981408,
+       46.94603414604927
+      ],
+      [
+       7.44191878396126,
+       46.94613097087334
+      ],
+      [
+       7.441922593111877,
+       46.94613159146298
+      ],
+      [
+       7.441817447105644,
+       46.946421796031764
+      ],
+      [
+       7.441815240413667,
+       46.946421427272476
+      ],
+      [
+       7.441802474647154,
+       46.94645612192549
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/5210/01",
+    "bbl_buch": "1000",
+    "bbl_we": "5210",
+    "bbl_obj": "01",
+    "bbl_bez": "Otto-von-Bismarck-Allee",
+    "bbl_port": "Diplomatische Vertretung",
+    "bbl_mietm": "Vollkostenmiete",
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_awrt": 18000000,
+    "bbl_bwrt": 5000000,
+    "bbl_hgart": false,
+    "adr_land": "DE",
+    "adr_reg": "Berlin",
+    "adr_ort": "Berlin",
+    "adr_plz": "10557",
+    "adr_str": "Otto-von-Bismarck-Allee",
+    "adr_hsnr": "4A",
+    "adr_conct": "Otto-von-Bismarck-Allee 4A 10557 Berlin",
+    "wgs84_lat": 52.521102,
+    "wgs84_lon": 13.371281,
+    "lv95_e": null,
+    "lv95_n": null,
+    "egm_elev": null,
+    "av_stat": null,
+    "av_egrid": null,
+    "bfs_gem": "Berlin",
+    "bfs_gemnr": null,
+    "av_nr": "41",
+    "larea_ggf": 1400,
+    "larea_gsf": 2100,
+    "larea_uf": 400,
+    "larea_buf": 300,
+    "larea_uuf": 100,
+    "larea_acu": "Geschätzt",
+    "larea_ver": 1500,
+    "larea_gre": 300,
+    "av_zbez": null,
+    "av_znut": null,
+    "fid": null,
+    "fid_src": null,
+    "objectid": 2,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "datenherkunft": "Demo-Geometrie (im Ausland keine amtliche Quelle verfügbar)",
+    "media": [
+     "MED-135"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       13.3688,
+       52.5194
+      ],
+      [
+       13.3702,
+       52.5194
+      ],
+      [
+       13.3702,
+       52.5206
+      ],
+      [
+       13.3688,
+       52.5206
+      ],
+      [
+       13.3688,
+       52.5194
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/3120/01",
+    "bbl_buch": "1000",
+    "bbl_we": "3120",
+    "bbl_obj": "01",
+    "bbl_bez": "Lindenmoos",
+    "bbl_port": "Lager / Logistik",
+    "bbl_mietm": "Kostenmiete",
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_awrt": 22000000,
+    "bbl_bwrt": 8500000,
+    "bbl_hgart": false,
+    "adr_land": "CH",
+    "adr_reg": "ZH",
+    "adr_ort": "Affoltern am Albis",
+    "adr_plz": "8910",
+    "adr_str": "Lindenmoosstrasse",
+    "adr_hsnr": "1",
+    "adr_conct": "Lagerstrasse 107 8004 Zürich",
+    "wgs84_lat": 47.268894,
+    "wgs84_lon": 8.445229,
+    "lv95_e": 2682571.5,
+    "lv95_n": 1247915.3,
+    "egm_elev": null,
+    "av_stat": "Gültig",
+    "av_egrid": "CH827785288941",
+    "bfs_gem": "Affoltern am Albis",
+    "bfs_gemnr": 2,
+    "av_nr": "4723",
+    "larea_ggf": 6500,
+    "larea_gsf": 43930,
+    "larea_uf": 6000,
+    "larea_buf": 4000,
+    "larea_uuf": 2000,
+    "larea_acu": "AV",
+    "larea_ver": 9500,
+    "larea_gre": 3000,
+    "av_zbez": "Industriezone",
+    "av_znut": "Industrie- und Gewerbezone",
+    "fid": null,
+    "fid_src": null,
+    "objectid": 3,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-136"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       8.444535444197678,
+       47.26915992840931
+      ],
+      [
+       8.444765090829927,
+       47.269391504682545
+      ],
+      [
+       8.445234318589753,
+       47.26986466181822
+      ],
+      [
+       8.445241083285461,
+       47.26987088145359
+      ],
+      [
+       8.44524859335547,
+       47.26987668079832
+      ],
+      [
+       8.445256821694864,
+       47.269882024107936
+      ],
+      [
+       8.44526568817514,
+       47.269886867105484
+      ],
+      [
+       8.445275139094718,
+       47.269891165283376
+      ],
+      [
+       8.44528509483341,
+       47.26989490134613
+      ],
+      [
+       8.445295475431967,
+       47.26989804001069
+      ],
+      [
+       8.445306227697076,
+       47.26990056375088
+      ],
+      [
+       8.445317258455868,
+       47.26990243739907
+      ],
+      [
+       8.445328475382903,
+       47.269903670756584
+      ],
+      [
+       8.445339811901755,
+       47.26990423741886
+      ],
+      [
+       8.445351175517432,
+       47.269904138193596
+      ],
+      [
+       8.445362487118,
+       47.26990338276681
+      ],
+      [
+       8.44537366725249,
+       47.26990196283699
+      ],
+      [
+       8.445384623595464,
+       47.2698998882057
+      ],
+      [
+       8.445395264160585,
+       47.269897186661986
+      ],
+      [
+       8.445405536432544,
+       47.2698938766551
+      ],
+      [
+       8.445415361299569,
+       47.26988996787124
+      ],
+      [
+       8.445424647114537,
+       47.26988550608717
+      ],
+      [
+       8.445433328318371,
+       47.26988051886133
+      ],
+      [
+       8.445972892473375,
+       47.269542468082065
+      ],
+      [
+       8.446495710501713,
+       47.26968373018306
+      ],
+      [
+       8.447163984103446,
+       47.26986354868936
+      ],
+      [
+       8.4471804616936,
+       47.26986762333044
+      ],
+      [
+       8.44719725722651,
+       47.26987103853299
+      ],
+      [
+       8.447214304464318,
+       47.26987378588113
+      ],
+      [
+       8.44723157663978,
+       47.269875847618316
+      ],
+      [
+       8.447248981087949,
+       47.26987721555993
+      ],
+      [
+       8.44726649138116,
+       47.269877889937
+      ],
+      [
+       8.447284015024279,
+       47.26987787155875
+      ],
+      [
+       8.447301512376114,
+       47.26987716077192
+      ],
+      [
+       8.447318917198682,
+       47.269875749160825
+      ],
+      [
+       8.447329777773586,
+       47.26987420590265
+      ],
+      [
+       8.447340415042621,
+       47.269872034928234
+      ],
+      [
+       8.44735073668082,
+       47.26986924604062
+      ],
+      [
+       8.447360677299828,
+       47.26986587579306
+      ],
+      [
+       8.447370144574798,
+       47.26986193398874
+      ],
+      [
+       8.447379086330974,
+       47.26985745706542
+      ],
+      [
+       8.447387437180213,
+       47.26985248157632
+      ],
+      [
+       8.447395131564567,
+       47.26984703508108
+      ],
+      [
+       8.447402117309519,
+       47.26984115401738
+      ],
+      [
+       8.447408329366862,
+       47.26983489292611
+      ],
+      [
+       8.447413742159064,
+       47.269828297007585
+      ],
+      [
+       8.447413591456476,
+       47.26978952870524
+      ],
+      [
+       8.447414339439524,
+       47.26975076153441
+      ],
+      [
+       8.447415999659427,
+       47.26971201336706
+      ],
+      [
+       8.447418572114206,
+       47.2696732842031
+      ],
+      [
+       8.447422043928155,
+       47.269634592145735
+      ],
+      [
+       8.447426415099333,
+       47.26959593719485
+      ],
+      [
+       8.447431991635098,
+       47.26955532871748
+      ],
+      [
+       8.447438560526702,
+       47.269514783518346
+      ],
+      [
+       8.4474461354949,
+       47.269474328463026
+      ],
+      [
+       8.447454703154186,
+       47.26943395467307
+      ],
+      [
+       8.447464250798582,
+       47.269393689245284
+      ],
+      [
+       8.44747479180915,
+       47.26935354105762
+      ],
+      [
+       8.44748663206712,
+       47.269305915422706
+      ],
+      [
+       8.447497691018066,
+       47.26925820666996
+      ],
+      [
+       8.447507955450689,
+       47.26921041491522
+      ],
+      [
+       8.44751741215377,
+       47.26916254027443
+      ],
+      [
+       8.447525813548255,
+       47.269116168082334
+      ],
+      [
+       8.447533460411295,
+       47.26906973052965
+      ],
+      [
+       8.447540353084582,
+       47.269023245604025
+      ],
+      [
+       8.44754650461347,
+       47.268976704196234
+      ],
+      [
+       8.447583202787241,
+       47.26864012169363
+      ],
+      [
+       8.447564333316388,
+       47.268636733694294
+      ],
+      [
+       8.447587305240654,
+       47.26842843596396
+      ],
+      [
+       8.447590946187479,
+       47.268391712371695
+      ],
+      [
+       8.447593780279657,
+       47.26835495086384
+      ],
+      [
+       8.447595807688737,
+       47.26831816043418
+      ],
+      [
+       8.44759702875616,
+       47.26828135907039
+      ],
+      [
+       8.447597443313706,
+       47.268244537778656
+      ],
+      [
+       8.447597051702813,
+       47.26820771454666
+      ],
+      [
+       8.447595854264915,
+       47.268170907361856
+      ],
+      [
+       8.447593837618737,
+       47.26813410734614
+      ],
+      [
+       8.447591642299543,
+       47.26810743757461
+      ],
+      [
+       8.447588575430883,
+       47.268080802416186
+      ],
+      [
+       8.447584650736735,
+       47.26805422873654
+      ],
+      [
+       8.447579855005337,
+       47.26802771665116
+      ],
+      [
+       8.447574201790761,
+       47.26800128403195
+      ],
+      [
+       8.44756767805112,
+       47.26797493998812
+      ],
+      [
+       8.447560310553456,
+       47.267948702275916
+      ],
+      [
+       8.447552073212698,
+       47.267922589114
+      ],
+      [
+       8.447543005669088,
+       47.26789660015525
+      ],
+      [
+       8.447533081837516,
+       47.2678707536184
+      ],
+      [
+       8.447523150349532,
+       47.26784729989118
+      ],
+      [
+       8.44751228431548,
+       47.26782404324206
+      ],
+      [
+       8.447500483906333,
+       47.26780099266458
+      ],
+      [
+       8.447487762845741,
+       47.267778175024134
+      ],
+      [
+       8.447474121304573,
+       47.267755599314334
+      ],
+      [
+       8.447459586049467,
+       47.267733283291086
+      ],
+      [
+       8.44744414437795,
+       47.26771125405107
+      ],
+      [
+       8.447427836099608,
+       47.267689520240936
+      ],
+      [
+       8.447410012726111,
+       47.26766733193134
+      ],
+      [
+       8.447391270915697,
+       47.26764549347584
+      ],
+      [
+       8.447371637604537,
+       47.26762403162409
+      ],
+      [
+       8.447351099750211,
+       47.267602955485074
+      ],
+      [
+       8.447329697331789,
+       47.26758228269909
+      ],
+      [
+       8.447307443902393,
+       47.267562031137565
+      ],
+      [
+       8.447284353015041,
+       47.26754221867211
+      ],
+      [
+       8.447260451435573,
+       47.26752286305855
+      ],
+      [
+       8.447235739334085,
+       47.26750397329018
+      ],
+      [
+       8.447225036547374,
+       47.26749705060851
+      ],
+      [
+       8.447213721417665,
+       47.267490592042044
+      ],
+      [
+       8.447201847305957,
+       47.26748462410962
+      ],
+      [
+       8.447189454190424,
+       47.26747916445187
+      ],
+      [
+       8.447176582219026,
+       47.26747423970326
+      ],
+      [
+       8.447163297795628,
+       47.26746986727325
+      ],
+      [
+       8.447149627685329,
+       47.26746606491812
+      ],
+      [
+       8.447135651334973,
+       47.26746284093805
+      ],
+      [
+       8.447121395509551,
+       47.26746021308934
+      ],
+      [
+       8.447106939655825,
+       47.26745818967217
+      ],
+      [
+       8.44709232358181,
+       47.26745677933357
+      ],
+      [
+       8.447077600308395,
+       47.267455990604915
+      ],
+      [
+       8.447062849112445,
+       47.267455822792726
+      ],
+      [
+       8.447048096419255,
+       47.26745627566586
+      ],
+      [
+       8.447033434718579,
+       47.26745734841535
+      ],
+      [
+       8.447018877053022,
+       47.26745903193176
+      ],
+      [
+       8.447004516082172,
+       47.267461334400025
+      ],
+      [
+       8.446990390934907,
+       47.26746422849216
+      ],
+      [
+       8.446976541249489,
+       47.26746771386147
+      ],
+      [
+       8.446963046133147,
+       47.267471780820905
+      ],
+      [
+       8.446949944714904,
+       47.26747640204259
+      ],
+      [
+       8.446937289676294,
+       47.267481568070586
+      ],
+      [
+       8.446925120146462,
+       47.26748725157688
+      ],
+      [
+       8.446913502019967,
+       47.26749344299016
+      ],
+      [
+       8.446790620543938,
+       47.26756165837085
+      ],
+      [
+       8.44673464090899,
+       47.26759244397664
+      ],
+      [
+       8.446678016634937,
+       47.267622686479235
+      ],
+      [
+       8.446620800743904,
+       47.26765239440926
+      ],
+      [
+       8.446562966641011,
+       47.26768155900318
+      ],
+      [
+       8.446504540413537,
+       47.26771016204141
+      ],
+      [
+       8.44644553544502,
+       47.2677382124014
+      ],
+      [
+       8.446385964779687,
+       47.26776570097297
+      ],
+      [
+       8.446325841461853,
+       47.26779261864595
+      ],
+      [
+       8.446265165492605,
+       47.2678189654195
+      ],
+      [
+       8.446203949916427,
+       47.26784473218348
+      ],
+      [
+       8.446142220990891,
+       47.267869909712346
+      ],
+      [
+       8.446079978717313,
+       47.26789449800524
+      ],
+      [
+       8.44597245426092,
+       47.26793624012668
+      ],
+      [
+       8.445864577957124,
+       47.26797755344667
+      ],
+      [
+       8.445756336425099,
+       47.268018429085835
+      ],
+      [
+       8.445647743049266,
+       47.268058875921525
+      ],
+      [
+       8.445538797492372,
+       47.26809887596522
+      ],
+      [
+       8.44522106700973,
+       47.268214766078735
+      ],
+      [
+       8.44508204906208,
+       47.268265615677464
+      ],
+      [
+       8.44494331544134,
+       47.268316840425086
+      ],
+      [
+       8.44480489257166,
+       47.268368440091926
+      ],
+      [
+       8.444666767068489,
+       47.26842040580061
+      ],
+      [
+       8.44465048288252,
+       47.26842656573473
+      ],
+      [
+       8.44463419886218,
+       47.268432734660315
+      ],
+      [
+       8.444751191547011,
+       47.26858134107096
+      ],
+      [
+       8.444646006910343,
+       47.268814103056634
+      ],
+      [
+       8.444535444197678,
+       47.26915992840931
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/5320/01",
+    "bbl_buch": "1000",
+    "bbl_we": "5320",
+    "bbl_obj": "01",
+    "bbl_bez": "Third Avenue Lot",
+    "bbl_port": "Diplomatische Vertretung",
+    "bbl_mietm": null,
+    "bbl_eigen": "Miete",
+    "bbl_awrt": null,
+    "bbl_bwrt": null,
+    "bbl_hgart": false,
+    "adr_land": "US",
+    "adr_reg": "NY",
+    "adr_ort": "New York",
+    "adr_plz": "10022",
+    "adr_str": "633 Third Avenue",
+    "adr_hsnr": "633",
+    "adr_conct": "633 Third Avenue 633 10022 New York",
+    "wgs84_lat": 40.7528,
+    "wgs84_lon": -73.9712,
+    "lv95_e": null,
+    "lv95_n": null,
+    "egm_elev": null,
+    "av_stat": null,
+    "av_egrid": null,
+    "bfs_gem": null,
+    "bfs_gemnr": null,
+    "av_nr": null,
+    "larea_ggf": null,
+    "larea_gsf": null,
+    "larea_uf": null,
+    "larea_buf": null,
+    "larea_uuf": null,
+    "larea_acu": null,
+    "larea_ver": null,
+    "larea_gre": null,
+    "av_zbez": null,
+    "av_znut": null,
+    "fid": null,
+    "fid_src": null,
+    "objectid": 4,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "media": [
+     "MED-137"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -73.972,
+       40.7522
+      ],
+      [
+       -73.9704,
+       40.7522
+      ],
+      [
+       -73.9704,
+       40.7534
+      ],
+      [
+       -73.972,
+       40.7534
+      ],
+      [
+       -73.972,
+       40.7522
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/4100/01",
+    "bbl_buch": "1000",
+    "bbl_we": "4100",
+    "bbl_obj": "01",
+    "bbl_bez": "Kasinostrasse",
+    "bbl_port": "Ausbildung",
+    "bbl_mietm": "Vollkostenmiete",
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_awrt": 15000000,
+    "bbl_bwrt": 4500000,
+    "bbl_hgart": false,
+    "adr_land": "CH",
+    "adr_reg": "BL",
+    "adr_ort": "Liestal",
+    "adr_plz": "4410",
+    "adr_str": "Kasinostrasse",
+    "adr_hsnr": "4",
+    "adr_conct": "Rue de Varembé 9 1211 Genf",
+    "wgs84_lat": 47.479862,
+    "wgs84_lon": 7.744051,
+    "lv95_e": 2500016.2,
+    "lv95_n": 1117821,
+    "egm_elev": null,
+    "av_stat": "Gültig",
+    "av_egrid": "CH207059761779",
+    "bfs_gem": "Liestal",
+    "bfs_gemnr": 2829,
+    "av_nr": "1787",
+    "larea_ggf": 2200,
+    "larea_gsf": 10326,
+    "larea_uf": 2300,
+    "larea_buf": 1500,
+    "larea_uuf": 800,
+    "larea_acu": "AV",
+    "larea_ver": 3000,
+    "larea_gre": 1500,
+    "av_zbez": "Zone mixte",
+    "av_znut": "Mischzone Wohnen/Arbeiten",
+    "fid": null,
+    "fid_src": null,
+    "objectid": 5,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-138"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.743831397844491,
+       47.47968664551906
+      ],
+      [
+       7.744565580782145,
+       47.480335519334524
+      ],
+      [
+       7.745175698456346,
+       47.480018380393716
+      ],
+      [
+       7.745271789439741,
+       47.48010347973912
+      ],
+      [
+       7.745497726984911,
+       47.47998613986278
+      ],
+      [
+       7.745577364959208,
+       47.47957766335221
+      ],
+      [
+       7.745702705916013,
+       47.47951246672151
+      ],
+      [
+       7.745723776837827,
+       47.47950151018416
+      ],
+      [
+       7.745641177662304,
+       47.47941625857084
+      ],
+      [
+       7.745479677634612,
+       47.479307318492076
+      ],
+      [
+       7.745129581935997,
+       47.47912975751757
+      ],
+      [
+       7.745061904240067,
+       47.479156729515225
+      ],
+      [
+       7.744685314137336,
+       47.47930679066506
+      ],
+      [
+       7.744682670191593,
+       47.47934078606848
+      ],
+      [
+       7.744389992029041,
+       47.47945876799403
+      ],
+      [
+       7.743831397844491,
+       47.47968664551906
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Löschvermerk",
+    "bbl_id": "1000/5410/01",
+    "bbl_buch": "1000",
+    "bbl_we": "5410",
+    "bbl_obj": "01",
+    "bbl_bez": "Minami-Azabu",
+    "bbl_port": "Diplomatische Vertretung",
+    "bbl_mietm": "Vollkostenmiete",
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_awrt": 60000000,
+    "bbl_bwrt": 15000000,
+    "bbl_hgart": false,
+    "adr_land": "JP",
+    "adr_reg": "Präfektur Tokio",
+    "adr_ort": "Tokio",
+    "adr_plz": "106-8589",
+    "adr_str": "Minami-Azabu, Minato-ku",
+    "adr_hsnr": "5-9-12",
+    "adr_conct": "Minami-Azabu 5-9-12 106-8589 Minato-ku",
+    "wgs84_lat": 35.653365,
+    "wgs84_lon": 139.723812,
+    "lv95_e": null,
+    "lv95_n": null,
+    "egm_elev": null,
+    "av_stat": null,
+    "av_egrid": null,
+    "bfs_gem": "Minato-ku",
+    "bfs_gemnr": null,
+    "av_nr": "9-12",
+    "larea_ggf": 1200,
+    "larea_gsf": 2100,
+    "larea_uf": 900,
+    "larea_buf": 600,
+    "larea_uuf": 300,
+    "larea_acu": "Geschätzt",
+    "larea_ver": 1500,
+    "larea_gre": 600,
+    "av_zbez": null,
+    "av_znut": null,
+    "fid": null,
+    "fid_src": null,
+    "objectid": 6,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "datenherkunft": "Demo-Geometrie (im Ausland keine amtliche Quelle verfügbar)",
+    "media": [
+     "MED-139"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       139.734,
+       35.6514
+      ],
+      [
+       139.736,
+       35.6514
+      ],
+      [
+       139.736,
+       35.6526
+      ],
+      [
+       139.734,
+       35.6526
+      ],
+      [
+       139.734,
+       35.6514
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/2800/01",
+    "bbl_buch": "1000",
+    "bbl_we": "2800",
+    "bbl_obj": "01",
+    "bbl_bez": "Effingerstrasse 29",
+    "bbl_port": "Wohnliegenschaft",
+    "bbl_mietm": "Marktmiete",
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_awrt": 3200000,
+    "bbl_bwrt": 800000,
+    "bbl_hgart": true,
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Bern",
+    "adr_plz": "3008",
+    "adr_str": "Effingerstrasse",
+    "adr_hsnr": "29",
+    "adr_conct": "Aeschenvorstadt 36 4051 Basel",
+    "wgs84_lat": 46.945808,
+    "wgs84_lon": 7.432851,
+    "lv95_e": 2611287.9,
+    "lv95_n": 1267665,
+    "egm_elev": null,
+    "av_stat": "Gültig",
+    "av_egrid": "CH650246873582",
+    "bfs_gem": "Bern",
+    "bfs_gemnr": 351,
+    "av_nr": "2746",
+    "larea_ggf": 380,
+    "larea_gsf": 615,
+    "larea_uf": 140,
+    "larea_buf": 100,
+    "larea_uuf": 40,
+    "larea_acu": "AV",
+    "larea_ver": 420,
+    "larea_gre": 100,
+    "av_zbez": "Wohnzone W3",
+    "av_znut": "Wohnzone",
+    "fid": null,
+    "fid_src": null,
+    "objectid": 7,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-140"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.432621924374419,
+       46.94560389939386
+      ],
+      [
+       7.432638272515943,
+       46.945843019256635
+      ],
+      [
+       7.432951014274607,
+       46.94583286425288
+      ],
+      [
+       7.432949506521301,
+       46.94581058310508
+      ],
+      [
+       7.432942124957246,
+       46.94570268549369
+      ],
+      [
+       7.432914822067703,
+       46.945667512752586
+      ],
+      [
+       7.432909853025889,
+       46.94559473246055
+      ],
+      [
+       7.432621924374419,
+       46.94560389939386
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/5510/01",
+    "bbl_buch": "1000",
+    "bbl_we": "5510",
+    "bbl_obj": "01",
+    "bbl_bez": "Setor de Embaixadas Sul",
+    "bbl_port": "Diplomatische Vertretung",
+    "bbl_mietm": "Vollkostenmiete",
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_awrt": 8000000,
+    "bbl_bwrt": 2000000,
+    "bbl_hgart": false,
+    "adr_land": "BR",
+    "adr_reg": "Distrito Federal",
+    "adr_ort": "Brasília",
+    "adr_plz": "70448-900",
+    "adr_str": "SES Avenida das Nações, Qd. 811",
+    "adr_hsnr": "Lote 41",
+    "adr_conct": "SES Av. das Nações Lote 44 70443-900 Brasília",
+    "wgs84_lat": -15.831611,
+    "wgs84_lon": -47.897273,
+    "lv95_e": null,
+    "lv95_n": null,
+    "egm_elev": null,
+    "av_stat": null,
+    "av_egrid": null,
+    "bfs_gem": "Brasília",
+    "bfs_gemnr": null,
+    "av_nr": "Lote 41",
+    "larea_ggf": null,
+    "larea_gsf": null,
+    "larea_uf": null,
+    "larea_buf": null,
+    "larea_uuf": null,
+    "larea_acu": null,
+    "larea_ver": null,
+    "larea_gre": null,
+    "av_zbez": null,
+    "av_znut": null,
+    "fid": null,
+    "fid_src": null,
+    "objectid": 8,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "datenherkunft": "Demo-Geometrie (im Ausland keine amtliche Quelle verfügbar)",
+    "media": [
+     "MED-141"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       -47.8835,
+       -15.795
+      ],
+      [
+       -47.8815,
+       -15.795
+      ],
+      [
+       -47.8815,
+       -15.7934
+      ],
+      [
+       -47.8835,
+       -15.7934
+      ],
+      [
+       -47.8835,
+       -15.795
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/1950/01",
+    "bbl_buch": "1000",
+    "bbl_we": "1950",
+    "bbl_obj": "01",
+    "bbl_bez": "Auenfeld",
+    "bbl_port": "Infrastruktur IT",
+    "bbl_mietm": "Kostenmiete",
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_awrt": 12000000,
+    "bbl_bwrt": 3000000,
+    "bbl_hgart": false,
+    "adr_land": "CH",
+    "adr_reg": "TG",
+    "adr_ort": "Frauenfeld",
+    "adr_plz": "8500",
+    "adr_str": "Auenfeld",
+    "adr_hsnr": "",
+    "adr_conct": "Via Industria 12 6900 Lugano",
+    "wgs84_lat": 47.570346,
+    "wgs84_lon": 8.884102,
+    "lv95_e": 2717168.7,
+    "lv95_n": 1095811.6,
+    "egm_elev": null,
+    "av_stat": "Gültig",
+    "av_egrid": "CH652680772937",
+    "bfs_gem": "Frauenfeld",
+    "bfs_gemnr": 4566,
+    "av_nr": "61736",
+    "larea_ggf": 1500,
+    "larea_gsf": 5001,
+    "larea_uf": 1700,
+    "larea_buf": 1200,
+    "larea_uuf": 500,
+    "larea_acu": "AV",
+    "larea_ver": 2200,
+    "larea_gre": 1000,
+    "av_zbez": "Arbeitszone",
+    "av_znut": "Arbeitszone",
+    "fid": null,
+    "fid_src": null,
+    "objectid": 9,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-142"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       8.881561550277976,
+       47.57120095951106
+      ],
+      [
+       8.881725585529427,
+       47.57136233288828
+      ],
+      [
+       8.881849982339943,
+       47.57128304781979
+      ],
+      [
+       8.882263638986563,
+       47.571111477021546
+      ],
+      [
+       8.882574251147949,
+       47.57098912367885
+      ],
+      [
+       8.883981835428733,
+       47.57045432195928
+      ],
+      [
+       8.884013333957933,
+       47.57044103909474
+      ],
+      [
+       8.884044558648775,
+       47.57042746279487
+      ],
+      [
+       8.884068690920426,
+       47.570419452996596
+      ],
+      [
+       8.884092367814903,
+       47.57041082820387
+      ],
+      [
+       8.884115536917465,
+       47.5704016160562
+      ],
+      [
+       8.88413818494045,
+       47.57039181671956
+      ],
+      [
+       8.88416027251162,
+       47.570381448675604
+      ],
+      [
+       8.884181760258834,
+       47.570370530406045
+      ],
+      [
+       8.88420263513949,
+       47.57035907106903
+      ],
+      [
+       8.884222857781618,
+       47.57034708914626
+      ],
+      [
+       8.8842424021005,
+       47.57033460295378
+      ],
+      [
+       8.88426124176664,
+       47.570321621815495
+      ],
+      [
+       8.884323035700453,
+       47.570282612591775
+      ],
+      [
+       8.884354839676648,
+       47.57026346995463
+      ],
+      [
+       8.88438604626271,
+       47.57024386700965
+      ],
+      [
+       8.884416629374039,
+       47.57022382207298
+      ],
+      [
+       8.884424965063285,
+       47.57021998509942
+      ],
+      [
+       8.884433835846194,
+       47.57021676211897
+      ],
+      [
+       8.88444314895806,
+       47.570214163283694
+      ],
+      [
+       8.884452812613826,
+       47.57021223471431
+      ],
+      [
+       8.884462720761837,
+       47.57021098672879
+      ],
+      [
+       8.884472767595353,
+       47.57021043863721
+      ],
+      [
+       8.88448283377565,
+       47.570210600923225
+      ],
+      [
+       8.884494363919817,
+       47.57021327259537
+      ],
+      [
+       8.884506194098352,
+       47.57021524789433
+      ],
+      [
+       8.88451821801391,
+       47.570216528145956
+      ],
+      [
+       8.884530382027789,
+       47.57021709602893
+      ],
+      [
+       8.88454256631055,
+       47.570216944042755
+      ],
+      [
+       8.884554678096828,
+       47.57021608233982
+      ],
+      [
+       8.884566637663479,
+       47.57021451191456
+      ],
+      [
+       8.884620083998186,
+       47.57022820152152
+      ],
+      [
+       8.884626898757585,
+       47.57023050023429
+      ],
+      [
+       8.884633661838658,
+       47.57023285356247
+      ],
+      [
+       8.884740500247984,
+       47.57011917082176
+      ],
+      [
+       8.884682936449959,
+       47.57008997096075
+      ],
+      [
+       8.884686802004563,
+       47.57008403088835
+      ],
+      [
+       8.884689770710883,
+       47.570077859134116
+      ],
+      [
+       8.884691844528673,
+       47.57007152763525
+      ],
+      [
+       8.88469297153459,
+       47.57006508201546
+      ],
+      [
+       8.884694191246506,
+       47.57006106394011
+      ],
+      [
+       8.88469461177441,
+       47.570056983873364
+      ],
+      [
+       8.88469422105608,
+       47.57005288694162
+      ],
+      [
+       8.88469303507305,
+       47.570048871892524
+      ],
+      [
+       8.884691081869228,
+       47.57004499234745
+      ],
+      [
+       8.884688376936234,
+       47.5700413290697
+      ],
+      [
+       8.884684974892046,
+       47.57003793534902
+      ],
+      [
+       8.884665001480984,
+       47.57002441288698
+      ],
+      [
+       8.88464455831827,
+       47.57001121111331
+      ],
+      [
+       8.884623658935881,
+       47.56999833885408
+      ],
+      [
+       8.884602317110636,
+       47.569985813927644
+      ],
+      [
+       8.884223402371905,
+       47.56991605994987
+      ],
+      [
+       8.88421144209696,
+       47.56992150727555
+      ],
+      [
+       8.884199972885229,
+       47.569927416225674
+      ],
+      [
+       8.884189034352856,
+       47.56993377731108
+      ],
+      [
+       8.884181801091817,
+       47.569937096789516
+      ],
+      [
+       8.884174115156377,
+       47.5699399001919
+      ],
+      [
+       8.884166042737053,
+       47.56994217769738
+      ],
+      [
+       8.884157675619168,
+       47.56994388318538
+      ],
+      [
+       8.884149093525231,
+       47.56994501566161
+      ],
+      [
+       8.884140402017364,
+       47.569945546824066
+      ],
+      [
+       8.884131654733704,
+       47.56994549399419
+      ],
+      [
+       8.88412297076831,
+       47.569944837696454
+      ],
+      [
+       8.884114430333403,
+       47.56994359492099
+      ],
+      [
+       8.884075823798195,
+       47.56993354298736
+      ],
+      [
+       8.884070099917222,
+       47.56994348208542
+      ],
+      [
+       8.884032928957966,
+       47.570008126265364
+      ],
+      [
+       8.884066050139344,
+       47.57001686135678
+      ],
+      [
+       8.88407253046753,
+       47.570019083315394
+      ],
+      [
+       8.884078521067174,
+       47.57002186908216
+      ],
+      [
+       8.884083901130653,
+       47.570025175187794
+      ],
+      [
+       8.88408857617955,
+       47.57002894883937
+      ],
+      [
+       8.884092450756038,
+       47.57003310127546
+      ],
+      [
+       8.884095483284975,
+       47.570037570048314
+      ],
+      [
+       8.884097592085116,
+       47.57004228421504
+      ],
+      [
+       8.884098747644115,
+       47.57004713620152
+      ],
+      [
+       8.884101734048441,
+       47.57005967423266
+      ],
+      [
+       8.884105594708172,
+       47.570072102414414
+      ],
+      [
+       8.884110315602301,
+       47.57008439393603
+      ],
+      [
+       8.88411219777165,
+       47.57009103589873
+      ],
+      [
+       8.884113204952573,
+       47.57009776073427
+      ],
+      [
+       8.884113322633466,
+       47.57010452364776
+      ],
+      [
+       8.88411254910016,
+       47.5701112616942
+      ],
+      [
+       8.88411089641521,
+       47.570117929747184
+      ],
+      [
+       8.884108376396394,
+       47.57012447368823
+      ],
+      [
+       8.88410500086148,
+       47.57013083939877
+      ],
+      [
+       8.884100808202481,
+       47.57013697242882
+      ],
+      [
+       8.884095823769199,
+       47.57014282748628
+      ],
+      [
+       8.884090086443416,
+       47.570148368105386
+      ],
+      [
+       8.883979811940288,
+       47.5702330476145
+      ],
+      [
+       8.883969983774238,
+       47.57022698147435
+      ],
+      [
+       8.883937670844597,
+       47.570251356554095
+      ],
+      [
+       8.883953858108807,
+       47.570261049422946
+      ],
+      [
+       8.883912230505866,
+       47.57028992129411
+      ],
+      [
+       8.883926892136959,
+       47.57030020888104
+      ],
+      [
+       8.883901001862766,
+       47.57031492399359
+      ],
+      [
+       8.883874689636125,
+       47.570329275558436
+      ],
+      [
+       8.883841624176348,
+       47.57034651781413
+      ],
+      [
+       8.883807932309404,
+       47.57036321016827
+      ],
+      [
+       8.88377366669483,
+       47.57037933397346
+      ],
+      [
+       8.88373881404603,
+       47.570394889394855
+      ],
+      [
+       8.883703413980333,
+       47.57040986694283
+      ],
+      [
+       8.883667479296086,
+       47.570424248467056
+      ],
+      [
+       8.883631036323646,
+       47.57043802464355
+      ],
+      [
+       8.883594111882957,
+       47.57045120413271
+      ],
+      [
+       8.882480083736544,
+       47.570874951457526
+      ],
+      [
+       8.882159099138562,
+       47.570992711259635
+      ],
+      [
+       8.881561550277976,
+       47.57120095951106
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "bbl_stat": "Abgang",
+    "bbl_id": "1000/4850/01",
+    "bbl_buch": "1000",
+    "bbl_we": "4850",
+    "bbl_obj": "01",
+    "bbl_bez": "Guisanplatz",
+    "bbl_port": "Verwaltungsgebäude",
+    "bbl_mietm": null,
+    "bbl_eigen": "Verkauft",
+    "bbl_awrt": 4500000,
+    "bbl_bwrt": 0,
+    "bbl_hgart": false,
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Bern",
+    "adr_plz": "3014",
+    "adr_str": "Guisanplatz",
+    "adr_hsnr": "1",
+    "adr_conct": "Bollwerk 15 3014 Bern",
+    "wgs84_lat": 46.959785,
+    "wgs84_lon": 7.463306,
+    "lv95_e": 2600012.7,
+    "lv95_n": 1199990.8,
+    "egm_elev": null,
+    "av_stat": "Gültig",
+    "av_egrid": "CH208835944617",
+    "bfs_gem": "Bern",
+    "bfs_gemnr": 351,
+    "av_nr": "586",
+    "larea_ggf": 750,
+    "larea_gsf": 41438,
+    "larea_uf": 350,
+    "larea_buf": 250,
+    "larea_uuf": 100,
+    "larea_acu": "AV",
+    "larea_ver": 900,
+    "larea_gre": 200,
+    "av_zbez": "Mischzone",
+    "av_znut": "Mischzone Wohnen/Arbeiten",
+    "fid": null,
+    "fid_src": null,
+    "objectid": 10,
+    "etl_ts": "2026-03-18T06:00:00Z",
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-143"
+    ]
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.461821877193574,
+       46.960120909665314
+      ],
+      [
+       7.461821458999144,
+       46.96012629784595
+      ],
+      [
+       7.461821894792635,
+       46.960131676865515
+      ],
+      [
+       7.461823197694006,
+       46.96013700174581
+      ],
+      [
+       7.461825328254953,
+       46.960142191537926
+      ],
+      [
+       7.461828273315003,
+       46.96014719227352
+      ],
+      [
+       7.461832006571567,
+       46.960151940991445
+      ],
+      [
+       7.462363077182061,
+       46.96084661351481
+      ],
+      [
+       7.462649408000194,
+       46.9612211055083
+      ],
+      [
+       7.462749175478952,
+       46.96132650859584
+      ],
+      [
+       7.463232547708871,
+       46.96195754586614
+      ],
+      [
+       7.463236689140145,
+       46.9619637066918
+      ],
+      [
+       7.463239937242085,
+       46.961970110571045
+      ],
+      [
+       7.463242252574266,
+       46.9619767035411
+      ],
+      [
+       7.463243621969835,
+       46.96198342263876
+      ],
+      [
+       7.463244019119128,
+       46.961990195908164
+      ],
+      [
+       7.463243457132837,
+       46.96199696038058
+      ],
+      [
+       7.463241922848005,
+       46.96200366208779
+      ],
+      [
+       7.463239442510157,
+       46.96201022906305
+      ],
+      [
+       7.463236029241894,
+       46.96201662532301
+      ],
+      [
+       7.463231709276925,
+       46.96202275191548
+      ],
+      [
+       7.463226535154349,
+       46.96202857284882
+      ],
+      [
+       7.463220559393521,
+       46.962034007155786
+      ],
+      [
+       7.463213834533698,
+       46.96203901884473
+      ],
+      [
+       7.463206413106279,
+       46.96204355393376
+      ],
+      [
+       7.463198387067086,
+       46.96204757642317
+      ],
+      [
+       7.463189822086491,
+       46.962051032328375
+      ],
+      [
+       7.462652317632841,
+       46.96224392601386
+      ],
+      [
+       7.462628303145491,
+       46.96225169366696
+      ],
+      [
+       7.462603867941636,
+       46.96225884073391
+      ],
+      [
+       7.46257906456968,
+       46.96226534921358
+      ],
+      [
+       7.462553919304241,
+       46.96227121010537
+      ],
+      [
+       7.462528458419988,
+       46.96227641440861
+      ],
+      [
+       7.462502721330503,
+       46.96228095312004
+      ],
+      [
+       7.462476747453262,
+       46.96228482623161
+      ],
+      [
+       7.462450589336964,
+       46.962288015742395
+      ],
+      [
+       7.462578997993103,
+       46.962385965248366
+      ],
+      [
+       7.462582949194046,
+       46.9623775539859
+      ],
+      [
+       7.462587767652483,
+       46.962369358432746
+      ],
+      [
+       7.462593427109593,
+       46.962361423569924
+      ],
+      [
+       7.462599888160025,
+       46.96235377639061
+      ],
+      [
+       7.462607137687811,
+       46.962346470868255
+      ],
+      [
+       7.462615123148844,
+       46.96233953399871
+      ],
+      [
+       7.462623818280709,
+       46.9623330017678
+      ],
+      [
+       7.462633157404427,
+       46.96232691016917
+      ],
+      [
+       7.462643114257738,
+       46.9623212951885
+      ],
+      [
+       7.462629113521046,
+       46.96230303784397
+      ],
+      [
+       7.465179233364521,
+       46.96138781494454
+      ],
+      [
+       7.465221519433912,
+       46.961372693623815
+      ],
+      [
+       7.463831668877541,
+       46.95955644235384
+      ],
+      [
+       7.463823913070156,
+       46.959546981089005
+      ],
+      [
+       7.463815408526798,
+       46.9595378258175
+      ],
+      [
+       7.46380615526395,
+       46.95952901251972
+      ],
+      [
+       7.46379619271259,
+       46.959520577167815
+      ],
+      [
+       7.46378556029144,
+       46.95951252874849
+      ],
+      [
+       7.463774284293145,
+       46.95950490323651
+      ],
+      [
+       7.463762404144409,
+       46.959497727608934
+      ],
+      [
+       7.463749919857324,
+       46.95949102885098
+      ],
+      [
+       7.463736923407111,
+       46.95948482493349
+      ],
+      [
+       7.463723427935809,
+       46.95947912484854
+      ],
+      [
+       7.463709486008012,
+       46.959473955570495
+      ],
+      [
+       7.463695137042004,
+       46.959469326085895
+      ],
+      [
+       7.463680433602241,
+       46.95946526336913
+      ],
+      [
+       7.46366542824103,
+       46.95946176740895
+      ],
+      [
+       7.463650173506592,
+       46.95945882919906
+      ],
+      [
+       7.4636347088251,
+       46.95945647571659
+      ],
+      [
+       7.463619073618628,
+       46.959454724943406
+      ],
+      [
+       7.463603320439344,
+       46.959453576868476
+      ],
+      [
+       7.463587488705247,
+       46.95945304047863
+      ],
+      [
+       7.463571657240792,
+       46.95945310676224
+      ],
+      [
+       7.463555839187633,
+       46.959453784711556
+      ],
+      [
+       7.463540126496343,
+       46.95945503832683
+      ],
+      [
+       7.463524545450793,
+       46.95945688559296
+      ],
+      [
+       7.463509135464989,
+       46.959459326501666
+      ],
+      [
+       7.463493949087118,
+       46.95946235204693
+      ],
+      [
+       7.463479038869401,
+       46.959465962217834
+      ],
+      [
+       7.46346444421393,
+       46.95947013002084
+      ],
+      [
+       7.463450217673008,
+       46.959474855445144
+      ],
+      [
+       7.462630705468832,
+       46.95976822949852
+      ],
+      [
+       7.46211886375979,
+       46.959951463790766
+      ],
+      [
+       7.462092932497924,
+       46.959960347111675
+      ],
+      [
+       7.462067435028562,
+       46.95996979703649
+      ],
+      [
+       7.462042384478128,
+       46.95997978657741
+      ],
+      [
+       7.462017807122727,
+       46.959990315729634
+      ],
+      [
+       7.461993729230978,
+       46.960001366497934
+      ],
+      [
+       7.461970163940804,
+       46.96001293888013
+      ],
+      [
+       7.461947190047956,
+       46.96002495190463
+      ],
+      [
+       7.461924768159806,
+       46.96003745955052
+      ],
+      [
+       7.461902937683583,
+       46.96005044382008
+      ],
+      [
+       7.461881711749974,
+       46.960063886720775
+      ],
+      [
+       7.461861116635535,
+       46.9600777882478
+      ],
+      [
+       7.461841178605684,
+       46.96009212141097
+      ],
+      [
+       7.461836108912792,
+       46.96009622418812
+      ],
+      [
+       7.461831722557511,
+       46.960100677643446
+      ],
+      [
+       7.46182807207087,
+       46.96010542779581
+      ],
+      [
+       7.461825183711024,
+       46.96011042966451
+      ],
+      [
+       7.461823123136266,
+       46.96011560228032
+      ],
+      [
+       7.461821877193574,
+       46.960120909665314
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       8.538466561573701,
+       47.379289086163546
+      ],
+      [
+       8.538680120237357,
+       47.37965488144051
+      ],
+      [
+       8.538732378200253,
+       47.37963822856272
+      ],
+      [
+       8.538803746416338,
+       47.37979160842284
+      ],
+      [
+       8.539342724126184,
+       47.37964577247959
+      ],
+      [
+       8.539430207677224,
+       47.379794500856
+      ],
+      [
+       8.539435510146928,
+       47.37980244699643
+      ],
+      [
+       8.539441746382396,
+       47.37981007840455
+      ],
+      [
+       8.539448888602521,
+       47.37981733237899
+      ],
+      [
+       8.53945686967592,
+       47.37982416458366
+      ],
+      [
+       8.539465649138002,
+       47.37983053942353
+      ],
+      [
+       8.539475159671431,
+       47.379836403569115
+      ],
+      [
+       8.539485307477634,
+       47.379841703943306
+      ],
+      [
+       8.539496052463253,
+       47.379846422937845
+      ],
+      [
+       8.539507327867936,
+       47.37985053420321
+      ],
+      [
+       8.539519053690713,
+       47.379854011516414
+      ],
+      [
+       8.53953116317106,
+       47.37985682852805
+      ],
+      [
+       8.53954356343884,
+       47.37985897712797
+      ],
+      [
+       8.539555193390058,
+       47.37986037747703
+      ],
+      [
+       8.539566943672263,
+       47.379861191995
+      ],
+      [
+       8.539578735213185,
+       47.37986143942556
+      ],
+      [
+       8.539590540973979,
+       47.37986109304112
+      ],
+      [
+       8.539602268641795,
+       47.37986017171164
+      ],
+      [
+       8.539613852013396,
+       47.37985867606811
+      ],
+      [
+       8.539625251738277,
+       47.37985662447579
+      ],
+      [
+       8.539636401427467,
+       47.37985400857242
+      ],
+      [
+       8.539647248675712,
+       47.37985085584289
+      ],
+      [
+       8.539657727651495,
+       47.3798471849049
+      ],
+      [
+       8.539775458681477,
+       47.379799072229524
+      ],
+      [
+       8.540330428456755,
+       47.37964859964117
+      ],
+      [
+       8.54079353258819,
+       47.379792296015445
+      ],
+      [
+       8.540825135449372,
+       47.37979380251915
+      ],
+      [
+       8.540884168784569,
+       47.37978204933004
+      ],
+      [
+       8.540977147803812,
+       47.37973588965387
+      ],
+      [
+       8.541018136447114,
+       47.379680880099045
+      ],
+      [
+       8.541124966434136,
+       47.3794253254307
+      ],
+      [
+       8.541038218057167,
+       47.379325785633085
+      ],
+      [
+       8.541058351205518,
+       47.37929203267295
+      ],
+      [
+       8.541077805160374,
+       47.37925809729265
+      ],
+      [
+       8.541096579922842,
+       47.379223979492565
+      ],
+      [
+       8.541114675866101,
+       47.37918969725975
+      ],
+      [
+       8.541133146551022,
+       47.37915304572773
+      ],
+      [
+       8.541150832307084,
+       47.379116221780734
+      ],
+      [
+       8.54116774637611,
+       47.37907922529283
+      ],
+      [
+       8.54118386246486,
+       47.37904206551042
+      ],
+      [
+       8.541281179007218,
+       47.37881005173456
+      ],
+      [
+       8.541278231005602,
+       47.37878789787847
+      ],
+      [
+       8.541251869544986,
+       47.378768944890815
+      ],
+      [
+       8.541254456881525,
+       47.37875958324824
+      ],
+      [
+       8.541188274022746,
+       47.378695818786596
+      ],
+      [
+       8.541128733159823,
+       47.37867913438413
+      ],
+      [
+       8.541111247291244,
+       47.378674398917305
+      ],
+      [
+       8.54109342945654,
+       47.378670260294676
+      ],
+      [
+       8.5410753328023,
+       47.37866672700402
+      ],
+      [
+       8.54105699742083,
+       47.378663816652846
+      ],
+      [
+       8.541038515993414,
+       47.37866152835661
+      ],
+      [
+       8.541019875465174,
+       47.37865987123495
+      ],
+      [
+       8.541001155277089,
+       47.37865884452962
+      ],
+      [
+       8.540982368854765,
+       47.37865845710764
+      ],
+      [
+       8.540811350590886,
+       47.37865719249392
+      ],
+      [
+       8.540772563514887,
+       47.37865725672192
+      ],
+      [
+       8.540733776402211,
+       47.37865795959158
+      ],
+      [
+       8.540695042212555,
+       47.37865930059763
+      ],
+      [
+       8.540656360944519,
+       47.37866127974012
+      ],
+      [
+       8.540617759077268,
+       47.37866389676649
+      ],
+      [
+       8.540579263089978,
+       47.37866715142422
+      ],
+      [
+       8.540540899461835,
+       47.37867104346081
+      ],
+      [
+       8.540502681245831,
+       47.3786755637568
+      ],
+      [
+       8.540464634921216,
+       47.37868071205973
+      ],
+      [
+       8.54042678715316,
+       47.37868649711048
+      ],
+      [
+       8.540389150808833,
+       47.37869290079639
+      ],
+      [
+       8.540351752367561,
+       47.378699922865025
+      ],
+      [
+       8.540314618308708,
+       47.37870756306407
+      ],
+      [
+       8.540277774925777,
+       47.37871581214796
+      ],
+      [
+       8.54024123545793,
+       47.37872466999061
+      ],
+      [
+       8.54020502619876,
+       47.37873412734651
+      ],
+      [
+       8.539022213217399,
+       47.37905498563499
+      ],
+      [
+       8.538982251503338,
+       47.37906808539209
+      ],
+      [
+       8.538942698678019,
+       47.37908174793353
+      ],
+      [
+       8.538903567795238,
+       47.379095964140326
+      ],
+      [
+       8.53886487172318,
+       47.37911071590008
+      ],
+      [
+       8.538826637127467,
+       47.3791260119543
+      ],
+      [
+       8.538788863636059,
+       47.37914183431679
+      ],
+      [
+       8.538751590969436,
+       47.379158182609665
+      ],
+      [
+       8.538714818941324,
+       47.37917504784011
+      ],
+      [
+       8.538466561573701,
+       47.379289086163546
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/6100/01",
+    "bbl_we": "6100",
+    "bbl_bez": "Museumstrasse 2",
+    "av_nr": "AA8090",
+    "av_egrid": "CH385599917023",
+    "av_egid": "2372933",
+    "adr_land": "CH",
+    "adr_reg": "ZH",
+    "adr_ort": "Zürich",
+    "adr_plz": "8001",
+    "adr_str": "Museumstrasse",
+    "adr_hsnr": "2",
+    "bfs_gem": "Zürich",
+    "bfs_gemnr": 261,
+    "wgs84_lat": 47.379024505615234,
+    "wgs84_lon": 8.540567398071289,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Kultur",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": 18938,
+    "objectid": 13,
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-144"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.963719,
+       46.307345
+      ],
+      [
+       7.964017,
+       46.307435
+      ],
+      [
+       7.964173,
+       46.307185
+      ],
+      [
+       7.963875,
+       46.307096
+      ],
+      [
+       7.963859,
+       46.307122
+      ],
+      [
+       7.963719,
+       46.307345
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/6210/01",
+    "bbl_we": "6210",
+    "bbl_bez": "Bielstrasse 1",
+    "av_nr": "6368",
+    "av_egrid": "CH713038525960",
+    "av_egid": "191208950",
+    "adr_land": "CH",
+    "adr_reg": "VS",
+    "adr_ort": "Glis",
+    "adr_plz": "3902",
+    "adr_str": "Bielstrasse",
+    "adr_hsnr": "1",
+    "bfs_gem": "Glis",
+    "bfs_gemnr": 6002,
+    "wgs84_lat": 46.3072624206543,
+    "wgs84_lon": 7.964066505432129,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Zoll",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": null,
+    "objectid": 15,
+    "datenherkunft": "Geometrie © Data: swisstopo; amtliche Fläche in diesem Kanton nicht über geodienste.ch abrufbar",
+    "media": [
+     "MED-145"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       9.437090335202337,
+       47.51472468726407
+      ],
+      [
+       9.437213029522658,
+       47.51477206019239
+      ],
+      [
+       9.437378571625317,
+       47.51481714576202
+      ],
+      [
+       9.437479746162845,
+       47.514823738847596
+      ],
+      [
+       9.437642752397304,
+       47.51483141437248
+      ],
+      [
+       9.43765534391239,
+       47.51483323920274
+      ],
+      [
+       9.437971165669964,
+       47.514588354647316
+      ],
+      [
+       9.43781289796235,
+       47.514474364155305
+      ],
+      [
+       9.437678562183283,
+       47.514377701776745
+      ],
+      [
+       9.437653330605402,
+       47.514359343277114
+      ],
+      [
+       9.437600186580735,
+       47.51434455264757
+      ],
+      [
+       9.437537538315963,
+       47.51432457304148
+      ],
+      [
+       9.437519461481454,
+       47.51432166434203
+      ],
+      [
+       9.437431238487909,
+       47.514320443658306
+      ],
+      [
+       9.437404612855246,
+       47.51434233363729
+      ],
+      [
+       9.437227144523945,
+       47.51454960586183
+      ],
+      [
+       9.437090335202337,
+       47.51472468726407
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/6320/01",
+    "bbl_we": "6320",
+    "bbl_bez": "Hafenstrasse 3",
+    "av_nr": "228",
+    "av_egrid": "CH651426772080",
+    "av_egid": "640002",
+    "adr_land": "CH",
+    "adr_reg": "TG",
+    "adr_ort": "Arbon",
+    "adr_plz": "9320",
+    "adr_str": "Hafenstrasse",
+    "adr_hsnr": "3",
+    "bfs_gem": "Arbon",
+    "bfs_gemnr": 4401,
+    "wgs84_lat": 47.51472854614258,
+    "wgs84_lon": 9.4371337890625,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Zoll",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": 2317,
+    "objectid": 17,
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-146"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.448819713164235,
+       46.94150627947602
+      ],
+      [
+       7.449435569928391,
+       46.94158217448843
+      ],
+      [
+       7.450501680064609,
+       46.94171374930714
+      ],
+      [
+       7.450649817951457,
+       46.94114716424971
+      ],
+      [
+       7.448968538022371,
+       46.94093958857804
+      ],
+      [
+       7.448819713164235,
+       46.94150627947602
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/6430/01",
+    "bbl_we": "6430",
+    "bbl_bez": "Hallwylstrasse 15",
+    "av_nr": "947",
+    "av_egrid": "CH386746357647",
+    "av_egid": "1236008",
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Bern",
+    "adr_plz": "3005",
+    "adr_str": "Hallwylstrasse",
+    "adr_hsnr": "15",
+    "bfs_gem": "Bern",
+    "bfs_gemnr": 351,
+    "wgs84_lat": 46.94121551513672,
+    "wgs84_lon": 7.449760913848877,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Lager / Logistik",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": 8326,
+    "objectid": 19,
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-147"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.461957339222604,
+       46.99780279188167
+      ],
+      [
+       7.46197907958958,
+       46.998261501500735
+      ],
+      [
+       7.462027952805684,
+       46.998677901838654
+      ],
+      [
+       7.46207675520236,
+       46.99876683575836
+      ],
+      [
+       7.462144317247171,
+       46.998974977938666
+      ],
+      [
+       7.462167673357864,
+       46.999050568102916
+      ],
+      [
+       7.462188654965866,
+       46.999107296019325
+      ],
+      [
+       7.462203349679702,
+       46.99912752308445
+      ],
+      [
+       7.462214805002558,
+       46.999135850279096
+      ],
+      [
+       7.4622601728687,
+       46.999247245538456
+      ],
+      [
+       7.462272595517007,
+       46.99930437091471
+      ],
+      [
+       7.46227695650086,
+       46.99935676646696
+      ],
+      [
+       7.462358231373851,
+       46.9995291143091
+      ],
+      [
+       7.462416185971252,
+       46.99964862056978
+      ],
+      [
+       7.462435730740935,
+       46.999695490099796
+      ],
+      [
+       7.46249661463166,
+       46.999561559008825
+      ],
+      [
+       7.462726656052386,
+       46.9990530741552
+      ],
+      [
+       7.462745387056539,
+       46.999011719927
+      ],
+      [
+       7.463011650502012,
+       46.99842376445753
+      ],
+      [
+       7.463034742049699,
+       46.998373135343044
+      ],
+      [
+       7.463319256738498,
+       46.99768615733801
+      ],
+      [
+       7.461957339222604,
+       46.99780279188167
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/6540/01",
+    "bbl_we": "6540",
+    "bbl_bez": "Eichenweg 5",
+    "av_nr": "226",
+    "av_egrid": "CH708235374683",
+    "av_egid": "191845156",
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Zollikofen",
+    "adr_plz": "3052",
+    "adr_str": "Eichenweg",
+    "adr_hsnr": "5",
+    "bfs_gem": "Zollikofen",
+    "bfs_gemnr": 361,
+    "wgs84_lat": 46.99821472167969,
+    "wgs84_lon": 7.462268829345703,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Verwaltungsgebäude",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": 12575,
+    "objectid": 21,
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-148"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.420199398803037,
+       46.930155206134806
+      ],
+      [
+       7.420198253769688,
+       46.93016251004667
+      ],
+      [
+       7.42019785719357,
+       46.93016984107087
+      ],
+      [
+       7.420198222212494,
+       46.93017718121929
+      ],
+      [
+       7.420199361974014,
+       46.93018448551811
+      ],
+      [
+       7.420201237101636,
+       46.93019170898459
+      ],
+      [
+       7.420206234915059,
+       46.930205850291706
+      ],
+      [
+       7.420211928717208,
+       46.93021987477871
+      ],
+      [
+       7.420218318521554,
+       46.9302337464647
+      ],
+      [
+       7.420225364932282,
+       46.93024747433812
+      ],
+      [
+       7.420233094221608,
+       46.93026103141759
+      ],
+      [
+       7.420367350028459,
+       46.93046957185773
+      ],
+      [
+       7.420383439903679,
+       46.93049426639207
+      ],
+      [
+       7.420400094491632,
+       46.93051879010983
+      ],
+      [
+       7.420417300665036,
+       46.930543134013405
+      ],
+      [
+       7.420435045293367,
+       46.930567298100264
+      ],
+      [
+       7.420472162907286,
+       46.93061548261408
+      ],
+      [
+       7.420504832376167,
+       46.93065454523782
+      ],
+      [
+       7.420538526267674,
+       46.93069319424312
+      ],
+      [
+       7.420642366785805,
+       46.930806281179834
+      ],
+      [
+       7.42070197285205,
+       46.93087039084595
+      ],
+      [
+       7.420770137056213,
+       46.93094461249558
+      ],
+      [
+       7.420785778641669,
+       46.93093794962014
+      ],
+      [
+       7.420839333380848,
+       46.93099677803521
+      ],
+      [
+       7.420824059367637,
+       46.93100370183902
+      ],
+      [
+       7.420854104496462,
+       46.93103871608901
+      ],
+      [
+       7.420888243679438,
+       46.93108214151425
+      ],
+      [
+       7.420921739308762,
+       46.93112607955062
+      ],
+      [
+       7.42095298934016,
+       46.93117061988996
+      ],
+      [
+       7.420984671761327,
+       46.93121802976026
+      ],
+      [
+       7.421023757167958,
+       46.93127443602454
+      ],
+      [
+       7.421027668982695,
+       46.931278214643825
+      ],
+      [
+       7.421211378426402,
+       46.93119301473588
+      ],
+      [
+       7.421363527963187,
+       46.9311224537023
+      ],
+      [
+       7.421625641873356,
+       46.93100087998603
+      ],
+      [
+       7.421814287502205,
+       46.93091339509944
+      ],
+      [
+       7.422015093826466,
+       46.930820253785186
+      ],
+      [
+       7.422537055670996,
+       46.93057817284589
+      ],
+      [
+       7.422629551587162,
+       46.930535279463726
+      ],
+      [
+       7.42288676647743,
+       46.93077906929574
+      ],
+      [
+       7.422922275813147,
+       46.93081271653004
+      ],
+      [
+       7.423121858464328,
+       46.930720157782815
+      ],
+      [
+       7.423462921655181,
+       46.930561971705934
+      ],
+      [
+       7.42374887735989,
+       46.93042935036213
+      ],
+      [
+       7.424144477233522,
+       46.930246091150494
+      ],
+      [
+       7.424397321962019,
+       46.93012896244541
+      ],
+      [
+       7.424649614017086,
+       46.93001208497319
+      ],
+      [
+       7.42492173519762,
+       46.929886025380746
+      ],
+      [
+       7.424958427637032,
+       46.92986911909079
+      ],
+      [
+       7.425030591117121,
+       46.92983587301803
+      ],
+      [
+       7.425165287872985,
+       46.929690104783596
+      ],
+      [
+       7.424788049908091,
+       46.92954954254424
+      ],
+      [
+       7.425034331349329,
+       46.92926185348251
+      ],
+      [
+       7.424366123834551,
+       46.92901269834131
+      ],
+      [
+       7.424416156450117,
+       46.92895004437861
+      ],
+      [
+       7.424336526931876,
+       46.92892107823041
+      ],
+      [
+       7.424167356610156,
+       46.9288557413782
+      ],
+      [
+       7.424152703431061,
+       46.92885342763561
+      ],
+      [
+       7.424138286778823,
+       46.92885051124421
+      ],
+      [
+       7.424124146040753,
+       46.92884701019992
+      ],
+      [
+       7.42411033373481,
+       46.92884294250024
+      ],
+      [
+       7.424096902381467,
+       46.92883831714771
+      ],
+      [
+       7.423713964046174,
+       46.92868867441209
+      ],
+      [
+       7.42369960063362,
+       46.92868356314242
+      ],
+      [
+       7.423684843136832,
+       46.92867901851418
+      ],
+      [
+       7.423669730947377,
+       46.928675040532724
+      ],
+      [
+       7.423654316576741,
+       46.92867166518604
+      ],
+      [
+       7.42363863941903,
+       46.92866888348424
+      ],
+      [
+       7.42362277825226,
+       46.928666713428726
+      ],
+      [
+       7.423606746206547,
+       46.928665155021186
+      ],
+      [
+       7.423590398892557,
+       46.928664046327604
+      ],
+      [
+       7.4235739857357,
+       46.928663576282204
+      ],
+      [
+       7.423557559260618,
+       46.92866373589699
+      ],
+      [
+       7.423541185114553,
+       46.92866454317162
+      ],
+      [
+       7.423524889563564,
+       46.92866598011938
+      ],
+      [
+       7.423508121098756,
+       46.92866811862447
+      ],
+      [
+       7.423491549406232,
+       46.92867087782404
+      ],
+      [
+       7.423475213877384,
+       46.92867425772369
+      ],
+      [
+       7.423459193298214,
+       46.92867824933936
+      ],
+      [
+       7.423443500804309,
+       46.92868283468274
+      ],
+      [
+       7.423428202051143,
+       46.9286880047679
+      ],
+      [
+       7.423413349566325,
+       46.928693741612044
+      ],
+      [
+       7.423398969616248,
+       46.92870002722875
+      ],
+      [
+       7.423323484215653,
+       46.92873453113599
+      ],
+      [
+       7.42270323364361,
+       46.92902009310031
+      ],
+      [
+       7.42269122276256,
+       46.9290082266517
+      ],
+      [
+       7.421704692010613,
+       46.92946166003415
+      ],
+      [
+       7.420345321817986,
+       46.930086948160294
+      ],
+      [
+       7.420202892642636,
+       46.93015245419401
+      ],
+      [
+       7.420199398803037,
+       46.930155206134806
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/6650/01",
+    "bbl_we": "6650",
+    "bbl_bez": "Schwarzenburgstrasse 157",
+    "av_nr": "16",
+    "av_egrid": "CH208035154682",
+    "av_egid": "191458950",
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Liebefeld",
+    "adr_plz": "3097",
+    "adr_str": "Schwarzenburgstrasse",
+    "adr_hsnr": "157",
+    "bfs_gem": "Liebefeld",
+    "bfs_gemnr": 355,
+    "wgs84_lat": 46.929893493652344,
+    "wgs84_lon": 7.42135763168335,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Verwaltungsgebäude",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": 55432,
+    "objectid": 23,
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-149"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.20889,
+       47.138388
+      ],
+      [
+       7.209821,
+       47.138927
+      ],
+      [
+       7.209614,
+       47.139092
+      ],
+      [
+       7.21047,
+       47.139119
+      ],
+      [
+       7.210593,
+       47.138994
+      ],
+      [
+       7.210562,
+       47.138972
+      ],
+      [
+       7.210282,
+       47.138734
+      ],
+      [
+       7.209952,
+       47.138454
+      ],
+      [
+       7.209884,
+       47.138398
+      ],
+      [
+       7.209817,
+       47.138345
+      ],
+      [
+       7.209536,
+       47.13813
+      ],
+      [
+       7.209473,
+       47.13808
+      ],
+      [
+       7.209413,
+       47.138031
+      ],
+      [
+       7.209374,
+       47.137998
+      ],
+      [
+       7.20889,
+       47.138388
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/6760/01",
+    "bbl_we": "6760",
+    "bbl_bez": "Alpenstrasse 18",
+    "av_nr": "1002",
+    "av_egrid": "CH794612143531",
+    "av_egid": "191964452",
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Magglingen/Macolin",
+    "adr_plz": "2532",
+    "adr_str": "Alpenstrasse",
+    "adr_hsnr": "18",
+    "bfs_gem": "Magglingen/Macolin",
+    "bfs_gemnr": 372,
+    "wgs84_lat": 47.13838195800781,
+    "wgs84_lon": 7.209400653839111,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Ausbildung",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": null,
+    "objectid": 25,
+    "datenherkunft": "Geometrie © Data: swisstopo; amtliche Fläche in diesem Kanton nicht über geodienste.ch abrufbar",
+    "media": [
+     "MED-150"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.450437610432447,
+       46.9278606123883
+      ],
+      [
+       7.450525169523887,
+       46.9279511318179
+      ],
+      [
+       7.450590993350621,
+       46.9280191742489
+      ],
+      [
+       7.450656134417383,
+       46.928086533071614
+      ],
+      [
+       7.450743759909202,
+       46.9281771062954
+      ],
+      [
+       7.451213571045392,
+       46.928667685072554
+      ],
+      [
+       7.451233448810037,
+       46.92865836401703
+      ],
+      [
+       7.451244704321486,
+       46.92867013759574
+      ],
+      [
+       7.451247606745495,
+       46.92867268294334
+      ],
+      [
+       7.451251034323069,
+       46.92867489541468
+      ],
+      [
+       7.451254921391243,
+       46.92867673004044
+      ],
+      [
+       7.45125929421125,
+       46.928678186817805
+      ],
+      [
+       7.451263942669322,
+       46.928679157825755
+      ],
+      [
+       7.451268761718258,
+       46.92867963407969
+      ],
+      [
+       7.451340179932358,
+       46.92868263116411
+      ],
+      [
+       7.451351288484833,
+       46.92868276495045
+      ],
+      [
+       7.451362396924914,
+       46.92868238600901
+      ],
+      [
+       7.451373439599081,
+       46.92868149434648
+      ],
+      [
+       7.451384363984453,
+       46.92868008996836
+      ],
+      [
+       7.451395117560133,
+       46.92867818187526
+      ],
+      [
+       7.451407525379865,
+       46.928675293132756
+      ],
+      [
+       7.451419552265006,
+       46.92867174777824
+      ],
+      [
+       7.451431132563997,
+       46.92866755481382
+      ],
+      [
+       7.451442187498651,
+       46.928662741233474
+      ],
+      [
+       7.452335824827474,
+       46.9282437203808
+      ],
+      [
+       7.452330387520241,
+       46.928238386828774
+      ],
+      [
+       7.452097081163932,
+       46.927999922650386
+      ],
+      [
+       7.451461107505613,
+       46.92735090522411
+      ],
+      [
+       7.451398448717883,
+       46.92728704573106
+      ],
+      [
+       7.451303815029566,
+       46.92733067322743
+      ],
+      [
+       7.451239443249154,
+       46.9273589517417
+      ],
+      [
+       7.451131733549584,
+       46.92741212434217
+      ],
+      [
+       7.451028423308364,
+       46.92747001888518
+      ],
+      [
+       7.450882157463096,
+       46.92756192846478
+      ],
+      [
+       7.450437610432447,
+       46.9278606123883
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/6870/01",
+    "bbl_we": "6870",
+    "bbl_bez": "Seftigenstrasse 264",
+    "av_nr": "212",
+    "av_egrid": "CH669746359158",
+    "av_egid": "1272199",
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Wabern",
+    "adr_plz": "3084",
+    "adr_str": "Seftigenstrasse",
+    "adr_hsnr": "264",
+    "bfs_gem": "Wabern",
+    "bfs_gemnr": 355,
+    "wgs84_lat": 46.92793655395508,
+    "wgs84_lon": 7.451352119445801,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Verwaltungsgebäude",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": 11976,
+    "objectid": 27,
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-151"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.430534912938492,
+       46.94420076604592
+      ],
+      [
+       7.43061593233848,
+       46.94447826479576
+      ],
+      [
+       7.431007362258281,
+       46.944424755463785
+      ],
+      [
+       7.430949287144187,
+       46.944226515273485
+      ],
+      [
+       7.430940124343296,
+       46.94419520235224
+      ],
+      [
+       7.430849232002882,
+       46.94420778870931
+      ],
+      [
+       7.430695424899533,
+       46.94422487671342
+      ],
+      [
+       7.430534912938492,
+       46.94420076604592
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/6980/01",
+    "bbl_we": "6980",
+    "bbl_bez": "Schwarztorstrasse 59",
+    "av_nr": "181",
+    "av_egrid": "CH843546762721",
+    "av_egid": "2245724",
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Bern",
+    "adr_plz": "3007",
+    "adr_str": "Schwarztorstrasse",
+    "adr_hsnr": "59",
+    "bfs_gem": "Bern",
+    "bfs_gemnr": 351,
+    "wgs84_lat": 46.944454193115234,
+    "wgs84_lon": 7.430766582489014,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Verwaltungsgebäude",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": 827,
+    "objectid": 29,
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-152"
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       7.445244267280628,
+       46.94725423558961
+      ],
+      [
+       7.44524664474602,
+       46.94725420848653
+      ],
+      [
+       7.44524648689516,
+       46.94725204065652
+      ],
+      [
+       7.445304032000138,
+       46.94725079646105
+      ],
+      [
+       7.445304071483319,
+       46.94725152506844
+      ],
+      [
+       7.445508428191737,
+       46.947247268950754
+      ],
+      [
+       7.445508467934792,
+       46.94725032730905
+      ],
+      [
+       7.44574030332963,
+       46.94724525978604
+      ],
+      [
+       7.445740738895032,
+       46.947149074327434
+      ],
+      [
+       7.445737980518055,
+       46.94714912844682
+      ],
+      [
+       7.445738503245892,
+       46.94701118736584
+      ],
+      [
+       7.445740985799843,
+       46.94701132216
+      ],
+      [
+       7.445741328545671,
+       46.94690754477211
+      ],
+      [
+       7.445509704179989,
+       46.946907260155676
+      ],
+      [
+       7.445509927678229,
+       46.94690908616525
+      ],
+      [
+       7.4453055586484,
+       46.946908898668575
+      ],
+      [
+       7.445305558725096,
+       46.94690961828282
+      ],
+      [
+       7.445247921883532,
+       46.94690937827931
+      ],
+      [
+       7.445248013619487,
+       46.946907390340435
+      ],
+      [
+       7.445245701836408,
+       46.94690733648373
+      ],
+      [
+       7.445244267280628,
+       46.94725423558961
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "bbl_stat": "Aktiv",
+    "bbl_id": "1000/7090/01",
+    "bbl_we": "7090",
+    "bbl_bez": "Kochergasse 10",
+    "av_nr": "850",
+    "av_egrid": "CH307635434672",
+    "av_egid": "1230563",
+    "adr_land": "CH",
+    "adr_reg": "BE",
+    "adr_ort": "Bern",
+    "adr_plz": "3011",
+    "adr_str": "Kochergasse",
+    "adr_hsnr": "10",
+    "bfs_gem": "Bern",
+    "bfs_gemnr": 351,
+    "wgs84_lat": 46.94707107543945,
+    "wgs84_lon": 7.445525169372559,
+    "bbl_eigen": "Eigentum Bund",
+    "bbl_port": "Verwaltungsgebäude",
+    "av_znut": "Zone für öffentliche Nutzung",
+    "av_zbez": "Verwaltungszone",
+    "larea_gsf": 1426,
+    "objectid": 31,
+    "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
+    "media": [
+     "MED-153"
+    ]
+   }
+  }
+ ]
 }
