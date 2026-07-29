@@ -85,6 +85,8 @@ function normalizeBuilding(f) {
     // Das Objekt trägt nur noch `media` — eine Auswahl von mediaId. Aufgelöst
     // wird sie in linkMedia() unten, sobald beide Bestände geladen sind.
     media: Array.isArray(p.media) ? p.media : [],
+    // Kuratierte Bildauswahl direkt am Objekt (geojson) — Quelle fürs Portfolio.
+    bilder: Array.isArray(p.bilder) ? p.bilder : [],
     photoSrc: '', photo: '', bildCredit: '', bildQuelle: '', color: '#2f4356',
   };
 }
@@ -102,6 +104,7 @@ function normalizeParcel(f) {
     gsf: p.larea_gsf || 0, zone: p.av_znut || p.av_zbez || '', portfolio: p.bbl_port || '—',
     ownership: OWNERSHIP(p.bbl_eigen), status: p.bbl_stat || '',
     lat: p.wgs84_lat, lng: p.wgs84_lon, geom: (f && f.geometry) || null,
+    bilder: Array.isArray(p.bilder) ? p.bilder : [],
   };
 }
 
@@ -147,21 +150,19 @@ async function load() {
   return DATA;
 }
 
-// Bilder liegen im Register data/media.json; die Objekte tragen nur eine Auswahl
-// von mediaId. Hier wird die Auswahl EINMAL nach dem Laden aufgelöst, damit
-// jede Ansicht direkt `photoSrc` (echte Datei) bzw. `photo` (Platzhalter) lesen
-// kann, ohne bei jedem Rendern das Register zu durchsuchen.
+// Hauptbild + Bildnachweis kommen aus der kuratierten Auswahl `bilder` DIREKT am
+// Objekt (buildings.geojson / parcels.geojson) — das erste Bild ist das Hauptbild.
+// data/media.json wird dafür NICHT mehr gelesen (das Register bleibt allein der
+// Mediathek vorbehalten). Ohne `bilder` bleibt das Objekt bildlos (Farbfläche),
+// statt einen Unsplash-Platzhalter zu zeigen.
 function linkMedia() {
-  const nach = new Map((DATA.media || []).map((m) => [m.mediaId, m]));
-  const ersteAufnahme = (ids) => (ids || []).map((id) => nach.get(id)).filter(Boolean)[0] || null;
   for (const o of [...(DATA.buildings || []), ...(DATA.parcels || [])]) {
-    const m = ersteAufnahme(o.media);
-    if (!m) continue;
-    o.photoSrc = m.file || '';
-    o.photo = m.photo || '';
-    o.bildCredit = m.copyright || '';
-    o.bildQuelle = m.sourceUrl || '';
-    o.bildPlatzhalter = !!m.isPlaceholder;
+    const b0 = (o.bilder || [])[0];
+    o.photoSrc = b0 ? (b0.src || '') : '';
+    o.photo = '';
+    o.bildCredit = b0 ? (b0.credit || '') : '';
+    o.bildQuelle = b0 ? (b0.sourceUrl || '') : '';
+    o.bildPlatzhalter = false;
   }
 }
 

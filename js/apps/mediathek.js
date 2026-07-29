@@ -88,7 +88,7 @@ export default async function render(ctx) {
 
   // Einträge für die geteilte Vollbildgalerie (js/gallery.js). Die Reihenfolge
   // entspricht der Trefferliste, damit Blättern in der Galerie der Sortierung folgt.
-  const galleryItems = () => sorted.filter(m => m.photo).map(m => ({
+  const galleryItems = () => sorted.filter(m => m.file || m.photo).map(m => ({
     id: m.mediaId,
     photo: m.photo, photoSrc: m.file || '', title: m.title, meta: `${m.date} · ${bname(objektId(m))}`,
     type: m.mediaType, gray: isHistoric(m),
@@ -359,7 +359,7 @@ function detail(ctx, id) {
 
   // Bild und «In der Galerie öffnen» führen zum selben Betrachter, eingestiegen
   // bei genau dieser Aufnahme.
-  const items = siblings.filter(x => x.photo).map(galleryItem);
+  const items = siblings.filter(x => x.file || x.photo).map(galleryItem);
   const startAt = Math.max(0, items.findIndex(x => x.href.endsWith(encodeURIComponent(m.mediaId))));
   // NICHT an `mount` hängen: das ist der bestehende #main-content-Knoten des
   // Routers, der beim Seitenwechsel nur seinen innerHTML tauscht. Ein Listener

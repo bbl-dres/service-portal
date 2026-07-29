@@ -51,6 +51,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-134"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_aussenansicht.jpg",
+      "titel": "Bundesgasse 1 — luftbild",
+      "fotograf": "Arkhein Drakenov",
+      "credit": "Arkhein Drakenov · CC BY-SA 4.0",
+      "lizenz": "CC BY-SA 4.0"
+     }
     ]
    },
    "geometry": {
@@ -310,6 +319,15 @@
     "datenherkunft": "Demo-Geometrie (im Ausland keine amtliche Quelle verfügbar)",
     "media": [
      "MED-135"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_aussenansicht.jpg",
+      "titel": "Otto-von-Bismarck-Allee — luftbild",
+      "fotograf": "Christian Richters",
+      "credit": "Christian Richters — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -389,6 +407,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-136"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-3120-AB_sammlungszentrum-schweizerisches-nationalmuseu_drohnenaufnahme.jpg",
+      "titel": "Lindenmoos — luftbild",
+      "fotograf": "Schweizerisches Nationalmuseum",
+      "credit": "Schweizerisches Nationalmuseum · CC BY-SA 4.0",
+      "lizenz": "CC BY-SA 4.0"
+     }
     ]
    },
    "geometry": {
@@ -1069,9 +1096,8 @@
     "fid_src": null,
     "objectid": 4,
     "etl_ts": "2026-03-18T06:00:00Z",
-    "media": [
-     "MED-137"
-    ]
+    "media": [],
+    "bilder": []
    },
    "geometry": {
     "type": "Polygon",
@@ -1150,6 +1176,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-138"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg",
+      "titel": "Kasinostrasse — luftbild",
+      "fotograf": "Franz Rindlisbacher, Zürich",
+      "credit": "Franz Rindlisbacher, Zürich — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -1273,6 +1308,15 @@
     "datenherkunft": "Demo-Geometrie (im Ausland keine amtliche Quelle verfügbar)",
     "media": [
      "MED-139"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-5410-AA_schweizerische-botschaft-tokio_aussenansicht.jpg",
+      "titel": "Minami-Azabu — luftbild",
+      "fotograf": "Syced",
+      "credit": "Syced · CC0 1.0 (gemeinfrei)",
+      "lizenz": "CC0 1.0 (gemeinfrei)"
+     }
     ]
    },
    "geometry": {
@@ -1350,9 +1394,8 @@
     "objectid": 7,
     "etl_ts": "2026-03-18T06:00:00Z",
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
-    "media": [
-     "MED-140"
-    ]
+    "media": [],
+    "bilder": []
    },
    "geometry": {
     "type": "Polygon",
@@ -1443,6 +1486,15 @@
     "datenherkunft": "Demo-Geometrie (im Ausland keine amtliche Quelle verfügbar)",
     "media": [
      "MED-141"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_aussenansicht.jpg",
+      "titel": "Setor de Embaixadas Sul — luftbild",
+      "fotograf": "Laurence Bonvin",
+      "credit": "Laurence Bonvin — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -1520,9 +1572,8 @@
     "objectid": 9,
     "etl_ts": "2026-03-18T06:00:00Z",
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
-    "media": [
-     "MED-142"
-    ]
+    "media": [],
+    "bilder": []
    },
    "geometry": {
     "type": "Polygon",
@@ -2033,6 +2084,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-143"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
+      "titel": "Guisanplatz — luftbild",
+      "fotograf": "Rolf Siegenthaler",
+      "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -2815,6 +2875,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-144"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_aussenansicht.jpg",
+      "titel": "Museumstrasse 2 — luftbild",
+      "fotograf": "Walter Mair",
+      "credit": "Walter Mair — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -2878,6 +2947,15 @@
     "datenherkunft": "Geometrie © Data: swisstopo; amtliche Fläche in diesem Kanton nicht über geodienste.ch abrufbar",
     "media": [
      "MED-145"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_aussenansicht.jpg",
+      "titel": "Bielstrasse 1 — luftbild",
+      "fotograf": "Michael Haug",
+      "credit": "Michael Haug — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -2985,6 +3063,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-146"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6320-AA_bootshaus-grenzwachtposten-arbon_aussenansicht.jpg",
+      "titel": "Hafenstrasse 3 — luftbild",
+      "fotograf": "BBL-Bautendokumentation",
+      "credit": "Fotograf nicht genannt — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -3048,6 +3135,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-147"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg",
+      "titel": "Hallwylstrasse 15 — luftbild",
+      "fotograf": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern",
+      "credit": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -3175,6 +3271,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-148"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6540-AA_verwaltungsgebaeude-eichenweg-5-areal-meielen-_aussenansicht.jpg",
+      "titel": "Eichenweg 5 — luftbild",
+      "fotograf": "Rolf Siegenthaler, Bern",
+      "credit": "Rolf Siegenthaler, Bern — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -3574,6 +3679,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-149"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6650-AA_verwaltungsgebaeude-liebefeld-bag-blv_aussenansicht.jpg",
+      "titel": "Schwarzenburgstrasse 157 — luftbild",
+      "fotograf": "Rolf Siegenthaler",
+      "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -3673,6 +3787,15 @@
     "datenherkunft": "Geometrie © Data: swisstopo; amtliche Fläche in diesem Kanton nicht über geodienste.ch abrufbar",
     "media": [
      "MED-150"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_aussenansicht.jpg",
+      "titel": "Alpenstrasse 18 — luftbild",
+      "fotograf": "Yves André",
+      "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -3852,6 +3975,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-151"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6870-AA_bundesamt-fuer-landestopografie-swisstopo_aussenansicht.jpg",
+      "titel": "Seftigenstrasse 264 — luftbild",
+      "fotograf": "Fotos Neubau 2. OG",
+      "credit": "Fotos Neubau 2. OG — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -3923,6 +4055,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-152"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6980-AA_bundesverwaltungsgericht-schwarztorstrasse_aussenansicht.jpg",
+      "titel": "Schwarztorstrasse 59 — luftbild",
+      "fotograf": "Fotos Markus Beyeler, Hinterkappelen",
+      "credit": "Fotos Markus Beyeler, Hinterkappelen — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -4046,6 +4187,15 @@
     "datenherkunft": "Amtliche Vermessung — © Data: swisstopo / geodienste.ch",
     "media": [
      "MED-153"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-7090-AA_bundeshaus-nord_aussenansicht.jpg",
+      "titel": "Kochergasse 10 — luftbild",
+      "fotograf": "Brutusaurus",
+      "credit": "Brutusaurus — Wikimedia Commons, CC BY-SA 4.0",
+      "lizenz": "CC BY-SA 4.0"
+     }
     ]
    }
   }

@@ -61,7 +61,7 @@ function overview(ctx) {
     return {
       ...p, id: p.projectId,
       land: (b && b.land) || '', region: (b && b.canton) || '', city: (b && b.city) || '', we: p.buildingId ? weOf(p.buildingId) : '',
-      lat: b && b.lat, lon: b && b.lng, buildingName: (b && b.name) || p.buildingId, photo: b && b.photo, street: (b && b.street) || '', zip: (b && b.zip) || '',
+      lat: b && b.lat, lon: b && b.lng, buildingName: (b && b.name) || p.buildingId, photo: b && b.photo, photoSrc: (b && b.photoSrc) || '', street: (b && b.street) || '', zip: (b && b.zip) || '',
     };
   });
   const subPortfolios = [...new Set(objects.map((o) => o.subPortfolio))].filter(Boolean);
@@ -130,7 +130,7 @@ function overview(ctx) {
   function pjCard(o) {
     return C.card({
       title: o.name, desc: o.teaser, href: `#/app/projects/${encodeURIComponent(o.id)}`,
-      photo: { id: o.photo, color: '#2f4356', alt: `${o.name} — ${o.buildingName}` },
+      photo: { src: o.photoSrc, id: o.photo, color: '#2f4356', alt: `${o.name} — ${o.buildingName}` },
       badges: [projectStatusBadge(C, core, o.status), ampelBadge(C, 'Ziele', o.zielAmpel), ampelBadge(C, 'Risiko', o.risikoAmpel)],
       footer: `<span>${esc(o.projectNumber)}</span><span>SIA ${esc(o.siaPhase)} · ${esc(o.siaPhaseLabel)}</span>`,
     });
@@ -412,7 +412,7 @@ function detail(ctx, id) {
         <p class="muted">${C.escape(p.projectNumber)} · ${b ? C.escape(b.name + ', ' + b.city) : C.escape(p.buildingId)}</p>
       </div>
       ${C.photo({
-        id: b && b.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name, w: 1600,
+        src: b && b.photoSrc, id: b && b.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name, w: 1600,
         style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg);margin-top:1rem',
       })}
       ${C.tabBar({ items: tabs, active, idPrefix: 'pj-tab', ariaLabel: 'Projektdetails', controlsClass: 'mt-6' })}

@@ -39,9 +39,7 @@
   "zielAmpel": "gruen",
   "risikoAmpel": "gruen",
   "teaser": "Instandsetzung Gebäudehülle und Haustechnik.",
-  "media": [
-   "MED-155"
-  ]
+  "media": []
  },
  {
   "projectId": "PRJ-03",
@@ -61,9 +59,7 @@
   "zielAmpel": "gelb",
   "risikoAmpel": "rot",
   "teaser": "Standortkonzentration Agroscope, Neubau und Rückbau.",
-  "media": [
-   "MED-156"
-  ]
+  "media": []
  },
  {
   "projectId": "PRJ-04",
@@ -193,9 +189,7 @@
   "zielAmpel": "gruen",
   "risikoAmpel": "gruen",
   "teaser": "Abgeschlossen 2018.",
-  "media": [
-   "MED-162"
-  ]
+  "media": []
  },
  {
   "projectId": "PRJ-10",

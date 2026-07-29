@@ -80,12 +80,39 @@
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
      "MED-001",
-     "MED-002",
      "MED-003",
      "MED-004",
-     "MED-005",
-     "MED-006",
-     "MED-007"
+     "MED-005"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_aussenansicht.jpg",
+      "titel": "Bundeshaus West — aussenansicht",
+      "fotograf": "Arkhein Drakenov",
+      "credit": "Arkhein Drakenov · CC BY-SA 4.0",
+      "lizenz": "CC BY-SA 4.0"
+     },
+     {
+      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_innenansicht.jpg",
+      "titel": "Bundeshaus West — innenansicht",
+      "fotograf": "Alexander Gempeler",
+      "credit": "Alexander Gempeler — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_fassadendetail.jpg",
+      "titel": "Bundeshaus West — fassadendetail",
+      "fotograf": "Alexander Gempeler",
+      "credit": "Alexander Gempeler — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_eingangsbereich.jpg",
+      "titel": "Bundeshaus West — eingangsbereich",
+      "fotograf": "Alexander Gempeler",
+      "credit": "Alexander Gempeler — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -177,9 +204,44 @@
      "MED-009",
      "MED-010",
      "MED-011",
-     "MED-012",
-     "MED-013",
-     "MED-014"
+     "MED-012"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_aussenansicht.jpg",
+      "titel": "Schweizerische Botschaft Berlin — aussenansicht",
+      "fotograf": "Christian Richters",
+      "credit": "Christian Richters — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_umgebung.jpg",
+      "titel": "Schweizerische Botschaft Berlin — umgebung",
+      "fotograf": "Christian Richters",
+      "credit": "Christian Richters — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_innenansicht.jpg",
+      "titel": "Schweizerische Botschaft Berlin — innenansicht",
+      "fotograf": "Christian Richters",
+      "credit": "Christian Richters — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_fassadendetail.jpg",
+      "titel": "Schweizerische Botschaft Berlin — fassadendetail",
+      "fotograf": "Christian Richters",
+      "credit": "Christian Richters — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_eingangsbereich.jpg",
+      "titel": "Schweizerische Botschaft Berlin — eingangsbereich",
+      "fotograf": "Christian Richters",
+      "credit": "Christian Richters — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -267,12 +329,16 @@
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
-     "MED-015",
-     "MED-016",
-     "MED-017",
-     "MED-018",
-     "MED-019",
-     "MED-020"
+     "MED-015"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-3120-AB_sammlungszentrum-schweizerisches-nationalmuseu_drohnenaufnahme.jpg",
+      "titel": "Sammlungszentrum Schweizerisches Nationalmuseum — drohnenaufnahme",
+      "fotograf": "Schweizerisches Nationalmuseum",
+      "credit": "Schweizerisches Nationalmuseum · CC BY-SA 4.0",
+      "lizenz": "CC BY-SA 4.0"
+     }
     ]
    },
    "geometry": {
@@ -359,14 +425,8 @@
      "https://www.eda.admin.ch/countries/usa/en/home/representations/generalkonsulat-new-york.html"
     ],
     "datenherkunft": "BBL / EDA, Koordinaten OpenStreetMap",
-    "media": [
-     "MED-021",
-     "MED-022",
-     "MED-023",
-     "MED-024",
-     "MED-025",
-     "MED-026"
-    ]
+    "media": [],
+    "bilder": []
    },
    "geometry": {
     "type": "Point",
@@ -453,12 +513,16 @@
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
-     "MED-027",
-     "MED-028",
-     "MED-029",
-     "MED-030",
-     "MED-031",
-     "MED-032"
+     "MED-027"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg",
+      "titel": "Campus BAZG (Ausbildungszentrum Liestal) — aussenansicht",
+      "fotograf": "Franz Rindlisbacher, Zürich",
+      "credit": "Franz Rindlisbacher, Zürich — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -546,12 +610,16 @@
     ],
     "datenherkunft": "BBL / EDA, Koordinaten OpenStreetMap",
     "media": [
-     "MED-033",
-     "MED-034",
-     "MED-035",
-     "MED-036",
-     "MED-037",
-     "MED-038"
+     "MED-033"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-5410-AA_schweizerische-botschaft-tokio_aussenansicht.jpg",
+      "titel": "Schweizerische Botschaft Tokio — aussenansicht",
+      "fotograf": "Syced",
+      "credit": "Syced · CC0 1.0 (gemeinfrei)",
+      "lizenz": "CC0 1.0 (gemeinfrei)"
+     }
     ]
    },
    "geometry": {
@@ -638,15 +706,8 @@
      "https://www.bbl.admin.ch/dam/de/sd-web/J-9Pctw1raik/20180701_Bern%20Effingerstrasse%2029%20Sanierung%20und%20Umbau%20zu%20Dienstwohnungen_DE.pdf"
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
-    "media": [
-     "MED-039",
-     "MED-040",
-     "MED-041",
-     "MED-042",
-     "MED-043",
-     "MED-044",
-     "MED-045"
-    ]
+    "media": [],
+    "bilder": []
    },
    "geometry": {
     "type": "Point",
@@ -737,8 +798,44 @@
      "MED-047",
      "MED-048",
      "MED-049",
-     "MED-050",
-     "MED-051"
+     "MED-050"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_aussenansicht.jpg",
+      "titel": "Schweizerische Botschaft Brasília — aussenansicht",
+      "fotograf": "Laurence Bonvin",
+      "credit": "Laurence Bonvin — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_umgebung.jpg",
+      "titel": "Schweizerische Botschaft Brasília — umgebung",
+      "fotograf": "Laurence Bonvin",
+      "credit": "Laurence Bonvin — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_innenansicht.jpg",
+      "titel": "Schweizerische Botschaft Brasília — innenansicht",
+      "fotograf": "Laurence Bonvin",
+      "credit": "Laurence Bonvin — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_fassadendetail.jpg",
+      "titel": "Schweizerische Botschaft Brasília — fassadendetail",
+      "fotograf": "Laurence Bonvin",
+      "credit": "Laurence Bonvin — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_eingangsbereich.jpg",
+      "titel": "Schweizerische Botschaft Brasília — eingangsbereich",
+      "fotograf": "Laurence Bonvin",
+      "credit": "Laurence Bonvin — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -826,14 +923,8 @@
      "https://www.vtg.admin.ch/de/rechenzentrum-campus-in-frauenfeld-feiert-aufrichte"
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
-    "media": [
-     "MED-052",
-     "MED-053",
-     "MED-054",
-     "MED-055",
-     "MED-056",
-     "MED-057"
-    ]
+    "media": [],
+    "bilder": []
    },
    "geometry": {
     "type": "Point",
@@ -924,8 +1015,44 @@
      "MED-059",
      "MED-060",
      "MED-061",
-     "MED-062",
-     "MED-063"
+     "MED-062"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_aussenansicht.jpg",
+      "titel": "Schweizerische Botschaft Canberra — aussenansicht",
+      "fotograf": "Anthony Basheer",
+      "credit": "Anthony Basheer — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_umgebung.jpg",
+      "titel": "Schweizerische Botschaft Canberra — umgebung",
+      "fotograf": "Anthony Basheer",
+      "credit": "Anthony Basheer — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_innenansicht.jpg",
+      "titel": "Schweizerische Botschaft Canberra — innenansicht",
+      "fotograf": "Anthony Basheer",
+      "credit": "Anthony Basheer — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_fassadendetail.jpg",
+      "titel": "Schweizerische Botschaft Canberra — fassadendetail",
+      "fotograf": "Anthony Basheer",
+      "credit": "Anthony Basheer — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_eingangsbereich.jpg",
+      "titel": "Schweizerische Botschaft Canberra — eingangsbereich",
+      "fotograf": "Anthony Basheer",
+      "credit": "Anthony Basheer — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -1016,10 +1143,30 @@
     "media": [
      "MED-064",
      "MED-065",
-     "MED-066",
-     "MED-067",
-     "MED-068",
-     "MED-069"
+     "MED-066"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
+      "titel": "Verwaltungszentrum Guisanplatz — aussenansicht",
+      "fotograf": "Rolf Siegenthaler",
+      "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-4850-AG_verwaltungszentrum-guisanplatz_umgebung.jpg",
+      "titel": "Verwaltungszentrum Guisanplatz — umgebung",
+      "fotograf": "Rolf Siegenthaler",
+      "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-4850-AG_verwaltungszentrum-guisanplatz_innenansicht.jpg",
+      "titel": "Verwaltungszentrum Guisanplatz — innenansicht",
+      "fotograf": "Rolf Siegenthaler",
+      "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    },
    "geometry": {
@@ -1120,10 +1267,37 @@
      "MED-070",
      "MED-071",
      "MED-072",
-     "MED-073",
-     "MED-074",
-     "MED-075",
-     "MED-076"
+     "MED-073"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_aussenansicht.jpg",
+      "titel": "Landesmuseum Zürich — aussenansicht",
+      "fotograf": "Walter Mair",
+      "credit": "Walter Mair — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_umgebung.jpg",
+      "titel": "Landesmuseum Zürich — umgebung",
+      "fotograf": "Walter Mair",
+      "credit": "Walter Mair — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_innenansicht.jpg",
+      "titel": "Landesmuseum Zürich — innenansicht",
+      "fotograf": "Walter Mair",
+      "credit": "Walter Mair — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_fassadendetail.jpg",
+      "titel": "Landesmuseum Zürich — fassadendetail",
+      "fotograf": "Walter Mair",
+      "credit": "Walter Mair — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -1218,8 +1392,44 @@
      "MED-078",
      "MED-079",
      "MED-080",
-     "MED-081",
-     "MED-082"
+     "MED-081"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_aussenansicht.jpg",
+      "titel": "Zollanlage Brig-Glis — aussenansicht",
+      "fotograf": "Michael Haug",
+      "credit": "Michael Haug — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_umgebung.jpg",
+      "titel": "Zollanlage Brig-Glis — umgebung",
+      "fotograf": "Michael Haug",
+      "credit": "Michael Haug — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_innenansicht.jpg",
+      "titel": "Zollanlage Brig-Glis — innenansicht",
+      "fotograf": "Michael Haug",
+      "credit": "Michael Haug — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_fassadendetail.jpg",
+      "titel": "Zollanlage Brig-Glis — fassadendetail",
+      "fotograf": "Michael Haug",
+      "credit": "Michael Haug — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_eingangsbereich.jpg",
+      "titel": "Zollanlage Brig-Glis — eingangsbereich",
+      "fotograf": "Michael Haug",
+      "credit": "Michael Haug — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -1310,12 +1520,16 @@
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
-     "MED-083",
-     "MED-084",
-     "MED-085",
-     "MED-086",
-     "MED-087",
-     "MED-088"
+     "MED-083"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6320-AA_bootshaus-grenzwachtposten-arbon_aussenansicht.jpg",
+      "titel": "Bootshaus Grenzwachtposten Arbon — aussenansicht",
+      "fotograf": "BBL-Bautendokumentation",
+      "credit": "Fotograf nicht genannt — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -1406,13 +1620,16 @@
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
-     "MED-089",
-     "MED-090",
-     "MED-091",
-     "MED-092",
-     "MED-093",
-     "MED-094",
-     "MED-095"
+     "MED-089"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg",
+      "titel": "Schweizerische Nationalbibliothek, Tiefmagazin West — aussenansicht",
+      "fotograf": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern",
+      "credit": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -1503,12 +1720,16 @@
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
-     "MED-096",
-     "MED-097",
-     "MED-098",
-     "MED-099",
-     "MED-100",
-     "MED-101"
+     "MED-096"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6540-AA_verwaltungsgebaeude-eichenweg-5-areal-meielen-_aussenansicht.jpg",
+      "titel": "Verwaltungsgebäude Eichenweg 5, Areal Meielen Nord — aussenansicht",
+      "fotograf": "Rolf Siegenthaler, Bern",
+      "credit": "Rolf Siegenthaler, Bern — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -1599,12 +1820,16 @@
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
-     "MED-102",
-     "MED-103",
-     "MED-104",
-     "MED-105",
-     "MED-106",
-     "MED-107"
+     "MED-102"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6650-AA_verwaltungsgebaeude-liebefeld-bag-blv_aussenansicht.jpg",
+      "titel": "Verwaltungsgebäude Liebefeld (BAG / BLV) — aussenansicht",
+      "fotograf": "Rolf Siegenthaler",
+      "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -1698,9 +1923,37 @@
      "MED-108",
      "MED-109",
      "MED-110",
-     "MED-111",
-     "MED-112",
-     "MED-113"
+     "MED-111"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_aussenansicht.jpg",
+      "titel": "EHSM Magglingen, Neubau Lärchenplatz — aussenansicht",
+      "fotograf": "Yves André",
+      "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_umgebung.jpg",
+      "titel": "EHSM Magglingen, Neubau Lärchenplatz — umgebung",
+      "fotograf": "Yves André",
+      "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_innenansicht.jpg",
+      "titel": "EHSM Magglingen, Neubau Lärchenplatz — innenansicht",
+      "fotograf": "Yves André",
+      "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     },
+     {
+      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_fassadendetail.jpg",
+      "titel": "EHSM Magglingen, Neubau Lärchenplatz — fassadendetail",
+      "fotograf": "Yves André",
+      "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
+      "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -1791,13 +2044,16 @@
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
-     "MED-114",
-     "MED-115",
-     "MED-116",
-     "MED-117",
-     "MED-118",
-     "MED-119",
-     "MED-120"
+     "MED-114"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6870-AA_bundesamt-fuer-landestopografie-swisstopo_aussenansicht.jpg",
+      "titel": "Bundesamt für Landestopografie swisstopo — aussenansicht",
+      "fotograf": "Fotos Neubau 2. OG",
+      "credit": "Fotos Neubau 2. OG — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -1888,12 +2144,16 @@
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
-     "MED-121",
-     "MED-122",
-     "MED-123",
-     "MED-124",
-     "MED-125",
-     "MED-126"
+     "MED-121"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-6980-AA_bundesverwaltungsgericht-schwarztorstrasse_aussenansicht.jpg",
+      "titel": "Bundesverwaltungsgericht Schwarztorstrasse — aussenansicht",
+      "fotograf": "Fotos Markus Beyeler, Hinterkappelen",
+      "credit": "Fotos Markus Beyeler, Hinterkappelen — aus der Bautendokumentation des BBL",
+      "lizenz": "BBL-Bautendokumentation, nicht frei lizenziert"
+     }
     ]
    }
   },
@@ -1984,13 +2244,16 @@
     ],
     "datenherkunft": "BBL-Bautendokumentation; Kataster © Data: swisstopo / amtliche Vermessung",
     "media": [
-     "MED-127",
-     "MED-128",
-     "MED-129",
-     "MED-130",
-     "MED-131",
-     "MED-132",
-     "MED-133"
+     "MED-127"
+    ],
+    "bilder": [
+     {
+      "src": "assets/images/buildings/1000-7090-AA_bundeshaus-nord_aussenansicht.jpg",
+      "titel": "Bundeshaus Nord — aussenansicht",
+      "fotograf": "Brutusaurus",
+      "credit": "Brutusaurus — Wikimedia Commons, CC BY-SA 4.0",
+      "lizenz": "CC BY-SA 4.0"
+     }
     ]
    }
   }

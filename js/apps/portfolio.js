@@ -11,21 +11,22 @@ import { initEstateMap } from '../buildings-map.js';
 
 // Galerie-Eintrag aus einem Medium. `details` speist das Metadaten-Panel der
 // Vollbildgalerie (js/gallery.js), `href` dessen Verweis auf die Detailseite.
-function mediaGalleryItem(m) {
-  return {
-    id: m.mediaId,
-    photo: m.photo, title: m.title, meta: `${m.date} · ${m.historicPeriod}`,
-    type: m.mediaType, gray: m.historicPeriod === 'historisch',
-    href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
+// Bildergalerie eines Objekts aus seiner kuratierten Auswahl `bilder` (direkt am
+// Objekt in buildings.geojson / parcels.geojson). data/media.json wird NICHT gelesen —
+// das Register bleibt der Mediathek vorbehalten. Erstes Bild = Hauptbild.
+function bilderGalleryItems(o) {
+  return (o.bilder || []).map((x, i) => ({
+    id: `${o.bbl_id}-bild-${i}`,
+    photo: '', photoSrc: x.src, title: x.titel || o.name,
+    meta: [x.fotograf && `© ${x.fotograf}`, o.city].filter(Boolean).join(' · '),
+    type: 'foto', gray: !!x.historisch,
     details: [
-      ['Typ', m.mediaType === 'video' ? 'Video' : 'Foto'],
-      ['Datum', m.date],
-      ['Epoche', m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'],
-      [m.mediaType === 'video' ? 'Quelle' : 'Fotograf:in', m.photographer],
-      ['Copyright', m.copyright],
-      ['Zugriff', m.accessLevel],
-    ],
-  };
+      ['Titel', x.titel || o.name],
+      x.fotograf && ['Fotograf:in', x.fotograf],
+      x.credit && ['Copyright', x.credit],
+      x.lizenz && ['Lizenz', x.lizenz],
+    ].filter(Boolean),
+  }));
 }
 
 let pfMap = null;
@@ -89,8 +90,11 @@ export default async function render(ctx) {
   ];
 
   const state = {
-    view: ['karte', 'galerie', 'liste'].includes(query.get('view')) ? query.get('view') : 'karte',
-    sel: {}, focus: null, q: '', sort: 'name', filters: { status: [], ownership: [], kind: [] }, page: 1,
+    view: ['karte', 'galerie', 'liste'].includes(query.get('view')) ? query.get('view') : 'galerie',
+    // Standard: nur Gebäude. Grundstücke blendet man über den Objekttyp-Filter
+    // dazu (oder entfernt die «Gebäude»-Pille). Eine explizite Objektauswahl aus
+    // Baum/Karte hebt den Typfilter auf, damit auch ein angeklicktes Grundstück erscheint.
+    sel: {}, focus: null, q: '', sort: 'name', filters: { status: [], ownership: [], kind: ['building'] }, page: 1,
     perPage: { galerie: 9, liste: 25 },
   };
 
@@ -102,7 +106,7 @@ export default async function render(ctx) {
     && (!state.filters.ownership.length || state.filters.ownership.includes(o.ownership))
     && (!state.filters.kind.length || state.filters.kind.includes(o.kind));
   const inSearch = (o) => { const q = state.q.trim().toLowerCase(); return !q || `${o.name} ${o.id} ${o.street} ${o.zip} ${o.city}`.toLowerCase().includes(q); };
-  const filtered = () => objects.filter((o) => inSel(o) && inFilters(o) && inSearch(o));
+  const filtered = () => objects.filter((o) => inSel(o) && inSearch(o) && (state.sel.id ? true : inFilters(o)));
 
   // --- spatial tree -----------------------------------------------------------
   function buildTree() {
@@ -268,7 +272,7 @@ export default async function render(ctx) {
       placeholder: 'Adresse, Objekt oder ID suchen…', countId: 'pf-count',
       sort: { id: 'pf-sort', label: 'Sortieren', value: state.sort, options: SORT_OPTIONS },
       filterId: 'pf-filter-btn', filterLabel: 'Filter', panelId: 'pf-filters', panel: filterPanel,
-      view: state.view, views: [['karte', 'Kartenansicht', 'Map'], ['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
+      view: state.view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List'], ['karte', 'Kartenansicht', 'Map']],
     })}
     <div id="pf-activefilters"></div>
     <div class="pf-layout">
@@ -397,15 +401,10 @@ function buildingDetail(ctx, b) {
   const costs = core.costsForBuilding(b.bbl_id);
   const contacts = core.buildingContactsFor(b.bbl_id);
   const documents = core.documentsForBuilding(b.bbl_id);
-  const media = core.mediaForBuilding(b.bbl_id);
   const parcels = core.parcelsForBuilding(b.bbl_id);
   const regionLabel = [b.land, b.canton].filter(Boolean).join(' · ');
-  // Bildergalerie (Modal auf dem Hero-Bild) statt eines Medien-Registers: Hauptbild + verknüpfte Medien.
-  const galleryItems = [
-    { id: 'hauptansicht', photo: b.photo, photoSrc: b.photoSrc, title: b.name, meta: `${b.city} · Hauptansicht`, type: 'foto',
-      details: [['Objekt', b.name], ['Adresse', `${b.street}, ${b.zip} ${b.city}`], ['Objekt-ID', b.bbl_id]] },
-    ...media.map(mediaGalleryItem),
-  ].filter((g) => g.photo);
+  // Bildergalerie (Modal auf dem Hero-Bild) aus der kuratierten Bildauswahl des Objekts.
+  const galleryItems = bilderGalleryItems(b);
 
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
@@ -644,12 +643,8 @@ function parcelDetail(ctx, p) {
   const we = p.bbl_we || weOf(p.bbl_id);
   const bld = core.buildings().find((b) => (b.bbl_we || weOf(b.bbl_id)) === we);
   const covers = core.landcoversForParcel(p.bbl_id);
-  // Gleiche Bildquelle wie beim Gebäude (core.mediaForObject prüft auf die bbl_id,
-  // egal ob Gebäude oder Parzelle). Ein Grundstück trägt kein eigenes `photo`-Feld,
-  // sein Hauptbild ist deshalb schlicht das erste verknüpfte Medium.
-  const galleryItems = core.mediaForObject(p.bbl_id)
-    .map(mediaGalleryItem)
-    .filter((g) => g.photo);
+  // Bildergalerie aus der kuratierten Bildauswahl des Grundstücks (bilder am Objekt).
+  const galleryItems = bilderGalleryItems(p);
   setTitle(p.name);
   setCrumbs([...CRUMBS, { label: 'Liegenschaften Inventar', href: '#/app/portfolio' }, { label: p.name }]);
 
