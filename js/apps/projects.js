@@ -4,6 +4,11 @@
 // Ein Projekt wird über #/app/projects/<projectId> angesprochen.
 import { initEstateMap } from '../buildings-map.js';
 
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['buildings', 'projects'];
 let pjMap = null;
 function freePjMap() { if (pjMap) { try { pjMap.remove(); } catch { /* schon weg */ } pjMap = null; } }
 const weOf = (id) => String(id || '').split('/')[1] || '';

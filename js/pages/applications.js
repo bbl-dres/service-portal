@@ -8,6 +8,11 @@
 // Karten führen auf #/applications/<appId>, nicht direkt in die Anwendung:
 // jede Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen.
 
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['applications', 'contacts'];
 const PER_PAGE = 9;
 
 const AREAS = [
@@ -32,11 +37,10 @@ const SORTS = {
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
   if (params[0]) {
-    // application.js wird NICHT vom Router geladen, sondern hier — die
-    // `needs`-Sperre des Routers greift also nicht. Der Detailbestand
-    // (application-pages.json) wird darum hier angefordert, und zwar nur beim
-    // Öffnen eines Details, nicht schon für die Liste (H4).
-    const [mod] = await Promise.all([import('./application.js'), core.ensure('appPages')]);
+    // Die Landingpage-Inhalte stehen am Anwendungsdatensatz selbst (siehe
+    // application.js), es gibt also keinen nachzuladenden Bestand mehr — nur
+    // das Modul selbst wird dynamisch geladen.
+    const mod = await import('./application.js');
     if (ctx.stale()) return;   // A2: nach dem await keine überholte Navigation überschreiben
     return mod.default(ctx, params[0]);
   }

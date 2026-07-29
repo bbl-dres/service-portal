@@ -9,10 +9,10 @@
 // externes System), Berechtigung und Ansprechstelle — das gehört auf eine
 // Seite, bevor jemand auf «Öffnen» klickt.
 
-// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
-// bevor render() den ersten Accessor aufruft (H4).
-export const needs = ["appPages"];
-
+// Die Landingpage-Felder (long, entries, access, resources, contact, updated)
+// stehen seit 2026-07 am Anwendungsdatensatz selbst — es gab keinen Grund für
+// eine zweite Datei mit demselben Schlüssel. `page` bleibt als lokaler Alias
+// stehen, damit unten nicht jede Fundstelle umgeschrieben werden muss.
 export default function render(ctx, appId) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
   const a = core.application(C.safeDecode(appId));
@@ -26,7 +26,7 @@ export default function render(ctx, appId) {
     return;
   }
 
-  const page = core.appPage(a.appId) || {};
+  const page = a;
   setTitle(a.name);
   setCrumbs([...crumbs(), { label: a.name }]);
 

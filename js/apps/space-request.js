@@ -1,4 +1,9 @@
 // Raumbedarf melden — the hero service flow (external → mock process → Meine Vorgänge).
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['buildings'];
 export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs, navigate } = ctx;
   setTitle('Raumbedarf melden');

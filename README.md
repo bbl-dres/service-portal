@@ -4,7 +4,7 @@
   <img src="assets/images/social1.jpg" width="100%" alt="BBL Kundenportal — service portal prototype"/>
 </p>
 
-<p align="center">
+<p>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"/></a>
   <img src="https://img.shields.io/badge/status-prototype-orange.svg" alt="Status: Prototype"/>
   <img src="https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white" alt="HTML5"/>
@@ -71,14 +71,18 @@ Prototype of the customer portal (**Kundenportal**) for the [Federal Office for 
 No build tools, no dependencies — just static files. But ES modules and `fetch()` need HTTP, so serve the folder rather than opening `index.html` from disk:
 
 ```bash
-# Python
-python -m http.server 8848
-
-# Node
-npx http-server -p 8848
+node scripts/serve.mjs          # empfohlen — mit gzip/brotli, Port 8848
 ```
 
 Then open http://127.0.0.1:8848/. Tested in Edge/Chrome; current Firefox/Safari.
+
+> [!IMPORTANT]
+> `scripts/serve.mjs` is dependency-free (node: modules only) and **compresses text responses**, which is what a real host does. Any plain static server works too —
+> ```bash
+> python -m http.server 8848      # funktioniert, komprimiert aber NICHT
+> npx http-server -p 8848
+> ```
+> — but without compression `css/app.css` ships as 213 KB instead of 47 KB and the app looks about three times slower than it is. If you deploy this, make sure gzip or brotli is on: it is the single cheapest win after the fonts ([docs/code-review.md](docs/code-review.md) §2).
 
 > [!NOTE]
 > Building, media and news photography are stock images from [Unsplash](https://unsplash.com) (a `photo` field holds an Unsplash id, rendered via `C.photo()`) — they are **not** photographs of the real federal buildings. They load from `images.unsplash.com`, so the demo wants internet access for imagery; offline, every image degrades to a flat colour block and nothing else changes.

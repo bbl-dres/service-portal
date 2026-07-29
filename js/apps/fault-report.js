@@ -1,5 +1,10 @@
 // Meldung erfassen — single-step report form that creates a Vorgang.
 // Variants via ?type=: sicherheit | reklamation | umzug | (default Störung/Reinigung/Reparatur).
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['buildings', 'contacts'];
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs } = ctx;
 

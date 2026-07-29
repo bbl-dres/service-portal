@@ -1,5 +1,10 @@
 // Verkauf / Divestment — Transaktionsplattform (STUB / Prototyp).
 // Bildet den Veräusserungsprozess von Bundesliegenschaften ab (intern + Makler).
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['buildings'];
 export default async function render(ctx) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
 

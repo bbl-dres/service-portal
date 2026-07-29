@@ -25,6 +25,17 @@ function renderDataStatus() {
 }
 
 async function boot() {
+  // Der Start wartet nur noch auf das, was die Shell zum Zeichnen braucht:
+  // services + reference (17 KB, 2 Requests). Alles andere holt der Router je
+  // Route über `needs` nach.
+  //
+  // Vorher hingen hier elf Bestände (275 KB, 13 Requests) VOR dem ersten
+  // Pixel — gedrosselt 7.7 s bis zum ersten Inhalt, auch auf den Wissensseiten,
+  // die gar keine Daten lesen (docs/code-review.md §1).
+  //
+  // Die Prozess-Engine (2 Dateien, 11 KB) bleibt im Start, aber PARALLEL: sie
+  // trägt die Vorgangsliste, und «Meine Vorgänge» dürfte sie nicht halb sehen.
+  // Vier Requests statt dreizehn.
   await Promise.all([core.load(), engine.load()]);
   // Nachgeladene Bestände (core.ensure) können später ausfallen — das Band wurde
   // da längst gezeichnet. Ohne diesen Horcher bliebe so ein Ausfall unsichtbar.

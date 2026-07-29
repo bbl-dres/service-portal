@@ -1,4 +1,9 @@
 // Workspace & Buchung — Möblierung & Material, Belegungsplanung und interaktive Ressourcenbuchung.
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['buildings'];
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs } = ctx;
   setTitle('Workspace & Buchung');

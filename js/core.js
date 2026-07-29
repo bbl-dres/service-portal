@@ -5,26 +5,36 @@ import { fetchJSON } from './fetch-json.js';
 
 const DATA = {};
 
+// EAGER — nur, was die Shell braucht, bevor der Router überhaupt verteilt.
+// js/shell.js liest genau zwei Schlüssel: `ref().domains` und `services()` für
+// den Dienstleistungs-Drawer. Alles andere gehört einer Route und wird über
+// `needs` nachgeladen.
+//
+// Vorher standen hier elf Dateien (275 KB, 13 Requests), und `boot()` wartete
+// auf jede einzelne, bevor irgendetwas gezeichnet wurde — gedrosselt gemessen
+// 7.7 s bis zum ersten Inhalt, obwohl die Startseite fünf davon braucht und die
+// Wissensseiten gar keine (docs/code-review.md §1/§3).
 const FILES = {
-  projects:     'data/projects.json',
   services:     'data/services.json',
-  applications: 'data/applications.json',
-  documents:    'data/documents.json',
-  media:        'data/media.json',
-  news:         'data/news.json',
-  contacts:     'data/contacts.json',
   reference:    'data/reference-data.json',
-  catalogLabels:'data/catalog-labels.json',
 };
 
-// Aufschiebbar (H4): gross, aber nur auf wenigen Seiten gebraucht. Zusammen rund
-// 230 KB — mehr als die Hälfte des Bestands —, die der Start bisher jede Sitzung
-// bezahlte, gleichgültig welche Route aufgerufen wurde. Sie werden NICHT beim
-// Start geladen; der Router holt sie über core.ensure() nach, bevor eine Route
-// rendert, die sie in `needs` deklariert.
+// Aufschiebbar (H4): der Router ruft core.ensure(mod.needs) VOR dem Rendern auf,
+// die Zusage je Schlüssel wird gemerkt (PENDING) — zehn Aufrufer erzeugen eine
+// Anfrage. Ausfälle landen im selben FAILED-Register wie die Startdateien und
+// erscheinen im Fehlerband.
 const DEFERRED = {
-  datasets:     'data/datasets.json',              // 115 KB, nur Datenkatalog + Suche
-  appPages:     'data/application-pages.json',     // nur die Anwendungs-Detailseite
+  applications: 'data/applications.json',           // Anwendungskatalog + Landingpages
+  news:         'data/news.json',                   // Startseite, #/news, Suche
+  contacts:     'data/contacts.json',               // Dienstleistungs- und Anwendungskontakte
+  documents:    'data/documents.json',              // Dokumentenarchiv, Suche
+  projects:     'data/projects.json',               // Bauprojekte, Meine Vorgänge
+  media:        'data/media.json',                  // 55 KB, NUR die Mediathek
+  catalogLabels:'data/catalog-labels.json',         // nur der Datenkatalog
+  datasets:     'data/datasets.json',               // 115 KB, nur Datenkatalog + Suche
+  // Golden Record — GeoJSON, wird beim Laden normalisiert (siehe loadDeferred).
+  buildings:    'data/buildings.geojson',           // 66 KB, Portfolio + 9 weitere Apps
+  parcels:      'data/parcels.geojson',             // 79 KB, NUR Portfolio + Mediathek
   // Liegenschaften-Inventar-Detailregister (SAP RE-FX-Untertabellen, re-keyed auf bbl_id):
   assets:           'data/assets.json',            // Ausstattung
   contracts:        'data/contracts.json',         // Verträge
@@ -48,13 +58,13 @@ const AREA = {
   buildings: 'Liegenschaften', parcels: 'Grundstücke', projects: 'Bauprojekte', services: 'Dienstleistungen',
   applications: 'Anwendungen', documents: 'Dokumente', media: 'Mediathek',
   news: 'News', contacts: 'Kontakte', reference: 'Referenzdaten',
-  datasets: 'Datenkatalog', catalogLabels: 'Katalog-Beschriftungen', appPages: 'Anwendungsseiten',
+  datasets: 'Datenkatalog', catalogLabels: 'Katalog-Beschriftungen',
   assets: 'Ausstattung', contracts: 'Verträge', costs: 'Kosten', areas: 'Flächen',
   buildingContacts: 'Objektkontakte', landcovers: 'Bodenbedeckung',
 };
 
 // Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
-const OBJECT_FILES = new Set(['reference', 'catalogLabels', 'appPages']);
+const OBJECT_FILES = new Set(['reference', 'catalogLabels']);
 
 // Gebäude kommen aus dem SAP-RE-FX-Golden-Record (data/buildings.geojson) — dieselbe
 // Quelle und dieselben bbl_id wie das Immobilienportfolio-Dashboard, damit die
@@ -132,19 +142,6 @@ async function load() {
     }
   }));
   for (const [k, v] of entries) DATA[k] = v;
-
-  // Golden Record (Gebäude + Grundstücke): GeoJSON-Objekte ({type,features}), nicht
-  // die Listenform der übrigen Dateien — eigener Pfad mit Normalisierung, aber
-  // parallel geladen, damit der Boot (window.__login etc.) nicht unnötig wartet.
-  const [bFc, pFc] = await Promise.all([
-    fetchJSON('data/buildings.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] buildings.geojson', e.message); return null; }),
-    fetchJSON('data/parcels.geojson', { shape: 'object' }).catch((e) => { console.warn('[core] parcels.geojson', e.message); return null; }),
-  ]);
-  DATA.buildings = bFc ? (bFc.features || []).map(normalizeBuilding).filter((b) => b.bbl_id) : [];
-  if (!DATA.buildings.length) FAILED.add('buildings');
-  DATA.parcels = pFc ? (pFc.features || []).map(normalizeParcel).filter((p) => p.bbl_id) : [];
-  if (!pFc) FAILED.add('parcels');
-  linkMedia();
   return DATA;
 }
 
@@ -174,9 +171,16 @@ async function loadDeferred(key) {
   const url = DEFERRED[key];
   const isObj = OBJECT_FILES.has(key);
   try {
-    if (key === 'landcovers') {
+    // GeoJSON-Bestände tragen {type,features} statt einer Liste und werden beim
+    // Laden auf die schlanke Form normalisiert, die alle Ansichten lesen.
+    const GEO = { buildings: normalizeBuilding, parcels: normalizeParcel, landcovers: normalizeLandcover };
+    const ID = { buildings: 'bbl_id', parcels: 'bbl_id', landcovers: 'parcelId' };
+    if (GEO[key]) {
       const fc = await fetchJSON(url, { shape: 'object' });
-      DATA.landcovers = (fc.features || []).map(normalizeLandcover).filter((l) => l.parcelId);
+      DATA[key] = (fc.features || []).map(GEO[key]).filter((x) => x[ID[key]]);
+      // Hauptbild/Bildnachweis stehen an den Objekten selbst; nach jedem der
+      // beiden Bestände neu verknüpfen, weil sie unabhängig eintreffen können.
+      if (key === 'buildings' || key === 'parcels') linkMedia();
     } else {
       DATA[key] = await fetchJSON(url, { shape: isObj ? 'object' : 'array' });
     }
@@ -230,7 +234,6 @@ export const core = {
   applications: () => DATA.applications || [],
   applicationsByGroup: () => groupBy(DATA.applications || [], 'group'),
   application: (id) => find(DATA.applications, 'appId', id),
-  appPage: (id) => (DATA.appPages || {})[id] || null,
   documents: () => DATA.documents || [],
   documentsForBuilding: (bid) => (DATA.documents || []).filter(d => (d.linkedTo || []).includes(bid)),
   media: () => DATA.media || [],

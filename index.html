@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BBL Kundenportal</title>
   <meta name="description" content="BBL Kundenportal — Prototyp. Dienstleistungen, Anwendungen, Dokumente und Daten des Bundesamts für Bauten und Logistik an einem Ort.">
-  <!-- Nur die beiden Schnitte, die tatsächlich geladen werden (document.fonts:
-       Regular + Bold `loaded`, beide Kursiven `unloaded`). -->
-  <link rel="preload" href="assets/fonts/NotoSans-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="assets/fonts/NotoSans-Bold.ttf" as="font" type="font/ttf" crossorigin>
+  <!-- Eine variable woff2 (latin-Subset, wght 100–900) deckt Regular und Bold
+       ab — vorher zwei TTF à 569 KB, jetzt 35 KB gesamt. -->
+  <link rel="preload" href="assets/fonts/NotoSans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/app.css">
 </head>

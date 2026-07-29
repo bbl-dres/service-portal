@@ -6,14 +6,24 @@
    ========================================================================== */
 
 /* ---- Fonts (self-hosted Noto Sans, CD Bund) ---- */
-@font-face { font-family:'Noto Sans'; font-style:normal; font-weight:400; font-display:swap;
-  src:url('../assets/fonts/NotoSans-Regular.ttf') format('truetype'); }
-@font-face { font-family:'Noto Sans'; font-style:normal; font-weight:700; font-display:swap;
-  src:url('../assets/fonts/NotoSans-Bold.ttf') format('truetype'); }
-@font-face { font-family:'Noto Sans'; font-style:italic; font-weight:400; font-display:swap;
-  src:url('../assets/fonts/NotoSans-Italic.ttf') format('truetype'); }
-@font-face { font-family:'Noto Sans'; font-style:italic; font-weight:700; font-display:swap;
-  src:url('../assets/fonts/NotoSans-BoldItalic.ttf') format('truetype'); }
+/* EINE variable woff2 statt vier TTF. Vorher lud der Start 1138 KB Schrift
+   (2× 569 KB, ungekürztes Unicode) — 48 % der gesamten Payload und der grösste
+   Einzelposten der App (docs/code-review.md §5). Jetzt: 35 KB.
+
+   `NotoSans-latin.woff2` ist der offizielle latin-Subset von Google Fonts,
+   variabel über die wght-Achse 100–900 — dieselbe Schrift wie zuvor, nur im
+   Webformat und auf die tatsächlich gebrauchten Zeichen beschnitten. Geprüft:
+   der gesamte App-Text (49 Zeichen ausserhalb ASCII) liegt im latin-Bereich;
+   latin-ext (ą ć ę ł ř š ž …) kommt nirgends vor und wird nicht ausgeliefert.
+
+   Symbole ausserhalb des Subsets (← → ▲ ▼ ₂ ⌘ √ ≈ ≥) fallen glyphweise auf die
+   Systemschrift zurück — bei Symbolen ist das üblich und unauffällig.
+
+   Kursiv hat KEINE eigene Datei mehr: die beiden Kursiv-TTF wurden nie geladen
+   (`document.fonts` meldete sie dauerhaft als `unloaded`). Der Browser
+   synthetisiert die wenigen kursiven Stellen. */
+@font-face { font-family:'Noto Sans'; font-style:normal; font-weight:100 900; font-display:swap;
+  src:url('../assets/fonts/NotoSans-latin.woff2') format('woff2'); }
 /* Metrisch angeglichener Fallback (CD font-face.postcss:37-44), KORRIGIERT:
    `advance-override` ist keine CSS-Eigenschaft (abgebrochenes Chrome-Experiment,
    ersetzt durch `size-adjust`) und `descent-override` verlangt einen

@@ -371,7 +371,11 @@ export default async function render(ctx) {
     else panel.classList.toggle('filter-panel--collapsed');
     syncToggle();
   });
-  window.matchMedia('(min-width:1024px)').addEventListener('change', syncToggle);
+  // Beim Verlassen der Route abmelden: der Horcher hängt an window und
+  // überlebte den DOM-Tausch sonst — ein weiterer je Besuch (code-review §4).
+  const mqAc = new AbortController();
+  ctx.onUnmount(() => mqAc.abort());
+  window.matchMedia('(min-width:1024px)').addEventListener('change', syncToggle, { signal: mqAc.signal });
   C.wireMenu(mount.querySelector('.dash-header'), (action) => {
     if (action === 'refresh') { update(); C.toast('Dashboard aktualisiert.'); }
     else if (action === 'pdf') C.toast('Export als PDF — im Prototyp simuliert.');

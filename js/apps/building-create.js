@@ -499,9 +499,16 @@ export default async function render(ctx) {
       if (li) highlight(Number(li.dataset.idx));
     });
 
+    // Klick ausserhalb schliesst die Vorschlagsliste. `{ once: true }` allein
+    // genügte NICHT: der Horcher verschwindet erst, wenn irgendwo geklickt WIRD —
+    // wer die Seite ohne Klick verlässt, hinterlässt ihn. Gemessen: ein
+    // lebender document-click je Besuch, ohne Obergrenze (code-review §4).
+    // Der Controller hängt am Routenwechsel und räumt unabhängig davon auf.
+    const outsideAc = new AbortController();
+    ctx.onUnmount(() => outsideAc.abort());
     document.addEventListener('click', (e) => {
       if (!picker.contains(e.target)) closeList();
-    }, { once: true });
+    }, { signal: outsideAc.signal });
 
     redrawFacts();
   }

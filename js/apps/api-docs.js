@@ -14,9 +14,10 @@ import { copyText } from '../export.js';
 
 const METHOD = { GET: 'get', POST: 'post', PUT: 'put', PATCH: 'patch', DELETE: 'delete' };
 
-// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
-// bevor render() den ersten Accessor aufruft (H4).
-export const needs = ["datasets"];
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['applications', 'buildings', 'datasets', 'documents', 'projects'];
 
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs, stale } = ctx;

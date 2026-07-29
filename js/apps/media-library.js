@@ -18,6 +18,11 @@ import { initEstateMap } from '../buildings-map.js';
 import { openGallery } from '../gallery.js';
 
 // Historic material is rendered desaturated, so the archive reads as an archive.
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['buildings', 'media', 'parcels', 'projects'];
 const isHistoric = (m) => m.historicPeriod === 'historisch';
 
 const PER_PAGE = 12;

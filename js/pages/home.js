@@ -8,6 +8,11 @@
 // ausdrücklich nicht dem Aufbau öffentlicher Bundesauftritte folgend.
 
 
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['news'];
 const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 
 // Die Themenkacheln (Bauprojekte · Unterbringung · Objektbetrieb · Sicherheit)
@@ -93,29 +98,35 @@ export default async function render(ctx) {
   //     Sammlung, ein externer Shop, ein Dokumentenbestand. Bewusst gemischt und
   //     bewusst kurz: es ist eine Auswahl, kein zweites Menü.
   //     Fünf Karten im Dreierraster ergeben 3+2 — keine einzeln verwaiste Karte.
+  //
+  //     Anwendungen führen auf ihre LANDINGPAGE (#/applications/<appId>), nicht
+  //     direkt ins System — dieselbe Regel wie im Anwendungskatalog: jede
+  //     Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen,
+  //     und die stehen auf der Landingpage. Nur Hilfsmittel verweisen direkt auf
+  //     ihre Sammlung, weil es dort nichts zu erklären gibt.
   const HIGHLIGHTS = [
-    { title: 'Datenportal', href: '#/app/dataportal', photo: '1551288049-bebda4e38f71',
+    { title: 'Datenportal', href: '#/applications/datenportal', photo: '1551288049-bebda4e38f71',
       desc: 'Auswertungen und Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal und Logistik.',
       foot: 'Anwendung' },
-    { title: 'Liegenschaften Inventar', href: '#/app/portfolio', photo: '1515488764276-beab7607c1e6',
+    { title: 'Liegenschaften Inventar', href: '#/applications/liegenschaften-inventar', photo: '1515488764276-beab7607c1e6',
       desc: 'Gebäude und Grundstücke des Bundes auf der Karte, mit Flächen, Verträgen, Kosten und Dokumenten.',
       foot: 'Anwendung' },
     { title: 'Informatik und IKT-Beschaffung', href: '#/knowledge/it', photo: '1518770660439-4636190af475',
       desc: 'Mustervorlagen, Werkzeugkasten und Vorgaben für Beschaffungen im Informatikbereich.',
       foot: 'Hilfsmittel' },
-    { title: 'Bundespublikationen-Shop', href: '#', photo: '1583521214690-73421a1829a9', external: true,
+    { title: 'Bundespublikationen-Shop', href: '#/applications/bundespublikationen', photo: '1583521214690-73421a1829a9',
       desc: 'Publikationen und Drucksachen des Bundes ab Lager bestellen.',
-      foot: 'Externes System' },
-    { title: 'Bauwerksdokumentation', href: '#/app/document-archive', photo: '1478860409698-8707f313ee8b',
+      foot: 'Anwendung' },
+    { title: 'Bauwerksdokumentation', href: '#/applications/dokumentenarchiv', photo: '1478860409698-8707f313ee8b',
       desc: 'Pläne, Dokumentationen und Berichte je Gebäude suchen und beziehen.',
       foot: 'Anwendung' },
   ];
   blocks.push({
     title: 'Anwendungen, Hilfsmittel und weitere Angebote',
     body: `<div class="grid grid--responsive-cols-3">${HIGHLIGHTS.map(h => C.card({
-      title: h.title, desc: h.desc, href: h.href, external: h.external,
+      title: h.title, desc: h.desc, href: h.href,
       photo: { id: h.photo, alt: '' },
-      footerInfo: h.foot, footerAction: C.cardAction({ external: !!h.external }),
+      footerInfo: h.foot, footerAction: C.cardAction(),
     })).join('')}</div>`,
   });
 
@@ -147,8 +158,21 @@ export default async function render(ctx) {
               <button class="btn btn--filled btn--lg" type="submit">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
             </form>
           </div>
+          ${/* Das Bild misst 2048×1258, dargestellt wird es mit höchstens ~714 px
+                — vorher lud jede Startseite 511 KB für rund ein Neuntel der
+                Pixel (docs/code-review.md §5). `srcset` lässt den Browser die
+                passende Grösse wählen; das AVIF bleibt als grösste Stufe für
+                sehr breite oder hochauflösende Anzeigen. `width`/`height` geben
+                das Seitenverhältnis vor, damit beim Laden nichts springt.
+                Varianten erzeugt scripts/make-image-variants.mjs. */''}
           <figure class="home-hero__figure">
-            <img src="assets/images/BBL-FE21_O-01.avif" alt="Der Hauptsitz des BBL an der Fellerstrasse 21 von aussen" loading="eager" decoding="async">
+            <img src="assets/images/BBL-FE21_O-01-800.webp"
+                 srcset="assets/images/BBL-FE21_O-01-800.webp 800w,
+                         assets/images/BBL-FE21_O-01-1400.webp 1400w,
+                         assets/images/BBL-FE21_O-01.avif 2048w"
+                 sizes="(min-width:900px) 40vw, 92vw"
+                 width="2048" height="1258"
+                 alt="Der Hauptsitz des BBL an der Fellerstrasse 21 von aussen" loading="eager" decoding="async">
             <figcaption>Der Hauptsitz des BBL an der Fellerstrasse 21 von aussen — © BBL</figcaption>
           </figure>
         </div>

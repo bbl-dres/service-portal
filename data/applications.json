@@ -13,7 +13,32 @@
     },
     "description": "Karten-, Listen- und Detailansicht des Immobilienportfolios des Bundes.",
     "photo": "1515488764276-beab7607c1e6",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Immobilienportfolio des Bundes",
+    "long": "Das Liegenschafteninventar führt sämtliche Liegenschaften und Gebäude im Eigentum oder in der Verwaltung des Bundes. Es verbindet die Stammdaten aus dem ERP mit Flächen, Nutzungen, Zustandsbewertungen und Standortangaben und stellt sie als Karte, Liste und Detailansicht zur Verfügung. Grundlage für Portfoliosteuerung, Instandhaltungsplanung und Reporting.",
+    "access": {
+      "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Schreibrechte auf Stammdaten liegen beim Portfoliomanagement."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Datensatz «Gebäude (SAP Liegenschafteninventar)»",
+        "href": "#/data/katalog/1"
+      },
+      {
+        "label": "Datensatz «Grundstücke (SAP Liegenschafteninventar)»",
+        "href": "#/data/katalog/2"
+      }
+    ],
+    "related": [
+      "bauprojekte-eppm",
+      "gis-immo"
+    ],
+    "contact": "pfm",
+    "updated": "12.06.2026"
   },
   {
     "appId": "bauprojekte-eppm",
@@ -29,7 +54,33 @@
     },
     "description": "Projekt- und Portfoliomanagement der Bauprojekte (laufend & abgeschlossen).",
     "photo": "1504307651254-35680f356dfd",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Projekt- und Portfoliomanagement Bau",
+    "long": "EPPM führt alle Neu-, Um- und Instandsetzungsprojekte des BBL von der Bedarfsmeldung bis zur Übergabe. Abgebildet werden Projektphasen nach SIA 112, Kosten und Termine, Freigaben sowie die Zuordnung zu Liegenschaft und Portfolio. Die Anwendung ist die führende Quelle für den Projektstatus im Reporting.",
+    "access": {
+      "note": "Projektleitende und Portfoliomanagement des BBL; Lesezugriff für beteiligte Verwaltungseinheiten.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Projektrollen werden vom Portfoliomanagement vergeben."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Weisung Bauprojektabwicklung BBL",
+        "href": "#/knowledge?tab=grundlagen"
+      },
+      {
+        "label": "Datensatz «Bauprojekte (SAP Projektcontrolling)»",
+        "href": "#/data/katalog/3"
+      }
+    ],
+    "related": [
+      "liegenschaften-inventar",
+      "cde",
+      "qualitygate"
+    ],
+    "contact": "pfm",
+    "updated": "02.07.2026"
   },
   {
     "appId": "dokumentenarchiv",
@@ -44,7 +95,32 @@
     },
     "description": "Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.",
     "photo": "1478860409698-8707f313ee8b",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Bauwerksdokumentation",
+    "long": "Die Bauwerksdokumentation bündelt Pläne, Dokumentationen und Nachweise pro Gebäude — von der Projektierung über die Realisierung bis zum Betrieb. Dokumente lassen sich nach Gebäude, Dokumenttyp und Baujahr suchen und beziehen. Umfang und Struktur richten sich nach der Weisung Bauwerksdokumentation.",
+    "access": {
+      "note": "Intern und für berechtigte externe Planende.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Externe Beteiligte erhalten den Zugang über die Projektleitung."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Weisung Bauwerksdokumentation",
+        "href": "#/knowledge?tab=grundlagen"
+      },
+      {
+        "label": "Datensatz «Bauwerksdokumentation (Planarchiv DALA)»",
+        "href": "#/data/katalog/9"
+      }
+    ],
+    "related": [
+      "dala-filenet",
+      "cde"
+    ],
+    "contact": "dres",
+    "updated": "20.05.2026"
   },
   {
     "appId": "mediathek",
@@ -59,7 +135,42 @@
     },
     "description": "Recherche- und Bezugsansicht auf die Mediathek Bauten: Fotos und Videos der Bundesbauten suchen, ansehen und beziehen. Die Verwaltung der Assets erfolgt im DAM.",
     "photo": "1554907984-15263bfd63bd",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Digital Asset Management",
+    "long": "Diese Ansicht im Kundenportal erschliesst die Mediathek Bauten für die Recherche: Fotos und Videos der Bundesbauten suchen, ansehen und beziehen — aktuelle Aufnahmen ebenso wie historisches Archivmaterial. Zu jedem Medium sind Objektbezug, Datum, Urheberschaft und Nutzungsrechte erfasst; die Verwendung in Publikationen ist nur im Rahmen der angegebenen Rechte zulässig. Erfasst und verwaltet werden die Medien im Digital-Asset-Management der Mediathek Bauten.",
+    "access": {
+      "note": "Intern; einzelne Bestände sind öffentlich freigegeben.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Für Publikationen die Angaben zu Urheberschaft und Rechten beachten."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Corporate Design der Bundesverwaltung",
+        "href": "#/knowledge?tab=grundlagen"
+      }
+    ],
+    "related": [
+      "dokumentenarchiv"
+    ],
+    "contact": "dres",
+    "updated": "08.04.2026"
+  },
+  {
+    "appId": "datenportal",
+    "name": "Datenportal (Portal)",
+    "group": "Zentrale Systeme",
+    "icon": "ChartBar",
+    "audience": "both",
+    "accessNote": "Intern + Extern",
+    "link": {
+      "kind": "app",
+      "href": "#/app/dataportal"
+    },
+    "description": "Auswertungen und Dashboards zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal und Logistik.",
+    "photo": "1551288049-bebda4e38f71",
+    "area": "central"
   },
   {
     "appId": "metadatenkatalog",
@@ -75,7 +186,32 @@
     },
     "description": "Dokumentiert die Datenarchitektur und -governance des BBL: Datenobjekte, Verantwortlichkeiten, Klassifizierung und Schnittstellen.",
     "photo": "1481627834876-b7833e8f5570",
-    "area": "central"
+    "area": "central",
+    "subtitle": "Datenarchitektur und Data Governance",
+    "long": "Der Metadatenkatalog dokumentiert die Datenarchitektur des BBL: fachliche Konzepte und Codelisten, ihre Systeme und Verantwortlichkeiten sowie die Beziehungen zwischen den Datenbeständen. Er ist die Referenz für Dateneigner und Datenverwalter und ergänzt den Datenbezug um die begriffliche Ebene.",
+    "access": {
+      "note": "Lesend für alle Mitarbeitenden des BBL; Pflege durch die Datenverwalter.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Änderungen an Konzepten laufen über die Fachstelle Daten."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Datenbezug und API Verzeichnis — Datensatzkatalog",
+        "href": "#/data/katalog"
+      },
+      {
+        "label": "I14Y Interoperabilitätsplattform",
+        "href": "https://www.i14y.admin.ch/",
+        "kind": "external"
+      }
+    ],
+    "related": [
+      "gis-immo"
+    ],
+    "contact": "dres",
+    "updated": "15.07.2026"
   },
   {
     "appId": "gis-immo",
@@ -90,7 +226,44 @@
     },
     "description": "Geoinformationssystem Immobilien (Fachanwendung).",
     "photo": "1541888946425-d81bb19240f5",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Geoinformationssystem",
+    "long": "BBL GIS IMMO ist eine strategische Initiative des Bundesamtes für Bauten und Logistik, um Geoinformationssysteme für das Immobilienmanagement zu etablieren. Das System basiert auf der ArcGIS-Enterprise-Plattform von ESRI und bietet Werkzeuge, Vorlagen und Dienste zur Erstellung, Veröffentlichung und Verwaltung räumlicher Daten — Karten, Anwendungen und Services. Ziel ist es, räumliche Daten effizient zu nutzen, um die Qualität von Entscheidungsprozessen im Immobilienmanagement zu verbessern und datenbasierte Entscheide zu unterstützen.",
+    "entries": [
+      {
+        "label": "BBL GIS IMMO Portal",
+        "href": "https://gis.bbl.admin.ch/portal",
+        "kind": "external",
+        "note": "Einstieg in Karten, Dienste und Anwendungen."
+      },
+      {
+        "label": "BBL GIS Liegenschaftsinventar",
+        "href": "https://gis.bbl.admin.ch/portal/apps/experiencebuilder/experience/",
+        "kind": "external",
+        "note": "Kartenanwendung zum Liegenschaftsinventar."
+      }
+    ],
+    "access": {
+      "note": "Aktuell eingeschränkt auf Mitarbeitende des BBL.",
+      "steps": [
+        "Beim ersten Login den blauen Balken «eIAM» auswählen.",
+        "Öffnet sich die Seite nicht automatisch, beantragen Sie den Zugriff bei der Fachstelle."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dokumentation im Confluence",
+        "href": "https://confluence.bbl.admin.ch/",
+        "kind": "external",
+        "note": "Anleitungen, Datenmodell und Schulungsunterlagen."
+      }
+    ],
+    "related": [
+      "liegenschaften-inventar",
+      "metadatenkatalog"
+    ],
+    "contact": "dres",
+    "updated": "30.04.2025"
   },
   {
     "appId": "dala-filenet",
@@ -105,7 +278,27 @@
     },
     "description": "Planverwaltungstool (Fachanwendung).",
     "photo": "1568667256549-094345857637",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Digitales Planarchiv",
+    "long": "DALA ist das digitale Langzeitarchiv für Pläne und Bauakten des BBL auf Basis von IBM FileNET. Es sichert die revisionssichere Ablage archivwürdiger Unterlagen und dient als Quelle für die Bauwerksdokumentation. Neue Dokumente gelangen aus den Projektablagen ins Archiv.",
+    "access": {
+      "note": "Eingeschränkt auf Mitarbeitende mit Archivrolle.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Die Archivrolle wird von der Fachstelle Daten vergeben."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Datensatz «Bauwerksdokumentation (Planarchiv DALA)»",
+        "href": "#/data/katalog/9"
+      }
+    ],
+    "related": [
+      "dokumentenarchiv"
+    ],
+    "contact": "dres",
+    "updated": "11.03.2026"
   },
   {
     "appId": "cde",
@@ -120,7 +313,32 @@
     },
     "description": "Gemeinsame Datenumgebung / Digital Twin (Fachanwendung).",
     "photo": "1522071820081-009f0129c71c",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Common Data Environment",
+    "long": "Das CDE Bund ist die gemeinsame Datenumgebung für Bauprojekte: Planende, Unternehmer und Bauherrschaft arbeiten auf einem gemeinsamen Modell- und Dokumentenstand. Das CDE ist die verbindliche Ablage während der Projektlaufzeit; bei Projektabschluss werden die archivwürdigen Unterlagen in die Bauwerksdokumentation überführt.",
+    "access": {
+      "note": "Projektbeteiligte intern und extern, pro Projekt berechtigt.",
+      "steps": [
+        "Zugang wird durch die Projektleitung beantragt.",
+        "Externe Beteiligte melden sich über das eIAM-Partnerkonto an."
+      ]
+    },
+    "resources": [
+      {
+        "label": "BIM-Vorgaben des BBL",
+        "href": "#/knowledge?tab=grundlagen"
+      },
+      {
+        "label": "Datensatz «Projektdaten: Bauprojekte (CDE Bund)»",
+        "href": "#/data/katalog/6"
+      }
+    ],
+    "related": [
+      "bauprojekte-eppm",
+      "dokumentenarchiv"
+    ],
+    "contact": "dres",
+    "updated": "24.06.2026"
   },
   {
     "appId": "ehp",
@@ -135,7 +353,23 @@
     },
     "description": "Erhaltungs- und Instandsetzungsplanung (Fachanwendung).",
     "photo": "1470075801209-17f9ec0cada6",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Erhaltungsplanung",
+    "long": "Die Erhaltungsplanung bewertet den Zustand der Bauteile und leitet daraus den mittelfristigen Instandsetzungsbedarf ab. Sie verbindet Zustandsaufnahmen mit Kostenkennwerten und liefert die Grundlage für die Priorisierung im Investitionsprogramm.",
+    "access": {
+      "note": "Fachstellen Erhaltung und Portfoliomanagement.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Zugriff auf Antrag beim Portfoliomanagement."
+      ]
+    },
+    "resources": [],
+    "related": [
+      "liegenschaften-inventar",
+      "bauprojekte-eppm"
+    ],
+    "contact": "pfm",
+    "updated": "19.05.2026"
   },
   {
     "appId": "flm",
@@ -150,7 +384,32 @@
     },
     "description": "Flächen- und Belegungsmanagement (Fachanwendung).",
     "photo": "1502005229762-cf1b2da7c5d6",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Flächenmanagement",
+    "long": "Das Flächenmanagement führt die Flächen der Bundesbauten nach Nutzungsart, Verwaltungseinheit und Arbeitsplatzzahl. Es liefert die Kennzahlen für die Flächenstandards nach der Weisung Neue Arbeitswelten und ist Grundlage für Flächenverrechnung und Belegungsplanung.",
+    "access": {
+      "note": "Flächenverantwortliche der Verwaltungseinheiten und Portfoliomanagement.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Mutationen werden über die zuständige Flächenverantwortung erfasst."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Weisung Neue Arbeitswelten (NAW)",
+        "href": "#/knowledge?tab=grundlagen"
+      },
+      {
+        "label": "Raumbedarf melden",
+        "href": "#/services/raumbedarf-melden"
+      }
+    ],
+    "related": [
+      "workspace",
+      "liegenschaften-inventar"
+    ],
+    "contact": "pfm",
+    "updated": "03.06.2026"
   },
   {
     "appId": "edm",
@@ -165,7 +424,32 @@
     },
     "description": "Energiedaten der Liegenschaften (Fachanwendung).",
     "photo": "1466611653911-95081537e5b7",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Energiedatenmanagement",
+    "long": "Das Energiedatenmanagement erfasst Verbräuche für Wärme, Strom und Wasser je Gebäude und Zählpunkt. Die Daten sind Grundlage für die Treibhausgasbilanz, das Energiereporting nach Vorbildfunktion des Bundes und die Wirkungskontrolle von Sanierungen.",
+    "access": {
+      "note": "Fachstellen Energie und Objektbetrieb.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Zählpunkte werden durch den Objektbetrieb gepflegt."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Energiegesetz — Vorbildfunktion des Bundes",
+        "href": "#/knowledge?tab=grundlagen"
+      },
+      {
+        "label": "Datenportal — Auswertungen Energie",
+        "href": "#/app/dataportal"
+      }
+    ],
+    "related": [
+      "pva",
+      "liegenschaften-inventar"
+    ],
+    "contact": "campus",
+    "updated": "28.05.2026"
   },
   {
     "appId": "pva",
@@ -180,7 +464,26 @@
     },
     "description": "Monitoring Photovoltaikanlagen (Fachanwendung).",
     "photo": "1509391366360-2e959784a276",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Photovoltaikanlagen",
+    "long": "Die Anwendung führt die Photovoltaikanlagen auf Bundesbauten mit Standort, Leistung, Inbetriebnahme und Ertrag. Sie dient dem Ausbaumonitoring im Rahmen der Klimaziele und der Betriebsüberwachung der bestehenden Anlagen.",
+    "access": {
+      "note": "Fachstellen Energie und Objektbetrieb.",
+      "steps": [
+        "Anmeldung über eIAM."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Klima- und Innovationsgesetz (KlG)",
+        "href": "#/knowledge?tab=grundlagen"
+      }
+    ],
+    "related": [
+      "edm"
+    ],
+    "contact": "campus",
+    "updated": "17.04.2026"
   },
   {
     "appId": "qualitygate",
@@ -195,7 +498,28 @@
     },
     "description": "Qualitätssicherung Bauprojekte (Fachanwendung).",
     "photo": "1562564055-71e051d33c19",
-    "area": "buildings"
+    "area": "buildings",
+    "subtitle": "Qualitätssicherung Bauprojekte",
+    "long": "QualityGate prüft Projektdaten und Modelllieferungen automatisiert gegen die Vorgaben des BBL, bevor sie in die führenden Systeme übernommen werden. Geprüft werden Vollständigkeit, Struktur und Benennung — Abweichungen gehen als Prüfbericht an die Projektleitung zurück.",
+    "access": {
+      "note": "Projektleitende und Planende mit CDE-Zugang.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Die Prüfregeln sind pro Projektphase hinterlegt."
+      ]
+    },
+    "resources": [
+      {
+        "label": "BIM-Vorgaben des BBL",
+        "href": "#/knowledge?tab=grundlagen"
+      }
+    ],
+    "related": [
+      "cde",
+      "bauprojekte-eppm"
+    ],
+    "contact": "dres",
+    "updated": "09.06.2026"
   },
   {
     "appId": "workspace",
@@ -210,7 +534,27 @@
     },
     "description": "Möblierung, Belegungsplanung, Multispace und Buchungen.",
     "photo": "1524758631624-e2822e304c36",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Arbeitsplatz und Belegung",
+    "long": "Workspace Management bildet Arbeitsplätze, Zonen und Belegung der Bürogebäude ab. Es unterstützt die Planung nach Desk-Sharing-Faktor, die Zuteilung von Zonen an Verwaltungseinheiten und die Auswertung der tatsächlichen Nutzung.",
+    "access": {
+      "note": "Für Mitarbeitende der angeschlossenen Verwaltungseinheiten.",
+      "steps": [
+        "Anmeldung über eIAM."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Weisung Neue Arbeitswelten (NAW)",
+        "href": "#/knowledge?tab=grundlagen"
+      }
+    ],
+    "related": [
+      "raumbuchung",
+      "flm"
+    ],
+    "contact": "campus",
+    "updated": "22.06.2026"
   },
   {
     "appId": "raumbuchung",
@@ -225,7 +569,22 @@
     },
     "description": "Sitzungsräume, Arbeitsplätze und Parkplätze reservieren.",
     "photo": "1486406146926-c627a92ad1ab",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Räume und Parkplätze buchen",
+    "long": "Über die Raum- und Parkplatzbuchung reservieren Mitarbeitende Sitzungszimmer, Arbeitsplätze und Parkplätze an den Standorten des Bundes. Die Verfügbarkeit richtet sich nach der Zuteilung der jeweiligen Verwaltungseinheit.",
+    "access": {
+      "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Parkplätze unterliegen der Zuteilung durch die Verwaltungseinheit."
+      ]
+    },
+    "resources": [],
+    "related": [
+      "workspace"
+    ],
+    "contact": "campus",
+    "updated": "30.06.2026"
   },
   {
     "appId": "eshop",
@@ -240,7 +599,25 @@
     },
     "description": "Büromaterial, Mobiliar und IT-Verbrauchsmaterial bestellen.",
     "photo": "1553413077-190dd305871c",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Online-Shop der Bundesverwaltung",
+    "long": "Über den Online-Shop beziehen Verwaltungseinheiten Büromaterial, Publikationen, Drucksachen und Mobiliar aus dem Sortiment des BBL. Bestellungen laufen über die Kostenstelle der Verwaltungseinheit; Lieferung und Retouren erfolgen über die Logistik des BBL.",
+    "access": {
+      "note": "Für bestellberechtigte Personen der Verwaltungseinheiten.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Die Bestellberechtigung vergibt die Verwaltungseinheit."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistungen — Beschaffung",
+        "href": "#/services?topic=E"
+      }
+    ],
+    "related": [],
+    "contact": "kbb",
+    "updated": "14.05.2026"
   },
   {
     "appId": "egate",
@@ -255,7 +632,29 @@
     },
     "description": "Föderierter Zugang / Single Sign-on der Bundesverwaltung.",
     "photo": "1449157291145-7efd050a4d0e",
-    "area": "central"
+    "area": "central",
+    "subtitle": "Zentrales Portal der Bundesverwaltung",
+    "long": "eGate ist das gemeinsame Einstiegsportal der Bundesverwaltung. Es bündelt personalisierte Informationen, Anwendungen und Dienste der Departemente und Ämter und ist für alle Mitarbeitenden der Bundesverwaltung der zentrale Startpunkt.",
+    "access": {
+      "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto."
+      ]
+    },
+    "entries": [
+      {
+        "label": "eGate öffnen",
+        "href": "http://intranet.egate.admin.ch/",
+        "kind": "external",
+        "note": "Einstiegsportal der Bundesverwaltung."
+      }
+    ],
+    "resources": [],
+    "related": [
+      "infopers"
+    ],
+    "contact": "support-bil",
+    "updated": "01.07.2026"
   },
   {
     "appId": "infopers",
@@ -270,7 +669,21 @@
     },
     "description": "HR-Self-Service der Bundesverwaltung.",
     "photo": "1543872084-c7bd3822856f",
-    "area": "central"
+    "area": "central",
+    "subtitle": "Personalinformationssystem",
+    "long": "InfoPers ist das Personalinformationssystem der Bundesverwaltung. Mitarbeitende sehen und pflegen dort ihre Personaldaten, Zeitsaldi und Abwesenheiten; Führungskräfte nutzen es für Bewilligungen und Auswertungen.",
+    "access": {
+      "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto."
+      ]
+    },
+    "resources": [],
+    "related": [
+      "egate"
+    ],
+    "contact": "support-bil",
+    "updated": "01.07.2026"
   },
   {
     "appId": "superb",
@@ -285,7 +698,28 @@
     },
     "description": "ERP der Bundesverwaltung (Finanzen, Beschaffung, Immobilien, EPPM). Migration von SAP ECC auf S/4HANA im Programm SUPERB.",
     "photo": "1578575437130-527eed3abbec",
-    "area": "central"
+    "area": "central",
+    "subtitle": "SAP S/4HANA der Bundesverwaltung",
+    "long": "Mit dem Programm SUPERB migriert die Bundesverwaltung ihre bisherigen SAP-Systeme auf SAP S/4HANA. Für das BBL betrifft das insbesondere Finanzen, Beschaffung und das Immobilienmanagement — die Stammdaten aus dem Liegenschafteninventar stammen aus diesem System.",
+    "access": {
+      "note": "Rollenbasiert für Mitarbeitende mit SAP-Berechtigung.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "SAP-Rollen werden über den Vorgesetzten beantragt."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Datenbezug und API Verzeichnis — Datensätze aus SAP",
+        "href": "#/data/katalog?q=SAP"
+      }
+    ],
+    "related": [
+      "liegenschaften-inventar",
+      "bauprojekte-eppm"
+    ],
+    "contact": "support-bil",
+    "updated": "25.06.2026"
   },
   {
     "appId": "admin-directory",
@@ -300,7 +734,30 @@
     },
     "description": "Personen- und Organisationsverzeichnis der Bundesverwaltung (ersetzt das PDF-Verzeichnis).",
     "photo": "1590274853856-f22d5ee3d228",
-    "area": "central"
+    "area": "central",
+    "subtitle": "Personen- und Organisationsverzeichnis",
+    "long": "Das Admin-Directory ist das Verzeichnis der Personen, Organisationseinheiten und Standorte der Bundesverwaltung. Es liefert die Referenz für Zuständigkeiten — unter anderem für die Dateneigner und Datenverwalter im Datenbezug.",
+    "access": {
+      "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto."
+      ]
+    },
+    "entries": [
+      {
+        "label": "Admin-Directory öffnen",
+        "href": "https://admindir.verzeichnisse.admin.ch/",
+        "kind": "external",
+        "note": "Personen, Organisationseinheiten und Standorte der Bundesverwaltung."
+      }
+    ],
+    "resources": [],
+    "related": [
+      "egate",
+      "infopers"
+    ],
+    "contact": "support-bil",
+    "updated": "01.07.2026"
   },
   {
     "appId": "bundespublikationen",

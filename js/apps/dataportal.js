@@ -12,6 +12,11 @@ import { chart, wireCharts, wireChartMenus, paintCharts } from '../charts.js';
 import { initBuildingsMap } from '../buildings-map.js';
 import { copyText, shareMail } from '../export.js';
 
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['buildings'];
 const CRUMB_BASE = [
   { label: 'Startseite', href: '#/' },
   { label: 'Daten und Digitalisierung', href: '#/data' },
@@ -322,7 +327,11 @@ function dashboardView(ctx, id) {
     else panel.classList.toggle('filter-panel--collapsed');
     syncToggle();
   });
-  window.matchMedia('(min-width:1024px)').addEventListener('change', syncToggle);
+  // Beim Verlassen der Route abmelden: der Horcher hängt an window und
+  // überlebte den DOM-Tausch sonst — ein weiterer je Besuch (code-review §4).
+  const mqAc = new AbortController();
+  ctx.onUnmount(() => mqAc.abort());
+  window.matchMedia('(min-width:1024px)').addEventListener('change', syncToggle, { signal: mqAc.signal });
 
   // --- dashboard toolbar menu: Aktualisieren (echt) · Herunterladen (Demo) ·
   // Teilen (echt: Zwischenablage / E-Mail). Einmal verdrahtet (Toolbar bleibt). ---

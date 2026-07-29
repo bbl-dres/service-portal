@@ -60,7 +60,7 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
     </div>
   </div>`;
 
-  wireAnchorNav(mount);
+  wireAnchorNav(mount, ctx);
 
   // Direktsprung aus einem Kurzlink («Häufig gebraucht»). Nach dem Fokus-Setzen
   // des Routers ausführen, sonst zieht dessen h1-Fokus die Seite zurück nach oben.
@@ -78,7 +78,20 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
 // den Fokus auf dessen Überschrift; (2) Scroll-Spy markiert den aktuellen
 // Abschnitt mit .menu__item--active (CD detailPageAnchorNav JS-Beispiel);
 // (3) etwaige Akkordeons im Inhalt werden aktiviert.
-function wireAnchorNav(mount) {
+// `ctx` wird durchgereicht, damit die globalen Horcher beim Verlassen der Route
+// wieder abgemeldet werden. Ohne das sammelte jede Ankernavigations-Seite pro
+// Besuch je einen matchMedia- und einen scroll-Listener an — gemessen +1/+1 pro
+// Aufruf, ohne Obergrenze, und der matchMedia-Horcher hielt über seine Closure
+// den ausgetauschten `mount`-Teilbaum am Leben (docs/code-review.md §4).
+// Diese Seiten sind die meistbesuchten der App: sechs Wissens- und fünf
+// Digitalisierungs-Seiten teilen sich dieses Layout.
+function wireAnchorNav(mount, ctx) {
+  // Ein AbortController je Render — dasselbe Muster wie in js/shell.js. Alle
+  // Listener werden mit `signal` registriert und mit einem `abort()` gelöst.
+  const ac = new AbortController();
+  const { signal } = ac;
+  if (ctx && ctx.onUnmount) ctx.onUnmount(() => ac.abort());
+
   // Das Inhaltsverzeichnis ist NUR unter 768px ein Ausklapper. Der Zustand muss
   // vom JS kommen: Browser klappen <details> heute über
   // `::details-content { content-visibility:hidden }` ein, und dagegen kommt
@@ -90,7 +103,7 @@ function wireAnchorNav(mount) {
     const sync = () => { details.open = wide.matches; };
     sync();
     // Beim Breitenwechsel nachziehen; auf `change` statt Resize-Sturm.
-    if (wide.addEventListener) wide.addEventListener('change', sync);
+    wide.addEventListener('change', sync, { signal });
   }
 
   const links = [...mount.querySelectorAll('.anchor-nav [data-anchor]')];
@@ -101,22 +114,24 @@ function wireAnchorNav(mount) {
       if (!target) return;
       target.scrollIntoView({ block: 'start', behavior: 'smooth' });
       (target.querySelector('.anchor-section__title') || target).focus({ preventScroll: true });
-    });
+    }, { signal });
   });
 
-  // Scroll-Spy: den zuletzt überschrittenen Abschnitt aktiv setzen. Der
-  // window-Listener entfernt sich selbst, sobald die Seite ausgetauscht wurde.
+  // Scroll-Spy: den zuletzt überschrittenen Abschnitt aktiv setzen. Die
+  // Selbstabmeldung beim ersten Scroll nach dem Seitenwechsel bleibt als Netz
+  // bestehen — sie griff aber nur, WENN nach dem Verlassen überhaupt noch
+  // gescrollt wurde. Der Controller räumt jetzt unabhängig davon auf.
   const sections = [...mount.querySelectorAll('.anchor-section[id]')];
   if (sections.length) {
     const OFFSET = 140;
     const onScroll = () => {
-      if (!mount.querySelector('.anchor-nav')) { window.removeEventListener('scroll', onScroll); return; }
+      if (!mount.querySelector('.anchor-nav')) { ac.abort(); return; }
       const y = window.scrollY || document.documentElement.scrollTop;
       let current = sections[0].id;
       for (const s of sections) if (s.offsetTop - OFFSET <= y) current = s.id;
       links.forEach(a => a.classList.toggle('menu__item--active', a.getAttribute('data-anchor') === current));
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true, signal });
     onScroll();
   }
 
@@ -127,6 +142,6 @@ function wireAnchorNav(mount) {
       btn.setAttribute('aria-expanded', String(!expanded));
       const panel = mount.querySelector('#' + CSS.escape(btn.getAttribute('aria-controls')));
       if (panel) panel.hidden = expanded;
-    });
+    }, { signal });
   });
 }

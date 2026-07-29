@@ -1,16 +1,25 @@
 // Daten und Digitalisierung — Abschnitts-Übersicht. Die Unterseiten liegen in
 // eigenen Modulen: catalog.js (Datenbezug), ict-projects.js, digitalisation.js.
 
-// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
-// bevor render() den ersten Accessor aufruft (H4).
-export const needs = ["datasets"];
+// Nur was die ÜBERSICHT liest. Die Unterseiten fordern ihren Bestand selbst an
+// (siehe unten) — stünde hier die Vereinigungsmenge, zöge `#/data/digitalisation`
+// die 115 KB des Datenkatalogs mit, obwohl es keinen einzigen Datensatz liest.
+export const needs = ['applications', 'datasets'];
+
+// Bestand je Unterseite. `data.js` lädt sie per dynamischem Import, der Router
+// sieht deren `needs` also nicht — deshalb hier ensure() vor dem Delegieren.
+const SUBS = {
+  catalog:        { mod: './catalog.js',        needs: ['datasets', 'catalogLabels'] },
+  'ict-projects': { mod: './ict-projects.js',   needs: [] },
+  digitalisation: { mod: './digitalisation.js', needs: [] },
+};
 
 export default async function render(ctx) {
-  const { params } = ctx;
+  const { params, core } = ctx;
   if (!params.length) return overview(ctx);
-  const sub = { catalog: './catalog.js', 'ict-projects': './ict-projects.js', digitalisation: './digitalisation.js' }[params[0]];
+  const sub = SUBS[params[0]];
   if (!sub) return notFound(ctx);
-  const mod = await import(sub);
+  const [mod] = await Promise.all([import(sub.mod), core.ensure(sub.needs)]);
   if (ctx.stale()) return;   // A2: nach dem await keine überholte Navigation überschreiben
   return mod.default(ctx);
 }

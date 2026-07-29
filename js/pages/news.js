@@ -6,6 +6,11 @@
 // Filter — die Liste ist chronologisch, das ist bei News die einzige Ordnung,
 // die jemand erwartet.
 
+
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['news'];
 export default async function render(ctx) {
   const { params, C } = ctx;
   const id = params[0] ? C.safeDecode(params[0]) : '';

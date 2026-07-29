@@ -55,9 +55,10 @@ const CRUMBS = [
   { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
 ];
 
-// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
-// bevor render() den ersten Accessor aufruft (H4).
-export const needs = ["assets","contracts","costs","areas","buildingContacts","landcovers"];
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['areas', 'assets', 'buildingContacts', 'buildings', 'contracts', 'costs', 'documents', 'landcovers', 'parcels'];
 
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;

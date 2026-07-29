@@ -19,9 +19,10 @@ const SYNONYMS = {
   material: 'bestellen', möbel: 'mobiliar',
 };
 
-// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
-// bevor render() den ersten Accessor aufruft (H4).
-export const needs = ["datasets"];
+// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
+// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
+// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+export const needs = ['applications', 'datasets', 'documents', 'news'];
 
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
