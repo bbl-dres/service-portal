@@ -3,9 +3,8 @@
     "appId": "liegenschaften-inventar",
     "name": "Liegenschaften Inventar (Portal)",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "Map",
-    "audience": "internal",
+    "audience": "staff",
     "hero": true,
     "accessNote": "Intern",
     "link": {
@@ -13,15 +12,15 @@
       "href": "#/app/portfolio"
     },
     "description": "Karten-, Listen- und Detailansicht des Immobilienportfolios des Bundes.",
-    "photo": "1515488764276-beab7607c1e6"
+    "photo": "1515488764276-beab7607c1e6",
+    "area": "buildings"
   },
   {
     "appId": "bauprojekte-eppm",
     "name": "Bauprojekte / EPPM (Portal)",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "Building",
-    "audience": "internal",
+    "audience": "staff",
     "hero": true,
     "accessNote": "Intern",
     "link": {
@@ -29,13 +28,13 @@
       "href": "#/app/projects"
     },
     "description": "Projekt- und Portfoliomanagement der Bauprojekte (laufend & abgeschlossen).",
-    "photo": "1504307651254-35680f356dfd"
+    "photo": "1504307651254-35680f356dfd",
+    "area": "buildings"
   },
   {
     "appId": "dokumentenarchiv",
     "name": "Bauwerksdokumentation (Portal)",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "Folder",
     "audience": "both",
     "accessNote": "Intern + Extern",
@@ -44,13 +43,13 @@
       "href": "#/app/document-archive"
     },
     "description": "Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.",
-    "photo": "1478860409698-8707f313ee8b"
+    "photo": "1478860409698-8707f313ee8b",
+    "area": "buildings"
   },
   {
     "appId": "mediathek",
     "name": "Mediathek Bauten (Portal)",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "Image",
     "audience": "both",
     "accessNote": "Intern + Extern",
@@ -59,15 +58,15 @@
       "href": "#/app/mediathek"
     },
     "description": "Recherche- und Bezugsansicht auf die Mediathek Bauten: Fotos und Videos der Bundesbauten suchen, ansehen und beziehen. Die Verwaltung der Assets erfolgt im DAM.",
-    "photo": "1554907984-15263bfd63bd"
+    "photo": "1554907984-15263bfd63bd",
+    "area": "buildings"
   },
   {
     "appId": "metadatenkatalog",
     "name": "Metadatenkatalog (Portal)",
     "group": "Zentrale Systeme",
-    "bereich": "zentral",
     "icon": "Database",
-    "audience": "internal",
+    "audience": "staff",
     "hero": false,
     "accessNote": "Intern",
     "link": {
@@ -75,148 +74,148 @@
       "href": "#/data/katalog"
     },
     "description": "Dokumentiert die Datenarchitektur und -governance des BBL: Datenobjekte, Verantwortlichkeiten, Klassifizierung und Schnittstellen.",
-    "photo": "1481627834876-b7833e8f5570"
+    "photo": "1481627834876-b7833e8f5570",
+    "area": "central"
   },
   {
     "appId": "gis-immo",
     "name": "BBL GIS IMMO",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "Map",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Geoinformationssystem Immobilien (Fachanwendung).",
-    "photo": "1541888946425-d81bb19240f5"
+    "photo": "1541888946425-d81bb19240f5",
+    "area": "buildings"
   },
   {
     "appId": "dala-filenet",
     "name": "DALA / FileNET",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "File",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Planverwaltungstool (Fachanwendung).",
-    "photo": "1568667256549-094345857637"
+    "photo": "1568667256549-094345857637",
+    "area": "buildings"
   },
   {
     "appId": "cde",
     "name": "Common Data Environment (CDE)",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "Database",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Gemeinsame Datenumgebung / Digital Twin (Fachanwendung).",
-    "photo": "1522071820081-009f0129c71c"
+    "photo": "1522071820081-009f0129c71c",
+    "area": "buildings"
   },
   {
     "appId": "ehp",
     "name": "Erhaltungsplanung (EHP)",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "Wrench",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Erhaltungs- und Instandsetzungsplanung (Fachanwendung).",
-    "photo": "1470075801209-17f9ec0cada6"
+    "photo": "1470075801209-17f9ec0cada6",
+    "area": "buildings"
   },
   {
     "appId": "flm",
     "name": "Flächenmanagement (FLM)",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "Map",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Flächen- und Belegungsmanagement (Fachanwendung).",
-    "photo": "1502005229762-cf1b2da7c5d6"
+    "photo": "1502005229762-cf1b2da7c5d6",
+    "area": "buildings"
   },
   {
     "appId": "edm",
     "name": "Energiedatenmanagement (EDM)",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "FileDatabase",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Energiedaten der Liegenschaften (Fachanwendung).",
-    "photo": "1466611653911-95081537e5b7"
+    "photo": "1466611653911-95081537e5b7",
+    "area": "buildings"
   },
   {
     "appId": "pva",
     "name": "Photovoltaikanlagen (PVA)",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "Cog",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Monitoring Photovoltaikanlagen (Fachanwendung).",
-    "photo": "1509391366360-2e959784a276"
+    "photo": "1509391366360-2e959784a276",
+    "area": "buildings"
   },
   {
     "appId": "qualitygate",
     "name": "QualityGate",
     "group": "Immobilien & Bau",
-    "bereich": "bauten",
     "icon": "CheckmarkCircle",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Qualitätssicherung Bauprojekte (Fachanwendung).",
-    "photo": "1562564055-71e051d33c19"
+    "photo": "1562564055-71e051d33c19",
+    "area": "buildings"
   },
   {
     "appId": "workspace",
     "name": "Workspace Management (Portal)",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "Apps",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Intern",
     "link": {
       "kind": "app",
       "href": "#/app/workspace"
     },
     "description": "Möblierung, Belegungsplanung, Multispace und Buchungen.",
-    "photo": "1524758631624-e2822e304c36"
+    "photo": "1524758631624-e2822e304c36",
+    "area": "logistics"
   },
   {
     "appId": "raumbuchung",
     "name": "Raum- & Parkplatzbuchung (Portal)",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "Calendar",
     "audience": "both",
     "accessNote": "Intern + Extern",
@@ -225,13 +224,13 @@
       "href": "#/app/workspace"
     },
     "description": "Sitzungsräume, Arbeitsplätze und Parkplätze reservieren.",
-    "photo": "1486406146926-c627a92ad1ab"
+    "photo": "1486406146926-c627a92ad1ab",
+    "area": "logistics"
   },
   {
     "appId": "eshop",
     "name": "Online-Shop Bundesverwaltung",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "ShoppingCart",
     "audience": "both",
     "accessNote": "Extern (Login)",
@@ -240,13 +239,13 @@
       "href": "#"
     },
     "description": "Büromaterial, Mobiliar und IT-Verbrauchsmaterial bestellen.",
-    "photo": "1553413077-190dd305871c"
+    "photo": "1553413077-190dd305871c",
+    "area": "logistics"
   },
   {
     "appId": "egate",
     "name": "eGate",
     "group": "Zentrale Systeme",
-    "bereich": "zentral",
     "icon": "Key",
     "audience": "both",
     "accessNote": "Extern (SSO)",
@@ -255,43 +254,43 @@
       "href": "#"
     },
     "description": "Föderierter Zugang / Single Sign-on der Bundesverwaltung.",
-    "photo": "1449157291145-7efd050a4d0e"
+    "photo": "1449157291145-7efd050a4d0e",
+    "area": "central"
   },
   {
     "appId": "infopers",
     "name": "InfoPers",
     "group": "Zentrale Systeme",
-    "bereich": "zentral",
     "icon": "Users",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "HR-Self-Service der Bundesverwaltung.",
-    "photo": "1543872084-c7bd3822856f"
+    "photo": "1543872084-c7bd3822856f",
+    "area": "central"
   },
   {
     "appId": "superb",
     "name": "SAP S/4HANA (Programm SUPERB)",
     "group": "Zentrale Systeme",
-    "bereich": "zentral",
     "icon": "Database",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Extern (Login)",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "ERP der Bundesverwaltung (Finanzen, Beschaffung, Immobilien, EPPM). Migration von SAP ECC auf S/4HANA im Programm SUPERB.",
-    "photo": "1578575437130-527eed3abbec"
+    "photo": "1578575437130-527eed3abbec",
+    "area": "central"
   },
   {
     "appId": "admin-directory",
     "name": "Admin-Directory",
     "group": "Zentrale Systeme",
-    "bereich": "zentral",
     "icon": "User",
     "audience": "both",
     "accessNote": "Extern",
@@ -300,13 +299,13 @@
       "href": "#"
     },
     "description": "Personen- und Organisationsverzeichnis der Bundesverwaltung (ersetzt das PDF-Verzeichnis).",
-    "photo": "1590274853856-f22d5ee3d228"
+    "photo": "1590274853856-f22d5ee3d228",
+    "area": "central"
   },
   {
     "appId": "bundespublikationen",
     "name": "Bundespublikationen-Shop",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "Book",
     "audience": "both",
     "accessNote": "Extern (Login)",
@@ -315,13 +314,13 @@
       "href": "#"
     },
     "description": "Broschüren, Formulare und amtliche Publikationen des Bundes bestellen und Lagerbestände abfragen (Warengruppe Publikationen).",
-    "photo": "1583521214690-73421a1829a9"
+    "photo": "1583521214690-73421a1829a9",
+    "area": "logistics"
   },
   {
     "appId": "umzug-transport",
     "name": "Umzugs- & Transportmanagement",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "Truck",
     "audience": "both",
     "accessNote": "Intern + Extern",
@@ -330,13 +329,13 @@
       "href": "#"
     },
     "description": "Umzüge, interne Transporte und Entsorgungsaufträge erfassen, disponieren und den Status verfolgen.",
-    "photo": "1757837593538-b4a8654132f1"
+    "photo": "1757837593538-b4a8654132f1",
+    "area": "logistics"
   },
   {
     "appId": "moebelboerse",
     "name": "Möbelbörse (Wiederverwendung)",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "Exchange",
     "audience": "both",
     "accessNote": "Intern",
@@ -345,28 +344,28 @@
       "href": "#"
     },
     "description": "Kreislauf-Plattform für gebrauchtes Mobiliar: Möbel intern weiterverwenden, reservieren oder im Mobiliarverkauf für Bundesmitarbeitende beziehen.",
-    "photo": "1748975026870-1f7041b9c8d1"
+    "photo": "1748975026870-1f7041b9c8d1",
+    "area": "logistics"
   },
   {
     "appId": "kurier-fuhrpark",
     "name": "Kurierdienst & Fuhrpark",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "PaperPlane",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Intern",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Kurieraufträge des BBL aufgeben, Sendungen verfolgen und Fahrzeuge des Fuhrparks reservieren.",
-    "photo": "1533324445462-9c7e805a94a1"
+    "photo": "1533324445462-9c7e805a94a1",
+    "area": "logistics"
   },
   {
     "appId": "produktion-druck",
     "name": "Produktion & Digitaldruck",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "Printer",
     "audience": "both",
     "accessNote": "Intern + Extern",
@@ -375,13 +374,13 @@
       "href": "#"
     },
     "description": "Druck-, Serienbrief- und Versandaufträge einreichen (Arbeitsvorbereitung AVOR, Digital Druck, Versenden).",
-    "photo": "1503694978374-8a2fa686963a"
+    "photo": "1503694978374-8a2fa686963a",
+    "area": "logistics"
   },
   {
     "appId": "facility-auftrag",
     "name": "Facility-Auftragssystem",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "Brush",
     "audience": "both",
     "accessNote": "Intern + Extern",
@@ -390,13 +389,13 @@
       "href": "#"
     },
     "description": "Reinigungs-, Hausdienst- und Kleinaufträge bestellen und beauftragen (ergänzt die Störungsmeldung).",
-    "photo": "1563453392212-326f5e854473"
+    "photo": "1563453392212-326f5e854473",
+    "area": "logistics"
   },
   {
     "appId": "fahnen-event",
     "name": "Fahnen- & Eventlogistik",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "Flag",
     "audience": "both",
     "accessNote": "Intern",
@@ -405,21 +404,22 @@
       "href": "#"
     },
     "description": "Fahnenmanagement, Blumendekorationen und Ausstattung für Anlässe des Bundes planen und bestellen.",
-    "photo": "1722073650943-fbebd9d244e1"
+    "photo": "1722073650943-fbebd9d244e1",
+    "area": "logistics"
   },
   {
     "appId": "lager-material",
     "name": "Lager- & Materialwirtschaft",
     "group": "Arbeitsplatz & Logistik",
-    "bereich": "logistik",
     "icon": "Archive",
-    "audience": "internal",
+    "audience": "staff",
     "accessNote": "Intern",
     "link": {
       "kind": "external",
       "href": "#"
     },
     "description": "Lagerbestände, Warengruppen und Nachschub für Büro- und Hausdienstmaterial bewirtschaften.",
-    "photo": "1749244768351-2726dc23d26c"
+    "photo": "1749244768351-2726dc23d26c",
+    "area": "logistics"
   }
 ]

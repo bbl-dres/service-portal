@@ -36,31 +36,43 @@ export const NAV = [
     children: [
       { href: '#/data', label: 'Übersicht' },
       // «Digitalisierung» ist ein Drill-down-Zweig (CD navy) mit eigenen L2-Seiten.
-      { label: 'Digitalisierung', branchKey: 'digitalisierung', branches: [
-        { href: '#/data/digitalisierung', label: 'Übersicht' },
-        { href: '#/data/digitalisierung/strategie', label: 'Digitalisierungsstrategie' },
-        { href: '#/data/digitalisierung/vision', label: 'Vision' },
-        { href: '#/data/digitalisierung/prinzipien', label: 'Prinzipien' },
+      { label: 'Digitalisierung', branchKey: 'digitalisation', branches: [
+        { href: '#/data/digitalisation', label: 'Übersicht' },
+        { href: '#/data/digitalisation/strategy', label: 'Digitalisierungsstrategie' },
+        { href: '#/data/digitalisation/vision', label: 'Vision' },
+        { href: '#/data/digitalisation/principles', label: 'Prinzipien' },
       ] },
       { href: '#/app/dataportal', label: 'Datenportal' },
-      { href: '#/data/katalog', label: 'Datenbezug und API Verzeichnis' },
-      { href: '#/applications?bereich=bauten', label: 'Fachanwendungen Bauten' },
-      { href: '#/applications?bereich=logistik', label: 'Fachanwendungen Logistik' },
+      { href: '#/data/catalog', label: 'Datenbezug und API Verzeichnis' },
+      { href: '#/applications?area=buildings', label: 'Fachanwendungen Bauten' },
+      { href: '#/applications?area=logistics', label: 'Fachanwendungen Logistik' },
     ],
   },
+  // «Wissen und Hilfsmittel» trägt die Referenzschicht: Vorgaben, Vorlagen,
+  // Anleitungen, Prozesse. News ist daraus herausgelöst (docs/sitemap.md §2.1) —
+  // eine Nachricht wird einmal gelesen, ein Hilfsmittel immer wieder benutzt.
   {
     path: '#/knowledge',
     base: 'knowledge',
-    label: 'News und Wissen',
+    label: 'Wissen und Hilfsmittel',
     icon: 'Book',
+    // Gegliedert nach FACHGEBIET, nicht nach Materialart: Hilfsmittel werden
+    // dort gebraucht, wo man arbeitet — im Altbestand lagen Werkzeugkasten und
+    // Mustervorlagen unter «Informatik», die BKB-Dokumente unter «Beschaffen»
+    // (docs/legacy-analysis.md). Die Materialarten sind Abschnitte INNERHALB
+    // der Fachgebietsseite; ihr Inhaltsverzeichnis trägt die dritte Ebene.
     children: [
       { href: '#/knowledge', label: 'Übersicht' },
-      { href: '#/knowledge/grundlagen', label: 'Gesetzliche Grundlagen und Vorgaben' },
-      { href: '#/knowledge/news', label: 'News' },
-      { href: '#/knowledge/prozesse', label: 'Prozessdokumentation' },
-      { href: '#/knowledge/anleitungen', label: 'Anleitungen und Schulungsunterlagen' },
+      { href: '#/knowledge/it', label: 'Informatik und IKT-Beschaffung' },
+      { href: '#/knowledge/procurement', label: 'Beschaffung' },
+      { href: '#/knowledge/accommodation', label: 'Unterbringung und Objektbetrieb' },
+      { href: '#/knowledge/publishing', label: 'Publikationen, Druck und Versand' },
+      { href: '#/knowledge/guides', label: 'Anleitungen und Schulungen' },
+      { href: '#/knowledge/processes', label: 'Prozessdokumentation' },
     ],
   },
+  // News ist flach — kein Drawer.
+  { path: '#/news',         base: 'news',         label: 'News',               icon: 'Bell' },
   // «Meine Vorgänge» steht immer zuletzt.
   { path: '#/my-cases',     base: 'my-cases',     label: 'Meine Vorgänge',     icon: 'List' },
 ];
@@ -73,6 +85,7 @@ const PAGES = {
   'applications':'./pages/applications.js',
   'data':        './pages/data.js',
   'knowledge':   './pages/knowledge.js',
+  'news':        './pages/news.js',
   'my-cases':    './pages/my-cases.js',
   'search':      './pages/search.js',
 };
@@ -82,12 +95,12 @@ const APPS = {
   'portfolio':       './apps/portfolio.js',
   'projects':        './apps/projects.js',
   'document-archive':'./apps/document-archive.js',
-  'mediathek':       './apps/mediathek.js',
   'workspace':       './apps/workspace.js',
   'transaction':     './apps/transaction.js',
   'dataportal':      './apps/dataportal.js',
   'api-docs':        './apps/api-docs.js',
   'building-create': './apps/building-create.js',
+  'media-library':   './apps/media-library.js',
 };
 // Which top-nav item to highlight for pages and apps that are not themselves a
 // top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
@@ -97,7 +110,7 @@ const SECTION_OF = {
   'space-request': 'services', 'fault-report': 'services', 'building-create': 'services',
   'portfolio': 'data', 'projects': 'data',
   'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
-  'document-archive': 'data', 'mediathek': 'data', 'api-docs': 'data',
+  'document-archive': 'data', 'media-library': 'data', 'api-docs': 'data',
 };
 
 function parseHash() {
@@ -105,6 +118,40 @@ function parseHash() {
   const [pathPart, queryPart] = raw.split('?');
   const segs = pathPart.split('/').filter(Boolean);
   return { segs, query: new URLSearchParams(queryPart || '') };
+}
+
+// --- Altlasten-Weiterleitungen (docs/sitemap.md §7) -------------------------
+// Die Routen tragen jetzt durchgehend englische Segmente. Geteilte Links auf die
+// alten deutschen Pfade dürfen deswegen nicht ins Leere laufen — sie sind genau
+// die, die jemand weitergegeben hat. Reihenfolge zählt: längere Pfade zuerst,
+// sonst schluckt `#/knowledge/news` die Regel für `#/knowledge/news/<id>` nicht.
+const REDIRECTS = [
+  [/^#\/knowledge\/news(\/.*)?$/,        (m) => `#/news${m[1] || ''}`],
+  // «Wissen» ist nach Fachgebiet gegliedert. Die alten materialart-basierten
+  // Abschnitte haben kein 1:1-Ziel mehr — ihre Inhalte liegen verteilt in den
+  // Fachgebieten —, also führt der Weg auf die Übersicht statt in eine falsche
+  // Ecke. Anleitungen und Prozessdokumentation bleiben eigene Seiten.
+  [/^#\/knowledge\/(grundlagen|regulations|general)(\/.*)?$/, () => '#/knowledge'],
+  [/^#\/knowledge\/anleitungen$/,                     () => '#/knowledge/guides'],
+  [/^#\/knowledge\/prozesse$/,                        () => '#/knowledge/processes'],
+  [/^#\/knowledge\/templates$/,                       () => '#/knowledge'],
+  [/^#\/data\/katalog(\/.*)?$/,          (m) => `#/data/catalog${m[1] || ''}`],
+  [/^#\/data\/digitalisierung(\/.*)?$/,  (m) => `#/data/digitalisation${SUBS[(m[1] || '').slice(1)] || m[1] || ''}`],
+  [/^#\/data\/ikt-vorhaben$/,            () => '#/data/ict-projects'],
+  [/^#\/app\/mediathek(\/.*)?$/,         (m) => `#/app/media-library${m[1] || ''}`],
+];
+const SUBS = { strategie: '/strategy', prinzipien: '/principles', vision: '/vision', superb: '/superb', bim: '/bim' };
+
+// Gibt das Ziel zurück, wenn der aktuelle Hash eine Altlast ist — sonst ''.
+// Der Query-Teil bleibt erhalten; veraltete Parameter fallen still weg (sie
+// werden von der Zielseite schlicht nicht gelesen).
+export function legacyTarget(hash) {
+  const [path, qs] = String(hash || '').split('?');
+  for (const [re, to] of REDIRECTS) {
+    const m = path.match(re);
+    if (m) return to(m) + (qs ? `?${qs}` : '');
+  }
+  return '';
 }
 
 function setActiveNav(base) {
@@ -210,6 +257,13 @@ async function dispatch() {
   // die Navigation nicht anhalten.
   for (const fn of routeCleanups) { try { fn(); } catch (e) { console.warn('[router] cleanup failed', e); } }
   routeCleanups = [];
+  // Altlast-Pfad? Adresse ERSETZEN, nicht anhängen — sonst führt «Zurück» auf
+  // den alten Pfad und von dort sofort wieder hierher (Endlosfalle). replaceState
+  // feuert kein `hashchange`, also läuft dieser Aufruf danach einfach weiter und
+  // rendert das Ziel; parseHash() liest die bereits ersetzte Adresse.
+  const redirect = legacyTarget(location.hash);
+  if (redirect) { try { history.replaceState(null, '', redirect); } catch { location.hash = redirect; } }
+
   const ticket = ++dispatchId;
   const stale = () => ticket !== dispatchId;
   const { segs, query } = parseHash();

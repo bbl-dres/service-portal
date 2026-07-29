@@ -7,9 +7,9 @@
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const ROUTES = [
-  { name: 'knowledge/grundlagen',              url: `${APP_BASE}/knowledge/grundlagen`,            items: 1 },
-  { name: 'knowledge/anleitungen',             url: `${APP_BASE}/knowledge/anleitungen`,           items: 1 },
-  { name: 'digitalisierung/strategie',         url: `${APP_BASE}/data/digitalisierung/strategie`,  items: 2 },
+  { name: 'knowledge/it (Fachgebiet)',         url: `${APP_BASE}/knowledge/it`,                items: 1 },
+  { name: 'knowledge/anleitungen',             url: `${APP_BASE}/knowledge/guides`,           items: 1 },
+  { name: 'digitalisierung/strategie',         url: `${APP_BASE}/data/digitalisation/strategy`,  items: 2 },
   { name: 'applications/liegenschaften',       url: `${APP_BASE}/applications/liegenschaften-inventar`, items: 1, mailto: true },
   { name: 'services/raumbedarf-melden',        url: `${APP_BASE}/services/raumbedarf-melden`,       mailto: true },
   { name: 'my-cases/seed-1 (attachments)',     url: `${APP_BASE}/my-cases/seed-1`,                  items: 1, login: true },

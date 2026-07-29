@@ -3,23 +3,23 @@
 // Gleiches Muster wie #/services: Suche links, zwei Filter-Dropdowns,
 // Ansichtswechsel rechts, aktive Filter als Pills, Galerie/Liste, Pagination.
 // Die Seite hat immer denselben Kopf — «Fachanwendungen Bauten» ist kein
-// eigener Seitentyp, sondern nur ?bereich=bauten.
+// eigener Seitentyp, sondern nur ?area=buildings.
 //
 // Karten führen auf #/applications/<appId>, nicht direkt in die Anwendung:
 // jede Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen.
 
 const PER_PAGE = 9;
 
-const BEREICHE = [
-  { key: 'bauten',   label: 'Immobilien & Bau' },
-  { key: 'logistik', label: 'Arbeitsplatz & Logistik' },
-  { key: 'zentral',  label: 'Zentrale Systeme' },
+const AREAS = [
+  { key: 'buildings', label: 'Immobilien & Bau' },
+  { key: 'logistics', label: 'Arbeitsplatz & Logistik' },
+  { key: 'central',   label: 'Zentrale Systeme' },
 ];
 
 const AUDIENCES = [
-  { value: 'internal', label: 'Intern' },
-  { value: 'external', label: 'Extern' },
-  { value: 'both',     label: 'Intern + Extern' },
+  { value: 'staff',     label: 'BBL-Personal' },
+  { value: 'customers', label: 'Kundschaft' },
+  { value: 'both',      label: 'Beide' },
 ];
 
 // Sortierung (catbar): leer = Standard (Schlüsselanwendungen zuerst, «Sortieren»-Platzhalter).
@@ -51,16 +51,16 @@ export default async function render(ctx) {
   const rawQ = query.get('q') || '';
   const q = rawQ.toLowerCase();
   // Filter sind mehrwertig (Mehrfachauswahl-Checkboxen): komma-getrennt im Hash.
-  const bereiche = (query.get('bereich') || '').split(',').map(s => s.trim()).filter(k => BEREICHE.some(b => b.key === k));
+  const areas = (query.get('area') || '').split(',').map(s => s.trim()).filter(k => AREAS.some(b => b.key === k));
   const audiences = (query.get('audience') || '').split(',').map(s => s.trim()).filter(v => AUDIENCES.some(a => a.value === v));
-  const view = query.get('view') === 'liste' ? 'liste' : 'galerie';
+  const view = query.get('view') === 'list' ? 'list' : 'gallery';
   const wanted = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
   const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
 
   const all = core.applications();
   const matches = (a) =>
     (!q || (a.name + ' ' + a.description + ' ' + a.group).toLowerCase().includes(q)) &&
-    (!bereiche.length || bereiche.includes(a.bereich)) &&
+    (!areas.length || areas.includes(a.area)) &&
     (!audiences.length || audiences.includes(a.audience));
 
   // Standard: Schlüsselanwendungen zuerst; explizite Sortierung überschreibt das.
@@ -70,13 +70,13 @@ export default async function render(ctx) {
   const page = Math.min(wanted, totalPages);
   const visible = apps.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const base = { q: rawQ, bereich: bereiche, audience: audiences, sort: sortKey, view };
+  const base = { q: rawQ, area: areas, audience: audiences, sort: sortKey, view };
   const hash = (patch = {}) => C.catalogueHash('#/applications', { ...base, ...patch });
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert.
   const active = [
     ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
-    ...bereiche.map(x => ({ label: bereichLabel(x), href: hash({ bereich: bereiche.filter(y => y !== x) }) })),
+    ...areas.map(x => ({ label: areaLabel(x), href: hash({ area: areas.filter(y => y !== x) }) })),
     ...audiences.map(x => ({ label: audienceLabel(x), href: hash({ audience: audiences.filter(y => y !== x) }) })),
   ];
   const filterBar = C.activeFilters({ filters: active, resetHref: '#/applications' });
@@ -119,12 +119,12 @@ export default async function render(ctx) {
       formId: 'app-search', inputId: 'aq', searchLabel: 'Anwendung suchen', placeholder: 'Anwendung suchen...', q: rawQ,
       countId: 'app-count', count: `<strong>${apps.length}</strong> von ${all.length} Anwendungen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'app-sort', value: sortKey, options: SORT_OPTS },
-      filterId: 'app-filter', filterLabel: 'Filter', filterCount: bereiche.length + audiences.length,
+      filterId: 'app-filter', filterLabel: 'Filter', filterCount: areas.length + audiences.length,
       panelId: 'app-filters', panel: `
-        ${C.filterGroup({ dim: 'bereich', legend: 'Bereich', selected: bereiche, options: BEREICHE.map(b => ({ value: b.key, label: b.label })) })}
+        ${C.filterGroup({ dim: 'area', legend: 'Bereich', selected: areas, options: AREAS.map(b => ({ value: b.key, label: b.label })) })}
         ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: AUDIENCES })}
-        <a class="btn btn--bare btn--sm" href="${hash({ bereich: [], audience: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
-      view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
+        <a class="btn btn--bare btn--sm" href="${hash({ area: [], audience: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
+      view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}
     ${C.catalogueResults({
@@ -145,5 +145,5 @@ export default async function render(ctx) {
   });
 }
 
-function bereichLabel(key) { const b = BEREICHE.find(x => x.key === key); return b ? b.label : key; }
+function areaLabel(key) { const b = AREAS.find(x => x.key === key); return b ? b.label : key; }
 function audienceLabel(v) { const a = AUDIENCES.find(x => x.value === v); return a ? a.label : v; }

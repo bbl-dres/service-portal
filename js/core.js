@@ -11,7 +11,6 @@ const FILES = {
   applications: 'data/applications.json',
   documents:    'data/documents.json',
   media:        'data/media.json',
-  weisungen:    'data/weisungen.json',
   news:         'data/news.json',
   contacts:     'data/contacts.json',
   reference:    'data/reference-data.json',
@@ -48,7 +47,7 @@ const FAILED = new Set();
 const AREA = {
   buildings: 'Liegenschaften', parcels: 'Grundstücke', projects: 'Bauprojekte', services: 'Dienstleistungen',
   applications: 'Anwendungen', documents: 'Dokumente', media: 'Mediathek',
-  weisungen: 'Weisungen', news: 'News', contacts: 'Kontakte', reference: 'Referenzdaten',
+  news: 'News', contacts: 'Kontakte', reference: 'Referenzdaten',
   datasets: 'Datenkatalog', catalogLabels: 'Katalog-Beschriftungen', appPages: 'Anwendungsseiten',
   assets: 'Ausstattung', contracts: 'Verträge', costs: 'Kosten', areas: 'Flächen',
   buildingContacts: 'Objektkontakte', landcovers: 'Bodenbedeckung',
@@ -240,9 +239,11 @@ export const core = {
   // Detailansicht behandelt Gebäude und Grundstücke gleich.
   mediaForObject: (id) => (DATA.media || []).filter(m => m.buildingId === id),
   mediaForBuilding: (bid) => (DATA.media || []).filter(m => m.buildingId === bid),
-  weisungen: () => DATA.weisungen || [],
-  weisung: (id) => find(DATA.weisungen, 'directiveId', id),
-  weisungenForService: (sid) => (DATA.weisungen || []).filter(w => (w.relatedServices || []).includes(sid)),
+  // «Wissen und Hilfsmittel» hat KEINEN Bestand: Vorgaben, Vorlagen, Anleitungen
+  // und Prozesse sind statische Seiten (js/pages/knowledge.js, regulations.js).
+  // Es sind Dokumentenverzeichnisse zum Nachlesen und Herunterladen — eine
+  // Weisung ist ein anderswo erlassenes Dokument, und das Portal verlinkt sie,
+  // statt sie zu katalogisieren (docs/sitemap.md §2.4).
   news: () => DATA.news || [],
   newsItem: (id) => find(DATA.news, 'id', id),
   contacts: () => DATA.contacts || [],

@@ -39,7 +39,7 @@ console.log(`   (Register: ${MEDIEN.length} Medien, davon ${ECHT.length} mit ech
         leer:/konnte nicht|nicht verf/.test(m.innerText)});})()`);
 
     console.log('■ Übersicht');
-    await go('#/app/mediathek', 2400);
+    await go('#/app/media-library', 2400);
     let r = JSON.parse(await lies());
     check(/Mediathek Bauten/.test(r.h1), `Seitentitel (${r.h1})`);
     check(new RegExp(`^${MEDIEN.length} von ${MEDIEN.length}`).test(r.count), `alle ${MEDIEN.length} Aufnahmen gezählt (${r.count})`);
@@ -47,7 +47,7 @@ console.log(`   (Register: ${MEDIEN.length} Medien, davon ${ECHT.length} mit ech
 
     console.log('■ Sortierungen — jede einzeln (der Fehler traf nur eine)');
     for (const s of ['datum-desc', 'datum-asc', 'titel', 'objekt']) {
-      await go(`#/app/mediathek?sort=${s}`, 1800);
+      await go(`#/app/media-library?sort=${s}`, 1800);
       const x = JSON.parse(await lies());
       const probleme = await p.problems();
       check(x.karten > 0 && !x.leer && probleme.length === 0,
@@ -55,10 +55,10 @@ console.log(`   (Register: ${MEDIEN.length} Medien, davon ${ECHT.length} mit ech
     }
 
     console.log('■ Ansichten');
-    await go('#/app/mediathek?view=liste', 1800);
+    await go('#/app/media-library?view=list', 1800);
     r = JSON.parse(await lies());
     check(r.zeilen > 0, `Liste zeigt Zeilen (${r.zeilen})`);
-    await go('#/app/mediathek?view=karte', 3000);
+    await go('#/app/media-library?view=map', 3000);
     r = JSON.parse(await lies());
     check(r.canvas, 'Karte rendert');
 
@@ -67,7 +67,7 @@ console.log(`   (Register: ${MEDIEN.length} Medien, davon ${ECHT.length} mit ech
     for (const [art, feld] of [['Gebäude', 'buildingId'], ['Grundstück', 'parcelId'], ['Bauprojekt', 'projectId']]) {
       const m = MEDIEN.find((x) => x[feld]);
       if (!m) { console.log(`   – kein Medium mit ${feld}`); continue; }
-      await go(`#/app/mediathek/${encodeURIComponent(m.mediaId)}`, 2000);
+      await go(`#/app/media-library/${encodeURIComponent(m.mediaId)}`, 2000);
       const x = JSON.parse(await lies());
       const probleme = await p.problems();
       check(!!x.h1 && !x.leer && probleme.length === 0,
@@ -76,7 +76,7 @@ console.log(`   (Register: ${MEDIEN.length} Medien, davon ${ECHT.length} mit ech
 
     console.log('■ Echte Aufnahmen werden auch wirklich geladen');
     const echt = ECHT[0];
-    await go(`#/app/mediathek/${encodeURIComponent(echt.mediaId)}`, 2200);
+    await go(`#/app/media-library/${encodeURIComponent(echt.mediaId)}`, 2200);
     const bild = await p.evaluate(`(function(){
       var i=[].slice.call(document.querySelectorAll('img')).filter(function(x){
         return (x.getAttribute('src')||'').indexOf('assets/images/buildings')>=0;})[0];

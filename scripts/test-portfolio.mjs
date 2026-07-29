@@ -48,7 +48,7 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
         && !!document.querySelector('.catbar .catbar__controls .view-switch');
 
       // Galerie → cards + pagination
-      document.querySelector('[data-view="galerie"]').click(); await s(300);
+      document.querySelector('[data-view="gallery"]').click(); await s(300);
       r.galCards = document.querySelectorAll('.pf-gallery .pf-card').length;
       r.galPag = (document.querySelector('#pf-count') || {}).textContent || '';   // CD header: «N von M Objekte · Seite X von Y»
       r.hasCdPag = !!document.querySelector('.pagination-wrap .pagination_items');
@@ -72,14 +72,14 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
       r.afPillsAfter = document.querySelectorAll('#pf-activefilters .active-filter').length;
       r.afCountRestored = parseInt((document.querySelector('#pf-count') || {}).textContent || '', 10);
       // Liste → rows
-      document.querySelector('[data-view="liste"]').click(); await s(250);
+      document.querySelector('[data-view="list"]').click(); await s(250);
       r.listRows = document.querySelectorAll('.pf-main table tbody tr').length;
       // Search
       const q = document.querySelector('#pf-q'); q.value = 'Botschaft'; q.dispatchEvent(new Event('input', { bubbles: true })); await s(450);
       r.countSearch = count();
       q.value = ''; q.dispatchEvent(new Event('input', { bubbles: true })); await s(450);
       // Karte back + tree filter: click the CH land node
-      document.querySelector('[data-view="karte"]').click(); await s(200);
+      document.querySelector('[data-view="map"]').click(); await s(200);
       const ch = [...document.querySelectorAll('.pf-tree__node[data-land="CH"]')].find(n => !n.dataset.region);
       r.chTreeCount = ch.querySelector('.pf-tree__n').textContent;
       ch.click(); await s(400);

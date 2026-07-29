@@ -108,7 +108,7 @@ export default function render(ctx, appId) {
           <h3>Eckdaten</h3>
           <dl class="kv" style="margin:0">
             <dt>Gruppe</dt><dd>${C.escape(a.group)}</dd>
-            ${a.bereich ? `<dt>Bereich</dt><dd>${C.escape(bereichLabel(a.bereich))}</dd>` : ''}
+            ${a.area ? `<dt>Bereich</dt><dd>${C.escape(bereichLabel(a.area))}</dd>` : ''}
             <dt>Zugang</dt><dd>${C.escape(a.accessNote || '—')}</dd>
             <dt>Einstieg</dt><dd>${external ? 'Externes System' : 'Im Kundenportal'}</dd>
             ${page.updated ? `<dt>Letzte Änderung</dt><dd>${C.escape(page.updated)}</dd>` : ''}
@@ -129,6 +129,6 @@ function crumbs() {
 }
 
 function bereichLabel(key) {
-  return { bauten: 'Fachanwendungen Bauten', logistik: 'Fachanwendungen Logistik',
-    zentral: 'Zentrale Systeme' }[key] || key;
+  return { buildings: 'Fachanwendungen Bauten', logistics: 'Fachanwendungen Logistik',
+    central: 'Zentrale Systeme' }[key] || key;
 }

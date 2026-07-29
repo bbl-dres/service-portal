@@ -44,7 +44,9 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(D.epCount >= 15, `endpoints render (${D.epCount})`);
     check(D.methods.includes('GET') && D.methods.includes('POST'), `method badges GET/POST (${JSON.stringify(D.methods)})`);
     check(/api\.bbl\.admin\.ch\/kundenportal/.test(D.base), `base URL shown (${D.base})`);
-    check(/1000\//.test(D.tryOut), 'data-backed «Ausprobieren» returns real building data (bbl_id)');
+    // Auf die FORM der bbl_id prüfen (1080/4840/AF), nicht auf ein festes Präfix:
+    // «1000/» kam im Bestand nie vor, der Test war damit immer rot.
+    check(/\b\d{4}\/\d{4}\//.test(D.tryOut), 'data-backed «Ausprobieren» returns real building data (bbl_id)');
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, p.sessionId);
     writeFileSync(process.env.SHOT || join(tmpdir(), 'bbl-apidocs.png'), Buffer.from(shot.data, 'base64'));
     await p.closeTarget();
@@ -63,7 +65,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     await p2.closeTarget();
 
     // 3) Kundenportal catalog entry links into the docs ---------------------
-    const p3 = await openPage(cdp, `${APP_BASE}/data/katalog/20`);
+    const p3 = await openPage(cdp, `${APP_BASE}/data/catalog/20`);
     await new Promise(r => setTimeout(r, 700));
     const K = await p3.evaluate(`(async () => {
       const s = ms => new Promise(r => setTimeout(r, ms));

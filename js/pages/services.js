@@ -11,11 +11,15 @@ export default async function render(ctx) {
   // Filter sind mehrwertig (Mehrfachauswahl-Checkboxen): komma-getrennt im Hash.
   const selectedAudiences = (query.get('audience') || '').split(',').map(t => t.trim()).filter(Boolean);
   const selectedTopics = (query.get('topic') || '').split(',').map(t => t.trim()).filter(Boolean);
-  const view = query.get('view') === 'liste' ? 'liste' : 'galerie';
+  const view = query.get('view') === 'list' ? 'list' : 'gallery';
   const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
   const perPage = 12;
   const domains = core.ref().domains || [];
-  const all = core.services();
+  // Der Katalog führt NUR startbare Dienstleistungen (docs/sitemap.md §2.3).
+  // `type: info` sind Referenzseiten im Dienstleistungskostüm; sie sind über
+  // «Wissen und Hilfsmittel» bzw. «Daten und Digitalisierung» erschlossen. Ihre
+  // Detailseite bleibt erreichbar, damit geteilte Links nicht ins Leere laufen.
+  const all = core.services().filter(s => s.type === 'action');
 
   // Sortierung (catbar): leer = Datenreihenfolge (Platzhalter «Sortieren»).
   const SORT_OPTS = [{ value: 'title', label: 'Bezeichnung (A–Z)' }, { value: 'domain', label: 'Bereich' }];
@@ -41,12 +45,11 @@ export default async function render(ctx) {
   const otherHits = q ? {
     apps: core.applications().filter(a => (a.name + a.description).toLowerCase().includes(q)).length,
     docs: core.documents().filter(d => d.title.toLowerCase().includes(q)).length,
-    weisungen: core.weisungen().filter(w => (w.title + w.summary).toLowerCase().includes(q)).length,
   } : null;
 
   const card = (s) => C.card({
     title: s.title, desc: s.short, href: `#/services/${s.serviceId}`,
-    badges: [C.audienceTag(s.audience), s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')],
+    badges: [C.audienceTag(s.audience)],
     footerInfo: C.escape(domainLabel(domains, s.domain)), footerAction: C.cardAction(),
   });
 
@@ -57,7 +60,6 @@ export default async function render(ctx) {
       { key: 'title', label: 'Dienstleistung', render: s => `<a href="#/services/${s.serviceId}">${C.escape(s.title)}</a><br><span class="small muted">${C.escape(s.short)}</span>` },
       { key: 'domain', label: 'Bereich', render: s => C.escape(domainLabel(domains, s.domain)) },
       { key: 'audience', label: 'Zielgruppe', render: s => C.audienceTag(s.audience) },
-      { key: 'type', label: 'Typ', render: s => s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray') },
     ],
     rows: list,
   });
@@ -71,8 +73,11 @@ export default async function render(ctx) {
   ];
   const filterBar = C.activeFilters({ filters: activeFilters, resetHref: '#/services' });
 
-  const relatedHits = otherHits && (otherHits.apps + otherHits.docs + otherHits.weisungen)
-    ? `Auch in: ${otherHits.apps ? `<a href="#/applications">${otherHits.apps} Anwendung(en)</a> · ` : ''}${otherHits.docs ? `<a href="#/app/document-archive">${otherHits.docs} Dokument(e)</a> · ` : ''}${otherHits.weisungen ? `<a href="#/knowledge">${otherHits.weisungen} Weisung(en)</a>` : ''}`
+  const relatedHits = otherHits && (otherHits.apps + otherHits.docs)
+    ? `Auch in: ${[
+        otherHits.apps ? `<a href="#/applications">${otherHits.apps} Anwendung(en)</a>` : '',
+        otherHits.docs ? `<a href="#/app/document-archive">${otherHits.docs} Dokument(e)</a>` : '',
+      ].filter(Boolean).join(' · ')}`
     : '';
 
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
@@ -91,7 +96,7 @@ export default async function render(ctx) {
       sort: { id: 'svc-sort', value: sortKey, options: SORT_OPTS },
       filterId: 'svc-filter', filterLabel: 'Filter', filterCount: selectedAudiences.length + selectedTopics.length,
       panelId: 'svc-filters', panel: filterPanel,
-      view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
+      view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}
     ${C.catalogueResults({
@@ -133,7 +138,6 @@ function detail(ctx, id) {
   // durchläuft, steht VOR dem Absenden auf der Seite. Fehlt die Definition,
   // entfällt der Block wortlos — er ist Zusatzinformation, keine Bedingung.
   const def = s.processDefId ? engine.definition(s.processDefId) : null;
-  const weis = core.weisungenForService(s.serviceId);
   const tgt = s.target || {};   // Informationsangebote haben kein `target` — nicht dereferenzieren (A5)
   const ext = tgt.kind === 'external';
   const ctaLabel = s.type === 'action' ? (ext ? 'Zum externen System' : 'Vorgang starten') : 'Öffnen';
@@ -189,7 +193,14 @@ function detail(ctx, id) {
       <aside class="container__aside stack-lg" aria-labelledby="svc-aside-head">
         <h2 class="sr-only" id="svc-aside-head">Kontakt und Grundlagen</h2>
         ${C.contactBox(contact)}
-        ${weis.length ? `<div class="box"><h3>Geltende Weisungen</h3>${weis.map(w => `<a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge/grundlagen/${w.directiveId}">${C.icon('Book', 'icon--base')}<span class="small">${C.escape(w.title)}</span></a>`).join('')}</div>` : ''}
+        ${/* Die je Dienstleistung geltenden Weisungen wurden aus data/weisungen.json
+              gelesen; der Bestand ist zurückgezogen (docs/sitemap.md §2.4). Statt
+              einer erfundenen Liste steht hier der Verweis auf die Sammlung. */''}
+        <div class="box">
+          <h3>Gesetzliche Grundlagen</h3>
+          <p class="small muted">Die für diese Dienstleistung massgebenden Erlasse, Vorgaben und Weisungen finden Sie in der Sammlung.</p>
+          <a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge">${C.icon('Book', 'icon--base')}<span class="small">Wissen und Hilfsmittel</span></a>
+        </div>
       </aside>
     </div>
   </div>`;
@@ -197,9 +208,9 @@ function detail(ctx, id) {
 
 function audienceOptions() {
   return [
-    { value: 'internal', label: 'Intern' },
-    { value: 'external', label: 'Extern' },
-    { value: 'both', label: 'Intern + Extern' },
+    { value: 'staff', label: 'BBL-Personal' },
+    { value: 'customers', label: 'Kundschaft' },
+    { value: 'both', label: 'Beide' },
   ];
 }
 

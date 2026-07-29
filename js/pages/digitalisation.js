@@ -4,20 +4,20 @@
 // stammen aus der «Gesamtstrategie Digitale Immobilien» (BBL Bauten / DRES,
 // Arbeitsentwurf, Stand 15.07.2026); für den Prototyp gekürzt.
 
-import { anchorNavPage } from './grundlagen.js';
+import { anchorNavPage } from './anchor-nav.js';
 
 const CRUMB = [
   { label: 'Startseite', href: '#/' },
   { label: 'Daten und Digitalisierung', href: '#/data' },
-  { label: 'Digitalisierung', href: '#/data/digitalisierung' },
+  { label: 'Digitalisierung', href: '#/data/digitalisation' },
 ];
 
 export default function render(ctx) {
   const sub = ctx.params[1];
   if (!sub) return uebersicht(ctx);
-  if (sub === 'strategie') return strategiePage(ctx);
+  if (sub === 'strategy') return strategiePage(ctx);
   if (sub === 'vision') return visionPage(ctx);
-  if (sub === 'prinzipien') return prinzipienPage(ctx);
+  if (sub === 'principles') return prinzipienPage(ctx);
   if (sub === 'superb') return superbPage(ctx);
   if (sub === 'bim') return bimPage(ctx);
   return notFound(ctx);
@@ -26,15 +26,15 @@ export default function render(ctx) {
 /* ================================ ÜBERSICHT ============================== */
 
 const CARDS = [
-  { icon: 'Book', title: 'Digitalisierungsstrategie', href: '#/data/digitalisierung/strategie',
+  { icon: 'Book', title: 'Digitalisierungsstrategie', href: '#/data/digitalisation/strategy',
     desc: 'Gesamtstrategie «Digitale Immobilien» des BBL Bauten — Ziele, Handlungsfelder und Steuerung bis 2030.', meta: 'Strategie 2026–2030' },
-  { icon: 'Compass', title: 'Vision', href: '#/data/digitalisierung/vision',
+  { icon: 'Compass', title: 'Vision', href: '#/data/digitalisation/vision',
     desc: 'Vision, Mission und Zielbild der digitalen Weiterentwicklung des Immobilienmanagements.', meta: 'Vision & Mission' },
-  { icon: 'Balance', title: 'Prinzipien', href: '#/data/digitalisierung/prinzipien',
+  { icon: 'Balance', title: 'Prinzipien', href: '#/data/digitalisation/principles',
     desc: 'Die acht handlungsleitenden Prinzipien der digitalen Bundesverwaltung, angewandt im BBL.', meta: '8 Prinzipien' },
-  { icon: 'Database', title: 'Programm SUPERB — SAP S/4HANA', href: '#/data/digitalisierung/superb',
+  { icon: 'Database', title: 'Programm SUPERB — SAP S/4HANA', href: '#/data/digitalisation/superb',
     desc: 'Migration der SAP-Systeme der Bundesverwaltung auf SAP S/4HANA und ihre Bedeutung für das BBL.', meta: 'Vorhaben' },
-  { icon: 'Building', title: 'BIM und Common Data Environment', href: '#/data/digitalisierung/bim',
+  { icon: 'Building', title: 'BIM und Common Data Environment', href: '#/data/digitalisation/bim',
     desc: 'Modellbasierte Planung und die gemeinsame Datenumgebung (CDE) über den Bauwerkslebenszyklus.', meta: 'Vorhaben' },
 ];
 
@@ -61,11 +61,11 @@ function uebersicht(ctx) {
       <p>Die Digitalisierung wird im BBL bereichsübergreifend gesteuert: Die Fachbereiche verantworten ihre Prozesse und Daten, die Informatik BBL die Plattformen und den Betrieb. Für die digitale Weiterentwicklung des Immobilienmanagements koordiniert die Organisationseinheit Digital Real Estate und Support (DRES) Strategie und Umsetzung. Für die bundesweiten Vorhaben arbeitet das BBL mit der Bundeskanzlei (Bereich DTI), dem BIT und der Digitalen Verwaltung Schweiz zusammen.</p>`) })}
     ${C.pageSection({ title: 'Weitere Informationen', alt: true, body: prose(`
       <ul class="list--default">
-        <li><a href="#/data/ikt-vorhaben">IKT-Vorhaben — laufende und geplante Informatik-Vorhaben des BBL</a></li>
-        <li><a href="#/knowledge/grundlagen">Gesetzliche Grundlagen und Vorgaben</a></li>
+        <li><a href="#/data/ict-projects">IKT-Vorhaben — laufende und geplante Informatik-Vorhaben des BBL</a></li>
+        <li><a href="#/knowledge/it">Informatik und IKT-Beschaffung — Vorgaben und Mustervorlagen</a></li>
         <li><a href="https://www.bk.admin.ch/de/digitale-bundesverwaltung" target="_blank" rel="noopener external">Strategie Digitale Bundesverwaltung (Bundeskanzlei)</a></li>
         <li><a href="#/app/dataportal">Datenportal — Auswertungen und Kennzahlen</a></li>
-        <li><a href="#/data/katalog">Datenbezug und API Verzeichnis — Datenkatalog nach DCAT-AP-CH</a></li>
+        <li><a href="#/data/catalog">Datenbezug und API Verzeichnis — Datenkatalog nach DCAT-AP-CH</a></li>
       </ul>`) })}`;
 }
 
@@ -110,7 +110,7 @@ function strategiePage(ctx) {
     lead: 'Gesamtstrategie «Digitale Immobilien» des BBL Bauten — wie das Immobilienmanagement der zivilen Bundesverwaltung digital, datenbasiert, sicher und wirtschaftlich weiterentwickelt wird.',
     intro: 'Strategiezeitraum 2026–2030, Programmhorizont bis 2034. Im Prototyp gekürzte Fassung eines Arbeitsentwurfs (Stand 15. Juli 2026).',
     sections,
-    back: { href: '#/data/digitalisierung', label: 'Digitalisierung' },
+    back: { href: '#/data/digitalisation', label: 'Digitalisierung' },
   });
 }
 
@@ -143,7 +143,7 @@ function visionPage(ctx) {
     title: 'Vision',
     lead: 'Vision, Mission und Zielbild der Strategie «Digitale Immobilien» des BBL Bauten.',
     sections,
-    back: { href: '#/data/digitalisierung', label: 'Digitalisierung' },
+    back: { href: '#/data/digitalisation', label: 'Digitalisierung' },
   });
 }
 
@@ -177,7 +177,7 @@ function prinzipienPage(ctx) {
     title: 'Prinzipien',
     lead: 'Die acht handlungsleitenden Prinzipien der Strategie Digitale Bundesverwaltung, angewandt im Immobilienkontext des BBL.',
     sections,
-    back: { href: '#/data/digitalisierung', label: 'Digitalisierung' },
+    back: { href: '#/data/digitalisation', label: 'Digitalisierung' },
   });
 }
 
@@ -190,7 +190,7 @@ function infoPage(ctx, { title, lead, note, photo }) {
   mount.innerHTML = `
   <div class="container section">
     ${C.detailHead({
-      backHref: '#/data/digitalisierung', backLabel: 'Digitalisierung',
+      backHref: '#/data/digitalisation', backLabel: 'Digitalisierung',
       title, lead,
       image: C.heroFigure({ id: photo }),
     })}
@@ -224,7 +224,7 @@ function notFound(ctx) {
   const { mount, C, setTitle, setCrumbs } = ctx;
   setTitle('Seite nicht gefunden');
   setCrumbs([...CRUMB, { label: 'Nicht gefunden' }]);
-  mount.innerHTML = C.notFound({ backHref: '#/data/digitalisierung', backLabel: 'Digitalisierung',
+  mount.innerHTML = C.notFound({ backHref: '#/data/digitalisation', backLabel: 'Digitalisierung',
     title: 'Seite nicht gefunden',
-    body: 'Diese Seite existiert nicht. <a href="#/data/digitalisierung">Zur Übersicht «Digitalisierung»</a>' });
+    body: 'Diese Seite existiert nicht. <a href="#/data/digitalisation">Zur Übersicht «Digitalisierung»</a>' });
 }

@@ -90,12 +90,12 @@ export default async function render(ctx) {
   ];
 
   const state = {
-    view: ['karte', 'galerie', 'liste'].includes(query.get('view')) ? query.get('view') : 'galerie',
+    view: ['map', 'gallery', 'list'].includes(query.get('view')) ? query.get('view') : 'gallery',
     // Standard: nur Gebäude. Grundstücke blendet man über den Objekttyp-Filter
     // dazu (oder entfernt die «Gebäude»-Pille). Eine explizite Objektauswahl aus
     // Baum/Karte hebt den Typfilter auf, damit auch ein angeklicktes Grundstück erscheint.
     sel: {}, focus: null, q: '', sort: 'name', filters: { status: [], ownership: [], kind: ['building'] }, page: 1,
-    perPage: { galerie: 9, liste: 25 },
+    perPage: { gallery: 9, list: 25 },
   };
 
   // --- filtering --------------------------------------------------------------
@@ -208,7 +208,7 @@ export default async function render(ctx) {
     const cnt = mount.querySelector('#pf-count');
     const main = mount.querySelector('#pf-main');
     freePfMap();
-    if (state.view === 'karte') {
+    if (state.view === 'map') {
       // Karte: nur die Anzahl (kein «von … · Seite …» — das ist nur für Galerie/Liste).
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> ${list.length === 1 ? 'Objekt' : 'Objekte'}`;
       main.innerHTML = `<div class="pf-map dash-map" id="pf-map-el" role="group" aria-label="Karte der Liegenschaften"></div>`;
@@ -223,7 +223,7 @@ export default async function render(ctx) {
       const slice = list.slice((state.page - 1) * per, state.page * per);
       // CD-Ergebniskopf: «N von M Objekte · Seite X von Y» (wie #/services).
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Objekte${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
-      main.innerHTML = (state.view === 'galerie' ? galleryHTML(slice) : listHTML(slice))
+      main.innerHTML = (state.view === 'gallery' ? galleryHTML(slice) : listHTML(slice))
         + C.pagination({ page: state.page, totalPages: pages, href: () => '#', inputId: 'pf-page' });
       if (pages > 1) C.wirePagination(mount, 'pf-page', state.page, pages, (t) => { state.page = t; renderMain(); });
     }
@@ -273,7 +273,7 @@ export default async function render(ctx) {
       placeholder: 'Adresse, Objekt oder ID suchen…', countId: 'pf-count',
       sort: { id: 'pf-sort', label: 'Sortieren', value: state.sort, options: SORT_OPTIONS },
       filterId: 'pf-filter-btn', filterLabel: 'Filter', panelId: 'pf-filters', panel: filterPanel,
-      view: state.view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List'], ['karte', 'Kartenansicht', 'Map']],
+      view: state.view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
     })}
     <div id="pf-activefilters"></div>
     <div class="pf-layout">

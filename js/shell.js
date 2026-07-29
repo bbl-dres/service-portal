@@ -4,7 +4,6 @@
 import { NAV } from './router.js';
 import { core } from './core.js';
 import { session } from './session.js';
-import { INTRANET_AREAS } from './intranet-areas.js';
 import { icon, escape as escapeHtml, select } from './components.js';
 
 // renderHeader() läuft bei jedem Login/Logout erneut. Pro Render ein
@@ -22,20 +21,24 @@ function navyRow(child) {
     </a></li>`;
 }
 
-// Drill-down-Unterzweige für den Dienstleistungen-Drawer (CD navy multi-level):
-// die fünf Intranet-Aufgabenbereiche als aufklappbare Zweige. Level 1 wird beim
-// Klick befüllt (js/shell.js renderHeader), die Kinder stammen aus INTRANET_AREAS.
-function areaBranchRows() {
-  return INTRANET_AREAS.map(a => branchRow(a.key, a.label)).join('');
+// Der Dienstleistungs-Drawer wird AUS DEN DATEN abgeleitet: jedes Thema mit
+// mindestens einer startbaren Dienstleistung wird ein aufklappbarer Zweig
+// (CD navy multi-level), Level 2 listet dessen Dienstleistungen.
+//
+// Vorher steuerte ein handgepflegtes Feld `thema` die Auswahl — und war
+// veraltet: Büroausrüstung, Informatik und Publizieren trugen echte Vorgänge,
+// standen aber nicht im Menü, während Beschaffung und Personal ohne einen
+// einzigen Vorgang gelistet gewesen wären. Eine Kennzeichnung, die man pflegen
+// muss, driftet; eine abgeleitete kann es nicht. Die ~30 Links ins BBL-Intranet
+// sind ersatzlos entfallen — ihr Inhalt liegt in «Dienstleistungen» (Vorgänge)
+// und «Wissen und Hilfsmittel» (Vorlagen, Werkzeugkasten, BKB-Dokumente).
+function themenMitVorgaengen() {
+  const svcs = core.services().filter(s => s.type === 'action');
+  return (core.ref().domains || []).filter(d => svcs.some(s => s.domain === d.key));
 }
 
-// Die Themen sind ebenfalls aufklappbare Zweige (ausser «Übersicht»): Level 2
-// listet die Dienstleistungen des Themas. Schlüssel mit «dom:»-Präfix, damit
-// fillBranch sie von den Intranet-Bereichen unterscheiden kann.
 function themaBranchRows() {
-  return (core.ref().domains || [])
-    .filter(d => d.thema)
-    .map(d => branchRow(`dom:${d.key}`, d.label)).join('');
+  return themenMitVorgaengen().map(d => branchRow(`dom:${d.key}`, d.label)).join('');
 }
 
 // Ein aufklappbarer Zweig-Knopf (Übersicht/Themen/Bereiche teilen dieselbe Anatomie).
@@ -50,12 +53,9 @@ function branchRow(branchKey, label) {
 // renders), so the menu always matches the catalogue.
 function resolveChildren(item) {
   if (item.childrenFrom !== 'themen') return item.children || [];
-  // Die Themen sind eine kuratierte Liste (domains mit `thema: true`), nicht
-  // mehr aus «hat Dienstleistungen» abgeleitet: so erscheinen auch Themen ohne
-  // Services (z. B. Unterbringung, Objektbetrieb), während die Bereiche mit
-  // eigenem Drill-down (Büroausrüstung, Informatik …) nicht doppelt auftauchen.
-  const themen = (core.ref().domains || [])
-    .filter(d => d.thema)
+  // Dieselbe Ableitung wie themaBranchRows(): nur Themen, hinter denen wirklich
+  // ein Vorgang steht. Wird für die flache Mobil-/Fallback-Liste gebraucht.
+  const themen = themenMitVorgaengen()
     .map(d => ({ href: `#/services?topic=${encodeURIComponent(d.key)}`, label: d.label }));
   return [...(item.children || []), ...themen];
 }
@@ -94,7 +94,7 @@ function headerHTML() {
       // «führt ins BBL-Intranet» trägt die Ebene 2, wo die externen Ziele das
       // External-Symbol führen.
       level0 = `<ul class="menu navy__level-0">${
-        (item.children || []).map(navyRow).join('')}${themaBranchRows()}${areaBranchRows()}</ul>`;
+        (item.children || []).map(navyRow).join('')}${themaBranchRows()}</ul>`;
     } else if (hasNavBranch) {
       level0 = `<ul class="menu navy__level-0">${(item.children || [])
         .map(c => c.branchKey ? branchRow('nav:' + c.branchKey, c.label) : navyRow(c)).join('')}</ul>`;
@@ -312,7 +312,7 @@ function footerHTML() {
           <h3>Weitere Informationen</h3>
           <div class="footer-information__links">
             <div class="footer-information__links-column">
-              ${fLink('#/knowledge', 'Wissen & Weisungen')}${fLink('#/applications', 'Anwendungen')}${fLink('#/data', 'Datenkatalog')}
+              ${fLink('#/knowledge', 'Wissen und Hilfsmittel')}${fLink('#/news', 'News')}${fLink('#/applications', 'Anwendungen')}${fLink('#/data', 'Datenkatalog')}
             </div>
             <div class="footer-information__links-column">
               ${fLink('#/my-cases', 'Meine Vorgänge')}${fLink('#/services/sicherheitsvorfall-melden', 'Notfall & Vorfälle')}${fLink('#/services', 'Dienstleistungen')}
@@ -451,31 +451,27 @@ function renderHeader(el) {
     });
   });
 
-  // --- Drill-down-Unterzweige (Dienstleistungen → Intranet-Bereiche) ---
+  // --- Drill-down-Unterzweige (Thema → seine Dienstleistungen) ---
   const fillBranch = (drill, key) => {
     let title, rows;
     if (key.startsWith('dom:')) {
-      // Thema → seine Dienstleistungen (intern), mit «Übersicht» = gefilterte Liste.
+      // Thema → seine startbaren Dienstleistungen. «Alle anzeigen» führt auf den
+      // gefilterten Katalog — dieselbe Menge, nur mit Suche, Sortierung und
+      // Zielgruppenfilter. Informationsangebote (`type: info`) stehen nicht im
+      // Katalog und deshalb auch nicht hier (docs/sitemap.md §2.3).
       const dk = key.slice(4);
       const dom = (core.ref().domains || []).find(d => d.key === dk);
       if (!dom) return;
-      const svcs = core.services().filter(s => s.domain === dk);
+      const svcs = core.services().filter(s => s.domain === dk && s.type === 'action');
       title = dom.label;
-      rows = [{ href: `#/services?topic=${encodeURIComponent(dk)}`, label: 'Übersicht' },
-        ...svcs.map(s => ({ href: `#/services/${s.serviceId}`, label: s.title }))];
-    } else if (key.startsWith('nav:')) {
+      rows = [{ href: `#/services?topic=${encodeURIComponent(dk)}`, label: 'Alle anzeigen' },
+        ...svcs.map(s => ({ href: `#/services/${encodeURIComponent(s.serviceId)}`, label: s.title }))];
+    } else {
       // Nav-Zweig (z. B. «Digitalisierung») → seine L2-Kinder (intern).
-      const b = NAV_BRANCHES[key.slice(4)];
+      const b = NAV_BRANCHES[key.replace(/^nav:/, '')];
       if (!b) return;
       title = b.label;
       rows = b.children.map(c => ({ href: c.href, label: c.label }));
-    } else {
-      // Intranet-Bereich → externe Kinder aus INTRANET_AREAS.
-      const a = INTRANET_AREAS.find(x => x.key === key);
-      if (!a) return;
-      title = a.label;
-      rows = [{ href: a.overview, label: 'Übersicht', external: true },
-        ...(a.children || []).map(c => ({ href: c.href, label: c.label, external: true }))];
     }
     drill.querySelector('[data-branch-title]').textContent = title;
     drill.querySelector('[data-branch-list]').innerHTML = rows.map(navyRow).join('');

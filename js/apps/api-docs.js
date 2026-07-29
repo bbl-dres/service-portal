@@ -30,12 +30,12 @@ export default async function render(ctx) {
   setCrumbs([
     { label: 'Startseite', href: '#/' },
     { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Datenbezug und API Verzeichnis', href: '#/data/katalog' },
+    { label: 'Datenbezug und API Verzeichnis', href: '#/data/catalog' },
     { label: spec ? spec.title : 'API-Dokumentation' },
   ]);
   if (!spec) {
     setTitle('API nicht gefunden');
-    mount.innerHTML = `<div class="container section">${C.backLink('#/data/katalog', 'Datenbezug und API Verzeichnis')}
+    mount.innerHTML = `<div class="container section">${C.backLink('#/data/catalog', 'Datenbezug und API Verzeichnis')}
       ${C.empty('Diese API-Spezifikation existiert nicht.')}</div>`;
     return;
   }
@@ -123,7 +123,7 @@ export default async function render(ctx) {
 
   mount.innerHTML = `
   <div class="container section api-docs">
-    ${C.backLink('#/data/katalog', 'Datenbezug und API Verzeichnis')}
+    ${C.backLink('#/data/catalog', 'Datenbezug und API Verzeichnis')}
     <div class="api-head">
       <h1 tabindex="-1">${C.escape(spec.title)}</h1>
       <div class="api-head__badges">${C.badge('v' + spec.version, 'blue')} ${C.badge(spec.format || 'REST', 'gray')}</div>

@@ -83,8 +83,11 @@ export function badge(text, variant = 'gray', size = '') {
   return `<span class="badge badge--${variant}${size ? ' badge--' + size : ''}">${escape(text)}</span>`;
 }
 
+// Zielgruppen: `staff` = BBL-Personal, `customers` = Mitarbeitende anderer
+// Verwaltungseinheiten. Die Plattform ist nie öffentlich — «Extern» hätte die
+// Hauptzielgruppe als Aussenstehende benannt (docs/sitemap.md §5).
 export function audienceTag(a) {
-  const map = { internal: ['blue', 'Intern'], external: ['green', 'Extern'], both: ['gray', 'Intern + Extern'] };
+  const map = { staff: ['blue', 'BBL-Personal'], customers: ['green', 'Kundschaft'], both: ['gray', 'Beide'] };
   const [v, l] = map[a] || map.both;
   return badge(l, v);
 }
@@ -1058,7 +1061,7 @@ export function wirePagination(mount, inputId, page, totalPages, go) {
 // --- Ergebniskopf (search.postcss:208-234) ----------------------------------
 // Die Leiste über der Trefferliste: Anzahl links, Steuerung rechts. Der
 // Ansichtswechsel steht als Icon-Gruppe rechts, abgetrennt durch einen Strich.
-export function resultsHeader({ count, total, unit, page = 1, totalPages = 1, view = 'galerie' }) {
+export function resultsHeader({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   return `
     <div class="search-results__header">
@@ -1076,7 +1079,7 @@ export function resultsHeader({ count, total, unit, page = 1, totalPages = 1, vi
 // `visible` = die aktuell sichtbare (bereits geschnittene) Seite; `count` = Anzahl
 // gefilterter Treffer gesamt; `card(item)`/`listView(items)` rendern die Ansicht.
 export function catalogueResults({
-  visible, count, total, view = 'galerie', page = 1, totalPages = 1,
+  visible, count, total, view = 'gallery', page = 1, totalPages = 1,
   card, listView, mapView, unit, gridCls = 'grid grid--3',
   paginationHref, paginationInputId, paginationLabel,
   available = true, emptyMsg, unavailableMsg, note = '', header = true,
@@ -1085,11 +1088,11 @@ export function catalogueResults({
   // Die Kartenansicht zeigt bewusst ALLE Treffer statt einer Seite: eine Karte
   // mit 10 von 17 Punkten wäre ein falsches Bild der Verteilung. Deshalb bekommt
   // sie auch keine Blätterleiste — `mapView` erhält die volle gefilterte Menge.
-  const isMap = view === 'karte' && typeof mapView === 'function';
+  const isMap = view === 'map' && typeof mapView === 'function';
   const body = count
     ? isMap
       ? mapView()
-      : `${view === 'liste'
+      : `${view === 'list'
         ? listView(visible)
         : `<div class="${gridCls} mt-4">${visible.map(card).join('')}</div>`}${
       paginationHref ? pagination({ page, totalPages, inputId: paginationInputId, label: paginationLabel, href: paginationHref }) : ''}`
@@ -1117,15 +1120,15 @@ export function catalogueResults({
 }
 
 // Standard-Ansage für die Live-Region der Katalogseiten (Trefferzahl · Seite · Ansicht).
-export function announceCatalogue({ count, total, unit, page = 1, totalPages = 1, view = 'galerie' }) {
-  announce(`${count} von ${total} ${unit}${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'liste' ? 'Liste' : 'Galerie'}`);
+export function announceCatalogue({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
+  announce(`${count} von ${total} ${unit}${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'list' ? 'Liste' : 'Galerie'}`);
 }
 
 // Icon-Umschalter Galerie/Liste — keine Beschriftung, der Zustand steht in
 // aria-pressed und im aria-label.
 // CD-Ansichtsschalter (Icon-Umschaltgruppe, aria-pressed). `items` erlaubt andere
 // Ansichtspaare (z. B. Karten/Liste bei Projekten) statt harter btn--filled-Betonung.
-export function viewSwitch(view = 'galerie', items = [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']]) {
+export function viewSwitch(view = 'gallery', items = [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']]) {
   const btn = ([key, label, iconName]) => {
     const on = view === key;
     // Stabile id (aus den Daten, feste Reihenfolge): der Router stellt den Fokus
@@ -1142,12 +1145,12 @@ export function viewSwitch(view = 'galerie', items = [['galerie', 'Galerieansich
 // --- Katalog-Trio (services / applications / katalog teilen dieses Muster) -----
 // Ein Katalog-Hash: q/page/view einheitlich, alle weiteren Filter aus `filters`
 // als Query-Parameter (String → gesetzt wenn truthy; Array → komma-verbunden wenn
-// nicht leer). Default-Werte (page 1, view 'galerie') bleiben aus der URL, damit
+// nicht leer). Default-Werte (page 1, view 'gallery') bleiben aus der URL, damit
 // sie kurz und teilbar bleibt. Schlüssel = Parametername (z. B. `topic`, `tag`).
-// `defaultView` bleibt bei 'galerie' (Katalog-Trio, unverändert). Die Suchseite
-// setzt 'liste' als Standard — CD zeigt Suchergebnisse zuerst als Liste — und
-// braucht die Umkehrung: dort wandert 'galerie' in die URL.
-export function catalogueHash(base, { q = '', page = 1, view = '', defaultView = 'galerie', ...filters } = {}) {
+// `defaultView` bleibt bei 'gallery' (Katalog-Trio, unverändert). Die Suchseite
+// setzt 'list' als Standard — CD zeigt Suchergebnisse zuerst als Liste — und
+// braucht die Umkehrung: dort wandert 'gallery' in die URL.
+export function catalogueHash(base, { q = '', page = 1, view = '', defaultView = 'gallery', ...filters } = {}) {
   const p = new URLSearchParams();
   if (q) p.set('q', q);
   for (const [k, v] of Object.entries(filters)) {
@@ -1243,7 +1246,7 @@ export function catalogueBar({
   formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', countId = 'cat-count', count = '',
   sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
   panelId = '', panel = '', panelHidden = true,
-  view = 'galerie', views, showSearch = true,
+  view = 'gallery', views, showSearch = true,
 }) {
   // Ein einmal geöffnetes Panel bleibt offen, bis der Nutzer es selbst zuklappt.
   if (panelId && PANEL_OPEN.has(panelId)) panelHidden = false;

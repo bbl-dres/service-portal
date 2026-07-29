@@ -132,13 +132,13 @@ function detail(ctx, id) {
       h.note ? `<br><span class="small muted">${C.escape(h.note)}</span>` : ''}</li>`).join('')}</ul>`;
 
   const tabItems = [
-    { id: 'daten', label: 'Daten' },
-    { id: 'anhaenge', label: `Anhänge${atts.length ? ` · ${atts.length}` : ''}` },
-    { id: 'verlauf', label: 'Verlauf' },
+    { id: 'data', label: 'Daten' },
+    { id: 'attachments', label: `Anhänge${atts.length ? ` · ${atts.length}` : ''}` },
+    { id: 'history', label: 'Verlauf' },
   ];
-  const panelsById = { daten: datenPanel, anhaenge: anhaengePanel, verlauf: verlaufPanel };
+  const panelsById = { data: datenPanel, attachments: anhaengePanel, history: verlaufPanel };
   const requested = query && query.get('tab');
-  const activeTab = tabItems.some(t => t.id === requested) ? requested : 'daten';
+  const activeTab = tabItems.some(t => t.id === requested) ? requested : 'data';
 
   mount.innerHTML = `
   <div class="container section">
@@ -172,7 +172,7 @@ function detail(ctx, id) {
   // APG-Tabs (Klick + Pfeil/Home/End, roving tabindex) via C.wireTabs; der aktive
   // Tab wird in die Hash-Query gespiegelt (teilbar/lesezeichenbar).
   C.wireTabs(mount, {
-    syncHash: (tab) => history.replaceState(null, '', `#/my-cases/${encodeURIComponent(id)}${tab === 'daten' ? '' : `?tab=${tab}`}`),
+    syncHash: (tab) => history.replaceState(null, '', `#/my-cases/${encodeURIComponent(id)}${tab === 'data' ? '' : `?tab=${tab}`}`),
   });
   const adv = mount.querySelector('#advance');
   if (adv) adv.addEventListener('click', () => { engine.advance(i.instanceId); location.reload(); });

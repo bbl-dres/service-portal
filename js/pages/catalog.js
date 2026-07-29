@@ -1,7 +1,7 @@
 // Datenbezug — Datensatzkatalog (DCAT-AP-CH).
 // Gleiches Muster wie #/services: Suche links, Filter-Dropdowns, Ansichtswechsel
 // rechts, aktive Filter als Pills, Galerie/Liste und eine Detailansicht unter
-// #/data/katalog/<id>. Datenmodell und Vorschaubilder stammen aus dem
+// #/data/catalog/<id>. Datenmodell und Vorschaubilder stammen aus dem
 // Datenkatalog-Prototyp (data/datasets.json).
 
 const PER_PAGE = 9;
@@ -28,10 +28,10 @@ function list(ctx) {
   const rawQ = query.get('q') || '';
   const q = rawQ.toLowerCase();
   // Filter sind mehrwertig (Mehrfachauswahl-Checkboxen): komma-getrennt im Hash.
-  const themas = (query.get('thema') || '').split(',').map(s => s.trim()).filter(Boolean);
-  const klasses = (query.get('klass') || '').split(',').map(s => s.trim()).filter(Boolean);
+  const themas = (query.get('topic') || '').split(',').map(s => s.trim()).filter(Boolean);
+  const klasses = (query.get('classification') || '').split(',').map(s => s.trim()).filter(Boolean);
   const tags = (query.get('tag') || '').split(',').map(s => s.trim()).filter(Boolean);
-  const view = query.get('view') === 'liste' ? 'liste' : 'galerie';
+  const view = query.get('view') === 'list' ? 'list' : 'gallery';
   const wanted = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
 
   const themen = uniq(all.map(d => t(d.meta.thema))).sort((a, b) => a.localeCompare(b, 'de'));
@@ -61,23 +61,23 @@ function list(ctx) {
   const page = Math.min(wanted, totalPages);
   const visible = datasets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const base = { q: rawQ, thema: themas, klass: klasses, tag: tags, sort: sortKey, view };
-  const hash = (patch = {}) => C.catalogueHash('#/data/katalog', { ...base, ...patch });
+  const base = { q: rawQ, topic: themas, classification: klasses, tag: tags, sort: sortKey, view };
+  const hash = (patch = {}) => C.catalogueHash('#/data/catalog', { ...base, ...patch });
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert — das
   // Entfernen eines Filters braucht kein JS und bleibt verlinkbar.
   const active = [
     ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
-    ...themas.map(x => ({ label: x, href: hash({ thema: themas.filter(y => y !== x) }) })),
-    ...klasses.map(x => ({ label: klassLabel(core, x), href: hash({ klass: klasses.filter(y => y !== x) }) })),
+    ...themas.map(x => ({ label: x, href: hash({ topic: themas.filter(y => y !== x) }) })),
+    ...klasses.map(x => ({ label: klassLabel(core, x), href: hash({ classification: klasses.filter(y => y !== x) }) })),
     ...tags.map(x => ({ label: tagLabel(core, x), href: hash({ tag: tags.filter(y => y !== x) }) })),
   ];
-  const filterBar = C.activeFilters({ filters: active, resetHref: '#/data/katalog' });
+  const filterBar = C.activeFilters({ filters: active, resetHref: '#/data/catalog' });
 
   const card = (d) => C.card({
     title: t(d.title),
     desc: t(d.description),
-    href: `#/data/katalog/${encodeURIComponent(d.id)}`,
+    href: `#/data/catalog/${encodeURIComponent(d.id)}`,
     image: preview(C, d),
     imageAlt: '',
     badges: [
@@ -94,7 +94,7 @@ function list(ctx) {
     zebra: true,
     columns: [
       { key: 'title', label: 'Datensatz', render: d =>
-        `<a href="#/data/katalog/${encodeURIComponent(d.id)}">${C.escape(t(d.title))}</a>
+        `<a href="#/data/catalog/${encodeURIComponent(d.id)}">${C.escape(t(d.title))}</a>
          <br><span class="small muted">${C.escape(t(d.description))}</span>` },
       { key: 'thema', label: 'Thema', render: d => C.escape(t(d.meta.thema)) },
       { key: 'klass', label: 'Klassifizierung', render: d =>
@@ -116,14 +116,14 @@ function list(ctx) {
       sort: { id: 'ds-sort', value: sortKey, options: SORT_OPTS },
       filterId: 'ds-filter', filterLabel: 'Filter', filterCount: themas.length + klasses.length + tags.length,
       panelId: 'ds-filters', panel: `
-        ${C.filterGroup({ dim: 'thema', legend: 'Thema', selected: themas, options: themen.map(x => ({ value: x, label: x })) })}
-        ${C.filterGroup({ dim: 'klass', legend: 'Klassifizierung', selected: klasses, options: klassen.map(x => ({ value: x, label: klassLabel(core, x) })) })}
-        <a class="btn btn--bare btn--sm" href="${hash({ thema: [], klass: [], tag: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
-      view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
+        ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: themas, options: themen.map(x => ({ value: x, label: x })) })}
+        ${C.filterGroup({ dim: 'classification', legend: 'Klassifizierung', selected: klasses, options: klassen.map(x => ({ value: x, label: klassLabel(core, x) })) })}
+        <a class="btn btn--bare btn--sm" href="${hash({ topic: [], klass: [], tag: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
+      view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}
     ${C.catalogueResults({
-      resetHref: '#/data/katalog',
+      resetHref: '#/data/catalog',
       visible, count: datasets.length, total: all.length, view, page, totalPages, header: false,
       card, listView, unit: 'Datensätzen',
       paginationInputId: 'ds-page', paginationLabel: 'Seitennavigation Datensätze',
@@ -152,9 +152,9 @@ function detail(ctx, id) {
   if (!d) {
     setTitle('Datensatz nicht gefunden');
     setCrumbs(crumbs());
-    mount.innerHTML = C.notFound({ backHref: '#/data/katalog', backLabel: 'Datenbezug und API Verzeichnis',
+    mount.innerHTML = C.notFound({ backHref: '#/data/catalog', backLabel: 'Datenbezug und API Verzeichnis',
       title: 'Datensatz nicht gefunden',
-      body: 'Dieser Datensatz existiert nicht. <a href="#/data/katalog">Zur Übersicht «Datenbezug und API Verzeichnis»</a>' });
+      body: 'Dieser Datensatz existiert nicht. <a href="#/data/catalog">Zur Übersicht «Datenbezug und API Verzeichnis»</a>' });
     return;
   }
   setTitle(t(d.title));
@@ -164,7 +164,7 @@ function detail(ctx, id) {
 
   // Schlagworte führen zurück in den Katalog — als gesetzter Filter.
   const tagPills = (d.tags || []).map(x =>
-    `<a class="badge badge--gray" href="${C.catalogueHash('#/data/katalog', { tag: [x] })}">${C.escape(tagLabel(core, x))}</a>`).join('');
+    `<a class="badge badge--gray" href="${C.catalogueHash('#/data/catalog', { tag: [x] })}">${C.escape(tagLabel(core, x))}</a>`).join('');
 
   const persons = (d.responsiblePersons || []).map(p => `
     <div class="data-row">
@@ -238,7 +238,7 @@ function detail(ctx, id) {
   mount.innerHTML = `
   <div class="container section">
     ${C.detailHead({
-      backHref: '#/data/katalog', backLabel: 'Datenbezug und API Verzeichnis',
+      backHref: '#/data/catalog', backLabel: 'Datenbezug und API Verzeichnis',
       title: t(d.title), lead: t(d.description),
       tags: tagPills,
       image: img ? `<img src="${img}" alt="" loading="lazy">` : '',
@@ -275,7 +275,7 @@ function crumbs() {
   return [
     { label: 'Startseite', href: '#/' },
     { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Datenbezug und API Verzeichnis', href: '#/data/katalog' },
+    { label: 'Datenbezug und API Verzeichnis', href: '#/data/catalog' },
   ];
 }
 

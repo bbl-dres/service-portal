@@ -10,7 +10,7 @@ import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 const CATS = [
   { name: 'services',     base: `${APP_BASE}/services`,     detail: `${APP_BASE}/services/raumbedarf-melden` },
   { name: 'applications', base: `${APP_BASE}/applications`, detail: `${APP_BASE}/applications/liegenschaften-inventar` },
-  { name: 'katalog',      base: `${APP_BASE}/data/katalog`, detail: `${APP_BASE}/data/katalog/1` },
+  { name: 'katalog',      base: `${APP_BASE}/data/catalog`, detail: `${APP_BASE}/data/catalog/1` },
 ];
 
 const PROBE_DETAIL = `(async () => {
@@ -120,11 +120,11 @@ const dec = (h) => decodeURIComponent(h);
       check(q.cards === 0 && q.hasEmpty, 'q with no match → 0 cards + empty state');
       await p.closeTarget();
 
-      // 3. view deep-link: ?view=liste → table, liste pressed, no grid cards
-      p = await openPage(cdp, `${cat.base}?view=liste`);
+      // 3. view deep-link: ?view=list → table, liste pressed, no grid cards
+      p = await openPage(cdp, `${cat.base}?view=list`);
       const lv = await p.evaluate(PROBE_RENDER);
-      check(lv.tableRows > 0, `view=liste renders a table (${lv.tableRows} rows)`);
-      check(lv.viewBtns.find(b => b.view === 'liste')?.pressed === 'true', 'liste button aria-pressed=true');
+      check(lv.tableRows > 0, `view=list renders a table (${lv.tableRows} rows)`);
+      check(lv.viewBtns.find(b => b.view === 'list')?.pressed === 'true', 'liste button aria-pressed=true');
       await p.closeTarget();
 
       // 4. submit interaction → hash gets ?q=
@@ -133,10 +133,10 @@ const dec = (h) => decodeURIComponent(h);
       check(/[?&]q=buch/.test(hSubmit), `search submit → ${hSubmit.replace(APP_BASE, '#')}`);
       await p.closeTarget();
 
-      // 5. view-switch interaction → hash gets view=liste
+      // 5. view-switch interaction → hash gets view=list
       p = await openPage(cdp, cat.base);
-      const hView = await p.evaluate(probeView('liste'));
-      check(/[?&]view=liste/.test(hView), `view switch → ${hView.replace(APP_BASE, '#')}`);
+      const hView = await p.evaluate(probeView('list'));
+      check(/[?&]view=list/.test(hView), `view switch → ${hView.replace(APP_BASE, '#')}`);
       await p.closeTarget();
 
       // 5b. catbar sort interaction → hash gets ?sort=<value>

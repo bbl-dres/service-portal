@@ -1,5 +1,5 @@
 // Vollbild-Bildergalerie — geteilt von der Objekt-Detailansicht
-// (js/apps/portfolio.js) und der Mediathek (js/apps/mediathek.js).
+// (js/apps/portfolio.js) und der Mediathek (js/apps/media-library.js).
 //
 // Folgt dem CD-Overlay-Muster wie die Dokumentvorschau (js/doc-viewer.js):
 // Kopfzeile mit Titel und Aktionen, darunter die Bildfläche. Tastatur: Esc

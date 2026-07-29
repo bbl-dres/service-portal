@@ -60,10 +60,10 @@ export default async function render(ctx) {
   const epochen = (query.get('epoche') || '').split(',').filter(Boolean);
   const objekte = (query.get('objekt') || '').split(',').filter(Boolean);
   const sortKey = SORT_OPTS.some(([v]) => v === query.get('sort')) ? query.get('sort') : 'datum-desc';
-  const view = ['galerie', 'liste', 'karte'].includes(query.get('view')) ? query.get('view') : 'galerie';
+  const view = ['gallery', 'list', 'map'].includes(query.get('view')) ? query.get('view') : 'gallery';
 
   const base = { q: rawQ, typ: typs, epoche: epochen, objekt: objekte, sort: sortKey, view };
-  const hash = (patch = {}) => C.catalogueHash('#/app/mediathek', { ...base, ...patch });
+  const hash = (patch = {}) => C.catalogueHash('#/app/media-library', { ...base, ...patch });
 
   const needle = rawQ.toLowerCase();
   const matches = (m) => !needle || [m.title, bname(objektId(m)), m.photographer, m.date]
@@ -92,7 +92,7 @@ export default async function render(ctx) {
     id: m.mediaId,
     photo: m.photo, photoSrc: m.file || '', title: m.title, meta: `${m.date} · ${bname(objektId(m))}`,
     type: m.mediaType, gray: isHistoric(m),
-    href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
+    href: `#/app/media-library/${encodeURIComponent(m.mediaId)}`,
     details: [
       ['Typ', m.mediaType === 'video' ? 'Video' : 'Foto'],
       ['Datum', m.date],
@@ -112,7 +112,7 @@ export default async function render(ctx) {
   const card = (m) => C.card({
     title: m.title,
     desc: `${bname(objektId(m))} · ${m.photographer}`,
-    href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
+    href: `#/app/media-library/${encodeURIComponent(m.mediaId)}`,
     titleTag: 'h3',
     photo: { src: m.file || '', id: m.photo, color: m.color, alt: '', gray: isHistoric(m) },
     badges: [
@@ -128,7 +128,7 @@ export default async function render(ctx) {
     zebra: true,
     columns: [
       { key: 'title', label: 'Titel', render: m =>
-        `<a href="#/app/mediathek/${encodeURIComponent(m.mediaId)}">${C.escape(m.title)}</a>` },
+        `<a href="#/app/media-library/${encodeURIComponent(m.mediaId)}">${C.escape(m.title)}</a>` },
       { key: 'typ', label: 'Typ', render: m => C.escape(typLabel(m.mediaType)) },
       { key: 'objekt', label: 'Objekt', render: m => C.escape(bname(objektId(m))) },
       { key: 'epoche', label: 'Epoche', render: m => periodBadge(m.historicPeriod) },
@@ -144,7 +144,7 @@ export default async function render(ctx) {
     .map(m => ({
       lat: m.lat, lon: m.lon, bblId: m.mediaId, label: m.title,
       sub: `${typLabel(m.mediaType)} · ${m.date} · ${bname(objektId(m))}`,
-      href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
+      href: `#/app/media-library/${encodeURIComponent(m.mediaId)}`,
     }));
   const mapView = () => {
     const n = mapPoints().length;
@@ -177,7 +177,7 @@ export default async function render(ctx) {
       placeholder: 'Titel, Objekt oder Urheberschaft…', q: rawQ,
       countId: 'med-count',
       // In der Karte ist «Seite x von y» sinnlos: sie zeigt alle Treffer.
-      count: view === 'karte'
+      count: view === 'map'
         ? `<strong>${sorted.length}</strong> ${sorted.length === 1 ? 'Aufnahme' : 'Aufnahmen'}`
         : `<strong>${sorted.length}</strong> von ${all.length} Aufnahmen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'med-sort', value: sortKey, options: SORT_OPTS },
@@ -189,11 +189,11 @@ export default async function render(ctx) {
           { value: 'historisch', label: 'Historisch' }, { value: 'aktuell', label: 'Aktuell' }] })}
         ${C.filterGroup({ dim: 'objekt', legend: 'Objekt', selected: objekte, options: objOpts })}
         <div class="catbar__panel__actions"><a class="btn btn--bare btn--sm" href="${hash({ typ: [], epoche: [], objekt: [] })}">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></a></div>`,
-      view, views: [['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List'], ['karte', 'Kartenansicht', 'Map']],
+      view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
     })}
-    ${C.activeFilters({ filters: active, resetHref: '#/app/mediathek' })}
+    ${C.activeFilters({ filters: active, resetHref: '#/app/media-library' })}
     ${C.catalogueResults({
-      resetHref: '#/app/mediathek',
+      resetHref: '#/app/media-library',
       visible, count: sorted.length, total: all.length, view, page, totalPages, header: false,
       card, listView, mapView, unit: 'Aufnahmen', regionLabel: 'Aufnahmen',
       paginationInputId: 'med-page', paginationLabel: 'Seitennavigation Mediathek',
@@ -210,7 +210,7 @@ export default async function render(ctx) {
     sortId: 'med-sort', filterToggleId: 'med-filter', panelId: 'med-filters',
   });
 
-  if (view === 'galerie') {
+  if (view === 'gallery') {
     // Fortschrittliche Verbesserung: der href auf die Detailseite bleibt die
     // Rückfallebene (und die Tastaturbedienung), der Klick öffnet die Vollbild-
     // galerie an genau diesem Bild — wie in der Objekt-Detailansicht.
@@ -232,7 +232,7 @@ export default async function render(ctx) {
     });
   }
 
-  if (view === 'karte') {
+  if (view === 'map') {
     const el = mount.querySelector('#med-map');
     if (el) {
       // Handle festhalten: ohne ihn ist map.remove() unerreichbar und je Besuch
@@ -244,7 +244,7 @@ export default async function render(ctx) {
   }
 }
 
-// Detailansicht: #/app/mediathek/MED-001
+// Detailansicht: #/app/media-library/MED-001
 //
 // Gleiche Anatomie wie die Objekt-Detailansicht (js/apps/portfolio.js):
 // Zurück-Leiste → Kennzeichen + Titel + Lead → Hero (Bild neben Standortkarte)
@@ -256,9 +256,9 @@ function detail(ctx, id) {
   const all = core.media();
   const m = all.find(x => x.mediaId === id);
   if (!m) {
-    mount.innerHTML = C.notFound({ backHref: '#/app/mediathek', backLabel: 'Mediathek Bauten',
+    mount.innerHTML = C.notFound({ backHref: '#/app/media-library', backLabel: 'Mediathek Bauten',
       title: 'Medium nicht gefunden',
-      body: 'Dieses Medium existiert nicht (oder wurde zurückgezogen). <a href="#/app/mediathek">Zur Übersicht «Mediathek»</a>' });
+      body: 'Dieses Medium existiert nicht (oder wurde zurückgezogen). <a href="#/app/media-library">Zur Übersicht «Mediathek»</a>' });
     return;
   }
 
@@ -266,7 +266,7 @@ function detail(ctx, id) {
   setCrumbs([
     { label: 'Startseite', href: '#/' },
     { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Mediathek Bauten', href: '#/app/mediathek' },
+    { label: 'Mediathek Bauten', href: '#/app/media-library' },
     { label: m.title },
   ]);
 
@@ -286,7 +286,7 @@ function detail(ctx, id) {
     id: x.mediaId,
     photo: x.photo, photoSrc: x.file || '', title: x.title, meta: `${x.date} · ${bn}`,
     type: x.mediaType, gray: x.historicPeriod === 'historisch',
-    href: `#/app/mediathek/${encodeURIComponent(x.mediaId)}`,
+    href: `#/app/media-library/${encodeURIComponent(x.mediaId)}`,
     details: [
       ['Typ', x.mediaType === 'video' ? 'Video' : 'Foto'],
       ['Datum', x.date],
@@ -345,7 +345,7 @@ function detail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.detailBar({ backHref: '#/app/mediathek', backLabel: 'Mediathek Bauten' })}
+    ${C.detailBar({ backHref: '#/app/media-library', backLabel: 'Mediathek Bauten' })}
     <h1 tabindex="-1">${C.escape(m.title)}</h1>
     <p class="lead">${C.escape(bn)} · ${C.escape(m.date)}</p>
 

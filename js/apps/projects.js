@@ -68,9 +68,9 @@ function overview(ctx) {
   const phases = [...new Set(objects.map((o) => o.siaPhaseLabel))].filter(Boolean);
 
   const state = {
-    view: ['karte', 'galerie', 'liste'].includes(query.get('view')) ? query.get('view') : 'karte',
+    view: ['map', 'gallery', 'list'].includes(query.get('view')) ? query.get('view') : 'map',
     sel: {}, focus: null, q: '', sort: 'name', filters: { status: [], sia: [], sub: [] }, page: 1,
-    perPage: { galerie: 9, liste: 25 },
+    perPage: { gallery: 9, list: 25 },
   };
 
   const inSel = (o) => (!state.sel.id || o.id === state.sel.id)
@@ -167,7 +167,7 @@ function overview(ctx) {
     const cnt = mount.querySelector('#pj-count');
     const main = mount.querySelector('#pj-main');
     freePjMap();
-    if (state.view === 'karte') {
+    if (state.view === 'map') {
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> ${list.length === 1 ? 'Projekt' : 'Projekte'}`;
       main.innerHTML = `<div class="pf-map dash-map" id="pj-map-el" role="group" aria-label="Karte der Bauprojekte"></div>`;
       mountMap(list, state.focus);
@@ -180,7 +180,7 @@ function overview(ctx) {
       if (state.page > pages) state.page = pages;
       const slice = list.slice((state.page - 1) * per, state.page * per);
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Projekte${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
-      main.innerHTML = (state.view === 'galerie' ? galleryHTML(slice) : listHTML(slice))
+      main.innerHTML = (state.view === 'gallery' ? galleryHTML(slice) : listHTML(slice))
         + C.pagination({ page: state.page, totalPages: pages, href: () => '#', inputId: 'pj-page' });
       if (pages > 1) C.wirePagination(mount, 'pj-page', state.page, pages, (t) => { state.page = t; renderMain(); });
     }
@@ -222,7 +222,7 @@ function overview(ctx) {
       placeholder: 'Projekt, Nummer, PL oder Gebäude suchen…', countId: 'pj-count',
       sort: { id: 'pj-sort', label: 'Sortierung', value: state.sort, options: SORT_OPTS },
       filterId: 'pj-filter-btn', filterLabel: 'Filter', panelId: 'pj-filters', panel: filterPanel,
-      view: state.view, views: [['karte', 'Kartenansicht', 'Map'], ['galerie', 'Galerieansicht', 'Apps'], ['liste', 'Listenansicht', 'List']],
+      view: state.view, views: [['map', 'Kartenansicht', 'Map'], ['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     <div id="pj-activefilters"></div>
     <div class="pf-layout">

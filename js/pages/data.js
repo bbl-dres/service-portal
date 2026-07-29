@@ -1,5 +1,5 @@
 // Daten und Digitalisierung — Abschnitts-Übersicht. Die Unterseiten liegen in
-// eigenen Modulen: katalog.js (Datenbezug), ikt-vorhaben.js, digitalisierung.js.
+// eigenen Modulen: catalog.js (Datenbezug), ict-projects.js, digitalisation.js.
 
 // Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
 // bevor render() den ersten Accessor aufruft (H4).
@@ -8,7 +8,7 @@ export const needs = ["datasets"];
 export default async function render(ctx) {
   const { params } = ctx;
   if (!params.length) return overview(ctx);
-  const sub = { katalog: './katalog.js', 'ikt-vorhaben': './ikt-vorhaben.js', digitalisierung: './digitalisierung.js' }[params[0]];
+  const sub = { catalog: './catalog.js', 'ict-projects': './ict-projects.js', digitalisation: './digitalisation.js' }[params[0]];
   if (!sub) return notFound(ctx);
   const mod = await import(sub);
   if (ctx.stale()) return;   // A2: nach dem await keine überholte Navigation überschreiben
@@ -23,32 +23,32 @@ function overview(ctx) {
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung' }]);
 
   const apps = core.applications();
-  const count = (b) => apps.filter(a => a.bereich === b).length;
+  const count = (b) => apps.filter(a => a.area === b).length;
   const datasets = core.datasets().length;
 
   const entries = [
     { title: 'Datenportal', icon: 'ChartBar', href: '#/app/dataportal',
       desc: 'Auswertungen und Dashboards zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal.',
       meta: '6 Themen' },
-    { title: 'Datenbezug und API Verzeichnis', icon: 'FileDatabase', href: '#/data/katalog',
+    { title: 'Datenbezug und API Verzeichnis', icon: 'FileDatabase', href: '#/data/catalog',
       desc: 'Datensatzkatalog nach DCAT-AP-CH: Beschreibung, Klassifizierung und Bezugswege der Datensätze des BBL.',
       meta: `${datasets} Datensätze` },
     { title: 'Bauwerksdokumentation', icon: 'Folder', href: '#/app/document-archive',
       desc: 'Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.',
       meta: 'Dokumentenarchiv' },
-    { title: 'Mediathek Bauten', icon: 'Image', href: '#/app/mediathek',
+    { title: 'Mediathek Bauten', icon: 'Image', href: '#/app/media-library',
       desc: 'Digital-Asset-Management für Fotos und Videos der Bundesbauten, inkl. historischer Aufnahmen.',
       meta: 'DAM' },
-    { title: 'Fachanwendungen Bauten', icon: 'Building', href: '#/applications?bereich=bauten',
+    { title: 'Fachanwendungen Bauten', icon: 'Building', href: '#/applications?area=buildings',
       desc: 'Fachanwendungen für Immobilien, Bauprojekte und Bauwerksdokumentation.',
-      meta: `${count('bauten')} Anwendungen` },
-    { title: 'Fachanwendungen Logistik', icon: 'ShoppingCart', href: '#/applications?bereich=logistik',
+      meta: `${count('buildings')} Anwendungen` },
+    { title: 'Fachanwendungen Logistik', icon: 'ShoppingCart', href: '#/applications?area=logistics',
       desc: 'Fachanwendungen für Arbeitsplatz, Beschaffung und Logistik.',
-      meta: `${count('logistik')} Anwendungen` },
+      meta: `${count('logistics')} Anwendungen` },
     { title: 'Alle Anwendungen', icon: 'Apps', href: '#/applications',
       desc: 'Der vollständige Anwendungskatalog, inklusive der zentralen Systeme der Bundesverwaltung.',
       meta: `${apps.length} Anwendungen` },
-    { title: 'Digitalisierung', icon: 'Book', href: '#/data/digitalisierung',
+    { title: 'Digitalisierung', icon: 'Book', href: '#/data/digitalisation',
       desc: 'Strategie, Vorhaben und Grundsätze der Digitalisierung im BBL.',
       meta: 'Strategie & Vorhaben' },
   ].map(C.domainTile).join('');

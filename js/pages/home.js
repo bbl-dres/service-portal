@@ -2,12 +2,11 @@
 //
 // Aufbau nach der Reihenfolge, in der jemand die Seite benutzt:
 //   Suche → offene Vorgänge → häufige Dienstleistungen →
-//   Bestellen und weitere Angebote → Aktuelles.
+//   Anwendungen und Hilfsmittel → Aktuelles.
 // Begründung siehe docs/design-review.md P1-1: ein Intranet dient der
 // wiederholten Aufgabenerledigung, nicht der Erstorientierung — deshalb
 // ausdrücklich nicht dem Aufbau öffentlicher Bundesauftritte folgend.
 
-import { INTRANET_AREAS } from '../intranet-areas.js';
 
 const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 
@@ -89,20 +88,35 @@ export default async function render(ctx) {
     more: { href: '#/services', label: 'Alle Dienstleistungen ansehen' },
   });
 
-  // 3 · Bestellen und weitere Angebote — Einstiegsgalerie: zuerst wichtige
-  //     Dienstleistungs-Themen (intern), dann die Aufgabenbereiche im
-  //     BBL-Intranet (extern). Bewusst eine Auswahl, nicht jeder Menüpunkt.
-  const areaCard = (a) => C.card({
-    title: a.label, desc: a.desc, href: a.overview, external: true,
-    photo: { id: a.photo, alt: '' },
-    footerInfo: 'BBL-Intranet', footerAction: C.cardAction({ external: true }),
-  });
-  // Die fünf Aufgabenbereiche des BBL-Intranets. Sie verlassen den Prototyp in
-  // einem neuen Tab; die Fusszeile jeder Karte sagt das vorher (Item 7.3).
-  // Fünf Karten im Dreierraster ergeben 3+2 — keine einzeln verwaiste Karte.
+  // 3 · Anwendungen, Hilfsmittel und weitere Angebote — die meistgebrauchten
+  //     Einstiege quer über die Plattform: zwei Anwendungen, eine Hilfsmittel-
+  //     Sammlung, ein externer Shop, ein Dokumentenbestand. Bewusst gemischt und
+  //     bewusst kurz: es ist eine Auswahl, kein zweites Menü.
+  //     Fünf Karten im Dreierraster ergeben 3+2 — keine einzeln verwaiste Karte.
+  const HIGHLIGHTS = [
+    { title: 'Datenportal', href: '#/app/dataportal', photo: '1551288049-bebda4e38f71',
+      desc: 'Auswertungen und Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal und Logistik.',
+      foot: 'Anwendung' },
+    { title: 'Liegenschaften Inventar', href: '#/app/portfolio', photo: '1515488764276-beab7607c1e6',
+      desc: 'Gebäude und Grundstücke des Bundes auf der Karte, mit Flächen, Verträgen, Kosten und Dokumenten.',
+      foot: 'Anwendung' },
+    { title: 'Informatik und IKT-Beschaffung', href: '#/knowledge/it', photo: '1518770660439-4636190af475',
+      desc: 'Mustervorlagen, Werkzeugkasten und Vorgaben für Beschaffungen im Informatikbereich.',
+      foot: 'Hilfsmittel' },
+    { title: 'Bundespublikationen-Shop', href: '#', photo: '1583521214690-73421a1829a9', external: true,
+      desc: 'Publikationen und Drucksachen des Bundes ab Lager bestellen.',
+      foot: 'Externes System' },
+    { title: 'Bauwerksdokumentation', href: '#/app/document-archive', photo: '1478860409698-8707f313ee8b',
+      desc: 'Pläne, Dokumentationen und Berichte je Gebäude suchen und beziehen.',
+      foot: 'Anwendung' },
+  ];
   blocks.push({
-    title: 'Bestellen und weitere Angebote',
-    body: `<div class="grid grid--responsive-cols-3">${INTRANET_AREAS.map(areaCard).join('')}</div>`,
+    title: 'Anwendungen, Hilfsmittel und weitere Angebote',
+    body: `<div class="grid grid--responsive-cols-3">${HIGHLIGHTS.map(h => C.card({
+      title: h.title, desc: h.desc, href: h.href, external: h.external,
+      photo: { id: h.photo, alt: '' },
+      footerInfo: h.foot, footerAction: C.cardAction({ external: !!h.external }),
+    })).join('')}</div>`,
   });
 
   // 5 · Aktuelles — Galerie mit Bildern (CD TopNewsSection).
@@ -110,11 +124,11 @@ export default async function render(ctx) {
     title: 'Aktuelles',
     body: `<div class="grid grid--3">${news.map(n => C.card({
       title: n.title, desc: n.teaser,
-      href: `#/knowledge/news/${encodeURIComponent(n.id)}`,
+      href: `#/news/${encodeURIComponent(n.id)}`,
       photo: { id: n.photo, color: n.color, alt: '' },
       footerInfo: `${C.escape(n.date)} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
     })).join('')}</div>`,
-    more: { href: '#/knowledge/news', label: 'Alle Aktualitäten ansehen' },
+    more: { href: '#/news', label: 'Alle Aktualitäten ansehen' },
   });
 
   // Der Hero ist weiss; danach wechseln die Bänder — erstes Band grau.

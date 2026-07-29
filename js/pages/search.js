@@ -57,9 +57,9 @@ export default async function render(ctx) {
     {
       label: 'Datensätze', icon: 'FileDatabase',
       all: core.datasets().filter(d => hit(t(d.title), t(d.description), t(d.fullDescription), (d.tags || []).join(' '))),
-      more: `#/data/katalog?q=${encodeURIComponent(rawQ)}`,
+      more: `#/data/catalog?q=${encodeURIComponent(rawQ)}`,
       row: d => ({ type: 'Datensatz', title: t(d.title), desc: t(d.description),
-        href: `#/data/katalog/${encodeURIComponent(d.id)}` }),
+        href: `#/data/catalog/${encodeURIComponent(d.id)}` }),
     },
     {
       label: 'Dokumente', icon: 'Folder',
@@ -69,18 +69,11 @@ export default async function render(ctx) {
         href: '#/app/document-archive' }),
     },
     {
-      label: 'Gesetzliche Grundlagen und Vorgaben', icon: 'Book',
-      all: core.weisungen().filter(w => hit(w.title, w.summary, w.code, w.topic)),
-      more: '#/knowledge/grundlagen',
-      row: w => ({ type: w.type || 'Weisung', title: w.title, desc: w.summary,
-        href: `#/knowledge/grundlagen/${encodeURIComponent(w.directiveId)}` }),
-    },
-    {
       label: 'News', icon: 'Bell',
       all: core.news().filter(n => hit(n.title, n.teaser, n.body)),
-      more: '#/knowledge/news',
+      more: '#/news',
       row: n => ({ type: 'News', title: n.title, desc: n.teaser, date: n.date,
-        href: `#/knowledge/news/${encodeURIComponent(n.id)}` }),
+        href: `#/news/${encodeURIComponent(n.id)}` }),
     },
   ].filter(g => g.all.length) : [];
 
@@ -109,17 +102,17 @@ export default async function render(ctx) {
   }));
 
   // --- Zustand aus dem Hash (teilbar), wie beim Katalog-Trio ---
-  const selectedArt = (query.get('art') || '').split(',').map(s => s.trim()).filter(Boolean);
+  const selectedArt = (query.get('kind') || '').split(',').map(s => s.trim()).filter(Boolean);
   // CD zeigt Suchergebnisse zuerst als LISTE (searchResults.vue → SearchResultsList).
-  const view = query.get('view') === 'galerie' ? 'galerie' : 'liste';
+  const view = query.get('view') === 'gallery' ? 'gallery' : 'list';
   const SORT_OPTS = [
     { value: '', label: 'Relevanz' },
     { value: 'title', label: 'Titel (A–Z)' },
-    { value: 'art', label: 'Inhaltsart' },
+    { value: 'kind', label: 'Inhaltsart' },
   ];
   const SORTS = {
     title: (a, b) => String(a.title).localeCompare(String(b.title), 'de'),
-    art: (a, b) => String(a.art).localeCompare(String(b.art), 'de') || a.rank - b.rank,
+    kind: (a, b) => String(a.art).localeCompare(String(b.art), 'de') || a.rank - b.rank,
   };
   const sortKey = SORT_OPTS.some(o => o.value && o.value === query.get('sort')) ? query.get('sort') : '';
   const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
@@ -131,8 +124,8 @@ export default async function render(ctx) {
   const page = Math.min(currentPage, totalPages);
   const visible = sorted.slice((page - 1) * perPage, page * perPage);
 
-  const base = { q: rawQ, art: selectedArt, sort: sortKey, view };
-  const hash = (patch = {}) => C.catalogueHash('#/search', { ...base, ...patch, defaultView: 'liste' });
+  const base = { q: rawQ, kind: selectedArt, sort: sortKey, view };
+  const hash = (patch = {}) => C.catalogueHash('#/search', { ...base, ...patch, defaultView: 'list' });
 
   const artOptions = [...new Set(flat.map(r => r.art))].map(a => ({ value: a, label: a }));
   const listView = (items) => `<ul class="search-results-list">${items.map(resultRow).join('')}</ul>`;
@@ -153,14 +146,14 @@ export default async function render(ctx) {
     sort: { id: 'sr-sort', value: sortKey, options: SORT_OPTS.filter(o => o.value) },
     filterId: 'sr-filter', filterCount: selectedArt.length,
     panelId: 'sr-filters',
-    panel: C.filterGroup({ dim: 'art', legend: 'Inhaltsart', selected: selectedArt, options: artOptions })
-      + `<div class="catbar__panel__actions"><a class="btn btn--bare btn--sm" href="${hash({ art: [] })}">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></a></div>`,
-    view, views: [['liste', 'Listenansicht', 'List'], ['galerie', 'Galerieansicht', 'Apps']],
+    panel: C.filterGroup({ dim: 'kind', legend: 'Inhaltsart', selected: selectedArt, options: artOptions })
+      + `<div class="catbar__panel__actions"><a class="btn btn--bare btn--sm" href="${hash({ kind: [] })}">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></a></div>`,
+    view, views: [['list', 'Listenansicht', 'List'], ['gallery', 'Galerieansicht', 'Apps']],
   });
 
   const activePills = C.activeFilters({
-    filters: selectedArt.map(a => ({ label: a, href: hash({ art: selectedArt.filter(x => x !== a) }) })),
-    resetHref: hash({ art: [] }),
+    filters: selectedArt.map(a => ({ label: a, href: hash({ kind: selectedArt.filter(x => x !== a) }) })),
+    resetHref: hash({ kind: [] }),
   });
 
   const body = !rawQ

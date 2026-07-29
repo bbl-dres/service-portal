@@ -19,7 +19,7 @@ const VORHABEN = [
     zeitraum: '2022–2027',
     lead: 'BBL Bau',
     beschreibung: 'Modellbasierte Planung und Übergabe von Bauprojekten mit einer gemeinsamen Datenumgebung über den Lebenszyklus.',
-    href: '#/applications?bereich=bauten',
+    href: '#/applications?area=buildings',
   },
   {
     titel: 'Kundenportal BBL',
@@ -37,7 +37,7 @@ const VORHABEN = [
     zeitraum: '2026–2028',
     lead: 'Informatik BBL',
     beschreibung: 'Dokumentation der Datenarchitektur, Verantwortlichkeiten und Schnittstellen als Grundlage für den Datenbezug.',
-    href: '#/data/katalog',
+    href: '#/data/catalog',
   },
   {
     titel: 'Ablösung Dokumentenablage (GEVER)',

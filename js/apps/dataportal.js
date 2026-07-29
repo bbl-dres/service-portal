@@ -143,7 +143,7 @@ function dashboardView(ctx, id) {
   const chartById = Object.fromEntries(board.charts.map(c => [c.id, c]));
   const tabs = (board.tabs && board.tabs.length)
     ? board.tabs
-    : [{ id: 'ueberblick', label: 'Überblick', charts: board.charts.map(c => c.id) }];
+    : [{ id: 'overview', label: 'Überblick', charts: board.charts.map(c => c.id) }];
   const buildings = core.buildings();
 
   // --- filter/tab state (mirrored in the hash query so it is shareable) ---
