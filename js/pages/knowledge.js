@@ -75,7 +75,8 @@ const AREAS = {
         { title: 'Weisung WTO-Verfahren und Schwellenwerte', desc: 'Verfahrenswahl, Fristen, Publikationspflichten.', href: '#', meta: ['PDF', '890 kB', 'Weisung BBL'] },
         { title: 'Weisung Harmonisierte Beschaffungsprozesse', desc: 'Der HBB-Prozess und seine Anhänge A1 und A2.', href: '#', meta: ['PDF', '1.2 MB', 'Weisung BBL'] },
       ] },
-      { id: 'bkb', title: 'Dokumente der BKB', intro: 'Verbindliche Formulare und Hilfsmittel der Beschaffungskonferenz des Bundes.', items: [
+      { id: 'bkb', title: 'Dokumente der BKB', intro: 'Verbindliche Formulare und Hilfsmittel der Beschaffungskonferenz des Bundes. Die BKB führt die vollständige Sammlung auf ihrer eigenen Plattform — hier steht, was im Alltag am häufigsten gebraucht wird.', items: [
+        { title: 'Beschaffungskonferenz des Bundes (BKB)', desc: 'Die Plattform der BKB mit allen Vorgaben, Hilfsmitteln, Merkblättern und Vertragsbedingungen des Bundes.', href: 'https://www.bkb.admin.ch/', external: true, meta: ['bkb.admin.ch'] },
         { title: 'Allgemeine Geschäftsbedingungen des Bundes', desc: 'AGB für Dienstleistungs- und Lieferaufträge.', href: 'https://www.bkb.admin.ch/de/agb-des-bundes', external: true, meta: ['bkb.admin.ch'] },
         { title: 'Formular Bankgarantie', desc: 'Sicherstellung durch Bankgarantie.', meta: ['PDF', '148 kB'] },
         { title: 'Formular Bürgschaft', desc: 'Sicherstellung durch Bürgschaft.', meta: ['PDF', '142 kB'] },
