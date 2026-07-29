@@ -1,7 +1,7 @@
 # BBL Kundenportal (Service Portal)
 
 <p align="center">
-  <img src="assets/Social.jpg" width="100%" alt="BBL Kundenportal — service portal prototype"/>
+  <img src="assets/social1.jpg" width="100%" alt="BBL Kundenportal — service portal prototype"/>
 </p>
 
 <p align="center">
