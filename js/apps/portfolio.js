@@ -167,6 +167,7 @@ export default async function render(ctx) {
       <div class="pf-card__vis">${vis}<div class="pf-card__chips">${chips}</div></div>
       <div class="card__content"><div class="card__body">
         <h3 class="card__title">${esc(o.name)}</h3>
+        <p class="pf-card__id">${esc(o.id)}</p>
         <p class="card__description">${esc(o.street)}${o.city ? `, ${esc(o.zip)} ${esc(o.city)}` : ''}</p>
       </div>
       <div class="card__footer"><span>${esc(o.cat)}</span><span>${Number(o.area || 0).toLocaleString('de-CH')} m² <span class="muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span></span></div></div></a>`;

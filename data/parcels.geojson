@@ -6,8 +6,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/4840/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/4840/01",
+    "bbl_buch": "1080",
     "bbl_we": "4840",
     "bbl_obj": "01",
     "bbl_bez": "Bundesgasse 1",
@@ -54,7 +54,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-4840-AF_bundeshaus-west_aussenansicht.jpg",
       "titel": "Bundesgasse 1 — luftbild",
       "fotograf": "Arkhein Drakenov",
       "credit": "Arkhein Drakenov · CC BY-SA 4.0",
@@ -274,8 +274,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/5210/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/5210/01",
+    "bbl_buch": "1080",
     "bbl_we": "5210",
     "bbl_obj": "01",
     "bbl_bez": "Otto-von-Bismarck-Allee",
@@ -322,7 +322,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-5210-AA_schweizerische-botschaft-berlin_aussenansicht.jpg",
       "titel": "Otto-von-Bismarck-Allee — luftbild",
       "fotograf": "Christian Richters",
       "credit": "Christian Richters — BBL-Mediendatenbank",
@@ -362,8 +362,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/3120/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/3120/01",
+    "bbl_buch": "1080",
     "bbl_we": "3120",
     "bbl_obj": "01",
     "bbl_bez": "Lindenmoos",
@@ -410,7 +410,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-3120-AB_sammlungszentrum-schweizerisches-nationalmuseu_drohnenaufnahme.jpg",
+      "src": "assets/images/buildings/1080-3120-AB_sammlungszentrum-schweizerisches-nationalmuseu_drohnenaufnahme.jpg",
       "titel": "Lindenmoos — luftbild",
       "fotograf": "Schweizerisches Nationalmuseum",
       "credit": "Schweizerisches Nationalmuseum · CC BY-SA 4.0",
@@ -1054,8 +1054,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/5320/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/5320/01",
+    "bbl_buch": "1080",
     "bbl_we": "5320",
     "bbl_obj": "01",
     "bbl_bez": "Third Avenue Lot",
@@ -1131,8 +1131,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/4100/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/4100/01",
+    "bbl_buch": "1080",
     "bbl_we": "4100",
     "bbl_obj": "01",
     "bbl_bez": "Kasinostrasse",
@@ -1179,7 +1179,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg",
       "titel": "Kasinostrasse — luftbild",
       "fotograf": "Franz Rindlisbacher, Zürich",
       "credit": "Franz Rindlisbacher, Zürich — aus der Bautendokumentation des BBL",
@@ -1263,8 +1263,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Löschvermerk",
-    "bbl_id": "1000/5410/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/5410/01",
+    "bbl_buch": "1080",
     "bbl_we": "5410",
     "bbl_obj": "01",
     "bbl_bez": "Minami-Azabu",
@@ -1311,7 +1311,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-5410-AA_schweizerische-botschaft-tokio_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-5410-AA_schweizerische-botschaft-tokio_aussenansicht.jpg",
       "titel": "Minami-Azabu — luftbild",
       "fotograf": "Syced",
       "credit": "Syced · CC0 1.0 (gemeinfrei)",
@@ -1351,8 +1351,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/2800/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/2800/01",
+    "bbl_buch": "1080",
     "bbl_we": "2800",
     "bbl_obj": "01",
     "bbl_bez": "Effingerstrasse 29",
@@ -1441,8 +1441,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/5510/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/5510/01",
+    "bbl_buch": "1080",
     "bbl_we": "5510",
     "bbl_obj": "01",
     "bbl_bez": "Setor de Embaixadas Sul",
@@ -1489,7 +1489,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-5510-AA_schweizerische-botschaft-bras-lia_aussenansicht.jpg",
       "titel": "Setor de Embaixadas Sul — luftbild",
       "fotograf": "Laurence Bonvin",
       "credit": "Laurence Bonvin — BBL-Mediendatenbank",
@@ -1529,8 +1529,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/1950/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/1950/01",
+    "bbl_buch": "1080",
     "bbl_we": "1950",
     "bbl_obj": "01",
     "bbl_bez": "Auenfeld",
@@ -2039,8 +2039,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Abgang",
-    "bbl_id": "1000/4850/01",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/4850/01",
+    "bbl_buch": "1080",
     "bbl_we": "4850",
     "bbl_obj": "01",
     "bbl_bez": "Guisanplatz",
@@ -2087,7 +2087,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
       "titel": "Guisanplatz — luftbild",
       "fotograf": "Rolf Siegenthaler",
       "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
@@ -2850,7 +2850,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6100/01",
+    "bbl_id": "1080/6100/01",
     "bbl_we": "6100",
     "bbl_bez": "Museumstrasse 2",
     "av_nr": "AA8090",
@@ -2878,7 +2878,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_aussenansicht.jpg",
       "titel": "Museumstrasse 2 — luftbild",
       "fotograf": "Walter Mair",
       "credit": "Walter Mair — BBL-Mediendatenbank",
@@ -2922,7 +2922,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6210/01",
+    "bbl_id": "1080/6210/01",
     "bbl_we": "6210",
     "bbl_bez": "Bielstrasse 1",
     "av_nr": "6368",
@@ -2950,7 +2950,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6210-AA_zollanlage-brig-glis_aussenansicht.jpg",
       "titel": "Bielstrasse 1 — luftbild",
       "fotograf": "Michael Haug",
       "credit": "Michael Haug — BBL-Mediendatenbank",
@@ -3038,7 +3038,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6320/01",
+    "bbl_id": "1080/6320/01",
     "bbl_we": "6320",
     "bbl_bez": "Hafenstrasse 3",
     "av_nr": "228",
@@ -3066,7 +3066,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6320-AA_bootshaus-grenzwachtposten-arbon_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6320-AA_bootshaus-grenzwachtposten-arbon_aussenansicht.jpg",
       "titel": "Hafenstrasse 3 — luftbild",
       "fotograf": "BBL-Bautendokumentation",
       "credit": "Fotograf nicht genannt — aus der Bautendokumentation des BBL",
@@ -3110,7 +3110,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6430/01",
+    "bbl_id": "1080/6430/01",
     "bbl_we": "6430",
     "bbl_bez": "Hallwylstrasse 15",
     "av_nr": "947",
@@ -3138,7 +3138,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg",
       "titel": "Hallwylstrasse 15 — luftbild",
       "fotograf": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern",
       "credit": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern — aus der Bautendokumentation des BBL",
@@ -3246,7 +3246,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6540/01",
+    "bbl_id": "1080/6540/01",
     "bbl_we": "6540",
     "bbl_bez": "Eichenweg 5",
     "av_nr": "226",
@@ -3274,7 +3274,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6540-AA_verwaltungsgebaeude-eichenweg-5-areal-meielen-_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6540-AA_verwaltungsgebaeude-eichenweg-5-areal-meielen-_aussenansicht.jpg",
       "titel": "Eichenweg 5 — luftbild",
       "fotograf": "Rolf Siegenthaler, Bern",
       "credit": "Rolf Siegenthaler, Bern — aus der Bautendokumentation des BBL",
@@ -3654,7 +3654,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6650/01",
+    "bbl_id": "1080/6650/01",
     "bbl_we": "6650",
     "bbl_bez": "Schwarzenburgstrasse 157",
     "av_nr": "16",
@@ -3682,7 +3682,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6650-AA_verwaltungsgebaeude-liebefeld-bag-blv_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6650-AA_verwaltungsgebaeude-liebefeld-bag-blv_aussenansicht.jpg",
       "titel": "Schwarzenburgstrasse 157 — luftbild",
       "fotograf": "Rolf Siegenthaler",
       "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
@@ -3762,7 +3762,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6760/01",
+    "bbl_id": "1080/6760/01",
     "bbl_we": "6760",
     "bbl_bez": "Alpenstrasse 18",
     "av_nr": "1002",
@@ -3790,7 +3790,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6760-AA_ehsm-magglingen-neubau-laerchenplatz_aussenansicht.jpg",
       "titel": "Alpenstrasse 18 — luftbild",
       "fotograf": "Yves André",
       "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
@@ -3950,7 +3950,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6870/01",
+    "bbl_id": "1080/6870/01",
     "bbl_we": "6870",
     "bbl_bez": "Seftigenstrasse 264",
     "av_nr": "212",
@@ -3978,7 +3978,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6870-AA_bundesamt-fuer-landestopografie-swisstopo_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6870-AA_bundesamt-fuer-landestopografie-swisstopo_aussenansicht.jpg",
       "titel": "Seftigenstrasse 264 — luftbild",
       "fotograf": "Fotos Neubau 2. OG",
       "credit": "Fotos Neubau 2. OG — aus der Bautendokumentation des BBL",
@@ -4030,7 +4030,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6980/01",
+    "bbl_id": "1080/6980/01",
     "bbl_we": "6980",
     "bbl_bez": "Schwarztorstrasse 59",
     "av_nr": "181",
@@ -4058,7 +4058,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6980-AA_bundesverwaltungsgericht-schwarztorstrasse_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6980-AA_bundesverwaltungsgericht-schwarztorstrasse_aussenansicht.jpg",
       "titel": "Schwarztorstrasse 59 — luftbild",
       "fotograf": "Fotos Markus Beyeler, Hinterkappelen",
       "credit": "Fotos Markus Beyeler, Hinterkappelen — aus der Bautendokumentation des BBL",
@@ -4162,7 +4162,7 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/7090/01",
+    "bbl_id": "1080/7090/01",
     "bbl_we": "7090",
     "bbl_bez": "Kochergasse 10",
     "av_nr": "850",
@@ -4190,7 +4190,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-7090-AA_bundeshaus-nord_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-7090-AA_bundeshaus-nord_aussenansicht.jpg",
       "titel": "Kochergasse 10 — luftbild",
       "fotograf": "Brutusaurus",
       "credit": "Brutusaurus — Wikimedia Commons, CC BY-SA 4.0",

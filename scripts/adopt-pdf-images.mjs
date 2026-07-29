@@ -29,16 +29,16 @@ const uebersicht = JSON.parse(readFileSync(QUELLE + 'UEBERSICHT.json', 'utf8'));
 
 // bbl_id → Ordner in research/pdf-bilder/ (= Datenblatt des Objekts)
 const ZUORDNUNG = {
-  '1000/4100/AC': '2015_liestal_zollschule',
-  '1000/6100/AA': 'p045_Landesmuseum_Erweiterung',
-  '1000/6210/AA': 'p124_BrigGlis_Zollanlage',
-  '1000/6320/AA': 'p112_Arbon_Bootshaus',
-  '1000/6430/AA': 'p099_NB_Tiefmagazin',
-  '1000/6540/AA': 'p023_Zollikofen_Eichenweg5',
-  '1000/6650/AA': 'p025_Liebefeld_Schwarzenburg157',
-  '1000/6760/AA': 'p108_Magglingen_Laerchenplatz',
-  '1000/6870/AA': 'p132_Wabern_swisstopo',
-  '1000/6980/AA': 'p019_Bundesverwaltungsgericht',
+  '1080/4100/AC': '2015_liestal_zollschule',
+  '1080/6100/AA': 'p045_Landesmuseum_Erweiterung',
+  '1080/6210/AA': 'p124_BrigGlis_Zollanlage',
+  '1080/6320/AA': 'p112_Arbon_Bootshaus',
+  '1080/6430/AA': 'p099_NB_Tiefmagazin',
+  '1080/6540/AA': 'p023_Zollikofen_Eichenweg5',
+  '1080/6650/AA': 'p025_Liebefeld_Schwarzenburg157',
+  '1080/6760/AA': 'p108_Magglingen_Laerchenplatz',
+  '1080/6870/AA': 'p132_Wabern_swisstopo',
+  '1080/6980/AA': 'p019_Bundesverwaltungsgericht',
   // Objekte, für die schon eine geprüfte Commons-Aufnahme vorliegt, bleiben
   // unangetastet — Commons ist frei lizenziert, das Datenblatt nicht.
 };

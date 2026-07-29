@@ -2343,6 +2343,22 @@ body.docviewer-open .back-to-top-rail { display:none; }
   background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
 .pf-card__chips { position:absolute; top:.5rem; left:.5rem; right:.5rem; display:flex; flex-wrap:wrap; gap:.3rem; }
 .pf-card__land { background:rgba(0,0,0,.6); color:#fff; font-size:var(--fs-xs); padding:.12rem .5rem; border-radius:var(--radius-full); }
+/* Galerie-Karte: kompaktere, stimmige Typo & Abstände. Nur die Galerie — die
+   Listenansicht nutzt das C.table-Layout und bleibt unberührt. Rhythmus:
+   Name (fett) → eng darunter die bbl_id (mono) → Adresse; der Fuss (Kategorie ·
+   Fläche) bleibt unten bündig. gap:0 + gezielte margins statt der luftigen 1rem-Lücke. */
+.pf-card .card__body { padding:1.25rem 1.5rem 1rem; gap:0; }
+.pf-card .card__title { font-size:var(--text-lg); line-height:1.3; }
+.pf-card__id { margin:.35rem 0 0; font-family:Consolas,Menlo,monospace; font-size:var(--text-sm);
+  font-weight:var(--fw-normal); color:var(--color-text-muted); letter-spacing:.01em; }
+.pf-card .card__description { margin:.6rem 0 0; font-size:var(--text-sm); }
+/* Karte auf Inhaltshöhe (nicht auf Zeilenhöhe strecken): so klebt der Fuss NICHT
+   unten mit grosser Leerlücke, sondern folgt dicht auf die Adresse. Oben bündig
+   im Raster. Der Fuss (Kategorie · Fläche) wird durch eine feine Linie abgesetzt. */
+.pf-card { align-self:start; }
+.pf-card .card__content { height:auto; justify-content:flex-start; }
+.pf-card .card__footer { margin:0 1.5rem; padding:.85rem 0 1.25rem; font-size:var(--text-sm);
+  border-top:1px solid var(--color-border); }
 .pf-typ { display:inline-flex; color:var(--color-text-muted); }
 
 @media (max-width:800px) {

@@ -227,7 +227,7 @@ export default async function render(ctx) {
   }));
 
   // Parcel polygons for the map (shown only at close zoom). Matched to their
-  // building via the WE segment of the bbl_id (1000/4840/01 ↔ 1000/4840/AF) so the
+  // building via the WE segment of the bbl_id (1080/4840/01 ↔ 1080/4840/AF) so the
   // popup deep-links to the object in the Liegenschaften Inventar.
   const weOf = (id) => String(id || '').split('/')[1] || '';
   const bldByWe = {};

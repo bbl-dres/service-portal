@@ -25,32 +25,32 @@ const kataster = JSON.parse(readFileSync(
 
 // bbl_id → belegte Angaben aus der jeweiligen Bautendokumentation
 const NEU = {
-  '1000/6100/AA': { bez: 'Landesmuseum Zürich', port: 'Kultur', gbda1: 'Kultur', gbda2: 'Museum',
+  '1080/6100/AA': { bez: 'Landesmuseum Zürich', port: 'Kultur', gbda1: 'Kultur', gbda2: 'Museum',
     bjahr: 1898, vjahr: 2016, astw: 4, gf: 11800, gv: 62500, kosten: 109960000,
     architekt: 'Gustav Gull (1898); Christ & Gantenbein, Basel (Erweiterung 2012–2016)',
     nutzer: 'Schweizerisches Nationalmuseum SNM', hist: 'Ja', arch: 'Ja', kgs_kat: 'A', kgs_nr: 7873,
     nachhaltig: 'Minergie P', kat: '10 Kultur und Denkmäler',
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/a74sKG5sCA0H/20160101_Z%C3%BCrich%20Museumstrasse%202%20Landesmuseum%20Z%C3%BCrich%20Erweiterung_DE.pdf'] },
-  '1000/6210/AA': { bez: 'Zollanlage Brig-Glis', port: 'Zoll', gbda1: 'Zoll', gbda2: 'Zollanlage',
+  '1080/6210/AA': { bez: 'Zollanlage Brig-Glis', port: 'Zoll', gbda1: 'Zoll', gbda2: 'Zollanlage',
     bjahr: 2017, vjahr: null, astw: 3, gf: 2865, gv: 13725, kosten: 21400000,
     architekt: 'Albrecht Architekten AG SIA, Brig',
     nutzer: 'Bundesamt für Zoll und Grenzsicherheit BAZG', hist: 'Nein', arch: 'Ja', kgs_kat: null, kgs_nr: null,
     nachhaltig: 'Minergie-P-Eco', kat: '13 Verkehrs- und Zollanlagen',
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/L8T9Eq2aX8-u/20170101_Brig-Glis%20Bielstrasse%201%20Neubau%20Zollanlage_DE.pdf'] },
-  '1000/6320/AA': { bez: 'Bootshaus Grenzwachtposten Arbon', port: 'Zoll', gbda1: 'Zoll', gbda2: 'Bootshaus in Holzbauweise System Hetzer',
+  '1080/6320/AA': { bez: 'Bootshaus Grenzwachtposten Arbon', port: 'Zoll', gbda1: 'Zoll', gbda2: 'Bootshaus in Holzbauweise System Hetzer',
     bjahr: null, vjahr: 2016, astw: 1, gf: 65, gv: 994, kosten: 330000,
     architekt: 'Zech Architektur, Romanshorn (Sanierung 2015/16)',
     nutzer: 'BAZG — Grenzwachtposten Arbon', hist: 'Ja', arch: 'Ja', kgs_kat: null, kgs_nr: null,
     nachhaltig: null, kat: '12 Freizeit, Sport und Erholung',
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/WMthYdID6KZo/20160301_Arbon%2C%20Hafenstrasse%203%2C%20Umbau%20und%20Sanierung%20Bootshaus_DE.pdf'] },
-  '1000/6430/AA': { bez: 'Schweizerische Nationalbibliothek, Tiefmagazin West', port: 'Lager / Logistik',
+  '1080/6430/AA': { bez: 'Schweizerische Nationalbibliothek, Tiefmagazin West', port: 'Lager / Logistik',
     gbda1: 'Bildung', gbda2: 'Bibliotheksmagazin',
     bjahr: 1931, vjahr: 2009, astw: 4, gf: 9503, gv: 34244, kosten: 34440000,
     architekt: 'Alfred Oeschger (1931); ALB Architektengemeinschaft AG, Bern (Tiefmagazin 2005–2009)',
     nutzer: 'Schweizerische Nationalbibliothek NB', hist: 'Ja', arch: 'Ja', kgs_kat: 'A', kgs_nr: null,
     nachhaltig: null, kat: '02 Bildung',
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/5U3bqrgbR-kO/20090801_Bern%2C%20Hallwylstrasse%2015%2C%20Nationalbibliothek%2C%20Tiefmagazin%20West_DE.pdf'] },
-  '1000/6540/AA': { bez: 'Verwaltungsgebäude Eichenweg 5, Areal Meielen Nord', port: 'Verwaltungsgebäude',
+  '1080/6540/AA': { bez: 'Verwaltungsgebäude Eichenweg 5, Areal Meielen Nord', port: 'Verwaltungsgebäude',
     gbda1: 'Verwaltung', gbda2: 'Verwaltungsgebäude',
     bjahr: 2023, vjahr: null, astw: 9, gf: 33600, gv: 120000, kosten: 108400000,
     architekt: 'Bauart Architekten und Planer AG, Bern',
@@ -58,7 +58,7 @@ const NEU = {
     kgs_kat: null, kgs_nr: null,
     nachhaltig: 'SNBS Platin, Minergie-P-Eco, GI Gutes Innenraumklima', kat: '06 Verwaltung',
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/As-mSgpYIcn9/20230101_Zollikofen%2C%20Eichenweg%205%2C%20Neubau%20Verwaltungsgeb%C3%A4ude.pdf'] },
-  '1000/6650/AA': { bez: 'Verwaltungsgebäude Liebefeld (BAG / BLV)', port: 'Verwaltungsgebäude',
+  '1080/6650/AA': { bez: 'Verwaltungsgebäude Liebefeld (BAG / BLV)', port: 'Verwaltungsgebäude',
     gbda1: 'Verwaltung', gbda2: 'Verwaltungsgebäude',
     bjahr: 2015, vjahr: null, astw: 7, gf: 29900, gv: 124500, kosten: 107825000,
     architekt: 'Matti Ragaz Hitz Architekten AG, Liebefeld',
@@ -66,7 +66,7 @@ const NEU = {
     hist: 'Nein', arch: 'Nein', kgs_kat: null, kgs_nr: null,
     nachhaltig: 'Minergie-P-Eco', kat: '06 Verwaltung',
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/DhpU2Dp9QFh8/20150801_Liebefeld%20Schwarzenburgstrasse%20157%2C%20Neubau%20Verwaltungsgeb%C3%A4ude_DE.pdf'] },
-  '1000/6760/AA': { bez: 'EHSM Magglingen, Neubau Lärchenplatz', port: 'Ausbildung',
+  '1080/6760/AA': { bez: 'EHSM Magglingen, Neubau Lärchenplatz', port: 'Ausbildung',
     gbda1: 'Sport', gbda2: 'Hochschulgebäude',
     bjahr: 2023, vjahr: null, astw: 4, gf: 8494, gv: 41027, kosten: 44696000,
     architekt: 'Kim Strebel Architekten GmbH, Aarau',
@@ -74,21 +74,21 @@ const NEU = {
     hist: 'Nein', arch: 'Nein', kgs_kat: null, kgs_nr: null,
     nachhaltig: null, kat: '12 Sport',
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/29cGCSMzFsRS/20230901_Magglingen%2C%20Alpenstrasse%2018%2C%20Neubau%20L%C3%A4rchenplatz_DE.pdf'] },
-  '1000/6870/AA': { bez: 'Bundesamt für Landestopografie swisstopo', port: 'Verwaltungsgebäude',
+  '1080/6870/AA': { bez: 'Bundesamt für Landestopografie swisstopo', port: 'Verwaltungsgebäude',
     gbda1: 'Produktion', gbda2: 'Verwaltungs- und Produktionsgebäude',
     bjahr: 1945, vjahr: 2005, astw: 4, gf: null, gv: null, kosten: 15200000,
     architekt: 'Oeschger & Reimann Architekten, or.arch GmbH, Zürich (Ausbau 2003–2005)',
     nutzer: 'Bundesamt für Landestopografie swisstopo', hist: 'Nein', arch: 'Nein', kgs_kat: null, kgs_nr: null,
     nachhaltig: null, kat: '03 Produktionsbauten',
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/0K4TuZJcwZmy/Wabern%2C%20Seftigenstrasse%20264%2C%20Bundesamt%20f%C3%BCr%20Landestopografie_DE.pdf'] },
-  '1000/6980/AA': { bez: 'Bundesverwaltungsgericht Schwarztorstrasse', port: 'Verwaltungsgebäude',
+  '1080/6980/AA': { bez: 'Bundesverwaltungsgericht Schwarztorstrasse', port: 'Verwaltungsgebäude',
     gbda1: 'Justiz', gbda2: 'Gerichtsgebäude',
     bjahr: 1972, vjahr: 2006, astw: 6, gf: null, gv: null, kosten: 7684000,
     architekt: 'Frank Geiser (1972); Burckhardt+Partner AG, Bern (Sanierung 2006)',
     nutzer: 'Bundesverwaltungsgericht BVGer', hist: 'Nein', arch: 'Ja', kgs_kat: null, kgs_nr: null,
     nachhaltig: null, kat: '07 Justiz',
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/gRVjdIc39LvZ/20061201_Bern%2C%20Bundesverwaltungsgericht%2C%20Umbau%20und%20Sanierung_DE.pdf'] },
-  '1000/7090/AA': { bez: 'Bundeshaus Nord', port: 'Verwaltungsgebäude', gbda1: 'Verwaltung', gbda2: 'Departementsgebäude',
+  '1080/7090/AA': { bez: 'Bundeshaus Nord', port: 'Verwaltungsgebäude', gbda1: 'Verwaltung', gbda2: 'Departementsgebäude',
     bjahr: 1915, vjahr: 2018, astw: 9, gf: 6798, gv: 26340, kosten: 29084000,
     architekt: 'Eduard Joos (1912–1915); AAP Atelier für Architektur und Planung AG, Bolligen (Instandsetzung 2015–2018)',
     nutzer: 'UVEK Generalsekretariat; EDA Direktion für Völkerrecht', hist: 'Ja', arch: 'Ja', kgs_kat: 'A', kgs_nr: 615,
@@ -109,7 +109,7 @@ const kinder = {
 
 // Idempotenz: alles zu diesen bbl_id zuerst entfernen
 const ids = new Set(Object.keys(NEU));
-const parzIds = new Set([...ids].map((i) => `1000/${we(i)}/01`));
+const parzIds = new Set([...ids].map((i) => `1080/${we(i)}/01`));
 bg.features = bg.features.filter((f) => !ids.has(f.properties.bbl_id));
 pc.features = pc.features.filter((f) => !parzIds.has(f.properties.bbl_id));
 for (const k of Object.keys(kinder)) kinder[k] = kinder[k].filter((r) => !ids.has(r.buildingId));
@@ -168,7 +168,7 @@ for (const [id, b] of Object.entries(NEU)) {
     pc.features.push({
       type: 'Feature', geometry: p.geometrie,
       properties: {
-        bbl_stat: 'Aktiv', bbl_id: `1000/${we(id)}/01`, bbl_we: we(id),
+        bbl_stat: 'Aktiv', bbl_id: `1080/${we(id)}/01`, bbl_we: we(id),
         bbl_bez: `${k.strasse} ${k.hausnummer}`.trim(),
         av_nr: p.nummer, av_egrid: p.egrid, av_egid: gw.egid || null,
         adr_land: 'CH', adr_reg: reg, adr_ort: k.ort, adr_plz: k.plz, adr_str: k.strasse, adr_hsnr: k.hausnummer,

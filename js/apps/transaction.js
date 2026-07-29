@@ -26,9 +26,9 @@ export default async function render(ctx) {
 
   // Fiktive Status-Zuordnung je Objekt (Demo).
   const FICTIVE = [
-    { id: '1000/4850/AG', status: 'In Vermarktung', variant: 'warning' },       // Ehem. Verwaltungsgebäude Bern Nord (Abgang · Verkauft)
-    { id: '1000/2800/AD', status: 'Zum Verkauf freigegeben', variant: 'info' },  // Wohnliegenschaft Basel
-    { id: '1000/5320/AA', status: 'Auftrag in Prüfung', variant: 'gray' },       // Generalkonsulat New York (Miete)
+    { id: '1080/4850/AG', status: 'In Vermarktung', variant: 'warning' },       // Ehem. Verwaltungsgebäude Bern Nord (Abgang · Verkauft)
+    { id: '1080/2800/AD', status: 'Zum Verkauf freigegeben', variant: 'info' },  // Wohnliegenschaft Basel
+    { id: '1080/5320/AA', status: 'Auftrag in Prüfung', variant: 'gray' },       // Generalkonsulat New York (Miete)
   ];
 
   // Auf vorhandene Gebäude abbilden; nicht gefundene auslassen, bei Bedarf auffüllen.

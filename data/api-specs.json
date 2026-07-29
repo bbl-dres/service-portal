@@ -72,7 +72,7 @@
             ],
             "responses": { "200": "Liste von Liegenschaften" }, "live": "liegenschaften.list" },
           { "method": "GET", "path": "/liegenschaften/{bblId}", "summary": "Eine Liegenschaft über die BBL-ID abrufen",
-            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID (SAP RE-FX), z. B. 1000/4840/AF" }],
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID (SAP RE-FX), z. B. 1080/4840/AF" }],
             "responses": { "200": "Liegenschaft", "404": "Nicht gefunden" }, "live": "liegenschaften.one" },
           { "method": "GET", "path": "/liegenschaften/{bblId}/dokumente", "summary": "Verknüpfte Dokumente einer Liegenschaft",
             "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],

@@ -18,7 +18,7 @@ const check = (ok, label) => { console.log(`   ${ok ? '✓' : '✗'} ${label}`);
     const go = async (hash, ms = 2200) => { await p.evaluate(`location.hash='${hash}'`); await sleep(ms); };
 
     console.log('■ Building detail hero (pf-mosaic) shows the real image');
-    await go('#/app/portfolio?id=' + encodeURIComponent('1000/5510/AA'), 2600); // Brasília (was placeholder)
+    await go('#/app/portfolio?id=' + encodeURIComponent('1080/5510/AA'), 2600); // Brasília (was placeholder)
     let r = JSON.parse(await p.evaluate(`(function(){
       var cell=document.querySelector('#pf-mosaic .pf-mosaic__cell:not(.pf-mosaic__cell--empty)');
       var img=document.querySelector('#pf-mosaic img');
@@ -44,7 +44,7 @@ const check = (ok, label) => { console.log(`   ${ok ? '✓' : '✗'} ${label}`);
     check(/Gebäude/.test(r.activeFilters), `active filter shows «Gebäude» (${r.activeFilters||'—'})`);
 
     console.log('■ Placeholder-only building falls back cleanly (no broken image)');
-    await go('#/app/portfolio?id=' + encodeURIComponent('1000/1950/AE'), 2400); // Frauenfeld (no image)
+    await go('#/app/portfolio?id=' + encodeURIComponent('1080/1950/AE'), 2400); // Frauenfeld (no image)
     r = JSON.parse(await p.evaluate(`(function(){
       var imgs=[].slice.call(document.querySelectorAll('#pf-mosaic img'));
       var broken=imgs.filter(function(i){return i.complete&&i.naturalWidth===0&&(i.getAttribute('src')||'');}).length;

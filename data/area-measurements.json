@@ -13,7 +13,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "areaMeasurementId": "FLM-4840-2",
@@ -29,7 +29,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "areaMeasurementId": "FLM-4840-3",
@@ -45,7 +45,7 @@
    "source": "Schätzmodell",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "areaMeasurementId": "FLM-4840-4",
@@ -61,7 +61,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m³"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "areaMeasurementId": "FLM-4840-5",
@@ -77,7 +77,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "areaMeasurementId": "FLM-4840-6",
@@ -93,7 +93,7 @@
    "source": "Schätzmodell",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "areaMeasurementId": "FLM-5210-1",
@@ -109,7 +109,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "areaMeasurementId": "FLM-5210-2",
@@ -125,7 +125,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "areaMeasurementId": "FLM-5210-3",
@@ -141,7 +141,7 @@
    "source": "Schätzmodell",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "areaMeasurementId": "FLM-5210-4",
@@ -157,7 +157,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m³"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "areaMeasurementId": "FLM-5210-5",
@@ -173,7 +173,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "areaMeasurementId": "FLM-5210-6",
@@ -189,7 +189,7 @@
    "source": "Vermessung",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "areaMeasurementId": "FLM-3120-1",
@@ -205,7 +205,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "areaMeasurementId": "FLM-3120-2",
@@ -221,7 +221,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "areaMeasurementId": "FLM-3120-3",
@@ -237,7 +237,7 @@
    "source": "Vermessung",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "areaMeasurementId": "FLM-3120-4",
@@ -253,7 +253,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m³"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "areaMeasurementId": "FLM-3120-5",
@@ -269,7 +269,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "areaMeasurementId": "FLM-3120-6",
@@ -285,7 +285,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "areaMeasurementId": "FLM-3120-7",
@@ -301,7 +301,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "areaMeasurementId": "FLM-5320-1",
@@ -317,7 +317,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "areaMeasurementId": "FLM-5320-2",
@@ -333,7 +333,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "areaMeasurementId": "FLM-5320-3",
@@ -349,7 +349,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "areaMeasurementId": "FLM-5320-4",
@@ -365,7 +365,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "areaMeasurementId": "FLM-5320-5",
@@ -381,7 +381,7 @@
    "source": "Schätzmodell",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "areaMeasurementId": "FLM-4100-1",
@@ -397,7 +397,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "areaMeasurementId": "FLM-4100-2",
@@ -413,7 +413,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "areaMeasurementId": "FLM-4100-3",
@@ -429,7 +429,7 @@
    "source": "Vermessung",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "areaMeasurementId": "FLM-4100-4",
@@ -445,7 +445,7 @@
    "source": "Schätzmodell",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "areaMeasurementId": "FLM-4100-5",
@@ -461,7 +461,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m³"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "areaMeasurementId": "FLM-4100-6",
@@ -477,7 +477,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "areaMeasurementId": "FLM-4100-7",
@@ -493,7 +493,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "areaMeasurementId": "FLM-5410-1",
@@ -509,7 +509,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "areaMeasurementId": "FLM-5410-2",
@@ -525,7 +525,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "areaMeasurementId": "FLM-5410-3",
@@ -541,7 +541,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m³"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "areaMeasurementId": "FLM-5410-4",
@@ -557,7 +557,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "areaMeasurementId": "FLM-5410-5",
@@ -573,7 +573,7 @@
    "source": "Vermessung",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "areaMeasurementId": "FLM-5410-6",
@@ -589,7 +589,7 @@
    "source": "Vermessung",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "areaMeasurementId": "FLM-2800-1",
@@ -605,7 +605,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "areaMeasurementId": "FLM-2800-2",
@@ -621,7 +621,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "areaMeasurementId": "FLM-2800-3",
@@ -637,7 +637,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "areaMeasurementId": "FLM-2800-4",
@@ -653,7 +653,7 @@
    "source": "Schätzmodell",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "areaMeasurementId": "FLM-2800-5",
@@ -669,7 +669,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m³"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "areaMeasurementId": "FLM-2800-6",
@@ -685,7 +685,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "areaMeasurementId": "FLM-2800-7",
@@ -701,7 +701,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "areaMeasurementId": "FLM-5510-1",
@@ -717,7 +717,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "areaMeasurementId": "FLM-5510-2",
@@ -733,7 +733,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "areaMeasurementId": "FLM-5510-3",
@@ -749,7 +749,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m³"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "areaMeasurementId": "FLM-5510-4",
@@ -765,7 +765,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "areaMeasurementId": "FLM-5510-5",
@@ -781,7 +781,7 @@
    "source": "Vermessung",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "areaMeasurementId": "FLM-5510-6",
@@ -797,7 +797,7 @@
    "source": "Schätzmodell",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "areaMeasurementId": "FLM-1950-1",
@@ -813,7 +813,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "areaMeasurementId": "FLM-1950-2",
@@ -829,7 +829,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "areaMeasurementId": "FLM-1950-3",
@@ -845,7 +845,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "areaMeasurementId": "FLM-1950-4",
@@ -861,7 +861,7 @@
    "source": "CAD/BIM",
    "originalUnit": "MW"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "areaMeasurementId": "FLM-1950-5",
@@ -877,7 +877,7 @@
    "source": "CAD/BIM",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "areaMeasurementId": "FLM-1950-6",
@@ -893,7 +893,7 @@
    "source": "CAD/BIM",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "areaMeasurementId": "FLM-1950-7",
@@ -909,7 +909,7 @@
    "source": "Vermessung",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "areaMeasurementId": "FLM-5620-1",
@@ -925,7 +925,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "areaMeasurementId": "FLM-5620-2",
@@ -941,7 +941,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "areaMeasurementId": "FLM-5620-3",
@@ -957,7 +957,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m³"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "areaMeasurementId": "FLM-5620-4",
@@ -973,7 +973,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "areaMeasurementId": "FLM-5620-5",
@@ -989,7 +989,7 @@
    "source": "Vermessung",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "areaMeasurementId": "FLM-5620-6",
@@ -1005,7 +1005,7 @@
    "source": "Vermessung",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "areaMeasurementId": "FLM-4850-1",
@@ -1021,7 +1021,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "areaMeasurementId": "FLM-4850-2",
@@ -1037,7 +1037,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "areaMeasurementId": "FLM-4850-3",
@@ -1053,7 +1053,7 @@
    "source": "Schätzmodell",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "areaMeasurementId": "FLM-4850-4",
@@ -1069,7 +1069,7 @@
    "source": "CAD/BIM",
    "originalUnit": "m³"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "areaMeasurementId": "FLM-4850-5",
@@ -1085,7 +1085,7 @@
    "source": "Manuell",
    "originalUnit": "Stk"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "areaMeasurementId": "FLM-4850-6",
@@ -1101,7 +1101,7 @@
    "source": "Schätzmodell",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "areaMeasurementId": "FLM-6100-1",
@@ -1117,7 +1117,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6100/AA"
+  "buildingId": "1080/6100/AA"
  },
  {
   "areaMeasurementId": "FLM-6100-2",
@@ -1133,7 +1133,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6100/AA"
+  "buildingId": "1080/6100/AA"
  },
  {
   "areaMeasurementId": "FLM-6100-3",
@@ -1149,7 +1149,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6100/AA"
+  "buildingId": "1080/6100/AA"
  },
  {
   "areaMeasurementId": "FLM-6210-1",
@@ -1165,7 +1165,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6210/AA"
+  "buildingId": "1080/6210/AA"
  },
  {
   "areaMeasurementId": "FLM-6210-2",
@@ -1181,7 +1181,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6210/AA"
+  "buildingId": "1080/6210/AA"
  },
  {
   "areaMeasurementId": "FLM-6210-3",
@@ -1197,7 +1197,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6210/AA"
+  "buildingId": "1080/6210/AA"
  },
  {
   "areaMeasurementId": "FLM-6320-1",
@@ -1213,7 +1213,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6320/AA"
+  "buildingId": "1080/6320/AA"
  },
  {
   "areaMeasurementId": "FLM-6320-2",
@@ -1229,7 +1229,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6320/AA"
+  "buildingId": "1080/6320/AA"
  },
  {
   "areaMeasurementId": "FLM-6320-3",
@@ -1245,7 +1245,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6320/AA"
+  "buildingId": "1080/6320/AA"
  },
  {
   "areaMeasurementId": "FLM-6430-1",
@@ -1261,7 +1261,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6430/AA"
+  "buildingId": "1080/6430/AA"
  },
  {
   "areaMeasurementId": "FLM-6430-2",
@@ -1277,7 +1277,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6430/AA"
+  "buildingId": "1080/6430/AA"
  },
  {
   "areaMeasurementId": "FLM-6430-3",
@@ -1293,7 +1293,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6430/AA"
+  "buildingId": "1080/6430/AA"
  },
  {
   "areaMeasurementId": "FLM-6540-1",
@@ -1309,7 +1309,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6540/AA"
+  "buildingId": "1080/6540/AA"
  },
  {
   "areaMeasurementId": "FLM-6540-2",
@@ -1325,7 +1325,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6540/AA"
+  "buildingId": "1080/6540/AA"
  },
  {
   "areaMeasurementId": "FLM-6540-3",
@@ -1341,7 +1341,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6540/AA"
+  "buildingId": "1080/6540/AA"
  },
  {
   "areaMeasurementId": "FLM-6650-1",
@@ -1357,7 +1357,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6650/AA"
+  "buildingId": "1080/6650/AA"
  },
  {
   "areaMeasurementId": "FLM-6650-2",
@@ -1373,7 +1373,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6650/AA"
+  "buildingId": "1080/6650/AA"
  },
  {
   "areaMeasurementId": "FLM-6650-3",
@@ -1389,7 +1389,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6650/AA"
+  "buildingId": "1080/6650/AA"
  },
  {
   "areaMeasurementId": "FLM-6760-1",
@@ -1405,7 +1405,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6760/AA"
+  "buildingId": "1080/6760/AA"
  },
  {
   "areaMeasurementId": "FLM-6760-2",
@@ -1421,7 +1421,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6760/AA"
+  "buildingId": "1080/6760/AA"
  },
  {
   "areaMeasurementId": "FLM-6760-3",
@@ -1437,7 +1437,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6760/AA"
+  "buildingId": "1080/6760/AA"
  },
  {
   "areaMeasurementId": "FLM-6870-1",
@@ -1453,7 +1453,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6870/AA"
+  "buildingId": "1080/6870/AA"
  },
  {
   "areaMeasurementId": "FLM-6870-2",
@@ -1469,7 +1469,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6870/AA"
+  "buildingId": "1080/6870/AA"
  },
  {
   "areaMeasurementId": "FLM-6870-3",
@@ -1485,7 +1485,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6870/AA"
+  "buildingId": "1080/6870/AA"
  },
  {
   "areaMeasurementId": "FLM-6980-1",
@@ -1501,7 +1501,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6980/AA"
+  "buildingId": "1080/6980/AA"
  },
  {
   "areaMeasurementId": "FLM-6980-2",
@@ -1517,7 +1517,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6980/AA"
+  "buildingId": "1080/6980/AA"
  },
  {
   "areaMeasurementId": "FLM-6980-3",
@@ -1533,7 +1533,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/6980/AA"
+  "buildingId": "1080/6980/AA"
  },
  {
   "areaMeasurementId": "FLM-7090-1",
@@ -1549,7 +1549,7 @@
    "source": "BBL-Bautendokumentation",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/7090/AA"
+  "buildingId": "1080/7090/AA"
  },
  {
   "areaMeasurementId": "FLM-7090-2",
@@ -1565,7 +1565,7 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/7090/AA"
+  "buildingId": "1080/7090/AA"
  },
  {
   "areaMeasurementId": "FLM-7090-3",
@@ -1581,6 +1581,6 @@
    "source": "abgeleitet",
    "originalUnit": "m²"
   },
-  "buildingId": "1000/7090/AA"
+  "buildingId": "1080/7090/AA"
  }
 ]

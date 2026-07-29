@@ -12,7 +12,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "contractId": "VTR-4840-2",
@@ -27,7 +27,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "contractId": "VTR-4840-3",
@@ -42,7 +42,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": true
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "contractId": "VTR-5210-1",
@@ -57,7 +57,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "contractId": "VTR-5210-2",
@@ -72,7 +72,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": true
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "contractId": "VTR-3120-1",
@@ -87,7 +87,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "contractId": "VTR-3120-2",
@@ -102,7 +102,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "contractId": "VTR-3120-3",
@@ -117,7 +117,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": true
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "contractId": "VTR-3120-4",
@@ -132,7 +132,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "contractId": "VTR-5320-1",
@@ -147,7 +147,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "contractId": "VTR-5320-2",
@@ -162,7 +162,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "contractId": "VTR-4100-1",
@@ -177,7 +177,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "contractId": "VTR-4100-2",
@@ -192,7 +192,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "contractId": "VTR-4100-3",
@@ -207,7 +207,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "contractId": "VTR-5410-1",
@@ -222,7 +222,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "contractId": "VTR-5410-2",
@@ -237,7 +237,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": true
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "contractId": "VTR-5410-3",
@@ -252,7 +252,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "contractId": "VTR-2800-1",
@@ -267,7 +267,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "contractId": "VTR-2800-2",
@@ -282,7 +282,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": true
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "contractId": "VTR-2800-3",
@@ -297,7 +297,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "contractId": "VTR-5510-1",
@@ -312,7 +312,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "contractId": "VTR-5510-2",
@@ -327,7 +327,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": true
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "contractId": "VTR-5510-3",
@@ -342,7 +342,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "contractId": "VTR-1950-1",
@@ -357,7 +357,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "contractId": "VTR-1950-2",
@@ -372,7 +372,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "contractId": "VTR-1950-3",
@@ -387,7 +387,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "contractId": "VTR-1950-4",
@@ -402,7 +402,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": true
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "contractId": "VTR-5620-1",
@@ -417,7 +417,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "contractId": "VTR-5620-2",
@@ -432,7 +432,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": true
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "contractId": "VTR-5620-3",
@@ -447,7 +447,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "contractId": "VTR-4850-1",
@@ -462,7 +462,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "contractId": "VTR-4850-2",
@@ -477,7 +477,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "contractId": "VTR-4850-3",
@@ -492,7 +492,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": true
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "contractId": "VTR-6100-1",
@@ -507,7 +507,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/6100/AA"
+  "buildingId": "1080/6100/AA"
  },
  {
   "contractId": "VTR-6100-2",
@@ -522,7 +522,7 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/6100/AA"
+  "buildingId": "1080/6100/AA"
  },
  {
   "contractId": "VTR-6210-1",
@@ -537,7 +537,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/6210/AA"
+  "buildingId": "1080/6210/AA"
  },
  {
   "contractId": "VTR-6210-2",
@@ -552,7 +552,7 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/6210/AA"
+  "buildingId": "1080/6210/AA"
  },
  {
   "contractId": "VTR-6320-1",
@@ -567,7 +567,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/6320/AA"
+  "buildingId": "1080/6320/AA"
  },
  {
   "contractId": "VTR-6320-2",
@@ -582,7 +582,7 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/6320/AA"
+  "buildingId": "1080/6320/AA"
  },
  {
   "contractId": "VTR-6430-1",
@@ -597,7 +597,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/6430/AA"
+  "buildingId": "1080/6430/AA"
  },
  {
   "contractId": "VTR-6430-2",
@@ -612,7 +612,7 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/6430/AA"
+  "buildingId": "1080/6430/AA"
  },
  {
   "contractId": "VTR-6540-1",
@@ -627,7 +627,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/6540/AA"
+  "buildingId": "1080/6540/AA"
  },
  {
   "contractId": "VTR-6540-2",
@@ -642,7 +642,7 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/6540/AA"
+  "buildingId": "1080/6540/AA"
  },
  {
   "contractId": "VTR-6650-1",
@@ -657,7 +657,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/6650/AA"
+  "buildingId": "1080/6650/AA"
  },
  {
   "contractId": "VTR-6650-2",
@@ -672,7 +672,7 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/6650/AA"
+  "buildingId": "1080/6650/AA"
  },
  {
   "contractId": "VTR-6760-1",
@@ -687,7 +687,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/6760/AA"
+  "buildingId": "1080/6760/AA"
  },
  {
   "contractId": "VTR-6760-2",
@@ -702,7 +702,7 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/6760/AA"
+  "buildingId": "1080/6760/AA"
  },
  {
   "contractId": "VTR-6870-1",
@@ -717,7 +717,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/6870/AA"
+  "buildingId": "1080/6870/AA"
  },
  {
   "contractId": "VTR-6870-2",
@@ -732,7 +732,7 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/6870/AA"
+  "buildingId": "1080/6870/AA"
  },
  {
   "contractId": "VTR-6980-1",
@@ -747,7 +747,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/6980/AA"
+  "buildingId": "1080/6980/AA"
  },
  {
   "contractId": "VTR-6980-2",
@@ -762,7 +762,7 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/6980/AA"
+  "buildingId": "1080/6980/AA"
  },
  {
   "contractId": "VTR-7090-1",
@@ -777,7 +777,7 @@
    "paymentTerms": "Jährlich im Voraus",
    "autoRenewal": false
   },
-  "buildingId": "1000/7090/AA"
+  "buildingId": "1080/7090/AA"
  },
  {
   "contractId": "VTR-7090-2",
@@ -792,6 +792,6 @@
    "paymentTerms": "Quartalsweise",
    "autoRenewal": true
   },
-  "buildingId": "1000/7090/AA"
+  "buildingId": "1080/7090/AA"
  }
 ]

@@ -12,7 +12,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "costId": "KST-4840-2",
@@ -27,7 +27,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "costId": "KST-4840-3",
@@ -42,7 +42,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "costId": "KST-4840-4",
@@ -57,7 +57,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "costId": "KST-4840-5",
@@ -72,7 +72,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "costId": "KST-4840-6",
@@ -87,7 +87,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "costId": "KST-4840-7",
@@ -102,7 +102,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4840/AF"
+  "buildingId": "1080/4840/AF"
  },
  {
   "costId": "KST-5210-1",
@@ -117,7 +117,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-002"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "costId": "KST-5210-2",
@@ -132,7 +132,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-002"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "costId": "KST-5210-3",
@@ -147,7 +147,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-002"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "costId": "KST-5210-4",
@@ -162,7 +162,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-002"
   },
-  "buildingId": "1000/5210/AA"
+  "buildingId": "1080/5210/AA"
  },
  {
   "costId": "KST-3120-1",
@@ -177,7 +177,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-003"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "costId": "KST-3120-2",
@@ -192,7 +192,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-003"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "costId": "KST-3120-3",
@@ -207,7 +207,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-003"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "costId": "KST-3120-4",
@@ -222,7 +222,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-003"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "costId": "KST-3120-5",
@@ -237,7 +237,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-003"
   },
-  "buildingId": "1000/3120/AB"
+  "buildingId": "1080/3120/AB"
  },
  {
   "costId": "KST-5320-1",
@@ -252,7 +252,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-004"
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "costId": "KST-5320-2",
@@ -267,7 +267,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-004"
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "costId": "KST-5320-3",
@@ -282,7 +282,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-004"
   },
-  "buildingId": "1000/5320/AA"
+  "buildingId": "1080/5320/AA"
  },
  {
   "costId": "KST-4100-1",
@@ -297,7 +297,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-005"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "costId": "KST-4100-2",
@@ -312,7 +312,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-005"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "costId": "KST-4100-3",
@@ -327,7 +327,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-005"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "costId": "KST-4100-4",
@@ -342,7 +342,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-005"
   },
-  "buildingId": "1000/4100/AC"
+  "buildingId": "1080/4100/AC"
  },
  {
   "costId": "KST-5410-1",
@@ -357,7 +357,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-006"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "costId": "KST-5410-2",
@@ -372,7 +372,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-006"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "costId": "KST-5410-3",
@@ -387,7 +387,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-006"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "costId": "KST-5410-4",
@@ -402,7 +402,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-006"
   },
-  "buildingId": "1000/5410/AA"
+  "buildingId": "1080/5410/AA"
  },
  {
   "costId": "KST-2800-1",
@@ -417,7 +417,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-007"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "costId": "KST-2800-2",
@@ -432,7 +432,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-007"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "costId": "KST-2800-3",
@@ -447,7 +447,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-007"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "costId": "KST-2800-4",
@@ -462,7 +462,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-007"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "costId": "KST-2800-5",
@@ -477,7 +477,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-007"
   },
-  "buildingId": "1000/2800/AD"
+  "buildingId": "1080/2800/AD"
  },
  {
   "costId": "KST-5510-1",
@@ -492,7 +492,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-008"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "costId": "KST-5510-2",
@@ -507,7 +507,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-008"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "costId": "KST-5510-3",
@@ -522,7 +522,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-008"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "costId": "KST-5510-4",
@@ -537,7 +537,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-008"
   },
-  "buildingId": "1000/5510/AA"
+  "buildingId": "1080/5510/AA"
  },
  {
   "costId": "KST-1950-1",
@@ -552,7 +552,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-009"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "costId": "KST-1950-2",
@@ -567,7 +567,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-009"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "costId": "KST-1950-3",
@@ -582,7 +582,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-009"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "costId": "KST-1950-4",
@@ -597,7 +597,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-009"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "costId": "KST-1950-5",
@@ -612,7 +612,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-009"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "costId": "KST-1950-6",
@@ -627,7 +627,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-009"
   },
-  "buildingId": "1000/1950/AE"
+  "buildingId": "1080/1950/AE"
  },
  {
   "costId": "KST-5620-1",
@@ -642,7 +642,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-010"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "costId": "KST-5620-2",
@@ -657,7 +657,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-010"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "costId": "KST-5620-3",
@@ -672,7 +672,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-010"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "costId": "KST-5620-4",
@@ -687,7 +687,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-010"
   },
-  "buildingId": "1000/5620/AA"
+  "buildingId": "1080/5620/AA"
  },
  {
   "costId": "KST-4850-1",
@@ -702,7 +702,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "costId": "KST-4850-2",
@@ -717,7 +717,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "costId": "KST-4850-3",
@@ -732,7 +732,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "costId": "KST-4850-4",
@@ -747,7 +747,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "costId": "KST-4850-5",
@@ -762,7 +762,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "costId": "KST-4850-6",
@@ -777,7 +777,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "costId": "KST-4850-7",
@@ -792,7 +792,7 @@
    "budgetYear": 2024,
    "costCenter": "CC-BBL-001"
   },
-  "buildingId": "1000/4850/AG"
+  "buildingId": "1080/4850/AG"
  },
  {
   "costId": "KST-6100-1",
@@ -807,7 +807,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6100"
   },
-  "buildingId": "1000/6100/AA"
+  "buildingId": "1080/6100/AA"
  },
  {
   "costId": "KST-6100-2",
@@ -822,7 +822,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6100"
   },
-  "buildingId": "1000/6100/AA"
+  "buildingId": "1080/6100/AA"
  },
  {
   "costId": "KST-6100-3",
@@ -837,7 +837,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6100"
   },
-  "buildingId": "1000/6100/AA"
+  "buildingId": "1080/6100/AA"
  },
  {
   "costId": "KST-6100-4",
@@ -852,7 +852,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6100"
   },
-  "buildingId": "1000/6100/AA"
+  "buildingId": "1080/6100/AA"
  },
  {
   "costId": "KST-6210-1",
@@ -867,7 +867,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6210"
   },
-  "buildingId": "1000/6210/AA"
+  "buildingId": "1080/6210/AA"
  },
  {
   "costId": "KST-6210-2",
@@ -882,7 +882,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6210"
   },
-  "buildingId": "1000/6210/AA"
+  "buildingId": "1080/6210/AA"
  },
  {
   "costId": "KST-6210-3",
@@ -897,7 +897,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6210"
   },
-  "buildingId": "1000/6210/AA"
+  "buildingId": "1080/6210/AA"
  },
  {
   "costId": "KST-6210-4",
@@ -912,7 +912,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6210"
   },
-  "buildingId": "1000/6210/AA"
+  "buildingId": "1080/6210/AA"
  },
  {
   "costId": "KST-6320-1",
@@ -927,7 +927,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6320"
   },
-  "buildingId": "1000/6320/AA"
+  "buildingId": "1080/6320/AA"
  },
  {
   "costId": "KST-6320-2",
@@ -942,7 +942,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6320"
   },
-  "buildingId": "1000/6320/AA"
+  "buildingId": "1080/6320/AA"
  },
  {
   "costId": "KST-6320-3",
@@ -957,7 +957,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6320"
   },
-  "buildingId": "1000/6320/AA"
+  "buildingId": "1080/6320/AA"
  },
  {
   "costId": "KST-6320-4",
@@ -972,7 +972,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6320"
   },
-  "buildingId": "1000/6320/AA"
+  "buildingId": "1080/6320/AA"
  },
  {
   "costId": "KST-6430-1",
@@ -987,7 +987,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6430"
   },
-  "buildingId": "1000/6430/AA"
+  "buildingId": "1080/6430/AA"
  },
  {
   "costId": "KST-6430-2",
@@ -1002,7 +1002,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6430"
   },
-  "buildingId": "1000/6430/AA"
+  "buildingId": "1080/6430/AA"
  },
  {
   "costId": "KST-6430-3",
@@ -1017,7 +1017,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6430"
   },
-  "buildingId": "1000/6430/AA"
+  "buildingId": "1080/6430/AA"
  },
  {
   "costId": "KST-6430-4",
@@ -1032,7 +1032,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6430"
   },
-  "buildingId": "1000/6430/AA"
+  "buildingId": "1080/6430/AA"
  },
  {
   "costId": "KST-6540-1",
@@ -1047,7 +1047,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6540"
   },
-  "buildingId": "1000/6540/AA"
+  "buildingId": "1080/6540/AA"
  },
  {
   "costId": "KST-6540-2",
@@ -1062,7 +1062,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6540"
   },
-  "buildingId": "1000/6540/AA"
+  "buildingId": "1080/6540/AA"
  },
  {
   "costId": "KST-6540-3",
@@ -1077,7 +1077,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6540"
   },
-  "buildingId": "1000/6540/AA"
+  "buildingId": "1080/6540/AA"
  },
  {
   "costId": "KST-6540-4",
@@ -1092,7 +1092,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6540"
   },
-  "buildingId": "1000/6540/AA"
+  "buildingId": "1080/6540/AA"
  },
  {
   "costId": "KST-6650-1",
@@ -1107,7 +1107,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6650"
   },
-  "buildingId": "1000/6650/AA"
+  "buildingId": "1080/6650/AA"
  },
  {
   "costId": "KST-6650-2",
@@ -1122,7 +1122,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6650"
   },
-  "buildingId": "1000/6650/AA"
+  "buildingId": "1080/6650/AA"
  },
  {
   "costId": "KST-6650-3",
@@ -1137,7 +1137,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6650"
   },
-  "buildingId": "1000/6650/AA"
+  "buildingId": "1080/6650/AA"
  },
  {
   "costId": "KST-6650-4",
@@ -1152,7 +1152,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6650"
   },
-  "buildingId": "1000/6650/AA"
+  "buildingId": "1080/6650/AA"
  },
  {
   "costId": "KST-6760-1",
@@ -1167,7 +1167,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6760"
   },
-  "buildingId": "1000/6760/AA"
+  "buildingId": "1080/6760/AA"
  },
  {
   "costId": "KST-6760-2",
@@ -1182,7 +1182,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6760"
   },
-  "buildingId": "1000/6760/AA"
+  "buildingId": "1080/6760/AA"
  },
  {
   "costId": "KST-6760-3",
@@ -1197,7 +1197,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6760"
   },
-  "buildingId": "1000/6760/AA"
+  "buildingId": "1080/6760/AA"
  },
  {
   "costId": "KST-6760-4",
@@ -1212,7 +1212,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6760"
   },
-  "buildingId": "1000/6760/AA"
+  "buildingId": "1080/6760/AA"
  },
  {
   "costId": "KST-6870-1",
@@ -1227,7 +1227,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6870"
   },
-  "buildingId": "1000/6870/AA"
+  "buildingId": "1080/6870/AA"
  },
  {
   "costId": "KST-6870-2",
@@ -1242,7 +1242,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6870"
   },
-  "buildingId": "1000/6870/AA"
+  "buildingId": "1080/6870/AA"
  },
  {
   "costId": "KST-6870-3",
@@ -1257,7 +1257,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6870"
   },
-  "buildingId": "1000/6870/AA"
+  "buildingId": "1080/6870/AA"
  },
  {
   "costId": "KST-6870-4",
@@ -1272,7 +1272,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6870"
   },
-  "buildingId": "1000/6870/AA"
+  "buildingId": "1080/6870/AA"
  },
  {
   "costId": "KST-6980-1",
@@ -1287,7 +1287,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6980"
   },
-  "buildingId": "1000/6980/AA"
+  "buildingId": "1080/6980/AA"
  },
  {
   "costId": "KST-6980-2",
@@ -1302,7 +1302,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6980"
   },
-  "buildingId": "1000/6980/AA"
+  "buildingId": "1080/6980/AA"
  },
  {
   "costId": "KST-6980-3",
@@ -1317,7 +1317,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6980"
   },
-  "buildingId": "1000/6980/AA"
+  "buildingId": "1080/6980/AA"
  },
  {
   "costId": "KST-6980-4",
@@ -1332,7 +1332,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-6980"
   },
-  "buildingId": "1000/6980/AA"
+  "buildingId": "1080/6980/AA"
  },
  {
   "costId": "KST-7090-1",
@@ -1347,7 +1347,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-7090"
   },
-  "buildingId": "1000/7090/AA"
+  "buildingId": "1080/7090/AA"
  },
  {
   "costId": "KST-7090-2",
@@ -1362,7 +1362,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-7090"
   },
-  "buildingId": "1000/7090/AA"
+  "buildingId": "1080/7090/AA"
  },
  {
   "costId": "KST-7090-3",
@@ -1377,7 +1377,7 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-7090"
   },
-  "buildingId": "1000/7090/AA"
+  "buildingId": "1080/7090/AA"
  },
  {
   "costId": "KST-7090-4",
@@ -1392,6 +1392,6 @@
    "budgetYear": 2025,
    "costCenter": "CC-BBL-7090"
   },
-  "buildingId": "1000/7090/AA"
+  "buildingId": "1080/7090/AA"
  }
 ]

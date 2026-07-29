@@ -36,7 +36,7 @@ const J = (f) => JSON.parse(readFileSync(D + f, 'utf8'));
 // gültig bleiben — sie hängen alle an der bbl_id.
 // ---------------------------------------------------------------------------
 const BAUTEN = {
-  '1000/4840/AF': {
+  '1080/4840/AF': {
     bez: 'Bundeshaus West',
     str: 'Bundesgasse', nr: '1', plz: '3011', ort: 'Bern', land: 'CH', reg: 'BE',
     lat: 46.946346, lon: 7.442977, lv95_e: 2599669.6, lv95_n: 1199471.6,
@@ -54,7 +54,7 @@ const BAUTEN = {
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/xpRh20JjlO-A/20100101_Bern%2C%20Bundesgasse%201%2C%20Sanierung_DE.pdf'],
     parzelle: { nr: '1058', flaeche: 9893, bez: 'Bundesgasse 1' },
   },
-  '1000/3120/AB': {
+  '1080/3120/AB': {
     bez: 'Sammlungszentrum Schweizerisches Nationalmuseum',
     str: 'Lindenmoosstrasse', nr: '1', plz: '8910', ort: 'Affoltern am Albis', land: 'CH', reg: 'ZH',
     lat: 47.268894, lon: 8.445229, lv95_e: 2676876.0, lv95_n: 1237056.0,
@@ -72,7 +72,7 @@ const BAUTEN = {
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/B66TZzOayoZP/20070901_Affoltern%20am%20Albis%20Umnutzung%20vom%20Zeughaus%20zum%20Sammlungszentrum_DE.pdf'],
     parzelle: { nr: '4723', flaeche: 43930, bez: 'Lindenmoos' },
   },
-  '1000/4100/AC': {
+  '1080/4100/AC': {
     bez: 'Campus BAZG (Ausbildungszentrum Liestal)',
     str: 'Kasinostrasse', nr: '4', plz: '4410', ort: 'Liestal', land: 'CH', reg: 'BL',
     lat: 47.479862, lon: 7.744051, lv95_e: 2622310.0, lv95_n: 1259520.0,
@@ -88,7 +88,7 @@ const BAUTEN = {
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/YMr47zVY9cLN/20150501_Liestal%20Kasinostrasse%204%20Zollschule%20Erweiterung%20Modulbau_DE.pdf'],
     parzelle: { nr: '1787', flaeche: 10326, bez: 'Kasinostrasse' },
   },
-  '1000/2800/AD': {
+  '1080/2800/AD': {
     bez: 'Dienstwohnungen EDA Effingerstrasse',
     str: 'Effingerstrasse', nr: '29', plz: '3008', ort: 'Bern', land: 'CH', reg: 'BE',
     lat: 46.945808, lon: 7.432851, lv95_e: 2598897.0, lv95_n: 1199420.0,
@@ -104,7 +104,7 @@ const BAUTEN = {
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/J-9Pctw1raik/20180701_Bern%20Effingerstrasse%2029%20Sanierung%20und%20Umbau%20zu%20Dienstwohnungen_DE.pdf'],
     parzelle: { nr: '2746', flaeche: 615, bez: 'Effingerstrasse 29' },
   },
-  '1000/1950/AE': {
+  '1080/1950/AE': {
     bez: 'Rechenzentrum CAMPUS Frauenfeld',
     str: 'Auenfeld', nr: '', plz: '8500', ort: 'Frauenfeld', land: 'CH', reg: 'TG',
     lat: 47.570346, lon: 8.884102, lv95_e: 2708430.0, lv95_n: 1269660.0,
@@ -122,7 +122,7 @@ const BAUTEN = {
     quellen: ['https://www.bit.admin.ch/de/rz-campus-78', 'https://www.vtg.admin.ch/de/rechenzentrum-campus-in-frauenfeld-feiert-aufrichte'],
     parzelle: { nr: '61736', flaeche: 5001, bez: 'Auenfeld' },
   },
-  '1000/4850/AG': {
+  '1080/4850/AG': {
     bez: 'Verwaltungszentrum Guisanplatz',
     str: 'Guisanplatz', nr: '1', plz: '3014', ort: 'Bern', land: 'CH', reg: 'BE',
     lat: 46.959785, lon: 7.463306, lv95_e: 2601210.0, lv95_n: 1200980.0,
@@ -140,7 +140,7 @@ const BAUTEN = {
   },
 
   // --- Auslandvertretungen (Koordinaten aus OpenStreetMap, Adressen vom EDA) ---
-  '1000/5210/AA': {
+  '1080/5210/AA': {
     bez: 'Schweizerische Botschaft Berlin',
     str: 'Otto-von-Bismarck-Allee', nr: '4A', plz: '10557', ort: 'Berlin', land: 'DE', reg: 'Berlin',
     lat: 52.521102, lon: 13.371281, lv95_e: null, lv95_n: null,
@@ -158,7 +158,7 @@ const BAUTEN = {
     quellen: ['https://www.bbl.admin.ch/dam/de/sd-web/6KztH5h4iF7L/20001201_Berlin%2C%20Deutschland%2C%20Schweizerische%20Botschaft_DE.pdf'],
     parzelle: { nr: '41', flaeche: 2100, bez: 'Otto-von-Bismarck-Allee' },
   },
-  '1000/5320/AA': {
+  '1080/5320/AA': {
     bez: 'Schweizerisches Generalkonsulat New York',
     str: 'Third Avenue', nr: '633', plz: '10017', ort: 'New York', land: 'US', reg: 'NY',
     lat: 40.753889, lon: -73.972500, lv95_e: null, lv95_n: null,
@@ -175,7 +175,7 @@ const BAUTEN = {
     quellen: ['https://www.eda.admin.ch/countries/usa/en/home/representations/generalkonsulat-new-york.html'],
     parzelle: null,
   },
-  '1000/5410/AA': {
+  '1080/5410/AA': {
     bez: 'Schweizerische Botschaft Tokio',
     str: 'Minami-Azabu, Minato-ku', nr: '5-9-12', plz: '106-8589', ort: 'Tokio', land: 'JP', reg: 'Präfektur Tokio',
     lat: 35.653365, lon: 139.723812, lv95_e: null, lv95_n: null,
@@ -193,7 +193,7 @@ const BAUTEN = {
     quellen: ['https://www.eda.admin.ch/countries/japan/en/home/representations/embassy-tokyo.html'],
     parzelle: { nr: '9-12', flaeche: null, bez: 'Minami-Azabu' },
   },
-  '1000/5510/AA': {
+  '1080/5510/AA': {
     bez: 'Schweizerische Botschaft Brasília',
     str: 'SES Avenida das Nações, Qd. 811', nr: 'Lote 41', plz: '70448-900', ort: 'Brasília', land: 'BR', reg: 'Distrito Federal',
     lat: -15.831611, lon: -47.897273, lv95_e: null, lv95_n: null,
@@ -209,7 +209,7 @@ const BAUTEN = {
     quellen: ['https://pt.wikipedia.org/wiki/Embaixada_da_Su%C3%AD%C3%A7a_em_Bras%C3%ADlia'],
     parzelle: { nr: 'Lote 41', flaeche: null, bez: 'Setor de Embaixadas Sul' },
   },
-  '1000/5620/AA': {
+  '1080/5620/AA': {
     bez: 'Schweizerische Botschaft Canberra',
     str: 'Melbourne Avenue', nr: '7', plz: '2603', ort: 'Canberra', land: 'AU', reg: 'ACT',
     lat: -35.313476, lon: 149.121046, lv95_e: null, lv95_n: null,

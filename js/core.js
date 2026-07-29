@@ -81,18 +81,17 @@ function normalizeBuilding(f) {
     quellen: Array.isArray(p.quellen) ? p.quellen : [],
     status: p.bbl_stat || '',                          // Aktiv | Abgang | Löschvermerk (reference.buildingStatuses)
     classification: isDiplo ? 'VERTRAULICH' : 'INTERN', // im Golden Record nicht geführt → aus dem Portfolio-Typ abgeleitet
-    // Bilder stehen NICHT mehr am Objekt, sondern im Register data/media.json.
-    // Das Objekt trägt nur noch `media` — eine Auswahl von mediaId. Aufgelöst
-    // wird sie in linkMedia() unten, sobald beide Bestände geladen sind.
+    // `media` = Auswahl von mediaId ins Register data/media.json (nur noch für die Mediathek).
     media: Array.isArray(p.media) ? p.media : [],
-    // Kuratierte Bildauswahl direkt am Objekt (geojson) — Quelle fürs Portfolio.
+    // Portfolio-Bilder kommen aus der kuratierten Auswahl `bilder` DIREKT am Objekt
+    // (geojson); erstes Bild = Hauptbild, aufgelöst in linkMedia() unten.
     bilder: Array.isArray(p.bilder) ? p.bilder : [],
     photoSrc: '', photo: '', bildCredit: '', bildQuelle: '', color: '#2f4356',
   };
 }
 
 // Grundstücke (parcels.geojson) — Polygon-Geometrie, verknüpft mit dem Gebäude über
-// das WE-Segment der bbl_id (1000/4840/01 ↔ 1000/4840/AF). Geometrie bleibt erhalten
+// das WE-Segment der bbl_id (1080/4840/01 ↔ 1080/4840/AF). Geometrie bleibt erhalten
 // für die Karten-Polygone und die Detail-Minikarte.
 function normalizeParcel(f) {
   const p = (f && f.properties) || {};

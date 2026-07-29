@@ -2,7 +2,7 @@
  {
   "projectId": "PRJ-01",
   "projectNumber": "B-2024-014",
-  "buildingId": "1000/3120/AB",
+  "buildingId": "1080/3120/AB",
   "name": "Bundeshaus Nord — Gesamtsanierung",
   "siaPhase": "41",
   "siaPhaseLabel": "Ausführung",
@@ -24,7 +24,7 @@
  {
   "projectId": "PRJ-02",
   "projectNumber": "B-2025-002",
-  "buildingId": "1000/2800/AD",
+  "buildingId": "1080/2800/AD",
   "name": "Eigerplatz 1 — Instandsetzung",
   "siaPhase": "32",
   "siaPhaseLabel": "Bauprojekt",
@@ -44,7 +44,7 @@
  {
   "projectId": "PRJ-03",
   "projectNumber": "B-2022-031",
-  "buildingId": "1000/1950/AE",
+  "buildingId": "1080/1950/AE",
   "name": "Agroscope Posieux — Neubau Forschungszentrum",
   "siaPhase": "21",
   "siaPhaseLabel": "Vorprojekt",
@@ -64,7 +64,7 @@
  {
   "projectId": "PRJ-04",
   "projectNumber": "B-2024-009",
-  "buildingId": "1000/5410/AA",
+  "buildingId": "1080/5410/AA",
   "name": "Campus Guisanplatz — Erweiterung Etappe 2",
   "siaPhase": "33",
   "siaPhaseLabel": "Ausschreibung",
@@ -86,7 +86,7 @@
  {
   "projectId": "PRJ-05",
   "projectNumber": "B-2020-017",
-  "buildingId": "1000/4840/AF",
+  "buildingId": "1080/4840/AF",
   "name": "Bundeshaus West — Restaurierung Wandelhalle",
   "siaPhase": "61",
   "siaPhaseLabel": "Betrieb",
@@ -108,7 +108,7 @@
  {
   "projectId": "PRJ-06",
   "projectNumber": "B-2019-022",
-  "buildingId": "1000/4850/AG",
+  "buildingId": "1080/4850/AG",
   "name": "Nationalbibliothek — Magazinerweiterung",
   "siaPhase": "61",
   "siaPhaseLabel": "Betrieb",
@@ -130,7 +130,7 @@
  {
   "projectId": "PRJ-07",
   "projectNumber": "B-2023-040",
-  "buildingId": "1000/5620/AA",
+  "buildingId": "1080/5620/AA",
   "name": "Zollanlage Genève — Modernisierung",
   "siaPhase": "31",
   "siaPhaseLabel": "Vorprojekt",
@@ -152,7 +152,7 @@
  {
   "projectId": "PRJ-08",
   "projectNumber": "B-2025-011",
-  "buildingId": "1000/4100/AC",
+  "buildingId": "1080/4100/AC",
   "name": "Fellerstrasse 21 — Photovoltaik & Netto-Null",
   "siaPhase": "32",
   "siaPhaseLabel": "Bauprojekt",
@@ -174,7 +174,7 @@
  {
   "projectId": "PRJ-09",
   "projectNumber": "B-2018-005",
-  "buildingId": "1000/5320/AA",
+  "buildingId": "1080/5320/AA",
   "name": "Bernerhof — Instandsetzung Dach",
   "siaPhase": "61",
   "siaPhaseLabel": "Betrieb",
@@ -194,7 +194,7 @@
  {
   "projectId": "PRJ-10",
   "projectNumber": "B-2024-027",
-  "buildingId": "1000/4840/AF",
+  "buildingId": "1080/4840/AF",
   "name": "Landesmuseum Zürich — Klimatechnik Depot",
   "siaPhase": "51",
   "siaPhaseLabel": "Inbetriebnahme",

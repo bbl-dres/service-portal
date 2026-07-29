@@ -6,8 +6,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/4840/AF",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/4840/AF",
+    "bbl_buch": "1080",
     "bbl_we": "4840",
     "bbl_obj": "AF",
     "bbl_bez": "Bundeshaus West",
@@ -86,28 +86,28 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-4840-AF_bundeshaus-west_aussenansicht.jpg",
       "titel": "Bundeshaus West — aussenansicht",
       "fotograf": "Arkhein Drakenov",
       "credit": "Arkhein Drakenov · CC BY-SA 4.0",
       "lizenz": "CC BY-SA 4.0"
      },
      {
-      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_innenansicht.jpg",
+      "src": "assets/images/buildings/1080-4840-AF_bundeshaus-west_innenansicht.jpg",
       "titel": "Bundeshaus West — innenansicht",
       "fotograf": "Alexander Gempeler",
       "credit": "Alexander Gempeler — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_fassadendetail.jpg",
+      "src": "assets/images/buildings/1080-4840-AF_bundeshaus-west_fassadendetail.jpg",
       "titel": "Bundeshaus West — fassadendetail",
       "fotograf": "Alexander Gempeler",
       "credit": "Alexander Gempeler — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-4840-AF_bundeshaus-west_eingangsbereich.jpg",
+      "src": "assets/images/buildings/1080-4840-AF_bundeshaus-west_eingangsbereich.jpg",
       "titel": "Bundeshaus West — eingangsbereich",
       "fotograf": "Alexander Gempeler",
       "credit": "Alexander Gempeler — BBL-Mediendatenbank",
@@ -127,8 +127,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/5210/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/5210/AA",
+    "bbl_buch": "1080",
     "bbl_we": "5210",
     "bbl_obj": "AA",
     "bbl_bez": "Schweizerische Botschaft Berlin",
@@ -208,35 +208,35 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-5210-AA_schweizerische-botschaft-berlin_aussenansicht.jpg",
       "titel": "Schweizerische Botschaft Berlin — aussenansicht",
       "fotograf": "Christian Richters",
       "credit": "Christian Richters — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_umgebung.jpg",
+      "src": "assets/images/buildings/1080-5210-AA_schweizerische-botschaft-berlin_umgebung.jpg",
       "titel": "Schweizerische Botschaft Berlin — umgebung",
       "fotograf": "Christian Richters",
       "credit": "Christian Richters — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_innenansicht.jpg",
+      "src": "assets/images/buildings/1080-5210-AA_schweizerische-botschaft-berlin_innenansicht.jpg",
       "titel": "Schweizerische Botschaft Berlin — innenansicht",
       "fotograf": "Christian Richters",
       "credit": "Christian Richters — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_fassadendetail.jpg",
+      "src": "assets/images/buildings/1080-5210-AA_schweizerische-botschaft-berlin_fassadendetail.jpg",
       "titel": "Schweizerische Botschaft Berlin — fassadendetail",
       "fotograf": "Christian Richters",
       "credit": "Christian Richters — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5210-AA_schweizerische-botschaft-berlin_eingangsbereich.jpg",
+      "src": "assets/images/buildings/1080-5210-AA_schweizerische-botschaft-berlin_eingangsbereich.jpg",
       "titel": "Schweizerische Botschaft Berlin — eingangsbereich",
       "fotograf": "Christian Richters",
       "credit": "Christian Richters — BBL-Mediendatenbank",
@@ -256,8 +256,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/3120/AB",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/3120/AB",
+    "bbl_buch": "1080",
     "bbl_we": "3120",
     "bbl_obj": "AB",
     "bbl_bez": "Sammlungszentrum Schweizerisches Nationalmuseum",
@@ -333,7 +333,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-3120-AB_sammlungszentrum-schweizerisches-nationalmuseu_drohnenaufnahme.jpg",
+      "src": "assets/images/buildings/1080-3120-AB_sammlungszentrum-schweizerisches-nationalmuseu_drohnenaufnahme.jpg",
       "titel": "Sammlungszentrum Schweizerisches Nationalmuseum — drohnenaufnahme",
       "fotograf": "Schweizerisches Nationalmuseum",
       "credit": "Schweizerisches Nationalmuseum · CC BY-SA 4.0",
@@ -353,8 +353,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/5320/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/5320/AA",
+    "bbl_buch": "1080",
     "bbl_we": "5320",
     "bbl_obj": "AA",
     "bbl_bez": "Schweizerisches Generalkonsulat New York",
@@ -440,8 +440,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/4100/AC",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/4100/AC",
+    "bbl_buch": "1080",
     "bbl_we": "4100",
     "bbl_obj": "AC",
     "bbl_bez": "Campus BAZG (Ausbildungszentrum Liestal)",
@@ -517,7 +517,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg",
       "titel": "Campus BAZG (Ausbildungszentrum Liestal) — aussenansicht",
       "fotograf": "Franz Rindlisbacher, Zürich",
       "credit": "Franz Rindlisbacher, Zürich — aus der Bautendokumentation des BBL",
@@ -537,8 +537,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Löschvermerk",
-    "bbl_id": "1000/5410/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/5410/AA",
+    "bbl_buch": "1080",
     "bbl_we": "5410",
     "bbl_obj": "AA",
     "bbl_bez": "Schweizerische Botschaft Tokio",
@@ -614,7 +614,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-5410-AA_schweizerische-botschaft-tokio_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-5410-AA_schweizerische-botschaft-tokio_aussenansicht.jpg",
       "titel": "Schweizerische Botschaft Tokio — aussenansicht",
       "fotograf": "Syced",
       "credit": "Syced · CC0 1.0 (gemeinfrei)",
@@ -634,8 +634,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/2800/AD",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/2800/AD",
+    "bbl_buch": "1080",
     "bbl_we": "2800",
     "bbl_obj": "AD",
     "bbl_bez": "Dienstwohnungen EDA Effingerstrasse",
@@ -721,8 +721,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/5510/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/5510/AA",
+    "bbl_buch": "1080",
     "bbl_we": "5510",
     "bbl_obj": "AA",
     "bbl_bez": "Schweizerische Botschaft Brasília",
@@ -802,35 +802,35 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-5510-AA_schweizerische-botschaft-bras-lia_aussenansicht.jpg",
       "titel": "Schweizerische Botschaft Brasília — aussenansicht",
       "fotograf": "Laurence Bonvin",
       "credit": "Laurence Bonvin — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_umgebung.jpg",
+      "src": "assets/images/buildings/1080-5510-AA_schweizerische-botschaft-bras-lia_umgebung.jpg",
       "titel": "Schweizerische Botschaft Brasília — umgebung",
       "fotograf": "Laurence Bonvin",
       "credit": "Laurence Bonvin — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_innenansicht.jpg",
+      "src": "assets/images/buildings/1080-5510-AA_schweizerische-botschaft-bras-lia_innenansicht.jpg",
       "titel": "Schweizerische Botschaft Brasília — innenansicht",
       "fotograf": "Laurence Bonvin",
       "credit": "Laurence Bonvin — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_fassadendetail.jpg",
+      "src": "assets/images/buildings/1080-5510-AA_schweizerische-botschaft-bras-lia_fassadendetail.jpg",
       "titel": "Schweizerische Botschaft Brasília — fassadendetail",
       "fotograf": "Laurence Bonvin",
       "credit": "Laurence Bonvin — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5510-AA_schweizerische-botschaft-bras-lia_eingangsbereich.jpg",
+      "src": "assets/images/buildings/1080-5510-AA_schweizerische-botschaft-bras-lia_eingangsbereich.jpg",
       "titel": "Schweizerische Botschaft Brasília — eingangsbereich",
       "fotograf": "Laurence Bonvin",
       "credit": "Laurence Bonvin — BBL-Mediendatenbank",
@@ -850,8 +850,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/1950/AE",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/1950/AE",
+    "bbl_buch": "1080",
     "bbl_we": "1950",
     "bbl_obj": "AE",
     "bbl_bez": "Rechenzentrum CAMPUS Frauenfeld",
@@ -938,8 +938,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/5620/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/5620/AA",
+    "bbl_buch": "1080",
     "bbl_we": "5620",
     "bbl_obj": "AA",
     "bbl_bez": "Schweizerische Botschaft Canberra",
@@ -1019,35 +1019,35 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_aussenansicht.jpg",
       "titel": "Schweizerische Botschaft Canberra — aussenansicht",
       "fotograf": "Anthony Basheer",
       "credit": "Anthony Basheer — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_umgebung.jpg",
+      "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_umgebung.jpg",
       "titel": "Schweizerische Botschaft Canberra — umgebung",
       "fotograf": "Anthony Basheer",
       "credit": "Anthony Basheer — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_innenansicht.jpg",
+      "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_innenansicht.jpg",
       "titel": "Schweizerische Botschaft Canberra — innenansicht",
       "fotograf": "Anthony Basheer",
       "credit": "Anthony Basheer — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_fassadendetail.jpg",
+      "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_fassadendetail.jpg",
       "titel": "Schweizerische Botschaft Canberra — fassadendetail",
       "fotograf": "Anthony Basheer",
       "credit": "Anthony Basheer — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-5620-AA_schweizerische-botschaft-canberra_eingangsbereich.jpg",
+      "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_eingangsbereich.jpg",
       "titel": "Schweizerische Botschaft Canberra — eingangsbereich",
       "fotograf": "Anthony Basheer",
       "credit": "Anthony Basheer — BBL-Mediendatenbank",
@@ -1067,8 +1067,8 @@
    "type": "Feature",
    "properties": {
     "bbl_stat": "Abgang",
-    "bbl_id": "1000/4850/AG",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/4850/AG",
+    "bbl_buch": "1080",
     "bbl_we": "4850",
     "bbl_obj": "AG",
     "bbl_bez": "Verwaltungszentrum Guisanplatz",
@@ -1147,21 +1147,21 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
       "titel": "Verwaltungszentrum Guisanplatz — aussenansicht",
       "fotograf": "Rolf Siegenthaler",
       "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-4850-AG_verwaltungszentrum-guisanplatz_umgebung.jpg",
+      "src": "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_umgebung.jpg",
       "titel": "Verwaltungszentrum Guisanplatz — umgebung",
       "fotograf": "Rolf Siegenthaler",
       "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-4850-AG_verwaltungszentrum-guisanplatz_innenansicht.jpg",
+      "src": "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_innenansicht.jpg",
       "titel": "Verwaltungszentrum Guisanplatz — innenansicht",
       "fotograf": "Rolf Siegenthaler",
       "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
@@ -1188,8 +1188,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6100/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/6100/AA",
+    "bbl_buch": "1080",
     "bbl_we": "6100",
     "bbl_obj": "AA",
     "bbl_bez": "Landesmuseum Zürich",
@@ -1271,28 +1271,28 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_aussenansicht.jpg",
       "titel": "Landesmuseum Zürich — aussenansicht",
       "fotograf": "Walter Mair",
       "credit": "Walter Mair — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_umgebung.jpg",
+      "src": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_umgebung.jpg",
       "titel": "Landesmuseum Zürich — umgebung",
       "fotograf": "Walter Mair",
       "credit": "Walter Mair — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_innenansicht.jpg",
+      "src": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_innenansicht.jpg",
       "titel": "Landesmuseum Zürich — innenansicht",
       "fotograf": "Walter Mair",
       "credit": "Walter Mair — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6100-AA_landesmuseum-zuerich_fassadendetail.jpg",
+      "src": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_fassadendetail.jpg",
       "titel": "Landesmuseum Zürich — fassadendetail",
       "fotograf": "Walter Mair",
       "credit": "Walter Mair — BBL-Mediendatenbank",
@@ -1312,8 +1312,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6210/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/6210/AA",
+    "bbl_buch": "1080",
     "bbl_we": "6210",
     "bbl_obj": "AA",
     "bbl_bez": "Zollanlage Brig-Glis",
@@ -1396,35 +1396,35 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6210-AA_zollanlage-brig-glis_aussenansicht.jpg",
       "titel": "Zollanlage Brig-Glis — aussenansicht",
       "fotograf": "Michael Haug",
       "credit": "Michael Haug — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_umgebung.jpg",
+      "src": "assets/images/buildings/1080-6210-AA_zollanlage-brig-glis_umgebung.jpg",
       "titel": "Zollanlage Brig-Glis — umgebung",
       "fotograf": "Michael Haug",
       "credit": "Michael Haug — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_innenansicht.jpg",
+      "src": "assets/images/buildings/1080-6210-AA_zollanlage-brig-glis_innenansicht.jpg",
       "titel": "Zollanlage Brig-Glis — innenansicht",
       "fotograf": "Michael Haug",
       "credit": "Michael Haug — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_fassadendetail.jpg",
+      "src": "assets/images/buildings/1080-6210-AA_zollanlage-brig-glis_fassadendetail.jpg",
       "titel": "Zollanlage Brig-Glis — fassadendetail",
       "fotograf": "Michael Haug",
       "credit": "Michael Haug — BBL-Mediendatenbank",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6210-AA_zollanlage-brig-glis_eingangsbereich.jpg",
+      "src": "assets/images/buildings/1080-6210-AA_zollanlage-brig-glis_eingangsbereich.jpg",
       "titel": "Zollanlage Brig-Glis — eingangsbereich",
       "fotograf": "Michael Haug",
       "credit": "Michael Haug — BBL-Mediendatenbank",
@@ -1444,8 +1444,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6320/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/6320/AA",
+    "bbl_buch": "1080",
     "bbl_we": "6320",
     "bbl_obj": "AA",
     "bbl_bez": "Bootshaus Grenzwachtposten Arbon",
@@ -1524,7 +1524,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6320-AA_bootshaus-grenzwachtposten-arbon_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6320-AA_bootshaus-grenzwachtposten-arbon_aussenansicht.jpg",
       "titel": "Bootshaus Grenzwachtposten Arbon — aussenansicht",
       "fotograf": "BBL-Bautendokumentation",
       "credit": "Fotograf nicht genannt — aus der Bautendokumentation des BBL",
@@ -1544,8 +1544,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6430/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/6430/AA",
+    "bbl_buch": "1080",
     "bbl_we": "6430",
     "bbl_obj": "AA",
     "bbl_bez": "Schweizerische Nationalbibliothek, Tiefmagazin West",
@@ -1624,7 +1624,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg",
       "titel": "Schweizerische Nationalbibliothek, Tiefmagazin West — aussenansicht",
       "fotograf": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern",
       "credit": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern — aus der Bautendokumentation des BBL",
@@ -1644,8 +1644,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6540/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/6540/AA",
+    "bbl_buch": "1080",
     "bbl_we": "6540",
     "bbl_obj": "AA",
     "bbl_bez": "Verwaltungsgebäude Eichenweg 5, Areal Meielen Nord",
@@ -1724,7 +1724,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6540-AA_verwaltungsgebaeude-eichenweg-5-areal-meielen-_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6540-AA_verwaltungsgebaeude-eichenweg-5-areal-meielen-_aussenansicht.jpg",
       "titel": "Verwaltungsgebäude Eichenweg 5, Areal Meielen Nord — aussenansicht",
       "fotograf": "Rolf Siegenthaler, Bern",
       "credit": "Rolf Siegenthaler, Bern — aus der Bautendokumentation des BBL",
@@ -1744,8 +1744,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6650/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/6650/AA",
+    "bbl_buch": "1080",
     "bbl_we": "6650",
     "bbl_obj": "AA",
     "bbl_bez": "Verwaltungsgebäude Liebefeld (BAG / BLV)",
@@ -1824,7 +1824,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6650-AA_verwaltungsgebaeude-liebefeld-bag-blv_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6650-AA_verwaltungsgebaeude-liebefeld-bag-blv_aussenansicht.jpg",
       "titel": "Verwaltungsgebäude Liebefeld (BAG / BLV) — aussenansicht",
       "fotograf": "Rolf Siegenthaler",
       "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
@@ -1844,8 +1844,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6760/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/6760/AA",
+    "bbl_buch": "1080",
     "bbl_we": "6760",
     "bbl_obj": "AA",
     "bbl_bez": "EHSM Magglingen, Neubau Lärchenplatz",
@@ -1927,28 +1927,28 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6760-AA_ehsm-magglingen-neubau-laerchenplatz_aussenansicht.jpg",
       "titel": "EHSM Magglingen, Neubau Lärchenplatz — aussenansicht",
       "fotograf": "Yves André",
       "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_umgebung.jpg",
+      "src": "assets/images/buildings/1080-6760-AA_ehsm-magglingen-neubau-laerchenplatz_umgebung.jpg",
       "titel": "EHSM Magglingen, Neubau Lärchenplatz — umgebung",
       "fotograf": "Yves André",
       "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_innenansicht.jpg",
+      "src": "assets/images/buildings/1080-6760-AA_ehsm-magglingen-neubau-laerchenplatz_innenansicht.jpg",
       "titel": "EHSM Magglingen, Neubau Lärchenplatz — innenansicht",
       "fotograf": "Yves André",
       "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
       "lizenz": "BBL-Mediendatenbank, nicht frei lizenziert"
      },
      {
-      "src": "assets/images/buildings/1000-6760-AA_ehsm-magglingen-neubau-laerchenplatz_fassadendetail.jpg",
+      "src": "assets/images/buildings/1080-6760-AA_ehsm-magglingen-neubau-laerchenplatz_fassadendetail.jpg",
       "titel": "EHSM Magglingen, Neubau Lärchenplatz — fassadendetail",
       "fotograf": "Yves André",
       "credit": "Yves André — BBL-Mediendatenbank (BASPO Hochschule Hauptgebäude, Campus Magglingen — nicht der Neubau Lärchenplatz)",
@@ -1968,8 +1968,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6870/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/6870/AA",
+    "bbl_buch": "1080",
     "bbl_we": "6870",
     "bbl_obj": "AA",
     "bbl_bez": "Bundesamt für Landestopografie swisstopo",
@@ -2048,7 +2048,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6870-AA_bundesamt-fuer-landestopografie-swisstopo_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6870-AA_bundesamt-fuer-landestopografie-swisstopo_aussenansicht.jpg",
       "titel": "Bundesamt für Landestopografie swisstopo — aussenansicht",
       "fotograf": "Fotos Neubau 2. OG",
       "credit": "Fotos Neubau 2. OG — aus der Bautendokumentation des BBL",
@@ -2068,8 +2068,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/6980/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/6980/AA",
+    "bbl_buch": "1080",
     "bbl_we": "6980",
     "bbl_obj": "AA",
     "bbl_bez": "Bundesverwaltungsgericht Schwarztorstrasse",
@@ -2148,7 +2148,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-6980-AA_bundesverwaltungsgericht-schwarztorstrasse_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-6980-AA_bundesverwaltungsgericht-schwarztorstrasse_aussenansicht.jpg",
       "titel": "Bundesverwaltungsgericht Schwarztorstrasse — aussenansicht",
       "fotograf": "Fotos Markus Beyeler, Hinterkappelen",
       "credit": "Fotos Markus Beyeler, Hinterkappelen — aus der Bautendokumentation des BBL",
@@ -2168,8 +2168,8 @@
    },
    "properties": {
     "bbl_stat": "Aktiv",
-    "bbl_id": "1000/7090/AA",
-    "bbl_buch": "1000",
+    "bbl_id": "1080/7090/AA",
+    "bbl_buch": "1080",
     "bbl_we": "7090",
     "bbl_obj": "AA",
     "bbl_bez": "Bundeshaus Nord",
@@ -2248,7 +2248,7 @@
     ],
     "bilder": [
      {
-      "src": "assets/images/buildings/1000-7090-AA_bundeshaus-nord_aussenansicht.jpg",
+      "src": "assets/images/buildings/1080-7090-AA_bundeshaus-nord_aussenansicht.jpg",
       "titel": "Bundeshaus Nord — aussenansicht",
       "fotograf": "Brutusaurus",
       "credit": "Brutusaurus — Wikimedia Commons, CC BY-SA 4.0",
