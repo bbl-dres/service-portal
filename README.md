@@ -1,7 +1,7 @@
 # BBL Kundenportal (Service Portal)
 
 <p align="center">
-  <img src="assets/social1.jpg" width="100%" alt="BBL Kundenportal — service portal prototype"/>
+  <img src="assets/images/social1.jpg" width="100%" alt="BBL Kundenportal — service portal prototype"/>
 </p>
 
 <p align="center">
@@ -28,12 +28,12 @@ Prototype of the customer portal (**Kundenportal**) for the [Federal Office for 
 **Live Demo:** https://bbl-dres.github.io/service-portal/
 
 <p align="center">
-  <img src="assets\images\preview1.jpg" width="90%"/>
+  <img src="assets/images/preview1.jpg" width="90%"/>
 </p>
 
 <p align="center">
-  <img src="assets\images\preview2.jpg" width="45%" style="vertical-align: top;"/>
-  <img src="assets\images\preview3.jpg" width="45%" style="vertical-align: top;"/>
+  <img src="assets/images/preview2.jpg" width="45%" style="vertical-align: top;"/>
+  <img src="assets/images/preview3.jpg" width="45%" style="vertical-align: top;"/>
 </p>
 
 ## Features
