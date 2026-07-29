@@ -28,12 +28,12 @@ Prototype of the customer portal (**Kundenportal**) for the [Federal Office for 
 **Live Demo:** https://bbl-dres.github.io/service-portal/
 
 <p align="center">
-  <img src="assets/Preview1.jpg" width="90%"/>
+  <img src="assets\images\preview1.jpg" width="90%"/>
 </p>
 
 <p align="center">
-  <img src="assets/Preview2.jpg" width="45%" style="vertical-align: top;"/>
-  <img src="assets/Preview3.jpg" width="45%" style="vertical-align: top;"/>
+  <img src="assets\images\preview2.jpg" width="45%" style="vertical-align: top;"/>
+  <img src="assets\images\preview3.jpg" width="45%" style="vertical-align: top;"/>
 </p>
 
 ## Features
