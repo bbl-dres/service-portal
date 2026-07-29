@@ -443,19 +443,11 @@ function buildingDetail(ctx, b) {
           : 'Ja'}</dd>` : ''}
         ${parcels.length ? `<dt>Grundstück${parcels.length > 1 ? 'e' : ''}</dt><dd>${parcels.map(pc => `<a href="#/app/portfolio?id=${encodeURIComponent(pc.bbl_id)}">${C.escape(pc.name)}</a>`).join(', ')}</dd>` : ''}
         <dt>Status</dt><dd>${statusBadge(C, ref, b.status)}</dd>
-        <dt>Klassifizierung</dt><dd>${classBadge(C, ref, b.classification)}</dd>
-      </dl>
-      ${/* Herkunft der Angaben. Die Demo-Daten mischen Belegtes (Adresse, Kataster,
-            Bauzeit, Architektur) mit Erfundenem (Werte, Verträge, Ausstattung) —
-            das darf man beim Vorführen nicht verwechseln. */''}
-      ${b.quellen && b.quellen.length ? `<p class="small muted mt-4">Angaben zu Bau und Nutzung aus der
-        <a href="${C.escape(b.quellen[0])}" target="_blank" rel="noopener external">Bautendokumentation des BBL</a>;
-        Kataster (EGID, Parzelle, Geometrie) © Data: swisstopo. Übrige Werte sind Demo-Daten.</p>` : ''}
-      ${/* Bildnachweis. Bei CC-BY und CC-BY-SA ist die Nennung von Urheber und
-            Lizenz Pflicht — sie darf nicht bloss in einer Datei stehen. */''}
-      ${b.bildCredit ? `<p class="small muted">Bild: ${b.bildQuelle
-        ? `<a href="${C.escape(b.bildQuelle)}" target="_blank" rel="noopener external">${C.escape(b.bildCredit)}</a>`
-        : C.escape(b.bildCredit)}</p>` : ''}`;
+      </dl>`;
+    // Kein Quellen- und kein Bildnachweis mehr unter der Tabelle: die Bildangaben
+    // (Urheber, Copyright, Lizenz) stehen im Metadaten-Panel der Vollbildgalerie,
+    // wo das Bild auch betrachtet wird. Die Attribution geht dadurch nicht
+    // verloren — sie steht nur an der richtigen Stelle.
   }
   // Alle Detail-Tabellen folgen demselben Muster (Suche · Sortierung · Facetten ·
   // Paginierung) und werden darum über EINEN Baustein gerendert: C.mountDataTable.
@@ -606,7 +598,6 @@ function buildingDetail(ctx, b) {
   mount.innerHTML = `
   <div class="container section">
     ${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}
-    <div class="row mt-4" style="gap:.5rem">${classBadge(C, ref, b.classification)} ${statusBadge(C, ref, b.status)} <span class="small muted">${C.escape(b.bbl_id)}</span></div>
     <h1 tabindex="-1">${C.escape(b.name)}</h1>
     <p class="lead">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)} · ${C.escape(b.portfolioCategory)}</p>
     ${heroBlock(C, { items: galleryItems, mapId: 'pf-hero-map', mapLabel: `Standort von ${b.name} auf der Karte` })}
@@ -697,7 +688,6 @@ function parcelDetail(ctx, p) {
   mount.innerHTML = `
   <div class="container section">
     ${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}
-    <div class="row mt-4" style="gap:.5rem">${C.badge('Grundstück', 'gray')} ${statusBadge(C, ref, p.status)} <span class="small muted">${C.escape(p.bbl_id)}</span></div>
     <h1 tabindex="-1">${C.escape(p.name)}</h1>
     <p class="lead">${C.escape(p.street)}, ${C.escape(p.zip)} ${C.escape(p.city)} · ${C.escape(p.zone || 'Grundstück')}</p>
     ${heroBlock(C, { items: galleryItems, mapId: 'pf-parcel-map', mapLabel: `Bodenbedeckung von ${p.name} auf der Karte` })}

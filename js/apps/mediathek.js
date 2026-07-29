@@ -40,7 +40,19 @@ export default async function render(ctx) {
   ]);
 
   const all = core.media();
-  const bname = (id) => { const b = core.building(id); return b ? b.name : id; };
+  // Das Bildregister umfasst Gebäude, Grundstücke UND Bauprojekte; ein Medium
+  // trägt darum je nach Bezug buildingId, parcelId oder projectId. `objektId`
+  // vereinheitlicht das, `bname` löst über alle drei Bestände auf.
+  // Vorher las die Mediathek nur buildingId — bei einem Grundstücksbild war das
+  // null, und die Sortierung lief auf `null.localeCompare`.
+  const objektId = (m) => m.buildingId || m.parcelId || m.projectId || '';
+  const bname = (id) => {
+    if (!id) return 'Ohne Objektbezug';
+    const b = core.building(id); if (b) return b.name;
+    const p = core.parcel(id); if (p) return p.name;
+    const pr = core.project(id); if (pr) return pr.name || id;
+    return String(id);
+  };
 
   /* ------------------------------------------------------------- Zustand -- */
   const rawQ = (query.get('q') || '').trim();
@@ -54,19 +66,19 @@ export default async function render(ctx) {
   const hash = (patch = {}) => C.catalogueHash('#/app/mediathek', { ...base, ...patch });
 
   const needle = rawQ.toLowerCase();
-  const matches = (m) => !needle || [m.title, bname(m.buildingId), m.photographer, m.date]
+  const matches = (m) => !needle || [m.title, bname(objektId(m)), m.photographer, m.date]
     .some(v => String(v || '').toLowerCase().includes(needle));
 
   const hits = all.filter(m => matches(m)
     && (!typs.length || typs.includes(m.mediaType))
     && (!epochen.length || epochen.includes(m.historicPeriod))
-    && (!objekte.length || objekte.includes(m.buildingId)));
+    && (!objekte.length || objekte.includes(objektId(m))));
 
   const SORTS = {
     'datum-desc': (a, b) => String(b.date).localeCompare(String(a.date)),
     'datum-asc': (a, b) => String(a.date).localeCompare(String(b.date)),
     titel: (a, b) => a.title.localeCompare(b.title, 'de-CH'),
-    objekt: (a, b) => bname(a.buildingId).localeCompare(bname(b.buildingId), 'de-CH'),
+    objekt: (a, b) => bname(objektId(a)).localeCompare(bname(objektId(b)), 'de-CH'),
   };
   const sorted = hits.slice().sort(SORTS[sortKey] || SORTS['datum-desc']);
 
@@ -78,14 +90,14 @@ export default async function render(ctx) {
   // entspricht der Trefferliste, damit Blättern in der Galerie der Sortierung folgt.
   const galleryItems = () => sorted.filter(m => m.photo).map(m => ({
     id: m.mediaId,
-    photo: m.photo, photoSrc: m.file || '', title: m.title, meta: `${m.date} · ${bname(m.buildingId)}`,
+    photo: m.photo, photoSrc: m.file || '', title: m.title, meta: `${m.date} · ${bname(objektId(m))}`,
     type: m.mediaType, gray: isHistoric(m),
     href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
     details: [
       ['Typ', m.mediaType === 'video' ? 'Video' : 'Foto'],
       ['Datum', m.date],
       ['Epoche', m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'],
-      ['Objekt', bname(m.buildingId)],
+      ['Objekt', bname(objektId(m))],
       [m.mediaType === 'video' ? 'Quelle' : 'Fotograf:in', m.photographer],
       ['Copyright', m.copyright],
       ['Zugriff', m.accessLevel],
@@ -99,7 +111,7 @@ export default async function render(ctx) {
 
   const card = (m) => C.card({
     title: m.title,
-    desc: `${bname(m.buildingId)} · ${m.photographer}`,
+    desc: `${bname(objektId(m))} · ${m.photographer}`,
     href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
     titleTag: 'h3',
     photo: { src: m.file || '', id: m.photo, color: m.color, alt: '', gray: isHistoric(m) },
@@ -118,7 +130,7 @@ export default async function render(ctx) {
       { key: 'title', label: 'Titel', render: m =>
         `<a href="#/app/mediathek/${encodeURIComponent(m.mediaId)}">${C.escape(m.title)}</a>` },
       { key: 'typ', label: 'Typ', render: m => C.escape(typLabel(m.mediaType)) },
-      { key: 'objekt', label: 'Objekt', render: m => C.escape(bname(m.buildingId)) },
+      { key: 'objekt', label: 'Objekt', render: m => C.escape(bname(objektId(m))) },
       { key: 'epoche', label: 'Epoche', render: m => periodBadge(m.historicPeriod) },
       { key: 'urheber', label: 'Urheberschaft', render: m => C.escape(m.photographer) },
       { key: 'datum', label: 'Datum', align: 'right', render: m => C.escape(m.date) },
@@ -131,7 +143,7 @@ export default async function render(ctx) {
     .filter(m => Number.isFinite(m.lat) && Number.isFinite(m.lon))
     .map(m => ({
       lat: m.lat, lon: m.lon, bblId: m.mediaId, label: m.title,
-      sub: `${typLabel(m.mediaType)} · ${m.date} · ${bname(m.buildingId)}`,
+      sub: `${typLabel(m.mediaType)} · ${m.date} · ${bname(objektId(m))}`,
       href: `#/app/mediathek/${encodeURIComponent(m.mediaId)}`,
     }));
   const mapView = () => {
@@ -149,7 +161,7 @@ export default async function render(ctx) {
     ...objekte.map(x => ({ label: bname(x), href: hash({ objekt: objekte.filter(y => y !== x) }) })),
   ];
 
-  const objOpts = [...new Set(all.map(m => m.buildingId))]
+  const objOpts = [...new Set(all.map(objektId).filter(Boolean))]
     .map(id => ({ value: id, label: bname(id) }))
     .sort((a, b) => a.label.localeCompare(b.label, 'de-CH'));
 
@@ -258,14 +270,18 @@ function detail(ctx, id) {
     { label: m.title },
   ]);
 
-  const b = core.building(m.buildingId);
-  const bn = b ? b.name : m.buildingId;
+  // Auch hier: das Medium kann an einem Gebäude, einem Grundstück oder einem
+  // Bauprojekt hängen. objId() vereinheitlicht, oname() löst über alle auf.
+  const objId = (x) => x.buildingId || x.parcelId || x.projectId || '';
+  const oid = objId(m);
+  const b = core.building(oid) || core.parcel(oid) || null;
+  const bn = b ? b.name : (core.project(oid) ? (core.project(oid).name || oid) : (oid || 'Ohne Objektbezug'));
   const isVideo = m.mediaType === 'video';
   const isPublic = m.accessLevel === 'öffentlich';
   const hist = m.historicPeriod === 'historisch';
   const hasGeo = Number.isFinite(m.lat) && Number.isFinite(m.lon);
   // Geschwisteraufnahmen desselben Objekts — echte Daten, kein Füllmaterial.
-  const siblings = all.filter(x => x.buildingId === m.buildingId);
+  const siblings = all.filter(x => objId(x) === oid);
   const galleryItem = (x) => ({
     id: x.mediaId,
     photo: x.photo, photoSrc: x.file || '', title: x.title, meta: `${x.date} · ${bn}`,
@@ -311,8 +327,8 @@ function detail(ctx, id) {
       <dt>Typ</dt><dd>${isVideo ? 'Video' : 'Foto'}</dd>
       <dt>Datum</dt><dd>${C.escape(m.date)}</dd>
       <dt>Epoche</dt><dd>${hist ? 'Historisch' : 'Aktuell'}</dd>
-      <dt>Objekt</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(m.buildingId)}">${C.escape(bn)}</a>
-        <span class="small muted">${C.escape(m.buildingId)}</span></dd>
+      <dt>Objekt</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(oid)}">${C.escape(bn)}</a>
+        <span class="small muted">${C.escape(oid)}</span></dd>
       <dt>${isVideo ? 'Quelle' : 'Fotograf:in'}</dt><dd>${C.escape(m.photographer)}</dd>
       <dt>Copyright</dt><dd>${C.escape(m.copyright)}</dd>
       <dt>Zugriff</dt><dd>${C.escape(m.accessLevel)}</dd>

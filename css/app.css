@@ -2209,7 +2209,14 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Liste direkt an der Kante des Popups (das CD setzt `text-right` ohne Polsterung).
    Chromium respektiert `padding` auf <option> in der Popup-Liste, also gibt es hier
    denselben optischen Rand wie im geschlossenen Zustand. */
-.catbar__sort select option { padding-right:.75rem; }
+/* Optionsfarbe explizit setzen: das bare Select erbt nur `color` auf dem
+   <select>; die <option> selbst hat keine eigene Farbe und keinen deckenden
+   Hintergrund. Manche Browser vererben die Select-Farbe NICHT in die native
+   Popup-Liste und zeichnen die Optionen dann hell auf hell (unlesbar). Deshalb
+   hier — wie beim .language-switcher select — Textfarbe und weisser Grund direkt
+   an der Option. */
+.catbar__sort select option { padding-right:.75rem; color:var(--color-text); background:#fff; }
+.catbar__sort select option:disabled { color:var(--color-gray-400); }
 /* CD-Padding (px-4) links; rechts Platz für das Chevron (der zugleich den Abstand
    für die rechtsbündige Ausrichtung oben liefert). */
 .catbar__sort select { min-height:2.75rem; padding-left:1rem; padding-right:1.75rem; font-size:var(--text-sm); color:var(--color-text); }
