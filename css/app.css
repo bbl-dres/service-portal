@@ -1337,6 +1337,10 @@ table.table thead th { background:var(--color-secondary-50); text-align:left; pa
 table.table td, table.table tbody th { padding:1rem 1.5rem; border-bottom:1px solid var(--color-border-strong);
   vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
 table.table tbody th { text-align:left; font-weight:var(--fw-bold); color:var(--color-gray-800); }
+/* Summenzeile: das erste Feld (z. B. «Total (4)») ist ein <th> im <tfoot> und
+   fiel bisher durch beide Polster-Regeln (thead th / tbody th) — also linksbündig
+   ohne Einzug. Gleiches Zellpolster wie die übrigen Zeilen. */
+table.table tfoot th { padding:1rem 1.5rem; vertical-align:top; }
 /* Die Ausrichtungs-Utilities (.text-right/-center/-left) sind (0,1,0) und
    verloren gegen `table.table thead th` (0,1,3) bzw. `table.table tbody th` —
    die Kopfzeile blieb also linksbündig, während die Werte rechts standen.
@@ -2352,13 +2356,12 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .pf-card__id { margin:.35rem 0 0; font-family:Consolas,Menlo,monospace; font-size:var(--text-sm);
   font-weight:var(--fw-normal); color:var(--color-text-muted); letter-spacing:.01em; }
 .pf-card .card__description { margin:.6rem 0 0; font-size:var(--text-sm); }
-/* Karte auf Inhaltshöhe (nicht auf Zeilenhöhe strecken): so klebt der Fuss NICHT
-   unten mit grosser Leerlücke, sondern folgt dicht auf die Adresse. Oben bündig
-   im Raster. Der Fuss (Kategorie · Fläche) wird durch eine feine Linie abgesetzt. */
+/* Karte auf Inhaltshöhe (nicht auf Zeilenhöhe strecken): die Kartenhöhe ergibt
+   sich aus dem Inhalt, der Fuss (Kategorie · Fläche) sitzt unten an der Karte —
+   ohne grosse Leerlücke und ohne Trennlinie. Oben bündig im Raster. */
 .pf-card { align-self:start; }
 .pf-card .card__content { height:auto; justify-content:flex-start; }
-.pf-card .card__footer { margin:0 1.5rem; padding:.85rem 0 1.25rem; font-size:var(--text-sm);
-  border-top:1px solid var(--color-border); }
+.pf-card .card__footer { margin:0 1.5rem; padding:.85rem 0 1.25rem; font-size:var(--text-sm); }
 .pf-typ { display:inline-flex; color:var(--color-text-muted); }
 
 @media (max-width:800px) {
