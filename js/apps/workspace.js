@@ -165,16 +165,15 @@ export default async function render(ctx) {
     const i = state.created;
     return `
       <div class="stack-lg measure-lg">
-        ${C.notification(`<strong>Buchung angefragt.</strong> Ihre Referenz: <strong>${C.escape(i.reference)}</strong>`, 'success', 'CheckmarkCircle')}
-        <div>
-          <h2>Vielen Dank</h2>
-          <p>Ihre Ressourcenbuchung «${C.escape(i.title)}» wurde erfasst und wird durch Workspace BBL
-             bestätigt. Den Status sehen Sie jederzeit unter «Meine Vorgänge».</p>
-        </div>
-        <div class="row">
-          <a class="btn btn--outline" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--base')}</a>
-          <button class="btn btn--outline" type="button" id="buchung-neu">Weitere Buchung</button>
-        </div>
+        ${C.processDone({ instance: i, lead: 'Buchung angefragt.', title: 'Vielen Dank',
+          // h2, nicht h1: die Reiterseite trägt ihre Überschrift schon.
+          heading: 'h2',
+          text: `Ihre Ressourcenbuchung «${C.escape(i.title)}» wurde erfasst und wird durch Workspace BBL
+             bestätigt. Den Status sehen Sie jederzeit unter «Meine Vorgänge».`,
+          actions: [
+            { href: `#/my-cases/${i.instanceId}`, label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            { id: 'buchung-neu', label: 'Weitere Buchung' },
+          ] })}
       </div>`;
   }
 

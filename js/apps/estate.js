@@ -9,6 +9,7 @@
 import { fetchJSON } from '../fetch-json.js';
 import { chart, wireCharts, wireChartMenus, paintCharts } from '../charts.js';
 import { initEstateMap } from '../buildings-map.js';
+import { createMapSlot } from '../map-slot.js';
 import { copyText, shareMail } from '../export.js';
 
 const CRUMB_BASE = [
@@ -107,8 +108,12 @@ export default async function render(ctx) {
     data = await loadData();
     if (ctx.stale && ctx.stale()) return;
   } catch (e) {
-    mount.innerHTML = `<div class="container section"><div class="notification notification--error">${C.icon('WarningCircle', 'icon--lg')}
-      <div><strong>Die Immobilien-Stammdaten konnten nicht geladen werden.</strong><br><span class="small">${C.escape(e.message)}</span></div></div></div>`;
+    // Über C.notification statt von Hand: die handgebaute Fassung hatte kein
+    // `.notification__content`, also weder die Textbreitenbegrenzung noch die
+    // Live-Region, die eine erst nach dem Laden eintreffende Meldung braucht.
+    mount.innerHTML = `<div class="container section">${C.notification(
+      `<strong>Die Immobilien-Stammdaten konnten nicht geladen werden.</strong><br><span class="small">${C.escape(e.message)}</span>`,
+      'error', 'WarningCircle', { live: true })}</div>`;
     return;
   }
 
@@ -258,8 +263,8 @@ export default async function render(ctx) {
   };
 
   let unpaint = null;   // Aufräumer des ResizeObserver aus paintCharts
-  let mapPromise = null;
-  const freeMap = () => { if (mapPromise && mapPromise.then) mapPromise.then((m) => m && m.remove && m.remove()).catch(() => {}); mapPromise = null; };
+  const mapSlot = createMapSlot();   // Besitz/Abbau: js/map-slot.js
+  ctx.onUnmount(mapSlot.free);
 
   const syncHash = () => {
     const qs = new URLSearchParams();
@@ -282,11 +287,10 @@ export default async function render(ctx) {
     unpaint = paintCharts(grid, (id) => chartData.get(id));
     wireCharts(grid);
     wireChartMenus(grid);
-    freeMap();
+    mapSlot.free();
     if (state.tab === 'gebaeude') {
       const el = grid.querySelector('#estate-map-el');
-      if (el) { mapPromise = initEstateMap(el, mapPoints(), parcelFC());
-        ctx.onUnmount(() => mapPromise && mapPromise.then(m => m && m.remove()).catch(() => {})); }
+      if (el) mapSlot.mount(el, (node) => initEstateMap(node, mapPoints(), parcelFC()));
     }
   }
 

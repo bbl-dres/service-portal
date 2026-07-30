@@ -77,10 +77,7 @@ function overview(ctx) {
 }
 
 function notFound(ctx) {
-  const { mount, C, setTitle, setCrumbs } = ctx;
-  setTitle('Seite nicht gefunden');
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Nicht gefunden' }]);
-  mount.innerHTML = C.notFound({ backHref: '#/data', backLabel: 'Daten und Digitalisierung',
-    title: 'Seite nicht gefunden',
-    body: 'Diese Seite existiert nicht. <a href="#/data">Zur Übersicht «Daten und Digitalisierung»</a>' });
+  ctx.C.renderNotFound(ctx, { thing: 'Diese Seite', title: 'Seite nicht gefunden',
+    backHref: '#/data', backLabel: 'Daten und Digitalisierung',
+    crumbs: [{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' }] });
 }

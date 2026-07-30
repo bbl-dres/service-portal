@@ -101,7 +101,7 @@ export default async function render(ctx) {
     return `
       ${C.select({ id: 'naw', name: 'naw', label: 'Arbeitswelt (NAW-Klasse)', value: state.nawClass,
         options: naw.map(n => ({ value: n.id, label: n.label })) })}
-      <div class="notification notification--info">${C.icon('InfoCircle', 'icon--lg')}<div>Geschätzter Flächenbedarf: <strong>${area()} m² HNF</strong><br><span class="small">${state.persons} Arbeitsplätze × ${AREA_PER_WORKPLACE} m² × Desk-Sharing-Faktor ${dsf}</span></div></div>
+      ${C.notification(`Geschätzter Flächenbedarf: <strong>${area()} m² HNF</strong><br><span class="small">${state.persons} Arbeitsplätze × ${AREA_PER_WORKPLACE} m² × Desk-Sharing-Faktor ${dsf}</span>`, 'info', 'InfoCircle')}
       ${C.field({ id: 'termin', label: 'Gewünschter Termin',
         control: (cls, attrs) => `<input id="termin" type="date" value="${C.escape(state.termin)}" class="${cls}"${attrs}>` })}
       ${C.field({ id: 'beg', label: 'Begründung', required: true, message: state.errors.beg,
@@ -134,13 +134,12 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-        <div class="notification notification--success">${C.icon('CheckmarkCircle', 'icon--lg')}<div><strong>Antrag eingereicht.</strong> Ihre Referenz: <strong>${C.escape(i.reference)}</strong></div></div>
-        <h1 tabindex="-1">Vielen Dank</h1>
-        <p>Ihr Raumbedarf-Antrag wurde erfasst und an die Prüfung weitergeleitet. Den Status sehen Sie jederzeit unter «Meine Vorgänge».</p>
-        <div class="row mt-4">
-          <a class="btn btn--outline" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--base')}</a>
-          <a class="btn btn--outline" href="#/services">Weitere Services</a>
-        </div>
+        ${C.processDone({ instance: i, lead: 'Antrag eingereicht.', title: 'Vielen Dank',
+          text: 'Ihr Raumbedarf-Antrag wurde erfasst und an die Prüfung weitergeleitet. Den Status sehen Sie jederzeit unter «Meine Vorgänge».',
+          actions: [
+            { href: `#/my-cases/${i.instanceId}`, label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            { href: '#/services', label: 'Weitere Services' },
+          ] })}
       </div>
     </div>`;
   }

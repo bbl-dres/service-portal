@@ -15,6 +15,7 @@
 // liegen bis ~30 m um ihn herum — plausibel, aber keine echten Kamerapunkte.)
 
 import { initEstateMap } from '../buildings-map.js';
+import { createMapSlot } from '../map-slot.js';
 import { openGallery } from '../gallery.js';
 
 // Historic material is rendered desaturated, so the archive reads as an archive.
@@ -240,11 +241,11 @@ export default async function render(ctx) {
   if (view === 'map') {
     const el = mount.querySelector('#med-map');
     if (el) {
-      // Handle festhalten: ohne ihn ist map.remove() unerreichbar und je Besuch
-      // bleibt ein WebGL-Kontext stehen.
-      const pm = initEstateMap(el, mapPoints(), null, null, { focusPopup: false });
-      ctx.onUnmount(() => pm.then(mp => mp && mp.remove()).catch(() => {}));
-      pm.catch(() => { /* Karte ist optional; der Fehlertext steht im Container */ });
+      // Ohne festgehaltenen Handle ist map.remove() unerreichbar und je Besuch
+      // bleibt ein WebGL-Kontext stehen — der Slot hält ihn (js/map-slot.js).
+      const slot = createMapSlot();
+      slot.mount(el, (node) => initEstateMap(node, mapPoints(), null, null, { focusPopup: false }));
+      ctx.onUnmount(slot.free);
     }
   }
 }
@@ -261,8 +262,12 @@ function detail(ctx, id) {
   const all = core.media();
   const m = all.find(x => x.mediaId === id);
   if (!m) {
-    mount.innerHTML = C.notFound({ backHref: '#/app/media-library', backLabel: 'Mediathek Bauten',
-      title: 'Medium nicht gefunden',
+    // Titel und Brotkrumen fehlten hier ganz: die des zuvor besuchten Mediums
+    // blieben stehen. C.renderNotFound setzt beides mit.
+    C.renderNotFound(ctx, { title: 'Medium nicht gefunden',
+      backHref: '#/app/media-library', backLabel: 'Mediathek Bauten', overview: 'Mediathek',
+      crumbs: [{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' },
+        { label: 'Mediathek Bauten', href: '#/app/media-library' }],
       body: 'Dieses Medium existiert nicht (oder wurde zurückgezogen). <a href="#/app/media-library">Zur Übersicht «Mediathek»</a>' });
     return;
   }
@@ -380,10 +385,10 @@ function detail(ctx, id) {
   if (hasGeo) {
     const el = mount.querySelector('#med-detail-map');
     if (el) {
-      const pm = initEstateMap(el, [{ lat: m.lat, lon: m.lon, label: m.title, bblId: m.mediaId,
-        sub: `Aufnahmeort · ${bn}` }], null, m.mediaId, { focusPopup: false });
-      ctx.onUnmount(() => pm.then(mp => mp && mp.remove()).catch(() => {}));
-      pm.catch(() => { /* Karte optional */ });
+      const slot = createMapSlot();
+      slot.mount(el, (node) => initEstateMap(node, [{ lat: m.lat, lon: m.lon, label: m.title, bblId: m.mediaId,
+        sub: `Aufnahmeort · ${bn}` }], null, m.mediaId, { focusPopup: false }));
+      ctx.onUnmount(slot.free);
     }
   }
 

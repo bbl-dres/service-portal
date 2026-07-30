@@ -221,10 +221,6 @@ function bimPage(ctx) {
 /* ---------------------------------------------------------------------- */
 
 function notFound(ctx) {
-  const { mount, C, setTitle, setCrumbs } = ctx;
-  setTitle('Seite nicht gefunden');
-  setCrumbs([...CRUMB, { label: 'Nicht gefunden' }]);
-  mount.innerHTML = C.notFound({ backHref: '#/data/digitalisation', backLabel: 'Digitalisierung',
-    title: 'Seite nicht gefunden',
-    body: 'Diese Seite existiert nicht. <a href="#/data/digitalisation">Zur Übersicht «Digitalisierung»</a>' });
+  ctx.C.renderNotFound(ctx, { thing: 'Diese Seite', title: 'Seite nicht gefunden',
+    backHref: '#/data/digitalisation', backLabel: 'Digitalisierung', crumbs: CRUMB });
 }

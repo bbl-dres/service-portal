@@ -85,6 +85,11 @@ async function boot() {
   window.__engine = engine;
 }
 
+// Bewusst NICHT über C.notification (anders als die übrigen Fehlerbänder, §2.6):
+// das hier ist der letzte Auffangnetz-Handler. Wenn der Start scheitert, kann
+// die Ursache in einem Baustein liegen — dann würde ein Aufruf im catch-Zweig
+// gleich noch einmal werfen und der Nutzer sähe eine leere Seite statt einer
+// Meldung. `escape` allein ist eine reine Funktion ohne Abhängigkeiten.
 boot().catch(e => {
   console.error('[app] boot failed', e);
   document.getElementById('main-content').innerHTML =

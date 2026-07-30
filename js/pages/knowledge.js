@@ -102,10 +102,7 @@ function areaPage(ctx, area) {
 }
 
 function notFound(ctx) {
-  const { mount, C, setTitle, setCrumbs } = ctx;
-  setTitle('Seite nicht gefunden');
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Wissen und Hilfsmittel', href: '#/knowledge' }, { label: 'Nicht gefunden' }]);
-  mount.innerHTML = C.notFound({ backHref: '#/knowledge', backLabel: 'Wissen und Hilfsmittel',
-    title: 'Seite nicht gefunden',
-    body: 'Dieses Fachgebiet existiert nicht. <a href="#/knowledge">Zur Übersicht «Wissen und Hilfsmittel»</a>' });
+  ctx.C.renderNotFound(ctx, { thing: 'Dieses Fachgebiet', title: 'Seite nicht gefunden',
+    backHref: '#/knowledge', backLabel: 'Wissen und Hilfsmittel',
+    crumbs: [{ label: 'Startseite', href: '#/' }, { label: 'Wissen und Hilfsmittel', href: '#/knowledge' }] });
 }

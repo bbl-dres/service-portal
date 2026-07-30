@@ -133,11 +133,9 @@ function detail(ctx, id) {
   const { mount, core, engine, session, C, setTitle, setCrumbs } = ctx;
   const s = core.service(id);
   if (!s) {
-    setTitle('Dienstleistung nicht gefunden');
-    setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }]);
-    mount.innerHTML = C.notFound({ backHref: '#/services', backLabel: 'Dienstleistungen',
-      title: 'Dienstleistung nicht gefunden',
-      body: 'Diese Dienstleistung existiert nicht. <a href="#/services">Zur Übersicht «Dienstleistungen»</a>' });
+    C.renderNotFound(ctx, { thing: 'Diese Dienstleistung', title: 'Dienstleistung nicht gefunden',
+      backHref: '#/services', backLabel: 'Dienstleistungen',
+      crumbs: [{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }] });
     return;
   }
   setTitle(s.title);

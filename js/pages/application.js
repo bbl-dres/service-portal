@@ -18,11 +18,8 @@ export default function render(ctx, appId) {
   const a = core.application(C.safeDecode(appId));
 
   if (!a) {
-    setTitle('Anwendung nicht gefunden');
-    setCrumbs(crumbs());
-    mount.innerHTML = C.notFound({ backHref: '#/applications', backLabel: 'Anwendungen',
-      title: 'Anwendung nicht gefunden',
-      body: 'Diese Anwendung existiert nicht. <a href="#/applications">Zur Übersicht «Anwendungen»</a>' });
+    C.renderNotFound(ctx, { thing: 'Diese Anwendung', title: 'Anwendung nicht gefunden',
+      backHref: '#/applications', backLabel: 'Anwendungen', crumbs: crumbs() });
     return;
   }
 

@@ -87,11 +87,9 @@ function detail(ctx, id) {
   const { mount, query, core, engine, C, setTitle, setCrumbs } = ctx;
   const i = engine.instance(id);
   if (!i) {
-    setTitle('Vorgang nicht gefunden');
-    setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Meine Vorgänge', href: '#/my-cases' }]);
-    mount.innerHTML = C.notFound({ backHref: '#/my-cases', backLabel: 'Meine Vorgänge',
-      title: 'Vorgang nicht gefunden',
-      body: 'Dieser Vorgang existiert nicht. <a href="#/my-cases">Zur Übersicht «Meine Vorgänge»</a>' });
+    C.renderNotFound(ctx, { thing: 'Dieser Vorgang', title: 'Vorgang nicht gefunden',
+      backHref: '#/my-cases', backLabel: 'Meine Vorgänge',
+      crumbs: [{ label: 'Startseite', href: '#/' }, { label: 'Meine Vorgänge', href: '#/my-cases' }] });
     return;
   }
   setTitle(i.reference);

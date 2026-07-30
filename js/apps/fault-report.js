@@ -154,14 +154,13 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-      ${C.notification(`<strong>Meldung erfasst.</strong> Ihre Referenz: <strong>${C.escape(i.reference)}</strong>`, 'success', 'CheckmarkCircle')}
-      <h1 tabindex="-1">Vielen Dank</h1>
-      <p>Ihre Meldung wurde erfasst und an die zuständige Stelle weitergeleitet. Den Bearbeitungsstand sehen Sie jederzeit unter «Meine Vorgänge».</p>
-      ${isSecurity ? C.notification('Bei akuter Gefahr wenden Sie sich umgehend an die <strong>Alarmzentrale +41 58 465 65 65</strong>.', 'warning', 'WarningCircle') : ''}
-      <div class="row mt-4">
-        <a class="btn btn--outline" href="#/my-cases/${i.instanceId}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--base')}</a>
-        <a class="btn btn--outline" href="#/services">Weitere Services</a>
-      </div>
+      ${C.processDone({ instance: i, lead: 'Meldung erfasst.', title: 'Vielen Dank',
+        text: 'Ihre Meldung wurde erfasst und an die zuständige Stelle weitergeleitet. Den Bearbeitungsstand sehen Sie jederzeit unter «Meine Vorgänge».',
+        extra: isSecurity ? C.notification('Bei akuter Gefahr wenden Sie sich umgehend an die <strong>Alarmzentrale +41 58 465 65 65</strong>.', 'warning', 'WarningCircle') : '',
+        actions: [
+          { href: `#/my-cases/${i.instanceId}`, label: 'Vorgang ansehen', icon: 'ArrowRight' },
+          { href: '#/services', label: 'Weitere Services' },
+        ] })}
       </div>
     </div>`;
   }

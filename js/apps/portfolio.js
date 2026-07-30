@@ -9,6 +9,8 @@
 import { openGallery } from '../gallery.js';
 import { heroMosaic, galleryItemsFrom } from '../hero-mosaic.js';
 import { initEstateMap } from '../buildings-map.js';
+import { createMapSlot } from '../map-slot.js';
+import { syncTreeCounts } from '../spatial-tree.js';
 import { num, m2, chf, datum, dateiGroesse } from '../format.js';
 import { landName, weOf } from '../domain.js';
 import { ANWENDUNGEN } from '../crumbs.js';
@@ -27,8 +29,9 @@ const bilderGalleryItems = (o) => galleryItemsFrom(o.bilder, {
   idPrefix: o.bbl_id, title: o.name, ort: o.city,
 });
 
-let pfMap = null;
-function freePfMap() { if (pfMap) { try { pfMap.remove(); } catch { /* schon weg */ } pfMap = null; } }
+// Besitz und Abbau der Karte liegen im gemeinsamen Slot (js/map-slot.js);
+// er trägt auch die Rennmarke gegen den asynchronen CDN-Ladevorgang.
+const pfMap = createMapSlot();
 
 // Sortierung der Ergebnisliste (Galerie/Liste; die Karte ist reihenfolgeunabhängig).
 const nameCmp = (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de');
@@ -56,22 +59,21 @@ export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
   // Karte beim Verlassen der Route abbauen — sonst bleibt ein WebGL-Kontext je
   // Besuch stehen (Browser kappen bei ~16 und verwerfen die ältesten).
-  ctx.onUnmount(freePfMap);
+  ctx.onUnmount(pfMap.free);
   const detailId = (query && query.get('id')) || params[0];
   if (detailId) {
     const b = core.building(detailId);
     if (b) return buildingDetail(ctx, b);
     const p = core.parcel(detailId);
     if (p) return parcelDetail(ctx, p);
-    freePfMap();
-    setTitle('Objekt nicht gefunden');
-    setCrumbs([...CRUMBS, { label: 'Liegenschaften Inventar', href: '#/app/portfolio' }, { label: 'Nicht gefunden' }]);
-    mount.innerHTML = C.notFound({ backHref: '#/app/portfolio', backLabel: 'Liegenschaften Inventar',
-      title: 'Objekt nicht gefunden',
+    pfMap.free();
+    C.renderNotFound(ctx, { title: 'Objekt nicht gefunden',
+      backHref: '#/app/portfolio', backLabel: 'Liegenschaften Inventar',
+      crumbs: [...CRUMBS, { label: 'Liegenschaften Inventar', href: '#/app/portfolio' }],
       body: `Zu der ID «${C.escape(String(detailId))}» gibt es kein Gebäude und kein Grundstück. <a href="#/app/portfolio">Zur Übersicht «Liegenschaften Inventar»</a>` });
     return;
   }
-  freePfMap();
+  pfMap.free();
   setTitle('Liegenschaften Inventar');
   setCrumbs([...CRUMBS, { label: 'Liegenschaften Inventar' }]);
 
@@ -154,7 +156,11 @@ export default async function render(ctx) {
     const vis = o.kind === 'building'
       ? C.photo({ src: o.photoSrc, id: o.photo, color: 'var(--color-secondary-600)', alt: `${o.name}, ${o.city}`, w: 480, cls: 'pf-card__img' })
       : `<div class="pf-card__parcel">${C.icon('Crop', 'icon--2xl')}</div>`;
-    const chips = [landName(o.land), o.kind === 'building' ? 'Gebäude' : 'Grundstück', o.status]
+    // Land und Status — NICHT die Objektart: dass hier ein Grundstück steht,
+    // sagt schon das Bild (Foto gegen schraffierte Parzelle) und die Einheit im
+    // Fuss (GF gegen GSF). Als dritter Chip neben «Schweiz» und «in Betrieb»
+    // las sich «Gebäude» wie ein Filterwert, den es so nicht gibt.
+    const chips = [landName(o.land), o.status]
       .filter(Boolean).map((c) => `<span class="pf-card__land">${esc(c)}</span>`).join('');
     return `<a class="card card--universal card--clickable pf-card" href="#/app/portfolio?id=${encodeURIComponent(o.id)}">
       <div class="pf-card__vis">${vis}<div class="pf-card__chips">${chips}</div></div>
@@ -175,32 +181,29 @@ export default async function render(ctx) {
     { key: 'area', label: 'Fläche', align: 'right', render: (o) => `${m2(o.area)}<br><span class="small muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span>` },
     { key: 'status', label: 'Status', render: (o) => statusBadge(C, ref, o.status) },
   ], rows: slice });
-  // Wettlauf-Schutz: initEstateMap lädt MapLibre erst vom CDN. Ohne Marke
-  // konnte ein zweiter Aufruf (Suche, zweiter Baumknoten) starten, während der
-  // erste noch offen war — free…Map() lief dann gegen null und die zuerst
-  // aufgelöste Karte blieb als WebGL-Kontext auf einem entfernten Knoten liegen.
-  let mapTicket = 0;
   async function mountMap(list, focus) {
-    const ticket = ++mapTicket;
-    freePfMap();
     const el = mount.querySelector('#pf-map-el');
     if (!el) return;
     const points = list.filter((o) => o.kind === 'building' && Number.isFinite(o.lat) && Number.isFinite(o.lon))
       .map((o) => ({ lat: o.lat, lon: o.lon, label: o.name, bblId: o.id, sub: `${o.street}, ${o.zip} ${o.city}`.trim(), href: `#/app/portfolio?id=${encodeURIComponent(o.id)}` }));
     const parcels = { type: 'FeatureCollection', features: list.filter((o) => o.kind === 'parcel' && o.geom).map((o) => ({
       type: 'Feature', geometry: o.geom, properties: { label: o.name, sub: `${o.street}, ${o.zip} ${o.city}`.trim(), id: o.id, area: o.area, href: `#/app/portfolio?id=${encodeURIComponent(o.id)}` } })) };
-    const created = await initEstateMap(el, points, parcels, focus);
-    // Überholt oder Container weg? Sofort abbauen statt zuweisen.
-    if (ticket !== mapTicket || !el.isConnected) { if (created) { try { created.remove(); } catch { /* egal */ } } return; }
-    pfMap = created;
+    await pfMap.mount(el, (node) => initEstateMap(node, points, parcels, focus));
   }
+
+  // Baumzahlen an Suche und Facetten angleichen — OHNE die Baumauswahl selbst
+  // (js/spatial-tree.js erklärt, warum).
+  const syncTree = () => syncTreeCounts(mount.querySelector(".pf-tree"),
+    objects.filter((o) => inSearch(o) && inFilters(o)),
+    (o) => [o.land, o.region, o.city, o.we], (o) => o.id);
 
   // --- partial render of the main pane ---------------------------------------
   function renderMain() {
+    syncTree();
     const list = filtered().sort(SORTS[state.sort] || SORTS.name);
     const cnt = mount.querySelector('#pf-count');
     const main = mount.querySelector('#pf-main');
-    freePfMap();
+    pfMap.free();
     if (state.view === 'map') {
       // Karte: nur die Anzahl (kein «von … · Seite …» — das ist nur für Galerie/Liste).
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> ${list.length === 1 ? 'Objekt' : 'Objekte'}`;
@@ -392,7 +395,7 @@ export default async function render(ctx) {
 // ---------------------------------------------------------------------------
 function buildingDetail(ctx, b) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
-  freePfMap();
+  pfMap.free();
   const ref = core.ref();
   setTitle(b.name);
   setCrumbs([...CRUMBS, { label: 'Liegenschaften Inventar', href: '#/app/portfolio' }, { label: b.name }]);
@@ -622,9 +625,8 @@ function buildingDetail(ctx, b) {
   // Gebäude-Detailansicht überhaupt keine Karte — die Lage stand nur als Adresse.
   const bMapEl = mount.querySelector('#pf-hero-map');
   if (bMapEl && Number.isFinite(b.lat) && Number.isFinite(b.lng)) {
-    initEstateMap(bMapEl, [{ lat: b.lat, lon: b.lng, label: b.name, bblId: b.bbl_id,
-      sub: `${b.street}, ${b.zip} ${b.city}`.trim() }], null, b.bbl_id, { focusPopup: false })
-      .then((m) => { pfMap = m; }).catch(() => { /* Karte optional */ });
+    pfMap.mount(bMapEl, (node) => initEstateMap(node, [{ lat: b.lat, lon: b.lng, label: b.name, bblId: b.bbl_id,
+      sub: `${b.street}, ${b.zip} ${b.city}`.trim() }], null, b.bbl_id, { focusPopup: false }));
   } else if (bMapEl) {
     bMapEl.innerHTML = `<div class="empty empty--unavailable h-full">
       <span>Für dieses Objekt sind keine Koordinaten erfasst.</span></div>`;
@@ -639,7 +641,7 @@ function buildingDetail(ctx, b) {
 // ---------------------------------------------------------------------------
 function parcelDetail(ctx, p) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
-  freePfMap();
+  pfMap.free();
   const ref = core.ref();
   const we = p.bbl_we || weOf(p.bbl_id);
   const bld = core.buildings().find((b) => (b.bbl_we || weOf(b.bbl_id)) === we);
@@ -699,7 +701,7 @@ function parcelDetail(ctx, p) {
   if (mapEl) {
     const feats = covers.filter((c) => c.geom).map((c) => ({ type: 'Feature', geometry: c.geom, properties: { label: c.type, sub: `${m2(c.area)}`, id: p.bbl_id } }));
     if (p.geom) feats.push({ type: 'Feature', geometry: p.geom, properties: { label: p.name, sub: 'Parzelle', id: p.bbl_id } });
-    initEstateMap(mapEl, [], { type: 'FeatureCollection', features: feats }, p.bbl_id, { focusPopup: false }).then((m) => { pfMap = m; }).catch(() => { /* Karte optional */ });
+    pfMap.mount(mapEl, (node) => initEstateMap(node, [], { type: 'FeatureCollection', features: feats }, p.bbl_id, { focusPopup: false }));
   }
   // Gleiche Galerie-Verdrahtung wie beim Gebäude — sie fehlte hier ganz, weil das
   // Grundstück bisher gar keine Bilder zeigte.

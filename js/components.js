@@ -323,6 +323,28 @@ export function notFound({ backHref, backLabel, title, body }) {
   </div>`;
 }
 
+// Der ganze ABLAUF einer «nicht gefunden»-Antwort, nicht nur ihr Markup.
+//
+// Elf Stellen (acht Seiten, fünf Apps) hatten dieselben vier Schritte von Hand
+// geschrieben: setTitle · setCrumbs · mount.innerHTML = notFound({…}) · return.
+// `notFound` vereinheitlichte nur den letzten davon, und die elf Kopien liefen
+// prompt auseinander — zwei setzten überhaupt keine Brotkrumen (die des zuvor
+// besuchten Datensatzes blieben stehen), sechs schlossen sie mit «Nicht
+// gefunden» ab, drei nicht.
+//
+// `thing` trägt das Geschlecht, das je Gegenstand wechselt («Dieses
+// Bauprojekt», «Diese Anwendung», «Dieser Datensatz»). Wo der Satz mehr sagen
+// muss als «… existiert nicht», ersetzt `body` ihn vollständig.
+export function renderNotFound(ctx, {
+  thing, title, backHref, backLabel, overview = backLabel, crumbs, body,
+} = {}) {
+  const { mount, setTitle, setCrumbs } = ctx;
+  setTitle(title);
+  if (crumbs) setCrumbs([...crumbs, { label: 'Nicht gefunden' }]);
+  mount.innerHTML = notFound({ backHref, backLabel, title,
+    body: body || `${thing} existiert nicht. <a href="${backHref}">Zur Übersicht «${escape(overview)}»</a>` });
+}
+
 // Aktive-Filter-Pillenreihe (zuvor in services/applications/katalog kopiert).
 // filters = [{ label, href }] — href = dieselbe Ansicht ohne diesen einen Filter.
 // Zwei Modi, gleiche Optik (`.active-filters` / `.active-filter`): Katalogseiten
@@ -799,6 +821,37 @@ export function notification(text, variant = 'info', iconName = 'InfoCircle', op
     : '';
   const cls = `notification notification--${variant}${opts.dismissible ? ' notification--dismissible' : ''}`;
   return `<div class="${cls}"${role ? ` role="${role}"` : ''}>${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div>${close}</div>`;
+}
+
+// Der Abschluss eines eingereichten Vorgangs. Vier Formular-Apps hatten ihn von
+// Hand gebaut — Erfolgsmeldung mit Referenz, Dankesüberschrift, Erklärsatz,
+// Knopfreihe — und liefen genau dort auseinander, wo es zählt: space-request
+// schrieb sein `<div class="notification notification--success">` selbst und
+// verlor damit `.notification__content`, also die Textbreitenbegrenzung;
+// workspace nutzt eine h2 (richtig, die Seite hat schon eine h1), die anderen
+// eine h1; die Knöpfe waren dreimal `btn--outline`, einmal `btn--filled`.
+//
+//   lead     Satz in der Erfolgsmeldung («Antrag eingereicht.»)
+//   title    Überschrift · `heading:'h2'`, wo die Seite ihre h1 schon hat
+//   text     Erklärsatz darunter
+//   extra    optionaler HTML-Block dazwischen (Merkmalliste, Zusatzhinweis)
+//   actions  [{ href | id, label, variant, icon }] — erste Aktion gefüllt
+export function processDone({ instance, lead, title, heading = 'h1', text,
+  extra = '', actions = [] } = {}) {
+  const knopf = (a, i) => {
+    const cls = `btn btn--${a.variant || (i === 0 ? 'filled' : 'outline')}`;
+    const inhalt = `${escape(a.label)}${a.icon ? ` ${icon(a.icon, 'icon--base')}` : ''}`;
+    return a.href
+      ? `<a class="${cls}" href="${escape(a.href)}">${inhalt}</a>`
+      : `<button class="${cls}" type="button" id="${escape(a.id)}">${inhalt}</button>`;
+  };
+  return `
+    ${notification(`<strong>${escape(lead)}</strong> Ihre Referenz: <strong>${escape(instance.reference)}</strong>`,
+      'success', 'CheckmarkCircle')}
+    <${heading} tabindex="-1" class="mt-6">${escape(title)}</${heading}>
+    <p class="lead">${text}</p>
+    ${extra}
+    ${actions.length ? `<div class="row mt-6">${actions.map(knopf).join('')}</div>` : ''}`;
 }
 
 // CD step-indicator.postcss:5-24 / StepIndicator.vue:2-9 — EINE nummerierte
@@ -1545,12 +1598,12 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, card, table, empty,
   mountBanner, openShareModal, wireShare, domainTile, announce, trapFocus, notFound,
-  activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
+  renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, loginGate,
-  preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, stepIndicator,
+  preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, stepIndicator, processDone,
   mountDataTable, wireTableRows, cardAction, pageSection, heroFigure,
 };
 export default C;

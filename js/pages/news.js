@@ -50,11 +50,9 @@ function newsDetail(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
   const n = core.newsItem(id);
   if (!n) {
-    setTitle('Meldung nicht gefunden');
-    setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News', href: '#/news' }, { label: 'Nicht gefunden' }]);
-    mount.innerHTML = C.notFound({ backHref: '#/news', backLabel: 'News',
-      title: 'Meldung nicht gefunden',
-      body: 'Diese Meldung existiert nicht. <a href="#/news">Zur Übersicht «News»</a>' });
+    C.renderNotFound(ctx, { thing: 'Diese Meldung', title: 'Meldung nicht gefunden',
+      backHref: '#/news', backLabel: 'News',
+      crumbs: [{ label: 'Startseite', href: '#/' }, { label: 'News', href: '#/news' }] });
     return;
   }
   setTitle(n.title);

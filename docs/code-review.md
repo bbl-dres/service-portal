@@ -4,6 +4,15 @@
 
 **Methode:** vier unabhängige Prüfläufe über getrennte Bereiche (CSS/Tokens, `components.js`, die sechs Micro-Apps, `pages`/`core`/`router`/`shell`), dazu ein eigener Lauf über die Formular-Apps und die Testwerkzeuge. Jeder Befund trägt Datei und Zeile. **Die schwerwiegenden Befunde sind einzeln nachgestellt**, nicht übernommen — was nachgestellt wurde, steht in [§8](#8-was-nachgeprüft-wurde).
 
+> **Stand der Umsetzung (30. Juli 2026):** §1, §3, §4, §5, §2.4, §2.6 (`processDone`),
+> §2.7 und das Testwerkzeug sind umgesetzt und mit eigenen Prüfläufen belegt —
+> siehe [§7](#7-reihenfolge-der-umsetzung--und-was-davon-umgesetzt-ist) für die
+> Übersicht, [§8](#8-was-umgesetzt-wurde--im-einzelnen) für die Einzelheiten.
+> **Offen bleiben** die vier grössten Zusammenlegungen: `wireCatbar` (§2.3),
+> `C.loginPage` (§2.6), `js/spatial-tree.js` vollständig (§2.1) und
+> `js/catalogue-page.js` (§2.2). Die Befundtexte unten beschreiben den Zustand
+> **vor** der Umsetzung und bleiben als Begründung stehen.
+
 **Befund in einem Satz:** die Architektur trägt, aber sie ist an sechs Stellen dreifach vorhanden. Die grössten Hebel sind der räumliche Baum (3 Kopien), die Katalogseiten-Pipeline (5 Kopien) und die Katalogleisten-Verdrahtung (2 Kopien) — zusammen rund **900 Zeilen**, die auf etwa 300 zusammengehen. Der Weg dorthin ist nicht die Schwierigkeit; die Schwierigkeit sind die **Verhaltensunterschiede zwischen den Kopien**, und die sind in [§2](#2-die-grossen-zusammenlegungen) je Zusammenlegung einzeln aufgelistet.
 
 ---
@@ -208,47 +217,174 @@ Zwei Dinge, die **nicht** tot sind und es beinahe geworden wären: `js/apps/esta
 
 ---
 
-## 7. Reihenfolge der Umsetzung
+## 7. Reihenfolge der Umsetzung — und was davon umgesetzt ist
 
-Von risikoarm nach risikoreich. Die ersten drei Stufen sind reine Textverschiebung.
+Von risikoarm nach risikoreich. Der Stand am 30. Juli 2026, nach der Umsetzung:
 
-1. **Die sieben Fehler aus §1** — zuerst, damit das Refactoring sie nicht mitzementiert. Klein, einzeln prüfbar.
-2. **`js/format.js`, `js/domain.js`, `js/crumbs.js`, `js/links.js`** (§2.8) — kein Verhaltensrisiko, entfernt ~120 Zeilen und behebt nebenbei die Grössen-Divergenz aus §1.4.
-3. **Toter Code** (§5) — ~200 Zeilen CSS und JS, keine Wirkung.
-4. **Tokens** (§3) in der Reihenfolge Farbe → Zeit → Z-Achse → Abstand. Jede Stufe ist mechanisch und einzeln nachmessbar.
-5. **`js/map-slot.js`** (§2.4) — klar abgegrenzt, sechs Aufrufstellen.
-6. **`wireCatbar`** (§2.3) — zwei Aufrufer, klein, hoher Aufräumwert.
-7. **`js/spatial-tree.js`** (§2.1) — grösster Einzelgewinn, aber erst nach 1–6: die acht Verhaltensunterschiede müssen Zeile für Zeile abgehakt werden.
-8. **`js/catalogue-page.js`** (§2.2) — zuletzt und **als fünf kleine Bausteine**, nicht als eine Funktion mit dreissig Optionen.
+| # | Gegenstand | Stand |
+|---|---|---|
+| 0 | Testwerkzeug (Anhang) | **erledigt** — `launch()` sucht sich einen freien Port und bricht ab, statt sich an einen fremden Browser zu hängen |
+| 1 | Die sieben Fehler aus §1 | **erledigt** — alle sieben, einzeln nachgemessen |
+| 2 | `js/format.js` · `js/domain.js` · `js/crumbs.js` · `js/links.js` (§2.8) | **erledigt** |
+| 3 | Toter Code (§5) | **erledigt** |
+| 4 | Tokens (§3) | **erledigt** |
+| 5 | `js/map-slot.js` (§2.4) | **erledigt** — fünf Apps, sechs Aufrufstellen |
+| 6 | `C.renderNotFound` (§2.7) | **erledigt** — zwölf Wege |
+| 7 | `C.processDone` (§2.6) | **erledigt** — vier Formular-Apps |
+| 8 | Zählstand im Strukturbaum (Nutzerbefund) | **erledigt** — `js/spatial-tree.js`, erster Baustein von §2.1 |
+| 9 | `wireCatbar` (§2.3) | **offen** |
+| 10 | `C.loginPage` (§2.6) | **offen** — vier Login-Gate-Gerüste stehen weiterhin einzeln |
+| 11 | `js/spatial-tree.js` vollständig (§2.1) | **offen** — nur der Zählstand ist herausgezogen |
+| 12 | `js/catalogue-page.js` (§2.2) | **offen** |
 
-**Erwartete Wirkung:** rund **900 Zeilen weniger** bei gleichem Funktionsumfang, eine Token-Schicht, die tatsächlich benutzt wird, und — der eigentliche Gewinn — **eine Stelle statt drei**, an der eine Änderung am räumlichen Baum oder an der Katalogleiste einzupflegen ist.
-
----
-
-## 8. Was nachgeprüft wurde
-
-Nicht übernommen, sondern selbst nachgestellt:
-
-- **§1.1** im Browser reproduziert: Reset-Ziel bleibt `?classification=internal`.
-- **§1.2** Signatur von `empty()` gegen den Aufruf in `news.js` gelesen — die Inversion ist real.
-- **§1.3** `fgroup()` gegen `C.filterGroup` verglichen; `checked` und `id` fehlen, Vorgabefilter ist `['building']`.
-- **§1.4** beide Formatierer mit 2048/4820/512 KB durchgerechnet: «4,7 MB» gegen «4.7 MB».
-- **§1.5/§1.6** `--color-focus` und `--fw-normal` existieren in `tokens.css` nicht; `1544px` steht an 12 anderen Stellen.
-- **§1.7** Zeilenreihenfolge und Spezifität beider Regeln gelesen.
-- **§2.1/§2.3** Blöcke nebeneinandergelegt; die Verdrahtungen unterscheiden sich nur im Commit-Ziel.
-- **§3** alle Zahlen der Tabelle einzeln gezählt (`grep -c`).
-- **§5** jeder tote Export einzeln gegrept (`C.<name>` und blanker Aufruf); `resolveChildren` über `childrenFrom` und die Zweigbedingung geprüft; `estate.js` als **lebendig** nachgewiesen, bevor es auf die Liste kam.
-
-**Nicht geprüft und deshalb als Vorschlag, nicht als Befund zu lesen:** die genauen Signaturen der vorgeschlagenen neuen Module (§2) — sie sind aus den Aufrufstellen abgeleitet, aber nicht implementiert.
+Die vier offenen Punkte sind die grössten und riskantesten; sie bleiben in dieser
+Reihenfolge stehen. Alles davor ist umgesetzt und geprüft.
 
 ---
 
-## Anhang: Testwerkzeug
+## 8. Was umgesetzt wurde — im Einzelnen
 
-Kein Befund am Produktcode, aber die Ursache wiederkehrender Falschalarme:
+### §1 Die sieben Fehler
+Alle behoben und über `scratchpad/check-fixes.mjs` einzeln nachgemessen: der
+Reset-Parameter im Datenkatalog (`klass` → `classification`), die invertierte
+Ausfallprüfung in `empty()`, der Objekttyp-Filter auf `C.filterGroup`, die
+Grössenformatierung auf `de-CH` (Dezimalpunkt), `--color-focus-ring` statt des
+nicht existierenden `--color-focus`, `--fw-regular` statt `--fw-normal`,
+1536 → **1544** (CDs 2xl), und die Kontrastmodus-Regel hinter ihre Basisregel.
 
-`scripts/lib/cdp.mjs:28-46` startet Edge und verbindet sich anschliessend mit **dem, was auf dem Debug-Port antwortet**. Drei Suiten teilen sich Port 9333 — `test-tabs.mjs` nennt ihn, `test-building-create.mjs` und `test-media-library.mjs` rufen `launch()` ohne Port und erben denselben Standardwert. Ein übrig gebliebener Browser wird dadurch mitsamt seinem warmen HTTP-Cache übernommen.
+### §3 Tokens
+| Vorher | Nachher |
+|---|---|
+| `2.75rem` **46×** wörtlich, vermischt mit `--control-h` | neues **`--target-min`** (feste WCAG-Tippfläche, rampt bewusst NICHT), 58 Literale ersetzt; `--control-h` bleibt die *skalierende* Bedienhöhe |
+| **64** Zeitliterale in 7 Werten | alle auf `--duration-fast` / `--duration` / `--duration-slow` — und *dadurch* schaltet jetzt **eine** `prefers-reduced-motion`-Regel in `tokens.css` die Bewegung ab (vorher deckten zwei Einzelregeln zwei von 64 Fällen ab) |
+| **34** rohe `z-index`, darunter `2000`, `200`, `60`, `50` | Skala vervollständigt (`--z-content`, `--z-nav`, `--z-drawer`, `--z-nav-active`, `--z-footer`, `--z-viewer`, `--z-skiplink`); die verbliebenen 18 sind kleine Ganzzahlen INNERHALB eines Komponenten-Stacking-Context — die Konvention steht jetzt in `tokens.css` |
+| `#fff` **112×** | `--color-bg` (Fläche) bzw. neues **`--color-text-negative`** (Text auf dunkler Chrome); 0 verbliebene |
+| fünf Rezepte für dieselbe Abdunkelung | `--scrim-chip` / `--scrim-chip-hover` / `--scrim-gradient`, alle auf der Sekundärrampe |
+| **24** `rgba(255,255,255,…)` in zehn Deckkraftstufen | fünf benannte Werte der Negativ-Ebene (`--surface-negative` / `-hover` / `-active`, `--border-negative`, `--text-negative-muted`); die eine verbliebene ist begründet im Blatt vermerkt |
+| `Consolas,Menlo,monospace` **9×** | `--font-mono` |
+| elf freie Hexe in der API-Doku | HTTP-Verben auf die **kategoriale** Chart-Palette, Statusklassen auf die **Zustands**-Rampe |
+| zwei Rampen fünffach ausgeschrieben | `--gap-responsive` und `--section-py` / `--section-py-half` / `--section-pt`; **auch der seitliche Innenabstand von `.container`** ist dieselbe Rampe und stand ein drittes Mal da |
+| **57** Inline-`style=` in `js/` | **13** — der Rest über `.row--between` / `.row--end` / `.m-0` / `.mt-0` / `.h-full` / `.mb-3` und die neuen `.measure-*`; die verbliebenen sind echte Einzelfälle oder tokengetriebene `fill`/`background` |
+| `#2f4356` 8× in sechs Dateien | `var(--color-secondary-600)` |
 
-Das hat am 29. und 30. Juli zweimal zu Phantomfehlern geführt, die nach dem Abschiessen der Prozesse verschwanden — zuletzt bei `table--rows-clickable`, wo die Klasse nachweislich im DOM stand, der Test sie aber nicht sah (185 verwaiste `msedge`-Prozesse).
+**Nachgemessen:** `scratchpad/check-ramps.mjs` liest an acht Breiten
+(375 · 480 · 640 · 768 · 1024 · 1280 · 1544 · 1920) den berechneten Wert von
+`.grid`-Spalte, `.container.section`-Polsterung, `--target-min` und
+`--control-h` — **40 von 40 identisch zu vorher**. Der Umbau ist reines
+Benennen, kein Layoutwechsel.
 
-→ `launch()` sollte einen freien Port selbst wählen **oder** abbrechen, wenn der Port schon antwortet, statt sich anzuhängen.
+### §4 CSS
+- `.card--flat` und `.card--list` teilen ihre byte-identische Basis. Dabei fiel auf, dass `.card--list` die Polsterrampe fehlte, die das CD für **beide** vorgibt (`card.postcss:331-400`) — nachgezogen.
+- `.stat` war `.box` minus einer Stufe → eine Deklaration für beide.
+- Der Visually-hidden-Block stand **7×** in drei Fassungen → eine Sammelregel; die Gegenregeln, die den Text ab einer Breite wieder einblenden, bleiben bei ihrer Komponente.
+- Der CD-Fokusring stand **10×**; sieben davon waren reine Doubletten der globalen `:focus-visible`-Regel. **Nachgewiesen**, nicht angenommen: `scratchpad/check-focus.mjs` erzwingt über `CSS.forcePseudoState` den Fokuszustand für alle sieben Klassen und liest den berechneten Umriss — alle sieben tragen weiterhin `2px solid rgb(134,85,246)`.
+- Fünf echte Doubletten entfernt (u. a. die `.meta-info__item`-Media-Query zweimal buchstabengleich hintereinander, `.text--light` zweimal), dazu das No-Op `@media (max-width:800px)` und zwei tote `font-weight` an `.form__group__legend`.
+- Die drei Suchfeld-Bauteile: `.service-controls__search` und `.catbar__search` teilen jetzt ihre Anatomie; `.map-search__field` bleibt eigenständig (anderes Bauteil — Symbol statt Absendeknopf, beidseitige Polsterung, Schatten).
+- Vier Schreibweisen für dieselbe sm-Grenze → durchgängig `max-width:639.98px`; die Konvention steht in `tokens.css`. Vorher überlappte `max-width:640px` bei genau 640 px mit `min-width:640px`, und `max-width:639px` liess dazwischen eine Lücke.
+- Die `:not()`-Kette auf `#main-content a` stand **dreimal** ausgeschrieben und ergab (1,11,1) → eine `:not(a, b, c)`-Liste plus `:is(:hover,:focus)`, das ergibt (1,2,1). `.tile` ist aus der Liste raus, die Klasse existiert nicht mehr.
+
+**Eine Korrektur an der Review selbst:** die zwei `!important` waren als
+«entbehrlich» notiert. Das stimmt nur für eines. `.select--bare` kam mit einer
+Selektorstufe mehr aus. Bei `.main-navigation > ul > li > .clicked` ist es
+**nötig**: `[data-menu]` wird über die ganze Shell verdrahtet (`shell.js:374`),
+`.clicked` kann also im mobilen Menü stehen, und
+`.mobile-menu .main-navigation > ul > li > button:hover` (0,4,2) schlägt die
+Regel (0,2,2) in Spezifität *und* Reihenfolge. Es bleibt stehen, jetzt mit
+dieser Begründung daneben.
+
+### §5 Toter Code
+Fünf tote Exporte (`tile`, `tagItem`, `catalogueControls`, `rerender`,
+`chevron`) und der No-op `wirePipeline` entfernt; neun nur modulintern genutzte
+Helfer aus `C` gestrichen (**76 → 63** öffentliche Namen); der unerreichbare
+`themen`-Zweig in `resolveChildren` und der tote Zweig in `wireAccordion`
+vereinfacht; sieben tote CSS-Blöcke entfernt; `.mt-3` ergänzt, das an drei
+Stellen benutzt wurde, ohne definiert zu sein.
+
+`.ratio--*` und `.photo--*` sind **bewusst geblieben**: sie sind der
+Modifikatorensatz zweier geteilter Bausteine (`ratio.postcss`, `C.photo`), kein
+verwaister Code — die Review liess dafür ausdrücklich die Wahl.
+
+### §2.4 `js/map-slot.js`
+Fünf Karten-Lebenszyklen in zwei Bauarten (Modulvariable + `freeXxMap()` +
+Rennmarke gegen festgehaltenes Promise + `onUnmount`) → ein
+`createMapSlot() → { mount, free, get }`. Erhalten geblieben sind alle drei
+Fallstricke, die die Kopien einzeln gelöst hatten: die Rennmarke gegen den
+asynchronen CDN-Ladevorgang, die Idempotenz von `free()` (läuft zweimal je
+Renderdurchgang) und das sofortige Abbauen, wenn der Container zwischenzeitlich
+aus dem Dokument gefallen ist.
+
+### §2.7 `C.renderNotFound`
+Zwölf Stellen bauten `setTitle` + `setCrumbs` + `mount.innerHTML` + `return`
+von Hand. **Zwei davon setzten überhaupt keine Brotkrumen** — die des zuvor
+besuchten Datensatzes blieben stehen (`media-library.js`, `projects.js`) —,
+sechs schlossen sie mit «Nicht gefunden» ab, drei nicht.
+`scratchpad/check-404.mjs` fährt alle zwölf ab und prüft Überschrift,
+Zurück-Leiste, letzte Brotkrume und den Verweis auf die Übersicht: **12/12
+gleich aufgebaut.**
+
+### §2.6 `C.processDone`
+Vier Formular-Apps hatten die Abschlussseite von Hand. `space-request` schrieb
+sein `<div class="notification notification--success">` selbst und verlor damit
+`.notification__content`, also die Textbreitenbegrenzung; die Knöpfe waren
+dreimal `btn--outline`, einmal `btn--filled`. Dazu sind fünf weitere
+handgebaute `<div class="notification …">` auf `C.notification` umgestellt
+(`space-request` ×2, `building-create`, `estate`, `router`).
+
+**Bewusst nicht umgestellt:** `js/app.js:91`. Das ist der letzte
+Auffangnetz-Handler — scheitert der Start an einem Baustein, würde ein Aufruf
+im `catch`-Zweig gleich noch einmal werfen. Steht jetzt mit dieser Begründung
+im Code.
+
+### Nutzerbefunde, die während der Umsetzung dazukamen
+- **Hinweisstreifen ohne seitliche Polsterung.** Das CD schreibt `.notification-banner__wrapper { @apply container }` (`notification-banner.postcss:20`); hier stand ein festes `padding:0 1rem`. Auf breiten Fenstern klebte der Text am Rand, während oben/unten 2.5rem Luft standen. Jetzt dieselbe Rampe wie `.container` — geprüft an sechs Breiten.
+- **Objektart-Chip in der Inventar-Galerie** («Gebäude» / «Grundstück») entfernt: die Art sagt schon das Bild (Foto gegen schraffierte Parzelle) und die Einheit im Fuss (GF gegen GSF); als dritter Chip las er sich wie ein Filterwert.
+- **Fusszeilen der Galeriekarten lagen auf verschiedenen Höhen**, weil die Karten auf Inhaltshöhe standen. Jetzt füllen sie ihre Rasterzeile, der Fuss sitzt über `margin-top:auto` an der Unterkante — der Höhenausgleich landet als Lücke *über* dem Fuss.
+- **Merkmalliste `.kv`**: Doppelpunkt an jeder Beschriftung, aus dem Blatt (`dt::after`) statt aus neun Zeichenketten, und eine spürbar getrennte Beschriftungsspalte (`fit-content(18rem)` + 2rem Spalte­nabstand). Beim Nachmessen fiel auf, dass die zuerst geschriebene Fassung `minmax(0, min(18rem, max-content))` **ungültig** war — `max-content` ist keine Länge, `min()` verwirft die ganze Angabe und `.kv` fiel auf eine Spalte zurück. `fit-content()` ist die richtige Grundform.
+- **Der Strukturbaum zählte an den Filtern vorbei** (`.pf-tree`, in allen drei Apps): «21 von 41 Objekte» in der Werkzeugleiste, aber 41 in den Baumzahlen. Die Zahlen folgen jetzt Suche und Facetten — **nicht** aber der Baumauswahl selbst, sonst bliebe nach einem Klick nur der geklickte Ast mit einer «1» stehen. Leere Äste werden ausgeblendet statt eine 0 anzubieten. `scratchpad/check-tree.mjs` prüft in allen drei Apps, dass die Summe der Wurzelknoten der Trefferzahl entspricht — vor und nach einem Filterwechsel.
+
+---
+
+## 9. Was nachgeprüft wurde
+
+Die Befunde der Review selbst wurden vor der Umsetzung nachgestellt (§1.1 im
+Browser reproduziert, §1.2 die Signatur gegen den Aufruf gelesen, §1.4 beide
+Formatierer durchgerechnet, §3 alle Zahlen einzeln gezählt, §5 jeder tote
+Export einzeln gegrept, `estate.js` als **lebendig** nachgewiesen, bevor es auf
+die Liste kam).
+
+Die Umsetzung ist zusätzlich mit eigenen Prüfläufen belegt:
+
+| Prüflauf | Was er zeigt |
+|---|---|
+| `check-ramps.mjs` | 40 berechnete Werte an 8 Breiten — identisch zu vorher |
+| `check-focus.mjs` | alle 7 entfernten Fokusring-Regeln: Umriss bleibt der CD-Ring |
+| `check-404.mjs` | 12 «nicht gefunden»-Wege, gleicher Aufbau |
+| `check-tree.mjs` | Baumzahlen = Trefferzahl, in 3 Apps, vor und nach Filterwechsel |
+| `check-banner.mjs` | Streifen fluchtet mit dem Seiteninhalt, 6 Breiten |
+| `check-kv.mjs` | Doppelpunkt und zweispaltige Spur in jeder App |
+| `check-pfcard.mjs` | Fusszeilen einer Rasterreihe enden auf derselben Höhe |
+| `check-done.mjs` | Abschlussseite über `C.processDone`, mit Referenz und Knopfreihe |
+
+**Die Testsuiten** (`test-content`, `test-routes`, `test-catalogue`,
+`test-tabs`, `test-tenancies`, `test-estate`, `test-dashboard`,
+`test-media-library`, `test-forms`, `test-search`, `test-apidocs`,
+`test-login`, `test-building-create`, `test-data-integrity`) laufen grün.
+
+`test-portfolio` meldet weiterhin **26 Fehlschläge**. Sie sind
+**vorbestehend und unabhängig** von dieser Arbeit — nachgewiesen, indem die
+Änderungen weggelegt wurden: auf `HEAD` sind es 27. Sie betreffen das
+Bildmosaik und die Grundstück-Detailansicht und gehören in eine eigene Runde.
+
+---
+
+## Anhang: Testwerkzeug — behoben
+
+`scripts/lib/cdp.mjs` startete Edge und verband sich anschliessend mit **dem,
+was auf dem Debug-Port antwortete**. Drei Suiten teilten sich Port 9333; ein
+übrig gebliebener Browser wurde mitsamt seinem warmen HTTP-Cache übernommen.
+Das hat am 29. und 30. Juli zweimal zu Phantomfehlern geführt, die nach dem
+Abschiessen der Prozesse verschwanden (zuletzt 185 verwaiste `msedge`-Prozesse).
+
+`launch()` sucht sich jetzt selbst einen freien Port und **bricht ab**, wenn auf
+einem ausdrücklich genannten Port schon jemand antwortet, statt sich anzuhängen.
+Zusätzlich startet der Browser mit `--disable-http-cache`.

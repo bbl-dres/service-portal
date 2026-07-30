@@ -151,7 +151,7 @@ export default async function render(ctx) {
       <p id="bc-address-hint" class="small muted">Nadel ziehen oder in die Karte klicken, um die Lage zu justieren.</p>
       <div id="bc-status" aria-live="polite"></div>
 
-      ${state.errors['bc-address'] ? `<div class="notification notification--error" role="alert">${C.icon('WarningCircle', 'icon--lg')}<div>${C.escape(state.errors['bc-address'])}</div></div>` : ''}
+      ${state.errors['bc-address'] ? C.notification(C.escape(state.errors['bc-address']), 'error', 'WarningCircle', { live: true }) : ''}
 
       ${state.lat != null ? `
         <dl class="kv">
@@ -284,18 +284,17 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-        ${C.notification(`<strong>Erfassung eingereicht.</strong> Ihre Referenz: <strong>${C.escape(i.reference)}</strong>`, 'success', 'CheckmarkCircle')}
-        <h1 tabindex="-1" class="mt-6">Gebäude erfasst</h1>
-        <p class="lead">Das Objekt «${C.escape(bezeichnung())}» ist zur Prüfung beim Portfoliomanagement.</p>
-        <dl class="kv">
-          <dt>Referenz</dt><dd>${C.escape(i.reference)}</dd>
-          <dt>Adresse</dt><dd>${C.escape(`${state.street} ${state.no}, ${state.zip} ${state.city}`.trim())}</dd>
-          <dt>Status</dt><dd>${C.statusBadge(i.status, 'Eingereicht')}</dd>
-        </dl>
-        <div class="row mt-6">
-          <a class="btn btn--filled" href="#/my-cases/${encodeURIComponent(i.instanceId)}">Vorgang ansehen ${C.icon('ArrowRight', 'icon--base')}</a>
-          <a class="btn btn--outline" href="#/services">Zu den Dienstleistungen</a>
-        </div>
+        ${C.processDone({ instance: i, lead: 'Erfassung eingereicht.', title: 'Gebäude erfasst',
+          text: `Das Objekt «${C.escape(bezeichnung())}» ist zur Prüfung beim Portfoliomanagement.`,
+          extra: `<dl class="kv">
+            <dt>Referenz</dt><dd>${C.escape(i.reference)}</dd>
+            <dt>Adresse</dt><dd>${C.escape(`${state.street} ${state.no}, ${state.zip} ${state.city}`.trim())}</dd>
+            <dt>Status</dt><dd>${C.statusBadge(i.status, 'Eingereicht')}</dd>
+          </dl>`,
+          actions: [
+            { href: `#/my-cases/${encodeURIComponent(i.instanceId)}`, label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            { href: '#/services', label: 'Zu den Dienstleistungen' },
+          ] })}
       </div>
     </div>`;
     const h = mount.querySelector('h1'); if (h) h.focus({ preventScroll: true });

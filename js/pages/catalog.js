@@ -154,11 +154,8 @@ function detail(ctx, id) {
   const t = core.t;
 
   if (!d) {
-    setTitle('Datensatz nicht gefunden');
-    setCrumbs(crumbs());
-    mount.innerHTML = C.notFound({ backHref: '#/data/catalog', backLabel: 'Datenbezug und API Verzeichnis',
-      title: 'Datensatz nicht gefunden',
-      body: 'Dieser Datensatz existiert nicht. <a href="#/data/catalog">Zur Übersicht «Datenbezug und API Verzeichnis»</a>' });
+    C.renderNotFound(ctx, { thing: 'Dieser Datensatz', title: 'Datensatz nicht gefunden',
+      backHref: '#/data/catalog', backLabel: 'Datenbezug und API Verzeichnis', crumbs: crumbs() });
     return;
   }
   setTitle(t(d.title));

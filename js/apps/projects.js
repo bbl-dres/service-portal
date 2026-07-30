@@ -10,6 +10,8 @@
 // nicht in einem RE-FX-Gebäude; es verweist nur darauf.
 // Ein Projekt wird über #/app/projects/<projectId> angesprochen.
 import { initEstateMap } from '../buildings-map.js';
+import { createMapSlot } from '../map-slot.js';
+import { syncTreeCounts } from '../spatial-tree.js';
 import { openGallery } from '../gallery.js';
 import { chf } from '../format.js';
 import { landName, weOf, projectStatusLabel } from '../domain.js';
@@ -22,8 +24,7 @@ import * as links from '../links.js';
 // `buildings` wird NICHT mehr gebraucht: mit dem Wegfall des Joins spart die
 // Route 66 KB und einen Request.
 export const needs = ['projects'];
-let pjMap = null;
-function freePjMap() { if (pjMap) { try { pjMap.remove(); } catch { /* schon weg */ } pjMap = null; } }
+const pjMap = createMapSlot();   // Besitz/Abbau: js/map-slot.js
 
 const CRUMBS = ANWENDUNGEN;
 
@@ -47,7 +48,7 @@ const SORT_OPTS = [
 ];
 
 export default async function render(ctx) {
-  ctx.onUnmount(freePjMap);
+  ctx.onUnmount(pjMap.free);
   const { params } = ctx;
   if (params[0]) return detail(ctx, params[0]);
   return overview(ctx);
@@ -60,7 +61,7 @@ function ampelBadge(C, prefix, value) { return C.badge(`${prefix}: ${AMPEL_LABEL
 // ---- overview (map-first explorer) --------------------------------------
 function overview(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  freePjMap();
+  pjMap.free();
   setTitle('Bauprojekte / EPPM');
   setCrumbs([...CRUMBS, { label: 'Bauprojekte / EPPM' }]);
 
@@ -170,29 +171,24 @@ function overview(ctx) {
     { key: 'sia', label: 'SIA-Phase', render: (o) => `${esc(o.siaPhase)} · ${esc(o.siaPhaseLabel)}` },
     { key: 'plannedTotalCost', label: 'Investition', align: 'right', render: (o) => esc(chf(o.plannedTotalCost)) },
   ], rows: slice });
-  // Wettlauf-Schutz: initEstateMap lädt MapLibre erst vom CDN. Ohne Marke
-  // konnte ein zweiter Aufruf (Suche, zweiter Baumknoten) starten, während der
-  // erste noch offen war — free…Map() lief dann gegen null und die zuerst
-  // aufgelöste Karte blieb als WebGL-Kontext auf einem entfernten Knoten liegen.
-  let mapTicket = 0;
   async function mountMap(list, focus) {
-    const ticket = ++mapTicket;
-    freePjMap();
     const el = mount.querySelector('#pj-map-el'); if (!el) return;
     const points = list.filter((o) => Number.isFinite(o.lat) && Number.isFinite(o.lon))
       .map((o) => ({ lat: o.lat, lon: o.lon, label: o.name, bblId: o.id, sub: `${o.projectNumber} · ${o.buildingName}`.trim(), href: links.bauprojekt(o.id) }));
-    const created = await initEstateMap(el, points, { type: 'FeatureCollection', features: [] }, focus);
-    // Überholt oder Container weg? Sofort abbauen statt zuweisen.
-    if (ticket !== mapTicket || !el.isConnected) { if (created) { try { created.remove(); } catch { /* egal */ } } return; }
-    pjMap = created;
+    await pjMap.mount(el, (node) => initEstateMap(node, points, { type: 'FeatureCollection', features: [] }, focus));
   }
 
   // --- partial render of the main pane ------------------------------------
+  const syncTree = () => syncTreeCounts(mount.querySelector(".pf-tree"),
+    objects.filter((o) => inSearch(o) && inFilters(o)),
+    (o) => [o.land, o.region, o.city, o.we], (o) => o.id);
+
   function renderMain() {
+    syncTree();
     const list = filtered().sort(SORTS[state.sort] || SORTS.name);
     const cnt = mount.querySelector('#pj-count');
     const main = mount.querySelector('#pj-main');
-    freePjMap();
+    pjMap.free();
     if (state.view === 'map') {
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> ${list.length === 1 ? 'Projekt' : 'Projekte'}`;
       main.innerHTML = `<div class="pf-map dash-map" id="pj-map-el" role="group" aria-label="Karte der Bauprojekte"></div>`;
@@ -355,12 +351,13 @@ function overview(ctx) {
 // ---- detail -------------------------------------------------------------
 function detail(ctx, id) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  freePjMap();
+  pjMap.free();
   const p = core.project(id);
   if (!p) {
-    mount.innerHTML = C.notFound({ backHref: '#/app/projects', backLabel: 'Bauprojekte',
-      title: 'Projekt nicht gefunden',
-      body: 'Dieses Bauprojekt existiert nicht. <a href="#/app/projects">Zur Übersicht «Bauprojekte»</a>' });
+    // Titel und Brotkrumen fehlten hier ganz (siehe media-library.js).
+    C.renderNotFound(ctx, { thing: 'Dieses Bauprojekt', title: 'Projekt nicht gefunden',
+      backHref: '#/app/projects', backLabel: 'Bauprojekte',
+      crumbs: [...CRUMBS, { label: 'Bauprojekte', href: '#/app/projects' }] });
     return;
   }
   setTitle(p.name);

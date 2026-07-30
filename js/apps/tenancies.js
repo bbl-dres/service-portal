@@ -16,6 +16,8 @@
 
 import { floorplanSvg, floorplanLegend, wireFloorplan, COLOR_MODES } from '../floorplan.js';
 import { initEstateMap } from '../buildings-map.js';
+import { createMapSlot } from '../map-slot.js';
+import { syncTreeCounts } from '../spatial-tree.js';
 import { heroMosaic, galleryItemsFrom } from '../hero-mosaic.js';
 import { openGallery } from '../gallery.js';
 import { chf, m2, datum } from '../format.js';
@@ -45,13 +47,12 @@ export default async function render(ctx) {
 // Karte. Der Zustand liegt in `state` und wird nur teilweise neu gezeichnet —
 // ein voller Neuaufbau würde bei jedem Baumklick die Karte verwerfen und neu
 // aufbauen (WebGL-Kontext), und der Fokus spränge zur Überschrift zurück.
-let mtMap = null;
-function freeMtMap() { if (mtMap) { try { mtMap.remove(); } catch { /* schon weg */ } mtMap = null; } }
+const mtMap = createMapSlot();   // Besitz/Abbau: js/map-slot.js
 
 function overview(ctx) {
   const { mount, core, C, setTitle, setCrumbs, onUnmount } = ctx;
-  freeMtMap();
-  onUnmount(freeMtMap);
+  mtMap.free();
+  onUnmount(mtMap.free);
   setTitle('Mietende');
   setCrumbs([...CRUMBS, { label: 'Mietende' }]);
 
@@ -171,29 +172,27 @@ function overview(ctx) {
   // auf buildings.geojson. Zwei Mietverhältnisse im selben Haus liegen damit
   // exakt übereinander; das ist fachlich richtig (es ist dasselbe Objekt) und
   // die Bündelung der Karte fasst sie zusammen.
-  let mapTicket = 0;
   async function mountMap(list) {
-    const ticket = ++mapTicket;
-    freeMtMap();
     const el = mount.querySelector('#mt-map-el');
     if (!el) return;
     const points = list.filter((t) => Number.isFinite(t.lat) && Number.isFinite(t.lon))
       .map((t) => ({ lat: t.lat, lon: t.lon, label: t.buildingName, bblId: t.tenancyId,
         sub: `${t.ve} · ${t.floorLabels.join(' + ')} · ${m2(t.areaHnf)}`,
         href: links.mietverhaeltnis(t.tenancyId) }));
-    const created = await initEstateMap(el, points, { type: 'FeatureCollection', features: [] }, state.sel.id || null);
-    // Überholt oder Container weg? Sofort abbauen statt zuweisen (Wettlauf-Schutz
-    // wie in js/apps/projects.js — initEstateMap lädt MapLibre erst vom CDN).
-    if (ticket !== mapTicket || !el.isConnected) { if (created) { try { created.remove(); } catch { /* egal */ } } return; }
-    mtMap = created;
+    await mtMap.mount(el, (node) => initEstateMap(node, points, { type: 'FeatureCollection', features: [] }, state.sel.id || null));
   }
 
   /* ------------------------------------------------- Teil-Neuzeichnung ---- */
+  const syncTree = () => syncTreeCounts(mount.querySelector(".pf-tree"),
+    all.filter((t) => inSearch(t) && inFilters(t)),
+    (t) => [t.land, t.canton, t.city], (t) => t.tenancyId);
+
   function renderMain() {
+    syncTree();
     const list = filtered().slice().sort(SORTS[state.sort] || SORTS.end);
     const cnt = mount.querySelector('#mt-count');
     const main = mount.querySelector('#mt-main');
-    freeMtMap();
+    mtMap.free();
 
     // NUR die Trefferzahl — keine Summen. Fläche und Jahresmiete über die
     // gefilterte Menge zu addieren wäre eine Auswertung, und Auswertungen
@@ -357,11 +356,9 @@ function detail(ctx, id) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs, onUnmount } = ctx;
   const t = core.tenancy(id);
   if (!t) {
-    setTitle('Mietverhältnis nicht gefunden');
-    setCrumbs([...CRUMBS, { label: 'Mietende', href: '#/app/tenancies' }, { label: 'Nicht gefunden' }]);
-    mount.innerHTML = C.notFound({ backHref: '#/app/tenancies', backLabel: 'Mietende',
-      title: 'Mietverhältnis nicht gefunden',
-      body: 'Dieses Mietverhältnis existiert nicht. <a href="#/app/tenancies">Zur Übersicht «Mietende»</a>' });
+    C.renderNotFound(ctx, { thing: 'Dieses Mietverhältnis', title: 'Mietverhältnis nicht gefunden',
+      backHref: '#/app/tenancies', backLabel: 'Mietende',
+      crumbs: [...CRUMBS, { label: 'Mietende', href: '#/app/tenancies' }] });
     return;
   }
   setTitle(t.buildingName);
@@ -690,20 +687,16 @@ function detail(ctx, id) {
   // Kopf verdrahten: jede Mosaikkachel öffnet die Vollbildgalerie bei ihrem
   // eigenen Bild, und die Standortkarte bekommt einen Punkt auf das Objekt.
   // Koordinaten stehen im Mietverhältnis — kein Zugriff auf den Gebäudebestand.
-  let heroMap = null;
-  function freeHeroMap() { if (heroMap) { try { heroMap.remove(); } catch { /* schon weg */ } heroMap = null; } }
+  const heroMap = createMapSlot();
   async function wireHero() {
     mount.querySelectorAll('#mt-mosaic [data-gallery]').forEach((el) => {
       el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C, { param: 'bild' }));
     });
-    freeHeroMap();
     const el = mount.querySelector('#mt-hero-map');
-    if (!el || !Number.isFinite(t.lat) || !Number.isFinite(t.lon)) return;
-    const created = await initEstateMap(el,
+    if (!el || !Number.isFinite(t.lat) || !Number.isFinite(t.lon)) { heroMap.free(); return; }
+    await heroMap.mount(el, (node) => initEstateMap(node,
       [{ lat: t.lat, lon: t.lon, label: t.buildingName, sub: `${t.street}, ${t.zip} ${t.city}`, bblId: t.tenancyId }],
-      { type: 'FeatureCollection', features: [] }, t.tenancyId, { focusPopup: false });
-    if (!el.isConnected) { if (created) { try { created.remove(); } catch { /* egal */ } } return; }
-    heroMap = created;
+      { type: 'FeatureCollection', features: [] }, t.tenancyId, { focusPopup: false }));
   }
 
   // Datentabellen in ihre Montagepunkte hängen. Alle Reiterpanels liegen im
@@ -755,7 +748,7 @@ function detail(ctx, id) {
 
   onUnmount(() => {
     if (detach) detach();
-    freeHeroMap();
+    heroMap.free();
     detachTables.forEach((f) => { try { f(); } catch { /* egal */ } });
   });
   draw();

@@ -347,9 +347,9 @@ async function dispatch() {
   } catch (e) {
     if (stale()) return;
     console.error('[router] render failed for', modPath, e);
-    mount.innerHTML = `<div class="container section">
-      <div class="notification notification--error">${C.icon('WarningCircle', 'icon--lg')}
-      <div><strong>Diese Ansicht konnte nicht geladen werden.</strong><br><span class="small">${C.escape(e.message)}</span></div></div></div>`;
+    mount.innerHTML = `<div class="container section">${C.notification(
+      `<strong>Diese Ansicht konnte nicht geladen werden.</strong><br><span class="small">${C.escape(e.message)}</span>`,
+      'error', 'WarningCircle', { live: true })}</div>`;
   }
 }
 

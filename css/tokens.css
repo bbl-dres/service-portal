@@ -231,7 +231,13 @@
   --header-z: var(--z-header); --breadcrumb-z: var(--z-breadcrumb); --modal-z: var(--z-modal); --sticky-z: var(--z-sticky);
 
   /* --- Breakpoints (for reference; used in media queries) ---
-     xs 480 · sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1544 · 3xl 1920 */
+     xs 480 · sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1544 · 3xl 1920
+
+     KONVENTION: `min-width` nimmt die Stufe selbst (640px), `max-width` die
+     Stufe minus 0.02px (639.98px). Vorher liefen vier Schreibweisen für
+     dieselbe sm-Grenze nebeneinander — `max-width:640px` überlappte bei genau
+     640px mit `min-width:640px` (beide Regeln aktiv), `max-width:639px` liess
+     zwischen 639 und 640 eine Lücke, in der keine von beiden griff. */
 }
 
 /* ============================================================================
