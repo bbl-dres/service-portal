@@ -54,7 +54,7 @@ let failures = 0;
 const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label}`); if (!cond) failures++; };
 
 (async () => {
-  const cdp = await launch({ port: 9348, webgl: true });
+  const cdp = await launch({ webgl: true });
   try {
     const page = await openPage(cdp, `${APP_BASE}/app/dataportal/immobilien`);
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1500, deviceScaleFactor: 1, mobile: false }, page.sessionId);

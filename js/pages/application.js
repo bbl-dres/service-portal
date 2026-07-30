@@ -95,18 +95,18 @@ export default function render(ctx, appId) {
               }<span class="btn__text">${C.escape(primary.label)}</span>
             </a></p>` : ''}
           ${page.access && page.access.note
-            ? `<p class="small" style="margin:0">${C.escape(page.access.note)}</p>` : ''}
+            ? `<p class="small m-0">${C.escape(page.access.note)}</p>` : ''}
           ${page.access && page.access.steps && page.access.steps.length
             ? `<ul class="list--default small mt-2" style="color:var(--color-text-muted)">${
                 page.access.steps.map(s => `<li>${C.escape(s)}</li>`).join('')}</ul>` : ''}
-          ${noTarget ? `<p class="small muted" style="margin:0">Im Prototyp ist kein Zielsystem verknüpft.</p>` : ''}
+          ${noTarget ? `<p class="small muted m-0">Im Prototyp ist kein Zielsystem verknüpft.</p>` : ''}
         </div>
 
         ${C.contactBox(contact)}
 
         <div class="box">
           <h3>Eckdaten</h3>
-          <dl class="kv" style="margin:0">
+          <dl class="kv m-0">
             <dt>Gruppe</dt><dd>${C.escape(a.group)}</dd>
             ${a.area ? `<dt>Bereich</dt><dd>${C.escape(bereichLabel(a.area))}</dd>` : ''}
             <dt>Zugang</dt><dd>${C.escape(a.accessNote || '—')}</dd>

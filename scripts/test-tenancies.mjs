@@ -15,7 +15,7 @@ const clean = async (p, label) => {
   check(!errs.length, `${label}: keine Fehler`, errs.join(' | '));
 };
 
-const browser = await launch({ port: 9360, webgl: true });
+const browser = await launch({ webgl: true });
 
 /* ------------------------------------------------------------- Übersicht -- */
 head('Übersicht');

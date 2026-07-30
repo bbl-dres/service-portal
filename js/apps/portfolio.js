@@ -7,34 +7,28 @@
 // Ansicht Karte (Default, geclustert) · Galerie · Liste. Siehe docs/portfolio-redesign.md.
 
 import { openGallery } from '../gallery.js';
-import { heroMosaic } from '../hero-mosaic.js';
+import { heroMosaic, galleryItemsFrom } from '../hero-mosaic.js';
 import { initEstateMap } from '../buildings-map.js';
+import { num, m2, chf, datum, dateiGroesse } from '../format.js';
+import { landName, weOf } from '../domain.js';
+import { ANWENDUNGEN } from '../crumbs.js';
+import * as links from '../links.js';
 
-// Galerie-Eintrag aus einem Medium. `details` speist das Metadaten-Panel der
-// Vollbildgalerie (js/gallery.js), `href` dessen Verweis auf die Detailseite.
 // Bildergalerie eines Objekts aus seiner kuratierten Auswahl `bilder` (direkt am
-// Objekt in buildings.geojson / parcels.geojson). data/media.json wird NICHT gelesen —
-// das Register bleibt der Mediathek vorbehalten. Erstes Bild = Hauptbild.
-function bilderGalleryItems(o) {
-  return (o.bilder || []).map((x, i) => ({
-    id: `${o.bbl_id}-bild-${i}`,
-    photo: '', photoSrc: x.src, title: x.titel || o.name,
-    meta: [x.fotograf && `© ${x.fotograf}`, o.city].filter(Boolean).join(' · '),
-    type: 'foto', gray: !!x.historisch,
-    details: [
-      ['Titel', x.titel || o.name],
-      x.fotograf && ['Fotograf:in', x.fotograf],
-      x.credit && ['Copyright', x.credit],
-      x.lizenz && ['Lizenz', x.lizenz],
-    ].filter(Boolean),
-  }));
-}
+// Objekt in buildings.geojson / parcels.geojson). data/media.json wird NICHT
+// gelesen — das Register bleibt der Mediathek vorbehalten. Erstes Bild = Hauptbild.
+//
+// Baut auf `galleryItemsFrom` (js/hero-mosaic.js) auf. Vorher stand hier eine
+// eigene Fassung, der genau eine Zeile fehlte: die Quellenangabe. Folge war,
+// dass der Bildnachweis im Metadatenpanel der Vollbildgalerie im Inventar
+// fehlte, im Mietendenportal aber stand — bei Aufnahmen, die nicht frei
+// lizenziert sind.
+const bilderGalleryItems = (o) => galleryItemsFrom(o.bilder, {
+  idPrefix: o.bbl_id, title: o.name, ort: o.city,
+});
 
 let pfMap = null;
 function freePfMap() { if (pfMap) { try { pfMap.remove(); } catch { /* schon weg */ } pfMap = null; } }
-const weOf = (id) => String(id || '').split('/')[1] || '';
-const LAND = { CH: 'Schweiz', DE: 'Deutschland', US: 'USA', JP: 'Japan', BR: 'Brasilien', AU: 'Australien' };
-const landName = (l) => LAND[l] || l || '—';
 
 // Sortierung der Ergebnisliste (Galerie/Liste; die Karte ist reihenfolgeunabhängig).
 const nameCmp = (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de');
@@ -51,10 +45,7 @@ const SORT_OPTIONS = [
   { value: 'land', label: 'Land' },
 ];
 
-const CRUMBS = [
-  { label: 'Startseite', href: '#/' },
-  { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
-];
+const CRUMBS = ANWENDUNGEN;
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -161,7 +152,7 @@ export default async function render(ctx) {
   // --- views (renderMain slices the list + appends the CD pagination) ---------
   function pfCard(o) {
     const vis = o.kind === 'building'
-      ? C.photo({ src: o.photoSrc, id: o.photo, color: '#2f4356', alt: `${o.name}, ${o.city}`, w: 480, cls: 'pf-card__img' })
+      ? C.photo({ src: o.photoSrc, id: o.photo, color: 'var(--color-secondary-600)', alt: `${o.name}, ${o.city}`, w: 480, cls: 'pf-card__img' })
       : `<div class="pf-card__parcel">${C.icon('Crop', 'icon--2xl')}</div>`;
     const chips = [landName(o.land), o.kind === 'building' ? 'Gebäude' : 'Grundstück', o.status]
       .filter(Boolean).map((c) => `<span class="pf-card__land">${esc(c)}</span>`).join('');
@@ -172,7 +163,7 @@ export default async function render(ctx) {
         <p class="pf-card__id">${esc(o.id)}</p>
         <p class="card__description">${esc(o.street)}${o.city ? `, ${esc(o.zip)} ${esc(o.city)}` : ''}</p>
       </div>
-      <div class="card__footer"><span>${esc(o.cat)}</span><span>${Number(o.area || 0).toLocaleString('de-CH')} m² <span class="muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span></span></div></div></a>`;
+      <div class="card__footer"><span>${esc(o.cat)}</span><span>${m2(o.area)} <span class="muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span></span></div></div></a>`;
   }
   const galleryHTML = (slice) => `<div class="pf-gallery">${slice.map(pfCard).join('')}</div>`;
   // Compact table: Typ as an icon (no label/emoji), Ort merged with Land, GF/GSF unit — fits without a horizontal scrollbar.
@@ -181,7 +172,7 @@ export default async function render(ctx) {
     { key: 'name', label: 'Bezeichnung', render: (o) => `<a href="#/app/portfolio?id=${encodeURIComponent(o.id)}">${esc(o.name)}</a><br><span class="small muted">${esc(o.id)}</span>` },
     { key: 'ort', label: 'Ort', render: (o) => `${esc(o.city)}<br><span class="small muted">${esc(landName(o.land))}</span>` },
     { key: 'cat', label: 'Kategorie', render: (o) => esc(o.cat) },
-    { key: 'area', label: 'Fläche', align: 'right', render: (o) => `${Number(o.area || 0).toLocaleString('de-CH')} m²<br><span class="small muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span>` },
+    { key: 'area', label: 'Fläche', align: 'right', render: (o) => `${m2(o.area)}<br><span class="small muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span>` },
     { key: 'status', label: 'Status', render: (o) => statusBadge(C, ref, o.status) },
   ], rows: slice });
   // Wettlauf-Schutz: initEstateMap lädt MapLibre erst vom CDN. Ohne Marke
@@ -259,12 +250,20 @@ export default async function render(ctx) {
   // --- chrome (once) ----------------------------------------------------------
   const statuses = [...new Set(objects.map((o) => o.status))].filter(Boolean);
   const owns = [...new Set(objects.map((o) => o.ownership))].filter(Boolean);
-  const fgroup = (key, label, opts) => `<fieldset class="filter-group"><legend class="filter-group__legend">${label}</legend>${opts.map((o) => `<label class="filter-check"><input type="checkbox" data-fdim="${key}" value="${esc(o.v)}"><span>${esc(o.l)}</span></label>`).join('')}</fieldset>`;
+  // C.filterGroup statt einer eigenen Fassung: der lokale Nachbau wertete
+  // `selected` nicht aus und vergab keine `id`. Folge war ein Panel, das seinem
+  // eigenen Zustand widersprach — `state.filters.kind` steht auf `['building']`,
+  // das Inventar öffnet also auf Gebäude gefiltert, die Checkbox «Gebäude»
+  // rendert aber ungehakt. Ohne `id` konnte `C.preserveFocus` zudem den Fokus
+  // nach dem Neuzeichnen nicht zurücksetzen.
+  const fgroup = (dim, legend, opts) => C.filterGroup({
+    dim, legend, options: opts, selected: state.filters[dim] || [],
+  });
 
   const filterPanel = `
-      ${fgroup('status', 'Status', statuses.map((s) => ({ v: s, l: s })))}
-      ${fgroup('ownership', 'Eigentumsverhältnis', owns.map((o) => ({ v: o, l: o })))}
-      ${fgroup('kind', 'Objekttyp', [{ v: 'building', l: 'Gebäude' }, { v: 'parcel', l: 'Grundstück' }])}
+      ${fgroup('status', 'Status', statuses.map((s) => ({ value: s, label: s })))}
+      ${fgroup('ownership', 'Eigentumsverhältnis', owns.map((o) => ({ value: o, label: o })))}
+      ${fgroup('kind', 'Objekttyp', [{ value: 'building', label: 'Gebäude' }, { value: 'parcel', label: 'Grundstück' }])}
       <div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm" id="pf-freset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>`;
 
   mount.innerHTML = `
@@ -412,15 +411,14 @@ function buildingDetail(ctx, b) {
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
     { id: 'flaechen', label: `Flächen (${areas.length})` },
-    { id: 'ausstattung', label: `Ausstattung (${assets.length})` },
+    // Plural, weil eine Zahl danebensteht — siehe js/apps/tenancies.js.
+    { id: 'ausstattung', label: `Ausstattungen (${assets.length})` },
     { id: 'vertraege', label: `Verträge (${contracts.length})` },
     { id: 'kosten', label: `Kosten (${costs.length})` },
     { id: 'dokumente', label: `Dokumente (${documents.length})` },
     { id: 'kontakte', label: `Kontakte (${contacts.length})` },
   ];
 
-  const fmtDate = (iso) => { if (!iso) return '—'; const d = new Date(iso); return isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString('de-CH'); };
-  const fmtMoney = (amount, currency) => `${currency || 'CHF'} ${Number(amount || 0).toLocaleString('de-CH')}`;
 
   function tabUebersicht() {
     return `
@@ -437,8 +435,8 @@ function buildingDetail(ctx, b) {
           b.renovationYear ? ` <span class="muted">· saniert ${C.escape(String(b.renovationYear))}</span>` : ''}</dd>
         ${b.architekt ? `<dt>Architektur</dt><dd>${C.escape(b.architekt)}</dd>` : ''}
         ${b.nutzer ? `<dt>Nutzer</dt><dd>${C.escape(b.nutzer)}</dd>` : ''}
-        <dt>Geschossfläche (GF)</dt><dd>${Number(b.gf || 0).toLocaleString('de-CH')} m²</dd>
-        <dt>Hauptnutzfläche (HNF)</dt><dd>${Number(b.hnf || 0).toLocaleString('de-CH')} m²</dd>
+        <dt>Geschossfläche (GF)</dt><dd>${m2(b.gf)}</dd>
+        <dt>Hauptnutzfläche (HNF)</dt><dd>${m2(b.hnf)}</dd>
         ${b.erhaltung ? `<dt>Erhaltungsstrategie</dt><dd>${C.escape(b.erhaltung)}</dd>` : ''}
         ${b.heritage || b.kgsKat ? `<dt>Baudenkmal</dt><dd>${b.kgsKat
           ? `Ja — KGS-Kategorie ${C.escape(b.kgsKat)}${b.kgsNr ? `, Nr. ${C.escape(String(b.kgsNr))}` : ''}`
@@ -471,10 +469,10 @@ function buildingDetail(ctx, b) {
         match: (r, v) => v.includes(String(r.standard)) }],
       columns: [
         { key: 'type', label: 'Bemessungsart', render: (a) => C.escape(a.type) },
-        { key: 'value', label: 'Wert', align: 'right', render: (a) => `${Number(a.value || 0).toLocaleString('de-CH')} <span class="muted">${C.escape(a.unit || '')}</span>` },
+        { key: 'value', label: 'Wert', align: 'right', render: (a) => `${num(a.value)} <span class="muted">${C.escape(a.unit || '')}</span>` },
         { key: 'accuracy', label: 'Genauigkeit', render: (a) => C.escape(a.accuracy || '—') },
         { key: 'standard', label: 'Standard', render: (a) => C.escape(a.standard || '—') },
-        { key: 'validFrom', label: 'Gültig ab', render: (a) => fmtDate(a.validFrom) },
+        { key: 'validFrom', label: 'Gültig ab', render: (a) => datum(a.validFrom) },
       ],
     },
     ausstattung: !assets.length ? null : {
@@ -509,8 +507,8 @@ function buildingDetail(ctx, b) {
       columns: [
         { key: 'type', label: 'Vertragsart', render: (c) => C.escape(c.type) },
         { key: 'contractPartner', label: 'Vertragspartner', render: (c) => C.escape(c.contractPartner || '—') },
-        { key: 'laufzeit', label: 'Laufzeit', render: (c) => `${fmtDate(c.validFrom)} – ${c.validUntil ? fmtDate(c.validUntil) : 'unbefristet'}` },
-        { key: 'amount', label: 'Betrag/Jahr', align: 'right', render: (c) => fmtMoney(c.amount, c.currency) },
+        { key: 'laufzeit', label: 'Laufzeit', render: (c) => `${datum(c.validFrom)} – ${c.validUntil ? datum(c.validUntil) : 'unbefristet'}` },
+        { key: 'amount', label: 'Betrag/Jahr', align: 'right', render: (c) => chf(c.amount, c.currency) },
         { key: 'status', label: 'Status', render: (c) => C.badge(c.status, CONTRACT_STATUS_VARIANT[c.status] || 'gray') },
       ],
     },
@@ -525,9 +523,9 @@ function buildingDetail(ctx, b) {
       columns: [
         { key: 'costGroup', label: 'Kostengruppe', render: (c) => C.escape(c.costGroup) },
         { key: 'costType', label: 'Kostenart', render: (c) => C.escape(c.costType) },
-        { key: 'amount', label: 'Betrag', align: 'right', render: (c) => fmtMoney(c.amount, c.currency) },
+        { key: 'amount', label: 'Betrag', align: 'right', render: (c) => chf(c.amount, c.currency) },
         { key: 'period', label: 'Periode', render: (c) => C.escape(c.period || '—') },
-        { key: 'referenceDate', label: 'Stichtag', render: (c) => fmtDate(c.referenceDate) },
+        { key: 'referenceDate', label: 'Stichtag', render: (c) => datum(c.referenceDate) },
       ],
       // Summe der GEFILTERTEN Menge, nicht der Gesamtmenge — sonst widerspricht
       // der Fuss der sichtbaren Auswahl.
@@ -537,7 +535,7 @@ function buildingDetail(ctx, b) {
         // «Total (4)» statt einer zweiten Zelle «4 Positionen · jährlich»: die
         // Anzahl gehört zur Beschriftung, und die Periode steht bereits in jeder
         // Zeile der Spalte «Periode».
-        return `<tr class="table__total"><th scope="row" class="text-left">Total (${filtered.length})</th><td></td><td class="text-right"><strong>${fmtMoney(sum, cur)}</strong></td><td colspan="2"></td></tr>`;
+        return `<tr class="table__total"><th scope="row" class="text-left">Total (${filtered.length})</th><td></td><td class="text-right"><strong>${chf(sum, cur)}</strong></td><td colspan="2"></td></tr>`;
       },
     },
     kontakte: !contacts.length ? null : {
@@ -574,7 +572,7 @@ function buildingDetail(ctx, b) {
         { key: 'title', label: 'Titel', render: (d) => `${C.icon('File', 'icon--base')} <strong>${C.escape(d.title)}</strong>` },
         { key: 'type', label: 'Typ', render: (d) => C.escape(d.type) },
         { key: 'format', label: 'Format', render: (d) => C.escape(d.format) },
-        { key: 'sizeKB', label: 'Grösse', align: 'right', render: (d) => C.escape(formatSize(d.sizeKB)) },
+        { key: 'sizeKB', label: 'Grösse', align: 'right', render: (d) => C.escape(dateiGroesse(d.sizeKB)) },
         { key: 'year', label: 'Jahr', align: 'right', render: (d) => C.escape(String(d.year)) },
         { key: 'classification', label: 'Klassifizierung', render: (d) => classBadge(C, ref, d.classification) },
         { key: 'url', label: 'Aktion', render: (d) => `<a class="btn btn--outline btn--sm" href="${C.escape(d.url || '#')}">${C.icon('Download', 'icon--base')}<span class="btn__text">Download</span></a>` },
@@ -628,7 +626,7 @@ function buildingDetail(ctx, b) {
       sub: `${b.street}, ${b.zip} ${b.city}`.trim() }], null, b.bbl_id, { focusPopup: false })
       .then((m) => { pfMap = m; }).catch(() => { /* Karte optional */ });
   } else if (bMapEl) {
-    bMapEl.innerHTML = `<div class="empty empty--unavailable" style="height:100%">
+    bMapEl.innerHTML = `<div class="empty empty--unavailable h-full">
       <span>Für dieses Objekt sind keine Koordinaten erfasst.</span></div>`;
   }
   window.scrollTo(0, 0);
@@ -653,7 +651,7 @@ function parcelDetail(ctx, p) {
 
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
-    { id: 'bodenbedeckung', label: `Bodenbedeckung (${covers.length})` },
+    { id: 'bodenbedeckung', label: `Bodenbedeckungen (${covers.length})` },
   ];
   function tabUebersicht() {
     return `<dl class="kv">
@@ -663,7 +661,7 @@ function parcelDetail(ctx, p) {
       <dt>EGRID</dt><dd>${C.escape(p.egrid || '—')}</dd>
       <dt>Gemeinde</dt><dd>${C.escape(p.gemeinde || p.city)}</dd>
       <dt>Land / Region</dt><dd>${C.escape([p.land, p.canton].filter(Boolean).join(' · '))}</dd>
-      <dt>Grundstücksfläche (GSF)</dt><dd>${Number(p.gsf || 0).toLocaleString('de-CH')} m²</dd>
+      <dt>Grundstücksfläche (GSF)</dt><dd>${m2(p.gsf)}</dd>
       <dt>Nutzungszone</dt><dd>${C.escape(p.zone || '—')}</dd>
       <dt>Eigentumsverhältnis</dt><dd>${C.escape(p.ownership)}</dd>
       <dt>Status</dt><dd>${statusBadge(C, ref, p.status)}</dd>
@@ -673,10 +671,10 @@ function parcelDetail(ctx, p) {
   function tabBoden() {
     if (!covers.length) return C.empty('Keine Bodenbedeckungsdaten (amtliche Vermessung) erfasst.');
     const total = covers.reduce((s, c) => s + (Number(c.area) || 0), 0);
-    return `<p class="lead" style="margin-top:0">Bedeckte Fläche total: <strong>${total.toLocaleString('de-CH')} m²</strong> <span class="small muted">(${covers.length} Bedeckungen)</span></p>
+    return `<p class="lead mt-0">Bedeckte Fläche total: <strong>${m2(total)}</strong> <span class="small muted">(${covers.length} Bedeckungen)</span></p>
       ${C.table({ zebra: true, caption: 'Bodenbedeckung (amtliche Vermessung)', columns: [
         { key: 'type', label: 'Bodenbedeckungsart', render: (c) => C.escape(c.type) },
-        { key: 'area', label: 'Fläche', render: (c) => `${Number(c.area || 0).toLocaleString('de-CH')} m²` },
+        { key: 'area', label: 'Fläche', render: (c) => `${m2(c.area)}` },
         { key: 'status', label: 'AV-Status', render: (c) => C.escape(c.status || '—') },
         { key: 'egrid', label: 'EGRID', render: (c) => `<span class="small">${C.escape(c.egrid || '—')}</span>` },
       ], rows: covers.slice().sort((a, c) => (c.area || 0) - (a.area || 0)) })}`;
@@ -699,7 +697,7 @@ function parcelDetail(ctx, p) {
   // Foto, die Karte ist der räumliche «Hero». Fehler brechen die Seite nicht ab.
   const mapEl = mount.querySelector('#pf-parcel-map');
   if (mapEl) {
-    const feats = covers.filter((c) => c.geom).map((c) => ({ type: 'Feature', geometry: c.geom, properties: { label: c.type, sub: `${Number(c.area || 0).toLocaleString('de-CH')} m²`, id: p.bbl_id } }));
+    const feats = covers.filter((c) => c.geom).map((c) => ({ type: 'Feature', geometry: c.geom, properties: { label: c.type, sub: `${m2(c.area)}`, id: p.bbl_id } }));
     if (p.geom) feats.push({ type: 'Feature', geometry: p.geom, properties: { label: p.name, sub: 'Parzelle', id: p.bbl_id } });
     initEstateMap(mapEl, [], { type: 'FeatureCollection', features: feats }, p.bbl_id, { focusPopup: false }).then((m) => { pfMap = m; }).catch(() => { /* Karte optional */ });
   }
@@ -718,7 +716,6 @@ const BUILDING_STATUS_VARIANT = { Aktiv: 'success', Abgang: 'warning', 'Löschve
 const CONTRACT_STATUS_VARIANT = { Aktiv: 'success', Ausgelaufen: 'gray', 'Gekündigt': 'warning' };
 function statusBadge(C, ref, statusId) { const m = (ref.buildingStatuses || []).find((s) => s.id === statusId); return C.badge(m ? m.label : statusId, BUILDING_STATUS_VARIANT[statusId] || 'gray'); }
 function classBadge(C, ref, clsId) { const m = (ref.classificationTiers || []).find((t) => t.id === clsId); return C.badge(m ? m.label : clsId, m ? m.variant : 'gray'); }
-function formatSize(kb) { if (kb == null) return ''; return kb >= 1024 ? (kb / 1024).toFixed(1).replace('.', ',') + ' MB' : kb + ' KB'; }
 
 // ---------------------------------------------------------------------------
 // Bildergalerie-Modal (Lightbox) — geöffnet über das Hero-Bild im Gebäudedetail.

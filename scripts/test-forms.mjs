@@ -68,7 +68,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
 const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid === 'true' && f.badge === true;
 
 (async () => {
-  const cdp = await launch({ port: 9336 });
+  const cdp = await launch();
   try {
     // log in once (persists across tabs via localStorage)
     let p = await openPage(cdp, `${APP_BASE}/app/workspace`);

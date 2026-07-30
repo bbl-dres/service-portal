@@ -82,7 +82,7 @@ export default async function render(ctx) {
       <h2>${C.icon('ShoppingCart', 'icon--base')} Verkaufslebenszyklus</h2>
       <p class="muted">Sieben Phasen vom Veräusserungsauftrag bis zum vollzogenen Verkauf. Hervorgehoben ist der aktuelle Demo-Stand.</p>
       ${stepsBar}
-      <div class="box mt-4" style="max-width:42rem">
+      <div class="box measure mt-4">
         <h3>Phasen im Detail</h3>
         ${timeline}
       </div>
@@ -95,7 +95,7 @@ export default async function render(ctx) {
     </section>
 
     <section class="mt-8">
-      <div class="box" style="max-width:42rem">
+      <div class="box measure">
         <h3>Beteiligte</h3>
         <ul style="padding-left:1.1rem" class="small">
           <li><strong>Portfoliomanagement BBL</strong> — Priorisierung und Verkaufsfreigabe</li>

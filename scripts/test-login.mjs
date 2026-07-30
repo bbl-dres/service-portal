@@ -41,7 +41,7 @@ let failures = 0;
 const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label}`); if (!cond) failures++; };
 
 (async () => {
-  const cdp = await launch({ port: 9334 });
+  const cdp = await launch();
   try {
     console.log('■ workspace Buchung [logged in]');
     const page = await openPage(cdp, `${APP_BASE}/app/workspace`);

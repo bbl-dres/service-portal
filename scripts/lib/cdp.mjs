@@ -22,14 +22,44 @@ export const EDGE = process.env.EDGE_PATH
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Ist auf diesem Port schon ein Debug-Endpunkt erreichbar?
+async function portBelegt(port) {
+  try {
+    const r = await fetch(`http://localhost:${port}/json/version`, { signal: AbortSignal.timeout(400) });
+    return r.ok;
+  } catch { return false; }
+}
+
 // Launch headless Edge with a throwaway profile and connect to its CDP endpoint.
 // `webgl: true` enables SwiftShader so MapLibre/WebGL renders (never --disable-gpu,
 // which blanks WebGL). Returns { send, on, close }.
-export async function launch({ port = 9333, webgl = false } = {}) {
+//
+// PORTWAHL: ohne `port` sucht `launch()` selbst einen freien. Vorher stand hier
+// die feste Vorgabe 9333 — drei Suiten teilten sie sich, und weil die Schleife
+// unten sich mit dem verbindet, was auf dem Port ANTWORTET, übernahm ein Lauf
+// den Browser eines anderen Laufs mitsamt dessen warmem HTTP-Cache. Ergebnis
+// waren Phantomfehler: geänderte Dateien kamen im Test nie an. Zweimal
+// aufgetreten (29./30. Juli), zweimal als vermeintlicher Code-Fehler gejagt.
+//
+// Wird ein Port ausdrücklich genannt und ist er belegt, bricht `launch()` ab,
+// statt sich anzuhängen — lieber ein lauter Fehler als ein stiller Fremdbrowser.
+export async function launch({ port, webgl = false } = {}) {
+  if (port == null) {
+    for (let p = 9400 + Math.floor(Math.random() * 400); ; p++) {
+      if (!(await portBelegt(p))) { port = p; break; }
+    }
+  } else if (await portBelegt(port)) {
+    throw new Error(`Auf Port ${port} antwortet bereits ein Browser. `
+      + 'Verwaiste msedge-Prozesse beenden oder launch() ohne Port aufrufen.');
+  }
+
   const userDir = mkdtempSync(join(tmpdir(), 'edge-cdp-'));
   const flags = [
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${userDir}`,
     '--no-first-run', '--no-default-browser-check',
+    // Kein HTTP-Cache: der Testlauf soll die Dateien auf der Platte prüfen,
+    // nicht eine ältere Fassung aus dem Profil.
+    '--disable-http-cache',
   ];
   if (webgl) flags.push('--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist');
   const edge = spawn(EDGE, [...flags, 'about:blank'], { stdio: 'ignore' });

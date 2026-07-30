@@ -97,6 +97,24 @@
      (app.css:781-782). Die Stufen stehen unten bei den Typo-Rampen. */
   --control-h: 2.75rem;
 
+  /* Feste Mindest-Tippfläche (WCAG 2.5.8 «Target Size», 44px). BEWUSST getrennt
+     von --control-h: die Bedienhöhe skaliert mit dem Viewport, ein Tippziel muss
+     das nicht — Icon-Knöpfe ohne Beschriftung sollen bei 1544px nicht auf 48px
+     aufgehen. Vorher trugen beide Absichten dasselbe Literal 2.75rem, was die
+     Rampe unbemerkt mitgerissen hätte. */
+  --target-min: 2.75rem;
+
+  /* Negativ-Ebene — helle Bedienelemente auf dunkler Chrome (Lightbox,
+     Dokumentbetrachter). Das CD führt dafür `btn--*-negative`, `link--negative`
+     und --color-focus-ring-negative; hier die fehlenden Flächen- und Textwerte,
+     damit nicht jede Regel ihre eigene Weiss-Deckkraft erfindet. */
+  --color-text-negative:     #ffffff;
+  --text-negative-muted:     rgba(255,255,255,.65);
+  --surface-negative:        rgba(255,255,255,.06);  /* ruhende Fläche: Panel, Leiste */
+  --surface-negative-hover:  rgba(255,255,255,.14);
+  --surface-negative-active: rgba(255,255,255,.22);
+  --border-negative:         rgba(255,255,255,.16);
+
   /* --- Kategoriale Chart-Palette — CD-Hue-Stufen, alle ≥4.5:1 auf Weiss, keine
      kollidiert mit --color-primary-600 (rot #d8232a / intranet-blau #2563eb).
      Bewusst NIE in einem Skin-Block überschrieben (gleiches Vorgehen wie
@@ -117,6 +135,8 @@
 
   /* --- Typography --- */
   --font-sans: 'Noto Sans', 'Hind', 'Fallback-font', sans-serif;
+  /* Identifikatoren, Pfade, Code — stand 9× wörtlich im Blatt */
+  --font-mono: Consolas, Menlo, monospace;
 
   /* Immutable scale steps (tailwind.config.js fontSize) */
   --fs-xs:  0.75rem;  --fs-sm:  0.875rem; --fs-base: 1rem;    --fs-lg:  1.125rem;
@@ -160,16 +180,53 @@
   --ease-out: cubic-bezier(0,0,.2,1); --ease-in-out: cubic-bezier(.4,0,.2,1);
   --scale-hover: 1.02;    /* CD scale-102 Hover-Lift */
 
-  /* Scrim für Text/Chips über Bildern (Mediathek-Kacheln) */
-  --overlay-scrim: rgba(0,0,0,.45);
+  /* --- Scrims: Abdunkelung, damit Text/Chips über Bildern lesbar bleiben ---
+     Vorher standen fünf Rezepte für dieselbe Aufgabe im Blatt (reines Schwarz,
+     text-800, und ein #0d1b2a, das in keiner Rampe vorkommt). Alle drei folgen
+     jetzt der Sekundärrampe; die Deckkraft trägt die Bedeutung, nicht der Ton. */
+  --overlay-scrim: rgba(0,0,0,.45);              /* ganzflächig, Mediathek-Kacheln */
+  --scrim-chip:       rgba(19,27,34,.72);        /* secondary-900, Chips auf Bildern */
+  --scrim-chip-hover: rgba(19,27,34,.9);
+  --scrim-gradient: linear-gradient(180deg, rgba(19,27,34,.15) 0%, rgba(19,27,34,.72) 100%);
+
+  /* --- Responsive Abstandsrampen ---------------------------------------------
+     CD grids.postcss:25-56 und container.postcss:29-49. Beide Rampen standen
+     vorher vollständig ausgeschrieben im Blatt — die Spalten-Rampe zweimal
+     (Utilities und `.grid`), die Abschnitts-Rampe fünfmal. Die Stufen leben
+     jetzt hier, genau wie --control-h es vormacht; die Konsumenten in app.css
+     sind wieder einzeilig und können nicht mehr auseinanderlaufen. */
+  --gap-responsive:  1.25rem;   /* 480 → 1.75 · 640 → 2.25 · 1024 → 2.5 · 1280 → 3 · 1920 → 4 */
+  --section-py:      3.5rem;    /* 1024 → 5 · 1920 → 8 */
+  --section-py-half: 1.75rem;   /* 1024 → 2.5 · 1920 → 4 */
+  --section-pt:      3rem;      /* 1024 → 3.5 · 1920 → 5 — oben schmaler als unten, wie im CD */
 
   /* --- Layout --- */
   --container-max-2xl: 1544px;
   --container-max-3xl: 1676px;
   --container-max: var(--container-max-2xl);
-  /* Z-Index-Skala (statt verstreuter Magic Numbers) — governt Stapelordnung. */
-  --z-dropdown: 10; --z-breadcrumb: 20; --z-header: 30; --z-overlay: 90;
-  --z-modal: 100; --z-toast: 110; --z-sticky: 1000;
+  /* Z-Index-Skala (statt verstreuter Magic Numbers) — governt Stapelordnung.
+     Von unten nach oben gelesen ist das die vollständige Ordnung der Seite; die
+     Lücken zwischen Nav (40-50) und Overlay (90) sind Reserve, keine Zufälle. */
+  --z-content: 10;        /* #main-content, .mobile-menu — der Fluss selbst */
+  --z-dropdown: 10;
+  --z-breadcrumb: 20;
+  --z-header: 30;         /* .search--main, .suggest */
+  --z-nav: 40;            /* .desktop-menu, .action-menu__popup */
+  --z-drawer: 45;         /* .desktop-menu__drawer — über seiner Leiste */
+  --z-nav-active: 50;     /* die geöffnete Nav-Schaltfläche über dem Drawer-Rand */
+  --z-footer: 60;         /* Bezugsrahmen für «nach oben» */
+  --z-overlay: 90;
+  --z-modal: 100;
+  --z-toast: 110;
+  --z-viewer: 200;        /* .docviewer — bewusst ÜBER dem Toast: der Betrachter
+                             ist Vollbild, ein Toast darunter wäre unerreichbar */
+  --z-sticky: 1000;
+  --z-skiplink: 2000;     /* muss alles überlagern, sonst ist er wertlos */
+  /* KONVENTION: diese Skala gilt für Chrome auf Seitenebene. Kleine Ganzzahlen
+     (0-7) INNERHALB des eigenen Stacking-Context einer Komponente — etwa
+     .pf-lightbox__bar über .pf-lightbox__stage — bleiben roh; sie sagen «über
+     meinem Geschwister», nicht «über der Seite», und ein Token verspräche dort
+     eine Ordnung, die gar nicht global gilt. */
   /* Rückwärtskompatible Aliase */
   --header-z: var(--z-header); --breadcrumb-z: var(--z-breadcrumb); --modal-z: var(--z-modal); --sticky-z: var(--z-sticky);
 
@@ -224,10 +281,15 @@
   --color-secondary-600: #5f755f; --color-secondary-700: #546c55; --color-secondary-800: #49634b; --color-secondary-900: #3e5a41;
 }
 
-/* Responsive type ramps — CD steps at lg 1024 / xl 1280 / 3xl 1920
-   (css/foundations/typography.postcss:18-57, verified against the compiled bundle) */
+/* Responsive ramps — CD steps at xs 480 / sm 640 / lg 1024 / xl 1280 / 3xl 1920
+   (css/foundations/typography.postcss:18-57 und grids.postcss:25-56,
+   gegen das kompilierte Bundle geprüft) */
+@media (min-width:480px)  { :root { --gap-responsive: 1.75rem; } }   /* xs */
+@media (min-width:640px)  { :root { --gap-responsive: 2.25rem; } }   /* sm */
 @media (min-width:1024px) {          /* lg */
   :root {
+    --gap-responsive: 2.5rem;
+    --section-py: 5rem; --section-py-half: 2.5rem; --section-pt: 3.5rem;
     --text-xl:  var(--fs-2xl); --text-2xl: var(--fs-3xl); --text-3xl: var(--fs-4xl);
     --text-4xl: var(--fs-5xl); --text-5xl: var(--fs-6xl);
   }
@@ -235,6 +297,7 @@
 @media (min-width:1280px) {          /* xl */
   :root {
     --control-h: 3rem;               /* CD btn.postcss:112-127 xl:min-h-[48px] */
+    --gap-responsive: 3rem;
     --text-xs:  var(--fs-sm);  --text-sm:  var(--fs-base); --text-base: var(--fs-lg);
     --text-lg:  var(--fs-xl);  --text-xl:  var(--fs-3xl);  --text-2xl:  var(--fs-4xl);
     --text-3xl: var(--fs-5xl); --text-4xl: var(--fs-6xl);  --text-5xl:  var(--fs-7xl);
@@ -243,9 +306,24 @@
 @media (min-width:1920px) {          /* 3xl */
   :root {
     --control-h: 3.25rem;            /* CD btn.postcss:112-127 3xl:min-h-[52px] */
+    --gap-responsive: 4rem;
+    --section-py: 8rem; --section-py-half: 4rem; --section-pt: 5rem;
     --text-xs:  var(--fs-base); --text-sm:  var(--fs-lg);  --text-base: var(--fs-xl);
     --text-lg:  var(--fs-2xl);  --text-xl:  var(--fs-4xl); --text-2xl:  var(--fs-5xl);
     --text-3xl: var(--fs-6xl);  --text-4xl: var(--fs-7xl); --text-5xl:  var(--fs-8xl);
     --container-max: var(--container-max-3xl);
+  }
+}
+
+/* Der versprochene Nutzen der Motion-Tokens: seit alle Übergänge in app.css
+   --duration-* konsumieren (§3.2 der Review), schaltet EINE Regel die Bewegung
+   für `prefers-reduced-motion` ab — vorher hätte man 64 Zeitliterale einzeln
+   nachziehen müssen und hatte entsprechend nur zwei davon abgedeckt.
+   Nicht 0s: eine messbar kurze Dauer feuert `transitionend` weiterhin, worauf
+   Verdrahtungen sich verlassen dürfen. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: .01ms; --duration: .01ms;
+    --duration-slow: .01ms; --duration-slowest: .01ms;
   }
 }

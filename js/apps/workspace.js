@@ -74,7 +74,7 @@ export default async function render(ctx) {
           </div>
           <div class="box">
             <h3>Gut zu wissen</h3>
-            <p class="small muted" style="margin:0">Bestellungen lösen einen Vorgang vom Typ
+            <p class="small muted m-0">Bestellungen lösen einen Vorgang vom Typ
               «Bestellung» aus und sind unter <a href="#/my-cases">Meine Vorgänge</a> nachverfolgbar.</p>
           </div>
         </aside>
@@ -102,7 +102,7 @@ export default async function render(ctx) {
           </div>
           <div class="box">
             <h3>Belegung planen</h3>
-            <p class="small muted" style="margin:0">Belegungspläne, Desk-Sharing-Quoten und
+            <p class="small muted m-0">Belegungspläne, Desk-Sharing-Quoten und
               Flächenauslastung werden zentral in GIS/FLM geführt.</p>
           </div>
         </aside>
@@ -137,7 +137,7 @@ export default async function render(ctx) {
               options: ZEITEN.map(z => ({ value: z, label: z })) })}
             ${C.field({ id: 'bemerkung', label: 'Bemerkung',
               control: (cls, attrs) => `<textarea id="bemerkung" placeholder="z. B. benötigte Ausstattung, Personenzahl, besondere Wünsche" class="${cls}"${attrs}>${C.escape(state.bemerkung)}</textarea>` })}
-            <div class="row" style="justify-content:flex-end">
+            <div class="row row--end">
               <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Buchung anfragen</button>
             </div>
           </form>
@@ -154,7 +154,7 @@ export default async function render(ctx) {
           </div>
           <div class="box">
             <h3>Hinweis</h3>
-            <p class="small muted" style="margin:0">Arbeitsplätze werden im Desk-Sharing-Modell vergeben.
+            <p class="small muted m-0">Arbeitsplätze werden im Desk-Sharing-Modell vergeben.
               Buchungen sind unter <a href="#/my-cases">Meine Vorgänge</a> einsehbar.</p>
           </div>
         </aside>
@@ -164,7 +164,7 @@ export default async function render(ctx) {
   function doneBuchung() {
     const i = state.created;
     return `
-      <div class="stack-lg" style="max-width:50rem">
+      <div class="stack-lg measure-lg">
         ${C.notification(`<strong>Buchung angefragt.</strong> Ihre Referenz: <strong>${C.escape(i.reference)}</strong>`, 'success', 'CheckmarkCircle')}
         <div>
           <h2>Vielen Dank</h2>

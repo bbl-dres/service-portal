@@ -51,7 +51,7 @@ const REDIRECTS = [
 
 const fails = [];
 
-const cdp = await launch({ port: 9347 });
+const cdp = await launch();
 try {
   const page = await openPage(cdp, `${APP_BASE}/`);
   await sleep(1200);

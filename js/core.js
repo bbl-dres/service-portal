@@ -103,7 +103,7 @@ function normalizeBuilding(f) {
     // Portfolio-Bilder kommen aus der kuratierten Auswahl `bilder` DIREKT am Objekt
     // (geojson); erstes Bild = Hauptbild, aufgelöst in linkMedia() unten.
     bilder: Array.isArray(p.bilder) ? p.bilder : [],
-    photoSrc: '', photo: '', bildCredit: '', bildQuelle: '', color: '#2f4356',
+    photoSrc: '', photo: '', bildCredit: '', bildQuelle: '', color: 'var(--color-secondary-600)',
   };
 }
 

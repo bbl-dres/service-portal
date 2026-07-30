@@ -34,7 +34,7 @@ export function photo(o = {}) {
   const img = src
     ? `<img src="${src}" alt="${escape(o.alt || '')}" loading="lazy" decoding="async" onerror="this.remove()">`
     : '';
-  return `<div class="photo${o.cls ? ' ' + o.cls : ''}" style="background-color:${escape(o.color || '#2f4356')}${o.style ? ';' + o.style : ''}">${img}${o.overlay || ''}</div>`;
+  return `<div class="photo${o.cls ? ' ' + o.cls : ''}" style="background-color:${escape(o.color || 'var(--color-secondary-600)')}${o.style ? ';' + o.style : ''}">${img}${o.overlay || ''}</div>`;
 }
 
 export function icon(name, cls = 'icon--base') {
@@ -52,7 +52,7 @@ export function escape(s) {
 // vorfall» als ein unteilbares Wort galt und mitten im Wort abriss (sichtbar bei
 // 1440 UND 320). <wbr> gibt die Stelle frei, ohne ein Zeichen hinzuzufügen —
 // `textContent` bleibt identisch, die Tests bleiben also unberührt (Item 5.8).
-export function breakable(s) {
+function breakable(s) {
   return escape(s).replace(/([/–—-])(?=\S)/g, '$1<wbr>');
 }
 
@@ -102,13 +102,6 @@ export function statusBadge(status, label) {
   return badge(label || status, STATUS_VARIANT[status] || 'gray');
 }
 
-// --- Tag items — CD's filter control (tag-item.postcss) ----------------------
-export function tagItem({ label, active = false, size = '', iconName = '', attrs = '' }) {
-  const cls = ['tag-item', active ? 'tag-item--active' : '', size ? 'tag-item--' + size : ''].filter(Boolean).join(' ');
-  return `<button type="button" class="${cls}" aria-pressed="${active}"${attrs ? ' ' + attrs : ''}>`
-    + `<span class="tag-item__inner">${iconName ? icon(iconName, 'icon--sm') : ''}`
-    + `<span class="tag-item__text">${escape(label)}</span></span></button>`;
-}
 
 // Seitenabschnitt in CDs Anatomie (section.postcss): das <section> ist das
 // ÄUSSERE Element, der .container liegt darin. Nur so kann ein Hintergrund von
@@ -145,7 +138,7 @@ export function pageSection({ title = '', body = '', more = null, alt = false, t
 // (notification-banner.postcss + NotificationBanner.vue). Anatomie wie dort:
 // `.notification-banner` (+ `--fixed`) trägt zusätzlich die `.notification`-
 // Klassen, darin ein `__wrapper` mit `__infos` und der Aktion.
-export function notificationBanner({ id, html, actionLabel = 'Verstanden', variant = 'info', label = 'Hinweis' }) {
+function notificationBanner({ id, html, actionLabel = 'Verstanden', variant = 'info', label = 'Hinweis' }) {
   return `<div class="notification-banner notification-banner--fixed notification notification--${escape(variant)}"
       role="region" aria-label="${escape(label)}" data-banner="${escape(id)}">
     <div class="notification-banner__wrapper">
@@ -179,14 +172,6 @@ export function pageHeader({ title, lead, leadHtml }) {
   return `<div class="page-header"><h1 tabindex="-1">${escape(title)}</h1>${body ? `<p class="lead">${body}</p>` : ''}</div>`;
 }
 
-// Flat CD card (card--flat) — used for compact text-led teasers.
-export function tile({ title, desc, href, extra = '', titleTag = 'h3' }) {
-  return `<a class="card card--flat card--clickable" href="${escape(href)}">
-    <div class="card__content"><div class="card__body">
-      <${titleTag} class="card__title">${escape(title)}</${titleTag}>
-      ${desc ? `<span class="card__description">${escape(desc)}</span>` : ''}${extra}
-    </div></div></a>`;
-}
 
 // --- Cards (card.postcss) ----------------------------------------------------
 export function card(o) {
@@ -303,7 +288,13 @@ export function table({ columns, rows, zebra, caption, showCaption, foot, rowsCl
 // (Ladefehler) statt «keine Einträge» — mit Warnsymbol und error-Tönung.
 // `hint` ergänzt einen zweiten, helfenden Satz (z. B. «Suche/Filter anpassen»).
 export function empty(msg, opts = {}) {
-  if (opts.unavailable) {
+  // EIN Name für diesen Zustand: `available: false`. Vorher hiess er hier
+  // `unavailable: true` und im Zwillingsbauteil `catalogueResults` `available` —
+  // gegenläufig benannt und gegenläufig gepolt. `news.js` übergab `available`
+  // und erreichte den Ausfallpfad damit nie: fiel `news.json` aus, behauptete
+  // die Seite, es gebe keine Meldungen. `unavailable` bleibt als Altname
+  // gelesen, damit kein Aufrufer stillschweigend umkippt.
+  if (opts.available === false || opts.unavailable) {
     return `<div class="empty empty--unavailable">${icon('WarningCircle', 'icon--base')}<span>${escape(msg)}</span></div>`;
   }
   // Angereicherter Leerzustand nur mit Hinweis; ohne bleibt es die schlichte Variante.
@@ -389,12 +380,6 @@ export function preserveFocus(mount) {
   };
 }
 
-// Bequemlichkeitsform für einzeilige Fälle.
-export function rerender(mount, html) {
-  const restore = preserveFocus(mount);
-  mount.innerHTML = html;
-  return restore();
-}
 
 // Macht `tabindex` an Scrollbereichen davon abhängig, dass wirklich etwas
 // überläuft — ein unbedingtes tabindex="0" erzeugt auf breiten Viewports einen
@@ -459,7 +444,7 @@ export function trapFocus(container) {
 // hängt es an document.body, fängt den Fokus, schliesst bei Escape / Backdrop-Klick /
 // [data-modal-close] und gibt den Fokus zurück. Primitive für neue Dialoge; `body`/
 // `footer` sind RAW-HTML (Aufrufer escaped). `size` = sm|md|lg|xl.
-export function modal({ title = '', body = '', footer = '', size = 'md', id = 'modal' } = {}) {
+function modal({ title = '', body = '', footer = '', size = 'md', id = 'modal' } = {}) {
   const titleId = `${id}-title`;
   const closeBtn = `<button type="button" class="modal__close" data-modal-close aria-label="Schliessen">${icon('Cancel', 'icon--md')}</button>`;
   return `<div class="modal modal--${size}" role="dialog" aria-modal="true"${title ? ` aria-labelledby="${escape(titleId)}"` : ''}>
@@ -471,7 +456,7 @@ export function modal({ title = '', body = '', footer = '', size = 'md', id = 'm
     </div>
   </div>`;
 }
-export function openModal(opts = {}) {
+function openModal(opts = {}) {
   const trigger = document.activeElement;
   const host = document.createElement('div');
   host.innerHTML = modal(opts);
@@ -515,7 +500,7 @@ export function cardAction({ external = false } = {}) {
   return `<span class="btn btn--outline btn--icon-only" aria-hidden="true">${icon(external ? 'External' : 'ArrowRight', 'btn__icon icon--base')}</span>`;
 }
 
-export function cardFooter(meta = '', opts = {}) {
+function cardFooter(meta = '', opts = {}) {
   return `<div class="card__footer${meta ? '' : ' card__footer--icon-only'}">
     ${meta ? `<div class="card__footer__info">${meta}</div>` : ''}
     <div class="card__footer__action">${cardAction(opts)}</div>
@@ -543,7 +528,7 @@ export function domainTile({ icon: ic, title, desc, meta = '', href, external = 
 
 // Share-Bar (share-bar.postcss) — nach der Brotkrume auf Detailseiten: Drucken
 // und Link kopieren. Rechtsbündig (flex-row-reverse) wie im CD.
-export function shareBar() {
+function shareBar() {
   // CD: nur Icons (aria-label), keine sichtbaren Beschriftungen, grosse Icons (ShareBar.vue, SvgIcon size="xl").
   // Der Teilen-Knopf öffnet den CD-Dialog (openShareModal) — vorher kopierte er
   // still in die Zwischenablage: ohne Rückmeldung, ohne sichtbare URL und ohne
@@ -567,7 +552,7 @@ export function shareBar() {
 // Warum ein sichtbares Feld statt nur «kopiert»: die Clipboard-API braucht einen
 // sicheren Kontext und kann blockiert sein. Steht die URL im Feld, lässt sie sich
 // immer noch von Hand markieren — die Funktion fällt also nie ganz aus.
-export function shareUrlBlock(url, { id = 'share-url-input' } = {}) {
+function shareUrlBlock(url, { id = 'share-url-input' } = {}) {
   return `<div class="pt-3">
     <label class="sr-only" for="${escape(id)}">Link zu diesem Inhalt</label>
     <input id="${escape(id)}" class="input--outline input--base" type="text" readonly
@@ -631,7 +616,7 @@ export function detailBar({ backHref, backLabel } = {}) {
 // Rasterspalte nicht und stand links wie rechts 40px eingerückt. Die figcaption
 // trug ausserdem `class="small muted"`, obwohl `figcaption` seit Item 1.6 global
 // von `.legend` erbt — die Klassen setzten also einen fünften Legendenstil.
-export function heroFigure({ id, color = '#2f4356', alt = '', w = 800,
+export function heroFigure({ id, color = 'var(--color-secondary-600)', alt = '', w = 800,
   credit = 'Symbolbild — © Unsplash' } = {}) {
   if (!id) return '';
   return `<figure class="hero__figure">${photo({ id, color, alt, w })}${
@@ -671,13 +656,6 @@ export function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = 
     + `<ol class="pipeline">${steps.map(seg).join('')}</ol></div>`;
 }
 
-// Der Stepper scrollte früher zum aktiven Segment, weil er waagrecht überlief
-// und bei scrollLeft:0 startete. Seit die Segmente umbrechen, ist immer der
-// ganze Ablauf sichtbar — es bleibt nichts zu tun. Die Funktion bleibt als
-// no-op erhalten, damit bestehende Aufrufe nicht brechen.
-export function wirePipeline(root) {
-  return root;
-}
 
 // Ein Detailseiten-Abschnitt: H2-Titel + Inhalt. `body` ist fertiges HTML.
 export function detailSection({ title, body = '' }) {
@@ -716,9 +694,7 @@ export function wireAccordion(root) {
     btn.addEventListener('click', () => {
       const open = btn.getAttribute('aria-expanded') === 'true';
       btn.setAttribute('aria-expanded', String(!open));
-      const drawer = root.getElementById
-        ? root.getElementById(btn.getAttribute('aria-controls'))
-        : root.querySelector('#' + CSS.escape(btn.getAttribute('aria-controls')));
+      const drawer = root.querySelector('#' + CSS.escape(btn.getAttribute('aria-controls')));
       if (drawer) drawer.hidden = open;
     });
   });
@@ -906,13 +882,6 @@ export function select(o = {}) {
 </div>`;
 }
 
-// Bare CD select chrome: the `.select` positioning box plus the chevron in its
-// `.select__icon` divider. Use when the label/message layer is supplied elsewhere.
-export const chevron = CHEVRON_SVG;
-
-export function selectBox(inner, extraCls = '', style = '') {
-  return `<div class="select${extraCls ? ' ' + extraCls : ''}"${style ? ` style="${style}"` : ''}>${inner}<div class="select__icon">${CHEVRON_SVG}</div></div>`;
-}
 
 // Fehlerübersicht am Formularkopf (WCAG 3.3.1/3.3.3). Bisher gab es nur
 // Feldmeldungen: bei einem mehrseitigen Behördenformular muss der Nutzer nach
@@ -932,6 +901,13 @@ export function errorSummary({ errors = {}, labels = {}, id = 'err-summary' } = 
         : `${ids.length} Felder müssen noch korrigiert werden`}</h2>
       <ul class="error-summary__list">${items}</ul>
     </div></div>`;
+}
+
+// Die CD-Auswahlhülle: `<select>` plus das Chevron als Overlay. `CHEVRON_SVG`
+// steht als Modulkonstante oben — der frühere Export `chevron` war nur ein
+// Alias darauf und hatte keinen einzigen Aufrufer.
+export function selectBox(inner, extraCls = '', style = '') {
+  return `<div class="select${extraCls ? ' ' + extraCls : ''}"${style ? ` style="${style}"` : ''}>${inner}<div class="select__icon">${CHEVRON_SVG}</div></div>`;
 }
 
 // Verdrahtet die Sprungmarken der Fehlerübersicht und setzt den Fokus auf ihre
@@ -1036,7 +1012,7 @@ export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) 
     contact.phone ? escape(contact.phone) : '',
   ].filter(Boolean);
   return `<div class="box"><${heading}>${escape(title)}</${heading}>
-    <p class="small" style="margin:0">${lines.join('<br>')}</p></div>`;
+    <p class="small m-0">${lines.join('<br>')}</p></div>`;
 }
 
 // Link for a demo download that has no real target yet.
@@ -1096,7 +1072,7 @@ export function wirePagination(mount, inputId, page, totalPages, go) {
 // --- Ergebniskopf (search.postcss:208-234) ----------------------------------
 // Die Leiste über der Trefferliste: Anzahl links, Steuerung rechts. Der
 // Ansichtswechsel steht als Icon-Gruppe rechts, abgetrennt durch einen Strich.
-export function resultsHeader({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
+function resultsHeader({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   return `
     <div class="search-results__header">
@@ -1141,7 +1117,7 @@ export function catalogueResults({
           hint: 'Passen Sie Ihre Suche oder die Filter an.',
           action: resetHref ? { label: 'Suche und Filter zurücksetzen', href: resetHref } : null,
         })
-      : empty(unavailableMsg || `${unit} konnten nicht geladen werden (Ladefehler).`, { unavailable: true });
+      : empty(unavailableMsg || `${unit} konnten nicht geladen werden (Ladefehler).`, { available: false });
   // header:false, wenn die Seite bereits eine C.catalogueBar rendert (die Trefferzahl
   // + Ansichtswechsel selbst enthält) — dann nur Hinweis + Trefferkörper.
   // Die Trefferliste braucht eine eigene Überschrift: die Karten darin sind
@@ -1170,7 +1146,7 @@ export function announceCatalogue({ count, total, unit, page = 1, totalPages = 1
 // aria-pressed und im aria-label.
 // CD-Ansichtsschalter (Icon-Umschaltgruppe, aria-pressed). `items` erlaubt andere
 // Ansichtspaare (z. B. Karten/Liste bei Projekten) statt harter btn--filled-Betonung.
-export function viewSwitch(view = 'gallery', items = [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']]) {
+function viewSwitch(view = 'gallery', items = [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']]) {
   const btn = ([key, label, iconName]) => {
     const on = view === key;
     // Stabile id (aus den Daten, feste Reihenfolge): der Router stellt den Fokus
@@ -1205,18 +1181,6 @@ export function catalogueHash(base, { q = '', page = 1, view = '', defaultView =
   return s ? `${base}?${s}` : base;
 }
 
-// Katalog-Suchleiste (service-controls): Suchfeld + Submit + Filter-Slot. `filters`
-// ist fertiges HTML (i. d. R. mehrere C.select(...)) — RAW HTML, der Aufrufer escaped.
-export function catalogueControls({ formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', filtersLabel = '', filters = '' }) {
-  return `<form class="service-controls" id="${formId}" role="search">
-    <div class="service-controls__search">
-      <label class="sr-only" for="${inputId}">${escape(searchLabel)}</label>
-      <input id="${inputId}" type="search" placeholder="${escape(placeholder)}" value="${escape(q)}" autocomplete="off">
-      <button class="btn btn--bare btn--icon-only service-controls__submit" type="submit" aria-label="Suchen" title="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
-    </div>
-    ${filters ? `<div class="service-controls__filters"${filtersLabel ? ` aria-label="${escape(filtersLabel)}"` : ''}>${filters}</div>` : ''}
-  </form>`;
-}
 
 // Verdrahtet die gemeinsamen Katalog-Interaktionen: Suchformular (Submit → Seite 1),
 // einfache Filter-Dropdowns (`filters: [{id, param}]` → Wert setzen, Seite 1),
@@ -1579,13 +1543,14 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 }
 
 export const C = {
-  icon, escape, badge, audienceTag, statusBadge, pageHeader, tile, card, table, empty, notificationBanner, mountBanner, shareBar, shareUrlBlock, openShareModal, wireShare, domainTile, announce, trapFocus, modal, openModal,
-  notFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
-  catalogueResults, announceCatalogue, catalogueHash, catalogueControls, catalogueBar, filterGroup, wireCatalogue, pipeline,
+  icon, escape, badge, audienceTag, statusBadge, pageHeader, card, table, empty,
+  mountBanner, openShareModal, wireShare, domainTile, announce, trapFocus, notFound,
+  activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
+  catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
-  notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
-  pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
-  preserveFocus, rerender, wireScrollRegions, wirePipeline, errorSummary, wireErrorSummary, stepIndicator,
-  breakable, mountDataTable, wireTableRows, cardAction, cardFooter, pageSection, heroFigure,
+  notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,
+  pagination, wirePagination, loginGate,
+  preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, stepIndicator,
+  mountDataTable, wireTableRows, cardAction, pageSection, heroFigure,
 };
 export default C;

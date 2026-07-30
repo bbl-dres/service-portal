@@ -98,7 +98,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
 const dec = (h) => decodeURIComponent(h);
 
 (async () => {
-  const cdp = await launch({ port: 9335 });
+  const cdp = await launch();
   try {
     for (const cat of CATS) {
       console.log(`\n■ ${cat.name}`);

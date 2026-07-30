@@ -160,7 +160,7 @@ export default async function render(ctx) {
           <dt>Koordinaten (WGS 84)</dt><dd>${C.escape(coords)}</dd>
         </dl>` : ''}
 
-      <div class="row mt-4" style="justify-content:flex-end">
+      <div class="row row--end mt-4">
         <button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button>
       </div>`;
   }
@@ -190,7 +190,7 @@ export default async function render(ctx) {
         options: OWNERSHIP.map(v => ({ value: v, label: v })) })}
       ${C.field({ id: 'bc-baujahr', label: 'Baujahr', required: true, message: state.errors['bc-baujahr'],
         control: (cls, attrs) => `<input id="bc-baujahr" type="number" min="1200" max="2100" placeholder="z. B. 1974" value="${C.escape(state.baujahr)}" class="${cls}"${attrs}>` })}
-      <div class="row mt-4" style="justify-content:space-between">
+      <div class="row row--between mt-4">
         <button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')}<span class="btn__text">Zurück</span></button>
         <button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button>
       </div>`;
@@ -214,7 +214,7 @@ export default async function render(ctx) {
         <dt>Verantwortliche OE</dt><dd>${C.escape(state.org)}</dd>
       </dl>
       ${C.notification('Mit dem Absenden entsteht ein Vorgang. EGID und EGRID löst der Kataster­dienst anhand der Lage auf; die Objekt-ID (bbl_id), die Flächen (GF/HNF) und die Klassifizierung vergibt das Portfoliomanagement bei der Prüfung.', 'info')}
-      <div class="row mt-4" style="justify-content:space-between">
+      <div class="row row--between mt-4">
         <button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')}<span class="btn__text">Zurück</span></button>
         <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Erfassung einreichen</button>
       </div>`;

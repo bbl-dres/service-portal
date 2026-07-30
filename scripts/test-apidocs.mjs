@@ -13,7 +13,7 @@ let failures = 0;
 const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label}`); if (!cond) failures++; };
 
 (async () => {
-  const cdp = await launch({ port: 9384, webgl: false });
+  const cdp = await launch({ webgl: false });
   try {
     // 1) docs page + data-backed «Ausprobieren» -----------------------------
     const p = await openPage(cdp, `${APP_BASE}/app/api-docs/kundenportal`);

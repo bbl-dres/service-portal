@@ -98,7 +98,7 @@ async function pointMap(container, points, style, camera) {
   try {
     maplibregl = await loadMapLibre();
   } catch (e) {
-    container.innerHTML = `<div class="empty empty--unavailable" style="height:100%">
+    container.innerHTML = `<div class="empty empty--unavailable h-full">
       <span>Die Karte konnte nicht geladen werden (${esc(e.message)}). Im Bundesnetz ist der Kartendienst ggf. gesperrt.</span></div>`;
     return null;
   }
@@ -185,7 +185,7 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
   try {
     maplibregl = await loadMapLibre();
   } catch (e) {
-    container.innerHTML = `<div class="empty empty--unavailable" style="height:100%">
+    container.innerHTML = `<div class="empty empty--unavailable h-full">
       <span>Die Karte konnte nicht geladen werden (${esc(e.message)}). Im Bundesnetz ist der Kartendienst ggf. gesperrt.</span></div>`;
     return null;
   }
@@ -336,7 +336,7 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
   try {
     maplibregl = await loadMapLibre();
   } catch (e) {
-    container.innerHTML = `<div class="empty empty--unavailable" style="height:100%">
+    container.innerHTML = `<div class="empty empty--unavailable h-full">
       <span>Die Karte konnte nicht geladen werden (${esc(e.message)}). Im Bundesnetz ist der Kartendienst ggf. gesperrt.</span></div>`;
     return null;
   }

@@ -94,7 +94,7 @@ export default async function render(ctx) {
         options: buildings.map(b => ({ value: b.bbl_id, label: `${b.name} — ${b.city}` })) })}
       ${C.field({ id: 'persons', label: 'Anzahl Personen / Arbeitsplätze', required: true, message: state.errors.persons,
         control: (cls, attrs) => `<input id="persons" type="number" min="1" value="${state.persons}" class="${cls}"${attrs}>` })}
-      <div class="row" style="justify-content:flex-end"><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
+      <div class="row row--end"><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
   }
 
   function step2() {
@@ -106,7 +106,7 @@ export default async function render(ctx) {
         control: (cls, attrs) => `<input id="termin" type="date" value="${C.escape(state.termin)}" class="${cls}"${attrs}>` })}
       ${C.field({ id: 'beg', label: 'Begründung', required: true, message: state.errors.beg,
         control: (cls, attrs) => `<textarea id="beg" placeholder="Weshalb wird der zusätzliche Raum benötigt?" class="${cls}"${attrs}>${C.escape(state.begruendung)}</textarea>` })}
-      <div class="row" style="justify-content:space-between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')} Zurück</button><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
+      <div class="row row--between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')} Zurück</button><button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button></div>`;
   }
 
   function step3() {
@@ -126,7 +126,7 @@ export default async function render(ctx) {
         <dt>Begründung</dt><dd>${C.escape(state.begruendung)}</dd>
       </dl>
       ${C.notification('Mit dem Absenden wird ein Vorgang erstellt und an die Prüfung weitergeleitet. Sie können den Status unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
-      <div class="row" style="justify-content:space-between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')} Zurück</button><button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Antrag absenden</button></div>`;
+      <div class="row row--between"><button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')} Zurück</button><button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Antrag absenden</button></div>`;
   }
 
   function drawDone() {

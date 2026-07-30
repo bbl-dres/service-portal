@@ -58,7 +58,7 @@ let failures = 0;
 const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label}`); if (!cond) failures++; };
 
 (async () => {
-  const cdp = await launch({ port: 9342, webgl: true });
+  const cdp = await launch({ webgl: true });
   try {
     // a generic query-spec dashboard (immobilien is now the record-based estate one)
     const page = await openPage(cdp, `${APP_BASE}/app/dataportal/energie-klima`);

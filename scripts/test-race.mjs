@@ -33,7 +33,7 @@ let failures = 0;
 const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label}`); if (!cond) failures++; };
 
 (async () => {
-  const cdp = await launch({ port: 9338 });
+  const cdp = await launch();
   try {
     const page = await openPage(cdp, `${APP_BASE}/`);
     for (const c of CASES) {

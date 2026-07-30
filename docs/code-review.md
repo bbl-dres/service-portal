@@ -1,367 +1,254 @@
-# Code review — Performance
+# Code-Review — Vereinfachung, Wiederverwendung, Konsistenz
 
-> **Scope:** loading behaviour and runtime performance of the prototype.
-> **Date:** 2026-07-29 · **Method:** measured, not estimated — headless Edge over CDP; see §8 to reproduce.
-> **Verdict:** rendering is fast and the architecture is sound. The cost is almost entirely in **what is fetched before anything appears**, and it is fetched in the wrong order.
->
-> **STATUS: alle sechs Empfehlungen umgesetzt (2026-07-29).** Erste Inhalte gedrosselt
-> **7996 ms → 1852 ms**, Payload **2354 KB → 257 KB**, Startanfragen **13 → 5**,
-> Listener-Lecks geschlossen. Zahlen und Vorgehen in **§9**. §1–§6 bleiben als
-> Befund stehen — sie sind der Ausgangszustand, gegen den §9 misst.
+**Stand:** 30. Juli 2026 · **Gegenstand:** 13 000 Zeilen JS, 3 500 Zeilen CSS · **Auftrag:** ausschliesslich Refactoring — keine Funktion kommt dazu, keine fällt weg.
+
+**Methode:** vier unabhängige Prüfläufe über getrennte Bereiche (CSS/Tokens, `components.js`, die sechs Micro-Apps, `pages`/`core`/`router`/`shell`), dazu ein eigener Lauf über die Formular-Apps und die Testwerkzeuge. Jeder Befund trägt Datei und Zeile. **Die schwerwiegenden Befunde sind einzeln nachgestellt**, nicht übernommen — was nachgestellt wurde, steht in [§8](#8-was-nachgeprüft-wurde).
+
+**Befund in einem Satz:** die Architektur trägt, aber sie ist an sechs Stellen dreifach vorhanden. Die grössten Hebel sind der räumliche Baum (3 Kopien), die Katalogseiten-Pipeline (5 Kopien) und die Katalogleisten-Verdrahtung (2 Kopien) — zusammen rund **900 Zeilen**, die auf etwa 300 zusammengehen. Der Weg dorthin ist nicht die Schwierigkeit; die Schwierigkeit sind die **Verhaltensunterschiede zwischen den Kopien**, und die sind in [§2](#2-die-grossen-zusammenlegungen) je Zusammenlegung einzeln aufgelistet.
 
 ---
 
-## 1. The headline
+## 1. Zuerst: sieben Fehler, die kein Refactoring sind
 
-Under conditions a federal workstation over VPN would actually see — **4× CPU throttle, 1.5 Mbit/s, 60 ms latency** — the portal shows its first content after **~7.7 seconds**.
+Beim Durchsehen sind sieben echte Defekte aufgefallen. Sie gehören nicht zum Auftrag, aber sie stehen hier zuerst, weil ein Refactoring sie sonst mitzementiert. **Zwei davon sind am 30. Juli von mir selbst eingebaut worden** (1.5 und 1.6).
 
-```
-   0 ms  navigate
-4500 ms  CSS fertig                          (213 KB unkomprimiert)
-4589 ms  erster data/*-Request               ← startet erst nach den JS-Modulen
-7673 ms  letzter der 13 data/*-Requests
-7996 ms  first-contentful-paint              ← erst hier sieht jemand etwas
-```
+### 1.1 «Zurücksetzen» im Datenkatalog löscht die Klassifizierung nicht
+`js/pages/catalog.js:64` führt den Parameter als `classification`, der Reset-Link bei `:121` setzt aber `klass: []` zurück. `catalogueHash` kennt `klass` nicht, lässt `classification` aus `base` stehen und wirft das leere Array weg.
+**Nachgestellt:** `#/data/catalog?classification=internal&topic=Bauwerke` → der Reset-Link zeigt auf `#/data/catalog?classification=internal`. Thema und Tag verschwinden, die Klassifizierung bleibt.
+`services.js:99` und `applications.js:133` machen es richtig. → `klass` in `classification` ändern.
 
-Nothing renders before **all 13 data files** have landed, because `js/app.js` opens with:
+### 1.2 Ladefehler der News liest sich als «keine Meldungen»
+`js/pages/news.js:44` übergibt `{ available: core.available('news') }`, `empty()` prüft aber `opts.unavailable` (`js/components.js:306`) — und zwar invertiert. Der Ausfallpfad wird nie erreicht: fällt `news.json` aus, behauptet die Seite, es gebe keine Meldungen.
+Ursache ist die gegenläufige Benennung: `catalogueResults` nennt es `available` (`:1120`), `empty` nennt es `unavailable`. **Einer der beiden Namen muss verschwinden.**
 
-```js
-await Promise.all([core.load(), engine.load()]);   // 275 KB, 13 Requests
-shell.renderHeader(header);                        // erst danach
-initRouter();
-```
+### 1.3 Der Objekttyp-Filter im Inventar zeigt einen falschen Zustand
+`js/apps/portfolio.js:262` baut die Filtergruppen mit einem lokalen `fgroup()` statt mit `C.filterGroup`. Dem fehlen zwei Dinge: die Auswertung von `selected` und die `id="f-…"`.
+Folge: `state.filters.kind` steht auf `['building']` (`:99`), das Inventar öffnet also auf Gebäude gefiltert — **die Checkbox «Gebäude» rendert aber ungehakt.** Das Panel widerspricht dem Zustand. Zusätzlich kann `C.preserveFocus` ohne `id` den Fokus nicht wiederherstellen.
+Die vier anderen Apps nutzen `C.filterGroup`.
 
-One blocking gate in front of the entire application. The home page needs **five** of those thirteen files.
+### 1.4 Dieselbe Datei, zwei Grössenangaben — eine davon nicht schweizerisch
+`js/apps/portfolio.js:721` formatiert mit `(kb/1024).toFixed(1).replace('.', ',')`, `js/apps/document-archive.js:42` mit `toLocaleString('de-CH', …)`.
+**Nachgestellt:** 4820 KB → **«4,7 MB»** im Objektdetail, **«4.7 MB»** im Bauwerksdokumenten-Archiv. `de-CH` schreibt den Dezimalpunkt; die Portfolio-Fassung ersetzt ihn aktiv durch ein deutsches Komma.
 
-Unthrottled on localhost the same chain takes 216 ms — which is why this has not been noticed.
+### 1.5 Der Fokusring am Grundriss-Titelbild ist nicht der CD-Fokusring
+`css/app.css:2437` schreibt `var(--color-focus, var(--color-primary-600))`. Ein Token `--color-focus` gibt es nicht — es heisst `--color-focus-ring` (`tokens.css:90`, CD-Violett `#8655F6`). Der Ausweichwert greift, der Ring ist blau statt violett. **Am 30. Juli von mir eingebaut.**
+Gleiche Stelle, gleicher Fehlertyp: `css/app.css:2447` nutzt `var(--fw-normal)`; das Token heisst `--fw-regular`, die Angabe fällt still aus.
 
----
+### 1.6 Zwei Breakpoints auf Tailwind statt auf CD
+`css/app.css:1934` und `:1949` verwenden `min-width:1536px` — das ist Tailwinds 2xl. Das CD setzt 2xl auf **1544px** (`designsystem/app/tailwind.config.js:26`), und `app.css` benutzt 1544 an zwölf anderen Stellen. **Ebenfalls am 30. Juli von mir eingebaut.**
 
-## 2. Where the bytes are
-
-Full first load, measured (uncompressed, as the dev server delivers it):
-
-| Type | Requests | Size | Share |
-|---|---:|---:|---:|
-| **Font** | 2 | **1138 KB** | **48 %** |
-| Image | 18 | 540 KB | 23 % |
-| Fetch (`data/*`) | 13 | 275 KB | 12 % |
-| Stylesheet | 2 | 226 KB | 10 % |
-| Script | 10 | 173 KB | 7 % |
-| Document / other | 2 | 2 KB | — |
-| **Total** | **47** | **2354 KB** | |
-
-Largest single resources:
-
-```
-  569.3 KB  assets/fonts/NotoSans-Regular.ttf
-  569.1 KB  assets/fonts/NotoSans-Bold.ttf
-  510.7 KB  assets/images/BBL-FE21_O-01.avif
-  213.2 KB  css/app.css
-   87.5 KB  js/components.js
-   78.9 KB  data/parcels.geojson
-   66.3 KB  data/buildings.geojson
-   55.1 KB  data/media.json
-```
-
-**Compression reorders this, which matters for prioritisation.** Text compresses; fonts and images barely do:
-
-| | raw | gzip | brotli |
-|---|---:|---:|---:|
-| `css/app.css` | 213.0 | 56.5 | 47.3 |
-| `js/components.js` | 87.3 | 29.7 | 26.1 |
-| `data/datasets.json` | 114.9 | 22.0 | 18.2 |
-| `data/parcels.geojson` | 78.8 | 17.0 | 12.3 |
-| `data/media.json` | 54.9 | **4.2** | 3.2 |
-| `NotoSans-Regular.ttf` | 569 | **281** | — |
-
-On a properly configured host: **fonts and images become ~85 % of transferred bytes**, and all the JSON together drops under 60 KB.
-
-> The dev server compresses nothing, so §1 is a worst case — but it is the number the prototype produces today, and `python -m http.server` is what the README recommends.
+### 1.7 Hoher Kontrastmodus: die Korrektur greift nie
+`css/app.css:473` setzt im `@media (forced-colors: active)` `appearance:auto` für Checkboxen und Radios, damit das System den Zustand zeichnet. Die Basisregel bei `:1537` setzt `appearance:none` — **gleiche Spezifität, 1060 Zeilen später, gewinnt immer.** Der im Kommentar `:469-472` beschriebene Fix (weisses Häkchen auf weissem Grund) ist wirkungslos.
+Dasselbe Muster zweimal mehr: `css/app.css:2397` (Touch-Vergrösserung der Dokumentbetrachter-Knöpfe, WCAG 2.5.5) und `:2874` (Klebe-Hover der Schnelleinstiege auf Touch) stehen vor den Regeln, die sie überschreiben sollen.
 
 ---
 
-## 3. Data loading — what each route actually needs
-
-Worth restructuring less for bytes than for **request count inside the blocking gate**.
-
-### 3.1 Eager payload and its readers
-
-| Key | Size | Read by |
-|---|---:|---|
-| `parcels` | 78.8 KB | `apps/portfolio`, `apps/media-library` |
-| `buildings` | 66.1 KB | 10 micro-apps + `pages/my-cases` |
-| `media` | 54.9 KB | **`apps/media-library` only** |
-| `applications` | 29.6 KB | `pages/applications`, `application`, `data`, `search`, `services` |
-| `services` | 12.7 KB | `shell`, `pages/home`, `search`, `services` |
-| `projects` | 5.3 KB | `apps/projects`, `media-library`, `pages/my-cases` |
-| `reference` | 4.3 KB | `shell` + 8 modules |
-| `documents` | 4.2 KB | `apps/document-archive`, `portfolio`, `pages/search`, `services` |
-| `news` | 3.4 KB | `pages/home`, `news`, `search` |
-| `catalogLabels` | 1.4 KB | **`pages/catalog` only** |
-| `contacts` | 1.0 KB | `apps/fault-report`, `pages/application`, `services` |
-| **Total** | **262 KB** | + 11 KB Prozess-Engine = **13 Requests** |
-
-Every reader in **bold** is a lazily-imported route module. `media.json` (55 KB) and `catalog-labels.json` are fetched on every visit to serve one page each; `parcels.geojson` (79 KB) serves two `#/app/*` routes.
-
-### 3.2 What the shell actually needs
-
-Before the router dispatches, only `js/shell.js` touches the core — and it reads exactly two keys:
-
-- `core.ref().domains` — the Dienstleistungen drawer
-- `core.services()` — which domains have a startable service
-
-**17 KB of the 275 KB.** Everything else belongs to a route.
-
-### 3.3 Per-route need
-
-| Route | Needs | Currently waits for |
-|---|---|---:|
-| `#/` | services, news, reference, engine | 275 KB |
-| `#/knowledge/*` | **nothing** — fully static | 275 KB |
-| `#/news` | news | 275 KB |
-| `#/services` | services, applications, documents, contacts, reference | 275 KB |
-| `#/app/portfolio` | buildings, parcels, projects, documents, reference (+147 KB deferred) | 275 KB |
-
-The six *Wissen und Hilfsmittel* pages and the five *Digitalisierung* sub-pages read **no data at all** and still wait for the full boot.
-
-### 3.4 Recommendation
-
-Move `media`, `parcels`, `buildings`, `projects`, `documents` and `catalogLabels` into `DEFERRED`, declared via `needs` on the route modules that read them. The machinery already exists and is proven: `core.ensure()`, the `needs` contract and the router's pre-render gate serve seven keys today.
-
-| | now | after |
-|---|---:|---:|
-| Eager requests | 13 | **5** |
-| Eager bytes | 275 KB | **~60 KB** |
-| `#/knowledge/*` blocked on | 275 KB | ~28 KB (shell only) |
-
-Handle in the same change:
-
-- `pages/my-cases.js` reads `core.building()` for linked entities → add `needs: ['buildings']`.
-- `pages/services.js` reads `applications` + `documents` **only** for the "Auch in: …" hint. That hint should not gate the page — declare the need or drop the hint.
-- `pages/search.js` reads five keys and already declares `datasets`; it would need the full set. Search is legitimately the one route that wants everything.
-- `apps/document-archive.js` and `apps/portfolio.js` already declare `needs` — extend, do not replace.
-
----
-
-## 4. Listener leaks — measured, not suspected
-
-Each visit installs listeners that are never removed. Counted by patching `addEventListener` and visiting each route **5×**, returning to `#/news` in between:
-
-| Route | matchMedia | document | window | Heap after |
-|---|---:|---:|---:|---:|
-| `#/knowledge/it` | **+5** | 0 | **+5** | 7 MB |
-| `#/data/digitalisation/strategy` | **+5** | 0 | **+5** | 7 MB |
-| `#/app/dataportal/energie-klima` | **+5** | +1 | 0 | 2 MB |
-| `#/app/building-create` | 0 | **+20** | **+10** | 9 MB |
-
-Exactly one set per visit — linear growth, no ceiling.
-
-**`js/pages/anchor-nav.js` is the worst, because it is the most-used.** It backs all six Wissen pages and all five Digitalisierung sub-pages:
-
-```js
-// :89 — nie abgemeldet
-const wide = window.matchMedia('(min-width:768px)');
-wide.addEventListener('change', sync);
-
-// :119 — räumt sich selbst auf, aber erst beim NÄCHSTEN Scroll-Ereignis
-window.addEventListener('scroll', onScroll, { passive: true });
-```
-
-The scroll listener self-removes (`:113` checks whether `.anchor-nav` is still mounted) — but only when a scroll actually fires. Navigate away without scrolling and it stays. The `matchMedia` listener has no cleanup at all, and it closes over `mount`, so every stale listener pins a detached DOM subtree.
-
-`js/apps/dataportal.js:325` and `js/apps/estate.js:374` carry the identical `matchMedia` bug. Both files *do* call `ctx.onUnmount(…)` — but only to dispose the MapLibre instance.
-
-`js/apps/building-create.js` is heaviest: **4 document + 2 window listeners per visit**, heap 2 MB → 9 MB over five visits. Its `onUnmount` likewise frees only the map.
-
-**Fix:** the router already passes `ctx.onUnmount` and runs cleanups before the next dispatch (`js/router.js:211`). These four call sites simply need to use it. One `AbortController` per render — the pattern `js/shell.js` already uses for the header — closes all of them in a line each.
-
----
-
-## 5. Fonts, CSS, images
-
-**Fonts — 1138 KB for two weights.** Raw `.ttf`, full Unicode coverage, unsubsetted. Four files ship (2.3 MB on disk); two load, and the two italics are declared in `@font-face` but never used (`document.fonts` reports both `unloaded`).
-
-- `.woff2` instead of `.ttf`: ~55 % smaller for identical glyphs.
-- Subset to `latin` + `latin-ext` — this is a DE/FR/IT/EN portal: **~30 KB per weight**.
-- Together: **1138 KB → ~60 KB.** The single largest win available, with no behaviour change.
-
-**CSS — 213 KB unminified.** Roughly half is the German rationale commentary, which is genuinely valuable *in source*. Serving it is the problem, not writing it. gzip already reaches 56 KB; minification would reach ~35 KB. For a no-build project the honest answer is to enable compression on the host and leave the source alone.
-
-**Images — 540 KB over 18 requests**, dominated by a 511 KB AVIF hero on the home page. Already a modern format, simply oversized for its display box. A `srcset` with a ~120 KB variant for typical viewports removes ~400 KB from the most-visited route.
-
----
-
-## 6. What is already right
-
-Worth stating, because it bounds what should change:
-
-- **Rendering is not a problem.** Hash change → new `h1`, unthrottled:
-
-  | Route | ms | DOM nodes |
-  |---|---:|---:|
-  | `#/my-cases` | 11 | 11 |
-  | `#/news` | 15 | 123 |
-  | `#/services` | 22 | 243 |
-  | `#/knowledge/it` | 25 | 448 |
-  | `#/app/dataportal` | 33 | 79 |
-  | `#/app/portfolio` | **39** | **851** |
-
-  The heaviest view renders in 39 ms. `innerHTML` with template strings is right at this scale; a framework would add weight and remove nothing.
-
-- **The deferral machinery is well built.** `core.ensure()` memoises per key (`PENDING`), so ten callers make one request; failures land in the same `FAILED` register as boot failures and surface in the outage band. §3.4 is about *using* it more, not building anything.
-
-- **The router's cleanup contract exists and works** — ticket-based stale-render guard, `onUnmount` before the next dispatch, scroll-region rewiring. §4 is four call sites ignoring an existing facility.
-
-- **Heap stays at 2–3 MB** in normal use; the growth in §4 appears only under repeated visits to the four leaking routes.
-
-- **No N+1 scans in render paths.** The `filter`-inside-`map` occurrences all operate on collections under ~50 items.
-
----
-
-## 7. Priorities
-
-| # | Change | Effort | Effect | Status |
-|---|---|---|---|---|
-| 1 | **Subset fonts to woff2** (latin + latin-ext) | S | **−1.08 MB** — 46 % of total payload | ✅ §9.1 |
-| 2 | **Enable gzip/brotli** on the host; note it in the README | S | −250 KB across CSS, JS and JSON | ✅ §9.4 |
-| 3 | **`srcset` for the home hero** | S | −400 KB on the most-visited route | ✅ §9.2 |
-| 4 | **Fix the four listener leaks** via `ctx.onUnmount` / `AbortController` | S | removes unbounded growth on the most-used pages | ✅ §9.3 |
-| 5 | **Move six keys to `DEFERRED`** (§3.4) | M | boot 13 → 5 requests, 275 → 60 KB | ✅ §9.5 |
-| 6 | **Render the shell before `core.load()` resolves** | M | first paint stops depending on data at all | ✅ §9.5 |
-
-1–4 are small, local and independently shippable. 5 is what the architecture was built for. 6 is the structural fix: with 5 done, `boot()` can render the shell against `reference` + `services` alone and let each route pull its own data — at which point §1's 7.7 s collapses to roughly the cost of the CSS.
-
-**Not recommended:** a build step, a framework, virtualised lists, or `requestIdleCallback` scheduling. The measurements do not support any of them.
-
----
-
-## 8. Reproducing
-
-Probes were written ad hoc against `scripts/lib/cdp.mjs` and removed after use.
-
-```bash
-python -m http.server 8848
-# CDP: Network.enable
-#      Emulation.setCPUThrottlingRate      { rate: 4 }
-#      Network.emulateNetworkConditions    { latency: 60, downloadThroughput: 1.5 Mbit/s }
-# lesen: performance.getEntriesByType('resource' | 'paint' | 'navigation')
-```
-
-Listener counts: patch `MediaQueryList.prototype.addEventListener`, `document.addEventListener`
-and `window.addEventListener` with counters, then visit each route five times.
-
----
-
-## 9. Umsetzung (2026-07-29)
-
-Alle sechs Empfehlungen sind umgesetzt. Gemessen unter denselben Bedingungen wie §1/§2.
-
-### Ergebnis
-
-| | vorher | nachher (roh) | nachher (komprimiert) |
-|---|---:|---:|---:|
-| **Erster Inhalt, gedrosselt** | **7996 ms** | 3336 ms | **1852 ms** |
-| Payload gesamt | 2354 KB | 580 KB | **257 KB** |
-| Requests | 47 | 39 | 39 |
-| Schriften | 1138 KB | 35 KB | 35 KB |
-| Bilder | 540 KB | 109 KB | 90 KB |
-| Stylesheet | 226 KB | 226 KB | 58 KB |
-| `data/*` beim Start | 275 KB / 13 Req | 32 KB / 5 Req | 9 KB / 5 Req |
-
-**4,3× schneller** bis zum ersten Inhalt; **−89 %** Payload.
-
-### 9.1 Schriften — 1138 KB → 35 KB
-
-Eine variable woff2 (`assets/fonts/NotoSans-latin.woff2`, wght 100–900) ersetzt vier TTF.
-Der offizielle latin-Subset von Google Fonts, dieselbe OFL-lizenzierte Schrift wie zuvor.
-
-Geprüft, statt geschätzt: der gesamte App-Text enthält **49 Zeichen ausserhalb ASCII**, alle
-im latin-Bereich. `latin-ext` (ą ć ę ł ř š ž …) kommt nirgends vor und wird nicht ausgeliefert —
-das spart weitere 164 KB. Symbole ausserhalb des Subsets (← → ▲ ▼ ₂ ⌘ √ ≈ ≥) fallen glyphweise
-auf die Systemschrift zurück.
-
-Die wght-Achse ist echt, nicht synthetisiert: gemessen 400 → 568,5 px, 700 → 596,2 px
-(4,9 % breiter) bei gleicher Zeichenkette. Die Kursiv-Deklarationen entfielen — die beiden
-Kursiv-TTF wurden nie geladen.
-
-### 9.2 Hero-Bild — 511 KB → 80 KB in der Regel
-
-`srcset` mit 800w/1400w-WebP; das AVIF bleibt als 2048w-Stufe für sehr breite oder
-hochauflösende Anzeigen. Gemessen wurde vorher 2048×1258 geladen und mit **534–714 px**
-dargestellt — rund neunmal so viele Pixel wie nötig. `width`/`height` verhindern jetzt
-zusätzlich den Layout-Sprung.
-
-Varianten erzeugt `scripts/make-image-variants.mjs` — ohne Bildbibliothek, mit dem Browser
-als Encoder (Canvas → WebP), passend zur abhängigkeitsfreien Bauweise des Projekts.
-
-### 9.3 Listener-Lecks — geschlossen
-
-Nachgemessen mit `DOMDebugger.getEventListeners` (**lebende** Listener, nicht
-Registrierungen — mit `{ signal }` zählt die Registrierung weiter, der Listener ist aber weg):
-
-| Route | vorher | nachher |
+## 2. Die grossen Zusammenlegungen
+
+Nach Wert geordnet. Jede trägt die Liste der Verhaltensunterschiede, die die gemeinsame Fassung erhalten muss — **dort liegt das Risiko, nicht im Zusammenlegen selbst.**
+
+### 2.1 Der räumliche Baum — 3 Kopien, ~135 Zeilen je Kopie
+`js/apps/portfolio.js:113-159` · `projects.js:110-152` · `tenancies.js:102-146`
+`buildTree()`, `rowContent()`, `node()` und der Rumpf von `treeHTML()` sind zwischen Portfolio und Projekten **zeichengleich**; `node()` ist zwischen Portfolio und Mietenden byte-identisch. Dazu die Auswahl- und Markierungslogik (`portfolio.js:335-378`, `projects.js:311-348`, `tenancies.js:307-336`, ~112 Zeilen).
+
+→ **`js/spatial-tree.js`** mit `spatialTree(C, { objects, levels, leaf, dataKeys })` und `wireSpatialTree(root, { dataKeys, mark, onSelect })`.
+
+Zu erhalten:
+
+| | |
+|---|---|
+| Mietende haben **keine WE-Stufe**; ihre Regionquelle heisst `canton`, wird aber als `data-region` ausgegeben | `tenancies.js:110-112, 124` |
+| Portfolio sortiert Blätter **erst nach `kind`**, dann Name | `portfolio.js:149` vs. `projects.js:142` |
+| WE-Label: erstes **Gebäude** der WE (Portfolio) vs. `buildingName` des ersten Objekts (Projekte) | `portfolio.js:150` vs. `projects.js:143` |
+| WE-Icon `Folder` vs. `Building` | `portfolio.js:151` vs. `projects.js:144` |
+| WE-Schlüssel mit nacktem `.sort()`, alle anderen Stufen mit `byDe` | `portfolio.js:147` |
+| Markierung **zweifarbig** (`is-active` + `is-path`) vs. **einfarbig** (`is-selected`) | `portfolio.js:339-351` vs. `tenancies.js:310` |
+| Bei Mietenden ist die Reihenfolge tragend: `setSelection` löscht alle Klassen, **danach** setzt der Aufrufer `is-selected` | `tenancies.js:320/321` |
+| Blattzweig prüft `dataset[k]` (truthy), Knotenzweig `!= null` (vorhanden) — semantisch verschieden, in allen drei Dateien gleich | `portfolio.js:363` vs. `:375` |
+
+### 2.2 Die Katalogseiten-Pipeline — 5 Kopien, ~400 Zeilen
+`js/pages/services.js` · `applications.js` · `catalog.js` · `search.js` · `js/apps/media-library.js`
+Zwölf identische Schritte je Datei (Hash lesen → filtern → sortieren → paginieren → `hash()` → Pillen → Leiste → Ergebnisse → Ansage → Verdrahtung). Etwa **250 der 400 Zeilen unterscheiden sich nur in Bezeichnern** (`svc-`/`app-`/`ds-`/`sr-`/`med-`).
+
+→ **`js/catalogue-page.js`** mit einer `catalogueView(ctx, {…})`; die Seiten schrumpfen auf `card`, `listView`, `sorts`, `facets` — je 30–50 Zeilen.
+
+Zu erhalten (Auswahl aus zwanzig dokumentierten Abweichungen):
+- **`search.js` hat kein eigenes Suchfeld** (`showSearch:false`), kehrt den Standard-View auf `list` um, sortiert nach Relevanz, sagt selbst an statt über `announceCatalogue`, und rendert Leiste + Treffer nur bei `total > 0`.
+- **`catalog.js` ist mehrsprachig** — alle Textfelder laufen durch `core.t`, Enum-Beschriftungen durch `core.label`, die Themenfacette filtert auf den *übersetzten* Wert.
+- **`applications.js`** validiert Filterwerte gegen bekannte Schlüssel; `services.js` und `catalog.js` übernehmen beliebige Hash-Werte.
+- **`perPage`** ist überall anders: 12 / 9 / 9 / 10 / `PER_PAGE`.
+- **`media-library.js`** hat eine dritte Ansicht (`map`) mit eigener Zählformulierung und braucht einen Nachverdrahtungs-Haken (Vollbildgalerie + `?bild=`-Deeplink).
+- **`unit`** steht in verschiedenen Fällen («Datensätzen» ist Dativ) und wird sowohl im Zähler als auch im Leerzustand verwendet.
+
+### 2.3 Zwei Implementierungen derselben Katalogleisten-Verdrahtung
+`js/components.js:1226-1266` (`wireCatalogue`) vs. `:1415-1438` (in `mountDataTable`)
+Beide verdrahten dieselben fünf Dinge in derselben Reihenfolge: Suchformular, Sortierung, Filter-Umschalter, Panel-`change` mit `data-fdim`-Ernte, Blätterleiste. **Der einzige Unterschied ist das Ziel:** `location.hash = hash({…})` gegen `state.x = …; draw()`.
+→ Ein `wireCatbar(root, ids, commit)`; `commit(patch)` entscheidet Hash oder lokaler Zustand. Spart ~50 Zeilen und macht die Leiste an einer Stelle wartbar.
+
+### 2.4 Der Karten-Lebenszyklus — 5 Ausprägungen
+`portfolio.js` · `projects.js` · `tenancies.js` (je Modulinstanz + `freeXxMap()` + Ticket + `mountMap`) gegen `media-library.js` · `estate.js` (festgehaltenes Promise + `onUnmount`).
+→ **`js/map-slot.js`** mit `createMapSlot() → { mount, free, get }`.
+Zu erhalten: `free()` läuft **zweimal je Renderdurchgang** (Kopf von `renderMain` und in `mountMap`) und muss idempotent bleiben; Portfolios Detailzweig schreibt ohne Ticket in dieselbe Modulvariable; nur Portfolio übergibt eine echte Parzellen-FeatureCollection, die anderen eine leere oder `null` — und `initEstateMap` behandelt beides verschieden.
+
+### 2.5 Der Zustands- und Teilrender-Kreislauf — 4 Kopien, ~385 Zeilen
+`portfolio.js` · `projects.js` · `tenancies.js` · `document-archive.js`
+`renderMain()` ist zwischen Portfolio und Projekten bis auf Präfix und Substantiv identisch (26 Zeilen); der Verdrahtungsblock (43 Zeilen) unterscheidet sich **ausschliesslich** in `pf-`/`pj-` und drei Dimensionsnamen.
+→ Fünf kleine Bausteine (`wireSearchBox`, `wireFilterPanel`, `wirePillRow`, `wirePrevNext`, `renderPills`) — **nicht** eine `mountExplorer()`-Funktion, sonst landen die zehn Abweichungen als Optionsflut im Signaturkopf.
+Wichtigste Abweichung: **der Paginierungs-Kontrakt divergiert.** Drei Apps übergeben `href: () => '#'`, bekommen `<a href="#">` und parsen dann den deutschen `aria-label` mit `/Nächste/`; `document-archive.js` lässt `href` weg, bekommt `<button data-page>` und liest `data-page`. Die Button-Variante ist die richtige — der `#`-Link ist ein toter Link.
+
+### 2.6 Vier Formular-Apps mit demselben Gerüst
+`building-create.js` · `space-request.js` · `fault-report.js` · `workspace.js`
+- **`drawDone()` viermal**: gleiches Skelett (Erfolgsmeldung mit Referenz, Dankeszeile, zwei Knöpfe), verschieden nur in Wortlaut, `h1` vs. `h2`, `btn--filled` vs. `btn--outline` und einem hartcodierten `max-width:50rem`.
+- **Vier verschiedene Login-Gate-Gerüste** für dieselbe Lage: eines mit `pageHeader`, eines mit `backLink + h1 + lead`, eines nur mit dem nackten Gate.
+- **Die Wizard-Fussleiste** (Zurück/Weiter) steht viermal, mit `style="justify-content:space-between"` — obwohl `.row--between` seit `app.css:2906` existiert.
+- **`C.notification()` wird sechsmal umgangen**: `space-request.js:104,137`, `building-create.js:154`, `estate.js:110`, `router.js:351`, `app.js:91` schreiben `<div class="notification notification--…">` samt Icon von Hand.
+→ `C.processDone({ instance, title, text, extra, actions })` und `C.loginPage(ctx, { title, lead, back, text })`.
+
+### 2.7 Elf handgebaute «nicht gefunden»-Blöcke
+Acht Seiten und fünf Apps wiederholen `setTitle` + `setCrumbs` + `mount.innerHTML = C.notFound({…})` + `return`. `C.notFound` vereinheitlicht das *Markup*, nicht den *Ablauf*.
+→ `C.renderNotFound(ctx, { thing, article, backHref, backLabel, crumbs })`.
+Zu erhalten: das Geschlecht wechselt («Diese Dienstleistung», «Dieser Datensatz», «Dieses Fachgebiet», «Diese Seite»); manche Brotkrumen tragen ein abschliessendes `{ label: 'Nicht gefunden' }`, andere nicht.
+
+### 2.8 Kleinteiliges, das überall doppelt liegt
+
+| Was | Wo | Vorschlag |
 |---|---|---|
-| `#/knowledge/it` | matchMedia +5, window +5, Heap 7 MB | **0 / 0**, Heap 2 MB |
-| `#/data/digitalisation/strategy` | matchMedia +5, window +5, Heap 7 MB | **0 / 0**, Heap 2 MB |
-| `#/app/dataportal/energie-klima` | matchMedia +5 | **0** |
-| `#/app/building-create` | document +20, window +10, Heap 9 MB | **0 / 0** |
+| `chf()` zeichengleich | `projects.js:36`, `tenancies.js:36` | **`js/format.js`**: `chf`, `m2`, `num`, `datum`, `dateiGroesse` |
+| Datumsformatierer mit **unterschiedlicher Wache** (`isNaN(d)` vs. `isNaN(d.getTime())`) | `tenancies.js:38`, `portfolio.js:422` | ebd. |
+| `toLocaleString('de-CH') + ' m²'` inline | 9× in `portfolio.js` | ebd. |
+| `LAND` / `landName()` / `weOf()` | je 3× identisch | **`js/domain.js`** |
+| `esc = (s) => C.escape(String(s ?? ''))` | 6× wortgleich, dazu 2 Eigenimplementierungen | `import { escape as esc }` — `escape` macht die Null-Wache bereits selbst |
+| `CRUMBS`-Präfix «Startseite ›…» | 36× in 24 Dateien, 3 private Kopien | **`js/crumbs.js`** |
+| Zielgruppen-Tabelle (`staff`/`customers`/`both`) | `components.js:89`, `services.js:220`, `applications.js:24` | eine Tabelle neben `audienceTag` |
+| `statusLabel(core, id)` | `projects.js:61`, `tenancies.js:770`, `home.js:205`, `my-cases.js:188` | `core.statusLabel(id)` |
+| `#/app/portfolio?id=` von Hand gebaut | 13 Stellen | **`js/links.js`** — Achtung: Bauprojekte adressieren über ein **Pfadsegment**, nicht `?id=` |
+| Galerie-Einträge | 5 Kopien; Portfolio importiert `heroMosaic`, aber **nicht** `galleryItemsFrom` | die exportierte Fassung nutzen (schliesst zugleich die fehlende Quellenangabe, siehe §5) |
+| Roving-Tastaturnavigation | `wireTabs:795` und `wireMenu:1540`, bis auf die Achse gleich | `rovingKeys(items, i, e, { horizontal })` |
+| `target="_blank" rel="noopener external"` | **21×** portalweit, 10× allein in `shell.js` | ein `extLink()`-Baustein |
+| `core.js`: 21 Accessoren in drei Mustern (`find-by-id` 10×, `filter-by-key` 10×, `list` 11×) | `core.js:216-281` | Fabriken `list(k)`, `one(k,f)`, `many(k,f)` + Deklarationstabelle |
+| `core.js`: `FILES`/`DEFERRED`/`AREA`/`OBJECT_FILES` über denselben Schlüsselraum | `core.js:17-72` | **eine** `SOURCES`-Tabelle mit `{ url, area, eager, shape, geo, idKey }` |
+| `core.js`: `load()` und `loadDeferred()` sind derselbe Ablauf | `core.js:138-154` vs. `:178-203` | ein `loadKey(key)`; `load()` = `Promise.all(eagerKeys.map(loadKey))` |
+| `router.js`: `PAGES`/`APPS`/`SECTION_OF` über denselben Namensraum | `router.js:81-116` | Abschnitt als Feld am Eintrag |
 
-Ein `AbortController` je Render, abgemeldet über `ctx.onUnmount` — das Muster, das
-`js/shell.js` für die Kopfzeile schon benutzte. Betroffen: `pages/anchor-nav.js` (elf Seiten
-teilen sich dieses Layout), `apps/dataportal.js`, `apps/estate.js`, `apps/building-create.js`.
+---
 
-Bei `building-create` war `{ once: true }` die Falle: der Horcher verschwindet erst, wenn
-irgendwo geklickt **wird** — wer die Seite ohne Klick verlässt, hinterlässt ihn.
+## 3. Tokens statt Literale
 
-Das verbleibende `document click +1` auf dem Dashboard ist `ensureMenuGlobal()` — einmalig
-registriert und per Flag geschützt, also korrekt.
+Die Token-Schicht existiert und ist gut geschnitten — sie wird nur **kaum benutzt**. Die Zahlen sind gezählt, nicht geschätzt:
 
-### 9.4 Kompression — `scripts/serve.mjs`
+| Token | gedacht für | tatsächlich genutzt | daneben stehen |
+|---|---|---|---|
+| `--control-h` | Bedienhöhe | **8×** | `2.75rem` **46×** |
+| `--duration-*` | «eine Quelle, auditierbar für reduced-motion» (`tokens.css:158`) | **5×** | **64** Zeitliterale (`.12s` 22×, `.15s` 14×, `.2s` 15× …) |
+| `--z-*` | «statt verstreuter Magic Numbers» (`tokens.css:170`) | wenige | **34** rohe `z-index`, darunter `2000`, `200`, `60`, `50` |
+| `--color-bg` | Fläche | wenige | `#fff` **112×** (67× als Textfarbe — dafür fehlt ein Token) |
+| `--sp-*` | Abstandsraster | **6×** (nur in `.mt-*`) | `.4rem` 25×, `.35rem` 21×, `.6rem` 17× … |
 
-Abhängigkeitsfreier Entwicklungsserver (nur `node:`-Module) mit gzip/brotli für Textantworten,
-Pfadausbruch-Schutz und passenden MIME-Typen. `css/app.css` 218 KB → **55 KB** brotli.
-README empfiehlt ihn jetzt; `python -m http.server` bleibt erwähnt, mit dem Hinweis, dass es
-nicht komprimiert.
+Konkrete Schritte:
 
-Die Quelle bleibt unverändert: die deutschen Begründungskommentare in `app.css` sind dort
-wertvoll — sie auszuliefern war das Problem, nicht sie zu schreiben.
+1. **`--control-h` und ein neues `--target-min: 2.75rem` trennen.** Heute vermischt `2.75rem` zwei Absichten: die *skalierende* Bedienhöhe und das *feste* 44-px-WCAG-Ziel für Icon-Knöpfe, die laut Kommentar `app.css:2086` ausdrücklich nicht mitwachsen sollen.
+2. **Alle Übergangszeiten auf `--duration-*` einrasten** (`.12s/.15s`→fast, `.2s`→default, `.25s/.3s`→slow). Erst danach ist die `prefers-reduced-motion`-Abschaltung an einer Stelle prüfbar — das ist der erklärte Zweck der Tokens.
+3. **Z-Skala vervollständigen** (`--z-content`, `--z-drawer`, `--z-viewer`, `--z-skiplink`). Heute liegt `.docviewer` auf `200` über `--z-toast: 110`, ohne dass diese Ordnung irgendwo steht.
+4. **`--color-text-negative: #fff`** als Gegenstück zu `--color-focus-ring-negative` einführen; Flächen auf `--color-bg`. Ohne das ist eine Kontrast- oder Dunkelvariante gar nicht möglich.
+5. **`--font-mono`** anlegen — `Consolas,Menlo,monospace` steht 9× wörtlich.
+6. **Overlay-Abdunkelung vereinheitlichen:** fünf Rezepte für dieselbe Aufgabe (`rgba(0,0,0,…)`, `rgba(31,41,55,…)`, `rgba(13,27,42,…)` — Letzteres eine Farbe, die in keiner Rampe vorkommt). → `--scrim-chip`, `--scrim-gradient` neben `--overlay-scrim`.
+7. **Die responsiven Rampen** (`gap` 1.25→4rem, `section-py` 3.5→8rem) sind zweimal bzw. fünfmal vollständig ausgeschrieben. → `--gap-responsive` und `--section-py` in `tokens.css` steppen, genau wie `--control-h` es vormacht.
+8. **Elf freie Hexe in der API-Doku** (`app.css:2221-2238`), drei davon exakte Duplikate bestehender Tokens (`#fef3c7` = `--color-yellow-bg`, `#047857` = `--chart-series-4`, `#6d28d9` = `--chart-series-3`).
+9. **Die dunkle Chrome** von Lightbox und Dokumentbetrachter erfindet ein eigenes Negativ-Vokabular aus **24** `rgba(255,255,255,…)`-Werten in zehn Deckkraftstufen, obwohl das CD eine benannte Negativ-Ebene führt (`btn--*-negative`, `link--negative`, `--color-focus-ring-negative`). → drei Tokens (`--surface-negative-hover`, `--border-negative`, `--text-negative-muted`).
 
-### 9.5 Datenladen — 13 → 5 Anfragen
+Im JS gilt dasselbe: **57 Inline-`style=`-Attribute**, darunter 14× `margin:0`, fünf `max-width`-Deckel und 4× `justify-content:space-between` trotz `.row--between`. Und `#2f4356` steht **8× in sechs Dateien** als Platzhalterfarbe — es ist bereits `--color-secondary-600`, und da `C.photo` die Farbe als Inline-`background-color` setzt, funktioniert `var(--color-secondary-600)` dort unverändert.
 
-`FILES` (eager) enthält nur noch, was die Shell zum Zeichnen braucht:
+---
 
-```js
-const FILES = { services: 'data/services.json', reference: 'data/reference-data.json' };
-```
+## 4. CSS: Duplikate, Reihenfolge, Breakpoints
 
-Alles andere ist `DEFERRED` und wird über `needs` je Route angefordert — inklusive der beiden
-GeoJSON-Bestände, die `loadDeferred()` jetzt mitsamt Normalisierung und `linkMedia()` behandelt.
-17 Routenmodule deklarieren ihren Bestand; `boot()` wartet auf vier parallele Anfragen
-(2 core + 2 Prozess-Engine) statt auf dreizehn.
+- **`.card--flat` und `.card--list` sind in der Basis byte-identisch** (`app.css:1198-1231`), inklusive zweier identischer `:hover`-Neutralisierungen; `.catalogue-grid .card__body` und `.search-result__link` wiederholen dieselbe Polsterrampe ein drittes und viertes Mal.
+- **`.stat` ist `.box` minus einer Stufe** (`:1770` vs. `:1759`) — und weicht dadurch unbeabsichtigt von CD `box.postcss` ab. → `.stat` löschen, `.box` verwenden.
+- **Der Visually-hidden-Block steht 7× in drei Fassungen**; `outline:2px solid var(--color-focus-ring); outline-offset:2px` steht **14×**.
+- **Fünf echte Doubletten**, u. a. die `.meta-info__item`-Media-Query zweimal buchstabengleich hintereinander und `.text--light` zweimal.
+- **Dreimal dasselbe Suchfeld-Bauteil** (`.service-controls__search`, `.catbar__search`, `.map-search__field`) — Deklarationen bis auf die Höhe identisch.
+- **Vier Konventionen für dieselbe sm-Grenze**: `max-width:640px` (4×, überlappt bei genau 640 px mit `min-width:640px`), `639px`, `639.98px`. Dazu die Sonderbreiten `800px` und `900px`, die auf keiner CD-Stufe liegen.
+- **Drei Regeln, die nie gewinnen können** — siehe §1.7. Dazu `.form__group__legend` mit zwei toten `font-weight`-Angaben (`:1428`, `:1434` gegen `:1472`) und zwei entbehrliche `!important` (`:751`, `:1528`).
+- **Ein reines No-Op:** `@media (max-width:800px)` bei `:2457` setzt exakt die Basiswerte.
+- **Die `:not()`-Kette auf `#main-content a`** (`:106-112`) ist dreimal ausgeschrieben und ergibt Spezifität (1,11,1) — jede spätere Link-Regel muss dagegen anschreiben. → eine `:not(…)`-Liste plus `:is(:hover,:focus)`, das senkt sie auf (1,2,1).
 
-Die Prozess-Engine bleibt bewusst im Start: sie trägt die Vorgangsliste, und «Meine Vorgänge»
-dürfte sie nicht halb sehen.
+---
 
-`pages/data.js` fordert nicht mehr die Vereinigungsmenge seiner Unterseiten an — sonst zöge
-`#/data/digitalisation` die 115 KB des Datenkatalogs mit, ohne einen Datensatz zu lesen. Die
-Unterseiten fordern ihren Bestand beim Delegieren selbst an.
+## 5. Toter und unerreichbarer Code
 
-### 9.6 Was NICHT gemacht wurde
+**Nachgeprüft** — jeweils `grep` über `js/`, `index.html` und die dynamische Klassenbildung:
 
-- **Kein Build-Schritt, kein Framework, keine Virtualisierung.** Die Messungen stützen das
-  nicht: die schwerste Ansicht rendert in 39 ms.
-- **`app.css` nicht minifiziert.** Komprimiert liegt sie bei 55 KB; eine Minifizierung
-  brächte ~20 KB und kostete die Lesbarkeit der Quelle oder einen Build-Schritt.
-- **`latin-ext` nicht ausgeliefert** — im gesamten Textbestand kommt kein Zeichen daraus vor.
+| | |
+|---|---|
+| **5 tote Exporte** in `components.js`: `tile`, `tagItem`, `catalogueControls`, `rerender`, `chevron` | 0 Aufrufe, ~45 Zeilen |
+| **9 Exporte nur modulintern genutzt**: `breakable`, `notificationBanner`, `modal`, `openModal`, `shareBar`, `shareUrlBlock`, `cardFooter`, `resultsHeader`, `viewSwitch` | aus `C` streichen; öffentliche Oberfläche 76 → ~62 Namen |
+| **`resolveChildren`'s `themen`-Zweig** (`shell.js:56-60`) ist **unerreichbar**: `childrenFrom` steht nur am Services-Eintrag, der Zweig wird nur bei `base !== 'services'` erreicht | löschen |
+| **`wirePipeline`** ist ein exportierter No-op (`return root`) mit genau einem Aufrufer | beide löschen |
+| **Toter Zweig** in `wireAccordion:719` (`root.getElementById ? …`) — `root` ist am einzigen Aufrufort ein Mount-Element | vereinfachen |
+| **Portfolio-Schemakarte** (`.pf-marker`, `.pf-status--*`, `.pf-map__hint`) — von MapLibre abgelöst | 3 Blöcke löschen |
+| **`.media-tile`, `.media-play`, `.lightbox`, `.pf-media*`** — kein Konsument | löschen |
+| **`.scroll-x` / `.table-scroll`** — `SCROLL_SEL` (`components.js:404`) kennt sie nicht; der Kommentar behauptet das Gegenteil | löschen oder `SCROLL_SEL` erweitern |
+| **`.ratio--*` (5 Regeln) und alle 7 `.photo--*`** — `C.photo` wird nur mit drei anderen Klassen aufgerufen | löschen oder als CD-Vokabular kennzeichnen |
+| **`.mt-3` wird benutzt, ist aber nicht definiert** (`components.js:576, 594, 595`) — die drei Elemente bekommen still keinen Abstand | `.mt-3` ergänzen |
 
-### 9.7 Testlage
+Zwei Dinge, die **nicht** tot sind und es beinahe geworden wären: `js/apps/estate.js` sieht im Routentabellen-Vergleich verwaist aus, wird aber dynamisch von `dataportal.js:45` geladen. Und `trapFocus`/`mountBanner`/`wireShare` zeigen in der `C.`-Zählung null Treffer, weil sie **benannt importiert** werden.
 
-13 der 14 CDP-Suiten grün. `test-portfolio` schlägt weiterhin mit ~26 Prüfungen fehl —
-**vorbestehend**: die Suite erwartet 41 Objekte, die Ansicht zeigt standardmässig nur
-Gebäude (21). Zwei Suiten (`media-library`, `building-create`) fallen aus, wenn man sie in
-enger Schleife hintereinander startet, und laufen einzeln grün — Browser-Kontention der
-Testumgebung, nicht der Anwendung.
+---
 
-Die Karte im Liegenschaften-Inventar wurde direkt geprüft und rendert korrekt
-(`.pf-map canvas` vorhanden, MapLibre geladen, keine Konsolenfehler).
+## 6. Konventionen, die auseinanderlaufen
+
+1. **Rückgabewerte der `wire*`-Familie:** sechs Konventionen. Vier geben eine Aufräumfunktion zurück, eine `{activate}`, eine `boolean`, eine `root`, fünf `undefined`. Ein Aufrufer kann nicht wissen, ob es ein Teardown gibt, ohne die Quelle zu lesen. → **Jede `wire*`-Funktion gibt eine Aufräumfunktion zurück** (notfalls `() => {}`), Zusatzergebnisse hängen als Eigenschaften daran.
+2. **Positional vs. Objekt:** `notification(text, variant, iconName, opts)` hat vier Positionen, deren letzte bereits ein Optionsobjekt ist. → **Ab dem dritten Parameter Objekt.**
+3. **Namen für dasselbe:** `iconName` gegen `icon:` gegen `triggerIcon`; `label` bedeutet je nach Bauteil sichtbaren Text, `aria-label`, Vorspann oder Zielbezeichnung. → `iconName` / `label` (sichtbar) / `ariaLabel` / `title` festlegen.
+4. **`available` vs. `unavailable`** — siehe §1.2. Einer der beiden muss weg.
+5. **Wer escaped?** `catalogueResults:1140` escaped `unit`, bevor es an `empty()` geht, das noch einmal escaped; vier Zeilen weiter (`:1144`) geht dasselbe `unit` roh hinein. Regel festhalten: **was an `empty()` geht, ist Klartext.**
+6. **Drei Inline-`onclick`** in einer sonst durchgehend delegationsbasierten Bibliothek (`components.js:553`, `:822`, `:1574`) — für eine Content-Security-Policy unbrauchbar.
+7. **`CSS.escape` uneinheitlich:** die eine Hälfte der Datei nutzt es, die andere konkateniert `'#' + id`.
+8. **`openShareModal` greift global zu:** `document.querySelector('.modal--xs')` statt auf das soeben erzeugte Element (`components.js:588`) — `openModal` gibt nur `close` zurück, nicht `el`. Bei zwei offenen Dialogen wird der falsche verdrahtet.
+
+---
+
+## 7. Reihenfolge der Umsetzung
+
+Von risikoarm nach risikoreich. Die ersten drei Stufen sind reine Textverschiebung.
+
+1. **Die sieben Fehler aus §1** — zuerst, damit das Refactoring sie nicht mitzementiert. Klein, einzeln prüfbar.
+2. **`js/format.js`, `js/domain.js`, `js/crumbs.js`, `js/links.js`** (§2.8) — kein Verhaltensrisiko, entfernt ~120 Zeilen und behebt nebenbei die Grössen-Divergenz aus §1.4.
+3. **Toter Code** (§5) — ~200 Zeilen CSS und JS, keine Wirkung.
+4. **Tokens** (§3) in der Reihenfolge Farbe → Zeit → Z-Achse → Abstand. Jede Stufe ist mechanisch und einzeln nachmessbar.
+5. **`js/map-slot.js`** (§2.4) — klar abgegrenzt, sechs Aufrufstellen.
+6. **`wireCatbar`** (§2.3) — zwei Aufrufer, klein, hoher Aufräumwert.
+7. **`js/spatial-tree.js`** (§2.1) — grösster Einzelgewinn, aber erst nach 1–6: die acht Verhaltensunterschiede müssen Zeile für Zeile abgehakt werden.
+8. **`js/catalogue-page.js`** (§2.2) — zuletzt und **als fünf kleine Bausteine**, nicht als eine Funktion mit dreissig Optionen.
+
+**Erwartete Wirkung:** rund **900 Zeilen weniger** bei gleichem Funktionsumfang, eine Token-Schicht, die tatsächlich benutzt wird, und — der eigentliche Gewinn — **eine Stelle statt drei**, an der eine Änderung am räumlichen Baum oder an der Katalogleiste einzupflegen ist.
+
+---
+
+## 8. Was nachgeprüft wurde
+
+Nicht übernommen, sondern selbst nachgestellt:
+
+- **§1.1** im Browser reproduziert: Reset-Ziel bleibt `?classification=internal`.
+- **§1.2** Signatur von `empty()` gegen den Aufruf in `news.js` gelesen — die Inversion ist real.
+- **§1.3** `fgroup()` gegen `C.filterGroup` verglichen; `checked` und `id` fehlen, Vorgabefilter ist `['building']`.
+- **§1.4** beide Formatierer mit 2048/4820/512 KB durchgerechnet: «4,7 MB» gegen «4.7 MB».
+- **§1.5/§1.6** `--color-focus` und `--fw-normal` existieren in `tokens.css` nicht; `1544px` steht an 12 anderen Stellen.
+- **§1.7** Zeilenreihenfolge und Spezifität beider Regeln gelesen.
+- **§2.1/§2.3** Blöcke nebeneinandergelegt; die Verdrahtungen unterscheiden sich nur im Commit-Ziel.
+- **§3** alle Zahlen der Tabelle einzeln gezählt (`grep -c`).
+- **§5** jeder tote Export einzeln gegrept (`C.<name>` und blanker Aufruf); `resolveChildren` über `childrenFrom` und die Zweigbedingung geprüft; `estate.js` als **lebendig** nachgewiesen, bevor es auf die Liste kam.
+
+**Nicht geprüft und deshalb als Vorschlag, nicht als Befund zu lesen:** die genauen Signaturen der vorgeschlagenen neuen Module (§2) — sie sind aus den Aufrufstellen abgeleitet, aber nicht implementiert.
+
+---
+
+## Anhang: Testwerkzeug
+
+Kein Befund am Produktcode, aber die Ursache wiederkehrender Falschalarme:
+
+`scripts/lib/cdp.mjs:28-46` startet Edge und verbindet sich anschliessend mit **dem, was auf dem Debug-Port antwortet**. Drei Suiten teilen sich Port 9333 — `test-tabs.mjs` nennt ihn, `test-building-create.mjs` und `test-media-library.mjs` rufen `launch()` ohne Port und erben denselben Standardwert. Ein übrig gebliebener Browser wird dadurch mitsamt seinem warmen HTTP-Cache übernommen.
+
+Das hat am 29. und 30. Juli zweimal zu Phantomfehlern geführt, die nach dem Abschiessen der Prozesse verschwanden — zuletzt bei `table--rows-clickable`, wo die Klasse nachweislich im DOM stand, der Test sie aber nicht sah (185 verwaiste `msedge`-Prozesse).
+
+→ `launch()` sollte einen freien Port selbst wählen **oder** abbrechen, wenn der Port schon antwortet, statt sich anzuhängen.

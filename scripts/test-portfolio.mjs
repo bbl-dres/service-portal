@@ -26,7 +26,7 @@ const GAL_SEITEN = Math.ceil(TOTAL / 9);   // Galerie zeigt 9 je Seite
 console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grundstücke = ${TOTAL}, davon CH ${CH}, ${LAENDER} Länder)`);
 
 (async () => {
-  const cdp = await launch({ port: 9353, webgl: true });
+  const cdp = await launch({ webgl: true });
   try {
     // 1) shell: tree + default Karte view --------------------------------------
     const p = await openPage(cdp, `${APP_BASE}/app/portfolio`);

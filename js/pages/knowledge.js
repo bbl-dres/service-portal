@@ -90,7 +90,7 @@ function areaPage(ctx, area) {
       s.items ? `<ul class="download-items">${s.items.map(it => C.downloadItem({
         href: '#', ...it, download: !it.external, wrapLi: true,
       })).join('')}</ul>` : '',
-      s.faq ? C.accordion(FAQS.map(f => ({ title: f.q, body: `<p style="margin:0">${C.escape(f.a)}</p>` })), { id: 'faq' }) : '',
+      s.faq ? C.accordion(FAQS.map(f => ({ title: f.q, body: `<p class="m-0">${C.escape(f.a)}</p>` })), { id: 'faq' }) : '',
     ].join(''),
   }));
 

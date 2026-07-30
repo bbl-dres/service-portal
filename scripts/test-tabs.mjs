@@ -70,7 +70,7 @@ const check = (cond, label) => {
 };
 
 (async () => {
-  const cdp = await launch({ port: 9333, webgl: true });
+  const cdp = await launch({ webgl: true });
   try {
     for (const v of VIEWS) {
       console.log(`\n■ ${v.name}`);

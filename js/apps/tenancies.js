@@ -18,24 +18,14 @@ import { floorplanSvg, floorplanLegend, wireFloorplan, COLOR_MODES } from '../fl
 import { initEstateMap } from '../buildings-map.js';
 import { heroMosaic, galleryItemsFrom } from '../hero-mosaic.js';
 import { openGallery } from '../gallery.js';
-
-// Ländercode → Name. Alle erfassten Mietverhältnisse liegen in der Schweiz;
-// die Tabelle steht trotzdem hier, weil der Baum die Stufe «Land» führt und
-// Auslandvertretungen im Portfolio des Bundes vorkommen.
-const LAND = { CH: 'Schweiz', DE: 'Deutschland', US: 'USA', JP: 'Japan', BR: 'Brasilien', AU: 'Australien' };
-const landName = (l) => LAND[l] || l || '—';
+import { chf, m2, datum } from '../format.js';
+import { landName, statusLabel } from '../domain.js';
+import { ANWENDUNGEN } from '../crumbs.js';
+import * as links from '../links.js';
 
 export const needs = ['tenancies', 'floors', 'spaces', 'contracts'];
 
-const CRUMBS = [
-  { label: 'Startseite', href: '#/' },
-  { label: 'Daten und Digitalisierung', href: '#/data' },
-  { label: 'Anwendungen', href: '#/applications' },
-];
-
-const chf = (x) => 'CHF ' + Number(x || 0).toLocaleString('de-CH');
-const m2 = (x) => Number(x || 0).toLocaleString('de-CH') + ' m²';
-const datum = (iso) => { if (!iso) return '—'; const d = new Date(iso); return isNaN(d) ? String(iso) : d.toLocaleDateString('de-CH'); };
+const CRUMBS = ANWENDUNGEN;
 // Restlaufzeit in Monaten — die Zahl, auf die Mietende zuerst schauen.
 const monateBis = (iso) => {
   const d = new Date(iso);
@@ -156,8 +146,8 @@ function overview(ctx) {
   const card = (t) => C.card({
     title: t.buildingName,
     desc: `${t.veName} · ${t.department}`,
-    href: `#/app/tenancies/${encodeURIComponent(t.tenancyId)}`,
-    photo: { src: t.photoSrc, color: '#2f4356', alt: `${t.buildingName}, ${t.city}` },
+    href: links.mietverhaeltnis(t.tenancyId),
+    photo: { src: t.photoSrc, color: 'var(--color-secondary-600)', alt: `${t.buildingName}, ${t.city}` },
     chips: [t.ve, t.floorLabels.join(' + ')],
     footerInfo: `${m2(t.areaHnf)} · ${t.workstations} AP`,
     footerAction: C.cardAction(),
@@ -167,7 +157,7 @@ function overview(ctx) {
   const listHTML = (slice) => C.table({
     caption: 'Mietverhältnisse', zebra: true,
     columns: [
-      { key: 'buildingName', label: 'Objekt', render: (t) => `<a href="#/app/tenancies/${encodeURIComponent(t.tenancyId)}">${esc(t.buildingName)}</a><br><span class="small muted">${esc(t.street)}, ${esc(t.zip)} ${esc(t.city)}</span>` },
+      { key: 'buildingName', label: 'Objekt', render: (t) => `<a href="${links.mietverhaeltnis(t.tenancyId)}">${esc(t.buildingName)}</a><br><span class="small muted">${esc(t.street)}, ${esc(t.zip)} ${esc(t.city)}</span>` },
       { key: 've', label: 'Verwaltungseinheit', render: (t) => `${esc(t.ve)}<br><span class="small muted">${esc(t.department)}</span>` },
       { key: 'floors', label: 'Geschosse', render: (t) => esc(t.floorLabels.join(', ')) },
       { key: 'areaHnf', label: 'Fläche', align: 'right', render: (t) => m2(t.areaHnf) },
@@ -190,7 +180,7 @@ function overview(ctx) {
     const points = list.filter((t) => Number.isFinite(t.lat) && Number.isFinite(t.lon))
       .map((t) => ({ lat: t.lat, lon: t.lon, label: t.buildingName, bblId: t.tenancyId,
         sub: `${t.ve} · ${t.floorLabels.join(' + ')} · ${m2(t.areaHnf)}`,
-        href: `#/app/tenancies/${encodeURIComponent(t.tenancyId)}` }));
+        href: links.mietverhaeltnis(t.tenancyId) }));
     const created = await initEstateMap(el, points, { type: 'FeatureCollection', features: [] }, state.sel.id || null);
     // Überholt oder Container weg? Sofort abbauen statt zuweisen (Wettlauf-Schutz
     // wie in js/apps/projects.js — initEstateMap lädt MapLibre erst vom CDN).
@@ -386,8 +376,12 @@ function detail(ctx, id) {
 
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
-    { id: 'grundriss', label: `Grundriss (${floors.length})` },
-    { id: 'vertrag', label: `Vertrag (${contracts.length})` },
+    // Reiterbeschriftungen tragen im ganzen Portal den Plural, sobald eine Zahl
+    // danebensteht — «Übersicht» ist die einzige Ausnahme. «Vertrag (3)» und
+    // «Grundriss (2)» lasen sich wie ein einzelner Gegenstand mit einer Zahl
+    // dahinter. «Verträge (0)» ist ausdrücklich richtig.
+    { id: 'grundriss', label: `Grundrisse (${floors.length})` },
+    { id: 'vertrag', label: `Verträge (${contracts.length})` },
     { id: 'vorgaenge', label: `Vorgänge (${cases.length})` },
   ];
   let active = query.get('tab') || 'uebersicht';
@@ -414,7 +408,7 @@ function detail(ctx, id) {
       if (spaceId) p.set('space', spaceId);
     }
     const qs = p.toString();
-    history.replaceState(null, '', `#/app/tenancies/${encodeURIComponent(t.tenancyId)}${qs ? '?' + qs : ''}`);
+    history.replaceState(null, '', `${links.mietverhaeltnis(t.tenancyId)}${qs ? '?' + qs : ''}`);
   };
 
   const restMonate = monateBis(t.leaseEnd);
@@ -434,7 +428,7 @@ function detail(ctx, id) {
       <dt>Mietende</dt><dd>${datum(t.leaseEnd)} ${restMonate != null ? C.badge(restMonate <= 12 ? `noch ${restMonate} Monate` : `noch ${Math.floor(restMonate / 12)} Jahre`, restMonate <= 12 ? 'warning' : 'info') : ''}</dd>
       <dt>Jahresmiete</dt><dd>${chf(t.yearlyCost)}</dd>
       <dt>Kostenstelle</dt><dd>${C.escape(t.costCentre)}</dd>
-      <dt>Objekt im Inventar</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(t.buildingId)}">${C.escape(t.buildingId)}</a></dd>
+      <dt>Objekt im Inventar</dt><dd><a href="${links.objekt(t.buildingId)}">${C.escape(t.buildingId)}</a></dd>
     </dl>`;
     const kontakte = (t.contacts || []).map((c) => `<div class="box">
       <h3>${C.escape(c.rolle)}</h3>
@@ -599,7 +593,7 @@ function detail(ctx, id) {
           { value: 'rooms', label: 'Räume (meiste zuerst)', cmp: (a, b) => b.rooms - a.rooms },
         ],
         columns: [
-          { key: 'label', label: 'Geschoss', render: (f) => `<a href="#/app/tenancies/${encodeURIComponent(t.tenancyId)}?tab=grundriss&floor=${encodeURIComponent(f.floorId)}">${C.escape(f.label)}</a>` },
+          { key: 'label', label: 'Geschoss', render: (f) => `<a href="${links.mietverhaeltnis(t.tenancyId)}?tab=grundriss&floor=${encodeURIComponent(f.floorId)}">${C.escape(f.label)}</a>` },
           { key: 'level', label: 'Niveau', align: 'right', render: (f) => String(f.level) },
           { key: 'rooms', label: 'Räume', align: 'right', render: (f) => String(f.rooms) },
           { key: 'areaHnf', label: 'HNF', align: 'right', render: (f) => m2(f.areaHnf) },
@@ -641,7 +635,7 @@ function detail(ctx, id) {
         perPage: 10, searchKeys: ['reference', 'title', 'defName'],
         sorts: [{ value: 'updated', label: 'Aktualisiert (neuste zuerst)', cmp: (a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')) }],
         columns: [
-          { key: 'reference', label: 'Referenz', render: (i) => `<a href="#/my-cases/${encodeURIComponent(i.instanceId)}">${C.escape(i.reference || i.instanceId)}</a>` },
+          { key: 'reference', label: 'Referenz', render: (i) => `<a href="${links.vorgang(i.instanceId)}">${C.escape(i.reference || i.instanceId)}</a>` },
           { key: 'title', label: 'Anliegen', render: (i) => C.escape(i.title || '—') },
           { key: 'defName', label: 'Ablauf', render: (i) => C.escape(i.defName || '—') },
           { key: 'status', label: 'Status', render: (i) => C.badge(statusLabel(core, i.status), 'info') },
@@ -765,9 +759,4 @@ function detail(ctx, id) {
     detachTables.forEach((f) => { try { f(); } catch { /* egal */ } });
   });
   draw();
-}
-
-function statusLabel(core, id) {
-  const m = (core.ref().statusModel || []).find((s) => s.id === id);
-  return m ? m.label : id;
 }

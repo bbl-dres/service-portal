@@ -24,7 +24,7 @@ export function heroMosaic(C, { items = [], mapId, mapLabel, id = 'pf-mosaic' })
   const tile = (it, i, cls, w, overlay = '') =>
     `<button type="button" class="pf-mosaic__cell ${cls}" data-gallery="${i}"
        aria-label="${esc(it.title)} — in der Galerie öffnen (Bild ${i + 1} von ${n})">
-      ${C.photo({ src: it.photoSrc, id: it.photo, color: '#2f4356', alt: esc(it.title), w, gray: it.gray,
+      ${C.photo({ src: it.photoSrc, id: it.photo, color: 'var(--color-secondary-600)', alt: esc(it.title), w, gray: it.gray,
         cls: 'pf-mosaic__photo', overlay })}
     </button>`;
   const placeholder = (cls) =>

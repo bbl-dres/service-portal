@@ -118,7 +118,11 @@ function list(ctx) {
       panelId: 'ds-filters', panel: `
         ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: themas, options: themen.map(x => ({ value: x, label: x })) })}
         ${C.filterGroup({ dim: 'classification', legend: 'Klassifizierung', selected: klasses, options: klassen.map(x => ({ value: x, label: klassLabel(core, x) })) })}
-        <a class="btn btn--bare btn--sm" href="${hash({ topic: [], klass: [], tag: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
+        ${/* Der Parameter heisst `classification` (siehe `base`), nicht `klass`.
+              Mit dem falschen Schlüssel liess `catalogueHash` die Klassifizierung
+              aus `base` stehen und warf das unbekannte leere Array weg — der
+              Filter überlebte also seinen eigenen Zurücksetzen-Knopf. */''}
+        <a class="btn btn--bare btn--sm" href="${hash({ topic: [], classification: [], tag: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}
@@ -248,7 +252,7 @@ function detail(ctx, id) {
 
     ${section('Verantwortliche Personen', persons
       ? `<div class="box"><div class="data-rows">${persons}</div></div>`
-      : `<div class="box"><p class="muted" style="margin:0">Für diesen Datensatz ist keine verantwortliche Person hinterlegt.</p></div>`)}
+      : `<div class="box"><p class="muted m-0">Für diesen Datensatz ist keine verantwortliche Person hinterlegt.</p></div>`)}
 
     ${section('Metadaten', `<div class="data-rows">${metaRows.map(([k, v]) => `
       <div class="data-row">

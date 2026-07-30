@@ -3,6 +3,8 @@
 // + die Aktive-Filter-Zeile, wie die übrigen Katalogansichten. Titel/Vorschau öffnen
 // den Dokument-Viewer mit der aktuellen Trefferliste als Blätter-Kontext.
 import { openDocumentViewer } from '../doc-viewer.js';
+import { dateiGroesse } from '../format.js';
+import { DATEN } from '../crumbs.js';
 
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
@@ -27,11 +29,7 @@ const PER_PAGE = 10;
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   setTitle('Bauwerksdokumentation');
-  setCrumbs([
-    { label: 'Startseite', href: '#/' },
-    { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Bauwerksdokumentation' },
-  ]);
+  setCrumbs([...DATEN, { label: 'Bauwerksdokumentation' }]);
 
   const all = core.documents();
   const buildings = core.buildings();
@@ -39,9 +37,6 @@ export default async function render(ctx) {
   const types = [...new Set(all.map(d => d.type))].sort((a, b) => a.localeCompare(b, 'de'));
   const years = [...new Set(all.map(d => d.year))].sort((a, b) => b - a);
   const tierVariant = (id) => { const t = tiers.find(x => x.id === id); return t ? t.variant : 'gray'; };
-  const fmtSize = (kb) => { const n = Number(kb) || 0; return n >= 1024
-    ? (n / 1024).toLocaleString('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' MB'
-    : n.toLocaleString('de-CH') + ' KB'; };
   const esc = (s) => C.escape(String(s == null ? '' : s));
 
   const parseArr = (k) => (query.get(k) || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -63,7 +58,7 @@ export default async function render(ctx) {
       { key: 'type', label: 'Typ', render: r => C.badge(r.type, 'gray') },
       { key: 'building', label: 'Gebäude', render: r => { const bid = (r.linkedTo || [])[0]; const b = bid ? core.building(bid) : null; return b ? `<a href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${esc(b.name)}</a>` : '<span class="muted">—</span>'; } },
       { key: 'year', label: 'Jahr', align: 'right', render: r => esc(r.year) },
-      { key: 'size', label: 'Grösse', align: 'right', render: r => fmtSize(r.sizeKB) },
+      { key: 'size', label: 'Grösse', align: 'right', render: r => dateiGroesse(r.sizeKB) },
       { key: 'classification', label: 'Klassifizierung', render: r => C.badge(r.classification, tierVariant(r.classification)) },
       { key: 'preview', label: 'Vorschau', render: r => `<button type="button" class="btn btn--link doc-open" data-doc="${esc(r.docId)}" aria-label="Vorschau ${esc(r.title)}">${C.icon('File', 'icon--base')} Öffnen</button>` },
     ], rows });

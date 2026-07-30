@@ -11,7 +11,10 @@
 // Ein Projekt wird über #/app/projects/<projectId> angesprochen.
 import { initEstateMap } from '../buildings-map.js';
 import { openGallery } from '../gallery.js';
-
+import { chf } from '../format.js';
+import { landName, weOf, projectStatusLabel } from '../domain.js';
+import { ANWENDUNGEN } from '../crumbs.js';
+import * as links from '../links.js';
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -21,19 +24,12 @@ import { openGallery } from '../gallery.js';
 export const needs = ['projects'];
 let pjMap = null;
 function freePjMap() { if (pjMap) { try { pjMap.remove(); } catch { /* schon weg */ } pjMap = null; } }
-const weOf = (id) => String(id || '').split('/')[1] || '';
-const LAND = { CH: 'Schweiz', DE: 'Deutschland', US: 'USA', JP: 'Japan', BR: 'Brasilien', AU: 'Australien' };
-const landName = (l) => LAND[l] || l || '—';
 
-const CRUMBS = [
-  { label: 'Startseite', href: '#/' },
-  { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
-];
+const CRUMBS = ANWENDUNGEN;
 
 const PROJECT_STATUS_VARIANT = { geplant: 'info', aktiv: 'warning', sistiert: 'gray', abgeschlossen: 'success', abgebrochen: 'error' };
 const AMPEL_VARIANT = { gruen: 'success', gelb: 'warning', rot: 'error' };
 const AMPEL_LABEL = { gruen: 'Grün', gelb: 'Gelb', rot: 'Rot' };
-const chf = (x) => 'CHF ' + Number(x || 0).toLocaleString('de-CH');
 
 // Sortierung der Ergebnisliste (Galerie/Liste; die Karte ist reihenfolgeunabhängig).
 const nameCmp = (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de');
@@ -58,8 +54,7 @@ export default async function render(ctx) {
 }
 
 // ---- shared badges ------------------------------------------------------
-function statusLabel(core, id) { const m = (core.ref().projectStatuses || []).find(s => s.id === id); return m ? m.label : id; }
-function projectStatusBadge(C, core, status) { return C.badge(statusLabel(core, status), PROJECT_STATUS_VARIANT[status] || 'gray'); }
+function projectStatusBadge(C, core, status) { return C.badge(projectStatusLabel(core, status), PROJECT_STATUS_VARIANT[status] || 'gray'); }
 function ampelBadge(C, prefix, value) { return C.badge(`${prefix}: ${AMPEL_LABEL[value] || value}`, AMPEL_VARIANT[value] || 'gray'); }
 
 // ---- overview (map-first explorer) --------------------------------------
@@ -160,15 +155,15 @@ function overview(ctx) {
   // Listenansicht und auf der Detailseite, wo sie mit ihrer Erklärung stehen.
   function pjCard(o) {
     return C.card({
-      title: o.name, desc: o.teaser, href: `#/app/projects/${encodeURIComponent(o.id)}`,
-      photo: { src: o.photoSrc, color: '#2f4356', alt: `${o.name} — ${o.buildingName}` },
-      chips: [landName(o.land), statusLabel(core, o.status)],
+      title: o.name, desc: o.teaser, href: links.bauprojekt(o.id),
+      photo: { src: o.photoSrc, color: 'var(--color-secondary-600)', alt: `${o.name} — ${o.buildingName}` },
+      chips: [landName(o.land), projectStatusLabel(core, o.status)],
       footer: `<span>${esc(o.projectNumber)}</span><span>SIA ${esc(o.siaPhase)} · ${esc(o.siaPhaseLabel)}</span>`,
     });
   }
   const galleryHTML = (slice) => `<div class="grid grid--3">${slice.map(pjCard).join('')}</div>`;
   const listHTML = (slice) => C.table({ zebra: true, caption: 'Bauprojekte', columns: [
-    { key: 'projectNumber', label: 'Projektnr.', render: (o) => `<a href="#/app/projects/${encodeURIComponent(o.id)}">${esc(o.projectNumber)}</a>` },
+    { key: 'projectNumber', label: 'Projektnr.', render: (o) => `<a href="${links.bauprojekt(o.id)}">${esc(o.projectNumber)}</a>` },
     { key: 'name', label: 'Bezeichnung', render: (o) => `${esc(o.name)}<br><span class="small muted">${esc(o.buildingName)}</span>` },
     { key: 'ort', label: 'Ort', render: (o) => `${esc(o.city)}<br><span class="small muted">${esc(landName(o.land))}</span>` },
     { key: 'status', label: 'Status', render: (o) => projectStatusBadge(C, core, o.status) },
@@ -185,7 +180,7 @@ function overview(ctx) {
     freePjMap();
     const el = mount.querySelector('#pj-map-el'); if (!el) return;
     const points = list.filter((o) => Number.isFinite(o.lat) && Number.isFinite(o.lon))
-      .map((o) => ({ lat: o.lat, lon: o.lon, label: o.name, bblId: o.id, sub: `${o.projectNumber} · ${o.buildingName}`.trim(), href: `#/app/projects/${encodeURIComponent(o.id)}` }));
+      .map((o) => ({ lat: o.lat, lon: o.lon, label: o.name, bblId: o.id, sub: `${o.projectNumber} · ${o.buildingName}`.trim(), href: links.bauprojekt(o.id) }));
     const created = await initEstateMap(el, points, { type: 'FeatureCollection', features: [] }, focus);
     // Überholt oder Container weg? Sofort abbauen statt zuweisen.
     if (ticket !== mapTicket || !el.isConnected) { if (created) { try { created.remove(); } catch { /* egal */ } } return; }
@@ -232,7 +227,7 @@ function overview(ctx) {
     const pills = [];
     if (state.q.trim()) pills.push({ label: `Suche: „${state.q.trim()}“`, remove: 'q' });
     const sp = selPill(); if (sp) pills.push(sp);
-    state.filters.status.forEach((v) => pills.push({ label: statusLabel(core, v), remove: `status:${v}` }));
+    state.filters.status.forEach((v) => pills.push({ label: projectStatusLabel(core, v), remove: `status:${v}` }));
     state.filters.sia.forEach((v) => pills.push({ label: v, remove: `sia:${v}` }));
     state.filters.sub.forEach((v) => pills.push({ label: v, remove: `sub:${v}` }));
     box.innerHTML = C.activeFilters({ filters: pills });
@@ -405,7 +400,7 @@ function detail(ctx, id) {
       <dt>Projektnummer</dt><dd>${C.escape(p.projectNumber)}</dd>
       <dt>Standort</dt><dd>${C.escape(p.siteName || '—')}${ort ? `<br><span class="small muted">${C.escape(ort)}</span>` : ''}</dd>
       <dt>Objekt im Inventar</dt><dd>${p.buildingId
-        ? `<a href="#/app/portfolio?id=${encodeURIComponent(p.buildingId)}">${C.escape(p.buildingId)}</a>` : '—'}</dd>
+        ? `<a href="${links.objekt(p.buildingId)}">${C.escape(p.buildingId)}</a>` : '—'}</dd>
       <dt>Projektleitung</dt><dd>${C.escape(p.pm || '—')}</dd>
       <dt>Teilportfolio</dt><dd>${C.escape(p.subPortfolio || '—')}</dd>
       <dt>SIA-Phase</dt><dd>${C.escape(p.siaPhase)} · ${C.escape(p.siaPhaseLabel)}</dd>
@@ -431,7 +426,7 @@ function detail(ctx, id) {
     const row = (icon, prefix, value, desc) => `
       <div class="box">
         <div class="row gap-sm">${C.icon(icon, 'icon--lg')}<strong>${C.escape(prefix)}</strong> ${ampelBadge(C, prefix === 'Projektziele' ? 'Ziele' : 'Risiko', value)}</div>
-        <p class="small muted mt-2" style="margin-top:.5rem">${C.escape(desc)}</p>
+        <p class="small muted mt-2">${C.escape(desc)}</p>
       </div>`;
     const zielDesc = {
       gruen: 'Projektziele (Termine, Kosten, Qualität) werden voraussichtlich erreicht.',
@@ -457,10 +452,10 @@ function detail(ctx, id) {
   // ohne Urheberangabe wäre hier schlicht falsch.
   function heroFigure() {
     const bild = C.photo({
-      src: p.photoSrc, color: '#2f4356', alt: `${p.name}${p.siteName ? ' — ' + p.siteName : ''}`, w: 1600,
+      src: p.photoSrc, color: 'var(--color-secondary-600)', alt: `${p.name}${p.siteName ? ' — ' + p.siteName : ''}`, w: 1600,
       style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg)',
     });
-    if (!galleryItems.length) return `<div style="margin-top:1rem">${bild}</div>`;
+    if (!galleryItems.length) return `<div class="mt-4">${bild}</div>`;
     const m = p.media[0];
     return `<figure class="pj-hero">
       <button type="button" class="pj-hero__btn" data-gallery="0"
@@ -483,7 +478,7 @@ function detail(ctx, id) {
       ${C.backLink('#/app/projects', 'Bauprojekte')}
       <h1 tabindex="-1">${C.escape(p.name)}</h1>
       <p class="lead">${C.escape(p.projectNumber)}${p.siteName ? ' · ' + C.escape(p.siteName) : ''}${
-        p.city ? ', ' + C.escape(p.city) : ''} · ${C.escape(statusLabel(core, p.status))}</p>
+        p.city ? ', ' + C.escape(p.city) : ''} · ${C.escape(projectStatusLabel(core, p.status))}</p>
       ${heroFigure()}
       ${C.tabBar({ items: tabs, active, idPrefix: 'pj-tab', ariaLabel: 'Projektdetails', controlsClass: 'mt-6' })}
       ${C.tabPanels({ items: tabs, active, idPrefix: 'pj-tab', render: (t) => panels[t]() })}

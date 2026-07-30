@@ -194,7 +194,7 @@ function infoPage(ctx, { title, lead, note, photo }) {
       title, lead,
       image: C.heroFigure({ id: photo }),
     })}
-    <div class="mt-6" style="max-width:60rem">
+    <div class="measure-xl mt-6">
       ${C.notification(note, 'info', 'InfoCircle')}
     </div>
   </div>`;

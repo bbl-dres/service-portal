@@ -40,7 +40,7 @@ let failures = 0;
 const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label}`); if (!cond) failures++; };
 
 (async () => {
-  const cdp = await launch({ port: 9337 });
+  const cdp = await launch();
   try {
     // log in once for the gated my-cases route
     let lp = await openPage(cdp, `${APP_BASE}/`);

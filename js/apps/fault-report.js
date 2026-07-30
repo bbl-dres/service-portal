@@ -138,7 +138,7 @@ export default async function render(ctx) {
           control: (cls, attrs) => `<textarea id="beschreibung" placeholder="Beschreiben Sie den Sachverhalt möglichst genau." class="${cls}"${attrs}>${C.escape(state.beschreibung)}</textarea>` })}
         ${C.select({ id: 'dringlichkeit', name: 'dringlichkeit', label: 'Dringlichkeit', value: state.dringlichkeit, options: dringlichkeitOpts })}
         ${C.notification('Mit dem Absenden wird ein Vorgang erstellt. Sie können den Status jederzeit unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
-        <div class="row mt-4" style="justify-content:flex-end">
+        <div class="row row--end mt-4">
           <a class="btn btn--outline" href="#/services">Abbrechen</a>
           <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Meldung absenden</button>
         </div>

@@ -1,4 +1,5 @@
 // Meine Vorgänge — running cases (driven by the mock process engine).
+import { statusLabel } from '../domain.js';
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -32,7 +33,7 @@ export default async function render(ctx) {
   <div class="container section">
     ${C.pageHeader({ title: 'Meine Vorgänge', lead: 'Status aller von Ihnen ausgelösten Anfragen und Bestellungen.' })}
     <h2 class="sr-only">Kennzahlen</h2>
-    <div class="stats mt-4" style="max-width:34rem">
+    <div class="stats measure-sm mt-4">
       <div class="stat"><div class="stat__num">${all.length}</div><div class="stat__label">Vorgänge total</div></div>
       <div class="stat"><div class="stat__num">${openCount}</div><div class="stat__label">offen / in Arbeit</div></div>
     </div>
@@ -44,7 +45,7 @@ export default async function render(ctx) {
   // keine Sortierung, keine Paginierung — bei wachsender Vorgangszahl unbrauchbar.
   // Gleicher Baustein wie in der Objekt-Detailansicht (C.mountDataTable).
   const STATUS_OPTS = [...new Set(all.map(i => i.status))]
-    .map(s => ({ value: s, label: sLabel(core, s) }));
+    .map(s => ({ value: s, label: statusLabel(core, s) }));
   C.mountDataTable(mount.querySelector('#mc-table'), {
     id: 'mc', rows: all, unit: 'Vorgänge', caption: 'Meine Vorgänge',
     searchKeys: ['reference', 'title', 'defName'],
@@ -62,7 +63,7 @@ export default async function render(ctx) {
       { key: 'title', label: 'Titel', render: r => C.escape(r.title) },
       { key: 'defName', label: 'Typ', render: r => C.escape(r.defName) },
       { key: 'updatedAt', label: 'Aktualisiert', render: r => C.escape(r.updatedAt || r.createdAt) },
-      { key: 'status', label: 'Status', render: r => C.statusBadge(r.status, sLabel(core, r.status)) },
+      { key: 'status', label: 'Status', render: r => C.statusBadge(r.status, statusLabel(core, r.status)) },
     ],
   });
 }
@@ -106,15 +107,15 @@ function detail(ctx, id) {
 
   // --- Tab «Daten»: Antragsteller/Standort/Projekt als Karten + Angaben-Tabelle ---
   const antragstellerCard = `<div class="box"><h3>Antragsteller</h3>
-    <p style="margin:0"><strong>${C.escape(i.requester || '—')}</strong>${
+    <p class="m-0"><strong>${C.escape(i.requester || '—')}</strong>${
       i.organization ? `<br><span class="small muted">${C.escape(i.organization)}</span>` : ''}</p></div>`;
   const standortCard = b ? `<div class="box"><h3>Standort</h3>
-    <p style="margin:0">${C.escape(b.name)}<br>
+    <p class="m-0">${C.escape(b.name)}<br>
       <span class="small muted">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)}</span><br>
       <span class="small muted">WE ${C.escape(b.bbl_we || '—')} · EGID ${C.escape(b.egid || '—')}</span></p>
     <p style="margin:.5rem 0 0"><a class="btn btn--link" href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')} Gebäude ansehen</a></p></div>` : '';
   const projektCard = p ? `<div class="box"><h3>Verknüpftes Projekt</h3>
-    <p style="margin:0">${C.escape(p.name)}${p.projectNumber ? `<br><span class="small muted">${C.escape(p.projectNumber)}</span>` : ''}</p>
+    <p class="m-0">${C.escape(p.name)}${p.projectNumber ? `<br><span class="small muted">${C.escape(p.projectNumber)}</span>` : ''}</p>
     <p style="margin:.5rem 0 0"><a class="btn btn--link" href="#/app/projects/${encodeURIComponent(p.projectId)}">${C.icon('ArrowRight', 'btn__icon')} Projekt ansehen</a></p></div>` : '';
   const cards = [antragstellerCard, standortCard, projektCard].filter(Boolean).join('');
   const angaben = dataEntries.length
@@ -149,7 +150,7 @@ function detail(ctx, id) {
   <div class="container section">
     ${C.detailBar({ backHref: '#/my-cases', backLabel: 'Meine Vorgänge' })}
     <div class="page-header">
-      <div class="row gap-sm" style="margin-bottom:.75rem">${C.statusBadge(i.status, sLabel(core, i.status))}</div>
+      <div class="row gap-sm mb-3">${C.statusBadge(i.status, statusLabel(core, i.status))}</div>
       <h1 tabindex="-1">${C.escape(i.reference)} <span class="case-title-sub">— ${C.escape(i.title)}</span></h1>
       <p class="lead">Eingereicht ${C.escape(i.createdAt)} · Typ ${C.escape(i.defName)}${i.organization ? ` · ${C.escape(i.organization)}` : ''}</p>
     </div>
@@ -181,8 +182,7 @@ function detail(ctx, id) {
   });
   const adv = mount.querySelector('#advance');
   if (adv) adv.addEventListener('click', () => { engine.advance(i.instanceId); location.reload(); });
-  // Stepper auf den aktuellen Schritt scrollen + tabindex nur bei echtem Überlauf.
-  C.wirePipeline(mount);
+  // `C.wirePipeline(mount)` stand hier — die Funktion war seit dem Umbau auf
+  // `C.wireScrollRegions` ein `return root;` ohne Wirkung. Der Scrollbereich
+  // der Ablaufleiste wird vom Router verdrahtet.
 }
-
-function sLabel(core, id) { const m = (core.ref().statusModel || []).find(s => s.id === id); return m ? m.label : id; }

@@ -49,17 +49,6 @@ function branchRow(branchKey, label) {
     </button></li>`;
 }
 
-// Some nav items take their children from the data core (loaded before the shell
-// renders), so the menu always matches the catalogue.
-function resolveChildren(item) {
-  if (item.childrenFrom !== 'themen') return item.children || [];
-  // Dieselbe Ableitung wie themaBranchRows(): nur Themen, hinter denen wirklich
-  // ein Vorgang steht. Wird für die flache Mobil-/Fallback-Liste gebraucht.
-  const themen = themenMitVorgaengen()
-    .map(d => ({ href: `#/services?topic=${encodeURIComponent(d.key)}`, label: d.label }));
-  return [...(item.children || []), ...themen];
-}
-
 // Registry der nav-Zweige (Kinder mit branchKey, z. B. «Digitalisierung») —
 // fillBranch schlägt darüber die L2-Kinder eines Zweigs nach.
 const NAV_BRANCHES = {};
@@ -99,7 +88,9 @@ function headerHTML() {
       level0 = `<ul class="menu navy__level-0">${(item.children || [])
         .map(c => c.branchKey ? branchRow('nav:' + c.branchKey, c.label) : navyRow(c)).join('')}</ul>`;
     } else {
-      level0 = `<ul class="menu navy__level-0">${resolveChildren(item).map(navyRow).join('')}</ul>`;
+      // `childrenFrom: 'themen'` steht nur am Services-Eintrag, und der wird oben
+      // abgefangen — hier bleiben nur statisch deklarierte Kinder übrig.
+      level0 = `<ul class="menu navy__level-0">${(item.children || []).map(navyRow).join('')}</ul>`;
     }
 
     const inner = withBranches
