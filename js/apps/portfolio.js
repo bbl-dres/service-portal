@@ -632,6 +632,14 @@ function buildingDetail(ctx, b) {
     <h1 tabindex="-1">${C.escape(b.name)}</h1>
     <p class="lead">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)} · ${C.escape(b.portfolioCategory)}</p>
     ${heroBlock(C, { items: galleryItems, mapId: 'pf-hero-map', lat: b.lat, lon: b.lng, mapLabel: `Standort von ${b.name} auf der Karte` })}
+    ${/* Die Randspalte liegt IM Übersichtspanel, nicht neben der Reiterfläche.
+          Zwischenzeitlich stand sie aussen, damit die klebende Spalte mehr Weg
+          bekommt — das war der falsche Tausch: die Reiterleiste schrumpfte
+          dadurch von 1329 auf 929px und fluchtete nicht mehr mit dem Hero
+          darüber, und gebracht hat es nichts, weil das Übersichtspanel hier
+          (589px) ohnehin niedriger ist als die Randspalte selbst (771px).
+          Auf den übrigen Reitern will eine siebenspaltige Tabelle die volle
+          Breite, nicht eine Randspalte daneben. */''}
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', ariaLabel: 'Gebäudedetails' })}
       ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', render: panelHtml, heading: true })}

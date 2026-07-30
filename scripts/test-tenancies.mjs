@@ -123,7 +123,7 @@ check(o.h1 === 'Verwaltungszentrum Guisanplatz', 'Objektname als h1', o.h1);
 // gestellt wird, statt einen Klick daneben.
 // Zwei Reiter: «Vorgänge» und «Grundrisse» sind Abschnitte der Übersicht
 // geworden — als Reiter wurden sie nicht gefunden.
-check(o.reiter.length === 2, 'zwei Reiter', o.reiter.join(' | '));
+check(o.reiter.length === 3 && /^Grundrisse/.test(o.reiter[1]), 'drei Reiter mit eigenem Grundriss-Reiter', o.reiter.join(' | '));
 check(o.antragTitel === 'Anträge zu diesem Mietobjekt' && o.antragTabelle,
   'Anträge als Abschnitt der Übersicht', `${o.antragTitel} · Tabelle ${o.antragTabelle}`);
 check(o.kv.includes('Verwaltungseinheit') && o.kv.includes('Geschosse'), 'Kerndaten im Übersichtsreiter', o.kv.join(', '));
@@ -236,13 +236,13 @@ o = JSON.parse(await p.evaluate(`(async () => {
     svg: !!svg,
     viewBox: svg?.getAttribute('viewBox'),
     raeume: document.querySelectorAll('.fp__room').length,
-    geschosse: document.querySelectorAll('.fp-floors__chip').length,
-    aktiv: document.querySelector('.fp-floors__chip.is-active')?.textContent.trim(),
+    geschosse: document.querySelectorAll('.fp-floors .tag-item').length,
+    aktiv: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
     modi: [...document.querySelectorAll('#fp-color option')].map(x => x.value),
     legende: document.querySelectorAll('.fp-legend__item').length,
     gewaehlt: document.querySelector('#fp-color')?.value,
     kopf: document.querySelector('.fp-head__name')?.textContent.trim(),
-    fakten: document.querySelector('.fp-head__facts')?.textContent.trim(),
+    fakten: document.querySelector('.fp-side .fp-facts')?.textContent.replace(/s+/g,' ').trim(),
     knoepfe: [document.querySelector('#fp-vollbild'), document.querySelector('#fp-drucken')].map(Boolean),
     ariaErster: document.querySelector('.fp__room rect')?.getAttribute('aria-label'),
   });
@@ -258,7 +258,7 @@ check(o.modi.join(',') === 'none,use,sia,ve,capacity', 'fünf Einfärbemodi', o.
 check(o.gewaehlt === 've', 'Vorgabe-Einfärbung: Verwaltungseinheit', o.gewaehlt);
 check(o.legende > 0, 'Legende ohne Zutun sichtbar', String(o.legende));
 check(o.kopf === '2. OG', 'Geschossname in der Kopfleiste', o.kopf);
-check(/Räume/.test(o.fakten || '') && /HNF/.test(o.fakten || ''), 'Kennzahlen in der Kopfleiste', o.fakten);
+check(/Räume/.test(o.fakten || '') && /HNF/.test(o.fakten || ''), 'Kennzahlen in der Auswertungsspalte', o.fakten);
 check(o.knoepfe.every(Boolean), 'Vollbild- und Druckknopf vorhanden', o.knoepfe.join(','));
 
 // Und «Keine» bleibt wählbar — dann darf keine Legende stehen.
@@ -311,11 +311,11 @@ await clean(p, 'Raumauswahl');
 
 head('Geschosswechsel');
 o = JSON.parse(await p.evaluate(`(async () => {
-  const chip = [...document.querySelectorAll('.fp-floors__chip')].find(c => !c.classList.contains('is-active'));
+  const chip = [...document.querySelectorAll('.fp-floors .tag-item')].find(c => !c.classList.contains('tag-item--active'));
   const label = chip.textContent.trim();
   chip.click();
   await new Promise(r => setTimeout(r, 420));
-  return JSON.stringify({ label, aktiv: document.querySelector('.fp-floors__chip.is-active')?.textContent.trim(),
+  return JSON.stringify({ label, aktiv: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
     raeume: document.querySelectorAll('.fp__room').length, hash: location.hash });
 })()`));
 check(o.aktiv === o.label, 'Geschoss gewechselt', `${o.label} · ${o.raeume} Räume`);

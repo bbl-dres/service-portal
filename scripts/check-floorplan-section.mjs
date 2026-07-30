@@ -16,11 +16,11 @@ const lies = () => page.evaluate(`(() => {
   return {
     reiter: [...document.querySelectorAll('[role="tab"]')].map(t => t.textContent.trim()),
     reiterleiste: sichtbar('.tab__controls'),
-    abschnitt: q('#mt-grundriss > h2')?.textContent.trim(),
+    abschnitt: [...document.querySelectorAll('[role="tab"]')].map(t=>t.textContent.trim()).find(x=>/Grundriss/.test(x)),
     tabelle: !!q('#mt-dt-floors table'),
     betrachter: !!q('#fp-wrap'),
     kopfName: q('.fp-head__name')?.textContent.trim(),
-    kopfFakten: q('.fp-head__facts')?.textContent.trim(),
+    seitenFakten: q('.fp-side .fp-facts')?.textContent.replace(/s+/g,' ').trim(),
     vollbild: !!q('#fp-vollbild'), drucken: !!q('#fp-drucken'), zurueck: !!q('#fp-zurueck'),
     farbe: q('#fp-color')?.value,
     legende: document.querySelectorAll('.fp-legend__item').length,
@@ -28,7 +28,7 @@ const lies = () => page.evaluate(`(() => {
     // Bleibt der Kontext über dem Abschnitt stehen?
     eckdaten: !!q('.kpi-strip'), antraege: !!q('#mt-dt-vorgaenge table'), mosaik: !!q('#mt-mosaic'),
     // Reihenfolge der drei Abschnitte in der Übersicht.
-    reihenfolge: [...document.querySelectorAll('.detail-layout > div > section, .detail-layout .box')]
+    reihenfolge: [...document.querySelectorAll('.tab__container:not([hidden]) section, .detail-layout__aside .box')]
       .map(e => (e.querySelector(':scope > h2')?.textContent.trim() || '').split(' ')[0]),
     klebt: q('.fp-head') ? getComputedStyle(q('.fp-head')).position : null,
     hash: location.hash,
@@ -64,13 +64,12 @@ const druck = await page.evaluate(`(() => {
   const sicht = (s) => { const e = document.querySelector(s); return e ? getComputedStyle(e).visibility : null; };
   const zeigt = (s) => { const e = document.querySelector(s); return e ? getComputedStyle(e).display : null; };
   return JSON.stringify({
-    inhalt: sicht('#main-content'), abschnitt: sicht('#mt-grundriss'), plan: sicht('svg.fp'),
+    inhalt: sicht('#main-content'), abschnitt: sicht('#mt-grundriss__body'), plan: sicht('svg.fp'),
     legende: zeigt('.fp-legend'),            // der Schlüssel zur Einfärbung MUSS mitdrucken
     raumdetail: zeigt('#fp-room'),           // Bedienelemente nicht
     knoepfe: zeigt('.fp-head__actions'),
-    geschosswahl: zeigt('.fp-toolbar'),
+    geschosswahl: zeigt('.fp-color'),
     fusszeile: zeigt('.fp-print-foot'),      // nur im Druck sichtbar
-    abschnittTitel: zeigt('#mt-grundriss > h2'),
   });
 })()`).then(JSON.parse);
 await cdp.send('Emulation.setEmulatedMedia', { media: '' }, page.sessionId);
@@ -80,25 +79,26 @@ await cdp.close();
 console.log(JSON.stringify({ vorher, nachher, zurueck, alt, druck }, null, 1));
 
 const p = [
-  ['zwei Reiter, Grundrisse nicht darunter', vorher.reiter.length === 2 && !vorher.reiter.some((x) => /Grundriss/.test(x))],
-  ['Abschnitt «Grundrisse» in der Übersicht', vorher.abschnitt === 'Grundrisse'],
-  ['Reihenfolge Vertrag → Anträge → Grundrisse (+ Randspalte)',
-    vorher.reihenfolge.join('>') === 'Vertrag>Grundrisse>Anträge>Aktionen>Ansprechpersonen'],
+  ['drei Reiter, Grundrisse als eigener', vorher.reiter.length === 3 && vorher.reiter.some((x) => /^Grundrisse/.test(x))],
+  ['Reiter «Grundrisse» mit Zähler', /^Grundrisse \(\d+\)$/.test(vorher.abschnitt || '')],
+  ['Übersicht: Vertrag → Anträge (+ Randspalte)',
+    vorher.reihenfolge.join('>') === 'Vertrag>Anträge>Aktionen>Ansprechpersonen'],
   ['Ruhezustand: Geschosstabelle', vorher.tabelle && !vorher.betrachter],
   ['Klick öffnet den Betrachter an ihrer Stelle', nachher.betrachter && !nachher.tabelle],
   ['Reiterleiste bleibt sichtbar', nachher.reiterleiste],
   ['Eckdaten, Anträge und Mosaik bleiben stehen', nachher.eckdaten && nachher.antraege && nachher.mosaik],
-  ['Kopfleiste: Geschossname + Kennzahlen', !!nachher.kopfName && /Räume/.test(nachher.kopfFakten || '')],
+  ['Kopfleiste: Geschossname', !!nachher.kopfName],
+  ['Kennzahlen in der Auswertungsspalte', /Räume/.test(nachher.seitenFakten || '')],
   ['Kopfleiste: Zurück, Vollbild, Drucken', nachher.zurueck && nachher.vollbild && nachher.drucken],
   ['Kopfleiste klebt', nachher.klebt === 'sticky'],
   ['Vorgabe-Einfärbung Verwaltungseinheit, Legende gefüllt', nachher.farbe === 've' && nachher.legende > 0],
   ['Raumdetail vorhanden', nachher.raumPanel],
   ['Zurück führt in die Tabelle', zurueck.tabelle && !zurueck.betrachter],
   ['alter ?tab=grundriss-Link öffnet weiterhin den Plan', alt.betrachter && alt.farbe === 'use'],
-  ['… und landet auf der Übersicht', alt.aktiverReiter === 'Übersicht'],
-  ['Druck: nur der Grundrissabschnitt sichtbar', druck.inhalt === 'hidden' && druck.abschnitt === 'visible' && druck.plan === 'visible'],
+  ['… und landet auf dem Grundriss-Reiter', /^Grundrisse/.test(alt.aktiverReiter || '')],
+  ['Druck: nur der Grundriss sichtbar', druck.inhalt === 'hidden' && druck.abschnitt === 'visible' && druck.plan === 'visible'],
   ['Druck: Legende ist dabei (Schlüssel zur Einfärbung)', druck.legende !== 'none'],
-  ['Druck: Bedienelemente und Raumdetail nicht', ['raumdetail', 'knoepfe', 'geschosswahl', 'abschnittTitel'].every((k) => druck[k] === 'none')],
+  ['Druck: Bedienelemente und Raumdetail nicht', ['raumdetail', 'knoepfe', 'geschosswahl'].every((k) => druck[k] === 'none')],
   ['Druck: Fusszeile mit Objekt/Geschoss/Einfärbung', druck.fusszeile === 'block'],
 ];
 let fehler = 0;

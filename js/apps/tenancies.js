@@ -377,18 +377,21 @@ function detail(ctx, id) {
     // danebensteht — «Übersicht» ist die einzige Ausnahme. «Vertrag (3)» und
     // «Grundriss (2)» lasen sich wie ein einzelner Gegenstand mit einer Zahl
     // dahinter. «Verträge (0)» ist ausdrücklich richtig.
+    // «Grundrisse» ist ein eigener Reiter — nach einem Zwischenschritt als
+    // Abschnitt der Übersicht. Der Grund für den Rückweg: der Betrachter
+    // braucht BREITE. Als Abschnitt teilte er sich die Inhaltsspalte mit der
+    // Randspalte (929px statt 1329px), und daneben stand die Geschosstabelle,
+    // die Vertragsdaten und die Anträge — vier Dinge auf einer Fläche. Als
+    // eigener Reiter bekommt der Plan die volle Containerbreite, und das
+    // Raumdetail mit «Dienstleistung starten» hat rechts Platz, ohne mit einer
+    // zweiten Randspalte um dieselbe Kante zu streiten.
+    { id: 'grundriss', label: `Grundrisse (${floors.length})` },
     { id: 'vertrag', label: `Verträge (${contracts.length})` },
-    // «Grundrisse» ist ebenfalls kein Reiter mehr, sondern der letzte Abschnitt
-    // der Übersicht. Grund derselbe wie bei den Anträgen: hinter einem Reiter
-    // wurde der Plan schlicht nicht gefunden. Er steht ZULETZT, weil er der
-    // einzige Abschnitt ist, der aus einer zweizeiligen Tabelle in einen ~700px
-    // hohen Betrachter aufgeht — über den Anträgen schöbe er sie jedes Mal weg.
-    // «Vorgänge» war ein eigener Reiter und ist jetzt ein Abschnitt der
-    // Übersicht: die laufenden Anträge sind der Grund, warum eine
-    // Verwaltungseinheit diese Ansicht überhaupt öffnet — hinter einem Reiter
-    // waren sie einen Klick von der Frage entfernt, die sie beantworten.
-    // Ein alter Link mit `?tab=vorgaenge` fällt über die Prüfung unten
-    // stillschweigend auf die Übersicht zurück, wo der Abschnitt jetzt steht.
+    // «Vorgänge» bleibt dagegen ein Abschnitt der Übersicht: die laufenden
+    // Anträge sind der Grund, warum eine Verwaltungseinheit diese Ansicht
+    // überhaupt öffnet — hinter einem Reiter waren sie einen Klick von der
+    // Frage entfernt, die sie beantworten. Ein alter Link mit `?tab=vorgaenge`
+    // fällt über die Prüfung unten stillschweigend auf die Übersicht zurück.
   ];
   let active = query.get('tab') || 'uebersicht';
   if (!tabs.some((x) => x.id === active)) active = 'uebersicht';
@@ -402,6 +405,11 @@ function detail(ctx, id) {
   // die übrigen versteckt und die Kennzahlen je Geschoss gar nicht gezeigt.
   let floorId = query.get('floor') || '';
   if (floorId && !floors.some((f) => f.floorId === floorId)) floorId = '';
+  // Ein Link, der ein Geschoss nennt, meint den Grundriss — auch ohne `tab=`.
+  // Die Geschosstabelle verlinkt genau so (nur `?floor=`), und geteilte Links
+  // aus der Zeit, als der Plan ein Abschnitt der Übersicht war, landen damit
+  // weiterhin dort, wo der Plan steht.
+  if (floorId && !query.get('tab')) active = 'grundriss';
   // VORGABE «Verwaltungseinheit», nicht «Keine»: ein einfarbiger Plan lässt
   // nicht erkennen, dass er überhaupt eingefärbt werden KANN — die Auswahl
   // daneben las sich wie eine Zierde. Mit der Belegung als Startbild ist der
@@ -457,41 +465,16 @@ function detail(ctx, id) {
       <dt>Kostenstelle</dt><dd>${C.escape(t.costCentre)}</dd>
       <dt>Objekt im Inventar</dt><dd><a href="${links.objekt(t.buildingId)}">${C.escape(t.buildingId)}</a></dd>
     </dl>`;
-    // EIN Kasten für alle Ansprechstellen, nicht einer je Stelle: zuvor stand
-    // je Kontakt eine vollständige Kartenhülle um drei Textzeilen (191px hoch,
-    // davon das meiste Polsterung). Die Rolle ist jetzt die Beschriftung der
-    // Merkmalliste — und der Name entfällt, wo er die Rolle nur wiederholt
-    // («Portfoliomanagement / Portfoliomanagement» in 18 von 18 Datensätzen
-    // las sich wie ein Anzeigefehler).
-    const kontakte = `<div class="box">
-      <h2>Ansprechpersonen</h2>
-      <dl class="kv kv--stack">${(t.contacts || []).map((c) => `
-        <dt>${C.escape(c.rolle)}</dt>
-        <dd>${c.name && c.name !== c.rolle ? `${C.escape(c.name)}<br>` : ''
-          }<a href="mailto:${C.escape(c.email)}">${C.escape(c.email)}</a><br>${C.escape(c.phone)}</dd>`).join('')}
-      </dl>
-    </div>`;
-    // `.detail-layout` statt des 12-Spalten-Rasters: nur so kann die Randspalte
-    // über die GANZE Höhe kleben. Im Containerraster wäre sie ein Kind derselben
-    // Zeile wie der erste Abschnitt und nach ihm verschwunden — genau das
-    // Verhalten, das am Prototyp auffiel.
-    return `<div class="detail-layout">
-      <div>
+    // Die Randspalte gehört IN dieses Panel: die Reiterleiste darüber behält so
+    // die volle Containerbreite und fluchtet mit dem Hero, und der Reiter
+    // «Verträge» bekommt seine siebenspaltige Tabelle ungeschmälert. Der
+    // Klebeweg bleibt erhalten — dieses Panel ist 1227px hoch, die Randspalte
+    // 772px.
+    return `<div class="detail-layout"><div>
         <section>
           <h2 class="detail-section__title">Vertrag und Mengengerüst</h2>
           ${kpis}
           ${kv}
-        </section>
-        ${/* Grundrisse VOR den Anträgen: sie beschreiben das Mietobjekt selbst
-              und gehören damit neben die Vertragsdaten. Die Anträge sind
-              Vorgangsgeschehen und schliessen die Seite ab. */''}
-        ${/* Zwei Zustände in EINEM Abschnitt: die Geschosstabelle, und an ihrer
-              Stelle der Betrachter. Der Wechsel tauscht nur
-              `#mt-grundriss__body` aus — Seitenkopf, Bildmosaik, Reiterleiste
-              und die Abschnitte darüber bleiben stehen. */''}
-        <section class="detail-section" id="mt-grundriss">
-          <h2 class="detail-section__title">Grundrisse</h2>
-          <div id="mt-grundriss__body">${panelGrundriss()}</div>
         </section>
         ${/* Als eigener Reiter war das einen Klick weit weg von genau der
               Frage, mit der man in diese Ansicht kommt: «was läuft bei uns?» */''}
@@ -499,22 +482,35 @@ function detail(ctx, id) {
           <h2 class="detail-section__title">Anträge zu diesem Mietobjekt</h2>
           <div id="mt-dt-vorgaenge"></div>
         </section>
-      </div>
-      <aside class="detail-layout__aside" aria-label="Aktionen und Ansprechstellen">
-        ${serviceShortcuts()}
-        ${kontakte}
-      </aside>
-    </div>`;
+      </div>${asideHtml()}</div>`;
   }
+
+  // Randspalte NEBEN der ganzen Reiterfläche (wie im Liegenschafteninventar):
+  // Aktionen und Ansprechstellen gelten dem MIETOBJEKT, nicht einem Reiter.
+  // EIN Kasten für alle Ansprechstellen, nicht einer je Stelle: zuvor stand je
+  // Kontakt eine vollständige Kartenhülle um drei Textzeilen (191px hoch, davon
+  // das meiste Polsterung). Die Rolle ist die Beschriftung, der Name entfällt,
+  // wo er sie nur wiederholt («Portfoliomanagement / Portfoliomanagement» in
+  // 18 von 18 Datensätzen las sich wie ein Anzeigefehler). Beide Karten kommen
+  // aus js/components.js — dieselben wie im Inventar.
+  const asideHtml = () => `<aside class="detail-layout__aside" aria-label="Aktionen und Ansprechstellen">
+    ${serviceShortcuts()}
+    ${C.contactCard({ contacts: (t.contacts || []).map((c) => ({
+      label: c.rolle, name: c.name, email: c.email, phone: c.phone })) })}
+  </aside>`;
 
   /* ------------------------------------------------------------- Grundriss -- */
   // Zwei Zustände: die Geschossübersicht als Tabelle, und der Plan eines
   // Geschosses. Ein Mietobjekt umfasst mehrere Geschosse — die Tabelle ist die
   // Einstiegsebene und beantwortet die Mengenfragen (wie viele Räume, wie viel
   // Fläche, wie viele Arbeitsplätze je Geschoss), bevor man in die Zeichnung geht.
+  // Zwei Zustände in EINEM Reiter: die Geschosstabelle, und an ihrer Stelle der
+  // Betrachter. Der Wechsel tauscht nur `#mt-grundriss__body` aus — Seitenkopf,
+  // Bildmosaik und Reiterleiste bleiben stehen, es wird nicht navigiert.
   function panelGrundriss() {
-    if (!floors.length) return C.empty('Für dieses Mietverhältnis ist kein Grundriss hinterlegt.');
-    return floorId ? floorplanView() : floorTable();
+    return `<div id="mt-grundriss__body">${
+      !floors.length ? C.empty('Für dieses Mietverhältnis ist kein Grundriss hinterlegt.')
+        : floorId ? floorplanView() : floorTable()}</div>`;
   }
 
   // Geschosszeilen — angereichert um die Summen aus den Räumen. Wird von der
@@ -549,27 +545,40 @@ function detail(ctx, id) {
     const spaces = core.spacesForFloor(floor.floorId);
     const sel = spaces.find((s) => s.spaceId === spaceId) || null;
 
-    // Die Geschoss-Chips bleiben: sie wechseln OHNE den Umweg über die Tabelle.
-    // Der Rücksprung darüber verlässt den Betrachter — zwei Wege mit zwei
-    // verschiedenen Aufgaben, nicht zwei Wege zum selben Ziel.
-    const geschossWahl = floors.map((f) => `<a class="fp-floors__chip${f.floorId === floor.floorId ? ' is-active' : ''}"
-        href="#" data-floor="${C.escape(f.floorId)}"${f.floorId === floor.floorId ? ' aria-current="true"' : ''}>${C.escape(f.label)}</a>`).join('');
+    // Geschosswahl als CD-`tag-item` — dieselbe Chip-Komponente, die auch die
+    // Katalogfilter tragen, statt eines bespoken Knopfs mit voller Markenfarbe.
+    // BEI NUR EINEM GESCHOSS entfällt die Gruppe: sie wiederholte dann bloss
+    // den Geschossnamen aus der Überschrift, in einer auffälligen Fläche.
+    const geschossWahl = floors.length < 2 ? '' : `
+        <div class="fp-floors" role="group" aria-label="Geschoss wechseln">${floors.map((f) => {
+          const aktiv = f.floorId === floor.floorId;
+          return `<a class="tag-item${aktiv ? ' tag-item--active' : ''}" href="#" data-floor="${C.escape(f.floorId)}"${
+            aktiv ? ' aria-current="true"' : ''}><span class="tag-item__inner"><span class="tag-item__text">${
+            C.escape(f.label)}</span></span></a>`;
+        }).join('')}</div>`;
 
-    // Kopfleiste des Betrachters. Klebend, damit «Zurück», die Geschosse und
-    // «Einfärben nach» auch beim Scrollen eines hohen Plans erreichbar bleiben
-    // — dasselbe Idiom wie `.docviewer__bar`. `#fp-wrap` umschliesst Kopf UND
-    // Betrachter, damit im Vollbild die Bedienung mitkommt und nicht nur die
-    // Zeichnung dasteht.
+    // Kopfleiste des Betrachters — EINE Zeile: Geschossname · Geschosswahl ·
+    // Einfärbung · Vollbild/Drucken. Vorher standen Titel und Bedienelemente in
+    // zwei Reihen (`.fp-head__top` über `.fp-toolbar`), was einen Umbruch
+    // erzwang, den nichts nötig machte, und die Leiste auf 134px trieb.
+    // Klebend, damit die Bedienung beim Scrollen eines hohen Plans erreichbar
+    // bleibt — dasselbe Idiom wie `.docviewer__bar`. `#fp-wrap` umschliesst
+    // Kopf UND Betrachter, damit im Vollbild die Bedienung mitkommt und nicht
+    // nur die Zeichnung dasteht.
     const farbLabel = (COLOR_MODES.find((m) => m.value === colorMode) || {}).label || '';
     return `
       <div id="fp-wrap">
         <div class="fp-head">
+          <p class="fp-back"><a href="#" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
           <div class="fp-head__top">
-            <div class="fp-head__title">
-              <p class="fp-back"><a href="#" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
-              <h3 class="fp-head__name">${C.escape(floor.label)}</h3>
-              <p class="fp-head__facts">${floor.rooms} Räume · ${m2(floor.areaHnf)} HNF · ${m2(floor.areaGross)} brutto</p>
-            </div>
+            <h3 class="fp-head__name">${C.escape(floor.label)}</h3>
+            ${geschossWahl}
+            ${/* Vollwertiges CD-Auswahlfeld (`C.select`) statt eines baren
+                  Toolbar-Selects: ohne Rahmen las sich «Verwaltungseinheit» wie
+                  eine Beschriftung, nicht wie ein Bedienelement — und dies ist
+                  der einzige Regler, der das Bild verändert. */''}
+            ${C.select({ id: 'fp-color', label: 'Einfärben nach', value: colorMode,
+              size: 'sm', wrapClass: 'fp-color', options: COLOR_MODES })}
             <div class="fp-head__actions">
               <button class="btn btn--outline btn--sm" type="button" id="fp-vollbild">
                 ${C.icon('Expand', 'btn__icon icon--base')}<span class="btn__text">Vollbild</span></button>
@@ -577,23 +586,24 @@ function detail(ctx, id) {
                 ${C.icon('Printer', 'btn__icon icon--base')}<span class="btn__text">Drucken</span></button>
             </div>
           </div>
-          <div class="fp-toolbar">
-            <div class="fp-toolbar__group">
-              <span class="fp-toolbar__label" id="fp-floors-label">Geschoss</span>
-              <div class="fp-floors" role="group" aria-labelledby="fp-floors-label">${geschossWahl}</div>
-            </div>
-            <div class="fp-toolbar__group fp-toolbar__group--right">
-              <label class="fp-toolbar__label" for="fp-color">Einfärben nach</label>
-              <div class="select select--bare"><select id="fp-color" class="select__field">
-                ${COLOR_MODES.map((m) => `<option value="${m.value}"${m.value === colorMode ? ' selected' : ''}>${m.label}</option>`).join('')}
-              </select>${C.icon('ChevronDown', 'select__icon')}</div>
-            </div>
-          </div>
         </div>
         <div class="fp-viewer">
           <div class="fp-stage" id="fp-stage">${floorplanSvg({ floor, spaces, mode: colorMode, selectedId: spaceId })}</div>
           <div class="fp-side">
-            ${floorplanLegend(spaces, colorMode)}
+            ${/* Die Kennzahlen des Geschosses stehen HIER, nicht im Kopf: sie
+                  gehören zur Auswertung der Zeichnung — wie die Legende
+                  darunter, die dieselbe Fläche noch einmal aufteilt. Im Kopf
+                  standen sie zwischen Rücksprung und Bedienelementen und
+                  gehörten dort zu nichts. */''}
+            <dl class="kv kv--tight fp-facts">
+              <dt>Räume</dt><dd>${floor.rooms}</dd>
+              <dt>Fläche (HNF)</dt><dd>${m2(floor.areaHnf)}</dd>
+              <dt>Bruttofläche</dt><dd>${m2(floor.areaGross)}</dd>
+            </dl>
+            ${colorMode === 'none' ? '' : `<div>
+              <h4 class="fp-side__title">Einfärbung: ${C.escape(farbLabel)}</h4>
+              ${floorplanLegend(spaces, colorMode)}
+            </div>`}
             <div id="fp-room">${roomPanel(sel)}</div>
           </div>
         </div>
@@ -707,11 +717,15 @@ function detail(ctx, id) {
         ],
         // Summenzeile über die GEFILTERTE Menge, nicht über die Seite: sonst
         // stünde bei zwei Seiten eine Teilsumme unter der Tabelle.
-        foot: (_sichtbar, alle) => `<tr><th scope="row">Total</th>
-          <td class="text-right">${alle.reduce((n, f) => n + f.rooms, 0)}</td>
-          <td class="text-right">${m2(alle.reduce((n, f) => n + f.areaHnf, 0))}</td>
-          <td class="text-right">${alle.reduce((n, f) => n + f.arbeitsplaetze, 0)}</td>
-          <td class="text-right">${alle.reduce((n, f) => n + f.meineRaeume, 0)}</td></tr>`,
+        // Aufbau wie im Liegenschafteninventar (js/apps/portfolio.js): Klasse
+        // `table__total`, «Total (n)» mit der Anzahl in der Beschriftung, und
+        // die Summen fett — damit beide Apps ihre Tabellen gleich abschliessen.
+        foot: (_sichtbar, alle) => `<tr class="table__total">
+          <th scope="row" class="text-left">Total (${alle.length})</th>
+          <td class="text-right"><strong>${alle.reduce((n, f) => n + f.rooms, 0)}</strong></td>
+          <td class="text-right"><strong>${m2(alle.reduce((n, f) => n + f.areaHnf, 0))}</strong></td>
+          <td class="text-right"><strong>${alle.reduce((n, f) => n + f.arbeitsplaetze, 0)}</strong></td>
+          <td class="text-right"><strong>${alle.reduce((n, f) => n + f.meineRaeume, 0)}</strong></td></tr>`,
       },
       'mt-dt-vertraege': {
         id: 'mt-dt-vertrag', rows: contracts, unit: 'Verträge', caption: 'Verträge zum Objekt',
@@ -752,7 +766,7 @@ function detail(ctx, id) {
     };
   }
 
-  const panels = { uebersicht: panelUebersicht, vertrag: panelVertrag };
+  const panels = { uebersicht: panelUebersicht, grundriss: panelGrundriss, vertrag: panelVertrag };
 
   /* ---------------------------------------------------------------- Zeichnen */
   function draw() {
@@ -809,7 +823,9 @@ function detail(ctx, id) {
   function redrawGrundriss() {
     const host = mount.querySelector('#mt-grundriss__body');
     if (!host) return draw();
-    host.innerHTML = panelGrundriss();
+    // panelGrundriss() bringt die Hülle selbst mit — hier nur ihren Inhalt
+    // ersetzen, sonst verschachtelte sich #mt-grundriss__body bei jedem Klick.
+    host.outerHTML = panelGrundriss();
     wireGrundriss();
   }
 

@@ -19,9 +19,9 @@ const r = await page.evaluate(`(() => {
   const farbe = (e) => e ? getComputedStyle(e).backgroundColor : null;
   return {
     // --- Aufbau ---
-    hauptPanels: qa('.detail-layout > div > section').map(p => p.querySelector(':scope > h2')?.textContent.trim()),
+    hauptPanels: qa('.tab__container:not([hidden]) section').map(p => p.querySelector(':scope > h2')?.textContent.trim()),
     randPanels: panels.map(p => p.querySelector(':scope > h2')?.textContent.trim()),
-    ebenen: qa('.detail-layout section > h2, .detail-layout .box > h2').map(h => h.tagName),
+    ebenen: qa('.tab__container:not([hidden]) section > h2, .detail-layout__aside .box > h2').map(h => h.tagName),
     seitenFarbe: farbe(q('#main-content')),
     // --- Kopf ---
     eyebrow: q('.eyebrow')?.textContent.trim(),
@@ -40,7 +40,7 @@ const r = await page.evaluate(`(() => {
       return dt.some((rolle, i) => (dd[i] || '').startsWith(rolle)); })(),
     // --- Weg in die Bauwerksdokumentation statt eines Dokumentenabschnitts ---
     dokLink: q('.detail-layout__aside a[href*="document-archive"]')?.getAttribute('href'),
-    dokAbschnitt: qa('.detail-layout section > h2, .detail-layout .box > h2').some(h => /Dokument/.test(h.textContent)),
+    dokAbschnitt: qa('.tab__container:not([hidden]) section > h2, .detail-layout__aside .box > h2').some(h => /Dokument/.test(h.textContent)),
     // --- Klick-Winkel an anklickbaren Zeilen ---
     winkel: (() => { const z = q('.table--rows-clickable tbody tr > :last-child');
       return z ? getComputedStyle(z, '::after').maskImage || getComputedStyle(z, '::after').webkitMaskImage : null; })(),
@@ -66,8 +66,8 @@ await cdp.close();
 console.log(JSON.stringify({ ...r, kleben }, null, 1));
 
 const p = [
-  ['drei Karten in der Hauptspalte', r.hauptPanels.join(' · ') === 'Vertrag und Mengengerüst · Anträge zu diesem Mietobjekt · Grundrisse'],
-  ['zwei Karten in der Randspalte', r.randPanels.join(' · ') === 'Aktionen · Ansprechpersonen'],
+  ['zwei Abschnitte in der Übersicht (Grundrisse ist ein eigener Reiter)', r.hauptPanels.join(' · ') === 'Vertrag und Mengengerüst · Anträge zu diesem Mietobjekt'],
+  ['zwei Karten in der Randspalte (Aktionen · Ansprechpersonen)', r.randPanels.join(' · ') === 'Aktionen · Ansprechpersonen'],
   ['alle Kartentitel auf h2', r.ebenen.every((e) => e === 'H2')],
   ['Seite bleibt weiss (kein getöntes Band)', /255, 255, 255/.test(r.seitenFarbe || '') || r.seitenFarbe === 'rgba(0, 0, 0, 0)'],
   ['Augenbrauenzeile mit Kennungen', /MV-2026-001/.test(r.eyebrow || '') && /Objekt/.test(r.eyebrow || '')],

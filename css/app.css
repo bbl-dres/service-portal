@@ -2637,10 +2637,20 @@ body.chart-overlay-open { overflow:hidden; }
    der Resthöhe. Die RASTERPLATZIERUNG hängt jetzt an dieser Spalte, nicht mehr
    an der Karte selbst — sonst läge die Kopfzeile als eigenes Rasterkind
    irgendwo im Mosaik. */
-.pf-hero__mapcol { display:flex; flex-direction:column; gap:.35rem; min-height:0; }
-.pf-hero__maplink { margin:0; font-size:var(--text-sm); }
+/* KEIN gap: Leiste und Karte bilden EINEN Block. Die Rundung läuft aussen
+   herum — oben an der Leiste, unten an der Karte —, dazwischen stossen sie
+   auf Kante. Mit einer Lücke sah die Leiste aus wie ein versehentlich
+   danebengeratener Absatz. */
+.pf-hero__mapcol { display:flex; flex-direction:column; min-height:0; }
+/* Getönte Leiste, nicht weiss auf weiss: die Zeile steht über einer randlosen
+   Karte und ohne eigene Fläche schwebte sie im Nichts. */
+.pf-hero__maplink { margin:0; padding:.4rem .75rem; font-size:var(--text-sm);
+  background:var(--color-secondary-50);
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
 .pf-hero__map { position:relative; overflow:hidden; flex:1 1 auto; min-height:0;
   border-radius:var(--radius-lg); background:var(--color-secondary-100); }
+/* Trägt die Leiste, wird die obere Rundung der Karte zur geraden Stosskante. */
+.pf-hero__maplink + .pf-hero__map { border-radius:0 0 var(--radius-lg) var(--radius-lg); }
 
 /* Bis 640px — gestapelt. Flacheres Hauptbild (16/9) und eine Viererreihe
    Kacheln: auf dem Telefon zählt, wie schnell man an den Inhalt DARUNTER kommt,
@@ -3329,11 +3339,17 @@ body.docviewer-open { overflow:hidden; }
    250px — auf einem 844px hohen Telefon wären das 30% des Bildschirms, dauerhaft
    belegt. Sie scrollt dann einfach mit, der Plan bekommt die Fläche. */
 @media (max-width:767.98px){ .fp-head { position:static; } }
-.fp-head__top { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:.75rem 1.5rem; }
-.fp-head__title { min-width:0; }
-.fp-head__name { margin:0; font-size:var(--text-lg); }
-.fp-head__facts { margin:.15rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); }
+/* EINE Zeile: Geschossname · Geschosswahl · Einfärbung · Aktionen. Zuvor lagen
+   Titel und Bedienelemente in zwei Reihen (`.fp-head__top` über `.fp-toolbar`)
+   — ein Umbruch, den nichts nötig machte und der die Leiste auf 134px trieb.
+   `.fp-color` trägt `margin-left:auto` und schiebt sich mit der Knopfgruppe
+   nach rechts; Name und Chips teilen sich die linke Seite. Umbruch erst, wenn
+   die Zeile wirklich nicht reicht. */
+.fp-head__top { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem 1rem;
+  padding-bottom:.75rem; border-bottom:1px solid var(--color-secondary-300); }
+.fp-head__name { margin:0; font-size:var(--text-lg); flex:none; }
 .fp-head__actions { display:flex; align-items:center; gap:.5rem; flex:none; }
+.fp-color { margin-left:auto; }
 .fp-back { margin:0 0 .35rem; font-size:var(--text-sm); }
 .fp-back a { display:inline-flex; align-items:center; gap:.4rem; }
 /* Nur für den Druck: Objekt, Geschoss, Adresse und aktive Einfärbung. Auf dem
@@ -3343,21 +3359,29 @@ body.docviewer-open { overflow:hidden; }
    den weissen Grund, den das Element sonst vom Seitenhintergrund erbt. */
 #fp-wrap:fullscreen { background:var(--color-bg); padding:1rem 1.25rem; overflow:auto; }
 #fp-wrap:fullscreen .fp-viewer { height:auto; }
-.fp-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem 1.5rem;
-  padding-bottom:.75rem; border-bottom:1px solid var(--color-secondary-300); }
-.fp-toolbar__group { display:flex; align-items:center; gap:.6rem; }
-.fp-toolbar__group--right { margin-left:auto; }
-.fp-toolbar__label { font-size:var(--text-sm); color:var(--color-text-muted); white-space:nowrap; }
-.fp-toolbar .select { min-width:12rem; }
-
-/* Geschosswahl: Segmentgruppe wie die Ansichtsumschaltung der Katalogleiste. */
+/* Geschosswahl trägt jetzt CDs `.tag-item` — die Chip-Komponente, die auch die
+   Katalogfilter verwenden. Der eigene `.fp-floors__chip` mit voller
+   Markenfläche im aktiven Zustand ist entfallen: er war ein zweites Chip-
+   Vokabular für dieselbe Aufgabe und dominierte die Leiste. */
 .fp-floors { display:flex; flex-wrap:wrap; gap:.25rem; }
-.fp-floors__chip { min-width:3.25rem; padding:.4rem .75rem; text-align:center; text-decoration:none;
-  font-size:var(--text-sm); color:var(--color-text); background:var(--color-secondary-50);
-  border:1px solid var(--color-secondary-300); }
-.fp-floors__chip:hover { background:var(--color-secondary-100); }
-.fp-floors__chip.is-active { color:var(--color-text-negative); background:var(--color-primary-700); border-color:var(--color-primary-700); font-weight:var(--fw-bold); }
-.fp-facts { margin:.75rem 0 1rem; }
+/* Kennzahlen des Geschosses, jetzt in der Auswertungsspalte über der Legende. */
+.fp-facts { margin:0; padding:.75rem .85rem; background:var(--color-secondary-50); }
+.fp-side__title { margin:0 0 .4rem; font-size:var(--text-sm); color:var(--color-text-muted); font-weight:var(--fw-regular); }
+/* Kompaktes Auswahlfeld in der Werkzeugleiste: Beschriftung daneben statt
+   darüber, damit die Leiste eine Zeile bleibt. */
+/* `flex-direction:row` MUSS hier stehen: `.form__group__select` (die Hülle, die
+   C.select liefert) setzt `column` — ohne die Umkehr stünde die Beschriftung
+   über dem Feld und die Leiste wäre doppelt so hoch. */
+/* `width:auto` und `flex-direction:row` MÜSSEN hier stehen: die Hülle, die
+   C.select liefert (`.form__group__select`), ist auf `width:100%` und
+   `flex-direction:column` ausgelegt — sie ist für Formularspalten gedacht, wo
+   ein Feld die Zeile füllt und die Beschriftung darüber steht. In einer
+   Werkzeugleiste beansprucht sie damit eine ganze Zeile für sich und schiebt
+   alles Folgende darunter: die Kopfzeile fiel in drei Reihen auseinander. */
+.fp-color { display:flex; flex-direction:row; align-items:center; gap:.6rem;
+  width:auto; flex:0 0 auto; }
+.fp-color > label { margin:0; white-space:nowrap; font-size:var(--text-sm); color:var(--color-text-muted); }
+.fp-color .select { min-width:13rem; }
 
 /* Zeichnung links, Legende und Raumdetail rechts. Unter 1024px stapeln — der
    Plan braucht Breite, die Seitenspalte darf sie ihm nicht nehmen. */
@@ -3426,7 +3450,7 @@ body.docviewer-open { overflow:hidden; }
      und die Fusszeile mit Objekt/Geschoss/Einfärbung.
      Weg: Geschosswahl, die drei Aktionsknöpfe und das Raumdetail samt seinen
      Dienstleistungs-Kurzwegen — Bedienelemente drucken nicht mit. */
-  .fp-toolbar, .fp-head__actions, .fp-back, #fp-room { display:none; }
+  .fp-floors, .fp-color, .fp-head__actions, .fp-back, #fp-room { display:none; }
   .fp-head { position:static; }
   .fp-stage { overflow:visible; padding:0; background:none; border:0; }
   .fp-viewer { display:block; }
@@ -3439,13 +3463,13 @@ body.docviewer-open { overflow:hidden; }
      im Raster, eine `:not()`-Liste auf Geschwistern träfe ihn also gar nicht.
      `visibility` vererbt sich und lässt sich am Ziel wieder einschalten — das
      Standardverfahren, um genau einen Teilbaum zu drucken. `position:absolute`
-     holt ihn an den Blattanfang (Bezug: `#main-content{position:relative}`). */
+     holt ihn an den Blattanfang (Bezug: `#main-content{position:relative}`).
+     Ziel ist der Rumpf des Grundriss-Reiters — die Reiterleiste selbst und
+     alles andere bleiben unsichtbar. */
   body.print--plan #main-content { visibility:hidden; }
-  body.print--plan #mt-grundriss { visibility:visible; position:absolute; inset:0 0 auto 0; margin:0; }
-  body.print--plan #mt-grundriss * { visibility:visible; }
-  /* «Grundrisse» als Abschnittstitel sagt auf Papier nichts — Objekt, Geschoss
-     und Einfärbung stehen in der Fusszeile. */
-  body.print--plan #mt-grundriss > h2 { display:none; }
+  body.print--plan #mt-grundriss__body { visibility:visible; position:absolute; inset:0 0 auto 0; margin:0; }
+  body.print--plan #mt-grundriss__body * { visibility:visible; }
+
 }
 
 /* Leerzeile einer Datentabelle: mittig gesetzt, damit sie als Zustand lesbar
