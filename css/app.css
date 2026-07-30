@@ -1401,6 +1401,20 @@ table.table--zebra tbody tr:hover { background:var(--color-secondary-100); }
    Bedienung läuft aber weiter über den Link in der Zeile — deshalb steht hier
    nur der Cursor und kein eigener Fokusstil. */
 table.table--rows-clickable tbody tr { cursor:pointer; }
+/* Klick-Hinweis am Zeilenende. Der Zeigefinger allein verrät die anklickbare
+   Zeile erst BEIM Überfahren — der Winkel sagt es vorher. Rein dekorativ
+   (`aria-hidden` bräuchte ein Element; ein ::after ist für AT ohnehin nicht
+   da), die Bedienung trägt weiterhin der echte Link in der ersten Zelle. */
+table.table--rows-clickable tbody td:last-child,
+table.table--rows-clickable tbody th:last-child { position:relative; padding-right:2.25rem; }
+table.table--rows-clickable tbody tr > :last-child::after {
+  content:""; position:absolute; right:.85rem; top:50%; transform:translateY(-50%);
+  width:1rem; height:1rem; background-color:var(--color-text-muted);
+  -webkit-mask:url('../assets/icons/ChevronRight.svg') no-repeat center/contain;
+  mask:url('../assets/icons/ChevronRight.svg') no-repeat center/contain; }
+table.table--rows-clickable tbody tr:hover > :last-child::after { background-color:var(--color-primary-700); }
+/* Die Summenzeile im tfoot ist keine Zeile zum Anklicken. */
+table.table--rows-clickable tfoot tr > :last-child::after { content:none; }
 @media (hover:none){ table.table tbody tr:hover { background:inherit; } }
 /* Dichte + Umbruch auf schmalen Viewports (Item 2.11) */
 @media (max-width:767.98px){
@@ -1777,7 +1791,18 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 @media (min-width:1024px){ .box, .stat { padding:1.5rem; } }
 @media (min-width:1544px){ .box, .stat { padding:2rem; } }
 .box + .box { margin-top:1px; }
-.box h3 { font-size:var(--text-base); }
+/* `.container__aside > *` (CD container.postcss) gibt JEDEM Block der
+   Seitenspalte 1.75-2rem Abstand nach unten. Zwischen zwei aufeinanderfolgenden
+   Kästen widerspricht das der Naht darüber: gemessen standen 32px zwischen den
+   beiden, die 1px-Naht war unsichtbar und die Kästen schwebten einzeln.
+   `:has(+ .box)` nimmt den Abstand genau dort weg — ein Kasten, auf den etwas
+   anderes folgt, behält ihn. */
+.container__aside > .box:has(+ .box) { margin-bottom:0; }
+/* h2 mitgeführt: der Kastentitel ist optisch immer derselbe, unabhängig davon,
+   auf welcher Ebene der Gliederung er steht. Die Seitenspalte der
+   Mietende-Detailansicht trägt h2, weil die Seite sonst von h1 direkt auf h3
+   springt (die Reiterpanels bringen keine Zwischenebene mit). */
+.box h2, .box h3 { font-size:var(--text-base); }
 
 /* Stat figures — expressed on .box (no CD component) */
 .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1.25rem; }
@@ -2608,7 +2633,13 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-mosaic__side { display:grid; gap:.5rem; min-height:0;
   grid-template-columns:repeat(2,minmax(0,1fr));
   grid-template-rows:repeat(2,minmax(0,1fr)); }
-.pf-hero__map { position:relative; overflow:hidden;
+/* Kartenspalte: Kopfzeile mit dem Weg nach draussen, darunter die Karte auf
+   der Resthöhe. Die RASTERPLATZIERUNG hängt jetzt an dieser Spalte, nicht mehr
+   an der Karte selbst — sonst läge die Kopfzeile als eigenes Rasterkind
+   irgendwo im Mosaik. */
+.pf-hero__mapcol { display:flex; flex-direction:column; gap:.35rem; min-height:0; }
+.pf-hero__maplink { margin:0; font-size:var(--text-sm); }
+.pf-hero__map { position:relative; overflow:hidden; flex:1 1 auto; min-height:0;
   border-radius:var(--radius-lg); background:var(--color-secondary-100); }
 
 /* Bis 640px — gestapelt. Flacheres Hauptbild (16/9) und eine Viererreihe
@@ -2621,7 +2652,7 @@ body.chart-overlay-open { overflow:hidden; }
      den zweispaltigen direkt darüber — bei 560px 612px gegen 465px bei 640px. */
   .pf-mosaic__side { grid-template-columns:repeat(4,minmax(0,1fr));
     grid-template-rows:5rem; }
-  .pf-hero__map { height:12rem; }
+  .pf-hero__map { height:12rem; flex:none; }
 }
 /* 640–1279px — Hauptbild und Karte nebeneinander, die Kacheln als Streifen
    darunter. Drei Drittel wären hier je nur ~300px breit; Bild und Karte teilen
@@ -2634,7 +2665,7 @@ body.chart-overlay-open { overflow:hidden; }
 @media (min-width:640px) and (max-width:1279.98px){
   .pf-mosaic--map { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .pf-mosaic--map .pf-mosaic__cell--main { grid-column:1; grid-row:1; }
-  .pf-mosaic--map .pf-hero__map { grid-column:2; grid-row:1; }
+  .pf-mosaic--map .pf-hero__mapcol { grid-column:2; grid-row:1; }
   /* Der Streifen läuft hier über die volle Breite, die Kacheln werden also
      deutlich breiter als hoch — etwas mehr Zeilenhöhe als auf dem Telefon. */
   .pf-mosaic--map .pf-mosaic__side { grid-column:1 / -1; grid-row:2;
@@ -3008,6 +3039,46 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .m-0 { margin:0; } .mb-0 { margin-bottom:0; } .mt-0 { margin-top:0; } .mb-3 { margin-bottom:var(--sp-3); }
 /* Kartenplatzhalter füllt seinen Rahmen — ersetzt 4× `style="height:100%"`. */
 .h-full { height:100%; }
+/* ---- Detailseiten-Layout: Inhaltsspalte + KLEBENDE Randspalte -------------
+   Bewusst NICHT das 12-Spalten-Raster des Containers: dort steht die
+   Randspalte als eigenes Rasterkind in DERSELBEN Zeile wie der erste Block der
+   Hauptspalte, kann also nur innerhalb dieser einen Zeile kleben — nach dem
+   ersten Abschnitt wäre sie weg. Hier sind es genau zwei Kinder, die Randspalte
+   spannt damit über die volle Höhe aller Abschnitte und bleibt beim Scrollen
+   stehen. Dieselbe Anatomie wie im Mieterportal-Prototyp (`.property-layout`).
+   `minmax(0,1fr)` statt `1fr`: eine breite Tabelle in der Hauptspalte würde die
+   Spur sonst über den Container hinausdrücken. */
+.detail-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap-responsive); }
+.detail-layout > * { min-width:0; }
+@media (min-width:1024px){
+  .detail-layout { grid-template-columns:minmax(0,1fr) 22rem; align-items:start; }
+  .detail-layout__aside { position:sticky; top:1rem; }
+}
+/* Abstand zwischen den Karten der Randspalte. `.box + .box` legt sie sonst mit
+   einer 1px-Naht zu EINER Fläche zusammen — das ist richtig für gestapelte
+   Kästen im Fliesstext, hier aber falsch: «Aktionen» und «Ansprechpersonen»
+   sind zwei Angebote, keine zwei Abschnitte desselben. */
+.detail-layout__aside .box + .box { margin-top:var(--sp-6); }
+
+/* Kennzahlenzeile über den Vertragsdetails: vier grosse Zahlen, kleine
+   Beschriftungen, oben und unten eine Linie. Beantwortet «wie gross, wie
+   teuer» auf einen Blick, bevor die Merkmalliste ins Detail geht. Ohne
+   Kartenrahmen — der Kontrast entsteht allein über die Schriftgrade. */
+.kpi-strip { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem;
+  margin:0 0 1.5rem; padding:1rem 0;
+  border-top:1px solid var(--color-secondary-100); border-bottom:1px solid var(--color-secondary-100); }
+@media (min-width:768px){ .kpi-strip { grid-template-columns:repeat(4,minmax(0,1fr)); gap:1.5rem; } }
+.kpi-strip__item { display:flex; flex-direction:column; gap:.15rem; }
+.kpi-strip__label { font-size:var(--text-sm); color:var(--color-text-muted); }
+.kpi-strip__value { font-size:var(--text-2xl); font-weight:var(--fw-bold); line-height:var(--lh-tight);
+  font-variant-numeric:tabular-nums; }
+.kpi-strip__value small { font-size:var(--text-sm); font-weight:var(--fw-regular); color:var(--color-text-muted); }
+
+/* Augenbrauenzeile über der Seitenüberschrift: Kennungen, die man sucht
+   (MV-Nummer, WE, EGID), aber nicht liest wie Fliesstext. */
+.eyebrow { margin:0 0 .25rem; font-size:var(--text-xs); text-transform:uppercase;
+  letter-spacing:.08em; color:var(--color-text-muted); }
+
 /* Lesebreiten-Deckel. Fünf verschiedene `style="max-width:…"` standen dafür in
    js/ — als Klassen sind sie benannt, wiederverwendbar und im Blatt auffindbar. */
 .measure-sm { max-width:34rem; } .measure    { max-width:42rem; }
@@ -3026,9 +3097,22 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .kv dt { color:var(--color-text-muted); }
 /* Doppelpunkt aus dem Blatt, nicht aus den Zeichenketten: er gehört zur
    Darstellung der Liste, und so tragen ihn alle neun Konsumenten gleich,
-   ohne dass jede Beschriftung im JS ihn mitschleppen muss. Ohne Leerzeichen
-   davor — das ist französische Setzung, nicht deutsche. */
-.kv dt::after { content:":"; }
+   ohne dass jede Beschriftung im JS ihn mitschleppen muss.
+   Mit Abstand davor (Wunsch): das geschützte Leerzeichen \00A0 statt eines
+   gewöhnlichen — sonst könnte der Doppelpunkt bei einer umbrechenden
+   Beschriftung allein auf der nächsten Zeile landen. */
+.kv dt::after { content:"\00A0:"; }
+/* Einspaltig ERZWUNGEN — dieselbe Form, die die Container-Abfrage weiter unten
+   bei schmalen Kästen herstellt, nur unabhängig von der gemessenen Breite. Für
+   Werte, die auch in einer 411px-Seitenspalte nicht neben ihre Beschriftung
+   passen: eine E-Mail-Adresse bräche dort mitten im Namen um. */
+.kv--stack { grid-template-columns:minmax(0,1fr); gap:0; }
+.kv--stack dt { margin-top:1rem; }
+.kv--stack dt:first-of-type { margin-top:0; }
+/* Kein Einzug am Wert: in der Seitenspalte fluchten Beschriftung und Wert an
+   derselben Kante wie die Kartenüberschrift darüber. Ein halber Zentimeter
+   Versatz je Block liess die Spalte unruhig wirken. */
+.kv--stack dd { padding-left:0; }
 /* break-word statt anywhere: lange URLs dürfen umbrechen, normale Wörter nicht
    mitten im Wort («Fachanwendung|en Bauten»). */
 .kv dd { margin:0; overflow-wrap:break-word; }
@@ -3234,8 +3318,31 @@ body.docviewer-open { overflow:hidden; }
   --fp-cap-high: #f8dcdf;
 }
 
-.fp-back { margin:0 0 .75rem; font-size:var(--text-sm); }
+/* Kopfleiste des Grundriss-Betrachters: Rücksprung + Geschossname + Kennzahlen
+   links, Vollbild/Drucken rechts, darunter Geschosswahl und Einfärbung.
+   KLEBEND, weil ein Geschossplan höher ist als das Fenster — ohne das wandern
+   «Zurück» und «Einfärben nach» beim Scrollen aus dem Bild. Idiom wie
+   `.docviewer__bar`. `top:0` genügt: die Seitenkopfzeile scrollt mit. */
+.fp-head { position:sticky; top:0; z-index:var(--z-dropdown);
+  background:var(--color-bg); padding-bottom:.75rem; margin-bottom:.25rem; }
+/* Unter md NICHT klebend: dort bricht die Leiste auf drei Zeilen um und misst
+   250px — auf einem 844px hohen Telefon wären das 30% des Bildschirms, dauerhaft
+   belegt. Sie scrollt dann einfach mit, der Plan bekommt die Fläche. */
+@media (max-width:767.98px){ .fp-head { position:static; } }
+.fp-head__top { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:.75rem 1.5rem; }
+.fp-head__title { min-width:0; }
+.fp-head__name { margin:0; font-size:var(--text-lg); }
+.fp-head__facts { margin:.15rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); }
+.fp-head__actions { display:flex; align-items:center; gap:.5rem; flex:none; }
+.fp-back { margin:0 0 .35rem; font-size:var(--text-sm); }
 .fp-back a { display:inline-flex; align-items:center; gap:.4rem; }
+/* Nur für den Druck: Objekt, Geschoss, Adresse und aktive Einfärbung. Auf dem
+   Schirm stünde das alles doppelt (Seitenkopf und Kopfleiste). */
+.fp-print-foot { display:none; }
+/* Der Betrachter im nativen Vollbild — er füllt dort den Schirm und braucht
+   den weissen Grund, den das Element sonst vom Seitenhintergrund erbt. */
+#fp-wrap:fullscreen { background:var(--color-bg); padding:1rem 1.25rem; overflow:auto; }
+#fp-wrap:fullscreen .fp-viewer { height:auto; }
 .fp-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem 1.5rem;
   padding-bottom:.75rem; border-bottom:1px solid var(--color-secondary-300); }
 .fp-toolbar__group { display:flex; align-items:center; gap:.6rem; }
@@ -3292,16 +3399,53 @@ body.docviewer-open { overflow:hidden; }
 /* Kurzweg in eine Dienstleistung — eine Zeile, kein Knopf: es sind mehrere
    gleichrangige Ziele, und fünf Knöpfe untereinander lesen sich als Formular. */
 .fp-svc-list { display:flex; flex-direction:column; }
-.fp-svc { display:flex; align-items:center; gap:.55rem; padding:.5rem .1rem; text-decoration:none;
+/* RASTER statt Flexbox: drei feste Spuren — Symbolspalte, Beschriftung,
+   Folgepfeil. Vorher war das eine Flexzeile mit `.fp-svc span { flex:1 1 auto }`,
+   und weil die Symbole selbst `<span class="icon">` sind, traf diese Regel sie
+   mit (0,2,0) — spezifischer als das `flex:none` an `.icon` (0,1,0). Die
+   Symbole wuchsen also mit, und jede Beschriftung begann an einer anderen
+   Stelle: die Spalte sah ausgefranst aus. Mit Rasterspuren fluchten Symbole,
+   Beschriftungen und Pfeile über alle Zeilen. */
+.fp-svc { display:grid; grid-template-columns:1.25rem minmax(0,1fr) 1rem;
+  align-items:center; column-gap:.6rem; padding:.5rem .1rem; text-decoration:none;
   color:var(--color-text); font-size:var(--text-sm); border-bottom:1px solid var(--color-secondary-100); }
 .fp-svc:last-child { border-bottom:0; }
 .fp-svc:hover { color:var(--color-primary-700); }
-.fp-svc span { flex:1 1 auto; min-width:0; }
-.fp-svc__go { flex:0 0 auto; color:var(--color-text-muted); }
+.fp-svc > .icon:first-child { justify-self:center; }
+.fp-svc__go { color:var(--color-text-muted); }
+
+/* Farbkodierung ist beim Grundriss die INFORMATION, nicht Dekoration: ohne
+   `exact` wirft ein Browser im Sparmodus die Raumfarben weg und das Blatt ist
+   nicht mehr lesbar. Die Füllungen sind SVG-`fill`, keine Hintergründe — der
+   Hinweis kostet nichts und deckt den Sparmodus mit ab. */
+.fp, .fp-legend__swatch { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
 
 @media print {
-  .fp-toolbar, .fp-side { display:none; }
+  /* Auf dem Blatt bleiben: Zeichnung, Legende (der SCHLÜSSEL zur Einfärbung —
+     sie war bisher ausgeblendet, was einen eingefärbten Plan unlesbar machte)
+     und die Fusszeile mit Objekt/Geschoss/Einfärbung.
+     Weg: Geschosswahl, die drei Aktionsknöpfe und das Raumdetail samt seinen
+     Dienstleistungs-Kurzwegen — Bedienelemente drucken nicht mit. */
+  .fp-toolbar, .fp-head__actions, .fp-back, #fp-room { display:none; }
+  .fp-head { position:static; }
   .fp-stage { overflow:visible; padding:0; background:none; border:0; }
+  .fp-viewer { display:block; }
+  .fp-legend { break-inside:avoid; margin-top:1rem; }
+  .fp-print-foot { display:block; margin-top:1rem; font-size:.85em; color:var(--color-text-muted); }
+  /* `body.print--plan` setzt der Druckknopf für die Dauer des Dialogs: dann
+     druckt NUR der Grundrissabschnitt. Ohne die Marke käme die ganze
+     Detailseite mit — Eckdaten, Seitenspalte, Anträge, Reiterleiste.
+     Über `visibility`, nicht `display`: der Abschnitt liegt drei Ebenen tief
+     im Raster, eine `:not()`-Liste auf Geschwistern träfe ihn also gar nicht.
+     `visibility` vererbt sich und lässt sich am Ziel wieder einschalten — das
+     Standardverfahren, um genau einen Teilbaum zu drucken. `position:absolute`
+     holt ihn an den Blattanfang (Bezug: `#main-content{position:relative}`). */
+  body.print--plan #main-content { visibility:hidden; }
+  body.print--plan #mt-grundriss { visibility:visible; position:absolute; inset:0 0 auto 0; margin:0; }
+  body.print--plan #mt-grundriss * { visibility:visible; }
+  /* «Grundrisse» als Abschnittstitel sagt auf Papier nichts — Objekt, Geschoss
+     und Einfärbung stehen in der Fusszeile. */
+  body.print--plan #mt-grundriss > h2 { display:none; }
 }
 
 /* Leerzeile einer Datentabelle: mittig gesetzt, damit sie als Zustand lesbar

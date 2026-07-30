@@ -1068,6 +1068,42 @@ export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) 
     <p class="small m-0">${lines.join('<br>')}</p></div>`;
 }
 
+// --- Randspalte der Detailansichten -----------------------------------------
+// Zwei Karten, die auf jeder Objekt-Detailseite dasselbe leisten: was kann ich
+// hier auslösen, und wen frage ich. Sie stehen als Bausteine hier, damit
+// Liegenschafteninventar und Mietendenportal nicht zwei Fassungen desselben
+// Kastens pflegen — die Randspalte ist genau die Stelle, an der ein Nutzer
+// Wiedererkennung erwartet.
+
+// `links` = [{ icon, label, href }]. Die Zeilen tragen dasselbe `.fp-svc`-Raster
+// wie die Kurzwege im Raumdetail: Symbolspalte, Beschriftung, Folgepfeil.
+export function actionCard({ title = 'Aktionen', lead = '', links = [] } = {}) {
+  if (!links.length) return '';
+  return `<div class="box">
+    <h2>${escape(title)}</h2>
+    ${lead ? `<p class="small muted">${escape(lead)}</p>` : ''}
+    <div class="fp-svc-list">${links.map((l) => `<a class="fp-svc" href="${escape(l.href)}">${
+      icon(l.icon || 'ArrowRight', 'icon--base')}<span>${escape(l.label)}</span>${
+      icon('ArrowRight', 'icon--sm fp-svc__go')}</a>`).join('')}</div>
+  </div>`;
+}
+
+// `contacts` = [{ label, name, email, phone }]. `name` entfällt, wo er die
+// Rolle nur wiederholt — «Portfoliomanagement / Portfoliomanagement» las sich
+// wie ein Anzeigefehler.
+export function contactCard({ title = 'Ansprechpersonen', contacts = [] } = {}) {
+  if (!contacts.length) return '';
+  return `<div class="box">
+    <h2>${escape(title)}</h2>
+    <dl class="kv kv--stack">${contacts.map((c) => `
+      <dt>${escape(c.label)}</dt>
+      <dd>${c.name && c.name !== c.label ? `${escape(c.name)}<br>` : ''}${
+        c.email ? `<a href="mailto:${escape(c.email)}">${escape(c.email)}</a>` : ''}${
+        c.phone ? `<br>${escape(c.phone)}` : ''}</dd>`).join('')}
+    </dl>
+  </div>`;
+}
+
 // Link for a demo download that has no real target yet.
 export function downloadLink(url, label, iconName = 'Download') {
   const real = url && url !== '#';
@@ -1602,6 +1638,7 @@ export const C = {
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,
+  actionCard, contactCard,
   pagination, wirePagination, loginGate,
   preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, stepIndicator, processDone,
   mountDataTable, wireTableRows, cardAction, pageSection, heroFigure,

@@ -423,8 +423,35 @@ function buildingDetail(ctx, b) {
   ];
 
 
+  // Randspalte wie im Mietendenportal: was kann ich hier auslösen, wen frage
+  // ich. Beide Karten kommen aus `js/components.js`, damit die zwei
+  // Objekt-Detailseiten nicht auseinanderlaufen.
+  const asideHtml = () => {
+    const dienst = (id, iconName, href) => {
+      const s = core.service(id);
+      return s ? { icon: iconName, label: s.title, href } : null;
+    };
+    const bq = `building=${encodeURIComponent(b.bbl_id)}`;
+    const aktionen = [
+      // «Stammdaten mutieren» steht zuerst: das ist die Aktion, für die man ein
+      // Objekt im Inventar aufschlägt. Melde- und Nachschlagewege folgen.
+      dienst('stammdaten-mutieren', 'FileCheckmark', `#/services/stammdaten-mutieren?${bq}`),
+      dienst('stoerung-melden', 'Wrench', `#/app/fault-report?${bq}`),
+      dienst('bautendokumentation-abrufen', 'File', `#/app/document-archive?${bq}`),
+      { icon: 'Image', label: 'Aufnahmen in der Mediathek', href: `#/app/media-library?building=${encodeURIComponent(b.bbl_id)}` },
+    ].filter(Boolean);
+    return `<aside class="detail-layout__aside" aria-label="Aktionen und Ansprechstellen">
+      ${C.actionCard({ lead: 'Für dieses Objekt vorbelegt.', links: aktionen })}
+      ${C.contactCard({ contacts: contacts.slice()
+        .sort((x, y) => (y.isPrimary ? 1 : 0) - (x.isPrimary ? 1 : 0))
+        .slice(0, 4)
+        .map((c) => ({ label: c.role || c.organisation, name: c.name, email: c.email, phone: c.phone })) })}
+    </aside>`;
+  };
+
   function tabUebersicht() {
-    return `
+    return `<div class="detail-layout"><div>
+      <h2 class="detail-section__title">Objektdaten</h2>
       <dl class="kv">
         <dt>BBL-ID</dt><dd>${C.escape(b.bbl_id)}</dd>
         <dt>Wirtschaftseinheit (WE)</dt><dd>${C.escape(b.bbl_we)}</dd>
@@ -446,7 +473,8 @@ function buildingDetail(ctx, b) {
           : 'Ja'}</dd>` : ''}
         ${parcels.length ? `<dt>Grundstück${parcels.length > 1 ? 'e' : ''}</dt><dd>${parcels.map(pc => `<a href="#/app/portfolio?id=${encodeURIComponent(pc.bbl_id)}">${C.escape(pc.name)}</a>`).join(', ')}</dd>` : ''}
         <dt>Status</dt><dd>${statusBadge(C, ref, b.status)}</dd>
-      </dl>`;
+      </dl>
+    </div>${asideHtml()}</div>`;
     // Kein Quellen- und kein Bildnachweis mehr unter der Tabelle: die Bildangaben
     // (Urheber, Copyright, Lizenz) stehen im Metadaten-Panel der Vollbildgalerie,
     // wo das Bild auch betrachtet wird. Die Attribution geht dadurch nicht
@@ -603,7 +631,7 @@ function buildingDetail(ctx, b) {
     ${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}
     <h1 tabindex="-1">${C.escape(b.name)}</h1>
     <p class="lead">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)} · ${C.escape(b.portfolioCategory)}</p>
-    ${heroBlock(C, { items: galleryItems, mapId: 'pf-hero-map', mapLabel: `Standort von ${b.name} auf der Karte` })}
+    ${heroBlock(C, { items: galleryItems, mapId: 'pf-hero-map', lat: b.lat, lon: b.lng, mapLabel: `Standort von ${b.name} auf der Karte` })}
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', ariaLabel: 'Gebäudedetails' })}
       ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-tab', render: panelHtml, heading: true })}
@@ -656,7 +684,8 @@ function parcelDetail(ctx, p) {
     { id: 'bodenbedeckung', label: `Bodenbedeckungen (${covers.length})` },
   ];
   function tabUebersicht() {
-    return `<dl class="kv">
+    return `<h2 class="detail-section__title">Grundstücksdaten</h2>
+    <dl class="kv">
       <dt>Parzellen-ID</dt><dd>${C.escape(p.bbl_id)}</dd>
       <dt>Wirtschaftseinheit (WE)</dt><dd>${C.escape(p.bbl_we)}</dd>
       <dt>Parzellen-Nr.</dt><dd>${C.escape(p.plotNumber || '—')}</dd>
@@ -688,7 +717,7 @@ function parcelDetail(ctx, p) {
     ${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}
     <h1 tabindex="-1">${C.escape(p.name)}</h1>
     <p class="lead">${C.escape(p.street)}, ${C.escape(p.zip)} ${C.escape(p.city)} · ${C.escape(p.zone || 'Grundstück')}</p>
-    ${heroBlock(C, { items: galleryItems, mapId: 'pf-parcel-map', mapLabel: `Bodenbedeckung von ${p.name} auf der Karte` })}
+    ${heroBlock(C, { items: galleryItems, mapId: 'pf-parcel-map', lat: p.lat, lon: p.lng, mapLabel: `Bodenbedeckung von ${p.name} auf der Karte` })}
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'pf-ptab', ariaLabel: 'Grundstücksdetails' })}
       ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'pf-ptab', render: panelHtml, heading: true })}

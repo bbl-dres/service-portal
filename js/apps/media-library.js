@@ -314,6 +314,7 @@ function detail(ctx, id) {
   ];
 
   const tabUebersicht = () => `
+    <h2 class="detail-section__title">Aufnahme</h2>
     ${/* Das Bild steht jetzt HIER statt in einem Hero: auf einer Medien-
           Detailseite ist es der Inhalt, nicht die Kopfzier — und im Register
           bekommt es die volle Breite der Inhaltsspalte. */''}

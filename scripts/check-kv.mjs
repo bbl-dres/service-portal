@@ -26,9 +26,9 @@ for (const [name, url] of SEITEN) {
     return { label: dt.textContent.trim(), after, spalten: cs.gridTemplateColumns, luecke: cs.columnGap };
   })()`);
   if (r.keine) { console.log(`  –   ${name.padEnd(20)} keine .kv auf der Seite`); await page.closeTarget(); continue; }
-  const ok = r.after === '":"' && parseFloat(r.luecke) >= 24 && r.spalten.split(' ').length === 2;
+  const ok = r.after === String.fromCharCode(34,160,58,34) && parseFloat(r.luecke) >= 24 && r.spalten.split(' ').length === 2;
   if (!ok) fehler++;
-  console.log(`${ok ? '  ok ' : ' FEHL'} ${name.padEnd(20)} «${r.label}${r.after === '":"' ? ':' : ''}» · Lücke ${r.luecke} · Spuren ${r.spalten}`);
+  console.log(`${ok ? '  ok ' : ' FEHL'} ${name.padEnd(20)} «${r.label}${r.after === String.fromCharCode(34,160,58,34) ? ':' : ''}» · Lücke ${r.luecke} · Spuren ${r.spalten}`);
   await page.closeTarget();
 }
 await cdp.close();

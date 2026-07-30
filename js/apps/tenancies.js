@@ -20,7 +20,7 @@ import { createMapSlot } from '../map-slot.js';
 import { syncTreeCounts } from '../spatial-tree.js';
 import { heroMosaic, galleryItemsFrom } from '../hero-mosaic.js';
 import { openGallery } from '../gallery.js';
-import { chf, m2, datum } from '../format.js';
+import { num, chf, m2, datum } from '../format.js';
 import { landName, statusLabel } from '../domain.js';
 import { ANWENDUNGEN } from '../crumbs.js';
 import * as links from '../links.js';
@@ -377,9 +377,18 @@ function detail(ctx, id) {
     // danebensteht — «Übersicht» ist die einzige Ausnahme. «Vertrag (3)» und
     // «Grundriss (2)» lasen sich wie ein einzelner Gegenstand mit einer Zahl
     // dahinter. «Verträge (0)» ist ausdrücklich richtig.
-    { id: 'grundriss', label: `Grundrisse (${floors.length})` },
     { id: 'vertrag', label: `Verträge (${contracts.length})` },
-    { id: 'vorgaenge', label: `Vorgänge (${cases.length})` },
+    // «Grundrisse» ist ebenfalls kein Reiter mehr, sondern der letzte Abschnitt
+    // der Übersicht. Grund derselbe wie bei den Anträgen: hinter einem Reiter
+    // wurde der Plan schlicht nicht gefunden. Er steht ZULETZT, weil er der
+    // einzige Abschnitt ist, der aus einer zweizeiligen Tabelle in einen ~700px
+    // hohen Betrachter aufgeht — über den Anträgen schöbe er sie jedes Mal weg.
+    // «Vorgänge» war ein eigener Reiter und ist jetzt ein Abschnitt der
+    // Übersicht: die laufenden Anträge sind der Grund, warum eine
+    // Verwaltungseinheit diese Ansicht überhaupt öffnet — hinter einem Reiter
+    // waren sie einen Klick von der Frage entfernt, die sie beantworten.
+    // Ein alter Link mit `?tab=vorgaenge` fällt über die Prüfung unten
+    // stillschweigend auf die Übersicht zurück, wo der Abschnitt jetzt steht.
   ];
   let active = query.get('tab') || 'uebersicht';
   if (!tabs.some((x) => x.id === active)) active = 'uebersicht';
@@ -393,17 +402,24 @@ function detail(ctx, id) {
   // die übrigen versteckt und die Kennzahlen je Geschoss gar nicht gezeigt.
   let floorId = query.get('floor') || '';
   if (floorId && !floors.some((f) => f.floorId === floorId)) floorId = '';
-  let colorMode = COLOR_MODES.some((m) => m.value === query.get('color')) ? query.get('color') : 'none';
+  // VORGABE «Verwaltungseinheit», nicht «Keine»: ein einfarbiger Plan lässt
+  // nicht erkennen, dass er überhaupt eingefärbt werden KANN — die Auswahl
+  // daneben las sich wie eine Zierde. Mit der Belegung als Startbild ist der
+  // Nutzen sofort sichtbar, und wer etwas anderes braucht, stellt um. Die
+  // Verwaltungseinheit ist zudem die Frage, mit der man in ein Mietobjekt
+  // schaut: wer sitzt wo.
+  const COLOR_DEFAULT = 've';
+  let colorMode = COLOR_MODES.some((m) => m.value === query.get('color')) ? query.get('color') : COLOR_DEFAULT;
   let spaceId = query.get('space') || '';
 
   const syncHash = () => {
     const p = new URLSearchParams();
     if (active !== 'uebersicht') p.set('tab', active);
-    if (active === 'grundriss') {
-      if (floorId) p.set('floor', floorId);
-      if (colorMode !== 'none') p.set('color', colorMode);
-      if (spaceId) p.set('space', spaceId);
-    }
+    // Der Grundrisszustand hängt nicht mehr an einem Reiter — er gehört zur
+    // Übersicht und bleibt deshalb unabhängig von `active` im Hash stehen.
+    if (floorId) p.set('floor', floorId);
+    if (colorMode !== COLOR_DEFAULT) p.set('color', colorMode);
+    if (spaceId) p.set('space', spaceId);
     const qs = p.toString();
     history.replaceState(null, '', `${links.mietverhaeltnis(t.tenancyId)}${qs ? '?' + qs : ''}`);
   };
@@ -415,26 +431,76 @@ function detail(ctx, id) {
 
   /* ------------------------------------------------------------ Übersicht -- */
   function panelUebersicht() {
+    // Vier Zahlen zuerst, Einzelheiten danach. Vorher standen alle zehn
+    // Merkmale gleichgewichtig untereinander — «wie gross, wie teuer» musste
+    // man sich aus der Liste zusammensuchen. Vorbild: `.property-stats` im
+    // Mieterportal-Prototyp.
+    const kpis = `<div class="kpi-strip">
+      <div class="kpi-strip__item"><span class="kpi-strip__label">Fläche (HNF)</span>
+        <span class="kpi-strip__value">${num(t.areaHnf)}<small> m²</small></span></div>
+      <div class="kpi-strip__item"><span class="kpi-strip__label">Arbeitsplätze</span>
+        <span class="kpi-strip__value">${t.workstations}</span></div>
+      <div class="kpi-strip__item"><span class="kpi-strip__label">Fläche je Arbeitsplatz</span>
+        <span class="kpi-strip__value">${(t.areaHnf / t.workstations).toFixed(1)}<small> m²</small></span></div>
+      <div class="kpi-strip__item"><span class="kpi-strip__label">Jahresmiete</span>
+        <span class="kpi-strip__value">${chf(t.yearlyCost)}</span></div>
+    </div>`;
+    // Fläche, Arbeitsplätze und Jahresmiete stehen jetzt oben in der
+    // Kennzahlenzeile — hier bleiben die Merkmale, die man liest und nicht
+    // überfliegt.
     const kv = `<dl class="kv">
       <dt>Verwaltungseinheit</dt><dd>${C.escape(t.veName)}<br><span class="small muted">${C.escape(t.department)}</span></dd>
       <dt>Objekt</dt><dd>${C.escape(t.buildingName)}<br><span class="small muted">${C.escape(t.street)}, ${C.escape(t.zip)} ${C.escape(t.city)}</span></dd>
       <dt>Geschosse</dt><dd>${C.escape(t.floorLabels.join(', '))}</dd>
-      <dt>Fläche (HNF)</dt><dd>${m2(t.areaHnf)}</dd>
-      <dt>Arbeitsplätze</dt><dd>${t.workstations} <span class="small muted">(${(t.areaHnf / t.workstations).toFixed(1)} m² je Arbeitsplatz)</span></dd>
       <dt>Mietbeginn</dt><dd>${datum(t.leaseStart)}</dd>
-      <dt>Mietende</dt><dd>${datum(t.leaseEnd)} ${restMonate != null ? C.badge(restMonate <= 12 ? `noch ${restMonate} Monate` : `noch ${Math.floor(restMonate / 12)} Jahre`, restMonate <= 12 ? 'warning' : 'info') : ''}</dd>
-      <dt>Jahresmiete</dt><dd>${chf(t.yearlyCost)}</dd>
+      <dt>Mietende</dt><dd>${datum(t.leaseEnd)}</dd>
       <dt>Kostenstelle</dt><dd>${C.escape(t.costCentre)}</dd>
       <dt>Objekt im Inventar</dt><dd><a href="${links.objekt(t.buildingId)}">${C.escape(t.buildingId)}</a></dd>
     </dl>`;
-    const kontakte = (t.contacts || []).map((c) => `<div class="box">
-      <h3>${C.escape(c.rolle)}</h3>
-      <p class="small">${C.escape(c.name)}</p>
-      <p class="small"><a href="mailto:${C.escape(c.email)}">${C.escape(c.email)}</a><br>${C.escape(c.phone)}</p>
-    </div>`).join('');
-    return `<div class="container--grid gap--responsive">
-      <div class="container__main">${kv}</div>
-      <aside class="container__aside stack-lg" aria-label="Ansprechstellen und Kurzwege">
+    // EIN Kasten für alle Ansprechstellen, nicht einer je Stelle: zuvor stand
+    // je Kontakt eine vollständige Kartenhülle um drei Textzeilen (191px hoch,
+    // davon das meiste Polsterung). Die Rolle ist jetzt die Beschriftung der
+    // Merkmalliste — und der Name entfällt, wo er die Rolle nur wiederholt
+    // («Portfoliomanagement / Portfoliomanagement» in 18 von 18 Datensätzen
+    // las sich wie ein Anzeigefehler).
+    const kontakte = `<div class="box">
+      <h2>Ansprechpersonen</h2>
+      <dl class="kv kv--stack">${(t.contacts || []).map((c) => `
+        <dt>${C.escape(c.rolle)}</dt>
+        <dd>${c.name && c.name !== c.rolle ? `${C.escape(c.name)}<br>` : ''
+          }<a href="mailto:${C.escape(c.email)}">${C.escape(c.email)}</a><br>${C.escape(c.phone)}</dd>`).join('')}
+      </dl>
+    </div>`;
+    // `.detail-layout` statt des 12-Spalten-Rasters: nur so kann die Randspalte
+    // über die GANZE Höhe kleben. Im Containerraster wäre sie ein Kind derselben
+    // Zeile wie der erste Abschnitt und nach ihm verschwunden — genau das
+    // Verhalten, das am Prototyp auffiel.
+    return `<div class="detail-layout">
+      <div>
+        <section>
+          <h2 class="detail-section__title">Vertrag und Mengengerüst</h2>
+          ${kpis}
+          ${kv}
+        </section>
+        ${/* Grundrisse VOR den Anträgen: sie beschreiben das Mietobjekt selbst
+              und gehören damit neben die Vertragsdaten. Die Anträge sind
+              Vorgangsgeschehen und schliessen die Seite ab. */''}
+        ${/* Zwei Zustände in EINEM Abschnitt: die Geschosstabelle, und an ihrer
+              Stelle der Betrachter. Der Wechsel tauscht nur
+              `#mt-grundriss__body` aus — Seitenkopf, Bildmosaik, Reiterleiste
+              und die Abschnitte darüber bleiben stehen. */''}
+        <section class="detail-section" id="mt-grundriss">
+          <h2 class="detail-section__title">Grundrisse</h2>
+          <div id="mt-grundriss__body">${panelGrundriss()}</div>
+        </section>
+        ${/* Als eigener Reiter war das einen Klick weit weg von genau der
+              Frage, mit der man in diese Ansicht kommt: «was läuft bei uns?» */''}
+        <section class="detail-section">
+          <h2 class="detail-section__title">Anträge zu diesem Mietobjekt</h2>
+          <div id="mt-dt-vorgaenge"></div>
+        </section>
+      </div>
+      <aside class="detail-layout__aside" aria-label="Aktionen und Ansprechstellen">
         ${serviceShortcuts()}
         ${kontakte}
       </aside>
@@ -455,9 +521,17 @@ function detail(ctx, id) {
   // Datentabelle unten gelesen.
   const floorRows = () => floors.map((f) => {
     const sp = core.spacesForFloor(f.floorId);
+    // «Davon <meine VE>»: die Tabelle listete bisher nur ALLE belegenden
+    // Einheiten als Textkette. Für die mietende VE ist aber genau die eine
+    // Frage interessant — wie viele der Räume auf diesem Geschoss gehören uns.
+    // Ein Gebäude trägt oft mehrere Mietverhältnisse (Liebefeld: BAFU und BLV),
+    // die Unterscheidung ist also nicht theoretisch.
+    const meine = sp.filter((s) => s.occupierVe === t.ve);
     return {
       ...f,
       arbeitsplaetze: sp.reduce((n, s) => n + (s.capacity || 0), 0),
+      meineRaeume: meine.length,
+      meineFlaeche: meine.reduce((n, s) => n + (s.area || 0), 0),
       belegung: [...new Set(sp.map((s) => s.occupierVe).filter(Boolean))].sort().join(', ') || '—',
     };
   });
@@ -481,27 +555,54 @@ function detail(ctx, id) {
     const geschossWahl = floors.map((f) => `<a class="fp-floors__chip${f.floorId === floor.floorId ? ' is-active' : ''}"
         href="#" data-floor="${C.escape(f.floorId)}"${f.floorId === floor.floorId ? ' aria-current="true"' : ''}>${C.escape(f.label)}</a>`).join('');
 
+    // Kopfleiste des Betrachters. Klebend, damit «Zurück», die Geschosse und
+    // «Einfärben nach» auch beim Scrollen eines hohen Plans erreichbar bleiben
+    // — dasselbe Idiom wie `.docviewer__bar`. `#fp-wrap` umschliesst Kopf UND
+    // Betrachter, damit im Vollbild die Bedienung mitkommt und nicht nur die
+    // Zeichnung dasteht.
+    const farbLabel = (COLOR_MODES.find((m) => m.value === colorMode) || {}).label || '';
     return `
-      <p class="fp-back"><a href="#" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
-      <div class="fp-toolbar">
-        <div class="fp-toolbar__group">
-          <span class="fp-toolbar__label" id="fp-floors-label">Geschoss</span>
-          <div class="fp-floors" role="group" aria-labelledby="fp-floors-label">${geschossWahl}</div>
+      <div id="fp-wrap">
+        <div class="fp-head">
+          <div class="fp-head__top">
+            <div class="fp-head__title">
+              <p class="fp-back"><a href="#" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
+              <h3 class="fp-head__name">${C.escape(floor.label)}</h3>
+              <p class="fp-head__facts">${floor.rooms} Räume · ${m2(floor.areaHnf)} HNF · ${m2(floor.areaGross)} brutto</p>
+            </div>
+            <div class="fp-head__actions">
+              <button class="btn btn--outline btn--sm" type="button" id="fp-vollbild">
+                ${C.icon('Expand', 'btn__icon icon--base')}<span class="btn__text">Vollbild</span></button>
+              <button class="btn btn--outline btn--sm" type="button" id="fp-drucken">
+                ${C.icon('Printer', 'btn__icon icon--base')}<span class="btn__text">Drucken</span></button>
+            </div>
+          </div>
+          <div class="fp-toolbar">
+            <div class="fp-toolbar__group">
+              <span class="fp-toolbar__label" id="fp-floors-label">Geschoss</span>
+              <div class="fp-floors" role="group" aria-labelledby="fp-floors-label">${geschossWahl}</div>
+            </div>
+            <div class="fp-toolbar__group fp-toolbar__group--right">
+              <label class="fp-toolbar__label" for="fp-color">Einfärben nach</label>
+              <div class="select select--bare"><select id="fp-color" class="select__field">
+                ${COLOR_MODES.map((m) => `<option value="${m.value}"${m.value === colorMode ? ' selected' : ''}>${m.label}</option>`).join('')}
+              </select>${C.icon('ChevronDown', 'select__icon')}</div>
+            </div>
+          </div>
         </div>
-        <div class="fp-toolbar__group fp-toolbar__group--right">
-          <label class="fp-toolbar__label" for="fp-color">Einfärben nach</label>
-          <div class="select"><select id="fp-color" class="select__field">
-            ${COLOR_MODES.map((m) => `<option value="${m.value}"${m.value === colorMode ? ' selected' : ''}>${m.label}</option>`).join('')}
-          </select>${C.icon('ChevronDown', 'select__icon')}</div>
+        <div class="fp-viewer">
+          <div class="fp-stage" id="fp-stage">${floorplanSvg({ floor, spaces, mode: colorMode, selectedId: spaceId })}</div>
+          <div class="fp-side">
+            ${floorplanLegend(spaces, colorMode)}
+            <div id="fp-room">${roomPanel(sel)}</div>
+          </div>
         </div>
-      </div>
-      <p class="small muted fp-facts">${floor.rooms} Räume · ${m2(floor.areaHnf)} HNF · ${m2(floor.areaGross)} brutto</p>
-      <div class="fp-viewer">
-        <div class="fp-stage" id="fp-stage">${floorplanSvg({ floor, spaces, mode: colorMode, selectedId: spaceId })}</div>
-        <div class="fp-side">
-          ${floorplanLegend(spaces, colorMode)}
-          <div id="fp-room">${roomPanel(sel)}</div>
-        </div>
+        ${/* Nur im Druck sichtbar: das Blatt trägt sonst keinen Bezug — eine
+              Zeichnung ohne Objekt, Geschoss und Einfärbung ist auf Papier
+              nicht zuzuordnen. */''}
+        <p class="fp-print-foot">${C.escape(t.buildingName)} — ${C.escape(floor.label)} ·
+          ${C.escape(t.street)}, ${C.escape(t.zip)} ${C.escape(t.city)} ·
+          Einfärbung: ${C.escape(farbLabel)}</p>
       </div>`;
   }
 
@@ -544,19 +645,24 @@ function detail(ctx, id) {
     return `<div class="fp-svc-list">
       ${serviceLink('stoerung-melden', 'Wrench', `#/app/fault-report?${objektQ}${raumQ}`)}
       ${serviceLink('kleinauftrag-gebaeude', 'Building', `#/app/fault-report?type=kleinauftrag&${objektQ}${raumQ}`)}
-      ${serviceLink('umzug-anmelden', 'ArrowRight', `#/app/fault-report?type=umzug&${objektQ}${raumQ}`)}
+      ${serviceLink('umzug-anmelden', 'Truck', `#/app/fault-report?type=umzug&${objektQ}${raumQ}`)}
     </div>`;
   }
   function serviceShortcuts() {
     return `<div class="box">
-      <h3>Dienstleistung starten</h3>
+      <h2>Aktionen</h2>
       <p class="small muted">Für dieses Objekt vorbelegt.</p>
       <div class="fp-svc-list">
         ${serviceLink('stoerung-melden', 'Wrench', `#/app/fault-report?${objektQ}`)}
         ${serviceLink('kleinauftrag-gebaeude', 'Building', `#/app/fault-report?type=kleinauftrag&${objektQ}`)}
-        ${serviceLink('umzug-anmelden', 'ArrowRight', `#/app/fault-report?type=umzug&${objektQ}`)}
+        ${serviceLink('umzug-anmelden', 'Truck', `#/app/fault-report?type=umzug&${objektQ}`)}
         ${serviceLink('raumbedarf-melden', 'Home', '#/app/space-request')}
         ${serviceLink('reklamation', 'WarningCircle', `#/app/fault-report?type=reklamation&${objektQ}`)}
+        ${/* Dokumente hängen am GEBÄUDE, nicht am Mietverhältnis — deshalb hier
+              kein Dokumentenabschnitt, sondern der Weg in die
+              Bauwerksdokumentation, auf dieses Gebäude vorgefiltert. */''}
+        <a class="fp-svc" href="#/app/document-archive?building=${encodeURIComponent(t.buildingId)}">
+          ${C.icon('File', 'icon--base')}<span>Dokumente zum Gebäude</span>${C.icon('ArrowRight', 'icon--sm fp-svc__go')}</a>
       </div>
     </div>`;
   }
@@ -568,7 +674,6 @@ function detail(ctx, id) {
   // gilt. Die Dienstleistungs-Kurzwege liegen aus demselben Grund nur noch in
   // der Seitenspalte der Übersicht und im Raumdetail des Grundrisses.
   const panelVertrag = () => '<div id="mt-dt-vertraege"></div>';
-  const panelVorgaenge = () => '<div id="mt-dt-vorgaenge"></div>';
 
   /* ------------------------------------------------------- Datentabellen ---- */
   // Alle Tabellen der Reiter laufen über dieselbe Komponente wie die Register
@@ -590,22 +695,23 @@ function detail(ctx, id) {
           { value: 'rooms', label: 'Räume (meiste zuerst)', cmp: (a, b) => b.rooms - a.rooms },
         ],
         columns: [
-          { key: 'label', label: 'Geschoss', render: (f) => `<a href="${links.mietverhaeltnis(t.tenancyId)}?tab=grundriss&floor=${encodeURIComponent(f.floorId)}">${C.escape(f.label)}</a>` },
-          { key: 'level', label: 'Niveau', align: 'right', render: (f) => String(f.level) },
+          { key: 'label',
+            label: 'Geschoss',
+            render: (f) => `<a href="${links.mietverhaeltnis(t.tenancyId)}?floor=${encodeURIComponent(f.floorId)}">${C.escape(f.label)}</a>${
+              f.meineRaeume ? ` ${C.badge('Ihr Standort', 'success')}` : ''}` },
           { key: 'rooms', label: 'Räume', align: 'right', render: (f) => String(f.rooms) },
           { key: 'areaHnf', label: 'HNF', align: 'right', render: (f) => m2(f.areaHnf) },
-          { key: 'areaGross', label: 'Bruttofläche', align: 'right', render: (f) => m2(f.areaGross) },
           { key: 'arbeitsplaetze', label: 'Arbeitsplätze', align: 'right', render: (f) => String(f.arbeitsplaetze) },
-          { key: 'belegung', label: 'Belegung', render: (f) => C.escape(f.belegung) },
+          { key: 'meineRaeume', label: `Davon ${t.ve}`, align: 'right',
+            render: (f) => f.meineRaeume ? `${f.meineRaeume} <span class="small muted">(${m2(f.meineFlaeche)})</span>` : '<span class="muted">—</span>' },
         ],
         // Summenzeile über die GEFILTERTE Menge, nicht über die Seite: sonst
         // stünde bei zwei Seiten eine Teilsumme unter der Tabelle.
-        foot: (_sichtbar, alle) => `<tr><th scope="row">Total</th><td class="text-right">—</td>
+        foot: (_sichtbar, alle) => `<tr><th scope="row">Total</th>
           <td class="text-right">${alle.reduce((n, f) => n + f.rooms, 0)}</td>
           <td class="text-right">${m2(alle.reduce((n, f) => n + f.areaHnf, 0))}</td>
-          <td class="text-right">${m2(alle.reduce((n, f) => n + f.areaGross, 0))}</td>
           <td class="text-right">${alle.reduce((n, f) => n + f.arbeitsplaetze, 0)}</td>
-          <td></td></tr>`,
+          <td class="text-right">${alle.reduce((n, f) => n + f.meineRaeume, 0)}</td></tr>`,
       },
       'mt-dt-vertraege': {
         id: 'mt-dt-vertrag', rows: contracts, unit: 'Verträge', caption: 'Verträge zum Objekt',
@@ -627,8 +733,12 @@ function detail(ctx, id) {
         ],
       },
       'mt-dt-vorgaenge': {
-        id: 'mt-dt-vorgang', rows: cases, unit: 'Vorgänge', caption: 'Laufende Vorgänge',
-        emptyMsg: 'Für dieses Objekt sind derzeit keine Vorgänge offen.',
+        // «Antrag» ist hier das richtige Wort, nicht «Vorgang»: das ist die
+        // Sicht der mietenden Verwaltungseinheit auf das, was SIE eingereicht
+        // hat. Die Referenzspalte führt weiterhin zum «Vorgang» unter «Meine
+        // Vorgänge» — das ist derselbe Gegenstand aus Sicht der Bearbeitung.
+        id: 'mt-dt-vorgang', rows: cases, unit: 'Anträge', caption: 'Anträge zu diesem Mietobjekt',
+        emptyMsg: 'Zu diesem Mietobjekt ist derzeit kein Antrag offen.',
         perPage: 10, searchKeys: ['reference', 'title', 'defName'],
         sorts: [{ value: 'updated', label: 'Aktualisiert (neuste zuerst)', cmp: (a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')) }],
         columns: [
@@ -642,28 +752,47 @@ function detail(ctx, id) {
     };
   }
 
-  const panels = { uebersicht: panelUebersicht, grundriss: panelGrundriss, vertrag: panelVertrag, vorgaenge: panelVorgaenge };
+  const panels = { uebersicht: panelUebersicht, vertrag: panelVertrag };
 
   /* ---------------------------------------------------------------- Zeichnen */
   function draw() {
+    // Restlaufzeit als Abzeichen im Kopf. Zuvor stand hier die Begründung, das
+    // NICHT zu tun («alarmiert jedes Mietverhältnis») — die galt aber nur für
+    // ein einfarbiges Warnabzeichen. Abgestuft (Warnung ≤ 12 Monate, Hinweis
+    // ≤ 36, sonst Erfolg) trägt es Information statt Dringlichkeit, und es ist
+    // die erste Frage an ein Mietverhältnis. Dasselbe Abzeichen wie in der
+    // Übersichtsliste, damit Liste und Detail dieselbe Aussage machen.
+    const restChip = restMonate == null ? '' : C.badge(
+      restMonate < 24 ? `noch ${restMonate} Monate` : `noch ${Math.floor(restMonate / 12)} Jahre`,
+      restMonate <= 12 ? 'warning' : restMonate <= 36 ? 'info' : 'success');
+
     mount.innerHTML = `
     <div class="container section">
-      ${/* Kopf wie im Liegenschaften Inventar: Rücksprung, Titel, Fakten als
-            Lead-Zeile — ohne Abzeichenreihe. Die Restlaufzeit steht mit ihrem
-            Datum im Reiter «Übersicht»; als Warnabzeichen über dem Titel hätte
-            sie jedes Mietverhältnis alarmiert, auch die mit 14 Jahren Restzeit. */''}
       ${C.backLink('#/app/tenancies', 'Mietende')}
+      ${/* Augenbrauenzeile: die Kennungen, nach denen gesucht und in Mails
+            zitiert wird. Als Teil der Lead-Zeile gingen sie zwischen Adresse
+            und Fläche unter. */''}
+      <p class="eyebrow">${C.escape(t.tenancyId)} · Objekt ${C.escape(t.buildingId)}</p>
       <h1 tabindex="-1">${C.escape(t.buildingName)}</h1>
       <p class="lead">${C.escape(t.street)}, ${C.escape(t.zip)} ${C.escape(t.city)} · ${
-        C.escape(t.ve)} · ${C.escape(t.floorLabels.join(' + '))} · ${m2(t.areaHnf)}</p>
+        C.escape(t.ve)} · ${C.escape(t.floorLabels.join(' + '))}</p>
+      ${restChip ? `<p class="pill-row mt-2">${restChip}</p>` : ''}
       ${/* Derselbe Kopf wie im Liegenschafteninventar (js/hero-mosaic.js):
             Bildmosaik links, Standortkarte rechts, jede Kachel öffnet die
             Vollbildgalerie. Ein einzelnes Bild wie zuvor liess offen, dass es
             zum Objekt weitere Aufnahmen gibt, und zeigte die Lage gar nicht. */''}
-      ${heroMosaic(C, { items: galleryItems, id: 'mt-mosaic', mapId: 'mt-hero-map',
+      ${heroMosaic(C, { items: galleryItems, id: 'mt-mosaic', mapId: 'mt-hero-map', lat: t.lat, lon: t.lon,
         mapLabel: `Standort von ${t.buildingName} auf der Karte` })}
-      ${C.tabBar({ items: tabs, active, idPrefix: 'mt-tab', ariaLabel: 'Mietverhältnis', controlsClass: 'mt-6' })}
-      ${C.tabPanels({ items: tabs, active, idPrefix: 'mt-tab', render: (id2) => panels[id2]() })}
+      ${/* Reiterrahmen und Abstände wie im Liegenschafteninventar
+            (js/apps/portfolio.js): `.tabs mt-6` um Leiste und Panels, alles auf
+            weissem Grund im selben `.container.section`. Zwischenzeitlich lag
+            hier ein getöntes Band mit weissen Karten (Vorbild
+            Mieterportal-Prototyp) — verworfen, weil es diese eine Detailseite
+            gegen alle anderen Micro-Apps abgesetzt hätte. */''}
+      <div class="tabs mt-6">
+        ${C.tabBar({ items: tabs, active, idPrefix: 'mt-tab', ariaLabel: 'Mietverhältnis' })}
+        ${C.tabPanels({ items: tabs, active, idPrefix: 'mt-tab', heading: true, render: (id2) => panels[id2]() })}
+      </div>
     </div>`;
 
     C.wireTabs(mount, { syncHash: (tab) => { active = tab; syncHash(); } });
@@ -678,7 +807,7 @@ function detail(ctx, id) {
   // draw() würde den Fokus auf die h1 zurückwerfen und nach oben scrollen —
   // beim Durchklicken von Räumen wäre das unbenutzbar.
   function redrawGrundriss() {
-    const host = mount.querySelector('#mt-tab-panel-grundriss') || mount.querySelector('[id$="-grundriss"]');
+    const host = mount.querySelector('#mt-grundriss__body');
     if (!host) return draw();
     host.innerHTML = panelGrundriss();
     wireGrundriss();
@@ -721,6 +850,9 @@ function detail(ctx, id) {
     // Rücksprung aus dem Betrachter in die Geschossübersicht.
     mount.querySelector('#fp-zurueck')?.addEventListener('click', (e) => {
       e.preventDefault();
+      // Erst das Vollbild verlassen: sonst stünde die Geschosstabelle im
+      // Vollbild-Element, das gleich darauf aus dem DOM ersetzt wird.
+      if (document.fullscreenElement) document.exitFullscreen?.();
       floorId = ''; spaceId = '';
       syncHash(); redrawGrundriss();
       mount.querySelector('#mt-dt-floors a')?.focus({ preventScroll: true });
@@ -744,6 +876,29 @@ function detail(ctx, id) {
       floorId = el.dataset.floor; spaceId = '';
       syncHash(); redrawGrundriss();
     }));
+
+    // Vollbild über die native Fullscreen-API auf `#fp-wrap` — also samt
+    // Kopfleiste und Seitenpanel, nicht nur der Zeichnung. Dieselbe API, die
+    // die Dashboard-Karte schon nutzt (js/charts.js:512). Esc beendet es vom
+    // Browser aus; der Knopf schaltet in beide Richtungen.
+    const wrap = mount.querySelector('#fp-wrap');
+    const vollbild = mount.querySelector('#fp-vollbild');
+    vollbild?.addEventListener('click', () => {
+      if (document.fullscreenElement) { document.exitFullscreen?.(); return; }
+      wrap?.requestFullscreen?.().catch(() => { /* vom Browser abgelehnt — Ansicht bleibt inline */ });
+    });
+
+    // Drucken: `body.print--plan` blendet für die Dauer des Druckdialogs alles
+    // ausser dem Plan aus (siehe @media print in css/app.css). Ohne die Marke
+    // druckte der Browser die ganze Detailseite mitsamt Eckdaten und Anträgen.
+    mount.querySelector('#fp-drucken')?.addEventListener('click', () => {
+      document.body.classList.add('print--plan');
+      const auf = () => { document.body.classList.remove('print--plan'); window.removeEventListener('afterprint', auf); };
+      window.addEventListener('afterprint', auf);
+      window.print();
+      // Sicherheitsnetz: `afterprint` feuert nicht in jedem Browser zuverlässig.
+      setTimeout(auf, 1000);
+    });
   }
 
   onUnmount(() => {

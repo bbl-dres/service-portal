@@ -17,7 +17,7 @@ const SIDE_SLOTS = 4;
 //   { id, photoSrc, photo, title, meta, type, gray?, details: [[Label, Wert]] }
 // `mapId` ist die id des Kartencontainers — der Aufrufer montiert die Karte
 // selbst, weil nur er weiss, welche Koordinaten und welcher Zoom gelten.
-export function heroMosaic(C, { items = [], mapId, mapLabel, id = 'pf-mosaic' }) {
+export function heroMosaic(C, { items = [], mapId, mapLabel, id = 'pf-mosaic', lat, lon }) {
   const esc = (s) => C.escape(String(s == null ? '' : s));
   const n = items.length;
 
@@ -55,10 +55,30 @@ export function heroMosaic(C, { items = [], mapId, mapLabel, id = 'pf-mosaic' })
         `<span class="pf-hero__badge">${C.icon('Image', 'icon--base')} ${n} Bild${n === 1 ? '' : 'er'}</span>`)
     : placeholder('pf-mosaic__cell--main');
 
+  // Kopfzeile über der Standortkarte: der Weg nach draussen zu Google Maps.
+  // Unsere Karte zeigt die Lage im Portalkontext (swisstopo-Grundkarte, andere
+  // Objekte, Parzellen); für Anfahrt, Strassenansicht und Umgebung greift man
+  // zu dem, was man ohnehin auf dem Telefon hat. Der `search`-Endpunkt der
+  // Google-Maps-URL-API setzt einen echten Marker auf die Koordinate — anders
+  // als `@lat,lng,zoom`, das nur die Kamera bewegt und den Ort NICHT markiert.
+  //
+  // `noopener noreferrer` und `rel~="external"` (das Blatt hängt daran das
+  // Aussenverweis-Symbol) — es verlässt das Portal in einen fremden Dienst.
+  const hasGeo = Number.isFinite(lat) && Number.isFinite(lon);
+  const mapsUrl = hasGeo
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lon}`)}`
+    : '';
+  const mapHead = hasGeo
+    ? `<p class="pf-hero__maplink"><a href="${esc(mapsUrl)}" target="_blank" rel="external noopener noreferrer">Auf Google Maps ansehen</a></p>`
+    : '';
+
   return `<div class="pf-mosaic pf-mosaic--map" id="${esc(id)}">
     ${mainCell}
     <div class="pf-mosaic__side">${sideTiles}</div>
-    <div class="pf-hero__map" id="${esc(mapId)}" role="group" aria-label="${esc(mapLabel)}"></div>
+    <div class="pf-hero__mapcol">
+      ${mapHead}
+      <div class="pf-hero__map" id="${esc(mapId)}" role="group" aria-label="${esc(mapLabel)}"></div>
+    </div>
   </div>`;
 }
 

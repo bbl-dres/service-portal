@@ -393,7 +393,8 @@ function detail(ctx, id) {
   if (!tabs.some(t => t.id === active)) active = 'uebersicht';
 
   function panelUebersicht() {
-    return `<dl class="kv">
+    return `<h2 class="detail-section__title">Projektdaten</h2>
+    <dl class="kv">
       <dt>Projektnummer</dt><dd>${C.escape(p.projectNumber)}</dd>
       <dt>Standort</dt><dd>${C.escape(p.siteName || '—')}${ort ? `<br><span class="small muted">${C.escape(ort)}</span>` : ''}</dd>
       <dt>Objekt im Inventar</dt><dd>${p.buildingId

@@ -113,9 +113,19 @@ o = JSON.parse(await p.evaluate(`JSON.stringify({
   kv: [...document.querySelectorAll('.kv dt')].map(x => x.textContent.trim()).slice(0,4),
   kurzwege: [...document.querySelectorAll('.fp-svc span')].map(x => x.textContent.trim()),
   inventarLink: document.querySelector('a[href*="app/portfolio?id="]')?.getAttribute('href'),
+  antragTitel: [...document.querySelectorAll('.detail-layout h2')].map(h => h.textContent.trim())
+    .find(x => /Anträge/.test(x)),
+  antragTabelle: !!document.querySelector('#mt-dt-vorgaenge table'),
 })`));
 check(o.h1 === 'Verwaltungszentrum Guisanplatz', 'Objektname als h1', o.h1);
-check(o.reiter.length === 4, 'vier Reiter', o.reiter.join(' | '));
+// Drei Reiter: «Vorgänge» ist kein eigener Reiter mehr, sondern der Abschnitt
+// «Anträge zu diesem Mietobjekt» am Fuss der Übersicht — dort, wo die Frage
+// gestellt wird, statt einen Klick daneben.
+// Zwei Reiter: «Vorgänge» und «Grundrisse» sind Abschnitte der Übersicht
+// geworden — als Reiter wurden sie nicht gefunden.
+check(o.reiter.length === 2, 'zwei Reiter', o.reiter.join(' | '));
+check(o.antragTitel === 'Anträge zu diesem Mietobjekt' && o.antragTabelle,
+  'Anträge als Abschnitt der Übersicht', `${o.antragTitel} · Tabelle ${o.antragTabelle}`);
 check(o.kv.includes('Verwaltungseinheit') && o.kv.includes('Geschosse'), 'Kerndaten im Übersichtsreiter', o.kv.join(', '));
 check(o.kurzwege.length >= 4, 'Dienstleistungs-Kurzwege aus services.json', String(o.kurzwege.length));
 check(/1080%2F4850%2FAG/.test(o.inventarLink || ''), 'Querverweis ins Inventar', o.inventarLink);
@@ -230,6 +240,10 @@ o = JSON.parse(await p.evaluate(`(async () => {
     aktiv: document.querySelector('.fp-floors__chip.is-active')?.textContent.trim(),
     modi: [...document.querySelectorAll('#fp-color option')].map(x => x.value),
     legende: document.querySelectorAll('.fp-legend__item').length,
+    gewaehlt: document.querySelector('#fp-color')?.value,
+    kopf: document.querySelector('.fp-head__name')?.textContent.trim(),
+    fakten: document.querySelector('.fp-head__facts')?.textContent.trim(),
+    knoepfe: [document.querySelector('#fp-vollbild'), document.querySelector('#fp-drucken')].map(Boolean),
     ariaErster: document.querySelector('.fp__room rect')?.getAttribute('aria-label'),
   });
 })()`));
@@ -238,7 +252,23 @@ check(/^-40 -40 /.test(o.viewBox || ''), 'viewBox aus dem Zeichnungsmass', o.vie
 check(o.raeume === 22, '22 Räume im 2. OG', String(o.raeume));
 check(o.geschosse === 2, 'zwei gemietete Geschosse zur Wahl', o.aktiv);
 check(o.modi.join(',') === 'none,use,sia,ve,capacity', 'fünf Einfärbemodi', o.modi.join(','));
-check(o.legende === 0, 'ohne Einfärbung keine Legende');
+// VORGABE ist die Verwaltungseinheit, nicht «Keine»: ein einfarbiger Plan
+// verriet nicht, dass er eingefärbt werden kann. Also OHNE `color=` im Hash
+// muss der Plan bereits eingefärbt und die Legende gefüllt sein.
+check(o.gewaehlt === 've', 'Vorgabe-Einfärbung: Verwaltungseinheit', o.gewaehlt);
+check(o.legende > 0, 'Legende ohne Zutun sichtbar', String(o.legende));
+check(o.kopf === '2. OG', 'Geschossname in der Kopfleiste', o.kopf);
+check(/Räume/.test(o.fakten || '') && /HNF/.test(o.fakten || ''), 'Kennzahlen in der Kopfleiste', o.fakten);
+check(o.knoepfe.every(Boolean), 'Vollbild- und Druckknopf vorhanden', o.knoepfe.join(','));
+
+// Und «Keine» bleibt wählbar — dann darf keine Legende stehen.
+const ohne = JSON.parse(await p.evaluate(`(async () => {
+  location.hash = '#/app/tenancies/MV-2026-001?floor=1080-4850-AG-2og&color=none';
+  await new Promise(r => setTimeout(r, 600));
+  return JSON.stringify({ legende: document.querySelectorAll('.fp-legend__item').length,
+    gewaehlt: document.querySelector('#fp-color')?.value });
+})()`));
+check(ohne.gewaehlt === 'none' && ohne.legende === 0, 'mit «Keine» keine Legende', `${ohne.gewaehlt} / ${ohne.legende}`);
 check(/Quadratmeter/.test(o.ariaErster || ''), 'jeder Raum hat ein aria-label', (o.ariaErster || '').slice(0, 60));
 await clean(p, 'Grundriss');
 
