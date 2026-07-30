@@ -182,11 +182,14 @@ ul,ol { margin:0; padding:0; }
 .bg--secondary-500 :focus-visible, [class*="bg--secondary-6"] :focus-visible,
 [class*="bg--secondary-7"] :focus-visible, [class*="bg--secondary-8"] :focus-visible,
 [class*="bg--secondary-9"] :focus-visible { outline-color:var(--color-focus-ring-negative); }
-.card--clickable:focus-visible { outline-offset:-2px; }
 /* Route-change focus targets are not interactive controls: move focus for screen
-   readers (router.js focusHeading) without painting a ring for mouse users. */
+   readers (router.js focusHeading) without painting a ring for mouse users.
+   #main-header gehört dazu: der Nach-oben-Knopf fokussiert ihn programmatisch
+   (shell.js renderFooter) — ohne Eintrag malte Enter den Ring um den ganzen
+   Kopfbereich (a11y-backtotop-1). */
 h1[tabindex="-1"]:focus, h1[tabindex="-1"]:focus-visible,
 h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
+#main-header:focus, #main-header:focus-visible,
 #main-content:focus, #main-content:focus-visible { outline:none; }
 
 /* Visuell verborgen, für Screenreader lesbar. Das Rezept stand SIEBENMAL im
@@ -196,7 +199,6 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
    einblenden, stehen weiterhin bei ihrer Komponente und gewinnen, weil sie
    im Blatt später kommen. */
 .sr-only,
-.top-bar__btn > span:not(.icon),
 .top-bar-navigation a > span:not(.icon),
 .logo__title,
 .search__button__title,
@@ -214,7 +216,10 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    1.25rem (container.postcss:7 px-4 vs grids.postcss:10 gap-5). */
 .container { width:100%; max-width:var(--container-max); margin:0 auto;
   padding:0 var(--container-px); overflow-x:clip; }
-.container--flex { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+/* CD-neutral (container.postcss:23-25: nur flex + justify-between) — Ausrichtung
+   und Lücke setzen die Shell-Kontexte selbst (Top-Bar, Kopfzeile, Brotkrume);
+   der frühere align-items:stretch-Gegenschlag im .desktop-menu entfällt damit. */
+.container--flex { display:flex; justify-content:space-between; }
 
 /* CD 12-column container grid (container.postcss:53-146) */
 .container--grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); }
@@ -277,7 +282,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .gap--top    { padding-top:var(--gap-responsive); }
 .gap--bottom { padding-bottom:var(--gap-responsive); }
 .grid + .grid { margin-top:var(--gap-responsive); }
-.container--grid + .container--grid { padding-top:1.25rem; }
+.container--grid + .container--grid { padding-top:var(--gap-responsive); }   /* CD container.postcss:56-58 `& + &` = gap--top-Rampe, kein Literal */
 
 .container--py      { padding-block:var(--section-py); }
 .container--pt      { padding-block:var(--section-py) 0; }
@@ -344,14 +349,30 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    zweiten entfernen (section.postcss:31-49, dortige Absicht laut Kommentar:
    «same background»). Bei Farbwechsel behält der zweite Abschnitt seinen
    Abstand, sonst klebt der Inhalt eines farbigen Bandes an dessen Oberkante.
-   `section--default` ohne bg-- ist weiss; mit bg-- zählt die bg-Farbe. */
+   `section--default` ohne bg-- ist weiss; mit bg-- zählt die bg-Farbe.
+   Volle CD-Paarliste (section.postcss:31-51): auch die --py/--py-half-
+   Permutationen und die Selbstpaare 200-900 — mit demselben Farbwechsel-Guard,
+   damit künftige farbige Bänder ohne Nachpflege korrekt kollabieren. */
 .section--default:not([class*="bg--"]) + .section--default:not([class*="bg--"]),
+.section--default:not([class*="bg--"]) + .section--py:not([class*="bg--"]),
+.section--py:not([class*="bg--"]) + .section--default:not([class*="bg--"]),
+.section--default:not([class*="bg--"]) + .section--py-half:not([class*="bg--"]),
+.section--py-half:not([class*="bg--"]) + .section--default:not([class*="bg--"]),
 .section--default:not([class*="bg--"]) + .bg--white,
 .bg--white + .section--default:not([class*="bg--"]),
 .bg--white + .bg--white,
 .bg--secondary-50 + .bg--secondary-50,
 .bg--secondary-100 + .bg--secondary-100,
+.bg--secondary-200 + .bg--secondary-200,
+.bg--secondary-300 + .bg--secondary-300,
+.bg--secondary-400 + .bg--secondary-400,
+.bg--secondary-500 + .bg--secondary-500,
+.bg--secondary-600 + .bg--secondary-600,
+.bg--secondary-700 + .bg--secondary-700,
+.bg--secondary-800 + .bg--secondary-800,
+.bg--secondary-900 + .bg--secondary-900,
 .hero + .section--default:not([class*="bg--"]),
+.hero + .section--py:not([class*="bg--"]),
 .hero + .bg--white { padding-top:0; }
 
 /* Hinweisstreifen (notification-banner.postcss) — CDs Consent-Bauteil. Fix am
@@ -397,6 +418,10 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .bg--secondary-100{ background:var(--color-secondary-100); }
 .bg--secondary-200{ background:var(--color-secondary-200); }
 .bg--secondary-300{ background:var(--color-secondary-300); }
+/* BEWUSSTE ABWEICHUNG (Review 2026-07, layout/bg-1): CDs Negativ-Schwelle beginnt
+   erst bei 500 (section.postcss:58-70), auf 400 hält CD dunkle Tinte — gemessen
+   scheitert die aber an AA: text-800 auf #596978 = 2.6:1, auf Intranet-#5076b3
+   = 3.2:1. Weiss misst 5.65:1 (Default) bzw. 4.58:1 (Intranet) — negativ ab 400. */
 .bg--secondary-400{ background:var(--color-secondary-400); color:var(--color-text-negative); }
 .bg--secondary-500{ background:var(--color-secondary-500); color:var(--color-text-negative); }
 .bg--secondary-600{ background:var(--color-secondary-600); color:var(--color-text-negative); }
@@ -471,13 +496,17 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    Absicherung wie CD sie auf jeder generierten Spur setzt (grids.postcss:70,93,119)
    und wie app.css:140 sie für .container--grid bereits verwendet. */
 
-/* Ratios (ratio.postcss:5-33) */
+/* Ratios (ratio.postcss:5-33) — CD-Selektoren wörtlich (escaped `--16\/9` usw.),
+   damit CD-förmiges Markup unverändert greift. CDs z-50-Lift («for video iframes
+   in clickable cards») fehlt BEWUSST bis zum ersten Konsumenten: ein nacktes
+   z-index:50 kollidierte mit --z-nav-active der Portal-Skala. */
 .ratio { position:relative; }
 .ratio > * { position:absolute; inset:0; width:100%; height:100%; }
-.ratio--1x1  { padding-bottom:98%; }
-.ratio--2x1  { padding-bottom:50%; }
-.ratio--4x3  { padding-bottom:75%; }
-.ratio--16x9 { padding-bottom:56.25%; }
+.ratio--1\/1  { padding-bottom:98%; }
+.ratio--2\/1  { padding-bottom:50%; }
+.ratio--4\/3  { padding-bottom:75%; }
+.ratio--16\/9 { padding-bottom:56.25%; }
+.ratio--mb { margin-bottom:1.5rem; }
 
 /* ---- Icons (monochrome SVGs via CSS mask -> currentColor) ---- */
 .icon { display:inline-block; width:auto; height:1rem; vertical-align:-.15em;
@@ -526,47 +555,55 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 /* Demo / prototype chip — deliberately NOT skin-tinted: under the intranet skin
    `--color-primary-*` is blue, which disappeared against the blue top bar. Pinned
    to the federal red so the "this is a prototype" marker always stands out.
-   White on #d8232a = 5.01:1. */
-.demo-chip { display:inline-flex; align-items:center; padding:.12rem .5rem; font-size:var(--text-xs);
-  font-weight:var(--fw-bold); letter-spacing:.08em; text-transform:uppercase;
-  background:#d8232a; color:var(--color-text-negative); border-radius:var(--radius-sm); white-space:nowrap; }
+   White on #d8232a = 5.01:1.
+   Geometrie = CDs Badge (badge.postcss:5-9 py-[0.219em] px-[1em] rounded-full,
+   kein uppercase/tracking) — CDs Top-Bar hostet in diesem Slot genau eine Badge
+   (top-bar.postcss:154-166); nur die Farbe bleibt gepinnt. */
+.demo-chip { display:inline-flex; align-items:center; padding:.219em 1em; font-size:var(--text-xs);
+  font-weight:var(--fw-bold);
+  background:#d8232a; color:var(--color-text-negative); border-radius:var(--radius-full); white-space:nowrap; }
 
 /* Top bar (top-bar.postcss + top-bar-navigation.postcss) */
 .top-bar { background:var(--color-secondary-600); color:var(--color-text-negative); font-size:var(--fs-sm); }
-.top-bar .container--flex { min-height:var(--target-min); }
-.top-bar__btn { display:inline-flex; align-items:center; gap:.4rem; min-height:var(--target-min); min-width:var(--target-min); background:none; border:0;
+/* CD top-bar.postcss:7 `text-sm 2xl:text-base` — feste Stufen, keine Rampe. */
+@media (min-width:1544px){ .top-bar { font-size:var(--fs-base); } }
+.top-bar .container--flex { min-height:var(--target-min); align-items:center; gap:1rem; }
+.top-bar__btn { display:inline-flex; align-items:center; gap:.5rem; min-height:var(--target-min); min-width:var(--target-min); background:none; border:0;
   color:var(--color-text-negative); cursor:pointer; font:inherit; padding:.25rem 0 .25rem 1rem; margin-left:-1rem; text-decoration:none;
   transition:color var(--duration-fast); }
-.top-bar__btn:hover { color:var(--color-gray-300); text-decoration:none; }
-/* C.icon() rendert ein <span class="icon …">, kein <svg> — `> span {display:none}`
-   verbarg deshalb Beschriftung UND Symbol, und `display:none` fällt aus der
-   Berechnung des zugänglichen Namens heraus: unter 640 war das ein leerer,
-   fokussierbarer 44px-Bereich ganz ohne Namen (WCAG 4.1.2 + 2.4.4, Level A).
-   Jetzt nur die Beschriftung visuell ausblenden, für AT erhalten (die
-   sr-only-Sammelregel ganz oben im Blatt); ab 640 kommt sie zurück. CDs eigene
-   Regeln sind sicher, weil CD `svg` separat adressiert (top-bar-navigation.postcss:8,12). */
-@media (min-width:640px){ .top-bar__btn > span:not(.icon) { position:static; width:auto; height:auto;
-  margin:0; overflow:visible; clip:auto; } }
+/* Hover UND Fokus hellen auf (CD top-bar.postcss:130 `hover:text-text-300
+   focus:text-text-300`) — Tastaturfokus bekam sonst keinen Farbwechsel. */
+.top-bar__btn:hover, .top-bar__btn:focus { color:var(--color-gray-300); text-decoration:none; }
+/* Die Beschriftung bleibt auf JEDER Breite sichtbar — CD top-bar.postcss:136-138
+   `span { w-min sm:w-full }`: unter 640 wird sie zur min-content-Spalte und
+   bricht um, statt zu verschwinden. Die frühere sr-only-Behandlung war die
+   Reparatur eines schlimmeren Fehlers (Label UND Icon unsichtbar, WCAG 4.1.2);
+   CDs schmale umbrechende Spalte löst dasselbe Problem ohne Textverlust. */
+.top-bar__btn > span:not(.icon) { width:min-content; text-align:left; }
+@media (min-width:640px){ .top-bar__btn > span:not(.icon) { width:auto; } }
 /* align-items:stretch statt center: der Sprachwähler soll die volle 44px-Zeile
    füllen. Mit `center` war das Elternteil auto-hoch, und ein height:100% dagegen
    löst zu auto auf — genau der Fehler, der bei .burger schon gefunden und
    behoben wurde (Kommentar app.css:420-421, P0-5); hier war er übersehen. */
-.top-bar__right { display:flex; align-items:stretch; gap:1rem; }
-.top-bar__right > .demo-chip { align-self:center; }
+/* Kein flex-gap (CD top-bar.postcss:154-166 — nur `flex items-center`): den
+   Rhythmus tragen die Innenabstände der Einträge selbst (Nav-Padding,
+   Sprachwähler-Padding). Nur der portal-eigene Demo-Chip braucht einen
+   eigenen Rand (CDs Badge in diesem Slot trägt mr-2). */
+.top-bar__right { display:flex; align-items:stretch; }
+.top-bar__right > .demo-chip { align-self:center; margin-right:.5rem; }
 .top-bar-navigation { display:flex; height:100%; }
 .top-bar-navigation ul { list-style:none; display:flex; }
 .top-bar-navigation a { display:flex; align-items:center; height:100%; min-height:var(--target-min);
   padding-inline:.25rem; color:var(--color-text-negative); text-decoration:none; transition:color var(--duration-fast); }
 .top-bar-navigation a:hover, .top-bar-navigation a:focus { color:var(--color-gray-300); text-decoration:none; }
-/* wie oben: nur das Label ist ausgeblendet (sr-only-Sammelregel), nie das
-   Icon-<span> (Item 2.4) — ab 640 wieder sichtbar. */
-@media (min-width:640px){
-  .top-bar-navigation a > span:not(.icon) { position:static; width:auto; height:auto; overflow:visible;
-    clip:auto; padding-left:.5rem; padding-right:.25rem; }
-}
+/* Nur das Label ist ausgeblendet (sr-only-Sammelregel), nie das Icon-<span>
+   (Item 2.4). Sichtbar erst ab 1024: CD zeigt die Beschriftungen der
+   Werkzeuglinks erst ab lg (top-bar-navigation.postcss:7-11 `hidden lg:block`),
+   dazwischen bleibt die Leiste icon-only. */
 @media (min-width:1024px){
   .top-bar-navigation a { padding-inline:.5rem; }
-  .top-bar-navigation a > span:not(.icon) { padding-left:1rem; padding-right:.5rem; }
+  .top-bar-navigation a > span:not(.icon) { position:static; width:auto; height:auto; margin:0;
+    overflow:visible; clip:auto; padding-left:1rem; padding-right:.5rem; }
 }
 
 /* Language switcher (language-switcher.postcss:5-59) */
@@ -597,8 +634,9 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:768px){ .top-header { padding:1rem 0; } }
 @media (min-width:1024px){ .top-header { padding:1.5rem 0; } }
 @media (min-width:1280px){ .top-header { padding:2rem 0; } }
-@media (min-width:1920px){ .top-header { padding:2.5rem 0; } }
-.top-header .container--flex { min-height:0; }
+/* CD top-header.postcss:8 `text-sm 3xl:text-base`. */
+@media (min-width:1920px){ .top-header { padding:2.5rem 0; font-size:var(--fs-base); } }
+.top-header .container--flex { min-height:0; align-items:center; gap:1rem; }
 /* Die Transition trägt BEIDE Ausblendungen (offene Suche unter lg, offenes
    Mobilmenü) — CD logo.postcss:5-13, dort mit derselben duration-700. */
 .logo { display:flex; align-items:center; flex-wrap:nowrap; text-decoration:none;
@@ -620,14 +658,21 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .logo__accronym { font-weight:var(--fw-bold); line-height:var(--lh-snug); color:var(--color-text); }
 @media (min-width:480px){ .logo__accronym { display:none; } }
 @media (min-width:480px){
-  /* the office name stays on one line (logo.postcss:80); the product name below
-     it is a block child, so it still gets its own line */
-  .logo__title { position:static; width:auto; height:auto; margin:0; overflow:visible; clip:auto;
-    white-space:nowrap; font-size:var(--fs-xs); font-weight:var(--fw-bold); color:var(--color-text);
+  /* Der negative obere Rand ist CDs optischer Ausgleich gegen die Oberkante der
+     Flagge (logo.postcss:81 `mt-[-0.160rem]`) — sichtbar ab md, wo .logo auf
+     flex-start ausrichtet. */
+  .logo__title { position:static; width:auto; height:auto; margin:-.16rem 0 0; overflow:visible; clip:auto;
+    font-size:var(--fs-xs); font-weight:var(--fw-bold); color:var(--color-text);
     line-height:1.375; }
 }
+/* nowrap erst ab md (logo.postcss:78 `md:whitespace-nowrap`): zwischen 480 und
+   767 darf der lange Amtstitel umbrechen, statt neben Flagge + Trenner
+   überzulaufen. Der Produktname darunter ist ein Block-Kind und behält ohnehin
+   seine eigene Zeile. */
+@media (min-width:768px){ .logo__title { white-space:nowrap; } }
 @media (min-width:640px){ .logo__title { font-size:var(--fs-sm); } }
 @media (min-width:1280px){ .logo__title { font-size:var(--fs-base); } }
+@media (min-width:1920px){ .logo__title { font-size:var(--fs-lg); } }   /* logo.postcss:77 3xl:text-lg */
 .logo__title span { display:block; font-weight:var(--fw-regular); color:var(--color-text-muted); }
 /* Intranet skin stamps its own badge after the title (intranet.postcss:32-43).
    Die Pille am TITEL reitet die Badge-Grössenrampe (badge.postcss:73-77) mit;
@@ -655,12 +700,9 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:480px){ .top-header__mobile-title { display:none; } }
 .body--mobile-menu-is-open .top-header__mobile-title { max-height:0; }
 
-/* Anmelde-Slot in CDs eigener top-header__container-flex-Zeile (Item 4.2). */
-.top-header__auth { display:none; }
-@media (min-width:1024px){ .top-header__auth { display:flex; align-items:center; margin-right:.75rem; } }
-.top-header__auth ul { list-style:none; display:flex; align-items:center; margin:0; padding:0; }
-
-/* Meta navigation (meta-navigation.postcss:5-42) */
+/* Meta navigation (meta-navigation.postcss:5-42) — der Anmelde-Slot lebt HIER
+   (shell.js rendert ihn in der Meta-ul); der frühere .top-header__auth-Block
+   war die tote Hülle einer aufgegebenen Markup-Struktur. */
 /* Der An-/Abmelden-Knopf — der einzige Einstieg in jeden persönlichen Ablauf —
    mass 109x23px, weil hier gar keine Höhe gesetzt war (Item 2.5b). */
 .meta-navigation a, .meta-navigation__auth, .meta-navigation__user { min-height:var(--control-h); }
@@ -670,17 +712,20 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .meta-navigation--desktop { display:none; }
 @media (min-width:1024px){ .meta-navigation--desktop { display:flex; margin-bottom:.75rem; } }
 @media (min-width:1280px){ .meta-navigation--desktop { margin-bottom:1rem; } }
-/* Anmeldestatus (AGOV / FedLogin) rechts in der Meta-Navigation. */
-.meta-navigation__auth { display:flex; align-items:center; gap:.4rem;
+/* Anmeldestatus (AGOV / FedLogin) rechts in der Meta-Navigation. EIN Linkstil
+   für die ganze Leiste (CD meta-navigation.postcss:5-12 + MetaNavigation.vue:4-20:
+   alle Einträge uniform, kein Akzent-Variant) — die Betonung trägt das User-Icon
+   des Eintrags, nicht eine zweite Linkfarbe. Icon-Abstand .5rem wie CDs ml-2. */
+.meta-navigation__auth { display:flex; align-items:center; gap:.5rem;
   min-height:var(--control-h);
-  background:none; border:0; font:inherit; color:var(--color-primary-600);
+  background:none; border:0; font:inherit; color:var(--color-text);
   padding-inline:.75rem; cursor:pointer; }
-.meta-navigation__auth:hover { color:var(--color-primary-800); }
+.meta-navigation__auth:hover { color:var(--color-primary-600); }
 /* Die Trennlinie übernimmt .separator--vertical im Markup (Item 4.2) — eine
    nackte Haarlinie am Zeilenanfang liest sich als Tippfehler. */
 .meta-navigation__user { display:flex; align-items:center; gap:.5rem; padding-inline:.75rem;
   min-height:var(--control-h); border-left:0; }
-.meta-navigation__name { display:flex; align-items:center; gap:.35rem; color:var(--color-text-muted); }
+.meta-navigation__name { display:flex; align-items:center; gap:.375rem; color:var(--color-text-muted); }
 .meta-navigation__name .icon { color:var(--color-primary-600); }
 
 /* Login-Hinweis dort, wo ein Vorgang ausgelöst würde. */
@@ -695,7 +740,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
   background:none; border:0; cursor:pointer; }
 @media (min-width:1024px){ .burger { display:none; } }
 .burger__icon { display:block; position:relative; width:1.75rem; height:1.25rem;
-  color:var(--color-text-muted); transition:color var(--duration-fast); }
+  color:var(--color-text-500); transition:color var(--duration-fast); }   /* CD burger.postcss:10-17: Ruhefarbe text-500 */
 .burger:hover .burger__icon { color:var(--color-primary-600); }
 .burger__bar { display:block; position:absolute; width:100%; height:100%; color:inherit; transition:transform var(--duration-fast); }
 .burger__bar::after { content:""; display:block; position:absolute; width:100%; height:2px;
@@ -712,11 +757,20 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 /* Header search (search.postcss:5-31,113-146) */
 .search--main { position:relative; display:flex; align-items:center; justify-content:flex-end; min-height:var(--target-min); z-index:var(--z-header); }
 .search__group { display:flex; align-items:stretch; justify-content:flex-end; position:relative; }
-.search__button { display:inline-flex; align-items:center; gap:.4rem; background:none; border:0; font:inherit;
-  color:var(--color-text); min-height:var(--target-min); padding:.4rem .5rem; cursor:pointer; transition:color var(--duration-fast),opacity var(--duration); }
+/* CD-Polsterrampe (search.postcss:79-82 `lg:p-1 xl:p-2 2xl:py-3`, Basis p-0).
+   min-width + Zentrierung sind der portal-eigene Zusatz: min-height garantiert
+   nur die HÖHE — ohne Polster wäre der icon-only-Schalter sonst schmaler als
+   das 44px-Tippziel. */
+.search__button { display:inline-flex; align-items:center; justify-content:center; background:none; border:0; font:inherit;
+  color:var(--color-text); min-height:var(--target-min); min-width:var(--target-min); padding:0; cursor:pointer; transition:color var(--duration-fast),opacity var(--duration); }
+@media (min-width:1024px){ .search__button { padding:.25rem; } }
+@media (min-width:1280px){ .search__button { padding:.5rem; } }
+@media (min-width:1544px){ .search__button { padding-block:.75rem; } }
 .search__button:hover { color:var(--color-primary-600); }
 @media (min-width:1024px){
-  .search__button__title { position:static; width:auto; height:auto; overflow:visible; clip:auto;
+  /* -mt-0.5 = CDs optischer Ausgleich der Beschriftung neben der Lupe
+     (search.postcss:84-86 `lg:pr-1.5 lg:-mt-0.5`). */
+  .search__button__title { position:static; width:auto; height:auto; margin:-.125rem 0 0; overflow:visible; clip:auto;
     padding-right:.375rem; }
 }
 .search--main.open .search__button { opacity:0; visibility:hidden; pointer-events:none; }
@@ -736,7 +790,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 /* CD search.postcss:120-123: ab lg bekommt das offene Kopffeld py-4. */
 @media (min-width:1024px){ .search__form input { padding-top:1rem; padding-bottom:1rem; } }
 .search__submit { position:absolute; right:0; top:0; bottom:0; width:3rem; background:none; border:0;
-  cursor:pointer; color:var(--color-text); display:inline-flex; align-items:center; justify-content:center; }
+  cursor:pointer; color:var(--color-secondary-700); display:inline-flex; align-items:center; justify-content:center; }
 .search__submit:hover { color:var(--color-primary-600); }
 /* Das offene Feld lag quer über der Bundesmarke: es überlappte das Logo um 64px
    bei 320, 173px bei 480 und 176px bei 640. CD legt dafür eine eigene, volle
@@ -752,20 +806,19 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
   .search--main.open .search__form {
     position:absolute; left:0; right:0; top:100%; transform:none;
     width:auto; max-width:none; margin-top:.5rem;
-    padding-inline:1rem; z-index:var(--header-z); }
+    padding-inline:.875rem; z-index:var(--header-z); }   /* CD search.postcss:37-42 `.search--mobile { mt-2 px-3.5 }` */
   .top-header { position:relative; }
-  .logo { transition:opacity var(--duration-slow) var(--ease-out); }
+  /* KEINE eigene Transition mehr: die EINE duration-700 auf .logo (oben) trägt
+     beide Ausblendungen — Suche offen UND Mobilmenü offen (CD logo.postcss:8). */
   .body--search-is-open .logo { opacity:0; pointer-events:none; }
 }
 /* CD search.postcss:88-92 — auf dem Handy war die einzige Suchaffordanz eine 24px-Lupe */
 .search__button .icon { width:2.25rem; height:2.25rem; }
 @media (min-width:1024px){ .search__button .icon { width:1.75rem; height:1.75rem; } }
 .search__submit .icon { width:1.5rem; height:1.5rem; }
-.search__submit { color:var(--color-secondary-700); }
 
 /* Main navigation (main-navigation.postcss:11-56) */
 .desktop-menu { background:var(--color-bg); border-bottom:1px solid var(--color-border); position:relative; z-index:var(--z-nav); }
-.desktop-menu .container--flex { align-items:stretch; }
 /* top:100% = Unterkante der gesamten Navigation (auch wenn sie umbricht),
    gleich wie der Drawer — sonst tönt der Overlay eine umgebrochene zweite
    Navigationszeile grau ein und es entsteht eine Lücke über dem Drawer. */
@@ -781,14 +834,17 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    umbrechen: der Mehr-Flyout bräuchte Breitenmessung bei jedem Resize und
    versteckt Einträge, die im Intranet-Kontext alle gleichrangig sind; die
    Zeilen behalten die feste CD-Zeilenhöhe, der Bruch tritt nur zwischen
-   1024-1280 px auf. Kein overflow:hidden, sonst würden Einträge verschluckt. */
+   1024-1280 px auf. Kein overflow:hidden, sonst würden Einträge verschluckt.
+   Zur selben Entscheidung gehört der dichtere 0.7rem-Rhythmus (Padding,
+   Negativrand, Unterstrich-Insets — CD: 1rem, main-navigation.postcss:16,29,38):
+   er hält die neun Einträge länger in einer Zeile (nav/l1-2). */
 .main-navigation > ul { list-style:none; display:flex; flex-wrap:wrap; margin-left:-.7rem; min-height:3.5rem; }
 @media (max-width:1023.98px){ .desktop-menu { display:none; } }
 @media (min-width:1280px){ .main-navigation > ul { min-height:4rem; } }
 @media (min-width:1920px){ .main-navigation > ul { min-height:5rem; } }
 .main-navigation > ul > li > a,
 .main-navigation > ul > li > button { position:relative; display:flex; align-items:center; gap:.4rem; color:var(--color-text);
-  height:100%; min-height:3.5rem; padding:1rem .7rem; font:inherit; font-size:var(--text-base); line-height:1.2; white-space:nowrap;
+  height:100%; min-height:3.5rem; padding:1rem .7rem; font:inherit; font-size:var(--text-base); line-height:var(--lh-tight); white-space:nowrap;
   background:none; border:0; cursor:pointer; text-decoration:none; transition:color var(--duration-fast),box-shadow var(--duration); }
 @media (min-width:1280px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:4rem; } }
 @media (min-width:1920px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:5rem; } }
@@ -802,9 +858,14 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .main-navigation > ul > li > a.active::after,
 .main-navigation > ul > li > button.active::after,
 .main-navigation > ul > li > .clicked::after { background:var(--color-primary-500); }
+/* CD main-navigation.postcss:42-44 `focus-visible:ring-inset`: der Eintrag füllt
+   die Leistenhöhe — der Ring liegt innen, statt Leistenrand und Nachbarn zu
+   schneiden. */
+.main-navigation > ul > li > a:focus-visible,
+.main-navigation > ul > li > button:focus-visible { outline-offset:-2px; }
 /* CD: der aktive L1-Eintrag wird NUR durch den Unterstrich (::after) markiert,
-   nicht durch Fettschrift (main-navigation.postcss:46). Fett bleibt nur im
-   mobilen Menü (siehe .mobile-menu .main-navigation .active). */
+   nicht durch Fettschrift (main-navigation.postcss:46); mobil trägt allein der
+   3px-Balken den Zustand (navy.postcss:18-23 — auch dort kennt CD kein Fett). */
 .main-navigation:has(.navy__has-children[aria-expanded="true"]) [data-nav].active::after { background:transparent; }
 .main-navigation:has(.navy__has-children[aria-expanded="true"]) .clicked::after { background:var(--color-primary-500); }
 /* `!important` bleibt hier, entgegen der ersten Einschätzung der Review. Der
@@ -831,21 +892,24 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:1920px){ .desktop-menu__drawer { width:850px; padding:6rem; } }
 /* Nur ein dezentes Einschieben — die Sichtbarkeit steuert das hidden-Attribut.
    Keine Opazität im Keyframe: sonst blieb der Drawer je nach Fill-Mode/Timing
-   durchscheinend hängen. */
+   durchscheinend hängen.
+   BEWUSSTE REDUKTION (Review 2026-07, nav/drawer-4): CD animiert auch das
+   Schliessen (desktop-menu.postcss:19-34, opacity+height über eine Klasse) —
+   hier schliesst `hidden` hart; eine Transition bräuchte Klassen- statt
+   Attribut-Steuerung in shell.js. */
 @keyframes navMenuIn { from { transform:translateY(-.375rem); } to { transform:translateY(0); } }
 /* Schliessen-Knopf: Position und Icongrösse nach desktop-menu.postcss:75-88
    (lg:top-4 right-0 → xl:top-6 right-4 → 3xl:top-8 right-20; Icon h-5 = 1.25rem)
-   statt bisher in der Drawer-Ecke (top/right:0) mit zu kleinem Icon (0.75rem). */
+   statt bisher in der Drawer-Ecke (top/right:0) mit zu kleinem Icon (0.75rem).
+   Tinte = CDs menu__action-btn (menu.postcss:116-122): text-500 ruhend, Hover
+   text-600 auf secondary-50 — dieselbe Paarung wie .navy__back daneben. */
 .desktop-menu__close { position:absolute; top:1rem; right:0; display:inline-flex; align-items:center; gap:.4rem;
-  padding:.75rem 1rem; color:var(--color-text-muted); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
-.desktop-menu__close:hover { color:var(--color-secondary-700); background:var(--color-secondary-50); }
+  padding:.75rem 1rem; color:var(--color-text-500); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
+.desktop-menu__close:hover { color:var(--color-text-600); background:var(--color-secondary-50); }
 .desktop-menu__close .icon { width:1.25rem; height:1.25rem; }
 @media (min-width:1280px){ .desktop-menu__close { top:1.5rem; right:1rem; } }
 @media (min-width:1920px){ .desktop-menu__close { top:2rem; right:5rem; font-size:var(--fs-base); } }
 .navy { position:relative; }
-/* Zwischenüberschrift für die Unterzweig-Gruppe im Drawer. */
-.navy__group-title { margin:1.25rem 0 .25rem; padding:0 .75rem; font-size:var(--fs-sm);
-  font-weight:var(--fw-bold); color:var(--color-text-muted); }
 /* CD navy multi-level (navy.postcss): Ebene 0 = Dienstleistungen + Bereichszweige,
    Ebene 1 = Kinder eines Bereichs. Robuster Display-Wechsel statt Slider-Transform
    (width:200% + flex + translateX rendert je nach Browser Glyphen nicht) — nur die
@@ -854,22 +918,33 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .navy__slider { display:block; }
 .navy__pane[data-pane="1"] { display:none; }
 .navy--drill[data-level="1"] .navy__pane[data-pane="0"] { display:none; }
-.navy--drill[data-level="1"] .navy__pane[data-pane="1"] { display:block; animation:navyDrillIn var(--duration-slow) ease; }
+.navy--drill[data-level="1"] .navy__pane[data-pane="1"] { display:block; animation:navyDrillIn var(--duration-slowest) ease; }
 /* Fade, not a translateX slide: a transformed pane becomes a containing block,
    which would re-anchor the absolutely-positioned .navy__back to the pane instead
-   of the drawer's top row. Opacity has no such side effect. */
+   of the drawer's top row. Opacity has no such side effect.
+   Tempo var(--duration-slowest): CDs Ebenenwechsel läuft 600ms ease-in-out
+   (navy.postcss:97-98) — 700ms ist die nächste Token-Stufe; 300ms las sich als
+   fremdes Motion-Idiom (nav/drawer-5). */
 @keyframes navyDrillIn { from { opacity:0; } to { opacity:1; } }
 @media (prefers-reduced-motion: reduce){ .navy--drill[data-level="1"] .navy__pane[data-pane="1"] { animation:none; } }
 /* Der Zweig-Knopf muss zeichengenau wie die «Übersicht»-Zeile (<a>) ausgerichtet
    sein — die UA-Vorgabepolsterung des <button> sonst schiebt den Text nach rechts. */
 .navy-branch { background:none; border:0; padding:0; margin:0; text-align:left; font:inherit; cursor:pointer; color:inherit; }
-.navy__back { display:inline-flex; align-items:center; gap:.4rem; margin:0 0 .5rem; padding:.4rem .75rem;
+/* CD navy.postcss:54-58: der Zurück-Knopf trägt die menu__action-btn-Anatomie
+   (menu.postcss:109-123 — px-4 py-3, text-500, Hover secondary-50/text-600) wie
+   der Schliessen-Knopf, mit dem er die Kopfzeile teilt; die frühere
+   Primary-Linkfarbe las sich als Navigationslink statt als Menü-Aktion. */
+.navy__back { display:inline-flex; align-items:center; gap:.4rem; margin:0 0 .5rem; padding:.75rem 1rem;
   min-height:var(--target-min); background:none; border:0; font:inherit; font-size:var(--fs-sm);
-  color:var(--color-primary-600); cursor:pointer; }
-.navy__back:hover { color:var(--color-primary-800); }
+  color:var(--color-text-500); cursor:pointer; }
+.navy__back:hover { color:var(--color-text-600); background:var(--color-secondary-50); }
 .navy__level-0 { list-style:none; margin:0; padding:0; }
-.navy__title { display:block; margin:0 0 .5rem; padding:0 .75rem; font-size:var(--fs-lg); font-weight:var(--fw-bold);
-  line-height:var(--lh-tight); color:var(--color-secondary-700); cursor:default; }
+/* CD navy.postcss:69-73: der Paneltitel ist `menu__item--title` — Basisgrösse,
+   GEERBTE Tinte, Zeileneinzug px-4 mit lg:px-0 (menu.postcss:68-71); nur das
+   Fett bleibt. Die frühere fs-lg/secondary-700-Fassung war eine Eigenstimme. */
+.navy__title { display:block; margin:0 0 .5rem; padding:0 1rem; font-size:var(--fs-base); font-weight:var(--fw-bold);
+  line-height:var(--lh-tight); color:inherit; cursor:default; }
+@media (min-width:1024px){ .navy__title { padding:0; } }
 /* Item 4.10 zurückgenommen: CDs Drawer hat keine Abschnittstitel. Die Klasse
    `menu__item--title` existiert in menu.postcss, aber keine CD-Komponente wendet
    sie an — sie gehört nicht zum Drawer-Muster. Die Liste bleibt flach. */
@@ -885,8 +960,13 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .navy .menu__item { padding:0; }
 .navy .menu__item > .menu__item__flex,
 .navy .menu__item > .navy-branch { padding:.75rem 1rem; min-height:var(--target-min); box-sizing:border-box; }
-.navy .menu__item--condensed > .menu__item__flex,
-.navy .menu__item--condensed > .navy-branch { padding:.75rem; }
+/* CD-Zeilenrampe (navy.postcss:13-15: menu__item px-4 py-3, ab xl px-3) — der
+   frühere --condensed-Umweg ist raus: shell.js emittiert den Modifier nicht
+   mehr, in CD ist --condensed eine EIGENE Variante (menu.postcss:87-93). */
+@media (min-width:1280px){
+  .navy .menu__item > .menu__item__flex,
+  .navy .menu__item > .navy-branch { padding:.75rem; }
+}
 .navy .menu__item:hover { background:none; }
 .navy .menu__item > .menu__item__flex:hover,
 .navy .menu__item > .navy-branch:hover { background:var(--color-secondary-50); }
@@ -897,7 +977,8 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:1024px){
   .desktop-menu__drawer .navy,
   .desktop-menu__drawer .navy--drill { position:static; }
-  .desktop-menu__drawer .navy__back { position:absolute; top:1rem; left:0; margin:0; }
+  /* CDs lg:-left-5 gegen das 2rem-Drawer-Polster aufgelöst = .75rem vom Rand. */
+  .desktop-menu__drawer .navy__back { position:absolute; top:1rem; left:.75rem; margin:0; }
 }
 @media (min-width:1280px){ .desktop-menu__drawer .navy__back { top:1.5rem; left:1rem; font-size:var(--fs-sm); } }
 @media (min-width:1920px){ .desktop-menu__drawer .navy__back { top:2rem; left:5rem; font-size:var(--fs-base); } }
@@ -918,15 +999,39 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .menu__item__icon { flex:none; width:1.5rem; height:1.5rem; color:var(--color-text-muted); }
 @media (min-width:768px){ .menu__item__icon { width:1.75rem; height:1.75rem; } }
 .menu__item:hover .menu__item__icon { color:var(--color-primary-600); }
+/* CD menu.postcss:21 `focus:text-primary-600` — Tastaturfokus bekommt dieselbe
+   Tinten-Rückmeldung wie Hover, zusätzlich zum globalen Ring. */
+.menu__item a:focus-visible,
+.navy .menu__item > .navy-branch:focus-visible { color:var(--color-primary-600); }
 
 /* Mobile menu (mobile-menu.postcss:5-20) — an overlay drawer, opened by the burger */
 .mobile-menu { position:absolute; z-index:var(--z-content); width:100%; height:0;
   visibility:hidden; opacity:0; overflow:hidden; background:var(--color-bg);
-  box-shadow:var(--shadow-2xl); transition:opacity var(--duration-slow); }
+  box-shadow:var(--shadow-2xl); transition:opacity var(--duration-slowest); }   /* CD mobile-menu.postcss:10 duration-700 */
 @media (min-width:1024px){ .mobile-menu { display:none; } }
 .body--mobile-menu-is-open .mobile-menu { height:calc(100vh - var(--shell-top, 8rem));
   visibility:visible; opacity:1; overflow-y:auto; }
-.body--mobile-menu-is-open { overflow:hidden; }
+/* CD-Slide (global.postcss:34-38): die Seite rückt um die Top-Bar-Höhe nach
+   oben — bei offenem Menü füllen weisse Kopfzeile + Drawer den ganzen Schirm.
+   shell.js misst --topbar-h/--shell-top beim Öffnen. Transform macht den Body
+   zum Containing Block aller fixed-Nachfahren; Banner/Back-to-top sind bei
+   offenem Menü ohnehin ausgeblendet. */
+.body--mobile-menu-is-open { overflow:hidden;
+  height:calc(100vh + var(--topbar-h, 3rem));
+  transform:translateY(calc(-1 * var(--topbar-h, 3rem))); }
+/* Bei offenem Menü KEINE zweite Suchaffordanz in der Kopfzeile (die Suche
+   steht im Panel) und kein schwebender Hinweisstreifen über dem Menü. */
+@media (max-width:1023.98px){
+  .body--mobile-menu-is-open .search--main { display:none; }
+  .body--mobile-menu-is-open .notification-banner--fixed { display:none; }
+}
+/* Suchzeile zuoberst im Panel — CD search--mobile (weisses Feld, Schattenwurf). */
+.mobile-menu__search { padding:.75rem 1rem; background:var(--color-bg);
+  border-bottom:1px solid var(--color-secondary-100); }
+.mobile-menu__search-form { position:relative; display:flex; }
+.mobile-menu__search input { width:100%; min-height:var(--input-h);
+  padding-right:3rem; box-shadow:var(--shadow-2xl); }
+.mobile-menu__search-submit { position:absolute; top:0; right:0; bottom:0; width:3rem; }
 .mobile-menu ul { list-style:none; }
 .mobile-menu .main-navigation { border-bottom:0; }
 .mobile-menu .main-navigation > ul { flex-direction:column; margin-left:0; min-height:0; }
@@ -953,7 +1058,9 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .mobile-menu .main-navigation > ul > li > button::after { display:none; }
 .mobile-menu .main-navigation > ul > li > a:hover,
 .mobile-menu .main-navigation > ul > li > button:hover { background:var(--color-secondary-50); color:var(--color-text); }
-.mobile-menu .main-navigation .active { font-weight:var(--fw-bold); }
+/* Kein Fett auf der aktiven Zeile: CDs navy markiert mobil NUR über den
+   3px-Balken (navy.postcss:18-23); ein 700er-Gewicht verschob zudem die
+   Zeilenlänge — CDs «bold» ist ein 400er-Familienwechsel (nav/mob-4). */
 .mobile-menu .main-navigation .active::before { content:""; position:absolute; left:0; top:0; bottom:0;
   width:3px; background:var(--color-primary-500); }
 /* app.css setzte hier display:inline-block ohne Grösse, sodass icon--sm = 12px
@@ -985,7 +1092,9 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .mobile-menu .meta-navigation li > button { background:var(--color-secondary-50); color:var(--color-text); }
 .mobile-menu .meta-navigation li > a:hover,
 .mobile-menu .meta-navigation li > button:hover { background:var(--color-secondary-100); }
-.mobile-menu .top-bar-navigation--mobile { padding-bottom:3rem; background:var(--color-secondary-500); }
+/* Kein padding-bottom mehr: es malte einen leeren dunklen Streifen unter die
+   letzte Zeile (Nutzerbefund). Die Zeilen tragen ihre Fläche selbst. */
+.mobile-menu .top-bar-navigation--mobile { background:var(--color-secondary-500); }
 .mobile-menu .top-bar-navigation--mobile li > a { background:var(--color-secondary-500); color:var(--color-text-negative);
   border-bottom-color:var(--color-secondary-300); }
 .mobile-menu .top-bar-navigation--mobile li > a:hover { background:var(--color-secondary-700); color:var(--color-text-negative); }
@@ -1015,18 +1124,22 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media print { .share-bar { display:none; } }
 
 /* Breadcrumb (breadcrumb.postcss:5-70) */
-.breadcrumb { background:transparent; border-bottom:0; font-size:var(--fs-sm); color:var(--color-text-muted);
-  position:relative; z-index:var(--breadcrumb-z); }
+/* Tinte text-500 wie CD (breadcrumb.postcss:8) — JEDE Krume, auch die aktive;
+   #6b7280 misst 4.83:1 auf Weiss (AA). Ausrichtung/Lücke hier statt auf der
+   CD-neutralen .container--flex-Basis. */
+.breadcrumb { background:transparent; border-bottom:0; font-size:var(--fs-sm); color:var(--color-text-500);
+  align-items:center; gap:1rem; position:relative; z-index:var(--breadcrumb-z); }
 .breadcrumb ul { list-style:none; display:flex; flex-wrap:wrap; align-items:center; padding-block:.5rem; margin-left:-1rem; }
 @media (min-width:1280px){ .breadcrumb ul { padding-block:.75rem; } }
-.breadcrumb li { display:flex; align-items:center; color:var(--color-text-muted); }
+.breadcrumb li { display:flex; align-items:center; color:var(--color-text-500); }
 /* py-4 (1rem): die Brotkrume rendert nur ≥1024px, dort gilt CDs md:py-4
    (breadcrumb.postcss:23-27) — py-2 war die unsichtbare Mobilstufe. */
 .breadcrumb a, .breadcrumb [aria-current] { display:flex; align-items:center; padding:1rem; text-decoration:none; }
-.breadcrumb a { color:var(--color-text-muted); }
+.breadcrumb a { color:var(--color-text-500); }
 .breadcrumb a:hover { color:var(--color-primary-600); text-decoration:none; }
-.breadcrumb [aria-current] { color:var(--color-text); }
-.breadcrumb__include-icon { margin-left:-1.25rem; margin-right:.75rem; width:.85rem; height:.85rem; }
+/* Trenn-Chevron in SvgIcon-Basisgrösse 1rem (BreadcrumbNavigation.vue:108-112 →
+   icons.postcss:23-25 h-4); die Ränder sind CDs -ml-5 mr-3 und stimmen bereits. */
+.breadcrumb__include-icon { margin-left:-1.25rem; margin-right:.75rem; width:1rem; height:1rem; }
 @media (max-width:1023.98px){ .breadcrumb { display:none; } }
 
 /* Footer (footer.postcss:5-104) */
@@ -1044,7 +1157,8 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:1280px){ .footer-information__entry--big { grid-column:span 2; } }
 .footer-information__entry h3 { font-size:var(--text-xl); color:var(--color-text-negative); margin-bottom:1.5rem; }
 @media (min-width:1024px){ .footer-information__entry h3 { margin-bottom:2.5rem; } }
-.footer-information__entry p { margin-bottom:.75rem; }
+.footer-information__entry p { margin-bottom:.75rem; }   /* CD footer.postcss:54-60 mb-3 xl:mb-4 */
+@media (min-width:1280px){ .footer-information__entry p { margin-bottom:1rem; } }
 .footer-information__entry p:last-child { margin-bottom:0; }
 .footer__link { display:inline-flex; align-items:center; padding-block:.5rem; color:var(--color-text-negative); cursor:pointer; text-decoration:none; }
 .footer__link:hover { color:var(--color-gray-300); text-decoration:none; }
@@ -1057,13 +1171,19 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .footer-information__links .footer__link { width:100%; display:flex; justify-content:space-between;
   padding:1rem .5rem; border-bottom:1px solid var(--color-secondary-300); }
 .footer-information__links .footer__link:hover { background:var(--color-secondary-700); color:var(--color-text-negative); }
+/* CD footer.postcss:100-102: in den Linkzeilen wächst NUR die Icon-Höhe auf h-6
+   (1.5rem); die Breite bleibt CDs w-[1.4em] (footer.postcss:28). */
+.footer-information__links .footer-information__icon { height:1.5rem; }
 .footer-information__link--icon-right { flex-direction:row-reverse; }
-.footer-information__link--icon-right .footer-information__icon { margin-left:.2em; margin-right:0; }
+/* CD footer.postcss:33-38: relative ml-[0.2em] left-[0.1em] — der optische Nudge
+   rückt das rechtsstehende Icon an die Zeilenkante. */
+.footer-information__link--icon-right .footer-information__icon { position:relative; left:.1em; margin-left:.2em; margin-right:0; }
 .footer-navigation { list-style:none; display:flex; flex-wrap:wrap; padding-block:.75rem; gap:.5rem;
   font-size:var(--text-xs); color:var(--color-secondary-100); }
 @media (min-width:640px){ .footer-navigation { gap:1rem; } }
-.footer-navigation .footer__link { color:var(--color-secondary-100); }
-.footer-navigation .footer__link:hover { color:var(--color-text-negative); }
+/* Keine eigene Linkfarbe im Rechtsband: die Basis .footer__link gilt unverändert
+   (weiss ruhend → gray-300 Hover/Fokus, CD footer.postcss:19-23) — die frühere
+   Invertierung (grau → weiss) stand dem CD genau entgegen (nav/ft-2). */
 
 /* Page chrome */
 #main-content { min-height:50vh; flex:1 0 auto; position:relative; z-index:var(--z-content); }
@@ -1078,7 +1198,8 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    container__center--* um den Inhalt). */
 .page-header { padding:.25rem 0 1.5rem; }
 .page-header h1 { margin-bottom:.25rem; }
-.page-header .lead { font-size:var(--text-lg); color:var(--color-text-muted); }
+/* EIN Lead-Rezept, ungebunden (statt je Kontext kopiert). */
+.lead { font-size:var(--text-lg); color:var(--color-text-muted); }
 /* Keine max-width-Deckel mehr auf Lead, Seitenkopf oder Lead-Hinweis: sie
    brachen den Text mitten im Fluss um, während der Container ringsum breiter
    war. Das Mass kommt jetzt ausschliesslich aus der Spalte, in der der Text
@@ -1107,14 +1228,28 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .hero { padding-top:var(--section-pt); padding-bottom:var(--section-py); background:none; border-bottom:0; }
 .hero__content { display:flex; flex-direction:column; gap:1.5rem; max-width:60rem; }
 @media (min-width:1024px){ .hero__content { gap:2rem; } }
-.hero:not(.hero--main-image) .hero__content { max-width:42rem; }  /* CD hero--title-only = 6/12 Spalten */
+@media (min-width:1920px){ .hero__content { gap:2.5rem; } }   /* hero.postcss:14-16 3xl:space-y-10 */
+/* CD hero--title-only = 6/12 Spalten (container__center--xs). BEWUSSTE
+   ABWEICHUNG: das CD ZENTRIERT diese Spalte (container.postcss:65-87); hier
+   bleibt sie linksbündig — dieselbe Entscheidung wie bei .container__main
+   (oben): über den Detailköpfen stehen Zurück-Leiste und Reiter in Spalte 1,
+   eine zentrierte Überschrift läse sich als Fehlausrichtung. */
+.hero:not(.hero--main-image) .hero__content { max-width:42rem; }
 /* text--3xl wie CDs .hero__title (hero.postcss:18-22) UND wie h1/.h1 — text--4xl
    ist im CD allein hero--main vorbehalten. Vorher war die Hero-h1 eine Stufe
    grösser als jede andere h1 im Produkt. */
 .hero__title { font-size:var(--text-3xl); font-weight:var(--fw-bold); line-height:var(--lh-tight);
   overflow-wrap:anywhere; margin:0; }
+/* BEWUSSTE ABWEICHUNG: CD lässt die Hero-Beschreibung in Standardtinte
+   (hero.postcss:30-34 — nur text--lg leading-snug). Der gedämpfte Lead ist
+   eine portalweite Konvention — .page-header .lead und der Startseiten-Lead
+   tragen dieselbe muted text-lg-Stimme; EINE Lead-Optik im ganzen Produkt. */
 .hero__description { font-size:var(--text-lg); line-height:var(--lh-snug); color:var(--color-text-muted); margin:0; }
+/* CD-Abstandsrampe der CTA-Zeile (hero.postcss:36-39 mr/mb-4 md:5 xl:6 auf den
+   Knöpfen — hier als flex-gap, gleiches Mass). */
 .hero__cta { display:flex; flex-wrap:wrap; gap:1rem; }
+@media (min-width:768px){ .hero__cta { gap:1.25rem; } }
+@media (min-width:1280px){ .hero__cta { gap:1.5rem; } }
 /* hero--main-image (hero.postcss:70-88): content and image share the 12-col
    grid from md up; below that the content stacks above the image. */
 /* Kein eigenes Padding: oben nullt die .detail-bar-Regel (unten §Detailseiten),
@@ -1208,7 +1343,12 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    intrinsische Box. transition-transform wie CD (btn.postcss:147-152) — die
    zusätzlichen Farb-Transitions auf .btn bleiben als bewusste Politur. */
 .btn .icon, .btn__icon { width:1.4em; height:1.4em; flex:none; transition:transform var(--duration); }
-.btn--icon-right { flex-direction:row-reverse; }
+/* BEWUSSTE ABWEICHUNG: kein row-reverse (btn.postcss:174-180) — CDs Vue-Knopf
+   rendert das Icon IMMER zuerst im DOM und dreht es für icon-right um; unser
+   Markup schreibt Text-dann-Icon, DOM-Reihenfolge = visuelle Reihenfolge.
+   Mit row-reverse stünden alle icon-right-Icons links. */
+/* CD w-8 für Link-Icons (btn.postcss:43-47) — grösser als die 1.4em-Basis. */
+.btn--link .btn__icon, .btn--link-negative .btn__icon { width:2rem; }
 .btn--full-width { width:100%; }
 .btn--icon-only { padding-left:.625em; padding-right:.625em; }   /* CD px-[0.625em] — skaliert mit der Schrift */
 /* Nicht verfügbare Ziele werden als <span aria-disabled> gerendert — ein span
@@ -1227,8 +1367,11 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .download-item[aria-disabled="true"]:hover .download-item__title { color:inherit; text-decoration:none; }
 
 /* Cards (card.postcss:5-248) — the base carries no shadow */
+/* KEIN overflow:hidden (card.postcss:5-8): nur .card__image beschneidet sein
+   Medium; Texte kappt der line-clamp. Der Beschnitt an der Karte selbst zwang
+   die Fokusringe auf −2px nach innen und schnitt bei 200% Zoom Pillen ab. */
 .card { background:var(--color-bg); border:0; border-radius:0; box-shadow:none;
-  overflow:hidden; display:flex; flex-direction:column; height:100%; position:relative; container-type:inline-size; }
+  display:flex; flex-direction:column; height:100%; position:relative; container-type:inline-size; }
 .card--default, .card--universal { box-shadow:var(--shadow-lg); }
 /* card--universal: Bild wird eingepasst (object-contain) statt beschnitten (CD card.postcss). */
 .card--universal .card__image > img, .card--universal .card__image > .photo { object-fit:contain; }
@@ -1240,8 +1383,16 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    die Box die Höhe 0 und bleibt unantastbar. */
 .card__image { position:relative; height:0; padding-bottom:56.25%; flex:none;
   background:var(--color-secondary-50); overflow:hidden; }
+/* Platzhalterrahmen des leeren/ladenden Bildkastens (card.postcss:173-179:
+   bg-secondary-50 + 2px weisser Innenrand bei 70% Deckkraft) — das geladene
+   Bild malt darüber, sichtbar ist der Rahmen nur ohne Bild. */
+.card__image::before { content:""; position:absolute; inset:0;
+  background:var(--color-secondary-50); border:2px solid var(--color-bg); opacity:.7; }
 .card__image > img, .card__image > .photo {
   position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+/* 2:1 statt 16:9 im zweispaltigen Raster — CDs Karten-Kontrakt
+   (card.postcss:169-171 `.grid--responsive-cols-2 & { pb-[50%] }`). */
+.grid--responsive-cols-2 .card__image { padding-bottom:50%; }
 
 /* Vorschaubild in einer Detailansicht — gleiche Proportion wie das Kartenbild. */
 .detail-image { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; background:var(--color-secondary-50); }
@@ -1250,8 +1401,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    Description: das liess den Textkasten den Resthöhenausgleich der Rasterzeile
    aufsaugen, statt ihn als eine Lücke über dem Footer stehen zu lassen. */
 .card__body { padding:2.5rem 1.5rem; display:flex; flex-direction:column; gap:1rem; }
-.card__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); line-height:1.375; transition:color var(--duration); overflow-wrap:anywhere; }
-.card__title--sm { font-size:var(--text-base); }
+.card__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); line-height:1.375; transition:color var(--duration) var(--ease-in-out); overflow-wrap:anywhere; }
 .card__description { color:var(--color-text-muted); overflow-wrap:anywhere; }
 /* card.postcss:226-234 — lange Beschreibungen werden gekappt, damit eine
    einzelne Karte die Zeilenhöhe nicht sprengt. */
@@ -1278,13 +1428,13 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    (card.postcss:27-40); der Knopf behält seinen Ruhezustand. */
 .card__footer__action > .btn { pointer-events:none; }
 .card--clickable { cursor:pointer; transition:box-shadow var(--duration-slow) var(--ease-in-out); text-decoration:none; color:inherit; }
-.card--clickable::after { content:""; position:absolute; inset:0; border:2px solid transparent; transition:border-color var(--duration-slow); pointer-events:none; }
+.card--clickable::after { content:""; position:absolute; inset:0; border:2px solid transparent; transition:border-color var(--duration-slow) var(--ease-in-out); pointer-events:none; }
 /* Stretched Link: der Titel-<a> überdeckt die ganze Karte (klickbar), ohne die Karte
    selbst zum Link zu machen — so bleiben Dokument-Gliederung + gültige Verschachtelung. */
 .card--clickable .card__link { text-decoration:none; color:inherit; }
 .card--clickable .card__link::after { content:""; position:absolute; inset:0; z-index:1; }
 .card--clickable .card__link:focus-visible { outline:none; }
-.card--clickable .card__link:focus-visible::after { outline:2px solid var(--color-focus-ring); outline-offset:-2px; }
+.card--clickable .card__link:focus-visible::after { outline:2px solid var(--color-focus-ring); outline-offset:2px; }   /* Standard-Versatz — die Karte beschneidet nicht mehr */
 .card--clickable:hover, .card--clickable:focus-within { box-shadow:var(--shadow-2xl); text-decoration:none; }
 .card--clickable:hover::after, .card--clickable:focus-within::after { border-color:var(--color-gray-50); }
 .card--clickable:hover .card__title, .card--clickable:focus-within .card__title { color:var(--color-primary-700); }
@@ -1301,7 +1451,8 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:1024px){ .card--flat, .card--list { padding-block:1.5rem; } }
 @media (min-width:1544px){ .card--flat, .card--list { padding-block:2rem; } }
 .card--flat .card__body, .card--flat .card__footer,
-.card--list .card__body, .card--list .card__footer { padding:0; }
+.card--list .card__footer { padding:0; }
+.card--list .card__body { padding:0 0 1rem; }   /* card.postcss:381-383 `pt-0 pb-4` */
 .card--flat.card--clickable:hover,
 .card--list.card--clickable:hover { box-shadow:none; }
 .card--flat.card--clickable:hover::after,
@@ -1323,7 +1474,10 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .card--list .card__image { display:none; }
 @media (min-width:768px){
   .card--list { display:grid; grid-template-columns:4fr 1fr; column-gap:1.5rem; }
-  .card--list .card__image { display:block; grid-column:2; grid-row:1; height:0; padding-bottom:80%; }
+  /* border-block wie CD (card.postcss:364 border-t/b-[0.5em] transparent) —
+     hält das Bild von den Zeilen-Trennlinien frei. */
+  .card--list .card__image { display:block; grid-column:2; grid-row:1; height:0; padding-bottom:80%;
+    border-block:.5em solid transparent; }
   .card--list .card__image img, .card--list .card__image .photo { object-fit:contain; object-position:right top; }
   .card--list .card__content { grid-column:1; grid-row:1; align-self:start; }
 }
@@ -1404,14 +1558,20 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .badge--disabled { opacity:.4; cursor:default; }
 
 /* Tag items — CD's filter control (tag-item.postcss:7-85) */
-.tag-item { display:inline-flex; align-items:center; margin-right:.75rem; margin-bottom:.25rem;
-  min-height:var(--target-min); font:inherit; font-size:var(--text-base); line-height:1.25rem;
+/* min-height über --control-h: das Token trägt exakt CDs 44/48/52-Knopframpe
+   (min-h-[44px] xl:48 3xl:52) — vorher standen dieselben Stufen hier als
+   Literale ein zweites Mal. */
+.tag-item { display:inline-flex; align-items:center; margin-right:.75rem;
+  min-height:var(--control-h); font:inherit; font-size:var(--text-base); line-height:1.25rem;
   background:none; border:0; padding:0; color:inherit; text-decoration:none; cursor:pointer; }
-@media (min-width:1024px){ .tag-item { line-height:1.5rem; } }
-@media (min-width:1280px){ .tag-item { min-height:3rem; } }
-@media (min-width:1920px){ .tag-item { min-height:3.25rem; } }
+/* Randrampe unter der Pille: CD tag-item.postcss:9 `mr-3 md:mb-0.5 lg:mb-1` —
+   unter 768 KEIN unterer Rand. */
+@media (min-width:768px){ .tag-item { margin-bottom:.125rem; } }
+@media (min-width:1024px){ .tag-item { line-height:1.5rem; margin-bottom:.25rem; } }
 .tag-item:hover { color:inherit; text-decoration:none; }
 .tag-item--sm { font-size:var(--text-sm); }
+/* Die Hover-Transition ist eine BEWUSSTE portalweite Politur (CD schaltet
+   Tag-/Badge-Hover hart um): über die --duration-Tokens reduced-motion-sicher. */
 .tag-item__inner { display:inline-flex; align-items:center; gap:.35rem; padding-inline:1rem; line-height:1.25;
   border-radius:var(--radius-full); background:var(--color-gray-200); transition:background var(--duration-fast),color var(--duration-fast); }
 @media (min-width:1544px){ .tag-item__inner { padding-inline:1.25rem; } }
@@ -1419,9 +1579,15 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:1280px){ .tag-item__text { padding-block:.5rem; } }
 .tag-item:hover .tag-item__inner { background:var(--color-gray-300); }
 .tag-item--active .tag-item__inner, .tag-item--primary .tag-item__inner { background:var(--color-gray-800); color:var(--color-text-negative); }
+/* CD tag-item.postcss:61-67: die aktive Pille ist inert (der Zustand ist die
+   Aktion). Tastatur: der JS-Wächter der Konsumenten fängt Enter auf dem
+   aktiven Chip ab (tenancies [data-floor]). */
+.tag-item--active { pointer-events:none; }
 .tag-item--primary:hover .tag-item__inner { background:#000; }
 .tag-item:focus-visible { outline:none; }
-.tag-item:focus-visible .tag-item__inner { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+/* Versatz 0: CDs Ring liegt AN der Pille (tag-item.postcss:17-19 ring-2 ohne
+   Offset) und folgt dank outline-Radius-Verhalten der Rundung. */
+.tag-item:focus-visible .tag-item__inner { outline:2px solid var(--color-focus-ring); outline-offset:0; }
 /* CD tag-item.postcss:80-85 — Icon-Slot (z. B. Cancel-X der Entfernen-Pille).
    `align-self:stretch` + height:auto statt CDs h-full: `height:100%` löst im
    auto-hohen Flex-Container auf `auto` auf und kollabierte den Masken-Span auf
@@ -1452,12 +1618,17 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .table-wrapper.is-scrollable > .table-wrapper__hint .icon { flex:none; }
 table.table { width:100%; border-collapse:collapse; background:var(--color-bg); box-shadow:var(--shadow-md);
   border:1px solid var(--color-border); }
-table.table--caption caption { position:static; width:auto; height:auto; clip:auto; white-space:normal;
+/* pre-line wie CD (table.postcss:13-15): mehrzeilige Legenden behalten ihre
+   gesetzten Umbrüche, lange Zeilen brechen weiter normal um. */
+table.table--caption caption { position:static; width:auto; height:auto; clip:auto; white-space:pre-line;
   display:table-caption; caption-side:bottom; text-align:left; padding-top:.5rem;
   font-size:var(--text-xs); color:var(--color-text-muted); }
+/* Kein nowrap: CDs Kopfzellen dürfen umbrechen (table.postcss:37-42 setzt
+   align-top GENAU dafür); Identifikatorspalten pinnt .text-nowrap gezielt.
+   Trennlinie unter dem Kopf in text-300 wie ALLE Zeilenlinien (table.postcss:45-50). */
 table.table thead th { background:var(--color-secondary-50); text-align:left; padding:1rem 1.5rem;
   font-size:var(--text-sm); text-transform:uppercase; color:var(--color-gray-700);
-  border-bottom:1px solid var(--color-border); white-space:nowrap; vertical-align:top; }
+  border-bottom:1px solid var(--color-border-strong); vertical-align:top; }
 table.table td, table.table tbody th { padding:1rem 1.5rem; border-bottom:1px solid var(--color-border-strong);
   vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
 /* EINE Schriftstärke in der ganzen Zeile. Das erste Feld bleibt semantisch ein
@@ -1525,17 +1696,26 @@ table.table--rows-clickable tbody tr > :last-child::after {
 table.table--rows-clickable tbody tr:hover > :last-child::after { background-color:var(--color-primary-700); }
 /* Die Summenzeile im tfoot ist keine Zeile zum Anklicken. */
 table.table--rows-clickable tfoot tr > :last-child::after { content:none; }
-@media (hover:none){ table.table--rows-clickable tbody tr:hover { background:inherit; } }
-/* Dichte + Umbruch auf schmalen Viewports (Item 2.11) */
+@media (hover:none){
+  table.table--rows-clickable tbody tr:hover { background:inherit; }
+  /* Zebra-Streifen überlebt das Antippen: die inherit-Regel oben würde ihn
+     sonst auf getippten geraden Zeilen löschen (beide Konsumenten sind Zebra). */
+  table.table--rows-clickable.table--zebra tbody tr:nth-child(even):hover { background:var(--color-secondary-50); }
+}
+/* Dichte + Umbruch auf schmalen Viewports (Item 2.11). tfoot th steht MIT in
+   der Liste: die Summenzeile schrumpft sonst nur in den Wertzellen (td), ihr
+   Beschriftungsfeld behielte als einzige Zelle das volle Polster. */
 @media (max-width:767.98px){
   .table-wrapper table.table thead th,
   .table-wrapper table.table td,
-  .table-wrapper table.table tbody th { padding:.5rem .75rem; font-size:var(--text-sm); }
-  .table-wrapper table.table thead th { white-space:normal; }
+  .table-wrapper table.table tbody th,
+  .table-wrapper table.table tfoot th { padding:.5rem .75rem; font-size:var(--text-sm); }
   table.table td:first-child a, table.table tbody th a { white-space:nowrap; }
 }
-.table--compact { border:0; box-shadow:none; }
-.table--compact thead th, .table--compact td, .table--compact tbody th { padding:.5rem; font-size:var(--text-sm); }
+/* table.table-Präfix: die Basisregeln tragen (0,1,1)+Element — ohne den Präfix
+   verlor --compact gegen sie und Rahmen/Schatten blieben stehen. */
+table.table--compact { border:0; box-shadow:none; }
+table.table--compact thead th, table.table--compact td, table.table--compact tbody th { padding:.5rem; font-size:var(--text-sm); }
 
 /* Forms (form.postcss + input.postcss + select.postcss) */
 .form > * + * { margin-top:1.5rem; }
@@ -1595,6 +1775,9 @@ label + .form__group__radio { margin-top:.5rem; }   /* CD form.postcss:19-22 */
    Konsumenten. */
 .form > .form__group > * + * { margin-top:1.5rem; }
 .form__group__legend { font-size:var(--text-lg); font-weight:var(--fw-bold); }
+/* Luft zwischen Feldgruppen: die Legende einer Folgegruppe («Weitere
+   Stammdaten») klebte sonst am letzten Feld der Gruppe darüber. */
+.form__group + .form__group { margin-top:2.5rem; }
 
 /* Eingabefelder auf der FELD-Rampe (--input-h, 44 → 48 erst bei 2xl/1544 und
    Schluss — CD input.postcss:1-4,16); die Knopf-Rampe --control-h (44/48/52 bei
@@ -1773,15 +1956,15 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
    Du-bist-hier-Farbe im Produkt; vorher war der aktuelle Schritt schwächer als
    die erledigten. Der primary-100-Ring trägt den Zustand zusätzlich zur Farbe
    (WCAG 1.4.1). */
-.steps > li > .step__indicator-step,
+/* Nur noch CDs Wrapper-Form (Item 7.8 eingelöst): stepIndicator() rendert den
+   .step__indicator-Wrapper seit Item 3.10, die `.steps > li >`-Hälften waren
+   redundant. */
 .step__indicator .step__indicator-step { display:inline-flex; align-items:center; justify-content:center;
   width:36px; height:36px; flex:none; border-radius:var(--radius-full);
   background:transparent; color:var(--color-text-600); border:2px solid var(--color-secondary-400);
   font-size:var(--text-sm); font-weight:var(--fw-regular); }
-.steps > li > .step__indicator-step--active,
 .step__indicator .step__indicator-step--active { background:var(--color-primary-600); color:var(--color-text-negative); border:0;
   box-shadow:0 0 0 3px var(--color-primary-100); }
-.steps > li > .step__indicator-step--confirmed,
 .step__indicator .step__indicator-step--confirmed { background:var(--color-success-text); color:var(--color-text-negative); border:0; }
 
 /* Status pipeline / timeline (portal extension — no CD counterpart) */
@@ -1866,6 +2049,9 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 .accordion__button > span { min-width:0; overflow-wrap:anywhere; }
 .accordion__heading { margin:0; font-size:inherit; font-weight:inherit; }
 .accordion__title { font-size:var(--fs-base); text-align:left; padding:.25rem 1rem .25rem 0; margin:0; overflow-wrap:anywhere; }
+/* CD accordion.postcss:75-78: pr-4 → lg:pr-6 → 2xl:pr-8 */
+@media (min-width:1024px){ .accordion__title { padding-right:1.5rem; } }
+@media (min-width:1544px){ .accordion__title { padding-right:2rem; } }
 .accordion__button .icon { flex:none; transition:transform var(--duration); }
 .accordion__button[aria-expanded="true"] .icon { transform:rotate(180deg); }
 /* CD accordion.postcss:59-68: the drawer animates max-height 300ms ease-out
@@ -1875,6 +2061,9 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 .accordion__drawer { width:100%; max-height:none; overflow:hidden;
   transition:max-height var(--duration-slow) var(--ease-out); }
 .accordion__content { width:100%; padding:1rem .5rem 2.5rem; }
+/* CD accordion.postcss:70-73 2xl:px-3 — hält den Inhalt bündig mit dem Knopf,
+   der bei 1544 ebenfalls auf .75rem Inline-Polster springt. */
+@media (min-width:1544px){ .accordion__content { padding-inline:.75rem; } }
 /* right-hand cluster in an accordion header (format badge + chevron) */
 .accordion__meta { display:flex; align-items:center; gap:.75rem; flex:none; }
 
@@ -1897,11 +2086,14 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 .detail-section__title { margin-bottom:1rem; }
 
 /* Tabs (tab.postcss:12-87) */
-.tab__controls-container { position:relative; margin-bottom:1.5rem; }
-.tab__controls-container::after { content:""; position:absolute; right:0; top:0; bottom:1px; width:2.5rem;
+.tab__controls-container { position:relative; }
+/* bottom-1 (.25rem) wie CD (tab.postcss:15-17): der Verlauf endet über der
+   Unterstrich-Zone, nicht 1px darüber. */
+.tab__controls-container::after { content:""; position:absolute; right:0; top:0; bottom:.25rem; width:2.5rem;
   pointer-events:none; background:linear-gradient(to left, var(--color-bg) 0%, rgba(255,255,255,0) 100%); }
 @media (min-width:640px){ .tab__controls-container::after { width:5rem; } }
 .box .tab__controls-container::after { background:linear-gradient(to left, var(--color-secondary-50) 0%, rgba(240,244,247,0) 100%); }
+.box .tab__controls { border-bottom-color:var(--color-border-strong); }   /* CD tab.postcss:36-38: auf secondary-50 border-gray-300 */
 .tab__controls { display:flex; overflow-x:auto; overflow-y:hidden; white-space:nowrap;
   border-bottom:1px solid var(--color-border); -ms-overflow-style:none; scrollbar-width:none; }
 .tab__controls::-webkit-scrollbar { display:none; }
@@ -1916,22 +2108,25 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 /* KEIN bold auf dem aktiven Reiter: das CD markiert allein über den 3px-Balken
    (tab.postcss:49-77); der Gewichtswechsel liess die ganze Reiterleiste beim
    Umschalten die Breite wechseln. */
-.tab__container { padding-top:1rem; }
+/* EIN pt-8 trägt den ganzen Abstand Leiste↔Panel (tab.postcss:79-82) — kein
+   Leisten-Margin obendrauf. Die dichtere Dashboard-Stufe (1.25rem, unten) ist
+   der dortige Karten-Rhythmus und bleibt. */
+.tab__container { padding-top:2rem; }
 
 /* Pagination (pagination.postcss:5-31) */
 .pagination-wrap { display:flex; padding-block:1.5rem; }
 @media (min-width:1024px){ .pagination-wrap { padding-block:1.75rem; } }
 @media (min-width:1544px){ .pagination-wrap { padding-block:2rem; } }
 .pagination { display:flex; align-items:stretch; gap:.75rem; flex-wrap:wrap; list-style:none; }
-.pagination__input { width:3rem; min-height:var(--target-min); text-align:center; padding:.5rem; }
+/* CD gibt dem Seitenfeld die KNOPF-Rampe (pagination.postcss:8-11 `@apply
+   btn--base` → 44/48/52) — --control-h, nicht das starre --target-min. */
+.pagination__input { width:3rem; min-height:var(--control-h); text-align:center; padding:.5rem; }
 .pagination__text { display:flex; align-items:center; white-space:nowrap; }
 .pagination_items { display:flex; align-items:center; gap:.25rem; list-style:none; flex-wrap:wrap; white-space:nowrap; height:100%; }
 @media (min-width:1024px){ .pagination_items { gap:.5rem; } }
 @media (min-width:1280px){ .pagination_items { gap:.75rem; } }
-/* CD right-aligned variant (pagination.postcss:29-31) */
-.pagination--right { display:flex; justify-content:flex-end; padding-block:1.5rem; }
-@media (min-width:1024px){ .pagination--right { padding-block:1.75rem; } }
-@media (min-width:1544px){ .pagination--right { padding-block:2rem; } }
+/* CDs .pagination--right (pagination.postcss:29-31) lebt hier als
+   .pagination-wrap--right (unten) — die Polsterrampe trägt .pagination-wrap. */
 
 /* Box (box.postcss:5-11) */
 /* `.stat` war `.box` minus der 1544er-Stufe — dieselbe Fläche, zweimal
@@ -1969,19 +2164,25 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 .download-item { display:flex; width:100%; padding:1rem 0; text-align:left;
   border-bottom:1px solid var(--color-secondary-200); text-decoration:none; color:inherit; }
 .download-item:hover { text-decoration:none; }
-.box .download-item { border-bottom-color:var(--color-secondary-300); }
+/* Auf getönten Flächen die dunklere Trennlinie (download-item.postcss:12-14
+   `.bg--secondary-50 &`) — secondary-200 wäre dort kaum sichtbar. */
+.bg--secondary-50 .download-item, .box .download-item { border-bottom-color:var(--color-secondary-300); }
 .download-item__icon { flex:none; width:1.75rem; height:1.75rem;
   margin:-.25rem 0 -.25rem -.25rem; padding-right:.25rem; color:var(--color-primary-600); }
 @media (min-width:768px){ .download-item__icon { width:2rem; height:2rem; padding-right:.5rem; } }
 @media (min-width:1024px){ .download-item__icon { width:2.25rem; height:2.25rem; } }
 .download-item > div { min-width:0; }
 .download-item__title { margin:0; font-size:var(--text-base); font-weight:var(--fw-bold);
-  overflow-wrap:anywhere; transition:color var(--duration); }
+  overflow-wrap:anywhere; transition:color var(--duration) var(--ease-in-out); }
 .download-item:hover .download-item__title { color:var(--color-primary-600); }
 .download-item__description { margin:0; color:var(--color-text); overflow-wrap:anywhere; }
 .download-item__meta-info { padding-top:.75rem; }
 
 /* Meta info (meta-info.postcss:5-18) */
+/* BEWUSSTE ABWEICHUNG: CD startet auf text-gray-500 und dunkelt nur in
+   .box/.bg--secondary-50 auf text-600 nach — gray-500 misst auf secondary-50
+   aber nur ~4.4:1 (unter AA), weshalb CD selbst dort wechselt. EIN Wert
+   (--color-text-muted = text-600, tokens.css) trägt beide Flächen. */
 .meta-info { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
 .meta-info__item:not(:last-child)::after { content:"|"; padding:0 .5rem; }
 @media (min-width:1024px){ .meta-info__item:not(:last-child)::after { padding:0 .75rem; } }  /* CD: px-2 lg:px-3 */
@@ -2156,8 +2357,8 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Hinweisband steht bewusst frei, nicht als Anhängsel der Tippliste. */
 .search-results .notification { margin-top:4rem; margin-bottom:4rem; }
 
-/* Map placeholder + schematic portfolio map */
-.map { width:100%; height:420px; border:1px solid var(--color-border); }
+/* Schematische Portfolio-Karte (der tote `.map`-Platzhalter mit fester 420px-Höhe
+   ist gelöscht — kein Emitter, und die Festhöhe widersprach der clamp()-Linie). */
 /* Feste Kartenhöhen ignorierten den Viewport: 440px/34rem/30rem galten auch auf
    einem 844px hohen Handybildschirm. clamp() skaliert mit, behält aber die
    Desktop-Höhe (Item 2.27). ACHTUNG: .pf-map ist zweimal deklariert — hier die
@@ -2171,30 +2372,27 @@ body.docviewer-open .back-to-top-rail { display:none; }
 
 /* Active filter pills — a portal composition of CD badges. CD ships
    badge-filter, but that is a filter *chooser*; it has no removable pill. */
-.active-filters { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; }
+/* Abstand über der Pillenreihe: CDs Rampe (search.postcss:266-269
+   `.search__filters__tags { pt-4 sm:pt-6 2xl:pt-8 }`) — die Komponentenregel
+   trägt ihn, nicht eine mt-Utility am Call-Site (components.js verweist hierher). */
+.active-filters { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; padding-top:1rem; }
+@media (min-width:640px){ .active-filters { padding-top:1.5rem; } }
+@media (min-width:1544px){ .active-filters { padding-top:2rem; } }
 /* Entfernen-Pillen sind seit dem Umbau echte .tag-item (CDs interaktive Pille mit
    voller 44px-Rampe, tag-item.postcss:7-42) — hier nur noch die Einfärbung der
-   Innenpille und des Cancel-X. */
+   Innenpille. Das Cancel-X bleibt voll deckend: CD dimmt Pillen-Icons nie
+   (badge.postcss:85-90 / tag-item.postcss:80-85). */
 .active-filter { text-decoration:none; }
 .active-filter .tag-item__inner { background:var(--color-secondary-100); }
 .active-filter:hover .tag-item__inner { background:var(--color-secondary-200); }
-.active-filter .tag-item__icon { opacity:.65; }
-.active-filter:hover .tag-item__icon { opacity:1; }
 
 /* Topic tile icon (Datenportal) */
 .domain-tile__icon { display:block; color:var(--color-primary-600); margin-bottom:.25rem; }
 .card--clickable:hover .domain-tile__icon { color:var(--color-primary-700); }
 
 /* ---- Datenportal dashboards ---- */
-.dash-hero { margin-top:1.5rem; }
-.dash-hero__label { font-size:var(--text-sm); color:var(--color-text-muted); }
-.dash-hero__value { font-size:var(--fs-6xl); line-height:1.1; font-weight:var(--fw-bold); color:var(--color-text); margin-top:.25rem; }
-@media (min-width:1024px){ .dash-hero__value { font-size:var(--fs-7xl); } }
-.dash-hero__unit { font-size:var(--text-lg); font-weight:var(--fw-regular); color:var(--color-text-muted); margin-left:.5rem; }
-.dash-hero__delta { font-size:var(--text-sm); color:var(--color-text-muted); margin-top:.35rem; }
-.dash-hero__delta.is-good { color:var(--color-success-text); }
-.dash-hero__delta.is-bad { color:var(--color-error-text); }   /* beide Grossziffern-Komponenten im Gleichschritt */
-
+/* Der frühere .dash-hero-Block (Grossziffer über dem Raster) ist gelöscht —
+   kein Emitter mehr in js/; die Grossziffern tragen heute die .kpi-Kacheln. */
 .dash-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1.5rem; position:relative; }
 @media (min-width:1280px){ .dash-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:2rem; } }
 
@@ -2205,11 +2403,15 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .dashboard-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; margin-top:1.25rem; align-items:stretch; }
 @media (min-width:1024px){ .dashboard-layout { grid-template-columns:16rem minmax(0,1fr); gap:1.25rem; } }
 .dashboard-main { min-width:0; }
-/* Filterpanel — links, weisse Leiste (voll-hoch via Grid-Stretch), einklappbar */
+/* Filterpanel — links, weisse Leiste (voll-hoch via Grid-Stretch), einklappbar.
+   EIN Kartenrezept mit .catbar__panel (Rand secondary-100, Polster 1rem 1.25rem,
+   radius-lg); nur die Fläche ist INVERTIERT, weil die Leinwände es sind:
+   weisse Karte auf getönter Dashboard-Fläche hier, getönte Karte auf weisser
+   Seite dort — beide Entscheidungen sind dokumentiert. */
 .filter-panel { background:var(--color-bg); border:1px solid var(--color-secondary-100);
-  border-radius:var(--radius-lg); padding:1.25rem; }
+  border-radius:var(--radius-lg); padding:1rem 1.25rem; }
 .filter-panel__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:1rem; }
-.filter-panel__title { font-size:var(--fs-lg); font-weight:var(--fw-bold); margin:0; }
+.filter-panel__title { font-size:var(--text-lg); font-weight:var(--fw-bold); margin:0; }
 /* Der Umschalter war unter 1024 `display:none` und die Einklapp-Regeln standen
    INNERHALB derselben ≥1024-Abfrage — die Affordanz existierte also genau dort,
    wo sie nicht gebraucht wird. Gemessen bei 390: .filter-panel 358×946 in einem
@@ -2222,6 +2424,12 @@ body.docviewer-open .back-to-top-rail { display:none; }
   color:var(--color-text-muted); }
 .filter-panel__toggle:hover { color:var(--color-primary-600); }
 .filter-panel__toggle .icon { transition:transform var(--duration); }
+/* Unter lg klappt das Panel nach OBEN zusammen — der Pfeil zeigt die Richtung:
+   offen nach oben (einklappen), zu nach unten (aufklappen). */
+@media (max-width:1023.98px){
+  .filter-panel__toggle .icon { transform:rotate(90deg); }
+  .dashboard-layout--collapsed .filter-panel__toggle .icon { transform:rotate(-90deg); }
+}
 /* Unter lg: eigene Klasse .filter-panel--collapsed. Die bestehende
    .dashboard-layout--collapsed-Desktopmechanik bleibt unangetastet, damit die
    filterFullHeight-Zusicherung in test-dashboard.mjs grün bleibt. */
@@ -2307,14 +2515,16 @@ body.docviewer-open .back-to-top-rail { display:none; }
   outline:2px solid var(--color-focus-ring); outline-offset:1px; }
 /* HTML-Marker der Gebäude (Kreisgrösse ∝ √Geschossfläche) */
 .map-marker { display:block; position:relative; padding:0; border:2px solid var(--color-bg); border-radius:var(--radius-full);
-  background:rgba(37,99,235,.72); box-shadow:0 0 0 1px rgba(0,0,0,.12); cursor:pointer; transition:background var(--duration-fast); }
+  /* Markenfarbe aus dem Token statt Intranet-Literal — folgt dem Skin. */
+  background:color-mix(in srgb, var(--color-primary-600) 72%, transparent);
+  box-shadow:0 0 0 1px rgba(0,0,0,.12); cursor:pointer; transition:background var(--duration-fast); }
 /* Trefferfläche auf 44px bringen, ohne die gezeichnete Marke zu vergrössern —
    die Kreisgrösse trägt Information (∝ √Geschossfläche). */
 .map-marker::before { content:""; position:absolute; inset:calc((var(--target-min) - 100%) / -2); }
 /* Hover ≠ Fokus: der Tastaturfokus trägt den CD-Purpurring (global.postcss:75-77) —
    primary-700 als Ring war unter dem Intranet-Skin farbgleich mit der Markerfüllung. */
-.map-marker:hover { background:rgba(37,99,235,.95); }
-.map-marker:focus-visible { background:rgba(37,99,235,.95);
+.map-marker:hover { background:color-mix(in srgb, var(--color-primary-600) 95%, transparent); }
+.map-marker:focus-visible { background:color-mix(in srgb, var(--color-primary-600) 95%, transparent);
   outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 
 .chart { padding:1.25rem; margin:0; }
@@ -2334,13 +2544,10 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .chart__bar, .chart__dot { transition:opacity var(--duration-fast); }
 .chart__bar:hover, .chart__dot:hover, .chart__bar:focus-visible, .chart__dot:focus-visible { opacity:.78; }
 .chart__note { font-size:var(--text-sm); color:var(--color-text-muted); margin:.75rem 0 0; }
-.chart__sql { margin-top:.75rem; font-size:var(--text-sm); }
-.chart__sql summary { cursor:pointer; color:var(--color-primary-600); }
 /* `.chart__table` trägt `.sr-only` (Item 6.2): Textalternative für Hilfsmittel,
    keine sichtbare Aufklappzeile — Sehende exportieren über das Diagrammmenü
-   (CSV/Excel). Darum braucht die Tabelle hier keine eigene Optik. */
-.chart__sql pre { margin:.5rem 0 0; padding:.75rem; overflow-x:auto;
-  background:var(--color-secondary-50); font-size:var(--text-xs); line-height:1.5; }
+   (CSV/Excel). Darum braucht die Tabelle keine eigene Optik; die früheren
+   .chart__sql-Regeln (SQL-Ausklapper) sind mit ihrem Emitter entfallen. */
 .chart__tooltip { position:absolute; z-index:5; transform:translate(-50%,-100%); pointer-events:none;
   background:var(--color-secondary-800); color:var(--color-text-negative); padding:.3rem .55rem; border-radius:var(--radius-sm);
   font-size:var(--text-xs); white-space:nowrap; box-shadow:var(--shadow-md); }
@@ -2378,7 +2585,10 @@ body.docviewer-open .back-to-top-rail { display:none; }
 @media (min-width:1544px){ .filter-check { min-height:2.5rem; } }
 .filter-check--more { display:none; }
 .filter-group--expanded .filter-check--more { display:flex; }
-.filter-group__more { margin-top:.4rem; min-height:var(--target-min); padding:.5rem 0; background:none; border:0; color:var(--color-primary-700); font-size:var(--fs-sm); font-weight:var(--fw-bold); cursor:pointer; text-align:left; }
+/* Seit dem C.filterGroup-Umbau ist __more ein versteckter SPAN um die
+   Rest-Checkboxen (display:contents lässt sie im Fieldset-Fluss stehen,
+   [hidden] gewinnt weiterhin); der Aufdeck-Knopf ist ein normaler btn--link. */
+.filter-group__more { display:contents; }
 .filter-group__more:hover { text-decoration:underline; }
 
 /* ── API-Dokumentation (Mock Swagger · js/apps/api-docs.js) ────────────── */
@@ -2443,7 +2653,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .api-params td { padding:.32rem .6rem .32rem 0; border-bottom:1px solid var(--color-border); vertical-align:top; }
 .api-params code { font-family:var(--font-mono); }
 .api-req { color:var(--color-error); margin-left:.1rem; }
-.api-code { background:var(--color-secondary-50); border:1px solid var(--color-border); border-radius:var(--radius); padding:.65rem .8rem; font-family:var(--font-mono); font-size:.8125rem; line-height:1.5; overflow-x:auto; margin:0; white-space:pre; }
+/* --fs-sm eingefroren wie .api-ep__path (Code skaliert nicht mit) — die frühere
+   13px-Zwischenstufe existiert in keiner CD-Skala (tailwind.config.js fontSize). */
+.api-code { background:var(--color-secondary-50); border:1px solid var(--color-border); border-radius:var(--radius); padding:.65rem .8rem; font-family:var(--font-mono); font-size:var(--fs-sm); line-height:1.5; overflow-x:auto; margin:0; white-space:pre; }
 .api-resp { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.3rem; font-size:var(--fs-sm); }
 .api-status { font-family:var(--font-mono); font-size:var(--fs-xs); font-weight:700; padding:.12rem .45rem; border-radius:var(--radius-sm); white-space:nowrap; }
 /* HTTP-Statusklassen sind Zustandsfarben, nicht Kategorien — auf die
@@ -2476,13 +2688,15 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Datenbezug, Anwendungen. Eine Zeile: Suche + Trefferzahl links; hinter EINER
    Trennlinie rechts Sortierung, Filter-Umschalter und Ansichtswechsel. Der Filter
    öffnet ein einklappbares Panel darunter (nimmt die früheren Filter-Dropdowns auf). */
-.catbar { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem 1rem; margin-top:1.25rem;
-  padding-bottom:.6rem; border-bottom:1px solid var(--color-secondary-300); font-size:var(--text-sm); }
+.catbar { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; margin-top:1.25rem;
+  padding-bottom:.5rem; border-bottom:1px solid var(--color-secondary-300); font-size:var(--text-sm); }
 /* Anatomie oben bei .service-controls__search; hier nur die Unterschiede. */
 .catbar__search { flex:1 1 15rem; min-width:11rem; max-width:24rem; }
 /* BEWUSSTE AUSNAHME von der Feld-Rampe: die Katalogleiste ist eine kompakte
    Werkzeugzeile — Feld, Sortier-Select, Filter- und Ansichtsknöpfe teilen die
-   feste 44px-Höhe (--target-min), damit die Zeile auf keiner Breite springt. */
+   feste 44px-Höhe (--target-min), damit die Zeile auf keiner Breite springt.
+   Das WEICHT vom CD ab: dort wachsen Knöpfe ab xl auf 48px (btn.postcss:112-117)
+   und Felder ab 2xl auf 48px (input.postcss:1-16) — bewusst nicht übernommen. */
 .catbar__search input { min-height:var(--target-min); }
 .catbar__submit { top:0; bottom:0; }
 .catbar__count { color:var(--color-text-muted); white-space:nowrap; }
@@ -2498,8 +2712,8 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Überhang dann ohne Scrollbalken abgeschnitten — bei 320 lagen BEIDE
    Ansichtsknöpfe ausserhalb, bei 390 der zweite (WCAG 1.4.10 + 2.1.1).
    CDs Pendant ist ausdrücklich umbrechend (search.postcss:208-211). */
-.catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem .25rem;
-  margin-left:auto; min-width:0; max-width:100%; row-gap:.5rem; }
+.catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .25rem;
+  margin-left:auto; min-width:0; max-width:100%; }
 /* Ohne Suchfeld (Suchergebnisse): Trefferzahl links, Steuerung rechts — CDs
    `.search-results__header` (flex, justify-between, ml-auto rechts). */
 .catbar--no-search .catbar__count { flex:1 1 auto; }
@@ -2529,26 +2743,28 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .catbar__sort select { min-height:var(--target-min); padding-left:1rem; padding-right:1.75rem; font-size:var(--text-sm); color:var(--color-text); }
 .catbar__sort .select__icon { color:var(--color-text-muted); }
 .catbar__filter { min-height:var(--target-min); white-space:nowrap; }
-.catbar__fcount { margin-left:.35rem; font-weight:var(--fw-bold); }
+.catbar__fcount { margin-left:.25rem; font-weight:var(--fw-bold); }
 /* Im Knopf-Kontext notiert, sonst gewinnt «.btn .icon» (0,2,0) und der Pfeil
    erschiene mit 1.4em deutlich zu gross neben der Beschriftung. */
-.btn .catbar__chev, .catbar__chev { width:1em; height:1em; margin-left:.1rem; transition:transform var(--duration); }
+.btn .catbar__chev, .catbar__chev { width:1em; height:1em; transition:transform var(--duration); }
 .catbar__filter[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
 .catbar .view-switch__btn { min-height:var(--target-min); }
 /* Die getönte, gerundete Karte ist eine bewusste Entscheidung und BLEIBT —
    umgestellt wird nur die umbrechende Flex-Zeile, die bei 1440 rund 60% des
    Panels leer liess und «Zurücksetzen» wie eine dritte Facetten-Überschrift
    aussehen liess (Item 2.13). */
-.catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:.75rem 2rem;
+/* Rastermetrik nach CD (search.postcss:257-264 `gap-3 lg:gap-4`): einheitliche
+   Lücke .75rem → 1rem ab lg, KEIN eigener 2rem-Spaltengraben. */
+.catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:.75rem;
   /* Das Panel besitzt seinen Abstand nach UNTEN selbst (1.5rem = `mt-6`). Vorher
      kam der Abstand nur von dem, was folgte: die Katalogseiten setzen `mt-6` auf
      den Ergebnisblock, C.mountDataTable hängt die Tabelle direkt an — dort klebte
      die Tabelle am Filterpanel. Bei den Katalogseiten kollabieren die beiden
      Ränder zu denselben 1.5rem, die Darstellung bleibt dort also unverändert. */
   align-items:start; padding:1rem 1.25rem; margin:.75rem 0 1.5rem; background:var(--color-secondary-50);
-  border:1px solid var(--color-border); border-radius:var(--radius-lg); }
-@media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem 2rem; } }
-@media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  border:1px solid var(--color-secondary-100); border-radius:var(--radius-lg); }   /* Randton wie .filter-panel — EIN Kartenrezept */
+@media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; } }
 .catbar__panel .filter-group { margin:0; }
 .catbar__panel__actions { grid-column:1 / -1; display:flex; justify-content:flex-end;
   padding-top:.75rem; border-top:1px solid var(--color-secondary-200); }
@@ -2656,6 +2872,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
    die zugängliche Hülle um das Bild, damit die Galerie auch per Tastatur
    aufgeht. Sichtbar wird er erst im Fokus. */
 .pj-hero { margin:1rem 0 0; }
+/* Verhältnis und Radius am Bild selbst (16/10 wie Mosaik und Mediathek) —
+   projects.js gibt der C.photo-Hülle diese Klasse mit. */
+.pj-hero__photo { aspect-ratio:16/10; border-radius:var(--radius-lg); }
 .pj-hero__btn { display:block; width:100%; padding:0; border:0; background:none; cursor:zoom-in; border-radius:var(--radius-lg); }
 .pj-hero__btn:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:3px; }
 .pj-hero .legend { margin-top:.5rem; }
@@ -2743,6 +2962,8 @@ body.chart-overlay-open { overflow:hidden; }
    Scrim ist text-900/70 (der hellere Bild-Scrim liess den Negativ-Fokusring
    auf 1.82:1 fallen, WCAG 1.4.11). */
 .modal { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:flex-start; justify-content:center; padding:10vh 2rem; }
+/* Auf dem Telefon frisst 2rem+2rem Rahmen ~40 % der Breite. */
+@media (max-width:639.98px){ .modal { padding:5vh .5rem; } }
 .modal__backdrop { position:absolute; inset:0; background:var(--modal-scrim); }
 /* CD-Anatomie (modal.postcss:31-104): der INHALT ist durchsichtig, die Kopfzeile
    steht in weisser Schrift auf dem Scrim, und der eigentliche Inhalt sitzt in
@@ -2759,10 +2980,14 @@ body.chart-overlay-open { overflow:hidden; }
 .modal--md .modal__content { width:min(768px,100%); }
 .modal--lg .modal__content { width:min(1024px,100%); }
 .modal--xl .modal__content { width:min(1280px,100%); }
-.modal__header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
+/* CD Modal.vue:9-25 + modal.postcss:77-86: der Kopf existiert IMMER (justify-end,
+   der Schliessen-Knopf sitzt rechts); erst --with-title schaltet auf between. */
+.modal__header { display:flex; align-items:flex-start; justify-content:flex-end; gap:1rem;
   width:100%; margin-bottom:.5rem; color:var(--color-text-negative); }
+.modal__header--with-title { justify-content:space-between; }
 @media (min-width:1024px){ .modal__header { margin-bottom:1rem; } }
-.modal__title { margin:0; font-size:var(--text-xl); font-weight:var(--fw-bold); color:var(--color-text-negative); }
+/* CDs Modal-Titel ist eine h4 = text--lg (Modal.vue:13, typography.postcss:121-124). */
+.modal__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--color-text-negative); }
 .modal__body { width:100%; overflow:auto; }
 /* Item 6.12 baut das Chart-Vollbild auf die .modal-Ebene um; ohne diese Regel
    würde das Diagramm dort als gerahmte Schattenkarte erscheinen. Übernimmt die
@@ -2772,14 +2997,19 @@ body.chart-overlay-open { overflow:hidden; }
 .modal__body > .card { margin:0; }
 .modal__body .card__body { padding:1.5rem; }
 .modal--xl .modal__body { overflow:visible; }   /* Endpunkt-Label des Liniencharts nicht abschneiden */
+/* CD modal.postcss:103-107: p-4 auf WEISSER Fläche mit border-t — der Fuss steht
+   als Geschwister des Rumpfs auf dem Scrim und trägt seinen weissen Grund selbst. */
 .modal__footer { display:flex; align-items:center; justify-content:flex-end; gap:.5rem;
-  padding:1rem 1.5rem; border-top:1px solid var(--color-secondary-100); }
+  padding:1rem; background:var(--color-bg); border-top:1px solid var(--color-secondary-100); }
+/* Optische Kantenbündigkeit wie CD (modal.postcss:88-97 -mr-3 -mt-1 lg:-mt-2):
+   die 44px-Box hängt über die Inhaltskante hinaus, das Icon steht bündig. */
 .modal__close { flex:none; display:inline-flex; align-items:center; justify-content:center;
-  min-width:var(--target-min); min-height:var(--target-min); padding:.375rem; border:0; border-radius:var(--radius-sm);
+  min-width:var(--target-min); min-height:var(--target-min); padding:.375rem; margin:-.25rem -.75rem 0 0;
+  border:0; border-radius:var(--radius-sm);
   background:none; color:var(--color-text-negative); cursor:pointer; }
+@media (min-width:1024px){ .modal__close { margin-top:-.5rem; } }
 .modal__close:hover { opacity:.5; }
 .modal__close:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
-/* Der Fuss bleibt am weissen Kasten — er sitzt innerhalb der Karte. */
 
 .chart-overlay { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center;
   padding:2rem; background:var(--overlay-scrim); }
@@ -2805,6 +3035,11 @@ body.chart-overlay-open { overflow:hidden; }
    Links das Hauptbild auf voller Höhe, rechts ein 2x2-Raster. Jede Kachel ist ein
    eigener Knopf und öffnet die Galerie bei genau ihrem Bild; die letzte Nebenkachel
    trägt bei mehr als fünf Bildern die Auflage «Alle Bilder anzeigen». */
+/* BEWUSSTE ABWEICHUNG (Rundung): CD-abgeleitete Medien (card__image, hero__image,
+   detail-image) bleiben ECKIG wie im CD; die PORTAL-EIGENEN Medienkompositionen —
+   Mosaik, Karten (.pf-map/.dash-map/.map-picker), .med-shot — tragen durchgängig
+   radius-lg, dieselbe Kartenrundung wie die Dashboard-Chrome (Superset-Muster).
+   Nicht stückweise «korrigieren»: entweder alle Portal-Medien oder keines. */
 /* EIN Prinzip über alle Breiten: die Zeilenhöhe kommt aus dem Seitenverhältnis
    des Hauptbilds, nie aus einer festen rem-Zeile. Die Kachelspalte und die Karte
    ziehen sich auf diese Höhe.
@@ -2958,7 +3193,7 @@ body.chart-overlay-open { overflow:hidden; }
 /* Kindselektor, siehe Hinweis oben zu `.photo > :not(img)`. */
 .photo > .pf-hero__badge { position:absolute; right:.85rem; bottom:.75rem; display:inline-flex; align-items:center; gap:.35rem;
   padding:.3rem .7rem; border-radius:var(--radius-full); background:var(--scrim-chip); color:var(--color-text-negative);
-  font-size:var(--text-sm); font-weight:var(--fw-bold); }
+  font-size:var(--fs-sm); font-weight:var(--fw-bold); }   /* statisch wie alle Bild-Chips (.pf-card__land): Auflagen skalieren mit dem Bild, nicht mit dem Viewport */
 .pf-mosaic__cell:hover .photo > .pf-hero__badge { background:var(--scrim-chip-hover); }
 
 /* ---- Bildbetrachter: VOLLBILD mit Kopfzeile, analog zur Dokumentvorschau ----
@@ -2981,6 +3216,7 @@ body.chart-overlay-open { overflow:hidden; }
   padding:.6rem .75rem; background:var(--color-secondary-800); color:var(--color-text-negative); }
 @media (min-width:768px){ .pf-lightbox__bar { padding:.6rem 1.25rem; } }
 .pf-lightbox__heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
+.pf-lightbox__heading-text { min-width:0; }   /* Spiegel von .docviewer__heading-text — Titel dürfen kürzen */
 .pf-lightbox__heading-icon { color:var(--color-secondary-200); flex:none; }
 .pf-lightbox__title { margin:0; font-weight:var(--fw-bold); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .pf-lightbox__sub { margin:0; font-size:var(--fs-sm); color:var(--color-secondary-200); }
@@ -3102,9 +3338,13 @@ table.table tfoot { border-top:2px solid var(--color-border-strong); border-bott
 table.table tfoot th { font-weight:var(--fw-bold); color:var(--color-gray-800); }
 
 /* ---- Barrierefreiheit (Design-Review Stage 2) ---------------------------- */
-/* Badges behalten in Windows High Contrast / forced-colors einen sichtbaren Rand,
-   sonst wird die Füllung entfernt und semantische Pillen verschwimmen. */
-@media (forced-colors:active){ .badge { border:1px solid currentColor; } }
+/* Reine Flächen-Komponenten behalten in Windows High Contrast / forced-colors
+   einen sichtbaren Rand, sonst wird die Füllung entfernt und sie verschwimmen:
+   Badges, Meldungen (deckt auch die Toasts ab — beide hosten eine .notification)
+   und die graue Standard-Tag-Pille. */
+@media (forced-colors:active){
+  .badge, .notification, .tag-item__inner { border:1px solid currentColor; }
+}
 /* Klickbare Pillen erreichen ~2rem (näher an WCAG 2.5.8) statt ~24-30px.
    cursor:pointer ist CDs einzige eigene Deklaration (badge.postcss:99-101). */
 .badge--clickable { min-height:2rem; cursor:pointer; }
@@ -3119,7 +3359,7 @@ table.table tfoot th { font-weight:var(--fw-bold); color:var(--color-gray-800); 
   .card--clickable:hover .card__title { color:inherit; }
   .card--clickable:hover { box-shadow:var(--shadow-lg); }
   .card--clickable:hover::after { border-color:transparent; }
-  .card--clickable:hover .photo > img { transform:none; }
+  .card--clickable:hover .domain-tile__icon { color:var(--color-primary-600); }
   /* `.quick-tile:hover` stand hier, wird aber erst weiter unten definiert und
      verlor deshalb — der Klebe-Hover blieb auf Touch stehen. Steht jetzt hinter
      der Komponente. */
@@ -3161,7 +3401,9 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* ===================== Startseite (Arbeitsfläche) ===================== */
 /* CD-Abschnittskopf und -aktion (section.postcss:55,89 · ServicesSection.vue):
    Titel oben, «Alle …»-Verweis unten rechts. */
-.section__title { font-weight:var(--fw-bold); font-size:var(--text-2xl); margin:0 0 2.5rem; }
+/* pb statt mb wie CD (section.postcss:53-56 pb-10): Padding kollabiert nicht mit
+   dem margin-top eines Folgeblocks (.grid + .grid, mt-*-Utilities). */
+.section__title { font-weight:var(--fw-bold); font-size:var(--text-2xl); margin:0; padding-bottom:2.5rem; }
 /* CD section.postcss:89-97 gibt der Abschnitts-CTA `relative; top-6 lg:top-8
    3xl:top-12` — die Aktion wird in die untere Polsterung des Bandes hineingezogen.
    Ohne das stehen (gemessen auf home-1440) 50px vor und 97px nach dem Verweis. */
@@ -3172,7 +3414,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 
 /* CD section.postcss:80-87 — der kanonische Weg, eine Section in zwei benannte
    Kartengruppen zu teilen (heute erledigt das ein `mt-8`). */
-.section__subtitle { font-weight:var(--fw-bold); font-size:var(--text-lg); margin:0 0 2.5rem; }
+.section__subtitle { font-weight:var(--fw-bold); font-size:var(--text-lg); margin:0; padding-bottom:2.5rem; }   /* pb wie CD section.postcss:80-83 */
 .grid + .section__subtitle { padding-top:3rem; }
 @media (min-width:1024px){ .grid + .section__subtitle { padding-top:4rem; } }
 @media (min-width:1920px){ .grid + .section__subtitle { padding-top:5rem; } }
@@ -3226,7 +3468,9 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .quick-tile { display:flex; gap:1rem; align-items:flex-start; padding:1.25rem;
   background:var(--color-bg); color:inherit; text-decoration:none;
   border-left:3px solid transparent; box-shadow:var(--shadow-lg);
-  transition:box-shadow var(--duration), border-color var(--duration); }
+  /* Schatten-Lift im Karten-Takt (CD card.postcss:17 duration-300 ease-in-out) —
+     die beiden Lift-Komponenten der Startseite bewegen sich gleich. */
+  transition:box-shadow var(--duration-slow) var(--ease-in-out), border-color var(--duration); }
 .quick-tile:hover, .quick-tile:focus-visible { box-shadow:var(--shadow-2xl);
   border-left-color:var(--color-primary-600); }
 .quick-tile > .icon { flex:none; color:var(--color-primary-600); margin-top:.15rem; }
@@ -3363,7 +3607,6 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
     animation-duration:.01ms !important; animation-iteration-count:1 !important;
     transition-duration:.01ms !important; scroll-behavior:auto !important;
   }
-  .card--clickable:hover .photo > img { transform:none; }
 }
 
 /* ============================== PRINT (print.postcss) ============================== */
@@ -3373,7 +3616,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   .top-bar, .desktop-menu, .desktop-menu__overlay, .mobile-menu, .burger,
   .top-header__right, .breadcrumb, #main-footer,
   .search--main, .skip-to-content, .demo-chip, .card__image, .card__footer, .more-link,
-  .pf-map, .map, video, audio, object, iframe { display:none !important; }
+  .pf-map, video, audio, object, iframe { display:none !important; }
   .top-header { border:0 !important; padding:0 0 1rem !important; }
   .logo { align-items:flex-start !important; }
   .logo__name { display:block !important; }
@@ -3579,7 +3822,9 @@ html:has(> body.docviewer-open) { overflow:hidden; }
    Katalogfilter verwenden. Der eigene `.fp-floors__chip` mit voller
    Markenfläche im aktiven Zustand ist entfallen: er war ein zweites Chip-
    Vokabular für dieselbe Aufgabe und dominierte die Leiste. */
-.fp-floors { display:flex; flex-wrap:wrap; gap:.25rem; }
+/* Kein flex-gap: den Abstand zwischen den Chips trägt allein das mr-3/mb der
+   .tag-item selbst (tag-item.postcss:9) — ein Container-gap käme oben drauf. */
+.fp-floors { display:flex; flex-wrap:wrap; }
 /* Kennzahlen des Geschosses, jetzt in der Auswertungsspalte über der Legende. */
 .fp-facts { margin:0; padding:.75rem .85rem; background:var(--color-secondary-50); }
 .fp-side__title { margin:0 0 .4rem; font-size:var(--text-sm); color:var(--color-text-muted); font-weight:var(--fw-regular); }

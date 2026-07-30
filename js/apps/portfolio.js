@@ -98,9 +98,11 @@ export default async function render(ctx) {
   if (query.get('obj')) urlSel.id = query.get('obj');
   const state = {
     view: ['map', 'gallery', 'list'].includes(query.get('view')) ? query.get('view') : 'gallery',
-    // Standard: nur Gebäude. Grundstücke blendet man über den Objekttyp-Filter
-    // dazu (oder entfernt die «Gebäude»-Pille). Eine explizite Objektauswahl aus
-    // Baum/Karte hebt den Typfilter auf, damit auch ein angeklicktes Grundstück erscheint.
+    // Standard: NUR GEBÄUDE (Nutzerentscheid 2026-07-30) — Grundstücke blendet
+    // man über die Objekttyp-Facette dazu oder entfernt die «Gebäude»-Pille.
+    // `?kind=alle` kodiert die bewusst geleerte Auswahl (sonst wäre sie von
+    // «Param fehlt» nicht zu unterscheiden); eine explizite Objektauswahl aus
+    // Baum/Karte hebt den Typfilter auf, damit auch ein Grundstück erscheint.
     sel: urlSel, focus: urlSel.id || null, q: query.get('q') || '',
     sort: SORT_OPTIONS.some((o) => o.value === query.get('sort')) ? query.get('sort') : 'name',
     filters: {
@@ -245,7 +247,7 @@ export default async function render(ctx) {
     if (state.page > 1) p.set('page', String(state.page));
     if (state.view !== 'gallery') p.set('view', state.view);
     const s = p.toString();
-    try { history.replaceState(null, '', `#/app/portfolio${s ? `?${s}` : ''}`); } catch { /* nicht kritisch */ }
+    try { history.replaceState(history.state, '', `#/app/portfolio${s ? `?${s}` : ''}`); } catch { /* nicht kritisch */ }
   };
 
   // --- partial render of the main pane ---------------------------------------
@@ -340,8 +342,8 @@ export default async function render(ctx) {
     })}
     <div id="pf-activefilters"></div>
     <div class="pf-layout">
-      <aside class="pf-sidebar" aria-label="Portfolio-Struktur">
-        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Portfolio</h2>
+      <aside class="pf-sidebar" aria-label="Standorte">
+        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Standorte</h2>
           <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pf-clear" hidden>${C.icon('Cancel', 'btn__icon icon--base')}<span class="btn__text">Auswahl</span></button></div>
         ${treeHTML()}
       </aside>

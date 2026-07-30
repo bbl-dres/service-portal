@@ -178,7 +178,7 @@ function detail(ctx, id) {
   // APG-Tabs (Klick + Pfeil/Home/End, roving tabindex) via C.wireTabs; der aktive
   // Tab wird in die Hash-Query gespiegelt (teilbar/lesezeichenbar).
   C.wireTabs(mount, {
-    syncHash: (tab) => history.replaceState(null, '', `#/my-cases/${encodeURIComponent(id)}${tab === 'data' ? '' : `?tab=${tab}`}`),
+    syncHash: (tab) => history.replaceState(history.state, '', `#/my-cases/${encodeURIComponent(id)}${tab === 'data' ? '' : `?tab=${tab}`}`),
   });
   const adv = mount.querySelector('#advance');
   if (adv) adv.addEventListener('click', () => { engine.advance(i.instanceId); location.reload(); });

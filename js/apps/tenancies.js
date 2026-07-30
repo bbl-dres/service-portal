@@ -212,7 +212,7 @@ function overview(ctx) {
     // location.hash, weil der Router auf hashchange die Seite neu aufbaute und
     // dabei die Karte (WebGL-Kontext) verwürfe. Standardwerte bleiben draussen,
     // damit der Link kurz bleibt (C.catalogueHash).
-    history.replaceState(null, '', C.catalogueHash('#/app/tenancies', {
+    history.replaceState(history.state, '', C.catalogueHash('#/app/tenancies', {
       q: state.q, page: state.page, view: state.view,
       sort: state.sort === 'end' ? '' : state.sort,
       ve: state.filters.ve,
@@ -507,7 +507,7 @@ function detail(ctx, id) {
     if (colorMode !== COLOR_DEFAULT) p.set('color', colorMode);
     if (spaceId) p.set('space', spaceId);
     const qs = p.toString();
-    history.replaceState(null, '', `${links.mietverhaeltnis(t.tenancyId)}${qs ? '?' + qs : ''}`);
+    history.replaceState(history.state, '', `${links.mietverhaeltnis(t.tenancyId)}${qs ? '?' + qs : ''}`);
   };
 
   const restMonate = monateBis(t.leaseEnd);
@@ -915,8 +915,11 @@ function detail(ctx, id) {
     // ihre Live-Region-Ansage zweimal sprechen (Review apps/mt-dblmount-1).
     wireGrundriss();
     wireHero();
-    window.scrollTo(0, 0);
-    mount.querySelector('h1')?.focus({ preventScroll: true });
+    // KEIN eigenes scrollTo/Fokussieren mehr: Scroll und Fokus gehören dem
+    // Router — echte Navigation beginnt dort am Seitenanfang, ein reiner
+    // Zustandswechsel (?floor=/?tab=) behält Position und Bedienpfad. Das
+    // unbedingte scrollTo(0,0) hier warf beim Öffnen eines Grundrisses aus
+    // der Geschosstabelle die Seite nach oben (Nutzerbefund 2026-07-30).
   }
 
   // Nur den Grundriss-Bereich neu zeichnen statt der ganzen Seite: ein voller

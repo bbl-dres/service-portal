@@ -35,7 +35,7 @@ const PROBE = `(async () => {
   R.mapErrs = (window.__mapErrs || []).filter(e => /Unimplemented|glyph|type: 4/i.test(e));
 
   // multi-select filter Land = CH → building count should drop (worldwide → Swiss)
-  const cb = document.querySelector('input[type=checkbox][data-dim="land"][value="CH"]');
+  const cb = document.querySelector('input[type=checkbox][data-fdim="land"][value="CH"]');
   cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true }));
   await s(250);
   R.kpisCH = kpiVals();

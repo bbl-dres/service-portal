@@ -275,7 +275,7 @@ export default async function render(ctx) {
     if (state.tab !== TABS[0].id) qs.set('tab', state.tab);
     for (const k of FILTER_KEYS) if (state[k].length) qs.set(k, state[k].join(','));
     const s = qs.toString();
-    history.replaceState(null, '', `#/app/dataportal/immobilien${s ? '?' + s : ''}`);
+    history.replaceState(history.state, '', `#/app/dataportal/immobilien${s ? '?' + s : ''}`);
   };
 
   // --- content update (KPIs · charts · map · source); filter panel persists ---

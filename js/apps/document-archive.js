@@ -91,7 +91,7 @@ export default async function render(ctx) {
     if (state.sort !== 'title') qp.set('sort', state.sort);
     if (state.page > 1) qp.set('page', String(state.page));
     const qs = qp.toString();
-    try { history.replaceState(null, '', '#/app/document-archive' + (qs ? '?' + qs : '')); } catch { /* nicht kritisch */ }
+    try { history.replaceState(history.state, '', '#/app/document-archive' + (qs ? '?' + qs : '')); } catch { /* nicht kritisch */ }
   }
 
   function renderMain() {

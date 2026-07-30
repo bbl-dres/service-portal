@@ -21,8 +21,10 @@ const BAUTEN = geo('buildings.geojson');
 const PARZELLEN = geo('parcels.geojson');
 const TOTAL = BAUTEN.length + PARZELLEN.length;
 const CH = [...BAUTEN, ...PARZELLEN].filter((f) => f.properties.adr_land === 'CH').length;
+const CH_GEB = BAUTEN.filter((f) => f.properties.adr_land === 'CH').length;   // Baum zählt in der Standardansicht nur Gebäude
 const LAENDER = new Set(BAUTEN.map((f) => f.properties.adr_land)).size;
-const GAL_SEITEN = Math.ceil(TOTAL / 9);   // Galerie zeigt 9 je Seite
+const GEBAEUDE = BAUTEN.length;            // Standardansicht: nur Gebäude (Objekttyp-Facette)
+const GAL_SEITEN = Math.ceil(GEBAEUDE / 9);   // Galerie zeigt 9 je Seite
 console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grundstücke = ${TOTAL}, davon CH ${CH}, ${LAENDER} Länder)`);
 
 (async () => {
@@ -95,19 +97,21 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
     console.log('   CH tree count:', R.chTreeCount, '| nach CH-Klick:', R.countCH, '| Auswahl-Reset sichtbar:', R.clearShown);
     check(/Liegenschaften Inventar/.test(R.h1 || ''), 'page header');
     check(R.lands === LAENDER, `${LAENDER} Länder in the tree (${R.lands})`);
-    check(new RegExp(`^${TOTAL} `).test(R.count0), `${TOTAL} objects total (${R.count0})`);
-    check(R.mapCanvas, 'Karte (default) renders the clustered map');
+    check(new RegExp(`^${GEBAEUDE} von ${TOTAL} `).test(R.count0), `${GEBAEUDE} von ${TOTAL} Objekten — Standard nur Gebäude (${R.count0})`);
+    // Galerie ist die Standardansicht (seit je); die Karte wird im Probelauf
+    // explizit zugeschaltet — mapCanvas2 misst NACH dem Umschalten + CH-Klick.
+    check(R.mapCanvas2, 'Kartenansicht renders the clustered map');
     check(R.hasCatbar, 'compact catbar: search + sort + filter + view-switch in one bar');
     check(R.galCards === 9 && new RegExp(`Seite 1 von ${GAL_SEITEN}`).test(R.galPag) && R.hasCdPag, `Galerie: 9/page, CD pagination (${R.galCards}, ${JSON.stringify(R.galPag)})`);
     check(R.sortOpts === 4 && !!R.sortNameFirst && R.sortNameFirst !== R.sortAreaFirst, `sort reorders gallery (${R.sortOpts} opts; name:"${R.sortNameFirst}" ≠ area:"${R.sortAreaFirst}")`);
     console.log('   active-filters: pills', R.afPills, '| badge', JSON.stringify(R.afBadge), '| count filtered', R.afCountFiltered, '→ restored', R.afCountRestored);
-    check(R.afPills >= 1 && R.afBadge === '(1)' && R.afCountFiltered < TOTAL, `active-filter pill applies (${R.afPills} pill, badge ${R.afBadge}, ${R.afCountFiltered}/${TOTAL})`);
-    check(R.afPillsAfter === 0 && R.afCountRestored === TOTAL, `removing pill restores results (${R.afPillsAfter} pills, ${R.afCountRestored}/${TOTAL})`);
+    check(R.afPills === 2 && R.afBadge === '(2)' && R.afCountFiltered < GEBAEUDE, `active-filter pill applies neben der Gebäude-Pille (${R.afPills} pills, badge ${R.afBadge}, ${R.afCountFiltered}/${GEBAEUDE})`);
+    check(R.afPillsAfter === 1 && R.afCountRestored === GEBAEUDE, `removing the status pill restores the building default (${R.afPillsAfter} pill, ${R.afCountRestored}/${GEBAEUDE})`);
     // Die Liste blättert zu 25 — die frühere Zusicherung «zeigt alle» stimmte nur,
     // solange der Bestand unter 25 lag. Geprüft wird darum die erste Seite.
-    check(R.listRows === Math.min(TOTAL, 25), `Liste zeigt die erste Seite: ${Math.min(TOTAL, 25)} von ${TOTAL} (${R.listRows})`);
+    check(R.listRows === Math.min(GEBAEUDE, 25), `Liste zeigt die erste Seite: ${Math.min(GEBAEUDE, 25)} von ${GEBAEUDE} (${R.listRows})`);
     check(parseInt(R.countSearch, 10) < TOTAL && parseInt(R.countSearch, 10) > 0, `search filters (${R.countSearch})`);
-    check(R.chTreeCount === String(CH) && new RegExp(`^${CH} `).test(R.countCH), `tree node CH filters to its ${CH} objects (${R.chTreeCount} → ${R.countCH})`);
+    check(R.chTreeCount === String(CH_GEB) && new RegExp(`^${CH_GEB} `).test(R.countCH), `tree node CH filters to its ${CH_GEB} Gebäude (${R.chTreeCount} → ${R.countCH})`);
     check(R.mapCanvas2, 'map re-renders after tree filter');
     check(R.clearShown, 'selection shows the reset control');
     check(R.mapErrs.length === 0, `no glyph/tile parse errors${R.mapErrs[0] ? ' — ' + R.mapErrs[0] : ''}`);
@@ -116,7 +120,7 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
     await p.closeTarget();
 
     // 2) building detail deep-link — Phase-2 tabs (Flächen/Ausstattung/Verträge/Kosten/Kontakte)
-    const d = await openPage(cdp, `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1000/4840/AF')}`);
+    const d = await openPage(cdp, `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1080/4840/AF')}`);
     // Viewport auch hier setzen: dieses Target erbt die Override der Shell-Seite
     // NICHT und lief sonst in der Headless-Standardgrösse — die Detailansicht
     // wurde also im gestapelten Mobil-Layout geprüft, obwohl der Test 1440 meint.
@@ -129,7 +133,9 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
       const vp = document.querySelector('#pf-tab-panel-vertraege'); r.vertraegeRows = vp ? vp.querySelectorAll('table tbody tr').length : 0;
       // Kosten tab → body rows + a tfoot total row
       const kt = [...document.querySelectorAll('.tab__control')].find(t => /Kosten/.test(t.textContent)); if (kt) { kt.click(); await s(200); }
-      const kp = document.querySelector('#pf-tab-panel-kosten'); r.kostenTotalRow = kp ? !!kp.querySelector('tfoot .table__total') : false; r.kostenRows = kp ? kp.querySelectorAll('table tbody tr').length : 0;
+      // Seit dem CD-Review trägt die Summenzeile keine Klasse mehr — das
+      // generische tfoot IST das CD-Rezept (table.postcss:45-67).
+      const kp = document.querySelector('#pf-tab-panel-kosten'); r.kostenTotalRow = kp ? !!kp.querySelector('tfoot tr') : false; r.kostenRows = kp ? kp.querySelectorAll('table tbody tr').length : 0;
       // Bildmosaik: Hauptbild links auf voller Höhe + 2x2-Raster rechts. Jede Kachel
       // muss ihr Bild exakt bedecken — sonst entsteht neben dem Bild eine tote
       // Klickzone, die trotzdem die Galerie öffnet (früherer Fehler: 508px rechts).
@@ -196,7 +202,7 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
     await d.closeTarget();
 
     // 3) parcel detail deep-link -----------------------------------------------
-    const pc = await openPage(cdp, `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1000/4840/01')}`);
+    const pc = await openPage(cdp, `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1080/4840/01')}`);
     await new Promise(r => setTimeout(r, 600));
     const P = await pc.evaluate(`(async () => { const s = ms => new Promise(r => setTimeout(r, ms)); let n = 0; while (!document.querySelector('.kv') && n++ < 100) await s(100);
       const r = { h1: (document.querySelector('h1') || {}).textContent, text: document.body.textContent.replace(/\\s+/g, ' '),

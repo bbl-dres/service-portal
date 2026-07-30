@@ -238,7 +238,7 @@ function overview(ctx) {
     // Default-Werte heraus; replaceState statt location.hash, damit weder ein
     // Router-Neurender noch ein History-Eintrag pro Tastendruck entsteht.
     try {
-      history.replaceState(null, '', C.catalogueHash('#/app/projects', {
+      history.replaceState(history.state, '', C.catalogueHash('#/app/projects', {
         q: state.q.trim(), page: state.page, view: state.view,
         sort: state.sort === 'name' ? '' : state.sort,
         status: state.filters.status, sia: state.filters.sia, sub: state.filters.sub,
@@ -562,7 +562,7 @@ function detail(ctx, id) {
       </div>
     </div>`;
     C.wireTabs(mount, {
-      syncHash: (tab) => history.replaceState(null, '', `#/app/projects/${p.projectId}${tab === 'uebersicht' ? '' : '?tab=' + tab}`),
+      syncHash: (tab) => history.replaceState(history.state, '', `#/app/projects/${p.projectId}${tab === 'uebersicht' ? '' : '?tab=' + tab}`),
     });
     // Innerhalb von draw(), weil jeder Reiterwechsel neu zeichnet.
     mount.querySelector('.pj-hero__btn')?.addEventListener('click', () =>

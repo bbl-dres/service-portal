@@ -12,7 +12,8 @@ import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 const PROBE = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
   let n = 0; while (!document.querySelector('.dash-grid .chart') && n++ < 120) await s(100);
-  const lastToast = () => { const t = [...document.querySelectorAll('.toast')].pop(); return t ? t.textContent : null; };
+  // Seit dem CD-Review ist der Toast eine CD toast-message (Notification im Host).
+  const lastToast = () => { const t = [...document.querySelectorAll('.toast__message .notification__content')].pop(); return t ? t.textContent : null; };
   const R = {
     dashPage: !!document.querySelector('.dash-page'),
     headerMenu: !!document.querySelector('.dash-header .action-menu'),
@@ -36,11 +37,12 @@ const PROBE = `(async () => {
   chartMenuTrigger().click(); await s(60);
   R.chartPopupOpen = !document.querySelector('.dash-grid .chart .action-menu__popup').hidden;
   [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'fullscreen').click(); await s(180);
-  R.overlay = !!document.querySelector('.chart-overlay');
-  R.overlaySvg = document.querySelectorAll('.chart-overlay .chart__svg').length;
-  R.overlayHasMenu = !!document.querySelector('.chart-overlay .action-menu');   // should be false (stripped)
-  document.querySelector('.chart-overlay__close').click(); await s(120);
-  R.overlayClosed = !document.querySelector('.chart-overlay');
+  // Chart-Vollbild läuft seit dem Review über das kanonische Modal (C.openModal, xl).
+  R.overlay = !!document.querySelector('.modal--xl');
+  R.overlaySvg = document.querySelectorAll('.modal--xl .chart__svg').length;
+  R.overlayHasMenu = !!document.querySelector('.modal--xl .action-menu');   // should be false (stripped)
+  document.querySelector('.modal--xl .modal__close').click(); await s(120);
+  R.overlayClosed = !document.querySelector('.modal--xl');
 
   // chart menu → CSV then PNG
   chartMenuTrigger().click(); await s(60);

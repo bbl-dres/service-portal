@@ -259,6 +259,16 @@ function headerHTML() {
   </div>
 
   <div id="mobile-menu-id" class="mobile-menu">
+    <!-- CD integriert die Suche in das offene Mobilmenü (search--mobile,
+         detailPageSimpleMenuV2.vue:19-38): volle Breite zuoberst im Panel;
+         die Lupe der Kopfzeile ist bei offenem Menü ausgeblendet. -->
+    <div class="mobile-menu__search">
+      <form class="mobile-menu__search-form" id="mobile-search-form" role="search">
+        <label class="sr-only" for="mobile-q">Suche auf der Plattform</label>
+        <input type="search" id="mobile-q" placeholder="Suche…" autocomplete="off">
+        <button class="btn btn--bare btn--icon-only mobile-menu__search-submit" type="submit" aria-label="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
+      </form>
+    </div>
     <nav class="main-navigation main-navigation--mobile" aria-label="Hauptnavigation Mobil">
       <ul>${mobileNavItems}</ul>
     </nav>
@@ -376,13 +386,27 @@ function renderHeader(el) {
     if (main) main.inert = open;
     if (foot) foot.inert = open;
     if (open) {
-      // the drawer starts below the shell; measure it rather than hard-coding
+      // CD-Slide (global.postcss:34-38): der Body rückt um die Top-Bar-Höhe nach
+      // oben, der Mobil-Titelstreifen klappt zu. Nach dem Einschwingen steht die
+      // Kopfzeile also bei Viewport-0 und der Drawer beginnt exakt bei ihrer
+      // Höhe — deshalb WIRD GERECHNET statt gemessen: getBoundingClientRect
+      // mitten in der 700ms-Transition lieferte einen Zwischenstand.
       const top = el.querySelector('#top-header-id');
-      if (top) document.documentElement.style.setProperty('--shell-top', `${top.getBoundingClientRect().bottom}px`);
+      const bar = el.querySelector('.top-bar');
+      if (bar) document.documentElement.style.setProperty('--topbar-h', `${bar.offsetHeight}px`);
+      if (top) document.documentElement.style.setProperty('--shell-top', `${top.offsetHeight}px`);
     }
   };
   burger.addEventListener('click', () =>
     setMobileMenu(!document.body.classList.contains('body--mobile-menu-is-open')));
+  // Suche im offenen Menü: absenden navigiert und schliesst den Drawer.
+  const mForm = el.querySelector('#mobile-search-form');
+  if (mForm) mForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = el.querySelector('#mobile-q').value.trim();
+    setMobileMenu(false);
+    location.hash = q ? `#/search?q=${encodeURIComponent(q)}` : '#/search';
+  });
   drawer.addEventListener('click', (e) => { if (e.target.closest('a')) setMobileMenu(false); });
   window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => { if (e.matches) setMobileMenu(false); }, { signal });
 
