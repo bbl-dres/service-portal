@@ -40,9 +40,14 @@ export default async function render(ctx) {
   const esc = (s) => C.escape(String(s == null ? '' : s));
 
   const parseArr = (k) => (query.get(k) || '').split(',').map(s => s.trim()).filter(Boolean);
+  // Auch Sortierung und Seite aus der URL lesen: syncHash() schreibt beide,
+  // also muss der Start-Zustand sie ebenso einlesen — sonst reproduziert ein
+  // kopierter Link nicht die sichtbare Trefferliste (Muster: media-library).
   const state = {
     filters: { building: parseArr('building'), type: parseArr('type'), year: parseArr('year'), class: parseArr('class') },
-    q: query.get('q') || '', sort: 'title', page: 1,
+    q: query.get('q') || '',
+    sort: SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : 'title',
+    page: Math.max(1, Number(query.get('page')) || 1),
   };
 
   const inFilters = (d) => (!state.filters.building.length || (d.linkedTo || []).some(b => state.filters.building.includes(b)))
@@ -60,7 +65,7 @@ export default async function render(ctx) {
       { key: 'year', label: 'Jahr', align: 'right', render: r => esc(r.year) },
       { key: 'size', label: 'Grösse', align: 'right', render: r => dateiGroesse(r.sizeKB) },
       { key: 'classification', label: 'Klassifizierung', render: r => C.badge(r.classification, tierVariant(r.classification)) },
-      { key: 'preview', label: 'Vorschau', render: r => `<button type="button" class="btn btn--link doc-open" data-doc="${esc(r.docId)}" aria-label="Vorschau ${esc(r.title)}">${C.icon('File', 'icon--base')} Öffnen</button>` },
+      { key: 'preview', label: 'Vorschau', render: r => `<button type="button" class="btn btn--link btn--icon-left doc-open" data-doc="${esc(r.docId)}" aria-label="Vorschau ${esc(r.title)}">${C.icon('File', 'btn__icon icon--base')}<span class="btn__text">Öffnen</span></button>` },
     ], rows });
   }
 
@@ -81,6 +86,10 @@ export default async function render(ctx) {
     for (const [k, dim] of [['building', 'building'], ['type', 'type'], ['year', 'year'], ['class', 'class']]) {
       if (state.filters[dim].length) qp.set(k, state.filters[dim].join(','));
     }
+    // Defaults (Titel-Sortierung, Seite 1) bleiben aus der URL — kurz und
+    // teilbar, wie C.catalogueHash es für das Katalog-Trio handhabt.
+    if (state.sort !== 'title') qp.set('sort', state.sort);
+    if (state.page > 1) qp.set('page', String(state.page));
     const qs = qp.toString();
     try { history.replaceState(null, '', '#/app/document-archive' + (qs ? '?' + qs : '')); } catch { /* nicht kritisch */ }
   }
@@ -91,7 +100,8 @@ export default async function render(ctx) {
     if (state.page > totalPages) state.page = totalPages;
     const visible = rows.slice((state.page - 1) * PER_PAGE, state.page * PER_PAGE);
     const cnt = mount.querySelector('#doc-count');
-    if (cnt) cnt.innerHTML = `<strong>${rows.length}</strong> von ${all.length} Dokumente${totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`;
+    // Dativ nach «von» («… von N Dokumenten»), wie bei den Mietverhältnissen.
+    if (cnt) cnt.innerHTML = `<strong>${rows.length}</strong> von ${all.length} Dokumenten${totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`;
     const main = mount.querySelector('#doc-main');
     main.innerHTML = rows.length
       // Ohne `href`-Builder: C.pagination rendert <button data-page> statt
@@ -105,6 +115,9 @@ export default async function render(ctx) {
     if (totalPages > 1) C.wirePagination(mount, 'doc-page', state.page, totalPages, (t) => { state.page = t; renderMain(); });
     renderActiveFilters();
     syncHash();
+    // Live-Region: ohne Ansage bleibt eine Suche/Filterung für Screenreader
+    // stumm — gleiche Konvention wie tenancies/media-library nach jedem Render.
+    C.announceCatalogue({ count: rows.length, total: all.length, unit: 'Dokumenten', page: state.page, totalPages, view: 'list' });
   }
 
   // --- chrome (once) ------------------------------------------------------

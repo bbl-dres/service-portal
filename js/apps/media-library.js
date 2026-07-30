@@ -132,6 +132,10 @@ export default async function render(ctx) {
   const listView = (rows) => C.table({
     caption: 'Aufnahmen',
     zebra: true,
+    // Erste Zelle ist der Zeilenlink → Zeilenklick wie in den übrigen
+    // Katalogtabellen (Startseite, Mietverhältnisse) — die Affordanz
+    // (Zeiger + Chevron) soll nicht je Tabelle kommen und gehen.
+    rowsClickable: true,
     columns: [
       { key: 'title', label: 'Titel', render: m =>
         `<a href="#/app/media-library/${encodeURIComponent(m.mediaId)}">${C.escape(m.title)}</a>` },
@@ -194,7 +198,7 @@ export default async function render(ctx) {
         ${C.filterGroup({ dim: 'epoche', legend: 'Epoche', selected: epochen, options: [
           { value: 'historisch', label: 'Historisch' }, { value: 'aktuell', label: 'Aktuell' }] })}
         ${C.filterGroup({ dim: 'objekt', legend: 'Objekt', selected: objekte, options: objOpts })}
-        <div class="catbar__panel__actions"><a class="btn btn--bare btn--sm" href="${hash({ typ: [], epoche: [], objekt: [] })}">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></a></div>`,
+        <div class="catbar__panel__actions"><a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ typ: [], epoche: [], objekt: [] })}">${C.icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">Zurücksetzen</span></a></div>`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
     })}
     ${C.activeFilters({ filters: active, resetHref: '#/app/media-library' })}
@@ -215,6 +219,15 @@ export default async function render(ctx) {
     formId: 'med-search', inputId: 'medq', pageInputId: 'med-page', page, totalPages, hash,
     sortId: 'med-sort', filterToggleId: 'med-filter', panelId: 'med-filters',
   });
+
+  if (view === 'list') {
+    // Zeilenklick (C.table rowsClickable): am pro Render neu erzeugten
+    // Container verdrahtet, nicht an `mount` — das ist der bestehende
+    // #main-content-Knoten des Routers, ein Horcher darauf überlebte jede
+    // Navigation und sammelte sich an (siehe Kommentar in detail()).
+    const root = mount.querySelector('.container.section');
+    if (root) C.wireTableRows(root);
+  }
 
   if (view === 'gallery') {
     // Fortschrittliche Verbesserung: der href auf die Detailseite bleibt die
@@ -327,9 +340,10 @@ function detail(ctx, id) {
     ${/* Der frühere Warnkasten zur internen Einstufung ist weg; die Einstufung
           steht als Zeile «Zugriff» im Register Metadaten. */''}
     ${isPublic ? '<p class="small muted">Frei verwendbar gemäss angegebenem Copyright.</p>' : ''}
-    <div class="row mt-4" style="gap:.75rem">
-      <a class="btn btn--filled" href="${C.escape(m.url || '#')}">${C.icon('Download', 'icon--base')}<span class="btn__text">Herunterladen</span></a>
-      <button type="button" class="btn btn--outline" data-open-gallery>${C.icon('Image', 'icon--base')}<span class="btn__text">In der Galerie öffnen</span></button>
+    ${''/* .row bringt gap:.75rem bereits mit — das Inline-style war redundant. */}
+    <div class="row mt-4">
+      <a class="btn btn--filled btn--icon-left" href="${C.escape(m.url || '#')}">${C.icon('Download', 'btn__icon icon--base')}<span class="btn__text">Herunterladen</span></a>
+      <button type="button" class="btn btn--outline btn--icon-left" data-open-gallery>${C.icon('Image', 'btn__icon icon--base')}<span class="btn__text">In der Galerie öffnen</span></button>
     </div>`;
 
   const tabMetadaten = () => `

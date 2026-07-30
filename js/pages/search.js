@@ -106,7 +106,7 @@ export default async function render(ctx) {
     filterId: 'sr-filter', filterCount: selectedArt.length,
     panelId: 'sr-filters',
     panel: C.filterGroup({ dim: 'kind', legend: 'Inhaltsart', selected: selectedArt, options: artOptions })
-      + `<div class="catbar__panel__actions"><a class="btn btn--bare btn--sm" href="${hash({ kind: [] })}">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></a></div>`,
+      + `<div class="catbar__panel__actions"><a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ kind: [] })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a></div>`,
     view, views: [['list', 'Listenansicht', 'List'], ['gallery', 'Galerieansicht', 'Apps']],
   });
 
@@ -123,7 +123,7 @@ export default async function render(ctx) {
         ? `${toolbar}${activePills}${C.catalogueResults({
             visible, count: sorted.length, total, view, page, totalPages, header: false,
             card, listView, unit: 'Treffer',
-            gridCls: 'grid grid--3 catalogue-grid',
+            gridCls: 'grid grid--responsive-cols-3 gap--responsive catalogue-grid',
             paginationInputId: 'sr-page', paginationLabel: 'Seitennavigation Suchergebnisse',
             paginationHref: (p) => hash({ page: p }),
           })}`
@@ -347,6 +347,6 @@ function logView(C, indexSize) {
       ein Notizblock, kein Tracking. Er beantwortet die Frage, welche Begriffe ins Leere laufen.
       <a href="#/search">Zurück zur Suche</a>`, 'info')}
     ${body}
-    <div class="row mt-4"><button class="btn btn--outline btn--sm" type="button" id="log-clear">${
+    <div class="row mt-4"><button class="btn btn--outline btn--sm btn--icon-left" type="button" id="log-clear">${
       C.icon('Trash', 'btn__icon icon--base')}<span class="btn__text">Protokoll löschen</span></button></div>`;
 }

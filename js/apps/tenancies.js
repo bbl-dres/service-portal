@@ -50,7 +50,7 @@ export default async function render(ctx) {
 const mtMap = createMapSlot();   // Besitz/Abbau: js/map-slot.js
 
 function overview(ctx) {
-  const { mount, core, C, setTitle, setCrumbs, onUnmount } = ctx;
+  const { mount, query, core, C, setTitle, setCrumbs, onUnmount } = ctx;
   mtMap.free();
   onUnmount(mtMap.free);
   setTitle('Mietende');
@@ -74,10 +74,26 @@ function overview(ctx) {
     { value: 'cost', label: 'Jahresmiete (höchste zuerst)' },
   ];
 
+  // Zustand aus der URL lesen (Review apps/url-state-1): ein kopierter Link
+  // reproduziert Suche, Filter, Baumauswahl, Sortierung, Seite und Ansicht —
+  // dasselbe Versprechen, das die Detailseite mit `syncHash` bereits einlöst
+  // und die Mediathek über C.catalogueHash vollständig vormacht.
   const state = {
-    view: 'gallery', q: '', sort: 'end', page: 1, perPage: { gallery: 9, list: 25 },
-    filters: { ve: [] }, sel: {},
+    view: ['gallery', 'list', 'map'].includes(query.get('view')) ? query.get('view') : 'gallery',
+    q: (query.get('q') || '').trim(),
+    sort: SORT_OPTS.some((o) => o.value === query.get('sort')) ? query.get('sort') : 'end',
+    page: Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1),
+    perPage: { gallery: 9, list: 25 },
+    // Nur bekannte VE-Kürzel übernehmen: ein Tippfehler in der URL erzeugte
+    // sonst einen unsichtbaren Filter ohne zugehörige Checkbox zum Abwählen.
+    filters: { ve: (query.get('ve') || '').split(',').filter((v) => all.some((t) => t.ve === v)) },
+    sel: {},
   };
+  // Baumauswahl: Parameternamen wie die data-Attribute des Baums (`obj` = Blatt).
+  for (const [key, param] of [['land', 'land'], ['region', 'region'], ['city', 'city'], ['id', 'obj']]) {
+    const v = query.get(param);
+    if (v) state.sel[key] = v;
+  }
 
   const inSel = (t) => (!state.sel.id || t.tenancyId === state.sel.id)
     && (!state.sel.land || t.land === state.sel.land)
@@ -155,8 +171,11 @@ function overview(ctx) {
   });
   const galleryHTML = (slice) => `<div class="pf-gallery">${slice.map(card).join('')}</div>`;
 
+  // `rowsClickable` wie in jeder Listenansicht, deren erste Spalte der Link der
+  // Zeile ist (Review tables/tbl-8) — Zeilenklick und Cursor verhalten sich
+  // damit wie in der Geschosstabelle des Details und den übrigen Katalogen.
   const listHTML = (slice) => C.table({
-    caption: 'Mietverhältnisse', zebra: true,
+    caption: 'Mietverhältnisse', zebra: true, rowsClickable: true,
     columns: [
       { key: 'buildingName', label: 'Objekt', render: (t) => `<a href="${links.mietverhaeltnis(t.tenancyId)}">${esc(t.buildingName)}</a><br><span class="small muted">${esc(t.street)}, ${esc(t.zip)} ${esc(t.city)}</span>` },
       { key: 've', label: 'Verwaltungseinheit', render: (t) => `${esc(t.ve)}<br><span class="small muted">${esc(t.department)}</span>` },
@@ -189,6 +208,26 @@ function overview(ctx) {
 
   function renderMain() {
     syncTree();
+    // Zustand in die URL spiegeln (Review apps/url-state-1) — replaceState statt
+    // location.hash, weil der Router auf hashchange die Seite neu aufbaute und
+    // dabei die Karte (WebGL-Kontext) verwürfe. Standardwerte bleiben draussen,
+    // damit der Link kurz bleibt (C.catalogueHash).
+    history.replaceState(null, '', C.catalogueHash('#/app/tenancies', {
+      q: state.q, page: state.page, view: state.view,
+      sort: state.sort === 'end' ? '' : state.sort,
+      ve: state.filters.ve,
+      land: state.sel.land, region: state.sel.region, city: state.sel.city, obj: state.sel.id,
+    }));
+    // Aktivzähler am Filter-Umschalter (Review apps/mt-filter-1): «Filter (n)»
+    // zeigt die Zahl der Haken auch bei zugeklapptem Panel — wie im
+    // Liegenschafteninventar. renderMain ist der Trichter aller Filterwege
+    // (Checkbox, Zurücksetzen, Pille, URL), darum steht die Pflege hier.
+    const fbadge = mount.querySelector('#mt-filter .catbar__fcount');
+    if (fbadge) {
+      const n = state.filters.ve.length;
+      fbadge.textContent = n ? `(${n})` : '';
+      fbadge.hidden = !n;
+    }
     const list = filtered().slice().sort(SORTS[state.sort] || SORTS.end);
     const cnt = mount.querySelector('#mt-count');
     const main = mount.querySelector('#mt-main');
@@ -242,11 +281,11 @@ function overview(ctx) {
     })}
     ${C.catalogueBar({
       formId: 'mt-search', inputId: 'mt-q', searchLabel: 'Mietverhältnis suchen',
-      placeholder: 'Objekt, Ort oder Verwaltungseinheit…', q: '',
+      placeholder: 'Objekt, Ort oder Verwaltungseinheit…', q: state.q,
       countId: 'mt-count', count: '',
       sort: { id: 'mt-sort', value: state.sort, options: SORT_OPTS },
-      filterId: 'mt-filter', filterLabel: 'Filter', panelId: 'mt-filters',
-      panel: C.filterGroup({ dim: 've', legend: 'Verwaltungseinheit', selected: [], options: veOptions })
+      filterId: 'mt-filter', filterLabel: 'Filter', filterCount: state.filters.ve.length, panelId: 'mt-filters',
+      panel: C.filterGroup({ dim: 've', legend: 'Verwaltungseinheit', selected: state.filters.ve, options: veOptions })
         + `<div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm" id="mt-reset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>`,
       view: state.view,
       views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
@@ -282,6 +321,16 @@ function overview(ctx) {
   });
 
   mount.querySelector('#mt-sort').addEventListener('change', (e) => { state.sort = e.target.value; state.page = 1; renderMain(); });
+  // Filter-Umschalter: ohne diese Verdrahtung blieb das Panel für immer
+  // `hidden` — die VE-Facette war weder mit Maus noch Tastatur erreichbar
+  // (Review apps/mt-filter-1). Gleiches Muster wie js/apps/portfolio.js.
+  const fbtn = mount.querySelector('#mt-filter');
+  const fpanel = mount.querySelector('#mt-filters');
+  fbtn.addEventListener('click', () => {
+    const open = !fpanel.hidden;
+    fpanel.hidden = open;
+    fbtn.setAttribute('aria-expanded', String(!open));
+  });
   mount.querySelector('#mt-filters').addEventListener('change', (e) => {
     const cb = e.target.closest('[data-fdim="ve"]');
     if (!cb) return;
@@ -292,6 +341,31 @@ function overview(ctx) {
     mount.querySelectorAll('[data-fdim="ve"]').forEach((x) => { x.checked = false; });
     state.filters.ve = []; state.page = 1; renderMain();
   });
+
+  // Eine aus der URL übernommene Baumauswahl sichtbar machen (Review
+  // apps/url-state-1): Pfad aufklappen, Knoten markieren, Lösch-Knopf zeigen —
+  // sonst stünde eine gefilterte Trefferliste neben einem Baum, der nichts
+  // davon erkennen liesse.
+  if (Object.keys(state.sel).length) {
+    clearBtn.hidden = false;
+    const attr = (v) => `"${String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+    const target = state.sel.id
+      ? mount.querySelector(`.pf-tree__leaf[data-obj=${attr(state.sel.id)}]`)
+      : mount.querySelector('.pf-tree__node'
+        + ['land', 'region', 'city'].map((k) => state.sel[k] ? `[data-${k}=${attr(state.sel[k])}]` : `:not([data-${k}])`).join(''));
+    if (target) {
+      target.classList.add('is-selected');
+      if (target.classList.contains('pf-tree__node')) {
+        target.setAttribute('aria-expanded', 'true');
+        const kids = target.closest('.pf-tree__item')?.querySelector(':scope > .pf-tree__children');
+        if (kids) kids.hidden = false;
+      }
+      for (let ul = target.closest('.pf-tree__children'); ul; ul = ul.parentElement.closest('.pf-tree__children')) {
+        ul.hidden = false;
+        ul.closest('.pf-tree__item')?.querySelector(':scope > .pf-tree__node')?.setAttribute('aria-expanded', 'true');
+      }
+    }
+  }
 
   function setSelection(sel) {
     state.sel = sel;
@@ -338,6 +412,10 @@ function overview(ctx) {
     }
     state.page = 1; renderMain();
   });
+
+  // Zeilenklick der Listenansicht (C.table `rowsClickable`) — einmal delegiert
+  // auf #mt-main, das jede Teil-Neuzeichnung überlebt.
+  C.wireTableRows(mount.querySelector('#mt-main'));
 
   // Blätterleiste (CD-Pagination rendert Links; hier steuert sie den Zustand).
   mount.querySelector('#mt-main').addEventListener('click', (e) => {
@@ -554,7 +632,12 @@ function detail(ctx, id) {
     const geschossWahl = `
         <div class="fp-floors" role="group" aria-label="Geschoss wechseln">${floors.map((f) => {
           const aktiv = f.floorId === floor.floorId;
-          return `<a class="tag-item${aktiv ? ' tag-item--active' : ''}" href="#" data-floor="${C.escape(f.floorId)}"${
+          // Echtes Ziel statt href="#" (Review apps/floors-chip-1): der Chip
+          // trägt denselben kanonischen Link wie die Geschosstabelle (?floor=…)
+          // — Mittelklick und Link-Kopieren funktionieren, der Klick-Handler
+          // zeichnet weiterhin nur den Grundrissbereich um.
+          return `<a class="tag-item${aktiv ? ' tag-item--active' : ''}" href="${
+            links.mietverhaeltnis(t.tenancyId)}?floor=${encodeURIComponent(f.floorId)}" data-floor="${C.escape(f.floorId)}"${
             aktiv ? ' aria-current="true"' : ''}><span class="tag-item__inner"><span class="tag-item__text">${
             C.escape(f.label)}</span></span></a>`;
         }).join('')}</div>`;
@@ -571,7 +654,10 @@ function detail(ctx, id) {
     return `
       <div id="fp-wrap">
         <div class="fp-head">
-          <p class="fp-back"><a href="#" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
+          ${/* Auch der Rücksprung trägt sein echtes Ziel (wie die Geschoss-
+                Chips, Review apps/floors-chip-1): die Geschosstabelle ist die
+                Detailseite mit tab=grundriss ohne floor-Parameter. */''}
+          <p class="fp-back"><a href="${links.mietverhaeltnis(t.tenancyId)}?tab=grundriss" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
           <div class="fp-head__top">
             ${/* KEIN eigener Geschossname mehr: die aktive Pille der Geschosswahl
                   sagt bereits, welches Geschoss gezeichnet ist — zwei Angaben
@@ -594,7 +680,11 @@ function detail(ctx, id) {
           </div>
         </div>
         <div class="fp-viewer">
-          <div class="fp-stage" id="fp-stage">${floorplanSvg({ floor, spaces, mode: colorMode, selectedId: spaceId })}</div>
+          ${/* data-scroll-region (Review apps/fp-scroll-1): unter ~640px läuft
+                die Zeichnung waagrecht über — über den geteilten Mechanismus
+                (C.wireScrollRegions, zentral im Router) bekommt die Fläche dann
+                Fokus, Gruppenrolle und Scrollhinweis wie jede Tabelle. */''}
+          <div class="fp-stage" id="fp-stage" data-scroll-region aria-label="Grundriss ${C.escape(floor.label)}">${floorplanSvg({ floor, spaces, mode: colorMode, selectedId: spaceId })}</div>
           <div class="fp-side">
             ${/* Die Kennzahlen des Geschosses stehen HIER, nicht im Kopf: sie
                   gehören zur Auswertung der Zeichnung — wie die Legende
@@ -722,16 +812,17 @@ function detail(ctx, id) {
             render: (f) => f.meineRaeume ? `${f.meineRaeume} <span class="small muted">(${m2(f.meineFlaeche)})</span>` : '<span class="muted">—</span>' },
         ],
         // Summenzeile über die GEFILTERTE Menge, nicht über die Seite: sonst
-        // stünde bei zwei Seiten eine Teilsumme unter der Tabelle.
-        // Aufbau wie im Liegenschafteninventar (js/apps/portfolio.js): Klasse
-        // `table__total`, «Total (n)» mit der Anzahl in der Beschriftung, und
-        // die Summen fett — damit beide Apps ihre Tabellen gleich abschliessen.
-        foot: (_sichtbar, alle) => `<tr class="table__total">
+        // stünde bei zwei Seiten eine Teilsumme unter der Tabelle. Keine eigene
+        // Klasse und kein <strong> mehr (Review tables/tbl-4): das CD zeichnet
+        // den <tfoot> selbst aus (2px-Linien oben und unten, nur die
+        // Zeilenbeschriftung im <th> fett, Werte regulär) — die Optik kommt
+        // vollständig aus der tfoot-Regel in css/app.css.
+        foot: (_sichtbar, alle) => `<tr>
           <th scope="row" class="text-left">Total (${alle.length})</th>
-          <td class="text-right"><strong>${alle.reduce((n, f) => n + f.rooms, 0)}</strong></td>
-          <td class="text-right"><strong>${m2(alle.reduce((n, f) => n + f.areaHnf, 0))}</strong></td>
-          <td class="text-right"><strong>${alle.reduce((n, f) => n + f.arbeitsplaetze, 0)}</strong></td>
-          <td class="text-right"><strong>${alle.reduce((n, f) => n + f.meineRaeume, 0)}</strong></td></tr>`,
+          <td class="text-right">${alle.reduce((n, f) => n + f.rooms, 0)}</td>
+          <td class="text-right">${m2(alle.reduce((n, f) => n + f.areaHnf, 0))}</td>
+          <td class="text-right">${alle.reduce((n, f) => n + f.arbeitsplaetze, 0)}</td>
+          <td class="text-right">${alle.reduce((n, f) => n + f.meineRaeume, 0)}</td></tr>`,
       },
       'mt-dt-vertraege': {
         id: 'mt-dt-vertrag', rows: contracts, unit: 'Verträge', caption: 'Verträge zum Objekt',
@@ -788,7 +879,10 @@ function detail(ctx, id) {
 
     mount.innerHTML = `
     <div class="container section">
-      ${C.backLink('#/app/tenancies', 'Mietende')}
+      ${/* CD-Detailkopf (Review apps/share-1): Zurück-Link UND Share-Bar in
+            einer Zeile — der Hash trägt den ganzen Grundrisszustand, gerade
+            diese Seite ist zum Teilen gebaut. */''}
+      ${C.detailBar({ backHref: '#/app/tenancies', backLabel: 'Mietende' })}
       ${/* Augenbrauenzeile: die Kennungen, nach denen gesucht und in Mails
             zitiert wird. Als Teil der Lead-Zeile gingen sie zwischen Adresse
             und Fläche unter. */''}
@@ -816,7 +910,9 @@ function detail(ctx, id) {
     </div>`;
 
     C.wireTabs(mount, { syncHash: (tab) => { active = tab; syncHash(); } });
-    mountTables();
+    // KEIN mountTables() hier: wireGrundriss() montiert die Datentabellen
+    // bereits selbst — der doppelte Aufruf je Zeichnung liess jede Tabelle
+    // ihre Live-Region-Ansage zweimal sprechen (Review apps/mt-dblmount-1).
     wireGrundriss();
     wireHero();
     window.scrollTo(0, 0);
@@ -895,6 +991,11 @@ function detail(ctx, id) {
     });
     mount.querySelectorAll('[data-floor]').forEach((el) => el.addEventListener('click', (e) => {
       e.preventDefault();
+      // Erneuter Klick auf das aktive Geschoss ist ein Leerlauf (Review
+      // badges/tag-1): die aktive Pille ist per CSS zwar stillgelegt
+      // (pointer-events:none), aber die Tastatur erreicht den Link weiterhin —
+      // ohne die Wache zeichnete Enter den Plan grundlos neu.
+      if (el.dataset.floor === floorId) return;
       floorId = el.dataset.floor; spaceId = '';
       syncHash(); redrawGrundriss();
     }));

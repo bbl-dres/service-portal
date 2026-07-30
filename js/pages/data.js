@@ -73,7 +73,7 @@ function overview(ctx) {
         lead: 'Auswertungen, Datenbezug und API Verzeichnis sowie die Fachanwendungen des BBL — an einem Ort.',
       }),
     })}
-    ${C.pageSection({ title: 'Angebote', alt: true, body: `<div class="grid grid--3">${entries}</div>` })}`;
+    ${C.pageSection({ title: 'Angebote', alt: true, body: `<div class="grid grid--responsive-cols-3 gap--responsive">${entries}</div>` })}`;
 }
 
 function notFound(ctx) {

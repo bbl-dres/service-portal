@@ -84,15 +84,28 @@ function overview(ctx) {
   const subPortfolios = [...new Set(objects.map((o) => o.subPortfolio))].filter(Boolean);
   const phases = [...new Set(objects.map((o) => o.siaPhaseLabel))].filter(Boolean);
 
+  // Der GESAMTE Zustand kommt aus der URL, nicht nur `view`: eine kopierte
+  // Adresse reproduziert Suche, Filter, Baum-Auswahl, Sortierung und Seite —
+  // wie in der Mediathek (js/apps/media-library.js). renderMain() spiegelt den
+  // Zustand über C.catalogueHash wieder zurück in den Hash.
+  const csv = (k) => (query.get(k) || '').split(',').filter(Boolean);
   const state = {
     // Galerie als Standard — wie im Liegenschaften-Inventar. Die Karte zeigt
     // Punkte ohne Namen und Kennzahlen; für den Einstieg in eine Projektliste
     // sind die Kacheln die informativere Ansicht (und die schnellere: kein
     // WebGL-Kontext beim ersten Aufruf).
     view: ['map', 'gallery', 'list'].includes(query.get('view')) ? query.get('view') : 'gallery',
-    sel: {}, focus: null, q: '', sort: 'name', filters: { status: [], sia: [], sub: [] }, page: 1,
+    sel: {}, focus: null,
+    q: query.get('q') || '',
+    sort: SORT_OPTS.some((o) => o.value === query.get('sort')) ? query.get('sort') : 'name',
+    filters: { status: csv('status'), sia: csv('sia'), sub: csv('sub') },
+    page: Math.max(1, parseInt(query.get('page'), 10) || 1),
     perPage: { gallery: 9, list: 25 },
   };
+  // Baum-Auswahl (Land/Region/Stadt/WE/Projekt) als eigene Parameter; ein aus
+  // der URL gewähltes Projekt fokussiert — wie der Klick aufs Blatt — die Karte.
+  for (const k of ['land', 'region', 'city', 'we', 'id']) if (query.get(k)) state.sel[k] = query.get(k);
+  if (state.sel.id) state.focus = state.sel.id;
 
   const inSel = (o) => (!state.sel.id || o.id === state.sel.id)
     && (!state.sel.land || o.land === state.sel.land) && (!state.sel.region || o.region === state.sel.region)
@@ -163,7 +176,11 @@ function overview(ctx) {
     });
   }
   const galleryHTML = (slice) => `<div class="grid grid--3">${slice.map(pjCard).join('')}</div>`;
-  const listHTML = (slice) => C.table({ zebra: true, caption: 'Bauprojekte', columns: [
+  // `rowsClickable`: die erste Zelle ist der Zeilen-Link — dieselbe Anatomie wie
+  // die Vorgangstabelle (home) und die Geschosstabelle (tenancies), also auch
+  // dieselbe Zeigen-und-Klicken-Affordanz. Verdrahtet EINMAL unten über
+  // C.wireTableRows auf dem stabilen #pj-main (überlebt jedes Neurendern).
+  const listHTML = (slice) => C.table({ zebra: true, caption: 'Bauprojekte', rowsClickable: true, columns: [
     { key: 'projectNumber', label: 'Projektnr.', render: (o) => `<a href="${links.bauprojekt(o.id)}">${esc(o.projectNumber)}</a>` },
     { key: 'name', label: 'Bezeichnung', render: (o) => `${esc(o.name)}<br><span class="small muted">${esc(o.buildingName)}</span>` },
     { key: 'ort', label: 'Ort', render: (o) => `${esc(o.city)}<br><span class="small muted">${esc(landName(o.land))}</span>` },
@@ -188,27 +205,46 @@ function overview(ctx) {
     const list = filtered().sort(SORTS[state.sort] || SORTS.name);
     const cnt = mount.querySelector('#pj-count');
     const main = mount.querySelector('#pj-main');
+    // Seitenzahl VOR den Zweigen: die Ansage unten braucht sie in jedem Fall,
+    // und eine zu grosse Seite (etwa aus einer alten URL) wird sofort geklemmt.
+    const pages = state.view === 'map' ? 1 : Math.max(1, Math.ceil(list.length / state.perPage[state.view]));
+    if (state.page > pages) state.page = pages;
     pjMap.free();
     if (state.view === 'map') {
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> ${list.length === 1 ? 'Projekt' : 'Projekte'}`;
       main.innerHTML = `<div class="pf-map dash-map" id="pj-map-el" role="group" aria-label="Karte der Bauprojekte"></div>`;
       mountMap(list, state.focus);
     } else if (!list.length) {
-      if (cnt) cnt.innerHTML = `<strong>0</strong> von ${objects.length} Projekte`;
+      if (cnt) cnt.innerHTML = `<strong>0</strong> von ${objects.length} Projekten`;
       main.innerHTML = C.empty('Keine Projekte für diese Auswahl.');
     } else {
       const per = state.perPage[state.view];
-      const pages = Math.max(1, Math.ceil(list.length / per));
-      if (state.page > pages) state.page = pages;
       const slice = list.slice((state.page - 1) * per, state.page * per);
-      if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Projekte${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
+      if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Projekten${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
       main.innerHTML = (state.view === 'gallery' ? galleryHTML(slice) : listHTML(slice))
         + C.pagination({ page: state.page, totalPages: pages, href: () => '#', inputId: 'pj-page' });
       if (pages > 1) C.wirePagination(mount, 'pj-page', state.page, pages, (t) => { state.page = t; renderMain(); });
     }
     mount.querySelectorAll('.view-switch__btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
     renderActiveFilters();
-    try { history.replaceState(null, '', `#/app/projects?view=${state.view}`); } catch { /* nicht kritisch */ }
+    // Screenreader-Rückmeldung nach jedem Ergebnis-Neuaufbau (Suche, Filter,
+    // Baum, Seite, Ansicht) — Standard der Katalogseiten (WCAG 4.1.3), wie in
+    // Mediathek und Mietverhältnissen. Einheit im Dativ («von … Projekten»).
+    C.announceCatalogue({ count: list.length, total: objects.length, unit: 'Projekten',
+      page: state.page, totalPages: pages, view: state.view });
+    // Zustand VOLLSTÄNDIG in die URL spiegeln (nicht nur `view`): erst mit
+    // Suche, Filtern, Baum-Auswahl, Sortierung und Seite reproduziert eine
+    // kopierte Adresse die sichtbare Treffermenge. C.catalogueHash hält die
+    // Default-Werte heraus; replaceState statt location.hash, damit weder ein
+    // Router-Neurender noch ein History-Eintrag pro Tastendruck entsteht.
+    try {
+      history.replaceState(null, '', C.catalogueHash('#/app/projects', {
+        q: state.q.trim(), page: state.page, view: state.view,
+        sort: state.sort === 'name' ? '' : state.sort,
+        status: state.filters.status, sia: state.filters.sia, sub: state.filters.sub,
+        ...state.sel,
+      }));
+    } catch { /* nicht kritisch */ }
   }
 
   // Active-Filter-Zeile (Suche, Baum-Auswahl, Panel-Filter) — entfernbare Pillen.
@@ -234,7 +270,7 @@ function overview(ctx) {
       ${C.filterGroup({ dim: 'status', legend: 'Status', selected: state.filters.status, options: projectStatuses.map((s) => ({ value: s.id, label: s.label })) })}
       ${C.filterGroup({ dim: 'sia', legend: 'SIA-Phase', selected: state.filters.sia, options: phases.map((p) => ({ value: p, label: p })) })}
       ${C.filterGroup({ dim: 'sub', legend: 'Teilportfolio', selected: state.filters.sub, options: subPortfolios.map((s) => ({ value: s, label: s })) })}
-      <div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm" id="pj-freset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>`;
+      <div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pj-freset">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></button></div>`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -242,6 +278,10 @@ function overview(ctx) {
     ${C.catalogueBar({
       formId: 'pj-search', inputId: 'pj-q', searchLabel: 'Projekt, Nummer, Projektleitung oder Gebäude suchen',
       placeholder: 'Projekt, Nummer, PL oder Gebäude suchen…', countId: 'pj-count',
+      // Aus der URL initialisiert (teilbarer Zustand): Suchfeld und Filterzähler
+      // zeigen sonst beim Laden Leere, obwohl die Treffer bereits gefiltert sind.
+      q: state.q,
+      filterCount: state.filters.status.length + state.filters.sia.length + state.filters.sub.length,
       sort: { id: 'pj-sort', label: 'Sortierung', value: state.sort, options: SORT_OPTS },
       filterId: 'pj-filter-btn', filterLabel: 'Filter', panelId: 'pj-filters', panel: filterPanel,
       view: state.view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
@@ -250,7 +290,7 @@ function overview(ctx) {
     <div class="pf-layout">
       <aside class="pf-sidebar" aria-label="Projektstruktur">
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Projekte</h2>
-          <button type="button" class="btn btn--bare btn--sm" id="pj-clear" hidden>${C.icon('Cancel', 'icon--base')}<span class="btn__text">Auswahl</span></button></div>
+          <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pj-clear" hidden>${C.icon('Cancel', 'btn__icon')}<span class="btn__text">Auswahl</span></button></div>
         ${treeHTML()}
       </aside>
       <div class="pf-main" id="pj-main"></div>
@@ -344,6 +384,36 @@ function overview(ctx) {
     state.page += /Nächste/.test(a.getAttribute('aria-label') || '') ? 1 : -1;
     renderMain();
   });
+  // Zeilenklick der Listenansicht (C.table `rowsClickable`): delegiert auf dem
+  // stabilen #pj-main, deshalb genügt EINE Verdrahtung für alle Neurender.
+  C.wireTableRows(mount.querySelector('#pj-main'));
+
+  // Baum-Auswahl aus der URL wiederherstellen (Teil des teilbaren Zustands):
+  // passenden Knoten suchen, Vorfahren aufklappen, Pfad markieren. Der flachste
+  // Treffer in Dokumentreihenfolge IST der exakte Knoten — tiefere Ebenen tragen
+  // dieselben data-Attribute nur zusätzlich.
+  (function restoreSelection() {
+    if (!Object.keys(state.sel).length) return;
+    const cssq = (v) => (window.CSS && CSS.escape) ? CSS.escape(v) : String(v).replace(/"/g, '\\"');
+    const btn = state.sel.id
+      ? mount.querySelector(`.pf-tree__leaf[data-obj="${cssq(state.sel.id)}"]`)
+      : mount.querySelector('.pf-tree__node' + ['land', 'region', 'city', 'we']
+          .filter((k) => state.sel[k] != null).map((k) => `[data-${k}="${cssq(state.sel[k])}"]`).join(''));
+    // Veraltete URL (Auswahl existiert nicht mehr): still verwerfen statt eine
+    // unsichtbare Filterung stehen zu lassen.
+    if (!btn) { state.sel = {}; state.focus = null; return; }
+    let li = btn.closest('.pf-tree__item');
+    while (li) {
+      const ul = li.parentElement;
+      if (!ul || !ul.classList.contains('pf-tree__children')) break;
+      ul.hidden = false;
+      const parentNode = ul.parentElement.querySelector(':scope > .pf-tree__node');
+      if (parentNode) parentNode.setAttribute('aria-expanded', 'true');
+      li = ul.parentElement;
+    }
+    markTree(btn);
+    clearBtn.hidden = false;
+  })();
 
   renderMain();
 }
@@ -445,41 +515,51 @@ function detail(ctx, id) {
   const panels = { uebersicht: panelUebersicht, kennzahlen: panelKennzahlen, risiken: panelRisiken };
 
   // Titelbild: ohne Bilder eine Farbfläche wie bisher, mit Bildern ein Knopf,
-  // der die Vollbildgalerie öffnet. Der Nachweis steht als Bildlegende darunter —
-  // die Aufnahmen der BBL-Mediendatenbank sind nicht frei lizenziert, ein Bild
-  // ohne Urheberangabe wäre hier schlicht falsch.
+  // der die Vollbildgalerie öffnet. KEINE Bildlegende mehr (Nutzerentscheid
+  // 2026-07-30: Detailseiten prototypweit ohne figcaption) — der Urheber-
+  // nachweis der nicht frei lizenzierten BBL-Aufnahmen bleibt in data/media.json
+  // erfasst und steht im Metadaten-Panel der Vollbildgalerie, nur nicht mehr
+  // als Legende auf der Seite.
   function heroFigure() {
     const bild = C.photo({
       src: p.photoSrc, color: 'var(--color-secondary-600)', alt: `${p.name}${p.siteName ? ' — ' + p.siteName : ''}`, w: 1600,
-      style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg)',
+      // Verhältnis und Radius in CSS (.pj-hero__photo, 16/10 wie Mosaik und
+      // Mediathek) statt Inline-Stil: `max-height` UND `aspect-ratio` auf
+      // demselben Element rechneten die BREITE zurück — genau der Fehlerfall,
+      // vor dem der Mosaik-Kommentar in css/app.css warnt.
+      cls: 'pj-hero__photo',
     });
     if (!galleryItems.length) return `<div class="mt-4">${bild}</div>`;
-    const m = p.media[0];
-    return `<figure class="pj-hero">
+    return `<div class="pj-hero">
       <button type="button" class="pj-hero__btn" data-gallery="0"
         aria-label="Bildergalerie öffnen — ${galleryItems.length} Aufnahme${galleryItems.length === 1 ? '' : 'n'}">${bild}</button>
-      <figcaption class="legend">${C.escape(m.titel || p.name)}${
-        m.credit ? ` — ${C.escape(m.credit)}` : ''}${
-        galleryItems.length > 1 ? ` · ${galleryItems.length} Aufnahmen` : ''}</figcaption>
-    </figure>`;
+    </div>`;
   }
 
   function draw() {
     mount.innerHTML = `
     <div class="container section">
-      ${/* Kopf wie im Liegenschaften Inventar: Rücksprung, Titel, Fakten als
-            Lead-Zeile. Die frühere Abzeichenreihe (`pill-row` mit Status und
-            zwei Ampeln) ist entfallen — das Inventar kennt sie nicht, und drei
-            farbige Abzeichen ÜBER dem Titel lasen sich vor dem Projektnamen.
-            Der Status steht jetzt als Wort in der Lead-Zeile, die beiden Ampeln
-            im Reiter «Risiken & Ziele», wo ihre Erklärung danebensteht. */''}
-      ${C.backLink('#/app/projects', 'Bauprojekte')}
+      ${/* Kopf wie im Liegenschaften Inventar: Zurück- und Teilen-Leiste
+            (C.detailBar — CD: back-bar + share-bar in EINER Zeile), Titel,
+            Fakten als Lead-Zeile. Die frühere Abzeichenreihe (`pill-row` mit
+            Status und zwei Ampeln) ist entfallen — das Inventar kennt sie
+            nicht, und drei farbige Abzeichen ÜBER dem Titel lasen sich vor dem
+            Projektnamen. Der Status steht jetzt als Wort in der Lead-Zeile,
+            die beiden Ampeln im Reiter «Risiken & Ziele», wo ihre Erklärung
+            danebensteht. */''}
+      ${C.detailBar({ backHref: '#/app/projects', backLabel: 'Bauprojekte' })}
       <h1 tabindex="-1">${C.escape(p.name)}</h1>
       <p class="lead">${C.escape(p.projectNumber)}${p.siteName ? ' · ' + C.escape(p.siteName) : ''}${
         p.city ? ', ' + C.escape(p.city) : ''} · ${C.escape(projectStatusLabel(core, p.status))}</p>
       ${heroFigure()}
-      ${C.tabBar({ items: tabs, active, idPrefix: 'pj-tab', ariaLabel: 'Projektdetails', controlsClass: 'mt-6' })}
-      ${C.tabPanels({ items: tabs, active, idPrefix: 'pj-tab', render: (t) => panels[t]() })}
+      ${/* Reiterrahmen wie bei den Geschwistern (portfolio/tenancies/
+            media-library): `.tabs mt-6` um Leiste UND Panels; `heading:true`
+            stellt jedem Panel eine sr-only-<h2> voran — Kennzahlen und Risiken
+            hatten sonst keine Stufe zwischen <h1> und Inhalt (WCAG 2.4.10). */''}
+      <div class="tabs mt-6">
+        ${C.tabBar({ items: tabs, active, idPrefix: 'pj-tab', ariaLabel: 'Projektdetails' })}
+        ${C.tabPanels({ items: tabs, active, idPrefix: 'pj-tab', heading: true, render: (t) => panels[t]() })}
+      </div>
     </div>`;
     C.wireTabs(mount, {
       syncHash: (tab) => history.replaceState(null, '', `#/app/projects/${p.projectId}${tab === 'uebersicht' ? '' : '?tab=' + tab}`),

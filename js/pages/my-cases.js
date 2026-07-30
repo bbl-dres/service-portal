@@ -46,8 +46,10 @@ export default async function render(ctx) {
   // Gleicher Baustein wie in der Objekt-Detailansicht (C.mountDataTable).
   const STATUS_OPTS = [...new Set(all.map(i => i.status))]
     .map(s => ({ value: s, label: statusLabel(core, s) }));
+  // `rowsClickable` wie in der gleichgebauten Vorgangstabelle der Startseite:
+  // erste Spalte ist der Zeilenlink, die Zeile folgt ihm per Mausklick (tbl-8).
   C.mountDataTable(mount.querySelector('#mc-table'), {
-    id: 'mc', rows: all, unit: 'Vorgänge', caption: 'Meine Vorgänge',
+    id: 'mc', rows: all, unit: 'Vorgänge', caption: 'Meine Vorgänge', rowsClickable: true,
     searchKeys: ['reference', 'title', 'defName'],
     searchLabel: 'Vorgang suchen', placeholder: 'Referenz oder Titel suchen…',
     perPage: 10,
@@ -111,17 +113,17 @@ function detail(ctx, id) {
     <p class="m-0">${C.escape(b.name)}<br>
       <span class="small muted">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)}</span><br>
       <span class="small muted">WE ${C.escape(b.bbl_we || '—')} · EGID ${C.escape(b.egid || '—')}</span></p>
-    <p style="margin:.5rem 0 0"><a class="btn btn--link" href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')} Gebäude ansehen</a></p></div>` : '';
+    <p style="margin:.5rem 0 0"><a class="btn btn--link btn--icon-left" href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Gebäude ansehen</span></a></p></div>` : '';
   const projektCard = p ? `<div class="box"><h3>Verknüpftes Projekt</h3>
     <p class="m-0">${C.escape(p.name)}${p.projectNumber ? `<br><span class="small muted">${C.escape(p.projectNumber)}</span>` : ''}</p>
-    <p style="margin:.5rem 0 0"><a class="btn btn--link" href="#/app/projects/${encodeURIComponent(p.projectId)}">${C.icon('ArrowRight', 'btn__icon')} Projekt ansehen</a></p></div>` : '';
+    <p style="margin:.5rem 0 0"><a class="btn btn--link btn--icon-left" href="#/app/projects/${encodeURIComponent(p.projectId)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Projekt ansehen</span></a></p></div>` : '';
   const cards = [antragstellerCard, standortCard, projektCard].filter(Boolean).join('');
   const angaben = dataEntries.length
     ? `<div class="detail-section"><h3 class="detail-section__title">Angaben zum Vorgang</h3>
         <div class="box"><div class="data-rows">${dataEntries.map(([k, v]) =>
           `<div class="data-row"><div class="data-row__key">${C.escape(DATA_LABELS[k] || k)}</div><div class="data-row__value">${C.escape(String(v))}</div></div>`).join('')}</div></div></div>`
     : '';
-  const datenPanel = `<div class="grid grid--3">${cards}</div>${angaben}`;
+  const datenPanel = `<div class="grid grid--responsive-cols-3 gap--responsive">${cards}</div>${angaben}`;
 
   // --- Tab «Anhänge»: eingereichte Dateien (Demo, nicht herunterladbar) ---
   const anhaengePanel = atts.length
@@ -168,7 +170,7 @@ function detail(ctx, id) {
     </div>
 
     ${canAdvance
-      ? `<div class="mt-6"><button class="btn btn--outline" id="advance">${C.icon('ArrowRight', 'icon--base')} Nächster Schritt (Demo)</button></div>`
+      ? `<div class="mt-6"><button class="btn btn--outline btn--icon-left" id="advance">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Nächster Schritt (Demo)</span></button></div>`
       : !def ? ''
       : i.createdLocally ? '<p class="small muted mt-6">Vorgang abgeschlossen.</p>' : '<p class="small muted mt-6">Seed-Vorgang (Demo) — nicht weiterführbar.</p>'}
   </div>`;

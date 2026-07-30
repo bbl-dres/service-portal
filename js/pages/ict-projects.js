@@ -87,6 +87,9 @@ export default function render(ctx) {
       ${C.table({
         caption: 'IKT-Vorhaben des BBL',
         zebra: true,
+        // Erste Spalte ist der Zeilenlink — wie in allen Listentabellen folgt
+        // die ganze Zeile ihm per Mausklick (einheitliche Affordanz, tbl-8).
+        rowsClickable: true,
         columns: [
           { key: 'titel', label: 'Vorhaben', render: r => `<a href="${r.href}">${C.escape(r.titel)}</a><br><span class="small muted">${C.escape(r.kuerzel)}</span>` },
           { key: 'beschreibung', label: 'Inhalt', render: r => C.escape(r.beschreibung) },
@@ -98,4 +101,8 @@ export default function render(ctx) {
       })}
     </div>
   </div>`;
+
+  // Zeilenklick der Tabelle. Abbau via onUnmount, sonst sammelt der
+  // wiederverwendete mount pro Besuch einen weiteren Klick-Horcher an.
+  ctx.onUnmount(C.wireTableRows(mount));
 }

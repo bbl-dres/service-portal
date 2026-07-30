@@ -104,6 +104,9 @@ export default async function render(ctx) {
   const listView = (rows) => C.table({
     caption: 'Anwendungen',
     zebra: true,
+    // Erste Spalte ist der Zeilenlink — wie in allen Katalog-Listenansichten
+    // folgt die ganze Zeile ihm per Mausklick (einheitliche Affordanz, tbl-8).
+    rowsClickable: true,
     columns: [
       { key: 'name', label: 'Anwendung', render: a =>
         `<a href="#/applications/${encodeURIComponent(a.appId)}">${C.escape(a.name)}</a>
@@ -130,7 +133,7 @@ export default async function render(ctx) {
       panelId: 'app-filters', panel: `
         ${C.filterGroup({ dim: 'area', legend: 'Bereich', selected: areas, options: AREAS.map(b => ({ value: b.key, label: b.label })) })}
         ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: AUDIENCES })}
-        <a class="btn btn--bare btn--sm" href="${hash({ area: [], audience: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
+        <a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ area: [], audience: [] })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a>`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}
@@ -150,6 +153,9 @@ export default async function render(ctx) {
     formId: 'app-search', inputId: 'aq', pageInputId: 'app-page', page, totalPages, hash,
     sortId: 'app-sort', filterToggleId: 'app-filter', panelId: 'app-filters',
   });
+  // Zeilenklick der Listenansicht. Abbau via onUnmount, sonst sammelt der
+  // wiederverwendete mount pro Besuch einen weiteren Klick-Horcher an.
+  ctx.onUnmount(C.wireTableRows(mount));
 }
 
 function areaLabel(key) { const b = AREAS.find(x => x.key === key); return b ? b.label : key; }

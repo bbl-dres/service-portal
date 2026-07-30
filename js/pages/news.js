@@ -31,7 +31,9 @@ function newsList(ctx) {
       lead: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.',
     })}
     <h2 class="sr-only">Aktualitäten</h2>
-    <div class="grid grid--3 mt-6">
+    ${/* CD-Rasternamen (grids.postcss): grid--responsive-cols-N + gap--responsive
+          statt der portal-eigenen grid--N-Aliasse (Review layout/grid-3/-4). */''}
+    <div class="grid grid--responsive-cols-3 gap--responsive mt-6">
       ${/* Eine Quelle für die Nachrichtenkarte: C.card liefert das Stretched-Link-
             Muster (echte <h3> für die Gliederung) und den CD-Kartenfuss. */''}
       ${items.length ? items.map(n => C.card({

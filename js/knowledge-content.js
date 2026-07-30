@@ -210,7 +210,9 @@ export const AREAS = {
       { id: 'portal', title: 'Prozessportal', html: (C) => `
         <p>Die vollständige Prozesslandschaft des BBL — Abläufe, Rollen und Zuständigkeiten — wird im Prozessportal Archimap gepflegt.</p>
         <div class="row mt-4">
-          <a class="btn btn--outline btn--lg" href="https://prozesse-archimap.admin.ch" target="_blank" rel="noopener external">Zum Prozessportal (Archimap) ${C.icon('External', 'icon--base')}</a>
+          ${/* CD Btn.vue: Icon im DOM zuerst, btn--icon-right dreht die
+                Reihenfolge; das Label trägt den .btn__text-Wickel. */''}
+          <a class="btn btn--outline btn--lg btn--icon-right" href="https://prozesse-archimap.admin.ch" target="_blank" rel="noopener external">${C.icon('External', 'btn__icon')}<span class="btn__text">Zum Prozessportal (Archimap)</span></a>
         </div>` },
       { id: 'faq', title: 'Häufige Fragen (FAQ)', faq: true },
     ],

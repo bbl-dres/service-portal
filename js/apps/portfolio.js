@@ -84,12 +84,30 @@ export default async function render(ctx) {
     ...core.parcels().map((p) => ({ kind: 'parcel', id: p.bbl_id, we: p.bbl_we || weOf(p.bbl_id), land: p.land, region: p.canton, city: p.city, name: p.name, cat: p.zone || 'Grundstück', ownership: p.ownership, status: p.status, area: p.gsf, lat: p.lat, lon: p.lng, geom: p.geom, street: p.street, zip: p.zip })),
   ];
 
+  // Zustand VOLLSTÄNDIG aus der URL lesen (Review url-state-1): eine kopierte
+  // Adresse stellt Suche, Facetten, Baum-Auswahl, Sortierung und Seite wieder
+  // her — dasselbe Modell wie die Mediathek (C.catalogueHash). Die Baum-Auswahl
+  // steht als `land/region/city/we/obj` im Hash; `obj` statt `id`, weil `id`
+  // oben für die Detailroute reserviert ist. `kind` hat als einzige Dimension
+  // einen NICHT-leeren Default (nur Gebäude); «alle» kodiert deshalb die bewusst
+  // geleerte Auswahl — sonst wäre sie von «Param fehlt» nicht zu unterscheiden.
+  const csv = (k) => (query.get(k) || '').split(',').filter(Boolean);
+  const kindParam = query.get('kind');
+  const urlSel = {};
+  for (const k of ['land', 'region', 'city', 'we']) if (query.get(k)) urlSel[k] = query.get(k);
+  if (query.get('obj')) urlSel.id = query.get('obj');
   const state = {
     view: ['map', 'gallery', 'list'].includes(query.get('view')) ? query.get('view') : 'gallery',
     // Standard: nur Gebäude. Grundstücke blendet man über den Objekttyp-Filter
     // dazu (oder entfernt die «Gebäude»-Pille). Eine explizite Objektauswahl aus
     // Baum/Karte hebt den Typfilter auf, damit auch ein angeklicktes Grundstück erscheint.
-    sel: {}, focus: null, q: '', sort: 'name', filters: { status: [], ownership: [], kind: ['building'] }, page: 1,
+    sel: urlSel, focus: urlSel.id || null, q: query.get('q') || '',
+    sort: SORT_OPTIONS.some((o) => o.value === query.get('sort')) ? query.get('sort') : 'name',
+    filters: {
+      status: csv('status'), ownership: csv('ownership'),
+      kind: kindParam == null ? ['building'] : (kindParam === 'alle' ? [] : csv('kind')),
+    },
+    page: Math.max(1, Number(query.get('page')) || 1),
     perPage: { gallery: 9, list: 25 },
   };
 
@@ -162,18 +180,27 @@ export default async function render(ctx) {
     // las sich «Gebäude» wie ein Filterwert, den es so nicht gibt.
     const chips = [landName(o.land), o.status]
       .filter(Boolean).map((c) => `<span class="pf-card__land">${esc(c)}</span>`).join('');
-    return `<a class="card card--universal card--clickable pf-card" href="#/app/portfolio?id=${encodeURIComponent(o.id)}">
+    // Stretched-Link-Muster wie C.card() (Review card-11): die Karte ist ein <div>,
+    // der Titel ein echtes <h3> mit <a class="card__link">, dessen ::after die ganze
+    // Karte klickbar macht — der zugängliche Name bleibt der Titel, nicht der ganze
+    // Kartentext. Und `card--default` statt `card--universal` (Review card-12):
+    // universal meint im CD ausschliesslich eingepasste (object-contain) Bilder,
+    // die Galeriebilder hier sind aber beschnitten (cover); den Schatten trägt
+    // card--default gleichermassen.
+    return `<div class="card card--default card--clickable pf-card">
       <div class="pf-card__vis">${vis}<div class="pf-card__chips">${chips}</div></div>
       <div class="card__content"><div class="card__body">
-        <h3 class="card__title">${esc(o.name)}</h3>
+        <h3 class="card__title"><a class="card__link" href="#/app/portfolio?id=${encodeURIComponent(o.id)}">${esc(o.name)}</a></h3>
         <p class="pf-card__id">${esc(o.id)}</p>
         <p class="card__description">${esc(o.street)}${o.city ? `, ${esc(o.zip)} ${esc(o.city)}` : ''}</p>
       </div>
-      <div class="card__footer"><span>${esc(o.cat)}</span><span>${m2(o.area)} <span class="muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span></span></div></div></a>`;
+      <div class="card__footer"><span>${esc(o.cat)}</span><span>${m2(o.area)} <span class="muted">${o.kind === 'building' ? 'GF' : 'GSF'}</span></span></div></div></div>`;
   }
   const galleryHTML = (slice) => `<div class="pf-gallery">${slice.map(pfCard).join('')}</div>`;
   // Compact table: Typ as an icon (no label/emoji), Ort merged with Land, GF/GSF unit — fits without a horizontal scrollbar.
-  const listHTML = (slice) => C.table({ zebra: true, caption: 'Liegenschaften', columns: [
+  // `rowsClickable` wie in den übrigen Bestandslisten (Review tbl-8): die Zeile
+  // folgt ihrem ersten Link (Bezeichnung); Tastatur/SR nutzen weiterhin den Link.
+  const listHTML = (slice) => C.table({ zebra: true, rowsClickable: true, caption: 'Liegenschaften', columns: [
     { key: 'kind', label: 'Typ', render: (o) => `<span class="pf-typ" title="${o.kind === 'building' ? 'Gebäude' : 'Grundstück'}" aria-label="${o.kind === 'building' ? 'Gebäude' : 'Grundstück'}">${C.icon(o.kind === 'building' ? 'Building' : 'Crop', 'icon--base')}</span>` },
     { key: 'name', label: 'Bezeichnung', render: (o) => `<a href="#/app/portfolio?id=${encodeURIComponent(o.id)}">${esc(o.name)}</a><br><span class="small muted">${esc(o.id)}</span>` },
     { key: 'ort', label: 'Ort', render: (o) => `${esc(o.city)}<br><span class="small muted">${esc(landName(o.land))}</span>` },
@@ -197,12 +224,37 @@ export default async function render(ctx) {
     objects.filter((o) => inSearch(o) && inFilters(o)),
     (o) => [o.land, o.region, o.city, o.we], (o) => o.id);
 
+  // Zustand → URL (Review url-state-1): ALLE Dimensionen serialisieren, nicht nur
+  // die Ansicht — sonst reproduziert eine kopierte Adresse nicht die sichtbare
+  // Treffermenge. Defaults bleiben aus der URL (kurz und teilbar, wie
+  // C.catalogueHash); die Gegenrichtung (URL → state) steht oben bei der
+  // state-Initialisierung. replaceState statt location.hash, damit der Router
+  // die Seite nicht neu zeichnet (JS-State, kein Hash-Roundtrip).
+  const syncHash = () => {
+    const p = new URLSearchParams();
+    if (state.q.trim()) p.set('q', state.q.trim());
+    for (const k of ['land', 'region', 'city', 'we']) if (state.sel[k]) p.set(k, state.sel[k]);
+    if (state.sel.id) p.set('obj', state.sel.id);
+    if (state.filters.status.length) p.set('status', state.filters.status.join(','));
+    if (state.filters.ownership.length) p.set('ownership', state.filters.ownership.join(','));
+    // Nur bei Abweichung vom Default «nur Gebäude»; leer → Marke «alle» (s. oben).
+    if (state.filters.kind.length !== 1 || state.filters.kind[0] !== 'building') {
+      p.set('kind', state.filters.kind.length ? state.filters.kind.join(',') : 'alle');
+    }
+    if (state.sort !== 'name') p.set('sort', state.sort);
+    if (state.page > 1) p.set('page', String(state.page));
+    if (state.view !== 'gallery') p.set('view', state.view);
+    const s = p.toString();
+    try { history.replaceState(null, '', `#/app/portfolio${s ? `?${s}` : ''}`); } catch { /* nicht kritisch */ }
+  };
+
   // --- partial render of the main pane ---------------------------------------
   function renderMain() {
     syncTree();
     const list = filtered().sort(SORTS[state.sort] || SORTS.name);
     const cnt = mount.querySelector('#pf-count');
     const main = mount.querySelector('#pf-main');
+    let pages = 1;   // für Ansage + URL; geblättert wird nur in Galerie/Liste
     pfMap.free();
     if (state.view === 'map') {
       // Karte: nur die Anzahl (kein «von … · Seite …» — das ist nur für Galerie/Liste).
@@ -210,22 +262,27 @@ export default async function render(ctx) {
       main.innerHTML = `<div class="pf-map dash-map" id="pf-map-el" role="group" aria-label="Karte der Liegenschaften"></div>`;
       mountMap(list, state.focus);
     } else if (!list.length) {
-      if (cnt) cnt.innerHTML = `<strong>0</strong> von ${objects.length} Objekte`;
+      // Dativ nach «von» (Review count-gram-1) — wie «… von N Mietverhältnissen».
+      if (cnt) cnt.innerHTML = `<strong>0</strong> von ${objects.length} Objekten`;
       main.innerHTML = C.empty('Keine Objekte für diese Auswahl.');
     } else {
       const per = state.perPage[state.view];
-      const pages = Math.max(1, Math.ceil(list.length / per));
+      pages = Math.max(1, Math.ceil(list.length / per));
       if (state.page > pages) state.page = pages;
       const slice = list.slice((state.page - 1) * per, state.page * per);
-      // CD-Ergebniskopf: «N von M Objekte · Seite X von Y» (wie #/services).
-      if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Objekte${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
+      // CD-Ergebniskopf: «N von M Objekten · Seite X von Y» (wie #/services).
+      if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Objekten${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
       main.innerHTML = (state.view === 'gallery' ? galleryHTML(slice) : listHTML(slice))
         + C.pagination({ page: state.page, totalPages: pages, href: () => '#', inputId: 'pf-page' });
       if (pages > 1) C.wirePagination(mount, 'pf-page', state.page, pages, (t) => { state.page = t; renderMain(); });
     }
     mount.querySelectorAll('.view-switch__btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
     renderActiveFilters();
-    try { history.replaceState(null, '', `#/app/portfolio?view=${state.view}`); } catch { /* nicht kritisch */ }
+    // Treffer-Ansage für die Live-Region (Review announce-1) — wie Mediathek und
+    // Mietendenportal; ohne sie blieben Suche/Filter/Baum für Screenreader stumm.
+    C.announceCatalogue({ count: list.length, total: objects.length, unit: 'Objekten',
+      page: state.page, totalPages: pages, view: state.view });
+    syncHash();
   }
 
   // Active-Filter-Zeile (wie #/applications, C.activeFilters): Suche, Baum-Auswahl und
@@ -259,22 +316,24 @@ export default async function render(ctx) {
   // das Inventar öffnet also auf Gebäude gefiltert, die Checkbox «Gebäude»
   // rendert aber ungehakt. Ohne `id` konnte `C.preserveFocus` zudem den Fokus
   // nach dem Neuzeichnen nicht zurücksetzen.
+  // `idPrefix` hält die Checkbox-ids dokumentweit eindeutig (Review a11y-dup-ids-1)
+  // — die Detail-Tabellen prefixen über C.mountDataTable mit ihrer Tabellen-id.
   const fgroup = (dim, legend, opts) => C.filterGroup({
-    dim, legend, options: opts, selected: state.filters[dim] || [],
+    dim, legend, options: opts, selected: state.filters[dim] || [], idPrefix: 'pf',
   });
 
   const filterPanel = `
       ${fgroup('status', 'Status', statuses.map((s) => ({ value: s, label: s })))}
       ${fgroup('ownership', 'Eigentumsverhältnis', owns.map((o) => ({ value: o, label: o })))}
       ${fgroup('kind', 'Objekttyp', [{ value: 'building', label: 'Gebäude' }, { value: 'parcel', label: 'Grundstück' }])}
-      <div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm" id="pf-freset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>`;
+      <div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pf-freset">${C.icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>`;
 
   mount.innerHTML = `
   <div class="container section">
     ${C.pageHeader({ title: 'Liegenschaften Inventar', lead: 'Weltweites Immobilienportfolio des BBL — Gebäude und Grundstücke aus dem SAP-RE-FX-Stammdatenbestand.' })}
     ${C.catalogueBar({
       formId: 'pf-search', inputId: 'pf-q', searchLabel: 'Adresse, Objekt oder ID suchen',
-      placeholder: 'Adresse, Objekt oder ID suchen…', countId: 'pf-count',
+      placeholder: 'Adresse, Objekt oder ID suchen…', q: state.q, countId: 'pf-count',
       sort: { id: 'pf-sort', label: 'Sortieren', value: state.sort, options: SORT_OPTIONS },
       filterId: 'pf-filter-btn', filterLabel: 'Filter', panelId: 'pf-filters', panel: filterPanel,
       view: state.view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
@@ -283,7 +342,7 @@ export default async function render(ctx) {
     <div class="pf-layout">
       <aside class="pf-sidebar" aria-label="Portfolio-Struktur">
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Portfolio</h2>
-          <button type="button" class="btn btn--bare btn--sm" id="pf-clear" hidden>${C.icon('Cancel', 'icon--base')}<span class="btn__text">Auswahl</span></button></div>
+          <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pf-clear" hidden>${C.icon('Cancel', 'btn__icon icon--base')}<span class="btn__text">Auswahl</span></button></div>
         ${treeHTML()}
       </aside>
       <div class="pf-main" id="pf-main"></div>
@@ -314,6 +373,9 @@ export default async function render(ctx) {
   };
   const syncFilterChecks = () => fpanel.querySelectorAll('input[data-fdim]').forEach((cb) => { cb.checked = (state.filters[cb.dataset.fdim] || []).includes(cb.value); });
   const clearFilters = () => { state.filters = { status: [], ownership: [], kind: [] }; syncFilterChecks(); updateFilterBadge(); };
+  // Aus der URL wiederhergestellte Filter sofort am Knopf anzeigen (url-state-1);
+  // die Checkboxen selbst sind schon richtig, weil fgroup `selected` auswertet.
+  updateFilterBadge();
   fbtn.addEventListener('click', () => { const open = !fpanel.hidden; fpanel.hidden = open; fbtn.setAttribute('aria-expanded', String(!open)); });
   fpanel.addEventListener('change', (e) => {
     const cb = e.target.closest('input[data-fdim]'); if (!cb) return;
@@ -385,6 +447,41 @@ export default async function render(ctx) {
     state.page += /Nächste/.test(a.getAttribute('aria-label') || '') ? 1 : -1;
     renderMain();
   });
+  // Zeilenklick der Listenansicht (Review tbl-8): EINMAL auf dem beständigen
+  // Container delegiert — renderMain tauscht nur dessen innerHTML, ein Aufruf je
+  // Render würde Listener anhäufen.
+  C.wireTableRows(mount.querySelector('#pf-main'));
+
+  // Baum-Auswahl aus der URL wiederherstellen (Review url-state-1): den passenden
+  // Knoten suchen, seinen Pfad aufklappen und markieren. Die FILTERUNG wirkt über
+  // state.sel ohnehin — hier geht es um die sichtbare Hervorhebung im Baum.
+  // Vergleich über dataset statt Attribut-Selektor, weil die SAP-ids «/» enthalten.
+  if (Object.keys(state.sel).length) {
+    const s = state.sel;
+    const btn = s.id
+      ? [...mount.querySelectorAll('.pf-tree__leaf')].find((n) => n.dataset.obj === s.id)
+      : [...mount.querySelectorAll('.pf-tree__node')].find((n) =>
+          ['land', 'region', 'city', 'we'].every((k) => (n.dataset[k] || '') === (s[k] || '')));
+    if (btn) {
+      let li = btn.closest('.pf-tree__item');
+      while (li) {
+        const ul = li.parentElement;
+        if (!ul || !ul.classList.contains('pf-tree__children')) break;
+        ul.hidden = false;
+        const pn = ul.parentElement.querySelector(':scope > .pf-tree__node');
+        if (pn) pn.setAttribute('aria-expanded', 'true');
+        li = ul.parentElement;
+      }
+      // Wie beim Klick: ein wiederhergestellter Knoten zeigt auch seine Kinder.
+      if (btn.classList.contains('pf-tree__node')) {
+        const kids = btn.closest('.pf-tree__item').querySelector(':scope > .pf-tree__children');
+        btn.setAttribute('aria-expanded', 'true');
+        if (kids) kids.hidden = false;
+      }
+      markTree(btn);
+      clearBtn.hidden = false;
+    }
+  }
 
   renderMain();
 }
@@ -565,8 +662,10 @@ function buildingDetail(ctx, b) {
         const sum = filtered.reduce((s, c) => s + (Number(c.amount) || 0), 0);
         // «Total (4)» statt einer zweiten Zelle «4 Positionen · jährlich»: die
         // Anzahl gehört zur Beschriftung, und die Periode steht bereits in jeder
-        // Zeile der Spalte «Periode».
-        return `<tr class="table__total"><th scope="row" class="text-left">Total (${filtered.length})</th><td></td><td class="text-right"><strong>${chf(sum, cur)}</strong></td><td colspan="2"></td></tr>`;
+        // Zeile der Spalte «Periode». Keine Klasse und kein <strong> (Review
+        // tbl-4): CDs tfoot-Regeln in app.css tragen die 2px-Ränder selbst,
+        // fett ist dort nur die th-Zelle — die td bleibt regular.
+        return `<tr><th scope="row" class="text-left">Total (${filtered.length})</th><td></td><td class="text-right">${chf(sum, cur)}</td><td colspan="2"></td></tr>`;
       },
     },
     kontakte: !contacts.length ? null : {
@@ -606,7 +705,7 @@ function buildingDetail(ctx, b) {
         { key: 'sizeKB', label: 'Grösse', align: 'right', render: (d) => C.escape(dateiGroesse(d.sizeKB)) },
         { key: 'year', label: 'Jahr', align: 'right', render: (d) => C.escape(String(d.year)) },
         { key: 'classification', label: 'Klassifizierung', render: (d) => classBadge(C, ref, d.classification) },
-        { key: 'url', label: 'Aktion', render: (d) => `<a class="btn btn--outline btn--sm" href="${C.escape(d.url || '#')}">${C.icon('Download', 'icon--base')}<span class="btn__text">Download</span></a>` },
+        { key: 'url', label: 'Aktion', render: (d) => `<a class="btn btn--outline btn--sm btn--icon-left" href="${C.escape(d.url || '#')}">${C.icon('Download', 'btn__icon icon--base')}<span class="btn__text">Download</span></a>` },
       ],
     },
   };
@@ -615,7 +714,10 @@ function buildingDetail(ctx, b) {
   const dtPanel = (key, emptyMsg, after = '') => DT[key]
     ? `<div id="${DT[key].id}"></div>${after}`
     : `${C.empty(emptyMsg)}${after}`;
-  const archiveLink = `<p class="mt-6"><a class="btn btn--link" href="#/app/document-archive">In der Bauwerksdokumentation öffnen ${C.icon('ArrowRight', 'icon--base')}</a></p>`;
+  // Kanonische Knopf-Anatomie (Review btn-2): Label in .btn__text, Icon als
+  // .btn__icon mit btn--icon-right — ohne den Wrapper fehlen dem Label die
+  // py-2-Rhythmik und der Umbruchschutz (overflow-wrap:anywhere) des CD.
+  const archiveLink = `<p class="mt-6"><a class="btn btn--link btn--icon-right" href="#/app/document-archive"><span class="btn__text">In der Bauwerksdokumentation öffnen</span>${C.icon('ArrowRight', 'btn__icon')}</a></p>`;
 
   const tabFlaechen = () => dtPanel('flaechen', 'Keine Flächen- oder Bemessungsdaten erfasst.');
   const tabAusstattung = () => dtPanel('ausstattung', 'Keine Ausstattung erfasst.');
@@ -628,7 +730,9 @@ function buildingDetail(ctx, b) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}
+    ${/* detailBar statt backLink (Review share-1): Zurück + Teilen-Leiste in
+          einer Zeile — der CD-Detailseitenkopf, wie ihn die Mediathek trägt. */''}
+    ${C.detailBar({ backHref: '#/app/portfolio', backLabel: 'Liegenschaften Inventar' })}
     <h1 tabindex="-1">${C.escape(b.name)}</h1>
     <p class="lead">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)} · ${C.escape(b.portfolioCategory)}</p>
     ${heroBlock(C, { items: galleryItems, mapId: 'pf-hero-map', lat: b.lat, lon: b.lng, mapLabel: `Standort von ${b.name} auf der Karte` })}
@@ -722,7 +826,8 @@ function parcelDetail(ctx, p) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/app/portfolio', 'Liegenschaften Inventar')}
+    ${/* detailBar statt backLink (Review share-1) — wie beim Gebäudedetail. */''}
+    ${C.detailBar({ backHref: '#/app/portfolio', backLabel: 'Liegenschaften Inventar' })}
     <h1 tabindex="-1">${C.escape(p.name)}</h1>
     <p class="lead">${C.escape(p.street)}, ${C.escape(p.zip)} ${C.escape(p.city)} · ${C.escape(p.zone || 'Grundstück')}</p>
     ${heroBlock(C, { items: galleryItems, mapId: 'pf-parcel-map', lat: p.lat, lon: p.lng, mapLabel: `Bodenbedeckung von ${p.name} auf der Karte` })}

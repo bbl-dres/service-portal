@@ -14,8 +14,12 @@
 <body class="body--intranet">
   <header id="main-header"></header>
   <!-- Datenausfall-Band (P0-4): von js/app.js nach dem Laden befüllt, wenn eine
-       data/*.json fehlt. Persistent, weil der Router nur #main-content neu zeichnet. -->
-  <div id="data-status" role="alert"></div>
+       data/*.json fehlt. Persistent, weil der Router nur #main-content neu zeichnet.
+       Benannte Region statt role="alert" am Container: das Band samt «Neu laden»-
+       Knopf liegt sonst in KEINER Landmark und ist über die Landmark-Navigation
+       unauffindbar; die einmalige Ansage beim Einfügen trägt die injizierte
+       Notification selbst (role="alert" via { live:true } in js/app.js). -->
+  <div id="data-status" role="region" aria-label="Hinweis zum Datenbestand"></div>
   <main id="main-content" tabindex="-1"></main>
   <!-- Persistente Live-Region: Router/Katalogseiten schreiben hier Treffer-,
        Ansichts- und Seitenwechsel hinein (WCAG 4.1.3). Nur Text mutieren. -->

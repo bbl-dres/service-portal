@@ -150,18 +150,21 @@ export default async function render(ctx) {
   const sections = blocks.map((b, i) => section(b, i % 2 === 0)).join('');
 
   mount.innerHTML = `
-    <section class="section section--default">
-      <div class="container">
-        <div class="home-hero">
-          <div class="home-hero__content">
-            <h1 tabindex="-1">Willkommen im BBL Kundenportal</h1>
-            <p class="lead">Dienstleistungen, Anwendungen, Dokumente und Daten des Bundesamts für Bauten und Logistik — an einem Ort.</p>
-            <form class="home-search" id="home-search" role="search">
-              <label class="sr-only" for="home-q">Im Portal suchen</label>
-              <input id="home-q" type="search" placeholder="Wonach suchen Sie? z. B. Störung, Raumbedarf, Bauprojekt…" autocomplete="off">
-              <button class="btn btn--filled btn--lg" type="submit">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
-            </form>
-          </div>
+    <div class="container">
+      ${/* CDs hero--main-image (hero.postcss:73-90): Inhalt links, Bild rechts im
+            selben Raster; der Hero trägt den Abschnittsrhythmus selbst. Die
+            Suchzeile ist der CTA-Slot. */''}
+      <div class="hero hero--main-image">
+        <div class="hero__content">
+          <h1 class="hero__title" tabindex="-1">Willkommen im BBL Kundenportal</h1>
+          <p class="hero__description">Dienstleistungen, Anwendungen, Dokumente und Daten des Bundesamts für Bauten und Logistik — an einem Ort.</p>
+          <form class="home-search hero__cta" id="home-search" role="search">
+            <label class="sr-only" for="home-q">Im Portal suchen</label>
+            <input id="home-q" type="search" placeholder="Wonach suchen Sie? z. B. Störung, Raumbedarf, Bauprojekt…" autocomplete="off">
+            <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
+          </form>
+        </div>
+        <div class="hero__image">
           ${/* Das Bild misst 2048×1258, dargestellt wird es mit höchstens ~714 px
                 — vorher lud jede Startseite 511 KB für rund ein Neuntel der
                 Pixel (docs/code-review.md §5). `srcset` lässt den Browser die
@@ -169,19 +172,19 @@ export default async function render(ctx) {
                 sehr breite oder hochauflösende Anzeigen. `width`/`height` geben
                 das Seitenverhältnis vor, damit beim Laden nichts springt.
                 Varianten erzeugt scripts/make-image-variants.mjs. */''}
-          <figure class="home-hero__figure">
+          <figure class="hero__figure">
             <img src="assets/images/BBL-FE21_O-01-800.webp"
                  srcset="assets/images/BBL-FE21_O-01-800.webp 800w,
                          assets/images/BBL-FE21_O-01-1400.webp 1400w,
                          assets/images/BBL-FE21_O-01.avif 2048w"
-                 sizes="(min-width:900px) 40vw, 92vw"
+                 sizes="(min-width:768px) 46vw, 92vw"
                  width="2048" height="1258"
                  alt="Der Hauptsitz des BBL an der Fellerstrasse 21 von aussen" loading="eager" decoding="async">
             <figcaption>Der Hauptsitz des BBL an der Fellerstrasse 21 von aussen — © BBL</figcaption>
           </figure>
         </div>
       </div>
-    </section>
+    </div>
     ${sections}`;
 
   // Zeilenklick in der Vorgangstabelle (C.table `rowsClickable`).

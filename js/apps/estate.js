@@ -149,10 +149,17 @@ export default async function render(ctx) {
     chartData.set(id, { spec, result });
     return chart(spec, result);
   };
-  const kpi = (label, value, unit, delta) => `<div class="kpi">
+  // Kachel-Anatomie identisch zu dataportal.js kpiTiles(), inkl. Delta-Pfeil +
+  // sr-only-Wort (WCAG 1.4.1: Richtung nicht nur über Farbe), damit die beiden
+  // Kopien nicht driften, bis das Dashboard-Chrome in ein Modul extrahiert ist.
+  const kpi = (label, value, unit, deltaLabel, deltaGood) => `<div class="kpi">
     <div class="kpi__label">${C.escape(label)}</div>
     <div class="kpi__value">${C.escape(value)}${unit ? `<span class="kpi__unit">${C.escape(unit)}</span>` : ''}</div>
-    ${delta ? `<div class="kpi__delta">${C.escape(delta)}</div>` : ''}</div>`;
+    ${deltaLabel ? `<div class="kpi__delta${deltaGood === true ? ' is-good' : deltaGood === false ? ' is-bad' : ''}">${
+      deltaGood === undefined ? ''
+        : `<span class="kpi__arrow" aria-hidden="true">${deltaGood ? '▲' : '▼'}</span>`
+          + `<span class="sr-only">${deltaGood ? 'positive Entwicklung' : 'negative Entwicklung'}: </span>`
+    }${C.escape(deltaLabel)}</div>` : ''}</div>`;
   const mapFigure = () => `<figure class="chart card card--universal chart--map" id="estate-map">
     <figcaption class="chart__head"><h3 class="chart__title">Standorte weltweit</h3>
       <div class="chart__actions">${C.menu({ menuId: 'estate-map', label: 'Karten-Aktionen', items: [
@@ -248,19 +255,16 @@ export default async function render(ctx) {
     })),
   });
 
-  // Long option lists stay compact: show the first 5, the rest behind «Alle
-  // anzeigen». Overflow rows carry .filter-check--more (hidden until expanded).
+  // C.filterGroup statt einer eigenen Fassung (wie portfolio.js): der lokale
+  // Nachbau sprach data-dim statt data-fdim und vergab keine ids. `max` kappt
+  // lange Wertelisten auf die ersten 5; der Rest liegt in der versteckten
+  // .filter-group__more-Spanne, die der [data-fmore]-Knopf unten aufdeckt.
   const FILTER_MAX = 5;
-  const fGroup = (key, label) => {
-    const opts = OPTS[key];
-    const many = opts.length > FILTER_MAX;
-    const rows = opts.map((o, i) => `<label class="filter-check${many && i >= FILTER_MAX ? ' filter-check--more' : ''}"><input type="checkbox" data-dim="${key}" value="${C.escape(o)}"${state[key].includes(o) ? ' checked' : ''}><span>${C.escape(o)}</span></label>`).join('');
-    return `<fieldset class="filter-group">
-      <legend class="filter-group__legend">${C.escape(label)}</legend>
-      ${rows}
-      ${many ? `<button type="button" class="filter-group__more" data-more data-count="${opts.length}" aria-expanded="false">Alle anzeigen (${opts.length})</button>` : ''}
-    </fieldset>`;
-  };
+  const fGroup = (dim, legend) => C.filterGroup({
+    dim, legend,
+    options: OPTS[dim].map((o) => ({ value: o, label: o })),
+    selected: state[dim], idPrefix: 'estate', max: FILTER_MAX,
+  });
 
   let unpaint = null;   // Aufräumer des ResizeObserver aus paintCharts
   const mapSlot = createMapSlot();   // Besitz/Abbau: js/map-slot.js
@@ -332,20 +336,26 @@ export default async function render(ctx) {
   // --- wiring (once) ---
   const filterBody = mount.querySelector('#filter-body');
   filterBody.addEventListener('change', (e) => {
-    const cb = e.target.closest('input[type="checkbox"][data-dim]');
+    const cb = e.target.closest('input[type="checkbox"][data-fdim]');
     if (!cb) return;
-    const dim = cb.dataset.dim, val = cb.value;
+    const dim = cb.dataset.fdim, val = cb.value;
     if (cb.checked) { if (!state[dim].includes(val)) state[dim].push(val); }
     else state[dim] = state[dim].filter((x) => x !== val);
     syncHash(); update();
   });
-  // «Alle anzeigen / Weniger anzeigen» — expand a capped option list in place.
+  // «Alle anzeigen / Weniger anzeigen» — deckt die von C.filterGroup (`max`)
+  // in die versteckte .filter-group__more-Spanne gekappten Optionen in place auf.
   filterBody.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-more]');
+    const btn = e.target.closest('[data-fmore]');
     if (!btn) return;
-    const open = btn.closest('.filter-group').classList.toggle('filter-group--expanded');
+    const group = btn.closest('.filter-group');
+    const more = group.querySelector('.filter-group__more');
+    const open = more.hidden;                // Zustand NACH dem Umschalten
+    more.hidden = !open;
     btn.setAttribute('aria-expanded', String(open));
-    btn.textContent = open ? 'Weniger anzeigen' : `Alle anzeigen (${btn.dataset.count})`;
+    btn.querySelector('.btn__text').textContent = open
+      ? 'Weniger anzeigen'
+      : `Alle anzeigen (${group.querySelectorAll('input[data-fdim]').length})`;
   });
   mount.querySelector('#f-reset').addEventListener('click', () => {
     FILTER_KEYS.forEach((k) => { state[k] = []; });

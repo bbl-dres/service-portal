@@ -61,6 +61,9 @@ export default async function render(ctx) {
   const tableHtml = C.table({
     zebra: true,
     caption: 'Positionen',
+    // Erste Zelle ist der Zeilenlink → Zeilenklick wie in den übrigen
+    // Listen des Portals (Portal-Standard, einheitliche Affordanz).
+    rowsClickable: true,
     columns: [
       { key: 'objekt', label: 'Objekt', render: r => `<a href="#/app/portfolio?id=${encodeURIComponent(r.b.bbl_id)}">${C.escape(r.b.name)}</a><br><span class="small muted">${C.escape(r.b.bbl_id)}</span>` },
       { key: 'standort', label: 'Standort', render: r => `${C.escape(r.b.street)}<br><span class="small muted">${C.escape(r.b.zip)} ${C.escape(r.b.city)}</span>` },
@@ -97,7 +100,8 @@ export default async function render(ctx) {
     <section class="mt-8">
       <div class="box measure">
         <h3>Beteiligte</h3>
-        <ul style="padding-left:1.1rem" class="small">
+        ${''/* Kanonisches Listenrezept statt Inline-Einzug (1.1rem wich vom
+              1.25rem-Standard in .list--default ab). */}<ul class="list--default small">
           <li><strong>Portfoliomanagement BBL</strong> — Priorisierung und Verkaufsfreigabe</li>
           <li><strong>Recht / Beurkundung</strong> — Prüfung, Verträge, Eigentumsübergang</li>
           <li><strong>Externe Maklerinnen und Makler</strong> — Vermarktung und Bieterverfahren</li>
@@ -105,4 +109,9 @@ export default async function render(ctx) {
       </div>
     </section>
   </div>`;
+
+  // Zeilenklick (C.table rowsClickable): am pro Render neu erzeugten Container
+  // verdrahtet — ein Horcher direkt auf #main-content überlebte jeden
+  // Seitenwechsel und sammelte sich an (vgl. js/apps/media-library.js).
+  C.wireTableRows(mount.querySelector('.container.section'));
 }

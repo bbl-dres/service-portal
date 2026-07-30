@@ -169,8 +169,17 @@ export async function initBuildingsMap(container, buildings) {
 // overlap. Clusters show a count; single points are uniform circles and, from a
 // closer zoom, show the bbl_id as a label. The nav control's compass resets the
 // rotation to north. `points` = [{ lat, lon, label, sub?, bblId?, href? }].
-const BLUE = '#2563eb';
-const PARCEL = '#0f766e';   // teal — Grundstücke, distinct from the blue building markers
+//
+// Farben kommen aus dem Token-Layer (Muster wie js/charts.js): MapLibre-Paint-
+// Specs können kein `var(...)` tragen, also werden die Tokens zur Renderzeit
+// per getComputedStyle AUFGELÖST. So folgen Marker und Labels dem aktiven Skin
+// (rot/intranet/freebrand) statt fest auf Intranet-Blau zu stehen. Fallbacks
+// entsprechen den Standardwerten in css/tokens.css.
+const cssVar = (name, fallback) => {
+  if (typeof document === 'undefined') return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+};
 // `opts.focusPopup: false` zoomt auf das Objekt, öffnet aber KEIN Info-Popup.
 // Nötig für die Hero-Karte der Detailseite: MapLibre setzt den Fokus auf den
 // Schliessen-Knopf des Popups, sobald es angehängt wird — beim Seitenaufbau
@@ -193,6 +202,11 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
   // Ladeplatzhalter entfernen, BEVOR MapLibre anhängt (Item 6.14).
   container.textContent = '';
 
+  // Skin-abhängige Farben erst hier (Renderzeit) auflösen, nicht beim Modul-Load.
+  const MARKER = cssVar('--color-primary-600', '#d8232a');   // Gebäude-Marker = Primärfarbe des Skins
+  const PARCEL = cssVar('--chart-series-1', '#0f6b75');      // teal — Grundstücke, distinct from the building markers
+  const LABEL_INK = cssVar('--chart-ink', '#1f2937');
+  const LABEL_HALO = cssVar('--chart-surface', '#ffffff');
 
   const fc = {
     type: 'FeatureCollection',
@@ -228,17 +242,18 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
     if (!map.getSource('estate')) {
       map.addSource('estate', { type: 'geojson', data: fc, cluster: true, clusterMaxZoom: 10, clusterRadius: 46 });
       map.addLayer({ id: 'clusters', type: 'circle', source: 'estate', filter: ['has', 'point_count'],
-        paint: { 'circle-color': BLUE, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2,
+        paint: { 'circle-color': MARKER, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2,
           'circle-radius': ['step', ['get', 'point_count'], 16, 3, 20, 6, 26, 10, 32] } });
+      // text-size 12 = --fs-xs, die kleinste Stufe der CD-Schriftskala (11/13 lagen daneben).
       map.addLayer({ id: 'cluster-count', type: 'symbol', source: 'estate', filter: ['has', 'point_count'],
-        layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 13 },
+        layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 12 },
         paint: { 'text-color': '#fff' } });
       map.addLayer({ id: 'points', type: 'circle', source: 'estate', filter: ['!', ['has', 'point_count']],
-        paint: { 'circle-color': BLUE, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2, 'circle-radius': 7 } });
+        paint: { 'circle-color': MARKER, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2, 'circle-radius': 7 } });
       // bbl_id above the marker, only from a closer zoom so the overview stays calm
       map.addLayer({ id: 'point-labels', type: 'symbol', source: 'estate', filter: ['!', ['has', 'point_count']], minzoom: 8.5,
-        layout: { 'text-field': ['get', 'bbl_id'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, -1.2], 'text-anchor': 'bottom' },
-        paint: { 'text-color': '#1f2937', 'text-halo-color': '#fff', 'text-halo-width': 1.4 } });
+        layout: { 'text-field': ['get', 'bbl_id'], 'text-font': ['Noto Sans Regular'], 'text-size': 12, 'text-offset': [0, -1.2], 'text-anchor': 'bottom' },
+        paint: { 'text-color': LABEL_INK, 'text-halo-color': LABEL_HALO, 'text-halo-width': 1.4 } });
       // Parcel polygons — only from a close zoom (plot-sized), like the id labels.
       // Drawn below the building markers (beforeId 'clusters') so points stay on top.
       if (parcels && parcels.features && parcels.features.length) {
