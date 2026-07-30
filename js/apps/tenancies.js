@@ -547,9 +547,11 @@ function detail(ctx, id) {
 
     // Geschosswahl als CD-`tag-item` — dieselbe Chip-Komponente, die auch die
     // Katalogfilter tragen, statt eines bespoken Knopfs mit voller Markenfarbe.
-    // BEI NUR EINEM GESCHOSS entfällt die Gruppe: sie wiederholte dann bloss
-    // den Geschossnamen aus der Überschrift, in einer auffälligen Fläche.
-    const geschossWahl = floors.length < 2 ? '' : `
+    // IMMER sichtbar, auch bei nur einem Geschoss: die aktive Pille IST seit
+    // dem Wegfall von `.fp-head__name` die Angabe, welches Geschoss gezeichnet
+    // ist. Sie bei einem einzelnen Geschoss auszublenden liesse die Kopfzeile
+    // ohne diese Angabe zurück.
+    const geschossWahl = `
         <div class="fp-floors" role="group" aria-label="Geschoss wechseln">${floors.map((f) => {
           const aktiv = f.floorId === floor.floorId;
           return `<a class="tag-item${aktiv ? ' tag-item--active' : ''}" href="#" data-floor="${C.escape(f.floorId)}"${
@@ -571,7 +573,11 @@ function detail(ctx, id) {
         <div class="fp-head">
           <p class="fp-back"><a href="#" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
           <div class="fp-head__top">
-            <h3 class="fp-head__name">${C.escape(floor.label)}</h3>
+            ${/* KEIN eigener Geschossname mehr: die aktive Pille der Geschosswahl
+                  sagt bereits, welches Geschoss gezeichnet ist — zwei Angaben
+                  nebeneinander waren eine zu viel. Bei nur EINEM Geschoss
+                  entfällt die Wahl, dann trägt der Reitername «Grundrisse (1)»
+                  zusammen mit dem Rücksprung «Alle Geschosse» den Kontext. */''}
             ${geschossWahl}
             ${/* Vollwertiges CD-Auswahlfeld (`C.select`) statt eines baren
                   Toolbar-Selects: ohne Rahmen las sich «Verwaltungseinheit» wie

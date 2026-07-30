@@ -3347,7 +3347,6 @@ body.docviewer-open { overflow:hidden; }
    die Zeile wirklich nicht reicht. */
 .fp-head__top { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem 1rem;
   padding-bottom:.75rem; border-bottom:1px solid var(--color-secondary-300); }
-.fp-head__name { margin:0; font-size:var(--text-lg); flex:none; }
 .fp-head__actions { display:flex; align-items:center; gap:.5rem; flex:none; }
 .fp-color { margin-left:auto; }
 .fp-back { margin:0 0 .35rem; font-size:var(--text-sm); }

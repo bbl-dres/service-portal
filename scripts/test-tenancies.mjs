@@ -200,7 +200,10 @@ check(o.catbar, 'Tabelle trägt eine Katalogleiste (C.mountDataTable)');
 check(o.zeilen === 2, 'zwei gemietete Geschosse als Zeilen', String(o.zeilen));
 check(o.klickbar, 'Zeilen sind klickbar (table--rows-clickable)');
 check(o.kopf.includes('Räume') && o.kopf.includes('HNF') && o.kopf.includes('Arbeitsplätze'), 'Mengenspalten', o.kopf.join(' | '));
-check(o.total[0] === 'Total', 'Summenzeile', o.total.join(' '));
+// Summenzeile im Stil des Liegenschafteninventars: Klasse `table__total`,
+// «Total (n)» mit der Anzahl in der Beschriftung, Summen fett.
+check(/^Total \(\d+\)$/.test((o.total[0] || '').replace(/\s+/g, ' ').trim()),
+  'Summenzeile im Stil des Inventars: «Total (n)»', o.total.join(' '));
 check(/2 von 2 Geschosse/.test(o.zahl || ''), 'Trefferzahl der Tabelle', o.zahl);
 await clean(p, 'Geschosstabelle');
 
@@ -241,7 +244,7 @@ o = JSON.parse(await p.evaluate(`(async () => {
     modi: [...document.querySelectorAll('#fp-color option')].map(x => x.value),
     legende: document.querySelectorAll('.fp-legend__item').length,
     gewaehlt: document.querySelector('#fp-color')?.value,
-    kopf: document.querySelector('.fp-head__name')?.textContent.trim(),
+    kopf: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
     fakten: document.querySelector('.fp-side .fp-facts')?.textContent.replace(/s+/g,' ').trim(),
     knoepfe: [document.querySelector('#fp-vollbild'), document.querySelector('#fp-drucken')].map(Boolean),
     ariaErster: document.querySelector('.fp__room rect')?.getAttribute('aria-label'),
@@ -257,7 +260,7 @@ check(o.modi.join(',') === 'none,use,sia,ve,capacity', 'fünf Einfärbemodi', o.
 // muss der Plan bereits eingefärbt und die Legende gefüllt sein.
 check(o.gewaehlt === 've', 'Vorgabe-Einfärbung: Verwaltungseinheit', o.gewaehlt);
 check(o.legende > 0, 'Legende ohne Zutun sichtbar', String(o.legende));
-check(o.kopf === '2. OG', 'Geschossname in der Kopfleiste', o.kopf);
+check(o.kopf === '2. OG', 'aktives Geschoss als Pille in der Kopfleiste', o.kopf);
 check(/Räume/.test(o.fakten || '') && /HNF/.test(o.fakten || ''), 'Kennzahlen in der Auswertungsspalte', o.fakten);
 check(o.knoepfe.every(Boolean), 'Vollbild- und Druckknopf vorhanden', o.knoepfe.join(','));
 
