@@ -101,6 +101,7 @@ const APPS = {
   'api-docs':        './apps/api-docs.js',
   'building-create': './apps/building-create.js',
   'media-library':   './apps/media-library.js',
+  'tenancies':       './apps/tenancies.js',
 };
 // Which top-nav item to highlight for pages and apps that are not themselves a
 // top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
@@ -111,6 +112,7 @@ const SECTION_OF = {
   'portfolio': 'data', 'projects': 'data',
   'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
   'document-archive': 'data', 'media-library': 'data', 'api-docs': 'data',
+  'tenancies': 'data',
 };
 
 function parseHash() {

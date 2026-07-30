@@ -7,6 +7,7 @@
 // Ansicht Karte (Default, geclustert) · Galerie · Liste. Siehe docs/portfolio-redesign.md.
 
 import { openGallery } from '../gallery.js';
+import { heroMosaic } from '../hero-mosaic.js';
 import { initEstateMap } from '../buildings-map.js';
 
 // Galerie-Eintrag aus einem Medium. `details` speist das Metadaten-Panel der
@@ -743,49 +744,8 @@ function formatSize(kb) { if (kb == null) return ''; return kb >= 1024 ? (kb / 1
 // Lücke die Regel, und ein je nach Datenlage ein- und ausklappender Hero liesse
 // die Detailseiten unruhig wirken. Platzhalter sind KEINE Knöpfe und für
 // Hilfsmittel unsichtbar — dahinter liegt nichts, was sich öffnen liesse.
-const HERO_SIDE_SLOTS = 4;
 
-function heroBlock(C, { items = [], mapId, mapLabel }) {
-  const esc = (s) => C.escape(String(s == null ? '' : s));
-  const n = items.length;
-  const tile = (it, i, cls, w, overlay = '') =>
-    `<button type="button" class="pf-mosaic__cell ${cls}" data-gallery="${i}"
-       aria-label="${esc(it.title)} — in der Galerie öffnen (Bild ${i + 1} von ${n})">
-      ${C.photo({ src: it.photoSrc, id: it.photo, color: '#2f4356', alt: esc(it.title), w, gray: it.gray,
-        cls: 'pf-mosaic__photo', overlay })}
-    </button>`;
-  const placeholder = (cls) =>
-    `<div class="pf-mosaic__cell ${cls} pf-mosaic__cell--empty" aria-hidden="true">
-      <div class="photo pf-mosaic__photo image__not-available">${C.icon('Image', 'icon--lg')}
-        <p class="image__not-available-text">Kein Bild</p></div>
-    </div>`;
-
-  const side = items.slice(1, 1 + HERO_SIDE_SLOTS);
-  const hidden = n - (1 + side.length);
-  // Auflage auf der letzten ECHTEN Nebenkachel — nie auf einem Platzhalter, der
-  // führt nirgendwohin. Bei genau zwei Bildern bleibt sie weg: dort verdeckte sie
-  // das einzige Nebenbild vollständig.
-  const showMore = side.length >= 2 || hidden > 0;
-  const sideTiles = side.map((it, i) => {
-    const isLast = i === side.length - 1 && showMore;
-    const overlay = isLast
-      ? `<span class="pf-mosaic__more">${hidden > 0 ? `<span class="pf-mosaic__more-num">+${hidden}</span>` : ''}
-          <span class="pf-mosaic__more-label">Alle Bilder anzeigen</span></span>`
-      : '';
-    return tile(it, i + 1, 'pf-mosaic__cell--side', 640, overlay);
-  }).join('') + placeholder('pf-mosaic__cell--side').repeat(Math.max(0, HERO_SIDE_SLOTS - side.length));
-
-  // Zähler nur, wenn es etwas zu zählen gibt — «0 Bilder» auf einem Platzhalter
-  // wäre doppelt gemoppelt, der Kasten sagt es schon.
-  const mainCell = n
-    ? tile(items[0], 0, 'pf-mosaic__cell--main', 1600,
-        `<span class="pf-hero__badge">${C.icon('Image', 'icon--base')} ${n} Bild${n === 1 ? '' : 'er'}</span>`)
-    : placeholder('pf-mosaic__cell--main');
-
-  return `<div class="pf-mosaic pf-mosaic--map" id="pf-mosaic">
-    ${mainCell}
-    <div class="pf-mosaic__side">${sideTiles}</div>
-    <div class="pf-hero__map" id="${esc(mapId)}" role="group" aria-label="${esc(mapLabel)}"></div>
-  </div>`;
-}
+// heroBlock ist nach js/hero-mosaic.js gewandert — das Mietendenportal zeigt
+// dieselben Objekte aus Mietersicht und nutzt denselben Kopf.
+const heroBlock = (C, opts) => heroMosaic(C, { ...opts, id: "pf-mosaic" });
 // Die Vollbild-Galerie liegt in js/gallery.js — dieselbe nutzt die Mediathek.

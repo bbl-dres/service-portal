@@ -269,14 +269,15 @@ function buildIndex(core) {
 
   // Bauprojekte adressiert die App über ein Pfadsegment, nicht über `?id=` —
   // anders als das Portfolio (dort ist die Detailansicht ein Zustand der Karte).
+  // Standort direkt aus dem Projektdatensatz: EPPM führt ihn selbst, es gibt
+  // keinen Join ins Liegenschaftsinventar (js/apps/projects.js).
   for (const p of core.projects()) {
-    const b = core.building(p.buildingId);
     rows.push({
       art: 'Bauprojekte', type: 'Bauprojekt', title: p.name, desc: p.teaser || '',
       href: `#/app/projects/${encodeURIComponent(p.projectId)}`,
       meta: [p.projectNumber, p.status].filter(Boolean).join(' · '),
       extra: [p.projectId, p.projectNumber, p.status, p.siaPhaseLabel, p.subPortfolio,
-        p.pm, p.buildingId, b && b.name, b && b.city].filter(Boolean).join(' '),
+        p.pm, p.buildingId, p.siteName, p.street, p.city, p.canton].filter(Boolean).join(' '),
     });
   }
 

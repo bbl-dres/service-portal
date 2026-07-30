@@ -12,10 +12,9 @@
       "href": "#/app/portfolio"
     },
     "description": "Karten-, Listen- und Detailansicht des Immobilienportfolios des Bundes.",
-    "photo": "1515488764276-beab7607c1e6",
     "area": "buildings",
     "subtitle": "Immobilienportfolio des Bundes",
-    "long": "Das Liegenschafteninventar führt sämtliche Liegenschaften und Gebäude im Eigentum oder in der Verwaltung des Bundes. Es verbindet die Stammdaten aus dem ERP mit Flächen, Nutzungen, Zustandsbewertungen und Standortangaben und stellt sie als Karte, Liste und Detailansicht zur Verfügung. Grundlage für Portfoliosteuerung, Instandhaltungsplanung und Reporting.",
+    "long": "Das Liegenschafteninventar führt sämtliche Liegenschaften und Gebäude im Eigentum oder in der Verwaltung des Bundes. Führungssystem ist SAP RE-FX: die Wirtschaftseinheit als Bewirtschaftungsebene, darunter Gebäude, Grundstücke und Bemessungen. Das Portal stellt diesen Bestand mit Flächen, Nutzungen, Portfolio-Zuordnung und Standortangaben als Karte, Liste und Detailansicht bereit — Grundlage für Portfoliosteuerung und Reporting. Die Zustandsbewertung der Bauteile führt die Erhaltungsplanung (EHP), nicht das Inventar.",
     "access": {
       "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
       "steps": [
@@ -25,62 +24,188 @@
     },
     "resources": [
       {
-        "label": "Datensatz «Gebäude (SAP Liegenschafteninventar)»",
-        "href": "#/data/katalog/1"
+        "label": "Datensatz «Gebäude (SAP RE-FX)»",
+        "href": "#/data/catalog/1"
       },
       {
-        "label": "Datensatz «Grundstücke (SAP Liegenschafteninventar)»",
-        "href": "#/data/katalog/2"
+        "label": "Datensatz «Grundstücke (SAP RE-FX)»",
+        "href": "#/data/catalog/2"
       }
     ],
     "related": [
       "bauprojekte-eppm",
       "gis-immo"
     ],
-    "contact": "pfm",
-    "updated": "12.06.2026"
+    "contact": "immobilienmanagement",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/liegenschaften-inventar.jpg",
+      "titel": "Contemporary building facade with reflective glass windows in an urban environment.",
+      "fotograf": "Mindaugas U",
+      "credit": "Mindaugas U — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/gray-city-building-1313534/"
+    }
+  },
+  {
+    "appId": "mietende",
+    "name": "Mietende (Portal)",
+    "group": "Immobilien & Bau",
+    "icon": "Home",
+    "audience": "both",
+    "hero": true,
+    "accessNote": "Intern",
+    "link": {
+      "kind": "app",
+      "href": "#/app/tenancies"
+    },
+    "description": "Gemietete Flächen, Verträge und Grundrisse aus Sicht der mietenden Verwaltungseinheit.",
+    "area": "buildings",
+    "subtitle": "Mietverhältnisse der Verwaltungseinheiten",
+    "long": "Das Mietendenportal zeigt einer Verwaltungseinheit die Flächen, die sie beim BBL gemietet hat — nicht das Immobilienportfolio des Bundes, sondern den eigenen Ausschnitt daraus. Gemietet wird selten ein ganzes Gebäude, sondern ein Geschoss oder ein Geschossteil; die Einheit ist deshalb das Mietverhältnis. Je Mietverhältnis stehen Vertragsdaten, Flächen und Arbeitsplätze, die laufenden Vorgänge am Objekt sowie ein interaktiver Grundriss zur Verfügung, der sich nach Nutzung, SIA-416-Kategorie, Verwaltungseinheit oder Belegungsdichte einfärben lässt. Aus jedem Raum heraus lassen sich die passenden Dienstleistungen mit vorbelegtem Objekt starten.",
+    "access": {
+      "note": "Für Mietende der Verwaltungseinheiten sowie das Portfoliomanagement und den Objektbetrieb des BBL.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Sichtbar sind die Mietverhältnisse der eigenen Verwaltungseinheit."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Störungs-, Reinigungs- & Reparaturmeldung»",
+        "href": "#/services/stoerung-melden"
+      },
+      {
+        "label": "Dienstleistung «Raumbedarf & bauliche Bedürfnisse melden»",
+        "href": "#/services/raumbedarf-melden"
+      }
+    ],
+    "related": [
+      "liegenschaften-inventar",
+      "workspace",
+      "facility-auftrag"
+    ],
+    "contact": "immobilienmanagement",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/mietende.jpg",
+      "titel": "Spacious empty office with rows of desks and large windows.",
+      "fotograf": "cottonbro studio",
+      "credit": "cottonbro studio — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/an-empty-office-5483236/"
+    }
   },
   {
     "appId": "bauprojekte-eppm",
     "name": "Bauprojekte / EPPM (Portal)",
     "group": "Immobilien & Bau",
     "icon": "Building",
-    "audience": "staff",
+    "audience": "both",
     "hero": true,
-    "accessNote": "Intern",
+    "accessNote": "Intern + Extern",
     "link": {
       "kind": "app",
       "href": "#/app/projects"
     },
-    "description": "Projekt- und Portfoliomanagement der Bauprojekte (laufend & abgeschlossen).",
-    "photo": "1504307651254-35680f356dfd",
+    "description": "Vereinfachte Leseansicht der Bauprojekte — Karte, Liste und Projektdetails.",
     "area": "buildings",
-    "subtitle": "Projekt- und Portfoliomanagement Bau",
-    "long": "EPPM führt alle Neu-, Um- und Instandsetzungsprojekte des BBL von der Bedarfsmeldung bis zur Übergabe. Abgebildet werden Projektphasen nach SIA 112, Kosten und Termine, Freigaben sowie die Zuordnung zu Liegenschaft und Portfolio. Die Anwendung ist die führende Quelle für den Projektstatus im Reporting.",
+    "subtitle": "Bauprojekte einsehen (Leseansicht)",
+    "long": "Die Portalansicht zeigt die Neu-, Um- und Instandsetzungsprojekte des BBL als Karte, Galerie und Liste, je Projekt mit Standort, Projektphase nach SIA 112, Kosten, Terminen und der Ampelbewertung aus dem Projektreporting. Sie ist eine vereinfachte Leseansicht: erfasst, bewirtschaftet und freigegeben werden die Projektdaten ausschliesslich im Führungssystem SAP ePPM, das Portal schreibt nichts zurück. Für die Verwaltungseinheiten ist sie der Zugang zum Stand ihrer Bauvorhaben, ohne dass eine SAP-Berechtigung nötig ist.",
     "access": {
-      "note": "Projektleitende und Portfoliomanagement des BBL; Lesezugriff für beteiligte Verwaltungseinheiten.",
+      "note": "Für BBL-Mitarbeitende und für die Verwaltungseinheiten als Kundschaft — durchgehend nur lesend.",
       "steps": [
-        "Anmeldung über eIAM.",
-        "Projektrollen werden vom Portfoliomanagement vergeben."
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Keine Projektrolle nötig — die Ansicht ist lesend.",
+        "Änderungen an Projektdaten erfolgen im Führungssystem SAP ePPM."
       ]
     },
     "resources": [
       {
-        "label": "Weisung Bauprojektabwicklung BBL",
-        "href": "#/knowledge?tab=grundlagen"
+        "label": "SAP ePPM — Führungssystem der Bauprojekte",
+        "href": "#/applications/sap-eppm",
+        "note": "Erfassung, Bewirtschaftung und Freigabe der Projektdaten (nur BBL-Personal)."
       },
       {
-        "label": "Datensatz «Bauprojekte (SAP Projektcontrolling)»",
-        "href": "#/data/katalog/3"
+        "label": "Standards und Weisungen — Nutzung und Betrieb der Bauten",
+        "href": "#/knowledge/accommodation?section=wi-standards"
+      },
+      {
+        "label": "Datensatz «Bauprojekte (SAP ePPM)»",
+        "href": "#/data/catalog/3"
       }
     ],
     "related": [
+      "sap-eppm",
       "liegenschaften-inventar",
       "cde",
       "qualitygate"
     ],
-    "contact": "pfm",
-    "updated": "02.07.2026"
+    "contact": "projektmanagement",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/bauprojekte-eppm.jpg",
+      "titel": "Urban construction site featuring multiple tower cranes against a city skyline.",
+      "fotograf": "Engin Akyurt",
+      "credit": "Engin Akyurt — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/tower-cranes-under-the-blue-sky-4170185/"
+    }
+  },
+  {
+    "appId": "sap-eppm",
+    "name": "SAP ePPM",
+    "group": "Immobilien & Bau",
+    "icon": "Briefcase",
+    "audience": "staff",
+    "accessNote": "Extern (Login)",
+    "link": {
+      "kind": "external",
+      "href": "#"
+    },
+    "description": "Führungssystem der Bauprojekte — Erfassung, Freigabe und Controlling (Fachanwendung).",
+    "area": "buildings",
+    "subtitle": "Führungssystem Bauprojekte",
+    "long": "SAP ePPM (Enterprise Portfolio and Project Management) führt alle Neu-, Um- und Instandsetzungsprojekte des BBL von der Bedarfsmeldung bis zur Übergabe. Hier werden Projektstruktur, Phasen nach SIA 112, Kosten, Termine und Freigaben erfasst und bewirtschaftet; das System ist damit die führende Quelle für den Projektstatus im Reporting. Das Kundenportal zeigt daraus eine vereinfachte Leseansicht («Bauprojekte / EPPM») — die Bewirtschaftung bleibt in SAP ePPM.",
+    "access": {
+      "note": "Nur BBL-Personal: Projektleitende, Portfoliomanagement und Projektcontrolling.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "SAP- und Projektrollen werden vom Portfoliomanagement vergeben.",
+        "Ohne SAP-Berechtigung führt der Weg über die Leseansicht im Kundenportal."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Bauprojekte / EPPM (Portal) — Leseansicht",
+        "href": "#/applications/bauprojekte-eppm",
+        "note": "Vereinfachte Ansicht für die Verwaltungseinheiten, ohne SAP-Berechtigung."
+      },
+      {
+        "label": "Datensatz «Bauprojekte (SAP ePPM)»",
+        "href": "#/data/catalog/3"
+      },
+      {
+        "label": "Standards und Weisungen — Nutzung und Betrieb der Bauten",
+        "href": "#/knowledge/accommodation?section=wi-standards"
+      }
+    ],
+    "related": [
+      "bauprojekte-eppm",
+      "superb",
+      "cde",
+      "qualitygate"
+    ],
+    "contact": "projektmanagement",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/sap-eppm.jpg",
+      "titel": "Office setup featuring a conference table, laptop, and organized whiteboard schedule, high",
+      "fotograf": "Walls.io",
+      "credit": "Walls.io — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/laptop-on-conference-table-15505438/"
+    }
   },
   {
     "appId": "dokumentenarchiv",
@@ -94,7 +219,6 @@
       "href": "#/app/document-archive"
     },
     "description": "Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.",
-    "photo": "1478860409698-8707f313ee8b",
     "area": "buildings",
     "subtitle": "Bauwerksdokumentation",
     "long": "Die Bauwerksdokumentation bündelt Pläne, Dokumentationen und Nachweise pro Gebäude — von der Projektierung über die Realisierung bis zum Betrieb. Dokumente lassen sich nach Gebäude, Dokumenttyp und Baujahr suchen und beziehen. Umfang und Struktur richten sich nach der Weisung Bauwerksdokumentation.",
@@ -107,20 +231,28 @@
     },
     "resources": [
       {
-        "label": "Weisung Bauwerksdokumentation",
-        "href": "#/knowledge?tab=grundlagen"
+        "label": "Standards und Weisungen — Nutzung und Betrieb der Bauten",
+        "href": "#/knowledge/accommodation?section=wi-standards"
       },
       {
         "label": "Datensatz «Bauwerksdokumentation (Planarchiv DALA)»",
-        "href": "#/data/katalog/9"
+        "href": "#/data/catalog/9"
       }
     ],
     "related": [
       "dala-filenet",
       "cde"
     ],
-    "contact": "dres",
-    "updated": "20.05.2026"
+    "contact": "lcdm-bim",
+    "updated": "20.05.2026",
+    "bild": {
+      "src": "assets/images/applications/dokumentenarchiv.jpg",
+      "titel": "Engineer reviewing architectural blueprints on a desk with technical drawings.",
+      "fotograf": "Tima Miroshnichenko",
+      "credit": "Tima Miroshnichenko — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/person-in-blue-denim-jacket-holding-white-printer-paper-6615234/"
+    }
   },
   {
     "appId": "mediathek",
@@ -131,10 +263,9 @@
     "accessNote": "Intern + Extern",
     "link": {
       "kind": "app",
-      "href": "#/app/mediathek"
+      "href": "#/app/media-library"
     },
     "description": "Recherche- und Bezugsansicht auf die Mediathek Bauten: Fotos und Videos der Bundesbauten suchen, ansehen und beziehen. Die Verwaltung der Assets erfolgt im DAM.",
-    "photo": "1554907984-15263bfd63bd",
     "area": "buildings",
     "subtitle": "Digital Asset Management",
     "long": "Diese Ansicht im Kundenportal erschliesst die Mediathek Bauten für die Recherche: Fotos und Videos der Bundesbauten suchen, ansehen und beziehen — aktuelle Aufnahmen ebenso wie historisches Archivmaterial. Zu jedem Medium sind Objektbezug, Datum, Urheberschaft und Nutzungsrechte erfasst; die Verwendung in Publikationen ist nur im Rahmen der angegebenen Rechte zulässig. Erfasst und verwaltet werden die Medien im Digital-Asset-Management der Mediathek Bauten.",
@@ -148,14 +279,24 @@
     "resources": [
       {
         "label": "Corporate Design der Bundesverwaltung",
-        "href": "#/knowledge?tab=grundlagen"
+        "href": "https://www.bk.admin.ch/bk/de/home/dokumentation/cd-bund.html",
+        "kind": "external",
+        "note": "Vorgaben der Bundeskanzlei zu Erscheinungsbild und Bildsprache."
       }
     ],
     "related": [
       "dokumentenarchiv"
     ],
-    "contact": "dres",
-    "updated": "08.04.2026"
+    "contact": "kommunikation",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/mediathek.jpg",
+      "titel": "A photographer focuses on Seattle's architecture through a camera lens, highlighting the c",
+      "fotograf": "Josh Hild",
+      "credit": "Josh Hild — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/photographer-in-seattle-captures-city-architecture-28614059/"
+    }
   },
   {
     "appId": "datenportal",
@@ -169,12 +310,40 @@
       "href": "#/app/dataportal"
     },
     "description": "Auswertungen und Dashboards zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal und Logistik.",
-    "photo": "1551288049-bebda4e38f71",
-    "area": "central"
+    "area": "central",
+    "subtitle": "Auswertungen und Kennzahlen",
+    "long": "Das Datenportal bündelt die Auswertungen des BBL zu Themenboards — Energie und Klima, Immobilien, Beschaffung, Personal und Logistik. Je Board stehen eine Kennzahlenzeile und Diagramme über einem gemeinsamen Jahresfilter zur Verfügung. Die Werte stammen aus den Führungssystemen und werden periodisch nachgeführt; das Portal ist eine Auswertungsansicht und keine Erfassungsoberfläche.",
+    "access": {
+      "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Die Auswertungen sind lesend — Datenkorrekturen erfolgen im jeweiligen Führungssystem."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Datenbezug und API Verzeichnis — Herkunft der Kennzahlen",
+        "href": "#/data/catalog"
+      }
+    ],
+    "related": [
+      "datenbezug",
+      "liegenschaften-inventar"
+    ],
+    "contact": "dres",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/datenportal.jpg",
+      "titel": "A laptop displaying an analytics dashboard with real-time data tracking and analysis tools",
+      "fotograf": "Atlantic Ambience",
+      "credit": "Atlantic Ambience — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/close-up-shot-of-a-laptop-computer-12969403/"
+    }
   },
   {
-    "appId": "metadatenkatalog",
-    "name": "Metadatenkatalog (Portal)",
+    "appId": "datenbezug",
+    "name": "Datenbezug und API Verzeichnis (Portal)",
     "group": "Zentrale Systeme",
     "icon": "Database",
     "audience": "staff",
@@ -182,36 +351,42 @@
     "accessNote": "Intern",
     "link": {
       "kind": "app",
-      "href": "#/data/katalog"
+      "href": "#/data/catalog"
     },
-    "description": "Dokumentiert die Datenarchitektur und -governance des BBL: Datenobjekte, Verantwortlichkeiten, Klassifizierung und Schnittstellen.",
-    "photo": "1481627834876-b7833e8f5570",
+    "description": "Katalog der Datensätze und Schnittstellen des BBL — Inhalt, Bezugswege, Klassifizierung und Verantwortlichkeiten.",
     "area": "central",
-    "subtitle": "Datenarchitektur und Data Governance",
-    "long": "Der Metadatenkatalog dokumentiert die Datenarchitektur des BBL: fachliche Konzepte und Codelisten, ihre Systeme und Verantwortlichkeiten sowie die Beziehungen zwischen den Datenbeständen. Er ist die Referenz für Dateneigner und Datenverwalter und ergänzt den Datenbezug um die begriffliche Ebene.",
+    "subtitle": "Datenkatalog und Schnittstellen",
+    "long": "Das Verzeichnis beschreibt die Datensätze des BBL nach DCAT-AP-CH: Inhalt und Abgrenzung, führendes System, Aktualisierungsintervall, Klassifizierung sowie Dateneigner und Datenverwalter. Je Datensatz sind die Bezugswege als Distributionen erfasst — Datei, Tabelle oder API. Das Verzeichnis sagt, welche Daten es gibt, wem sie gehören und wie man sie bezieht; die Daten selbst bleiben in den Führungssystemen.",
     "access": {
-      "note": "Lesend für alle Mitarbeitenden des BBL; Pflege durch die Datenverwalter.",
+      "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
       "steps": [
-        "Anmeldung über eIAM.",
-        "Änderungen an Konzepten laufen über die Fachstelle Daten."
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Der Bezug klassifizierter Datensätze läuft über den im Eintrag genannten Dateneigner."
       ]
     },
     "resources": [
       {
-        "label": "Datenbezug und API Verzeichnis — Datensatzkatalog",
-        "href": "#/data/katalog"
+        "label": "API-Verzeichnis — Schnittstellen ausprobieren",
+        "href": "#/app/api-docs"
       },
       {
-        "label": "I14Y Interoperabilitätsplattform",
-        "href": "https://www.i14y.admin.ch/",
-        "kind": "external"
+        "label": "Datenportal — Auswertungen und Dashboards",
+        "href": "#/app/dataportal"
       }
     ],
     "related": [
       "gis-immo"
     ],
     "contact": "dres",
-    "updated": "15.07.2026"
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/datenbezug.jpg",
+      "titel": "Detailed view of programming code in a dark theme on a computer screen.",
+      "fotograf": "Stanislav Kondratiev",
+      "credit": "Stanislav Kondratiev — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/screen-with-code-10816120/"
+    }
   },
   {
     "appId": "gis-immo",
@@ -225,7 +400,6 @@
       "href": "https://gis.bbl.admin.ch/portal"
     },
     "description": "Geoinformationssystem Immobilien (Fachanwendung).",
-    "photo": "1541888946425-d81bb19240f5",
     "area": "buildings",
     "subtitle": "Geoinformationssystem",
     "long": "BBL GIS IMMO ist eine strategische Initiative des Bundesamtes für Bauten und Logistik, um Geoinformationssysteme für das Immobilienmanagement zu etablieren. Das System basiert auf der ArcGIS-Enterprise-Plattform von ESRI und bietet Werkzeuge, Vorlagen und Dienste zur Erstellung, Veröffentlichung und Verwaltung räumlicher Daten — Karten, Anwendungen und Services. Ziel ist es, räumliche Daten effizient zu nutzen, um die Qualität von Entscheidungsprozessen im Immobilienmanagement zu verbessern und datenbasierte Entscheide zu unterstützen.",
@@ -272,10 +446,18 @@
     ],
     "related": [
       "liegenschaften-inventar",
-      "metadatenkatalog"
+      "datenbezug"
     ],
     "contact": "dres",
-    "updated": "30.04.2025"
+    "updated": "30.04.2025",
+    "bild": {
+      "src": "assets/images/applications/gis-immo.jpg",
+      "titel": "Aerial photo showing detailed layout of urban residential area with roads and buildings.",
+      "fotograf": "ÇİĞDEM EYCE",
+      "credit": "ÇİĞDEM EYCE — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/aerial-view-of-modern-urban-residential-area-36324754/"
+    }
   },
   {
     "appId": "dala-filenet",
@@ -289,7 +471,6 @@
       "href": "https://dala.admin.ch/bblpvt/"
     },
     "description": "Planverwaltungstool (Fachanwendung).",
-    "photo": "1568667256549-094345857637",
     "area": "buildings",
     "subtitle": "Digitales Planarchiv",
     "long": "DALA ist das digitale Langzeitarchiv für Pläne und Bauakten des BBL auf Basis von IBM FileNET. Es sichert die revisionssichere Ablage archivwürdiger Unterlagen und dient als Quelle für die Bauwerksdokumentation. Neue Dokumente gelangen aus den Projektablagen ins Archiv.",
@@ -303,7 +484,7 @@
     "resources": [
       {
         "label": "Datensatz «Bauwerksdokumentation (Planarchiv DALA)»",
-        "href": "#/data/katalog/9"
+        "href": "#/data/catalog/9"
       },
       {
         "label": "Lerneinheit «Planverwaltung»",
@@ -324,7 +505,15 @@
         "kind": "external",
         "note": "Pläne suchen, ablegen und verwalten."
       }
-    ]
+    ],
+    "bild": {
+      "src": "assets/images/applications/dala-filenet.jpg",
+      "titel": "Spacious modern library archive with rows of wooden drawers for document storage.",
+      "fotograf": "Tima Miroshnichenko",
+      "credit": "Tima Miroshnichenko — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/a-gray-room-with-shelves-full-of-brown-drawers-6549926/"
+    }
   },
   {
     "appId": "cde",
@@ -338,7 +527,6 @@
       "href": "http://bbl.libal-tech.ch/#/projects"
     },
     "description": "Gemeinsame Datenumgebung / Digital Twin (Fachanwendung).",
-    "photo": "1522071820081-009f0129c71c",
     "area": "buildings",
     "subtitle": "Common Data Environment",
     "long": "Das CDE Bund ist die gemeinsame Datenumgebung für Bauprojekte: Planende, Unternehmer und Bauherrschaft arbeiten auf einem gemeinsamen Modell- und Dokumentenstand. Das CDE ist die verbindliche Ablage während der Projektlaufzeit; bei Projektabschluss werden die archivwürdigen Unterlagen in die Bauwerksdokumentation überführt.",
@@ -351,12 +539,12 @@
     },
     "resources": [
       {
-        "label": "BIM-Vorgaben des BBL",
-        "href": "#/knowledge?tab=grundlagen"
+        "label": "Standards und Weisungen — Nutzung und Betrieb der Bauten",
+        "href": "#/knowledge/accommodation?section=wi-standards"
       },
       {
         "label": "Datensatz «Projektdaten: Bauprojekte (CDE Bund)»",
-        "href": "#/data/katalog/6"
+        "href": "#/data/catalog/6"
       },
       {
         "label": "Projekt CDE Bund (Confluence)",
@@ -375,7 +563,7 @@
       "bauprojekte-eppm",
       "dokumentenarchiv"
     ],
-    "contact": "dres",
+    "contact": "lcdm-bim",
     "updated": "24.06.2026",
     "entries": [
       {
@@ -384,7 +572,15 @@
         "kind": "external",
         "note": "Gemeinsame Datenumgebung der laufenden Projekte."
       }
-    ]
+    ],
+    "bild": {
+      "src": "assets/images/applications/cde.jpg",
+      "titel": "Architect in hard hat reviewing blueprints on a screen, discussing plans in modern office.",
+      "fotograf": "Gustavo Fring",
+      "credit": "Gustavo Fring — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/construction-worker-explaining-blueprints-6285151/"
+    }
   },
   {
     "appId": "ehp",
@@ -398,7 +594,6 @@
       "href": "https://www.wuestdimensions.com/?goIndexHtml&kc_idp_hint=bbl-sso"
     },
     "description": "Erhaltungs- und Instandsetzungsplanung (Fachanwendung).",
-    "photo": "1470075801209-17f9ec0cada6",
     "area": "buildings",
     "subtitle": "Erhaltungsplanung",
     "long": "Die Erhaltungsplanung bewertet den Zustand der Bauteile und leitet daraus den mittelfristigen Instandsetzungsbedarf ab. Sie verbindet Zustandsaufnahmen mit Kostenkennwerten und liefert die Grundlage für die Priorisierung im Investitionsprogramm.",
@@ -409,13 +604,22 @@
         "Zugriff auf Antrag beim Portfoliomanagement."
       ]
     },
-    "resources": [],
+    "resources": [
+      {
+        "label": "Standards und Weisungen — Nutzung und Betrieb der Bauten",
+        "href": "#/knowledge/accommodation?section=wi-standards"
+      },
+      {
+        "label": "Liegenschaften Inventar — Objektstammdaten zum bewerteten Bestand",
+        "href": "#/applications/liegenschaften-inventar"
+      }
+    ],
     "related": [
       "liegenschaften-inventar",
       "bauprojekte-eppm"
     ],
-    "contact": "pfm",
-    "updated": "19.05.2026",
+    "contact": "immobilienmanagement",
+    "updated": "30.07.2026",
     "entries": [
       {
         "label": "Wüest Dimensions",
@@ -429,7 +633,15 @@
         "kind": "external",
         "note": "Erfassung vor Ort."
       }
-    ]
+    ],
+    "bild": {
+      "src": "assets/images/applications/ehp.jpg",
+      "titel": "A construction worker in a hard hat repairs a building facade on scaffolding in an urban s",
+      "fotograf": "Sergei Starostin",
+      "credit": "Sergei Starostin — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/house-renovation-27134625/"
+    }
   },
   {
     "appId": "flm",
@@ -443,7 +655,6 @@
       "href": "http://intranet.egate.admin.ch/"
     },
     "description": "Flächen- und Belegungsmanagement (Fachanwendung).",
-    "photo": "1502005229762-cf1b2da7c5d6",
     "area": "buildings",
     "subtitle": "Flächenmanagement",
     "long": "Das Flächenmanagement führt die Flächen der Bundesbauten nach Nutzungsart, Verwaltungseinheit und Arbeitsplatzzahl. Es liefert die Kennzahlen für die Flächenstandards nach der Weisung Neue Arbeitswelten und ist Grundlage für Flächenverrechnung und Belegungsplanung.",
@@ -457,7 +668,7 @@
     "resources": [
       {
         "label": "Weisung Neue Arbeitswelten (NAW)",
-        "href": "#/knowledge?tab=grundlagen"
+        "href": "#/knowledge/accommodation?section=wi-standards"
       },
       {
         "label": "Raumbedarf melden",
@@ -468,7 +679,7 @@
       "workspace",
       "liegenschaften-inventar"
     ],
-    "contact": "pfm",
+    "contact": "immobilienmanagement",
     "updated": "03.06.2026",
     "entries": [
       {
@@ -477,7 +688,15 @@
         "kind": "external",
         "note": "Zugriff über das eGate-Portal der Bundesverwaltung."
       }
-    ]
+    ],
+    "bild": {
+      "src": "assets/images/applications/flm.jpg",
+      "titel": "Architecture scheme of floor on paper placed on wooden surface near pen and ruler in room",
+      "fotograf": "Anete Lusina",
+      "credit": "Anete Lusina — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/architecture-plan-on-wooden-surface-4792483/"
+    }
   },
   {
     "appId": "edm",
@@ -491,7 +710,6 @@
       "href": "https://edm.admin.ch/"
     },
     "description": "Energiedaten der Liegenschaften (Fachanwendung).",
-    "photo": "1466611653911-95081537e5b7",
     "area": "buildings",
     "subtitle": "Energiedatenmanagement",
     "long": "Das Energiedatenmanagement erfasst Verbräuche für Wärme, Strom und Wasser je Gebäude und Zählpunkt. Die Daten sind Grundlage für die Treibhausgasbilanz, das Energiereporting nach Vorbildfunktion des Bundes und die Wirkungskontrolle von Sanierungen.",
@@ -504,8 +722,8 @@
     },
     "resources": [
       {
-        "label": "Energiegesetz — Vorbildfunktion des Bundes",
-        "href": "#/knowledge?tab=grundlagen"
+        "label": "Weisungen nachhaltiges Immobilienmanagement",
+        "href": "#/knowledge/accommodation?section=wi-nachhaltigkeit"
       },
       {
         "label": "Datenportal — Auswertungen Energie",
@@ -525,7 +743,15 @@
         "kind": "external",
         "note": "Energie- und Verbrauchsdaten der Bundesbauten."
       }
-    ]
+    ],
+    "bild": {
+      "src": "assets/images/applications/edm.jpg",
+      "titel": "Multiple smart utility meters lined up on a blue industrial wall.",
+      "fotograf": "Robert So",
+      "credit": "Robert So — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/row-of-industrial-utility-meters-on-blue-wall-35107502/"
+    }
   },
   {
     "appId": "pva",
@@ -539,7 +765,6 @@
       "href": "https://abiotpro.abidex.ch/dashboard/e644e040-4bc8-11ee-a5ec-f1931d04d733?publicId=62eedd20-4bb1-11ee-a5ec-f1931d04d733"
     },
     "description": "Monitoring Photovoltaikanlagen (Fachanwendung).",
-    "photo": "1509391366360-2e959784a276",
     "area": "buildings",
     "subtitle": "Photovoltaikanlagen",
     "long": "Die Anwendung führt die Photovoltaikanlagen auf Bundesbauten mit Standort, Leistung, Inbetriebnahme und Ertrag. Sie dient dem Ausbaumonitoring im Rahmen der Klimaziele und der Betriebsüberwachung der bestehenden Anlagen.",
@@ -551,8 +776,8 @@
     },
     "resources": [
       {
-        "label": "Klima- und Innovationsgesetz (KlG)",
-        "href": "#/knowledge?tab=grundlagen"
+        "label": "Weisungen nachhaltiges Immobilienmanagement",
+        "href": "#/knowledge/accommodation?section=wi-nachhaltigkeit"
       },
       {
         "label": "Nachhaltigkeitsbericht BBL",
@@ -573,7 +798,15 @@
         "kind": "external",
         "note": "Ertrag und Betrieb der Photovoltaikanlagen."
       }
-    ]
+    ],
+    "bild": {
+      "src": "assets/images/applications/pva.jpg",
+      "titel": "Close-up view of modern solar panels on a rooftop against a clear blue sky, representing c",
+      "fotograf": "Vladimir Srajber",
+      "credit": "Vladimir Srajber — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/blue-solar-panels-on-the-roof-13963757/"
+    }
   },
   {
     "appId": "qualitygate",
@@ -587,7 +820,6 @@
       "href": "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=3XrianaCOEqIwTqcH5c3Z_bpVBhHeQhDikh1-QT7itdUN0lIMlAzMldRUVY1RkFaRldJU1hHOURMSy4u"
     },
     "description": "Qualitätssicherung Bauprojekte (Fachanwendung).",
-    "photo": "1562564055-71e051d33c19",
     "area": "buildings",
     "subtitle": "Qualitätssicherung Bauprojekte",
     "long": "QualityGate prüft Projektdaten und Modelllieferungen automatisiert gegen die Vorgaben des BBL, bevor sie in die führenden Systeme übernommen werden. Geprüft werden Vollständigkeit, Struktur und Benennung — Abweichungen gehen als Prüfbericht an die Projektleitung zurück.",
@@ -600,15 +832,15 @@
     },
     "resources": [
       {
-        "label": "BIM-Vorgaben des BBL",
-        "href": "#/knowledge?tab=grundlagen"
+        "label": "Standards und Weisungen — Nutzung und Betrieb der Bauten",
+        "href": "#/knowledge/accommodation?section=wi-standards"
       }
     ],
     "related": [
       "cde",
       "bauprojekte-eppm"
     ],
-    "contact": "dres",
+    "contact": "lcdm-bim",
     "updated": "09.06.2026",
     "entries": [
       {
@@ -617,7 +849,15 @@
         "kind": "external",
         "note": "Prüfauftrag für ein Bauprojekt anmelden."
       }
-    ]
+    ],
+    "bild": {
+      "src": "assets/images/applications/qualitygate.jpg",
+      "titel": "A female engineer in workwear checks her tablet on a construction site, highlighting moder",
+      "fotograf": "Mikael Blomkvist",
+      "credit": "Mikael Blomkvist — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/woman-in-white-hardhat-holding-silver-touchscreen-device-8960944/"
+    }
   },
   {
     "appId": "workspace",
@@ -631,7 +871,6 @@
       "href": "#/app/workspace"
     },
     "description": "Möblierung, Belegungsplanung, Multispace und Buchungen.",
-    "photo": "1524758631624-e2822e304c36",
     "area": "logistics",
     "subtitle": "Arbeitsplatz und Belegung",
     "long": "Workspace Management bildet Arbeitsplätze, Zonen und Belegung der Bürogebäude ab. Es unterstützt die Planung nach Desk-Sharing-Faktor, die Zuteilung von Zonen an Verwaltungseinheiten und die Auswertung der tatsächlichen Nutzung.",
@@ -644,7 +883,7 @@
     "resources": [
       {
         "label": "Weisung Neue Arbeitswelten (NAW)",
-        "href": "#/knowledge?tab=grundlagen"
+        "href": "#/knowledge/accommodation?section=wi-standards"
       }
     ],
     "related": [
@@ -652,7 +891,15 @@
       "flm"
     ],
     "contact": "campus",
-    "updated": "22.06.2026"
+    "updated": "22.06.2026",
+    "bild": {
+      "src": "assets/images/applications/workspace.jpg",
+      "titel": "Spacious open-plan office with cubicles and modern furnishings, ideal for collaborative wo",
+      "fotograf": "DOAN THANH BINH",
+      "credit": "DOAN THANH BINH — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/modern-open-office-space-with-cubicles-36631700/"
+    }
   },
   {
     "appId": "raumbuchung",
@@ -663,10 +910,9 @@
     "accessNote": "Intern + Extern",
     "link": {
       "kind": "app",
-      "href": "#/app/workspace"
+      "href": "#/app/workspace?tab=buchung"
     },
     "description": "Sitzungsräume, Arbeitsplätze und Parkplätze reservieren.",
-    "photo": "1486406146926-c627a92ad1ab",
     "area": "logistics",
     "subtitle": "Räume und Parkplätze buchen",
     "long": "Über die Raum- und Parkplatzbuchung reservieren Mitarbeitende Sitzungszimmer, Arbeitsplätze und Parkplätze an den Standorten des Bundes. Die Verfügbarkeit richtet sich nach der Zuteilung der jeweiligen Verwaltungseinheit.",
@@ -677,16 +923,33 @@
         "Parkplätze unterliegen der Zuteilung durch die Verwaltungseinheit."
       ]
     },
-    "resources": [],
+    "resources": [
+      {
+        "label": "Dienstleistung «Raum-, Arbeitsplatz- & Parkplatzbuchung»",
+        "href": "#/services/raumbuchung"
+      },
+      {
+        "label": "Workspace Management — Belegungsplanung",
+        "href": "#/applications/workspace"
+      }
+    ],
     "related": [
       "workspace"
     ],
     "contact": "campus",
-    "updated": "30.06.2026"
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/raumbuchung.jpg",
+      "titel": "Sleek, minimalist conference room with glass walls, long table, and office chairs.",
+      "fotograf": "Pixabay",
+      "credit": "Pixabay — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/rectangular-white-table-with-rolling-chairs-inside-room-260689/"
+    }
   },
   {
     "appId": "eshop",
-    "name": "Online-Shop Bundesverwaltung",
+    "name": "BBL Intranetshop (E-Shop)",
     "group": "Arbeitsplatz & Logistik",
     "icon": "ShoppingCart",
     "audience": "both",
@@ -695,11 +958,10 @@
       "kind": "external",
       "href": "#"
     },
-    "description": "Büromaterial, Mobiliar und IT-Verbrauchsmaterial bestellen.",
-    "photo": "1553413077-190dd305871c",
+    "description": "Büromaterial, Mobiliar, Hausdienst- und IT-Verbrauchsmaterial bestellen.",
     "area": "logistics",
-    "subtitle": "Online-Shop der Bundesverwaltung",
-    "long": "Über den Online-Shop beziehen Verwaltungseinheiten Büromaterial, Publikationen, Drucksachen und Mobiliar aus dem Sortiment des BBL. Bestellungen laufen über die Kostenstelle der Verwaltungseinheit; Lieferung und Retouren erfolgen über die Logistik des BBL.",
+    "subtitle": "Intranetshop des BBL",
+    "long": "Über den Intranetshop beziehen Verwaltungseinheiten Büromaterial, Hausdienstmaterial, IT-Verbrauchsmaterial und Mobiliar aus dem Sortiment des BBL. Bestellungen laufen über die Kostenstelle der Verwaltungseinheit; Lieferung und Retouren erfolgen über die Logistik des BBL. Der Shop richtet sich an die Bundesverwaltung — amtliche Publikationen für ein breiteres Publikum laufen über den Publikationsshop.",
     "access": {
       "note": "Für bestellberechtigte Personen der Verwaltungseinheiten.",
       "steps": [
@@ -709,13 +971,29 @@
     },
     "resources": [
       {
-        "label": "Dienstleistungen — Beschaffung",
-        "href": "#/services?topic=E"
+        "label": "Dienstleistung «Büromaterial & Mobiliar bestellen (E-Shop)»",
+        "href": "#/services/eshop-bestellen"
+      },
+      {
+        "label": "Dienstleistung «Zugang BBL Intranetshop beantragen (Kreis 3)»",
+        "href": "#/services/intranetshop-zugang"
       }
     ],
-    "related": [],
-    "contact": "kbb",
-    "updated": "14.05.2026"
+    "related": [
+      "bundespublikationen",
+      "moebelboerse",
+      "lager-material"
+    ],
+    "contact": "shop-support",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/eshop.jpg",
+      "titel": "Flat lay of office supplies on a wooden desk for a neat workspace setup.",
+      "fotograf": "Pavel Danilyuk",
+      "credit": "Pavel Danilyuk — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/office-supplies-on-a-desk-6340707/"
+    }
   },
   {
     "appId": "egate",
@@ -728,11 +1006,10 @@
       "kind": "external",
       "href": "#"
     },
-    "description": "Föderierter Zugang / Single Sign-on der Bundesverwaltung.",
-    "photo": "1449157291145-7efd050a4d0e",
+    "description": "Intranet und zentrales Einstiegsportal der Bundesverwaltung.",
     "area": "central",
     "subtitle": "Zentrales Portal der Bundesverwaltung",
-    "long": "eGate ist das gemeinsame Einstiegsportal der Bundesverwaltung. Es bündelt personalisierte Informationen, Anwendungen und Dienste der Departemente und Ämter und ist für alle Mitarbeitenden der Bundesverwaltung der zentrale Startpunkt.",
+    "long": "eGate ist das gemeinsame Einstiegsportal der Bundesverwaltung. Es bündelt personalisierte Informationen, Anwendungen und Dienste der Departemente und Ämter und ist für alle Mitarbeitenden der Bundesverwaltung der zentrale Startpunkt. eGate ist das Portal, nicht der Anmeldedienst: die Authentisierung und das Single Sign-on leisten die Identitätsdienste des Bundes (eIAM, AGOV).",
     "access": {
       "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
       "steps": [
@@ -747,12 +1024,29 @@
         "note": "Einstiegsportal der Bundesverwaltung."
       }
     ],
-    "resources": [],
+    "resources": [
+      {
+        "label": "Admin-Directory — Personen und Organisationseinheiten",
+        "href": "#/applications/admin-directory"
+      },
+      {
+        "label": "InfoPers — Personaldaten und Zeitsaldi",
+        "href": "#/applications/infopers"
+      }
+    ],
     "related": [
       "infopers"
     ],
-    "contact": "support-bil",
-    "updated": "01.07.2026"
+    "contact": "servicedesk-bit",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/egate.jpg",
+      "titel": "Sleek office desk setup featuring a laptop, glass of water, and open window view.",
+      "fotograf": "EVG Kowalievska",
+      "credit": "EVG Kowalievska — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/turned-on-silver-laptop-on-tabletop-1128207/"
+    }
   },
   {
     "appId": "infopers",
@@ -766,7 +1060,6 @@
       "href": "#"
     },
     "description": "HR-Self-Service der Bundesverwaltung.",
-    "photo": "1543872084-c7bd3822856f",
     "area": "central",
     "subtitle": "Personalinformationssystem",
     "long": "InfoPers ist das Personalinformationssystem der Bundesverwaltung. Mitarbeitende sehen und pflegen dort ihre Personaldaten, Zeitsaldi und Abwesenheiten; Führungskräfte nutzen es für Bewilligungen und Auswertungen.",
@@ -776,12 +1069,29 @@
         "Anmeldung über eIAM mit dem Bundeskonto."
       ]
     },
-    "resources": [],
+    "resources": [
+      {
+        "label": "eGate — Einstiegsportal der Bundesverwaltung",
+        "href": "#/applications/egate"
+      },
+      {
+        "label": "Admin-Directory — Zuständigkeiten und Organisationseinheiten",
+        "href": "#/applications/admin-directory"
+      }
+    ],
     "related": [
       "egate"
     ],
-    "contact": "support-bil",
-    "updated": "01.07.2026"
+    "contact": "epa-cchr",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/infopers.jpg",
+      "titel": "A woman in a business suit participates in a job interview, showcasing professionalism and",
+      "fotograf": "Edmond Dantès",
+      "credit": "Edmond Dantès — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/woman-in-a-job-interview-4344878/"
+    }
   },
   {
     "appId": "superb",
@@ -794,11 +1104,10 @@
       "kind": "external",
       "href": "#"
     },
-    "description": "ERP der Bundesverwaltung (Finanzen, Beschaffung, Immobilien, EPPM). Migration von SAP ECC auf S/4HANA im Programm SUPERB.",
-    "photo": "1578575437130-527eed3abbec",
+    "description": "ERP der Bundesverwaltung (Finanzen, Beschaffung, Immobilien/RE-FX, Bauprojekte/ePPM). Migration von SAP ECC auf S/4HANA im Programm SUPERB.",
     "area": "central",
     "subtitle": "SAP S/4HANA der Bundesverwaltung",
-    "long": "Mit dem Programm SUPERB migriert die Bundesverwaltung ihre bisherigen SAP-Systeme auf SAP S/4HANA. Für das BBL betrifft das insbesondere Finanzen, Beschaffung und das Immobilienmanagement — die Stammdaten aus dem Liegenschafteninventar stammen aus diesem System.",
+    "long": "Mit dem Programm SUPERB migriert die Bundesverwaltung ihre bisherigen SAP-Systeme auf SAP S/4HANA. Für das BBL betrifft das insbesondere Finanzen, Beschaffung und das Immobilienmanagement. Fachlich sind es zwei getrennte Module: SAP RE-FX führt Wirtschaftseinheit, Gebäude, Grundstück, Bemessungen und die Mietverwaltung (Mietobjekt, Mietvertrag), SAP ePPM die Bauprojekte. Die Stammdaten des Liegenschafteninventars stammen aus RE-FX.",
     "access": {
       "note": "Rollenbasiert für Mitarbeitende mit SAP-Berechtigung.",
       "steps": [
@@ -809,15 +1118,24 @@
     "resources": [
       {
         "label": "Datenbezug und API Verzeichnis — Datensätze aus SAP",
-        "href": "#/data/katalog?q=SAP"
+        "href": "#/data/catalog?q=SAP"
       }
     ],
     "related": [
       "liegenschaften-inventar",
+      "sap-eppm",
       "bauprojekte-eppm"
     ],
-    "contact": "support-bil",
-    "updated": "25.06.2026"
+    "contact": "servicedesk-bit",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/superb.jpg",
+      "titel": "Detailed image of a server rack with glowing lights in a modern data center.",
+      "fotograf": "panumas nikhomkhai",
+      "credit": "panumas nikhomkhai — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/close-up-photo-of-mining-rig-1148820/"
+    }
   },
   {
     "appId": "admin-directory",
@@ -831,7 +1149,6 @@
       "href": "#"
     },
     "description": "Personen- und Organisationsverzeichnis der Bundesverwaltung (ersetzt das PDF-Verzeichnis).",
-    "photo": "1590274853856-f22d5ee3d228",
     "area": "central",
     "subtitle": "Personen- und Organisationsverzeichnis",
     "long": "Das Admin-Directory ist das Verzeichnis der Personen, Organisationseinheiten und Standorte der Bundesverwaltung. Es liefert die Referenz für Zuständigkeiten — unter anderem für die Dateneigner und Datenverwalter im Datenbezug.",
@@ -849,13 +1166,30 @@
         "note": "Personen, Organisationseinheiten und Standorte der Bundesverwaltung."
       }
     ],
-    "resources": [],
+    "resources": [
+      {
+        "label": "Datenbezug und API Verzeichnis — Dateneigner und Datenverwalter",
+        "href": "#/data/catalog"
+      },
+      {
+        "label": "eGate — Einstiegsportal der Bundesverwaltung",
+        "href": "#/applications/egate"
+      }
+    ],
     "related": [
       "egate",
       "infopers"
     ],
-    "contact": "support-bil",
-    "updated": "01.07.2026"
+    "contact": "servicedesk-bit",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/admin-directory.jpg",
+      "titel": "Confident multiethnic team posing in a modern office setting showcasing diversity and prof",
+      "fotograf": "Tiger Lily",
+      "credit": "Tiger Lily — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/office-team-posing-at-the-camera-7109061/"
+    }
   },
   {
     "appId": "bundespublikationen",
@@ -869,8 +1203,40 @@
       "href": "#"
     },
     "description": "Broschüren, Formulare und amtliche Publikationen des Bundes bestellen und Lagerbestände abfragen (Warengruppe Publikationen).",
-    "photo": "1583521214690-73421a1829a9",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Amtliche Publikationen bestellen",
+    "long": "Über den Publikationsshop werden Broschüren, Formulare und amtliche Publikationen des Bundes bestellt. Der Shop weist die verfügbaren Lagerbestände aus; das BBL führt die Warengruppe Publikationen, die Lagerhaltung und den Versand. Anders als der Intranetshop richtet er sich nicht nur an die Verwaltungseinheiten.",
+    "access": {
+      "note": "Offen für die Verwaltungseinheiten; ein Teil des Sortiments ist öffentlich bestellbar.",
+      "steps": [
+        "Bestellung mit Angabe von Titel und Menge.",
+        "Grossmengen und Nachdrucke klärt die Warengruppe Publikationen."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Bundespublikationen bestellen»",
+        "href": "#/services/publikation-bestellen"
+      },
+      {
+        "label": "Dienstleistung «Publikationsauftrag erteilen»",
+        "href": "#/services/publikationsauftrag"
+      }
+    ],
+    "related": [
+      "produktion-druck",
+      "eshop"
+    ],
+    "contact": "warengruppe-publikationen",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/bundespublikationen.jpg",
+      "titel": "Colorful collection of travel brochures on display at a bookstore.",
+      "fotograf": "Owen.outdoors",
+      "credit": "Owen.outdoors — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/display-of-various-travel-and-tourism-brochures-29452731/"
+    }
   },
   {
     "appId": "umzug-transport",
@@ -884,8 +1250,41 @@
       "href": "#"
     },
     "description": "Umzüge, interne Transporte und Entsorgungsaufträge erfassen, disponieren und den Status verfolgen.",
-    "photo": "1757837593538-b4a8654132f1",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Umzüge, Transporte und Entsorgung",
+    "long": "Über das Umzugs- und Transportmanagement melden Verwaltungseinheiten Büroumzüge, interne Transporte und Entsorgungsaufträge an. Erfasst werden Ausgangs- und Zielort, Umfang und Wunschtermin; die Disposition übernimmt der Hausdienst des BBL, der Auftragsstatus bleibt nachvollziehbar. Freiwerdendes Mobiliar geht wo möglich in die Möbelbörse statt in die Entsorgung.",
+    "access": {
+      "note": "Für die Verwaltungseinheiten sowie Mobiliar und Hausdienst des BBL.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Umzüge ab einer bestimmten Grösse werden mit dem Objektbetrieb terminiert."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Umzug, Transport & Entsorgung»",
+        "href": "#/services/umzug-anmelden"
+      },
+      {
+        "label": "Möbelbörse — Mobiliar wiederverwenden",
+        "href": "#/applications/moebelboerse"
+      }
+    ],
+    "related": [
+      "moebelboerse",
+      "facility-auftrag",
+      "lager-material"
+    ],
+    "contact": "mobiliar-hausdienst",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/umzug-transport.jpg",
+      "titel": "A couple packing and organizing office supplies into labeled boxes, preparing for relocati",
+      "fotograf": "Blue Bird",
+      "credit": "Blue Bird — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/couple-putting-a-label-on-box-7217852/"
+    }
   },
   {
     "appId": "moebelboerse",
@@ -899,8 +1298,40 @@
       "href": "#"
     },
     "description": "Kreislauf-Plattform für gebrauchtes Mobiliar: Möbel intern weiterverwenden, reservieren oder im Mobiliarverkauf für Bundesmitarbeitende beziehen.",
-    "photo": "1748975026870-1f7041b9c8d1",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Mobiliar wiederverwenden",
+    "long": "Die Möbelbörse führt gebrauchtes Mobiliar aus Umzügen und Auflösungen und stellt es für die Wiederverwendung innerhalb der Bundesverwaltung bereit. Verwaltungseinheiten reservieren Stücke für den eigenen Bedarf; was nicht weiterverwendet wird, geht in den Mobiliarverkauf für Bundesmitarbeitende. Ziel ist die Verlängerung der Nutzungsdauer — Wiederverwendung vor Neubeschaffung.",
+    "access": {
+      "note": "Für die Verwaltungseinheiten; der Mobiliarverkauf steht Mitarbeitenden des Bundes offen.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Reservationen sind befristet; Transport und Abholung laufen über den Hausdienst."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Büromaterial & Mobiliar bestellen (E-Shop)»",
+        "href": "#/services/eshop-bestellen"
+      },
+      {
+        "label": "Dienstleistung «Umzug, Transport & Entsorgung»",
+        "href": "#/services/umzug-anmelden"
+      }
+    ],
+    "related": [
+      "umzug-transport",
+      "eshop"
+    ],
+    "contact": "mobiliar-hausdienst",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/moebelboerse.jpg",
+      "titel": "Modern office space featuring pink ergonomic chairs around a sleek conference table.",
+      "fotograf": "RDNE Stock project",
+      "credit": "RDNE Stock project — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/chairs-and-a-table-in-the-office-7845304/"
+    }
   },
   {
     "appId": "kurier-fuhrpark",
@@ -914,8 +1345,36 @@
       "href": "#"
     },
     "description": "Kurieraufträge des BBL aufgeben, Sendungen verfolgen und Fahrzeuge des Fuhrparks reservieren.",
-    "photo": "1533324445462-9c7e805a94a1",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Kurierdienst und Fahrzeuge",
+    "long": "Der Kurierdienst des BBL befördert Sendungen zwischen den Standorten der Bundesverwaltung. Über die Anwendung werden Kurieraufträge aufgegeben und Sendungen verfolgt; zusätzlich lassen sich Fahrzeuge des BBL-Fuhrparks für Dienstfahrten reservieren. Für den externen Postversand grösserer Aussendungen ist die Produktion des BBL zuständig.",
+    "access": {
+      "note": "Für Mitarbeitende des BBL und beauftragte Verwaltungseinheiten.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Fahrzeugreservationen erfordern eine gültige Fahrberechtigung."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Versandauftrag erteilen»",
+        "href": "#/services/versandauftrag"
+      }
+    ],
+    "related": [
+      "produktion-druck",
+      "umzug-transport"
+    ],
+    "contact": "mobiliar-hausdienst",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/kurier-fuhrpark.jpg",
+      "titel": "Two white delivery vans parked in a spacious parking lot under a clear blue sky.",
+      "fotograf": "Bernard Foss",
+      "credit": "Bernard Foss — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/white-vans-parked-on-gray-concrete-road-4620555/"
+    }
   },
   {
     "appId": "produktion-druck",
@@ -929,8 +1388,44 @@
       "href": "#"
     },
     "description": "Druck-, Serienbrief- und Versandaufträge einreichen (Arbeitsvorbereitung AVOR, Digital Druck, Versenden).",
-    "photo": "1503694978374-8a2fa686963a",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Druck, Serienbriefe und Versand",
+    "long": "Die Produktion des BBL übernimmt Digitaldruck, Serienbriefe und den Versand für die Bundesverwaltung. Aufträge gehen über die Arbeitsvorbereitung (AVOR) ein, die Umfang, Material und Termin klärt und den Auftrag einplant. Abgedeckt sind Kleinserien bis zu grossen Aussendungen mit Adressaufbereitung und Postaufgabe.",
+    "access": {
+      "note": "Für die Verwaltungseinheiten; Auftragsannahme und Beratung über die Arbeitsvorbereitung (AVOR).",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Umfangreiche Aufträge werden vorab mit der AVOR terminiert."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Digitaldruckauftrag erteilen»",
+        "href": "#/services/druckauftrag"
+      },
+      {
+        "label": "Dienstleistung «Versandauftrag erteilen»",
+        "href": "#/services/versandauftrag"
+      },
+      {
+        "label": "Dienstleistung «Layout- oder Output-Design-Auftrag erteilen»",
+        "href": "#/services/avor-auftrag"
+      }
+    ],
+    "related": [
+      "bundespublikationen",
+      "kurier-fuhrpark"
+    ],
+    "contact": "produktion",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/produktion-druck.jpg",
+      "titel": "Close-up of an industrial printing press producing designs.",
+      "fotograf": "João  Jesus",
+      "credit": "João  Jesus — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/machinery-in-factory-19316517/"
+    }
   },
   {
     "appId": "facility-auftrag",
@@ -944,8 +1439,44 @@
       "href": "#"
     },
     "description": "Reinigungs-, Hausdienst- und Kleinaufträge bestellen und beauftragen (ergänzt die Störungsmeldung).",
-    "photo": "1563453392212-326f5e854473",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Reinigung, Hausdienst und Kleinaufträge",
+    "long": "Über das Facility-Auftragssystem bestellen Verwaltungseinheiten Leistungen des Objektbetriebs: Sonderreinigungen, Hausdienstarbeiten sowie Klein- und Reparaturaufträge am Gebäude. Es ergänzt die Störungsmeldung — dort wird ein Mangel gemeldet, hier eine Leistung beauftragt. Aufträge werden über den Objektbetrieb des jeweiligen Standorts disponiert.",
+    "access": {
+      "note": "Für die Verwaltungseinheiten sowie den Objektbetrieb des BBL.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Kostenpflichtige Leistungen werden der Verwaltungseinheit verrechnet."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Störungs-, Reinigungs- & Reparaturmeldung»",
+        "href": "#/services/stoerung-melden"
+      },
+      {
+        "label": "Dienstleistung «Kleinauftrag am Gebäude erteilen»",
+        "href": "#/services/kleinauftrag-gebaeude"
+      },
+      {
+        "label": "Dienstleistung «Leistungsverrechnung & Preiskatalog»",
+        "href": "#/services/leistungsverrechnung"
+      }
+    ],
+    "related": [
+      "umzug-transport",
+      "fahnen-event"
+    ],
+    "contact": "helpdesk-om",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/facility-auftrag.jpg",
+      "titel": "A comprehensive collection of professional cleaning tools on a cart in an indoor environme",
+      "fotograf": "Caleb Oquendo",
+      "credit": "Caleb Oquendo — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/professional-cleaning-supplies-in-indoor-setting-34516664/"
+    }
   },
   {
     "appId": "fahnen-event",
@@ -959,8 +1490,40 @@
       "href": "#"
     },
     "description": "Fahnenmanagement, Blumendekorationen und Ausstattung für Anlässe des Bundes planen und bestellen.",
-    "photo": "1722073650943-fbebd9d244e1",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Fahnen, Dekoration und Anlässe",
+    "long": "Das BBL stattet Anlässe des Bundes aus: Beflaggung der Bundesbauten, Blumen- und Raumdekoration sowie Mobiliar und Material für Empfänge und Konferenzen. Über die Anwendung werden Bedarf, Ort und Termin gemeldet; die Logistik des BBL stellt bereit, liefert und baut zurück. Die Beflaggung folgt den Vorgaben des Bundes zu Anlass und Rangordnung.",
+    "access": {
+      "note": "Für die Verwaltungseinheiten; Bereitstellung durch Mobiliar und Hausdienst des BBL.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Anlässe möglichst früh melden — Material und Personal sind begrenzt."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Dekorationen bestellen»",
+        "href": "#/services/dekoration-bestellen"
+      },
+      {
+        "label": "Dienstleistung «Innenbegrünung bestellen»",
+        "href": "#/services/innenbegruenung-bestellen"
+      }
+    ],
+    "related": [
+      "facility-auftrag",
+      "lager-material"
+    ],
+    "contact": "mobiliar-hausdienst",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/fahnen-event.jpg",
+      "titel": "Front view of Swiss Parliament Building in Bern with Swiss and EU flags.",
+      "fotograf": "Christian Wasserfallen",
+      "credit": "Christian Wasserfallen — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/the-switzerland-and-europian-flags-near-the-court-of-swiss-confederation-in-bern-switzerland-7327878/"
+    }
   },
   {
     "appId": "lager-material",
@@ -974,7 +1537,35 @@
       "href": "#"
     },
     "description": "Lagerbestände, Warengruppen und Nachschub für Büro- und Hausdienstmaterial bewirtschaften.",
-    "photo": "1749244768351-2726dc23d26c",
-    "area": "logistics"
+    "area": "logistics",
+    "subtitle": "Lager und Nachschub",
+    "long": "Die Lager- und Materialwirtschaft führt die Bestände des BBL an Büromaterial, Hausdienstmaterial und Mobiliar. Sie bewirtschaftet Warengruppen, Mindestbestände und Nachschub und ist damit die Grundlage für die Lieferfähigkeit des Intranetshops. Bestellungen der Verwaltungseinheiten laufen nicht hier, sondern über den Shop.",
+    "access": {
+      "note": "Nur BBL-Personal: Lagerbewirtschaftung und Einkauf.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Dispositionsrechte vergibt die Materialwirtschaft."
+      ]
+    },
+    "resources": [
+      {
+        "label": "BBL Intranetshop — Bestellsicht der Verwaltungseinheiten",
+        "href": "#/applications/eshop"
+      }
+    ],
+    "related": [
+      "eshop",
+      "moebelboerse"
+    ],
+    "contact": "beschaffung",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/lager-material.jpg",
+      "titel": "Wide view of an organized industrial warehouse with metal shelving and stored merchandise.",
+      "fotograf": "Daniel Andraski",
+      "credit": "Daniel Andraski — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/narrow-walkway-between-metal-shelves-12234109/"
+    }
   }
 ]

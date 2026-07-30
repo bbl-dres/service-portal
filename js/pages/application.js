@@ -67,7 +67,7 @@ export default function render(ctx, appId) {
       title: a.name, lead: a.description,
       tags: `${C.audienceTag(a.audience)}${a.hero ? C.badge('Schlüsselanwendung', 'info') : ''}${
         external ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue')}`,
-      image: a.photo ? C.photo({ id: a.photo, alt: '', w: 800 }) : '',
+      image: heroBild(C, a),
     })}
 
     <div class="container--grid gap--responsive mt-6">
@@ -118,6 +118,19 @@ export default function render(ctx, appId) {
       </aside>
     </div>
   </div>`;
+}
+
+// Titelbild — ohne Bildlegende. Die Aufnahmen sind Stockbilder von Pexels und
+// liegen lokal unter assets/images/applications/. Die Pexels-Lizenz erlaubt die
+// Nutzung auch kommerziell und verlangt KEINE Namensnennung, der Nachweis ist
+// hier also keine Bedingung, sondern nur Zierde — und eine Zeile «Fotograf —
+// Pexels» unter jedem Symbolbild sagt der Leserin nichts über die Anwendung.
+// Urheber, Lizenz und Quellseite bleiben in data/applications.json `bild`
+// erfasst, damit die Herkunft beim Pflegen nachvollziehbar bleibt.
+function heroBild(C, a) {
+  const b = a.bild;
+  if (!b || !b.src) return '';
+  return C.photo({ src: b.src, alt: b.titel || a.name, w: 800 });
 }
 
 function crumbs() {

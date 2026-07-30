@@ -89,7 +89,10 @@ export default async function render(ctx) {
     title: a.name,
     desc: a.description,
     href: `#/applications/${encodeURIComponent(a.appId)}`,
-    photo: { id: a.photo, alt: '' },
+    // Die Aufnahmen liegen lokal und frei lizenziert unter
+    // assets/images/applications/ (Nachweis in `bild`). Kein Unsplash-Rückfall
+    // mehr — wie beim Gebäudebestand bleibt ohne Datei die Farbfläche.
+    photo: { src: a.bild && a.bild.src, alt: '' },
     badges: [
       C.audienceTag(a.audience),
       ...(a.hero ? [C.badge('Schlüsselanwendung', 'info')] : []),

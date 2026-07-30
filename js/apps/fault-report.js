@@ -78,9 +78,18 @@ export default async function render(ctx) {
   const buildings = core.buildings();
   const isbo = core.contacts().find(c => c.contactId === 'isbo');
 
+  // Vorbelegung aus dem Aufruf: `?building=<bbl_id>&room=<Raumnummer>`. Das
+  // Mietendenportal verlinkt aus dem Grundriss hierher (js/apps/tenancies.js) —
+  // wer dort auf einen Raum geklickt hat, soll Gebäude und Ort nicht noch
+  // einmal aus einer Liste von 21 Objekten heraussuchen müssen. Unbekannte IDs
+  // werden ignoriert statt übernommen, sonst stünde im Feld eine Kennung, die
+  // die Auswahlliste gar nicht führt.
+  const vorgabeBld = query.get('building');
+  const gueltig = vorgabeBld && buildings.some((b) => b.bbl_id === vorgabeBld);
+
   const state = {
-    buildingId: buildings[0] ? buildings[0].bbl_id : '',
-    ort: '',
+    buildingId: gueltig ? vorgabeBld : (buildings[0] ? buildings[0].bbl_id : ''),
+    ort: query.get('room') || '',
     category: cfg.categories[0] || '',
     beschreibung: '',
     dringlichkeit: 'normal',

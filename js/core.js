@@ -42,6 +42,13 @@ const DEFERRED = {
   areas:            'data/area-measurements.json',  // Flächen / Bemessungen
   buildingContacts: 'data/building-contacts.json',  // Objektkontakte (nicht die Dienstleistungs-Kontakte)
   landcovers:       'data/landcovers.geojson',      // Bodenbedeckung, nur im Grundstück-Register
+  // Mietendenportal (#/app/tenancies): Mietverhältnisse, Geschosse, Räume.
+  // Die drei Bestände sind selbsttragend — Standort, Bild und Ansprechstellen
+  // stehen im Mietverhältnis, Nutzung und SIA-Kategorie am Raum. Erzeugt von
+  // scripts/build-tenancy-data.mjs.
+  tenancies:        'data/tenancies.json',
+  floors:           'data/floors.json',
+  spaces:           'data/spaces.json',
 };
 // data/data-products.json bleibt liegen (DataService- und Concept-Einträge für
 // einen künftigen Metadatenkatalog), wird aber von keiner Ansicht mehr gelesen
@@ -61,6 +68,7 @@ const AREA = {
   datasets: 'Datenkatalog', catalogLabels: 'Katalog-Beschriftungen',
   assets: 'Ausstattung', contracts: 'Verträge', costs: 'Kosten', areas: 'Flächen',
   buildingContacts: 'Objektkontakte', landcovers: 'Bodenbedeckung',
+  tenancies: 'Mietverhältnisse', floors: 'Geschosse', spaces: 'Räume',
 };
 
 // Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
@@ -228,6 +236,15 @@ export const core = {
   buildingContactsFor: (bid) => (DATA.buildingContacts || []).filter(c => c.buildingId === bid),
   // Bodenbedeckung je Grundstück (parcelId = bbl_id des Grundstücks).
   landcoversForParcel: (pid) => (DATA.landcovers || []).filter(l => l.parcelId === pid),
+  // Mietendenportal. `floorsForTenancy` liest die Geschossliste AM
+  // Mietverhältnis (gemietet ist ein Geschoss, nicht das Gebäude) — nicht alle
+  // Geschosse des Hauses.
+  tenancies: () => DATA.tenancies || [],
+  tenancy: (id) => find(DATA.tenancies, 'tenancyId', id),
+  floors: () => DATA.floors || [],
+  floor: (id) => find(DATA.floors, 'floorId', id),
+  floorsForTenancy: (t) => (t && t.floors ? t.floors : []).map((fid) => find(DATA.floors, 'floorId', fid)).filter(Boolean),
+  spacesForFloor: (fid) => (DATA.spaces || []).filter((s) => s.floorId === fid),
   services: () => DATA.services || [],
   service: (id) => find(DATA.services, 'serviceId', id),
   servicesByDomain: () => groupBy(DATA.services || [], 'domain'),

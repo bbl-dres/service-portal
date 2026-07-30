@@ -190,10 +190,20 @@ export function tile({ title, desc, href, extra = '', titleTag = 'h3' }) {
 
 // --- Cards (card.postcss) ----------------------------------------------------
 export function card(o) {
+  // `chips`: kurze Merkmale ALS AUFLAGE auf dem Bild statt als Pillenzeile im
+  // Kartenkörper — dasselbe Muster wie die Galerie des Liegenschaften-Inventars
+  // (`.pf-card__chips`, portfolio.js). Sinnvoll für Angaben, die man beim
+  // Überfliegen des Rasters mitliest (Land, Status) und die im Text nur Platz
+  // vor Titel und Beschreibung wegnehmen würden. `.card__image` ist bereits
+  // `position:relative`, die Auflage braucht deshalb keinen eigenen Kasten.
+  const chips = (o.chips || []).filter(Boolean);
+  const overlay = chips.length
+    ? `<div class="pf-card__chips">${chips.map((c) => `<span class="pf-card__land">${escape(c)}</span>`).join('')}</div>`
+    : '';
   const media = o.photo
-    ? `<div class="card__image">${photo({ ...o.photo, alt: o.photo.alt || '', w: 640 })}</div>`
-    : o.image ? `<div class="card__image"><img src="${escape(o.image)}" alt="${escape(o.imageAlt || '')}" loading="lazy"></div>`
-    : o.placeholder ? `<div class="card__image"><div class="photo image__not-available">${icon('Image')}<p class="image__not-available-text">${escape(o.placeholder === true ? 'Bild folgt' : o.placeholder)}</p></div></div>`
+    ? `<div class="card__image">${photo({ ...o.photo, alt: o.photo.alt || '', w: 640 })}${overlay}</div>`
+    : o.image ? `<div class="card__image"><img src="${escape(o.image)}" alt="${escape(o.imageAlt || '')}" loading="lazy">${overlay}</div>`
+    : o.placeholder ? `<div class="card__image"><div class="photo image__not-available">${icon('Image')}<p class="image__not-available-text">${escape(o.placeholder === true ? 'Bild folgt' : o.placeholder)}</p></div>${overlay}</div>`
     : '';
   // CD: `card--default` is the plain shadow card (with or without image);
   // `card--universal` is the variant whose image is letterboxed (object-contain),
@@ -232,10 +242,20 @@ export function card(o) {
 }
 
 // --- Tables (table.postcss) --------------------------------------------------
-// columns: [{ key, label, render?(row) }]; rows: object[]; caption names the table.
+// DIE Tabelle des Portals. Jede Tabelle läuft hier durch — direkt oder über
+// C.mountDataTable, das dieselbe Funktion mit Katalogleiste und Blätterleiste
+// umgibt. Zweck ist die Einheitlichkeit: eine Schriftstärke je Zeile, Text
+// links, Zahlen rechts, gleiche Polster, gleiche Trennlinien.
+//
+// columns: [{ key, label, render?(row), align?, width? }]
+//   align: 'right' für Zahlen — richtet Kopf UND Zelle aus, macht die Spalte
+//          schmal und setzt Tabellenziffern (siehe app.css).
+//   width: explizite Spaltenbreite ('12rem', '25%') für die Fälle, in denen das
+//          Schrumpfen nach Inhalt kein gutes Bild gibt. Landet im <colgroup>.
+// rows: object[]; caption names the table.
 // `foot` = fertiges <tr>…</tr>-HTML für eine <tfoot>-Zeile (z. B. eine Summenzeile);
 // der Aufrufer escaped den Inhalt.
-export function table({ columns, rows, zebra, caption, showCaption, foot }) {
+export function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable, emptyText }) {
   // `align: 'right'|'center'|'left'` je Spalte → CD-Ausrichtungs-Utility auf Kopf + Zelle.
   const al = (c) => c.align ? ` class="text-${c.align}"` : '';
   const head = columns.map(c => `<th scope="col"${al(c)}>${escape(c.label)}</th>`).join('');
@@ -245,17 +265,28 @@ export function table({ columns, rows, zebra, caption, showCaption, foot }) {
       return i === 0 ? `<th scope="row"${al(c)}>${cell}</th>` : `<td${al(c)}>${cell}</td>`;
     }).join('')}</tr>`
   ).join('');
-  const cls = ['table', zebra ? 'table--zebra' : '', showCaption ? 'table--caption' : ''].filter(Boolean).join(' ');
+  // `rowsClickable`: die ganze Zeile folgt dem ERSTEN Link in ihr. Das ist reine
+  // Mausbequemlichkeit — die Bedienung mit Tastatur und Screenreader läuft
+  // weiterhin über diesen Link. Ohne einen solchen Link tut die Zeile nichts;
+  // ein `onclick` auf `<tr>` ohne Linkziel wäre für beide unerreichbar.
+  const cls = ['table', zebra ? 'table--zebra' : '', showCaption ? 'table--caption' : '',
+    rowsClickable ? 'table--rows-clickable' : ''].filter(Boolean).join(' ');
   // Nur eine benannte Tabelle wird zur benannten Region: `aria-label="Tabelle"`
   // war für 11 der 15 Tabellen der Name — im Landmarkenbaum standen elf
   // gleichnamige «Tabelle»-Regionen ohne Unterscheidungsmerkmal (Item 5.6).
   // Ohne Namen bleibt der Kasten ein reiner Scrollbereich; tabindex/role setzt
   // `wireScrollRegions` erst, wenn er wirklich überläuft.
+  // <colgroup> nur, wenn mindestens eine Spalte eine Breite vorgibt — ein
+  // colgroup aus lauter leeren <col> wäre wirkungslos, aber nicht kostenlos.
+  const colgroup = columns.some((c) => c.width)
+    ? `<colgroup>${columns.map((c) => `<col${c.width ? ` style="width:${escape(c.width)}"` : ''}>`).join('')}</colgroup>`
+    : '';
   return `<div class="table-wrapper"${caption ? ` role="region" aria-label="${escape(caption)}"` : ''}>
     <table class="${cls}">
     ${caption ? `<caption>${escape(caption)}</caption>` : ''}
+    ${colgroup}
     <thead><tr>${head}</tr></thead>
-    <tbody>${body || `<tr><td colspan="${columns.length}" class="muted">Keine Einträge</td></tr>`}</tbody>
+    <tbody>${body || `<tr><td colspan="${columns.length}" class="table__empty muted">${escape(emptyText || 'Keine Einträge')}</td></tr>`}</tbody>
     ${foot ? `<tfoot>${foot}</tfoot>` : ''}
   </table>
   ${/* Sichtbarer Hinweis auf den waagrechten Überlauf (Item 5.7): eine Tabelle,
@@ -994,8 +1025,12 @@ export function downloadItem({ href, title, note = '', desc = '', meta = [], ico
 // mailto-Stellen (code-review B4).
 export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) {
   if (!contact) return '';
+  // `unit` = Direktionsbereich nach dem BBL-Organigramm. Ohne diese Zeile stand
+  // eine Ansprechstelle ohne Ort in der Organisation da — «Portfoliomanagement»
+  // sagt wenig, «Direktionsbereich Bauten — Portfoliomanagement» verortet sie.
   const lines = [
     contact.name ? `<strong>${escape(contact.name)}</strong>` : '',
+    contact.unit ? escape(contact.unit) : '',
     contact.role ? escape(contact.role) : '',
     contact.email ? `<a href="mailto:${escape(contact.email)}">${escape(contact.email)}</a>` : '',
     contact.phone ? escape(contact.phone) : '',
@@ -1322,7 +1357,7 @@ export function mountDataTable(host, opts = {}) {
   const {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
-    sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '',
+    sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '', rowsClickable = false,
   } = opts;
   const state = { q: '', sort: '', page: 1, open: false, sel: {} };
   facets.forEach((f) => { state.sel[f.dim] = []; });
@@ -1364,10 +1399,16 @@ export function mountDataTable(host, opts = {}) {
         panelHidden: !state.open,
       })}
       ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
-      ${sorted.length
-        ? table({ columns, rows: visible, zebra: true, caption,
-            foot: foot ? foot(visible, sorted) : undefined })
-        : empty(emptyMsg || `Keine ${unit} gefunden.`, { hint: 'Passen Sie Suche oder Filter an.' })}
+      ${/* Auch OHNE Treffer bleibt die Tabelle stehen — mit einer Zeile, die
+            sagt warum. Ein Leerzustand an ihrer Stelle liess Kopfzeile und
+            Spalten verschwinden: man sah nicht mehr, was die Tabelle überhaupt
+            zeigt, und beim Filtern sprang das Layout. Der Text unterscheidet
+            «gar keine Daten» von «nichts für diese Auswahl». */''}
+      ${table({ columns, rows: visible, zebra: true, caption, rowsClickable,
+        emptyText: allRows.length
+          ? `Keine ${unit} für diese Suche oder Filterung.`
+          : (emptyMsg || `Keine ${unit} erfasst.`),
+        foot: sorted.length && foot ? foot(visible, sorted) : undefined })}
       ${pagination({ page: state.page, totalPages, inputId: `${id}-page`, label: `Seitennavigation ${unit}` })}`;
 
     // --- Verdrahtung (nur innerhalb von host) ---
@@ -1393,6 +1434,7 @@ export function mountDataTable(host, opts = {}) {
     host.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => {
       state.page = Math.min(totalPages, Math.max(1, Number(b.dataset.page) || 1)); draw();
     }));
+    if (rowsClickable) wireTableRows(host);
     wirePagination(host, `${id}-page`, state.page, totalPages, (target) => { state.page = target; draw(); });
     // Vorherige Beobachter ABMELDEN. `host` wird nie ersetzt, nur sein
     // innerHTML — ohne das blieben MutationObserver und ResizeObserver je
@@ -1408,7 +1450,25 @@ export function mountDataTable(host, opts = {}) {
   // Abbaufunktion für den Aufrufer (ctx.onUnmount), damit die Beobachter auch
   // beim Verlassen der Route verschwinden.
   return () => { if (unwireScroll) { try { unwireScroll(); } catch { /* egal */ } unwireScroll = null; } };
-  return { redraw: draw };
+}
+
+// Zeilenklick für `C.table({ rowsClickable: true })`. Die Zeile folgt dem
+// ERSTEN Link in sich; Tastatur und Screenreader benutzen weiterhin diesen
+// Link. Klicks auf ein Bedienelement oder auf markierten Text bleiben
+// unangetastet — sonst liesse sich in der Tabelle nichts mehr kopieren.
+// C.mountDataTable ruft das selbst auf; wer C.table direkt rendert, ruft es
+// nach dem Einfügen einmal auf `root` auf.
+export function wireTableRows(root) {
+  if (!root) return () => {};
+  const ctrl = new AbortController();
+  root.addEventListener('click', (e) => {
+    if (e.target.closest('a, button, input, label, select')) return;
+    const tr = e.target.closest('.table--rows-clickable tbody tr');
+    if (!tr) return;
+    if (String(window.getSelection?.() || '').length) return;
+    tr.querySelector('a[href]')?.click();
+  }, { signal: ctrl.signal });
+  return () => ctrl.abort();
 }
 
 // Mehrfachauswahl-Filtergruppe (Checkboxen) — dieselbe Optik wie das Portfolio-
@@ -1526,6 +1586,6 @@ export const C = {
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, chevron, field, val, readForm, tagItem, downloadItem, contactBox, downloadLink,
   pagination, wirePagination, resultsHeader, viewSwitch, loginGate,
   preserveFocus, rerender, wireScrollRegions, wirePipeline, errorSummary, wireErrorSummary, stepIndicator,
-  breakable, mountDataTable, cardAction, cardFooter, pageSection, heroFigure,
+  breakable, mountDataTable, wireTableRows, cardAction, cardFooter, pageSection, heroFigure,
 };
 export default C;

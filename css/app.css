@@ -176,8 +176,17 @@ h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 }
 @media (min-width:1024px){
   .container__center--xs { grid-column:3 / span 8; }
-  .container__main  { grid-column:2 / span 6; }
-  .container__aside { grid-column:8 / span 4; }
+  /* BEWUSSTE ABWEICHUNG VOM CD: dort ist es `lg:col-span-6 lg:col-start-2`
+     (container.postcss:94-98), die Hauptspalte beginnt also erst in Spalte 2.
+     Im CD sind das Artikelseiten, bei denen der eingerückte Fliesstext unter
+     einem Hero eine gewollte optische Marge bildet.
+     Unsere Detailseiten sind Anwendungsseiten: darüber stehen Seitenkopf,
+     Reiterleiste und Katalogleiste, die alle in Spalte 1 beginnen. Die
+     Einrückung las sich dort nicht als Marge, sondern als Fehlausrichtung —
+     der Inhalt wirkte gegenüber allem darüber verschoben. Die Hauptspalte
+     beginnt deshalb links bündig und nimmt die frei gewordene Spalte mit. */
+  .container__main  { grid-column:1 / span 7; }
+  .container__aside { grid-column:9 / span 4; }
 }
 @media (min-width:1280px){
   .container__center--xs { grid-column:4 / span 6; }
@@ -1351,7 +1360,14 @@ table.table thead th { background:var(--color-secondary-50); text-align:left; pa
   border-bottom:1px solid var(--color-border); white-space:nowrap; vertical-align:top; }
 table.table td, table.table tbody th { padding:1rem 1.5rem; border-bottom:1px solid var(--color-border-strong);
   vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
-table.table tbody th { text-align:left; font-weight:var(--fw-bold); color:var(--color-gray-800); }
+/* EINE Schriftstärke in der ganzen Zeile. Das erste Feld bleibt semantisch ein
+   `<th scope="row">` — Hilfsmittel brauchen den Zeilenkopf, um beim Vorlesen
+   einer Zelle zu sagen, zu welcher Zeile sie gehört. Es wird nur nicht mehr
+   fett und nicht mehr dunkler gesetzt: der Fettdruck hat in Listenansichten
+   ganze Beschreibungstexte erfasst und liess jede Tabelle wie eine Rangliste
+   aussehen. Auszeichnung übernimmt jetzt allein die Ausrichtung — Text links,
+   Zahlen rechts. */
+table.table tbody th { text-align:left; font-weight:var(--fw-regular); color:var(--color-gray-600); }
 /* Summenzeile: das erste Feld (z. B. «Total (4)») ist ein <th> im <tfoot> und
    fiel bisher durch beide Polster-Regeln (thead th / tbody th) — also linksbündig
    ohne Einzug. Gleiches Zellpolster wie die übrigen Zeilen. */
@@ -1367,12 +1383,21 @@ table.table thead th.text-center, table.table tbody th.text-center, table.table 
 table.table tfoot th.text-center, table.table tfoot td.text-center { text-align:center; }
 table.table thead th.text-left, table.table tbody th.text-left, table.table td.text-left,
 table.table tfoot th.text-left, table.table tfoot td.text-left { text-align:left; }
-/* `tbody th` ist fett — in den Listenansichten steckt darin aber Titel UND
-   Teasertext, sodass jede Beschreibung fett gerendert wurde (Item 2.12). */
-table.table tbody th .small,
-table.table tbody th .meta-info,
-table.table tbody th p { font-weight:var(--fw-regular); }
+/* Die früheren Ausnahmen für `.small`, `.meta-info` und `<p>` im Zeilenkopf
+   sind entfallen: sie hoben den Fettdruck stellenweise wieder auf, den es
+   jetzt gar nicht mehr gibt. */
 table.table tbody tr:last-child td, table.table tbody tr:last-child th { border-bottom:0; }
+/* SPALTENBREITEN. Zahlenspalten (`align: 'right'`) schrumpfen auf ihren Inhalt
+   und brechen nicht um; die verbleibende Breite verteilt sich auf die
+   Textspalten. Damit stehen gleichartige Tabellen im ganzen Portal gleich
+   breit, ohne dass jede ihre Spalten von Hand vermessen muss. `width:1%` ist
+   dabei kein echtes Mass, sondern das übliche Signal an den Tabellensatz,
+   diese Spalte so schmal wie möglich zu halten.
+   Ziffern laufen auf Tabellenziffern, damit Beträge untereinander fluchten. */
+table.table td.text-right, table.table tbody th.text-right,
+table.table tfoot td.text-right, table.table tfoot th.text-right {
+  width:1%; white-space:nowrap; font-variant-numeric:tabular-nums; }
+table.table thead th.text-right { width:1%; }
 /* Reihenfolge ist hier die Korrektur: Zebra und Hover hatten dieselbe Spezifität
    (0,2,3), Zebra stand zuletzt und gewann — auf den GERADEN Zeilen war Hover
    wirkungslos. Hover kommt jetzt nach der Zebra-Regel und nutzt die nächste
@@ -1381,6 +1406,10 @@ table.table--zebra tbody tr:nth-child(even),
 table.table--zebra tfoot tr:nth-child(even) { background:var(--color-secondary-50); }
 table.table tbody tr:hover,
 table.table--zebra tbody tr:hover { background:var(--color-secondary-100); }
+/* Ganze Zeile klickbar (C.table `rowsClickable`): der Zeiger zeigt es an, die
+   Bedienung läuft aber weiter über den Link in der Zeile — deshalb steht hier
+   nur der Cursor und kein eigener Fokusstil. */
+table.table--rows-clickable tbody tr { cursor:pointer; }
 @media (hover:none){ table.table tbody tr:hover { background:inherit; } }
 /* Dichte + Umbruch auf schmalen Viewports (Item 2.11) */
 @media (max-width:767.98px){
@@ -2400,6 +2429,13 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .pf-card__parcel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);
   background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
 .pf-card__chips { position:absolute; top:.5rem; left:.5rem; right:.5rem; display:flex; flex-wrap:wrap; gap:.3rem; }
+/* Titelbild eines Bauprojekts: der Knopf trägt KEINE Knopfoptik — er ist nur
+   die zugängliche Hülle um das Bild, damit die Galerie auch per Tastatur
+   aufgeht. Sichtbar wird er erst im Fokus. */
+.pj-hero { margin:1rem 0 0; }
+.pj-hero__btn { display:block; width:100%; padding:0; border:0; background:none; cursor:zoom-in; border-radius:var(--radius-lg); }
+.pj-hero__btn:focus-visible { outline:2px solid var(--color-focus, var(--color-primary-600)); outline-offset:3px; }
+.pj-hero .legend { margin-top:.5rem; }
 .pf-card__land { background:rgba(0,0,0,.6); color:#fff; font-size:var(--fs-xs); padding:.12rem .5rem; border-radius:var(--radius-full); }
 /* Galerie-Karte: kompaktere, stimmige Typo & Abstände. Nur die Galerie — die
    Listenansicht nutzt das C.table-Layout und bleibt unberührt. Rhythmus:
@@ -3128,3 +3164,110 @@ body.docviewer-open { overflow:hidden; }
   .docviewer__title  { white-space:normal; overflow:visible; text-overflow:clip;
                        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 }
+
+/* ========================= MIETENDENPORTAL (#/app/tenancies) ==============
+   Grundriss als SVG statt als Karte: eine lokale Zeichnung braucht weder WebGL
+   noch einen Kartendienst (js/floorplan.js erklärt die Wahl). Die Palette liegt
+   hier, damit Zeichnung und Legende dieselbe Quelle haben — die Legende setzt
+   `background:var(--fp-…)`, die Räume `fill:var(--fp-…)`.
+
+   Alle Töne sind helle Flächen: auf einem Grundriss trägt die Fläche die Farbe
+   und die Beschriftung muss darauf lesbar bleiben. Kräftige Töne bleiben der
+   Auswahl vorbehalten. */
+:root {
+  /* Nutzung (grobe Gruppen) */
+  --fp-use-work:    #dbe7f6;
+  --fp-use-collab:  #fbeccd;
+  --fp-use-infra:   #e9edf1;
+  --fp-use-special: #e4dcf2;
+  /* SIA 416 — SIA schreibt KEINE Palette vor, die Norm regelt die Einteilung.
+     Fünf gut unterscheidbare Töne gleicher Helligkeit, ohne Wertung. */
+  --fp-sia-hnf: #d6e6f5;
+  --fp-sia-nnf: #e6ddf2;
+  --fp-sia-vf:  #e9edf1;
+  --fp-sia-ff:  #dcecdd;
+  --fp-sia-tf:  #f7e2d6;
+  /* Verwaltungseinheiten — sechs Töne, mehr VE je Geschoss kommen kaum vor */
+  --fp-ve-a: #d6e6f5;  --fp-ve-b: #fbeccd;  --fp-ve-c: #e4dcf2;
+  --fp-ve-d: #f8dcdf;  --fp-ve-e: #d9ecdb;  --fp-ve-f: #d5eaf0;
+  --fp-unassigned: #f1f3f5;
+  /* Belegung — hier IST eine Ampel gemeint: «dicht» ist eine Bewertung */
+  --fp-cap-none: #f1f3f5;
+  --fp-cap-low:  #dcecdd;
+  --fp-cap-ok:   #d6e6f5;
+  --fp-cap-high: #f8dcdf;
+}
+
+.fp-back { margin:0 0 .75rem; font-size:var(--text-sm); }
+.fp-back a { display:inline-flex; align-items:center; gap:.4rem; }
+.fp-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem 1.5rem;
+  padding-bottom:.75rem; border-bottom:1px solid var(--color-secondary-300); }
+.fp-toolbar__group { display:flex; align-items:center; gap:.6rem; }
+.fp-toolbar__group--right { margin-left:auto; }
+.fp-toolbar__label { font-size:var(--text-sm); color:var(--color-text-muted); white-space:nowrap; }
+.fp-toolbar .select { min-width:12rem; }
+
+/* Geschosswahl: Segmentgruppe wie die Ansichtsumschaltung der Katalogleiste. */
+.fp-floors { display:flex; flex-wrap:wrap; gap:.25rem; }
+.fp-floors__chip { min-width:3.25rem; padding:.4rem .75rem; text-align:center; text-decoration:none;
+  font-size:var(--text-sm); color:var(--color-text); background:var(--color-secondary-50);
+  border:1px solid var(--color-secondary-300); }
+.fp-floors__chip:hover { background:var(--color-secondary-100); }
+.fp-floors__chip.is-active { color:#fff; background:var(--color-primary-700); border-color:var(--color-primary-700); font-weight:var(--fw-bold); }
+.fp-facts { margin:.75rem 0 1rem; }
+
+/* Zeichnung links, Legende und Raumdetail rechts. Unter 1024px stapeln — der
+   Plan braucht Breite, die Seitenspalte darf sie ihm nicht nehmen. */
+.fp-viewer { display:grid; gap:1.5rem; }
+@media (min-width:1024px){ .fp-viewer { grid-template-columns:minmax(0,1fr) 20rem; align-items:start; } }
+.fp-stage { overflow:auto; padding:1rem; background:var(--color-secondary-50); border:1px solid var(--color-secondary-200); }
+.fp-side { display:flex; flex-direction:column; gap:1rem; }
+
+.fp { display:block; width:100%; height:auto; min-width:38rem; }
+.fp__shell { fill:#fff; stroke:var(--color-secondary-400); stroke-width:6; }
+.fp__room rect { fill:#fff; stroke:var(--color-secondary-400); stroke-width:4; cursor:pointer;
+  transition:fill .12s ease, stroke .12s ease; }
+.fp__room--infra rect { fill:var(--color-secondary-50); }
+.fp__room:hover rect { stroke:var(--color-primary-600); stroke-width:8; }
+.fp__room rect:focus-visible { outline:none; stroke:var(--color-primary-700); stroke-width:12; }
+.fp__room.is-selected rect { stroke:var(--color-primary-700); stroke-width:14; }
+/* Beschriftung: nicht anklickbar, sonst fängt der Text den Klick auf dem Raum ab. */
+/* Schriftgrade in ZEICHNUNGSEINHEITEN (100 = 1 m): der Plan wird über die
+   viewBox skaliert, ein 4980 Einheiten breiter Grundriss auf ~1000 px also mit
+   Faktor 0.2. 68 Einheiten ergeben damit rund 13 px auf dem Schirm. */
+.fp__nr, .fp__use, .fp__area { pointer-events:none; text-anchor:middle; fill:var(--color-text); }
+.fp__nr   { font-size:68px; font-weight:700; }
+.fp__use  { font-size:58px; fill:var(--color-text-muted); }
+.fp__area { font-size:54px; fill:var(--color-text-muted); }
+
+.fp-legend { list-style:none; margin:0; padding:0; border:1px solid var(--color-secondary-200); }
+.fp-legend__item { display:flex; align-items:center; gap:.6rem; padding:.5rem .75rem; font-size:var(--text-sm); }
+.fp-legend__item + .fp-legend__item { border-top:1px solid var(--color-secondary-100); }
+.fp-legend__swatch { flex:0 0 auto; width:1rem; height:1rem; border:1px solid var(--color-secondary-400); }
+.fp-legend__label { flex:1 1 auto; min-width:0; }
+.fp-legend__val { flex:0 0 auto; text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.fp-legend__pct { display:block; font-size:var(--text-xs); color:var(--color-text-muted); }
+
+.fp-room h3 { margin:0 0 .5rem; }
+.fp-room__sub { margin:1rem 0 .5rem; font-size:var(--text-sm); }
+.fp-room--empty { display:flex; align-items:center; min-height:8rem; }
+.kv--tight { gap:.2rem .75rem; font-size:var(--text-sm); }
+
+/* Kurzweg in eine Dienstleistung — eine Zeile, kein Knopf: es sind mehrere
+   gleichrangige Ziele, und fünf Knöpfe untereinander lesen sich als Formular. */
+.fp-svc-list { display:flex; flex-direction:column; }
+.fp-svc { display:flex; align-items:center; gap:.55rem; padding:.5rem .1rem; text-decoration:none;
+  color:var(--color-text); font-size:var(--text-sm); border-bottom:1px solid var(--color-secondary-100); }
+.fp-svc:last-child { border-bottom:0; }
+.fp-svc:hover { color:var(--color-primary-700); }
+.fp-svc span { flex:1 1 auto; min-width:0; }
+.fp-svc__go { flex:0 0 auto; color:var(--color-text-muted); }
+
+@media print {
+  .fp-toolbar, .fp-side { display:none; }
+  .fp-stage { overflow:visible; padding:0; background:none; border:0; }
+}
+
+/* Leerzeile einer Datentabelle: mittig gesetzt, damit sie als Zustand lesbar
+   ist und nicht wie ein leerer erster Datensatz. */
+table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:2rem; }

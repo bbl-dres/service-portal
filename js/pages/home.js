@@ -66,18 +66,20 @@ export default async function render(ctx) {
   // 1 · Offene Vorgänge — nur angemeldet und nur wenn es welche gibt.
   if (session.isLoggedIn() && open.length) blocks.push({
     title: 'Meine offenen Vorgänge',
-    body: `<div class="table-wrapper" tabindex="0" role="region" aria-label="Meine offenen Vorgänge">
-      <table class="table table--zebra table--compact">
-        <caption class="sr-only">Meine offenen Vorgänge</caption>
-        <thead><tr><th scope="col">Referenz</th><th scope="col">Titel</th>
-          <th scope="col">Aktualisiert</th><th scope="col">Status</th></tr></thead>
-        <tbody>${open.slice(0, 5).map(i => `<tr>
-          <th scope="row"><a href="#/my-cases/${encodeURIComponent(i.instanceId)}">${C.escape(i.reference)}</a></th>
-          <td>${C.escape(i.title)}</td>
-          <td>${C.escape(i.updatedAt || i.createdAt)}</td>
-          <td>${C.statusBadge(i.status, statusLabel(core, i.status))}</td>
-        </tr>`).join('')}</tbody>
-      </table></div>`,
+    // Über C.table statt von Hand: die Startseite hatte als einzige Ansicht
+    // eine eigene Tabellen-Auszeichnung und wich damit in Polster, Trennlinien
+    // und Scrollhinweis von allen anderen ab.
+    body: C.table({
+      caption: 'Meine offenen Vorgänge', zebra: true, rowsClickable: true,
+      columns: [
+        { key: 'reference', label: 'Referenz', width: '10rem',
+          render: (i) => `<a href="#/my-cases/${encodeURIComponent(i.instanceId)}">${C.escape(i.reference)}</a>` },
+        { key: 'title', label: 'Titel', render: (i) => C.escape(i.title) },
+        { key: 'updatedAt', label: 'Aktualisiert', width: '9rem', render: (i) => C.escape(i.updatedAt || i.createdAt) },
+        { key: 'status', label: 'Status', width: '11rem', render: (i) => C.statusBadge(i.status, statusLabel(core, i.status)) },
+      ],
+      rows: open.slice(0, 5),
+    }),
     more: { href: '#/my-cases', label: `Alle Vorgänge (${cases.length})` },
   });
 
@@ -181,6 +183,9 @@ export default async function render(ctx) {
       </div>
     </section>
     ${sections}`;
+
+  // Zeilenklick in der Vorgangstabelle (C.table `rowsClickable`).
+  C.wireTableRows(mount);
 
   const searchForm = mount.querySelector('#home-search');
   searchForm.addEventListener('submit', (e) => {

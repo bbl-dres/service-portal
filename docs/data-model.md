@@ -13,7 +13,7 @@ It is a *synthesis* of the data models already in the prototypes (`property-inve
 
 - **One core, many views.** Buildings/projects/documents live **once**; apps and overviews are views over them.
 - **Join on the real Swiss keys.** Everything links through the federal identifiers all five prototypes already share — so the silos *can* merge:
-  - **`bbl_we`** — Wirtschaftseinheit (SAP RE-FX economic unit) — the primary business key linking buildings, tenancies, projects, costs.
+  - **`bbl_we`** — Wirtschaftseinheit (SAP RE-FX economic unit) — the primary business key. **RE-FX scope:** Wirtschaftseinheit, Gebäude, Grundstück, Bemessungen (areas/measurements) and tenant management (**Mietobjekt**, **Mietvertrag**). Construction projects are **not** RE-FX objects — they are led in **SAP ePPM** and merely *cross-reference* a WE / `bbl_id`.
   - **`egid`** — federal building register (GWR) id · **`egrid`** — federal parcel id.
   - **`bbl_id`** — internal surrogate PK per object.
 - **Standards-anchored.** Areas per **SIA 416** (GF/HNF/NGF), costs per **BKP** (Baukostenplan 0–9), project phases per **SIA/HERMES**, space classes per **NAW** (Neue Arbeitswelten). These become the catalog's **Concepts/code-lists**.
@@ -29,14 +29,16 @@ It is a *synthesis* of the data models already in the prototypes (`property-inve
 | **Parcel** | Grundstück | `egrid`, `bfs_gemnr`, `kgs_nr`, area, owner | Polygon | property-inventory |
 | **Floor** | Geschoss | `floorId`, buildingId, level, name | Polygon | tenant-portal, workspace |
 | **Space** | Raum / Fläche | `spaceId`, floorId, `siaCategory`, useType, area, capacity, `isBookable` | Polygon | tenant-portal (459), workspace |
-| **Project** | Bauprojekt | `projectId`, `projectNumber`, buildingId, name, `siaPhase` (11–61), `projectStatus`, PM, plannedTotalCost, `kostenBkp`, milestones, `risiken` (Ampel) | — (via building) | ppm-cockpit, transaction |
-| **Tenancy** | Mietverhältnis | `tenancyId`, `ve`, buildingId, spaceIds[], hnf2, leaseStart/End, yearlyCost, contacts{pfm,im,flm} | — | tenant-portal |
+| **Project** | Bauprojekt | `projectId`, `projectNumber`, `buildingId` (cross-ref only), `siteName`, address, name, `siaPhase` (11–61), `projectStatus`, PM, plannedTotalCost, `kostenBkp`, milestones, `risiken` (Ampel) | Point (own site) | ppm-cockpit, transaction |
+| **Tenancy** | Mietverhältnis | `tenancyId`, `ve`, buildingId, spaceIds[], hnf2, leaseStart/End, yearlyCost, contacts{pfm,im,flm} — in RE-FX: **Mietobjekt** + **Mietvertrag** | — | tenant-portal |
 | **Document** | Dokument / Plan | `docId`, type (Floorplan/Lease/Permit/Valuation/CAD…), `linkedTo[]`, format, url, uploadedBy/at | — | tenant-portal, transaction, workspace |
 | **Asset** | Inventar/Mobiliar | `assetId`, spaceId, productId, `inventoryStatus`, inventoryNumber | — | workspace (61 items) |
 | **Contact** | Kontakt | `contactId`, name, role, email (dres@, isbo@, PFM…) | — | all |
 | **Media** | Foto / Video | `mediaId`, mediaType (photo/video), title, `buildingId?`/`projectId?`, date, `historicPeriod?`, photographer, copyright/licence, url, thumbnail, resolutions[] | — | NEW (Mediathek) |
 
-**Relationships:** `Parcel 1—* Building` (egrid) · `Building 1—* Floor 1—* Space` · `Building 1—* Project` (current vs finished via `projectStatus`) · `Building 1—* Tenancy *—* Space` · `Document *—1 {Building|Project|Space}` (polymorphic `linkedTo`) · `Asset *—1 Space` · `Media *—1 {Building|Project}` (powers the Mediathek + a building's photo gallery). All roll up to **`bbl_we`**.
+**Relationships:** `Parcel 1—* Building` (egrid) · `Building 1—* Floor 1—* Space` · `Building 1—* Tenancy *—* Space` · `Document *—1 {Building|Project|Space}` (polymorphic `linkedTo`) · `Asset *—1 Space` · `Media *—1 {Building|Project}` (powers the Mediathek + a building's photo gallery). The RE-FX objects all roll up to **`bbl_we`**.
+
+**System boundary — Project.** `Project *—0..1 Building` is a **cross-reference, not a containment**: projects are led in SAP ePPM, which carries its own site name, address and coordinates. The portal therefore reads location straight off the project and never joins into the RE-FX inventory ([js/apps/projects.js](../js/apps/projects.js)) — the earlier join silently placed «Campus Guisanplatz» in Tokyo. `buildingId` stays only as a link *into* the inventory; a project may legitimately have none.
 
 ---
 

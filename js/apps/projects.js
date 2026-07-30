@@ -1,14 +1,24 @@
 // Bauprojekte / EPPM — map-first Explorer (Karte/Galerie/Liste + räumlicher Baum +
 // catbar), dieselben Muster wie das Liegenschaften Inventar (js/apps/portfolio.js).
-// Projekte erben Ort und Koordinaten von ihrem Gebäude (buildingId → core.building).
+// Standort, Koordinaten und Titelbild führt das Projekt SELBST (data/projects.json) —
+// EPPM und SAP RE-FX sind zwei Führungssysteme, es gibt keinen Join;
+// `buildingId` ist nur ein Querverweis ins Liegenschaftsinventar.
+//
+// SYSTEMGRENZE: SAP RE-FX führt Wirtschaftseinheit, Gebäude, Grundstück und
+// Bemessungen sowie die Mietverwaltung (Mietobjekt, Mietvertrag). Bauprojekte
+// stehen dort NICHT — Führungssystem ist SAP ePPM. Ein Projekt «liegt» also
+// nicht in einem RE-FX-Gebäude; es verweist nur darauf.
 // Ein Projekt wird über #/app/projects/<projectId> angesprochen.
 import { initEstateMap } from '../buildings-map.js';
+import { openGallery } from '../gallery.js';
 
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
-export const needs = ['buildings', 'projects'];
+// `buildings` wird NICHT mehr gebraucht: mit dem Wegfall des Joins spart die
+// Route 66 KB und einen Request.
+export const needs = ['projects'];
 let pjMap = null;
 function freePjMap() { if (pjMap) { try { pjMap.remove(); } catch { /* schon weg */ } pjMap = null; } }
 const weOf = (id) => String(id || '').split('/')[1] || '';
@@ -60,15 +70,21 @@ function overview(ctx) {
   setCrumbs([...CRUMBS, { label: 'Bauprojekte / EPPM' }]);
 
   const projectStatuses = core.ref().projectStatuses || [];
-  // Projekte mit Ort/Koordinaten des Gebäudes anreichern.
-  const objects = core.projects().map((p) => {
-    const b = core.building(p.buildingId);
-    return {
-      ...p, id: p.projectId,
-      land: (b && b.land) || '', region: (b && b.canton) || '', city: (b && b.city) || '', we: p.buildingId ? weOf(p.buildingId) : '',
-      lat: b && b.lat, lon: b && b.lng, buildingName: (b && b.name) || p.buildingId, photo: b && b.photo, photoSrc: (b && b.photoSrc) || '', street: (b && b.street) || '', zip: (b && b.zip) || '',
-    };
-  });
+  // KEIN Join mehr ins Liegenschaftsinventar: SAP ePPM (Bauprojekte) und SAP
+  // RE-FX (Wirtschaftseinheit, Gebäude, Grundstück, Bemessungen, Mietverwaltung)
+  // sind zwei Führungssysteme, und ePPM führt die Adresse seiner Projekt-
+  // standorte selbst. `buildingId` bleibt als fachlicher Querverweis erhalten,
+  // ist aber keine Bezugsquelle mehr.
+  //
+  // Der Join war zudem stillschweigend falsch: er zog die Adresse aus einem
+  // Gebäude, das bei neun von zehn Projekten nichts mit dem Projekt zu tun
+  // hatte — «Campus Guisanplatz» lag damit in Tokio. Erst als die Adresse als
+  // Attribut in der Datei stand, war das zu sehen.
+  const objects = core.projects().map((p) => ({
+    ...p, id: p.projectId,
+    region: p.canton || '', we: p.buildingId ? weOf(p.buildingId) : '',
+    lon: p.lon, buildingName: p.siteName || p.buildingId,
+  }));
   const subPortfolios = [...new Set(objects.map((o) => o.subPortfolio))].filter(Boolean);
   const phases = [...new Set(objects.map((o) => o.siaPhaseLabel))].filter(Boolean);
 
@@ -136,11 +152,17 @@ function overview(ctx) {
   }
 
   // --- views (renderMain slices + appends CD pagination) -------------------
+  // Land und Status liegen als Auflage AUF dem Bild — wie in der Galerie des
+  // Liegenschaften-Inventars (`.pf-card__chips`). Vorher standen sie als
+  // Pillenzeile zwischen Titel und Beschreibung: drei farbige Abzeichen (Status,
+  // Ziele, Risiko) drängten sich vor den Text, und beim Überfliegen des Rasters
+  // las man zuerst Ampelfarben statt Projektnamen. Die Ampeln bleiben in der
+  // Listenansicht und auf der Detailseite, wo sie mit ihrer Erklärung stehen.
   function pjCard(o) {
     return C.card({
       title: o.name, desc: o.teaser, href: `#/app/projects/${encodeURIComponent(o.id)}`,
-      photo: { src: o.photoSrc, id: o.photo, color: '#2f4356', alt: `${o.name} — ${o.buildingName}` },
-      badges: [projectStatusBadge(C, core, o.status), ampelBadge(C, 'Ziele', o.zielAmpel), ampelBadge(C, 'Risiko', o.risikoAmpel)],
+      photo: { src: o.photoSrc, color: '#2f4356', alt: `${o.name} — ${o.buildingName}` },
+      chips: [landName(o.land), statusLabel(core, o.status)],
       footer: `<span>${esc(o.projectNumber)}</span><span>SIA ${esc(o.siaPhase)} · ${esc(o.siaPhaseLabel)}</span>`,
     });
   }
@@ -225,7 +247,7 @@ function overview(ctx) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.pageHeader({ title: 'Bauprojekte / EPPM', lead: 'Laufende und abgeschlossene Bauprojekte des BBL — Enterprise Project & Portfolio Management, verortet über das SAP-RE-FX-Gebäude.' })}
+    ${C.pageHeader({ title: 'Bauprojekte / EPPM', lead: 'Laufende und abgeschlossene Bauprojekte des BBL — Enterprise Portfolio and Project Management. Führungssystem ist SAP ePPM; diese Ansicht ist eine Leseansicht.' })}
     ${C.catalogueBar({
       formId: 'pj-search', inputId: 'pj-q', searchLabel: 'Projekt, Nummer, Projektleitung oder Gebäude suchen',
       placeholder: 'Projekt, Nummer, PL oder Gebäude suchen…', countId: 'pj-count',
@@ -349,7 +371,27 @@ function detail(ctx, id) {
   setTitle(p.name);
   setCrumbs([...CRUMBS, { label: 'Bauprojekte / EPPM', href: '#/app/projects' }, { label: p.name }]);
 
-  const b = core.building(p.buildingId);
+  // Standort und Bild kommen aus dem Projektdatensatz selbst (siehe overview()).
+  // `buildingId` bleibt nur als Querverweis ins Liegenschaftsinventar — der Link
+  // wird gesetzt, ohne den Gebäudebestand zu lesen.
+  const ort = [p.street, [p.zip, p.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  // Bilder samt Nachweis stehen im Projektdatensatz (`media`) — dieselbe Form
+  // wie `bilder` am Gebäude, damit die gemeinsame Galerie sie ohne Umbau
+  // anzeigt. Ein Bestand, den niemand liest, verfällt; deshalb hängt am Hero
+  // die Vollbildgalerie statt eines toten Feldes.
+  const galleryItems = (p.media || []).map((x, i) => ({
+    id: `${p.projectId}-bild-${i}`,
+    photo: '', photoSrc: x.src, title: x.titel || p.name,
+    meta: [x.fotograf && `© ${x.fotograf}`, p.city].filter(Boolean).join(' · '),
+    type: 'foto',
+    details: [
+      ['Titel', x.titel || p.name],
+      x.fotograf && ['Fotograf:in', x.fotograf],
+      x.credit && ['Copyright', x.credit],
+      x.lizenz && ['Lizenz', x.lizenz],
+      x.quelle && ['Quelle', x.quelle],
+    ].filter(Boolean),
+  }));
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
     { id: 'kennzahlen', label: 'Kennzahlen' },
@@ -361,7 +403,9 @@ function detail(ctx, id) {
   function panelUebersicht() {
     return `<dl class="kv">
       <dt>Projektnummer</dt><dd>${C.escape(p.projectNumber)}</dd>
-      <dt>Gebäude</dt><dd>${b ? `<a href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${C.escape(b.name)}</a>` : '—'}</dd>
+      <dt>Standort</dt><dd>${C.escape(p.siteName || '—')}${ort ? `<br><span class="small muted">${C.escape(ort)}</span>` : ''}</dd>
+      <dt>Objekt im Inventar</dt><dd>${p.buildingId
+        ? `<a href="#/app/portfolio?id=${encodeURIComponent(p.buildingId)}">${C.escape(p.buildingId)}</a>` : '—'}</dd>
       <dt>Projektleitung</dt><dd>${C.escape(p.pm || '—')}</dd>
       <dt>Teilportfolio</dt><dd>${C.escape(p.subPortfolio || '—')}</dd>
       <dt>SIA-Phase</dt><dd>${C.escape(p.siaPhase)} · ${C.escape(p.siaPhaseLabel)}</dd>
@@ -407,29 +451,49 @@ function detail(ctx, id) {
   }
   const panels = { uebersicht: panelUebersicht, kennzahlen: panelKennzahlen, risiken: panelRisiken };
 
+  // Titelbild: ohne Bilder eine Farbfläche wie bisher, mit Bildern ein Knopf,
+  // der die Vollbildgalerie öffnet. Der Nachweis steht als Bildlegende darunter —
+  // die Aufnahmen der BBL-Mediendatenbank sind nicht frei lizenziert, ein Bild
+  // ohne Urheberangabe wäre hier schlicht falsch.
+  function heroFigure() {
+    const bild = C.photo({
+      src: p.photoSrc, color: '#2f4356', alt: `${p.name}${p.siteName ? ' — ' + p.siteName : ''}`, w: 1600,
+      style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg)',
+    });
+    if (!galleryItems.length) return `<div style="margin-top:1rem">${bild}</div>`;
+    const m = p.media[0];
+    return `<figure class="pj-hero">
+      <button type="button" class="pj-hero__btn" data-gallery="0"
+        aria-label="Bildergalerie öffnen — ${galleryItems.length} Aufnahme${galleryItems.length === 1 ? '' : 'n'}">${bild}</button>
+      <figcaption class="legend">${C.escape(m.titel || p.name)}${
+        m.credit ? ` — ${C.escape(m.credit)}` : ''}${
+        galleryItems.length > 1 ? ` · ${galleryItems.length} Aufnahmen` : ''}</figcaption>
+    </figure>`;
+  }
+
   function draw() {
     mount.innerHTML = `
     <div class="container section">
+      ${/* Kopf wie im Liegenschaften Inventar: Rücksprung, Titel, Fakten als
+            Lead-Zeile. Die frühere Abzeichenreihe (`pill-row` mit Status und
+            zwei Ampeln) ist entfallen — das Inventar kennt sie nicht, und drei
+            farbige Abzeichen ÜBER dem Titel lasen sich vor dem Projektnamen.
+            Der Status steht jetzt als Wort in der Lead-Zeile, die beiden Ampeln
+            im Reiter «Risiken & Ziele», wo ihre Erklärung danebensteht. */''}
       ${C.backLink('#/app/projects', 'Bauprojekte')}
-      <div class="mt-4">
-        <div class="pill-row">
-          ${projectStatusBadge(C, core, p.status)}
-          ${ampelBadge(C, 'Projektziele', p.zielAmpel)}
-          ${ampelBadge(C, 'Risiken', p.risikoAmpel)}
-        </div>
-        <h1 tabindex="-1" class="mt-2">${C.escape(p.name)}</h1>
-        <p class="muted">${C.escape(p.projectNumber)} · ${b ? C.escape(b.name + ', ' + b.city) : C.escape(p.buildingId)}</p>
-      </div>
-      ${C.photo({
-        src: b && b.photoSrc, id: b && b.photo, color: '#2f4356', alt: b ? `${p.name} — ${b.name}` : p.name, w: 1600,
-        style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg);margin-top:1rem',
-      })}
+      <h1 tabindex="-1">${C.escape(p.name)}</h1>
+      <p class="lead">${C.escape(p.projectNumber)}${p.siteName ? ' · ' + C.escape(p.siteName) : ''}${
+        p.city ? ', ' + C.escape(p.city) : ''} · ${C.escape(statusLabel(core, p.status))}</p>
+      ${heroFigure()}
       ${C.tabBar({ items: tabs, active, idPrefix: 'pj-tab', ariaLabel: 'Projektdetails', controlsClass: 'mt-6' })}
       ${C.tabPanels({ items: tabs, active, idPrefix: 'pj-tab', render: (t) => panels[t]() })}
     </div>`;
     C.wireTabs(mount, {
       syncHash: (tab) => history.replaceState(null, '', `#/app/projects/${p.projectId}${tab === 'uebersicht' ? '' : '?tab=' + tab}`),
     });
+    // Innerhalb von draw(), weil jeder Reiterwechsel neu zeichnet.
+    mount.querySelector('.pj-hero__btn')?.addEventListener('click', () =>
+      openGallery(galleryItems, 0, C, { param: 'bild' }));
     window.scrollTo(0, 0);
     const h = mount.querySelector('h1'); if (h) h.focus({ preventScroll: true });
   }

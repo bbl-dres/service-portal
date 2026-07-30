@@ -1,19 +1,182 @@
 [
-  { "contactId": "dres", "name": "Fachstelle Daten & Anwendungen Bauten (DRES)", "role": "Fachanwendungen BBL Bauten", "email": "dres@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
-  { "contactId": "isbo", "name": "Informationssicherheit BBL (ISBO)", "role": "Integrale Sicherheit & Datenschutz", "email": "isbo@bbl.admin.ch", "phone": "+41 58 46 5 00 01" },
-  { "contactId": "kbb", "name": "Kompetenzzentrum Beschaffungswesen Bund (KBB)", "role": "Beschaffung & Recht", "email": "kbb@bbl.admin.ch", "phone": "+41 58 46 5 00 02" },
-  { "contactId": "support-bil", "name": "Support@BIL", "role": "Anforderungs- & Beschaffungslösung (HBB)", "email": "support.bil@bbl.admin.ch", "phone": "+41 58 46 5 00 03" },
-  { "contactId": "pfm", "name": "Portfoliomanagement BBL (PFM)", "role": "Immobilienportfolio & Bauprojekte", "email": "pfm@bbl.admin.ch", "phone": "+41 58 46 5 00 04" },
-  { "contactId": "campus", "name": "Objektbetrieb / Campus", "role": "Gebäudebetrieb & Störungsmeldungen", "email": "objektbetrieb@bbl.admin.ch", "phone": "+41 58 46 5 00 05" },
-  { "contactId": "ikt", "name": "Informatik BBL (IKT)", "role": "Betrieb und Support der Fachanwendungen", "email": "ikt@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
-  { "contactId": "edm", "name": "Energiedatenmanagement (EDM)", "role": "Energiedaten der Bundesbauten", "email": "edm@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
-  { "contactId": "nachhaltigkeit", "name": "Nachhaltigkeit BBL", "role": "Nachhaltiges Immobilienmanagement", "email": "nachhaltigkeit@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
-  { "contactId": "lcdm-bim", "name": "LCDM / BIM BBL", "role": "Life-Cycle-Data-Management und BIM", "email": "lcdm.bim@bbl.admin.ch", "phone": "+41 58 46 5 00 00" },
-  { "contactId": "helpdesk-om", "name": "Helpdesk Objektmanagement (OM)", "role": "Störungsmeldungen und Kleinaufträge", "email": "helpdeskom@bbl.admin.ch", "phone": "+41 58 462 08 10" },
-  { "contactId": "mobiliar-hausdienst", "name": "BBL Mobiliar und Hausdienst", "role": "Mobiliar, Umzüge und Hausdienst", "email": "mobiliar_hausdienst@bbl.admin.ch", "phone": "+41 58 46 5 00 06" },
-  { "contactId": "produktion", "name": "Produktion BBL — Arbeitsvorbereitung (AVOR)", "role": "Druck, Versand und Datenaufbereitung", "email": "produktion@bbl.admin.ch", "phone": "+41 58 465 50 71" },
-  { "contactId": "shop-support", "name": "Hotline BBL Intranetshop", "role": "Berechtigungen, Passwörter und Störungen im Shop", "email": "shopsupportteam@bbl.admin.ch", "phone": "+41 58 46 5 00 07" },
-  { "contactId": "einkauf-it", "name": "Einkauf IT BBL", "role": "IKT-Beschaffung, HBB-Prozess und Delegationen", "email": "einkauf.it@bbl.admin.ch", "phone": "+41 58 46 5 00 08" },
-  { "contactId": "warengruppe-publikationen", "name": "Warengruppe Publikationen", "role": "Zentrale Beschaffung von Publikationen und Agenturleistungen", "email": "publikationen@bbl.admin.ch", "phone": "+41 58 46 5 00 09" },
-  { "contactId": "bkb", "name": "Beschaffungskonferenz des Bundes (BKB)", "role": "Strategieorgan Beschaffungswesen des Bundes", "email": "bkb@bbl.admin.ch", "phone": "+41 58 46 5 00 10" }
+  {
+    "contactId": "isbo",
+    "name": "Informationssicherheit und Datenschutz BBL (ISBO)",
+    "unit": "Stab",
+    "role": "Informationssicherheit, Datenschutz und Klassifizierung",
+    "email": "isbo@bbl.admin.ch",
+    "phone": "+41 58 465 50 12"
+  },
+  {
+    "contactId": "kommunikation",
+    "name": "Kommunikation BBL",
+    "unit": "Stab",
+    "role": "Mediendatenbank, Bildmaterial und Publikationen des BBL",
+    "email": "media@bbl.admin.ch",
+    "phone": "+41 58 465 50 03",
+    "quelle": "https://www.bbl.admin.ch/de/kontakt"
+  },
+  {
+    "contactId": "pfm",
+    "name": "Portfoliomanagement",
+    "unit": "Direktionsbereich Bauten",
+    "role": "Immobilienportfolio, Wirtschaftseinheiten und Investitionssteuerung",
+    "email": "portfoliomanagement@bbl.admin.ch",
+    "phone": "+41 58 465 50 20"
+  },
+  {
+    "contactId": "immobilienmanagement",
+    "name": "Immobilienmanagement",
+    "unit": "Direktionsbereich Bauten",
+    "role": "Stammdaten der Liegenschaften (SAP RE-FX), Mietverhältnisse und Flächen",
+    "email": "immobilienmanagement@bbl.admin.ch",
+    "phone": "+41 58 465 50 21"
+  },
+  {
+    "contactId": "projektmanagement",
+    "name": "Projektmanagement",
+    "unit": "Direktionsbereich Bauten",
+    "role": "Bauprojekte von der Bedarfsmeldung bis zur Übergabe (SAP ePPM)",
+    "email": "projektmanagement@bbl.admin.ch",
+    "phone": "+41 58 465 50 22"
+  },
+  {
+    "contactId": "helpdesk-om",
+    "name": "Helpdesk Objektmanagement",
+    "unit": "Direktionsbereich Bauten — Objektmanagement",
+    "role": "Störungsmeldungen, Kleinaufträge und Objektbetrieb",
+    "email": "helpdesk.om@bbl.admin.ch",
+    "phone": "+41 58 462 08 10"
+  },
+  {
+    "contactId": "nachhaltigkeit",
+    "name": "Nachhaltigkeit BBL",
+    "unit": "Direktionsbereich Bauten",
+    "role": "Nachhaltiges Immobilienmanagement, Energie- und Klimaziele",
+    "email": "nachhaltigkeit@bbl.admin.ch",
+    "phone": "+41 58 465 50 24",
+    "quelle": "https://www.bbl.admin.ch/de/nachhaltigkeit-im-bbl"
+  },
+  {
+    "contactId": "edm",
+    "name": "Energiedatenmanagement (EDM)",
+    "unit": "Direktionsbereich Bauten — Nachhaltigkeit BBL",
+    "role": "Energie- und Verbrauchsdaten der Bundesbauten",
+    "email": "edm@bbl.admin.ch",
+    "phone": "+41 58 465 50 25"
+  },
+  {
+    "contactId": "lcdm-bim",
+    "name": "Life-Cycle-Data-Management und BIM (LCDM)",
+    "unit": "Direktionsbereich Bauten — Projektmanagement",
+    "role": "BIM-Vorgaben, Bauwerksdokumentation und Planarchiv",
+    "email": "lcdm.bim@bbl.admin.ch",
+    "phone": "+41 58 465 50 26"
+  },
+  {
+    "contactId": "dres",
+    "name": "Fachstelle Digital Real Estate and Support (DRES)",
+    "unit": "Direktionsbereich Bauten",
+    "role": "Daten, Digitalisierung und Fachanwendungen der Bauten",
+    "email": "dres@bbl.admin.ch",
+    "phone": "+41 58 465 50 27"
+  },
+  {
+    "contactId": "beschaffung",
+    "name": "Beschaffung",
+    "unit": "Direktionsbereich Logistik",
+    "role": "Warengruppen, Rahmenverträge und Grundversorgung der Bundesverwaltung",
+    "email": "beschaffung@bbl.admin.ch",
+    "phone": "+41 58 465 50 30"
+  },
+  {
+    "contactId": "shop-support",
+    "name": "Hotline BBL Intranetshop",
+    "unit": "Direktionsbereich Logistik — Shop",
+    "role": "Zugänge, Berechtigungen und Störungen im Shop",
+    "email": "shopsupport@bbl.admin.ch",
+    "phone": "+41 58 465 50 31"
+  },
+  {
+    "contactId": "campus",
+    "name": "Campus",
+    "unit": "Direktionsbereich Logistik",
+    "role": "Betrieb der Verwaltungszentren, Raum- und Arbeitsplatzbuchung",
+    "email": "campus@bbl.admin.ch",
+    "phone": "+41 58 465 50 32"
+  },
+  {
+    "contactId": "mobiliar-hausdienst",
+    "name": "Mobiliar und Hausdienst",
+    "unit": "Direktionsbereich Logistik — Campus",
+    "role": "Mobiliar, Umzüge, Transporte und Ausstattung von Anlässen",
+    "email": "mobiliar.hausdienst@bbl.admin.ch",
+    "phone": "+41 58 465 50 33"
+  },
+  {
+    "contactId": "produktion",
+    "name": "Produktion — Arbeitsvorbereitung (AVOR)",
+    "unit": "Direktionsbereich Logistik",
+    "role": "Digitaldruck, Serienbriefe und Versand",
+    "email": "produktion@bbl.admin.ch",
+    "phone": "+41 58 465 50 71"
+  },
+  {
+    "contactId": "warengruppe-publikationen",
+    "name": "Warengruppe Publikationen",
+    "unit": "Direktionsbereich Logistik — Beschaffung",
+    "role": "Beschaffung, Lagerhaltung und Versand amtlicher Publikationen",
+    "email": "verkauf.zivil@bbl.admin.ch",
+    "phone": "+41 58 465 50 34",
+    "quelle": "https://www.bbl.admin.ch/de/kontakt"
+  },
+  {
+    "contactId": "einkauf-it",
+    "name": "Einkauf IKT",
+    "unit": "Direktionsbereich Logistik — Beschaffung",
+    "role": "IKT-Beschaffung, HBB-Prozess und Beschaffungsdelegationen",
+    "email": "einkauf.ikt@bbl.admin.ch",
+    "phone": "+41 58 465 50 35"
+  },
+  {
+    "contactId": "support-bil",
+    "name": "Support BIL — Bedarfs- und Beschaffungslösung",
+    "unit": "Direktionsbereich Logistik — Beschaffung",
+    "role": "Anwendungssupport für die Bedarfsmeldung (HBB-Prozess)",
+    "email": "support.bil@bbl.admin.ch",
+    "phone": "+41 58 465 50 36"
+  },
+  {
+    "contactId": "kbb",
+    "name": "Kompetenzzentrum Beschaffungswesen Bund und Rechtsdienst BBL (KBB)",
+    "unit": "Direktionsbereich Aussenbeziehungen, Beschaffungspolitik und Recht",
+    "role": "Beschaffungsrecht, Mustervorlagen und Rechtsberatung",
+    "email": "rechtsdienst.kbb@bbl.admin.ch",
+    "phone": "+41 58 465 50 40",
+    "quelle": "https://www.bbl.admin.ch/de/beschaffungsrechtliche-beratung-kbb"
+  },
+  {
+    "contactId": "bkb",
+    "name": "Geschäftsstelle BKB",
+    "unit": "Direktionsbereich Aussenbeziehungen, Beschaffungspolitik und Recht",
+    "role": "Strategieorgan Beschaffungswesen des Bundes",
+    "email": "bkb@bbl.admin.ch",
+    "phone": "+41 58 465 50 41"
+  },
+  {
+    "contactId": "servicedesk-bit",
+    "name": "Service Desk BIT",
+    "unit": "Bundesamt für Informatik und Telekommunikation (BIT)",
+    "role": "Betrieb und Support der zentralen Systeme der Bundesverwaltung",
+    "email": "info@bit.admin.ch",
+    "quelle": "https://www.bit.admin.ch/de/kontakt-bit"
+  },
+  {
+    "contactId": "epa-cchr",
+    "name": "Kompetenzzentrum Human Resources (CCHR)",
+    "unit": "Eidgenössisches Personalamt (EPA)",
+    "role": "Betrieb und Schulung des Personalinformationssystems der Bundesverwaltung",
+    "email": "personaladministration@epa-dlz.admin.ch",
+    "quelle": "https://www.epa.admin.ch/de/kontakt"
+  }
 ]
