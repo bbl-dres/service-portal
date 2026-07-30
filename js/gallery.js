@@ -65,7 +65,7 @@ export function openGallery(items, start, C, opts = {}) {
     <div class="pf-lightbox__bar">
       <div class="pf-lightbox__heading">
         <span class="pf-lightbox__heading-icon" data-el="icon"></span>
-        <div style="min-width:0">
+        <div class="pf-lightbox__heading-text">
           <p class="pf-lightbox__title" data-el="title"></p>
           <p class="pf-lightbox__sub" data-el="sub"></p>
         </div>
@@ -113,8 +113,10 @@ export function openGallery(items, start, C, opts = {}) {
             muss auf ein vorhandenes Element zeigen, sonst geht der Bezug ins Leere. */''}
       <div class="pf-lightbox__meta" id="lb-meta" data-el="meta" hidden>
         <h2 class="pf-lightbox__meta-title">Metadaten</h2>
-        <dl class="kv kv--compact" data-el="metakv"></dl>
-        <a class="btn btn--outline btn--sm" data-el="metalink" data-act="close-nav" href="#" hidden></a>
+        <dl class="kv kv--tight" data-el="metakv"></dl>
+        ${/* btn--outline-negative, nicht btn--outline: das Panel ist dunkel, die
+              Ad-hoc-Umfärbung in app.css (16%-Weiss-Rand, unter 3:1) ist weg. */''}
+        <a class="btn btn--outline-negative btn--sm btn--icon-right" data-el="metalink" data-act="close-nav" href="#" hidden></a>
       </div>
     </div>`;
 
@@ -200,7 +202,7 @@ export function openGallery(items, start, C, opts = {}) {
     if (hasDetails(it)) {
       el.metakv.innerHTML = it.details.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
       el.metalink.hidden = !it.href;
-      if (it.href) { el.metalink.href = it.href; el.metalink.innerHTML = `Zur Detailseite ${C.icon('ArrowRight', 'icon--base')}`; }
+      if (it.href) { el.metalink.href = it.href; el.metalink.innerHTML = `<span class="btn__text">Zur Detailseite</span>${C.icon('ArrowRight', 'btn__icon')}`; }
     }
 
     // Fokus NUR beim Öffnen setzen. Vorher lief er bei jedem Blättern auf
@@ -226,14 +228,15 @@ export function openGallery(items, start, C, opts = {}) {
     syncUrl(true);
     document.removeEventListener('keydown', onKey);
     window.removeEventListener('resize', onResize);
+    untrap();
     overlay.remove();
     document.body.classList.remove('chart-overlay-open');
     if (trigger && trigger.focus) trigger.focus();
   };
   function onKey(e) {
     // Liegt ein Modal (Teilen-Dialog) ÜBER der Galerie, gehört ihm die Tastatur:
-    // sonst schlösse ein Escape beides auf einmal und Tab liefe gegen zwei
-    // Fokusfallen gleichzeitig.
+    // sonst schlösse ein Escape beides auf einmal. (Tab fängt C.trapFocus direkt
+    // am Overlay — das Modal hängt ausserhalb und bleibt davon unberührt.)
     if (document.querySelector('.modal')) return;
     if (e.key === 'Escape') { e.preventDefault(); close(); }
     else if (e.key === '+' || e.key === '=') { e.preventDefault(); stepZoom(1); }
@@ -241,15 +244,6 @@ export function openGallery(items, start, C, opts = {}) {
     else if (e.key === '0') { e.preventDefault(); zoom = 'fit'; applyZoom(); }
     else if (multi && e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
     else if (multi && e.key === 'ArrowRight') { e.preventDefault(); go(1); }
-    else if (e.key === 'Tab') {
-      // Auch `a[href]` einsammeln — der Herunterladen-Knopf ist ein Link und wäre
-      // sonst aus der Fokusfalle gefallen.
-      const f = [...overlay.querySelectorAll('button, a[href]')].filter((n) => n.offsetParent !== null);
-      if (!f.length) return;
-      const first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    }
   }
   overlay.addEventListener('click', (e) => {
     // Der Hintergrund schliesst NICHT: beim Schieben eines gezoomten Bildes
@@ -285,6 +279,11 @@ export function openGallery(items, start, C, opts = {}) {
   const onResize = () => { syncChrome(); if (zoom === 'fit') applyZoom(); };
   window.addEventListener('resize', onResize);
   document.addEventListener('keydown', onKey);
+  // Tab/Shift+Tab über die GETEILTE Fokusfalle aus components.js: deren Liste
+  // schliesst [disabled] aus und nimmt [tabindex="0"] (die Bildfläche) mit. Die
+  // frühere Eigenliste ('button, a[href]') zählte den abgeschalteten Fit-Knopf
+  // als letztes Element — Tab fiel damit aus dem Dialog heraus (Review lb-trap-1).
+  const untrap = C.trapFocus(overlay);
   document.body.classList.add('chart-overlay-open');
   document.body.appendChild(overlay);
   syncChrome();

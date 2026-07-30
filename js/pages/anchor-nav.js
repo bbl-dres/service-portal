@@ -135,13 +135,9 @@ function wireAnchorNav(mount, ctx) {
     onScroll();
   }
 
-  // Akkordeons (z. B. FAQ auf der Prozesse-Seite).
-  mount.querySelectorAll('.accordion .accordion__button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const expanded = btn.getAttribute('aria-expanded') === 'true';
-      btn.setAttribute('aria-expanded', String(!expanded));
-      const panel = mount.querySelector('#' + CSS.escape(btn.getAttribute('aria-controls')));
-      if (panel) panel.hidden = expanded;
-    }, { signal });
-  });
+  // Akkordeons (z. B. FAQ auf der Prozesse-Seite): gemeinsame Verdrahtung statt
+  // der früher hier kopierten Toggle-Logik — so landen Verhaltensänderungen
+  // (etwa die CD-Animation) an EINER Stelle. Kein `signal` nötig: die Horcher
+  // hängen an Knoten innerhalb von `mount` und verschwinden mit dem DOM-Tausch.
+  ctx.C.wireAccordion(mount);
 }

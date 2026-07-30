@@ -136,6 +136,10 @@ export default async function render(ctx) {
         <div class="map-search">
           <ul class="map-search__list" id="bc-listbox" role="listbox" aria-label="Adressvorschläge" hidden></ul>
           <div class="map-search__field">
+            ${/* sr-only-Label wie bei der CD-Suche (search.postcss): der Platz-
+                  halter verschwindet beim Tippen und ist für manche Hilfsmittel
+                  kein zugänglicher Name. */''}
+            <label class="sr-only" for="bc-address">Adresse suchen</label>
             ${C.icon('Search', 'map-search__icon')}
             <input id="bc-address" class="input--outline input--base" type="text" role="combobox"
               autocomplete="off" spellcheck="false"
@@ -160,8 +164,11 @@ export default async function render(ctx) {
           <dt>Koordinaten (WGS 84)</dt><dd>${C.escape(coords)}</dd>
         </dl>` : ''}
 
-      <div class="row row--end mt-4">
-        <button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button>
+      ${/* form__actions statt .row: Primäraktion auf Mobile zuerst und vollbreit
+            (app.css, Item 3.12). Icon VOR dem btn__text im DOM — die rechte
+            Position stellt btn--icon-right per row-reverse her (CD Btn.vue). */''}
+      <div class="form__actions">
+        <button class="btn btn--filled btn--icon-right" type="submit">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Weiter</span></button>
       </div>`;
   }
 
@@ -169,30 +176,37 @@ export default async function render(ctx) {
   function step2() {
     return `
       ${/* Zuerst die abgeleiteten Felder (nur lesbar, gestrichelter Rahmen), dann
-            die Handeingabe. Wer das Formular ausfüllt, sieht so auf einen Blick,
-            was das System bereits weiss und was von ihm erwartet wird. */''}
-      ${C.field({ id: 'bc-bez', label: 'Objektbezeichnung',
-        hint: 'Wird aus der Adresse übernommen und kann hier nicht geändert werden.',
-        control: (cls, attrs) => `<input id="bc-bez" value="${C.escape(bezeichnung())}" class="${cls}" readonly${attrs}>` })}
-      ${C.field({ id: 'bc-egid', label: 'EGID (Eidg. Gebäudeidentifikator)',
-        hint: 'Wird anhand der Lage aus dem Gebäude- und Wohnungsregister (GWR) ermittelt.',
-        control: (cls, attrs) => `<input id="bc-egid" value="${C.escape(state.egid)}" placeholder="wird ermittelt" class="${cls}" readonly${attrs}>` })}
-      ${C.field({ id: 'bc-egrid', label: 'EGRID (Eidg. Grundstücksidentifikator)',
-        hint: 'Wird anhand der Lage aus der amtlichen Vermessung ermittelt.',
-        control: (cls, attrs) => `<input id="bc-egrid" value="${C.escape(state.egrid)}" placeholder="wird ermittelt" class="${cls}" readonly${attrs}>` })}
-      ${C.select({ id: 'bc-portfolio', name: 'bc-portfolio', label: 'Teilportfolio', required: true,
-        value: state.portfolio, message: state.errors['bc-portfolio'],
-        options: [PLEASE_PICK, ...TEILPORTFOLIO] })}
-      ${C.select({ id: 'bc-gebart', name: 'bc-gebart', label: 'Gebäudeart', required: true,
-        value: state.gebaeudeart, message: state.errors['bc-gebart'],
-        options: [PLEASE_PICK, ...GEBAEUDEART] })}
-      ${C.select({ id: 'bc-ownership', name: 'bc-ownership', label: 'Eigentumsverhältnis', value: state.ownership,
-        options: OWNERSHIP.map(v => ({ value: v, label: v })) })}
-      ${C.field({ id: 'bc-baujahr', label: 'Baujahr', required: true, message: state.errors['bc-baujahr'],
-        control: (cls, attrs) => `<input id="bc-baujahr" type="number" min="1200" max="2100" placeholder="z. B. 1974" value="${C.escape(state.baujahr)}" class="${cls}"${attrs}>` })}
-      <div class="row row--between mt-4">
-        <button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')}<span class="btn__text">Zurück</span></button>
-        <button class="btn btn--filled" type="submit">Weiter ${C.icon('ArrowRight', 'icon--base')}</button>
+            die Handeingabe — als zwei <fieldset class="form__group">, damit die
+            Zweiteilung nicht nur erzählt wird, sondern auch für Hilfsmittel als
+            Gruppe hörbar ist (CD Fieldset.vue, Item 3.14). */''}
+      <fieldset class="form__group">
+        <legend class="form__group__legend">Abgeleitete Angaben</legend>
+        ${C.field({ id: 'bc-bez', label: 'Objektbezeichnung',
+          hint: 'Wird aus der Adresse übernommen und kann hier nicht geändert werden.',
+          control: (cls, attrs) => `<input id="bc-bez" value="${C.escape(bezeichnung())}" class="${cls}" readonly${attrs}>` })}
+        ${C.field({ id: 'bc-egid', label: 'EGID (Eidg. Gebäudeidentifikator)',
+          hint: 'Wird anhand der Lage aus dem Gebäude- und Wohnungsregister (GWR) ermittelt.',
+          control: (cls, attrs) => `<input id="bc-egid" value="${C.escape(state.egid)}" placeholder="wird ermittelt" class="${cls}" readonly${attrs}>` })}
+        ${C.field({ id: 'bc-egrid', label: 'EGRID (Eidg. Grundstücksidentifikator)',
+          hint: 'Wird anhand der Lage aus der amtlichen Vermessung ermittelt.',
+          control: (cls, attrs) => `<input id="bc-egrid" value="${C.escape(state.egrid)}" placeholder="wird ermittelt" class="${cls}" readonly${attrs}>` })}
+      </fieldset>
+      <fieldset class="form__group">
+        <legend class="form__group__legend">Klassifizierung</legend>
+        ${C.select({ id: 'bc-portfolio', name: 'bc-portfolio', label: 'Teilportfolio', required: true,
+          value: state.portfolio, message: state.errors['bc-portfolio'],
+          options: [PLEASE_PICK, ...TEILPORTFOLIO] })}
+        ${C.select({ id: 'bc-gebart', name: 'bc-gebart', label: 'Gebäudeart', required: true,
+          value: state.gebaeudeart, message: state.errors['bc-gebart'],
+          options: [PLEASE_PICK, ...GEBAEUDEART] })}
+        ${C.select({ id: 'bc-ownership', name: 'bc-ownership', label: 'Eigentumsverhältnis', value: state.ownership,
+          options: OWNERSHIP.map(v => ({ value: v, label: v })) })}
+        ${C.field({ id: 'bc-baujahr', label: 'Baujahr', required: true, message: state.errors['bc-baujahr'],
+          control: (cls, attrs) => `<input id="bc-baujahr" type="number" min="1200" max="2100" placeholder="z. B. 1974" value="${C.escape(state.baujahr)}" class="${cls}"${attrs}>` })}
+      </fieldset>
+      <div class="form__actions form__actions--between">
+        <button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>
+        <button class="btn btn--filled btn--icon-right" type="submit">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Weiter</span></button>
       </div>`;
   }
 
@@ -214,9 +228,9 @@ export default async function render(ctx) {
         <dt>Verantwortliche OE</dt><dd>${C.escape(state.org)}</dd>
       </dl>
       ${C.notification('Mit dem Absenden entsteht ein Vorgang. EGID und EGRID löst der Kataster­dienst anhand der Lage auf; die Objekt-ID (bbl_id), die Flächen (GF/HNF) und die Klassifizierung vergibt das Portfoliomanagement bei der Prüfung.', 'info')}
-      <div class="row row--between mt-4">
-        <button class="btn btn--bare" type="button" data-back>${C.icon('ChevronLeft', 'icon--base')}<span class="btn__text">Zurück</span></button>
-        <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Erfassung einreichen</button>
+      <div class="form__actions form__actions--between">
+        <button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>
+        <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Erfassung einreichen</span></button>
       </div>`;
   }
 
@@ -487,7 +501,17 @@ export default async function render(ctx) {
       else if (e.key === 'ArrowUp') { e.preventDefault(); if (suggestions.length) highlight(activeIdx - 1); }
       else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); pick(activeIdx); }
       else if (e.key === 'Escape' && !box.hidden) { e.preventDefault(); closeList(); }
+      // «Tab verlässt» schliesst — wie die Home-Suche (search-suggest.js), sonst
+      // bleibt die Liste mit aria-expanded="true" offen, wenn der Fokus in die
+      // Karte weiterwandert. Kein preventDefault: Tab soll den Fokus bewegen.
+      else if (e.key === 'Tab') closeList();
     });
+
+    // Fokusverlust schliesst ebenfalls (Parität zu search-suggest.js:136). Das
+    // mousedown-preventDefault davor lässt den Fokus beim Klick auf eine Option
+    // im Feld — sonst schlösse blur die Liste, bevor der click übernehmen kann.
+    box.addEventListener('mousedown', (e) => e.preventDefault());
+    inp.addEventListener('blur', () => setTimeout(closeList, 120));
 
     box.addEventListener('click', (e) => {
       const li = e.target.closest('[data-idx]');

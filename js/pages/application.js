@@ -68,7 +68,9 @@ export default function render(ctx, appId) {
     })}
 
     <div class="container--grid gap--responsive mt-6">
-      <div class="container__main stack-lg">
+      ${/* .stack-lg kodierte dieselbe Rampe wie CDs .vertical-spacing (3/3.5rem)
+            ein zweites Mal — hier steht der kanonische Name (Review layout/main-1). */''}
+      <div class="container__main vertical-spacing">
         ${page.long ? `<div><h2 class="detail-section__title">Über die Anwendung</h2><p>${C.escape(page.long)}</p></div>` : ''}
 
         ${section('Einstieg', entries.length
@@ -81,7 +83,9 @@ export default function render(ctx, appId) {
           : ''}
       </div>
 
-      <aside class="container__aside stack-lg">
+      ${/* KEIN .stack-lg hier: den CD-Abstand der Aside-Module (1.75/2rem)
+            liefert bereits .container__aside > * (Review layout/aside-1). */''}
+      <aside class="container__aside">
         <div class="box">
           <h3>Zugriff</h3>
           ${primary ? `<p style="margin:0 0 1rem">

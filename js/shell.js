@@ -12,8 +12,11 @@ import { icon, escape as escapeHtml, select } from './components.js';
 let shellAbort = null;
 
 // Zeilen eines navy-Menüs (CD-Anatomie). external → neues Fenster + External-Icon.
+// Kein menu__item--condensed: der Modifier ist in CD eine EIGENE Variante
+// (menu.postcss:87-93), die navy nicht verwendet — die Zeilen tragen CDs
+// Basis-Polsterung aus dem Blatt (Review nav/drawer-2).
 function navyRow(child) {
-  return `<li class="menu__item menu__item--border menu__item--condensed">
+  return `<li class="menu__item menu__item--border">
     <a class="menu__item__flex" href="${child.href}"${
       child.external ? ' target="_blank" rel="noopener external"' : ' data-navsub="' + escapeHtml(child.href) + '"'}>
       <span>${escapeHtml(child.label)}</span>
@@ -43,7 +46,7 @@ function themaBranchRows() {
 
 // Ein aufklappbarer Zweig-Knopf (Übersicht/Themen/Bereiche teilen dieselbe Anatomie).
 function branchRow(branchKey, label) {
-  return `<li class="menu__item menu__item--border menu__item--condensed">
+  return `<li class="menu__item menu__item--border">
     <button class="menu__item__flex navy-branch" type="button" data-branch="${escapeHtml(branchKey)}">
       <span>${escapeHtml(label)}</span>${icon('ChevronRight', 'menu__item__icon')}
     </button></li>`;
@@ -93,30 +96,41 @@ function headerHTML() {
       level0 = `<ul class="menu navy__level-0">${(item.children || []).map(navyRow).join('')}</ul>`;
     }
 
+    // Drawer-Titel als <h2> wie in CDs kanonischem Markup (MainNavigation.vue:41,
+    // 62, 85): der Titel gibt AT Struktur. Geschlossene Drawer sind `hidden`,
+    // die Überschriften belasten die Seitengliederung also nicht; tabindex="-1"
+    // am Zweigtitel bleibt für den Fokus beim Drill-down (Review nav/drawer-3).
     const inner = withBranches
       ? `<div class="navy navy--drill" data-level="0">
           <div class="navy__slider">
             <div class="navy__pane" data-pane="0">
-              <span class="navy__title">${escapeHtml(item.label)}</span>
+              <h2 class="navy__title">${escapeHtml(item.label)}</h2>
               ${level0}
             </div>
             <div class="navy__pane" data-pane="1">
               <button class="navy__back" type="button" data-back>${icon('ChevronLeft', 'icon--sm')}<span>Zurück</span></button>
-              <span class="navy__title" data-branch-title tabindex="-1"></span>
+              <h2 class="navy__title" data-branch-title tabindex="-1"></h2>
               <ul class="menu" data-branch-list></ul>
             </div>
           </div>
         </div>`
       : `<div class="navy">
-          <span class="navy__title">${escapeHtml(item.label)}</span>
+          <h2 class="navy__title">${escapeHtml(item.label)}</h2>
           ${level0}
         </div>`;
 
+    // Der Schliessen-Knopf ist per CD ein Desktop-Element (desktop-menu.postcss:57
+    // «hidden lg:block»). Im mobilen Baum wurde er bisher gerendert und nur per
+    // CSS versteckt — ihn gar nicht zu erzeugen hält den AT-Baum sauber und
+    // erspart das desktop-benannte Element im Mobilmenü (Review nav/mob-3).
+    const closeBtn = scope === 'desktop'
+      ? `<button class="desktop-menu__close" type="button" data-menu-close="${menuId}" aria-label="${escapeHtml(item.label)} schliessen">
+          <span>Schliessen</span>${icon('Cancel', 'icon--sm')}
+      </button>`
+      : '';
     return `
     <div class="${drawerClass}" id="${menuId}" role="group" aria-label="${escapeHtml(item.label)}" hidden>
-      <button class="desktop-menu__close" type="button" data-menu-close="${menuId}" aria-label="${escapeHtml(item.label)} schliessen">
-          <span>Schliessen</span>${icon('Cancel', 'icon--sm')}
-      </button>
+      ${closeBtn}
       ${inner}
     </div>`;
   };
@@ -288,8 +302,10 @@ function footerHTML() {
                ersten Spalte nicht mehr auf drei Zeilen; das Akronym steht in der
                Adresszeile darunter (Item 4.13). -->
           <h3>Bundesamt für Bauten und Logistik</h3>
-          <p class="small">Das Kundenportal bündelt Dienstleistungen, Anwendungen, Dokumente und Daten des BBL an einem Ort. Dies ist ein <strong>Prototyp mit Demo-Daten</strong>.</p>
-          <p class="small">BBL · Fellerstrasse 21, 3003 Bern</p>
+          <!-- Fliesstext in Basisgrösse wie CD (FooterInformation.vue:7-13 rendert
+               nackte <p>) — kein .small (Review nav/ft-1). -->
+          <p>Das Kundenportal bündelt Dienstleistungen, Anwendungen, Dokumente und Daten des BBL an einem Ort. Dies ist ein <strong>Prototyp mit Demo-Daten</strong>.</p>
+          <p>BBL · Fellerstrasse 21, 3003 Bern</p>
         </div>
         <div class="footer-information__entry">
           <h3>Prototyp</h3>

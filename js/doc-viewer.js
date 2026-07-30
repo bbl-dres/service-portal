@@ -101,6 +101,13 @@ export function openDocumentViewer(doc, siblings) {
   document.body.appendChild(backdrop);
   document.body.classList.add('docviewer-open');
 
+  // Tab-Falle über das geteilte C.trapFocus statt einer eigenen Selektorliste:
+  // drei abweichende Kopien der Fokusliste haben bereits einen Trap-Ausbruch
+  // produziert (Review lb-trap-1). Der Listener sitzt auf dem Backdrop und
+  // überlebt mount() (innerHTML ersetzt nur die Kinder); die übrigen Tasten
+  // bleiben in onKeydown.
+  const untrap = C.trapFocus(backdrop);
+
   let stage, pagesEl, readout, indicator, total, baseW, zoom = 1;
 
   function applyZoom() {
@@ -109,18 +116,25 @@ export function openDocumentViewer(doc, siblings) {
     if (readout) readout.textContent = Math.round(zoom * 100) + '%';
   }
 
-  // Kurzer Hinweis für simulierte Aktionen (Download/Upload/Teilen).
-  function toast(msg) {
+  // Kurzer Hinweis für simulierte Aktionen (Download/Upload/Teilen). Gleiche
+  // Anatomie und Dauer wie C.toast (CD toast-message: Notification im Host,
+  // Einblenden, 5 s + 300 ms Ausblenden) — nur im Backdrop gehostet, weil
+  // --z-viewer (200) über --z-toast (110) liegt: ein Toast auf dem <body>
+  // wäre hinter dem Betrachter unerreichbar (tokens.css z-Skala).
+  // .toast__message liefert die Blende, .docviewer__toast nur Position/Schatten.
+  function toast(msg, variant = 'success', iconName = 'CheckmarkCircle') {
+    C.announce(msg); // wie C.toast: aria-live feuert in frisch erzeugten Knoten nicht.
     const t = document.createElement('div');
-    t.className = 'docviewer__toast';
-    t.setAttribute('role', 'status');
-    t.textContent = msg;
+    t.className = 'toast__message docviewer__toast';
+    t.innerHTML = C.notification(C.escape(msg), variant, iconName);
     backdrop.appendChild(t);
-    setTimeout(() => t.remove(), 2200);
+    requestAnimationFrame(() => t.classList.add('toast__message--in'));
+    setTimeout(() => { t.classList.remove('toast__message--in'); setTimeout(() => t.remove(), 300); }, 5000);
   }
 
   function close() {
     document.removeEventListener('keydown', onKeydown, true);
+    untrap();
     backdrop.remove();
     document.body.classList.remove('docviewer-open');
     if (opener && opener.focus) opener.focus();
@@ -142,12 +156,6 @@ export function openDocumentViewer(doc, siblings) {
     if (e.key === '0') { e.preventDefault(); zoom = 1; applyZoom(); return; }
     if (e.key === 'ArrowLeft' && list.length > 1) { e.preventDefault(); go(-1); return; }
     if (e.key === 'ArrowRight' && list.length > 1) { e.preventDefault(); go(1); return; }
-    if (e.key !== 'Tab') return;
-    const f = Array.from(backdrop.querySelectorAll('button, [tabindex]:not([tabindex="-1"])')).filter(el => el.offsetParent !== null);
-    if (!f.length) return;
-    const first = f[0], last = f[f.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   }
 
   function mount() {
@@ -200,7 +208,8 @@ export function openDocumentViewer(doc, siblings) {
     on('download', () => toast('Download simuliert: ' + d.title));
     on('upload', () => toast('Neue Version hochladen — simuliert.'));
     on('share', () => toast('Link kopiert (Demo).'));
-    on('comment', () => toast('Kommentare sind im Prototyp nicht verfügbar.'));
+    // «nicht verfügbar» ist kein Erfolg — als Info-Notification, nicht mit Häkchen.
+    on('comment', () => toast('Kommentare sind im Prototyp nicht verfügbar.', 'info', 'InfoCircle'));
     on('zoom-in', () => { zoom += 0.25; applyZoom(); });
     on('zoom-out', () => { zoom -= 0.25; applyZoom(); });
     on('zoom-reset', () => { zoom = 1; applyZoom(); });

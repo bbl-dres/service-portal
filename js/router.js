@@ -309,9 +309,15 @@ async function dispatch() {
   // Kein «Lädt…»-Aufblitzen bei einem reinen Zustandswechsel (Modul ist im Cache).
   // Ladezustand: statt eines nackten «Lädt…»-Absatzes eine echte Statusregion mit
   // aria-busy und einer Ladeanzeige (Item 3.17). Der sichtbare Text ist sr-only —
-  // das Spinner-Symbol trägt die Information optisch.
-  if (!isStateChange) mount.innerHTML = `<div class="container section" role="status" aria-busy="true">`
-    + `${C.icon('Spinner', 'icon--2xl icon--spin')}<span class="sr-only">Inhalt wird geladen…</span></div>`;
+  // das Spinner-Symbol trägt die Information optisch. Die ANSAGE geht über die
+  // persistente Live-Region: eine frisch MIT Inhalt erzeugte role=status-Region
+  // feuert nicht (components.js, Item 3.9); das Ende signalisiert der h1-Fokus
+  // nach dem Rendern (Review a11y-loading-1).
+  if (!isStateChange) {
+    C.announce('Inhalt wird geladen…');
+    mount.innerHTML = `<div class="container section" role="status" aria-busy="true">`
+      + `${C.icon('Spinner', 'icon--2xl icon--spin')}<span class="sr-only">Inhalt wird geladen…</span></div>`;
+  }
   try {
     const mod = await import(modPath);
     if (stale()) return;

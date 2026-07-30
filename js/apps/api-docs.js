@@ -88,6 +88,9 @@ export default async function render(ctx) {
         <td class="muted small">${C.escape(p.in)}</td><td class="muted small">${C.escape(p.type)}</td>
         <td>${C.escape(p.desc || '')}</td></tr>`).join('')}</tbody></table></div>` : '';
 
+  // Die aria-label auf den beiden pre.api-code: wireScrollRegions macht
+  // überlaufende Codeblöcke fokussierbar, erklärt sie aber nur MIT Namen zur
+  // benannten Region — ohne Label bliebe ein anonymer Tab-Stopp (Item 3.21).
   const endpoint = (ep, key) => `
     <div class="api-ep">
       <button type="button" class="api-ep__head" aria-expanded="false">
@@ -99,16 +102,16 @@ export default async function render(ctx) {
       <div class="api-ep__body" hidden>
         ${paramTable(ep)}
         ${ep.body ? `<div class="api-block"><div class="api-block__label">Request-Body <span class="muted small">(application/json)</span></div>
-          <pre class="api-code">${C.escape(JSON.stringify(ep.body, null, 2))}</pre></div>` : ''}
+          <pre class="api-code" aria-label="Beispiel-Request (JSON)">${C.escape(JSON.stringify(ep.body, null, 2))}</pre></div>` : ''}
         <div class="api-block"><div class="api-block__label">Antworten</div>
           <ul class="api-resp">${Object.entries(ep.responses || {}).map(([code, desc]) =>
             `<li><span class="api-status api-status--${String(code)[0]}">${C.escape(code)}</span> ${C.escape(desc)}</li>`).join('')}</ul></div>
         <div class="api-try">
-          <button type="button" class="btn btn--outline btn--sm" data-try="${key}">${C.icon('ArrowRight', 'icon--base')} Ausprobieren</button>
+          <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-try="${key}">${C.icon('ArrowRight', 'btn__icon icon--base')}<span class="btn__text">Ausprobieren</span></button>
           <div class="api-try__out" hidden>
             <div class="api-try__req"><span class="api-method api-method--${METHOD[ep.method] || 'get'}">${ep.method}</span> <code>${C.escape(spec.baseUrl + ep.path)}</code></div>
             <div class="api-try__status"></div>
-            <pre class="api-code api-try__pre"></pre>
+            <pre class="api-code api-try__pre" aria-label="Antwort der Testanfrage"></pre>
           </div>
         </div>
       </div>
@@ -133,7 +136,7 @@ export default async function render(ctx) {
     <div class="api-meta">
       <div class="api-meta__row"><span class="api-meta__k">Basis-URL</span>
         <code id="api-base">${C.escape(spec.baseUrl)}</code>
-        <button type="button" class="btn btn--bare btn--sm" id="api-copy" title="Basis-URL kopieren">${C.icon('Link', 'icon--base')}<span class="btn__text">kopieren</span></button></div>
+        <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="api-copy" title="Basis-URL kopieren">${C.icon('Link', 'btn__icon icon--base')}<span class="btn__text">kopieren</span></button></div>
       ${spec.auth ? `<div class="api-meta__row"><span class="api-meta__k">${C.icon('Lock', 'icon--base')} Authentifizierung</span> <span class="muted">${C.escape(spec.auth)}</span></div>` : ''}
     </div>
     <div class="api-layout">

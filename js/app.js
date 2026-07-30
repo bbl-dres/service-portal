@@ -17,11 +17,14 @@ function renderDataStatus() {
   // Formular ausfüllt (H10).
   const areas = [...core.failedAreas(), ...engine.failedAreas()];
   if (!areas.length) { el.innerHTML = ''; return; }
+  // { live:true }: der Container ist eine benannte Region (index.html), keine
+  // Live-Region mehr — die einmalige Ansage beim Einfügen übernimmt die
+  // Notification selbst als role="alert" (Review a11y-datastatus-1).
   el.innerHTML = `<div class="container" style="padding-top:1rem">${notification(
     `<strong>Einige Daten konnten nicht geladen werden</strong> (${escape(areas.join(', '))}). `
     + 'Betroffene Listen sind unvollständig oder leer — das ist ein Ladefehler, keine leere Ablage. '
     + '<button type="button" class="link" onclick="location.reload()">Seite neu laden</button>',
-    'error', 'WarningCircle')}</div>`;
+    'error', 'WarningCircle', { live: true })}</div>`;
 }
 
 async function boot() {

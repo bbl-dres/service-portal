@@ -88,7 +88,11 @@ export default async function render(ctx) {
   const gueltig = vorgabeBld && buildings.some((b) => b.bbl_id === vorgabeBld);
 
   const state = {
-    buildingId: gueltig ? vorgabeBld : (buildings[0] ? buildings[0].bbl_id : ''),
+    // Leere Vorauswahl (wie PLEASE_PICK in building-create.js): eine Pflicht-
+    // auswahl, die schon ausgefüllt ist, ist keine — vorher stand hier still-
+    // schweigend das erste von 21 Gebäuden, und required konnte nie fehlschlagen.
+    // Nur der Deep-Link (?building=) darf vorbelegen.
+    buildingId: gueltig ? vorgabeBld : '',
     ort: query.get('room') || '',
     category: cfg.categories[0] || '',
     beschreibung: '',
@@ -97,10 +101,17 @@ export default async function render(ctx) {
     created: null,
   };
 
+  // Klartextnamen für die Fehlerübersicht. Die Schlüssel sind DOM-ids, damit
+  // die Sprungmarken auflösen (Muster space-request.js / building-create.js).
+  const FIELD_LABELS = { bld: 'Gebäude / Standort', beschreibung: 'Beschreibung' };
+
   function draw() {
     if (state.created) return drawDone();
 
-    const buildingOpts = buildings.map(b => ({ value: b.bbl_id, text: `${b.name} — ${b.city}` }));
+    // «Bitte wählen …» als echte Leerauswahl an erster Stelle — erst damit kann
+    // die required-Prüfung des Gebäude-Felds überhaupt fehlschlagen.
+    const buildingOpts = [{ value: '', text: 'Bitte wählen …' },
+      ...buildings.map(b => ({ value: b.bbl_id, text: `${b.name} — ${b.city}` }))];
     const categoryOpts = cfg.categories.map(c => ({ value: c, text: c }));
     const dringlichkeitOpts = [
       { value: 'normal', text: 'Normal' },
@@ -125,11 +136,13 @@ export default async function render(ctx) {
       <!-- novalidate — siehe space-request.js: ohne das Attribut feuert das
            submit-Event nie und validate() bleibt unerreichbar. -->
       <h2 class="sr-only">Meldung erfassen</h2>
+      <p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>
+      ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
       <form id="report-form" class="form mt-6" novalidate>
         ${buildings.length
           ? C.select({ id: 'bld', name: 'bld', label: 'Gebäude / Standort', required: true,
-              value: state.buildingId, message: state.errors.buildingId, options: buildingOpts })
-          : C.field({ id: 'bld', label: 'Gebäude / Standort', required: true, message: state.errors.buildingId,
+              value: state.buildingId, message: state.errors.bld, options: buildingOpts })
+          : C.field({ id: 'bld', label: 'Gebäude / Standort', required: true, message: state.errors.bld,
               control: (cls, attrs) => `<input id="bld" value="" placeholder="Kein Gebäude verfügbar" disabled class="${cls}"${attrs}>` })}
         ${C.field({ id: 'ort', label: 'Ort (Stockwerk / Raum)', hint: 'Optional – hilft bei der Lokalisierung.',
           control: (cls, attrs) => `<input id="ort" placeholder="z. B. 3. OG, Raum 312" value="${C.escape(state.ort)}" class="${cls}"${attrs}>` })}
@@ -138,9 +151,9 @@ export default async function render(ctx) {
           control: (cls, attrs) => `<textarea id="beschreibung" placeholder="Beschreiben Sie den Sachverhalt möglichst genau." class="${cls}"${attrs}>${C.escape(state.beschreibung)}</textarea>` })}
         ${C.select({ id: 'dringlichkeit', name: 'dringlichkeit', label: 'Dringlichkeit', value: state.dringlichkeit, options: dringlichkeitOpts })}
         ${C.notification('Mit dem Absenden wird ein Vorgang erstellt. Sie können den Status jederzeit unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
-        <div class="row row--end mt-4">
-          <a class="btn btn--outline" href="#/services">Abbrechen</a>
-          <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Meldung absenden</button>
+        <div class="form__actions">
+          <a class="btn btn--outline" href="#/services"><span class="btn__text">Abbrechen</span></a>
+          <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Meldung absenden</span></button>
         </div>
       </form>
       </div>
@@ -173,7 +186,7 @@ export default async function render(ctx) {
 
   function validate() {
     const e = {};
-    if (!state.buildingId) e.buildingId = 'Bitte Gebäude / Standort wählen';
+    if (!state.buildingId) e.bld = 'Bitte Gebäude / Standort wählen';
     if (!state.beschreibung.trim()) e.beschreibung = 'Bitte beschreiben Sie den Sachverhalt';
     state.errors = e;
     return Object.keys(e).length === 0;
@@ -185,7 +198,9 @@ export default async function render(ctx) {
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       read();
-      if (!validate()) { draw(); return; }
+      // Fehlversuch: neu zeichnen, dann Fokus auf die Fehlerübersicht — sonst
+      // landet er auf <body> und der Nutzer erfährt nichts (WCAG 3.3.1).
+      if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
       const b = core.building(state.buildingId);
       const buildingName = b ? b.name : state.buildingId;
       state.created = engine.start(cfg.defId, {

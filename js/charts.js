@@ -18,7 +18,7 @@
 // between marks, a legend whenever there are two or more series, and (since
 // item 6.2) the data table underneath every chart. Assign slots in order, never cycle.
 
-import { menu, wireMenu, toast, trapFocus } from './components.js';
+import C, { menu, wireMenu, toast } from './components.js';
 import { download, tableToCsv, tableToXls, svgToPng, copyText, fileSlug } from './export.js';
 
 // Kategoriale Palette und Diagramm-Tinte kommen aus dem Token-Layer
@@ -192,8 +192,9 @@ function lineChart({ id, rows, x, y, series, unit, width }) {
          data-tip="${esc(name === '__single' ? '' : name + ' · ')}${esc(p[x])}: ${esc(fmt(p[y], unit))}"
        ><title>${esc(p[x])}: ${esc(fmt(p[y], unit))}</title></circle>`).join('');
     const last = pts[pts.length - 1];
-    // direct label on the endpoint only
-    const label = `<text x="${px(last[x]) + 12}" y="${py(last[y]) + 4}" fill="${INK}" font-size="13" font-weight="700">${esc(fmt(last[y], unit))}</text>`;
+    // direct label on the endpoint only — 14px (--fs-sm-Äquivalent): 13 liegt
+    // zwischen den CD-Stufen (Item chart-fs-1)
+    const label = `<text x="${px(last[x]) + 12}" y="${py(last[y]) + 4}" fill="${INK}" font-size="14" font-weight="700">${esc(fmt(last[y], unit))}</text>`;
     const dash = name === 'Ziel' ? ' stroke-dasharray="6 5"' : '';
     return `<path d="${d}" fill="none" stroke="${colour}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${dash}/>${dots}${label}`;
   }).join('');
@@ -278,11 +279,13 @@ function barChart({ id, rows, x, y, unit, width }) {
     const by = P.t + i * rowH + (rowH - thick) / 2;
     const label = String(r[x]);
     const short = label.length > maxChars ? label.slice(0, maxChars - 1) + '…' : label;
-    return `<text x="${P.l - 12}" y="${by + thick / 2 + 4}" text-anchor="end" fill="${INK}" font-size="13">${esc(short)}<title>${esc(label)}</title></text>
+    // 12/14 statt 13: die CD-Skala kennt keine 13px-Stufe — 12 für die
+    // Kategorie-Beschriftung, 14 für den betonten Wert (Item chart-fs-1).
+    return `<text x="${P.l - 12}" y="${by + thick / 2 + 4}" text-anchor="end" fill="${INK}" font-size="12">${esc(short)}<title>${esc(label)}</title></text>
       <path d="${barPath(P.l, by, Math.max(w, 2), thick, 4, 'right')}" fill="${SER[0]}"
         class="chart__bar" data-tip="${esc(label)}: ${esc(fmt(v, unit))}"
       ><title>${esc(label)}: ${esc(fmt(v, unit))}</title></path>
-      <text x="${P.l + Math.max(w, 2) + 10}" y="${by + thick / 2 + 4}" fill="${INK}" font-size="13" font-weight="700">${esc(fmt(v, unit))}</text>`;
+      <text x="${P.l + Math.max(w, 2) + 10}" y="${by + thick / 2 + 4}" fill="${INK}" font-size="14" font-weight="700">${esc(fmt(v, unit))}</text>`;
   }).join('');
 
   return { svg: `<svg viewBox="0 0 ${W} ${H}" class="chart__svg" role="img" aria-labelledby="${id}-t">
@@ -334,9 +337,11 @@ function pieChart({ id, rows, x, y, unit, width }) {
     return `<path d="${s.path}" fill="${s.color}" stroke="${SURFACE}" stroke-width="2" class="chart__bar" data-tip="${tip}" fill-rule="evenodd"><title>${tip}</title></path>`;
   }).join('');
   // Prozentwert nur, wenn das Segment breit genug ist — im Ringband ist weniger
-  // Platz als in einem Vollkreis-Keil. Weiss auf den 700er-Tönen: >= 5.02:1.
+  // Platz als in einem Vollkreis-Keil. Oberflächenfarbe (Token --chart-surface,
+  // Standard Weiss) statt Literal #fff, wie bei allen anderen Mark-Konturen;
+  // auf den 700er-Tönen: >= 5.02:1. 14 statt 13: keine 13px-Stufe im CD.
   const labels = slices.filter((s) => s.frac >= 0.08).map((s) =>
-    `<text x="${s.lx.toFixed(1)}" y="${s.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="13" font-weight="700">${Math.round(s.frac * 100)}%</text>`).join('');
+    `<text x="${s.lx.toFixed(1)}" y="${s.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${SURFACE}" font-size="14" font-weight="700">${Math.round(s.frac * 100)}%</text>`).join('');
   // Gesamtsumme in der Mitte — nur wenn der Innenkreis sie trägt.
   const totalText = fmt(total, unit);
   const centre = Ri >= 44 && totalText.length <= 12
@@ -397,11 +402,16 @@ export function renderSvg(spec, result, width) {
 /** Füllt jedes leere `.chart__plot[data-chart]` unter `root`. `lookup(id)`
  *  liefert `{ spec, result }`. Gibt eine Aufräumfunktion für den ResizeObserver
  *  zurück — der Aufrufer MUSS sie beim Neuzeichnen der Route aufrufen. */
+// Das Vollbild (Item 6.12) zeichnet mit spec/result in Modalbreite NEU statt das
+// skalierte SVG zu klonen — paintCharts merkt sich beide je Diagramm-ID, damit
+// wireChartMenus keinen lookup-Parameter durch alle Seiten schleifen muss.
+const chartRegistry = new Map();
 export function paintCharts(root, lookup) {
   const paint = () => {
     root.querySelectorAll('.chart__plot[data-chart]').forEach((p) => {
       const found = lookup(p.dataset.chart);
       if (!found || !found.spec) return;
+      chartRegistry.set(p.dataset.chart, found);
       const w = p.clientWidth || p.getBoundingClientRect().width;
       if (!w) return;                       // unsichtbar (z. B. inaktiver Tab)
       p.innerHTML = renderSvg(found.spec, found.result, w);
@@ -449,50 +459,38 @@ export function wireCharts(root) {
 }
 
 /* -------------------------------------------------------- fullscreen ------- */
-// "Vollbild": clone the chart card into a modal overlay (the SVG scales via its
-// viewBox). Escape / backdrop / close button dismiss it; focus is restored.
+// «Vollbild» (Item 6.12): läuft über das kanonische Modal (C.openModal, Grösse
+// xl) statt über das frühere eigene .chart-overlay — EINE Dialog-Anatomie für
+// alle Dialoge; Fokusfalle, Escape, Backdrop-Klick und Fokus-Rückgabe verdrahtet
+// openModal. Der Titel wandert in den Modal-Kopf (weiss auf dem Scrim, CD-
+// Anatomie), darum verliert der Klon seinen eigenen Kopf samt Kebab-Menü.
+// Wichtig: das SVG wird mit der GEMESSENEN Modalbreite neu gezeichnet, nicht als
+// skalierter Klon übernommen — der Klon trüge den viewBox der Karte, und auf dem
+// Telefon wäre «Vollbild» damit KLEINER als die Inline-Darstellung (Item 6.1:
+// 1 User-Unit = 1 CSS-Pixel, Beschriftungen bleiben 12/14px).
 function openChartFullscreen(figure) {
-  const title = (figure.querySelector('.chart__title') || {}).textContent || 'Diagramm';
-  const opener = document.activeElement;
-  const overlay = document.createElement('div');
-  overlay.className = 'chart-overlay';
-  overlay.setAttribute('role', 'dialog');
-  overlay.setAttribute('aria-modal', 'true');
-  overlay.setAttribute('aria-label', title);
+  const title = ((figure.querySelector('.chart__title') || {}).textContent || 'Diagramm').trim();
+  const found = chartRegistry.get(figure.id);
 
   const clone = figure.cloneNode(true);
-  clone.querySelectorAll('.action-menu').forEach((m) => m.remove());   // no nested action menu
+  clone.removeAttribute('id');   // querySelectorAll('[id]') fasst die Wurzel nicht — sonst doppelte ID
+  clone.querySelectorAll('.chart__head').forEach((h) => h.remove());   // Titel + Menü stehen nicht doppelt
   clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
   clone.querySelectorAll('[aria-labelledby]').forEach((el) => el.removeAttribute('aria-labelledby'));
   clone.querySelectorAll('details').forEach((d) => d.removeAttribute('open'));
 
-  const box = document.createElement('div');
-  box.className = 'chart-overlay__box';
-  const close = document.createElement('button');
-  close.type = 'button';
-  close.className = 'chart-overlay__close';
-  close.setAttribute('aria-label', 'Schliessen');
-  close.innerHTML = '<span class="icon icon--base" style="-webkit-mask-image:url(\'assets/icons/Cancel.svg\');mask-image:url(\'assets/icons/Cancel.svg\')" aria-hidden="true"></span>';
-  box.appendChild(close);
-  box.appendChild(clone);
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-  document.body.classList.add('chart-overlay-open');
-  const untrap = trapFocus(overlay);   // WCAG 2.4.3: Tab bleibt im Dialog
-
-  const dismiss = () => {
-    untrap();
-    overlay.remove();
-    document.body.classList.remove('chart-overlay-open');
-    document.removeEventListener('keydown', onKey, true);
-    if (opener && opener.focus) opener.focus();
-  };
-  const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); dismiss(); } };
-  document.addEventListener('keydown', onKey, true);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) dismiss(); });
-  close.addEventListener('click', dismiss);
-  close.focus();
-  wireCharts(clone);   // re-arm the hover tooltip inside the clone
+  C.openModal({ title, size: 'xl', body: clone.outerHTML });
+  const dialogs = document.querySelectorAll('.modal');
+  const dlg = dialogs[dialogs.length - 1];   // openModal hängt das Modal zuletzt an
+  if (!dlg) return;
+  const plot = dlg.querySelector('.chart__plot[data-chart]');
+  if (found && found.spec && plot) {
+    const w = plot.clientWidth || plot.getBoundingClientRect().width;
+    if (w) plot.innerHTML = renderSvg(found.spec, found.result, w);
+  }
+  // Tooltip NACH dem Neuzeichnen verdrahten (sonst hingen die Listener am
+  // ersetzten SVG) und am positionierten Vorfahren verankern.
+  wireCharts(dlg.querySelector('.modal__content') || dlg);
 }
 
 /* ------------------------------------------------- chart action menus ------ */
@@ -504,7 +502,9 @@ export function wireChartMenus(root) {
     if (!figure) return;
     const title = ((figure.querySelector('.chart__title') || {}).textContent || 'Diagramm').trim();
     const name = fileSlug(title, 'diagramm');
-    if (action === 'link') { copyText(location.href).then((ok) => toast(ok ? 'Link kopiert.' : 'Kopieren nicht möglich.')); return; }
+    // Fehl- und «nicht verfügbar»-Pfade melden sich als error-/warning-Toast
+    // (CD-Notification-Anatomie), nicht mit dem Erfolgs-Grün des Standardfalls.
+    if (action === 'link') { copyText(location.href).then((ok) => (ok ? toast('Link kopiert.') : toast('Kopieren nicht möglich.', 'error', 'WarningCircle'))); return; }
 
     // The map is a WebGL canvas (no SVG/table): Vollbild uses the Fullscreen API,
     // "Als Bild" reads the canvas (needs preserveDrawingBuffer on the map).
@@ -512,16 +512,16 @@ export function wireChartMenus(root) {
       if (action === 'fullscreen') { const el = figure.querySelector('.dash-map') || figure; if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); return; }
       if (action === 'png') {
         const canvas = figure.querySelector('canvas');
-        if (!canvas || !canvas.toBlob) { toast('Bild-Export fehlgeschlagen.'); return; }
+        if (!canvas || !canvas.toBlob) { toast('Bild-Export fehlgeschlagen.', 'error', 'WarningCircle'); return; }
         canvas.toBlob((blob) => {
-          if (!blob) { toast('Bild-Export fehlgeschlagen.'); return; }
+          if (!blob) { toast('Bild-Export fehlgeschlagen.', 'error', 'WarningCircle'); return; }
           const url = URL.createObjectURL(blob), a = document.createElement('a');
           a.href = url; a.download = name + '.png'; document.body.appendChild(a); a.click(); a.remove();
           setTimeout(() => URL.revokeObjectURL(url), 1000); toast('Bild heruntergeladen.');
         }, 'image/png');
         return;
       }
-      toast('Für die Karte nicht verfügbar.'); return;
+      toast('Für die Karte nicht verfügbar.', 'warning', 'WarningCircle'); return;
     }
 
     const table = figure.querySelector('.chart__table table');
@@ -529,8 +529,8 @@ export function wireChartMenus(root) {
     if (action === 'fullscreen') { openChartFullscreen(figure); return; }
     if (action === 'csv' && table) { download(tableToCsv(table), name + '.csv', 'text/csv;charset=utf-8'); toast('CSV heruntergeladen.'); return; }
     if (action === 'xls' && table) { download(tableToXls(table, title), name + '.xls', 'application/vnd.ms-excel'); toast('Excel-Datei heruntergeladen.'); return; }
-    if (action === 'png' && svg) { svgToPng(svg, name + '.png').then(() => toast('Bild heruntergeladen.')).catch(() => toast('Bild-Export fehlgeschlagen.')); return; }
-    toast('Für dieses Diagramm nicht verfügbar.');
+    if (action === 'png' && svg) { svgToPng(svg, name + '.png').then(() => toast('Bild heruntergeladen.')).catch(() => toast('Bild-Export fehlgeschlagen.', 'error', 'WarningCircle')); return; }
+    toast('Für dieses Diagramm nicht verfügbar.', 'warning', 'WarningCircle');
   });
 }
 

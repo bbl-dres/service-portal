@@ -67,9 +67,15 @@
   /* Dedizierte Rot-Töne für Fehlerzustände — entkoppelt vom (skin-getauschten)
      Primary-Ramp, damit Fehler auch unter .body--intranet ROT bleiben, nicht blau. */
   --color-error-400: #fc656b;    --color-error-700: #bf1f25;
+  /* red-200/300 (CD input.postcss:74-76, select.postcss:66-72) für Fehler auf
+     Negativflächen (.input--error.input--negative). */
+  --color-error-200: #ffccce;    --color-error-300: #fa9da1;
 
   /* CD-Akzent-Hues für Badges/Tags: 100-bg / 800-text (garantiert AA auf Weiss,
-     badge.postcss:23-72). Ergänzt die vier fehlenden Hues + trennt Gelb von Orange. */
+     badge.postcss:23-72). Ergänzt die vier fehlenden Hues + trennt Gelb von Orange.
+     Teal ist dabei eine PORTAL-Erweiterung: badge.postcss kennt kein badge--teal;
+     die Werte sind CDs teal-100/800 (tailwind.config.js), formeltreu ergänzt —
+     bei einem CD-Sync nicht als Kanon missverstehen. */
   --color-yellow-bg: #fef3c7;    --color-yellow-text: #92400e;
   --color-indigo-bg: #e0e7ff;    --color-indigo-text: #3730a3;
   --color-pink-bg:   #fce7f3;    --color-pink-text:   #9d174d;
@@ -78,15 +84,18 @@
 
   --color-text:        var(--color-text-800);   /* body text */
   --color-text-muted:  var(--color-text-600);   /* passes AA on white AND on secondary-50 */
-  --color-text-light:  var(--color-text-400);
+  --color-text-light:  var(--color-text-500); /* CDs .text--light/.color--light = text-500
+                                      (typography.postcss:87-89). Vorher text-400
+                                      (#9ca3af, 2.54:1 auf Weiss) — eine Falle. */
   --color-link:        var(--color-primary-600);
   --color-border:      #e5e7eb;
   --color-border-strong:#d1d5db;
   --color-border-input: #6b7280;   /* CD Bund input border = gray-500 (more visible) */
-  --color-placeholder: #596978;    /* secondary-400 — AA on white */
+  --color-placeholder: var(--color-secondary-400);  /* CD input.postcss:18 — folgt dem Skin.
+                                      Default 5.65:1, Intranet #5076b3 4.58:1 — beide AA. */
   --color-bg:          #ffffff;
-  --color-bg-subtle:   #f0f4f7;   /* secondary-50 — CD's only neutral surface */
-  --color-bg-muted:    #dfe4e9;   /* secondary-100 */
+  --color-bg-subtle:   var(--color-secondary-50);   /* CD's only neutral surface — folgt dem Skin */
+  --color-bg-muted:    var(--color-secondary-100);
   --color-focus-ring:  #8655F6;   /* CD Bund focus purple-500 */
   --color-focus-ring-negative: #c4b5fd;   /* purple-300 — on dark chrome (global.postcss:78-85) */
 
@@ -103,6 +112,12 @@
      aufgehen. Vorher trugen beide Absichten dasselbe Literal 2.75rem, was die
      Rampe unbemerkt mitgerissen hätte. */
   --target-min: 2.75rem;
+
+  /* Eingabefeld-Rampe — CD input.postcss:1-4,16: Felder steigen NUR bei 2xl/1544
+     von 44 auf 48 px und enden dort; die xl/3xl-Stufen (48/52) gehören allein den
+     Knöpfen. Vorher ritten die Felder auf --control-h mit und waren auf
+     1280-1543-px-Laptops 4 px höher als das CD vorsieht. */
+  --input-h: 2.75rem;
 
   /* Negativ-Ebene — helle Bedienelemente auf dunkler Chrome (Lightbox,
      Dokumentbetrachter). Das CD führt dafür `btn--*-negative`, `link--negative`
@@ -145,6 +160,11 @@
   --fs-9xl: 5rem;
 
   --lh-tight: 1.25;   --lh-snug: 1.375;  --lh-normal: 1.5;  --lh-relaxed: 1.625;
+  /* CDs Bold-Idiom ist «fontWeight.bold: 400 + Familienwechsel auf Font-Bold»
+     (tailwind.config.js:200-222, font-face.postcss:13-19); hier trägt die
+     wght-Achse 700 der EINEN variablen Datei denselben Schnitt. NICHT auf 400
+     «korrigieren»: ohne Bold-Familie und ohne Gewichts-Synthese (app.css
+     font-synthesis) verschwände sonst stumm jedes Fett. */
   --fw-regular: 400;  --fw-bold: 700;
 
   /* CD `text--*` responsive ramps (typography.postcss:18-57) — base step.
@@ -153,7 +173,10 @@
   --text-lg:  var(--fs-lg);   --text-xl:  var(--fs-xl);   --text-2xl:  var(--fs-2xl);
   --text-3xl: var(--fs-3xl);  --text-4xl: var(--fs-4xl);  --text-5xl:  var(--fs-5xl);
 
-  /* --- Spacing (Tailwind default scale, as CD uses it) --- */
+  /* --- Spacing — BEWUSST beschnittene Teilmenge der Tailwind/CD-Standardskala:
+     nur die Stufen, die app.css konsumiert. Die Bruchstufen (0.5–3.5, CD nutzt
+     sie z. B. in mark py-0.5 und notification mt-2.5) und Stufen über 8rem
+     (hero 3xl:py-40) fehlen absichtlich, bis ein Konsument sie braucht. --- */
   --sp-0: 0;        --sp-1: .25rem;   --sp-2: .5rem;    --sp-3: .75rem;
   --sp-4: 1rem;     --sp-5: 1.25rem;  --sp-6: 1.5rem;   --sp-7: 1.75rem;
   --sp-8: 2rem;     --sp-9: 2.25rem;  --sp-10: 2.5rem;  --sp-12: 3rem;
@@ -182,9 +205,17 @@
 
   /* --- Scrims: Abdunkelung, damit Text/Chips über Bildern lesbar bleiben ---
      Vorher standen fünf Rezepte für dieselbe Aufgabe im Blatt (reines Schwarz,
-     text-800, und ein #0d1b2a, das in keiner Rampe vorkommt). Alle drei folgen
-     jetzt der Sekundärrampe; die Deckkraft trägt die Bedeutung, nicht der Ton. */
+     text-800, und ein #0d1b2a, das in keiner Rampe vorkommt). Die Chip-Scrims
+     nehmen den Ton von secondary-900 des DEFAULT-Skins (#131b22) und sind —
+     wie --color-error-400/700 und die Chart-Palette — BEWUSST skin-eingefroren,
+     NICHT skin-geschaltet: ein Foto-Scrim bleibt neutral dunkel; unter
+     .body--intranet wäre secondary-900 blau (#1c3c7d). Die Deckkraft trägt
+     die Bedeutung, nicht der Ton. */
   --overlay-scrim: rgba(0,0,0,.45);              /* ganzflächig, Mediathek-Kacheln */
+  /* Modal-Scrim getrennt vom Bild-Scrim: CD modal.postcss:25-29 nimmt text-900/70
+     (#111827 zu 70 %). Auf dem hellen .45-Schwarz fiel der negative Fokusring
+     (#c4b5fd) auf 1.82:1 — unter WCAG 1.4.11 (3:1); auf text-900/70 misst er 3.6:1. */
+  --modal-scrim: rgba(17,24,39,.7);
   --scrim-chip:       rgba(19,27,34,.72);        /* secondary-900, Chips auf Bildern */
   --scrim-chip-hover: rgba(19,27,34,.9);
   --scrim-gradient: linear-gradient(180deg, rgba(19,27,34,.15) 0%, rgba(19,27,34,.72) 100%);
@@ -196,6 +227,11 @@
      jetzt hier, genau wie --control-h es vormacht; die Konsumenten in app.css
      sind wieder einzeilig und können nicht mehr auseinanderlaufen. */
   --gap-responsive:  1.25rem;   /* 480 → 1.75 · 640 → 2.25 · 1024 → 2.5 · 1280 → 3 · 1920 → 4 */
+  /* Container-Seitenabstand: identisch mit der Spalten-Rampe AB xs — nur die
+     Basisstufe weicht ab (container.postcss:7 px-4 = 1rem vs grids.postcss:10
+     gap-5 = 1.25rem). Ein gemeinsames Token gäbe jeder Seite unter 480 px
+     4 px zu viel Rand. */
+  --container-px:    1rem;
   --section-py:      3.5rem;    /* 1024 → 5 · 1920 → 8 */
   --section-py-half: 1.75rem;   /* 1024 → 2.5 · 1920 → 4 */
   --section-pt:      3rem;      /* 1024 → 3.5 · 1920 → 5 — oben schmaler als unten, wie im CD */
@@ -210,11 +246,15 @@
   --z-content: 10;        /* #main-content, .mobile-menu — der Fluss selbst */
   --z-dropdown: 10;
   --z-breadcrumb: 20;
+  --z-footer: 20;         /* Bezugsrahmen «nach oben»: über dem Inhalt (10), unter
+                             Header (30) und Nav (40). CD stapelt den Footer
+                             zuunterst (z-0, global.postcss:59-61) — 0 geht hier
+                             nicht, weil der sticky Nach-oben-Knopf im Footer
+                             über #main-content schweben muss. */
   --z-header: 30;         /* .search--main, .suggest */
   --z-nav: 40;            /* .desktop-menu, .action-menu__popup */
   --z-drawer: 45;         /* .desktop-menu__drawer — über seiner Leiste */
   --z-nav-active: 50;     /* die geöffnete Nav-Schaltfläche über dem Drawer-Rand */
-  --z-footer: 60;         /* Bezugsrahmen für «nach oben» */
   --z-overlay: 90;
   --z-modal: 100;
   --z-toast: 110;
@@ -266,6 +306,11 @@
 
   /* dense secondary colors are blue */
   --color-secondary-400: #5076b3;
+  /* Re-Deklaration nötig, damit die Kopplung wirklich greift: var() in Custom
+     Properties wird EAGER auf dem deklarierenden Element substituiert — die
+     :root-Definition friert sonst beim Default-Wert #596978 ein (gemessen).
+     #5076b3 auf Weiss = 4.58:1, AA. */
+  --color-placeholder: var(--color-secondary-400);
   --color-secondary-500: #234dc2;
   --color-secondary-600: #1e40af;
   --color-secondary-700: #1e3a8a;
@@ -285,16 +330,19 @@
   --color-secondary-50:  #efffee; --color-secondary-100: #b0beb0; --color-secondary-200: #768176;
   --color-secondary-300: #404941; --color-secondary-400: #758874; --color-secondary-500: #6a7f69;
   --color-secondary-600: #5f755f; --color-secondary-700: #546c55; --color-secondary-800: #49634b; --color-secondary-900: #3e5a41;
+  /* --color-placeholder folgt sonst secondary-400 — hier wäre das #758874 =
+     3.80:1 auf Weiss (unter AA). Eine dunklere Stufe: #5f755f = 5.0:1. */
+  --color-placeholder: var(--color-secondary-600);
 }
 
 /* Responsive ramps — CD steps at xs 480 / sm 640 / lg 1024 / xl 1280 / 3xl 1920
    (css/foundations/typography.postcss:18-57 und grids.postcss:25-56,
    gegen das kompilierte Bundle geprüft) */
-@media (min-width:480px)  { :root { --gap-responsive: 1.75rem; } }   /* xs */
-@media (min-width:640px)  { :root { --gap-responsive: 2.25rem; } }   /* sm */
+@media (min-width:480px)  { :root { --gap-responsive: 1.75rem; --container-px: 1.75rem; } }   /* xs */
+@media (min-width:640px)  { :root { --gap-responsive: 2.25rem; --container-px: 2.25rem; } }   /* sm */
 @media (min-width:1024px) {          /* lg */
   :root {
-    --gap-responsive: 2.5rem;
+    --gap-responsive: 2.5rem; --container-px: 2.5rem;
     --section-py: 5rem; --section-py-half: 2.5rem; --section-pt: 3.5rem;
     --text-xl:  var(--fs-2xl); --text-2xl: var(--fs-3xl); --text-3xl: var(--fs-4xl);
     --text-4xl: var(--fs-5xl); --text-5xl: var(--fs-6xl);
@@ -303,16 +351,19 @@
 @media (min-width:1280px) {          /* xl */
   :root {
     --control-h: 3rem;               /* CD btn.postcss:112-127 xl:min-h-[48px] */
-    --gap-responsive: 3rem;
+    --gap-responsive: 3rem; --container-px: 3rem;
     --text-xs:  var(--fs-sm);  --text-sm:  var(--fs-base); --text-base: var(--fs-lg);
     --text-lg:  var(--fs-xl);  --text-xl:  var(--fs-3xl);  --text-2xl:  var(--fs-4xl);
     --text-3xl: var(--fs-5xl); --text-4xl: var(--fs-6xl);  --text-5xl:  var(--fs-7xl);
   }
 }
+@media (min-width:1544px) {          /* 2xl — einzige Stufe der Eingabefeld-Rampe */
+  :root { --input-h: 3rem; }
+}
 @media (min-width:1920px) {          /* 3xl */
   :root {
     --control-h: 3.25rem;            /* CD btn.postcss:112-127 3xl:min-h-[52px] */
-    --gap-responsive: 4rem;
+    --gap-responsive: 4rem; --container-px: 4rem;
     --section-py: 8rem; --section-py-half: 4rem; --section-pt: 5rem;
     --text-xs:  var(--fs-base); --text-sm:  var(--fs-lg);  --text-base: var(--fs-xl);
     --text-lg:  var(--fs-2xl);  --text-xl:  var(--fs-4xl); --text-2xl:  var(--fs-5xl);

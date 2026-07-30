@@ -189,11 +189,11 @@ function dashboardView(ctx, id) {
             <label for="f-from">Start Zeitreihe</label>
             ${C.selectBox(`<select id="f-from" class="input--outline input--base">${yearOpts(state.from)}</select>`)}
           </div>
-          <div class="field" style="margin:.9rem 0 0">
+          <div class="field mt-4">
             <label for="f-to">bis Jahr</label>
             ${C.selectBox(`<select id="f-to" class="input--outline input--base">${yearOpts(state.to)}</select>`)}
           </div>
-          <div class="filter-panel__actions"><button type="button" class="btn btn--bare btn--sm mt-4" id="f-reset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>
+          <div class="filter-panel__actions"><button type="button" class="btn btn--bare btn--sm btn--icon-left mt-4" id="f-reset">${C.icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>
         ` : '<p class="small muted m-0">Für dieses Dashboard sind keine Zeitreihen-Filter verfügbar.</p>'}
       </div>
     </aside>`;

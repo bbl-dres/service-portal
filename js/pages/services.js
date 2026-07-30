@@ -61,6 +61,9 @@ export default async function render(ctx) {
   const listView = (list) => C.table({
     caption: 'Dienstleistungen',
     zebra: true,
+    // Erste Spalte ist der Zeilenlink — wie in allen Katalog-Listenansichten
+    // folgt die ganze Zeile ihm per Mausklick (einheitliche Affordanz, tbl-8).
+    rowsClickable: true,
     columns: [
       { key: 'title', label: 'Dienstleistung', render: s => `<a href="#/services/${s.serviceId}">${C.escape(s.title)}</a><br><span class="small muted">${C.escape(s.short)}</span>` },
       { key: 'domain', label: 'Bereich', render: s => C.escape(domainLabel(domains, s.domain)) },
@@ -96,7 +99,7 @@ export default async function render(ctx) {
           nicht sehen und nicht abwählen. Die Fahne ist entfallen. */''}
     ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: selectedTopics,
       options: domains.filter(d => all.some(s => s.domain === d.key)).map(d => ({ value: d.key, label: d.label })) })}
-    <a class="btn btn--bare btn--sm" href="${hash({ audience: [], topic: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`;
+    <a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ audience: [], topic: [] })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a>`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -127,6 +130,9 @@ export default async function render(ctx) {
     formId: 'svc-search', inputId: 'sq', pageInputId: 'svc-page', page, totalPages, hash,
     sortId: 'svc-sort', filterToggleId: 'svc-filter', panelId: 'svc-filters',
   });
+  // Zeilenklick der Listenansicht. Abbau via onUnmount, sonst sammelt der
+  // wiederverwendete mount pro Besuch einen weiteren Klick-Horcher an.
+  ctx.onUnmount(C.wireTableRows(mount));
 }
 
 function detail(ctx, id) {
@@ -161,12 +167,14 @@ function detail(ctx, id) {
   const ctaBlock = needsLogin
     ? C.loginGate(`Zum Starten des Vorgangs «${C.escape(s.title)}» ist eine Anmeldung mit AGOV / FedLogin erforderlich. Alle Informationen auf dieser Seite sind frei einsehbar.`)
     : `<div class="row mt-4">
+        ${/* CD Btn.vue: das Icon steht im DOM zuerst, btn--icon-right dreht die
+              Reihenfolge; das Label trägt IMMER den .btn__text-Wickel. */''}
         ${hasTarget
-          ? `<a class="btn btn--outline btn--lg" href="${C.escape(tgt.href)}"${
-              ext ? ' target="_blank" rel="noopener external"' : ''}>${ctaLabel} ${
-              C.icon(ext ? 'External' : 'ArrowRight', 'icon--base')}</a>`
-          : `<span class="btn btn--outline btn--lg" aria-disabled="true">${ctaLabel} ${
-              C.icon(ext ? 'External' : 'ArrowRight', 'icon--base')}</span>
+          ? `<a class="btn btn--outline btn--lg btn--icon-right" href="${C.escape(tgt.href)}"${
+              ext ? ' target="_blank" rel="noopener external"' : ''}>${
+              C.icon(ext ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></a>`
+          : `<span class="btn btn--outline btn--lg btn--icon-right" aria-disabled="true">${
+              C.icon(ext ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></span>
              <span class="small muted">Im Prototyp ist kein Zielsystem angebunden.</span>`}
       </div>`;
 
@@ -188,7 +196,10 @@ function detail(ctx, id) {
       image: C.heroFigure({ id: img }),
     })}
     <div class="container--grid gap--responsive mt-6">
-      <div class="container__main stack">
+      ${/* CD-Inhaltsrhythmus (.vertical-spacing, 3/3.5rem) statt des portal-
+            eigenen .stack — die Detail-Hauptspalten sollen alle dieselbe
+            Rampe tragen (Review layout/main-1). */''}
+      <div class="container__main vertical-spacing">
         ${/* Die Detailseite hatte ausser der <h1> keine Gliederungsstufe: ohne
               Voraussetzungen und ohne Weisungen blieb sie ganz ohne <h2>/<h3>. */''}
         <h2 class="sr-only">Beschreibung</h2>
@@ -199,7 +210,10 @@ function detail(ctx, id) {
           ${C.pipeline(def.steps, 0, { label: `Ablauf «${def.name}»` })}</div>` : ''}
         ${ctaBlock}
       </div>
-      <aside class="container__aside stack-lg" aria-labelledby="svc-aside-head">
+      ${/* KEIN .stack-lg hier: den CD-Abstand der Aside-Module (1.75/2rem)
+            liefert bereits .container__aside > * — ein zweites Rhythmus-Utility
+            überschriebe ihn mit 3rem (Review layout/aside-1). */''}
+      <aside class="container__aside" aria-labelledby="svc-aside-head">
         <h2 class="sr-only" id="svc-aside-head">Kontakt und Grundlagen</h2>
         ${C.contactBox(contact)}
         ${/* Die je Dienstleistung geltenden Weisungen wurden aus data/weisungen.json

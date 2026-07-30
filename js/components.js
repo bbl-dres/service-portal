@@ -79,8 +79,11 @@ export function markLang(text, terms = EN_TERMS) {
 }
 
 // --- Badges (badge.postcss) --------------------------------------------------
+// CD-Anatomie (Badge.vue:11-18): die Beschriftung liegt in einem .badge__text-
+// Span; Symbole tragen .badge__icon / .badge__icon-left (em-skaliert, optisch
+// ins 1em-Polster gezogen) statt generischer icon--*-Klassen plus Flex-gap.
 export function badge(text, variant = 'gray', size = '') {
-  return `<span class="badge badge--${variant}${size ? ' badge--' + size : ''}">${escape(text)}</span>`;
+  return `<span class="badge badge--${variant}${size ? ' badge--' + size : ''}"><span class="badge__text">${escape(text)}</span></span>`;
 }
 
 // Zielgruppen: `staff` = BBL-Personal, `customers` = Mitarbeitende anderer
@@ -124,7 +127,7 @@ export function pageSection({ title = '', body = '', more = null, alt = false, t
         ${title ? `<${titleTag} class="section__title">${escape(title)}</${titleTag}>` : ''}
         ${body}
         ${more ? `<div class="section__action">
-          <a class="btn btn--bare" href="${escape(more.href)}">${escape(more.label)} ${icon('ArrowRight', 'icon--base')}</a>
+          <a class="btn btn--bare btn--icon-right" href="${escape(more.href)}"><span class="btn__text">${escape(more.label)}</span>${icon('ArrowRight', 'btn__icon')}</a>
         </div>` : ''}
       </div>
     </section>`;
@@ -143,8 +146,8 @@ function notificationBanner({ id, html, actionLabel = 'Verstanden', variant = 'i
       role="region" aria-label="${escape(label)}" data-banner="${escape(id)}">
     <div class="notification-banner__wrapper">
       <p class="notification-banner__infos">${html}</p>
-      <button type="button" class="btn btn--outline btn--sm" data-banner-close>
-        <span class="btn__text">${escape(actionLabel)}</span>${icon('Checkmark', 'icon--base')}</button>
+      <button type="button" class="btn btn--outline btn--sm btn--icon-right" data-banner-close>
+        <span class="btn__text">${escape(actionLabel)}</span>${icon('Checkmark', 'btn__icon')}</button>
     </div>
   </div>`;
 }
@@ -355,13 +358,19 @@ export function renderNotFound(ctx, {
 export function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurücksetzen', label = 'Aktive Filter:' }) {
   if (!filters || !filters.length) return '';
   // id je Pille — sonst verliert das Entfernen einer Pille den Fokus an <body> (Item 3.3).
+  // CDs interaktive Pille ist .tag-item (volle 44px-Höhenrampe + Fokusring,
+  // tag-item.postcss:7-42) — die frühere 32px-Badge lag unter der Zielgrösse.
+  const inner = (f) => `<span class="tag-item__inner"><span class="tag-item__text">${escape(f.label)}</span>${icon('Cancel', 'tag-item__icon')}</span>`;
   const pill = (f, i) => f.href != null
-    ? `<a class="badge badge--gray active-filter" id="af-${i}" href="${escape(f.href)}" aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</a>`
-    : `<button type="button" class="badge badge--gray active-filter" id="af-${i}" data-remove="${escape(f.remove == null ? '' : f.remove)}" aria-label="Filter „${escape(f.label)}“ entfernen">${escape(f.label)}${icon('Cancel', 'icon--sm')}</button>`;
+    ? `<a class="tag-item tag-item--sm active-filter" id="af-${i}" href="${escape(f.href)}" aria-label="Filter „${escape(f.label)}“ entfernen">${inner(f)}</a>`
+    : `<button type="button" class="tag-item tag-item--sm active-filter" id="af-${i}" data-remove="${escape(f.remove == null ? '' : f.remove)}" aria-label="Filter „${escape(f.label)}“ entfernen">${inner(f)}</button>`;
   const reset = resetHref != null
-    ? `<a class="btn btn--link" href="${escape(resetHref)}">${escape(resetLabel)}</a>`
-    : `<button type="button" class="btn btn--link" data-reset>${escape(resetLabel)}</button>`;
-  return `<div class="active-filters mt-4" role="group" aria-label="Aktive Filter">
+    ? `<a class="btn btn--link" href="${escape(resetHref)}"><span class="btn__text">${escape(resetLabel)}</span></a>`
+    : `<button type="button" class="btn btn--link" data-reset><span class="btn__text">${escape(resetLabel)}</span></button>`;
+  // Der Abstand über der Pillenreihe liegt in der Komponentenregel
+  // (.active-filters, CD-Rampe pt-4/sm:pt-6/2xl:pt-8 — search.postcss:266-269),
+  // nicht in einer festen mt-4-Utility, die die Rampe bei >=640px festnageln würde.
+  return `<div class="active-filters" role="group" aria-label="Aktive Filter">
     <span class="small muted">${escape(label)}</span>
     ${filters.map(pill).join('')}
     ${reset}
@@ -448,7 +457,10 @@ export function wireScrollRegions(root) {
 // Fokusfalle für modale Overlays (Lightbox, Chart-Vollbild, Dokumentvorschau):
 // Tab/Shift+Tab bleiben innerhalb von `container`. Gibt eine Abmelde-Funktion
 // zurück. Geteilt, damit alle Dialoge identisch fangen (WCAG 2.4.3 / 2.1.2).
-const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+// Exportiert, damit Overlays mit eigener Tastaturlogik (Galerie, Dokument-
+// betrachter) DENSELBEN Fokuskreis verwenden — drei abweichende Kopien dieser
+// Liste haben bereits einen Trap-Ausbruch produziert (Review lb-trap-1).
+export const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 export function trapFocus(container) {
   const onKey = (e) => {
     if (e.key !== 'Tab') return;
@@ -467,13 +479,17 @@ export function trapFocus(container) {
 // [data-modal-close] und gibt den Fokus zurück. Primitive für neue Dialoge; `body`/
 // `footer` sind RAW-HTML (Aufrufer escaped). `size` = sm|md|lg|xl.
 function modal({ title = '', body = '', footer = '', size = 'md', id = 'modal' } = {}) {
-  const titleId = `${id}-title`;
-  const closeBtn = `<button type="button" class="modal__close" data-modal-close aria-label="Schliessen">${icon('Cancel', 'icon--md')}</button>`;
-  return `<div class="modal modal--${size}" role="dialog" aria-modal="true"${title ? ` aria-labelledby="${escape(titleId)}"` : ''}>
+  const titleId = `${id}-title`, bodyId = `${id}-desc`;
+  const closeBtn = `<button type="button" class="modal__close" data-modal-close aria-label="Schliessen">${icon('Cancel', 'icon--2xl')}</button>`;
+  // CD Modal.vue:2-27 — aria-modal auf der Hülle; role="dialog" + aria-labelledby
+  // + aria-describedby auf .modal__content; der Körper trägt die referenzierte id.
+  // Der Header existiert IMMER (ohne ihn streckte die Flex-Spalte den Schliessen-
+  // Knopf auf volle Breite); `--with-title` schaltet nur die Verteilung um.
+  return `<div class="modal modal--${size}" aria-modal="true">
     <div class="modal__backdrop" data-modal-close></div>
-    <div class="modal__content">
-      ${title ? `<div class="modal__header"><h2 class="modal__title" id="${escape(titleId)}">${escape(title)}</h2>${closeBtn}</div>` : closeBtn}
-      <div class="modal__body">${body}</div>
+    <div class="modal__content" role="dialog"${title ? ` aria-labelledby="${escape(titleId)}"` : ''} aria-describedby="${escape(bodyId)}">
+      <div class="modal__header${title ? ' modal__header--with-title' : ''}">${title ? `<h2 class="modal__title" id="${escape(titleId)}">${escape(title)}</h2>` : ''}${closeBtn}</div>
+      <div class="modal__body" id="${escape(bodyId)}">${body}</div>
       ${footer ? `<div class="modal__footer">${footer}</div>` : ''}
     </div>
   </div>`;
@@ -534,18 +550,20 @@ function cardFooter(meta = '', opts = {}) {
 // Digitalisierung) — bildlose Karten sind card--default (CD, nicht --universal).
 export function domainTile({ icon: ic, title, desc, meta = '', href, external = false, titleTag = 'h3' }) {
   const ext = external ? ' target="_blank" rel="noopener external"' : '';
-  // Bildlose Kachel bleibt eine Ganzkarten-<a> (CD-Ausnahme; kein verschachtelter Link),
-  // aber der Titel ist eine echte Überschrift für die Dokument-Gliederung.
-  return `<a class="card card--default card--clickable" href="${escape(href)}"${ext}>
+  // Dasselbe Stretched-Link-Muster wie card(): die Karte ist ein <div>, der
+  // Titel-<a> deckt sie per ::after ab. Im CD ist die Kartenwurzel IMMER ein div
+  // (Card.vue:2-39) — die frühere Ganzkarten-<a> gab Screenreadern Titel +
+  // Beschreibung + Meta als einen langen Linknamen.
+  return `<div class="card card--default card--clickable">
     <div class="card__content">
       <div class="card__body">
         <span class="domain-tile__icon">${icon(ic, 'icon--2xl')}</span>
-        <${titleTag} class="card__title">${escape(title)}</${titleTag}>
+        <${titleTag} class="card__title"><a class="card__link" href="${escape(href)}"${ext}>${escape(title)}</a></${titleTag}>
         <p class="card__description">${escape(desc)}</p>
       </div>
       ${cardFooter(escape(meta), { external })}
     </div>
-  </a>`;
+  </div>`;
 }
 
 // Share-Bar (share-bar.postcss) — nach der Brotkrume auf Detailseiten: Drucken
@@ -580,8 +598,10 @@ function shareUrlBlock(url, { id = 'share-url-input' } = {}) {
     <input id="${escape(id)}" class="input--outline input--base" type="text" readonly
       value="${escape(url)}" data-share-url>
     <div class="share-url">
+      ${/* CD detailPageSimple.vue:847-853: reiner Beschriftungs-Button (outline,
+            mt-3) — die Vorlage führt KEIN Link-Icon auf dem Kopieren-Knopf. */''}
       <button type="button" class="btn btn--outline mt-3" data-share-copy>
-        ${icon('Link', 'icon--base')}<span class="btn__text">URL kopieren</span></button>
+        <span class="btn__text">URL kopieren</span></button>
       <div aria-live="polite" data-share-done></div>
     </div>
   </div>`;
@@ -598,8 +618,9 @@ export function openShareModal(url = location.href, title = 'Inhalt teilen') {
   const done = root.querySelector('[data-share-done]');
   if (input) { input.focus(); input.select(); }
   if (btn) btn.addEventListener('click', () => {
-    const ok = () => { if (done) done.innerHTML = `<span class="badge badge--success badge--sm mt-3">${icon('Checkmark', 'icon--base')} URL wurde kopiert</span>`; };
-    const fail = () => { if (done) done.innerHTML = `<span class="badge badge--warning badge--sm mt-3">${icon('WarningCircle', 'icon--base')} Kopieren nicht möglich — bitte von Hand markieren</span>`; };
+    // Badge-Anatomie wie CD (Badge.vue:11-12): badge__icon-left vor badge__text.
+    const ok = () => { if (done) done.innerHTML = `<span class="badge badge--success badge--sm mt-3">${icon('Checkmark', 'badge__icon-left')}<span class="badge__text">URL wurde kopiert</span></span>`; };
+    const fail = () => { if (done) done.innerHTML = `<span class="badge badge--warning badge--sm mt-3">${icon('WarningCircle', 'badge__icon-left')}<span class="badge__text">Kopieren nicht möglich — bitte von Hand markieren</span></span>`; };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(ok, fail);
     } else if (input) {
@@ -638,11 +659,14 @@ export function detailBar({ backHref, backLabel } = {}) {
 // Rasterspalte nicht und stand links wie rechts 40px eingerückt. Die figcaption
 // trug ausserdem `class="small muted"`, obwohl `figcaption` seit Item 1.6 global
 // von `.legend` erbt — die Klassen setzten also einen fünften Legendenstil.
-export function heroFigure({ id, color = 'var(--color-secondary-600)', alt = '', w = 800,
-  credit = 'Symbolbild — © Unsplash' } = {}) {
+// KEINE Bildlegende auf Detailseiten (Nutzerentscheid 2026-07-30): die
+// Unsplash-Platzhalter trugen mal einen «Symbolbild»-Vermerk, mal keinen —
+// für den Prototyp einheitlich ohne. Die Startseite (echtes BBL-Foto mit
+// ©-Vermerk) schreibt ihre figcaption selbst und behält sie. Der `credit`-
+// Parameter bleibt als Schnittstelle bestehen, wird aber nicht gerendert.
+export function heroFigure({ id, color = 'var(--color-secondary-600)', alt = '', w = 800 } = {}) {
   if (!id) return '';
-  return `<figure class="hero__figure">${photo({ id, color, alt, w })}${
-    credit ? `<figcaption>${escape(credit)}</figcaption>` : ''}</figure>`;
+  return `<figure class="hero__figure">${photo({ id, color, alt, w })}</figure>`;
 }
 
 export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '' } = {}) {
@@ -651,9 +675,11 @@ export function detailHead({ backHref, backLabel, title, lead = '', tags = '', i
         ${lead ? `<p class="hero__description">${escape(lead)}</p>` : ''}
         ${tags ? `<div class="pill-row">${tags}</div>` : ''}
       </div>`;
+  // CD Hero.vue:8 — der Hero ist ein <section>-Band, kein blosses <div>: gleiche
+  // Optik (alle Regeln sind Klassenselektoren), aber Gliederungs-/Outline-Parität.
   const hero = image
-    ? `<div class="hero hero--main-image">${content}<div class="hero__image">${image}</div></div>`
-    : `<div class="hero">${content}</div>`;
+    ? `<section class="hero hero--main-image">${content}<div class="hero__image">${image}</div></section>`
+    : `<section class="hero">${content}</section>`;
   return `${detailBar({ backHref, backLabel })}
     ${hero}`;
 }
@@ -698,7 +724,7 @@ export function accordion(items, { id = 'acc' } = {}) {
       <h3 class="accordion__heading">
         <button class="accordion__button" type="button" id="${bid}" aria-expanded="${open}" aria-controls="${pid}">
           <span class="accordion__title">${escape(title)}</span>
-          <span class="accordion__meta">${meta}${icon('ChevronDown', 'icon--base accordion__arrow')}</span>
+          <span class="accordion__meta">${meta}${icon('ChevronDown', 'icon--xl accordion__arrow')}</span>
         </button>
       </h3>
       <div class="accordion__drawer" id="${pid}" role="region" aria-labelledby="${bid}"${open ? '' : ' hidden'}>
@@ -717,7 +743,31 @@ export function wireAccordion(root) {
       const open = btn.getAttribute('aria-expanded') === 'true';
       btn.setAttribute('aria-expanded', String(!open));
       const drawer = root.querySelector('#' + CSS.escape(btn.getAttribute('aria-controls')));
-      if (drawer) drawer.hidden = open;
+      if (!drawer) return;
+      // CD Accordion.js:27-43 — max-height wird animiert (300ms ease-out, Regel
+      // am .accordion__drawer); [hidden] fällt erst nach `transitionend`, damit
+      // Messung und Übergang greifen. `_accSeq` entwertet den Abschluss-Handler,
+      // wenn ein schneller Gegenklick die Richtung wechselt. Bei reduced-motion
+      // ist die Dauer ~0 (tokens.css), transitionend feuert trotzdem.
+      const seq = (drawer._accSeq = (drawer._accSeq || 0) + 1);
+      const done = (fn) => {
+        const te = (e) => {
+          if (e.propertyName !== 'max-height') return;
+          drawer.removeEventListener('transitionend', te);
+          if (drawer._accSeq === seq) fn();
+        };
+        drawer.addEventListener('transitionend', te);
+      };
+      if (open) {
+        drawer.style.maxHeight = drawer.scrollHeight + 'px';
+        requestAnimationFrame(() => { drawer.style.maxHeight = '0px'; });
+        done(() => { drawer.hidden = true; drawer.style.maxHeight = ''; });
+      } else {
+        drawer.hidden = false;
+        drawer.style.maxHeight = '0px';
+        requestAnimationFrame(() => { drawer.style.maxHeight = drawer.scrollHeight + 'px'; });
+        done(() => { drawer.style.maxHeight = ''; });
+      }
     });
   });
 }
@@ -808,6 +858,24 @@ export function wireTabs(root, { onSelect, syncHash } = {}) {
 }
 
 // --- Notifications (notification.postcss) ------------------------------------
+// Einmalige, delegierte Verdrahtung des Schliessen-Knopfs aller Notifications —
+// Hausregel «kein inline onclick» (vgl. menu()); die Ansage über die persistente
+// #live-Region entspricht mountBanner («Hinweis geschlossen.», CD Notification.vue
+// bindet den Handler ebenfalls programmatisch).
+let notifCloseWired = false;
+function ensureNotificationClose() {
+  if (notifCloseWired || typeof document === 'undefined') return;
+  notifCloseWired = true;
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-notification-close]');
+    if (!btn) return;
+    const n = btn.closest('.notification');
+    if (!n) return;
+    n.remove();
+    announce('Meldung geschlossen.');
+  });
+}
+
 // variant: info | success | warning | error | hint | alert
 export function notification(text, variant = 'info', iconName = 'InfoCircle', opts = {}) {
   // `live: true` NUR für Meldungen, die als Ergebnis einer Aktion neu eintreffen.
@@ -816,8 +884,9 @@ export function notification(text, variant = 'info', iconName = 'InfoCircle', op
   // Folge von Statusmeldungen vor, und in einer neu erzeugten Region feuert
   // aria-live ohnehin nicht (Item 3.9).
   const role = opts.live ? ((variant === 'error' || variant === 'alert') ? 'alert' : 'status') : '';
+  if (opts.dismissible) ensureNotificationClose();
   const close = opts.dismissible
-    ? `<button type="button" class="notification__close" aria-label="Meldung schliessen" onclick="this.closest('.notification').remove()">${icon('Cancel', 'icon--md')}</button>`
+    ? `<button type="button" class="notification__close" aria-label="Meldung schliessen" data-notification-close>${icon('Cancel', 'icon--md')}</button>`
     : '';
   const cls = `notification notification--${variant}${opts.dismissible ? ' notification--dismissible' : ''}`;
   return `<div class="${cls}"${role ? ` role="${role}"` : ''}>${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div>${close}</div>`;
@@ -839,8 +908,8 @@ export function notification(text, variant = 'info', iconName = 'InfoCircle', op
 export function processDone({ instance, lead, title, heading = 'h1', text,
   extra = '', actions = [] } = {}) {
   const knopf = (a, i) => {
-    const cls = `btn btn--${a.variant || (i === 0 ? 'filled' : 'outline')}`;
-    const inhalt = `${escape(a.label)}${a.icon ? ` ${icon(a.icon, 'icon--base')}` : ''}`;
+    const cls = `btn btn--${a.variant || (i === 0 ? 'filled' : 'outline')}${a.icon ? ' btn--icon-right' : ''}`;
+    const inhalt = `<span class="btn__text">${escape(a.label)}</span>${a.icon ? icon(a.icon, 'btn__icon') : ''}`;
     return a.href
       ? `<a class="${cls}" href="${escape(a.href)}">${inhalt}</a>`
       : `<button class="${cls}" type="button" id="${escape(a.id)}">${inhalt}</button>`;
@@ -930,8 +999,13 @@ export function select(o = {}) {
       described ? ` aria-describedby="${escape(described)}"` : ''}${o.attrs ? ' ' + o.attrs : ''}>${opts}</select>
     <div class="select__icon">${CHEVRON_SVG}</div>
   </div>
-  ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}" role="${
-      isError ? 'alert' : 'status'}">${escape(o.message)}</div>` : ''}
+  ${/* `quiet: true` unterdrückt die Live-Rolle der Feldmeldung: rendert die Seite
+        zugleich eine errorSummary (role="alert"), würde derselbe Fehler sonst
+        zwei- bis dreimal angesagt (WCAG 4.1.3 — EINE Statusmeldung; CD Input.vue
+        gibt der Meldung gar keine Live-Rolle). aria-describedby liest die
+        Meldung am Feld weiterhin vor. */''}
+  ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}"${o.quiet ? '' : ` role="${
+      isError ? 'alert' : 'status'}"`}>${escape(o.message)}</div>` : ''}
 </div>`;
 }
 
@@ -1006,7 +1080,9 @@ export function field(o = {}) {
     <label for="${escape(id)}"${lbl}>${escape(o.label)}${o.required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
     ${o.hint ? `<p class="form__group__hint" id="${escape(hintId)}">${escape(o.hint)}</p>` : ''}
     ${o.control(cls, attrs)}
-    ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}" role="alert">${escape(o.message)}</div>` : ''}
+    ${/* `quiet: true` wie bei select(): keine Live-Rolle, wenn eine errorSummary
+          dieselben Fehler bereits als EINE Statusmeldung ansagt (WCAG 4.1.3). */''}
+    ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}"${o.quiet ? '' : ' role="alert"'}>${escape(o.message)}</div>` : ''}
   </div>`;
 }
 
@@ -1108,8 +1184,8 @@ export function contactCard({ title = 'Ansprechpersonen', contacts = [] } = {}) 
 export function downloadLink(url, label, iconName = 'Download') {
   const real = url && url !== '#';
   return real
-    ? `<a class="btn btn--link" href="${escape(url)}">${icon(iconName, 'btn__icon')} ${escape(label)}</a>`
-    : `<span class="btn btn--link" aria-disabled="true" title="Im Prototyp nicht verfügbar">${icon(iconName, 'btn__icon')} ${escape(label)}<span class="sr-only"> (im Prototyp nicht verfügbar)</span></span>`;
+    ? `<a class="btn btn--link btn--icon-left" href="${escape(url)}">${icon(iconName, 'btn__icon')}<span class="btn__text">${escape(label)}</span></a>`
+    : `<span class="btn btn--link btn--icon-left" aria-disabled="true" title="Im Prototyp nicht verfügbar">${icon(iconName, 'btn__icon')}<span class="btn__text">${escape(label)}<span class="sr-only"> (im Prototyp nicht verfügbar)</span></span></span>`;
 }
 
 // --- Pagination (pagination.postcss) -----------------------------------------
@@ -1122,7 +1198,9 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
   const control = (target, text, iconName, disabled, key) => {
     const inner = `${icon(iconName, 'btn__icon')}<span class="btn__text">${text}</span>`;
     const id = inputId ? ` id="${escape(inputId)}-${key}"` : '';   // Fokus-Wiederherstellung (Item 3.3)
-    if (disabled) return `<li><span class="btn btn--outline btn--icon-only" aria-disabled="true" aria-label="${text}">${inner}</span></li>`;
+    // Echte deaktivierte <button> wie CDs PaginationItem.vue — ein <span> mit
+    // aria-label ist role=generic (Name verboten) und für SR unzuverlässig.
+    if (disabled) return `<li><button type="button" class="btn btn--outline btn--icon-only" disabled aria-label="${text}">${inner}</button></li>`;
     // Ohne `href`-Builder: lokaler Zustand statt Hash-Navigation (C.mountDataTable)
     // — dieselbe CD-Anatomie, aber als <button data-page>.
     return href
@@ -1132,9 +1210,12 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
   return `
     <nav class="pagination-wrap${align === 'right' ? ' pagination-wrap--right' : ''}" aria-label="${escape(label)}">
       <div class="pagination">
+        ${/* EIN Name je Bedienelement (CD Pagination.vue führt genau eine Quelle):
+              das sr-only-Label benennt das Feld — ein zusätzliches aria-label
+              würde es stumm überschreiben und könnte auseinanderdriften. */''}
         <label class="sr-only" for="${inputId}">Seite</label>
         <input id="${inputId}" class="pagination__input input--outline input--base" type="text" inputmode="numeric"
-          value="${page}" aria-label="Seite" autocomplete="off">
+          value="${page}" autocomplete="off">
         <div class="pagination__text">von ${totalPages} Seiten</div>
         <ul class="pagination_items">
           ${control(page - 1, 'Vorherige Seite', 'ChevronLeft', page === 1, 'prev')}
@@ -1194,9 +1275,11 @@ export function catalogueResults({
       ? mapView()
       : `${view === 'list'
         ? listView(visible)
-        // Die Galerie behält einen Abstand zur Leiste (CD: `gap--top` über dem
-        // Raster); nur die LISTE schliesst bündig an die Trennlinie an.
-        : `<div class="${gridCls} ${header ? 'mt-4' : 'mt-6'}">${visible.map(card).join('')}</div>`}${
+        // Die Galerie trägt CDs responsive `gap--top`-Rampe über dem Raster
+        // (search.postcss:196-201) — feste mt-4/mt-6 blieben bei 1024px auf
+        // 1rem stehen, wo das CD 2.5rem vorsieht; nur die LISTE schliesst
+        // bündig an die Trennlinie an.
+        : `<div class="${gridCls} gap--top">${visible.map(card).join('')}</div>`}${
       paginationHref ? pagination({ page, totalPages, inputId: paginationInputId, label: paginationLabel, href: paginationHref }) : ''}`
     : available
       // Nullzustand mit Ausweg: der Rat «oben lassen sich aktive Filter
@@ -1228,7 +1311,7 @@ export function catalogueResults({
 
 // Standard-Ansage für die Live-Region der Katalogseiten (Trefferzahl · Seite · Ansicht).
 export function announceCatalogue({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
-  announce(`${count} von ${total} ${unit}${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'list' ? 'Liste' : 'Galerie'}`);
+  announce(`${count} von ${total} ${unit}${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'list' ? 'Liste' : view === 'map' ? 'Karte' : 'Galerie'}`);
 }
 
 // Icon-Umschalter Galerie/Liste — keine Beschriftung, der Zustand steht in
@@ -1370,10 +1453,15 @@ export function catalogueBar({
   // `.search-results__header` trägt dort nur Trefferzahl links und Sortierung
   // rechts (search.postcss:208-233), kein zweites Feld.
   const searchHtml = showSearch ? `
-      <form class="catbar__search" id="${escape(formId)}" role="search">
+      ${/* role=search kommt mehrfach je Seite vor (Kopfzeilen-Suche + je Katalog-/
+            Tabellenleiste eine) — jede Landmarke braucht darum einen eigenen Namen;
+            `searchLabel` ist je Leiste bereits eindeutig («Verträge durchsuchen»).
+            Der Submit-Knopf hat EINE Namensquelle: das sr-only btn__text (CD-Muster
+            btn.postcss:160-166) — kein doppeltes aria-label daneben. */''}
+      <form class="catbar__search" id="${escape(formId)}" role="search" aria-label="${escape(searchLabel)}">
         <label class="sr-only" for="${escape(inputId)}">${escape(searchLabel)}</label>
         <input id="${escape(inputId)}" type="search" placeholder="${escape(placeholder)}" value="${escape(q)}" autocomplete="off">
-        <button class="btn btn--bare btn--icon-only catbar__submit" type="submit" aria-label="Suchen" title="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
+        <button class="btn btn--bare btn--icon-only catbar__submit" type="submit" title="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </form>` : '';
   return `
     <div class="catbar${showSearch ? '' : ' catbar--no-search'}">${searchHtml}
@@ -1448,7 +1536,7 @@ export function mountDataTable(host, opts = {}) {
         sort: sorts.length ? { id: `${id}-sort`, value: state.sort, options: sorts.map((s) => ({ value: s.value, label: s.label })) } : null,
         filterId: facets.length ? `${id}-filter` : '', filterCount: activeFacetCount,
         panelId: facets.length ? `${id}-panel` : '',
-        panel: facets.map((f) => filterGroup({ dim: f.dim, legend: f.legend, options: f.options, selected: state.sel[f.dim] })).join(''),
+        panel: facets.map((f) => filterGroup({ dim: f.dim, legend: f.legend, options: f.options, selected: state.sel[f.dim], idPrefix: id })).join(''),
         panelHidden: !state.open,
       })}
       ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
@@ -1528,12 +1616,23 @@ export function wireTableRows(root) {
 // Panel (.filter-group / .filter-check). `dim` = Hash-Parametername (steht auf jeder
 // Checkbox als data-fdim), `selected` = aktuell angehakte Werte. Verdrahtet über
 // C.wireCatalogue: Panel-Change → alle angehakten Werte der Dimension → Hash.
-export function filterGroup({ dim, legend, options = [], selected = [] }) {
-  // `id="f-${dim}-${i}"` — der Index ist stabil, weil die Optionen aus den Daten
-  // in fester Reihenfolge kommen; nötig für die Fokus-Wiederherstellung (Item 3.3).
+export function filterGroup({ dim, legend, options = [], selected = [], idPrefix = '', max = 0 }) {
+  // `id="${idPrefix}f-${dim}-${i}"` — der Index ist stabil, weil die Optionen aus
+  // den Daten in fester Reihenfolge kommen; nötig für die Fokus-Wiederherstellung
+  // (Item 3.3). `idPrefix` hält die ids dokumentweit eindeutig, wenn zwei
+  // Tabellen dieselbe Facetten-Dimension führen (Review a11y-dup-ids-1).
+  // `max` kappt lange Wertelisten: der Rest liegt in einem versteckten Span,
+  // den der Aufrufer über den [data-fmore]-Knopf aufdeckt (estate).
+  const p = idPrefix ? escape(idPrefix) + '-' : '';
+  const cb = (o, i) => `<label class="filter-check"><input type="checkbox" id="${p}f-${escape(dim)}-${i}" data-fdim="${escape(dim)}" value="${escape(o.value)}"${
+    selected.includes(o.value) ? ' checked' : ''}><span>${escape(o.label)}</span></label>`;
+  const head = max && options.length > max ? options.slice(0, max) : options;
+  const rest = max && options.length > max ? options.slice(max) : [];
   return `<fieldset class="filter-group"><legend class="filter-group__legend">${escape(legend)}</legend>${
-    options.map((o, i) => `<label class="filter-check"><input type="checkbox" id="f-${escape(dim)}-${i}" data-fdim="${escape(dim)}" value="${escape(o.value)}"${
-      selected.includes(o.value) ? ' checked' : ''}><span>${escape(o.label)}</span></label>`).join('')}</fieldset>`;
+    head.map(cb).join('')}${rest.length
+      ? `<span class="filter-group__more" hidden>${rest.map((o, i) => cb(o, i + head.length)).join('')}</span>
+         <button type="button" class="btn btn--link btn--sm" data-fmore="${escape(dim)}" aria-expanded="false"><span class="btn__text">Alle anzeigen (${options.length})</span></button>`
+      : ''}</fieldset>`;
 }
 
 // --- Aktionsmenü (Kebab-Dropdown) --------------------------------------------
@@ -1549,9 +1648,12 @@ export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', tr
     return `<button type="button" role="menuitem" class="action-menu__item" data-action="${escape(it.action)}" tabindex="-1">`
       + `${it.icon ? icon(it.icon, 'action-menu__icon') : ''}<span>${escape(it.label)}</span></button>`;
   };
+  // aria-controls + Popup-id wie CDs Popover.vue:3-9 — der Auslöser benennt,
+  // WAS er aufklappt (menuIds sind je Seite eindeutig, s. Aufrufer).
+  const popupId = `${menuId}-popup`;
   return `<div class="action-menu" data-menu="${escape(menuId)}">
-    <button type="button" class="action-menu__trigger${triggerClass ? ' ' + triggerClass : ''}" aria-haspopup="true" aria-expanded="false" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
-    <div class="action-menu__popup action-menu__popup--${align}" role="menu" aria-label="${escape(label)}" hidden>${items.map(row).join('')}</div>
+    <button type="button" class="action-menu__trigger${triggerClass ? ' ' + triggerClass : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="${escape(popupId)}" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
+    <div class="action-menu__popup action-menu__popup--${align}" id="${escape(popupId)}" role="menu" aria-label="${escape(label)}" hidden>${items.map(row).join('')}</div>
   </div>`;
 }
 
@@ -1600,19 +1702,33 @@ export function wireMenu(root, onAction) {
       });
     });
     m.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !popup.hidden) { e.stopPropagation(); close(true); } });
+    // APG-Menü-Muster: verlässt der Fokus das Menü (Tab aus einem menuitem, Klick
+    // auf ein fokussierbares Ziel aussen), schliesst es — sonst bliebe ein offen
+    // sichtbares Menü mit aria-expanded="true" zurück; der globale Schliesser
+    // reagiert nur auf Zeigerklicks. Kein preventDefault: der Fokus zieht
+    // natürlich weiter (relatedTarget null = Ziel nicht fokussierbar → zu).
+    m.addEventListener('focusout', (e) => {
+      if (popup.hidden) return;
+      if (!m.contains(e.relatedTarget)) close(false);
+    });
   });
 }
 
 // Kurze, selbst-verschwindende Statusmeldung (für simulierte/erledigte Aktionen).
-export function toast(msg) {
+// CD toast-message (toast-message.postcss:5-18 + ToastMessage.vue): fixer Host
+// bei bottom 10 %, innen eine normale Notification (Standard: success mit
+// CheckmarkCircle, Fehlerpfade geben 'error'/'warning' mit), 5 s sichtbar.
+// Die Meldung ist rein visuell — die SR-Ansage läuft über die persistente
+// #live-Region (announce): in einem frisch erzeugten Knoten feuert aria-live nicht.
+export function toast(msg, variant = 'success', iconName = 'CheckmarkCircle') {
+  announce(msg);
   if (typeof document === 'undefined') return;
   const t = document.createElement('div');
-  t.className = 'toast';
-  t.setAttribute('role', 'status');
-  t.textContent = msg;
+  t.className = 'toast__message';
+  t.innerHTML = notification(escape(msg), variant, iconName);
   document.body.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('toast--in'));
-  setTimeout(() => { t.classList.remove('toast--in'); setTimeout(() => t.remove(), 300); }, 2800);
+  requestAnimationFrame(() => t.classList.add('toast__message--in'));
+  setTimeout(() => { t.classList.remove('toast__message--in'); setTimeout(() => t.remove(), 300); }, 5000);
 }
 
 // --- Login-Hinweis (AGOV / FedLogin) -----------------------------------------
@@ -1620,11 +1736,14 @@ export function toast(msg) {
 // ein Vorgang ausgelöst würde. Der Button ruft window.__login() (in app.js
 // verdrahtet), das die Session setzt und die Seite neu zeichnet.
 export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.') {
+  // Abstand vor dem Knopf über `.login-gate .btn { margin-top:1rem }` (app.css)
+  // statt eines Inline-Stils — CDs Banner-Rampe (notification.postcss:89-92)
+  // gilt hier nicht, weil der Knopf IM __content sitzt, nicht daneben.
   return `<div class="notification notification--hint login-gate">
     ${icon('Lock', 'notification__icon')}
     <div class="notification__content">
-      <p style="margin:0 0 .75rem">${text}</p>
-      <button type="button" class="btn btn--outline login-gate__btn" onclick="window.__login && window.__login()">
+      <p class="m-0">${text}</p>
+      <button type="button" class="btn btn--outline btn--icon-left login-gate__btn" onclick="window.__login && window.__login()">
         ${icon('User', 'btn__icon')}<span class="btn__text">Anmelden mit AGOV / FedLogin</span>
       </button>
     </div>
@@ -1633,7 +1752,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 
 export const C = {
   icon, escape, badge, audienceTag, statusBadge, pageHeader, card, table, empty,
-  mountBanner, openShareModal, wireShare, domainTile, announce, trapFocus, notFound,
+  mountBanner, openModal, openShareModal, wireShare, domainTile, announce, trapFocus, FOCUSABLE, notFound,
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,

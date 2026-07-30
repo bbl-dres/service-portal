@@ -40,15 +40,20 @@
 
 /* ============================== BASE ============================== */
 *,*::before,*::after { box-sizing:border-box; }
-html { -webkit-text-size-adjust:100%; height:100%; overflow-y:scroll; }
+/* -webkit-fill-available: CD global.postcss:7,29-30 — sonst läuft die Flex-Shell
+   hinter iOS-Safaris eingeklappter Werkzeugleiste durch. */
+html { -webkit-text-size-adjust:100%; height:100%; height:-webkit-fill-available; overflow-y:scroll; }
 body {
   margin:0; font-family:var(--font-sans); font-size:var(--text-base);
   line-height:var(--lh-normal); color:var(--color-text); background:var(--color-bg);
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; word-spacing:.0625em;
-  /* Kein synthetisches Bold/Italic: fehlt eine echte Schnitt-Datei, lieber Regular
-     als ein gefälschter Stil (CD nutzt echte Font-Dateien je Schnitt). */
-  font-synthesis:none;
-  min-height:100vh; display:flex; flex-direction:column; transition:transform var(--duration-slowest);
+  /* Kein synthetisches Bold (die variable Datei trägt die echte wght-Achse
+     100-900), aber Oblique-Synthese ERLAUBT: es gibt keine Italic-Datei, und
+     `none` hätte em/i/.text--italic stumm aufrecht gerendert — das Blatt
+     verspricht bei den @font-face-Regeln ausdrücklich synthetisierte Kursive. */
+  font-synthesis:style;
+  min-height:100vh; min-height:-webkit-fill-available;
+  display:flex; flex-direction:column; transition:transform var(--duration-slowest);
 }
 [hidden] { display:none !important; }
 /* Inline-Element-Normalisierung (CD-Parität) */
@@ -64,15 +69,23 @@ h2,.h2 { font-size:var(--text-2xl); line-height:var(--lh-tight); }
 h3,.h3 { font-size:var(--text-xl);  line-height:var(--lh-tight); }
 h4,.h4 { font-size:var(--text-lg);  line-height:var(--lh-normal); }
 h5,.h5 { font-size:var(--text-base);line-height:var(--lh-normal); }
+/* BEWUSSTE ABWEICHUNG vom CD: Tailwind-Preflight nullt p-Ränder, Rhythmus kommt
+   dort aus .vertical-spacing und den Komponenten. Diese inhaltslastige Vanilla-
+   App gibt Absätzen einen Grundrhythmus; geschlossene Flächen nullen den
+   Schlussrand lokal (.footer-information__entry p:last-child,
+   .notification__content > p). */
 p { margin:0 0 1rem; }
 
 /* CD text utilities (typography.postcss:18-98) */
-.text--xs { font-size:var(--text-xs); } .text--sm { font-size:var(--text-sm); }
+.text--xs { font-size:var(--text-xs); } .text--sm, .small { font-size:var(--text-sm); }
 .text--base { font-size:var(--text-base); } .text--lg { font-size:var(--text-lg); }
 .text--xl { font-size:var(--text-xl); line-height:var(--lh-tight); }
 .text--2xl { font-size:var(--text-2xl); line-height:var(--lh-tight); }
 .text--3xl { font-size:var(--text-3xl); line-height:var(--lh-tight); }
 .text--4xl { font-size:var(--text-4xl); line-height:var(--lh-tight); }
+/* .text--5xl fehlt BEWUSST, bis ein Hero-Konsument existiert (wie die
+   ungenutzten Listen-Varianten); die --text-5xl-Rampe in tokens.css bleibt als
+   CD-Paritäts-Buchhaltung stehen (typography.postcss:18-21). */
 .text--bold { font-weight:var(--fw-bold); }
 .text--negative { color:var(--color-text-negative); }
 .text--asterisk::after { content:'\202F*'; speak:none; }
@@ -84,18 +97,20 @@ p { margin:0 0 1rem; }
 .text--bold-italic, .font--bold-italic { font-weight:var(--fw-bold); font-style:italic; }
 .text--default, .color--default { color:var(--color-text); }
 /* CD `.text--light` ist text-text-500 (typography.postcss:87-89) — die dunkelste
-   Stufe, die AA erreicht. --color-text-400 (#9ca3af) wären 2.54:1 auf Weiss. */
-.color--light { color:var(--color-gray-500); }
+   Stufe, die AA erreicht. --color-text-400 (#9ca3af) wären 2.54:1 auf Weiss.
+   Alias-Gruppe, damit der CD-Name nie wieder vom Wert wegdriften kann. */
+.text--light, .color--light { color:var(--color-gray-500); }
 .color--link { color:var(--color-link); }
 .color--negative { color:var(--color-text-negative); }
 .text--asterisk ~ * .text--asterisk::after { content:''; }   /* nur der erste Stern (CD) */
 /* Overtitle/Eyebrow — CD typography.postcss:100-104 hat genau vier Deklarationen:
-   KEIN uppercase, KEIN letter-spacing, KEIN font-weight, KEIN align-items.
+   KEIN uppercase, KEIN letter-spacing, KEIN font-weight, KEIN align-items —
+   und `text-xs` ist die FESTE 0.75rem-Stufe, nicht die responsive Rampe.
    Konsumenten kommen in Item 2.25. */
-.overtitle { display:flex; gap:.5rem; font-size:var(--text-xs); color:var(--color-text-muted); }
+.overtitle { display:flex; gap:.5rem; font-size:var(--fs-xs); color:var(--color-text-muted); }
 /* Bildlegende — CD bindet `figcaption { @apply legend }` (typography.postcss:131-137);
    ohne diese Bindung wird jede figcaption anders gestaltet. Farbe ist CDs
-   text-text-500 (4.83:1 auf Weiss), nicht --color-text-light (2.54:1).
+   text-text-500 (4.83:1 auf Weiss), nicht text-400 (2.54:1).
    CDs `--color-secondary-100` (#dfe4e9) wäre auf unseren weissen Flächen 1.2:1 —
    CDs Eyebrow/Legende ist für dunkle Hero-Hintergründe entworfen. */
 .legend, figcaption { font-size:var(--text-xs); padding-top:.5rem; color:var(--color-gray-500); }
@@ -108,14 +123,25 @@ a { color:var(--color-link); text-decoration:none; }
    war. `:not(a, b, c)` zählt nur sein spezifischstes Argument, das ergibt
    (1,1,1); `:is(:hover,:focus)` erspart die zweite und dritte Kopie.
    `.tile` ist aus der Liste raus — die Klasse existiert nicht mehr (§5). */
-#main-content a:not(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link),
-.notification a, .link {
-  color:var(--color-primary-600); text-decoration:underline; text-underline-offset:2px; overflow-wrap:break-word;
+/* `.notification a` steht als KOMPLEXES :not()-Argument in der Liste (Selectors 4):
+   Links in Meldungen erben die Meldungsfarbe (currentColor, Regel bei .notification),
+   nie Brand-Primary — CD notification.postcss:11-21. */
+/* `.modal a` steht MIT im Rezept: Modale montieren auf document.body, also
+   ausserhalb von #main-content — ein nackter Anker dort erhielte sonst die
+   Markenfarbe OHNE Unterstrich (Farbe als einziges Merkmal). Toasts brauchen
+   keinen Eintrag: toast() rendert über textContent, nie Markup.
+   cursor:pointer wie CD (link.postcss:8) — `.link` auf einem <button> oder
+   einem Anker ohne href zeigte sonst den Text-Cursor. */
+#main-content a:not(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a),
+.modal a:not(.btn, .notification a),
+.link {
+  color:var(--color-primary-600); text-decoration:underline; text-underline-offset:2px; overflow-wrap:break-word; cursor:pointer;
 }
-#main-content a:not(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link):is(:hover, :focus),
-.notification a:hover, .link:hover, .link:focus { color:var(--color-primary-800); }
-.link--negative { color:var(--color-text-negative); text-decoration:underline; text-underline-offset:2px; }
-.link--negative:hover { color:var(--color-gray-300); }
+#main-content a:not(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a):is(:hover, :focus),
+.modal a:not(.btn, .notification a):is(:hover, :focus),
+.link:hover, .link:focus { color:var(--color-primary-800); }
+.link--negative { color:var(--color-text-negative); text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
+.link--negative:is(:hover, :focus) { color:var(--color-gray-300); }   /* CD link.postcss:12-15: hover UND focus */
 /* automatic external-link affordance (link.postcss:21-38) */
 :root { --icon-external-link:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m14.5 2.7v1.9h3.8l.6-.5.3.1-.7.6-6.4 6.4 1.4 1.4 6.4-6.4.6-.7.1.3-.5.7v3.7h1.9v-7.5z'/%3E%3Cpath d='m16.9 19.9h-12v-12.2h5.7v-1.9h-7.6v16h15.9v-7.7h-2z'/%3E%3C/svg%3E"); }
 /* .download-item und .card--clickable führen ihr Icon bereits selbst */
@@ -126,7 +152,7 @@ a { color:var(--color-link); text-decoration:none; }
   -webkit-mask-size:contain; mask-size:contain;
 }
 
-mark { background:var(--color-primary-200); padding:.05em .25em; border-radius:var(--radius-sm); }
+mark { background:var(--color-primary-200); padding:.125rem .25rem; }   /* CD typography.postcss:157-159: py-0.5 px-1, kein Radius */
 img { max-width:100%; display:block; }
 ul,ol { margin:0; padding:0; }
 
@@ -145,8 +171,12 @@ ul,ol { margin:0; padding:0; }
    Regel, die den Ring wegnähme, sie waren also reine Doubletten. Eine eigene
    :focus-visible-Regel braucht nur, wer den Ring vorher abschaltet
    (input, .tag-item, .card--clickable .card__link) oder wer einen anderen
-   Versatz bzw. den Negativ-Ring braucht. */
-:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; border-radius:1px; }
+   Versatz bzw. den Negativ-Ring braucht.
+   ABWEICHUNG vom CD: dort ist es ein ANLIEGENDER box-shadow-Ring mit z-10
+   (global.postcss:75-86, ring-2 ring-purple-500, Versatz 0). Der 2px-Versatz
+   hier ist bewusst — auf gefüllten Flächen deutlich sichtbarer; eine
+   z-Anhebung braucht ein Outline nicht, es malt ohnehin über Nachbarn. */
+:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 .top-bar :focus-visible, .footer-information :focus-visible, .footer-navigation :focus-visible,
 .mobile-menu .top-bar-navigation--mobile :focus-visible,
 .bg--secondary-500 :focus-visible, [class*="bg--secondary-6"] :focus-visible,
@@ -175,15 +205,15 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
   clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .skip-to-content { position:absolute; left:50%; top:0; z-index:var(--z-skiplink); background:var(--color-secondary-900);
   color:var(--color-text-negative); border:2px solid var(--color-bg); box-shadow:var(--shadow-md); padding:.5rem 1rem; font:inherit; cursor:pointer;
-  transform:translate(-50%,-200%); transition:transform var(--duration); }
+  transform:translate(-50%,-200%); transition:transform var(--duration-fast); }   /* CD: transition-transform = 150ms */
 .skip-to-content:focus { transform:translate(-50%,0); }
 
 /* ============================== LAYOUT ============================== */
-/* Der seitliche Innenabstand des Containers IST die Spalten-Rampe (dieselben
-   sechs Stufen 1/1.75/2.25/2.5/3/4rem, container.postcss:29-49 vs
-   grids.postcss:25-56) — sie stand hier ein drittes Mal ausgeschrieben. */
+/* Container-Seitenabstand: eigene Rampe (--container-px), die ab xs mit der
+   Spalten-Rampe zusammenfällt — nur die Basisstufe ist CD-gemäss 1rem statt
+   1.25rem (container.postcss:7 px-4 vs grids.postcss:10 gap-5). */
 .container { width:100%; max-width:var(--container-max); margin:0 auto;
-  padding:0 var(--gap-responsive); overflow-x:clip; }
+  padding:0 var(--container-px); overflow-x:clip; }
 .container--flex { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
 
 /* CD 12-column container grid (container.postcss:53-146) */
@@ -264,12 +294,11 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    («Informationssicherheitsgesetz»). Bei 200% Textzoom lief die Zeile aus der
    Karte und wurde von deren `overflow:hidden` abgeschnitten (WCAG 1.4.4). */
 .anchor-nav .menu__item { overflow-wrap:anywhere; }
-/* Ankernavigations-Seite (CD detailPageAnchorNav): der Kopf sitzt im selben
-   12-Spalten-Raster wie der Inhalt und richtet seine linke Kante ab lg an der
-   Inhaltsspalte (container__main: lg col-start-2) aus, die rechte an der
-   Randspalte des Inhaltsverzeichnisses (container__aside endet bei Spalte 11). */
+/* Ankernavigations-Seite (CD detailPageAnchorNav): der Kopf spannt die volle
+   Rasterbreite. Die frühere lg-Einrückung (Spalte 2/12) zielte auf CDs
+   col-start-2-Hauptspalte — die dieses Blatt oben BEWUSST auf Spalte 1 legt;
+   der Kopf muss dieselbe Bündigkeit teilen, sonst steht er versetzt. */
 .anchor-page__header { grid-column:1 / -1; }
-@media (min-width:1024px){ .anchor-page__header { grid-column:2 / 12; } }
 /* Inhaltsverzeichnis als Ausklapper — nur unter 768px. Die <summary> trägt die
    Überschrift (HTML erlaubt darin genau ein Überschriftenelement), sodass die
    Gliederung auf jeder Breite dieselbe bleibt. */
@@ -346,15 +375,21 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    während oben und unten 2.5rem Luft standen, und er stimmte nicht mit der
    Textkante der Seite überein. Jetzt dieselbe Rampe wie .container. */
 .notification-banner__wrapper { width:100%; max-width:var(--container-max); margin:0 auto;
-  padding:0 var(--gap-responsive);
-  display:flex; flex-direction:column; align-items:flex-start; gap:1rem; }
+  padding:0 var(--container-px);
+  display:flex; flex-direction:column; align-items:flex-start; }
 @media (min-width:1024px){
   .notification-banner__wrapper { flex-direction:row; flex-wrap:nowrap; align-items:flex-start;
-    justify-content:space-between; gap:1.5rem; }
+    justify-content:space-between; }
 }
 .notification-banner__infos { margin:0; overflow-wrap:break-word; }
-.notification-banner .btn { flex:none; }
-.notification-banner .btn__text { white-space:nowrap; }
+/* CD notification-banner.postcss:24-27: den Abstand trägt der KNOPF (mt-4
+   sm:mt-8 lg:mt-0 lg:ml-6), kein Wrapper-gap — beides zusammen addierte sich.
+   Kein nowrap auf .btn__text: CDs Knopftext darf überall umbrechen
+   (btn.postcss:133-137), die Spalten-/Zeilenanatomie hält den Knopf ohnehin
+   auf seiner eigenen Zeile bzw. rechts. */
+.notification-banner .btn { flex:none; margin-top:1rem; }
+@media (min-width:640px){ .notification-banner .btn { margin-top:2rem; } }
+@media (min-width:1024px){ .notification-banner .btn { margin-top:0; margin-left:1.5rem; } }
 
 /* Backgrounds (backgrounds.postcss:5-38) */
 .bg--white { background:var(--color-bg); }
@@ -384,8 +419,10 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .stack > * + * { margin-top:1rem; }
 .stack-lg > * + * { margin-top:3rem; }
 @media (min-width:1544px){ .stack-lg > * + * { margin-top:3.5rem; } }
-.muted, .text--light { color:var(--color-text-muted); }
-.small { font-size:var(--text-sm); }
+/* .muted ist BEWUSST dunkler als CDs .text--light (text-600 statt text-500):
+   text-500 fiele auf secondary-50-Flächen auf ~4.1:1 unter AA. .text--light
+   selbst steht oben bei den CD-Utilities auf dem CD-Wert. */
+.muted { color:var(--color-text-muted); }
 .text-center { text-align:center; }
 .text-right { text-align:right; }
 .text-left { text-align:left; }
@@ -461,6 +498,8 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:1024px){
   .icon--xl { width:2.25rem; height:2.25rem; } .icon--2xl{ width:3rem; height:3rem; }
 }
+/* icon--full/3xl/4xl/5xl (CD icons.postcss:15-53) folgen mit dem ersten
+   Konsumenten über 3rem — bis dahin wären sie tote Regeln. */
 /* Ladeanzeige (icons.postcss:55 `animate-spin-fast` = spin .5s linear infinite,
    tailwind.config.js:17). assets/icons/Spinner.svg liegt im Repo und wurde bisher
    von nichts referenziert; der reduced-motion-Ausstieg steht im Sammelblock unten. */
@@ -469,8 +508,10 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 
 /* Masked icons are dropped by forced-colors; repaint them with a system colour */
 @media (forced-colors: active) {
-  .icon { forced-color-adjust:none; background-color:CanvasText; }
-  .btn .icon, .btn--link .icon, a .icon { background-color:LinkText; }
+  /* currentColor folgt der ERZWUNGENEN Farbe des Kontexts (ButtonText/LinkText/
+     CanvasText) — wie CDs fill-current (icons.postcss:5-13). Ein statisches
+     LinkText malte Knopf-Symbole andersfarbig als ihre Beschriftung. */
+  .icon { forced-color-adjust:none; background-color:currentColor; }
   /* Die Ankreuzfelder stehen NICHT hier, sondern direkt hinter ihrer Basisregel
      (siehe «Ankreuzfelder im hohen Kontrast» weiter unten): beide Regeln haben
      dieselbe Spezifität, hier stünde die Korrektur 1000 Zeilen zu früh und
@@ -539,6 +580,12 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:1024px){ .language-switcher select { width:4.5em; padding-left:1rem; } }
 .language-switcher select option { color:var(--color-text); background:var(--color-bg); }
 .language-switcher select option:disabled { color:var(--color-gray-400); }
+/* Deaktiviert (Prototyp: nur DE): CDs Disabled-Rezept ist NUR opacity-40
+   (select.postcss:28-35). Die generischen [disabled]-Feldregeln unten würden
+   sonst helles Grau-auf-Grau auf die Navy-Leiste malen und mit pointer-events:none
+   den erklärenden title-Tooltip töten. */
+.language-switcher select:disabled { color:var(--color-text-negative); opacity:.4;
+  pointer-events:auto; cursor:default; }
 .language-switcher .select__icon { position:absolute; top:0; right:0; width:1.5rem; height:100%;
   display:flex; align-items:center; justify-content:center; border-left:0; background:transparent;
   color:var(--color-text-negative); pointer-events:none; transition:color var(--duration-fast); }
@@ -552,8 +599,12 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:1280px){ .top-header { padding:2rem 0; } }
 @media (min-width:1920px){ .top-header { padding:2.5rem 0; } }
 .top-header .container--flex { min-height:0; }
-.logo { display:flex; align-items:center; flex-wrap:nowrap; text-decoration:none; }
+/* Die Transition trägt BEIDE Ausblendungen (offene Suche unter lg, offenes
+   Mobilmenü) — CD logo.postcss:5-13, dort mit derselben duration-700. */
+.logo { display:flex; align-items:center; flex-wrap:nowrap; text-decoration:none;
+  transition:opacity var(--duration-slowest); }
 @media (min-width:768px){ .logo { align-items:flex-start; } }
+.body--mobile-menu-is-open .logo { opacity:0; }
 .logo__flag { flex:none; display:block; width:30px; height:33px; }
 @media (min-width:1024px){ .logo__flag { width:32px; height:34px; } }
 @media (min-width:1920px){ .logo__flag { width:40px; height:44px; } }
@@ -578,13 +629,17 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:640px){ .logo__title { font-size:var(--fs-sm); } }
 @media (min-width:1280px){ .logo__title { font-size:var(--fs-base); } }
 .logo__title span { display:block; font-weight:var(--fw-regular); color:var(--color-text-muted); }
-/* Intranet skin stamps its own badge after the title (intranet.postcss:32-43) */
+/* Intranet skin stamps its own badge after the title (intranet.postcss:32-43).
+   Die Pille am TITEL reitet die Badge-Grössenrampe (badge.postcss:73-77) mit;
+   nur die Pille am Akronym (<480px) bleibt auf text-xs gepinnt (intranet.postcss:42). */
 .body--intranet .logo__title::after,
 .body--intranet .logo__accronym::after {
   content:'Intranet'; display:block; width:fit-content; margin-top:.25rem; margin-left:-1px;
   padding:.219em 1em; border-radius:var(--radius-full);
   background:var(--color-info-bg); color:var(--color-info-text);
   font-size:var(--fs-xs); font-weight:var(--fw-regular); line-height:1.25rem; }
+@media (min-width:768px){ .body--intranet .logo__title::after { font-size:var(--fs-sm); } }
+@media (min-width:1024px){ .body--intranet .logo__title::after { font-size:var(--fs-base); line-height:1.5rem; } }
 .top-header__right { display:flex; align-items:center; }
 @media (min-width:1024px){ .top-header__right { flex-direction:column; align-items:flex-end; margin-right:-.75rem; } }
 .top-header__container-flex { display:flex; align-items:center; }
@@ -677,7 +732,9 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .search--main.open .search__form {
   width:18rem; max-width:60vw; opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
 .search__form input { width:100%; padding:.625rem 3rem .625rem 1rem; border:1px solid var(--color-border-input);
-  border-radius:var(--radius-xs); background:var(--color-bg); box-shadow:var(--shadow-2xl); min-height:var(--target-min); }
+  border-radius:var(--radius-xs); background:var(--color-bg); box-shadow:var(--shadow-2xl); min-height:var(--input-h); }
+/* CD search.postcss:120-123: ab lg bekommt das offene Kopffeld py-4. */
+@media (min-width:1024px){ .search__form input { padding-top:1rem; padding-bottom:1rem; } }
 .search__submit { position:absolute; right:0; top:0; bottom:0; width:3rem; background:none; border:0;
   cursor:pointer; color:var(--color-text); display:inline-flex; align-items:center; justify-content:center; }
 .search__submit:hover { color:var(--color-primary-600); }
@@ -718,9 +775,13 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .desktop-menu__overlay.hidden { height:0; overflow:hidden; opacity:0; pointer-events:none; }
 .desktop-menu .main-navigation, .mobile-menu .main-navigation { border-bottom:0; }
 .main-navigation { width:100%; background:var(--color-bg); border-bottom:1px solid var(--color-border); position:relative; }
-/* Neun L1-Einträge passen nicht in eine Reihe — die Leiste darf umbrechen
-   (der Nutzerentscheid zu den fünf Intranet-Bereichen). Kein overflow:hidden
-   mehr, sonst würden überzählige Einträge verschluckt. */
+/* BEWUSSTE ABWEICHUNG vom CD (Review 2026-07, nav/l1-1): CDs Antwort auf zu
+   viele L1-Einträge ist der «Mehr»-Überlauf-Flyout (MainNavigation.vue MenuMore,
+   navy.postcss:25-27), nie eine zweite Zeile. Hier dürfen die neun Einträge
+   umbrechen: der Mehr-Flyout bräuchte Breitenmessung bei jedem Resize und
+   versteckt Einträge, die im Intranet-Kontext alle gleichrangig sind; die
+   Zeilen behalten die feste CD-Zeilenhöhe, der Bruch tritt nur zwischen
+   1024-1280 px auf. Kein overflow:hidden, sonst würden Einträge verschluckt. */
 .main-navigation > ul { list-style:none; display:flex; flex-wrap:wrap; margin-left:-.7rem; min-height:3.5rem; }
 @media (max-width:1023.98px){ .desktop-menu { display:none; } }
 @media (min-width:1280px){ .main-navigation > ul { min-height:4rem; } }
@@ -903,6 +964,12 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .mobile-menu .navy__has-children[aria-expanded="true"] .icon { transform:rotate(90deg); }
 @media (prefers-reduced-motion: reduce){ .mobile-menu .navy__has-children .icon { transition:none; } }
 .navy__back .icon { width:1.25rem; height:1.25rem; }
+/* BEWUSSTE ABWEICHUNG vom CD (Review 2026-07, nav/mob-1): CDs Mobilmenü schiebt
+   GANZE Ebenen-Panels per translateX (navy.postcss:79-99, 600ms) — das setzt
+   einen einzigen Navy-Baum voraus. Unsere Shell führt je L1-Eintrag einen
+   eigenen Drawer; der Drill-down öffnet darum als Inline-Akkordeon mit
+   getönter Einrückung. Der Umbau auf CDs Slider hiesse, die Drawer-Anatomie
+   der ganzen Shell umzustrukturieren — Aufwand/Nutzen dokumentiert im Review. */
 .mobile-menu__drawer { position:static; width:100%; padding:0; background:var(--color-secondary-50); }
 /* Nur den Drawer-Schliessen-Knopf und den Ebene-0-Titel (redundant zum
    Trigger) ausblenden — der Zweigtitel auf Ebene 1 muss sichtbar bleiben. */
@@ -953,7 +1020,9 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .breadcrumb ul { list-style:none; display:flex; flex-wrap:wrap; align-items:center; padding-block:.5rem; margin-left:-1rem; }
 @media (min-width:1280px){ .breadcrumb ul { padding-block:.75rem; } }
 .breadcrumb li { display:flex; align-items:center; color:var(--color-text-muted); }
-.breadcrumb a, .breadcrumb [aria-current] { display:flex; align-items:center; padding:.5rem 1rem; text-decoration:none; }
+/* py-4 (1rem): die Brotkrume rendert nur ≥1024px, dort gilt CDs md:py-4
+   (breadcrumb.postcss:23-27) — py-2 war die unsichtbare Mobilstufe. */
+.breadcrumb a, .breadcrumb [aria-current] { display:flex; align-items:center; padding:1rem; text-decoration:none; }
 .breadcrumb a { color:var(--color-text-muted); }
 .breadcrumb a:hover { color:var(--color-primary-600); text-decoration:none; }
 .breadcrumb [aria-current] { color:var(--color-text); }
@@ -1039,17 +1108,22 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .hero__content { display:flex; flex-direction:column; gap:1.5rem; max-width:60rem; }
 @media (min-width:1024px){ .hero__content { gap:2rem; } }
 .hero:not(.hero--main-image) .hero__content { max-width:42rem; }  /* CD hero--title-only = 6/12 Spalten */
-.hero__title { font-size:var(--text-4xl); font-weight:var(--fw-bold); line-height:var(--lh-tight);
+/* text--3xl wie CDs .hero__title (hero.postcss:18-22) UND wie h1/.h1 — text--4xl
+   ist im CD allein hero--main vorbehalten. Vorher war die Hero-h1 eine Stufe
+   grösser als jede andere h1 im Produkt. */
+.hero__title { font-size:var(--text-3xl); font-weight:var(--fw-bold); line-height:var(--lh-tight);
   overflow-wrap:anywhere; margin:0; }
 .hero__description { font-size:var(--text-lg); line-height:var(--lh-snug); color:var(--color-text-muted); margin:0; }
 .hero__cta { display:flex; flex-wrap:wrap; gap:1rem; }
 /* hero--main-image (hero.postcss:70-88): content and image share the 12-col
    grid from md up; below that the content stacks above the image. */
-.hero--main-image { display:grid; gap:1.5rem; padding-top:2rem; padding-bottom:0; }
+/* Kein eigenes Padding: oben nullt die .detail-bar-Regel (unten §Detailseiten),
+   unten gilt .heros var(--section-py) — CDs container--py-Rhythmus. Der Spalten-
+   abstand ist CDs gap--responsive (hero.postcss:79 grid--responsive-cols-2). */
+.hero--main-image { display:grid; gap:var(--gap-responsive); }
 .hero--main-image .hero__content { max-width:none; }
-.hero--main-image .hero__title { font-size:var(--text-3xl); }
 @media (min-width:768px){
-  .hero--main-image { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:2.5rem; align-items:center; }
+  .hero--main-image { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:center; }
   .hero--main-image .hero__content { justify-content:center; }
 }
 .hero__image { display:block; position:relative; overflow:hidden; width:100%; }
@@ -1075,10 +1149,14 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 /* CD zentriert NICHT pauschal (btn.postcss): der Text sitzt links, zentriert wird
    nur bei btn--icon-only und btn--full-width. Pauschales Zentrieren fiel bei
    mehrzeiligen Beschriftungen auf den Login-Gates auseinander (Item 2.21). */
-.btn { display:inline-flex; align-items:center; gap:.5rem;
-  min-height:var(--target-min); padding:.5rem 1rem; border-radius:var(--radius-sm); border:1px solid transparent;
+/* KEIN gap und KEIN Block-Padding auf .btn selbst (btn.postcss:6-13: nur px-4):
+   die vertikale Luft trägt allein .btn__text (py-2), den Icon-Abstand allein
+   der icon-left/right-Versatz. Vorher ergaben Basis-Padding + Wrapper-Padding
+   zwei verschiedene Knopfhöhen für dieselbe Variante, je nach Markup. */
+.btn { display:inline-flex; align-items:center;
+  min-height:var(--target-min); padding:0 1rem; border-radius:var(--radius-sm); border:1px solid transparent;
   font:inherit; font-weight:var(--fw-regular); font-size:var(--text-base); cursor:pointer; text-decoration:none;
-  transition:background var(--duration-fast),color var(--duration-fast),border-color var(--duration-fast); line-height:1.2; }
+  transition:background var(--duration-fast),color var(--duration-fast),border-color var(--duration-fast); line-height:1.25rem; }
 .btn--icon-only, .btn--full-width { justify-content:center; }
 .btn__text          { padding-block:.5rem; text-align:left;   overflow-wrap:anywhere; }
 .btn__text-centered { padding-block:.5rem; text-align:center; width:100%; overflow-wrap:anywhere; }
@@ -1089,44 +1167,61 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .btn--filled { background:var(--color-secondary-500); border-color:var(--color-secondary-500); color:var(--color-text-negative); font-weight:var(--fw-bold); }
 .btn--filled:hover { background:var(--color-secondary-500); border-color:var(--color-secondary-500); color:var(--color-secondary-100); }
 .btn--filled[disabled] { background:var(--color-secondary-200); border-color:var(--color-secondary-200); color:var(--color-text-negative); opacity:1; }
-.btn--bare { background:none; color:var(--color-secondary-800); padding-left:.5rem; padding-right:.5rem; }
+.btn--bare { background:none; border:0; color:var(--color-secondary-800); padding-left:.5rem; padding-right:.5rem; }   /* border:0 wie die übrigen randlosen Varianten (CD btn--bare kennt keinen Rand) */
 .btn--bare:hover { background:none; color:var(--color-primary-600); }
 /* Negativ-Varianten (auf dunklem Grund, z. B. Top-Bar/Footer) — CD btn.postcss:78-109 */
-.btn--outline-negative { background:transparent; border-color:var(--color-text-negative); color:var(--color-text-negative); font-weight:var(--fw-bold); }
-.btn--outline-negative:hover { background:transparent; border-color:var(--color-secondary-100); color:var(--color-secondary-100); }
-.btn--bare-negative { background:none; border:0; color:var(--color-text-negative); padding-left:.5rem; padding-right:.5rem; }
+.btn--outline-negative { background:var(--color-secondary-500); border-color:var(--color-text-negative); color:var(--color-text-negative); font-weight:var(--fw-bold); }
+.btn--outline-negative:hover { background:var(--color-secondary-500); border-color:var(--color-secondary-100); color:var(--color-secondary-100); }
+.btn--outline-negative[disabled] { color:var(--color-secondary-200); border-color:var(--color-secondary-300); background:transparent; }
+.btn--bare-negative { background:none; border:0; color:var(--color-text-negative); }   /* behält CDs px-4 — nur .btn--bare hat px-2 (btn.postcss:28,101-109) */
 .btn--bare-negative:hover { background:none; color:var(--color-secondary-100); }
-.btn--link-negative { background:none; border:0; color:var(--color-text-negative); text-decoration:underline; text-underline-offset:2px; padding:.25rem 0; min-height:0; }
+.btn--bare-negative[disabled] { color:var(--color-secondary-200); }
+/* Link-Varianten behalten die volle CD-Höhenrampe (btn.postcss:112-117 gilt für
+   JEDE Variante) — min-height:0 drückte das Tippziel auf ~27px. CD-Padding pr-2 pl-0. */
+.btn--link-negative { background:none; border:0; color:var(--color-text-negative); text-decoration:underline; text-underline-offset:2px; padding:0 .5rem 0 0; }
 .btn--link-negative:hover { color:var(--color-secondary-100); }
-.btn--link { background:none; border:0; color:var(--color-primary-600); padding:.25rem 0; min-height:0; }
-.btn--link:hover { text-decoration:underline; }
-.btn--sm { min-height:2.125rem; padding:.35rem .8rem; font-size:var(--text-sm); }
+.btn--link-negative[disabled] { color:var(--color-secondary-200); background:transparent; }
+.btn--link { background:none; border:0; color:var(--color-primary-600); padding:0 .5rem 0 0; }
+.btn--link:hover { color:var(--color-primary-700); }   /* CD btn.postcss:38-41: Hover dunkelt (600→700), unterstreicht nie */
+.btn--link[disabled], .btn--bare[disabled] { color:var(--color-secondary-300); background:transparent; }
+.btn--sm { min-height:2.125rem; font-size:var(--text-sm); line-height:1rem; }
 /* btn.postcss:171-191 — icon-left nudges the icon; btn--back floats the button
    out of the text flow. `.back-link-row` gives that float something to clear. */
 .btn--icon-left .btn__icon { position:relative; right:.1em; margin-right:.2em; }
+.btn--icon-right .btn__icon { position:relative; left:.1em; margin-left:.2em; }
 .btn--back { float:left; margin-top:.4em; }
 @media (min-width:1024px){ .btn--back { margin-top:.25rem; } }
 .back-link-row { display:flow-root; padding-bottom:1rem; }
-.btn--lg { min-height:3rem; padding:.75rem 1rem; font-size:var(--text-lg); }
+.btn--lg { min-height:3rem; font-size:var(--text-lg); line-height:1.5rem; }
+/* CD-Zeilenrampe (btn.postcss:112-129): Basis leading-5 lg:leading-6, sm
+   leading-4 lg:leading-5, lg leading-6 — feste rem-Stufen, Sprung bei lg.
+   Wirkt nur auf mehrzeilige Beschriftungen; einzeilige regelt min-height. */
+@media (min-width:1024px){ .btn, .btn--base { line-height:1.5rem; } .btn--sm { line-height:1.25rem; } }
 @media (min-width:1280px){ .btn, .btn--base { min-height:3rem; } .btn--sm { min-height:2.5rem; } .btn--lg { min-height:3.25rem; } }
 @media (min-width:1920px){ .btn, .btn--base { min-height:3.25rem; } .btn--sm { min-height:2.75rem; } .btn--lg { min-height:3.5rem; } }
 .btn[disabled] { cursor:not-allowed; }
 /* Symbole im Knopf wachsen mit dem Knopf — beabsichtigt und stärker (0,2,0) als
    jede .icon--*-Grössenklasse (0,1,0). Ein `icon('X','icon--base')` INNERHALB
    eines Knopfes bleibt darum wirkungslos; wer eine eigene Grösse braucht,
-   überschreibt sie mit einer Regel im Knopf-Kontext (siehe .btn .catbar__chev). */
-.btn .icon, .btn__icon { width:1.4em; height:1.4em; flex:none; }
+   überschreibt sie mit einer Regel im Knopf-Kontext (siehe .btn .catbar__chev).
+   Quadratische 1.4em-Box statt CDs h-full: die Masken-Technik braucht eine
+   intrinsische Box. transition-transform wie CD (btn.postcss:147-152) — die
+   zusätzlichen Farb-Transitions auf .btn bleiben als bewusste Politur. */
+.btn .icon, .btn__icon { width:1.4em; height:1.4em; flex:none; transition:transform var(--duration); }
 .btn--icon-right { flex-direction:row-reverse; }
 .btn--full-width { width:100%; }
-.btn--icon-only { gap:0; padding-left:.625rem; padding-right:.625rem; }
+.btn--icon-only { padding-left:.625em; padding-right:.625em; }   /* CD px-[0.625em] — skaliert mit der Schrift */
 /* Nicht verfügbare Ziele werden als <span aria-disabled> gerendert — ein span
    nimmt kein [disabled], deshalb müssen die Selektoren beides abdecken, sonst
-   sehen tote Links wie lebende aus (docs/design-review.md P0-7). */
-.btn--icon-only[aria-disabled="true"] { opacity:.4; cursor:not-allowed; pointer-events:none; }
+   sehen tote Links wie lebende aus (docs/design-review.md P0-7).
+   EIN Disabled-Rezept wie bei [disabled]: Text secondary-300 / Rand
+   secondary-200 (CD btn.postcss:21-24 usw.) — nie opacity, nie eine eigene
+   dritte Farbstufe. */
+.btn--icon-only[aria-disabled="true"] { color:var(--color-secondary-300); border-color:var(--color-secondary-200); cursor:not-allowed; pointer-events:none; }
 .btn[aria-disabled="true"] { cursor:not-allowed; }
-.btn--link[aria-disabled="true"], .btn--bare[aria-disabled="true"] { color:var(--color-secondary-400); text-decoration:none; }
-.btn--outline[aria-disabled="true"] { color:var(--color-secondary-400); border-color:var(--color-secondary-200); }
-.btn[aria-disabled="true"]:hover { color:var(--color-secondary-400); text-decoration:none; }
+.btn--link[aria-disabled="true"], .btn--bare[aria-disabled="true"] { color:var(--color-secondary-300); text-decoration:none; }
+.btn--outline[aria-disabled="true"] { color:var(--color-secondary-300); border-color:var(--color-secondary-200); }
+.btn[aria-disabled="true"]:hover { color:var(--color-secondary-300); text-decoration:none; }
 .download-item[aria-disabled="true"] { cursor:not-allowed; opacity:.65; }
 .download-item[aria-disabled="true"]:hover { background:transparent; }
 .download-item[aria-disabled="true"]:hover .download-item__title { color:inherit; text-decoration:none; }
@@ -1178,11 +1273,10 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .card__footer--icon-only { justify-content:flex-end; }
 .card__footer__info { min-width:0; padding-right:1.5rem; color:var(--color-secondary-500); }
 .card__footer__action { flex:none; }
-/* Der Pfeil im Kartenfuss ist Dekoration (der Kartenlink trägt die Aktion),
-   erbt aber den Hover-Zustand der Karte, damit er nicht toter Rahmen wirkt. */
+/* Der Pfeil im Kartenfuss ist Dekoration (der Kartenlink trägt die Aktion).
+   KEINE Hover-Inversion: CDs Karten-Hover ist Schatten + Titelfarbe + Randoverlay
+   (card.postcss:27-40); der Knopf behält seinen Ruhezustand. */
 .card__footer__action > .btn { pointer-events:none; }
-.card--clickable:hover .card__footer__action > .btn--outline {
-  background:var(--color-primary-600); border-color:var(--color-primary-600); color:var(--color-text-negative); }
 .card--clickable { cursor:pointer; transition:box-shadow var(--duration-slow) var(--ease-in-out); text-decoration:none; color:inherit; }
 .card--clickable::after { content:""; position:absolute; inset:0; border:2px solid transparent; transition:border-color var(--duration-slow); pointer-events:none; }
 /* Stretched Link: der Titel-<a> überdeckt die ganze Karte (klickbar), ohne die Karte
@@ -1256,36 +1350,46 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .photo--fill { height:100%; }
 .photo--overlay-bottom { display:flex; align-items:flex-end; justify-content:space-between; padding:.75rem; }
 .photo--overlay-center { display:flex; align-items:center; justify-content:center; color:var(--color-text-negative); }
-.card--clickable .photo > img { transition:transform var(--duration-slow) ease; }
-.card--clickable:hover .photo > img { transform:scale(1.04); }
+/* Kein Bild-Zoom beim Karten-Hover: das CD kennt keinen Transform auf Kartenbildern
+   (einziger Scale im System ist card--highlight's Hintergrundebene, scale-102). */
 /* image-not-available (image-not-available.postcss:5-17) */
 .image__not-available { display:flex; flex-direction:column; align-items:center; justify-content:center;
   width:100%; height:100%; text-align:center; color:var(--color-text-muted); background:var(--color-secondary-50); }
 .image__not-available .icon { width:3rem; height:3rem; }
 .image__not-available-text { margin:.5rem 5px 0; font-size:var(--text-sm); }
 
-/* Badges (badge.postcss:5-82) */
-.badge { display:inline-flex; align-items:center; gap:.3rem; padding:.219em 1em;
-  border-radius:var(--radius-full); font-weight:var(--fw-regular); white-space:nowrap;
+/* Badges (badge.postcss:5-82) — die Basis kennt weder gap noch nowrap (CD
+   badge.postcss:5-9: nur inline-flex, items-center, Polster, rounded-full);
+   Pillen dürfen also überall umbrechen, u. a. bei 200% Textzoom (WCAG 1.4.4). */
+.badge { display:inline-flex; align-items:center; padding:.219em 1em;
+  border-radius:var(--radius-full); font-weight:var(--fw-regular);
   background:var(--color-secondary-100); color:var(--color-gray-800); }
 /* Die Formularebene verwendet .badge--sm für Hinweis- und Fehlertexte (CD tut das
-   auch, form.postcss) — dort steht aber ein ganzer Satz, der mit nowrap aus dem
-   Feld läuft. Nur in der Feldgruppe umbrechen lassen; echte Pillen bleiben nowrap. */
+   auch, form.postcss) — ein ganzer Satz steht linksbündig statt pillen-zentriert. */
 .form__group__input > .badge,
-.form__group__select > .badge { white-space:normal; text-align:left; }
+.form__group__select > .badge { text-align:left; }
 /* Kartenpillen (.pill-row) müssen bei 200% Textzoom umbrechen dürfen (WCAG 1.4.4).
    Gemessen auf #/data/katalog: das Themen-Badge «Immobilienmanagement» wuchs auf
    439px in einer 347px breiten Karte und wurde von deren `overflow:hidden`
-   abgeschnitten — ein einzelnes deutsches Kompositum, an dem `white-space:normal`
-   allein nichts ändert, deshalb zusätzlich `overflow-wrap`. Bei normaler
+   abgeschnitten — ein einzelnes deutsches Kompositum, an dem blosses
+   Umbruch-Erlauben nichts ändert, deshalb `overflow-wrap`. Bei normaler
    Textgrösse passen die Pillen, die Regel ist dort also unsichtbar. */
-.pill-row .badge { white-space:normal; overflow-wrap:anywhere; }
+.pill-row .badge { overflow-wrap:anywhere; }
 .badge, .badge--base { font-size:var(--fs-xs); line-height:1.25rem; }
 @media (min-width:768px) { .badge, .badge--base { font-size:var(--fs-sm); } }
 @media (min-width:1024px){ .badge, .badge--base { font-size:var(--fs-base); line-height:1.5rem; } }
 .badge--sm { font-size:10px; line-height:1rem; }
 @media (min-width:768px) { .badge--sm { font-size:var(--fs-xs); line-height:1.35rem; } }
 @media (min-width:1024px){ .badge--sm { font-size:var(--fs-sm); } }
+/* CD-Icon-Anatomie (badge.postcss:84-97 + Badge.vue:11-18): das Symbol wird
+   0.4em optisch ins 1em-Polster gezogen; den Abstand zur Beschriftung
+   (.badge__text) liefert allein dieser Versatz, kein flex-gap. CDs stroke-*
+   entfällt — unsere Icons sind Masken, keine gestrichenen SVGs.
+   `align-self:stretch` + height:auto statt CDs h-full: `height:100%` löst im
+   auto-hohen Flex-Container auf `auto` auf und kollabierte den Masken-Span auf
+   0 (gemessen) — Stretchen liefert dieselbe volle Pillenhöhe definit. */
+.badge__icon      { align-self:stretch; height:auto; width:1.5em; position:relative; left:.4em;  flex:none; }
+.badge__icon-left { align-self:stretch; height:auto; width:1.5em; position:relative; right:.4em; flex:none; }
 .badge--gray    { background:var(--color-secondary-100); color:var(--color-gray-800); }
 .badge--success, .badge--green { background:var(--color-success-bg); color:var(--color-success-text); }
 .badge--warning, .badge--orange { background:var(--color-warning-bg); color:var(--color-warning-text); }
@@ -1318,6 +1422,11 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .tag-item--primary:hover .tag-item__inner { background:#000; }
 .tag-item:focus-visible { outline:none; }
 .tag-item:focus-visible .tag-item__inner { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+/* CD tag-item.postcss:80-85 — Icon-Slot (z. B. Cancel-X der Entfernen-Pille).
+   `align-self:stretch` + height:auto statt CDs h-full: `height:100%` löst im
+   auto-hohen Flex-Container auf `auto` auf und kollabierte den Masken-Span auf
+   0 — das X der Entfernen-Pille war unsichtbar (gemessen 27x0px). */
+.tag-item__icon { align-self:stretch; height:auto; width:1.5em; position:relative; left:.4em; flex:none; }
 @media (forced-colors: active) { .tag-item--active .tag-item__inner { outline:2px solid CanvasText; outline-offset:-3px; } }
 
 /* ---- Scroll-Regionen ------------------------------------------------------
@@ -1395,8 +1504,9 @@ table.table thead th.text-right { width:1%; }
    Stufe, damit der Unterschied auch auf getönten Zeilen sichtbar ist. */
 table.table--zebra tbody tr:nth-child(even),
 table.table--zebra tfoot tr:nth-child(even) { background:var(--color-secondary-50); }
-table.table tbody tr:hover,
-table.table--zebra tbody tr:hover { background:var(--color-secondary-100); }
+/* Hover NUR auf klickbaren Zeilen — CDs Tabelle kennt keinen Zeilen-Hover
+   (table.postcss); eine statische Datentabelle darf keine Klickbarkeit signalisieren. */
+table.table--rows-clickable tbody tr:hover { background:var(--color-secondary-100); }
 /* Ganze Zeile klickbar (C.table `rowsClickable`): der Zeiger zeigt es an, die
    Bedienung läuft aber weiter über den Link in der Zeile — deshalb steht hier
    nur der Cursor und kein eigener Fokusstil. */
@@ -1415,7 +1525,7 @@ table.table--rows-clickable tbody tr > :last-child::after {
 table.table--rows-clickable tbody tr:hover > :last-child::after { background-color:var(--color-primary-700); }
 /* Die Summenzeile im tfoot ist keine Zeile zum Anklicken. */
 table.table--rows-clickable tfoot tr > :last-child::after { content:none; }
-@media (hover:none){ table.table tbody tr:hover { background:inherit; } }
+@media (hover:none){ table.table--rows-clickable tbody tr:hover { background:inherit; } }
 /* Dichte + Umbruch auf schmalen Viewports (Item 2.11) */
 @media (max-width:767.98px){
   .table-wrapper table.table thead th,
@@ -1435,6 +1545,7 @@ table.table--rows-clickable tfoot tr > :last-child::after { content:none; }
 /* message/hint pills hug their text rather than stretching in the column */
 .form__group__input > .badge, .form__group__select > .badge { align-self:flex-start; }
 .form__group__radio { display:flex; align-items:baseline; gap:.5rem; margin-bottom:.5rem; }
+label + .form__group__radio { margin-top:.5rem; }   /* CD form.postcss:19-22 */
 .form__group__checkbox { display:flex; align-items:baseline; gap:.5rem; margin-bottom:.5rem; }
 .form__group__input > label, .form__group__select > label {
   display:block; font-weight:var(--fw-regular); font-size:var(--text-base); color:var(--color-text); }
@@ -1469,23 +1580,27 @@ table.table--rows-clickable tfoot tr > :last-child::after { content:none; }
 .error-summary__list  { margin:0; padding-left:1.25rem; }
 /* (c) Feldhinweis ≠ Validierungsmeldung. CDs Input.vue:24-30 nutzt die Badge NUR
    für `message`; ein Hinweis ist Prosa und steht VOR dem Control. */
-.form__group__hint { margin:0 0 .35rem; font-size:var(--text-sm); color:var(--color-text-muted); }
+/* margin:0 — den 0.5rem-Rhythmus liefert bereits der flex-gap der Feldgruppe
+   (CD form.postcss:12-15 space-y-2); ein Eigenrand käme oben drauf. */
+.form__group__hint { margin:0; font-size:var(--text-sm); color:var(--color-text-muted); }
 /* (d) Meldungsgrösse. `.badge--sm` startet bei 10px (CD badge.postcss:76) — das
    ist die kleinste Schrift der App und trägt die folgenreichste Microcopy. Nur
    dort anheben, wo die Badge Prosa ist; die globale Badge-Skala und die
-   dekorativen Zählmarken (Katalog-Formatchips, .api-rail__n) bleiben unberührt. */
+   dekorativen Zählmarken (Katalog-Formatchips, .api-rail__n) bleiben unberührt.
+   Auf der FESTEN Stufe (--fs-sm): CDs badge--sm endet bei lg:text-sm — die
+   responsive Rampe liefe bei 1920 auf 1.125rem hinaus. */
 .form__group__input > .badge--sm,
-.form__group__select > .badge--sm { font-size:var(--text-sm); line-height:1.35rem; padding:.219em .75em; }
+.form__group__select > .badge--sm { font-size:var(--fs-sm); line-height:1.35rem; padding:.219em .75em; }
 /* (e) Fieldset-Gruppierung (Item 3.14) — vollständig gestaltet, bisher ohne
    Konsumenten. */
 .form > .form__group > * + * { margin-top:1.5rem; }
 .form__group__legend { font-size:var(--text-lg); font-weight:var(--fw-bold); }
 
-/* EINE Steuerhöhen-Rampe im ganzen Produkt (Item 2.5e). Vorher liefen zwei:
-   hier 2.75rem mit einer Stufe bei 2xl/1544, und --control-h mit CDs Stufen bei
-   xl/1280 und 3xl/1920 (btn.postcss:112-116) — auf demselben Bildschirm wären
-   die Steuerhöhen an unterschiedlichen Breakpoints gesprungen. */
-input, select, textarea { font:inherit; width:100%; min-height:var(--control-h); padding:.625rem 1rem; line-height:1;
+/* Eingabefelder auf der FELD-Rampe (--input-h, 44 → 48 erst bei 2xl/1544 und
+   Schluss — CD input.postcss:1-4,16); die Knopf-Rampe --control-h (44/48/52 bei
+   xl/3xl) gilt nur für knopfartige Bedienelemente. Die frühere Vereinheitlichung
+   (Item 2.5e) machte Felder auf 1280-1543-px-Laptops 4 px höher als das CD. */
+input, select, textarea { font:inherit; width:100%; min-height:var(--input-h); padding:.625rem 1rem; line-height:1;
   border:1px solid var(--color-border-input); border-radius:var(--radius-xs); background:var(--color-bg);
   color:var(--color-text); box-shadow:var(--shadow); }
 input::placeholder, textarea::placeholder { color:var(--color-placeholder); }
@@ -1506,20 +1621,36 @@ input[readonly], textarea[readonly] {
   border-style:dashed; cursor:default; }
 input[type='search']::-webkit-search-decoration { display:none; }
 /* Native Löschen-Schaltfläche (X) sichtbar lassen, im CD-Stil (Cancel-Icon) —
-   erscheint, sobald Text eingegeben ist, und leert das Feld. */
+   erscheint, sobald Text eingegeben ist, und leert das Feld. BEWUSSTE ABWEICHUNG
+   von CD input.postcss:165-171 (dort unterdrückt); Kollisionen mit dem
+   aufgelegten Suchknopf verhindert das reservierte padding-right der Felder.
+   WebKit-only: Firefox kennt das Pseudo-Element nicht und zeigt kein X —
+   akzeptiert; wo Löschen zum Ablauf gehört, steht ein echter, browserneutraler
+   Knopf (.map-search__clear). */
 input[type='search']::-webkit-search-cancel-button {
   -webkit-appearance:none; appearance:none; width:1rem; height:1rem; margin-left:.5rem; cursor:pointer;
   background-color:var(--color-text-muted);
   -webkit-mask:url('../assets/icons/Cancel.svg') center/contain no-repeat;
   mask:url('../assets/icons/Cancel.svg') center/contain no-repeat; }
 input[type='search']::-webkit-search-cancel-button:hover { background-color:var(--color-primary-600); }
-.input--sm { font-size:var(--text-sm); } .input--base { font-size:var(--text-base); } .input--lg { font-size:var(--text-lg); }
+/* CD-Leadings (input.postcss:21-31): sm/base leading-6, lg leading-7. Textareas
+   tragen die 1.5rem schon über die Basisregel; einzeilige sm/base-Felder wachsen
+   damit auf 46px (24+20+2) — exakt wie CDs eigenes input--base. */
+.input--sm { font-size:var(--text-sm); line-height:1.5rem; } .input--base { font-size:var(--text-base); line-height:1.5rem; } .input--lg { font-size:var(--text-lg); line-height:1.75rem; }
 .input--outline { border-color:var(--color-border-input); color:var(--color-text); }
 .input--error { color:var(--color-error-text); border-color:var(--color-error); }
 .input--error::placeholder { color:var(--color-error-400); }
 .input--negative { color:var(--color-text-negative); background:var(--color-secondary-500); border-color:var(--color-secondary-300); }
 .input--negative::placeholder { color:var(--color-secondary-50); }
 .input--negative option { background:var(--color-secondary-600); color:var(--color-text-negative); }
+/* CD-Zustandsregeln (input.postcss:55-76): Fehler-Label (Checkbox/Radio-Muster,
+   Beschriftung FOLGT dem Feld), Negativ-Hover/-Disabled, Fehler auf Negativ-
+   flächen. Fehlerrot über die dedizierten --color-error-*-Töne, damit es unter
+   .body--intranet rot bleibt. */
+.input--error + label { color:var(--color-error-text); margin-right:.75rem; }
+.input--negative:hover, .input--negative:focus { color:var(--color-text-300); }
+.input--negative:disabled, .input--negative.input--disabled { background:var(--color-secondary-300); color:var(--color-secondary-200); }
+.input--error.input--negative { color:var(--color-error-200); border-color:var(--color-error-300); }
 
 /* Select (select.postcss:1-78) */
 .select { position:relative; }
@@ -1535,6 +1666,7 @@ select:disabled, .input--disabled select { opacity:.4; }
 select:disabled + .select__icon, .input--disabled select + .select__icon { opacity:.4; }
 .input--error + .select__icon { color:var(--color-error-700); border-left-color:var(--color-error-400); }
 .input--negative + .select__icon { color:var(--color-text-negative); border-left-color:var(--color-secondary-300); background:var(--color-secondary-500); }
+.input--error.input--negative + .select__icon { color:var(--color-error-200); border-left-color:var(--color-error-300); }   /* CD select.postcss:66-72 */
 .select--bare { width:auto; display:inline-block; }
 /* Der bare Select steht in Werkzeugleisten NEBEN anderen Bedienelementen, nicht
    als eigene Formularzeile — der Zeilenabstand von `.form > .form__group > * + *`
@@ -1558,6 +1690,14 @@ input[type='checkbox']:checked, input[type='radio']:checked {
 input[type='radio']:checked { background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='6' cy='6' r='3' fill='white'/%3E%3C/svg%3E"); }
 input[type='checkbox']:checked { background-image:url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 10 7' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9.2.29A1 1 0 0 1 9.2 1.7l-5 5a1 1 0 0 1-1.42 0l-2-2A1 1 0 0 1 2.2 3.29L3.5 4.59 7.79.29a1 1 0 0 1 1.41 0Z' fill='white'/%3E%3C/svg%3E"); }
 input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
+/* CD-Grössenvarianten (input.postcss:95-108): sm h-3, lg h-4; Basis .9rem oben. */
+input[type='checkbox'].input--sm, input[type='radio'].input--sm { width:.75rem; height:.75rem; }
+input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; height:1rem; }
+/* CD form.postcss:25-27 + input.postcss:82: in der Checkbox-Zeile liefert schon
+   der flex-gap die 0.5rem — das mr-2 des Feldes käme dazu (1rem statt CDs
+   0.5rem). Die RADIO-Zeile behält ihr mr-2: dort ergeben gap+Rand CDs
+   effektive 1rem. (Beide Zeilenklassen sind derzeit ohne Konsumenten.) */
+.form__group__checkbox input[type='checkbox'] { margin-right:0; }
 /* Ankreuzfelder im hohen Kontrast — muss DIREKT hinter der Basisregel stehen.
    `appearance:none` oben und `appearance:auto` hier haben dieselbe Spezifität;
    die spätere Regel gewinnt. Stand die Korrektur wie früher 1000 Zeilen weiter
@@ -1582,18 +1722,25 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 @media (min-width:1280px){ .notification__content { margin-block:.5rem; } }
 .notification__content > p { margin:0; overflow-wrap:anywhere; }
 .notification__content > p + p { margin-top:.25rem; }
-.notification__title { margin:0; font-weight:var(--fw-bold); }
+/* KEINE .notification__title-Regel: nichts emittiert die Klasse, und CDs
+   Titel-Anatomie ist grösser (__header + --with-title + __content-offset,
+   notification.postcss:98-112) — eine halbe Implementation wäre eine Falle.
+   Kommt vollständig, wenn eine betitelte Meldung gebraucht wird. */
 .notification--info    { background:var(--color-info-bg-subtle);    color:var(--color-info-text-subtle); }
 .notification--success { background:var(--color-success-bg-subtle); color:var(--color-success-text); }
 .notification--warning { background:var(--color-warning-bg-subtle); color:var(--color-warning-text); }
 .notification--error   { background:var(--color-error-bg-subtle);   color:var(--color-error-text); }
 .notification--hint    { background:var(--color-secondary-50);      color:var(--color-gray-700); }
 .notification--alert   { background:var(--color-alert-bg);          color:var(--color-text-negative); }
-.notification--alert .btn { color:var(--color-text-negative); border-color:var(--color-text-negative); }
-/* Links erben die Meldungsfarbe (currentColor) statt Brand-Primary — die
-   Alert-Sonderregel wird so zum Spezialfall der allgemeinen Regel (S4-114). */
-.notification a { color:currentColor; text-decoration:underline; text-underline-offset:2px; }
-.notification a:hover { filter:brightness(.5); }
+/* JEDES interaktive Kind einer Meldung erbt die Meldungsfarbe (currentColor) statt
+   Brand-Primary — CD notification.postcss:11-21 (text-current, hover brightness-50).
+   Deckt <a>, button.link UND .btn ab; die frühere --alert-Sonderregel ist damit
+   der Spezialfall der allgemeinen Regel. Hover pinnt die Farbe erneut, weil
+   .link:hover (0,2,0) sonst Brand-Primary zurückholte. */
+.notification a, .notification .link { color:currentColor; text-decoration:underline; text-underline-offset:2px; }
+.notification a:hover, .notification a:focus, .notification .link:hover, .notification .link:focus { color:currentColor; filter:brightness(.5); }
+.notification .btn { color:currentColor; border-color:currentColor; }
+.notification .btn:hover { color:currentColor; border-color:currentColor; filter:brightness(.5); }
 /* Schliessen-Knopf (CD notification.postcss) — 44px-Trefferfläche um das 2rem-Icon. */
 .notification--dismissible { padding-right:var(--target-min); }
 .notification__close { position:absolute; top:0; right:0; display:inline-flex; align-items:center; justify-content:center;
@@ -1721,9 +1868,12 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .accordion__title { font-size:var(--fs-base); text-align:left; padding:.25rem 1rem .25rem 0; margin:0; overflow-wrap:anywhere; }
 .accordion__button .icon { flex:none; transition:transform var(--duration); }
 .accordion__button[aria-expanded="true"] .icon { transform:rotate(180deg); }
-/* CD accordion.postcss: the drawer wraps the content and is the toggled region;
-   [hidden] collapses it. The .icon rotation rule above also serves .accordion__arrow. */
-.accordion__drawer { width:100%; }
+/* CD accordion.postcss:59-68: the drawer animates max-height 300ms ease-out
+   (wireAccordion drives style.maxHeight from scrollHeight); [hidden] still
+   collapses it hard for non-JS/print. The .icon rotation rule above also
+   serves .accordion__arrow. */
+.accordion__drawer { width:100%; max-height:none; overflow:hidden;
+  transition:max-height var(--duration-slow) var(--ease-out); }
 .accordion__content { width:100%; padding:1rem .5rem 2.5rem; }
 /* right-hand cluster in an accordion header (format badge + chevron) */
 .accordion__meta { display:flex; align-items:center; gap:.75rem; flex:none; }
@@ -1763,7 +1913,9 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .tab__control:hover:not(.tab__control--active) { color:var(--color-primary-600); }
 .tab__control:first-child { padding-left:0; }
 .tab__control:first-child::after { left:0; }
-.tab__control--active { font-weight:var(--fw-bold); }
+/* KEIN bold auf dem aktiven Reiter: das CD markiert allein über den 3px-Balken
+   (tab.postcss:49-77); der Gewichtswechsel liess die ganze Reiterleiste beim
+   Umschalten die Breite wechseln. */
 .tab__container { padding-top:1rem; }
 
 /* Pagination (pagination.postcss:5-31) */
@@ -1873,7 +2025,7 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 .dash-map .maplibregl-ctrl-bottom-right,
 .pf-map .maplibregl-ctrl-bottom-right { padding-bottom:1.5rem; }
 @media (min-width:1024px){ .back-to-top-rail { bottom:calc(100% - (1rem + 3rem)); } }
-@media (min-width:1280px){ .back-to-top-rail { bottom:calc(100% - (1rem + 4rem)); } }
+@media (min-width:1920px){ .back-to-top-rail { bottom:calc(100% - (1rem + 4rem)); } }
 .back-to-top-track { height:100%; display:flex; flex-direction:column;
   justify-content:flex-end; align-items:flex-end; pointer-events:none; }
 .back-to-top-btn { position:sticky; bottom:1.5rem; pointer-events:all; margin-inline-end:0;
@@ -1882,15 +2034,17 @@ input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
   border-radius:var(--radius-sm); box-shadow:var(--shadow-lg); background:var(--color-bg);
   transition:box-shadow var(--duration-fast), border-color var(--duration-fast); }
 @media (min-width:1024px){ .back-to-top-btn { width:3rem; height:3rem; } }
-/* CDs xl:w-16 setzt eine Platzierung im Seitengraben voraus, die erst ab 1920 gilt. */
+/* CDs xl:w-16 setzt eine Platzierung im Seitengraben voraus, die erst ab 1920
+   gilt — DORT greift sie dann auch (back-to-top-btn.postcss:27-30). */
 @media (min-width:1280px){ .back-to-top-btn { width:3rem; height:3rem; } }
+@media (min-width:1920px){ .back-to-top-btn { width:4rem; height:4rem; } }
 @media (hover:none), (max-width:767.98px){
   .back-to-top-btn { bottom:1rem; margin-inline-end:.75rem; }
 }
 .back-to-top-btn:hover { box-shadow:var(--shadow-xl); }
 .back-to-top-btn--outline { border:1px solid var(--color-primary-600); }
 .back-to-top-btn--outline:hover { border-color:var(--color-primary-700); }
-.back-to-top-btn__icon { width:50%; height:50%; background-color:var(--color-primary-600); }
+.back-to-top-btn__icon { width:50%; height:100%; background-color:var(--color-primary-600); }   /* CD: w-1/2 h-full */
 .back-to-top-btn--outline:hover .back-to-top-btn__icon { background-color:var(--color-primary-700); }
 /* Bei offenem Mobilmenü oder Dokumentbetrachter ausblenden. */
 .body--mobile-menu-is-open .back-to-top-rail,
@@ -1916,8 +2070,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .service-controls__submit:hover, .catbar__submit:hover { color:var(--color-primary-600); background:none; }
 /* Das Dienstleistungsfeld ist 3rem hoch und sitzt unter einer Beschriftung —
    der Knopf richtet sich deshalb an der Unterkante aus, nicht über die volle Höhe. */
-.service-controls__search input { min-height:3rem; }
-.service-controls__submit { bottom:0; height:3rem; }
+/* Feld-Rampe statt fixer 48px — der Knopf folgt derselben Variable und bleibt bündig. */
+.service-controls__search input { min-height:var(--input-h); }
+.service-controls__submit { bottom:0; height:var(--input-h); }
 .service-controls__filters { display:grid; grid-template-columns:minmax(12rem, 1fr) minmax(12rem, 1fr); gap:1rem 1.5rem; align-items:end; }
 @media (max-width:1279.98px){
   .service-controls { grid-template-columns:minmax(0,1fr); }
@@ -1952,8 +2107,13 @@ body.docviewer-open .back-to-top-rail { display:none; }
 /* ===================== Suche (search.postcss «SEARCH RESULTS PAGE») ===================== */
 /* Grosses Suchfeld (search--large): fettes h-16-Feld mit Icon-Knopf rechts. */
 .search--large .search__group { display:flex; align-items:stretch; position:relative; height:4rem; max-width:52rem; }
-.search__field { flex:1 1 auto; min-width:0; width:100%; padding:.75rem 1rem; border:1px solid var(--color-border);
-  background:var(--color-bg); font-size:var(--text-xl); font-weight:var(--fw-bold); outline:none; }
+/* CD search.postcss:135-152: statisches text-xl (1.25rem, KEINE responsive Rampe —
+   2rem fett bei 1920 wäre sichtbar ausserhalb des CD), Input-Rahmenfarbe, kein
+   Feld-Schatten; rechts 3.5rem Luft, damit Text und natives Lösch-X nicht unter
+   den absolut gesetzten Suchknopf laufen (pr-12-Prinzip, wie die Kopfsuche). */
+.search__field { flex:1 1 auto; min-width:0; width:100%; padding:.75rem 3.5rem .75rem 1rem;
+  border:1px solid var(--color-border-input); box-shadow:none;
+  background:var(--color-bg); font-size:var(--fs-xl); font-weight:var(--fw-bold); outline:none; }
 /* war --color-secondary-300 #828e9a auf Weiss = 3.34:1 (Soll 4.5:1) auf dem
    prominentesten Eingabefeld des Produkts; --color-placeholder = 5.65:1. */
 .search__field::placeholder { color:var(--color-placeholder); font-weight:var(--fw-regular); }
@@ -2012,10 +2172,14 @@ body.docviewer-open .back-to-top-rail { display:none; }
 /* Active filter pills — a portal composition of CD badges. CD ships
    badge-filter, but that is a filter *chooser*; it has no removable pill. */
 .active-filters { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; }
-.active-filter { text-decoration:none; cursor:pointer; transition:background var(--duration-fast); border:0; font-family:inherit; }
-.active-filter .icon { margin-left:.15rem; opacity:.65; }
-.active-filter:hover { background:var(--color-secondary-200); }
-.active-filter:hover .icon { opacity:1; }
+/* Entfernen-Pillen sind seit dem Umbau echte .tag-item (CDs interaktive Pille mit
+   voller 44px-Rampe, tag-item.postcss:7-42) — hier nur noch die Einfärbung der
+   Innenpille und des Cancel-X. */
+.active-filter { text-decoration:none; }
+.active-filter .tag-item__inner { background:var(--color-secondary-100); }
+.active-filter:hover .tag-item__inner { background:var(--color-secondary-200); }
+.active-filter .tag-item__icon { opacity:.65; }
+.active-filter:hover .tag-item__icon { opacity:1; }
 
 /* Topic tile icon (Datenportal) */
 .domain-tile__icon { display:block; color:var(--color-primary-600); margin-bottom:.25rem; }
@@ -2147,7 +2311,11 @@ body.docviewer-open .back-to-top-rail { display:none; }
 /* Trefferfläche auf 44px bringen, ohne die gezeichnete Marke zu vergrössern —
    die Kreisgrösse trägt Information (∝ √Geschossfläche). */
 .map-marker::before { content:""; position:absolute; inset:calc((var(--target-min) - 100%) / -2); }
-.map-marker:hover, .map-marker:focus-visible { background:rgba(37,99,235,.95); outline:2px solid var(--color-primary-700); outline-offset:1px; }
+/* Hover ≠ Fokus: der Tastaturfokus trägt den CD-Purpurring (global.postcss:75-77) —
+   primary-700 als Ring war unter dem Intranet-Skin farbgleich mit der Markerfüllung. */
+.map-marker:hover { background:rgba(37,99,235,.95); }
+.map-marker:focus-visible { background:rgba(37,99,235,.95);
+  outline:2px solid var(--color-focus-ring); outline-offset:2px; }
 
 .chart { padding:1.25rem; margin:0; }
 @media (min-width:1024px){ .chart { padding:1.5rem; } }
@@ -2192,7 +2360,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .lead-hint { margin-top:.35rem; }
 /* Multi-select-Filter (Checkbox-Gruppen) im Filterpanel */
 .filter-group { border:0; margin:0 0 1.25rem; padding:0; }
-.filter-group__legend { font-size:var(--fs-sm); font-weight:var(--fw-bold); color:var(--color-text); margin:0 0 .35rem; padding:0; }
+/* Gleiche Stimme wie die Formular-Legende (responsives text-sm) und CDs mb-2 —
+   die beiden Fieldset-Legenden des Produkts unterscheiden sich nur im Grad. */
+.filter-group__legend { font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--color-text); margin:0 0 .5rem; padding:0; }
 /* Höchste Tippdichte im Produkt und zugleich die kleinste Trefferfläche: 16x16-Box
    in .18rem Polsterung ≈ 22-27px, 8-20 Zeilen tief. Ein Fehlgriff schaltet die
    Nachbarfacette und stellt das ganze Dashboard still neu zusammen. Das negative
@@ -2231,7 +2401,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .api-rail { position:sticky; top:1rem; display:flex; flex-direction:column; gap:.1rem; min-width:0; }
 .api-rail__item { min-width:0; }
 .api-rail__title { font-size:var(--fs-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin:0 0 .4rem .75rem; }
-.api-rail__item { display:flex; justify-content:space-between; align-items:center; gap:.5rem; padding:.4rem .75rem; border-radius:var(--radius-sm); color:var(--color-text); text-decoration:none; font-size:var(--fs-sm); border-left:2px solid transparent; }
+.api-rail__item { display:flex; justify-content:space-between; align-items:center; gap:.5rem; padding:.4rem .75rem; border-radius:var(--radius-sm); color:var(--color-text); text-decoration:none; font-size:var(--text-sm); border-left:2px solid transparent; }
 .api-rail__item:hover { background:var(--color-secondary-50); }
 .api-rail__item.is-active { background:var(--color-primary-50); border-left-color:var(--color-primary-600); font-weight:var(--fw-bold); color:var(--color-primary-700); }
 .api-rail__n { font-size:var(--fs-xs); color:var(--color-text-muted); background:var(--color-secondary-100); border-radius:var(--radius-full); padding:0 .4rem; }
@@ -2248,8 +2418,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .api-ep { border:1px solid var(--color-border); border-radius:var(--radius-lg); overflow:hidden; background:var(--color-bg); }
 .api-ep__head { display:flex; align-items:center; gap:.75rem; width:100%; padding:.6rem .8rem; background:none; border:0; cursor:pointer; text-align:left; font:inherit; }
 .api-ep__head:hover { background:var(--color-secondary-50); }
+/* Mono-Pfade BEWUSST auf der starren Stufe (--fs-sm): Code skaliert nicht mit. */
 .api-ep__path { font-family:var(--font-mono); font-size:var(--fs-sm); color:var(--color-text); font-weight:var(--fw-bold); }
-.api-ep__summary { color:var(--color-text-muted); font-size:var(--fs-sm); flex:1 1 auto; min-width:0; }
+.api-ep__summary { color:var(--color-text-muted); font-size:var(--text-sm); flex:1 1 auto; min-width:0; }
 .api-ep__chev { margin-left:auto; transition:transform var(--duration-fast); flex:none; }
 .api-ep.is-open .api-ep__chev { transform:rotate(180deg); }
 .api-ep__body { padding:.25rem .85rem 1rem; border-top:1px solid var(--color-border); }
@@ -2267,8 +2438,8 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .api-method--delete { background:var(--color-error-700); }
 
 .api-block { margin-top:.9rem; }
-.api-block__label { font-size:var(--fs-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin-bottom:.35rem; }
-.api-params { width:100%; border-collapse:collapse; font-size:var(--fs-sm); }
+.api-block__label { font-size:var(--text-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin-bottom:.35rem; }
+.api-params { width:100%; border-collapse:collapse; font-size:var(--text-sm); }
 .api-params td { padding:.32rem .6rem .32rem 0; border-bottom:1px solid var(--color-border); vertical-align:top; }
 .api-params code { font-family:var(--font-mono); }
 .api-req { color:var(--color-error); margin-left:.1rem; }
@@ -2309,10 +2480,15 @@ body.docviewer-open .back-to-top-rail { display:none; }
   padding-bottom:.6rem; border-bottom:1px solid var(--color-secondary-300); font-size:var(--text-sm); }
 /* Anatomie oben bei .service-controls__search; hier nur die Unterschiede. */
 .catbar__search { flex:1 1 15rem; min-width:11rem; max-width:24rem; }
+/* BEWUSSTE AUSNAHME von der Feld-Rampe: die Katalogleiste ist eine kompakte
+   Werkzeugzeile — Feld, Sortier-Select, Filter- und Ansichtsknöpfe teilen die
+   feste 44px-Höhe (--target-min), damit die Zeile auf keiner Breite springt. */
 .catbar__search input { min-height:var(--target-min); }
 .catbar__submit { top:0; bottom:0; }
 .catbar__count { color:var(--color-text-muted); white-space:nowrap; }
-.catbar__count strong { font-weight:var(--fw-bold); color:var(--color-text); }
+/* CD hält die Trefferzahl regular (search.postcss:215-217) — wie unsere eigene
+   .search-results__header-Zeile; nur die Tinte bleibt dunkler als der Suffix. */
+.catbar__count strong { font-weight:var(--fw-regular); color:var(--color-text); }
 /* Steuerungscluster rechts (bare Controls, CD-Muster): Sortierung · Filter · │ ·
    Ansichtswechsel. Alle Controls gleich hoch (--target-min); die EINE
    Trennlinie ist der View-Switch-Strich zwischen Filter und Ansichtswechsel. */
@@ -2470,7 +2646,8 @@ body.docviewer-open .back-to-top-rail { display:none; }
    und ein aspect-ratio-Flexkind wird dabei gestaucht — das Bild verlor seine
    Proportion (131px statt 186px) und die Differenz stand als Leerraum über der
    Fusszeile. Mit height:0 + padding-bottom + flex:none ist der Kasten fix. */
-.pf-card__vis { position:relative; height:0; padding-bottom:62.5%; flex:none; overflow:hidden; background:var(--color-secondary-100); }
+/* 16:9 wie jedes Kartenbild (card.postcss:166) — 16:10 war ein drittes Medienmass. */
+.pf-card__vis { position:relative; height:0; padding-bottom:56.25%; flex:none; overflow:hidden; background:var(--color-secondary-100); }
 .pf-card__img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .pf-card__parcel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);
   background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
@@ -2534,13 +2711,16 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .action-menu__heading { padding:.45rem .65rem .2rem; font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--color-text-muted); }
 .action-menu__sep { height:1px; background:var(--color-secondary-100); margin:.35rem .25rem; }
 
-/* ---- Toast (kurze Statusmeldung für erledigte/simulierte Aktionen) ------- */
-.toast { position:fixed; left:50%; bottom:2rem; z-index:var(--z-toast); transform:translate(-50%,1rem);
-  background:var(--color-secondary-800); color:var(--color-text-negative); padding:.7rem 1.1rem; border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-lg); font-size:var(--text-sm); max-width:calc(100vw - 2rem); text-align:center;
-  opacity:0; transition:opacity var(--duration-slow), transform var(--duration-slow); pointer-events:none; }
-.toast--in { opacity:1; transform:translate(-50%,0); }
-@media (prefers-reduced-motion: reduce) { .toast { transition:opacity .01s; } .icon--spin { animation:none; } }
+/* ---- Toast — CD toast-message (toast-message.postcss:5-18 + ToastMessage.vue):
+   fester Host bei bottom 10 %, innen eine normale .notification (Standard:
+   success + CheckmarkCircle), max. 500px breit. Die frühere dunkle Eigenbau-
+   Pille ist ersetzt; die Ansage für Screenreader läuft über #live (announce). */
+.toast__message { position:fixed; left:0; right:0; bottom:10%; z-index:var(--z-toast);
+  display:flex; justify-content:center; pointer-events:none;
+  opacity:0; transition:opacity var(--duration-slow); }
+.toast__message--in { opacity:1; }
+.toast__message .notification { max-width:500px; margin-inline:1.25rem; pointer-events:auto; }
+@media (prefers-reduced-motion: reduce) { .toast__message { transition:opacity .01s; } .icon--spin { animation:none; } }
 
 /* ---- Chart-Vollbild (Overlay) -------------------------------------------- */
 /* Scroll-Sperre für alle Vollbild-Overlays (Diagramm, Modal, Bildergalerie).
@@ -2553,19 +2733,17 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Seite darunter um die Leistenbreite springen. */
 html { scrollbar-gutter:stable; }
 html:has(> body.chart-overlay-open) { overflow:hidden; }
-/* `overflow:hidden` allein auf dem <body> genügt NICHT: der Dokument-Scroller
-   ist das <html>-Element (app.css:33 setzt dort `overflow-y:scroll`). Die
-   Seitenleiste blieb sonst hinter dem Overlay aktiv — beim Hineinzoomen zwei
-   senkrechte Leisten nebeneinander. */
-html:has(> body.chart-overlay-open) { overflow:hidden; }
 body.chart-overlay-open { overflow:hidden; }
 /* ---- Kanonisches Modal (CD modal.postcss BEM) ----------------------------
    Primitive für neue Dialoge (Bestätigungen, Formulare). Die bestehenden Overlays
    (chart-overlay, pf-lightbox, docviewer) bleiben eigenständig, teilen aber die
    --z-*-Skala und das --overlay-scrim-Token. C.openModal() verdrahtet Fokusfalle,
    Escape, Backdrop-Klick und Fokus-Rückgabe. */
-.modal { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center; padding:2rem; }
-.modal__backdrop { position:absolute; inset:0; background:var(--overlay-scrim); }
+/* CD modal.postcss:10-35 — Dialog sitzt 10vh unter der Oberkante (nicht mittig),
+   Scrim ist text-900/70 (der hellere Bild-Scrim liess den Negativ-Fokusring
+   auf 1.82:1 fallen, WCAG 1.4.11). */
+.modal { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:flex-start; justify-content:center; padding:10vh 2rem; }
+.modal__backdrop { position:absolute; inset:0; background:var(--modal-scrim); }
 /* CD-Anatomie (modal.postcss:31-104): der INHALT ist durchsichtig, die Kopfzeile
    steht in weisser Schrift auf dem Scrim, und der eigentliche Inhalt sitzt in
    einer weissen .card darin. Vorher war .modal__content selbst der weisse
@@ -2574,11 +2752,13 @@ body.chart-overlay-open { overflow:hidden; }
   display:flex; flex-direction:column; align-items:stretch; }
 /* CDs layout="xs" ist max-w-screen-xs = 480px. Mit 340px passte .share-url
    (min-width 22rem = 352px) nicht hinein — daher die waagrechte Bildlaufleiste. */
+/* Grössenskala = CD-Screen-Token (modal.postcss:52-70 max-w-screen-*):
+   xs 480 · sm 640 · md 768 · lg 1024 · xl 1280. Vorher war sm (420) < xs (480). */
 .modal--xs .modal__content { width:min(480px,100%); }
-.modal--sm .modal__content { width:min(420px,100%); }
-.modal--md .modal__content { width:min(640px,100%); }
-.modal--lg .modal__content { width:min(880px,100%); }
-.modal--xl .modal__content { width:min(1100px,100%); }
+.modal--sm .modal__content { width:min(640px,100%); }
+.modal--md .modal__content { width:min(768px,100%); }
+.modal--lg .modal__content { width:min(1024px,100%); }
+.modal--xl .modal__content { width:min(1280px,100%); }
 .modal__header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
   width:100%; margin-bottom:.5rem; color:var(--color-text-negative); }
 @media (min-width:1024px){ .modal__header { margin-bottom:1rem; } }
@@ -2603,11 +2783,17 @@ body.chart-overlay-open { overflow:hidden; }
 
 .chart-overlay { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center;
   padding:2rem; background:var(--overlay-scrim); }
+/* Auf dem Telefon frisst 2rem+2rem Rahmen ~40 % der Breite — das «Vollbild»
+   zeigte das Diagramm KLEINER als inline. */
+@media (max-width:639.98px){
+  .chart-overlay { padding:.5rem; }
+  .chart-overlay__box { padding:1rem; }
+}
 .chart-overlay__box { position:relative; width:min(1100px,100%); max-height:90vh; overflow:auto;
   background:var(--color-bg); border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); padding:1.75rem 2rem; }
 .chart-overlay__box .chart { padding:0; box-shadow:none; border:0; }
 .chart-overlay__close { position:absolute; top:.9rem; right:.9rem; z-index:1; display:inline-flex;
-  align-items:center; justify-content:center; min-width:2.25rem; min-height:2.25rem; padding:.35rem;
+  align-items:center; justify-content:center; min-width:var(--target-min); min-height:var(--target-min); padding:.35rem;
   border:1px solid var(--color-secondary-200); border-radius:var(--radius-sm); background:var(--color-bg);
   color:var(--color-text-muted); cursor:pointer; }
 .chart-overlay__close:hover { background:var(--color-secondary-100); color:var(--color-text); }
@@ -2710,14 +2896,15 @@ body.chart-overlay-open { overflow:hidden; }
    sonst zu wenig Kartenfläche über dem Feld. */
 @media (min-width:640px){ .map-search { bottom:3.5rem; } }
 .map-search__field { position:relative; display:flex; }
-.map-search__field input { width:100%; min-height:var(--control-h);
+.map-search__field input { width:100%; min-height:var(--input-h);
   padding-left:var(--target-min); padding-right:var(--target-min); background:var(--color-bg);
   box-shadow:var(--shadow-lg); border-radius:var(--radius); }
 .map-search__icon { position:absolute; left:.85rem; top:50%; transform:translateY(-50%);
   color:var(--color-text-muted); pointer-events:none; }
-.map-search__clear { position:absolute; right:.25rem; top:50%; transform:translateY(-50%);
+/* 44px-Ziel (--target-min): das Feld reserviert rechts genau diese Breite. */
+.map-search__clear { position:absolute; right:0; top:50%; transform:translateY(-50%);
   display:inline-flex; align-items:center; justify-content:center;
-  width:2.5rem; height:2.5rem; border:0; background:none; cursor:pointer;
+  width:var(--target-min); height:var(--target-min); border:0; background:none; cursor:pointer;
   color:var(--color-text-muted); border-radius:var(--radius); }
 .map-search__clear:hover { color:var(--color-primary-600); }
 /* Liste über dem Feld: `order` dreht die optische Reihenfolge, ohne die
@@ -2727,11 +2914,17 @@ body.chart-overlay-open { overflow:hidden; }
   max-height:13rem; overflow-y:auto; background:var(--color-bg);
   border-radius:var(--radius); box-shadow:var(--shadow-2xl); }
 .map-search__option { display:flex; align-items:center; gap:.5rem;
-  padding:.55rem .7rem; border-radius:var(--radius-sm); cursor:pointer;
+  min-height:var(--target-min); padding:.55rem .7rem; border-radius:var(--radius-sm); cursor:pointer;
   font-size:var(--text-sm); line-height:var(--lh-snug); }
 .map-search__option .icon { flex:none; color:var(--color-text-muted); }
-.map-search__option.is-active, .map-search__option:hover { background:var(--color-secondary-50); }
+.map-search__option:hover { background:var(--color-secondary-50); }
 .map-search__option[aria-selected="true"] { background:var(--color-primary-100); }
+/* Tastatur-aktive Zeile im CD-Listbox-Stil (multiselect.postcss:70-71: text-600,
+   Schrift invertiert) — die Sekundärfläche war als aria-activedescendant-Cue zu
+   schwach und von Hover nicht unterscheidbar. Steht NACH aria-selected, damit
+   die Fokusposition auch auf der bereits gewählten Zeile sichtbar bleibt. */
+.map-search__option.is-active { background:var(--color-gray-600); color:var(--color-text-negative); }
+.map-search__option.is-active .icon { color:inherit; }
 /* Stecknadel: Kreis mit Spitze, in der Primärfarbe der aktiven Marke. */
 .map-pin { width:1.5rem; height:1.5rem; border-radius:50% 50% 50% 0;
   transform:rotate(-45deg); background:var(--color-primary-600);
@@ -2778,7 +2971,9 @@ body.chart-overlay-open { overflow:hidden; }
    sich als «die Seite scrollt», obwohl weiterhin ein Element im Dialog scrollt
    (Fokusfalle, Rückkehr an die alte Scrollposition und aria-modal bleiben).
    --lb-top / --lb-bottom misst syncChrome() in js/gallery.js. */
-.pf-lightbox { position:fixed; inset:0; z-index:var(--z-modal);
+/* z-viewer wie der Dokumentbetrachter: beide Vollbild-Betrachter liegen ÜBER dem
+   Toast (tokens.css) — ein Toast darunter wäre unerreichbar. */
+.pf-lightbox { position:fixed; inset:0; z-index:var(--z-viewer);
   --lb-top:3.5rem; --lb-bottom:0px;
   background:var(--color-secondary-900); }
 .pf-lightbox__bar { position:absolute; top:0; left:0; right:0; z-index:3;
@@ -2810,7 +3005,6 @@ body.chart-overlay-open { overflow:hidden; }
 .share-url { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; }
 @media (min-width:480px){ .share-url { min-width:22rem; } }
 @media (min-width:1280px){ .share-url { min-width:24rem; } }
-.share-url .badge { display:inline-flex; align-items:center; gap:.3rem; }
 [data-share-url] { width:100%; }
 
 .pf-lightbox__btn.is-active { background:var(--surface-negative-active); }
@@ -2851,12 +3045,18 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-lightbox__stage { overflow:hidden; }
 /* Zoomleiste: unten mittig über der Bühne, dunkel mit hellen Symbolen wie die
    Kopfzeile. Sie schwebt über dem Bild, deshalb Abstand nach unten. */
+/* Gleiche Leisten-Oberfläche wie .docviewer__toolbar (secondary-900 + border-negativ):
+   EIN Zoomleisten-Rezept für beide Betrachter. */
 .pf-lightbox__zoom { position:absolute; left:50%; bottom:calc(var(--lb-bottom) + 1rem); transform:translateX(-50%);
   z-index:2; display:flex; align-items:center; gap:.15rem; padding:.25rem .4rem;
-  border-radius:var(--radius-full); background:var(--scrim-chip);
-  box-shadow:var(--shadow-lg); backdrop-filter:blur(4px); }
+  border-radius:var(--radius-full); background:var(--color-secondary-900);
+  border:1px solid var(--border-negative); box-shadow:var(--shadow-lg); }
 @media (min-width:768px){ .pf-lightbox__zoom { bottom:calc(var(--lb-bottom) + 1.5rem); } }
 .pf-lightbox__zoom .pf-lightbox__btn { width:2.25rem; height:2.25rem; }
+/* 44-px-Ziel ohne Zeigegerät (WCAG 2.5.5) — Spiegel der Docviewer-Zoomregel. */
+@media (max-width:1023.98px), (hover:none){
+  .pf-lightbox__zoom .pf-lightbox__btn { width:var(--target-min); height:var(--target-min); }
+}
 .pf-lightbox__zoom-val { min-width:3.75rem; text-align:center; color:var(--color-text-negative);
   font-size:var(--text-sm); font-variant-numeric:tabular-nums; }
 .pf-lightbox__zoom-sep { width:1px; align-self:stretch; margin-inline:.2rem;
@@ -2872,8 +3072,9 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-lightbox__meta .kv { margin:0; color:var(--color-text-negative); }
 .pf-lightbox__meta .kv dt { color:var(--text-negative-muted); }
 .pf-lightbox__meta .kv dd { color:var(--color-text-negative); }
-.pf-lightbox__meta .btn--outline { margin-top:.75rem; color:var(--color-text-negative); border-color:var(--border-negative); }
-.pf-lightbox__meta .btn--outline:hover { background:var(--surface-negative-hover); }
+/* Der Meta-Knopf ist ein echter .btn--outline-negative (btn.postcss:87-98) —
+   keine Ad-hoc-Geistervariante mit 16%-Weiss-Rand mehr (die lag unter 3:1). */
+.pf-lightbox__meta .btn { margin-top:.75rem; }
 @media (min-width:768px){
   /* Bühne und Panel nebeneinander — im .pf-lightbox__body, NICHT indem das
      Overlay selbst zur Zeile wird: dann verliert die Bühne ihre feste Höhe. */
@@ -2894,14 +3095,19 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-lightbox__nav--prev { left:.75rem; } .pf-lightbox__nav--next { right:.75rem; }
 .pf-lightbox__count { flex:none; color:var(--color-secondary-200); font-size:var(--fs-sm); }
 /* Summenzeile (tfoot) in Detailtabellen */
-.table__total th, .table__total td { border-top:2px solid var(--color-secondary-300); font-weight:var(--fw-bold); background:var(--color-secondary-50); }
+/* CD tfoot (table.postcss:45-67): 2px-Rahmen oben UND unten in text-300, kein
+   Flächenton, bold nur auf th — td bleibt regular. Die Klasse .table__total im
+   Markup ist damit reine Semantik ohne eigene Optik. */
+table.table tfoot { border-top:2px solid var(--color-border-strong); border-bottom:2px solid var(--color-border-strong); }
+table.table tfoot th { font-weight:var(--fw-bold); color:var(--color-gray-800); }
 
 /* ---- Barrierefreiheit (Design-Review Stage 2) ---------------------------- */
 /* Badges behalten in Windows High Contrast / forced-colors einen sichtbaren Rand,
    sonst wird die Füllung entfernt und semantische Pillen verschwimmen. */
 @media (forced-colors:active){ .badge { border:1px solid currentColor; } }
-/* Klickbare Pillen erreichen ~2rem (näher an WCAG 2.5.8) statt ~24-30px. */
-.badge--clickable, button.active-filter, a.active-filter { min-height:2rem; }
+/* Klickbare Pillen erreichen ~2rem (näher an WCAG 2.5.8) statt ~24-30px.
+   cursor:pointer ist CDs einzige eigene Deklaration (badge.postcss:99-101). */
+.badge--clickable { min-height:2rem; cursor:pointer; }
 /* Hover-Akzente nur auf echten Zeigern — auf Touch bleibt die Farbe sonst „kleben“. */
 /* Auf Touch bleibt :hover nach dem Antippen kleben, bis anderswo getippt wird —
    der Guard deckte bisher nur Farbwechsel ab, nicht Transforms und Schatten
@@ -2971,23 +3177,19 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 @media (min-width:1024px){ .grid + .section__subtitle { padding-top:4rem; } }
 @media (min-width:1920px){ .grid + .section__subtitle { padding-top:5rem; } }
 
-/* Hero mit Suche links, Gebäudebild rechts (CD hero--main-image). Suchen ist
-   im Intranet der häufigste Einstieg, deshalb der erste Block. */
-.home-hero { display:grid; gap:2rem; align-items:center; }
-@media (min-width:900px){ .home-hero { grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:3rem; } }
-.home-hero h1 { margin-bottom:.5rem; }
-.home-hero .lead { font-size:var(--text-lg); color:var(--color-text-muted); margin-bottom:1.5rem; }
-.home-hero__figure { margin:0; }
-/* `height:auto` ist Pflicht, nicht Kosmetik: das `height`-Attribut am Bild wird
-   zur Presentational Hint (`height:1258px`). Wären Breite und Höhe beide
-   definit, ignoriert der Browser `aspect-ratio` — der Hero wuchs dadurch auf
-   Originalhöhe. `auto` gibt die Höhe frei, `aspect-ratio` bestimmt sie. */
-.home-hero__figure img { display:block; width:100%; height:auto; aspect-ratio:4/3; object-fit:cover;
-  background:var(--color-secondary-50); }
-/* Bildlegende: `figcaption` erbt jetzt global von `.legend` (Item 1.6) — die
-   bespoke Regel hier war einer von vier verschiedenen Legendenstilen. */
-.home-search { display:flex; gap:.5rem; align-items:stretch; max-width:40rem; }
-.home-search input { flex:1 1 auto; min-width:0; min-height:3.25rem; font-size:var(--text-base); }
+/* Startseiten-Hero = der ECHTE CD hero--main-image (hero.postcss:73-90) — die
+   frühere Parallel-Implementation .home-hero (eigenes Raster, 900px-Breakpoint
+   ausserhalb der CD-Skala, 4:3-Bild) ist ersetzt; nur die Suchzeile bleibt
+   eine Portalklasse. `height:auto` am Bild ist Pflicht: das `height`-Attribut
+   würde als Presentational Hint das aspect-ratio aushebeln. */
+.hero__image figure > img { display:block; width:100%; height:auto; aspect-ratio:16/9;
+  object-fit:cover; background:var(--color-secondary-50); }
+/* nowrap schlägt das flex-wrap:wrap der .hero__cta-Basisklasse: das Feld trägt
+   width:100 % (globale Input-Regel) und würde den Knopf sonst in die zweite
+   Zeile drängen — Feld und «Suchen» bleiben eine Zeile, unter 640 px stapelt
+   die Regel unten weiterhin bewusst. */
+.home-search { display:flex; flex-wrap:nowrap; gap:.5rem; align-items:stretch; max-width:40rem; }
+.home-search input { flex:1 1 auto; min-width:0; min-height:var(--input-h); font-size:var(--text-base); }
 /* Der Knopf darf NICHT schrumpfen: `.btn__text` trägt CDs `overflow-wrap:anywhere`
    (btn.postcss:133-137), was die min-content-Breite auf ein Zeichen senkt — als
    Flex-Element neben dem wachsenden Feld wurde «Suchen» dadurch zu «Such/en»
@@ -2998,7 +3200,10 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* Suchvorschläge (ARIA-Combobox, js/search-suggest.js). Die Liste hängt
    ABSOLUT unter dem Formular — als Flex-Element hätte sie sich neben Feld und
    Knopf gestellt. Optik nach dem CD-Menü (menu__item): flache Zeilen, Trennung
-   nur zwischen den Einträgen, aktive Zeile in der Sekundärfläche. */
+   nur zwischen den Einträgen. Die TASTATUR-aktive Zeile nimmt CDs
+   Listbox-Invertierung (multiselect.postcss:70-71), nicht die Menü-
+   Sekundärfläche — die war als aria-activedescendant-Cue zu schwach und von
+   Hover nicht unterscheidbar. */
 .suggest-anchor { position:relative; }
 .suggest { position:absolute; z-index:var(--z-header); top:calc(100% + .25rem); left:0; right:0;
   margin:0; padding:.25rem 0; list-style:none; max-height:22rem; overflow-y:auto;
@@ -3006,7 +3211,10 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   box-shadow:var(--shadow-lg); }
 .suggest__item { display:flex; flex-direction:column; gap:.1rem; padding:.55rem .9rem; cursor:pointer; }
 .suggest__item + .suggest__item { border-top:1px solid var(--color-secondary-200); }
-.suggest__item:hover, .suggest__item.is-active { background:var(--color-secondary-50); }
+.suggest__item:hover { background:var(--color-secondary-50); }
+.suggest__item.is-active { background:var(--color-gray-600); }
+.suggest__item.is-active .suggest__title,
+.suggest__item.is-active .suggest__meta { color:var(--color-text-negative); }
 .suggest__title { font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--color-text); }
 .suggest__meta { font-size:var(--text-xs); color:var(--color-text-muted); }
 @media (max-width:639.98px){ .suggest { position:static; margin-top:.5rem; max-height:none; } }
@@ -3188,6 +3396,9 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* Dunkle Chrome fest verdrahtet, damit die Vorschau in beiden Skins wie ein
    Viewer wirkt. Portiert aus dem BBL Mieterportal (tenant-portal). */
 body.docviewer-open { overflow:hidden; }
+/* Der Dokument-Scroller ist das <html>-Element (html{overflow-y:scroll} oben) —
+   dieselbe Korrektur, die der Chart-Overlay-Block bereits dokumentiert. */
+html:has(> body.docviewer-open) { overflow:hidden; }
 .docviewer { position:fixed; inset:0; z-index:var(--z-viewer); overflow:auto; background:var(--color-secondary-900); }
 .docviewer__bar { position:sticky; top:0; z-index:5; display:flex; align-items:center;
   justify-content:space-between; gap:1rem; padding:.75rem 1rem;
@@ -3200,12 +3411,14 @@ body.docviewer-open { overflow:hidden; }
 .docviewer__sub { margin:0; color:var(--text-negative-muted); font-size:var(--text-xs); }
 .docviewer__docnum { white-space:nowrap; }
 .docviewer__actions { display:flex; align-items:center; gap:.25rem; flex:none; }
+/* EIN Dunkel-Chrome-Rezept für beide Vollbild-Betrachter (Betrachter + Lightbox):
+   44px-Ziel, radius-sm, surface-negative-Hover. Der frühere primary-600-Hover auf
+   dem Schliessen-Knopf wechselte mit dem Skin die Farbe — Chrome ist markenneutral. */
 .docviewer__btn { display:inline-flex; align-items:center; justify-content:center;
-  width:2.5rem; height:2.5rem; background:none; border:0; border-radius:var(--radius);
+  width:var(--target-min); height:var(--target-min); background:none; border:0; border-radius:var(--radius-sm);
   color:var(--color-text-negative); cursor:pointer; transition:background var(--duration-fast); }
 .docviewer__btn:hover { background:var(--surface-negative-hover); }
 .docviewer__btn:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
-.docviewer__btn--close:hover { background:var(--color-primary-600); }
 .docviewer__main { position:relative; background:var(--color-secondary-800); }
 .docviewer__stage { padding:2.5rem 1rem; cursor:default; }
 .docviewer__stage:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
@@ -3214,7 +3427,7 @@ body.docviewer-open { overflow:hidden; }
 /* Vor/Zurück: am Viewport fixiert, damit sie beim Scrollen stehen bleiben. */
 .docviewer__nav { position:fixed; top:50%; transform:translateY(-50%); z-index:6;
   display:inline-flex; align-items:center; justify-content:center; width:var(--target-min); height:var(--target-min);
-  background:var(--surface-negative); border:0; border-radius:var(--radius-full); color:var(--color-text-negative); cursor:pointer;
+  background:var(--surface-negative); border:0; border-radius:var(--radius-sm); color:var(--color-text-negative); cursor:pointer;
   transition:background var(--duration-fast); }
 .docviewer__nav:hover { background:var(--surface-negative-hover); }
 .docviewer__nav:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
@@ -3266,14 +3479,18 @@ body.docviewer-open { overflow:hidden; }
 /* 44-px-Ziel ohne Zeigegerät (WCAG 2.5.5). Muss HINTER den Basisgrössen stehen —
    im allgemeinen Touch-Block weiter oben verlor die Regel gegen sie. */
 @media (max-width:1023.98px), (hover:none){
-  .docviewer__btn  { width:var(--target-min); height:var(--target-min); }
   .docviewer__zoom { min-width:var(--target-min); height:var(--target-min); }
   .docviewer__zoom--reset { min-width:4rem; }
 }
 
-.docviewer__toast { position:fixed; bottom:5rem; left:50%; transform:translateX(-50%); z-index:7;
-  padding:.6rem 1rem; background:var(--color-bg); color:var(--color-text); font-size:var(--text-sm);
-  border-radius:var(--radius); box-shadow:0 10px 40px rgba(0,0,0,.45); }
+/* Gleicher Toast wie überall (CD notification im Host), nur INNERHALB des
+   Betrachters gehostet: --z-viewer (200) läge sonst über dem globalen Toast (110).
+   Der schwere Schatten ist die dokumentierte Negativ-Ebenen-Ausnahme (wie
+   .docviewer__toolbar) — var(--shadow-lg) verschwände auf dunklem Grund. */
+.docviewer__toast { position:fixed; left:0; right:0; bottom:5rem; z-index:7;
+  display:flex; justify-content:center; pointer-events:none; }
+.docviewer__toast .notification { max-width:500px; margin-inline:1.25rem; pointer-events:auto;
+  box-shadow:0 10px 40px rgba(0,0,0,.45); }
 
 /* Titel/Vorschau-Auslöser in der Tabelle: sieht aus wie ein Link, ist ein Button. */
 .doc-open { display:inline-flex; align-items:center; gap:.4rem; min-height:var(--target-min); background:none; border:0;
@@ -3386,7 +3603,9 @@ body.docviewer-open { overflow:hidden; }
    Plan braucht Breite, die Seitenspalte darf sie ihm nicht nehmen. */
 .fp-viewer { display:grid; gap:1.5rem; }
 @media (min-width:1024px){ .fp-viewer { grid-template-columns:minmax(0,1fr) 20rem; align-items:start; } }
-.fp-stage { overflow:auto; padding:1rem; background:var(--color-secondary-50); border:1px solid var(--color-secondary-200); }
+/* position:relative — Pflicht für Scroll-Regionen (siehe .table-wrapper):
+   data-scroll-region am Element macht die Bühne fokussierbar mit Hinweis. */
+.fp-stage { position:relative; overflow:auto; padding:1rem; background:var(--color-secondary-50); border:1px solid var(--color-secondary-200); }
 .fp-side { display:flex; flex-direction:column; gap:1rem; }
 
 .fp { display:block; width:100%; height:auto; min-width:38rem; }

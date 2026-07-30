@@ -61,7 +61,7 @@ function overview(ctx) {
         lead: 'Die geltenden Vorgaben, Vorlagen und Formulare — gegliedert nach Fachgebiet, weil Unterlagen dort gebraucht werden, wo man gerade arbeitet.',
       }),
     })}
-    ${C.pageSection({ title: 'Fachgebiete', alt: true, body: `<div class="grid grid--2">${areaTiles}</div>` })}`;
+    ${C.pageSection({ title: 'Fachgebiete', alt: true, body: `<div class="grid grid--responsive-cols-2 gap--responsive">${areaTiles}</div>` })}`;
 }
 
 /* ============================== FACHGEBIETSSEITE ========================== */

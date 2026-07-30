@@ -92,6 +92,9 @@ function list(ctx) {
   const listView = (rows) => C.table({
     caption: 'Datensätze',
     zebra: true,
+    // Erste Spalte ist der Zeilenlink — wie in allen Katalog-Listenansichten
+    // folgt die ganze Zeile ihm per Mausklick (einheitliche Affordanz, tbl-8).
+    rowsClickable: true,
     columns: [
       { key: 'title', label: 'Datensatz', render: d =>
         `<a href="#/data/catalog/${encodeURIComponent(d.id)}">${C.escape(t(d.title))}</a>
@@ -122,7 +125,7 @@ function list(ctx) {
               Mit dem falschen Schlüssel liess `catalogueHash` die Klassifizierung
               aus `base` stehen und warf das unbekannte leere Array weg — der
               Filter überlebte also seinen eigenen Zurücksetzen-Knopf. */''}
-        <a class="btn btn--bare btn--sm" href="${hash({ topic: [], classification: [], tag: [] })}">${C.icon('Refresh', 'icon--base')} Zurücksetzen</a>`,
+        <a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ topic: [], classification: [], tag: [] })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a>`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}
@@ -144,6 +147,9 @@ function list(ctx) {
     formId: 'ds-search', inputId: 'dsq', pageInputId: 'ds-page', page, totalPages, hash,
     sortId: 'ds-sort', filterToggleId: 'ds-filter', panelId: 'ds-filters',
   });
+  // Zeilenklick der Listenansicht. Abbau via onUnmount, sonst sammelt der
+  // wiederverwendete mount pro Besuch einen weiteren Klick-Horcher an.
+  ctx.onUnmount(C.wireTableRows(mount));
 }
 
 // ============================== DETAIL ==============================

@@ -34,6 +34,10 @@ export default async function render(ctx) {
     '15:00–17:00',
   ];
 
+  // Klartextnamen für die Fehlerübersicht. Die Schlüssel sind DOM-ids, damit
+  // die Sprungmarken auflösen (Muster space-request.js / building-create.js).
+  const FIELD_LABELS = { ressourcentyp: 'Ressourcentyp', bld: 'Standort', datum: 'Datum' };
+
   // ---- state -------------------------------------------------------------
   const initialTab = TABS.some(t => t.id === query.get('tab')) ? query.get('tab') : 'moeblierung';
   const state = {
@@ -51,21 +55,23 @@ export default async function render(ctx) {
   function panelMoeblierung() {
     return `
       <div class="container--grid gap--responsive">
-        <div class="container__main stack">
+        <div class="container__main vertical-spacing">
           <h2>${C.icon('ShoppingCart', 'icon--base')} Möblierung & Material</h2>
           <p>Mobiliar, Büromaterial und Ausstattung für Bundesarbeitsplätze beziehen Sie über den
              zentralen E-Shop des BBL. Standardisierte Sortimente sorgen für einheitliche, ergonomische
              und wirtschaftliche Arbeitsumgebungen über alle Standorte hinweg.</p>
           ${C.notification('<strong>Kreislaufwirtschaft:</strong> Gut erhaltenes Mobiliar wird wiederverwendet statt neu beschafft. Prüfen Sie vor jeder Bestellung das Angebot an aufbereitetem Occasions-Mobiliar im E-Shop – das spart Kosten und Ressourcen.', 'success', 'CheckmarkCircle')}
-          <div class="row mt-4">
-            <a class="btn btn--outline btn--lg" href="#" target="_blank" rel="noopener">Zum E-Shop ${C.icon('External', 'icon--base')}</a>
-            <a class="btn btn--outline" href="#/services">Verwandte Dienstleistungen</a>
+          <div class="row">
+            <a class="btn btn--outline btn--lg btn--icon-right" href="#" target="_blank" rel="noopener">${C.icon('External', 'btn__icon')}<span class="btn__text">Zum E-Shop</span></a>
+            <a class="btn btn--outline" href="#/services"><span class="btn__text">Verwandte Dienstleistungen</span></a>
           </div>
         </div>
-        <aside class="container__aside stack-lg">
+        ${/* Kein stack-lg auf der Aside: .container__aside bringt den CD-Rhythmus
+              (1.75/2rem) schon mit — ein zweiter Takt obendrauf gewinnt nur. */''}
+        <aside class="container__aside">
           <div class="box">
             <h3>Sortimente</h3>
-            <ul class="stack" style="padding-left:1.1rem; margin:0">
+            <ul class="list--default stack">
               <li>Büro- und Sitzungsmobiliar</li>
               <li>Ergonomie-Ausstattung</li>
               <li>Büro- und Verbrauchsmaterial</li>
@@ -84,18 +90,18 @@ export default async function render(ctx) {
   function panelBelegung() {
     return `
       <div class="container--grid gap--responsive">
-        <div class="container__main stack">
+        <div class="container__main vertical-spacing">
           <h2>${C.icon('Map', 'icon--base')} Belegungsplanung</h2>
           <p>Die Belegungs- und Flächenplanung – wer sitzt wo, wie sind Flächen zugeteilt und wie hoch ist
              die Auslastung – erfolgt in der Fachanwendung <strong>GIS/FLM</strong> (Flächen- und
              Liegenschaftsmanagement). Dort stehen Belegungspläne, Flächenbilanzen und Auswertungen je
              Gebäude und Verwaltungseinheit zur Verfügung.</p>
           ${C.notification('Die detaillierte Belegungsplanung ist in der GIS/FLM-Fachanwendung verfügbar. Den Zugang finden Sie unter Anwendungen.', 'info')}
-          <div class="row mt-4">
-            <a class="btn btn--outline" href="#/applications">Zu den Anwendungen ${C.icon('ArrowRight', 'icon--base')}</a>
+          <div class="row">
+            <a class="btn btn--outline btn--icon-right" href="#/applications">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Zu den Anwendungen</span></a>
           </div>
         </div>
-        <aside class="container__aside stack-lg">
+        <aside class="container__aside">
           <div class="stat">
             <div class="stat__num">${totalWorkplaces.toLocaleString('de-CH')}</div>
             <div class="stat__label">Arbeitsplätze im Portfolio (${buildings.length} Gebäude)</div>
@@ -120,16 +126,19 @@ export default async function render(ctx) {
     const r = RESSOURCEN.find(x => x.id === state.ressourcentyp);
     return `
       <div class="container--grid gap--responsive">
-        <div class="container__main stack">
+        <div class="container__main vertical-spacing">
           <h2>${C.icon('Calendar', 'icon--base')} Ressource buchen</h2>
           <p class="muted">Buchung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.
              Eine Anfrage wird als Vorgang erfasst und durch Workspace BBL bestätigt.</p>
+          <p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>
+          ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
           <!-- novalidate — siehe space-request.js -->
           <form id="buchung-form" class="form" novalidate>
             ${C.select({ id: 'ressourcentyp', name: 'ressourcentyp', label: 'Ressourcentyp', required: true,
-              value: state.ressourcentyp, hint: r ? r.hint : '',
+              value: state.ressourcentyp, hint: r ? r.hint : '', message: state.errors.ressourcentyp,
               options: RESSOURCEN.map(x => ({ value: x.id, label: x.label })) })}
             ${C.select({ id: 'bld', name: 'bld', label: 'Standort', required: true, value: state.buildingId,
+              message: state.errors.bld,
               options: buildings.map(x => ({ value: x.bbl_id, label: `${x.name} — ${x.city}` })) })}
             ${C.field({ id: 'datum', label: 'Datum', required: true, message: state.errors.datum,
               control: (cls, attrs) => `<input id="datum" type="date" value="${C.escape(state.datum)}" class="${cls}"${attrs}>` })}
@@ -137,12 +146,12 @@ export default async function render(ctx) {
               options: ZEITEN.map(z => ({ value: z, label: z })) })}
             ${C.field({ id: 'bemerkung', label: 'Bemerkung',
               control: (cls, attrs) => `<textarea id="bemerkung" placeholder="z. B. benötigte Ausstattung, Personenzahl, besondere Wünsche" class="${cls}"${attrs}>${C.escape(state.bemerkung)}</textarea>` })}
-            <div class="row row--end">
-              <button class="btn btn--filled btn--lg" type="submit">${C.icon('Checkmark', 'icon--base')} Buchung anfragen</button>
+            <div class="form__actions">
+              <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Buchung anfragen</span></button>
             </div>
           </form>
         </div>
-        <aside class="container__aside stack-lg">
+        <aside class="container__aside">
           <div class="box">
             <h3>Ihre Auswahl</h3>
             <dl class="kv">
@@ -164,7 +173,7 @@ export default async function render(ctx) {
   function doneBuchung() {
     const i = state.created;
     return `
-      <div class="stack-lg measure-lg">
+      <div class="vertical-spacing measure-lg">
         ${C.processDone({ instance: i, lead: 'Buchung angefragt.', title: 'Vielen Dank',
           // h2, nicht h1: die Reiterseite trägt ihre Überschrift schon.
           heading: 'h2',
@@ -211,8 +220,11 @@ export default async function render(ctx) {
     if (!state.datum) e.datum = 'Bitte ein Datum wählen';
     // Defensiv: beide Felder sind required:true im Markup und tragen immer einen
     // Wert — mit novalidate greift aber keine Browserprüfung mehr, also hier.
+    // Die Fehlerschlüssel sind DOM-ids (Sprungmarken der Fehlerübersicht);
+    // geprüft wird der State-Schlüssel: `state.bld` gab es nie, der Standort-
+    // Fehler stand deshalb IMMER und blockierte jede Absendung.
     if (!state.ressourcentyp) e.ressourcentyp = 'Bitte Ressourcentyp wählen';
-    if (!state.bld) e.bld = 'Bitte Standort wählen';
+    if (!state.buildingId) e.bld = 'Bitte Standort wählen';
     state.errors = e;
     return Object.keys(e).length === 0;
   }
@@ -239,7 +251,9 @@ export default async function render(ctx) {
       form.addEventListener('submit', (ev) => {
         ev.preventDefault();
         readForm();
-        if (!validate()) { draw(); return; }
+        // Fehlversuch: neu zeichnen, dann Fokus auf die Fehlerübersicht — sonst
+        // landet er auf <body> und der Nutzer erfährt nichts (WCAG 3.3.1).
+        if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
         const b = core.building(state.buildingId);
         const r = RESSOURCEN.find(x => x.id === state.ressourcentyp);
         const buildingName = b ? b.name : 'Standort';
