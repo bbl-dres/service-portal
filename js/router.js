@@ -247,6 +247,43 @@ function focusHeading(mount) {
 // write overwrites the newer page (code-review A2).
 let dispatchId = 0;
 let prevPath = null;
+
+// --- Scroll-Strategie (Review-Auftrag 2026-07) -------------------------------
+// Das CD selbst definiert kein Scroll-Verhalten; sein Referenz-Stack (Nuxt)
+// nutzt den Plattform-Standard, und genau der gilt jetzt auch hier:
+//   · NEUE Navigation (neuer History-Eintrag)  → Seitenanfang
+//   · Zurück/Vorwärts (bekannter Eintrag)      → gemerkte Position
+//   · reiner Zustandswechsel (gleicher Pfad)   → Position unangetastet
+// Jeder History-Eintrag bekommt beim ersten Besuch eine Nummer in history.state;
+// die Positionen liegen je Nummer in sessionStorage (überleben ein Neuladen).
+// Browser stellen bei Same-Document-Hash-Navigation selbst NICHTS wieder her —
+// ohne das hier warf «Zurück» aus einer Detailansicht die Liste an den Anfang.
+const SCROLL_KEY = 'bbl_scroll_v1';
+let lastEntryIdx = null;
+const scrollMap = () => { try { return JSON.parse(sessionStorage.getItem(SCROLL_KEY)) || {}; } catch { return {}; } };
+function saveLeavingScroll() {
+  if (lastEntryIdx == null) return;
+  try {
+    const m = scrollMap(); m[lastEntryIdx] = window.scrollY;
+    sessionStorage.setItem(SCROLL_KEY, JSON.stringify(m));
+  } catch { /* Speicher gesperrt — dann eben ohne Wiederherstellung */ }
+}
+// Nummeriert den AKTUELLEN Eintrag (falls neu) und liefert die zu
+// restaurierende Position — oder null für «neuer Eintrag, nach oben».
+function stampHistoryEntry() {
+  const known = history.state && typeof history.state.bblIdx === 'number';
+  let idx;
+  if (known) { idx = history.state.bblIdx; }
+  else {
+    idx = Number(sessionStorage.getItem(SCROLL_KEY + '_n') || 0) + 1;
+    try {
+      sessionStorage.setItem(SCROLL_KEY + '_n', String(idx));
+      history.replaceState({ bblIdx: idx }, '');
+    } catch { /* ohne Stempel bleibt es beim Nach-oben-Standard */ }
+  }
+  lastEntryIdx = idx;
+  return known ? (scrollMap()[idx] ?? 0) : null;
+}
 // ResizeObserver der Scrollbereiche der aktuellen Ansicht — beim Ansichtswechsel
 // abmelden, sonst beobachtet er entfernte Knoten weiter.
 let unwireScroll = null;
@@ -264,10 +301,14 @@ async function dispatch() {
   // feuert kein `hashchange`, also läuft dieser Aufruf danach einfach weiter und
   // rendert das Ziel; parseHash() liest die bereits ersetzte Adresse.
   const redirect = legacyTarget(location.hash);
-  if (redirect) { try { history.replaceState(null, '', redirect); } catch { location.hash = redirect; } }
+  if (redirect) { try { history.replaceState(history.state, '', redirect); } catch { location.hash = redirect; } }
 
   const ticket = ++dispatchId;
   const stale = () => ticket !== dispatchId;
+  // Beim hashchange steht das DOM noch auf der VERLASSENEN Seite — jetzt ihre
+  // Position sichern, dann den neuen Eintrag stempeln/nachschlagen.
+  saveLeavingScroll();
+  const restoreY = stampHistoryEntry();
   const { segs, query } = parseHash();
   const mount = document.getElementById('main-content');
 
@@ -279,6 +320,8 @@ async function dispatch() {
   const isStateChange = prevPath !== null && prevPath === pathKey;
   const activeId = isStateChange && document.activeElement && mount.contains(document.activeElement)
     ? document.activeElement.id : '';
+  // H1 der VERLASSENEN Sicht — Referenz für die Drill-in-Erkennung unten.
+  const prevH1 = isStateChange ? (mount.querySelector('h1')?.textContent || '') : '';
   prevPath = pathKey;
 
   let modPath, params, navBase;
@@ -343,11 +386,35 @@ async function dispatch() {
     if (unwireScroll) { unwireScroll(); unwireScroll = null; }
     unwireScroll = C.wireScrollRegions(mount);
     if (isStateChange) {
-      const el = activeId ? document.getElementById(activeId) : null;
-      if (el) el.focus({ preventScroll: true });   // Fokus zurück auf den Filter/Schalter
-      else focusHeading(mount);                    // A10: nie an <body> verlieren
+      // Drill-in-Regel (Nutzerauftrag 2026-07-30, wiederverwendbar für JEDE
+      // Sicht): wechselt ein Zustandswechsel die SICHT-IDENTITÄT — erkennbar
+      // an einer anderen H1 (Liste → Objekt, z. B. portfolio?id=…) — ist er
+      // Navigation im Query-Gewand. Ziel ist dann der INHALTSANFANG
+      // (#main-content, also .container.section unterhalb der Bundes-Chrome):
+      // nicht Seitenanfang 0 (die Chrome hat man beim Absprung gerade gesehen)
+      // und nicht die alte Position (die zeigte irgendwo in die neue Sicht).
+      // Reine Verfeinerungen (Filter, Sortierung, Seite, ?floor=, ?tab=)
+      // lassen die H1 unverändert und behalten Position + Bedienpfad;
+      // Zurück/Vorwärts stellt weiterhin die gemerkte Position wieder her.
+      const h1Now = mount.querySelector('h1')?.textContent || '';
+      if (restoreY != null) {
+        window.scrollTo({ top: restoreY, behavior: 'instant' });
+        focusHeading(mount);
+      } else if (h1Now && h1Now !== prevH1) {
+        window.scrollTo({ top: mount.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
+        focusHeading(mount);
+      } else {
+        const el = activeId ? document.getElementById(activeId) : null;
+        if (el) el.focus({ preventScroll: true });   // Fokus zurück auf den Filter/Schalter
+        else focusHeading(mount);                    // A10: nie an <body> verlieren
+      }
     } else {
-      window.scrollTo(0, 0);
+      // Zurück/Vorwärts stellt die gemerkte Position wieder her, jede andere
+      // Navigation beginnt am Seitenanfang. `instant` umgeht das globale
+      // scroll-behavior:smooth — ein Seitenwechsel ist ein Schnitt, kein Gleiten
+      // (so auch der Nuxt-Standard); die weichen Sprünge bleiben den echten
+      // In-Page-Ankern vorbehalten. Fokus auf die Überschrift, preventScroll.
+      window.scrollTo({ top: restoreY != null ? restoreY : 0, behavior: 'instant' });
       focusHeading(mount);
     }
   } catch (e) {

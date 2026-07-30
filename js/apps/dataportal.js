@@ -279,7 +279,7 @@ function dashboardView(ctx, id) {
     if (hasYears && state.from !== yMin) qs.set('from', state.from);
     if (hasYears && state.to !== yMax) qs.set('to', state.to);
     const s = qs.toString();
-    history.replaceState(null, '', `#/app/dataportal/${encodeURIComponent(id)}${s ? '?' + s : ''}`);
+    history.replaceState(history.state, '', `#/app/dataportal/${encodeURIComponent(id)}${s ? '?' + s : ''}`);
   };
 
   const fromSel = mount.querySelector('#f-from');

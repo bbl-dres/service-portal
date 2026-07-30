@@ -192,7 +192,10 @@ export default async function render(ctx) {
           control: (cls, attrs) => `<input id="bc-egrid" value="${C.escape(state.egrid)}" placeholder="wird ermittelt" class="${cls}" readonly${attrs}>` })}
       </fieldset>
       <fieldset class="form__group">
-        <legend class="form__group__legend">Klassifizierung</legend>
+        ${/* «Weitere Stammdaten», nicht «Klassifizierung» (Nutzerentscheid
+              2026-07-30): der Begriff ist im Sicherheitskontext besetzt
+              (Informationsklassifizierung) und hier irreführend. */''}
+        <legend class="form__group__legend">Weitere Stammdaten</legend>
         ${C.select({ id: 'bc-portfolio', name: 'bc-portfolio', label: 'Teilportfolio', required: true,
           value: state.portfolio, message: state.errors['bc-portfolio'],
           options: [PLEASE_PICK, ...TEILPORTFOLIO] })}
@@ -227,7 +230,7 @@ export default async function render(ctx) {
         <dt>Baujahr</dt><dd>${C.escape(state.baujahr)}</dd>
         <dt>Verantwortliche OE</dt><dd>${C.escape(state.org)}</dd>
       </dl>
-      ${C.notification('Mit dem Absenden entsteht ein Vorgang. EGID und EGRID löst der Kataster­dienst anhand der Lage auf; die Objekt-ID (bbl_id), die Flächen (GF/HNF) und die Klassifizierung vergibt das Portfoliomanagement bei der Prüfung.', 'info')}
+      ${C.notification('Mit dem Absenden entsteht ein Vorgang. EGID und EGRID löst der Kataster­dienst anhand der Lage auf; die Objekt-ID (bbl_id), die Flächen (GF/HNF) und die weiteren Stammdaten vergibt das Portfoliomanagement bei der Prüfung.', 'info')}
       <div class="form__actions form__actions--between">
         <button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>
         <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Erfassung einreichen</span></button>

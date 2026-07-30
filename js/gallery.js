@@ -220,7 +220,7 @@ export function openGallery(items, start, C, opts = {}) {
     const id = items[idx] && items[idx].id;
     if (clear || !id) q.delete(param); else q.set(param, id);
     const str = q.toString();
-    history.replaceState(null, '', `${location.pathname}${location.search}#${path}${str ? '?' + str : ''}`);
+    history.replaceState(history.state, '', `${location.pathname}${location.search}#${path}${str ? '?' + str : ''}`);
   }
 
   const go = (d) => { idx = (idx + d + items.length) % items.length; update(false); };

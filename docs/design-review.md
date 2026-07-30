@@ -13,7 +13,7 @@ The drift sits one level deeper, in four patterns:
 3. **The button core.** `.btn` carries its own block padding AND a flex `gap`, neither of which CD has; half the views skip the `.btn__text` wrapper. Result: two different heights for the same variant depending on markup.
 4. **Cross-cutting gaps between the app views.** Result announcements, URL state, the share bar, form action rows and error summaries are each implemented in 2–3 of 5 apps instead of everywhere.
 
-**270 verified findings** (5 high · 65 medium · 200 low); 3 first-pass claims were refuted in verification and are documented at the end. Implementation status: **162 fixed · 17 partial · 3 deliberate deviations (documented) · 88 open**.
+**270 verified findings** (5 high · 65 medium · 200 low); 3 first-pass claims were refuted in verification and are documented at the end. Implementation status: **254 fixed · 2 partial · 3 deliberate deviations (documented) · 11 open**.
 
 ## The five high-severity findings
 
@@ -169,7 +169,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1012 — `.page-header .lead { font-size:var(--text-lg); color:var(--color-text-muted); }` and css/app.css:2979 — `.home-hero .lead { font-size:var(--text-lg); color:var(--color-text-muted); margin-bottom:1.5rem; }` — identical declarations duplicated; `.lead` has no counterpart in designsystem/css
 - **CD:** CD convention — lead paragraphs compose text--lg (typography.postcss:43-45) with a muted text utility; there is no .lead component
 - **Fix:** Two honest options: (a) pure refactor — merge the duplicates as `.page-header .lead, .home-hero .lead { font-size:var(--text-lg); color:var(--color-text-muted); }` and keep `.home-hero .lead { margin-bottom:1.5rem; }`, leaving the raw consumers untouched; or (b) define the unscoped `.lead { font-size:var(--text-lg); color:var(--color-text-muted); }` in the BASE block — explicitly acknowledging this restyles the ~8 currently-unstyled `<p class="lead">` occurrences (portfolio.js:633/713/727, api-docs.js:132, components.js:852 et al.) and visually checking those pages. Option (b) is likely the intended fix for a real latent bug, but must be framed as such, not as drift-proofing two consumers.
-- **Status:** 🔶 partial — JS-Anteil umgesetzt; CSS-Rest: css/app.css: either merge the duplicated scoped rules (.page-header .lead, .home-hero .lead { font-size:var(--text-lg); color:var(--color-te
+- **Status:** ✅ fixed — EIN ungebundenes .lead-Rezept
 
 ### util-naming-1 · L · naming — Duplicate utility vocabulary beside the CD names (.small vs .text--sm, .muted/.color--light vs .text--light)
 
@@ -332,7 +332,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1118 — the generic 1.4em (~22.4px) applies to link buttons too; used by downloadLink (js/components.js:1108-1112) and the arrow links in js/pages/my-cases.js:114,117.
 - **CD:** css/components/btn.postcss:43-47 — ".btn--link .btn__icon { @apply w-8; … }" — 2rem icon with near-zero stroke; download/arrow icons in link buttons are deliberately larger in CD.
 - **Fix:** Add .btn--link .btn__icon, .btn--link-negative .btn__icon { width:2rem; height:2rem; } after the generic rule (same specificity, later wins for width; height stays square for the mask).
-- **Status:** 🔶 partial — JS-Anteil umgesetzt; CSS-Rest: css/app.css: after the generic `.btn .icon, .btn__icon { width:1.4em; height:1.4em; }` rule (app.css:1164), add `.btn--link .btn__icon, .btn
+- **Status:** ✅ fixed — Link-Icons w-8 (2rem)
 
 ### btn-17 · L · consistency — .btn--bare keeps the 1px transparent border the other borderless variants reset
 
@@ -481,7 +481,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** js/search-suggest.js:50-157 — closes via blur+120ms timeout, opens at 2 chars, no hover-highlight, option ids `${listId}-${i}`; js/apps/building-create.js:310-510 — closes via document-click AbortController, opens at 3 chars + 300ms debounce, mousemove highlight, option ids `bc-opt-${n}`; skins also differ: `.suggest` (app.css:3003-3011, bordered flat list, secondary-300 border) vs `.map-search__list` (app.css:2726-2734, floating rounded, shadow-2xl)
 - **CD:** CD convention — one canonical pattern per widget (cf. the shared C.select/C.field factories the portal itself established)
 - **Fix:** Extract the shared ARIA mechanics (open/close/highlight/choose, aria-expanded/activedescendant handling) into one helper both call, and let one listbox skin with a modifier (.suggest--float) carry both looks. The behavioral deltas (blur-close vs outside-click, 2 vs 3 chars) are currently unexplained differences a keyboard user can feel.
-- **Status:** 🔶 partial — JS-Anteil umgesetzt; CSS-Rest: The full de-drift needs shared files: a C.combobox helper (open/close/highlight/choose + aria-expanded/activedescendant) in js/components.js
+- **Status:** ⬜ open — Combobox-Konsolidierung (C.combobox) — Umbau offen
 
 ### cbx-3 · L · consistency — Listbox active-option highlight is a light tint; CD's canonical dropdown highlight is dark
 
@@ -567,7 +567,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:348-356 — banner wrapper uses "gap:1rem" (lg: 1.5rem) and ".notification-banner .btn { flex:none; }"; js/components.js:1626 — loginGate hard-codes '<p style="margin:0 0 .75rem">' to create space before its button because no .notification .btn margin rule exists.
 - **CD:** designsystem/css/components/notification.postcss:89-92 and notification-banner.postcss:24-27 — ".notification .btn / .notification-banner .btn { @apply mt-4 sm:mt-8 lg:mt-0; @apply lg:ml-6; }": 1rem top gap, 2rem from sm, 0 + 1.5rem left from lg.
 - **Fix:** Apply CD's ramp to the banner only: remove the wrapper gap at ALL widths (app.css:350 and 353) and add '.notification-banner .btn { margin-top:1rem } @media(min-width:640px){ .notification-banner .btn { margin-top:2rem } } @media(min-width:1024px){ .notification-banner .btn { margin-top:0; margin-left:1.5rem } }' per notification-banner.postcss:24-27. For the loginGate, whose button sits inside .notification__content rather than beside it, replace the inline style at js/components.js:1626 with a scoped rule such as '.login-gate .btn { margin-top:1rem }' instead of the banner ramp.
-- **Status:** ✅ fixed — Banner half applied: wrapper gap removed at ALL widths, CD ramp on .notification-banner .btn (mt-4 / sm:mt-8 / lg:mt-0 + ml-6); wrapper side padding also aligned to --container-px 
+- **Status:** ✅ fixed — JS half: loginGate's inline <p style="margin:0 0 .75rem"> replaced with <p class="m-0"> (utility exists, app.css:3141) + WHY-comment. Depends on css cluster changing .login-gate .b
 
 ### notif-5 · L · naming — Orphan .notification__title rule; CD title anatomy (--with-title/header/content-offset) absent
 
@@ -588,7 +588,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1268 — ".badge { … gap:.3rem … }"; js/components.js:359-360 and 601-602 place generic icon('Cancel','icon--sm') / icon('Checkmark','icon--base') directly in the badge, and badge() (js/components.js:82-84) has no .badge__text span; css/app.css:2016 additionally sets ".active-filter .icon { margin-left:.15rem }", stacking with the .3rem gap to .45rem.
 - **CD:** designsystem/css/components/badge.postcss:84-97 — ".badge__icon { h-full w-[1.5em]; relative left-[0.4em]; stroke-… }" / ".badge__icon-left { … right-[0.4em] }" (icon optically pulled 0.4em into the 1em padding, no flex gap); Badge.vue:11-18 — text wrapped in <span class="badge__text">.
 - **Fix:** Add .badge__icon/.badge__icon-left rules (width:1.5em; position:relative; left/right:.4em) to app.css, emit them from badge()/activeFilters()/the copy-URL badges, wrap the label in .badge__text, and drop the gap on .badge plus the extra margin at 2016 so spacing comes from the CD offsets.
-- **Status:** ✅ fixed — CSS half applied (components.js already emits badge__icon-left/badge__text): .badge__icon/.badge__icon-left rules added, gap:.3rem removed from .badge, redundant .share-url .badge 
+- **Status:** ✅ fixed — JS half: badge() wraps its label in <span class="badge__text"> (CD Badge.vue:12); openShareModal copy-status badges now emit icon(...,'badge__icon-left') + badge__text (Badge.vue:1
 
 ### badge-2 · L · pixel — .badge base sets white-space:nowrap — not in CD, needs carve-outs and can still clip at zoom
 
@@ -623,49 +623,49 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1317 — ".tag-item--active .tag-item__inner, .tag-item--primary .tag-item__inner { background:var(--color-gray-800); color:var(--color-text-negative); }" (colors only); js/apps/tenancies.js:557-559 renders the active floor chip as a clickable <a href="#" … aria-current="true">.
 - **CD:** designsystem/css/components/tag-item.postcss:61-67 — ".tag-item--active { @apply pointer-events-none; … }": the active tag is inert.
 - **Fix:** Add "pointer-events:none" to .tag-item--active in app.css (keep aria-current="true" — a portal improvement over CD); optionally also guard the click handler so re-selecting the current floor is a no-op.
-- **Status:** ✅ fixed — Applied the JS share only: the [data-floor] click handler now returns early when the clicked chip is the active floor (keyboard can still reach the link even with pointer-events:no
+- **Status:** ✅ fixed — tag-item--active inert (pointer-events:none) + JS-Wächter
 
 ### tag-2 · L · pixel — tag-item bottom margin flat .25rem instead of CD's 0 / md 2px / lg 4px ramp
 
 - **Portal:** css/app.css:1303 — ".tag-item { … margin-right:.75rem; margin-bottom:.25rem; … }" at all widths.
 - **CD:** designsystem/css/components/tag-item.postcss:9 — "@apply mr-3 md:mb-0.5 lg:mb-1;": no bottom margin below 768px, 0.125rem from md, 0.25rem from lg.
 - **Fix:** Drop margin-bottom from the base rule and add "@media(min-width:768px){ .tag-item{margin-bottom:.125rem} } @media(min-width:1024px){ .tag-item{margin-bottom:.25rem} }" to reproduce the CD ramp.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Base margin-bottom dropped; CD ramp added (md .125rem, lg .25rem) per tag-item.postcss:9.
 
 ### tag-3 · L · pixel — tag-item focus ring floats 2px off the pill; CD's ring hugs it (and fires on :focus)
 
 - **Portal:** css/app.css:1319-1320 — ".tag-item:focus-visible { outline:none; } .tag-item:focus-visible .tag-item__inner { outline:2px solid var(--color-focus-ring); outline-offset:2px; }".
 - **CD:** designsystem/css/components/tag-item.postcss:17-19 — "&:focus .tag-item__inner { @apply outline-none ring-2 ring-purple-500; }": a 2px box-shadow ring with zero offset, adjacent to the rounded pill, on any :focus.
 - **Fix:** Change outline-offset to 0 (or use box-shadow:0 0 0 2px var(--color-focus-ring) which follows the border-radius) so the ring hugs the pill as in CD; :focus-visible may stay — it is the portal-wide convention (app.css:142-149) and strictly an improvement.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Focus ring outline-offset 2px→0 so it hugs the pill (tag-item.postcss:17-19); :focus-visible kept as the sheet-wide convention.
 
 ### tag-4 · L · consistency — tag-item hardcodes the 44/48/52px touch ramp instead of consuming --control-h
 
 - **Portal:** css/app.css:1304,1307-1308 — "min-height:var(--target-min)" (static 2.75rem) plus "@media(min-width:1280px){ min-height:3rem } @media(min-width:1920px){ min-height:3.25rem }" — re-implementing exactly the ramp that tokens.css:93-98 declares as «EIN Token für die Touch-Rampe aller Bedienelemente» (--control-h: 2.75rem → 3rem @1280 → 3.25rem @1920, tokens.css:305,314).
 - **CD:** designsystem/css/components/tag-item.postcss:37-42 — min-h-[44px] xl:min-h-[48px] 3xl:min-h-[52px] (values match; only the portal's own token indirection is bypassed).
 - **Fix:** Replace the three declarations with "min-height:var(--control-h)" and delete the two media-query overrides — identical rendering, one source of truth.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — min-height now var(--control-h); the two literal 1280/1920 media overrides deleted — identical rendering, one source of truth.
 
 ### tag-5 · L · pixel — Floor-chip row stacks container gap on top of tag-item's own margin (1rem gaps vs CD 0.75rem)
 
 - **Portal:** css/app.css:3365 — ".fp-floors { display:flex; flex-wrap:wrap; gap:.25rem; }" combines with ".tag-item { margin-right:.75rem; … }" (app.css:1303) → 1rem horizontal gaps plus a trailing 0.75rem after the last chip.
 - **CD:** designsystem/css/components/tag-item.postcss:9 — spacing between tags comes solely from the tag's own mr-3 (0.75rem); a host adds no extra gap.
 - **Fix:** Drop the gap from .fp-floors (rely on the tag's mr-3 like CD), or zero the tag margins inside .fp-floors and let gap:.75rem carry the spacing — either way one mechanism, 0.75rem.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — gap:.25rem removed from .fp-floors; the tag's own mr-3/mb ramp carries spacing (CD mechanism), with a WHY comment.
 
 ### tag-6 · L · pixel — Hover transitions on tag-item/active-filter are portal additions absent from CD
 
 - **Portal:** css/app.css:1312 — ".tag-item__inner { … transition:background var(--duration-fast),color var(--duration-fast); }" and css/app.css:2015 — ".active-filter { … transition:background var(--duration-fast); … }" — no German comment documents these as deliberate.
 - **CD:** designsystem/css/components/tag-item.postcss:22-27 / badge.postcss — CD tag and badge hover states switch instantly; no transition property.
 - **Fix:** Either remove the transitions for literal CD parity, or (preferred, they are harmless polish and reduced-motion-safe via the --duration tokens) add a short comment documenting them as a deliberate portal-wide hover convention so future audits don't re-litigate them.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Kept the transitions, documented as deliberate portal-wide hover polish (reduced-motion-safe via --duration tokens) at .tag-item__inner; the .active-filter transition no longer exi
 
 ### fc-1 · L · a11y — forced-colors borders cover badges and active tags only — notifications, toasts and default tag pills lose their surface
 
 - **Portal:** css/app.css:2902 — "@media (forced-colors:active){ .badge { border:1px solid currentColor; } }" and app.css:1321 — forced-colors outline for .tag-item--active only. No equivalent for .notification (variant surfaces vanish, leaving the 2.5rem icon floating beside text), .toast/.docviewer__toast (borderless floating text), or the default .tag-item__inner (gray-200 pill boundary disappears).
 - **CD:** CD convention — CD sources define no forced-colors rules for these components either, but the portal's own documented pattern («Badges behalten in Windows High Contrast … einen sichtbaren Rand, sonst … verschwimmen», app.css:2900-2901) applies equally to every surface-only component.
 - **Fix:** Extend the existing block: "@media (forced-colors:active){ .notification, .toast, .docviewer__toast, .tag-item__inner { border:1px solid currentColor; } }" — same rationale, complete coverage.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — forced-colors block extended to .notification and .tag-item__inner. Covering .notification also covers both toasts (toast__message and docviewer__toast host a .notification since t
 
 ### notif-7 · L · ux — 70ch cap on notification content is a portal deviation — documented and still justified
 
@@ -679,7 +679,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:2813 — ".share-url .badge { display:inline-flex; align-items:center; gap:.3rem; }" — all three declarations are already set identically by the .badge base rule at app.css:1268.
 - **CD:** CD convention — component base classes are not re-declared at call-sites (badge.postcss defines the anatomy once).
 - **Fix:** Delete the rule at 2813 (rendering is unchanged); if badge-1 is implemented and the gap moves out of the base rule, ensure the share-url badge uses .badge__icon-left instead of relying on this duplicate.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — bereits durch die erste Welle abgedeckt (verifiziert)
 
 ## Cards, boxes, tiles, hero
 
@@ -723,7 +723,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1205-1235 — complete flat/list card implementation with zero consumers (grep over js/html finds none); app.css:1239-1246 separately flattens `.card--default` inside `.catalogue-grid` under 768px («unter md dieselbe Dichte wie CDs card--list, ohne das Karten-Markup anzufassen»)
 - **CD:** card.postcss:331-433 — card--list IS the canonical list rendering (the portal's own comment at app.css:1216-1218 cites newsList.vue:124-137 / searchResults.vue:44-46 and notes «Adoption: Item 5.10»)
 - **Fix:** Two mechanisms for one pattern, one of them dead. Either complete the documented adoption (render news/search/catalog result lists as card--list, letting the catalogue-grid override shrink to the grid-gap reset), or remove the unused card--flat/card--list block until adoption — dead variants invite silent drift (its body padding already deviates, see card-10).
-- **Status:** ⬜ open
+- **Status:** 🔶 partial — Rest: Adoption of card--list as the rendering for news/search/catalogue result lists is js work (components/shell clusters, do
 
 ### card-11 · M · a11y — Three whole-card click patterns coexist (stretched link vs two whole-<a> cards)
 
@@ -744,42 +744,42 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1048 `gap:1.5rem` and :1052 `@media(min-width:768px){ ... gap:2.5rem }`
 - **CD:** Hero.vue:9 — hero children sit in `container--grid gap--responsive`; grids ramp = 1.25/1.75/2.25/2.5/3/4rem at base/480/640/1024/1280/1920. The portal already owns this ramp as --gap-responsive (tokens.css:198,293-316)
 - **Fix:** Use `gap:var(--gap-responsive)` on `.hero--main-image` and delete both literal gap declarations — the token exists precisely so these ramps cannot drift (tokens.css:192-197 states this intent).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — bereits durch die erste Welle abgedeckt (verifiziert)
 
 ### hero-4 · L · pixel — hero__content spacing missing the 3xl step
 
 - **Portal:** css/app.css:1039-1040 — gap:1.5rem, ≥1024px gap:2rem; no ≥1920px rule
 - **CD:** hero.postcss:14-16 — `.hero__content { @apply space-y-6 lg:space-y-8 3xl:space-y-10; }` = 1.5/2/2.5rem
 - **Fix:** Add `@media (min-width:1920px){ .hero__content { gap:2.5rem; } }`.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added @media(min-width:1920px) gap:2.5rem (hero.postcss:14-16 3xl:space-y-10).
 
 ### hero-5 · L · pixel — hero__description rendered muted; CD uses default ink
 
 - **Portal:** css/app.css:1044 — `.hero__description { ... color:var(--color-text-muted); ... }` (text-600 #4b5563)
 - **CD:** hero.postcss:30-34 — `.hero__description { @apply text--lg leading-snug; }` — no color, inherits body text-text-800 (#1f2937)
 - **Fix:** Remove the color override to match CD. If the lighter lead is a portal-wide convention (page-header .lead app.css:1012 and home-hero .lead app.css:2979 use the same muted text-lg), keep it but add the documenting comment — today the deviation is silent.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Muted color kept but now documented: page-header .lead and home lead share the same muted text-lg voice — one lead convention product-wide.
 
 ### hero-6 · L · consistency — Narrow hero content is left-aligned; CD centers the column
 
 - **Portal:** css/app.css:1041 — `.hero:not(.hero--main-image) .hero__content { max-width:42rem; }  /* CD hero--title-only = 6/12 Spalten */`
 - **CD:** hero.postcss:65-71 — hero--title-only content is `container__center--xs`; hero--default is `container__center--sm` — both use col-start offsets to CENTER the column (container.postcss:65-87)
 - **Fix:** The quoted rationale covers the width (6/12 at xl ≈ 38-42rem — holds) but silently drops CD's horizontal centering. Add `margin-inline:auto` to the capped `.hero__content`, or note the left-alignment as a deliberate intranet deviation in the comment.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Left-alignment documented as deliberate intranet deviation, mirroring the existing documented .container__main col-start-1 decision (same rationale: app pages align everything to c
 
 ### hero-7 · L · pixel — Generic hero image rules force a 16:9 crop; CD leaves hero images uncropped
 
 - **Portal:** css/app.css:1063-1066 — `.hero__image .photo { width:100%; aspect-ratio:16/9; }` and `.hero__image > img { ... aspect-ratio:16/9; object-fit:cover; ... }`
 - **CD:** hero.postcss:41-49 — `.hero__image { block relative overflow-hidden w-full } img { @apply w-full; }` — no ratio, no cover; hero--default merely centers the image (m-auto, hero.postcss:56-62)
 - **Fix:** Drop aspect-ratio/object-fit from the generic `.hero__image` rules and let callers opt into crops via the existing `.photo--16x9` utility (app.css:1254), so free-format hero images render as CD intends.
-- **Status:** ⬜ open
+- **Status:** 🔶 partial — Rest: Dropping the generic 16:9 crop must be coordinated with js/components.js: heroFigure() emits a bare .photo whose <img> i
 
 ### hero-8 · L · pixel — hero__cta spacing static (and rule currently has no consumer)
 
 - **Portal:** css/app.css:1045 — `.hero__cta { display:flex; flex-wrap:wrap; gap:1rem; }`; no `hero__cta` occurrence in js/**or index.html
 - **CD:** hero.postcss:36-39 — `.hero__cta .btn { mr-4 md:mr-5 xl:mr-6; mb-4 md:mb-5 xl:mb-6 }` = 1/1.25/1.5rem ramp
 - **Fix:** Ramp the gap (1rem, md 1.25rem, xl 1.5rem). Since no renderer emits `.hero__cta` today, alternatively delete the rule until the home-hero search form adopts it (see hero-9).
-- **Status:** 🔶 partial — Teilweise; offener Rest: css cluster: ramp .hero__cta gap at css/app.css:1078 (1rem, md 1.25rem, xl 1.5rem per hero.postcss:36-39). Note: the finding's 'no consumer 
+- **Status:** ✅ fixed — Gap ramped 1rem/md 1.25/xl 1.5 (hero.postcss:36-39). Rule now HAS a consumer — home-search adopted hero__cta (home.js:161); its own later gap:.5rem override keeps the home form unc
 
 ### hero-10 · L · consistency — Detail hero is a <div> inside the page container; CD hero is a full-width <section> with its own container grid
 
@@ -793,91 +793,91 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:2909-2916 — the touch guard resets title color, shadow, border overlay and image transform, but not the footer-button inversion (app.css:1184) nor the domain-tile icon color (app.css:2022 `.card--clickable:hover .domain-tile__icon { color:var(--color-primary-700); }`)
 - **CD:** CD convention — the portal's own guard comment (app.css:2905-2908) states ALL hover accents must be neutralized on touch («der Guard deckte bisher nur Farbwechsel ab, nicht Transforms und Schatten»)
 - **Fix:** Inside `@media (hover:none)` add `.card--clickable:hover .card__footer__action > .btn--outline { background:transparent; border-color:var(--color-primary-600); color:var(--color-primary-600); }` and `.card--clickable:hover .domain-tile__icon { color:var(--color-primary-600); }` (both become no-ops if card-1 is fixed and the icon rule removed).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — hover:none guard: added .domain-tile__icon reset (icon rule still exists at the domain tiles); removed the two now-dead .photo>img transform lines (guard + reduced-motion) left ove
 
 ### card-4 · L · pixel — card__image placeholder frame (secondary-50 @70% + 2px white inset) missing
 
 - **Portal:** css/app.css:1146-1147 — `.card__image { … background:var(--color-secondary-50); overflow:hidden; }` — solid tint, no inset frame
 - **CD:** card.postcss:173-179 — `.card__image:before { absolute inset-0 bg-secondary-50 border-2 border-white opacity-70 }`
 - **Fix:** Add `.card__image::before { content:""; position:absolute; inset:0; z-index:0; background:var(--color-secondary-50); border:2px solid var(--color-bg); opacity:.7; }` — the loaded image paints over it, so only the empty/loading state changes, matching CD.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added .card__image::before (secondary-50, 2px white border, opacity .7) per card.postcss:173-179; loaded image paints over it. Verified present in browser.
 
 ### card-5 · L · pixel — 2:1 card image ratio inside grid--responsive-cols-2 not ported
 
 - **Portal:** css/app.css:396-403 defines .grid--responsive-cols-2, but no rule adjusts .card__image inside it (only the global 56.25% at app.css:1146)
 - **CD:** card.postcss:169-171 — `.grid--responsive-cols-2 & { @apply relative pb-[50%]; /* 2/1 ratio */ }`
 - **Fix:** Add `.grid--responsive-cols-2 .card__image { padding-bottom:50%; }`. No page composes cards in a 2-col responsive grid today (verified), but the class is public API of the sheet and the ratio switch is part of CD's card contract.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added .grid--responsive-cols-2 .card__image { padding-bottom:50%; }. Verified inert for today's two grid--responsive-cols-2 consumers (domainTile cards have no card__image; digital
 
 ### card-6 · L · pixel — Color transitions drop CD's ease-in-out curve
 
 - **Portal:** css/app.css:1158 `.card__title { … transition:color var(--duration); }`, :1187 `.card--clickable::after { … transition:border-color var(--duration-slow); }`, :1826-1827 `.download-item__title { … transition:color var(--duration); }` — all fall back to the default `ease` curve
 - **CD:** card.postcss:17,24,219 and download-item.postcss:32 — `transition-… duration-…` utilities carry Tailwind's default cubic-bezier(.4,0,.2,1); card--clickable explicitly adds `ease-in-out`
 - **Fix:** Append `var(--ease-in-out)` (tokens.css:180) to these three transition declarations, as `.card--clickable` (app.css:1186) already does.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — var(--ease-in-out) appended to .card__title, .card--clickable::after and .download-item__title transitions.
 
 ### card-7 · L · pixel — .card carries overflow:hidden that CD does not have
 
 - **Portal:** css/app.css:1135-1136 — `.card { … overflow:hidden; … }`; it forces the inset focus rings at app.css:155 and :1193 (outline-offset:-2px)
 - **CD:** card.postcss:5-8 — `.card { flex flex-col h-full bg-white; container-type:inline-size }` — no overflow; only `.card__image` clips (card.postcss:165-167)
 - **Fix:** Remove `overflow:hidden` from `.card` — the image box already clips its media, and nothing else overflows (line-clamp handles text). The focus rings can then use the sheet's standard +2px offset instead of the compensating −2px inset.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — overflow:hidden removed from .card (with WHY comment); deleted the compensating .card--clickable:focus-visible{outline-offset:-2px} and switched .card__link::after focus ring to th
 
 ### card-8 · L · naming — .card__title--sm is dead CSS with a non-CD modifier name
 
 - **Portal:** css/app.css:1159 — `.card__title--sm { font-size:var(--text-base); }` — zero usages repo-wide (verified via grep)
 - **CD:** card.postcss:215-220 — CD knows exactly one card__title size per breakpoint; no --sm modifier exists
 - **Fix:** Delete the rule (the anchor-nav's smaller title need is already served by `.anchor-nav .card__title` at app.css:261).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Dead .card__title--sm deleted (grep re-verified: zero usages).
 
 ### card-10 · L · pixel — card--list details deviate from CD: body bottom padding and image inset borders
 
 - **Portal:** css/app.css:1209-1210 — `.card--list .card__body, .card--list .card__footer { padding:0; }`; app.css:1232-1233 — list image has no vertical inset
 - **CD:** card.postcss:381-383 — `.card--list .card__body { @apply pt-0 pb-4; }` (1rem bottom); card.postcss:364 — image carries `border-t-[0.5em] border-b-[0.5em] border-transparent`
 - **Fix:** When adopting card--list (card-9): give its body `padding-bottom:1rem` and add `border-block:.5em solid transparent` to `.card--list .card__image`. The two deliberately unported CD clauses (btn h-0, sm-vs-md grid start) are correctly documented at app.css:1220-1228 and that rationale still holds.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — card--list body now pt-0/pb-1rem (split out of the shared flat/list padding:0 rule) and list image carries border-block:.5em transparent (card.postcss:364,381-383). Block is still 
 
 ### dl-1 · L · pixel — download-item on bg--secondary-50 bands keeps the white-surface border color
 
 - **Portal:** css/app.css:1820 — only `.box .download-item { border-bottom-color:var(--color-secondary-300); }`; a `.download-items` list inside a `pageSection({alt:true})` band (bg--secondary-50, components.js:122) would keep secondary-200 — near-invisible on the tinted surface
 - **CD:** download-item.postcss:12-14 — `.bg--secondary-50 & { @apply border-secondary-300; }`
 - **Fix:** Extend the selector: `.bg--secondary-50 .download-item, .box .download-item { border-bottom-color:var(--color-secondary-300); }` (same context pattern the sheet already uses for `.box .separator` at app.css:1840).
-- **Status:** 🔶 partial — Teilweise; offener Rest: css/app.css only: extend `.box .download-item` (border-bottom secondary-300) to `.bg--secondary-50 .download-item` — selector currently abse
+- **Status:** ✅ fixed — Selector extended: .bg--secondary-50 .download-item, .box .download-item { border-bottom-color:secondary-300 } — same context pattern as .box .separator.
 
 ### dl-2 · L · pixel — CD's accordion last-download-item rule not ported
 
 - **Portal:** css/app.css:1815-1830 — no `.accordion .download-item` rule; portal has both components (accordion app.css:1708-1729) and currently renders download lists only as accordion siblings (js/pages/knowledge.js:90-93), so the gap is inert today
 - **CD:** download-item.postcss:16-19 — `.accordion &:last-of-type { @apply mb-4 border-b-0; }`
 - **Fix:** Add `.accordion .download-item:last-of-type { margin-bottom:1rem; border-bottom:0; }` for parity, so the first page that puts a download list into a drawer doesn't end on a stray divider.
-- **Status:** 🔶 partial — JS-Anteil umgesetzt; CSS-Rest: css/app.css: add `.accordion .download-item:last-of-type { margin-bottom:1rem; border-bottom:0; }` (CD download-item.postcss:16-19). No page
+- **Status:** ✅ fixed — Akkordeon-download-item letzte Zeile ohne Trennlinie
 
 ### dl-3 · L · pixel — meta-info base color one step darker than CD (documented, holds)
 
 - **Portal:** css/app.css:1833 — `.meta-info { … color:var(--color-text-muted); … }` = text-600 everywhere
 - **CD:** meta-info.postcss:5-14 — base `text-gray-500`, switching to text-600 only inside `.box`/`.bg--secondary-50`
 - **Fix:** Deliberate deviation backed by tokens.css:80 («passes AA on white AND on secondary-50» — gray-500 on secondary-50 is only ~4.4:1, which is why CD itself switches). Assessment: holds; keep the single value, but move the justification (or a pointer to it) next to the .meta-info rule so the diff against meta-info.postcss is explained at the point of deviation.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Kept single text-600 value; justification (CD starts gray-500 which fails AA on secondary-50, CD itself switches there) now sits at the .meta-info rule.
 
 ### mos-1 · L · consistency — Portfolio media tiles are rounded while all CD-derived media is square
 
 - **Portal:** css/app.css:2741-2742 (.pf-mosaic__cell border-radius:var(--radius-lg)), :2650-2653 (.pf-hero__map/.pf-hero__maplink), :2456 (.pf-map), :2482 (.pj-hero__btn) — vs square .card__image (1146), .hero__image (1055), .detail-image (1152)
 - **CD:** card.postcss/hero.postcss — no border-radius on any card or hero media; CD radii are reserved for small controls (tailwind.config.js:236-249 scale exists but is unused on media)
 - **Fix:** Drop the radius on mosaic cells, map and project-hero button, or make the rounding an explicit documented portal decision applied to ALL full-bleed media — currently the object detail head (rounded mosaic) sits pages away from square card images of the same buildings.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Documented as explicit convention at the mosaic block: CD-derived media stay square, portal-own media compositions (mosaic, all maps, med-shot) uniformly carry radius-lg matching t
 
 ### mos-2 · L · consistency — On-image chips mix static and responsive type scales
 
 - **Portal:** css/app.css:2485 — `.pf-card__land { … font-size:var(--fs-xs) … }` (static); app.css:2766-2768 — `.photo > .pf-hero__badge { … font-size:var(--text-sm) … }` (responsive ramp); app.css:2761 — `.pf-mosaic__more-num { font-size:var(--fs-2xl); }` (static)
 - **CD:** CD convention — tokens.css:150-151 instructs «Consume these [--text-*] … for anything that should scale»; overlays that scale with the image, not the viewport, are the static case
 - **Fix:** Pick one rule for image overlays: static --fs-* (recommended — a chip on a fixed-ratio photo should not grow to 1.375rem at 1920px). Change `.pf-hero__badge` to `var(--fs-sm)`.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .pf-hero__badge font-size → static var(--fs-sm) with comment (on-image chips scale with the image, not the viewport) — now consistent with .pf-card__land.
 
 ### tile-1 · L · consistency — quick-tile hover shadow animates at 200ms while cards use CD's 300ms
 
 - **Portal:** css/app.css:3018-3021 — `.quick-tile { … transition:box-shadow var(--duration), border-color var(--duration); }` (200ms) with the same shadow-lg→shadow-2xl lift
 - **CD:** card.postcss:17 — `transition-shadow duration-300 ease-in-out` is CD's card-lift timing; portal cards follow it at app.css:1186 (var(--duration-slow))
 - **Fix:** Use `var(--duration-slow)` for the quick-tile box-shadow transition so the two shadow-lift components on the home page move in step.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — quick-tile box-shadow transition → var(--duration-slow) var(--ease-in-out); border-color stays at --duration. Home's two lift components now move in step.
 
 ### card-13 · L · consistency — Container-query body-padding reduction is a documented CD extension (holds)
 
@@ -928,14 +928,14 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1349-1351 — `table.table thead th { … border-bottom:1px solid var(--color-border); }` (#e5e7eb / text-200), while body rows use `var(--color-border-strong)` (#d1d5db) at app.css:1352.
 - **CD:** css/components/table.postcss:45-50 — `tbody, tfoot { tr { @apply border-t border-text-300; } }` — the line between thead and the first body row is text-300 #d1d5db, same as all row dividers.
 - **Fix:** Change the thead border-bottom to `var(--color-border-strong)` so the header divider matches the row dividers exactly as in CD.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — thead border-bottom → var(--color-border-strong), matching the row dividers (table.postcss:45-50).
 
 ### tbl-3 · L · consistency — Header cells forced to white-space:nowrap on desktop (CD lets them wrap)
 
 - **Portal:** css/app.css:1349-1351 — `table.table thead th { … white-space:nowrap; … }`; only the <768 media query at app.css:1424 resets it to normal.
 - **CD:** css/components/table.postcss:37-42 — `thead th { @apply px-6 py-4 text-left text-text-700 uppercase text--sm align-top; }` — `align-top` exists precisely because wrapped multi-line headers are expected; no nowrap.
 - **Fix:** Drop `white-space:nowrap` from the base thead rule; the portal already has the `.text-nowrap` utility (app.css:1332, documented «nur Identifikatorspalten») for the columns that genuinely must not wrap. Nowrap on every header widens tables and triggers the overflow scroller more often than CD would.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — white-space:nowrap dropped from thead th (CD align-top exists for wrapped headers); the now-dead <768 white-space:normal reset removed. .text-nowrap utility remains for identifier 
 
 ### tbl-5 · L · consistency — Row headers (tbody th) rendered regular/gray-600 instead of CD bold/gray-800 — documented deviation, rationale holds
 
@@ -949,14 +949,14 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1346-1348 — `table.table--caption caption { … white-space:normal; … padding-top:.5rem; font-size:var(--text-xs); color:var(--color-text-muted); }` — text-muted = text-600 #4b5563 (tokens.css:80).
 - **CD:** css/foundations/typography.postcss:131-133 — `.legend { @apply text--xs pt-2 text-text-500; }` (#6b7280); css/components/table.postcss:13-15 — `.table-wrapper caption { white-space: pre-line; }`.
 - **Fix:** The darker color is a portal-wide token decision (tokens.css:80 «passes AA on white AND on secondary-50») and can stay. Restore `white-space:pre-line` in the visible-caption rule so multi-line captions keep their authored line breaks as in CD.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Visible caption white-space:normal → pre-line (table.postcss:13-15); darker color kept as the documented token decision.
 
 ### tbl-7 · L · consistency — .table--compact rules lose the cascade against table.table — compact styling can never apply
 
 - **Portal:** css/app.css:1427-1428 — `.table--compact { border:0; box-shadow:none; }` is (0,1,0) vs `table.table` (0,1,1) at app.css:1344; `.table--compact thead th …` is (0,1,2) vs `table.table thead th` (0,1,3) at app.css:1349. With the actual markup `<table class="table table--compact">` (js/charts.js:153) the higher-specificity base rules win, so border, shadow and the 1rem/1.5rem padding all remain. Currently invisible only because the sole consumer is the sr-only chart fallback table.
 - **CD:** css/components/table.postcss:69-87 — `.table--compact` must remove border/shadow and reduce all cells to px-2 py-2 text--sm.
 - **Fix:** Raise the selectors to `table.table--compact { … }` and `table.table--compact thead th, table.table--compact td, table.table--compact tbody th { padding:.5rem; font-size:var(--text-sm); }` so any future visible compact table actually renders compact.
-- **Status:** 🔶 partial — JS-Anteil umgesetzt; CSS-Rest: Entirely a css/app.css change (file forbidden to this cluster) and verified still unfixed: raise app.css:1475-1476 to table.table--compact {
+- **Status:** ✅ fixed — table.table--compact-Spezifität angehoben
 
 ### tbl-8 · L · consistency — rowsClickable applied inconsistently across identical list tables
 
@@ -977,14 +977,14 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1774 — `.pagination__input { width:3rem; min-height:var(--target-min); text-align:center; padding:.5rem; }` — --target-min is deliberately non-scaling (tokens.css:100-105), so the intrinsic min stays 44px at every width; only flex-stretch from `.pagination { align-items:stretch }` rescues the alignment next to the 48px buttons at ≥1280px.
 - **CD:** css/components/pagination.postcss:8-11 — `input { @apply w-12 h-full text-center px-2; @apply btn--base; }` with btn.postcss:112-117 `min-h-[44px] xl:min-h-[48px] 3xl:min-h-[52px]`.
 - **Fix:** Use the scaling control token: `min-height:var(--control-h);` — that token exists precisely for this ramp (tokens.css:93-98, stepped at :305/:314) and makes the input's own height match the adjacent `.btn` ramp without relying on flex stretch.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .pagination__input min-height → var(--control-h) (pagination.postcss:8-11 @apply btn--base) — input now rides the 44/48/52 ramp itself instead of relying on flex stretch.
 
 ### pag-3 · L · consistency — Two right-alignment mechanisms: dead .pagination--right duplicates live .pagination-wrap--right
 
 - **Portal:** css/app.css:1780-1782 — `.pagination--right { display:flex; justify-content:flex-end; padding-block:1.5rem; }` (+ media steps) has no consumer: pagination() emits `pagination-wrap--right` (js/components.js:1133), styled separately at app.css:2943 `.pagination-wrap--right { justify-content:flex-end; }`. Grep over js/html finds no `pagination--right` usage.
 - **CD:** css/components/pagination.postcss:30-32 — CD has exactly one variant, `.pagination--right`.
 - **Fix:** Delete the unused `.pagination--right` block (its padding ramp is already carried by `.pagination-wrap`, app.css:1770-1772) and keep the single live `.pagination-wrap--right` modifier — or rename it to `.pagination-wrap--right` in one place with a comment pointing at pagination.postcss:30.
-- **Status:** 🔶 partial — Teilweise; offener Rest: css/app.css only: dead `.pagination--right` block still at :1837-1839 — delete (live modifier is .pagination-wrap--right).
+- **Status:** ✅ fixed — Dead .pagination--right block deleted (grep re-verified: no consumer); pointer comment references the live .pagination-wrap--right.
 
 ### pag-4 · L · a11y — Pagination input double-named: sr-only <label> plus aria-label
 
@@ -998,28 +998,28 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:2308-2309 — `.catbar { … gap:.6rem 1rem; … padding-bottom:.6rem; … }`; :2325 — `.catbar__controls { … gap:.6rem .25rem; … }`; :2356 — `.catbar__fcount { margin-left:.35rem; … }`; :2359 — `.catbar__chev { … margin-left:.1rem; … }`.
 - **CD:** CD convention — all CD spacing resolves to the Tailwind quarter-rem scale (tailwind.config.js uses default spacing; portal mirrors it as --sp-* in tokens.css:156-161). .6/.35/.1rem exist on no step.
 - **Fix:** Snap the live literals: `.catbar` gap `.5rem 1rem` and padding-bottom `.5rem` (or `.75rem`); `.catbar__fcount` margin-left `.25rem`; `.catbar__chev` margin-left `.25rem` or drop it (source value is .1rem). In `.catbar__controls`, simply delete the dead `.6rem` half of the gap shorthand (write `gap:.5rem .25rem` and drop the separate row-gap) — its effective values are already on-scale.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Snapped: .catbar gap .5rem 1rem + padding-bottom .5rem; __fcount margin-left .25rem; __chev .1rem margin dropped; __controls rewritten gap:.5rem .25rem with the dead .6rem shorthan
 
 ### catbar-3 · L · consistency — Catbar controls frozen at 44px while CD equivalents ramp 44/48/52 — documented, defensible
 
 - **Portal:** css/app.css:2312, 2353, 2355, 2361 — search input, sort select, filter button and view-switch all pinned to `min-height:var(--target-min)` (fixed 2.75rem). Documented at app.css:2316-2318: «Alle Controls gleich hoch (--target-min)».
 - **CD:** css/components/btn.postcss:112-117 and input.postcss — every CD control carries the `min-h-[44px] xl:min-h-[48px] 3xl:min-h-[52px]` ramp; the CD results header's select/buttons scale with it.
 - **Fix:** Keep the uniform 44px toolbar — the documented rationale holds and the bar is internally consistent. If alignment next to 48px page controls at ≥1280px ever needs fixing, switch the four rules to var(--control-h) (which mirrors the CD BUTTON ramp; CD's own inputs would only reach 48px at 1544px per input.postcss:1-16). Amend the comment at app.css:2316-2318 to note 44px is a conscious divergence, not the CD value.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Kept uniform 44px; comment amended to state explicitly that CD buttons ramp at xl and CD inputs at 2xl — conscious divergence, per the verify note's corrected CD reading.
 
 ### catbar-4 · L · pixel — Filter drawer (.catbar__panel) gaps and breakpoint deviate beyond the documented tinted-card decision
 
 - **Portal:** css/app.css:2366-2375 — `.catbar__panel { … gap:.75rem 2rem; … background:var(--color-secondary-50); border-radius:var(--radius-lg); }` with `@media (min-width:768px){ … gap:1rem 2rem; }`. The documented deviation covers only the surface: app.css:2362-2365 «Die getönte, gerundete Karte ist eine bewusste Entscheidung und BLEIBT — umgestellt wird nur die umbrechende Flex-Zeile …».
 - **CD:** css/components/search.postcss:257-264 — `.search__filters__drawer { @apply grid md:grid-cols-2 lg:grid-cols-3; @apply gap-3 lg:gap-4; … border-t border-secondary-200; }` — uniform .75rem gap, stepping to 1rem at lg (1024), no 2rem column gutter.
 - **Fix:** Keep the tinted card (rationale is explicit and still holds), but align the grid metrics with CD: `gap:.75rem` stepping to `1rem` at 1024px, dropping the 2rem column gutter — the column count (1/md:2/lg:3) already matches, so only the gap values drift.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Panel grid aligned to CD (search.postcss:257-264): uniform gap .75rem → 1rem at 1024, 2rem column gutter dropped; tinted rounded card kept (documented deliberate).
 
 ### af-2 · L · naming — Pill dismiss icon uses generic icon--sm + opacity instead of CD's badge/tag icon anatomy
 
 - **Portal:** js/components.js:359-360 — `${escape(f.label)}${icon('Cancel', 'icon--sm')}` inside the pill; css/app.css:2016 — `.active-filter .icon { margin-left:.15rem; opacity:.65; }` (off-scale margin, opacity-dimmed).
 - **CD:** css/components/badge.postcss:85-90 — `.badge__icon { @apply h-full w-[1.5em]; @apply relative left-[0.4em]; @apply stroke-current; }` (em-scaled, optically pulled toward the rounded edge, full-strength); tag-item.postcss:80-85 identical convention.
 - **Fix:** Port CD's icon anatomy into app.css first — `.badge__icon { height:100%; width:1.5em; position:relative; left:.4em; }` (badge.postcss:85-90; stroke-current is moot for the portal's mask-based icons) or the identical `.tag-item__icon` if af-1 lands — then swap the pill markup to `${icon('Cancel','badge__icon')}` and delete `.active-filter .icon { margin-left:.15rem; opacity:.65; }` plus the hover-to-full-opacity rule at app.css:2018; CD never dims the icon.
-- **Status:** 🔶 partial — Teilweise; offener Rest: css/app.css: JS already emits tag-item__icon and the CD icon rule exists (:1367); remaining: delete the opacity dimming `.active-filter .tag
+- **Status:** ✅ fixed — Markup + icon anatomy had already landed (tag-item__icon exists, pills emit it). Removed the remaining deviation: the opacity .65/hover-1 dimming rules — CD never dims the icon; co
 
 ### af-3 · L · pixel — Active-filter row top spacing fixed (mt-4) instead of CD's responsive ramp
 
@@ -1033,7 +1033,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:2045-2046 — `.filter-panel { background:var(--color-bg); border:1px solid var(--color-secondary-100); border-radius:var(--radius-lg); padding:1.25rem; }` (white, secondary-100 border) vs app.css:2372-2373 — `.catbar__panel { … padding:1rem 1.25rem; background:var(--color-secondary-50); border:1px solid var(--color-border); border-radius:var(--radius-lg); }` (tinted, gray border). Additionally `.filter-panel__title { font-size:var(--fs-lg); … }` (app.css:2048) consumes the static step instead of the responsive `--text-lg` that tokens.css:150-151 prescribes («Consume these, not the raw --fs-* steps»).
 - **CD:** CD convention — search.postcss:249-264 defines ONE facet-filter surface (border-t border-secondary-200, no card); when a product invents a card variant it should at least be one variant, not two.
 - **Fix:** Pick one card recipe for both hosts of the shared `.filter-group` content: same background token, same border token (secondary-100 or --color-border, not both) and same padding pair; and change `.filter-panel__title` to `font-size:var(--text-lg)` so it scales with the rest of the type ramp.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — One card recipe: both panels on border secondary-100 and padding 1rem 1.25rem; .filter-panel__title → var(--text-lg). The inverted backgrounds (white card on tinted dashboard canva
 
 ### sort-1 · L · ux — Sort select right-alignment deviates from CD below 768px — documented, rationale holds
 
@@ -1047,7 +1047,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1420-1426 — `@media (max-width:767.98px){ .table-wrapper table.table thead th, … td, … tbody th { padding:.5rem .75rem; font-size:var(--text-sm); } … }` (Item 2.11). Note the selector list omits `tfoot th`/`tfoot td`: the Total row keeps 1rem/1.5rem padding (app.css:1365 `table.table tfoot th { padding:1rem 1.5rem; }`) while all other rows shrink.
 - **CD:** css/components/table.postcss:37-63 — CD keeps px-6 py-4 at all widths (density is opt-in via .table--compact only); CD convention for the portal's own override is at least uniform application per table.
 - **Fix:** Add only the th selector to the mobile override at app.css:1420-1426: `.table-wrapper table.table tfoot th { padding:.5rem .75rem; font-size:var(--text-sm); }` — tfoot td is already covered by the existing `.table-wrapper table.table td` line. The denser mobile ramp itself stays.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added .table-wrapper table.table tfoot th to the mobile density override (td was already covered per the verify note) — the Total label no longer stands taller than its own value c
 
 ## Federal header — top bar, logo, language switcher, meta nav, search
 
@@ -1077,105 +1077,105 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:494 — `.top-bar { … font-size:var(--fs-sm); }` (fixed 0.875rem, no 1544px step); css/app.css:548-549 — `.top-header { … font-size:var(--fs-sm); }` (fixed, no 1920px step).
 - **CD:** css/sections/top-bar.postcss:7 — `text-sm 2xl:text-base` (1rem from 1544px); css/sections/top-header.postcss:8 — `text-sm 3xl:text-base` (1rem from 1920px); breakpoints per app/tailwind.config.js:20-28.
 - **Fix:** Add `@media (min-width:1544px){ .top-bar { font-size:var(--fs-base); } }` and `@media (min-width:1920px){ .top-header { font-size:var(--fs-base); } }` (use the raw --fs steps, matching CD's non-ramped utilities).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added @1544 fs-base for .top-bar and @1920 fs-base for .top-header (raw --fs steps like CD's non-ramped utilities).
 
 ### topbar-2 · L · consistency — .top-bar__btn has no :focus color state (its sibling nav links do)
 
 - **Portal:** css/app.css:499 — `.top-bar__btn:hover { color:var(--color-gray-300); }` — :hover only, while css/app.css:519 gives `.top-bar-navigation a:hover, .top-bar-navigation a:focus` both states.
 - **CD:** css/sections/top-bar.postcss:130 — `.top-bar__btn { hover:text-text-300 focus:text-text-300 }` (#d1d5db on both states).
 - **Fix:** Change the selector to `.top-bar__btn:hover, .top-bar__btn:focus { color:var(--color-gray-300); text-decoration:none; }` so keyboard focus gets the same lightening as hover, matching both CD and the adjacent top-bar-navigation links.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .top-bar__btn:focus added alongside :hover (top-bar.postcss:130).
 
 ### topbar-3 · L · mobile — «Alle Schweizer Bundesbehörden» label fully hidden below 640px; CD keeps it visible as a narrow wrapped column
 
 - **Portal:** css/app.css:169 — `.top-bar__btn > span:not(.icon)` sits in the sr-only group; css/app.css:507-508 reveals it only `@media (min-width:640px)`. Below 640 the link is icon-only (comment at js/shell.js:179-180 argues the icon is the only affordance).
 - **CD:** css/sections/top-bar.postcss:136-138 — `.top-bar__btn span { @apply w-min sm:w-full }` — below sm CD narrows the span to min-content (text wraps) but never hides it.
 - **Fix:** Replace the sr-only treatment below 640 with CD's approach: keep the span visible and add `.top-bar__btn > span:not(.icon) { width:min-content; } @media (min-width:640px){ width:auto; }`. The documented rationale (icon as sole affordance) was a fix for a worse bug (invisible label AND icon) — CD's wrapped-label pattern solves the same problem without dropping the text.
-- **Status:** 🔶 partial — Teilweise; offener Rest: css cluster: replace the below-640 sr-only treatment of .top-bar__btn > span:not(.icon) (app.css:173-180 + reveal at 511-512) with CD's widt
+- **Status:** ✅ fixed — Label removed from the sr-only group; visible at every width with width:min-content below 640 / auto above (top-bar.postcss:136-138 w-min sm:w-full); comment rewritten. Browser-ver
 
 ### topbarnav-1 · L · pixel — Top-bar navigation labels appear from 640px; CD shows them only from 1024px
 
 - **Portal:** css/app.css:522-525 — `@media (min-width:640px){ .top-bar-navigation a > span:not(.icon) { position:static; … } }` un-hides the «eGate» label at sm.
 - **CD:** css/navigations/top-bar-navigation.postcss:7-11 — `span { @apply hidden lg:block; pl-2 lg:pl-4; pr-1 lg:pr-2 }` — labels are display:none below 1024, icon-only between 480–1023.
 - **Fix:** Move the reveal to `@media (min-width:1024px)` (merge with the existing lg rule at css/app.css:526-529) and keep sr-only below — between 640–1023 the bar then shows icon-only utility links exactly like CD.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Label reveal moved from 640 to 1024 and merged into the existing lg block (incl. margin reset the old reveal missed); icon-only between 480-1023 like CD.
 
 ### topbar-4 · L · pixel — .top-bar__right adds a 1rem flex gap CD does not have
 
 - **Portal:** css/app.css:513 — `.top-bar__right { display:flex; align-items:stretch; gap:1rem; }` (the align-items:stretch deviation is documented at :509-512 and holds; the gap is not).
 - **CD:** css/sections/top-bar.postcss:154-166 — `.top-bar__right { @apply flex items-center; }` — no gap; spacing comes from each item's own padding (nav `px-1 lg:px-2`, switcher `pl-1 lg:pl-4`).
 - **Fix:** Drop `gap:1rem` and let the per-item padding-inline carry the rhythm; keep a small `margin-right` on `.demo-chip` if the portal-specific chip needs breathing room (CD's badge in this slot uses `mr-2`).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — gap:1rem dropped from .top-bar__right (per-item padding carries rhythm); portal demo-chip got margin-right:.5rem (CD badge slot mr-2). align-items:stretch deviation untouched.
 
 ### logo-2 · L · pixel — .logo__title misses the 3xl font step and CD's -0.16rem optical top offset
 
 - **Portal:** css/app.css:571-579 — `.logo__title` steps --fs-xs @480 / --fs-sm @640 / --fs-base @1280, no 1920 step and no negative top margin.
 - **CD:** css/components/logo.postcss:76-82 — `text-sm xs:text-xs sm:text-sm xl:text-base 3xl:text-lg; font-bold leading-snug; relative mt-[-0.160rem]` — 1.125rem from 1920px plus the optical alignment against the flag's top edge.
 - **Fix:** Add `@media (min-width:1920px){ .logo__title { font-size:var(--fs-lg); } }` and `margin-top:-0.16rem` to the ≥480 block (the md:items-start alignment at css/app.css:556 makes the offset visible from 768px up).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added @1920 fs-lg step and CD's -0.16rem optical top offset in the ≥480 reveal (margin:-.16rem 0 0).
 
 ### logo-3 · L · mobile — Office title forced to nowrap from 480px; CD allows wrapping until 768px
 
 - **Portal:** css/app.css:571-577 — the ≥480 `.logo__title` rule sets `white-space:nowrap` (the comment cites logo.postcss:80 as "stays on one line", but that line is the md-scoped utility).
 - **CD:** css/components/logo.postcss:78 — `md:whitespace-nowrap` — below 768 the title may wrap; nowrap only from 768px.
 - **Fix:** Move `white-space:nowrap` into a `@media (min-width:768px)` block. Between 480–767 the long «Bundesamt für Bauten und Logistik» can then wrap instead of risking overflow next to flag + separator, exactly as CD intends.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — white-space:nowrap moved from the ≥480 block to @media(min-width:768px) (logo.postcss:78 md:whitespace-nowrap); comment corrected.
 
 ### burger-1 · L · pixel — Burger icon resting color is text-600 instead of CD's text-500
 
 - **Portal:** css/app.css:642-643 — `.burger__icon { … color:var(--color-text-muted); }` where --color-text-muted = --color-text-600 = #4b5563 (css/tokens.css:80).
 - **CD:** css/components/burger.postcss:10-17 — `.burger__icon { text-text-500 … hover:text-primary-600 }` — resting #6b7280.
 - **Fix:** Use `color:var(--color-text-500)` (alias exists in tokens.css:50) on `.burger__icon`; keep the primary-600 hover which already matches.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Resting color → var(--color-text-500) (alias exists in tokens.css); primary-600 hover already matched.
 
 ### search-1 · L · pixel — Search toggle padding is a fixed portal value; CD ramps it (lg:p-1 xl:p-2 2xl:py-3) and nudges the title -0.125rem
 
 - **Portal:** css/app.css:660-661 — `.search__button { … padding:.4rem .5rem; }` at all widths; css/app.css:663-666 — revealed `.search__button__title` gets `padding-right:.375rem` but no negative top nudge.
 - **CD:** css/components/search.postcss:75-86 — `.search__button { lg:p-1 xl:p-2 2xl:py-3 }` (0 below lg; .25rem @1024; .5rem @1280; py .75rem @1544) and `.search__button__title { lg:pr-1.5 lg:-mt-0.5 }`.
 - **Fix:** Adopt the CD ramp but preserve the tap target: base `padding:0; min-width:var(--target-min); justify-content:center;` then `@media (min-width:1024px){ .search__button { padding:.25rem; } } @media (min-width:1280px){ padding:.5rem; } @media (min-width:1544px){ padding-block:.75rem; }`, and add `margin-top:-.125rem` to the revealed `.search__button__title` in the existing ≥1024 block at app.css:663-666. CD's own base is p-0 with a 36px icon, so the min-width guard is the only portal-specific addition needed.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — CD padding ramp adopted (0 base / .25rem lg / .5rem xl / py .75rem 2xl) with the portal min-width:var(--target-min)+centering guard the verify note demanded (min-height alone guara
 
 ### search-2 · L · pixel — Mobile expanded search row uses 1rem side padding; CD uses 0.875rem
 
 - **Portal:** css/app.css:695-698 — `.search--main.open .search__form { … margin-top:.5rem; padding-inline:1rem; … }` inside the ≤1023.98px block.
 - **CD:** css/components/search.postcss:37-42 — `.search--mobile { @apply mt-2 px-3.5; }` — 0.5rem top ✓ but 0.875rem inline.
 - **Fix:** Change `padding-inline:1rem` to `padding-inline:.875rem` so the dropped-down field aligns with CD's mobile search inset (mt-2 already matches).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Mobile expanded search row padding-inline 1rem → .875rem (search.postcss:37-42 px-3.5).
 
 ### search-3 · L · consistency — .search__submit color declared twice 25 lines apart
 
 - **Portal:** css/app.css:681-682 — `.search__submit { … color:var(--color-text); … }` then css/app.css:707 — `.search__submit { color:var(--color-secondary-700); }` silently overrides it.
 - **CD:** CD convention — one declaration per property per component block (no CD counterpart for this portal-specific in-field submit).
 - **Fix:** Delete the trailing rule at css/app.css:707 and set `color:var(--color-secondary-700)` directly in the main `.search__submit` block at :681, so the intended value is where a reader looks for it.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — color:var(--color-secondary-700) moved into the main .search__submit block; trailing duplicate rule deleted. Browser-verified.
 
 ### meta-1 · L · consistency — Dead `.top-header__auth` CSS block for a markup structure that no longer exists
 
 - **Portal:** css/app.css:603-606 — `.top-header__auth { display:none; } @media (min-width:1024px){ … } .top-header__auth ul { … }` — no element in js/shell.js renders this class (auth now lives inside the meta-navigation ul, js/shell.js:158-162, 212).
 - **CD:** CD convention — css/sections/top-header.postcss contains only selectors its Vue markup emits.
 - **Fix:** Remove the three `.top-header__auth` rules; the meta-navigation auth styles at css/app.css:618-629 are the live implementation.
-- **Status:** 🔶 partial — Teilweise; offener Rest: css cluster: delete the three dead .top-header__auth rules at css/app.css:622-624. Confirmed no consumer in js/shell.js or index.html (auth 
+- **Status:** ✅ fixed — Deleted the three dead .top-header__auth rules and their Item-4.2 comment; left a pointer note at the meta-navigation heading (auth lives in the meta ul per shell.js).
 
 ### meta-2 · L · ux — Auth entry uses primary-600 text inside a meta-navigation whose sibling links are text-colored
 
 - **Portal:** css/app.css:613-614 — `.meta-navigation a { color:var(--color-text); }` with hover primary-600, but css/app.css:619-623 — `.meta-navigation__auth { … color:var(--color-primary-600); }` (hover primary-800), so «Notfall & Vorfälle \| Hilfe \| Anmelden» renders in two different link styles in one list.
 - **CD:** css/navigations/meta-navigation.postcss:5-12 + app/components/ch/navigations/MetaNavigation.vue:4-20 — all meta items share one uniform plain style; CD defines no accent variant in this bar.
 - **Fix:** Give `.meta-navigation__auth` the same resting `color:var(--color-text)` and hover as `.meta-navigation a`; if login emphasis is wanted, carry it via the existing User icon (already primary-tinted in the logged-in state, css/app.css:629) rather than a second link color.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .meta-navigation__auth now rests on var(--color-text) with hover primary-600 — one uniform link style in the bar; emphasis stays on the User icon. German rationale added.
 
 ### chip-1 · L · consistency — Demo chip invents a non-CD chip anatomy (uppercase, tracking, 2px radius)
 
 - **Portal:** css/app.css:489-491 — `.demo-chip { padding:.12rem .5rem; … letter-spacing:.08em; text-transform:uppercase; … border-radius:var(--radius-sm); }` — the German comment (:485-488) justifies only the pinned red color, not the geometry.
 - **CD:** css/components/badge.postcss:5-9,73-77 — CD's only chip pattern is the badge: `py-[0.219em] px-[1em]; rounded-full`, no uppercase/tracking; the top bar hosts exactly this component in its right cluster (top-bar.postcss:154-166).
 - **Fix:** Keep the pinned #d8232a/white pair (documented rationale at app.css:485-488 holds — it must survive the intranet skin) and adopt badge geometry only: `padding:.219em 1em; border-radius:var(--radius-full);` and drop `text-transform`/`letter-spacing`. Leave `font-size:var(--text-xs)` as is, or for exact CD badge parity reuse the portal's own badge ramp already implemented at app.css:1284-1285 (font-size:var(--fs-sm)@768, var(--fs-base) + line-height:1.5rem@1024).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .demo-chip adopts CD badge geometry: padding .219em 1em, radius-full, uppercase/letter-spacing dropped; pinned #d8232a/white and font-size:var(--text-xs) kept as directed. Verified
 
 ### spacing-1 · L · consistency — Off-scale icon gaps (.4rem/.35rem) across header controls instead of CD spacing steps
 
 - **Portal:** css/app.css:496 — `.top-bar__btn { … gap:.4rem; }`; css/app.css:660 — `.search__button { … gap:.4rem; }`; css/app.css:619 — `.meta-navigation__auth { … gap:.4rem; }`; css/app.css:628 — `.meta-navigation__name { … gap:.35rem; }` — none of these values exist on the token scale (css/tokens.css:157-161).
 - **CD:** app/tailwind.config.js spacing (Tailwind default scale: 0.375rem / 0.5rem); CD icon gaps in this area are `ml-2` = 0.5rem (top-bar.postcss:141-143) and `pr-1.5` = 0.375rem (search.postcss:83-85).
 - **Fix:** Snap `.top-bar__btn` (app.css:496) and `.meta-navigation__auth` (app.css:619) gaps to .5rem (var(--sp-2), mirroring CD's ml-2 icon offset) and `.meta-navigation__name` (app.css:628) to .375rem. For `.search__button` (app.css:660) remove the gap entirely (gap:0): CD carries that spacing solely via the title's lg:pr-1.5, which the portal already implements as padding-right:.375rem at app.css:665 — keeping any gap double-spaces the desktop toggle relative to CD.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — top-bar__btn and meta-navigation__auth gaps → .5rem, meta-navigation__name → .375rem, .search__button gap removed entirely (title lg:pr-1.5 carries the spacing). Verified computed 
 
 ## Main navigation, drawers, mobile menu, breadcrumb, footer
 
@@ -1205,28 +1205,28 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:724 `margin-left:-.7rem`; :730 `padding:1rem .7rem`; :735 `::after { left:.7rem; right:.7rem; }` — the tightening is not covered by the wrap comment at :721-723
 - **CD:** designsystem/css/navigations/main-navigation.postcss:16 `-ml-4` (-1rem), :29 `lg:px-4` (1rem), :38 `absolute right-4 bottom-0 left-4` (1rem insets)
 - **Fix:** Internally consistent (first label still aligns to the container edge), but item spacing and the active-underline length are visibly tighter than CD. If l1-1 is fixed with a «Mehr» overflow, restore 1rem: `margin-left:-1rem`, `padding:1rem`, `::after{left:1rem;right:1rem}`. If wrap stays, document 0.7rem as a deliberate density deviation next to the wrap comment.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Wrap is retained (l1-1 documented deviation), so the 0.7rem density is now documented as part of that decision in the wrap comment at .main-navigation > ul — values unchanged per t
 
 ### l1-3 · L · pixel — L1 line-height 1.2 vs CD leading-tight 1.25
 
 - **Portal:** css/app.css:730 `line-height:1.2` on `.main-navigation > ul > li > a/button`
 - **CD:** designsystem/css/navigations/main-navigation.postcss:30 `@apply hover:text-primary-600 leading-tight;` — Tailwind leading-tight = 1.25
 - **Fix:** Change to `line-height:var(--lh-tight)` (tokens.css:147 already defines 1.25).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — L1 line-height 1.2 → var(--lh-tight) (1.25). Verified 22.5px at 1280 (18px base).
 
 ### l1-4 · L · a11y — L1 focus ring is an outset outline; CD specifies an inset ring on nav items
 
 - **Portal:** css/app.css:149 global `:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }` — no nav-specific override exists (verified via grep)
 - **CD:** designsystem/css/navigations/main-navigation.postcss:42-44 `&:focus-visible { @apply ring-inset; }` — the L1 item fills the bar height, so CD draws the ring inside the item
 - **Fix:** Add `.main-navigation > ul > li > a:focus-visible, .main-navigation > ul > li > button:focus-visible { outline-offset:-2px; }` so the ring stays inside the full-height item instead of colliding with the nav border and adjacent items.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added inset focus ring: .main-navigation > ul > li > a/button:focus-visible { outline-offset:-2px; } with CD ring-inset reference; higher specificity than the global :focus-visible
 
 ### drawer-1 · L · pixel — navy__back styled as a primary-colored link; CD uses the grey menu__action-btn anatomy
 
 - **Portal:** css/app.css:805-808 `.navy__back { padding:.4rem .75rem; color:var(--color-primary-600); } .navy__back:hover { color:var(--color-primary-800); }` (no hover background); :839 desktop position `left:0`
 - **CD:** designsystem/css/navigations/navy.postcss:54-58 `.navy__back { @apply menu__action-btn; @apply lg:absolute lg:-top-12 lg:-left-5; }` + components/menu.postcss:109-123 menu__action-btn = `px-4 py-3`, `text-sm`, `text-text-500`, hover `bg-secondary-50 text-text-600` — resolved against the 2rem drawer padding, CD's -left-5 puts it 0.75rem from the drawer edge
 - **Fix:** Align to the action-button anatomy shared with «Schliessen»: `padding:.75rem 1rem; color:var(--color-text-muted);` and `.navy__back:hover { color:var(--color-text-600 equivalent); background:var(--color-secondary-50); }`; shift the desktop position to `left:.75rem` (lg). The red/blue link colour reads as a navigation link, not a menu action, and drifts from the close button it shares the top row with.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — navy__back now carries the menu__action-btn anatomy: padding .75rem 1rem, resting text-500, hover text-600 on secondary-50; desktop lg position left:.75rem (CD -left-5 against the 
 
 ### drawer-2 · L · pixel — Drawer rows use 0.75rem horizontal padding at all widths (CD: 1rem below xl); menu__item--condensed repurposed
 
@@ -1247,35 +1247,35 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:768 `animation:navMenuIn var(--duration) ease` (open only) + :771-773 documented rationale «Nur ein dezentes Einschieben — die Sichtbarkeit steuert das hidden-Attribut. Keine Opazität im Keyframe: sonst blieb der Drawer je nach Fill-Mode/Timing durchscheinend hängen.»; js/shell.js:411/423 toggle `panel.hidden`
 - **CD:** designsystem/css/sections/desktop-menu.postcss:19 `transition: opacity 300ms ease-in-out, height 200ms ease-in-out` + :25-34 `.hidden { display:block !important; height:0 !important; opacity-0 … }` with children translate-y-8
 - **Fix:** The opacity-stuck rationale holds for keyframes, but a transition (not animation) cannot get stuck: replicate CD's close by toggling a class instead of `hidden` (keep `hidden` semantics via `[data-closed]{visibility:hidden}` after transitionend, or use CD's own display:block+height:0 recipe). Low priority; acceptable as a documented reduction if motion parity is not required.
-- **Status:** 🔶 partial — Teilweise; offener Rest: css cluster first: CD's close animation needs the transition recipe (desktop-menu.postcss:19,25-34 — transition on opacity/height with the d
+- **Status:** ⬜ open — CD-Schliessanimation des Drawers — offen
 
 ### drawer-5 · L · consistency — Drill level change is a 300ms fade; CD slides panes 600ms ease-in-out
 
 - **Portal:** css/app.css:788-800 — documented: «Robuster Display-Wechsel statt Slider-Transform (width:200% + flex + translateX rendert je nach Browser Glyphen nicht)» and «Fade, not a translateX slide: a transformed pane becomes a containing block, which would re-anchor the absolutely-positioned .navy__back»; `animation:navyDrillIn var(--duration-slow) ease` (opacity fade)
 - **CD:** designsystem/css/navigations/navy.postcss:97-98 `transform: translateX(0%); transition: transform 600ms ease-in-out, opacity 600ms ease-in-out;`
 - **Fix:** The containing-block rationale is real and verified (navy__back is absolutely positioned against the drawer at :839). Keep the fade on desktop, but match CD's tempo (`var(--duration-slowest)` ≈ 600-700ms is closer than 300ms, or add a dedicated 600ms token) so the level change reads as the same motion family; on mobile prefer the true slide (see mob-1) where the anchoring constraint does not exist.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Drill fade now var(--duration-slowest) (700ms token, nearest to CD's 600ms); containing-block rationale kept, tempo note added. Mobile keeps the documented accordion (mob-1).
 
 ### drawer-6 · L · a11y — Menu rows lack CD's focus text-color state
 
 - **Portal:** css/app.css:829-831 only defines hover (`.navy .menu__item > .menu__item__flex:hover … { background:var(--color-secondary-50); }`); no :focus/:focus-visible color rule for menu rows anywhere in app.css (verified)
 - **CD:** designsystem/css/components/menu.postcss:21 `.menu__item { … @apply focus:text-primary-600; }`
 - **Fix:** Add `.menu__item a:focus-visible, .navy .menu__item > .navy-branch:focus-visible { color:var(--color-primary-600); }` so keyboard focus gets the same ink feedback as CD, in addition to the global ring.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added .menu__item a:focus-visible / .navy .menu__item > .navy-branch:focus-visible { color:var(--color-primary-600); } after the menu block (CD menu.postcss:21).
 
 ### drawer-7 · L · pixel — Close-button ink one ramp step off CD (text-600 resting, secondary-700 hover)
 
 - **Portal:** css/app.css:778-780 `.desktop-menu__close { … color:var(--color-text-muted); }` (--color-text-muted = text-600 #4b5563, tokens.css:80) `.desktop-menu__close:hover { color:var(--color-secondary-700); background:var(--color-secondary-50); }`
 - **CD:** designsystem/css/sections/desktop-menu.postcss:56-58 → components/menu.postcss:116 `text-text-500` (#6b7280), :119-122 hover `bg-secondary-50` + `text-text-600` (#4b5563)
 - **Fix:** Positions and icon size already match CD exactly (top 1/1.5/2rem, right 0/1/5rem, icon 1.25rem). Align ink: resting `color:var(--color-text-500 alias, #6b7280)`, hover `color:#4b5563` — or document that the darker resting grey is the portal's AA-driven muted token. Apply the same pair to navy__back (drawer-1).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Close button and navy__back ink aligned to CD action-btn pair: resting var(--color-text-500) #6b7280, hover var(--color-text-600) on secondary-50. Verified computed rgb(107,114,128
 
 ### mob-2 · L · pixel — Mobile menu fade 300ms vs CD 700ms
 
 - **Portal:** css/app.css:862-864 `.mobile-menu { … transition:opacity var(--duration-slow); }` (--duration-slow = 300ms, tokens.css:179)
 - **CD:** designsystem/css/sections/mobile-menu.postcss:10 `@apply transition-opacity duration-700;`
 - **Fix:** Use `transition:opacity var(--duration-slowest)` (700ms token already exists in tokens.css:179).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .mobile-menu transition now var(--duration-slowest) (700ms) per mobile-menu.postcss:10.
 
 ### mob-3 · L · naming — Portal-invented .mobile-menu__drawer class; desktop-named close button rendered (then hidden) in the mobile tree
 
@@ -1289,21 +1289,21 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:895 `.mobile-menu .main-navigation .active { font-weight:var(--fw-bold); }` with comment at :744-746 «Fett bleibt nur im mobilen Menü»
 - **CD:** designsystem/css/navigations/navy.postcss:18-23 active state = `::after` 3px `bg-primary-500` left bar only; no bold anywhere (CD's tailwind fontWeight maps bold→400, tailwind.config.js:200-203 — emphasis is a font-family swap, not weight 700)
 - **Fix:** The comment asserts the deviation but no CD source backs it: navy's mobile active recipe is bar-only. Drop the font-weight rule (the existing ::before 3px primary-500 bar at :896-897 already matches CD's marker) — a 700-weight row also shifts line length, which CD's 400-weight bold never does.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Deleted the mobile bold-active rule; the 3px ::before bar alone carries state. Both related comments (L1 block and mobile block) updated — no CD source backs the bold.
 
 ### bc-2 · L · pixel — Breadcrumb separator chevron 0.85rem vs CD 1rem
 
 - **Portal:** css/app.css:960 `.breadcrumb__include-icon { margin-left:-1.25rem; margin-right:.75rem; width:.85rem; height:.85rem; }`
 - **CD:** designsystem/app/components/ch/navigations/BreadcrumbNavigation.vue:108-112 — ChevronRight rendered without a size prop → SvgIcon default 'base' (SvgIcon.vue:14-17) → icons.postcss:23-25 `.icon--base { @apply h-4; }` = 1rem; breadcrumb.postcss:63-65 sets only `-ml-5 mr-3` (margins already match)
 - **Fix:** Set `width:1rem; height:1rem;` — margins are already pixel-exact against CD.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Breadcrumb chevron .85rem → 1rem (SvgIcon base); margins already pixel-exact. Verified 16px.
 
 ### bc-3 · L · pixel — Breadcrumb ink one step darker than CD, and the current crumb darkened further
 
 - **Portal:** css/app.css:951 `.breadcrumb { … color:var(--color-text-muted); }` + :957 `.breadcrumb a { color:var(--color-text-muted); }` (text-600 #4b5563) + :959 `.breadcrumb [aria-current] { color:var(--color-text); }` (text-800) — no documenting comment for either
 - **CD:** designsystem/css/sections/breadcrumb.postcss:8 `@apply text-sm text-text-500;` (#6b7280) — CD keeps every crumb, including the active one, at text-500
 - **Fix:** CD's #6b7280 already passes AA (≈4.8:1) so the darker muted token is not required here: use `color:#6b7280` (add a --color-text-500 alias consumer) for the trail and drop the [aria-current] darkening, or keep the current-crumb emphasis and document it as a deliberate wayfinding deviation. Hover primary-600 already matches CD.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Full CD parity: .breadcrumb, li and a now text-500 (#6b7280, 4.83:1 AA) and the [aria-current] darkening rule dropped — every crumb one ink, hover primary-600 unchanged. Verified c
 
 ### ft-1 · L · pixel — Footer paragraphs downsized via .small; CD footer body runs at base size with mb-3 xl:mb-4
 
@@ -1317,28 +1317,28 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:993-997 `.footer-navigation { … color:var(--color-secondary-100); } .footer-navigation .footer__link { color:var(--color-secondary-100); } …:hover { color:var(--color-text-negative); }`
 - **CD:** designsystem/css/sections/footer.postcss:19-23 `.footer__link { @apply text-white hover:text-text-300 focus:text-text-300; }` — the legal bar (FooterNavigation.vue) uses this unmodified, so CD is white resting, #d1d5db hover
 - **Fix:** Drop the two .footer-navigation color overrides so `.footer__link` (app.css:980-981, already white → gray-300 hover, matching CD exactly) applies in the legal bar too.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Deleted the two .footer-navigation .footer__link color overrides; base .footer__link (white → gray-300 hover) now applies in the legal bar. Verified rgb(255,255,255).
 
 ### ft-3 · L · pixel — Footer link-row icons: CD's h-6 (1.5rem) override missing; icon-right nudge left-[0.1em] missing
 
 - **Portal:** css/app.css:982 `.footer-information__icon { … width:1.4em; height:1.4em; }` with no larger size inside `.footer-information__links`; :992 `.footer-information__link--icon-right .footer-information__icon { margin-left:.2em; margin-right:0; }` (no left offset)
 - **CD:** designsystem/css/sections/footer.postcss:100-102 `.footer-information__links .footer__link { .footer-information__icon { @apply h-6; } }` (1.5rem); :33-38 `.footer-information__link--icon-right .footer-information__icon { @apply relative ml-[0.2em] left-[0.1em]; }`
 - **Fix:** Add `.footer-information__links .footer-information__icon { height:1.5rem; }` (CD h-6 — width stays the existing 1.4em, matching CD's w-[1.4em] from footer.postcss:28), and extend the icon-right modifier at app.css:992 with `position:relative; left:.1em;` per footer.postcss:33-38. If a square box is preferred for the masked icons, note the 1.6px width deviation from CD explicitly.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added .footer-information__links .footer-information__icon { height:1.5rem; } (h-6, width stays CD's w-[1.4em]) and position:relative; left:.1em on the icon-right modifier. Verifie
 
 ### btt-1 · L · consistency — Back-to-top: xl button 3rem vs CD 4rem, missing 1920 step promised by its own comment, and rail reserves 4rem it never uses
 
 - **Portal:** css/app.css:1884-1886 lg and xl both `width:3rem; height:3rem;` with comment :1885 «CDs xl:w-16 setzt eine Platzierung im Seitengraben voraus, die erst ab 1920 gilt» — yet no ≥1920 rule sets 4rem; meanwhile :1876 `@media (min-width:1280px){ .back-to-top-rail { bottom:calc(100% - (1rem + 4rem)); } }` reserves docking space for a 4rem button, so the docked resting position is 1rem off the stated intent; :1879 `bottom:1.5rem` constant (mobile 1rem at :1888)
 - **CD:** designsystem/css/components/back-to-top-btn.postcss:28-30 `w-11 h-11; lg:w-12 lg:h-12; xl:w-16 xl:h-16` and :37-50 sticky top calc(100vh − 3.5/4.5/5rem) → bottom gaps 0.75/1.5/1rem
 - **Fix:** Either honour the comment — add `@media (min-width:1920px){ .back-to-top-btn { width:4rem; height:4rem; } .back-to-top-rail { bottom:calc(100% - (1rem + 4rem)); } }` and revert the 1280 rail rule to 3rem — or cap at 3rem consistently (rail 1280 rule → `1rem + 3rem`) and reword the comment. Sizes at base/lg, radius-sm, shadow-lg→xl, and the outline recipe already match CD exactly.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — bereits durch die erste Welle abgedeckt (verifiziert)
 
 ### misc-1 · L · consistency — Dead rule .navy__group-title contradicts the documented flat-list decision
 
 - **Portal:** css/app.css:786-787 `.navy__group-title { … }` — no emitter in js/ (grep confirms only navy__title is rendered), while :812-814 documents «Item 4.10 zurückgenommen: CDs Drawer hat keine Abschnittstitel … Die Liste bleibt flach.»
 - **CD:** CD convention — no `.navy__group-title` exists in the design system; menu.postcss:68-71 `menu__item--title` is the only title class and is unused by the drawer
 - **Fix:** Delete the .navy__group-title rule; it is the CSS remnant of the rolled-back Item 4.10 and can only drift.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Deleted the dead .navy__group-title rule and its comment; the flat-list decision comment (Item 4.10 rollback) remains as the audit trail.
 
 ## Modal, tabs, accordion, viewers, lightbox
 
@@ -1445,7 +1445,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:2595-2596 — `.modal__footer { … padding:1rem 1.5rem; border-top:1px solid var(--color-secondary-100); }` (no background). Comment at 2602 claims 'Der Fuss bleibt am weissen Kasten — er sitzt innerhalb der Karte', but modal() (components.js:476-477) places the footer as a sibling of `.modal__body`, outside the card. Latent — no caller passes footer yet.
 - **CD:** designsystem/css/components/modal.postcss:103-107 — `.modal__footer { text-right p-4; bg-white border-t border-secondary-100 }`.
 - **Fix:** Add `background:var(--color-bg)` (and CD's uniform 1rem padding) to `.modal__footer`, or move the footer markup inside the card and fix the comment — either way the declaration and the comment must agree.
-- **Status:** 🔶 partial — Teilweise; offener Rest: css/app.css only: `.modal__footer` (:2676-2677) still lacks `background:var(--color-bg)` (CD modal.postcss:103-107 bg-white); the contradict
+- **Status:** ✅ fixed — .modal__footer now background:var(--color-bg) with CD's uniform 1rem padding; the contradicting 'Fuss bleibt am weissen Kasten' comment replaced with an accurate one (footer is a s
 
 ### modal-aria-7 · L · a11y — Modal aria wiring differs from CD: no aria-describedby, role=dialog on the wrapper that also contains the backdrop
 
@@ -1459,49 +1459,49 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:2585 — `.modal__title { font-size:var(--text-xl); font-weight:var(--fw-bold); }` (1.25rem base → 1.375/1.625 at lg/xl via tokens.css:299-309).
 - **CD:** designsystem/app/components/ch/components/Modal.vue:13 — `<h4 class="h4">`; css/foundations/typography.postcss:121-124 — `.h4 { text--lg font-bold }` (1.125rem base).
 - **Fix:** Set `.modal__title { font-size:var(--text-lg); }` (or reuse the portal's h4 ramp class) to land on CD's modal title size.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .modal__title font-size → var(--text-lg) (CD h4/text--lg), with source comment.
 
 ### modal-close-9 · L · pixel — Close button misses CD's optical edge alignment (-mr-3, -mt-1 lg:-mt-2, pl-10 hit extension)
 
 - **Portal:** css/app.css:2597-2599 — `.modal__close { … min-width/min-height:var(--target-min); padding:.375rem; }` — the icon sits ~10px inside the content's right edge instead of flush with it.
 - **CD:** designsystem/css/components/modal.postcss:88-97 — `.modal__close { -mr-3 -mt-1 lg:-mt-2; pl-10 }` pulls the icon to the optical edge and extends the hit area leftwards.
 - **Fix:** Add `margin:-0.25rem -0.75rem 0 0` (lg: -0.5rem top) to `.modal__close` so the enlarged 44px box overhangs the edge like CD, keeping the icon optically flush with the card edge.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added optical edge alignment: margin:-.25rem -.75rem 0 0 with lg margin-top:-.5rem (CD -mr-3 -mt-1 lg:-mt-2); 44px box now overhangs the card edge.
 
 ### tab-spacing-2 · L · pixel — Tab panel spacing rebuilt as 1.5rem bar-margin + 1rem panel padding instead of CD's single pt-8
 
 - **Portal:** css/app.css:1750 — `.tab__controls-container { margin-bottom:1.5rem; }` and app.css:1767 — `.tab__container { padding-top:1rem; }` → 2.5rem combined above panel content.
 - **CD:** designsystem/css/components/tab.postcss:79-82 — `.tab__container.vertical-spacing { @apply pt-8 }` (2rem) is the only gap; `.tab__controls-container` has no margin (tab.postcss:12-29).
 - **Fix:** Drop the 1.5rem margin on `.tab__controls-container` and set `.tab__container { padding-top:2rem; }` so the rhythm matches CD with one declaration.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Dropped margin-bottom:1.5rem from .tab__controls-container; .tab__container padding-top → 2rem (CD pt-8, one declaration). The denser .dashboard-layout .tab__container 1.25rem over
 
 ### tab-fade-3 · L · pixel — Overflow fade stops 1px above the tab border; CD stops 0.25rem above
 
 - **Portal:** css/app.css:1751 — `.tab__controls-container::after { … right:0; top:0; bottom:1px; width:2.5rem; }`
 - **CD:** designsystem/css/components/tab.postcss:15-17 — `@apply absolute right-0 top-0 bottom-1 w-10;` → bottom:0.25rem.
 - **Fix:** Change `bottom:1px` to `bottom:.25rem` so the gradient clears the underline zone like CD.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Overflow fade bottom:1px → .25rem (CD bottom-1).
 
 ### tab-border-4 · L · pixel — Missing CD variant: tab__controls border stays gray-200 on tinted (.box / secondary-50) background
 
 - **Portal:** css/app.css:1755-1756 — `.tab__controls { … border-bottom:1px solid var(--color-border); }` (#e5e7eb) with no `.box` override; only the ::after gradient has a box variant (app.css:1754).
 - **CD:** designsystem/css/components/tab.postcss:36-38 — `.bg--secondary-50 & { @apply border-gray-300 }` (#d1d5db).
 - **Fix:** Add `.box .tab__controls { border-bottom-color:var(--color-border-strong); }` next to the existing `.box .tab__controls-container::after` rule.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added .box .tab__controls { border-bottom-color:var(--color-border-strong); } (#d1d5db = CD border-gray-300 on secondary-50).
 
 ### acc-pad-3 · L · pixel — accordion__content misses CD's 2xl horizontal padding bump — content misaligns with the button at ≥1544px
 
 - **Portal:** css/app.css:1727 — `.accordion__content { padding:1rem .5rem 2.5rem; }` with no 1544px media query, while `.accordion__button` bumps to `.75rem` inline padding at 1544px (app.css:1715).
 - **CD:** designsystem/css/components/accordion.postcss:70-73 — `.accordion__content { px-2 pt-4 pb-10 2xl:px-3 }`.
 - **Fix:** Add `@media (min-width:1544px){ .accordion__content { padding-inline:.75rem; } }` alongside the existing button bump.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added @media 1544 .accordion__content { padding-inline:.75rem; } matching the button's 2xl bump.
 
 ### acc-title-4 · L · pixel — accordion__title lacks CD's responsive right-padding ramp (lg:pr-6, 2xl:pr-8)
 
 - **Portal:** css/app.css:1721 — `.accordion__title { … padding:.25rem 1rem .25rem 0; }` — pr fixed at 1rem for all widths.
 - **CD:** designsystem/css/components/accordion.postcss:75-78 — `.accordion__title { text-base text-left py-1 pr-4; lg:pr-6 2xl:pr-8 }`.
 - **Fix:** Add `@media (min-width:1024px){ .accordion__title{padding-right:1.5rem} }` and `@media (min-width:1544px){ .accordion__title{padding-right:2rem} }`.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Added the CD pr ramp: lg padding-right:1.5rem, 2xl 2rem.
 
 ### acc-wire-5 · L · consistency — anchor-nav.js re-implements wireAccordion verbatim instead of calling it
 
@@ -1522,7 +1522,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:1629/1634/1637 — union selectors `.steps > li > .step__indicator-step, .step__indicator .step__indicator-step` kept 'ohne kaputten Zwischenzustand' (comment 1610-1615, Items 3.10/7.8); but stepIndicator() (js/components.js:866-868) already renders `<li class="step__indicator">`, and all four consumers go through it (building-create.js:267, transaction.js:54, space-request.js:53).
 - **CD:** designsystem/app/components/ch/components/StepIndicator.vue:2-9 — anatomy is `.step__indicator > .step__indicator-step` only.
 - **Fix:** Execute the planned Item 7.8: delete the `.steps > li > .step__indicator-step`-half of each union selector at app.css:1629/1634/1637. Note they are redundant rather than dead — `<li class="step__indicator">` matches both halves — so removal is a no-op visually; the CD-verbatim `.step__indicator .step__indicator-step` rules keep matching every current call site (building-create.js:267, space-request.js:53, transaction.js:54).
-- **Status:** 🔶 partial — JS-Anteil umgesetzt; CSS-Rest: Delete the '.steps > li > .step__indicator-step' half of the union selectors at css/app.css:1629/1634/1637 (redundant, visually a no-op). No
+- **Status:** ✅ fixed — Legacy-Selektorhälften entfernt (Item 7.8)
 
 ### menu-a11y-1 · L · a11y — Action menu: Tab does not close the open popup, and the trigger lacks aria-controls/popup id
 
@@ -1550,7 +1550,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:2555 and 2560 — `html:has(> body.chart-overlay-open) { overflow:hidden; }` appears twice, with the explanatory comment repeated at 2546-2553 and 2556-2559.
 - **CD:** CD convention: single declaration per rule.
 - **Fix:** Delete the second copy of the comment block and rule (lines 2556-2560), keeping one authoritative instance.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — bereits durch die erste Welle abgedeckt (verifiziert)
 
 ## Layout — container, grid, sections, rhythm
 
@@ -1573,14 +1573,14 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:185-186 — .container { padding:0 var(--gap-responsive); } with css/tokens.css:198 — --gap-responsive: 1.25rem base step. The comment app.css:182-184 claims container padding and column gap are 'dieselben sechs Stufen 1/1.75/2.25/2.5/3/4rem' — but the shared token starts at 1.25rem, so the container gets 1.25rem below 480px.
 - **CD:** css/layouts/container.postcss:7 — @apply px-4 xs:px-7 sm:px-9 lg:px-10 xl:px-12 3xl:px-16 → base side padding is 1rem (px-4); only the gap ramp starts at 1.25rem (grids.postcss:10 gap-5). The two ramps differ at the base step only.
 - **Fix:** Restore the CD base step: add '@media (max-width:479.98px){ .container, .notification-banner__wrapper { padding-inline:1rem; } }' (matches the repo's max-width convention), or introduce a --container-px token that is 1rem at base and follows --gap-responsive from 480px up. Also correct the comment at app.css:182-184 — the ramps are identical only from xs upward.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — bereits durch die erste Welle abgedeckt (verifiziert)
 
 ### grid-2 · L · consistency — Consecutive container--grid spacing is static 1.25rem instead of the responsive gap ramp
 
 - **Portal:** css/app.css:250 — .container--grid + .container--grid { padding-top:1.25rem; } — a literal, one line below the correctly tokenised .gap--top { padding-top:var(--gap-responsive); } (app.css:247). Above 480px the rule diverges from the ramp (1.75→4rem). No adjacent container--grid pairs exist in current markup, so no visible defect today, but the rule contradicts the token architecture the file itself established.
 - **CD:** css/layouts/container.postcss:56-58 — .container--grid & + & { @apply gap--top; } → responsive ramp pt-5 xs:pt-7 sm:pt-9 lg:pt-10 xl:pt-12 3xl:pt-16.
 - **Fix:** Change to .container--grid + .container--grid { padding-top:var(--gap-responsive); } — identical to CD at every breakpoint and consistent with .gap--top.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .container--grid + .container--grid padding-top → var(--gap-responsive), identical to CD's gap--top at every breakpoint.
 
 ### main-1 · L · consistency — Three different vertical rhythms across identical container__main detail layouts
 
@@ -1594,21 +1594,21 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:319-326 — collapse list covers only white/white, white/bg--white, bg--secondary-50 and -100 self-pairs, and hero + white. Missing vs CD: .hero + .section--py, .section--default + .section--py, .section--py-half + .section--default, .section--default + .section--py-half, .section--py + .section--default, and .bg--secondary-200…900 + same. The documented refinement (app.css:314-318: 'Bei Farbwechsel behält der zweite Abschnitt seinen Abstand, sonst klebt der Inhalt eines farbigen Bandes an dessen Oberkante') justifies not collapsing across colour changes — it does not cover omitting same-colour pairs for 200-900 or the --py aliases. No affected adjacency exists in current markup (section--py unused; only 50/600/700 bands rendered), so no visible defect today.
 - **CD:** css/layouts/section.postcss:31-51 — collapse list includes .hero + .section--py, all section--default/--py/--py-half permutations, and every .bg--secondary-N + .bg--secondary-N pair from 900 down to 50.
 - **Fix:** Extend the selector list to full CD parity while keeping the portal's colour-change refinement: add the section--py/--py-half permutations (with the same :not([class*="bg--"]) guards) and the bg--secondary-200…900 self-pairs, so future coloured bands collapse correctly without revisiting this rule.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Collapse list extended to full CD parity with the colour-change guard kept: --py/--py-half permutations (incl. .hero + .section--py) and all .bg--secondary-200…900 self-pairs; comm
 
 ### bg-1 · L · consistency — bg--secondary-400 is treated as a dark surface; CD's negative threshold starts at 500
 
 - **Portal:** css/app.css:365 — .bg--secondary-400 { background:var(--color-secondary-400); color:var(--color-text-negative); } — white text on a step CD considers light. (Folding the negative text colour into the bg utilities for 500-900 is a reasonable vanilla translation of CD's per-component negative rules; extending it to 400 is not backed by CD.) Currently unused in markup (only 50/600/700 appear), so no visible defect.
 - **CD:** css/layouts/section.postcss:58-70 — negative text overrides exist only for bg--secondary-900…500; backgrounds.postcss:5-38 sets background-color only. CD convention: 400 keeps dark text.
 - **Fix:** Remove color:var(--color-text-negative) from .bg--secondary-400 so the light/dark threshold matches CD (negative from 500 upward), or add a German comment documenting the deviation with a contrast rationale if 400-with-white is genuinely wanted.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Kept white-on-400 but documented it as a deliberate deviation with measured ratios: CD's dark ink on 400 fails AA (2.6:1 default / 3.2:1 intranet), white passes (5.65:1 / 4.58:1) —
 
 ### cont-2 · L · consistency — container--flex silently extended with align-items:center and gap:1rem
 
 - **Portal:** css/app.css:187 — .container--flex { display:flex; align-items:center; justify-content:space-between; gap:1rem; } — undocumented additions vs CD, which then need a counter-override at app.css:711 (.desktop-menu .container--flex { align-items:stretch; }). Used 4× in the shell (top-bar, top-header, breadcrumb, desktop-menu).
 - **CD:** css/layouts/container.postcss:23-25 — .container--flex { @apply flex justify-between; } — no alignment, no gap; components set their own.
 - **Fix:** Keep .container--flex CD-neutral (flex + justify-between only) and move align-items:center/gap:1rem to the shell contexts that need them (.top-bar .container--flex, .breadcrumb.container--flex …); the .desktop-menu counter-override then disappears.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .container--flex reduced to CD's flex + justify-between; align-items:center + gap:1rem moved to .top-bar/.top-header context rules and the .breadcrumb compound; .desktop-menu align
 
 ### grid-3 · L · naming — Duplicate grid column naming: grid--2/3/4 alongside CD's grid--responsive-cols-N, mixed in markup
 
@@ -1629,21 +1629,21 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:438-443 — .ratio { position:relative; } (no z-index) and .ratio--1x1/--2x1/--4x3/--16x9. Percentages (98/50/75/56.25) match CD exactly. CD's .ratio--mb (mb-6) is absent. All ratio classes are currently unused in js/ markup.
 - **CD:** css/layouts/ratio.postcss:5-33 — class names .ratio--1\/1, --2\/1, --4\/3, --16\/9 (markup 'ratio--16/9'); .ratio also gets z-50 ('for video iframes in clickable cards') and .ratio--mb { @apply mb-6 }.
 - **Fix:** Rename to the escaped CD selectors (.ratio--16\/9 etc. — valid vanilla CSS) so future CD-shaped markup works verbatim, and add .ratio--mb { margin-bottom:1.5rem }. Leave the z-index lift out until a video-in-clickable-card case exists, since the portal has its own z-scale and a bare z-index:50 would collide with --z-nav-active.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Renamed to escaped CD selectors (.ratio--1\/1 … --16\/9, unused in markup so safe), added .ratio--mb { margin-bottom:1.5rem; }; z-50 lift deliberately omitted with comment (collide
 
 ### notif-1 · L · pixel — Notification banner text-to-button spacing 1rem at 640-1023px; CD uses 2rem
 
 - **Portal:** css/app.css:348-354 — .notification-banner__wrapper is flex-column with gap:1rem below lg, switching to row with gap:1.5rem at 1024px. The 1024px row gap matches CD's ml-6; the sm step is missing, so between 640 and 1023px the button sits 1rem under the text instead of 2rem. (The wrapper's container-ramp side padding and py ramp 1/2/2.5rem are correct per notification-banner.postcss:9,20.)
 - **CD:** css/components/notification-banner.postcss:24-27 — .notification-banner .btn { @apply mt-4 sm:mt-8 lg:mt-0; @apply lg:ml-6; } → 1rem below 640, 2rem from 640, 1.5rem horizontal from 1024.
 - **Fix:** Add @media (min-width:640px){ .notification-banner__wrapper { gap:2rem; } } before the existing 1024px rule (which already restores 1.5rem for the row layout).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — bereits durch die erste Welle abgedeckt (verifiziert)
 
 ### sect-2 · L · pixel — section__title/subtitle use margin-bottom where CD uses padding-bottom
 
 - **Portal:** css/app.css:2958 — .section__title { … margin:0 0 2.5rem; } and app.css:2969 — .section__subtitle { … margin:0 0 2.5rem; }. Distance value (2.5rem) and the grid + subtitle ramp (3/4/5rem, app.css:2970-2972) match CD, but as a margin it can collapse against a following sibling's margin-top (e.g. a .mt-* utility or .grid + .grid margin), yielding max() instead of CD's additive padding.
 - **CD:** css/layouts/section.postcss:53-56, 80-83 — .section__title / .section__subtitle { @apply pb-10; } — padding-bottom 2.5rem, immune to margin collapsing.
 - **Fix:** Switch both to padding-bottom:2.5rem; margin:0; (and keep the .grid + .section__subtitle padding-top ramp as is).
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .section__title/.section__subtitle switched to margin:0; padding-bottom:2.5rem (CD pb-10) — immune to margin collapsing; .grid + .section__subtitle ramp untouched. Verified mb 0 / 
 
 ### sect-3 · L · consistency — Two page anatomies coexist: fused .container.section root vs CD's section > container
 
@@ -1722,7 +1722,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** js/shell.js:561-566 — the back-to-top handler sets tabindex="-1" on #main-header and focuses it; css/app.css:158-160 suppresses the ring only for `h1[tabindex="-1"]`, `h2[tabindex="-1"]` and `#main-content`. Activating the button with Enter (keyboard → :focus-visible applies) paints the 2px purple outline around the entire header band.
 - **CD:** Portal's own rule and rationale at css/app.css:156-160 («Route-change focus targets are not interactive controls … without painting a ring»); CD back-to-top (back-to-top-btn.postcss) scrolls without decorating the header.
 - **Fix:** Extend the existing suppression rule: `#main-header:focus, #main-header:focus-visible { outline:none; }` next to css/app.css:160 — same rationale as the current list (non-interactive programmatic focus target).
-- **Status:** 🔶 partial — Teilweise; offener Rest: css cluster: extend the focus-outline suppression rule at app.css:163-165 with #main-header:focus, #main-header:focus-visible { outline:none
+- **Status:** ✅ fixed — Added #main-header:focus/:focus-visible to the programmatic-focus suppression list with rationale; shell.js renderFooter still focuses #main-header.
 
 ### a11y-navy-title-1 · L · naming — Drawer titles are spans; CD's canonical navy markup uses h2.navy__title
 
@@ -1736,14 +1736,14 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:471-473 — `@media (forced-colors: active){ … .btn .icon, .btn--link .icon, a .icon { background-color:LinkText; } }` — the selector matches <button> elements carrying .btn (e.g. catbar submit js/components.js:1376, filter toggle :1366, form buttons), whose text renders ButtonText in Windows High Contrast; the icon shows in the system link colour inside a button.
 - **CD:** CD needs no such rule: its icons are inline SVG with fill:currentColor (SvgIcon.vue), so they always match the surrounding control's forced colour.
 - **Fix:** Split the repaint by element: `a .icon, a.btn .icon { background-color:LinkText; }` and `button.btn .icon { background-color:ButtonText; }` (keep the generic `.icon { CanvasText }` fallback). Icons then track their host control's forced colour like CD's currentColor SVGs.
-- **Status:** 🔶 partial — Teilweise; offener Rest: css/app.css:475-477: split the forced-colors repaint by host element — `a .icon, a.btn .icon { background-color:LinkText }` / `button.btn .i
+- **Status:** ✅ fixed — bereits durch die erste Welle abgedeckt (verifiziert)
 
 ### a11y-close-target-1 · L · consistency — Overlay close buttons drift between 44px and 36px targets without a documented exception
 
 - **Portal:** css/app.css:2597-2598 — `.modal__close { min-width:var(--target-min); min-height:var(--target-min); }` (44px) and css/app.css:2793 — `.pf-lightbox__btn` 44px, but css/app.css:2609-2610 — `.chart-overlay__close { min-width:2.25rem; min-height:2.25rem; }` (36px) and css/app.css:2859 — `.pf-lightbox__zoom .pf-lightbox__btn { width:2.25rem; height:2.25rem; }`. The 36px variants carry no rationale comment, unlike the map-control exception which documents its pointer:fine condition (css/app.css:2123-2129).
 - **CD:** Portal's own token contract: css/tokens.css:100-105 — `--target-min` is the deliberate 44px tap-target floor for icon-only controls.
 - **Fix:** Raise `.chart-overlay__close` and the lightbox zoom buttons to `min-width/min-height:var(--target-min)` (visual size can stay smaller via padding), or scope the denser size behind `(min-width:1024px) and (pointer:fine)` with the same documenting comment style as the map controls.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — bereits durch die erste Welle abgedeckt (verifiziert)
 
 ### a11y-menu-tab-1 · L · a11y — Action menu (kebab) stays open with aria-expanded=true when focus tabs out
 
@@ -1778,7 +1778,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:149 — `:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; border-radius:1px; }` — colour (#8655F6 = CD purple-500, tokens.css:90) and width match, but the 2px offset draws the ring 2px away from the control; CD's ring hugs the edge.
 - **CD:** designsystem/css/foundations/global.postcss:75-86 — `*:focus-visible { @apply outline-none ring-2 ring-purple-500 z-10; }` — Tailwind ring-2 is a box-shadow flush with the element (no offset); purple-500 = #8655F6 (tailwind.config.js:142).
 - **Fix:** Acceptable-to-keep deviation (the offset improves indicator visibility and outline survives forced-colors, which box-shadow rings do not) — but it is undocumented. Either add the standard German rationale comment at css/app.css:142-149 declaring the offset deliberate, or drop `outline-offset` to 0 for strict CD parity.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — bereits durch die erste Welle abgedeckt (verifiziert)
 
 ## App views — consistency and mobile
 
@@ -1801,14 +1801,14 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:3389 `.fp-stage { overflow:auto; padding:1rem; … }` with css/app.css:3392 `.fp { min-width:38rem }` — always overflows below ~640px; the markup (js/apps/tenancies.js:597 `<div class="fp-stage" id="fp-stage">`) carries no data-scroll-region, so it gets no tabindex, no focus ring and no scroll hint.
 - **CD:** Portal convention css/app.css:1323-1329: every horizontal scroll host is positioned, focusable and hinted via C.wireScrollRegions; js/components.js:411 SCROLL_SEL = '[data-scroll-region], .table-wrapper, pre.api-code'.
 - **Fix:** Add `data-scroll-region` to the .fp-stage element and `position:relative` to the .fp-stage rule; the router's wireScrollRegions call (router.js:338) then adds tabindex/role/hint only when it actually overflows.
-- **Status:** ✅ fixed — Added data-scroll-region to #fp-stage plus an aria-label ("Grundriss <Geschoss>") so wireScrollRegions can promote it to a NAMED group when it overflows (its MutationObserver cover
+- **Status:** ✅ fixed — fp-stage als benannte Scroll-Region, position:relative
 
 ### map-tokens-1 · M · consistency — Map palette hardcoded — bypasses the token layer and the skin
 
 - **Portal:** js/buildings-map.js:172-173 `const BLUE = '#2563eb'; const PARCEL = '#0f766e';` used in paint specs at 231/237 (circle-color) and 241 (text-color '#1f2937', halo '#fff'); css/app.css:2145-2146 `.map-marker { … background:rgba(37,99,235,.72); }` — the intranet primary-600 literal. Under the default (red) or freebrand skin the markers stay intranet-blue; PARCEL #0f766e is a near-miss of --chart-series-1 #0f6b75.
 - **CD:** js/charts.js:29-53 establishes the pattern: resolve tokens at render time via getComputedStyle (cssVar('--chart-series-1', …)) precisely because paint specs cannot carry var(); tokens.css:249-259 shows primary-600 is skin-dependent.
 - **Fix:** Resolve marker/cluster color from --color-primary-600 and the parcel tint from --chart-series-1 with the same cssVar helper before building the paint objects; derive .map-marker background from the primary token (e.g. color-mix(in srgb, var(--color-primary-600) 72%, transparent)) instead of a fixed rgba.
-- **Status:** ✅ fixed — JS share applied in js/buildings-map.js: added the charts.js-style cssVar helper (getComputedStyle at render time) and moved color resolution into initEstateMap — circle-color for 
+- **Status:** ✅ fixed — Markerfarben via color-mix aus --color-primary-600
 
 ### api-ramp-1 · M · consistency — API docs mix frozen --fs-* with responsive --text-* type ramps
 
@@ -1829,7 +1829,7 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** js/apps/estate.js:254-263 — local fGroup() emits `<input type="checkbox" data-dim=…>` without ids; the rest of the portal uses C.filterGroup with `data-fdim` and stable ids (js/components.js:1531-1537). Two checkbox vocabularies for the same pattern.
 - **CD:** js/apps/portfolio.js:256-261 documents why the local copy was retired there («C.filterGroup statt einer eigenen Fassung: der lokale Nachbau wertete selected nicht aus und vergab keine id»).
 - **Fix:** Extend C.filterGroup with an optional `max`/«Alle anzeigen» cap (the only extra feature estate needs, estate.js:253-262) and use it in estate.js with data-fdim, retiring the local fGroup.
-- **Status:** ✅ fixed — Local fGroup() retired; now a thin adapter over C.filterGroup with dim/legend/options({value,label})/selected/idPrefix:'estate'/max:5. Change listener switched from input[data-dim]
+- **Status:** ✅ fixed — C.filterGroup übernommen; __more als display:contents-Span
 
 ### overlay-mobile-1 · M · mobile — Chart 'Vollbild' overlay renders the chart smaller than inline on phones
 
@@ -1871,14 +1871,14 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** css/app.css:2275 — `.api-code { … font-family:var(--font-mono); font-size:.8125rem; … }`.
 - **CD:** css/tokens.css:142-145 — CD fontSize scale steps are 12/14/16…; no 13px step.
 - **Fix:** Use `font-size:var(--fs-sm)` (14px, frozen deliberately for code) or var(--text-sm) if it should ride the ramp; add a German comment if 13px is kept deliberately.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — .api-code 0.8125rem → var(--fs-sm), frozen like .api-ep__path, with comment noting no 13px step exists in any CD scale.
 
 ### dead-css-1 · L · naming — Dead app CSS: .dash-hero, .chart__sql, .map and a duplicated overlay rule
 
 - **Portal:** css/app.css:2025-2032 (.dash-hero block), 2169-2175 (.chart__sql rules), 2000 (`.map { width:100%; height:420px; … }` — fixed height contradicting the clamp() philosophy documented at 2001-2004) have no consumer anywhere in js/ (verified by grep); css/app.css:2555 and 2560 declare `html:has(> body.chart-overlay-open) { overflow:hidden; }` twice with near-identical comments.
 - **CD:** Portal convention (tokens.css preamble, design-review process): app.css rules exist only for live consumers; duplicates invite silent drift.
 - **Fix:** Delete .dash-hero, .chart__sql, .map (also remove `.map` from the print hide-list at 3168) and one of the two duplicate :has rules.
-- **Status:** ⬜ open
+- **Status:** ✅ fixed — Deleted .dash-hero block, the three .chart__sql rules (kept the .chart__table sr-only explanation) and the fixed-height .map rule incl. its entry in the print hide-list — grep conf
 
 ### list-pad-1 · L · consistency — Inline padding-left:1.1rem lists bypass .list--default (and use a different indent)
 
@@ -1892,14 +1892,14 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** js/apps/dataportal.js:192 `<div class="field" style="margin:.9rem 0 0">` (utilities .mt-3/.mt-4 exist at app.css:3046); js/apps/media-library.js:330 `<div class="row mt-4" style="gap:.75rem">` — redundant, `.row` already sets gap:.75rem (app.css:2946); js/gallery.js:68 `<div style="min-width:0">` in the lightbox heading while the sibling viewer has a class for exactly this (`.docviewer__heading-text { min-width:0 }`, app.css:3197).
 - **CD:** Portal convention css/app.css:3092-3093 — «Fünf verschiedene style="max-width:…" standen dafür in js/ — als Klassen sind sie benannt, wiederverwendbar und im Blatt auffindbar».
 - **Fix:** Use .mt-4 in dataportal, drop the redundant gap in media-library, and add `.pf-lightbox__heading-text { min-width:0 }` mirroring the docviewer BEM.
-- **Status:** ✅ fixed — dataportal.js field now class="field mt-4" (inline margin gone, 16px verified); media-library.js redundant style="gap:.75rem" dropped (.row already supplies gap:.75rem, verified 12
+- **Status:** ✅ fixed — .pf-lightbox__heading-text Regel ergänzt
 
 ### pj-hero-1 · L · consistency — Project hero photo styled via inline aspect-ratio + max-height — the exact pattern the mosaic comment warns against
 
 - **Portal:** js/apps/projects.js:454 — `style: 'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg)'` passed into C.photo; it also drifts from the shared 16/10 hero ratio.
 - **CD:** css/app.css:2670-2674 documents the bug class («max-height UND aspect-ratio auf demselben Element deckeln nicht nur die Höhe, sie rechnen auch die BREITE zurück»); shared ratios: .pf-mosaic__cell--main 16/10 (2629), .med-shot__photo 16/10 (2803).
 - **Fix:** Add a `.pj-hero__photo { aspect-ratio:16/10 (or 21/9); border-radius:var(--radius-lg); }` rule (no max-height — cap via the container if needed) and pass `cls` instead of `style`.
-- **Status:** ✅ fixed — JS side applied: C.photo now receives cls:'pj-hero__photo' instead of style:'aspect-ratio:21/9;max-height:22rem;border-radius:var(--radius-lg)'. The companion CSS rule lives in css
+- **Status:** ✅ fixed — .pj-hero__photo 16/10 + radius-lg
 
 ### tab-idiom-1 · L · consistency — Projects detail drifts from the shared detail-tab idiom (no .tabs wrapper, no panel headings)
 
@@ -1920,21 +1920,21 @@ Severity: **H** visibly off-brand / a11y failure / broken on mobile · M noticea
 - **Portal:** js/apps/dataportal.js:184 and estate.js:311 use icon 'ChevronLeft'; css/app.css:2079 rotates it only for the DESKTOP rail collapse (.dashboard-layout--collapsed); under 1024px the collapse class is .filter-panel--collapsed (app.css:2064-2068) — no rotation rule, so a left-pointing chevron sits on a vertically collapsing panel.
 - **CD:** Internal standard: the catbar filter toggle uses ChevronDown that flips on aria-expanded (js/components.js:1367, css/app.css:2359-2360).
 - **Fix:** Add `@media (max-width:1023.98px){ .filter-panel--collapsed .filter-panel__toggle .icon { transform:rotate(-90deg); } .filter-panel__toggle .icon { transform:rotate(90deg); } }` (turning the left chevron into down/up), or switch the mobile icon to ChevronDown with the catbar rotation.
-- **Status:** 🔶 partial — JS-Anteil umgesetzt; CSS-Rest: css/app.css: add the mobile rotation for the filter-panel toggle chevron (no estate.js change needed — icon stays 'ChevronLeft' so the deskt
+- **Status:** ✅ fixed — Panel-Chevron rotiert unter lg (auf/zu)
 
 ### dash-dup-1 · L · consistency — Dashboard chrome duplicated verbatim between dataportal.js and estate.js
 
 - **Portal:** js/apps/estate.js:36-42 (DASHBOARD_MENU), 152-155 (kpi tile markup), 356-389 (filter-collapse + menu wiring, comment «identisch zu dataportal.js») duplicate js/apps/dataportal.js:28-38, 163-177 and 302-342 line-for-line — two copies that can silently drift (the KPI delta arrow/sr-only affordance of dataportal.js:169-176 is already missing from estate's kpi()).
 - **CD:** Portal convention: shared patterns live in factories (js/components.js), cf. the C.filterGroup consolidation note in portfolio.js:256-261.
 - **Fix:** Extract a shared dashboard-chrome module (DASHBOARD_MENU, kpi() incl. delta arrow + sr-only word, filter-collapse wiring, dash-footer) consumed by both dashboards.
-- **Status:** ✅ fixed — PARTIAL (same-file share only): estate's kpi() aligned verbatim to dataportal.js kpiTiles() anatomy — kpi__delta with is-good/is-bad modifier, kpi__arrow glyph (aria-hidden) plus s
+- **Status:** ⬜ open — Gemeinsames dashboard-chrome-Modul — Extraktion offen
 
 ### count-gram-1 · L · consistency — Result-count wording drifts across catalogs (nominative vs dative)
 
 - **Portal:** js/apps/portfolio.js:213/221 «… von N Objekte», js/apps/projects.js:197/204 «… von N Projekte», js/apps/document-archive.js:94 «… von N Dokumente» vs js/apps/tenancies.js:201 «… von N Mietverhältnissen» (grammatically correct dative).
 - **CD:** CD result header convention (search.postcss SEARCH RESULTS) uses one consistent phrase; internally C.mountDataTable emits «X von Y {unit}».
 - **Fix:** Standardize the phrase (e.g. dative units «Objekten / Projekten / Dokumenten», or restructure to «N von M · Objekte») in all count templates.
-- **Status:** ✅ fixed — Visible count now reads «N von M Dokumenten» (dative after «von», matching tenancies.js), and the new announceCatalogue call uses the same dative unit so the live-region announceme
+- **Status:** ⬜ open — Kasus der Trefferzeile in mountDataTable — offen
 
 ### mt-dblmount-1 · L · consistency — Tenancies detail mounts every data table twice per draw — duplicate SR announcements
 

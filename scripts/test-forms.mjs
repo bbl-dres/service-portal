@@ -52,10 +52,18 @@ const PROBE_RENDER = `(async () => {
   };
 })()`;
 
-// fill beschreibung and submit → expect the success screen (Vorgang created)
+// Gebäude wählen, beschreibung füllen, absenden → Erfolgsbildschirm (Vorgang).
+// Seit dem Review (forms/errsum-1-Umfeld) startet das Pflichtfeld «Gebäude»
+// LEER («Bitte wählen …») statt still mit dem ersten Gebäude vorbelegt — der
+// Test muss wie ein Mensch zuerst wählen.
 const PROBE_SUCCESS = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
   let n = 0; while (!document.getElementById('beschreibung') && n++ < 120) await s(100);
+  const bld = document.getElementById('bld');
+  if (bld && bld.tagName === 'SELECT') {
+    const opt = [...bld.options].find(o => o.value);
+    if (opt) { bld.value = opt.value; bld.dispatchEvent(new Event('change', { bubbles: true })); }
+  }
   const bes = document.getElementById('beschreibung');
   bes.value = 'Testmeldung aus dem Formulartest';
   bes.closest('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
