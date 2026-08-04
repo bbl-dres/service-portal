@@ -12,13 +12,15 @@
 //
 // Einsehbar unter #/search?log=1.
 
+import { readJSON, writeJSON, remove } from './storage.js';
+
 const KEY = 'bbl.searchlog';
 const MAX = 200;
 
-const read = () => {
-  try { const v = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(v) ? v : []; }
-  catch { return []; }
-};
+// Lesen/Schreiben über js/storage.js — das Modul existiert genau, um die
+// localStorage-Fehlerfälle (Korruption, privater Modus, Kontingent) EINMAL zu
+// behandeln; hier standen alle drei Pfade nochmals von Hand (Design-Review B23).
+const read = () => readJSON(KEY, [], Array.isArray);
 
 // Aufeinanderfolgende Tastendrücke auf demselben Begriff sollen nicht 20 Zeilen
 // erzeugen: derselbe Begriff direkt nacheinander aktualisiert den letzten
@@ -26,13 +28,11 @@ const read = () => {
 export function record(q, hits) {
   const term = String(q || '').trim();
   if (!term) return;
-  try {
-    const log = read();
-    const last = log[log.length - 1];
-    if (last && last.q === term) { last.n = hits; last.at = Date.now(); }
-    else log.push({ q: term, n: hits, at: Date.now() });
-    localStorage.setItem(KEY, JSON.stringify(log.slice(-MAX)));
-  } catch { /* privater Modus oder volles Kontingent — das Protokoll ist entbehrlich */ }
+  const log = read();
+  const last = log[log.length - 1];
+  if (last && last.q === term) { last.n = hits; last.at = Date.now(); }
+  else log.push({ q: term, n: hits, at: Date.now() });
+  writeJSON(KEY, log.slice(-MAX));   // Fehlschlag ist hier entbehrlich (Notizblock)
 }
 
 // Ausgewertet: je Begriff die Häufigkeit und die zuletzt gemessene Trefferzahl,
@@ -51,5 +51,5 @@ export function summary() {
 }
 
 export function clear() {
-  try { localStorage.removeItem(KEY); } catch { /* egal */ }
+  remove(KEY);
 }

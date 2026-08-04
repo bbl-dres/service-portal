@@ -169,9 +169,14 @@ export async function openPage(cdp, url) {
     if (consoleErrors.length) out.push(`Konsolenfehler: ${consoleErrors[0]}`);
     try {
       // .error-summary ist die Fehlerübersicht eines Formulars — sie MELDET eine
-      // Falscheingabe, sie IST kein Defekt. Nur Bannern der Anwendung selbst
-      // (Router, Datenladen, Startfehler) darf ein Test widersprechen.
-      const err = await evaluate(`(function(){var n=document.querySelector('.notification--error:not(.error-summary)');
+      // Falscheingabe, sie IST kein Defekt. Ebenso ausgenommen: error-Toasts
+      // (.toast__message) — seit der Sprach-Review trägt ein fehlgeschlagenes
+      // Kopieren korrekt die error-Variante (Design-Review D5); headless gibt es
+      // keine Clipboard-Berechtigung, der Toast ist dort also ERWARTET. Nur
+      // Bannern der Anwendung selbst (Router, Datenladen) darf ein Test
+      // widersprechen.
+      const err = await evaluate(`(function(){var n=[...document.querySelectorAll('.notification--error:not(.error-summary)')]
+          .find(function(x){ return !x.closest('.toast__message'); });
         return n ? (n.innerText||'').replace(/\s+/g,' ').slice(0,120) : '';})()`);
       if (err) out.push(`Fehlerbanner: ${err}`);
     } catch { /* Seite bereits zu */ }

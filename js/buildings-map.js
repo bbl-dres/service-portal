@@ -6,6 +6,9 @@
 // Positron (worldwide). Marks are HTML markers (a handful of points) — simple,
 // accessible and reliably rendered, incl. headless.
 
+import { escape as esc } from './components.js';
+import { m2 } from './format.js';
+
 const MAPLIBRE_VER = '4.7.1';
 let mlPromise = null;
 
@@ -27,8 +30,10 @@ function loadMapLibre() {
   return mlPromise;
 }
 
-const esc = (s) => String(s == null ? '' : s)
-  .replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// `esc`/`m2` kommen aus den Sammelmodulen (Imports oben) — die frühere lokale
+// Escape-Neuimplementierung und das handgeschriebene de-CH-Format sind weg
+// (Design-Review B23); components.js/format.js sind selbst import-frei, das
+// lazy geladene Kartenmodul zieht also keine Kette nach.
 
 // swisstopo grey (CH only) — official Swiss basemap.
 const SWISSTOPO_STYLE = {
@@ -80,7 +85,7 @@ function showMapSpinner(container, map) {
   sp.setAttribute('role', 'status');
   sp.innerHTML = '<span class="icon icon--2xl icon--spin" aria-hidden="true"'
     + ' style="-webkit-mask-image:url(\'assets/icons/Spinner.svg\');mask-image:url(\'assets/icons/Spinner.svg\')"></span>'
-    + '<span class="sr-only">Karte wird geladen …</span>';
+    + '<span class="sr-only">Karte wird geladen…</span>';
   container.appendChild(sp);
   let done = false;
   const clear = () => { if (done) return; done = true; sp.remove(); };
@@ -283,7 +288,7 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
           map.easeTo({ center: ct, zoom: 16 });
           if (focusPopup) popup.setLngLat(ct).setHTML(
             `<strong>${esc(pr.label)}</strong>${pr.sub ? `<br><span class="small muted">${esc(pr.sub)}</span>` : ''}`
-            + `<br><span class="small muted">Grundstück ${esc(pr.id)}${pr.area ? ' · ' + Number(pr.area).toLocaleString('de-CH') + ' m²' : ''}</span>`
+            + `<br><span class="small muted">Grundstück ${esc(pr.id)}${pr.area ? ' · ' + m2(pr.area) : ''}</span>`
             + `${pr.href ? `<br><a class="link" href="${esc(pr.href)}">Objekt ansehen →</a>` : ''}`,
           ).addTo(map);
         }
@@ -326,7 +331,7 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
     const p = e.features[0].properties;
     popup.setLngLat(e.lngLat).setHTML(
       `<strong>${esc(p.label)}</strong>${p.sub ? `<br><span class="small muted">${esc(p.sub)}</span>` : ''}`
-      + `<br><span class="small muted">Grundstück ${esc(p.id)}${p.area ? ' · ' + Number(p.area).toLocaleString('de-CH') + ' m²' : ''}</span>`
+      + `<br><span class="small muted">Grundstück ${esc(p.id)}${p.area ? ' · ' + m2(p.area) : ''}</span>`
       + `${p.href ? `<br><a class="link" href="${esc(p.href)}">Objekt ansehen →</a>` : ''}`,
     ).addTo(map);
   });

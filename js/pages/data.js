@@ -37,11 +37,16 @@ function overview(ctx) {
 
   const entries = [
     { title: 'Datenportal', icon: 'ChartBar', href: '#/app/dataportal',
-      desc: 'Auswertungen und Dashboards zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal.',
+      desc: 'Auswertungen zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal.',
       meta: '6 Themen' },
     { title: 'Datenbezug und API Verzeichnis', icon: 'FileDatabase', href: '#/data/catalog',
       desc: 'Datensatzkatalog nach DCAT-AP-CH: Beschreibung, Klassifizierung und Bezugswege der Datensätze des BBL.',
       meta: `${datasets} Datensätze` },
+    // Ohne Zahl: der Metadatenbestand hängt an dieser Übersicht nicht (`needs`),
+    // und eine fest eingetragene Zahl liefe der Datei davon.
+    { title: 'Metadaten Katalog Bauten', icon: 'Stack', href: '#/app/metadata-catalog',
+      desc: 'Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und Systemtabellen.',
+      meta: 'Geschäftsobjekte und Systemtabellen' },
     { title: 'Bauwerksdokumentation', icon: 'Folder', href: '#/app/document-archive',
       desc: 'Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.',
       meta: 'Dokumentenarchiv' },
@@ -54,8 +59,11 @@ function overview(ctx) {
     { title: 'Fachanwendungen Logistik', icon: 'ShoppingCart', href: '#/applications?area=logistics',
       desc: 'Fachanwendungen für Arbeitsplatz, Beschaffung und Logistik.',
       meta: `${count('logistics')} Anwendungen` },
+    { title: 'Fachanwendungen Bundesverwaltung', icon: 'Key', href: '#/applications?area=federal',
+      desc: 'Gemeinsam genutzte Anwendungen und Plattformen des Bundes — eGate, InfoPers, SUPERB, I14Y, TERMDAT, Geoportal, geocat.ch und simap.ch.',
+      meta: `${count('federal')} Anwendungen` },
     { title: 'Alle Anwendungen', icon: 'Apps', href: '#/applications',
-      desc: 'Der vollständige Anwendungskatalog, inklusive der zentralen Systeme der Bundesverwaltung.',
+      desc: 'Der vollständige Anwendungskatalog des BBL und der Bundesverwaltung.',
       meta: `${apps.length} Anwendungen` },
     { title: 'Digitalisierung', icon: 'Book', href: '#/data/digitalisation',
       desc: 'Strategie, Vorhaben und Grundsätze der Digitalisierung im BBL.',
@@ -73,7 +81,7 @@ function overview(ctx) {
         lead: 'Auswertungen, Datenbezug und API Verzeichnis sowie die Fachanwendungen des BBL — an einem Ort.',
       }),
     })}
-    ${C.pageSection({ title: 'Angebote', alt: true, body: `<div class="grid grid--responsive-cols-3 gap--responsive">${entries}</div>` })}`;
+    ${C.pageSection({ title: 'Angebote', alt: true, body: `<div class="grid grid--responsive-cols-3">${entries}</div>` })}`;
 }
 
 function notFound(ctx) {

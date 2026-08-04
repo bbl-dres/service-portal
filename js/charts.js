@@ -52,8 +52,9 @@ function palette() {
   paletteCache.key = key; paletteCache.val = val;
   return val;
 }
-// Rückwärtskompatibler Export (Legende/Swatches lesen ihn).
-export const SERIES = ['#0f6b75', '#c2410c', '#6d28d9', '#047857', '#be185d', '#4b5563', '#b45309'];
+// Der frühere SERIES-Export ist weg: er war eine Literal-Kopie von
+// --chart-series-1..7 (tokens.css) MIT null Importern — die Legende liest in
+// Wahrheit palette().series, das die CSS-Variablen auflöst (Design-Review C20).
 
 // Per-chart action menu (Superset-style). Actions are handled in wireChartMenus.
 const CHART_MENU = [
@@ -534,4 +535,4 @@ export function wireChartMenus(root) {
   });
 }
 
-export default { chart, wireCharts, wireChartMenus, renderSvg, paintCharts, SERIES };
+export default { chart, wireCharts, wireChartMenus, renderSvg, paintCharts };

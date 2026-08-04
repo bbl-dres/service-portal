@@ -1,7 +1,7 @@
 [
   {
     "serviceId": "raumbedarf-melden",
-    "title": "Raumbedarf & bauliche Bedürfnisse melden",
+    "title": "Raumbedarf melden",
     "domain": "A",
     "audience": "customers",
     "type": "action",
@@ -197,7 +197,7 @@
   },
   {
     "serviceId": "bautendokumentation-abrufen",
-    "title": "Bautendokumentationen abrufen",
+    "title": "Bauwerksdokumentation abrufen",
     "domain": "A",
     "audience": "both",
     "type": "action",
@@ -229,7 +229,7 @@
   },
   {
     "serviceId": "portfolio-einsicht",
-    "title": "Liegenschaften-Portfolio einsehen",
+    "title": "Liegenschaften Inventar einsehen",
     "domain": "A",
     "audience": "staff",
     "type": "info",
@@ -298,7 +298,7 @@
   },
   {
     "serviceId": "parzelle-erfassen",
-    "title": "Parzelle erfassen",
+    "title": "Grundstück erfassen",
     "domain": "B",
     "audience": "staff",
     "type": "action",
@@ -354,6 +354,28 @@
       "Betroffenes Objekt / Parzelle",
       "Grund der Archivierung",
       "Stichtag"
+    ]
+  },
+  {
+    "serviceId": "geschaeftspartner-anlegen",
+    "title": "Neuen Geschäftspartner anlegen",
+    "domain": "B",
+    "audience": "staff",
+    "type": "action",
+    "icon": "AddressBook",
+    "target": {
+      "kind": "app",
+      "href": "#"
+    },
+    "contact": "efv-stammdaten",
+    "short": "Einen neuen Geschäftspartner — Lieferantin, Vermieter oder Kundin — im Stammdatensystem des Bundes anlegen lassen.",
+    "description": "Ein Geschäftspartner ist die Stammdatensatz-Grundlage für jede Bestellung, jeden Vertrag und jede Zahlung: ohne ihn lässt sich weder eine Bestellanforderung erfassen noch eine Rechnung buchen. Geführt wird der Bestand zentral im SAP Master Data Governance (MDG) der Bundesverwaltung; die Datenhoheit liegt bei der Eidgenössischen Finanzverwaltung (EFV), nicht beim BBL. Das BBL meldet den Bedarf an und liefert die Angaben zu, die Prüfung und Anlage erfolgen bei der EFV. Heute läuft die Anmeldung als E-Mail an die EFV; dieses Formular soll den Weg künftig über das Kundenportal führen, mit Statusverfolgung unter «Meine Vorgänge».",
+    "voraussetzungen": [
+      "Firmenname und vollständige Adresse",
+      "UID-Nummer (Unternehmens-Identifikationsnummer)",
+      "Rolle des Partners (Lieferantin, Vermieter, Kundin)",
+      "Bankverbindung (IBAN) für den Zahlungsverkehr",
+      "Anlass der Anlage (Vertrag, Beschaffung oder Vorgang)"
     ]
   },
   {

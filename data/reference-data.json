@@ -78,5 +78,22 @@
     { "id": "VERTRAULICH", "label": "VERTRAULICH", "variant": "warning" },
     { "id": "GEHEIM", "label": "GEHEIM", "variant": "error" }
   ],
+  "dataDomains": [
+    { "key": "bauwerk", "label": "Bauwerk und Liegenschaft", "icon": "Building" },
+    { "key": "miete", "label": "Mietverhältnisse", "icon": "Key" },
+    { "key": "energie", "label": "Energie", "icon": "Bolt" },
+    { "key": "partner", "label": "Geschäftspartner", "icon": "Users" },
+    { "key": "finanzen", "label": "Finanzen", "icon": "Calculator" }
+  ],
+  "objectStatuses": [
+    { "id": "approved", "label": "Verabschiedet", "variant": "success" },
+    { "id": "draft", "label": "Entwurf", "variant": "gray" },
+    { "id": "deprecated", "label": "Abgelöst", "variant": "warning" }
+  ],
+  "mappingMatches": [
+    { "id": "exact", "label": "Exakt", "variant": "success" },
+    { "id": "close", "label": "Nahe", "variant": "info" },
+    { "id": "partial", "label": "Teilweise", "variant": "warning" }
+  ],
   "deskSharingFactor": 0.8
 }

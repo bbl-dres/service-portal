@@ -63,7 +63,7 @@ Prototype of the customer portal (**Kundenportal**) for the [Federal Office for 
 - **Hash-routed SPA** — no framework, no build step, no `package.json`. Plain ES modules and template-string components.
 - **Zero runtime dependencies.** MapLibre GL JS is lazy-loaded from a CDN only when a map is actually opened; everything else is local.
 - **URL state persistence** — view mode, filters, sort and pagination live in the URL hash, so every list view is shareable.
-- **A shared mock core** — one accessor (`js/core.js`) over 24 JSON / GeoJSON files is the single source of truth for every page; `js/process-engine.js` is a mock "Camunda" (process definitions, instances, status transitions).
+- **A shared mock core** — one accessor (`js/core.js`) over 27 JSON / GeoJSON files is the single source of truth for every page; `js/process-engine.js` is a mock "Camunda" (process definitions, instances, status transitions).
 - **Charts and maps built in-house** — SVG charts with token-driven palettes and PNG export; MapLibre maps over swisstopo (CH) and CARTO basemaps, with clustering and cooperative gestures.
 
 ## Running locally
@@ -105,9 +105,9 @@ Then open http://127.0.0.1:8848/. Tested in Edge/Chrome; current Firefox/Safari.
 | Route | Description |
 |---|---|
 | `#/data` | Overview of data, applications and digitalisation |
-| `#/data/katalog` | Dataset catalogue (DCAT-flavoured) |
-| `#/data/katalog/:id` | Dataset detail: distributions, roles, classification |
-| `#/data/digitalisierung` | Strategy, vision and principles |
+| `#/data/catalog` | Datenbezug und API Verzeichnis (DCAT-AP-CH) |
+| `#/data/catalog/:id` | Dataset detail: distributions, roles, classification |
+| `#/data/digitalisation` | Strategy, vision and principles |
 | `#/applications` | Application catalogue (specialist software launcher) |
 | `#/knowledge` | News, directives (Weisungen) and process documentation |
 
@@ -118,13 +118,16 @@ Then open http://127.0.0.1:8848/. Tested in Edge/Chrome; current Firefox/Safari.
 | `#/app/portfolio` | Liegenschaften Inventar — map / gallery / list + object detail |
 | `#/app/dataportal` | Analysis dashboards (topic landing + per-topic boards) |
 | `#/app/document-archive` | Bauwerksdokumentation — filterable document archive |
-| `#/app/mediathek` | Media library |
+| `#/app/media-library` | Mediathek Bauten |
 | `#/app/projects` | Construction projects (Bauprojekte) |
 | `#/app/workspace` | Workspace / office planning |
 | `#/app/api-docs` | Mock Swagger API directory with live «Ausprobieren» |
 | `#/app/space-request` | 3-step space-needs wizard (Raumbedarf melden) |
 | `#/app/fault-report` | Fault and incident reporting (Störungsmeldung) |
-| `#/app/transaction` | Order / transaction detail |
+| `#/app/transaction` | Veräusserung von Bundesliegenschaften (Status-Stub) |
+| `#/app/building-create` | Gebäude erfassen — 3-step wizard with map picker |
+| `#/app/tenancies` | Mietende — Mietverhältnisse, Geschosse, Grundrisse |
+| `#/app/metadata-catalog` | Metadaten Katalog Bauten — Geschäftsobjekte + Systemtabellen |
 
 ## Structure
 
@@ -133,7 +136,7 @@ index.html                   # shell entry (links css/ + js/app.js)
 css/  tokens.css             # CD Bund design tokens (colour, type, spacing, motion, z-index)
       app.css                # federal shell + the component layer, hand-written vanilla CSS
 assets/  fonts/ icons/ images/ swiss-logo-flag.svg swiss-logo-name.svg
-data/                        # the shared mock core — 24 JSON / GeoJSON files
+data/                        # the shared mock core — 27 JSON / GeoJSON files
 js/   app.js                 # bootstrap: load core + engine, render shell, start router
       shell.js               # three-row federal header, mega-drawer navigation, footer
       router.js              # hash router, NAV definition, page/app module maps
@@ -157,13 +160,14 @@ Each page and app is an ES module exporting `default async function render(ctx)`
 
 ## Testing
 
-Ten headless suites drive a real Edge instance over the Chrome DevTools Protocol (no Puppeteer, no dependencies) and assert behaviour rather than screenshots — clicks, keyboard paths, focus order, login-gated flows and race conditions on fast navigation:
+Over thirty headless suites and layout probes drive a real Edge instance over the Chrome DevTools Protocol (no Puppeteer, no dependencies) and assert behaviour rather than screenshots — clicks, keyboard paths, focus order, login-gated flows and race conditions on fast navigation:
 
 ```bash
-python -m http.server 8848 &          # the suites expect a server on 8848
-for t in apidocs catalogue content dashboard estate forms login portfolio race tabs; do
-  node scripts/test-$t.mjs
-done
+node scripts/serve.mjs &                     # Port 8848
+# APP_BASE zeigt auf den Index; ohne die Variable erwartet lib/cdp.mjs
+# einen Home-dir-Server auf Port 8000 (siehe scripts/lib/cdp.mjs).
+APP_BASE='http://localhost:8848/#' node scripts/test-routes.mjs
+# alle Suiten: scripts/test-*.mjs und scripts/check-*.mjs nach demselben Muster
 ```
 
 ## Documentation

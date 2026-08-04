@@ -13,8 +13,9 @@ const WEGE = [
   ['Daten-Seite',    '/data/gibtsnicht',             'Seite nicht gefunden'],
   ['Digi-Seite',     '/data/digitalisation/gibtsnicht', 'Seite nicht gefunden'],
   ['Fachgebiet',     '/knowledge/gibtsnicht',        'Seite nicht gefunden'],
-  ['Meldung',        '/news/gibtsnicht',             'Meldung nicht gefunden'],
   ['Dienstleistung', '/services/gibtsnicht',         'Dienstleistung nicht gefunden'],
+  ['API',            '/app/api-docs/gibtsnicht',     'API nicht gefunden'],
+  ['Mitteilung',     '/news/gibtsnicht',             'Mitteilung nicht gefunden'],
 ];
 
 const cdp = await launch();

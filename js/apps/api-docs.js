@@ -11,8 +11,12 @@
 
 import { fetchJSON } from '../fetch-json.js';
 import { copyText } from '../export.js';
+import { DATEN } from '../crumbs.js';
 
 const METHOD = { GET: 'get', POST: 'post', PUT: 'put', PATCH: 'patch', DELETE: 'delete' };
+
+// Brotkrumen-Präfix der Route: die Seite hängt unter dem Datenbezug-Katalog.
+const CRUMBS = [...DATEN, { label: 'Datenbezug und API Verzeichnis', href: '#/data/catalog' }];
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -28,18 +32,14 @@ export default async function render(ctx) {
   if (stale && stale()) return;
   const spec = specs[specId];
 
-  setCrumbs([
-    { label: 'Startseite', href: '#/' },
-    { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Datenbezug und API Verzeichnis', href: '#/data/catalog' },
-    { label: spec ? spec.title : 'API-Dokumentation' },
-  ]);
+  // Krume erst NACH der spec-Prüfung — im Fehlerfall endet die Kette mit
+  // «Nicht gefunden» (setzt renderNotFound), nicht mit einem Phantom-Titel.
   if (!spec) {
-    setTitle('API nicht gefunden');
-    mount.innerHTML = `<div class="container section">${C.backLink('#/data/catalog', 'Datenbezug und API Verzeichnis')}
-      ${C.empty('Diese API-Spezifikation existiert nicht.')}</div>`;
-    return;
+    return C.renderNotFound(ctx, { thing: 'Diese API-Spezifikation', title: 'API nicht gefunden',
+      backHref: '#/data/catalog', backLabel: 'Datenbezug und API Verzeichnis',
+      crumbs: CRUMBS });
   }
+  setCrumbs([...CRUMBS, { label: spec.title }]);
   setTitle(spec.title);
   const activeTag = spec.resources.some((r) => r.tag === query.get('tag')) ? query.get('tag') : spec.resources[0].tag;
 
@@ -125,9 +125,11 @@ export default async function render(ctx) {
       <div class="api-endpoints">${r.endpoints.map((ep) => { const key = String(flat.push(ep) - 1); return endpoint(ep, key); }).join('')}</div>
     </section>`).join('');
 
+  // detailBar statt nacktem backLink: die Seite ist per ?tag teilbar und bekommt
+  // damit denselben Teilen/Drucken-Einstieg wie jede andere Detailseite.
   mount.innerHTML = `
   <div class="container section api-docs">
-    ${C.backLink('#/data/catalog', 'Datenbezug und API Verzeichnis')}
+    ${C.detailBar({ backHref: '#/data/catalog', backLabel: 'Datenbezug und API Verzeichnis' })}
     <div class="api-head">
       <h1 tabindex="-1">${C.escape(spec.title)}</h1>
       <div class="api-head__badges">${C.badge('v' + spec.version, 'blue')} ${C.badge(spec.format || 'REST', 'gray')}</div>
@@ -136,7 +138,7 @@ export default async function render(ctx) {
     <div class="api-meta">
       <div class="api-meta__row"><span class="api-meta__k">Basis-URL</span>
         <code id="api-base">${C.escape(spec.baseUrl)}</code>
-        <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="api-copy" title="Basis-URL kopieren">${C.icon('Link', 'btn__icon icon--base')}<span class="btn__text">kopieren</span></button></div>
+        <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="api-copy" title="Basis-URL kopieren">${C.icon('Link', 'btn__icon icon--base')}<span class="btn__text">Kopieren</span></button></div>
       ${spec.auth ? `<div class="api-meta__row"><span class="api-meta__k">${C.icon('Lock', 'icon--base')} Authentifizierung</span> <span class="muted">${C.escape(spec.auth)}</span></div>` : ''}
     </div>
     <div class="api-layout">
@@ -170,7 +172,11 @@ export default async function render(ctx) {
   }));
 
   const copyBtn = mount.querySelector('#api-copy');
-  if (copyBtn) copyBtn.addEventListener('click', () => copyText(spec.baseUrl).then((ok) => C.toast(ok ? 'Basis-URL kopiert.' : 'Kopieren nicht möglich.')));
+  // Fehlschlag als error-Toast — der Erfolgs-Default (grün, CheckmarkCircle)
+  // würde einen misslungenen Kopiervorgang als gelungen verkleiden.
+  if (copyBtn) copyBtn.addEventListener('click', () => copyText(spec.baseUrl).then((ok) => (ok
+    ? C.toast('Basis-URL kopiert.')
+    : C.toast('Kopieren nicht möglich.', 'error', 'WarningCircle'))));
 
   // Deep-link ?tag=… → open that resource focused. Deferred past the router's
   // post-render scrollTo(0,0) so the scroll actually lands on the resource.

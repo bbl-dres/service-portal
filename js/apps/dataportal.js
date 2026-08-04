@@ -6,36 +6,22 @@
 // grid of chart cards. Data comes only from data/dashboards.json (js/dashboard-
 // data.js): every chart declares a query spec that is evaluated in memory over
 // the JSON datasets. Analysis only: no write-back.
+//
+// Kopf, KPI-Kacheln, Filterpanel-Hülle, Einklapp-Logik, Toolbar-Menü und
+// Fusszeile kommen aus js/dashboard-chrome.js (eine Quelle für beide Boards,
+// Design-Review A4); hier bleibt nur die Daten- und Chart-Logik.
 
 import { dashData } from '../dashboard-data.js';
 import { chart, wireCharts, wireChartMenus, paintCharts } from '../charts.js';
 import { initBuildingsMap } from '../buildings-map.js';
-import { copyText, shareMail } from '../export.js';
+import { kpiTile, dashHeader, filterPanelShell, dashFooter, wireFilterCollapse, wireDashboardMenu } from '../dashboard-chrome.js';
+import { DATEN } from '../crumbs.js';
 
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['buildings'];
-const CRUMB_BASE = [
-  { label: 'Startseite', href: '#/' },
-  { label: 'Daten und Digitalisierung', href: '#/data' },
-];
-
-// Dashboard-Toolbar (Superset-Muster). Aktionen in wireMenu unten. Ganzes-
-// Dashboard-Export (PDF/Bild) bleibt eine simulierte Affordanz (bräuchte einen
-// Rasterisierer); Aktualisieren/Teilen sind echt.
-const DASHBOARD_MENU = [
-  { action: 'refresh', label: 'Dashboard aktualisieren' },
-  { separator: true },
-  { heading: 'Herunterladen' },
-  { action: 'pdf', label: 'Als PDF' },
-  { action: 'img', label: 'Als Bild' },
-  { separator: true },
-  { heading: 'Teilen' },
-  { action: 'copy', label: 'Link kopieren' },
-  { action: 'mail', label: 'Per E-Mail' },
-];
 
 export default async function render(ctx) {
   const { params } = ctx;
@@ -53,7 +39,7 @@ export default async function render(ctx) {
   if (!dashData.ok()) {
     const { mount, C, setTitle, setCrumbs } = ctx;
     setTitle('Datenportal');
-    setCrumbs([...CRUMB_BASE, { label: 'Datenportal' }]);
+    setCrumbs([...DATEN, { label: 'Datenportal' }]);
     mount.innerHTML = `<div class="container section">${C.notification(
       '<strong>Die Auswertungen konnten nicht geladen werden.</strong> '
       + 'Das ist ein Ladefehler, kein leeres Portal. '
@@ -69,7 +55,7 @@ export default async function render(ctx) {
 function overview(ctx) {
   const { mount, C, setTitle, setCrumbs } = ctx;
   setTitle('Datenportal');
-  setCrumbs([...CRUMB_BASE, { label: 'Datenportal' }]);
+  setCrumbs([...DATEN, { label: 'Datenportal' }]);
 
   const topics = dashData.topics();
   const boards = dashData.dashboards();
@@ -100,7 +86,7 @@ function overview(ctx) {
         + '<a href="https://www.bbl.admin.ch/de/programm-superb" target="_blank" rel="noopener external">Programm SUPERB</a> (SAP S/4HANA).',
     })}
     <h2 class="sr-only">Themen</h2>
-    <div class="grid grid--3 mt-8">${topics.map(topicCard).join('')}</div>
+    <div class="grid grid--responsive-cols-3 mt-8">${topics.map(topicCard).join('')}</div>
   </div>`;
 }
 
@@ -134,11 +120,11 @@ function dashboardView(ctx, id) {
   if (!board) {
     C.renderNotFound(ctx, { thing: 'Dieses Dashboard', title: 'Dashboard nicht gefunden',
       backHref: '#/app/dataportal', backLabel: 'Datenportal',
-      crumbs: [...CRUMB_BASE, { label: 'Datenportal', href: '#/app/dataportal' }] });
+      crumbs: [...DATEN, { label: 'Datenportal', href: '#/app/dataportal' }] });
     return;
   }
   setTitle(board.title);
-  setCrumbs([...CRUMB_BASE, { label: 'Datenportal', href: '#/app/dataportal' }, { label: board.title }]);
+  setCrumbs([...DATEN, { label: 'Datenportal', href: '#/app/dataportal' }, { label: board.title }]);
 
   const years = boardYears(board);
   const hasYears = years.length > 1;
@@ -160,53 +146,35 @@ function dashboardView(ctx, id) {
 
   const yearOpts = (selected) => years.map(y => `<option value="${y}"${y === selected ? ' selected' : ''}>${y}</option>`).join('');
 
+  // Kachel-Markup aus dashboard-chrome.kpiTile; hier bleibt nur das Board-
+  // Spezifische — der {buildingCount}-Platzhalter aus dashboards.json.
   const kpiTiles = (board.kpis && board.kpis.length ? board.kpis : (board.hero ? [board.hero] : []))
-    .map(k => {
-      const value = String(k.value).replace('{buildingCount}', String(buildings.filter(b => Number.isFinite(b.lat)).length));
-      return `<div class="kpi">
-        <div class="kpi__label">${C.escape(k.label)}</div>
-        <div class="kpi__value">${C.escape(value)}${k.unit ? `<span class="kpi__unit">${C.escape(k.unit)}</span>` : ''}</div>
-        ${k.deltaLabel ? `<div class="kpi__delta${k.deltaGood === true ? ' is-good' : k.deltaGood === false ? ' is-bad' : ''}">${
-          // Richtung nicht nur über Farbe (WCAG 1.4.1, Item 6.11): Pfeilglyph für
-          // Sehende, sr-only-Wort für Hilfsmittel. `deltaGood` undefined = neutral
-          // (z. B. ein Zielwert), der dann auch nicht wie ein Erfolg aussieht.
-          k.deltaGood === undefined ? ''
-            : `<span class="kpi__arrow" aria-hidden="true">${k.deltaGood ? '▲' : '▼'}</span>`
-              + `<span class="sr-only">${k.deltaGood ? 'positive Entwicklung' : 'negative Entwicklung'}: </span>`
-        }${C.escape(k.deltaLabel)}</div>` : ''}
-      </div>`;
-    }).join('');
+    .map(k => kpiTile(C, {
+      label: k.label,
+      value: String(k.value).replace('{buildingCount}', String(buildings.filter(b => Number.isFinite(b.lat)).length)),
+      unit: k.unit, deltaLabel: k.deltaLabel, deltaGood: k.deltaGood,
+    })).join('');
 
-  const filterPanel = `
-    <aside class="filter-panel" id="dash-filters" aria-label="Filter">
-      <div class="filter-panel__head">
-        <h2 class="filter-panel__title">Filter</h2>
-        <button type="button" class="filter-panel__toggle btn--bare" id="filter-toggle" aria-label="Filter einklappen" aria-expanded="true">${C.icon('ChevronLeft', 'icon--base')}</button>
-      </div>
-      <div class="filter-panel__body">
-        ${hasYears ? `
-          <div class="field m-0">
-            <label for="f-from">Start Zeitreihe</label>
-            ${C.selectBox(`<select id="f-from" class="input--outline input--base">${yearOpts(state.from)}</select>`)}
-          </div>
-          <div class="field mt-4">
-            <label for="f-to">bis Jahr</label>
-            ${C.selectBox(`<select id="f-to" class="input--outline input--base">${yearOpts(state.to)}</select>`)}
-          </div>
-          <div class="filter-panel__actions"><button type="button" class="btn btn--bare btn--sm btn--icon-left mt-4" id="f-reset">${C.icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>
-        ` : '<p class="small muted m-0">Für dieses Dashboard sind keine Zeitreihen-Filter verfügbar.</p>'}
-      </div>
-    </aside>`;
+  // Hülle aus dashboard-chrome.filterPanelShell; der Body (Jahres-Selects +
+  // Panel-Reset) bleibt board-eigen.
+  const filterPanel = filterPanelShell(C, hasYears ? `
+        <div class="field m-0">
+          <label for="f-from">Start Zeitreihe</label>
+          ${C.selectBox(`<select id="f-from" class="input--outline input--base">${yearOpts(state.from)}</select>`)}
+        </div>
+        <div class="field mt-4">
+          <label for="f-to">bis Jahr</label>
+          ${C.selectBox(`<select id="f-to" class="input--outline input--base">${yearOpts(state.to)}</select>`)}
+        </div>
+        ${C.panelReset({ id: 'f-reset', wrap: 'filter-panel__actions' })}
+      ` : '<p class="small muted m-0">Für dieses Dashboard sind keine Zeitreihen-Filter verfügbar.</p>');
 
   const tabBar = C.tabBar({ items: tabs, active: state.tab, idPrefix: 'dash-tab', panelId: 'dpanel', ariaLabel: 'Dashboard-Ansichten' });
 
   mount.innerHTML = `
   <div class="container section dash-page">
     ${C.backLink('#/app/dataportal', 'Datenportal')}
-    <div class="dash-header">
-      <div class="dash-header__text">${C.pageHeader({ title: board.title, lead: board.lead })}</div>
-      ${C.menu({ menuId: 'dashboard', label: 'Dashboard-Aktionen', items: DASHBOARD_MENU })}
-    </div>
+    ${dashHeader(C, { title: board.title, lead: board.lead })}
     <div class="dashboard-layout" id="dashboard">
       ${filterPanel}
       <div class="dashboard-main">
@@ -217,11 +185,7 @@ function dashboardView(ctx, id) {
         </div>
       </div>
     </div>
-    <footer class="dash-footer">
-      <span class="meta-info__item">Quelle: ${C.escape(board.source)}</span>
-      <span class="meta-info__item">Stand: ${C.escape(board.updated)}</span>
-      <span class="meta-info__item">Demo-Daten</span>
-    </footer>
+    ${dashFooter(C, { source: board.source, updated: board.updated })}
   </div>`;
 
   // --- render the chart grid for the active tab + filters ---
@@ -243,7 +207,7 @@ function dashboardView(ctx, id) {
             <h3 class="chart__title">${C.escape(spec.title)}</h3>
             <div class="chart__actions">${C.menu({ menuId: spec.id, label: 'Karten-Aktionen', items: [{ action: 'link', label: 'Link kopieren' }] })}</div>
           </figcaption>
-          <div class="dash-map" id="map-${spec.id}" role="group" aria-label="Karte der Gebäudestandorte"><p class="dash-map__loading" role="status">Karte wird geladen …</p></div>
+          <div class="dash-map" id="map-${spec.id}" role="group" aria-label="Karte der Gebäudestandorte"><p class="dash-map__loading" role="status">Karte wird geladen…</p></div>
           ${spec.note ? `<p class="chart__note">${C.escape(spec.note)}</p>` : ''}
         </figure>`;
       }
@@ -298,46 +262,7 @@ function dashboardView(ctx, id) {
     syncHash,
   });
 
-  // Item 6.13: unter lg trägt `.filter-panel--collapsed` das Einklappen (die
-  // Desktop-Mechanik `.dashboard-layout--collapsed` bleibt unangetastet, damit die
-  // filterFullHeight-Zusicherung in test-dashboard.mjs grün bleibt). Auf dem Handy
-  // stand vorher mehr als ein Bildschirm Checkboxen VOR der ersten Kennzahl, und
-  // der Umschalter war dort `display:none`.
-  const layout = mount.querySelector('#dashboard');
-  const panel = mount.querySelector('#dash-filters');
-  const toggle = mount.querySelector('#filter-toggle');
-  const isDesktop = () => window.matchMedia('(min-width:1024px)').matches;
-  // Unter lg standardmässig zugeklappt — wie CDs Facettenfilter und wie die
-  // .catbar__panel-Schublade auf den Katalogseiten.
-  if (panel && !isDesktop()) panel.classList.add('filter-panel--collapsed');
-  const syncToggle = () => {
-    if (!toggle) return;
-    const collapsed = isDesktop()
-      ? layout.classList.contains('dashboard-layout--collapsed')
-      : panel.classList.contains('filter-panel--collapsed');
-    toggle.setAttribute('aria-expanded', String(!collapsed));
-    toggle.setAttribute('aria-label', collapsed ? 'Filter ausklappen' : 'Filter einklappen');
-    if (panel) toggle.setAttribute('aria-controls', 'dash-filters');
-  };
-  syncToggle();
-  if (toggle) toggle.addEventListener('click', () => {
-    if (isDesktop()) layout.classList.toggle('dashboard-layout--collapsed');
-    else panel.classList.toggle('filter-panel--collapsed');
-    syncToggle();
-  });
-  // Beim Verlassen der Route abmelden: der Horcher hängt an window und
-  // überlebte den DOM-Tausch sonst — ein weiterer je Besuch (code-review §4).
-  const mqAc = new AbortController();
-  ctx.onUnmount(() => mqAc.abort());
-  window.matchMedia('(min-width:1024px)').addEventListener('change', syncToggle, { signal: mqAc.signal });
-
-  // --- dashboard toolbar menu: Aktualisieren (echt) · Herunterladen (Demo) ·
-  // Teilen (echt: Zwischenablage / E-Mail). Einmal verdrahtet (Toolbar bleibt). ---
-  C.wireMenu(mount.querySelector('.dash-header'), (action) => {
-    if (action === 'refresh') { renderGrid(); C.toast('Dashboard aktualisiert.'); }
-    else if (action === 'pdf') C.toast('Export als PDF — im Prototyp simuliert.');
-    else if (action === 'img') C.toast('Export als Bild — im Prototyp simuliert.');
-    else if (action === 'copy') copyText(location.href).then((ok) => C.toast(ok ? 'Link kopiert.' : 'Kopieren nicht möglich.'));
-    else if (action === 'mail') shareMail(`${board.title} — BBL Datenportal`, location.href);
-  });
+  // Einklapp-Logik (Item 6.13) + Toolbar-Menü: geteilt in dashboard-chrome.js.
+  wireFilterCollapse(ctx, mount);
+  wireDashboardMenu(mount, C, { title: board.title, onRefresh: renderGrid });
 }

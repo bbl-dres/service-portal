@@ -178,5 +178,60 @@
     "role": "Betrieb und Schulung des Personalinformationssystems der Bundesverwaltung",
     "email": "personaladministration@epa-dlz.admin.ch",
     "quelle": "https://www.epa.admin.ch/de/kontakt"
+  },
+  {
+    "contactId": "efv-stammdaten",
+    "name": "Stammdaten Geschäftspartner",
+    "unit": "Eidgenössische Finanzverwaltung (EFV)",
+    "role": "Geschäftspartner-Stammdaten der Bundesverwaltung (SAP MDG)",
+    "email": "info@efv.admin.ch",
+    "phone": "+41 58 462 21 11",
+    "quelle": "https://www.efv.admin.ch/de/kontakt"
+  },
+  {
+    "contactId": "bfs-gwr",
+    "name": "GWR-Hotline",
+    "unit": "Bundesamt für Statistik (BFS)",
+    "role": "Eidg. Gebäude- und Wohnungsregister, EGID und EWID",
+    "email": "housing-stat@bfs.admin.ch",
+    "phone": "0800 866 600",
+    "quelle": "https://www.housing-stat.ch/"
+  },
+  {
+    "contactId": "bfs-bur",
+    "name": "Betriebs- und Unternehmensregister (BUR)",
+    "unit": "Bundesamt für Statistik (BFS)",
+    "role": "Register der Unternehmen und Arbeitsstätten, BUR-Nummer",
+    "quelle": "https://www.bfs.admin.ch/bfs/de/home/register/unternehmensregister/betriebs-unternehmensregister.html"
+  },
+  {
+    "contactId": "bfs-ios",
+    "name": "Interoperabilitätsstelle (IOS)",
+    "unit": "Bundesamt für Statistik (BFS)",
+    "role": "Betrieb und Weiterentwicklung der Interoperabilitätsplattform I14Y",
+    "quelle": "https://www.i14y.admin.ch/"
+  },
+  {
+    "contactId": "bk-terminologie",
+    "name": "Sektion Terminologie",
+    "unit": "Bundeskanzlei (BK) — Zentrale Sprachdienste",
+    "role": "TERMDAT und die Terminologie der Rechts- und Verwaltungssprache",
+    "email": "terminologie@bk.admin.ch",
+    "quelle": "https://www.bk.admin.ch/de/termdat-die-terminologie-datenbank-der-bundesverwaltung"
+  },
+  {
+    "contactId": "swisstopo-kogis",
+    "name": "Koordination, Geo-Information und Services (KOGIS)",
+    "unit": "Bundesamt für Landestopografie swisstopo",
+    "role": "Geoportal des Bundes, Geodienste und Bundesgeodateninfrastruktur",
+    "quelle": "https://www.swisstopo.admin.ch/de/geoadminch-das-geoportal-des-bundes"
+  },
+  {
+    "contactId": "swisstopo-geocat",
+    "name": "Fachstelle geocat.ch",
+    "unit": "Bundesamt für Landestopografie swisstopo — KOGIS",
+    "role": "Geometadatenkatalog der Schweiz, Registrierung publizierender Stellen",
+    "email": "geocat@swisstopo.ch",
+    "quelle": "https://info.geocat.ch/de/ubersicht-geocat"
   }
 ]

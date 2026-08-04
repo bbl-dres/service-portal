@@ -63,7 +63,11 @@ NAV.forEach(item => (item.children || []).forEach(c => {
 // Confederation-wide ones live in the navy top bar (top-bar-navigation).
 const META_LINKS = [
   { href: '#/services/sicherheitsvorfall-melden', label: 'Notfall & Vorfälle' },
-  { href: '#/knowledge', label: 'Hilfe' },
+  // «Hilfe» zeigt auf die Anleitungen und Schulungen — DAS ist Hilfe-Inhalt.
+  // Vorher zielte der Eintrag auf die Wissens-Übersicht, die in der Haupt-
+  // navigation gleichzeitig «Wissen und Hilfsmittel» hiess: zwei Namen für
+  // dieselbe Seite im selben Header (Design-Review D16).
+  { href: '#/knowledge/guides', label: 'Hilfe' },
 ];
 const TOP_BAR_LINKS = [
   { href: 'https://www.egate.admin.ch/', label: 'eGate', icon: 'External', external: true },
@@ -232,7 +236,7 @@ function headerHTML() {
               </button>
               <form class="search__form" role="search" id="header-search-form" aria-label="Suche auf der Plattform">
                 <label class="sr-only" for="global-search">Suche auf der Plattform</label>
-                <input type="search" id="global-search" placeholder="Suche…" autocomplete="off">
+                <input type="search" id="global-search" placeholder="Suchen…" autocomplete="off">
                 <button class="search__submit" type="submit" aria-label="Suchen">${icon('Search', 'icon--base')}</button>
               </form>
             </div>
@@ -265,7 +269,7 @@ function headerHTML() {
     <div class="mobile-menu__search">
       <form class="mobile-menu__search-form" id="mobile-search-form" role="search">
         <label class="sr-only" for="mobile-q">Suche auf der Plattform</label>
-        <input type="search" id="mobile-q" placeholder="Suche…" autocomplete="off">
+        <input type="search" id="mobile-q" placeholder="Suchen…" autocomplete="off">
         <button class="btn btn--bare btn--icon-only mobile-menu__search-submit" type="submit" aria-label="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </form>
     </div>
@@ -329,7 +333,7 @@ function footerHTML() {
           <h3>Weitere Informationen</h3>
           <div class="footer-information__links">
             <div class="footer-information__links-column">
-              ${fLink('#/knowledge', 'Wissen und Hilfsmittel')}${fLink('#/news', 'News')}${fLink('#/applications', 'Anwendungen')}${fLink('#/data', 'Datenkatalog')}
+              ${fLink('#/knowledge', 'Wissen und Hilfsmittel')}${fLink('#/news', 'News')}${fLink('#/applications', 'Anwendungen')}${fLink('#/data', 'Daten und Digitalisierung')}
             </div>
             <div class="footer-information__links-column">
               ${fLink('#/my-cases', 'Meine Vorgänge')}${fLink('#/services/sicherheitsvorfall-melden', 'Notfall & Vorfälle')}${fLink('#/services', 'Dienstleistungen')}

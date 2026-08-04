@@ -24,7 +24,7 @@ export const AREAS = {
         { title: 'IKT-Vorgaben der Bundesverwaltung (DTI)', desc: 'Vorgabensammlung der Bundeskanzlei — Architektur, Sicherheit, Projektführung.', href: 'https://intranet.dti.bk.admin.ch', external: true, meta: ['dti.bk.admin.ch'] },
         { title: 'Informatiksicherheitsvorgaben Bund', desc: 'Vorgaben des NCSC zur Informatiksicherheit.', href: 'https://www.ncsc.admin.ch', external: true, meta: ['ncsc.admin.ch'] },
         { title: 'Mustervertragsklausel der BKB betreffend Cyberrisiken', desc: 'Standardklausel für Verträge mit IKT-Bezug.', href: 'https://www.sepos.admin.ch', external: true, meta: ['sepos.admin.ch'] },
-        { title: 'Sicherheits- oder Datenschutzvorfall melden', desc: 'Meldung als Vorgang erfassen — die ISBO übernimmt die Bearbeitung.', href: '#/services/sicherheitsvorfall-melden', meta: ['Dienstleistung'] },
+        { title: 'Sicherheits-/Datenschutzvorfall melden', desc: 'Meldung als Vorgang erfassen — die ISBO übernimmt die Bearbeitung.', href: '#/services/sicherheitsvorfall-melden', meta: ['Dienstleistung'] },
       ] },
       { id: 'mustervorlagen', title: 'Mustervorlagen für IKT-Beschaffungen', intro: 'Komplette Vorlagen-Sets für IT-Ausschreibungen (Pflichtenheft, Kriterienkatalog, Vertrag) sowie die einzelnen Vertragsvorlagen für Informatik-Leistungen.', items: [
         { title: 'IT Dienstleistungen Einzelzuschlag', desc: 'Vollständiges Vorlagen-Set für eine Ausschreibung mit Einzelzuschlag.', meta: ['ZIP', '3.4 MB'] },
@@ -186,7 +186,7 @@ export const AREAS = {
     sections: [
       { id: 'anleitungen', title: 'Anleitungen', intro: 'Kurzanleitungen zu den häufigsten Wegen durch das Portal.', items: [
         { title: 'Erste Schritte im Kundenportal', desc: 'Überblick über Dienstleistungen, Anwendungen, Dokumente und Daten.', meta: ['PDF', 'Anleitung'] },
-        { title: 'Einen Vorgang starten und verfolgen', desc: 'Wie Sie einen Service auslösen und den Status unter «Meine Vorgänge» einsehen.', meta: ['PDF', 'Anleitung'] },
+        { title: 'Einen Vorgang starten und verfolgen', desc: 'Wie Sie eine Dienstleistung auslösen und den Status unter «Meine Vorgänge» einsehen.', meta: ['PDF', 'Anleitung'] },
         { title: 'Gebäude und Dokumente finden', desc: 'Suche im Portfolio sowie im Dokumenten- und Medienarchiv.', meta: ['PDF', 'Anleitung'] },
         { title: 'Unterlagen und Vorlagen finden', desc: 'Wie «Wissen und Hilfsmittel» nach Fachgebiet gegliedert ist.', meta: ['PDF', 'Anleitung'] },
       ] },
@@ -220,10 +220,10 @@ export const AREAS = {
 };
 
 export const FAQS = [
-  { q: 'Wie melde ich zusätzlichen Raumbedarf an?', a: 'Öffnen Sie unter «Dienstleistungen» den Service «Raumbedarf melden» und folgen Sie dem geführten Antrag. Nach dem Absenden entsteht ein Vorgang, den Sie unter «Meine Vorgänge» verfolgen.' },
+  { q: 'Wie melde ich zusätzlichen Raumbedarf an?', a: 'Öffnen Sie unter «Dienstleistungen» die Dienstleistung «Raumbedarf melden» und folgen Sie dem geführten Antrag. Nach dem Absenden wird ein Vorgang erstellt, den Sie unter «Meine Vorgänge» verfolgen.' },
   { q: 'Welche Weisung gilt für die Flächenstandards?', a: 'Massgebend ist die Weisung «Neue Arbeitswelten (NAW)» unter «Unterbringung und Objektbetrieb».' },
   { q: 'Wo finde ich die Vertragsvorlagen für eine IT-Beschaffung?', a: 'Unter «Informatik und IKT-Beschaffung» im Abschnitt «Mustervorlagen für IKT-Beschaffungen».' },
-  { q: 'Wie melde ich einen Sicherheits- oder Datenschutzvorfall?', a: 'Nutzen Sie den Service «Sicherheitsvorfall melden». Grundlagen sind das Informationssicherheitsgesetz (ISG) und das Datenschutzmerkblatt (DSG).' },
+  { q: 'Wie melde ich einen Sicherheits- oder Datenschutzvorfall?', a: 'Nutzen Sie die Dienstleistung «Sicherheitsvorfall melden». Grundlagen sind das Informationssicherheitsgesetz (ISG) und das Datenschutzmerkblatt (DSG).' },
   { q: 'An wen wende ich mich bei Rückfragen zu einem Vorgang?', a: 'Verwenden Sie die Referenznummer (Format BBL-JJJJ-XXXX) aus der Detailansicht Ihres Vorgangs für Rückfragen.' },
 ];
 

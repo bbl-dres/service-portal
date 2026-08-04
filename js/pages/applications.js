@@ -9,26 +9,24 @@
 // jede Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen.
 
 
+import { APP_AREAS, AUDIENCES, audienceLabel } from '../domain.js';
+
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['applications', 'contacts'];
-const PER_PAGE = 9;
+// 12 wie die Geschwister-Kataloge: teilbar durch 2 UND 3 Rasterspalten (B16).
+const PER_PAGE = 12;
 
-const AREAS = [
-  { key: 'buildings', label: 'Immobilien & Bau' },
-  { key: 'logistics', label: 'Arbeitsplatz & Logistik' },
-  { key: 'central',   label: 'Zentrale Systeme' },
-];
+// Die Bereiche stehen in js/domain.js — dieselbe Liste trägt den Filter hier
+// und die Bereichszeile der Landingpage (application.js).
+const AREAS = APP_AREAS;
 
-const AUDIENCES = [
-  { value: 'staff',     label: 'BBL-Personal' },
-  { value: 'customers', label: 'Kundschaft' },
-  { value: 'both',      label: 'Beide' },
-];
+// AUDIENCES + audienceLabel kommen aus js/domain.js — die Liste stand dreimal im Code (B23).
 
 // Sortierung (catbar): leer = Standard (Schlüsselanwendungen zuerst, «Sortieren»-Platzhalter).
-const SORT_OPTS = [{ value: 'name', label: 'Name (A–Z)' }, { value: 'group', label: 'Bereich' }];
+// «Bezeichnung (A–Z)» — Kanon: «Titel» nur für Titel-Felder, sonst Bezeichnung (B24).
+const SORT_OPTS = [{ value: 'name', label: 'Bezeichnung (A–Z)' }, { value: 'group', label: 'Bereich' }];
 const SORTS = {
   name: (a, b) => a.name.localeCompare(b.name, 'de'),
   group: (a, b) => a.group.localeCompare(b.group, 'de') || a.name.localeCompare(b.name, 'de'),
@@ -52,14 +50,16 @@ export default async function render(ctx) {
     { label: 'Anwendungen' },
   ]);
 
-  const rawQ = query.get('q') || '';
+  // Lese-Seite des Katalog-Musters aus EINER Quelle (C.catalogueState, B16) —
+  // vorher trug das Quartett je ~35 Zeilen identisches Parsen/Klemmen/Schneiden.
+  const st = C.catalogueState(query, {
+    base: '#/applications', perPage: PER_PAGE,
+    sortOpts: SORT_OPTS.map(o => o.value),
+    filters: { area: AREAS.map(b => b.key), audience: AUDIENCES.map(a => a.value) },
+  });
+  const { q: rawQ, view, sort: sortKey, hash } = st;
   const q = rawQ.toLowerCase();
-  // Filter sind mehrwertig (Mehrfachauswahl-Checkboxen): komma-getrennt im Hash.
-  const areas = (query.get('area') || '').split(',').map(s => s.trim()).filter(k => AREAS.some(b => b.key === k));
-  const audiences = (query.get('audience') || '').split(',').map(s => s.trim()).filter(v => AUDIENCES.some(a => a.value === v));
-  const view = query.get('view') === 'list' ? 'list' : 'gallery';
-  const wanted = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
-  const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
+  const areas = st.selected.area, audiences = st.selected.audience;
 
   const all = core.applications();
   const matches = (a) =>
@@ -70,16 +70,11 @@ export default async function render(ctx) {
   // Standard: Schlüsselanwendungen zuerst; explizite Sortierung überschreibt das.
   const filtered = all.filter(matches);
   const apps = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered.slice().sort((a, b) => (b.hero ? 1 : 0) - (a.hero ? 1 : 0));
-  const totalPages = Math.max(1, Math.ceil(apps.length / PER_PAGE));
-  const page = Math.min(wanted, totalPages);
-  const visible = apps.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  const base = { q: rawQ, area: areas, audience: audiences, sort: sortKey, view };
-  const hash = (patch = {}) => C.catalogueHash('#/applications', { ...base, ...patch });
+  const { visible, totalPages, page } = st.clamp(apps);
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert.
   const active = [
-    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
+    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
     ...areas.map(x => ({ label: areaLabel(x), href: hash({ area: areas.filter(y => y !== x) }) })),
     ...audiences.map(x => ({ label: audienceLabel(x), href: hash({ audience: audiences.filter(y => y !== x) }) })),
   ];
@@ -126,14 +121,18 @@ export default async function render(ctx) {
       lead: 'Alle Anwendungen des BBL an einem Ort — von den Fachanwendungen für Bauten über Logistik bis zu den zentralen Systemen der Bundesverwaltung.',
     })}
     ${C.catalogueBar({
-      formId: 'app-search', inputId: 'aq', searchLabel: 'Anwendung suchen', placeholder: 'Anwendung suchen...', q: rawQ,
+      formId: 'app-search', inputId: 'aq', searchLabel: 'Anwendung suchen', placeholder: 'Anwendung suchen…', q: rawQ,
       countId: 'app-count', count: `<strong>${apps.length}</strong> von ${all.length} Anwendungen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'app-sort', value: sortKey, options: SORT_OPTS },
       filterId: 'app-filter', filterLabel: 'Filter', filterCount: areas.length + audiences.length,
       panelId: 'app-filters', panel: `
-        ${C.filterGroup({ dim: 'area', legend: 'Bereich', selected: areas, options: AREAS.map(b => ({ value: b.key, label: b.label })) })}
+        ${/* navLabel auch im Filter: der Nav-Klick «Fachanwendungen Bauten»
+              erzeugte vorher die Pille «Immobilien & Bau» — zwei Namen für
+              denselben Wert in EINEM Klickpfad (D24); `label` bleibt der
+              group-Spaltenwert. */''}
+        ${C.filterGroup({ dim: 'area', legend: 'Bereich', selected: areas, options: AREAS.map(b => ({ value: b.key, label: b.navLabel })) })}
         ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: AUDIENCES })}
-        <a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ area: [], audience: [] })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a>`,
+        ${C.panelReset({ href: hash({ area: [], audience: [] }) })}`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}
@@ -158,5 +157,4 @@ export default async function render(ctx) {
   ctx.onUnmount(C.wireTableRows(mount));
 }
 
-function areaLabel(key) { const b = AREAS.find(x => x.key === key); return b ? b.label : key; }
-function audienceLabel(v) { const a = AUDIENCES.find(x => x.value === v); return a ? a.label : v; }
+function areaLabel(key) { const b = AREAS.find(x => x.key === key); return b ? b.navLabel : key; }

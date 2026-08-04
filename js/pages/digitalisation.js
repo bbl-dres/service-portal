@@ -56,7 +56,7 @@ function uebersicht(ctx) {
         lead: 'Die Digitalisierung hat für das BBL einen hohen Stellenwert: Sie vereinfacht den Austausch mit den Verwaltungseinheiten, macht Prozesse durchgängig und verbessert die Datengrundlage für Bauten, Immobilien und Logistik.',
       }),
     })}
-    ${C.pageSection({ title: 'Themen', alt: true, body: `<div class="grid grid--responsive-cols-3 gap--responsive">${CARDS.map(C.domainTile).join('')}</div>` })}
+    ${C.pageSection({ title: 'Themen', alt: true, body: `<div class="grid grid--responsive-cols-3">${CARDS.map(C.domainTile).join('')}</div>` })}
     ${C.pageSection({ title: 'Über uns', body: prose(`
       <p>Die Digitalisierung wird im BBL bereichsübergreifend gesteuert: Die Fachbereiche verantworten ihre Prozesse und Daten, die Informatik BBL die Plattformen und den Betrieb. Für die digitale Weiterentwicklung des Immobilienmanagements koordiniert die Organisationseinheit Digital Real Estate und Support (DRES) Strategie und Umsetzung. Für die bundesweiten Vorhaben arbeitet das BBL mit der Bundeskanzlei (Bereich DTI), dem BIT und der Digitalen Verwaltung Schweiz zusammen.</p>`) })}
     ${C.pageSection({ title: 'Weitere Informationen', alt: true, body: prose(`
@@ -93,7 +93,7 @@ function strategiePage(ctx) {
         <p>Der Handlungsbedarf entsteht weniger aus fehlenden Einzelwerkzeugen als aus der ungenügenden Abstimmung von Leistungen, Daten, Lösungen und Verantwortlichkeiten. Ziel ist keine neue Systemlandschaft auf der grünen Wiese, sondern die gezielte und schrittweise Weiterentwicklung des Bestehenden.</p>` },
     { id: 'st-handlungsfelder', title: 'Vier Handlungsfelder mit Zielzustand 2030',
       html: `<p class="muted">Bis 2030 verfolgt das BBL Bauten vier Handlungsfelder mit je einem Zielzustand.</p>
-        <div class="grid grid--responsive-cols-2 gap--responsive mt-4">${handlungsfelder.map(([t, d], i) => `<div class="box">
+        <div class="grid grid--responsive-cols-2 mt-4">${handlungsfelder.map(([t, d], i) => `<div class="box">
           <h3>${i + 1}. ${C.escape(t)}</h3><p class="m-0">${C.escape(d)}</p></div>`).join('')}</div>` },
     { id: 'st-umsetzung', title: 'Umsetzung und Steuerung',
       html: `<p>Die Strategie gibt die Ausrichtung bis 2030 vor; die konkrete Umsetzung erfolgt über einen jährlich aktualisierten Umsetzungsplan «Digitale Immobilien» mit Massnahmen, Verantwortlichkeiten, Ressourcen, Abhängigkeiten und wenigen geeigneten Indikatoren. Die Wirkungsmessung stützt sich vorrangig auf amtsbezogene Indikatoren übergeordneter Bundesstrategien.</p>
@@ -194,7 +194,7 @@ function infoPage(ctx, { title, lead, note, photo }) {
       title, lead,
       image: C.heroFigure({ id: photo }),
     })}
-    <div class="measure-xl mt-6">
+    <div class="measure-xl">
       ${C.notification(note, 'info', 'InfoCircle')}
     </div>
   </div>`;

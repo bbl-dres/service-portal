@@ -5,7 +5,7 @@ const { launch, openPage, APP_BASE, sleep } = await import('file:///C:/Users/dav
 const b = await launch({ port: 9350 });
 
 const probe = `(() => {
-  const card = document.querySelector('.grid .card, .pf-gallery .pf-card');
+  const card = document.querySelector('.grid .card, .pf-gallery .card');
   if (!card) return JSON.stringify({ fehler: 'keine Karte' });
   const chips = card.querySelector('.pf-card__chips');
   const box = chips && chips.getBoundingClientRect();

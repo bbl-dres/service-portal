@@ -11,6 +11,8 @@
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['news'];
+import { datum } from '../format.js';
+import * as links from '../links.js';
 export default async function render(ctx) {
   const { params, C } = ctx;
   const id = params[0] ? C.safeDecode(params[0]) : '';
@@ -30,7 +32,7 @@ function newsList(ctx) {
       title: 'News',
       lead: 'Aktuelle Mitteilungen rund um das BBL, das Kundenportal und die Bundesverwaltung.',
     })}
-    <h2 class="sr-only">Aktualitäten</h2>
+    <h2 class="sr-only">News-Beiträge</h2>
     ${/* CD-Rasternamen (grids.postcss): grid--responsive-cols-N + gap--responsive
           statt der portal-eigenen grid--N-Aliasse (Review layout/grid-3/-4). */''}
     <div class="grid grid--responsive-cols-3 gap--responsive mt-6">
@@ -38,12 +40,14 @@ function newsList(ctx) {
             Muster (echte <h3> für die Gliederung) und den CD-Kartenfuss. */''}
       ${items.length ? items.map(n => C.card({
         title: n.title, desc: n.teaser,
-        href: `#/news/${encodeURIComponent(n.id)}`,
+        href: links.news(n.id),
         photo: { id: n.photo, color: n.color, alt: '' },
-        footerInfo: `${C.escape(n.date)} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
+        footerInfo: `${C.escape(datum(n.date))} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
       })).join('') : ''}
     </div>
-    ${items.length ? '' : C.empty('Keine Meldungen vorhanden.', { available: core.available('news') })}
+    ${/* «Mitteilung» für den Einzelbeitrag — «Meldung» gehört dem Meldewesen
+          (Störung/Sicherheitsvorfall, D3). Ungefilterte Liste → «vorhanden». */''}
+    ${items.length ? '' : C.empty('Keine Mitteilungen vorhanden.', { available: core.available('news') })}
   </div>`;
 }
 
@@ -52,7 +56,7 @@ function newsDetail(ctx, id) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
   const n = core.newsItem(id);
   if (!n) {
-    C.renderNotFound(ctx, { thing: 'Diese Meldung', title: 'Meldung nicht gefunden',
+    C.renderNotFound(ctx, { thing: 'Diese Mitteilung', title: 'Mitteilung nicht gefunden',
       backHref: '#/news', backLabel: 'News',
       crumbs: [{ label: 'Startseite', href: '#/' }, { label: 'News', href: '#/news' }] });
     return;
@@ -61,7 +65,10 @@ function newsDetail(ctx, id) {
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'News', href: '#/news' }, { label: n.title }]);
   mount.innerHTML = `
   <div class="container section">
-    ${C.backLink('#/news', 'News')}
+    ${/* detailBar wie jede andere Detailseite — News war die einzige ohne
+          Teilen/Drucken-Leiste, dabei ist ein Beitrag das archetypische
+          Druck-/Teilziel (B6, CD detailPressRelease). */''}
+    ${C.detailBar({ backHref: '#/news', backLabel: 'News' })}
     ${/* Die einzige lange Lesefläche der App. Mass und Rhythmus kommen aus CDs
           container__center--xs + .vertical-spacing; Datumszeile und Titel bleiben
           als <header> eng beieinander, statt wie alle anderen Kinder 1rem
@@ -69,7 +76,7 @@ function newsDetail(ctx, id) {
     <div class="container--grid">
       <article class="container__center--xs vertical-spacing mt-4">
         <header>
-          <p class="small muted">${C.escape(n.date)} · ${C.escape(n.source)}</p>
+          <p class="small muted">${C.escape(datum(n.date))} · ${C.escape(n.source)}</p>
           <h1 tabindex="-1">${C.escape(n.title)}</h1>
         </header>
         ${C.photo({ id: n.photo, color: n.color, alt: '', w: 1200, style: 'aspect-ratio:21/9;max-height:20rem;border-radius:var(--radius-lg)' })}

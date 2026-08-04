@@ -44,8 +44,17 @@ export const NAV = [
       ] },
       { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/catalog', label: 'Datenbezug und API Verzeichnis' },
+      // Der Metadatenkatalog steht bewusst NICHT im Menü: er ist ein Werkzeug
+      // der Datenverwaltung, nicht der täglichen Nutzung. Erreichbar über den
+      // Anwendungskatalog (Fachanwendungen Bauten) und die Daten-Übersicht.
       { href: '#/applications?area=buildings', label: 'Fachanwendungen Bauten' },
       { href: '#/applications?area=logistics', label: 'Fachanwendungen Logistik' },
+      // Die gemeinsam genutzten Anwendungen der Bundesverwaltung — eGate,
+      // InfoPers, SUPERB, Admin-Directory und die Bundesplattformen I14Y,
+      // TERMDAT, Geoportal, geocat.ch und simap.ch. Sie gehören nicht dem BBL,
+      // werden hier aber täglich gebraucht; ohne diesen Eintrag findet sie nur,
+      // wer den Anwendungskatalog von sich aus filtert.
+      { href: '#/applications?area=federal', label: 'Fachanwendungen Bundesverwaltung' },
     ],
   },
   // «Wissen und Hilfsmittel» trägt die Referenzschicht: Vorgaben, Vorlagen,
@@ -102,6 +111,7 @@ const APPS = {
   'building-create': './apps/building-create.js',
   'media-library':   './apps/media-library.js',
   'tenancies':       './apps/tenancies.js',
+  'metadata-catalog':'./apps/metadata-catalog.js',
 };
 // Which top-nav item to highlight for pages and apps that are not themselves a
 // top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
@@ -112,7 +122,7 @@ const SECTION_OF = {
   'portfolio': 'data', 'projects': 'data',
   'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
   'document-archive': 'data', 'media-library': 'data', 'api-docs': 'data',
-  'tenancies': 'data',
+  'tenancies': 'data', 'metadata-catalog': 'data',
 };
 
 function parseHash() {
@@ -344,7 +354,7 @@ async function dispatch() {
   if (!modPath) {
     document.title = 'Seite nicht gefunden · BBL Kundenportal';
     mount.innerHTML = `<div class="container section"><div class="page-header"><h1 tabindex="-1">Seite nicht gefunden</h1></div>
-      <p class="muted">Diese Seite existiert nicht. <a href="#/">Zur Übersicht</a></p></div>`;
+      <p class="muted">Diese Seite existiert nicht. <a href="#/">Zur Startseite</a></p></div>`;
     focusHeading(mount);
     return;
   }

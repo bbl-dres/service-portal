@@ -13,6 +13,8 @@
 // prüfbar ist (scripts/test-search.mjs).
 
 import { search as runSearch, fold, prepare as prepareRow } from '../search-engine.js';
+import { domainLabel as domainLabelShared } from '../domain.js';
+import * as links from '../links.js';
 import { knowledgeIndex } from '../knowledge-content.js';
 import { record as logQuery, summary as logSummary, clear as logClear } from '../search-log.js';
 
@@ -100,13 +102,13 @@ export default async function render(ctx) {
     // Kein zweites Suchfeld: die Anfrage kommt aus dem grossen Feld im Hero.
     showSearch: false, formId: 'sr-form', inputId: 'sr-q', searchLabel: 'Treffer eingrenzen',
     countId: 'sr-count',
-    count: `<strong>${sorted.length}</strong> von ${total} Treffern für „${C.escape(rawQ)}“${
+    count: `<strong>${sorted.length}</strong> von ${total} Treffern für «${C.escape(rawQ)}»${
       totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
     sort: { id: 'sr-sort', value: sortKey, options: SORT_OPTS.filter(o => o.value) },
     filterId: 'sr-filter', filterCount: selectedArt.length,
     panelId: 'sr-filters',
     panel: C.filterGroup({ dim: 'kind', legend: 'Inhaltsart', selected: selectedArt, options: artOptions })
-      + `<div class="catbar__panel__actions"><a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ kind: [] })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a></div>`,
+      + C.panelReset({ href: hash({ kind: [] }) }),
     view, views: [['list', 'Listenansicht', 'List'], ['gallery', 'Galerieansicht', 'Apps']],
   });
 
@@ -118,41 +120,38 @@ export default async function render(ctx) {
   const body = showLog
     ? logView(C, index.length)
     : !rawQ
-      ? `<p class="muted">Geben Sie einen Suchbegriff ein — zum Beispiel «Störung», «Mustervorlage» oder «Guisanplatz». Durchsucht werden ${index.length} Einträge aus Dienstleistungen, Anwendungen, Unterlagen, Daten, Dokumenten, News, Liegenschaften und Bauprojekten.</p>`
+      ? `<p class="muted">Geben Sie einen Suchbegriff ein — zum Beispiel «Störung», «Mustervorlage» oder «Guisanplatz». Durchsucht werden ${index.length} Einträge aus Dienstleistungen, Anwendungen, Wissen und Hilfsmitteln, Datensätzen, Dokumenten, News, Liegenschaften und Bauprojekten.</p>`
       : total
         ? `${toolbar}${activePills}${C.catalogueResults({
             visible, count: sorted.length, total, view, page, totalPages, header: false,
             card, listView, unit: 'Treffer',
-            gridCls: 'grid grid--responsive-cols-3 gap--responsive catalogue-grid',
+            gridCls: 'grid grid--responsive-cols-3 catalogue-grid',
             paginationInputId: 'sr-page', paginationLabel: 'Seitennavigation Suchergebnisse',
             paginationHref: (p) => hash({ page: p }),
           })}`
         : noResults(C, rawQ, index);
 
-  mount.innerHTML = `
-    <section class="section section--default bg--secondary-50">
-      <div class="container">
-        <h1 tabindex="-1">Suche</h1>
+  // Bänder über C.pageSection — die Seite war die einzige, die die
+  // Section-Anatomie von Hand schrieb (B18); Ausgabe ist byte-gleich.
+  mount.innerHTML = C.pageSection({
+    alt: true,
+    body: `<h1 tabindex="-1">Suche</h1>
         <form class="search search--large search--page-result" id="search-page-form" role="search">
           <div class="search__group">
             <label class="sr-only" for="search-page-input">Im Portal suchen</label>
             <input id="search-page-input" class="search__field" type="search" name="q"
-              placeholder="Suche" value="${C.escape(rawQ)}" autocomplete="off">
+              placeholder="Suchen…" value="${C.escape(rawQ)}" autocomplete="off">
             <button class="btn btn--bare btn--lg btn--icon-only search__submit" type="submit" aria-label="Suchen">
               ${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span>
             </button>
           </div>
-        </form>
-      </div>
-    </section>
-    <section class="section section--default">
-      <div class="container">
-        <!-- Kein aria-live hier: der Knoten wird bei jedem Rendern NEU erzeugt,
-             und eine frisch eingefügte Live-Region feuert nicht. Die Ansage läuft
-             über die persistente Region #live via C.announce() (Item 3.8). -->
-        <div class="search-results">${body}</div>
-      </div>
-    </section>`;
+        </form>`,
+  }) + C.pageSection({
+    // Kein aria-live hier: der Knoten wird bei jedem Rendern NEU erzeugt, und
+    // eine frisch eingefügte Live-Region feuert nicht. Die Ansage läuft über
+    // die persistente Region #live via C.announce() (Item 3.8).
+    body: `<div class="search-results">${body}</div>`,
+  });
 
   // Trefferzahl ansagen — bisher war das Ergebnis für Screenreader stumm.
   if (!showLog) C.announce(rawQ
@@ -189,7 +188,9 @@ export default async function render(ctx) {
 // zuerst. Beides sind kleine Ausschläge, keine Rangdiktate.
 function buildIndex(core) {
   const t = core.t;
-  const domainLabel = (k) => (core.ref().domains || []).find(d => d.key === k)?.label || k;
+  // domainLabel kommt aus js/domain.js — die lokale Kopie war genau der Drift,
+  // den das Modul beenden sollte (B23).
+  const domainLabel = (k) => domainLabelShared(core, k);
   const contactName = (id) => (core.contacts() || []).find(c => c.contactId === id)?.name || '';
   const rows = [];
 
@@ -229,7 +230,7 @@ function buildIndex(core) {
   for (const d of core.datasets()) {
     rows.push({
       art: 'Datensätze', type: 'Datensatz', title: t(d.title), desc: t(d.description),
-      href: `#/data/catalog/${encodeURIComponent(d.id)}`,
+      href: links.datensatz(d.id),
       extra: [t(d.fullDescription), (d.tags || []).join(' '), t(d.meta && d.meta.thema)].join(' '),
     });
   }
@@ -250,7 +251,7 @@ function buildIndex(core) {
   for (const n of core.news()) {
     rows.push({
       art: 'News', type: 'News', title: n.title, desc: n.teaser, meta: n.date,
-      href: `#/news/${encodeURIComponent(n.id)}`, extra: n.body || '',
+      href: links.news(n.id), extra: n.body || '',
     });
   }
 
@@ -260,7 +261,7 @@ function buildIndex(core) {
     rows.push({
       art: 'Liegenschaften', type: 'Liegenschaft',
       title: b.name, desc: [b.street, [b.zip, b.city].filter(Boolean).join(' ')].filter(Boolean).join(', '),
-      href: `#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}`,
+      href: links.objekt(b.bbl_id),
       meta: b.portfolioCategory,
       extra: [String(b.bbl_id).replace(/\//g, ' '), b.city, b.canton, b.portfolioCategory,
         b.typ, b.architekt, b.nutzer, b.ownership].join(' '),
@@ -274,7 +275,7 @@ function buildIndex(core) {
   for (const p of core.projects()) {
     rows.push({
       art: 'Bauprojekte', type: 'Bauprojekt', title: p.name, desc: p.teaser || '',
-      href: `#/app/projects/${encodeURIComponent(p.projectId)}`,
+      href: links.bauprojekt(p.projectId),
       meta: [p.projectNumber, p.status].filter(Boolean).join(' · '),
       extra: [p.projectId, p.projectNumber, p.status, p.siaPhaseLabel, p.subPortfolio,
         p.pm, p.buildingId, p.siteName, p.street, p.city, p.canton].filter(Boolean).join(' '),

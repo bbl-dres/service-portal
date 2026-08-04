@@ -4,6 +4,9 @@
 // der Störungsmeldung, weil der Helpdesk OM laut Kundenplattform die zentrale
 // Annahmestelle für «Störungsmeldung UND Kleinaufträge» ist.
 
+import * as links from '../links.js';
+import { DIENSTLEISTUNGEN, trail } from '../crumbs.js';
+
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
@@ -11,10 +14,14 @@ export const needs = ['buildings', 'contacts'];
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs } = ctx;
 
+  // serviceId = Katalogeintrag in data/services.json — Zurück/Abbrechen zielt
+  // auf die Dienstleistungsbeschreibung des jeweiligen Typs, nicht den Hub
+  // (Design-Review B11).
   const TYPES = {
     sicherheit: {
       title: 'Sicherheits-/Datenschutzvorfall melden',
       defId: 'sicherheitsvorfall',
+      serviceId: 'sicherheitsvorfall-melden',
       label: 'Sicherheits-/Datenschutzvorfall',
       categories: ['Informationssicherheit', 'Datenschutz'],
       lead: 'Melden Sie einen Vorfall der Informationssicherheit oder des Datenschutzes an die Fachstelle ISBO.',
@@ -22,13 +29,17 @@ export default async function render(ctx) {
     reklamation: {
       title: 'Reklamationsmeldung',
       defId: 'stoerung',
+      serviceId: 'reklamation',
       label: 'Reklamation',
       categories: ['Reklamation'],
       lead: 'Erfassen Sie eine Reklamation zu Liegenschaften, Betrieb oder Dienstleistungen.',
     },
     kleinauftrag: {
-      title: 'Kleinauftrag am Gebäude',
+      // Katalogtitel = h1 (Verb inklusive) — services.json führt den Eintrag
+      // als «Kleinauftrag am Gebäude erteilen».
+      title: 'Kleinauftrag am Gebäude erteilen',
       defId: 'stoerung',
+      serviceId: 'kleinauftrag-gebaeude',
       label: 'Kleinauftrag',
       categories: ['Bauliche Anpassung', 'Möblierung', 'Beschilderung'],
       lead: 'Beauftragen Sie eine kleinere bauliche Anpassung ausserhalb eines Bauprojekts.',
@@ -36,6 +47,7 @@ export default async function render(ctx) {
     umzug: {
       title: 'Umzug, Transport & Entsorgung',
       defId: 'stoerung',
+      serviceId: 'umzug-anmelden',
       label: 'Umzug / Transport / Entsorgung',
       categories: ['Umzug', 'Transport', 'Entsorgung'],
       lead: 'Beauftragen Sie einen Umzug, einen Transport oder eine Entsorgung.',
@@ -43,6 +55,7 @@ export default async function render(ctx) {
     default: {
       title: 'Störungs-, Reinigungs- & Reparaturmeldung',
       defId: 'stoerung',
+      serviceId: 'stoerung-melden',
       label: 'Störungsmeldung',
       categories: ['Störung', 'Reinigung', 'Reparatur'],
       lead: 'Melden Sie eine Störung, einen Reinigungs- oder Reparaturbedarf am Objekt.',
@@ -54,11 +67,7 @@ export default async function render(ctx) {
   const isSecurity = typeKey === 'sicherheit';
 
   setTitle(cfg.title);
-  setCrumbs([
-    { label: 'Startseite', href: '#/' },
-    { label: 'Dienstleistungen', href: '#/services' },
-    { label: cfg.title },
-  ]);
+  setCrumbs(trail(DIENSTLEISTUNGEN, { label: cfg.title }));
 
   // Meldung = persönlicher Vorgang — abgemeldet zum Login auffordern statt in der
   // Formularansicht session.user() zu dereferenzieren (Direktaufruf-Schutz).
@@ -66,10 +75,10 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-        ${C.backLink('#/services', 'Dienstleistungen')}
+        ${C.backLink(links.dienstleistung(cfg.serviceId), 'Dienstleistungsbeschreibung')}
         <h1 tabindex="-1">${C.escape(cfg.title)}</h1>
         <p class="lead">${C.escape(cfg.lead)}</p>
-        ${C.loginGate('Diese Meldung wird als persönlicher Vorgang unter «Meine Vorgänge» erfasst. Bitte melden Sie sich mit AGOV / FedLogin an, um sie einzureichen.')}
+        ${C.loginGate('Diese Meldung wird als persönlicher Vorgang unter «Meine Vorgänge» erfasst. Bitte melden Sie sich mit AGOV / FedLogin an, um sie abzusenden.')}
       </div>
     </div>`;
     return;
@@ -110,12 +119,12 @@ export default async function render(ctx) {
 
     // «Bitte wählen …» als echte Leerauswahl an erster Stelle — erst damit kann
     // die required-Prüfung des Gebäude-Felds überhaupt fehlschlagen.
-    const buildingOpts = [{ value: '', text: 'Bitte wählen …' },
-      ...buildings.map(b => ({ value: b.bbl_id, text: `${b.name} — ${b.city}` }))];
-    const categoryOpts = cfg.categories.map(c => ({ value: c, text: c }));
+    const buildingOpts = [{ value: '', label: 'Bitte wählen…' },
+      ...buildings.map(b => ({ value: b.bbl_id, label: `${b.name} — ${b.city}` }))];
+    const categoryOpts = cfg.categories.map(c => ({ value: c, label: c }));
     const dringlichkeitOpts = [
-      { value: 'normal', text: 'Normal' },
-      { value: 'hoch', text: 'Hoch' },
+      { value: 'normal', label: 'Normal' },
+      { value: 'hoch', label: 'Hoch' },
     ];
 
     const securityNote = isSecurity ? `
@@ -128,10 +137,10 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-      ${C.backLink('#/services', 'Dienstleistungen')}
+      ${C.backLink(links.dienstleistung(cfg.serviceId), 'Dienstleistungsbeschreibung')}
       <h1 tabindex="-1">${C.escape(cfg.title)}</h1>
       <p class="lead">${C.escape(cfg.lead)}</p>
-      <p class="muted">Meldung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}</p>
+      ${C.contextLine({ action: 'Meldung', name: session.user().name, org: session.user().org })}
       ${securityNote}
       <!-- novalidate — siehe space-request.js: ohne das Attribut feuert das
            submit-Event nie und validate() bleibt unerreichbar. -->
@@ -152,7 +161,7 @@ export default async function render(ctx) {
         ${C.select({ id: 'dringlichkeit', name: 'dringlichkeit', label: 'Dringlichkeit', value: state.dringlichkeit, options: dringlichkeitOpts })}
         ${C.notification('Mit dem Absenden wird ein Vorgang erstellt. Sie können den Status jederzeit unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
         <div class="form__actions">
-          <a class="btn btn--outline" href="#/services"><span class="btn__text">Abbrechen</span></a>
+          <a class="btn btn--outline" href="${links.dienstleistung(cfg.serviceId)}"><span class="btn__text">Abbrechen</span></a>
           <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Meldung absenden</span></button>
         </div>
       </form>
@@ -171,11 +180,14 @@ export default async function render(ctx) {
         text: 'Ihre Meldung wurde erfasst und an die zuständige Stelle weitergeleitet. Den Bearbeitungsstand sehen Sie jederzeit unter «Meine Vorgänge».',
         extra: isSecurity ? C.notification('Bei akuter Gefahr wenden Sie sich umgehend an die <strong>Alarmzentrale +41 58 465 65 65</strong>.', 'warning', 'WarningCircle') : '',
         actions: [
-          { href: `#/my-cases/${i.instanceId}`, label: 'Vorgang ansehen', icon: 'ArrowRight' },
-          { href: '#/services', label: 'Weitere Services' },
+          { href: links.vorgang(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
+          { href: '#/services', label: 'Zu den Dienstleistungen' },
         ] })}
       </div>
     </div>`;
+    // Nach dem Absenden fiele der Fokus sonst auf <body> — Überschrift
+    // fokussieren + Referenz ansagen (Design-Review B8).
+    C.focusProcessDone(mount, i);
   }
 
   function read() {
@@ -186,7 +198,7 @@ export default async function render(ctx) {
 
   function validate() {
     const e = {};
-    if (!state.buildingId) e.bld = 'Bitte Gebäude / Standort wählen';
+    if (!state.buildingId) e.bld = 'Bitte ein Gebäude oder einen Standort wählen';
     if (!state.beschreibung.trim()) e.beschreibung = 'Bitte beschreiben Sie den Sachverhalt';
     state.errors = e;
     return Object.keys(e).length === 0;
@@ -195,6 +207,9 @@ export default async function render(ctx) {
   function wire() {
     const form = mount.querySelector('#report-form');
     if (!form) return;
+    // Fehler löschen, sobald das Feld korrigiert wird — fehlte hier komplett,
+    // Meldungen blieben nach der Korrektur stehen (Design-Review A8).
+    C.wireFieldErrors(mount, state.errors);
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       read();

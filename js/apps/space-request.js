@@ -1,5 +1,8 @@
 // Raumbedarf melden — the hero service flow (external → mock process → Meine Vorgänge).
 
+import * as links from '../links.js';
+import { DIENSTLEISTUNGEN, trail } from '../crumbs.js';
+
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
@@ -7,15 +10,21 @@ export const needs = ['buildings'];
 export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs, navigate } = ctx;
   setTitle('Raumbedarf melden');
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }, { label: 'Raumbedarf melden' }]);
+  setCrumbs(trail(DIENSTLEISTUNGEN, { label: 'Raumbedarf melden' }));
 
   // Persönlicher Vorgang — abgemeldet zum Login auffordern (der Zustand unten
   // liest session.user().org, würde also sonst beim Direktaufruf werfen).
   if (!session.isLoggedIn()) {
+    // Ausgeloggt derselbe Kopf wie eingeloggt (schmale Spalte, Rückweg zur
+    // Dienstleistungsbeschreibung) — nur statt des Formulars steht der Gate.
     mount.innerHTML = `
-    <div class="container section">
-      ${C.pageHeader({ title: 'Raumbedarf melden', lead: 'Ihr Bedarf an Räumen und Flächen — als persönlicher Vorgang erfasst.' })}
-      ${C.loginGate('«Raumbedarf melden» erfasst Ihren Bedarf als Vorgang unter «Meine Vorgänge». Bitte melden Sie sich mit AGOV / FedLogin an, um eine Meldung zu erstellen.')}
+    <div class="container section container--grid">
+      <div class="container__center--xs">
+        ${C.backLink(links.dienstleistung('raumbedarf-melden'), 'Dienstleistungsbeschreibung')}
+        <h1 tabindex="-1">Raumbedarf melden</h1>
+        <p class="lead">Ihr Bedarf an Räumen und Flächen — als persönlicher Vorgang erfasst.</p>
+        ${C.loginGate('«Raumbedarf melden» erfasst Ihren Bedarf als Vorgang unter «Meine Vorgänge». Bitte melden Sie sich mit AGOV / FedLogin an, um den Antrag zu erstellen.')}
+      </div>
     </div>`;
     return;
   }
@@ -47,11 +56,7 @@ export default async function render(ctx) {
     persons: 'Anzahl Personen / Arbeitsplätze', beg: 'Begründung',
   };
 
-  // Gemeinsame Schrittanzeige (C.stepIndicator) — `current` ist 0-basiert (Item 3.10).
   const STEP_LABELS = ['Angaben', 'Bedarf', 'Prüfen & Absenden'];
-  function stepsBar() {
-    return C.stepIndicator(STEP_LABELS, state.step - 1, { label: 'Antragsschritte' });
-  }
 
   function draw() {
     if (state.created) return drawDone();
@@ -60,16 +65,13 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-        ${C.backLink('#/services/raumbedarf-melden', 'Service-Beschreibung')}
+        ${C.backLink(links.dienstleistung('raumbedarf-melden'), 'Dienstleistungsbeschreibung')}
         <h1 tabindex="-1">Raumbedarf melden</h1>
-        <p class="muted">Antrag als <strong>${C.escape(state.org)}</strong> · Prozess: Eingang → Prüfung GS → Prüfung PFM → Entscheid.</p>
-        ${stepsBar()}
-        ${/* Stufe 2 der Gliederung: die Seite bot Hilfsmitteln ausser der <h1> keinen
-              einzigen Sprungpunkt. sr-only, weil die CD-Schrittanzeige die Position
-              schon sichtbar trägt — und Fokusziel beim Schrittwechsel, damit die
-              Ansage «Schritt N von 3» aus dem Dokument selbst kommt. */''}
-        <h2 class="sr-only" id="wiz-step-head" tabindex="-1">Schritt ${state.step} von 3: ${C.escape(STEP_LABELS[state.step - 1])}</h2>
-        ${state.step < 3 ? '<p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>' : ''}
+        ${C.contextLine({ action: 'Antrag', name: session.user().name, org: state.org, process: 'Eingang → Prüfung GS → Prüfung PFM → Entscheid' })}
+        ${/* Gemeinsames Wizard-Gerüst: Schrittanzeige + sr-only-Schrittüberschrift
+              (Fokusziel beim Wechsel) + Pflichtfeld-Legende — Schritt 3 hat keine
+              mit «*» markierten Felder, dort entfällt die Legende (Review B8). */''}
+        ${C.wizardHead(STEP_LABELS, state.step, { legend: state.step < 3 })}
         ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
         <!-- novalidate: ohne das Attribut bricht die HTML-Constraint-Validierung
              die Absendung ab, BEVOR das submit-Event feuert - validate() lief nie
@@ -140,11 +142,13 @@ export default async function render(ctx) {
         ${C.processDone({ instance: i, lead: 'Antrag eingereicht.', title: 'Vielen Dank',
           text: 'Ihr Raumbedarf-Antrag wurde erfasst und an die Prüfung weitergeleitet. Den Status sehen Sie jederzeit unter «Meine Vorgänge».',
           actions: [
-            { href: `#/my-cases/${i.instanceId}`, label: 'Vorgang ansehen', icon: 'ArrowRight' },
-            { href: '#/services', label: 'Weitere Services' },
+            { href: links.vorgang(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            { href: '#/services', label: 'Zu den Dienstleistungen' },
           ] })}
       </div>
     </div>`;
+    // Fokus auf die Erfolgsüberschrift + Ansage der Referenz (gemeinsamer Helfer).
+    C.focusProcessDone(mount, i);
   }
 
   function readStep() {
@@ -162,8 +166,8 @@ export default async function render(ctx) {
     const e = {};
     if (state.step === 1) {
       // Anweisende Formulierung wie in fault-report.js — nicht «Pflichtfeld».
-      if (!state.org.trim()) e.org = 'Bitte Verwaltungseinheit angeben';
-      if (!state.costCenter.trim()) e.cc = 'Bitte Kostenstelle angeben';
+      if (!state.org.trim()) e.org = 'Bitte die Verwaltungseinheit angeben';
+      if (!state.costCenter.trim()) e.cc = 'Bitte die Kostenstelle angeben';
       const n = Number.parseInt(state.persons, 10);
       if (!Number.isFinite(n) || n < 1) e.persons = 'Bitte eine Anzahl ab 1 angeben';
       else if (n > 5000) e.persons = 'Bitte einen Wert bis 5000 angeben';
@@ -187,7 +191,7 @@ export default async function render(ctx) {
       // Fehlversuch: neu zeichnen, dann Fokus auf die Fehlerübersicht — sonst
       // landet er auf <body> und der Nutzer erfährt nichts (WCAG 3.3.1).
       if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
-      if (state.step < 3) { state.step += 1; draw(); focusStepHeading(); return; }
+      if (state.step < 3) { state.step += 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step); return; }
       // submit
       const b = core.building(state.buildingId);
       state.created = engine.start('raumbedarf', {
@@ -201,7 +205,7 @@ export default async function render(ctx) {
       if (!state.created) C.flashError(mount, 'Der Vorgang konnte nicht gespeichert werden — bitte erneut versuchen.');
     });
     const back = mount.querySelector('[data-back]');
-    if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); focusStepHeading(); });
+    if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step); });
     // `#persons` wird hier gebunden, weil der Wert die Flächenschätzung in Schritt 2
     // speist (der frühere Kommentar behauptete das Gegenteil direkt über dem Code).
     const personsEl = mount.querySelector('#persons');
@@ -209,26 +213,7 @@ export default async function render(ctx) {
     // stillschweigend zu korrigieren.
     if (personsEl) personsEl.addEventListener('input', () => { state.persons = personsEl.value; });
     // Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert (Item 3.6).
-    Object.keys(state.errors).forEach((id) => {
-      const el = mount.querySelector('#' + id);
-      if (!el) return;
-      el.addEventListener('input', () => {
-        if (!state.errors[id]) return;
-        delete state.errors[id];
-        el.classList.remove('input--error');
-        el.removeAttribute('aria-invalid');
-        const msg = mount.querySelector('#' + id + '-msg');
-        if (msg) msg.remove();
-      }, { once: true });
-    });
-  }
-
-  // Schrittwechsel ist ein Kontextwechsel: Fokus auf die Seitenüberschrift, damit
-  // Screenreader den neuen Schritt ansagen (bisher war er völlig still).
-  function focusStepHeading() {
-    const h = mount.querySelector('#wiz-step-head') || mount.querySelector('h1');
-    if (h) h.focus({ preventScroll: true });
-    C.announce(`Schritt ${state.step} von 3`);
+    C.wireFieldErrors(mount, state.errors);
   }
 
   draw();

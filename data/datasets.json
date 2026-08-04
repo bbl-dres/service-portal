@@ -96,11 +96,12 @@
           "en": "I14Y Interoperability Platform"
         },
         "value": {
-          "de": "Gebäude Bund",
-          "fr": "Bâtiments de la Confédération",
-          "it": "Edifici della Confederazione",
-          "en": "Federal Buildings"
-        }
+          "de": "Gebäude Stammdaten – Details lesen",
+          "fr": "Données de base des bâtiments – lire les détails",
+          "it": "Dati di base degli edifici – lettura dei dettagli",
+          "en": "Building Master Data - Get Detail"
+        },
+        "url": "https://www.i14y.admin.ch/de/catalog/dataservices/60f54f01-bd80-423b-8581-581b7bcd6b38/description"
       }
     ],
     "responsiblePersons": [
@@ -744,7 +745,7 @@
   {
     "id": "8",
     "title": {
-      "de": "Geodaten: Bodenabdeckung (GIS IMMO)",
+      "de": "Geodaten: Bodenbedeckung (GIS IMMO)",
       "fr": "Géodonnées : couverture du sol (GIS IMMO)",
       "it": "Geodati: copertura del suolo (GIS IMMO)",
       "en": "Geodata: Land Cover (GIS IMMO)"
@@ -796,14 +797,14 @@
     "distributions": [
       {
         "name": {
-          "de": "GIS Bodenabdeckung Export",
+          "de": "GIS Bodenbedeckung Export",
           "fr": "Export GIS couverture du sol",
           "it": "Esportazione GIS copertura del suolo",
           "en": "GIS land cover export"
         },
         "format": "GeoJSON",
         "identifikator": "z7a8b9c0-1234-56za-2345-7890123456za",
-        "titel": "GIS Bodenabdeckung Export",
+        "titel": "GIS Bodenbedeckung Export",
         "zugriffsUrl": "https://gis.bbl.admin.ch/export/bodenabdeckung",
         "downloadUrl": "https://gis.bbl.admin.ch/download/bodenabdeckung.geojson",
         "status": "published",
@@ -813,14 +814,14 @@
       },
       {
         "name": {
-          "de": "GIS Bodenabdeckung WFS",
+          "de": "GIS Bodenbedeckung WFS",
           "fr": "WFS GIS bodenabdeckung",
           "it": "WFS GIS bodenabdeckung",
-          "en": "GIS Bodenabdeckung WFS"
+          "en": "GIS Bodenbedeckung WFS"
         },
         "format": "WFS",
         "identifikator": "275429c9-220c-487f-88cf-65d434b93aa5",
-        "titel": "GIS Bodenabdeckung WFS",
+        "titel": "GIS Bodenbedeckung WFS",
         "zugriffsUrl": "https://gis.bbl.admin.ch/wfs/bodenabdeckung",
         "downloadUrl": "",
         "status": "published",
@@ -835,14 +836,14 @@
       },
       {
         "name": {
-          "de": "GIS Bodenabdeckung API (REST)",
+          "de": "GIS Bodenbedeckung API (REST)",
           "fr": "API GIS bodenabdeckung (REST)",
           "it": "API GIS bodenabdeckung (REST)",
-          "en": "GIS Bodenabdeckung API (REST)"
+          "en": "GIS Bodenbedeckung API (REST)"
         },
         "format": "REST",
         "identifikator": "1b9298d4-f575-4e12-a0b3-876a4f2d7cbd",
-        "titel": "GIS Bodenabdeckung API (REST)",
+        "titel": "GIS Bodenbedeckung API (REST)",
         "zugriffsUrl": "https://api.bbl.admin.ch/v1/gis/bodenabdeckung",
         "downloadUrl": "",
         "status": "published",
@@ -857,14 +858,14 @@
       },
       {
         "name": {
-          "de": "GIS Bodenabdeckung Export (XLSX)",
+          "de": "GIS Bodenbedeckung Export (XLSX)",
           "fr": "Export GIS bodenabdeckung (XLSX)",
           "it": "Esportazione GIS bodenabdeckung (XLSX)",
-          "en": "GIS Bodenabdeckung export (XLSX)"
+          "en": "GIS Bodenbedeckung export (XLSX)"
         },
         "format": "Excel",
         "identifikator": "65c57ead-b153-49da-97ed-fc5741b45b12",
-        "titel": "GIS Bodenabdeckung Export (XLSX)",
+        "titel": "GIS Bodenbedeckung Export (XLSX)",
         "zugriffsUrl": "https://gis.bbl.admin.ch/export/bodenabdeckung",
         "downloadUrl": "https://gis.bbl.admin.ch/download/bodenabdeckung.xlsx",
         "status": "published",
@@ -1085,7 +1086,38 @@
         "bemerkungen": ""
       }
     ],
-    "publications": []
+    "publications": [
+      {
+        "catalog": {
+          "de": "I14Y Interoperabilitätsplattform",
+          "fr": "I14Y Plateforme d'interopérabilité",
+          "it": "I14Y Piattaforma di interoperabilità",
+          "en": "I14Y Interoperability Platform"
+        },
+        "value": {
+          "de": "Grundstücke Bund (GIS IMMO) – WFS und REST",
+          "fr": "Biens-fonds de la Confédération (GIS IMMO) – WFS et REST",
+          "it": "Fondi della Confederazione (GIS IMMO) – WFS e REST",
+          "en": "Federal Land Parcels (GIS IMMO) - WFS and REST"
+        },
+        "url": "https://www.i14y.admin.ch/de/catalog/dataservices/09dc2754-945a-47bb-a1c4-3e72ffa1483a/description"
+      },
+      {
+        "catalog": {
+          "de": "geocat.ch — Schweizer Katalog der Geometadaten",
+          "fr": "geocat.ch — catalogue suisse des géométadonnées",
+          "it": "geocat.ch — catalogo svizzero dei geometadati",
+          "en": "geocat.ch - Swiss catalogue for geometadata"
+        },
+        "value": {
+          "de": "Grundstücke des Bundes (BBL)",
+          "fr": "Biens-fonds de la Confédération (OFCL)",
+          "it": "Fondi della Confederazione (UFCL)",
+          "en": "Federal Land Parcels (FOBL)"
+        },
+        "url": "https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/a2ccc288-de8c-459a-88a7-d5b6357300ec"
+      }
+    ]
   },
   {
     "id": "11",
@@ -1219,7 +1251,38 @@
         "bemerkungen": ""
       }
     ],
-    "publications": []
+    "publications": [
+      {
+        "catalog": {
+          "de": "I14Y Interoperabilitätsplattform",
+          "fr": "I14Y Plateforme d'interopérabilité",
+          "it": "I14Y Piattaforma di interoperabilità",
+          "en": "I14Y Interoperability Platform"
+        },
+        "value": {
+          "de": "Gebäude Bund (GIS IMMO) – WFS und REST",
+          "fr": "Bâtiments de la Confédération (GIS IMMO) – WFS et REST",
+          "it": "Edifici della Confederazione (GIS IMMO) – WFS e REST",
+          "en": "Federal Buildings (GIS IMMO) - WFS and REST"
+        },
+        "url": "https://www.i14y.admin.ch/de/catalog/dataservices/920020e9-fb71-4194-a1d9-81fe901d26fd/description"
+      },
+      {
+        "catalog": {
+          "de": "geocat.ch — Schweizer Katalog der Geometadaten",
+          "fr": "geocat.ch — catalogue suisse des géométadonnées",
+          "it": "geocat.ch — catalogo svizzero dei geometadati",
+          "en": "geocat.ch - Swiss catalogue for geometadata"
+        },
+        "value": {
+          "de": "Gebäude des Bundes (BBL)",
+          "fr": "Bâtiments de la Confédération (OFCL)",
+          "it": "Edifici della Confederazione (UFCL)",
+          "en": "Federal Buildings (FOBL)"
+        },
+        "url": "https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/8a12a3ab-f3e0-436e-a571-e129becce292"
+      }
+    ]
   },
   {
     "id": "12",

@@ -9,6 +9,13 @@ exiting non-zero on failure.
 > These grew out of verifying specific code-review fixes. A proper test strategy
 > (a runner, CI, broader coverage) is a later task — for now they are runnable,
 > reusable smoke tests worth keeping.
+>
+> Die Tabellen unten decken die ÄLTEREN Suiten ab; inzwischen gibt es je
+> `test-*.mjs`-Suite und `check-*.mjs`-Layoutprobe eine Datei mehr, als hier
+> steht — massgebend ist `ls scripts/test-*.mjs scripts/check-*.mjs`. Alle
+> folgen demselben Muster (APP_BASE-Umgebungsvariable, Exit ≠ 0 bei Fehlern);
+> Neuzugang der Konsistenz-Review: `check-consistency.mjs` (skin-bewusste
+> Computed-Style-Proben, docs/design-review.md).
 
 ## Prerequisites
 

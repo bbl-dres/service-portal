@@ -9,6 +9,9 @@
 // externes System), Berechtigung und Ansprechstelle — das gehört auf eine
 // Seite, bevor jemand auf «Öffnen» klickt.
 
+import { appAreaLabel } from '../domain.js';
+import { datum } from '../format.js';
+
 // Die Landingpage-Felder (long, entries, access, resources, contact, updated)
 // stehen seit 2026-07 am Anwendungsdatensatz selbst — es gab keinen Grund für
 // eine zweite Datei mit demselben Schlüssel. `page` bleibt als lokaler Alias
@@ -67,11 +70,13 @@ export default function render(ctx, appId) {
       image: heroBild(C, a),
     })}
 
-    <div class="container--grid gap--responsive mt-6">
+    ${''/* Kein mt-6 mehr: den Abstand unter dem Hero trägt die geteilte Regel
+          .hero + .container--grid (EIN Wert für alle Detail-Geschwister). */}
+    <div class="container--grid gap--responsive">
       ${/* .stack-lg kodierte dieselbe Rampe wie CDs .vertical-spacing (3/3.5rem)
             ein zweites Mal — hier steht der kanonische Name (Review layout/main-1). */''}
       <div class="container__main vertical-spacing">
-        ${page.long ? `<div><h2 class="detail-section__title">Über die Anwendung</h2><p>${C.escape(page.long)}</p></div>` : ''}
+        ${page.long ? section('Über die Anwendung', `<p>${C.escape(page.long)}</p>`) : ''}
 
         ${section('Einstieg', entries.length
           ? `<ul class="download-items">${entries.map(entryItem).join('')}</ul>`
@@ -85,10 +90,14 @@ export default function render(ctx, appId) {
 
       ${/* KEIN .stack-lg hier: den CD-Abstand der Aside-Module (1.75/2rem)
             liefert bereits .container__aside > * (Review layout/aside-1). */''}
-      <aside class="container__aside">
+      ${''/* Benannte Randspalte mit sr-h2 — wie das Dienstleistungs-Detail; ohne
+            die Stufe hingen die Box-h3 in der Gliederung unter der letzten
+            Haupt-h2 (Design-Review, pages). */}
+      <aside class="container__aside" aria-labelledby="app-aside-head">
+        <h2 class="sr-only" id="app-aside-head">Zugriff und Kontakt</h2>
         <div class="box">
           <h3>Zugriff</h3>
-          ${primary ? `<p style="margin:0 0 1rem">
+          ${primary ? `<p class="mt-0 mb-4">
             <a class="btn btn--outline btn--icon-right" href="${C.escape(primary.href)}"${
               primary.kind === 'external' ? ' target="_blank" rel="noopener external"' : ''}>${
               /* CD: das Icon steht im DOM zuerst, btn--icon-right dreht die Reihenfolge */
@@ -98,9 +107,9 @@ export default function render(ctx, appId) {
           ${page.access && page.access.note
             ? `<p class="small m-0">${C.escape(page.access.note)}</p>` : ''}
           ${page.access && page.access.steps && page.access.steps.length
-            ? `<ul class="list--default small mt-2" style="color:var(--color-text-muted)">${
+            ? `<ul class="list--default small muted mt-2">${
                 page.access.steps.map(s => `<li>${C.escape(s)}</li>`).join('')}</ul>` : ''}
-          ${noTarget ? `<p class="small muted m-0">Im Prototyp ist kein Zielsystem verknüpft.</p>` : ''}
+          ${noTarget ? `<p class="small muted m-0">Im Prototyp ist kein Zielsystem angebunden.</p>` : ''}
         </div>
 
         ${C.contactBox(contact)}
@@ -109,10 +118,12 @@ export default function render(ctx, appId) {
           <h3>Eckdaten</h3>
           <dl class="kv m-0">
             <dt>Gruppe</dt><dd>${C.escape(a.group)}</dd>
-            ${a.area ? `<dt>Bereich</dt><dd>${C.escape(bereichLabel(a.area))}</dd>` : ''}
+            ${a.area ? `<dt>Bereich</dt><dd>${C.escape(appAreaLabel(a.area))}</dd>` : ''}
             <dt>Zugang</dt><dd>${C.escape(a.accessNote || '—')}</dd>
             <dt>Einstieg</dt><dd>${external ? 'Externes System' : 'Im Kundenportal'}</dd>
-            ${page.updated ? `<dt>Letzte Änderung</dt><dd>${C.escape(page.updated)}</dd>` : ''}
+            ${''/* «Stand» wie alle Datenstands-Zeilen (A13); applications.json
+                  liefert das Datum neu als ISO, datum() formatiert de-CH. */}
+            ${page.updated ? `<dt>Stand</dt><dd>${C.escape(datum(page.updated))}</dd>` : ''}
             <dt>ID</dt><dd><code>${C.escape(a.appId)}</code></dd>
           </dl>
         </div>
@@ -142,7 +153,3 @@ function crumbs() {
   ];
 }
 
-function bereichLabel(key) {
-  return { buildings: 'Fachanwendungen Bauten', logistics: 'Fachanwendungen Logistik',
-    central: 'Zentrale Systeme' }[key] || key;
-}

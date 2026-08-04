@@ -10,7 +10,7 @@ const b = await launch({ webgl: true });
 let p = await openPage(b, APP_BASE + '/data/catalog?classification=internal&topic=Bauwerke');
 await sleep(1600);
 let r = JSON.parse(await p.evaluate(`(() => {
-  const a = [...document.querySelectorAll('#ds-filters a')].find(x => /Zurücksetzen/.test(x.textContent));
+  const a = [...document.querySelectorAll('#ds-filters a')].find(x => /zurücksetzen/i.test(x.textContent));
   return JSON.stringify({ href: a?.getAttribute('href') });
 })()`));
 ok(!/classification/.test(r.href || ''), '§1.1 Reset löscht die Klassifizierung', r.href);

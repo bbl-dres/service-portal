@@ -99,7 +99,7 @@ export function openDocumentViewer(doc, siblings) {
   backdrop.setAttribute('role', 'dialog');
   backdrop.setAttribute('aria-modal', 'true');
   document.body.appendChild(backdrop);
-  document.body.classList.add('docviewer-open');
+  document.body.classList.add('body--overlay-open');
 
   // Tab-Falle über das geteilte C.trapFocus statt einer eigenen Selektorliste:
   // drei abweichende Kopien der Fokusliste haben bereits einen Trap-Ausbruch
@@ -136,7 +136,7 @@ export function openDocumentViewer(doc, siblings) {
     document.removeEventListener('keydown', onKeydown, true);
     untrap();
     backdrop.remove();
-    document.body.classList.remove('docviewer-open');
+    document.body.classList.remove('body--overlay-open');
     if (opener && opener.focus) opener.focus();
   }
 
@@ -190,7 +190,7 @@ export function openDocumentViewer(doc, siblings) {
     </div>
     <div class="docviewer__toolbar" role="group" aria-label="Zoom-Steuerung">
       <button class="docviewer__zoom" type="button" data-act="zoom-out" aria-label="Verkleinern" title="Verkleinern">${C.icon('Minus', 'icon--sm')}</button>
-      <button class="docviewer__zoom docviewer__zoom--reset" type="button" data-act="zoom-reset" aria-label="Zoom zurücksetzen" title="Zurücksetzen"><span data-zoom-readout>100%</span></button>
+      <button class="docviewer__zoom docviewer__zoom--reset" type="button" data-act="zoom-reset" aria-label="Zoom zurücksetzen" title="Zoom zurücksetzen"><span data-zoom-readout>100%</span></button>
       <button class="docviewer__zoom" type="button" data-act="zoom-in" aria-label="Vergrössern" title="Vergrössern">${C.icon('Plus', 'icon--sm')}</button>
     </div>`;
 
@@ -205,9 +205,12 @@ export function openDocumentViewer(doc, siblings) {
 
     const on = (act, fn) => { const el = backdrop.querySelector(`[data-act="${act}"]`); if (el) el.addEventListener('click', fn); };
     on('close', close);
-    on('download', () => toast('Download simuliert: ' + d.title));
-    on('upload', () => toast('Neue Version hochladen — simuliert.'));
-    on('share', () => toast('Link kopiert (Demo).'));
+    // EIN Suffix für alle Fake-Aktionen: «— im Prototyp simuliert.» — vorher
+    // drei Grammatiken («simuliert:», «— simuliert.», «(Demo)») nebeneinander
+    // im selben Menü (Design-Review D13).
+    on('download', () => toast(`Download «${d.title}» — im Prototyp simuliert.`));
+    on('upload', () => toast('Neue Version hochladen — im Prototyp simuliert.'));
+    on('share', () => toast('Link kopieren — im Prototyp simuliert.'));
     // «nicht verfügbar» ist kein Erfolg — als Info-Notification, nicht mit Häkchen.
     on('comment', () => toast('Kommentare sind im Prototyp nicht verfügbar.', 'info', 'InfoCircle'));
     on('zoom-in', () => { zoom += 0.25; applyZoom(); });

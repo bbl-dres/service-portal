@@ -1,5 +1,7 @@
-// Verkauf / Divestment — Transaktionsplattform (STUB / Prototyp).
+// Veräusserung von Bundesliegenschaften — Transaktionsplattform (STUB / Prototyp).
 // Bildet den Veräusserungsprozess von Bundesliegenschaften ab (intern + Makler).
+
+import { ANWENDUNGEN, trail } from '../crumbs.js';
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -8,12 +10,8 @@ export const needs = ['buildings'];
 export default async function render(ctx) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
 
-  setTitle('Verkauf / Divestment');
-  setCrumbs([
-    { label: 'Startseite', href: '#/' },
-    { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' },
-    { label: 'Verkauf / Divestment' },
-  ]);
+  setTitle('Veräusserung von Bundesliegenschaften');
+  setCrumbs(trail(ANWENDUNGEN, { label: 'Veräusserung von Bundesliegenschaften' }));
 
   // 7-stufiger Verkaufslebenszyklus.
   const LIFECYCLE = [
@@ -49,9 +47,10 @@ export default async function render(ctx) {
     }));
   }
 
-  // Eine gemeinsame Schrittanzeige (C.stepIndicator) statt der lokalen Kopie —
-  // trägt CDs .step__indicator-Wrapper und die sr-only-Zustandswörter (Item 3.10).
-  const stepsBar = C.stepIndicator(LIFECYCLE.map((s) => s.label), CURRENT_STEP, { label: 'Verkaufslebenszyklus' });
+  // C.pipeline statt C.stepIndicator: die Anzeige ist ein PASSIVER Prozessstatus
+  // (wie my-cases/services), kein interaktiver Wizard — der Stepper bleibt den
+  // Antragsstrecken vorbehalten. pipeline liest nur `label`, LIFECYCLE passt direkt.
+  const stepsBar = C.pipeline(LIFECYCLE, CURRENT_STEP, { label: 'Verkaufslebenszyklus' });
 
   const timeline = `<ul class="timeline">${LIFECYCLE.map((s, idx) => {
     const cls = idx < CURRENT_STEP ? 'done' : idx === CURRENT_STEP ? 'current' : '';
@@ -74,15 +73,19 @@ export default async function render(ctx) {
 
   mount.innerHTML = `
   <div class="container section">
+    ${''/* Deutscher Titel statt «Verkauf / Divestment»; der englische Fachbegriff
+          bleibt als Klammerzusatz im Lead auffindbar. */}
     ${C.pageHeader({
-      title: 'Verkauf / Divestment',
-      lead: 'Transaktionsplattform für die Veräusserung von Bundesliegenschaften — koordiniert die Zusammenarbeit zwischen Portfoliomanagement, internen Stellen und beauftragten Maklerinnen und Maklern.',
+      title: 'Veräusserung von Bundesliegenschaften',
+      lead: 'Transaktionsplattform für die Veräusserung von Bundesliegenschaften (Divestment) — koordiniert die Zusammenarbeit zwischen Portfoliomanagement, internen Stellen und beauftragten Maklerinnen und Maklern.',
     })}
 
     ${C.notification('Dieses Modul ist im Prototyp ein <strong>Stub</strong>: Die hier gezeigten Objekte, Status und Schritte sind fiktive Demo-Daten. Die produktive Anbindung an die Transaktionsplattform (Auftragsverwaltung, Bieterverfahren, Beurkundung) ist noch nicht umgesetzt.', 'warning', 'WarningCircle')}
 
-    <section class="mt-8">
-      <h2>${C.icon('ShoppingCart', 'icon--base')} Verkaufslebenszyklus</h2>
+    ${''/* .detail-section statt mt-8-Inseln: geteilter Abschnittsrhythmus
+          (--stack-gap) wie auf den übrigen Detailseiten. */}
+    <section class="detail-section">
+      <h2 class="detail-section__title">${C.icon('ShoppingCart', 'icon--base')} Verkaufslebenszyklus</h2>
       <p class="muted">Sieben Phasen vom Veräusserungsauftrag bis zum vollzogenen Verkauf. Hervorgehoben ist der aktuelle Demo-Stand.</p>
       ${stepsBar}
       <div class="box measure mt-4">
@@ -91,13 +94,13 @@ export default async function render(ctx) {
       </div>
     </section>
 
-    <section class="mt-8">
-      <h2>${C.icon('Building', 'icon--base')} Objekte in Veräusserung</h2>
+    <section class="detail-section">
+      <h2 class="detail-section__title">${C.icon('Building', 'icon--base')} Objekte in Veräusserung</h2>
       <p class="muted">Beispielhafte Auswahl von Liegenschaften im Verkaufsprozess (Demo-Daten).</p>
       <div class="mt-4">${tableHtml}</div>
     </section>
 
-    <section class="mt-8">
+    <section class="detail-section">
       <div class="box measure">
         <h3>Beteiligte</h3>
         ${''/* Kanonisches Listenrezept statt Inline-Einzug (1.1rem wich vom

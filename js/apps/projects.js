@@ -11,8 +11,9 @@
 // Ein Projekt wird über #/app/projects/<projectId> angesprochen.
 import { initEstateMap } from '../buildings-map.js';
 import { createMapSlot } from '../map-slot.js';
-import { syncTreeCounts } from '../spatial-tree.js';
+import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../spatial-tree.js';
 import { openGallery } from '../gallery.js';
+import { galleryItemsFrom } from '../hero-mosaic.js';
 import { chf } from '../format.js';
 import { landName, weOf, projectStatusLabel } from '../domain.js';
 import { ANWENDUNGEN } from '../crumbs.js';
@@ -117,48 +118,26 @@ function overview(ctx) {
   const filtered = () => objects.filter((o) => inSel(o) && inFilters(o) && inSearch(o));
 
   // --- spatial tree: Land › Region › Stadt › WE › Projekte -----------------
-  function buildTree() {
-    const t = {};
-    for (const o of objects) {
-      const L = (t[o.land] = t[o.land] || { n: 0, r: {} });
-      const R = (L.r[o.region] = L.r[o.region] || { n: 0, c: {} });
-      const Ci = (R.c[o.city] = R.c[o.city] || { n: 0, w: {} });
-      const W = (Ci.w[o.we] = Ci.w[o.we] || { n: 0, o: [] });
-      W.o.push(o); L.n++; R.n++; Ci.n++; W.n++;
-    }
-    return t;
-  }
-  const esc = (s) => C.escape(String(s == null ? '' : s));
-  const rowContent = (iconName, idText, label) => `${C.icon(iconName, 'pf-tree__ico')}${idText ? `<span class="pf-tree__id">${esc(idText)}</span>` : ''}<span class="pf-tree__label">${esc(label)}</span>`;
-  const node = (content, count, attrs, children) => `<li class="pf-tree__item">
-      <button type="button" class="pf-tree__node" ${attrs} aria-expanded="false">
-        ${C.icon('ChevronRight', 'pf-tree__chev')}${content}<span class="pf-tree__n">${count}</span>
-      </button>
-      <ul class="pf-tree__children" hidden>${children}</ul></li>`;
-  // Blatt = Auswahl-Button (kein Detail-Sprung): filtert auf das Projekt + öffnet das Karten-Popup.
-  const leaf = (o) => `<li class="pf-tree__item"><button type="button" class="pf-tree__leaf" data-obj="${esc(o.id)}" data-land="${esc(o.land)}" data-region="${esc(o.region)}" data-city="${esc(o.city)}" data-we="${esc(o.we)}">${rowContent('Briefcase', o.projectNumber, o.name)}</button></li>`;
-  function treeHTML() {
-    const tree = buildTree();
-    const byDe = (a, b) => a.localeCompare(b, 'de');
-    return `<ul class="pf-tree">${Object.keys(tree).sort((a, b) => landName(a).localeCompare(landName(b), 'de')).map((L) => {
-      const land = tree[L];
-      const regions = Object.keys(land.r).sort(byDe).map((R) => {
-        const reg = land.r[R];
-        const cities = Object.keys(reg.c).sort(byDe).map((Cy) => {
-          const city = reg.c[Cy];
-          const wes = Object.keys(city.w).sort().map((W) => {
-            const we = city.w[W];
-            const projs = we.o.slice().sort((a, b) => byDe(a.name, b.name)).map(leaf).join('');
-            const bName = (we.o[0] || {}).buildingName || '';
-            return node(rowContent('Building', `WE ${W}`, bName), we.n, `data-land="${esc(L)}" data-region="${esc(R)}" data-city="${esc(Cy)}" data-we="${esc(W)}"`, projs);
-          }).join('');
-          return node(rowContent('MapMarker', '', Cy), city.n, `data-land="${esc(L)}" data-region="${esc(R)}" data-city="${esc(Cy)}"`, wes);
-        }).join('');
-        return node(rowContent('Map', '', R), reg.n, `data-land="${esc(L)}" data-region="${esc(R)}"`, cities);
-      }).join('');
-      return node(rowContent('Globe', '', landName(L)), land.n, `data-land="${esc(L)}"`, regions);
-    }).join('')}</ul>`;
-  }
+  // Aufbau aus dem geteilten Bauplan (js/spatial-tree.js) — dieselbe Anatomie
+  // wie Inventar und Mietende. Die WE-Stufe zeigt den Gebäudenamen des ersten
+  // Eintrags und sortiert nach der WE-Nummer; Blätter sind Projekte
+  // (Auswahl-Button, kein Detail-Sprung — wie im Liegenschaften Inventar).
+  const esc = C.escape;
+  const tree = treeHTML(C, objects, {
+    levels: [
+      { key: 'land', icon: 'Globe', label: (k) => landName(k) },
+      { key: 'region', icon: 'Map' },
+      { key: 'city', icon: 'MapMarker' },
+      { key: 'we', icon: 'Building', idText: (k) => `WE ${k}`,
+        label: (k, es) => (es[0] || {}).buildingName || '',
+        sort: (a, b) => String(a).localeCompare(String(b)) },
+    ],
+    leaf: {
+      icon: () => 'Briefcase', idText: (o) => o.projectNumber,
+      label: (o) => o.name, objId: (o) => o.id,
+      sort: (a, b) => String(a.name).localeCompare(String(b.name), 'de'),
+    },
+  });
 
   // --- views (renderMain slices + appends CD pagination) -------------------
   // Land und Status liegen als Auflage AUF dem Bild — wie in der Galerie des
@@ -170,12 +149,17 @@ function overview(ctx) {
   function pjCard(o) {
     return C.card({
       title: o.name, desc: o.teaser, href: links.bauprojekt(o.id),
+      // Projektnummer als Kennzeile unter dem Titel (`idLine`, .pf-card__id) —
+      // wie die bbl_id im Inventar; der CD-Fuss trägt links die SIA-Phase und
+      // rechts den Pfeil (footerInfo/footerAction wie Inventar und Mietende).
+      idLine: o.projectNumber,
       photo: { src: o.photoSrc, color: 'var(--color-secondary-600)', alt: `${o.name} — ${o.buildingName}` },
       chips: [landName(o.land), projectStatusLabel(core, o.status)],
-      footer: `<span>${esc(o.projectNumber)}</span><span>SIA ${esc(o.siaPhase)} · ${esc(o.siaPhaseLabel)}</span>`,
+      footerInfo: `SIA ${esc(o.siaPhase)} · ${esc(o.siaPhaseLabel)}`,
+      footerAction: C.cardAction(),
     });
   }
-  const galleryHTML = (slice) => `<div class="grid grid--3">${slice.map(pjCard).join('')}</div>`;
+  const galleryHTML = (slice) => `<div class="pf-gallery">${slice.map(pjCard).join('')}</div>`;
   // `rowsClickable`: die erste Zelle ist der Zeilen-Link — dieselbe Anatomie wie
   // die Vorgangstabelle (home) und die Geschosstabelle (tenancies), also auch
   // dieselbe Zeigen-und-Klicken-Affordanz. Verdrahtet EINMAL unten über
@@ -216,13 +200,21 @@ function overview(ctx) {
       mountMap(list, state.focus);
     } else if (!list.length) {
       if (cnt) cnt.innerHTML = `<strong>0</strong> von ${objects.length} Projekten`;
-      main.innerHTML = C.empty('Keine Projekte für diese Auswahl.');
+      // Leerzustand mit Ausweg (Kanon): Hinweis + voller Reset — der Knopf ist
+      // unten EINMAL auf dem stabilen #pj-main delegiert, weil er hier bei
+      // jedem Neuzeichnen neu entsteht.
+      main.innerHTML = C.empty('Keine Projekte gefunden.', {
+        hint: 'Passen Sie Ihre Suche oder die Filter an.',
+        action: { id: 'pj-empty-reset', label: 'Suche und Filter zurücksetzen' },
+      });
     } else {
       const per = state.perPage[state.view];
       const slice = list.slice((state.page - 1) * per, state.page * per);
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Projekten${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
+      // Ohne href-Builder rendert C.pagination echte <button data-page>, die
+      // C.wirePagination zusammen mit dem Seitenfeld bindet.
       main.innerHTML = (state.view === 'gallery' ? galleryHTML(slice) : listHTML(slice))
-        + C.pagination({ page: state.page, totalPages: pages, href: () => '#', inputId: 'pj-page' });
+        + C.pagination({ page: state.page, totalPages: pages, inputId: 'pj-page' });
       if (pages > 1) C.wirePagination(mount, 'pj-page', state.page, pages, (t) => { state.page = t; renderMain(); });
     }
     mount.querySelectorAll('.view-switch__btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
@@ -257,7 +249,7 @@ function overview(ctx) {
   function renderActiveFilters() {
     const box = mount.querySelector('#pj-activefilters'); if (!box) return;
     const pills = [];
-    if (state.q.trim()) pills.push({ label: `Suche: „${state.q.trim()}“`, remove: 'q' });
+    if (state.q.trim()) pills.push({ label: `Suche: «${state.q.trim()}»`, remove: 'q' });
     const sp = selPill(); if (sp) pills.push(sp);
     state.filters.status.forEach((v) => pills.push({ label: projectStatusLabel(core, v), remove: `status:${v}` }));
     state.filters.sia.forEach((v) => pills.push({ label: v, remove: `sia:${v}` }));
@@ -270,7 +262,7 @@ function overview(ctx) {
       ${C.filterGroup({ dim: 'status', legend: 'Status', selected: state.filters.status, options: projectStatuses.map((s) => ({ value: s.id, label: s.label })) })}
       ${C.filterGroup({ dim: 'sia', legend: 'SIA-Phase', selected: state.filters.sia, options: phases.map((p) => ({ value: p, label: p })) })}
       ${C.filterGroup({ dim: 'sub', legend: 'Teilportfolio', selected: state.filters.sub, options: subPortfolios.map((s) => ({ value: s, label: s })) })}
-      <div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pj-freset">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></button></div>`;
+      ${C.panelReset({ id: 'pj-freset' })}`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -282,7 +274,7 @@ function overview(ctx) {
       // zeigen sonst beim Laden Leere, obwohl die Treffer bereits gefiltert sind.
       q: state.q,
       filterCount: state.filters.status.length + state.filters.sia.length + state.filters.sub.length,
-      sort: { id: 'pj-sort', label: 'Sortierung', value: state.sort, options: SORT_OPTS },
+      sort: { id: 'pj-sort', value: state.sort, options: SORT_OPTS },
       filterId: 'pj-filter-btn', filterLabel: 'Filter', panelId: 'pj-filters', panel: filterPanel,
       view: state.view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
     })}
@@ -290,130 +282,59 @@ function overview(ctx) {
     <div class="pf-layout">
       <aside class="pf-sidebar" aria-label="Projektstruktur">
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Projekte</h2>
-          <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pj-clear" hidden>${C.icon('Cancel', 'btn__icon')}<span class="btn__text">Auswahl</span></button></div>
-        ${treeHTML()}
+          <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pj-clear" hidden>${C.icon('Cancel', 'btn__icon')}<span class="btn__text">Auswahl zurücksetzen</span></button></div>
+        ${tree}
       </aside>
       <div class="pf-main" id="pj-main"></div>
     </div>
   </div>`;
 
   // --- wiring -------------------------------------------------------------
-  let searchT = null;
-  const q = mount.querySelector('#pj-q');
-  const runSearch = () => { state.q = q.value || ''; state.page = 1; renderMain(); };
-  mount.querySelector('#pj-search').addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(searchT); runSearch(); });
-  q.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(runSearch, 250); });
-
-  mount.querySelector('.view-switch').addEventListener('click', (e) => {
-    const btn = e.target.closest('.view-switch__btn'); if (!btn) return;
-    state.view = btn.dataset.view; state.page = 1; renderMain();
-  });
-
-  const sortSel = mount.querySelector('#pj-sort');
-  if (sortSel) sortSel.addEventListener('change', () => { state.sort = sortSel.value; state.page = 1; renderMain(); });
-
-  const fbtn = mount.querySelector('#pj-filter-btn');
-  const fpanel = mount.querySelector('#pj-filters');
-  const fbadge = mount.querySelector('#pj-filter-btn .catbar__fcount');
-  const updateFilterBadge = () => {
-    const total = state.filters.status.length + state.filters.sia.length + state.filters.sub.length;
-    fbadge.textContent = total ? `(${total})` : ''; fbadge.hidden = !total;
-  };
-  const syncFilterChecks = () => fpanel.querySelectorAll('input[data-fdim]').forEach((cb) => { cb.checked = (state.filters[cb.dataset.fdim] || []).includes(cb.value); });
-  const clearFilters = () => { state.filters = { status: [], sia: [], sub: [] }; syncFilterChecks(); updateFilterBadge(); };
-  fbtn.addEventListener('click', () => { const open = !fpanel.hidden; fpanel.hidden = open; fbtn.setAttribute('aria-expanded', String(!open)); });
-  fpanel.addEventListener('change', (e) => {
-    const cb = e.target.closest('input[data-fdim]'); if (!cb) return;
-    const dim = cb.dataset.fdim, arr = state.filters[dim];
-    if (cb.checked) { if (!arr.includes(cb.value)) arr.push(cb.value); } else state.filters[dim] = arr.filter((x) => x !== cb.value);
-    updateFilterBadge(); state.page = 1; renderMain();
-  });
-  mount.querySelector('#pj-freset').addEventListener('click', () => { clearFilters(); state.page = 1; renderMain(); });
-
-  mount.querySelector('#pj-activefilters').addEventListener('click', (e) => {
-    if (e.target.closest('[data-reset]')) { state.q = ''; q.value = ''; clearFilters(); setSelection({}, null, null); return; }
-    const pill = e.target.closest('[data-remove]'); if (!pill) return;
-    const tok = pill.dataset.remove;
-    if (tok === 'q') { state.q = ''; q.value = ''; state.page = 1; renderMain(); }
-    else if (tok === 'sel') { setSelection({}, null, null); }
-    else { const i = tok.indexOf(':'), dim = tok.slice(0, i); state.filters[dim] = (state.filters[dim] || []).filter((x) => x !== tok.slice(i + 1)); syncFilterChecks(); updateFilterBadge(); state.page = 1; renderMain(); }
-  });
-
+  // Baum: Klick (auf/zu + Auswahl), Zweiton-Markierung und der «Auswahl
+  // zurücksetzen»-Knopf kommen aus dem geteilten Bauplan (js/spatial-tree.js).
+  // Ein Blatt liefert `sel.id` mit — das fokussiert wie bisher die Karte.
+  const sidebar = mount.querySelector('.pf-sidebar');
   const clearBtn = mount.querySelector('#pj-clear');
-  function markTree(activeNode) {
-    mount.querySelectorAll('.pf-tree__node, .pf-tree__leaf').forEach((n) => n.classList.remove('is-active', 'is-path'));
-    if (!activeNode) return;
-    activeNode.classList.add('is-active');
-    let li = activeNode.closest('.pf-tree__item');
-    while (li) {
-      const ul = li.parentElement;
-      if (!ul || !ul.classList.contains('pf-tree__children')) break;
-      const parentNode = ul.parentElement.querySelector(':scope > .pf-tree__node');
-      if (parentNode) parentNode.classList.add('is-path');
-      li = ul.parentElement;
-    }
-  }
-  function setSelection(sel, activeNode, focus) {
-    state.sel = sel; state.focus = focus || null; markTree(activeNode);
-    clearBtn.hidden = !Object.keys(sel).length; state.page = 1; renderMain();
-  }
-  mount.querySelector('.pf-sidebar').addEventListener('click', (e) => {
-    const leafBtn = e.target.closest('.pf-tree__leaf');
-    if (leafBtn) {
-      const sel = {};
-      for (const k of ['land', 'region', 'city', 'we']) if (leafBtn.dataset[k]) sel[k] = leafBtn.dataset[k];
-      sel.id = leafBtn.dataset.obj;
-      setSelection(sel, leafBtn, leafBtn.dataset.obj);
-      return;
-    }
-    const nd = e.target.closest('.pf-tree__node'); if (!nd) return;
-    const item = nd.closest('.pf-tree__item');
-    const kids = item.querySelector(':scope > .pf-tree__children');
-    const expanded = nd.getAttribute('aria-expanded') === 'true';
-    nd.setAttribute('aria-expanded', String(!expanded));
-    if (kids) kids.hidden = expanded;
-    const sel = {};
-    for (const k of ['land', 'region', 'city', 'we']) if (nd.dataset[k] != null) sel[k] = nd.dataset[k];
-    setSelection(sel, nd, null);
-  });
-  clearBtn.addEventListener('click', () => setSelection({}, null, null));
+  const onTreeSelect = (sel) => { state.sel = sel; state.focus = sel.id || null; state.page = 1; renderMain(); };
+  wireTree(sidebar, { onSelect: onTreeSelect, clearBtn });
+  // Voller Auswahl-Reset von ausserhalb des Baums (Reset-Pille, Leerzustand):
+  // dasselbe wie der Knopf im Baumkopf, nur ohne Klick auf ihn.
+  const resetSelection = () => { markTree(sidebar, null); clearBtn.hidden = true; onTreeSelect({}); };
 
+  // Suche (mit Tipp-Verzögerung), Sortierung, Ansichtswechsel, Filterpanel
+  // samt Zähler-Badge und Aktiv-Pillen: geteilte Explorer-Verdrahtung
+  // (C.wireCatalogueState). 'sel' ist das einzige Pillen-Token ausserhalb von
+  // q/Filtern und gehört dem Baum; nach «Alle Filter zurücksetzen» fällt auch
+  // die Baum-Auswahl (onReset).
+  const qEl = mount.querySelector('#pj-q');
+  const cat = C.wireCatalogueState(mount, {
+    formId: 'pj-search', inputId: 'pj-q', sortId: 'pj-sort',
+    filterToggleId: 'pj-filter-btn', panelId: 'pj-filters', resetId: 'pj-freset',
+    activeFiltersId: 'pj-activefilters', state,
+    onChange: renderMain,
+    onRemove: (tok) => { if (tok === 'sel') resetSelection(); },
+    onReset: resetSelection,
+  });
+
+  // Leerzustands-Aktion «Suche und Filter zurücksetzen»: gleicher Umfang wie
+  // die Reset-Pille (Suche + Filter + Baum-Auswahl). Delegiert auf dem stabilen
+  // #pj-main, weil der Knopf mit jedem Neuzeichnen neu entsteht.
   mount.querySelector('#pj-main').addEventListener('click', (e) => {
-    const a = e.target.closest('.pagination_items a'); if (!a) return;
-    e.preventDefault();
-    state.page += /Nächste/.test(a.getAttribute('aria-label') || '') ? 1 : -1;
-    renderMain();
+    if (!e.target.closest('#pj-empty-reset')) return;
+    state.q = ''; qEl.value = '';
+    cat.clearFilters();
+    resetSelection();
   });
   // Zeilenklick der Listenansicht (C.table `rowsClickable`): delegiert auf dem
   // stabilen #pj-main, deshalb genügt EINE Verdrahtung für alle Neurender.
   C.wireTableRows(mount.querySelector('#pj-main'));
 
-  // Baum-Auswahl aus der URL wiederherstellen (Teil des teilbaren Zustands):
-  // passenden Knoten suchen, Vorfahren aufklappen, Pfad markieren. Der flachste
-  // Treffer in Dokumentreihenfolge IST der exakte Knoten — tiefere Ebenen tragen
-  // dieselben data-Attribute nur zusätzlich.
-  (function restoreSelection() {
-    if (!Object.keys(state.sel).length) return;
-    const cssq = (v) => (window.CSS && CSS.escape) ? CSS.escape(v) : String(v).replace(/"/g, '\\"');
-    const btn = state.sel.id
-      ? mount.querySelector(`.pf-tree__leaf[data-obj="${cssq(state.sel.id)}"]`)
-      : mount.querySelector('.pf-tree__node' + ['land', 'region', 'city', 'we']
-          .filter((k) => state.sel[k] != null).map((k) => `[data-${k}="${cssq(state.sel[k])}"]`).join(''));
-    // Veraltete URL (Auswahl existiert nicht mehr): still verwerfen statt eine
-    // unsichtbare Filterung stehen zu lassen.
-    if (!btn) { state.sel = {}; state.focus = null; return; }
-    let li = btn.closest('.pf-tree__item');
-    while (li) {
-      const ul = li.parentElement;
-      if (!ul || !ul.classList.contains('pf-tree__children')) break;
-      ul.hidden = false;
-      const parentNode = ul.parentElement.querySelector(':scope > .pf-tree__node');
-      if (parentNode) parentNode.setAttribute('aria-expanded', 'true');
-      li = ul.parentElement;
-    }
-    markTree(btn);
-    clearBtn.hidden = false;
-  })();
+  // Baum-Auswahl aus der URL wiederherstellen (Teil des teilbaren Zustands).
+  // Veraltete URL (Auswahl existiert nicht mehr): still verwerfen statt eine
+  // unsichtbare Filterung stehen zu lassen.
+  if (Object.keys(state.sel).length && !restoreTreeSelection(sidebar, state.sel, { clearBtn })) {
+    state.sel = {}; state.focus = null;
+  }
 
   renderMain();
 }
@@ -426,8 +347,8 @@ function detail(ctx, id) {
   if (!p) {
     // Titel und Brotkrumen fehlten hier ganz (siehe media-library.js).
     C.renderNotFound(ctx, { thing: 'Dieses Bauprojekt', title: 'Projekt nicht gefunden',
-      backHref: '#/app/projects', backLabel: 'Bauprojekte',
-      crumbs: [...CRUMBS, { label: 'Bauprojekte', href: '#/app/projects' }] });
+      backHref: '#/app/projects', backLabel: 'Bauprojekte / EPPM',
+      crumbs: [...CRUMBS, { label: 'Bauprojekte / EPPM', href: '#/app/projects' }] });
     return;
   }
   setTitle(p.name);
@@ -438,22 +359,12 @@ function detail(ctx, id) {
   // wird gesetzt, ohne den Gebäudebestand zu lesen.
   const ort = [p.street, [p.zip, p.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
   // Bilder samt Nachweis stehen im Projektdatensatz (`media`) — dieselbe Form
-  // wie `bilder` am Gebäude, damit die gemeinsame Galerie sie ohne Umbau
-  // anzeigt. Ein Bestand, den niemand liest, verfällt; deshalb hängt am Hero
-  // die Vollbildgalerie statt eines toten Feldes.
-  const galleryItems = (p.media || []).map((x, i) => ({
-    id: `${p.projectId}-bild-${i}`,
-    photo: '', photoSrc: x.src, title: x.titel || p.name,
-    meta: [x.fotograf && `© ${x.fotograf}`, p.city].filter(Boolean).join(' · '),
-    type: 'foto',
-    details: [
-      ['Titel', x.titel || p.name],
-      x.fotograf && ['Fotograf:in', x.fotograf],
-      x.credit && ['Copyright', x.credit],
-      x.lizenz && ['Lizenz', x.lizenz],
-      x.quelle && ['Quelle', x.quelle],
-    ].filter(Boolean),
-  }));
+  // wie `bilder` am Gebäude, deshalb baut die geteilte Fassung
+  // (galleryItemsFrom, js/hero-mosaic.js) die Galerieeinträge: gleiche Angaben
+  // inklusive Bildnachweis und historisch-Graustufe wie bei den
+  // Geschwister-Detailseiten. Ein Bestand, den niemand liest, verfällt;
+  // deshalb hängt am Hero die Vollbildgalerie statt eines toten Feldes.
+  const galleryItems = galleryItemsFrom(p.media, { idPrefix: p.projectId, title: p.name, ort: p.city });
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
     { id: 'kennzahlen', label: 'Kennzahlen' },
@@ -506,7 +417,7 @@ function detail(ctx, id) {
       gelb: 'Mittlere Risiken — werden aktiv überwacht.',
       rot: 'Hohe Risiken — eskaliert, Steuerung durch Projektleitung.',
     }[p.risikoAmpel] || 'Keine Bewertung verfügbar.';
-    return `<div class="grid grid--2">
+    return `<div class="grid grid--responsive-cols-2">
       ${row('CheckmarkCircle', 'Projektziele', p.zielAmpel, zielDesc)}
       ${row('WarningCircle', 'Risiken', p.risikoAmpel, risikoDesc)}
     </div>
@@ -515,7 +426,12 @@ function detail(ctx, id) {
   const panels = { uebersicht: panelUebersicht, kennzahlen: panelKennzahlen, risiken: panelRisiken };
 
   // Titelbild: ohne Bilder eine Farbfläche wie bisher, mit Bildern ein Knopf,
-  // der die Vollbildgalerie öffnet. KEINE Bildlegende mehr (Nutzerentscheid
+  // der die Vollbildgalerie öffnet. BEWUSSTE Abweichung vom heroMosaic der
+  // Geschwister-Detailseiten (dokumentierte Einbild-Variante): das Projekt
+  // führt EIN Titelbild (`photoSrc`) als Kopfbild — weitere Aufnahmen (`media`,
+  // meist keine oder eine) liegen in der Vollbildgalerie hinter dem Knopf, ein
+  // Mosaik bestünde hier oft nur aus leeren Nebenkacheln. KEINE Bildlegende
+  // mehr (Nutzerentscheid
   // 2026-07-30: Detailseiten prototypweit ohne figcaption) — der Urheber-
   // nachweis der nicht frei lizenzierten BBL-Aufnahmen bleibt in data/media.json
   // erfasst und steht im Metadaten-Panel der Vollbildgalerie, nur nicht mehr
@@ -547,7 +463,7 @@ function detail(ctx, id) {
             Projektnamen. Der Status steht jetzt als Wort in der Lead-Zeile,
             die beiden Ampeln im Reiter «Risiken & Ziele», wo ihre Erklärung
             danebensteht. */''}
-      ${C.detailBar({ backHref: '#/app/projects', backLabel: 'Bauprojekte' })}
+      ${C.detailBar({ backHref: '#/app/projects', backLabel: 'Bauprojekte / EPPM' })}
       <h1 tabindex="-1">${C.escape(p.name)}</h1>
       <p class="lead">${C.escape(p.projectNumber)}${p.siteName ? ' · ' + C.escape(p.siteName) : ''}${
         p.city ? ', ' + C.escape(p.city) : ''} · ${C.escape(projectStatusLabel(core, p.status))}</p>
@@ -564,11 +480,12 @@ function detail(ctx, id) {
     C.wireTabs(mount, {
       syncHash: (tab) => history.replaceState(history.state, '', `#/app/projects/${p.projectId}${tab === 'uebersicht' ? '' : '?tab=' + tab}`),
     });
-    // Innerhalb von draw(), weil jeder Reiterwechsel neu zeichnet.
+    // draw() läuft EINMAL je Aufruf — C.wireTabs schaltet die Reiter ohne
+    // Neuzeichnen um, der Hero-Knopf wird also genau einmal verdrahtet.
+    // Kein eigenes scrollTo/h1-Fokus: Bildlauf und Fokus nach einem
+    // Routenwechsel gehören dem Router (Archetyp-Rezept Objekt-Detail).
     mount.querySelector('.pj-hero__btn')?.addEventListener('click', () =>
       openGallery(galleryItems, 0, C, { param: 'bild' }));
-    window.scrollTo(0, 0);
-    const h = mount.querySelector('h1'); if (h) h.focus({ preventScroll: true });
   }
   draw();
 }

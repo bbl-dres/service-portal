@@ -102,4 +102,17 @@ export function galleryItemsFrom(bilder, { idPrefix, title, ort = '' } = {}) {
   }));
 }
 
-export default { heroMosaic, galleryItemsFrom };
+// Klick-Verdrahtung der Mosaik-Kacheln: jede [data-gallery]-Kachel öffnet die
+// Vollbildgalerie bei ihrem eigenen Bild. Stand vorher wortgleich dreimal in
+// den Detailansichten (Portfolio-Gebäude, -Grundstück, Mietverhältnis —
+// Design-Review B19). `openGallery` kommt als Parameter, damit dieses Modul
+// die Galerie nicht selbst laden muss, wo sie nicht gebraucht wird.
+export function wireHeroMosaic(root, openGallery, items, C, { param = 'bild' } = {}) {
+  // Klassen- statt id-Scope: das Mosaik heisst je App anders (#pf-mosaic,
+  // #mt-mosaic — testgepinnt), trägt aber immer .pf-mosaic (Mietende-Befund).
+  root.querySelectorAll('.pf-mosaic [data-gallery]').forEach((el) => {
+    el.addEventListener('click', () => openGallery(items, Number(el.dataset.gallery) || 0, C, { param }));
+  });
+}
+
+export default { heroMosaic, galleryItemsFrom, wireHeroMosaic };
