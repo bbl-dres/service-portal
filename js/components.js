@@ -8,10 +8,11 @@ const CHEVRON_SVG = '<svg role="presentation" aria-hidden="true" viewBox="0 0 24
   + '<path d="m5.706 10.015 6.669 3.85 6.669-3.85.375.649-7.044 4.067-7.044-4.067z"/></svg>';
 
 // --- Placeholder photography -------------------------------------------------
-// Demo images come from Unsplash (data/*.json carry a `photo` = Unsplash photo id).
-// The id is only ever interpolated after a strict charset check; the `color` of
-// the record stays behind the image, so a failed/offline fetch degrades to CD's
-// image-not-available placeholder over the plain colour block.
+// SEIT DEM BILD-SCREENING (2026-08-04) trägt KEIN Datenbestand mehr Unsplash-
+// photo-Ids — alle Bilder liegen lokal unter assets/images/ (Nachweis im
+// jeweiligen JSON bzw. assets/images/heroes/README.md). photoUrl/`id` bleibt
+// als Rückfallebene für Altstände: die Id wird nur nach strikter Zeichen-
+// prüfung interpoliert, und die `color` der Karte bleibt hinter dem Bild.
 const PHOTO_BASE = 'https://images.unsplash.com/photo-';
 const PHOTO_ID = /^[A-Za-z0-9_-]+$/;
 
@@ -683,9 +684,9 @@ export function detailBar({ backHref, backLabel } = {}) {
 // für den Prototyp einheitlich ohne. Die Startseite (echtes BBL-Foto mit
 // ©-Vermerk) schreibt ihre figcaption selbst und behält sie. Der `credit`-
 // Parameter bleibt als Schnittstelle bestehen, wird aber nicht gerendert.
-export function heroFigure({ id, color = 'var(--color-secondary-600)', alt = '', w = 800 } = {}) {
-  if (!id) return '';
-  return `<figure class="hero__figure">${photo({ id, color, alt, w })}</figure>`;
+export function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt = '', w = 800 } = {}) {
+  if (!src && !id) return '';
+  return `<figure class="hero__figure">${photo({ src, id, color, alt, w })}</figure>`;
 }
 
 export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '' } = {}) {

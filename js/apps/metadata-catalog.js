@@ -113,19 +113,17 @@ const matchBadge = (core, id) => {
   return `<span title="${esc(MATCH_HINT[id] || m.label)}">${badge(m.label, m.variant, 'sm')}</span>`;
 };
 
-// «Verantwortliche Personen» — dasselbe Muster wie das Datensatzblatt
-// (js/pages/catalog.js): Abschnitt mit linierter kv-Liste (kv--ruled),
-// dt = Rolle im Katalog («Datenverwaltung»), dd = Stelle mit
-// Organisationseinheit, Aufgabenbeschrieb und Erreichbarkeit
-// (Nutzerentscheid 2026-08-04; beide Detailansichten teilen den Baustein).
-const personsSection = (contact) => `
+// «Verantwortliche Personen» — exakt das Muster des Datensatzblatts
+// (js/pages/catalog.js): eine PERSON ist ein AdminDir-Eintrag (Rolle →
+// Verzeichnis-Link), KEINE Sammeladresse — die generische Datenverwaltung
+// steht als «Kontakt»-Karte in der Randspalte (Nutzerentscheid 2026-08-04).
+// Beide Detailansichten teilen den Baustein.
+const personsSection = (persons) => `
     <h2 class="detail-section__title">Verantwortliche Personen</h2>
-    <div class="box">${contact ? `<dl class="kv kv--ruled">
-      <dt>Datenverwaltung</dt>
-      <dd><strong>${esc(contact.name)}</strong>${contact.unit ? `<br>${esc(contact.unit)}` : ''}${
-        contact.role ? `<br><span class="small muted">${esc(contact.role)}</span>` : ''}${
-        contact.email ? `<br><a href="mailto:${esc(contact.email)}">${esc(contact.email)}</a>` : ''}${
-        contact.phone ? `<br>${esc(contact.phone)}` : ''}</dd>
+    <div class="box">${persons && persons.length ? `<dl class="kv kv--ruled">${persons.map((p) => `
+      <dt>${esc(p.role)}</dt>
+      <dd><a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
+           target="_blank" rel="noopener external">AdminDir ${esc(p.admindirId)}</a></dd>`).join('')}
     </dl>` : '<p class="muted m-0">Für diesen Eintrag ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
 
 const objHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
@@ -514,14 +512,14 @@ function objectDetail(ctx, id) {
     // Mietobjekt» im Mietendenportal. So sieht man, WAS hier stünde.
     if (id === 'realisierung') return '<div id="mc-maps"></div>';
     // Übersicht im Muster des Datensatzblatts (js/pages/catalog.js,
-    // Nutzerentscheid 2026-08-04): die Definition steht als Lead unter der H1,
-    // danach «Verantwortliche Personen» und «Metadaten» als linierte kv-Listen
-    // in voller Breite — «Metadaten» statt «Eckdaten», weil die Einträge dieses
-    // Katalogs Metadaten SIND (dieselbe Ausnahme wie das DCAT-Blatt, Kanon D26).
-    // Die frühere Randspalte entfällt; die Tabellen-Reiter daneben sind ohnehin
-    // vollbreit. Attribut- und Realisierungszahl fehlen bewusst — sie stehen in
-    // den Reiterbeschriftungen, eine zweite Nennung wäre eine Dublette.
-    return `${personsSection(contact)}
+    // Nutzerentscheid 2026-08-04): Definition als Lead unter der H1, dann
+    // «Verantwortliche Personen» (AdminDir-Einträge) und «Metadaten» als
+    // linierte kv-Listen — «Metadaten» statt «Eckdaten», weil die Einträge
+    // dieses Katalogs Metadaten SIND (dieselbe Ausnahme wie das DCAT-Blatt,
+    // Kanon D26). Die Randspalte trägt die «Kontakt»-Karte (generische
+    // Sammeladresse der Datenverwaltung — Person ≠ Postfach). Attribut- und
+    // Realisierungszahl fehlen bewusst — sie stehen in den Reiterbeschriftungen.
+    return `<div class="detail-layout"><div>${personsSection(o.responsiblePersons)}
       <section class="detail-section">
         <h2 class="detail-section__title">Metadaten</h2>
         <dl class="kv kv--ruled">
@@ -535,7 +533,10 @@ function objectDetail(ctx, id) {
           ${o.updated ? `<dt>Stand</dt><dd>${esc(datum(o.updated))}</dd>` : ''}
           <dt>ID</dt><dd><code>${esc(o.objectId)}</code></dd>
         </dl>
-      </section>`;
+      </section></div>
+      <aside class="detail-layout__aside" aria-label="Kontakt">
+        ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
+      </aside></div>`;
   };
 
   mount.innerHTML = `
@@ -671,7 +672,7 @@ async function tableDetail(ctx, id) {
     // Lead unter der H1, dann «Verantwortliche Personen» und «Metadaten» als
     // linierte kv-Listen; die Zahlen der Reiterbeschriftungen (Felder,
     // Realisierungen) stehen nicht ein zweites Mal hier.
-    return `${personsSection(contact)}
+    return `<div class="detail-layout"><div>${personsSection(t.responsiblePersons)}
       <section class="detail-section">
         <h2 class="detail-section__title">Metadaten</h2>
         <dl class="kv kv--ruled">
@@ -679,12 +680,10 @@ async function tableDetail(ctx, id) {
           <dt>Schema</dt><dd>${esc(t.schemaLabel)}<br><span class="small muted"><code>${esc(t.schema)}</code> · ${esc(SCHEMA_TYPE[t.schemaType] || t.schemaType)}</span></dd>
           <dt>Technischer Name</dt><dd><code>${esc(t.name)}</code></dd>
           <dt>Art</dt><dd>${esc(TABLE_TYPE[t.type] || t.type)}</dd>
-          ${/* Aus der entfallenen Pillenzeile hierher: die Zertifizierung ist
-                eine Eigenschaft der Tabelle und darf nicht verschwinden. */''}
-          <dt>Zertifiziert</dt><dd>${t.certified ? 'Ja' : 'Nein'}</dd>
-          ${/* «Zeilen», nicht «Datensätze»: das Wort «Datensatz» bleibt dem
-                DCAT-Katalog vorbehalten (Terminologie-Kanon D22). */''}
-          <dt>Zeilen</dt><dd>${t.rowCount ? num(t.rowCount) : '—'}</dd>
+          ${/* «Zertifiziert» und «Zeilen» sind auf Nutzerentscheid (2026-08-04)
+                aus dem Blatt entfallen — Betriebs-/Volumenangaben, die für die
+                Katalogfrage («welches Feld trägt welchen Begriff?») nichts
+                beitragen; die Kartenansicht der Liste nennt die Zeilenzahl. */''}
           ${/* Die Brücke in den DCAT-Katalog steht in den Metadaten statt in einer
                 eigenen Karte: sie ist eine EIGENSCHAFT dieser Tabelle («wird als
                 dieser Datensatz publiziert»), keine Aktion. */''}
@@ -695,7 +694,21 @@ async function tableDetail(ctx, id) {
           ${t.updated ? `<dt>Stand</dt><dd>${esc(datum(t.updated))}</dd>` : ''}
           <dt>ID</dt><dd><code>${esc(t.tableId)}</code></dd>
         </dl>
-      </section>`;
+      </section></div>
+      <aside class="detail-layout__aside" aria-label="Zugriff und Kontakt">
+        ${/* «Zugriff» zuoberst (Nutzerentscheid 2026-08-04, nur Tabellenblatt):
+              der Bezug einer Systemtabelle läuft über ihren publizierten
+              DCAT-Datensatz — die Karte ist der Aktionsweg dorthin, die
+              «Publiziert als»-Zeile in den Metadaten bleibt die Eigenschaft.
+              Ohne Datensatz entfällt die Karte (nichts zu beziehen). */''}
+        ${dataset ? `<div class="box">
+          <h2>Zugriff</h2>
+          <p class="small muted">Bezug und Bereitstellungsformen stehen beim publizierten Datensatz im Datenbezug und API Verzeichnis.</p>
+          <a class="btn btn--outline btn--sm btn--icon-left" href="${esc(links.datensatz(dataset.id))}">
+            ${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Datensatz ansehen</span></a>
+        </div>` : ''}
+        ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
+      </aside></div>`;
   };
 
   mount.innerHTML = `

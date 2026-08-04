@@ -165,6 +165,22 @@ function detail(ctx, id) {
   // erscheint statt des Knopfs der Login-Hinweis (AGOV / FedLogin).
   const needsLogin = s.type === 'action' && !session.isLoggedIn();
 
+  // «Zugriff»-Karte, erste Karte der Randspalte (Nutzerentscheid 2026-08-04):
+  // derselbe Ort wie auf der Anwendungs-Landingpage. Abgemeldet trägt sie die
+  // Aussage des login-gate-Bands in kompakter Form (kleiner Text, sm-Knopf,
+  // derselbe window.__login-Weg); angemeldet den Sitzungskontext; Informations-
+  // angebote sind ausdrücklich frei zugänglich.
+  const zugriffCard = `<div class="box">
+      <h3>Zugriff</h3>
+      ${s.type !== 'action'
+        ? '<p class="small muted m-0">Frei zugänglich — keine Anmeldung erforderlich.</p>'
+        : session.isLoggedIn()
+          ? `<p class="small muted m-0">Angemeldet als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.</p>`
+          : `<p class="small m-0">${C.icon('Lock', 'icon--base')} Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.</p>
+             <button type="button" class="btn btn--outline btn--sm btn--icon-left mt-3" onclick="window.__login && window.__login()">
+               ${C.icon('User', 'btn__icon')}<span class="btn__text">Anmelden mit AGOV / FedLogin</span></button>`}
+    </div>`;
+
   const ctaBlock = needsLogin
     ? C.loginGate(`Zum Starten des Vorgangs «${C.escape(s.title)}» ist eine Anmeldung mit AGOV / FedLogin erforderlich. Alle Informationen auf dieser Seite sind frei einsehbar.`)
     : `<div class="row mt-4">
@@ -181,12 +197,15 @@ function detail(ctx, id) {
 
   // Symbolbild je Thema (verifizierte Unsplash-ids aus dem Bestand); Fallback =
   // Farbfläche. Deckt sich mit den Themen-Bildern der Startseite/Bereiche.
+  // Lokaler Heldenpool (assets/images/heroes, Nachweis im README dort) statt
+  // Unsplash-Hotlinks — Bild-Screening 2026-08-04.
+  const H = 'assets/images/heroes/';
   const DOMAIN_PHOTO = {
-    A: '1541888946425-d81bb19240f5', B: '1481627834876-b7833e8f5570', U: '1497366216548-37526070297c',
-    O: '1454165804606-c3d57bc86b40', G: '1522071820081-009f0129c71c', C: '1524758631624-e2822e304c36',
-    D: '1522071820081-009f0129c71c', E: '1454165804606-c3d57bc86b40', F: '1481627834876-b7833e8f5570',
+    A: H + 'domain-a.jpg', B: H + 'domain-b.jpg', U: H + 'domain-u.jpg',
+    O: H + 'domain-o.jpg', G: H + 'domain-g.jpg', C: H + 'domain-c.jpg',
+    D: H + 'domain-g.jpg', E: H + 'domain-o.jpg', F: H + 'domain-b.jpg',
   };
-  const img = DOMAIN_PHOTO[s.domain] || '1454165804606-c3d57bc86b40';
+  const img = DOMAIN_PHOTO[s.domain] || H + 'domain-o.jpg';
 
   mount.innerHTML = `
   <div class="container section">
@@ -194,7 +213,7 @@ function detail(ctx, id) {
       backHref: '#/services', backLabel: 'Dienstleistungen',
       title: s.title, lead: s.short,
       tags: `${C.audienceTag(s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
-      image: C.heroFigure({ id: img }),
+      image: C.heroFigure({ src: img }),
     })}
     <div class="container--grid gap--responsive">
       ${/* CD-Inhaltsrhythmus (.vertical-spacing, 3/3.5rem) statt des portal-
@@ -215,7 +234,8 @@ function detail(ctx, id) {
             liefert bereits .container__aside > * — ein zweites Rhythmus-Utility
             überschriebe ihn mit 3rem (Review layout/aside-1). */''}
       <aside class="container__aside" aria-labelledby="svc-aside-head">
-        <h2 class="sr-only" id="svc-aside-head">Kontakt und Grundlagen</h2>
+        <h2 class="sr-only" id="svc-aside-head">Zugriff, Kontakt und Grundlagen</h2>
+        ${zugriffCard}
         ${C.contactBox(contact)}
         ${/* Die je Dienstleistung geltenden Weisungen wurden aus data/weisungen.json
               gelesen; der Bestand ist zurückgezogen (docs/sitemap.md §2.4). Statt

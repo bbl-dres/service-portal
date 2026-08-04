@@ -179,7 +179,10 @@ export default async function render(ctx) {
   function doneBuchung() {
     const i = state.created;
     return `
-      <div class="vertical-spacing measure-lg">
+      ${/* 46rem wie die Erfolgsscreens der Formular-Apps (container__center--xs
+            trägt standalone nur den max-width-Deckel) — measure-lg war die
+            einzige abweichende Breite für dieselbe Funktion (C25). */''}
+      <div class="vertical-spacing container__center--xs">
         ${C.processDone({ instance: i, lead: 'Buchung angefragt.', title: 'Vielen Dank',
           // h2, nicht h1: die Reiterseite trägt ihre Überschrift schon.
           heading: 'h2',

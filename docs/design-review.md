@@ -71,6 +71,7 @@ Damit «konsistent» prüfbar wird, hält diese Review die Soll-Rezepte fest. Ne
 
 ### Struktur-Konventionen
 
+- **Lesemass:** das Mass sitzt am Eltern-/Spaltenelement (container__main/anchor-page__header 60rem, measure-xl-Artikel-Wrapper), nie an Textklassen; Ausnahmen: notification__content, api-resource__desc (C25).
 - **Spacing:** rem-Literale AUF der CD-Skala sind Konvention; skalenfremde Werte werden auf die nächste Stufe gesnappt (`--sp-1-5`/`--sp-2-5` ergänzen die Bruchstufen). Icon+Label-Lücke: `.5rem` (Mehrheitsrezept `.gap-sm`). Sektionsrhythmus aus `--stack-gap` (3rem → 3.5rem ab 1544px, CD-Kanon).
 - **Easing:** nur `var(--ease-out)` / `var(--ease-in-out)`, kein nacktes `ease`.
 - **Panel-Rand:** `--panel-border` (secondary-100). **Viewer-Schatten:** `--shadow-viewer`.
@@ -159,6 +160,7 @@ Status: ✅ umgesetzt · 🔶 teilweise · 📌 bewusste Abweichung (dokumentier
 | C22 | Geteilte Helfer emittieren App-Klassen (card→.pf-card__chips, actionCard→.fp-svc in der Mietende-Sektion) | CSS in die COMPONENTS-Sektion umgezogen, Konsumenten dokumentiert (kein Rename — Tests greppen die Klassen) | ✅ |
 | C23 | Kopf-Suchfeld: Fokusring dunkel statt CD-Purpur — der globale Aussenring wird vom overflow:hidden der Aufklapp-Animation beschnitten (Nutzerbefund 2026-08-04) | Inset-Ring (:focus, -2px) in --color-focus-ring am .search__form-Feld | ✅ |
 | C24 | Gestapelte Kästen der Dienstleistungs-Landingpage («Das brauchen Sie» / «So läuft es ab») klebten als EIN Block — das 1px-Naht-Fossil `.box + .box` schlug mit (0,2,0) den Spaltenrhythmus (Nutzerbefund 2026-08-04) | Fossil entfernt; Kastenabstand kommt überall aus dem Kontextrhythmus (vertical-spacing 3/3.5rem · Aside 1.75/2rem · detail-layout 1.5rem); Wächter in check-consistency.mjs | ✅ |
+| C25 | Lesemass-Wildwuchs: 70ch-Einzeldeckel an p/ul in container__main, detail-/anchor-section und page-intro neben ungedeckelten Geschwistern — Text endete, Kästen liefen weiter (Nutzerbefund 2026-08-04) | EIN Modell: das Mass sitzt am Eltern-/Spaltenelement — container__main und anchor-page__header messen 60rem (= hero__content); Blattseiten (Datensatz, Metadatenkatalog-Übersicht) tragen einen measure-xl-Artikel-Wrapper; Einzeldeckel gelöscht; measure-lg entfallen (Workspace-Erfolg = 46rem-Formularspalte). Dokumentierte Ausnahmen: notification__content und api-resource__desc (komponenten-interne Lesbarkeit). Datentabellen/Registerpanels bewusst vollbreit. Wächter in check-consistency.mjs | ✅ |
 
 ### D — Sprache (Detailliste)
 
@@ -198,6 +200,7 @@ Die vollständigen Fundstellenlisten je Variante liegen im Review-Protokoll; hie
 | D30 | «Dienstleistung starten» vs. «Vorgang starten» | «Vorgang starten» | ✅ |
 | D31 | Schritt-Ansage mit/ohne Label | «Schritt N von M: LABEL» | ✅ |
 | D32 | «Parzelle erfassen» vs. Geschwister-Wortschatz | «Grundstück erfassen» | ✅ |
+| D33 | Metadatenkatalog-Details ohne Datensatzblatt-Anatomie: Beschreibung als kv-Zeile versteckt, keine Personen, «Eckdaten» ohne Trennlinien; Sammeladresse und Personen vermischt (Nutzerentscheide 2026-08-04) | Datensatzblatt-Muster für beide Detailansichten: Definition/Beschreibung als Lead unter der H1 · «Verantwortliche Personen» = AdminDir-Einträge (kv--ruled; Tabellen erben die Personen ihres publizierten Datensatzes) · «Metadaten» (kv--ruled) · «Kontakt»-Karte (Sammeladresse der Datenverwaltung) in der Randspalte; «Zertifiziert»/«Zeilen» aus dem Tabellenblatt entfallen | ✅ |
 
 ### E — Meta (Tests, Doku)
 

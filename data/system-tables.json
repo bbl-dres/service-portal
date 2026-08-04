@@ -254,6 +254,12 @@
         "description": "Funktion des Objektes",
         "nullable": true
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      }
     ]
   },
   {
@@ -675,6 +681,16 @@
         "description": "Funktion des Objektes",
         "nullable": true
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -726,6 +742,16 @@
         "dataType": "VARCHAR(20)",
         "description": "Zahlungsintervall.",
         "nullable": false
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -823,6 +849,16 @@
         "description": "Kennzeichen: Summenbemessung",
         "nullable": true
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -880,6 +916,16 @@
         "dataType": "VARCHAR(20)",
         "description": "Status des Vertrags (aktiv, gekündigt, abgelaufen).",
         "nullable": false
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -1357,6 +1403,16 @@
         "description": "Liste von Bild-URLs für Karussell und Galerie (App-spezifisch)",
         "nullable": true
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -1580,6 +1636,16 @@
         "description": "Zeitstempel der letzten ETL-Synchronisation",
         "nullable": true
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -1782,6 +1848,16 @@
         "description": "Zeitstempel der letzten ETL-Synchronisation",
         "nullable": true
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -1897,6 +1973,16 @@
         "dataType": "TIMESTAMP",
         "description": "Zeitstempel der letzten ETL-Synchronisation",
         "nullable": true
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -2186,6 +2272,16 @@
         "dataType": "TIMESTAMP",
         "description": "Zeitstempel der letzten ETL-Synchronisation",
         "nullable": true
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   }
