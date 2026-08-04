@@ -1151,15 +1151,21 @@ export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) 
 // Kastens pflegen — die Randspalte ist genau die Stelle, an der ein Nutzer
 // Wiedererkennung erwartet.
 
-// `links` = [{ icon, label, href }]. Die Zeilen tragen dasselbe `.fp-svc`-Raster
-// wie die Kurzwege im Raumdetail: Symbolspalte, Beschriftung, Folgepfeil.
+// `links` = [{ label, href }]. Die Zeilen tragen dasselbe `.fp-svc`-Raster wie
+// die Kurzwege im Raumdetail: Beschriftung, Folgepfeil.
+//
+// OHNE führendes Symbol: die Symbole standen für die verlinkte Dienstleistung
+// («Wrench» für Störung melden, «File» für Dokumente) und wiederholten damit
+// nur die Beschriftung daneben — ein Symbol muss etwas beitragen, was der Text
+// nicht schon sagt. Der Pfeil rechts bleibt: er sagt, dass die Zeile wegführt.
+// `icon` an den Aufrufstellen wird ignoriert (Altbestand, schadet nicht).
 export function actionCard({ title = 'Aktionen', lead = '', links = [] } = {}) {
   if (!links.length) return '';
   return `<div class="box">
     <h2>${escape(title)}</h2>
     ${lead ? `<p class="small muted">${escape(lead)}</p>` : ''}
     <div class="fp-svc-list">${links.map((l) => `<a class="fp-svc" href="${escape(l.href)}">${
-      icon(l.icon || 'ArrowRight', 'icon--base')}<span>${escape(l.label)}</span>${
+      `<span>${escape(l.label)}</span>`}${
       icon('ArrowRight', 'icon--sm fp-svc__go')}</a>`).join('')}</div>
   </div>`;
 }

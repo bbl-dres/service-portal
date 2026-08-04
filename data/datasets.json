@@ -96,11 +96,12 @@
           "en": "I14Y Interoperability Platform"
         },
         "value": {
-          "de": "Gebäude Bund",
-          "fr": "Bâtiments de la Confédération",
-          "it": "Edifici della Confederazione",
-          "en": "Federal Buildings"
-        }
+          "de": "Gebäude Stammdaten – Details lesen",
+          "fr": "Données de base des bâtiments – lire les détails",
+          "it": "Dati di base degli edifici – lettura dei dettagli",
+          "en": "Building Master Data - Get Detail"
+        },
+        "url": "https://www.i14y.admin.ch/de/catalog/dataservices/60f54f01-bd80-423b-8581-581b7bcd6b38/description"
       }
     ],
     "responsiblePersons": [
@@ -1085,7 +1086,38 @@
         "bemerkungen": ""
       }
     ],
-    "publications": []
+    "publications": [
+      {
+        "catalog": {
+          "de": "I14Y Interoperabilitätsplattform",
+          "fr": "I14Y Plateforme d'interopérabilité",
+          "it": "I14Y Piattaforma di interoperabilità",
+          "en": "I14Y Interoperability Platform"
+        },
+        "value": {
+          "de": "Grundstücke Bund (GIS IMMO) – WFS und REST",
+          "fr": "Biens-fonds de la Confédération (GIS IMMO) – WFS et REST",
+          "it": "Fondi della Confederazione (GIS IMMO) – WFS e REST",
+          "en": "Federal Land Parcels (GIS IMMO) - WFS and REST"
+        },
+        "url": "https://www.i14y.admin.ch/de/catalog/dataservices/09dc2754-945a-47bb-a1c4-3e72ffa1483a/description"
+      },
+      {
+        "catalog": {
+          "de": "geocat.ch — Schweizer Katalog der Geometadaten",
+          "fr": "geocat.ch — catalogue suisse des géométadonnées",
+          "it": "geocat.ch — catalogo svizzero dei geometadati",
+          "en": "geocat.ch - Swiss catalogue for geometadata"
+        },
+        "value": {
+          "de": "Grundstücke des Bundes (BBL)",
+          "fr": "Biens-fonds de la Confédération (OFCL)",
+          "it": "Fondi della Confederazione (UFCL)",
+          "en": "Federal Land Parcels (FOBL)"
+        },
+        "url": "https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/a2ccc288-de8c-459a-88a7-d5b6357300ec"
+      }
+    ]
   },
   {
     "id": "11",
@@ -1219,7 +1251,38 @@
         "bemerkungen": ""
       }
     ],
-    "publications": []
+    "publications": [
+      {
+        "catalog": {
+          "de": "I14Y Interoperabilitätsplattform",
+          "fr": "I14Y Plateforme d'interopérabilité",
+          "it": "I14Y Piattaforma di interoperabilità",
+          "en": "I14Y Interoperability Platform"
+        },
+        "value": {
+          "de": "Gebäude Bund (GIS IMMO) – WFS und REST",
+          "fr": "Bâtiments de la Confédération (GIS IMMO) – WFS et REST",
+          "it": "Edifici della Confederazione (GIS IMMO) – WFS e REST",
+          "en": "Federal Buildings (GIS IMMO) - WFS and REST"
+        },
+        "url": "https://www.i14y.admin.ch/de/catalog/dataservices/920020e9-fb71-4194-a1d9-81fe901d26fd/description"
+      },
+      {
+        "catalog": {
+          "de": "geocat.ch — Schweizer Katalog der Geometadaten",
+          "fr": "geocat.ch — catalogue suisse des géométadonnées",
+          "it": "geocat.ch — catalogo svizzero dei geometadati",
+          "en": "geocat.ch - Swiss catalogue for geometadata"
+        },
+        "value": {
+          "de": "Gebäude des Bundes (BBL)",
+          "fr": "Bâtiments de la Confédération (OFCL)",
+          "it": "Edifici della Confederazione (UFCL)",
+          "en": "Federal Buildings (FOBL)"
+        },
+        "url": "https://www.geocat.ch/geonetwork/srv/ger/catalog.search#/metadata/8a12a3ab-f3e0-436e-a571-e129becce292"
+      }
+    ]
   },
   {
     "id": "12",

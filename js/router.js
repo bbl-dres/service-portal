@@ -44,6 +44,9 @@ export const NAV = [
       ] },
       { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/catalog', label: 'Datenbezug und API Verzeichnis' },
+      // Der Metadatenkatalog steht bewusst NICHT im Menü: er ist ein Werkzeug
+      // der Datenverwaltung, nicht der täglichen Nutzung. Erreichbar über den
+      // Anwendungskatalog (Fachanwendungen Bauten) und die Daten-Übersicht.
       { href: '#/applications?area=buildings', label: 'Fachanwendungen Bauten' },
       { href: '#/applications?area=logistics', label: 'Fachanwendungen Logistik' },
       // Die gemeinsam genutzten Anwendungen der Bundesverwaltung — eGate,
@@ -108,6 +111,7 @@ const APPS = {
   'building-create': './apps/building-create.js',
   'media-library':   './apps/media-library.js',
   'tenancies':       './apps/tenancies.js',
+  'metadata-catalog':'./apps/metadata-catalog.js',
 };
 // Which top-nav item to highlight for pages and apps that are not themselves a
 // top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
@@ -118,7 +122,7 @@ const SECTION_OF = {
   'portfolio': 'data', 'projects': 'data',
   'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
   'document-archive': 'data', 'media-library': 'data', 'api-docs': 'data',
-  'tenancies': 'data',
+  'tenancies': 'data', 'metadata-catalog': 'data',
 };
 
 function parseHash() {

@@ -153,61 +153,6 @@
     }
   },
   {
-    "appId": "sap-eppm",
-    "name": "SAP ePPM",
-    "group": "Immobilien & Bau",
-    "icon": "Briefcase",
-    "audience": "staff",
-    "accessNote": "Extern (Login)",
-    "link": {
-      "kind": "external",
-      "href": "#"
-    },
-    "description": "Führungssystem der Bauprojekte — Erfassung, Freigabe und Controlling (Fachanwendung).",
-    "area": "buildings",
-    "subtitle": "Führungssystem Bauprojekte",
-    "long": "SAP ePPM (Enterprise Portfolio and Project Management) führt alle Neu-, Um- und Instandsetzungsprojekte des BBL von der Bedarfsmeldung bis zur Übergabe. Hier werden Projektstruktur, Phasen nach SIA 112, Kosten, Termine und Freigaben erfasst und bewirtschaftet; das System ist damit die führende Quelle für den Projektstatus im Reporting. Das Kundenportal zeigt daraus eine vereinfachte Leseansicht («Bauprojekte / EPPM») — die Bewirtschaftung bleibt in SAP ePPM.",
-    "access": {
-      "note": "Nur BBL-Personal: Projektleitende, Portfoliomanagement und Projektcontrolling.",
-      "steps": [
-        "Anmeldung über eIAM.",
-        "SAP- und Projektrollen werden vom Portfoliomanagement vergeben.",
-        "Ohne SAP-Berechtigung führt der Weg über die Leseansicht im Kundenportal."
-      ]
-    },
-    "resources": [
-      {
-        "label": "Bauprojekte / EPPM (Portal) — Leseansicht",
-        "href": "#/applications/bauprojekte-eppm",
-        "note": "Vereinfachte Ansicht für die Verwaltungseinheiten, ohne SAP-Berechtigung."
-      },
-      {
-        "label": "Datensatz «Bauprojekte (SAP ePPM)»",
-        "href": "#/data/catalog/3"
-      },
-      {
-        "label": "Standards und Weisungen — Nutzung und Betrieb der Bauten",
-        "href": "#/knowledge/accommodation?section=wi-standards"
-      }
-    ],
-    "related": [
-      "bauprojekte-eppm",
-      "superb",
-      "cde",
-      "qualitygate"
-    ],
-    "contact": "projektmanagement",
-    "updated": "30.07.2026",
-    "bild": {
-      "src": "assets/images/applications/sap-eppm.jpg",
-      "titel": "Office setup featuring a conference table, laptop, and organized whiteboard schedule, high",
-      "fotograf": "Walls.io",
-      "credit": "Walls.io — Pexels",
-      "lizenz": "Pexels-Lizenz",
-      "quelle": "https://www.pexels.com/photo/laptop-on-conference-table-15505438/"
-    }
-  },
-  {
     "appId": "dokumentenarchiv",
     "name": "Bauwerksdokumentation (Portal)",
     "group": "Immobilien & Bau",
@@ -299,6 +244,54 @@
     }
   },
   {
+    "appId": "metadaten-katalog",
+    "name": "Metadaten Katalog Bauten (Portal)",
+    "group": "Immobilien & Bau",
+    "icon": "Stack",
+    "audience": "staff",
+    "accessNote": "Intern",
+    "link": {
+      "kind": "app",
+      "href": "#/app/metadata-catalog"
+    },
+    "description": "Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und die Felder, die sie tragen.",
+    "area": "buildings",
+    "subtitle": "Geschäftsobjekte, Attribute und Systemtabellen",
+    "long": "Der Metadaten Katalog Bauten beschreibt die Daten des Immobilienbereichs auf zwei Ebenen. Technologieneutral steht das Geschäftsobjekt: was ein Gebäude, ein Mietobjekt oder eine Wirtschaftseinheit fachlich ist, welche Attribute dazugehören, welche Norm sie belegt und wer sie verantwortet — unabhängig davon, in welchem System sie gerade liegen. Systemgebunden stehen daneben die Tabellen und Layer der Führungssysteme SAP RE-FX und GIS IMMO mit ihren Feldern. Verbunden sind beide Ebenen über die Abbildung am Attribut; sie beantwortet die Frage, an der Datenprojekte sonst hängenbleiben: welches Feld welchen Systems trägt diesen Begriff. Der Katalog ergänzt damit das «Datenbezug und API Verzeichnis», das die publizierten Datensätze nach DCAT-AP CH beschreibt — dort steht, was man beziehen kann, hier, was es bedeutet und wo es herkommt.",
+    "access": {
+      "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Der Katalog ist lesend; Begriffe und Abbildungen pflegen die Datenverwaltenden der jeweiligen Domäne."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Datenbezug und API Verzeichnis — die publizierten Datensätze",
+        "href": "#/data/catalog"
+      },
+      {
+        "label": "I14Y Interoperabilitätsplattform — das Vorbild auf Bundesebene",
+        "href": "#/applications/i14y"
+      }
+    ],
+    "related": [
+      "datenbezug",
+      "i14y",
+      "liegenschaften-inventar"
+    ],
+    "contact": "dres",
+    "updated": "04.08.2026",
+    "bild": {
+      "src": "assets/images/applications/metadata-catalog.jpg",
+      "titel": "Rows of labelled white archive boxes on wooden shelves",
+      "fotograf": "Luke Caunt",
+      "credit": "Luke Caunt — Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/rows-of-white-archive-boxes-on-wooden-shelves-5utYi64hnJ0"
+    }
+  },
+  {
     "appId": "datenportal",
     "name": "Datenportal (Portal)",
     "group": "Daten und Auswertungen",
@@ -386,6 +379,149 @@
       "credit": "Stanislav Kondratiev — Pexels",
       "lizenz": "Pexels-Lizenz",
       "quelle": "https://www.pexels.com/photo/screen-with-code-10816120/"
+    }
+  },
+  {
+    "appId": "workspace",
+    "name": "Workspace Management (Portal)",
+    "group": "Arbeitsplatz & Logistik",
+    "icon": "Apps",
+    "audience": "staff",
+    "accessNote": "Intern",
+    "link": {
+      "kind": "app",
+      "href": "#/app/workspace"
+    },
+    "description": "Möblierung, Belegungsplanung, Multispace und Buchungen.",
+    "area": "logistics",
+    "subtitle": "Arbeitsplatz und Belegung",
+    "long": "Workspace Management bildet Arbeitsplätze, Zonen und Belegung der Bürogebäude ab. Es unterstützt die Planung nach Desk-Sharing-Faktor, die Zuteilung von Zonen an Verwaltungseinheiten und die Auswertung der tatsächlichen Nutzung.",
+    "access": {
+      "note": "Für Mitarbeitende der angeschlossenen Verwaltungseinheiten.",
+      "steps": [
+        "Anmeldung über eIAM."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Weisung Neue Arbeitswelten (NAW)",
+        "href": "#/knowledge/accommodation?section=wi-standards"
+      }
+    ],
+    "related": [
+      "raumbuchung",
+      "flm"
+    ],
+    "contact": "campus",
+    "updated": "22.06.2026",
+    "bild": {
+      "src": "assets/images/applications/workspace.jpg",
+      "titel": "Spacious open-plan office with cubicles and modern furnishings, ideal for collaborative wo",
+      "fotograf": "DOAN THANH BINH",
+      "credit": "DOAN THANH BINH — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/modern-open-office-space-with-cubicles-36631700/"
+    }
+  },
+  {
+    "appId": "raumbuchung",
+    "name": "Raum- & Parkplatzbuchung (Portal)",
+    "group": "Arbeitsplatz & Logistik",
+    "icon": "Calendar",
+    "audience": "both",
+    "accessNote": "Intern + Extern",
+    "link": {
+      "kind": "app",
+      "href": "#/app/workspace?tab=buchung"
+    },
+    "description": "Sitzungsräume, Arbeitsplätze und Parkplätze reservieren.",
+    "area": "logistics",
+    "subtitle": "Räume und Parkplätze buchen",
+    "long": "Über die Raum- und Parkplatzbuchung reservieren Mitarbeitende Sitzungszimmer, Arbeitsplätze und Parkplätze an den Standorten des Bundes. Die Verfügbarkeit richtet sich nach der Zuteilung der jeweiligen Verwaltungseinheit.",
+    "access": {
+      "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "Parkplätze unterliegen der Zuteilung durch die Verwaltungseinheit."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Raum-, Arbeitsplatz- & Parkplatzbuchung»",
+        "href": "#/services/raumbuchung"
+      },
+      {
+        "label": "Workspace Management — Belegungsplanung",
+        "href": "#/applications/workspace"
+      }
+    ],
+    "related": [
+      "workspace"
+    ],
+    "contact": "campus",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/raumbuchung.jpg",
+      "titel": "Sleek, minimalist conference room with glass walls, long table, and office chairs.",
+      "fotograf": "Pixabay",
+      "credit": "Pixabay — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/rectangular-white-table-with-rolling-chairs-inside-room-260689/"
+    }
+  },
+  {
+    "appId": "sap-eppm",
+    "name": "SAP ePPM",
+    "group": "Immobilien & Bau",
+    "icon": "Briefcase",
+    "audience": "staff",
+    "accessNote": "Extern (Login)",
+    "link": {
+      "kind": "external",
+      "href": "#"
+    },
+    "description": "Führungssystem der Bauprojekte — Erfassung, Freigabe und Controlling (Fachanwendung).",
+    "area": "buildings",
+    "subtitle": "Führungssystem Bauprojekte",
+    "long": "SAP ePPM (Enterprise Portfolio and Project Management) führt alle Neu-, Um- und Instandsetzungsprojekte des BBL von der Bedarfsmeldung bis zur Übergabe. Hier werden Projektstruktur, Phasen nach SIA 112, Kosten, Termine und Freigaben erfasst und bewirtschaftet; das System ist damit die führende Quelle für den Projektstatus im Reporting. Das Kundenportal zeigt daraus eine vereinfachte Leseansicht («Bauprojekte / EPPM») — die Bewirtschaftung bleibt in SAP ePPM.",
+    "access": {
+      "note": "Nur BBL-Personal: Projektleitende, Portfoliomanagement und Projektcontrolling.",
+      "steps": [
+        "Anmeldung über eIAM.",
+        "SAP- und Projektrollen werden vom Portfoliomanagement vergeben.",
+        "Ohne SAP-Berechtigung führt der Weg über die Leseansicht im Kundenportal."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Bauprojekte / EPPM (Portal) — Leseansicht",
+        "href": "#/applications/bauprojekte-eppm",
+        "note": "Vereinfachte Ansicht für die Verwaltungseinheiten, ohne SAP-Berechtigung."
+      },
+      {
+        "label": "Datensatz «Bauprojekte (SAP ePPM)»",
+        "href": "#/data/catalog/3"
+      },
+      {
+        "label": "Standards und Weisungen — Nutzung und Betrieb der Bauten",
+        "href": "#/knowledge/accommodation?section=wi-standards"
+      }
+    ],
+    "related": [
+      "bauprojekte-eppm",
+      "superb",
+      "cde",
+      "qualitygate"
+    ],
+    "contact": "projektmanagement",
+    "updated": "30.07.2026",
+    "bild": {
+      "src": "assets/images/applications/sap-eppm.jpg",
+      "titel": "Office setup featuring a conference table, laptop, and organized whiteboard schedule, high",
+      "fotograf": "Walls.io",
+      "credit": "Walls.io — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/laptop-on-conference-table-15505438/"
     }
   },
   {
@@ -857,94 +993,6 @@
       "credit": "Mikael Blomkvist — Pexels",
       "lizenz": "Pexels-Lizenz",
       "quelle": "https://www.pexels.com/photo/woman-in-white-hardhat-holding-silver-touchscreen-device-8960944/"
-    }
-  },
-  {
-    "appId": "workspace",
-    "name": "Workspace Management (Portal)",
-    "group": "Arbeitsplatz & Logistik",
-    "icon": "Apps",
-    "audience": "staff",
-    "accessNote": "Intern",
-    "link": {
-      "kind": "app",
-      "href": "#/app/workspace"
-    },
-    "description": "Möblierung, Belegungsplanung, Multispace und Buchungen.",
-    "area": "logistics",
-    "subtitle": "Arbeitsplatz und Belegung",
-    "long": "Workspace Management bildet Arbeitsplätze, Zonen und Belegung der Bürogebäude ab. Es unterstützt die Planung nach Desk-Sharing-Faktor, die Zuteilung von Zonen an Verwaltungseinheiten und die Auswertung der tatsächlichen Nutzung.",
-    "access": {
-      "note": "Für Mitarbeitende der angeschlossenen Verwaltungseinheiten.",
-      "steps": [
-        "Anmeldung über eIAM."
-      ]
-    },
-    "resources": [
-      {
-        "label": "Weisung Neue Arbeitswelten (NAW)",
-        "href": "#/knowledge/accommodation?section=wi-standards"
-      }
-    ],
-    "related": [
-      "raumbuchung",
-      "flm"
-    ],
-    "contact": "campus",
-    "updated": "22.06.2026",
-    "bild": {
-      "src": "assets/images/applications/workspace.jpg",
-      "titel": "Spacious open-plan office with cubicles and modern furnishings, ideal for collaborative wo",
-      "fotograf": "DOAN THANH BINH",
-      "credit": "DOAN THANH BINH — Pexels",
-      "lizenz": "Pexels-Lizenz",
-      "quelle": "https://www.pexels.com/photo/modern-open-office-space-with-cubicles-36631700/"
-    }
-  },
-  {
-    "appId": "raumbuchung",
-    "name": "Raum- & Parkplatzbuchung (Portal)",
-    "group": "Arbeitsplatz & Logistik",
-    "icon": "Calendar",
-    "audience": "both",
-    "accessNote": "Intern + Extern",
-    "link": {
-      "kind": "app",
-      "href": "#/app/workspace?tab=buchung"
-    },
-    "description": "Sitzungsräume, Arbeitsplätze und Parkplätze reservieren.",
-    "area": "logistics",
-    "subtitle": "Räume und Parkplätze buchen",
-    "long": "Über die Raum- und Parkplatzbuchung reservieren Mitarbeitende Sitzungszimmer, Arbeitsplätze und Parkplätze an den Standorten des Bundes. Die Verfügbarkeit richtet sich nach der Zuteilung der jeweiligen Verwaltungseinheit.",
-    "access": {
-      "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
-      "steps": [
-        "Anmeldung über eIAM.",
-        "Parkplätze unterliegen der Zuteilung durch die Verwaltungseinheit."
-      ]
-    },
-    "resources": [
-      {
-        "label": "Dienstleistung «Raum-, Arbeitsplatz- & Parkplatzbuchung»",
-        "href": "#/services/raumbuchung"
-      },
-      {
-        "label": "Workspace Management — Belegungsplanung",
-        "href": "#/applications/workspace"
-      }
-    ],
-    "related": [
-      "workspace"
-    ],
-    "contact": "campus",
-    "updated": "30.07.2026",
-    "bild": {
-      "src": "assets/images/applications/raumbuchung.jpg",
-      "titel": "Sleek, minimalist conference room with glass walls, long table, and office chairs.",
-      "fotograf": "Pixabay",
-      "credit": "Pixabay — Pexels",
-      "lizenz": "Pexels-Lizenz",
-      "quelle": "https://www.pexels.com/photo/rectangular-white-table-with-rolling-chairs-inside-room-260689/"
     }
   },
   {

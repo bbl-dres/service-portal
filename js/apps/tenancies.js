@@ -739,19 +739,22 @@ function detail(ctx, id) {
   // vorbelegtem Gebäude, damit der Vorgang nicht bei null beginnt. Die Auswahl
   // ist bewusst kurz: was Mietende an einer Fläche tatsächlich auslösen.
   function svc(serviceId) { return core.service(serviceId); }
-  function serviceLink(serviceId, iconName, href) {
+  // Ohne führendes Symbol — wie C.actionCard: das Symbol wiederholte nur die
+  // Beschriftung daneben. Der Folgepfeil bleibt, er trägt die Information,
+  // dass die Zeile wegführt.
+  function serviceLink(serviceId, href) {
     const s = svc(serviceId);
     if (!s) return '';
     return `<a class="fp-svc" href="${href}">
-      ${C.icon(iconName, 'icon--base')}<span>${C.escape(s.title)}</span>${C.icon('ArrowRight', 'icon--sm fp-svc__go')}</a>`;
+      <span>${C.escape(s.title)}</span>${C.icon('ArrowRight', 'icon--sm fp-svc__go')}</a>`;
   }
   const objektQ = `building=${encodeURIComponent(t.buildingId)}`;
   function serviceLinks(s) {
     const raumQ = s ? `&room=${encodeURIComponent(s.roomNumber)}` : '';
     return `<div class="fp-svc-list">
-      ${serviceLink('stoerung-melden', 'Wrench', `#/app/fault-report?${objektQ}${raumQ}`)}
-      ${serviceLink('kleinauftrag-gebaeude', 'Building', `#/app/fault-report?type=kleinauftrag&${objektQ}${raumQ}`)}
-      ${serviceLink('umzug-anmelden', 'Truck', `#/app/fault-report?type=umzug&${objektQ}${raumQ}`)}
+      ${serviceLink('stoerung-melden', `#/app/fault-report?${objektQ}${raumQ}`)}
+      ${serviceLink('kleinauftrag-gebaeude', `#/app/fault-report?type=kleinauftrag&${objektQ}${raumQ}`)}
+      ${serviceLink('umzug-anmelden', `#/app/fault-report?type=umzug&${objektQ}${raumQ}`)}
     </div>`;
   }
   function serviceShortcuts() {
@@ -759,16 +762,16 @@ function detail(ctx, id) {
       <h2>Aktionen</h2>
       <p class="small muted">Für dieses Objekt vorbelegt.</p>
       <div class="fp-svc-list">
-        ${serviceLink('stoerung-melden', 'Wrench', `#/app/fault-report?${objektQ}`)}
-        ${serviceLink('kleinauftrag-gebaeude', 'Building', `#/app/fault-report?type=kleinauftrag&${objektQ}`)}
-        ${serviceLink('umzug-anmelden', 'Truck', `#/app/fault-report?type=umzug&${objektQ}`)}
-        ${serviceLink('raumbedarf-melden', 'Home', '#/app/space-request')}
-        ${serviceLink('reklamation', 'WarningCircle', `#/app/fault-report?type=reklamation&${objektQ}`)}
+        ${serviceLink('stoerung-melden', `#/app/fault-report?${objektQ}`)}
+        ${serviceLink('kleinauftrag-gebaeude', `#/app/fault-report?type=kleinauftrag&${objektQ}`)}
+        ${serviceLink('umzug-anmelden', `#/app/fault-report?type=umzug&${objektQ}`)}
+        ${serviceLink('raumbedarf-melden', '#/app/space-request')}
+        ${serviceLink('reklamation', `#/app/fault-report?type=reklamation&${objektQ}`)}
         ${/* Dokumente hängen am GEBÄUDE, nicht am Mietverhältnis — deshalb hier
               kein Dokumentenabschnitt, sondern der Weg in die
               Bauwerksdokumentation, auf dieses Gebäude vorgefiltert. */''}
         <a class="fp-svc" href="#/app/document-archive?building=${encodeURIComponent(t.buildingId)}">
-          ${C.icon('File', 'icon--base')}<span>Dokumente zum Gebäude</span>${C.icon('ArrowRight', 'icon--sm fp-svc__go')}</a>
+          <span>Dokumente zum Gebäude</span>${C.icon('ArrowRight', 'icon--sm fp-svc__go')}</a>
       </div>
     </div>`;
   }

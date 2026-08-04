@@ -240,8 +240,15 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
      Reiterleiste und Katalogleiste, die alle in Spalte 1 beginnen. Die
      Einrückung las sich dort nicht als Marge, sondern als Fehlausrichtung —
      der Inhalt wirkte gegenüber allem darüber verschoben. Die Hauptspalte
-     beginnt deshalb links bündig und nimmt die frei gewordene Spalte mit. */
-  .container__main  { grid-column:1 / span 7; }
+     beginnt deshalb links bündig und nimmt die frei gewordene Spalte mit.
+     ZWEITE ABWEICHUNG: sie nimmt auch die achte Spalte. Beim CD trennt eine
+     ganze leere Rasterspalte Haupt- und Seitenspalte (main 2-7, aside 9-12);
+     nachdem die Hauptspalte links bündig beginnt, blieb daraus eine tote Zone
+     von rund 150px in der Mitte — Tabellen brachen dort um oder liefen rechts
+     aus dem Bild, während daneben Platz frei stand. Jetzt grenzen die Spalten
+     aneinander, und der Abstand ist derselbe wie zwischen allen Rasterspalten
+     (die `gap--responsive` der Call-Sites). */
+  .container__main  { grid-column:1 / span 8; }
   .container__aside { grid-column:9 / span 4; }
 }
 @media (min-width:1280px){
@@ -1226,6 +1233,12 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 
 /* Hero (hero.postcss:5-155) — CD heroes sit on white; tint comes from bg-- sections */
 .hero { padding-top:var(--section-pt); padding-bottom:var(--section-py); background:none; border-bottom:0; }
+/* Ein Hero, der NUR die Überschrift trägt (kein Lead, keine Pillenzeile), braucht
+   nicht die Bandhöhe eines Heros mit Text: der untere Innenabstand ist für drei
+   gestapelte Elemente bemessen und liess unter einer einzelnen H1 rund 80px
+   Leerfläche stehen. Betrifft die Detailansichten des Metadatenkatalogs, deren
+   Beschreibung in den Eckdaten steht statt unter dem Titel. */
+.hero:has(> .hero__content > .hero__title:only-child) { padding-bottom:2rem; }
 .hero__content { display:flex; flex-direction:column; gap:1.5rem; max-width:60rem; }
 @media (min-width:1024px){ .hero__content { gap:2rem; } }
 @media (min-width:1920px){ .hero__content { gap:2.5rem; } }   /* hero.postcss:14-16 3xl:space-y-10 */
@@ -2138,13 +2151,14 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 @media (min-width:1024px){ .box, .stat { padding:1.5rem; } }
 @media (min-width:1544px){ .box, .stat { padding:2rem; } }
 .box + .box { margin-top:1px; }
-/* `.container__aside > *` (CD container.postcss) gibt JEDEM Block der
-   Seitenspalte 1.75-2rem Abstand nach unten. Zwischen zwei aufeinanderfolgenden
-   Kästen widerspricht das der Naht darüber: gemessen standen 32px zwischen den
-   beiden, die 1px-Naht war unsichtbar und die Kästen schwebten einzeln.
-   `:has(+ .box)` nimmt den Abstand genau dort weg — ein Kasten, auf den etwas
-   anderes folgt, behält ihn. */
-.container__aside > .box:has(+ .box) { margin-bottom:0; }
+/* Die Seitenspalte hatte hier eine Ausnahme: `.container__aside > .box:has(+ .box)`
+   nahm den Abstand zwischen zwei aufeinanderfolgenden Kästen weg, damit die
+   1px-Naht trägt statt einer Lücke. In der Praxis trägt sie nicht — Kasten und
+   Naht sind beide hell (secondary-50 auf Weiss), und drei gestapelte Kästen
+   lasen sich als EIN Block mit Zwischenüberschriften statt als Eckdaten,
+   Kontakt und Aktionen. Die Ausnahme ist deshalb wieder weg: es gilt der
+   CD-Abstand aus `.container__aside > *` (1.75rem, ab lg 2rem), derselbe wie
+   zwischen allen anderen Blöcken der Seitenspalte. */
 /* h2 mitgeführt: der Kastentitel ist optisch immer derselbe, unabhängig davon,
    auf welcher Ebene der Gliederung er steht. Die Seitenspalte der
    Mietende-Detailansicht trägt h2, weil die Seite sonst von h1 direkt auf h3
@@ -2840,6 +2854,16 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .pf-tree__label { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .pf-tree__n { flex:none; margin-left:.4rem; font-size:var(--fs-xs); color:var(--color-text-muted); }
 .pf-tree__node.is-active .pf-tree__n { color:var(--color-primary-700); }
+
+/* Variante OHNE Symbolspalte (Metadatenkatalog, js/apps/metadata-catalog.js).
+   Dort führt der Baum Datendomänen und Systeme — Begriffe, für die es kein
+   Symbol gibt, das mehr sagt als das Wort selbst; fünf verschiedene Glyphen
+   untereinander waren Rauschen. Statt des Symbols trägt hier die Einrückung
+   die Ebene. Im Inventar bleibt das Symbol: dort kodiert es die Ebene
+   (Land › Region › Stadt › WE) in einem Baum, der gar nicht einrückt.
+   Der Zweig selbst bleibt wie im Inventar ein <button> mit dem Chevron IN sich;
+   gefiltert wird über seine Blätter (das erste heisst «Alle …»). */
+.pf-tree--plain .pf-tree__leaf { padding-left:2rem; }   /* Einrückung ersetzt die Symbolspalte */
 
 .pf-main { min-width:0; }
 /* zweite .pf-map-Deklaration: behält nur noch, was sie wirklich ergänzt — die
@@ -3886,19 +3910,21 @@ html:has(> body.docviewer-open) { overflow:hidden; }
 /* Kurzweg in eine Dienstleistung — eine Zeile, kein Knopf: es sind mehrere
    gleichrangige Ziele, und fünf Knöpfe untereinander lesen sich als Formular. */
 .fp-svc-list { display:flex; flex-direction:column; }
-/* RASTER statt Flexbox: drei feste Spuren — Symbolspalte, Beschriftung,
-   Folgepfeil. Vorher war das eine Flexzeile mit `.fp-svc span { flex:1 1 auto }`,
-   und weil die Symbole selbst `<span class="icon">` sind, traf diese Regel sie
-   mit (0,2,0) — spezifischer als das `flex:none` an `.icon` (0,1,0). Die
-   Symbole wuchsen also mit, und jede Beschriftung begann an einer anderen
-   Stelle: die Spalte sah ausgefranst aus. Mit Rasterspuren fluchten Symbole,
-   Beschriftungen und Pfeile über alle Zeilen. */
-.fp-svc { display:grid; grid-template-columns:1.25rem minmax(0,1fr) 1rem;
+/* RASTER statt Flexbox: zwei feste Spuren — Beschriftung, Folgepfeil. Vorher
+   war das eine Flexzeile mit `.fp-svc span { flex:1 1 auto }`, und weil die
+   Symbole selbst `<span class="icon">` sind, traf diese Regel sie mit (0,2,0) —
+   spezifischer als das `flex:none` an `.icon` (0,1,0). Die Symbole wuchsen also
+   mit, und jede Beschriftung begann an einer anderen Stelle. Mit Rasterspuren
+   fluchten Beschriftungen und Pfeile über alle Zeilen.
+   Die führende Symbolspalte ist entfallen: die Symbole standen für DIENSTLEISTUNGEN
+   («Wrench», «File», «Image») und wiederholten nur, was daneben stand — ein
+   Symbol muss verdient sein. Der Folgepfeil rechts bleibt, er sagt etwas, was
+   der Text nicht sagt: dass die Zeile wegführt. */
+.fp-svc { display:grid; grid-template-columns:minmax(0,1fr) 1rem;
   align-items:center; column-gap:.6rem; padding:.5rem .1rem; text-decoration:none;
   color:var(--color-text); font-size:var(--text-sm); border-bottom:1px solid var(--color-secondary-100); }
 .fp-svc:last-child { border-bottom:0; }
 .fp-svc:hover { color:var(--color-primary-700); }
-.fp-svc > .icon:first-child { justify-self:center; }
 .fp-svc__go { color:var(--color-text-muted); }
 
 /* Farbkodierung ist beim Grundriss die INFORMATION, nicht Dekoration: ohne

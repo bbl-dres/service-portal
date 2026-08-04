@@ -4,15 +4,9 @@
     "name": "Areal",
     "domain": "bauwerk",
     "definition": "Ein definiertes Landareal bestehend aus einer oder mehreren Parzellen, typischerweise ein Bundeskampus oder eine Anlage.",
-    "scopeNote": "Im BBL-Kontext umfasst ein Areal das gesamte zusammenhängende Gelände einer Bundesanlage.",
-    "altNames": [
-      "Standort",
-      "Campus-Areal"
-    ],
+    "comment": "Im BBL-Kontext umfasst ein Areal das gesamte zusammenhängende Gelände einer Bundesanlage. Auch gebräuchlich: Standort, Campus-Areal. Identifiziert über EGRID.",
     "status": "approved",
     "standardRef": "VILB, eCH-0071",
-    "egidRelevant": false,
-    "egridRelevant": true,
     "steward": "immobilienmanagement",
     "updated": "2024-06-01",
     "attributes": [
@@ -68,14 +62,9 @@
     "name": "Kampus",
     "domain": "bauwerk",
     "definition": "Eine zusammengehörende Gruppe von Gebäuden, die eine funktionale Einheit bilden, z.B. Bundeskampus Zollikofen.",
-    "scopeNote": "",
-    "altNames": [
-      "Bundeskampus"
-    ],
+    "comment": "Auch gebräuchlich: Bundeskampus.",
     "status": "approved",
     "standardRef": "VILB Anhang A",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "immobilienmanagement",
     "updated": "2024-06-01",
     "attributes": [
@@ -122,14 +111,9 @@
     "name": "Grundstück",
     "domain": "bauwerk",
     "definition": "Ein im Grundbuch eingetragenes, rechtlich definiertes Stück Land, identifiziert durch eine EGRID.",
-    "scopeNote": "",
-    "altNames": [
-      "Parzelle"
-    ],
+    "comment": "Auch gebräuchlich: Parzelle. Identifiziert über EGRID.",
     "status": "approved",
     "standardRef": "ZGB Art. 655, eCH-0071",
-    "egidRelevant": false,
-    "egridRelevant": true,
     "steward": "immobilienmanagement",
     "updated": "2024-06-15",
     "attributes": [
@@ -225,15 +209,9 @@
     "name": "Gebäude",
     "domain": "bauwerk",
     "definition": "Ein dauerhaftes, überdachtes Bauwerk, das im eidgenössischen Gebäude- und Wohnungsregister (GWR) erfasst und durch eine EGID identifiziert wird.",
-    "scopeNote": "Im BBL-Kontext umfasst Gebäude ausschliesslich Bauwerke im Eigentum oder in der Verwaltung des Bundes.",
-    "altNames": [
-      "Bauwerk",
-      "Bau"
-    ],
+    "comment": "Im BBL-Kontext umfasst Gebäude ausschliesslich Bauwerke im Eigentum oder in der Verwaltung des Bundes. Auch gebräuchlich: Bauwerk, Bau. Identifiziert über EGID.",
     "status": "approved",
     "standardRef": "eCH-0071 v2.0, GWR",
-    "egidRelevant": true,
-    "egridRelevant": false,
     "steward": "immobilienmanagement",
     "updated": "2024-06-01",
     "attributes": [
@@ -243,7 +221,7 @@
         "type": "text",
         "required": true,
         "keyRole": "PK",
-        "standardRef": "SAP RE-FX",
+        "standardRef": "",
         "mappings": [
           {
             "tableId": "sap-refx-vibdbu",
@@ -373,14 +351,9 @@
     "name": "Nutzungseinheit",
     "domain": "bauwerk",
     "definition": "Ein in sich geschlossener Bereich innerhalb eines Gebäudes, der einem einzigen Zweck dient, klassifiziert nach SIA 416.",
-    "scopeNote": "",
-    "altNames": [
-      "NE"
-    ],
+    "comment": "Auch gebräuchlich: NE. Identifiziert über EGID.",
     "status": "approved",
     "standardRef": "SIA 416 p3",
-    "egidRelevant": true,
-    "egridRelevant": false,
     "steward": "immobilienmanagement",
     "updated": "2024-07-15",
     "attributes": [
@@ -427,15 +400,9 @@
     "name": "Geschoss",
     "domain": "bauwerk",
     "definition": "Eine horizontale Ebene innerhalb eines Gebäudes, gemessen nach SIA 416.",
-    "scopeNote": "",
-    "altNames": [
-      "Stockwerk",
-      "Niveau"
-    ],
+    "comment": "Auch gebräuchlich: Stockwerk, Niveau. Identifiziert über EGID.",
     "status": "approved",
     "standardRef": "SIA 416",
-    "egidRelevant": true,
-    "egridRelevant": false,
     "steward": "immobilienmanagement",
     "updated": "2024-06-01",
     "attributes": [
@@ -482,14 +449,9 @@
     "name": "Raum",
     "domain": "bauwerk",
     "definition": "Ein einzelner umschlossener Raum innerhalb eines Geschosses, identifiziert durch eine Raumnummer.",
-    "scopeNote": "",
-    "altNames": [
-      "Zimmer"
-    ],
+    "comment": "Auch gebräuchlich: Zimmer. Identifiziert über EGID.",
     "status": "approved",
     "standardRef": "SIA 416 p4",
-    "egidRelevant": true,
-    "egridRelevant": false,
     "steward": "immobilienmanagement",
     "updated": "2024-06-01",
     "attributes": [
@@ -536,15 +498,9 @@
     "name": "Bemessung",
     "domain": "bauwerk",
     "definition": "Berechnete Flächen- und Volumenkennwerte für ein Gebäude oder eine Einheit (Geschossfläche, Nutzfläche etc.) nach SIA 416.",
-    "scopeNote": "",
-    "altNames": [
-      "Flächenberechnung",
-      "Volumenberechnung"
-    ],
+    "comment": "Auch gebräuchlich: Flächenberechnung, Volumenberechnung.",
     "status": "approved",
     "standardRef": "SIA 416 p3.6",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "immobilienmanagement",
     "updated": "2024-08-01",
     "attributes": [
@@ -608,15 +564,9 @@
     "name": "Mietobjekt",
     "domain": "miete",
     "definition": "Eine vermietbare Einheit innerhalb eines Gebäudes, verwaltet durch das BBL, entsprechend einer Wirtschaftseinheit in SAP RE-FX.",
-    "scopeNote": "Ein Mietobjekt kann aus mehreren Nutzungseinheiten bestehen.",
-    "altNames": [
-      "MO",
-      "Mieteinheit"
-    ],
+    "comment": "Ein Mietobjekt kann aus mehreren Nutzungseinheiten bestehen. Auch gebräuchlich: MO, Mieteinheit. Identifiziert über EGID.",
     "status": "approved",
     "standardRef": "VILB Anhang A",
-    "egidRelevant": true,
-    "egridRelevant": false,
     "steward": "immobilienmanagement",
     "updated": "2024-07-01",
     "attributes": [
@@ -627,13 +577,7 @@
         "required": true,
         "keyRole": "PK",
         "standardRef": "",
-        "mappings": [
-          {
-            "tableId": "sap-refx-vibdau",
-            "field": "MIOBJNR",
-            "match": "exact"
-          }
-        ]
+        "mappings": []
       },
       {
         "name": "Bezeichnung",
@@ -651,13 +595,7 @@
         "required": false,
         "keyRole": "",
         "standardRef": "SIA 416",
-        "mappings": [
-          {
-            "tableId": "sap-refx-vibdau",
-            "field": "MFESSION",
-            "match": "close"
-          }
-        ]
+        "mappings": []
       },
       {
         "name": "Status",
@@ -675,15 +613,9 @@
     "name": "Mietvertrag",
     "domain": "miete",
     "definition": "Ein rechtsverbindlicher Vertrag zwischen dem Bund und einer Gegenpartei über die Nutzung eines Mietobjekts.",
-    "scopeNote": "",
-    "altNames": [
-      "MV",
-      "Mietkontrakt"
-    ],
+    "comment": "Auch gebräuchlich: MV, Mietkontrakt.",
     "status": "draft",
     "standardRef": "OR Art. 253ff",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "immobilienmanagement",
     "updated": "2024-08-01",
     "attributes": [
@@ -751,15 +683,9 @@
     "name": "Kondition",
     "domain": "miete",
     "definition": "Finanzielle und vertragliche Konditionen eines Mietvertrags: Mietzins, Nebenkosten, Indexierung und Kautionen.",
-    "scopeNote": "",
-    "altNames": [
-      "Vertragskondition",
-      "Mietkondition"
-    ],
+    "comment": "Auch gebräuchlich: Vertragskondition, Mietkondition.",
     "status": "draft",
     "standardRef": "OR Art. 269ff",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "immobilienmanagement",
     "updated": "2024-08-15",
     "attributes": [
@@ -769,7 +695,7 @@
         "type": "text",
         "required": true,
         "keyRole": "PK",
-        "standardRef": "SAP RE-FX",
+        "standardRef": "",
         "mappings": [
           {
             "tableId": "sap-refx-vibdkd",
@@ -827,15 +753,9 @@
     "name": "Heizzentrale",
     "domain": "energie",
     "definition": "Zentrale Heizungsanlage für ein oder mehrere Gebäude, klassifiziert nach Energieträger (Öl, Gas, Wärmepumpe, Fernwärme).",
-    "scopeNote": "",
-    "altNames": [
-      "HZ",
-      "Wärmeerzeugung"
-    ],
+    "comment": "Auch gebräuchlich: HZ, Wärmeerzeugung.",
     "status": "approved",
     "standardRef": "SIA 380/1, EnDK",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "edm",
     "updated": "2024-08-01",
     "attributes": [
@@ -882,15 +802,9 @@
     "name": "Stromzähler",
     "domain": "energie",
     "definition": "Messgerät für den Stromverbrauch innerhalb eines Gebäudes oder Gebäudeteils.",
-    "scopeNote": "",
-    "altNames": [
-      "Zähler",
-      "E-Zähler"
-    ],
+    "comment": "Auch gebräuchlich: Zähler, E-Zähler.",
     "status": "approved",
     "standardRef": "StromVV, ElCom",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "edm",
     "updated": "2024-08-15",
     "attributes": [
@@ -937,15 +851,9 @@
     "name": "Betriebsmesswert",
     "domain": "energie",
     "definition": "Ein erfasster Energie- oder Ressourcenverbrauchswert eines Messgeräts zu einem bestimmten Zeitpunkt.",
-    "scopeNote": "",
-    "altNames": [
-      "Messwert",
-      "Verbrauchswert"
-    ],
+    "comment": "Auch gebräuchlich: Messwert, Verbrauchswert.",
     "status": "approved",
     "standardRef": "SIA 380/1",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "edm",
     "updated": "2024-09-01",
     "attributes": [
@@ -1001,14 +909,9 @@
     "name": "Person",
     "domain": "partner",
     "definition": "Eine natürliche Person im Immobilienmanagement: Mieter, Mitarbeitende oder Kontaktperson.",
-    "scopeNote": "",
-    "altNames": [
-      "Natürliche Person"
-    ],
+    "comment": "Auch gebräuchlich: Natürliche Person.",
     "status": "approved",
     "standardRef": "eCH-0010, eCH-0011",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "dres",
     "updated": "2024-07-01",
     "attributes": [
@@ -1018,14 +921,8 @@
         "type": "text",
         "required": true,
         "keyRole": "PK",
-        "standardRef": "SAP RE-FX",
-        "mappings": [
-          {
-            "tableId": "sap-refx-vibdbp",
-            "field": "PARTNER_NR",
-            "match": "exact"
-          }
-        ]
+        "standardRef": "",
+        "mappings": []
       },
       {
         "name": "AHV-Nr",
@@ -1070,15 +967,9 @@
     "name": "Kontakt",
     "domain": "partner",
     "definition": "Ein Kommunikationsendpunkt für eine Person oder Organisation: E-Mail, Telefon oder Postadresse.",
-    "scopeNote": "",
-    "altNames": [
-      "Kontaktdaten",
-      "Erreichbarkeit"
-    ],
+    "comment": "Auch gebräuchlich: Kontaktdaten, Erreichbarkeit.",
     "status": "approved",
     "standardRef": "eCH-0010",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "dres",
     "updated": "2024-07-15",
     "attributes": [
@@ -1116,16 +1007,9 @@
     "name": "Unternehmen",
     "domain": "partner",
     "definition": "Eine juristische Person oder Organisationseinheit, identifiziert durch die UID (Unternehmens-Identifikationsnummer). Stammdaten aus dem BFS-Unternehmensregister oder SAP MDG.",
-    "scopeNote": "",
-    "altNames": [
-      "Firma",
-      "Organisation",
-      "Juristische Person"
-    ],
+    "comment": "Auch gebräuchlich: Firma, Organisation, Juristische Person.",
     "status": "approved",
     "standardRef": "UID-Register (BFS), eCH-0011",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "dres",
     "updated": "2024-07-01",
     "attributes": [
@@ -1135,14 +1019,8 @@
         "type": "text",
         "required": true,
         "keyRole": "PK",
-        "standardRef": "SAP RE-FX",
-        "mappings": [
-          {
-            "tableId": "sap-refx-vibdbp",
-            "field": "PARTNER_NR",
-            "match": "exact"
-          }
-        ]
+        "standardRef": "",
+        "mappings": []
       },
       {
         "name": "UID",
@@ -1151,13 +1029,7 @@
         "required": true,
         "keyRole": "PK",
         "standardRef": "UID-Register",
-        "mappings": [
-          {
-            "tableId": "sap-refx-vibdbp",
-            "field": "UID_NR",
-            "match": "exact"
-          }
-        ]
+        "mappings": []
       },
       {
         "name": "Firmenname",
@@ -1193,15 +1065,9 @@
     "name": "Wirtschaftseinheit",
     "domain": "finanzen",
     "definition": "Eine eigenständige wirtschaftliche Einheit in der Immobilienbuchhaltung, typischerweise ein Gebäude oder eine Gebäudegruppe, die als ein Profit Center geführt wird. Zentrale Organisationseinheit in SAP RE-FX.",
-    "scopeNote": "",
-    "altNames": [
-      "WE",
-      "Immobilien-WE"
-    ],
+    "comment": "Auch gebräuchlich: WE, Immobilien-WE.",
     "status": "approved",
     "standardRef": "SAP RE-FX, VILB",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "pfm",
     "updated": "2024-06-01",
     "attributes": [
@@ -1271,15 +1137,9 @@
     "name": "Buchungskreis",
     "domain": "finanzen",
     "definition": "Die höchste Organisationseinheit in der Finanzbuchhaltung (SAP FI). Jeder Buchungskreis repräsentiert eine eigenständige juristische Einheit mit eigener Bilanz und GuV. Das BBL operiert typischerweise unter einem Buchungskreis für Bundesimmobilien.",
-    "scopeNote": "",
-    "altNames": [
-      "BuKrs",
-      "Mandant"
-    ],
+    "comment": "Auch gebräuchlich: BuKrs, Mandant.",
     "status": "approved",
     "standardRef": "SAP FI, OR Art. 957ff",
-    "egidRelevant": false,
-    "egridRelevant": false,
     "steward": "pfm",
     "updated": "2024-06-01",
     "attributes": [

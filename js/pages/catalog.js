@@ -234,11 +234,21 @@ function detail(ctx, id) {
     };
   });
 
-  const pubs = (d.publications || []).map(p => `
+  // Eine Publikation IST ein Eintrag in einem fremden Katalog — sie gehört also
+  // verlinkt, sonst muss man den Namen drüben von Hand suchen. `url` ist
+  // optional: liegt keine vor (Publikation angekündigt, Eintrag noch nicht
+  // erfasst), bleibt der Name Text statt eines ins Leere führenden Links.
+  // Absprung aus dem Portal, darum target/rel wie bei den Bezugs-URLs oben.
+  const pubs = (d.publications || []).map(p => {
+    const name = C.escape(t(p.value));
+    return `
     <div class="data-row">
       <div class="data-row__key">${C.escape(t(p.catalog))}</div>
-      <div class="data-row__value">${C.escape(t(p.value))}</div>
-    </div>`).join('');
+      <div class="data-row__value">${p.url
+        ? `<a href="${C.escape(p.url)}" target="_blank" rel="noopener external" class="break-all">${name}</a>`
+        : name}</div>
+    </div>`;
+  }).join('');
 
   const section = (title, body) => C.detailSection({ title, body });
 

@@ -1,57 +1,5 @@
 [
   {
-    "tableId": "sap-refx-vibdau",
-    "system": "sap-refx",
-    "systemName": "SAP RE-FX",
-    "schema": "VIBD",
-    "schemaLabel": "SAP RE-FX Stammdaten",
-    "schemaType": "database_schema",
-    "name": "VIBDAU",
-    "displayName": "Wirtschaftseinheiten Mietobjekt",
-    "type": "table",
-    "description": "SAP RE-FX Stammdatentabelle für Mietobjekte (Wirtschaftseinheit Typ AU). Enthält Mietobjektnummern, Flächen und Nutzungsarten.",
-    "certified": true,
-    "rowCount": 32100,
-    "sourceUrl": "https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDAU",
-    "datasetId": "",
-    "steward": "immobilienmanagement",
-    "updated": "2024-11-15",
-    "fields": [
-      {
-        "name": "MIOBJNR",
-        "dataType": "VARCHAR(20)",
-        "description": "Primärschlüssel des Mietobjekts.",
-        "nullable": false,
-        "primaryKey": true
-      },
-      {
-        "name": "SWESSION",
-        "dataType": "VARCHAR(20)",
-        "description": "Fremdschlüssel zur Wirtschaftseinheit Gebäude.",
-        "nullable": false,
-        "foreignKey": true
-      },
-      {
-        "name": "BEZEICHNUNG",
-        "dataType": "VARCHAR(80)",
-        "description": "Bezeichnung des Mietobjekts.",
-        "nullable": true
-      },
-      {
-        "name": "MFESSION",
-        "dataType": "DECIMAL(10,2)",
-        "description": "Vermietbare Fläche in Quadratmetern.",
-        "nullable": true
-      },
-      {
-        "name": "STATUS",
-        "dataType": "VARCHAR(10)",
-        "description": "Status des Mietobjekts (aktiv/passiv).",
-        "nullable": false
-      }
-    ]
-  },
-  {
     "tableId": "sap-refx-vibdbe",
     "system": "sap-refx",
     "systemName": "SAP RE-FX",
@@ -936,57 +884,6 @@
     ]
   },
   {
-    "tableId": "sap-refx-vibdbp",
-    "system": "sap-refx",
-    "systemName": "SAP RE-FX",
-    "schema": "VIBP",
-    "schemaLabel": "SAP RE-FX Partnerdaten",
-    "schemaType": "database_schema",
-    "name": "VIBDBP",
-    "displayName": "Geschäftspartner",
-    "type": "table",
-    "description": "SAP RE-FX Geschäftspartner-Stammdaten. Enthält Personen und Unternehmen mit Partnernummern, UID, Adressen und Kontaktdaten.",
-    "certified": true,
-    "rowCount": 18500,
-    "sourceUrl": "https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDBP",
-    "datasetId": "",
-    "steward": "immobilienmanagement",
-    "updated": "2024-11-01",
-    "fields": [
-      {
-        "name": "PARTNER_NR",
-        "dataType": "VARCHAR(20)",
-        "description": "Primärschlüssel des Geschäftspartners.",
-        "nullable": false,
-        "primaryKey": true
-      },
-      {
-        "name": "BP_TYP",
-        "dataType": "VARCHAR(10)",
-        "description": "Typ des Partners (PERS = Person, ORG = Organisation).",
-        "nullable": false
-      },
-      {
-        "name": "NAME1",
-        "dataType": "VARCHAR(80)",
-        "description": "Nachname (Person) oder Firmenname (Organisation).",
-        "nullable": false
-      },
-      {
-        "name": "NAME2",
-        "dataType": "VARCHAR(80)",
-        "description": "Vorname (nur bei Personen).",
-        "nullable": true
-      },
-      {
-        "name": "UID_NR",
-        "dataType": "VARCHAR(15)",
-        "description": "Unternehmens-Identifikationsnummer (nur bei Org).",
-        "nullable": true
-      }
-    ]
-  },
-  {
     "tableId": "gis-immo-building",
     "system": "gis-immo",
     "systemName": "GIS IMMO",
@@ -996,7 +893,7 @@
     "name": "BUILDING",
     "displayName": "Gebäude",
     "type": "gis_layer",
-    "description": "GIS-IMMO Feature-Layer 'Gebäude' (Point, Status LIVE). 68 LIVE Felder / 7 DEV Felder.",
+    "description": "GIS-IMMO Feature-Layer 'Gebäude' (Point, Status LIVE).",
     "certified": true,
     "rowCount": 9200,
     "sourceUrl": "https://gis.bbl.admin.ch/arcgis/rest/services/BUILDING/FeatureServer/0",
@@ -1472,7 +1369,7 @@
     "name": "BUILDING_ENVELOPE",
     "displayName": "Gebäudehülle",
     "type": "gis_layer",
-    "description": "GIS-IMMO Feature-Layer 'Gebäudehülle' (Polygon, Status DEV). 0 LIVE Felder / 33 DEV Felder.",
+    "description": "GIS-IMMO Feature-Layer 'Gebäudehülle' (Polygon, Status DEV).",
     "certified": false,
     "rowCount": 125000,
     "sourceUrl": "https://actanova.bbl.admin.ch/objects/DOC_BUILDING",
@@ -1695,7 +1592,7 @@
     "name": "CONSTRUCTION_PROJECT",
     "displayName": "Bauprojekt",
     "type": "gis_layer",
-    "description": "GIS-IMMO Feature-Layer 'Bauprojekt' (Point, Status DEV). 0 LIVE Felder / 30 DEV Felder.",
+    "description": "GIS-IMMO Feature-Layer 'Bauprojekt' (Point, Status DEV).",
     "certified": false,
     "rowCount": null,
     "sourceUrl": "",
@@ -1897,7 +1794,7 @@
     "name": "LAND_COVER",
     "displayName": "Bodenabdeckung",
     "type": "gis_layer",
-    "description": "GIS-IMMO Feature-Layer 'Bodenabdeckung' (Polygon, Status LIVE). 15 LIVE Felder.",
+    "description": "GIS-IMMO Feature-Layer 'Bodenabdeckung' (Polygon, Status LIVE).",
     "certified": true,
     "rowCount": 12600,
     "sourceUrl": "https://gis.bbl.admin.ch/arcgis/rest/services/ENERGY_METER/FeatureServer/0",
@@ -2013,7 +1910,7 @@
     "name": "PARCEL",
     "displayName": "Grundstück",
     "type": "gis_layer",
-    "description": "GIS-IMMO Feature-Layer 'Grundstück' (Polygon, Status LIVE). 43 LIVE Felder / 1 DEV Felder.",
+    "description": "GIS-IMMO Feature-Layer 'Grundstück' (Polygon, Status LIVE).",
     "certified": true,
     "rowCount": 3400,
     "sourceUrl": "https://gis.bbl.admin.ch/arcgis/rest/services/PARCEL/FeatureServer/0",

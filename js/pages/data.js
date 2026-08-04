@@ -42,6 +42,11 @@ function overview(ctx) {
     { title: 'Datenbezug und API Verzeichnis', icon: 'FileDatabase', href: '#/data/catalog',
       desc: 'Datensatzkatalog nach DCAT-AP-CH: Beschreibung, Klassifizierung und Bezugswege der Datensätze des BBL.',
       meta: `${datasets} Datensätze` },
+    // Ohne Zahl: der Metadatenbestand hängt an dieser Übersicht nicht (`needs`),
+    // und eine fest eingetragene Zahl liefe der Datei davon.
+    { title: 'Metadaten Katalog Bauten', icon: 'Stack', href: '#/app/metadata-catalog',
+      desc: 'Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und Systemtabellen.',
+      meta: 'Begriffe und Systemtabellen' },
     { title: 'Bauwerksdokumentation', icon: 'Folder', href: '#/app/document-archive',
       desc: 'Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.',
       meta: 'Dokumentenarchiv' },

@@ -49,6 +49,13 @@ const DEFERRED = {
   tenancies:        'data/tenancies.json',
   floors:           'data/floors.json',
   spaces:           'data/spaces.json',
+  // Metadatenkatalog (#/app/metadata-catalog): die beiden Schichten UNTER dem
+  // DCAT-Katalog. `businessObjects` ist technologieneutral (Geschäftsobjekt mit
+  // Attributen, je Datendomäne), `systemTables` systemgebunden (Tabelle bzw.
+  // Layer mit Feldern, je System). Verbunden sind sie über die Abbildungen am
+  // Attribut; `datasetId` an der Tabelle führt weiter in data/datasets.json.
+  businessObjects:  'data/business-objects.json',
+  systemTables:     'data/system-tables.json',
 };
 // data/data-products.json bleibt liegen (DataService- und Concept-Einträge für
 // einen künftigen Metadatenkatalog), wird aber von keiner Ansicht mehr gelesen
@@ -69,6 +76,7 @@ const AREA = {
   assets: 'Ausstattung', contracts: 'Verträge', costs: 'Kosten', areas: 'Flächen',
   buildingContacts: 'Objektkontakte', landcovers: 'Bodenbedeckung',
   tenancies: 'Mietverhältnisse', floors: 'Geschosse', spaces: 'Räume',
+  businessObjects: 'Geschäftsobjekte', systemTables: 'Systemtabellen',
 };
 
 // Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
@@ -191,6 +199,10 @@ async function loadDeferred(key) {
       if (key === 'buildings' || key === 'parcels') linkMedia();
     } else {
       DATA[key] = await fetchJSON(url, { shape: isObj ? 'object' : 'array' });
+      // Der Rückwärtsindex der Abbildungen wurde womöglich schon gebaut, als
+      // der Bestand noch leer war (zwei Routen, zwei ensure-Aufrufe) — dann
+      // zeigte die Tabellenansicht dauerhaft «keine Begriffe realisiert».
+      if (key === 'businessObjects') MAP_INDEX = null;
     }
   } catch (e) {
     console.warn('[core] could not load', url, e.message);
@@ -214,6 +226,31 @@ function ensure(...keys) {
 }
 
 const find = (arr, key, id) => (arr || []).find(x => x[key] === id);
+
+// --- Metadatenkatalog: Gegenrichtung der Abbildung --------------------------
+// Die Abbildungen stehen AM ATTRIBUT des Geschäftsobjekts — das ist die
+// Richtung, in der sie gepflegt werden («welches Feld trägt diesen Begriff?»).
+// Die Tabellenansicht braucht die Gegenfrage («welchen Begriff realisiert
+// dieses Feld?»). Statt sie je Feld über den ganzen Bestand zu suchen, wird der
+// Index einmal je Laden gebaut; loadDeferred() verwirft ihn, wenn der Bestand
+// neu eintrifft. Der Schlüssel verbindet Tabellen- und Feldname mit «|» — das
+// Zeichen kommt in keiner Kennung vor (Tabellen: a-z0-9-, Felder: A-Za-z0-9_),
+// mit einem gewöhnlichen Trenner kollidierte «a.b»+«c» mit «a»+«b.c».
+let MAP_INDEX = null;
+function mapIndex() {
+  if (MAP_INDEX) return MAP_INDEX;
+  MAP_INDEX = new Map();
+  for (const o of DATA.businessObjects || []) {
+    for (const a of o.attributes || []) {
+      for (const m of a.mappings || []) {
+        const k = `${m.tableId}|${m.field}`;
+        if (!MAP_INDEX.has(k)) MAP_INDEX.set(k, []);
+        MAP_INDEX.get(k).push({ objectId: o.objectId, objectName: o.name, attribute: a.name, match: m.match });
+      }
+    }
+  }
+  return MAP_INDEX;
+}
 
 export const core = {
   load,
@@ -239,6 +276,30 @@ export const core = {
   // Mietendenportal. `floorsForTenancy` liest die Geschossliste AM
   // Mietverhältnis (gemietet ist ein Geschoss, nicht das Gebäude) — nicht alle
   // Geschosse des Hauses.
+  // Metadatenkatalog. `realisedBy` beantwortet die Gegenfrage zur Abbildung
+  // (Feld → Begriffe), `realisationsOf` sammelt alle Abbildungen EINES
+  // Geschäftsobjekts über seine Attribute hinweg — beides braucht keine dritte
+  // Datei, nur den Index oben.
+  businessObjects: () => DATA.businessObjects || [],
+  businessObject: (id) => find(DATA.businessObjects, 'objectId', id),
+  systemTables: () => DATA.systemTables || [],
+  systemTable: (id) => find(DATA.systemTables, 'tableId', id),
+  dataDomains: () => (DATA.reference || {}).dataDomains || [],
+  realisedBy: (tableId, field) => mapIndex().get(`${tableId}|${field}`) || [],
+  realisationsOf: (o) => (o && o.attributes ? o.attributes : [])
+    .flatMap((a) => (a.mappings || []).map((m) => ({ attribute: a.name, ...m }))),
+  // Alle Abbildungen, die in EINE Tabelle zeigen — für die Tabellen-Detailseite.
+  realisationsForTable: (tableId) => {
+    const out = [];
+    for (const o of DATA.businessObjects || []) {
+      for (const a of o.attributes || []) {
+        for (const m of a.mappings || []) {
+          if (m.tableId === tableId) out.push({ objectId: o.objectId, objectName: o.name, attribute: a.name, field: m.field, match: m.match });
+        }
+      }
+    }
+    return out;
+  },
   tenancies: () => DATA.tenancies || [],
   tenancy: (id) => find(DATA.tenancies, 'tenancyId', id),
   floors: () => DATA.floors || [],
