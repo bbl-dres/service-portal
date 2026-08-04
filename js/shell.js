@@ -325,7 +325,7 @@ function footerHTML() {
           <h3>Prototyp</h3>
           <div class="footer-information__links">
             <div class="footer-information__links-column">
-              ${fLink('https://github.com/bbl-dres/service-portal', 'Quellcode auf GitHub', true)}${fLink('https://www.bk.admin.ch/de/webauftritt-der-bundesverwaltung', 'Webauftritt der Bundesverwaltung', true)}
+              ${fLink('https://github.com/bbl-dres/service-portal', 'Quellcode auf GitHub', true)}${fLink('#/app/api-docs', 'API-Dokumentation')}${fLink('https://www.bk.admin.ch/de/webauftritt-der-bundesverwaltung', 'Webauftritt der Bundesverwaltung', true)}
             </div>
           </div>
         </div>

@@ -9,7 +9,7 @@
 // externes System), Berechtigung und Ansprechstelle — das gehört auf eine
 // Seite, bevor jemand auf «Öffnen» klickt.
 
-import { appAreaLabel } from '../domain.js';
+import { appAreaLabel, audienceTags } from '../domain.js';
 import { datum } from '../format.js';
 
 // Die Landingpage-Felder (long, entries, access, resources, contact, updated)
@@ -65,7 +65,7 @@ export default function render(ctx, appId) {
     ${C.detailHead({
       backHref: '#/applications', backLabel: 'Anwendungen',
       title: a.name, lead: a.description,
-      tags: `${C.audienceTag(a.audience)}${a.hero ? C.badge('Schlüsselanwendung', 'info') : ''}${
+      tags: `${audienceTags(core, C, a.audience)}${a.hero ? C.badge('Schlüsselanwendung', 'info') : ''}${
         external ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue')}`,
       image: heroBild(C, a),
     })}
@@ -119,7 +119,10 @@ export default function render(ctx, appId) {
           <dl class="kv m-0">
             <dt>Gruppe</dt><dd>${C.escape(a.group)}</dd>
             ${a.area ? `<dt>Bereich</dt><dd>${C.escape(appAreaLabel(a.area))}</dd>` : ''}
-            <dt>Zugang</dt><dd>${C.escape(a.accessNote || '—')}</dd>
+            ${''/* Die frühere «Zugang»-Zeile (accessNote: «Intern»/«Extern») ist
+                  entfallen — Zielgruppen heissen kanonisch «Mitarbeiter»/«Kunden»
+                  und stehen als Badges im Kopf; den ORT trägt «Einstieg»
+                  (Nutzerentscheid 2026-08-04). */}
             <dt>Einstieg</dt><dd>${external ? 'Externes System' : 'Im Kundenportal'}</dd>
             ${''/* «Stand» wie alle Datenstands-Zeilen (A13); applications.json
                   liefert das Datum neu als ISO, datum() formatiert de-CH. */}

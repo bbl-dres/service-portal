@@ -1,5 +1,5 @@
 // Dienstleistungen - service directory (catalog) + service detail.
-import { AUDIENCES, audienceLabel } from '../domain.js';
+import { audienceOptions, audienceLabel, audienceTags } from '../domain.js';
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -36,7 +36,7 @@ export default async function render(ctx) {
   const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
 
   const matches = (s) => !q || (s.title + ' ' + s.short + ' ' + s.description).toLowerCase().includes(q);
-  const matchesAudience = (s) => !selectedAudiences.length || selectedAudiences.includes(s.audience);
+  const matchesAudience = (s) => !selectedAudiences.length || selectedAudiences.some(v => (s.audience || []).includes(v));
   const matchesTopic = (s) => !selectedTopics.length || selectedTopics.includes(s.domain);
   const filtered = all.filter(s => matches(s) && matchesAudience(s) && matchesTopic(s));
   const services = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
@@ -55,7 +55,7 @@ export default async function render(ctx) {
 
   const card = (s) => C.card({
     title: s.title, desc: s.short, href: `#/services/${s.serviceId}`,
-    badges: [C.audienceTag(s.audience)],
+    badges: [audienceTags(core, C, s.audience)],
     footerInfo: C.escape(domainLabel(domains, s.domain)), footerAction: C.cardAction(),
   });
 
@@ -68,7 +68,7 @@ export default async function render(ctx) {
     columns: [
       { key: 'title', label: 'Dienstleistung', render: s => `<a href="#/services/${s.serviceId}">${C.escape(s.title)}</a><br><span class="small muted">${C.escape(s.short)}</span>` },
       { key: 'domain', label: 'Bereich', render: s => C.escape(domainLabel(domains, s.domain)) },
-      { key: 'audience', label: 'Zielgruppe', render: s => C.audienceTag(s.audience) },
+      { key: 'audience', label: 'Zielgruppe', render: s => audienceTags(core, C, s.audience) },
     ],
     rows: list,
   });
@@ -77,7 +77,7 @@ export default async function render(ctx) {
   // so removing a filter needs no JS and stays deep-linkable.
   const activeFilters = [
     ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
-    ...selectedAudiences.map(a => ({ label: audienceLabel(a), href: hash({ audience: selectedAudiences.filter(x => x !== a) }) })),
+    ...selectedAudiences.map(a => ({ label: audienceLabel(core, a), href: hash({ audience: selectedAudiences.filter(x => x !== a) }) })),
     ...selectedTopics.map(t => ({ label: domainLabel(domains, t), href: hash({ topic: selectedTopics.filter(x => x !== t) }) })),
   ];
   const filterBar = C.activeFilters({ filters: activeFilters, resetHref: '#/services' });
@@ -91,7 +91,7 @@ export default async function render(ctx) {
 
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   const filterPanel = `
-    ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: selectedAudiences, options: audienceOptions() })}
+    ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: selectedAudiences, options: audienceOptions(core) })}
     ${/* Themen aus den Daten ableiten — dieselbe Regel wie im Drawer (shell.js):
           ein Thema erscheint, sobald ein Vorgang dahintersteht. Vorher entschied
           die Fahne `thema` in reference-data.json, und sie war veraltet: der
@@ -168,14 +168,23 @@ function detail(ctx, id) {
   // «Zugriff»-Karte, erste Karte der Randspalte (Nutzerentscheid 2026-08-04):
   // derselbe Ort wie auf der Anwendungs-Landingpage. Abgemeldet trägt sie die
   // Aussage des login-gate-Bands in kompakter Form (kleiner Text, sm-Knopf,
-  // derselbe window.__login-Weg); angemeldet den Sitzungskontext; Informations-
-  // angebote sind ausdrücklich frei zugänglich.
+  // derselbe window.__login-Weg); ANGEMELDET den Sitzungskontext UND den
+  // Primär-CTA — ohne ihn führte nach dem Login kein Weg aus der Randspalte
+  // in den Vorgang (Nutzerbefund 2026-08-04). Gleicher Knopf wie im Inhalt
+  // (ctaBlock), nur in Kartengrösse (sm statt lg); Informationsangebote sind
+  // ausdrücklich frei zugänglich.
+  const cardCta = hasTarget
+    ? `<a class="btn btn--outline btn--sm btn--icon-right mt-3" href="${C.escape(tgt.href)}"${
+        ext ? ' target="_blank" rel="noopener external"' : ''}>${
+        C.icon(ext ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></a>`
+    : `<p class="small muted mt-3 m-0">Im Prototyp ist kein Zielsystem angebunden.</p>`;
   const zugriffCard = `<div class="box">
       <h3>Zugriff</h3>
       ${s.type !== 'action'
         ? '<p class="small muted m-0">Frei zugänglich — keine Anmeldung erforderlich.</p>'
         : session.isLoggedIn()
-          ? `<p class="small muted m-0">Angemeldet als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.</p>`
+          ? `<p class="small muted m-0">Angemeldet als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.</p>
+             ${cardCta}`
           : `<p class="small m-0">${C.icon('Lock', 'icon--base')} Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.</p>
              <button type="button" class="btn btn--outline btn--sm btn--icon-left mt-3" onclick="window.__login && window.__login()">
                ${C.icon('User', 'btn__icon')}<span class="btn__text">Anmelden mit AGOV / FedLogin</span></button>`}
@@ -212,7 +221,7 @@ function detail(ctx, id) {
     ${C.detailHead({
       backHref: '#/services', backLabel: 'Dienstleistungen',
       title: s.title, lead: s.short,
-      tags: `${C.audienceTag(s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
+      tags: `${audienceTags(core, C, s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
       image: C.heroFigure({ src: img }),
     })}
     <div class="container--grid gap--responsive">
@@ -249,11 +258,6 @@ function detail(ctx, id) {
     </div>
   </div>`;
 }
-
-// Zielgruppen aus js/domain.js (AUDIENCES/audienceLabel) — die Liste stand
-// dreimal im Code (Design-Review B23).
-function audienceOptions() { return AUDIENCES; }
-
 
 // Bewusst die Listen-Variante (Aufrufer reicht seine Themenliste durch) — die
 // core-gebundene Fassung steht in domain.js; s. Design-Review B23.

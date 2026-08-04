@@ -3,7 +3,9 @@
     "serviceId": "raumbedarf-melden",
     "title": "Raumbedarf melden",
     "domain": "A",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Building",
     "popular": 6,
@@ -26,7 +28,10 @@
     "serviceId": "stoerung-melden",
     "title": "Störungs-, Reinigungs- & Reparaturmeldung",
     "domain": "O",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Wrench",
     "popular": 1,
@@ -48,7 +53,10 @@
     "serviceId": "umzug-anmelden",
     "title": "Umzug, Transport & Entsorgung",
     "domain": "O",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "ArrowRight",
     "popular": 5,
@@ -70,7 +78,10 @@
     "serviceId": "reklamation",
     "title": "Reklamationsmeldung",
     "domain": "O",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "WarningCircle",
     "popular": 4,
@@ -91,7 +102,10 @@
     "serviceId": "raumbuchung",
     "title": "Raum-, Arbeitsplatz- & Parkplatzbuchung",
     "domain": "C",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Calendar",
     "popular": 3,
@@ -113,7 +127,10 @@
     "serviceId": "eshop-bestellen",
     "title": "Büromaterial & Mobiliar bestellen (E-Shop)",
     "domain": "C",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "ShoppingCart",
     "popular": 2,
@@ -134,7 +151,9 @@
     "serviceId": "banf-bedarfsmeldung",
     "title": "Bedarfsmeldung «BANF» (IKT-Beschaffung)",
     "domain": "D",
-    "audience": "staff",
+    "audience": [
+      "staff"
+    ],
     "type": "action",
     "icon": "Cog",
     "popular": 7,
@@ -156,7 +175,10 @@
     "serviceId": "publikation-bestellen",
     "title": "Bundespublikationen bestellen",
     "domain": "F",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "File",
     "popular": 8,
@@ -178,7 +200,10 @@
     "serviceId": "sicherheitsvorfall-melden",
     "title": "Sicherheits-/Datenschutzvorfall melden",
     "domain": "G",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Lock",
     "target": {
@@ -199,7 +224,10 @@
     "serviceId": "bautendokumentation-abrufen",
     "title": "Bauwerksdokumentation abrufen",
     "domain": "A",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Folder",
     "target": {
@@ -215,7 +243,10 @@
     "serviceId": "bauprojekt-informationen",
     "title": "Bauprojekt-Informationen",
     "domain": "A",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "info",
     "icon": "Building",
     "target": {
@@ -231,7 +262,9 @@
     "serviceId": "portfolio-einsicht",
     "title": "Liegenschaften Inventar einsehen",
     "domain": "A",
-    "audience": "staff",
+    "audience": [
+      "staff"
+    ],
     "type": "info",
     "icon": "Map",
     "target": {
@@ -247,7 +280,9 @@
     "serviceId": "beschaffung-einstieg",
     "title": "Beschaffung — Einstieg & Vorlagen",
     "domain": "E",
-    "audience": "staff",
+    "audience": [
+      "staff"
+    ],
     "type": "info",
     "icon": "Briefcase",
     "target": {
@@ -263,7 +298,10 @@
     "serviceId": "leistungsverrechnung",
     "title": "Leistungsverrechnung & Preiskatalog",
     "domain": "O",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "info",
     "icon": "FileDatabase",
     "target": {
@@ -279,7 +317,9 @@
     "serviceId": "gebaeude-erfassen",
     "title": "Gebäude erfassen",
     "domain": "B",
-    "audience": "staff",
+    "audience": [
+      "staff"
+    ],
     "type": "action",
     "icon": "Building",
     "target": {
@@ -300,7 +340,9 @@
     "serviceId": "parzelle-erfassen",
     "title": "Grundstück erfassen",
     "domain": "B",
-    "audience": "staff",
+    "audience": [
+      "staff"
+    ],
     "type": "action",
     "icon": "MapMarker",
     "target": {
@@ -320,7 +362,9 @@
     "serviceId": "stammdaten-mutieren",
     "title": "Stammdaten mutieren",
     "domain": "B",
-    "audience": "staff",
+    "audience": [
+      "staff"
+    ],
     "type": "action",
     "icon": "UserPen",
     "target": {
@@ -340,7 +384,9 @@
     "serviceId": "objekt-archivieren",
     "title": "Objekt archivieren",
     "domain": "B",
-    "audience": "staff",
+    "audience": [
+      "staff"
+    ],
     "type": "action",
     "icon": "Folder",
     "target": {
@@ -360,7 +406,9 @@
     "serviceId": "geschaeftspartner-anlegen",
     "title": "Neuen Geschäftspartner anlegen",
     "domain": "B",
-    "audience": "staff",
+    "audience": [
+      "staff"
+    ],
     "type": "action",
     "icon": "AddressBook",
     "target": {
@@ -382,7 +430,9 @@
     "serviceId": "unterbringungsbedarf",
     "title": "Unterbringungsbedarf anmelden",
     "domain": "U",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Home",
     "target": {
@@ -402,7 +452,9 @@
     "serviceId": "flaechenzuweisung",
     "title": "Arbeitsplatz-/Flächenzuweisung",
     "domain": "U",
-    "audience": "staff",
+    "audience": [
+      "staff"
+    ],
     "type": "action",
     "icon": "Users",
     "target": {
@@ -422,7 +474,9 @@
     "serviceId": "kleinauftrag-gebaeude",
     "title": "Kleinauftrag am Gebäude erteilen",
     "domain": "O",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Wrench",
     "target": {
@@ -444,7 +498,9 @@
     "serviceId": "dekoration-bestellen",
     "title": "Dekorationen bestellen",
     "domain": "O",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Art",
     "target": {
@@ -464,7 +520,9 @@
     "serviceId": "innenbegruenung-bestellen",
     "title": "Innenbegrünung bestellen",
     "domain": "O",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Home",
     "target": {
@@ -484,7 +542,10 @@
     "serviceId": "mobiliarschluessel-bestellen",
     "title": "Mobiliarschlüssel bestellen",
     "domain": "C",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Key",
     "target": {
@@ -505,7 +566,9 @@
     "serviceId": "intranetshop-zugang",
     "title": "Zugang BBL Intranetshop beantragen (Kreis 3)",
     "domain": "C",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Login",
     "target": {
@@ -525,7 +588,10 @@
     "serviceId": "hbb-bedarfsmeldung",
     "title": "IKT-Bedarf melden (HBB-Prozess)",
     "domain": "D",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Desktop",
     "target": {
@@ -546,7 +612,9 @@
     "serviceId": "delegation-beantragen",
     "title": "Beschaffungsdelegation beantragen",
     "domain": "D",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Certificate",
     "target": {
@@ -568,7 +636,9 @@
     "serviceId": "beschaffung-anmelden",
     "title": "Überschwellige Beschaffung anmelden",
     "domain": "E",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Balance",
     "target": {
@@ -589,7 +659,10 @@
     "serviceId": "druckauftrag",
     "title": "Digitaldruckauftrag erteilen",
     "domain": "F",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Printer",
     "target": {
@@ -610,7 +683,10 @@
     "serviceId": "versandauftrag",
     "title": "Versandauftrag erteilen",
     "domain": "F",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Envelope",
     "target": {
@@ -631,7 +707,10 @@
     "serviceId": "avor-auftrag",
     "title": "Layout- oder Output-Design-Auftrag erteilen",
     "domain": "F",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Brush",
     "target": {
@@ -652,7 +731,10 @@
     "serviceId": "srm-limitbestellung",
     "title": "SRM-Limitbestellung Auftragsproduktion erfassen",
     "domain": "F",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Calculator",
     "target": {
@@ -672,7 +754,9 @@
     "serviceId": "publikationsauftrag",
     "title": "Publikationsauftrag erteilen",
     "domain": "F",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Book",
     "target": {
@@ -693,7 +777,9 @@
     "serviceId": "agenturleistung-beschaffen",
     "title": "Agenturleistung beschaffen",
     "domain": "F",
-    "audience": "customers",
+    "audience": [
+      "customers"
+    ],
     "type": "action",
     "icon": "Bullhorn",
     "target": {
@@ -714,7 +800,10 @@
     "serviceId": "sanktionierte-anbieterin-melden",
     "title": "Sanktionierte Anbieterin melden",
     "domain": "E",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Ban",
     "target": {
@@ -734,7 +823,10 @@
     "serviceId": "sanktionsliste-abfragen",
     "title": "Sanktionsliste abfragen",
     "domain": "E",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "Search",
     "target": {
@@ -754,7 +846,10 @@
     "serviceId": "unbefangenheitserklaerung",
     "title": "Unbefangenheitserklärung abgeben",
     "domain": "E",
-    "audience": "both",
+    "audience": [
+      "staff",
+      "customers"
+    ],
     "type": "action",
     "icon": "UserCheckmark",
     "target": {

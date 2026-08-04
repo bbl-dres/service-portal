@@ -87,17 +87,6 @@ export function badge(text, variant = 'gray', size = '') {
   return `<span class="badge badge--${variant}${size ? ' badge--' + size : ''}"><span class="badge__text">${escape(text)}</span></span>`;
 }
 
-// Zielgruppen: `staff` = BBL-Personal, `customers` = Mitarbeitende anderer
-// Verwaltungseinheiten. Die Plattform ist nie öffentlich — «Extern» hätte die
-// Hauptzielgruppe als Aussenstehende benannt (docs/sitemap.md §5).
-// WORTLAUTE = domain.js AUDIENCES (die eine Quelle für Filter/Labels der
-// Seiten); hier nur zusätzlich die Badge-Farbe. components.js bleibt import-frei.
-export function audienceTag(a) {
-  const map = { staff: ['blue', 'BBL-Personal'], customers: ['green', 'Kundschaft'], both: ['gray', 'Beide'] };
-  const [v, l] = map[a] || map.both;
-  return badge(l, v);
-}
-
 const STATUS_VARIANT = {
   entwurf: 'gray', eingereicht: 'info', in_pruefung: 'warning', in_pruefung_gs: 'warning',
   in_pruefung_pfm: 'warning', rueckfrage: 'warning', in_arbeit: 'warning', triage: 'info',
@@ -1999,7 +1988,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 }
 
 export const C = {
-  icon, escape, badge, audienceTag, statusBadge, pageHeader, card, table, empty,
+  icon, escape, badge, statusBadge, pageHeader, card, table, empty,
   mountBanner, openModal, openShareModal, wireShare, domainTile, announce, trapFocus, FOCUSABLE, notFound,
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,

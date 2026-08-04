@@ -1,34 +1,109 @@
-// Mock OpenAPI/Swagger docs — renders an API spec (data/api-specs.json) in CD Bund
-// style, matching the portal's "mocked backend" theme (no swagger-ui dependency).
+// API-Dokumentation — Standard-Swagger-Oberfläche (swagger-ui-dist) über den
+// Spezifikationen aus data/api-specs.json.
 //
-// Route: #/app/api-docs/<specId> (default: kundenportal). A ?tag=<resource> opens
-// the docs focused on one resource — used by the Datenbezug catalog, where each
-// distribution of the «BBL Kundenportal (Portal-API)» dataset deep-links here.
+// Route: #/app/api-docs/<specId> (Standard: kundenportal). ?tag=<resource>
+// scrollt zur Ressource — der Datenbezug-Katalog verlinkt je Distribution des
+// Datensatzes «BBL Kundenportal (Portal-API)» hierher.
 //
-// «Ausprobieren» returns live portal data where an endpoint is data-backed
-// (LIVE[...] reads from core), otherwise the spec's static example — "real where
-// free, mock the rest".
+// ENTSCHEID (Nutzerwunsch 2026-08-04): oberhalb der detail-bar bleibt das
+// Portal-Chrome (Krume, Zurück/Teilen, Seitenkopf), darunter rendert das
+// ECHTE Swagger UI im Standard-Look — statt des früheren CD-nachgebauten
+// api-*-Blocks (~160 Zeilen JS + 62 CSS-Regeln, beide entfallen). Die
+// Bibliothek kommt wie MapLibre lazy vom CDN und degradiert bei Ausfall zu
+// einer Meldung; deepLinking bleibt AUS (Swagger schriebe sonst in unseren
+// Hash-Router), «Try it out» ebenso (kein echtes Backend — die Anfrage liefe
+// ins Leere).
+//
+// Das frühere «Ausprobieren mit Live-Daten» lebt als Antwort-BEISPIELE weiter:
+// wo ein Endpunkt datengedeckt ist (LIVE[...] liest aus dem core), steht das
+// echte Portal-Datenbeispiel im 200er-Response — «real where free, mock the
+// rest», nur eben als Beispiel statt als Knopf.
 
 import { fetchJSON } from '../fetch-json.js';
-import { copyText } from '../export.js';
 import { DATEN } from '../crumbs.js';
-
-const METHOD = { GET: 'get', POST: 'post', PUT: 'put', PATCH: 'patch', DELETE: 'delete' };
 
 // Brotkrumen-Präfix der Route: die Seite hängt unter dem Datenbezug-Katalog.
 const CRUMBS = [...DATEN, { label: 'Datenbezug und API Verzeichnis', href: '#/data/catalog' }];
 
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+// Aufschiebbare Bestände dieser Route — sie speisen die Live-Beispiele.
 export const needs = ['applications', 'buildings', 'datasets', 'documents', 'projects'];
+
+// --- swagger-ui-dist lazy vom CDN (Muster: loadMapLibre, buildings-map.js) ---
+const SWAGGER_VER = '5.17.14';
+let suPromise = null;
+function loadSwaggerUI() {
+  if (window.SwaggerUIBundle) return Promise.resolve(window.SwaggerUIBundle);
+  if (suPromise) return suPromise;
+  suPromise = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Zeitüberschreitung beim Laden der Swagger-Oberfläche')), 12000);
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = `https://unpkg.com/swagger-ui-dist@${SWAGGER_VER}/swagger-ui.css`;
+    document.head.appendChild(css);
+    const s = document.createElement('script');
+    s.src = `https://unpkg.com/swagger-ui-dist@${SWAGGER_VER}/swagger-ui-bundle.js`;
+    s.onload = () => { clearTimeout(timer); window.SwaggerUIBundle ? resolve(window.SwaggerUIBundle) : reject(new Error('SwaggerUIBundle fehlt')); };
+    s.onerror = () => { clearTimeout(timer); reject(new Error('Swagger UI konnte nicht geladen werden')); };
+    document.head.appendChild(s);
+  }).catch((e) => { suPromise = null; throw e; });   // Fehler nicht cachen → späterer Aufruf lädt neu
+  return suPromise;
+}
+
+// --- Spezifikation → OpenAPI 3 ----------------------------------------------
+// data/api-specs.json ist die pflegefreundliche Kurzform (Ressourcen mit
+// Endpunkten); Swagger UI liest OpenAPI. Die Übersetzung passiert hier beim
+// Rendern — die Datei bleibt die eine Quelle, und die Live-Beispiele können
+// aus dem core einfliessen (`exampleFor`).
+function toOpenApi(spec, exampleFor) {
+  const paths = {};
+  for (const r of spec.resources) {
+    for (const ep of r.endpoints) {
+      const op = {
+        tags: [r.label],
+        summary: ep.summary,
+        parameters: (ep.params || []).map((p) => ({
+          name: p.name, in: p.in, required: !!p.required,
+          description: p.desc || '',
+          schema: { type: p.type === 'integer' ? 'integer' : 'string' },
+        })),
+        responses: {},
+      };
+      if (ep.body) op.requestBody = { required: true, content: { 'application/json': { example: ep.body } } };
+      const codes = Object.entries(ep.responses || { 200: 'OK' });
+      for (const [code, desc] of codes) {
+        op.responses[code] = { description: desc };
+      }
+      // Beispielantwort an den ersten (Erfolgs-)Code — Live-Daten wo gedeckt.
+      const okCode = codes[0] ? codes[0][0] : '200';
+      const example = exampleFor(ep);
+      if (example !== undefined) {
+        op.responses[okCode] = { ...op.responses[okCode], content: { 'application/json': { example } } };
+      }
+      (paths[ep.path] = paths[ep.path] || {})[ep.method.toLowerCase()] = op;
+    }
+  }
+  return {
+    openapi: '3.0.3',
+    info: { title: spec.title, version: spec.version, description: spec.description },
+    servers: [{ url: spec.baseUrl }],
+    tags: spec.resources.map((r) => ({ name: r.label, description: r.description })),
+    // Der Auth-Hinweis der Spezifikation wird zum Security-Schema — Swagger
+    // zeigt damit sein Standard-Schloss samt «Authorize»-Dialog (nur Doku,
+    // es gibt kein Backend, das den Wert prüfen würde).
+    components: spec.auth ? { securitySchemes: {
+      portalAuth: { type: 'apiKey', in: 'header', name: 'Authorization', description: spec.auth },
+    } } : undefined,
+    security: spec.auth ? [{ portalAuth: [] }] : undefined,
+    paths,
+  };
+}
 
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs, stale } = ctx;
   const specId = C.safeDecode(params[0] || 'kundenportal');
 
   let specs = {};
-  try { specs = await fetchJSON('data/api-specs.json', { shape: 'object' }); } catch (e) { /* handled below */ }
+  try { specs = await fetchJSON('data/api-specs.json', { shape: 'object' }); } catch (e) { /* unten behandelt */ }
   if (stale && stale()) return;
   const spec = specs[specId];
 
@@ -41,9 +116,8 @@ export default async function render(ctx) {
   }
   setCrumbs([...CRUMBS, { label: spec.title }]);
   setTitle(spec.title);
-  const activeTag = spec.resources.some((r) => r.tag === query.get('tag')) ? query.get('tag') : spec.resources[0].tag;
 
-  // --- data-backed «Ausprobieren» responses (real where free) --------------
+  // --- Live-Beispiele: echte Portaldaten, wo ein Endpunkt gedeckt ist -------
   const t = core.t;
   const pick = (o, keys) => { const r = {}; if (o) for (const k of keys) r[k] = o[k]; return r; };
   const LIVE = {
@@ -52,8 +126,7 @@ export default async function render(ctx) {
       { id: 'V-2026-0039', serviceId: 'stoerung-melden', status: 'abgeschlossen', created: '2026-07-14' },
     ],
     // Dienstleistungen heissen `title`, Anwendungen `name` — die beiden Entitäten
-    // stimmen nicht überein. Hier stand `s.name`; JSON.stringify liess das Feld
-    // danach kommentarlos weg, die Antwort kam ohne Bezeichnung (M19).
+    // stimmen nicht überein (M19).
     'dienstleistungen.list': () => core.services().slice(0, 5).map((s) => ({ serviceId: s.serviceId, title: s.title, domain: s.domain })),
     'dienstleistungen.one': () => pick(core.services()[0], ['serviceId', 'title', 'domain', 'description']),
     'anwendungen.list': () => core.applications().slice(0, 5).map((a) => ({ appId: a.appId, name: a.name, group: a.group, audience: a.audience })),
@@ -68,124 +141,71 @@ export default async function render(ctx) {
     'datensaetze.one': () => { const d = core.datasets()[0]; return d ? { id: d.id, titel: t(d.title), thema: t(d.meta.thema), formate: (d.distributions || []).map((x) => x.dateiformat || x.format) } : {}; },
     'suche': () => ({ query: 'bau', treffer: { dienstleistungen: 3, anwendungen: 1, dokumente: 4, weisungen: 2 } }),
   };
-  const respond = (ep) => {
-    if (ep.live && LIVE[ep.live]) { try { return LIVE[ep.live](); } catch (e) { /* fall back */ } }
-    return ep.example || { message: 'OK' };
+  const exampleFor = (ep) => {
+    if (ep.live && LIVE[ep.live]) { try { return LIVE[ep.live](); } catch (e) { /* Beispiel aus der Spez */ } }
+    return ep.example;   // undefined = kein Beispiel, nur die Beschreibung
   };
-  const okCode = (ep) => Object.keys(ep.responses || { 200: '' })[0];
 
-  // --- markup --------------------------------------------------------------
-  const rail = spec.resources.map((r) =>
-    // plain-link ist der Ausweg aus der :not()-Kette in «#main-content a» — ohne
-    // die Klasse zeichnete die Kette jeden Eintrag farbig und unterstrichen, und
-    // der aktive war vom inaktiven nicht zu unterscheiden (H8).
-    `<a class="api-rail__item plain-link${r.tag === activeTag ? ' is-active' : ''}" href="#res-${r.tag}" data-rail="${r.tag}">${C.escape(r.label)}<span class="api-rail__n">${r.endpoints.length}</span></a>`).join('');
-
-  const paramTable = (ep) => (ep.params || []).length ? `
-    <div class="api-block"><div class="api-block__label">Parameter</div>
-      <table class="api-params"><tbody>${ep.params.map((p) => `<tr>
-        <td><code>${C.escape(p.name)}</code>${p.required ? '<span class="api-req" title="erforderlich">*</span>' : ''}</td>
-        <td class="muted small">${C.escape(p.in)}</td><td class="muted small">${C.escape(p.type)}</td>
-        <td>${C.escape(p.desc || '')}</td></tr>`).join('')}</tbody></table></div>` : '';
-
-  // Die aria-label auf den beiden pre.api-code: wireScrollRegions macht
-  // überlaufende Codeblöcke fokussierbar, erklärt sie aber nur MIT Namen zur
-  // benannten Region — ohne Label bliebe ein anonymer Tab-Stopp (Item 3.21).
-  const endpoint = (ep, key) => `
-    <div class="api-ep">
-      <button type="button" class="api-ep__head" aria-expanded="false">
-        <span class="api-method api-method--${METHOD[ep.method] || 'get'}">${ep.method}</span>
-        <code class="api-ep__path">${C.escape(ep.path)}</code>
-        <span class="api-ep__summary">${C.escape(ep.summary)}</span>
-        ${C.icon('ChevronDown', 'api-ep__chev')}
-      </button>
-      <div class="api-ep__body" hidden>
-        ${paramTable(ep)}
-        ${ep.body ? `<div class="api-block"><div class="api-block__label">Request-Body <span class="muted small">(application/json)</span></div>
-          <pre class="api-code" aria-label="Beispiel-Request (JSON)">${C.escape(JSON.stringify(ep.body, null, 2))}</pre></div>` : ''}
-        <div class="api-block"><div class="api-block__label">Antworten</div>
-          <ul class="api-resp">${Object.entries(ep.responses || {}).map(([code, desc]) =>
-            `<li><span class="api-status api-status--${String(code)[0]}">${C.escape(code)}</span> ${C.escape(desc)}</li>`).join('')}</ul></div>
-        <div class="api-try">
-          <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-try="${key}">${C.icon('ArrowRight', 'btn__icon icon--base')}<span class="btn__text">Ausprobieren</span></button>
-          <div class="api-try__out" hidden>
-            <div class="api-try__req"><span class="api-method api-method--${METHOD[ep.method] || 'get'}">${ep.method}</span> <code>${C.escape(spec.baseUrl + ep.path)}</code></div>
-            <div class="api-try__status"></div>
-            <pre class="api-code api-try__pre" aria-label="Antwort der Testanfrage"></pre>
-          </div>
-        </div>
-      </div>
-    </div>`;
-
-  const flat = [];
-  const sections = spec.resources.map((r) => `
-    <section class="api-resource" id="res-${r.tag}">
-      <h2 class="api-resource__title">${C.escape(r.label)}</h2>
-      <p class="muted api-resource__desc">${C.escape(r.description)}</p>
-      <div class="api-endpoints">${r.endpoints.map((ep) => { const key = String(flat.push(ep) - 1); return endpoint(ep, key); }).join('')}</div>
-    </section>`).join('');
-
-  // detailBar statt nacktem backLink: die Seite ist per ?tag teilbar und bekommt
-  // damit denselben Teilen/Drucken-Einstieg wie jede andere Detailseite.
+  // --- Chrome (oberhalb: Portal, unterhalb: Standard-Swagger) ----------------
   mount.innerHTML = `
-  <div class="container section api-docs">
+  <div class="container section">
     ${C.detailBar({ backHref: '#/data/catalog', backLabel: 'Datenbezug und API Verzeichnis' })}
-    <div class="api-head">
-      <h1 tabindex="-1">${C.escape(spec.title)}</h1>
-      <div class="api-head__badges">${C.badge('v' + spec.version, 'blue')} ${C.badge(spec.format || 'REST', 'gray')}</div>
-    </div>
+    <h1 tabindex="-1">${C.escape(spec.title)}</h1>
+    <div class="pill-row">${C.badge('v' + spec.version, 'blue')} ${C.badge(spec.format || 'REST', 'gray')}</div>
     <p class="lead">${C.escape(spec.description)}</p>
-    <div class="api-meta">
-      <div class="api-meta__row"><span class="api-meta__k">Basis-URL</span>
-        <code id="api-base">${C.escape(spec.baseUrl)}</code>
-        <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="api-copy" title="Basis-URL kopieren">${C.icon('Link', 'btn__icon icon--base')}<span class="btn__text">Kopieren</span></button></div>
-      ${spec.auth ? `<div class="api-meta__row"><span class="api-meta__k">${C.icon('Lock', 'icon--base')} Authentifizierung</span> <span class="muted">${C.escape(spec.auth)}</span></div>` : ''}
-    </div>
-    <div class="api-layout">
-      <nav class="api-rail" aria-label="Ressourcen"><div class="api-rail__title">Ressourcen</div>${rail}</nav>
-      <div class="api-main">${sections}</div>
+    ${/* Der Kopf (Titel, Version, Beschreibung) gehört dem Portal — Swaggers
+          eigener .information-container ist per CSS ausgeblendet, sonst stünde
+          alles doppelt. Server-Zeile, Authorize und die Ressourcen-Abschnitte
+          liefern den Standard-Look darunter. */''}
+    <div class="swagger-host" id="api-swagger">
+      <p class="muted" role="status">API-Dokumentation wird geladen…</p>
     </div>
   </div>`;
 
-  // --- wiring --------------------------------------------------------------
-  mount.querySelectorAll('.api-ep__head').forEach((btn) => btn.addEventListener('click', () => {
-    const open = btn.getAttribute('aria-expanded') === 'true';
-    btn.setAttribute('aria-expanded', String(!open));
-    btn.nextElementSibling.hidden = open;
-    btn.closest('.api-ep').classList.toggle('is-open', !open);
-  }));
-
-  mount.querySelectorAll('[data-try]').forEach((btn) => btn.addEventListener('click', () => {
-    const ep = flat[Number(btn.getAttribute('data-try'))];
-    const out = btn.parentElement.querySelector('.api-try__out');
-    const code = okCode(ep);
-    out.querySelector('.api-try__status').innerHTML = `<span class="api-status api-status--${String(code)[0]}">${C.escape(code)}</span> <span class="muted small">application/json · Mock</span>`;
-    out.querySelector('.api-try__pre').textContent = JSON.stringify(respond(ep), null, 2);
-    out.hidden = false;
-  }));
-
-  mount.querySelectorAll('[data-rail]').forEach((a) => a.addEventListener('click', (e) => {
-    e.preventDefault();
-    mount.querySelectorAll('[data-rail]').forEach((x) => x.classList.toggle('is-active', x === a));
-    const sec = document.getElementById('res-' + a.getAttribute('data-rail'));
-    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }));
-
-  const copyBtn = mount.querySelector('#api-copy');
-  // Fehlschlag als error-Toast — der Erfolgs-Default (grün, CheckmarkCircle)
-  // würde einen misslungenen Kopiervorgang als gelungen verkleiden.
-  if (copyBtn) copyBtn.addEventListener('click', () => copyText(spec.baseUrl).then((ok) => (ok
-    ? C.toast('Basis-URL kopiert.')
-    : C.toast('Kopieren nicht möglich.', 'error', 'WarningCircle'))));
-
-  // Deep-link ?tag=… → open that resource focused. Deferred past the router's
-  // post-render scrollTo(0,0) so the scroll actually lands on the resource.
-  if (query.get('tag')) {
-    const sec = document.getElementById('res-' + activeTag);
-    if (sec) {
-      const first = sec.querySelector('.api-ep__head');
-      if (first) first.click();
-      setTimeout(() => sec.scrollIntoView({ block: 'start' }), 0);
-    }
+  const host = mount.querySelector('#api-swagger');
+  let SwaggerUIBundle;
+  try {
+    SwaggerUIBundle = await loadSwaggerUI();
+    if (stale && stale()) return;
+  } catch (e) {
+    if (stale && stale()) return;
+    host.innerHTML = C.notification(
+      '<strong>Die Swagger-Oberfläche konnte nicht geladen werden.</strong> '
+      + `${C.escape(e.message)} — sie kommt von unpkg.com und braucht Netzzugang. `
+      + '<button type="button" class="link" onclick="location.reload()">Seite neu laden</button>',
+      'error', 'WarningCircle', { live: true });
+    return;
   }
+
+  host.innerHTML = '';
+  SwaggerUIBundle({
+    spec: toOpenApi(spec, exampleFor),
+    domNode: host,
+    presets: [SwaggerUIBundle.presets.apis],
+    layout: 'BaseLayout',
+    // KEIN deepLinking: Swagger schriebe seine Anker in location.hash und
+    // kollidierte mit dem Hash-Router des Portals.
+    deepLinking: false,
+    docExpansion: 'list',
+    defaultModelsExpandDepth: -1,   // keine Schemas in der Spez → Models-Block weglassen
+    supportedSubmitMethods: [],     // kein Backend → kein «Try it out»
+    validatorUrl: null,             // kein Anruf beim externen Validator-Badge
+    onComplete: () => {
+      // ?tag=<resource> aus dem Datenbezug-Katalog: zur Ressource scrollen.
+      // onComplete feuert, BEVOR Swaggers React-Baum fertig im DOM steht —
+      // deshalb kurz auf den Abschnitt pollen statt einmal zu greifen (das
+      // scrollTo(0,0) des Routers ist zu diesem Zeitpunkt längst gelaufen,
+      // die Bibliothek kam ja erst Sekunden später vom CDN).
+      const wanted = spec.resources.find((r) => r.tag === query.get('tag'));
+      if (!wanted) return;
+      let tries = 0;
+      const hin = () => {
+        const el = [...host.querySelectorAll('.opblock-tag')]
+          .find((h) => h.getAttribute('data-tag') === wanted.label);
+        if (el) { el.scrollIntoView({ block: 'start' }); return; }
+        if (tries++ < 30) setTimeout(hin, 100);
+      };
+      hin();
+    },
+  });
 }

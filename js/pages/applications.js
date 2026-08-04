@@ -9,7 +9,7 @@
 // jede Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen.
 
 
-import { APP_AREAS, AUDIENCES, audienceLabel } from '../domain.js';
+import { APP_AREAS, audienceOptions, audienceLabel, audienceTags } from '../domain.js';
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -22,7 +22,8 @@ const PER_PAGE = 12;
 // und die Bereichszeile der Landingpage (application.js).
 const AREAS = APP_AREAS;
 
-// AUDIENCES + audienceLabel kommen aus js/domain.js — die Liste stand dreimal im Code (B23).
+// Zielgruppen-Nachschläge kommen aus js/domain.js, die Liste selbst aus
+// data/reference-data.json (`audiences`) — `audience` ist ein Array (B23).
 
 // Sortierung (catbar): leer = Standard (Schlüsselanwendungen zuerst, «Sortieren»-Platzhalter).
 // «Bezeichnung (A–Z)» — Kanon: «Titel» nur für Titel-Felder, sonst Bezeichnung (B24).
@@ -55,7 +56,7 @@ export default async function render(ctx) {
   const st = C.catalogueState(query, {
     base: '#/applications', perPage: PER_PAGE,
     sortOpts: SORT_OPTS.map(o => o.value),
-    filters: { area: AREAS.map(b => b.key), audience: AUDIENCES.map(a => a.value) },
+    filters: { area: AREAS.map(b => b.key), audience: audienceOptions(core).map(a => a.value) },
   });
   const { q: rawQ, view, sort: sortKey, hash } = st;
   const q = rawQ.toLowerCase();
@@ -65,7 +66,7 @@ export default async function render(ctx) {
   const matches = (a) =>
     (!q || (a.name + ' ' + a.description + ' ' + a.group).toLowerCase().includes(q)) &&
     (!areas.length || areas.includes(a.area)) &&
-    (!audiences.length || audiences.includes(a.audience));
+    (!audiences.length || audiences.some(v => (a.audience || []).includes(v)));
 
   // Standard: Schlüsselanwendungen zuerst; explizite Sortierung überschreibt das.
   const filtered = all.filter(matches);
@@ -76,7 +77,7 @@ export default async function render(ctx) {
   const active = [
     ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
     ...areas.map(x => ({ label: areaLabel(x), href: hash({ area: areas.filter(y => y !== x) }) })),
-    ...audiences.map(x => ({ label: audienceLabel(x), href: hash({ audience: audiences.filter(y => y !== x) }) })),
+    ...audiences.map(x => ({ label: audienceLabel(core, x), href: hash({ audience: audiences.filter(y => y !== x) }) })),
   ];
   const filterBar = C.activeFilters({ filters: active, resetHref: '#/applications' });
 
@@ -89,7 +90,7 @@ export default async function render(ctx) {
     // mehr — wie beim Gebäudebestand bleibt ohne Datei die Farbfläche.
     photo: { src: a.bild && a.bild.src, alt: '' },
     badges: [
-      C.audienceTag(a.audience),
+      audienceTags(core, C, a.audience),
       ...(a.hero ? [C.badge('Schlüsselanwendung', 'info')] : []),
       ...(a.link && a.link.kind === 'external' ? [C.badge('Externes System', 'gray')] : []),
     ],
@@ -107,7 +108,7 @@ export default async function render(ctx) {
         `<a href="#/applications/${encodeURIComponent(a.appId)}">${C.escape(a.name)}</a>
          <br><span class="small muted">${C.escape(a.description)}</span>` },
       { key: 'group', label: 'Bereich', render: a => C.escape(a.group) },
-      { key: 'audience', label: 'Zielgruppe', render: a => C.audienceTag(a.audience) },
+      { key: 'audience', label: 'Zielgruppe', render: a => audienceTags(core, C, a.audience) },
       { key: 'link', label: 'Einstieg', render: a =>
         a.link && a.link.kind === 'external' ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue') },
     ],
@@ -131,7 +132,7 @@ export default async function render(ctx) {
               denselben Wert in EINEM Klickpfad (D24); `label` bleibt der
               group-Spaltenwert. */''}
         ${C.filterGroup({ dim: 'area', legend: 'Bereich', selected: areas, options: AREAS.map(b => ({ value: b.key, label: b.navLabel })) })}
-        ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: AUDIENCES })}
+        ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: audienceOptions(core) })}
         ${C.panelReset({ href: hash({ area: [], audience: [] }) })}`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}

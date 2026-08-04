@@ -11,6 +11,10 @@
     { "key": "F", "label": "Publizieren, Drucken & Versenden", "icon": "File" },
     { "key": "H", "label": "Personal & Arbeiten beim BBL", "icon": "Users" }
   ],
+  "audiences": [
+    { "id": "staff", "label": "Mitarbeiter", "variant": "blue" },
+    { "id": "customers", "label": "Kunden", "variant": "green" }
+  ],
   "statusModel": [
     { "id": "entwurf", "label": "Entwurf", "variant": "gray" },
     { "id": "eingereicht", "label": "Eingereicht", "variant": "info" },

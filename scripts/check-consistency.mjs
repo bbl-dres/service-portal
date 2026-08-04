@@ -38,20 +38,21 @@ const cdp = await launch();
   await p.closeTarget();
 }
 
-// --- C20/C11: api-docs — Rinnenbreite wie die Geschwister-Rails, Panel-Rand --
+// --- api-docs: Portal-Kopf + Standard-Swagger darunter (Umbau 2026-08-04) ----
+// Die früheren C20/C11-Proben (api-layout-Rinne, api-meta-Rand) sind mit dem
+// entfernten Eigenbau entfallen; scripts/test-apidocs.mjs prüft die
+// Swagger-Oberfläche selbst. Hier nur: der Kopf bleibt Portal (genau eine h1,
+// Swaggers doppelter Info-Block ist aus).
 {
   const p = await openPage(cdp, APP_BASE + '/app/api-docs');
-  await sleep(2000);
-  const r = JSON.parse(await p.evaluate(`(() => {
-    const l = document.querySelector('.api-layout');
-    const m = document.querySelector('.api-meta');
-    return JSON.stringify({
-      gap: l && getComputedStyle(l).columnGap,
-      metaBorder: m && getComputedStyle(m).borderTopColor,
-    });
-  })()`));
-  ok(r.gap === '20px', 'C20 .api-layout-Rinne = 1.25rem wie pf-/dashboard-layout', r.gap);
-  ok(r.metaBorder === 'rgb(223, 228, 233)', 'C11 .api-meta-Rand = --panel-border', r.metaBorder);
+  await sleep(2500);
+  const r = JSON.parse(await p.evaluate(`(() => JSON.stringify({
+    h1: document.querySelectorAll('#main-content h1').length,
+    infoHidden: (() => { const i = document.querySelector('.swagger-host .information-container');
+      return !i || getComputedStyle(i).display === 'none'; })(),
+  }))()`));
+  ok(r.h1 === 1, 'api-docs: genau eine h1 (Portal-Kopf)', String(r.h1));
+  ok(r.infoHidden, 'api-docs: Swaggers Info-Block doppelt den Kopf nicht', String(r.infoHidden));
   await p.closeTarget();
 }
 

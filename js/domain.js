@@ -39,17 +39,23 @@ export const APP_AREAS = [
 ];
 export const appAreaLabel = (key) => (APP_AREAS.find((a) => a.key === key) || {}).navLabel || key;
 
-// Zielgruppen (`audience` in services.json/applications.json). Die Liste stand
-// dreimal im Code (components.audienceTag, services.js, applications.js) —
-// hier die EINE Quelle für Filteroptionen und Beschriftung; C.audienceTag
-// behält seine interne Farbzuordnung (components.js bleibt import-frei), die
-// Wortlaute sind per Kommentar dort hierher gebunden.
-export const AUDIENCES = [
-  { value: 'staff', label: 'BBL-Personal' },
-  { value: 'customers', label: 'Kundschaft' },
-  { value: 'both', label: 'Beide' },
-];
-export const audienceLabel = (value) => (AUDIENCES.find((a) => a.value === value) || {}).label || value;
+// Zielgruppen (`audience` in services.json/applications.json) — seit Aug. 2026
+// ein ARRAY von Kennungen: ein Angebot für beide Gruppen trägt beide Werte
+// statt des Pseudowerts «both», und die Etiketten heissen nur noch
+// «Mitarbeiter» und «Kunden» (Nutzerentscheid; das frühere «Intern/Extern»
+// der Anwendungen ist damit ebenfalls abgelöst). Die Liste selbst — Kennung,
+// Wortlaut, Badge-Farbe — liegt als Referenzliste in data/reference-data.json
+// (`audiences`); hier stehen nur die Nachschläge darauf.
+export const audiences = (core) => core.ref().audiences || [];
+export const audienceOptions = (core) => audiences(core).map((a) => ({ value: a.id, label: a.label }));
+export const audienceLabel = (core, id) => refLabel(core, 'audiences', id);
+// Etikettenreihe für Karten, Listen und Detailköpfe: ein Badge je Zielgruppe,
+// in Referenzreihenfolge (Mitarbeiter vor Kunden, egal wie die Daten sortieren).
+export const audienceTags = (core, C, audience) => {
+  const ids = Array.isArray(audience) ? audience : [audience].filter(Boolean);
+  return audiences(core).filter((a) => ids.includes(a.id))
+    .map((a) => C.badge(a.label, a.variant)).join('');
+};
 
 /**
  * Beschriftung aus einer Referenzliste. `listName` ist der Schlüssel in
@@ -67,4 +73,4 @@ export const statusLabel = (core, id) => refLabel(core, 'statusModel', id);
 export const projectStatusLabel = (core, id) => refLabel(core, 'projectStatuses', id);
 export const domainLabel = (core, key) => refLabel(core, 'domains', key, 'key');
 
-export default { LAND, landName, weOf, APP_AREAS, appAreaLabel, AUDIENCES, audienceLabel, refLabel, statusLabel, projectStatusLabel, domainLabel };
+export default { LAND, landName, weOf, APP_AREAS, appAreaLabel, audiences, audienceOptions, audienceLabel, audienceTags, refLabel, statusLabel, projectStatusLabel, domainLabel };

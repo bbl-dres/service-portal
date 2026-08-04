@@ -2543,97 +2543,16 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 .filter-group__more { display:contents; }
 .filter-group__more:hover { text-decoration:underline; }
 
-/* ── API-Dokumentation (Mock Swagger · js/apps/api-docs.js) ────────────── */
-.api-head { display:flex; align-items:baseline; gap:1rem; flex-wrap:wrap; margin-top:.5rem; }
-.api-head h1 { margin:0; }
-.api-head__badges { display:flex; gap:.5rem; }
-.api-meta { display:flex; flex-direction:column; gap:.5rem; margin:1rem 0 1.75rem; padding:.875rem 1rem; background:var(--color-secondary-50); border:1px solid var(--panel-border); border-radius:var(--radius-lg); }
-.api-meta__row { display:flex; align-items:center; gap:.625rem; flex-wrap:wrap; font-size:var(--fs-sm); }
-.api-meta__k { font-weight:var(--fw-bold); color:var(--color-text); display:inline-flex; align-items:center; gap:.5rem; }
-
-/* Die Grid-Kinder behielten min-width:auto, sodass die unteilbaren Monospace-Pfade
-   die 1fr-Spur auf ~475px auflösten — in einer 358px-Spalte wurden 101px stumm
-   gelöscht (WCAG 1.4.10). CD entschärft das auf jeder generierten Spur mit
-   minmax(0,1fr) (grids.postcss:70,93,119); app.css:140 tut es für .container--grid
-   bereits, .api-layout war schlicht übersehen. */
-.api-layout { display:grid; grid-template-columns:190px minmax(0,1fr); gap:1.25rem; align-items:start; }   /* Rinnenbreite wie .pf-layout/.dashboard-layout (Design-Review C20) */
-.api-layout > * { min-width:0; }
-.api-ep__path, .api-try__req code, #api-base { min-width:0; overflow-wrap:anywhere; }
-.api-rail { position:sticky; top:1rem; display:flex; flex-direction:column; gap:.125rem; min-width:0; }
-.api-rail__item { min-width:0; }
-.api-rail__title { font-size:var(--fs-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin:0 0 .375rem .75rem; }
-.api-rail__item { display:flex; justify-content:space-between; align-items:center; gap:.5rem; padding:.375rem .75rem; border-radius:var(--radius-sm); color:var(--color-text); text-decoration:none; font-size:var(--text-sm); border-left:3px solid transparent; }   /* Markierungsbreite wie Hauptnavigation + pf-tree (Design-Review C15) */
-.api-rail__item:hover { background:var(--color-secondary-50); }
-.api-rail__item.is-active { background:var(--color-primary-50); border-left-color:var(--color-primary-500); font-weight:var(--fw-bold); color:var(--color-primary-700); }   /* Markierungsfarbe wie .menu__item--active (Design-Review C15) */
-.api-rail__n { font-size:var(--fs-xs); color:var(--color-text-muted); background:var(--color-secondary-100); border-radius:var(--radius-full); padding:0 .375rem; }
-.api-rail__item.is-active .api-rail__n { background:var(--color-bg); }
-
-/* H2 rendert gegen eine 40px-H1 bei 20px — CDs .h3-Stufe schliesst die Lücke,
-   und der Abschnittstext folgt der responsiven Rampe statt eingefroren 4px unter
-   der Seite zu bleiben (Item 2.22). */
-.api-resource { margin-bottom:2.5rem; scroll-margin-top:1rem; }
-.api-resource__title { margin:0 0 .375rem; font-size:var(--text-xl); }
-/* DOKUMENTIERTE AUSNAHME (C25): Doku-Layout — Prosa liest schmal, die
-   Codeblöcke daneben brauchen die volle Spalte (Muster jeder API-Referenz). */
-.api-resource__desc { margin:0 0 .75rem; font-size:var(--text-sm); max-width:70ch; }
-.api-endpoints { display:flex; flex-direction:column; gap:.5rem; }
-
-.api-ep { border:1px solid var(--panel-border); border-radius:var(--radius-lg); overflow:hidden; background:var(--color-bg); }
-.api-ep__head { display:flex; align-items:center; gap:.75rem; width:100%; padding:.625rem .8rem; background:none; border:0; cursor:pointer; text-align:left; font:inherit; }
-.api-ep__head:hover { background:var(--color-secondary-50); }
-/* Mono-Pfade BEWUSST auf der starren Stufe (--fs-sm): Code skaliert nicht mit. */
-.api-ep__path { font-family:var(--font-mono); font-size:var(--fs-sm); color:var(--color-text); font-weight:var(--fw-bold); }
-.api-ep__summary { color:var(--color-text-muted); font-size:var(--text-sm); flex:1 1 auto; min-width:0; }
-.api-ep__chev { margin-left:auto; transition:transform var(--duration-fast); flex:none; }
-.api-ep.is-open .api-ep__chev { transform:rotate(180deg); }
-.api-ep__body { padding:.25rem .875rem 1rem; border-top:1px solid var(--color-border); }
-
-.api-method { font-family:var(--font-mono); font-size:var(--fs-xs); font-weight:var(--fw-bold); color:var(--color-text-negative); padding:.125rem .5rem; border-radius:var(--radius-sm); letter-spacing:.03em; flex:none; min-width:3.6rem; text-align:center; }
-/* Die HTTP-Verben sind eine KATEGORIALE Skala — genau das, wofür die
-   Chart-Serien angelegt wurden (alle ≥4.5:1 auf Weiss, keine kollidiert mit
-   der Markenfarbe). Vorher standen hier fünf freie Hexe, drei davon exakte
-   Duplikate der Serienfarben. `delete` bleibt bewusst auf der Fehlerrampe:
-   es ist das einzige Verb, dessen Farbe eine Warnung transportiert. */
-.api-method--get { background:var(--chart-series-1); }
-.api-method--post { background:var(--chart-series-4); }
-.api-method--put { background:var(--chart-series-7); }
-.api-method--patch { background:var(--chart-series-3); }
-.api-method--delete { background:var(--color-error-700); }
-
-.api-block { margin-top:.875rem; }
-.api-block__label { font-size:var(--text-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin-bottom:.375rem; }
-.api-params { width:100%; border-collapse:collapse; font-size:var(--text-sm); }
-.api-params td { padding:.375rem .625rem .375rem 0; border-bottom:1px solid var(--color-border); vertical-align:top; }
-.api-req { color:var(--color-error); margin-left:.125rem; }
-/* --fs-sm eingefroren wie .api-ep__path (Code skaliert nicht mit) — die frühere
-   13px-Zwischenstufe existiert in keiner CD-Skala (tailwind.config.js fontSize). */
-.api-code { background:var(--color-secondary-50); border:1px solid var(--panel-border); border-radius:var(--radius); padding:.625rem .8rem; font-family:var(--font-mono); font-size:var(--fs-sm); line-height:1.5; overflow-x:auto; margin:0; white-space:pre; }
-.api-resp { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.25rem; font-size:var(--fs-sm); }
-.api-status { font-family:var(--font-mono); font-size:var(--fs-xs); font-weight:var(--fw-bold); padding:.125rem .5rem; border-radius:var(--radius-sm); white-space:nowrap; }
-/* HTTP-Statusklassen sind Zustandsfarben, nicht Kategorien — auf die
-   Status-Rampe, die das ganze Portal schon führt (`#fef3c7`/`#92400e` waren
-   ohnehin exakt --color-yellow-bg/-text). */
-.api-status--2 { background:var(--color-success-bg); color:var(--color-success-text); }
-.api-status--4 { background:var(--color-yellow-bg); color:var(--color-yellow-text); }
-.api-status--5 { background:var(--color-error-bg); color:var(--color-error-text); }
-
-.api-try { margin-top:1rem; }
-.api-try__out { margin-top:.625rem; }
-.api-try__req { font-size:var(--fs-sm); margin-bottom:.375rem; display:flex; align-items:center; gap:.5rem; }
-.api-try__status { margin-bottom:.375rem; }
-.api-try__pre { max-height:22rem; overflow:auto; }
-
-/* CD-lg statt der Sonderbreite 820 (Item 1.3 räumt die Leiter auf). */
-@media (max-width:1023.98px) {
-  .api-layout { grid-template-columns:minmax(0,1fr); }
-  .api-rail { position:static; flex-direction:row; flex-wrap:wrap; margin-bottom:1rem; }
-  .api-rail__title { width:100%; margin-left:0; }
-}
-@media (max-width:479.98px) {
-  /* Methode + Pfad und Zusammenfassung untereinander statt in einer Zeile */
-  .api-ep__head { flex-wrap:wrap; row-gap:.25rem; }
-  .api-ep__summary { flex:1 0 100%; }
-}
+/* ── API-Dokumentation (js/apps/api-docs.js) ─────────────────────────────
+   Unterhalb der detail-bar rendert das ECHTE Swagger UI (swagger-ui-dist vom
+   CDN, Lademuster wie MapLibre) — der frühere CD-nachgebaute api-*-Block
+   (59 Selektoren) ist mit dem Umbau entfallen (Nutzerentscheid 2026-08-04).
+   Swaggers Stile leben unter .swagger-ui und bleiben dort; hier nur die
+   Einbettung. */
+.swagger-host { margin-top: 1rem; }
+/* Titel, Version und Beschreibung trägt der Portal-Seitenkopf (h1/pill-row/
+   lead) — Swaggers eigener Info-Block stünde doppelt darunter. */
+.swagger-host .swagger-ui .information-container { display:none; }
 
 /* ── Kompakte Katalogleiste (catbar) — geteilt: Portfolio, Dienstleistungen,
    Datenbezug, Anwendungen. Eine Zeile: Suche + Trefferzahl links; hinter EINER
