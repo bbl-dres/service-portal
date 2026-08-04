@@ -9,17 +9,17 @@
 // jede Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen.
 
 
+import { APP_AREAS } from '../domain.js';
+
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['applications', 'contacts'];
 const PER_PAGE = 9;
 
-const AREAS = [
-  { key: 'buildings', label: 'Immobilien & Bau' },
-  { key: 'logistics', label: 'Arbeitsplatz & Logistik' },
-  { key: 'central',   label: 'Zentrale Systeme' },
-];
+// Die Bereiche stehen in js/domain.js — dieselbe Liste trägt den Filter hier
+// und die Bereichszeile der Landingpage (application.js).
+const AREAS = APP_AREAS;
 
 const AUDIENCES = [
   { value: 'staff',     label: 'BBL-Personal' },

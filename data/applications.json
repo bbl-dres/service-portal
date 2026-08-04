@@ -301,7 +301,7 @@
   {
     "appId": "datenportal",
     "name": "Datenportal (Portal)",
-    "group": "Zentrale Systeme",
+    "group": "Daten und Auswertungen",
     "icon": "ChartBar",
     "audience": "both",
     "accessNote": "Intern + Extern",
@@ -344,7 +344,7 @@
   {
     "appId": "datenbezug",
     "name": "Datenbezug und API Verzeichnis (Portal)",
-    "group": "Zentrale Systeme",
+    "group": "Daten und Auswertungen",
     "icon": "Database",
     "audience": "staff",
     "hero": false,
@@ -998,7 +998,7 @@
   {
     "appId": "egate",
     "name": "eGate",
-    "group": "Zentrale Systeme",
+    "group": "Bundesverwaltung",
     "icon": "Key",
     "audience": "both",
     "accessNote": "Extern (SSO)",
@@ -1007,7 +1007,7 @@
       "href": "#"
     },
     "description": "Intranet und zentrales Einstiegsportal der Bundesverwaltung.",
-    "area": "central",
+    "area": "federal",
     "subtitle": "Zentrales Portal der Bundesverwaltung",
     "long": "eGate ist das gemeinsame Einstiegsportal der Bundesverwaltung. Es bündelt personalisierte Informationen, Anwendungen und Dienste der Departemente und Ämter und ist für alle Mitarbeitenden der Bundesverwaltung der zentrale Startpunkt. eGate ist das Portal, nicht der Anmeldedienst: die Authentisierung und das Single Sign-on leisten die Identitätsdienste des Bundes (eIAM, AGOV).",
     "access": {
@@ -1051,7 +1051,7 @@
   {
     "appId": "infopers",
     "name": "InfoPers",
-    "group": "Zentrale Systeme",
+    "group": "Bundesverwaltung",
     "icon": "Users",
     "audience": "staff",
     "accessNote": "Extern (Login)",
@@ -1060,7 +1060,7 @@
       "href": "#"
     },
     "description": "HR-Self-Service der Bundesverwaltung.",
-    "area": "central",
+    "area": "federal",
     "subtitle": "Personalinformationssystem",
     "long": "InfoPers ist das Personalinformationssystem der Bundesverwaltung. Mitarbeitende sehen und pflegen dort ihre Personaldaten, Zeitsaldi und Abwesenheiten; Führungskräfte nutzen es für Bewilligungen und Auswertungen.",
     "access": {
@@ -1096,7 +1096,7 @@
   {
     "appId": "superb",
     "name": "SAP S/4HANA (Programm SUPERB)",
-    "group": "Zentrale Systeme",
+    "group": "Bundesverwaltung",
     "icon": "Database",
     "audience": "staff",
     "accessNote": "Extern (Login)",
@@ -1105,7 +1105,7 @@
       "href": "#"
     },
     "description": "ERP der Bundesverwaltung (Finanzen, Beschaffung, Immobilien/RE-FX, Bauprojekte/ePPM). Migration von SAP ECC auf S/4HANA im Programm SUPERB.",
-    "area": "central",
+    "area": "federal",
     "subtitle": "SAP S/4HANA der Bundesverwaltung",
     "long": "Mit dem Programm SUPERB migriert die Bundesverwaltung ihre bisherigen SAP-Systeme auf SAP S/4HANA. Für das BBL betrifft das insbesondere Finanzen, Beschaffung und das Immobilienmanagement. Fachlich sind es zwei getrennte Module: SAP RE-FX führt Wirtschaftseinheit, Gebäude, Grundstück, Bemessungen und die Mietverwaltung (Mietobjekt, Mietvertrag), SAP ePPM die Bauprojekte. Die Stammdaten des Liegenschafteninventars stammen aus RE-FX.",
     "access": {
@@ -1140,7 +1140,7 @@
   {
     "appId": "admin-directory",
     "name": "Admin-Directory",
-    "group": "Zentrale Systeme",
+    "group": "Bundesverwaltung",
     "icon": "User",
     "audience": "both",
     "accessNote": "Extern",
@@ -1149,7 +1149,7 @@
       "href": "#"
     },
     "description": "Personen- und Organisationsverzeichnis der Bundesverwaltung (ersetzt das PDF-Verzeichnis).",
-    "area": "central",
+    "area": "federal",
     "subtitle": "Personen- und Organisationsverzeichnis",
     "long": "Das Admin-Directory ist das Verzeichnis der Personen, Organisationseinheiten und Standorte der Bundesverwaltung. Es liefert die Referenz für Zuständigkeiten — unter anderem für die Dateneigner und Datenverwalter im Datenbezug.",
     "access": {
@@ -1566,6 +1566,262 @@
       "credit": "Daniel Andraski — Pexels",
       "lizenz": "Pexels-Lizenz",
       "quelle": "https://www.pexels.com/photo/narrow-walkway-between-metal-shelves-12234109/"
+    }
+  },
+  {
+    "appId": "i14y",
+    "name": "I14Y Interoperabilitätsplattform",
+    "group": "Bundesverwaltung",
+    "icon": "Exchange",
+    "audience": "both",
+    "accessNote": "Öffentlich",
+    "link": {
+      "kind": "external",
+      "href": "https://www.i14y.admin.ch/"
+    },
+    "description": "Öffentliches Verzeichnis der Datensammlungen, Schnittstellen und Codelisten der öffentlichen Verwaltung — Bund, Kantone und Gemeinden.",
+    "area": "federal",
+    "subtitle": "Datenkatalog der öffentlichen Verwaltung",
+    "long": "Die Interoperabilitätsplattform I14Y beschreibt, welche Daten die öffentliche Verwaltung führt und wie man sie bezieht. Katalogisiert werden Datensätze, elektronische Schnittstellen, organisationsübergreifend nutzbare Konzepte und Codelisten sowie Behördenleistungen — von Bund, Kantonen und Gemeinden. Die Plattform steht seit Sommer 2021 zur Verfügung und wird im Auftrag des Bundes vom Bundesamt für Statistik zusammen mit dem Bundesamt für Informatik und Telekommunikation entwickelt und betrieben. Für das BBL ist sie zweierlei: Bezugsquelle für Referenzdaten anderer Stellen und Veröffentlichungsweg für eigene Datensätze, die sich zur Mehrfachnutzung eignen. Das portalinterne Verzeichnis «Datenbezug und API Verzeichnis» folgt demselben Metadatenmodell (DCAT-AP CH) — ein Eintrag bleibt damit übertragbar.",
+    "access": {
+      "note": "Der Katalog ist öffentlich und ohne Anmeldung einsehbar.",
+      "steps": [
+        "Lesender Zugriff ohne Konto — Suche über Datensätze, Schnittstellen, Konzepte und Codelisten.",
+        "Zum Publizieren eigener Datensätze braucht die Organisation ein Konto bei der Interoperabilitätsstelle des BFS."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Datenbezug und API Verzeichnis — der Datenkatalog des BBL",
+        "href": "#/data/catalog"
+      },
+      {
+        "label": "Handbuch der Interoperabilitätsplattform I14Y",
+        "href": "https://i14y-ch.github.io/handbook/de/",
+        "kind": "external"
+      }
+    ],
+    "related": [
+      "datenbezug",
+      "admin-directory"
+    ],
+    "contact": "bfs-ios",
+    "updated": "04.08.2026",
+    "bild": {
+      "src": "assets/images/applications/i14y.jpg",
+      "titel": "A blue background with lines and dots forming a connected network",
+      "fotograf": "Conny Schneider",
+      "credit": "Conny Schneider — Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/a-blue-background-with-lines-and-dots-pREq0ns_p_E"
+    }
+  },
+  {
+    "appId": "termdat",
+    "name": "TERMDAT",
+    "group": "Bundesverwaltung",
+    "icon": "Book",
+    "audience": "both",
+    "accessNote": "Öffentlich",
+    "link": {
+      "kind": "external",
+      "href": "https://www.termdat.bk.admin.ch/"
+    },
+    "description": "Terminologiedatenbank der Bundesverwaltung — Fachbegriffe der Rechts- und Verwaltungssprache in den vier Landessprachen und auf Englisch.",
+    "area": "federal",
+    "subtitle": "Terminologie der Rechts- und Verwaltungssprache",
+    "long": "TERMDAT führt den Fachwortschatz der Bundesverwaltung in den vier Landessprachen — Deutsch, Französisch, Italienisch, Rätoromanisch — sowie zunehmend auf Englisch. Erfasst sind die Rechts- und Verwaltungsterminologie und die Begriffe zahlreicher Sachgebiete, darunter Bau, Energie, Finanzen, Informatik, Umwelt und Verkehr. Zu den Benennungen kommen Definitionen, Anmerkungen und Quellen, dazu die offiziellen Bezeichnungen und Abkürzungen schweizerischer und internationaler Behörden und Organisationen sowie die Titel und Abkürzungen der Bundeserlasse. Betrieben wird die Datenbank von der Sektion Terminologie der Zentralen Sprachdienste der Bundeskanzlei. Sie ist der Beleg, wenn eine Benennung amtlich sein muss — für Weisungen, Formulare und Übersetzungen ebenso wie für die Beschriftungen einer Fachanwendung.",
+    "access": {
+      "note": "Frei zugänglich, ohne Anmeldung und ohne Konto.",
+      "steps": [
+        "Suche über Benennung, Abkürzung oder Sachgebiet; die Trefferanzeige stellt die Sprachen nebeneinander.",
+        "Ergänzungen und Korrekturen nimmt die Sektion Terminologie der Bundeskanzlei entgegen."
+      ]
+    },
+    "resources": [
+      {
+        "label": "TERMDAT — Erläuterungen der Bundeskanzlei",
+        "href": "https://www.bk.admin.ch/bk/de/home/dokumentation/sprachen/termdat.html",
+        "kind": "external"
+      },
+      {
+        "label": "Wissen und Hilfsmittel — Vorgaben, Vorlagen und Anleitungen",
+        "href": "#/knowledge"
+      }
+    ],
+    "related": [
+      "admin-directory"
+    ],
+    "contact": "bk-terminologie",
+    "updated": "04.08.2026",
+    "bild": {
+      "src": "assets/images/applications/termdat.jpg",
+      "titel": "Close-up of a dictionary page in focus",
+      "fotograf": "Romain Vignes",
+      "credit": "Romain Vignes — Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/focus-dictionary-index-page-ywqa9IZB-dU"
+    }
+  },
+  {
+    "appId": "geoportal-bund",
+    "name": "Geoportal des Bundes (geo.admin.ch)",
+    "group": "Bundesverwaltung",
+    "icon": "Map",
+    "audience": "both",
+    "accessNote": "Öffentlich",
+    "link": {
+      "kind": "external",
+      "href": "https://www.geo.admin.ch/"
+    },
+    "description": "Kartenviewer und Geodienste des Bundes — Landeskarten, Luftbilder, Höhenmodelle und über tausend Fachdatensätze.",
+    "area": "federal",
+    "subtitle": "Karten, Luftbilder und Geodienste der Schweiz",
+    "long": "geo.admin.ch ist die Plattform für Geoinformationen, Geodaten und Geodienste der Bundesverwaltung; betrieben wird sie vom Bundesamt für Landestopografie swisstopo. Der Kartenviewer map.geo.admin.ch kombiniert Karten, Luftbilder und Fachdaten frei wählbar, misst Strecken und Flächen, vergleicht aktuelle mit historischen Aufnahmen und lässt sich als Link teilen, drucken oder mobil offline nutzen; seit Mai 2026 umfasst das Portal 1000 Datensätze. Für Fachanwendungen stehen dieselben Daten als Dienste bereit — WMS und WMTS für Karten, REST-Schnittstellen für Suche, Adressen und Höhen, die STAC-API für Datendownloads —, dokumentiert auf docs.geo.admin.ch. Das Kundenportal nutzt beides selbst: die Objektkarten des Liegenschafteninventars liegen auf den swisstopo-Kacheln, und die Adresssuche der Gebäudeerfassung fragt den SearchServer von geo.admin.ch. Die Bundesbauten selbst sind dort allerdings nicht als Ebene geführt — dafür ist dieses Portal zuständig.",
+    "access": {
+      "note": "Kartenviewer und Geodienste sind öffentlich; die Geobasisdaten von swisstopo stehen als Open Government Data zur Verfügung.",
+      "steps": [
+        "Ohne Anmeldung nutzbar — Ebenen kombinieren, zeichnen, messen, drucken und als Link teilen.",
+        "Für den Einbau in eigene Anwendungen die Dienste über docs.geo.admin.ch beziehen, nicht den Viewer einbetten."
+      ]
+    },
+    "entries": [
+      {
+        "label": "Kartenviewer map.geo.admin.ch",
+        "href": "https://map.geo.admin.ch/",
+        "kind": "external",
+        "note": "Karten, Luftbilder und Fachdaten kombinieren, messen, drucken und teilen."
+      },
+      {
+        "label": "Technische Dokumentation docs.geo.admin.ch",
+        "href": "https://docs.geo.admin.ch/",
+        "kind": "external",
+        "note": "Geodienste und Schnittstellen der Bundesgeodateninfrastruktur — WMS, WMTS, REST und STAC."
+      }
+    ],
+    "resources": [
+      {
+        "label": "geocat.ch — die Metadaten zu diesen Geodaten",
+        "href": "#/applications/geocat"
+      },
+      {
+        "label": "BBL GIS IMMO — Geoinformationssystem der Bauten",
+        "href": "#/applications/gis-immo"
+      }
+    ],
+    "related": [
+      "geocat",
+      "gis-immo",
+      "liegenschaften-inventar"
+    ],
+    "contact": "swisstopo-kogis",
+    "updated": "04.08.2026",
+    "bild": {
+      "src": "assets/images/applications/geoportal-bund.jpg",
+      "titel": "Detailed topographic map of a mountainous region",
+      "fotograf": "The New York Public Library",
+      "credit": "The New York Public Library — Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/detailed-topographic-map-of-a-mountainous-region-UNu-lqX2FdQ"
+    }
+  },
+  {
+    "appId": "geocat",
+    "name": "geocat.ch",
+    "group": "Bundesverwaltung",
+    "icon": "Archive",
+    "audience": "both",
+    "accessNote": "Öffentlich (Publikation mit Konto)",
+    "link": {
+      "kind": "external",
+      "href": "https://www.geocat.ch/"
+    },
+    "description": "Metadatenkatalog der Schweizer Geodaten — wer welche Geodaten führt, wie aktuell sie sind und wie man sie bezieht.",
+    "area": "federal",
+    "subtitle": "Schweizer Katalog der Geometadaten",
+    "long": "In geocat.ch beschreiben Bundesstellen, Kantone, Gemeinden und private Betreiber die Metadaten ihrer Geodaten: Inhalt und Abgrenzung, Aktualität, Zuständigkeit, Nutzungsbedingungen und Bezugswege. Der Katalog wird von der Abteilung Koordination, Geo-Information und Services (KOGIS) des Bundesamts für Landestopografie swisstopo im Auftrag des Koordinationsorgans für Geoinformation des Bundes (GKG) betrieben, läuft seit 2004 und beruht auf der Open-Source-Anwendung GeoNetwork. Beschrieben wird nach dem Schweizer Metadatenmodell GM03 beziehungsweise dem Profil ISO 19139_CHE — den nationalen Ausprägungen der internationalen Norm ISO 19115. Die Einträge speisen weitere Portale: map.geo.admin.ch und opendata.swiss lesen ihre Metadaten von hier. Fachlich ist geocat.ch für Geodaten das, was das portalinterne «Datenbezug und API Verzeichnis» für die Datensätze des BBL ist.",
+    "access": {
+      "note": "Der Katalog ist öffentlich; für das Publizieren eigener Metadaten braucht es ein Konto.",
+      "steps": [
+        "Lesender Zugriff ohne Anmeldung — Suche über Titel, Thema, Raum und Zeit.",
+        "Die Registrierung als publizierende Stelle läuft über die Fachstelle geocat.ch bei swisstopo."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Handbuch, Normen und Modelle (info.geocat.ch)",
+        "href": "https://info.geocat.ch/de/ubersicht-geocat",
+        "kind": "external"
+      },
+      {
+        "label": "Geoportal des Bundes — die Karten zu diesen Metadaten",
+        "href": "#/applications/geoportal-bund"
+      },
+      {
+        "label": "Datenbezug und API Verzeichnis — der Datenkatalog des BBL",
+        "href": "#/data/catalog"
+      }
+    ],
+    "related": [
+      "geoportal-bund",
+      "datenbezug"
+    ],
+    "contact": "swisstopo-geocat",
+    "updated": "04.08.2026",
+    "bild": {
+      "src": "assets/images/applications/geocat.jpg",
+      "titel": "Close-up photography of a wooden library card catalog",
+      "fotograf": "Erol Ahmed",
+      "credit": "Erol Ahmed — Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/close-up-photography-of-brown-wooden-card-catalog-Y3KEBQlB1Zk"
+    }
+  },
+  {
+    "appId": "simap",
+    "name": "simap.ch",
+    "group": "Bundesverwaltung",
+    "icon": "Briefcase",
+    "audience": "both",
+    "accessNote": "Öffentlich (Konto für Angebote)",
+    "link": {
+      "kind": "external",
+      "href": "https://www.simap.ch/"
+    },
+    "description": "Gemeinsame Ausschreibungsplattform von Bund, Kantonen und Gemeinden — Ausschreibungen, Anbieterfragen, elektronische Angebote und Zuschläge.",
+    "area": "federal",
+    "subtitle": "Ausschreibungsplattform des öffentlichen Beschaffungswesens",
+    "long": "simap.ch ist die gemeinsame Plattform des öffentlichen Beschaffungswesens von Bund, Kantonen und Gemeinden; getragen wird sie vom Verein simap.ch, dem seit 2011 alle Kantone und der Bund angehören. Beschaffungsstellen veröffentlichen dort ihre Ausschreibungen samt Unterlagen, beantworten Anbieterfragen und publizieren die Zuschläge; Anbieterinnen und Anbieter suchen Ausschreibungen, abonnieren Benachrichtigungen, laden die Unterlagen herunter und reichen ihre Angebote elektronisch ein. Das BBL publiziert als zentrale Beschaffungsstelle des Bundes seine Ausschreibungen über simap.ch — insbesondere die Verfahren im Staatsvertragsbereich (WTO). Die Plattform wurde per 1. Juli 2024 vollständig erneuert.",
+    "access": {
+      "note": "Ausschreibungen und Zuschläge sind öffentlich einsehbar; für Angebote und Publikationen braucht es ein Konto.",
+      "steps": [
+        "Suche und Benachrichtigungs-Abonnement ohne Konto möglich.",
+        "Anbieterinnen und Anbieter registrieren sich selbst; Konten für Beschaffungsstellen des BBL laufen über das KBB."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Beschaffung — Vorgaben, Vorlagen und Verfahren",
+        "href": "#/knowledge/procurement"
+      },
+      {
+        "label": "Dienstleistungen im Bereich Beschaffung",
+        "href": "#/services?topic=E"
+      }
+    ],
+    "related": [
+      "eshop",
+      "bundespublikationen"
+    ],
+    "contact": "kbb",
+    "updated": "04.08.2026",
+    "bild": {
+      "src": "assets/images/applications/simap.jpg",
+      "titel": "Two people reviewing and signing documents at a table",
+      "fotograf": "Gabrielle Henderson",
+      "credit": "Gabrielle Henderson — Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/woman-signing-on-white-printer-paper-beside-woman-about-to-touch-the-documents-HJckKnwCXxQ"
     }
   }
 ]

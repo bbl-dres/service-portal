@@ -1,0 +1,1340 @@
+[
+  {
+    "objectId": "areal",
+    "name": "Areal",
+    "domain": "bauwerk",
+    "definition": "Ein definiertes Landareal bestehend aus einer oder mehreren Parzellen, typischerweise ein Bundeskampus oder eine Anlage.",
+    "scopeNote": "Im BBL-Kontext umfasst ein Areal das gesamte zusammenhängende Gelände einer Bundesanlage.",
+    "altNames": [
+      "Standort",
+      "Campus-Areal"
+    ],
+    "status": "approved",
+    "standardRef": "VILB, eCH-0071",
+    "egidRelevant": false,
+    "egridRelevant": true,
+    "steward": "immobilienmanagement",
+    "updated": "2024-06-01",
+    "attributes": [
+      {
+        "name": "Areal-ID",
+        "definition": "Eindeutige Kennung des Areals.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "VILB",
+        "mappings": []
+      },
+      {
+        "name": "Bezeichnung",
+        "definition": "Bezeichnung des Areals.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Fläche (m2)",
+        "definition": "Gesamtfläche des Areals in Quadratmetern.",
+        "type": "float",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Standort-Kanton",
+        "definition": "Kanton, in dem sich das Areal befindet.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "eCH-0071",
+        "mappings": []
+      },
+      {
+        "name": "Eigentümer",
+        "definition": "Eigentümer des Areals (Bund, Kanton, Dritte).",
+        "type": "text",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "kampus",
+    "name": "Kampus",
+    "domain": "bauwerk",
+    "definition": "Eine zusammengehörende Gruppe von Gebäuden, die eine funktionale Einheit bilden, z.B. Bundeskampus Zollikofen.",
+    "scopeNote": "",
+    "altNames": [
+      "Bundeskampus"
+    ],
+    "status": "approved",
+    "standardRef": "VILB Anhang A",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "immobilienmanagement",
+    "updated": "2024-06-01",
+    "attributes": [
+      {
+        "name": "Kampus-ID",
+        "definition": "Eindeutige Kennung des Kampus.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Bezeichnung",
+        "definition": "Bezeichnung des Kampus.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Anzahl Gebäude",
+        "definition": "Anzahl der Gebäude auf dem Kampus.",
+        "type": "integer",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Hauptnutzung",
+        "definition": "Hauptnutzungsart des Kampus.",
+        "type": "text",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "grundstueck",
+    "name": "Grundstück",
+    "domain": "bauwerk",
+    "definition": "Ein im Grundbuch eingetragenes, rechtlich definiertes Stück Land, identifiziert durch eine EGRID.",
+    "scopeNote": "",
+    "altNames": [
+      "Parzelle"
+    ],
+    "status": "approved",
+    "standardRef": "ZGB Art. 655, eCH-0071",
+    "egidRelevant": false,
+    "egridRelevant": true,
+    "steward": "immobilienmanagement",
+    "updated": "2024-06-15",
+    "attributes": [
+      {
+        "name": "Grundbuch-Nr",
+        "definition": "Grundbuchnummer der Parzelle.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "ZGB",
+        "mappings": [
+          {
+            "tableId": "gis-immo-parcel",
+            "field": "av_nr",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "EGRID",
+        "definition": "Eidgenössischer Grundstücksidentifikator.",
+        "type": "text",
+        "required": true,
+        "keyRole": "UK",
+        "standardRef": "eCH-0071",
+        "mappings": [
+          {
+            "tableId": "gis-immo-parcel",
+            "field": "av_egrid",
+            "match": "exact"
+          },
+          {
+            "tableId": "gis-immo-building",
+            "field": "av_egrid",
+            "match": "partial"
+          },
+          {
+            "tableId": "gis-immo-land-cover",
+            "field": "av_egrid",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Gemeinde-BFS-Nr",
+        "definition": "BFS-Gemeindenummer des Standorts.",
+        "type": "integer",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "eCH-0071",
+        "mappings": [
+          {
+            "tableId": "gis-immo-parcel",
+            "field": "bfs_gemnr",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Fläche (m2)",
+        "definition": "Gesamtfläche des Grundstücks in m2.",
+        "type": "float",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": [
+          {
+            "tableId": "gis-immo-parcel",
+            "field": "larea_gsf",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Eigentumsart",
+        "definition": "Art des Eigentums (Alleineigentum, Miteigentum, Stockwerkeigentum).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": [
+          {
+            "tableId": "gis-immo-parcel",
+            "field": "bbl_eigen",
+            "match": "exact"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "objectId": "gebaeude",
+    "name": "Gebäude",
+    "domain": "bauwerk",
+    "definition": "Ein dauerhaftes, überdachtes Bauwerk, das im eidgenössischen Gebäude- und Wohnungsregister (GWR) erfasst und durch eine EGID identifiziert wird.",
+    "scopeNote": "Im BBL-Kontext umfasst Gebäude ausschliesslich Bauwerke im Eigentum oder in der Verwaltung des Bundes.",
+    "altNames": [
+      "Bauwerk",
+      "Bau"
+    ],
+    "status": "approved",
+    "standardRef": "eCH-0071 v2.0, GWR",
+    "egidRelevant": true,
+    "egridRelevant": false,
+    "steward": "immobilienmanagement",
+    "updated": "2024-06-01",
+    "attributes": [
+      {
+        "name": "Gebäude-ID (BBL)",
+        "definition": "Kennung des Gebäudes im Führungssystem, zusammengesetzt aus Buchungskreis, Wirtschaftseinheit und Teilobjekt (z. B. 1080/4840/01).",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "SAP RE-FX",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbu",
+            "field": "BUILDING",
+            "match": "exact"
+          },
+          {
+            "tableId": "gis-immo-building",
+            "field": "bbl_id",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Bezeichnung",
+        "definition": "Objektbezeichnung des Gebäudes, wie sie im Führungssystem geführt wird.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbu",
+            "field": "BUILDING_TEXT",
+            "match": "exact"
+          },
+          {
+            "tableId": "gis-immo-building",
+            "field": "bbl_bez",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "EGID",
+        "definition": "Eidgenössischer Gebäudeidentifikator aus dem GWR.",
+        "type": "integer",
+        "required": true,
+        "keyRole": "UK",
+        "standardRef": "eCH-0071",
+        "mappings": [
+          {
+            "tableId": "gis-immo-building",
+            "field": "av_egid",
+            "match": "exact"
+          },
+          {
+            "tableId": "gis-immo-land-cover",
+            "field": "av_egid",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Baujahr",
+        "definition": "Jahr der Fertigstellung des Gebäudes.",
+        "type": "integer",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "GWR",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbu",
+            "field": "CONSTRUCTION_YEAR",
+            "match": "exact"
+          },
+          {
+            "tableId": "gis-immo-building",
+            "field": "bbl_bjahr",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Gebäudekategorie",
+        "definition": "Klassifikation des Gebäudetyps nach GWR-Katalog.",
+        "type": "code",
+        "required": true,
+        "keyRole": "FK",
+        "standardRef": "eCH-0071",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbu",
+            "field": "BUILDING_TYPE",
+            "match": "close"
+          },
+          {
+            "tableId": "gis-immo-building",
+            "field": "bbl_gbda1",
+            "match": "close"
+          }
+        ]
+      },
+      {
+        "name": "Anzahl Geschosse",
+        "definition": "Gesamtzahl der ober- und unterirdischen Geschosse.",
+        "type": "integer",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "GWR",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbu",
+            "field": "FLOORS",
+            "match": "exact"
+          },
+          {
+            "tableId": "gis-immo-building",
+            "field": "gastw",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Energieträger",
+        "definition": "Hauptsächlicher Energieträger für Heizung.",
+        "type": "code",
+        "required": false,
+        "keyRole": "FK",
+        "standardRef": "GWR",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "nutzungseinheit",
+    "name": "Nutzungseinheit",
+    "domain": "bauwerk",
+    "definition": "Ein in sich geschlossener Bereich innerhalb eines Gebäudes, der einem einzigen Zweck dient, klassifiziert nach SIA 416.",
+    "scopeNote": "",
+    "altNames": [
+      "NE"
+    ],
+    "status": "approved",
+    "standardRef": "SIA 416 p3",
+    "egidRelevant": true,
+    "egridRelevant": false,
+    "steward": "immobilienmanagement",
+    "updated": "2024-07-15",
+    "attributes": [
+      {
+        "name": "NE-Nummer",
+        "definition": "Nummer der Nutzungseinheit.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Nutzungsart",
+        "definition": "Art der Nutzung gemäss SIA 416.",
+        "type": "code",
+        "required": true,
+        "keyRole": "FK",
+        "standardRef": "SIA 416",
+        "mappings": []
+      },
+      {
+        "name": "Fläche (m2)",
+        "definition": "Fläche der Nutzungseinheit in m2.",
+        "type": "float",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "SIA 416",
+        "mappings": []
+      },
+      {
+        "name": "Geschoss-Lage",
+        "definition": "Geschoss, auf dem sich die Nutzungseinheit befindet.",
+        "type": "text",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "geschoss",
+    "name": "Geschoss",
+    "domain": "bauwerk",
+    "definition": "Eine horizontale Ebene innerhalb eines Gebäudes, gemessen nach SIA 416.",
+    "scopeNote": "",
+    "altNames": [
+      "Stockwerk",
+      "Niveau"
+    ],
+    "status": "approved",
+    "standardRef": "SIA 416",
+    "egidRelevant": true,
+    "egridRelevant": false,
+    "steward": "immobilienmanagement",
+    "updated": "2024-06-01",
+    "attributes": [
+      {
+        "name": "Geschoss-Nr",
+        "definition": "Nummer des Geschosses.",
+        "type": "integer",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Bezeichnung",
+        "definition": "Bezeichnung des Geschosses (z.B. EG, 1.OG, UG1).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Geschossfläche (m2)",
+        "definition": "Bruttogeschossfläche in m2.",
+        "type": "float",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "SIA 416",
+        "mappings": []
+      },
+      {
+        "name": "Nutzfläche (m2)",
+        "definition": "Nutzfläche in m2.",
+        "type": "float",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "SIA 416",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "raum",
+    "name": "Raum",
+    "domain": "bauwerk",
+    "definition": "Ein einzelner umschlossener Raum innerhalb eines Geschosses, identifiziert durch eine Raumnummer.",
+    "scopeNote": "",
+    "altNames": [
+      "Zimmer"
+    ],
+    "status": "approved",
+    "standardRef": "SIA 416 p4",
+    "egidRelevant": true,
+    "egridRelevant": false,
+    "steward": "immobilienmanagement",
+    "updated": "2024-06-01",
+    "attributes": [
+      {
+        "name": "Raum-Nr",
+        "definition": "Eindeutige Raumnummer.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Bezeichnung",
+        "definition": "Bezeichnung des Raums.",
+        "type": "text",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Fläche (m2)",
+        "definition": "Fläche des Raums in m2.",
+        "type": "float",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Nutzungsart",
+        "definition": "Art der Raumnutzung.",
+        "type": "text",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "bemessung",
+    "name": "Bemessung",
+    "domain": "bauwerk",
+    "definition": "Berechnete Flächen- und Volumenkennwerte für ein Gebäude oder eine Einheit (Geschossfläche, Nutzfläche etc.) nach SIA 416.",
+    "scopeNote": "",
+    "altNames": [
+      "Flächenberechnung",
+      "Volumenberechnung"
+    ],
+    "status": "approved",
+    "standardRef": "SIA 416 p3.6",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "immobilienmanagement",
+    "updated": "2024-08-01",
+    "attributes": [
+      {
+        "name": "Berechnungsart",
+        "definition": "Art der Flächenberechnung (GF, NF, EBF, etc.).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "SIA 416",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdme",
+            "field": "MEASUREMENT",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Bezugsfläche (m2)",
+        "definition": "Berechnete Bezugsfläche in m2.",
+        "type": "float",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "SIA 416",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdme",
+            "field": "VALUE_AVAIL",
+            "match": "partial"
+          },
+          {
+            "tableId": "sap-refx-vibdme",
+            "field": "VALUE_COMPL",
+            "match": "partial"
+          }
+        ]
+      },
+      {
+        "name": "Norm-Referenz",
+        "definition": "Referenz auf die angewandte Norm.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Berechnungsdatum",
+        "definition": "Datum der letzten Berechnung.",
+        "type": "date",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "mietobjekt",
+    "name": "Mietobjekt",
+    "domain": "miete",
+    "definition": "Eine vermietbare Einheit innerhalb eines Gebäudes, verwaltet durch das BBL, entsprechend einer Wirtschaftseinheit in SAP RE-FX.",
+    "scopeNote": "Ein Mietobjekt kann aus mehreren Nutzungseinheiten bestehen.",
+    "altNames": [
+      "MO",
+      "Mieteinheit"
+    ],
+    "status": "approved",
+    "standardRef": "VILB Anhang A",
+    "egidRelevant": true,
+    "egridRelevant": false,
+    "steward": "immobilienmanagement",
+    "updated": "2024-07-01",
+    "attributes": [
+      {
+        "name": "MO-Nummer",
+        "definition": "Eindeutige Kennung des Mietobjekts in SAP RE-FX.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdau",
+            "field": "MIOBJNR",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Bezeichnung",
+        "definition": "Bezeichnung des Mietobjekts.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Mietfläche (m2)",
+        "definition": "Vermietbare Fläche des Mietobjekts in m2.",
+        "type": "float",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "SIA 416",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdau",
+            "field": "MFESSION",
+            "match": "close"
+          }
+        ]
+      },
+      {
+        "name": "Status",
+        "definition": "Status des Mietobjekts (aktiv/passiv).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "mietvertrag",
+    "name": "Mietvertrag",
+    "domain": "miete",
+    "definition": "Ein rechtsverbindlicher Vertrag zwischen dem Bund und einer Gegenpartei über die Nutzung eines Mietobjekts.",
+    "scopeNote": "",
+    "altNames": [
+      "MV",
+      "Mietkontrakt"
+    ],
+    "status": "draft",
+    "standardRef": "OR Art. 253ff",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "immobilienmanagement",
+    "updated": "2024-08-01",
+    "attributes": [
+      {
+        "name": "Vertrags-Nr",
+        "definition": "Eindeutige Kennung des Mietvertrags.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdmv",
+            "field": "MVNR",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Beginn",
+        "definition": "Datum des Mietbeginns.",
+        "type": "date",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdmv",
+            "field": "MVBEG",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Ende",
+        "definition": "Datum des Mietendes (leer = unbefristet).",
+        "type": "date",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Nettomiete (CHF)",
+        "definition": "Jährliche Nettomiete in CHF.",
+        "type": "float",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Status",
+        "definition": "Vertragsstatus (aktiv, gekündigt, abgelaufen).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "kondition",
+    "name": "Kondition",
+    "domain": "miete",
+    "definition": "Finanzielle und vertragliche Konditionen eines Mietvertrags: Mietzins, Nebenkosten, Indexierung und Kautionen.",
+    "scopeNote": "",
+    "altNames": [
+      "Vertragskondition",
+      "Mietkondition"
+    ],
+    "status": "draft",
+    "standardRef": "OR Art. 269ff",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "immobilienmanagement",
+    "updated": "2024-08-15",
+    "attributes": [
+      {
+        "name": "Konditions-Nr",
+        "definition": "Eindeutige Nummer der Kondition im Mietvertrag.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "SAP RE-FX",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdkd",
+            "field": "KDNR",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Konditionsart",
+        "definition": "Art der Kondition (Nettomiete, Nebenkosten, Indexanpassung, Kaution, Mieterausbau).",
+        "type": "code",
+        "required": true,
+        "keyRole": "FK",
+        "standardRef": "",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdkd",
+            "field": "KDART",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Betrag (CHF)",
+        "definition": "Betrag der Kondition in CHF.",
+        "type": "float",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Periodizität",
+        "definition": "Zahlungsintervall (monatlich, quartalsweise, jährlich).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Index-Basis",
+        "definition": "Basis für die Indexanpassung (z.B. LIK Dezember 2020 = 100).",
+        "type": "text",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "heizzentrale",
+    "name": "Heizzentrale",
+    "domain": "energie",
+    "definition": "Zentrale Heizungsanlage für ein oder mehrere Gebäude, klassifiziert nach Energieträger (Öl, Gas, Wärmepumpe, Fernwärme).",
+    "scopeNote": "",
+    "altNames": [
+      "HZ",
+      "Wärmeerzeugung"
+    ],
+    "status": "approved",
+    "standardRef": "SIA 380/1, EnDK",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "edm",
+    "updated": "2024-08-01",
+    "attributes": [
+      {
+        "name": "HZ-Nummer",
+        "definition": "Eindeutige Kennung der Heizzentrale.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Typ",
+        "definition": "Typ der Heizzentrale (Öl, Gas, Wärmepumpe, Fernwärme).",
+        "type": "code",
+        "required": true,
+        "keyRole": "FK",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Leistung (kW)",
+        "definition": "Nennleistung der Heizzentrale in Kilowatt.",
+        "type": "float",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Baujahr",
+        "definition": "Baujahr der Heizzentrale.",
+        "type": "integer",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "stromzaehler",
+    "name": "Stromzähler",
+    "domain": "energie",
+    "definition": "Messgerät für den Stromverbrauch innerhalb eines Gebäudes oder Gebäudeteils.",
+    "scopeNote": "",
+    "altNames": [
+      "Zähler",
+      "E-Zähler"
+    ],
+    "status": "approved",
+    "standardRef": "StromVV, ElCom",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "edm",
+    "updated": "2024-08-15",
+    "attributes": [
+      {
+        "name": "Zähler-Nr",
+        "definition": "Eindeutige Zählernummer.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Zählertyp",
+        "definition": "Typ des Zählers (Hauptzähler, Unterzähler, Erzeugungszähler).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Messbereich",
+        "definition": "Messbereich des Zählers.",
+        "type": "text",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Standort",
+        "definition": "Standort des Zählers im Gebäude.",
+        "type": "text",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "betriebsmesswert",
+    "name": "Betriebsmesswert",
+    "domain": "energie",
+    "definition": "Ein erfasster Energie- oder Ressourcenverbrauchswert eines Messgeräts zu einem bestimmten Zeitpunkt.",
+    "scopeNote": "",
+    "altNames": [
+      "Messwert",
+      "Verbrauchswert"
+    ],
+    "status": "approved",
+    "standardRef": "SIA 380/1",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "edm",
+    "updated": "2024-09-01",
+    "attributes": [
+      {
+        "name": "Messart",
+        "definition": "Art der Messung (Strom, Wärme, Wasser, Gas).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Wert",
+        "definition": "Gemessener Wert.",
+        "type": "float",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Einheit",
+        "definition": "Masseinheit (kWh, MWh, m3, l).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Zeitstempel",
+        "definition": "Zeitpunkt der Messung.",
+        "type": "date",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Zähler-Referenz",
+        "definition": "Referenz auf den zugehörigen Zähler.",
+        "type": "text",
+        "required": true,
+        "keyRole": "FK",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "person",
+    "name": "Person",
+    "domain": "partner",
+    "definition": "Eine natürliche Person im Immobilienmanagement: Mieter, Mitarbeitende oder Kontaktperson.",
+    "scopeNote": "",
+    "altNames": [
+      "Natürliche Person"
+    ],
+    "status": "approved",
+    "standardRef": "eCH-0010, eCH-0011",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "dres",
+    "updated": "2024-07-01",
+    "attributes": [
+      {
+        "name": "Partner-Nr",
+        "definition": "Nummer des Geschäftspartners im Partnerstamm.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "SAP RE-FX",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbp",
+            "field": "PARTNER_NR",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "AHV-Nr",
+        "definition": "Sozialversicherungsnummer (AHV-Nr) der Person.",
+        "type": "text",
+        "required": false,
+        "keyRole": "UK",
+        "standardRef": "eCH-0011",
+        "mappings": []
+      },
+      {
+        "name": "Vorname",
+        "definition": "Vorname der Person.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Nachname",
+        "definition": "Nachname der Person.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Geburtsdatum",
+        "definition": "Geburtsdatum der Person.",
+        "type": "date",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "kontakt",
+    "name": "Kontakt",
+    "domain": "partner",
+    "definition": "Ein Kommunikationsendpunkt für eine Person oder Organisation: E-Mail, Telefon oder Postadresse.",
+    "scopeNote": "",
+    "altNames": [
+      "Kontaktdaten",
+      "Erreichbarkeit"
+    ],
+    "status": "approved",
+    "standardRef": "eCH-0010",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "dres",
+    "updated": "2024-07-15",
+    "attributes": [
+      {
+        "name": "Kontaktart",
+        "definition": "Art des Kontakts (Email, Telefon, Adresse).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Wert",
+        "definition": "Kontaktwert (z.B. E-Mail-Adresse, Telefonnummer).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Gültig-ab",
+        "definition": "Beginn der Gültigkeit des Kontakts.",
+        "type": "date",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "unternehmen",
+    "name": "Unternehmen",
+    "domain": "partner",
+    "definition": "Eine juristische Person oder Organisationseinheit, identifiziert durch die UID (Unternehmens-Identifikationsnummer). Stammdaten aus dem BFS-Unternehmensregister oder SAP MDG.",
+    "scopeNote": "",
+    "altNames": [
+      "Firma",
+      "Organisation",
+      "Juristische Person"
+    ],
+    "status": "approved",
+    "standardRef": "UID-Register (BFS), eCH-0011",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "dres",
+    "updated": "2024-07-01",
+    "attributes": [
+      {
+        "name": "Partner-Nr",
+        "definition": "Nummer des Geschäftspartners im Partnerstamm.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "SAP RE-FX",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbp",
+            "field": "PARTNER_NR",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "UID",
+        "definition": "Unternehmens-Identifikationsnummer (UID).",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "UID-Register",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbp",
+            "field": "UID_NR",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Firmenname",
+        "definition": "Offizielle Firma des Unternehmens.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Rechtsform",
+        "definition": "Rechtsform des Unternehmens (AG, GmbH, Stiftung, etc.).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Sitz",
+        "definition": "Sitz des Unternehmens (Gemeinde).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "wirtschaftseinheit",
+    "name": "Wirtschaftseinheit",
+    "domain": "finanzen",
+    "definition": "Eine eigenständige wirtschaftliche Einheit in der Immobilienbuchhaltung, typischerweise ein Gebäude oder eine Gebäudegruppe, die als ein Profit Center geführt wird. Zentrale Organisationseinheit in SAP RE-FX.",
+    "scopeNote": "",
+    "altNames": [
+      "WE",
+      "Immobilien-WE"
+    ],
+    "status": "approved",
+    "standardRef": "SAP RE-FX, VILB",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "pfm",
+    "updated": "2024-06-01",
+    "attributes": [
+      {
+        "name": "WE-Nummer",
+        "definition": "Eindeutige Nummer der Wirtschaftseinheit in SAP RE-FX.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "SAP RE-FX",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbe",
+            "field": "BUSINESS_ENTITY",
+            "match": "exact"
+          },
+          {
+            "tableId": "gis-immo-building",
+            "field": "bbl_we",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Bezeichnung",
+        "definition": "Name/Bezeichnung der Wirtschaftseinheit.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbe",
+            "field": "BUSINESS_ENTITY_TEXT",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Buchungskreis",
+        "definition": "Zugeordneter Buchungskreis der Wirtschaftseinheit.",
+        "type": "text",
+        "required": true,
+        "keyRole": "FK",
+        "standardRef": "SAP FI",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbe",
+            "field": "COMP_CODE",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Profit Center",
+        "definition": "Zugeordnetes Profit Center für die Ergebnisrechnung.",
+        "type": "text",
+        "required": false,
+        "keyRole": "",
+        "standardRef": "SAP CO",
+        "mappings": []
+      }
+    ]
+  },
+  {
+    "objectId": "buchungskreis",
+    "name": "Buchungskreis",
+    "domain": "finanzen",
+    "definition": "Die höchste Organisationseinheit in der Finanzbuchhaltung (SAP FI). Jeder Buchungskreis repräsentiert eine eigenständige juristische Einheit mit eigener Bilanz und GuV. Das BBL operiert typischerweise unter einem Buchungskreis für Bundesimmobilien.",
+    "scopeNote": "",
+    "altNames": [
+      "BuKrs",
+      "Mandant"
+    ],
+    "status": "approved",
+    "standardRef": "SAP FI, OR Art. 957ff",
+    "egidRelevant": false,
+    "egridRelevant": false,
+    "steward": "pfm",
+    "updated": "2024-06-01",
+    "attributes": [
+      {
+        "name": "Buchungskreis-Nr",
+        "definition": "Vierstelliger SAP-Buchungskreisschlüssel.",
+        "type": "text",
+        "required": true,
+        "keyRole": "PK",
+        "standardRef": "SAP FI",
+        "mappings": [
+          {
+            "tableId": "sap-refx-vibdbe",
+            "field": "COMP_CODE",
+            "match": "exact"
+          },
+          {
+            "tableId": "sap-refx-vibdbu",
+            "field": "COMP_CODE",
+            "match": "exact"
+          },
+          {
+            "tableId": "gis-immo-building",
+            "field": "bbl_buch",
+            "match": "exact"
+          }
+        ]
+      },
+      {
+        "name": "Bezeichnung",
+        "definition": "Name des Buchungskreises.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "",
+        "mappings": []
+      },
+      {
+        "name": "Währung",
+        "definition": "Hauswährung des Buchungskreises (CHF).",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "ISO 4217",
+        "mappings": []
+      },
+      {
+        "name": "Kontenplan",
+        "definition": "Zugeordneter Kontenplan.",
+        "type": "text",
+        "required": true,
+        "keyRole": "",
+        "standardRef": "SAP FI",
+        "mappings": []
+      }
+    ]
+  }
+]

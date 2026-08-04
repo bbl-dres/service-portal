@@ -178,5 +178,35 @@
     "role": "Betrieb und Schulung des Personalinformationssystems der Bundesverwaltung",
     "email": "personaladministration@epa-dlz.admin.ch",
     "quelle": "https://www.epa.admin.ch/de/kontakt"
+  },
+  {
+    "contactId": "bfs-ios",
+    "name": "Interoperabilitätsstelle (IOS)",
+    "unit": "Bundesamt für Statistik (BFS)",
+    "role": "Betrieb und Weiterentwicklung der Interoperabilitätsplattform I14Y",
+    "quelle": "https://www.i14y.admin.ch/"
+  },
+  {
+    "contactId": "bk-terminologie",
+    "name": "Sektion Terminologie",
+    "unit": "Bundeskanzlei (BK) — Zentrale Sprachdienste",
+    "role": "TERMDAT und die Terminologie der Rechts- und Verwaltungssprache",
+    "email": "terminologie@bk.admin.ch",
+    "quelle": "https://www.bk.admin.ch/de/termdat-die-terminologie-datenbank-der-bundesverwaltung"
+  },
+  {
+    "contactId": "swisstopo-kogis",
+    "name": "Koordination, Geo-Information und Services (KOGIS)",
+    "unit": "Bundesamt für Landestopografie swisstopo",
+    "role": "Geoportal des Bundes, Geodienste und Bundesgeodateninfrastruktur",
+    "quelle": "https://www.swisstopo.admin.ch/de/geoadminch-das-geoportal-des-bundes"
+  },
+  {
+    "contactId": "swisstopo-geocat",
+    "name": "Fachstelle geocat.ch",
+    "unit": "Bundesamt für Landestopografie swisstopo — KOGIS",
+    "role": "Geometadatenkatalog der Schweiz, Registrierung publizierender Stellen",
+    "email": "geocat@swisstopo.ch",
+    "quelle": "https://info.geocat.ch/de/ubersicht-geocat"
   }
 ]

@@ -9,6 +9,8 @@
 // externes System), Berechtigung und Ansprechstelle — das gehört auf eine
 // Seite, bevor jemand auf «Öffnen» klickt.
 
+import { appAreaLabel } from '../domain.js';
+
 // Die Landingpage-Felder (long, entries, access, resources, contact, updated)
 // stehen seit 2026-07 am Anwendungsdatensatz selbst — es gab keinen Grund für
 // eine zweite Datei mit demselben Schlüssel. `page` bleibt als lokaler Alias
@@ -109,7 +111,7 @@ export default function render(ctx, appId) {
           <h3>Eckdaten</h3>
           <dl class="kv m-0">
             <dt>Gruppe</dt><dd>${C.escape(a.group)}</dd>
-            ${a.area ? `<dt>Bereich</dt><dd>${C.escape(bereichLabel(a.area))}</dd>` : ''}
+            ${a.area ? `<dt>Bereich</dt><dd>${C.escape(appAreaLabel(a.area))}</dd>` : ''}
             <dt>Zugang</dt><dd>${C.escape(a.accessNote || '—')}</dd>
             <dt>Einstieg</dt><dd>${external ? 'Externes System' : 'Im Kundenportal'}</dd>
             ${page.updated ? `<dt>Letzte Änderung</dt><dd>${C.escape(page.updated)}</dd>` : ''}
@@ -142,7 +144,3 @@ function crumbs() {
   ];
 }
 
-function bereichLabel(key) {
-  return { buildings: 'Fachanwendungen Bauten', logistics: 'Fachanwendungen Logistik',
-    central: 'Zentrale Systeme' }[key] || key;
-}

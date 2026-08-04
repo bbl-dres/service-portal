@@ -1,0 +1,2295 @@
+[
+  {
+    "tableId": "sap-refx-vibdau",
+    "system": "sap-refx",
+    "systemName": "SAP RE-FX",
+    "schema": "VIBD",
+    "schemaLabel": "SAP RE-FX Stammdaten",
+    "schemaType": "database_schema",
+    "name": "VIBDAU",
+    "displayName": "Wirtschaftseinheiten Mietobjekt",
+    "type": "table",
+    "description": "SAP RE-FX Stammdatentabelle für Mietobjekte (Wirtschaftseinheit Typ AU). Enthält Mietobjektnummern, Flächen und Nutzungsarten.",
+    "certified": true,
+    "rowCount": 32100,
+    "sourceUrl": "https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDAU",
+    "datasetId": "",
+    "steward": "immobilienmanagement",
+    "updated": "2024-11-15",
+    "fields": [
+      {
+        "name": "MIOBJNR",
+        "dataType": "VARCHAR(20)",
+        "description": "Primärschlüssel des Mietobjekts.",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "SWESSION",
+        "dataType": "VARCHAR(20)",
+        "description": "Fremdschlüssel zur Wirtschaftseinheit Gebäude.",
+        "nullable": false,
+        "foreignKey": true
+      },
+      {
+        "name": "BEZEICHNUNG",
+        "dataType": "VARCHAR(80)",
+        "description": "Bezeichnung des Mietobjekts.",
+        "nullable": true
+      },
+      {
+        "name": "MFESSION",
+        "dataType": "DECIMAL(10,2)",
+        "description": "Vermietbare Fläche in Quadratmetern.",
+        "nullable": true
+      },
+      {
+        "name": "STATUS",
+        "dataType": "VARCHAR(10)",
+        "description": "Status des Mietobjekts (aktiv/passiv).",
+        "nullable": false
+      }
+    ]
+  },
+  {
+    "tableId": "sap-refx-vibdbe",
+    "system": "sap-refx",
+    "systemName": "SAP RE-FX",
+    "schema": "VIBD",
+    "schemaLabel": "SAP RE-FX Stammdaten",
+    "schemaType": "database_schema",
+    "name": "VIBDBE",
+    "displayName": "Wirtschaftseinheit",
+    "type": "table",
+    "description": "SAP RE-FX Stammdatentabelle für Wirtschaftseinheiten (BUS_ENTITY). Exponiert über ZAPI_X4AI_BAPI_RE_BE_GET_DET.",
+    "certified": true,
+    "rowCount": null,
+    "sourceUrl": "",
+    "datasetId": "12",
+    "steward": "immobilienmanagement",
+    "updated": "2026-04-20",
+    "fields": [
+      {
+        "name": "COMP_CODE",
+        "dataType": "VARCHAR(4)",
+        "description": "Buchungskreis",
+        "nullable": false,
+        "primaryKey": true,
+        "foreignKey": true
+      },
+      {
+        "name": "BUSINESS_ENTITY",
+        "dataType": "VARCHAR(8)",
+        "description": "Nummer der Wirtschaftseinheit",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "IDENT_OBJECT_TYPE",
+        "dataType": "VARCHAR(2)",
+        "description": "Ident-Teil Objektart, z.B. 'IS' (Immobilienvertrag)",
+        "nullable": true
+      },
+      {
+        "name": "IDENT_KEY",
+        "dataType": "VARCHAR(45)",
+        "description": "Ident-Teil Schlüssel, z.B. '1000/123'",
+        "nullable": true
+      },
+      {
+        "name": "CREATION_USER",
+        "dataType": "VARCHAR(12)",
+        "description": "Erfasser",
+        "nullable": true
+      },
+      {
+        "name": "CREATION_DATE",
+        "dataType": "DATE",
+        "description": "Zuerst erfasst am",
+        "nullable": true
+      },
+      {
+        "name": "CREATION_TIME",
+        "dataType": "TIME",
+        "description": "Angelegt um",
+        "nullable": true
+      },
+      {
+        "name": "LASTCHANGE_USER",
+        "dataType": "VARCHAR(12)",
+        "description": "Mitarbeiterkennung",
+        "nullable": true
+      },
+      {
+        "name": "LASTCHANGE_DATE",
+        "dataType": "DATE",
+        "description": "Zuletzt bearbeitet am",
+        "nullable": true
+      },
+      {
+        "name": "LASTCHANGE_TIME",
+        "dataType": "TIME",
+        "description": "Uhrzeit der letzten Bearbeitung",
+        "nullable": true
+      },
+      {
+        "name": "BUSINESS_ENTITY_TEXT",
+        "dataType": "VARCHAR(60)",
+        "description": "Bezeichnung der Wirtschaftseinheit",
+        "nullable": true
+      },
+      {
+        "name": "MAINTENANCE_AREA",
+        "dataType": "VARCHAR(5)",
+        "description": "Instandhaltungsbezirk",
+        "nullable": true
+      },
+      {
+        "name": "TRANSPORT_CONNECTION",
+        "dataType": "VARCHAR(1)",
+        "description": "Verkehrsanbindung der WE",
+        "nullable": true
+      },
+      {
+        "name": "LOCATION",
+        "dataType": "VARCHAR(4)",
+        "description": "Nummer Lage der WE",
+        "nullable": true
+      },
+      {
+        "name": "DISTRICT_LOCATION",
+        "dataType": "VARCHAR(2)",
+        "description": "Kennzeichen Ortslage des Objektes",
+        "nullable": true
+      },
+      {
+        "name": "REGIONAL_LOCATION",
+        "dataType": "VARCHAR(10)",
+        "description": "Standort",
+        "nullable": true
+      },
+      {
+        "name": "REPR_LIST_OF_RENTS",
+        "dataType": "VARCHAR(6)",
+        "description": "Mietspiegel",
+        "nullable": true
+      },
+      {
+        "name": "UNIT_AREA",
+        "dataType": "VARCHAR(3)",
+        "description": "Flächeneinheit",
+        "nullable": true
+      },
+      {
+        "name": "UNIT_AREA_ISO",
+        "dataType": "VARCHAR(3)",
+        "description": "ISO-Code Masseinheit",
+        "nullable": true
+      },
+      {
+        "name": "UNIT_VOLUME",
+        "dataType": "VARCHAR(3)",
+        "description": "Einheit für Rauminhalt",
+        "nullable": true
+      },
+      {
+        "name": "UNIT_VOLUME_ISO",
+        "dataType": "VARCHAR(3)",
+        "description": "ISO-Code Masseinheit",
+        "nullable": true
+      },
+      {
+        "name": "UNIT_LENGTH",
+        "dataType": "VARCHAR(3)",
+        "description": "Längeneinheit",
+        "nullable": true
+      },
+      {
+        "name": "UNIT_LENGTH_ISO",
+        "dataType": "VARCHAR(3)",
+        "description": "ISO-Code Masseinheit",
+        "nullable": true
+      },
+      {
+        "name": "TENANCY_LAW",
+        "dataType": "VARCHAR(5)",
+        "description": "Mietrecht",
+        "nullable": true
+      },
+      {
+        "name": "PREDEF_OPERATION_COSTS",
+        "dataType": "VARCHAR(4)",
+        "description": "Vorbelegung Betriebskosten-Abrechnungsvariante",
+        "nullable": true
+      },
+      {
+        "name": "PREDEF_HEATING_EXPENSES",
+        "dataType": "VARCHAR(4)",
+        "description": "Vorbelegung Heizkosten-Abrechnungsvariante",
+        "nullable": true
+      },
+      {
+        "name": "AUTHORIZATION_GROUP",
+        "dataType": "VARCHAR(40)",
+        "description": "Berechtigungsgruppe",
+        "nullable": true
+      },
+      {
+        "name": "AUTO_FUNC_LOC_DISABLED",
+        "dataType": "VARCHAR(1)",
+        "description": "Verbietet das automatische Anlegen von Technischen Plätzen",
+        "nullable": true
+      },
+      {
+        "name": "OBJECT_VALID_FROM",
+        "dataType": "DATE",
+        "description": "Datum: Gültig ab",
+        "nullable": true
+      },
+      {
+        "name": "OBJECT_VALID_TO",
+        "dataType": "DATE",
+        "description": "Datum: Gültig bis",
+        "nullable": true
+      },
+      {
+        "name": "RESPONSIBLE",
+        "dataType": "VARCHAR(12)",
+        "description": "Verantwortlicher",
+        "nullable": true
+      },
+      {
+        "name": "STAT_PROF",
+        "dataType": "VARCHAR(8)",
+        "description": "Statusschema",
+        "nullable": true
+      },
+      {
+        "name": "NEIGHBORHOOD_01",
+        "dataType": "VARCHAR(30)",
+        "description": "Gegend",
+        "nullable": true
+      },
+      {
+        "name": "NEIGHBORHOOD_02",
+        "dataType": "VARCHAR(30)",
+        "description": "Gegend",
+        "nullable": true
+      },
+      {
+        "name": "NEIGHBORHOOD_03",
+        "dataType": "VARCHAR(30)",
+        "description": "Gegend",
+        "nullable": true
+      },
+      {
+        "name": "MANDATE_OBJECT_ID",
+        "dataType": "VARCHAR(45)",
+        "description": "Ident-Teil des Mandatsobjekts im Mandatsbukrs",
+        "nullable": true
+      },
+      {
+        "name": "MANDATE_MNG_OBJECT_ID",
+        "dataType": "VARCHAR(45)",
+        "description": "Ident-Teil des Mandatsobjekts im Verwaltungsbukrs",
+        "nullable": true
+      },
+      {
+        "name": "MANDATE_CR_OBJECT_ID",
+        "dataType": "VARCHAR(45)",
+        "description": "Ident-Teil des Mandatsobjekts im Sondereigentumsbukrs",
+        "nullable": true
+      },
+      {
+        "name": "FUNCTION",
+        "dataType": "VARCHAR(4)",
+        "description": "Funktion des Objektes",
+        "nullable": true
+      }
+    ]
+  },
+  {
+    "tableId": "sap-refx-vibdbu",
+    "system": "sap-refx",
+    "systemName": "SAP RE-FX",
+    "schema": "VIBD",
+    "schemaLabel": "SAP RE-FX Stammdaten",
+    "schemaType": "database_schema",
+    "name": "VIBDBU",
+    "displayName": "Gebäude",
+    "type": "table",
+    "description": "SAP RE-FX Stammdatentabelle für Gebäude (BUILDING). Exponiert über ZAPI_X4AI_BAPI_RE_BU_GET_DET.",
+    "certified": true,
+    "rowCount": 8450,
+    "sourceUrl": "https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDBE",
+    "datasetId": "1",
+    "steward": "immobilienmanagement",
+    "updated": "2026-04-20",
+    "fields": [
+      {
+        "name": "COMP_CODE",
+        "dataType": "VARCHAR(4)",
+        "description": "Buchungskreis",
+        "nullable": false,
+        "primaryKey": true,
+        "foreignKey": true
+      },
+      {
+        "name": "BUSINESS_ENTITY",
+        "dataType": "VARCHAR(8)",
+        "description": "Nummer der Wirtschaftseinheit",
+        "nullable": false,
+        "primaryKey": true,
+        "foreignKey": true
+      },
+      {
+        "name": "BUILDING",
+        "dataType": "VARCHAR(8)",
+        "description": "Nummer des Gebäudes",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "IDENT_OBJECT_TYPE",
+        "dataType": "VARCHAR(2)",
+        "description": "Ident-Teil Objektart, z.B. 'IS' (Immobilienvertrag)",
+        "nullable": true
+      },
+      {
+        "name": "IDENT_KEY",
+        "dataType": "VARCHAR(45)",
+        "description": "Ident-Teil Schlüssel, z.B. '1000/123'",
+        "nullable": true
+      },
+      {
+        "name": "CREATION_USER",
+        "dataType": "VARCHAR(12)",
+        "description": "Erfasser",
+        "nullable": true
+      },
+      {
+        "name": "CREATION_DATE",
+        "dataType": "DATE",
+        "description": "Zuerst erfasst am",
+        "nullable": true
+      },
+      {
+        "name": "CREATION_TIME",
+        "dataType": "TIME",
+        "description": "Angelegt um",
+        "nullable": true
+      },
+      {
+        "name": "LASTCHANGE_USER",
+        "dataType": "VARCHAR(12)",
+        "description": "Mitarbeiterkennung",
+        "nullable": true
+      },
+      {
+        "name": "LASTCHANGE_DATE",
+        "dataType": "DATE",
+        "description": "Zuletzt bearbeitet am",
+        "nullable": true
+      },
+      {
+        "name": "LASTCHANGE_TIME",
+        "dataType": "TIME",
+        "description": "Uhrzeit der letzten Bearbeitung",
+        "nullable": true
+      },
+      {
+        "name": "BUILDING_TEXT",
+        "dataType": "VARCHAR(60)",
+        "description": "Bezeichnung des Gebäudes",
+        "nullable": true
+      },
+      {
+        "name": "BUILDING_TYPE",
+        "dataType": "VARCHAR(2)",
+        "description": "Art des Gebäudes",
+        "nullable": true
+      },
+      {
+        "name": "BUILDING_CONDITION",
+        "dataType": "VARCHAR(2)",
+        "description": "Allgemeiner Gebäudezustand",
+        "nullable": true
+      },
+      {
+        "name": "CONSTRUCTION_YEAR",
+        "dataType": "VARCHAR(4)",
+        "description": "Baujahr",
+        "nullable": true
+      },
+      {
+        "name": "MODERNIZATION_YEAR",
+        "dataType": "VARCHAR(4)",
+        "description": "Jahr der Modernisierung",
+        "nullable": true
+      },
+      {
+        "name": "RECONSTRUCTION_YEAR",
+        "dataType": "VARCHAR(4)",
+        "description": "Jahr Wiederaufbau",
+        "nullable": true
+      },
+      {
+        "name": "BEGIN_CONSTRUCTION_YEAR",
+        "dataType": "DATE",
+        "description": "Datum Baubeginn",
+        "nullable": true
+      },
+      {
+        "name": "READY_FOR_OCCUPANCY_DATE",
+        "dataType": "DATE",
+        "description": "Bezugsfertigkeit",
+        "nullable": true
+      },
+      {
+        "name": "COMPLETION_DATE",
+        "dataType": "DATE",
+        "description": "Fertigstellung",
+        "nullable": true
+      },
+      {
+        "name": "FINAL_INSPECTION_DATE",
+        "dataType": "DATE",
+        "description": "Schlussabnahme",
+        "nullable": true
+      },
+      {
+        "name": "PLANNING_INQUIRY_DATE",
+        "dataType": "DATE",
+        "description": "Datum Bauvoranfrage",
+        "nullable": true
+      },
+      {
+        "name": "PRIOR_NOTICE_DATE",
+        "dataType": "DATE",
+        "description": "Datum Vorbescheid",
+        "nullable": true
+      },
+      {
+        "name": "BUILDING_PERMIT_APPLIC_DATE",
+        "dataType": "DATE",
+        "description": "Antrag Baugenehmigung",
+        "nullable": true
+      },
+      {
+        "name": "BUILDING_PERMIT_DATE",
+        "dataType": "DATE",
+        "description": "Baugenehmigung",
+        "nullable": true
+      },
+      {
+        "name": "TRANSF_USE_AND_ENCUMBR_DATE",
+        "dataType": "DATE",
+        "description": "Übergang Nutzung / Lasten",
+        "nullable": true
+      },
+      {
+        "name": "SALE_DATE",
+        "dataType": "DATE",
+        "description": "Verkaufsdatum",
+        "nullable": true
+      },
+      {
+        "name": "PLANNED_SALE_DATE",
+        "dataType": "DATE",
+        "description": "Geplanter Verkauf",
+        "nullable": true
+      },
+      {
+        "name": "USAGE_END_DATE",
+        "dataType": "DATE",
+        "description": "Nutzungsende",
+        "nullable": true
+      },
+      {
+        "name": "BUILDING_PERMIT_NOTE",
+        "dataType": "VARCHAR(30)",
+        "description": "Anmerkung zur Baugenehmigung",
+        "nullable": true
+      },
+      {
+        "name": "BUILDING_VALUE",
+        "dataType": "DECIMAL(23,2)",
+        "description": "BAPI: Bauwert",
+        "nullable": true
+      },
+      {
+        "name": "CURRENT_BUILDING_VALUE",
+        "dataType": "DECIMAL(23,2)",
+        "description": "BAPI: Aktueller Bauwert",
+        "nullable": true
+      },
+      {
+        "name": "AMOUNT_PER_VOLUME",
+        "dataType": "DECIMAL(23,2)",
+        "description": "BAPI: Betrag pro Raumeinheit",
+        "nullable": true
+      },
+      {
+        "name": "HAS_HIST_SITE_PROTECTION",
+        "dataType": "VARCHAR(1)",
+        "description": "Denkmalschutz",
+        "nullable": true
+      },
+      {
+        "name": "ASSESSMENT_VALUE",
+        "dataType": "DECIMAL(23,2)",
+        "description": "BAPI: Einheitswert des Gebäudes",
+        "nullable": true
+      },
+      {
+        "name": "ASSESSMENT_VALUE_YEAR",
+        "dataType": "VARCHAR(4)",
+        "description": "Basisjahr des Einheitswertes",
+        "nullable": true
+      },
+      {
+        "name": "INSURANCE_VALUE",
+        "dataType": "DECIMAL(23,2)",
+        "description": "BAPI: Betrag des Versicherungswertes",
+        "nullable": true
+      },
+      {
+        "name": "INSURANCE_VALUE_TYPE",
+        "dataType": "VARCHAR(1)",
+        "description": "Art des Versicherungswertes",
+        "nullable": true
+      },
+      {
+        "name": "HERITABLE_BLDG_RIGHT_IND",
+        "dataType": "VARCHAR(1)",
+        "description": "Kennzeichen Erbbaurecht",
+        "nullable": true
+      },
+      {
+        "name": "REPR_LIST_OF_RENTS",
+        "dataType": "VARCHAR(6)",
+        "description": "Mietspiegel",
+        "nullable": true
+      },
+      {
+        "name": "LOCATION_CLASS",
+        "dataType": "VARCHAR(6)",
+        "description": "Lageklasse",
+        "nullable": true
+      },
+      {
+        "name": "MAIN_USAGE_TYPE",
+        "dataType": "VARCHAR(8)",
+        "description": "Überwiegende Nutzungsart",
+        "nullable": true
+      },
+      {
+        "name": "PUBLIC_FUNDING_FROM",
+        "dataType": "DATE",
+        "description": "Öffentliche Förderung von",
+        "nullable": true
+      },
+      {
+        "name": "PUBLIC_FUNDING_TO",
+        "dataType": "DATE",
+        "description": "Öffentliche Förderung bis",
+        "nullable": true
+      },
+      {
+        "name": "FLOORS",
+        "dataType": "DECIMAL(4,2)",
+        "description": "Anzahl der Geschosse",
+        "nullable": true
+      },
+      {
+        "name": "BASEMENTS",
+        "dataType": "DECIMAL(2,2)",
+        "description": "Anzahl Untergeschosse",
+        "nullable": true
+      },
+      {
+        "name": "TOP_FLOOR",
+        "dataType": "VARCHAR(3)",
+        "description": "Oberstes Geschoss eines Gebäudes",
+        "nullable": true
+      },
+      {
+        "name": "ELEVATOR_TO_FLOOR",
+        "dataType": "VARCHAR(3)",
+        "description": "Lift bis Geschoss im Gebäude",
+        "nullable": true
+      },
+      {
+        "name": "MUNICIPALITY_KEY",
+        "dataType": "VARCHAR(8)",
+        "description": "Gemeindeschlüssel",
+        "nullable": true
+      },
+      {
+        "name": "HAS_CURR_OCC_PRINC",
+        "dataType": "VARCHAR(1)",
+        "description": "Nutzt das Raumschuldnerprinzip",
+        "nullable": true
+      },
+      {
+        "name": "UNIT_VOLUME",
+        "dataType": "VARCHAR(3)",
+        "description": "Einheit für Rauminhalt",
+        "nullable": true
+      },
+      {
+        "name": "UNIT_VOLUME_ISO",
+        "dataType": "VARCHAR(3)",
+        "description": "ISO-Code Masseinheit",
+        "nullable": true
+      },
+      {
+        "name": "CURRENCY",
+        "dataType": "VARCHAR(5)",
+        "description": "Währungsschlüssel",
+        "nullable": true
+      },
+      {
+        "name": "CURRENCY_ISO",
+        "dataType": "VARCHAR(3)",
+        "description": "Iso-Code Währung",
+        "nullable": true
+      },
+      {
+        "name": "AUTHORIZATION_GROUP",
+        "dataType": "VARCHAR(40)",
+        "description": "Berechtigungsgruppe",
+        "nullable": true
+      },
+      {
+        "name": "OBJECT_VALID_FROM",
+        "dataType": "DATE",
+        "description": "Datum: Objekt gültig ab",
+        "nullable": true
+      },
+      {
+        "name": "OBJECT_VALID_TO",
+        "dataType": "DATE",
+        "description": "Datum: Objekt gültig bis",
+        "nullable": true
+      },
+      {
+        "name": "REAL_VALID_FROM",
+        "dataType": "DATE",
+        "description": "Datum: Gültig ab (effektiv)",
+        "nullable": true
+      },
+      {
+        "name": "REAL_VALID_TO",
+        "dataType": "DATE",
+        "description": "Datum: Gültig bis (effektiv)",
+        "nullable": true
+      },
+      {
+        "name": "RESPONSIBLE",
+        "dataType": "VARCHAR(12)",
+        "description": "Verantwortlicher",
+        "nullable": true
+      },
+      {
+        "name": "STAT_PROF",
+        "dataType": "VARCHAR(8)",
+        "description": "Statusschema",
+        "nullable": true
+      },
+      {
+        "name": "MANDATE_OBJECT_ID",
+        "dataType": "VARCHAR(45)",
+        "description": "Ident-Teil des Mandatsobjekts im Mandatsbukrs",
+        "nullable": true
+      },
+      {
+        "name": "MANDATE_MNG_OBJECT_ID",
+        "dataType": "VARCHAR(45)",
+        "description": "Ident-Teil des Mandatsobjekts im Verwaltungsbukrs",
+        "nullable": true
+      },
+      {
+        "name": "MANDATE_CR_OBJECT_ID",
+        "dataType": "VARCHAR(45)",
+        "description": "Ident-Teil des Mandatsobjekts im Sondereigentumsbukrs",
+        "nullable": true
+      },
+      {
+        "name": "USES_REPR_LIST_OF_RENTS",
+        "dataType": "VARCHAR(1)",
+        "description": "Mietspiegel wird verwendet",
+        "nullable": true
+      },
+      {
+        "name": "FUNCTION",
+        "dataType": "VARCHAR(4)",
+        "description": "Funktion des Objektes",
+        "nullable": true
+      }
+    ]
+  },
+  {
+    "tableId": "sap-refx-vibdkd",
+    "system": "sap-refx",
+    "systemName": "SAP RE-FX",
+    "schema": "VIBD",
+    "schemaLabel": "SAP RE-FX Stammdaten",
+    "schemaType": "database_schema",
+    "name": "VIBDKD",
+    "displayName": "Konditionen",
+    "type": "table",
+    "description": "SAP RE-FX Konditionentabelle. Enthält Nettomiete, Nebenkosten, Indexanpassungen und Kautionen pro Mietvertrag.",
+    "certified": false,
+    "rowCount": 42000,
+    "sourceUrl": "https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDKD",
+    "datasetId": "",
+    "steward": "immobilienmanagement",
+    "updated": "2024-10-15",
+    "fields": [
+      {
+        "name": "KDNR",
+        "dataType": "VARCHAR(20)",
+        "description": "Primärschlüssel der Kondition.",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "MVNR",
+        "dataType": "VARCHAR(20)",
+        "description": "Fremdschlüssel zum Mietvertrag.",
+        "nullable": false,
+        "foreignKey": true
+      },
+      {
+        "name": "KDART",
+        "dataType": "VARCHAR(10)",
+        "description": "Art der Kondition (NM, NK, IDX, KAU, MAB).",
+        "nullable": false
+      },
+      {
+        "name": "BETRAG",
+        "dataType": "DECIMAL(12,2)",
+        "description": "Betrag der Kondition in CHF.",
+        "nullable": false
+      },
+      {
+        "name": "PERIOD",
+        "dataType": "VARCHAR(20)",
+        "description": "Zahlungsintervall.",
+        "nullable": false
+      }
+    ]
+  },
+  {
+    "tableId": "sap-refx-vibdme",
+    "system": "sap-refx",
+    "systemName": "SAP RE-FX",
+    "schema": "VIBD",
+    "schemaLabel": "SAP RE-FX Stammdaten",
+    "schemaType": "database_schema",
+    "name": "VIBDME",
+    "displayName": "Bemessungen",
+    "type": "table",
+    "description": "SAP RE-FX Bemessungsdaten zu Immobilienobjekten (MEASUREMENT). Exponiert über ZAPI_X4AI_BAPI_RE_BU_MEAS_EDM.",
+    "certified": true,
+    "rowCount": null,
+    "sourceUrl": "",
+    "datasetId": "",
+    "steward": "immobilienmanagement",
+    "updated": "2026-04-20",
+    "fields": [
+      {
+        "name": "OBJECT_TYPE",
+        "dataType": "VARCHAR(2)",
+        "description": "Business-Objektart des Objekts",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "OBJECT_ID",
+        "dataType": "VARCHAR(45)",
+        "description": "Ident-Teil des Objekts",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "MEASUREMENT",
+        "dataType": "VARCHAR(4)",
+        "description": "Bemessungsart",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "VALID_FROM",
+        "dataType": "DATE",
+        "description": "Datum: Bemessung gültig ab",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "VALID_TO",
+        "dataType": "DATE",
+        "description": "Datum: Bemessung gültig bis",
+        "nullable": true
+      },
+      {
+        "name": "VALUE_AVAIL",
+        "dataType": "DECIMAL(17,3)",
+        "description": "Bemessungsgröße: Verfügbare",
+        "nullable": true
+      },
+      {
+        "name": "UNIT",
+        "dataType": "VARCHAR(3)",
+        "description": "Bemessungseinheit",
+        "nullable": true
+      },
+      {
+        "name": "UNIT_ISO",
+        "dataType": "VARCHAR(3)",
+        "description": "ISO-Code Masseinheit",
+        "nullable": true
+      },
+      {
+        "name": "VALUE_COMPL",
+        "dataType": "DECIMAL(17,3)",
+        "description": "Bemessungsgröße: Kapazität",
+        "nullable": true
+      },
+      {
+        "name": "VALUE_SET_MANUALLY",
+        "dataType": "VARCHAR(1)",
+        "description": "Kennzeichen: Bemessung ist manuell überschrieben",
+        "nullable": true
+      },
+      {
+        "name": "VALUE_IS_HIERARCHICAL",
+        "dataType": "VARCHAR(1)",
+        "description": "Kennzeichen: Es existieren hierarchisch unterg. Objekte",
+        "nullable": true
+      },
+      {
+        "name": "TOTAL_MEASUREMENT",
+        "dataType": "VARCHAR(1)",
+        "description": "Kennzeichen: Summenbemessung",
+        "nullable": true
+      }
+    ]
+  },
+  {
+    "tableId": "sap-refx-vibdmv",
+    "system": "sap-refx",
+    "systemName": "SAP RE-FX",
+    "schema": "VIBD",
+    "schemaLabel": "SAP RE-FX Stammdaten",
+    "schemaType": "database_schema",
+    "name": "VIBDMV",
+    "displayName": "Mietverträge",
+    "type": "table",
+    "description": "SAP RE-FX Vertragstabelle für Mietverträge. Enthält Vertragsnummern, Laufzeiten, Mietkonditionen und Geschäftspartner-Referenzen.",
+    "certified": false,
+    "rowCount": 15600,
+    "sourceUrl": "https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDMV",
+    "datasetId": "4",
+    "steward": "immobilienmanagement",
+    "updated": "2024-10-01",
+    "fields": [
+      {
+        "name": "MVNR",
+        "dataType": "VARCHAR(20)",
+        "description": "Primärschlüssel des Mietvertrags.",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "MIOBJNR",
+        "dataType": "VARCHAR(20)",
+        "description": "Fremdschlüssel zum Mietobjekt.",
+        "nullable": false,
+        "foreignKey": true
+      },
+      {
+        "name": "MVBEG",
+        "dataType": "DATE",
+        "description": "Beginn des Mietvertrags.",
+        "nullable": false
+      },
+      {
+        "name": "MVEND",
+        "dataType": "DATE",
+        "description": "Ende des Mietvertrags (NULL = unbefristet).",
+        "nullable": true
+      },
+      {
+        "name": "NMIETE",
+        "dataType": "DECIMAL(12,2)",
+        "description": "Jährliche Nettomiete in CHF.",
+        "nullable": false
+      },
+      {
+        "name": "STATUS",
+        "dataType": "VARCHAR(20)",
+        "description": "Status des Vertrags (aktiv, gekündigt, abgelaufen).",
+        "nullable": false
+      }
+    ]
+  },
+  {
+    "tableId": "sap-refx-vibdbp",
+    "system": "sap-refx",
+    "systemName": "SAP RE-FX",
+    "schema": "VIBP",
+    "schemaLabel": "SAP RE-FX Partnerdaten",
+    "schemaType": "database_schema",
+    "name": "VIBDBP",
+    "displayName": "Geschäftspartner",
+    "type": "table",
+    "description": "SAP RE-FX Geschäftspartner-Stammdaten. Enthält Personen und Unternehmen mit Partnernummern, UID, Adressen und Kontaktdaten.",
+    "certified": true,
+    "rowCount": 18500,
+    "sourceUrl": "https://sap-refx.bbl.admin.ch/sap/bc/gui/sap/its/webgui?~transaction=VIBDBP",
+    "datasetId": "",
+    "steward": "immobilienmanagement",
+    "updated": "2024-11-01",
+    "fields": [
+      {
+        "name": "PARTNER_NR",
+        "dataType": "VARCHAR(20)",
+        "description": "Primärschlüssel des Geschäftspartners.",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "BP_TYP",
+        "dataType": "VARCHAR(10)",
+        "description": "Typ des Partners (PERS = Person, ORG = Organisation).",
+        "nullable": false
+      },
+      {
+        "name": "NAME1",
+        "dataType": "VARCHAR(80)",
+        "description": "Nachname (Person) oder Firmenname (Organisation).",
+        "nullable": false
+      },
+      {
+        "name": "NAME2",
+        "dataType": "VARCHAR(80)",
+        "description": "Vorname (nur bei Personen).",
+        "nullable": true
+      },
+      {
+        "name": "UID_NR",
+        "dataType": "VARCHAR(15)",
+        "description": "Unternehmens-Identifikationsnummer (nur bei Org).",
+        "nullable": true
+      }
+    ]
+  },
+  {
+    "tableId": "gis-immo-building",
+    "system": "gis-immo",
+    "systemName": "GIS IMMO",
+    "schema": "BBL_GIS_IMMO",
+    "schemaLabel": "BBL GIS IMMO",
+    "schemaType": "gis_workspace",
+    "name": "BUILDING",
+    "displayName": "Gebäude",
+    "type": "gis_layer",
+    "description": "GIS-IMMO Feature-Layer 'Gebäude' (Point, Status LIVE). 68 LIVE Felder / 7 DEV Felder.",
+    "certified": true,
+    "rowCount": 9200,
+    "sourceUrl": "https://gis.bbl.admin.ch/arcgis/rest/services/BUILDING/FeatureServer/0",
+    "datasetId": "11",
+    "steward": "dres",
+    "updated": "2026-04-20",
+    "fields": [
+      {
+        "name": "bbl_id",
+        "dataType": "VARCHAR(50)",
+        "description": "Interne BBL ID (Buchungskreis/WE/Teilobjekt)",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "bbl_buch",
+        "dataType": "VARCHAR(50)",
+        "description": "Buchungskreis entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_we",
+        "dataType": "VARCHAR(50)",
+        "description": "Wirtschaftseinheit, gruppiert Teilobjekte nach kaufmannischer Logik",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "bbl_obj",
+        "dataType": "VARCHAR(50)",
+        "description": "Teilobjekt, pro Wirtschaftseinheit indexiert",
+        "nullable": true
+      },
+      {
+        "name": "bbl_bez",
+        "dataType": "VARCHAR(50)",
+        "description": "Objektbezeichnung entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_stat",
+        "dataType": "VARCHAR(50)",
+        "description": "Status entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "adr_land",
+        "dataType": "VARCHAR(2)",
+        "description": "Land",
+        "nullable": true
+      },
+      {
+        "name": "adr_reg",
+        "dataType": "VARCHAR(50)",
+        "description": "Region oder Kanton",
+        "nullable": true
+      },
+      {
+        "name": "adr_ort",
+        "dataType": "VARCHAR(50)",
+        "description": "Ort",
+        "nullable": true
+      },
+      {
+        "name": "adr_plz",
+        "dataType": "VARCHAR(50)",
+        "description": "Postleitzahl",
+        "nullable": true
+      },
+      {
+        "name": "adr_str",
+        "dataType": "VARCHAR(50)",
+        "description": "Strasse",
+        "nullable": true
+      },
+      {
+        "name": "adr_hsnr",
+        "dataType": "VARCHAR(50)",
+        "description": "Hausnummer",
+        "nullable": true
+      },
+      {
+        "name": "adr_conct",
+        "dataType": "VARCHAR(50)",
+        "description": "Verkettet aus Adressfeldern, ohne Trennzeichen",
+        "nullable": true
+      },
+      {
+        "name": "wgs84_lat",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Breitengrad WGS84",
+        "nullable": true
+      },
+      {
+        "name": "wgs84_lon",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Langengrad WGS84",
+        "nullable": true
+      },
+      {
+        "name": "lv95_e",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Ost, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "lv95_n",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Nord, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "egm_elev",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Absolute Hohe in Meter (EGM2008)",
+        "nullable": true
+      },
+      {
+        "name": "bbl_eigen",
+        "dataType": "VARCHAR(50)",
+        "description": "Eigentum Art entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_ostr",
+        "dataType": "VARCHAR(50)",
+        "description": "Objektstrategie entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_mietm",
+        "dataType": "VARCHAR(50)",
+        "description": "Mietmodell entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_bjahr",
+        "dataType": "INTEGER",
+        "description": "Baujahr",
+        "nullable": true
+      },
+      {
+        "name": "bbl_vjahr",
+        "dataType": "INTEGER",
+        "description": "Verkaufsjahr (leer wenn nicht verkauft)",
+        "nullable": true
+      },
+      {
+        "name": "bbl_port",
+        "dataType": "VARCHAR(50)",
+        "description": "Teilportfolio entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_port2",
+        "dataType": "VARCHAR(50)",
+        "description": "Teilportfoliogruppe entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_awrt",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Anschaffungswert in CHF",
+        "nullable": true
+      },
+      {
+        "name": "bbl_bwrt",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Buchwert des Gebäudeanlageguts in CHF",
+        "nullable": true
+      },
+      {
+        "name": "bbl_gbda1",
+        "dataType": "VARCHAR(50)",
+        "description": "Gebäudeart Stufe 1",
+        "nullable": true
+      },
+      {
+        "name": "bbl_gbda2",
+        "dataType": "VARCHAR(50)",
+        "description": "Gebäudeart Stufe 2",
+        "nullable": true
+      },
+      {
+        "name": "bbl_ovtw",
+        "dataType": "VARCHAR(50)",
+        "description": "Objektverantwortliche Person",
+        "nullable": true
+      },
+      {
+        "name": "bbl_pvtw",
+        "dataType": "VARCHAR(50)",
+        "description": "Portfoliomanager entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_rgrp",
+        "dataType": "VARCHAR(50)",
+        "description": "Reinigungsgruppe",
+        "nullable": true
+      },
+      {
+        "name": "garea_rff",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Fensterflache fur Reinigung in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_rgf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Glasflache fur Reinigung in m2",
+        "nullable": true
+      },
+      {
+        "name": "av_egid",
+        "dataType": "VARCHAR(50)",
+        "description": "Eidg. Gebäudeidentifikator (nur CH)",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "av_egrid",
+        "dataType": "VARCHAR(14)",
+        "description": "Eidg. Grundstuckidentifikator (nur CH)",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "bfs_gem",
+        "dataType": "VARCHAR(50)",
+        "description": "BFS Gemeindename",
+        "nullable": true
+      },
+      {
+        "name": "bfs_gemnr",
+        "dataType": "VARCHAR(50)",
+        "description": "BFS Gemeindenummer",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "av_zbez",
+        "dataType": "VARCHAR(50)",
+        "description": "Bauzonenbezeichnung (ARE / Kantone)",
+        "nullable": true
+      },
+      {
+        "name": "av_znut",
+        "dataType": "VARCHAR(50)",
+        "description": "Bauzonennutzung",
+        "nullable": true
+      },
+      {
+        "name": "av_nrisk",
+        "dataType": "VARCHAR(50)",
+        "description": "Naturgefahren-Klassifikation",
+        "nullable": true
+      },
+      {
+        "name": "bbl_hist",
+        "dataType": "VARCHAR(20)",
+        "description": "Historische Ausstattung",
+        "nullable": true
+      },
+      {
+        "name": "bbl_arch",
+        "dataType": "VARCHAR(20)",
+        "description": "Archivwurdigkeit",
+        "nullable": true
+      },
+      {
+        "name": "kgs_kat",
+        "dataType": "VARCHAR(20)",
+        "description": "KGS-Inventar Kategorie",
+        "nullable": true
+      },
+      {
+        "name": "kgs_nr",
+        "dataType": "INTEGER",
+        "description": "KGS-Inventar ID",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "objectid",
+        "dataType": "INTEGER",
+        "description": "ESRI ID fur GIS-Updates",
+        "nullable": true
+      },
+      {
+        "name": "bbl_api",
+        "dataType": "INTEGER",
+        "description": "Aktuelle Anzahl Arbeitsplatze",
+        "nullable": true
+      },
+      {
+        "name": "bbl_apr",
+        "dataType": "INTEGER",
+        "description": "Anzahl Reserve-Arbeitsplatze",
+        "nullable": true
+      },
+      {
+        "name": "bbl_aps",
+        "dataType": "INTEGER",
+        "description": "Soll-Anzahl Arbeitsplatze",
+        "nullable": true
+      },
+      {
+        "name": "garea_gf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Geschossflache GF Total in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_gfo",
+        "dataType": "DECIMAL(18,3)",
+        "description": "GF Oberirdisch in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_gfu",
+        "dataType": "DECIMAL(18,3)",
+        "description": "GF Unterirdisch in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_acu",
+        "dataType": "VARCHAR(20)",
+        "description": "Genauigkeit und Datenherkunft",
+        "nullable": true
+      },
+      {
+        "name": "garea_ngf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Netto-Geschossflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_nf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Nutzflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_hnf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Hauptnutzflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_nnf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Nebennutzflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_ff",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Funktionsflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_vf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Verkehrsflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_vmf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Vermietbare Flache in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_ebf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Energiebezugsflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "gvol_gv",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Gebäudevolumen GV in m3",
+        "nullable": true
+      },
+      {
+        "name": "gvol_gvo",
+        "dataType": "DECIMAL(18,3)",
+        "description": "GV Oberirdisch in m3",
+        "nullable": true
+      },
+      {
+        "name": "gvol_gvu",
+        "dataType": "DECIMAL(18,3)",
+        "description": "GV Unterirdisch in m3",
+        "nullable": true
+      },
+      {
+        "name": "gvol_acu",
+        "dataType": "VARCHAR(20)",
+        "description": "Genauigkeit und Datenherkunft",
+        "nullable": true
+      },
+      {
+        "name": "gastw",
+        "dataType": "INTEGER",
+        "description": "Anzahl Geschosse Total",
+        "nullable": true
+      },
+      {
+        "name": "gastw_og",
+        "dataType": "INTEGER",
+        "description": "Geschosse Oberirdisch",
+        "nullable": true
+      },
+      {
+        "name": "gastw_ug",
+        "dataType": "INTEGER",
+        "description": "Geschosse Unterirdisch",
+        "nullable": true
+      },
+      {
+        "name": "gastw_acu",
+        "dataType": "VARCHAR(20)",
+        "description": "Genauigkeit und Datenherkunft",
+        "nullable": true
+      },
+      {
+        "name": "larea_ggf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Gebäudegrundflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_gsf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Grundstucksflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_uf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Umgebungsflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_acu",
+        "dataType": "VARCHAR(20)",
+        "description": "Genauigkeit und Datenherkunft",
+        "nullable": true
+      },
+      {
+        "name": "etl_ts",
+        "dataType": "TIMESTAMP",
+        "description": "Zeitstempel der letzten ETL-Synchronisation",
+        "nullable": true
+      },
+      {
+        "name": "img_url",
+        "dataType": "TEXT",
+        "description": "Liste von Bild-URLs für Karussell und Galerie (App-spezifisch)",
+        "nullable": true
+      }
+    ]
+  },
+  {
+    "tableId": "gis-immo-building-envelope",
+    "system": "gis-immo",
+    "systemName": "GIS IMMO",
+    "schema": "BBL_GIS_IMMO",
+    "schemaLabel": "BBL GIS IMMO",
+    "schemaType": "gis_workspace",
+    "name": "BUILDING_ENVELOPE",
+    "displayName": "Gebäudehülle",
+    "type": "gis_layer",
+    "description": "GIS-IMMO Feature-Layer 'Gebäudehülle' (Polygon, Status DEV). 0 LIVE Felder / 33 DEV Felder.",
+    "certified": false,
+    "rowCount": 125000,
+    "sourceUrl": "https://actanova.bbl.admin.ch/objects/DOC_BUILDING",
+    "datasetId": "",
+    "steward": "dres",
+    "updated": "2026-04-20",
+    "fields": [
+      {
+        "name": "bbl_id",
+        "dataType": "VARCHAR(50)",
+        "description": "Interne BBL ID; Semikolon-getrennt bei Mehrfachzuordnung",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "av_stat",
+        "dataType": "VARCHAR(50)",
+        "description": "Status Amtliche Vermessung",
+        "nullable": true
+      },
+      {
+        "name": "av_egid",
+        "dataType": "VARCHAR(50)",
+        "description": "Eidg. Gebäudeidentifikator (nur CH)",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "av_egrid",
+        "dataType": "VARCHAR(14)",
+        "description": "Eidg. Grundstuckidentifikator (nur CH)",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "adr_land",
+        "dataType": "VARCHAR(2)",
+        "description": "Land",
+        "nullable": true
+      },
+      {
+        "name": "adr_reg",
+        "dataType": "VARCHAR(50)",
+        "description": "Region oder Kanton",
+        "nullable": true
+      },
+      {
+        "name": "adr_ort",
+        "dataType": "VARCHAR(50)",
+        "description": "Ort",
+        "nullable": true
+      },
+      {
+        "name": "adr_plz",
+        "dataType": "VARCHAR(50)",
+        "description": "Postleitzahl",
+        "nullable": true
+      },
+      {
+        "name": "adr_str",
+        "dataType": "VARCHAR(50)",
+        "description": "Strasse",
+        "nullable": true
+      },
+      {
+        "name": "adr_hsnr",
+        "dataType": "VARCHAR(50)",
+        "description": "Hausnummer",
+        "nullable": true
+      },
+      {
+        "name": "adr_conct",
+        "dataType": "VARCHAR(50)",
+        "description": "Adresse verkettet",
+        "nullable": true
+      },
+      {
+        "name": "wgs84_lat",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Breitengrad WGS84",
+        "nullable": true
+      },
+      {
+        "name": "wgs84_lon",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Langengrad WGS84",
+        "nullable": true
+      },
+      {
+        "name": "lv95_e",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Ost, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "lv95_n",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Nord, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "egm_elev",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Absolute Hohe in Meter (EGM2008)",
+        "nullable": true
+      },
+      {
+        "name": "garea_gf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Geschossflache GF Total in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_acu",
+        "dataType": "VARCHAR(20)",
+        "description": "Genauigkeit und Datenherkunft",
+        "nullable": true
+      },
+      {
+        "name": "garea_ebf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Energiebezugsflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "gvol_gv",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Gebäudevolumen GV in m3",
+        "nullable": true
+      },
+      {
+        "name": "gvol_acu",
+        "dataType": "VARCHAR(20)",
+        "description": "Genauigkeit und Datenherkunft",
+        "nullable": true
+      },
+      {
+        "name": "gastw",
+        "dataType": "INTEGER",
+        "description": "Anzahl Geschosse Total",
+        "nullable": true
+      },
+      {
+        "name": "gastw_acu",
+        "dataType": "VARCHAR(20)",
+        "description": "Genauigkeit und Datenherkunft",
+        "nullable": true
+      },
+      {
+        "name": "larea_ggf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Gebäudegrundflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_gsf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Grundstucksflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_uf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Umgebungsflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_acu",
+        "dataType": "VARCHAR(20)",
+        "description": "Genauigkeit und Datenherkunft",
+        "nullable": true
+      },
+      {
+        "name": "garea_daf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Dachflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "garea_awf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Aussenwandflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "fid",
+        "dataType": "VARCHAR(50)",
+        "description": "Architektur-Objekt-ID",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "fid_src",
+        "dataType": "VARCHAR(50)",
+        "description": "Quelle der Geometrie",
+        "nullable": true
+      },
+      {
+        "name": "objectid",
+        "dataType": "INTEGER",
+        "description": "ESRI ID fur GIS-Updates",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "etl_ts",
+        "dataType": "TIMESTAMP",
+        "description": "Zeitstempel der letzten ETL-Synchronisation",
+        "nullable": true
+      }
+    ]
+  },
+  {
+    "tableId": "gis-immo-construction-project",
+    "system": "gis-immo",
+    "systemName": "GIS IMMO",
+    "schema": "BBL_GIS_IMMO",
+    "schemaLabel": "BBL GIS IMMO",
+    "schemaType": "gis_workspace",
+    "name": "CONSTRUCTION_PROJECT",
+    "displayName": "Bauprojekt",
+    "type": "gis_layer",
+    "description": "GIS-IMMO Feature-Layer 'Bauprojekt' (Point, Status DEV). 0 LIVE Felder / 30 DEV Felder.",
+    "certified": false,
+    "rowCount": null,
+    "sourceUrl": "",
+    "datasetId": "7",
+    "steward": "dres",
+    "updated": "2026-04-20",
+    "fields": [
+      {
+        "name": "bbl_stat",
+        "dataType": "VARCHAR(50)",
+        "description": "Status entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_id",
+        "dataType": "VARCHAR(50)",
+        "description": "Interne BBL ID",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "bbl_bez",
+        "dataType": "VARCHAR(50)",
+        "description": "Objektbezeichnung",
+        "nullable": true
+      },
+      {
+        "name": "bbl_buch",
+        "dataType": "VARCHAR(50)",
+        "description": "Buchungskreis",
+        "nullable": true
+      },
+      {
+        "name": "bbl_we",
+        "dataType": "VARCHAR(50)",
+        "description": "Wirtschaftseinheit",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "adr_land",
+        "dataType": "VARCHAR(2)",
+        "description": "Land",
+        "nullable": true
+      },
+      {
+        "name": "adr_reg",
+        "dataType": "VARCHAR(50)",
+        "description": "Region oder Kanton",
+        "nullable": true
+      },
+      {
+        "name": "adr_ort",
+        "dataType": "VARCHAR(50)",
+        "description": "Ort",
+        "nullable": true
+      },
+      {
+        "name": "adr_plz",
+        "dataType": "VARCHAR(50)",
+        "description": "Postleitzahl",
+        "nullable": true
+      },
+      {
+        "name": "adr_str",
+        "dataType": "VARCHAR(50)",
+        "description": "Strasse",
+        "nullable": true
+      },
+      {
+        "name": "adr_hsnr",
+        "dataType": "VARCHAR(50)",
+        "description": "Hausnummer",
+        "nullable": true
+      },
+      {
+        "name": "adr_conct",
+        "dataType": "VARCHAR(50)",
+        "description": "Adresse verkettet",
+        "nullable": true
+      },
+      {
+        "name": "wgs84_lat",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Breitengrad WGS84",
+        "nullable": true
+      },
+      {
+        "name": "wgs84_lon",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Langengrad WGS84",
+        "nullable": true
+      },
+      {
+        "name": "lv95_e",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Ost, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "lv95_n",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Nord, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "egm_elev",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Absolute Hohe in Meter (EGM2008)",
+        "nullable": true
+      },
+      {
+        "name": "bbl_ptag",
+        "dataType": "VARCHAR(50)",
+        "description": "Typ des Auftraggebers",
+        "nullable": true
+      },
+      {
+        "name": "bbl_partb",
+        "dataType": "VARCHAR(50)",
+        "description": "Art der Bauwerke",
+        "nullable": true
+      },
+      {
+        "name": "bbl_ptypb",
+        "dataType": "VARCHAR(50)",
+        "description": "Typ der Bauwerke",
+        "nullable": true
+      },
+      {
+        "name": "bbl_part",
+        "dataType": "VARCHAR(50)",
+        "description": "Projektart (Neubau, Sanierung, etc.)",
+        "nullable": true
+      },
+      {
+        "name": "bbl_pkost",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Gesamtkosten in CHF",
+        "nullable": true
+      },
+      {
+        "name": "bbl_pdtin",
+        "dataType": "TIMESTAMP",
+        "description": "Datum der Baueingabe",
+        "nullable": true
+      },
+      {
+        "name": "bbl_pdtok",
+        "dataType": "TIMESTAMP",
+        "description": "Datum der Baubewilligung",
+        "nullable": true
+      },
+      {
+        "name": "bbl_pdtbb",
+        "dataType": "TIMESTAMP",
+        "description": "Datum des Baubeginns",
+        "nullable": true
+      },
+      {
+        "name": "bbl_pdtbe",
+        "dataType": "TIMESTAMP",
+        "description": "Geplantes oder tatsachliches Bauende",
+        "nullable": true
+      },
+      {
+        "name": "bbl_pvbd",
+        "dataType": "VARCHAR(50)",
+        "description": "Voraussichtliche Baudauer",
+        "nullable": true
+      },
+      {
+        "name": "bbl_ptxt1",
+        "dataType": "VARCHAR(50)",
+        "description": "Freitextfeld fur Projektangaben",
+        "nullable": true
+      },
+      {
+        "name": "bbl_ptxt2",
+        "dataType": "VARCHAR(50)",
+        "description": "Freitextfeld fur Projektangaben",
+        "nullable": true
+      },
+      {
+        "name": "etl_ts",
+        "dataType": "TIMESTAMP",
+        "description": "Zeitstempel der letzten ETL-Synchronisation",
+        "nullable": true
+      }
+    ]
+  },
+  {
+    "tableId": "gis-immo-land-cover",
+    "system": "gis-immo",
+    "systemName": "GIS IMMO",
+    "schema": "BBL_GIS_IMMO",
+    "schemaLabel": "BBL GIS IMMO",
+    "schemaType": "gis_workspace",
+    "name": "LAND_COVER",
+    "displayName": "Bodenabdeckung",
+    "type": "gis_layer",
+    "description": "GIS-IMMO Feature-Layer 'Bodenabdeckung' (Polygon, Status LIVE). 15 LIVE Felder.",
+    "certified": true,
+    "rowCount": 12600,
+    "sourceUrl": "https://gis.bbl.admin.ch/arcgis/rest/services/ENERGY_METER/FeatureServer/0",
+    "datasetId": "8",
+    "steward": "dres",
+    "updated": "2026-04-20",
+    "fields": [
+      {
+        "name": "bbl_id",
+        "dataType": "VARCHAR(50)",
+        "description": "Grundstück-ID (FK zu Parcel bbl_id)",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "geb_id",
+        "dataType": "VARCHAR(100)",
+        "description": "Gebäude-ID (FK zu Building bbl_id); nur für av_type=Gebäude",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "av_type",
+        "dataType": "VARCHAR(50)",
+        "description": "Bodenabdeckungstyp",
+        "nullable": true
+      },
+      {
+        "name": "lc_area",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Fläche der Bodenabdeckung in m2",
+        "nullable": true
+      },
+      {
+        "name": "av_stat",
+        "dataType": "VARCHAR(50)",
+        "description": "Status entsprechend GWR (nur CH)",
+        "nullable": true
+      },
+      {
+        "name": "av_egid",
+        "dataType": "VARCHAR(50)",
+        "description": "Eidg. Gebäudeidentifikator (nur CH); nur für Typ Gebäude",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "av_egrid",
+        "dataType": "VARCHAR(14)",
+        "description": "Eidg. Grundstuckidentifikator (nur CH)",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "wgs84_lat",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Breitengrad WGS84",
+        "nullable": true
+      },
+      {
+        "name": "wgs84_lon",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Langengrad WGS84",
+        "nullable": true
+      },
+      {
+        "name": "lv95_e",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Ost, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "lv95_n",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Nord, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "fid",
+        "dataType": "VARCHAR(50)",
+        "description": "Architektur-Objekt-ID fur externe Geometrie",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "fid_src",
+        "dataType": "VARCHAR(50)",
+        "description": "Quelle der Geometrie",
+        "nullable": true
+      },
+      {
+        "name": "objectid",
+        "dataType": "INTEGER",
+        "description": "ESRI ID fur GIS-Updates",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "etl_ts",
+        "dataType": "TIMESTAMP",
+        "description": "Zeitstempel der letzten ETL-Synchronisation",
+        "nullable": true
+      }
+    ]
+  },
+  {
+    "tableId": "gis-immo-parcel",
+    "system": "gis-immo",
+    "systemName": "GIS IMMO",
+    "schema": "BBL_GIS_IMMO",
+    "schemaLabel": "BBL GIS IMMO",
+    "schemaType": "gis_workspace",
+    "name": "PARCEL",
+    "displayName": "Grundstück",
+    "type": "gis_layer",
+    "description": "GIS-IMMO Feature-Layer 'Grundstück' (Polygon, Status LIVE). 43 LIVE Felder / 1 DEV Felder.",
+    "certified": true,
+    "rowCount": 3400,
+    "sourceUrl": "https://gis.bbl.admin.ch/arcgis/rest/services/PARCEL/FeatureServer/0",
+    "datasetId": "10",
+    "steward": "dres",
+    "updated": "2026-04-20",
+    "fields": [
+      {
+        "name": "bbl_id",
+        "dataType": "VARCHAR(50)",
+        "description": "Interne BBL ID (Buchungskreis/WE/Teilobjekt)",
+        "nullable": false,
+        "primaryKey": true
+      },
+      {
+        "name": "bbl_buch",
+        "dataType": "VARCHAR(50)",
+        "description": "Buchungskreis entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_we",
+        "dataType": "VARCHAR(50)",
+        "description": "Wirtschaftseinheit",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "bbl_obj",
+        "dataType": "VARCHAR(50)",
+        "description": "Teilobjekt",
+        "nullable": true
+      },
+      {
+        "name": "bbl_bez",
+        "dataType": "VARCHAR(50)",
+        "description": "Objektbezeichnung",
+        "nullable": true
+      },
+      {
+        "name": "bbl_stat",
+        "dataType": "VARCHAR(50)",
+        "description": "Status entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_port",
+        "dataType": "VARCHAR(50)",
+        "description": "Teilportfolio-Zuordnung",
+        "nullable": true
+      },
+      {
+        "name": "bbl_mietm",
+        "dataType": "VARCHAR(50)",
+        "description": "Mietmodell entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "bbl_eigen",
+        "dataType": "VARCHAR(50)",
+        "description": "Eigentum Art entsprechend SAP",
+        "nullable": true
+      },
+      {
+        "name": "adr_land",
+        "dataType": "VARCHAR(2)",
+        "description": "Land",
+        "nullable": true
+      },
+      {
+        "name": "adr_reg",
+        "dataType": "VARCHAR(50)",
+        "description": "Region oder Kanton",
+        "nullable": true
+      },
+      {
+        "name": "adr_ort",
+        "dataType": "VARCHAR(50)",
+        "description": "Ort",
+        "nullable": true
+      },
+      {
+        "name": "adr_plz",
+        "dataType": "VARCHAR(50)",
+        "description": "Postleitzahl",
+        "nullable": true
+      },
+      {
+        "name": "adr_str",
+        "dataType": "VARCHAR(50)",
+        "description": "Strasse",
+        "nullable": true
+      },
+      {
+        "name": "adr_hsnr",
+        "dataType": "VARCHAR(50)",
+        "description": "Hausnummer",
+        "nullable": true
+      },
+      {
+        "name": "adr_conct",
+        "dataType": "VARCHAR(50)",
+        "description": "Adresse verkettet, ohne Trennzeichen",
+        "nullable": true
+      },
+      {
+        "name": "wgs84_lat",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Breitengrad WGS84 (Punkt im Polygon)",
+        "nullable": true
+      },
+      {
+        "name": "wgs84_lon",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Langengrad WGS84 (Punkt im Polygon)",
+        "nullable": true
+      },
+      {
+        "name": "lv95_e",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Ost, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "lv95_n",
+        "dataType": "DECIMAL(18,3)",
+        "description": "LV95 Nord, aus WGS84 hergeleitet",
+        "nullable": true
+      },
+      {
+        "name": "egm_elev",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Absolute Hohe in Meter (EGM2008)",
+        "nullable": true
+      },
+      {
+        "name": "av_stat",
+        "dataType": "VARCHAR(50)",
+        "description": "Status Amtliche Vermessung",
+        "nullable": true
+      },
+      {
+        "name": "av_egrid",
+        "dataType": "VARCHAR(14)",
+        "description": "Eidg. Grundstuckidentifikator (nur CH)",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "bbl_awrt",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Anschaffungswert in CHF",
+        "nullable": true
+      },
+      {
+        "name": "bbl_bwrt",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Kumulierte Baumassnahmen am Grundstuck in CHF",
+        "nullable": true
+      },
+      {
+        "name": "bbl_hgart",
+        "dataType": "BOOLEAN",
+        "description": "Kennzeichnung als historischer Garten",
+        "nullable": true
+      },
+      {
+        "name": "larea_ggf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Summe Gebäudegrundflache pro Grundstuck in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_gsf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Grundstucksflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_uf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Umgebungsflache pro Grundstuck in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_buf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Bearbeitete Umgebungsflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_uuf",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Unbearbeitete Umgebungsflache in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_acu",
+        "dataType": "VARCHAR(20)",
+        "description": "Genauigkeit und Datenherkunft",
+        "nullable": true
+      },
+      {
+        "name": "larea_ver",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Versiegelte Flache pro Grundstuck in m2",
+        "nullable": true
+      },
+      {
+        "name": "larea_gre",
+        "dataType": "DECIMAL(18,3)",
+        "description": "Grunflachen, Grundlage fur Auswertung",
+        "nullable": true
+      },
+      {
+        "name": "bfs_gem",
+        "dataType": "VARCHAR(50)",
+        "description": "BFS Gemeindename",
+        "nullable": true
+      },
+      {
+        "name": "bfs_gemnr",
+        "dataType": "VARCHAR(50)",
+        "description": "BFS Gemeindenummer",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "av_nr",
+        "dataType": "VARCHAR(50)",
+        "description": "Grundstucksnummer pro Gemeinde",
+        "nullable": true
+      },
+      {
+        "name": "av_zbez",
+        "dataType": "VARCHAR(50)",
+        "description": "Bauzonenbezeichnung",
+        "nullable": true
+      },
+      {
+        "name": "av_znut",
+        "dataType": "VARCHAR(50)",
+        "description": "Bauzonennutzung",
+        "nullable": true
+      },
+      {
+        "name": "av_nrisk",
+        "dataType": "VARCHAR(50)",
+        "description": "Naturgefahren-Klassifikation",
+        "nullable": true
+      },
+      {
+        "name": "fid",
+        "dataType": "VARCHAR(50)",
+        "description": "Architektur-Objekt-ID fur externe Geometrie",
+        "nullable": true,
+        "foreignKey": true
+      },
+      {
+        "name": "fid_src",
+        "dataType": "VARCHAR(50)",
+        "description": "Quelle der Geometrie",
+        "nullable": true
+      },
+      {
+        "name": "objectid",
+        "dataType": "INTEGER",
+        "description": "ESRI ID fur GIS-Updates",
+        "nullable": true
+      },
+      {
+        "name": "etl_ts",
+        "dataType": "TIMESTAMP",
+        "description": "Zeitstempel der letzten ETL-Synchronisation",
+        "nullable": true
+      }
+    ]
+  }
+]
