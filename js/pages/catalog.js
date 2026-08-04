@@ -250,6 +250,9 @@ function detail(ctx, id) {
       image: img ? `<img src="${img}" alt="" loading="lazy">` : '',
     })}
 
+    ${/* Artikel-Wrapper: das Blatt liest als EINE 60rem-Spalte (Mass am
+          Elternelement, C25) — Kopf-Lead darüber misst dieselben 60rem. */''}
+    <div class="measure-xl">
     ${section('Beschreibung', `<p>${C.escape(t(d.fullDescription) || t(d.description))}</p>`)}
 
     ${section('Verantwortliche Personen', persons
@@ -267,6 +270,7 @@ function detail(ctx, id) {
     ${section('Publikationen in externen Katalogen', pubs
       ? `<dl class="kv kv--ruled">${pubs}</dl>`
       : '<p class="muted">Dieser Datensatz ist in keinem externen Katalog publiziert.</p>')}
+    </div>
   </div>`;
 
   // CD-Akkordeon: auf- und zuklappen (gemeinsame Verdrahtung).
@@ -285,11 +289,11 @@ function crumbs() {
 
 function uniq(arr) { return [...new Set(arr.filter(Boolean))]; }
 
-// Vorschaubild: entweder eine mitgelieferte Datei (`image`) oder — wie im
-// übrigen Portal — eine Unsplash-ID (`photo`).
+// Vorschaubild: die mitgelieferte lokale Datei (`image`). Der frühere
+// Unsplash-photo-Rückfall ist nach dem Bild-Screening (2026-08-04) entfallen —
+// alle 19 bebilderten Datensätze tragen `image`.
 function preview(C, d) {
-  if (d.image) return encodeURI(d.image);
-  return d.photo ? C.photoUrl(d.photo, { w: 800 }) : '';
+  return d.image ? encodeURI(d.image) : '';
 }
 
 function formats(d) { return uniq((d.distributions || []).map(x => x.dateiformat || x.format)); }

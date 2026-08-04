@@ -55,6 +55,16 @@
         "standardRef": "",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -103,6 +113,16 @@
         "keyRole": "",
         "standardRef": "",
         "mappings": []
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -201,6 +221,16 @@
             "match": "exact"
           }
         ]
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -344,6 +374,16 @@
         "standardRef": "GWR",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -392,6 +432,16 @@
         "keyRole": "",
         "standardRef": "",
         "mappings": []
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -442,6 +492,16 @@
         "standardRef": "SIA 416",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -490,6 +550,16 @@
         "keyRole": "",
         "standardRef": "",
         "mappings": []
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -557,6 +627,16 @@
         "standardRef": "",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-1YFBMPWKZ",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -605,6 +685,16 @@
         "keyRole": "",
         "standardRef": "",
         "mappings": []
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-4102938",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -676,6 +766,16 @@
         "standardRef": "",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-4102938",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -746,6 +846,16 @@
         "standardRef": "",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-4102938",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -795,6 +905,16 @@
         "standardRef": "",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-5573046",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -843,6 +963,16 @@
         "keyRole": "",
         "standardRef": "",
         "mappings": []
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-5573046",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -902,6 +1032,16 @@
         "standardRef": "",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-5573046",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -960,6 +1100,16 @@
         "standardRef": "",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-6291057",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -999,6 +1149,16 @@
         "keyRole": "",
         "standardRef": "",
         "mappings": []
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-6291057",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -1057,6 +1217,16 @@
         "keyRole": "",
         "standardRef": "",
         "mappings": []
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-6291057",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   },
@@ -1130,6 +1300,16 @@
         "standardRef": "SAP CO",
         "mappings": []
       }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-7150834",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
+      }
     ]
   },
   {
@@ -1194,6 +1374,16 @@
         "keyRole": "",
         "standardRef": "SAP FI",
         "mappings": []
+      }
+    ],
+    "responsiblePersons": [
+      {
+        "admindirId": "p-7150834",
+        "role": "Dateneigner"
+      },
+      {
+        "admindirId": "p-2560681",
+        "role": "Datenverwalter"
       }
     ]
   }

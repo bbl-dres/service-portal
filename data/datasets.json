@@ -537,7 +537,6 @@
       "it": "Fornisce i metadati dei progetti dalla piattaforma centrale di collaborazione Common Data Environment (CDE) della Confederazione. Questa piattaforma serve allo scambio di modelli BIM, piani e documenti tecnici durante le fasi di pianificazione ed esecuzione. Il set di dati contiene informazioni sulla struttura del progetto, i partecipanti, lo stato dei documenti e i processi di approvazione, e costituisce la base per la gestione digitale dei progetti.",
       "en": "Provides project metadata from the federal Common Data Environment (CDE) collaboration platform. This platform serves the exchange of BIM models, plans and technical documents during the planning and execution phases. The dataset contains information on project structure, stakeholders, document status and approval processes, and forms the basis for digital project management."
     },
-    "photo": "1454165804606-c3d57bc86b40",
     "tags": [
       "construction_project",
       "document",
@@ -611,7 +610,8 @@
         }
       }
     ],
-    "publications": []
+    "publications": [],
+    "image": "assets/images/datasets/CDE Bauprojekte.jpg"
   },
   {
     "id": "7",

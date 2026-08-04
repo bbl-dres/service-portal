@@ -132,10 +132,15 @@ o = JSON.parse(await p.evaluate(`JSON.stringify({
   ${/* Erste Zelle ist ein <th scope="row"> (C.table), kein <td>. */''}
   attrNamen: [...document.querySelectorAll('#mc-attrs tbody tr th strong')].map(x => x.textContent),
   mapZahl: document.querySelector('#mc-mp-count')?.textContent.replace(/\\s+/g,' ').trim(),
-  ${/* Eckdaten stehen im Reiter «Übersicht», die Randspalte trägt nur die
-        Ansprechstelle. */''}
+  ${/* Metadaten + Verantwortliche Personen stehen im Reiter «Übersicht» als
+        linierte kv-Listen (Datensatzblatt-Muster, Nutzerentscheid 2026-08-04);
+        die frühere Randspalte ist weg. */''}
   eckdaten: [...document.querySelectorAll('[data-panel=uebersicht] dt')].map(x => x.textContent),
+  abschnitte: [...document.querySelectorAll('[data-panel=uebersicht] .detail-section__title')].map(x => x.textContent.trim()),
+  adminLinks: document.querySelectorAll('[data-panel=uebersicht] a[href*="admindir"]').length,
+  liniert: document.querySelectorAll('[data-panel=uebersicht] dl.kv--ruled').length,
   asideKaesten: [...document.querySelectorAll('[data-panel=uebersicht] .detail-layout__aside .box h2')].map(x => x.textContent.trim()),
+  leadNeu: document.querySelectorAll('h1 + .lead, .lead').length,
   asideAusserhalb: document.querySelectorAll('.container__aside').length,
   pillenzeile: document.querySelectorAll('.pill-row').length,
   lead: document.querySelectorAll('.hero__description').length,
@@ -158,10 +163,14 @@ check(/12 von 12 Realisierungen/.test(o.mapZahl || ''), '12 Realisierungen', o.m
 check(o.attrSpalten.join(',') === 'Attribut,Beschreibung,Werttyp,Schlüssel', 'vier Spalten, nichts gestapelt', o.attrSpalten.join(','));
 check(o.eckdaten.includes('Bemerkung'), 'Abgrenzung/Zweitnamen/EGID als eine Bemerkung', o.eckdaten.join(', '));
 check(o.tabellenLinks >= 8, 'Abbildungstabelle verlinkt die tragenden Tabellen', String(o.tabellenLinks));
-check(o.eckdaten.includes('Beschreibung') && o.eckdaten.includes('Datendomäne'), 'Eckdaten im Übersicht-Reiter', o.eckdaten.join(', '));
+check(!o.eckdaten.includes('Beschreibung') && o.eckdaten.includes('Datendomäne'), 'Metadaten-Liste: Beschreibung steht als Lead, Domäne bleibt', o.eckdaten.join(', '));
+check(o.abschnitte.join(' | ') === 'Verantwortliche Personen | Metadaten', 'Abschnitte im Datensatzblatt-Muster', o.abschnitte.join(' | '));
+check(o.liniert === 2, 'beide kv-Listen liniert (kv--ruled)', String(o.liniert));
 check(!o.eckdaten.includes('Attribute') && !o.eckdaten.includes('Realisierungen'), 'keine Zahlen doppelt (die stehen in den Reitern)', o.eckdaten.join(', '));
-check(o.lead === 0, 'kein hero__description — die Beschreibung steht in den Eckdaten', String(o.lead));
-check(o.asideKaesten.join(' | ') === 'Datenverwaltung', 'Randspalte im Übersicht-Reiter trägt die Ansprechstelle', o.asideKaesten.join(' | '));
+check(o.lead === 0, 'kein hero__description (App-Kopf, kein Hero)', String(o.lead));
+check(o.leadNeu >= 1, 'Definition als Lead unter der H1', String(o.leadNeu));
+check(o.asideKaesten.join(' | ') === 'Kontakt', 'Randspalte trägt die Kontakt-Karte (Sammeladresse)', o.asideKaesten.join(' | '));
+check(o.adminLinks >= 2, 'Verantwortliche Personen verlinken ins AdminDir', String(o.adminLinks));
 check(o.asideAusserhalb === 0, 'keine Randspalte ausserhalb der Reiter', String(o.asideAusserhalb));
 check(o.pillenzeile === 0, 'keine Pillenzeile im Kopf', String(o.pillenzeile));
 check(o.crumbs.length === 5, 'Brotkrume bis zum Begriff', o.crumbs.join(' › '));
@@ -209,7 +218,9 @@ o = JSON.parse(await p.evaluate(`JSON.stringify({
   feldSpalten: [...document.querySelectorAll('#mc-fields thead th')].map(x => x.textContent.trim()),
   beschreibung: [...document.querySelectorAll('[data-panel=uebersicht] dd')][0]?.textContent.trim(),
   datensatzLink: document.querySelector('[data-panel=uebersicht] a[href*="/data/catalog/"]')?.getAttribute('href'),
-  quelle: document.querySelector('[data-panel=uebersicht] a[target=_blank]')?.getAttribute('href'),
+  ${/* Nicht der ERSTE externe Link — seit die Verantwortlichen Personen ins
+        AdminDir verlinken, ist gezielt der Quellsystem-Link gemeint. */''}
+  quelle: [...document.querySelectorAll('[data-panel=uebersicht] a[target=_blank]')].map(a => a.getAttribute('href')).find(h => !/admindir/.test(h)),
   treiter: [...document.querySelectorAll('.tab__controls .tab__control')].map(x => x.textContent.trim()),
   tpanels: [...document.querySelectorAll('.tab__container')].length,
   begriffLinks: [...document.querySelectorAll('#mc-fields a[href*="id="]')].map(x => x.textContent.trim()).slice(0,3),

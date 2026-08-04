@@ -75,6 +75,23 @@ const cdp = await launch();
   await p.closeTarget();
 }
 
+// --- C25: das Lesemass sitzt an der Spalte, nicht an Textklassen -------------
+{
+  const p = await openPage(cdp, APP_BASE + '/services/raumbedarf-melden');
+  await sleep(2000);
+  const r = JSON.parse(await p.evaluate(`(() => {
+    const main = document.querySelector('.container__main');
+    const para = main && main.querySelector(':scope > p');
+    return JSON.stringify({
+      mainMax: main && getComputedStyle(main).maxWidth,
+      paraMax: para && getComputedStyle(para).maxWidth,
+    });
+  })()`));
+  ok(r.mainMax === '960px', 'C25 container__main misst 60rem', r.mainMax);
+  ok(r.paraMax === 'none', 'C25 keine 70ch-Einzeldeckel an der Prosa', r.paraMax);
+  await p.closeTarget();
+}
+
 // --- C7: Datensatz-Detail nutzt dl.kv (kv--ruled) statt .data-rows -----------
 {
   const p = await openPage(cdp, APP_BASE + '/data/catalog/1');

@@ -192,7 +192,7 @@ function infoPage(ctx, { title, lead, note, photo }) {
     ${C.detailHead({
       backHref: '#/data/digitalisation', backLabel: 'Digitalisierung',
       title, lead,
-      image: C.heroFigure({ id: photo }),
+      image: C.heroFigure({ src: photo }),
     })}
     <div class="measure-xl">
       ${C.notification(note, 'info', 'InfoCircle')}
@@ -205,7 +205,7 @@ function superbPage(ctx) {
     title: 'Programm SUPERB — SAP S/4HANA',
     lead: 'Mit dem Programm SUPERB migriert die Bundesverwaltung ihre bisherigen SAP-Systeme (ECC) auf die neue Generation SAP S/4HANA. Für das BBL betrifft das Finanzen, Beschaffung, Logistik und die Immobilienbewirtschaftung — und damit die Datenbasis vieler Fachanwendungen.',
     note: 'Diese Info-Landingpage ist im Prototyp ein Platzhalter — der ausführliche Inhalt zum Programm SUPERB folgt.',
-    photo: '1522071820081-009f0129c71c',
+    photo: 'assets/images/heroes/domain-g.jpg',
   });
 }
 
@@ -214,7 +214,7 @@ function bimPage(ctx) {
     title: 'BIM und Common Data Environment',
     lead: 'Bauprojekte des BBL werden modellbasiert geplant und übergeben. Das Common Data Environment (CDE) ist die gemeinsame Datenumgebung für alle Projektbeteiligten über den ganzen Bauwerkslebenszyklus.',
     note: 'Diese Info-Landingpage ist im Prototyp ein Platzhalter — der ausführliche Inhalt zu BIM und CDE folgt.',
-    photo: '1541888946425-d81bb19240f5',
+    photo: 'assets/images/heroes/domain-a.jpg',
   });
 }
 

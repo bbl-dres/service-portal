@@ -219,6 +219,15 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 /* CD 12-column container grid (container.postcss:53-146) */
 .container--grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); }
 .container__full, .container__center--xs, .container__center--sm, .container__center--md,
+/* DAS Lesemass des Portals sitzt an der SPALTE, nie an Textklassen
+   (Nutzerentscheid 2026-08-04, Design-Review C25): .container__main misst
+   60rem — dieselbe Breite wie .hero__content darüber, sodass Kopf und Spalte
+   auf Detailseiten bündig enden. Unterhalb ~1300px Viewport ist die
+   Rasterspalte ohnehin schmaler, der Deckel greift nur auf breiten Schirmen.
+   Kinder (Kästen, Listen, Prosa) füllen die gemessene Spalte — die früheren
+   70ch-Einzeldeckel an p/ul sind entfallen. Datentabellen und Registerpanels
+   stehen NICHT in container__main und laufen bewusst vollbreit. */
+.container__main { max-width:60rem; }
 .container__main, .container__aside { grid-column:span 12; }
 @media (min-width:768px){
   .container__center--xs, .container__center--sm { grid-column:2 / span 10; }
@@ -1181,9 +1190,10 @@ code { font-family:var(--font-mono); }
    steht — genau wie im CD, das keine Deckel auf Textklassen kennt, sondern
    `container__center--*` um den Inhalt legt. Wo eine Fläche zu breit misst, ist
    die Antwort das Spaltenraster (Stufe 7), nicht ein Deckel an der Klasse. */
-.detail-section > p, .detail-section > .stack > p,
-.anchor-section > p,
-.detail-section > ul:not([class]), .anchor-section > ul:not([class]) { max-width:70ch; }
+/* KEINE 70ch-Einzeldeckel mehr an detail-/anchor-section-Prosa: das Mass
+   kommt aus der Spalte (container__main 60rem bzw. der measure-xl-Artikel-
+   Wrapper der Blattseiten) — Einzeldeckel erzeugten genau die ausgefransten
+   Breiten («Text endet, Kasten läuft weiter»), die die Review moniert (C25). */
 /* Der 70ch-Deckel auf `.search-result` ist ENTFALLEN: das CD legt die
    Ergebnisliste ohne `container__center--*` direkt in den `.container`
    (searchResults.vue:45-46), die Treffer nehmen also die volle Containerbreite.
@@ -1191,13 +1201,19 @@ code { font-family:var(--font-mono); }
    weiterliefen — die Liste wirkte eingerückt statt bündig. Die lange Zeile ist
    dabei in Kauf genommen: Titel und zweizeiliger Beschreibungstext sind kurz,
    und das CD kennt für diese Komponente keinen Deckel. */
+/* DOKUMENTIERTE AUSNAHME vom Spalten-Mass (C25): Notifications können in
+   vollbreiten Kontexten stehen (Fehlerbänder, Dashboards) — die 70ch sind
+   eine komponenten-interne Lesbarkeitsgrenze, kein Spalten-Ersatz. */
 .notification__content > p,
 .notification__content > ul { max-width:70ch; }       /* die Login-Gates massen 137ch */
-/* Vorgriff auf die zweispaltigen Detailseiten aus Stufe 7 */
-.container__main > p, .container__main > .stack > p, .container__main > ul:not([class]) { max-width:70ch; }
+/* Der frühere 70ch-Vorgriff auf .container__main-Kinder ist entfallen —
+   die Spalte selbst misst 60rem (siehe Rasterregeln oben, C25). */
 /* De-emphasised suffix in a case title: «BBL-2026-1042 — <Titel>» (tenant-portal page-header__count) */
 .case-title-sub { font-weight:var(--fw-regular); color:var(--color-text-muted); }
-.page-intro { max-width:70ch; }
+/* Mass am Elternelement statt am Absatz (C25): der Einleitungskopf der
+   Anker-Seiten deckelt als Block — Lead und Intro enden damit bündig. */
+.anchor-page__header { max-width:60rem; }
+.page-intro { margin-top:0; }
 
 /* Hero (hero.postcss:5-155) — CD heroes sit on white; tint comes from bg-- sections */
 .hero { padding-top:var(--section-pt); padding-bottom:var(--section-py); background:none; border-bottom:0; }
@@ -2021,6 +2037,11 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
    auf dem 3rem-Abschnittsrhythmus — dieselbe Stelle, zwei Lufträume
    (Design-Review, pages-Befund). Die Seiten tragen kein mt-6 mehr. */
 .hero + .container--grid, .hero + .measure-xl { margin-top:var(--stack-gap); }
+/* Der Abstand unter dem Hero liegt am Wrapper — das erste .detail-section-Kind
+   darf ihn nicht verdoppeln (6rem statt 3rem, sichtbar auf Anwendungs- und
+   Datensatzblatt). */
+.container__main > .detail-section:first-child,
+.measure-xl > .detail-section:first-child { margin-top:0; }
 .detail-section__title { margin-bottom:1rem; }
 
 /* Tabs (tab.postcss:12-87) */
@@ -2552,6 +2573,8 @@ body.body--overlay-open .back-to-top-rail { display:none; }
    der Seite zu bleiben (Item 2.22). */
 .api-resource { margin-bottom:2.5rem; scroll-margin-top:1rem; }
 .api-resource__title { margin:0 0 .375rem; font-size:var(--text-xl); }
+/* DOKUMENTIERTE AUSNAHME (C25): Doku-Layout — Prosa liest schmal, die
+   Codeblöcke daneben brauchen die volle Spalte (Muster jeder API-Referenz). */
 .api-resource__desc { margin:0 0 .75rem; font-size:var(--text-sm); max-width:70ch; }
 .api-endpoints { display:flex; flex-direction:column; gap:.5rem; }
 
@@ -3484,8 +3507,12 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 
 /* Lesebreiten-Deckel. Fünf verschiedene `style="max-width:…"` standen dafür in
    js/ — als Klassen sind sie benannt, wiederverwendbar und im Blatt auffindbar. */
+/* measure-* = ELTERN-Deckel für Flächen AUSSERHALB des Rasters (Artikel-
+   Wrapper, Kachelzeilen); im Raster misst die Spalte selbst (C25).
+   measure-lg (50rem) ist entfallen — sein einziger Konsument (Workspace-
+   Erfolgspanel) nutzt jetzt die 46rem-Formularspalte der Geschwister. */
 .measure-sm { max-width:34rem; } .measure    { max-width:42rem; }
-.measure-lg { max-width:50rem; } .measure-xl { max-width:60rem; }
+.measure-xl { max-width:60rem; }
 .pill-row { display:flex; flex-wrap:wrap; gap:.5rem; }
 /* Merkmalliste (Beschriftung · Wert), u. a. der Reiter «Übersicht» aller
    Detailansichten. Die Beschriftungsspalte ist bewusst BREITER als ihr

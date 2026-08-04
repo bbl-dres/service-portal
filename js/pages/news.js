@@ -41,7 +41,7 @@ function newsList(ctx) {
       ${items.length ? items.map(n => C.card({
         title: n.title, desc: n.teaser,
         href: links.news(n.id),
-        photo: { id: n.photo, color: n.color, alt: '' },
+        photo: { src: n.bild && n.bild.src, color: n.color, alt: '' },
         footerInfo: `${C.escape(datum(n.date))} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
       })).join('') : ''}
     </div>
@@ -79,7 +79,7 @@ function newsDetail(ctx, id) {
           <p class="small muted">${C.escape(datum(n.date))} · ${C.escape(n.source)}</p>
           <h1 tabindex="-1">${C.escape(n.title)}</h1>
         </header>
-        ${C.photo({ id: n.photo, color: n.color, alt: '', w: 1200, style: 'aspect-ratio:21/9;max-height:20rem;border-radius:var(--radius-lg)' })}
+        ${C.photo({ src: n.bild && n.bild.src, color: n.color, alt: '', w: 1200, style: 'aspect-ratio:21/9;max-height:20rem;border-radius:var(--radius-lg)' })}
         <p class="lead">${C.escape(n.teaser)}</p>
         <div class="separator separator--md"></div>
         <p>${C.escape(n.body)}</p>

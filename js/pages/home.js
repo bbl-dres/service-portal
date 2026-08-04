@@ -17,7 +17,7 @@ import * as links from '../links.js';
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
-export const needs = ['news'];
+export const needs = ['news', 'applications'];   // Kachelbilder kommen aus den Anwendungsdatensätzen
 const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 
 // Die Themenkacheln (Bauprojekte · Unterbringung · Objektbetrieb · Sicherheit)
@@ -115,20 +115,30 @@ export default async function render(ctx) {
   //     Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen,
   //     und die stehen auf der Landingpage. Nur Hilfsmittel verweisen direkt auf
   //     ihre Sammlung, weil es dort nichts zu erklären gibt.
+  /* Anwendungs-Kacheln tragen das BILD DES ANWENDUNGSDATENSATZES
+        (applications.json `bild`) — Startseite, Katalogkarte und Landingpage
+        zeigen damit dasselbe Motiv (Nutzerbefund 2026-08-04: das Datenportal
+        hatte hier ein anderes Bild als auf seiner Landingpage). Nur die
+        Wissens-Kachel hat keinen Datensatz und bringt ihr Bild aus dem
+        heroes-Pool mit. */
   const HIGHLIGHTS = [
-    { title: 'Datenportal', href: '#/applications/datenportal', photo: '1551288049-bebda4e38f71',
+    { appId: 'datenportal', href: '#/applications/datenportal',
+      title: 'Datenportal',
       desc: 'Auswertungen und Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal und Logistik.',
       foot: 'Anwendung' },
-    { title: 'Liegenschaften Inventar', href: '#/applications/liegenschaften-inventar', photo: '1515488764276-beab7607c1e6',
+    { appId: 'liegenschaften-inventar', href: '#/applications/liegenschaften-inventar',
+      title: 'Liegenschaften Inventar',
       desc: 'Gebäude und Grundstücke des Bundes auf der Karte, mit Flächen, Verträgen, Kosten und Dokumenten.',
       foot: 'Anwendung' },
-    { title: 'Informatik und IKT-Beschaffung', href: '#/knowledge/it', photo: '1518770660439-4636190af475',
+    { title: 'Informatik und IKT-Beschaffung', href: '#/knowledge/it', src: 'assets/images/heroes/it-beschaffung.jpg',
       desc: 'Mustervorlagen, Werkzeugkasten und Vorgaben für Beschaffungen im Informatikbereich.',
       foot: 'Hilfsmittel' },
-    { title: 'Bundespublikationen-Shop', href: '#/applications/bundespublikationen', photo: '1583521214690-73421a1829a9',
+    { appId: 'bundespublikationen', href: '#/applications/bundespublikationen',
+      title: 'Bundespublikationen-Shop',
       desc: 'Publikationen und Drucksachen des Bundes ab Lager bestellen.',
       foot: 'Anwendung' },
-    { title: 'Bauwerksdokumentation', href: '#/applications/dokumentenarchiv', photo: '1478860409698-8707f313ee8b',
+    { appId: 'dokumentenarchiv', href: '#/applications/dokumentenarchiv',
+      title: 'Bauwerksdokumentation',
       desc: 'Pläne, Dokumentationen und Berichte je Gebäude suchen und beziehen.',
       foot: 'Anwendung' },
   ];
@@ -136,7 +146,7 @@ export default async function render(ctx) {
     title: 'Anwendungen, Hilfsmittel und weitere Angebote',
     body: `<div class="grid grid--responsive-cols-3">${HIGHLIGHTS.map(h => C.card({
       title: h.title, desc: h.desc, href: h.href,
-      photo: { id: h.photo, alt: '' },
+      photo: { src: h.appId ? (core.application(h.appId)?.bild?.src || '') : h.src, alt: '' },
       footerInfo: h.foot, footerAction: C.cardAction(),
     })).join('')}</div>`,
   });
@@ -148,7 +158,7 @@ export default async function render(ctx) {
     body: `<div class="grid grid--responsive-cols-3">${news.map(n => C.card({
       title: n.title, desc: n.teaser,
       href: links.news(n.id),
-      photo: { id: n.photo, color: n.color, alt: '' },
+      photo: { src: n.bild && n.bild.src, color: n.color, alt: '' },
       footerInfo: `${C.escape(datum(n.date))} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
     })).join('')}</div>`,
     more: { href: '#/news', label: 'Alle News anzeigen' },
