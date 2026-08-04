@@ -12,6 +12,7 @@
 // zurück. Ereignisse verdrahtet der Aufrufer (js/apps/tenancies.js).
 
 import { escape as esc } from './components.js';
+import { m2 } from './format.js';
 
 // Einfärbemodi. `none` zeigt die reine Zeichnung — die Voreinstellung, weil ein
 // Grundriss zuerst ein Plan ist und erst auf Verlangen eine Auswertung.
@@ -97,7 +98,7 @@ export function floorplanSvg({ floor, spaces, mode = 'none', selectedId = '' }) 
     const zeigNu = bw >= NUTZUNG_AB && bh >= 400;
     // Zeilen mittig stapeln: je nach Anzahl sichtbarer Zeilen verschiebt sich
     // der Block, damit er nicht aus dem Raum kippt.
-    const zeilen = [zeigNr && ['fp__nr', nr], zeigNu && ['fp__use', s.useLabel], zeigFl && ['fp__area', `${s.area} m²`]].filter(Boolean);
+    const zeilen = [zeigNr && ['fp__nr', nr], zeigNu && ['fp__use', s.useLabel], zeigFl && ['fp__area', m2(s.area)]].filter(Boolean);
     const dy = 78;
     const y0 = cy - ((zeilen.length - 1) * dy) / 2 + 22;
     return `<g class="${cls}" data-space="${esc(s.spaceId)}" role="listitem">
@@ -138,7 +139,7 @@ export function floorplanLegend(spaces, mode) {
     ${rows.map((r) => `<li class="fp-legend__item">
       <span class="fp-legend__swatch" style="background:var(--fp-${r.fill})" aria-hidden="true"></span>
       <span class="fp-legend__label">${esc(r.label)}</span>
-      <span class="fp-legend__val">${Math.round(r.area).toLocaleString('de-CH')} m²<span class="fp-legend__pct">${Math.round(r.area / total * 100)} %</span></span>
+      <span class="fp-legend__val">${m2(Math.round(r.area))}<span class="fp-legend__pct">${Math.round(r.area / total * 100)} %</span></span>
     </li>`).join('')}
   </ul>`;
 }

@@ -39,6 +39,18 @@ export const APP_AREAS = [
 ];
 export const appAreaLabel = (key) => (APP_AREAS.find((a) => a.key === key) || {}).navLabel || key;
 
+// Zielgruppen (`audience` in services.json/applications.json). Die Liste stand
+// dreimal im Code (components.audienceTag, services.js, applications.js) —
+// hier die EINE Quelle für Filteroptionen und Beschriftung; C.audienceTag
+// behält seine interne Farbzuordnung (components.js bleibt import-frei), die
+// Wortlaute sind per Kommentar dort hierher gebunden.
+export const AUDIENCES = [
+  { value: 'staff', label: 'BBL-Personal' },
+  { value: 'customers', label: 'Kundschaft' },
+  { value: 'both', label: 'Beide' },
+];
+export const audienceLabel = (value) => (AUDIENCES.find((a) => a.value === value) || {}).label || value;
+
 /**
  * Beschriftung aus einer Referenzliste. `listName` ist der Schlüssel in
  * data/reference-data.json (`statusModel`, `projectStatuses`, `domains`,
@@ -55,4 +67,4 @@ export const statusLabel = (core, id) => refLabel(core, 'statusModel', id);
 export const projectStatusLabel = (core, id) => refLabel(core, 'projectStatuses', id);
 export const domainLabel = (core, key) => refLabel(core, 'domains', key, 'key');
 
-export default { LAND, landName, weOf, APP_AREAS, appAreaLabel, refLabel, statusLabel, projectStatusLabel, domainLabel };
+export default { LAND, landName, weOf, APP_AREAS, appAreaLabel, AUDIENCES, audienceLabel, refLabel, statusLabel, projectStatusLabel, domainLabel };

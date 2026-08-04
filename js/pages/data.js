@@ -37,7 +37,7 @@ function overview(ctx) {
 
   const entries = [
     { title: 'Datenportal', icon: 'ChartBar', href: '#/app/dataportal',
-      desc: 'Auswertungen und Dashboards zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal.',
+      desc: 'Auswertungen zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal.',
       meta: '6 Themen' },
     { title: 'Datenbezug und API Verzeichnis', icon: 'FileDatabase', href: '#/data/catalog',
       desc: 'Datensatzkatalog nach DCAT-AP-CH: Beschreibung, Klassifizierung und Bezugswege der Datensätze des BBL.',
@@ -46,7 +46,7 @@ function overview(ctx) {
     // und eine fest eingetragene Zahl liefe der Datei davon.
     { title: 'Metadaten Katalog Bauten', icon: 'Stack', href: '#/app/metadata-catalog',
       desc: 'Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und Systemtabellen.',
-      meta: 'Begriffe und Systemtabellen' },
+      meta: 'Geschäftsobjekte und Systemtabellen' },
     { title: 'Bauwerksdokumentation', icon: 'Folder', href: '#/app/document-archive',
       desc: 'Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.',
       meta: 'Dokumentenarchiv' },
@@ -81,7 +81,7 @@ function overview(ctx) {
         lead: 'Auswertungen, Datenbezug und API Verzeichnis sowie die Fachanwendungen des BBL — an einem Ort.',
       }),
     })}
-    ${C.pageSection({ title: 'Angebote', alt: true, body: `<div class="grid grid--responsive-cols-3 gap--responsive">${entries}</div>` })}`;
+    ${C.pageSection({ title: 'Angebote', alt: true, body: `<div class="grid grid--responsive-cols-3">${entries}</div>` })}`;
 }
 
 function notFound(ctx) {

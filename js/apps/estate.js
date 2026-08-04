@@ -1,22 +1,20 @@
 // Immobilienportfolio — record-based Stammdaten dashboard (Gebäude · Grundstücke ·
 // Bodenbedeckung). Loads the three GeoJSON master-data files, applies the global
 // multi-select dimension filters (Land · Region · Gebäudetyp · Eigentum · Status)
-// and aggregates the charts at runtime, reusing the shared dashboard chrome and SVG
-// chart renderer. The map is worldwide CARTO grey with clustering; its popups link
-// into the Liegenschaften-Inventar app by bbl_id. Filter changes update only the
-// content (KPIs · charts · map · source) so the filter panel keeps focus/scroll.
+// and aggregates the charts at runtime, reusing the shared dashboard chrome
+// (js/dashboard-chrome.js) and SVG chart renderer. The map is worldwide CARTO grey
+// with clustering; its popups link into the Liegenschaften-Inventar app by bbl_id.
+// Filter changes update only the content (KPIs · charts · map · source) so the
+// filter panel keeps focus/scroll.
 
 import { fetchJSON } from '../fetch-json.js';
 import { chart, wireCharts, wireChartMenus, paintCharts } from '../charts.js';
 import { initEstateMap } from '../buildings-map.js';
 import { createMapSlot } from '../map-slot.js';
-import { copyText, shareMail } from '../export.js';
+import { kpiTile, dashHeader, filterPanelShell, dashFooter, wireFilterCollapse, wireDashboardMenu } from '../dashboard-chrome.js';
+import { DATEN } from '../crumbs.js';
+import { num } from '../format.js';
 
-const CRUMB_BASE = [
-  { label: 'Startseite', href: '#/' },
-  { label: 'Daten und Digitalisierung', href: '#/data' },
-  { label: 'Datenportal', href: '#/app/dataportal' },
-];
 const META = {
   title: 'Immobilienportfolio',
   lead: 'Überblick über die Immobilien-Stammdaten des BBL — Gebäude, Grundstücke und Bodenbedeckung des weltweiten Portfolios.',
@@ -32,13 +30,6 @@ const TABS = [
   { id: 'gebaeude', label: 'Gebäude' },
   { id: 'grundstuecke', label: 'Grundstücke' },
   { id: 'bodenbedeckung', label: 'Bodenbedeckung' },
-];
-const DASHBOARD_MENU = [
-  { action: 'refresh', label: 'Dashboard aktualisieren' },
-  { separator: true }, { heading: 'Herunterladen' },
-  { action: 'pdf', label: 'Als PDF' }, { action: 'img', label: 'Als Bild' },
-  { separator: true }, { heading: 'Teilen' },
-  { action: 'copy', label: 'Link kopieren' }, { action: 'mail', label: 'Per E-Mail' },
 ];
 const ownership = (v) => (v === 'Eigentum Bund' ? 'Im Eigentum' : v === 'Miete' ? 'Anmieter' : 'Sonderfall');
 const EIGEN_ORDER = ['Im Eigentum', 'Anmieter', 'Sonderfall'];
@@ -75,7 +66,9 @@ async function loadData() {
 }
 
 // --- aggregation helpers ---------------------------------------------------
-const CH = (n) => Math.round(n).toLocaleString('de-CH');
+// Gerundete Ganzzahl im de-CH-Format. Dünner Alias auf format.num (die EINE
+// Formatquelle) — wegen der Aufrufdichte in den KPI-Zeilen lokal benannt.
+const CH = (n) => num(Math.round(n));
 const uniq = (arr, k) => [...new Set(arr.map((x) => x[k]).filter(Boolean))];
 const sumBy = (arr, k) => arr.reduce((s, x) => s + (Number(x[k]) || 0), 0);
 const pctOf = (n, d) => (d ? Math.round((n / d) * 100) : 0);
@@ -101,7 +94,7 @@ const GSF_BINS = [{ label: '< 1 000', lo: 0, hi: 1000 }, { label: '1 000–3 000
 export default async function render(ctx) {
   const { mount, C, setTitle, setCrumbs, query } = ctx;
   setTitle(META.title);
-  setCrumbs([...CRUMB_BASE, { label: META.title }]);
+  setCrumbs([...DATEN, { label: 'Datenportal', href: '#/app/dataportal' }, { label: META.title }]);
 
   let data;
   try {
@@ -149,17 +142,6 @@ export default async function render(ctx) {
     chartData.set(id, { spec, result });
     return chart(spec, result);
   };
-  // Kachel-Anatomie identisch zu dataportal.js kpiTiles(), inkl. Delta-Pfeil +
-  // sr-only-Wort (WCAG 1.4.1: Richtung nicht nur über Farbe), damit die beiden
-  // Kopien nicht driften, bis das Dashboard-Chrome in ein Modul extrahiert ist.
-  const kpi = (label, value, unit, deltaLabel, deltaGood) => `<div class="kpi">
-    <div class="kpi__label">${C.escape(label)}</div>
-    <div class="kpi__value">${C.escape(value)}${unit ? `<span class="kpi__unit">${C.escape(unit)}</span>` : ''}</div>
-    ${deltaLabel ? `<div class="kpi__delta${deltaGood === true ? ' is-good' : deltaGood === false ? ' is-bad' : ''}">${
-      deltaGood === undefined ? ''
-        : `<span class="kpi__arrow" aria-hidden="true">${deltaGood ? '▲' : '▼'}</span>`
-          + `<span class="sr-only">${deltaGood ? 'positive Entwicklung' : 'negative Entwicklung'}: </span>`
-    }${C.escape(deltaLabel)}</div>` : ''}</div>`;
   const mapFigure = () => `<figure class="chart card card--universal chart--map" id="estate-map">
     <figcaption class="chart__head"><h3 class="chart__title">Standorte weltweit</h3>
       <div class="chart__actions">${C.menu({ menuId: 'estate-map', label: 'Karten-Aktionen', items: [
@@ -169,10 +151,11 @@ export default async function render(ctx) {
         { separator: true }, { action: 'link', label: 'Link kopieren' },
       ] })}</div>
     </figcaption>
-    <div class="dash-map" id="estate-map-el" role="group" aria-label="Weltkarte der Gebäudestandorte"><p class="dash-map__loading" role="status">Karte wird geladen …</p></div>
+    <div class="dash-map" id="estate-map-el" role="group" aria-label="Weltkarte der Gebäudestandorte"><p class="dash-map__loading" role="status">Karte wird geladen…</p></div>
   </figure>`;
 
   // --- per-tab content: { kpis[], figures[] (HTML), source } ---
+  // Kachel-Markup aus dashboard-chrome.kpiTile (eine Quelle für beide Boards).
   function tabContent() {
     if (state.tab === 'grundstuecke') {
       const P = fP();
@@ -180,10 +163,10 @@ export default async function render(ctx) {
       return {
         source: SOURCE.grundstuecke,
         kpis: [
-          kpi('Grundstücke', CH(P.length)),
-          kpi('Grundstücksfläche', CH(sumBy(P, 'gsf')), 'm²'),
-          kpi('Ø Fläche', CH(P.length ? sumBy(P, 'gsf') / P.length : 0), 'm²'),
-          kpi('Im Eigentum', String(pctOf(P.filter((p) => p.ownership === 'Im Eigentum').length, P.length)), '%'),
+          kpiTile(C, { label: 'Grundstücke', value: CH(P.length) }),
+          kpiTile(C, { label: 'Grundstücksfläche', value: CH(sumBy(P, 'gsf')), unit: 'm²' }),
+          kpiTile(C, { label: 'Ø Fläche', value: CH(P.length ? sumBy(P, 'gsf') / P.length : 0), unit: 'm²' }),
+          kpiTile(C, { label: 'Im Eigentum', value: String(pctOf(P.filter((p) => p.ownership === 'Im Eigentum').length, P.length)), unit: '%' }),
         ],
         figures: [
           gchart('p-eigen', 'Grundstücke nach Eigentumsverhältnis', eigen, { x: 'Eigentum', y: 'Anzahl', form: 'pie' }),
@@ -202,10 +185,10 @@ export default async function render(ctx) {
       return {
         source: SOURCE.bodenbedeckung,
         kpis: [
-          kpi('Bodenbedeckung', CH(total), 'm²'),
-          kpi('Anteil bebaut', String(pctOf(areaOf('Gebaeude'), total)), '%'),
-          kpi('Anteil versiegelt', String(pctOf(versiegelt, total)), '%'),
-          kpi('Anteil grün', String(pctOf(gruen, total)), '%'),
+          kpiTile(C, { label: 'Bodenbedeckung', value: CH(total), unit: 'm²' }),
+          kpiTile(C, { label: 'Anteil bebaut', value: String(pctOf(areaOf('Gebaeude'), total)), unit: '%' }),
+          kpiTile(C, { label: 'Anteil versiegelt', value: String(pctOf(versiegelt, total)), unit: '%' }),
+          kpiTile(C, { label: 'Anteil grün', value: String(pctOf(gruen, total)), unit: '%' }),
         ],
         figures: [
           gchart('l-typ', 'Bodenbedeckung nach Typ', groupSum(L, 'label', 'area'), { x: 'Typ', y: 'Fläche', unit: 'm²' }),
@@ -217,10 +200,10 @@ export default async function render(ctx) {
     return {
       source: SOURCE.gebaeude,
       kpis: [
-        kpi('Gebäude', CH(B.length)),
-        kpi('Geschossfläche', CH(sumBy(B, 'gf')), 'm²'),
-        kpi('Ø Geschossfläche', CH(B.length ? sumBy(B, 'gf') / B.length : 0), 'm²'),
-        kpi('Im Eigentum', String(pctOf(B.filter((b) => b.ownership === 'Im Eigentum').length, B.length)), '%'),
+        kpiTile(C, { label: 'Gebäude', value: CH(B.length) }),
+        kpiTile(C, { label: 'Geschossfläche', value: CH(sumBy(B, 'gf')), unit: 'm²' }),
+        kpiTile(C, { label: 'Ø Geschossfläche', value: CH(B.length ? sumBy(B, 'gf') / B.length : 0), unit: 'm²' }),
+        kpiTile(C, { label: 'Im Eigentum', value: String(pctOf(B.filter((b) => b.ownership === 'Im Eigentum').length, B.length)), unit: '%' }),
       ],
       figures: [
         mapFigure(),
@@ -298,26 +281,19 @@ export default async function render(ctx) {
     }
   }
 
-  // --- full chrome, rendered once ---
+  // --- full chrome, rendered once (Kopf/Panel-Hülle/Fusszeile: dashboard-chrome.js;
+  // dashFooter formatiert das «Stand:»-Datum via format.datum statt rohem ISO) ---
   mount.innerHTML = `
   <div class="container section dash-page">
     ${C.backLink('#/app/dataportal', 'Datenportal')}
-    <div class="dash-header">
-      <div class="dash-header__text">
-        ${C.pageHeader({ title: META.title, lead: META.lead })}
-        <p class="small muted lead-hint">Detaillierte Objektinformationen und Bewirtschaftung im <a href="${INVENTORY}" target="_blank" rel="noopener">Liegenschaften Inventar</a>.</p>
-      </div>
-      ${C.menu({ menuId: 'dashboard', label: 'Dashboard-Aktionen', items: DASHBOARD_MENU })}
-    </div>
+    ${dashHeader(C, {
+      title: META.title, lead: META.lead,
+      extra: `<p class="small muted lead-hint">Detaillierte Objektinformationen und Bewirtschaftung im <a href="${INVENTORY}" target="_blank" rel="noopener">Liegenschaften Inventar</a>.</p>`,
+    })}
     <div class="dashboard-layout" id="dashboard">
-      <aside class="filter-panel" id="dash-filters" aria-label="Filter">
-        <div class="filter-panel__head"><h2 class="filter-panel__title">Filter</h2>
-          <button type="button" class="filter-panel__toggle btn--bare" id="filter-toggle" aria-label="Filter einklappen" aria-expanded="true">${C.icon('ChevronLeft', 'icon--base')}</button></div>
-        <div class="filter-panel__body" id="filter-body">
+      ${filterPanelShell(C, `
           ${fGroup('land', 'Land')}${fGroup('region', 'Region / Kanton')}${fGroup('typ', 'Gebäudetyp')}${fGroup('eigentum', 'Eigentumsverhältnis')}${fGroup('status', 'Status')}
-          <div class="filter-panel__actions"><button type="button" class="btn btn--bare btn--sm mt-2" id="f-reset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>
-        </div>
-      </aside>
+          ${C.panelReset({ id: 'f-reset', wrap: 'filter-panel__actions' })}`)}
       <div class="dashboard-main">
         ${C.tabBar({ items: TABS, active: state.tab, idPrefix: 'estate-tab', panelId: 'dpanel', ariaLabel: 'Stammdaten-Ansichten' })}
         <div class="tab__container" role="tabpanel" id="dpanel" aria-labelledby="estate-tab-${state.tab}" tabindex="0">
@@ -326,11 +302,7 @@ export default async function render(ctx) {
         </div>
       </div>
     </div>
-    <footer class="dash-footer">
-      <span class="meta-info__item">Quelle: <span id="dash-source"></span></span>
-      <span class="meta-info__item">Stand: ${C.escape(META.updated)}</span>
-      <span class="meta-info__item">Demo-Daten</span>
-    </footer>
+    ${dashFooter(C, { sourceId: 'dash-source', updated: META.updated })}
   </div>`;
 
   // --- wiring (once) ---
@@ -345,6 +317,8 @@ export default async function render(ctx) {
   });
   // «Alle anzeigen / Weniger anzeigen» — deckt die von C.filterGroup (`max`)
   // in die versteckte .filter-group__more-Spanne gekappten Optionen in place auf.
+  // Bleibt lokal (einziger Konsument); die Beschriftungen sind mit C.filterGroup
+  // (components.js) abgestimmt, das den Ausgangszustand «Alle anzeigen (N)» rendert.
   filterBody.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-fmore]');
     if (!btn) return;
@@ -363,40 +337,9 @@ export default async function render(ctx) {
     syncHash(); update();
   });
   C.wireTabs(mount, { onSelect: (id) => { state.tab = id; syncHash(); update(); } });
-  // Item 6.13 — identisch zu dataportal.js: unter lg klappt das PANEL, ab lg die
-  // Layoutspalte. Fünf Facettengruppen sind auf dem Handy sonst eine Wand.
-  const layout = mount.querySelector('#dashboard');
-  const panel = mount.querySelector('#dash-filters');
-  const toggle = mount.querySelector('#filter-toggle');
-  const isDesktop = () => window.matchMedia('(min-width:1024px)').matches;
-  if (panel && !isDesktop()) panel.classList.add('filter-panel--collapsed');
-  const syncToggle = () => {
-    if (!toggle) return;
-    const collapsed = isDesktop()
-      ? layout.classList.contains('dashboard-layout--collapsed')
-      : panel.classList.contains('filter-panel--collapsed');
-    toggle.setAttribute('aria-expanded', String(!collapsed));
-    toggle.setAttribute('aria-label', collapsed ? 'Filter ausklappen' : 'Filter einklappen');
-    if (panel) toggle.setAttribute('aria-controls', panel.id || 'dash-filters');
-  };
-  syncToggle();
-  toggle.addEventListener('click', () => {
-    if (isDesktop()) layout.classList.toggle('dashboard-layout--collapsed');
-    else panel.classList.toggle('filter-panel--collapsed');
-    syncToggle();
-  });
-  // Beim Verlassen der Route abmelden: der Horcher hängt an window und
-  // überlebte den DOM-Tausch sonst — ein weiterer je Besuch (code-review §4).
-  const mqAc = new AbortController();
-  ctx.onUnmount(() => mqAc.abort());
-  window.matchMedia('(min-width:1024px)').addEventListener('change', syncToggle, { signal: mqAc.signal });
-  C.wireMenu(mount.querySelector('.dash-header'), (action) => {
-    if (action === 'refresh') { update(); C.toast('Dashboard aktualisiert.'); }
-    else if (action === 'pdf') C.toast('Export als PDF — im Prototyp simuliert.');
-    else if (action === 'img') C.toast('Export als Bild — im Prototyp simuliert.');
-    else if (action === 'copy') copyText(location.href).then((ok) => C.toast(ok ? 'Link kopiert.' : 'Kopieren nicht möglich.'));
-    else if (action === 'mail') shareMail(`${META.title} — BBL Datenportal`, location.href);
-  });
+  // Einklapp-Logik (Item 6.13) + Toolbar-Menü: geteilt in dashboard-chrome.js.
+  wireFilterCollapse(ctx, mount);
+  wireDashboardMenu(mount, C, { title: META.title, onRefresh: update });
 
   update();
 }

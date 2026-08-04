@@ -17,7 +17,7 @@
 import { floorplanSvg, floorplanLegend, wireFloorplan, COLOR_MODES } from '../floorplan.js';
 import { initEstateMap } from '../buildings-map.js';
 import { createMapSlot } from '../map-slot.js';
-import { syncTreeCounts } from '../spatial-tree.js';
+import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../spatial-tree.js';
 import { heroMosaic, galleryItemsFrom } from '../hero-mosaic.js';
 import { openGallery } from '../gallery.js';
 import { num, chf, m2, datum } from '../format.js';
@@ -33,6 +33,18 @@ const monateBis = (iso) => {
   const d = new Date(iso);
   if (isNaN(d)) return null;
   return Math.max(0, Math.round((d - new Date()) / (30.44 * 86400000)));
+};
+// Restlaufzeit als Abzeichen. Abgestuft (Warnung ≤ 12 Monate, Hinweis ≤ 36,
+// sonst Erfolg) trägt es Information statt Dringlichkeit — ein einfarbiges
+// Warnabzeichen hätte jedes Mietverhältnis alarmiert. EINE Fassung für
+// Übersichtsliste UND Detailkopf (Design-Review B21): die beiden wortgleichen
+// Kopien wären bei der nächsten Schwellen-Änderung stumm auseinandergelaufen,
+// und Liste und Detail müssen dieselbe Aussage machen.
+const restBadge = (C, iso) => {
+  const m = monateBis(iso);
+  if (m == null) return '';
+  return C.badge(m < 24 ? `noch ${m} Monate` : `noch ${Math.floor(m / 12)} Jahre`,
+    m <= 12 ? 'warning' : m <= 36 ? 'info' : 'success');
 };
 
 export default async function render(ctx) {
@@ -57,7 +69,7 @@ function overview(ctx) {
   setCrumbs([...CRUMBS, { label: 'Mietende' }]);
 
   const all = core.tenancies();
-  const esc = (s) => C.escape(String(s == null ? '' : s));
+  const esc = C.escape;   // koerziert selbst (null → '') — kein eigener Wrapper nötig
 
   const SORTS = {
     name: (a, b) => a.buildingName.localeCompare(b.buildingName, 'de'),
@@ -107,58 +119,25 @@ function overview(ctx) {
   const filtered = () => all.filter((t) => inSel(t) && inFilters(t) && inSearch(t));
 
   /* ------------------------------------------- räumlicher Baum (Sidebar) -- */
-  // Land › Kanton › Ort › Mietverhältnis. Alle vier Stufen stehen als Attribute
-  // im Mietverhältnis (data/tenancies.json) — der Baum entsteht ohne einen
-  // einzigen Zugriff auf den Gebäudebestand.
-  function buildTree() {
-    const tree = {};
-    for (const t of all) {
-      const L = (tree[t.land] = tree[t.land] || { n: 0, r: {} });
-      const R = (L.r[t.canton] = L.r[t.canton] || { n: 0, c: {} });
-      const C2 = (R.c[t.city] = R.c[t.city] || { n: 0, o: [] });
-      C2.o.push(t); L.n++; R.n++; C2.n++;
-    }
-    return tree;
-  }
-  const rowContent = (ic, idText, label) => `${C.icon(ic, 'pf-tree__ico')}${
-    idText ? `<span class="pf-tree__id">${esc(idText)}</span>` : ''}<span class="pf-tree__label">${esc(label)}</span>`;
-  const node = (content, count, attrs, children) => `<li class="pf-tree__item">
-      <button type="button" class="pf-tree__node" ${attrs} aria-expanded="false">
-        ${C.icon('ChevronRight', 'pf-tree__chev')}${content}<span class="pf-tree__n">${count}</span>
-      </button>
-      <ul class="pf-tree__children" hidden>${children}</ul></li>`;
-  const leaf = (t) => `<li class="pf-tree__item"><button type="button" class="pf-tree__leaf"
-      data-obj="${esc(t.tenancyId)}" data-land="${esc(t.land)}" data-region="${esc(t.canton)}" data-city="${esc(t.city)}"
-      >${rowContent('Home', t.ve, t.buildingName)}</button></li>`;
-
-  function treeHTML() {
-    const tree = buildTree();
-    const byDe = (a, b) => a.localeCompare(b, 'de');
-    // Nach dem ANGEZEIGTEN Namen sortieren, nicht nach dem Ländercode: sonst
-    // steht «Schweiz» (CH) zwischen Brasilien und Deutschland.
-    return `<ul class="pf-tree">${Object.keys(tree).sort((a, b) => byDe(landName(a), landName(b))).map((L) => {
-      const land = tree[L];
-      const regions = Object.keys(land.r).sort(byDe).map((R) => {
-        const reg = land.r[R];
-        const cities = Object.keys(reg.c).sort(byDe).map((Cy) => {
-          const city = reg.c[Cy];
-          const objs = city.o.slice().sort((a, b) => byDe(a.buildingName, b.buildingName)).map(leaf).join('');
-          return node(rowContent('MapMarker', '', Cy), city.n,
-            `data-land="${esc(L)}" data-region="${esc(R)}" data-city="${esc(Cy)}"`, objs);
-        }).join('');
-        return node(rowContent('Map', '', R), reg.n, `data-land="${esc(L)}" data-region="${esc(R)}"`, cities);
-      }).join('');
-      return node(rowContent('Globe', '', landName(L)), land.n, `data-land="${esc(L)}"`, regions);
-    }).join('')}</ul>`;
-  }
+  // Land › Kanton › Ort › Mietverhältnis — über den geteilten Bauplan in
+  // js/spatial-tree.js (Design-Review A1). Alle vier Stufen stehen als
+  // Attribute im Mietverhältnis (data/tenancies.json) — der Baum entsteht ohne
+  // einen einzigen Zugriff auf den Gebäudebestand. Der Kanton heisst am Knoten
+  // `data-region`, damit die Auswahl-Schlüssel über alle Explorer gleich sind.
+  // Länder sortieren nach dem ANGEZEIGTEN Namen (Vorgabe des Bauplans), nicht
+  // nach dem Ländercode: sonst stünde «Schweiz» (CH) zwischen Brasilien und
+  // Deutschland.
+  const treeMarkup = treeHTML(C, all, {
+    levels: [
+      { key: 'land', icon: 'Globe', label: (k) => landName(k) },
+      { key: 'canton', attr: 'region', icon: 'Map' },
+      { key: 'city', icon: 'MapMarker' },
+    ],
+    leaf: { icon: () => 'Home', idText: (t) => t.ve, label: (t) => t.buildingName,
+      objId: (t) => t.tenancyId, sort: (a, b) => a.buildingName.localeCompare(b.buildingName, 'de') },
+  });
 
   /* ----------------------------------------------------------- Ansichten -- */
-  const restBadge = (t) => {
-    const m = monateBis(t.leaseEnd);
-    if (m == null) return '';
-    return C.badge(m < 24 ? `noch ${m} Monate` : `noch ${Math.floor(m / 12)} Jahre`,
-      m <= 12 ? 'warning' : m <= 36 ? 'info' : 'success');
-  };
 
   const card = (t) => C.card({
     title: t.buildingName,
@@ -182,7 +161,7 @@ function overview(ctx) {
       { key: 'floors', label: 'Geschosse', render: (t) => esc(t.floorLabels.join(', ')) },
       { key: 'areaHnf', label: 'Fläche', align: 'right', render: (t) => m2(t.areaHnf) },
       { key: 'workstations', label: 'AP', align: 'right', render: (t) => String(t.workstations) },
-      { key: 'leaseEnd', label: 'Vertragsende', render: (t) => `${datum(t.leaseEnd)}<br>${restBadge(t)}` },
+      { key: 'leaseEnd', label: 'Vertragsende', render: (t) => `${datum(t.leaseEnd)}<br>${restBadge(C, t.leaseEnd)}` },
     ],
     rows: slice,
   });
@@ -218,16 +197,10 @@ function overview(ctx) {
       ve: state.filters.ve,
       land: state.sel.land, region: state.sel.region, city: state.sel.city, obj: state.sel.id,
     }));
-    // Aktivzähler am Filter-Umschalter (Review apps/mt-filter-1): «Filter (n)»
-    // zeigt die Zahl der Haken auch bei zugeklapptem Panel — wie im
-    // Liegenschafteninventar. renderMain ist der Trichter aller Filterwege
-    // (Checkbox, Zurücksetzen, Pille, URL), darum steht die Pflege hier.
-    const fbadge = mount.querySelector('#mt-filter .catbar__fcount');
-    if (fbadge) {
-      const n = state.filters.ve.length;
-      fbadge.textContent = n ? `(${n})` : '';
-      fbadge.hidden = !n;
-    }
+    // Den gedrückten Ansichtsknopf hier pflegen: wireCatalogueState schaltet
+    // nur den Zustand um — aria-pressed ist Teil der Neuzeichnung. (Der
+    // Filter-Zähler am Umschalter wohnt seit A2 in wireCatalogueState selbst.)
+    mount.querySelectorAll('.view-switch__btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
     const list = filtered().slice().sort(SORTS[state.sort] || SORTS.end);
     const cnt = mount.querySelector('#mt-count');
     const main = mount.querySelector('#mt-main');
@@ -237,11 +210,13 @@ function overview(ctx) {
     // gefilterte Menge zu addieren wäre eine Auswertung, und Auswertungen
     // gehören ins Datenportal (#/app/dataportal), nicht in eine Katalogleiste.
     // Die Zahlen des einzelnen Mietverhältnisses stehen auf dessen Detailseite.
-    if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${all.length} Mietverhältnissen`;
+    const zaehler = (n, suffix = '') => {
+      if (cnt) cnt.innerHTML = `<strong>${n}</strong> von ${all.length} Mietverhältnissen${suffix}`;
+    };
 
     mount.querySelector('#mt-activefilters').innerHTML = C.activeFilters({
       filters: [
-        ...(state.q ? [{ label: `Suche: „${state.q}“`, remove: 'q' }] : []),
+        ...(state.q ? [{ label: `Suche: «${state.q}»`, remove: 'q' }] : []),
         ...state.filters.ve.map((v) => ({ label: v, remove: 've:' + v })),
         ...(state.sel.city ? [{ label: state.sel.city, remove: 'sel' }]
           : state.sel.region ? [{ label: state.sel.region, remove: 'sel' }]
@@ -250,13 +225,21 @@ function overview(ctx) {
     });
 
     if (state.view === 'map') {
+      // Bewusst OHNE Seiten-Suffix: die Karte zeigt ALLE Treffer, nicht eine
+      // Seite — «Seite 1 von 2» neben einer ungeschnittenen Karte wäre falsch
+      // (dokumentierte Abweichung, docs/design-review.md).
+      zaehler(list.length);
       main.innerHTML = `<div class="pf-map dash-map" id="mt-map-el" role="group" aria-label="Karte der Mietverhältnisse"></div>`;
       mountMap(list);
       return;
     }
     if (!list.length) {
-      main.innerHTML = C.empty('Keine Mietverhältnisse für diese Auswahl.', {
-        hint: 'Passen Sie Suche, Filter oder die Auswahl im Baum an.',
+      zaehler(0);
+      // Leerzustand mit Ausweg (Explorer-Kanon): der Rat allein verlangte,
+      // hochzuscrollen und die Leiste zu suchen — der Knopf ist der Weg.
+      main.innerHTML = C.empty('Keine Mietverhältnisse gefunden.', {
+        hint: 'Passen Sie Ihre Suche, die Filter oder die Auswahl im Baum an.',
+        action: { id: 'mt-empty-reset', label: 'Suche und Filter zurücksetzen' },
       });
       return;
     }
@@ -264,9 +247,16 @@ function overview(ctx) {
     const pages = Math.max(1, Math.ceil(list.length / per));
     if (state.page > pages) state.page = pages;
     const slice = list.slice((state.page - 1) * per, state.page * per);
+    zaehler(list.length, pages > 1 ? ` · Seite ${state.page} von ${pages}` : '');
+    // Ohne href-Builder rendert C.pagination echte <button data-page>, die
+    // C.wirePagination zusammen mit dem Seitenfeld bindet (Design-Review A3) —
+    // der frühere Regex-Klickhandler auf das deutsche aria-label entfällt.
     main.innerHTML = (state.view === 'gallery' ? galleryHTML(slice) : listHTML(slice))
-      + (pages > 1 ? C.pagination({ page: state.page, totalPages: pages, href: () => '#', inputId: 'mt-page' }) : '');
-    C.announceCatalogue({ count: list.length, total: all.length, unit: 'Mietverhältnisse', page: state.page, totalPages: pages, view: state.view });
+      + C.pagination({ page: state.page, totalPages: pages, inputId: 'mt-page' });
+    C.wirePagination(main, 'mt-page', state.page, pages, (p) => { state.page = p; renderMain(); });
+    C.announceCatalogue({ count: list.length, total: all.length,
+      unit: { nom: 'Mietverhältnisse', dat: 'Mietverhältnissen' },
+      page: state.page, totalPages: pages, view: state.view });
   }
 
   /* ------------------------------------------------------------- Gerüst ---- */
@@ -281,12 +271,12 @@ function overview(ctx) {
     })}
     ${C.catalogueBar({
       formId: 'mt-search', inputId: 'mt-q', searchLabel: 'Mietverhältnis suchen',
-      placeholder: 'Objekt, Ort oder Verwaltungseinheit…', q: state.q,
+      placeholder: 'Objekt, Ort oder Verwaltungseinheit suchen…', q: state.q,
       countId: 'mt-count', count: '',
       sort: { id: 'mt-sort', value: state.sort, options: SORT_OPTS },
       filterId: 'mt-filter', filterLabel: 'Filter', filterCount: state.filters.ve.length, panelId: 'mt-filters',
       panel: C.filterGroup({ dim: 've', legend: 'Verwaltungseinheit', selected: state.filters.ve, options: veOptions })
-        + `<div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm" id="mt-reset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>`,
+        + C.panelReset({ id: 'mt-reset' }),
       view: state.view,
       views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
     })}
@@ -295,9 +285,9 @@ function overview(ctx) {
       <aside class="pf-sidebar" aria-label="Struktur der Mietverhältnisse">
         <div class="pf-sidebar__head">
           <h2 class="pf-sidebar__title">Standorte</h2>
-          <button type="button" class="btn btn--bare btn--sm" id="mt-clear" hidden>${C.icon('Cancel', 'icon--base')}<span class="btn__text">Auswahl</span></button>
+          <button type="button" class="btn btn--bare btn--sm" id="mt-clear" hidden>${C.icon('Cancel', 'icon--base')}<span class="btn__text">Auswahl zurücksetzen</span></button>
         </div>
-        ${treeHTML()}
+        ${treeMarkup}
       </aside>
       <div class="pf-main" id="mt-main"></div>
     </div>
@@ -305,125 +295,58 @@ function overview(ctx) {
 
   /* ---------------------------------------------------------- Verdrahten ---- */
   const clearBtn = mount.querySelector('#mt-clear');
-  let searchT = null;
+  const sidebar = mount.querySelector('.pf-sidebar');
   const qEl = mount.querySelector('#mt-q');
-  const runSearch = () => { state.q = qEl.value || ''; state.page = 1; renderMain(); };
-  mount.querySelector('#mt-search').addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(searchT); runSearch(); });
-  qEl.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(runSearch, 250); });
 
-  mount.querySelector('.view-switch').addEventListener('click', (e) => {
-    const btn = e.target.closest('.view-switch__btn');
-    if (!btn) return;
-    state.view = btn.dataset.view;
+  // Auswahl von aussen aufheben (Pille «sel», Reset-Pille, Leerzustands-Knopf):
+  // dieselbe Pflege, die wireTree beim Klick auf den Auswahl-Knopf leistet.
+  const clearSelection = () => {
+    markTree(sidebar, null);
+    clearBtn.hidden = true;
+    state.sel = {};
     state.page = 1;
-    mount.querySelectorAll('.view-switch__btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
     renderMain();
+  };
+
+  // Katalogleiste über die geteilte Verdrahtung (Design-Review A2): Suche mit
+  // Tipp-Verzögerung, Sortierung, Ansichtswechsel, Filterpanel samt Zähler-
+  // Badge, Panel-Reset und Aktiv-Pillen. Der data-reset-Zweig macht den zuvor
+  // TOTEN «Alle Filter zurücksetzen»-Knopf funktionsfähig (A5): Suche und
+  // Filter räumt wireCatalogueState selbst ab, onReset zusätzlich den Baum.
+  const cat = C.wireCatalogueState(mount, {
+    formId: 'mt-search', inputId: 'mt-q', sortId: 'mt-sort',
+    filterToggleId: 'mt-filter', panelId: 'mt-filters', resetId: 'mt-reset',
+    activeFiltersId: 'mt-activefilters', state,
+    onChange: renderMain,
+    onRemove: (tok) => { if (tok === 'sel') clearSelection(); },
+    onReset: clearSelection,
   });
 
-  mount.querySelector('#mt-sort').addEventListener('change', (e) => { state.sort = e.target.value; state.page = 1; renderMain(); });
-  // Filter-Umschalter: ohne diese Verdrahtung blieb das Panel für immer
-  // `hidden` — die VE-Facette war weder mit Maus noch Tastatur erreichbar
-  // (Review apps/mt-filter-1). Gleiches Muster wie js/apps/portfolio.js.
-  const fbtn = mount.querySelector('#mt-filter');
-  const fpanel = mount.querySelector('#mt-filters');
-  fbtn.addEventListener('click', () => {
-    const open = !fpanel.hidden;
-    fpanel.hidden = open;
-    fbtn.setAttribute('aria-expanded', String(!open));
+  // Raumbaum: Klick-Verdrahtung, Zweiton-Markierung (is-active/is-path) und
+  // Auswahl-Knopf aus js/spatial-tree.js (A1) — die alte lokale Kopie
+  // markierte mit `is-selected`, wofür am Baum keine CSS-Regel existiert:
+  // die Auswahl blieb unsichtbar.
+  wireTree(sidebar, {
+    attrs: ['land', 'region', 'city'], clearBtn,
+    onSelect: (sel) => { state.sel = sel; state.page = 1; renderMain(); },
   });
-  mount.querySelector('#mt-filters').addEventListener('change', (e) => {
-    const cb = e.target.closest('[data-fdim="ve"]');
-    if (!cb) return;
-    state.filters.ve = [...mount.querySelectorAll('[data-fdim="ve"]:checked')].map((x) => x.value);
-    state.page = 1; renderMain();
-  });
-  mount.querySelector('#mt-reset').addEventListener('click', () => {
-    mount.querySelectorAll('[data-fdim="ve"]').forEach((x) => { x.checked = false; });
-    state.filters.ve = []; state.page = 1; renderMain();
-  });
-
   // Eine aus der URL übernommene Baumauswahl sichtbar machen (Review
   // apps/url-state-1): Pfad aufklappen, Knoten markieren, Lösch-Knopf zeigen —
   // sonst stünde eine gefilterte Trefferliste neben einem Baum, der nichts
   // davon erkennen liesse.
-  if (Object.keys(state.sel).length) {
-    clearBtn.hidden = false;
-    const attr = (v) => `"${String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-    const target = state.sel.id
-      ? mount.querySelector(`.pf-tree__leaf[data-obj=${attr(state.sel.id)}]`)
-      : mount.querySelector('.pf-tree__node'
-        + ['land', 'region', 'city'].map((k) => state.sel[k] ? `[data-${k}=${attr(state.sel[k])}]` : `:not([data-${k}])`).join(''));
-    if (target) {
-      target.classList.add('is-selected');
-      if (target.classList.contains('pf-tree__node')) {
-        target.setAttribute('aria-expanded', 'true');
-        const kids = target.closest('.pf-tree__item')?.querySelector(':scope > .pf-tree__children');
-        if (kids) kids.hidden = false;
-      }
-      for (let ul = target.closest('.pf-tree__children'); ul; ul = ul.parentElement.closest('.pf-tree__children')) {
-        ul.hidden = false;
-        ul.closest('.pf-tree__item')?.querySelector(':scope > .pf-tree__node')?.setAttribute('aria-expanded', 'true');
-      }
-    }
-  }
-
-  function setSelection(sel) {
-    state.sel = sel;
-    clearBtn.hidden = !Object.keys(sel).length;
-    mount.querySelectorAll('.pf-tree__node, .pf-tree__leaf').forEach((n) => n.classList.remove('is-selected'));
-    state.page = 1;
-    renderMain();
-  }
-  mount.querySelector('.pf-sidebar').addEventListener('click', (e) => {
-    const leafBtn = e.target.closest('.pf-tree__leaf');
-    if (leafBtn) {
-      const sel = {};
-      for (const k of ['land', 'region', 'city']) if (leafBtn.dataset[k]) sel[k] = leafBtn.dataset[k];
-      sel.id = leafBtn.dataset.obj;
-      setSelection(sel);
-      leafBtn.classList.add('is-selected');
-      return;
-    }
-    const nd = e.target.closest('.pf-tree__node');
-    if (!nd) return;
-    const item = nd.closest('.pf-tree__item');
-    const kids = item.querySelector(':scope > .pf-tree__children');
-    const expanded = nd.getAttribute('aria-expanded') === 'true';
-    nd.setAttribute('aria-expanded', String(!expanded));
-    if (kids) kids.hidden = expanded;
-    const sel = {};
-    for (const k of ['land', 'region', 'city']) if (nd.dataset[k] != null) sel[k] = nd.dataset[k];
-    setSelection(sel);
-    nd.classList.add('is-selected');
-  });
-  clearBtn.addEventListener('click', () => setSelection({}));
-
-  // Aktive Filterpillen entfernen (Delegation, weil sie bei jedem Zeichnen neu entstehen).
-  mount.querySelector('#mt-activefilters').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-remove]');
-    if (!btn) return;
-    const what = btn.dataset.remove;
-    if (what === 'q') { state.q = ''; qEl.value = ''; }
-    else if (what === 'sel') { setSelection({}); return; }
-    else if (what.startsWith('ve:')) {
-      const v = what.slice(3);
-      state.filters.ve = state.filters.ve.filter((x) => x !== v);
-      mount.querySelectorAll('[data-fdim="ve"]').forEach((x) => { if (x.value === v) x.checked = false; });
-    }
-    state.page = 1; renderMain();
-  });
+  restoreTreeSelection(sidebar, state.sel, { attrs: ['land', 'region', 'city'], clearBtn });
 
   // Zeilenklick der Listenansicht (C.table `rowsClickable`) — einmal delegiert
   // auf #mt-main, das jede Teil-Neuzeichnung überlebt.
   C.wireTableRows(mount.querySelector('#mt-main'));
 
-  // Blätterleiste (CD-Pagination rendert Links; hier steuert sie den Zustand).
+  // Der Leerzustands-Knopf entsteht bei jedem Zeichnen neu — Delegation statt
+  // Einzelbindung. Voller Reset wie die Reset-Pille: Suche, Filter UND Baum.
   mount.querySelector('#mt-main').addEventListener('click', (e) => {
-    const a = e.target.closest('.pagination_items a');
-    if (!a) return;
-    e.preventDefault();
-    state.page += /Nächste/.test(a.getAttribute('aria-label') || '') ? 1 : -1;
-    renderMain();
+    if (!e.target.closest('#mt-empty-reset')) return;
+    state.q = ''; qEl.value = '';
+    cat.clearFilters();
+    clearSelection();
   });
 
   renderMain();
@@ -461,7 +384,7 @@ function detail(ctx, id) {
     // Randspalte (929px statt 1329px), und daneben stand die Geschosstabelle,
     // die Vertragsdaten und die Anträge — vier Dinge auf einer Fläche. Als
     // eigener Reiter bekommt der Plan die volle Containerbreite, und das
-    // Raumdetail mit «Dienstleistung starten» hat rechts Platz, ohne mit einer
+    // Raumdetail mit «Vorgang starten» hat rechts Platz, ohne mit einer
     // zweiten Randspalte um dieselbe Kante zu streiten.
     { id: 'grundriss', label: `Grundrisse (${floors.length})` },
     { id: 'vertrag', label: `Verträge (${contracts.length})` },
@@ -510,7 +433,6 @@ function detail(ctx, id) {
     history.replaceState(history.state, '', `${links.mietverhaeltnis(t.tenancyId)}${qs ? '?' + qs : ''}`);
   };
 
-  const restMonate = monateBis(t.leaseEnd);
   const galleryItems = galleryItemsFrom(t.bilder, {
     idPrefix: t.tenancyId, title: t.buildingName, ort: t.city,
   });
@@ -539,7 +461,10 @@ function detail(ctx, id) {
       <dt>Objekt</dt><dd>${C.escape(t.buildingName)}<br><span class="small muted">${C.escape(t.street)}, ${C.escape(t.zip)} ${C.escape(t.city)}</span></dd>
       <dt>Geschosse</dt><dd>${C.escape(t.floorLabels.join(', '))}</dd>
       <dt>Mietbeginn</dt><dd>${datum(t.leaseStart)}</dd>
-      <dt>Mietende</dt><dd>${datum(t.leaseEnd)}</dd>
+      ${/* «Vertragsende», nicht «Mietende» (Review D19): «Mietende» ist hier
+            der Name der App und ihrer Nutzenden — als Beschriftung eines
+            Datums las es sich doppeldeutig. */''}
+      <dt>Vertragsende</dt><dd>${datum(t.leaseEnd)}</dd>
       <dt>Kostenstelle</dt><dd>${C.escape(t.costCentre)}</dd>
       <dt>Objekt im Inventar</dt><dd><a href="${links.objekt(t.buildingId)}">${C.escape(t.buildingId)}</a></dd>
     </dl>`;
@@ -571,8 +496,8 @@ function detail(ctx, id) {
   // wo er sie nur wiederholt («Portfoliomanagement / Portfoliomanagement» in
   // 18 von 18 Datensätzen las sich wie ein Anzeigefehler). Beide Karten kommen
   // aus js/components.js — dieselben wie im Inventar.
-  const asideHtml = () => `<aside class="detail-layout__aside" aria-label="Aktionen und Ansprechstellen">
-    ${serviceShortcuts()}
+  const asideHtml = () => `<aside class="detail-layout__aside" aria-label="Aktionen und Ansprechpersonen">
+    ${C.actionCard({ lead: 'Für dieses Objekt vorbelegt.', links: aktionLinks() })}
     ${C.contactCard({ contacts: (t.contacts || []).map((c) => ({
       label: c.rolle, name: c.name, email: c.email, phone: c.phone })) })}
   </aside>`;
@@ -729,7 +654,9 @@ function detail(ctx, id) {
       <h3>${C.escape(s.roomNumber)}</h3>
       <dl class="kv kv--tight">${kv.map(([k, v]) => `<dt>${C.escape(k)}</dt><dd>${C.escape(v)}</dd>`).join('')}</dl>
       ${s.bookable ? `<a class="btn btn--outline btn--sm" href="#/app/workspace">${C.icon('Calendar', 'btn__icon icon--base')}<span class="btn__text">Raum buchen</span></a>` : ''}
-      <h4 class="fp-room__sub">Dienstleistung starten</h4>
+      ${/* «Vorgang starten» (Sprachkanon): der Klick erstellt einen VORGANG im
+            Portal — «Dienstleistung» ist die Katalogseite, nicht die Handlung. */''}
+      <h4 class="fp-room__sub">Vorgang starten</h4>
       ${serviceLinks(s)}
     </div>`;
   }
@@ -757,24 +684,21 @@ function detail(ctx, id) {
       ${serviceLink('umzug-anmelden', `#/app/fault-report?type=umzug&${objektQ}${raumQ}`)}
     </div>`;
   }
-  function serviceShortcuts() {
-    return `<div class="box">
-      <h2>Aktionen</h2>
-      <p class="small muted">Für dieses Objekt vorbelegt.</p>
-      <div class="fp-svc-list">
-        ${serviceLink('stoerung-melden', `#/app/fault-report?${objektQ}`)}
-        ${serviceLink('kleinauftrag-gebaeude', `#/app/fault-report?type=kleinauftrag&${objektQ}`)}
-        ${serviceLink('umzug-anmelden', `#/app/fault-report?type=umzug&${objektQ}`)}
-        ${serviceLink('raumbedarf-melden', '#/app/space-request')}
-        ${serviceLink('reklamation', `#/app/fault-report?type=reklamation&${objektQ}`)}
-        ${/* Dokumente hängen am GEBÄUDE, nicht am Mietverhältnis — deshalb hier
-              kein Dokumentenabschnitt, sondern der Weg in die
-              Bauwerksdokumentation, auf dieses Gebäude vorgefiltert. */''}
-        <a class="fp-svc" href="#/app/document-archive?building=${encodeURIComponent(t.buildingId)}">
-          <span>Dokumente zum Gebäude</span>${C.icon('ArrowRight', 'icon--sm fp-svc__go')}</a>
-      </div>
-    </div>`;
-  }
+  // Randspalten-Aktionen für C.actionCard (Design-Review B21): der Kasten kam
+  // zuvor handgerollt daher, obwohl die geteilte Karte genau dafür existiert.
+  // Fehlt eine Dienstleistung in data/services.json, fällt ihre Zeile weg,
+  // statt eine leere Beschriftung zu verlinken.
+  const aktionLinks = () => [
+    ['stoerung-melden', `#/app/fault-report?${objektQ}`],
+    ['kleinauftrag-gebaeude', `#/app/fault-report?type=kleinauftrag&${objektQ}`],
+    ['umzug-anmelden', `#/app/fault-report?type=umzug&${objektQ}`],
+    ['raumbedarf-melden', '#/app/space-request'],
+    ['reklamation', `#/app/fault-report?type=reklamation&${objektQ}`],
+  ].map(([sid, href]) => ({ label: (svc(sid) || {}).title, href })).filter((l) => l.label)
+    // Dokumente hängen am GEBÄUDE, nicht am Mietverhältnis — deshalb hier kein
+    // Dokumentenabschnitt, sondern der Weg in die Bauwerksdokumentation, auf
+    // dieses Gebäude vorgefiltert.
+    .concat({ label: 'Dokumente zum Gebäude', href: `#/app/document-archive?building=${encodeURIComponent(t.buildingId)}` });
 
   /* ------------------------------------------------- Vertrag und Vorgänge -- */
   // Beide Reiter tragen NUR ihre Tabelle. Die Vertragseckdaten standen zuvor
@@ -795,7 +719,7 @@ function detail(ctx, id) {
   function dataTables() {
     return {
       'mt-dt-floors': {
-        id: 'mt-dt-geschosse', rows: floorRows(), unit: 'Geschosse',
+        id: 'mt-dt-geschosse', rows: floorRows(), unit: { nom: 'Geschosse', dat: 'Geschossen' },
         caption: 'Geschosse dieses Mietverhältnisses', perPage: 10, rowsClickable: true,
         searchKeys: ['label', 'belegung'],
         sorts: [
@@ -828,8 +752,11 @@ function detail(ctx, id) {
           <td class="text-right">${alle.reduce((n, f) => n + f.meineRaeume, 0)}</td></tr>`,
       },
       'mt-dt-vertraege': {
-        id: 'mt-dt-vertrag', rows: contracts, unit: 'Verträge', caption: 'Verträge zum Objekt',
-        emptyMsg: 'Zu diesem Objekt sind keine Verträge im Inventar erfasst.',
+        id: 'mt-dt-vertrag', rows: contracts, unit: { nom: 'Verträge', dat: 'Verträgen' },
+        caption: 'Verträge zum Objekt',
+        // Inventar-Leerzustands-Kanon: «Keine ‹X› erfasst.» — der Halbsatz
+        // «Zu diesem Objekt … im Inventar» wiederholte nur die Tabellenüberschrift.
+        emptyMsg: 'Keine Verträge erfasst.',
         perPage: 10, searchKeys: ['contractId', 'type', 'contractPartner'],
         sorts: [
           { value: 'until', label: 'Gültig bis (nächstes zuerst)', cmp: (a, b) => String(a.validUntil).localeCompare(String(b.validUntil)) },
@@ -851,7 +778,8 @@ function detail(ctx, id) {
         // Sicht der mietenden Verwaltungseinheit auf das, was SIE eingereicht
         // hat. Die Referenzspalte führt weiterhin zum «Vorgang» unter «Meine
         // Vorgänge» — das ist derselbe Gegenstand aus Sicht der Bearbeitung.
-        id: 'mt-dt-vorgang', rows: cases, unit: 'Anträge', caption: 'Anträge zu diesem Mietobjekt',
+        id: 'mt-dt-vorgang', rows: cases, unit: { nom: 'Anträge', dat: 'Anträgen' },
+        caption: 'Anträge zu diesem Mietobjekt',
         emptyMsg: 'Zu diesem Mietobjekt ist derzeit kein Antrag offen.',
         perPage: 10, searchKeys: ['reference', 'title', 'defName'],
         sorts: [{ value: 'updated', label: 'Aktualisiert (neuste zuerst)', cmp: (a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')) }],
@@ -870,15 +798,11 @@ function detail(ctx, id) {
 
   /* ---------------------------------------------------------------- Zeichnen */
   function draw() {
-    // Restlaufzeit als Abzeichen im Kopf. Zuvor stand hier die Begründung, das
-    // NICHT zu tun («alarmiert jedes Mietverhältnis») — die galt aber nur für
-    // ein einfarbiges Warnabzeichen. Abgestuft (Warnung ≤ 12 Monate, Hinweis
-    // ≤ 36, sonst Erfolg) trägt es Information statt Dringlichkeit, und es ist
-    // die erste Frage an ein Mietverhältnis. Dasselbe Abzeichen wie in der
-    // Übersichtsliste, damit Liste und Detail dieselbe Aussage machen.
-    const restChip = restMonate == null ? '' : C.badge(
-      restMonate < 24 ? `noch ${restMonate} Monate` : `noch ${Math.floor(restMonate / 12)} Jahre`,
-      restMonate <= 12 ? 'warning' : restMonate <= 36 ? 'info' : 'success');
+    // Restlaufzeit als Abzeichen im Kopf — es ist die erste Frage an ein
+    // Mietverhältnis. DIESELBE Modul-Funktion wie in der Übersichtsliste
+    // (restBadge, Design-Review B21), damit Liste und Detail dieselbe Aussage
+    // machen; Abstufung und Begründung stehen dort.
+    const restChip = restBadge(C, t.leaseEnd);
 
     mount.innerHTML = `
     <div class="container section">
@@ -942,6 +866,13 @@ function detail(ctx, id) {
   // Koordinaten stehen im Mietverhältnis — kein Zugriff auf den Gebäudebestand.
   const heroMap = createMapSlot();
   async function wireHero() {
+    // BEWUSST der lokale Klick-Loop statt wireHeroMosaic (js/hero-mosaic.js):
+    // der geteilte Helfer bindet über den festen Selektor
+    // '#pf-mosaic [data-gallery]', dieses Mosaik heisst aber '#mt-mosaic' —
+    // und die id ist testgepinnt (scripts/test-tenancies.mjs,
+    // scripts/check-floorplan-section.mjs). Sobald wireHeroMosaic die Kacheln
+    // innerhalb der übergebenen Wurzel sucht statt über die feste id, ersetzt
+    // ein Aufruf diesen Loop.
     mount.querySelectorAll('#mt-mosaic [data-gallery]').forEach((el) => {
       el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C, { param: 'bild' }));
     });

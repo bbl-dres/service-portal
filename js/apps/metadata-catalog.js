@@ -24,6 +24,10 @@
 import { ANWENDUNGEN, trail } from '../crumbs.js';
 import { num, datum } from '../format.js';
 import * as links from '../links.js';
+// escape/badge direkt aus components.js (Muster buildings-map.js/floorplan.js):
+// EIN modulweites `esc` statt dreier funktionslokaler `const esc = C.escape;`-
+// Aliase — und matchBadge (unten) braucht beide schon auf Modulebene.
+import { escape as esc, badge } from '../components.js';
 
 // `contacts` trägt die Datenverwaltung (steward) beider Schichten. `datasets`
 // wird NUR in der Tabellen-Detailansicht gebraucht (115 KB für einen Titel) und
@@ -65,6 +69,9 @@ const kurz = (s, n = 110) => {
 };
 
 export default async function render(ctx) {
+  // Detailansichten per ?id=/?table= statt eigener Routensegmente — bewusste
+  // Wiederverwendung des Inventar-Idioms (Design-Review «Bewusste Abweichungen»
+  // Nr. 7): ein Routenwechsel bräche bereits geteilte Links ohne Nutzergewinn.
   const objectId = ctx.query.get('id');
   const tableId = ctx.query.get('table');
   if (objectId) return objectDetail(ctx, objectId);
@@ -98,6 +105,29 @@ const MATCH_HINT = {
   partial: 'Teilweise — das Feld deckt nur einen Teil des Begriffs ab.',
 };
 
+// Güte-Marke mit Erklärung am Element (siehe MATCH_HINT): beide Detailansichten
+// zeigen dieselbe Marke — die Definition steht deshalb EINMAL hier statt
+// wortgleich in beiden Renderfunktionen; `core` reicht der Aufrufer durch.
+const matchBadge = (core, id) => {
+  const m = matchOf(core, id);
+  return `<span title="${esc(MATCH_HINT[id] || m.label)}">${badge(m.label, m.variant, 'sm')}</span>`;
+};
+
+// «Verantwortliche Personen» — dasselbe Muster wie das Datensatzblatt
+// (js/pages/catalog.js): Abschnitt mit linierter kv-Liste (kv--ruled),
+// dt = Rolle im Katalog («Datenverwaltung»), dd = Stelle mit
+// Organisationseinheit, Aufgabenbeschrieb und Erreichbarkeit
+// (Nutzerentscheid 2026-08-04; beide Detailansichten teilen den Baustein).
+const personsSection = (contact) => `
+    <h2 class="detail-section__title">Verantwortliche Personen</h2>
+    <div class="box">${contact ? `<dl class="kv kv--ruled">
+      <dt>Datenverwaltung</dt>
+      <dd><strong>${esc(contact.name)}</strong>${contact.unit ? `<br>${esc(contact.unit)}` : ''}${
+        contact.role ? `<br><span class="small muted">${esc(contact.role)}</span>` : ''}${
+        contact.email ? `<br><a href="mailto:${esc(contact.email)}">${esc(contact.email)}</a>` : ''}${
+        contact.phone ? `<br>${esc(contact.phone)}` : ''}</dd>
+    </dl>` : '<p class="muted m-0">Für diesen Eintrag ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
+
 const objHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
 const tblHref = (id) => `${BASE}?table=${encodeURIComponent(id)}`;
 
@@ -106,7 +136,6 @@ const tblHref = (id) => `${BASE}?table=${encodeURIComponent(id)}`;
 // ---------------------------------------------------------------------------
 function list(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  const esc = C.escape;
   setTitle(TITEL);
   setCrumbs(trail(ANWENDUNGEN, { label: TITEL }));
 
@@ -142,7 +171,7 @@ function list(ctx) {
       { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.displayName.localeCompare(b.displayName, 'de') },
       { value: 'system', label: 'System', cmp: (a, b) => a.systemName.localeCompare(b.systemName, 'de') || a.name.localeCompare(b.name, 'de') },
       { value: 'fields', label: 'Felder (meiste zuerst)', cmp: (a, b) => b.fields.length - a.fields.length },
-      { value: 'real', label: 'Realisierte Begriffe (meiste zuerst)', cmp: (a, b) => realCount(b) - realCount(a) },
+      { value: 'real', label: 'Realisierte Geschäftsobjekte (meiste zuerst)', cmp: (a, b) => realCount(b) - realCount(a) },
     ];
   const sortKey = SORTS.some((s) => s.value === query.get('sort')) ? query.get('sort') : '';
 
@@ -186,7 +215,7 @@ function list(ctx) {
 
   // --- aktive Filter als Pillen ------------------------------------------------
   const active = [
-    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
+    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
     ...selDomains.map((x) => ({ label: domainLabel(core, x), href: hash({ domain: selDomains.filter((y) => y !== x) }) })),
     ...selSystems.map((x) => ({ label: (tables.find((t) => t.system === x) || {}).systemName || x, href: hash({ system: selSystems.filter((y) => y !== x) }) })),
     ...selSchemas.map((x) => ({ label: `Schema ${x}`, href: hash({ schema: selSchemas.filter((y) => y !== x) }) })),
@@ -222,7 +251,7 @@ function list(ctx) {
       C.badge(TABLE_TYPE[t.type] || t.type, 'gray'),
       ...(t.certified ? [C.badge('Zertifiziert', 'success')] : []),
     ],
-    footerInfo: `${t.fields.length} Felder${t.rowCount ? ` · ${num(t.rowCount)} Datensätze` : ''}`,
+    footerInfo: `${t.fields.length} Felder${t.rowCount ? ` · ${num(t.rowCount)} Zeilen` : ''}`,
     footerAction: C.cardAction(),
   });
 
@@ -265,27 +294,32 @@ function list(ctx) {
 
   // --- Filterpanel -------------------------------------------------------------
   const panel = kind === 'objekte' ? `
-      ${C.filterGroup({ dim: 'domain', legend: 'Datendomäne', selected: selDomains, idPrefix: 'mc',
+      ${C.filterGroup({ dim: 'domain', legend: 'Domäne', selected: selDomains, idPrefix: 'mc',
         options: domains.map((d) => ({ value: d.key, label: d.label })) })}
       ${C.filterGroup({ dim: 'status', legend: 'Status', selected: selStatus, idPrefix: 'mc',
         options: refList(core, 'objectStatuses').map((s) => ({ value: s.id, label: s.label })) })}
       ${C.filterGroup({ dim: 'mapped', legend: 'Realisierung', selected: mapped ? [mapped] : [], idPrefix: 'mc',
         options: [{ value: 'ja', label: 'In einem System realisiert' }, { value: 'nein', label: 'In keinem System realisiert' }] })}
-      <a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ domain: [], status: [], mapped: '' })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a>`
+      ${C.panelReset({ href: hash({ domain: [], status: [], mapped: '' }) })}`
     : `
       ${C.filterGroup({ dim: 'system', legend: 'System', selected: selSystems, idPrefix: 'mc',
         options: [...new Map(tables.map((t) => [t.system, t.systemName])).entries()].map(([v, l]) => ({ value: v, label: l })) })}
       ${C.filterGroup({ dim: 'schema', legend: 'Schema', selected: selSchemas, idPrefix: 'mc',
         options: [...new Map(tables.map((t) => [t.schema, t.schemaLabel])).entries()].map(([v, l]) => ({ value: v, label: l })) })}
       ${C.filterGroup({ dim: 'mapped', legend: 'Realisierung', selected: mapped ? [mapped] : [], idPrefix: 'mc',
-        options: [{ value: 'ja', label: 'Trägt katalogisierte Begriffe' }, { value: 'nein', label: 'Trägt keine katalogisierten Begriffe' }] })}
-      <a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ system: [], schema: [], mapped: '' })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a>`;
+        options: [{ value: 'ja', label: 'Realisiert Geschäftsobjekte' }, { value: 'nein', label: 'Realisiert keine Geschäftsobjekte' }] })}
+      ${C.panelReset({ href: hash({ system: [], schema: [], mapped: '' }) })}`;
 
   const filterCount = kind === 'objekte'
     ? selDomains.length + selStatus.length + (mapped ? 1 : 0)
     : selSystems.length + selSchemas.length + (mapped ? 1 : 0);
 
-  const unit = kind === 'objekte' ? 'Geschäftsobjekten' : 'Systemtabellen';
+  // `unit` als { nom, dat }: «19 von 19 Geschäftsobjekten» (Dativ nach «von»),
+  // aber «Keine Geschäftsobjekte gefunden.» (Nominativ der Leertexte) — ein
+  // einzelner String traf nur einen der beiden Kasus (Design-Review A14).
+  const unit = kind === 'objekte'
+    ? { nom: 'Geschäftsobjekte', dat: 'Geschäftsobjekten' }
+    : { nom: 'Systemtabellen', dat: 'Systemtabellen' };
 
   mount.innerHTML = `
   <div class="container section">
@@ -298,7 +332,7 @@ function list(ctx) {
       searchLabel: kind === 'objekte' ? 'Geschäftsobjekt oder Attribut suchen' : 'Tabelle oder Feld suchen',
       placeholder: kind === 'objekte' ? 'Geschäftsobjekt oder Attribut suchen…' : 'Tabelle oder Feld suchen…',
       q: rawQ, countId: 'mc-count',
-      count: `<strong>${sorted.length}</strong> von ${all.length} ${esc(unit)}${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
+      count: `<strong>${sorted.length}</strong> von ${all.length} ${esc(unit.dat)}${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'mc-sort', value: sortKey, options: SORTS.map((s) => ({ value: s.value, label: s.label })) },
       filterId: 'mc-filter', filterLabel: 'Filter', filterCount,
       panelId: 'mc-filters', panel,
@@ -316,9 +350,9 @@ function list(ctx) {
           view, page, totalPages, header: false,
           card: kind === 'objekte' ? objCard : tblCard,
           listView: kind === 'objekte' ? objList : tblList,
-          unit, gridCls: 'grid grid--2',
+          unit, gridCls: 'grid grid--responsive-cols-2',
           regionLabel: kind === 'objekte' ? 'Geschäftsobjekte' : 'Systemtabellen',
-          paginationInputId: 'mc-page', paginationLabel: `Seitennavigation ${unit}`,
+          paginationInputId: 'mc-page', paginationLabel: `Seitennavigation ${unit.nom}`,
           paginationHref: (p) => hash({ page: p }),
           available: core.available(kind === 'objekte' ? 'businessObjects' : 'systemTables'),
         })}
@@ -431,13 +465,7 @@ function list(ctx) {
 // Geschäftsobjekt — Detail
 // ---------------------------------------------------------------------------
 function objectDetail(ctx, id) {
-  const { mount, core, C, setTitle, setCrumbs } = ctx;
-  const esc = C.escape;
-  // Güte-Marke mit Erklärung am Element (siehe MATCH_HINT oben).
-  const matchBadge = (id) => {
-    const m = matchOf(core, id);
-    return `<span title="${esc(MATCH_HINT[id] || m.label)}">${C.badge(m.label, m.variant, 'sm')}</span>`;
-  };
+  const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   const o = core.businessObject(C.safeDecode(id));
   if (!o) {
     return C.renderNotFound(ctx, {
@@ -463,6 +491,17 @@ function objectDetail(ctx, id) {
     { id: 'attribute', label: `Attribute (${o.attributes.length})` },
     { id: 'realisierung', label: `Realisierung (${maps.length})` },
   ];
+  // ?tab= steht in der Adresse (App-Detail-Rezept, Design-Review B3): ein
+  // geteilter Link öffnet denselben Reiter; unbekannte Werte fallen still auf
+  // die Übersicht zurück. replaceState statt location.hash — ein Reiterwechsel
+  // ist ein Zustandswechsel, der Router soll weder neu rendern noch fokussieren.
+  let active = query.get('tab') || tabs[0].id;
+  if (!tabs.some((x) => x.id === active)) active = tabs[0].id;
+  const syncHash = (tab) => {
+    const p = new URLSearchParams({ id: o.objectId });
+    if (tab !== tabs[0].id) p.set('tab', tab);
+    history.replaceState(history.state, '', `${BASE}?${p}`);
+  };
   // Die Übersicht trägt, was den Begriff AUSMACHT — Definition, Abgrenzung,
   // gebräuchliche Benennungen. Als eigene Abschnitte waren sie zu viel für den
   // Einstieg (siehe unten); als erster Reiter sind sie genau das, was man beim
@@ -474,22 +513,18 @@ function objectDetail(ctx, id) {
     // hinein, die sagt warum — dasselbe Muster wie «Anträge zu diesem
     // Mietobjekt» im Mietendenportal. So sieht man, WAS hier stünde.
     if (id === 'realisierung') return '<div id="mc-maps"></div>';
-    // Übersicht = Eckdaten links, Ansprechstelle rechts — dasselbe Muster wie
-    // die Objekt-Übersicht des Inventars (`.detail-layout` mit
-    // `.detail-layout__aside`). Die Randspalte gehört damit zum Reiter und
-    // verschwindet mit ihm; die langen Tabellen der übrigen Reiter bekommen die
-    // volle Breite, statt neben einer halbleeren Spalte zu stehen.
-    // Alle Prosa-Angaben stehen als Zeilen der kv-Liste, nicht als Lead unter
-    // der H1 und nicht als freistehende Absätze: eine Beschreibung ist eine
-    // Eigenschaft des Begriffs wie jede andere, und in einer Liste findet man
-    // sie an der Stelle, an der man sie sucht.
-    // Attribut- und Realisierungszahl fehlen hier bewusst — sie stehen in den
-    // Reiterbeschriftungen darüber, eine zweite Nennung wäre eine Dublette,
-    // die beim Pflegen auseinanderlaufen kann.
-    return `<div class="detail-layout"><div>
-        <h2 class="detail-section__title">Eckdaten</h2>
-        <dl class="kv">
-          <dt>Beschreibung</dt><dd>${esc(o.definition)}</dd>
+    // Übersicht im Muster des Datensatzblatts (js/pages/catalog.js,
+    // Nutzerentscheid 2026-08-04): die Definition steht als Lead unter der H1,
+    // danach «Verantwortliche Personen» und «Metadaten» als linierte kv-Listen
+    // in voller Breite — «Metadaten» statt «Eckdaten», weil die Einträge dieses
+    // Katalogs Metadaten SIND (dieselbe Ausnahme wie das DCAT-Blatt, Kanon D26).
+    // Die frühere Randspalte entfällt; die Tabellen-Reiter daneben sind ohnehin
+    // vollbreit. Attribut- und Realisierungszahl fehlen bewusst — sie stehen in
+    // den Reiterbeschriftungen, eine zweite Nennung wäre eine Dublette.
+    return `${personsSection(contact)}
+      <section class="detail-section">
+        <h2 class="detail-section__title">Metadaten</h2>
+        <dl class="kv kv--ruled">
           <dt>Datendomäne</dt><dd><a href="${C.catalogueHash(BASE, { domain: [o.domain] })}">${esc(domainLabel(core, o.domain))}</a></dd>
           <dt>Status</dt><dd>${C.badge(st.label, st.variant)}</dd>
           ${o.standardRef ? `<dt>Norm-Referenz</dt><dd>${esc(o.standardRef)}</dd>` : ''}
@@ -500,37 +535,41 @@ function objectDetail(ctx, id) {
           ${o.updated ? `<dt>Stand</dt><dd>${esc(datum(o.updated))}</dd>` : ''}
           <dt>ID</dt><dd><code>${esc(o.objectId)}</code></dd>
         </dl>
-      </div>
-      <aside class="detail-layout__aside" aria-label="Ansprechstelle">
-        ${C.contactBox(contact, { title: 'Datenverwaltung', heading: 'h2' })}
-      </aside></div>`;
+      </section>`;
   };
 
   mount.innerHTML = `
   <div class="container section">
-    ${/* Ohne Pillenzeile: Domäne, Status und Realisierungsgrad standen dort als
-          Marken UND direkt darunter in den Eckdaten — zweimal dasselbe, und die
-          Marken sagten es unpräziser. */''}
-    ${C.detailHead({ backHref: BASE, backLabel: TITEL, title: o.name })}
+    ${/* App-Detailkopf (detailBar + h1, Design-Review B2) statt des Hero-Bands:
+          diese Ansichten folgen dem Objekt-Detail-Rezept der Apps — der Hero
+          gehört den Inhaltsseiten. Ohne Pillenzeile: Domäne, Status und
+          Realisierungsgrad standen dort als Marken UND direkt darunter in den
+          Eckdaten — zweimal dasselbe, und die Marken sagten es unpräziser. */''}
+    ${C.detailBar({ backHref: BASE, backLabel: TITEL })}
+    <h1 tabindex="-1">${esc(o.name)}</h1>
+    ${/* Die Definition ist die Beschreibung des Begriffs und steht als Lead
+          unter der H1 — wie auf dem Datensatzblatt (Nutzerentscheid
+          2026-08-04); in der Metadaten-Liste wiederholt sie sich nicht. */''}
+    ${o.definition ? `<p class="lead">${esc(o.definition)}</p>` : ''}
 
     <div class="tabs mt-6">
-      ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'mc-tab', ariaLabel: 'Geschäftsobjekt' })}
-      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'mc-tab', render: panelHtml, heading: true })}
+      ${C.tabBar({ items: tabs, active, idPrefix: 'mc-tab', ariaLabel: 'Geschäftsobjekt' })}
+      ${C.tabPanels({ items: tabs, active, idPrefix: 'mc-tab', render: panelHtml, heading: true })}
     </div>
   </div>`;
 
-  C.wireTabs(mount);
+  C.wireTabs(mount, { syncHash });
 
   // Attribute — die Tabelle trägt die eigentliche Substanz des Geschäftsobjekts
   // und wird bei grösseren Objekten lang; darum C.mountDataTable mit Suche,
   // Sortierung und Blätterleiste statt einer nackten C.table.
   ctx.onUnmount(C.mountDataTable(mount.querySelector('#mc-attrs'), {
-    id: 'mc-at', unit: 'Attribute', caption: `Attribute von ${o.name}`, perPage: 15,
+    id: 'mc-at', unit: { nom: 'Attribute', dat: 'Attributen' }, caption: `Attribute von ${o.name}`, perPage: 15,
     rows: o.attributes,
     searchKeys: ['name', 'definition'],
     sorts: [
       { value: 'ord', label: 'Reihenfolge', cmp: () => 0 },
-      { value: 'name', label: 'Name (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
+      { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
     ],
     facets: [
       { dim: 'keyRole', legend: 'Schlüsselrolle',
@@ -545,7 +584,7 @@ function objectDetail(ctx, id) {
     // darunter, mit eigenen Spalten für System, Tabelle, Feld und Güte — hier
     // wäre sie eine gedrängte Wiederholung. Die Norm-Referenz je Attribut
     // entfällt aus demselben Grund; die des Geschäftsobjekts steht in den
-    // Eckdaten.
+    // Metadaten.
     columns: [
       { key: 'name', label: 'Attribut', width: '14rem', render: (a) =>
         `<strong>${esc(a.name)}</strong>${a.required ? '' : ' <span class="small muted">optional</span>'}` },
@@ -575,7 +614,7 @@ function objectDetail(ctx, id) {
       { key: 'tableName', label: 'Tabelle', render: (m) =>
         `<a href="${tblHref(m.tableId)}">${esc(m.tableName)}</a><br><span class="small muted"><code>${esc(m.technical)}</code></span>` },
       { key: 'field', label: 'Feld', render: (m) => `<code>${esc(m.field)}</code>` },
-      { key: 'match', label: 'Güte', render: (m) => matchBadge(m.match) },
+      { key: 'match', label: 'Güte', render: (m) => matchBadge(core, m.match) },
     ],
   }));
 }
@@ -584,13 +623,7 @@ function objectDetail(ctx, id) {
 // Systemtabelle — Detail
 // ---------------------------------------------------------------------------
 async function tableDetail(ctx, id) {
-  const { mount, core, C, setTitle, setCrumbs } = ctx;
-  const esc = C.escape;
-  // Güte-Marke mit Erklärung am Element (siehe MATCH_HINT oben).
-  const matchBadge = (id) => {
-    const m = matchOf(core, id);
-    return `<span title="${esc(MATCH_HINT[id] || m.label)}">${C.badge(m.label, m.variant, 'sm')}</span>`;
-  };
+  const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   const t = core.systemTable(C.safeDecode(id));
   if (!t) {
     return C.renderNotFound(ctx, {
@@ -613,25 +646,35 @@ async function tableDetail(ctx, id) {
   const contact = core.contacts().find((c) => c.contactId === t.steward);
   const dataset = t.datasetId ? core.dataset(t.datasetId) : null;
   // Gleicher Aufbau wie das Geschäftsobjekt: drei Reiter, in der Übersicht die
-  // Eckdaten links und die Ansprechstelle rechts (.detail-layout). Nur die
-  // Felder unterscheiden sich — beide Detailansichten dieses Katalogs sollen
-  // sich gleich bedienen lassen.
+  // Gleicher Aufbau wie das Geschäftsobjekt (Lead + Verantwortliche Personen +
+  // Metadaten) — beide Detailansichten dieses Katalogs sollen sich gleich
+  // bedienen lassen; nur die Felder unterscheiden sich.
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
     { id: 'felder', label: `Felder (${t.fields.length})` },
     { id: 'realisierung', label: `Realisierung (${real.length})` },
   ];
+  // ?tab= wie beim Geschäftsobjekt (Design-Review B3): geteilter Link öffnet
+  // denselben Reiter; replaceState, weil ein Reiterwechsel kein Neuaufbau ist.
+  let active = query.get('tab') || tabs[0].id;
+  if (!tabs.some((x) => x.id === active)) active = tabs[0].id;
+  const syncHash = (tab) => {
+    const p = new URLSearchParams({ table: t.tableId });
+    if (tab !== tabs[0].id) p.set('tab', tab);
+    history.replaceState(history.state, '', `${BASE}?${p}`);
+  };
   const panelHtml = (id) => {
     if (id === 'felder') return '<div id="mc-fields"></div>';
     // Wie beim Geschäftsobjekt: leere Tabelle mit Kopfzeile statt Leerzustand.
     if (id === 'realisierung') return '<div id="mc-real"></div>';
-    // Wie beim Geschäftsobjekt: Beschreibung als kv-Zeile statt als Lead, und
-    // die Zahlen, die schon in den Reiterbeschriftungen stehen (Felder,
-    // realisierte Begriffe), nicht ein zweites Mal.
-    return `<div class="detail-layout"><div>
-        <h2 class="detail-section__title">Eckdaten</h2>
-        <dl class="kv">
-          <dt>Beschreibung</dt><dd>${esc(t.description)}</dd>
+    // Wie beim Geschäftsobjekt (Nutzerentscheid 2026-08-04): Beschreibung als
+    // Lead unter der H1, dann «Verantwortliche Personen» und «Metadaten» als
+    // linierte kv-Listen; die Zahlen der Reiterbeschriftungen (Felder,
+    // Realisierungen) stehen nicht ein zweites Mal hier.
+    return `${personsSection(contact)}
+      <section class="detail-section">
+        <h2 class="detail-section__title">Metadaten</h2>
+        <dl class="kv kv--ruled">
           <dt>System</dt><dd>${esc(t.systemName)}</dd>
           <dt>Schema</dt><dd>${esc(t.schemaLabel)}<br><span class="small muted"><code>${esc(t.schema)}</code> · ${esc(SCHEMA_TYPE[t.schemaType] || t.schemaType)}</span></dd>
           <dt>Technischer Name</dt><dd><code>${esc(t.name)}</code></dd>
@@ -639,8 +682,10 @@ async function tableDetail(ctx, id) {
           ${/* Aus der entfallenen Pillenzeile hierher: die Zertifizierung ist
                 eine Eigenschaft der Tabelle und darf nicht verschwinden. */''}
           <dt>Zertifiziert</dt><dd>${t.certified ? 'Ja' : 'Nein'}</dd>
-          <dt>Datensätze</dt><dd>${t.rowCount ? num(t.rowCount) : '—'}</dd>
-          ${/* Die Brücke in den DCAT-Katalog steht in den Eckdaten statt in einer
+          ${/* «Zeilen», nicht «Datensätze»: das Wort «Datensatz» bleibt dem
+                DCAT-Katalog vorbehalten (Terminologie-Kanon D22). */''}
+          <dt>Zeilen</dt><dd>${t.rowCount ? num(t.rowCount) : '—'}</dd>
+          ${/* Die Brücke in den DCAT-Katalog steht in den Metadaten statt in einer
                 eigenen Karte: sie ist eine EIGENSCHAFT dieser Tabelle («wird als
                 dieser Datensatz publiziert»), keine Aktion. */''}
           ${dataset ? `<dt>Publiziert als</dt><dd><a href="${esc(links.datensatz(dataset.id))}">${esc(core.t(dataset.title))}</a></dd>` : ''}
@@ -650,38 +695,37 @@ async function tableDetail(ctx, id) {
           ${t.updated ? `<dt>Stand</dt><dd>${esc(datum(t.updated))}</dd>` : ''}
           <dt>ID</dt><dd><code>${esc(t.tableId)}</code></dd>
         </dl>
-      </div>
-      <aside class="detail-layout__aside" aria-label="Ansprechstelle">
-        ${C.contactBox(contact, { title: 'Datenverwaltung', heading: 'h2' })}
-      </aside></div>`;
+      </section>`;
   };
 
   mount.innerHTML = `
   <div class="container section">
-    ${/* Ohne Pillenzeile — wie beim Geschäftsobjekt: System, Art und
-          Zertifizierung stehen in den Eckdaten. */''}
-    ${C.detailHead({
+    ${/* App-Detailkopf (detailBar + h1, Design-Review B2) statt des Hero-Bands
+          — wie beim Geschäftsobjekt. Ohne Pillenzeile: System, Art und
+          Zertifizierung stehen in den Metadaten. */''}
+    ${C.detailBar({
       backHref: C.catalogueHash(BASE, { kind: 'tabellen', system: [t.system] }),
       backLabel: t.systemName,
-      title: t.displayName,
     })}
+    <h1 tabindex="-1">${esc(t.displayName)}</h1>
+    ${t.description ? `<p class="lead">${esc(t.description)}</p>` : ''}
 
     <div class="tabs mt-6">
-      ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'mc-ttab', ariaLabel: 'Systemtabelle' })}
-      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'mc-ttab', render: panelHtml, heading: true })}
+      ${C.tabBar({ items: tabs, active, idPrefix: 'mc-ttab', ariaLabel: 'Systemtabelle' })}
+      ${C.tabPanels({ items: tabs, active, idPrefix: 'mc-ttab', render: panelHtml, heading: true })}
     </div>
   </div>`;
 
-  C.wireTabs(mount);
+  C.wireTabs(mount, { syncHash });
 
   ctx.onUnmount(C.mountDataTable(mount.querySelector('#mc-fields'), {
-    id: 'mc-fl', unit: 'Felder', caption: `Felder von ${t.name}`, perPage: 15,
+    id: 'mc-fl', unit: { nom: 'Felder', dat: 'Feldern' }, caption: `Felder von ${t.name}`, perPage: 15,
     rows: t.fields.map((f) => ({ ...f, real: core.realisedBy(t.tableId, f.name) })),
     searchKeys: ['name', 'description', 'dataType'],
     sorts: [
       { value: 'ord', label: 'Reihenfolge im System', cmp: () => 0 },
       { value: 'name', label: 'Feldname (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
-      { value: 'real', label: 'Realisierte Begriffe zuerst', cmp: (a, b) => b.real.length - a.real.length },
+      { value: 'real', label: 'Realisierte Geschäftsobjekte zuerst', cmp: (a, b) => b.real.length - a.real.length },
     ],
     facets: [
       { dim: 'key', legend: 'Schlüssel',
@@ -712,7 +756,7 @@ async function tableDetail(ctx, id) {
   }));
 
   ctx.onUnmount(C.mountDataTable(mount.querySelector('#mc-real'), {
-    id: 'mc-rl', unit: 'Begriffe', caption: `Von ${t.name} realisierte Geschäftsobjekte`, perPage: 15,
+    id: 'mc-rl', unit: { nom: 'Begriffe', dat: 'Begriffen' }, caption: `Von ${t.name} realisierte Geschäftsobjekte`, perPage: 15,
     emptyMsg: 'Diese Tabelle realisiert kein katalogisiertes Geschäftsobjekt — die Abbildung wird am Attribut des Geschäftsobjekts gepflegt und ist hier noch nicht erfasst.',
     rows: real,
     searchKeys: ['objectName', 'attribute', 'field'],
@@ -724,7 +768,7 @@ async function tableDetail(ctx, id) {
       { key: 'objectName', label: 'Geschäftsobjekt', render: (r) => `<a href="${objHref(r.objectId)}">${esc(r.objectName)}</a>` },
       { key: 'attribute', label: 'Attribut', render: (r) => esc(r.attribute) },
       { key: 'field', label: 'Feld', render: (r) => `<code>${esc(r.field)}</code>` },
-      { key: 'match', label: 'Güte', render: (r) => matchBadge(r.match) },
+      { key: 'match', label: 'Güte', render: (r) => matchBadge(core, r.match) },
     ],
   }));
 }

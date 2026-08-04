@@ -202,7 +202,9 @@ export function openGallery(items, start, C, opts = {}) {
     if (hasDetails(it)) {
       el.metakv.innerHTML = it.details.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
       el.metalink.hidden = !it.href;
-      if (it.href) { el.metalink.href = it.href; el.metalink.innerHTML = `<span class="btn__text">Zur Detailseite</span>${C.icon('ArrowRight', 'btn__icon')}`; }
+      // «‹Objekt› ansehen» — das Muster der übrigen Verweis-Aktionen; «Zur
+      // Detailseite» war der einzige Ausreisser (Design-Review D8).
+      if (it.href) { el.metalink.href = it.href; el.metalink.innerHTML = `<span class="btn__text">Aufnahme ansehen</span>${C.icon('ArrowRight', 'btn__icon')}`; }
     }
 
     // Fokus NUR beim Öffnen setzen. Vorher lief er bei jedem Blättern auf
@@ -230,7 +232,7 @@ export function openGallery(items, start, C, opts = {}) {
     window.removeEventListener('resize', onResize);
     untrap();
     overlay.remove();
-    document.body.classList.remove('chart-overlay-open');
+    document.body.classList.remove('body--overlay-open');
     if (trigger && trigger.focus) trigger.focus();
   };
   function onKey(e) {
@@ -284,7 +286,7 @@ export function openGallery(items, start, C, opts = {}) {
   // frühere Eigenliste ('button, a[href]') zählte den abgeschalteten Fit-Knopf
   // als letztes Element — Tab fiel damit aus dem Dialog heraus (Review lb-trap-1).
   const untrap = C.trapFocus(overlay);
-  document.body.classList.add('chart-overlay-open');
+  document.body.classList.add('body--overlay-open');
   document.body.appendChild(overlay);
   syncChrome();
   update(true);

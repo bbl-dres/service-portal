@@ -103,11 +103,8 @@ p { margin:0 0 1rem; }
 .color--link { color:var(--color-link); }
 .color--negative { color:var(--color-text-negative); }
 .text--asterisk ~ * .text--asterisk::after { content:''; }   /* nur der erste Stern (CD) */
-/* Overtitle/Eyebrow — CD typography.postcss:100-104 hat genau vier Deklarationen:
-   KEIN uppercase, KEIN letter-spacing, KEIN font-weight, KEIN align-items —
-   und `text-xs` ist die FESTE 0.75rem-Stufe, nicht die responsive Rampe.
-   Konsumenten kommen in Item 2.25. */
-.overtitle { display:flex; gap:.5rem; font-size:var(--fs-xs); color:var(--color-text-muted); }
+/* .overtitle (typography.postcss:100-104) exzidiert — der angekündigte
+   Konsument (Item 2.25) kam nie; die Portal-Eyebrow ist .eyebrow (Design-Review C10). */
 /* Bildlegende — CD bindet `figcaption { @apply legend }` (typography.postcss:131-137);
    ohne diese Bindung wird jede figcaption anders gestaltet. Farbe ist CDs
    text-text-500 (4.83:1 auf Weiss), nicht text-400 (2.54:1).
@@ -140,8 +137,6 @@ a { color:var(--color-link); text-decoration:none; }
 #main-content a:not(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a):is(:hover, :focus),
 .modal a:not(.btn, .notification a):is(:hover, :focus),
 .link:hover, .link:focus { color:var(--color-primary-800); }
-.link--negative { color:var(--color-text-negative); text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
-.link--negative:is(:hover, :focus) { color:var(--color-gray-300); }   /* CD link.postcss:12-15: hover UND focus */
 /* automatic external-link affordance (link.postcss:21-38) */
 :root { --icon-external-link:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m14.5 2.7v1.9h3.8l.6-.5.3.1-.7.6-6.4 6.4 1.4 1.4 6.4-6.4.6-.7.1.3-.5.7v3.7h1.9v-7.5z'/%3E%3Cpath d='m16.9 19.9h-12v-12.2h5.7v-1.9h-7.6v16h15.9v-7.7h-2z'/%3E%3C/svg%3E"); }
 /* .download-item und .card--clickable führen ihr Icon bereits selbst */
@@ -436,9 +431,9 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .bg--secondary-800{ background:var(--color-secondary-800); color:var(--color-text-negative); }
 .bg--secondary-900{ background:var(--color-secondary-900); color:var(--color-text-negative); }
 
-.vertical-spacing > * { margin-top:3rem; }
+.vertical-spacing > * { margin-top:var(--stack-gap); }
 .vertical-spacing > *:first-child { margin-top:0; }
-@media (min-width:1544px){ .vertical-spacing > * { margin-top:3.5rem; } }
+/* 3.5rem-Stufe ab 1544px kommt aus --stack-gap (tokens.css) */
 /* CD spacings.postcss:17-41 — die INTRA-Block-Regeln fehlten. Ohne sie stehen
    3rem zwischen einer <h2> und ihrem eigenen ersten Absatz, weshalb die Klasse
    bisher nur dort einsetzbar war, wo alle Kinder <section>-Wrapper sind
@@ -449,71 +444,39 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .vertical-spacing > p + p, .vertical-spacing > p + ul, .vertical-spacing > p + ol,
 .vertical-spacing > ul + p, .vertical-spacing > ol + p { margin-top:1em; }
 .stack > * + * { margin-top:1rem; }
-.stack-lg > * + * { margin-top:3rem; }
-@media (min-width:1544px){ .stack-lg > * + * { margin-top:3.5rem; } }
 /* .muted ist BEWUSST dunkler als CDs .text--light (text-600 statt text-500):
    text-500 fiele auf secondary-50-Flächen auf ~4.1:1 unter AA. .text--light
    selbst steht oben bei den CD-Utilities auf dem CD-Wert. */
 .muted { color:var(--color-text-muted); }
+/* Identifikatoren, Pfade, Schemanamen — EIN Mono-Rezept für jedes <code>.
+   Vorher war die Familie dreimal api-scoped gesetzt, und die <code> des
+   Metadatenkatalogs fielen auf die UA-Monoschrift zurück (Design-Review C13). */
+code { font-family:var(--font-mono); }
 .text-center { text-align:center; }
 .text-right { text-align:right; }
 .text-left { text-align:left; }
 
 /* Grids — mobile-first, CD breakpoints and responsive gaps (grids.postcss:10,25-56) */
 .grid { display:grid; gap:var(--gap-responsive); }
-.grid--2, .grid--3, .grid--4,
+/* Nur noch die CD-Namen (grids.postcss:25-54) — die Portal-Aliase grid--2/3/4
+   sind nach abgeschlossener Migration entfallen (Design-Review C17). */
 .grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:minmax(0,1fr); }
 /* min(260px,100%) statt 260px: verschachtelt in einer schmalen Spalte (oder unter
    320px Viewport) würde ein festes Minimum die Spur breiter als ihren Container
    machen — dieselbe Absicherung wie beim Kachelraster der Startseite. */
 .grid--auto { grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr)); }
 @media (min-width:768px) {
-  .grid--2, .grid--3, .grid--4,
   .grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media (min-width:1024px){
-  .grid--3, .grid--responsive-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  .grid--4, .grid--responsive-cols-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .grid--responsive-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .grid--responsive-cols-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
 }
-/* CD grids.postcss:226-271 — `.grid--items-N` balanciert die LETZTE Zeile, indem
-   es das erste (bzw. die ersten zwei) Elemente breiter spannt. `.grid--3` fixiert
-   dagegen drei Spalten unabhängig von der Elementzahl und lässt das letzte
-   Element allein stehen (TopNewsSection.vue:5 nutzt `grid grid--items-5`).
-   Adoption: Item 7.3. */
-.grid--items-1,.grid--items-2,.grid--items-3,.grid--items-4,.grid--items-5 { grid-template-columns:minmax(0,1fr); }
-@media (min-width:768px){
-  .grid--items-1 { grid-template-columns:repeat(1,minmax(0,1fr)); }
-  .grid--items-2,.grid--items-3 { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .grid--items-4 { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  .grid--items-5 { grid-template-columns:repeat(12,minmax(0,1fr)); }
-  .grid--items-3 > *, .grid--items-4 > * { grid-column:span 1; }
-  .grid--items-3 > *:nth-child(1) { grid-column:span 2; }
-  .grid--items-4 > *:nth-child(1) { grid-column:span 3; }
-  .grid--items-5 > * { grid-column:span 6; }
-}
-@media (min-width:1024px){
-  .grid--items-5 > * { grid-column:span 4; }
-  .grid--items-5 > *:nth-child(1),
-  .grid--items-5 > *:nth-child(2) { grid-column:span 6; }
-}
-/* minmax(0,1fr), nicht 1fr: `1fr` ist `minmax(auto,1fr)`, die Spur kann also nicht
-   unter die min-content-Breite ihres Inhalts schrumpfen. Ein <select> mit langen
-   Optionen trieb die einspaltige Spur auf 388px in einem 358px-Container — der
-   Überhang wurde von .container{overflow-x:clip} still abgeschnitten. Dieselbe
-   Absicherung wie CD sie auf jeder generierten Spur setzt (grids.postcss:70,93,119)
-   und wie app.css:140 sie für .container--grid bereits verwendet. */
+/* .grid--items-N (CD grids.postcss:226-271, Zeilen-Balancierung) ist EXZIDIERT:
+   null Konsumenten seit zwei Wellen — Regel des Blatts: Parity-Klassen erst mit
+   dem ersten Konsumenten (Design-Review C10). */
 
-/* Ratios (ratio.postcss:5-33) — CD-Selektoren wörtlich (escaped `--16\/9` usw.),
-   damit CD-förmiges Markup unverändert greift. CDs z-50-Lift («for video iframes
-   in clickable cards») fehlt BEWUSST bis zum ersten Konsumenten: ein nacktes
-   z-index:50 kollidierte mit --z-nav-active der Portal-Skala. */
-.ratio { position:relative; }
-.ratio > * { position:absolute; inset:0; width:100%; height:100%; }
-.ratio--1\/1  { padding-bottom:98%; }
-.ratio--2\/1  { padding-bottom:50%; }
-.ratio--4\/3  { padding-bottom:75%; }
-.ratio--16\/9 { padding-bottom:56.25%; }
-.ratio--mb { margin-bottom:1.5rem; }
+/* .ratio--* (ratio.postcss:5-33) exzidiert — null Konsumenten (Design-Review C10). */
 
 /* ---- Icons (monochrome SVGs via CSS mask -> currentColor) ---- */
 .icon { display:inline-block; width:auto; height:1rem; vertical-align:-.15em;
@@ -783,7 +746,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .search--main.open .search__button { opacity:0; visibility:hidden; pointer-events:none; }
 .search__form { position:absolute; right:0; top:50%; transform:translateY(-50%); display:flex; align-items:stretch;
   width:0; opacity:0; visibility:hidden; pointer-events:none; overflow:hidden;
-  transition:width var(--duration-slow) ease, opacity var(--duration) ease, visibility 0s linear var(--duration-slow); }
+  transition:width var(--duration-slow) var(--ease-in-out), opacity var(--duration) var(--ease-in-out), visibility 0s linear var(--duration-slow); }
 /* KEIN :focus-within — blosses Tabben auf den «Suche»-Schalter hätte sonst das
    Feld aufgeklappt, während aria-expanded="false" blieb und der Schalter darunter
    sichtbar stehenblieb: unangeforderter Kontextwechsel (WCAG 3.2.1) plus falsch
@@ -794,6 +757,13 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
   width:18rem; max-width:60vw; opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
 .search__form input { width:100%; padding:.625rem 3rem .625rem 1rem; border:1px solid var(--color-border-input);
   border-radius:var(--radius-xs); background:var(--color-bg); box-shadow:var(--shadow-2xl); min-height:var(--input-h); }
+/* CDs Fokusring am offenen Kopf-Suchfeld ist PURPUR (ring-2 ring-purple-500,
+   global.postcss:75-77). Der globale :focus-visible-Ring dieses Blatts liegt
+   2px AUSSERHALB des Felds — .search__form beschneidet ihn (overflow:hidden
+   trägt die Aufklapp-Animation), sichtbar blieb nur der dunkle UA-Ring
+   (Nutzerbefund 2026-08-04). Deshalb hier INSET (-2px) und auf :focus statt
+   nur :focus-visible — CD stylt das Feld ebenfalls ab Fokus (search.postcss:22). */
+.search__form input:focus { outline:2px solid var(--color-focus-ring); outline-offset:-2px; }
 /* CD search.postcss:120-123: ab lg bekommt das offene Kopffeld py-4. */
 @media (min-width:1024px){ .search__form input { padding-top:1rem; padding-bottom:1rem; } }
 .search__submit { position:absolute; right:0; top:0; bottom:0; width:3rem; background:none; border:0;
@@ -829,9 +799,9 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 /* top:100% = Unterkante der gesamten Navigation (auch wenn sie umbricht),
    gleich wie der Drawer — sonst tönt der Overlay eine umgebrochene zweite
    Navigationszeile grau ein und es entsteht eine Lücke über dem Drawer. */
-.desktop-menu__overlay { position:absolute; top:100%; right:0; bottom:0; left:0; z-index:20; height:120vh;
+.desktop-menu__overlay { position:absolute; top:100%; right:0; bottom:0; left:0; z-index:2; height:120vh;
   background:linear-gradient(to bottom, rgba(17,24,39,.2) 0%, rgba(17,24,39,.2) 50%, rgba(17,24,39,0) 100%);
-  opacity:1; pointer-events:auto; transition:opacity var(--duration-slow) ease; }
+  opacity:1; pointer-events:auto; transition:opacity var(--duration-slow) var(--ease-in-out); }
 .desktop-menu__overlay.hidden { height:0; overflow:hidden; opacity:0; pointer-events:none; }
 .desktop-menu .main-navigation, .mobile-menu .main-navigation { border-bottom:0; }
 .main-navigation { width:100%; background:var(--color-bg); border-bottom:1px solid var(--color-border); position:relative; }
@@ -850,8 +820,8 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 @media (min-width:1280px){ .main-navigation > ul { min-height:4rem; } }
 @media (min-width:1920px){ .main-navigation > ul { min-height:5rem; } }
 .main-navigation > ul > li > a,
-.main-navigation > ul > li > button { position:relative; display:flex; align-items:center; gap:.4rem; color:var(--color-text);
-  height:100%; min-height:3.5rem; padding:1rem .7rem; font:inherit; font-size:var(--text-base); line-height:var(--lh-tight); white-space:nowrap;
+.main-navigation > ul > li > button { position:relative; display:flex; align-items:center; gap:.5rem; color:var(--color-text);
+  height:100%; min-height:3.5rem; padding:1rem .75rem; font:inherit; font-size:var(--text-base); line-height:var(--lh-tight); white-space:nowrap;
   background:none; border:0; cursor:pointer; text-decoration:none; transition:color var(--duration-fast),box-shadow var(--duration); }
 @media (min-width:1280px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:4rem; } }
 @media (min-width:1920px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:5rem; } }
@@ -894,7 +864,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .desktop-menu__drawer { position:absolute; left:0; top:100%; width:450px; max-width:calc(100vw - 1.5rem);
   padding:4rem 2rem 2rem; z-index:var(--z-drawer); background:var(--color-bg); overflow:hidden;
   max-height:calc(100vh - var(--shell-top, 14rem) - 1.5rem); overflow-y:auto; overscroll-behavior:contain;
-  box-shadow:var(--shadow-2xl); opacity:1; animation:navMenuIn var(--duration) ease; }
+  box-shadow:var(--shadow-2xl); opacity:1; animation:navMenuIn var(--duration) var(--ease-out); }
 @media (min-width:1280px){ .desktop-menu__drawer { width:650px; padding:5rem 3rem 3rem; } }
 @media (min-width:1920px){ .desktop-menu__drawer { width:850px; padding:6rem; } }
 /* Nur ein dezentes Einschieben — die Sichtbarkeit steuert das hidden-Attribut.
@@ -910,7 +880,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    statt bisher in der Drawer-Ecke (top/right:0) mit zu kleinem Icon (0.75rem).
    Tinte = CDs menu__action-btn (menu.postcss:116-122): text-500 ruhend, Hover
    text-600 auf secondary-50 — dieselbe Paarung wie .navy__back daneben. */
-.desktop-menu__close { position:absolute; top:1rem; right:0; display:inline-flex; align-items:center; gap:.4rem;
+.desktop-menu__close { position:absolute; top:1rem; right:0; display:inline-flex; align-items:center; gap:.5rem;
   padding:.75rem 1rem; color:var(--color-text-500); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
 .desktop-menu__close:hover { color:var(--color-text-600); background:var(--color-secondary-50); }
 .desktop-menu__close .icon { width:1.25rem; height:1.25rem; }
@@ -925,7 +895,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .navy__slider { display:block; }
 .navy__pane[data-pane="1"] { display:none; }
 .navy--drill[data-level="1"] .navy__pane[data-pane="0"] { display:none; }
-.navy--drill[data-level="1"] .navy__pane[data-pane="1"] { display:block; animation:navyDrillIn var(--duration-slowest) ease; }
+.navy--drill[data-level="1"] .navy__pane[data-pane="1"] { display:block; animation:navyDrillIn var(--duration-slowest) var(--ease-out); }
 /* Fade, not a translateX slide: a transformed pane becomes a containing block,
    which would re-anchor the absolutely-positioned .navy__back to the pane instead
    of the drawer's top row. Opacity has no such side effect.
@@ -941,7 +911,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    (menu.postcss:109-123 — px-4 py-3, text-500, Hover secondary-50/text-600) wie
    der Schliessen-Knopf, mit dem er die Kopfzeile teilt; die frühere
    Primary-Linkfarbe las sich als Navigationslink statt als Menü-Aktion. */
-.navy__back { display:inline-flex; align-items:center; gap:.4rem; margin:0 0 .5rem; padding:.75rem 1rem;
+.navy__back { display:inline-flex; align-items:center; gap:.5rem; margin:0 0 .5rem; padding:.75rem 1rem;
   min-height:var(--target-min); background:none; border:0; font:inherit; font-size:var(--fs-sm);
   color:var(--color-text-500); cursor:pointer; }
 .navy__back:hover { color:var(--color-text-600); background:var(--color-secondary-50); }
@@ -998,8 +968,6 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .menu__item:hover { background:var(--color-secondary-50); }
 .menu__item--condensed { padding:.75rem; }
 .menu__item--border { border-bottom:1px solid var(--color-secondary-100); }
-.menu__item--small { font-size:var(--fs-sm); }
-.menu__item--grey { background:var(--color-secondary-50); }
 .menu__item--active::after { content:""; display:block; position:absolute; top:0; bottom:0; left:0;
   width:3px; background:var(--color-primary-500); }
 .menu__item__flex { display:flex; width:100%; align-items:center; justify-content:space-between; gap:.5rem; }
@@ -1233,12 +1201,9 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 
 /* Hero (hero.postcss:5-155) — CD heroes sit on white; tint comes from bg-- sections */
 .hero { padding-top:var(--section-pt); padding-bottom:var(--section-py); background:none; border-bottom:0; }
-/* Ein Hero, der NUR die Überschrift trägt (kein Lead, keine Pillenzeile), braucht
-   nicht die Bandhöhe eines Heros mit Text: der untere Innenabstand ist für drei
-   gestapelte Elemente bemessen und liess unter einer einzelnen H1 rund 80px
-   Leerfläche stehen. Betrifft die Detailansichten des Metadatenkatalogs, deren
-   Beschreibung in den Eckdaten steht statt unter dem Titel. */
-.hero:has(> .hero__content > .hero__title:only-child) { padding-bottom:2rem; }
+/* Der frühere :has()-Sonderfall für Nur-Titel-Heros ist entfallen: sein einziger
+   Konsument (Metadatenkatalog-Details) trägt jetzt das App-Detail-Rezept
+   detailBar + h1 statt eines Heros (Design-Review B2). */
 .hero__content { display:flex; flex-direction:column; gap:1.5rem; max-width:60rem; }
 @media (min-width:1024px){ .hero__content { gap:2rem; } }
 @media (min-width:1920px){ .hero__content { gap:2.5rem; } }   /* hero.postcss:14-16 3xl:space-y-10 */
@@ -1452,48 +1417,10 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .card--clickable:hover::after, .card--clickable:focus-within::after { border-color:var(--color-gray-50); }
 .card--clickable:hover .card__title, .card--clickable:focus-within .card__title { color:var(--color-primary-700); }
 /* flat card (card.postcss:109-141) — replaces the old .tile */
-/* `.card--flat` und `.card--list` hatten eine BYTE-IDENTISCHE Basis, zweimal
-   vollständig ausgeschrieben — bis hin zu zwei gleichlautenden
-   Hover-Neutralisierungen. Sie steht jetzt einmal. Dabei fällt auf, dass
-   `.card--list` die Polsterrampe fehlte, die `.card--flat` korrekt führte und
-   die CD für BEIDE vorgibt (card.postcss:331-400 «py-4 lg:py-6 2xl:py-8 px-1»);
-   die Zusammenlegung zieht sie nach. Der einzige echte Unterschied ist das
-   Bildverhalten ab md — das steht unten weiterhin nur bei `.card--list`. */
-.card--flat, .card--list { padding:1rem .25rem; background:transparent; box-shadow:none;
-  border-bottom:1px solid var(--color-secondary-200); }
-@media (min-width:1024px){ .card--flat, .card--list { padding-block:1.5rem; } }
-@media (min-width:1544px){ .card--flat, .card--list { padding-block:2rem; } }
-.card--flat .card__body, .card--flat .card__footer,
-.card--list .card__footer { padding:0; }
-.card--list .card__body { padding:0 0 1rem; }   /* card.postcss:381-383 `pt-0 pb-4` */
-.card--flat.card--clickable:hover,
-.card--list.card--clickable:hover { box-shadow:none; }
-.card--flat.card--clickable:hover::after,
-.card--list.card--clickable:hover::after { border-color:transparent; }
-
-/* Listenkarte (CD card.postcss:331-400) — die Standarddarstellung von
-   newsList.vue:124-137 und searchResults.vue:44-46. Das Bild ist unter md
-   ABSICHTLICH unterdrückt: bei 390px sind ~450px Scrollweg pro Karte, davon
-   219px dekoratives Bild. Adoption: Item 5.10.
-   ZWEI Klauseln von card.postcss:331-400 sind bewusst NICHT portiert und dürfen
-   nicht nachgezogen werden:
-   1. `.card--list .btn { h-0 min-h-0 border-0 }` — home's areaCard und knowledge's
-      newsList legen `<span class="btn btn--link">` in den `.card__footer`; die
-      CD-Regel würde sie auf Höhe 0 kollabieren.
-   2. CDs Raster ab sm (640), während `.card__image` `hidden md:block` (768) ist —
-      zwischen 640 und 767 reserviert das eine leere 1fr-Spur für ein
-      `display:none`-Bild. Hier steht bei BEIDEN 768, deshalb kann der Fall nicht
-      auftreten. */
-.card--list .card__image { display:none; }
-@media (min-width:768px){
-  .card--list { display:grid; grid-template-columns:4fr 1fr; column-gap:1.5rem; }
-  /* border-block wie CD (card.postcss:364 border-t/b-[0.5em] transparent) —
-     hält das Bild von den Zeilen-Trennlinien frei. */
-  .card--list .card__image { display:block; grid-column:2; grid-row:1; height:0; padding-bottom:80%;
-    border-block:.5em solid transparent; }
-  .card--list .card__image img, .card--list .card__image .photo { object-fit:contain; object-position:right top; }
-  .card--list .card__content { grid-column:1; grid-row:1; align-self:start; }
-}
+/* .card--flat/.card--list (card.postcss:331-400) EXZIDIERT — null Konsumenten
+   über zwei Wellen; die angekündigte Adoption (Item 5.10) kam nie. Die mobile
+   Verdichtung der Trefferlisten übernimmt .catalogue-grid unten, .search-result
+   führt seine Polsterrampe selbst (Design-Review C10). */
 
 /* Katalog-Ergebnisraster: unter md dieselbe Dichte wie CDs card--list, ohne das
    Karten-Markup anzufassen (die `.card`-Klasse bleibt überall stehen). */
@@ -1560,15 +1487,11 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .badge--gray    { background:var(--color-secondary-100); color:var(--color-gray-800); }
 .badge--success, .badge--green { background:var(--color-success-bg); color:var(--color-success-text); }
 .badge--warning, .badge--orange { background:var(--color-warning-bg); color:var(--color-warning-text); }
-.badge--yellow  { background:var(--color-yellow-bg); color:var(--color-yellow-text); }
 .badge--error, .badge--red { background:var(--color-error-bg); color:var(--color-error-text); }
 .badge--info, .badge--blue { background:var(--color-info-bg); color:var(--color-info-text); }
-.badge--indigo  { background:var(--color-indigo-bg); color:var(--color-indigo-text); }
-.badge--purple  { background:var(--color-purple-bg); color:var(--color-purple-text); }
-.badge--pink    { background:var(--color-pink-bg); color:var(--color-pink-text); }
-.badge--teal    { background:var(--color-teal-bg); color:var(--color-teal-text); }
-.badge--negative { background:var(--color-gray-800); color:var(--color-gray-100); }
-.badge--disabled { opacity:.4; cursor:default; }
+/* badge--yellow/indigo/purple/pink/teal/negative/disabled exzidiert — null
+   Produzenten (auch nicht über badge--${variant}); die Akzent-Tokens in
+   tokens.css bleiben als CD-Kanon dokumentiert (Design-Review C9). */
 
 /* Tag items — CD's filter control (tag-item.postcss:7-85) */
 /* min-height über --control-h: das Token trägt exakt CDs 44/48/52-Knopframpe
@@ -1585,18 +1508,17 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
 .tag-item--sm { font-size:var(--text-sm); }
 /* Die Hover-Transition ist eine BEWUSSTE portalweite Politur (CD schaltet
    Tag-/Badge-Hover hart um): über die --duration-Tokens reduced-motion-sicher. */
-.tag-item__inner { display:inline-flex; align-items:center; gap:.35rem; padding-inline:1rem; line-height:1.25;
+.tag-item__inner { display:inline-flex; align-items:center; gap:.5rem; padding-inline:1rem; line-height:1.25;
   border-radius:var(--radius-full); background:var(--color-gray-200); transition:background var(--duration-fast),color var(--duration-fast); }
 @media (min-width:1544px){ .tag-item__inner { padding-inline:1.25rem; } }
 .tag-item__text { display:inline-block; padding-block:.375rem; text-align:left; }
 @media (min-width:1280px){ .tag-item__text { padding-block:.5rem; } }
 .tag-item:hover .tag-item__inner { background:var(--color-gray-300); }
-.tag-item--active .tag-item__inner, .tag-item--primary .tag-item__inner { background:var(--color-gray-800); color:var(--color-text-negative); }
+.tag-item--active .tag-item__inner { background:var(--color-gray-800); color:var(--color-text-negative); }
 /* CD tag-item.postcss:61-67: die aktive Pille ist inert (der Zustand ist die
    Aktion). Tastatur: der JS-Wächter der Konsumenten fängt Enter auf dem
    aktiven Chip ab (tenancies [data-floor]). */
 .tag-item--active { pointer-events:none; }
-.tag-item--primary:hover .tag-item__inner { background:#000; }
 .tag-item:focus-visible { outline:none; }
 /* Versatz 0: CDs Ring liegt AN der Pille (tag-item.postcss:17-19 ring-2 ohne
    Offset) und folgt dank outline-Radius-Verhalten der Rundung. */
@@ -1617,7 +1539,6 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    entsteht auf breiten Viewports ein toter Tab-Stop. */
 /* Nur `.sr-only`-Containment, kein Scroller. */
 .tab__controls { position:relative; }
-.text-nowrap { white-space:nowrap; }   /* nur Identifikatorspalten, Item 5.7 */
 
 /* Tables (table.postcss:5-135) */
 .table-wrapper { position:relative; overflow-x:auto; }
@@ -1625,7 +1546,7 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    Kasten (Klasse von wireScrollRegions). sticky/left:0 hält ihn beim Scrollen. */
 .table-wrapper__hint { display:none; }
 .table-wrapper.is-scrollable > .table-wrapper__hint {
-  display:flex; align-items:center; gap:.35rem;
+  display:flex; align-items:center; gap:.5rem;
   position:sticky; left:0; width:max-content;
   margin:.5rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); }
 .table-wrapper.is-scrollable > .table-wrapper__hint .icon { flex:none; }
@@ -1737,9 +1658,8 @@ table.table--compact thead th, table.table--compact td, table.table--compact tbo
 .form__group__input, .form__group__select { width:100%; display:flex; flex-direction:column; gap:.5rem; }
 /* message/hint pills hug their text rather than stretching in the column */
 .form__group__input > .badge, .form__group__select > .badge { align-self:flex-start; }
-.form__group__radio { display:flex; align-items:baseline; gap:.5rem; margin-bottom:.5rem; }
-label + .form__group__radio { margin-top:.5rem; }   /* CD form.postcss:19-22 */
-.form__group__checkbox { display:flex; align-items:baseline; gap:.5rem; margin-bottom:.5rem; }
+/* .form__group__radio/__checkbox (form.postcss:19-22) exzidiert — beide ohne
+   Konsument seit Einführung (Design-Review C10). */
 .form__group__input > label, .form__group__select > label {
   display:block; font-weight:var(--fw-regular); font-size:var(--text-base); color:var(--color-text); }
 /* Die Legende teilt Darstellung und Farbe mit den Feldbeschriftungen, aber weder
@@ -1927,6 +1847,10 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 .notification--warning { background:var(--color-warning-bg-subtle); color:var(--color-warning-text); }
 .notification--error   { background:var(--color-error-bg-subtle);   color:var(--color-error-text); }
 .notification--hint    { background:var(--color-secondary-50);      color:var(--color-gray-700); }
+/* --alert (Lebensgefahr, notification.postcss:29-58) hat bewusst KEINEN
+   Portal-Konsumenten — die Variante bleibt als CD-Kanon stehen, weil
+   --color-alert-bg und der notification()-role-Zweig sie referenzieren;
+   löschen würde die Kette verwaisen (Design-Review, Entscheid zu C9). */
 .notification--alert   { background:var(--color-alert-bg);          color:var(--color-text-negative); }
 /* JEDES interaktive Kind einer Meldung erbt die Meldungsfarbe (currentColor) statt
    Brand-Primary — CD notification.postcss:11-21 (text-current, hover brightness-50).
@@ -1982,7 +1906,7 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 
 /* Status pipeline / timeline (portal extension — no CD counterpart) */
 .timeline { list-style:none; border-left:2px solid var(--color-border); margin-left:.5rem; }
-.timeline li { position:relative; padding:0 0 1.1rem 1.25rem; }
+.timeline li { position:relative; padding:0 0 1rem 1.25rem; }
 .timeline li::before { content:""; position:absolute; left:-.45rem; top:.2rem; width:.8rem; height:.8rem;
   border-radius:var(--radius-full); background:var(--color-gray-400); border:2px solid var(--color-bg); }
 .timeline li.done::before { background:var(--color-success-text); }
@@ -2027,7 +1951,7 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
   /* Die Segmente füllen die Zeile aus (`1 1 auto`): die Kette bleibt ein
      durchgehender Balken bis zum rechten Rand, statt mit einer Lücke zu enden. */
   flex:1 1 auto; max-width:100%;
-  display:flex; align-items:center; justify-content:center; gap:.4rem;
+  display:flex; align-items:center; justify-content:center; gap:.5rem;
   min-height:var(--target-min); padding:.5rem 1rem .5rem calc(1rem + var(--arrow));
   margin-left:calc(var(--seg-gap) - var(--arrow));
   background:var(--color-secondary-100); color:var(--color-text-muted);
@@ -2080,22 +2004,23 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 /* right-hand cluster in an accordion header (format badge + chevron) */
 .accordion__meta { display:flex; align-items:center; gap:.75rem; flex:none; }
 
-/* Key/value rows — the detail-page pattern of the Datenkatalog. A definition
-   list would need one grid per pair; these rows stack and wrap on their own. */
-.data-rows { display:flex; flex-direction:column; }
-.data-row { display:grid; grid-template-columns:minmax(0,1fr); gap:.15rem;
-  padding:.6rem 0; border-bottom:1px solid var(--color-secondary-200); font-size:var(--text-sm); }
-.data-row:last-child { border-bottom:0; }
-.data-row__key { color:var(--color-text-muted); }
-.data-row__value { overflow-wrap:anywhere; }
-@media (min-width:768px){
-  .data-row { grid-template-columns:minmax(10rem, 18rem) minmax(0, 1fr); gap:1.5rem; align-items:baseline; }
-}
-.box .data-row { border-bottom-color:var(--color-secondary-200); }
+/* .data-rows/.data-row sind GELÖSCHT: die Parallel-Implementierung des
+   Schlüssel-Wert-Musters (nur Datenkatalog + my-cases) ist auf das EINE
+   Rezept dl.kv (+ .kv--ruled für die Trennlinien) umgezogen — die alte
+   Begründung «eine dl bräuchte ein Grid je Paar» widerlegt .kv selbst
+   (Design-Review C7). */
 
 /* Detail page section rhythm (CD vertical-spacing between content blocks) */
-.detail-section { margin-top:3rem; }
-@media (min-width:1024px){ .detail-section { margin-top:3.5rem; } }
+/* Rhythmus aus --stack-gap: stuft bei 1544px wie CD (spacings.postcss:7-8) —
+   vorher stufte NUR diese Regel schon bei 1024px, Detailabschnitte der Apps
+   sassen zwischen 1024 und 1544 8px weiter auseinander als jede
+   .vertical-spacing-Spalte (Design-Review C2). */
+.detail-section { margin-top:var(--stack-gap); }
+/* Abstand unter dem Detail-Hero: EIN Wert für alle Geschwister. Vorher trugen
+   Dienstleistung/Anwendung/Info-Seite mt-6 (1.5rem), nur der Datensatz stand
+   auf dem 3rem-Abschnittsrhythmus — dieselbe Stelle, zwei Lufträume
+   (Design-Review, pages-Befund). Die Seiten tragen kein mt-6 mehr. */
+.hero + .container--grid, .hero + .measure-xl { margin-top:var(--stack-gap); }
 .detail-section__title { margin-bottom:1rem; }
 
 /* Tabs (tab.postcss:12-87) */
@@ -2150,15 +2075,15 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 @media (min-width:480px) { .box, .stat { padding:1.25rem; } }
 @media (min-width:1024px){ .box, .stat { padding:1.5rem; } }
 @media (min-width:1544px){ .box, .stat { padding:2rem; } }
-.box + .box { margin-top:1px; }
-/* Die Seitenspalte hatte hier eine Ausnahme: `.container__aside > .box:has(+ .box)`
-   nahm den Abstand zwischen zwei aufeinanderfolgenden Kästen weg, damit die
-   1px-Naht trägt statt einer Lücke. In der Praxis trägt sie nicht — Kasten und
-   Naht sind beide hell (secondary-50 auf Weiss), und drei gestapelte Kästen
-   lasen sich als EIN Block mit Zwischenüberschriften statt als Eckdaten,
-   Kontakt und Aktionen. Die Ausnahme ist deshalb wieder weg: es gilt der
-   CD-Abstand aus `.container__aside > *` (1.75rem, ab lg 2rem), derselbe wie
-   zwischen allen anderen Blöcken der Seitenspalte. */
+/* KEIN `.box + .box { margin-top:1px }` mehr — das war das Fossil der alten
+   1px-Naht-Idee (die :has()-Ausnahme dazu war schon länger weg, weil die Naht
+   auf hellem Grund «nicht trägt»). Die Regel schlug mit (0,2,0) aber weiter
+   den Spaltenrhythmus `.vertical-spacing > *` (0,1,0): auf der Dienstleistungs-
+   Landingpage klebten «Das brauchen Sie» und «So läuft es ab» als EIN Block
+   zusammen, während alles andere 3rem Abstand hatte (Nutzerbefund 2026-08-04).
+   Gestapelte Kästen beziehen ihren Abstand jetzt überall aus ihrem Kontext:
+   `.vertical-spacing > *` (Hauptspalte, 3/3.5rem), `.container__aside > *`
+   (1.75/2rem) bzw. `.detail-layout__aside .box + .box` (1.5rem). */
 /* h2 mitgeführt: der Kastentitel ist optisch immer derselbe, unabhängig davon,
    auf welcher Ebene der Gliederung er steht. Die Seitenspalte der
    Mietende-Detailansicht trägt h2, weil die Seite sonst von h1 direkt auf h3
@@ -2166,12 +2091,19 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 .box h2, .box h3 { font-size:var(--text-base); }
 
 /* Stat figures — expressed on .box (no CD component) */
-.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1.25rem; }
-@media (min-width:640px) { .stats { gap:2.25rem; } }
-@media (min-width:1024px){ .stats { gap:2.5rem; } }
+/* Spaltenrampe aus --gap-responsive — die private Teilkopie (1.25/2.25/2.5)
+   liess xs/xl/3xl aus und war der dritte Klon der konsolidierten Rampe
+   (Design-Review C3). */
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--gap-responsive); }
 .stat { box-shadow:none; }
-.stat__num { font-size:var(--text-3xl); font-weight:var(--fw-bold); line-height:var(--lh-tight); color:var(--color-secondary-600); }
-.stat__label { font-size:var(--text-sm); color:var(--color-text-muted); margin-top:.35rem; }
+/* DIE Grossziffer-Typografie des Portals: text-3xl · fw-bold · lh-tight ·
+   secondary-600 · Tabellenziffern. Drei Flächen konsumieren sie — .stat (Box),
+   .kpi (Dashboard-Karte), .kpi-strip (rahmenloser Streifen, dokumentiert) —
+   vorher mit drei Grössen, zwei Farben und zwei Beschriftungspositionen für
+   dasselbe Element (Design-Review C8). Die Flächen bleiben Modifier. */
+.stat__num, .kpi__value, .kpi-strip__value { font-size:var(--text-3xl); font-weight:var(--fw-bold);
+  line-height:var(--lh-tight); color:var(--color-secondary-600); font-variant-numeric:tabular-nums; }
+.stat__label { font-size:var(--text-sm); color:var(--color-text-muted); margin-top:.375rem; }
 
 /* Download items (download-item.postcss:5-57) */
 .download-items { list-style:none; margin:0; padding:0; }
@@ -2263,36 +2195,19 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; he
 .back-to-top-btn--outline:hover .back-to-top-btn__icon { background-color:var(--color-primary-700); }
 /* Bei offenem Mobilmenü oder Dokumentbetrachter ausblenden. */
 .body--mobile-menu-is-open .back-to-top-rail,
-body.docviewer-open .back-to-top-rail { display:none; }
+body.body--overlay-open .back-to-top-rail { display:none; }
 
-/* Sidebar (sub-nav) */
-.subnav { list-style:none; }
-.subnav a { display:block; padding:.5rem .75rem; border-left:3px solid transparent; color:var(--color-text); text-decoration:none; }
-.subnav a:hover { background:var(--color-secondary-50); text-decoration:none; }
-.subnav a.active { border-left-color:var(--color-primary-600); font-weight:var(--fw-bold); background:var(--color-secondary-50); }
-
-/* In-page search controls */
-.service-controls { display:grid; grid-template-columns:minmax(18rem, 30rem) minmax(0,1fr); gap:1rem 1.5rem; align-items:end; }
 /* Suchfeld mit Lupe INNERHALB des Rahmens (links); die native Löschen-X sitzt
-   rechts im Feld. Das Formular sendet weiterhin per Enter bzw. Klick auf die Lupe.
-   Dieselbe Anatomie trägt die Katalog-Werkzeugleiste (.catbar__search, weiter
-   unten); sie stand dort ein zweites Mal vollständig ausgeschrieben. Gemeinsam
-   ist alles ausser der Feldhöhe und der vertikalen Ausrichtung des Knopfes. */
-.service-controls__search, .catbar__search { position:relative; }
-.service-controls__search input, .catbar__search input { width:100%; padding-left:var(--target-min); }
-.service-controls__submit, .catbar__submit { position:absolute; left:0; width:var(--target-min);
+   rechts im Feld. Das Formular sendet weiterhin per Enter bzw. Klick auf die
+   Lupe. Die .service-controls-Hälften der früheren Gruppenselektoren sind
+   entfallen — die Dienstleistungsseite rendert seit der catbar-Migration keine
+   .service-controls mehr, nur die toten Selektorhälften blieben stehen
+   (Design-Review C9). */
+.catbar__search { position:relative; }
+.catbar__search input { width:100%; padding-left:var(--target-min); }
+.catbar__submit { position:absolute; left:0; width:var(--target-min);
   min-height:0; padding:0; justify-content:center; color:var(--color-text-muted); }
-.service-controls__submit:hover, .catbar__submit:hover { color:var(--color-primary-600); background:none; }
-/* Das Dienstleistungsfeld ist 3rem hoch und sitzt unter einer Beschriftung —
-   der Knopf richtet sich deshalb an der Unterkante aus, nicht über die volle Höhe. */
-/* Feld-Rampe statt fixer 48px — der Knopf folgt derselben Variable und bleibt bündig. */
-.service-controls__search input { min-height:var(--input-h); }
-.service-controls__submit { bottom:0; height:var(--input-h); }
-.service-controls__filters { display:grid; grid-template-columns:minmax(12rem, 1fr) minmax(12rem, 1fr); gap:1rem 1.5rem; align-items:end; }
-@media (max-width:1279.98px){
-  .service-controls { grid-template-columns:minmax(0,1fr); }
-  .service-controls__filters { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
-}
+.catbar__submit:hover { color:var(--color-primary-600); background:none; }
 
 /* Ergebniskopf (search.postcss:208-234): Trefferzahl links, Steuerung rechts,
    auf einer Trennlinie. Der Ansichtswechsel sitzt hier statt in den Filtern. */
@@ -2353,7 +2268,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
 @media (min-width:1544px){ .search-result__link { padding-top:2rem; padding-bottom:2rem; } }
 .search-result__link:hover .search-result__title,
 .search-result__link:focus-visible .search-result__title { color:var(--color-primary-700); }
-.search-result__meta { margin:0 0 .15rem; }
+.search-result__meta { margin:0 0 .125rem; }
 .search-result__title { font-size:var(--text-base); font-weight:var(--fw-bold); line-height:var(--lh-snug); margin:0; }
 .search-result__desc { margin:.25rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
 /* Nulltreffer-Block nach search.postcss:240-247: eigener vertikaler Innenabstand,
@@ -2404,7 +2319,8 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .domain-tile__icon { display:block; color:var(--color-primary-600); margin-bottom:.25rem; }
 .card--clickable:hover .domain-tile__icon { color:var(--color-primary-700); }
 
-/* ---- Datenportal dashboards ---- */
+/* ---- Dashboards (dash-*/dashboard-*/kpi/filter-panel) — geteilt von
+        js/apps/dataportal.js und js/apps/estate.js über js/dashboard-chrome.js ---- */
 /* Der frühere .dash-hero-Block (Grossziffer über dem Raster) ist gelöscht —
    kein Emitter mehr in js/; die Grossziffern tragen heute die .kpi-Kacheln. */
 .dash-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1.5rem; position:relative; }
@@ -2422,7 +2338,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
    radius-lg); nur die Fläche ist INVERTIERT, weil die Leinwände es sind:
    weisse Karte auf getönter Dashboard-Fläche hier, getönte Karte auf weisser
    Seite dort — beide Entscheidungen sind dokumentiert. */
-.filter-panel { background:var(--color-bg); border:1px solid var(--color-secondary-100);
+.filter-panel { background:var(--color-bg); border:1px solid var(--panel-border);
   border-radius:var(--radius-lg); padding:1rem 1.25rem; }
 .filter-panel__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:1rem; }
 .filter-panel__title { font-size:var(--text-lg); font-weight:var(--fw-bold); margin:0; }
@@ -2468,16 +2384,17 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .kpi-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-bottom:1.5rem; }
 @media (max-width:479.98px){ .kpi-row { grid-template-columns:minmax(0,1fr); } }
 @media (min-width:768px){ .kpi-row { grid-template-columns:repeat(4,minmax(0,1fr)); } }
-.kpi { background:var(--color-bg); border:1px solid var(--color-secondary-100); border-radius:var(--radius-lg);
-  padding:1rem 1.1rem; box-shadow:var(--shadow-sm); }
+.kpi { background:var(--color-bg); border:1px solid var(--panel-border); border-radius:var(--radius-lg);
+  padding:1rem 1rem; box-shadow:var(--shadow-sm); }
 /* Lange Kennzahlnamen liefen aus der Kachel; Einheit brach allein um (Item 2.16). */
 .kpi__label { font-size:var(--text-sm); color:var(--color-text-muted);
   overflow-wrap:anywhere; hyphens:auto; }
-.kpi__value { display:flex; flex-wrap:wrap; align-items:baseline; gap:.3rem;
-  font-size:var(--fs-3xl); line-height:1.15; font-weight:var(--fw-bold); color:var(--color-text);
-  margin-top:.2rem; overflow-wrap:anywhere; }
+/* Typografie (Grösse/Farbe/Ziffern) kommt aus dem geteilten Grossziffer-Rezept
+   bei .stat__num — hier nur Layout der Kachel. */
+.kpi__value { display:flex; flex-wrap:wrap; align-items:baseline; gap:.25rem;
+  margin-top:.25rem; overflow-wrap:anywhere; }
 .kpi__unit { font-size:var(--fs-base); font-weight:var(--fw-regular); color:var(--color-text-muted); margin-left:0; }
-.kpi__delta { font-size:var(--fs-xs); color:var(--color-text-muted); margin-top:.3rem; }
+.kpi__delta { font-size:var(--fs-xs); color:var(--color-text-muted); margin-top:.25rem; }
 .kpi__delta.is-good { color:var(--color-success-text); }
 /* Gegenstück zu .is-good — fehlte, sodass eine Verschlechterung im neutralen Grau
    erschien. Richtung darf nicht allein über Farbe laufen (WCAG 1.4.1): Item 6.11
@@ -2504,8 +2421,8 @@ body.docviewer-open .back-to-top-rail { display:none; }
 /* Popups auf .pf-map bekamen bisher MapLibre-Defaults — an die Dashboard-Popups
    angleichen (Item 2.5d). */
 .dash-map .maplibregl-popup-content, .pf-map .maplibregl-popup-content {
-  padding:.75rem .9rem; border-radius:var(--radius-lg);
-  border:1px solid var(--color-secondary-100); box-shadow:var(--shadow-lg); font-size:var(--text-sm); }
+  padding:.75rem .875rem; border-radius:var(--radius-lg);
+  border:1px solid var(--panel-border); box-shadow:var(--shadow-lg); font-size:var(--text-sm); }
 /* MapLibre liefert seine Bedienknöpfe ungestylt mit 29x29 aus — auf CDs Rampe
    holen (in diag.json auf dash-immobilien, portfolio und projects bei JEDER Breite).
    Die Rampe wächst hier BEWUSST nicht mit der Breite wie sonst (--control-h):
@@ -2550,9 +2467,9 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .chart__title { min-width:0; flex:1 1 12rem; overflow-wrap:anywhere;
   font-size:var(--text-base); font-weight:var(--fw-bold); margin:0; }
 @media (max-width:479.98px){ .chart__actions { min-height:var(--target-min); } }
-.chart__legend { display:flex; flex-wrap:wrap; gap:1rem; margin-top:.6rem; font-size:var(--text-sm); color:var(--color-text-muted); }
-.chart__legend-item { display:inline-flex; align-items:center; gap:.4rem; }
-.chart__swatch { width:.75rem; height:.75rem; border-radius:2px; flex:none; }
+.chart__legend { display:flex; flex-wrap:wrap; gap:1rem; margin-top:.625rem; font-size:var(--text-sm); color:var(--color-text-muted); }
+.chart__legend-item { display:inline-flex; align-items:center; gap:.5rem; }
+.chart__swatch { width:.75rem; height:.75rem; border-radius:var(--radius-sm); flex:none; }
 .chart__plot { margin-top:.75rem; }
 .chart__svg { width:100%; height:auto; display:block; overflow:visible; }
 .chart__bar, .chart__dot { transition:opacity var(--duration-fast); }
@@ -2563,7 +2480,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
    (CSV/Excel). Darum braucht die Tabelle keine eigene Optik; die früheren
    .chart__sql-Regeln (SQL-Ausklapper) sind mit ihrem Emitter entfallen. */
 .chart__tooltip { position:absolute; z-index:5; transform:translate(-50%,-100%); pointer-events:none;
-  background:var(--color-secondary-800); color:var(--color-text-negative); padding:.3rem .55rem; border-radius:var(--radius-sm);
+  background:var(--color-secondary-800); color:var(--color-text-negative); padding:.25rem .5rem; border-radius:var(--radius-sm);
   font-size:var(--text-xs); white-space:nowrap; box-shadow:var(--shadow-md); }
 @media (prefers-reduced-motion: reduce) { .chart__bar, .chart__dot { transition:none; } }
 
@@ -2575,10 +2492,10 @@ body.docviewer-open .back-to-top-rail { display:none; }
   color:var(--color-text-muted); font-size:var(--text-sm); display:flex; flex-wrap:wrap; align-items:center; }
 .dash-footer .meta-info__item:not(:last-child)::after { content:"|"; padding:0 .75rem; color:var(--color-secondary-300); }
 /* weisse Karten auf grauer Leinwand — flacher als der Default-Schatten */
-.dashboard-layout .chart, .dashboard-layout .kpi { box-shadow:var(--shadow-sm); border:1px solid var(--color-secondary-100); }
+.dashboard-layout .chart, .dashboard-layout .kpi { box-shadow:var(--shadow-sm); border:1px solid var(--panel-border); }
 .dashboard-layout .tab__container { padding-top:1.25rem; }
 .chart__actions { display:flex; align-items:center; gap:.5rem; flex:none; }
-.lead-hint { margin-top:.35rem; }
+.lead-hint { margin-top:.375rem; }
 /* Multi-select-Filter (Checkbox-Gruppen) im Filterpanel */
 .filter-group { border:0; margin:0 0 1.25rem; padding:0; }
 /* Gleiche Stimme wie die Formular-Legende (responsives text-sm) und CDs mb-2 —
@@ -2591,7 +2508,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Panel-Polsterung hineinwächst. Desktop-Dichte bleibt erhalten (Item 2.5c).
    accent-color entfällt: unter appearance:none ist es wirkungslos (S3-066). */
 .filter-check { display:flex; align-items:center; gap:.625rem; min-height:var(--target-min);
-  padding:.35rem .25rem; margin:0 -.25rem; font-size:var(--text-sm);
+  padding:.375rem .25rem; margin:0 -.25rem; font-size:var(--text-sm);
   color:var(--color-text); cursor:pointer; border-radius:var(--radius-xs); }
 .filter-check input { flex:none; width:1.15rem; height:1.15rem; margin:0; }
 .filter-check:hover { color:var(--color-primary-700); background:var(--color-secondary-100); }
@@ -2608,48 +2525,47 @@ body.docviewer-open .back-to-top-rail { display:none; }
 /* ── API-Dokumentation (Mock Swagger · js/apps/api-docs.js) ────────────── */
 .api-head { display:flex; align-items:baseline; gap:1rem; flex-wrap:wrap; margin-top:.5rem; }
 .api-head h1 { margin:0; }
-.api-head__badges { display:flex; gap:.4rem; }
-.api-meta { display:flex; flex-direction:column; gap:.45rem; margin:1rem 0 1.75rem; padding:.9rem 1.1rem; background:var(--color-secondary-50); border:1px solid var(--color-border); border-radius:var(--radius-lg); }
-.api-meta__row { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; font-size:var(--fs-sm); }
-.api-meta__k { font-weight:var(--fw-bold); color:var(--color-text); display:inline-flex; align-items:center; gap:.35rem; }
-.api-meta code { font-family:var(--font-mono); }
+.api-head__badges { display:flex; gap:.5rem; }
+.api-meta { display:flex; flex-direction:column; gap:.5rem; margin:1rem 0 1.75rem; padding:.875rem 1rem; background:var(--color-secondary-50); border:1px solid var(--panel-border); border-radius:var(--radius-lg); }
+.api-meta__row { display:flex; align-items:center; gap:.625rem; flex-wrap:wrap; font-size:var(--fs-sm); }
+.api-meta__k { font-weight:var(--fw-bold); color:var(--color-text); display:inline-flex; align-items:center; gap:.5rem; }
 
 /* Die Grid-Kinder behielten min-width:auto, sodass die unteilbaren Monospace-Pfade
    die 1fr-Spur auf ~475px auflösten — in einer 358px-Spalte wurden 101px stumm
    gelöscht (WCAG 1.4.10). CD entschärft das auf jeder generierten Spur mit
    minmax(0,1fr) (grids.postcss:70,93,119); app.css:140 tut es für .container--grid
    bereits, .api-layout war schlicht übersehen. */
-.api-layout { display:grid; grid-template-columns:190px minmax(0,1fr); gap:1.75rem; align-items:start; }
+.api-layout { display:grid; grid-template-columns:190px minmax(0,1fr); gap:1.25rem; align-items:start; }   /* Rinnenbreite wie .pf-layout/.dashboard-layout (Design-Review C20) */
 .api-layout > * { min-width:0; }
 .api-ep__path, .api-try__req code, #api-base { min-width:0; overflow-wrap:anywhere; }
-.api-rail { position:sticky; top:1rem; display:flex; flex-direction:column; gap:.1rem; min-width:0; }
+.api-rail { position:sticky; top:1rem; display:flex; flex-direction:column; gap:.125rem; min-width:0; }
 .api-rail__item { min-width:0; }
-.api-rail__title { font-size:var(--fs-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin:0 0 .4rem .75rem; }
-.api-rail__item { display:flex; justify-content:space-between; align-items:center; gap:.5rem; padding:.4rem .75rem; border-radius:var(--radius-sm); color:var(--color-text); text-decoration:none; font-size:var(--text-sm); border-left:2px solid transparent; }
+.api-rail__title { font-size:var(--fs-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin:0 0 .375rem .75rem; }
+.api-rail__item { display:flex; justify-content:space-between; align-items:center; gap:.5rem; padding:.375rem .75rem; border-radius:var(--radius-sm); color:var(--color-text); text-decoration:none; font-size:var(--text-sm); border-left:3px solid transparent; }   /* Markierungsbreite wie Hauptnavigation + pf-tree (Design-Review C15) */
 .api-rail__item:hover { background:var(--color-secondary-50); }
-.api-rail__item.is-active { background:var(--color-primary-50); border-left-color:var(--color-primary-600); font-weight:var(--fw-bold); color:var(--color-primary-700); }
-.api-rail__n { font-size:var(--fs-xs); color:var(--color-text-muted); background:var(--color-secondary-100); border-radius:var(--radius-full); padding:0 .4rem; }
+.api-rail__item.is-active { background:var(--color-primary-50); border-left-color:var(--color-primary-500); font-weight:var(--fw-bold); color:var(--color-primary-700); }   /* Markierungsfarbe wie .menu__item--active (Design-Review C15) */
+.api-rail__n { font-size:var(--fs-xs); color:var(--color-text-muted); background:var(--color-secondary-100); border-radius:var(--radius-full); padding:0 .375rem; }
 .api-rail__item.is-active .api-rail__n { background:var(--color-bg); }
 
 /* H2 rendert gegen eine 40px-H1 bei 20px — CDs .h3-Stufe schliesst die Lücke,
    und der Abschnittstext folgt der responsiven Rampe statt eingefroren 4px unter
    der Seite zu bleiben (Item 2.22). */
 .api-resource { margin-bottom:2.5rem; scroll-margin-top:1rem; }
-.api-resource__title { margin:0 0 .35rem; font-size:var(--text-xl); }
+.api-resource__title { margin:0 0 .375rem; font-size:var(--text-xl); }
 .api-resource__desc { margin:0 0 .75rem; font-size:var(--text-sm); max-width:70ch; }
 .api-endpoints { display:flex; flex-direction:column; gap:.5rem; }
 
-.api-ep { border:1px solid var(--color-border); border-radius:var(--radius-lg); overflow:hidden; background:var(--color-bg); }
-.api-ep__head { display:flex; align-items:center; gap:.75rem; width:100%; padding:.6rem .8rem; background:none; border:0; cursor:pointer; text-align:left; font:inherit; }
+.api-ep { border:1px solid var(--panel-border); border-radius:var(--radius-lg); overflow:hidden; background:var(--color-bg); }
+.api-ep__head { display:flex; align-items:center; gap:.75rem; width:100%; padding:.625rem .8rem; background:none; border:0; cursor:pointer; text-align:left; font:inherit; }
 .api-ep__head:hover { background:var(--color-secondary-50); }
 /* Mono-Pfade BEWUSST auf der starren Stufe (--fs-sm): Code skaliert nicht mit. */
 .api-ep__path { font-family:var(--font-mono); font-size:var(--fs-sm); color:var(--color-text); font-weight:var(--fw-bold); }
 .api-ep__summary { color:var(--color-text-muted); font-size:var(--text-sm); flex:1 1 auto; min-width:0; }
 .api-ep__chev { margin-left:auto; transition:transform var(--duration-fast); flex:none; }
 .api-ep.is-open .api-ep__chev { transform:rotate(180deg); }
-.api-ep__body { padding:.25rem .85rem 1rem; border-top:1px solid var(--color-border); }
+.api-ep__body { padding:.25rem .875rem 1rem; border-top:1px solid var(--color-border); }
 
-.api-method { font-family:var(--font-mono); font-size:var(--fs-xs); font-weight:700; color:var(--color-text-negative); padding:.18rem .5rem; border-radius:var(--radius-sm); letter-spacing:.03em; flex:none; min-width:3.6rem; text-align:center; }
+.api-method { font-family:var(--font-mono); font-size:var(--fs-xs); font-weight:var(--fw-bold); color:var(--color-text-negative); padding:.125rem .5rem; border-radius:var(--radius-sm); letter-spacing:.03em; flex:none; min-width:3.6rem; text-align:center; }
 /* Die HTTP-Verben sind eine KATEGORIALE Skala — genau das, wofür die
    Chart-Serien angelegt wurden (alle ≥4.5:1 auf Weiss, keine kollidiert mit
    der Markenfarbe). Vorher standen hier fünf freie Hexe, drei davon exakte
@@ -2661,17 +2577,16 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .api-method--patch { background:var(--chart-series-3); }
 .api-method--delete { background:var(--color-error-700); }
 
-.api-block { margin-top:.9rem; }
-.api-block__label { font-size:var(--text-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin-bottom:.35rem; }
+.api-block { margin-top:.875rem; }
+.api-block__label { font-size:var(--text-xs); color:var(--color-text-muted); font-weight:var(--fw-bold); margin-bottom:.375rem; }
 .api-params { width:100%; border-collapse:collapse; font-size:var(--text-sm); }
-.api-params td { padding:.32rem .6rem .32rem 0; border-bottom:1px solid var(--color-border); vertical-align:top; }
-.api-params code { font-family:var(--font-mono); }
-.api-req { color:var(--color-error); margin-left:.1rem; }
+.api-params td { padding:.375rem .625rem .375rem 0; border-bottom:1px solid var(--color-border); vertical-align:top; }
+.api-req { color:var(--color-error); margin-left:.125rem; }
 /* --fs-sm eingefroren wie .api-ep__path (Code skaliert nicht mit) — die frühere
    13px-Zwischenstufe existiert in keiner CD-Skala (tailwind.config.js fontSize). */
-.api-code { background:var(--color-secondary-50); border:1px solid var(--color-border); border-radius:var(--radius); padding:.65rem .8rem; font-family:var(--font-mono); font-size:var(--fs-sm); line-height:1.5; overflow-x:auto; margin:0; white-space:pre; }
-.api-resp { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.3rem; font-size:var(--fs-sm); }
-.api-status { font-family:var(--font-mono); font-size:var(--fs-xs); font-weight:700; padding:.12rem .45rem; border-radius:var(--radius-sm); white-space:nowrap; }
+.api-code { background:var(--color-secondary-50); border:1px solid var(--panel-border); border-radius:var(--radius); padding:.625rem .8rem; font-family:var(--font-mono); font-size:var(--fs-sm); line-height:1.5; overflow-x:auto; margin:0; white-space:pre; }
+.api-resp { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.25rem; font-size:var(--fs-sm); }
+.api-status { font-family:var(--font-mono); font-size:var(--fs-xs); font-weight:var(--fw-bold); padding:.125rem .5rem; border-radius:var(--radius-sm); white-space:nowrap; }
 /* HTTP-Statusklassen sind Zustandsfarben, nicht Kategorien — auf die
    Status-Rampe, die das ganze Portal schon führt (`#fef3c7`/`#92400e` waren
    ohnehin exakt --color-yellow-bg/-text). */
@@ -2679,11 +2594,10 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .api-status--4 { background:var(--color-yellow-bg); color:var(--color-yellow-text); }
 .api-status--5 { background:var(--color-error-bg); color:var(--color-error-text); }
 
-.api-try { margin-top:1.1rem; }
-.api-try__out { margin-top:.65rem; }
-.api-try__req { font-size:var(--fs-sm); margin-bottom:.4rem; display:flex; align-items:center; gap:.5rem; }
-.api-try__req code { font-family:var(--font-mono); }
-.api-try__status { margin-bottom:.4rem; }
+.api-try { margin-top:1rem; }
+.api-try__out { margin-top:.625rem; }
+.api-try__req { font-size:var(--fs-sm); margin-bottom:.375rem; display:flex; align-items:center; gap:.5rem; }
+.api-try__status { margin-bottom:.375rem; }
 .api-try__pre { max-height:22rem; overflow:auto; }
 
 /* CD-lg statt der Sonderbreite 820 (Item 1.3 räumt die Leiter auf). */
@@ -2704,7 +2618,8 @@ body.docviewer-open .back-to-top-rail { display:none; }
    öffnet ein einklappbares Panel darunter (nimmt die früheren Filter-Dropdowns auf). */
 .catbar { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; margin-top:1.25rem;
   padding-bottom:.5rem; border-bottom:1px solid var(--color-secondary-300); font-size:var(--text-sm); }
-/* Anatomie oben bei .service-controls__search; hier nur die Unterschiede. */
+/* Anatomie (Lupe im Feld, absoluter Submit) oben im «In-page search»-Block;
+   hier nur die Unterschiede. */
 .catbar__search { flex:1 1 15rem; min-width:11rem; max-width:24rem; }
 /* BEWUSSTE AUSNAHME von der Feld-Rampe: die Katalogleiste ist eine kompakte
    Werkzeugzeile — Feld, Sortier-Select, Filter- und Ansichtsknöpfe teilen die
@@ -2776,7 +2691,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
      die Tabelle am Filterpanel. Bei den Katalogseiten kollabieren die beiden
      Ränder zu denselben 1.5rem, die Darstellung bleibt dort also unverändert. */
   align-items:start; padding:1rem 1.25rem; margin:.75rem 0 1.5rem; background:var(--color-secondary-50);
-  border:1px solid var(--color-secondary-100); border-radius:var(--radius-lg); }   /* Randton wie .filter-panel — EIN Kartenrezept */
+  border:1px solid var(--panel-border); border-radius:var(--radius-lg); }   /* Randton wie .filter-panel — EIN Kartenrezept */
 @media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; } }
 .catbar__panel .filter-group { margin:0; }
@@ -2817,33 +2732,39 @@ body.docviewer-open .back-to-top-rail { display:none; }
   .catbar__controls .view-switch { border-left:0; padding-left:0; }
 }
 
-/* ── Liegenschaften Inventar — map-first explorer (js/apps/portfolio.js) ── */
+/* ── Explorer-Schicht (pf-*) — GETEILT, nicht portfolio-eigen: pf-layout/
+   pf-sidebar/pf-tree/pf-main tragen Inventar, Bauprojekte, Mietende und den
+   Metadatenkatalog (Baum: js/spatial-tree.js); pf-gallery/pf-card zusätzlich
+   die Galerie-Karten (auch via C.card idLine/chips); pf-mosaic/pf-lightbox
+   liegen bei den Medien-Blöcken (js/hero-mosaic.js, js/gallery.js). Der
+   pf-Präfix ist historisch («Portfolio») und bleibt — sechs Testskripte
+   greppen ihn; ein Umbenennen wäre Churn ohne Nutzwert (Design-Review C22). ── */
 
 /* Mobile-first: unter lg steht der Baum ÜBER der Karte statt in einer 288px-Spalte,
    die auf dem Handy die Karte auf Briefmarkengrösse quetscht (Item 2.15). */
 .pf-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; align-items:start; margin-top:1rem; }
-.pf-sidebar { position:static; max-height:22rem; overflow:auto; background:var(--color-bg); border:1px solid var(--color-border); border-radius:var(--radius-lg); padding:.5rem; }
+.pf-sidebar { position:static; max-height:22rem; overflow:auto; background:var(--color-bg); border:1px solid var(--panel-border); border-radius:var(--radius-lg); padding:.5rem; }
 @media (min-width:1024px){
   .pf-layout  { grid-template-columns:minmax(15rem,18rem) minmax(0,1fr); }
   .pf-sidebar { position:sticky; top:1rem; max-height:calc(100vh - 7rem); }
 }
-.pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.35rem .5rem .5rem; }
+.pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.375rem .5rem .5rem; }
 .pf-sidebar__title { font-size:var(--text-lg); margin:0; }
 
 /* Tree — flat indent; the icon shows the level, the two-tone highlight the path.
    .is-path (light grey) = an ancestor of the selection · .is-active (blue) = selected. */
 .pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; }   /* no indent — icon + grey path carry the hierarchy */
-.pf-tree__node, .pf-tree__leaf { display:flex; align-items:center; gap:.4rem; width:100%; padding:.36rem .5rem; border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
+.pf-tree__node, .pf-tree__leaf { display:flex; align-items:center; gap:.5rem; width:100%; padding:.375rem .5rem; border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
 .pf-tree__node:hover, .pf-tree__leaf:hover { background:var(--color-secondary-50); color:var(--color-text); text-decoration:none; }
 .pf-tree__node.is-path { background:var(--color-gray-100); }
 .pf-tree__node.is-active, .pf-tree__leaf.is-active { background:var(--color-primary-50); color:var(--color-primary-700); font-weight:var(--fw-bold); box-shadow:inset 3px 0 0 var(--color-primary-600); }
 .pf-tree__chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-muted); }
 .pf-tree__node[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
 .pf-tree__ico { flex:none; color:var(--color-text-muted); }
-.pf-tree__leaf > .pf-tree__ico { margin-left:1.4rem; }   /* align the leaf icon under the parent icon (past the chevron column) */
+.pf-tree__leaf > .pf-tree__ico { margin-left:1.5rem; }   /* align the leaf icon under the parent icon (past the chevron column) */
 /* Touch/ohne Zeigegerät: 44px garantieren, Desktop-Dichte behalten (Item 2.5d). */
 @media (max-width:1023.98px), (hover:none){
-  .pf-tree__node, .pf-tree__leaf { min-height:var(--target-min); padding-block:.6rem; }
+  .pf-tree__node, .pf-tree__leaf { min-height:var(--target-min); padding-block:.625rem; }
   /* Die Knöpfe des Dokumentbetrachters standen hier — 700 Zeilen VOR ihrer
      eigenen Basisregel und damit wirkungslos (WCAG 2.5.5). Sie stehen jetzt
      direkt hinter der Komponente. */
@@ -2852,7 +2773,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .pf-tree__id { flex:none; font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--color-text-muted); }
 .pf-tree__node.is-active .pf-tree__id, .pf-tree__leaf.is-active .pf-tree__id { color:var(--color-primary-700); }
 .pf-tree__label { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pf-tree__n { flex:none; margin-left:.4rem; font-size:var(--fs-xs); color:var(--color-text-muted); }
+.pf-tree__n { flex:none; margin-left:.375rem; font-size:var(--fs-xs); color:var(--color-text-muted); }
 .pf-tree__node.is-active .pf-tree__n { color:var(--color-primary-700); }
 
 /* Variante OHNE Symbolspalte (Metadatenkatalog, js/apps/metadata-catalog.js).
@@ -2891,7 +2812,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .pf-card__img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .pf-card__parcel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);
   background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
-.pf-card__chips { position:absolute; top:.5rem; left:.5rem; right:.5rem; display:flex; flex-wrap:wrap; gap:.3rem; }
+.pf-card__chips { position:absolute; top:.5rem; left:.5rem; right:.5rem; display:flex; flex-wrap:wrap; gap:.25rem; }
 /* Titelbild eines Bauprojekts: der Knopf trägt KEINE Knopfoptik — er ist nur
    die zugängliche Hülle um das Bild, damit die Galerie auch per Tastatur
    aufgeht. Sichtbar wird er erst im Fokus. */
@@ -2902,16 +2823,16 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .pj-hero__btn { display:block; width:100%; padding:0; border:0; background:none; cursor:zoom-in; border-radius:var(--radius-lg); }
 .pj-hero__btn:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:3px; }
 .pj-hero .legend { margin-top:.5rem; }
-.pf-card__land { background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); padding:.12rem .5rem; border-radius:var(--radius-full); }
+.pf-card__land { background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); padding:.125rem .5rem; border-radius:var(--radius-full); }
 /* Galerie-Karte: kompaktere, stimmige Typo & Abstände. Nur die Galerie — die
    Listenansicht nutzt das C.table-Layout und bleibt unberührt. Rhythmus:
    Name (fett) → eng darunter die bbl_id (mono) → Adresse; der Fuss (Kategorie ·
    Fläche) bleibt unten bündig. gap:0 + gezielte margins statt der luftigen 1rem-Lücke. */
 .pf-card .card__body { padding:1.25rem 1.5rem 1rem; gap:0; }
 .pf-card .card__title { font-size:var(--text-lg); line-height:1.3; }
-.pf-card__id { margin:.35rem 0 0; font-family:var(--font-mono); font-size:var(--text-sm);
+.pf-card__id { margin:.375rem 0 0; font-family:var(--font-mono); font-size:var(--text-sm);
   font-weight:var(--fw-regular); color:var(--color-text-muted); letter-spacing:.01em; }
-.pf-card .card__description { margin:.6rem 0 0; font-size:var(--text-sm); }
+.pf-card .card__description { margin:.625rem 0 0; font-size:var(--text-sm); }
 /* Karten füllen ihre Rasterzeile, der Fuss (Kategorie · Fläche) sitzt an der
    UNTERKANTE. Vorher stand hier `align-self:start` mit Inhaltshöhe: jede Karte
    endete dort, wo ihr Text aufhörte, und weil Bezeichnung und Adresse
@@ -2920,7 +2841,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
    Spalte — der Höhenausgleich landet als Lücke ÜBER dem Fuss, nicht in ihm. */
 .pf-card { height:100%; }
 .pf-card .card__content { height:100%; justify-content:flex-start; }
-.pf-card .card__footer { margin:auto 1.5rem 0; padding:.85rem 0 1.25rem; font-size:var(--text-sm); }
+.pf-card .card__footer { margin:auto 1.5rem 0; padding:.875rem 0 1.25rem; font-size:var(--text-sm); }
 .pf-typ { display:inline-flex; color:var(--color-text-muted); }
 
 /* ---- Aktionsmenü (Kebab-Dropdown, wiederverwendbar) ------------------------
@@ -2939,20 +2860,20 @@ body.docviewer-open .back-to-top-rail { display:none; }
 .dash-header .action-menu__trigger:hover { background:var(--color-secondary-50); }
 .action-menu__popup { position:absolute; top:calc(100% + .35rem); min-width:13rem; z-index:var(--z-nav);
   background:var(--color-bg); border:1px solid var(--color-secondary-200); border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-lg); padding:.35rem; }
+  box-shadow:var(--shadow-lg); padding:.375rem; }
 /* min-width:13rem sitzt auf .action-menu__popup: bei 320 öffnete das Menü teils
    ausserhalb des Bildschirms. Gegen den Viewport klemmen (Item 2.29). */
 .action-menu__popup { max-width:calc(100vw - 1.5rem); }
 @media (max-width:479.98px){ .action-menu__popup { min-width:0; width:max-content; } }
 .action-menu__popup--end { right:0; }
 .action-menu__popup--start { left:0; }
-.action-menu__item { display:flex; align-items:center; gap:.6rem; width:100%; min-height:var(--target-min); padding:.5rem .65rem; border:0;
+.action-menu__item { display:flex; align-items:center; gap:.625rem; width:100%; min-height:var(--target-min); padding:.5rem .625rem; border:0;
   border-radius:var(--radius-sm); background:none; text-align:left; cursor:pointer; color:var(--color-text);
   font-size:var(--text-sm); font-family:inherit; }
 .action-menu__item:hover, .action-menu__item:focus-visible { background:var(--color-secondary-50); }
 .action-menu__icon { width:1.05rem; height:1.05rem; color:var(--color-text-muted); flex:none; }
-.action-menu__heading { padding:.45rem .65rem .2rem; font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--color-text-muted); }
-.action-menu__sep { height:1px; background:var(--color-secondary-100); margin:.35rem .25rem; }
+.action-menu__heading { padding:.5rem .625rem .25rem; font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--color-text-muted); }
+.action-menu__sep { height:1px; background:var(--color-secondary-100); margin:.375rem .25rem; }
 
 /* ---- Toast — CD toast-message (toast-message.postcss:5-18 + ToastMessage.vue):
    fester Host bei bottom 10 %, innen eine normale .notification (Standard:
@@ -2963,7 +2884,7 @@ body.docviewer-open .back-to-top-rail { display:none; }
   opacity:0; transition:opacity var(--duration-slow); }
 .toast__message--in { opacity:1; }
 .toast__message .notification { max-width:500px; margin-inline:1.25rem; pointer-events:auto; }
-@media (prefers-reduced-motion: reduce) { .toast__message { transition:opacity .01s; } .icon--spin { animation:none; } }
+@media (prefers-reduced-motion: reduce) { .icon--spin { animation:none; } }   /* Toast-Transition deckt der Token-Killswitch (tokens.css) ab */
 
 /* ---- Chart-Vollbild (Overlay) -------------------------------------------- */
 /* Scroll-Sperre für alle Vollbild-Overlays (Diagramm, Modal, Bildergalerie).
@@ -2975,8 +2896,8 @@ body.docviewer-open .back-to-top-rail { display:none; }
    `scrollbar-gutter:stable` hält die Rinne beim Sperren frei, sonst würde die
    Seite darunter um die Leistenbreite springen. */
 html { scrollbar-gutter:stable; }
-html:has(> body.chart-overlay-open) { overflow:hidden; }
-body.chart-overlay-open { overflow:hidden; }
+html:has(> body.body--overlay-open) { overflow:hidden; }
+body.body--overlay-open { overflow:hidden; }
 /* ---- Kanonisches Modal (CD modal.postcss BEM) ----------------------------
    Primitive für neue Dialoge (Bestätigungen, Formulare). Die bestehenden Overlays
    (chart-overlay, pf-lightbox, docviewer) bleiben eigenständig, teilen aber die
@@ -3047,7 +2968,7 @@ body.chart-overlay-open { overflow:hidden; }
   background:var(--color-bg); border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); padding:1.75rem 2rem; }
 .chart-overlay__box .chart { padding:0; box-shadow:none; border:0; }
 .chart-overlay__close { position:absolute; top:.9rem; right:.9rem; z-index:1; display:inline-flex;
-  align-items:center; justify-content:center; min-width:var(--target-min); min-height:var(--target-min); padding:.35rem;
+  align-items:center; justify-content:center; min-width:var(--target-min); min-height:var(--target-min); padding:.375rem;
   border:1px solid var(--color-secondary-200); border-radius:var(--radius-sm); background:var(--color-bg);
   color:var(--color-text-muted); cursor:pointer; }
 .chart-overlay__close:hover { background:var(--color-secondary-100); color:var(--color-text); }
@@ -3089,7 +3010,7 @@ body.chart-overlay-open { overflow:hidden; }
 .pf-hero__mapcol { display:flex; flex-direction:column; min-height:0; }
 /* Getönte Leiste, nicht weiss auf weiss: die Zeile steht über einer randlosen
    Karte und ohne eigene Fläche schwebte sie im Nichts. */
-.pf-hero__maplink { margin:0; padding:.4rem .75rem; font-size:var(--text-sm);
+.pf-hero__maplink { margin:0; padding:.375rem .75rem; font-size:var(--text-sm);
   background:var(--color-secondary-50);
   border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
 .pf-hero__map { position:relative; overflow:hidden; flex:1 1 auto; min-height:0;
@@ -3171,9 +3092,10 @@ body.chart-overlay-open { overflow:hidden; }
    Combobox-Semantik falsch (aria-controls zeigt vorwärts auf die Liste). */
 .map-search__list { order:-1; margin:0; padding:.25rem; list-style:none;
   max-height:13rem; overflow-y:auto; background:var(--color-bg);
-  border-radius:var(--radius); box-shadow:var(--shadow-2xl); }
+  border:1px solid var(--color-secondary-300);
+  border-radius:var(--radius); box-shadow:var(--shadow-lg); }   /* Chrome = .suggest (EIN Listbox-Rezept, C12) */
 .map-search__option { display:flex; align-items:center; gap:.5rem;
-  min-height:var(--target-min); padding:.55rem .7rem; border-radius:var(--radius-sm); cursor:pointer;
+  min-height:var(--target-min); padding:.5rem .75rem; border-radius:var(--radius-sm); cursor:pointer;
   font-size:var(--text-sm); line-height:var(--lh-snug); }
 .map-search__option .icon { flex:none; color:var(--color-text-muted); }
 .map-search__option:hover { background:var(--color-secondary-50); }
@@ -3206,7 +3128,7 @@ body.chart-overlay-open { overflow:hidden; }
 /* `.photo > *` als Kindselektor, weil `.photo > :not(img)` (0,1,1) sonst unser
    `position:absolute` (0,1,0) überstimmt und die Auflage in den normalen Fluss
    an den Kachelanfang kippt. */
-.photo > .pf-mosaic__more { position:absolute; inset:0; display:flex; flex-direction:column; gap:.15rem;
+.photo > .pf-mosaic__more { position:absolute; inset:0; display:flex; flex-direction:column; gap:.125rem;
   align-items:center; justify-content:center; text-align:center; padding:.5rem;
   background:var(--scrim-chip); color:var(--color-text-negative); font-weight:var(--fw-bold); }
 .pf-mosaic__cell:hover .pf-mosaic__more { background:var(--scrim-chip-hover); }
@@ -3215,8 +3137,8 @@ body.chart-overlay-open { overflow:hidden; }
   text-underline-offset:2px; }
 @media (max-width:767.98px){ .pf-mosaic__more-label { display:none; } }
 /* Kindselektor, siehe Hinweis oben zu `.photo > :not(img)`. */
-.photo > .pf-hero__badge { position:absolute; right:.85rem; bottom:.75rem; display:inline-flex; align-items:center; gap:.35rem;
-  padding:.3rem .7rem; border-radius:var(--radius-full); background:var(--scrim-chip); color:var(--color-text-negative);
+.photo > .pf-hero__badge { position:absolute; right:.85rem; bottom:.75rem; display:inline-flex; align-items:center; gap:.5rem;
+  padding:.25rem .75rem; border-radius:var(--radius-full); background:var(--scrim-chip); color:var(--color-text-negative);
   font-size:var(--fs-sm); font-weight:var(--fw-bold); }   /* statisch wie alle Bild-Chips (.pf-card__land): Auflagen skalieren mit dem Bild, nicht mit dem Viewport */
 .pf-mosaic__cell:hover .photo > .pf-hero__badge { background:var(--scrim-chip-hover); }
 
@@ -3237,18 +3159,13 @@ body.chart-overlay-open { overflow:hidden; }
   background:var(--color-secondary-900); }
 .pf-lightbox__bar { position:absolute; top:0; left:0; right:0; z-index:3;
   display:flex; align-items:center; justify-content:space-between; gap:1rem;
-  padding:.6rem .75rem; background:var(--color-secondary-800); color:var(--color-text-negative); }
-@media (min-width:768px){ .pf-lightbox__bar { padding:.6rem 1.25rem; } }
-.pf-lightbox__heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
-.pf-lightbox__heading-text { min-width:0; }   /* Spiegel von .docviewer__heading-text — Titel dürfen kürzen */
-.pf-lightbox__heading-icon { color:var(--color-secondary-200); flex:none; }
-.pf-lightbox__title { margin:0; font-weight:var(--fw-bold); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pf-lightbox__sub { margin:0; font-size:var(--fs-sm); color:var(--color-secondary-200); }
-.pf-lightbox__actions { display:flex; align-items:center; gap:.25rem; flex:none; }
-.pf-lightbox__btn { display:inline-flex; align-items:center; justify-content:center; width:var(--target-min); height:var(--target-min);
-  padding:0; border:0; border-radius:var(--radius-sm); background:none; color:var(--color-text-negative); cursor:pointer; transition:background var(--duration-fast); }
-.pf-lightbox__btn:hover { background:var(--surface-negative-hover); }
-.pf-lightbox__btn:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
+  padding:.625rem .75rem; background:var(--color-secondary-800); color:var(--color-text-negative); }
+@media (min-width:768px){ .pf-lightbox__bar { padding:.625rem 1.25rem; } }
+/* Kopfzeile, Titel, Aktionen und Knöpfe teilen sich das EINE Dunkel-Chrome-
+   Rezept mit dem Dokumentbetrachter — als GRUPPENSELEKTOR bei der
+   Dokumentvorschau (Design-Review A12). Vorher standen die Paare als Kopien
+   hier und drifteten bereits: Kopfzeilen-Icon secondary-200 gegen
+   text-negative-muted, Subzeile fs-sm gegen text-xs, Fokus-Offset 2 gegen -2. */
 /* Aufnahme auf der Medien-Detailseite: volle Breite der Inhaltsspalte, als
    Knopf (öffnet die Vollbildgalerie). Seitenverhältnis statt fester Höhe —
    dieselbe Regel wie im Objekt-Hero, damit hohe und breite Aufnahmen gleich
@@ -3308,9 +3225,9 @@ body.chart-overlay-open { overflow:hidden; }
 /* Gleiche Leisten-Oberfläche wie .docviewer__toolbar (secondary-900 + border-negativ):
    EIN Zoomleisten-Rezept für beide Betrachter. */
 .pf-lightbox__zoom { position:absolute; left:50%; bottom:calc(var(--lb-bottom) + 1rem); transform:translateX(-50%);
-  z-index:2; display:flex; align-items:center; gap:.15rem; padding:.25rem .4rem;
+  z-index:2; display:flex; align-items:center; gap:.125rem; padding:.25rem .375rem;
   border-radius:var(--radius-full); background:var(--color-secondary-900);
-  border:1px solid var(--border-negative); box-shadow:var(--shadow-lg); }
+  border:1px solid var(--border-negative); box-shadow:var(--shadow-viewer); }   /* wie .docviewer__toolbar — shadow-lg verschwand auf dunklem Grund (C16) */
 @media (min-width:768px){ .pf-lightbox__zoom { bottom:calc(var(--lb-bottom) + 1.5rem); } }
 .pf-lightbox__zoom .pf-lightbox__btn { width:2.25rem; height:2.25rem; }
 /* 44-px-Ziel ohne Zeigegerät (WCAG 2.5.5) — Spiegel der Docviewer-Zoomregel. */
@@ -3319,7 +3236,7 @@ body.chart-overlay-open { overflow:hidden; }
 }
 .pf-lightbox__zoom-val { min-width:3.75rem; text-align:center; color:var(--color-text-negative);
   font-size:var(--text-sm); font-variant-numeric:tabular-nums; }
-.pf-lightbox__zoom-sep { width:1px; align-self:stretch; margin-inline:.2rem;
+.pf-lightbox__zoom-sep { width:1px; align-self:stretch; margin-inline:.25rem;
   background:var(--border-negative); }
 /* Metadaten-Panel — standardmässig eingeklappt, per Knopf in der Kopfzeile.
    Ab 768px als Spalte NEBEN der Bühne (das Bild bleibt sichtbar), darunter als
@@ -3418,9 +3335,8 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    long label next to one squashes it to a sliver. */
 .row > .icon { flex:none; }
 .break-all { overflow-wrap:anywhere; word-break:break-word; }
-.row--between { justify-content:space-between; }
+
 .row--end { justify-content:flex-end; }
-.more-link { display:flex; justify-content:flex-end; margin-top:1.5rem; }
 
 /* ===================== Startseite (Arbeitsfläche) ===================== */
 /* CD-Abschnittskopf und -aktion (section.postcss:55,89 · ServicesSection.vue):
@@ -3438,10 +3354,6 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 
 /* CD section.postcss:80-87 — der kanonische Weg, eine Section in zwei benannte
    Kartengruppen zu teilen (heute erledigt das ein `mt-8`). */
-.section__subtitle { font-weight:var(--fw-bold); font-size:var(--text-lg); margin:0; padding-bottom:2.5rem; }   /* pb wie CD section.postcss:80-83 */
-.grid + .section__subtitle { padding-top:3rem; }
-@media (min-width:1024px){ .grid + .section__subtitle { padding-top:4rem; } }
-@media (min-width:1920px){ .grid + .section__subtitle { padding-top:5rem; } }
 
 /* Startseiten-Hero = der ECHTE CD hero--main-image (hero.postcss:73-90) — die
    frühere Parallel-Implementation .home-hero (eigenes Raster, 900px-Breakpoint
@@ -3471,11 +3383,15 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    Sekundärfläche — die war als aria-activedescendant-Cue zu schwach und von
    Hover nicht unterscheidbar. */
 .suggest-anchor { position:relative; }
+/* EIN Listbox-Chrome für beide Komboboxen des Portals (Suchvorschläge hier,
+   Adresssuche im Karten-Wähler): border secondary-300 + shadow-lg + radius —
+   vorher zwei Rezepte (randlos/shadow-2xl gegen Rand/shadow-lg), zwei Produkte
+   (Design-Review C12). Die Invertierungs-Regel unten gilt wortgleich dort. */
 .suggest { position:absolute; z-index:var(--z-header); top:calc(100% + .25rem); left:0; right:0;
   margin:0; padding:.25rem 0; list-style:none; max-height:22rem; overflow-y:auto;
   background:var(--color-bg); border:1px solid var(--color-secondary-300);
-  box-shadow:var(--shadow-lg); }
-.suggest__item { display:flex; flex-direction:column; gap:.1rem; padding:.55rem .9rem; cursor:pointer; }
+  border-radius:var(--radius); box-shadow:var(--shadow-lg); }
+.suggest__item { display:flex; flex-direction:column; gap:.125rem; padding:.5rem .875rem; cursor:pointer; }
 .suggest__item + .suggest__item { border-top:1px solid var(--color-secondary-200); }
 .suggest__item:hover { background:var(--color-secondary-50); }
 .suggest__item.is-active { background:var(--color-gray-600); }
@@ -3497,7 +3413,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   transition:box-shadow var(--duration-slow) var(--ease-in-out), border-color var(--duration); }
 .quick-tile:hover, .quick-tile:focus-visible { box-shadow:var(--shadow-2xl);
   border-left-color:var(--color-primary-600); }
-.quick-tile > .icon { flex:none; color:var(--color-primary-600); margin-top:.15rem; }
+.quick-tile > .icon { flex:none; color:var(--color-primary-600); margin-top:.125rem; }
 /* Der Text-Wrapper ist ein Flex-Kind: ohne min-width:0 schrumpft er nicht unter
    seine intrinsische Mindestbreite, und lange Komposita (Datenschutzvorfall,
    Verbrauchsmaterial) laufen aus der Kachel. */
@@ -3507,7 +3423,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .quick-tile__label { margin:0; display:block; font-size:var(--text-base);
   font-weight:var(--fw-bold); line-height:var(--lh-snug); overflow-wrap:anywhere; }
 .quick-tile:hover .quick-tile__label { color:var(--color-primary-700); }
-.quick-tile__meta { display:block; margin-top:.15rem; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
+.quick-tile__meta { display:block; margin-top:.125rem; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
 /* Auf grauen Abschnitten heben sich die weissen Kacheln ab — auf weissen
    Abschnitten brauchen sie eine leichte Tönung, damit sie als Fläche lesbar bleiben. */
 .section--default:not([class*="bg--"]) .quick-tile { background:var(--color-secondary-50); box-shadow:none; }
@@ -3519,8 +3435,9 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   .section--default:not([class*="bg--"]) .quick-tile:hover { background:var(--color-secondary-50); }
 }
 .gap-sm { gap:.5rem; }
+.py-1-5 { padding-block:var(--sp-1-5); }   /* Zeilen-Link im Aside-Kasten (services) — statt Inline-Style */
 .mt-2 { margin-top:var(--sp-2); } .mt-3 { margin-top:var(--sp-3); } .mt-4 { margin-top:var(--sp-4); } .mt-6 { margin-top:var(--sp-6); }
-.mt-8 { margin-top:var(--sp-8); } .mt-12 { margin-top:var(--sp-12); }
+.mt-8 { margin-top:var(--sp-8); }
 .mb-4 { margin-bottom:var(--sp-4); }
 .m-0 { margin:0; } .mb-0 { margin-bottom:0; } .mt-0 { margin-top:0; } .mb-3 { margin-bottom:var(--sp-3); }
 /* Kartenplatzhalter füllt seinen Rahmen — ersetzt 4× `style="height:100%"`. */
@@ -3554,10 +3471,10 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   margin:0 0 1.5rem; padding:1rem 0;
   border-top:1px solid var(--color-secondary-100); border-bottom:1px solid var(--color-secondary-100); }
 @media (min-width:768px){ .kpi-strip { grid-template-columns:repeat(4,minmax(0,1fr)); gap:1.5rem; } }
-.kpi-strip__item { display:flex; flex-direction:column; gap:.15rem; }
+.kpi-strip__item { display:flex; flex-direction:column; gap:.125rem; }
 .kpi-strip__label { font-size:var(--text-sm); color:var(--color-text-muted); }
-.kpi-strip__value { font-size:var(--text-2xl); font-weight:var(--fw-bold); line-height:var(--lh-tight);
-  font-variant-numeric:tabular-nums; }
+/* Typografie aus dem geteilten Grossziffer-Rezept (.stat__num) — der Streifen
+   bleibt rahmenlos (dokumentierter Flächen-Entscheid). */
 .kpi-strip__value small { font-size:var(--text-sm); font-weight:var(--fw-regular); color:var(--color-text-muted); }
 
 /* Augenbrauenzeile über der Seitenüberschrift: Kennungen, die man sucht
@@ -3569,7 +3486,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    js/ — als Klassen sind sie benannt, wiederverwendbar und im Blatt auffindbar. */
 .measure-sm { max-width:34rem; } .measure    { max-width:42rem; }
 .measure-lg { max-width:50rem; } .measure-xl { max-width:60rem; }
-.pill-row { display:flex; flex-wrap:wrap; gap:.4rem; }
+.pill-row { display:flex; flex-wrap:wrap; gap:.5rem; }
 /* Merkmalliste (Beschriftung · Wert), u. a. der Reiter «Übersicht» aller
    Detailansichten. Die Beschriftungsspalte ist bewusst BREITER als ihr
    längster Eintrag: mit `max-content` klebte der Wert direkt an der längsten
@@ -3579,7 +3496,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    von 18rem verhindert, dass eine einzelne lange Beschriftung dem Wert die
    Breite nimmt. */
 .kv { display:grid; grid-template-columns:fit-content(18rem) minmax(0,1fr);
-  gap:.4rem 2rem; font-size:var(--text-sm); }
+  gap:.5rem 2rem; font-size:var(--text-sm); }
 .kv dt { color:var(--color-text-muted); }
 /* Doppelpunkt aus dem Blatt, nicht aus den Zeichenketten: er gehört zur
    Darstellung der Liste, und so tragen ihn alle neun Konsumenten gleich,
@@ -3603,15 +3520,20 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    mitten im Wort («Fachanwendung|en Bauten»). */
 .kv dd { margin:0; overflow-wrap:break-word; }
 .kv dd code { overflow-wrap:anywhere; }
+/* Linierte Variante — übernimmt die Zeilen-Trennlinien der früheren .data-rows
+   (Datenkatalog-Metadaten, lange Distributionslisten); eine Implementierung,
+   zwei Oberflächen (Design-Review C7). */
+.kv--ruled { row-gap:0; }
+.kv--ruled dt, .kv--ruled dd { padding:.5rem 0; border-bottom:1px solid var(--color-border); margin:0; }
 /* In der schmalen Seitenspalte reicht die Breite für zwei Spalten nicht — dort
    steht die Beschriftung über dem Wert, statt Wörter zu zerbrechen. */
 .box { container-type:inline-size; }
 @container (max-width:22rem){
   .kv { grid-template-columns:minmax(0,1fr); gap:0; }
-  .kv dt { margin-top:.6rem; }
+  .kv dt { margin-top:.625rem; }
   .kv dt:first-of-type { margin-top:0; }
 }
-@media (max-width:639.98px){ .kv { grid-template-columns:minmax(0,1fr); gap:.1rem 0; } .kv dt { margin-top:.5rem; } }
+@media (max-width:639.98px){ .kv { grid-template-columns:minmax(0,1fr); gap:.125rem 0; } .kv dt { margin-top:.5rem; } }
 .empty { text-align:center; color:var(--color-text-muted); padding:3rem 1rem; }
 .empty__title { margin:0; font-size:var(--fs-lg); color:var(--color-text); }
 .empty__hint { margin:.5rem auto 0; max-width:44ch; font-size:var(--fs-sm); }
@@ -3623,7 +3545,6 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   padding:2rem 1rem; color:var(--color-error-text); background:var(--color-error-bg);
   border-radius:var(--radius-lg); text-align:left; }
 .empty--unavailable .icon { flex:none; }
-.swatch { display:inline-block; width:.75rem; height:.75rem; border-radius:2px; vertical-align:middle; margin-right:.35rem; }
 
 /* ============================== MOTION ============================== */
 @media (prefers-reduced-motion: reduce) {
@@ -3639,13 +3560,15 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   body { display:block; }
   .top-bar, .desktop-menu, .desktop-menu__overlay, .mobile-menu, .burger,
   .top-header__right, .breadcrumb, #main-footer,
-  .search--main, .skip-to-content, .demo-chip, .card__image, .card__footer, .more-link,
+  .search--main, .skip-to-content, .demo-chip, .card__image, .card__footer,
+  /* btn--back + notification-banner: CD print.postcss:62,72 blendet beide aus —
+     fehlte hier, jede gedruckte Detailseite trug den «Zurück»-Knopf (Review C19) */
+  .btn--back, .back-link-row, .notification-banner,
   .pf-map, video, audio, object, iframe { display:none !important; }
   .top-header { border:0 !important; padding:0 0 1rem !important; }
   .logo { align-items:flex-start !important; }
   .logo__name { display:block !important; }
-  .grid, .grid--2, .grid--3, .grid--4, .grid--auto, .stats, .service-controls,
-  .container--grid { display:block !important; }
+  .grid, .grid--auto, .stats, .container--grid { display:block !important; }
   p, img, ul, ol, .card, .notification, .box, table.table { position:relative; display:block; break-inside:avoid; }
   table.table { display:table; }
   .card { margin-bottom:2em; box-shadow:none !important; border:1px solid var(--color-border-strong); }
@@ -3662,30 +3585,34 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* ===================== Dokumentvorschau (Lightbox) ===================== */
 /* Dunkle Chrome fest verdrahtet, damit die Vorschau in beiden Skins wie ein
    Viewer wirkt. Portiert aus dem BBL Mieterportal (tenant-portal). */
-body.docviewer-open { overflow:hidden; }
-/* Der Dokument-Scroller ist das <html>-Element (html{overflow-y:scroll} oben) —
-   dieselbe Korrektur, die der Chart-Overlay-Block bereits dokumentiert. */
-html:has(> body.docviewer-open) { overflow:hidden; }
+/* Scroll-Lock: die EINE Klasse body--overlay-open (Modal, Galerie, Betrachter)
+   — das zweite Regelpaar unter dem alten Namen docviewer-open ist entfallen
+   (Design-Review C14). */
 .docviewer { position:fixed; inset:0; z-index:var(--z-viewer); overflow:auto; background:var(--color-secondary-900); }
 .docviewer__bar { position:sticky; top:0; z-index:5; display:flex; align-items:center;
   justify-content:space-between; gap:1rem; padding:.75rem 1rem;
   background:var(--color-secondary-900); border-bottom:1px solid var(--border-negative); }
-.docviewer__heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
-.docviewer__heading-icon { color:var(--text-negative-muted); flex:none; }
-.docviewer__heading-text { min-width:0; }
-.docviewer__title { margin:0; color:var(--color-text-negative); font-weight:var(--fw-bold); font-size:var(--text-base);
+/* EIN Dunkel-Chrome-Rezept für BEIDE Vollbild-Betrachter (Dokumentvorschau +
+   Bildergalerie) — Gruppenselektoren statt der früheren Kopie im Lightbox-
+   Block, die bereits gedriftet war (Design-Review A12). Aufgelöste Drifts:
+   Kopfzeilen-Icon und Subzeile einheitlich text-negative-muted/text-xs,
+   Fokusring einheitlich INSET (-2px — die Leisten kleben an Fensterkanten,
+   ein Aussenring würde dort beschnitten). 44px-Ziel, radius-sm,
+   surface-negative-Hover; der frühere primary-600-Hover wechselte mit dem
+   Skin die Farbe — Chrome ist markenneutral. */
+.docviewer__heading, .pf-lightbox__heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
+.docviewer__heading-icon, .pf-lightbox__heading-icon { color:var(--text-negative-muted); flex:none; }
+.docviewer__heading-text, .pf-lightbox__heading-text { min-width:0; }   /* Titel dürfen kürzen */
+.docviewer__title, .pf-lightbox__title { margin:0; color:var(--color-text-negative); font-weight:var(--fw-bold); font-size:var(--text-base);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.docviewer__sub { margin:0; color:var(--text-negative-muted); font-size:var(--text-xs); }
+.docviewer__sub, .pf-lightbox__sub { margin:0; color:var(--text-negative-muted); font-size:var(--text-xs); }
 .docviewer__docnum { white-space:nowrap; }
-.docviewer__actions { display:flex; align-items:center; gap:.25rem; flex:none; }
-/* EIN Dunkel-Chrome-Rezept für beide Vollbild-Betrachter (Betrachter + Lightbox):
-   44px-Ziel, radius-sm, surface-negative-Hover. Der frühere primary-600-Hover auf
-   dem Schliessen-Knopf wechselte mit dem Skin die Farbe — Chrome ist markenneutral. */
-.docviewer__btn { display:inline-flex; align-items:center; justify-content:center;
-  width:var(--target-min); height:var(--target-min); background:none; border:0; border-radius:var(--radius-sm);
+.docviewer__actions, .pf-lightbox__actions { display:flex; align-items:center; gap:.25rem; flex:none; }
+.docviewer__btn, .pf-lightbox__btn { display:inline-flex; align-items:center; justify-content:center;
+  width:var(--target-min); height:var(--target-min); padding:0; background:none; border:0; border-radius:var(--radius-sm);
   color:var(--color-text-negative); cursor:pointer; transition:background var(--duration-fast); }
-.docviewer__btn:hover { background:var(--surface-negative-hover); }
-.docviewer__btn:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
+.docviewer__btn:hover, .pf-lightbox__btn:hover { background:var(--surface-negative-hover); }
+.docviewer__btn:focus-visible, .pf-lightbox__btn:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
 .docviewer__main { position:relative; background:var(--color-secondary-800); }
 .docviewer__stage { padding:2.5rem 1rem; cursor:default; }
 .docviewer__stage:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
@@ -3702,7 +3629,7 @@ html:has(> body.docviewer-open) { overflow:hidden; }
 .docviewer__nav--next { right:1rem; }
 
 .docpage { width:var(--docpage-w); min-height:calc(var(--docpage-w) * 1.414); flex:none;
-  background:var(--color-bg); color:var(--color-text); box-shadow:0 10px 40px rgba(0,0,0,.45);
+  background:var(--color-bg); color:var(--color-text); box-shadow:var(--shadow-viewer);
   padding:clamp(28px,6%,56px); box-sizing:border-box; display:flex; flex-direction:column; }
 .docpage__footer { display:flex; justify-content:space-between; gap:.75rem; margin-top:auto;
   padding-top:.75rem; border-top:1px solid var(--color-secondary-200);
@@ -3736,7 +3663,7 @@ html:has(> body.docviewer-open) { overflow:hidden; }
 
 .docviewer__toolbar { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); z-index:6;
   display:flex; align-items:center; gap:.25rem; padding:.25rem; background:var(--color-secondary-900);
-  border:1px solid var(--border-negative); border-radius:var(--radius-full); box-shadow:0 10px 40px rgba(0,0,0,.45); }
+  border:1px solid var(--border-negative); border-radius:var(--radius-full); box-shadow:var(--shadow-viewer); }
 .docviewer__zoom { display:inline-flex; align-items:center; justify-content:center; min-width:2.25rem; height:2.25rem;
   padding:0 .75rem; background:none; border:0; border-radius:var(--radius-full); color:var(--color-text-negative);
   font-size:var(--text-sm); cursor:pointer; transition:background var(--duration-fast); }
@@ -3757,10 +3684,10 @@ html:has(> body.docviewer-open) { overflow:hidden; }
 .docviewer__toast { position:fixed; left:0; right:0; bottom:5rem; z-index:7;
   display:flex; justify-content:center; pointer-events:none; }
 .docviewer__toast .notification { max-width:500px; margin-inline:1.25rem; pointer-events:auto;
-  box-shadow:0 10px 40px rgba(0,0,0,.45); }
+  box-shadow:var(--shadow-viewer); }
 
 /* Titel/Vorschau-Auslöser in der Tabelle: sieht aus wie ein Link, ist ein Button. */
-.doc-open { display:inline-flex; align-items:center; gap:.4rem; min-height:var(--target-min); background:none; border:0;
+.doc-open { display:inline-flex; align-items:center; gap:.5rem; min-height:var(--target-min); background:none; border:0;
   padding:0; font:inherit; color:var(--color-primary-600); cursor:pointer; text-align:left; }
 .doc-open:hover { color:var(--color-primary-800); text-decoration:underline; }
 .doc-open .icon { flex:none; }
@@ -3829,12 +3756,12 @@ html:has(> body.docviewer-open) { overflow:hidden; }
    `.fp-color` trägt `margin-left:auto` und schiebt sich mit der Knopfgruppe
    nach rechts; Name und Chips teilen sich die linke Seite. Umbruch erst, wenn
    die Zeile wirklich nicht reicht. */
-.fp-head__top { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem 1rem;
+.fp-head__top { display:flex; flex-wrap:wrap; align-items:center; gap:.625rem 1rem;
   padding-bottom:.75rem; border-bottom:1px solid var(--color-secondary-300); }
 .fp-head__actions { display:flex; align-items:center; gap:.5rem; flex:none; }
 .fp-color { margin-left:auto; }
-.fp-back { margin:0 0 .35rem; font-size:var(--text-sm); }
-.fp-back a { display:inline-flex; align-items:center; gap:.4rem; }
+.fp-back { margin:0 0 .375rem; font-size:var(--text-sm); }
+.fp-back a { display:inline-flex; align-items:center; gap:.5rem; }
 /* Nur für den Druck: Objekt, Geschoss, Adresse und aktive Einfärbung. Auf dem
    Schirm stünde das alles doppelt (Seitenkopf und Kopfleiste). */
 .fp-print-foot { display:none; }
@@ -3850,8 +3777,8 @@ html:has(> body.docviewer-open) { overflow:hidden; }
    .tag-item selbst (tag-item.postcss:9) — ein Container-gap käme oben drauf. */
 .fp-floors { display:flex; flex-wrap:wrap; }
 /* Kennzahlen des Geschosses, jetzt in der Auswertungsspalte über der Legende. */
-.fp-facts { margin:0; padding:.75rem .85rem; background:var(--color-secondary-50); }
-.fp-side__title { margin:0 0 .4rem; font-size:var(--text-sm); color:var(--color-text-muted); font-weight:var(--fw-regular); }
+.fp-facts { margin:0; padding:.75rem .875rem; background:var(--color-secondary-50); }
+.fp-side__title { margin:0 0 .375rem; font-size:var(--text-sm); color:var(--color-text-muted); font-weight:var(--fw-regular); }
 /* Kompaktes Auswahlfeld in der Werkzeugleiste: Beschriftung daneben statt
    darüber, damit die Leiste eine Zeile bleibt. */
 /* `flex-direction:row` MUSS hier stehen: `.form__group__select` (die Hülle, die
@@ -3863,7 +3790,7 @@ html:has(> body.docviewer-open) { overflow:hidden; }
    ein Feld die Zeile füllt und die Beschriftung darüber steht. In einer
    Werkzeugleiste beansprucht sie damit eine ganze Zeile für sich und schiebt
    alles Folgende darunter: die Kopfzeile fiel in drei Reihen auseinander. */
-.fp-color { display:flex; flex-direction:row; align-items:center; gap:.6rem;
+.fp-color { display:flex; flex-direction:row; align-items:center; gap:.625rem;
   width:auto; flex:0 0 auto; }
 .fp-color > label { margin:0; white-space:nowrap; font-size:var(--text-sm); color:var(--color-text-muted); }
 .fp-color .select { min-width:13rem; }
@@ -3874,13 +3801,13 @@ html:has(> body.docviewer-open) { overflow:hidden; }
 @media (min-width:1024px){ .fp-viewer { grid-template-columns:minmax(0,1fr) 20rem; align-items:start; } }
 /* position:relative — Pflicht für Scroll-Regionen (siehe .table-wrapper):
    data-scroll-region am Element macht die Bühne fokussierbar mit Hinweis. */
-.fp-stage { position:relative; overflow:auto; padding:1rem; background:var(--color-secondary-50); border:1px solid var(--color-secondary-200); }
+.fp-stage { position:relative; overflow:auto; padding:1rem; background:var(--color-secondary-50); border:1px solid var(--panel-border); }
 .fp-side { display:flex; flex-direction:column; gap:1rem; }
 
 .fp { display:block; width:100%; height:auto; min-width:38rem; }
 .fp__shell { fill:var(--color-bg); stroke:var(--color-secondary-400); stroke-width:6; }
 .fp__room rect { fill:var(--color-bg); stroke:var(--color-secondary-400); stroke-width:4; cursor:pointer;
-  transition:fill var(--duration-fast) ease, stroke var(--duration-fast) ease; }
+  transition:fill var(--duration-fast) var(--ease-out), stroke var(--duration-fast) var(--ease-out); }
 .fp__room--infra rect { fill:var(--color-secondary-50); }
 .fp__room:hover rect { stroke:var(--color-primary-600); stroke-width:8; }
 .fp__room rect:focus-visible { outline:none; stroke:var(--color-primary-700); stroke-width:12; }
@@ -3890,12 +3817,12 @@ html:has(> body.docviewer-open) { overflow:hidden; }
    viewBox skaliert, ein 4980 Einheiten breiter Grundriss auf ~1000 px also mit
    Faktor 0.2. 68 Einheiten ergeben damit rund 13 px auf dem Schirm. */
 .fp__nr, .fp__use, .fp__area { pointer-events:none; text-anchor:middle; fill:var(--color-text); }
-.fp__nr   { font-size:68px; font-weight:700; }
+.fp__nr   { font-size:68px; font-weight:var(--fw-bold); }
 .fp__use  { font-size:58px; fill:var(--color-text-muted); }
 .fp__area { font-size:54px; fill:var(--color-text-muted); }
 
-.fp-legend { list-style:none; margin:0; padding:0; border:1px solid var(--color-secondary-200); }
-.fp-legend__item { display:flex; align-items:center; gap:.6rem; padding:.5rem .75rem; font-size:var(--text-sm); }
+.fp-legend { list-style:none; margin:0; padding:0; border:1px solid var(--panel-border); }
+.fp-legend__item { display:flex; align-items:center; gap:.625rem; padding:.5rem .75rem; font-size:var(--text-sm); }
 .fp-legend__item + .fp-legend__item { border-top:1px solid var(--color-secondary-100); }
 .fp-legend__swatch { flex:0 0 auto; width:1rem; height:1rem; border:1px solid var(--color-secondary-400); }
 .fp-legend__label { flex:1 1 auto; min-width:0; }
@@ -3905,10 +3832,12 @@ html:has(> body.docviewer-open) { overflow:hidden; }
 .fp-room h3 { margin:0 0 .5rem; }
 .fp-room__sub { margin:1rem 0 .5rem; font-size:var(--text-sm); }
 .fp-room--empty { display:flex; align-items:center; min-height:8rem; }
-.kv--tight { gap:.2rem .75rem; font-size:var(--text-sm); }
+.kv--tight { gap:.25rem .75rem; font-size:var(--text-sm); }
 
 /* Kurzweg in eine Dienstleistung — eine Zeile, kein Knopf: es sind mehrere
-   gleichrangige Ziele, und fünf Knöpfe untereinander lesen sich als Formular. */
+   gleichrangige Ziele, und fünf Knöpfe untereinander lesen sich als Formular.
+   GETEILT: emittiert von C.actionCard (components.js) — Konsumenten sind
+   Inventar UND Mietende; der fp-Präfix ist historisch (Design-Review C22). */
 .fp-svc-list { display:flex; flex-direction:column; }
 /* RASTER statt Flexbox: zwei feste Spuren — Beschriftung, Folgepfeil. Vorher
    war das eine Flexzeile mit `.fp-svc span { flex:1 1 auto }`, und weil die
@@ -3921,7 +3850,7 @@ html:has(> body.docviewer-open) { overflow:hidden; }
    Symbol muss verdient sein. Der Folgepfeil rechts bleibt, er sagt etwas, was
    der Text nicht sagt: dass die Zeile wegführt. */
 .fp-svc { display:grid; grid-template-columns:minmax(0,1fr) 1rem;
-  align-items:center; column-gap:.6rem; padding:.5rem .1rem; text-decoration:none;
+  align-items:center; column-gap:.625rem; padding:.5rem .125rem; text-decoration:none;
   color:var(--color-text); font-size:var(--text-sm); border-bottom:1px solid var(--color-secondary-100); }
 .fp-svc:last-child { border-bottom:0; }
 .fp-svc:hover { color:var(--color-primary-700); }

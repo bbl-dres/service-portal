@@ -4,7 +4,7 @@
 // den Dokument-Viewer mit der aktuellen Trefferliste als Blätter-Kontext.
 import { openDocumentViewer } from '../doc-viewer.js';
 import { dateiGroesse } from '../format.js';
-import { DATEN } from '../crumbs.js';
+import { ANWENDUNGEN, trail } from '../crumbs.js';
 
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
@@ -29,7 +29,8 @@ const PER_PAGE = 10;
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   setTitle('Bauwerksdokumentation');
-  setCrumbs([...DATEN, { label: 'Bauwerksdokumentation' }]);
+  // Die App steht im Anwendungskatalog — Kette über «Anwendungen» (js/crumbs.js).
+  setCrumbs(trail(ANWENDUNGEN, { label: 'Bauwerksdokumentation' }));
 
   const all = core.documents();
   const buildings = core.buildings();
@@ -37,7 +38,9 @@ export default async function render(ctx) {
   const types = [...new Set(all.map(d => d.type))].sort((a, b) => a.localeCompare(b, 'de'));
   const years = [...new Set(all.map(d => d.year))].sort((a, b) => b - a);
   const tierVariant = (id) => { const t = tiers.find(x => x.id === id); return t ? t.variant : 'gray'; };
-  const esc = (s) => C.escape(String(s == null ? '' : s));
+  // C.escape stringifiziert selbst (String(s == null ? '' : s)) — der lokale
+  // Wrapper war eine Doppelung.
+  const esc = C.escape;
 
   const parseArr = (k) => (query.get(k) || '').split(',').map(s => s.trim()).filter(Boolean);
   // Auch Sortierung und Seite aus der URL lesen: syncHash() schreibt beide,
@@ -65,14 +68,14 @@ export default async function render(ctx) {
       { key: 'year', label: 'Jahr', align: 'right', render: r => esc(r.year) },
       { key: 'size', label: 'Grösse', align: 'right', render: r => dateiGroesse(r.sizeKB) },
       { key: 'classification', label: 'Klassifizierung', render: r => C.badge(r.classification, tierVariant(r.classification)) },
-      { key: 'preview', label: 'Vorschau', render: r => `<button type="button" class="btn btn--link btn--icon-left doc-open" data-doc="${esc(r.docId)}" aria-label="Vorschau ${esc(r.title)}">${C.icon('File', 'btn__icon icon--base')}<span class="btn__text">Öffnen</span></button>` },
+      { key: 'preview', label: 'Vorschau', render: r => `<button type="button" class="btn btn--link btn--icon-left doc-open" data-doc="${esc(r.docId)}" aria-label="Vorschau ${esc(r.title)}">${C.icon('File', 'btn__icon icon--base')}<span class="btn__text">Vorschau</span></button>` },
     ], rows });
   }
 
   function renderActiveFilters() {
     const box = mount.querySelector('#doc-activefilters'); if (!box) return;
     const pills = [];
-    if (state.q.trim()) pills.push({ label: `Suche: „${state.q.trim()}“`, remove: 'q' });
+    if (state.q.trim()) pills.push({ label: `Suche: «${state.q.trim()}»`, remove: 'q' });
     state.filters.building.forEach(v => { const b = core.building(v); pills.push({ label: b ? b.name : v, remove: `building:${v}` }); });
     state.filters.type.forEach(v => pills.push({ label: v, remove: `type:${v}` }));
     state.filters.year.forEach(v => pills.push({ label: `Jahr ${v}`, remove: `year:${v}` }));
@@ -108,9 +111,9 @@ export default async function render(ctx) {
       // <a href="#">. Die Seite hält ihren Zustand in JS, `#` war ein toter
       // Link — kopierbar, in neuem Tab öffenbar, und führte nirgendwohin.
       ? resultTable(visible) + C.pagination({ page: state.page, totalPages, inputId: 'doc-page', label: 'Seitennavigation Bauwerksdokumentation' })
-      : C.empty('Keine Dokumente für die gewählten Filter gefunden.', {
-          hint: 'Setzen Sie die Filter zurück oder ändern Sie den Suchbegriff.',
-          action: { label: 'Filter und Suche zurücksetzen', id: 'doc-empty-reset' },
+      : C.empty('Keine Dokumente gefunden.', {
+          hint: 'Passen Sie Ihre Suche oder die Filter an.',
+          action: { label: 'Suche und Filter zurücksetzen', id: 'doc-empty-reset' },
         });
     if (totalPages > 1) C.wirePagination(mount, 'doc-page', state.page, totalPages, (t) => { state.page = t; renderMain(); });
     renderActiveFilters();
@@ -126,7 +129,7 @@ export default async function render(ctx) {
       ${C.filterGroup({ dim: 'type', legend: 'Dokumenttyp', selected: state.filters.type, options: types.map(t => ({ value: t, label: t })) })}
       ${C.filterGroup({ dim: 'year', legend: 'Jahr', selected: state.filters.year, options: years.map(y => ({ value: String(y), label: String(y) })) })}
       ${C.filterGroup({ dim: 'class', legend: 'Klassifizierung', selected: state.filters.class, options: tiers.map(t => ({ value: t.id, label: t.label })) })}
-      <div class="catbar__panel__actions"><button type="button" class="btn btn--bare btn--sm" id="doc-freset">${C.icon('Refresh', 'icon--base')}<span class="btn__text">Zurücksetzen</span></button></div>`;
+      ${C.panelReset({ id: 'doc-freset' })}`;
 
   const filterCount = state.filters.building.length + state.filters.type.length + state.filters.year.length + state.filters.class.length;
 
@@ -138,7 +141,7 @@ export default async function render(ctx) {
     })}
     ${C.catalogueBar({
       formId: 'doc-search', inputId: 'doc-q', searchLabel: 'Dokument suchen', placeholder: 'Titel, Typ oder Kategorie suchen…', q: state.q, countId: 'doc-count',
-      sort: { id: 'doc-sort', label: 'Sortierung', value: state.sort, options: SORT_OPTS },
+      sort: { id: 'doc-sort', value: state.sort, options: SORT_OPTS },
       filterId: 'doc-filter-btn', filterLabel: 'Filter', filterCount, panelId: 'doc-filters', panel: filterPanel,
     })}
     <div id="doc-activefilters"></div>
@@ -147,50 +150,25 @@ export default async function render(ctx) {
   </div>`;
 
   // --- wiring -------------------------------------------------------------
-  let searchT = null;
-  const q = mount.querySelector('#doc-q');
-  const runSearch = () => { state.q = q.value || ''; state.page = 1; renderMain(); };
-  mount.querySelector('#doc-search').addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(searchT); runSearch(); });
-  q.addEventListener('input', () => { clearTimeout(searchT); searchT = setTimeout(runSearch, 250); });
-
-  const sortSel = mount.querySelector('#doc-sort');
-  if (sortSel) sortSel.addEventListener('change', () => { state.sort = sortSel.value; state.page = 1; renderMain(); });
-
-  const fbtn = mount.querySelector('#doc-filter-btn');
-  const fpanel = mount.querySelector('#doc-filters');
-  const fbadge = mount.querySelector('#doc-filter-btn .catbar__fcount');
-  const updateFilterBadge = () => {
-    const total = state.filters.building.length + state.filters.type.length + state.filters.year.length + state.filters.class.length;
-    fbadge.textContent = total ? `(${total})` : ''; fbadge.hidden = !total;
-  };
-  const syncFilterChecks = () => fpanel.querySelectorAll('input[data-fdim]').forEach((cb) => { cb.checked = (state.filters[cb.dataset.fdim] || []).includes(cb.value); });
-  const clearFilters = () => { state.filters = { building: [], type: [], year: [], class: [] }; syncFilterChecks(); updateFilterBadge(); };
-  fbtn.addEventListener('click', () => { const open = !fpanel.hidden; fpanel.hidden = open; fbtn.setAttribute('aria-expanded', String(!open)); });
-  fpanel.addEventListener('change', (e) => {
-    const cb = e.target.closest('input[data-fdim]'); if (!cb) return;
-    const dim = cb.dataset.fdim, arr = state.filters[dim];
-    if (cb.checked) { if (!arr.includes(cb.value)) arr.push(cb.value); } else state.filters[dim] = arr.filter((x) => x !== cb.value);
-    updateFilterBadge(); state.page = 1; renderMain();
-  });
-  mount.querySelector('#doc-freset').addEventListener('click', () => { clearFilters(); state.page = 1; renderMain(); });
-
-  mount.querySelector('#doc-activefilters').addEventListener('click', (e) => {
-    if (e.target.closest('[data-reset]')) { state.q = ''; q.value = ''; clearFilters(); state.page = 1; renderMain(); return; }
-    const pill = e.target.closest('[data-remove]'); if (!pill) return;
-    const tok = pill.dataset.remove;
-    if (tok === 'q') { state.q = ''; q.value = ''; }
-    else { const i = tok.indexOf(':'), dim = tok.slice(0, i); state.filters[dim] = (state.filters[dim] || []).filter((x) => x !== tok.slice(i + 1)); syncFilterChecks(); updateFilterBadge(); }
-    state.page = 1; renderMain();
+  // Suche (mit Tipp-Verzögerung), Sortierung, Filterpanel samt Badge, Panel-
+  // Reset und Aktiv-Pillen über die geteilte Explorer-Verdrahtung — diese
+  // Datei war die Vorlage der lokalen Kopien (Design-Review A2).
+  const { clearFilters } = C.wireCatalogueState(mount, {
+    formId: 'doc-search', inputId: 'doc-q', sortId: 'doc-sort',
+    filterToggleId: 'doc-filter-btn', panelId: 'doc-filters', resetId: 'doc-freset',
+    activeFiltersId: 'doc-activefilters', state, onChange: renderMain,
   });
 
-  // Delegated: pagination prev/next + Dokument-Vorschau (Blätter-Kontext = aktuelle Treffer).
+  // Delegated: Dokument-Vorschau (Blätter-Kontext = aktuelle Treffer) + Null-
+  // zustands-Reset. KEIN eigener [data-page]-Handler mehr: C.wirePagination
+  // (in renderMain) bindet die Buttons der Paginierung bereits selbst.
   mount.querySelector('#doc-main').addEventListener('click', (e) => {
-    const pg = e.target.closest('.pagination_items [data-page]');
-    if (pg) { state.page = Number(pg.dataset.page) || state.page; renderMain(); return; }
     // Nullzustand: Suche + Filter in einem Klick zurücksetzen (Item 5.13).
     if (e.target.closest('#doc-empty-reset')) {
-      state.q = ''; q.value = ''; clearFilters(); state.page = 1; renderMain();
-      const el = mount.querySelector('#doc-q'); if (el) el.focus();
+      const q = mount.querySelector('#doc-q');
+      state.q = ''; if (q) q.value = '';
+      clearFilters(); state.page = 1; renderMain();
+      if (q) q.focus();
       return;
     }
     const open = e.target.closest('.doc-open');

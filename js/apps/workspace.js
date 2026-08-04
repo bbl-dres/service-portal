@@ -1,5 +1,9 @@
 // Workspace & Buchung — Möblierung & Material, Belegungsplanung und interaktive Ressourcenbuchung.
 
+import * as links from '../links.js';
+import { ANWENDUNGEN, trail } from '../crumbs.js';
+import { num, datum } from '../format.js';
+
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
@@ -7,7 +11,8 @@ export const needs = ['buildings'];
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs } = ctx;
   setTitle('Workspace & Buchung');
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Anwendungen', href: '#/applications' }, { label: 'Workspace' }]);
+  // Crumb-Blatt = Titel/h1 («Workspace & Buchung»-Kanon, Design-Review D17).
+  setCrumbs(trail(ANWENDUNGEN, { label: 'Workspace & Buchung' }));
 
   const buildings = core.buildings();
   const totalWorkplaces = buildings.reduce((sum, b) => sum + (b.workplaces || 0), 0);
@@ -103,7 +108,7 @@ export default async function render(ctx) {
         </div>
         <aside class="container__aside">
           <div class="stat">
-            <div class="stat__num">${totalWorkplaces.toLocaleString('de-CH')}</div>
+            <div class="stat__num">${num(totalWorkplaces)}</div>
             <div class="stat__label">Arbeitsplätze im Portfolio (${buildings.length} Gebäude)</div>
           </div>
           <div class="box">
@@ -128,8 +133,8 @@ export default async function render(ctx) {
       <div class="container--grid gap--responsive">
         <div class="container__main vertical-spacing">
           <h2>${C.icon('Calendar', 'icon--base')} Ressource buchen</h2>
-          <p class="muted">Buchung als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.
-             Eine Anfrage wird als Vorgang erfasst und durch Workspace BBL bestätigt.</p>
+          ${C.contextLine({ action: 'Buchung', name: session.user().name, org: session.user().org })}
+          <p class="muted">Eine Anfrage wird als Vorgang erfasst und durch Workspace BBL bestätigt.</p>
           <p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>
           ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
           <!-- novalidate — siehe space-request.js -->
@@ -157,7 +162,8 @@ export default async function render(ctx) {
             <dl class="kv">
               <dt>Ressource</dt><dd>${r ? C.escape(r.label) : '—'}</dd>
               <dt>Standort</dt><dd>${b ? C.escape(b.name) : '—'}</dd>
-              <dt>Datum</dt><dd>${C.escape(state.datum || '—')}</dd>
+              ${/* format.datum statt rohem ISO-Wert des date-Inputs; '' → «—». */''}
+              <dt>Datum</dt><dd>${C.escape(datum(state.datum))}</dd>
               <dt>Zeit</dt><dd>${C.escape(state.zeit || '—')}</dd>
             </dl>
           </div>
@@ -180,7 +186,9 @@ export default async function render(ctx) {
           text: `Ihre Ressourcenbuchung «${C.escape(i.title)}» wurde erfasst und wird durch Workspace BBL
              bestätigt. Den Status sehen Sie jederzeit unter «Meine Vorgänge».`,
           actions: [
-            { href: `#/my-cases/${i.instanceId}`, label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            { href: links.vorgang(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            // Bewusst NICHT «Zu den Dienstleistungen»: die Sekundäraktion startet
+            // das Buchungsformular neu (dokumentierter Unterschied der Reiterseite).
             { id: 'buchung-neu', label: 'Weitere Buchung' },
           ] })}
       </div>`;
@@ -223,8 +231,8 @@ export default async function render(ctx) {
     // Die Fehlerschlüssel sind DOM-ids (Sprungmarken der Fehlerübersicht);
     // geprüft wird der State-Schlüssel: `state.bld` gab es nie, der Standort-
     // Fehler stand deshalb IMMER und blockierte jede Absendung.
-    if (!state.ressourcentyp) e.ressourcentyp = 'Bitte Ressourcentyp wählen';
-    if (!state.buildingId) e.bld = 'Bitte Standort wählen';
+    if (!state.ressourcentyp) e.ressourcentyp = 'Bitte einen Ressourcentyp wählen';
+    if (!state.buildingId) e.bld = 'Bitte einen Standort wählen';
     state.errors = e;
     return Object.keys(e).length === 0;
   }
@@ -239,6 +247,12 @@ export default async function render(ctx) {
         draw();
       },
     });
+
+    // Fehler löschen, sobald das Feld korrigiert wird — der Redraw zeigte vorher
+    // stale Fehler (Design-Review A8). VOR der Live-Aside-Verdrahtung anmelden:
+    // beide hängen am selben change-Ereignis, und nur in dieser Reihenfolge ist
+    // der Fehler schon aus state.errors raus, wenn draw() neu zeichnet.
+    C.wireFieldErrors(mount, state.errors);
 
     // live aside update on the booking tab
     ['ressourcentyp', 'bld', 'datum', 'zeit'].forEach(id => {
@@ -271,7 +285,13 @@ export default async function render(ctx) {
           linkedEntities: state.buildingId ? { buildingId: state.buildingId } : {},
         });
         draw();
-        if (!state.created) C.flashError(mount, 'Die Buchung konnte nicht gespeichert werden — bitte erneut versuchen.');
+        // Fokus + Ansage auf den Erfolgsscreen — HIER statt in doneBuchung():
+        // das Done-Panel wird auch beim blossen Reiterwechsel neu gezeichnet,
+        // und nur der Absende-Moment ist ein Kontextwechsel. Wurzel ist das
+        // Tab-Panel, weil die Seiten-h1 ebenfalls tabindex="-1" trägt und den
+        // Fokus sonst abfinge (die Erfolgsüberschrift ist ein h2 im Panel).
+        if (state.created) C.focusProcessDone(mount.querySelector('#wpanel') || mount, state.created);
+        else C.flashError(mount, 'Die Buchung konnte nicht gespeichert werden — bitte erneut versuchen.');
       });
     }
 

@@ -354,7 +354,7 @@ async function dispatch() {
   if (!modPath) {
     document.title = 'Seite nicht gefunden · BBL Kundenportal';
     mount.innerHTML = `<div class="container section"><div class="page-header"><h1 tabindex="-1">Seite nicht gefunden</h1></div>
-      <p class="muted">Diese Seite existiert nicht. <a href="#/">Zur Übersicht</a></p></div>`;
+      <p class="muted">Diese Seite existiert nicht. <a href="#/">Zur Startseite</a></p></div>`;
     focusHeading(mount);
     return;
   }

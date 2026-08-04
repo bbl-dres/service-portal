@@ -784,7 +784,7 @@
       {
         "name": "VALUE_AVAIL",
         "dataType": "DECIMAL(17,3)",
-        "description": "Bemessungsgröße: Verfügbare",
+        "description": "Bemessungsgrösse: Verfügbare",
         "nullable": true
       },
       {
@@ -802,7 +802,7 @@
       {
         "name": "VALUE_COMPL",
         "dataType": "DECIMAL(17,3)",
-        "description": "Bemessungsgröße: Kapazität",
+        "description": "Bemessungsgrösse: Kapazität",
         "nullable": true
       },
       {
@@ -1792,9 +1792,9 @@
     "schemaLabel": "BBL GIS IMMO",
     "schemaType": "gis_workspace",
     "name": "LAND_COVER",
-    "displayName": "Bodenabdeckung",
+    "displayName": "Bodenbedeckung",
     "type": "gis_layer",
-    "description": "GIS-IMMO Feature-Layer 'Bodenabdeckung' (Polygon, Status LIVE).",
+    "description": "GIS-IMMO Feature-Layer 'Bodenbedeckung' (Polygon, Status LIVE).",
     "certified": true,
     "rowCount": 12600,
     "sourceUrl": "https://gis.bbl.admin.ch/arcgis/rest/services/ENERGY_METER/FeatureServer/0",
@@ -1819,13 +1819,13 @@
       {
         "name": "av_type",
         "dataType": "VARCHAR(50)",
-        "description": "Bodenabdeckungstyp",
+        "description": "Bodenbedeckungstyp",
         "nullable": true
       },
       {
         "name": "lc_area",
         "dataType": "DECIMAL(18,3)",
-        "description": "Fläche der Bodenabdeckung in m2",
+        "description": "Fläche der Bodenbedeckung in m2",
         "nullable": true
       },
       {

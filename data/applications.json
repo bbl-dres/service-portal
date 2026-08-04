@@ -37,7 +37,7 @@
       "gis-immo"
     ],
     "contact": "immobilienmanagement",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/liegenschaften-inventar.jpg",
       "titel": "Contemporary building facade with reflective glass windows in an urban environment.",
@@ -86,7 +86,7 @@
       "facility-auftrag"
     ],
     "contact": "immobilienmanagement",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/mietende.jpg",
       "titel": "Spacious empty office with rows of desks and large windows.",
@@ -142,7 +142,7 @@
       "qualitygate"
     ],
     "contact": "projektmanagement",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/bauprojekte-eppm.jpg",
       "titel": "Urban construction site featuring multiple tower cranes against a city skyline.",
@@ -189,7 +189,7 @@
       "cde"
     ],
     "contact": "lcdm-bim",
-    "updated": "20.05.2026",
+    "updated": "2026-05-20",
     "bild": {
       "src": "assets/images/applications/dokumentenarchiv.jpg",
       "titel": "Engineer reviewing architectural blueprints on a desk with technical drawings.",
@@ -233,7 +233,7 @@
       "dokumentenarchiv"
     ],
     "contact": "kommunikation",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/mediathek.jpg",
       "titel": "A photographer focuses on Seattle's architecture through a camera lens, highlighting the c",
@@ -281,7 +281,7 @@
       "liegenschaften-inventar"
     ],
     "contact": "dres",
-    "updated": "04.08.2026",
+    "updated": "2026-08-04",
     "bild": {
       "src": "assets/images/applications/metadata-catalog.jpg",
       "titel": "Rows of labelled white archive boxes on wooden shelves",
@@ -324,7 +324,7 @@
       "liegenschaften-inventar"
     ],
     "contact": "dres",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/datenportal.jpg",
       "titel": "A laptop displaying an analytics dashboard with real-time data tracking and analysis tools",
@@ -348,7 +348,7 @@
     },
     "description": "Katalog der Datensätze und Schnittstellen des BBL — Inhalt, Bezugswege, Klassifizierung und Verantwortlichkeiten.",
     "area": "central",
-    "subtitle": "Datenkatalog und Schnittstellen",
+    "subtitle": "Datenbezug und Schnittstellen",
     "long": "Das Verzeichnis beschreibt die Datensätze des BBL nach DCAT-AP-CH: Inhalt und Abgrenzung, führendes System, Aktualisierungsintervall, Klassifizierung sowie Dateneigner und Datenverwalter. Je Datensatz sind die Bezugswege als Distributionen erfasst — Datei, Tabelle oder API. Das Verzeichnis sagt, welche Daten es gibt, wem sie gehören und wie man sie bezieht; die Daten selbst bleiben in den Führungssystemen.",
     "access": {
       "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
@@ -371,7 +371,7 @@
       "gis-immo"
     ],
     "contact": "dres",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/datenbezug.jpg",
       "titel": "Detailed view of programming code in a dark theme on a computer screen.",
@@ -383,7 +383,7 @@
   },
   {
     "appId": "workspace",
-    "name": "Workspace Management (Portal)",
+    "name": "Workspace & Buchung (Portal)",
     "group": "Arbeitsplatz & Logistik",
     "icon": "Apps",
     "audience": "staff",
@@ -413,7 +413,7 @@
       "flm"
     ],
     "contact": "campus",
-    "updated": "22.06.2026",
+    "updated": "2026-06-22",
     "bild": {
       "src": "assets/images/applications/workspace.jpg",
       "titel": "Spacious open-plan office with cubicles and modern furnishings, ideal for collaborative wo",
@@ -425,7 +425,7 @@
   },
   {
     "appId": "raumbuchung",
-    "name": "Raum- & Parkplatzbuchung (Portal)",
+    "name": "Raum-, Arbeitsplatz- & Parkplatzbuchung (Portal)",
     "group": "Arbeitsplatz & Logistik",
     "icon": "Calendar",
     "audience": "both",
@@ -459,7 +459,7 @@
       "workspace"
     ],
     "contact": "campus",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/raumbuchung.jpg",
       "titel": "Sleek, minimalist conference room with glass walls, long table, and office chairs.",
@@ -514,7 +514,7 @@
       "qualitygate"
     ],
     "contact": "projektmanagement",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/sap-eppm.jpg",
       "titel": "Office setup featuring a conference table, laptop, and organized whiteboard schedule, high",
@@ -585,7 +585,7 @@
       "datenbezug"
     ],
     "contact": "dres",
-    "updated": "30.04.2025",
+    "updated": "2025-04-30",
     "bild": {
       "src": "assets/images/applications/gis-immo.jpg",
       "titel": "Aerial photo showing detailed layout of urban residential area with roads and buildings.",
@@ -633,7 +633,7 @@
       "dokumentenarchiv"
     ],
     "contact": "lcdm-bim",
-    "updated": "11.03.2026",
+    "updated": "2026-03-11",
     "entries": [
       {
         "label": "DALA Planverwaltung",
@@ -700,7 +700,7 @@
       "dokumentenarchiv"
     ],
     "contact": "lcdm-bim",
-    "updated": "24.06.2026",
+    "updated": "2026-06-24",
     "entries": [
       {
         "label": "CDE Libal",
@@ -755,7 +755,7 @@
       "bauprojekte-eppm"
     ],
     "contact": "immobilienmanagement",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "entries": [
       {
         "label": "Wüest Dimensions",
@@ -816,7 +816,7 @@
       "liegenschaften-inventar"
     ],
     "contact": "immobilienmanagement",
-    "updated": "03.06.2026",
+    "updated": "2026-06-03",
     "entries": [
       {
         "label": "FLM über eGate",
@@ -871,7 +871,7 @@
       "liegenschaften-inventar"
     ],
     "contact": "edm",
-    "updated": "28.05.2026",
+    "updated": "2026-05-28",
     "entries": [
       {
         "label": "EDM — Energiedatenmanagement",
@@ -926,7 +926,7 @@
       "edm"
     ],
     "contact": "nachhaltigkeit",
-    "updated": "17.04.2026",
+    "updated": "2026-04-17",
     "entries": [
       {
         "label": "AbiotPRO Dashboard",
@@ -977,7 +977,7 @@
       "bauprojekte-eppm"
     ],
     "contact": "lcdm-bim",
-    "updated": "09.06.2026",
+    "updated": "2026-06-09",
     "entries": [
       {
         "label": "QualityGate — Anmeldung",
@@ -1033,7 +1033,7 @@
       "lager-material"
     ],
     "contact": "shop-support",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/eshop.jpg",
       "titel": "Flat lay of office supplies on a wooden desk for a neat workspace setup.",
@@ -1086,7 +1086,7 @@
       "infopers"
     ],
     "contact": "servicedesk-bit",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/egate.jpg",
       "titel": "Sleek office desk setup featuring a laptop, glass of water, and open window view.",
@@ -1131,7 +1131,7 @@
       "egate"
     ],
     "contact": "epa-cchr",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/infopers.jpg",
       "titel": "A woman in a business suit participates in a job interview, showcasing professionalism and",
@@ -1175,7 +1175,7 @@
       "bauprojekte-eppm"
     ],
     "contact": "servicedesk-bit",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/superb.jpg",
       "titel": "Detailed image of a server rack with glowing lights in a modern data center.",
@@ -1229,7 +1229,7 @@
       "infopers"
     ],
     "contact": "servicedesk-bit",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/admin-directory.jpg",
       "titel": "Confident multiethnic team posing in a modern office setting showcasing diversity and prof",
@@ -1276,7 +1276,7 @@
       "eshop"
     ],
     "contact": "warengruppe-publikationen",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/bundespublikationen.jpg",
       "titel": "Colorful collection of travel brochures on display at a bookstore.",
@@ -1324,7 +1324,7 @@
       "lager-material"
     ],
     "contact": "mobiliar-hausdienst",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/umzug-transport.jpg",
       "titel": "A couple packing and organizing office supplies into labeled boxes, preparing for relocati",
@@ -1371,7 +1371,7 @@
       "eshop"
     ],
     "contact": "mobiliar-hausdienst",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/moebelboerse.jpg",
       "titel": "Modern office space featuring pink ergonomic chairs around a sleek conference table.",
@@ -1414,7 +1414,7 @@
       "umzug-transport"
     ],
     "contact": "mobiliar-hausdienst",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/kurier-fuhrpark.jpg",
       "titel": "Two white delivery vans parked in a spacious parking lot under a clear blue sky.",
@@ -1465,7 +1465,7 @@
       "kurier-fuhrpark"
     ],
     "contact": "produktion",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/produktion-druck.jpg",
       "titel": "Close-up of an industrial printing press producing designs.",
@@ -1516,7 +1516,7 @@
       "fahnen-event"
     ],
     "contact": "helpdesk-om",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/facility-auftrag.jpg",
       "titel": "A comprehensive collection of professional cleaning tools on a cart in an indoor environme",
@@ -1563,7 +1563,7 @@
       "lager-material"
     ],
     "contact": "mobiliar-hausdienst",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/fahnen-event.jpg",
       "titel": "Front view of Swiss Parliament Building in Bern with Swiss and EU flags.",
@@ -1606,7 +1606,7 @@
       "moebelboerse"
     ],
     "contact": "beschaffung",
-    "updated": "30.07.2026",
+    "updated": "2026-07-30",
     "bild": {
       "src": "assets/images/applications/lager-material.jpg",
       "titel": "Wide view of an organized industrial warehouse with metal shelving and stored merchandise.",
@@ -1614,6 +1614,102 @@
       "credit": "Daniel Andraski — Pexels",
       "lizenz": "Pexels-Lizenz",
       "quelle": "https://www.pexels.com/photo/narrow-walkway-between-metal-shelves-12234109/"
+    }
+  },
+  {
+    "appId": "gwr",
+    "name": "Eidg. Gebäude- und Wohnungsregister (GWR)",
+    "group": "Bundesverwaltung",
+    "icon": "Building",
+    "audience": "both",
+    "accessNote": "Öffentlich (Erfassung mit Konto)",
+    "link": {
+      "kind": "external",
+      "href": "https://www.housing-stat.ch/"
+    },
+    "description": "Amtliches Register aller Gebäude und Wohnungen der Schweiz — Quelle des EGID, mit dem auch die Bundesbauten identifiziert werden.",
+    "area": "federal",
+    "subtitle": "Gebäude, Wohnungen und ihre eidgenössischen Identifikatoren",
+    "long": "Das eidgenössische Gebäude- und Wohnungsregister führt die Grunddaten aller Gebäude und Wohnungen der Schweiz — Bauprojekte, Gebäude, Wohnungen, Gebäudeeingänge und Strassen. Jedes Gebäude trägt darin einen eidgenössischen Gebäudeidentifikator (EGID), jede Wohnung einen Wohnungsidentifikator (EWID). Geführt wird das Register vom Bundesamt für Statistik zusammen mit den Bau- und Meldestellen von Bund, Kantonen und Gemeinden; die Nachführung läuft über die Webanwendung housing-stat.ch. Für das BBL ist es die Quelle der Gebäudeidentität: der EGID verbindet den eigenen Liegenschaftsbestand mit den Geodaten des Bundes und mit jeder anderen Stelle, die dasselbe Gebäude führt. Im Metadaten Katalog ist er als Attribut des Geschäftsobjekts «Gebäude» erfasst.",
+    "access": {
+      "note": "Die Abfrage einzelner Gebäude- und Wohnungsdaten ist öffentlich; die Erfassung und Nachführung läuft über die zuständigen kommunalen und kantonalen Meldestellen.",
+      "steps": [
+        "Öffentliche Abfrage ohne Konto — Suche über Adresse, EGID oder Gemeinde.",
+        "Erfassungsrechte erteilt das BFS den Bau- und Meldestellen der Kantone und Gemeinden."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Geschäftsobjekt «Gebäude» im Metadaten Katalog",
+        "href": "#/app/metadata-catalog?id=gebaeude"
+      },
+      {
+        "label": "Liegenschaften Inventar — die Bauten des Bundes",
+        "href": "#/app/portfolio"
+      }
+    ],
+    "related": [
+      "bur",
+      "geoportal-bund",
+      "liegenschaften-inventar"
+    ],
+    "contact": "bfs-gwr",
+    "updated": "2026-08-04",
+    "bild": {
+      "src": "assets/images/applications/gwr.jpg",
+      "titel": "Bird's eye view of assorted-colour roof tiles",
+      "fotograf": "Jack Price-Burns",
+      "credit": "Jack Price-Burns — Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/birds-eye-view-of-assorted-color-roof-tiles-YVNlVJ8F_Ok"
+    }
+  },
+  {
+    "appId": "bur",
+    "name": "Betriebs- und Unternehmensregister (BUR)",
+    "group": "Bundesverwaltung",
+    "icon": "Industry",
+    "audience": "staff",
+    "accessNote": "Behördenzugang",
+    "link": {
+      "kind": "external",
+      "href": "https://www.bfs.admin.ch/bfs/de/home/register/unternehmensregister/betriebs-unternehmensregister.html"
+    },
+    "description": "Amtliches Register aller Unternehmen und Arbeitsstätten mit wirtschaftlicher Tätigkeit in der Schweiz — Adressregister der Bundesstatistik.",
+    "area": "federal",
+    "subtitle": "Unternehmen, Arbeitsstätten und die BUR-Nummer",
+    "long": "Das Betriebs- und Unternehmensregister des Bundesamts für Statistik enthält alle örtlichen Einheiten und Unternehmen, die in der Schweiz eine wirtschaftliche Tätigkeit ausüben. Es dient dem BFS als Adressregister für die statistischen Erhebungen bei Unternehmen und Arbeitsstätten; weitere Ämter der Bundesverwaltung und zahlreiche Kantone nutzen es für statistische und administrative Zwecke. Jede Betriebsstätte trägt eine achtstellige BUR-Nummer, die über «MyUID» im UID-Register abrufbar ist; über Name und Adresse lässt sich eine Arbeitsstätte durch Verknüpfung mit dem Gebäude- und Wohnungsregister meist exakt verorten. Für das BBL ist das Register die Referenz, wenn ein Geschäftspartner — Lieferantin, Vermieter oder Kundin — eindeutig identifiziert werden muss.",
+    "access": {
+      "note": "Der Registerzugang ist Behörden vorbehalten; die eigene BUR-Nummer können Unternehmen im UID-Register abrufen.",
+      "steps": [
+        "Auskünfte für Bundesstellen über das Bundesamt für Statistik.",
+        "BUR-Nummern einzelner Unternehmen über «MyUID» im UID-Register."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Dienstleistung «Neuen Geschäftspartner anlegen»",
+        "href": "#/services/geschaeftspartner-anlegen"
+      },
+      {
+        "label": "Geschäftsobjekt «Unternehmen» im Metadaten Katalog",
+        "href": "#/app/metadata-catalog?id=unternehmen"
+      }
+    ],
+    "related": [
+      "gwr",
+      "i14y",
+      "simap"
+    ],
+    "contact": "bfs-bur",
+    "updated": "2026-08-04",
+    "bild": {
+      "src": "assets/images/applications/bur.jpg",
+      "titel": "View through the window of a business premises with customers inside",
+      "fotograf": "Andrew Leu",
+      "credit": "Andrew Leu — Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/group-of-people-inside-cafe-_L3YMlqc9NA"
     }
   },
   {
@@ -1654,7 +1750,7 @@
       "admin-directory"
     ],
     "contact": "bfs-ios",
-    "updated": "04.08.2026",
+    "updated": "2026-08-04",
     "bild": {
       "src": "assets/images/applications/i14y.jpg",
       "titel": "A blue background with lines and dots forming a connected network",
@@ -1701,7 +1797,7 @@
       "admin-directory"
     ],
     "contact": "bk-terminologie",
-    "updated": "04.08.2026",
+    "updated": "2026-08-04",
     "bild": {
       "src": "assets/images/applications/termdat.jpg",
       "titel": "Close-up of a dictionary page in focus",
@@ -1763,7 +1859,7 @@
       "liegenschaften-inventar"
     ],
     "contact": "swisstopo-kogis",
-    "updated": "04.08.2026",
+    "updated": "2026-08-04",
     "bild": {
       "src": "assets/images/applications/geoportal-bund.jpg",
       "titel": "Detailed topographic map of a mountainous region",
@@ -1815,7 +1911,7 @@
       "datenbezug"
     ],
     "contact": "swisstopo-geocat",
-    "updated": "04.08.2026",
+    "updated": "2026-08-04",
     "bild": {
       "src": "assets/images/applications/geocat.jpg",
       "titel": "Close-up photography of a wooden library card catalog",
@@ -1862,7 +1958,7 @@
       "bundespublikationen"
     ],
     "contact": "kbb",
-    "updated": "04.08.2026",
+    "updated": "2026-08-04",
     "bild": {
       "src": "assets/images/applications/simap.jpg",
       "titel": "Two people reviewing and signing documents at a table",

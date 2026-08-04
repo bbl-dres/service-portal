@@ -1,22 +1,30 @@
 # BBL Unified Service Platform — Documentation
 
-Planning & concept docs for the BBL service-portal prototype. Read in this order:
+Konzept- und Review-Dokumente des Service-Portal-Prototyps. Leseordnung:
 
-1. **[platform-vision.md](platform-vision.md)** — the north star. Unify the intranet + five domain prototypes into one **process-oriented platform**: a wiki + a service directory that open microservices, driven by a process engine (Camunda), over a shared data core, with an internal DCAT **data catalog**. Modeled on the Aargau Smart Service Portal + federal I14Y.
-2. **[sitemap.md](sitemap.md)** — information architecture of the **portal shell & service directory** (the front door): the 6 top-level task areas and the 8-domain service catalog.
-3. **[requirements.md](requirements.md)** — prioritized prototype requirements (MoSCoW), functional + non-functional.
-4. **[prototype-plan.md](prototype-plan.md)** — the concrete **demo build plan**: confirmed decisions, evolved nav, the new **Anwendungen** & **Daten** surfaces, folder structure, micro-app plan, and the one remaining stack decision.
-5. **[data-model.md](data-model.md)** — the shared core data model + the DCAT data-catalog model.
-6. **[expert-review.md](expert-review.md)** — multi-persona expert review (10 personas, fact-checked): verdict, validated strengths, prioritized gaps, the blind spots the whole panel missed, and recommended doc changes.
-7. **[cd-audit.md](cd-audit.md)** — CD Bund alignment audit (4 reviewers vs designsystem + tenant-portal): what's fixed and the prioritized backlog.
+**Konzept (Plan-first-Phase):**
+
+1. **[platform-vision.md](platform-vision.md)** — der Nordstern. Intranet + fünf Fach-Prototypen zu EINER prozessorientierten Plattform: Wiki + Dienstleistungskatalog, Micro-Apps, Prozess-Engine (Camunda), geteilter Datenkern, interner DCAT-Datenkatalog. Vorbilder: Aargau Smart Service Portal + I14Y.
+2. **[sitemap.md](sitemap.md)** — Informationsarchitektur von Portal-Shell und Dienstleistungskatalog. *(Teilweise überholt: «Anwendungskatalog» heisst im Bau «Anwendungen», die Wissens-Abschnitte sind nach Fachgebieten gegliedert — massgebend ist js/router.js.)*
+3. **[requirements.md](requirements.md)** — priorisierte Anforderungen (MoSCoW).
+4. **[data-model.md](data-model.md)** — Datenkern + DCAT-Katalogmodell.
+5. **[services.md](services.md)** — der Dienstleistungskatalog fachlich.
+6. **[bbl-vokabular.md](bbl-vokabular.md)** — Terminologie-Autorität (BKP, SIA, Rollen, Objektbegriffe).
+7. **[legacy-analysis.md](legacy-analysis.md)** — Analyse des heutigen Intranets.
+8. **[swisstopo-api.md](swisstopo-api.md)** — Karten-/Geodatengrundlagen.
+9. **[portfolio-redesign.md](portfolio-redesign.md)** — Entwurfsnotizen zum Liegenschaften-Explorer.
+
+**Reviews (je Welle, chronologisch):**
+
+10. **[code-review.md](code-review.md)** — technischer Review (Lade-/Fehlerpfade, Router-Verträge).
+11. **[design-review.md](design-review.md)** — die AKTUELLE Design-Review (August 2026): Konsistenz, Komplexität, Sprache — Kanon, 130 Befunde, Umsetzungsstand, bewusste Abweichungen.
 
 ## Status
 
-- **Phase:** requirements & concept — *no implementation yet.*
-- **Confirmed:** unified audience (customers + staff); 6 top-level task areas (sitemap §7).
-- **Source material analyzed:** the current intranet ([bbl-intranet/](../bbl-intranet/), gitignored) and the five sibling prototypes — `tenant-portal`, `property-inventory`, `transaction-portal`, `workspace-management`, `ppm-cockpit`.
+- **Phase:** lauffähiger Prototyp — 8 Seitenbereiche + 13 Micro-Apps (vanilla JS, kein Build; Start: `node scripts/serve.mjs` oder `python -m http.server`).
+- Frühere Einzeldokumente der ersten Review-Wellen (prototype-plan, expert-review, cd-audit) sind in die obigen Dokumente aufgegangen und existieren nicht mehr als Dateien.
 
-## Open decisions
+## Offene Entscheide
 
-- **Remaining:** tech stack — vanilla vs Vue/Nuxt ([prototype-plan.md §8](prototype-plan.md)); platform name (V6).
-- Resolved platform decisions: [platform-vision.md §11](platform-vision.md). Prototype-level defaults: [requirements.md §10](requirements.md).
+- Plattformname (V6); produktiver Stack (der Prototyp ist bewusst vanilla).
+- Aufgelöste Plattform-Entscheide: [platform-vision.md §11](platform-vision.md).

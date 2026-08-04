@@ -17,6 +17,7 @@
 import { initEstateMap } from '../buildings-map.js';
 import { createMapSlot } from '../map-slot.js';
 import { openGallery } from '../gallery.js';
+import { ANWENDUNGEN, trail } from '../crumbs.js';
 
 // Historic material is rendered desaturated, so the archive reads as an archive.
 
@@ -25,6 +26,43 @@ import { openGallery } from '../gallery.js';
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['buildings', 'media', 'parcels', 'projects'];
 const isHistoric = (m) => m.historicPeriod === 'historisch';
+
+// Das Bildregister umfasst Gebäude, Grundstücke UND Bauprojekte; ein Medium
+// trägt darum je nach Bezug buildingId, parcelId oder projectId. `objektId`
+// vereinheitlicht das, `objektName` löst über alle drei Bestände auf.
+// Vorher las die Mediathek nur buildingId — bei einem Grundstücksbild war das
+// null, und die Sortierung lief auf `null.localeCompare`. Übersicht und
+// Detailansicht hielten je eine eigene Kopie dieser Auflösung (objId/bn);
+// jetzt EINE Fassung für beide.
+const objektId = (m) => m.buildingId || m.parcelId || m.projectId || '';
+const objektName = (core, id) => {
+  if (!id) return 'Ohne Objektbezug';
+  const b = core.building(id); if (b) return b.name;
+  const p = core.parcel(id); if (p) return p.name;
+  const pr = core.project(id); if (pr) return pr.name || id;
+  return String(id);
+};
+
+// Eintrag für die geteilte Vollbildgalerie (js/gallery.js) — EINE Fassung für
+// Übersicht und Detailansicht (vorher zwei fast gleiche Kopien; die Detail-
+// Kopie liess die Koordinaten-Zeile weg). Die Zeile ist datengetrieben:
+// ohne Georeferenz steht «—».
+const galleryItem = (C, core, m) => ({
+  id: m.mediaId,
+  photo: m.photo, photoSrc: m.file || '', title: m.title, meta: `${m.date} · ${objektName(core, objektId(m))}`,
+  type: m.mediaType, gray: isHistoric(m),
+  href: `#/app/media-library/${encodeURIComponent(m.mediaId)}`,
+  details: [
+    ['Typ', m.mediaType === 'video' ? 'Video' : 'Foto'],
+    ['Datum', m.date],
+    ['Epoche', isHistoric(m) ? 'Historisch' : 'Aktuell'],
+    ['Objekt', objektName(core, objektId(m))],
+    [m.mediaType === 'video' ? 'Quelle' : 'Fotograf:in', m.photographer],
+    ['Copyright', m.copyright],
+    ['Zugriff', m.accessLevel],
+    ['Koordinaten', Number.isFinite(m.lat) ? `${m.lat.toFixed(5)}, ${m.lon.toFixed(5)}` : '—'],
+  ],
+});
 
 const PER_PAGE = 12;
 const SORT_OPTS = [
@@ -39,26 +77,12 @@ export default async function render(ctx) {
   if (params[0]) return detail(ctx, params[0]);
 
   setTitle('Mediathek Bauten');
-  setCrumbs([
-    { label: 'Startseite', href: '#/' },
-    { label: 'Daten und Digitalisierung', href: '#/data' },
-    { label: 'Mediathek Bauten' },
-  ]);
+  // Die App steht im Anwendungskatalog — Kette über «Anwendungen» (js/crumbs.js).
+  setCrumbs(trail(ANWENDUNGEN, { label: 'Mediathek Bauten' }));
 
   const all = core.media();
-  // Das Bildregister umfasst Gebäude, Grundstücke UND Bauprojekte; ein Medium
-  // trägt darum je nach Bezug buildingId, parcelId oder projectId. `objektId`
-  // vereinheitlicht das, `bname` löst über alle drei Bestände auf.
-  // Vorher las die Mediathek nur buildingId — bei einem Grundstücksbild war das
-  // null, und die Sortierung lief auf `null.localeCompare`.
-  const objektId = (m) => m.buildingId || m.parcelId || m.projectId || '';
-  const bname = (id) => {
-    if (!id) return 'Ohne Objektbezug';
-    const b = core.building(id); if (b) return b.name;
-    const p = core.parcel(id); if (p) return p.name;
-    const pr = core.project(id); if (pr) return pr.name || id;
-    return String(id);
-  };
+  // Objektauflösung: Modul-Funktionen oben, hier nur an `core` gebunden.
+  const bname = (id) => objektName(core, id);
 
   /* ------------------------------------------------------------- Zustand -- */
   const rawQ = (query.get('q') || '').trim();
@@ -91,25 +115,6 @@ export default async function render(ctx) {
   const totalPages = Math.max(1, Math.ceil(sorted.length / PER_PAGE));
   const page = Math.min(Math.max(1, parseInt(query.get('page') || '1', 10) || 1), totalPages);
   const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  // Einträge für die geteilte Vollbildgalerie (js/gallery.js). Die Reihenfolge
-  // entspricht der Trefferliste, damit Blättern in der Galerie der Sortierung folgt.
-  const galleryItems = () => sorted.filter(m => m.file || m.photo).map(m => ({
-    id: m.mediaId,
-    photo: m.photo, photoSrc: m.file || '', title: m.title, meta: `${m.date} · ${bname(objektId(m))}`,
-    type: m.mediaType, gray: isHistoric(m),
-    href: `#/app/media-library/${encodeURIComponent(m.mediaId)}`,
-    details: [
-      ['Typ', m.mediaType === 'video' ? 'Video' : 'Foto'],
-      ['Datum', m.date],
-      ['Epoche', m.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'],
-      ['Objekt', bname(objektId(m))],
-      [m.mediaType === 'video' ? 'Quelle' : 'Fotograf:in', m.photographer],
-      ['Copyright', m.copyright],
-      ['Zugriff', m.accessLevel],
-      ['Koordinaten', Number.isFinite(m.lat) ? `${m.lat.toFixed(5)}, ${m.lon.toFixed(5)}` : '—'],
-    ],
-  }));
 
   /* ------------------------------------------------------------ Bausteine -- */
   const periodBadge = (p) => p === 'historisch' ? C.badge('Historisch', 'warning') : C.badge('Aktuell', 'info');
@@ -165,7 +170,7 @@ export default async function render(ctx) {
   };
 
   const active = [
-    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
+    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
     ...typs.map(x => ({ label: typLabel(x), href: hash({ typ: typs.filter(y => y !== x) }) })),
     ...epochen.map(x => ({ label: x === 'historisch' ? 'Historisch' : 'Aktuell', href: hash({ epoche: epochen.filter(y => y !== x) }) })),
     ...objekte.map(x => ({ label: bname(x), href: hash({ objekt: objekte.filter(y => y !== x) }) })),
@@ -184,7 +189,7 @@ export default async function render(ctx) {
     })}
     ${C.catalogueBar({
       formId: 'med-search', inputId: 'medq', searchLabel: 'Aufnahme suchen',
-      placeholder: 'Titel, Objekt oder Urheberschaft…', q: rawQ,
+      placeholder: 'Titel, Objekt oder Urheberschaft suchen…', q: rawQ,
       countId: 'med-count',
       // In der Karte ist «Seite x von y» sinnlos: sie zeigt alle Treffer.
       count: view === 'map'
@@ -198,7 +203,7 @@ export default async function render(ctx) {
         ${C.filterGroup({ dim: 'epoche', legend: 'Epoche', selected: epochen, options: [
           { value: 'historisch', label: 'Historisch' }, { value: 'aktuell', label: 'Aktuell' }] })}
         ${C.filterGroup({ dim: 'objekt', legend: 'Objekt', selected: objekte, options: objOpts })}
-        <div class="catbar__panel__actions"><a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ typ: [], epoche: [], objekt: [] })}">${C.icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">Zurücksetzen</span></a></div>`,
+        ${C.panelReset({ href: hash({ typ: [], epoche: [], objekt: [] }) })}`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List'], ['map', 'Kartenansicht', 'Map']],
     })}
     ${C.activeFilters({ filters: active, resetHref: '#/app/media-library' })}
@@ -233,7 +238,8 @@ export default async function render(ctx) {
     // Fortschrittliche Verbesserung: der href auf die Detailseite bleibt die
     // Rückfallebene (und die Tastaturbedienung), der Klick öffnet die Vollbild-
     // galerie an genau diesem Bild — wie in der Objekt-Detailansicht.
-    const items = galleryItems();
+    // Reihenfolge = Trefferliste, damit Blättern der Sortierung folgt.
+    const items = sorted.filter(m => m.file || m.photo).map((m) => galleryItem(C, core, m));
     // Geteilter Link (?bild=MED-007) öffnet die Galerie direkt bei der Aufnahme.
     const deep = query.get('bild');
     if (deep) {
@@ -271,60 +277,42 @@ export default async function render(ctx) {
 // Metadatenbox in der Randspalte — das einzige Detail im Portal, das nicht dem
 // Registermuster folgte.
 function detail(ctx, id) {
-  const { mount, core, C, setTitle, setCrumbs } = ctx;
+  const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   const all = core.media();
   const m = all.find(x => x.mediaId === id);
   if (!m) {
     // Titel und Brotkrumen fehlten hier ganz: die des zuvor besuchten Mediums
     // blieben stehen. C.renderNotFound setzt beides mit.
     C.renderNotFound(ctx, { title: 'Medium nicht gefunden',
-      backHref: '#/app/media-library', backLabel: 'Mediathek Bauten', overview: 'Mediathek',
-      crumbs: [{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' },
-        { label: 'Mediathek Bauten', href: '#/app/media-library' }],
-      body: 'Dieses Medium existiert nicht (oder wurde zurückgezogen). <a href="#/app/media-library">Zur Übersicht «Mediathek»</a>' });
+      backHref: '#/app/media-library', backLabel: 'Mediathek Bauten',
+      crumbs: trail(ANWENDUNGEN, { label: 'Mediathek Bauten', href: '#/app/media-library' }),
+      body: 'Dieses Medium existiert nicht (oder wurde zurückgezogen). <a href="#/app/media-library">Zur Übersicht «Mediathek Bauten»</a>' });
     return;
   }
 
   setTitle(m.title);
-  setCrumbs([
-    { label: 'Startseite', href: '#/' },
-    { label: 'Daten und Digitalisierung', href: '#/data' },
+  setCrumbs(trail(ANWENDUNGEN,
     { label: 'Mediathek Bauten', href: '#/app/media-library' },
-    { label: m.title },
-  ]);
+    { label: m.title }));
 
-  // Auch hier: das Medium kann an einem Gebäude, einem Grundstück oder einem
-  // Bauprojekt hängen. objId() vereinheitlicht, oname() löst über alle auf.
-  const objId = (x) => x.buildingId || x.parcelId || x.projectId || '';
-  const oid = objId(m);
-  const b = core.building(oid) || core.parcel(oid) || null;
-  const bn = b ? b.name : (core.project(oid) ? (core.project(oid).name || oid) : (oid || 'Ohne Objektbezug'));
+  // Objektauflösung über die Modul-Funktionen oben (eine Fassung mit der Übersicht).
+  const oid = objektId(m);
+  const bn = objektName(core, oid);
   const isVideo = m.mediaType === 'video';
   const isPublic = m.accessLevel === 'öffentlich';
-  const hist = m.historicPeriod === 'historisch';
+  const hist = isHistoric(m);
   const hasGeo = Number.isFinite(m.lat) && Number.isFinite(m.lon);
   // Geschwisteraufnahmen desselben Objekts — echte Daten, kein Füllmaterial.
-  const siblings = all.filter(x => objId(x) === oid);
-  const galleryItem = (x) => ({
-    id: x.mediaId,
-    photo: x.photo, photoSrc: x.file || '', title: x.title, meta: `${x.date} · ${bn}`,
-    type: x.mediaType, gray: x.historicPeriod === 'historisch',
-    href: `#/app/media-library/${encodeURIComponent(x.mediaId)}`,
-    details: [
-      ['Typ', x.mediaType === 'video' ? 'Video' : 'Foto'],
-      ['Datum', x.date],
-      ['Epoche', x.historicPeriod === 'historisch' ? 'Historisch' : 'Aktuell'],
-      ['Objekt', bn],
-      [x.mediaType === 'video' ? 'Quelle' : 'Fotograf:in', x.photographer],
-      ['Copyright', x.copyright],
-      ['Zugriff', x.accessLevel],
-    ],
-  });
+  const siblings = all.filter(x => objektId(x) === oid);
 
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
     { id: 'metadaten', label: 'Metadaten' },
   ];
+  // ?tab=-Deeplink wie bei Projekten/Mietverhältnissen: ein geteilter Link auf
+  // «Metadaten» landet dort; Unbekanntes fällt still auf die Übersicht zurück.
+  let active = query.get('tab') || 'uebersicht';
+  if (!tabs.some((t) => t.id === active)) active = 'uebersicht';
 
   const tabUebersicht = () => `
     <h2 class="detail-section__title">Aufnahme</h2>
@@ -375,16 +363,20 @@ function detail(ctx, id) {
     <p class="lead">${C.escape(bn)} · ${C.escape(m.date)}</p>
 
     <div class="tabs mt-6">
-      ${C.tabBar({ items: tabs, active: tabs[0].id, idPrefix: 'med-tab', ariaLabel: 'Details zur Aufnahme' })}
-      ${C.tabPanels({ items: tabs, active: tabs[0].id, idPrefix: 'med-tab', render: panelHtml, heading: true })}
+      ${C.tabBar({ items: tabs, active, idPrefix: 'med-tab', ariaLabel: 'Details zur Aufnahme' })}
+      ${C.tabPanels({ items: tabs, active, idPrefix: 'med-tab', render: panelHtml, heading: true })}
     </div>
   </div>`;
 
-  C.wireTabs(mount);
+  // Reiterwechsel in die URL spiegeln (teilbarer Link, Muster projects.js).
+  C.wireTabs(mount, {
+    syncHash: (tab) => history.replaceState(history.state, '',
+      `#/app/media-library/${encodeURIComponent(m.mediaId)}${tab === 'uebersicht' ? '' : '?tab=' + tab}`),
+  });
 
   // Bild und «In der Galerie öffnen» führen zum selben Betrachter, eingestiegen
   // bei genau dieser Aufnahme.
-  const items = siblings.filter(x => x.file || x.photo).map(galleryItem);
+  const items = siblings.filter(x => x.file || x.photo).map((x) => galleryItem(C, core, x));
   const startAt = Math.max(0, items.findIndex(x => x.href.endsWith(encodeURIComponent(m.mediaId))));
   // NICHT an `mount` hängen: das ist der bestehende #main-content-Knoten des
   // Routers, der beim Seitenwechsel nur seinen innerHTML tauscht. Ein Listener
@@ -406,8 +398,6 @@ function detail(ctx, id) {
       ctx.onUnmount(slot.free);
     }
   }
-
-  window.scrollTo(0, 0);
-  const h = mount.querySelector('h1');
-  if (h) h.focus({ preventScroll: true });
+  // KEIN eigenes scrollTo/Fokussieren: Scroll und Fokus gehören dem Router
+  // (router.js) — gleiches Muster wie die Mietverhältnis-Detailansicht.
 }

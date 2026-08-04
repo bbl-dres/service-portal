@@ -83,7 +83,9 @@ export default function render(ctx) {
       lead: 'Die laufenden und geplanten Informatik-Vorhaben des BBL — was sie umfassen, wer sie führt und wann sie wirken.',
     })}
     ${C.notification('Demo-Inhalt: Die Vorhaben sind an real existierende Programme angelehnt; Status und Termine sind für den Prototyp gesetzt.', 'hint', 'InfoCircle')}
-    <div class="mt-8">
+    ${''/* mt-6 wie jeder Geschwister-Block nach dem Seitenkopf — die Seite war
+          die einzige mt-8-Nutzerin (Design-Review, pages). */}
+    <div class="mt-6">
       ${C.table({
         caption: 'IKT-Vorhaben des BBL',
         zebra: true,

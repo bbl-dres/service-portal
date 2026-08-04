@@ -8,6 +8,9 @@
 // ausdrücklich nicht dem Aufbau öffentlicher Bundesauftritte folgend.
 
 import { attachSuggest } from '../search-suggest.js';
+import { statusLabel } from '../domain.js';
+import { datum } from '../format.js';
+import * as links from '../links.js';
 
 
 
@@ -25,7 +28,9 @@ const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 
 export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs } = ctx;
-  setTitle('Übersicht');
+  // «Startseite» wie die Brotkrumen-Wurzel — der Tab hiess als einziger Ort
+  // «Übersicht», das Wort gehört den Drawer-Erstzeilen und Detail-Tabs (D7).
+  setTitle('Startseite');
   setCrumbs([]);
 
   const services = core.services();
@@ -73,14 +78,16 @@ export default async function render(ctx) {
       caption: 'Meine offenen Vorgänge', zebra: true, rowsClickable: true,
       columns: [
         { key: 'reference', label: 'Referenz', width: '10rem',
-          render: (i) => `<a href="#/my-cases/${encodeURIComponent(i.instanceId)}">${C.escape(i.reference)}</a>` },
+          render: (i) => `<a href="${links.vorgang(i.instanceId)}">${C.escape(i.reference)}</a>` },
         { key: 'title', label: 'Titel', render: (i) => C.escape(i.title) },
-        { key: 'updatedAt', label: 'Aktualisiert', width: '9rem', render: (i) => C.escape(i.updatedAt || i.createdAt) },
+        { key: 'updatedAt', label: 'Aktualisiert', width: '9rem', render: (i) => C.escape(datum(i.updatedAt || i.createdAt)) },
         { key: 'status', label: 'Status', width: '11rem', render: (i) => C.statusBadge(i.status, statusLabel(core, i.status)) },
       ],
       rows: open.slice(0, 5),
     }),
-    more: { href: '#/my-cases', label: `Alle Vorgänge (${cases.length})` },
+    // «Alle ‹Einheit› anzeigen» — das Muster aller geteilten Mehr-Verweise; die
+    // Zahl trug nur dieser eine Link und ist entfallen (D4).
+    more: { href: '#/my-cases', label: 'Alle Vorgänge anzeigen' },
   });
 
   // 2 · Häufig gebrauchte Dienstleistungen
@@ -94,7 +101,7 @@ export default async function render(ctx) {
   if (popular.length) blocks.push({
     title: 'Häufig gebraucht',
     body: `<div class="grid grid--responsive-cols-3">${popular.map(serviceTile).join('')}</div>`,
-    more: { href: '#/services', label: 'Alle Dienstleistungen ansehen' },
+    more: { href: '#/services', label: 'Alle Dienstleistungen anzeigen' },
   });
 
   // 3 · Anwendungen, Hilfsmittel und weitere Angebote — die meistgebrauchten
@@ -134,16 +141,17 @@ export default async function render(ctx) {
     })).join('')}</div>`,
   });
 
-  // 5 · Aktuelles — Galerie mit Bildern (CD TopNewsSection).
+  // 5 · News — Galerie mit Bildern (CD TopNewsSection). «News» wie Navigation
+  // und Zielseite: der Klickpfad zeigte drei Namen für einen Ort (D3).
   if (news.length) blocks.push({
-    title: 'Aktuelles',
-    body: `<div class="grid grid--3">${news.map(n => C.card({
+    title: 'News',
+    body: `<div class="grid grid--responsive-cols-3">${news.map(n => C.card({
       title: n.title, desc: n.teaser,
-      href: `#/news/${encodeURIComponent(n.id)}`,
+      href: links.news(n.id),
       photo: { id: n.photo, color: n.color, alt: '' },
-      footerInfo: `${C.escape(n.date)} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
+      footerInfo: `${C.escape(datum(n.date))} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
     })).join('')}</div>`,
-    more: { href: '#/news', label: 'Alle Aktualitäten ansehen' },
+    more: { href: '#/news', label: 'Alle News anzeigen' },
   });
 
   // Der Hero ist weiss; danach wechseln die Bänder — erstes Band grau.
@@ -203,9 +211,4 @@ export default async function render(ctx) {
   // sonst bliebe die Liste beim Routenwechsel im DOM.
   const detach = attachSuggest(mount.querySelector('#home-q'), searchForm, core, C);
   if (ctx.onUnmount) ctx.onUnmount(detach);
-}
-
-function statusLabel(core, status) {
-  const m = (core.ref().statusModel || []).find(s => s.id === status);
-  return m ? m.label : status;
 }

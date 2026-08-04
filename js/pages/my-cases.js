@@ -1,5 +1,7 @@
 // Meine Vorgänge — running cases (driven by the mock process engine).
 import { statusLabel } from '../domain.js';
+import { datum } from '../format.js';
+import * as links from '../links.js';
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -38,7 +40,9 @@ export default async function render(ctx) {
       <div class="stat"><div class="stat__num">${openCount}</div><div class="stat__label">offen / in Arbeit</div></div>
     </div>
     <h2 class="sr-only">Vorgänge</h2>
-    <div class="mt-6" id="mc-table"></div>
+    ${/* id 'cases' statt 'mc': das mc-Präfix gehört dem Metadatenkatalog —
+          Kollision beim Greppen (Design-Review, naming). */''}
+    <div class="mt-6" id="cases-table"></div>
   </div>`;
 
   // «Meine Vorgänge» war die einzige Listenfläche ohne Werkzeugleiste: keine Suche,
@@ -48,8 +52,8 @@ export default async function render(ctx) {
     .map(s => ({ value: s, label: statusLabel(core, s) }));
   // `rowsClickable` wie in der gleichgebauten Vorgangstabelle der Startseite:
   // erste Spalte ist der Zeilenlink, die Zeile folgt ihm per Mausklick (tbl-8).
-  C.mountDataTable(mount.querySelector('#mc-table'), {
-    id: 'mc', rows: all, unit: 'Vorgänge', caption: 'Meine Vorgänge', rowsClickable: true,
+  C.mountDataTable(mount.querySelector('#cases-table'), {
+    id: 'cases', rows: all, unit: { nom: 'Vorgänge', dat: 'Vorgängen' }, caption: 'Meine Vorgänge', rowsClickable: true,
     searchKeys: ['reference', 'title', 'defName'],
     searchLabel: 'Vorgang suchen', placeholder: 'Referenz oder Titel suchen…',
     perPage: 10,
@@ -61,10 +65,10 @@ export default async function render(ctx) {
     facets: [{ dim: 'status', legend: 'Status', options: STATUS_OPTS,
       match: (r, vals) => vals.includes(r.status) }],
     columns: [
-      { key: 'reference', label: 'Referenz', render: r => `<a href="#/my-cases/${encodeURIComponent(r.instanceId)}">${C.escape(r.reference)}</a>` },
+      { key: 'reference', label: 'Referenz', render: r => `<a href="${links.vorgang(r.instanceId)}">${C.escape(r.reference)}</a>` },
       { key: 'title', label: 'Titel', render: r => C.escape(r.title) },
       { key: 'defName', label: 'Typ', render: r => C.escape(r.defName) },
-      { key: 'updatedAt', label: 'Aktualisiert', render: r => C.escape(r.updatedAt || r.createdAt) },
+      { key: 'updatedAt', label: 'Aktualisiert', render: r => C.escape(datum(r.updatedAt || r.createdAt)) },
       { key: 'status', label: 'Status', render: r => C.statusBadge(r.status, statusLabel(core, r.status)) },
     ],
   });
@@ -113,17 +117,21 @@ function detail(ctx, id) {
     <p class="m-0">${C.escape(b.name)}<br>
       <span class="small muted">${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)}</span><br>
       <span class="small muted">WE ${C.escape(b.bbl_we || '—')} · EGID ${C.escape(b.egid || '—')}</span></p>
-    <p style="margin:.5rem 0 0"><a class="btn btn--link btn--icon-left" href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Gebäude ansehen</span></a></p></div>` : '';
+    <p class="mt-2 mb-0"><a class="btn btn--link btn--icon-left" href="${links.objekt(b.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Gebäude ansehen</span></a></p></div>` : '';
   const projektCard = p ? `<div class="box"><h3>Verknüpftes Projekt</h3>
     <p class="m-0">${C.escape(p.name)}${p.projectNumber ? `<br><span class="small muted">${C.escape(p.projectNumber)}</span>` : ''}</p>
-    <p style="margin:.5rem 0 0"><a class="btn btn--link btn--icon-left" href="#/app/projects/${encodeURIComponent(p.projectId)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Projekt ansehen</span></a></p></div>` : '';
+    <p class="mt-2 mb-0"><a class="btn btn--link btn--icon-left" href="${links.bauprojekt(p.projectId)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Projekt ansehen</span></a></p></div>` : '';
   const cards = [antragstellerCard, standortCard, projektCard].filter(Boolean).join('');
+  // «Eckdaten» wie der gleiche Slot aller Geschwister-Detailseiten (D26); die
+  // Zeilen laufen über das EINE Schlüssel-Wert-Rezept dl.kv (linierte Variante)
+  // statt der parallelen .data-rows-Implementierung (C7). detailSection mit
+  // titleTag h3 — der Abschnitt sitzt unter der Panel-h2.
   const angaben = dataEntries.length
-    ? `<div class="detail-section"><h3 class="detail-section__title">Angaben zum Vorgang</h3>
-        <div class="box"><div class="data-rows">${dataEntries.map(([k, v]) =>
-          `<div class="data-row"><div class="data-row__key">${C.escape(DATA_LABELS[k] || k)}</div><div class="data-row__value">${C.escape(String(v))}</div></div>`).join('')}</div></div></div>`
+    ? C.detailSection({ title: 'Eckdaten', titleTag: 'h3',
+        body: `<div class="box"><dl class="kv kv--ruled">${dataEntries.map(([k, v]) =>
+          `<dt>${C.escape(DATA_LABELS[k] || k)}</dt><dd>${C.escape(String(v))}</dd>`).join('')}</dl></div>` })
     : '';
-  const datenPanel = `<div class="grid grid--responsive-cols-3 gap--responsive">${cards}</div>${angaben}`;
+  const datenPanel = `<div class="grid grid--responsive-cols-3">${cards}</div>${angaben}`;
 
   // --- Tab «Anhänge»: eingereichte Dateien (Demo, nicht herunterladbar) ---
   const anhaengePanel = atts.length
@@ -149,11 +157,12 @@ function detail(ctx, id) {
   mount.innerHTML = `
   <div class="container section">
     ${C.detailBar({ backHref: '#/my-cases', backLabel: 'Meine Vorgänge' })}
-    <div class="page-header">
-      <div class="row gap-sm mb-3">${C.statusBadge(i.status, statusLabel(core, i.status))}</div>
-      <h1 tabindex="-1">${C.escape(i.reference)} <span class="case-title-sub">— ${C.escape(i.title)}</span></h1>
-      <p class="lead">Eingereicht ${C.escape(i.createdAt)} · Typ ${C.escape(i.defName)}${i.organization ? ` · ${C.escape(i.organization)}` : ''}</p>
-    </div>
+    ${/* App-Detail-Rezept (detailBar + h1 + lead) statt der .page-header-Hülle —
+          der Vorgangskopf war der einzige Detailkopf mit Listenseiten-Anatomie
+          (Design-Review B7); die Statuszeile bleibt als Pillenzeile darüber. */''}
+    <div class="row gap-sm mb-3">${C.statusBadge(i.status, statusLabel(core, i.status))}</div>
+    <h1 tabindex="-1">${C.escape(i.reference)} <span class="case-title-sub">— ${C.escape(i.title)}</span></h1>
+    <p class="lead">Eingereicht ${C.escape(datum(i.createdAt))} · Typ ${C.escape(i.defName)}${i.organization ? ` · ${C.escape(i.organization)}` : ''}</p>
 
     ${/* Ohne Definition gibt es keinen Ablauf zu zeigen. Ein leeres <ol> sähe aus
           wie ein Vorgang ohne Schritte — und die Fusszeile meldete dazu noch

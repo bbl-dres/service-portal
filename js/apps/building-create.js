@@ -15,12 +15,14 @@
 //       ?type=locations&origins=address&sr=4326&searchText=…
 //
 // Drei Schritte: Standort (Suche als Auflage IN der Karte) → Stammdaten →
-// Prüfen und Einreichen. Der Vorgang landet unter «Meine Vorgänge».
+// Prüfen und Absenden. Der Vorgang landet unter «Meine Vorgänge».
 
 import { initPickerMap } from '../buildings-map.js';
+import * as links from '../links.js';
+import { DIENSTLEISTUNGEN, trail } from '../crumbs.js';
 
 const SEARCH_URL = 'https://api3.geo.admin.ch/rest/services/api/SearchServer';
-const STEP_LABELS = ['Standort', 'Stammdaten', 'Prüfen & Einreichen'];
+const STEP_LABELS = ['Standort', 'Stammdaten', 'Prüfen & Absenden'];
 
 // swisstopo liefert `label` als HTML-Schnipsel mit <b>-Hervorhebungen. Als Text
 // weiterverwenden, nie als Markup: es ist Fremdinhalt.
@@ -57,16 +59,19 @@ async function searchAddresses(query) {
 export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs, navigate } = ctx;
   setTitle('Gebäude erfassen');
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' },
-    { label: 'Gebäude erfassen' }]);
+  setCrumbs(trail(DIENSTLEISTUNGEN, { label: 'Gebäude erfassen' }));
 
   // Persönlicher Vorgang — abgemeldet zum Login auffordern, statt unten
   // session.user() zu dereferenzieren (Direktaufruf-Schutz, wie space-request).
   if (!session.isLoggedIn()) {
+    // Ausgeloggt derselbe Kopf wie eingeloggt (schmale Spalte, Rückweg zur
+    // Dienstleistungsbeschreibung) — nur statt des Formulars steht der Gate.
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-        ${C.pageHeader({ title: 'Gebäude erfassen', lead: 'Ein neues Gebäude im Immobilien-Stammdatenbestand anlegen.' })}
+        ${C.backLink(links.dienstleistung('gebaeude-erfassen'), 'Dienstleistungsbeschreibung')}
+        <h1 tabindex="-1">Gebäude erfassen</h1>
+        <p class="lead">Ein neues Gebäude im Immobilien-Stammdatenbestand erfassen.</p>
         ${C.loginGate('Das Erfassen eines Gebäudes wird als Vorgang unter «Meine Vorgänge» geführt. Bitte melden Sie sich mit AGOV / FedLogin an.')}
       </div>
     </div>`;
@@ -84,7 +89,7 @@ export default async function render(ctx) {
   const OWNERSHIP = ['Eigentum Bund', 'Miete'];
   // Leere Vorauswahl: eine Pflichtauswahl, die schon ausgefüllt ist, ist keine.
   // Ein stillschweigend gesetztes Teilportfolio wäre erfundenes Stammdatum.
-  const PLEASE_PICK = { value: '', label: 'Bitte wählen …' };
+  const PLEASE_PICK = { value: '', label: 'Bitte wählen…' };
 
   const state = {
     step: 1,
@@ -141,10 +146,10 @@ export default async function render(ctx) {
                   kein zugänglicher Name. */''}
             <label class="sr-only" for="bc-address">Adresse suchen</label>
             ${C.icon('Search', 'map-search__icon')}
-            <input id="bc-address" class="input--outline input--base" type="text" role="combobox"
+            <input id="bc-address" class="input--outline input--base${state.errors['bc-address'] ? ' input--error' : ''}" type="text" role="combobox"
               autocomplete="off" spellcheck="false"
               aria-expanded="false" aria-controls="bc-listbox" aria-autocomplete="list"
-              aria-describedby="bc-address-hint"
+              aria-describedby="bc-address-hint${state.errors['bc-address'] ? ' bc-address-msg' : ''}"${state.errors['bc-address'] ? ' aria-invalid="true"' : ''}
               placeholder="Adresse suchen, z. B. Fellerstrasse 21 Bern"
               value="${C.escape(state.address)}">
             <button type="button" class="map-search__clear" id="bc-clear" aria-label="Eingabe löschen"${state.address ? '' : ' hidden'}>
@@ -152,10 +157,13 @@ export default async function render(ctx) {
           </div>
         </div>
       </div>
+      ${/* Adressfehler als Standard-Feld-Badge unter dem Suchfeld (id-Konvention
+            `<id>-msg`, wie C.field) — OHNE Live-Rolle: die errorSummary ist die
+            eine Statusmeldung, und C.wireFieldErrors räumt die Badge beim
+            Korrigieren ab. */''}
+      ${state.errors['bc-address'] ? `<div class="badge badge--sm badge--error" id="bc-address-msg">${C.escape(state.errors['bc-address'])}</div>` : ''}
       <p id="bc-address-hint" class="small muted">Nadel ziehen oder in die Karte klicken, um die Lage zu justieren.</p>
       <div id="bc-status" aria-live="polite"></div>
-
-      ${state.errors['bc-address'] ? C.notification(C.escape(state.errors['bc-address']), 'error', 'WarningCircle', { live: true }) : ''}
 
       ${state.lat != null ? `
         <dl class="kv">
@@ -230,10 +238,10 @@ export default async function render(ctx) {
         <dt>Baujahr</dt><dd>${C.escape(state.baujahr)}</dd>
         <dt>Verantwortliche OE</dt><dd>${C.escape(state.org)}</dd>
       </dl>
-      ${C.notification('Mit dem Absenden entsteht ein Vorgang. EGID und EGRID löst der Kataster­dienst anhand der Lage auf; die Objekt-ID (bbl_id), die Flächen (GF/HNF) und die weiteren Stammdaten vergibt das Portfoliomanagement bei der Prüfung.', 'info')}
+      ${C.notification('Mit dem Absenden wird ein Vorgang erstellt. EGID und EGRID löst der Kataster­dienst anhand der Lage auf; die Objekt-ID (bbl_id), die Flächen (GF/HNF) und die weiteren Stammdaten vergibt das Portfoliomanagement bei der Prüfung.', 'info')}
       <div class="form__actions form__actions--between">
         <button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>
-        <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Erfassung einreichen</span></button>
+        <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Erfassung absenden</span></button>
       </div>`;
   }
 
@@ -241,16 +249,16 @@ export default async function render(ctx) {
   function validate() {
     const e = {};
     if (state.step === 1) {
-      if (state.lat == null) e['bc-address'] = 'Bitte eine Adresse suchen oder die Lage in der Karte anklicken.';
+      if (state.lat == null) e['bc-address'] = 'Bitte eine Adresse suchen oder die Lage in der Karte anklicken';
     }
     if (state.step === 2) {
       // Anweisende Formulierung wie in space-request.js / fault-report.js — der
       // Fehler sagt, was zu tun ist, nicht bloss «Pflichtfeld».
-      if (!state.portfolio) e['bc-portfolio'] = 'Bitte ein Teilportfolio wählen.';
-      if (!state.gebaeudeart) e['bc-gebart'] = 'Bitte eine Gebäudeart wählen.';
+      if (!state.portfolio) e['bc-portfolio'] = 'Bitte ein Teilportfolio wählen';
+      if (!state.gebaeudeart) e['bc-gebart'] = 'Bitte eine Gebäudeart wählen';
       const y = Number(state.baujahr);
-      if (!String(state.baujahr).trim()) e['bc-baujahr'] = 'Bitte das Baujahr angeben.';
-      else if (!Number.isInteger(y) || y < 1200 || y > 2100) e['bc-baujahr'] = 'Bitte ein Jahr zwischen 1200 und 2100 angeben.';
+      if (!String(state.baujahr).trim()) e['bc-baujahr'] = 'Bitte das Baujahr angeben';
+      else if (!Number.isInteger(y) || y < 1200 || y > 2100) e['bc-baujahr'] = 'Bitte ein Jahr zwischen 1200 und 2100 angeben';
       // `bc-ownership` steht bewusst ohne required: die Auswahl ist zweiwertig und
       // «Eigentum Bund» ist der belegte Regelfall — Markup und Prüfung beschreiben
       // damit dieselbe Menge (vgl. space-request.js zum Standort-Feld).
@@ -276,16 +284,16 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--sm">
-        ${C.backLink('#/services/gebaeude-erfassen', 'Service-Beschreibung')}
+        ${C.backLink(links.dienstleistung('gebaeude-erfassen'), 'Dienstleistungsbeschreibung')}
         <h1 tabindex="-1">Gebäude erfassen</h1>
         ${/* Wie space-request.js: unter wem erfasst wird und wohin der Vorgang
               läuft, steht als Kontextzeile — nicht als Formularfeld. */''}
-        <p class="muted">Erfassung als <strong>${C.escape(state.org)}</strong> · Prozess: Eingang → Prüfung PFM → Genehmigung → Publikation.</p>
-        ${C.stepIndicator(STEP_LABELS, state.step - 1, { label: 'Erfassungsschritte' })}
-        <h2 class="sr-only" id="bc-step-head" tabindex="-1">Schritt ${state.step} von 3: ${C.escape(STEP_LABELS[state.step - 1])}</h2>
-        ${/* Nur Schritt 2 hat mit «*» markierte Felder — auf Schritt 1 stand die
-              Legende zu einem Zeichen, das dort nirgends vorkommt. */''}
-        ${state.step === 2 ? '<p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>' : ''}
+        ${C.contextLine({ action: 'Erfassung', name: session.user().name, org: state.org, process: 'Eingang → Prüfung PFM → Genehmigung → Publikation' })}
+        ${/* Gemeinsames Wizard-Gerüst (Review B8). headId 'bc-step-head' ist im
+              Test gepinnt. Legende nur auf Schritt 2: nur dort gibt es mit «*»
+              markierte Felder — auf Schritt 1 stand sie zu einem Zeichen, das
+              dort nirgends vorkommt. */''}
+        ${C.wizardHead(STEP_LABELS, state.step, { headId: 'bc-step-head', label: 'Erfassungsschritte', legend: state.step === 2 })}
         ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
         <!-- novalidate — siehe space-request.js: ohne das Attribut feuert das
              submit-Event nie und validate() bleibt unerreichbar. -->
@@ -301,7 +309,7 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-        ${C.processDone({ instance: i, lead: 'Erfassung eingereicht.', title: 'Gebäude erfasst',
+        ${C.processDone({ instance: i, lead: 'Erfassung eingereicht.', title: 'Vielen Dank',
           text: `Das Objekt «${C.escape(bezeichnung())}» ist zur Prüfung beim Portfoliomanagement.`,
           extra: `<dl class="kv">
             <dt>Referenz</dt><dd>${C.escape(i.reference)}</dd>
@@ -309,18 +317,13 @@ export default async function render(ctx) {
             <dt>Status</dt><dd>${C.statusBadge(i.status, 'Eingereicht')}</dd>
           </dl>`,
           actions: [
-            { href: `#/my-cases/${encodeURIComponent(i.instanceId)}`, label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            { href: links.vorgang(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
             { href: '#/services', label: 'Zu den Dienstleistungen' },
           ] })}
       </div>
     </div>`;
-    const h = mount.querySelector('h1'); if (h) h.focus({ preventScroll: true });
-  }
-
-  function focusStepHeading() {
-    const h = mount.querySelector('#bc-step-head') || mount.querySelector('h1');
-    if (h) h.focus({ preventScroll: true });
-    C.announce(`Schritt ${state.step} von 3: ${STEP_LABELS[state.step - 1]}`);
+    // Fokus auf die Erfolgsüberschrift + Ansage der Referenz (gemeinsamer Helfer).
+    C.focusProcessDone(mount, i);
   }
 
   /* ------------------------------------------------------------- Verkabeln - */
@@ -400,7 +403,7 @@ export default async function render(ctx) {
       // vorher waren es nackte Anker, und der Fokus sprang auf den ersten Link statt auf
       // die Überschrift, die sagt, wie viele Felder zu korrigieren sind (WCAG 3.3.1).
       if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
-      if (state.step < 3) { state.step += 1; draw(); focusStepHeading(); return; }
+      if (state.step < 3) { state.step += 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step, { headId: 'bc-step-head' }); return; }
       const inst = engine.start('gebaeude-erfassung', {
         title: `Gebäude erfassen — ${bezeichnung()}`.trim(),
         organization: state.org,
@@ -419,33 +422,18 @@ export default async function render(ctx) {
       if (!inst) { C.flashError(mount, 'Der Vorgang konnte nicht gespeichert werden — bitte erneut versuchen.'); return; }
       state.created = inst;
       freeMap();
+      // drawDone() fokussiert die Erfolgsüberschrift und sagt die Referenz an
+      // (C.focusProcessDone) — kein eigener announce mehr nötig.
       draw();
-      C.announce(`Erfassung eingereicht. Referenz ${inst.reference}`);
     });
 
     const back = form.querySelector('[data-back]');
-    if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); focusStepHeading(); });
+    if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step, { headId: 'bc-step-head' }); });
 
-    // Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert. `change`
-    // zusätzlich zu `input`, weil zwei der Pflichtfelder <select> sind.
-    // Die Meldung wird über die id-Konvention von C.field/C.select (`<id>-msg`)
-    // gefunden: das frühere `closest('.form__group')` traf nie etwas — die Wrapper
-    // heissen `form__group__input` bzw. `form__group__select`, und ein
-    // Klassenselektor trifft nur ganze Klassennamen. Die Meldung blieb stehen.
-    Object.keys(state.errors).forEach((id) => {
-      const el = mount.querySelector('#' + id);
-      if (!el) return;
-      const clear = () => {
-        if (!state.errors[id]) return;
-        delete state.errors[id];
-        const msg = mount.querySelector('#' + id + '-msg');
-        if (msg) msg.remove();
-        el.classList.remove('input--error');
-        el.removeAttribute('aria-invalid');
-      };
-      el.addEventListener('input', clear, { once: true });
-      el.addEventListener('change', clear, { once: true });
-    });
+    // Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert —
+    // gemeinsamer Helfer (id-Konvention `<id>-msg`, `input` + `change`, weil
+    // zwei der Pflichtfelder <select> sind). Deckt auch die Adress-Badge ab.
+    C.wireFieldErrors(mount, state.errors);
 
     if (state.step !== 1) return;
 

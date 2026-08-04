@@ -1,4 +1,5 @@
 // Dienstleistungen - service directory (catalog) + service detail.
+import { AUDIENCES, audienceLabel } from '../domain.js';
 
 // Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
@@ -75,7 +76,7 @@ export default async function render(ctx) {
   // Active-filter pills. Each pill links to the same view minus that one value,
   // so removing a filter needs no JS and stays deep-linkable.
   const activeFilters = [
-    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
+    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
     ...selectedAudiences.map(a => ({ label: audienceLabel(a), href: hash({ audience: selectedAudiences.filter(x => x !== a) }) })),
     ...selectedTopics.map(t => ({ label: domainLabel(domains, t), href: hash({ topic: selectedTopics.filter(x => x !== t) }) })),
   ];
@@ -99,7 +100,7 @@ export default async function render(ctx) {
           nicht sehen und nicht abwählen. Die Fahne ist entfallen. */''}
     ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: selectedTopics,
       options: domains.filter(d => all.some(s => s.domain === d.key)).map(d => ({ value: d.key, label: d.label })) })}
-    <a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ audience: [], topic: [] })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a>`;
+    ${C.panelReset({ href: hash({ audience: [], topic: [] }) })}`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -195,7 +196,7 @@ function detail(ctx, id) {
       tags: `${C.audienceTag(s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
       image: C.heroFigure({ id: img }),
     })}
-    <div class="container--grid gap--responsive mt-6">
+    <div class="container--grid gap--responsive">
       ${/* CD-Inhaltsrhythmus (.vertical-spacing, 3/3.5rem) statt des portal-
             eigenen .stack — die Detail-Hauptspalten sollen alle dieselbe
             Rampe tragen (Review layout/main-1). */''}
@@ -204,9 +205,9 @@ function detail(ctx, id) {
               Voraussetzungen und ohne Weisungen blieb sie ganz ohne <h2>/<h3>. */''}
         <h2 class="sr-only">Beschreibung</h2>
         <p>${C.escape(s.description)}</p>
-        ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="box"><h3>Das brauchen Sie</h3><ul style="padding-left:1.1rem">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
+        ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="box"><h3>Das brauchen Sie</h3><ul class="list--default">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
         ${def && Array.isArray(def.steps) && def.steps.length ? `<div class="box"><h3>So läuft es ab</h3>
-          <p class="small muted">${C.escape(def.name)} — ${def.steps.length} Schritte. Den Stand sehen Sie danach unter <a href="#/app/my-cases">Meine Vorgänge</a>.</p>
+          <p class="small muted">${C.escape(def.name)} — ${def.steps.length} Schritte. Den Stand sehen Sie danach unter <a href="#/my-cases">Meine Vorgänge</a>.</p>
           ${C.pipeline(def.steps, 0, { label: `Ablauf «${def.name}»` })}</div>` : ''}
         ${ctaBlock}
       </div>
@@ -222,25 +223,18 @@ function detail(ctx, id) {
         <div class="box">
           <h3>Gesetzliche Grundlagen</h3>
           <p class="small muted">Die für diese Dienstleistung massgebenden Erlasse, Vorgaben und Weisungen finden Sie in der Sammlung.</p>
-          <a class="row gap-sm" style="padding:.35rem 0" href="#/knowledge">${C.icon('Book', 'icon--base')}<span class="small">Wissen und Hilfsmittel</span></a>
+          <a class="row gap-sm py-1-5" href="#/knowledge">${C.icon('Book', 'icon--base')}<span class="small">Wissen und Hilfsmittel</span></a>
         </div>
       </aside>
     </div>
   </div>`;
 }
 
-function audienceOptions() {
-  return [
-    { value: 'staff', label: 'BBL-Personal' },
-    { value: 'customers', label: 'Kundschaft' },
-    { value: 'both', label: 'Beide' },
-  ];
-}
-
-function audienceLabel(key) {
-  const option = audienceOptions().find(o => o.value === key);
-  return option ? option.label : key;
-}
+// Zielgruppen aus js/domain.js (AUDIENCES/audienceLabel) — die Liste stand
+// dreimal im Code (Design-Review B23).
+function audienceOptions() { return AUDIENCES; }
 
 
+// Bewusst die Listen-Variante (Aufrufer reicht seine Themenliste durch) — die
+// core-gebundene Fassung steht in domain.js; s. Design-Review B23.
 function domainLabel(domains, key) { const d = domains.find(x => x.key === key); return d ? d.label : key; }

@@ -96,14 +96,21 @@
   --color-bg:          #ffffff;
   --color-bg-subtle:   var(--color-secondary-50);   /* CD's only neutral surface — folgt dem Skin */
   --color-bg-muted:    var(--color-secondary-100);
+  /* Randton des EINEN Panel-Karten-Rezepts (Filterpanel, KPI-Kachel,
+     catbar-Schublade, Chart-Karte, Karten-Popup, Seitenrails). Vorher drei
+     Töne für dieselbe Rolle (secondary-100 / border / secondary-200) — unter
+     .body--intranet drifteten Grau- und Skin-Ränder zusätzlich auseinander
+     (Design-Review C11). */
+  --panel-border:      var(--color-secondary-100);
   --color-focus-ring:  #8655F6;   /* CD Bund focus purple-500 */
   --color-focus-ring-negative: #c4b5fd;   /* purple-300 — on dark chrome (global.postcss:78-85) */
 
   /* Gestufte Control-Höhe (CD btn.postcss:112-127 «.btn--base min-h-[44px]
      xl:min-h-[48px] 3xl:min-h-[52px]», input.postcss:1-4). EIN Token für die
      Touch-Rampe aller Bedienelemente; die Konsumenten kommen in Item 2.7.
-     NICHT auf .btn anwenden — .btn führt seine Rampe bereits selbst
-     (app.css:781-782). Die Stufen stehen unten bei den Typo-Rampen. */
+     NICHT auf .btn anwenden — .btn führt seine Rampe bereits selbst (app.css,
+     «.btn min-height»-Rampe im Buttons-Abschnitt). Die Stufen stehen unten bei
+     den Typo-Rampen. */
   --control-h: 2.75rem;
 
   /* Feste Mindest-Tippfläche (WCAG 2.5.8 «Target Size», 44px). BEWUSST getrennt
@@ -174,14 +181,24 @@
   --text-3xl: var(--fs-3xl);  --text-4xl: var(--fs-4xl);  --text-5xl:  var(--fs-5xl);
 
   /* --- Spacing — BEWUSST beschnittene Teilmenge der Tailwind/CD-Standardskala:
-     nur die Stufen, die app.css konsumiert. Die Bruchstufen (0.5–3.5, CD nutzt
-     sie z. B. in mark py-0.5 und notification mt-2.5) und Stufen über 8rem
-     (hero 3xl:py-40) fehlen absichtlich, bis ein Konsument sie braucht. --- */
-  --sp-0: 0;        --sp-1: .25rem;   --sp-2: .5rem;    --sp-3: .75rem;
+     nur die Stufen, die app.css konsumiert. Stufen über 8rem (hero 3xl:py-40)
+     fehlen absichtlich, bis ein Konsument sie braucht.
+     KONVENTION (Design-Review C1): rem-Literale AUF dieser Skala sind in
+     app.css zulässig (lesbarer als 655 var()-Hüllen); skalenfremde Werte
+     (.35/.4/.6 …) sind Defekte und werden auf die nächste Stufe gesnappt.
+     Die Bruchstufen 1.5/2.5 (.375/.625) sind seit dem Snap konsumiert. --- */
+  --sp-0: 0;        --sp-1: .25rem;   --sp-1-5: .375rem; --sp-2: .5rem;
+  --sp-2-5: .625rem; --sp-3: .75rem;
   --sp-4: 1rem;     --sp-5: 1.25rem;  --sp-6: 1.5rem;   --sp-7: 1.75rem;
   --sp-8: 2rem;     --sp-9: 2.25rem;  --sp-10: 2.5rem;  --sp-12: 3rem;
   --sp-14: 3.5rem;  --sp-16: 4rem;    --sp-20: 5rem;    --sp-24: 6rem;
   --sp-28: 7rem;    --sp-32: 8rem;
+
+  /* Sektionsrhythmus der Inhaltsspalten — CD «mt-12 2xl:mt-14»
+     (spacings.postcss:7-8). Vorher stand die 3rem→3.5rem-Rampe dreimal im
+     Blatt, und .detail-section stufte abweichend schon bei 1024px (Design-
+     Review C2); die Stufung steht unten im 1544-Block. */
+  --stack-gap: 3rem;
 
   /* --- Radius (voller CD-Maßstab, tailwind.config.js borderRadius) --- */
   --radius-none: 0;       --radius-xs: 0.0625rem; --radius-sm: 0.125rem; --radius: 0.1875rem;
@@ -197,6 +214,11 @@
   --shadow-lg: 0 2px 6px -1px rgba(0,0,0,.06), 0 5px 20px -3px rgba(0,0,0,.08);
   --shadow-xl: 0 6px 10px -5px rgba(0,0,0,.06), 0 15px 25px -3px rgba(0,0,0,.09);
   --shadow-2xl:0 10px 20px 0 rgba(0,0,0,.06), 1px 10px 70px -8px rgba(0,0,0,.13);
+  /* Negativ-Ebene: auf dunklem Viewer-Chrome verschwände --shadow-lg — dieser
+     kräftige Wurf trennt Werkzeugleiste/Blatt/Toast vom fast schwarzen Grund.
+     Vorher stand das Literal dreimal im Blatt, und die erklärte Zwillingsregel
+     (.pf-lightbox__zoom) nutzte stattdessen shadow-lg (Design-Review C16). */
+  --shadow-viewer: 0 10px 40px rgba(0,0,0,.45);
 
   /* --- Motion (tailwind.config duration/easing) — eine Quelle, auditierbar für reduced-motion --- */
   --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms; --duration-slowest: 700ms;
@@ -357,8 +379,8 @@
     --text-3xl: var(--fs-5xl); --text-4xl: var(--fs-6xl);  --text-5xl:  var(--fs-7xl);
   }
 }
-@media (min-width:1544px) {          /* 2xl — einzige Stufe der Eingabefeld-Rampe */
-  :root { --input-h: 3rem; }
+@media (min-width:1544px) {          /* 2xl — Eingabefeld-Rampe + Sektionsrhythmus */
+  :root { --input-h: 3rem; --stack-gap: 3.5rem; }
 }
 @media (min-width:1920px) {          /* 3xl */
   :root {

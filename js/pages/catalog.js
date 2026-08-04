@@ -4,7 +4,8 @@
 // #/data/catalog/<id>. Datenmodell und Vorschaubilder stammen aus dem
 // Datenkatalog-Prototyp (data/datasets.json).
 
-const PER_PAGE = 9;
+// 12 wie die Geschwister-Kataloge (B16).
+const PER_PAGE = 12;
 
 // Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
 // bevor render() den ersten Accessor aufruft (H4).
@@ -25,14 +26,15 @@ function list(ctx) {
   const all = core.datasets();
   const t = core.t;
 
-  const rawQ = query.get('q') || '';
+  // Lese-Seite des Katalog-Musters aus EINER Quelle (C.catalogueState, B16).
+  const st = C.catalogueState(query, {
+    base: '#/data/catalog', perPage: PER_PAGE,
+    sortOpts: ['title', 'thema', 'date'],
+    filters: { topic: null, classification: null, tag: null },
+  });
+  const { q: rawQ, view, hash } = st;
   const q = rawQ.toLowerCase();
-  // Filter sind mehrwertig (Mehrfachauswahl-Checkboxen): komma-getrennt im Hash.
-  const themas = (query.get('topic') || '').split(',').map(s => s.trim()).filter(Boolean);
-  const klasses = (query.get('classification') || '').split(',').map(s => s.trim()).filter(Boolean);
-  const tags = (query.get('tag') || '').split(',').map(s => s.trim()).filter(Boolean);
-  const view = query.get('view') === 'list' ? 'list' : 'gallery';
-  const wanted = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
+  const themas = st.selected.topic, klasses = st.selected.classification, tags = st.selected.tag;
 
   const themen = uniq(all.map(d => t(d.meta.thema))).sort((a, b) => a.localeCompare(b, 'de'));
   const klassen = uniq(all.map(d => d.meta.klassifizierung));
@@ -47,7 +49,7 @@ function list(ctx) {
     thema: (a, b) => t(a.meta.thema).localeCompare(t(b.meta.thema), 'de') || t(a.title).localeCompare(t(b.title), 'de'),
     date: (a, b) => dateKey(b.meta.ausgabedatum) - dateKey(a.meta.ausgabedatum) || t(a.title).localeCompare(t(b.title), 'de'),
   };
-  const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
+  const sortKey = st.sort;
 
   const matches = (d) =>
     (!q || (t(d.title) + ' ' + t(d.description) + ' ' + t(d.fullDescription)).toLowerCase().includes(q)) &&
@@ -57,17 +59,12 @@ function list(ctx) {
 
   const filtered = all.filter(matches);
   const datasets = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
-  const totalPages = Math.max(1, Math.ceil(datasets.length / PER_PAGE));
-  const page = Math.min(wanted, totalPages);
-  const visible = datasets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  const base = { q: rawQ, topic: themas, classification: klasses, tag: tags, sort: sortKey, view };
-  const hash = (patch = {}) => C.catalogueHash('#/data/catalog', { ...base, ...patch });
+  const { visible, totalPages, page } = st.clamp(datasets);
 
   // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert — das
   // Entfernen eines Filters braucht kein JS und bleibt verlinkbar.
   const active = [
-    ...(rawQ ? [{ label: `Suche: „${rawQ}“`, href: hash({ q: '' }) }] : []),
+    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
     ...themas.map(x => ({ label: x, href: hash({ topic: themas.filter(y => y !== x) }) })),
     ...klasses.map(x => ({ label: klassLabel(core, x), href: hash({ classification: klasses.filter(y => y !== x) }) })),
     ...tags.map(x => ({ label: tagLabel(core, x), href: hash({ tag: tags.filter(y => y !== x) }) })),
@@ -114,34 +111,32 @@ function list(ctx) {
       lead: 'Die Datensätze des BBL — beschrieben nach DCAT-AP-CH, mit Bezugswegen, Klassifizierung und Datenverantwortung.',
     })}
     ${C.catalogueBar({
-      formId: 'ds-search', inputId: 'dsq', searchLabel: 'Datensatz suchen', placeholder: 'Datensatz suchen...', q: rawQ,
+      formId: 'ds-search', inputId: 'dsq', searchLabel: 'Datensatz suchen', placeholder: 'Datensatz suchen…', q: rawQ,
       countId: 'ds-count', count: `<strong>${datasets.length}</strong> von ${all.length} Datensätzen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'ds-sort', value: sortKey, options: SORT_OPTS },
       filterId: 'ds-filter', filterLabel: 'Filter', filterCount: themas.length + klasses.length + tags.length,
       panelId: 'ds-filters', panel: `
         ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: themas, options: themen.map(x => ({ value: x, label: x })) })}
         ${C.filterGroup({ dim: 'classification', legend: 'Klassifizierung', selected: klasses, options: klassen.map(x => ({ value: x, label: klassLabel(core, x) })) })}
-        ${/* Der Parameter heisst `classification` (siehe `base`), nicht `klass`.
-              Mit dem falschen Schlüssel liess `catalogueHash` die Klassifizierung
-              aus `base` stehen und warf das unbekannte leere Array weg — der
-              Filter überlebte also seinen eigenen Zurücksetzen-Knopf. */''}
-        <a class="btn btn--bare btn--sm btn--icon-left" href="${hash({ topic: [], classification: [], tag: [] })}">${C.icon('Refresh', 'btn__icon')}<span class="btn__text">Zurücksetzen</span></a>`,
+        ${/* Der Parameter heisst `classification`, nicht `klass` — mit dem
+              falschen Schlüssel überlebte der Filter seinen eigenen Reset. */''}
+        ${C.panelReset({ href: hash({ topic: [], classification: [], tag: [] }) })}`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}
     ${C.catalogueResults({
       resetHref: '#/data/catalog',
       visible, count: datasets.length, total: all.length, view, page, totalPages, header: false,
-      card, listView, unit: 'Datensätzen',
+      // unit trägt beide Kasus — die früheren emptyMsg/unavailableMsg-
+      // Überschreibungen waren nur die Grammatik-Krücke dafür (A14).
+      card, listView, unit: { nom: 'Datensätze', dat: 'Datensätzen' },
       paginationInputId: 'ds-page', paginationLabel: 'Seitennavigation Datensätze',
       paginationHref: (p) => hash({ page: p }),
       available: core.available('datasets'),
-      emptyMsg: 'Keine Datensätze gefunden.',
-      unavailableMsg: 'Datensätze konnten nicht geladen werden (Ladefehler).',
     })}
   </div>`;
 
-  C.announceCatalogue({ count: datasets.length, total: all.length, unit: 'Datensätzen', page, totalPages, view });
+  C.announceCatalogue({ count: datasets.length, total: all.length, unit: { nom: 'Datensätze', dat: 'Datensätzen' }, page, totalPages, view });
 
   C.wireCatalogue(mount, {
     formId: 'ds-search', inputId: 'dsq', pageInputId: 'ds-page', page, totalPages, hash,
@@ -173,14 +168,13 @@ function detail(ctx, id) {
   const tagPills = (d.tags || []).map(x =>
     `<a class="badge badge--gray" href="${C.catalogueHash('#/data/catalog', { tag: [x] })}">${C.escape(tagLabel(core, x))}</a>`).join('');
 
+  // Schlüssel-Wert-Zeilen über das EINE Rezept dl.kv (linierte Variante) statt
+  // der parallelen .data-rows-Implementierung — die Begründung der alten Regel
+  // («eine dl bräuchte ein Grid je Paar») widerlegt .kv selbst (C7).
   const persons = (d.responsiblePersons || []).map(p => `
-    <div class="data-row">
-      <div class="data-row__key">${C.escape(p.role)}</div>
-      <div class="data-row__value">
-        <a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
-           target="_blank" rel="noopener external">AdminDir ${C.escape(p.admindirId)}</a>
-      </div>
-    </div>`).join('');
+      <dt>${C.escape(p.role)}</dt>
+      <dd><a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
+           target="_blank" rel="noopener external">AdminDir ${C.escape(p.admindirId)}</a></dd>`).join('');
 
   // Metadaten in der Reihenfolge des Datenkatalogs (config.metaFields.dataset).
   const metaRows = [
@@ -224,12 +218,9 @@ function detail(ctx, id) {
     return {
       title: t(dist.name) || dist.titel,
       meta: format ? C.badge(format, 'gray', 'sm') : '',
-      body: `<div class="data-rows">
-          ${DIST_FIELDS.map(f => `<div class="data-row">
-            <div class="data-row__key">${f.label}</div>
-            <div class="data-row__value">${distValue(dist, f)}</div>
-          </div>`).join('')}
-        </div>
+      body: `<dl class="kv kv--ruled">
+          ${DIST_FIELDS.map(f => `<dt>${f.label}</dt><dd>${distValue(dist, f)}</dd>`).join('')}
+        </dl>
         <div class="row mt-4">${C.downloadLink(download, 'Datensatz beziehen')}</div>`,
     };
   });
@@ -242,12 +233,10 @@ function detail(ctx, id) {
   const pubs = (d.publications || []).map(p => {
     const name = C.escape(t(p.value));
     return `
-    <div class="data-row">
-      <div class="data-row__key">${C.escape(t(p.catalog))}</div>
-      <div class="data-row__value">${p.url
+      <dt>${C.escape(t(p.catalog))}</dt>
+      <dd>${p.url
         ? `<a href="${C.escape(p.url)}" target="_blank" rel="noopener external" class="break-all">${name}</a>`
-        : name}</div>
-    </div>`;
+        : name}</dd>`;
   }).join('');
 
   const section = (title, body) => C.detailSection({ title, body });
@@ -264,21 +253,19 @@ function detail(ctx, id) {
     ${section('Beschreibung', `<p>${C.escape(t(d.fullDescription) || t(d.description))}</p>`)}
 
     ${section('Verantwortliche Personen', persons
-      ? `<div class="box"><div class="data-rows">${persons}</div></div>`
+      ? `<div class="box"><dl class="kv kv--ruled">${persons}</dl></div>`
       : `<div class="box"><p class="muted m-0">Für diesen Datensatz ist keine verantwortliche Person hinterlegt.</p></div>`)}
 
-    ${section('Metadaten', `<div class="data-rows">${metaRows.map(([k, v]) => `
-      <div class="data-row">
-        <div class="data-row__key">${C.escape(k)}</div>
-        <div class="data-row__value">${v || '<span class="muted">—</span>'}</div>
-      </div>`).join('')}</div>`)}
+    ${section('Metadaten', `<dl class="kv kv--ruled">${metaRows.map(([k, v]) => `
+      <dt>${C.escape(k)}</dt>
+      <dd>${v || '<span class="muted">—</span>'}</dd>`).join('')}</dl>`)}
 
     ${section('Bereitstellungsformen', dists.length
       ? C.accordion(dists, { id: 'dist' })
       : '<p class="muted">Für diesen Datensatz ist keine Bereitstellungsform erfasst.</p>')}
 
     ${section('Publikationen in externen Katalogen', pubs
-      ? `<div class="data-rows">${pubs}</div>`
+      ? `<dl class="kv kv--ruled">${pubs}</dl>`
       : '<p class="muted">Dieser Datensatz ist in keinem externen Katalog publiziert.</p>')}
   </div>`;
 

@@ -33,6 +33,16 @@ const ROUTES = [
   ['/app/portfolio',                ''],
   ['/app/media-library',            ''],
   ['/app/dataportal',               ''],
+  ['/app/projects',                 'Bauprojekte'],
+  ['/app/tenancies',                'Mietende'],
+  ['/app/metadata-catalog',         'Metadaten Katalog'],
+  ['/app/document-archive',         'Bauwerksdokumentation'],
+  ['/app/space-request',            'Raumbedarf'],
+  ['/app/fault-report',             'Störungs'],
+  ['/app/building-create',          'Gebäude erfassen'],
+  ['/app/workspace',                'Workspace'],
+  ['/app/transaction',              'Veräusserung'],
+  ['/app/api-docs',                 'BBL Kundenportal'],
 ];
 
 // [Altlast, erwartetes Ziel]

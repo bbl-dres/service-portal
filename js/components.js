@@ -89,6 +89,8 @@ export function badge(text, variant = 'gray', size = '') {
 // Zielgruppen: `staff` = BBL-Personal, `customers` = Mitarbeitende anderer
 // Verwaltungseinheiten. Die Plattform ist nie öffentlich — «Extern» hätte die
 // Hauptzielgruppe als Aussenstehende benannt (docs/sitemap.md §5).
+// WORTLAUTE = domain.js AUDIENCES (die eine Quelle für Filter/Labels der
+// Seiten); hier nur zusätzlich die Badge-Farbe. components.js bleibt import-frei.
 export function audienceTag(a) {
   const map = { staff: ['blue', 'BBL-Personal'], customers: ['green', 'Kundschaft'], both: ['gray', 'Beide'] };
   const [v, l] = map[a] || map.both;
@@ -188,7 +190,14 @@ export function card(o) {
   const overlay = chips.length
     ? `<div class="pf-card__chips">${chips.map((c) => `<span class="pf-card__land">${escape(c)}</span>`).join('')}</div>`
     : '';
-  const media = o.photo
+  // `media` = fertiges Medien-HTML des Aufrufers (RAW — er escaped selbst): die
+  // Explorer-Galerie braucht ihren eigenen Vis-Block (16:10-Kachel, Parzellen-
+  // Schraffur) und rollte dafür vorher die GANZE Karte von Hand nach (portfolio
+  // pfCard, Design-Review A11). Jetzt liefert sie nur das Medium, Körper und
+  // Fuss kommen aus dieser einen Quelle.
+  const media = o.media
+    ? o.media
+    : o.photo
     ? `<div class="card__image">${photo({ ...o.photo, alt: o.photo.alt || '', w: 640 })}${overlay}</div>`
     : o.image ? `<div class="card__image"><img src="${escape(o.image)}" alt="${escape(o.imageAlt || '')}" loading="lazy">${overlay}</div>`
     : o.placeholder ? `<div class="card__image"><div class="photo image__not-available">${icon('Image')}<p class="image__not-available-text">${escape(o.placeholder === true ? 'Bild folgt' : o.placeholder)}</p></div>${overlay}</div>`
@@ -221,12 +230,15 @@ export function card(o) {
     <div class="card__content">
       <div class="card__body">
         <${tag} class="card__title">${titleInner}</${tag}>
+        ${/* `idLine`: Kennungszeile in Mono direkt unter dem Titel (bbl_id,
+              Projektnummer) — Rezept der Explorer-Galerie (.pf-card__id). */''}
+        ${o.idLine ? `<p class="pf-card__id">${escape(o.idLine)}</p>` : ''}
         ${o.badges ? `<div class="pill-row">${o.badges.join('')}</div>` : ''}
         ${o.desc ? `<p class="card__description">${escape(o.desc)}</p>` : ''}
       </div>
       ${footerSlots}
     </div>`;
-  return `<div class="card card--${variant}${o.href ? ' card--clickable' : ''}">${inner}</div>`;
+  return `<div class="card card--${variant}${o.href ? ' card--clickable' : ''}${o.cls ? ' ' + escape(o.cls) : ''}">${inner}</div>`;
 }
 
 // --- Tables (table.postcss) --------------------------------------------------
@@ -274,7 +286,7 @@ export function table({ columns, rows, zebra, caption, showCaption, foot, rowsCl
     ${caption ? `<caption>${escape(caption)}</caption>` : ''}
     ${colgroup}
     <thead><tr>${head}</tr></thead>
-    <tbody>${body || `<tr><td colspan="${columns.length}" class="table__empty muted">${escape(emptyText || 'Keine Einträge')}</td></tr>`}</tbody>
+    <tbody>${body || `<tr><td colspan="${columns.length}" class="table__empty muted">${escape(emptyText || 'Keine Einträge.')}</td></tr>`}</tbody>
     ${foot ? `<tfoot>${foot}</tfoot>` : ''}
   </table>
   ${/* Sichtbarer Hinweis auf den waagrechten Überlauf (Item 5.7): eine Tabelle,
@@ -362,8 +374,8 @@ export function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zu
   // tag-item.postcss:7-42) — die frühere 32px-Badge lag unter der Zielgrösse.
   const inner = (f) => `<span class="tag-item__inner"><span class="tag-item__text">${escape(f.label)}</span>${icon('Cancel', 'tag-item__icon')}</span>`;
   const pill = (f, i) => f.href != null
-    ? `<a class="tag-item tag-item--sm active-filter" id="af-${i}" href="${escape(f.href)}" aria-label="Filter „${escape(f.label)}“ entfernen">${inner(f)}</a>`
-    : `<button type="button" class="tag-item tag-item--sm active-filter" id="af-${i}" data-remove="${escape(f.remove == null ? '' : f.remove)}" aria-label="Filter „${escape(f.label)}“ entfernen">${inner(f)}</button>`;
+    ? `<a class="tag-item tag-item--sm active-filter" id="af-${i}" href="${escape(f.href)}" aria-label="Filter «${escape(f.label)}» entfernen">${inner(f)}</a>`
+    : `<button type="button" class="tag-item tag-item--sm active-filter" id="af-${i}" data-remove="${escape(f.remove == null ? '' : f.remove)}" aria-label="Filter «${escape(f.label)}» entfernen">${inner(f)}</button>`;
   const reset = resetHref != null
     ? `<a class="btn btn--link" href="${escape(resetHref)}"><span class="btn__text">${escape(resetLabel)}</span></a>`
     : `<button type="button" class="btn btn--link" data-reset><span class="btn__text">${escape(resetLabel)}</span></button>`;
@@ -480,7 +492,10 @@ export function trapFocus(container) {
 // `footer` sind RAW-HTML (Aufrufer escaped). `size` = sm|md|lg|xl.
 function modal({ title = '', body = '', footer = '', size = 'md', id = 'modal' } = {}) {
   const titleId = `${id}-title`, bodyId = `${id}-desc`;
-  const closeBtn = `<button type="button" class="modal__close" data-modal-close aria-label="Schliessen">${icon('Cancel', 'icon--2xl')}</button>`;
+  // Zugänglicher Name «Dialog schliessen» — die Familie benennt überall den
+  // Kontext («Galerie schliessen», «Vorschau schliessen», «Hinweis schliessen»);
+  // das Modal war das einzige nackte «Schliessen» (Design-Review D15).
+  const closeBtn = `<button type="button" class="modal__close" data-modal-close aria-label="Dialog schliessen">${icon('Cancel', 'icon--2xl')}</button>`;
   // CD Modal.vue:2-27 — aria-modal auf der Hülle; role="dialog" + aria-labelledby
   // + aria-describedby auf .modal__content; der Körper trägt die referenzierte id.
   // Der Header existiert IMMER (ohne ihn streckte die Flex-Spalte den Schliessen-
@@ -500,11 +515,11 @@ function openModal(opts = {}) {
   host.innerHTML = modal(opts);
   const el = host.firstElementChild;
   document.body.appendChild(el);
-  document.body.classList.add('chart-overlay-open');   // Scroll-Lock (geteilt mit den Overlays)
+  document.body.classList.add('body--overlay-open');   // der EINE Scroll-Lock (Modal, Galerie, Dokumentbetrachter)
   const untrap = trapFocus(el);
   const close = () => {
     document.removeEventListener('keydown', onKey, true);
-    untrap(); el.remove(); document.body.classList.remove('chart-overlay-open');
+    untrap(); el.remove(); document.body.classList.remove('body--overlay-open');
     if (trigger && trigger.focus) trigger.focus();
   };
   // stopPropagation, nicht nur preventDefault: ein Modal ist modal. Ohne das
@@ -600,8 +615,12 @@ function shareUrlBlock(url, { id = 'share-url-input' } = {}) {
     <div class="share-url">
       ${/* CD detailPageSimple.vue:847-853: reiner Beschriftungs-Button (outline,
             mt-3) — die Vorlage führt KEIN Link-Icon auf dem Kopieren-Knopf. */''}
+      ${/* «Link kopieren» wie die fünf Menü-Einträge und der Toast «Link
+            kopiert.» — CDs Demo sagt «URL Kopieren» (detailPageSimple.vue:850),
+            dessen Binnengrosschreibung aber kein Standarddeutsch ist; bewusste
+            Abweichung, dokumentiert in docs/design-review.md. */''}
       <button type="button" class="btn btn--outline mt-3" data-share-copy>
-        <span class="btn__text">URL kopieren</span></button>
+        <span class="btn__text">Link kopieren</span></button>
       <div aria-live="polite" data-share-done></div>
     </div>
   </div>`;
@@ -619,7 +638,7 @@ export function openShareModal(url = location.href, title = 'Inhalt teilen') {
   if (input) { input.focus(); input.select(); }
   if (btn) btn.addEventListener('click', () => {
     // Badge-Anatomie wie CD (Badge.vue:11-12): badge__icon-left vor badge__text.
-    const ok = () => { if (done) done.innerHTML = `<span class="badge badge--success badge--sm mt-3">${icon('Checkmark', 'badge__icon-left')}<span class="badge__text">URL wurde kopiert</span></span>`; };
+    const ok = () => { if (done) done.innerHTML = `<span class="badge badge--success badge--sm mt-3">${icon('Checkmark', 'badge__icon-left')}<span class="badge__text">Link kopiert</span></span>`; };
     const fail = () => { if (done) done.innerHTML = `<span class="badge badge--warning badge--sm mt-3">${icon('WarningCircle', 'badge__icon-left')}<span class="badge__text">Kopieren nicht möglich — bitte von Hand markieren</span></span>`; };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(ok, fail);
@@ -705,10 +724,13 @@ export function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = 
 }
 
 
-// Ein Detailseiten-Abschnitt: H2-Titel + Inhalt. `body` ist fertiges HTML.
-export function detailSection({ title, body = '' }) {
+// Ein Detailseiten-Abschnitt: Titel + Inhalt. `body` ist fertiges HTML.
+// `titleTag` wie bei pageSection — in Registerkarten sitzt der Abschnitt unter
+// einer h2 und braucht eine h3; vorher kopierten zwei Aufrufer dafür das ganze
+// Markup von Hand (Design-Review, pages).
+export function detailSection({ title, body = '', titleTag = 'h2' }) {
   return `<section class="detail-section">
-      <h2 class="detail-section__title">${escape(title)}</h2>
+      <${titleTag} class="detail-section__title">${escape(title)}</${titleTag}>
       ${body}
     </section>`;
 }
@@ -872,7 +894,7 @@ function ensureNotificationClose() {
     const n = btn.closest('.notification');
     if (!n) return;
     n.remove();
-    announce('Meldung geschlossen.');
+    announce('Hinweis geschlossen.');
   });
 }
 
@@ -886,7 +908,7 @@ export function notification(text, variant = 'info', iconName = 'InfoCircle', op
   const role = opts.live ? ((variant === 'error' || variant === 'alert') ? 'alert' : 'status') : '';
   if (opts.dismissible) ensureNotificationClose();
   const close = opts.dismissible
-    ? `<button type="button" class="notification__close" aria-label="Meldung schliessen" data-notification-close>${icon('Cancel', 'icon--md')}</button>`
+    ? `<button type="button" class="notification__close" aria-label="Hinweis schliessen" data-notification-close>${icon('Cancel', 'icon--md')}</button>`
     : '';
   const cls = `notification notification--${variant}${opts.dismissible ? ' notification--dismissible' : ''}`;
   return `<div class="${cls}"${role ? ` role="${role}"` : ''}>${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div>${close}</div>`;
@@ -981,7 +1003,9 @@ export function select(o = {}) {
 
   const opts = (o.options || []).map((x) => {
     const v = (x && typeof x === 'object') ? x.value : x;
-    const t = (x && typeof x === 'object') ? (x.label != null ? x.label : x.text) : x;
+    // Options-Schlüssel ist einheitlich `label` — der frühere `text`-Zweitweg
+    // hatte nur noch fault-report als Konsument und ist migriert (Review B14).
+    const t = (x && typeof x === 'object') ? x.label : x;
     const sel = String(v) === String(o.value == null ? '' : o.value) ? ' selected' : '';
     const dis = (x && typeof x === 'object' && x.disabled) ? ' disabled' : '';
     return `<option value="${escape(v)}"${sel}${dis}>${escape(t)}</option>`;
@@ -999,13 +1023,13 @@ export function select(o = {}) {
       described ? ` aria-describedby="${escape(described)}"` : ''}${o.attrs ? ' ' + o.attrs : ''}>${opts}</select>
     <div class="select__icon">${CHEVRON_SVG}</div>
   </div>
-  ${/* `quiet: true` unterdrückt die Live-Rolle der Feldmeldung: rendert die Seite
-        zugleich eine errorSummary (role="alert"), würde derselbe Fehler sonst
-        zwei- bis dreimal angesagt (WCAG 4.1.3 — EINE Statusmeldung; CD Input.vue
-        gibt der Meldung gar keine Live-Rolle). aria-describedby liest die
-        Meldung am Feld weiterhin vor. */''}
-  ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}"${o.quiet ? '' : ` role="${
-      isError ? 'alert' : 'status'}"`}>${escape(o.message)}</div>` : ''}
+  ${/* KEINE Live-Rolle an der Feldmeldung: jede Formularseite rendert eine
+        errorSummary (role="alert") als die EINE Statusmeldung (WCAG 4.1.3) —
+        mit role am Feld wurde derselbe Fehler zwei- bis dreimal angesagt. CD
+        Input.vue gibt der Meldung ebenfalls keine Live-Rolle; aria-describedby
+        liest sie am Feld weiterhin vor. Der frühere `quiet`-Parameter hatte
+        null Aufrufer und ist entfallen (Design-Review B9). */''}
+  ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}">${escape(o.message)}</div>` : ''}
 </div>`;
 }
 
@@ -1080,9 +1104,9 @@ export function field(o = {}) {
     <label for="${escape(id)}"${lbl}>${escape(o.label)}${o.required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
     ${o.hint ? `<p class="form__group__hint" id="${escape(hintId)}">${escape(o.hint)}</p>` : ''}
     ${o.control(cls, attrs)}
-    ${/* `quiet: true` wie bei select(): keine Live-Rolle, wenn eine errorSummary
-          dieselben Fehler bereits als EINE Statusmeldung ansagt (WCAG 4.1.3). */''}
-    ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}"${o.quiet ? '' : ' role="alert"'}>${escape(o.message)}</div>` : ''}
+    ${/* Keine Live-Rolle — wie bei select(): die errorSummary ist die eine
+          Statusmeldung (WCAG 4.1.3, Design-Review B9). */''}
+    ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}">${escape(o.message)}</div>` : ''}
   </div>`;
 }
 
@@ -1130,18 +1154,22 @@ export function downloadItem({ href, title, note = '', desc = '', meta = [], ico
 // mailto-Stellen (code-review B4).
 export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) {
   if (!contact) return '';
-  // `unit` = Direktionsbereich nach dem BBL-Organigramm. Ohne diese Zeile stand
-  // eine Ansprechstelle ohne Ort in der Organisation da — «Portfoliomanagement»
-  // sagt wenig, «Direktionsbereich Bauten — Portfoliomanagement» verortet sie.
-  const lines = [
+  // DIESELBE Anatomie wie contactCard (dl.kv--stack): der Kontakt-Slot der
+  // Detailseiten trug zwei Typografien für denselben Zweck — Zeilenliste hier,
+  // beschriftete kv-Zeilen dort (Design-Review B22). dt = Rolle; `unit` =
+  // Direktionsbereich nach dem BBL-Organigramm («Portfoliomanagement» sagt
+  // wenig, «Direktionsbereich Bauten — Portfoliomanagement» verortet).
+  const dd = [
     contact.name ? `<strong>${escape(contact.name)}</strong>` : '',
     contact.unit ? escape(contact.unit) : '',
-    contact.role ? escape(contact.role) : '',
     contact.email ? `<a href="mailto:${escape(contact.email)}">${escape(contact.email)}</a>` : '',
     contact.phone ? escape(contact.phone) : '',
   ].filter(Boolean);
   return `<div class="box"><${heading}>${escape(title)}</${heading}>
-    <p class="small m-0">${lines.join('<br>')}</p></div>`;
+    <dl class="kv kv--stack">
+      <dt>${escape(contact.role || 'Ansprechperson')}</dt>
+      <dd>${dd.join('<br>')}</dd>
+    </dl></div>`;
 }
 
 // --- Randspalte der Detailansichten -----------------------------------------
@@ -1231,13 +1259,20 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
     </nav>`;
 }
 
-// Wires the editable page field of a pagination block. `go(target)` navigates.
+// Wires the editable page field AND the prev/next `<button data-page>` controls
+// of a pagination block. `go(target)` navigates. Vorher banden drei Explorer die
+// Buttons selbst — über einen Regex auf das deutsche aria-label («/Nächste/»),
+// der bei jeder Umbenennung stumm gebrochen wäre (Design-Review A3); die
+// data-page-Bindung wohnt jetzt hier, mountDataTable nutzt denselben Weg.
 export function wirePagination(mount, inputId, page, totalPages, go) {
+  const clamp = (n) => Math.min(totalPages, Math.max(1, Number.isFinite(n) ? n : page));
+  mount.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => {
+    go(clamp(Number(b.dataset.page)));
+  }));
   const input = mount.querySelector('#' + inputId);
   if (!input) return;
   const jump = () => {
-    const parsed = Number.parseInt(input.value, 10);
-    const target = Math.min(totalPages, Math.max(1, Number.isFinite(parsed) ? parsed : page));
+    const target = clamp(Number.parseInt(input.value, 10));
     if (target === page) { input.value = String(page); return; }
     go(target);
   };
@@ -1248,12 +1283,23 @@ export function wirePagination(mount, inputId, page, totalPages, go) {
 // --- Ergebniskopf (search.postcss:208-234) ----------------------------------
 // Die Leiste über der Trefferliste: Anzahl links, Steuerung rechts. Der
 // Ansichtswechsel steht als Icon-Gruppe rechts, abgetrennt durch einen Strich.
+
+// EIN `unit`-String diente zwei Kasus zugleich: dem Dativ nach «von» («3 von
+// 6 Verträgen») und dem Nominativ der Leer-/Suchtexte («Keine Verträge …») —
+// je nach übergebener Form war die eine oder die andere Hälfte falsches
+// Deutsch («3 von 6 Verträge», Design-Review A14). `unit` darf deshalb ein
+// Objekt `{ nom, dat }` sein; ein einfacher String gilt weiter für beide
+// Slots (die meisten Plurale sind kasusinvariant: Objekte, Dokumente, Kosten).
+const unitCase = (unit) => (unit && typeof unit === 'object')
+  ? { nom: unit.nom || unit.dat || '', dat: unit.dat || unit.nom || '' }
+  : { nom: unit || '', dat: unit || '' };
+
 function resultsHeader({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   return `
     <div class="search-results__header">
       <div class="search-results__header__left">
-        <strong>${escape(String(count))}</strong> von ${escape(String(total))} ${escape(unit)}${pageInfo}
+        <strong>${escape(String(count))}</strong> von ${escape(String(total))} ${escape(unitCase(unit).dat)}${pageInfo}
       </div>
       <div class="search-results__header__right">${viewSwitch(view)}</div>
     </div>`;
@@ -1267,7 +1313,7 @@ function resultsHeader({ count, total, unit, page = 1, totalPages = 1, view = 'g
 // gefilterter Treffer gesamt; `card(item)`/`listView(items)` rendern die Ansicht.
 export function catalogueResults({
   visible, count, total, view = 'gallery', page = 1, totalPages = 1,
-  card, listView, mapView, unit, gridCls = 'grid grid--3',
+  card, listView, mapView, unit, gridCls = 'grid grid--responsive-cols-3',
   paginationHref, paginationInputId, paginationLabel,
   available = true, emptyMsg, unavailableMsg, note = '', header = true,
   regionLabel = '', resetHref = '',
@@ -1291,11 +1337,11 @@ export function catalogueResults({
       // Nullzustand mit Ausweg: der Rat «oben lassen sich aktive Filter
       // zurücksetzen» verlangte, wieder hochzuscrollen und die Leiste zu finden
       // (Item 5.13). `resetHref` gibt dem Zustand denselben Weg als Bedienelement.
-      ? empty(emptyMsg || `Keine ${escape(unit)} gefunden.`, {
+      ? empty(emptyMsg || `Keine ${escape(unitCase(unit).nom)} gefunden.`, {
           hint: 'Passen Sie Ihre Suche oder die Filter an.',
           action: resetHref ? { label: 'Suche und Filter zurücksetzen', href: resetHref } : null,
         })
-      : empty(unavailableMsg || `${unit} konnten nicht geladen werden (Ladefehler).`, { available: false });
+      : empty(unavailableMsg || `${unitCase(unit).nom} konnten nicht geladen werden (Ladefehler).`, { available: false });
   // header:false, wenn die Seite bereits eine C.catalogueBar rendert (die Trefferzahl
   // + Ansichtswechsel selbst enthält) — dann nur Hinweis + Trefferkörper.
   // Die Trefferliste braucht eine eigene Überschrift: die Karten darin sind
@@ -1308,7 +1354,7 @@ export function catalogueResults({
   // (search.postcss:207-217). Der zusätzliche `mt-6` riss zwischen Trennlinie
   // und erster Zeile eine Lücke auf, die es im CD nicht gibt.
   return `<section${header ? ' class="mt-6"' : ''}>
-      <h2 class="sr-only">${escape(regionLabel || unit || 'Ergebnisse')}</h2>
+      <h2 class="sr-only">${escape(regionLabel || unitCase(unit).nom || 'Ergebnisse')}</h2>
       ${header ? resultsHeader({ count, total, unit, page, totalPages, view }) : ''}
       ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
       ${body}
@@ -1317,7 +1363,7 @@ export function catalogueResults({
 
 // Standard-Ansage für die Live-Region der Katalogseiten (Trefferzahl · Seite · Ansicht).
 export function announceCatalogue({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
-  announce(`${count} von ${total} ${unit}${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'list' ? 'Liste' : view === 'map' ? 'Karte' : 'Galerie'}`);
+  announce(`${count} von ${total} ${unitCase(unit).dat}${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'list' ? 'Liste' : view === 'map' ? 'Karte' : 'Galerie'}`);
 }
 
 // Icon-Umschalter Galerie/Liste — keine Beschriftung, der Zustand steht in
@@ -1531,13 +1577,14 @@ export function mountDataTable(host, opts = {}) {
     const activeFacetCount = facets.reduce((n, f) => n + (state.sel[f.dim] || []).length, 0);
 
     const restore = preserveFocus(host);
+    const u = unitCase(unit);
     host.innerHTML = `
       ${catalogueBar({
         formId: `${id}-form`, inputId: `${id}-q`,
-        searchLabel: searchLabel || `${unit} durchsuchen`,
-        placeholder: placeholder || `${unit} durchsuchen…`, q: state.q,
+        searchLabel: searchLabel || `${u.nom} durchsuchen`,
+        placeholder: placeholder || `${u.nom} durchsuchen…`, q: state.q,
         countId: `${id}-count`,
-        count: `<strong>${escape(String(sorted.length))}</strong> von ${escape(String(allRows.length))} ${escape(unit)}${
+        count: `<strong>${escape(String(sorted.length))}</strong> von ${escape(String(allRows.length))} ${escape(u.dat)}${
           totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`,
         sort: sorts.length ? { id: `${id}-sort`, value: state.sort, options: sorts.map((s) => ({ value: s.value, label: s.label })) } : null,
         filterId: facets.length ? `${id}-filter` : '', filterCount: activeFacetCount,
@@ -1553,10 +1600,10 @@ export function mountDataTable(host, opts = {}) {
             «gar keine Daten» von «nichts für diese Auswahl». */''}
       ${table({ columns, rows: visible, zebra: true, caption, rowsClickable,
         emptyText: allRows.length
-          ? `Keine ${unit} für diese Suche oder Filterung.`
-          : (emptyMsg || `Keine ${unit} erfasst.`),
+          ? `Keine ${u.nom} für diese Suche oder Filterung.`
+          : (emptyMsg || `Keine ${u.nom} erfasst.`),
         foot: sorted.length && foot ? foot(visible, sorted) : undefined })}
-      ${pagination({ page: state.page, totalPages, inputId: `${id}-page`, label: `Seitennavigation ${unit}` })}`;
+      ${pagination({ page: state.page, totalPages, inputId: `${id}-page`, label: `Seitennavigation ${u.nom}` })}`;
 
     // --- Verdrahtung (nur innerhalb von host) ---
     const form = host.querySelector(`#${id}-form`);
@@ -1578,10 +1625,8 @@ export function mountDataTable(host, opts = {}) {
         state.page = 1; draw();
       });
     }
-    host.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => {
-      state.page = Math.min(totalPages, Math.max(1, Number(b.dataset.page) || 1)); draw();
-    }));
     if (rowsClickable) wireTableRows(host);
+    // wirePagination bindet Eingabefeld UND die [data-page]-Buttons (Review A3).
     wirePagination(host, `${id}-page`, state.page, totalPages, (target) => { state.page = target; draw(); });
     // Vorherige Beobachter ABMELDEN. `host` wird nie ersetzt, nur sein
     // innerHTML — ohne das blieben MutationObserver und ResizeObserver je
@@ -1591,7 +1636,7 @@ export function mountDataTable(host, opts = {}) {
     if (unwireScroll) { try { unwireScroll(); } catch { /* schon weg */ } }
     unwireScroll = wireScrollRegions(host);
     restore();
-    announce(`${sorted.length} von ${allRows.length} ${unit}${totalPages > 1 ? `, Seite ${state.page} von ${totalPages}` : ''}`);
+    announce(`${sorted.length} von ${allRows.length} ${u.dat}${totalPages > 1 ? `, Seite ${state.page} von ${totalPages}` : ''}`);
   };
   draw();
   // Abbaufunktion für den Aufrufer (ctx.onUnmount), damit die Beobachter auch
@@ -1737,6 +1782,202 @@ export function toast(msg, variant = 'success', iconName = 'CheckmarkCircle') {
   setTimeout(() => { t.classList.remove('toast__message--in'); setTimeout(() => t.remove(), 300); }, 5000);
 }
 
+// --- Katalog-Zustand aus der Hash-Query (Katalog-Quartett) -------------------
+// Die Lese-Seite des Katalog-Musters: services/applications/catalog/search
+// rollten je ~35 Zeilen identisches Parsen/Validieren/Klemmen/Schneiden von
+// Hand (Design-Review B16) — nur die Schreib-Seite (catalogueHash/wireCatalogue)
+// war geteilt. Hier beides aus einer Quelle.
+//
+//   query      URLSearchParams der Route
+//   base       Basis-Hash der Seite ('#/services')
+//   perPage    Galerieseiten-Grösse (Standard 12 — teilbar durch 2 UND 3 Spalten)
+//   sortOpts   erlaubte Sortierwerte (Array der option-values); '' = Datenreihenfolge
+//   filters    { param: erlaubteWerte[]|null } — mehrwertig, komma-verbunden
+//   views      erlaubte Ansichten; defaultView bleibt aus der URL
+//
+// Rückgabe: { q, view, page, sort, selected, hash(patch), clamp(list) } —
+// clamp() schneidet die sortierte Liste auf die Seite zu und liefert
+// { visible, totalPages, page } (page ggf. auf den gültigen Bereich geklemmt).
+export function catalogueState(query, { base, perPage = 12, sortOpts = [], defaultSort = '',
+  views = ['gallery', 'list'], defaultView = 'gallery', filters = {} } = {}) {
+  const q = (query.get('q') || '').trim();
+  const rawView = query.get('view') || defaultView;
+  const view = views.includes(rawView) ? rawView : defaultView;
+  const rawSort = query.get('sort') || defaultSort;
+  const sort = sortOpts.includes(rawSort) ? rawSort : defaultSort;
+  const selected = {};
+  for (const [param, allowed] of Object.entries(filters)) {
+    const vals = (query.get(param) || '').split(',').map((s) => s.trim()).filter(Boolean);
+    selected[param] = allowed ? vals.filter((v) => allowed.includes(v)) : vals;
+  }
+  const parsed = Number.parseInt(query.get('page') || '1', 10);
+  let page = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  const hash = (patch = {}) => catalogueHash(base, { q, page, view, defaultView, sort, ...selected, ...patch });
+  const clamp = (list) => {
+    const totalPages = Math.max(1, Math.ceil(list.length / perPage));
+    if (page > totalPages) page = totalPages;
+    return { visible: list.slice((page - 1) * perPage, page * perPage), totalPages, page };
+  };
+  return { q, view, page, sort, selected, perPage, hash, clamp };
+}
+
+// --- JS-State-Katalogverdrahtung (Explorer) ----------------------------------
+// Der lokale Zwilling von wireCatalogue: Portfolio, Bauprojekte, Mietende und
+// die Bauwerksdokumentation halten ihren Zustand in einer Variablen statt im
+// Hash (Registerkarten/Baum, dokumentiert je App) und trugen dafür je eine
+// ~45-Zeilen-Kopie derselben Verdrahtung — Suche mit Tipp-Verzögerung, Sort,
+// Filterpanel samt Zähler-Badge, Aktiv-Pillen (Design-Review A2). Die Kopien
+// waren bereits gedriftet (toter Reset in Mietende).
+//
+//   state     { q, sort, page, view, filters: { dim: wert[] } } — wird hier mutiert
+//   onChange  Neuzeichnen der Trefferfläche (renderMain)
+//   onRemove  (token) für Pillen-Tokens ausserhalb von 'q'/'dim:wert' (z. B. 'sel')
+//   onReset   ersetzt das Standard-onChange nach «Alle Filter zurücksetzen»
+//             (Explorer setzen hier zusätzlich die Baum-Auswahl zurück)
+//
+// Rückgabe: { updateFilterBadge, syncFilterChecks, clearFilters } für Aufrufer,
+// die den Panel-Zustand selbst anfassen (URL-Wiederherstellung).
+export function wireCatalogueState(mount, {
+  formId, inputId, sortId = '', filterToggleId = '', panelId = '', resetId = '',
+  activeFiltersId = '', state, onChange, onRemove, onReset, debounceMs = 250,
+} = {}) {
+  const input = inputId ? mount.querySelector('#' + inputId) : null;
+  let timer = null;
+  const runSearch = () => { state.q = input ? (input.value || '') : ''; state.page = 1; onChange(); };
+  const form = formId ? mount.querySelector('#' + formId) : null;
+  if (form) form.addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); runSearch(); });
+  if (input) input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(runSearch, debounceMs); });
+
+  const vs = mount.querySelector('.view-switch');
+  if (vs) vs.addEventListener('click', (e) => {
+    const btn = e.target.closest('.view-switch__btn'); if (!btn) return;
+    state.view = btn.dataset.view; state.page = 1; onChange();
+  });
+
+  const sortSel = sortId ? mount.querySelector('#' + sortId) : null;
+  if (sortSel) sortSel.addEventListener('change', () => { state.sort = sortSel.value; state.page = 1; onChange(); });
+
+  const fbtn = filterToggleId ? mount.querySelector('#' + filterToggleId) : null;
+  const fpanel = panelId ? mount.querySelector('#' + panelId) : null;
+  const fbadge = fbtn ? fbtn.querySelector('.catbar__fcount') : null;
+  const dims = () => Object.keys(state.filters || {});
+  const updateFilterBadge = () => {
+    if (!fbadge) return;
+    const total = dims().reduce((n, d) => n + (state.filters[d] || []).length, 0);
+    fbadge.textContent = total ? `(${total})` : ''; fbadge.hidden = !total;
+  };
+  const syncFilterChecks = () => { if (fpanel) fpanel.querySelectorAll('input[data-fdim]').forEach((cb) => { cb.checked = (state.filters[cb.dataset.fdim] || []).includes(cb.value); }); };
+  const clearFilters = () => { dims().forEach((d) => { state.filters[d] = []; }); syncFilterChecks(); updateFilterBadge(); };
+  // Aus der URL wiederhergestellte Filter sofort am Knopf anzeigen (url-state-1);
+  // die Checkboxen selbst sind schon richtig, wenn filterGroup `selected` erhielt.
+  updateFilterBadge();
+  if (fbtn && fpanel) fbtn.addEventListener('click', () => {
+    const open = !fpanel.hidden; fpanel.hidden = open; fbtn.setAttribute('aria-expanded', String(!open));
+  });
+  if (fpanel) fpanel.addEventListener('change', (e) => {
+    const cb = e.target.closest('input[data-fdim]'); if (!cb) return;
+    const dim = cb.dataset.fdim, arr = state.filters[dim] || (state.filters[dim] = []);
+    if (cb.checked) { if (!arr.includes(cb.value)) arr.push(cb.value); }
+    else state.filters[dim] = arr.filter((x) => x !== cb.value);
+    updateFilterBadge(); state.page = 1; onChange();
+  });
+  const resetBtn = resetId ? mount.querySelector('#' + resetId) : null;
+  if (resetBtn) resetBtn.addEventListener('click', () => { clearFilters(); state.page = 1; onChange(); });
+
+  const af = activeFiltersId ? mount.querySelector('#' + activeFiltersId) : null;
+  if (af) af.addEventListener('click', (e) => {
+    if (e.target.closest('[data-reset]')) {
+      state.q = ''; if (input) input.value = '';
+      clearFilters();
+      if (onReset) onReset(); else { state.page = 1; onChange(); }
+      return;
+    }
+    const pill = e.target.closest('[data-remove]'); if (!pill) return;
+    const tok = pill.dataset.remove;
+    if (tok === 'q') { state.q = ''; if (input) input.value = ''; state.page = 1; onChange(); return; }
+    const i = tok.indexOf(':');
+    if (i > 0 && state.filters[tok.slice(0, i)] !== undefined) {
+      const dim = tok.slice(0, i);
+      state.filters[dim] = (state.filters[dim] || []).filter((x) => x !== tok.slice(i + 1));
+      syncFilterChecks(); updateFilterBadge(); state.page = 1; onChange(); return;
+    }
+    if (onRemove) onRemove(tok);   // z. B. 'sel' — die Baum-Auswahl des Aufrufers
+  });
+
+  return { updateFilterBadge, syncFilterChecks, clearFilters };
+}
+
+// Kanonischer Filterpanel-Reset — EINE Anatomie für die 13 Panels, die vorher
+// in ~7 Varianten auseinanderliefen (Icon-Klasse, Modifier, Wrapper; Design-
+// Review B17). Beschriftung «Filter zurücksetzen» (CD-Wortlaut, eventsList.vue)
+// — die Pillenreihe darunter behält ihr «Alle Filter zurücksetzen» (sie räumt
+// auch Suche und Baum-Auswahl ab). `wrap:''` für Panels mit eigener Aktionszeile
+// (Dashboards: .filter-panel__actions).
+export function panelReset({ href = '', id = '', label = 'Filter zurücksetzen', wrap = 'catbar__panel__actions' } = {}) {
+  const inner = `${icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">${escape(label)}</span>`;
+  const ctl = href
+    ? `<a class="btn btn--bare btn--sm btn--icon-left" href="${escape(href)}">${inner}</a>`
+    : `<button type="button" class="btn btn--bare btn--sm btn--icon-left"${id ? ` id="${escape(id)}"` : ''}>${inner}</button>`;
+  return wrap ? `<div class="${escape(wrap)}">${ctl}</div>` : ctl;
+}
+
+// --- Formular-Seams (Design-Review A8/A9/B8/B12) -----------------------------
+// Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert (Item 3.6).
+// Superset-Fassung aus building-create: `change` zusätzlich zu `input`, weil
+// ein <select> beim Zeigerklick kein input-Ereignis feuert. Vorher trugen
+// space-request und building-create je eine Kopie, fault-report und workspace
+// gar keine — gleiche Formulare verziehen ungleich.
+export function wireFieldErrors(mount, errors) {
+  Object.keys(errors).forEach((id) => {
+    const el = mount.querySelector('#' + CSS.escape(id));
+    if (!el) return;
+    const clear = () => {
+      if (!errors[id]) return;
+      delete errors[id];
+      el.classList.remove('input--error');
+      el.removeAttribute('aria-invalid');
+      const msg = mount.querySelector('#' + CSS.escape(id) + '-msg');
+      if (msg) msg.remove();
+    };
+    el.addEventListener('input', clear, { once: true });
+    el.addEventListener('change', clear, { once: true });
+  });
+}
+
+// Fokus + Ansage auf dem Erfolgsscreen: processDone rendert seine Überschrift
+// mit tabindex="-1" GENAU dafür — aber nur building-create nutzte das; in den
+// drei Geschwister-Flows fiel der Fokus nach dem Absenden auf <body>.
+export function focusProcessDone(mount, instance) {
+  const h = mount.querySelector('h1[tabindex="-1"], h2[tabindex="-1"]');
+  if (h) h.focus();
+  if (instance && instance.reference) announce(`Vorgang erstellt. Referenz ${instance.reference}.`);
+}
+
+// Wizard-Kopf: Schrittanzeige + sr-only-Schrittüberschrift (Fokusziel beim
+// Wechsel) + Pflichtfeld-Legende. `step` ist 1-basiert wie in den Apps.
+export function wizardHead(labels, step, { headId = 'wiz-step-head', label = 'Antragsschritte', legend = true } = {}) {
+  return `${stepIndicator(labels, step - 1, { label })}
+    <h2 class="sr-only" id="${escape(headId)}" tabindex="-1">Schritt ${step} von ${labels.length}: ${escape(labels[step - 1])}</h2>
+    ${legend ? '<p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>' : ''}`;
+}
+
+// Schrittwechsel ist ein Kontextwechsel: Fokus auf die Schrittüberschrift, Ansage
+// MIT Schrittnamen («Schritt 2 von 3: Bedarf») — vorher sagte space-request nur
+// die Nummer an, building-create auch den Namen (Design-Review D31).
+export function focusWizardStep(mount, labels, step, { headId = 'wiz-step-head' } = {}) {
+  const h = mount.querySelector('#' + headId) || mount.querySelector('h1');
+  if (h) h.focus({ preventScroll: true });
+  announce(`Schritt ${step} von ${labels.length}: ${labels[step - 1]}`);
+}
+
+// Kontextzeile unter der Formular-h1 — EINE Formel für alle vier Flows:
+// «<Aktion> als NAME · ORG (· Prozess: …)». Vorher entschied jede App selbst,
+// ob Name und Prozessvorschau erscheinen (Design-Review B12).
+export function contextLine({ action, name = '', org, process = '' }) {
+  return `<p class="muted">${escape(action)} als ${name ? `<strong>${escape(name)}</strong> · ` : ''}<strong>${escape(org)}</strong>${
+    process ? ` · Prozess: ${escape(process)}` : ''}.</p>`;
+}
+
 // --- Login-Hinweis (AGOV / FedLogin) -----------------------------------------
 // Kein Inhalt wird versteckt; abgemeldet erscheint nur dieser Hinweis dort, wo
 // ein Vorgang ausgelöst würde. Der Button ruft window.__login() (in app.js
@@ -1761,6 +2002,7 @@ export const C = {
   mountBanner, openModal, openShareModal, wireShare, domainTile, announce, trapFocus, FOCUSABLE, notFound,
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,
+  catalogueState, wireCatalogueState, panelReset, wireFieldErrors, focusProcessDone, wizardHead, focusWizardStep, contextLine,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,
   actionCard, contactCard,

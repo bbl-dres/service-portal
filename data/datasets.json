@@ -745,7 +745,7 @@
   {
     "id": "8",
     "title": {
-      "de": "Geodaten: Bodenabdeckung (GIS IMMO)",
+      "de": "Geodaten: Bodenbedeckung (GIS IMMO)",
       "fr": "Géodonnées : couverture du sol (GIS IMMO)",
       "it": "Geodati: copertura del suolo (GIS IMMO)",
       "en": "Geodata: Land Cover (GIS IMMO)"
@@ -797,14 +797,14 @@
     "distributions": [
       {
         "name": {
-          "de": "GIS Bodenabdeckung Export",
+          "de": "GIS Bodenbedeckung Export",
           "fr": "Export GIS couverture du sol",
           "it": "Esportazione GIS copertura del suolo",
           "en": "GIS land cover export"
         },
         "format": "GeoJSON",
         "identifikator": "z7a8b9c0-1234-56za-2345-7890123456za",
-        "titel": "GIS Bodenabdeckung Export",
+        "titel": "GIS Bodenbedeckung Export",
         "zugriffsUrl": "https://gis.bbl.admin.ch/export/bodenabdeckung",
         "downloadUrl": "https://gis.bbl.admin.ch/download/bodenabdeckung.geojson",
         "status": "published",
@@ -814,14 +814,14 @@
       },
       {
         "name": {
-          "de": "GIS Bodenabdeckung WFS",
+          "de": "GIS Bodenbedeckung WFS",
           "fr": "WFS GIS bodenabdeckung",
           "it": "WFS GIS bodenabdeckung",
-          "en": "GIS Bodenabdeckung WFS"
+          "en": "GIS Bodenbedeckung WFS"
         },
         "format": "WFS",
         "identifikator": "275429c9-220c-487f-88cf-65d434b93aa5",
-        "titel": "GIS Bodenabdeckung WFS",
+        "titel": "GIS Bodenbedeckung WFS",
         "zugriffsUrl": "https://gis.bbl.admin.ch/wfs/bodenabdeckung",
         "downloadUrl": "",
         "status": "published",
@@ -836,14 +836,14 @@
       },
       {
         "name": {
-          "de": "GIS Bodenabdeckung API (REST)",
+          "de": "GIS Bodenbedeckung API (REST)",
           "fr": "API GIS bodenabdeckung (REST)",
           "it": "API GIS bodenabdeckung (REST)",
-          "en": "GIS Bodenabdeckung API (REST)"
+          "en": "GIS Bodenbedeckung API (REST)"
         },
         "format": "REST",
         "identifikator": "1b9298d4-f575-4e12-a0b3-876a4f2d7cbd",
-        "titel": "GIS Bodenabdeckung API (REST)",
+        "titel": "GIS Bodenbedeckung API (REST)",
         "zugriffsUrl": "https://api.bbl.admin.ch/v1/gis/bodenabdeckung",
         "downloadUrl": "",
         "status": "published",
@@ -858,14 +858,14 @@
       },
       {
         "name": {
-          "de": "GIS Bodenabdeckung Export (XLSX)",
+          "de": "GIS Bodenbedeckung Export (XLSX)",
           "fr": "Export GIS bodenabdeckung (XLSX)",
           "it": "Esportazione GIS bodenabdeckung (XLSX)",
-          "en": "GIS Bodenabdeckung export (XLSX)"
+          "en": "GIS Bodenbedeckung export (XLSX)"
         },
         "format": "Excel",
         "identifikator": "65c57ead-b153-49da-97ed-fc5741b45b12",
-        "titel": "GIS Bodenabdeckung Export (XLSX)",
+        "titel": "GIS Bodenbedeckung Export (XLSX)",
         "zugriffsUrl": "https://gis.bbl.admin.ch/export/bodenabdeckung",
         "downloadUrl": "https://gis.bbl.admin.ch/download/bodenabdeckung.xlsx",
         "status": "published",
