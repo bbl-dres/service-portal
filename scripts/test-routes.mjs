@@ -36,6 +36,7 @@ const ROUTES = [
   ['/app/projects',                 'Bauprojekte'],
   ['/app/tenancies',                'Mietende'],
   ['/app/metadata-catalog',         'Metadaten Katalog'],
+  ['/app/process-docs',             'Prozessdokumentation'],
   ['/app/document-archive',         'Bauwerksdokumentation'],
   ['/app/space-request',            'Raumbedarf'],
   ['/app/fault-report',             'Störungs'],

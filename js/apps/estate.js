@@ -151,7 +151,7 @@ export default async function render(ctx) {
         { separator: true }, { action: 'link', label: 'Link kopieren' },
       ] })}</div>
     </figcaption>
-    <div class="dash-map" id="estate-map-el" role="group" aria-label="Weltkarte der Gebäudestandorte"><p class="dash-map__loading" role="status">Karte wird geladen…</p></div>
+    <div class="dash-map" id="estate-map-el" role="group" aria-label="Weltkarte der Gebäudestandorte">${C.loading({ label: 'Karte wird geladen…' })}</div>
   </figure>`;
 
   // --- per-tab content: { kpis[], figures[] (HTML), source } ---

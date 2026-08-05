@@ -22,8 +22,9 @@ export const vorgang = (instanceId) => `#/my-cases/${q(instanceId)}`;
 export const news = (id) => `#/news/${q(id)}`;
 /** Das Archiv filtert über `?q=` — es gibt keine Detailroute je Dokument. */
 export const dokument = (titel) => `#/app/document-archive?q=${q(titel)}`;
+export const prozess = (processId) => `#/app/process-docs?id=${q(processId)}`;
 
 export default {
   objekt, bauprojekt, mietverhaeltnis, dienstleistung, anwendung,
-  datensatz, vorgang, news, dokument,
+  datensatz, vorgang, news, dokument, prozess,
 };

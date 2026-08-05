@@ -31,7 +31,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       // gerenderten Beispieltext lesen (Live-Daten aus dem core).
       let example = '';
       const summary = [...document.querySelectorAll('.opblock-summary')]
-        .find(el => /\\/liegenschaften$/.test((el.querySelector('.opblock-summary-path') || {}).textContent || ''));
+        .find(el => /\\/buildings$/.test((el.querySelector('.opblock-summary-path') || {}).textContent || ''));
       if (summary) {
         summary.querySelector('button, .opblock-summary-control')?.click() || summary.click();
         let m = 0; while (!summary.closest('.opblock')?.querySelector('.opblock-body') && m++ < 50) await s(100);
@@ -50,6 +50,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
         post: document.querySelectorAll('.swagger-ui .opblock-post').length,
         tryOut: document.querySelectorAll('.swagger-ui .try-out').length,
         authorize: !!document.querySelector('.swagger-ui .auth-wrapper, .swagger-ui .authorization__btn'),
+        loadingLeft: !!document.querySelector('.swagger-host .loading'),
         example,
       };
     })()`);
@@ -59,11 +60,14 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(/Kundenportal API/.test(D.h1 || ''), `Portal-h1 bleibt (${D.h1})`);
     check(D.badges.some(b => /^v/.test(b)), `Versions-Badge im Kopf (${JSON.stringify(D.badges)})`);
     check(!D.infoDoppelt, 'Swaggers Info-Block doppelt den Kopf nicht');
-    check(D.tags.length === 8, `8 Ressourcen-Abschnitte (${D.tags.length})`);
-    check(D.ops >= 15, `Operationen gerendert (${D.ops})`);
+    // Seit der Englisch-Umbenennung (2026-08-04) deckt die API den ganzen
+    // Datenbestand: 17 Ressourcen, 47 Endpunkte (data/api-specs.json).
+    check(D.tags.length === 17, `17 Ressourcen-Abschnitte (${D.tags.length})`);
+    check(D.ops >= 40, `Operationen gerendert (${D.ops})`);
     check(D.get > 0 && D.post > 0, `GET- und POST-Blöcke (${D.get}/${D.post})`);
     check(/api\.bbl\.admin\.ch\/kundenportal/.test(D.server), 'Server-Zeile zeigt die Basis-URL');
     check(D.tryOut === 0, 'kein «Try it out» (kein Backend)');
+    check(!D.loadingLeft, 'Ladezustand (C.loading) ist nach dem Rendern abgeräumt');
     // Auf die FORM der bbl_id prüfen (1080/4840/AF), nicht auf ein festes Präfix.
     check(/\b\d{4}\/\d{4}\//.test(D.example), 'Live-Beispiel trägt echte Gebäudedaten (bbl_id)');
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, p.sessionId);
@@ -71,17 +75,17 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     await p.closeTarget();
 
     // 2) Deep-Link ?tag=… scrollt zur Ressource ----------------------------
-    const p2 = await openPage(cdp, `${APP_BASE}/app/api-docs/kundenportal?tag=bauprojekte`);
+    const p2 = await openPage(cdp, `${APP_BASE}/app/api-docs/kundenportal?tag=projects`);
     await new Promise(r => setTimeout(r, 800));
     const T = await p2.evaluate(`(async () => {
       const s = ms => new Promise(r => setTimeout(r, ms));
       let n = 0; while (!document.querySelector('.swagger-ui .opblock-tag') && n++ < 200) await s(100);
       await s(600);   // onComplete + Router-Scroll abwarten
-      const el = [...document.querySelectorAll('.opblock-tag')].find(h => /Bauprojekte/.test(h.getAttribute('data-tag') || ''));
+      const el = [...document.querySelectorAll('.opblock-tag')].find(h => (h.getAttribute('data-tag') || '') === 'projects');
       const top = el ? el.getBoundingClientRect().top : 9999;
       return { da: !!el, top: Math.round(top), scrollY: Math.round(scrollY) };
     })()`);
-    check(T.da, 'Ressource «Bauprojekte» vorhanden');
+    check(T.da, 'Ressource «projects» vorhanden');
     check(T.scrollY > 0 && T.top > -120 && T.top < 300, `?tag scrollt zur Ressource (top ${T.top}, scrollY ${T.scrollY})`);
     await p2.closeTarget();
 
@@ -96,7 +100,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     })()`);
     console.log('■ Katalog-Eintrag:', JSON.stringify(K.h1), '| Links in die Docs:', K.docsLinks);
     check(/Kundenportal/.test(K.h1 || ''), `catalog dataset renders (${K.h1})`);
-    check(K.docsLinks >= 8, `distributions deep-link into the docs (${K.docsLinks})`);
+    check(K.docsLinks >= 17, `distributions deep-link into the docs (${K.docsLinks})`);
     check([...(await p.problems()), ...(await p2.problems()), ...(await p3.problems())].length === 0,
       `no exceptions / console errors / error banner${[...(await p.problems()), ...(await p2.problems()), ...(await p3.problems())][0] ? ': ' + [...(await p.problems()), ...(await p2.problems()), ...(await p3.problems())][0] : ''}`);
     await p3.closeTarget();

@@ -1,0 +1,738 @@
+[
+  {
+    "processId": "TQ.21.00.00.01",
+    "name": "Lösungsvorschläge Anmiete Kauf",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "akquisition-planung",
+    "groupLabel": "Akquisition & Planung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.01.bpmn",
+    "description": "Mögliche Mietobjekte für eine Anmiete und mögliche Liegenschaften für einen Kauf suchen und als Lösungsvorschläge aufbereiten.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-UBRUNX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-WWAGNX"
+      }
+    ],
+    "tags": [
+      "Akquisition",
+      "Projektinitiierung"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER",
+      "Excel"
+    ],
+    "standards": [
+      "TQ.21.00.00.01 C01 Lösungsvorschläge Anmiete Kauf"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.02",
+    "name": "Machbarkeit Projektdefinition",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "akquisition-planung",
+    "groupLabel": "Akquisition & Planung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.02.bpmn",
+    "description": "Regelt den Ablauf bei A- und B-Geschäften vom Auftrag «Machbarkeit / Projektdefinition» über den Entscheid zum Eintreten auf das Projekt bis zum bestätigten Projektauftrag.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-UBRUNX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-WWAGNX"
+      }
+    ],
+    "tags": [
+      "Akquisition",
+      "Projektinitiierung"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER",
+      "Excel"
+    ],
+    "standards": [
+      "Verordnung über das Immobilienmanagement und die Logistik des Bundes (VILB)",
+      "Weisungen EFD",
+      "Weisung über wirtschaftliche Nutzung und den Betrieb der Bauten im BBL-Immobilienportfolio",
+      "Strategische Konzepte und Vorgaben (Portfoliostrategie, UK, BWEK)",
+      "Masterpläne und Nutzerkonzepte der Benutzerorganisationen",
+      "Anträge von Benutzerorganisationen",
+      "Aufträge PFM"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.03",
+    "name": "Auftragskoordination",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "akquisition-planung",
+    "groupLabel": "Akquisition & Planung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.03.bpmn",
+    "description": "Koordination und Überwachung von A- und B-Geschäften nach erfolgter Auftragserteilung bis zum Debriefing des jeweiligen Geschäfts.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-UBRUNX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-WWAGNX"
+      }
+    ],
+    "tags": [
+      "Akquisition",
+      "Projektinitiierung"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER",
+      "Excel"
+    ],
+    "standards": [
+      "Auftrag aus Prozess TQ.21.00.00.02 Machbarkeit / Projektdefinition (060-5/4/1/1)"
+    ],
+    "related": [
+      "TQ.21.00.00.02"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.10",
+    "name": "Vollzug Anmiete Pacht",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "vollzug-uebernahme",
+    "groupLabel": "Vollzug & Übernahme",
+    "bpmn": "assets/bpmn/TQ.21.00.00.10.bpmn",
+    "description": "Abschluss eines Anmiet- oder Pachtvertrages.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-XRICHX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-UBRUNX"
+      }
+    ],
+    "tags": [
+      "Vollzug",
+      "Vertrag"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER",
+      "NotarDossier"
+    ],
+    "standards": [
+      "TQ.21.00.00.10 C01 Vollzug Anmiete Pacht"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.15",
+    "name": "Verurkundung Kauf Baurecht",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "vollzug-uebernahme",
+    "groupLabel": "Vollzug & Übernahme",
+    "bpmn": "assets/bpmn/TQ.21.00.00.15.bpmn",
+    "description": "Abschluss eines Kauf- oder Baurechtsvertrages unter Mitwirkung eines Notars.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-XRICHX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-UBRUNX"
+      }
+    ],
+    "tags": [
+      "Vollzug",
+      "Vertrag"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER",
+      "NotarDossier"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.15 C01 Verurkundung Kauf Baurecht"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.20",
+    "name": "Objektübernahme",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "vollzug-uebernahme",
+    "groupLabel": "Vollzug & Übernahme",
+    "bpmn": "assets/bpmn/TQ.21.00.00.20.bpmn",
+    "description": "Nach einem Kauf oder einer Anmiete wird das Objekt durch das BBL vom Verkäufer oder Vermieter übernommen.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-XRICHX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-UBRUNX"
+      }
+    ],
+    "tags": [
+      "Vollzug",
+      "Vertrag"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER",
+      "NotarDossier"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.30",
+    "name": "Bewirtschaftung Anmiet-, Pachtverträge, Eigene Baurechte",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "bewirtschaftung",
+    "groupLabel": "Bewirtschaftung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.30.bpmn",
+    "description": "Ersterfassung von Anmiet-, Pacht- und Baurechtsverträgen im SAP; laufende Anpassungen, wenn sich diese Verträge verändern.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-YARNOX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-ZFISCX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-10NEUMX"
+      }
+    ],
+    "tags": [
+      "Bewirtschaftung",
+      "FM"
+    ],
+    "systems": [
+      "SAP RE",
+      "CAFM",
+      "RUMBA",
+      "ESTAT"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.30 C01 Bewirtschaftung Anmiet-, Pachtverträge, Eigene Baurechte"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.35",
+    "name": "Bewirtschaftung Eigentum, Stiftungen",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "bewirtschaftung",
+    "groupLabel": "Bewirtschaftung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.35.bpmn",
+    "description": "Bewirtschaften von Immobilien im Eigentum des Bundes und im Eigentum von Stiftungen des Bundes.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-YARNOX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-ZFISCX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-10NEUMX"
+      }
+    ],
+    "tags": [
+      "Bewirtschaftung",
+      "FM"
+    ],
+    "systems": [
+      "SAP RE",
+      "CAFM",
+      "RUMBA",
+      "ESTAT"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.35 C01 Bewirtschaftung Eigentum, Stiftungen"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.45",
+    "name": "Bewirtschaftung von Vermietungen, Verpachtungen, Baurechtsvergaben",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "bewirtschaftung",
+    "groupLabel": "Bewirtschaftung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.45.bpmn",
+    "description": "Verträge von Vermietungen, Verpachtungen und Abgaben im Baurecht bewirtschaften.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-YARNOX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-ZFISCX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-10NEUMX"
+      }
+    ],
+    "tags": [
+      "Bewirtschaftung",
+      "FM"
+    ],
+    "systems": [
+      "SAP RE",
+      "CAFM",
+      "RUMBA",
+      "ESTAT"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.45 C01 Bewirtschaftung von Vermietungen, Verpachtungen, Baurechtsvergaben"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.50",
+    "name": "Objektübergabe an LB, Mieter",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "rueckgabe-aufloesung",
+    "groupLabel": "Rückgabe & Auflösung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.50.bpmn",
+    "description": "Übergabe des Objektes an interne Mieter (Leistungsbezüger) oder externe Mieter (Private).",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-XRICHX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-YARNOX"
+      }
+    ],
+    "tags": [
+      "Rückgabe",
+      "Auflösung"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.50 C01 Objektübergabe an LB Mieter"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.60",
+    "name": "Lösungsvorschläge Rückgabe",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "rueckgabe-aufloesung",
+    "groupLabel": "Rückgabe & Auflösung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.60.bpmn",
+    "description": "Lösungsvorschläge für die Rückgabe einer Anmiete oder für den Verkauf einer Liegenschaft erarbeiten.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-XRICHX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-YARNOX"
+      }
+    ],
+    "tags": [
+      "Rückgabe",
+      "Auflösung"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.60 C01 Lösungsvorschläge Rückgabe Anmietobjekt, Verkauf"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.70",
+    "name": "Auflösung Anmiete, Pacht",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "rueckgabe-aufloesung",
+    "groupLabel": "Rückgabe & Auflösung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.70.bpmn",
+    "description": "Kündigungen von Anmiete oder Pacht aussprechen oder entgegennehmen.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-XRICHX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-YARNOX"
+      }
+    ],
+    "tags": [
+      "Rückgabe",
+      "Auflösung"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.70 C01 Auflösung Anmiete Pacht"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.75",
+    "name": "Verurkundung Verkauf, Baurechtrückgabe",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "rueckgabe-aufloesung",
+    "groupLabel": "Rückgabe & Auflösung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.75.bpmn",
+    "description": "Vertrag für den Verkauf oder die Rückgabe eines Baurechtes beim Notar beurkunden.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-XRICHX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-YARNOX"
+      }
+    ],
+    "tags": [
+      "Rückgabe",
+      "Auflösung"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.75 C01 Verurkundung Verkauf Baurechtrückgabe"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.80",
+    "name": "Objektrücknahme von LB, Mieter",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "rueckgabe-aufloesung",
+    "groupLabel": "Rückgabe & Auflösung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.80.bpmn",
+    "description": "Rücknahme von Räumlichkeiten von internen Mietern (Leistungsbezügern) oder von privaten Mietern.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-XRICHX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-YARNOX"
+      }
+    ],
+    "tags": [
+      "Rückgabe",
+      "Auflösung"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.80 C01 Objektrücknahme von LB, Mieter"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.90",
+    "name": "Objektrückgabe",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "rueckgabe-aufloesung",
+    "groupLabel": "Rückgabe & Auflösung",
+    "bpmn": "assets/bpmn/TQ.21.00.00.90.bpmn",
+    "description": "Rückgabe der Räumlichkeiten nach der Kündigung einer Anmiete oder dem Verkauf.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-VBERGX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-XRICHX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-YARNOX"
+      }
+    ],
+    "tags": [
+      "Rückgabe",
+      "Auflösung"
+    ],
+    "systems": [
+      "SAP RE",
+      "GEVER"
+    ],
+    "standards": [
+      "Gültige Checkliste: TQ.21.00.00.90 C01 Objektrückgabe"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.96",
+    "name": "Immostammdaten Energiedatenverwaltung",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "stammdaten-support",
+    "groupLabel": "Stammdaten & Support",
+    "bpmn": "assets/bpmn/TQ.21.00.00.96.bpmn",
+    "description": "Immobilienstammdaten und Energiedaten im SAP erfassen und verschiedenen Bereichen zur Verfügung stellen.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-11KELLX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-11KELLX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-10NEUMX"
+      }
+    ],
+    "tags": [
+      "Stammdaten",
+      "Support"
+    ],
+    "systems": [
+      "SAP RE",
+      "RUMBA",
+      "ESTAT",
+      "CAFM",
+      "BIM"
+    ],
+    "standards": [
+      "Konzept Energiebezugsflächen + Anhang Flächendefinitionen SIA416",
+      "TQ.21.00.00.96 A04 Erfassen Immobilienstammdaten",
+      "TQ.21.00.00.96 A05 Handbuch Erfassen Immobilienstammdaten im SAP",
+      "TQ.21.00.00.96 A06 Entscheidungsbaum WE GE GR Nummer",
+      "TQ.21.00.00.96 A07 Wirtschaftseinheit Beispiele",
+      "TQ.21.00.00.96 C01 Datenfluss Immostammdaten"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.97",
+    "name": "Aktenmanagement",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "stammdaten-support",
+    "groupLabel": "Stammdaten & Support",
+    "bpmn": "assets/bpmn/TQ.21.00.00.97.bpmn",
+    "description": "Übernahme der Projekt- und Bewirtschaftungsakten aus Bauprojekten (nur Papier), Bewirtschaftung und Langzeitablage.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-11KELLX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-11KELLX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-10NEUMX"
+      }
+    ],
+    "tags": [
+      "Stammdaten",
+      "Support"
+    ],
+    "systems": [
+      "SAP RE",
+      "RUMBA",
+      "ESTAT",
+      "CAFM",
+      "BIM"
+    ],
+    "standards": [
+      "Organisationsvorschriften BBL",
+      "Weisungen über die Projekt- und Bewirtschaftungsakten"
+    ]
+  },
+  {
+    "processId": "TQ.21.00.00.99",
+    "name": "Planverwaltung / BIM",
+    "area": "immobilienmanagement",
+    "areaCode": "TQ.21.00",
+    "areaLabel": "Immobilienmanagement (K0)",
+    "group": "stammdaten-support",
+    "groupLabel": "Stammdaten & Support",
+    "bpmn": "assets/bpmn/TQ.21.00.00.99.bpmn",
+    "description": "Übernahme und Upload der Pläne und BIM-Modelle in das Planverwaltungstool (digitales Planarchiv) aus Bauprojekten sowie digitale Plangrundlagen aus Anmiete und Kauf; Bewirtschaftung und Schulung.",
+    "status": "VALID",
+    "version": "1.0",
+    "updated": "2026-08-04",
+    "responsiblePersons": [
+      {
+        "role": "Prozesseigner",
+        "admindirId": "p-11KELLX"
+      },
+      {
+        "role": "Prozessverantwortung",
+        "admindirId": "p-11KELLX"
+      },
+      {
+        "role": "Fachexpertise",
+        "admindirId": "p-10NEUMX"
+      }
+    ],
+    "tags": [
+      "Stammdaten",
+      "Support"
+    ],
+    "systems": [
+      "SAP RE",
+      "RUMBA",
+      "ESTAT",
+      "CAFM",
+      "BIM"
+    ],
+    "standards": [
+      "Weisungen CAD-Daten",
+      "Weisungen CAFM"
+    ]
+  }
+]

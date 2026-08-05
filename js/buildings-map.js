@@ -6,7 +6,7 @@
 // Positron (worldwide). Marks are HTML markers (a handful of points) — simple,
 // accessible and reliably rendered, incl. headless.
 
-import { escape as esc } from './components.js';
+import { escape as esc, loading } from './components.js';
 import { m2 } from './format.js';
 
 const MAPLIBRE_VER = '4.7.1';
@@ -82,10 +82,8 @@ function showMapSpinner(container, map) {
   if (!container) return;
   const sp = document.createElement('div');
   sp.className = 'map-spinner';
-  sp.setAttribute('role', 'status');
-  sp.innerHTML = '<span class="icon icon--2xl icon--spin" aria-hidden="true"'
-    + ' style="-webkit-mask-image:url(\'assets/icons/Spinner.svg\');mask-image:url(\'assets/icons/Spinner.svg\')"></span>'
-    + '<span class="sr-only">Karte wird geladen…</span>';
+  // role="status" bringt C.loading selbst mit — hier nur die Überlagerung.
+  sp.innerHTML = loading({ label: 'Karte wird geladen…', hideLabel: true, size: '2xl' });
   container.appendChild(sp);
   let done = false;
   const clear = () => { if (done) return; done = true; sp.remove(); };

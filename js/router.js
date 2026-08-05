@@ -112,6 +112,7 @@ const APPS = {
   'media-library':   './apps/media-library.js',
   'tenancies':       './apps/tenancies.js',
   'metadata-catalog':'./apps/metadata-catalog.js',
+  'process-docs':    './apps/process-docs.js',
 };
 // Which top-nav item to highlight for pages and apps that are not themselves a
 // top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
@@ -122,7 +123,7 @@ const SECTION_OF = {
   'portfolio': 'data', 'projects': 'data',
   'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
   'document-archive': 'data', 'media-library': 'data', 'api-docs': 'data',
-  'tenancies': 'data', 'metadata-catalog': 'data',
+  'tenancies': 'data', 'metadata-catalog': 'data', 'process-docs': 'data',
 };
 
 function parseHash() {
@@ -368,8 +369,8 @@ async function dispatch() {
   // nach dem Rendern (Review a11y-loading-1).
   if (!isStateChange) {
     C.announce('Inhalt wird geladen…');
-    mount.innerHTML = `<div class="container section" role="status" aria-busy="true">`
-      + `${C.icon('Spinner', 'icon--2xl icon--spin')}<span class="sr-only">Inhalt wird geladen…</span></div>`;
+    mount.innerHTML = `<div class="container section" aria-busy="true">`
+      + C.loading({ label: 'Inhalt wird geladen…', hideLabel: true, size: '2xl' }) + `</div>`;
   }
   try {
     const mod = await import(modPath);

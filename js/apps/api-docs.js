@@ -25,8 +25,16 @@ import { DATEN } from '../crumbs.js';
 // Brotkrumen-Präfix der Route: die Seite hängt unter dem Datenbezug-Katalog.
 const CRUMBS = [...DATEN, { label: 'Datenbezug und API Verzeichnis', href: '#/data/catalog' }];
 
-// Aufschiebbare Bestände dieser Route — sie speisen die Live-Beispiele.
-export const needs = ['applications', 'buildings', 'datasets', 'documents', 'projects'];
+// Aufschiebbare Bestände dieser Route — sie speisen die Live-Beispiele. Die
+// API deckt SEIT 2026-08-04 den ganzen Datenbestand (englische Ressourcen-
+// namen, deckungsgleich mit data/*) — entsprechend breit ist die Liste; alles
+// lokale JSON-Dateien, einmal geladen und dann aus dem core-Cache.
+export const needs = [
+  'services', 'applications', 'news', 'contacts', 'documents', 'projects',
+  'media', 'datasets', 'buildings', 'parcels', 'tenancies', 'floors', 'spaces',
+  'assets', 'contracts', 'costs', 'areas', 'buildingContacts', 'landcovers',
+  'businessObjects', 'systemTables',
+];
 
 // --- swagger-ui-dist lazy vom CDN (Muster: loadMapLibre, buildings-map.js) ---
 const SWAGGER_VER = '5.17.14';
@@ -104,6 +112,10 @@ export default async function render(ctx) {
 
   let specs = {};
   try { specs = await fetchJSON('data/api-specs.json', { shape: 'object' }); } catch (e) { /* unten behandelt */ }
+  // Prozessdefinitionen liest sonst nur die Engine — für die Live-Beispiele
+  // der Ressource process-definitions einmal direkt dazuladen (kein core-Bestand).
+  let processDefs = [];
+  try { processDefs = await fetchJSON('data/process-definitions.json', { shape: 'array' }); } catch (e) { /* Beispiele entfallen */ }
   if (stale && stale()) return;
   const spec = specs[specId];
 
@@ -118,28 +130,57 @@ export default async function render(ctx) {
   setTitle(spec.title);
 
   // --- Live-Beispiele: echte Portaldaten, wo ein Endpunkt gedeckt ist -------
+  // Schlüssel-Konvention: '<tag>.<endpunkt>' aus der Spezifikation ("live").
+  // Antwort-SCHLÜSSEL englisch (Datenmodell = data/*), WERTE aus den Beständen
+  // (Status-Kennungen usw. bleiben, wie die Daten sie führen).
   const t = core.t;
   const pick = (o, keys) => { const r = {}; if (o) for (const k of keys) r[k] = o[k]; return r; };
+  const D = core.data;   // Rohbestände der Register ohne eigenen Listen-Accessor
   const LIVE = {
-    'vorgaenge.list': () => [
-      { id: 'V-2026-0042', serviceId: 'raumbedarf-melden', status: 'in_arbeit', created: '2026-07-20' },
-      { id: 'V-2026-0039', serviceId: 'stoerung-melden', status: 'abgeschlossen', created: '2026-07-14' },
-    ],
+    'process-definitions.list': () => processDefs.slice(0, 3).map((d) => ({ defId: d.defId, name: d.name, serviceId: d.serviceId, steps: (d.steps || []).length })),
+    'process-definitions.one': () => { const d = processDefs[0]; return d ? { defId: d.defId, name: d.name, serviceId: d.serviceId, steps: (d.steps || []).slice(0, 3).map((s) => pick(s, ['status', 'label', 'role', 'kind'])) } : {}; },
     // Dienstleistungen heissen `title`, Anwendungen `name` — die beiden Entitäten
     // stimmen nicht überein (M19).
-    'dienstleistungen.list': () => core.services().slice(0, 5).map((s) => ({ serviceId: s.serviceId, title: s.title, domain: s.domain })),
-    'dienstleistungen.one': () => pick(core.services()[0], ['serviceId', 'title', 'domain', 'description']),
-    'anwendungen.list': () => core.applications().slice(0, 5).map((a) => ({ appId: a.appId, name: a.name, group: a.group, audience: a.audience })),
-    'anwendungen.one': () => pick(core.applications()[0], ['appId', 'name', 'group', 'audience', 'description']),
-    'liegenschaften.list': () => core.buildings().slice(0, 3).map((b) => ({ bblId: b.bbl_id, name: b.name, land: b.land, kanton: b.canton, gf: b.gf, eigentum: b.ownership, status: b.status })),
-    'liegenschaften.one': () => { const b = core.buildings()[0]; return b ? { bblId: b.bbl_id, name: b.name, adresse: `${b.street}, ${b.zip} ${b.city}`, land: b.land, gf: b.gf, hnf: b.hnf, eigentum: b.ownership, status: b.status } : {}; },
-    'liegenschaften.docs': () => { const b = core.buildings()[0]; return core.documentsForBuilding(b ? b.bbl_id : '').slice(0, 3).map((d) => ({ docId: d.docId, titel: d.title, format: d.format })); },
-    'bauprojekte.list': () => core.projects().slice(0, 3).map((p) => ({ projectId: p.projectId, name: p.name, siaPhase: p.siaPhaseLabel, status: p.status })),
-    'bauprojekte.one': () => pick(core.projects()[0], ['projectId', 'name', 'status', 'plannedTotalCost', 'siaPhaseLabel']),
-    'dokumente.list': () => core.documents().slice(0, 3).map((d) => ({ docId: d.docId, titel: d.title, format: d.format, klassifizierung: d.classification })),
-    'datensaetze.list': () => core.datasets().slice(0, 4).map((d) => ({ id: d.id, titel: t(d.title), thema: t(d.meta.thema) })),
-    'datensaetze.one': () => { const d = core.datasets()[0]; return d ? { id: d.id, titel: t(d.title), thema: t(d.meta.thema), formate: (d.distributions || []).map((x) => x.dateiformat || x.format) } : {}; },
-    'suche': () => ({ query: 'bau', treffer: { dienstleistungen: 3, anwendungen: 1, dokumente: 4, weisungen: 2 } }),
+    'services.list': () => core.services().slice(0, 5).map((s) => ({ serviceId: s.serviceId, title: s.title, domain: s.domain })),
+    'services.one': () => pick(core.services()[0], ['serviceId', 'title', 'domain', 'description']),
+    'applications.list': () => core.applications().slice(0, 5).map((a) => ({ appId: a.appId, name: a.name, group: a.group, audience: a.audience })),
+    'applications.one': () => pick(core.applications()[0], ['appId', 'name', 'group', 'audience', 'description']),
+    'buildings.list': () => core.buildings().slice(0, 3).map((b) => ({ bblId: b.bbl_id, name: b.name, land: b.land, canton: b.canton, gf: b.gf, ownership: b.ownership, status: b.status })),
+    'buildings.one': () => { const b = core.buildings()[0]; return b ? { bblId: b.bbl_id, name: b.name, address: `${b.street}, ${b.zip} ${b.city}`, land: b.land, gf: b.gf, hnf: b.hnf, ownership: b.ownership, status: b.status } : {}; },
+    'buildings.floors': () => (D.floors || []).slice(0, 3).map((f) => pick(f, ['floorId', 'buildingId', 'key', 'label', 'level', 'areaGross', 'rooms'])),
+    'buildings.spaces': () => (D.spaces || []).slice(0, 3).map((s) => pick(s, ['spaceId', 'floorId', 'buildingId', 'roomNumber', 'useType', 'useLabel'])),
+    'buildings.tenancies': () => core.tenancies().slice(0, 2).map((x) => pick(x, ['tenancyId', 've', 'veName', 'department', 'buildingId'])),
+    'buildings.contacts': () => (D.buildingContacts || []).slice(0, 2).map((c) => pick(c, ['contactId', 'name', 'role', 'organisation', 'email', 'isPrimary'])),
+    'buildings.documents': () => { const b = core.buildings()[0]; return core.documentsForBuilding(b ? b.bbl_id : '').slice(0, 3).map((d) => pick(d, ['docId', 'title', 'format'])); },
+    'buildings.media': () => (D.media || []).filter((m) => m.buildingId).slice(0, 2).map((m) => pick(m, ['mediaId', 'mediaType', 'title', 'buildingId', 'date'])),
+    'buildings.assets': () => (D.assets || []).slice(0, 2).map((a) => pick(a, ['assetId', 'name', 'category', 'status', 'buildingId'])),
+    'buildings.contracts': () => (D.contracts || []).slice(0, 2).map((c) => pick(c, ['contractId', 'type', 'contractPartner', 'validUntil', 'status', 'buildingId'])),
+    'buildings.costs': () => (D.costs || []).slice(0, 2).map((c) => pick(c, ['costId', 'costGroup', 'costType', 'amount', 'currency', 'period', 'buildingId'])),
+    'buildings.area-measurements': () => (D.areas || []).slice(0, 2).map((a) => pick(a, ['areaMeasurementId', 'type', 'value', 'unit', 'standard', 'buildingId'])),
+    'parcels.list': () => core.parcels().slice(0, 3).map((p) => ({ bblId: p.bbl_id, name: p.name, egrid: p.egrid, city: p.city, land: p.land, gsf: p.gsf, ownership: p.ownership })),
+    'parcels.one': () => { const p = core.parcels()[0]; return p ? { bblId: p.bbl_id, name: p.name, plotNumber: p.plotNumber, egrid: p.egrid, zone: p.zone, gsf: p.gsf, city: p.city, canton: p.canton, land: p.land, ownership: p.ownership } : {}; },
+    'parcels.landcovers': () => (D.landcovers || []).slice(0, 3).map((l) => pick(l, ['parcelId', 'buildingId', 'type', 'area'])),
+    'tenancies.list': () => core.tenancies().slice(0, 3).map((x) => pick(x, ['tenancyId', 'veName', 'department', 'buildingName', 'city'])),
+    'tenancies.one': () => { const x = core.tenancies()[0]; return x ? { ...pick(x, ['tenancyId', 've', 'veName', 'department', 'buildingId', 'buildingName']), floors: x.floors || [] } : {}; },
+    'projects.list': () => core.projects().slice(0, 3).map((p) => ({ projectId: p.projectId, name: p.name, siaPhase: p.siaPhaseLabel, status: p.status })),
+    'projects.one': () => pick(core.projects()[0], ['projectId', 'name', 'status', 'plannedTotalCost', 'siaPhaseLabel']),
+    'documents.list': () => core.documents().slice(0, 3).map((d) => pick(d, ['docId', 'title', 'format', 'classification'])),
+    'documents.one': () => pick(core.documents()[0], ['docId', 'title', 'type', 'category', 'format', 'sizeKB', 'year', 'classification']),
+    'media.list': () => core.media().slice(0, 3).map((m) => pick(m, ['mediaId', 'mediaType', 'title', 'buildingId', 'projectId', 'date'])),
+    'media.one': () => pick(core.media()[0], ['mediaId', 'mediaType', 'title', 'slug', 'buildingId', 'date', 'photographer']),
+    'news.list': () => core.news().slice(0, 3).map((n) => pick(n, ['id', 'title', 'date', 'source'])),
+    'news.one': () => pick(core.news()[0], ['id', 'title', 'date', 'source', 'teaser']),
+    'contacts.list': () => core.contacts().slice(0, 3).map((c) => pick(c, ['contactId', 'name', 'unit', 'role', 'email'])),
+    'contacts.one': () => pick(core.contacts()[0], ['contactId', 'name', 'unit', 'role', 'email', 'phone']),
+    'datasets.list': () => core.datasets().slice(0, 4).map((d) => ({ id: d.id, title: t(d.title), theme: t(d.meta.thema) })),
+    'datasets.one': () => { const d = core.datasets()[0]; return d ? { id: d.id, title: t(d.title), theme: t(d.meta.thema), formats: (d.distributions || []).map((x) => x.dateiformat || x.format) } : {}; },
+    'business-objects.list': () => core.businessObjects().slice(0, 3).map((o) => pick(o, ['objectId', 'name', 'domain', 'status'])),
+    'business-objects.one': () => { const o = core.businessObjects()[0]; return o ? { ...pick(o, ['objectId', 'name', 'domain', 'status']), attributes: (o.attributes || []).slice(0, 3).map((a) => a.name) } : {}; },
+    'system-tables.list': () => core.systemTables().slice(0, 3).map((x) => pick(x, ['tableId', 'system', 'systemName', 'name', 'type'])),
+    'system-tables.one': () => pick(core.systemTables()[0], ['tableId', 'system', 'schema', 'name', 'displayName', 'type']),
+    'reference-data.list': () => ({ lists: Object.keys(core.ref()) }),
+    // Zeigt gleich die Zielgruppen-Referenzliste — die jüngste des Kanons.
+    'reference-data.one': () => ({ list: 'audiences', items: core.ref().audiences || [] }),
   };
   const exampleFor = (ep) => {
     if (ep.live && LIVE[ep.live]) { try { return LIVE[ep.live](); } catch (e) { /* Beispiel aus der Spez */ } }
@@ -158,7 +199,7 @@ export default async function render(ctx) {
           alles doppelt. Server-Zeile, Authorize und die Ressourcen-Abschnitte
           liefern den Standard-Look darunter. */''}
     <div class="swagger-host" id="api-swagger">
-      <p class="muted" role="status">API-Dokumentation wird geladen…</p>
+      ${C.loading({ label: 'API-Dokumentation wird geladen…' })}
     </div>
   </div>`;
 

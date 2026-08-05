@@ -2432,8 +2432,14 @@ body.body--overlay-open .back-to-top-rail { display:none; }
    danach unverändert als normalen Block zurück (`place-items` auf dem fertigen
    Kartencontainer wäre ein Eingriff in fremdes Layout). Ohne :has()-Unterstützung
    steht der Platzhalter oben links: rein kosmetisch, kein Funktionsverlust. */
-.dash-map:has(> .dash-map__loading) { display:grid; place-items:center; }
-.dash-map__loading { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+.dash-map:has(> .loading) { display:grid; place-items:center; }
+
+/* Ladezustand (C.loading) — das EINE Muster für «lädt/verarbeitet»: das
+   CD-Spinner-Symbol (icon--spin; reduced-motion stoppt es über den Killswitch
+   unten) plus Wortlaut. Zentriert sich im gebenden Kasten; .map-spinner und
+   .dash-map liefern nur noch die Überlagerungs-Geometrie. */
+.loading { display:flex; align-items:center; justify-content:center; gap:0.75rem;
+  padding:2.5rem 1rem; color:var(--color-text-muted); font-size:var(--text-sm); }
 /* Zentrierter Ladehinweis ÜBER der Karte, bis Kacheln und Cluster stehen
    (showMapSpinner). z-index unter den MapLibre-Bedienelementen (die liegen bei 2). */
 .map-spinner { position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;
@@ -2553,6 +2559,15 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 /* Titel, Version und Beschreibung trägt der Portal-Seitenkopf (h1/pill-row/
    lead) — Swaggers eigener Info-Block stünde doppelt darunter. */
 .swagger-host .swagger-ui .information-container { display:none; }
+
+/* ── Prozessdokumentation: BPMN-Viewer (bpmn-js, #/app/process-docs) ─────────
+   Wie der Swagger-Host: die Bibliothek bringt ihre Stile mit (diagram-js/
+   bpmn-js vom CDN), hier nur Einbettung und Zoomleiste. Der Behälter braucht
+   eine feste Höhe — bpmn-js misst ihn beim Einpassen. */
+.bpmn-host { position:relative; height:34rem; border:1px solid var(--panel-border); background:#fff; }
+.bpmn-host .loading { height:100%; }
+.bpmn-toolbar { display:flex; gap:0.25rem; justify-content:flex-end; margin-bottom:0.5rem; }
+@media print { .bpmn-toolbar { display:none; } }
 
 /* ── Kompakte Katalogleiste (catbar) — geteilt: Portfolio, Dienstleistungen,
    Datenbezug, Anwendungen. Eine Zeile: Suche + Trefferzahl links; hinter EINER

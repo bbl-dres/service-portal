@@ -2018,15 +2018,15 @@
     "distributions": [
       {
         "name": {
-          "de": "Vorgänge API (REST)",
-          "fr": "API Vorgänge (REST)",
-          "it": "API Vorgänge (REST)",
-          "en": "Vorgänge API (REST)"
+          "de": "process-instances API (REST)",
+          "fr": "process-instances API (REST)",
+          "it": "process-instances API (REST)",
+          "en": "process-instances API (REST)"
         },
         "format": "REST",
         "identifikator": "f8c8e66e-3137-482e-ac5a-54bae41ca404",
-        "titel": "Vorgänge API (REST)",
-        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=vorgaenge",
+        "titel": "process-instances API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=process-instances",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
@@ -2040,15 +2040,37 @@
       },
       {
         "name": {
-          "de": "Dienstleistungen API (REST)",
-          "fr": "API Dienstleistungen (REST)",
-          "it": "API Dienstleistungen (REST)",
-          "en": "Dienstleistungen API (REST)"
+          "de": "process-definitions API (REST)",
+          "fr": "process-definitions API (REST)",
+          "it": "process-definitions API (REST)",
+          "en": "process-definitions API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "61cdf6ca-1173-4f04-a67a-ae2c2176f455",
+        "titel": "process-definitions API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=process-definitions",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Die Prozessdefinitionen hinter den Dienstleistungen — Schritte, Rollen und Statusmodell je Ablauf.",
+          "fr": "Die Prozessdefinitionen hinter den Dienstleistungen — Schritte, Rollen und Statusmodell je Ablauf.",
+          "it": "Die Prozessdefinitionen hinter den Dienstleistungen — Schritte, Rollen und Statusmodell je Ablauf.",
+          "en": "Die Prozessdefinitionen hinter den Dienstleistungen — Schritte, Rollen und Statusmodell je Ablauf."
+        }
+      },
+      {
+        "name": {
+          "de": "services API (REST)",
+          "fr": "services API (REST)",
+          "it": "services API (REST)",
+          "en": "services API (REST)"
         },
         "format": "REST",
         "identifikator": "42226422-27da-41fb-a047-261c13e5ce7e",
-        "titel": "Dienstleistungen API (REST)",
-        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=dienstleistungen",
+        "titel": "services API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=services",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
@@ -2062,15 +2084,15 @@
       },
       {
         "name": {
-          "de": "Anwendungen API (REST)",
-          "fr": "API Anwendungen (REST)",
-          "it": "API Anwendungen (REST)",
-          "en": "Anwendungen API (REST)"
+          "de": "applications API (REST)",
+          "fr": "applications API (REST)",
+          "it": "applications API (REST)",
+          "en": "applications API (REST)"
         },
         "format": "REST",
         "identifikator": "7c2651d9-2e0d-4891-a827-af5963fddc2f",
-        "titel": "Anwendungen API (REST)",
-        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=anwendungen",
+        "titel": "applications API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=applications",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
@@ -2084,37 +2106,81 @@
       },
       {
         "name": {
-          "de": "Liegenschaften API (REST)",
-          "fr": "API Liegenschaften (REST)",
-          "it": "API Liegenschaften (REST)",
-          "en": "Liegenschaften API (REST)"
+          "de": "buildings API (REST)",
+          "fr": "buildings API (REST)",
+          "it": "buildings API (REST)",
+          "en": "buildings API (REST)"
         },
         "format": "REST",
         "identifikator": "d62c4dfa-c474-4635-bb9d-c9a7083d3ed8",
-        "titel": "Liegenschaften API (REST)",
-        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=liegenschaften",
+        "titel": "buildings API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=buildings",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
         "lizenz": "terms_by",
         "bemerkungen": {
-          "de": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form.",
-          "fr": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form.",
-          "it": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form.",
-          "en": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form."
+          "de": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record (buildings.geojson) samt den daran hängenden Registern: Geschosse, Räume, Mietverhältnisse, Objektkontakte, Dokumente, Medien, Ausstattung, Verträge, Kosten und Flächenbemessungen.",
+          "fr": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record (buildings.geojson) samt den daran hängenden Registern: Geschosse, Räume, Mietverhältnisse, Objektkontakte, Dokumente, Medien, Ausstattung, Verträge, Kosten und Flächenbemessungen.",
+          "it": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record (buildings.geojson) samt den daran hängenden Registern: Geschosse, Räume, Mietverhältnisse, Objektkontakte, Dokumente, Medien, Ausstattung, Verträge, Kosten und Flächenbemessungen.",
+          "en": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record (buildings.geojson) samt den daran hängenden Registern: Geschosse, Räume, Mietverhältnisse, Objektkontakte, Dokumente, Medien, Ausstattung, Verträge, Kosten und Flächenbemessungen."
         }
       },
       {
         "name": {
-          "de": "Bauprojekte API (REST)",
-          "fr": "API Bauprojekte (REST)",
-          "it": "API Bauprojekte (REST)",
-          "en": "Bauprojekte API (REST)"
+          "de": "parcels API (REST)",
+          "fr": "parcels API (REST)",
+          "it": "parcels API (REST)",
+          "en": "parcels API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "9876cc6a-dd16-4b2c-9dfa-cde0f76775ba",
+        "titel": "parcels API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=parcels",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Grundstücke (parcels.geojson) mit amtlicher Vermessung (E-GRID, Zone) und Bodenbedeckung; verknüpft mit den Gebäuden über das WE-Segment der BBL-ID.",
+          "fr": "Grundstücke (parcels.geojson) mit amtlicher Vermessung (E-GRID, Zone) und Bodenbedeckung; verknüpft mit den Gebäuden über das WE-Segment der BBL-ID.",
+          "it": "Grundstücke (parcels.geojson) mit amtlicher Vermessung (E-GRID, Zone) und Bodenbedeckung; verknüpft mit den Gebäuden über das WE-Segment der BBL-ID.",
+          "en": "Grundstücke (parcels.geojson) mit amtlicher Vermessung (E-GRID, Zone) und Bodenbedeckung; verknüpft mit den Gebäuden über das WE-Segment der BBL-ID."
+        }
+      },
+      {
+        "name": {
+          "de": "tenancies API (REST)",
+          "fr": "tenancies API (REST)",
+          "it": "tenancies API (REST)",
+          "en": "tenancies API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "13468164-d24d-4593-a5d5-674bd5c8a9e6",
+        "titel": "tenancies API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=tenancies",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Mietverhältnisse der Verwaltungseinheiten in den Gebäuden des Bundes — Grundlage des Mietendenportals.",
+          "fr": "Mietverhältnisse der Verwaltungseinheiten in den Gebäuden des Bundes — Grundlage des Mietendenportals.",
+          "it": "Mietverhältnisse der Verwaltungseinheiten in den Gebäuden des Bundes — Grundlage des Mietendenportals.",
+          "en": "Mietverhältnisse der Verwaltungseinheiten in den Gebäuden des Bundes — Grundlage des Mietendenportals."
+        }
+      },
+      {
+        "name": {
+          "de": "projects API (REST)",
+          "fr": "projects API (REST)",
+          "it": "projects API (REST)",
+          "en": "projects API (REST)"
         },
         "format": "REST",
         "identifikator": "9fc04645-23a4-47ee-8435-5996bc2069d8",
-        "titel": "Bauprojekte API (REST)",
-        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=bauprojekte",
+        "titel": "projects API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=projects",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
@@ -2128,15 +2194,15 @@
       },
       {
         "name": {
-          "de": "Dokumente API (REST)",
-          "fr": "API Dokumente (REST)",
-          "it": "API Dokumente (REST)",
-          "en": "Dokumente API (REST)"
+          "de": "documents API (REST)",
+          "fr": "documents API (REST)",
+          "it": "documents API (REST)",
+          "en": "documents API (REST)"
         },
         "format": "REST",
         "identifikator": "0c3d14e3-57f1-48da-9662-e348836c6f22",
-        "titel": "Dokumente API (REST)",
-        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=dokumente",
+        "titel": "documents API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=documents",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
@@ -2150,15 +2216,81 @@
       },
       {
         "name": {
-          "de": "Datenkatalog API (REST)",
-          "fr": "API Datenkatalog (REST)",
-          "it": "API Datenkatalog (REST)",
-          "en": "Datenkatalog API (REST)"
+          "de": "media API (REST)",
+          "fr": "media API (REST)",
+          "it": "media API (REST)",
+          "en": "media API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "cd8dc205-e0f4-4037-9801-69dbb3d1f4ef",
+        "titel": "media API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=media",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Die Mediathek — Fotos, Pläne und historische Aufnahmen zu Gebäuden, Grundstücken und Projekten.",
+          "fr": "Die Mediathek — Fotos, Pläne und historische Aufnahmen zu Gebäuden, Grundstücken und Projekten.",
+          "it": "Die Mediathek — Fotos, Pläne und historische Aufnahmen zu Gebäuden, Grundstücken und Projekten.",
+          "en": "Die Mediathek — Fotos, Pläne und historische Aufnahmen zu Gebäuden, Grundstücken und Projekten."
+        }
+      },
+      {
+        "name": {
+          "de": "news API (REST)",
+          "fr": "news API (REST)",
+          "it": "news API (REST)",
+          "en": "news API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "dcf48eae-a4c9-4b33-85a6-261a54a260bf",
+        "titel": "news API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=news",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Mitteilungen des BBL — die News der Startseite und der Übersicht #/news.",
+          "fr": "Mitteilungen des BBL — die News der Startseite und der Übersicht #/news.",
+          "it": "Mitteilungen des BBL — die News der Startseite und der Übersicht #/news.",
+          "en": "Mitteilungen des BBL — die News der Startseite und der Übersicht #/news."
+        }
+      },
+      {
+        "name": {
+          "de": "contacts API (REST)",
+          "fr": "contacts API (REST)",
+          "it": "contacts API (REST)",
+          "en": "contacts API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "9a343ed0-2518-41cb-a131-201c3583360a",
+        "titel": "contacts API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=contacts",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Ansprechstellen der Dienstleistungen und Anwendungen (nicht die Objektkontakte — diese hängen am Gebäude).",
+          "fr": "Ansprechstellen der Dienstleistungen und Anwendungen (nicht die Objektkontakte — diese hängen am Gebäude).",
+          "it": "Ansprechstellen der Dienstleistungen und Anwendungen (nicht die Objektkontakte — diese hängen am Gebäude).",
+          "en": "Ansprechstellen der Dienstleistungen und Anwendungen (nicht die Objektkontakte — diese hängen am Gebäude)."
+        }
+      },
+      {
+        "name": {
+          "de": "datasets API (REST)",
+          "fr": "datasets API (REST)",
+          "it": "datasets API (REST)",
+          "en": "datasets API (REST)"
         },
         "format": "REST",
         "identifikator": "1e725dbf-d4e8-45fe-becd-07b5637f848f",
-        "titel": "Datenkatalog API (REST)",
-        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=datenkatalog",
+        "titel": "datasets API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=datasets",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
@@ -2172,24 +2304,90 @@
       },
       {
         "name": {
-          "de": "Suche API (REST)",
-          "fr": "API Suche (REST)",
-          "it": "API Suche (REST)",
-          "en": "Suche API (REST)"
+          "de": "business-objects API (REST)",
+          "fr": "business-objects API (REST)",
+          "it": "business-objects API (REST)",
+          "en": "business-objects API (REST)"
         },
         "format": "REST",
-        "identifikator": "b7497d40-2866-4ca9-be29-57a40c9c2146",
-        "titel": "Suche API (REST)",
-        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=suche",
+        "identifikator": "64ac8c8d-db4e-4dc0-b888-2ce78c9c2220",
+        "titel": "business-objects API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=business-objects",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
         "lizenz": "terms_by",
         "bemerkungen": {
-          "de": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen.",
-          "fr": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen.",
-          "it": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen.",
-          "en": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen."
+          "de": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen.",
+          "fr": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen.",
+          "it": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen.",
+          "en": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen."
+        }
+      },
+      {
+        "name": {
+          "de": "system-tables API (REST)",
+          "fr": "system-tables API (REST)",
+          "it": "system-tables API (REST)",
+          "en": "system-tables API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "564dac2b-1364-4a1f-b24a-a37eb315fef5",
+        "titel": "system-tables API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=system-tables",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
+          "fr": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
+          "it": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
+          "en": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste."
+        }
+      },
+      {
+        "name": {
+          "de": "reference-data API (REST)",
+          "fr": "reference-data API (REST)",
+          "it": "reference-data API (REST)",
+          "en": "reference-data API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "34432e5e-53bf-4133-a50d-0e1376607b28",
+        "titel": "reference-data API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=reference-data",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Die Referenzlisten des Portals (reference-data.json): Statusmodelle, Domänen, Zielgruppen, SIA-Phasen, NAW-Klassen …",
+          "fr": "Die Referenzlisten des Portals (reference-data.json): Statusmodelle, Domänen, Zielgruppen, SIA-Phasen, NAW-Klassen …",
+          "it": "Die Referenzlisten des Portals (reference-data.json): Statusmodelle, Domänen, Zielgruppen, SIA-Phasen, NAW-Klassen …",
+          "en": "Die Referenzlisten des Portals (reference-data.json): Statusmodelle, Domänen, Zielgruppen, SIA-Phasen, NAW-Klassen …"
+        }
+      },
+      {
+        "name": {
+          "de": "search API (REST)",
+          "fr": "search API (REST)",
+          "it": "search API (REST)",
+          "en": "search API (REST)"
+        },
+        "format": "REST",
+        "identifikator": "b7497d40-2866-4ca9-be29-57a40c9c2146",
+        "titel": "search API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=search",
+        "downloadUrl": "",
+        "status": "published",
+        "dateiformat": "JSON",
+        "lizenz": "terms_by",
+        "bemerkungen": {
+          "de": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Inhalte.",
+          "fr": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Inhalte.",
+          "it": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Inhalte.",
+          "en": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Inhalte."
         }
       }
     ],

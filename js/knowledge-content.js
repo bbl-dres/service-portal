@@ -209,6 +209,11 @@ export const AREAS = {
     sections: [
       { id: 'portal', title: 'Prozessportal', html: (C) => `
         <p>Die vollständige Prozesslandschaft des BBL — Abläufe, Rollen und Zuständigkeiten — wird im Prozessportal Archimap gepflegt.</p>
+        ${/* Begriffsklärung (wie Bautendokumentation ↔ Bauwerksdokumentation):
+              diese Seite ist der Wegweiser QUER über alle Prozesse; die
+              Prozesse des Immobilienmanagements stehen zusätzlich als eigene
+              Anwendung «Prozessdokumentation Bauten» im Portal. */''}
+        <p>Die Prozesse des Immobilienmanagements sind zusätzlich direkt im Portal dokumentiert — mit BPMN-Diagramm und Prozessschritten je Prozess: <a href="#/app/process-docs">Prozessdokumentation Bauten</a>.</p>
         <div class="row mt-4">
           ${/* CD Btn.vue: Icon im DOM zuerst, btn--icon-right dreht die
                 Reihenfolge; das Label trägt den .btn__text-Wickel. */''}

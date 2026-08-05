@@ -56,6 +56,10 @@ const DEFERRED = {
   // Attribut; `datasetId` an der Tabelle führt weiter in data/datasets.json.
   businessObjects:  'data/business-objects.json',
   systemTables:     'data/system-tables.json',
+  // Prozessdokumentation Bauten (#/app/process-docs): die Prozesse des
+  // Immobilienmanagements (L1–L3 denormalisiert am Datensatz, BPMN-Pfad je
+  // Prozess → assets/bpmn/). Die Diagramme selbst lädt die App je Detailseite.
+  processes:        'data/processes.json',
 };
 // data/data-products.json bleibt liegen (DataService- und Concept-Einträge für
 // einen künftigen Metadatenkatalog), wird aber von keiner Ansicht mehr gelesen
@@ -77,6 +81,7 @@ const AREA = {
   buildingContacts: 'Objektkontakte', landcovers: 'Bodenbedeckung',
   tenancies: 'Mietverhältnisse', floors: 'Geschosse', spaces: 'Räume',
   businessObjects: 'Geschäftsobjekte', systemTables: 'Systemtabellen',
+  processes: 'Prozesse',
 };
 
 // Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
@@ -284,6 +289,9 @@ export const core = {
   businessObject: (id) => find(DATA.businessObjects, 'objectId', id),
   systemTables: () => DATA.systemTables || [],
   systemTable: (id) => find(DATA.systemTables, 'tableId', id),
+  // Prozessdokumentation Bauten — flache Liste, Detailsuche über die processId.
+  processes: () => DATA.processes || [],
+  processDoc: (id) => find(DATA.processes, 'processId', id),
   dataDomains: () => (DATA.reference || {}).dataDomains || [],
   realisedBy: (tableId, field) => mapIndex().get(`${tableId}|${field}`) || [],
   realisationsOf: (o) => (o && o.attributes ? o.attributes : [])

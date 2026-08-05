@@ -87,6 +87,21 @@ export function badge(text, variant = 'gray', size = '') {
   return `<span class="badge badge--${variant}${size ? ' badge--' + size : ''}"><span class="badge__text">${escape(text)}</span></span>`;
 }
 
+// Ladezustand — das EINE Muster für «lädt / verarbeitet» (Nutzerentscheid
+// 2026-08-04): das CD-Spinner-Symbol (icon--spin; reduced-motion-Killswitch
+// in app.css) plus Wortlaut als Statuszeile. role="status" macht den Text zur
+// Live-Meldung für Screenreader; das Symbol ist dekorativ. Wortlaut-Kanon:
+// «<Gegenstand> wird geladen…», ohne Gegenstand «Wird geladen…». `hideLabel`
+// versteckt den Wortlaut sr-only, wo das Symbol optisch reicht (Router,
+// Karten-Overlay). Ersetzt die früheren Einzelbauten (Router-Inline,
+// map-spinner-Inline, dash-map__loading-Textzeile).
+export function loading({ label = 'Wird geladen…', hideLabel = false, size = 'xl' } = {}) {
+  return `<div class="loading" role="status">
+    ${icon('Spinner', `icon--${size} icon--spin`)}
+    <span class="${hideLabel ? 'sr-only' : 'loading__label'}">${escape(label)}</span>
+  </div>`;
+}
+
 const STATUS_VARIANT = {
   entwurf: 'gray', eingereicht: 'info', in_pruefung: 'warning', in_pruefung_gs: 'warning',
   in_pruefung_pfm: 'warning', rueckfrage: 'warning', in_arbeit: 'warning', triage: 'info',
@@ -1988,7 +2003,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 }
 
 export const C = {
-  icon, escape, badge, statusBadge, pageHeader, card, table, empty,
+  icon, escape, badge, statusBadge, loading, pageHeader, card, table, empty,
   mountBanner, openModal, openShareModal, wireShare, domainTile, announce, trapFocus, FOCUSABLE, notFound,
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,

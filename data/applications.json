@@ -302,6 +302,54 @@
     }
   },
   {
+    "appId": "prozessdokumentation",
+    "name": "Prozessdokumentation Bauten (Portal)",
+    "group": "Immobilien & Bau",
+    "icon": "Share",
+    "audience": [
+      "staff"
+    ],
+    "link": {
+      "kind": "app",
+      "href": "#/app/process-docs"
+    },
+    "description": "Die Prozesse des Immobilienmanagements als navigierbare Prozesslandkarte — BPMN-Diagramme, Prozessschritte und Verantwortlichkeiten je Prozess.",
+    "area": "buildings",
+    "subtitle": "Prozesslandkarte, BPMN-Diagramme und Prozessschritte",
+    "long": "Die Prozessdokumentation Bauten erschliesst die Prozesse des Immobilienmanagements über die Prozesshierarchie: vom Prozessbereich über die Prozessgruppe bis zum einzelnen Prozess. Jeder Prozess trägt sein BPMN-Diagramm, die aus dem Diagramm gelesenen Prozessschritte mit Rollen sowie Verantwortlichkeiten, Status und die unterstützenden Systeme. Die Diagramme folgen BPMN 2.0 und werden direkt im Portal dargestellt — von der Akquisition über Vollzug und Bewirtschaftung bis zur Rückgabe.",
+    "access": {
+      "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
+      "steps": [
+        "Anmeldung über eIAM mit dem Bundeskonto.",
+        "Die Dokumentation ist lesend; Prozesse pflegen die Prozessverantwortlichen des Immobilienmanagements."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Metadaten Katalog Bauten — die Geschäftsobjekte hinter den Prozessen",
+        "href": "#/app/metadata-catalog"
+      },
+      {
+        "label": "Dienstleistungen — die startbaren Vorgänge des Portals",
+        "href": "#/services"
+      }
+    ],
+    "related": [
+      "metadaten-katalog",
+      "liegenschaften-inventar"
+    ],
+    "contact": "immobilienmanagement",
+    "updated": "2026-08-04",
+    "bild": {
+      "src": "assets/images/applications/process-docs.jpg",
+      "titel": "Baustelle mit Kran (Symbolbild aus dem Helden-Pool)",
+      "credit": "Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/1541888946425-d81bb19240f5",
+      "bemerkung": "Kopie von assets/images/heroes/domain-a.jpg (Nachweis dort im README)."
+    }
+  },
+  {
     "appId": "datenportal",
     "name": "Datenportal (Portal)",
     "group": "Daten und Auswertungen",

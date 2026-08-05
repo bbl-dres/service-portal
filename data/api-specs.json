@@ -3,133 +3,297 @@
     "title": "BBL Kundenportal API",
     "version": "1.0.0",
     "format": "REST",
-    "description": "Backend-Schnittstellen des Kundenportals — die REST-Ressourcen, die das Portal für Vorgänge, Kataloge und Fachdaten benötigt. Prototyp-Vision: die Endpunkte sind gemockt, die «Ausprobieren»-Antworten stammen wo möglich aus den echten Portaldaten.",
+    "description": "Backend-Schnittstellen des Kundenportals — die REST-Ressourcen, die das Portal für Vorgänge, Kataloge und Fachdaten benötigt. Ressourcen-, Pfad- und Feldnamen folgen dem Datenmodell des Portals (englisch, wie die Bestände unter data/); die Beschreibungstexte sind deutsch. Prototyp-Vision: die Endpunkte sind gemockt, die Antwort-Beispiele stammen wo möglich aus den echten Portaldaten.",
     "baseUrl": "https://api.bbl.admin.ch/kundenportal/v1",
     "auth": "Bearer-Token (eIAM / CH-LOGIN)",
     "resources": [
       {
-        "tag": "vorgaenge",
-        "label": "Vorgänge",
+        "tag": "process-instances",
+        "label": "process-instances",
         "description": "Geschäftsfälle, die das Portal über die Prozess-Engine auslöst und verfolgt (Raumbedarf, Störungsmeldung, Beschaffung …).",
         "endpoints": [
-          { "method": "GET", "path": "/vorgaenge", "summary": "Vorgänge der angemeldeten Person auflisten",
+          { "method": "GET", "path": "/process-instances", "summary": "Vorgänge der angemeldeten Person auflisten",
             "params": [
-              { "name": "status", "in": "query", "type": "string", "desc": "Filter nach Status (offen, in_arbeit, abgeschlossen)" },
+              { "name": "status", "in": "query", "type": "string", "desc": "Filter nach Status (eingereicht, in_arbeit, abgeschlossen …)" },
               { "name": "limit", "in": "query", "type": "integer", "desc": "Maximale Anzahl (Default 20)" }
             ],
-            "responses": { "200": "Liste von Vorgängen" }, "live": "vorgaenge.list" },
-          { "method": "POST", "path": "/vorgaenge", "summary": "Neuen Vorgang aus einer Dienstleistung erstellen",
+            "responses": { "200": "Liste von Vorgängen" },
+            "example": [
+              { "id": "V-2026-0042", "serviceId": "raumbedarf-melden", "status": "in_arbeit", "created": "2026-07-20" },
+              { "id": "V-2026-0039", "serviceId": "stoerung-melden", "status": "abgeschlossen", "created": "2026-07-14" }
+            ] },
+          { "method": "POST", "path": "/process-instances", "summary": "Neuen Vorgang aus einer Dienstleistung erstellen",
             "body": { "serviceId": "raumbedarf-melden", "payload": { "org": "GS-EFD", "flaeche_m2": 40, "begruendung": "Zusätzlicher Arbeitsplatz" } },
             "responses": { "201": "Vorgang erstellt", "400": "Validierung fehlgeschlagen" },
-            "example": { "id": "V-2026-0042", "serviceId": "raumbedarf-melden", "status": "offen", "created": "2026-07-25T09:12:00Z", "steps": [{ "id": "eingang", "state": "aktiv" }] } },
-          { "method": "GET", "path": "/vorgaenge/{id}", "summary": "Einen Vorgang mit Verlauf abrufen",
+            "example": { "id": "V-2026-0042", "serviceId": "raumbedarf-melden", "status": "eingereicht", "created": "2026-07-25T09:12:00Z", "steps": [{ "status": "eingereicht", "state": "aktiv" }] } },
+          { "method": "GET", "path": "/process-instances/{id}", "summary": "Einen Vorgang mit Verlauf abrufen",
             "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "Vorgangs-ID, z. B. V-2026-0042" }],
             "responses": { "200": "Vorgang", "404": "Nicht gefunden" },
-            "example": { "id": "V-2026-0042", "serviceId": "raumbedarf-melden", "status": "in_arbeit", "steps": [{ "id": "eingang", "state": "erledigt" }, { "id": "pruefung", "state": "aktiv" }] } },
-          { "method": "POST", "path": "/vorgaenge/{id}/aktionen", "summary": "Prozessschritt auslösen (weiterleiten, abschliessen)",
+            "example": { "id": "V-2026-0042", "serviceId": "raumbedarf-melden", "status": "in_arbeit", "steps": [{ "status": "eingereicht", "state": "erledigt" }, { "status": "in_pruefung_gs", "state": "aktiv" }] } },
+          { "method": "POST", "path": "/process-instances/{id}/actions", "summary": "Prozessschritt auslösen (weiterleiten, abschliessen)",
             "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "Vorgangs-ID" }],
-            "body": { "aktion": "weiterleiten", "kommentar": "Freigabe erteilt" },
+            "body": { "action": "weiterleiten", "comment": "Freigabe erteilt" },
             "responses": { "200": "Neuer Status", "409": "Aktion im aktuellen Status nicht erlaubt" },
-            "example": { "id": "V-2026-0042", "status": "in_arbeit", "aktiverSchritt": "pruefung" } }
+            "example": { "id": "V-2026-0042", "status": "in_arbeit", "activeStep": "in_pruefung_gs" } }
         ]
       },
       {
-        "tag": "dienstleistungen",
-        "label": "Dienstleistungen",
+        "tag": "process-definitions",
+        "label": "process-definitions",
+        "description": "Die Prozessdefinitionen hinter den Dienstleistungen — Schritte, Rollen und Statusmodell je Ablauf.",
+        "endpoints": [
+          { "method": "GET", "path": "/process-definitions", "summary": "Prozessdefinitionen auflisten",
+            "responses": { "200": "Liste von Prozessdefinitionen" }, "live": "process-definitions.list" },
+          { "method": "GET", "path": "/process-definitions/{defId}", "summary": "Eine Prozessdefinition mit Schritten abrufen",
+            "params": [{ "name": "defId", "in": "path", "type": "string", "required": true, "desc": "defId, z. B. raumbedarf" }],
+            "responses": { "200": "Prozessdefinition", "404": "Nicht gefunden" }, "live": "process-definitions.one" }
+        ]
+      },
+      {
+        "tag": "services",
+        "label": "services",
         "description": "Der Dienstleistungskatalog des BBL — Einstiegspunkte, Formulare und zugehörige Weisungen.",
         "endpoints": [
-          { "method": "GET", "path": "/dienstleistungen", "summary": "Dienstleistungen auflisten",
-            "params": [{ "name": "domain", "in": "query", "type": "string", "desc": "Filter nach Themenbereich" }],
-            "responses": { "200": "Liste von Dienstleistungen" }, "live": "dienstleistungen.list" },
-          { "method": "GET", "path": "/dienstleistungen/{id}", "summary": "Eine Dienstleistung mit Details abrufen",
-            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "serviceId" }],
-            "responses": { "200": "Dienstleistung", "404": "Nicht gefunden" }, "live": "dienstleistungen.one" }
+          { "method": "GET", "path": "/services", "summary": "Dienstleistungen auflisten",
+            "params": [{ "name": "domain", "in": "query", "type": "string", "desc": "Filter nach Themenbereich (A, B, U …)" }],
+            "responses": { "200": "Liste von Dienstleistungen" }, "live": "services.list" },
+          { "method": "GET", "path": "/services/{serviceId}", "summary": "Eine Dienstleistung mit Details abrufen",
+            "params": [{ "name": "serviceId", "in": "path", "type": "string", "required": true, "desc": "serviceId, z. B. raumbedarf-melden" }],
+            "responses": { "200": "Dienstleistung", "404": "Nicht gefunden" }, "live": "services.one" }
         ]
       },
       {
-        "tag": "anwendungen",
-        "label": "Anwendungen",
+        "tag": "applications",
+        "label": "applications",
         "description": "Das Anwendungsverzeichnis — Fachanwendungen mit Einstieg, Berechtigung und Ansprechstelle.",
         "endpoints": [
-          { "method": "GET", "path": "/anwendungen", "summary": "Anwendungen auflisten",
-            "params": [{ "name": "bereich", "in": "query", "type": "string", "desc": "bauten | logistik | zentral" }],
-            "responses": { "200": "Liste von Anwendungen" }, "live": "anwendungen.list" },
-          { "method": "GET", "path": "/anwendungen/{id}", "summary": "Eine Anwendung abrufen",
-            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "appId" }],
-            "responses": { "200": "Anwendung", "404": "Nicht gefunden" }, "live": "anwendungen.one" }
+          { "method": "GET", "path": "/applications", "summary": "Anwendungen auflisten",
+            "params": [{ "name": "area", "in": "query", "type": "string", "desc": "buildings | logistics | central | federal" }],
+            "responses": { "200": "Liste von Anwendungen" }, "live": "applications.list" },
+          { "method": "GET", "path": "/applications/{appId}", "summary": "Eine Anwendung abrufen",
+            "params": [{ "name": "appId", "in": "path", "type": "string", "required": true, "desc": "appId, z. B. liegenschaften-inventar" }],
+            "responses": { "200": "Anwendung", "404": "Nicht gefunden" }, "live": "applications.one" }
         ]
       },
       {
-        "tag": "liegenschaften",
-        "label": "Liegenschaften",
-        "description": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record. Proxy auf die Liegenschaften-Quelle mit portalfreundlicher Form.",
+        "tag": "buildings",
+        "label": "buildings",
+        "description": "Stammdaten der Gebäude aus dem SAP-RE-FX-Golden-Record (buildings.geojson) samt den daran hängenden Registern: Geschosse, Räume, Mietverhältnisse, Objektkontakte, Dokumente, Medien, Ausstattung, Verträge, Kosten und Flächenbemessungen.",
         "endpoints": [
-          { "method": "GET", "path": "/liegenschaften", "summary": "Liegenschaften auflisten",
+          { "method": "GET", "path": "/buildings", "summary": "Gebäude auflisten",
             "params": [
               { "name": "land", "in": "query", "type": "string", "desc": "Filter nach Land (CH, DE, US …)" },
               { "name": "status", "in": "query", "type": "string", "desc": "Aktiv | Abgang | Löschvermerk" },
               { "name": "limit", "in": "query", "type": "integer", "desc": "Maximale Anzahl" }
             ],
-            "responses": { "200": "Liste von Liegenschaften" }, "live": "liegenschaften.list" },
-          { "method": "GET", "path": "/liegenschaften/{bblId}", "summary": "Eine Liegenschaft über die BBL-ID abrufen",
+            "responses": { "200": "Liste von Gebäuden" }, "live": "buildings.list" },
+          { "method": "GET", "path": "/buildings/{bblId}", "summary": "Ein Gebäude über die BBL-ID abrufen",
             "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID (SAP RE-FX), z. B. 1080/4840/AF" }],
-            "responses": { "200": "Liegenschaft", "404": "Nicht gefunden" }, "live": "liegenschaften.one" },
-          { "method": "GET", "path": "/liegenschaften/{bblId}/dokumente", "summary": "Verknüpfte Dokumente einer Liegenschaft",
+            "responses": { "200": "Gebäude", "404": "Nicht gefunden" }, "live": "buildings.one" },
+          { "method": "GET", "path": "/buildings/{bblId}/floors", "summary": "Geschosse eines Gebäudes",
             "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
-            "responses": { "200": "Liste von Dokumenten" }, "live": "liegenschaften.docs" }
+            "responses": { "200": "Liste von Geschossen" }, "live": "buildings.floors" },
+          { "method": "GET", "path": "/buildings/{bblId}/spaces", "summary": "Räume eines Gebäudes",
+            "params": [
+              { "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" },
+              { "name": "floorId", "in": "query", "type": "string", "desc": "Nur Räume dieses Geschosses" }
+            ],
+            "responses": { "200": "Liste von Räumen" }, "live": "buildings.spaces" },
+          { "method": "GET", "path": "/buildings/{bblId}/tenancies", "summary": "Mietverhältnisse in einem Gebäude",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
+            "responses": { "200": "Liste von Mietverhältnissen" }, "live": "buildings.tenancies" },
+          { "method": "GET", "path": "/buildings/{bblId}/contacts", "summary": "Objektkontakte eines Gebäudes",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
+            "responses": { "200": "Liste von Objektkontakten" }, "live": "buildings.contacts" },
+          { "method": "GET", "path": "/buildings/{bblId}/documents", "summary": "Verknüpfte Dokumente eines Gebäudes",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
+            "responses": { "200": "Liste von Dokumenten" }, "live": "buildings.documents" },
+          { "method": "GET", "path": "/buildings/{bblId}/media", "summary": "Medien (Fotos, Pläne) eines Gebäudes",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
+            "responses": { "200": "Liste von Medien" }, "live": "buildings.media" },
+          { "method": "GET", "path": "/buildings/{bblId}/assets", "summary": "Ausstattung eines Gebäudes",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
+            "responses": { "200": "Liste von Ausstattungsgegenständen" }, "live": "buildings.assets" },
+          { "method": "GET", "path": "/buildings/{bblId}/contracts", "summary": "Verträge eines Gebäudes",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
+            "responses": { "200": "Liste von Verträgen" }, "live": "buildings.contracts" },
+          { "method": "GET", "path": "/buildings/{bblId}/costs", "summary": "Kosten eines Gebäudes",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
+            "responses": { "200": "Liste von Kostenpositionen" }, "live": "buildings.costs" },
+          { "method": "GET", "path": "/buildings/{bblId}/area-measurements", "summary": "Flächenbemessungen eines Gebäudes",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID" }],
+            "responses": { "200": "Liste von Flächenbemessungen" }, "live": "buildings.area-measurements" }
         ]
       },
       {
-        "tag": "bauprojekte",
-        "label": "Bauprojekte",
+        "tag": "parcels",
+        "label": "parcels",
+        "description": "Grundstücke (parcels.geojson) mit amtlicher Vermessung (E-GRID, Zone) und Bodenbedeckung; verknüpft mit den Gebäuden über das WE-Segment der BBL-ID.",
+        "endpoints": [
+          { "method": "GET", "path": "/parcels", "summary": "Grundstücke auflisten",
+            "params": [
+              { "name": "land", "in": "query", "type": "string", "desc": "Filter nach Land (CH, DE, US …)" },
+              { "name": "limit", "in": "query", "type": "integer", "desc": "Maximale Anzahl" }
+            ],
+            "responses": { "200": "Liste von Grundstücken" }, "live": "parcels.list" },
+          { "method": "GET", "path": "/parcels/{bblId}", "summary": "Ein Grundstück über die BBL-ID abrufen",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID des Grundstücks, z. B. 1080/4840/01" }],
+            "responses": { "200": "Grundstück", "404": "Nicht gefunden" }, "live": "parcels.one" },
+          { "method": "GET", "path": "/parcels/{bblId}/landcovers", "summary": "Bodenbedeckung eines Grundstücks (AV-Landcover)",
+            "params": [{ "name": "bblId", "in": "path", "type": "string", "required": true, "desc": "BBL-ID des Grundstücks" }],
+            "responses": { "200": "Liste von Bodenbedeckungsflächen" }, "live": "parcels.landcovers" }
+        ]
+      },
+      {
+        "tag": "tenancies",
+        "label": "tenancies",
+        "description": "Mietverhältnisse der Verwaltungseinheiten in den Gebäuden des Bundes — Grundlage des Mietendenportals.",
+        "endpoints": [
+          { "method": "GET", "path": "/tenancies", "summary": "Mietverhältnisse auflisten",
+            "params": [
+              { "name": "department", "in": "query", "type": "string", "desc": "Filter nach Departement (EFD, EDI …)" },
+              { "name": "buildingId", "in": "query", "type": "string", "desc": "Nur Mietverhältnisse dieses Gebäudes (BBL-ID)" }
+            ],
+            "responses": { "200": "Liste von Mietverhältnissen" }, "live": "tenancies.list" },
+          { "method": "GET", "path": "/tenancies/{tenancyId}", "summary": "Ein Mietverhältnis mit Geschossen abrufen",
+            "params": [{ "name": "tenancyId", "in": "path", "type": "string", "required": true, "desc": "tenancyId" }],
+            "responses": { "200": "Mietverhältnis", "404": "Nicht gefunden" }, "live": "tenancies.one" }
+        ]
+      },
+      {
+        "tag": "projects",
+        "label": "projects",
         "description": "Neu- und Umbauprojekte des Bundes mit SIA-Phase, Kosten und Status.",
         "endpoints": [
-          { "method": "GET", "path": "/bauprojekte", "summary": "Bauprojekte auflisten",
-            "params": [{ "name": "status", "in": "query", "type": "string", "desc": "Filter nach Projektstatus" }],
-            "responses": { "200": "Liste von Bauprojekten" }, "live": "bauprojekte.list" },
-          { "method": "GET", "path": "/bauprojekte/{id}", "summary": "Ein Bauprojekt abrufen",
-            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "projectId" }],
-            "responses": { "200": "Bauprojekt", "404": "Nicht gefunden" }, "live": "bauprojekte.one" }
+          { "method": "GET", "path": "/projects", "summary": "Bauprojekte auflisten",
+            "params": [{ "name": "status", "in": "query", "type": "string", "desc": "Filter nach Projektstatus (geplant, aktiv …)" }],
+            "responses": { "200": "Liste von Bauprojekten" }, "live": "projects.list" },
+          { "method": "GET", "path": "/projects/{projectId}", "summary": "Ein Bauprojekt abrufen",
+            "params": [{ "name": "projectId", "in": "path", "type": "string", "required": true, "desc": "projectId" }],
+            "responses": { "200": "Bauprojekt", "404": "Nicht gefunden" }, "live": "projects.one" }
         ]
       },
       {
-        "tag": "dokumente",
-        "label": "Dokumente",
+        "tag": "documents",
+        "label": "documents",
         "description": "Föderierte Dokumentensuche über die Quellsysteme (ActaNova, Planarchiv DALA, CDE Bund). Liefert Metadaten und Download-URLs.",
         "endpoints": [
-          { "method": "GET", "path": "/dokumente", "summary": "Dokumente suchen",
+          { "method": "GET", "path": "/documents", "summary": "Dokumente suchen",
             "params": [
               { "name": "q", "in": "query", "type": "string", "desc": "Volltextsuche" },
-              { "name": "quelle", "in": "query", "type": "string", "desc": "actanova | dala | cde" }
+              { "name": "source", "in": "query", "type": "string", "desc": "actanova | dala | cde" }
             ],
-            "responses": { "200": "Liste von Dokument-Metadaten" }, "live": "dokumente.list" },
-          { "method": "GET", "path": "/dokumente/{id}/download", "summary": "Download-URL(s) eines Dokuments auflösen",
-            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "Dokument-ID" }],
+            "responses": { "200": "Liste von Dokument-Metadaten" }, "live": "documents.list" },
+          { "method": "GET", "path": "/documents/{docId}", "summary": "Dokument-Metadaten abrufen",
+            "params": [{ "name": "docId", "in": "path", "type": "string", "required": true, "desc": "Dokument-ID" }],
+            "responses": { "200": "Dokument", "404": "Nicht gefunden" }, "live": "documents.one" },
+          { "method": "GET", "path": "/documents/{docId}/download", "summary": "Download-URL(s) eines Dokuments auflösen",
+            "params": [{ "name": "docId", "in": "path", "type": "string", "required": true, "desc": "Dokument-ID" }],
             "responses": { "200": "Download-URL oder Dateiliste", "404": "Nicht gefunden" },
-            "example": { "id": "DOC-2043", "titel": "Grundriss EG", "files": [{ "name": "grundriss_eg.pdf", "url": "https://dala.bbl.admin.ch/download/DOC-2043", "format": "PDF", "sizeKB": 2480 }] } }
+            "example": { "docId": "DOC-2043", "title": "Grundriss EG", "files": [{ "name": "grundriss_eg.pdf", "url": "https://dala.bbl.admin.ch/download/DOC-2043", "format": "PDF", "sizeKB": 2480 }] } }
         ]
       },
       {
-        "tag": "datenkatalog",
-        "label": "Datenkatalog",
+        "tag": "media",
+        "label": "media",
+        "description": "Die Mediathek — Fotos, Pläne und historische Aufnahmen zu Gebäuden, Grundstücken und Projekten.",
+        "endpoints": [
+          { "method": "GET", "path": "/media", "summary": "Medien auflisten",
+            "params": [
+              { "name": "mediaType", "in": "query", "type": "string", "desc": "photo | plan | historic" },
+              { "name": "buildingId", "in": "query", "type": "string", "desc": "Nur Medien dieses Gebäudes (BBL-ID)" },
+              { "name": "projectId", "in": "query", "type": "string", "desc": "Nur Medien dieses Bauprojekts" }
+            ],
+            "responses": { "200": "Liste von Medien" }, "live": "media.list" },
+          { "method": "GET", "path": "/media/{mediaId}", "summary": "Ein Medium mit Nachweis abrufen",
+            "params": [{ "name": "mediaId", "in": "path", "type": "string", "required": true, "desc": "mediaId" }],
+            "responses": { "200": "Medium", "404": "Nicht gefunden" }, "live": "media.one" }
+        ]
+      },
+      {
+        "tag": "news",
+        "label": "news",
+        "description": "Mitteilungen des BBL — die News der Startseite und der Übersicht #/news.",
+        "endpoints": [
+          { "method": "GET", "path": "/news", "summary": "Mitteilungen auflisten",
+            "responses": { "200": "Liste von Mitteilungen" }, "live": "news.list" },
+          { "method": "GET", "path": "/news/{id}", "summary": "Eine Mitteilung abrufen",
+            "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "Mitteilungs-ID" }],
+            "responses": { "200": "Mitteilung", "404": "Nicht gefunden" }, "live": "news.one" }
+        ]
+      },
+      {
+        "tag": "contacts",
+        "label": "contacts",
+        "description": "Ansprechstellen der Dienstleistungen und Anwendungen (nicht die Objektkontakte — diese hängen am Gebäude).",
+        "endpoints": [
+          { "method": "GET", "path": "/contacts", "summary": "Ansprechstellen auflisten",
+            "responses": { "200": "Liste von Ansprechstellen" }, "live": "contacts.list" },
+          { "method": "GET", "path": "/contacts/{contactId}", "summary": "Eine Ansprechstelle abrufen",
+            "params": [{ "name": "contactId", "in": "path", "type": "string", "required": true, "desc": "contactId" }],
+            "responses": { "200": "Ansprechstelle", "404": "Nicht gefunden" }, "live": "contacts.one" }
+        ]
+      },
+      {
+        "tag": "datasets",
+        "label": "datasets",
         "description": "Die DCAT-AP-CH-Datensätze des Datenbezug- und API-Verzeichnisses — inklusive dieser API-Sammlung selbst.",
         "endpoints": [
-          { "method": "GET", "path": "/datensaetze", "summary": "Datensätze auflisten",
-            "params": [{ "name": "thema", "in": "query", "type": "string", "desc": "Filter nach Thema" }],
-            "responses": { "200": "Liste von Datensätzen" }, "live": "datensaetze.list" },
-          { "method": "GET", "path": "/datensaetze/{id}", "summary": "Einen Datensatz mit Bezugswegen abrufen",
+          { "method": "GET", "path": "/datasets", "summary": "Datensätze auflisten",
+            "params": [{ "name": "theme", "in": "query", "type": "string", "desc": "Filter nach Thema" }],
+            "responses": { "200": "Liste von Datensätzen" }, "live": "datasets.list" },
+          { "method": "GET", "path": "/datasets/{id}", "summary": "Einen Datensatz mit Bezugswegen abrufen",
             "params": [{ "name": "id", "in": "path", "type": "string", "required": true, "desc": "Datensatz-ID" }],
-            "responses": { "200": "Datensatz", "404": "Nicht gefunden" }, "live": "datensaetze.one" }
+            "responses": { "200": "Datensatz", "404": "Nicht gefunden" }, "live": "datasets.one" }
         ]
       },
       {
-        "tag": "suche",
-        "label": "Suche",
-        "description": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Weisungen.",
+        "tag": "business-objects",
+        "label": "business-objects",
+        "description": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen.",
         "endpoints": [
-          { "method": "GET", "path": "/suche", "summary": "Portalweite Suche",
+          { "method": "GET", "path": "/business-objects", "summary": "Geschäftsobjekte auflisten",
+            "params": [{ "name": "domain", "in": "query", "type": "string", "desc": "Filter nach Datendomäne (bauwerk, miete …)" }],
+            "responses": { "200": "Liste von Geschäftsobjekten" }, "live": "business-objects.list" },
+          { "method": "GET", "path": "/business-objects/{objectId}", "summary": "Ein Geschäftsobjekt mit Attributen abrufen",
+            "params": [{ "name": "objectId", "in": "path", "type": "string", "required": true, "desc": "objectId, z. B. areal" }],
+            "responses": { "200": "Geschäftsobjekt", "404": "Nicht gefunden" }, "live": "business-objects.one" }
+        ]
+      },
+      {
+        "tag": "system-tables",
+        "label": "system-tables",
+        "description": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
+        "endpoints": [
+          { "method": "GET", "path": "/system-tables", "summary": "Systemtabellen auflisten",
+            "params": [{ "name": "system", "in": "query", "type": "string", "desc": "Filter nach Quellsystem (sap-refx, gis-immo …)" }],
+            "responses": { "200": "Liste von Systemtabellen" }, "live": "system-tables.list" },
+          { "method": "GET", "path": "/system-tables/{tableId}", "summary": "Eine Systemtabelle mit Feldern abrufen",
+            "params": [{ "name": "tableId", "in": "path", "type": "string", "required": true, "desc": "tableId, z. B. sap-refx-vibdkd" }],
+            "responses": { "200": "Systemtabelle", "404": "Nicht gefunden" }, "live": "system-tables.one" }
+        ]
+      },
+      {
+        "tag": "reference-data",
+        "label": "reference-data",
+        "description": "Die Referenzlisten des Portals (reference-data.json): Statusmodelle, Domänen, Zielgruppen, SIA-Phasen, NAW-Klassen …",
+        "endpoints": [
+          { "method": "GET", "path": "/reference-data", "summary": "Alle Referenzlisten (Schlüsselverzeichnis)",
+            "responses": { "200": "Verzeichnis der Referenzlisten" }, "live": "reference-data.list" },
+          { "method": "GET", "path": "/reference-data/{list}", "summary": "Eine Referenzliste abrufen",
+            "params": [{ "name": "list", "in": "path", "type": "string", "required": true, "desc": "Listenname, z. B. audiences oder statusModel" }],
+            "responses": { "200": "Referenzliste", "404": "Nicht gefunden" }, "live": "reference-data.one" }
+        ]
+      },
+      {
+        "tag": "search",
+        "label": "search",
+        "description": "Föderierte Suche über Dienstleistungen, Anwendungen, Dokumente und Inhalte.",
+        "endpoints": [
+          { "method": "GET", "path": "/search", "summary": "Portalweite Suche",
             "params": [{ "name": "q", "in": "query", "type": "string", "required": true, "desc": "Suchbegriff" }],
-            "responses": { "200": "Treffer gruppiert nach Kategorie" }, "live": "suche" }
+            "responses": { "200": "Treffer gruppiert nach Kategorie" },
+            "example": { "query": "bau", "hits": { "services": 3, "applications": 1, "documents": 4, "news": 2 } } }
         ]
       }
     ]

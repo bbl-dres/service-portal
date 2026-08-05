@@ -90,9 +90,10 @@
     { "key": "finanzen", "label": "Finanzen", "icon": "Calculator" }
   ],
   "objectStatuses": [
-    { "id": "approved", "label": "Verabschiedet", "variant": "success" },
-    { "id": "draft", "label": "Entwurf", "variant": "gray" },
-    { "id": "deprecated", "label": "Abgelöst", "variant": "warning" }
+    { "id": "DRAFT", "label": "Entwurf", "definition": "Erfasst, noch nie freigegeben", "consequence": "Nicht sichtbar für Nutzende, keine Verwendung", "variant": "gray" },
+    { "id": "VALID", "label": "Gültig", "definition": "Freigegeben und aktiv bewirtschaftet", "consequence": "Sichtbar, nutzbar, Verantwortlichkeiten gelten", "variant": "success" },
+    { "id": "SUPERSEDED", "label": "Abgelöst", "definition": "Durch Nachfolgedatensatz ersetzt", "consequence": "Sichtbar mit Verweis auf Nachfolger, keine Neuverwendung", "variant": "warning" },
+    { "id": "ARCHIVED", "label": "Archiviert", "definition": "Keine Bewirtschaftung mehr, nur Aufbewahrung", "consequence": "Lesend bzw. auf Anfrage, kein Support", "variant": "gray" }
   ],
   "mappingMatches": [
     { "id": "exact", "label": "Exakt", "variant": "success" },

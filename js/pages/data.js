@@ -47,6 +47,10 @@ function overview(ctx) {
     { title: 'Metadaten Katalog Bauten', icon: 'Stack', href: '#/app/metadata-catalog',
       desc: 'Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und Systemtabellen.',
       meta: 'Geschäftsobjekte und Systemtabellen' },
+    // Ohne Zahl — gleiche Begründung wie beim Metadatenkatalog.
+    { title: 'Prozessdokumentation Bauten', icon: 'Share', href: '#/app/process-docs',
+      desc: 'Die Prozesse des Immobilienmanagements mit BPMN-Diagrammen und Prozessschritten — von der Akquisition bis zur Rückgabe.',
+      meta: 'Prozesslandkarte und BPMN' },
     { title: 'Bauwerksdokumentation', icon: 'Folder', href: '#/app/document-archive',
       desc: 'Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.',
       meta: 'Dokumentenarchiv' },

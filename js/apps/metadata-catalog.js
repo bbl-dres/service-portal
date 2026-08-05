@@ -524,7 +524,12 @@ function objectDetail(ctx, id) {
         <h2 class="detail-section__title">Metadaten</h2>
         <dl class="kv kv--ruled">
           <dt>Datendomäne</dt><dd><a href="${C.catalogueHash(BASE, { domain: [o.domain] })}">${esc(domainLabel(core, o.domain))}</a></dd>
-          <dt>Status</dt><dd>${C.badge(st.label, st.variant)}</dd>
+          ${/* Der Lebenszyklus (DRAFT/VALID/SUPERSEDED/ARCHIVED, Nutzerentscheid
+                2026-08-04) trägt Definition + Konsequenz in der Referenzliste —
+                beim Badge steht die Kurzform, damit «Gültig» nicht Deutungssache
+                bleibt («was heisst das für die Verwendung?»). */''}
+          <dt>Status</dt><dd>${C.badge(st.label, st.variant)}${st.definition
+            ? `<br><span class="small muted">${esc(st.definition)} — ${esc(st.consequence)}</span>` : ''}</dd>
           ${o.standardRef ? `<dt>Norm-Referenz</dt><dd>${esc(o.standardRef)}</dd>` : ''}
           ${/* Abgrenzung, Zweitbenennungen und EGID/EGRID-Relevanz sind im
                 Bestand zu EINER Bemerkung zusammengefasst — drei dünne Zeilen,

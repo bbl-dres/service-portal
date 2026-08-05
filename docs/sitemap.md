@@ -158,7 +158,7 @@ The service/information distinction becomes **structural** rather than a badge. 
 
 **Micro-apps** — all under `#/app/<name>`, all highlighting *Daten und Digitalisierung* except the three service flows, which highlight *Dienstleistungen* (`SECTION_OF` in `js/router.js`):
 
-`portfolio` (hero) · `projects` (hero) · `dataportal` · `document-archive` · `media-library` · `workspace` · `api-docs` · `transaction` — and the service flows `space-request` · `fault-report` · `building-create`.
+`portfolio` (hero) · `projects` (hero) · `dataportal` · `document-archive` · `media-library` · `workspace` · `api-docs` · `transaction` · `tenancies` · `metadata-catalog` · `process-docs` — and the service flows `space-request` · `fault-report` · `building-create`.
 
 ### Routing rules
 

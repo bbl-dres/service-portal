@@ -59,6 +59,7 @@ Damit «konsistent» prüfbar wird, hält diese Review die Soll-Rezepte fest. Ne
 | Eckdaten-Slot | «Eckdaten» («Metadaten» nur DCAT) | «Objektdaten», «Grundstücksdaten», «Angaben zum Vorgang» |
 | Datum | immer `format.datum()` (ISO in den Daten) | rohes ISO, vorformatiertes «30.07.2026» |
 | Datumszeilen-Label | «Stand» (Datenstand) / «Aktualisiert» (Tabellenspalte) | «Letzte Änderung» |
+| Ladezustand | «‹Gegenstand› wird geladen…» (ohne Gegenstand «Wird geladen…»), immer über `C.loading` | drei Einzelbauten: Router-Inline-Spinner, map-spinner-Inline, dash-map-Textzeile |
 
 ### Terminologie-Entscheide
 
@@ -68,6 +69,9 @@ Damit «konsistent» prüfbar wird, hält diese Review die Soll-Rezepte fest. Ne
 - Katalogtitel = h1 der Zielseite («Raumbedarf melden», «Kleinauftrag am Gebäude erteilen», «Liegenschaften Inventar einsehen», «Bauwerksdokumentation abrufen», «Grundstück erfassen»).
 - **Vertragsende** für das Datum (die App bleibt «Mietende»). **Bodenbedeckung** (amtliche Vermessung), nie «Bodenabdeckung». **Geschäftsobjekt** als Fachterm des Metadatenkatalogs («Fachbegriff» nur einführend); Zeilenzahl heisst «Zeilen», «Datensatz» bleibt dem DCAT-Katalog. **Veräusserung von Bundesliegenschaften** statt «Verkauf / Divestment». «Bemessungsgrösse» (ss).
 - Produktnamen mit Leerzeichen («Liegenschaften Inventar», «Metadaten Katalog Bauten», «Datenbezug und API Verzeichnis») sind **gesetzte Markennamen** — Fliesstext darf regulär komponieren («Liegenschafteninventar»); nicht «korrigieren».
+- **Zielgruppen** (Nachtrag 2026-08-04): `audience` ist ein **Array** aus `staff`/`customers`; Etiketten «Mitarbeiter»/«Kunden», bei beiden zwei Badges. Kein «Beide», kein «Intern/Extern» (die `accessNote` der Anwendungen ist entfallen — den Ort trägt «Einstieg»). Liste in `reference-data.json → audiences`.
+- **API-Ressourcen englisch** (Nachtrag 2026-08-04): Pfade, Tags und Antwort-Schlüssel der Portal-API folgen dem Datenmodell (`buildings`, `parcels`, `process-instances` …, deckungsgleich mit `data/*`); deutsch bleiben Beschreibungstexte. Die API deckt den ganzen Datenbestand (17 Ressourcen, 47 Endpunkte).
+- **Objektstatus-Lebenszyklus** (Nachtrag 2026-08-04): `DRAFT`/`VALID`/`SUPERSEDED`/`ARCHIVED` mit Bezeichnung, Definition und Konsequenz in `reference-data.json → objectStatuses`; das Metadatenkatalog-Blatt zeigt zur Marke die Kurzform «Definition — Konsequenz».
 
 ### Struktur-Konventionen
 
@@ -77,6 +81,7 @@ Damit «konsistent» prüfbar wird, hält diese Review die Soll-Rezepte fest. Ne
 - **Panel-Rand:** `--panel-border` (secondary-100). **Viewer-Schatten:** `--shadow-viewer`.
 - **Grids:** nur die CD-Familie `grid--responsive-cols-N`; die Aliase `grid--2/3/4` sind entfernt.
 - **Scroll-Lock:** eine Klasse `body--overlay-open` für Modal, Galerie, Dokumentbetrachter.
+- **Ladezustand:** `C.loading({ label, hideLabel, size })` — CD-Spinner-Symbol (`icon--spin`) + `role="status"`-Wortlaut; `hideLabel` (sr-only), wo das Symbol optisch reicht (Router-Übergang, Karten-Overlay). Einzige Bauform für «lädt/verarbeitet».
 - **Deep-Links modulübergreifend:** immer über `js/links.js` (Selbst-Links innerhalb einer App dürfen literal bleiben).
 - **`pf-`-Namespace** ist die geteilte Explorer-Schicht (5 Apps) — dokumentiert, nicht umbenannt (Tests greppen die Klassen; Umbenennen wäre Churn ohne Nutzwert).
 

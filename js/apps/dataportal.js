@@ -207,7 +207,7 @@ function dashboardView(ctx, id) {
             <h3 class="chart__title">${C.escape(spec.title)}</h3>
             <div class="chart__actions">${C.menu({ menuId: spec.id, label: 'Karten-Aktionen', items: [{ action: 'link', label: 'Link kopieren' }] })}</div>
           </figcaption>
-          <div class="dash-map" id="map-${spec.id}" role="group" aria-label="Karte der Gebäudestandorte"><p class="dash-map__loading" role="status">Karte wird geladen…</p></div>
+          <div class="dash-map" id="map-${spec.id}" role="group" aria-label="Karte der Gebäudestandorte">${C.loading({ label: 'Karte wird geladen…' })}</div>
           ${spec.note ? `<p class="chart__note">${C.escape(spec.note)}</p>` : ''}
         </figure>`;
       }
