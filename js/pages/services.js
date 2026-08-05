@@ -222,7 +222,7 @@ function detail(ctx, id) {
       backHref: '#/services', backLabel: 'Dienstleistungen',
       title: s.title, lead: s.short,
       tags: `${audienceTags(core, C, s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
-      image: C.heroFigure({ src: img }),
+      image: C.heroFigure({ src: img, ratio: '16x9' }),
     })}
     <div class="container--grid gap--responsive">
       ${/* CD-Inhaltsrhythmus (.vertical-spacing, 3/3.5rem) statt des portal-

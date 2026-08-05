@@ -40,6 +40,9 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       }
       return {
         h1: (document.querySelector('#main-content h1') || {}).textContent,
+        resourcesH2: (document.querySelector('#api-resources-title') || {}).tagName || '',
+        resourcesLabelled: document.querySelector('#api-swagger')?.getAttribute('aria-labelledby') || '',
+        tagHeadingLevels: [...document.querySelectorAll('.swagger-ui .opblock-tag')].map(el => el.tagName),
         badges: [...document.querySelectorAll('.pill-row .badge')].map(b => b.textContent.trim()),
         infoDoppelt: !!document.querySelector('.swagger-host .information-container') &&
           getComputedStyle(document.querySelector('.swagger-host .information-container')).display !== 'none',
@@ -58,6 +61,8 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     console.log('   h1:', JSON.stringify(D.h1), '| badges:', JSON.stringify(D.badges));
     console.log('   tags:', D.tags.length, '| ops:', D.ops, `(get ${D.get} / post ${D.post})`, '| try-out:', D.tryOut);
     check(/Kundenportal API/.test(D.h1 || ''), `Portal-h1 bleibt (${D.h1})`);
+    check(D.resourcesH2 === 'H2' && D.resourcesLabelled === 'api-resources-title', 'Swagger-Ressourcen liegen unter einer benannten H2-Gruppe');
+    check(D.tagHeadingLevels.every(level => level === 'H3'), 'Ressourcentitel folgen als H3');
     check(D.badges.some(b => /^v/.test(b)), `Versions-Badge im Kopf (${JSON.stringify(D.badges)})`);
     check(!D.infoDoppelt, 'Swaggers Info-Block doppelt den Kopf nicht');
     // Seit der Englisch-Umbenennung (2026-08-04) deckt die API den ganzen

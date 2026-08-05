@@ -192,7 +192,7 @@ function infoPage(ctx, { title, lead, note, photo }) {
     ${C.detailHead({
       backHref: '#/data/digitalisation', backLabel: 'Digitalisierung',
       title, lead,
-      image: C.heroFigure({ src: photo }),
+      image: C.heroFigure({ src: photo, ratio: '16x9' }),
     })}
     <div class="measure-xl">
       ${C.notification(note, 'info', 'InfoCircle')}

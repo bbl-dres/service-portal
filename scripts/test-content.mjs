@@ -10,8 +10,8 @@ const ROUTES = [
   { name: 'knowledge/it (Fachgebiet)',         url: `${APP_BASE}/knowledge/it`,                items: 1 },
   { name: 'knowledge/anleitungen',             url: `${APP_BASE}/knowledge/guides`,           items: 1 },
   { name: 'digitalisierung/strategie',         url: `${APP_BASE}/data/digitalisation/strategy`,  items: 2 },
-  { name: 'applications/liegenschaften',       url: `${APP_BASE}/applications/liegenschaften-inventar`, items: 1, mailto: true },
-  { name: 'services/raumbedarf-melden',        url: `${APP_BASE}/services/raumbedarf-melden`,       mailto: true },
+  { name: 'applications/liegenschaften',       url: `${APP_BASE}/applications/liegenschaften-inventar`, items: 1, mailto: true, hero: true },
+  { name: 'services/raumbedarf-melden',        url: `${APP_BASE}/services/raumbedarf-melden`,       mailto: true, hero: true },
   { name: 'my-cases/seed-1 (attachments)',     url: `${APP_BASE}/my-cases/seed-1`,                  items: 1, login: true },
 ];
 
@@ -19,10 +19,18 @@ const PROBE = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
   let n = 0; while (!document.querySelector('h1') && n++ < 120) await s(100);
   const h1 = (document.querySelector('h1') || {}).textContent || null;
+  const heroMedia = document.querySelector('.hero__image .photo, .hero__image > img, .hero__image figure > img');
+  const headings = [...document.querySelectorAll('#main-content h1,#main-content h2,#main-content h3,#main-content h4,#main-content h5,#main-content h6')]
+    .filter(el => { const s = getComputedStyle(el), r = el.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0; });
+  const jumps = []; let prior = 0;
+  headings.forEach(el => { const level = Number(el.tagName[1]); if (prior && level > prior + 1) jumps.push(prior + '>' + level); prior = level; });
   return {
     h1,
     notFound: /nicht gefunden/i.test(h1 || ''),
     downloadItems: document.querySelectorAll('.download-item').length,
+    downloadHeadings: [...document.querySelectorAll('.download-item__title')].map(el => el.tagName),
+    headingJumps: jumps,
+    heroRatio: heroMedia ? getComputedStyle(heroMedia).aspectRatio : '',
     mailto: !!document.querySelector('a[href^="mailto:"]'),
   };
 })()`;
@@ -54,7 +62,10 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       const res = await p.evaluate(PROBE);
       check(res.h1 && !res.notFound, `renders ("${res.h1}")`);
       if (r.items) check(res.downloadItems >= r.items, `≥${r.items} download-item(s) (got ${res.downloadItems})`);
+      if (r.items) check(res.downloadHeadings.every(tag => tag === 'H3'), 'download-item titles use the contextual h3 level');
+      check(res.headingJumps.length === 0, `unbroken heading hierarchy (${res.headingJumps.join(', ') || 'ok'})`);
       if (r.mailto) check(res.mailto === true, 'renders a contact mailto link');
+      if (r.hero) check(res.heroRatio === '16 / 9', `consumer declares its hero ratio (${res.heroRatio})`);
       check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
       await p.closeTarget();
     }

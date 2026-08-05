@@ -198,7 +198,8 @@ export default async function render(ctx) {
           eigener .information-container ist per CSS ausgeblendet, sonst stünde
           alles doppelt. Server-Zeile, Authorize und die Ressourcen-Abschnitte
           liefern den Standard-Look darunter. */''}
-    <div class="swagger-host" id="api-swagger">
+    <h2 class="sr-only" id="api-resources-title">API-Ressourcen</h2>
+    <div class="swagger-host" id="api-swagger" aria-labelledby="api-resources-title">
       ${C.loading({ label: 'API-Dokumentation wird geladen…' })}
     </div>
   </div>`;

@@ -688,9 +688,11 @@ export function detailBar({ backHref, backLabel } = {}) {
 // für den Prototyp einheitlich ohne. Die Startseite (echtes BBL-Foto mit
 // ©-Vermerk) schreibt ihre figcaption selbst und behält sie. Der `credit`-
 // Parameter bleibt als Schnittstelle bestehen, wird aber nicht gerendert.
-export function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt = '', w = 800 } = {}) {
+export function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt = '', w = 800, ratio = '' } = {}) {
   if (!src && !id) return '';
-  return `<figure class="hero__figure">${photo({ src, id, color, alt, w })}</figure>`;
+  const ratioClass = { '16x9': 'photo--16x9', '4x3': 'photo--4x3', '21x9': 'photo--21x9' }[ratio]
+    || 'hero-media--natural';
+  return `<figure class="hero__figure">${photo({ src, id, color, alt, w, cls: ratioClass })}</figure>`;
 }
 
 export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '' } = {}) {
@@ -1135,12 +1137,13 @@ export function readForm(mount, map) {
 // `desc`, App-Einträge `note`); `icon` überschreibt das Standardsymbol (extern →
 // External, sonst Download). `wrapLi` umschliesst mit `<li>` für `.download-items`.
 export function downloadItem({ href, title, note = '', desc = '', meta = [], icon: iconName,
-  external = false, heading = 'h4', wrapLi = false, download = false } = {}) {
+  external = false, heading = 'h3', wrapLi = false, download = false } = {}) {
+  const titleTag = /^h[2-6]$/.test(heading) ? heading : 'h3';
   const text = note || desc;
   const sym = iconName || (external ? 'External' : 'Download');
   const inner = `${icon(sym, 'download-item__icon')}
     <div>
-      <${heading} class="download-item__title">${escape(title)}</${heading}>
+      <${titleTag} class="download-item__title">${escape(title)}</${titleTag}>
       ${text ? `<p class="download-item__description">${escape(text)}</p>` : ''}
       ${meta.length ? `<p class="meta-info download-item__meta-info">${
         meta.filter(Boolean).map(m => `<span class="meta-info__item">${escape(m)}</span>`).join('')}</p>` : ''}

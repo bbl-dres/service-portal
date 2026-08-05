@@ -1279,10 +1279,11 @@ code { font-family:var(--font-mono); }
    für sich — hier strukturell über `.hero__image figure`, damit die nächste
    Hero-Seite nicht die vierte Einzelfallregel braucht. */
 .hero__image figure, .hero__figure { margin:0; }
-.hero__image .photo { width:100%; aspect-ratio:16/9; }
-.hero__image .photo > img { position:absolute; inset:0; width:100%; height:100%; }
-.hero__image > img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover;
-  background:var(--color-secondary-50); }
+.hero__image .photo { width:100%; }
+.hero__image .hero-media--natural > img { position:static; width:100%; height:auto; object-fit:contain; }
+.hero__image > img { display:block; width:100%; height:auto; background:var(--color-secondary-50); }
+.hero__image > .hero-media--16x9, .hero__image figure > .hero-media--16x9 {
+  aspect-ratio:16/9; object-fit:cover; }
 /* flex children must be allowed to shrink below their intrinsic width, or the
    row overflows the container (the old `.container{overflow-x:clip}` hid this) */
 .search__form input, .service-controls__search input { min-width:0; }
@@ -3415,8 +3416,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    ausserhalb der CD-Skala, 4:3-Bild) ist ersetzt; nur die Suchzeile bleibt
    eine Portalklasse. `height:auto` am Bild ist Pflicht: das `height`-Attribut
    würde als Presentational Hint das aspect-ratio aushebeln. */
-.hero__image figure > img { display:block; width:100%; height:auto; aspect-ratio:16/9;
-  object-fit:cover; background:var(--color-secondary-50); }
+.hero__image figure > img { display:block; width:100%; height:auto; background:var(--color-secondary-50); }
 /* nowrap schlägt das flex-wrap:wrap der .hero__cta-Basisklasse: das Feld trägt
    width:100 % (globale Input-Regel) und würde den Knopf sonst in die zweite
    Zeile drängen — Feld und «Suchen» bleiben eine Zeile, unter 640 px stapelt
