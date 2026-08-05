@@ -64,7 +64,7 @@ function overview(ctx) {
       desc: 'Fachanwendungen für Arbeitsplatz, Beschaffung und Logistik.',
       meta: `${count('logistics')} Anwendungen` },
     { title: 'Fachanwendungen Bundesverwaltung', icon: 'Key', href: '#/applications?area=federal',
-      desc: 'Gemeinsam genutzte Anwendungen und Plattformen des Bundes — eGate, InfoPers, SUPERB, I14Y, TERMDAT, Geoportal, geocat.ch und simap.ch.',
+      desc: 'Gemeinsam genutzte Anwendungen und Plattformen des Bundes — eGate, InfoPers, SAP ERP, I14Y, TERMDAT, Geoportal, geocat.ch und simap.ch.',
       meta: `${count('federal')} Anwendungen` },
     { title: 'Alle Anwendungen', icon: 'Apps', href: '#/applications',
       desc: 'Der vollständige Anwendungskatalog des BBL und der Bundesverwaltung.',

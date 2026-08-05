@@ -11,6 +11,7 @@ const ROUTES = [
   { name: 'knowledge/anleitungen',             url: `${APP_BASE}/knowledge/guides`,           items: 1 },
   { name: 'digitalisierung/strategie',         url: `${APP_BASE}/data/digitalisation/strategy`,  items: 2 },
   { name: 'applications/liegenschaften',       url: `${APP_BASE}/applications/liegenschaften-inventar`, items: 1, mailto: true, hero: true },
+  { name: 'applications/superb (SAP ERP)',     url: `${APP_BASE}/applications/superb`, items: 2, mailto: true, hero: true, expectedTitle: 'ERP SAP (Supportprozesse)' },
   { name: 'services/raumbedarf-melden',        url: `${APP_BASE}/services/raumbedarf-melden`,       mailto: true, hero: true },
   { name: 'my-cases/seed-1 (attachments)',     url: `${APP_BASE}/my-cases/seed-1`,                  items: 1, login: true },
 ];
@@ -61,6 +62,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       const p = await openPage(cdp, r.url);
       const res = await p.evaluate(PROBE);
       check(res.h1 && !res.notFound, `renders ("${res.h1}")`);
+      if (r.expectedTitle) check(res.h1 === r.expectedTitle, `uses the expected title ("${r.expectedTitle}")`);
       if (r.items) check(res.downloadItems >= r.items, `≥${r.items} download-item(s) (got ${res.downloadItems})`);
       if (r.items) check(res.downloadHeadings.every(tag => tag === 'H3'), 'download-item titles use the contextual h3 level');
       check(res.headingJumps.length === 0, `unbroken heading hierarchy (${res.headingJumps.join(', ') || 'ok'})`);
