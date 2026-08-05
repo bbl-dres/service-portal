@@ -38,7 +38,7 @@ function overview(ctx) {
   const entries = [
     { title: 'Datenportal', icon: 'ChartBar', href: '#/app/dataportal',
       desc: 'Auswertungen zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal.',
-      meta: '6 Themen' },
+      meta: '7 Themen' },
     { title: 'Datenbezug und API Verzeichnis', icon: 'FileDatabase', href: '#/data/catalog',
       desc: 'Datensatzkatalog nach DCAT-AP-CH: Beschreibung, Klassifizierung und Bezugswege der Datensätze des BBL.',
       meta: `${datasets} Datensätze` },

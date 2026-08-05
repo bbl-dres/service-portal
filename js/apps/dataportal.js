@@ -66,9 +66,11 @@ function overview(ctx) {
     // Dieselbe Icon-Kachel wie in Daten/Wissen/Digitalisierung (C.domainTile):
     // echte <h3> für die Gliederung, CD-Kartenfuss, und bildlose Karten sind
     // card--default (nicht --universal, das ist die Letterbox-Bildvariante).
+    // `t.meta` überschreibt die Zählzeile — das Immobilien-Board rechnet seine
+    // Auswertungen zur Laufzeit (estate.js), die JSON-Zahl wäre falsch.
     return C.domainTile({
       icon: t.icon, title: t.title, desc: t.desc,
-      meta: `${n} ${n === 1 ? 'Auswertung' : 'Auswertungen'}`,
+      meta: t.meta || `${n} ${n === 1 ? 'Auswertung' : 'Auswertungen'}`,
       href: `#/app/dataportal/${encodeURIComponent(t.id)}`,
     });
   };
@@ -81,7 +83,7 @@ function overview(ctx) {
           Absatz. */''}
     ${C.pageHeader({
       title: 'Datenportal',
-      leadHtml: 'Auswertungen zu den Kennzahlen des BBL — Energie und Klima, Immobilienportfolio, Beschaffung, Personal, Logistik und Mobilität. '
+      leadHtml: 'Auswertungen zu den Kennzahlen des BBL — Energie und Klima, Immobilienportfolio, Bauprojekte und Investitionen, Beschaffung, Logistik, Mobilität und Personal. '
         + 'Behördenübergreifende Kennzahlen und Auswertungen bietet das Management-Informationssystem (MIS) der Bundesverwaltung — aufgebaut im '
         + '<a href="https://www.bbl.admin.ch/de/programm-superb" target="_blank" rel="noopener external">Programm SUPERB</a> (SAP S/4HANA).',
     })}

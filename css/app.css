@@ -2506,6 +2506,21 @@ body.body--overlay-open .back-to-top-rail { display:none; }
    keine sichtbare Aufklappzeile — Sehende exportieren über das Diagrammmenü
    (CSV/Excel). Darum braucht die Tabelle keine eigene Optik; die früheren
    .chart__sql-Regeln (SQL-Ausklapper) sind mit ihrem Emitter entfallen. */
+/* Sichtbare Kennzahlen-Tabelle (chart form 'table', Muster Geschäftsbericht
+   Stadt Zürich): Jahresspalten rechtsbündig mit Tabellenziffern, Gruppentitel-
+   Zeilen als Zwischenüberschriften, Fussnoten klein darunter. Überschreibt
+   punktuell das sr-only der Zwillingstabellen (Item 6.2) — hier IST die
+   Tabelle die Darstellung. */
+.chart__table--visible { margin:.25rem 0 0; }
+.chart__table--visible th.num, .chart__table--visible td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.chart__table--visible .chart__trow-group th { padding-top:1rem; font-weight:var(--fw-bold); border-bottom:0; }
+.chart__footnotes { margin:.5rem 0 0; padding-left:1.25rem; color:var(--color-text-muted); font-size:var(--text-xs); }
+.chart__footnotes li + li { margin-top:.125rem; }
+
+/* KPI-Kachel-Zusätze (Datenportal-Ausbau Aug. 2026): Sparkline + Stichtagszeile. */
+.kpi__spark { display:block; width:6rem; height:1.625rem; margin-top:.375rem; color:var(--color-secondary-600); opacity:.7; }
+.kpi__hint { font-size:var(--text-xs); color:var(--color-text-muted); margin-top:.375rem; }
+
 .chart__tooltip { position:absolute; z-index:5; transform:translate(-50%,-100%); pointer-events:none;
   background:var(--color-secondary-800); color:var(--color-text-negative); padding:.25rem .5rem; border-radius:var(--radius-sm);
   font-size:var(--text-xs); white-space:nowrap; box-shadow:var(--shadow-md); }

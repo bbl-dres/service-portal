@@ -30,15 +30,44 @@ export const DASHBOARD_MENU = [
 // KPI-Kachel inkl. Delta-Pfeil + sr-only-Wort (WCAG 1.4.1: Richtung nicht nur
 // über Farbe). `deltaGood` undefined = neutral (z. B. ein Zielwert), der dann
 // auch nicht wie ein Erfolg aussieht.
-export function kpiTile(C, { label, value, unit = '', deltaLabel = '', deltaGood } = {}) {
+//
+// Seit dem Datenportal-Ausbau (Aug. 2026, Muster Energiedashboard Bund /
+// Covid-Dashboard) zusätzlich: `delta2Label/delta2Good` als zweiter Chip
+// (Vormonat UND Vorjahr — Immobilien sind saisonal, erst das Jahresdelta ist
+// ehrlich), `spark` als achsenlose 24-Punkte-Miniaturlinie im Kachelfuss und
+// `hint` als Stichtags-/Referenznotiz («Stand: 30.06.2026»).
+const deltaChip = (C, deltaLabel, deltaGood) => `<div class="kpi__delta${
+  deltaGood === true ? ' is-good' : deltaGood === false ? ' is-bad' : ''}">${
+  deltaGood === undefined ? ''
+    : `<span class="kpi__arrow" aria-hidden="true">${deltaGood ? '▲' : '▼'}</span>`
+      + `<span class="sr-only">${deltaGood ? 'positive Entwicklung' : 'negative Entwicklung'}: </span>`
+}${C.escape(deltaLabel)}</div>`;
+
+// Achsenlose Miniaturlinie (Sparkline) — nur Verlauf + Endpunkt, bewusst ohne
+// Werte/Ticks: die Zahl steht gross darüber, die Linie beantwortet «woher kommt
+// sie?». Dekorativ (aria-hidden); die belastbare Reihe steht in den Diagrammen.
+function sparkline(values) {
+  const v = (values || []).map(Number).filter(Number.isFinite);
+  if (v.length < 2) return '';
+  const W = 96, H = 26, PAD = 3;
+  const min = Math.min(...v), max = Math.max(...v);
+  const px = (i) => PAD + (i / (v.length - 1)) * (W - 2 * PAD);
+  const py = (x) => max === min ? H / 2 : H - PAD - ((x - min) / (max - min)) * (H - 2 * PAD);
+  const d = v.map((x, i) => `${i ? 'L' : 'M'}${px(i).toFixed(1)} ${py(x).toFixed(1)}`).join(' ');
+  return `<svg class="kpi__spark" viewBox="0 0 ${W} ${H}" aria-hidden="true" focusable="false">
+    <path d="${d}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="${px(v.length - 1).toFixed(1)}" cy="${py(v[v.length - 1]).toFixed(1)}" r="2.5" fill="currentColor"/>
+  </svg>`;
+}
+
+export function kpiTile(C, { label, value, unit = '', deltaLabel = '', deltaGood, delta2Label = '', delta2Good, spark, hint = '' } = {}) {
   return `<div class="kpi">
     <div class="kpi__label">${C.escape(label)}</div>
     <div class="kpi__value">${C.escape(value)}${unit ? `<span class="kpi__unit">${C.escape(unit)}</span>` : ''}</div>
-    ${deltaLabel ? `<div class="kpi__delta${deltaGood === true ? ' is-good' : deltaGood === false ? ' is-bad' : ''}">${
-      deltaGood === undefined ? ''
-        : `<span class="kpi__arrow" aria-hidden="true">${deltaGood ? '▲' : '▼'}</span>`
-          + `<span class="sr-only">${deltaGood ? 'positive Entwicklung' : 'negative Entwicklung'}: </span>`
-    }${C.escape(deltaLabel)}</div>` : ''}
+    ${deltaLabel ? deltaChip(C, deltaLabel, deltaGood) : ''}
+    ${delta2Label ? deltaChip(C, delta2Label, delta2Good) : ''}
+    ${spark ? sparkline(spark) : ''}
+    ${hint ? `<div class="kpi__hint">${C.escape(hint)}</div>` : ''}
   </div>`;
 }
 
