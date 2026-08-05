@@ -23,8 +23,11 @@ export const news = (id) => `#/news/${q(id)}`;
 /** Das Archiv filtert über `?q=` — es gibt keine Detailroute je Dokument. */
 export const dokument = (titel) => `#/app/document-archive?q=${q(titel)}`;
 export const prozess = (processId) => `#/app/process-docs?id=${q(processId)}`;
+export const shop = () => '#/app/shop';
+export const shopProdukt = (productId) => `#/app/shop/product/${q(productId)}`;
+export const shopWarenkorb = () => '#/app/shop/cart';
 
 export default {
   objekt, bauprojekt, mietverhaeltnis, dienstleistung, anwendung,
-  datensatz, vorgang, news, dokument, prozess,
+  datensatz, vorgang, news, dokument, prozess, shop, shopProdukt, shopWarenkorb,
 };

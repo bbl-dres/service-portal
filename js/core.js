@@ -60,6 +60,10 @@ const DEFERRED = {
   // Immobilienmanagements (L1–L3 denormalisiert am Datensatz, BPMN-Pfad je
   // Prozess → assets/bpmn/). Die Diagramme selbst lädt die App je Detailseite.
   processes:        'data/processes.json',
+  // BBL Intranetshop (#/app/shop): Produktkatalog aus dem Workspace-Management-
+  // Prototyp. Bilder liegen gespiegelt unter assets/images/shop/.
+  shopProducts:     'data/shop-products.json',
+  shopCategories:   'data/shop-categories.json',
 };
 // data/data-products.json bleibt liegen (DataService- und Concept-Einträge für
 // einen künftigen Metadatenkatalog), wird aber von keiner Ansicht mehr gelesen
@@ -82,6 +86,7 @@ const AREA = {
   tenancies: 'Mietverhältnisse', floors: 'Geschosse', spaces: 'Räume',
   businessObjects: 'Geschäftsobjekte', systemTables: 'Systemtabellen',
   processes: 'Prozesse',
+  shopProducts: 'Shop-Produkte', shopCategories: 'Shop-Kategorien',
 };
 
 // Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
@@ -292,6 +297,9 @@ export const core = {
   // Prozessdokumentation Bauten — flache Liste, Detailsuche über die processId.
   processes: () => DATA.processes || [],
   processDoc: (id) => find(DATA.processes, 'processId', id),
+  shopProducts: () => DATA.shopProducts || [],
+  shopProduct: (id) => find(DATA.shopProducts, 'id', Number(id)),
+  shopCategories: () => DATA.shopCategories || [],
   dataDomains: () => (DATA.reference || {}).dataDomains || [],
   realisedBy: (tableId, field) => mapIndex().get(`${tableId}|${field}`) || [],
   realisationsOf: (o) => (o && o.attributes ? o.attributes : [])

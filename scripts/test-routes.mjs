@@ -37,11 +37,12 @@ const ROUTES = [
   ['/app/tenancies',                'Mietende'],
   ['/app/metadata-catalog',         'Metadaten Katalog'],
   ['/app/process-docs',             'Prozessdokumentation'],
+  ['/app/shop',                     'BBL Intranetshop'],
   ['/app/document-archive',         'Bauwerksdokumentation'],
   ['/app/space-request',            'Raumbedarf'],
   ['/app/fault-report',             'Störungs'],
   ['/app/building-create',          'Gebäude erfassen'],
-  ['/app/workspace',                'Workspace'],
+  ['/app/workspace',                'Workspace Management'],
   ['/app/transaction',              'Veräusserung'],
   ['/app/api-docs',                 'BBL Kundenportal'],
 ];

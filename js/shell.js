@@ -72,6 +72,36 @@ const META_LINKS = [
 const TOP_BAR_LINKS = [
   { href: 'https://www.egate.admin.ch/', label: 'eGate', icon: 'External', external: true },
 ];
+const SHOP_CART_KEY = 'bbl_shop_cart_v1';
+
+function shopCartCount() {
+  try {
+    const rows = JSON.parse(localStorage.getItem(SHOP_CART_KEY) || '[]');
+    return Array.isArray(rows)
+      ? rows.reduce((n, r) => n + Math.max(0, Number.parseInt(r.qty, 10) || 0), 0)
+      : 0;
+  } catch { return 0; }
+}
+
+function shoppingCartButton() {
+  return `<a class="shopping-cart__button" href="#/app/shop/cart" data-shop-cart-button-link>
+    <p class="shopping-cart__button-label">Warenkorb</p>
+    <div class="shopping-cart__icon-group">
+      ${icon('ShoppingCart', 'shopping-cart__icon')}
+      <span class="shopping__cart-amount-indicator" data-cart-count-indicator hidden><span data-cart-count>0</span></span>
+    </div>
+  </a>`;
+}
+
+function updateShopCartButton(root = document) {
+  const count = shopCartCount();
+  root.querySelectorAll('[data-shop-cart-button]').forEach((el) => { el.hidden = false; });
+  root.querySelectorAll('[data-shop-cart-button-link]').forEach((el) => {
+    el.setAttribute('aria-label', `Warenkorb: Es hat ${count} Artikel in Ihrem Warenkorb.`);
+  });
+  root.querySelectorAll('[data-cart-count]').forEach((el) => { el.textContent = String(count); });
+  root.querySelectorAll('[data-cart-count-indicator]').forEach((el) => { el.hidden = count <= 0; });
+}
 
 function headerHTML() {
   const renderNavMenu = (item, scope) => {
@@ -228,6 +258,9 @@ function headerHTML() {
       </a>
       <div class="top-header__right">
         <nav class="meta-navigation meta-navigation--desktop" aria-label="Meta"><ul>${metaNav}${authNav}</ul></nav>
+        <div class="top-header__shopping-cart-button-mobile" data-shop-cart-button>
+          ${shoppingCartButton()}
+        </div>
         <div class="top-header__container-flex">
           <div class="search search--main" id="header-search">
             <div class="search__group">
@@ -240,6 +273,9 @@ function headerHTML() {
                 <button class="search__submit" type="submit" aria-label="Suchen">${icon('Search', 'icon--base')}</button>
               </form>
             </div>
+          </div>
+          <div class="top-header__shopping-cart-button-desktop" data-shop-cart-button>
+            ${shoppingCartButton()}
           </div>
           <button class="burger" type="button" id="burger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="mobile-menu-id">
             <span class="burger__icon">
@@ -364,6 +400,10 @@ function renderHeader(el) {
   shellAbort?.abort();
   shellAbort = new AbortController();
   const { signal } = shellAbort;
+  updateShopCartButton(el);
+  window.__updateShopCart = () => updateShopCartButton(document);
+  window.addEventListener('hashchange', () => updateShopCartButton(el), { signal });
+  window.addEventListener('shop:cartchange', () => updateShopCartButton(el), { signal });
 
   // Skip link (CD: <a href="#main-content">) — preventDefault, damit der Hash-Router
   // das Fragment nicht als Route sieht; wir setzen den Fokus selbst (#main-content

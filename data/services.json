@@ -135,8 +135,8 @@
     "icon": "ShoppingCart",
     "popular": 2,
     "target": {
-      "kind": "external",
-      "href": "#"
+      "kind": "app",
+      "href": "#/app/shop"
     },
     "processDefId": "bestellung",
     "contact": "campus",

@@ -4,8 +4,9 @@
 // Geschwister des Metadatenkatalogs und bewusst dieselbe Anatomie: pf-Baum
 // (Prozessbereich → Prozessgruppe) links, Katalogleiste mit Suche/Sortierung/
 // Filtern, Liste/Galerie rechts; das Detail trägt die Register «Übersicht»
-// (Verantwortliche, Metadaten, BPMN-Diagramm) und «Prozessschritte» (aus dem
-// BPMN gelesene Schrittliste). Datenbestand: data/processes.json (L1–L3
+// (Verantwortliche, Metadaten), «Prozessdiagramm» (BPMN-Viewer) und
+// «Prozessschritte» (aus dem BPMN gelesene Schrittliste). Datenbestand:
+// data/processes.json (L1–L3
 // denormalisiert am Datensatz), Diagramme: assets/bpmn/<processId>.bpmn.
 //
 // Der BPMN-Viewer ist bpmn-js (NavigatedViewer) — wie MapLibre und Swagger UI
@@ -329,7 +330,7 @@ function list(ctx) {
 }
 
 // ============================================================================
-// Prozess-Detail (Übersicht mit Diagramm · Prozessschritte)
+// Prozess-Detail (Übersicht · Prozessdiagramm · Prozessschritte)
 // ============================================================================
 async function detail(ctx, rawId) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
@@ -361,6 +362,7 @@ async function detail(ctx, rawId) {
 
   const tabs = [
     { id: 'uebersicht', label: 'Übersicht' },
+    { id: 'diagramm', label: 'Prozessdiagramm' },
     { id: 'schritte', label: `Prozessschritte (${steps.length})` },
   ];
   let active = query.get('tab') || tabs[0].id;
@@ -387,8 +389,7 @@ async function detail(ctx, rawId) {
       <dl class="kv kv--ruled">
         <dt>Prozessbereich</dt><dd>${esc(p.areaLabel)} <span class="muted">(${esc(p.areaCode)})</span></dd>
         <dt>Prozessgruppe</dt><dd><a href="${C.catalogueHash(BASE, { group: [p.group] })}">${esc(p.groupLabel)}</a></dd>
-        <dt>Status</dt><dd>${badge(st.label, st.variant)}${st.definition
-          ? `<br><span class="small muted">${esc(st.definition)} — ${esc(st.consequence)}</span>` : ''}</dd>
+        <dt>Status</dt><dd>${badge(st.label, st.variant)}</dd>
         <dt>Version</dt><dd>${esc(p.version || '—')}</dd>
         ${p.systems && p.systems.length ? `<dt>Unterstützende Systeme</dt><dd>${p.systems.map((s) => badge(s, 'gray', 'sm')).join(' ')}</dd>` : ''}
         ${p.standards && p.standards.length ? `<dt>Grundlagen</dt><dd>${p.standards.map((s) => esc(s)).join('<br>')}</dd>` : ''}
@@ -405,9 +406,9 @@ async function detail(ctx, rawId) {
         }).join('')}</ul>
       </div>` : ''}
       ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
-    </aside></div>
-    ${''/* Das Diagramm unter dem Metadaten-Raster in voller Inhaltsbreite —
-          BPMN-Landschaften sind breit, die 2/3-Spalte würde sie zerdrücken. */}
+    </aside></div>`;
+
+  const diagrammHTML = () => `
     <section class="detail-section">
       <h2 class="detail-section__title">Prozessdiagramm</h2>
       ${''/* KEIN role=img am Host: der Viewer injiziert interaktive Inhalte
@@ -433,7 +434,11 @@ async function detail(ctx, rawId) {
     ${p.description ? `<p class="lead">${esc(p.description)}</p>` : ''}
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active, idPrefix: 'pd-tab', ariaLabel: 'Prozess' })}
-      ${C.tabPanels({ items: tabs, active, idPrefix: 'pd-tab', heading: true, render: (tid) => (tid === 'uebersicht' ? uebersichtHTML() : '<div id="pd-steps"></div>') })}
+      ${C.tabPanels({ items: tabs, active, idPrefix: 'pd-tab', heading: true, render: (tid) => (
+        tid === 'uebersicht' ? uebersichtHTML()
+          : tid === 'diagramm' ? diagrammHTML()
+            : '<div id="pd-steps"></div>'
+      ) })}
     </div>
   </div>`;
 
@@ -467,12 +472,12 @@ async function detail(ctx, rawId) {
     }));
   }
 
-  // --- BPMN-Viewer (Register «Übersicht») -----------------------------------
+  // --- BPMN-Viewer (Register «Prozessdiagramm») ------------------------------
   // Erst beim ersten sichtbaren Aufruf des Registers: bpmn-js misst seinen
   // Behälter, und ein verstecktes Panel misst 0×0 (Einpassen liefe ins Leere).
   let viewer = null, viewerStarted = false, needsFit = false;
   // Einpassen nur bei messbarem Behälter: wechselt jemand WÄHREND des Ladens
-  // (CDN, bis 12 s) aufs Schritte-Register, ist das Übersicht-Panel hidden —
+  // (CDN, bis 12 s) aufs Schritte-Register, ist das Diagramm-Panel hidden —
   // diagram-js rechnete aus 0×0 eine nicht-endliche Matrix, der Fang unten
   // ersetzte das ganze Diagramm durch die Fehlermeldung (Review-Repro
   // 2026-08-04). Stattdessen merken und beim Rückwechsel nachholen.
@@ -532,10 +537,10 @@ async function detail(ctx, rawId) {
   });
 
   C.wireTabs(mount, { syncHash, onSelect: (tab) => {
-    if (tab !== 'uebersicht') return;
+    if (tab !== 'diagramm') return;
     startViewer();
     // Aufgeschobenes Einpassen nachholen, sobald das Panel wieder Masse hat.
     if (needsFit) requestAnimationFrame(fitDiagram);
   } });
-  if (active === 'uebersicht') startViewer();
+  if (active === 'diagramm') startViewer();
 }

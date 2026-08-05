@@ -75,41 +75,63 @@ const expectedSteps = (file) => {
     await clean(p, 'Filter');
     await p.closeTarget();
 
-    // 3) Prozess-Detail: Übersicht mit Diagramm ---------------------------
-    head('Detail «Übersicht» (Metadaten + BPMN-Diagramm)');
+    // 3) Prozess-Detail: Uebersicht ohne Diagramm -------------------------
+    head('Detail Uebersicht (Metadaten ohne BPMN-Diagramm)');
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=TQ.21.00.00.02`);
+    o = JSON.parse(await p.evaluate(`(async () => {
+      const s = ms => new Promise(r => setTimeout(r, ms));
+      await s(600);
+      return JSON.stringify({
+        h1: document.querySelector('h1').textContent.trim(),
+        tabs: [...document.querySelectorAll('.tab__control')].map(b => b.textContent.trim()),
+        active: (document.querySelector('.tab__control--active') || {}).dataset?.tab || '',
+        bpmnHost: !!document.querySelector('#pd-tab-panel-uebersicht #pd-bpmn'),
+        toolbar: document.querySelectorAll('#pd-tab-panel-uebersicht [data-bpmn]').length,
+        dts: [...document.querySelectorAll('.detail-layout dl.kv--ruled dt')].map(d => d.textContent),
+        admindir: document.querySelectorAll('a[href*="admindir"]').length,
+        statusPill: (document.querySelector('.detail-layout dl.kv--ruled .badge') || {}).textContent || '',
+        oldStatusText: document.querySelector('.detail-layout dl.kv--ruled')?.textContent.includes('Freigegeben und aktiv bewirtschaftet') || false,
+        kontakt: !!document.querySelector('.detail-layout__aside .box'),
+      });
+    })()`));
+    check(o.h1 === 'Machbarkeit Projektdefinition', 'Prozessname als h1', o.h1);
+    check(o.tabs.length === 3 && o.tabs[0] === 'Übersicht' && o.tabs[1] === 'Prozessdiagramm', 'drei Register', o.tabs.join(' | '));
+    check(/Prozessschritte \(\d+\)/.test(o.tabs[2] || ''), 'Schrittzahl im Registertitel', o.tabs[2]);
+    check(o.active === 'uebersicht', 'Uebersicht ist Standardregister', o.active);
+    check(!o.bpmnHost && o.toolbar === 0, 'kein Diagramm in der Uebersicht');
+    check(o.dts.includes('Prozessbereich') && o.dts.includes('Prozessgruppe') && o.dts.includes('Status') && o.dts.includes('ID'),
+      'Metadaten-Zeilen', o.dts.join(', '));
+    check(o.admindir >= 2, 'Verantwortliche als AdminDir-Links', String(o.admindir));
+    check(/Gültig/.test(o.statusPill), 'Status als Pill-Tag', o.statusPill);
+    check(!o.oldStatusText, 'Status ohne Beschreibungstext');
+    check(o.kontakt, 'Kontakt-Karte in der Randspalte');
+    await clean(p, 'Detail');
+    await p.closeTarget();
+
+    // 4) Register Prozessdiagramm per Deep-Link ---------------------------
+    head('Register Prozessdiagramm (?tab=diagramm)');
+    p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=TQ.21.00.00.02&tab=diagramm`);
     o = JSON.parse(await p.evaluate(`(async () => {
       const s = ms => new Promise(r => setTimeout(r, ms));
       let n = 0; while (!document.querySelector('#pd-bpmn svg .djs-element') && n++ < 200) await s(100);
       await s(300);
       return JSON.stringify({
-        h1: document.querySelector('h1').textContent.trim(),
-        tabs: [...document.querySelectorAll('.tab__control')].map(b => b.textContent.trim()),
+        active: (document.querySelector('.tab__control--active') || {}).dataset?.tab || '',
         djs: document.querySelectorAll('#pd-bpmn .djs-element').length,
-        lanes: document.querySelectorAll('#pd-bpmn .djs-element[data-element-id^="Lane"], #pd-bpmn .djs-element[data-element-id*="lane"]').length,
         loadingLeft: !!document.querySelector('#pd-bpmn .loading'),
-        toolbar: document.querySelectorAll('[data-bpmn]').length,
-        dts: [...document.querySelectorAll('.detail-layout dl.kv--ruled dt')].map(d => d.textContent),
-        admindir: document.querySelectorAll('a[href*="admindir"]').length,
-        statusZeile: (document.querySelector('.detail-layout dl.kv--ruled .small.muted') || {}).textContent || '',
-        kontakt: !!document.querySelector('.detail-layout__aside .box'),
+        toolbar: document.querySelectorAll('#pd-tab-panel-diagramm [data-bpmn]').length,
+        asideInPanel: !!document.querySelector('#pd-tab-panel-diagramm .detail-layout__aside'),
       });
     })()`));
-    check(o.h1 === 'Machbarkeit Projektdefinition', 'Prozessname als h1', o.h1);
-    check(o.tabs.length === 2 && o.tabs[0] === 'Übersicht', 'zwei Register', o.tabs.join(' | '));
-    check(/Prozessschritte \(\d+\)/.test(o.tabs[1] || ''), 'Schrittzahl im Registertitel', o.tabs[1]);
+    check(o.active === 'diagramm', 'Diagramm-Register aktiv per Deep-Link', o.active);
     check(o.djs >= 20, 'Diagramm gerendert (bpmn-js)', `${o.djs} Elemente`);
-    check(!o.loadingLeft, 'Ladezustand abgeräumt');
-    check(o.toolbar === 3, 'Zoomleiste (3 Knöpfe)', String(o.toolbar));
-    check(o.dts.includes('Prozessbereich') && o.dts.includes('Prozessgruppe') && o.dts.includes('Status') && o.dts.includes('ID'),
-      'Metadaten-Zeilen', o.dts.join(', '));
-    check(o.admindir >= 2, 'Verantwortliche als AdminDir-Links', String(o.admindir));
-    check(/Freigegeben und aktiv bewirtschaftet/.test(o.statusZeile), 'Status-Definition am Badge', o.statusZeile.slice(0, 60));
-    check(o.kontakt, 'Kontakt-Karte in der Randspalte');
-    await clean(p, 'Detail');
+    check(!o.loadingLeft, 'Ladezustand abgeraeumt');
+    check(o.toolbar === 3, 'Zoomleiste (3 Knoepfe)', String(o.toolbar));
+    check(!o.asideInPanel, 'Diagramm nutzt volle Panelbreite');
+    await clean(p, 'Diagramm');
     await p.closeTarget();
 
-    // 4) Register «Prozessschritte» per Deep-Link -------------------------
+    // 5) Register «Prozessschritte» per Deep-Link -------------------------
     head('Register «Prozessschritte» (?tab=schritte)');
     const want = expectedSteps('assets/bpmn/TQ.21.00.00.02.bpmn');
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=TQ.21.00.00.02&tab=schritte`);
@@ -131,7 +153,7 @@ const expectedSteps = (file) => {
     await clean(p, 'Schritte');
     await p.closeTarget();
 
-    // 5) Unbekannte Kennung ------------------------------------------------
+    // 6) Unbekannte Kennung ------------------------------------------------
     head('Unbekannte Kennung');
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=GIBTS-NICHT`);
     await sleep(1200);
@@ -144,7 +166,7 @@ const expectedSteps = (file) => {
     await clean(p, 'NotFound');
     await p.closeTarget();
 
-    // 6) Einbindung: Anwendungskatalog + Daten-Übersicht ------------------
+    // 7) Einbindung: Anwendungskatalog + Daten-Übersicht ------------------
     head('Einbindung (Landingpage + Daten-Übersicht)');
     p = await openPage(cdp, `${APP_BASE}/applications/prozessdokumentation`);
     await sleep(1400);

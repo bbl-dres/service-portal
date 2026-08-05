@@ -444,7 +444,7 @@
   },
   {
     "appId": "workspace",
-    "name": "Workspace & Buchung (Portal)",
+    "name": "Workspace Management (Portal)",
     "group": "Arbeitsplatz & Logistik",
     "icon": "Apps",
     "audience": [
@@ -454,12 +454,12 @@
       "kind": "app",
       "href": "#/app/workspace"
     },
-    "description": "Möblierung, Belegungsplanung, Multispace und Buchungen.",
+    "description": "Arbeitsplätze, Zonen, Belegung und Multispace-Planung für Bürogebäude.",
     "area": "logistics",
-    "subtitle": "Arbeitsplatz und Belegung",
-    "long": "Workspace Management bildet Arbeitsplätze, Zonen und Belegung der Bürogebäude ab. Es unterstützt die Planung nach Desk-Sharing-Faktor, die Zuteilung von Zonen an Verwaltungseinheiten und die Auswertung der tatsächlichen Nutzung.",
+    "subtitle": "Arbeitsplatzplanung und Belegung",
+    "long": "Workspace Management bildet Arbeitsplätze, Zonen und Belegung der Bürogebäude ab. Es unterstützt die Planung nach Desk-Sharing-Faktor, die Zuteilung von Zonen an Verwaltungseinheiten und die Auswertung der tatsächlichen Nutzung. Im Zentrum stehen Planungsgrundlagen für moderne Arbeitswelten, Multispace-Konzepte und die laufende Abstimmung von Flächenbedarf und Nutzung.",
     "access": {
-      "note": "Für Mitarbeitende der angeschlossenen Verwaltungseinheiten.",
+      "note": "Für Mitarbeitende der angeschlossenen Verwaltungseinheiten, die Arbeitsflächen planen oder auswerten.",
       "steps": [
         "Anmeldung über eIAM."
       ]
@@ -1070,7 +1070,7 @@
   },
   {
     "appId": "eshop",
-    "name": "BBL Intranetshop (E-Shop)",
+    "name": "BBL Intranetshop (Portal)",
     "group": "Arbeitsplatz & Logistik",
     "icon": "ShoppingCart",
     "audience": [
@@ -1078,8 +1078,8 @@
       "customers"
     ],
     "link": {
-      "kind": "external",
-      "href": "#"
+      "kind": "app",
+      "href": "#/app/shop"
     },
     "description": "Büromaterial, Mobiliar, Hausdienst- und IT-Verbrauchsmaterial bestellen.",
     "area": "logistics",
