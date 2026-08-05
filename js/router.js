@@ -113,6 +113,7 @@ const APPS = {
   'tenancies':       './apps/tenancies.js',
   'metadata-catalog':'./apps/metadata-catalog.js',
   'process-docs':    './apps/process-docs.js',
+  'shop':            './apps/shop.js',
 };
 // Which top-nav item to highlight for pages and apps that are not themselves a
 // top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
@@ -124,6 +125,7 @@ const SECTION_OF = {
   'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
   'document-archive': 'data', 'media-library': 'data', 'api-docs': 'data',
   'tenancies': 'data', 'metadata-catalog': 'data', 'process-docs': 'data',
+  'shop': 'data',
 };
 
 function parseHash() {

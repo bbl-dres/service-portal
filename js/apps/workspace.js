@@ -1,4 +1,4 @@
-// Workspace & Buchung — Möblierung & Material, Belegungsplanung und interaktive Ressourcenbuchung.
+// Workspace Management — Möblierung & Material, Belegungsplanung und Arbeitsplatzplanung.
 
 import * as links from '../links.js';
 import { ANWENDUNGEN, trail } from '../crumbs.js';
@@ -10,9 +10,8 @@ import { num, datum } from '../format.js';
 export const needs = ['buildings'];
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs } = ctx;
-  setTitle('Workspace & Buchung');
-  // Crumb-Blatt = Titel/h1 («Workspace & Buchung»-Kanon, Design-Review D17).
-  setCrumbs(trail(ANWENDUNGEN, { label: 'Workspace & Buchung' }));
+  setTitle('Workspace Management');
+  setCrumbs(trail(ANWENDUNGEN, { label: 'Workspace Management' }));
 
   const buildings = core.buildings();
   const totalWorkplaces = buildings.reduce((sum, b) => sum + (b.workplaces || 0), 0);
@@ -207,7 +206,7 @@ export default async function render(ctx) {
     const restore = C.preserveFocus(mount);
     mount.innerHTML = `
     <div class="container section">
-      ${C.pageHeader({ title: 'Workspace & Buchung', lead: 'Möblierung und Material, Belegungsplanung sowie Buchung von Räumen, Arbeitsplätzen und Parkplätzen.' })}
+      ${C.pageHeader({ title: 'Workspace Management', lead: 'Arbeitsplätze, Zonen, Belegung und Multispace-Planung für Bürogebäude.' })}
       <div class="tabs">
         ${C.tabBar({ items: TABS, active: state.tab, idPrefix: 'ws-tab', panelId: 'wpanel', ariaLabel: 'Workspace-Ansichten' })}
         <div class="tab__container" role="tabpanel" id="wpanel" aria-labelledby="ws-tab-${state.tab}" tabindex="0">${panel}</div>
