@@ -169,12 +169,34 @@ export function mountBanner(host, opts) {
   try { seen = localStorage.getItem(key) === '1'; } catch { /* Speicher gesperrt */ }
   if (seen) return;
   host.innerHTML = notificationBanner(opts);
+  const banner = host.querySelector('.notification-banner--fixed');
+  let observer = null;
+  const reserveSpace = () => {
+    if (!banner || !banner.isConnected) return;
+    document.body.style.setProperty('--banner-offset', `${Math.ceil(banner.getBoundingClientRect().height)}px`);
+    document.body.classList.add('body--banner-visible');
+  };
+  const releaseSpace = () => {
+    observer?.disconnect();
+    window.removeEventListener('resize', reserveSpace);
+    document.body.classList.remove('body--banner-visible');
+    document.body.style.removeProperty('--banner-offset');
+  };
+  if (banner) {
+    reserveSpace();
+    if ('ResizeObserver' in window) {
+      observer = new ResizeObserver(reserveSpace);
+      observer.observe(banner);
+    } else window.addEventListener('resize', reserveSpace);
+  }
   const btn = host.querySelector('[data-banner-close]');
   if (btn) btn.addEventListener('click', () => {
+    releaseSpace();
     host.innerHTML = '';
     try { localStorage.setItem(key, '1'); } catch { /* dann kommt er eben wieder */ }
     announce('Hinweis geschlossen.');
   });
+  return releaseSpace;
 }
 
 export function pageHeader({ title, lead, leadHtml }) {

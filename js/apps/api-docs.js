@@ -57,6 +57,22 @@ function loadSwaggerUI() {
   return suPromise;
 }
 
+// Swagger rendert Teile seines Baums erst nach `onComplete` und weitere
+// Controls beim Aufklappen einer Operation. Der Adapter ergänzt nur Namen und
+// Sprache; Struktur und Verhalten bleiben vollständig bei der Bibliothek.
+function enhanceSwagger(host) {
+  host.setAttribute('lang', 'en');
+  host.querySelectorAll('.authorization__btn').forEach((button) => {
+    button.setAttribute('aria-label', 'Authorize API access');
+  });
+  host.querySelectorAll('.expand-operation').forEach((button) => {
+    if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', 'Expand or collapse all operations');
+  });
+  host.querySelectorAll('.opblock-control-arrow').forEach((button) => {
+    if (!button.getAttribute('aria-label')) button.setAttribute('aria-label', 'Expand or collapse operation');
+  });
+}
+
 // --- Spezifikation → OpenAPI 3 ----------------------------------------------
 // data/api-specs.json ist die pflegefreundliche Kurzform (Ressourcen mit
 // Endpunkten); Swagger UI liest OpenAPI. Die Übersetzung passiert hier beim
@@ -220,6 +236,9 @@ export default async function render(ctx) {
   }
 
   host.innerHTML = '';
+  const swaggerObserver = new MutationObserver(() => enhanceSwagger(host));
+  swaggerObserver.observe(host, { childList: true, subtree: true });
+  if (ctx.onUnmount) ctx.onUnmount(() => swaggerObserver.disconnect());
   SwaggerUIBundle({
     spec: toOpenApi(spec, exampleFor),
     domNode: host,
@@ -233,6 +252,7 @@ export default async function render(ctx) {
     supportedSubmitMethods: [],     // kein Backend → kein «Try it out»
     validatorUrl: null,             // kein Anruf beim externen Validator-Badge
     onComplete: () => {
+      enhanceSwagger(host);
       // ?tag=<resource> aus dem Datenbezug-Katalog: zur Ressource scrollen.
       // onComplete feuert, BEVOR Swaggers React-Baum fertig im DOM steht —
       // deshalb kurz auf den Abschnitt pollen statt einmal zu greifen (das

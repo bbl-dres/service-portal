@@ -149,6 +149,12 @@ function catalogue(ctx) {
     ...brands.map((b) => ({ label: b, href: hash({ brand: brands.filter((x) => x !== b), page: 1 }) })),
     ...flags.map(() => ({ label: 'Neuheiten', href: hash({ status: [], page: 1 }) })),
   ];
+  const categoryOptions = {
+    active: activeCat,
+    href: (id) => hash({ category: id === 'alle' ? '' : id, page: 1 }),
+    count: (id) => products.filter((p) => cat.contains(p, id)).length,
+  };
+  const categoryNavigation = categoryTree(C, categories, categoryOptions);
 
   const card = (p) => productCard(C, p);
   const listView = (rows) => C.table({
@@ -180,11 +186,16 @@ function catalogue(ctx) {
       countId: 'shop-count',
       count: `<strong>${sorted.length}</strong> von ${products.length} Produkten${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'shop-sort', value: sortKey, options: SORT_OPTS },
-      filterId: 'shop-filter', filterLabel: 'Filter', filterCount: brands.length + flags.length,
+      filterId: 'shop-filter', filterLabel: 'Filter',
+      filterCount: brands.length + flags.length + (activeCat === 'alle' ? 0 : 1),
       panelId: 'shop-filters', panel: `
+        <nav class="shop-categories-filter" aria-labelledby="shop-categories-filter-title">
+          <h2 class="filter-group__legend" id="shop-categories-filter-title">Kategorien</h2>
+          ${categoryNavigation}
+        </nav>
         ${C.filterGroup({ dim: 'brand', legend: 'Marke', selected: brands, options: brandOpts })}
         ${C.filterGroup({ dim: 'status', legend: 'Status', selected: flags, options: [{ value: 'new', label: 'Neuheiten' }] })}
-        ${C.panelReset({ href: hash({ brand: [], status: [], page: 1 }) })}`,
+        ${C.panelReset({ href: hash({ category: '', brand: [], status: [], page: 1 }) })}`,
       view,
     })}
     ${C.activeFilters({ filters: active, resetHref: '#/app/shop' })}
@@ -194,11 +205,7 @@ function catalogue(ctx) {
         <div class="pf-sidebar__head">
           <h2 class="pf-sidebar__title">Kategorien</h2>
         </div>
-        ${categoryTree(C, categories, {
-          active: activeCat,
-          href: (id) => hash({ category: id === 'alle' ? '' : id, page: 1 }),
-          count: (id) => products.filter((p) => cat.contains(p, id)).length,
-        })}
+        ${categoryNavigation}
       </aside>
       <main class="pf-main">
         ${C.catalogueResults({

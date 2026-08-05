@@ -400,6 +400,10 @@ table.table caption { position:absolute; width:1px; height:1px; padding:0; margi
    dem Sichtfeld im Dokumentfluss. */
 .notification-banner.notification-banner--fixed { position:fixed; z-index:var(--z-toast); right:0; bottom:0; left:0; width:100%;
   border-top:1px solid var(--color-bg); box-shadow:var(--shadow-2xl); }
+/* Der fixe Streifen erhält im Dokumentfluss exakt seine gemessene Höhe. Damit
+   lassen sich Footer, Kartenunterkanten und Viewer vollständig darüber scrollen. */
+body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
+.body--banner-visible .back-to-top-btn { bottom:calc(var(--sp-6) + var(--banner-offset, 0px)); }
 /* CD schreibt `.notification-banner__wrapper { @apply container }`
    (notification-banner.postcss:20) — der Streifen richtet seinen Inhalt also an
    derselben Kante aus wie jeder andere Seiteninhalt. Hier stand stattdessen ein
@@ -1346,6 +1350,11 @@ code { font-family:var(--font-mono); }
 @media (min-width:1024px){ .btn, .btn--base { line-height:1.5rem; } .btn--sm { line-height:1.25rem; } }
 @media (min-width:1280px){ .btn, .btn--base { min-height:3rem; } .btn--sm { min-height:2.5rem; } .btn--lg { min-height:3.25rem; } }
 @media (min-width:1920px){ .btn, .btn--base { min-height:3.25rem; } .btn--sm { min-height:2.75rem; } .btn--lg { min-height:3.5rem; } }
+/* Der CD-Kompaktknopf bleibt am feinen Desktop-Zeiger erhalten. Bis Tablet
+   und auf groben Zeigern gilt die 44-px-Zielgrösse des Portal-Auftrags. */
+@media (max-width:1023.98px), (pointer:coarse), (hover:none){
+  .btn--sm { min-height:var(--target-min); }
+}
 .btn[disabled] { cursor:not-allowed; }
 /* Symbole im Knopf wachsen mit dem Knopf — beabsichtigt und stärker (0,2,0) als
    jede .icon--*-Grössenklasse (0,1,0). Ein `icon('X','icon--base')` INNERHALB
@@ -1355,10 +1364,8 @@ code { font-family:var(--font-mono); }
    intrinsische Box. transition-transform wie CD (btn.postcss:147-152) — die
    zusätzlichen Farb-Transitions auf .btn bleiben als bewusste Politur. */
 .btn .icon, .btn__icon { width:1.4em; height:1.4em; flex:none; transition:transform var(--duration); }
-/* BEWUSSTE ABWEICHUNG: kein row-reverse (btn.postcss:174-180) — CDs Vue-Knopf
-   rendert das Icon IMMER zuerst im DOM und dreht es für icon-right um; unser
-   Markup schreibt Text-dann-Icon, DOM-Reihenfolge = visuelle Reihenfolge.
-   Mit row-reverse stünden alle icon-right-Icons links. */
+/* Wie CDs Btn.vue steht das Icon bei beiden Varianten zuerst im DOM;
+   `.btn--icon-right` dreht die visuelle Reihenfolge deshalb per row-reverse. */
 /* CD w-8 für Link-Icons (btn.postcss:43-47) — grösser als die 1.4em-Basis. */
 .btn--link .btn__icon, .btn--link-negative .btn__icon { width:2rem; }
 .btn--full-width { width:100%; }
@@ -2475,19 +2482,18 @@ body.body--overlay-open .back-to-top-rail { display:none; }
    praktisch immer ein feiner Zeiger auf sie — 48px wirkten dort klobig. 44px auf
    Touch bleiben (WCAG 2.5.5 AAA), 40px am Zeiger liegen weit über der
    AA-Mindestgrösse von 24px (WCAG 2.5.8). */
-.dash-map .maplibregl-ctrl-group button,
-.pf-map  .maplibregl-ctrl-group button { width:var(--target-min); height:var(--target-min); }
+.maplibregl-map .maplibregl-ctrl-group button { width:var(--target-min); height:var(--target-min); }
 @media (min-width:1024px) and (pointer:fine){
-  .dash-map .maplibregl-ctrl-group button,
-  .pf-map .maplibregl-ctrl-group button { width:2.5rem; height:2.5rem; } }
-.dash-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon,
-.pf-map  .maplibregl-ctrl-group button .maplibregl-ctrl-icon { background-size:60%; }
-.dash-map .maplibregl-ctrl-attrib-button,
-.pf-map  .maplibregl-ctrl-attrib-button { width:1.75rem; height:1.75rem; }
-.dash-map .maplibregl-ctrl-group, .pf-map .maplibregl-ctrl-group {
+  .maplibregl-map .maplibregl-ctrl-group button { width:2.5rem; height:2.5rem; } }
+.maplibregl-map .maplibregl-ctrl-group button .maplibregl-ctrl-icon { background-size:60%; }
+.maplibregl-map .maplibregl-ctrl-attrib-button { width:var(--target-min); height:var(--target-min); }
+@media (min-width:1024px) and (pointer:fine){
+  .maplibregl-map .maplibregl-ctrl-attrib-button { width:1.75rem; height:1.75rem; }
+}
+.maplibregl-map .maplibregl-ctrl-group {
   border-radius:var(--radius-lg); box-shadow:var(--shadow-md); }
-.dash-map .maplibregl-ctrl-group button:focus-visible,
-.pf-map  .maplibregl-ctrl-group button:focus-visible {
+.maplibregl-map .maplibregl-ctrl-group button:focus-visible,
+.maplibregl-map .maplibregl-ctrl-attrib-button:focus-visible {
   outline:2px solid var(--color-focus-ring); outline-offset:1px; }
 /* HTML-Marker der Gebäude (Kreisgrösse ∝ √Geschossfläche) */
 .map-marker { display:block; position:relative; padding:0; border:2px solid var(--color-bg); border-radius:var(--radius-full);
@@ -2592,6 +2598,18 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 /* Titel, Version und Beschreibung trägt der Portal-Seitenkopf (h1/pill-row/
    lead) — Swaggers eigener Info-Block stünde doppelt darunter. */
 .swagger-host .swagger-ui .information-container { display:none; }
+/* Drittanbieter-Adapter: Swagger liefert mehrere 25–33-px-Controls. Im Portal
+   gelten 44 px sowie derselbe sichtbare Fokus wie für native Komponenten. */
+.swagger-host .swagger-ui button { min-width:var(--target-min); min-height:var(--target-min); }
+.swagger-host .swagger-ui input:not([type="hidden"]),
+.swagger-host .swagger-ui select,
+.swagger-host .swagger-ui textarea { min-height:var(--target-min); }
+.swagger-host .swagger-ui input:is([type="checkbox"],[type="radio"]) {
+  width:var(--target-min); min-width:var(--target-min); height:var(--target-min); }
+.swagger-host .swagger-ui :is(button,input,select,textarea,[tabindex]):focus-visible {
+  outline:2px solid var(--color-focus-ring) !important; outline-offset:2px; box-shadow:none; }
+.swagger-host .swagger-ui :is(button,input,select,textarea):disabled {
+  cursor:not-allowed; opacity:.55; }
 
 /* ── Prozessdokumentation: BPMN-Viewer (bpmn-js, #/app/process-docs) ─────────
    Wie der Swagger-Host: die Bibliothek bringt ihre Stile mit (diagram-js/
@@ -2610,6 +2628,11 @@ body.body--overlay-open .back-to-top-rail { display:none; }
   border:1px solid var(--border-negative); border-radius:var(--radius-full); box-shadow:var(--shadow-viewer); }
 .viewer-toolbar__readout { font-variant-numeric:tabular-nums; }
 .viewer-toolbar__separator { width:1px; align-self:stretch; background:var(--border-negative); }
+.viewer-toolbar__button:disabled { cursor:not-allowed; opacity:.55; }
+.viewer-toolbar--light .viewer-toolbar__button:focus-visible {
+  position:relative; z-index:1; outline:2px solid var(--color-focus-ring); outline-offset:-3px; }
+.viewer-toolbar--negative .viewer-toolbar__button:focus-visible {
+  position:relative; z-index:1; outline:2px solid var(--color-focus-ring-negative); outline-offset:-3px; }
 
 .bpmn-toolbar { position:absolute; z-index:2; top:var(--sp-3); right:var(--sp-3); }
 @media (min-width:1024px) and (pointer:fine){
@@ -2799,8 +2822,14 @@ body.body--overlay-open .back-to-top-rail { display:none; }
    shopping__card / shopping__cart-* / total__summary-*. */
 .shop-head { max-width:60rem; }
 .shop-layout { margin-top:var(--sp-6); }
-.shop-layout .pf-sidebar { max-height:28rem; }
-@media (min-width:1024px){ .shop-layout .pf-sidebar { max-height:calc(100vh - 8rem); } }
+.shop-layout .pf-sidebar { display:none; max-height:28rem; }
+.shop-categories-filter { padding-bottom:var(--sp-5); margin-bottom:var(--sp-5);
+  border-bottom:1px solid var(--color-secondary-200); }
+.shop-categories-filter .filter-group__legend { margin-bottom:var(--sp-2); }
+@media (min-width:1024px){
+  .shop-layout .pf-sidebar { display:block; max-height:calc(100vh - 8rem); }
+  .shop-categories-filter { display:none; }
+}
 
 .shop-card .card__title a { color:inherit; text-decoration:none; }
 .shop-card .card__footer__action { position:relative; z-index:2; }
