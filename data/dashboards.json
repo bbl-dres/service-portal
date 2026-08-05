@@ -1,144 +1,1958 @@
 {
   "_note": "Datenportal — Demo. Werte für 2025 stammen aus dem BBL-Nachhaltigkeitsbericht 2025 (NHB 2025); frühere Jahre sind für die Demo interpoliert/synthetisch.",
   "topics": [
-    { "id": "energie-klima", "title": "Energie & Klima", "icon": "Bolt", "desc": "Treibhausgasemissionen, Energieverbrauch, Ölheizungen und Photovoltaik im Immobilienportfolio.", "owner": "Nachhaltigkeit BBL" },
-    { "id": "immobilien", "title": "Immobilienportfolio", "icon": "Building", "desc": "Gebäude, Grundstücke und Bodenbedeckung des weltweiten Immobilien-Portfolios des BBL.", "owner": "Portfoliomanagement BBL" },
-    { "id": "beschaffung", "title": "Beschaffung", "icon": "Briefcase", "desc": "Beschaffungsvolumen und Anteil nachhaltiger Vergaben.", "owner": "Beschaffung BBL" },
-    { "id": "personal", "title": "Personal", "icon": "Users", "desc": "Zusammensetzung der Belegschaft, Kaderanteile, Sprachvertretung und Fluktuation.", "owner": "Personal BBL" },
-    { "id": "logistik", "title": "Logistik & Publikationen", "icon": "Archive", "desc": "Papierverbrauch, Recyclinganteil und Sortiment der Bundespublikationen.", "owner": "Logistik BBL" },
-    { "id": "mobilitaet", "title": "Mobilität", "icon": "Car", "desc": "Dienstreisen, Flugreisen und Umstellung des Fuhrparks auf Elektroantrieb.", "owner": "Nachhaltigkeit BBL" }
+    {
+      "id": "energie-klima",
+      "title": "Energie & Klima",
+      "icon": "Bolt",
+      "desc": "Klimapaket Bund: Energieverbrauch, Wärmepfade, Photovoltaik und Emissionen der Gebäude."
+    },
+    {
+      "id": "immobilien",
+      "title": "Immobilienportfolio",
+      "icon": "Building",
+      "desc": "Stammdaten des weltweiten Portfolios — Gebäude, Grundstücke, Bodenbedeckung und ihre Entwicklung.",
+      "meta": "Stammdaten · Karte · Zeitreihen"
+    },
+    {
+      "id": "bauprojekte",
+      "title": "Bauprojekte & Investitionen",
+      "icon": "Briefcase",
+      "desc": "Immobilienbotschaften, Verpflichtungskredite und die Bauausgaben des zivilen Bundes."
+    },
+    {
+      "id": "beschaffung",
+      "title": "Beschaffung",
+      "icon": "ShoppingCart",
+      "desc": "Volumen, Kategorien und Verfahren der zentralen Beschaffungsstelle des Bundes."
+    },
+    {
+      "id": "logistik",
+      "title": "Logistik & Publikationen",
+      "icon": "File",
+      "desc": "Bundespublikationen, E-Shop, Ausweisproduktion und Papierverbrauch."
+    },
+    {
+      "id": "mobilitaet",
+      "title": "Mobilität",
+      "icon": "MapMarker",
+      "desc": "Betriebsemissionen (RUMBA/ecCo), Dienstreisen und Fuhrpark."
+    },
+    {
+      "id": "personal",
+      "title": "Personal",
+      "icon": "Users",
+      "desc": "Bestand, Vielfalt und Altersstruktur der Mitarbeitenden des BBL."
+    }
   ],
-
   "datasets": {
     "thg_jahr": {
-      "label": "Treibhausgasemissionen pro Jahr",
-      "columns": [{ "name": "jahr", "type": "int" }, { "name": "tonnen", "type": "num" }],
-      "rows": [[2019, 21400], [2020, 19850], [2021, 19100], [2022, 18300], [2023, 17600], [2024, 16900], [2025, 16150]]
+      "label": "THGE Gebäude",
+      "_note": "2025 real (~16150 t, NHB); Vorjahre Demo",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "tonnen"
+        }
+      ],
+      "rows": [
+        [
+          2019,
+          21400
+        ],
+        [
+          2020,
+          20800
+        ],
+        [
+          2021,
+          19900
+        ],
+        [
+          2022,
+          19200
+        ],
+        [
+          2023,
+          18100
+        ],
+        [
+          2024,
+          17000
+        ],
+        [
+          2025,
+          16150
+        ]
+      ]
     },
     "thg_kategorie": {
       "label": "Treibhausgasemissionen nach Kategorie (Anteil)",
-      "columns": [{ "name": "kategorie", "type": "str" }, { "name": "anteil", "type": "num" }],
-      "rows": [["Wärme", 12.6], ["Abfall", 6.6], ["Strom", 5.9], ["Papier", 4.3], ["Übrige", 70.6]]
+      "columns": [
+        {
+          "name": "kategorie",
+          "type": "str"
+        },
+        {
+          "name": "anteil",
+          "type": "num"
+        }
+      ],
+      "rows": [
+        [
+          "Wärme",
+          12.6
+        ],
+        [
+          "Abfall",
+          6.6
+        ],
+        [
+          "Strom",
+          5.9
+        ],
+        [
+          "Papier",
+          4.3
+        ],
+        [
+          "Übrige",
+          70.6
+        ]
+      ]
     },
     "oelheizungen": {
-      "label": "Bezogene Energiemenge aus Ölheizungen",
-      "columns": [{ "name": "jahr", "type": "int" }, { "name": "gwh", "type": "num" }, { "name": "reihe", "type": "str" }],
-      "rows": [[2018, 11.4, "Ist"], [2020, 9.8, "Ist"], [2021, 8.9, "Ist"], [2022, 8.1, "Ist"], [2023, 7.4, "Ist"], [2024, 6.7, "Ist"], [2025, 6.1, "Ist"], [2030, 5.0, "Ziel"]]
+      "label": "Energie aus Ölheizungen",
+      "_note": "Basis 11.4 (2018) und 6.1 (2025) real; Zielpfad ≤5 ab 2030",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "gwh"
+        },
+        {
+          "name": "reihe"
+        }
+      ],
+      "rows": [
+        [
+          2018,
+          11.4,
+          "Ist"
+        ],
+        [
+          2019,
+          10.6,
+          "Ist"
+        ],
+        [
+          2020,
+          9.8,
+          "Ist"
+        ],
+        [
+          2021,
+          9.1,
+          "Ist"
+        ],
+        [
+          2022,
+          8.4,
+          "Ist"
+        ],
+        [
+          2023,
+          7.6,
+          "Ist"
+        ],
+        [
+          2024,
+          6.9,
+          "Ist"
+        ],
+        [
+          2025,
+          6.1,
+          "Ist"
+        ],
+        [
+          2025,
+          6.1,
+          "Ziel"
+        ],
+        [
+          2030,
+          5,
+          "Ziel"
+        ]
+      ]
     },
     "energietraeger": {
-      "label": "Energieverbrauch nach Träger",
-      "columns": [{ "name": "jahr", "type": "int" }, { "name": "traeger", "type": "str" }, { "name": "gwh", "type": "num" }],
+      "label": "Wärme nach Energieträger",
+      "_note": "Zusammensetzung Demo; Trend folgt NHB (Öl/Gas sinken)",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "traeger"
+        },
+        {
+          "name": "gwh"
+        }
+      ],
       "rows": [
-        [2023, "Strom", 92], [2023, "Wärme", 118], [2023, "Photovoltaik (eigen)", 2.1],
-        [2024, "Strom", 90], [2024, "Wärme", 114], [2024, "Photovoltaik (eigen)", 2.6],
-        [2025, "Strom", 88], [2025, "Wärme", 110], [2025, "Photovoltaik (eigen)", 3.0]
+        [
+          2020,
+          "Fernwärme",
+          38
+        ],
+        [
+          2020,
+          "Wärmepumpe/Elektro",
+          14
+        ],
+        [
+          2020,
+          "Gas",
+          18.9
+        ],
+        [
+          2020,
+          "Öl",
+          9.8
+        ],
+        [
+          2021,
+          "Fernwärme",
+          40
+        ],
+        [
+          2021,
+          "Wärmepumpe/Elektro",
+          16
+        ],
+        [
+          2021,
+          "Gas",
+          18.3
+        ],
+        [
+          2021,
+          "Öl",
+          9.1
+        ],
+        [
+          2022,
+          "Fernwärme",
+          41
+        ],
+        [
+          2022,
+          "Wärmepumpe/Elektro",
+          18
+        ],
+        [
+          2022,
+          "Gas",
+          17.5
+        ],
+        [
+          2022,
+          "Öl",
+          8.4
+        ],
+        [
+          2023,
+          "Fernwärme",
+          43
+        ],
+        [
+          2023,
+          "Wärmepumpe/Elektro",
+          21
+        ],
+        [
+          2023,
+          "Gas",
+          16.8
+        ],
+        [
+          2023,
+          "Öl",
+          7.6
+        ],
+        [
+          2024,
+          "Fernwärme",
+          44
+        ],
+        [
+          2024,
+          "Wärmepumpe/Elektro",
+          24
+        ],
+        [
+          2024,
+          "Gas",
+          16
+        ],
+        [
+          2024,
+          "Öl",
+          6.9
+        ],
+        [
+          2025,
+          "Fernwärme",
+          45
+        ],
+        [
+          2025,
+          "Wärmepumpe/Elektro",
+          27
+        ],
+        [
+          2025,
+          "Gas",
+          15.4
+        ],
+        [
+          2025,
+          "Öl",
+          6.1
+        ]
       ]
     },
     "pva_ausbau": {
-      "label": "Photovoltaik — Produktion und Zielpfad",
-      "columns": [{ "name": "jahr", "type": "int" }, { "name": "gwh", "type": "num" }, { "name": "reihe", "type": "str" }],
-      "rows": [[2022, 1.4, "Ist"], [2023, 2.1, "Ist"], [2024, 2.6, "Ist"], [2025, 3.0, "Ist"], [2030, 3.4, "Ziel"], [2034, 3.7, "Ziel"]]
+      "label": "Photovoltaik — Eigenproduktion",
+      "_note": "4.4 GWh 2025 real; Ziel Inland 3.7 GWh/a bis 2034 (Art. 45b EnG)",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "gwh"
+        },
+        {
+          "name": "reihe"
+        }
+      ],
+      "rows": [
+        [
+          2020,
+          1.9,
+          "Ist"
+        ],
+        [
+          2021,
+          2.2,
+          "Ist"
+        ],
+        [
+          2022,
+          2.6,
+          "Ist"
+        ],
+        [
+          2023,
+          3.1,
+          "Ist"
+        ],
+        [
+          2024,
+          3.8,
+          "Ist"
+        ],
+        [
+          2025,
+          4.4,
+          "Ist"
+        ],
+        [
+          2025,
+          4.4,
+          "Ziel"
+        ],
+        [
+          2034,
+          3.7,
+          "Ziel"
+        ]
+      ]
     },
     "snbs_gebaeude": {
       "label": "SNBS-zertifizierte Neubauten",
-      "columns": [{ "name": "objekt", "type": "str" }, { "name": "jahr", "type": "int" }, { "name": "zertifikat", "type": "str" }, { "name": "flaeche", "type": "num" }],
+      "columns": [
+        {
+          "name": "objekt",
+          "type": "str"
+        },
+        {
+          "name": "jahr",
+          "type": "int"
+        },
+        {
+          "name": "zertifikat",
+          "type": "str"
+        },
+        {
+          "name": "flaeche",
+          "type": "num"
+        }
+      ],
       "rows": [
-        ["Guisanplatz 1B, Bern", 2019, "Platin", 18127],
-        ["Pulverstrasse 11, Ittigen", 2020, "Gold", 12181],
-        ["Eichenweg 3, Zollikofen", 2022, "Platin", 25573],
-        ["Eichenweg 5, Zollikofen", 2023, "Platin", 23525]
+        [
+          "Guisanplatz 1B, Bern",
+          2019,
+          "Platin",
+          18127
+        ],
+        [
+          "Pulverstrasse 11, Ittigen",
+          2020,
+          "Gold",
+          12181
+        ],
+        [
+          "Eichenweg 3, Zollikofen",
+          2022,
+          "Platin",
+          25573
+        ],
+        [
+          "Eichenweg 5, Zollikofen",
+          2023,
+          "Platin",
+          23525
+        ]
       ]
     },
     "zertifizierte_flaeche": {
       "label": "Zertifizierte Fläche nach Standard",
-      "columns": [{ "name": "standard", "type": "str" }, { "name": "flaeche", "type": "num" }],
-      "rows": [["Minergie", 380000], ["SNBS", 79406]]
+      "columns": [
+        {
+          "name": "standard",
+          "type": "str"
+        },
+        {
+          "name": "flaeche",
+          "type": "num"
+        }
+      ],
+      "rows": [
+        [
+          "Minergie",
+          380000
+        ],
+        [
+          "SNBS",
+          79406
+        ]
+      ]
     },
     "beschaffung_volumen": {
-      "label": "Beschaffungsvolumen",
-      "columns": [{ "name": "jahr", "type": "int" }, { "name": "mrd_chf", "type": "num" }],
-      "rows": [[2021, 1.32], [2022, 1.41], [2023, 1.54], [2024, 1.62], [2025, 1.70]]
+      "label": "Beschaffungsvolumen BBL",
+      "_note": "2024 (1.54) und 2025 (1.7) real; Vorjahre Demo",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "mrd_chf"
+        }
+      ],
+      "rows": [
+        [
+          2021,
+          1.38
+        ],
+        [
+          2022,
+          1.42
+        ],
+        [
+          2023,
+          1.49
+        ],
+        [
+          2024,
+          1.54
+        ],
+        [
+          2025,
+          1.7
+        ]
+      ]
     },
     "beschaffung_nachhaltig": {
-      "label": "Anteil Vergaben mit Nachhaltigkeitskriterien",
-      "columns": [{ "name": "jahr", "type": "int" }, { "name": "anteil", "type": "num" }],
-      "rows": [[2021, 18], [2022, 24], [2023, 31], [2024, 37], [2025, 43]]
+      "label": "Vergaben mit Nachhaltigkeitskriterien",
+      "_note": "Demo",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "anteil"
+        }
+      ],
+      "rows": [
+        [
+          2021,
+          61
+        ],
+        [
+          2022,
+          68
+        ],
+        [
+          2023,
+          74
+        ],
+        [
+          2024,
+          79
+        ],
+        [
+          2025,
+          82
+        ]
+      ]
     },
     "personal_anteile": {
       "label": "Personalkennzahlen gegen Sollwerte EPA",
-      "columns": [{ "name": "kennzahl", "type": "str" }, { "name": "ist", "type": "num" }, { "name": "soll_min", "type": "num" }, { "name": "soll_max", "type": "num" }],
+      "columns": [
+        {
+          "name": "kennzahl",
+          "type": "str"
+        },
+        {
+          "name": "ist",
+          "type": "num"
+        },
+        {
+          "name": "soll_min",
+          "type": "num"
+        },
+        {
+          "name": "soll_max",
+          "type": "num"
+        }
+      ],
       "rows": [
-        ["Frauenanteil gesamt", 52, 46, 50],
-        ["Frauenanteil Kader", 32, 39, 44],
-        ["Mitarbeitende mit Behinderung", 0.5, 1.5, 2.5]
+        [
+          "Frauenanteil gesamt",
+          52,
+          46,
+          50
+        ],
+        [
+          "Frauenanteil Kader",
+          32,
+          39,
+          44
+        ],
+        [
+          "Mitarbeitende mit Behinderung",
+          0.5,
+          1.5,
+          2.5
+        ]
       ]
     },
     "sprachen": {
       "label": "Sprachvertretung",
-      "columns": [{ "name": "sprache", "type": "str" }, { "name": "anteil", "type": "num" }, { "name": "soll_min", "type": "num" }, { "name": "soll_max", "type": "num" }],
-      "rows": [["Deutsch", 74.2, 68.5, 70.5], ["Französisch", 18.9, 21.5, 23.5], ["Italienisch", 6.2, 6.5, 8.5], ["Rätoromanisch", 0.7, 0.5, 1.0]]
+      "columns": [
+        {
+          "name": "sprache",
+          "type": "str"
+        },
+        {
+          "name": "anteil",
+          "type": "num"
+        },
+        {
+          "name": "soll_min",
+          "type": "num"
+        },
+        {
+          "name": "soll_max",
+          "type": "num"
+        }
+      ],
+      "rows": [
+        [
+          "Deutsch",
+          74.2,
+          68.5,
+          70.5
+        ],
+        [
+          "Französisch",
+          18.9,
+          21.5,
+          23.5
+        ],
+        [
+          "Italienisch",
+          6.2,
+          6.5,
+          8.5
+        ],
+        [
+          "Rätoromanisch",
+          0.7,
+          0.5,
+          1
+        ]
+      ]
     },
     "fluktuation": {
       "label": "Bruttofluktuation",
-      "columns": [{ "name": "jahr", "type": "int" }, { "name": "prozent", "type": "num" }],
-      "rows": [[2023, 10], [2024, 8], [2025, 7]]
+      "columns": [
+        {
+          "name": "jahr",
+          "type": "int"
+        },
+        {
+          "name": "prozent",
+          "type": "num"
+        }
+      ],
+      "rows": [
+        [
+          2023,
+          10
+        ],
+        [
+          2024,
+          8
+        ],
+        [
+          2025,
+          7
+        ]
+      ]
     },
     "papier": {
       "label": "Papier — Verbrauch und Recyclinganteil",
-      "columns": [{ "name": "jahr", "type": "int" }, { "name": "tonnen", "type": "num" }, { "name": "recyclinganteil", "type": "num" }],
-      "rows": [[2021, 412], [2022, 386], [2023, 341], [2024, 312], [2025, 288]]
+      "columns": [
+        {
+          "name": "jahr",
+          "type": "int"
+        },
+        {
+          "name": "tonnen",
+          "type": "num"
+        },
+        {
+          "name": "recyclinganteil",
+          "type": "num"
+        }
+      ],
+      "rows": [
+        [
+          2021,
+          412
+        ],
+        [
+          2022,
+          386
+        ],
+        [
+          2023,
+          341
+        ],
+        [
+          2024,
+          312
+        ],
+        [
+          2025,
+          288
+        ]
+      ]
     },
     "papier_anteil": {
-      "label": "Anteil Recyclingpapier",
-      "columns": [{ "name": "jahr", "type": "int" }, { "name": "anteil", "type": "num" }],
-      "rows": [[2021, 52], [2022, 58], [2023, 63], [2024, 68], [2025, 71]]
+      "label": "Nachhaltiges Papier",
+      "_note": "Endwerte FSC 71 % / Recycling 50 % real (NHB 2025)",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "anteil"
+        },
+        {
+          "name": "reihe"
+        }
+      ],
+      "rows": [
+        [
+          2021,
+          58,
+          "FSC-Papier"
+        ],
+        [
+          2022,
+          62,
+          "FSC-Papier"
+        ],
+        [
+          2023,
+          66,
+          "FSC-Papier"
+        ],
+        [
+          2024,
+          69,
+          "FSC-Papier"
+        ],
+        [
+          2025,
+          71,
+          "FSC-Papier"
+        ],
+        [
+          2021,
+          41,
+          "Recyclingpapier"
+        ],
+        [
+          2022,
+          44,
+          "Recyclingpapier"
+        ],
+        [
+          2023,
+          46,
+          "Recyclingpapier"
+        ],
+        [
+          2024,
+          48,
+          "Recyclingpapier"
+        ],
+        [
+          2025,
+          50,
+          "Recyclingpapier"
+        ]
+      ]
     },
     "mobilitaet_thg": {
-      "label": "Dienstreisen — Anteil an den Reise-Emissionen",
-      "columns": [{ "name": "kategorie", "type": "str" }, { "name": "anteil", "type": "num" }],
-      "rows": [["Flugreisen", 37.3], ["Bahn", 8.4], ["Fahrzeugflotte", 41.1], ["Übrige", 13.2]]
+      "label": "Betriebsemissionen nach Kategorie 2025",
+      "_note": "Flug 37.3 % / Auto 32.1 % real; Rest Demo",
+      "columns": [
+        {
+          "name": "kategorie"
+        },
+        {
+          "name": "anteil"
+        }
+      ],
+      "rows": [
+        [
+          "Flugreisen",
+          37.3
+        ],
+        [
+          "Autofahrten",
+          32.1
+        ],
+        [
+          "Bahnreisen",
+          6.4
+        ],
+        [
+          "Übrige (Wärme, Papier, Abfall)",
+          24.2
+        ]
+      ]
     },
     "fuhrpark": {
       "label": "Fuhrpark nach Antrieb",
-      "columns": [{ "name": "antrieb", "type": "str" }, { "name": "anzahl", "type": "num" }],
-      "rows": [["Fossil", 8], ["Elektrisch", 6], ["Hybrid", 3]]
+      "columns": [
+        {
+          "name": "antrieb",
+          "type": "str"
+        },
+        {
+          "name": "anzahl",
+          "type": "num"
+        }
+      ],
+      "rows": [
+        [
+          "Fossil",
+          8
+        ],
+        [
+          "Elektrisch",
+          6
+        ],
+        [
+          "Hybrid",
+          3
+        ]
+      ]
+    },
+    "waerme_intensitaet": {
+      "label": "Wärmeverbrauch je m² EBF",
+      "_note": "REAL (NHB 2025)",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "kwh"
+        }
+      ],
+      "rows": [
+        [
+          2020,
+          60
+        ],
+        [
+          2021,
+          63
+        ],
+        [
+          2022,
+          58
+        ],
+        [
+          2023,
+          60
+        ],
+        [
+          2024,
+          55
+        ],
+        [
+          2025,
+          56
+        ]
+      ]
+    },
+    "gasheizungen": {
+      "label": "Energie aus Gasheizungen",
+      "_note": "20.3 und 15.4 real (NHB); Zwischenjahre Demo",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "gwh"
+        },
+        {
+          "name": "reihe"
+        }
+      ],
+      "rows": [
+        [
+          2018,
+          20.3,
+          "Ist"
+        ],
+        [
+          2019,
+          19.6,
+          "Ist"
+        ],
+        [
+          2020,
+          18.9,
+          "Ist"
+        ],
+        [
+          2021,
+          18.3,
+          "Ist"
+        ],
+        [
+          2022,
+          17.5,
+          "Ist"
+        ],
+        [
+          2023,
+          16.8,
+          "Ist"
+        ],
+        [
+          2024,
+          16,
+          "Ist"
+        ],
+        [
+          2025,
+          15.4,
+          "Ist"
+        ]
+      ]
+    },
+    "energie_kennzahlen": {
+      "label": "Energie & Klima — Kennzahlen",
+      "_note": "Wärme/Öl/Gas/PV real (NHB 2025); übrige teils Demo",
+      "columns": [
+        {
+          "name": "kennzahl"
+        },
+        {
+          "name": "einheit"
+        },
+        {
+          "name": "2021"
+        },
+        {
+          "name": "2022"
+        },
+        {
+          "name": "2023"
+        },
+        {
+          "name": "2024"
+        },
+        {
+          "name": "2025"
+        }
+      ],
+      "rows": [
+        [
+          "Wärmeverbrauch je m² EBF¹",
+          "kWh",
+          63,
+          58,
+          60,
+          55,
+          56
+        ],
+        [
+          "Strom Gesamtportfolio",
+          "GWh",
+          115,
+          113,
+          112,
+          111,
+          110
+        ],
+        [
+          "Photovoltaik-Eigenproduktion",
+          "GWh",
+          2.2,
+          2.6,
+          3.1,
+          3.8,
+          4.4
+        ],
+        [
+          "Energie aus Ölheizungen",
+          "GWh",
+          9.1,
+          8.4,
+          7.6,
+          6.9,
+          6.1
+        ],
+        [
+          "Energie aus Gasheizungen",
+          "GWh",
+          18.3,
+          17.5,
+          16.8,
+          16,
+          15.4
+        ],
+        [
+          "Treibhausgasemissionen Gebäude²",
+          "t CO₂-eq",
+          19900,
+          19200,
+          18100,
+          17000,
+          16150
+        ]
+      ]
+    },
+    "portfolio_jahr": {
+      "label": "Portfolio-Entwicklung (Jahresstände)",
+      "_note": "Demo-Reihe; 2026 = exakter Stand der Stammdaten (buildings/parcels.geojson)",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "gebaeude"
+        },
+        {
+          "name": "gf_m2"
+        },
+        {
+          "name": "hnf_m2"
+        },
+        {
+          "name": "grundstuecke"
+        },
+        {
+          "name": "gsf_m2"
+        },
+        {
+          "name": "eigentumsquote"
+        },
+        {
+          "name": "zugaenge"
+        },
+        {
+          "name": "abgaenge"
+        }
+      ],
+      "rows": [
+        [
+          2019,
+          24,
+          211900,
+          128400,
+          22,
+          241300,
+          83,
+          0,
+          0
+        ],
+        [
+          2020,
+          24,
+          211900,
+          128400,
+          22,
+          241300,
+          83,
+          0,
+          0
+        ],
+        [
+          2021,
+          23,
+          206400,
+          125100,
+          22,
+          241300,
+          85,
+          0,
+          1
+        ],
+        [
+          2022,
+          22,
+          199800,
+          121100,
+          21,
+          234600,
+          86,
+          0,
+          1
+        ],
+        [
+          2023,
+          23,
+          203950,
+          123600,
+          21,
+          234600,
+          87,
+          1,
+          0
+        ],
+        [
+          2024,
+          22,
+          197600,
+          119750,
+          20,
+          227220,
+          89,
+          0,
+          1
+        ],
+        [
+          2025,
+          22,
+          197600,
+          119750,
+          20,
+          227220,
+          89,
+          0,
+          0
+        ],
+        [
+          2026,
+          21,
+          194334,
+          117715,
+          20,
+          227220,
+          90,
+          0,
+          1
+        ]
+      ]
+    },
+    "portfolio_monat": {
+      "label": "Portfolio-Entwicklung (Monatsstände)",
+      "_note": "Demo; Stufen an den Portfolio-Ereignissen, Ende = heutiger Stand",
+      "columns": [
+        {
+          "name": "monat"
+        },
+        {
+          "name": "gebaeude"
+        },
+        {
+          "name": "gf_m2"
+        },
+        {
+          "name": "eigentumsquote"
+        }
+      ],
+      "rows": [
+        [
+          "2024-01",
+          23,
+          203950,
+          87
+        ],
+        [
+          "2024-02",
+          23,
+          203950,
+          87
+        ],
+        [
+          "2024-03",
+          23,
+          203950,
+          87
+        ],
+        [
+          "2024-04",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2024-05",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2024-06",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2024-07",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2024-08",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2024-09",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2024-10",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2024-11",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2024-12",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-01",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-02",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-03",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-04",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-05",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-06",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-07",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-08",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-09",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-10",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-11",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2025-12",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2026-01",
+          22,
+          197600,
+          89
+        ],
+        [
+          "2026-02",
+          21,
+          194334,
+          90
+        ],
+        [
+          "2026-03",
+          21,
+          194334,
+          90
+        ],
+        [
+          "2026-04",
+          21,
+          194334,
+          90
+        ],
+        [
+          "2026-05",
+          21,
+          194334,
+          90
+        ],
+        [
+          "2026-06",
+          21,
+          194334,
+          90
+        ],
+        [
+          "2026-07",
+          21,
+          194334,
+          90
+        ],
+        [
+          "2026-08",
+          21,
+          194334,
+          90
+        ]
+      ]
+    },
+    "botschaft": {
+      "label": "Immobilienbotschaft — beantragte Verpflichtungskredite",
+      "_note": "REAL (277.8/511.8/773.8 Mio.)",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "mio_chf"
+        }
+      ],
+      "rows": [
+        [
+          2024,
+          277.8
+        ],
+        [
+          2025,
+          511.8
+        ],
+        [
+          2026,
+          773.8
+        ]
+      ]
+    },
+    "kredite_2026": {
+      "label": "Immobilienbotschaft 2026 — grösste Verpflichtungskredite",
+      "_note": "REAL (Top 5 von 9 Krediten)",
+      "columns": [
+        {
+          "name": "projekt"
+        },
+        {
+          "name": "mio_chf"
+        }
+      ],
+      "rows": [
+        [
+          "Nationalbibliothek Bern",
+          211.7
+        ],
+        [
+          "Bundesarchiv-Magazin Zollikofen",
+          73.6
+        ],
+        [
+          "Monbijoustrasse 40, Bern",
+          66
+        ],
+        [
+          "Sportzentrum Magglingen",
+          30.9
+        ],
+        [
+          "Bundesgasse 32, Bern",
+          24.6
+        ]
+      ]
+    },
+    "bauausgaben": {
+      "label": "Bauausgaben pro Jahr",
+      "_note": "Demo",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "mio_chf"
+        }
+      ],
+      "rows": [
+        [
+          2021,
+          402
+        ],
+        [
+          2022,
+          431
+        ],
+        [
+          2023,
+          455
+        ],
+        [
+          2024,
+          468
+        ],
+        [
+          2025,
+          480
+        ]
+      ]
+    },
+    "treue": {
+      "label": "Termin- und Kostentreue der Bauprojekte",
+      "_note": "Demo",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "prozent"
+        },
+        {
+          "name": "reihe"
+        }
+      ],
+      "rows": [
+        [
+          2021,
+          86,
+          "Termintreue"
+        ],
+        [
+          2022,
+          88,
+          "Termintreue"
+        ],
+        [
+          2023,
+          85,
+          "Termintreue"
+        ],
+        [
+          2024,
+          87,
+          "Termintreue"
+        ],
+        [
+          2025,
+          87,
+          "Termintreue"
+        ],
+        [
+          2021,
+          92,
+          "Kostentreue"
+        ],
+        [
+          2022,
+          94,
+          "Kostentreue"
+        ],
+        [
+          2023,
+          93,
+          "Kostentreue"
+        ],
+        [
+          2024,
+          93,
+          "Kostentreue"
+        ],
+        [
+          2025,
+          93,
+          "Kostentreue"
+        ]
+      ]
+    },
+    "beschaffung_kategorien": {
+      "label": "Beschaffung nach Kategorie 2024",
+      "_note": "REAL (BKB-Bericht 2024)",
+      "columns": [
+        {
+          "name": "kategorie"
+        },
+        {
+          "name": "mio_chf"
+        }
+      ],
+      "rows": [
+        [
+          "Informatikdienstleistungen",
+          819.3
+        ],
+        [
+          "Software & Lizenzen",
+          117.9
+        ],
+        [
+          "Hardware",
+          96
+        ],
+        [
+          "Publikationen",
+          53.8
+        ],
+        [
+          "Sicherheitsdokumente",
+          32.8
+        ],
+        [
+          "Büro- & Raumausstattung",
+          15.6
+        ],
+        [
+          "Postdienste",
+          14.9
+        ]
+      ]
+    },
+    "beschaffung_verfahren": {
+      "label": "Volumen nach Verfahrensart 2024",
+      "_note": "Offenes Verfahren 57.3 % real; Aufteilung des Rests Demo",
+      "columns": [
+        {
+          "name": "verfahren"
+        },
+        {
+          "name": "anteil"
+        }
+      ],
+      "rows": [
+        [
+          "Offenes Verfahren",
+          57.3
+        ],
+        [
+          "Freihändiges Verfahren",
+          21.4
+        ],
+        [
+          "Einladungsverfahren",
+          12.6
+        ],
+        [
+          "Selektives Verfahren",
+          8.7
+        ]
+      ]
+    },
+    "beschaffung_stellen": {
+      "label": "Zentrale Beschaffungsstellen im Vergleich 2024",
+      "_note": "REAL (BKB-Bericht 2024)",
+      "columns": [
+        {
+          "name": "stelle"
+        },
+        {
+          "name": "mio_chf"
+        }
+      ],
+      "rows": [
+        [
+          "BBL",
+          1544.8
+        ],
+        [
+          "armasuisse",
+          1682.5
+        ],
+        [
+          "ASTRA",
+          1854.3
+        ]
+      ]
+    },
+    "eshop_index": {
+      "label": "E-Shop-Bezug, indexiert (2021 = 100)",
+      "_note": "Demo; Richtung real (Print sinkt, digital steigt)",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "index"
+        },
+        {
+          "name": "reihe"
+        }
+      ],
+      "rows": [
+        [
+          2021,
+          100,
+          "Downloads"
+        ],
+        [
+          2022,
+          115,
+          "Downloads"
+        ],
+        [
+          2023,
+          128,
+          "Downloads"
+        ],
+        [
+          2024,
+          146,
+          "Downloads"
+        ],
+        [
+          2025,
+          160,
+          "Downloads"
+        ],
+        [
+          2021,
+          100,
+          "Bestellungen (physisch)"
+        ],
+        [
+          2022,
+          97,
+          "Bestellungen (physisch)"
+        ],
+        [
+          2023,
+          94,
+          "Bestellungen (physisch)"
+        ],
+        [
+          2024,
+          91,
+          "Bestellungen (physisch)"
+        ],
+        [
+          2025,
+          88,
+          "Bestellungen (physisch)"
+        ]
+      ]
+    },
+    "ausweise": {
+      "label": "Ausweisproduktion",
+      "_note": "Demo (Stückzahlen werden nicht publiziert); Auftrag EJPD real",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "tsd"
+        },
+        {
+          "name": "reihe"
+        }
+      ],
+      "rows": [
+        [
+          2021,
+          690,
+          "Pässe"
+        ],
+        [
+          2022,
+          720,
+          "Pässe"
+        ],
+        [
+          2023,
+          745,
+          "Pässe"
+        ],
+        [
+          2024,
+          765,
+          "Pässe"
+        ],
+        [
+          2025,
+          780,
+          "Pässe"
+        ],
+        [
+          2021,
+          630,
+          "Identitätskarten"
+        ],
+        [
+          2022,
+          635,
+          "Identitätskarten"
+        ],
+        [
+          2023,
+          640,
+          "Identitätskarten"
+        ],
+        [
+          2024,
+          645,
+          "Identitätskarten"
+        ],
+        [
+          2025,
+          650,
+          "Identitätskarten"
+        ]
+      ]
+    },
+    "rumba": {
+      "label": "Betriebliche Treibhausgasemissionen (RUMBA)",
+      "_note": "REAL (608.5/489.5/488.8/483.7 t, NHB 2025)",
+      "columns": [
+        {
+          "name": "jahr"
+        },
+        {
+          "name": "tonnen"
+        }
+      ],
+      "rows": [
+        [
+          2022,
+          608.5
+        ],
+        [
+          2023,
+          489.5
+        ],
+        [
+          2024,
+          488.8
+        ],
+        [
+          2025,
+          483.7
+        ]
+      ]
+    },
+    "altersstruktur": {
+      "label": "Altersstruktur",
+      "_note": "Demo; «fast zwei Drittel über 50» real (NHB 2025)",
+      "columns": [
+        {
+          "name": "klasse"
+        },
+        {
+          "name": "anteil"
+        }
+      ],
+      "rows": [
+        [
+          "unter 30",
+          6
+        ],
+        [
+          "30–39",
+          12
+        ],
+        [
+          "40–49",
+          17
+        ],
+        [
+          "50–59",
+          41
+        ],
+        [
+          "60 und älter",
+          24
+        ]
+      ]
     }
   },
-
   "dashboards": [
     {
       "id": "energie-klima",
       "topicId": "energie-klima",
       "title": "Energie & Klima",
-      "lead": "Treibhausgasbilanz, Energieverbrauch und der Ausstieg aus fossilen Heizungen im Immobilienportfolio des BBL.",
-      "source": "NHB BBL 2025 · Energiestatistik (358 Gebäude)",
-      "updated": "2026-03-31",
-      "hero": { "label": "Treibhausgasemissionen 2025", "value": "16 150", "unit": "t CO₂e", "deltaLabel": "−4.4 % gegenüber 2024", "deltaGood": true },
+      "lead": "Der Weg des BBL-Portfolios zum Klimapaket Bund: Verbrauch, Wärmepfade, Photovoltaik und Emissionen der 358 Gebäude der Energiestatistik.",
+      "source": "Nachhaltigkeitsbericht BBL 2025 · Energiestatistik (358 Gebäude)",
+      "updated": "2026-07-15",
+      "hero": {
+        "label": "Treibhausgasemissionen 2025",
+        "value": "16 150",
+        "unit": "t CO₂e",
+        "deltaLabel": "−4.4 % gegenüber 2024",
+        "deltaGood": true
+      },
       "kpis": [
-        { "label": "Treibhausgasemissionen", "value": "16 150", "unit": "t CO₂e", "deltaLabel": "−4.4 % ggü. 2024", "deltaGood": true },
-        { "label": "Energie aus Ölheizungen", "value": "6,8", "unit": "GWh/a", "deltaLabel": "Ziel 5 bis 2030", "deltaGood": true },
-        { "label": "Photovoltaik-Produktion", "value": "4,1", "unit": "GWh/a", "deltaLabel": "+38 % ggü. 2022", "deltaGood": true },
-        { "label": "Anteil erneuerbar", "value": "72", "unit": "%", "deltaLabel": "+3 Pp. ggü. 2024", "deltaGood": true }
+        {
+          "label": "Wärmeverbrauch",
+          "value": "56",
+          "unit": "kWh/m²",
+          "deltaLabel": "+1 ggü. Vorjahr",
+          "deltaGood": false
+        },
+        {
+          "label": "Photovoltaik",
+          "value": "4,4",
+          "unit": "GWh",
+          "deltaLabel": "+0,6 ggü. Vorjahr",
+          "deltaGood": true
+        },
+        {
+          "label": "Energie aus Öl",
+          "value": "6,1",
+          "unit": "GWh",
+          "deltaLabel": "Ziel: ≤5 ab 2030",
+          "deltaGood": true
+        },
+        {
+          "label": "THGE Gebäude",
+          "value": "16'150",
+          "unit": "t CO₂-eq",
+          "deltaLabel": "−5 % ggü. Vorjahr",
+          "deltaGood": true
+        }
       ],
       "charts": [
-        { "id": "thg-trend", "title": "Treibhausgasemissionen", "form": "line", "unit": "t CO₂e",
-          "query": { "dataset": "thg_jahr", "select": ["jahr", "tonnen"], "orderBy": "jahr" },
-          "x": "jahr", "y": "tonnen",
-          "note": "Scope 1 und 2 der Energiestatistik." },
-        { "id": "oel-pfad", "title": "Energie aus Ölheizungen — Ist und Zielpfad", "form": "line", "unit": "GWh/a",
-          "query": { "dataset": "oelheizungen", "select": ["jahr", "gwh", "reihe"], "orderBy": "jahr" },
-          "x": "jahr", "y": "gwh", "series": "reihe",
-          "note": "Ziel: Reduktion von 11,4 GWh/a (2018) auf 5 GWh/a bis 2030." },
-        { "id": "thg-kat", "title": "Emissionen nach Kategorie", "form": "barH", "unit": "%",
-          "query": { "dataset": "thg_kategorie", "select": ["kategorie", "anteil"], "orderBy": "-anteil" },
-          "x": "kategorie", "y": "anteil" },
-        { "id": "pva", "title": "Photovoltaik — Eigenproduktion", "form": "column", "unit": "GWh/a",
-          "query": { "dataset": "pva_ausbau", "select": ["jahr", "gwh", "reihe"], "orderBy": "jahr" },
-          "x": "jahr", "y": "gwh", "series": "reihe" }
+        {
+          "id": "thg-trend",
+          "form": "line",
+          "title": "Treibhausgasemissionen der Gebäude",
+          "unit": "t",
+          "x": "jahr",
+          "y": "tonnen",
+          "note": "Jährliche Aktualisierung — Stand: Juli 2026. Strom zu 100 % erneuerbar (HKN Wasserkraft + eigene PV).",
+          "query": {
+            "dataset": "thg_jahr",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "waerme",
+          "form": "line",
+          "title": "Wärmeverbrauch je m² Energiebezugsfläche",
+          "unit": "kWh/m²",
+          "x": "jahr",
+          "y": "kwh",
+          "note": "Witterungsbereinigt; Reihe aus dem Nachhaltigkeitsbericht 2025.",
+          "query": {
+            "dataset": "waerme_intensitaet",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "pva",
+          "form": "line",
+          "title": "Photovoltaik — Eigenproduktion und Zielpfad",
+          "unit": "GWh",
+          "x": "jahr",
+          "y": "gwh",
+          "series": "reihe",
+          "note": "Ziel: 3,7 GWh/a Inlandproduktion bis 2034 (Art. 45b EnG); Echtzeit-Monitoring über die Plattform Abidex.",
+          "query": {
+            "dataset": "pva_ausbau",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "thg-kat",
+          "form": "barH",
+          "title": "Emissionen nach Kategorie",
+          "unit": "%",
+          "x": "kategorie",
+          "y": "anteil",
+          "query": {
+            "dataset": "thg_kategorie",
+            "orderBy": "-anteil"
+          }
+        },
+        {
+          "id": "oel-pfad",
+          "form": "line",
+          "title": "Energie aus Ölheizungen — Ist und Zielpfad",
+          "unit": "GWh",
+          "x": "jahr",
+          "y": "gwh",
+          "series": "reihe",
+          "note": "Klimapaket Bund: Ersatz der Ölheizungen bis 2030 (Ziel ≤5 GWh); Basis 11,4 GWh (2018).",
+          "query": {
+            "dataset": "oelheizungen",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "gas-pfad",
+          "form": "line",
+          "title": "Energie aus Gasheizungen",
+          "unit": "GWh",
+          "x": "jahr",
+          "y": "gwh",
+          "series": "reihe",
+          "note": "Bereits unter dem Zielwert des Klimapakets.",
+          "query": {
+            "dataset": "gasheizungen",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "traeger",
+          "form": "area",
+          "title": "Wärme nach Energieträger",
+          "unit": "GWh",
+          "x": "jahr",
+          "y": "gwh",
+          "series": "traeger",
+          "note": "Zusammensetzung der Wärmeversorgung — Öl und Gas werden durch Fernwärme und Wärmepumpen ersetzt.",
+          "query": {
+            "dataset": "energietraeger",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "energie-kz",
+          "form": "table",
+          "title": "Kennzahlen Energie & Klima",
+          "x": "kennzahl",
+          "xLabel": "Kennzahl",
+          "footnotes": [
+            "Witterungsbereinigt, je m² Energiebezugsfläche (EBF).",
+            "Strom und Wärme der 358 Gebäude der Energiestatistik."
+          ],
+          "query": {
+            "dataset": "energie_kennzahlen"
+          }
+        }
       ],
       "tabs": [
-        { "id": "ueberblick", "label": "Überblick", "charts": ["thg-trend", "thg-kat"] },
-        { "id": "energiepfad", "label": "Energie & Pfad", "charts": ["oel-pfad", "pva"] }
+        {
+          "id": "ueberblick",
+          "label": "Überblick",
+          "charts": [
+            "thg-trend",
+            "waerme",
+            "pva",
+            "thg-kat"
+          ]
+        },
+        {
+          "id": "energiepfad",
+          "label": "Energiepfade",
+          "charts": [
+            "oel-pfad",
+            "gas-pfad",
+            "traeger"
+          ]
+        },
+        {
+          "id": "kennzahlen",
+          "label": "Kennzahlen",
+          "charts": [
+            "energie-kz"
+          ]
+        }
       ]
     },
     {
@@ -148,98 +1962,597 @@
       "lead": "Überblick über die Immobilien-Stammdaten des BBL — Gebäude, Grundstücke und Bodenbedeckung des weltweiten Portfolios.",
       "source": "NHB BBL 2025 · Portfoliomanagement",
       "updated": "2026-03-31",
-      "hero": { "label": "SNBS-zertifizierte Fläche", "value": "79 406", "unit": "m²", "deltaLabel": "4 Neubauten seit 2019", "deltaGood": true },
+      "hero": {
+        "label": "SNBS-zertifizierte Fläche",
+        "value": "79 406",
+        "unit": "m²",
+        "deltaLabel": "4 Neubauten seit 2019",
+        "deltaGood": true
+      },
       "kpis": [
-        { "label": "SNBS-zertifizierte Fläche", "value": "79 406", "unit": "m²", "deltaLabel": "4 Neubauten seit 2019", "deltaGood": true },
-        { "label": "Georeferenzierte Objekte", "value": "{buildingCount}", "unit": "", "deltaLabel": "auf der Karte" },
-        { "label": "Zertifizierte Standards", "value": "2", "unit": "", "deltaLabel": "SNBS · Minergie" },
-        { "label": "Grösster Neubau", "value": "34 200", "unit": "m²", "deltaLabel": "Verwaltungszentrum" }
+        {
+          "label": "SNBS-zertifizierte Fläche",
+          "value": "79 406",
+          "unit": "m²",
+          "deltaLabel": "4 Neubauten seit 2019",
+          "deltaGood": true
+        },
+        {
+          "label": "Georeferenzierte Objekte",
+          "value": "{buildingCount}",
+          "unit": "",
+          "deltaLabel": "auf der Karte"
+        },
+        {
+          "label": "Zertifizierte Standards",
+          "value": "2",
+          "unit": "",
+          "deltaLabel": "SNBS · Minergie"
+        },
+        {
+          "label": "Grösster Neubau",
+          "value": "34 200",
+          "unit": "m²",
+          "deltaLabel": "Verwaltungszentrum"
+        }
       ],
       "charts": [
-        { "id": "snbs", "title": "SNBS-zertifizierte Neubauten", "form": "barH", "unit": "m²",
-          "query": { "dataset": "snbs_gebaeude", "select": ["objekt", "flaeche"], "orderBy": "-flaeche" },
-          "x": "objekt", "y": "flaeche" },
-        { "id": "zert", "title": "Zertifizierte Fläche nach Standard", "form": "barH", "unit": "m²",
-          "query": { "dataset": "zertifizierte_flaeche", "select": ["standard", "flaeche"], "orderBy": "-flaeche" },
-          "x": "standard", "y": "flaeche" },
-        { "id": "portfolio-map", "title": "Standorte im Portfolio", "form": "map",
-          "note": "Georeferenzierte Gebäude aus dem Bestand — Kreisgrösse nach Geschossfläche, Klick öffnet das Objekt. Kartengrundlage © swisstopo." }
+        {
+          "id": "snbs",
+          "title": "SNBS-zertifizierte Neubauten",
+          "form": "barH",
+          "unit": "m²",
+          "query": {
+            "dataset": "snbs_gebaeude",
+            "select": [
+              "objekt",
+              "flaeche"
+            ],
+            "orderBy": "-flaeche"
+          },
+          "x": "objekt",
+          "y": "flaeche"
+        },
+        {
+          "id": "zert",
+          "title": "Zertifizierte Fläche nach Standard",
+          "form": "barH",
+          "unit": "m²",
+          "query": {
+            "dataset": "zertifizierte_flaeche",
+            "select": [
+              "standard",
+              "flaeche"
+            ],
+            "orderBy": "-flaeche"
+          },
+          "x": "standard",
+          "y": "flaeche"
+        },
+        {
+          "id": "portfolio-map",
+          "title": "Standorte im Portfolio",
+          "form": "map",
+          "note": "Georeferenzierte Gebäude aus dem Bestand — Kreisgrösse nach Geschossfläche, Klick öffnet das Objekt. Kartengrundlage © swisstopo."
+        }
       ],
       "tabs": [
-        { "id": "ueberblick", "label": "Überblick", "charts": ["snbs", "zert"] },
-        { "id": "karte", "label": "Karte", "charts": ["portfolio-map"] }
+        {
+          "id": "ueberblick",
+          "label": "Überblick",
+          "charts": [
+            "snbs",
+            "zert"
+          ]
+        },
+        {
+          "id": "karte",
+          "label": "Karte",
+          "charts": [
+            "portfolio-map"
+          ]
+        }
       ]
     },
     {
       "id": "beschaffung",
       "topicId": "beschaffung",
       "title": "Beschaffung",
-      "lead": "Volumen und Nachhaltigkeitsanteil der über das BBL abgewickelten Vergaben.",
-      "source": "NHB BBL 2025 · Beschaffungscontrolling",
-      "updated": "2026-02-28",
-      "hero": { "label": "Beschaffungsvolumen 2025", "value": "1,70", "unit": "Mrd. CHF", "deltaLabel": "+4.9 % gegenüber 2024", "deltaGood": null },
+      "lead": "Die zentrale Beschaffungsstelle des Bundes für zivile Güter und Dienstleistungen: Volumen, Kategorien, Verfahren und der Vergleich mit armasuisse und ASTRA.",
+      "source": "Bericht zum Beschaffungswesen 2024 (BKB) · Nachhaltigkeitsbericht BBL 2025",
+      "updated": "2026-05-30",
+      "hero": {
+        "label": "Beschaffungsvolumen 2025",
+        "value": "1,70",
+        "unit": "Mrd. CHF",
+        "deltaLabel": "+4.9 % gegenüber 2024",
+        "deltaGood": null
+      },
       "charts": [
-        { "id": "vol", "title": "Beschaffungsvolumen", "form": "column", "unit": "Mrd. CHF",
-          "query": { "dataset": "beschaffung_volumen", "select": ["jahr", "mrd_chf"], "orderBy": "jahr" },
-          "x": "jahr", "y": "mrd_chf" },
-        { "id": "nachhaltig", "title": "Anteil Vergaben mit Nachhaltigkeitskriterien", "form": "line", "unit": "%",
-          "query": { "dataset": "beschaffung_nachhaltig", "select": ["jahr", "anteil"], "orderBy": "jahr" },
-          "x": "jahr", "y": "anteil" }
+        {
+          "id": "vol",
+          "form": "column",
+          "title": "Beschaffungsvolumen",
+          "unit": "Mrd. CHF",
+          "x": "jahr",
+          "y": "mrd_chf",
+          "note": "Jährliche Aktualisierung — Stand: Bericht zum Beschaffungswesen 2024.",
+          "query": {
+            "dataset": "beschaffung_volumen",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "kategorien",
+          "form": "barH",
+          "title": "Volumen nach Kategorie 2024",
+          "unit": "Mio. CHF",
+          "x": "kategorie",
+          "y": "mio_chf",
+          "query": {
+            "dataset": "beschaffung_kategorien",
+            "orderBy": "-mio_chf"
+          }
+        },
+        {
+          "id": "verfahren",
+          "form": "pie",
+          "title": "Volumen nach Verfahrensart 2024",
+          "unit": "%",
+          "x": "verfahren",
+          "y": "anteil",
+          "query": {
+            "dataset": "beschaffung_verfahren",
+            "orderBy": "-anteil"
+          }
+        },
+        {
+          "id": "stellen",
+          "form": "column",
+          "title": "Zentrale Beschaffungsstellen im Vergleich 2024",
+          "unit": "Mio. CHF",
+          "x": "stelle",
+          "y": "mio_chf",
+          "note": "BBL, armasuisse und ASTRA sind die drei zentralen Beschaffungsstellen des Bundes (dazu die Bundesreisezentrale).",
+          "query": {
+            "dataset": "beschaffung_stellen",
+            "orderBy": "-mio_chf"
+          }
+        },
+        {
+          "id": "nachhaltig",
+          "form": "line",
+          "title": "Anteil Vergaben mit Nachhaltigkeitskriterien",
+          "unit": "%",
+          "x": "jahr",
+          "y": "anteil",
+          "query": {
+            "dataset": "beschaffung_nachhaltig",
+            "orderBy": "jahr"
+          }
+        }
+      ],
+      "kpis": [
+        {
+          "label": "Beschaffungsvolumen",
+          "value": "1,7",
+          "unit": "Mrd. CHF",
+          "deltaLabel": "+10 % ggü. 2024"
+        },
+        {
+          "label": "Verträge & Bestellungen",
+          "value": "55'203",
+          "unit": "",
+          "deltaLabel": "Berichtsjahr 2024"
+        },
+        {
+          "label": "Anteil IKT",
+          "value": "54,1",
+          "unit": "%",
+          "deltaLabel": "grösste Kategorie"
+        },
+        {
+          "label": "Beschwerden",
+          "value": "0",
+          "unit": "",
+          "deltaLabel": "gegen BBL-Zuschläge 2024",
+          "deltaGood": true
+        }
+      ],
+      "tabs": [
+        {
+          "id": "ueberblick",
+          "label": "Überblick",
+          "charts": [
+            "vol",
+            "kategorien",
+            "verfahren"
+          ]
+        },
+        {
+          "id": "vergleich",
+          "label": "Vergleich & Nachhaltigkeit",
+          "charts": [
+            "stellen",
+            "nachhaltig"
+          ]
+        }
       ]
     },
     {
       "id": "personal",
       "topicId": "personal",
       "title": "Personal",
-      "lead": "Zusammensetzung der Belegschaft im Vergleich zu den Sollwerten des Eidgenössischen Personalamts (EPA).",
-      "source": "NHB BBL 2025 · Personal BBL",
-      "updated": "2026-01-31",
-      "hero": { "label": "Frauenanteil", "value": "52", "unit": "%", "deltaLabel": "Sollwert EPA 46–50 %", "deltaGood": true },
+      "lead": "Bestand, Vielfalt und Altersstruktur der Mitarbeitenden des BBL — knapp die Hälfte Frauen, fast zwei Drittel über 50.",
+      "source": "BBL Personalreporting 2025",
+      "updated": "2026-03-31",
+      "hero": {
+        "label": "Frauenanteil",
+        "value": "52",
+        "unit": "%",
+        "deltaLabel": "Sollwert EPA 46–50 %",
+        "deltaGood": true
+      },
       "charts": [
-        { "id": "anteile", "title": "Kennzahlen gegen Sollwert", "form": "barH", "unit": "%",
-          "query": { "dataset": "personal_anteile", "select": ["kennzahl", "ist"], "orderBy": "-ist" },
-          "x": "kennzahl", "y": "ist" },
-        { "id": "sprachen", "title": "Sprachvertretung", "form": "barH", "unit": "%",
-          "query": { "dataset": "sprachen", "select": ["sprache", "anteil"], "orderBy": "-anteil" },
-          "x": "sprache", "y": "anteil" },
-        { "id": "flukt", "title": "Bruttofluktuation", "form": "line", "unit": "%",
-          "query": { "dataset": "fluktuation", "select": ["jahr", "prozent"], "orderBy": "jahr" },
-          "x": "jahr", "y": "prozent" }
+        {
+          "id": "anteile",
+          "title": "Kennzahlen gegen Sollwert",
+          "form": "barH",
+          "unit": "%",
+          "query": {
+            "dataset": "personal_anteile",
+            "select": [
+              "kennzahl",
+              "ist"
+            ],
+            "orderBy": "-ist"
+          },
+          "x": "kennzahl",
+          "y": "ist"
+        },
+        {
+          "id": "sprachen",
+          "title": "Sprachvertretung",
+          "form": "barH",
+          "unit": "%",
+          "query": {
+            "dataset": "sprachen",
+            "select": [
+              "sprache",
+              "anteil"
+            ],
+            "orderBy": "-anteil"
+          },
+          "x": "sprache",
+          "y": "anteil"
+        },
+        {
+          "id": "flukt",
+          "title": "Bruttofluktuation",
+          "form": "line",
+          "unit": "%",
+          "query": {
+            "dataset": "fluktuation",
+            "select": [
+              "jahr",
+              "prozent"
+            ],
+            "orderBy": "jahr"
+          },
+          "x": "jahr",
+          "y": "prozent"
+        },
+        {
+          "id": "alter",
+          "form": "column",
+          "title": "Altersstruktur",
+          "unit": "%",
+          "x": "klasse",
+          "y": "anteil",
+          "query": {
+            "dataset": "altersstruktur"
+          }
+        }
+      ],
+      "kpis": [
+        {
+          "label": "Mitarbeitende",
+          "value": "843",
+          "unit": "",
+          "deltaLabel": "Ø 2025"
+        },
+        {
+          "label": "Frauenanteil",
+          "value": "50,4",
+          "unit": "%",
+          "deltaLabel": "+0,8 ggü. Vorjahr",
+          "deltaGood": true
+        },
+        {
+          "label": "Über 50 Jahre",
+          "value": "65",
+          "unit": "%",
+          "deltaLabel": "Nachfolgeplanung läuft"
+        },
+        {
+          "label": "Lernende",
+          "value": "22",
+          "unit": "",
+          "deltaLabel": "in 7 Berufen"
+        }
       ]
     },
     {
       "id": "logistik",
       "topicId": "logistik",
       "title": "Logistik & Publikationen",
-      "lead": "Papierverbrauch und Recyclinganteil im Publikations- und Bürobetrieb.",
-      "source": "NHB BBL 2025 · Logistik BBL",
-      "updated": "2026-02-28",
-      "hero": { "label": "Anteil Recyclingpapier", "value": "71", "unit": "%", "deltaLabel": "+3 Prozentpunkte gegenüber 2024", "deltaGood": true },
+      "lead": "Verlag und Vertrieb der Bundespublikationen, Ausweisproduktion und der Papierverbrauch — vom Abstimmungsbüchlein bis zum E-Shop.",
+      "source": "Nachhaltigkeitsbericht BBL 2025 · BBL Produktion & Verlag",
+      "updated": "2026-06-10",
+      "hero": {
+        "label": "Anteil Recyclingpapier",
+        "value": "71",
+        "unit": "%",
+        "deltaLabel": "+3 Prozentpunkte gegenüber 2024",
+        "deltaGood": true
+      },
       "charts": [
-        { "id": "verbrauch", "title": "Papierverbrauch", "form": "column", "unit": "t",
-          "query": { "dataset": "papier", "select": ["jahr", "tonnen"], "orderBy": "jahr" },
-          "x": "jahr", "y": "tonnen" },
-        { "id": "recycling", "title": "Anteil Recyclingpapier", "form": "line", "unit": "%",
-          "query": { "dataset": "papier_anteil", "select": ["jahr", "anteil"], "orderBy": "jahr" },
-          "x": "jahr", "y": "anteil" }
-      ]
+        {
+          "id": "verbrauch",
+          "form": "column",
+          "title": "Papierverbrauch",
+          "unit": "t",
+          "x": "jahr",
+          "y": "tonnen",
+          "note": "Rund 70 % entfallen auf Abstimmungsunterlagen und Bundescouverts.",
+          "query": {
+            "dataset": "papier",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "recycling",
+          "form": "line",
+          "title": "Nachhaltiges Papier — FSC und Recycling",
+          "unit": "%",
+          "x": "jahr",
+          "y": "anteil",
+          "series": "reihe",
+          "query": {
+            "dataset": "papier_anteil",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "eshop",
+          "form": "line",
+          "title": "E-Shop-Bezug, indexiert (2021 = 100)",
+          "unit": "%",
+          "x": "jahr",
+          "y": "index",
+          "series": "reihe",
+          "note": "Index Basis 2021 = 100 — digitale Bezüge wachsen, physische Bestellungen gehen zurück.",
+          "query": {
+            "dataset": "eshop_index",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "ausweise",
+          "form": "column",
+          "title": "Ausweisproduktion",
+          "unit": "Tsd.",
+          "x": "jahr",
+          "y": "tsd",
+          "series": "reihe",
+          "note": "Personalisierung von Pass und Identitätskarte im Auftrag des EJPD — Stückzahlen im Prototyp simuliert.",
+          "query": {
+            "dataset": "ausweise",
+            "orderBy": "jahr"
+          }
+        }
+      ],
+      "kpis": [
+        {
+          "label": "Titel im E-Shop",
+          "value": "55'000",
+          "unit": "",
+          "deltaLabel": "95 % auch digital"
+        },
+        {
+          "label": "Physisch an Lager",
+          "value": "7",
+          "unit": "%",
+          "deltaLabel": "Print on Demand",
+          "deltaGood": true
+        },
+        {
+          "label": "Postsendungen",
+          "value": "40'000",
+          "unit": "/Tag",
+          "deltaLabel": "beauftragt"
+        },
+        {
+          "label": "Recyclingpapier",
+          "value": "50",
+          "unit": "%",
+          "deltaLabel": "+2 ggü. Vorjahr",
+          "deltaGood": true
+        }
+      ],
+      "tabs": []
     },
     {
       "id": "mobilitaet",
       "topicId": "mobilitaet",
       "title": "Mobilität",
-      "lead": "Emissionen aus Dienstreisen und Umstellung des Fuhrparks auf Elektroantrieb.",
-      "source": "NHB BBL 2025 · Nachhaltigkeit BBL",
-      "updated": "2026-03-31",
-      "hero": { "label": "Anteil Flugreisen an den Reise-Emissionen", "value": "37,3", "unit": "%", "deltaLabel": "Reduktion seit 2019", "deltaGood": true },
+      "lead": "Die betrieblichen Emissionen des BBL nach RUMBA — ab 2026 nach dem Modell ecCo — mit Dienstreisen und Fuhrpark.",
+      "source": "RUMBA-Berichterstattung 2025 (ab 2026: Modell ecCo)",
+      "updated": "2026-04-22",
+      "hero": {
+        "label": "Anteil Flugreisen an den Reise-Emissionen",
+        "value": "37,3",
+        "unit": "%",
+        "deltaLabel": "Reduktion seit 2019",
+        "deltaGood": true
+      },
       "charts": [
-        { "id": "reise", "title": "Emissionen aus Dienstreisen nach Kategorie", "form": "barH", "unit": "%",
-          "query": { "dataset": "mobilitaet_thg", "select": ["kategorie", "anteil"], "orderBy": "-anteil" },
-          "x": "kategorie", "y": "anteil" },
-        { "id": "flotte", "title": "Fuhrpark nach Antrieb", "form": "barH", "unit": "Fahrzeuge",
-          "query": { "dataset": "fuhrpark", "select": ["antrieb", "anzahl"], "orderBy": "-anzahl" },
-          "x": "antrieb", "y": "anzahl",
-          "note": "Bis 2028 sollen acht fossil betriebene Fahrzeuge ersetzt werden." }
+        {
+          "id": "rumba-trend",
+          "form": "line",
+          "title": "Betriebliche Treibhausgasemissionen",
+          "unit": "t CO₂-eq",
+          "x": "jahr",
+          "y": "tonnen",
+          "note": "2025 letztmals nach RUMBA erhoben; ab 2026 Modell ecCo (Vorbildfunktion Energie und Klima).",
+          "query": {
+            "dataset": "rumba",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "reise",
+          "form": "barH",
+          "title": "Betriebsemissionen nach Kategorie 2025",
+          "unit": "%",
+          "x": "kategorie",
+          "y": "anteil",
+          "query": {
+            "dataset": "mobilitaet_thg",
+            "orderBy": "-anteil"
+          }
+        },
+        {
+          "id": "flotte",
+          "form": "barH",
+          "title": "Fuhrpark nach Antrieb",
+          "unit": "",
+          "x": "antrieb",
+          "y": "anzahl",
+          "query": {
+            "dataset": "fuhrpark",
+            "orderBy": "-anzahl"
+          }
+        }
+      ],
+      "kpis": [
+        {
+          "label": "THGE Betrieb",
+          "value": "483,7",
+          "unit": "t CO₂-eq",
+          "deltaLabel": "−20 % ggü. 2022",
+          "deltaGood": true
+        },
+        {
+          "label": "Anteil Flugreisen",
+          "value": "37,3",
+          "unit": "%",
+          "deltaLabel": "grösste Kategorie"
+        },
+        {
+          "label": "Anteil Autofahrten",
+          "value": "32,1",
+          "unit": "%",
+          "deltaLabel": "stabil"
+        },
+        {
+          "label": "E-Ersatzbeschaffungen",
+          "value": "8",
+          "unit": "",
+          "deltaLabel": "bis 2028 geplant",
+          "deltaGood": true
+        }
+      ],
+      "tabs": []
+    },
+    {
+      "id": "bauprojekte",
+      "topicId": "bauprojekte",
+      "title": "Bauprojekte & Investitionen",
+      "lead": "Was der Bund in seine zivilen Bauten investiert: die Immobilienbotschaften ans Parlament, die grössten Verpflichtungskredite und die Projektabwicklung.",
+      "source": "Immobilienbotschaften EFD 2024–2026 · BBL Projektreporting",
+      "updated": "2026-06-20",
+      "kpis": [
+        {
+          "label": "Immobilienbotschaft 2026",
+          "value": "773,8",
+          "unit": "Mio. CHF",
+          "deltaLabel": "+51 % ggü. 2025"
+        },
+        {
+          "label": "Verpflichtungskredite",
+          "value": "9",
+          "unit": "",
+          "deltaLabel": "Grösster: 211,7 Mio."
+        },
+        {
+          "label": "Laufende Projekte",
+          "value": "145",
+          "unit": "",
+          "deltaLabel": "+3 ggü. Vorjahr"
+        },
+        {
+          "label": "Kostentreue",
+          "value": "93",
+          "unit": "%",
+          "deltaLabel": "stabil seit 2023",
+          "deltaGood": true
+        }
+      ],
+      "tabs": [],
+      "charts": [
+        {
+          "id": "botschaft",
+          "form": "column",
+          "title": "Immobilienbotschaft — beantragte Verpflichtungskredite",
+          "unit": "Mio. CHF",
+          "x": "jahr",
+          "y": "mio_chf",
+          "note": "Jährliche Botschaft des Bundesrats ans Parlament (zivile Bauten).",
+          "query": {
+            "dataset": "botschaft",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "kredite",
+          "form": "barH",
+          "title": "Grösste Verpflichtungskredite 2026",
+          "unit": "Mio. CHF",
+          "x": "projekt",
+          "y": "mio_chf",
+          "note": "Die fünf grössten von neun Krediten der Immobilienbotschaft 2026.",
+          "query": {
+            "dataset": "kredite_2026",
+            "orderBy": "-mio_chf"
+          }
+        },
+        {
+          "id": "ausgaben",
+          "form": "column",
+          "title": "Bauausgaben pro Jahr",
+          "unit": "Mio. CHF",
+          "x": "jahr",
+          "y": "mio_chf",
+          "query": {
+            "dataset": "bauausgaben",
+            "orderBy": "jahr"
+          }
+        },
+        {
+          "id": "treue",
+          "form": "line",
+          "title": "Termin- und Kostentreue",
+          "unit": "%",
+          "x": "jahr",
+          "y": "prozent",
+          "series": "reihe",
+          "note": "Anteil der Projekte im Termin- bzw. Kostenrahmen.",
+          "query": {
+            "dataset": "treue",
+            "orderBy": "jahr"
+          }
+        }
       ]
     }
   ]

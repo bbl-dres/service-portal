@@ -91,6 +91,70 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(/Bild heruntergeladen|fehlgeschlagen/.test(r.toastPng || ''), `PNG → toast ("${r.toastPng}")`);
     check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
     await page.closeTarget();
+
+    // --- Datenportal-Ausbau (Aug. 2026): 7 Themen, neue Chart-Formen, Zeitachse ---
+    console.log('■ Datenportal-Ausbau (Themen · Kennzahlen-Tabelle · Fläche · Zeitachse)');
+    const p2 = await openPage(cdp, `${APP_BASE}/app/dataportal`);
+    await new Promise(r => setTimeout(r, 1200));
+    const o = JSON.parse(await p2.evaluate(`JSON.stringify({
+      cards: document.querySelectorAll('.grid h3').length,
+      bauprojekte: [...document.querySelectorAll('.grid h3')].some(h => /Bauprojekte & Investitionen/.test(h.textContent)),
+    })`));
+    check(o.cards === 7, `7 Themenkarten (${o.cards})`);
+    check(o.bauprojekte, 'Thema «Bauprojekte & Investitionen» vorhanden');
+    await p2.evaluate(`location.hash = '#/app/dataportal/energie-klima?tab=kennzahlen'`);
+    await new Promise(r => setTimeout(r, 1200));
+    const kz = JSON.parse(await p2.evaluate(`JSON.stringify({
+      table: !!document.querySelector('#energie-kz .chart__table--visible table'),
+      rows: document.querySelectorAll('#energie-kz tbody tr').length,
+      fussnoten: document.querySelectorAll('#energie-kz .chart__footnotes li').length,
+    })`));
+    check(kz.table && kz.rows >= 5, `Kennzahlen-Tabelle sichtbar (${kz.rows} Zeilen)`);
+    check(kz.fussnoten >= 1, `Fussnoten (${kz.fussnoten})`);
+    await p2.evaluate(`location.hash = '#/app/dataportal/energie-klima?tab=energiepfad'`);
+    await new Promise(r => setTimeout(r, 1200));
+    const ar = JSON.parse(await p2.evaluate(`JSON.stringify({
+      bands: document.querySelectorAll('#traeger svg path[fill-opacity]').length,
+      legende: document.querySelectorAll('#traeger .chart__legend-item').length,
+    })`));
+    check(ar.bands === 4 && ar.legende === 4, `Flächendiagramm gestapelt (${ar.bands} Bänder, ${ar.legende} Legendeneinträge)`);
+    check((await p2.problems()).length === 0, 'Ausbau: keine Fehler');
+    await p2.closeTarget();
+
+    // Immobilien: Register «Entwicklung» (Zeitachse, Nutzerwunsch 2026-08-05).
+    console.log('■ Immobilienportfolio — Register «Entwicklung»');
+    const p3 = await openPage(cdp, `${APP_BASE}/app/dataportal/immobilien?tab=entwicklung`);
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1400, deviceScaleFactor: 1, mobile: false }, p3.sessionId);
+    await new Promise(r => setTimeout(r, 1800));
+    const e = JSON.parse(await p3.evaluate(`(async () => {
+      const s = ms => new Promise(r => setTimeout(r, ms));
+      let n = 0; while (!document.querySelector('#dash-grid svg') && n++ < 80) await s(100);
+      return JSON.stringify({
+        titel: [...document.querySelectorAll('#dash-grid .chart__title')].map(x => x.textContent),
+        sparks: document.querySelectorAll('.kpi__spark').length,
+        deltas: [...document.querySelectorAll('.kpi__delta')].map(x => x.textContent.trim()),
+        hint: ([...document.querySelectorAll('.kpi__hint')][0] || {}).textContent || '',
+        kz: document.querySelectorAll('#e-kz tbody tr').length,
+        radios: document.querySelectorAll('#filter-body input[name="e-gran"]').length,
+      });
+    })()`));
+    check(e.titel.includes('Gebäudebestand') && e.titel.includes('Indexierte Entwicklung (Basis 2019 = 100)')
+      && e.titel.includes('Auslaufende Verträge je Jahr'), `Zeitachsen-Auswertungen (${e.titel.length})`);
+    check(e.sparks >= 3, `Sparklines in den Kacheln (${e.sparks})`);
+    check(e.deltas.some(d => /ggü\. Vorjahr/.test(d)), `Vorjahres-Deltas (${e.deltas[0]})`);
+    check(/^Stand: /.test(e.hint), `Stichtagszeile («${e.hint}»)`);
+    check(e.kz === 8, `Kennzahlen-Tabelle 8 Zeilen (${e.kz})`);
+    check(e.radios === 2, 'Körnung Jahres-/Monatsstände wählbar');
+    const g = JSON.parse(await p3.evaluate(`(async () => {
+      const s = ms => new Promise(r => setTimeout(r, ms));
+      document.querySelector('input[name="e-gran"][value="monat"]').click();
+      await s(800);
+      return JSON.stringify({ hash: location.hash, dots: document.querySelectorAll('#e-bestand svg circle').length });
+    })()`));
+    check(/gran=monat/.test(g.hash), 'Körnung steht im Hash');
+    check(g.dots >= 24, `Monatsstände gezeichnet (${g.dots} Punkte)`);
+    check((await p3.problems()).length === 0, 'Entwicklung: keine Fehler');
+    await p3.closeTarget();
   } finally {
     cdp.close();
   }

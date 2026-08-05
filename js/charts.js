@@ -353,6 +353,87 @@ function pieChart({ id, rows, x, y, unit, width }) {
     names: rows.map((r) => String(r[x])) };
 }
 
+/* ------------------------------------------------------ stacked area ------- */
+// Zusammensetzung über die Zeit (Muster: Energiedashboard Bund) — Serien werden
+// kumulativ gestapelt; jede Fläche ist ein geschlossener Pfad (obere Kante hin,
+// untere Kante zurück). Reihenfolge der Serien = erste Vorkommnis in den Daten;
+// die Legende kommt vom Wrapper. Hover trägt jede Fläche als data-tip.
+function areaChart({ id, rows, x, y, series, unit, width }) {
+  const pal = palette();
+  const INK_MUTED = pal.inkMuted, GRID = pal.grid, AXIS = pal.axis, SURFACE = pal.surface;
+  const SER = pal.series;
+  const { W, H, P } = geom(width);
+  const names = series ? [...new Set(rows.map((r) => r[series]))] : ['__single'];
+  const xs = [...new Set(rows.map((r) => r[x]))].sort((a, b) => a - b);
+  // Kumulative Summen je x — das Maximum der Achse ist die Gesamthöhe.
+  const val = (name, xv) => { const r = rows.find((q) => q[x] === xv && (!series || q[series] === name)); return Number(r && r[y]) || 0; };
+  const totals = xs.map((xv) => names.reduce((s, n) => s + val(n, xv), 0));
+  const max = niceMax(Math.max(...totals));
+  const px = (v) => P.l + ((v - xs[0]) / ((xs[xs.length - 1] - xs[0]) || 1)) * (W - P.l - P.r);
+  const py = (v) => H - P.b - (v / max) * (H - P.t - P.b);
+
+  const grid = ticks(max).map((t) =>
+    `<line x1="${P.l}" y1="${py(t)}" x2="${W - P.r}" y2="${py(t)}" stroke="${GRID}" stroke-width="1"/>
+     <text x="${P.l - 10}" y="${py(t) + 4}" text-anchor="end" fill="${INK_MUTED}" font-size="12">${fmt(t)}</text>`
+  ).join('');
+  const stride = labelStride(xs.length, W - P.l - P.r);
+  const xLabels = xs.map((v, i) =>
+    (i % stride === 0 || i === xs.length - 1)
+      ? `<text x="${px(v)}" y="${H - P.b + 20}" text-anchor="middle" fill="${INK_MUTED}" font-size="12">${esc(v)}</text>`
+      : ''
+  ).join('');
+
+  const cum = xs.map(() => 0);
+  const bands = names.map((name, si) => {
+    const lower = [...cum];
+    xs.forEach((xv, i) => { cum[i] += val(name, xv); });
+    const upper = [...cum];
+    const top = xs.map((xv, i) => `${i ? 'L' : 'M'}${px(xv).toFixed(1)} ${py(upper[i]).toFixed(1)}`).join(' ');
+    const back = [...xs].reverse().map((xv, i) => `L${px(xv).toFixed(1)} ${py(lower[xs.length - 1 - i]).toFixed(1)}`).join(' ');
+    const totalOf = (n) => xs.reduce((s, xv) => s + val(n, xv), 0);
+    const tip = `${esc(name)}: ${esc(fmt(totalOf(name), unit))} gesamt`;
+    return `<path d="${top} ${back} Z" fill="${SER[si % SER.length]}" fill-opacity="0.85" stroke="${SURFACE}" stroke-width="1"
+      class="chart__bar" data-tip="${tip}"><title>${tip}</title></path>`;
+  }).join('');
+
+  return { svg: `<svg viewBox="0 0 ${W} ${H}" class="chart__svg" role="img" aria-labelledby="${id}-t">
+      ${grid}<line x1="${P.l}" y1="${H - P.b}" x2="${W - P.r}" y2="${H - P.b}" stroke="${AXIS}" stroke-width="1"/>
+      ${bands}${xLabels}
+    </svg>`, names: names.filter((n) => n !== '__single') };
+}
+
+/* -------------------------------------------------- Kennzahlen-Tabelle ----- */
+// Sichtbare Mehrjahres-Tabelle (Muster: Geschäftsbericht Stadt Zürich, «State of
+// the Estate» UK): Zeilen = Kennzahlen, Spalten = Jahre, optional Fussnoten.
+// Bewusst KEIN SVG — die Tabelle IST die Darstellung und zugleich ihre eigene
+// Textalternative; im Menü entfällt deshalb «Als Bild (PNG)». Eine Zeile, deren
+// Jahreswerte alle leer sind, ist ein Gruppentitel (Zürich-Anatomie); eine
+// `einheit`-Spalte im Dataset beschriftet die Zeile statt jeder Zelle.
+const TABLE_MENU = CHART_MENU.filter((m) => m.action !== 'png');
+function kennzahlenTable(spec, result) {
+  const cols = result.columns;
+  const x = spec.x || cols[0];
+  const hasEinheit = cols.includes('einheit');
+  const yearCols = cols.filter((c) => c !== x && c !== 'einheit');
+  const head = `<tr><th scope="col">${esc(spec.xLabel || 'Kennzahl')}</th>${
+    yearCols.map((c) => `<th scope="col" class="num">${esc(c)}</th>`).join('')}</tr>`;
+  const body = result.rows.map((r) => {
+    const isGroup = yearCols.every((c) => r[c] == null || r[c] === '');
+    if (isGroup) {
+      return `<tr class="chart__trow-group"><th scope="colgroup" colspan="${yearCols.length + 1}">${esc(r[x])}</th></tr>`;
+    }
+    const unit = hasEinheit ? r.einheit : spec.unit;
+    return `<tr><th scope="row">${esc(r[x])}${unit ? ` <span class="muted">(${esc(unit)})</span>` : ''}</th>${
+      yearCols.map((c) => `<td class="num">${r[c] == null || r[c] === '' ? '—' : esc(typeof r[c] === 'number' ? fmt(r[c]) : r[c])}</td>`).join('')}</tr>`;
+  }).join('');
+  return `<div class="chart__table chart__table--visible" id="${spec.id}-table">
+    <div class="table-wrapper" data-scroll-region tabindex="-1"><table class="table table--compact">
+      <caption class="sr-only">${esc(spec.title)}</caption>
+      <thead>${head}</thead><tbody>${body}</tbody></table></div>
+    ${(spec.footnotes || []).length ? `<ol class="chart__footnotes">${spec.footnotes.map((f) => `<li>${esc(f)}</li>`).join('')}</ol>` : ''}
+  </div>`;
+}
+
 /**
  * Render one chart card. `result` is a dashData.query() result ({ columns, rows, label }).
  */
@@ -362,6 +443,18 @@ export function chart(spec, result) {
   if (result.error || !rows.length) {
     return `<figure class="chart card card--universal"><figcaption class="chart__head"><h3 class="chart__title" id="${id}-t">${esc(title)}</h3></figcaption>
       <div class="empty">${esc(result.error || 'Keine Daten für diese Auswahl.')}</div></figure>`;
+  }
+  // Kennzahlen-Tabelle: kein Plot-Feld, kein zweiter Durchgang — die Tabelle
+  // steht direkt in der Karte (und ersetzt die sr-only-Zwillingstabelle).
+  if (spec.form === 'table') {
+    return `<figure class="chart card card--universal chart--table" id="${id}">
+      <figcaption class="chart__head">
+        <h3 class="chart__title" id="${id}-t">${esc(title)}</h3>
+        <div class="chart__actions">${menu({ menuId: id, label: 'Tabellen-Aktionen', items: TABLE_MENU })}</div>
+      </figcaption>
+      ${kennzahlenTable(spec, result)}
+      ${note ? `<p class="chart__note">${esc(note)}</p>` : ''}
+    </figure>`;
   }
   // Namen für die Legende ohne Geometrie ermitteln (die Legende steht über dem
   // Feld, das erst im zweiten Durchgang gefüllt wird).
@@ -395,7 +488,8 @@ export function chart(spec, result) {
 export function renderSvg(spec, result, width) {
   const rows = (result && result.rows) || [];
   if (!rows.length) return '';
-  const render = spec.form === 'line' ? lineChart : spec.form === 'column' ? columnChart : spec.form === 'pie' ? pieChart : barChart;
+  const render = spec.form === 'line' ? lineChart : spec.form === 'column' ? columnChart
+    : spec.form === 'pie' ? pieChart : spec.form === 'area' ? areaChart : barChart;
   const { svg } = render({ id: spec.id, rows, x: spec.x, y: spec.y, series: spec.series, unit: spec.unit, width });
   return svg;
 }
