@@ -10,41 +10,23 @@
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { REVIEW_ROUTES, REVIEW_VIEWPORTS } from './review-routes.mjs';
 
 const MODE = process.argv[2] || 'before';
 const OUT = join('docs', 'review-assets', MODE);
 
-// Identisch mit test-routes.mjs — die Routenliste IST das Prüfraster.
-const ROUTES = [
-  '/', '/services', '/services/stoerung-melden', '/applications',
-  '/applications?area=buildings', '/data', '/data/catalog', '/data/digitalisation',
-  '/data/digitalisation/strategy', '/data/digitalisation/principles',
-  '/data/ict-projects', '/knowledge', '/knowledge/it', '/knowledge/procurement',
-  '/knowledge/accommodation', '/knowledge/publishing', '/knowledge/guides',
-  '/knowledge/processes', '/news', '/my-cases', '/search?q=bau',
-  '/app/portfolio', '/app/media-library', '/app/dataportal', '/app/projects',
-  '/app/tenancies', '/app/metadata-catalog', '/app/process-docs',
-  '/app/document-archive', '/app/space-request', '/app/fault-report',
-  '/app/building-create', '/app/workspace', '/app/room-booking', '/app/transaction', '/app/api-docs',
-];
-// Karten- und diagrammlastige Routen brauchen länger, bis WebGL/Charts stehen.
-const SLOW = new Set(['/app/dataportal', '/app/portfolio', '/app/workspace', '/app/tenancies']);
-const VIEWPORTS = [320, 768, 1440];
-
-const slug = (r) => (r === '/' ? 'home' : r.replace(/^\//, '').replace(/[/?=&]/g, '_'));
-
 const cdp = await launch({ webgl: true });
 try {
-  for (const w of VIEWPORTS) mkdirSync(join(OUT, String(w)), { recursive: true });
+  for (const w of REVIEW_VIEWPORTS) mkdirSync(join(OUT, String(w)), { recursive: true });
   const page = await openPage(cdp, `${APP_BASE}/`);
   await sleep(1500);
 
-  for (const w of VIEWPORTS) {
+  for (const w of REVIEW_VIEWPORTS) {
     await cdp.send('Emulation.setDeviceMetricsOverride',
       { width: w, height: 900, deviceScaleFactor: 1, mobile: false }, page.sessionId);
-    for (const route of ROUTES) {
+    for (const { route, slug, slow } of REVIEW_ROUTES) {
       await page.evaluate(`location.hash = '#${route}'; true`);
-      await sleep(SLOW.has(route) ? 3200 : 1100);
+      await sleep(slow ? 3200 : 1100);
       // Einmal ans Ende und zurück: lazy Bilder laden, sticky Zustände beruhigen.
       await page.evaluate(`(async () => {
         await document.fonts.ready;
@@ -59,7 +41,7 @@ try {
         format: 'png', captureBeyondViewport: true,
         clip: { x: 0, y: 0, width: w, height: Math.min(contentSize.height, 12000), scale: 1 },
       }, page.sessionId);
-      writeFileSync(join(OUT, String(w), slug(route) + '.png'), Buffer.from(data, 'base64'));
+      writeFileSync(join(OUT, String(w), slug + '.png'), Buffer.from(data, 'base64'));
       console.log(`  ${w}px ${route}`);
     }
   }

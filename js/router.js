@@ -50,7 +50,7 @@ export const NAV = [
       { href: '#/applications?area=buildings', label: 'Fachanwendungen Bauten' },
       { href: '#/applications?area=logistics', label: 'Fachanwendungen Logistik' },
       // Die gemeinsam genutzten Anwendungen der Bundesverwaltung — eGate,
-      // InfoPers, SUPERB, Admin-Directory und die Bundesplattformen I14Y,
+      // InfoPers, SAP ERP, Admin-Directory und die Bundesplattformen I14Y,
       // TERMDAT, Geoportal, geocat.ch und simap.ch. Sie gehören nicht dem BBL,
       // werden hier aber täglich gebraucht; ohne diesen Eintrag findet sie nur,
       // wer den Anwendungskatalog von sich aus filtert.

@@ -6,16 +6,9 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-> These grew out of verifying specific code-review fixes. A proper test strategy
-> (a runner, CI, broader coverage) is a later task — for now they are runnable,
-> reusable smoke tests worth keeping.
->
-> Die Tabellen unten decken die ÄLTEREN Suiten ab; inzwischen gibt es je
-> `test-*.mjs`-Suite und `check-*.mjs`-Layoutprobe eine Datei mehr, als hier
-> steht — massgebend ist `ls scripts/test-*.mjs scripts/check-*.mjs`. Alle
-> folgen demselben Muster (APP_BASE-Umgebungsvariable, Exit ≠ 0 bei Fehlern);
-> Neuzugang der Konsistenz-Review: `check-consistency.mjs` (skin-bewusste
-> Computed-Style-Proben, docs/design-review.md).
+There are currently 20 `test-*.mjs` functional suites and 21
+`check-*.mjs` focused layout probes. Every script follows the same contract:
+`APP_BASE` selects the running app and a non-zero exit code means failure.
 
 ## Prerequisites
 
@@ -32,7 +25,10 @@ exiting non-zero on failure.
    ```
 3. **Edge** at the default install path, or override `EDGE_PATH`.
 
-## Tests
+## Functional tests
+
+The table calls out the broad and review-critical suites; the authoritative
+inventory is `scripts/test-*.mjs`.
 
 | Script | What it checks |
 |---|---|
@@ -44,19 +40,37 @@ exiting non-zero on failure.
 | `test-catalogue.mjs` | D2 catalogue triplet (`C.catalogueHash`/`C.catalogueControls`/`C.wireCatalogue`) across services · applications · katalog: deep-link round-trips (q/view/filter), search-submit / view-switch / filter interactions, active-filter pill removal, the services multi-value `topic`, and detail-view render. |
 | `test-forms.mjs` | D3 form helpers (`C.field`/`C.select`/`C.val`/`C.readForm`) + the C5 fix across the three wizards: renders, a custom validation error attaches `input--error`+`aria-invalid`+badge to the previously class-less fields (`#org`/`#cc`/`#beschreibung`/`#datum`), and a valid submit creates a Vorgang. Logs in via the stub first. |
 | `test-content.mjs` | D4 download-item + contact-box unification: the pages rendering `C.downloadItem` (grundlagen, anleitungen, digitalisierung, application entries, my-cases attachments) and `C.contactBox` (application, services detail) render with the expected items / mailto links and no exceptions. |
+| `test-combobox.mjs` | Shared `createListboxController`: Arrow keys, active descendant, selection, Escape/Tab close behavior and cleanup for global suggestions and address search. |
+| `test-apidocs.mjs` | Swagger adapter semantics, H2 hierarchy, stable accessible names/language, target sizes and focus styling. |
+| `test-process-docs.mjs` | Process detail tabs plus the full-width BPMN viewer, vertical overlay controls, reset action and disabled/focus states. |
+| `test-shop.mjs` | Shop catalogue, product/cart/checkout flows, global top-header cart and responsive category disclosure. |
 | `test-race.mjs` | A2 router render-race: rapid navigation between an awaiting page (application detail) and another must always land on the last-requested page (the `ctx.stale()` guard drops stale renders), across several timings and both directions. |
 | `test-dashboard.mjs` | Datenportal redesign on a generic sql-spec dashboard: the Superset-style grey-canvas/white-card framing, full-height filter panel, footer, dashboard toolbar menu (`copy link`) and per-chart menu (fullscreen overlay, CSV/PNG export). Saves a screenshot to `$SHOT`. |
 | `test-estate.mjs` | Immobilienportfolio record-based dashboard (`js/apps/estate.js`): the three tabs (Gebäude/Grundstücke/Bodenbedeckung), KPIs, runtime-aggregated charts, the worldwide CARTO map with markers, and live filtering (Land=CH shrinks the building count). Saves a screenshot to `$SHOT`. |
 
-Run:
+Run every functional suite in PowerShell:
+
+```powershell
+Get-ChildItem scripts/test-*.mjs | ForEach-Object {
+  node $_.FullName
+  if ($LASTEXITCODE) { exit $LASTEXITCODE }
+}
 ```
-node scripts/test-tabs.mjs
-node scripts/test-login.mjs
-node scripts/test-catalogue.mjs
-node scripts/test-forms.mjs
-node scripts/test-content.mjs
-node scripts/test-race.mjs
-node scripts/test-dashboard.mjs
+
+## Design review
+
+| Script | What it checks |
+|---|---|
+| `review-routes.mjs` | Shared inventory of 57 representative routes and states plus the 320/768/1440 viewport matrix. |
+| `review-audit.mjs` | Overflow, H1/heading structure, IDs, names, image/table semantics and responsive target-size policy across 171 renders. |
+| `review-accessibility.mjs` | 200% reflow proxy, keyboard focus visibility, tab-order hazards, ARIA references, landmarks and accessible control names across 57 states. |
+| `review-screenshots.mjs` | Full-page `before`/`after` screenshots for all 171 route/viewport combinations. |
+
+```powershell
+$env:APP_BASE='http://127.0.0.1:8848/#'
+node scripts/review-audit.mjs
+node scripts/review-accessibility.mjs
+node scripts/review-screenshots.mjs after
 ```
 
 > The driver kills each launch's full Edge process tree on close (matched by its throwaway `--user-data-dir`), so repeated runs don't pile up zombie processes and starve the machine.

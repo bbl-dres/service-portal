@@ -38,8 +38,17 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
         await s(300);
         example = summary.closest('.opblock')?.querySelector('.opblock-body')?.innerText || '';
       }
+      const controls = [...document.querySelectorAll('.swagger-ui button,.swagger-ui input:not([type="hidden"]),.swagger-ui select,.swagger-ui textarea')]
+        .filter(el => { const s = getComputedStyle(el), r = el.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && r.width > 0 && r.height > 0; });
+      const smallControls = controls.filter(el => { const r = el.getBoundingClientRect(); return r.width < 44 || r.height < 44; }).length;
+      const focusTarget = controls.find(el => !el.disabled);
+      focusTarget?.focus();
+      const focusStyle = focusTarget ? getComputedStyle(focusTarget) : null;
       return {
         h1: (document.querySelector('#main-content h1') || {}).textContent,
+        resourcesH2: (document.querySelector('#api-resources-title') || {}).tagName || '',
+        resourcesLabelled: document.querySelector('#api-swagger')?.getAttribute('aria-labelledby') || '',
+        tagHeadingLevels: [...document.querySelectorAll('.swagger-ui .opblock-tag')].map(el => el.tagName),
         badges: [...document.querySelectorAll('.pill-row .badge')].map(b => b.textContent.trim()),
         infoDoppelt: !!document.querySelector('.swagger-host .information-container') &&
           getComputedStyle(document.querySelector('.swagger-host .information-container')).display !== 'none',
@@ -51,6 +60,9 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
         tryOut: document.querySelectorAll('.swagger-ui .try-out').length,
         authorize: !!document.querySelector('.swagger-ui .auth-wrapper, .swagger-ui .authorization__btn'),
         loadingLeft: !!document.querySelector('.swagger-host .loading'),
+        smallControls,
+        focusOutline: focusStyle?.outlineStyle || '',
+        authName: document.querySelector('.authorization__btn')?.getAttribute('aria-label') || '',
         example,
       };
     })()`);
@@ -58,6 +70,8 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     console.log('   h1:', JSON.stringify(D.h1), '| badges:', JSON.stringify(D.badges));
     console.log('   tags:', D.tags.length, '| ops:', D.ops, `(get ${D.get} / post ${D.post})`, '| try-out:', D.tryOut);
     check(/Kundenportal API/.test(D.h1 || ''), `Portal-h1 bleibt (${D.h1})`);
+    check(D.resourcesH2 === 'H2' && D.resourcesLabelled === 'api-resources-title', 'Swagger-Ressourcen liegen unter einer benannten H2-Gruppe');
+    check(D.tagHeadingLevels.every(level => level === 'H3'), 'Ressourcentitel folgen als H3');
     check(D.badges.some(b => /^v/.test(b)), `Versions-Badge im Kopf (${JSON.stringify(D.badges)})`);
     check(!D.infoDoppelt, 'Swaggers Info-Block doppelt den Kopf nicht');
     // Seit der Englisch-Umbenennung (2026-08-04) deckt die API den ganzen
@@ -68,6 +82,9 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(/api\.bbl\.admin\.ch\/kundenportal/.test(D.server), 'Server-Zeile zeigt die Basis-URL');
     check(D.tryOut === 0, 'kein «Try it out» (kein Backend)');
     check(!D.loadingLeft, 'Ladezustand (C.loading) ist nach dem Rendern abgeräumt');
+    check(D.smallControls === 0, `Swagger-Bedienelemente mindestens 44 × 44 px (${D.smallControls} kleiner)`);
+    check(D.focusOutline !== 'none' && D.focusOutline !== '', `sichtbarer Fokuszustand (${D.focusOutline})`);
+    check(D.authName === 'Authorize API access', 'Autorisierungsknopf hat einen stabilen Namen');
     // Auf die FORM der bbl_id prüfen (1080/4840/AF), nicht auf ein festes Präfix.
     check(/\b\d{4}\/\d{4}\//.test(D.example), 'Live-Beispiel trägt echte Gebäudedaten (bbl_id)');
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, p.sessionId);

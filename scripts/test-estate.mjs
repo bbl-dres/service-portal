@@ -1,5 +1,5 @@
 // Immobilienportfolio — record-based Stammdaten dashboard (js/apps/estate.js).
-// Verifies the three tabs (Gebäude/Grundstücke/Bodenbedeckung), KPIs, runtime-
+// Verifies the four tabs (Gebäude/Grundstücke/Bodenbedeckung/Entwicklung), KPIs, runtime-
 // aggregated charts, the worldwide CARTO map with markers, and live filtering
 // (Land=CH shrinks the building count). Saves a screenshot to $SHOT.
 //
@@ -65,7 +65,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     console.log('   KPIs (all):', JSON.stringify(r.kpisAll), '| map canvas:', r.mapCanvas);
     console.log('   KPIs (Land=CH):', JSON.stringify(r.kpisCH));
 
-    check(JSON.stringify(r.tabs) === JSON.stringify(['Gebäude', 'Grundstücke', 'Bodenbedeckung']), 'three tabs Gebäude/Grundstücke/Bodenbedeckung');
+    check(JSON.stringify(r.tabs) === JSON.stringify(['Gebäude', 'Grundstücke', 'Bodenbedeckung', 'Entwicklung']), 'four tabs Gebäude/Grundstücke/Bodenbedeckung/Entwicklung');
     check(r.filters.length === 5 && r.filters[0] === 'Land', `five filter groups (${JSON.stringify(r.filters)})`);
     check(r.kpisAll.length === 4 && !r.kpiLabels.includes('Länder'), `4 KPI tiles, no Länder count (${JSON.stringify(r.kpiLabels)})`);
     check(r.hasLeadHint, 'lead hint links to Liegenschaften Inventar');

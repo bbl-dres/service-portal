@@ -145,7 +145,7 @@ export default function render(ctx, appId) {
 function heroBild(C, a) {
   const b = a.bild;
   if (!b || !b.src) return '';
-  return C.photo({ src: b.src, alt: b.titel || a.name, w: 800 });
+  return C.photo({ src: b.src, alt: b.titel || a.name, w: 800, cls: 'photo--16x9' });
 }
 
 function crumbs() {
@@ -155,4 +155,3 @@ function crumbs() {
     { label: 'Anwendungen', href: '#/applications' },
   ];
 }
-

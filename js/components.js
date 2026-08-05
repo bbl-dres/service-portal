@@ -134,7 +134,7 @@ export function pageSection({ title = '', body = '', more = null, alt = false, t
         ${title ? `<${titleTag} class="section__title">${escape(title)}</${titleTag}>` : ''}
         ${body}
         ${more ? `<div class="section__action">
-          <a class="btn btn--bare btn--icon-right" href="${escape(more.href)}"><span class="btn__text">${escape(more.label)}</span>${icon('ArrowRight', 'btn__icon')}</a>
+          <a class="btn btn--bare btn--icon-right" href="${escape(more.href)}">${icon('ArrowRight', 'btn__icon')}<span class="btn__text">${escape(more.label)}</span></a>
         </div>` : ''}
       </div>
     </section>`;
@@ -154,7 +154,7 @@ function notificationBanner({ id, html, actionLabel = 'Verstanden', variant = 'i
     <div class="notification-banner__wrapper">
       <p class="notification-banner__infos">${html}</p>
       <button type="button" class="btn btn--outline btn--sm btn--icon-right" data-banner-close>
-        <span class="btn__text">${escape(actionLabel)}</span>${icon('Checkmark', 'btn__icon')}</button>
+        ${icon('Checkmark', 'btn__icon')}<span class="btn__text">${escape(actionLabel)}</span></button>
     </div>
   </div>`;
 }
@@ -169,12 +169,50 @@ export function mountBanner(host, opts) {
   try { seen = localStorage.getItem(key) === '1'; } catch { /* Speicher gesperrt */ }
   if (seen) return;
   host.innerHTML = notificationBanner(opts);
+  const banner = host.querySelector('.notification-banner--fixed');
+  let observer = null;
+  const reserveSpace = () => {
+    if (!banner || !banner.isConnected) return;
+    document.body.style.setProperty('--banner-offset', `${Math.ceil(banner.getBoundingClientRect().height)}px`);
+    document.body.classList.add('body--banner-visible');
+  };
+  const keepFocusVisible = (event) => {
+    const target = event.target;
+    if (!banner || !(target instanceof Element) || banner.contains(target)) return;
+    const targetRect = target.getBoundingClientRect();
+    const bannerRect = banner.getBoundingClientRect();
+    if (targetRect.bottom <= bannerRect.top || targetRect.top >= bannerRect.bottom) return;
+    const delta = Math.ceil(targetRect.bottom - bannerRect.top + 8);
+    const scroller = document.scrollingElement;
+    if (!scroller) { window.scrollBy(0, delta); return; }
+    const priorBehavior = scroller.style.scrollBehavior;
+    scroller.style.scrollBehavior = 'auto';
+    scroller.scrollTop += delta;
+    scroller.style.scrollBehavior = priorBehavior;
+  };
+  const releaseSpace = () => {
+    observer?.disconnect();
+    window.removeEventListener('resize', reserveSpace);
+    document.removeEventListener('focusin', keepFocusVisible);
+    document.body.classList.remove('body--banner-visible');
+    document.body.style.removeProperty('--banner-offset');
+  };
+  if (banner) {
+    reserveSpace();
+    document.addEventListener('focusin', keepFocusVisible);
+    if ('ResizeObserver' in window) {
+      observer = new ResizeObserver(reserveSpace);
+      observer.observe(banner);
+    } else window.addEventListener('resize', reserveSpace);
+  }
   const btn = host.querySelector('[data-banner-close]');
   if (btn) btn.addEventListener('click', () => {
+    releaseSpace();
     host.innerHTML = '';
     try { localStorage.setItem(key, '1'); } catch { /* dann kommt er eben wieder */ }
     announce('Hinweis geschlossen.');
   });
+  return releaseSpace;
 }
 
 export function pageHeader({ title, lead, leadHtml }) {
@@ -688,9 +726,11 @@ export function detailBar({ backHref, backLabel } = {}) {
 // für den Prototyp einheitlich ohne. Die Startseite (echtes BBL-Foto mit
 // ©-Vermerk) schreibt ihre figcaption selbst und behält sie. Der `credit`-
 // Parameter bleibt als Schnittstelle bestehen, wird aber nicht gerendert.
-export function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt = '', w = 800 } = {}) {
+export function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt = '', w = 800, ratio = '' } = {}) {
   if (!src && !id) return '';
-  return `<figure class="hero__figure">${photo({ src, id, color, alt, w })}</figure>`;
+  const ratioClass = { '16x9': 'photo--16x9', '4x3': 'photo--4x3', '21x9': 'photo--21x9' }[ratio]
+    || 'hero-media--natural';
+  return `<figure class="hero__figure">${photo({ src, id, color, alt, w, cls: ratioClass })}</figure>`;
 }
 
 export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '' } = {}) {
@@ -936,7 +976,7 @@ export function processDone({ instance, lead, title, heading = 'h1', text,
   extra = '', actions = [] } = {}) {
   const knopf = (a, i) => {
     const cls = `btn btn--${a.variant || (i === 0 ? 'filled' : 'outline')}${a.icon ? ' btn--icon-right' : ''}`;
-    const inhalt = `<span class="btn__text">${escape(a.label)}</span>${a.icon ? icon(a.icon, 'btn__icon') : ''}`;
+    const inhalt = `${a.icon ? icon(a.icon, 'btn__icon') : ''}<span class="btn__text">${escape(a.label)}</span>`;
     return a.href
       ? `<a class="${cls}" href="${escape(a.href)}">${inhalt}</a>`
       : `<button class="${cls}" type="button" id="${escape(a.id)}">${inhalt}</button>`;
@@ -1135,12 +1175,13 @@ export function readForm(mount, map) {
 // `desc`, App-Einträge `note`); `icon` überschreibt das Standardsymbol (extern →
 // External, sonst Download). `wrapLi` umschliesst mit `<li>` für `.download-items`.
 export function downloadItem({ href, title, note = '', desc = '', meta = [], icon: iconName,
-  external = false, heading = 'h4', wrapLi = false, download = false } = {}) {
+  external = false, heading = 'h3', wrapLi = false, download = false } = {}) {
+  const titleTag = /^h[2-6]$/.test(heading) ? heading : 'h3';
   const text = note || desc;
   const sym = iconName || (external ? 'External' : 'Download');
   const inner = `${icon(sym, 'download-item__icon')}
     <div>
-      <${heading} class="download-item__title">${escape(title)}</${heading}>
+      <${titleTag} class="download-item__title">${escape(title)}</${titleTag}>
       ${text ? `<p class="download-item__description">${escape(text)}</p>` : ''}
       ${meta.length ? `<p class="meta-info download-item__meta-info">${
         meta.filter(Boolean).map(m => `<span class="meta-info__item">${escape(m)}</span>`).join('')}</p>` : ''}

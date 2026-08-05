@@ -2,8 +2,9 @@
 
 Prüfbare Referenz für das Design Review des BBL Kundenportals. Extrahiert aus dem
 lokalen Design-System-Repo (`C:\Users\david\Documents\GitHub\designsystem`,
-Version 1.0.5 — identisch mit github.com/swiss/designsystem main und mit der vom
-Portal referenzierten Version). Stand: 2026-08-05.
+Version 1.0.5). Das Portal deklariert in `README.md` und `css/tokens.css`
+ebenfalls Version 1.0.5 als Ausrichtungsziel; eine Versionsabweichung liegt damit
+nicht vor. Der Remote-Stand von `main` wurde nicht benötigt. Stand: 2026-08-05.
 
 Alle späteren Befunde des Reviews referenzieren dieses Dokument. Quellenangaben
 verweisen auf Dateien des Design-System-Repos (css/… = PostCSS-Quelle,
@@ -2862,4 +2863,3 @@ Titelhierarchie (`title:` im Default-Export), 5 Top-Level-Kategorien:
 | Schriftgrössen-Skala | xs 12, sm 14, base 16, lg 18, xl 20, 2xl 22, 3xl 26, 4xl 32, 5xl 40, 6xl 48, 7xl 56, 8xl 64, 9xl 80 (px, bei 1rem=16px) |
 | Btn-Mindesthöhen | base 44px, xl≥1280: 48px, 3xl≥1920: 52px; sm 34/40/44px; lg 48/52/56px; `px-4` = 16px; `rounded-sm` = 2px (`btn.postcss`) |
 | Badge | Padding `0.219em`/`1em`, `rounded-full`; base: 12→14→16px (Basis/md/lg); sm: 10→12→14px |
-

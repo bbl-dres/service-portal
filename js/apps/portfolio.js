@@ -649,7 +649,7 @@ function buildingDetail(ctx, b) {
   // Kanonische Knopf-Anatomie (Review btn-2): Label in .btn__text, Icon als
   // .btn__icon mit btn--icon-right — ohne den Wrapper fehlen dem Label die
   // py-2-Rhythmik und der Umbruchschutz (overflow-wrap:anywhere) des CD.
-  const archiveLink = `<p class="mt-6"><a class="btn btn--link btn--icon-right" href="#/app/document-archive"><span class="btn__text">In der Bauwerksdokumentation öffnen</span>${C.icon('ArrowRight', 'btn__icon')}</a></p>`;
+  const archiveLink = `<p class="mt-6"><a class="btn btn--link btn--icon-right" href="#/app/document-archive">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">In der Bauwerksdokumentation öffnen</span></a></p>`;
 
   const tabFlaechen = () => dtPanel('flaechen');
   const tabAusstattung = () => dtPanel('ausstattung');

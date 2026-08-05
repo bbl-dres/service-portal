@@ -191,7 +191,7 @@ export default async function render(ctx) {
                 das Seitenverhältnis vor, damit beim Laden nichts springt.
                 Varianten erzeugt scripts/make-image-variants.mjs. */''}
           <figure class="hero__figure">
-            <img src="assets/images/BBL-FE21_O-01-800.webp"
+            <img class="hero-media--16x9" src="assets/images/BBL-FE21_O-01-800.webp"
                  srcset="assets/images/BBL-FE21_O-01-800.webp 800w,
                          assets/images/BBL-FE21_O-01-1400.webp 1400w,
                          assets/images/BBL-FE21_O-01.avif 2048w"

@@ -15,6 +15,7 @@
 
 import { search as runSearch, prepare } from './search-engine.js';
 import { knowledgeIndex } from './knowledge-content.js';
+import { createListboxController } from './combobox.js';
 
 const MAX = 7;
 
@@ -61,31 +62,16 @@ export function attachSuggest(input, form, core, C) {
   anchor.classList.add('suggest-anchor');
   anchor.appendChild(list);
 
-  input.setAttribute('role', 'combobox');
-  input.setAttribute('aria-expanded', 'false');
-  input.setAttribute('aria-controls', listId);
-  input.setAttribute('aria-autocomplete', 'list');
-
   let items = [];
-  let active = -1;
-
-  const close = () => {
-    list.hidden = true;
-    list.innerHTML = '';
-    items = []; active = -1;
-    input.setAttribute('aria-expanded', 'false');
-    input.removeAttribute('aria-activedescendant');
-  };
-
-  const paint = () => {
-    list.querySelectorAll('.suggest__item').forEach((el, i) => {
-      const on = i === active;
-      el.classList.toggle('is-active', on);
-      el.setAttribute('aria-selected', String(on));
-    });
-    if (active >= 0) input.setAttribute('aria-activedescendant', `${listId}-${active}`);
-    else input.removeAttribute('aria-activedescendant');
-  };
+  const controller = createListboxController({
+    input,
+    list,
+    onChoose: (item) => {
+      if (item.external) window.open(item.href, '_blank', 'noopener');
+      else location.hash = item.href.replace(/^#/, '#');
+    },
+  });
+  const close = controller.close;
 
   const open = (q) => {
     items = runSearch(suggestIndex(core), q).slice(0, MAX);
@@ -95,18 +81,7 @@ export function attachSuggest(input, form, core, C) {
         <span class="suggest__title">${C.escape(r.title)}</span>
         <span class="suggest__meta">${C.escape(r.art)}${r.desc ? ' · ' + C.escape(r.desc) : ''}</span>
       </li>`).join('');
-    list.hidden = false;
-    input.setAttribute('aria-expanded', 'true');
-    active = -1;
-    paint();
-  };
-
-  const choose = (i) => {
-    const r = items[i];
-    if (!r) return;
-    close();
-    if (r.external) window.open(r.href, '_blank', 'noopener');
-    else location.hash = r.href.replace(/^#/, '#');
+    controller.setItems(items);
   };
 
   const onInput = () => {
@@ -115,43 +90,15 @@ export function attachSuggest(input, form, core, C) {
     open(q);
   };
 
-  const onKey = (e) => {
-    if (e.key === 'Escape') { close(); return; }
-    if (list.hidden || !items.length) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); active = (active + 1) % items.length; paint(); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); active = (active - 1 + items.length) % items.length; paint(); }
-    else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); choose(active); }
-    else if (e.key === 'Tab') close();
-  };
-
-  // Klick auf einen Vorschlag: mousedown statt click, weil das Feld sonst
-  // vorher den Fokus verliert und blur die Liste schliesst, bevor click feuert.
-  const onDown = (e) => {
-    const li = e.target.closest('.suggest__item');
-    if (!li) return;
-    e.preventDefault();
-    choose(Number(li.dataset.i));
-  };
-
-  const onBlur = () => setTimeout(close, 120);
   const onSubmit = () => close();
 
   input.addEventListener('input', onInput);
-  input.addEventListener('keydown', onKey);
-  input.addEventListener('blur', onBlur);
-  list.addEventListener('mousedown', onDown);
   form.addEventListener('submit', onSubmit);
 
   return () => {
     input.removeEventListener('input', onInput);
-    input.removeEventListener('keydown', onKey);
-    input.removeEventListener('blur', onBlur);
     form.removeEventListener('submit', onSubmit);
+    controller.destroy();
     list.remove();
-    input.removeAttribute('role');
-    input.removeAttribute('aria-expanded');
-    input.removeAttribute('aria-controls');
-    input.removeAttribute('aria-autocomplete');
-    input.removeAttribute('aria-activedescendant');
   };
 }

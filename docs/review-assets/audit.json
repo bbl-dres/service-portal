@@ -1,0 +1,1681 @@
+{
+  "generated": "2026-08-05T11:21:01.914Z",
+  "viewports": [
+    320,
+    768,
+    1440
+  ],
+  "routes": [
+    "/",
+    "/services",
+    "/services/stoerung-melden",
+    "/applications",
+    "/applications?area=buildings",
+    "/applications/liegenschaften-inventar",
+    "/applications/eshop",
+    "/data",
+    "/data/catalog",
+    "/data/catalog/11",
+    "/data/digitalisation",
+    "/data/digitalisation/strategy",
+    "/data/digitalisation/vision",
+    "/data/digitalisation/principles",
+    "/data/ict-projects",
+    "/knowledge",
+    "/knowledge/it",
+    "/knowledge/procurement",
+    "/knowledge/accommodation",
+    "/knowledge/publishing",
+    "/knowledge/guides",
+    "/knowledge/processes",
+    "/news",
+    "/news/N-01",
+    "/my-cases",
+    "/my-cases/seed-1",
+    "/search?q=bau",
+    "/app/portfolio",
+    "/app/portfolio?view=map",
+    "/app/portfolio?id=1080%2F4840%2FAF",
+    "/app/media-library",
+    "/app/media-library?view=map",
+    "/app/media-library/MED-001",
+    "/app/dataportal",
+    "/app/dataportal/energie-klima",
+    "/app/dataportal/immobilien?tab=entwicklung",
+    "/app/projects",
+    "/app/projects/PRJ-01",
+    "/app/tenancies",
+    "/app/tenancies/MV-2026-001",
+    "/app/metadata-catalog",
+    "/app/metadata-catalog?id=gebaeude",
+    "/app/metadata-catalog?table=gis-immo-building",
+    "/app/process-docs",
+    "/app/process-docs?id=TQ.21.00.00.01",
+    "/app/process-docs?id=TQ.21.00.00.01&tab=diagramm",
+    "/app/shop",
+    "/app/shop/product/3",
+    "/app/shop/cart",
+    "/app/shop/checkout",
+    "/app/document-archive",
+    "/app/space-request",
+    "/app/fault-report",
+    "/app/building-create",
+    "/app/workspace",
+    "/app/transaction",
+    "/app/api-docs"
+  ],
+  "totals": {
+    "routes": 171,
+    "overflow": 0,
+    "h1": 0,
+    "duplicateIds": 0,
+    "labels": 0,
+    "images": 0,
+    "headings": 0,
+    "tables": 0,
+    "targets": 0,
+    "compactTargets": 150
+  },
+  "findings": [],
+  "advisories": [
+    {
+      "width": 1440,
+      "route": "/",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/services",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/services/stoerung-melden",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Dienstleistungen",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left mt-3",
+          "name": "Anmelden mit AGOV / FedLogin",
+          "w": 297,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/applications",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/applications?area=buildings",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/applications/liegenschaften-inventar",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Anwendungen",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/applications/eshop",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Anwendungen",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/data",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/data/catalog",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/data/catalog/11",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Datenbezug und API Verzeichnis",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/data/digitalisation",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/data/digitalisation/strategy",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Digitalisierung",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/data/digitalisation/vision",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Digitalisierung",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/data/digitalisation/principles",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Digitalisierung",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/data/ict-projects",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/knowledge",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/knowledge/it",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Wissen und Hilfsmittel",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/knowledge/procurement",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Wissen und Hilfsmittel",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/knowledge/accommodation",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Wissen und Hilfsmittel",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/knowledge/publishing",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Wissen und Hilfsmittel",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/knowledge/guides",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Wissen und Hilfsmittel",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/knowledge/processes",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Wissen und Hilfsmittel",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/news",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/news/N-01",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu News",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/my-cases",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/my-cases/seed-1",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/search?q=bau",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/portfolio",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Australien1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Brasilien1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Deutschland1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Japan1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Schweiz16",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "USA1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/portfolio?view=map",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Australien1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Brasilien1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Deutschland1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Japan1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Schweiz16",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "USA1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-zoom-in",
+          "name": "Zoom in",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-zoom-out",
+          "name": "Zoom out",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-compass",
+          "name": "Reset bearing to north",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-fullscreen",
+          "name": "Enter fullscreen",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/portfolio?id=1080%2F4840%2FAF",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Liegenschaften Inventar",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-zoom-in",
+          "name": "Zoom in",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-zoom-out",
+          "name": "Zoom out",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-compass",
+          "name": "Reset bearing to north",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-fullscreen",
+          "name": "Enter fullscreen",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/media-library",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/media-library?view=map",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-zoom-in",
+          "name": "Zoom in",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-zoom-out",
+          "name": "Zoom out",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-compass",
+          "name": "Reset bearing to north",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-fullscreen",
+          "name": "Enter fullscreen",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/media-library/MED-001",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Mediathek Bauten",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/dataportal",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/dataportal/energie-klima",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Datenportal",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--bare btn--sm btn--icon-left",
+          "name": "Filter zurücksetzen",
+          "w": 183,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/dataportal/immobilien?tab=entwicklung",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Datenportal",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "input",
+          "cls": "",
+          "name": "Jahresstände",
+          "w": 222,
+          "h": 36,
+          "measuredBy": "label"
+        },
+        {
+          "tag": "input",
+          "cls": "",
+          "name": "Monatsstände",
+          "w": 222,
+          "h": 36,
+          "measuredBy": "label"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/projects",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Australien1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Schweiz8",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "USA1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/projects/PRJ-01",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Bauprojekte / EPPM",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/tenancies",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Australien1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Brasilien1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Deutschland2",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Japan1",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Schweiz11",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "USA2",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/tenancies/MV-2026-001",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Mietende",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-zoom-in",
+          "name": "Zoom in",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-zoom-out",
+          "name": "Zoom out",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-compass",
+          "name": "Reset bearing to north",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-fullscreen",
+          "name": "Enter fullscreen",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/metadata-catalog",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "pf-tree__node is-active",
+          "name": "Geschäftsobjekte19",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "pf-tree__node",
+          "name": "Systeme10",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/metadata-catalog?id=gebaeude",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Metadaten Katalog Bauten",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/metadata-catalog?table=gis-immo-building",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu GIS IMMO",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Datensatz ansehen",
+          "w": 205,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/process-docs",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "pf-tree__node is-active",
+          "name": "Immobilienmanagement (K0)18",
+          "w": 270,
+          "h": 39,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/process-docs?id=TQ.21.00.00.01",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Prozessdokumentation Bauten",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/process-docs?id=TQ.21.00.00.01&tab=diagramm",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Prozessdokumentation Bauten",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "viewer-toolbar__button btn btn--bare btn--icon-only",
+          "name": "Vergrössern",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "viewer-toolbar__button btn btn--bare btn--icon-only",
+          "name": "Verkleinern",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "viewer-toolbar__button btn btn--bare btn--icon-only",
+          "name": "Ausschnitt zurücksetzen",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/shop",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/shop/product/3",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu BBL Intranetshop",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/shop/cart",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu BBL Intranetshop",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm empty__action",
+          "name": "Zum Produktkatalog",
+          "w": 211,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/shop/checkout",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu BBL Intranetshop",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm empty__action",
+          "name": "Zum Produktkatalog",
+          "w": 211,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/document-archive",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/space-request",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Dienstleistungsbeschreibung",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/fault-report",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Dienstleistungsbeschreibung",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/building-create",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Dienstleistungsbeschreibung",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/workspace",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/transaction",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "route": "/app/api-docs",
+      "minimumTarget": 24,
+      "compact": [
+        {
+          "tag": "a",
+          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
+          "name": "Zurück zu Datenbezug und API Verzeichnis",
+          "w": 111,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
+        }
+      ]
+    }
+  ]
+}

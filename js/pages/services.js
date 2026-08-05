@@ -222,7 +222,7 @@ function detail(ctx, id) {
       backHref: '#/services', backLabel: 'Dienstleistungen',
       title: s.title, lead: s.short,
       tags: `${audienceTags(core, C, s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
-      image: C.heroFigure({ src: img }),
+      image: C.heroFigure({ src: img, ratio: '16x9' }),
     })}
     <div class="container--grid gap--responsive">
       ${/* CD-Inhaltsrhythmus (.vertical-spacing, 3/3.5rem) statt des portal-
@@ -252,7 +252,7 @@ function detail(ctx, id) {
         <div class="box">
           <h3>Gesetzliche Grundlagen</h3>
           <p class="small muted">Die für diese Dienstleistung massgebenden Erlasse, Vorgaben und Weisungen finden Sie in der Sammlung.</p>
-          <a class="row gap-sm py-1-5" href="#/knowledge">${C.icon('Book', 'icon--base')}<span class="small">Wissen und Hilfsmittel</span></a>
+          <a class="py-1-5 small" href="#/knowledge">Wissen und Hilfsmittel</a>
         </div>
       </aside>
     </div>
