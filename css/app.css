@@ -184,6 +184,8 @@ ul,ol { margin:0; padding:0; }
    Kopfbereich (a11y-backtotop-1). */
 h1[tabindex="-1"]:focus, h1[tabindex="-1"]:focus-visible,
 h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
+h3[tabindex="-1"]:focus, h3[tabindex="-1"]:focus-visible,
+h4[tabindex="-1"]:focus, h4[tabindex="-1"]:focus-visible,
 #main-header:focus, #main-header:focus-visible,
 #main-content:focus, #main-content:focus-visible { outline:none; }
 
@@ -4041,38 +4043,59 @@ table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:
 }
 
 /* ========================= ROOM BOOKING ===================================
-   Search, comparison, spatial orientation, and confirmation stay in one task
-   flow. Result rows are native radio labels; the side surface is a summary,
-   not a second stack of cards. */
+   The task-level tabs contain a three-step CD wizard: portfolio-style location
+   selection, schedule and room selection, then review and confirmation. */
 .booking-tabs { margin-top:var(--sp-8); }
 .booking-find, .booking-manage { min-width:0; }
+.booking-wizard-head .steps { margin-bottom:1rem; }
+.booking-wizard-head .wizard-step__title { margin:0; }
+.booking-wizard-head > .small { margin:.75rem 0 0; }
+.booking-step { min-width:0; }
+.booking-step--review { width:100%; max-width:52rem; margin-inline:auto; }
 
-/* Criteria band */
-.booking-search { padding:1.25rem; background:var(--color-secondary-50);
+/* Step 1: the shared explorer composition, with booking-specific choices. */
+.booking-location-explorer { min-width:0; }
+.booking-location-sidebar { padding:.5rem; }
+.booking-location-list { min-width:0; margin:0; padding:0; border:0;
+  border-top:1px solid var(--color-secondary-200); }
+.booking-location-choice { position:relative; display:block; min-width:0; padding:.875rem .5rem;
+  border-bottom:1px solid var(--color-secondary-200);
+  cursor:pointer; transition:background var(--duration-fast), box-shadow var(--duration-fast); }
+.booking-location-choice:hover { background:var(--color-secondary-50); }
+.booking-location-choice:focus-within { outline:2px solid var(--color-focus-ring); outline-offset:-2px; }
+.booking-location-choice.is-selected { background:var(--color-primary-50);
+  box-shadow:inset 3px 0 0 var(--color-primary-600); }
+.booking-location-choice > input { position:absolute; width:1px; height:1px; min-height:0; margin:0; padding:0; opacity:0; }
+.booking-location-choice > span { display:flex; flex-direction:column; gap:.125rem; min-width:0; }
+.booking-location-choice > span > * { overflow-wrap:anywhere; }
+.booking-location-choice > span > span { color:var(--color-text-muted); font-size:var(--text-sm); }
+.booking-location-main { min-width:0; }
+.booking-step-actions.booking-step-actions--end { justify-content:flex-end; }
+
+/* Step 2: schedule search, comparable results, and one selected-room summary. */
+.booking-location-summary { display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  padding:1rem 0; border-block:1px solid var(--color-secondary-200); }
+.booking-location-summary p { display:flex; flex-wrap:wrap; gap:.25rem 1rem; margin:0; }
+.booking-location-summary p span { color:var(--color-text-muted); }
+.booking-schedule { margin-top:1.5rem; padding:1.25rem; background:var(--color-secondary-50);
   border-block:1px solid var(--color-secondary-200); }
-.booking-search .form__group__legend { margin:0; }
-.booking-search .booking-search__grid { display:grid; grid-template-columns:minmax(0,1fr);
+.booking-schedule .form__group__legend { margin:0; }
+.booking-schedule__grid { display:grid; grid-template-columns:minmax(0,1fr);
   gap:1rem; align-items:end; margin-top:1rem; }
-.booking-search__grid > * { min-width:0; margin:0; }
-.booking-search__action .btn { width:100%; justify-content:center; }
+.booking-schedule__grid > * { min-width:0; margin:0; }
+.booking-schedule__action .btn { width:100%; justify-content:center; }
+.booking-results > .catbar { margin-top:1.5rem; }
 @media (min-width:768px){
-  .booking-search { padding:1.5rem; }
-  .booking-search .booking-search__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .booking-search__grid > :first-child { grid-column:1 / -1; }
-  .booking-search__action { display:flex; grid-column:1 / -1; justify-content:flex-end; }
-  .booking-search__action .btn { width:auto; }
+  .booking-schedule { padding:1.5rem; }
+  .booking-schedule__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .booking-schedule__action { display:flex; grid-column:1 / -1; justify-content:flex-end; }
+  .booking-schedule__action .btn { width:auto; }
 }
-@media (min-width:1280px){
-  .booking-search .booking-search__grid {
-    grid-template-columns:minmax(16rem,2.2fr) minmax(9.5rem,1fr) minmax(7rem,.7fr)
-      minmax(7rem,.7fr) minmax(8rem,.75fr) auto; }
-  .booking-search__grid > :first-child { grid-column:auto; }
-  .booking-search__action { grid-column:auto; }
+@media (min-width:1200px){
+  .booking-schedule__grid { grid-template-columns:minmax(10rem,1.2fr) repeat(2,minmax(8rem,.8fr)) minmax(9rem,.8fr) auto; }
+  .booking-schedule__action { grid-column:auto; }
 }
-
-/* Results and summary */
 .booking-results { min-width:0; }
-.booking-results .catbar { margin-top:0; }
 .booking-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1.5rem;
   align-items:start; margin-top:1.5rem; }
 .booking-results__main, .booking-side, .booking-side__section { min-width:0; }
@@ -4086,19 +4109,11 @@ table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:
   .booking-side { position:sticky; top:1rem; }
 }
 
-/* Building location */
-.booking-location__map { width:100%; height:12rem; overflow:hidden;
-  background:var(--color-secondary-100); border-radius:var(--radius-lg); }
-.booking-location__map--empty { display:grid; place-items:center; padding:1rem;
-  color:var(--color-text-muted); text-align:center; }
-.booking-location__name { margin:1rem 0 .125rem; }
-.booking-location__name + p { margin:0; }
-.booking-location .btn { margin-top:.5rem; }
-
-/* Comparable room rows */
+/* Comparable room rows. Availability is implicit because unavailable rooms do
+   not appear in this list; the floor plan still shows every state. */
 .booking-room-list { min-width:0; margin:0; padding:0;
   border:0; border-top:1px solid var(--color-secondary-300); }
-.booking-room-row { display:grid; grid-template-columns:auto 6rem minmax(0,1fr) auto;
+.booking-room-row { display:grid; grid-template-columns:auto 6rem minmax(0,1fr);
   gap:1rem; align-items:center; min-width:0; padding:1rem .5rem;
   border-bottom:1px solid var(--color-secondary-300); cursor:pointer;
   transition:background var(--duration-fast), box-shadow var(--duration-fast); }
@@ -4110,7 +4125,6 @@ table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:
 .booking-room-row__body { display:flex; flex-direction:column; gap:.125rem; min-width:0; }
 .booking-room-row__body > * { overflow-wrap:anywhere; }
 .booking-room-row__meta, .booking-room-row__features { color:var(--color-text-muted); font-size:var(--text-sm); }
-.booking-room-row > .badge { justify-self:end; }
 .booking-show-all { margin-top:.75rem; }
 .booking-room-list > .badge--error { margin-top:.75rem; }
 
@@ -4122,6 +4136,7 @@ table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:
 .booking-room-image--empty { display:flex; flex-direction:column; align-items:center;
   justify-content:center; gap:.375rem; color:var(--color-text-muted); text-align:center;
   font-size:var(--text-sm); }
+.booking-room-image--thumb.booking-room-image--empty { font-size:var(--text-xs); }
 .booking-selected__figure { margin:0 0 1.25rem; }
 .booking-selected__figure figcaption { margin:0; }
 .booking-selected__facts { margin:0; }
@@ -4131,19 +4146,24 @@ table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:
   color:var(--color-text-muted); font-size:var(--text-sm); }
 .booking-feature-list .icon { flex:none; color:var(--color-secondary-500); }
 
-/* Invitees and final confirmation */
-.booking-confirm { margin-top:1.5rem; padding-top:1.5rem;
-  border-top:1px solid var(--color-secondary-200); }
+/* Step 3: invitees, review, and final confirmation */
+.booking-confirm { margin:0; }
 .booking-invite__control { display:grid; grid-template-columns:minmax(0,1fr) auto;
   gap:.5rem; align-items:start; }
 .booking-invite__control .btn { white-space:nowrap; }
 .booking-invitees { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; }
 .booking-invitees .tag-item { margin:0; }
-.booking-confirm__summary { padding:1rem; background:var(--color-bg);
-  border:1px solid var(--color-secondary-200); }
-.booking-confirm__summary h4 { margin:0 0 .75rem; }
+.booking-confirm__summary { margin-top:2rem; border-block:1px solid var(--color-secondary-300); }
+.booking-confirm__summary > h4 { margin:0; padding:1.25rem 0; }
+.booking-review__section { padding:1.25rem 0; border-top:1px solid var(--color-secondary-200); }
+.booking-review__head { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+.booking-review__head .btn { flex:none; }
+.booking-review__section > strong { display:block; }
+.booking-review__section .kv { margin:.75rem 0 0; }
 .booking-summary__facts { margin:0; }
-.booking-confirm__submit { width:100%; justify-content:center; }
+.booking-step-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+  gap:1rem; margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--color-secondary-200); }
+.booking-confirm__submit { justify-content:center; }
 .booking-confirm__submit .btn__text { text-align:center; }
 
 /* Floor-plan view. The controls remain fixed over the scrollable drawing. */
@@ -4197,21 +4217,26 @@ table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:
 @media (max-width:767.98px){
   .booking-room-row { grid-template-columns:auto 4.5rem minmax(0,1fr); gap:.75rem; padding-inline:.25rem; }
   .booking-room-image--thumb { width:4.5rem; height:3.5rem; }
-  .booking-room-row > .badge { grid-column:3; justify-self:start; }
   .booking-plan-stage { min-height:18rem; }
   .booking-entry { grid-template-columns:minmax(0,1fr) auto; }
   .booking-entry__body, .booking-entry__actions { grid-column:1 / -1; }
   .booking-entry__actions { justify-content:flex-start; }
 }
 @media (max-width:479.98px){
-  .booking-search { padding:1rem; }
+  .booking-tabs .tab__control { padding-inline:.25rem; }
+  .booking-tabs .tab__control:first-child { padding-left:0; }
+  .booking-tabs .tab__control::after { right:.25rem; left:.25rem; }
+  .booking-tabs .tab__control:first-child::after { left:0; }
+  .booking-schedule { padding:1rem; }
   .booking-side__section { padding:1rem; }
+  .booking-location-summary { align-items:flex-start; flex-direction:column; }
   .booking-room-row { grid-template-columns:auto minmax(0,1fr); }
   .booking-room-image--thumb { display:none; }
-  .booking-room-row > .badge { grid-column:2; }
   .booking-feature-list { grid-template-columns:minmax(0,1fr); }
   .booking-invite__control { grid-template-columns:minmax(0,1fr); }
   .booking-invite__control .btn { width:100%; justify-content:center; }
+  .booking-step-actions { align-items:stretch; flex-direction:column; }
+  .booking-step-actions .btn { width:100%; justify-content:center; }
   .booking-entry { grid-template-columns:minmax(0,1fr); }
   .booking-entry__status, .booking-entry__body, .booking-entry__actions { grid-column:1; }
   .booking-entry__actions .btn { flex:1 1 auto; justify-content:center; }

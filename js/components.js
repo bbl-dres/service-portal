@@ -1999,11 +1999,15 @@ export function focusProcessDone(mount, instance) {
   if (instance && instance.reference) announce(`Vorgang erstellt. Referenz ${instance.reference}.`);
 }
 
-// Wizard-Kopf: Schrittanzeige + sr-only-Schrittüberschrift (Fokusziel beim
-// Wechsel) + Pflichtfeld-Legende. `step` ist 1-basiert wie in den Apps.
-export function wizardHead(labels, step, { headId = 'wiz-step-head', label = 'Antragsschritte', legend = true } = {}) {
+// Wizard-Kopf: Schrittanzeige + Schrittüberschrift (standardmässig sr-only,
+// optional sichtbar und mit passender Ebene) + Pflichtfeld-Legende. `step` ist
+// 1-basiert wie in den Apps.
+export function wizardHead(labels, step, { headId = 'wiz-step-head', label = 'Antragsschritte', legend = true,
+  heading = 'h2', title = '', visible = false } = {}) {
+  const headingTag = ['h2', 'h3', 'h4'].includes(heading) ? heading : 'h2';
+  const headingText = title || labels[step - 1];
   return `${stepIndicator(labels, step - 1, { label })}
-    <h2 class="sr-only" id="${escape(headId)}" tabindex="-1">Schritt ${step} von ${labels.length}: ${escape(labels[step - 1])}</h2>
+    <${headingTag} class="${visible ? 'wizard-step__title' : 'sr-only'}" id="${escape(headId)}" tabindex="-1">Schritt ${step} von ${labels.length}: ${escape(headingText)}</${headingTag}>
     ${legend ? '<p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>' : ''}`;
 }
 

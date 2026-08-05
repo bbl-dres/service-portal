@@ -20,6 +20,8 @@ const DIRECTORY = [
   { name: 'Nina Meier', email: 'nina.meier@bbl.admin.ch' },
 ];
 const VIEWS = [['list', 'Listenansicht', 'List'], ['floorplan', 'Grundrissansicht', 'Map']];
+const STEP_LABELS = ['Standort', 'Termin & Raum', 'Prüfen'];
+const STEP_TITLES = ['Wo möchten Sie sich treffen?', 'Wann und in welchem Raum möchten Sie sich treffen?', 'Buchung prüfen'];
 const CANCELLED = new Set(['zurueckgezogen', 'storniert']);
 const FIELD_LABELS = {
   'booking-date': 'Datum',
@@ -80,10 +82,13 @@ export default async function render(ctx) {
   const requestedParticipants = Number.parseInt(query.get('participants'), 10);
   const requestedView = query.get('view');
   const requestedTab = query.get('tab');
+  const requestedStep = Number.parseInt(query.get('step'), 10);
   const requestedEquipment = String(query.get('equipment') || '').split(',').filter((value) => EQUIPMENT_OPTIONS.includes(value));
 
   const state = {
     tab: requestedTab === 'bookings' ? 'bookings' : 'find',
+    step: [1, 2, 3].includes(requestedStep) ? requestedStep : requestedRoom ? 2 : 1,
+    locationQuery: String(query.get('q') || ''),
     view: requestedView === 'floorplan' ? 'floorplan' : 'list',
     buildingId: initialBuilding.bbl_id,
     date: safeDate(query.get('date'), nextWorkday()),
@@ -108,11 +113,20 @@ export default async function render(ctx) {
   };
 
   const locationMap = createMapSlot();
+  let locationSearchTimer = null;
   let unwirePlan = null;
   onUnmount(locationMap.free);
+  onUnmount(() => clearTimeout(locationSearchTimer));
   onUnmount(() => { if (unwirePlan) unwirePlan(); });
 
   const building = () => buildings.find((item) => item.bbl_id === state.buildingId) || buildings[0];
+  const locationBuildings = () => {
+    const needle = state.locationQuery.trim().toLocaleLowerCase('de-CH');
+    const matches = needle ? buildings.filter((item) => [item.name, item.bbl_id, item.street, item.zip, item.city, item.canton, item.land]
+      .filter(Boolean).join(' ').toLocaleLowerCase('de-CH').includes(needle)) : buildings;
+    return [...matches].sort((a, b) => Number(b.bbl_id === state.buildingId) - Number(a.bbl_id === state.buildingId));
+  };
+  const bookableRoomCount = (buildingId) => meetingRooms.filter((room) => room.buildingId === buildingId).length;
   const buildingRooms = () => meetingRooms
     .filter((room) => room.buildingId === state.buildingId)
     .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, 'de', { numeric: true }));
@@ -188,7 +202,7 @@ export default async function render(ctx) {
 
   function normalizeSelection({ keepFloor = false } = {}) {
     const available = sortedAvailableRooms();
-    if (!available.some((room) => room.spaceId === state.roomId)) state.roomId = available[0]?.spaceId || '';
+    if (!available.some((room) => room.spaceId === state.roomId)) state.roomId = '';
     const selected = available.find((room) => room.spaceId === state.roomId) || null;
     const floorRows = floors();
     if (!keepFloor && selected) state.floorId = selected.floorId;
@@ -197,10 +211,13 @@ export default async function render(ctx) {
 
   normalizeSelection();
   const selectedRoom = () => sortedAvailableRooms().find((room) => room.spaceId === state.roomId) || null;
+  if (state.step === 3 && !selectedRoom()) state.step = 2;
 
   function syncUrl() {
     const params = new URLSearchParams();
     if (state.tab !== 'find') params.set('tab', state.tab);
+    if (state.step !== 1) params.set('step', String(state.step));
+    if (state.locationQuery.trim()) params.set('q', state.locationQuery.trim());
     if (state.view !== 'list') params.set('view', state.view);
     params.set('building', state.buildingId);
     params.set('date', state.date);
@@ -215,22 +232,19 @@ export default async function render(ctx) {
     history.replaceState(history.state, '', `#/app/room-booking?${params}`);
   }
 
-  function readCriteria() {
-    const nextBuilding = C.val(mount, 'booking-building') || state.buildingId;
-    if (nextBuilding !== state.buildingId) {
-      state.buildingId = nextBuilding;
-      state.roomId = '';
-      state.floorId = '';
-    }
+  function readScheduleCriteria() {
     state.date = C.val(mount, 'booking-date') || '';
     state.start = C.val(mount, 'booking-start') || '';
     state.end = C.val(mount, 'booking-end') || '';
     state.participants = Math.max(1, Number.parseInt(C.val(mount, 'booking-participants'), 10) || 1);
+  }
+
+  function readBookingDetails() {
     const title = mount.querySelector('#booking-title');
     if (title) state.meetingTitle = title.value;
   }
 
-  function validate({ requireRoom = false } = {}) {
+  function validate({ requireRoom = false, requireDetails = false } = {}) {
     const errors = {};
     const start = minuteOfDay(state.start), end = minuteOfDay(state.end);
     if (!state.date) errors['booking-date'] = 'Bitte ein Datum wählen';
@@ -245,8 +259,8 @@ export default async function render(ctx) {
       const room = selectedRoom();
       if (!room) errors['booking-room-group'] = 'Bitte einen verfügbaren Raum wählen';
       else if (!isAvailable(room)) errors['booking-room-group'] = 'Dieser Raum ist im gewählten Zeitraum nicht mehr verfügbar';
-      if (!state.meetingTitle.trim()) errors['booking-title'] = 'Bitte einen Sitzungstitel angeben';
     }
+    if (requireDetails && !state.meetingTitle.trim()) errors['booking-title'] = 'Bitte einen Sitzungstitel angeben';
     state.errors = errors;
     return Object.keys(errors).length === 0;
   }
@@ -254,7 +268,7 @@ export default async function render(ctx) {
   function roomImage(profile, { thumb = false } = {}) {
     if (!profile.photoSrc) {
       return `<div class="booking-room-image booking-room-image--empty${thumb ? ' booking-room-image--thumb' : ''}">
-        ${C.icon('Image', thumb ? 'icon--base' : 'icon--2xl')}<span${thumb ? ' class="sr-only"' : ''}>Kein Raumfoto verfügbar</span></div>`;
+        ${C.icon('Image', thumb ? 'icon--base' : 'icon--2xl')}<span>${thumb ? 'Kein Foto' : 'Kein Raumfoto verfügbar'}</span></div>`;
     }
     return C.photo({
       src: profile.photoSrc,
@@ -288,7 +302,6 @@ export default async function render(ctx) {
             <span class="booking-room-row__meta">${C.escape(floorLabel(room))} · ${num(room.capacity)} Plätze · ${m2(room.area)}</span>
             <span class="booking-room-row__features">${C.escape(features.join(' · '))}</span>
           </span>
-          ${C.badge('Verfügbar', 'success', 'sm')}
         </label>`;
       }).join('')}
       ${!state.showAll && rooms.length > visible.length ? `<button type="button" class="btn btn--link booking-show-all" id="booking-show-all">
@@ -372,25 +385,52 @@ export default async function render(ctx) {
       </button>`).join('')}</div>`;
   }
 
-  function locationSection() {
-    const currentBuilding = building();
-    const hasCoordinates = Number.isFinite(currentBuilding.lat) && Number.isFinite(currentBuilding.lng);
-    return `<section class="booking-side__section booking-location" aria-labelledby="booking-location-title">
-      <h3 id="booking-location-title">Standort</h3>
-      ${hasCoordinates
-        ? `<div class="booking-location__map pf-map" id="booking-location-map" role="group" aria-label="Standort von ${C.escape(currentBuilding.name)} auf der Karte">${C.loading({ label: 'Karte wird geladen…' })}</div>`
-        : '<div class="booking-location__map booking-location__map--empty">Keine Kartenposition verfügbar</div>'}
-      <p class="booking-location__name"><strong>${C.escape(currentBuilding.name)}</strong></p>
-      <p class="small muted">${C.escape(currentBuilding.street)}, ${C.escape(currentBuilding.zip)} ${C.escape(currentBuilding.city)}</p>
-      <a class="btn btn--link btn--sm btn--icon-right" href="#/app/portfolio?id=${encodeURIComponent(currentBuilding.bbl_id)}">
-        <span class="btn__text">Gebäude ansehen</span>${C.icon('ArrowRight', 'btn__icon')}</a>
-    </section>`;
+  function locationExplorer() {
+    const visible = locationBuildings();
+    const mapped = visible.filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
+    return `<div class="booking-step booking-step--location">
+      ${C.catalogueBar({
+        formId: 'booking-location-search', inputId: 'booking-location-q',
+        searchLabel: 'Standort suchen', placeholder: 'Standort, Ort oder Adresse suchen…', q: state.locationQuery,
+        countId: 'booking-location-count',
+        count: `<strong>${num(visible.length)}</strong> von ${num(buildings.length)} Standorten`,
+      })}
+      <div class="pf-layout booking-location-explorer">
+        <aside class="pf-sidebar booking-location-sidebar" aria-labelledby="booking-location-list-title">
+          <div class="pf-sidebar__head"><h4 class="pf-sidebar__title" id="booking-location-list-title">Standorte</h4></div>
+          ${visible.length ? `<fieldset class="booking-location-list">
+            <legend class="sr-only">Standort auswählen</legend>
+            ${visible.map((item) => {
+              const id = `booking-location-${item.bbl_id.replace(/[^a-z0-9_-]/gi, '-')}`;
+              const roomCount = bookableRoomCount(item.bbl_id);
+              return `<label class="booking-location-choice${item.bbl_id === state.buildingId ? ' is-selected' : ''}" for="${C.escape(id)}">
+                <input id="${C.escape(id)}" type="radio" name="booking-location" value="${C.escape(item.bbl_id)}"${item.bbl_id === state.buildingId ? ' checked' : ''}>
+                <span><strong>${C.escape(item.name)}</strong>
+                  <span>${C.escape(item.street)}, ${C.escape(item.zip)} ${C.escape(item.city)}</span>
+                  <span>${num(roomCount)} ${roomCount === 1 ? 'buchbarer Raum' : 'buchbare Räume'}</span>
+                </span>
+              </label>`;
+            }).join('')}
+          </fieldset>` : C.empty('Keine Standorte gefunden.', {
+            hint: 'Passen Sie den Suchbegriff an.', action: { id: 'booking-location-reset', label: 'Suche zurücksetzen' },
+          })}
+        </aside>
+        <div class="pf-main booking-location-main">
+          ${mapped.length
+            ? `<div class="pf-map dash-map booking-location-map" id="booking-location-map" role="group" aria-label="Buchbare Standorte auf der Karte">${C.loading({ label: 'Karte wird geladen…' })}</div>`
+            : C.empty('Für diese Auswahl sind keine Kartenpositionen verfügbar.')}
+        </div>
+      </div>
+      <div class="booking-step-actions booking-step-actions--end">
+        <button type="button" class="btn btn--filled btn--icon-right" id="booking-location-next"><span class="btn__text">Weiter zu Termin und Raum</span>${C.icon('ArrowRight', 'btn__icon')}</button>
+      </div>
+    </div>`;
   }
 
   function selectedRoomSection() {
     const room = selectedRoom();
     if (!room) {
-      return `<section class="booking-side__section"><h3>Raum auswählen</h3>
+      return `<section class="booking-side__section"><h4>Raum auswählen</h4>
         <p class="small muted">Wählen Sie einen verfügbaren Raum in der Liste oder im Grundriss.</p></section>`;
     }
     const profile = roomProfile(room);
@@ -399,7 +439,7 @@ export default async function render(ctx) {
         ${roomImage(profile)}
         <figcaption>${C.escape(profile.photoNote || 'Für diesen Raum ist noch kein Foto hinterlegt.')}</figcaption>
       </figure>
-      <h3 id="booking-selected-title">${C.escape(profile.name)} · ${C.escape(room.roomNumber)}</h3>
+      <h4 id="booking-selected-title">${C.escape(profile.name)} · ${C.escape(room.roomNumber)}</h4>
       <dl class="kv kv--tight booking-selected__facts">
         <dt>Geschoss</dt><dd>${C.escape(floorLabel(room))}</dd>
         <dt>Kapazität</dt><dd>${num(room.capacity)} Plätze</dd>
@@ -409,38 +449,14 @@ export default async function render(ctx) {
         ${profile.equipment.map((feature) => `<li>${C.icon(feature === 'Teams' || feature === 'Videokonferenz' ? 'Video' : 'Desktop', 'icon--base')}<span>${C.escape(feature)}</span></li>`).join('')}
         ${profile.accessible ? `<li>${C.icon('Wheelchair', 'icon--base')}<span>Rollstuhlgängig</span></li>` : ''}
       </ul>
-
-      <form id="booking-form" class="form booking-confirm" novalidate>
-        ${C.field({ id: 'booking-title', label: 'Sitzungstitel', required: true, message: state.errors['booking-title'],
-          control: (cls, attrs) => `<input id="booking-title" type="text" maxlength="120" value="${C.escape(state.meetingTitle)}" class="${cls}"${attrs}>` })}
-        <div class="form__group booking-invite">
-          <label for="booking-invite">Personen einladen <span class="muted">(optional)</span></label>
-          <div class="booking-invite__control">
-            <input id="booking-invite" type="text" class="input--outline input--base" list="booking-directory" autocomplete="off" placeholder="Name oder E-Mail">
-            <button type="button" class="btn btn--outline btn--icon-left" id="booking-invite-add">${C.icon('Plus', 'btn__icon')}<span class="btn__text">Hinzufügen</span></button>
-          </div>
-          <datalist id="booking-directory">${DIRECTORY.map((person) => `<option value="${C.escape(person.name)}">${C.escape(person.email)}</option>`).join('')}</datalist>
-          ${state.inviteError ? `<div class="badge badge--sm badge--error" id="booking-invite-error">${C.escape(state.inviteError)}</div>` : ''}
-          ${inviteeMarkup()}
-        </div>
-        <div class="booking-confirm__summary">
-          <h4>Ihre Buchung</h4>
-          ${bookingSummary(room)}
-        </div>
-        <button class="btn btn--filled btn--lg btn--icon-right booking-confirm__submit" type="submit">
-          <span class="btn__text">Raum verbindlich buchen</span>${C.icon('ArrowRight', 'btn__icon')}
-        </button>
-      </form>
     </section>`;
   }
 
-  function searchForm() {
-    return `<form id="booking-search-form" class="form booking-search" novalidate>
+  function scheduleForm() {
+    return `<form id="booking-search-form" class="form booking-schedule" novalidate>
       <fieldset class="form__group">
-        <legend class="form__group__legend">Buchungsangaben</legend>
-        <div class="booking-search__grid">
-          ${C.select({ id: 'booking-building', label: 'Standort', required: true, value: state.buildingId,
-            options: buildings.map((item) => ({ value: item.bbl_id, label: `${item.name} — ${item.city}` })) })}
+        <legend class="form__group__legend">Termin</legend>
+        <div class="booking-schedule__grid">
           ${C.field({ id: 'booking-date', label: 'Datum', required: true, message: state.errors['booking-date'],
             control: (cls, attrs) => `<input id="booking-date" type="date" min="${today}" value="${C.escape(state.date)}" class="${cls}"${attrs}>` })}
           ${C.field({ id: 'booking-start', label: 'Von', required: true, message: state.errors['booking-start'],
@@ -449,22 +465,29 @@ export default async function render(ctx) {
             control: (cls, attrs) => `<input id="booking-end" type="time" step="900" value="${C.escape(state.end)}" class="${cls}"${attrs}>` })}
           ${C.field({ id: 'booking-participants', label: 'Teilnehmende', required: true, message: state.errors['booking-participants'],
             control: (cls, attrs) => `<input id="booking-participants" type="number" min="1" max="100" step="1" value="${state.participants}" class="${cls}"${attrs}>` })}
-          <div class="booking-search__action"><button class="btn btn--filled btn--icon-right" type="submit">
-            <span class="btn__text">Räume anzeigen</span>${C.icon('ArrowRight', 'btn__icon')}</button></div>
+          <div class="booking-schedule__action"><button class="btn btn--filled btn--icon-left" id="booking-search-submit" type="submit">
+            ${C.icon('Search', 'btn__icon')}<span class="btn__text">Verfügbarkeit prüfen</span></button></div>
         </div>
       </fieldset>
     </form>`;
   }
 
-  function findView() {
-    if (state.created) return doneView();
+  function locationSummary() {
+    const currentBuilding = building();
+    return `<div class="booking-location-summary">
+      <p><strong>${C.escape(currentBuilding.name)}</strong><span>${C.escape(currentBuilding.street)}, ${C.escape(currentBuilding.zip)} ${C.escape(currentBuilding.city)}</span></p>
+      <button type="button" class="btn btn--link btn--sm" data-booking-edit-step="1"><span class="btn__text">Standort ändern</span></button>
+    </div>`;
+  }
+
+  function resultsStep() {
     const rooms = sortedAvailableRooms();
     const filterCount = state.filters.equipment.length + state.filters.accessible.length;
-    return `<div class="vertical-spacing booking-find">
-      ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS, id: 'booking-errors' })}
-      ${searchForm()}
+    return `<div class="booking-step booking-step--results">
+      ${locationSummary()}
+      ${scheduleForm()}
       <section class="booking-results" aria-labelledby="booking-results-title">
-        <h2 class="sr-only" id="booking-results-title">Verfügbare Räume</h2>
+        <h4 class="sr-only" id="booking-results-title">Verfügbare Räume</h4>
         ${C.catalogueBar({
           showSearch: false,
           countId: 'booking-count',
@@ -480,12 +503,91 @@ export default async function render(ctx) {
         })}
         <div class="booking-layout">
           <div class="booking-results__main">${state.view === 'floorplan' ? floorplanView() : roomList(rooms)}</div>
-          <aside class="booking-side" aria-label="Standort und ausgewählter Raum">
-            ${locationSection()}
+          <aside class="booking-side" aria-label="Ausgewählter Raum">
             <div id="booking-room-detail">${selectedRoomSection()}</div>
           </aside>
         </div>
       </section>
+      <div class="booking-step-actions">
+        <button type="button" class="btn btn--outline btn--icon-left" data-booking-back>${C.icon('ArrowLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>
+        <button type="button" class="btn btn--filled btn--icon-right" id="booking-step-next"><span class="btn__text">Weiter zur Buchung</span>${C.icon('ArrowRight', 'btn__icon')}</button>
+      </div>
+    </div>`;
+  }
+
+  function bookingReview(room) {
+    const currentBuilding = building();
+    const profile = roomProfile(room);
+    const invited = state.invitees.length ? state.invitees.map((person) => person.name).join(', ') : 'Keine Personen';
+    return `<section class="booking-confirm__summary booking-review" aria-labelledby="booking-review-title">
+      <h4 id="booking-review-title">Ihre Buchung</h4>
+      <div class="booking-review__section">
+        <div class="booking-review__head"><strong>Standort</strong>
+          <button type="button" class="btn btn--link btn--sm" data-booking-edit-step="1"><span class="btn__text">Ändern</span><span class="sr-only">: Standort</span></button></div>
+        <dl class="kv kv--tight">
+          <dt>Standort</dt><dd>${C.escape(currentBuilding.name)}</dd>
+          <dt>Adresse</dt><dd>${C.escape(currentBuilding.street)}, ${C.escape(currentBuilding.zip)} ${C.escape(currentBuilding.city)}</dd>
+        </dl>
+      </div>
+      <div class="booking-review__section">
+        <div class="booking-review__head"><strong>Termin & Raum</strong>
+          <button type="button" class="btn btn--link btn--sm" data-booking-edit-step="2"><span class="btn__text">Ändern</span><span class="sr-only">: Termin und Raum</span></button></div>
+        <dl class="kv kv--tight">
+          <dt>Datum</dt><dd>${C.escape(datum(state.date))}</dd>
+          <dt>Zeit</dt><dd>${C.escape(`${state.start}–${state.end}`)}</dd>
+          <dt>Teilnehmende</dt><dd>${num(state.participants)}</dd>
+          <dt>Raum</dt><dd>${C.escape(profile.name)} · ${C.escape(room.roomNumber)}</dd>
+          <dt>Geschoss</dt><dd>${C.escape(floorLabel(room))}</dd>
+          <dt>Kapazität</dt><dd>${num(room.capacity)} Plätze</dd>
+        </dl>
+      </div>
+      <div class="booking-review__section">
+        <strong>Sitzung</strong>
+        <dl class="kv kv--tight">
+          <dt>Sitzungstitel</dt><dd id="booking-review-meeting-title">${C.escape(state.meetingTitle || 'Noch nicht angegeben')}</dd>
+          <dt>Eingeladen</dt><dd>${C.escape(invited)}</dd>
+        </dl>
+      </div>
+    </section>`;
+  }
+
+  function confirmationStep() {
+    const room = selectedRoom();
+    if (!room) return C.empty('Der ausgewählte Raum ist nicht mehr verfügbar.', {
+      action: { id: 'booking-review-back', label: 'Anderen Raum wählen' },
+    });
+    return `<div class="booking-step booking-step--review">
+      <form id="booking-form" class="form booking-confirm" novalidate>
+        ${C.field({ id: 'booking-title', label: 'Sitzungstitel', required: true, message: state.errors['booking-title'],
+          control: (cls, attrs) => `<input id="booking-title" type="text" maxlength="120" value="${C.escape(state.meetingTitle)}" class="${cls}"${attrs}>` })}
+        <div class="form__group booking-invite">
+          <label for="booking-invite">Personen einladen <span class="muted">(optional)</span></label>
+          <div class="booking-invite__control">
+            <input id="booking-invite" type="text" class="input--outline input--base" list="booking-directory" autocomplete="off" placeholder="Name oder E-Mail">
+            <button type="button" class="btn btn--outline btn--icon-left" id="booking-invite-add">${C.icon('Plus', 'btn__icon')}<span class="btn__text">Hinzufügen</span></button>
+          </div>
+          <datalist id="booking-directory">${DIRECTORY.map((person) => `<option value="${C.escape(person.name)}">${C.escape(person.email)}</option>`).join('')}</datalist>
+          ${state.inviteError ? `<div class="badge badge--sm badge--error" id="booking-invite-error">${C.escape(state.inviteError)}</div>` : ''}
+          ${inviteeMarkup()}
+        </div>
+        ${bookingReview(room)}
+        <div class="booking-step-actions">
+          <button type="button" class="btn btn--outline btn--icon-left" data-booking-back>${C.icon('ArrowLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>
+          <button class="btn btn--filled btn--lg btn--icon-right booking-confirm__submit" type="submit">
+            <span class="btn__text">Raum verbindlich buchen</span>${C.icon('ArrowRight', 'btn__icon')}
+          </button>
+        </div>
+      </form>
+    </div>`;
+  }
+
+  function findView() {
+    if (state.created) return doneView();
+    return `<div class="vertical-spacing booking-find">
+      <div class="booking-wizard-head">${C.wizardHead(STEP_LABELS, state.step, { headId: 'booking-step-head', label: 'Buchungsschritte',
+        legend: state.step !== 1, heading: 'h3', title: STEP_TITLES[state.step - 1], visible: true })}</div>
+      ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS, id: 'booking-errors' })}
+      ${state.step === 1 ? locationExplorer() : state.step === 2 ? resultsStep() : confirmationStep()}
     </div>`;
   }
 
@@ -598,17 +700,19 @@ export default async function render(ctx) {
   }
 
   function mountLocationMap() {
-    if (state.tab !== 'find' || state.created) return;
-    const currentBuilding = building();
+    if (state.tab !== 'find' || state.created || state.step !== 1) return;
     const el = mount.querySelector('#booking-location-map');
-    if (!el || !Number.isFinite(currentBuilding.lat) || !Number.isFinite(currentBuilding.lng)) return;
-    locationMap.mount(el, (node) => initEstateMap(node, [{
-      lat: currentBuilding.lat,
-      lon: currentBuilding.lng,
-      label: currentBuilding.name,
-      sub: `${currentBuilding.street}, ${currentBuilding.zip} ${currentBuilding.city}`,
-      bblId: currentBuilding.bbl_id,
-    }], null, currentBuilding.bbl_id, { focusPopup: false }));
+    if (!el) return;
+    const visible = locationBuildings().filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
+    const focus = visible.some((item) => item.bbl_id === state.buildingId) ? state.buildingId : null;
+    locationMap.mount(el, (node) => initEstateMap(node, visible.map((item) => ({
+      lat: item.lat,
+      lon: item.lng,
+      label: item.name,
+      sub: `${item.street}, ${item.zip} ${item.city}`,
+      bblId: item.bbl_id,
+      href: `#/app/portfolio?id=${encodeURIComponent(item.bbl_id)}`,
+    })), null, focus, { focusPopup: false }));
   }
 
   function confirmCancellation(instance) {
@@ -629,15 +733,101 @@ export default async function render(ctx) {
   function wireFind() {
     C.wireFieldErrors(mount, state.errors);
 
-    mount.querySelector('#booking-search-form')?.addEventListener('submit', (event) => {
+    const locationSearch = mount.querySelector('#booking-location-search');
+    const locationInput = mount.querySelector('#booking-location-q');
+    const applyLocationSearch = () => {
+      state.locationQuery = locationInput?.value || '';
+      syncUrl();
+      draw();
+      C.announce(`${locationBuildings().length} Standorte gefunden.`);
+    };
+    locationSearch?.addEventListener('submit', (event) => {
       event.preventDefault();
-      readCriteria();
-      if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
+      clearTimeout(locationSearchTimer);
+      applyLocationSearch();
+    });
+    locationInput?.addEventListener('input', () => {
+      clearTimeout(locationSearchTimer);
+      locationSearchTimer = setTimeout(applyLocationSearch, 250);
+    });
+    mount.querySelector('#booking-location-reset')?.addEventListener('click', () => {
+      state.locationQuery = '';
+      syncUrl();
+      draw();
+      mount.querySelector('#booking-location-q')?.focus();
+    });
+    mount.querySelectorAll('input[name="booking-location"]').forEach((radio) => radio.addEventListener('change', () => {
+      if (radio.value === state.buildingId) return;
+      state.buildingId = radio.value;
+      state.roomId = '';
+      state.floorId = '';
       state.showAll = false;
       normalizeSelection();
       syncUrl();
       draw();
+      C.announce(`${building().name} ausgewählt.`);
+    }));
+    mount.querySelector('#booking-location-next')?.addEventListener('click', () => {
+      state.step = 2;
+      state.errors = {};
+      normalizeSelection();
+      syncUrl();
+      draw();
+      C.focusWizardStep(mount, STEP_LABELS, state.step, { headId: 'booking-step-head' });
       C.announce(`${sortedAvailableRooms().length} verfügbare Räume gefunden.`);
+    });
+
+    const schedule = mount.querySelector('#booking-search-form');
+    schedule?.addEventListener('input', readScheduleCriteria);
+    schedule?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      readScheduleCriteria();
+      if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
+      state.showAll = false;
+      normalizeSelection();
+      state.errors = {};
+      syncUrl();
+      draw();
+      C.announce(`${sortedAvailableRooms().length} verfügbare Räume gefunden.`);
+    });
+
+    mount.querySelectorAll('[data-booking-edit-step]').forEach((button) => button.addEventListener('click', () => {
+      readBookingDetails();
+      if (state.step === 2) readScheduleCriteria();
+      state.step = Number(button.dataset.bookingEditStep) || 1;
+      state.errors = {};
+      syncUrl();
+      draw();
+      C.focusWizardStep(mount, STEP_LABELS, state.step, { headId: 'booking-step-head' });
+    }));
+
+    mount.querySelector('[data-booking-back]')?.addEventListener('click', () => {
+      readBookingDetails();
+      if (state.step === 2) readScheduleCriteria();
+      state.step = Math.max(1, state.step - 1);
+      state.errors = {};
+      syncUrl();
+      draw();
+      C.focusWizardStep(mount, STEP_LABELS, state.step, { headId: 'booking-step-head' });
+    });
+
+    mount.querySelector('#booking-step-next')?.addEventListener('click', () => {
+      readScheduleCriteria();
+      normalizeSelection();
+      if (!validate({ requireRoom: true })) { draw(); C.wireErrorSummary(mount); return; }
+      state.step = 3;
+      state.errors = {};
+      syncUrl();
+      draw();
+      C.focusWizardStep(mount, STEP_LABELS, state.step, { headId: 'booking-step-head' });
+    });
+
+    mount.querySelector('#booking-review-back')?.addEventListener('click', () => {
+      state.step = 2;
+      state.errors = {};
+      syncUrl();
+      draw();
+      C.focusWizardStep(mount, STEP_LABELS, state.step, { headId: 'booking-step-head' });
     });
 
     mount.querySelector('#booking-sort')?.addEventListener('change', (event) => {
@@ -679,8 +869,7 @@ export default async function render(ctx) {
     }));
     mount.querySelectorAll('[data-booking-floor]').forEach((button) => button.addEventListener('click', () => {
       state.floorId = button.dataset.bookingFloor;
-      const first = sortedAvailableRooms().find((room) => room.floorId === state.floorId);
-      state.roomId = first?.spaceId || '';
+      if (selectedRoom()?.floorId !== state.floorId) state.roomId = '';
       state.planScale = 1;
       syncUrl(); draw();
     }));
@@ -701,7 +890,11 @@ export default async function render(ctx) {
     }));
 
     const title = mount.querySelector('#booking-title');
-    if (title) title.addEventListener('input', () => { state.meetingTitle = title.value; });
+    if (title) title.addEventListener('input', () => {
+      state.meetingTitle = title.value;
+      const reviewTitle = mount.querySelector('#booking-review-meeting-title');
+      if (reviewTitle) reviewTitle.textContent = title.value.trim() || 'Noch nicht angegeben';
+    });
     const addInvitee = () => {
       if (title) state.meetingTitle = title.value;
       const input = mount.querySelector('#booking-invite');
@@ -727,8 +920,16 @@ export default async function render(ctx) {
 
     mount.querySelector('#booking-form')?.addEventListener('submit', (event) => {
       event.preventDefault();
-      readCriteria();
-      if (!validate({ requireRoom: true })) { draw(); C.wireErrorSummary(mount); return; }
+      readBookingDetails();
+      if (!selectedRoom()) {
+        state.step = 2;
+        state.errors = { 'booking-room-group': 'Dieser Raum ist im gewählten Zeitraum nicht mehr verfügbar' };
+        syncUrl();
+        draw();
+        C.wireErrorSummary(mount);
+        return;
+      }
+      if (!validate({ requireRoom: true, requireDetails: true })) { draw(); C.wireErrorSummary(mount); return; }
       const room = selectedRoom();
       const currentBuilding = building();
       const profile = roomProfile(room);
@@ -778,6 +979,7 @@ export default async function render(ctx) {
       state.participants = Number(data.teilnehmende) || state.participants;
       state.meetingTitle = data.zweck ? `${data.zweck} (Kopie)` : '';
       state.date = nextWorkday();
+      state.step = 2;
       state.created = null;
       normalizeSelection(); syncUrl(); draw();
     }));
@@ -788,7 +990,7 @@ export default async function render(ctx) {
       onSelect: (tab) => {
         state.tab = tab;
         syncUrl();
-        if (tab === 'find') requestAnimationFrame(() => {
+        if (tab === 'find' && state.step === 1) requestAnimationFrame(() => {
           const map = locationMap.get();
           if (map?.resize) map.resize(); else mountLocationMap();
         });
