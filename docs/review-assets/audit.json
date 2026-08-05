@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-05T10:02:18.142Z",
+  "generated": "2026-08-05T11:21:01.914Z",
   "viewports": [
     320,
     768,
@@ -71,4746 +71,1610 @@
     "duplicateIds": 0,
     "labels": 0,
     "images": 0,
-    "headings": 60,
+    "headings": 0,
     "tables": 0,
-    "targets": 796
+    "targets": 0,
+    "compactTargets": 150
   },
-  "findings": [
-    {
-      "width": 320,
-      "route": "/",
-      "title": "Willkommen im BBL Kundenportal",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/services",
-      "title": "Dienstleistungen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/services/stoerung-melden",
-      "title": "Störungs-, Reinigungs- & Reparaturmeldung",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Dienstleistungen",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/applications",
-      "title": "Anwendungen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/applications?area=buildings",
-      "title": "Anwendungen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/applications/liegenschaften-inventar",
-      "title": "Liegenschaften Inventar (Portal)",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Anwendungen",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/applications/eshop",
-      "title": "BBL Intranetshop (Portal)",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Anwendungen",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/data",
-      "title": "Daten und Digitalisierung",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/data/catalog",
-      "title": "Datenbezug und API Verzeichnis",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/data/catalog/11",
-      "title": "Geodaten: Gebäude (GIS IMMO)",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Datenbezug und API Verzeichnis",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/data/digitalisation",
-      "title": "Digitalisierung",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/data/digitalisation/strategy",
-      "title": "Digitalisierungsstrategie",
-      "issues": [
-        "heading jumps 1",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Digitalisierung",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Gesamtstrategie «Digitale Immobilien»"
-      ]
-    },
-    {
-      "width": 320,
-      "route": "/data/digitalisation/vision",
-      "title": "Vision",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Digitalisierung",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/data/digitalisation/principles",
-      "title": "Prinzipien",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Digitalisierung",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/data/ict-projects",
-      "title": "IKT-Vorhaben",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/knowledge",
-      "title": "Wissen und Hilfsmittel",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/knowledge/it",
-      "title": "Informatik und IKT-Beschaffung",
-      "issues": [
-        "heading jumps 5",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:IKT-Vorgaben der Bundesverwaltung (DTI)",
-        "2>4:IT Dienstleistungen Einzelzuschlag",
-        "2>4:Checkliste für die Anmeldung öffentlicher Beschaffungsvorhaben",
-        "2>4:HBB QuickHelp – Wie starte ich eine Beschaffung",
-        "2>4:IT-Rahmenverträge BBL Informatik"
-      ]
-    },
-    {
-      "width": 320,
-      "route": "/knowledge/procurement",
-      "title": "Beschaffung",
-      "issues": [
-        "heading jumps 4",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Bundesgesetz über das öffentliche Beschaffungswesen (BöB)",
-        "2>4:Beschaffungskonferenz des Bundes (BKB)",
-        "2>4:Gesuch unterschwellige Delegation (Dienstleistungen)",
-        "2>4:Weisungen über das Beschaffungscontrolling"
-      ]
-    },
-    {
-      "width": 320,
-      "route": "/knowledge/accommodation",
-      "title": "Unterbringung und Objektbetrieb",
-      "issues": [
-        "heading jumps 4",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Verordnung über das Immobilienmanagement und die Logistik des Bundes (VILB)",
-        "2>4:Weisungen nachhaltiges Immobilienmanagement",
-        "2>4:Preisliste Leistungsbereich Unterbringung",
-        "2>4:K7P90 F1d Transport- und Umzugsauftrag"
-      ]
-    },
-    {
-      "width": 320,
-      "route": "/knowledge/publishing",
-      "title": "Publikationen, Druck und Versand",
-      "issues": [
-        "heading jumps 3",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Digitaldruckauftrag",
-        "2>4:Produktekatalog Produktion",
-        "2>4:Informationsblatt Warengruppe Publikationen"
-      ]
-    },
-    {
-      "width": 320,
-      "route": "/knowledge/guides",
-      "title": "Anleitungen und Schulungen",
-      "issues": [
-        "heading jumps 2",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Erste Schritte im Kundenportal",
-        "2>4:Einführung ins Kundenportal"
-      ]
-    },
-    {
-      "width": 320,
-      "route": "/knowledge/processes",
-      "title": "Prozessdokumentation",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/news",
-      "title": "News",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/news/N-01",
-      "title": "Massnahmen für Netto-Null im BBL — auch im Arbeitsalltag",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu News",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/my-cases",
-      "title": "Meine Vorgänge",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/my-cases/seed-1",
-      "title": "Meine Vorgänge",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/search?q=bau",
-      "title": "Suche",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/portfolio",
-      "title": "Liegenschaften Inventar",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/portfolio?view=map",
-      "title": "Liegenschaften Inventar",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/portfolio?id=1080%2F4840%2FAF",
-      "title": "Bundeshaus West",
-      "issues": [
-        "targets <44px 6"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Liegenschaften Inventar",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-zoom-in",
-          "name": "Zoom in",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-zoom-out",
-          "name": "Zoom out",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-compass",
-          "name": "Reset bearing to north",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-fullscreen",
-          "name": "Enter fullscreen",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/media-library",
-      "title": "Mediathek Bauten",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/media-library?view=map",
-      "title": "Mediathek Bauten",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/media-library/MED-001",
-      "title": "Bundeshaus West — aussenansicht",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Mediathek Bauten",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/dataportal",
-      "title": "Datenportal",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/dataportal/energie-klima",
-      "title": "Energie & Klima",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Datenportal",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/dataportal/immobilien?tab=entwicklung",
-      "title": "Immobilienportfolio",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Datenportal",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/projects",
-      "title": "Bauprojekte / EPPM",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/projects/PRJ-01",
-      "title": "Bundeshaus Nord — Gesamtsanierung",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Bauprojekte / EPPM",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/tenancies",
-      "title": "Mietende",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/tenancies/MV-2026-001",
-      "title": "Verwaltungszentrum Guisanplatz",
-      "issues": [
-        "targets <44px 6"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Mietende",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-zoom-in",
-          "name": "Zoom in",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-zoom-out",
-          "name": "Zoom out",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-compass",
-          "name": "Reset bearing to north",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-fullscreen",
-          "name": "Enter fullscreen",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/metadata-catalog",
-      "title": "Metadaten Katalog Bauten",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/metadata-catalog?id=gebaeude",
-      "title": "Gebäude",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Metadaten Katalog Bauten",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/metadata-catalog?table=gis-immo-building",
-      "title": "Gebäude",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu GIS IMMO",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Datensatz ansehen",
-          "w": 183,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/process-docs",
-      "title": "Prozessdokumentation Bauten",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/process-docs?id=TQ.21.00.00.01",
-      "title": "Lösungsvorschläge Anmiete Kauf",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Prozessdokumentation Bauten",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/process-docs?id=TQ.21.00.00.01&tab=diagramm",
-      "title": "Lösungsvorschläge Anmiete Kauf",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Prozessdokumentation Bauten",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/shop",
-      "title": "BBL Intranetshop",
-      "issues": [
-        "targets <44px 13"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/shop/product/3",
-      "title": "Bürostuhl Giroflex 64 Anthrazit",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu BBL Intranetshop",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/shop/cart",
-      "title": "Warenkorb",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu BBL Intranetshop",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm empty__action",
-          "name": "Zum Produktkatalog",
-          "w": 189,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/shop/checkout",
-      "title": "Warenkorb",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu BBL Intranetshop",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm empty__action",
-          "name": "Zum Produktkatalog",
-          "w": 189,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/document-archive",
-      "title": "Bauwerksdokumentation",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/space-request",
-      "title": "Raumbedarf melden",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/fault-report",
-      "title": "Störungs-, Reinigungs- & Reparaturmeldung",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/building-create",
-      "title": "Gebäude erfassen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/workspace",
-      "title": "Workspace Management",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/transaction",
-      "title": "Veräusserung von Bundesliegenschaften",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 320,
-      "route": "/app/api-docs",
-      "title": "BBL Kundenportal API",
-      "issues": [
-        "heading jumps 1",
-        "targets <44px 113"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Datenbezug und API Verzeichnis",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "expand-operation",
-          "name": "Collapse operation",
-          "w": 32,
-          "h": 30
-        },
-        {
-          "tag": "button",
-          "cls": "authorization__btn",
-          "name": "authorization button unlocked",
-          "w": 30,
-          "h": 24
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-control-arrow",
-          "name": "get ​/process-instances",
-          "w": 32,
-          "h": 26
-        },
-        {
-          "tag": "button",
-          "cls": "authorization__btn",
-          "name": "authorization button unlocked",
-          "w": 30,
-          "h": 24
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-control-arrow",
-          "name": "post ​/process-instances",
-          "w": 32,
-          "h": 26
-        },
-        {
-          "tag": "button",
-          "cls": "authorization__btn",
-          "name": "authorization button unlocked",
-          "w": 30,
-          "h": 24
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-control-arrow",
-          "name": "get ​/process-instances​/{id}",
-          "w": 32,
-          "h": 26
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "1>3:process-instancesGeschäftsfälle, die das Portal über die Prozess-Engine auslöst und verfolgt (Raumbedarf, Störungsmeldung, Beschaffung …)."
-      ]
-    },
-    {
-      "width": 768,
-      "route": "/",
-      "title": "Willkommen im BBL Kundenportal",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/services",
-      "title": "Dienstleistungen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/services/stoerung-melden",
-      "title": "Störungs-, Reinigungs- & Reparaturmeldung",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Dienstleistungen",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/applications",
-      "title": "Anwendungen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/applications?area=buildings",
-      "title": "Anwendungen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/applications/liegenschaften-inventar",
-      "title": "Liegenschaften Inventar (Portal)",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Anwendungen",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/applications/eshop",
-      "title": "BBL Intranetshop (Portal)",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Anwendungen",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/data",
-      "title": "Daten und Digitalisierung",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/data/catalog",
-      "title": "Datenbezug und API Verzeichnis",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/data/catalog/11",
-      "title": "Geodaten: Gebäude (GIS IMMO)",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Datenbezug und API Verzeichnis",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/data/digitalisation",
-      "title": "Digitalisierung",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/data/digitalisation/strategy",
-      "title": "Digitalisierungsstrategie",
-      "issues": [
-        "heading jumps 1",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Digitalisierung",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Gesamtstrategie «Digitale Immobilien»"
-      ]
-    },
-    {
-      "width": 768,
-      "route": "/data/digitalisation/vision",
-      "title": "Vision",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Digitalisierung",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/data/digitalisation/principles",
-      "title": "Prinzipien",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Digitalisierung",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/data/ict-projects",
-      "title": "IKT-Vorhaben",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/knowledge",
-      "title": "Wissen und Hilfsmittel",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/knowledge/it",
-      "title": "Informatik und IKT-Beschaffung",
-      "issues": [
-        "heading jumps 5",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:IKT-Vorgaben der Bundesverwaltung (DTI)",
-        "2>4:IT Dienstleistungen Einzelzuschlag",
-        "2>4:Checkliste für die Anmeldung öffentlicher Beschaffungsvorhaben",
-        "2>4:HBB QuickHelp – Wie starte ich eine Beschaffung",
-        "2>4:IT-Rahmenverträge BBL Informatik"
-      ]
-    },
-    {
-      "width": 768,
-      "route": "/knowledge/procurement",
-      "title": "Beschaffung",
-      "issues": [
-        "heading jumps 4",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Bundesgesetz über das öffentliche Beschaffungswesen (BöB)",
-        "2>4:Beschaffungskonferenz des Bundes (BKB)",
-        "2>4:Gesuch unterschwellige Delegation (Dienstleistungen)",
-        "2>4:Weisungen über das Beschaffungscontrolling"
-      ]
-    },
-    {
-      "width": 768,
-      "route": "/knowledge/accommodation",
-      "title": "Unterbringung und Objektbetrieb",
-      "issues": [
-        "heading jumps 4",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Verordnung über das Immobilienmanagement und die Logistik des Bundes (VILB)",
-        "2>4:Weisungen nachhaltiges Immobilienmanagement",
-        "2>4:Preisliste Leistungsbereich Unterbringung",
-        "2>4:K7P90 F1d Transport- und Umzugsauftrag"
-      ]
-    },
-    {
-      "width": 768,
-      "route": "/knowledge/publishing",
-      "title": "Publikationen, Druck und Versand",
-      "issues": [
-        "heading jumps 3",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Digitaldruckauftrag",
-        "2>4:Produktekatalog Produktion",
-        "2>4:Informationsblatt Warengruppe Publikationen"
-      ]
-    },
-    {
-      "width": 768,
-      "route": "/knowledge/guides",
-      "title": "Anleitungen und Schulungen",
-      "issues": [
-        "heading jumps 2",
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Erste Schritte im Kundenportal",
-        "2>4:Einführung ins Kundenportal"
-      ]
-    },
-    {
-      "width": 768,
-      "route": "/knowledge/processes",
-      "title": "Prozessdokumentation",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Wissen und Hilfsmittel",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/news",
-      "title": "News",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/news/N-01",
-      "title": "Massnahmen für Netto-Null im BBL — auch im Arbeitsalltag",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu News",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/my-cases",
-      "title": "Meine Vorgänge",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/my-cases/seed-1",
-      "title": "Meine Vorgänge",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/search?q=bau",
-      "title": "Suche",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/portfolio",
-      "title": "Liegenschaften Inventar",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/portfolio?view=map",
-      "title": "Liegenschaften Inventar",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/portfolio?id=1080%2F4840%2FAF",
-      "title": "Bundeshaus West",
-      "issues": [
-        "targets <44px 6"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Liegenschaften Inventar",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-zoom-in",
-          "name": "Zoom in",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-zoom-out",
-          "name": "Zoom out",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-compass",
-          "name": "Reset bearing to north",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-fullscreen",
-          "name": "Enter fullscreen",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/media-library",
-      "title": "Mediathek Bauten",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/media-library?view=map",
-      "title": "Mediathek Bauten",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/media-library/MED-001",
-      "title": "Bundeshaus West — aussenansicht",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Mediathek Bauten",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/dataportal",
-      "title": "Datenportal",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/dataportal/energie-klima",
-      "title": "Energie & Klima",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Datenportal",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/dataportal/immobilien?tab=entwicklung",
-      "title": "Immobilienportfolio",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Datenportal",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/projects",
-      "title": "Bauprojekte / EPPM",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/projects/PRJ-01",
-      "title": "Bundeshaus Nord — Gesamtsanierung",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Bauprojekte / EPPM",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/tenancies",
-      "title": "Mietende",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/tenancies/MV-2026-001",
-      "title": "Verwaltungszentrum Guisanplatz",
-      "issues": [
-        "targets <44px 6"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Mietende",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-zoom-in",
-          "name": "Zoom in",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-zoom-out",
-          "name": "Zoom out",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-compass",
-          "name": "Reset bearing to north",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "maplibregl-ctrl-fullscreen",
-          "name": "Enter fullscreen",
-          "w": 29,
-          "h": 29
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/metadata-catalog",
-      "title": "Metadaten Katalog Bauten",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/metadata-catalog?id=gebaeude",
-      "title": "Gebäude",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Metadaten Katalog Bauten",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/metadata-catalog?table=gis-immo-building",
-      "title": "Gebäude",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu GIS IMMO",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Datensatz ansehen",
-          "w": 183,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/process-docs",
-      "title": "Prozessdokumentation Bauten",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/process-docs?id=TQ.21.00.00.01",
-      "title": "Lösungsvorschläge Anmiete Kauf",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Prozessdokumentation Bauten",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/process-docs?id=TQ.21.00.00.01&tab=diagramm",
-      "title": "Lösungsvorschläge Anmiete Kauf",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Prozessdokumentation Bauten",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/shop",
-      "title": "BBL Intranetshop",
-      "issues": [
-        "targets <44px 13"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-left",
-          "name": "Hinzufügen",
-          "w": 133,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/shop/product/3",
-      "title": "Bürostuhl Giroflex 64 Anthrazit",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu BBL Intranetshop",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/shop/cart",
-      "title": "Warenkorb",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu BBL Intranetshop",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm empty__action",
-          "name": "Zum Produktkatalog",
-          "w": 189,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/shop/checkout",
-      "title": "Warenkorb",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu BBL Intranetshop",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm empty__action",
-          "name": "Zum Produktkatalog",
-          "w": 189,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/document-archive",
-      "title": "Bauwerksdokumentation",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/space-request",
-      "title": "Raumbedarf melden",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Dienstleistungsbeschreibung",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/fault-report",
-      "title": "Störungs-, Reinigungs- & Reparaturmeldung",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Dienstleistungsbeschreibung",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/building-create",
-      "title": "Gebäude erfassen",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Dienstleistungsbeschreibung",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/workspace",
-      "title": "Workspace Management",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/transaction",
-      "title": "Veräusserung von Bundesliegenschaften",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
-        {
-          "tag": "button",
-          "cls": "btn btn--outline btn--sm btn--icon-right",
-          "name": "Verstanden",
-          "w": 132,
-          "h": 34
-        }
-      ],
-      "tables": [],
-      "headings": []
-    },
-    {
-      "width": 768,
-      "route": "/app/api-docs",
-      "title": "BBL Kundenportal API",
-      "issues": [
-        "heading jumps 1",
-        "targets <44px 160"
-      ],
-      "small": [
-        {
-          "tag": "a",
-          "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
-          "name": "Zurück zu Datenbezug und API Verzeichnis",
-          "w": 102,
-          "h": 34
-        },
-        {
-          "tag": "button",
-          "cls": "expand-operation",
-          "name": "Collapse operation",
-          "w": 32,
-          "h": 30
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-summary-control",
-          "name": "GET/process-instancesVorgänge der angemeldeten Person auflisten",
-          "w": 567,
-          "h": 30
-        },
-        {
-          "tag": "button",
-          "cls": "authorization__btn",
-          "name": "authorization button unlocked",
-          "w": 30,
-          "h": 24
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-control-arrow",
-          "name": "get ​/process-instances",
-          "w": 32,
-          "h": 26
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-summary-control",
-          "name": "POST/process-instancesNeuen Vorgang aus einer Dienstleistung erstellen",
-          "w": 567,
-          "h": 30
-        },
-        {
-          "tag": "button",
-          "cls": "authorization__btn",
-          "name": "authorization button unlocked",
-          "w": 30,
-          "h": 24
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-control-arrow",
-          "name": "post ​/process-instances",
-          "w": 32,
-          "h": 26
-        }
-      ],
-      "tables": [],
-      "headings": [
-        "1>3:process-instancesGeschäftsfälle, die das Portal über die Prozess-Engine auslöst und verfolgt (Raumbedarf, Störungsmeldung, Beschaffung …)."
-      ]
-    },
+  "findings": [],
+  "advisories": [
     {
       "width": 1440,
       "route": "/",
-      "title": "Willkommen im BBL Kundenportal",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/services",
-      "title": "Dienstleistungen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/services/stoerung-melden",
-      "title": "Störungs-, Reinigungs- & Reparaturmeldung",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Dienstleistungen",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-left mt-3",
           "name": "Anmelden mit AGOV / FedLogin",
           "w": 297,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/applications",
-      "title": "Anwendungen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/applications?area=buildings",
-      "title": "Anwendungen",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/applications/liegenschaften-inventar",
-      "title": "Liegenschaften Inventar (Portal)",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Anwendungen",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/applications/eshop",
-      "title": "BBL Intranetshop (Portal)",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Anwendungen",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/data",
-      "title": "Daten und Digitalisierung",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/data/catalog",
-      "title": "Datenbezug und API Verzeichnis",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/data/catalog/11",
-      "title": "Geodaten: Gebäude (GIS IMMO)",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Datenbezug und API Verzeichnis",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/data/digitalisation",
-      "title": "Digitalisierung",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/data/digitalisation/strategy",
-      "title": "Digitalisierungsstrategie",
-      "issues": [
-        "heading jumps 1",
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Digitalisierung",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Gesamtstrategie «Digitale Immobilien»"
       ]
     },
     {
       "width": 1440,
       "route": "/data/digitalisation/vision",
-      "title": "Vision",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Digitalisierung",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/data/digitalisation/principles",
-      "title": "Prinzipien",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Digitalisierung",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/data/ict-projects",
-      "title": "IKT-Vorhaben",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/knowledge",
-      "title": "Wissen und Hilfsmittel",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/knowledge/it",
-      "title": "Informatik und IKT-Beschaffung",
-      "issues": [
-        "heading jumps 5",
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Wissen und Hilfsmittel",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:IKT-Vorgaben der Bundesverwaltung (DTI)",
-        "2>4:IT Dienstleistungen Einzelzuschlag",
-        "2>4:Checkliste für die Anmeldung öffentlicher Beschaffungsvorhaben",
-        "2>4:HBB QuickHelp – Wie starte ich eine Beschaffung",
-        "2>4:IT-Rahmenverträge BBL Informatik"
       ]
     },
     {
       "width": 1440,
       "route": "/knowledge/procurement",
-      "title": "Beschaffung",
-      "issues": [
-        "heading jumps 4",
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Wissen und Hilfsmittel",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Bundesgesetz über das öffentliche Beschaffungswesen (BöB)",
-        "2>4:Beschaffungskonferenz des Bundes (BKB)",
-        "2>4:Gesuch unterschwellige Delegation (Dienstleistungen)",
-        "2>4:Weisungen über das Beschaffungscontrolling"
       ]
     },
     {
       "width": 1440,
       "route": "/knowledge/accommodation",
-      "title": "Unterbringung und Objektbetrieb",
-      "issues": [
-        "heading jumps 4",
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Wissen und Hilfsmittel",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Verordnung über das Immobilienmanagement und die Logistik des Bundes (VILB)",
-        "2>4:Weisungen nachhaltiges Immobilienmanagement",
-        "2>4:Preisliste Leistungsbereich Unterbringung",
-        "2>4:K7P90 F1d Transport- und Umzugsauftrag"
       ]
     },
     {
       "width": 1440,
       "route": "/knowledge/publishing",
-      "title": "Publikationen, Druck und Versand",
-      "issues": [
-        "heading jumps 3",
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Wissen und Hilfsmittel",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Digitaldruckauftrag",
-        "2>4:Produktekatalog Produktion",
-        "2>4:Informationsblatt Warengruppe Publikationen"
       ]
     },
     {
       "width": 1440,
       "route": "/knowledge/guides",
-      "title": "Anleitungen und Schulungen",
-      "issues": [
-        "heading jumps 2",
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Wissen und Hilfsmittel",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": [
-        "2>4:Erste Schritte im Kundenportal",
-        "2>4:Einführung ins Kundenportal"
       ]
     },
     {
       "width": 1440,
       "route": "/knowledge/processes",
-      "title": "Prozessdokumentation",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Wissen und Hilfsmittel",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/news",
-      "title": "News",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/news/N-01",
-      "title": "Massnahmen für Netto-Null im BBL — auch im Arbeitsalltag",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu News",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/my-cases",
-      "title": "Meine Vorgänge",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/my-cases/seed-1",
-      "title": "Meine Vorgänge",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/search?q=bau",
-      "title": "Suche",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/portfolio",
-      "title": "Liegenschaften Inventar",
-      "issues": [
-        "targets <44px 7"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Australien1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Brasilien1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Deutschland1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Japan1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Schweiz16",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "USA1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/portfolio?view=map",
-      "title": "Liegenschaften Inventar",
-      "issues": [
-        "targets <44px 11"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Australien1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Brasilien1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Deutschland1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Japan1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Schweiz16",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "USA1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-zoom-in",
           "name": "Zoom in",
           "w": 40,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-zoom-out",
           "name": "Zoom out",
           "w": 40,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-compass",
+          "name": "Reset bearing to north",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "maplibregl-ctrl-fullscreen",
+          "name": "Enter fullscreen",
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/portfolio?id=1080%2F4840%2FAF",
-      "title": "Bundeshaus West",
-      "issues": [
-        "targets <44px 6"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Liegenschaften Inventar",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-zoom-in",
           "name": "Zoom in",
-          "w": 29,
-          "h": 29
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-zoom-out",
           "name": "Zoom out",
-          "w": 29,
-          "h": 29
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-compass",
           "name": "Reset bearing to north",
-          "w": 29,
-          "h": 29
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-fullscreen",
           "name": "Enter fullscreen",
-          "w": 29,
-          "h": 29
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/media-library",
-      "title": "Mediathek Bauten",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/media-library?view=map",
-      "title": "Mediathek Bauten",
-      "issues": [
-        "targets <44px 5"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-zoom-in",
           "name": "Zoom in",
           "w": 40,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-zoom-out",
           "name": "Zoom out",
           "w": 40,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-compass",
           "name": "Reset bearing to north",
           "w": 40,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-fullscreen",
           "name": "Enter fullscreen",
           "w": 40,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/media-library/MED-001",
-      "title": "Bundeshaus West — aussenansicht",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Mediathek Bauten",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/dataportal",
-      "title": "Datenportal",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/dataportal/energie-klima",
-      "title": "Energie & Klima",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Datenportal",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--bare btn--sm btn--icon-left",
           "name": "Filter zurücksetzen",
           "w": 183,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/dataportal/immobilien?tab=entwicklung",
-      "title": "Immobilienportfolio",
-      "issues": [
-        "targets <44px 4"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Datenportal",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "input",
           "cls": "",
           "name": "Jahresstände",
-          "w": 18,
-          "h": 18
+          "w": 222,
+          "h": 36,
+          "measuredBy": "label"
         },
         {
           "tag": "input",
           "cls": "",
           "name": "Monatsstände",
-          "w": 18,
-          "h": 18
+          "w": 222,
+          "h": 36,
+          "measuredBy": "label"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/projects",
-      "title": "Bauprojekte / EPPM",
-      "issues": [
-        "targets <44px 4"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Australien1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Schweiz8",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "USA1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/projects/PRJ-01",
-      "title": "Bundeshaus Nord — Gesamtsanierung",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Bauprojekte / EPPM",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/tenancies",
-      "title": "Mietende",
-      "issues": [
-        "targets <44px 7"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Australien1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Brasilien1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Deutschland2",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Japan1",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Schweiz11",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "USA2",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/tenancies/MV-2026-001",
-      "title": "Verwaltungszentrum Guisanplatz",
-      "issues": [
-        "targets <44px 6"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Mietende",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-zoom-in",
           "name": "Zoom in",
-          "w": 29,
-          "h": 29
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-zoom-out",
           "name": "Zoom out",
-          "w": 29,
-          "h": 29
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-compass",
           "name": "Reset bearing to north",
-          "w": 29,
-          "h": 29
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "maplibregl-ctrl-fullscreen",
           "name": "Enter fullscreen",
-          "w": 29,
-          "h": 29
+          "w": 40,
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/metadata-catalog",
-      "title": "Metadaten Katalog Bauten",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "pf-tree__node is-active",
           "name": "Geschäftsobjekte19",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "pf-tree__node",
           "name": "Systeme10",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/metadata-catalog?id=gebaeude",
-      "title": "Gebäude",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Metadaten Katalog Bauten",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/metadata-catalog?table=gis-immo-building",
-      "title": "Gebäude",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu GIS IMMO",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left",
           "name": "Datensatz ansehen",
           "w": 205,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/process-docs",
-      "title": "Prozessdokumentation Bauten",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "pf-tree__node is-active",
           "name": "Immobilienmanagement (K0)18",
           "w": 270,
-          "h": 39
+          "h": 39,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/process-docs?id=TQ.21.00.00.01",
-      "title": "Lösungsvorschläge Anmiete Kauf",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Prozessdokumentation Bauten",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/process-docs?id=TQ.21.00.00.01&tab=diagramm",
-      "title": "Lösungsvorschläge Anmiete Kauf",
-      "issues": [
-        "targets <44px 5"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Prozessdokumentation Bauten",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
-          "cls": "btn btn--bare btn--icon-only",
+          "cls": "viewer-toolbar__button btn btn--bare btn--icon-only",
           "name": "Vergrössern",
           "w": 40,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
-          "cls": "btn btn--bare btn--icon-only",
+          "cls": "viewer-toolbar__button btn btn--bare btn--icon-only",
           "name": "Verkleinern",
           "w": 40,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
-          "cls": "btn btn--bare btn--icon-only",
+          "cls": "viewer-toolbar__button btn btn--bare btn--icon-only",
           "name": "Ausschnitt zurücksetzen",
           "w": 40,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/shop",
-      "title": "BBL Intranetshop",
-      "issues": [
-        "targets <44px 13"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-left",
           "name": "Hinzufügen",
           "w": 147,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-left",
           "name": "Hinzufügen",
           "w": 147,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-left",
           "name": "Hinzufügen",
           "w": 147,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-left",
           "name": "Hinzufügen",
           "w": 147,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-left",
           "name": "Hinzufügen",
           "w": 147,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-left",
           "name": "Hinzufügen",
           "w": 147,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-left",
           "name": "Hinzufügen",
           "w": 147,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-left",
           "name": "Hinzufügen",
           "w": 147,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-left",
+          "name": "Hinzufügen",
+          "w": 147,
+          "h": 40,
+          "measuredBy": "control"
+        },
+        {
+          "tag": "button",
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/shop/product/3",
-      "title": "Bürostuhl Giroflex 64 Anthrazit",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu BBL Intranetshop",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/shop/cart",
-      "title": "Warenkorb",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu BBL Intranetshop",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm empty__action",
           "name": "Zum Produktkatalog",
           "w": 211,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/shop/checkout",
-      "title": "Warenkorb",
-      "issues": [
-        "targets <44px 3"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu BBL Intranetshop",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm empty__action",
           "name": "Zum Produktkatalog",
           "w": 211,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/document-archive",
-      "title": "Bauwerksdokumentation",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/space-request",
-      "title": "Raumbedarf melden",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Dienstleistungsbeschreibung",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/fault-report",
-      "title": "Störungs-, Reinigungs- & Reparaturmeldung",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Dienstleistungsbeschreibung",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/building-create",
-      "title": "Gebäude erfassen",
-      "issues": [
-        "targets <44px 2"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Dienstleistungsbeschreibung",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/workspace",
-      "title": "Workspace Management",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/transaction",
-      "title": "Veräusserung von Bundesliegenschaften",
-      "issues": [
-        "targets <44px 1"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "button",
           "cls": "btn btn--outline btn--sm btn--icon-right",
           "name": "Verstanden",
           "w": 146,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": []
+      ]
     },
     {
       "width": 1440,
       "route": "/app/api-docs",
-      "title": "BBL Kundenportal API",
-      "issues": [
-        "heading jumps 1",
-        "targets <44px 160"
-      ],
-      "small": [
+      "minimumTarget": 24,
+      "compact": [
         {
           "tag": "a",
           "cls": "btn btn--outline btn--sm btn--icon-left btn--back",
           "name": "Zurück zu Datenbezug und API Verzeichnis",
           "w": 111,
-          "h": 40
+          "h": 40,
+          "measuredBy": "control"
         },
         {
           "tag": "button",
-          "cls": "expand-operation",
-          "name": "Collapse operation",
-          "w": 32,
-          "h": 30
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-summary-control",
-          "name": "GET/process-instancesVorgänge der angemeldeten Person auflisten",
-          "w": 1215,
-          "h": 33
-        },
-        {
-          "tag": "button",
-          "cls": "authorization__btn",
-          "name": "authorization button unlocked",
-          "w": 30,
-          "h": 25
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-control-arrow",
-          "name": "get ​/process-instances",
-          "w": 32,
-          "h": 27
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-summary-control",
-          "name": "POST/process-instancesNeuen Vorgang aus einer Dienstleistung erstellen",
-          "w": 1215,
-          "h": 33
-        },
-        {
-          "tag": "button",
-          "cls": "authorization__btn",
-          "name": "authorization button unlocked",
-          "w": 30,
-          "h": 25
-        },
-        {
-          "tag": "button",
-          "cls": "opblock-control-arrow",
-          "name": "post ​/process-instances",
-          "w": 32,
-          "h": 27
+          "cls": "btn btn--outline btn--sm btn--icon-right",
+          "name": "Verstanden",
+          "w": 146,
+          "h": 40,
+          "measuredBy": "control"
         }
-      ],
-      "tables": [],
-      "headings": [
-        "1>3:process-instancesGeschäftsfälle, die das Portal über die Prozess-Engine auslöst und verfolgt (Raumbedarf, Störungsmeldung, Beschaffung …)."
       ]
     }
   ]

@@ -10,8 +10,9 @@ const cdp = await launch({ webgl: true });
 const findings = [];
 const totals = {
   routes: 0, overflow: 0, h1: 0, duplicateIds: 0, labels: 0,
-  images: 0, headings: 0, tables: 0, targets: 0,
+  images: 0, headings: 0, tables: 0, targets: 0, compactTargets: 0,
 };
+const advisories = [];
 
 const probe = `(() => {
   const visible = (el) => {
@@ -25,13 +26,25 @@ const probe = `(() => {
   const controls = [...document.querySelectorAll(
     'button,input:not([type=hidden]),select,textarea,[role=button],a.btn')].filter(visible);
   const unnamed = controls.filter(el => !nameOf(el)).map(el => el.outerHTML.slice(0, 120));
-  const small = controls.map(el => {
-    const r = el.getBoundingClientRect();
-    return { el, w: Math.round(r.width), h: Math.round(r.height) };
-  }).filter(x => x.w < 44 || x.h < 44).map(x => ({
+  const targetPolicy = innerWidth < 1024 || matchMedia('(pointer:coarse)').matches || matchMedia('(hover:none)').matches;
+  const minimumTarget = targetPolicy ? 44 : 24;
+  const measured = controls.map(el => {
+    const isChoice = el.matches('input[type="checkbox"],input[type="radio"]');
+    const explicitLabel = isChoice && el.id
+      ? document.querySelector('label[for="' + CSS.escape(el.id) + '"]') : null;
+    const hitTarget = isChoice ? (el.closest('label') || explicitLabel || el) : el;
+    const r = hitTarget.getBoundingClientRect();
+    return { el, hitTarget, w: Math.round(r.width), h: Math.round(r.height) };
+  });
+  const describeTarget = x => ({
     tag: x.el.tagName.toLowerCase(), cls: String(x.el.className || ''),
     name: nameOf(x.el), w: x.w, h: x.h,
-  }));
+    measuredBy: x.hitTarget === x.el ? 'control' : 'label',
+  });
+  const small = measured.filter(x => x.w < minimumTarget || x.h < minimumTarget).map(describeTarget);
+  const compact = targetPolicy ? [] : measured
+    .filter(x => (x.w < 44 || x.h < 44) && x.w >= minimumTarget && x.h >= minimumTarget)
+    .map(describeTarget);
   const badImages = [...document.images].filter(img => !img.hasAttribute('alt'))
     .map(img => img.currentSrc || img.src);
   // Header and footer are independent landmarks with their own heading
@@ -51,7 +64,7 @@ const probe = `(() => {
     title: document.querySelector('h1')?.textContent.trim() || '',
     overflow: Math.max(document.body.scrollWidth, document.documentElement.scrollWidth) - document.documentElement.clientWidth,
     h1: document.querySelectorAll('h1').length,
-    duplicateIds, unnamed, badImages, jumps, badTables, small,
+    duplicateIds, unnamed, badImages, jumps, badTables, small, compact, minimumTarget,
   };
 })()`;
 
@@ -77,7 +90,14 @@ try {
       if (r.badImages.length) { totals.images += r.badImages.length; issues.push(`images without alt ${r.badImages.length}`); }
       if (r.jumps.length) { totals.headings += r.jumps.length; issues.push(`heading jumps ${r.jumps.length}`); }
       if (r.badTables.length) { totals.tables += r.badTables.length; issues.push(`table semantics ${r.badTables.length}`); }
-      if (r.small.length) { totals.targets += r.small.length; issues.push(`targets <44px ${r.small.length}`); }
+      if (r.small.length) {
+        totals.targets += r.small.length;
+        issues.push(`targets <${r.minimumTarget}px ${r.small.length}`);
+      }
+      if (r.compact.length) {
+        totals.compactTargets += r.compact.length;
+        advisories.push({ width, route: item.route, minimumTarget: r.minimumTarget, compact: r.compact });
+      }
       if (issues.length) findings.push({
         width, route: item.route, title: r.title, issues,
         small: r.small.slice(0, 8), tables: r.badTables, headings: r.jumps,
@@ -93,5 +113,5 @@ console.log('DETAILS ' + JSON.stringify(findings));
 mkdirSync('docs/review-assets', { recursive: true });
 writeFileSync('docs/review-assets/audit.json', JSON.stringify({
   generated: new Date().toISOString(), viewports: REVIEW_VIEWPORTS,
-  routes: REVIEW_ROUTES.map(x => x.route), totals, findings,
+  routes: REVIEW_ROUTES.map(x => x.route), totals, findings, advisories,
 }, null, 2));
