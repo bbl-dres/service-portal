@@ -81,10 +81,12 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
       r.countSearch = count();
       q.value = ''; q.dispatchEvent(new Event('input', { bubbles: true })); await s(450);
       // Karte back + tree filter: click the CH land node
-      document.querySelector('[data-view="map"]').click(); await s(200);
+      document.querySelector('[data-view="map"]').click();
+      let mc = 0; while (!document.querySelector('.pf-map canvas') && mc++ < 100) await s(100);
       const ch = [...document.querySelectorAll('.pf-tree__node[data-land="CH"]')].find(n => !n.dataset.region);
       r.chTreeCount = ch.querySelector('.pf-tree__n').textContent;
-      ch.click(); await s(400);
+      ch.click();
+      let mc2 = 0; while (!document.querySelector('.pf-map canvas') && mc2++ < 100) await s(100);
       r.countCH = count();
       r.mapCanvas2 = !!document.querySelector('.pf-map canvas');
       r.clearShown = !document.querySelector('#pf-clear').hidden;

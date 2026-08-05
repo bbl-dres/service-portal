@@ -14,7 +14,7 @@ const VIEWS = [
   { name: 'portfolio (Bundeshaus West)', url: `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1080/4840/AF')}`, tabs: ['uebersicht', 'flaechen', 'ausstattung', 'vertraege', 'kosten', 'dokumente', 'kontakte'], hashSync: false },
   { name: 'projects (PRJ-01)',         url: `${APP_BASE}/app/projects/PRJ-01`,       tabs: ['uebersicht', 'kennzahlen', 'risiken'],             hashSync: true },
   { name: 'workspace [logged out]',    url: `${APP_BASE}/app/workspace`,             tabs: ['moeblierung', 'belegung', 'buchung'],              hashSync: false, gateTab: 'buchung' },
-  { name: 'dataportal (energie-klima)', url: `${APP_BASE}/app/dataportal/energie-klima`, tabs: ['ueberblick', 'energiepfad'],                     hashSync: true },
+  { name: 'dataportal (energie-klima)', url: `${APP_BASE}/app/dataportal/energie-klima`, tabs: ['ueberblick', 'energiepfad', 'kennzahlen'],        hashSync: true },
 ];
 const GATES = [
   { name: 'space-request [logged out]', url: `${APP_BASE}/app/space-request` },

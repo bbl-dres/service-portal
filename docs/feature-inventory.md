@@ -5,9 +5,10 @@ Interaktion und jeder Zustand — nach jeder Refactoring-Welle wird gegen diese
 Liste geprüft. Erstellt automatisiert aus der vollständigen Modullektüre
 (Stand: Branch design-review-2026-08, 2026-08-05).
 
-Altlast-Weiterleitungen (js/router.js REDIRECTS) und die Screenshot-Prüfroute
-liegen in scripts/test-routes.mjs; Vorher-Screenshots (35 Routen × 320/768/1440 px)
-unter docs/review-assets/before/.
+Altlast-Weiterleitungen (js/router.js REDIRECTS) liegen in
+scripts/test-routes.mjs. Die visuelle Regressionsmatrix steht zentral in
+scripts/review-routes.mjs; Vorher-Screenshots (57 repräsentative Routen und
+Zustände × 320/768/1440 px) liegen unter docs/review-assets/before/.
 
 ## Routenübersicht
 
@@ -17,6 +18,7 @@ unter docs/review-assets/before/.
 | `#/services` | Dienstleistungskatalog |
 | `#/services/<id>` | Dienstleistungsdetail |
 | `#/applications` | Anwendungskatalog |
+| `#/applications/<id>` | Anwendungsdetail / Portal-Einstieg |
 | `#/data` | Daten und Digitalisierung — Übersicht |
 | `#/data/catalog` | Datenbezug und API Verzeichnis |
 | `#/data/digitalisation` | Digitalisierung — Übersicht |
@@ -40,16 +42,28 @@ unter docs/review-assets/before/.
 | `#/app/fault-report` | Störung melden |
 | `#/app/building-create` | Gebäude erfassen |
 | `#/app/portfolio` | Liegenschaften Inventar |
+| `#/app/portfolio?id=<id>&view=<map|gallery|list>` | Inventaransicht oder Objekt-/Grundstücksdetail |
 | `#/app/projects` | Bauprojekte |
+| `#/app/projects/<id>?tab=<id>` | Bauprojektdetail mit Registern |
 | `#/app/tenancies` | Mietende |
+| `#/app/tenancies/<id>?tab=<id>&floor=<id>&space=<id>` | Mietobjekt-, Vertrags- und Grundrissdetail |
 | `#/app/dataportal` | Datenportal (Dashboards) |
+| `#/app/dataportal/<dashboard>?tab=<id>` | Dashboard mit Filtern und Registern |
 | `#/app/workspace` | Workspace |
 | `#/app/transaction` | Veräusserung |
 | `#/app/document-archive` | Bauwerksdokumentation |
 | `#/app/media-library` | Mediathek |
+| `#/app/media-library/<id>` | Mediendetail |
 | `#/app/api-docs` | API-Dokumentation (Swagger UI) |
 | `#/app/metadata-catalog` | Metadaten Katalog |
+| `#/app/metadata-catalog?id=<id>` | Geschäftsobjektdetail |
+| `#/app/metadata-catalog?table=<id>` | Systemtabellendetail |
 | `#/app/process-docs` | Prozessdokumentation Bauten |
+| `#/app/process-docs?id=<id>&tab=<uebersicht|diagramm|schritte>` | Prozessdetail mit BPMN- und Schrittansicht |
+| `#/app/shop` | BBL Intranetshop – Produktkatalog |
+| `#/app/shop/product/<id>` | Produktdetail |
+| `#/app/shop/cart` | Warenkorb |
+| `#/app/shop/checkout` | Bestellassistent |
 
 ## index.html
 
@@ -1789,3 +1803,36 @@ Inhaltsbestand von «Wissen und Hilfsmittel» (113 Unterlagen in 22 Abschnitten,
 
 - Keine eigenen — definiert aber die Link-/Download-Ziele, die knowledge.js und die Suche rendern
 
+## js/apps/shop.js
+
+Portal-native erste Version des BBL Intranetshops. Nutzt die Produkt- und
+Kategoriedaten aus `data/shop-products.json` und `data/shop-categories.json`,
+lokale Produktbilder sowie die gemeinsamen Katalog-, Tabellen-, Formular- und
+Prozessbausteine.
+
+**Routen**
+
+- `#/app/shop` – Produktkatalog
+- `#/app/shop/product/<id>` – Produktdetail
+- `#/app/shop/cart` – Warenkorb
+- `#/app/shop/checkout` – Login-Gate oder dreistufiger Bestellassistent
+
+**Funktionen**
+
+- Suche über Produkt, Beschreibung, Marke und Kategorie; hierarchischer Kategorienbaum; Marken- und Neuheitenfilter; Sortierung nach Bezeichnung, Preis und Neuheit
+- Galerie- und Listenansicht mit zwölf Produkten je Seite, URL-synchronisierten Filtern und Pagination
+- CD-Karten mit Produktbild, Marke, Beschreibung, Preis und Warenkorb-Aktion; vollständige Produktdetailansicht mit Menge, Produktdaten und ähnlichen Produkten
+- Warenkorb in `localStorage` (`bbl_shop_cart_v1`), Mengen 1–99, Entfernen, Positions- und Gesamtsumme; globaler Zähler im Top-Header über `shop:cartchange`
+- Checkout mit Kostenstelle, Lieferadresse, Bemerkung, Fehlerübersicht und Prüfschritt; erzeugt über die Prozess-Engine einen Vorgang `bestellung`
+
+**Zustände**
+
+- Daten verfügbar, Ladefehler, keine Treffer, unbekanntes Produkt
+- Warenkorb leer, gefüllt oder durch Produktänderungen bereinigt
+- Checkout abgemeldet, Schritte Warenkorb/Lieferung/Prüfen, Validierungsfehler, erfolgreich eingereicht
+
+**Interaktionen**
+
+- Suche, Filter, Kategorien, Sortierung, Ansicht und Seitenwechsel schreiben den Zustand in den Hash
+- Produkt hinzufügen, Menge ändern, Position entfernen und globalen Warenkorb öffnen
+- Checkout vor/zurück, Pflichtfelder korrigieren, Bestellung absenden und erzeugten Vorgang öffnen
