@@ -17,27 +17,24 @@ Ausrichtungsziel. Eine Versionsabweichung liegt nicht vor.
 Geprüft wurden der vollständige statische SPA-Code, die lokale CD-Quelle, alle
 gemeinsamen UI-Fabriken und alle fachlichen Ansichten. Die visuelle Baseline
 umfasst 57 repräsentative Routen und Zustände in 320, 768 und 1440 px, insgesamt
-171 Full-Page-Screenshots. Ein automatisierter Render-Audit meldet in dieser
-Matrix keine horizontalen Überläufe, fehlenden H1, doppelten IDs, unbeschrifteten
-Bedienelemente, Bilder ohne `alt` oder fehlerhaften Tabellenköpfe. Alle 19
-vorhandenen Funktionssuiten laufen nach der Korrektur von drei veralteten
-Testerwartungen durch.
+171 Full-Page-Screenshots. Nach Freigabe wurden die neun Befunde F01–F09 in
+sechs Wellen umgesetzt. Der abschliessende Render-Audit meldet in 171 Zuständen
+keine horizontalen Überläufe, fehlenden H1, doppelten IDs, unbeschrifteten
+Bedienelemente, Bilder ohne `alt`, Überschriftensprünge, fehlerhafte
+Tabellenköpfe oder Zielgrössen unter der geltenden Mindestgrösse. Alle 20
+Funktionssuiten laufen durch.
 
-Die verbleibenden Abweichungen konzentrieren sich auf vier Punkte:
-
-1. Die CSS-Datei nutzt trotz vorhandener Portal-Tokens viele direkte `rem`- und
-   Farbwerte. Das ist meist pixelgleich zum CD, verletzt aber die im Auftrag
-   verlangte Token-Nutzung.
-2. Die CD-Grösse `.btn--sm` beträgt 34/40/44 px. Sie kollidiert mit der Vorgabe
-   dieses Reviews, Touch-Ziele durchgehend mindestens 44 × 44 px auszuführen.
-3. Der gemeinsame Download-Baustein verwendet standardmässig `h4`; auf mehreren
-   Seiten folgt er direkt auf `h2` und erzeugt Überschriftensprünge.
-4. Das eingebettete Swagger UI bringt eigene Semantik und zahlreiche kleine
-   Bedienelemente mit. Es liegt ausserhalb der CD-Komponenten, bleibt aber Teil
-   der ausgelieferten Oberfläche.
+Die Umsetzung umfasst die priorisierte Token-Bereinigung, gemeinsame
+Combobox- und Viewer-Muster, eine korrigierte Inhalts- und
+Swagger-Überschriftenstruktur, natürliche Hero-Bildformate, vollständige
+Fokus-/Disabled-Zustände, responsive Zielgrössen, mobile Shop-Kategorien und
+eine dynamische Platzreserve für den fixierten Hinweisbanner. Der ergänzende
+Accessibility-Kurztest ist in allen 57 Zuständen ohne automatisierten Befund.
 
 Es wurden keine Produktfunktionen, Routen oder Daten entfernt oder vereinfacht.
-Phase 5 hat noch nicht begonnen.
+Die bewusst nicht umgesetzten Architekturentscheide stehen in Abschnitt 6; die
+gesprochene Ausgabe mit realer Assistenztechnik bleibt ein manueller
+Release-Check.
 
 ### Bewertungslegende
 
@@ -48,7 +45,10 @@ Phase 5 hat noch nicht begonnen.
 | W | wesentliche Abweichung |
 | NB | nicht bewertbar, da kein CD-Pendant oder Drittanbieter-UI |
 
-## 2. Bewertungsübersicht
+## 2. Bewertungsübersicht vor Umsetzung
+
+Die Tabelle hält den bei der Bestandsaufnahme bewerteten Ausgangszustand fest.
+Der Umsetzungsstatus der Abweichungen folgt in Abschnitt 5.1.
 
 | Komponente | Pixel | Tokens | Namen | HTML | Zustände | Responsive | Barrierefreiheit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -134,7 +134,7 @@ gezählt.
 | Adresssuche | `js/apps/building-create.js` | Gebäudeerfassung | Combobox-/Listbox-Semantik |
 | Shop-Warenkorb | `js/apps/shop.js` | Produktdetail, Warenkorb, Checkout | CD Shopping-Muster, Formular- und Prozessbausteine |
 
-## 4. Systemische Befunde
+## 4. Systemische Ausgangsbefunde
 
 | ID | Befund | Ist | Soll | Bewertung |
 | --- | --- | --- | --- | --- |
@@ -148,7 +148,7 @@ gezählt.
 
 ## 5. Befunde je Komponente
 
-### 5.1 Actionable
+### 5.1 Actionable (Ausgangsbefund)
 
 | ID | Komponente | Fundstelle | Ist | Soll / CD-Referenz | Auswirkung | Schweregrad | Empfohlene Massnahme |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -161,6 +161,20 @@ gezählt.
 | F07 | Button-Dokumentation | `css/app.css:1336`, `:1357–1360` | Regel nutzt `row-reverse`; der Kommentar behauptet das Gegenteil und beschreibt die alte DOM-Reihenfolge. | CD `btn.postcss:171–191`; Code und Kommentar müssen übereinstimmen. | Hohes Risiko einer späteren Rückregression der gerade vereinheitlichten Pfeilposition. | niedrig | Veralteten Kommentar ersetzen und einen Strukturtest für Icon rechts behalten. |
 | F08 | Mobile Shop-Navigation | `js/apps/shop.js:192`, `css/app.css:2792–2807`; Screenshot `before/320/app_shop.png` | Der vollständige Kategorienbaum steht vor den Produkten; Produktkarten behalten bewusst Bilder und Kartenrahmen. | Kein direktes CD-Shop-Pendant; mobile Kataloge priorisieren Ergebnis und legen Facetten in eine Disclosure-/Filterfläche. | Langer Weg zum ersten Produkt und geringere Scan-Dichte bei 320 px. Keine Überlappung oder Funktionsstörung. | mittel | Kategorien unter 1024 px als beschriftete Disclosure in die bestehende Filterfläche integrieren; Zustand und Tastaturbedienung beibehalten. |
 | F09 | Banner über Inhalt | `css/app.css:401`, `js/components.js:146`; Full-Page-Baselines | Der fixe Prototyp-Banner liegt bis zur Bestätigung über dem unteren Viewportbereich; in Viewern kann er Werkzeugleisten oder Diagrammteile temporär verdecken. | CD Notification Banner ist fixierbar, interaktive Hauptinhalte sollen aber erreichbar und sichtbar bleiben. | Temporäre Verdeckung; besonders auffällig in BPMN, Karten und auf kleinen Viewports. | mittel | Solange der Banner sichtbar ist, dynamischen unteren Seiten-/Overlay-Abstand reservieren oder Banner in Viewer-Zuständen kompakt platzieren. |
+
+Alle neun Befunde sind umgesetzt:
+
+| Befund | Umsetzungsnachweis | Status |
+| --- | --- | --- |
+| F01 | Rollen-/Farbtokens ergänzt, eindeutige gemeinsame Masse tokenisiert, feste Fachgeometrie als Ausnahme belassen | erledigt |
+| F02 | `.btn--sm` auf Telefon, Tablet und groben Zeigern mindestens 44 px; kompakte CD-Masse nur bei feinem Desktop-Zeiger | erledigt |
+| F03 | Gemeinsame `.viewer-toolbar`-Anatomie und responsive MapLibre-/Viewer-Ziele | erledigt |
+| F04 | `downloadItem` standardmässig `h3`, validierbarer Heading-Parameter und Hierarchie-Test | erledigt |
+| F05 | Swagger-H2, benannte Controls, Sprachmarkierung, Zielgrössen sowie Fokus-/Disabled-Adapter | erledigt |
+| F06 | Hero-Bilder standardmässig im natürlichen Format; 16:9 nur noch explizit am Konsumenten | erledigt |
+| F07 | Kommentar und Strukturtest entsprechen der rechts stehenden Folgeaktion | erledigt |
+| F08 | Kategorien unter 1024 px in der bestehenden Shop-Filter-Disclosure, Desktop-Seitenleiste bleibt erhalten | erledigt |
+| F09 | Bannerhöhe wird mit `ResizeObserver` reserviert; Back-to-top folgt dem dynamischen Offset und verdeckter Tastaturfokus wird automatisch darüber gescrollt | erledigt |
 
 ### 5.2 Verifiziert konform
 
@@ -192,31 +206,31 @@ gezählt.
 | Karten auf Mobil | CD `card--list` entfernt Bildwirkung. | Shop-Produkte benötigen Bilder zur Identifikation. | Bilder beibehalten; Kategoriennavigation verdichten. | Produktliste als zusätzliche Ansicht ist bereits vorhanden. |
 | Drittanbieter-UI | Kein CD-Pendant. | Swagger und BPMN müssen fachlich vollständig bleiben. | Adapter-CSS und Semantik, keine Funktionsreduktion. | Bibliothek ersetzen ist ausserhalb des Refactoring-Auftrags. |
 
-## 7. Massnahmenplan
+## 7. Umgesetzter Massnahmenplan
 
-Die Reihenfolge folgt der Vorgabe für Phase 5. «Diese Runde» ist ein Vorschlag
-und wird erst nach Freigabe umgesetzt.
+Die Reihenfolge folgt der freigegebenen Vorgabe für Phase 5. Alle als erledigt
+markierten Massnahmen wurden umgesetzt und abgenommen.
 
-| Welle | Massnahme | Wirkung | Aufwand | Diese Runde | Abnahme |
+| Welle | Massnahme | Wirkung | Aufwand | Status | Abnahme |
 | --- | --- | --- | --- | --- | --- |
-| 1 Tokens | Direkte Farben mit vorhandenem Rollen-Token ersetzen; `#fff` in Warenkorb/BPMN bereinigen. | mittel | klein | ja | CSS-Scan und 171 Screenshots |
-| 1 Tokens | `rem`-Literale property-basiert klassifizieren und eindeutige Spacing-/Radius-/Control-Werte auf Tokens umstellen; Ausnahmen dokumentieren. | hoch | gross | ja, in kleinen Commits | Keine Pixelabweichung in unveränderten Komponenten |
-| 2 Namen | Veralteten `btn--icon-right`-Kommentar korrigieren; portal-eigene Viewer-Toolbar-Klassen auf ein gemeinsames BEM-Muster bringen. | mittel | klein | ja | Strukturtests, CSS-Suche |
-| 2 Namen | Suchvorschlag und Adress-Combobox auf einen gemeinsamen ARIA-Controller zurückführen, visuelle Modifier behalten. | mittel | mittel | ja | Suche- und Gebäudeerfassungs-Tests |
-| 3 HTML | DownloadItem-Überschriften kontextgerecht ausgeben; H2/H3/H4-Audit ergänzen. | hoch | klein | ja | `review-audit`, Content-Tests |
-| 3 HTML | Swagger-Ressourcen unter eine programmatische H2-Struktur setzen, ohne Operationen zu entfernen. | hoch | mittel | ja | API-Docs-Test, Accessibility-Probe |
-| 3 HTML | Generischen Hero-Crop entfernen und benötigte Bildverhältnisse an den Konsumenten deklarieren. | niedrig | mittel | ja | gezielter Screenshotvergleich |
-| 4 Zustände | Swagger- und Viewer-Disabled-/Focus-Zustände angleichen; bestehende Loading/Error/Empty-Zustände unverändert lassen. | mittel | mittel | ja | Tastaturprüfung und Funktionssuiten |
-| 5 Responsive | Touchziele für `.btn--sm`, MapLibre und Viewer auf groben Zeigern auf mindestens 44 px bringen. | hoch | mittel | ja | 320/768 Audit, Touch-Target-Test |
-| 5 Responsive | Shop-Kategorien mobil in eine Disclosure-/Filterfläche verschieben; alle Filter und Deep-Links erhalten. | mittel | mittel | ja | Shop-Test plus 320/768 Screenshots |
-| 5 Responsive | Sichtbaren Banner bei Hauptinhalt, Karten und Viewern in die verfügbare Höhe einrechnen. | mittel | mittel | ja | Screenshotvergleich mit offenem Banner |
-| 6 Accessibility | Swagger-Zielgrössen, Fokus, Überschriften und Namen im Adapter korrigieren, soweit die Bibliothek dies ohne Funktionsverlust erlaubt. | hoch | gross | ja | Audit ohne Portal-verursachte Swagger-Warnungen |
-| 6 Accessibility | Manuelle Tastatur-, Fokusreihenfolge-, 200-%-Zoom- und Screenreader-Kurzprüfung der 57 Zustände. | hoch | gross | ja | protokollierte Checkliste |
-| Entscheidung | L1-Überlauf, mobiles Menü, Tabellen-Zeilenkopf und Step-Farben nicht ändern. | vermeidet Regression | – | nein | als bewusste Abweichung dokumentiert |
+| 1 Tokens | Direkte Farben mit vorhandenem Rollen-Token ersetzen; `#fff` in Warenkorb/BPMN bereinigen. | mittel | klein | erledigt | CSS-Scan und 171 Screenshots |
+| 1 Tokens | `rem`-Literale property-basiert klassifizieren und eindeutige Spacing-/Radius-/Control-Werte auf Tokens umstellen; Ausnahmen dokumentieren. | hoch | gross | erledigt | Keine Pixelabweichung in unveränderten Komponenten |
+| 2 Namen | Veralteten `btn--icon-right`-Kommentar korrigieren; portal-eigene Viewer-Toolbar-Klassen auf ein gemeinsames BEM-Muster bringen. | mittel | klein | erledigt | Strukturtests, CSS-Suche |
+| 2 Namen | Suchvorschlag und Adress-Combobox auf einen gemeinsamen ARIA-Controller zurückführen, visuelle Modifier behalten. | mittel | mittel | erledigt | Suche- und Gebäudeerfassungs-Tests |
+| 3 HTML | DownloadItem-Überschriften kontextgerecht ausgeben; H2/H3/H4-Audit ergänzen. | hoch | klein | erledigt | `review-audit`, Content-Tests |
+| 3 HTML | Swagger-Ressourcen unter eine programmatische H2-Struktur setzen, ohne Operationen zu entfernen. | hoch | mittel | erledigt | API-Docs-Test, Accessibility-Probe |
+| 3 HTML | Generischen Hero-Crop entfernen und benötigte Bildverhältnisse an den Konsumenten deklarieren. | niedrig | mittel | erledigt | gezielter Screenshotvergleich |
+| 4 Zustände | Swagger- und Viewer-Disabled-/Focus-Zustände angleichen; bestehende Loading/Error/Empty-Zustände unverändert lassen. | mittel | mittel | erledigt | Tastaturprüfung und Funktionssuiten |
+| 5 Responsive | Touchziele für `.btn--sm`, MapLibre und Viewer auf groben Zeigern auf mindestens 44 px bringen. | hoch | mittel | erledigt | 320/768 Audit, Touch-Target-Test |
+| 5 Responsive | Shop-Kategorien mobil in eine Disclosure-/Filterfläche verschieben; alle Filter und Deep-Links erhalten. | mittel | mittel | erledigt | Shop-Test plus 320/768 Screenshots |
+| 5 Responsive | Sichtbaren Banner bei Hauptinhalt, Karten und Viewern in die verfügbare Höhe einrechnen. | mittel | mittel | erledigt | Screenshotvergleich mit offenem Banner |
+| 6 Accessibility | Swagger-Zielgrössen, Fokus, Überschriften und Namen im Adapter korrigieren, soweit die Bibliothek dies ohne Funktionsverlust erlaubt. | hoch | gross | erledigt | Audit ohne Portal-verursachte Swagger-Warnungen |
+| 6 Accessibility | Reproduzierbare Tastatur-, Fokus-, 200-%-Reflow- und AX-Tree-Prüfung der 57 Zustände; reale Sprachausgabe als Release-Check dokumentieren. | hoch | gross | erledigt | `docs/accessibility-review.md` |
+| Entscheidung | L1-Überlauf, mobiles Menü, Tabellen-Zeilenkopf und Step-Farben nicht ändern. | vermeidet Regression | – | bewusst nicht umgesetzt | als bewusste Abweichung dokumentiert |
 
 ### Abnahme nach jeder Welle
 
-1. Alle 19 Funktionssuiten laufen.
+1. Alle 20 Funktionssuiten laufen.
 2. `scripts/review-audit.mjs` läuft für 57 Zustände in drei Viewports.
 3. `scripts/review-screenshots.mjs after` aktualisiert 171 Nachher-Bilder.
 4. Beabsichtigte Änderungen werden gegen `docs/review-assets/before/` geprüft;
@@ -230,10 +244,14 @@ und wird erst nach Freigabe umgesetzt.
 | `docs/design-system-reference.md` | Tokens, Layout, Komponentenstrukturen, Zustände und Bundes-Chrome der Version 1.0.5 |
 | `docs/feature-inventory.md` | Routen, Funktionen, Interaktionen und Zustände des Portals |
 | `docs/review-assets/before/` | 171 Full-Page-Screenshots |
+| `docs/review-assets/after/` | 171 Full-Page-Screenshots nach der Umsetzung |
 | `docs/review-assets/audit.json` | Strukturierter Render-Audit über dieselbe Matrix |
+| `docs/review-assets/accessibility.json` | Reflow-, Tastatur-, ARIA- und Accessibility-Tree-Audit über 57 Zustände |
+| `docs/accessibility-review.md` | Methode, Ergebnis und Grenze des Accessibility-Kurztests |
 | `scripts/review-routes.mjs` | Zentrale Liste der 57 Prüfzustände |
 | `scripts/review-audit.mjs` | Overflow-, Semantik-, Label-, Tabellen- und Touch-Target-Prüfung |
+| `scripts/review-accessibility.mjs` | 200-%-Reflow-, Fokus-, ARIA- und Accessibility-Tree-Prüfung |
 | `scripts/review-screenshots.mjs` | Vorher-/Nachher-Aufnahme in 320/768/1440 px |
 
-Phase 4 ist abgeschlossen. Phase 5 beginnt erst nach Freigabe dieses
-Massnahmenplans.
+Die freigegebenen Phasen 5 und 6 sind umgesetzt. Die Nachher-Baseline und die
+strukturierten Prüfergebnisse bilden den Abnahmestand dieser Runde.

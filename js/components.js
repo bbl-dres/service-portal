@@ -176,14 +176,30 @@ export function mountBanner(host, opts) {
     document.body.style.setProperty('--banner-offset', `${Math.ceil(banner.getBoundingClientRect().height)}px`);
     document.body.classList.add('body--banner-visible');
   };
+  const keepFocusVisible = (event) => {
+    const target = event.target;
+    if (!banner || !(target instanceof Element) || banner.contains(target)) return;
+    const targetRect = target.getBoundingClientRect();
+    const bannerRect = banner.getBoundingClientRect();
+    if (targetRect.bottom <= bannerRect.top || targetRect.top >= bannerRect.bottom) return;
+    const delta = Math.ceil(targetRect.bottom - bannerRect.top + 8);
+    const scroller = document.scrollingElement;
+    if (!scroller) { window.scrollBy(0, delta); return; }
+    const priorBehavior = scroller.style.scrollBehavior;
+    scroller.style.scrollBehavior = 'auto';
+    scroller.scrollTop += delta;
+    scroller.style.scrollBehavior = priorBehavior;
+  };
   const releaseSpace = () => {
     observer?.disconnect();
     window.removeEventListener('resize', reserveSpace);
+    document.removeEventListener('focusin', keepFocusVisible);
     document.body.classList.remove('body--banner-visible');
     document.body.style.removeProperty('--banner-offset');
   };
   if (banner) {
     reserveSpace();
+    document.addEventListener('focusin', keepFocusVisible);
     if ('ResizeObserver' in window) {
       observer = new ResizeObserver(reserveSpace);
       observer.observe(banner);

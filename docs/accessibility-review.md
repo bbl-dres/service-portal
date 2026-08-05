@@ -35,6 +35,9 @@ echter Tab-Tastendruck über CDP am Dokumentanfang. Das erreichte Element muss
 einen berechneten Outline- oder Box-Shadow-Fokusindikator besitzen. Die
 Funktionssuiten prüfen zusätzlich Tabs, Comboboxen, Menüs, Modals, Viewer,
 Filter, Formulare und Wizards mit ihren jeweiligen Tastaturinteraktionen.
+`check-banner.mjs` setzt ausserdem synthetisch ein Fokusziel hinter den fixierten
+Hinweisstreifen und prüft, dass es unmittelbar über die Overlay-Kante gescrollt
+wird.
 
 ### 200 Prozent und Reflow
 

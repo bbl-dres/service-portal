@@ -37,9 +37,24 @@ const live = await page.evaluate(`(() => {
   const buttonHeight = button ? Math.round(button.getBoundingClientRect().height) : 0;
   const padding = Math.round(parseFloat(getComputedStyle(document.body).paddingBottom) || 0);
   const visible = document.body.classList.contains('body--banner-visible');
+  const focusProbe = document.createElement('button');
+  const bannerTop = banner?.getBoundingClientRect().top || 0;
+  focusProbe.type = 'button';
+  focusProbe.textContent = 'Fokusprobe';
+  focusProbe.style.cssText = 'position:absolute;left:0;width:44px;height:44px;top:'
+    + (window.scrollY + bannerTop + 8) + 'px';
+  document.body.appendChild(focusProbe);
+  const focusBefore = focusProbe.getBoundingClientRect().bottom;
+  const scrollBefore = window.scrollY;
+  focusProbe.focus({ preventScroll: true });
+  const focusAfter = focusProbe.getBoundingClientRect().bottom;
+  const scrollAfter = window.scrollY;
+  const focusVisible = focusAfter <= bannerTop;
+  focusProbe.remove();
   button?.click();
   return {
-    height, padding, buttonHeight, visible,
+    height, padding, buttonHeight, visible, focusVisible,
+    focusBefore, focusAfter, scrollBefore, scrollAfter, bannerTop,
     released: !document.body.classList.contains('body--banner-visible')
       && !document.body.style.getPropertyValue('--banner-offset'),
   };
@@ -48,8 +63,11 @@ const reserved = live.visible && live.height > 0 && Math.abs(live.height - live.
 if (!reserved) fehler++;
 if (!live.released) fehler++;
 if (live.buttonHeight < 44) fehler++;
+if (!live.focusVisible) fehler++;
 console.log(`${reserved ? '  ok ' : ' FEHL'} Live-Streifen reserviert ${live.padding}px für ${live.height}px Höhe`);
 console.log(`${live.buttonHeight >= 44 ? '  ok ' : ' FEHL'} Banner-Aktion hat ${live.buttonHeight}px Zielhöhe`);
+console.log(`${live.focusVisible ? '  ok ' : ' FEHL'} Verdeckter Tastaturfokus wird über den Streifen gescrollt `
+  + `(Ziel ${live.focusBefore}→${live.focusAfter}, Scroll ${live.scrollBefore}→${live.scrollAfter}, Streifen ab ${live.bannerTop})`);
 console.log(`${live.released ? '  ok ' : ' FEHL'} Schliessen räumt den reservierten Abstand auf`);
 await cdp.close();
 console.log(fehler ? `\n${fehler} Abweichungen` : '\nDer Streifen fluchtet auf jeder Stufe mit dem Seiteninhalt.');
