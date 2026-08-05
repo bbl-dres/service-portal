@@ -2599,12 +2599,20 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 .bpmn-host { position:relative; height:34rem; border:1px solid var(--panel-border); background:var(--color-bg); overflow:hidden; }
 .bpmn-canvas { height:100%; }
 .bpmn-host .loading { height:100%; }
-.bpmn-toolbar { position:absolute; z-index:2; top:.75rem; right:.75rem; display:flex; flex-direction:column;
-  border-radius:var(--radius-lg); box-shadow:var(--shadow-md); background:var(--color-bg); overflow:hidden; }
-.bpmn-toolbar .btn { width:var(--target-min); height:var(--target-min); min-height:0; border-radius:0; background:var(--color-bg); }
-.bpmn-toolbar .btn + .btn { border-top:1px solid var(--color-secondary-200); }
+.viewer-toolbar { display:flex; align-items:center; }
+.viewer-toolbar--horizontal { flex-direction:row; }
+.viewer-toolbar--vertical { flex-direction:column; align-items:stretch; }
+.viewer-toolbar--light { border-radius:var(--radius-lg); box-shadow:var(--shadow-md); background:var(--color-bg); overflow:hidden; }
+.viewer-toolbar--light .viewer-toolbar__button { width:var(--target-min); height:var(--target-min); min-height:0; border-radius:0; background:var(--color-bg); }
+.viewer-toolbar--light .viewer-toolbar__button + .viewer-toolbar__button { border-top:1px solid var(--color-secondary-200); }
+.viewer-toolbar--negative { gap:var(--sp-1); padding:var(--sp-1); background:var(--color-secondary-900);
+  border:1px solid var(--border-negative); border-radius:var(--radius-full); box-shadow:var(--shadow-viewer); }
+.viewer-toolbar__readout { font-variant-numeric:tabular-nums; }
+.viewer-toolbar__separator { width:1px; align-self:stretch; background:var(--border-negative); }
+
+.bpmn-toolbar { position:absolute; z-index:2; top:var(--sp-3); right:var(--sp-3); }
 @media (min-width:1024px) and (pointer:fine){
-  .bpmn-toolbar .btn { width:2.5rem; height:2.5rem; }
+  .bpmn-toolbar .viewer-toolbar__button { width:2.5rem; height:2.5rem; }
 }
 @media print { .bpmn-toolbar { display:none; } }
 
@@ -3275,9 +3283,7 @@ body.body--overlay-open { overflow:hidden; }
 /* Gleiche Leisten-Oberfläche wie .docviewer__toolbar (secondary-900 + border-negativ):
    EIN Zoomleisten-Rezept für beide Betrachter. */
 .pf-lightbox__zoom { position:absolute; left:50%; bottom:calc(var(--lb-bottom) + 1rem); transform:translateX(-50%);
-  z-index:2; display:flex; align-items:center; gap:.125rem; padding:.25rem .375rem;
-  border-radius:var(--radius-full); background:var(--color-secondary-900);
-  border:1px solid var(--border-negative); box-shadow:var(--shadow-viewer); }   /* wie .docviewer__toolbar — shadow-lg verschwand auf dunklem Grund (C16) */
+  z-index:2; gap:var(--sp-1); padding-inline:var(--sp-1-5); }
 @media (min-width:768px){ .pf-lightbox__zoom { bottom:calc(var(--lb-bottom) + 1.5rem); } }
 .pf-lightbox__zoom .pf-lightbox__btn { width:2.25rem; height:2.25rem; }
 /* 44-px-Ziel ohne Zeigegerät (WCAG 2.5.5) — Spiegel der Docviewer-Zoomregel. */
@@ -3286,8 +3292,7 @@ body.body--overlay-open { overflow:hidden; }
 }
 .pf-lightbox__zoom-val { min-width:3.75rem; text-align:center; color:var(--color-text-negative);
   font-size:var(--text-sm); font-variant-numeric:tabular-nums; }
-.pf-lightbox__zoom-sep { width:1px; align-self:stretch; margin-inline:.25rem;
-  background:var(--border-negative); }
+.pf-lightbox__zoom-sep { margin-inline:var(--sp-1); }
 /* Metadaten-Panel — standardmässig eingeklappt, per Knopf in der Kopfzeile.
    Ab 768px als Spalte NEBEN der Bühne (das Bild bleibt sichtbar), darunter als
    Band darüber; auf dem Telefon wäre eine dritte Spalte nicht lesbar. */
@@ -3715,9 +3720,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .docpage__plan .plan-title { fill:var(--color-text); font-size:13px; font-weight:var(--fw-bold); }
 .docpage__plan .plan-meta { fill:var(--color-text-muted); font-size:11px; }
 
-.docviewer__toolbar { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); z-index:6;
-  display:flex; align-items:center; gap:.25rem; padding:.25rem; background:var(--color-secondary-900);
-  border:1px solid var(--border-negative); border-radius:var(--radius-full); box-shadow:var(--shadow-viewer); }
+.docviewer__toolbar { position:fixed; bottom:var(--sp-6); left:50%; transform:translateX(-50%); z-index:6; }
 .docviewer__zoom { display:inline-flex; align-items:center; justify-content:center; min-width:2.25rem; height:2.25rem;
   padding:0 .75rem; background:none; border:0; border-radius:var(--radius-full); color:var(--color-text-negative);
   font-size:var(--text-sm); cursor:pointer; transition:background var(--duration-fast); }

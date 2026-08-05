@@ -171,6 +171,7 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
       // Die Miniaturenleiste wurde bewusst entfernt; navigiert wird über die
       // Blätterpfeile und den Zähler in der Kopfzeile.
       r.zoomBar = !!document.querySelector('.pf-lightbox__zoom');
+      r.sharedZoomBar = !!document.querySelector('.pf-lightbox__zoom.viewer-toolbar--negative .viewer-toolbar__button');
       // Vollbild statt zentrierter Karte, mit Kopfzeile und Herunterladen-Aktion.
       r.lightboxFullscreen = lb
         ? Math.round(lb.getBoundingClientRect().height) === document.documentElement.clientHeight : false;
@@ -196,7 +197,8 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
     check(D.sideTiles === 4, `side grid is always 4 tiles, padded with placeholders (${D.sideTiles})`);
     check(D.emptyClickable === 0, `placeholder tiles are not clickable (${D.emptyClickable})`);
     check(D.moreOverlay, '«Alle Bilder anzeigen» overlay on the last side tile');
-    check(D.lightbox && D.lightboxImg && D.zoomBar, `mosaic tile opens the gallery (Zoomleiste: ${D.zoomBar})`);
+    check(D.lightbox && D.lightboxImg && D.zoomBar && D.sharedZoomBar,
+      `mosaic tile opens the gallery (gemeinsame Zoomleiste: ${D.sharedZoomBar})`);
     check(D.lightboxFullscreen, 'gallery viewer is full-screen');
     check(D.lightboxBar && D.lightboxDownload, 'viewer has a header bar with a download action');
     check(D.lightboxStartsAtClicked, 'viewer opens at the clicked image, not the first');

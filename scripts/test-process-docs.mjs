@@ -123,6 +123,7 @@ const expectedSteps = (file) => {
         tools: [...document.querySelectorAll('#pd-tab-panel-diagramm [data-bpmn]')].map(b => b.dataset.bpmn).join('|'),
         toolbarPosition: getComputedStyle(document.querySelector('#pd-tab-panel-diagramm .bpmn-toolbar')).position,
         toolbarDirection: getComputedStyle(document.querySelector('#pd-tab-panel-diagramm .bpmn-toolbar')).flexDirection,
+        sharedToolbar: !!document.querySelector('#pd-tab-panel-diagramm .viewer-toolbar--vertical .viewer-toolbar__button'),
         asideInPanel: !!document.querySelector('#pd-tab-panel-diagramm .detail-layout__aside'),
       });
     })()`));
@@ -132,6 +133,7 @@ const expectedSteps = (file) => {
     check(o.toolbar === 3, 'Zoomleiste (3 Knoepfe)', String(o.toolbar));
     check(o.tools === 'in|out|reset', 'Zoomleiste mit Reset', o.tools);
     check(o.toolbarPosition === 'absolute' && o.toolbarDirection === 'column', 'Zoomleiste als vertikales Overlay', `${o.toolbarPosition}/${o.toolbarDirection}`);
+    check(o.sharedToolbar, 'Gemeinsame Viewer-Toolbar-Anatomie');
     check(!o.asideInPanel, 'Diagramm nutzt volle Panelbreite');
     await clean(p, 'Diagramm');
     await p.closeTarget();

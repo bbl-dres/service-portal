@@ -188,10 +188,10 @@ export function openDocumentViewer(doc, siblings) {
       </div>
       ${many ? `<button class="docviewer__nav docviewer__nav--next" type="button" data-act="next" aria-label="Nächstes Dokument" title="Nächstes Dokument">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
     </div>
-    <div class="docviewer__toolbar" role="group" aria-label="Zoom-Steuerung">
-      <button class="docviewer__zoom" type="button" data-act="zoom-out" aria-label="Verkleinern" title="Verkleinern">${C.icon('Minus', 'icon--sm')}</button>
-      <button class="docviewer__zoom docviewer__zoom--reset" type="button" data-act="zoom-reset" aria-label="Zoom zurücksetzen" title="Zoom zurücksetzen"><span data-zoom-readout>100%</span></button>
-      <button class="docviewer__zoom" type="button" data-act="zoom-in" aria-label="Vergrössern" title="Vergrössern">${C.icon('Plus', 'icon--sm')}</button>
+    <div class="viewer-toolbar viewer-toolbar--negative viewer-toolbar--horizontal docviewer__toolbar" role="group" aria-label="Zoom-Steuerung">
+      <button class="viewer-toolbar__button docviewer__zoom" type="button" data-act="zoom-out" aria-label="Verkleinern" title="Verkleinern">${C.icon('Minus', 'icon--sm')}</button>
+      <button class="viewer-toolbar__button viewer-toolbar__readout docviewer__zoom docviewer__zoom--reset" type="button" data-act="zoom-reset" aria-label="Zoom zurücksetzen" title="Zoom zurücksetzen"><span data-zoom-readout>100%</span></button>
+      <button class="viewer-toolbar__button docviewer__zoom" type="button" data-act="zoom-in" aria-label="Vergrössern" title="Vergrössern">${C.icon('Plus', 'icon--sm')}</button>
     </div>`;
 
     stage = backdrop.querySelector('.docviewer__stage');

@@ -98,14 +98,14 @@ export function openGallery(items, start, C, opts = {}) {
           </div>
         </div>
         ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
-        <div class="pf-lightbox__zoom" role="group" aria-label="Zoom">
-          <button type="button" class="pf-lightbox__btn" data-act="zoom-out" data-el="zoomout"
+        <div class="viewer-toolbar viewer-toolbar--negative viewer-toolbar--horizontal pf-lightbox__zoom" role="group" aria-label="Zoom">
+          <button type="button" class="viewer-toolbar__button pf-lightbox__btn" data-act="zoom-out" data-el="zoomout"
             aria-label="Verkleinern" title="Verkleinern">${C.icon('Minus', 'icon--md')}</button>
-          <output class="pf-lightbox__zoom-val" data-el="zoomval" aria-live="off">100 %</output>
-          <button type="button" class="pf-lightbox__btn" data-act="zoom-in" data-el="zoomin"
+          <output class="viewer-toolbar__readout pf-lightbox__zoom-val" data-el="zoomval" aria-live="off">100 %</output>
+          <button type="button" class="viewer-toolbar__button pf-lightbox__btn" data-act="zoom-in" data-el="zoomin"
             aria-label="Vergrössern" title="Vergrössern">${C.icon('Plus', 'icon--md')}</button>
-          <span class="pf-lightbox__zoom-sep" aria-hidden="true"></span>
-          <button type="button" class="pf-lightbox__btn" data-act="zoom-fit" data-el="zoomfit"
+          <span class="viewer-toolbar__separator pf-lightbox__zoom-sep" aria-hidden="true"></span>
+          <button type="button" class="viewer-toolbar__button pf-lightbox__btn" data-act="zoom-fit" data-el="zoomfit"
             aria-label="An Bildschirm anpassen" title="An Bildschirm anpassen">${C.icon('Expand', 'icon--md')}</button>
         </div>
       </div>

@@ -20,6 +20,7 @@
 import { initPickerMap } from '../buildings-map.js';
 import * as links from '../links.js';
 import { DIENSTLEISTUNGEN, trail } from '../crumbs.js';
+import { createListboxController } from '../combobox.js';
 
 const SEARCH_URL = 'https://api3.geo.admin.ch/rest/services/api/SearchServer';
 const STEP_LABELS = ['Standort', 'Stammdaten', 'Prüfen & Absenden'];
@@ -109,8 +110,11 @@ export default async function render(ctx) {
 
   let pickerMap = null;
   let searchTimer = null;
-  let activeIdx = -1;
-  let suggestions = [];
+  let addressCombobox = null;
+  ctx.onUnmount(() => {
+    clearTimeout(searchTimer);
+    addressCombobox?.destroy();
+  });
 
   // Die Objektbezeichnung IST die Adresse — sie wird abgeleitet, nicht getippt.
   // Damit kann sie nicht von den Adressfeldern abweichen (der frühere Freitext
@@ -280,6 +284,8 @@ export default async function render(ctx) {
   function draw() {
     if (state.created) return drawDone();
     const restore = C.preserveFocus(mount);
+    addressCombobox?.destroy();
+    addressCombobox = null;
     freeMap();
     mount.innerHTML = `
     <div class="container section container--grid">
@@ -328,41 +334,21 @@ export default async function render(ctx) {
 
   /* ------------------------------------------------------------- Verkabeln - */
   function closeList() {
-    const box = mount.querySelector('#bc-listbox');
-    const inp = mount.querySelector('#bc-address');
-    if (box) { box.hidden = true; box.innerHTML = ''; }
-    if (inp) { inp.setAttribute('aria-expanded', 'false'); inp.removeAttribute('aria-activedescendant'); }
-    activeIdx = -1; suggestions = [];
+    if (addressCombobox) addressCombobox.close();
   }
 
   function renderList(items) {
     const box = mount.querySelector('#bc-listbox');
     const inp = mount.querySelector('#bc-address');
     if (!box || !inp) return;
-    suggestions = items; activeIdx = -1;
     if (!items.length) { closeList(); return; }
     box.innerHTML = items.map((it, n) =>
       `<li class="map-search__option" role="option" id="bc-opt-${n}" aria-selected="false" data-idx="${n}">
         ${C.icon('MapMarker', 'icon--sm')}<span>${C.escape(it.label)}</span></li>`).join('');
-    box.hidden = false;
-    inp.setAttribute('aria-expanded', 'true');
+    addressCombobox.setItems(items);
   }
 
-  function highlight(n) {
-    const box = mount.querySelector('#bc-listbox');
-    const inp = mount.querySelector('#bc-address');
-    if (!box || !suggestions.length) return;
-    activeIdx = (n + suggestions.length) % suggestions.length;
-    [...box.querySelectorAll('[role="option"]')].forEach((li, i) => {
-      const on = i === activeIdx;
-      li.classList.toggle('is-active', on);
-      li.setAttribute('aria-selected', String(on));
-      if (on) { inp.setAttribute('aria-activedescendant', li.id); li.scrollIntoView({ block: 'nearest' }); }
-    });
-  }
-
-  function pick(idx) {
-    const s = suggestions[idx];
+  function pick(s) {
     if (!s) return;
     const parts = splitAddress(s.label);
     Object.assign(state, {
@@ -442,7 +428,9 @@ export default async function render(ctx) {
     const inp = mount.querySelector('#bc-address');
     const clear = mount.querySelector('#bc-clear');
     const box = mount.querySelector('#bc-listbox');
-    if (!picker || !inp) return;
+    if (!picker || !inp || !box) return;
+
+    addressCombobox = createListboxController({ input: inp, list: box, onChoose: pick });
 
     // Die Auflage liegt ÜBER dem MapLibre-Canvas. Ohne das Stoppen der
     // Weitergabe würde jeder Klick ins Feld die Karte verschieben und jedes
@@ -485,32 +473,6 @@ export default async function render(ctx) {
             <span>Adresssuche nicht erreichbar (${C.escape(err.message)}). Sie können die Lage stattdessen direkt in der Karte anklicken.</span></div>`;
         }
       }, 300);
-    });
-
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowDown') { e.preventDefault(); if (suggestions.length) highlight(activeIdx + 1); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); if (suggestions.length) highlight(activeIdx - 1); }
-      else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); pick(activeIdx); }
-      else if (e.key === 'Escape' && !box.hidden) { e.preventDefault(); closeList(); }
-      // «Tab verlässt» schliesst — wie die Home-Suche (search-suggest.js), sonst
-      // bleibt die Liste mit aria-expanded="true" offen, wenn der Fokus in die
-      // Karte weiterwandert. Kein preventDefault: Tab soll den Fokus bewegen.
-      else if (e.key === 'Tab') closeList();
-    });
-
-    // Fokusverlust schliesst ebenfalls (Parität zu search-suggest.js:136). Das
-    // mousedown-preventDefault davor lässt den Fokus beim Klick auf eine Option
-    // im Feld — sonst schlösse blur die Liste, bevor der click übernehmen kann.
-    box.addEventListener('mousedown', (e) => e.preventDefault());
-    inp.addEventListener('blur', () => setTimeout(closeList, 120));
-
-    box.addEventListener('click', (e) => {
-      const li = e.target.closest('[data-idx]');
-      if (li) pick(Number(li.dataset.idx));
-    });
-    box.addEventListener('mousemove', (e) => {
-      const li = e.target.closest('[data-idx]');
-      if (li) highlight(Number(li.dataset.idx));
     });
 
     // Klick ausserhalb schliesst die Vorschlagsliste. `{ once: true }` allein
