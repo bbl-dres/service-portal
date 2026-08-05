@@ -2940,6 +2940,13 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 html { scrollbar-gutter:stable; }
 html:has(> body.body--overlay-open) { overflow:hidden; }
 body.body--overlay-open { overflow:hidden; }
+/* Opaque Vollbildbetrachter müssen bis an den physischen Viewportrand reichen.
+   Mit `stable` bleibt die Wurzelrinne auch bei overflow:hidden 15 px breit;
+   fixed/inset:0 endet davor und lässt rechts einen leeren weissen Streifen.
+   Modale Dialoge behalten die stabile Rinne, damit der sichtbare Hintergrund
+   beim Öffnen nicht springt. */
+html:has(> body > .pf-lightbox),
+html:has(> body > .docviewer) { overflow:hidden; scrollbar-gutter:auto; }
 /* ---- Kanonisches Modal (CD modal.postcss BEM) ----------------------------
    Primitive für neue Dialoge (Bestätigungen, Formulare). Die bestehenden Overlays
    (chart-overlay, pf-lightbox, docviewer) bleiben eigenständig, teilen aber die
@@ -3634,8 +3641,9 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* Scroll-Lock: die EINE Klasse body--overlay-open (Modal, Galerie, Betrachter)
    — das zweite Regelpaar unter dem alten Namen docviewer-open ist entfallen
    (Design-Review C14). */
-.docviewer { position:fixed; inset:0; z-index:var(--z-viewer); overflow:auto; background:var(--color-secondary-900); }
-.docviewer__bar { position:sticky; top:0; z-index:5; display:flex; align-items:center;
+.docviewer { position:fixed; inset:0; z-index:var(--z-viewer); display:flex; flex-direction:column;
+  overflow:hidden; background:var(--color-secondary-900); }
+.docviewer__bar { position:relative; z-index:5; display:flex; align-items:center; flex:none;
   justify-content:space-between; gap:1rem; padding:.75rem 1rem;
   background:var(--color-secondary-900); border-bottom:1px solid var(--border-negative); }
 /* EIN Dunkel-Chrome-Rezept für BEIDE Vollbild-Betrachter (Dokumentvorschau +
@@ -3658,8 +3666,11 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   width:var(--target-min); height:var(--target-min); padding:0; background:none; border:0; border-radius:var(--radius-sm);
   color:var(--color-text-negative); cursor:pointer; transition:background var(--duration-fast); }
 .docviewer__btn:hover, .pf-lightbox__btn:hover { background:var(--surface-negative-hover); }
+.docviewer__btn.is-active { background:var(--surface-negative-active); }
 .docviewer__btn:focus-visible, .pf-lightbox__btn:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
-.docviewer__main { position:relative; background:var(--color-secondary-800); }
+.docviewer__body { display:flex; flex:1 1 auto; flex-direction:column; min-height:0; }
+.docviewer__main { position:relative; flex:1 1 auto; min-width:0; min-height:0;
+  overflow:auto; background:var(--color-secondary-800); }
 .docviewer__stage { padding:2.5rem 1rem; cursor:default; }
 .docviewer__stage:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
 .docviewer__pages { --docpage-w:760px; display:flex; flex-direction:column; align-items:center;
@@ -3673,6 +3684,26 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .docviewer__nav:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
 .docviewer__nav--prev { left:1rem; }
 .docviewer__nav--next { right:1rem; }
+
+/* Metadaten folgen dem Muster des Bildbetrachters: auf kleinen Viewports als
+   begrenztes Band, ab md als feste Spalte neben der Vorschau. */
+.docviewer__meta { flex:0 0 auto; overflow-y:auto; max-height:40vh; padding:1rem 1.25rem;
+  container-type:inline-size;
+  background:var(--surface-negative); color:var(--color-text-negative);
+  border-top:1px solid var(--border-negative); }
+.docviewer__meta-title { margin:0 0 .5rem; color:var(--text-negative-muted);
+  font-size:var(--text-sm); font-weight:var(--fw-bold); }
+.docviewer__meta .kv { margin:0; color:var(--color-text-negative); }
+.docviewer__meta .kv dt { color:var(--text-negative-muted); }
+.docviewer__meta .kv dd { color:var(--color-text-negative); }
+.docviewer__meta .btn { margin-top:.75rem; }
+@media (min-width:768px){
+  .docviewer__body { flex-direction:row; }
+  .docviewer__meta { flex:0 0 20rem; max-height:none; border-top:0;
+    border-left:1px solid var(--border-negative); }
+  .docviewer--meta-open .docviewer__toolbar { left:calc((100% - 20rem) / 2); }
+  .docviewer--meta-open .docviewer__nav--next { right:21rem; }
+}
 
 .docpage { width:var(--docpage-w); min-height:calc(var(--docpage-w) * 1.414); flex:none;
   background:var(--color-bg); color:var(--color-text); box-shadow:var(--shadow-viewer);
@@ -3732,24 +3763,29 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .docviewer__toast .notification { max-width:500px; margin-inline:1.25rem; pointer-events:auto;
   box-shadow:var(--shadow-viewer); }
 
-/* Titel/Vorschau-Auslöser in der Tabelle: sieht aus wie ein Link, ist ein Button. */
-.doc-open { display:inline-flex; align-items:center; gap:.5rem; min-height:var(--target-min); background:none; border:0;
+/* Dateiname in der Tabelle: sieht aus wie ein Link, ist ein Viewer-Button. */
+.doc-open { display:inline-flex; align-items:center; min-height:var(--target-min); background:none; border:0;
   padding:0; font:inherit; color:var(--color-primary-600); cursor:pointer; text-align:left; }
 .doc-open:hover { color:var(--color-primary-800); text-decoration:underline; }
-.doc-open .icon { flex:none; }
 
 /* Dokumentvorschau auf dem Handy (Item 2.26): die Metadaten-Zweispaltigkeit
    klemmte bei 40ch, der Blocksatz erzeugte Flüsse, und die fixierten Pfeile
    lagen mitten auf der Seite statt am unteren Rand. */
 @media (max-width:639.98px){
+  .docviewer__bar { display:grid; grid-template-columns:minmax(0,1fr); gap:.375rem;
+    padding:.5rem; }
+  .docviewer__heading { width:100%; }
+  .docviewer__heading-icon { display:none; }
+  .docviewer__actions { width:100%; justify-content:flex-end; }
+  .docviewer__sub { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .docviewer__stage  { padding:1.5rem .5rem; }
   .docpage__metagrid { grid-template-columns:minmax(0,1fr); }
   .docpage__p        { text-align:left; }
-  .docviewer__nav    { position:sticky; top:auto; bottom:1rem; transform:none; }
+  .docviewer__nav    { position:fixed; top:50%; bottom:auto; transform:translateY(-50%); }
   .docviewer__nav--prev { left:.5rem; }
   .docviewer__nav--next { right:.5rem; }
-  .docviewer__title  { white-space:normal; overflow:visible; text-overflow:clip;
-                       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .docviewer__title  { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .docviewer--meta-open .docviewer__toolbar { bottom:calc(40vh + 1rem); }
 }
 
 /* ========================= MIETENDENPORTAL (#/app/tenancies) ==============
@@ -3939,3 +3975,204 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 /* Leerzeile einer Datentabelle: mittig gesetzt, damit sie als Zustand lesbar
    ist und nicht wie ein leerer erster Datensatz. */
 table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:2rem; }
+
+/* ========================= WORKSPACE MANAGEMENT ===========================
+   Planning application, deliberately separate from personal room booking.
+   The controls use the federal form/table/floor-plan components; these rules
+   only arrange them into a compact operational surface. */
+.workspace-context { display:grid; gap:1.25rem; align-items:end; padding:1.25rem;
+  background:var(--color-secondary-50); border-block:1px solid var(--color-secondary-200); }
+.workspace-context__address { margin:.5rem 0 0; }
+.workspace-context__meta { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; }
+.workspace-stats { margin-top:var(--sp-8); }
+.workspace-section { margin-top:var(--sp-12); }
+.workspace-plan__fields { align-items:start; }
+.workspace-plan__result h3 { margin-bottom:1rem; }
+.workspace-plan__status { margin-bottom:1rem; }
+.workspace-plan__facts { margin:0 0 1rem; }
+.workspace-capacity { width:100%; height:.625rem; overflow:hidden; margin:0 0 1rem;
+  background:var(--color-secondary-200); }
+.workspace-capacity__bar { display:block; height:100%; background:var(--color-success-text); }
+.workspace-capacity__bar--over { background:var(--color-error); }
+.workspace-floorplan__head { margin-top:0; }
+@media (min-width:768px) {
+  .workspace-context { grid-template-columns:minmax(18rem,34rem) minmax(0,1fr); padding:1.5rem; }
+  .workspace-context__meta { justify-content:flex-end; }
+}
+
+/* ========================= ROOM BOOKING ===================================
+   Search, comparison, spatial orientation, and confirmation stay in one task
+   flow. Result rows are native radio labels; the side surface is a summary,
+   not a second stack of cards. */
+.booking-tabs { margin-top:var(--sp-8); }
+.booking-find, .booking-manage { min-width:0; }
+
+/* Criteria band */
+.booking-search { padding:1.25rem; background:var(--color-secondary-50);
+  border-block:1px solid var(--color-secondary-200); }
+.booking-search .form__group__legend { margin:0; }
+.booking-search .booking-search__grid { display:grid; grid-template-columns:minmax(0,1fr);
+  gap:1rem; align-items:end; margin-top:1rem; }
+.booking-search__grid > * { min-width:0; margin:0; }
+.booking-search__action .btn { width:100%; justify-content:center; }
+@media (min-width:768px){
+  .booking-search { padding:1.5rem; }
+  .booking-search .booking-search__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .booking-search__grid > :first-child { grid-column:1 / -1; }
+  .booking-search__action { display:flex; grid-column:1 / -1; justify-content:flex-end; }
+  .booking-search__action .btn { width:auto; }
+}
+@media (min-width:1280px){
+  .booking-search .booking-search__grid {
+    grid-template-columns:minmax(16rem,2.2fr) minmax(9.5rem,1fr) minmax(7rem,.7fr)
+      minmax(7rem,.7fr) minmax(8rem,.75fr) auto; }
+  .booking-search__grid > :first-child { grid-column:auto; }
+  .booking-search__action { grid-column:auto; }
+}
+
+/* Results and summary */
+.booking-results { min-width:0; }
+.booking-results .catbar { margin-top:0; }
+.booking-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1.5rem;
+  align-items:start; margin-top:1.5rem; }
+.booking-results__main, .booking-side, .booking-side__section { min-width:0; }
+.booking-side { background:var(--color-secondary-50);
+  border-block:1px solid var(--color-secondary-200); }
+.booking-side__section { padding:1.25rem; }
+.booking-side__section + .booking-side__section { border-top:1px solid var(--color-secondary-200); }
+.booking-side__section h3, .booking-side__section h4 { margin-top:0; }
+@media (min-width:1024px){
+  .booking-layout { grid-template-columns:minmax(0,1fr) minmax(19rem,22rem); }
+  .booking-side { position:sticky; top:1rem; }
+}
+
+/* Building location */
+.booking-location__map { width:100%; height:12rem; overflow:hidden;
+  background:var(--color-secondary-100); border-radius:var(--radius-lg); }
+.booking-location__map--empty { display:grid; place-items:center; padding:1rem;
+  color:var(--color-text-muted); text-align:center; }
+.booking-location__name { margin:1rem 0 .125rem; }
+.booking-location__name + p { margin:0; }
+.booking-location .btn { margin-top:.5rem; }
+
+/* Comparable room rows */
+.booking-room-list { min-width:0; margin:0; padding:0;
+  border:0; border-top:1px solid var(--color-secondary-300); }
+.booking-room-row { display:grid; grid-template-columns:auto 6rem minmax(0,1fr) auto;
+  gap:1rem; align-items:center; min-width:0; padding:1rem .5rem;
+  border-bottom:1px solid var(--color-secondary-300); cursor:pointer;
+  transition:background var(--duration-fast), box-shadow var(--duration-fast); }
+.booking-room-row:hover { background:var(--color-secondary-50); }
+.booking-room-row:focus-within { outline:2px solid var(--color-focus-ring); outline-offset:-2px; }
+.booking-room-row.is-selected { background:var(--color-primary-50);
+  box-shadow:inset 4px 0 0 var(--color-primary-600); }
+.booking-room-row > input { align-self:start; width:auto; min-height:0; margin:.35rem 0 0; padding:0; }
+.booking-room-row__body { display:flex; flex-direction:column; gap:.125rem; min-width:0; }
+.booking-room-row__body > * { overflow-wrap:anywhere; }
+.booking-room-row__meta, .booking-room-row__features { color:var(--color-text-muted); font-size:var(--text-sm); }
+.booking-room-row > .badge { justify-self:end; }
+.booking-show-all { margin-top:.75rem; }
+.booking-room-list > .badge--error { margin-top:.75rem; }
+
+/* Room photography uses a real local image only where one is available. */
+.booking-room-image { position:relative; width:100%; aspect-ratio:16/9; overflow:hidden;
+  background:var(--color-secondary-100); }
+.booking-room-image > img { width:100%; height:100%; object-fit:cover; }
+.booking-room-image--thumb { width:6rem; height:4.5rem; aspect-ratio:auto; }
+.booking-room-image--empty { display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:.375rem; color:var(--color-text-muted); text-align:center;
+  font-size:var(--text-sm); }
+.booking-selected__figure { margin:0 0 1.25rem; }
+.booking-selected__figure figcaption { margin:0; }
+.booking-selected__facts { margin:0; }
+.booking-feature-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.5rem 1rem; margin:1rem 0 0; padding:0; list-style:none; }
+.booking-feature-list li { display:flex; align-items:center; gap:.5rem; min-width:0;
+  color:var(--color-text-muted); font-size:var(--text-sm); }
+.booking-feature-list .icon { flex:none; color:var(--color-secondary-500); }
+
+/* Invitees and final confirmation */
+.booking-confirm { margin-top:1.5rem; padding-top:1.5rem;
+  border-top:1px solid var(--color-secondary-200); }
+.booking-invite__control { display:grid; grid-template-columns:minmax(0,1fr) auto;
+  gap:.5rem; align-items:start; }
+.booking-invite__control .btn { white-space:nowrap; }
+.booking-invitees { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; }
+.booking-invitees .tag-item { margin:0; }
+.booking-confirm__summary { padding:1rem; background:var(--color-bg);
+  border:1px solid var(--color-secondary-200); }
+.booking-confirm__summary h4 { margin:0 0 .75rem; }
+.booking-summary__facts { margin:0; }
+.booking-confirm__submit { width:100%; justify-content:center; }
+.booking-confirm__submit .btn__text { text-align:center; }
+
+/* Floor-plan view. The controls remain fixed over the scrollable drawing. */
+.booking-floorbar { display:flex; flex-wrap:wrap; margin-bottom:1rem; }
+.booking-plan-shell { position:relative; min-width:0; }
+.booking-plan-stage { min-height:22rem; padding:0; }
+.booking-plan-canvas { min-width:100%; transform-origin:top left;
+  transition:width var(--duration-fast) var(--ease-out); }
+.booking-plan-canvas .fp { min-width:0; }
+.booking-plan-tools { position:absolute; top:.75rem; right:.75rem; z-index:3;
+  display:flex; flex-direction:column; background:var(--color-bg); box-shadow:var(--shadow-md); }
+.booking-plan-tools .btn { width:var(--target-min); height:var(--target-min); min-height:var(--target-min);
+  padding:0; border-radius:0; background:var(--color-bg); }
+.booking-plan-tools .btn + .btn { border-top:0; }
+.booking-plan-tools .btn:first-child { border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
+.booking-plan-tools .btn:last-child { border-radius:0 0 var(--radius-sm) var(--radius-sm); }
+.booking-plan-legend { display:flex; flex-wrap:wrap; gap:.5rem 1.25rem;
+  margin:1rem 0 0; padding:0; list-style:none; font-size:var(--text-sm); }
+.booking-plan-legend li { display:flex; align-items:center; gap:.5rem; }
+.booking-plan-legend__swatch { width:1rem; height:1rem; flex:none;
+  border:1px solid var(--color-secondary-400); }
+.booking-plan-legend__swatch--available { background:var(--color-success-bg); }
+.booking-plan-legend__swatch--unavailable { background:var(--color-secondary-200); }
+.booking-plan-legend__swatch--unsuitable { background:var(--color-secondary-50); border-style:dashed; }
+.booking-plan-legend__swatch--selected { background:var(--color-primary-100);
+  border:3px solid var(--color-primary-700); }
+.booking-floorplan .fp__room--booking-available rect { fill:var(--color-success-bg); }
+.booking-floorplan .fp__room--booking-unavailable rect { fill:var(--color-secondary-200); }
+.booking-floorplan .fp__room--booking-unsuitable rect { fill:var(--color-secondary-50); stroke-dasharray:18 10; }
+.booking-floorplan .fp__room.is-selected rect { fill:var(--color-primary-100); }
+.booking-floorplan .fp__room:not([data-space]) rect { cursor:default; }
+.booking-floorplan .fp__room:not([data-space]):hover rect { stroke:var(--color-secondary-400); stroke-width:4; }
+.booking-floorplan .fp__room--infra:not([data-space]):hover rect { fill:var(--color-secondary-50); }
+
+/* Personal bookings are dense records, not cards. */
+.booking-entry-list { border-top:1px solid var(--color-secondary-300); }
+.booking-entry { display:grid; grid-template-columns:10rem minmax(0,1fr) auto auto;
+  gap:1rem; align-items:start; padding:1rem .25rem;
+  border-bottom:1px solid var(--color-secondary-300); }
+.booking-entry__date { display:flex; flex-direction:column; }
+.booking-entry__date span { color:var(--color-text-muted); font-size:var(--text-sm); }
+.booking-entry__body { min-width:0; }
+.booking-entry__body h4, .booking-entry__body p { margin:0; overflow-wrap:anywhere; }
+.booking-entry__body p { margin-top:.25rem; }
+.booking-entry__status { padding-top:.125rem; }
+.booking-entry__actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.5rem; }
+.booking-done__summary { margin-top:1.5rem; padding:1.25rem;
+  background:var(--color-secondary-50); border-block:1px solid var(--color-secondary-200); }
+.booking-done__summary p:last-child { margin:1rem 0 0; }
+
+@media (max-width:767.98px){
+  .booking-room-row { grid-template-columns:auto 4.5rem minmax(0,1fr); gap:.75rem; padding-inline:.25rem; }
+  .booking-room-image--thumb { width:4.5rem; height:3.5rem; }
+  .booking-room-row > .badge { grid-column:3; justify-self:start; }
+  .booking-plan-stage { min-height:18rem; }
+  .booking-entry { grid-template-columns:minmax(0,1fr) auto; }
+  .booking-entry__body, .booking-entry__actions { grid-column:1 / -1; }
+  .booking-entry__actions { justify-content:flex-start; }
+}
+@media (max-width:479.98px){
+  .booking-search { padding:1rem; }
+  .booking-side__section { padding:1rem; }
+  .booking-room-row { grid-template-columns:auto minmax(0,1fr); }
+  .booking-room-image--thumb { display:none; }
+  .booking-room-row > .badge { grid-column:2; }
+  .booking-feature-list { grid-template-columns:minmax(0,1fr); }
+  .booking-invite__control { grid-template-columns:minmax(0,1fr); }
+  .booking-invite__control .btn { width:100%; justify-content:center; }
+  .booking-entry { grid-template-columns:minmax(0,1fr); }
+  .booking-entry__status, .booking-entry__body, .booking-entry__actions { grid-column:1; }
+  .booking-entry__actions .btn { flex:1 1 auto; justify-content:center; }
+}

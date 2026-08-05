@@ -38,8 +38,7 @@ export const COLLOQUIAL = {
   aufzug: ['stoerung'], lift: ['stoerung'], schimmel: ['stoerung'],
   dreckig: ['reinigung'], schmutz: ['reinigung'], putzen: ['reinigung'],
   // Arbeitsplatz und Buchung
-  parkplatz: ['buchung'], sitzungszimmer: ['buchung'],
-  sitzungsraum: ['buchung'], besprechungsraum: ['buchung'],
+  sitzungszimmer: ['buchung'], sitzungsraum: ['buchung'], besprechungsraum: ['buchung'],
   desk: ['arbeitsplatz'], homeoffice: ['arbeitsplatz'],
   // Beschaffung und Vergabe
   ausschreibung: ['beschaffung', 'verfahren'], submission: ['beschaffung'],
@@ -95,7 +94,7 @@ export function stem(w) {
 /* ------------------------------------------------------------- Zerlegen */
 // Die Anfrage wird in Begriffe zerlegt, die ALLE treffen müssen (UND). Vorher
 // wurde die ganze Anfrage als eine Zeichenkette gesucht — «raum buchen» fand
-// deshalb nichts, obwohl es «Raum-, Arbeitsplatz- & Parkplatzbuchung» gibt (B3).
+// deshalb nichts, obwohl es die Dienstleistung «Raum buchen» gibt (B3).
 export function tokenize(q) {
   const seen = new Set();
   const out = [];

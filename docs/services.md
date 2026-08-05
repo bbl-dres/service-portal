@@ -167,7 +167,7 @@ Drei Beobachtungen, die über die einzelne Zeile hinausgehen:
 | PRC-SEC | Sicherheits- und Datenschutzvorfall | umgesetzt — 3 Schritte |
 | PRC-BEST | Bestellung | umgesetzt — 4 Schritte |
 | PRC-BANF | Bedarfsmeldung BANF | umgesetzt — 4 Schritte |
-| PRC-BUCH | Ressourcenbuchung | umgesetzt — 2 Schritte |
+| PRC-BUCH | Raumbuchung | umgesetzt — 2 Schritte |
 | PRC-DELEG | Delegationsgesuch | umgesetzt — 6 Schritte |
 | PRC-AUFT | Auftragsabwicklung Objektbetrieb | zu entwerfen — 11 Dienstleistungen |
 | PRC-MUT | Stammdatenmutation | zu entwerfen — 4 Dienstleistungen |

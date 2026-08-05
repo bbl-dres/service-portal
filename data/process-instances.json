@@ -91,19 +91,26 @@
       { "when": "2025-11-10", "status": "In Projekt überführt", "note": "Projekt B-2025-002" },
       { "when": "2026-02-20", "status": "Abgeschlossen", "note": "Umsetzung abgeschlossen" }
     ] },
-  { "instanceId": "seed-6", "defId": "buchung", "defName": "Ressourcenbuchung", "reference": "BBL-2026-1099",
-    "title": "Sitzungsraum + 1 Parkplatz, Fellerstrasse", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
-    "audience": "both", "status": "abgeschlossen", "stepIndex": 1, "createdAt": "2026-06-12", "updatedAt": "2026-06-12",
-    "linkedEntities": { "buildingId": "BLD-05" },
+  { "instanceId": "seed-6", "defId": "buchung", "defName": "Raumbuchung", "reference": "BBL-2026-1099",
+    "title": "EG 06 — Verwaltungsgebäude Liebefeld", "requester": "Andrea Muster", "organization": "Bundesamt für Umwelt BAFU",
+    "audience": "both", "status": "abgeschlossen", "stepIndex": 1, "createdAt": "2026-08-01", "updatedAt": "2026-08-01",
+    "linkedEntities": { "buildingId": "1080/6650/AA" },
     "data": {
-      "ressourcentyp": "Sitzungsraum + Parkplatz",
-      "datum": "2026-06-20",
+      "gebaeude": "Verwaltungsgebäude Liebefeld (BAG / BLV)",
+      "raum": "EG 06",
+      "raumId": "1080-6650-AA-eg-06",
+      "geschoss": "EG",
+      "datum": "2026-08-07",
+      "start": "09:00",
+      "ende": "12:00",
       "zeit": "09:00–12:00",
-      "bemerkung": "Ein Parkplatz für externe Gäste benötigt."
+      "teilnehmende": 8,
+      "zweck": "Bereichssitzung",
+      "eingeladene": ["Anna Keller", "Marco Rossi"]
     },
     "attachments": [],
     "history": [
-      { "when": "2026-06-12", "status": "Angefragt", "note": "Vorgang erstellt" },
-      { "when": "2026-06-12", "status": "Bestätigt", "note": "Ressource reserviert" }
+      { "when": "2026-08-01", "status": "Angefragt", "note": "Vorgang erstellt" },
+      { "when": "2026-08-01", "status": "Bestätigt", "note": "Ressource reserviert" }
     ] }
 ]

@@ -11,6 +11,8 @@ const ROUTES = [
   { name: 'knowledge/anleitungen',             url: `${APP_BASE}/knowledge/guides`,           items: 1 },
   { name: 'digitalisierung/strategie',         url: `${APP_BASE}/data/digitalisation/strategy`,  items: 2 },
   { name: 'applications/liegenschaften',       url: `${APP_BASE}/applications/liegenschaften-inventar`, items: 1, mailto: true },
+  { name: 'app/workspace (planning)',           url: `${APP_BASE}/app/workspace` },
+  { name: 'app/room-booking (form)',            url: `${APP_BASE}/app/room-booking` },
   { name: 'services/raumbedarf-melden',        url: `${APP_BASE}/services/raumbedarf-melden`,       mailto: true },
   { name: 'my-cases/seed-1 (attachments)',     url: `${APP_BASE}/my-cases/seed-1`,                  items: 1, login: true },
 ];

@@ -1,8 +1,9 @@
 [
   {
     "docId": "DOC-001",
-    "title": "Bauwerksdokumentation Bundeshaus West",
-    "type": "Bauwerksdokumentation",
+    "title": "Dokumentenverzeichnis Bundeshaus West",
+    "typeCode": "O08001",
+    "type": "Dokumentenverzeichnis",
     "category": "Parlament und Regierung",
     "linkedTo": [
       "1080/4840/AF"
@@ -16,7 +17,8 @@
   {
     "docId": "DOC-002",
     "title": "Grundriss Bundeshaus West — Erdgeschoss",
-    "type": "Grundriss",
+    "typeCode": "V07102",
+    "type": "Grundrissplan",
     "category": "Parlament und Regierung",
     "linkedTo": [
       "1080/4840/AF"
@@ -29,8 +31,9 @@
   },
   {
     "docId": "DOC-003",
-    "title": "Bauwerksdokumentation Bundeshaus Ost",
-    "type": "Bauwerksdokumentation",
+    "title": "Dokumentenverzeichnis Schweizerische Botschaft Berlin",
+    "typeCode": "O08001",
+    "type": "Dokumentenverzeichnis",
     "category": "Parlament und Regierung",
     "linkedTo": [
       "1080/5210/AA"
@@ -43,11 +46,12 @@
   },
   {
     "docId": "DOC-004",
-    "title": "Sanierungskonzept Bundeshaus Nord",
-    "type": "Bericht",
+    "title": "Wartungs- und Instandhaltungskonzept Bundeshaus Nord",
+    "typeCode": "B11305",
+    "type": "Wartungs- und Instandhaltungskonzept",
     "category": "Verwaltung",
     "linkedTo": [
-      "1080/3120/AB"
+      "1080/7090/AA"
     ],
     "format": "PDF",
     "sizeKB": 2650,
@@ -58,10 +62,11 @@
   {
     "docId": "DOC-005",
     "title": "Grundriss Bundeshaus Nord — Regelgeschoss",
-    "type": "Grundriss",
+    "typeCode": "V07102",
+    "type": "Grundrissplan",
     "category": "Verwaltung",
     "linkedTo": [
-      "1080/3120/AB"
+      "1080/7090/AA"
     ],
     "format": "PDF",
     "sizeKB": 1120,
@@ -71,8 +76,9 @@
   },
   {
     "docId": "DOC-006",
-    "title": "Bauwerksdokumentation Bernerhof",
-    "type": "Bauwerksdokumentation",
+    "title": "Dokumentenverzeichnis Schweizerisches Generalkonsulat New York",
+    "typeCode": "O08001",
+    "type": "Dokumentenverzeichnis",
     "category": "Verwaltung",
     "linkedTo": [
       "1080/5320/AA"
@@ -85,11 +91,12 @@
   },
   {
     "docId": "DOC-007",
-    "title": "Bauwerksdokumentation Campus Guisanplatz 1",
-    "type": "Bauwerksdokumentation",
+    "title": "Dokumentenverzeichnis Verwaltungszentrum Guisanplatz",
+    "typeCode": "O08001",
+    "type": "Dokumentenverzeichnis",
     "category": "Verwaltung",
     "linkedTo": [
-      "1080/5410/AA"
+      "1080/4850/AG"
     ],
     "format": "PDF",
     "sizeKB": 6210,
@@ -99,8 +106,9 @@
   },
   {
     "docId": "DOC-008",
-    "title": "Energiekonzept Fellerstrasse 21",
-    "type": "Bericht",
+    "title": "Energiekonzept Campus BAZG (Ausbildungszentrum Liestal)",
+    "typeCode": "B11124",
+    "type": "Energiekonzept",
     "category": "Verwaltung",
     "linkedTo": [
       "1080/4100/AC"
@@ -113,11 +121,12 @@
   },
   {
     "docId": "DOC-009",
-    "title": "Bauwerksdokumentation Bundesgericht Lausanne",
-    "type": "Bauwerksdokumentation",
+    "title": "Dokumentenverzeichnis Bundesverwaltungsgericht Schwarztorstrasse",
+    "typeCode": "O08001",
+    "type": "Dokumentenverzeichnis",
     "category": "Justiz und Polizei",
     "linkedTo": [
-      "1080/5510/AA"
+      "1080/6980/AA"
     ],
     "format": "PDF",
     "sizeKB": 3990,
@@ -127,9 +136,10 @@
   },
   {
     "docId": "DOC-010",
-    "title": "Machbarkeitsstudie Agroscope Posieux",
-    "type": "Bericht",
-    "category": "Bildung und Forschung",
+    "title": "Machbarkeitsstudie Rechenzentrum CAMPUS Frauenfeld",
+    "typeCode": "B05050",
+    "type": "Machbarkeitsstudie",
+    "category": "Verwaltung",
     "linkedTo": [
       "1080/1950/AE"
     ],
@@ -141,11 +151,12 @@
   },
   {
     "docId": "DOC-011",
-    "title": "Sicherheitsdossier Zollanlage Genève",
-    "type": "Bericht",
+    "title": "Sicherheitsbericht Zollanlage Brig-Glis",
+    "typeCode": "B17018",
+    "type": "Sicherheitsbericht",
     "category": "Zoll",
     "linkedTo": [
-      "1080/5620/AA"
+      "1080/6210/AA"
     ],
     "format": "PDF",
     "sizeKB": 2210,
@@ -155,11 +166,12 @@
   },
   {
     "docId": "DOC-012",
-    "title": "Bauwerksdokumentation Nationalbibliothek",
-    "type": "Bauwerksdokumentation",
+    "title": "Dokumentenverzeichnis Nationalbibliothek",
+    "typeCode": "O08001",
+    "type": "Dokumentenverzeichnis",
     "category": "Kultur und Denkmäler",
     "linkedTo": [
-      "1080/4850/AG"
+      "1080/6430/AA"
     ],
     "format": "PDF",
     "sizeKB": 4470,
@@ -170,10 +182,11 @@
   {
     "docId": "DOC-013",
     "title": "Grundriss Landesmuseum — Depot",
-    "type": "Grundriss",
+    "typeCode": "V07102",
+    "type": "Grundrissplan",
     "category": "Kultur und Denkmäler",
     "linkedTo": [
-      "1080/4840/AF"
+      "1080/6100/AA"
     ],
     "format": "PDF",
     "sizeKB": 1010,
@@ -184,10 +197,11 @@
   {
     "docId": "DOC-014",
     "title": "Denkmalpflegerisches Gutachten Landesmuseum",
-    "type": "Gutachten",
+    "typeCode": "B06006",
+    "type": "Denkmalpflegerisches Gutachten",
     "category": "Kultur und Denkmäler",
     "linkedTo": [
-      "1080/4840/AF"
+      "1080/6100/AA"
     ],
     "format": "PDF",
     "sizeKB": 2890,

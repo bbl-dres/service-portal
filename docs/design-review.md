@@ -65,7 +65,7 @@ Damit «konsistent» prüfbar wird, hält diese Review die Soll-Rezepte fest. Ne
 
 - **Startseite** heisst der Ort `#/` (Titel, 404-Link); «Übersicht» bleibt Drawer-Erstzeile und erster Detail-Tab.
 - Fusszeile: `#/data` heisst **«Daten und Digitalisierung»** (nicht «Datenkatalog»). Meta-Nav «Hilfe» zeigt auf `#/knowledge/guides` (Anleitungen und Schulungen — das ist Hilfe), nicht auf die Wissens-Übersicht.
-- **Workspace & Buchung** überall (Katalogkarte, Crumb, h1); der Buchungs-Einstieg heisst in services.json UND applications.json «Raum-, Arbeitsplatz- & Parkplatzbuchung».
+- **Workspace Management** und **Raumbuchung** sind getrennte Anwendungen; Planung und persönliche Reservierung verwenden eigene Routen, Titel und Aufgabenoberflächen.
 - Katalogtitel = h1 der Zielseite («Raumbedarf melden», «Kleinauftrag am Gebäude erteilen», «Liegenschaften Inventar einsehen», «Bauwerksdokumentation abrufen», «Grundstück erfassen»).
 - **Vertragsende** für das Datum (die App bleibt «Mietende»). **Bodenbedeckung** (amtliche Vermessung), nie «Bodenabdeckung». **Geschäftsobjekt** als Fachterm des Metadatenkatalogs («Fachbegriff» nur einführend); Zeilenzahl heisst «Zeilen», «Datensatz» bleibt dem DCAT-Katalog. **Veräusserung von Bundesliegenschaften** statt «Verkauf / Divestment». «Bemessungsgrösse» (ss).
 - Produktnamen mit Leerzeichen («Liegenschaften Inventar», «Metadaten Katalog Bauten», «Datenbezug und API Verzeichnis») sind **gesetzte Markennamen** — Fliesstext darf regulär komponieren («Liegenschafteninventar»); nicht «korrigieren».
@@ -191,7 +191,7 @@ Die vollständigen Fundstellenlisten je Variante liegen im Review-Protokoll; hie
 | D14 | Ellipsen (ASCII, Leerzeichen davor) und Platzhalter («Suche»/«Suche…») | «…» ohne Leerzeichen; «Suchen…»; «‹Felder› suchen…» | ✅ |
 | D15 | «Hinweis/Meldung geschlossen»; Modal-aria «Schliessen» | «Hinweis geschlossen.»; «Dialog schliessen» | ✅ |
 | D16 | Fusszeile «Datenkatalog»; Meta-Nav «Hilfe» | «Daten und Digitalisierung»; Hilfe → guides | ✅ |
-| D17 | Workspace: 5 Namen, 1 App | «Workspace & Buchung»-Kanon (JSON + Crumb) | ✅ |
+| D17 | Workspace und Buchung vermischt | Getrennte Anwendungen und Routen für Workspace Management und Raumbuchung | ✅ |
 | D18 | Katalogtitel ≠ Ziel-h1 (4 Fälle) | Titel = h1 | ✅ |
 | D19 | «Mietende» als kv-Label fürs Vertragsende | «Vertragsende» | ✅ |
 | D20 | Bautendokumentation/Bauwerksdokumentation im selben Datensatz | services.json-Titel «Bauwerksdokumentation abrufen»; Begriffsklärung dokumentiert | ✅ |

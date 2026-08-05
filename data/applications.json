@@ -5,7 +5,8 @@
     "group": "Immobilien & Bau",
     "icon": "Map",
     "audience": [
-      "staff"
+      "staff",
+      "customers"
     ],
     "hero": true,
     "link": {
@@ -475,7 +476,7 @@
       "flm"
     ],
     "contact": "campus",
-    "updated": "2026-06-22",
+    "updated": "2026-08-05",
     "bild": {
       "src": "assets/images/applications/workspace.jpg",
       "titel": "Spacious open-plan office with cubicles and modern furnishings, ideal for collaborative wo",
@@ -487,7 +488,7 @@
   },
   {
     "appId": "raumbuchung",
-    "name": "Raum-, Arbeitsplatz- & Parkplatzbuchung (Portal)",
+    "name": "Raumbuchung (Portal)",
     "group": "Arbeitsplatz & Logistik",
     "icon": "Calendar",
     "audience": [
@@ -496,22 +497,22 @@
     ],
     "link": {
       "kind": "app",
-      "href": "#/app/workspace?tab=buchung"
+      "href": "#/app/room-booking"
     },
-    "description": "Sitzungsräume, Arbeitsplätze und Parkplätze reservieren.",
+    "description": "Sitzungs- und Besprechungsräume an den Standorten des Bundes reservieren.",
     "area": "logistics",
-    "subtitle": "Räume und Parkplätze buchen",
-    "long": "Über die Raum- und Parkplatzbuchung reservieren Mitarbeitende Sitzungszimmer, Arbeitsplätze und Parkplätze an den Standorten des Bundes. Die Verfügbarkeit richtet sich nach der Zuteilung der jeweiligen Verwaltungseinheit.",
+    "subtitle": "Sitzungsräume finden und reservieren",
+    "long": "Die Raumbuchung zeigt verfügbare Sitzungs- und Besprechungsräume an den angeschlossenen Standorten des Bundes. Mitarbeitende wählen Gebäude, Termin und Gruppengrösse und reservieren einen passenden Raum. Arbeitsplatzkapazitäten, Zonen und Desk-Sharing werden separat in Workspace Management geplant.",
     "access": {
       "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
       "steps": [
         "Anmeldung über eIAM.",
-        "Parkplätze unterliegen der Zuteilung durch die Verwaltungseinheit."
+        "Sichtbar sind die für die eigene Verwaltungseinheit freigegebenen Räume."
       ]
     },
     "resources": [
       {
-        "label": "Dienstleistung «Raum-, Arbeitsplatz- & Parkplatzbuchung»",
+        "label": "Dienstleistung «Raum buchen»",
         "href": "#/services/raumbuchung"
       },
       {
@@ -523,7 +524,7 @@
       "workspace"
     ],
     "contact": "campus",
-    "updated": "2026-07-30",
+    "updated": "2026-08-05",
     "bild": {
       "src": "assets/images/applications/raumbuchung.jpg",
       "titel": "Sleek, minimalist conference room with glass walls, long table, and office chairs.",

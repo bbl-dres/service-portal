@@ -170,8 +170,10 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
       // Blätterpfeile und den Zähler in der Kopfzeile.
       r.zoomBar = !!document.querySelector('.pf-lightbox__zoom');
       // Vollbild statt zentrierter Karte, mit Kopfzeile und Herunterladen-Aktion.
-      r.lightboxFullscreen = lb
-        ? Math.round(lb.getBoundingClientRect().height) === document.documentElement.clientHeight : false;
+      const lbRect = lb ? lb.getBoundingClientRect() : null;
+      r.lightboxViewportGap = lbRect ? Math.round(innerWidth - lbRect.right) : -1;
+      r.lightboxFullscreen = lbRect
+        ? Math.round(lbRect.height) === innerHeight && Math.abs(r.lightboxViewportGap) <= 1 : false;
       r.lightboxBar = !!document.querySelector('.pf-lightbox__bar');
       r.lightboxDownload = !!document.querySelector('.pf-lightbox a[download]');
       r.lightboxStartsAtClicked = /Bild 3 von/.test((document.querySelector('.pf-lightbox__sub') || {}).textContent || '');
@@ -195,7 +197,7 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
     check(D.emptyClickable === 0, `placeholder tiles are not clickable (${D.emptyClickable})`);
     check(D.moreOverlay, '«Alle Bilder anzeigen» overlay on the last side tile');
     check(D.lightbox && D.lightboxImg && D.zoomBar, `mosaic tile opens the gallery (Zoomleiste: ${D.zoomBar})`);
-    check(D.lightboxFullscreen, 'gallery viewer is full-screen');
+    check(D.lightboxFullscreen, `gallery viewer reaches every viewport edge (${D.lightboxViewportGap}px right gap)`);
     check(D.lightboxBar && D.lightboxDownload, 'viewer has a header bar with a download action');
     check(D.lightboxStartsAtClicked, 'viewer opens at the clicked image, not the first');
     check(D.lightboxClosed, 'Esc closes the viewer');

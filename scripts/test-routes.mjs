@@ -43,6 +43,7 @@ const ROUTES = [
   ['/app/fault-report',             'Störungs'],
   ['/app/building-create',          'Gebäude erfassen'],
   ['/app/workspace',                'Workspace Management'],
+  ['/app/room-booking',             'Raumbuchung'],
   ['/app/transaction',              'Veräusserung'],
   ['/app/api-docs',                 'BBL Kundenportal'],
 ];
@@ -59,6 +60,9 @@ const REDIRECTS = [
   ['/data/digitalisierung/strategie', '#/data/digitalisation/strategy'],
   ['/data/ikt-vorhaben',              '#/data/ict-projects'],
   ['/app/mediathek',                  '#/app/media-library'],
+  ['/app/workspace?tab=buchung',      '#/app/room-booking'],
+  ['/app/workspace?tab=moeblierung',  '#/app/shop'],
+  ['/app/workspace?tab=belegung',     '#/app/workspace'],
 ];
 
 const fails = [];

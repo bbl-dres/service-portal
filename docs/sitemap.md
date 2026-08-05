@@ -158,13 +158,13 @@ The service/information distinction becomes **structural** rather than a badge. 
 
 **Micro-apps** — all under `#/app/<name>`, all highlighting *Daten und Digitalisierung* except the three service flows, which highlight *Dienstleistungen* (`SECTION_OF` in `js/router.js`):
 
-`portfolio` (hero) · `projects` (hero) · `dataportal` · `document-archive` · `media-library` · `workspace` · `api-docs` · `transaction` · `tenancies` · `metadata-catalog` · `process-docs` — and the service flows `space-request` · `fault-report` · `building-create`.
+`portfolio` (hero) · `projects` (hero) · `dataportal` · `document-archive` · `media-library` · `workspace` · `room-booking` · `api-docs` · `transaction` · `tenancies` · `metadata-catalog` · `process-docs` — and the service flows `space-request` · `fault-report` · `building-create`.
 
 ### Routing rules
 
 1. **Only `#/…` dispatches.** A bare `#` and in-page fragments (the skip link) must not route.
 2. **Unknown route → a 404 place** with its own `h1` and a link home. Never a silent redirect to the Startseite.
-3. **Content is public, actions are gated.** Every catalogue and detail page stays readable when logged out. Login is required to *start* anything: `#/my-cases`, the three service-flow apps, the workspace booking tab, and the CTA on a service detail page. Those render `C.loginGate` **in place of the form**, keeping the surrounding page visible.
+3. **Content is public, actions are gated.** Every catalogue and detail page stays readable when logged out. Login is required to *start* anything: `#/my-cases`, the three service-flow apps, the standalone `#/app/room-booking` app, and the CTA on a service detail page. Those render `C.loginGate` **in place of the form**, keeping the surrounding page visible.
 4. **State change ≠ navigation.** If only the query changed on the same path, focus returns to the triggering control and the page does not scroll (WCAG 3.2.2). Real navigation scrolls to top and focuses the `h1`.
 5. **Stale renders are dropped.** Every dispatch takes a ticket; a module that `await`s before writing must check `ctx.stale()` immediately before `mount.innerHTML =`.
 6. **Renamed routes redirect, never 404** — shared links are exactly the ones that break — the map lives in `js/router.js` (`REDIRECTS`).

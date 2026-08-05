@@ -167,7 +167,7 @@
   },
   {
     "defId": "buchung",
-    "name": "Ressourcenbuchung",
+    "name": "Raumbuchung",
     "audience": "both",
     "serviceId": "raumbuchung",
     "steps": [

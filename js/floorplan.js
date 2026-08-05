@@ -79,15 +79,19 @@ function bucket(s, mode, slots) {
 // sie überlagerten sich in den schmalen Nebenräumen.
 const NR_AB = 200, FLAECHE_AB = 330, NUTZUNG_AB = 500;
 
-export function floorplanSvg({ floor, spaces, mode = 'none', selectedId = '' }) {
+export function floorplanSvg({ floor, spaces, mode = 'none', selectedId = '', statuses = {}, selectableIds = null }) {
   const [w, h] = floor.extent || [4000, 1440];
   const slots = veSlots(spaces);
+  const selectable = selectableIds ? new Set(selectableIds) : null;
   const pad = 40;
 
   const raum = (s) => {
     const [x, y, bw, bh] = s.rect;
     const key = fillKey(s, mode, slots);
-    const cls = ['fp__room', `fp__room--${s.group}`, key ? `fp__room--fill` : '', selectedId === s.spaceId ? 'is-selected' : ''].filter(Boolean).join(' ');
+    const status = statuses[s.spaceId] || '';
+    const canSelect = !selectable || selectable.has(s.spaceId);
+    const cls = ['fp__room', `fp__room--${s.group}`, key ? `fp__room--fill` : '',
+      status ? `fp__room--booking-${status}` : '', selectedId === s.spaceId ? 'is-selected' : ''].filter(Boolean).join(' ');
     const cx = x + bw / 2, cy = y + bh / 2;
     const nr = s.roomNumber.replace(/^.*\s/, '');
     // Der Korridor ist flach (240 Einheiten) und trotzdem beschriftbar —
@@ -101,12 +105,13 @@ export function floorplanSvg({ floor, spaces, mode = 'none', selectedId = '' }) 
     const zeilen = [zeigNr && ['fp__nr', nr], zeigNu && ['fp__use', s.useLabel], zeigFl && ['fp__area', m2(s.area)]].filter(Boolean);
     const dy = 78;
     const y0 = cy - ((zeilen.length - 1) * dy) / 2 + 22;
-    return `<g class="${cls}" data-space="${esc(s.spaceId)}" role="listitem">
+    const statusLabel = status === 'available' ? ', verfügbar' : status === 'unavailable' ? ', belegt' : status === 'unsuitable' ? ', nicht passend' : '';
+    return `<g class="${cls}"${canSelect ? ` data-space="${esc(s.spaceId)}"` : ''} role="listitem">
       <rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="6"
         ${key ? `style="fill:var(--fp-${key})"` : ''}
-        tabindex="0" role="button"
-        aria-label="${esc(`${s.roomNumber}, ${s.useLabel}, ${s.area} Quadratmeter${s.occupierVe ? ', ' + s.occupierVe : ''}`)}"
-        aria-pressed="${selectedId === s.spaceId ? 'true' : 'false'}"></rect>
+        ${canSelect ? 'tabindex="0" role="button"' : 'aria-disabled="true"'}
+        aria-label="${esc(`${s.roomNumber}, ${s.useLabel}, ${s.area} Quadratmeter${s.occupierVe ? ', ' + s.occupierVe : ''}${statusLabel}`)}"
+        ${canSelect ? `aria-pressed="${selectedId === s.spaceId ? 'true' : 'false'}"` : ''}></rect>
       ${zeilen.map(([c, txt], i) => `<text class="${c}" x="${cx}" y="${y0 + i * dy}">${esc(txt)}</text>`).join('')}
     </g>`;
   };

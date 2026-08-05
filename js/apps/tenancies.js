@@ -653,7 +653,7 @@ function detail(ctx, id) {
     return `<div class="box fp-room">
       <h3>${C.escape(s.roomNumber)}</h3>
       <dl class="kv kv--tight">${kv.map(([k, v]) => `<dt>${C.escape(k)}</dt><dd>${C.escape(v)}</dd>`).join('')}</dl>
-      ${s.bookable ? `<a class="btn btn--outline btn--sm" href="#/app/workspace">${C.icon('Calendar', 'btn__icon icon--base')}<span class="btn__text">Raum buchen</span></a>` : ''}
+      ${s.bookable ? `<a class="btn btn--outline btn--sm" href="#/app/room-booking?building=${encodeURIComponent(t.buildingId)}&room=${encodeURIComponent(s.spaceId)}">${C.icon('Calendar', 'btn__icon icon--base')}<span class="btn__text">Raum buchen</span></a>` : ''}
       ${/* «Vorgang starten» (Sprachkanon): der Klick erstellt einen VORGANG im
             Portal — «Dienstleistung» ist die Katalogseite, nicht die Handlung. */''}
       <h4 class="fp-room__sub">Vorgang starten</h4>

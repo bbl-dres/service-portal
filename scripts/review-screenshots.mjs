@@ -25,7 +25,7 @@ const ROUTES = [
   '/app/portfolio', '/app/media-library', '/app/dataportal', '/app/projects',
   '/app/tenancies', '/app/metadata-catalog', '/app/process-docs',
   '/app/document-archive', '/app/space-request', '/app/fault-report',
-  '/app/building-create', '/app/workspace', '/app/transaction', '/app/api-docs',
+  '/app/building-create', '/app/workspace', '/app/room-booking', '/app/transaction', '/app/api-docs',
 ];
 // Karten- und diagrammlastige Routen brauchen länger, bis WebGL/Charts stehen.
 const SLOW = new Set(['/app/dataportal', '/app/portfolio', '/app/workspace', '/app/tenancies']);

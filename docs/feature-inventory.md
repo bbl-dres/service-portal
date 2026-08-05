@@ -1005,7 +1005,7 @@ Datenportal — Superset-artige Analyse-Dashboards über data/dashboards.json: T
 
 ## js/apps/document-archive.js
 
-Bauwerksdokumentation — durchsuchbares, filterbares Dokumentarchiv als Liste mit gemeinsamer catbar (Suche/Sortierung/Filterpanel, ohne Ansichtswechsel), Aktiv-Filter-Pillen, Paginierung (10/Seite) und Dokument-Viewer mit Blätter-Kontext; kompletter Zustand URL-teilbar.
+Bauwerksdokumentation — durchsuchbares, filterbares Dokumentarchiv als Liste mit gemeinsamer catbar (Suche/Sortierung/Filterpanel, ohne Ansichtswechsel), KBOB-Dokumenttypen, Aktiv-Filter-Pillen, Paginierung (10/Seite) und Dokument-Viewer mit Blätter-Kontext und Metadatenpanel; kompletter Zustand URL-teilbar.
 
 **Routen**
 
@@ -1014,13 +1014,13 @@ Bauwerksdokumentation — durchsuchbares, filterbares Dokumentarchiv als Liste m
 
 **Funktionen**
 
-- Katalog-Toolbar C.catalogueBar: Suchfeld mit Label/Placeholder, Trefferzähler «N von M Dokumenten · Seite x von y», Sortier-Select (Titel A–Z / Dokumenttyp / Jahr neuste zuerst / Grösse grösste zuerst, mit Namens-Tiebreaker), Filter-Button mit Aktiv-Zähler-Badge, einklappbares Filterpanel (document-archive.js:15-26,142-146)
-- Filterpanel: 4 Mehrfach-Filtergruppen — Gebäude (alle buildings), Dokumenttyp (distinct, de-sortiert), Jahr (distinct, absteigend), Klassifizierung (classificationTiers aus reference-data) — plus Panel-Reset (document-archive.js:37-39,127-132)
+- Katalog-Toolbar C.catalogueBar: Suchfeld mit Label/Placeholder, Trefferzähler «N von M Dokumenten · Seite x von y», Sortier-Select (Dateiname A–Z / KBOB-Typ / Jahr neuste zuerst / Grösse grösste zuerst, mit Dateinamen-Tiebreaker), Filter-Button mit Aktiv-Zähler-Badge, einklappbares Filterpanel (document-archive.js:17-29,141-148)
+- Filterpanel: 4 Mehrfach-Filtergruppen — Gebäude (alle buildings), KBOB-Dokumenttyp (Code + Bezeichnung, distinct), Jahr (distinct, absteigend), Klassifizierung (classificationTiers aus reference-data) — plus Panel-Reset (document-archive.js:39-42,130-135)
 - Aktive-Filter-Pillen inkl. Such-Pille «Suche: «…»», Gebäude-Pillen mit Klarnamen; je Pille entfernbar (document-archive.js:75-84)
-- Ergebnistabelle (zebra): Dokumenttitel als Viewer-Button mit File-Icon, Typ-Badge, Gebäude-Link → #/app/portfolio?id=… (erstes linkedTo), Jahr (rechtsbündig), Grösse (dateiGroesse), Klassifizierungs-Badge (Variante je Stufe), separater «Vorschau»-Button mit aria-label (document-archive.js:63-73)
-- Suche über Titel+Typ+Kategorie (case-insensitiv) (document-archive.js:60)
+- Ergebnistabelle (zebra, ohne Tabellen-Icons): Dateiname inkl. `.pdf` als einziger Viewer-Button, KBOB-Code + Dokumenttyp, Gebäude als Klartext, Jahr (rechtsbündig), Grösse (dateiGroesse), Klassifizierungs-Badge; keine separate Vorschau-Spalte (document-archive.js:66-73)
+- Suche über Dateiname + KBOB-Code + Dokumenttyp + Kategorie (case-insensitiv) (document-archive.js:63)
 - Paginierung 10 pro Seite: C.pagination mit Buttons + Eingabefeld (bewusst KEINE toten #-Links) (document-archive.js:27,100-118)
-- Dokument-Viewer (openDocumentViewer) mit der aktuellen gefilterten/sortierten Trefferliste als Blätter-Kontext (document-archive.js:174-175)
+- Dokument-Viewer (openDocumentViewer) mit der aktuellen gefilterten/sortierten Trefferliste als Blätter-Kontext; Kopfzeilenknopf «Metadaten» zeigt Dokument-ID, Dateiname, KBOB-Typ, Kategorie, Gebäude, Jahr, Format, Grösse, Klassifizierung und Taxonomie. Kontextaktion «Gebäude ansehen» führt zum Portfolio-Objekt (document-archive.js:176-181; doc-viewer.js)
 - Screenreader-Live-Ansage nach jedem Render (C.announceCatalogue mit Count/Total/Seite) (document-archive.js:121-123)
 
 **Zustände**
@@ -1037,9 +1037,9 @@ Bauwerksdokumentation — durchsuchbares, filterbares Dokumentarchiv als Liste m
 
 - Suche mit Tipp-Verzögerung, Sortier-Select, Filter-Panel-Toggle, Checkbox-Filter, Panel-Reset und Pillen-Entfernen — komplett über C.wireCatalogueState verdrahtet (onChange → renderMain) (document-archive.js:152-160)
 - Nullzustands-Reset-Button: Suche + Filter + Seite in einem Klick zurück, Fokus zurück ins Suchfeld (document-archive.js:166-173)
-- Titel- oder Vorschau-Button klicken → Dokument-Viewer mit Blätterkontext (delegierter Klick-Handler auf #doc-main) (document-archive.js:165,174-175)
+- Dateiname klicken → Dokument-Viewer mit Blätterkontext (delegierter Klick-Handler auf #doc-main) (document-archive.js:167,176-181)
 - Paginierungs-Buttons/Eingabe (C.wirePagination, nur bei >1 Seite verdrahtet) (document-archive.js:118)
-- Gebäude-Link in der Zeile → Portfolio-Objektdetail (document-archive.js:67)
+- Gebäude in der Tabellenzeile ist bewusst kein Link; Navigation zum Objekt steht kontextuell im Metadatenpanel des Viewers (document-archive.js:70; doc-viewer.js)
 - URL-Kopieren teilt Suche/Filter/Sortierung/Seite (syncHash via history.replaceState) (document-archive.js:86-98)
 
 ## js/apps/estate.js
@@ -1611,44 +1611,50 @@ Veräusserung von Bundesliegenschaften — statische Stub-/Demo-Seite der Transa
 
 ## js/apps/workspace.js
 
-Workspace & Buchung — Reiterseite mit drei Tabs: Möblierung & Material (E-Shop-Verweis), Belegungsplanung (GIS/FLM-Verweis + Arbeitsplatz-Statistik) und interaktive Ressourcenbuchung (Formular mit Validierung, Login-Gate, Vorgangserzeugung via engine.start).
+Workspace Management — eigenständige Planungsanwendung für Arbeitsplatzkapazität, Geschosse, Zonen und Verwaltungseinheiten. Buchung und E-Shop sind getrennte Anwendungen; die Route enthält keine Tabs.
 
 **Routen**
 
-- #/app/workspace — Reiterseite, Default-Tab «moeblierung» (workspace.js:47, router.js:107)
-- #/app/workspace?tab=moeblierung|belegung|buchung — Deep-Link auf einen Tab; ungültige Werte fallen auf moeblierung zurück (workspace.js:47)
+- #/app/workspace — Planungsoberfläche
+- #/app/workspace?building=…&floor=…&color=… — Gebäude, Geschoss und Einfärbung direkt adressieren
+- Alte Tab-Links werden umgeleitet: `buchung` → `#/app/room-booking`, `moeblierung` → `#/app/shop`, `belegung` → `#/app/workspace`
 
 **Funktionen**
 
-- Tab Möblierung & Material: Erklärtext, Erfolgs-Notification «Kreislaufwirtschaft» (Occasions-Mobiliar), Buttons «Zum E-Shop» (externer Stub, target _blank) und «Verwandte Dienstleistungen» (#/services); Aside mit Sortimente-Liste und «Gut zu wissen»-Box (Link #/my-cases) (workspace.js:60-93)
-- Tab Belegungsplanung: GIS/FLM-Erklärtext, Info-Notification, Button «Zu den Anwendungen» (#/applications); Aside mit Stat-Kachel «Arbeitsplätze im Portfolio» (Summe workplaces über alle Gebäude + Gebäudezahl, num-formatiert) und Box «Belegung planen» (workspace.js:95-121)
-- Tab Buchung: Formular mit Ressourcentyp (Sitzungsraum/Arbeitsplatz Desk-Sharing/Parkplatz mit Hint je Typ), Standort (Select über alle Gebäude «Name — Ort»), Datum (date-Input), Zeit (7 feste Slots), Bemerkung (Textarea) (workspace.js:26-40,141-157)
-- contextLine mit Name/Organisation des angemeldeten Nutzers über dem Formular (workspace.js:136)
-- Live-Aside «Ihre Auswahl»: Ressource, Standort, Datum (format.datum, leer → «—»), Zeit — aktualisiert bei jeder Feldänderung (workspace.js:159-169)
-- Pflichtfeld-Hinweis mit Asterisk-Konvention + Fehlerübersicht C.errorSummary mit Sprungmarken (FIELD_LABELS = DOM-ids, workspace.js:44,138-139)
-- Vorgangserzeugung engine.start('buchung', …) mit Titel «<Ressource> — <Gebäude>», Requester/Org aus Session, data-Payload und linkedEntities.buildingId (workspace.js:277-289)
-- Erfolgsscreen C.processDone (h2, 46rem-Zentrierspalte): Dank-Text mit Buchungstitel, Aktionen «Vorgang ansehen» (links.vorgang) und «Weitere Buchung» (workspace.js:179-198)
+- Gebäudeauswahl über alle Objekte mit planbaren Geschossen und Arbeitsplätzen
+- Kennzahlen für Arbeitsplätze, Szenario-Personalbestand, Arbeitsfläche und Verwaltungseinheiten
+- Live-Szenario aus Personalbestand und Ziel-Desk-Sharing-Faktor mit Bedarf, Reserve oder Fehlbestand
+- Geschosstabelle mit Räumen, Arbeitsfläche, Arbeitsplätzen, Verwaltungseinheiten und Zuteilungsgrad
+- Interaktiver SVG-Grundriss mit Geschosswahl, Einfärbung nach Verwaltungseinheit, Nutzung oder Belegungsdichte und Raumdetail
+- Verknüpfung zum Gebäude im Liegenschaften Inventar
 
 **Zustände**
 
-- Tab-Zustand: 3 Tabs, Default moeblierung, ?tab-Deep-Link (workspace.js:47-49)
-- Anonym auf Tab Buchung: C.loginGate mit AGOV/FedLogin-Aufforderung — Möblierung und Belegung bleiben frei sichtbar (workspace.js:126-129)
-- Formular-Validierung (novalidate): Pflicht Datum/Ressourcentyp/Standort; Fehler in state.errors, Schlüssel = DOM-ids für Sprungmarken (workspace.js:141,229-241)
-- Fehler werden beim Korrigieren des Felds gelöscht (C.wireFieldErrors, VOR Live-Aside-Redraw angemeldet — Reihenfolge-Abhängigkeit) (workspace.js:254-258)
-- Erfolgszustand state.created ersetzt das Formular durch doneBuchung (workspace.js:123-124)
-- Engine-Fehlschlag: C.flashError «Die Buchung konnte nicht gespeichert werden…» (workspace.js:297)
-- Formulareingaben überleben Tab-Wechsel (readForm vor Wechsel; Selects behalten bei Abwesenheit ihren Wert) (workspace.js:220-227,246-252)
-- Fokus + Schreibmarke werden über jeden Redraw gerettet (C.preserveFocus) (workspace.js:207,217)
+- Gewähltes Gebäude, Geschoss und Einfärbung werden aus der URL gelesen
+- Fehlende Geschoss-/Raumdaten ergeben einen expliziten Leer- oder Ausfallzustand
+- Das Planungsszenario aktualisiert Ergebnis und Kennzahl ohne Seitenwechsel
 
 **Interaktionen**
 
-- Tab-Wechsel via C.wireTabs (inkl. Tastaturpfad); sichert Buchungseingaben vor dem Verlassen (workspace.js:246-252)
-- Feldänderung (ressourcentyp/bld/datum/zeit): change → readForm + Redraw der Live-Aside (workspace.js:261-264)
-- Submit «Buchung anfragen»: bei Fehlern Redraw + Fokus auf Fehlerübersicht (C.wireErrorSummary, WCAG 3.3.1); bei Erfolg Fokus/Ansage auf processDone im Tab-Panel (C.focusProcessDone) (workspace.js:266-298)
-- Fehlerübersicht-Links springen zu den Feldern (Schlüssel = DOM-ids) (workspace.js:44,139)
-- «Weitere Buchung» setzt created/datum/bemerkung/errors zurück und zeigt das Formular neu (workspace.js:301-310)
-- «Vorgang ansehen» → Vorgangsdetail (links.vorgang) (workspace.js:192)
-- Navigations-Links: #/services, #/my-cases (2x), #/applications, E-Shop extern (workspace.js:70-71,89,106,173)
+- Gebäude, Geschoss und Einfärbung wechseln über native CD-Auswahlfelder bzw. Tag-Links
+- Personalbestand und Desk-Sharing-Faktor rechnen das Szenario unmittelbar neu
+- Räume im Grundriss sind per Maus und Tastatur auswählbar
+
+## js/apps/room-booking.js
+
+Raumbuchung — eigenständige, loginpflichtige Aktionsanwendung für Sitzungs- und Besprechungsräume.
+
+**Routen und Funktionen**
+
+- #/app/room-booking — «Raum finden»; `building`, `room`, Zeitraum, Gruppengrösse, Filter und Ansicht sind tief verlinkbar
+- «Meine Buchungen» zeigt bevorstehende sowie vergangene/stornierte Reservierungen
+- Kriterien: Standort, Datum, Start/Ende und Teilnehmende; Verfügbarkeit wird gegen vorhandene Buchungsvorgänge geprüft
+- CD-Katalogleiste mit Sortierung, Ausstattungs-/Barrierefreiheitsfiltern und Umschalter zwischen Liste und Grundriss
+- Ergebnisliste mit Raumname, Raumnummer, Kapazität, Fläche, Ausstattung und ehrlich beschriftetem Foto bzw. Platzhalter
+- Grundriss mit Zuständen für verfügbar, belegt, nicht passend und ausgewählt sowie aufgelegten Zoom-/Einpassen-Werkzeugen
+- Randspalte mit Gebäudekarte, Raumdetails, Pflichtfeld Sitzungstitel, optionalen Eingeladenen und Buchungszusammenfassung
+- Abschluss über `engine.start('buchung', …)` und `C.processDone`; Kalendereintrag als ICS herunterladen
+- Eigene künftige Buchungen stornieren, vergangene wiederholen; anonym weiterhin `C.loginGate`
 
 ## js/app.js
 

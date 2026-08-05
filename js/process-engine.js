@@ -90,6 +90,20 @@ function advance(id) {
   return saveLS(arr) ? inst : null;
 }
 
+// Locally created reservations and requests can be withdrawn by their owner.
+// The process definition remains unchanged; the instance status records the
+// exceptional end state and releases resources such as booked rooms.
+function cancel(id) {
+  const arr = loadLS();
+  const inst = arr.find(i => i.instanceId === id);
+  if (!inst || inst.status === 'zurueckgezogen') return inst || null;
+  inst.status = 'zurueckgezogen';
+  inst.updatedAt = today();
+  inst.history = Array.isArray(inst.history) ? inst.history : [];
+  inst.history.push({ when: today(), status: 'Storniert', note: 'Durch die buchende Person storniert' });
+  return saveLS(arr) ? inst : null;
+}
+
 function reset() { saveLS([]); }
 
 export const engine = {
@@ -102,6 +116,7 @@ export const engine = {
   instance,
   start,
   advance,
+  cancel,
   reset,
 };
 

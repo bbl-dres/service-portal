@@ -100,7 +100,7 @@
   },
   {
     "serviceId": "raumbuchung",
-    "title": "Raum-, Arbeitsplatz- & Parkplatzbuchung",
+    "title": "Raum buchen",
     "domain": "C",
     "audience": [
       "staff",
@@ -111,16 +111,16 @@
     "popular": 3,
     "target": {
       "kind": "app",
-      "href": "#/app/workspace"
+      "href": "#/app/room-booking"
     },
     "processDefId": "buchung",
     "contact": "campus",
-    "short": "Sitzungsraum, Arbeitsplatz (Desk-Sharing) oder Parkplatz reservieren.",
-    "description": "Buchen Sie Sitzungsräume, flexible Arbeitsplätze oder Parkplätze an den BBL-Standorten.",
+    "short": "Sitzungs- oder Besprechungsraum an einem BBL-Standort reservieren.",
+    "description": "Finden und reservieren Sie einen passenden Sitzungs- oder Besprechungsraum nach Standort, Termin und Gruppengrösse.",
     "voraussetzungen": [
       "Standort",
-      "Datum & Zeit",
-      "Ressourcentyp"
+      "Datum und Zeit",
+      "Anzahl Teilnehmende"
     ]
   },
   {

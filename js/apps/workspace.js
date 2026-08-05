@@ -1,311 +1,319 @@
-// Workspace Management — Möblierung & Material, Belegungsplanung und Arbeitsplatzplanung.
+// Workspace Management: workplace capacity, allocation, and planning scenarios.
 
-import * as links from '../links.js';
 import { ANWENDUNGEN, trail } from '../crumbs.js';
-import { num, datum } from '../format.js';
+import { floorplanSvg, floorplanLegend, wireFloorplan } from '../floorplan.js';
+import { m2, num } from '../format.js';
 
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
-export const needs = ['buildings'];
+export const needs = ['buildings', 'floors', 'spaces'];
+
+const PREFERRED_BUILDING = '1080/6650/AA';
+const FACTORS = [
+  { value: '0.60', label: '0.60 Arbeitsplätze pro Person' },
+  { value: '0.70', label: '0.70 Arbeitsplätze pro Person' },
+  { value: '0.80', label: '0.80 Arbeitsplätze pro Person' },
+  { value: '0.90', label: '0.90 Arbeitsplätze pro Person' },
+  { value: '1.00', label: '1.00 Arbeitsplätze pro Person' },
+];
+const COLOR_MODES = [
+  { value: 've', label: 'Verwaltungseinheit' },
+  { value: 'use', label: 'Nutzung' },
+  { value: 'capacity', label: 'Belegungsdichte' },
+];
+
+const sum = (rows, value) => rows.reduce((total, row) => total + (value(row) || 0), 0);
+
 export default async function render(ctx) {
-  const { mount, query, core, engine, session, C, setTitle, setCrumbs } = ctx;
+  const { mount, query, core, C, setTitle, setCrumbs, onUnmount } = ctx;
   setTitle('Workspace Management');
   setCrumbs(trail(ANWENDUNGEN, { label: 'Workspace Management' }));
 
-  const buildings = core.buildings();
-  const totalWorkplaces = buildings.reduce((sum, b) => sum + (b.workplaces || 0), 0);
+  const floorsByBuilding = new Map();
+  for (const floor of core.floors()) {
+    const rows = floorsByBuilding.get(floor.buildingId) || [];
+    rows.push(floor);
+    floorsByBuilding.set(floor.buildingId, rows);
+  }
+  for (const rows of floorsByBuilding.values()) rows.sort((a, b) => a.level - b.level);
 
-  const TABS = [
-    { id: 'moeblierung', label: 'Möblierung & Material', icon: 'ShoppingCart' },
-    { id: 'belegung', label: 'Belegungsplanung', icon: 'Map' },
-    { id: 'buchung', label: 'Buchung', icon: 'Calendar' },
-  ];
+  const buildings = core.buildings()
+    .filter((building) => {
+      const floors = floorsByBuilding.get(building.bbl_id) || [];
+      return floors.some((floor) => sum(core.spacesForFloor(floor.floorId), (space) => space.capacity) > 0);
+    })
+    .sort((a, b) => `${a.land} ${a.city} ${a.name}`.localeCompare(`${b.land} ${b.city} ${b.name}`, 'de'));
 
-  const RESSOURCEN = [
-    { id: 'sitzungsraum', label: 'Sitzungsraum', icon: 'Users', hint: 'Besprechungs- und Sitzungsräume nach Verfügbarkeit.' },
-    { id: 'arbeitsplatz', label: 'Arbeitsplatz (Desk-Sharing)', icon: 'Briefcase', hint: 'Geteilte Arbeitsplätze im Desk-Sharing-Modell.' },
-    { id: 'parkplatz', label: 'Parkplatz', icon: 'Car', hint: 'Tages- oder halbtageweise Parkplatzbuchung.' },
-  ];
+  if (!buildings.length) {
+    mount.innerHTML = `<div class="container section">
+      ${C.pageHeader({ title: 'Workspace Management', lead: 'Arbeitsplätze und Büroflächen planen.' })}
+      ${C.empty('Für die Arbeitsplatzplanung sind keine Geschossdaten verfügbar.', { available: core.available('floors') && core.available('spaces') })}
+    </div>`;
+    return;
+  }
 
-  const ZEITEN = [
-    'Ganzer Tag (08:00–17:00)',
-    'Vormittag (08:00–12:00)',
-    'Nachmittag (13:00–17:00)',
-    '08:00–10:00',
-    '10:00–12:00',
-    '13:00–15:00',
-    '15:00–17:00',
-  ];
+  const requestedBuilding = query.get('building');
+  const defaultBuilding = buildings.find((building) => building.bbl_id === PREFERRED_BUILDING) || buildings[0];
+  const initialBuilding = buildings.find((building) => building.bbl_id === requestedBuilding) || defaultBuilding;
+  const initialFloors = floorsByBuilding.get(initialBuilding.bbl_id) || [];
+  const requestedFloor = query.get('floor');
+  const requestedColor = query.get('color');
 
-  // Klartextnamen für die Fehlerübersicht. Die Schlüssel sind DOM-ids, damit
-  // die Sprungmarken auflösen (Muster space-request.js / building-create.js).
-  const FIELD_LABELS = { ressourcentyp: 'Ressourcentyp', bld: 'Standort', datum: 'Datum' };
-
-  // ---- state -------------------------------------------------------------
-  const initialTab = TABS.some(t => t.id === query.get('tab')) ? query.get('tab') : 'moeblierung';
   const state = {
-    tab: initialTab,
-    ressourcentyp: RESSOURCEN[0].id,
-    buildingId: buildings[0] ? buildings[0].bbl_id : '',
-    datum: '',
-    zeit: ZEITEN[0],
-    bemerkung: '',
-    errors: {},
-    created: null,
+    buildingId: initialBuilding.bbl_id,
+    floorId: initialFloors.some((floor) => floor.floorId === requestedFloor) ? requestedFloor : initialFloors[0].floorId,
+    colorMode: COLOR_MODES.some((mode) => mode.value === requestedColor) ? requestedColor : 've',
+    people: 0,
+    factor: 0.8,
+    selectedSpaceId: '',
   };
 
-  // ---- tab panels --------------------------------------------------------
-  function panelMoeblierung() {
-    return `
-      <div class="container--grid gap--responsive">
-        <div class="container__main vertical-spacing">
-          <h2>${C.icon('ShoppingCart', 'icon--base')} Möblierung & Material</h2>
-          <p>Mobiliar, Büromaterial und Ausstattung für Bundesarbeitsplätze beziehen Sie über den
-             zentralen E-Shop des BBL. Standardisierte Sortimente sorgen für einheitliche, ergonomische
-             und wirtschaftliche Arbeitsumgebungen über alle Standorte hinweg.</p>
-          ${C.notification('<strong>Kreislaufwirtschaft:</strong> Gut erhaltenes Mobiliar wird wiederverwendet statt neu beschafft. Prüfen Sie vor jeder Bestellung das Angebot an aufbereitetem Occasions-Mobiliar im E-Shop – das spart Kosten und Ressourcen.', 'success', 'CheckmarkCircle')}
-          <div class="row">
-            <a class="btn btn--outline btn--lg btn--icon-right" href="#" target="_blank" rel="noopener">${C.icon('External', 'btn__icon')}<span class="btn__text">Zum E-Shop</span></a>
-            <a class="btn btn--outline" href="#/services"><span class="btn__text">Verwandte Dienstleistungen</span></a>
-          </div>
-        </div>
-        ${/* Kein stack-lg auf der Aside: .container__aside bringt den CD-Rhythmus
-              (1.75/2rem) schon mit — ein zweiter Takt obendrauf gewinnt nur. */''}
-        <aside class="container__aside">
-          <div class="box">
-            <h3>Sortimente</h3>
-            <ul class="list--default stack">
-              <li>Büro- und Sitzungsmobiliar</li>
-              <li>Ergonomie-Ausstattung</li>
-              <li>Büro- und Verbrauchsmaterial</li>
-              <li>Aufbereitetes Occasions-Mobiliar</li>
-            </ul>
-          </div>
-          <div class="box">
-            <h3>Gut zu wissen</h3>
-            <p class="small muted m-0">Bestellungen lösen einen Vorgang vom Typ
-              «Bestellung» aus und sind unter <a href="#/my-cases">Meine Vorgänge</a> nachverfolgbar.</p>
-          </div>
-        </aside>
-      </div>`;
+  const building = () => buildings.find((item) => item.bbl_id === state.buildingId) || buildings[0];
+  const floors = () => floorsByBuilding.get(state.buildingId) || [];
+  const spacesFor = (floorId) => core.spacesForFloor(floorId);
+  const allSpaces = () => floors().flatMap((floor) => spacesFor(floor.floorId));
+  const workplaceCount = () => sum(allSpaces(), (space) => space.capacity);
+  state.people = Math.max(1, Math.floor(workplaceCount() / state.factor));
+
+  function workspaceUrl(buildingId, floorId, colorMode = state.colorMode) {
+    const params = new URLSearchParams({ building: buildingId, floor: floorId });
+    if (colorMode !== 've') params.set('color', colorMode);
+    return `#/app/workspace?${params.toString()}`;
   }
 
-  function panelBelegung() {
-    return `
-      <div class="container--grid gap--responsive">
-        <div class="container__main vertical-spacing">
-          <h2>${C.icon('Map', 'icon--base')} Belegungsplanung</h2>
-          <p>Die Belegungs- und Flächenplanung – wer sitzt wo, wie sind Flächen zugeteilt und wie hoch ist
-             die Auslastung – erfolgt in der Fachanwendung <strong>GIS/FLM</strong> (Flächen- und
-             Liegenschaftsmanagement). Dort stehen Belegungspläne, Flächenbilanzen und Auswertungen je
-             Gebäude und Verwaltungseinheit zur Verfügung.</p>
-          ${C.notification('Die detaillierte Belegungsplanung ist in der GIS/FLM-Fachanwendung verfügbar. Den Zugang finden Sie unter Anwendungen.', 'info')}
-          <div class="row">
-            <a class="btn btn--outline btn--icon-right" href="#/applications">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Zu den Anwendungen</span></a>
-          </div>
-        </div>
-        <aside class="container__aside">
-          <div class="stat">
-            <div class="stat__num">${num(totalWorkplaces)}</div>
-            <div class="stat__label">Arbeitsplätze im Portfolio (${buildings.length} Gebäude)</div>
-          </div>
-          <div class="box">
-            <h3>Belegung planen</h3>
-            <p class="small muted m-0">Belegungspläne, Desk-Sharing-Quoten und
-              Flächenauslastung werden zentral in GIS/FLM geführt.</p>
-          </div>
-        </aside>
-      </div>`;
+  function floorFacts(floor) {
+    const spaces = spacesFor(floor.floorId);
+    const workspaces = sum(spaces, (space) => space.capacity);
+    const workArea = sum(spaces.filter((space) => space.group === 'arbeit'), (space) => space.area);
+    const allocatedArea = sum(spaces.filter((space) => space.occupierVe), (space) => space.area);
+    const totalArea = sum(spaces, (space) => space.area);
+    const organizations = [...new Set(spaces.map((space) => space.occupierVe).filter(Boolean))].sort();
+    return {
+      ...floor,
+      spaces,
+      workspaces,
+      workArea,
+      allocatedPercent: totalArea ? Math.round(allocatedArea / totalArea * 100) : 0,
+      organizations,
+    };
   }
 
-  function panelBuchung() {
-    if (state.created) return doneBuchung();
-    // Buchung ist ein persönlicher Vorgang — abgemeldet zum Login auffordern statt
-    // session.user() zu dereferenzieren (Möblierung/Belegung bleiben frei sichtbar).
-    if (!session.isLoggedIn()) {
-      return C.loginGate('Die Ressourcenbuchung wird als persönlicher Vorgang unter «Meine Vorgänge» erfasst. Bitte melden Sie sich mit AGOV / FedLogin an, um einen Raum, Arbeitsplatz oder Parkplatz zu buchen.');
+  function allocationBadge(percent) {
+    if (percent >= 95) return C.badge(`${percent} % zugeteilt`, 'success', 'sm');
+    if (percent >= 75) return C.badge(`${percent} % zugeteilt`, 'info', 'sm');
+    return C.badge(`${percent} % zugeteilt`, 'warning', 'sm');
+  }
+
+  function planResult() {
+    const available = workplaceCount();
+    const required = Math.ceil(state.people * state.factor);
+    const delta = available - required;
+    const use = available ? Math.round(required / available * 100) : 0;
+    const balanced = Math.max(2, Math.ceil(available * 0.03));
+    const status = delta < 0
+      ? { label: `${num(Math.abs(delta))} Arbeitsplätze fehlen`, variant: 'error' }
+      : delta <= balanced
+        ? { label: 'Planung ausgeglichen', variant: 'info' }
+        : { label: `${num(delta)} Arbeitsplätze Reserve`, variant: 'success' };
+    return { available, required, delta, use, status };
+  }
+
+  function resultMarkup(result) {
+    const difference = result.delta === 0 ? '0'
+      : result.delta > 0 ? `+${num(result.delta)}` : `−${num(Math.abs(result.delta))}`;
+    return `
+      <div class="workspace-plan__status">${C.badge(result.status.label, result.status.variant)}</div>
+      <dl class="kv workspace-plan__facts">
+        <dt>Erforderliche Arbeitsplätze</dt><dd>${num(result.required)}</dd>
+        <dt>Verfügbare Arbeitsplätze</dt><dd>${num(result.available)}</dd>
+        <dt>Differenz</dt><dd>${difference}</dd>
+        <dt>Kapazitätsbedarf</dt><dd>${result.use} %</dd>
+      </dl>
+      <div class="workspace-capacity" role="progressbar" aria-label="Kapazitätsbedarf" aria-valuemin="0"
+        aria-valuemax="100" aria-valuenow="${Math.min(result.use, 100)}">
+        <span class="workspace-capacity__bar${result.delta < 0 ? ' workspace-capacity__bar--over' : ''}"
+          style="width:${Math.min(result.use, 100)}%"></span>
+      </div>
+      <p class="small muted m-0">Der Zielwert berechnet die benötigten Arbeitsplätze aus Mitarbeitenden und Desk-Sharing-Faktor.</p>`;
+  }
+
+  function roomPanel(space) {
+    if (!space) {
+      return `<div class="box fp-room fp-room--empty"><p class="small muted m-0">Wählen Sie einen Raum im Grundriss, um seine Planungsdaten zu sehen.</p></div>`;
     }
-    const b = core.building(state.buildingId);
-    const r = RESSOURCEN.find(x => x.id === state.ressourcentyp);
-    return `
-      <div class="container--grid gap--responsive">
-        <div class="container__main vertical-spacing">
-          <h2>${C.icon('Calendar', 'icon--base')} Ressource buchen</h2>
-          ${C.contextLine({ action: 'Buchung', name: session.user().name, org: session.user().org })}
-          <p class="muted">Eine Anfrage wird als Vorgang erfasst und durch Workspace BBL bestätigt.</p>
-          <p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>
-          ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
-          <!-- novalidate — siehe space-request.js -->
-          <form id="buchung-form" class="form" novalidate>
-            ${C.select({ id: 'ressourcentyp', name: 'ressourcentyp', label: 'Ressourcentyp', required: true,
-              value: state.ressourcentyp, hint: r ? r.hint : '', message: state.errors.ressourcentyp,
-              options: RESSOURCEN.map(x => ({ value: x.id, label: x.label })) })}
-            ${C.select({ id: 'bld', name: 'bld', label: 'Standort', required: true, value: state.buildingId,
-              message: state.errors.bld,
-              options: buildings.map(x => ({ value: x.bbl_id, label: `${x.name} — ${x.city}` })) })}
-            ${C.field({ id: 'datum', label: 'Datum', required: true, message: state.errors.datum,
-              control: (cls, attrs) => `<input id="datum" type="date" value="${C.escape(state.datum)}" class="${cls}"${attrs}>` })}
-            ${C.select({ id: 'zeit', name: 'zeit', label: 'Zeit', value: state.zeit,
-              options: ZEITEN.map(z => ({ value: z, label: z })) })}
-            ${C.field({ id: 'bemerkung', label: 'Bemerkung',
-              control: (cls, attrs) => `<textarea id="bemerkung" placeholder="z. B. benötigte Ausstattung, Personenzahl, besondere Wünsche" class="${cls}"${attrs}>${C.escape(state.bemerkung)}</textarea>` })}
-            <div class="form__actions">
-              <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Buchung anfragen</span></button>
-            </div>
-          </form>
+    return `<div class="box fp-room">
+      <h3>${C.escape(space.roomNumber)}</h3>
+      <dl class="kv kv--tight">
+        <dt>Nutzung</dt><dd>${C.escape(space.useLabel)}</dd>
+        <dt>Fläche</dt><dd>${m2(space.area)}</dd>
+        <dt>Arbeitsplätze</dt><dd>${num(space.capacity || 0)}</dd>
+        <dt>Verwaltungseinheit</dt><dd>${C.escape(space.occupierVe || 'Nicht zugeteilt')}</dd>
+      </dl>
+    </div>`;
+  }
+
+  function floorplanView(activeFloor) {
+    const spaces = activeFloor.spaces;
+    const selected = spaces.find((space) => space.spaceId === state.selectedSpaceId) || null;
+    const modeLabel = (COLOR_MODES.find((mode) => mode.value === state.colorMode) || {}).label || '';
+    return `<div id="fp-wrap">
+      <div class="fp-head workspace-floorplan__head">
+        <div class="fp-head__top">
+          <div class="fp-floors" role="group" aria-label="Geschoss wechseln">
+            ${floors().map((floor) => {
+              const active = floor.floorId === activeFloor.floorId;
+              return `<a class="tag-item${active ? ' tag-item--active' : ''}"
+                href="${workspaceUrl(state.buildingId, floor.floorId)}"${active ? ' aria-current="true"' : ''}>
+                <span class="tag-item__inner"><span class="tag-item__text">${C.escape(floor.label)}</span></span></a>`;
+            }).join('')}
+          </div>
+          ${C.select({ id: 'workspace-color', label: 'Einfärben nach', value: state.colorMode,
+            size: 'sm', wrapClass: 'fp-color', options: COLOR_MODES })}
         </div>
-        <aside class="container__aside">
-          <div class="box">
-            <h3>Ihre Auswahl</h3>
-            <dl class="kv">
-              <dt>Ressource</dt><dd>${r ? C.escape(r.label) : '—'}</dd>
-              <dt>Standort</dt><dd>${b ? C.escape(b.name) : '—'}</dd>
-              ${/* format.datum statt rohem ISO-Wert des date-Inputs; '' → «—». */''}
-              <dt>Datum</dt><dd>${C.escape(datum(state.datum))}</dd>
-              <dt>Zeit</dt><dd>${C.escape(state.zeit || '—')}</dd>
-            </dl>
+      </div>
+      <div class="fp-viewer">
+        <div class="fp-stage" id="workspace-floorplan" data-scroll-region
+          aria-label="Grundriss ${C.escape(activeFloor.label)}">${floorplanSvg({
+            floor: activeFloor, spaces, mode: state.colorMode, selectedId: state.selectedSpaceId,
+          })}</div>
+        <div class="fp-side">
+          <dl class="kv kv--tight fp-facts">
+            <dt>Räume</dt><dd>${num(activeFloor.rooms)}</dd>
+            <dt>Hauptnutzfläche</dt><dd>${m2(activeFloor.areaHnf)}</dd>
+            <dt>Arbeitsplätze</dt><dd>${num(activeFloor.workspaces)}</dd>
+            <dt>Zuteilung</dt><dd>${activeFloor.allocatedPercent} %</dd>
+          </dl>
+          <div>
+            <h3 class="fp-side__title">Einfärbung: ${C.escape(modeLabel)}</h3>
+            ${floorplanLegend(spaces, state.colorMode)}
           </div>
-          <div class="box">
-            <h3>Hinweis</h3>
-            <p class="small muted m-0">Arbeitsplätze werden im Desk-Sharing-Modell vergeben.
-              Buchungen sind unter <a href="#/my-cases">Meine Vorgänge</a> einsehbar.</p>
-          </div>
-        </aside>
-      </div>`;
-  }
-
-  function doneBuchung() {
-    const i = state.created;
-    return `
-      ${/* 46rem wie die Erfolgsscreens der Formular-Apps (container__center--xs
-            trägt standalone nur den max-width-Deckel) — measure-lg war die
-            einzige abweichende Breite für dieselbe Funktion (C25). */''}
-      <div class="vertical-spacing container__center--xs">
-        ${C.processDone({ instance: i, lead: 'Buchung angefragt.', title: 'Vielen Dank',
-          // h2, nicht h1: die Reiterseite trägt ihre Überschrift schon.
-          heading: 'h2',
-          text: `Ihre Ressourcenbuchung «${C.escape(i.title)}» wurde erfasst und wird durch Workspace BBL
-             bestätigt. Den Status sehen Sie jederzeit unter «Meine Vorgänge».`,
-          actions: [
-            { href: links.vorgang(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
-            // Bewusst NICHT «Zu den Dienstleistungen»: die Sekundäraktion startet
-            // das Buchungsformular neu (dokumentierter Unterschied der Reiterseite).
-            { id: 'buchung-neu', label: 'Weitere Buchung' },
-          ] })}
-      </div>`;
-  }
-
-  // ---- render ------------------------------------------------------------
-  function draw() {
-    const panel = state.tab === 'moeblierung' ? panelMoeblierung()
-      : state.tab === 'belegung' ? panelBelegung()
-      : panelBuchung();
-
-    // Fokus + Schreibmarke über den kompletten Neuaufbau (inkl. wire()) retten.
-    const restore = C.preserveFocus(mount);
-    mount.innerHTML = `
-    <div class="container section">
-      ${C.pageHeader({ title: 'Workspace Management', lead: 'Arbeitsplätze, Zonen, Belegung und Multispace-Planung für Bürogebäude.' })}
-      <div class="tabs">
-        ${C.tabBar({ items: TABS, active: state.tab, idPrefix: 'ws-tab', panelId: 'wpanel', ariaLabel: 'Workspace-Ansichten' })}
-        <div class="tab__container" role="tabpanel" id="wpanel" aria-labelledby="ws-tab-${state.tab}" tabindex="0">${panel}</div>
+          <div id="workspace-room">${roomPanel(selected)}</div>
+        </div>
       </div>
     </div>`;
-    wire();
-    restore();
   }
 
-  function readForm() {
-    // Selects behalten bei Abwesenheit ihren Wert (|| alt); Datum/Bemerkung nicht.
-    state.ressourcentyp = C.val(mount, 'ressourcentyp') || state.ressourcentyp;
-    state.buildingId = C.val(mount, 'bld') || state.buildingId;
-    state.datum = C.val(mount, 'datum');
-    state.zeit = C.val(mount, 'zeit') || state.zeit;
-    state.bemerkung = C.val(mount, 'bemerkung');
-  }
+  function draw() {
+    const currentBuilding = building();
+    const floorRows = floors().map(floorFacts);
+    const activeFloor = floorRows.find((floor) => floor.floorId === state.floorId) || floorRows[0];
+    const spaces = allSpaces();
+    const workArea = sum(spaces.filter((space) => space.group === 'arbeit'), (space) => space.area);
+    const organizations = [...new Set(spaces.map((space) => space.occupierVe).filter(Boolean))];
+    const initialResult = planResult();
 
-  function validate() {
-    const e = {};
-    if (!state.datum) e.datum = 'Bitte ein Datum wählen';
-    // Defensiv: beide Felder sind required:true im Markup und tragen immer einen
-    // Wert — mit novalidate greift aber keine Browserprüfung mehr, also hier.
-    // Die Fehlerschlüssel sind DOM-ids (Sprungmarken der Fehlerübersicht);
-    // geprüft wird der State-Schlüssel: `state.bld` gab es nie, der Standort-
-    // Fehler stand deshalb IMMER und blockierte jede Absendung.
-    if (!state.ressourcentyp) e.ressourcentyp = 'Bitte einen Ressourcentyp wählen';
-    if (!state.buildingId) e.bld = 'Bitte einen Standort wählen';
-    state.errors = e;
-    return Object.keys(e).length === 0;
-  }
-
-  function wire() {
-    // Tab-Wechsel via C.wireTabs; onSelect rendert das Einzel-Panel via draw() neu.
-    // Vor dem Verlassen der Buchung deren Eingaben sichern (bleiben so erhalten).
-    C.wireTabs(mount, {
-      onSelect: (id) => {
-        if (state.tab === 'buchung' && !state.created) readForm();
-        state.tab = id;
-        draw();
-      },
+    const floorTable = C.table({
+      caption: `Geschosse ${currentBuilding.name}`,
+      columns: [
+        { key: 'label', label: 'Geschoss', render: (floor) => `<a href="${workspaceUrl(state.buildingId, floor.floorId)}">${C.escape(floor.label)}</a>${floor.floorId === activeFloor.floorId ? ` ${C.badge('Ausgewählt', 'info', 'sm')}` : ''}` },
+        { key: 'rooms', label: 'Räume', align: 'right', render: (floor) => num(floor.rooms) },
+        { key: 'workArea', label: 'Arbeitsfläche', align: 'right', render: (floor) => m2(Math.round(floor.workArea)) },
+        { key: 'workspaces', label: 'Arbeitsplätze', align: 'right', render: (floor) => num(floor.workspaces) },
+        { key: 'organizations', label: 'Verwaltungseinheiten', render: (floor) => C.escape(floor.organizations.join(', ') || 'Nicht zugeteilt') },
+        { key: 'allocatedPercent', label: 'Zuteilung', render: (floor) => allocationBadge(floor.allocatedPercent) },
+      ],
+      rows: floorRows,
+      zebra: true,
+      foot: `<tr><th scope="row">Total</th><td class="text-right">${num(sum(floorRows, (floor) => floor.rooms))}</td>
+        <td class="text-right">${m2(Math.round(workArea))}</td><td class="text-right">${num(workplaceCount())}</td>
+        <td>${num(organizations.length)} Verwaltungseinheiten</td><td></td></tr>`,
     });
 
-    // Fehler löschen, sobald das Feld korrigiert wird — der Redraw zeigte vorher
-    // stale Fehler (Design-Review A8). VOR der Live-Aside-Verdrahtung anmelden:
-    // beide hängen am selben change-Ereignis, und nur in dieser Reihenfolge ist
-    // der Fehler schon aus state.errors raus, wenn draw() neu zeichnet.
-    C.wireFieldErrors(mount, state.errors);
+    mount.innerHTML = `<div class="container section">
+      ${C.pageHeader({ title: 'Workspace Management', lead: 'Arbeitsplätze, Zonen und Flächen für die angeschlossenen Bürogebäude planen.' })}
 
-    // live aside update on the booking tab
-    ['ressourcentyp', 'bld', 'datum', 'zeit'].forEach(id => {
-      const el = mount.querySelector('#' + id);
-      if (el) el.addEventListener('change', () => { readForm(); draw(); });
+      <section class="workspace-context" aria-labelledby="workspace-context-title">
+        <div>
+          <h2 class="sr-only" id="workspace-context-title">Planungsobjekt</h2>
+          ${C.select({ id: 'workspace-building', label: 'Gebäude', value: state.buildingId,
+            options: buildings.map((item) => ({ value: item.bbl_id, label: `${item.name} — ${item.city}` })) })}
+          <p class="small muted workspace-context__address">${C.escape(currentBuilding.street)}, ${C.escape(currentBuilding.zip)} ${C.escape(currentBuilding.city)}</p>
+        </div>
+        <div class="workspace-context__meta">
+          ${C.badge(`${num(floors().length)} Geschosse`, 'gray')}
+          ${C.badge(`${num(organizations.length)} Verwaltungseinheiten`, 'gray')}
+          <a class="btn btn--outline btn--sm btn--icon-right" href="#/app/portfolio?id=${encodeURIComponent(currentBuilding.bbl_id)}">
+            <span class="btn__text">Gebäude im Portfolio</span>${C.icon('ArrowRight', 'btn__icon')}</a>
+        </div>
+      </section>
+
+      <div class="stats workspace-stats" aria-label="Kennzahlen des Planungsobjekts">
+        <div class="stat"><div class="stat__num">${num(workplaceCount())}</div><div class="stat__label">Arbeitsplätze</div></div>
+        <div class="stat"><div class="stat__num" id="workspace-people-stat">${num(state.people)}</div><div class="stat__label">Mitarbeitende im Szenario</div></div>
+        <div class="stat"><div class="stat__num">${m2(Math.round(workArea))}</div><div class="stat__label">Arbeitsfläche</div></div>
+        <div class="stat"><div class="stat__num">${num(organizations.length)}</div><div class="stat__label">Verwaltungseinheiten</div></div>
+      </div>
+
+      <section class="workspace-section" aria-labelledby="workspace-scenario-title">
+        <div class="container--grid gap--responsive">
+          <div class="container__main vertical-spacing">
+            <h2 id="workspace-scenario-title">Planungsszenario</h2>
+            <p>Prüfen Sie, ob die vorhandene Arbeitsplatzkapazität für den geplanten Personalbestand und den Zielwert des Desk-Sharing-Faktors ausreicht.</p>
+            <div class="grid grid--responsive-cols-2 workspace-plan__fields">
+              ${C.field({ id: 'workspace-people', label: 'Zu planende Mitarbeitende', hint: 'Personalbestand am gewählten Standort.',
+                control: (cls, attrs) => `<input id="workspace-people" type="number" min="1" max="9999" step="1" value="${state.people}" class="${cls}"${attrs}>` })}
+              ${C.select({ id: 'workspace-factor', label: 'Ziel Desk-Sharing-Faktor', value: state.factor.toFixed(2),
+                hint: 'Anzahl Arbeitsplätze pro Person.', options: FACTORS })}
+            </div>
+          </div>
+          <aside class="container__aside" aria-labelledby="workspace-result-title">
+            <div class="box workspace-plan__result" aria-live="polite">
+              <h3 id="workspace-result-title">Planungsresultat</h3>
+              <div id="workspace-result">${resultMarkup(initialResult)}</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="workspace-section vertical-spacing" aria-labelledby="workspace-floors-title">
+        <h2 id="workspace-floors-title">Geschosse und Zuteilung</h2>
+        <p>Die Übersicht zeigt Kapazität und räumliche Zuteilung je Geschoss. Wählen Sie ein Geschoss für den Grundriss.</p>
+        ${floorTable}
+      </section>
+
+      <section class="workspace-section vertical-spacing" aria-labelledby="workspace-plan-title">
+        <h2 id="workspace-plan-title">Zonen im Grundriss</h2>
+        ${floorplanView(activeFloor)}
+      </section>
+    </div>`;
+
+    const buildingSelect = mount.querySelector('#workspace-building');
+    if (buildingSelect) buildingSelect.addEventListener('change', () => {
+      const nextFloors = floorsByBuilding.get(buildingSelect.value) || [];
+      location.hash = workspaceUrl(buildingSelect.value, nextFloors[0].floorId);
     });
 
-    const form = mount.querySelector('#buchung-form');
-    if (form) {
-      form.addEventListener('submit', (ev) => {
-        ev.preventDefault();
-        readForm();
-        // Fehlversuch: neu zeichnen, dann Fokus auf die Fehlerübersicht — sonst
-        // landet er auf <body> und der Nutzer erfährt nichts (WCAG 3.3.1).
-        if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
-        const b = core.building(state.buildingId);
-        const r = RESSOURCEN.find(x => x.id === state.ressourcentyp);
-        const buildingName = b ? b.name : 'Standort';
-        state.created = engine.start('buchung', {
-          title: `${r ? r.label : 'Buchung'} — ${buildingName}`,
-          organization: session.user().org,
-          requester: session.user().name,
-          data: {
-            ressourcentyp: r ? r.label : state.ressourcentyp,
-            standort: buildingName,
-            datum: state.datum,
-            zeit: state.zeit,
-            bemerkung: state.bemerkung,
-          },
-          linkedEntities: state.buildingId ? { buildingId: state.buildingId } : {},
+    const colorSelect = mount.querySelector('#workspace-color');
+    if (colorSelect) colorSelect.addEventListener('change', () => {
+      location.hash = workspaceUrl(state.buildingId, state.floorId, colorSelect.value);
+    });
+
+    const peopleInput = mount.querySelector('#workspace-people');
+    const factorSelect = mount.querySelector('#workspace-factor');
+    const updateScenario = () => {
+      state.people = Math.max(1, Number(peopleInput?.value) || 1);
+      state.factor = Number(factorSelect?.value) || 0.8;
+      const result = planResult();
+      const host = mount.querySelector('#workspace-result');
+      const peopleStat = mount.querySelector('#workspace-people-stat');
+      if (host) host.innerHTML = resultMarkup(result);
+      if (peopleStat) peopleStat.textContent = num(state.people);
+    };
+    if (peopleInput) peopleInput.addEventListener('input', updateScenario);
+    if (factorSelect) factorSelect.addEventListener('change', updateScenario);
+
+    const stage = mount.querySelector('#workspace-floorplan');
+    if (stage) {
+      const unwire = wireFloorplan(stage, (spaceId) => {
+        state.selectedSpaceId = spaceId;
+        stage.querySelectorAll('[data-space]').forEach((group) => {
+          const selected = group.dataset.space === spaceId;
+          group.classList.toggle('is-selected', selected);
+          group.querySelector('rect')?.setAttribute('aria-pressed', selected ? 'true' : 'false');
         });
-        draw();
-        // Fokus + Ansage auf den Erfolgsscreen — HIER statt in doneBuchung():
-        // das Done-Panel wird auch beim blossen Reiterwechsel neu gezeichnet,
-        // und nur der Absende-Moment ist ein Kontextwechsel. Wurzel ist das
-        // Tab-Panel, weil die Seiten-h1 ebenfalls tabindex="-1" trägt und den
-        // Fokus sonst abfinge (die Erfolgsüberschrift ist ein h2 im Panel).
-        if (state.created) C.focusProcessDone(mount.querySelector('#wpanel') || mount, state.created);
-        else C.flashError(mount, 'Die Buchung konnte nicht gespeichert werden — bitte erneut versuchen.');
+        const room = spacesFor(state.floorId).find((space) => space.spaceId === spaceId) || null;
+        const roomHost = mount.querySelector('#workspace-room');
+        if (roomHost) roomHost.innerHTML = roomPanel(room);
       });
-    }
-
-    const neu = mount.querySelector('#buchung-neu');
-    if (neu) {
-      neu.addEventListener('click', () => {
-        state.created = null;
-        state.datum = '';
-        state.bemerkung = '';
-        state.errors = {};
-        draw();
-      });
+      onUnmount(unwire);
     }
   }
 

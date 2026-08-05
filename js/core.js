@@ -320,6 +320,8 @@ export const core = {
   tenancy: (id) => find(DATA.tenancies, 'tenancyId', id),
   floors: () => DATA.floors || [],
   floor: (id) => find(DATA.floors, 'floorId', id),
+  floorsForBuilding: (bid) => (DATA.floors || []).filter((f) => f.buildingId === bid),
+  spaces: () => DATA.spaces || [],
   floorsForTenancy: (t) => (t && t.floors ? t.floors : []).map((fid) => find(DATA.floors, 'floorId', fid)).filter(Boolean),
   spacesForFloor: (fid) => (DATA.spaces || []).filter((s) => s.floorId === fid),
   services: () => DATA.services || [],

@@ -3,15 +3,21 @@
 // Prototyp: es wird kein echtes PDF gerendert, sondern eine schematische Seite
 // (Grundriss bzw. Textdokument) mit Titelblock — deutlich als «Mock-Vorschau».
 //
-// openDocumentViewer(doc, siblings, C): doc = Datensatz aus documents.json,
-// siblings = geordnete Liste (aktuelle Trefferliste) für Vor/Zurück, C = Komponenten.
+// openDocumentViewer(doc, siblings, options): doc = Datensatz aus documents.json,
+// siblings = geordnete Liste (aktuelle Trefferliste) für Vor/Zurück.
 
 import C from './components.js';
+import { dateiGroesse } from './format.js';
 
-const TYPE_LABEL = {
-  Bauwerksdokumentation: 'Bauwerksdokumentation', Grundriss: 'Grundriss',
-  Bericht: 'Bericht', Gutachten: 'Gutachten',
-};
+export function documentFileName(doc) {
+  const name = String(doc?.fileName || doc?.title || doc?.docId || 'Dokument');
+  if (/\.[a-z0-9]{2,8}$/i.test(name)) return name;
+  const extension = String(doc?.format || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  return extension ? `${name}.${extension}` : name;
+}
+
+const kbobType = (doc) => [doc?.typeCode, doc?.type].filter(Boolean).join(' · ') || '—';
+const isPlan = (doc) => doc?.typeCode === 'V07102' || doc?.type === 'Grundriss';
 
 function hash(s) { let h = 0; for (let i = 0; i < String(s).length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
 
@@ -26,7 +32,7 @@ function filler(seed, n) { return Array.from({ length: n }, (_, i) => FILLER[(se
 const CREST = '<img class="docpage__crest" src="assets/swiss-logo-flag.svg" alt="" aria-hidden="true">';
 const PLAN_ROOMS = ['Büro', 'Sitzung', 'Lager', 'Technik', 'Archiv', 'Teeküche', 'Empfang', 'Flur'];
 
-function pageCount(doc) { return doc.type === 'Grundriss' ? 1 : 2; }
+function pageCount(doc) { return isPlan(doc) ? 1 : 2; }
 
 function footer(doc, n, total) {
   return `<footer class="docpage__footer">
@@ -74,7 +80,7 @@ function textPage(doc, n, total) {
       </header>
       <h1 class="docpage__title">${C.escape(doc.title)}</h1>
       <dl class="docpage__metagrid">
-        <div><dt>Typ</dt><dd>${C.escape(TYPE_LABEL[doc.type] || doc.type)}</dd></div>
+        <div><dt>KBOB-Typ</dt><dd>${C.escape(kbobType(doc))}</dd></div>
         <div><dt>Format</dt><dd>${C.escape(doc.format || '')}</dd></div>
         <div><dt>Jahr</dt><dd>${C.escape(String(doc.year || '—'))}</dd></div>
         <div><dt>Klassifizierung</dt><dd>${C.escape(doc.classification || '—')}</dd></div>
@@ -85,14 +91,16 @@ function textPage(doc, n, total) {
 }
 
 function pageHTML(doc, n, total) {
-  return doc.type === 'Grundriss' ? planPage(doc, n, total) : textPage(doc, n, total);
+  return isPlan(doc) ? planPage(doc, n, total) : textPage(doc, n, total);
 }
 
-export function openDocumentViewer(doc, siblings) {
+export function openDocumentViewer(doc, siblings, options = {}) {
   if (!doc) return;
   const opener = document.activeElement;
   const list = (Array.isArray(siblings) && siblings.length) ? siblings : [doc];
+  const buildingNameFor = typeof options.buildingNameFor === 'function' ? options.buildingNameFor : (id) => id;
   let pos = Math.max(0, list.findIndex(d => d.docId === doc.docId));
+  let showMeta = false;
 
   const backdrop = document.createElement('div');
   backdrop.className = 'docviewer';
@@ -108,13 +116,21 @@ export function openDocumentViewer(doc, siblings) {
   // bleiben in onKeydown.
   const untrap = C.trapFocus(backdrop);
 
-  let stage, pagesEl, readout, indicator, total, baseW, zoom = 1;
+  let stage, scrollHost, pagesEl, readout, indicator, total, baseW, zoom = 1;
 
   function applyZoom() {
     zoom = Math.max(0.5, Math.min(3, Math.round(zoom * 100) / 100));
     if (pagesEl) pagesEl.style.setProperty('--docpage-w', Math.round(baseW * zoom) + 'px');
     if (readout) readout.textContent = Math.round(zoom * 100) + '%';
   }
+
+  function measurePages() {
+    const width = stage?.clientWidth || backdrop.clientWidth;
+    baseW = Math.max(280, Math.min(820, width - 96));
+    applyZoom();
+  }
+
+  function onResize() { measurePages(); }
 
   // Kurzer Hinweis für simulierte Aktionen (Download/Upload/Teilen). Gleiche
   // Anatomie und Dauer wie C.toast (CD toast-message: Notification im Host,
@@ -134,6 +150,7 @@ export function openDocumentViewer(doc, siblings) {
 
   function close() {
     document.removeEventListener('keydown', onKeydown, true);
+    window.removeEventListener('resize', onResize);
     untrap();
     backdrop.remove();
     document.body.classList.remove('body--overlay-open');
@@ -161,32 +178,58 @@ export function openDocumentViewer(doc, siblings) {
   function mount() {
     const d = list[pos];
     const many = list.length > 1;
+    const buildingId = (d.linkedTo || [])[0] || '';
+    const buildingName = buildingId ? buildingNameFor(buildingId) : '';
     total = pageCount(d);
     const pages = Array.from({ length: total }, (_, i) => pageHTML(d, i + 1, total)).join('');
-    backdrop.setAttribute('aria-label', 'Dokumentvorschau: ' + (d.title || ''));
+    const metadata = [
+      ['Dokument-ID', d.docId],
+      ['Dateiname', documentFileName(d)],
+      ['KBOB-Typ', kbobType(d)],
+      ['Kategorie', d.category || '—'],
+      ['Gebäude', buildingName || buildingId || '—'],
+      ['Jahr', String(d.year || '—')],
+      ['Format', d.format || '—'],
+      ['Grösse', dateiGroesse(d.sizeKB)],
+      ['Klassifizierung', d.classification || '—'],
+      ['Taxonomie', 'KBOB/IPB Dokumenttypenkatalog 2016'],
+    ];
+    backdrop.classList.toggle('docviewer--meta-open', showMeta);
+    backdrop.setAttribute('aria-label', 'Dokumentvorschau: ' + documentFileName(d));
     backdrop.innerHTML = `
     <div class="docviewer__bar">
       <div class="docviewer__heading">
         ${C.icon('File', 'docviewer__heading-icon icon--lg')}
         <div class="docviewer__heading-text">
-          <p class="docviewer__title">${C.escape(d.title)}</p>
-          <p class="docviewer__sub">${C.escape(TYPE_LABEL[d.type] || d.type)} · ${C.escape(d.format || '')} · <span data-page-indicator>Seite 1 / ${total}</span>${many ? ` · <span class="docviewer__docnum">Dokument ${pos + 1} / ${list.length}</span>` : ''}</p>
+          <p class="docviewer__title">${C.escape(documentFileName(d))}</p>
+          <p class="docviewer__sub">${C.escape(kbobType(d))} · <span data-page-indicator>Seite 1 / ${total}</span>${many ? ` · <span class="docviewer__docnum">Dokument ${pos + 1} / ${list.length}</span>` : ''}</p>
         </div>
       </div>
       <div class="docviewer__actions">
         <button class="docviewer__btn" type="button" data-act="download" aria-label="Herunterladen" title="Herunterladen">${C.icon('Download', 'icon--md')}</button>
+        <button class="docviewer__btn${showMeta ? ' is-active' : ''}" type="button" data-act="meta"
+          aria-expanded="${showMeta}" aria-controls="docviewer-meta"
+          aria-label="${showMeta ? 'Metadaten ausblenden' : 'Metadaten anzeigen'}" title="Metadaten">${C.icon('InfoCircle', 'icon--md')}</button>
         <button class="docviewer__btn" type="button" data-act="upload" aria-label="Neue Version hochladen" title="Neue Version hochladen">${C.icon('Upload', 'icon--md')}</button>
         <button class="docviewer__btn" type="button" data-act="share" aria-label="Dokument teilen" title="Teilen">${C.icon('Share', 'icon--md')}</button>
         <button class="docviewer__btn" type="button" data-act="comment" aria-label="Kommentieren" title="Kommentieren">${C.icon('SpeechBubble', 'icon--md')}</button>
         <button class="docviewer__btn docviewer__btn--close" type="button" data-act="close" aria-label="Vorschau schliessen" title="Schliessen">${C.icon('Cancel', 'icon--md')}</button>
       </div>
     </div>
-    <div class="docviewer__main">
-      ${many ? `<button class="docviewer__nav docviewer__nav--prev" type="button" data-act="prev" aria-label="Vorheriges Dokument" title="Vorheriges Dokument">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
-      <div class="docviewer__stage" tabindex="0" aria-label="Dokumentseiten">
-        <div class="docviewer__pages">${pages}</div>
+    <div class="docviewer__body">
+      <div class="docviewer__main">
+        ${many ? `<button class="docviewer__nav docviewer__nav--prev" type="button" data-act="prev" aria-label="Vorheriges Dokument" title="Vorheriges Dokument">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
+        <div class="docviewer__stage" tabindex="0" aria-label="Dokumentseiten">
+          <div class="docviewer__pages">${pages}</div>
+        </div>
+        ${many ? `<button class="docviewer__nav docviewer__nav--next" type="button" data-act="next" aria-label="Nächstes Dokument" title="Nächstes Dokument">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
       </div>
-      ${many ? `<button class="docviewer__nav docviewer__nav--next" type="button" data-act="next" aria-label="Nächstes Dokument" title="Nächstes Dokument">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
+      <aside class="docviewer__meta" id="docviewer-meta"${showMeta ? '' : ' hidden'}>
+        <h2 class="docviewer__meta-title">Metadaten</h2>
+        <dl class="kv kv--tight">${metadata.map(([key, value]) => `<dt>${C.escape(key)}</dt><dd>${C.escape(value)}</dd>`).join('')}</dl>
+        ${buildingId ? `<a class="btn btn--outline-negative btn--sm btn--icon-right" data-act="building"
+          href="#/app/portfolio?id=${encodeURIComponent(buildingId)}"><span class="btn__text">Gebäude ansehen</span>${C.icon('ArrowRight', 'btn__icon')}</a>` : ''}
+      </aside>
     </div>
     <div class="docviewer__toolbar" role="group" aria-label="Zoom-Steuerung">
       <button class="docviewer__zoom" type="button" data-act="zoom-out" aria-label="Verkleinern" title="Verkleinern">${C.icon('Minus', 'icon--sm')}</button>
@@ -195,20 +238,34 @@ export function openDocumentViewer(doc, siblings) {
     </div>`;
 
     stage = backdrop.querySelector('.docviewer__stage');
+    scrollHost = backdrop.querySelector('.docviewer__main');
     pagesEl = backdrop.querySelector('.docviewer__pages');
     readout = backdrop.querySelector('[data-zoom-readout]');
     indicator = backdrop.querySelector('[data-page-indicator]');
 
-    baseW = Math.max(280, Math.min(820, backdrop.clientWidth - 96));
     zoom = 1;
-    applyZoom();
+    measurePages();
 
     const on = (act, fn) => { const el = backdrop.querySelector(`[data-act="${act}"]`); if (el) el.addEventListener('click', fn); };
     on('close', close);
     // EIN Suffix für alle Fake-Aktionen: «— im Prototyp simuliert.» — vorher
     // drei Grammatiken («simuliert:», «— simuliert.», «(Demo)») nebeneinander
     // im selben Menü (Design-Review D13).
-    on('download', () => toast(`Download «${d.title}» — im Prototyp simuliert.`));
+    on('download', () => toast(`Download «${documentFileName(d)}» — im Prototyp simuliert.`));
+    on('meta', () => {
+      showMeta = !showMeta;
+      const meta = backdrop.querySelector('#docviewer-meta');
+      const button = backdrop.querySelector('[data-act="meta"]');
+      if (meta) meta.hidden = !showMeta;
+      if (button) {
+        button.setAttribute('aria-expanded', String(showMeta));
+        button.setAttribute('aria-label', showMeta ? 'Metadaten ausblenden' : 'Metadaten anzeigen');
+        button.classList.toggle('is-active', showMeta);
+      }
+      backdrop.classList.toggle('docviewer--meta-open', showMeta);
+      requestAnimationFrame(measurePages);
+      C.announce(showMeta ? 'Metadaten eingeblendet.' : 'Metadaten ausgeblendet.');
+    });
     on('upload', () => toast('Neue Version hochladen — im Prototyp simuliert.'));
     on('share', () => toast('Link kopieren — im Prototyp simuliert.'));
     // «nicht verfügbar» ist kein Erfolg — als Info-Notification, nicht mit Häkchen.
@@ -218,25 +275,26 @@ export function openDocumentViewer(doc, siblings) {
     on('zoom-reset', () => { zoom = 1; applyZoom(); });
     on('prev', () => go(-1));
     on('next', () => go(1));
+    on('building', close);
+
+    // Die Dokumentfläche ist der Scroll-Host. Sie wird beim Blättern ersetzt,
+    // deshalb gehört auch der Listener an die jeweils neue Instanz.
+    let raf = null;
+    scrollHost?.addEventListener('scroll', () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        const ps = backdrop.querySelectorAll('.docpage');
+        const mid = window.innerHeight / 2;
+        let idx = 0;
+        ps.forEach((page, i) => { if (page.getBoundingClientRect().top <= mid) idx = i; });
+        if (indicator) indicator.textContent = `Seite ${idx + 1} / ${total}`;
+      });
+    });
   }
 
-  // Seitenanzeige folgt der Seite nahe der Fenstermitte. Einmal gebunden (backdrop
-  // ist stabil, total/indicator werden je mount() aktualisiert und hier live
-  // gelesen) — nicht je mount(), sonst ein Scroll-Listener-Leak pro Vor/Zurück (G1).
-  let raf = null;
-  backdrop.addEventListener('scroll', () => {
-    if (raf) return;
-    raf = requestAnimationFrame(() => {
-      raf = null;
-      const ps = backdrop.querySelectorAll('.docpage');
-      const mid = window.innerHeight / 2;
-      let idx = 0;
-      ps.forEach((p, i) => { if (p.getBoundingClientRect().top <= mid) idx = i; });
-      if (indicator) indicator.textContent = `Seite ${idx + 1} / ${total}`;
-    });
-  });
-
   document.addEventListener('keydown', onKeydown, true);
+  window.addEventListener('resize', onResize);
   mount();
   requestAnimationFrame(() => { try { stage.focus(); } catch (e) { /* noop */ } });
 }

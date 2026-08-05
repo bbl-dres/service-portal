@@ -14,7 +14,7 @@ const head = (s) => console.log('\n■ ' + s);
 /* Ein kleiner, aber echter Ausschnitt des Index. */
 const ROWS = [
   { title: 'Störungs-, Reinigungs- & Reparaturmeldung', desc: 'Defekte in einem Gebäude melden.', extra: 'Objektbetrieb', boost: 30 },
-  { title: 'Raum-, Arbeitsplatz- & Parkplatzbuchung', desc: 'Sitzungsraum oder Parkplatz reservieren.', extra: 'Büroausrüstung', boost: 26 },
+  { title: 'Raum buchen', desc: 'Sitzungs- oder Besprechungsraum reservieren.', extra: 'Arbeitsplatz und Logistik', boost: 26 },
   { title: 'Mobiliarschlüssel bestellen', desc: 'Ersatzschlüssel für Büromobiliar.', extra: 'Büroausrüstung Schlossnummer', boost: 12 },
   { title: 'Umzug, Transport & Entsorgung', desc: 'Umzüge, Transporte und Entsorgungen anmelden. Mobiliar wird mitgenommen.', extra: 'Objektbetrieb', boost: 22 },
   { title: 'Layout- oder Output-Design-Auftrag erteilen', desc: 'Die Arbeitsvorbereitung übernimmt Layout und Output-Design.', extra: 'Produktion', boost: 12 },
@@ -38,7 +38,7 @@ ok(first('gebaeude') === 'Störungs-, Reinigungs- & Reparaturmeldung', 'gebaeude
 
 head('Mehrwortanfragen (B3) — alle Begriffe müssen treffen');
 ok(find('raum buchen').length > 0, '«raum buchen» findet etwas', first('raum buchen') || '—');
-ok(first('raum buchen') === 'Raum-, Arbeitsplatz- & Parkplatzbuchung', 'und zwar die Buchung');
+ok(first('raum buchen') === 'Raum buchen', 'und zwar die Buchung');
 ok(find('mustervorlage ikt').length === 1, '«mustervorlage ikt» grenzt ein');
 ok(find('mustervorlage xyzzy').length === 0, 'ein unbekannter Begriff schliesst aus (UND)');
 
@@ -65,7 +65,7 @@ head('Umgangssprache (B8) — was getippt wird, führt zu dem, was dasteht');
 for (const [q, want] of [
   ['heizung', 'Störungs-, Reinigungs- & Reparaturmeldung'],
   ['kaputt', 'Störungs-, Reinigungs- & Reparaturmeldung'],
-  ['parkplatz', 'Raum-, Arbeitsplatz- & Parkplatzbuchung'],
+  ['sitzungszimmer', 'Raum buchen'],
   ['möbel', 'Mobiliarschlüssel bestellen'],
   ['agb', 'Allgemeine Geschäftsbedingungen des Bundes'],
   ['ausschreibung', 'Mustervorlagen für IKT-Beschaffungen'],

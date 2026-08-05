@@ -1,24 +1,23 @@
 // D1 tab component (C.tabBar / C.tabPanels / C.wireTabs) — behaviour test.
 // Drives every tab view in a headless browser and asserts: panel toggling,
 // aria-selected, roving tabindex, focus-follows-active, keyboard nav
-// (Arrow/Home/End), hash sync (?tab= only for non-default), and the workspace
-// "Buchung" login gate. Also checks the logged-out gate on the two direct-URL
-// wizards (regression guard for A16). Exits non-zero on any failure.
+// (Arrow/Home/End) and hash sync (?tab= only for non-default). It also checks
+// the logged-out gates on the direct-URL action apps. Exits non-zero on failure.
 //
 //   node scripts/test-tabs.mjs      (dev server must be running; see README)
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
-// Each view: the tab ids in DOM order, whether it mirrors the active tab into the
-// hash (?tab=), and — where relevant — a tab whose panel is a login gate.
+// Each view: tab ids in DOM order and whether the active tab is mirrored into
+// the hash (?tab=).
 const VIEWS = [
   { name: 'portfolio (Bundeshaus West)', url: `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1080/4840/AF')}`, tabs: ['uebersicht', 'flaechen', 'ausstattung', 'vertraege', 'kosten', 'dokumente', 'kontakte'], hashSync: false },
   { name: 'projects (PRJ-01)',         url: `${APP_BASE}/app/projects/PRJ-01`,       tabs: ['uebersicht', 'kennzahlen', 'risiken'],             hashSync: true },
-  { name: 'workspace [logged out]',    url: `${APP_BASE}/app/workspace`,             tabs: ['moeblierung', 'belegung', 'buchung'],              hashSync: false, gateTab: 'buchung' },
-  { name: 'dataportal (energie-klima)', url: `${APP_BASE}/app/dataportal/energie-klima`, tabs: ['ueberblick', 'energiepfad'],                     hashSync: true },
+  { name: 'dataportal (energie-klima)', url: `${APP_BASE}/app/dataportal/energie-klima`, tabs: ['ueberblick', 'energiepfad', 'kennzahlen'],       hashSync: true },
 ];
 const GATES = [
   { name: 'space-request [logged out]', url: `${APP_BASE}/app/space-request` },
   { name: 'fault-report [logged out]',  url: `${APP_BASE}/app/fault-report` },
+  { name: 'room-booking [logged out]',  url: `${APP_BASE}/app/room-booking` },
 ];
 
 // In-page probe: click every tab in order, then exercise the keyboard from tab 0.
@@ -88,7 +87,6 @@ const check = (cond, label) => {
         check(s.visiblePanels.length === 1, `  exactly one panel visible`);
         if (v.hashSync) check(i === 0 ? !/\?tab=/.test(s.hash) : s.hash.includes(`?tab=${tab}`), `  hash ${i === 0 ? 'clean on default' : '= ?tab=' + tab}`);
         else check(!/\?tab=/.test(s.hash), `  hash unchanged (no ?tab=)`);
-        if (v.gateTab === tab) check(s.gateInPanel === true, `  "${tab}" panel shows login gate`);
       });
       check(r.kbd[0].focus === v.tabs[1] && r.kbd[0].active === v.tabs[1], `ArrowRight → "${v.tabs[1]}"`);
       const last = v.tabs[v.tabs.length - 1];

@@ -1,8 +1,8 @@
 // D3 form-helper consolidation + C5 fix — verifies the three wizards (space-request,
-// fault-report, workspace Buchung) after routing through C.field / C.select /
+// fault-report, Room Booking) after routing through C.field / C.select /
 // C.val / C.readForm. The C5 check: a custom validation error must attach the
 // `input--error` class to previously class-less fields (#org, #cc, #beschreibung,
-// #datum) — the old regex only did so when a class already existed.
+// #booking-date) — the old regex only did so when a class already existed.
 //
 // Dispatching a synthetic 'submit' bypasses native required-validation, isolating
 // the custom validate() path where C5 lives. Forms are login-gated, so we log in
@@ -43,12 +43,13 @@ const probeErrors = (clearIds, checkIds) => `(async () => {
 // count rendered fields (form groups) as a render sanity check
 const PROBE_RENDER = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
-  let n = 0; while (!document.querySelector('#wiz, #report-form, #buchung-form') && n++ < 120) await s(100);
-  const form = document.querySelector('#wiz, #report-form, #buchung-form');
+  let n = 0; while (!document.querySelector('#wiz, #report-form, #booking-form') && n++ < 120) await s(100);
+  const form = document.querySelector('#wiz, #report-form, #booking-form');
   return {
     ok: !!form,
     groups: form ? form.querySelectorAll('.form__group__input, .form__group__select').length : 0,
     selects: form ? form.querySelectorAll('select').length : 0,
+    pageSelects: document.querySelectorAll('#main-content select').length,
   };
 })()`;
 
@@ -79,7 +80,7 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
   const cdp = await launch();
   try {
     // log in once (persists across tabs via localStorage)
-    let p = await openPage(cdp, `${APP_BASE}/app/workspace`);
+    let p = await openPage(cdp, `${APP_BASE}/app/room-booking`);
     await p.evaluate(LOGIN);
     await sleep(800);
     await p.closeTarget();
@@ -112,13 +113,13 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
     check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
     await p.closeTarget();
 
-    // --- workspace Buchung: render + C5 on #datum ---
-    console.log('\n■ workspace Buchung');
-    p = await openPage(cdp, `${APP_BASE}/app/workspace?tab=buchung`);
+    // --- Room Booking: render + C5 on #booking-date ---
+    console.log('\n■ Room Booking');
+    p = await openPage(cdp, `${APP_BASE}/app/room-booking`);
     const ws = await p.evaluate(PROBE_RENDER);
-    check(ws.ok && ws.selects >= 3, `renders booking form (${ws.selects} selects)`);
-    const wsE = await p.evaluate(probeErrors(['datum'], ['datum']));
-    check(errOk(wsE.fields?.datum), 'C5: cleared #datum → input--error + aria-invalid + badge');
+    check(ws.ok && ws.pageSelects >= 2, `renders booking search and confirmation forms (${ws.pageSelects} selects)`);
+    const wsE = await p.evaluate(probeErrors(['booking-date'], ['booking-date']));
+    check(errOk(wsE.fields?.['booking-date']), 'C5: cleared #booking-date -> input--error + aria-invalid + badge');
     check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
     await p.closeTarget();
   } finally {

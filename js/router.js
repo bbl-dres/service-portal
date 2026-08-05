@@ -105,6 +105,7 @@ const APPS = {
   'projects':        './apps/projects.js',
   'document-archive':'./apps/document-archive.js',
   'workspace':       './apps/workspace.js',
+  'room-booking':    './apps/room-booking.js',
   'transaction':     './apps/transaction.js',
   'dataportal':      './apps/dataportal.js',
   'api-docs':        './apps/api-docs.js',
@@ -122,7 +123,7 @@ const SECTION_OF = {
   'applications': 'data',
   'space-request': 'services', 'fault-report': 'services', 'building-create': 'services',
   'portfolio': 'data', 'projects': 'data',
-  'workspace': 'data', 'transaction': 'data', 'dataportal': 'data',
+  'workspace': 'data', 'room-booking': 'data', 'transaction': 'data', 'dataportal': 'data',
   'document-archive': 'data', 'media-library': 'data', 'api-docs': 'data',
   'tenancies': 'data', 'metadata-catalog': 'data', 'process-docs': 'data',
   'shop': 'data',
@@ -162,6 +163,18 @@ const SUBS = { strategie: '/strategy', prinzipien: '/principles', vision: '/visi
 // werden von der Zielseite schlicht nicht gelesen).
 export function legacyTarget(hash) {
   const [path, qs] = String(hash || '').split('?');
+  if (path === '#/app/workspace' && qs) {
+    const params = new URLSearchParams(qs);
+    const tab = params.get('tab');
+    const target = tab === 'buchung' ? '#/app/room-booking'
+      : tab === 'moeblierung' ? '#/app/shop'
+      : tab === 'belegung' ? '#/app/workspace' : '';
+    if (target) {
+      params.delete('tab');
+      const rest = params.toString();
+      return target + (rest ? `?${rest}` : '');
+    }
+  }
   for (const [re, to] of REDIRECTS) {
     const m = path.match(re);
     if (m) return to(m) + (qs ? `?${qs}` : '');

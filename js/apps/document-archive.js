@@ -1,8 +1,8 @@
 // Bauwerksdokumentation — durchsuchbares, filterbares Archiv (Liste). Verwendet die
 // gemeinsame `catbar` (Suche + Sortierung + Filter, ohne Ansichtswechsel, da nur Liste)
-// + die Aktive-Filter-Zeile, wie die übrigen Katalogansichten. Titel/Vorschau öffnen
+// + die Aktive-Filter-Zeile, wie die übrigen Katalogansichten. Der Dateiname öffnet
 // den Dokument-Viewer mit der aktuellen Trefferliste als Blätter-Kontext.
-import { openDocumentViewer } from '../doc-viewer.js';
+import { documentFileName, openDocumentViewer } from '../doc-viewer.js';
 import { dateiGroesse } from '../format.js';
 import { ANWENDUNGEN, trail } from '../crumbs.js';
 
@@ -11,16 +11,18 @@ import { ANWENDUNGEN, trail } from '../crumbs.js';
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['buildings', 'documents'];
-const nameCmp = (a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'de');
+const typeKey = (d) => d.typeCode || d.type || '';
+const typeLabel = (d) => [d.typeCode, d.type].filter(Boolean).join(' · ') || '—';
+const nameCmp = (a, b) => documentFileName(a).localeCompare(documentFileName(b), 'de');
 const SORT_OPTS = [
-  { value: 'title', label: 'Titel (A–Z)' },
-  { value: 'type', label: 'Dokumenttyp' },
+  { value: 'title', label: 'Dateiname (A–Z)' },
+  { value: 'type', label: 'KBOB-Typ' },
   { value: 'year', label: 'Jahr (neuste zuerst)' },
   { value: 'size', label: 'Grösse (grösste zuerst)' },
 ];
 const SORTS = {
   title: nameCmp,
-  type: (a, b) => String(a.type || '').localeCompare(String(b.type || ''), 'de') || nameCmp(a, b),
+  type: (a, b) => typeKey(a).localeCompare(typeKey(b), 'de') || nameCmp(a, b),
   year: (a, b) => (b.year || 0) - (a.year || 0) || nameCmp(a, b),
   size: (a, b) => (b.sizeKB || 0) - (a.sizeKB || 0) || nameCmp(a, b),
 };
@@ -35,7 +37,8 @@ export default async function render(ctx) {
   const all = core.documents();
   const buildings = core.buildings();
   const tiers = core.ref().classificationTiers || [];
-  const types = [...new Set(all.map(d => d.type))].sort((a, b) => a.localeCompare(b, 'de'));
+  const types = [...new Map(all.map(d => [typeKey(d), { value: typeKey(d), label: typeLabel(d) }])).values()]
+    .sort((a, b) => a.value.localeCompare(b.value, 'de'));
   const years = [...new Set(all.map(d => d.year))].sort((a, b) => b - a);
   const tierVariant = (id) => { const t = tiers.find(x => x.id === id); return t ? t.variant : 'gray'; };
   // C.escape stringifiziert selbst (String(s == null ? '' : s)) — der lokale
@@ -54,21 +57,20 @@ export default async function render(ctx) {
   };
 
   const inFilters = (d) => (!state.filters.building.length || (d.linkedTo || []).some(b => state.filters.building.includes(b)))
-    && (!state.filters.type.length || state.filters.type.includes(d.type))
+    && (!state.filters.type.length || state.filters.type.some(value => value === typeKey(d) || value === d.type))
     && (!state.filters.year.length || state.filters.year.includes(String(d.year)))
     && (!state.filters.class.length || state.filters.class.includes(d.classification));
-  const inSearch = (d) => { const q = state.q.trim().toLowerCase(); return !q || `${d.title} ${d.type} ${d.category}`.toLowerCase().includes(q); };
+  const inSearch = (d) => { const q = state.q.trim().toLowerCase(); return !q || `${documentFileName(d)} ${d.typeCode || ''} ${d.type} ${d.category}`.toLowerCase().includes(q); };
   const filtered = () => all.filter(d => inFilters(d) && inSearch(d)).sort(SORTS[state.sort] || SORTS.title);
 
   function resultTable(rows) {
     return C.table({ zebra: true, caption: 'Bauwerksdokumentation', columns: [
-      { key: 'title', label: 'Dokument', render: r => `<button type="button" class="doc-open" data-doc="${esc(r.docId)}">${C.icon('File', 'icon--base')} <span>${esc(r.title)}</span></button>` },
-      { key: 'type', label: 'Typ', render: r => C.badge(r.type, 'gray') },
-      { key: 'building', label: 'Gebäude', render: r => { const bid = (r.linkedTo || [])[0]; const b = bid ? core.building(bid) : null; return b ? `<a href="#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}">${esc(b.name)}</a>` : '<span class="muted">—</span>'; } },
+      { key: 'title', label: 'Dokument', render: r => `<button type="button" class="doc-open" data-doc="${esc(r.docId)}" aria-label="${esc(documentFileName(r))} öffnen"><span>${esc(documentFileName(r))}</span></button>` },
+      { key: 'type', label: 'KBOB-Typ', render: r => esc(typeLabel(r)) },
+      { key: 'building', label: 'Gebäude', render: r => { const bid = (r.linkedTo || [])[0]; const b = bid ? core.building(bid) : null; return b ? esc(b.name) : '<span class="muted">—</span>'; } },
       { key: 'year', label: 'Jahr', align: 'right', render: r => esc(r.year) },
       { key: 'size', label: 'Grösse', align: 'right', render: r => dateiGroesse(r.sizeKB) },
       { key: 'classification', label: 'Klassifizierung', render: r => C.badge(r.classification, tierVariant(r.classification)) },
-      { key: 'preview', label: 'Vorschau', render: r => `<button type="button" class="btn btn--link btn--icon-left doc-open" data-doc="${esc(r.docId)}" aria-label="Vorschau ${esc(r.title)}">${C.icon('File', 'btn__icon icon--base')}<span class="btn__text">Vorschau</span></button>` },
     ], rows });
   }
 
@@ -77,7 +79,7 @@ export default async function render(ctx) {
     const pills = [];
     if (state.q.trim()) pills.push({ label: `Suche: «${state.q.trim()}»`, remove: 'q' });
     state.filters.building.forEach(v => { const b = core.building(v); pills.push({ label: b ? b.name : v, remove: `building:${v}` }); });
-    state.filters.type.forEach(v => pills.push({ label: v, remove: `type:${v}` }));
+    state.filters.type.forEach(v => { const t = types.find(x => x.value === v || x.label.endsWith(` · ${v}`)); pills.push({ label: t ? t.label : v, remove: `type:${v}` }); });
     state.filters.year.forEach(v => pills.push({ label: `Jahr ${v}`, remove: `year:${v}` }));
     state.filters.class.forEach(v => pills.push({ label: v, remove: `class:${v}` }));
     box.innerHTML = C.activeFilters({ filters: pills });
@@ -126,7 +128,7 @@ export default async function render(ctx) {
   // --- chrome (once) ------------------------------------------------------
   const filterPanel = `
       ${C.filterGroup({ dim: 'building', legend: 'Gebäude', selected: state.filters.building, options: buildings.map(b => ({ value: b.bbl_id, label: b.name })) })}
-      ${C.filterGroup({ dim: 'type', legend: 'Dokumenttyp', selected: state.filters.type, options: types.map(t => ({ value: t, label: t })) })}
+      ${C.filterGroup({ dim: 'type', legend: 'KBOB-Dokumenttyp', selected: state.filters.type, options: types })}
       ${C.filterGroup({ dim: 'year', legend: 'Jahr', selected: state.filters.year, options: years.map(y => ({ value: String(y), label: String(y) })) })}
       ${C.filterGroup({ dim: 'class', legend: 'Klassifizierung', selected: state.filters.class, options: tiers.map(t => ({ value: t.id, label: t.label })) })}
       ${C.panelReset({ id: 'doc-freset' })}`;
@@ -137,10 +139,10 @@ export default async function render(ctx) {
   <div class="container section">
     ${C.pageHeader({
       title: 'Bauwerksdokumentation',
-      lead: 'Bauwerksdokumentation neu gedacht: statt statischer PDF-Listen ein pro Gebäude abfragbares, filterbares Archiv — nach Gebäude, Dokumenttyp, Jahr und Titel durchsuchbar.',
+      lead: 'Pläne, Berichte und weitere Bauwerksdokumente nach Gebäude, KBOB-Dokumenttyp, Jahr und Dateiname durchsuchen.',
     })}
     ${C.catalogueBar({
-      formId: 'doc-search', inputId: 'doc-q', searchLabel: 'Dokument suchen', placeholder: 'Titel, Typ oder Kategorie suchen…', q: state.q, countId: 'doc-count',
+      formId: 'doc-search', inputId: 'doc-q', searchLabel: 'Dokument suchen', placeholder: 'Dateiname, KBOB-Typ oder Kategorie suchen…', q: state.q, countId: 'doc-count',
       sort: { id: 'doc-sort', value: state.sort, options: SORT_OPTS },
       filterId: 'doc-filter-btn', filterLabel: 'Filter', filterCount, panelId: 'doc-filters', panel: filterPanel,
     })}
@@ -172,7 +174,11 @@ export default async function render(ctx) {
       return;
     }
     const open = e.target.closest('.doc-open');
-    if (open) { const rows = filtered(); const d = rows.find((x) => x.docId === open.getAttribute('data-doc')); if (d) openDocumentViewer(d, rows); }
+    if (open) {
+      const rows = filtered();
+      const d = rows.find((x) => x.docId === open.getAttribute('data-doc'));
+      if (d) openDocumentViewer(d, rows, { buildingNameFor: id => core.building(id)?.name || id });
+    }
   });
 
   renderMain();
