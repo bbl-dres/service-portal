@@ -1,249 +1,257 @@
-# Design Review — Konsistenz, Komplexität, Sprache (August 2026)
+# Design Review service-portal gegen CD Bund
 
-_Dritte Review-Welle, mit frischem Blick. Anders als die beiden Vorgänger (CD-Pixel-Treue, dann A11y/Shared-Layer) fragt diese Review nicht «stimmt das Pixel?», sondern: **Sieht Gleiches gleich aus, funktioniert Gleiches gleich, heisst Gleiches gleich?** Dazu: Komplexität abbauen (Duplikate, Parallel-Implementierungen, toter Code), Namen, Abstände, Hartkodiertes → Tokens._
+| Merkmal | Wert |
+| --- | --- |
+| Stand | 5. August 2026 |
+| Branch | `design-review-2026-08` |
+| Referenz | Schweizer Design System, lokale Version 1.0.5 |
 
-_Methode: 12 unabhängige Expertendurchgänge — 8 Design-Dimensionen (App-Shells, Seiten-Anatomie, Formular-Workflows, Liste→Detail-Workflows, Tokens/Spacing, Naming, CSS-Duplikate, JS-Duplikate), 3 Sprach-Dimensionen (Aktions-Beschriftungen, System-Feedback, Navigation/Terminologie), 1 Vollständigkeits-Kritiker — plus ein eigener struktureller Browser-Durchgang über alle Routen. Jede Behauptung wurde an der zitierten Zeile verifiziert; Sprachbefunde listen **jede** Fundstelle jeder Variante, damit die Fix-Welle vollständig migriert. Frühere Reviews wurden bewusst nicht gelesen; dokumentierte Entscheide (deutsche Kommentare im Code) wurden respektiert und nicht neu verhandelt._
+## 1. Zusammenfassung
 
-## Verdikt
+Das Portal ist in seiner Grundstruktur weitgehend CD-konform. Farb- und
+Typografierampen, Intranet-Skin, Container, Bundes-Chrome, Karten, Formulare,
+Tabellen, Register und Fokusdarstellung orientieren sich nachvollziehbar an
+`swiss/designsystem` 1.0.5. Das Portal deklariert dieselbe Version als
+Ausrichtungsziel. Eine Versionsabweichung liegt nicht vor.
 
-Die beiden früheren Wellen haben getragen: **Die Grundanatomie ist konvergiert.** Alle Listenansichten teilen `container.section → page-header → lead → catbar`; Trefferzähler, Blätterleiste, Ansichtswechsel und Nicht-gefunden-Fluss sind portalweit einheitlich; das Token-Blatt ist reif und wird konsumiert. Es gibt kein strukturelles Redesign-Bedürfnis.
+Geprüft wurden der vollständige statische SPA-Code, die lokale CD-Quelle, alle
+gemeinsamen UI-Fabriken und alle fachlichen Ansichten. Die visuelle Baseline
+umfasst 57 repräsentative Routen und Zustände in 320, 768 und 1440 px, insgesamt
+171 Full-Page-Screenshots. Nach Freigabe wurden die neun Befunde F01–F09 in
+sechs Wellen umgesetzt. Der abschliessende Render-Audit meldet in 171 Zuständen
+keine horizontalen Überläufe, fehlenden H1, doppelten IDs, unbeschrifteten
+Bedienelemente, Bilder ohne `alt`, Überschriftensprünge, fehlerhafte
+Tabellenköpfe oder Zielgrössen unter der geltenden Mindestgrösse. Alle 20
+Funktionssuiten laufen durch.
 
-Die Rest-Inkonsistenz konzentriert sich in vier Clustern:
+Die Umsetzung umfasst die priorisierte Token-Bereinigung, gemeinsame
+Combobox- und Viewer-Muster, eine korrigierte Inhalts- und
+Swagger-Überschriftenstruktur, natürliche Hero-Bildformate, vollständige
+Fokus-/Disabled-Zustände, responsive Zielgrössen, mobile Shop-Kategorien und
+eine dynamische Platzreserve für den fixierten Hinweisbanner. Der ergänzende
+Accessibility-Kurztest ist in allen 57 Zuständen ohne automatisierten Befund.
 
-1. **Die JS-State-Explorer sind Kopien voneinander.** Portfolio, Bauprojekte, Mietende (+ Bauwerksdokumentation für die Toolbar) tragen je ~150 Zeilen wortgleiche Katalog-Verdrahtung, einen dreifach kopierten Raumbaum und eine fragile Pagination über das deutsche aria-label — und die Kopien sind bereits nutzersichtbar abgedriftet: im Mietendenportal zeigt der Baum **keine** Auswahl-Hervorhebung (`is-selected` hat kein CSS), der «Alle Filter zurücksetzen»-Knopf ist **tot**, der Trefferzähler verliert das Seiten-Suffix. Das Dashboard-Chrome doppelt wortgleich in Datenportal und Immobilien-Board — die Extraktion ist im Code selbst als ausstehend vermerkt.
-2. **Gleiche Funktion, verschiedene Beschriftung.** Ein Nutzer, der zwei Flows durchläuft, sieht «absenden» und «einreichen» für dieselbe Handlung — einmal beides auf einem Bildschirm; vier Beschriftungen fürs Zurücksetzen; «Aktuelles» → «Alle Aktualitäten ansehen» → Seite «News» auf einem Klickpfad; «Download» neben «Herunterladen» auf derselben Detailseite; Fusszeile nennt `#/data` «Datenkatalog», Meta-Navigation nennt `#/knowledge` «Hilfe». Dazu grammatisch falsches Deutsch aus der Shared-API: `unit` dient Dativ- und Nominativ-Slots zugleich («3 von 6 Verträge»).
-3. **Zwei Rezepte, wo eines reicht.** Detailseiten-Kopf (Hero vs. h1+lead), Schlüssel-Wert-Listen (`.kv` vs. `.data-rows`), Grossziffer-Kacheln (`.stat`/`.kpi`/`.kpi-strip`), Vollbild-Chrome (Lightbox vs. Dokumentbetrachter), Kombobox-Listen, Scroll-Locks, Grid-Familien (`grid--3` vs. `grid--responsive-cols-3`), Datum (ISO roh vs. `format.datum` vs. vorformatiert) — je zweimal bis dreimal implementiert, je mit sichtbarer Drift.
-4. **Spacing-Streuung unterhalb der Token-Ebene.** ~108 Deklarationen auf 21 skalenfremden Werten (.35/.4/.6 …), drei Kopien der Sektionsrhythmus-Rampe mit Breakpoint-Drift, `mt-8`-Inseln, sechs Inline-Styles, 13 nackte `ease`-Keywords.
+Es wurden keine Produktfunktionen, Routen oder Daten entfernt oder vereinfacht.
+Die bewusst nicht umgesetzten Architekturentscheide stehen in Abschnitt 6; die
+gesprochene Ausgabe mit realer Assistenztechnik bleibt ein manueller
+Release-Check.
 
-**130 verifizierte Befunde** (16 hoch · 60 mittel · 54 niedrig). **Umsetzungsstand: 125 umgesetzt · 4 teilweise (B13/B16/B19/C18 — Rest jeweils benannt) · 1 offen (C21, dokumentierter Übergangszustand «Chart-Vollbild → Modal», Item 6.12).** Bewusste Abweichungen sind am Ende dokumentiert und im Code kommentiert.
+### Bewertungslegende
 
-## Der Kanon
+| Kürzel | Bedeutung |
+| --- | --- |
+| K | konform |
+| G | geringe Abweichung |
+| W | wesentliche Abweichung |
+| NB | nicht bewertbar, da kein CD-Pendant oder Drittanbieter-UI |
 
-Damit «konsistent» prüfbar wird, hält diese Review die Soll-Rezepte fest. Neue Ansichten bauen auf diesen auf; Abweichungen brauchen einen dokumentierten Grund.
+## 2. Bewertungsübersicht vor Umsetzung
 
-### Archetyp-Rezepte
+Die Tabelle hält den bei der Bestandsaufnahme bewerteten Ausgangszustand fest.
+Der Umsetzungsstatus der Abweichungen folgt in Abschnitt 5.1.
 
-| Archetyp | Ansichten | Rezept |
-|---|---|---|
-| **Explorer-Übersicht** (Liste+Detail, JS-State oder Hash) | Portfolio, Bauprojekte, Mietende, Mediathek, Metadatenkatalog, Bauwerksdok. | `container.section` → `C.pageHeader` → `C.catalogueBar` → Aktiv-Pillen → (`pf-layout` mit geteiltem Baum) → Treffer → Pagination als `data-page`-Buttons → `announceCatalogue`. Leerzustand IMMER mit Hinweis + Reset-Aktion. |
-| **Objekt-Detail** (App) | Gebäude, Grundstück, Projekt, Mietverhältnis, Geschäftsobjekt, Tabelle, Medium | `C.detailBar` → (`eyebrow` nur mit dokumentiertem Grund) → `h1[tabindex=-1]` → `p.lead` → Medienstreifen (`heroMosaic`) → `.tabs.mt-6` (tabBar+tabPanels, `?tab=`-Deeplink) → je Register `mountDataTable` → `renderNotFound`. KEIN eigenes scrollTo/Fokus — das gehört dem Router. |
-| **Inhalts-Detail** (Seite) | Dienstleistung, Anwendung, Datensatz, Info-Seite, News, Vorgang | `C.detailHead` (detailBar + Hero) bzw. detailBar + h1 für registerartige Fälle (my-cases). News trägt die detailBar wie alle anderen. |
-| **Formular-Prozess** | Störung, Raumbedarf, Gebäude erfassen, Buchung | `container--grid` → `container__center--xs/--sm` → `backLink` zur Dienstleistungsbeschreibung → h1 → Kontextzeile «‹Aktion› als NAME · ORG (· Prozess: …)» → `stepIndicator` + sr-h2 → `errorSummary` (Feldmeldungen ohne Live-Rolle) → Formular → `processDone` mit fokussierter Überschrift. Ausgeloggt: derselbe Kopf + `loginGate`. Fehler verschwinden beim Korrigieren (`wireFieldErrors`). |
-| **Dashboard** | Datenportal-Boards, Immobilien | Geteiltes Modul `js/dashboard-chrome.js`: backLink → dash-header (pageHeader + Menü) → dashboard-layout (Filterpanel + Tabs) → KPI-Zeile → dash-grid → dash-footer. |
+| Komponente | Pixel | Tokens | Namen | HTML | Zustände | Responsive | Barrierefreiheit |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Grundlagen, Typografie, Links, Listen | K | G | G | K | K | K | K |
+| Container, Grid, Sections | G | G | G | G | K | K | K |
+| Bundes-Chrome: Top-Bar, Header, Logo | G | G | K | K | K | G | K |
+| Hauptnavigation, Drawer, Mobile-Menü | G | G | G | G | K | G | K |
+| Brotkrumen und Footer | K | G | K | K | K | K | K |
+| Buttons und Icons | K | G | K | K | K | W | W |
+| Karten | G | G | K | K | K | G | K |
+| Badges und Tags | G | G | K | K | K | K | K |
+| Notifications und Banner | K | G | K | K | K | G | G |
+| Formulare, Inputs, Selects | K | G | K | K | K | K | K |
+| Validierung und Fehlermeldungen | G | G | K | K | K | K | K |
+| Tabellen und Pagination | G | G | K | K | K | K | K |
+| Katalogleiste, Filter, Ansichtswechsel | G | G | G | K | K | K | K |
+| Tabs und Accordion | K | G | K | K | K | K | K |
+| Step Indicator und Wizard | G | G | K | K | K | K | K |
+| Modal, Menü, Toast | K | G | K | K | K | K | K |
+| Download Item | K | G | K | W | K | K | W |
+| Hero, Detailkopf, Bildmosaik | G | G | G | K | K | G | K |
+| Box, Detailabschnitt, Key-Value | K | G | K | K | K | K | K |
+| Suchvorschläge und Adress-Combobox | G | G | G | K | K | K | G |
+| Raumbaum und Kategoriebaum | NB | G | K | K | K | G | G |
+| MapLibre-Karten | NB | G | NB | K | K | G | G |
+| Charts und Dashboard-Chrome | NB | G | K | K | K | K | K |
+| Dokument-, Galerie- und BPMN-Viewer | NB | G | K | K | K | G | G |
+| Grundriss-Viewer | NB | G | K | K | K | K | K |
+| Shop-Karten, Warenkorb, Checkout | G | G | G | K | K | G | G |
+| Swagger UI | NB | W | NB | W | G | G | W |
+| Loading, Empty, Not Found | K | G | K | K | K | K | K |
 
-### Sprach-Kanon (gleiche Funktion → gleiche Beschriftung)
+## 3. Komponenteninventar
 
-| Funktion | Kanonisch | Ersetzt |
-|---|---|---|
-| Formular abschicken | «‹Nomen› absenden»; Stufe «Prüfen & Absenden» | «Erfassung einreichen», «Prüfen & Einreichen» («Buchung anfragen» bleibt: Bestätigung erfolgt durch Workspace BBL) |
-| Filterpanel-Reset | «Filter zurücksetzen» (CD-Wortlaut) | 13× «Zurücksetzen» |
-| Pillenreihe-Reset | «Alle Filter zurücksetzen» (unverändert) | — |
-| Leerzustand-Reset | «Suche und Filter zurücksetzen» | Wortdreher «Filter und Suche …» |
-| Baum-Auswahl aufheben | «Auswahl zurücksetzen» | «Auswahl» |
-| Alle anzeigen | «Alle ‹Einheit› anzeigen» | «Alle Aktualitäten ansehen», «Alle Vorgänge (N)» |
-| Herunterladen | «Herunterladen» | «Download» (Knopf) |
-| Seiten-URL kopieren | «Link kopieren» / Toast «Link kopiert.» / Fehler als error-Toast | «URL kopieren», stiller Erfolgs-Toast bei Fehlschlag |
-| Wert kopieren | «Kopieren» (satzinitial gross) | «kopieren» |
-| Detail öffnen (verwandt) | «‹Objekt› ansehen» | «Zur Detailseite» |
-| Overlay-Vorschau | «Vorschau» | «Öffnen» (Bauwerksdok.-Tabelle) |
-| Nutzereingabe zitieren | «…» (Guillemets, Hausnorm) | „…“ (12 Stellen) |
-| Leerzustand gefilterte Liste | «Keine ‹Einheit› gefunden.» + Hinweis + Reset | «Keine ‹X› für diese Auswahl.» (ohne Ausweg) |
-| Leerzustand Inventardaten | «Keine ‹X› erfasst.»; «hinterlegt» nur für Angehängtes | «verknüpft», Satzformen |
-| Prototyp-Simulation | Suffix «— im Prototyp simuliert.» | «simuliert.», «(Demo)» |
-| Bereich News | «News»; Einzelbeitrag «Mitteilung» | «Aktuelles», «Aktualitäten», «Meldung» (bleibt dem Meldewesen) |
-| Dienstleistungen | «Dienstleistung(en)», «Zu den Dienstleistungen» | «Services», «Weitere Services» |
-| Erfolgstitel | «Vielen Dank» | «Gebäude erfasst» |
-| Sortieren | sichtbar «Sortieren», sr «Sortierung»; Optionen «Titel (A–Z)» (Titel-Felder) / «Bezeichnung (A–Z)» (sonst); Richtung gesprochen («grösste zuerst») | «Name (A–Z)», «(absteigend)» |
-| Validierung | «Bitte + Artikel + Objekt + Infinitiv», ohne Schlusspunkt; Sie-Imperativ nur für Freitext | artikellose und punktierte Varianten |
-| Kontakt-Slot | «Kontakt» (eine Stelle) / «Ansprechpersonen» (Liste) | «Ansprechstelle»-aria; «Objektkontakte»-Caption |
-| Eckdaten-Slot | «Eckdaten» («Metadaten» nur DCAT) | «Objektdaten», «Grundstücksdaten», «Angaben zum Vorgang» |
-| Datum | immer `format.datum()` (ISO in den Daten) | rohes ISO, vorformatiertes «30.07.2026» |
-| Datumszeilen-Label | «Stand» (Datenstand) / «Aktualisiert» (Tabellenspalte) | «Letzte Änderung» |
-| Ladezustand | «‹Gegenstand› wird geladen…» (ohne Gegenstand «Wird geladen…»), immer über `C.loading` | drei Einzelbauten: Router-Inline-Spinner, map-spinner-Inline, dash-map-Textzeile |
+Die Häufigkeit bezeichnet statische Aufrufstellen im JavaScript. Dynamisch
+erzeugte Wiederholungen, etwa 54 Produktkarten, werden als eine Aufrufstelle
+gezählt.
 
-### Terminologie-Entscheide
+### Komponenten mit CD-Pendant
 
-- **Startseite** heisst der Ort `#/` (Titel, 404-Link); «Übersicht» bleibt Drawer-Erstzeile und erster Detail-Tab.
-- Fusszeile: `#/data` heisst **«Daten und Digitalisierung»** (nicht «Datenkatalog»). Meta-Nav «Hilfe» zeigt auf `#/knowledge/guides` (Anleitungen und Schulungen — das ist Hilfe), nicht auf die Wissens-Übersicht.
-- **Workspace & Buchung** überall (Katalogkarte, Crumb, h1); der Buchungs-Einstieg heisst in services.json UND applications.json «Raum-, Arbeitsplatz- & Parkplatzbuchung».
-- Katalogtitel = h1 der Zielseite («Raumbedarf melden», «Kleinauftrag am Gebäude erteilen», «Liegenschaften Inventar einsehen», «Bauwerksdokumentation abrufen», «Grundstück erfassen»).
-- **Vertragsende** für das Datum (die App bleibt «Mietende»). **Bodenbedeckung** (amtliche Vermessung), nie «Bodenabdeckung». **Geschäftsobjekt** als Fachterm des Metadatenkatalogs («Fachbegriff» nur einführend); Zeilenzahl heisst «Zeilen», «Datensatz» bleibt dem DCAT-Katalog. **Veräusserung von Bundesliegenschaften** statt «Verkauf / Divestment». «Bemessungsgrösse» (ss).
-- Produktnamen mit Leerzeichen («Liegenschaften Inventar», «Metadaten Katalog Bauten», «Datenbezug und API Verzeichnis») sind **gesetzte Markennamen** — Fliesstext darf regulär komponieren («Liegenschafteninventar»); nicht «korrigieren».
-- **Zielgruppen** (Nachtrag 2026-08-04): `audience` ist ein **Array** aus `staff`/`customers`; Etiketten «Mitarbeiter»/«Kunden», bei beiden zwei Badges. Kein «Beide», kein «Intern/Extern» (die `accessNote` der Anwendungen ist entfallen — den Ort trägt «Einstieg»). Liste in `reference-data.json → audiences`.
-- **API-Ressourcen englisch** (Nachtrag 2026-08-04): Pfade, Tags und Antwort-Schlüssel der Portal-API folgen dem Datenmodell (`buildings`, `parcels`, `process-instances` …, deckungsgleich mit `data/*`); deutsch bleiben Beschreibungstexte. Die API deckt den ganzen Datenbestand (17 Ressourcen, 47 Endpunkte).
-- **Objektstatus-Lebenszyklus** (Nachtrag 2026-08-04): `DRAFT`/`VALID`/`SUPERSEDED`/`ARCHIVED` mit Bezeichnung, Definition und Konsequenz in `reference-data.json → objectStatuses`; das Metadatenkatalog-Blatt zeigt zur Marke die Kurzform «Definition — Konsequenz».
+| Baustein | Portal-Fundstelle | CD-Pendant | Häufigkeit |
+| --- | --- | --- | ---: |
+| Bundes-Chrome | `js/shell.js`, `index.html` | TopBar, TopHeader, Logo, MetaNavigation, MainNavigation, MobileMenu, Footer | 1 Shell |
+| Brotkrumen | `js/router.js:168`, `js/shell.js` | Breadcrumb | jede Route |
+| Buttons | `css/app.css:1292`, Templates in `js/` | Btn | 25 `btn--icon-right`, weitere Varianten verteilt |
+| Icons | `js/components.js:41` | SvgIcon | 104 `C.icon`-Aufrufe |
+| Karten | `js/components.js:187`, direkte Shop-/Dashboard-Karten | Card | 17 `C.card`-Aufrufe plus Fachkarten |
+| Badges | `js/components.js:86` | Badge | 60 `C.badge`-Aufrufe |
+| Tags / aktive Filter | `js/components.js:375`, `:1921` | TagItem, BadgeFilter | 13 aktive Filter, 15 Panel-Resets |
+| Notification | `js/components.js:907` | Notification | 28 Aufrufe |
+| Notification Banner | `js/components.js:146` | NotificationBanner | 1 globaler Banner |
+| Inputs / Selects / Fields | `js/components.js:991`, `:1085` | Input, Select, Form | 19 Fields, 14 Selects |
+| Fehlerübersicht | `js/components.js:1047`, `:1935` | Formularmeldung / Badge | 5 Übersichten, 6 Feldverdrahtungen |
+| Tabellen | `js/components.js:263`, `:1553` | Table | 28 direkte Tabellen, 18 Data Tables |
+| Pagination | `js/components.js:1235` | Pagination | 8 Aufrufstellen |
+| Tabs | `js/components.js:812`, `:832`, `:846` | Tab | 12 Tab Bars, 10 Panelgruppen |
+| Accordion | `js/components.js:747`, `:767` | Accordion | 2 Aufrufstellen |
+| Step Indicator | `js/components.js:957`, `:1963` | StepIndicator, Steps | 1 direkter Indikator, 3 Wizard-Köpfe |
+| Download Item | `js/components.js:1137` | DownloadItem | 7 direkte Aufrufstellen, datengetriebene Listen |
+| Modal | `js/components.js:634`, `C.openModal` | Modal | 2 allgemeine Modal-Aufrufe plus Teilen |
+| Menü / Popover | `js/components.js:1700`, `:1737` | Menu, Popover | 3 Menüs, 2 Verdrahtungen |
+| Toast | `js/components.js:1779` | ToastMessage | 9 Aufrufstellen |
+| Page Header / Hero | `js/components.js:180`, `:691`, `:696` | Hero, Detail Page Header | 24 Page Header, 2 Hero Figures |
+| Box / Kontakt | `js/components.js:1160`, `:1195`, `:1209` | Box, InfoBlock | 5 Kontaktboxen, 5 Action Cards |
+| Loading | `js/components.js:98` | Progress / Spinner | 6 Aufrufstellen |
+| Empty / Not Found | `js/components.js:310`, `:338`, `:358` | Empty-State-Prinzip, kein einzelnes Vue-Pendant | 10 Empty, 19 Not Found |
 
-### Struktur-Konventionen
+### Bausteine ohne direktes CD-Pendant
 
-- **Lesemass:** das Mass sitzt am Eltern-/Spaltenelement (container__main/anchor-page__header 60rem, measure-xl-Artikel-Wrapper), nie an Textklassen; Ausnahmen: notification__content, api-resource__desc (C25).
-- **Spacing:** rem-Literale AUF der CD-Skala sind Konvention; skalenfremde Werte werden auf die nächste Stufe gesnappt (`--sp-1-5`/`--sp-2-5` ergänzen die Bruchstufen). Icon+Label-Lücke: `.5rem` (Mehrheitsrezept `.gap-sm`). Sektionsrhythmus aus `--stack-gap` (3rem → 3.5rem ab 1544px, CD-Kanon).
-- **Easing:** nur `var(--ease-out)` / `var(--ease-in-out)`, kein nacktes `ease`.
-- **Panel-Rand:** `--panel-border` (secondary-100). **Viewer-Schatten:** `--shadow-viewer`.
-- **Grids:** nur die CD-Familie `grid--responsive-cols-N`; die Aliase `grid--2/3/4` sind entfernt.
-- **Scroll-Lock:** eine Klasse `body--overlay-open` für Modal, Galerie, Dokumentbetrachter.
-- **Ladezustand:** `C.loading({ label, hideLabel, size })` — CD-Spinner-Symbol (`icon--spin`) + `role="status"`-Wortlaut; `hideLabel` (sr-only), wo das Symbol optisch reicht (Router-Übergang, Karten-Overlay). Einzige Bauform für «lädt/verarbeitet».
-- **Deep-Links modulübergreifend:** immer über `js/links.js` (Selbst-Links innerhalb einer App dürfen literal bleiben).
-- **`pf-`-Namespace** ist die geteilte Explorer-Schicht (5 Apps) — dokumentiert, nicht umbenannt (Tests greppen die Klassen; Umbenennen wäre Churn ohne Nutzwert).
+| Baustein | Fundstelle | Verwendung | Prüfbasis |
+| --- | --- | --- | --- |
+| Katalogleiste | `js/components.js:1480` | 15 Kataloge | CD Search, Select, BadgeFilter, Pagination |
+| Raum-/Kategoriebaum | `js/spatial-tree.js`, `.pf-tree` | Portfolio, Mietende, Metadaten, Shop | Menu-Semantik, Fokus, Touch, Responsive |
+| MapLibre-Karte | `js/buildings-map.js`, `js/map-slot.js` | Portfolio, Mietende, Medien, Dashboards, Gebäudeerfassung | Bedienelemente, Kontrast, Resize, Fokus |
+| Charts | `js/charts.js` | Datenportal und Immobilienportfolio | Tabellenalternative, Beschriftung, Reduced Motion |
+| Dashboard-Chrome | `js/dashboard-chrome.js` | 2 Dashboard-Familien | CD Box, Menu, Tabs, Filter |
+| Bildmosaik / Lightbox | `js/hero-mosaic.js`, `js/gallery.js` | Portfolio, Mietende, Projekte | Modal, negative Buttons, Fokusfalle |
+| Dokumentbetrachter | `js/doc-viewer.js` | Dokumentenarchiv | Modal, Toolbar, Fokusfalle |
+| BPMN-Viewer | `js/apps/process-docs.js:411` | Prozessdiagramm | Viewer-Prinzip, alternative Schritttabelle |
+| Grundriss-Viewer | `js/floorplan.js` | Mietendenportal | SVG-Semantik, Legende, Datentabelle |
+| Swagger UI | `js/apps/api-docs.js:42` | API-Dokumentation | WCAG und Portal-Chrome, Drittanbieter-CSS |
+| Suchvorschläge | `js/search-suggest.js` | globale Suche | Combobox-/Listbox-Semantik |
+| Adresssuche | `js/apps/building-create.js` | Gebäudeerfassung | Combobox-/Listbox-Semantik |
+| Shop-Warenkorb | `js/apps/shop.js` | Produktdetail, Warenkorb, Checkout | CD Shopping-Muster, Formular- und Prozessbausteine |
 
-## Befunde und Status
+## 4. Systemische Ausgangsbefunde
 
-Status: ✅ umgesetzt · 🔶 teilweise · 📌 bewusste Abweichung (dokumentiert) · ⬜ offen. Belegstellen (Datei:Zeile) beziehen sich auf den Stand VOR der Fix-Welle.
+| ID | Befund | Ist | Soll | Bewertung |
+| --- | --- | --- | --- | --- |
+| S1 | Token-Nutzung | Der statische Scan findet 1002 `rem`-Vorkommen in `css/app.css`; 861 entsprechen Werten der vorhandenen Spacing-Skala. Die Zahl enthält auch Kommentare und feste Medienmasse und ist deshalb keine Anzahl automatisch behebbarer Verstösse. Direkte Werte dominieren dennoch die Komponentenregeln. | Wenn ein Portal-Token dieselbe Bedeutung trägt, ist gemäss Auftrag das Token zu verwenden. Ausnahmen für Breakpoints, Seitenverhältnisse, Druck und fachliche SVG-Koordinaten müssen explizit dokumentiert sein. | wesentliche Abweichung |
+| S2 | Touch-Ziele | Kleine CD-Buttons sind 34 px bis 1279 px und 40 px ab 1280 px. Der Audit zählt 363 Portal-Ziele unter 44 px ausserhalb Swagger; 164 davon sind der wiederkehrende Bannerknopf, 87 Back-Buttons und 27 Hinzufügen-Aktionen. | Review-Vorgabe: 44 × 44 px für Touch-Ziele. | wesentliche Abweichung |
+| S3 | Überschriften | 20 Überschriftensprünge pro Viewport in sieben Seitenzuständen, davon 19 durch Download Items (`h2` → `h4`) und einer im Swagger UI (`h1` → `h3`). | Keine Sprünge; DownloadItem-Titel = Elternstufe + 1, gemäss CD-Dokumentation. | wesentliche Abweichung |
+| S4 | Drittanbieter-Oberflächen | Swagger UI liefert eigenes CSS, Klassen, Überschriften und Bedienelemente. Im Audit liegen dort 113 kleine Ziele bei 320 px und je 160 bei 768/1440 px. | Drittanbieter-UI bleibt funktional, wird aber in einem Portal-Adapter auf Mindestsemantik, Fokus und Zielgrössen begrenzt. | wesentliche Abweichung |
+| S5 | Abweichungsdokumentation | Gute Begründungen stehen direkt im CSS. Ein Kommentar zu `btn--icon-right` behauptet jedoch weiterhin, `row-reverse` werde nicht verwendet, obwohl die Regel unmittelbar davor aktiv ist. | Kommentare und Review-Entscheide müssen dem aktuellen Code entsprechen. | geringe Abweichung |
+| S6 | Responsive Grundqualität | 171 gerenderte Zustände ohne horizontalen Seitenüberlauf; Tabellen besitzen fokussierbare Scrollregionen, Karten und Viewer feste responsive Rahmen. | Beibehalten und nach jeder Welle erneut prüfen. | konform |
+| S7 | Gemeinsame Zustände | Loading, Error, Empty, Not Found, Disabled, Login-Gate, Formularfehler und Erfolgsabschluss sind in den gemeinsamen Fabriken vorhanden und in Tests abgedeckt. | Beibehalten. | konform |
 
-### A — Workflows & Shells (hoch)
+## 5. Befunde je Komponente
 
-| # | Befund | Aktion | Status |
-|---|---|---|---|
-| A1 | Raumbaum dreifach kopiert; Mietende-Auswahl unsichtbar (`is-selected` ohne CSS), kein Vorfahrenpfad | Baum-Builder, markTree, Klick- und URL-Restore nach `js/spatial-tree.js`; Mietende erhält `is-active`/`is-path` | ✅ |
-| A2 | JS-State-Katalogverdrahtung 4× kopiert (Suche/Sort/Filter/Pillen, ~180 Z.) | `C.wireCatalogueState` als lokaler Zwilling von `wireCatalogue`; 4 Apps migriert | ✅ |
-| A3 | Explorer-Pagination: tote `href:'#'`-Links + `/Nächste/`-Regex 3× | `C.wirePagination` bindet `[data-page]`; href-Builder + Regex-Handler entfernt | ✅ |
-| A4 | Dashboard-Chrome wortgleich doppelt (Menü, KPI-Kachel, Filter-Collapse, Footer) | Extraktion nach `js/dashboard-chrome.js` (im Code als ausstehend markiert) | ✅ |
-| A5 | Mietende: «Alle Filter zurücksetzen» tot; Trefferzähler ohne Seiten-Suffix | data-reset-Zweig + Zähler-Format der Geschwister | ✅ |
-| A6 | Leerzustand: Reset-Aktion nur in der Hälfte der Kataloge | Explorer-Trio erhält Hinweis + verdrahteten Reset | ✅ |
-| A7 | Drei verschiedene Ausgelogt-Shells der Formular-Apps | Ein Rezept: grid + center + backLink + h1 + lead + loginGate | ✅ |
-| A8 | Fokus nach Submit nur in 1 von 4 Formular-Apps | `C.focusProcessDone` in allen vier drawDone-Pfaden | ✅ |
-| A9 | Fehler-Löschen bei Korrektur: 2× kopiert, 2× fehlend | `C.wireFieldErrors` (input+change), 4 Apps | ✅ |
-| A10 | Toter Link «Meine Vorgänge» → `#/app/my-cases` auf jeder Prozess-Dienstleistungsseite | `#/my-cases` | ✅ |
-| A11 | Galeriekarten/Grids der Explorer sichtbar verschieden (pfCard vs. C.card vs. Alt-Footer; pf-gallery vs. grid--3) | C.card mit `idLine`-Slot überall; `.pf-gallery` in allen drei | ✅ |
-| A12 | Vollbild-Chrome doppelt (.pf-lightbox vs. .docviewer) mit Drift (Schatten, Fokus-Offset, Tinten) | geteilter `.viewer-*`-Block, dokumentierte Deltas als Modifier | ✅ |
-| A13 | Datum dreisprachig: `format.datum` vs. rohes ISO vs. vorformatiert («2026-05-28» auf der Startseite) | alles durch `datum()`; applications.json `updated` → ISO; Labels «Stand»/«Aktualisiert» | ✅ |
-| A14 | `unit` in zwei Kasus gezwungen — «3 von 6 Verträge» | `unit: {nom, dat}` in mountDataTable/catalogueResults/announce | ✅ |
+### 5.1 Actionable (Ausgangsbefund)
 
-### B — Workflows & Shells (mittel/niedrig)
+| ID | Komponente | Fundstelle | Ist | Soll / CD-Referenz | Auswirkung | Schweregrad | Empfohlene Massnahme |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| F01 | Tokens | `css/app.css`, repräsentativ `:1302`, `:1432`, `:1599`, `:2792` | Abstände und Masse stehen häufig als Literal, obwohl `css/tokens.css` passende `--sp-*`, `--target-min`, Radius- und Farbtokens enthält. `#fff` steht zudem direkt in `:684` und `:2599`. | `docs/design-system-reference.md`, Token- und Spacing-Kapitel; Auftrag Phase 3.2 | Skin-, Skalierungs- und Wartungsdrift; grosser mechanischer Änderungsumfang. | mittel | Property-basiert inventarisieren; eindeutige Gleichwerte ersetzen; Breakpoints, fachliche Paletten und feste Viewer-Geometrie als begründete Ausnahmen führen. |
+| F02 | Kleine Buttons | `css/app.css:1332`, `:1346`; `js/components.js:156`; Back-Links und Shop-Aktionen | 34/40/44 px entsprechen exakt CD `btn.postcss:119–123`, unterschreiten aber bis 1919 px die Review-Vorgabe 44 px. | Review-Vorgabe 44 × 44; WCAG 2.5.8 fordert mindestens 24 px, der Auftrag ist strenger. | Kleine Touch-Ziele auf Telefon und Tablet, besonders beim globalen Banner. | hoch | `.btn--sm` auf groben Zeigegeräten und bis zum Tablet mindestens 44 px hoch ausführen; Desktop-CD-Masse nur bei `pointer:fine` beibehalten. |
+| F03 | Karten-/Viewer-Werkzeuge | `css/app.css:2477`, `:2480`, `:2604`, `:2607`; MapLibre-Standardcontrols ausserhalb `.dash-map/.pf-map` | Teilweise 29 oder 40 px; BPMN und einige Karten verkleinern bei feinem Zeiger explizit auf 40 px. | Einheitliches Werkzeugleistenmuster mit 44 px auf Touch; visuell 40 px auf Mausgeräten nur mit vergrösserter Hit Area. | Inkonsistente Zielgrössen zwischen Karten, BPMN und Viewern. | mittel | Gemeinsame `.viewer-toolbar`-/Map-Control-Regel mit 44-px-Hitbox und optional 40-px-Symbolfläche. |
+| F04 | Download Item | `js/components.js:1137`, `js/pages/knowledge.js:90`, `js/pages/digitalisation.js:103` | Standardtitel ist `h4`; Aufrufstellen unter `h2` übergeben keine Stufe. | CD `DownloadItem.mdx:48–56`: Titelstufe = Elternstufe + 1. | Überschriftensprünge in Wissen und Digitalisierungsstrategie; erschwerte Navigation mit Screenreader. | hoch | Default auf `h3` setzen und abweichende Kontexte explizit parametrisieren; Überschriften-Audit als Test behalten. |
+| F05 | Swagger UI | `js/apps/api-docs.js:42–55`, `:201`; `docs/review-assets/audit.json` | Ressourcen starten unter Portal-H1 mit H3; zahlreiche Swagger-Buttons liegen unter 44 px. | Lückenlose Hierarchie, 44-px-Touchziele, sichtbarer Fokus; kein CD-Pendant. | Grösster verbleibender Accessibility-Block, obwohl Portal-Chrome korrekt bleibt. | hoch | Adapter-CSS unter `.swagger-host`, vorgeschaltete SR-H2 oder angepasste Swagger-Tag-Templates; Zielgrössen und Fokuszustände testen. |
+| F06 | Hero-Bild | `css/app.css:1282–1284`, `js/components.js:691` | Generische Hero-Bilder werden auf 16:9 beschnitten. | CD `hero.postcss:41–49` lässt das Bildformat offen. | Bildausschnitte weichen vom CD ab; Inhalt kann abgeschnitten werden. | niedrig | Generischen Crop entfernen; 16:9 nur an Aufrufstellen setzen, die dieses Format fachlich benötigen. |
+| F07 | Button-Dokumentation | `css/app.css:1336`, `:1357–1360` | Regel nutzt `row-reverse`; der Kommentar behauptet das Gegenteil und beschreibt die alte DOM-Reihenfolge. | CD `btn.postcss:171–191`; Code und Kommentar müssen übereinstimmen. | Hohes Risiko einer späteren Rückregression der gerade vereinheitlichten Pfeilposition. | niedrig | Veralteten Kommentar ersetzen und einen Strukturtest für Icon rechts behalten. |
+| F08 | Mobile Shop-Navigation | `js/apps/shop.js:192`, `css/app.css:2792–2807`; Screenshot `before/320/app_shop.png` | Der vollständige Kategorienbaum steht vor den Produkten; Produktkarten behalten bewusst Bilder und Kartenrahmen. | Kein direktes CD-Shop-Pendant; mobile Kataloge priorisieren Ergebnis und legen Facetten in eine Disclosure-/Filterfläche. | Langer Weg zum ersten Produkt und geringere Scan-Dichte bei 320 px. Keine Überlappung oder Funktionsstörung. | mittel | Kategorien unter 1024 px als beschriftete Disclosure in die bestehende Filterfläche integrieren; Zustand und Tastaturbedienung beibehalten. |
+| F09 | Banner über Inhalt | `css/app.css:401`, `js/components.js:146`; Full-Page-Baselines | Der fixe Prototyp-Banner liegt bis zur Bestätigung über dem unteren Viewportbereich; in Viewern kann er Werkzeugleisten oder Diagrammteile temporär verdecken. | CD Notification Banner ist fixierbar, interaktive Hauptinhalte sollen aber erreichbar und sichtbar bleiben. | Temporäre Verdeckung; besonders auffällig in BPMN, Karten und auf kleinen Viewports. | mittel | Solange der Banner sichtbar ist, dynamischen unteren Seiten-/Overlay-Abstand reservieren oder Banner in Viewer-Zuständen kompakt platzieren. |
 
-| # | Befund | Aktion | Status |
-|---|---|---|---|
-| B1 | 9 Apps schreiben Brotkrumen-Ketten von Hand an `js/crumbs.js` vorbei | Importe (HOME/DATEN/DIENSTLEISTUNGEN/ANWENDUNGEN + trail); lokale CRUMB_BASE gelöscht; Mediathek + Bauwerksdok. tragen das «Anwendungen»-Glied (stehen im Katalog) | ✅ |
-| B2 | Metadatenkatalog-Details nutzen `detailHead` gegen den eigenen Bauplan («wie das Inventar») + :has()-CSS-Sonderfall | Kopf → detailBar + h1 (App-Rezept); :has()-Patch entfernt | ✅ |
-| B3 | `?tab=`-Deeplinks nur in der Hälfte der Register-Ansichten | Portfolio, Mediathek, Metadatenkatalog lesen+syncen `?tab=` | ✅ |
-| B4 | Vier Detail-Ansichten scrollen/fokussieren gegen den Router | vier scrollTo/focus-Blöcke ersatzlos (Muster tenancies) | ✅ |
-| B5 | api-docs: handgerollter NotFound-Pfad, kein detailBar/Share trotz `?tag`-Deeplink | `C.renderNotFound` + Krume «Nicht gefunden»; detailBar; check-404-Zeile | ✅ |
-| B6 | News-Detail als einziges ohne Share/Print-Leiste | `C.detailBar` statt backLink | ✅ |
-| B7 | my-cases-Detailkopf handgerollt (.page-header) | detailBar + h1 + lead (App-Rezept; pill-row für Statusbadge) | ✅ |
-| B8 | Wizard-Gerüst doppelt (Stufenkopf, Legende, focusStepHeading) mit Ansage-Drift | `C.wizardHead`/`C.focusWizardStep` («Schritt N von M: LABEL») | ✅ |
-| B9 | quiet-Vertrag ungenutzt: jeder Fehlversuch wird 2-3× angesagt | Feld-Badge ohne Live-Rolle (CD Input.vue), `quiet`-Parameter entfernt | ✅ |
-| B10 | building-create-Adressfehler als Live-Notification statt Feld-Badge | Standard-Badge `bc-address-msg`, Summary sagt an | ✅ |
-| B11 | fault-report: Zurück/Abbrechen zielt auf den Hub statt die Beschreibung | serviceId je TYPES-Eintrag; backLink «Dienstleistungsbeschreibung» | ✅ |
-| B12 | Kontextzeilen-Formel je Flow anders | «‹Aktion› als NAME · ORG (· Prozess: …)» in allen vier | ✅ |
-| B13 | processDone-Links handgebaut, 3× ohne Encoding | `links.vorgang()` in allen vier; links.js-Adoption auch in pages/search/buildings-map (≥15 Stellen) | 🔶 |
-| B14 | Options-Schlüssel `text` vs. `label` | fault-report → `label`; Fallback aus C.select entfernt | ✅ |
-| B15 | transaction: Wizard-Stepper für passiven Status | `C.pipeline` (wie my-cases/services) | ✅ |
-| B16 | Katalog-Quartett: ~35 Z. Hash-State-Boilerplate 4× | `C.catalogueState`-Helper; PER_PAGE vereinheitlicht (12) | 🔶 |
-| B17 | Filterpanel-Reset in ~7 Anatomien; 3 Katalogseiten ohne `.catbar__panel__actions` | `C.panelReset({href|id})`, kanonische Anatomie, 13 Stellen | ✅ |
-| B18 | search.js baut die Section-Bänder von Hand | `C.pageSection` | ✅ |
-| B19 | Mosaik-Klickverdrahtung 3×; projects baut galleryItemsFrom nach (verlor schon einmal den Bildnachweis) | `wireHeroMosaic()` in hero-mosaic.js; projects → `galleryItemsFrom` | 🔶 |
-| B20 | media-library: Objektauflösung + Galerieeintrag doppelt in einer Datei (Koordinaten-Zeile schon verloren) | Modul-Hoist `galleryItem`/`objektId` | ✅ |
-| B21 | tenancies: Aktionen-Box handgerollt trotz gegenteiligem Kommentar; Restlaufzeit-Badge doppelt | `C.actionCard`; `restBadge`-Hoist | ✅ |
-| B22 | Kontakt-Aside zwei Helfer, zwei Typografien | contactBox rendert intern die contactCard-Anatomie | ✅ |
-| B23 | Format-/Label-Bypässe: `CH()`, toLocaleString ×5, lokale statusLabel/domainLabel, Audience-Labels 3×, esc-Wrapper 6×, matchBadge 2×, search-log an storage.js vorbei | format.js/domain.js/storage.js konsequent; `AUDIENCES` in domain.js | ✅ |
-| B24 | Sortier-sr-Label und Sortieroptionen-Wortlaut driften | Default «Sortierung»; Optionsregel Titel/Bezeichnung; gesprochene Richtung | ✅ |
-| B25 | Zugriffszustand ohne festen Ort: Dienstleistungs-Landingpages sagten erst im Inhalt (login-gate-Band), ob und wie man startet; Systemtabellen-Blätter boten keinen Weg zum Datenbezug (Nutzerentscheide 2026-08-04) | Konsistente «Zugriff»-Karte als ERSTE Randspalten-Karte: Dienstleistung → kompakter Login-Hinweis (abgemeldet) / Sitzungskontext (angemeldet) / «frei zugänglich» (Info-Angebote); Tabellenblatt → «Datensatz ansehen»-Weg zum publizierten DCAT-Datensatz (nur wenn publiziert) | ✅ |
+Alle neun Befunde sind umgesetzt:
 
-### C — CSS, Tokens, Spacing
+| Befund | Umsetzungsnachweis | Status |
+| --- | --- | --- |
+| F01 | Rollen-/Farbtokens ergänzt, eindeutige gemeinsame Masse tokenisiert, feste Fachgeometrie als Ausnahme belassen | erledigt |
+| F02 | `.btn--sm` auf Telefon, Tablet und groben Zeigern mindestens 44 px; kompakte CD-Masse nur bei feinem Desktop-Zeiger | erledigt |
+| F03 | Gemeinsame `.viewer-toolbar`-Anatomie und responsive MapLibre-/Viewer-Ziele | erledigt |
+| F04 | `downloadItem` standardmässig `h3`, validierbarer Heading-Parameter und Hierarchie-Test | erledigt |
+| F05 | Swagger-H2, benannte Controls, Sprachmarkierung, Zielgrössen sowie Fokus-/Disabled-Adapter | erledigt |
+| F06 | Hero-Bilder standardmässig im natürlichen Format; 16:9 nur noch explizit am Konsumenten | erledigt |
+| F07 | Kommentar und Strukturtest entsprechen der rechts stehenden Folgeaktion | erledigt |
+| F08 | Kategorien unter 1024 px in der bestehenden Shop-Filter-Disclosure, Desktop-Seitenleiste bleibt erhalten | erledigt |
+| F09 | Bannerhöhe wird mit `ResizeObserver` reserviert; Back-to-top folgt dem dynamischen Offset und verdeckter Tastaturfokus wird automatisch darüber gescrollt | erledigt |
 
-| # | Befund | Aktion | Status |
-|---|---|---|---|
-| C1 | ~108 skalenfremde Spacing-Deklarationen (21 Werte), Icon-Gap .35/.4/.5 | Snap auf Skala; `--sp-1-5`/`--sp-2-5` ergänzt; Icon-Gap → .5rem | ✅ |
-| C2 | Sektionsrhythmus 3× mit Breakpoint-Drift (detail-section stuft bei 1024 statt 1544) | `--stack-gap`-Token; alle drei konsumieren; 1544 (CD-Kanon) | ✅ |
-| C3 | `.stats` mit privater Rampen-Kopie (bereits gedriftet) | `gap:var(--gap-responsive)` | ✅ |
-| C4 | transaction stapelt mit `mt-8` statt `.detail-section` | `.detail-section` | ✅ |
-| C5 | Inline-Spacing-Styles in Views (6, darunter ein dokumentiert «behobener» Defekt) | Utilities/list--default | ✅ |
-| C6 | 13× `ease`-Keyword | `var(--ease-out)`/`var(--ease-in-out)` | ✅ |
-| C7 | `.data-rows` vs. `.kv` | catalog/my-cases → `.kv` (+`.kv--ruled`); .data-rows gelöscht | ✅ |
-| C8 | Grossziffer 3 Rezepte (stat/kpi/kpi-strip), 3 Grössen, 2 Farben | eine Ziffern-Typografie, Flächen als dokumentierte Modifier | ✅ |
-| C9 | ~50 Z. tote Selektoren (verifiziert, inkl. dynamischer Klassenbau) | gelöscht | ✅ |
-| C10 | ~70 Z. vorprovisionierte CD-Blöcke ohne Konsument (gegen die eigene Policy) | exzidiert (Adoption bleibt möglich, wenn ein Konsument kommt) | ✅ |
-| C11 | Panel-Randton driftet über 3 Tokens | `--panel-border` (secondary-100) | ✅ |
-| C12 | Kombobox-Liste doppelt (.suggest vs. .map-search) mit zweierlei Popup-Chrome | ein Listbox-Rezept | ✅ |
-| C13 | Kein Basis-`code`-Rezept; drei scoped Wiederholungen; Metadatenkatalog fällt auf UA-Mono | `code { font-family:var(--font-mono) }` | ✅ |
-| C14 | Scroll-Lock doppelt, Name lügt (`chart-overlay-open` sperrt alles) | `body--overlay-open`, ein Regelpaar | ✅ |
-| C15 | «Du bist hier»-Markierung 3 Mechanismen, 2 Farben | ein Rezept (3px, primary-500) für api-rail + pf-tree | ✅ |
-| C16 | Viewer-Schatten-Literal 3×, Zwilling nutzt anderes Token | `--shadow-viewer` (4 Stellen) | ✅ |
-| C17 | Grid-Familien doppelt; `gap--responsive` redundant neben `.grid` | Migration auf `grid--responsive-cols-N` abgeschlossen; Aliase gelöscht | ✅ |
-| C18 | Blatt-Struktur: App-Sektionen nach PRINT, Utilities unter Seiten-Bannern, pf-Banner nennt einen Besitzer statt fünf | Banner nachgeführt, Strays umgezogen, Viewer-Sektionen vor MOTION/PRINT | 🔶 |
-| C19 | Print: `.btn--back`/`.notification-banner` nicht ausgeblendet (CD print.postcss:62,72) | display:none ergänzt | ✅ |
-| C20 | Kleinstellen: fw 700 ×3, radius 2px ×2, z-index 20, tote SERIES, toter reduced-motion-Rest, .stack-lg, api-layout-Gap, stale Token-Querverweis | bereinigt | ✅ |
-| C21 | Chart-Vollbild neben geplantem .modal-Nachfolger (Item 6.12 offen) | Chart-Vollbild auf `C.openModal`; .chart-overlay entfernt | ⬜ |
-| C22 | Geteilte Helfer emittieren App-Klassen (card→.pf-card__chips, actionCard→.fp-svc in der Mietende-Sektion) | CSS in die COMPONENTS-Sektion umgezogen, Konsumenten dokumentiert (kein Rename — Tests greppen die Klassen) | ✅ |
-| C23 | Kopf-Suchfeld: Fokusring dunkel statt CD-Purpur — der globale Aussenring wird vom overflow:hidden der Aufklapp-Animation beschnitten (Nutzerbefund 2026-08-04) | Inset-Ring (:focus, -2px) in --color-focus-ring am .search__form-Feld | ✅ |
-| C24 | Gestapelte Kästen der Dienstleistungs-Landingpage («Das brauchen Sie» / «So läuft es ab») klebten als EIN Block — das 1px-Naht-Fossil `.box + .box` schlug mit (0,2,0) den Spaltenrhythmus (Nutzerbefund 2026-08-04) | Fossil entfernt; Kastenabstand kommt überall aus dem Kontextrhythmus (vertical-spacing 3/3.5rem · Aside 1.75/2rem · detail-layout 1.5rem); Wächter in check-consistency.mjs | ✅ |
-| C26 | Unsplash-Hotlinks in fünf Flächen (Startseiten-Kacheln, News, Dienstleistungs-/Digitalisierungs-Heroes, ein Datensatz) — Bilder ausserhalb des Repos, Startseiten-Kachel «Datenportal» zeigte ein ANDERES Motiv als die Landingpage (Nutzerbefunde 2026-08-04) | Alle Bilder lokal unter assets/images: news/ (bild{src, quelle} je Meldung), heroes/ (geteilter Pool mit Nachweis-README), datasets/; Anwendungs-Kacheln der Startseite lesen das Bild aus dem ANWENDUNGSDATENSATZ (eine Quelle für Kachel, Katalog und Landingpage); photoUrl bleibt nur Rückfallebene, kein Datenbestand trägt mehr Ids | ✅ |
-| C25 | Lesemass-Wildwuchs: 70ch-Einzeldeckel an p/ul in container__main, detail-/anchor-section und page-intro neben ungedeckelten Geschwistern — Text endete, Kästen liefen weiter (Nutzerbefund 2026-08-04) | EIN Modell: das Mass sitzt am Eltern-/Spaltenelement — container__main und anchor-page__header messen 60rem (= hero__content); Blattseiten (Datensatz, Metadatenkatalog-Übersicht) tragen einen measure-xl-Artikel-Wrapper; Einzeldeckel gelöscht; measure-lg entfallen (Workspace-Erfolg = 46rem-Formularspalte). Dokumentierte Ausnahmen: notification__content und api-resource__desc (komponenten-interne Lesbarkeit). Datentabellen/Registerpanels bewusst vollbreit. Wächter in check-consistency.mjs | ✅ |
+### 5.2 Verifiziert konform
 
-### D — Sprache (Detailliste)
+| Komponente | Nachweis |
+| --- | --- |
+| Version | Portal und lokales CD referenzieren 1.0.5. |
+| Buttons, normale Grösse | 44/48/52 px, Typorampe, Varianten, Disabled und Icon-Reihenfolge entsprechen `btn.postcss`. |
+| Karten-Hover | Schatten, Titel-Farbwechsel und Randoverlay entsprechen dem CD; kein Bildzoom. |
+| Tabellen | Caption, `th`/`scope`, Scrollregion, Ausrichtung und Mobile-Verhalten sind programmatisch vorhanden. |
+| Tabs | Roving `tabindex`, Pfeiltasten, Home/End, genau ein sichtbares Panel und Hash-Synchronisation sind getestet. |
+| Formulare | Labels, Pflichtmarkierung, `aria-invalid`, verknüpfte Meldungen, Fehlerübersicht und Fokusführung sind getestet. |
+| Responsive | Kein horizontaler Seitenüberlauf in 171 Zuständen bei 320/768/1440 px. |
+| Bilder | Kein gerendertes Bild ohne `alt` in der Audit-Matrix. |
+| IDs und Namen | Keine doppelten IDs und keine unbenannten gerenderten Controls in der Audit-Matrix. |
+| Reduced Motion | Bewegungsdauern laufen über Tokens und werden in `prefers-reduced-motion` auf eine minimale Dauer gesetzt. |
+| Prozessdiagramm | Eigenes Vollbreiten-Register, vertikale Overlay-Werkzeuge, Reset und gleichwertige Schritttabelle. |
+| Warenkorb | Global im Top-Header, auf allen Routen erreichbar; Zähler reagiert auf Änderungen. |
 
-Die vollständigen Fundstellenlisten je Variante liegen im Review-Protokoll; hier die Familien mit Status.
+## 6. Zielkonflikte und bewusst nicht umgesetzte Punkte
 
-| # | Familie | Aktion | Status |
-|---|---|---|---|
-| D1 | absenden/einreichen gemischt (ein Bildschirm zeigt beide) | Kanon «absenden» (siehe Sprach-Kanon) | ✅ |
-| D2 | Reset-Vierfalt inkl. Wortdreher | Panel «Filter zurücksetzen» (+ Test check-fixes.mjs Regex), Leerzustand vereinheitlicht, Zoom «Zoom zurücksetzen» | ✅ |
-| D3 | News-Dreifaltigkeit + «Meldung»-Kollision | «News»/«Mitteilung» durchgängig | ✅ |
-| D4 | «Alle …»-Links dreierlei auf der Startseite | «Alle ‹Einheit› anzeigen» | ✅ |
-| D5 | Download/Herunterladen; Link/URL kopieren; kopieren klein | Kanon (Sprach-Tabelle); Kopier-Fehlertoast überall error-Variante | ✅ |
-| D6 | «Weitere Services», «Service-Beschreibung», «den Service» | «Dienstleistung(en)»-Familie | ✅ |
-| D7 | Startseite: Titel «Übersicht», 404 «Zur Übersicht» | «Startseite» | ✅ |
-| D8 | «Öffnen» dreifach belegt; «Zur Detailseite» | «Vorschau» (Overlay), «Aufnahme ansehen» (Galerie-Panel) | ✅ |
-| D9 | erfassen/anlegen/erstellen gemischt | Nutzerhandlung «erfassen», Systemseite «wird ein Vorgang erstellt» | ✅ |
-| D10 | Leerzustände: gefunden/für diese Auswahl/vorhanden; Hinweiszeile 3×; erfasst/hinterlegt/verknüpft | Familien nach Kanon; C.table-Default mit Punkt | ✅ |
-| D11 | Anführungszeichen „…“ ×12 | «…» | ✅ |
-| D12 | Validierungsgrammatik + Punktdrift | «Bitte + Artikel + Infinitiv», ohne Punkt | ✅ |
-| D13 | Prototyp-Hinweise vier Grammatiken; «verknüpft/angebunden» | Suffix-Kanon; «angebunden» | ✅ |
-| D14 | Ellipsen (ASCII, Leerzeichen davor) und Platzhalter («Suche»/«Suche…») | «…» ohne Leerzeichen; «Suchen…»; «‹Felder› suchen…» | ✅ |
-| D15 | «Hinweis/Meldung geschlossen»; Modal-aria «Schliessen» | «Hinweis geschlossen.»; «Dialog schliessen» | ✅ |
-| D16 | Fusszeile «Datenkatalog»; Meta-Nav «Hilfe» | «Daten und Digitalisierung»; Hilfe → guides | ✅ |
-| D17 | Workspace: 5 Namen, 1 App | «Workspace & Buchung»-Kanon (JSON + Crumb) | ✅ |
-| D18 | Katalogtitel ≠ Ziel-h1 (4 Fälle) | Titel = h1 | ✅ |
-| D19 | «Mietende» als kv-Label fürs Vertragsende | «Vertragsende» | ✅ |
-| D20 | Bautendokumentation/Bauwerksdokumentation im selben Datensatz | services.json-Titel «Bauwerksdokumentation abrufen»; Begriffsklärung dokumentiert | ✅ |
-| D21 | Bodenabdeckung (JSON) vs. Bodenbedeckung (App) — einmal Titel gegen Beschreibung | «Bodenbedeckung» in catalog-labels/system-tables/datasets | ✅ |
-| D22 | Metadatenkatalog: Begriff/Geschäftsobjekt/Domäne/Datensätze-Kollision | Kanon (Terminologie-Entscheide) | ✅ |
-| D23 | Suchseiten-Leerzustand nennt Facetten, die es nicht gibt | Facettennamen | ✅ |
-| D24 | Nav «Fachanwendungen Bauten» → Pille «Immobilien & Bau» | Pille/Checkbox zeigen navLabel (dokumentierter Zwei-Label-Entscheid bleibt für `group`) | ✅ |
-| D25 | Brotkrumen-Tiefe uneinheitlich (6 Apps mit, 5 ohne «Anwendungen») | Regel: Katalogeintrag → ANWENDUNGEN-Glied | ✅ |
-| D26 | Kontakt-/Eckdaten-Slots (4 bzw. 6 Überschriften) | Kanon-Zweiteilung / «Eckdaten» | ✅ |
-| D27 | «Auswertung» vs. «Dashboard» in einem Satz (data.js) | Satz entdoppelt; Board=«Dashboard», Inhalt=«Auswertung» dokumentiert | ✅ |
-| D28 | NotFound-Labels («Bauprojekte» vs. «… / EPPM»; «Mediathek» vs. «Mediathek Bauten») | vereinheitlicht | ✅ |
-| D29 | ß in system-tables.json («Bemessungsgröße») | «Bemessungsgrösse» | ✅ |
-| D30 | «Dienstleistung starten» vs. «Vorgang starten» | «Vorgang starten» | ✅ |
-| D31 | Schritt-Ansage mit/ohne Label | «Schritt N von M: LABEL» | ✅ |
-| D32 | «Parzelle erfassen» vs. Geschwister-Wortschatz | «Grundstück erfassen» | ✅ |
-| D33 | Metadatenkatalog-Details ohne Datensatzblatt-Anatomie: Beschreibung als kv-Zeile versteckt, keine Personen, «Eckdaten» ohne Trennlinien; Sammeladresse und Personen vermischt (Nutzerentscheide 2026-08-04) | Datensatzblatt-Muster für beide Detailansichten: Definition/Beschreibung als Lead unter der H1 · «Verantwortliche Personen» = AdminDir-Einträge (kv--ruled; Tabellen erben die Personen ihres publizierten Datensatzes) · «Metadaten» (kv--ruled) · «Kontakt»-Karte (Sammeladresse der Datenverwaltung) in der Randspalte; «Zertifiziert»/«Zeilen» aus dem Tabellenblatt entfallen | ✅ |
+| Thema | CD | Portal / Anforderung | Entscheid | Optionen |
+| --- | --- | --- | --- | --- |
+| Kleine Buttons | 34/40/44 px | Auftrag verlangt 44 × 44 px Touchziele | In Phase 5 nur auf Touch auf 44 px erhöhen; feine Zeiger dürfen CD-Masse behalten. | A: überall 44 px; B: `pointer:coarse` 44 px; C: strikt CD, Auftrag nicht erfüllt. |
+| Step Indicator | CD nutzt teilweise kontrastarme Grau-/Grünwerte. | Portal nutzt dunklere CD-Tokens mit AA-Kontrast. | Beibehalten; Accessibility hat Vorrang vor Pixelgleichheit. | Nur bei korrigierter CD-Version neu bewerten. |
+| Tabellen-Zeilenkopf | CD rendert `tbody th` fett und dunkel. | Portal hält den semantischen Zeilenkopf, aber visuell regulär, damit lange Listen nicht wie Ranglisten wirken. | Beibehalten und dokumentieren. | Pro Datentabelle opt-in für fette Zeilenköpfe. |
+| L1-Navigation | CD nutzt einen «Mehr»-Überlauf. | Portal lässt die fünf Einträge umbrechen. | Nicht ohne separate Navigationsentscheidung ändern. | A: CD-Überlauf; B: Umbruch beibehalten. |
+| Mobile-Menü | CD nutzt verschiebbare Ebenen. | Portal nutzt ein Inline-Accordion und erhält den Kontext. | Nicht in dieser Runde ändern. | A: CD-Slider; B: Accordion beibehalten. |
+| Formularmeldungen | CD startet bei 10 px. | Portal vergrössert längere Validierungstexte. | Beibehalten; Lesbarkeit hat Vorrang. | Nur dekorative Badges bleiben in CD-Grösse. |
+| Karten auf Mobil | CD `card--list` entfernt Bildwirkung. | Shop-Produkte benötigen Bilder zur Identifikation. | Bilder beibehalten; Kategoriennavigation verdichten. | Produktliste als zusätzliche Ansicht ist bereits vorhanden. |
+| Drittanbieter-UI | Kein CD-Pendant. | Swagger und BPMN müssen fachlich vollständig bleiben. | Adapter-CSS und Semantik, keine Funktionsreduktion. | Bibliothek ersetzen ist ausserhalb des Refactoring-Auftrags. |
 
-### E — Meta (Tests, Doku)
+## 7. Umgesetzter Massnahmenplan
 
-| # | Befund | Aktion | Status |
-|---|---|---|---|
-| E1 | test-routes.mjs deckt 3 von 13 App-Routen; Bauwerksdok./transaction nirgends getestet | Routen ergänzt (Smoke je App) | ✅ |
-| E2 | check-404.mjs kennt api-docs nicht (deshalb blieb die Abweichung grün) | 14. Zeile ergänzt | ✅ |
-| E3 | check-fixes.mjs pinnt /Zurücksetzen/ (case-sensitiv) | Regex /zurücksetzen/i | ✅ |
-| E4 | READMEs beschreiben einen zwei Wellen alten Stand (tote Links, fehlende Apps, falscher Port) | docs/README.md-Index + Routen-Tabellen nachgeführt | ✅ |
+Die Reihenfolge folgt der freigegebenen Vorgabe für Phase 5. Alle als erledigt
+markierten Massnahmen wurden umgesetzt und abgenommen.
 
-## Bewusste Abweichungen (dokumentiert, nicht «reparieren»)
+| Welle | Massnahme | Wirkung | Aufwand | Status | Abnahme |
+| --- | --- | --- | --- | --- | --- |
+| 1 Tokens | Direkte Farben mit vorhandenem Rollen-Token ersetzen; `#fff` in Warenkorb/BPMN bereinigen. | mittel | klein | erledigt | CSS-Scan und 171 Screenshots |
+| 1 Tokens | `rem`-Literale property-basiert klassifizieren und eindeutige Spacing-/Radius-/Control-Werte auf Tokens umstellen; Ausnahmen dokumentieren. | hoch | gross | erledigt | Keine Pixelabweichung in unveränderten Komponenten |
+| 2 Namen | Veralteten `btn--icon-right`-Kommentar korrigieren; portal-eigene Viewer-Toolbar-Klassen auf ein gemeinsames BEM-Muster bringen. | mittel | klein | erledigt | Strukturtests, CSS-Suche |
+| 2 Namen | Suchvorschlag und Adress-Combobox auf einen gemeinsamen ARIA-Controller zurückführen, visuelle Modifier behalten. | mittel | mittel | erledigt | Suche- und Gebäudeerfassungs-Tests |
+| 3 HTML | DownloadItem-Überschriften kontextgerecht ausgeben; H2/H3/H4-Audit ergänzen. | hoch | klein | erledigt | `review-audit`, Content-Tests |
+| 3 HTML | Swagger-Ressourcen unter eine programmatische H2-Struktur setzen, ohne Operationen zu entfernen. | hoch | mittel | erledigt | API-Docs-Test, Accessibility-Probe |
+| 3 HTML | Generischen Hero-Crop entfernen und benötigte Bildverhältnisse an den Konsumenten deklarieren. | niedrig | mittel | erledigt | gezielter Screenshotvergleich |
+| 4 Zustände | Swagger- und Viewer-Disabled-/Focus-Zustände angleichen; bestehende Loading/Error/Empty-Zustände unverändert lassen. | mittel | mittel | erledigt | Tastaturprüfung und Funktionssuiten |
+| 5 Responsive | Touchziele für `.btn--sm`, MapLibre und Viewer auf groben Zeigern auf mindestens 44 px bringen. | hoch | mittel | erledigt | 320/768 Audit, Touch-Target-Test |
+| 5 Responsive | Shop-Kategorien mobil in eine Disclosure-/Filterfläche verschieben; alle Filter und Deep-Links erhalten. | mittel | mittel | erledigt | Shop-Test plus 320/768 Screenshots |
+| 5 Responsive | Sichtbaren Banner bei Hauptinhalt, Karten und Viewern in die verfügbare Höhe einrechnen. | mittel | mittel | erledigt | Screenshotvergleich mit offenem Banner |
+| 6 Accessibility | Swagger-Zielgrössen, Fokus, Überschriften und Namen im Adapter korrigieren, soweit die Bibliothek dies ohne Funktionsverlust erlaubt. | hoch | gross | erledigt | Audit ohne Portal-verursachte Swagger-Warnungen |
+| 6 Accessibility | Reproduzierbare Tastatur-, Fokus-, 200-%-Reflow- und AX-Tree-Prüfung der 57 Zustände; reale Sprachausgabe als Release-Check dokumentieren. | hoch | gross | erledigt | `docs/accessibility-review.md` |
+| Entscheidung | L1-Überlauf, mobiles Menü, Tabellen-Zeilenkopf und Step-Farben nicht ändern. | vermeidet Regression | – | bewusst nicht umgesetzt | als bewusste Abweichung dokumentiert |
 
-1. **Filter-Umschalter «Filter»** (statt CD-Demo «Filter anzeigen/ausblenden»): Chevron + Zähler tragen den Zustand; eine Quelle in `C.catalogueBar`.
-2. **«Link kopieren»** statt CD-Demo «URL Kopieren» — CDs Binnengrosschreibung ist kein Standarddeutsch; Toast und Knopf sprechen jetzt dasselbe Wort.
-3. **«Buchung anfragen»** bleibt (Bestätigung durch Workspace BBL — semantisch korrekt).
-4. **Mietende-Eyebrow** (Gebäudename über dem Mietverhältnis-Titel): trägt Eltern-Kontext, den die Geschwister nicht haben.
-5. **`pf-`-Namespace** bleibt (geteilte Explorer-Schicht, Tests greppen ihn) — Banner dokumentiert die fünf Konsumenten.
-6. **Produktnamen mit Leerzeichen** sind Branding (siehe Terminologie-Entscheide).
-7. **Metadatenkatalog `?id=`/`?table=`** bleibt (Kommentar dokumentiert die bewusste Wiederverwendung des Inventar-Idioms; ein Routenwechsel bräche geteilte Links ohne Nutzergewinn).
-8. **`(Ladefehler)`-Suffix** nur in Trefferlisten-Leerzuständen; die Fehlerbänder formulieren frei (verschiedene Flächen).
-9. **kpi-strip rahmenlos** (dokumentiert) — nur die Ziffern-Typografie ist vereinheitlicht.
-10. **estate ohne `needs`**, **workspace-Gate im Panel**, **Mietende-Vorgänge im Übersicht-Tab**, **map-Zähler ohne Seiten-Suffix**: im Code dokumentierte Entscheide der Vorwellen, unangetastet.
+### Abnahme nach jeder Welle
 
-## Reststand der Teil-Umsetzungen
+1. Alle 20 Funktionssuiten laufen.
+2. `scripts/review-audit.mjs` läuft für 57 Zustände in drei Viewports.
+3. `scripts/review-screenshots.mjs after` aktualisiert 171 Nachher-Bilder.
+4. Beabsichtigte Änderungen werden gegen `docs/review-assets/before/` geprüft;
+   andere visuelle Abweichungen gelten als Regression.
+5. Die Welle erhält einen eigenen Commit mit nachvollziehbarer Message.
 
-- **B13** (links.js-Adoption): Formulare, Startseite, Vorgänge, News und Suche laufen über links.*; hand-gebaut bleiben Selbst-Links innerhalb einer App (dokumentierte Regel in links.js) sowie transaction/buildings-map (Karten-Popups erhalten ihre Hrefs vom Aufrufer).
-- **B16** (catalogueState): Anwendungen + Datenbezug umgezogen; Dienstleistungen und Suche folgen demselben Muster (identische Signatur, reine Fleissarbeit).
-- **B19** (Mosaik-Verdrahtung): portfolio nutzt wireHeroMosaic (2 Stellen); der Mietende-Loop bleibt lokal mit Begründungs-Kommentar — der Helfer scopt inzwischen über .pf-mosaic (Klasse), einer künftigen Migration steht nichts mehr im Weg.
-- **B24** (Sortier-Wortlaute): Regel umgesetzt; die Feld-Facette «Trägt einen Begriff» des Metadatenkatalogs behält «Begriff» (test-gepinnt, Attribut-Ebene — dokumentiert).
-- **C18** (Blattstruktur): Banner benennen jetzt die echten Besitzer (Explorer-Schicht, Dashboards, Viewer); das physische Umziehen der Sektionen bleibt bewusst aus — reine Umordnung mit Cascade-Risiko ohne Nutzersichtbarkeit.
-- **C21** (Chart-Vollbild → C.openModal): offener, im Blatt dokumentierter Übergangszustand (Item 6.12) — beide Rezepte koexistieren, bis das Chart-Vollbild auf die Modal-Ebene umzieht.
+## 8. Prüfartefakte
 
-## Testauswirkungen der Fix-Welle
+| Artefakt | Inhalt |
+| --- | --- |
+| `docs/design-system-reference.md` | Tokens, Layout, Komponentenstrukturen, Zustände und Bundes-Chrome der Version 1.0.5 |
+| `docs/feature-inventory.md` | Routen, Funktionen, Interaktionen und Zustände des Portals |
+| `docs/review-assets/before/` | 171 Full-Page-Screenshots |
+| `docs/review-assets/after/` | 171 Full-Page-Screenshots nach der Umsetzung |
+| `docs/review-assets/audit.json` | Strukturierter Render-Audit über dieselbe Matrix |
+| `docs/review-assets/accessibility.json` | Reflow-, Tastatur-, ARIA- und Accessibility-Tree-Audit über 57 Zustände |
+| `docs/accessibility-review.md` | Methode, Ergebnis und Grenze des Accessibility-Kurztests |
+| `scripts/review-routes.mjs` | Zentrale Liste der 57 Prüfzustände |
+| `scripts/review-audit.mjs` | Overflow-, Semantik-, Label-, Tabellen- und Touch-Target-Prüfung |
+| `scripts/review-accessibility.mjs` | 200-%-Reflow-, Fokus-, ARIA- und Accessibility-Tree-Prüfung |
+| `scripts/review-screenshots.mjs` | Vorher-/Nachher-Aufnahme in 320/768/1440 px |
 
-- `scripts/check-fixes.mjs:13` — Regex auf /zurücksetzen/i (D2).
-- `scripts/check-404.mjs` — api-docs-Zeile neu (B5/E2).
-- `scripts/test-metadata-catalog.mjs:197` — pinnt «keine Realisierung erfasst» (Wortlaut bleibt erhalten).
-- Pagination-aria («Nächste Seite») bleibt unverändert — die drei /Nächste/-Parser verschwinden mit A3.
-- `.pf-card`/`.fp-svc`/`.dashboard-main`-Klassen bleiben bestehen (check-pfcard, check-pjcards, test-tenancies, test-dashboard).
+Die freigegebenen Phasen 5 und 6 sind umgesetzt. Die Nachher-Baseline und die
+strukturierten Prüfergebnisse bilden den Abnahmestand dieser Runde.

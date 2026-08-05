@@ -81,10 +81,12 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
       r.countSearch = count();
       q.value = ''; q.dispatchEvent(new Event('input', { bubbles: true })); await s(450);
       // Karte back + tree filter: click the CH land node
-      document.querySelector('[data-view="map"]').click(); await s(200);
+      document.querySelector('[data-view="map"]').click();
+      let mc = 0; while (!document.querySelector('.pf-map canvas') && mc++ < 100) await s(100);
       const ch = [...document.querySelectorAll('.pf-tree__node[data-land="CH"]')].find(n => !n.dataset.region);
       r.chTreeCount = ch.querySelector('.pf-tree__n').textContent;
-      ch.click(); await s(400);
+      ch.click();
+      let mc2 = 0; while (!document.querySelector('.pf-map canvas') && mc2++ < 100) await s(100);
       r.countCH = count();
       r.mapCanvas2 = !!document.querySelector('.pf-map canvas');
       r.clearShown = !document.querySelector('#pf-clear').hidden;
@@ -169,6 +171,7 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
       // Die Miniaturenleiste wurde bewusst entfernt; navigiert wird über die
       // Blätterpfeile und den Zähler in der Kopfzeile.
       r.zoomBar = !!document.querySelector('.pf-lightbox__zoom');
+      r.sharedZoomBar = !!document.querySelector('.pf-lightbox__zoom.viewer-toolbar--negative .viewer-toolbar__button');
       // Vollbild statt zentrierter Karte, mit Kopfzeile und Herunterladen-Aktion.
       r.lightboxFullscreen = lb
         ? Math.round(lb.getBoundingClientRect().height) === document.documentElement.clientHeight : false;
@@ -194,7 +197,8 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
     check(D.sideTiles === 4, `side grid is always 4 tiles, padded with placeholders (${D.sideTiles})`);
     check(D.emptyClickable === 0, `placeholder tiles are not clickable (${D.emptyClickable})`);
     check(D.moreOverlay, '«Alle Bilder anzeigen» overlay on the last side tile');
-    check(D.lightbox && D.lightboxImg && D.zoomBar, `mosaic tile opens the gallery (Zoomleiste: ${D.zoomBar})`);
+    check(D.lightbox && D.lightboxImg && D.zoomBar && D.sharedZoomBar,
+      `mosaic tile opens the gallery (gemeinsame Zoomleiste: ${D.sharedZoomBar})`);
     check(D.lightboxFullscreen, 'gallery viewer is full-screen');
     check(D.lightboxBar && D.lightboxDownload, 'viewer has a header bar with a download action');
     check(D.lightboxStartsAtClicked, 'viewer opens at the clicked image, not the first');

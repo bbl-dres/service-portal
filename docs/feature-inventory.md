@@ -5,9 +5,10 @@ Interaktion und jeder Zustand — nach jeder Refactoring-Welle wird gegen diese
 Liste geprüft. Erstellt automatisiert aus der vollständigen Modullektüre
 (Stand: Branch design-review-2026-08, 2026-08-05).
 
-Altlast-Weiterleitungen (js/router.js REDIRECTS) und die Screenshot-Prüfroute
-liegen in scripts/test-routes.mjs; Vorher-Screenshots (35 Routen × 320/768/1440 px)
-unter docs/review-assets/before/.
+Altlast-Weiterleitungen (js/router.js REDIRECTS) liegen in
+scripts/test-routes.mjs. Die visuelle Regressionsmatrix steht zentral in
+scripts/review-routes.mjs; Vorher-Screenshots (57 repräsentative Routen und
+Zustände × 320/768/1440 px) liegen unter docs/review-assets/before/.
 
 ## Routenübersicht
 
@@ -17,6 +18,7 @@ unter docs/review-assets/before/.
 | `#/services` | Dienstleistungskatalog |
 | `#/services/<id>` | Dienstleistungsdetail |
 | `#/applications` | Anwendungskatalog |
+| `#/applications/<id>` | Anwendungsdetail / Portal-Einstieg |
 | `#/data` | Daten und Digitalisierung — Übersicht |
 | `#/data/catalog` | Datenbezug und API Verzeichnis |
 | `#/data/digitalisation` | Digitalisierung — Übersicht |
@@ -40,16 +42,28 @@ unter docs/review-assets/before/.
 | `#/app/fault-report` | Störung melden |
 | `#/app/building-create` | Gebäude erfassen |
 | `#/app/portfolio` | Liegenschaften Inventar |
+| `#/app/portfolio?id=<id>&view=<map|gallery|list>` | Inventaransicht oder Objekt-/Grundstücksdetail |
 | `#/app/projects` | Bauprojekte |
+| `#/app/projects/<id>?tab=<id>` | Bauprojektdetail mit Registern |
 | `#/app/tenancies` | Mietende |
+| `#/app/tenancies/<id>?tab=<id>&floor=<id>&space=<id>` | Mietobjekt-, Vertrags- und Grundrissdetail |
 | `#/app/dataportal` | Datenportal (Dashboards) |
+| `#/app/dataportal/<dashboard>?tab=<id>` | Dashboard mit Filtern und Registern |
 | `#/app/workspace` | Workspace |
 | `#/app/transaction` | Veräusserung |
 | `#/app/document-archive` | Bauwerksdokumentation |
 | `#/app/media-library` | Mediathek |
+| `#/app/media-library/<id>` | Mediendetail |
 | `#/app/api-docs` | API-Dokumentation (Swagger UI) |
 | `#/app/metadata-catalog` | Metadaten Katalog |
+| `#/app/metadata-catalog?id=<id>` | Geschäftsobjektdetail |
+| `#/app/metadata-catalog?table=<id>` | Systemtabellendetail |
 | `#/app/process-docs` | Prozessdokumentation Bauten |
+| `#/app/process-docs?id=<id>&tab=<uebersicht|diagramm|schritte>` | Prozessdetail mit BPMN- und Schrittansicht |
+| `#/app/shop` | BBL Intranetshop – Produktkatalog |
+| `#/app/shop/product/<id>` | Produktdetail |
+| `#/app/shop/cart` | Warenkorb |
+| `#/app/shop/checkout` | Bestellassistent |
 
 ## index.html
 
@@ -94,7 +108,7 @@ Geteilte Komponentenbibliothek (HTML-String-Fabriken + wire*-Verdrahtungen) im C
 - statusBadge(status, label) — Badge über STATUS_VARIANT-Mapping (16 Vorgangsstatus entwurf…abgelehnt) — components.js:105-113
 - loading({label, hideLabel, size}) — DER Ladezustand: Spinner-Icon + role=status, Wortlaut-Kanon «… wird geladen…» — components.js:98
 - pageSection({title, body, more, alt, titleTag}) — vollbreites Seitenband (section>container), alternierende Tönung, «mehr»-Link — components.js:131
-- mountBanner(host, opts) — Consent-/Hinweisstreifen (notification-banner--fixed) mit localStorage-Merker bbl_banner_<id> und Schliess-Ansage — components.js:165
+- mountBanner(host, opts) — Consent-/Hinweisstreifen (notification-banner--fixed) mit localStorage-Merker bbl_banner_<id>, Schliess-Ansage, per ResizeObserver gemessener Platzreserve `--banner-offset` und Fokus-Schutz gegen verdeckte Bedienelemente — components.js:165
 - pageHeader({title, lead, leadHtml}) — h1 tabindex=-1 + Lead (leadHtml nur für autoreneigenes Markup) — components.js:180
 - card(o) — CD-Karte: Stretched-Link-Muster, Medien-Slots (photo/image/placeholder/media RAW), Chips-Overlay, idLine (Mono-Kennung), Badges, desc, footerInfo/footerAction/footer, external, variant, cls — components.js:187
 - table({columns, rows, zebra, caption, showCaption, foot, rowsClickable, emptyText}) — DIE Tabelle: th scope row/col, align/width (colgroup), caption→benannte Region, tfoot, Leerzeile, sichtbarer Hinweis «Tabelle seitlich scrollbar» — components.js:263
@@ -112,7 +126,7 @@ Geteilte Komponentenbibliothek (HTML-String-Fabriken + wire*-Verdrahtungen) im C
 - openShareModal(url, title) — Teilen-Dialog: readonly-URL-Feld (vorselektiert), «Link kopieren» via Clipboard-API mit execCommand-Fallback, Erfolgs-/Warn-Badge in aria-live-Region — components.js:634
 - wireShare(root) — globale Delegation: Klick auf [data-share] öffnet den Teilen-Dialog — components.js:660
 - detailBar({backHref, backLabel}) — Zurück-Link links + Share-Bar (Drucken window.print, Teilen) rechts — components.js:671, shareBar components.js:591
-- heroFigure({src, id, color, alt}) — Hero-Kontextbild (figure, ohne Legende per Nutzerentscheid) — components.js:691
+- heroFigure({src, id, color, alt, w, ratio}) — Hero-Kontextbild im natürlichen Format; `ratio` erlaubt explizit 16x9/4x3/21x9 am fachlichen Konsumenten — components.js:691
 - detailHead({backHref, backLabel, title, lead, tags, image}) — Detailseiten-Kopf: detailBar + Hero (section) mit/ohne Bild — components.js:696
 - pipeline(steps, currentIndex, {label}) — Chevron-Status-Stepper done/active/todo mit sr-Präfixen und aria-current=step — components.js:714
 - detailSection({title, body, titleTag}) — Detailabschnitt mit Titel — components.js:736
@@ -132,7 +146,7 @@ Geteilte Komponentenbibliothek (HTML-String-Fabriken + wire*-Verdrahtungen) im C
 - wireErrorSummary(mount, {focus}) — Sprungmarken-Klick → Feld-Fokus+Scroll; Fokus auf die Übersichts-Überschrift — components.js:1071
 - field(o) — Feld-Wrapper für input/textarea: name/autocomplete/inputmode, Hint VOR dem Feld, Fehler-Badge, control(cls, attrs)-Callback — components.js:1085
 - val(mount, id) / readForm(mount, map) — Formularwerte einzeln bzw. als Objekt lesen — components.js:1120, 1125
-- downloadItem(o) — CD-Download-Zeile (Dokument/App/Ressource/Anhang); href '#' degradiert zu aria-disabled «Im Prototyp nicht verfügbar»; meta-Zeile, wrapLi, download-Attribut — components.js:1137
+- downloadItem(o) — CD-Download-Zeile (Dokument/App/Ressource/Anhang); Titel standardmässig h3, per `heading` auf h2–h6 anpassbar; href '#' degradiert zu aria-disabled «Im Prototyp nicht verfügbar»; meta-Zeile, wrapLi, download-Attribut — components.js:1137
 - contactBox(contact, opts) — CD-Kontaktkasten (dl kv--stack, mailto escaped, unit = Direktionsbereich) — components.js:1160
 - actionCard({title, lead, links}) — Randspalten-Karte «Aktionen» (fp-svc-Zeilen mit Folgepfeil, bewusst ohne führende Icons) — components.js:1195
 - contactCard({title, contacts}) — Randspalten-Karte «Ansprechpersonen» (dt=Rolle, Name entfällt bei Dublette) — components.js:1209
@@ -363,6 +377,25 @@ CD-Bund-Shell: Top-Bar, Marken-/Logo-Zeile, Meta-Navigation mit Login, Header-Su
 - Klick ausserhalb der offenen Suche schliesst sie — shell.js:591-595
 - «Anmelden»/«Abmelden»-Knöpfe rufen window.__login/__logout (inline onclick) — shell.js:177-180
 - Back-to-top-Klick → tabindex=-1 + Fokus auf #main-header, window.scrollTo(0) — shell.js:605-611
+
+## js/combobox.js und js/search-suggest.js
+
+Gemeinsamer WAI-ARIA-Controller für Eingabefelder mit Listbox-Popup. Die globale
+Suche und die swisstopo-Adresssuche besitzen weiterhin eigenes Datenladen und
+Markup, teilen aber Fokus-, Auswahl- und Schliessverhalten.
+
+**Funktionen und Zustände**
+
+- `createListboxController({input, list, onChoose, ...})` setzt role=combobox, `aria-expanded`, `aria-controls`, `aria-autocomplete` und `aria-activedescendant`
+- `setItems`, `highlight`, `choose` und `close` verwalten Optionen, zyklische aktive Auswahl und `aria-selected`
+- `destroy` entfernt Listener und die vom Controller gesetzten ARIA-Attribute; beide Konsumenten rufen ihn beim Unmount auf
+- Geschlossen, geöffnet ohne aktive Option und geöffnet mit aktiver Option sind identisch für Suche und Adresssuche umgesetzt
+
+**Interaktionen**
+
+- ArrowDown/ArrowUp wechseln zyklisch die aktive Option, Enter übernimmt, Escape und Tab schliessen
+- Mousedown auf einer Option erhält den Eingabefokus bis zur Auswahl; Klick und optional Pointer-Bewegung wählen beziehungsweise markieren
+- `test-combobox.mjs` prüft Tastatur, aktive Nachfahren, Auswahl und Cleanup beider Konsumenten
 
 ## js/pages/anchor-nav.js
 
@@ -876,6 +909,7 @@ API-Dokumentation: echtes Swagger UI (swagger-ui-dist, lazy vom CDN) über data/
 - Auth-Hinweis der Spez → apiKey-Security-Schema mit Swagger-Schloss + «Authorize»-Dialog (nur Doku, Z.98–104)
 - Bewusst deaktiviert: deepLinking (Kollision mit Hash-Router), «Try it out» (supportedSubmitMethods []), Models-Block, externer Validator (Z.228–233)
 - Swaggers eigener .information-container per CSS ausgeblendet — Kopf gehört dem Portal (Z.197–200)
+- Programmatische sr-only-H2 «API-Ressourcen» benennt den Swagger-Host; `enhanceSwagger` stabilisiert nach React-Updates zugängliche Namen, englische Sprachmarkierungen sowie Fokus-/Zielgrössen der Drittanbieter-Controls
 - Krume: Daten → Datenbezug und API Verzeichnis → Spez-Titel (Z.26, 129)
 
 **Zustände**
@@ -1359,7 +1393,7 @@ Prozessdokumentation Bauten: Prozesslandkarte (L1-Bereich → L2-Gruppe → L3-P
 - #/app/process-docs?view=list|gallery — Ansichtswechsel (Z.179)
 - #/app/process-docs?page=<n> — Blättern, 12 pro Seite (Z.201–203)
 - #/app/process-docs?id=<processId> — Prozess-Detail (Z.156–158)
-- #/app/process-docs?id=<processId>&tab=uebersicht|schritte — Register-Deeplink, Unbekanntes → Übersicht (Z.366–367)
+- #/app/process-docs?id=<processId>&tab=uebersicht|diagramm|schritte — Register-Deeplink, Unbekanntes → Übersicht (Z.366–368)
 
 **Funktionen**
 
@@ -1369,13 +1403,13 @@ Prozessdokumentation Bauten: Prozesslandkarte (L1-Bereich → L2-Gruppe → L3-P
 - Listenansicht: Tabelle Nr.(code)/Prozess-Link mit gekürzter Beschreibung darunter/Prozessgruppe/Status-Badge (Z.224–233)
 - Galerieansicht: Karten mit idLine (processId), gekürzter Beschreibung (kurz(), Z.143–148), Gruppen-Badge, Bereichslabel im Footer (Z.215–222)
 - Aktive-Filter-Pillen (Suche/Gruppe/Status) mit Entfernen-Links (Z.209–213)
-- Detail: detailBar, H1, Beschreibung als Lead, 2 Register — «Übersicht» und «Prozessschritte (n)» mit Zähler aus dem BPMN (Z.362–365, 429–438)
+- Detail: detailBar, H1, Beschreibung als Lead, 3 Register — «Übersicht», «Prozessdiagramm» und «Prozessschritte (n)» mit Zähler aus dem BPMN (Z.363–366, 435–441)
 - Übersicht: «Verantwortliche Personen» (AdminDir-Links, lokale Kopie von personsSection, Z.374–382), Metadaten-kv Bereich(+Code)/Gruppe als Filterlink/Status-Badge mit Definition+Konsequenz/Version/Unterstützende-Systeme-Badges/Grundlagen/Stand/ID (Z.384–397)
 - Randspalte: «Verwandte Prozesse» (Links via links.prozess, Name aus core.processDoc aufgelöst, Z.399–406) + Kontakt-Karte (generische Ansprechstelle CONTACT_ID 'immobilienmanagement', Z.29–30, 407)
-- BPMN-Diagramm in voller Inhaltsbreite unter den Metadaten (BPMN-Landschaften sind breit, Z.409–427)
+- BPMN-Diagramm in einem eigenen Register über die volle Inhaltsbreite; die zweispaltige Übersicht bleibt davon unabhängig (Z.411–428)
 - bpmn-js NavigatedViewer 17.11.1 lazy vom CDN inkl. 3 Stylesheets, 12-s-Timeout (Z.32–59)
-- Zoomleiste: Vergrössern/Verkleinern/Einpassen (Faktor 1.2, fit-viewport, Z.419–423, 526–532)
-- Hinweistext: Diagramm mit Maus verschieb-/zoombar, Schritte stehen als Screenreader-Alternative im Register «Prozessschritte» (Z.416–418); bewusst KEIN role=img am Host (Z.413–416)
+- Vertikale Overlay-Werkzeugleiste: Vergrössern, Verkleinern und Ausschnitt zurücksetzen (Faktor 1.2, fit-viewport, Z.419–422, 531–536)
+- Das Diagramm-Tabpanel besitzt eine sr-only-H2; die gleichwertige textuelle Alternative steht im Register «Prozessschritte». Der interaktive Host trägt bewusst kein `role=img`.
 - Schrittliste aus BPMN-XML via DOMParser: 21 typisierte Flusselementtypen in Dokumentreihenfolge, mit Lane-Zuordnung, Ein-/Ausgangszahlen, Dokumentation (parseBpmnSteps, Z.61–135)
 - Schrittregister: Datentabelle Nr./Schritt (Fallback «ohne Bezeichnung» + id)/Typ/Rolle(Lane), Facetten Art + Rolle (Lane-Facette nur wenn Lanes existieren), 15 pro Seite (Z.446–467)
 - Ein BPMN-Abruf für Diagramm UND Schrittliste (Z.350–360)
@@ -1393,7 +1427,7 @@ Prozessdokumentation Bauten: Prozesslandkarte (L1-Bereich → L2-Gruppe → L3-P
 - Import-/Zeichenfehler des Diagramms: eigene Fehlermeldung (Z.515–518)
 - Ladeanzeige C.loading «Diagramm wird geladen…» im bpmn-Host (Z.424–426)
 - Zoomknöpfe disabled, bis das Diagramm steht (Z.420–422, 513–514)
-- Viewer startet erst beim ersten SICHTBAREN Übersicht-Aufruf (viewerStarted-Guard, Z.473, 485–487, 540)
+- Viewer startet erst beim ersten sichtbaren Aufruf des Registers «Prozessdiagramm» (viewerStarted-Guard)
 - Aufgeschobenes Einpassen: bei 0×0-Panel (Registerwechsel während CDN-Laden) wird fit gemerkt und beim Rückwechsel per requestAnimationFrame nachgeholt (needsFit/fitDiagram, Z.474–483, 534–539)
 - stale()-Prüfungen nach BPMN-Fetch, Viewer-Laden und importXML (Z.359, 499, 506, 511)
 - viewer.destroy() via ctx.onUnmount, Fehler beim Zerstören geschluckt (Z.521)
@@ -1409,8 +1443,8 @@ Prozessdokumentation Bauten: Prozesslandkarte (L1-Bereich → L2-Gruppe → L3-P
 - Pagination mit Seiteneingabefeld pd-page (Z.299–300)
 - Baum: Zweigknopf navigiert (nimmt q und view mit, sonst könnte er bei gesetzter Suche nie klappen, Z.256–262) oder klappt an Ort auf/zu; Gruppen-Blattlinks filtern (Z.314–328)
 - Zeilenklick in der Liste (C.wireTableRows, Z.312)
-- Registerwechsel mit URL-Sync (replaceState); onSelect auf «Übersicht» startet den Viewer bzw. holt das Einpassen nach (Z.368–372, 534–540)
-- Zoomleiste: 3 Knöpfe (in/out/fit), delegierter Klick am .tabs-Kind statt mount gegen Horcher-Ansammlung (Z.523–532)
+- Registerwechsel mit URL-Sync (replaceState); onSelect auf «Prozessdiagramm» startet den Viewer beziehungsweise holt das Einpassen nach
+- Overlay-Werkzeugleiste: 3 Knöpfe (in/out/reset), delegierter Klick am .tabs-Kind statt mount gegen Horcher-Ansammlung
 - Diagramm: Pan/Zoom mit der Maus (NavigatedViewer, Z.417)
 - Schritttabelle: eigene Suche, Sortierung (Reihenfolge/Name), Facetten (Art, Rolle), Blättern (C.mountDataTable, Z.448–467)
 - Externe Links: AdminDir-Personeneinträge (target _blank, Z.380–381)
@@ -1789,3 +1823,37 @@ Inhaltsbestand von «Wissen und Hilfsmittel» (113 Unterlagen in 22 Abschnitten,
 
 - Keine eigenen — definiert aber die Link-/Download-Ziele, die knowledge.js und die Suche rendern
 
+## js/apps/shop.js
+
+Portal-native erste Version des BBL Intranetshops. Nutzt die Produkt- und
+Kategoriedaten aus `data/shop-products.json` und `data/shop-categories.json`,
+lokale Produktbilder sowie die gemeinsamen Katalog-, Tabellen-, Formular- und
+Prozessbausteine.
+
+**Routen**
+
+- `#/app/shop` – Produktkatalog
+- `#/app/shop/product/<id>` – Produktdetail
+- `#/app/shop/cart` – Warenkorb
+- `#/app/shop/checkout` – Login-Gate oder dreistufiger Bestellassistent
+
+**Funktionen**
+
+- Suche über Produkt, Beschreibung, Marke und Kategorie; hierarchischer Kategorienbaum; Marken- und Neuheitenfilter; Sortierung nach Bezeichnung, Preis und Neuheit
+- Kategorien stehen auf Desktop in der Seitenleiste und unter 1024 px innerhalb der bestehenden Filter-Disclosure; beide Varianten verwenden dieselben Hash-Links und Zähler
+- Galerie- und Listenansicht mit zwölf Produkten je Seite, URL-synchronisierten Filtern und Pagination
+- CD-Karten mit Produktbild, Marke, Beschreibung, Preis und Warenkorb-Aktion; vollständige Produktdetailansicht mit Menge, Produktdaten und ähnlichen Produkten
+- Warenkorb in `localStorage` (`bbl_shop_cart_v1`), Mengen 1–99, Entfernen, Positions- und Gesamtsumme; globaler Zähler im Top-Header über `shop:cartchange`
+- Checkout mit Kostenstelle, Lieferadresse, Bemerkung, Fehlerübersicht und Prüfschritt; erzeugt über die Prozess-Engine einen Vorgang `bestellung`
+
+**Zustände**
+
+- Daten verfügbar, Ladefehler, keine Treffer, unbekanntes Produkt
+- Warenkorb leer, gefüllt oder durch Produktänderungen bereinigt
+- Checkout abgemeldet, Schritte Warenkorb/Lieferung/Prüfen, Validierungsfehler, erfolgreich eingereicht
+
+**Interaktionen**
+
+- Suche, Filter, Kategorien, Sortierung, Ansicht und Seitenwechsel schreiben den Zustand in den Hash
+- Produkt hinzufügen, Menge ändern, Position entfernen und globalen Warenkorb öffnen
+- Checkout vor/zurück, Pflichtfelder korrigieren, Bestellung absenden und erzeugten Vorgang öffnen

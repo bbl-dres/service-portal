@@ -90,6 +90,18 @@ const SUBMIT = `document.querySelector('#bc-form').dispatchEvent(new Event('subm
       check(r.steps === 3, `Schrittanzeige mit 3 Schritten (${r.steps})`);
     }
 
+    await cdp.send('Emulation.setDeviceMetricsOverride',
+      { width: 768, height: 1000, deviceScaleFactor: 1, mobile: false }, p.sessionId);
+    await sleep(250);
+    r = await p.evaluate(`(() => {
+      const controls = [...document.querySelectorAll('#bc-picker .maplibregl-ctrl-group button')];
+      return { count: controls.length, min: controls.length ? Math.min(...controls.map(el => el.getBoundingClientRect().height)) : 0 };
+    })()`);
+    check(r.count > 0 && r.min >= 44, `Kartenwerkzeuge auf Tablet mindestens 44px (${r.count} × min. ${r.min}px)`);
+    await cdp.send('Emulation.setDeviceMetricsOverride',
+      { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, p.sessionId);
+    await sleep(250);
+
     console.log('■ swisstopo-Adresssuche');
     await p.evaluate(`(function(){var i=document.querySelector('#bc-address');i.focus();
       i.value='Fellerstrasse 21 Bern';i.dispatchEvent(new Event('input',{bubbles:true}));})()`);

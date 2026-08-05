@@ -115,11 +115,25 @@ const expectedSteps = (file) => {
       const s = ms => new Promise(r => setTimeout(r, ms));
       let n = 0; while (!document.querySelector('#pd-bpmn svg .djs-element') && n++ < 200) await s(100);
       await s(300);
+      const firstTool = document.querySelector('#pd-tab-panel-diagramm [data-bpmn]');
+      firstTool?.focus();
+      const focusOutline = firstTool ? getComputedStyle(firstTool).outlineStyle : '';
+      if (firstTool) firstTool.disabled = true;
+      const disabledOpacity = firstTool ? getComputedStyle(firstTool).opacity : '';
+      const disabledCursor = firstTool ? getComputedStyle(firstTool).cursor : '';
+      if (firstTool) firstTool.disabled = false;
       return JSON.stringify({
         active: (document.querySelector('.tab__control--active') || {}).dataset?.tab || '',
         djs: document.querySelectorAll('#pd-bpmn .djs-element').length,
         loadingLeft: !!document.querySelector('#pd-bpmn .loading'),
         toolbar: document.querySelectorAll('#pd-tab-panel-diagramm [data-bpmn]').length,
+        tools: [...document.querySelectorAll('#pd-tab-panel-diagramm [data-bpmn]')].map(b => b.dataset.bpmn).join('|'),
+        toolbarPosition: getComputedStyle(document.querySelector('#pd-tab-panel-diagramm .bpmn-toolbar')).position,
+        toolbarDirection: getComputedStyle(document.querySelector('#pd-tab-panel-diagramm .bpmn-toolbar')).flexDirection,
+        sharedToolbar: !!document.querySelector('#pd-tab-panel-diagramm .viewer-toolbar--vertical .viewer-toolbar__button'),
+        focusOutline,
+        disabledOpacity,
+        disabledCursor,
         asideInPanel: !!document.querySelector('#pd-tab-panel-diagramm .detail-layout__aside'),
       });
     })()`));
@@ -127,6 +141,11 @@ const expectedSteps = (file) => {
     check(o.djs >= 20, 'Diagramm gerendert (bpmn-js)', `${o.djs} Elemente`);
     check(!o.loadingLeft, 'Ladezustand abgeraeumt');
     check(o.toolbar === 3, 'Zoomleiste (3 Knoepfe)', String(o.toolbar));
+    check(o.tools === 'in|out|reset', 'Zoomleiste mit Reset', o.tools);
+    check(o.toolbarPosition === 'absolute' && o.toolbarDirection === 'column', 'Zoomleiste als vertikales Overlay', `${o.toolbarPosition}/${o.toolbarDirection}`);
+    check(o.sharedToolbar, 'Gemeinsame Viewer-Toolbar-Anatomie');
+    check(o.focusOutline !== 'none' && o.focusOutline !== '', 'Viewer-Werkzeug mit sichtbarem Fokus', o.focusOutline);
+    check(Number(o.disabledOpacity) < 1 && o.disabledCursor === 'not-allowed', 'Viewer-Disabled-Zustand sichtbar', `${o.disabledOpacity}/${o.disabledCursor}`);
     check(!o.asideInPanel, 'Diagramm nutzt volle Panelbreite');
     await clean(p, 'Diagramm');
     await p.closeTarget();

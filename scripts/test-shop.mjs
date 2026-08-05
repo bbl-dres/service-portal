@@ -72,6 +72,38 @@ try {
   }
   console.log(`  ok  Katalogkarte CD-Anatomie add=${catalogueCard.added}`);
 
+  await cdp.send('Emulation.setDeviceMetricsOverride',
+    { width: 320, height: 900, deviceScaleFactor: 1, mobile: false }, page.sessionId);
+  const mobileCategories = await page.evaluate(`(async () => {
+    location.hash = '#/app/shop';
+    await new Promise(r => setTimeout(r, 700));
+    const sidebar = document.querySelector('.shop-layout .pf-sidebar');
+    const panel = document.querySelector('#shop-filters');
+    const toggle = document.querySelector('#shop-filter');
+    const initiallyHidden = panel?.hidden;
+    toggle?.click();
+    await new Promise(r => setTimeout(r, 80));
+    const mobileNav = panel?.querySelector('.shop-categories-filter');
+    return {
+      sidebarHidden: sidebar ? getComputedStyle(sidebar).display === 'none' : false,
+      initiallyHidden,
+      expanded: toggle?.getAttribute('aria-expanded'),
+      panelVisible: panel ? !panel.hidden : false,
+      mobileNavVisible: mobileNav ? getComputedStyle(mobileNav).display !== 'none' : false,
+      categoryLinks: mobileNav?.querySelectorAll('.pf-tree__leaf').length || 0,
+      addHeight: Math.round(document.querySelector('[data-add]')?.getBoundingClientRect().height || 0),
+    };
+  })()`);
+  if (!mobileCategories.sidebarHidden || !mobileCategories.initiallyHidden
+      || mobileCategories.expanded !== 'true' || !mobileCategories.panelVisible
+      || !mobileCategories.mobileNavVisible || mobileCategories.categoryLinks < 2
+      || mobileCategories.addHeight < 44) {
+    fails.push(`Mobile Kategorien: Filter-Disclosure unvollständig (${JSON.stringify(mobileCategories)})`);
+  }
+  console.log(`  ok  Mobile Kategorien im Filter (${mobileCategories.categoryLinks} Links)`);
+  await cdp.send('Emulation.setDeviceMetricsOverride',
+    { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, page.sessionId);
+
   const globalCart = await page.evaluate(`(async () => {
     location.hash = '#/';
     await new Promise(r => setTimeout(r, 900));

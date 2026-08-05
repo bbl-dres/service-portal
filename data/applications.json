@@ -1221,7 +1221,7 @@
   },
   {
     "appId": "superb",
-    "name": "SAP S/4HANA (Programm SUPERB)",
+    "name": "ERP SAP (Supportprozesse)",
     "group": "Bundesverwaltung",
     "icon": "Database",
     "audience": [
@@ -1231,10 +1231,10 @@
       "kind": "external",
       "href": "#"
     },
-    "description": "ERP der Bundesverwaltung (Finanzen, Beschaffung, Immobilien/RE-FX, Bauprojekte/ePPM). Migration von SAP ECC auf S/4HANA im Programm SUPERB.",
+    "description": "Zentrales ERP-System der Bundesverwaltung für Finanzen, Personal, Logistik, Beschaffung und Immobilienmanagement.",
     "area": "federal",
-    "subtitle": "SAP S/4HANA der Bundesverwaltung",
-    "long": "Mit dem Programm SUPERB migriert die Bundesverwaltung ihre bisherigen SAP-Systeme auf SAP S/4HANA. Für das BBL betrifft das insbesondere Finanzen, Beschaffung und das Immobilienmanagement. Fachlich sind es zwei getrennte Module: SAP RE-FX führt Wirtschaftseinheit, Gebäude, Grundstück, Bemessungen und die Mietverwaltung (Mietobjekt, Mietvertrag), SAP ePPM die Bauprojekte. Die Stammdaten des Liegenschafteninventars stammen aus RE-FX.",
+    "subtitle": "ERP-Kernsystem der Bundesverwaltung",
+    "long": "SAP ERP unterstützt die durchgängige Abwicklung der bundesweiten Supportprozesse und stellt gemeinsame Stamm- und Bewegungsdaten für angebundene Fachanwendungen bereit. Für das BBL umfasst die Nutzung insbesondere Finanzen, Beschaffung, Logistik und Immobilienmanagement: SAP RE-FX führt unter anderem Wirtschaftseinheiten, Gebäude, Grundstücke, Bemessungen und Mietverhältnisse; SAP ePPM unterstützt die Bauprojekte. Die Erneuerung der zivilen SAP-Landschaft von SAP ECC auf SAP S/4HANA wird im Programm SUPERB umgesetzt. SUPERB ist damit das Transformationsprogramm; die hier beschriebene Anwendung ist das SAP-ERP-System für den laufenden Betrieb.",
     "access": {
       "note": "Rollenbasiert für Mitarbeitende mit SAP-Berechtigung.",
       "steps": [
@@ -1246,6 +1246,12 @@
       {
         "label": "Datenbezug und API Verzeichnis — Datensätze aus SAP",
         "href": "#/data/catalog?q=SAP"
+      },
+      {
+        "label": "Strategie ERP-IKT 2023 des Bundes",
+        "href": "https://www.bk.admin.ch/dam/de/sd-web/QHGRazhsvTy9/strategie_erp_ikt_2023.pdf",
+        "kind": "external",
+        "note": "Grundlagen zu den Supportprozessen, SAP S/4HANA und dem Programm SUPERB."
       }
     ],
     "related": [
@@ -1254,7 +1260,7 @@
       "bauprojekte-eppm"
     ],
     "contact": "servicedesk-bit",
-    "updated": "2026-07-30",
+    "updated": "2026-08-05",
     "bild": {
       "src": "assets/images/applications/superb.jpg",
       "titel": "Detailed image of a server rack with glowing lights in a modern data center.",
