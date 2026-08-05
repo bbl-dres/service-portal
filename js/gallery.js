@@ -204,7 +204,7 @@ export function openGallery(items, start, C, opts = {}) {
       el.metalink.hidden = !it.href;
       // «‹Objekt› ansehen» — das Muster der übrigen Verweis-Aktionen; «Zur
       // Detailseite» war der einzige Ausreisser (Design-Review D8).
-      if (it.href) { el.metalink.href = it.href; el.metalink.innerHTML = `<span class="btn__text">Aufnahme ansehen</span>${C.icon('ArrowRight', 'btn__icon')}`; }
+      if (it.href) { el.metalink.href = it.href; el.metalink.innerHTML = `${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Aufnahme ansehen</span>`; }
     }
 
     // Fokus NUR beim Öffnen setzen. Vorher lief er bei jedem Blättern auf

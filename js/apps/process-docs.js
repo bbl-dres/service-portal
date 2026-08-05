@@ -410,20 +410,20 @@ async function detail(ctx, rawId) {
 
   const diagrammHTML = () => `
     <section class="detail-section">
-      <h2 class="detail-section__title">Prozessdiagramm</h2>
       ${''/* KEIN role=img am Host: der Viewer injiziert interaktive Inhalte
             (bpmn.io-Link) und im Fehlerfall Meldungen mit Knopf — unter img
-            wären sie für Screenreader weg. Die Abschnitts-h2 benennt die
-            Fläche, der Satz hier verweist auf die zugängliche Alternative. */}
-      <p class="small muted">Das Diagramm lässt sich mit der Maus verschieben und über die Knöpfe zoomen.
-        Alle Schritte des Ablaufs stehen — auch für Screenreader — im Register «Prozessschritte».</p>
-      <div class="bpmn-toolbar">
-        <button type="button" class="btn btn--bare btn--icon-only" data-bpmn="in" title="Vergrössern" disabled>${C.icon('Plus', 'btn__icon')}<span class="btn__text">Vergrössern</span></button>
-        <button type="button" class="btn btn--bare btn--icon-only" data-bpmn="out" title="Verkleinern" disabled>${C.icon('Minus', 'btn__icon')}<span class="btn__text">Verkleinern</span></button>
-        <button type="button" class="btn btn--bare btn--icon-only" data-bpmn="fit" title="Einpassen" disabled>${C.icon('Expand', 'btn__icon')}<span class="btn__text">Einpassen</span></button>
-      </div>
+            wären sie für Screenreader weg. Das Tabpanel hat bereits eine
+            sr-only-h2; die zugängliche Alternative steht im Register
+            «Prozessschritte». */}
       <div class="bpmn-host" id="pd-bpmn">
-        ${C.loading({ label: 'Diagramm wird geladen…' })}
+        <div class="bpmn-toolbar" role="group" aria-label="Diagrammansicht">
+          <button type="button" class="btn btn--bare btn--icon-only" data-bpmn="in" title="Vergrössern" disabled>${C.icon('Plus', 'btn__icon')}<span class="btn__text">Vergrössern</span></button>
+          <button type="button" class="btn btn--bare btn--icon-only" data-bpmn="out" title="Verkleinern" disabled>${C.icon('Minus', 'btn__icon')}<span class="btn__text">Verkleinern</span></button>
+          <button type="button" class="btn btn--bare btn--icon-only" data-bpmn="reset" title="Ausschnitt zurücksetzen" disabled>${C.icon('Compass', 'btn__icon')}<span class="btn__text">Ausschnitt zurücksetzen</span></button>
+        </div>
+        <div class="bpmn-canvas" id="pd-bpmn-canvas">
+          ${C.loading({ label: 'Diagramm wird geladen…' })}
+        </div>
       </div>
     </section>`;
 
@@ -482,7 +482,7 @@ async function detail(ctx, rawId) {
   // ersetzte das ganze Diagramm durch die Fehlermeldung (Review-Repro
   // 2026-08-04). Stattdessen merken und beim Rückwechsel nachholen.
   const fitDiagram = () => {
-    const host = mount.querySelector('#pd-bpmn');
+    const host = mount.querySelector('#pd-bpmn-canvas');
     if (!viewer || !host) return;
     if (!host.clientWidth) { needsFit = true; return; }
     try { viewer.get('canvas').zoom('fit-viewport', 'auto'); needsFit = false; } catch { needsFit = true; }
@@ -490,7 +490,7 @@ async function detail(ctx, rawId) {
   const startViewer = async () => {
     if (viewerStarted) return;
     viewerStarted = true;
-    const host = mount.querySelector('#pd-bpmn');
+    const host = mount.querySelector('#pd-bpmn-canvas');
     if (!xml) {
       host.innerHTML = C.notification(
         `<strong>Das Prozessdiagramm kann nicht angezeigt werden.</strong> ${esc(xmlError || 'Die BPMN-Datei fehlt.')}`,
@@ -532,7 +532,7 @@ async function detail(ctx, rawId) {
     const btn = e.target.closest('[data-bpmn]');
     if (!btn || !viewer) return;
     const canvas = viewer.get('canvas');
-    if (btn.dataset.bpmn === 'fit') canvas.zoom('fit-viewport', 'auto');
+    if (btn.dataset.bpmn === 'reset') fitDiagram();
     else canvas.zoom(canvas.zoom() * (btn.dataset.bpmn === 'in' ? 1.2 : 1 / 1.2));
   });
 

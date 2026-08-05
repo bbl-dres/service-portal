@@ -1333,6 +1333,7 @@ code { font-family:var(--font-mono); }
 /* btn.postcss:171-191 — icon-left nudges the icon; btn--back floats the button
    out of the text flow. `.back-link-row` gives that float something to clear. */
 .btn--icon-left .btn__icon { position:relative; right:.1em; margin-right:.2em; }
+.btn--icon-right { flex-direction:row-reverse; }
 .btn--icon-right .btn__icon { position:relative; left:.1em; margin-left:.2em; }
 .btn--back { float:left; margin-top:.4em; }
 @media (min-width:1024px){ .btn--back { margin-top:.25rem; } }
@@ -2595,9 +2596,16 @@ body.body--overlay-open .back-to-top-rail { display:none; }
    Wie der Swagger-Host: die Bibliothek bringt ihre Stile mit (diagram-js/
    bpmn-js vom CDN), hier nur Einbettung und Zoomleiste. Der Behälter braucht
    eine feste Höhe — bpmn-js misst ihn beim Einpassen. */
-.bpmn-host { position:relative; height:34rem; border:1px solid var(--panel-border); background:#fff; }
+.bpmn-host { position:relative; height:34rem; border:1px solid var(--panel-border); background:#fff; overflow:hidden; }
+.bpmn-canvas { height:100%; }
 .bpmn-host .loading { height:100%; }
-.bpmn-toolbar { display:flex; gap:0.25rem; justify-content:flex-end; margin-bottom:0.5rem; }
+.bpmn-toolbar { position:absolute; z-index:2; top:.75rem; right:.75rem; display:flex; flex-direction:column;
+  border-radius:var(--radius-lg); box-shadow:var(--shadow-md); background:var(--color-bg); overflow:hidden; }
+.bpmn-toolbar .btn { width:var(--target-min); height:var(--target-min); min-height:0; border-radius:0; background:var(--color-bg); }
+.bpmn-toolbar .btn + .btn { border-top:1px solid var(--color-secondary-200); }
+@media (min-width:1024px) and (pointer:fine){
+  .bpmn-toolbar .btn { width:2.5rem; height:2.5rem; }
+}
 @media print { .bpmn-toolbar { display:none; } }
 
 /* ── Kompakte Katalogleiste (catbar) — geteilt: Portfolio, Dienstleistungen,

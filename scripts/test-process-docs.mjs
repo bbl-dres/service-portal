@@ -120,6 +120,9 @@ const expectedSteps = (file) => {
         djs: document.querySelectorAll('#pd-bpmn .djs-element').length,
         loadingLeft: !!document.querySelector('#pd-bpmn .loading'),
         toolbar: document.querySelectorAll('#pd-tab-panel-diagramm [data-bpmn]').length,
+        tools: [...document.querySelectorAll('#pd-tab-panel-diagramm [data-bpmn]')].map(b => b.dataset.bpmn).join('|'),
+        toolbarPosition: getComputedStyle(document.querySelector('#pd-tab-panel-diagramm .bpmn-toolbar')).position,
+        toolbarDirection: getComputedStyle(document.querySelector('#pd-tab-panel-diagramm .bpmn-toolbar')).flexDirection,
         asideInPanel: !!document.querySelector('#pd-tab-panel-diagramm .detail-layout__aside'),
       });
     })()`));
@@ -127,6 +130,8 @@ const expectedSteps = (file) => {
     check(o.djs >= 20, 'Diagramm gerendert (bpmn-js)', `${o.djs} Elemente`);
     check(!o.loadingLeft, 'Ladezustand abgeraeumt');
     check(o.toolbar === 3, 'Zoomleiste (3 Knoepfe)', String(o.toolbar));
+    check(o.tools === 'in|out|reset', 'Zoomleiste mit Reset', o.tools);
+    check(o.toolbarPosition === 'absolute' && o.toolbarDirection === 'column', 'Zoomleiste als vertikales Overlay', `${o.toolbarPosition}/${o.toolbarDirection}`);
     check(!o.asideInPanel, 'Diagramm nutzt volle Panelbreite');
     await clean(p, 'Diagramm');
     await p.closeTarget();

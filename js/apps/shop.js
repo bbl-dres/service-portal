@@ -374,7 +374,7 @@ function cart(ctx) {
           ${summaryBox(C, lines)}
           <div class="shopping__cart__action-container">
             <a class="btn btn--filled btn--full-width btn--icon-right" href="#/app/shop/checkout">
-              <span class="btn__text">Bestellung vorbereiten</span>${C.icon('ArrowRight', 'btn__icon')}
+              ${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Bestellung vorbereiten</span>
             </a>
           </div>
         </aside>
@@ -481,7 +481,7 @@ function checkout(ctx) {
     const lines = currentLines();
     return `<ul class="shopping__cart-card-list">${lines.map((line) => cartItem(C, line)).join('')}</ul>
       ${summaryBox(C, lines)}
-      <div class="form__actions"><button class="btn btn--filled btn--icon-right" type="submit"><span class="btn__text">Weiter</span>${C.icon('ArrowRight', 'btn__icon')}</button></div>`;
+      <div class="form__actions"><button class="btn btn--filled btn--icon-right" type="submit">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Weiter</span></button></div>`;
   }
   function stepDelivery() {
     return `
@@ -493,7 +493,7 @@ function checkout(ctx) {
         control: (cls, attrs) => `<textarea id="shop-note" class="${cls}"${attrs}>${C.escape(state.note)}</textarea>` })}
       <div class="form__actions form__actions--between">
         <button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>
-        <button class="btn btn--filled btn--icon-right" type="submit"><span class="btn__text">Weiter</span>${C.icon('ArrowRight', 'btn__icon')}</button>
+        <button class="btn btn--filled btn--icon-right" type="submit">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Weiter</span></button>
       </div>`;
   }
   function stepReview() {

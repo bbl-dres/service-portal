@@ -134,7 +134,7 @@ export function pageSection({ title = '', body = '', more = null, alt = false, t
         ${title ? `<${titleTag} class="section__title">${escape(title)}</${titleTag}>` : ''}
         ${body}
         ${more ? `<div class="section__action">
-          <a class="btn btn--bare btn--icon-right" href="${escape(more.href)}"><span class="btn__text">${escape(more.label)}</span>${icon('ArrowRight', 'btn__icon')}</a>
+          <a class="btn btn--bare btn--icon-right" href="${escape(more.href)}">${icon('ArrowRight', 'btn__icon')}<span class="btn__text">${escape(more.label)}</span></a>
         </div>` : ''}
       </div>
     </section>`;
@@ -154,7 +154,7 @@ function notificationBanner({ id, html, actionLabel = 'Verstanden', variant = 'i
     <div class="notification-banner__wrapper">
       <p class="notification-banner__infos">${html}</p>
       <button type="button" class="btn btn--outline btn--sm btn--icon-right" data-banner-close>
-        <span class="btn__text">${escape(actionLabel)}</span>${icon('Checkmark', 'btn__icon')}</button>
+        ${icon('Checkmark', 'btn__icon')}<span class="btn__text">${escape(actionLabel)}</span></button>
     </div>
   </div>`;
 }
@@ -936,7 +936,7 @@ export function processDone({ instance, lead, title, heading = 'h1', text,
   extra = '', actions = [] } = {}) {
   const knopf = (a, i) => {
     const cls = `btn btn--${a.variant || (i === 0 ? 'filled' : 'outline')}${a.icon ? ' btn--icon-right' : ''}`;
-    const inhalt = `<span class="btn__text">${escape(a.label)}</span>${a.icon ? icon(a.icon, 'btn__icon') : ''}`;
+    const inhalt = `${a.icon ? icon(a.icon, 'btn__icon') : ''}<span class="btn__text">${escape(a.label)}</span>`;
     return a.href
       ? `<a class="${cls}" href="${escape(a.href)}">${inhalt}</a>`
       : `<button class="${cls}" type="button" id="${escape(a.id)}">${inhalt}</button>`;
