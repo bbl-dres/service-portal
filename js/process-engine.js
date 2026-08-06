@@ -26,10 +26,13 @@ async function load() {
 }
 
 const definition = (id) => DEFS.find(d => d.defId === id);
-const today = () => new Date().toISOString().slice(0, 10);
+const localDateStamp = (date = new Date()) => {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
 
-function genRef() {
-  const y = new Date().getFullYear();
+function genRef(date = new Date()) {
+  const y = date.getFullYear();
   const n = Math.floor(1000 + Math.random() * 9000);
   return `BBL-${y}-${n}`;
 }
@@ -52,23 +55,25 @@ function start(defId, payload = {}) {
   }
   const steps = def.steps;
   const first = steps[0];
+  const now = new Date();
+  const stamp = localDateStamp(now);
   const inst = {
     instanceId: 'inst-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
     defId,
     defName: def.name,
-    reference: genRef(),
+    reference: genRef(now),
     title: payload.title || def.name,
     requester: payload.requester || 'Andrea Muster',
     organization: payload.organization || 'Bundesamt (Demo)',
     audience: def.audience,
     status: first.status,
     stepIndex: 0,
-    createdAt: today(),
-    updatedAt: today(),
+    createdAt: stamp,
+    updatedAt: stamp,
     data: payload.data || {},
     linkedEntities: payload.linkedEntities || {},
     createdLocally: true,
-    history: [{ when: today(), status: first.label, note: 'Vorgang erstellt' }],
+    history: [{ when: stamp, status: first.label, note: 'Vorgang erstellt' }],
   };
   const arr = loadLS();
   arr.unshift(inst);
@@ -85,8 +90,9 @@ function advance(id) {
   inst.stepIndex += 1;
   const step = def.steps[inst.stepIndex];
   inst.status = step.status;
-  inst.updatedAt = today();
-  inst.history.push({ when: today(), status: step.label, note: step.role ? `Schritt durch ${step.role} (Demo)` : 'Status aktualisiert (Demo)' });
+  const stamp = localDateStamp();
+  inst.updatedAt = stamp;
+  inst.history.push({ when: stamp, status: step.label, note: step.role ? `Schritt durch ${step.role} (Demo)` : 'Status aktualisiert (Demo)' });
   return saveLS(arr) ? inst : null;
 }
 
@@ -98,9 +104,10 @@ function cancel(id) {
   const inst = arr.find(i => i.instanceId === id);
   if (!inst || inst.status === 'zurueckgezogen') return inst || null;
   inst.status = 'zurueckgezogen';
-  inst.updatedAt = today();
+  const stamp = localDateStamp();
+  inst.updatedAt = stamp;
   inst.history = Array.isArray(inst.history) ? inst.history : [];
-  inst.history.push({ when: today(), status: 'Storniert', note: 'Durch die buchende Person storniert' });
+  inst.history.push({ when: stamp, status: 'Storniert', note: 'Durch die buchende Person storniert' });
   return saveLS(arr) ? inst : null;
 }
 
