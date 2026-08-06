@@ -375,6 +375,7 @@ export default async function render(ctx) {
     // «Alle Filter zurücksetzen» räumt hier AUCH die Baum-Auswahl ab.
     onReset: clearSelection,
   });
+  ctx.onUnmount(cat.destroy);
 
   wireTree(sidebar, { clearBtn, onSelect: (sel) => setSelection(sel, sel.id || null) });
 
@@ -443,7 +444,7 @@ function buildingDetail(ctx, b) {
       dienst('stammdaten-mutieren', 'FileCheckmark', `#/services/stammdaten-mutieren?${bq}`),
       dienst('stoerung-melden', 'Wrench', `#/app/fault-report?${bq}`),
       dienst('bautendokumentation-abrufen', 'File', `#/app/document-archive?${bq}`),
-      { icon: 'Image', label: 'Aufnahmen in der Mediathek', href: `#/app/media-library?building=${encodeURIComponent(b.bbl_id)}` },
+      { icon: 'Image', label: 'Aufnahmen in der Mediathek', href: `#/app/media-library?objekt=${encodeURIComponent(b.bbl_id)}` },
     ].filter(Boolean);
     return `<aside class="detail-layout__aside" aria-label="Aktionen und Ansprechpersonen">
       ${C.actionCard({ lead: 'Für dieses Objekt vorbelegt.', links: aktionen })}
@@ -649,7 +650,7 @@ function buildingDetail(ctx, b) {
   // Kanonische Knopf-Anatomie (Review btn-2): Label in .btn__text, Icon als
   // .btn__icon mit btn--icon-right — ohne den Wrapper fehlen dem Label die
   // py-2-Rhythmik und der Umbruchschutz (overflow-wrap:anywhere) des CD.
-  const archiveLink = `<p class="mt-6"><a class="btn btn--link btn--icon-right" href="#/app/document-archive">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">In der Bauwerksdokumentation öffnen</span></a></p>`;
+  const archiveLink = `<p class="mt-6"><a class="btn btn--link btn--icon-right" href="#/app/document-archive?building=${encodeURIComponent(b.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">In der Bauwerksdokumentation öffnen</span></a></p>`;
 
   const tabFlaechen = () => dtPanel('flaechen');
   const tabAusstattung = () => dtPanel('ausstattung');

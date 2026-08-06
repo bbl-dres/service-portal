@@ -231,6 +231,9 @@ function overview(ctx) {
       zaehler(list.length);
       main.innerHTML = `<div class="pf-map dash-map" id="mt-map-el" role="group" aria-label="Karte der Mietverhältnisse"></div>`;
       mountMap(list);
+      C.announceCatalogue({ count: list.length, total: all.length,
+        unit: { nom: 'Mietverhältnisse', dat: 'Mietverhältnissen' },
+        page: 1, totalPages: 1, view: state.view });
       return;
     }
     if (!list.length) {
@@ -241,6 +244,9 @@ function overview(ctx) {
         hint: 'Passen Sie Ihre Suche, die Filter oder die Auswahl im Baum an.',
         action: { id: 'mt-empty-reset', label: 'Suche und Filter zurücksetzen' },
       });
+      C.announceCatalogue({ count: 0, total: all.length,
+        unit: { nom: 'Mietverhältnisse', dat: 'Mietverhältnissen' },
+        page: 1, totalPages: 1, view: state.view });
       return;
     }
     const per = state.perPage[state.view];
@@ -321,6 +327,7 @@ function overview(ctx) {
     onRemove: (tok) => { if (tok === 'sel') clearSelection(); },
     onReset: clearSelection,
   });
+  onUnmount(cat.destroy);
 
   // Raumbaum: Klick-Verdrahtung, Zweiton-Markierung (is-active/is-path) und
   // Auswahl-Knopf aus js/spatial-tree.js (A1) — die alte lokale Kopie

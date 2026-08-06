@@ -395,7 +395,26 @@ function footerHTML() {
 }
 
 function renderHeader(el) {
+  // renderHeader() replaces the complete header on login/logout. If that
+  // happens while the mobile drawer is open, the old burger disappears before
+  // its close handler can release the page. Normalise the state first and move
+  // focus to the equivalent trigger in the new header until the caller selects
+  // its final post-login/logout focus target.
+  const mobileWasOpen = document.body.classList.contains('body--mobile-menu-is-open');
+  const restoreMobileFocus = mobileWasOpen && el.contains(document.activeElement);
+  const oldBurger = el.querySelector('#burger');
+  if (oldBurger) {
+    oldBurger.setAttribute('aria-expanded', 'false');
+    oldBurger.setAttribute('aria-label', 'Menü öffnen');
+  }
+  document.body.classList.remove('body--mobile-menu-is-open');
+  const oldMain = document.getElementById('main-content');
+  const oldFoot = document.getElementById('main-footer');
+  if (oldMain) oldMain.inert = false;
+  if (oldFoot) oldFoot.inert = false;
+
   el.innerHTML = headerHTML();
+  if (restoreMobileFocus) el.querySelector('#burger')?.focus({ preventScroll: true });
 
   // Vorherige globale Listener abwerfen, dann eine frische Runde: `signal` hängt
   // an jedem document/window/matchMedia-Listener unten (element-scoped Listener

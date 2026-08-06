@@ -34,6 +34,7 @@ export function openGallery(items, start, C, opts = {}) {
   // Router würde neu rendern und das Overlay unter sich wegziehen.
   const param = opts.param || '';
   if (!items || !items.length) return;
+  const openedPath = String(location.hash || '#/').split('?')[0];
   let idx = Math.max(0, Math.min(start || 0, items.length - 1));
   // Metadaten sind standardmässig EINGEKLAPPT: im Vollbild ist das Bild die
   // Hauptinformation. Der Zustand bleibt über den Bildwechsel erhalten — wer
@@ -217,6 +218,9 @@ export function openGallery(items, start, C, opts = {}) {
 
   function syncUrl(clear) {
     if (!param || !history.replaceState) return;
+    // A route dispatch closes the gallery after hashchange has already updated
+    // location. Never rewrite parameters on the destination route.
+    if (String(location.hash || '#/').split('?')[0] !== openedPath) return;
     const [path, qs] = String(location.hash || '#/').replace(/^#/, '').split('?');
     const q = new URLSearchParams(qs || '');
     const id = items[idx] && items[idx].id;
@@ -226,13 +230,19 @@ export function openGallery(items, start, C, opts = {}) {
   }
 
   const go = (d) => { idx = (idx + d + items.length) % items.length; update(false); };
+  let closed = false;
+  let unregisterOverlay = () => {};
+  let releaseOverlayLock = () => {};
   const close = () => {
+    if (closed) return;
+    closed = true;
+    unregisterOverlay();
     syncUrl(true);
     document.removeEventListener('keydown', onKey);
     window.removeEventListener('resize', onResize);
     untrap();
     overlay.remove();
-    document.body.classList.remove('body--overlay-open');
+    releaseOverlayLock();
     if (trigger && trigger.focus) trigger.focus();
   };
   function onKey(e) {
@@ -286,14 +296,16 @@ export function openGallery(items, start, C, opts = {}) {
   // frühere Eigenliste ('button, a[href]') zählte den abgeschalteten Fit-Knopf
   // als letztes Element — Tab fiel damit aus dem Dialog heraus (Review lb-trap-1).
   const untrap = C.trapFocus(overlay);
-  document.body.classList.add('body--overlay-open');
   document.body.appendChild(overlay);
+  releaseOverlayLock = C.acquireOverlayLock();
+  unregisterOverlay = C.registerOverlay(close);
   syncChrome();
   update(true);
   // Noch einmal nach dem ersten Bild: beim Anhängen steht die Zeilenhöhe der
   // Kopfzeile noch nicht endgültig fest (gemessen 63px, final 67px), und der
   // Innenabstand der Bildfläche hing an diesem Wert.
   requestAnimationFrame(syncChrome);
+  return close;
 }
 
 export default { openGallery };

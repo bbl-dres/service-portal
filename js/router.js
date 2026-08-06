@@ -116,6 +116,16 @@ const APPS = {
   'process-docs':    './apps/process-docs.js',
   'shop':            './apps/shop.js',
 };
+// Nicht jede direkte Fachroute besitzt eine Landingpage im Anwendungskatalog:
+// formular- und datengetriebene Werkzeuge brauchen für das zentrale Login-Gate
+// trotzdem einen verständlichen Namen und einen fachlich passenden Rückweg.
+const APP_GATE_META = {
+  'space-request': { title: 'Raumbedarf melden', back: '#/services/raumbedarf-melden', backLabel: 'Beschreibung der Dienstleistung' },
+  'fault-report': { title: 'Meldung erfassen', back: '#/services', backLabel: 'Dienstleistungen' },
+  'transaction': { title: 'Veräusserung von Bundesliegenschaften', back: '#/services', backLabel: 'Dienstleistungen' },
+  'api-docs': { title: 'API-Dokumentation', back: '#/data/catalog', backLabel: 'Datenkatalog' },
+  'building-create': { title: 'Gebäude erfassen', back: '#/services/stammdaten-mutieren', backLabel: 'Beschreibung der Dienstleistung' },
+};
 // Which top-nav item to highlight for pages and apps that are not themselves a
 // top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
 // und Digitalisierung, so it and every micro-app highlight that section.
@@ -327,13 +337,15 @@ async function renderAppLoginGate(mount, name, stale, text = '') {
   if (stale()) return true;
   const target = `#/app/${name}`;
   const app = core.applications().find((a) => String(a.link?.href || '').split('?')[0] === target);
-  const title = app ? app.name : 'Anwendung';
+  const fallback = APP_GATE_META[name];
+  const title = app ? app.name : (fallback?.title || 'Anwendung');
   document.title = `${title} · BBL Kundenportal`;
   // Rückweg auf die Landingpage: dort steht frei lesbar, was die Anwendung tut,
   // wer sie nutzen darf und wie man zu einem Konto kommt.
-  const back = app ? `#/applications/${encodeURIComponent(app.appId)}` : '#/applications';
+  const back = app ? `#/applications/${encodeURIComponent(app.appId)}` : (fallback?.back || '#/applications');
+  const backLabel = app ? 'Beschreibung der Anwendung' : (fallback?.backLabel || 'Anwendungen');
   mount.innerHTML = `<div class="container section">
-    ${C.backLink(back, app ? 'Beschreibung der Anwendung' : 'Anwendungen')}
+    ${C.backLink(back, backLabel)}
     <div class="page-header"><h1 tabindex="-1">${C.escape(title)}</h1></div>
     ${C.loginGate(text || 'Diese Fachanwendung arbeitet mit Betriebsdaten des BBL. Melden Sie sich mit AGOV / FedLogin an, um sie zu öffnen. '
       + 'Was die Anwendung tut und wer sie nutzen darf, steht frei zugänglich auf ihrer Beschreibungsseite.')}
@@ -343,6 +355,10 @@ async function renderAppLoginGate(mount, name, stale, text = '') {
 }
 
 async function dispatch() {
+  // Viewers and modals are appended to <body>, outside #main-content. Close
+  // them before route cleanup/replacement so no stale overlay or global
+  // listener survives navigation.
+  C.closeOverlays();
   // Erst aufräumen, dann neu bauen. Fehler einer einzelnen Abbaufunktion dürfen
   // die Navigation nicht anhalten.
   for (const fn of routeCleanups) { try { fn(); } catch (e) { console.warn('[router] cleanup failed', e); } }

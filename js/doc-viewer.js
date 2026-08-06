@@ -107,7 +107,7 @@ export function openDocumentViewer(doc, siblings, options = {}) {
   backdrop.setAttribute('role', 'dialog');
   backdrop.setAttribute('aria-modal', 'true');
   document.body.appendChild(backdrop);
-  document.body.classList.add('body--overlay-open');
+  const releaseOverlayLock = C.acquireOverlayLock();
 
   // Tab-Falle über das geteilte C.trapFocus statt einer eigenen Selektorliste:
   // drei abweichende Kopien der Fokusliste haben bereits einen Trap-Ausbruch
@@ -148,12 +148,17 @@ export function openDocumentViewer(doc, siblings, options = {}) {
     setTimeout(() => { t.classList.remove('toast__message--in'); setTimeout(() => t.remove(), 300); }, 5000);
   }
 
+  let closed = false;
+  let unregisterOverlay = () => {};
   function close() {
+    if (closed) return;
+    closed = true;
+    unregisterOverlay();
     document.removeEventListener('keydown', onKeydown, true);
     window.removeEventListener('resize', onResize);
     untrap();
     backdrop.remove();
-    document.body.classList.remove('body--overlay-open');
+    releaseOverlayLock();
     if (opener && opener.focus) opener.focus();
   }
 
@@ -295,8 +300,10 @@ export function openDocumentViewer(doc, siblings, options = {}) {
 
   document.addEventListener('keydown', onKeydown, true);
   window.addEventListener('resize', onResize);
+  unregisterOverlay = C.registerOverlay(close);
   mount();
   requestAnimationFrame(() => { try { stage.focus(); } catch (e) { /* noop */ } });
+  return close;
 }
 
 export default openDocumentViewer;

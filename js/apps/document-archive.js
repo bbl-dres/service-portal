@@ -155,11 +155,13 @@ export default async function render(ctx) {
   // Suche (mit Tipp-Verzögerung), Sortierung, Filterpanel samt Badge, Panel-
   // Reset und Aktiv-Pillen über die geteilte Explorer-Verdrahtung — diese
   // Datei war die Vorlage der lokalen Kopien (Design-Review A2).
-  const { clearFilters } = C.wireCatalogueState(mount, {
+  const catalogue = C.wireCatalogueState(mount, {
     formId: 'doc-search', inputId: 'doc-q', sortId: 'doc-sort',
     filterToggleId: 'doc-filter-btn', panelId: 'doc-filters', resetId: 'doc-freset',
     activeFiltersId: 'doc-activefilters', state, onChange: renderMain,
   });
+  const { clearFilters } = catalogue;
+  ctx.onUnmount(catalogue.destroy);
 
   // Delegated: Dokument-Vorschau (Blätter-Kontext = aktuelle Treffer) + Null-
   // zustands-Reset. KEIN eigener [data-page]-Handler mehr: C.wirePagination

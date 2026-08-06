@@ -529,6 +529,53 @@ export function trapFocus(container) {
   return () => container.removeEventListener('keydown', onKey);
 }
 
+// Overlays can be nested (for example, the share dialog above the gallery).
+// A boolean body class cannot represent that ownership: closing the topmost
+// dialog used to unlock scrolling while the gallery underneath was still open.
+// Give every overlay its own token and remove the class only after the last
+// owner releases it.
+const overlayLocks = new Set();
+const overlayClosers = new Set();
+function syncOverlayLock() {
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.toggle('body--overlay-open', overlayLocks.size > 0);
+  }
+}
+export function acquireOverlayLock() {
+  const token = {};
+  overlayLocks.add(token);
+  syncOverlayLock();
+  let active = true;
+  return () => {
+    if (!active) return;
+    active = false;
+    overlayLocks.delete(token);
+    syncOverlayLock();
+  };
+}
+
+// Route-owned content may open a viewer long after render() has returned, so
+// its close function cannot be known to ctx.onUnmount up front. The router uses
+// this small registry to close all currently open overlays before replacing the
+// route. Registration and closing are both idempotent.
+export function registerOverlay(close) {
+  if (typeof close !== 'function') return () => {};
+  overlayClosers.add(close);
+  let active = true;
+  return () => {
+    if (!active) return;
+    active = false;
+    overlayClosers.delete(close);
+  };
+}
+export function closeOverlays() {
+  // Close topmost/most recently opened first. Work on a snapshot because every
+  // close removes itself from the registry.
+  [...overlayClosers].reverse().forEach((close) => {
+    try { close(); } catch (e) { console.warn('[overlay] cleanup failed', e); }
+  });
+}
+
 // Kanonisches Modal (CD modal.postcss BEM). `modal()` liefert das Markup, `openModal()`
 // hängt es an document.body, fängt den Fokus, schliesst bei Escape / Backdrop-Klick /
 // [data-modal-close] und gibt den Fokus zurück. Primitive für neue Dialoge; `body`/
@@ -558,11 +605,16 @@ function openModal(opts = {}) {
   host.innerHTML = modal(opts);
   const el = host.firstElementChild;
   document.body.appendChild(el);
-  document.body.classList.add('body--overlay-open');   // der EINE Scroll-Lock (Modal, Galerie, Dokumentbetrachter)
+  const releaseOverlayLock = acquireOverlayLock();
   const untrap = trapFocus(el);
+  let closed = false;
+  let unregisterOverlay = () => {};
   const close = () => {
+    if (closed) return;
+    closed = true;
+    unregisterOverlay();
     document.removeEventListener('keydown', onKey, true);
-    untrap(); el.remove(); document.body.classList.remove('body--overlay-open');
+    untrap(); el.remove(); releaseOverlayLock();
     if (trigger && trigger.focus) trigger.focus();
   };
   // stopPropagation, nicht nur preventDefault: ein Modal ist modal. Ohne das
@@ -574,6 +626,7 @@ function openModal(opts = {}) {
     e.preventDefault(); e.stopPropagation();
     close();
   };
+  unregisterOverlay = registerOverlay(close);
   el.addEventListener('click', (e) => { if (e.target.closest('[data-modal-close]')) close(); });
   document.addEventListener('keydown', onKey, true);
   const first = el.querySelector('.modal__close'); if (first) first.focus();
@@ -1788,7 +1841,12 @@ export function wireMenu(root, onAction) {
     const popup = m.querySelector('.action-menu__popup');
     const items = [...popup.querySelectorAll('.action-menu__item')];
     const open = () => {
-      document.querySelectorAll('.action-menu__popup:not([hidden])').forEach((p) => { if (p !== popup) p.hidden = true; });
+      document.querySelectorAll('.action-menu__popup:not([hidden])').forEach((p) => {
+        if (p === popup) return;
+        p.hidden = true;
+        const oldTrigger = p.closest('.action-menu')?.querySelector('.action-menu__trigger');
+        if (oldTrigger) oldTrigger.setAttribute('aria-expanded', 'false');
+      });
       popup.hidden = false; trigger.setAttribute('aria-expanded', 'true'); items[0] && items[0].focus();
     };
     const close = (focusTrigger) => { popup.hidden = true; trigger.setAttribute('aria-expanded', 'false'); if (focusTrigger) trigger.focus(); };
@@ -1887,17 +1945,25 @@ export function catalogueState(query, { base, perPage = 12, sortOpts = [], defau
 //   onReset   ersetzt das Standard-onChange nach «Alle Filter zurücksetzen»
 //             (Explorer setzen hier zusätzlich die Baum-Auswahl zurück)
 //
-// Rückgabe: { updateFilterBadge, syncFilterChecks, clearFilters } für Aufrufer,
-// die den Panel-Zustand selbst anfassen (URL-Wiederherstellung).
+// Rückgabe: { updateFilterBadge, syncFilterChecks, clearFilters, destroy } für
+// Aufrufer, die den Panel-Zustand selbst anfassen (URL-Wiederherstellung).
+// `destroy` gehört in ctx.onUnmount und verwirft insbesondere die verzögerte Suche.
 export function wireCatalogueState(mount, {
   formId, inputId, sortId = '', filterToggleId = '', panelId = '', resetId = '',
   activeFiltersId = '', state, onChange, onRemove, onReset, debounceMs = 250,
 } = {}) {
   const input = inputId ? mount.querySelector('#' + inputId) : null;
   let timer = null;
-  const runSearch = () => { state.q = input ? (input.value || '') : ''; state.page = 1; onChange(); };
+  let destroyed = false;
+  const runSearch = () => {
+    timer = null;
+    // A delayed callback belongs to the mount that scheduled it. Do not let it
+    // mutate state or the hash after the router has replaced that mount.
+    if (destroyed || !mount.isConnected) return;
+    state.q = input ? (input.value || '') : ''; state.page = 1; onChange();
+  };
   const form = formId ? mount.querySelector('#' + formId) : null;
-  if (form) form.addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); runSearch(); });
+  if (form) form.addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); timer = null; runSearch(); });
   if (input) input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(runSearch, debounceMs); });
 
   const vs = mount.querySelector('.view-switch');
@@ -1956,7 +2022,13 @@ export function wireCatalogueState(mount, {
     if (onRemove) onRemove(tok);   // z. B. 'sel' — die Baum-Auswahl des Aufrufers
   });
 
-  return { updateFilterBadge, syncFilterChecks, clearFilters };
+  const destroy = () => {
+    if (destroyed) return;
+    destroyed = true;
+    if (timer !== null) clearTimeout(timer);
+    timer = null;
+  };
+  return { updateFilterBadge, syncFilterChecks, clearFilters, destroy };
 }
 
 // Kanonischer Filterpanel-Reset — EINE Anatomie für die 13 Panels, die vorher
@@ -2132,7 +2204,8 @@ export function wireLogin(root = document) {
 
 export const C = {
   icon, escape, badge, statusBadge, loading, pageHeader, card, table, empty,
-  mountBanner, openModal, openShareModal, wireShare, domainTile, announce, trapFocus, FOCUSABLE, notFound,
+  mountBanner, openModal, openShareModal, wireShare, domainTile, announce, trapFocus, FOCUSABLE,
+  acquireOverlayLock, registerOverlay, closeOverlays, notFound,
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,
   catalogueState, wireCatalogueState, panelReset, wireFieldErrors, focusProcessDone, wizardHead, focusWizardStep, contextLine,

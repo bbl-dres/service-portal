@@ -315,6 +315,7 @@ function overview(ctx) {
     onRemove: (tok) => { if (tok === 'sel') resetSelection(); },
     onReset: resetSelection,
   });
+  ctx.onUnmount(cat.destroy);
 
   // Leerzustands-Aktion «Suche und Filter zurücksetzen»: gleicher Umfang wie
   // die Reset-Pille (Suche + Filter + Baum-Auswahl). Delegiert auf dem stabilen
