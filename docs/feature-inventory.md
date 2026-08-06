@@ -502,7 +502,7 @@ Datensatzkatalog nach DCAT-AP-CH mit Katalog-Muster (catbar, Filter, Galerie/Lis
 
 **Zustände**
 
-- needs=['datasets'] — Router lädt Bestand vor render() (catalog.js:12); Lade-/Nichtverfügbar-Zustand via available: core.available('datasets') an catalogueResults (catalog.js:135)
+- Der delegierende Daten-Routenvertrag lädt `datasets` und `catalogLabels` vor `render()` (`data.js:4-21`); Lade-/Nichtverfügbar-Zustand via `available: core.available('datasets')` an `catalogueResults` (catalog.js:135)
 - Leerer Treffer-Zustand mit unit {nom:'Datensätze', dat:'Datensätzen'} und Reset-Link (catalog.js:128-132)
 - Aktive Filter als Pills (Suche/Thema/Klassifizierung/Tag) mit «alle zurücksetzen» (catalog.js:66-72)
 - Filterpanel auf-/zuklappbar mit Filterzähler im Button (catalog.js:117-123)
@@ -524,15 +524,15 @@ Datensatzkatalog nach DCAT-AP-CH mit Katalog-Muster (catbar, Filter, Galerie/Lis
 
 ## js/pages/data.js
 
-Abschnitts-Übersicht «Daten und Digitalisierung» plus Delegator: lädt Unterseiten (catalog, ict-projects, digitalisation) per dynamischem Import und stellt deren Datenbedarf via core.ensure() sicher (data.js:22).
+Abschnitts-Übersicht «Daten und Digitalisierung» plus Delegator: lädt Unterseiten (catalog, ict-projects, digitalisation) per dynamischem Import; ihr routenabhängiger `needs(params)`-Vertrag wird allein vom Router sichergestellt (data.js:4-30, router.js:453-461).
 
 **Routen**
 
 - #/data — Abschnitts-Übersicht mit Angebots-Kacheln
-- #/data/catalog[...] — delegiert an catalog.js (needs: datasets, catalogLabels; data.js:12)
+- #/data/catalog[...] — delegiert an catalog.js; `needs(params)` liefert dafür `datasets` und `catalogLabels` aus derselben Unterrouten-Registry (data.js:4-21)
 - #/data/ict-projects — delegiert an ict-projects.js
 - #/data/digitalisation[...] — delegiert an digitalisation.js
-- #/data/<unbekannt> — 404 via C.renderNotFound (data.js:91)
+- #/data/<unbekannt> — 404 via C.renderNotFound (data.js:97)
 
 **Funktionen**
 
@@ -543,8 +543,8 @@ Abschnitts-Übersicht «Daten und Digitalisierung» plus Delegator: lädt Unters
 
 **Zustände**
 
-- needs=['applications','datasets'] nur für die Übersicht; Unterseiten-Bestand wird erst beim Delegieren nachgeladen (data.js:7,22)
-- Stale-Guard: nach await keine überholte Navigation überschreiben (ctx.stale(), data.js:23)
+- Routenabhängiges `needs(params)`: Übersicht lädt `applications` + `datasets`, Katalog lädt `datasets` + `catalogLabels`, IKT/Digitalisierung/404 laden keinen aufschiebbaren Bestand; allein der Router führt `core.ensure` aus (data.js:4-28, router.js:453-461)
+- Stale-Guard: nach await keine überholte Navigation überschreiben (ctx.stale(), data.js:29)
 - 404-Zustand für unbekannte Unterroute mit Rücksprung nach #/data
 
 **Interaktionen**

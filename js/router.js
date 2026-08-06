@@ -451,11 +451,12 @@ async function dispatch() {
     const render = mod.default || mod.render;
     if (typeof render !== 'function') throw new Error('Modul exportiert kein render()');
     // Aufschiebbare Bestände (H4): das Modul nennt in `needs`, was es lesen will,
-    // und bekommt es VOR dem ersten Zugriff. Ohne diese Sperre läse ein Accessor
-    // die noch leere Liste und die Seite zeigte «keine Einträge» statt Daten.
+    // und bekommt es VOR dem ersten Zugriff. Ein Resolver darf die Liste aus den
+    // Routenparametern ableiten, wenn ein Modul mehrere Unteransichten delegiert.
     // Beim zweiten Besuch ist das Versprechen erfüllt und die Sperre kostet nichts.
-    if (Array.isArray(mod.needs) && mod.needs.length) {
-      await core.ensure(mod.needs);
+    const routeNeeds = typeof mod.needs === 'function' ? mod.needs(params, query) : mod.needs;
+    if (Array.isArray(routeNeeds) && routeNeeds.length) {
+      await core.ensure(routeNeeds);
       if (stale()) return;
     }
     const ctx = makeCtx(mount, params, query, stale, routeCleanups);

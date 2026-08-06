@@ -7,9 +7,9 @@
 // 12 wie die Geschwister-Kataloge (B16).
 const PER_PAGE = 12;
 
-// Aufschiebbarer Bestand, den diese Ansicht liest — der Router lädt ihn nach,
-// bevor render() den ersten Accessor aufruft (H4).
-export const needs = ["datasets"];
+// Den Bestand deklariert der übergeordnete Daten-Routenvertrag in data.js,
+// weil der Router dieses Modul nur über den dortigen Delegator erreicht.
+// Dieses delegierte Modul hat deshalb keinen eigenen `needs`-Export.
 
 export function katalog(ctx) {
   const { params } = ctx;
