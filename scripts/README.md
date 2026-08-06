@@ -6,9 +6,9 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently 28 supported `test-*.mjs` functional suites and 20 retained
+There are currently 29 supported `test-*.mjs` functional suites and 20 retained
 `check-*.mjs` diagnostics. Every browser suite uses `APP_BASE` to select the
-running app and exits non-zero on failure; the three pure-Node suites need no
+running app and exits non-zero on failure; the four pure-Node suites need no
 server. The older diagnostics are classified
 separately below because six are observation-only and deliberately do not act
 as regression gates.
@@ -27,8 +27,9 @@ login gate (`js/router.js`). Two cases must say so explicitly:
 - checking the **gate itself** → `{ login: false }` (see `test-tabs.mjs`);
 - a gated route **outside** `#/app/…`, i.e. `#/my-cases` → `{ login: true }`.
 
-Scripts that open one page and then walk routes by hash — `test-routes.mjs`
-and the three `review-*.mjs` — pass `{ login: true }` once at the top.
+Scripts that open one page and then walk routes by hash — `test-routes.mjs`,
+`check-404.mjs`, and the three `review-*.mjs` — pass `{ login: true }` once at
+the top.
 
 ## Prerequisites
 
@@ -52,17 +53,18 @@ inventory is `scripts/test-*.mjs`.
 | Script | What it checks |
 |---|---|
 | `test-tabs.mjs` | D1 tab component (`C.tabBar`/`C.tabPanels`/`C.wireTabs`) across portfolio · projects · dataportal: panel toggling, `aria-selected`, roving `tabindex`, focus-follows-active, keyboard (Arrow/Home/End), hash sync. Plus the logged-out gates for the action apps. |
-| `test-login.mjs` | Opens Room Booking with an explicitly empty session, verifies the login gate, then logs in via `window.__login` and asserts the form replaces the gate. |
+| `test-login.mjs` | Opens Room Booking with an explicitly empty session, verifies login persists and replaces the gate, then verifies logout clears storage and restores both the route gate and header without a subscription API. |
 | `test-workspace.mjs` | Standalone Workspace Management planning surface: no legacy tabs, live capacity scenario, floor-plan interaction, and desktop/mobile containment. |
 | `test-room-booking.mjs` | Room Booking on the one-page, direct-booking surface (`docs/room-booking-redesign.md`): search and sort behavior, one process snapshot per redraw, action-time conflict checks, favourites, dialogs, process creation, personal bookings, the `?room=` deep link, and desktop/mobile containment. |
 | `test-building-create.mjs` | Building creation: stale address responses, selection invalidation, map/search state, required fields, and process creation. |
 | `test-gallery-floorplan-state.mjs` | W-09/W-11 lifecycle regression: exact and stale gallery deep links, unknown image IDs, dialog focus, and tenancy floor-plan fullscreen/selection/focus preservation. |
-| `test-anchor-search-state.mjs` | W-15/W-16 navigation regression: document-relative anchor thresholds and search-query preservation across catalogue links. |
+| `test-anchor-search-state.mjs` | W-15/W-16/K-03 navigation regression: document-relative anchor thresholds, cross-catalogue query preservation, and exact global-search targets for application details and filtered documents. |
 | `test-process-dates.mjs` | W-21/K-06 pure Node regression: local date/history/reference consistency plus concurrent process-file loading, independent failures, and successful retry. |
+| `test-api-surface.mjs` | K-03 pure Node contract: exact ESM surfaces for session/links/crumbs/core/process engine/maps/components, removed object members, retained diagnostics, and encoded search-link builders. |
 | `test-ui-state.mjs` | W-03/W-04/W-05/W-22 state regression: catalogue debounce teardown, nested overlay ownership, route cleanup, action-menu ARIA, and mobile-shell reset. |
 | `test-document-archive.mjs` | Bauwerksdokumentation: reduced six-column table, KBOB document types, filename extensions, plain building cells, and viewer metadata at desktop/mobile widths. |
 | `test-catalogue.mjs` | D2 catalogue triplet (`C.catalogueHash`/`C.catalogueControls`/`C.wireCatalogue`) across services · applications · katalog: deep-link round-trips (q/view/filter), search-submit / view-switch / filter interactions, active-filter pill removal, the services multi-value `topic`, and detail-view render. |
-| `test-route-needs.mjs` | K-05 route loading contract: fresh-page resource assertions prove that the data overview, catalogue, static subroutes, and local 404 each load only their declared deferred data. |
+| `test-route-needs.mjs` | K-05/K-04 route loading contract: fresh-page resource assertions prove that data routes load only their declared deferred data, generic dashboards load no estate GeoJSON, and the specialized Immobilien renderer loads each of its three master files exactly once. |
 | `test-forms.mjs` | D3 form helpers (`C.field`/`C.select`/`C.val`/`C.readForm`) + the C5 fix across the three wizards: renders, a custom validation error attaches `input--error`+`aria-invalid`+badge to the previously class-less fields (`#org`/`#cc`/`#beschreibung`/`#datum`), and a valid submit creates a Vorgang. Logs in via the stub first. |
 | `test-content.mjs` | D4 download-item + contact-box unification: the pages rendering `C.downloadItem` (grundlagen, anleitungen, digitalisierung, application entries, my-cases attachments) and `C.contactBox` (application, services detail) render with the expected items / mailto links and no exceptions. |
 | `test-combobox.mjs` | Shared `createListboxController`: Arrow keys, active descendant, selection, Escape/Tab close behavior and cleanup for global suggestions and address search. |
@@ -70,8 +72,8 @@ inventory is `scripts/test-*.mjs`.
 | `test-process-docs.mjs` | Process detail tabs plus the full-width BPMN viewer, vertical overlay controls, reset action and disabled/focus states. |
 | `test-shop.mjs` | Shop catalogue, product/cart/checkout flows, global top-header cart and responsive category disclosure. |
 | `test-race.mjs` | A2 router render-race: rapid navigation between an awaiting page (application detail) and another must always land on the last-requested page (the `ctx.stale()` guard drops stale renders), across several timings and both directions. |
-| `test-dashboard.mjs` | Datenportal redesign on a generic sql-spec dashboard: the Superset-style grey-canvas/white-card framing, full-height filter panel, footer, dashboard toolbar menu (`copy link`) and per-chart menu (fullscreen overlay, CSV/PNG export). Saves a screenshot to `$SHOT`. |
-| `test-estate.mjs` | Immobilienportfolio record-based dashboard (`js/apps/estate.js`): the three tabs (Gebäude/Grundstücke/Bodenbedeckung), KPIs, runtime-aggregated charts, the worldwide CARTO map with markers, and live filtering (Land=CH shrinks the building count). Saves a screenshot to `$SHOT`. |
+| `test-dashboard.mjs` | Datenportal redesign and renderer boundary: exact seven-card routing, smoke coverage for all six generic dashboards, the specialized four-tab Immobilien route, Superset-style framing, dashboard/chart menus, fullscreen, and CSV/PNG export. Saves a screenshot to `$SHOT`. |
+| `test-estate.mjs` | Immobilienportfolio record-based dashboard (`js/apps/estate.js`): the four tabs (Gebäude/Grundstücke/Bodenbedeckung/Entwicklung), KPIs, runtime-aggregated charts, the worldwide CARTO map with markers, and live filtering (Land=CH shrinks the building count). Saves a screenshot to `$SHOT`. |
 
 Run every functional suite in PowerShell:
 

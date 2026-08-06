@@ -126,7 +126,7 @@ function list(ctx) {
     ${filterBar}
     ${C.catalogueResults({
       resetHref: '#/data/catalog',
-      visible, count: datasets.length, total: all.length, view, page, totalPages, header: false,
+      visible, count: datasets.length, view, page, totalPages,
       // unit trägt beide Kasus — die früheren emptyMsg/unavailableMsg-
       // Überschreibungen waren nur die Grammatik-Krücke dafür (A14).
       card, listView, unit: { nom: 'Datensätze', dat: 'Datensätzen' },

@@ -16,7 +16,7 @@ const CHEVRON_SVG = '<svg role="presentation" aria-hidden="true" viewBox="0 0 24
 const PHOTO_BASE = 'https://images.unsplash.com/photo-';
 const PHOTO_ID = /^[A-Za-z0-9_-]+$/;
 
-export function photoUrl(id, { w = 800, h = 0, q = 70, gray = false } = {}) {
+function photoUrl(id, { w = 800, h = 0, q = 70, gray = false } = {}) {
   if (!id || !PHOTO_ID.test(id)) return '';
   let u = `${PHOTO_BASE}${id}?auto=format&fit=crop&w=${w}&q=${q}`;
   if (h) u += `&h=${h}`;
@@ -30,7 +30,7 @@ export function photoUrl(id, { w = 800, h = 0, q = 70, gray = false } = {}) {
 // die Farbfläche zurück.
 const LOKAL = /^assets\/[A-Za-z0-9/_.-]+$/;
 
-export function photo(o = {}) {
+function photo(o = {}) {
   const src = (o.src && LOKAL.test(o.src)) ? o.src : photoUrl(o.id, { w: o.w, h: o.h, q: o.q, gray: o.gray });
   const img = src
     ? `<img src="${src}" alt="${escape(o.alt || '')}" loading="lazy" decoding="async" onerror="this.remove()">`
@@ -59,7 +59,7 @@ function breakable(s) {
 
 // decodeURIComponent, das bei malformten Sequenzen (roh getippter Hash wie
 // `#/applications/%`) nicht wirft, sondern den Rohwert zurückgibt (code-review A6).
-export function safeDecode(s) {
+function safeDecode(s) {
   try { return decodeURIComponent(s); } catch { return s; }
 }
 
@@ -70,7 +70,7 @@ const EN_TERMS = ['Digital by Design', 'Digital First', 'Digital Only', 'Once-On
 
 // Escaped den Text und zeichnet bekannte fremdsprachige Phrasen mit lang aus.
 // Längere Phrasen zuerst, damit Teilphrasen nicht vorzeitig umschlossen werden.
-export function markLang(text, terms = EN_TERMS) {
+function markLang(text, terms = EN_TERMS) {
   let out = escape(text);
   for (const phrase of [...terms].sort((a, b) => b.length - a.length)) {
     const e = escape(phrase);
@@ -108,7 +108,7 @@ const STATUS_VARIANT = {
   genehmigt: 'success', in_projekt: 'info', abgeschlossen: 'success', erledigt: 'success',
   geliefert: 'success', abgelehnt: 'error', zurueckgezogen: 'gray', in_bearbeitung: 'warning',
 };
-export function statusBadge(status, label) {
+function statusBadge(status, label) {
   return badge(label || status, STATUS_VARIANT[status] || 'gray');
 }
 
@@ -128,7 +128,7 @@ export function statusBadge(status, label) {
 // durch, damit die Bänder sauber alternieren. Kein neues CSS: .section,
 // .section--default, .section__title, .section__action und .bg--secondary-50
 // existieren alle bereits.
-export function pageSection({ title = '', body = '', more = null, alt = false, titleTag = 'h2' }) {
+function pageSection({ title = '', body = '', more = null, alt = false, titleTag = 'h2' }) {
   return `<section class="section section--default${alt ? ' bg--secondary-50' : ''}">
       <div class="container">
         ${title ? `<${titleTag} class="section__title">${escape(title)}</${titleTag}>` : ''}
@@ -215,14 +215,14 @@ export function mountBanner(host, opts) {
   return releaseSpace;
 }
 
-export function pageHeader({ title, lead, leadHtml }) {
+function pageHeader({ title, lead, leadHtml }) {
   const body = leadHtml || (lead ? escape(lead) : '');
   return `<div class="page-header"><h1 tabindex="-1">${escape(title)}</h1>${body ? `<p class="lead">${body}</p>` : ''}</div>`;
 }
 
 
 // --- Cards (card.postcss) ----------------------------------------------------
-export function card(o) {
+function card(o) {
   // `chips`: kurze Merkmale ALS AUFLAGE auf dem Bild statt als Pillenzeile im
   // Kartenkörper — dasselbe Muster wie die Galerie des Liegenschaften-Inventars
   // (`.pf-card__chips`, portfolio.js). Sinnvoll für Angaben, die man beim
@@ -298,7 +298,7 @@ export function card(o) {
 // rows: object[]; caption names the table.
 // `foot` = fertiges <tr>…</tr>-HTML für eine <tfoot>-Zeile (z. B. eine Summenzeile);
 // der Aufrufer escaped den Inhalt.
-export function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable, emptyText }) {
+function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable, emptyText }) {
   // `align: 'right'|'center'|'left'` je Spalte → CD-Ausrichtungs-Utility auf Kopf + Zelle.
   const al = (c) => c.align ? ` class="text-${c.align}"` : '';
   const head = columns.map(c => `<th scope="col"${al(c)}>${escape(c.label)}</th>`).join('');
@@ -373,7 +373,7 @@ export function empty(msg, opts = {}) {
 
 // Standard-«nicht gefunden»-Block für Detailrouten (zuvor mehrfach kopiert).
 // Titel/Brotkrume setzt die aufrufende Seite; `body` ist HTML (mit Rück-Link).
-export function notFound({ backHref, backLabel, title, body }) {
+function notFound({ backHref, backLabel, title, body }) {
   return `<div class="container section">
     ${backLink(backHref, backLabel)}
     <div class="page-header mt-4"><h1 tabindex="-1">${escape(title)}</h1></div>
@@ -393,7 +393,7 @@ export function notFound({ backHref, backLabel, title, body }) {
 // `thing` trägt das Geschlecht, das je Gegenstand wechselt («Dieses
 // Bauprojekt», «Diese Anwendung», «Dieser Datensatz»). Wo der Satz mehr sagen
 // muss als «… existiert nicht», ersetzt `body` ihn vollständig.
-export function renderNotFound(ctx, {
+function renderNotFound(ctx, {
   thing, title, backHref, backLabel, overview = backLabel, crumbs, body,
 } = {}) {
   const { mount, setTitle, setCrumbs } = ctx;
@@ -410,7 +410,7 @@ export function renderNotFound(ctx, {
 // (Portfolio) geben stattdessen `remove` (Daten-Token je Pille) — dann werden die
 // Pillen zu <button data-remove> und der Reset zu <button data-reset>, die der
 // Aufrufer verdrahtet. `label` überschreibt den Vorspann «Aktive Filter:».
-export function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurücksetzen', label = 'Aktive Filter:' }) {
+function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurücksetzen', label = 'Aktive Filter:' }) {
   if (!filters || !filters.length) return '';
   // id je Pille — sonst verliert das Entfernen einer Pille den Fokus an <body> (Item 3.3).
   // CDs interaktive Pille ist .tag-item (volle 44px-Höhenrampe + Fokusring,
@@ -452,7 +452,7 @@ export function announce(msg) {
 // wire() überlebt:
 //     const restore = C.preserveFocus(mount);
 //     mount.innerHTML = `…`;  wire();  restore();
-export function preserveFocus(mount) {
+function preserveFocus(mount) {
   const a = document.activeElement;
   const id = a && mount.contains(a) ? a.id : '';
   const sel = a && typeof a.selectionStart === 'number' ? [a.selectionStart, a.selectionEnd] : null;
@@ -473,7 +473,7 @@ export function preserveFocus(mount) {
 // gemessen. Ausserdem wird die Region nur dann als Gruppe angesagt, wenn sie
 // wirklich scrollt (Item 3.21).
 const SCROLL_SEL = '[data-scroll-region], .table-wrapper, pre.api-code';
-export function wireScrollRegions(root) {
+function wireScrollRegions(root) {
   const scan = () => {
     root.querySelectorAll(SCROLL_SEL).forEach((el) => {
       const scrolls = el.scrollWidth > el.clientWidth + 1;
@@ -511,12 +511,12 @@ export function wireScrollRegions(root) {
 
 // Fokusfalle für modale Overlays (Lightbox, Chart-Vollbild, Dokumentvorschau):
 // Tab/Shift+Tab bleiben innerhalb von `container`. Gibt eine Abmelde-Funktion
-// zurück. Geteilt, damit alle Dialoge identisch fangen (WCAG 2.4.3 / 2.1.2).
-// Exportiert, damit Overlays mit eigener Tastaturlogik (Galerie, Dokument-
-// betrachter) DENSELBEN Fokuskreis verwenden — drei abweichende Kopien dieser
-// Liste haben bereits einen Trap-Ausbruch produziert (Review lb-trap-1).
-export const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
-export function trapFocus(container) {
+// zurück. Geteilt über C.trapFocus, damit auch Overlays mit eigener
+// Tastaturlogik (Galerie, Dokumentbetrachter) identisch fangen — drei
+// abweichende Kopien dieser Liste hatten einen Trap-Ausbruch produziert
+// (WCAG 2.4.3 / 2.1.2; Review lb-trap-1).
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+function trapFocus(container) {
   const onKey = (e) => {
     if (e.key !== 'Tab') return;
     const f = [...container.querySelectorAll(FOCUSABLE)].filter((el) => el.offsetParent !== null);
@@ -541,7 +541,7 @@ function syncOverlayLock() {
     document.body.classList.toggle('body--overlay-open', overlayLocks.size > 0);
   }
 }
-export function acquireOverlayLock() {
+function acquireOverlayLock() {
   const token = {};
   overlayLocks.add(token);
   syncOverlayLock();
@@ -558,7 +558,7 @@ export function acquireOverlayLock() {
 // its close function cannot be known to ctx.onUnmount up front. The router uses
 // this small registry to close all currently open overlays before replacing the
 // route. Registration and closing are both idempotent.
-export function registerOverlay(close) {
+function registerOverlay(close) {
   if (typeof close !== 'function') return () => {};
   overlayClosers.add(close);
   let active = true;
@@ -568,7 +568,7 @@ export function registerOverlay(close) {
     overlayClosers.delete(close);
   };
 }
-export function closeOverlays() {
+function closeOverlays() {
   // Close topmost/most recently opened first. Work on a snapshot because every
   // close removes itself from the registry.
   [...overlayClosers].reverse().forEach((close) => {
@@ -645,7 +645,7 @@ function openModal(opts = {}) {
 // aussah, aber weder fokussierbar war noch als Link angekündigt wurde). Sie ist
 // deshalb rein dekorativ und für Hilfsmittel ausgeblendet — den zugänglichen
 // Namen und die Aktion trägt der Kartenlink selbst.
-export function cardAction({ external = false } = {}) {
+function cardAction({ external = false } = {}) {
   return `<span class="btn btn--outline btn--icon-only" aria-hidden="true">${icon(external ? 'External' : 'ArrowRight', 'btn__icon icon--base')}</span>`;
 }
 
@@ -659,7 +659,7 @@ function cardFooter(meta = '', opts = {}) {
 // Icon-Kachel (domain-tile): bildlose Karte mit grossem Icon, Titel, Text und
 // Pfeil-Fuss. Eine Quelle für die Übersichtskarten (Daten, Wissen,
 // Digitalisierung) — bildlose Karten sind card--default (CD, nicht --universal).
-export function domainTile({ icon: ic, title, desc, meta = '', href, external = false, titleTag = 'h3' }) {
+function domainTile({ icon: ic, title, desc, meta = '', href, external = false, titleTag = 'h3' }) {
   const ext = external ? ' target="_blank" rel="noopener external"' : '';
   // Dasselbe Stretched-Link-Muster wie card(): die Karte ist ein <div>, der
   // Titel-<a> deckt sie per ::after ab. Im CD ist die Kartenwurzel IMMER ein div
@@ -722,7 +722,7 @@ function shareUrlBlock(url, { id = 'share-url-input' } = {}) {
   </div>`;
 }
 
-export function openShareModal(url = location.href, title = 'Inhalt teilen') {
+function openShareModal(url = location.href, title = 'Inhalt teilen') {
   // CD legt den Inhalt in eine weisse .card (detailPageSimple.vue:817) — die
   // Kopfzeile steht darüber in weisser Schrift auf dem Scrim.
   const close = openModal({ title, size: 'xs',
@@ -759,7 +759,7 @@ export function wireShare(root = document) {
 
 // Kopfleiste einer Detailseite: Zurück-Link links, Share-Bar rechts — in EINER
 // Zeile (CD: .back-bar + .share-bar auf derselben Höhe nach der Brotkrume).
-export function detailBar({ backHref, backLabel } = {}) {
+function detailBar({ backHref, backLabel } = {}) {
   return `<div class="detail-bar">${
     backHref ? backLink(backHref, backLabel) : '<span></span>'}${shareBar()}</div>`;
 }
@@ -779,14 +779,14 @@ export function detailBar({ backHref, backLabel } = {}) {
 // für den Prototyp einheitlich ohne. Die Startseite (echtes BBL-Foto mit
 // ©-Vermerk) schreibt ihre figcaption selbst und behält sie. Der `credit`-
 // Parameter bleibt als Schnittstelle bestehen, wird aber nicht gerendert.
-export function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt = '', w = 800, ratio = '' } = {}) {
+function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt = '', w = 800, ratio = '' } = {}) {
   if (!src && !id) return '';
   const ratioClass = { '16x9': 'photo--16x9', '4x3': 'photo--4x3', '21x9': 'photo--21x9' }[ratio]
     || 'hero-media--natural';
   return `<figure class="hero__figure">${photo({ src, id, color, alt, w, cls: ratioClass })}</figure>`;
 }
 
-export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '' } = {}) {
+function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '' } = {}) {
   const content = `<div class="hero__content">
         <h1 class="hero__title" tabindex="-1">${escape(title)}</h1>
         ${lead ? `<p class="hero__description">${escape(lead)}</p>` : ''}
@@ -804,7 +804,7 @@ export function detailHead({ backHref, backLabel, title, lead = '', tags = '', i
 // Horizontaler Status-Stepper (CD steps / tenant-portal pipeline): Chevron-Segmente
 // — erledigt (grün, Haken) · aktuell (Primärfarbe, Uhr) · offen (grau). `steps` =
 // [{ label }]; `currentIndex` = Index des aktuellen Schritts. Scrollt horizontal auf Mobil.
-export function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = {}) {
+function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = {}) {
   const seg = (st, i) => {
     const state = i < currentIndex ? 'done' : i === currentIndex ? 'active' : 'todo';
     const glyph = state === 'done' ? icon('Checkmark', 'icon--sm pipeline__glyph')
@@ -826,7 +826,7 @@ export function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = 
 // `titleTag` wie bei pageSection — in Registerkarten sitzt der Abschnitt unter
 // einer h2 und braucht eine h3; vorher kopierten zwei Aufrufer dafür das ganze
 // Markup von Hand (Design-Review, pages).
-export function detailSection({ title, body = '', titleTag = 'h2' }) {
+function detailSection({ title, body = '', titleTag = 'h2' }) {
   return `<section class="detail-section">
       <${titleTag} class="detail-section__title">${escape(title)}</${titleTag}>
       ${body}
@@ -837,7 +837,7 @@ export function detailSection({ title, body = '', titleTag = 'h2' }) {
 // optionale .accordion__meta + .accordion__arrow) + .accordion__drawer >
 // .accordion__content. `items` = [{ title, meta?, body, open? }]; `title` wird
 // escaped, `meta`/`body` sind fertiges HTML. Verdrahtung über wireAccordion().
-export function accordion(items, { id = 'acc' } = {}) {
+function accordion(items, { id = 'acc' } = {}) {
   const li = ({ title, meta = '', body = '', open = false }, i) => {
     const bid = `${id}-b-${i}`, pid = `${id}-p-${i}`;
     return `<li class="accordion__item">
@@ -857,7 +857,7 @@ export function accordion(items, { id = 'acc' } = {}) {
 
 // Klick-Verdrahtung für ein oder mehrere Akkordeons in `root` (aria-expanded +
 // Drawer ein-/ausblenden). Ersetzt die je Seite kopierte Toggle-Logik.
-export function wireAccordion(root) {
+function wireAccordion(root) {
   root.querySelectorAll('.accordion__button').forEach((btn) => {
     btn.addEventListener('click', () => {
       const open = btn.getAttribute('aria-expanded') === 'true';
@@ -902,7 +902,7 @@ export function wireAccordion(root) {
 // EIN gemeinsames Panel (Einzel-Panel-/Neurender-Muster, z. B. dataportal); ohne
 // `panelId` zeigt jeder Tab auf sein eigenes `${idPrefix}-panel-${id}` (Mehr-
 // Panel-Muster, s. tabPanels).
-export function tabBar({ items, active, idPrefix = 'tab', ariaLabel = '', panelId = '', controlsClass = '' } = {}) {
+function tabBar({ items, active, idPrefix = 'tab', ariaLabel = '', panelId = '', controlsClass = '' } = {}) {
   const btns = items.map((t) => {
     const on = t.id === active;
     const controls = panelId || `${idPrefix}-panel-${t.id}`;
@@ -922,7 +922,7 @@ export function tabBar({ items, active, idPrefix = 'tab', ariaLabel = '', panelI
 // voran. `aria-labelledby` benennt das Panel nur, sobald der Fokus darin liegt —
 // für die Überschriftennavigation (WCAG 2.4.10) fehlte auf reinen Tab-Seiten
 // jede Stufe zwischen der <h1> und den <h3> im Panelinhalt.
-export function tabPanels({ items, active, idPrefix = 'tab', render, heading = false }) {
+function tabPanels({ items, active, idPrefix = 'tab', render, heading = false }) {
   return items.map((t) =>
     `<div class="tab__container" role="tabpanel" id="${idPrefix}-panel-${t.id}"`
     + ` aria-labelledby="${idPrefix}-${t.id}" tabindex="0" data-panel="${t.id}"`
@@ -936,7 +936,7 @@ export function tabPanels({ items, active, idPrefix = 'tab', render, heading = f
 // umgeblendet (Pattern A); `onSelect(id)` rendert bei Einzel-Panel/Neurender den
 // Inhalt (Pattern B). `syncHash(id)` spiegelt optional den Tab in die Hash-Query.
 // Fokus wird nach `onSelect` per Neuabfrage gesetzt, überlebt also ein Neurender.
-export function wireTabs(root, { onSelect, syncHash } = {}) {
+function wireTabs(root, { onSelect, syncHash } = {}) {
   const btns = [...root.querySelectorAll('.tab__control')];
   const panels = [...root.querySelectorAll('[data-panel]')];
   const single = root.querySelectorAll('[role="tabpanel"]');
@@ -1025,7 +1025,7 @@ export function notification(text, variant = 'info', iconName = 'InfoCircle', op
 //   text     Erklärsatz darunter
 //   extra    optionaler HTML-Block dazwischen (Merkmalliste, Zusatzhinweis)
 //   actions  [{ href | id, label, variant, icon }] — erste Aktion gefüllt
-export function processDone({ instance, lead, title, heading = 'h1', text,
+function processDone({ instance, lead, title, heading = 'h1', text,
   extra = '', actions = [] } = {}) {
   const knopf = (a, i) => {
     const cls = `btn btn--${a.variant || (i === 0 ? 'filled' : 'outline')}${a.icon ? ' btn--icon-right' : ''}`;
@@ -1047,7 +1047,7 @@ export function processDone({ instance, lead, title, heading = 'h1', text,
 // Schrittanzeige statt der zwei hand-gerollten Kopien in space-request und
 // transaction (Item 3.10). Liefert CDs `.step__indicator`-Wrapper, auf den die
 // Union-Selektoren aus Item 1.17d/2.3 schon vorbereitet sind.
-export function stepIndicator(labels, current = 0, { label = 'Fortschritt' } = {}) {
+function stepIndicator(labels, current = 0, { label = 'Fortschritt' } = {}) {
   const li = (l, i) => {
     const done = i < current, active = i === current;
     const mod = done ? ' step__indicator-step--confirmed' : active ? ' step__indicator-step--active' : '';
@@ -1061,7 +1061,7 @@ export function stepIndicator(labels, current = 0, { label = 'Fortschritt' } = {
 
 // Blendet einen Fehler oben in der Seite ein und sagt ihn an — für clientseitige
 // Aktionsfehler (z. B. localStorage-Speichern fehlgeschlagen, code-review C1).
-export function flashError(mount, msg) {
+function flashError(mount, msg) {
   announce(msg);
   const host = mount && mount.querySelector('.container');
   if (host) host.insertAdjacentHTML('afterbegin', notification(escape(msg), 'error', 'WarningCircle'));
@@ -1073,7 +1073,7 @@ export function flashError(mount, msg) {
 //        label="Zurück" class="btn--back" />
 // The visible label is always «Zurück»; `label` names the target for screen
 // readers ("Zurück zu Datenbezug"). `.back-link-row` clears the CD float.
-export function backLink(href, label) {
+function backLink(href, label) {
   return `<div class="back-link-row"><a class="btn btn--outline btn--sm btn--icon-left btn--back" href="${escape(href)}"${
     label ? ` aria-label="Zurück zu ${escape(label)}"` : ''}>${
     icon('ArrowLeft', 'btn__icon')}<span class="btn__text">Zurück</span></a></div>`;
@@ -1137,7 +1137,7 @@ export function select(o = {}) {
 // einer fehlgeschlagenen Absendung an einer Stelle sehen, WAS zu korrigieren ist,
 // und direkt dorthin springen können. `errors` ist nach DOM-id verschlüsselt,
 // damit die Sprungmarken auflösen; `labels` liefert die Klartextnamen.
-export function errorSummary({ errors = {}, labels = {}, id = 'err-summary' } = {}) {
+function errorSummary({ errors = {}, labels = {}, id = 'err-summary' } = {}) {
   const ids = Object.keys(errors);
   if (!ids.length) return '';
   const items = ids.map((k) => `<li><a href="#${escape(k)}" data-err-link="${escape(k)}">${
@@ -1155,13 +1155,13 @@ export function errorSummary({ errors = {}, labels = {}, id = 'err-summary' } = 
 // Die CD-Auswahlhülle: `<select>` plus das Chevron als Overlay. `CHEVRON_SVG`
 // steht als Modulkonstante oben — der frühere Export `chevron` war nur ein
 // Alias darauf und hatte keinen einzigen Aufrufer.
-export function selectBox(inner, extraCls = '', style = '') {
+function selectBox(inner, extraCls = '', style = '') {
   return `<div class="select${extraCls ? ' ' + extraCls : ''}"${style ? ` style="${style}"` : ''}>${inner}<div class="select__icon">${CHEVRON_SVG}</div></div>`;
 }
 
 // Verdrahtet die Sprungmarken der Fehlerübersicht und setzt den Fokus auf ihre
 // Überschrift — ohne das landet der Fokus nach einem Fehlversuch auf <body>.
-export function wireErrorSummary(mount, { focus = true } = {}) {
+function wireErrorSummary(mount, { focus = true } = {}) {
   mount.querySelectorAll('[data-err-link]').forEach((a) => a.addEventListener('click', (e) => {
     e.preventDefault();
     const t = mount.querySelector('#' + CSS.escape(a.dataset.errLink));
@@ -1175,7 +1175,7 @@ export function wireErrorSummary(mount, { focus = true } = {}) {
 
 // CD field wrapper for input/textarea. `control` receives (classes, attributes)
 // so required/aria-describedby/aria-invalid land on the control itself.
-export function field(o = {}) {
+function field(o = {}) {
   const id = o.id;
   const msgType = o.messageType || 'error';
   const isError = Boolean(o.message) && msgType === 'error';
@@ -1210,12 +1210,12 @@ export function field(o = {}) {
 
 // Formularwert aus `mount` lesen (ersetzt das 3× kopierte lokale val()); '' wenn
 // das Feld fehlt.
-export function val(mount, id) { const el = mount.querySelector('#' + id); return el ? el.value : ''; }
+function val(mount, id) { const el = mount.querySelector('#' + id); return el ? el.value : ''; }
 
 // Mehrere Felder in ein Objekt lesen. `map` = { zielSchlüssel: feldId }. Fehlende
 // Felder liefern ''; Coercion (Zahlen) und `|| alt`-Fallbacks macht der Aufrufer.
 // Typisch: Object.assign(state, C.readForm(mount, { buildingId: 'bld', ort: 'ort' })).
-export function readForm(mount, map) {
+function readForm(mount, map) {
   const out = {};
   for (const [key, id] of Object.entries(map)) out[key] = val(mount, id);
   return out;
@@ -1227,7 +1227,7 @@ export function readForm(mount, map) {
 // einem deaktivierten Ersatz. `note`/`desc` sind austauschbar (Datenobjekte tragen
 // `desc`, App-Einträge `note`); `icon` überschreibt das Standardsymbol (extern →
 // External, sonst Download). `wrapLi` umschliesst mit `<li>` für `.download-items`.
-export function downloadItem({ href, title, note = '', desc = '', meta = [], icon: iconName,
+function downloadItem({ href, title, note = '', desc = '', meta = [], icon: iconName,
   external = false, heading = 'h3', wrapLi = false, download = false } = {}) {
   const titleTag = /^h[2-6]$/.test(heading) ? heading : 'h3';
   const text = note || desc;
@@ -1251,7 +1251,7 @@ export function downloadItem({ href, title, note = '', desc = '', meta = [], ico
 // CD-Kontaktkasten (.box): Name/Rolle/E-Mail(mailto)/Telefon, alle escaped —
 // ersetzt die je Seite kopierte Kontaktmarkup und schliesst die unescapten
 // mailto-Stellen (code-review B4).
-export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) {
+function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) {
   if (!contact) return '';
   // DIESELBE Anatomie wie contactCard (dl.kv--stack): der Kontakt-Slot der
   // Detailseiten trug zwei Typografien für denselben Zweck — Zeilenliste hier,
@@ -1286,7 +1286,7 @@ export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) 
 // nur die Beschriftung daneben — ein Symbol muss etwas beitragen, was der Text
 // nicht schon sagt. Der Pfeil rechts bleibt: er sagt, dass die Zeile wegführt.
 // `icon` an den Aufrufstellen wird ignoriert (Altbestand, schadet nicht).
-export function actionCard({ title = 'Aktionen', lead = '', links = [] } = {}) {
+function actionCard({ title = 'Aktionen', lead = '', links = [] } = {}) {
   if (!links.length) return '';
   return `<div class="box">
     <h2>${escape(title)}</h2>
@@ -1300,7 +1300,7 @@ export function actionCard({ title = 'Aktionen', lead = '', links = [] } = {}) {
 // `contacts` = [{ label, name, email, phone }]. `name` entfällt, wo er die
 // Rolle nur wiederholt — «Portfoliomanagement / Portfoliomanagement» las sich
 // wie ein Anzeigefehler.
-export function contactCard({ title = 'Ansprechpersonen', contacts = [] } = {}) {
+function contactCard({ title = 'Ansprechpersonen', contacts = [] } = {}) {
   if (!contacts.length) return '';
   return `<div class="box">
     <h2>${escape(title)}</h2>
@@ -1314,7 +1314,7 @@ export function contactCard({ title = 'Ansprechpersonen', contacts = [] } = {}) 
 }
 
 // Link for a demo download that has no real target yet.
-export function downloadLink(url, label, iconName = 'Download') {
+function downloadLink(url, label, iconName = 'Download') {
   const real = url && url !== '#';
   return real
     ? `<a class="btn btn--link btn--icon-left" href="${escape(url)}">${icon(iconName, 'btn__icon')}<span class="btn__text">${escape(label)}</span></a>`
@@ -1326,7 +1326,7 @@ export function downloadLink(url, label, iconName = 'Download') {
 // icon-only outline buttons (disabled at the ends). `href(page)` builds the
 // target hash so the caller keeps its own filters; `inputId` is wired by the
 // caller for typed page jumps.
-export function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation', align }) {
+function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation', align }) {
   if (totalPages <= 1) return '';
   const control = (target, text, iconName, disabled, key) => {
     const inner = `${icon(iconName, 'btn__icon')}<span class="btn__text">${text}</span>`;
@@ -1363,7 +1363,7 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
 // Buttons selbst — über einen Regex auf das deutsche aria-label («/Nächste/»),
 // der bei jeder Umbenennung stumm gebrochen wäre (Design-Review A3); die
 // data-page-Bindung wohnt jetzt hier, mountDataTable nutzt denselben Weg.
-export function wirePagination(mount, inputId, page, totalPages, go) {
+function wirePagination(mount, inputId, page, totalPages, go) {
   const clamp = (n) => Math.min(totalPages, Math.max(1, Number.isFinite(n) ? n : page));
   mount.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => {
     go(clamp(Number(b.dataset.page)));
@@ -1393,28 +1393,18 @@ const unitCase = (unit) => (unit && typeof unit === 'object')
   ? { nom: unit.nom || unit.dat || '', dat: unit.dat || unit.nom || '' }
   : { nom: unit || '', dat: unit || '' };
 
-function resultsHeader({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
-  const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
-  return `
-    <div class="search-results__header">
-      <div class="search-results__header__left">
-        <strong>${escape(String(count))}</strong> von ${escape(String(total))} ${escape(unitCase(unit).dat)}${pageInfo}
-      </div>
-      <div class="search-results__header__right">${viewSwitch(view)}</div>
-    </div>`;
-}
-
 // Gemeinsamer Ergebnisblock der Katalogseiten (Dienstleistungen/Anwendungen/
 // Datensätze) — bisher 3× kopiert (P1-7). Filterung/Sortierung/Slicing bleibt in
-// der Seite (unterschiedlich); hier vereinheitlicht: Kopf (Trefferzahl + Ansicht),
-// Galerie-/Listenumschaltung, Paginierung und der Leer-/Nicht-verfügbar-Zustand.
+// der Seite (unterschiedlich); hier vereinheitlicht: Galerie-/Listenumschaltung,
+// Paginierung und der Leer-/Nicht-verfügbar-Zustand. Den sichtbaren Ergebniskopf
+// rendert für alle Aufrufer bereits catalogueBar.
 // `visible` = die aktuell sichtbare (bereits geschnittene) Seite; `count` = Anzahl
 // gefilterter Treffer gesamt; `card(item)`/`listView(items)` rendern die Ansicht.
-export function catalogueResults({
-  visible, count, total, view = 'gallery', page = 1, totalPages = 1,
+function catalogueResults({
+  visible, count, view = 'gallery', page = 1, totalPages = 1,
   card, listView, mapView, unit, gridCls = 'grid grid--responsive-cols-3',
   paginationHref, paginationInputId, paginationLabel,
-  available = true, emptyMsg, unavailableMsg, note = '', header = true,
+  available = true, emptyMsg, unavailableMsg, note = '',
   regionLabel = '', resetHref = '',
 }) {
   // Die Kartenansicht zeigt bewusst ALLE Treffer statt einer Seite: eine Karte
@@ -1441,27 +1431,19 @@ export function catalogueResults({
           action: resetHref ? { label: 'Suche und Filter zurücksetzen', href: resetHref } : null,
         })
       : empty(unavailableMsg || `${unitCase(unit).nom} konnten nicht geladen werden (Ladefehler).`, { available: false });
-  // header:false, wenn die Seite bereits eine C.catalogueBar rendert (die Trefferzahl
-  // + Ansichtswechsel selbst enthält) — dann nur Hinweis + Trefferkörper.
   // Die Trefferliste braucht eine eigene Überschrift: die Karten darin sind
   // <h3>, und ohne <h2> sprang die Gliederung von der Seiten-<h1> direkt auf
   // Stufe 3 (WCAG 1.3.1 / 2.4.10). Sie bleibt sr-only, weil die sichtbare
   // Trefferzahl in der catalogueBar dieselbe Information trägt.
-  // `header:false` heisst: über uns steht eine C.catalogueBar — und die trägt
-  // bereits `padding-bottom` und `border-bottom`, genau wie CDs
-  // `.search-results__header`. Dort folgt die Liste OHNE weiteren Abstand
-  // (search.postcss:207-217). Der zusätzliche `mt-6` riss zwischen Trennlinie
-  // und erster Zeile eine Lücke auf, die es im CD nicht gibt.
-  return `<section${header ? ' class="mt-6"' : ''}>
+  return `<section>
       <h2 class="sr-only">${escape(regionLabel || unitCase(unit).nom || 'Ergebnisse')}</h2>
-      ${header ? resultsHeader({ count, total, unit, page, totalPages, view }) : ''}
       ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
       ${body}
     </section>`;
 }
 
 // Standard-Ansage für die Live-Region der Katalogseiten (Trefferzahl · Seite · Ansicht).
-export function announceCatalogue({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
+function announceCatalogue({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
   announce(`${count} von ${total} ${unitCase(unit).dat}${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'list' ? 'Liste' : view === 'map' ? 'Karte' : 'Galerie'}`);
 }
 
@@ -1491,7 +1473,7 @@ function viewSwitch(view = 'gallery', items = [['gallery', 'Galerieansicht', 'Ap
 // `defaultView` bleibt bei 'gallery' (Katalog-Trio, unverändert). Die Suchseite
 // setzt 'list' als Standard — CD zeigt Suchergebnisse zuerst als Liste — und
 // braucht die Umkehrung: dort wandert 'gallery' in die URL.
-export function catalogueHash(base, { q = '', page = 1, view = '', defaultView = 'gallery', ...filters } = {}) {
+function catalogueHash(base, { q = '', page = 1, view = '', defaultView = 'gallery', ...filters } = {}) {
   const p = new URLSearchParams();
   if (q) p.set('q', q);
   for (const [k, v] of Object.entries(filters)) {
@@ -1510,7 +1492,7 @@ export function catalogueHash(base, { q = '', page = 1, view = '', defaultView =
 // Ansichtswechsel (behält die Seite) und Pagination. `hash(patch)` baut den Ziel-
 // Hash aus Basiszustand + patch (Aufrufer bäckt die Basis ein). Mehrwertige Filter
 // (z. B. Themen bei services) verdrahtet der Aufrufer separat.
-export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, totalPages = 1, hash, filters = [],
+function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, totalPages = 1, hash, filters = [],
   sortId, sortParam = 'sort', filterToggleId, panelId }) {
   const form = mount.querySelector('#' + formId);
   if (form) form.addEventListener('submit', (e) => {
@@ -1571,7 +1553,7 @@ export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, t
 // der Ansicht ist, nicht der Daten.
 const PANEL_OPEN = new Set();
 
-export function catalogueBar({
+function catalogueBar({
   formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', countId = 'cat-count', count = '',
   sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
   panelId = '', panel = '', panelHidden = true,
@@ -1650,7 +1632,7 @@ export function catalogueBar({
 //   facets    [{ dim, legend, options:[{value,label}], match(row, values) }]
 //   perPage   Standard 10
 //   foot(visible, filtered)  optionale <tfoot>-Zeile
-export function mountDataTable(host, opts = {}) {
+function mountDataTable(host, opts = {}) {
   let unwireScroll = null;
   let unwireRows = null;
   const {
@@ -1759,7 +1741,7 @@ export function mountDataTable(host, opts = {}) {
 // unangetastet — sonst liesse sich in der Tabelle nichts mehr kopieren.
 // C.mountDataTable ruft das selbst auf; wer C.table direkt rendert, ruft es
 // nach dem Einfügen einmal auf `root` auf.
-export function wireTableRows(root) {
+function wireTableRows(root) {
   if (!root) return () => {};
   const ctrl = new AbortController();
   root.addEventListener('click', (e) => {
@@ -1776,7 +1758,7 @@ export function wireTableRows(root) {
 // Panel (.filter-group / .filter-check). `dim` = Hash-Parametername (steht auf jeder
 // Checkbox als data-fdim), `selected` = aktuell angehakte Werte. Verdrahtet über
 // C.wireCatalogue: Panel-Change → alle angehakten Werte der Dimension → Hash.
-export function filterGroup({ dim, legend, options = [], selected = [], idPrefix = '', max = 0 }) {
+function filterGroup({ dim, legend, options = [], selected = [], idPrefix = '', max = 0 }) {
   // `id="${idPrefix}f-${dim}-${i}"` — der Index ist stabil, weil die Optionen aus
   // den Daten in fester Reihenfolge kommen; nötig für die Fokus-Wiederherstellung
   // (Item 3.3). `idPrefix` hält die ids dokumentweit eindeutig, wenn zwei
@@ -1912,7 +1894,7 @@ export function toast(msg, variant = 'success', iconName = 'CheckmarkCircle') {
 // Rückgabe: { q, view, page, sort, selected, hash(patch), clamp(list) } —
 // clamp() schneidet die sortierte Liste auf die Seite zu und liefert
 // { visible, totalPages, page } (page ggf. auf den gültigen Bereich geklemmt).
-export function catalogueState(query, { base, perPage = 12, sortOpts = [], defaultSort = '',
+function catalogueState(query, { base, perPage = 12, sortOpts = [], defaultSort = '',
   views = ['gallery', 'list'], defaultView = 'gallery', filters = {} } = {}) {
   const q = (query.get('q') || '').trim();
   const rawView = query.get('view') || defaultView;
@@ -1952,7 +1934,7 @@ export function catalogueState(query, { base, perPage = 12, sortOpts = [], defau
 // Rückgabe: { updateFilterBadge, syncFilterChecks, clearFilters, destroy } für
 // Aufrufer, die den Panel-Zustand selbst anfassen (URL-Wiederherstellung).
 // `destroy` gehört in ctx.onUnmount und verwirft insbesondere die verzögerte Suche.
-export function wireCatalogueState(mount, {
+function wireCatalogueState(mount, {
   formId, inputId, sortId = '', filterToggleId = '', panelId = '', resetId = '',
   activeFiltersId = '', state, onChange, onRemove, onReset, debounceMs = 250,
 } = {}) {
@@ -2041,7 +2023,7 @@ export function wireCatalogueState(mount, {
 // — die Pillenreihe darunter behält ihr «Alle Filter zurücksetzen» (sie räumt
 // auch Suche und Baum-Auswahl ab). `wrap:''` für Panels mit eigener Aktionszeile
 // (Dashboards: .filter-panel__actions).
-export function panelReset({ href = '', id = '', label = 'Filter zurücksetzen', wrap = 'catbar__panel__actions' } = {}) {
+function panelReset({ href = '', id = '', label = 'Filter zurücksetzen', wrap = 'catbar__panel__actions' } = {}) {
   const inner = `${icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">${escape(label)}</span>`;
   const ctl = href
     ? `<a class="btn btn--bare btn--sm btn--icon-left" href="${escape(href)}">${inner}</a>`
@@ -2055,7 +2037,7 @@ export function panelReset({ href = '', id = '', label = 'Filter zurücksetzen',
 // ein <select> beim Zeigerklick kein input-Ereignis feuert. Vorher trugen
 // space-request und building-create je eine Kopie, fault-report und workspace
 // gar keine — gleiche Formulare verziehen ungleich.
-export function wireFieldErrors(mount, errors) {
+function wireFieldErrors(mount, errors) {
   Object.keys(errors).forEach((id) => {
     const el = mount.querySelector('#' + CSS.escape(id));
     if (!el) return;
@@ -2075,7 +2057,7 @@ export function wireFieldErrors(mount, errors) {
 // Fokus + Ansage auf dem Erfolgsscreen: processDone rendert seine Überschrift
 // mit tabindex="-1" GENAU dafür — aber nur building-create nutzte das; in den
 // drei Geschwister-Flows fiel der Fokus nach dem Absenden auf <body>.
-export function focusProcessDone(mount, instance) {
+function focusProcessDone(mount, instance) {
   const h = mount.querySelector('h1[tabindex="-1"], h2[tabindex="-1"]');
   if (h) h.focus();
   if (instance && instance.reference) announce(`Vorgang erstellt. Referenz ${instance.reference}.`);
@@ -2084,7 +2066,7 @@ export function focusProcessDone(mount, instance) {
 // Wizard-Kopf: Schrittanzeige + Schrittüberschrift (standardmässig sr-only,
 // optional sichtbar und mit passender Ebene) + Pflichtfeld-Legende. `step` ist
 // 1-basiert wie in den Apps.
-export function wizardHead(labels, step, { headId = 'wiz-step-head', label = 'Antragsschritte', legend = true,
+function wizardHead(labels, step, { headId = 'wiz-step-head', label = 'Antragsschritte', legend = true,
   heading = 'h2', title = '', visible = false } = {}) {
   const headingTag = ['h2', 'h3', 'h4'].includes(heading) ? heading : 'h2';
   const headingText = title || labels[step - 1];
@@ -2096,7 +2078,7 @@ export function wizardHead(labels, step, { headId = 'wiz-step-head', label = 'An
 // Schrittwechsel ist ein Kontextwechsel: Fokus auf die Schrittüberschrift, Ansage
 // MIT Schrittnamen («Schritt 2 von 3: Bedarf») — vorher sagte space-request nur
 // die Nummer an, building-create auch den Namen (Design-Review D31).
-export function focusWizardStep(mount, labels, step, { headId = 'wiz-step-head' } = {}) {
+function focusWizardStep(mount, labels, step, { headId = 'wiz-step-head' } = {}) {
   const h = mount.querySelector('#' + headId) || mount.querySelector('h1');
   if (h) h.focus({ preventScroll: true });
   announce(`Schritt ${step} von ${labels.length}: ${labels[step - 1]}`);
@@ -2105,7 +2087,7 @@ export function focusWizardStep(mount, labels, step, { headId = 'wiz-step-head' 
 // Kontextzeile unter der Formular-h1 — EINE Formel für alle vier Flows:
 // «<Aktion> als NAME · ORG (· Prozess: …)». Vorher entschied jede App selbst,
 // ob Name und Prozessvorschau erscheinen (Design-Review B12).
-export function contextLine({ action, name = '', org, process = '' }) {
+function contextLine({ action, name = '', org, process = '' }) {
   return `<p class="muted">${escape(action)} als ${name ? `<strong>${escape(name)}</strong> · ` : ''}<strong>${escape(org)}</strong>${
     process ? ` · Prozess: ${escape(process)}` : ''}.</p>`;
 }
@@ -2121,7 +2103,7 @@ export function contextLine({ action, name = '', org, process = '' }) {
 // gerade geklickt hatte (Nutzerbefund 2026-08-06). Steht der Hinweis dagegen
 // SCHON auf der Zielseite (Formular-Apps, «Meine Vorgänge»), bleibt `next`
 // leer: dort ist das Neuzeichnen bereits das Ziel.
-export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.', opts = {}) {
+function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.', opts = {}) {
   // Abstand vor dem Knopf über `.login-gate .btn { margin-top:1rem }` (app.css)
   // statt eines Inline-Stils — CDs Banner-Rampe (notification.postcss:89-92)
   // gilt hier nicht, weil der Knopf IM __content sitzt, nicht daneben.
@@ -2138,7 +2120,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 // `data-login` statt inline onclick — Hausregel wie bei menu() und den
 // Notifications; `next` als Datenattribut ist ausserdem sicher escaped, während
 // eine URL in einem onclick-String an jedem Apostroph zerbricht.
-export function loginButton({ next = '', label = '', cls = 'btn btn--outline btn--icon-left', size = '' } = {}) {
+function loginButton({ next = '', label = '', cls = 'btn btn--outline btn--icon-left', size = '' } = {}) {
   return `<button type="button" class="${cls}${size ? ' ' + size : ''}" data-login${
     next ? ` data-login-next="${escape(next)}"` : ''}>${icon('User', 'btn__icon')}<span class="btn__text">${
     escape(label || 'Anmelden mit AGOV / FedLogin')}</span></button>`;
@@ -2157,7 +2139,7 @@ export function loginButton({ next = '', label = '', cls = 'btn btn--outline btn
 //   externes System      → Link mit External-Symbol, neuer Tab, ohne Anmeldung
 //   intern, abgemeldet   → Anmeldeknopf MIT Ziel (meldet an UND öffnet)
 //   intern, angemeldet   → Link
-export function accessCard({
+function accessCard({
   title = 'Zugriff', href = '', label = 'Öffnen', loginLabel = '',
   external = false, requiresLogin = false, loggedIn = false, user = null,
   note = '', steps = [], free = '',
@@ -2206,18 +2188,18 @@ export function wireLogin(root = document) {
   });
 }
 
-export const C = {
+const C = {
   icon, escape, badge, statusBadge, loading, pageHeader, card, table, empty,
-  mountBanner, openModal, openShareModal, wireShare, domainTile, announce, trapFocus, FOCUSABLE,
-  acquireOverlayLock, registerOverlay, closeOverlays, notFound,
+  openModal, openShareModal, domainTile, announce, trapFocus,
+  acquireOverlayLock, registerOverlay, closeOverlays,
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,
   catalogueState, wireCatalogueState, panelReset, wireFieldErrors, focusProcessDone, wizardHead, focusWizardStep, contextLine,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,
   actionCard, contactCard,
-  pagination, wirePagination, loginGate, loginButton, wireLogin, accessCard,
-  preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, stepIndicator, processDone,
+  pagination, wirePagination, loginGate, accessCard,
+  preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, processDone,
   mountDataTable, wireTableRows, cardAction, pageSection, heroFigure,
 };
 export default C;

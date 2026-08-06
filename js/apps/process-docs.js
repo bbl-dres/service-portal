@@ -293,8 +293,8 @@ function list(ctx) {
       </aside>
       <div class="pf-main">
         ${C.catalogueResults({
-          resetHref: BASE, visible, count: sorted.length, total: all.length,
-          view, page, totalPages, header: false,
+          resetHref: BASE, visible, count: sorted.length,
+          view, page, totalPages,
           card, listView, unit, gridCls: 'grid grid--responsive-cols-2',
           regionLabel: 'Prozesse',
           paginationInputId: 'pd-page', paginationLabel: 'Seitennavigation Prozesse',

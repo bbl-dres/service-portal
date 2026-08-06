@@ -209,7 +209,7 @@ function headerHTML() {
         <button type="button" class="meta-navigation__item meta-navigation__auth" onclick="window.__logout && window.__logout()">Abmelden</button></li>`
     // Kein Ziel: die Kopfzeile weiss nicht, was der Nutzer vorhat — sie zeichnet
     // die aktuelle Seite neu. Ein Ziel tragen nur die Knöpfe, die AN der Stelle
-    // stehen, an der sonst der Vorgang ausgelöst würde (C.loginGate/loginButton).
+    // stehen, an der sonst der Vorgang ausgelöst würde (C.loginGate/accessCard).
     : `<li><button type="button" class="meta-navigation__item meta-navigation__auth" data-login>${icon('User', 'icon--md')} Anmelden</button></li>`;
 
   // Item 4.11: das Steuerelement war bedienbar, aber jede Option außer DE war

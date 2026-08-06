@@ -2,9 +2,8 @@
 //
 // The portal is otherwise dependency-free; MapLibre is loaded lazily from a CDN
 // only when a map is opened, and degrades to a message if unavailable (offline /
-// blocked network). Two grey basemaps: swisstopo (Swiss coverage) and CARTO
-// Positron (worldwide). Marks are HTML markers (a handful of points) — simple,
-// accessible and reliably rendered, incl. headless.
+// blocked network). CARTO Positron is the calm worldwide basemap used by the
+// portfolio, project, room and location-picker views.
 
 import { escape as esc, loading } from './components.js';
 import { m2 } from './format.js';
@@ -34,20 +33,6 @@ function loadMapLibre() {
 // Escape-Neuimplementierung und das handgeschriebene de-CH-Format sind weg
 // (Design-Review B23); components.js/format.js sind selbst import-frei, das
 // lazy geladene Kartenmodul zieht also keine Kette nach.
-
-// swisstopo grey (CH only) — official Swiss basemap.
-const SWISSTOPO_STYLE = {
-  version: 8,
-  sources: {
-    swisstopo: {
-      type: 'raster',
-      tiles: ['https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-grau/default/current/3857/{z}/{x}/{y}.jpeg'],
-      tileSize: 256,
-      attribution: '© swisstopo',
-    },
-  },
-  layers: [{ id: 'swisstopo', type: 'raster', source: 'swisstopo' }],
-};
 
 // CARTO Positron grey (worldwide) — calm ground for a global portfolio.
 // `glyphs` (Noto Sans font PBFs) are needed for the cluster counts + id labels.
@@ -91,81 +76,6 @@ function showMapSpinner(container, map) {
   // Sicherheitsnetz: bleibt `idle` aus (blockierte Kachelquelle), soll der Hinweis
   // nicht dauerhaft stehen.
   setTimeout(clear, 12000);
-}
-
-// Shared core: render `points` = [{ lat, lon, label, sub?, size?, href? }] on
-// `container` with the given `style` and camera (`{center,zoom}` or `{bounds}`).
-async function pointMap(container, points, style, camera) {
-  const pts = (points || []).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
-  let maplibregl;
-  try {
-    maplibregl = await loadMapLibre();
-  } catch (e) {
-    container.innerHTML = `<div class="empty empty--unavailable h-full">
-      <span>Die Karte konnte nicht geladen werden (${esc(e.message)}). Im Bundesnetz ist der Kartendienst ggf. gesperrt.</span></div>`;
-    return null;
-  }
-  if (!container.isConnected) return null;   // tab switched away during the async gap
-  // Ladeplatzhalter entfernen, BEVOR MapLibre anhängt (Item 6.14).
-  container.textContent = '';
-
-  // Marker diameter ∝ √size: area-proportional. Untergrenze 20px statt 12px
-  // (Item 6.15): bei einem einzelnen kleinen Gebäude war die Marke ein 12px-Punkt
-  // — unter der 24px-Grenze für Bedienelemente und kaum zu treffen. Die
-  // Trefferfläche selbst wächst zusätzlich per .map-marker::before auf 44px.
-  const maxSize = Math.max(...pts.map(p => Number(p.size) || 0), 1);
-  const diam = (v) => Math.round(20 + 24 * Math.sqrt((Number(v) || 0) / maxSize));
-
-  const map = new maplibregl.Map({ container, style, attributionControl: { compact: true },
-    // Item 6.5: `scrollZoom.disable()` allein macht die Karte auf Touch zur
-    // Scroll-Falle — ein Finger zieht die Karte, die Seite bewegt sich nicht mehr.
-    // MapLibres cooperativeGestures verlangt zwei Finger bzw. Strg/⌘ + Scrollen
-    // und zeigt dazu einen Hinweis (hier auf Deutsch).
-    cooperativeGestures: true,
-    locale: {
-      'CooperativeGesturesHandler.WindowsHelpText': 'Strg + Scrollen zum Zoomen',
-      'CooperativeGesturesHandler.MacHelpText': '⌘ + Scrollen zum Zoomen',
-      'CooperativeGesturesHandler.MobileHelpText': 'Mit zwei Fingern verschieben',
-    },
-    ...camera });
-  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-  // Vollbild direkt neben Zoom (Item: Kartenbedienung) — MapLibres eigener Control.
-  map.addControl(new maplibregl.FullscreenControl({ container }), 'top-right');
-  showMapSpinner(container, map);
-  // Kein scrollZoom.disable() mehr — cooperativeGestures regelt es sauberer.
-
-  const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '260px' });
-  for (const p of pts) {
-    const el = document.createElement('button');
-    el.type = 'button';
-    el.className = 'map-marker';
-    el.style.width = el.style.height = `${diam(p.size)}px`;
-    el.setAttribute('aria-label', p.label);
-    el.title = p.label;
-    el.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      popup.setLngLat([p.lon, p.lat]).setHTML(
-        `<strong>${esc(p.label)}</strong>${p.sub ? `<br><span class="small muted">${esc(p.sub)}</span>` : ''}`
-        + (p.href ? `<br><a class="link" href="${esc(p.href)}">Objekt ansehen →</a>` : ''),
-      ).addTo(map);
-    });
-    new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([p.lon, p.lat]).addTo(map);
-  }
-  return map;
-}
-
-// Swiss buildings (core.buildings()) on swisstopo grey.
-export async function initBuildingsMap(container, buildings) {
-  const points = (buildings || []).map(b => ({
-    lat: b.lat, lon: b.lng, label: b.name, size: b.gf,
-    sub: [b.street, `${b.zip || ''} ${b.city || ''}`.trim()].filter(Boolean).join(', '),
-    href: `#/app/portfolio?id=${encodeURIComponent(b.bbl_id)}`,
-  }));
-  const c = points.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
-  const center = c.length
-    ? [c.reduce((a, p) => a + p.lon, 0) / c.length, c.reduce((a, p) => a + p.lat, 0) / c.length]
-    : [8.23, 46.82];
-  return pointMap(container, points, SWISSTOPO_STYLE, { center, zoom: c.length ? 8.4 : 6.6 });
 }
 
 // Worldwide estate buildings on CARTO grey — CLUSTERED so dense areas don't
@@ -411,5 +321,3 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
   container._map = map;   // Griff für die kopflosen Tests
   return map;
 }
-
-export default { initBuildingsMap, initEstateMap, initPickerMap };

@@ -94,7 +94,7 @@ Statisches SPA-Grundgerüst: benannte Host-Elemente für Header, Datenausfall-Ba
 
 ## js/components.js
 
-Geteilte Komponentenbibliothek (HTML-String-Fabriken + wire*-Verdrahtungen) im CD-Bund-Vokabular: Karten, Tabellen, Kataloge, Formulare, Tabs, Modals, Toasts, Fokus-/A11y-Werkzeuge; Export als benannte Funktionen und Sammelobjekt C.
+Geteilte Komponentenbibliothek (HTML-String-Fabriken + wire*-Verdrahtungen) im CD-Bund-Vokabular: Karten, Tabellen, Kataloge, Formulare, Tabs, Modals, Toasts, Fokus-/A11y-Werkzeuge. Routen konsumieren das Default-Objekt C; nur die wenigen Infrastrukturbausteine mit direkten Importen sind zusätzlich benannt exportiert.
 
 **Funktionen**
 
@@ -153,7 +153,7 @@ Geteilte Komponentenbibliothek (HTML-String-Fabriken + wire*-Verdrahtungen) im C
 - downloadLink(url, label, icon) — Demo-Download als Link oder aria-disabled-Ersatz — components.js:1223
 - pagination({page, totalPages, href, inputId, label, align}) — CD-Blätterleiste: editierbares Seitenfeld, «von N Seiten», prev/next als echte disabled-Buttons; href-Modus (Hash) oder data-page-Modus (lokal); ab 2 Seiten — components.js:1235
 - wirePagination(mount, inputId, page, totalPages, go) — bindet Seitenfeld (change/Enter, Klemmen) UND data-page-Buttons — components.js:1272
-- catalogueResults(o) — gemeinsamer Ergebnisblock: sr-only-h2, resultsHeader (Trefferzahl + viewSwitch), Galerie (gap--top-Raster)/Liste/Karte (Karte = ALLE Treffer, ungeblättert), Pagination, Leerzustand mit Reset-Aktion, Ausfallzustand — components.js:1319
+- catalogueResults(o) — gemeinsamer Ergebnisblock unter der stets vorhandenen catalogueBar: sr-only-h2, Galerie (gap--top-Raster)/Liste/Karte (Karte = ALLE Treffer, ungeblättert), Pagination, Leerzustand mit Reset-Aktion, Ausfallzustand
 - announceCatalogue(o) — Standard-Ansage «X von Y Einheit, Seite …, Ansicht Galerie/Liste/Karte» — components.js:1370
 - catalogueHash(base, state) — Katalog-URL-Bau: q/filters/page/view; Defaults (page 1, defaultView) bleiben aus der URL — components.js:1400
 - wireCatalogue(mount, opts) — Hash-Katalogverdrahtung: Suche (Submit→Seite 1), Filter-Dropdowns, Sortierung, Filterpanel-Umschalter + Mehrfach-Checkboxen (data-fdim→Hash), Ansichtswechsel, Pagination — components.js:1419
@@ -173,7 +173,7 @@ Geteilte Komponentenbibliothek (HTML-String-Fabriken + wire*-Verdrahtungen) im C
 - focusWizardStep(mount, labels, step) — Schrittwechsel: Fokus auf Schrittüberschrift + Ansage MIT Schrittnamen — components.js:1972
 - contextLine({action, name, org, process}) — Kontextzeile unter der Formular-h1 («<Aktion> als NAME · ORG · Prozess: …») — components.js:1981
 - loginGate(text) — Login-Hinweis (hint-Notification mit Lock-Icon) + Knopf «Anmelden mit AGOV / FedLogin» (window.__login); kein Inhalt wird versteckt — components.js:1990
-- Sammel-Export C mit allen ~76 Bausteinen + default-Export — components.js:2005-2018
+- Default-Export C als Route-Vertrag; benannte Exporte nur für `app.js`, Shell, Charts, Karten und Diagnostik (`announce`, `badge`, `empty`, `escape`, `icon`, `loading`, `menu`, `mountBanner`, `notification`, `select`, `toast`, `wireLogin`, `wireMenu`, `wireShare`)
 
 **Zustände**
 
@@ -298,8 +298,7 @@ Mock-Session für AGOV/FedLogin: Demo-Nutzerin in localStorage, kein Rollen-/Rec
 - Demo-User «Andrea Muster, Bundesamt für Umwelt BAFU» — session.js:11
 - Persistenz in localStorage-Schlüssel bbl_session_v1 (via storage.js readJSON/writeJSON/remove) — session.js:8-10, 19-21
 - Validierung isUser: nur Objekt mit nicht-leerem name gilt; korrupter Bestand → abgemeldet starten (M20) — session.js:13-16
-- API: user(), isLoggedIn(), login() (Stub ohne echten Redirect), logout(), onChange(fn) mit Abmeldefunktion — session.js:24-32
-- Listener-Emit mit try/catch je Abonnent (ein defekter Abonnent bricht die anderen nicht) — session.js:22
+- API: user(), isLoggedIn(), login() (Stub ohne echten Redirect), logout()
 
 **Zustände**
 
@@ -309,7 +308,7 @@ Mock-Session für AGOV/FedLogin: Demo-Nutzerin in localStorage, kein Rollen-/Rec
 **Interaktionen**
 
 - login()/logout() programmatisch (Header-Knöpfe, loginGate-Knopf via window.__login)
-- onChange-Abo: Header und aktive Seite zeichnen sich bei Sessionwechsel neu
+- `app.js` zeichnet Header und aktive Route nach login()/logout() explizit neu; es gibt keine ungenutzte Subscription-API
 
 ## js/shell.js
 
@@ -989,50 +988,47 @@ Datenportal — Superset-artige Analyse-Dashboards über data/dashboards.json: T
 
 **Routen**
 
-- #/app/dataportal — Themenübersicht (Karten je Thema, dataportal.js:55)
-- #/app/dataportal/:id — Dashboard eines Themas (dataportal.js:50,119)
-- #/app/dataportal/immobilien — Delegation an estate.js (record-basiertes Immobilien-Board, dataportal.js:30-34)
-- #/app/dataportal/:id?tab=…&from=…&to=… — teilbarer Zustand: aktiver Tab + Jahresbereich, via history.replaceState gespiegelt (dataportal.js:142-147,242-249)
+- #/app/dataportal — Themenübersicht (Karten je Thema, dataportal.js:48)
+- #/app/dataportal/:id — Dashboard eines Themas (dataportal.js:112)
+- #/app/dataportal/immobilien — Delegation an estate.js (record-basiertes Immobilien-Board, dataportal.js:23-26)
+- #/app/dataportal/:id?tab=…&from=…&to=… — teilbarer Zustand: aktiver Tab + Jahresbereich, via history.replaceState gespiegelt (dataportal.js:132-139,225-231)
 
 **Funktionen**
 
-- Themenübersicht: C.domainTile-Karten (Icon, Titel, Beschreibung, Zählzeile «N Auswertungen»; t.meta-Override fürs Immobilien-Board) (dataportal.js:63-76)
-- pageHeader mit Lead + externem MIS/SUPERB-Link (target _blank) (dataportal.js:84-89)
-- Dashboard-Seite: Zurück-Link, dashHeader (pageHeader + Dashboard-Aktionsmenü), Filterpanel, Tab-Leiste, Tab-Panel, dashFooter mit Quelle/Stand (format.datum)/«Demo-Daten» (dataportal.js:176-191, dashboard-chrome.js:76-104)
-- KPI-Zeile aus board.kpis bzw. board.hero; {buildingCount}-Platzhalter wird zur Laufzeit durch Gebäude mit Koordinaten ersetzt (dataportal.js:153-158)
+- Themenübersicht: C.domainTile-Karten (Icon, Titel, Beschreibung, Zählzeile «N Auswertungen»; t.meta-Override fürs Immobilien-Board) (dataportal.js:56-69)
+- pageHeader mit Lead + externem MIS/SUPERB-Link (target _blank) (dataportal.js:77-82)
+- Dashboard-Seite: Zurück-Link, dashHeader (pageHeader + Dashboard-Aktionsmenü), Filterpanel, Tab-Leiste, Tab-Panel, dashFooter mit Quelle/Stand (format.datum)/«Demo-Daten» (dataportal.js:168-183, dashboard-chrome.js:76-104)
+- KPI-Zeile aus der einzigen generischen Datenform board.kpis; Immobilien-Kennzahlen werden ausschliesslich in estate.js aus den Stammdaten berechnet
 - KPI-Kachel: Label, Wert+Einheit, Delta-Chip mit Pfeil + sr-only-Richtungswort, optional zweiter Delta-Chip (Vormonat/Vorjahr), achsenlose 24-Punkte-Sparkline (aria-hidden), Stichtags-Hinweis (dashboard-chrome.js:39-72)
 - Chart-Karten je Spec: Formen line/column/bar (horizontal)/pie (Ring mit Total in der Mitte)/area (gestapelt)/table (Kennzahlen-Mehrjahres-Tabelle mit Gruppenzeilen, einheit-Spalte, Fussnoten) (charts.js:159-435,488-495)
-- Karten-Chart (form 'map'): MapLibre-Gebäudekarte via initBuildingsMap, eigene figure mit C.loading-Spinner und reduziertem Menü (nur «Link kopieren») (dataportal.js:206-214,233-237)
-- Globaler Jahresbereichsfilter wirkt nur auf Zeitreihen-Datasets (jahr-Spalte); Snapshot-Charts bleiben unberührt (withYearRange, dataportal.js:111-116); Jahresdomäne aus allen Board-Datasets (boardYears, 98-107)
+- Globaler Jahresbereichsfilter wirkt nur auf Zeitreihen-Datasets (jahr-Spalte); Snapshot-Charts bleiben unberührt (withYearRange, dataportal.js:104-108); Jahresdomäne aus allen Board-Datasets (boardYears, 91-100)
 - Legende ab 2 Serien, Direktlabel nur am Endpunkt, Tooltips (data-tip) an jedem Mark, «Ziel»-Serie gestrichelt (charts.js:128-134,196-200)
 - sr-only-Datentabelle je SVG-Chart als Textalternative (WCAG 1.1.1) und CSV/Excel-Exportquelle (charts.js:136-157)
 - Responsive Chart-Geometrie: Zeichnen in CSS-Pixeln nach gemessener Kartenbreite, x-Label-Ausdünnung, Neuzeichnen via ResizeObserver (charts.js:70-84,497-524)
 - Chart-Farben aus Token-Layer (--chart-series-1..7, 700er-Stufen), zur Renderzeit aufgelöst (PNG-Export), Cache pro body-Klasse (charts.js:29-54)
-- Deep-Link/Teilen: Tab + Zeitraum in Hash-Query; Defaults bleiben aus der URL (dataportal.js:242-249)
+- Deep-Link/Teilen: Tab + Zeitraum in Hash-Query; Defaults bleiben aus der URL (dataportal.js:225-231)
 
 **Zustände**
 
-- Laden: dashData.load() vor Render; ctx.stale()-Abbruch bei überholter Navigation (dataportal.js:32,36)
-- Ladefehler dashboards.json: Error-Notification «Auswertungen konnten nicht geladen werden» mit Neu-laden-Button — explizit vom leeren Portal unterschieden (dataportal.js:39-48)
-- Dashboard-ID unbekannt: C.renderNotFound mit Zurück-Link + Crumbs (dataportal.js:122-127)
-- Keine Zeitreihen im Board: Filterpanel zeigt Hinweistext statt Jahres-Selects (dataportal.js:162-172)
+- Laden: dashData.load() vor Render; ctx.stale()-Abbruch bei überholter Navigation (dataportal.js:28-29)
+- Ladefehler dashboards.json: Error-Notification «Auswertungen konnten nicht geladen werden» mit Neu-laden-Button — explizit vom leeren Portal unterschieden (dataportal.js:32-40)
+- Dashboard-ID unbekannt: C.renderNotFound mit Zurück-Link + Crumbs (dataportal.js:115-120)
+- Keine Zeitreihen im Board: Filterpanel zeigt Hinweistext statt Jahres-Selects (dataportal.js:154-164)
 - Chart ohne Daten/mit Query-Fehler: Karte mit «Keine Daten für diese Auswahl.» bzw. Fehlertext (charts.js:443-446)
-- Karte lädt: C.loading «Karte wird geladen…» im dash-map-Container (dataportal.js:212)
-- Tab aktiv (Default erster Tab), Jahresbereich aktiv (Default min/max); ungültige Query-Werte werden geklemmt, from>to korrigiert (dataportal.js:141-147)
+- Tab aktiv (Default erster Tab), Jahresbereich aktiv (Default min/max); ungültige Query-Werte werden geklemmt, from>to korrigiert (dataportal.js:132-139)
 - Filterpanel ein-/ausgeklappt: Desktop via dashboard-layout--collapsed, unter 1024px via filter-panel--collapsed (mobil Default zu); aria-expanded/-label synchron, matchMedia-Wechsel beobachtet (dashboard-chrome.js:111-139)
 - Unsichtbare Plots (inaktiver Tab, Breite 0) werden ausgelassen und beim Sichtbarwerden per ResizeObserver nachgezeichnet (charts.js:510-512)
-- WebGL-Aufräumen: aktive Karten werden bei Grid-Neuzeichnen und onUnmount entfernt (dataportal.js:200-202,236)
+- Chart-Aufräumen: der aktive ResizeObserver wird vor jedem Grid-Neuzeichnen und bei onUnmount entfernt
 
 **Interaktionen**
 
-- Themenkarte klicken → Dashboard öffnen (dataportal.js:74)
-- Jahres-Selects «Start Zeitreihe»/«bis Jahr»: change → Klemmen (je nach fokussiertem Feld) + Hash-Sync + Grid-Neuzeichnen (dataportal.js:251-255)
-- Panel-Reset: Jahresbereich auf min/max zurück (dataportal.js:256-257)
-- Tab-Wechsel via C.wireTabs (inkl. Tastaturpfad der Komponente); onSelect rendert Grid neu, syncHash spiegelt in URL (dataportal.js:262-265)
+- Themenkarte klicken → Dashboard öffnen (dataportal.js:67)
+- Jahres-Selects «Start Zeitreihe»/«bis Jahr»: change → Klemmen (je nach fokussiertem Feld) + Hash-Sync + Grid-Neuzeichnen (dataportal.js:234-238)
+- Panel-Reset: Jahresbereich auf min/max zurück (dataportal.js:239-240)
+- Tab-Wechsel via C.wireTabs (inkl. Tastaturpfad der Komponente); onSelect rendert Grid neu, syncHash spiegelt in URL (dataportal.js:245-248)
 - Filterpanel-Toggle-Button (ChevronLeft) klappt Panel ein/aus (dashboard-chrome.js:129-133)
 - Dashboard-Toolbar-Menü: Aktualisieren (echtes Neuzeichnen + Toast) · Als PDF/Bild (simuliert, Toast) · Link kopieren (Clipboard, Fehlschlag als Error-Toast) · Per E-Mail (mailto) (dashboard-chrome.js:18-28,145-155)
 - Chart-Kebab-Menü je Diagramm: Vollbild (kanonisches Modal xl, SVG in Modalbreite NEU gezeichnet) · Als CSV · Als Excel · Als PNG (svgToPng) · Link kopieren; Tabellen-Charts ohne PNG (charts.js:60-69,412,556-630)
-- Karten-Chart-Menü: Vollbild via Fullscreen-API, PNG vom WebGL-Canvas, andere Aktionen → Warn-Toast «Für die Karte nicht verfügbar.» (charts.js:606-619)
 - Hover-/Fokus-Tooltip auf jedem Mark (data-tip); Escape schliesst Tooltip ohne Fokusverlust (WCAG 1.4.13); scroll versteckt (charts.js:527-554)
 - Toast-Rückmeldungen für alle Export-/Kopieraktionen inkl. Fehler-/Warn-Varianten (charts.js:602-628)
 - Link kopieren teilt die aktuelle URL inkl. Tab/Zeitraum-Query (Deep-Link)

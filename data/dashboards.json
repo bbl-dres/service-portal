@@ -384,76 +384,6 @@
         ]
       ]
     },
-    "snbs_gebaeude": {
-      "label": "SNBS-zertifizierte Neubauten",
-      "columns": [
-        {
-          "name": "objekt",
-          "type": "str"
-        },
-        {
-          "name": "jahr",
-          "type": "int"
-        },
-        {
-          "name": "zertifikat",
-          "type": "str"
-        },
-        {
-          "name": "flaeche",
-          "type": "num"
-        }
-      ],
-      "rows": [
-        [
-          "Guisanplatz 1B, Bern",
-          2019,
-          "Platin",
-          18127
-        ],
-        [
-          "Pulverstrasse 11, Ittigen",
-          2020,
-          "Gold",
-          12181
-        ],
-        [
-          "Eichenweg 3, Zollikofen",
-          2022,
-          "Platin",
-          25573
-        ],
-        [
-          "Eichenweg 5, Zollikofen",
-          2023,
-          "Platin",
-          23525
-        ]
-      ]
-    },
-    "zertifizierte_flaeche": {
-      "label": "Zertifizierte Fläche nach Standard",
-      "columns": [
-        {
-          "name": "standard",
-          "type": "str"
-        },
-        {
-          "name": "flaeche",
-          "type": "num"
-        }
-      ],
-      "rows": [
-        [
-          "Minergie",
-          380000
-        ],
-        [
-          "SNBS",
-          79406
-        ]
-      ]
-    },
     "beschaffung_volumen": {
       "label": "Beschaffungsvolumen BBL",
       "_note": "2024 (1.54) und 2025 (1.7) real; Vorjahre Demo",
@@ -1779,13 +1709,6 @@
       "lead": "Der Weg des BBL-Portfolios zum Klimapaket Bund: Verbrauch, Wärmepfade, Photovoltaik und Emissionen der 358 Gebäude der Energiestatistik.",
       "source": "Nachhaltigkeitsbericht BBL 2025 · Energiestatistik (358 Gebäude)",
       "updated": "2026-07-15",
-      "hero": {
-        "label": "Treibhausgasemissionen 2025",
-        "value": "16 150",
-        "unit": "t CO₂e",
-        "deltaLabel": "−4.4 % gegenüber 2024",
-        "deltaGood": true
-      },
       "kpis": [
         {
           "label": "Wärmeverbrauch",
@@ -1956,118 +1879,12 @@
       ]
     },
     {
-      "id": "immobilien",
-      "topicId": "immobilien",
-      "title": "Immobilienportfolio",
-      "lead": "Überblick über die Immobilien-Stammdaten des BBL — Gebäude, Grundstücke und Bodenbedeckung des weltweiten Portfolios.",
-      "source": "NHB BBL 2025 · Portfoliomanagement",
-      "updated": "2026-03-31",
-      "hero": {
-        "label": "SNBS-zertifizierte Fläche",
-        "value": "79 406",
-        "unit": "m²",
-        "deltaLabel": "4 Neubauten seit 2019",
-        "deltaGood": true
-      },
-      "kpis": [
-        {
-          "label": "SNBS-zertifizierte Fläche",
-          "value": "79 406",
-          "unit": "m²",
-          "deltaLabel": "4 Neubauten seit 2019",
-          "deltaGood": true
-        },
-        {
-          "label": "Georeferenzierte Objekte",
-          "value": "{buildingCount}",
-          "unit": "",
-          "deltaLabel": "auf der Karte"
-        },
-        {
-          "label": "Zertifizierte Standards",
-          "value": "2",
-          "unit": "",
-          "deltaLabel": "SNBS · Minergie"
-        },
-        {
-          "label": "Grösster Neubau",
-          "value": "34 200",
-          "unit": "m²",
-          "deltaLabel": "Verwaltungszentrum"
-        }
-      ],
-      "charts": [
-        {
-          "id": "snbs",
-          "title": "SNBS-zertifizierte Neubauten",
-          "form": "barH",
-          "unit": "m²",
-          "query": {
-            "dataset": "snbs_gebaeude",
-            "select": [
-              "objekt",
-              "flaeche"
-            ],
-            "orderBy": "-flaeche"
-          },
-          "x": "objekt",
-          "y": "flaeche"
-        },
-        {
-          "id": "zert",
-          "title": "Zertifizierte Fläche nach Standard",
-          "form": "barH",
-          "unit": "m²",
-          "query": {
-            "dataset": "zertifizierte_flaeche",
-            "select": [
-              "standard",
-              "flaeche"
-            ],
-            "orderBy": "-flaeche"
-          },
-          "x": "standard",
-          "y": "flaeche"
-        },
-        {
-          "id": "portfolio-map",
-          "title": "Standorte im Portfolio",
-          "form": "map",
-          "note": "Georeferenzierte Gebäude aus dem Bestand — Kreisgrösse nach Geschossfläche, Klick öffnet das Objekt. Kartengrundlage © swisstopo."
-        }
-      ],
-      "tabs": [
-        {
-          "id": "ueberblick",
-          "label": "Überblick",
-          "charts": [
-            "snbs",
-            "zert"
-          ]
-        },
-        {
-          "id": "karte",
-          "label": "Karte",
-          "charts": [
-            "portfolio-map"
-          ]
-        }
-      ]
-    },
-    {
       "id": "beschaffung",
       "topicId": "beschaffung",
       "title": "Beschaffung",
       "lead": "Die zentrale Beschaffungsstelle des Bundes für zivile Güter und Dienstleistungen: Volumen, Kategorien, Verfahren und der Vergleich mit armasuisse und ASTRA.",
       "source": "Bericht zum Beschaffungswesen 2024 (BKB) · Nachhaltigkeitsbericht BBL 2025",
       "updated": "2026-05-30",
-      "hero": {
-        "label": "Beschaffungsvolumen 2025",
-        "value": "1,70",
-        "unit": "Mrd. CHF",
-        "deltaLabel": "+4.9 % gegenüber 2024",
-        "deltaGood": null
-      },
       "charts": [
         {
           "id": "vol",
@@ -2186,13 +2003,6 @@
       "lead": "Bestand, Vielfalt und Altersstruktur der Mitarbeitenden des BBL — knapp die Hälfte Frauen, fast zwei Drittel über 50.",
       "source": "BBL Personalreporting 2025",
       "updated": "2026-03-31",
-      "hero": {
-        "label": "Frauenanteil",
-        "value": "52",
-        "unit": "%",
-        "deltaLabel": "Sollwert EPA 46–50 %",
-        "deltaGood": true
-      },
       "charts": [
         {
           "id": "anteile",
@@ -2289,13 +2099,6 @@
       "lead": "Verlag und Vertrieb der Bundespublikationen, Ausweisproduktion und der Papierverbrauch — vom Abstimmungsbüchlein bis zum E-Shop.",
       "source": "Nachhaltigkeitsbericht BBL 2025 · BBL Produktion & Verlag",
       "updated": "2026-06-10",
-      "hero": {
-        "label": "Anteil Recyclingpapier",
-        "value": "71",
-        "unit": "%",
-        "deltaLabel": "+3 Prozentpunkte gegenüber 2024",
-        "deltaGood": true
-      },
       "charts": [
         {
           "id": "verbrauch",
@@ -2389,13 +2192,6 @@
       "lead": "Die betrieblichen Emissionen des BBL nach RUMBA — ab 2026 nach dem Modell ecCo — mit Dienstreisen und Fuhrpark.",
       "source": "RUMBA-Berichterstattung 2025 (ab 2026: Modell ecCo)",
       "updated": "2026-04-22",
-      "hero": {
-        "label": "Anteil Flugreisen an den Reise-Emissionen",
-        "value": "37,3",
-        "unit": "%",
-        "deltaLabel": "Reduktion seit 2019",
-        "deltaGood": true
-      },
       "charts": [
         {
           "id": "rumba-trend",

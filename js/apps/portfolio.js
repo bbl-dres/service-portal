@@ -14,7 +14,6 @@ import { treeHTML, wireTree, restoreTreeSelection, markTree, syncTreeCounts } fr
 import { num, m2, chf, datum, dateiGroesse } from '../format.js';
 import { landName, weOf } from '../domain.js';
 import { ANWENDUNGEN } from '../crumbs.js';
-import * as links from '../links.js';
 
 // Bildergalerie eines Objekts aus seiner kuratierten Auswahl `bilder` (direkt am
 // Objekt in buildings.geojson / parcels.geojson). data/media.json wird NICHT

@@ -139,7 +139,7 @@ export default async function render(ctx) {
     ${filterBar}
     ${C.catalogueResults({
       resetHref: '#/applications',
-      visible, count: apps.length, total: all.length, view, page, totalPages, header: false,
+      visible, count: apps.length, view, page, totalPages,
       card, listView, unit: 'Anwendungen',
       paginationInputId: 'app-page', paginationLabel: 'Seitennavigation Anwendungen',
       paginationHref: (p) => hash({ page: p }),

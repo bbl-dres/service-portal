@@ -4,7 +4,7 @@
 
 **Geprüfter Stand:** `main`, Commit `fb9e9c2e60defc7ecdbf253e3b902446383971e3`
 
-**Review-Umfang:** Phase 0–4 auf `main`; Phase 5 auf Branch `code-review-2026-08`
+**Review-Umfang:** Phase 0–4 auf `main`; Phase 5 und Folgepakete auf den Branches `code-review-2026-08` und `code-review-k03-k04`
 
 ## 1. Zusammenfassung
 
@@ -25,7 +25,7 @@ Produktionsanforderungen wie echte Authentisierung, Backend-Fehlerbehandlung ode
 
 ### 1.1 Umsetzungsstand Phase 5
 
-Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04 sowie K-05/K-06 wurden auf `code-review-2026-08` umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden, C-08, K-05, K-06, K-09 und C-04 sind erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
+Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04, K-05/K-06 sowie K-03/K-04 wurden auf den Review-Branches umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden, C-08, K-03 bis K-06, K-09 und C-04 sind erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
 
 | Status | Befunde | Commit oder Abhängigkeit |
 | --- | --- | --- |
@@ -39,6 +39,8 @@ Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04 sowie K-05
 | Erledigt | W-19 | `b5213ad` – expliziter Besitz von Karten, Observern, Tabellen und Listenern |
 | Erledigt | W-21 | `39c7986` – ein lokaler Kalenderstempel für Datum, Historie und Referenzjahr |
 | Erledigt | C-08 | `3d0992a` – korrekte Template-Regex und arbeitsverzeichnisunabhängiger BPMN-Test |
+| Erledigt | K-03 | `9b3b72e` – kleine, getestete ESM-/Objektoberflächen und Entfernung verwaister Helfer |
+| Erledigt | K-04 | `ae736f5` – genau ein Renderer und eine Datenform je Datenportal-Thema |
 | Erledigt | K-05 | `05ca43f` – routenabhängige und alleinige Ladeverträge für Datenunterseiten |
 | Erledigt | K-06 | `5ecaa98` – paralleles Prozessladen und ein vorbereiteter Buchungskontext pro Render |
 | Erledigt | K-09 | `538975d` – portable Skriptpfade, klassifizierte Altproben und isolierbare Review-Ausgaben |
@@ -48,13 +50,13 @@ Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04 sowie K-05
 
 | Verifikation nach Phase 5 | Ergebnis |
 | --- | --- |
-| Vollständige funktionale Suite | 28 von 28 `test-*.mjs` bestanden; Laufzeit 278.9 Sekunden |
-| JavaScript-Syntax | 126 von 126 `.js`-/`.mjs`-Dateien bestehen `node --check` |
+| Vollständige funktionale Suite | 29 von 29 `test-*.mjs` bestanden; Laufzeit 277.4 Sekunden |
+| JavaScript-Syntax | 127 von 127 `.js`-/`.mjs`-Dateien bestehen `node --check` |
 | Routen und Redirects | 37 Routen und 13 Redirects bestanden innerhalb von `test-routes.mjs` |
 | C-08-Portabilität | `test-process-docs.mjs` besteht auch mit `scripts/` statt Repository-Root als Arbeitsverzeichnis |
 | K-09-Portabilität | Sechs historische Dry-Run-/Prüfwerkzeuge und acht geänderte Browserproben liefen aus einem Unterverzeichnis; kein entwicklerspezifischer Checkout-Pfad bleibt |
 | C-04-Artefakte | Isolierter Accessibility-Lauf: 58 von 58 Zuständen, null Befunde; erhaltener Audit 57 × 3 = 171 und Screenshot-Paar 171/171 konsistent |
-| Gezielte neue Regressionen | Monatsachse, UI-State, Galerie/Grundriss, Anchor-/Suchzustand, Prozessdatum, exakte Datenrouten-Ladeverträge, unabhängige Prozessladefehler sowie Buchungskontext/Verfügbarkeits-Recheck bestanden |
+| Gezielte neue Regressionen | Monatsachse, UI-State, Galerie/Grundriss, Anchor-/Suchzustand und Suchziele, Prozessdatum, API-Oberflächen, Login/Logout, eindeutige Dashboard-Renderer, exakte Datenrouten-Ladeverträge, unabhängige Prozessladefehler sowie Buchungskontext/Verfügbarkeits-Recheck bestanden |
 
 ### 1.2 Prüfumfang und Baseline
 
@@ -159,8 +161,8 @@ Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Com
 | W-22 | Erledigt | Action-Menü | Wichtig | Beim Öffnen eines zweiten Menüs bleibt der alte Trigger für Assistive Technology expanded | `js/components.js:1790-1794` |
 | K-01 | Nicht begonnen | Komponenten | Komplexität | Zentrale Komponenten- und App-Module bündeln zu viele Verantwortlichkeiten | `js/components.js:1-2146`, `js/apps/room-booking.js:1-1068` |
 | K-02 | Nicht begonnen | Katalogseiten | Komplexität | Filter-, Hash-, Sortier- und Paging-Abläufe liegen in mehreren Varianten vor | `js/pages/services.js:15-201`, `js/components.js:1460-1959` |
-| K-03 | Nicht begonnen | Öffentliche APIs | Komplexität | Nicht verwendete Exporte und Zustands-APIs vergrössern die Oberfläche | `js/session.js:17-31`, `js/core.js:186-359`, `js/components.js:1343-2143` |
-| K-04 | Nicht begonnen | Dashboards | Komplexität | Generische Immobilien-/Hero-Konfiguration ist nicht erreichbar oder driftet | `js/apps/dataportal.js:138-236`, `data/dashboards.json:1782-2392` |
+| K-03 | Erledigt | Öffentliche APIs | Komplexität | Nicht verwendete Exporte und Zustands-APIs vergrössern die Oberfläche | `js/session.js`, `js/core.js`, `js/components.js`, `scripts/test-api-surface.mjs` |
+| K-04 | Erledigt | Dashboards | Komplexität | Generische Immobilien-/Hero-Konfiguration ist nicht erreichbar oder driftet | `js/apps/dataportal.js`, `data/dashboards.json`, `scripts/test-dashboard.mjs` |
 | K-05 | Erledigt | Datenrouten | Komplexität | Unterrouten laden breitere Datenbereiche als sie verwenden | `js/pages/data.js:4-31`, `js/router.js:453-461` |
 | K-06 | Erledigt | Wiederholte Arbeit | Komplexität | Prozessdateien laden seriell; Raumsuche berechnet Profile und Sortierungen mehrfach | `js/process-engine.js:22-44`, `js/apps/room-booking.js:151-347,1145-1163` |
 | K-07 | Nicht begonnen | CSS | Komplexität | Stylesheets dienen zugleich als Review-Historie; Kommentare und tote Regeln werden ausgeliefert | `css/app.css:8-139`, `css/app.css:3030-3103` |
@@ -238,8 +240,8 @@ Aufwandsskala: **XS** unter 2 Stunden, **S** bis 0.5 Tag, **M** 1–2 Tage, **L*
 | --- | --- | --- | --- | --- | ---: |
 | K-01 | Nicht begonnen | `js/components.js:1-2146`; `js/apps/room-booking.js:1-1068`; `js/apps/tenancies.js:1-970`; `js/apps/portfolio.js:1-812` | Rendering, Zustandsreduktion, Event-Bindung und Teardown liegen in denselben sehr grossen Modulen. Änderungen an Katalog- oder Overlay-Verhalten berühren weit auseinanderliegende Abschnitte. | `components.js` nach Dialog/Overlay, Katalog/Tabelle und Formularfluss schneiden; App-spezifische Reducer/Validatoren als reine Funktionen auslagern. Keine neue Runtime-Abhängigkeit. | L |
 | K-02 | Nicht begonnen | `js/pages/services.js:15-201`; `js/pages/applications.js`; `js/pages/catalog.js`; `js/pages/search.js`; `js/apps/media-library.js`; `js/components.js:1460-1959` | Die Seiten teilen denselben Ablauf Hash lesen → filtern → sortieren → paginieren → Pills → Verdrahtung, führen aber lokale Varianten und mit `wireCatalogueState` einen zweiten Commit-Pfad. Das erhöht Drift und erschwert Fixes wie W-03. | Kleine gemeinsame Zustandsreduktion und einen Commit-Adapter für Hash versus lokalen State extrahieren; Seiten behalten Card-, Facet- und Textlogik. Q-05 vor Umbau klären. | L |
-| K-03 | Nicht begonnen | `js/session.js:17-31`; `js/links.js:19-24`; `js/crumbs.js:16`; `js/core.js:186,359`; `js/process-engine.js:107-120`; `js/components.js:1343-1352,2015-2143` | Listener-API, Link-/Crumb-Konstanten, Core-Zustände, Engine-Methoden und Komponentenexporte haben keine externen Aufrufer oder sind nur intern. Die öffentliche Oberfläche suggeriert nicht vorhandene Verträge. | Verwendungen mit statischer Suche/Importgraph bestätigen; ungenutzte Exporte entfernen oder intern machen; Engine-/Core-Diagnostik nur behalten, wenn ein konkreter Konsument benannt ist. | M |
-| K-04 | Nicht begonnen | `js/apps/dataportal.js:138-236`; `data/dashboards.json:1782-2392` | Generische Immobilienkarten-/Dashboard- und Hero-Konfiguration wird von den aktuellen Routen nicht erreicht oder parallel zur spezialisierten `estate.js`-Ansicht gepflegt. Daten und Texte können unbemerkt driften. | Pro Dashboard genau einen Renderer und eine Datenform festlegen; unerreichbare Konfiguration nach Routen-/Screenshotprüfung entfernen. | M |
+| K-03 | Erledigt | `js/session.js`; `js/links.js`; `js/crumbs.js`; `js/core.js`; `js/process-engine.js`; `js/components.js`; `js/buildings-map.js`; `scripts/test-api-surface.mjs` | Die ungenutzte Session-Subscription, Default-Exporte, Core-Komfortzugriffe, Komponenten-Aliasse und der verwaiste Kartenpfad sind entfernt oder intern. Drei passende Link-Builder werden jetzt von der Suche verwendet. Engine-/Core-Diagnostik mit konkreten Konsumenten bleibt erhalten. Ein schneller Modultest fixiert die beabsichtigten ESM- und Objektoberflächen; Browsertests bestätigen Login/Logout sowie die Suchziele. | Verwendungen mit statischer Suche/Importgraph bestätigen; ungenutzte Exporte entfernen oder intern machen; Engine-/Core-Diagnostik nur behalten, wenn ein konkreter Konsument benannt ist. | M |
+| K-04 | Erledigt | `js/apps/dataportal.js`; `js/apps/estate.js`; `data/dashboards.json`; `scripts/test-dashboard.mjs`; `scripts/test-data-integrity.mjs`; `scripts/test-route-needs.mjs` | Immobilien wird nur noch vom spezialisierten Renderer bedient. Der unerreichbare generische Immobilien-Record, seine exklusiven Datensätze, die parallele `hero`-Datenform und der generische Kartenpfad sind entfernt. Referenztests erzwingen genau einen Renderer je Thema; Kaltstarts bestätigen null Immobilien-GeoJSON für generische Seiten und genau einen Abruf je Stammdatendatei für Immobilien. | Pro Dashboard genau einen Renderer und eine Datenform festlegen; unerreichbare Konfiguration nach Routen-/Screenshotprüfung entfernen. | M |
 | K-05 | Erledigt | `js/pages/data.js:4-31`; `js/router.js:453-461`; `scripts/test-route-needs.mjs` | Jede Datenunterroute lud Anwendungen und Datensätze, auch wenn nur eine Teilansicht benötigt wurde; deklarierte `needs` waren teils unvollständig oder ohne Wirkung. Die Datenmenge ist heute klein, der Vertrag blieb aber irreführend. | `needs` ist jetzt die einzige Ladebeschreibung und deklariert pro Route nur tatsächlich verwendete Keys; kalte Seitenkontexte prüfen den Vertrag. | S |
 | K-06 | Erledigt | `js/process-engine.js:22-44`; `js/apps/room-booking.js:151-347,1145-1163`; `scripts/test-process-dates.mjs`; `scripts/test-room-booking.mjs` | Prozessdefinitionen und Instanzen luden unabhängig, aber seriell. Die Raumsuche berechnete Profil, Sortierung und `engine.instances()` wiederholt innerhalb der Raumiteration. Bei den kleinen Fixtures war das nicht spürbar, erschwerte aber die Logik. | Unabhängige Prozessdateien laden jetzt mit `Promise.allSettled`; ein Buchungskontext pro Render bündelt Räume, Profile, Favoriten und Belegungen, während Aktionen frisch nachprüfen. | S |
 | K-07 | Nicht begonnen | `css/app.css:8-139,517-519,3030-3103`; `css/tokens.css:23-143` | 45.3 Prozent der beiden CSS-Dateien sind Kommentare. Gzip-Grösse: 97'488 Byte mit, 31'198 Byte ohne Kommentare. Mehrere Kommentare sind bereits falsch, etwa «Spinner unreferenced» trotz Nutzung; tote Chart-/Service-/Filterregeln bleiben daneben bestehen. | Kurze Warum-Kommentare im CSS behalten, Review-Chronologie in ADR/Dokument verschieben, tote Regeln entfernen und für Deployment minifiziertes CSS ausliefern. | M |
@@ -322,7 +324,7 @@ Phase 5 wurde auf `code-review-2026-08` begonnen und für alle technisch entsche
 
 ### 8.1 Freigegebene erste Runde
 
-Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. In den anschliessenden Paketen wurden K-09/C-04 und K-05/K-06 erledigt. Offen bleiben K-01 bis K-04, K-07, K-08 und K-10. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
+Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. In den anschliessenden Paketen wurden K-09/C-04, K-05/K-06 und K-03/K-04 erledigt. Offen bleiben K-01, K-02, K-07, K-08 und K-10. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
 
 Nach jeder Gruppe gelten die Guardrails des Auftrags: ein Commit pro Befund oder eng zusammenhängender Gruppe, Commit-Message mit Befundnummer, Syntax-/Datentests, relevante Browser-Suiten und manueller Hauptpfad. Wird eine Änderung grösser als geschätzt oder verlangt eine fachliche Entscheidung, wird angehalten.
 

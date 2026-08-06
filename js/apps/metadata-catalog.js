@@ -344,8 +344,8 @@ function list(ctx) {
       </aside>
       <div class="pf-main">
         ${C.catalogueResults({
-          resetHref: BASE, visible, count: sorted.length, total: all.length,
-          view, page, totalPages, header: false,
+          resetHref: BASE, visible, count: sorted.length,
+          view, page, totalPages,
           card: kind === 'objekte' ? objCard : tblCard,
           listView: kind === 'objekte' ? objList : tblList,
           unit, gridCls: 'grid grid--responsive-cols-2',

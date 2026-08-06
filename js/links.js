@@ -26,8 +26,3 @@ export const prozess = (processId) => `#/app/process-docs?id=${q(processId)}`;
 export const shop = () => '#/app/shop';
 export const shopProdukt = (productId) => `#/app/shop/product/${q(productId)}`;
 export const shopWarenkorb = () => '#/app/shop/cart';
-
-export default {
-  objekt, bauprojekt, mietverhaeltnis, dienstleistung, anwendung,
-  datensatz, vorgang, news, dokument, prozess, shop, shopProdukt, shopWarenkorb,
-};

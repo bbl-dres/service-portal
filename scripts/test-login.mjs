@@ -11,6 +11,15 @@ const LOGIN = `(async () => {
   return 'login-called';
 })()`;
 
+const LOGOUT = `(async () => {
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  let tries = 0;
+  while (typeof window.__logout !== 'function' && tries++ < 120) await wait(50);
+  if (typeof window.__logout !== 'function') return 'no __logout';
+  await window.__logout();
+  return 'logout-called';
+})()`;
+
 const CHECK_LOGGED_OUT = `(async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   let tries = 0;
@@ -19,6 +28,7 @@ const CHECK_LOGGED_OUT = `(async () => {
     hasGate: !!document.querySelector('.login-gate__btn'),
     hasForm: !!document.querySelector('#booking-search'),
     hasSession: !!localStorage.getItem('bbl_session_v1'),
+    authLabel: document.querySelector('.meta-navigation--desktop .meta-navigation__auth')?.textContent.trim() || '',
   };
 })()`;
 
@@ -56,6 +66,14 @@ try {
   check(result.h1 === 'Raumbuchung', `route renders (h1: "${result.h1}")`);
   check(result.hasForm && !result.hasGate, 'the search bar is present and the login gate is gone');
   check(result.rooms > 0 && result.bookable === result.rooms, `results are bookable straight away (${result.rooms} rooms)`);
+
+  const logout = await page.evaluate(LOGOUT).catch((error) => 'logout-eval-destroyed: ' + error.message);
+  check(logout === 'logout-called', `logout fired (${logout})`);
+  const loggedOutAgain = await page.evaluate(CHECK_LOGGED_OUT);
+  check(loggedOutAgain.hasGate && !loggedOutAgain.hasForm && !loggedOutAgain.hasSession,
+    'logout clears storage and restores the route gate without a listener API');
+  check(loggedOutAgain.authLabel === 'Anmelden', 'the header returns to the logged-out action');
+
   const problems = await page.problems();
   check(problems.length === 0, `no exceptions / console errors / error banner${problems[0] ? ': ' + problems[0] : ''}`);
 } finally {

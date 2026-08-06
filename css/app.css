@@ -2282,16 +2282,6 @@ body.body--overlay-open .back-to-top-rail { display:none; }
   min-height:0; padding:0; justify-content:center; color:var(--color-text-muted); }
 .catbar__submit:hover { color:var(--color-primary-600); background:none; }
 
-/* Ergebniskopf (search.postcss:208-234): Trefferzahl links, Steuerung rechts,
-   auf einer Trennlinie. Der Ansichtswechsel sitzt hier statt in den Filtern. */
-.search-results__header { display:flex; flex-wrap:wrap; gap:1rem; align-items:center;
-  justify-content:space-between; font-size:var(--text-sm);
-  padding-top:1rem; padding-bottom:.5rem; border-bottom:1px solid var(--color-secondary-300); }
-@media (min-width:640px){ .search-results__header { padding-top:1.5rem; padding-bottom:.75rem; } }
-@media (min-width:1544px){ .search-results__header { padding-top:2rem; padding-bottom:1rem; } }
-.search-results__header strong { margin-right:1ex; font-weight:var(--fw-regular); }
-.search-results__header__left { display:flex; align-items:center; color:var(--color-text-muted); }
-.search-results__header__right { display:flex; align-items:center; margin-left:auto; gap:1rem; }
 .view-switch { display:flex; align-items:center; gap:.25rem;
   border-left:1px solid var(--color-secondary-300); padding-left:1rem; }
 .view-switch__btn { display:inline-flex; align-items:center; justify-content:center;
@@ -2522,20 +2512,6 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 .maplibregl-map .maplibregl-ctrl-group button:focus-visible,
 .maplibregl-map .maplibregl-ctrl-attrib-button:focus-visible {
   outline:2px solid var(--color-focus-ring); outline-offset:1px; }
-/* HTML-Marker der Gebäude (Kreisgrösse ∝ √Geschossfläche) */
-.map-marker { display:block; position:relative; padding:0; border:2px solid var(--color-bg); border-radius:var(--radius-full);
-  /* Markenfarbe aus dem Token statt Intranet-Literal — folgt dem Skin. */
-  background:color-mix(in srgb, var(--color-primary-600) 72%, transparent);
-  box-shadow:0 0 0 1px rgba(0,0,0,.12); cursor:pointer; transition:background var(--duration-fast); }
-/* Trefferfläche auf 44px bringen, ohne die gezeichnete Marke zu vergrössern —
-   die Kreisgrösse trägt Information (∝ √Geschossfläche). */
-.map-marker::before { content:""; position:absolute; inset:calc((var(--target-min) - 100%) / -2); }
-/* Hover ≠ Fokus: der Tastaturfokus trägt den CD-Purpurring (global.postcss:75-77) —
-   primary-700 als Ring war unter dem Intranet-Skin farbgleich mit der Markerfüllung. */
-.map-marker:hover { background:color-mix(in srgb, var(--color-primary-600) 95%, transparent); }
-.map-marker:focus-visible { background:color-mix(in srgb, var(--color-primary-600) 95%, transparent);
-  outline:2px solid var(--color-focus-ring); outline-offset:2px; }
-
 .chart { padding:1.25rem; margin:0; }
 @media (min-width:1024px){ .chart { padding:1.5rem; } }
 /* Bei 320 lief der Diagrammkopf aus der Karte und schob den Kebab — den einzigen
@@ -2745,11 +2721,9 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 /* Rastermetrik nach CD (search.postcss:257-264 `gap-3 lg:gap-4`): einheitliche
    Lücke .75rem → 1rem ab lg, KEIN eigener 2rem-Spaltengraben. */
 .catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:.75rem;
-  /* Das Panel besitzt seinen Abstand nach UNTEN selbst (1.5rem = `mt-6`). Vorher
-     kam der Abstand nur von dem, was folgte: die Katalogseiten setzen `mt-6` auf
-     den Ergebnisblock, C.mountDataTable hängt die Tabelle direkt an — dort klebte
-     die Tabelle am Filterpanel. Bei den Katalogseiten kollabieren die beiden
-     Ränder zu denselben 1.5rem, die Darstellung bleibt dort also unverändert. */
+  /* Das Panel besitzt seinen Abstand nach UNTEN selbst (1.5rem = `mt-6`).
+     Ergebnisblock und C.mountDataTable schliessen ohne eigenen oberen Rand an;
+     so bleibt der Abstand für Katalogseiten und eingebettete Tabellen gleich. */
   align-items:start; padding:1rem 1.25rem; margin:.75rem 0 1.5rem; background:var(--color-secondary-50);
   border:1px solid var(--panel-border); border-radius:var(--radius-lg); }   /* Randton wie .filter-panel — EIN Kartenrezept */
 @media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); } }
@@ -3445,12 +3419,6 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    Startseiten-Block (Item 1.12). */
 .link--block { display:block; }
 .link--block + .link--block { margin-top:.75rem; }
-/* Trefferzahl bricht auf Mobile auf eine eigene Zeile — search.postcss:215-217
-   (`block sm:inline`), unser 639px ist genau CDs sm-Grenze.
-   NUR für .search-results__header: das ist die CD-Komponente mit der grossen
-   Trefferzeile. Die catbar ist unsere eigene kompakte Leiste; dort machte die
-   Regel aus «21 Objekte» zwei Zeilen mitten in einer ohnehin dreizeiligen Leiste. */
-@media (max-width:639.98px){ .search-results__header strong { display:block; } }
 /* Pagination rechtsbündig unter Trefferlisten (CD) */
 .pagination-wrap--right { justify-content:flex-end; }
 

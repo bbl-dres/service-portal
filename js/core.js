@@ -183,7 +183,6 @@ function linkMedia() {
     o.photo = '';
     o.bildCredit = b0 ? (b0.credit || '') : '';
     o.bildQuelle = b0 ? (b0.sourceUrl || '') : '';
-    o.bildPlatzhalter = false;
   }
 }
 
@@ -274,7 +273,6 @@ export const core = {
   parcelsForBuilding: (bid) => { const we = String(bid || '').split('/')[1]; return (DATA.parcels || []).filter(p => String(p.bbl_id).split('/')[1] === we); },
   projects: () => DATA.projects || [],
   project: (id) => find(DATA.projects, 'projectId', id),
-  projectsForBuilding: (bid) => (DATA.projects || []).filter(p => p.buildingId === bid),
   // Liegenschaften-Inventar-Detailregister — je Gebäude über buildingId (= bbl_id).
   assetsForBuilding: (bid) => (DATA.assets || []).filter(a => a.buildingId === bid),
   contractsForBuilding: (bid) => (DATA.contracts || []).filter(c => c.buildingId === bid),
@@ -320,24 +318,16 @@ export const core = {
   tenancy: (id) => find(DATA.tenancies, 'tenancyId', id),
   floors: () => DATA.floors || [],
   floor: (id) => find(DATA.floors, 'floorId', id),
-  floorsForBuilding: (bid) => (DATA.floors || []).filter((f) => f.buildingId === bid),
   spaces: () => DATA.spaces || [],
   floorsForTenancy: (t) => (t && t.floors ? t.floors : []).map((fid) => find(DATA.floors, 'floorId', fid)).filter(Boolean),
   spacesForFloor: (fid) => (DATA.spaces || []).filter((s) => s.floorId === fid),
   services: () => DATA.services || [],
   service: (id) => find(DATA.services, 'serviceId', id),
-  servicesByDomain: () => groupBy(DATA.services || [], 'domain'),
   applications: () => DATA.applications || [],
-  applicationsByGroup: () => groupBy(DATA.applications || [], 'group'),
   application: (id) => find(DATA.applications, 'appId', id),
   documents: () => DATA.documents || [],
   documentsForBuilding: (bid) => (DATA.documents || []).filter(d => (d.linkedTo || []).includes(bid)),
   media: () => DATA.media || [],
-  // Medien hängen über `buildingId` am Objekt. Der Name ist historisch: das Feld
-  // trägt eine bbl_id, und die kann ebenso zu einer Parzelle gehören — die
-  // Detailansicht behandelt Gebäude und Grundstücke gleich.
-  mediaForObject: (id) => (DATA.media || []).filter(m => m.buildingId === id),
-  mediaForBuilding: (bid) => (DATA.media || []).filter(m => m.buildingId === bid),
   // «Wissen und Hilfsmittel» hat KEINEN Bestand: Vorgaben, Vorlagen, Anleitungen
   // und Prozesse sind statische Seiten (js/pages/knowledge.js, regulations.js).
   // Es sind Dokumentenverzeichnisse zum Nachlesen und Herunterladen — eine
@@ -356,14 +346,5 @@ export const core = {
   // Datenausfall-Status (P0-4): available() sagt, ob ein Schlüssel geladen wurde;
   // failedAreas() liefert die fachlichen Namen der ausgefallenen Bereiche.
   available: (key) => !FAILED.has(key),
-  failed: () => Array.from(FAILED),
   failedAreas: () => Array.from(FAILED).map(k => AREA[k] || k),
 };
-
-function groupBy(arr, key) {
-  const out = {};
-  for (const x of arr) { (out[x[key]] = out[x[key]] || []).push(x); }
-  return out;
-}
-
-export default core;
