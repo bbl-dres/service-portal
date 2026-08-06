@@ -317,6 +317,31 @@ let unwireScroll = null;
 // nächsten Dispatch abgearbeitet — also bevor die neue Ansicht etwas anlegt.
 let routeCleanups = [];
 
+// Anmeldesperre einer Fachanwendung. Der Name der Anwendung steht nicht im
+// Router, sondern im Anwendungskatalog — der wird dafür nachgeladen (nur im
+// abgemeldeten Fall, also selten). Ohne ihn bleibt es bei einer neutralen
+// Überschrift; eine fehlende Beschriftung darf die Sperre nicht aushebeln.
+// Gibt `true` zurück, wenn die Sperre gezeichnet wurde.
+async function renderAppLoginGate(mount, name, stale, text = '') {
+  await core.ensure(['applications']);
+  if (stale()) return true;
+  const target = `#/app/${name}`;
+  const app = core.applications().find((a) => String(a.link?.href || '').split('?')[0] === target);
+  const title = app ? app.name : 'Anwendung';
+  document.title = `${title} · BBL Kundenportal`;
+  // Rückweg auf die Landingpage: dort steht frei lesbar, was die Anwendung tut,
+  // wer sie nutzen darf und wie man zu einem Konto kommt.
+  const back = app ? `#/applications/${encodeURIComponent(app.appId)}` : '#/applications';
+  mount.innerHTML = `<div class="container section">
+    ${C.backLink(back, app ? 'Beschreibung der Anwendung' : 'Anwendungen')}
+    <div class="page-header"><h1 tabindex="-1">${C.escape(title)}</h1></div>
+    ${C.loginGate(text || 'Diese Fachanwendung arbeitet mit Betriebsdaten des BBL. Melden Sie sich mit AGOV / FedLogin an, um sie zu öffnen. '
+      + 'Was die Anwendung tut und wer sie nutzen darf, steht frei zugänglich auf ihrer Beschreibungsseite.')}
+  </div>`;
+  focusHeading(mount);
+  return true;
+}
+
 async function dispatch() {
   // Erst aufräumen, dann neu bauen. Fehler einer einzelnen Abbaufunktion dürfen
   // die Navigation nicht anhalten.
@@ -367,6 +392,20 @@ async function dispatch() {
   setActiveNav(navBase);
   document.getElementById('breadcrumb').hidden = true;
 
+  // --- Anmeldesperre der Fachanwendungen (Nutzerentscheid 2026-08-06) --------
+  // Eine Fachanwendung ist ein System mit echten Betriebsdaten, kein Katalog-
+  // inhalt: der Zugriff verlangt eine Anmeldung. FREI bleibt alles, was
+  // BESCHREIBT — die Anwendungs-Landingpage (#/applications/<id>), der
+  // Dienstleistungskatalog, Wissen, News, der Datenbezug.
+  //
+  // Die Sperre sitzt hier und nicht in den Anwendungen: fünf von siebzehn
+  // brachten sie selbst mit, zwölf nicht, und eine vergessene Sperre sieht man
+  // einer Anwendung nicht an. Zentral gilt sie auch für jede künftige.
+  // Den WORTLAUT bringt die Anwendung weiterhin selbst mit (`loginText`) —
+  // «Diese Meldung wird als persönlicher Vorgang erfasst» sagt mehr als ein
+  // Einheitssatz. Gegriffen wird er unten, nach dem Import des Moduls.
+  const gated = segs[0] === 'app' && modPath && !session.isLoggedIn();
+
   if (!modPath) {
     document.title = 'Seite nicht gefunden · BBL Kundenportal';
     mount.innerHTML = `<div class="container section"><div class="page-header"><h1 tabindex="-1">Seite nicht gefunden</h1></div>
@@ -390,6 +429,9 @@ async function dispatch() {
   try {
     const mod = await import(modPath);
     if (stale()) return;
+    // Anmeldesperre VOR `needs`: eine Anwendung, die niemand öffnen darf, muss
+    // auch ihre Bestände nicht laden (das Inventar allein sind 66 KB).
+    if (gated) { await renderAppLoginGate(mount, segs[1], stale, mod.loginText); return; }
     const render = mod.default || mod.render;
     if (typeof render !== 'function') throw new Error('Modul exportiert kein render()');
     // Aufschiebbare Bestände (H4): das Modul nennt in `needs`, was es lesen will,

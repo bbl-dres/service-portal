@@ -18,7 +18,10 @@ const OUT = join('docs', 'review-assets', MODE);
 const cdp = await launch({ webgl: true });
 try {
   for (const w of REVIEW_VIEWPORTS) mkdirSync(join(OUT, String(w)), { recursive: true });
-  const page = await openPage(cdp, `${APP_BASE}/`);
+  // Angemeldet: die Prüfmatrix läuft ALLE Zustände per Hash-Navigation ab,
+  // darunter die Fachanwendungen — die liegen seit 2026-08 hinter der
+  // Anmeldesperre (js/router.js) und zeigten sonst nur noch deren Band.
+  const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
   await sleep(1500);
 
   for (const w of REVIEW_VIEWPORTS) {

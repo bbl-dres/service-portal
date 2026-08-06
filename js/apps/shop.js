@@ -12,6 +12,11 @@ import { ANWENDUNGEN, trail } from '../crumbs.js';
 
 export const needs = ['shopProducts', 'shopCategories'];
 
+// Wortlaut der Anmeldesperre, die der Router vor diese Anwendung zieht
+// (js/router.js). Der Satz gehört zur Anwendung — «Diese Meldung wird als
+// persönlicher Vorgang erfasst» sagt mehr als ein Einheitssatz.
+export const loginText = "Der Intranetshop bestellt auf Rechnung Ihrer Verwaltungseinheit. Bitte melden Sie sich mit AGOV / FedLogin an, um Sortiment und Preise zu sehen und zu bestellen.";
+
 const CART_KEY = 'bbl_shop_cart_v1';
 const PER_PAGE = 12;
 const SORT_OPTS = [

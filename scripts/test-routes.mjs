@@ -69,7 +69,10 @@ const fails = [];
 
 const cdp = await launch();
 try {
-  const page = await openPage(cdp, `${APP_BASE}/`);
+  // Angemeldet: die Liste läuft ALLE Routen per Hash-Navigation ab, darunter die
+  // Fachanwendungen. Ohne Sitzung prüfte sie dort nur noch die Anmeldesperre —
+  // die hat ihre eigene Suite (scripts/test-tabs.mjs, GATES).
+  const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
   await sleep(1200);
 
   for (const [route, wantH1] of ROUTES) {
@@ -92,7 +95,11 @@ try {
       await new Promise(r => setTimeout(r, 700));
       return location.hash;
     })()`);
-    if (got !== want) fails.push(`Weiterleitung ${from} → «${got}», erwartet «${want}»`);
+    // Nennt das Ziel keine Query, zählt nur der PFAD: Ansichten, die ihren
+    // Suchzustand in die Adresse spiegeln (Raumbuchung), hängen nach dem
+    // Zeichnen ihre Kriterien an — das ist kein Weiterleitungsfehler.
+    const norm = (h) => (want.includes('?') ? h : String(h).split('?')[0]);
+    if (norm(got) !== want) fails.push(`Weiterleitung ${from} → «${got}», erwartet «${want}»`);
     else console.log(`  ok  ${from.padEnd(34)} → ${got}`);
   }
 

@@ -207,7 +207,10 @@ function headerHTML() {
     ? `<li class="meta-navigation__user"><span class="meta-navigation__name">${icon('User', 'icon--md')} ${escapeHtml(user.name)}</span>
         <span class="separator separator--vertical" aria-hidden="true"></span>
         <button type="button" class="meta-navigation__item meta-navigation__auth" onclick="window.__logout && window.__logout()">Abmelden</button></li>`
-    : `<li><button type="button" class="meta-navigation__item meta-navigation__auth" onclick="window.__login && window.__login()">${icon('User', 'icon--md')} Anmelden</button></li>`;
+    // Kein Ziel: die Kopfzeile weiss nicht, was der Nutzer vorhat — sie zeichnet
+    // die aktuelle Seite neu. Ein Ziel tragen nur die Knöpfe, die AN der Stelle
+    // stehen, an der sonst der Vorgang ausgelöst würde (C.loginGate/loginButton).
+    : `<li><button type="button" class="meta-navigation__item meta-navigation__auth" data-login>${icon('User', 'icon--md')} Anmelden</button></li>`;
 
   // Item 4.11: das Steuerelement war bedienbar, aber jede Option außer DE war
   // `disabled` — es öffnete also eine Liste, in der nichts wählbar ist. Ein

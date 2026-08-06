@@ -52,7 +52,10 @@ function axValue(node, key) {
 }
 
 try {
-  const page = await openPage(cdp, `${APP_BASE}/`);
+  // Angemeldet: die Prüfmatrix läuft ALLE Zustände per Hash-Navigation ab,
+  // darunter die Fachanwendungen — die liegen seit 2026-08 hinter der
+  // Anmeldesperre (js/router.js) und zeigten sonst nur noch deren Band.
+  const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 720, height: 900, deviceScaleFactor: 2, mobile: false }, page.sessionId);
   await cdp.send('Accessibility.enable', {}, page.sessionId);

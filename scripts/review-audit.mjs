@@ -69,7 +69,10 @@ const probe = `(() => {
 })()`;
 
 try {
-  const page = await openPage(cdp, `${APP_BASE}/`);
+  // Angemeldet: die Prüfmatrix läuft ALLE Zustände per Hash-Navigation ab,
+  // darunter die Fachanwendungen — die liegen seit 2026-08 hinter der
+  // Anmeldesperre (js/router.js) und zeigten sonst nur noch deren Band.
+  const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
   for (const width of REVIEW_VIEWPORTS) {
     await cdp.send('Emulation.setDeviceMetricsOverride',
       { width, height: 900, deviceScaleFactor: 1, mobile: false }, page.sessionId);

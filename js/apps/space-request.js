@@ -7,27 +7,15 @@ import { DIENSTLEISTUNGEN, trail } from '../crumbs.js';
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['buildings'];
+
+// Wortlaut der Anmeldesperre, die der Router vor diese Anwendung zieht
+// (js/router.js). Der Satz gehört zur Anwendung — «Diese Meldung wird als
+// persönlicher Vorgang erfasst» sagt mehr als ein Einheitssatz.
+export const loginText = "«Raumbedarf melden» erfasst Ihren Bedarf als Vorgang unter «Meine Vorgänge». Bitte melden Sie sich mit AGOV / FedLogin an, um den Antrag zu erstellen.";
 export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs, navigate } = ctx;
   setTitle('Raumbedarf melden');
   setCrumbs(trail(DIENSTLEISTUNGEN, { label: 'Raumbedarf melden' }));
-
-  // Persönlicher Vorgang — abgemeldet zum Login auffordern (der Zustand unten
-  // liest session.user().org, würde also sonst beim Direktaufruf werfen).
-  if (!session.isLoggedIn()) {
-    // Ausgeloggt derselbe Kopf wie eingeloggt (schmale Spalte, Rückweg zur
-    // Dienstleistungsbeschreibung) — nur statt des Formulars steht der Gate.
-    mount.innerHTML = `
-    <div class="container section container--grid">
-      <div class="container__center--xs">
-        ${C.backLink(links.dienstleistung('raumbedarf-melden'), 'Dienstleistungsbeschreibung')}
-        <h1 tabindex="-1">Raumbedarf melden</h1>
-        <p class="lead">Ihr Bedarf an Räumen und Flächen — als persönlicher Vorgang erfasst.</p>
-        ${C.loginGate('«Raumbedarf melden» erfasst Ihren Bedarf als Vorgang unter «Meine Vorgänge». Bitte melden Sie sich mit AGOV / FedLogin an, um den Antrag zu erstellen.')}
-      </div>
-    </div>`;
-    return;
-  }
 
   const buildings = core.buildings();
   const naw = core.ref().nawClasses || [];

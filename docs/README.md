@@ -13,11 +13,12 @@ Konzept- und Review-Dokumente des Service-Portal-Prototyps. Leseordnung:
 7. **[legacy-analysis.md](legacy-analysis.md)** — Analyse des heutigen Intranets.
 8. **[swisstopo-api.md](swisstopo-api.md)** — Karten-/Geodatengrundlagen.
 9. **[portfolio-redesign.md](portfolio-redesign.md)** — Entwurfsnotizen zum Liegenschaften-Explorer.
+10. **[room-booking-redesign.md](room-booking-redesign.md)** — Raumbuchung: vom dreistufigen Assistenten zur einen Seite mit Direktbuchung (Entwurf 1a, `docs/wireframes/`).
 
 **Reviews (je Welle, chronologisch):**
 
-10. **[code-review.md](code-review.md)** — technischer Review (Lade-/Fehlerpfade, Router-Verträge).
-11. **[design-review.md](design-review.md)** — die AKTUELLE Design-Review (August 2026): Konsistenz, Komplexität, Sprache — Kanon, 130 Befunde, Umsetzungsstand, bewusste Abweichungen.
+11. **[code-review.md](code-review.md)** — technischer Review (Lade-/Fehlerpfade, Router-Verträge).
+12. **[design-review.md](design-review.md)** — die AKTUELLE Design-Review (August 2026): Konsistenz, Komplexität, Sprache — Kanon, 130 Befunde, Umsetzungsstand, bewusste Abweichungen.
 
 ## Status
 

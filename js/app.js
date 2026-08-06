@@ -4,7 +4,7 @@ import { engine } from './process-engine.js';
 import { session } from './session.js';
 import { shell } from './shell.js';
 import { initRouter, redraw } from './router.js';
-import { notification, escape, announce, wireShare, mountBanner } from './components.js';
+import { notification, escape, announce, wireShare, wireLogin, mountBanner } from './components.js';
 
 // Datenausfall-Band (P0-4): Fehlt eine data/*.json, würde die betroffene Liste
 // als leer (statt «nicht verfügbar») erscheinen. Ein persistentes Fehlerband über
@@ -51,6 +51,10 @@ async function boot() {
   // share-bar bekommt ihn, ohne selbst etwas zu tun — und er überlebt jeden
   // Seitenwechsel, weil der Listener am Dokument hängt.
   wireShare(document);
+  // Anmeldeknöpfe ebenso EINMAL global verdrahten: sie stehen in der Kopfzeile,
+  // in jedem Login-Hinweis und in den Zugriff-Karten — und jeder von ihnen darf
+  // ein Ziel mitbringen (data-login-next).
+  wireLogin(document);
   // Prototyp-Hinweis als CD-Consent-Streifen. Einmal weggeklickt, bleibt er weg.
   mountBanner(document.getElementById('banner-host'), {
     id: 'prototyp',
@@ -68,18 +72,31 @@ async function boot() {
   // dabei zerstört, sodass der Fokus auf <body> fiel und nichts angesagt wurde.
   // Jetzt: Statusmeldung in die Live-Region und Fokus zurück auf den (neu
   // gerenderten) Auth-Knopf (Item 3.7).
-  const refresh = async (msg) => {
+  const refresh = async (msg, next = '') => {
     shell.renderHeader(header);
+    // Anmeldung MIT Ziel: der Knopf stand dort, wo sonst «Vorgang starten»
+    // steht, also erledigt er beides. Die Navigation ersetzt das Neuzeichnen —
+    // `hashchange` löst den Router aus, und der setzt den Fokus auf die neue
+    // Überschrift, was hier die richtige Ortsangabe ist («Sie sind jetzt im
+    // Formular»), nicht der Anmeldeknopf in der Kopfzeile.
+    // Nur portalinterne Routen: ein externes Ziel liesse sich nach dem
+    // `await` ohnehin nicht mehr ohne Popup-Blocker öffnen.
+    if (next && next.startsWith('#/')) {
+      announce(msg);
+      if (next === location.hash) await redraw();   // kein hashchange → selbst zeichnen
+      else location.hash = next;
+      return;
+    }
     await redraw();          // erst abwarten — der Router setzt am Ende selbst den Fokus
     announce(msg);
     const btn = header.querySelector('.meta-navigation--desktop .meta-navigation__auth')
              || header.querySelector('.meta-navigation__auth');
     if (btn) btn.focus({ preventScroll: true });
   };
-  window.__login = () => {
+  window.__login = (next = '') => {
     session.login();
     const u = session.user();
-    return refresh(`Angemeldet als ${u ? u.name : ''}. Die Seite wurde aktualisiert.`);
+    return refresh(`Angemeldet als ${u ? u.name : ''}.${next ? '' : ' Die Seite wurde aktualisiert.'}`, next);
   };
   window.__logout = () => { session.logout(); return refresh('Abgemeldet. Die Seite wurde aktualisiert.'); };
   // Nur für die Prüfskripte: die Prozess-Engine ohne Formularlauf erreichbar

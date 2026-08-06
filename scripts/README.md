@@ -10,6 +10,18 @@ There are currently 20 `test-*.mjs` functional suites and 21
 `check-*.mjs` focused layout probes. Every script follows the same contract:
 `APP_BASE` selects the running app and a non-zero exit code means failure.
 
+**Sessions.** `openPage(cdp, url, { login })` decides which session the page
+STARTS with, by writing (or clearing) `bbl_session_v1` before the first
+application script runs. Left unset it is derived from the URL: routes under
+`#/app/…` start **logged in**, because the specialist applications sit behind a
+login gate (`js/router.js`). Two cases must say so explicitly:
+
+- checking the **gate itself** → `{ login: false }` (see `test-tabs.mjs`);
+- a gated route **outside** `#/app/…`, i.e. `#/my-cases` → `{ login: true }`.
+
+Scripts that open one page and then walk routes by hash — `test-routes.mjs`
+and the three `review-*.mjs` — pass `{ login: true }` once at the top.
+
 ## Prerequisites
 
 1. **Dev server running.** From wherever the app is served, e.g.:
@@ -35,7 +47,7 @@ inventory is `scripts/test-*.mjs`.
 | `test-tabs.mjs` | D1 tab component (`C.tabBar`/`C.tabPanels`/`C.wireTabs`) across portfolio · projects · dataportal: panel toggling, `aria-selected`, roving `tabindex`, focus-follows-active, keyboard (Arrow/Home/End), hash sync. Plus the logged-out gates for the action apps. |
 | `test-login.mjs` | Logs in via the `window.__login` stub and asserts the standalone Room Booking route renders its form instead of the login gate. |
 | `test-workspace.mjs` | Standalone Workspace Management planning surface: no legacy tabs, live capacity scenario, floor-plan interaction, and desktop/mobile containment. |
-| `test-room-booking.mjs` | Room Booking: search, list/floor-plan views, location and room context, invitees, process creation, personal bookings, and desktop/mobile containment. |
+| `test-room-booking.mjs` | Room Booking on the one-page, direct-booking surface (`docs/room-booking-redesign.md`): search bar, quick choices, group size, invalid time range, equipment filter, the favourites store, the floor-plan and map dialogs, the booking dialog and its validation, process creation, personal bookings, the `?room=` deep link, and desktop/mobile containment. |
 | `test-document-archive.mjs` | Bauwerksdokumentation: reduced six-column table, KBOB document types, filename extensions, plain building cells, and viewer metadata at desktop/mobile widths. |
 | `test-catalogue.mjs` | D2 catalogue triplet (`C.catalogueHash`/`C.catalogueControls`/`C.wireCatalogue`) across services · applications · katalog: deep-link round-trips (q/view/filter), search-submit / view-switch / filter interactions, active-filter pill removal, the services multi-value `topic`, and detail-view render. |
 | `test-forms.mjs` | D3 form helpers (`C.field`/`C.select`/`C.val`/`C.readForm`) + the C5 fix across the three wizards: renders, a custom validation error attaches `input--error`+`aria-invalid`+badge to the previously class-less fields (`#org`/`#cc`/`#beschreibung`/`#datum`), and a valid submit creates a Vorgang. Logs in via the stub first. |

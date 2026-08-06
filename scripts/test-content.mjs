@@ -38,30 +38,20 @@ const PROBE = `(async () => {
   };
 })()`;
 
-const LOGIN = `(async () => {
-  const s = ms => new Promise(r => setTimeout(r, ms));
-  // __login is exposed at the end of app.js boot() (after core.load()); poll for it
-  // instead of racing boot, or the gated my-cases route stays behind the login wall.
-  let n = 0; while (typeof window.__login !== 'function' && n++ < 120) await s(50);
-  if (typeof window.__login === 'function') { window.__login(); return 'ok'; }
-  return 'no __login';
-})()`;
-
 let failures = 0;
 const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label}`); if (!cond) failures++; };
 
 (async () => {
   const cdp = await launch();
   try {
-    // log in once for the gated my-cases route
-    let lp = await openPage(cdp, `${APP_BASE}/`);
-    await lp.evaluate(LOGIN);
-    await sleep(700);
-    await lp.closeTarget();
-
+    // Die Sitzung setzt `openPage` je Seite (scripts/lib/cdp.mjs): App-Routen
+    // starten angemeldet, alle anderen abgemeldet. Routen, die ausserhalb von
+    // `#/app/…` eine Sitzung brauchen — «Meine Vorgänge» —, sagen es über
+    // `login: true` in der Liste oben. Ein einmaliges Anmelden auf einer
+    // Vorschaltseite genügt dafür nicht mehr.
     for (const r of ROUTES) {
       console.log(`\n■ ${r.name}`);
-      const p = await openPage(cdp, r.url);
+      const p = await openPage(cdp, r.url, r.login ? { login: true } : {});
       const res = await p.evaluate(PROBE);
       check(res.h1 && !res.notFound, `renders ("${res.h1}")`);
       if (r.expectedTitle) check(res.h1 === r.expectedTitle, `uses the expected title ("${r.expectedTitle}")`);

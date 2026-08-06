@@ -121,12 +121,42 @@ export async function launch({ port, webgl = false } = {}) {
 
 // Open a fresh page (flattened session), collect uncaught exceptions + console
 // errors. `evaluate(expr)` runs an async expression in-page and returns its value.
-export async function openPage(cdp, url) {
-  const { targetId } = await cdp.send('Target.createTarget', { url });
+// Die Demo-Sitzung, wie js/session.js sie schreibt. Wird VOR dem ersten
+// Anwendungsskript in den localStorage gelegt, damit `session.js` sie beim
+// Modulstart schon vorfindet — ein späteres window.__login() käme für die
+// erste Zeichnung zu spät und die Seite müsste neu gezeichnet werden.
+const DEMO_SESSION = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
+
+/**
+ * `login` steuert die Sitzung, mit der die Seite STARTET:
+ *   true   angemeldet · false  abgemeldet · undefined  automatisch
+ *
+ * Automatisch heisst: Routen unter `#/app/…` starten angemeldet. Die
+ * Fachanwendungen liegen seit 2026-08 hinter einer Anmeldesperre (js/router.js);
+ * ohne Sitzung prüfte sonst jede App-Suite nur noch das Anmeldeband. Wer die
+ * SPERRE selbst prüfen will, verlangt `login: false` ausdrücklich.
+ *
+ * Die Sitzung liegt im localStorage und gilt für das ganze Profil — deshalb
+ * wird sie hier bei JEDEM Seitenaufbau gesetzt bzw. gelöscht und nicht nur
+ * beim ersten; sonst erbte eine abgemeldete Prüfung die Sitzung ihrer
+ * Vorgängerin.
+ */
+export async function openPage(cdp, url, { login } = {}) {
+  const wantsLogin = login === undefined ? /#\/app\//.test(String(url)) : !!login;
+  const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
+  await cdp.send('Page.enable', {}, sessionId);
+  await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: wantsLogin
+      ? `try { localStorage.setItem('bbl_session_v1', ${JSON.stringify(JSON.stringify(DEMO_SESSION))}); } catch (e) {}`
+      : `try { localStorage.removeItem('bbl_session_v1'); } catch (e) {}`,
+  }, sessionId);
   const exceptions = [];
   const consoleErrors = [];
   let loaded = false;
+  // Horcher und Runtime.enable stehen VOR der Navigation: sonst feuert das
+  // Ladeereignis der Zielseite ins Leere, und Ausnahmen des Startlaufs — genau
+  // die interessanten — zählte niemand mit.
   cdp.on((m) => {
     if (m.sessionId !== sessionId) return;
     if (m.method === 'Page.loadEventFired') loaded = true;
@@ -138,7 +168,7 @@ export async function openPage(cdp, url) {
     }
   });
   await cdp.send('Runtime.enable', {}, sessionId);
-  await cdp.send('Page.enable', {}, sessionId);
+  await cdp.send('Page.navigate', { url }, sessionId);
   // Wait for the document to finish loading so evaluate() targets the loaded
   // context, not the throwaway initial one (which is destroyed on navigation).
   for (let i = 0; i < 40 && !loaded; i++) await sleep(50);

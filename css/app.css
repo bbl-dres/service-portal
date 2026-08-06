@@ -1372,6 +1372,17 @@ code { font-family:var(--font-mono); }
 .btn--link .btn__icon, .btn--link-negative .btn__icon { width:2rem; }
 .btn--full-width { width:100%; }
 .btn--icon-only { padding-left:.625em; padding-right:.625em; }   /* CD px-[0.625em] — skaliert mit der Schrift */
+/* Zugriff-Karte (C.accessCard): der Knopf steht oben und trägt den Abstand zum
+   erklärenden Text darunter. Volle Breite, damit die vier Zustände — öffnen,
+   anmelden, extern, ausgegraut — dieselbe Silhouette haben und der Wechsel
+   zwischen ihnen die Karte nicht springen lässt. */
+.access-card__action { margin:0 0 .75rem; }
+/* Sitzungskontext, Zugangshinweis und Schrittliste sind je ein eigener Absatz
+   mit m-0 — ohne diese Regel klebten sie aneinander und lasen sich als ein Satz. */
+.access-card p + p, .access-card p + ul { margin-top:.5rem; }
+.access-card__action > .btn { width:100%; justify-content:space-between; text-align:left; }
+.access-card__action > .btn.btn--icon-left { justify-content:flex-start; gap:.5rem; }
+
 /* Nicht verfügbare Ziele werden als <span aria-disabled> gerendert — ein span
    nimmt kein [disabled], deshalb müssen die Selektoren beides abdecken, sonst
    sehen tote Links wie lebende aus (docs/design-review.md P0-7).
@@ -1652,6 +1663,21 @@ table.table thead th.text-right { width:1%; }
    Stufe, damit der Unterschied auch auf getönten Zeilen sichtbar ist. */
 table.table--zebra tbody tr:nth-child(even),
 table.table--zebra tfoot tr:nth-child(even) { background:var(--color-secondary-50); }
+/* … ausser die Tabelle steht SELBST auf secondary-50. Das CD kennt genau EINE
+   neutrale Fläche, und die benutzen beide: das getönte Abschnittsband
+   (.bg--secondary-50) und die Tabelle für Kopfzeile und Zebrastreifen. Liegt
+   das eine auf dem anderen, sind Streifen und Grund identisch — die Streifen
+   werden zu Löchern, durch die das Band scheint, und nur die ungeraden Zeilen
+   sehen aus wie Zeilen (Nutzerbefund 2026-08-06, Startseite «Meine offenen
+   Vorgänge»).
+   Statt eine zweite Tönung zu erfinden, gibt die Tabelle ihre eigene auf: sie
+   ist ohnehin schon eine weisse Karte mit Rahmen und Schatten, und Kopfzeile
+   wie Zeilen bleiben durch Trennlinien und den fetten Kopf unterscheidbar.
+   Gilt für JEDE Tabelle auf dem Band — der Fehler hing nur an der Verschachtelung,
+   nicht an der Seite. */
+.bg--secondary-50 table.table thead th,
+.bg--secondary-50 table.table--zebra tbody tr:nth-child(even),
+.bg--secondary-50 table.table--zebra tfoot tr:nth-child(even) { background:transparent; }
 /* Hover NUR auf klickbaren Zeilen — CDs Tabelle kennt keinen Zeilen-Hover
    (table.postcss); eine statische Datentabelle darf keine Klickbarkeit signalisieren. */
 table.table--rows-clickable tbody tr:hover { background:var(--color-secondary-100); }
@@ -2708,6 +2734,11 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 .btn .catbar__chev, .catbar__chev { width:1em; height:1em; transition:transform var(--duration); }
 .catbar__filter[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
 .catbar .view-switch__btn { min-height:var(--target-min); }
+/* `extra`-Steckplatz der Leiste: eine Nebenaktion ganz rechts, abgesetzt wie der
+   Ansichtswechsel — sie steht auf derselben Stufe und darf nicht wie ein
+   weiterer Filter neben «Filter» kleben. */
+.catbar__aside { min-height:var(--target-min); white-space:nowrap;
+  border-left:1px solid var(--color-secondary-300); padding-left:1rem; margin-left:.75rem; }
 /* Die getönte, gerundete Karte ist eine bewusste Entscheidung und BLEIBT —
    umgestellt wird nur die umbrechende Flex-Zeile, die bei 1440 rund 60% des
    Panels leer liess und «Zurücksetzen» wie eine dritte Facetten-Überschrift
@@ -2760,6 +2791,7 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 @media (max-width:479.98px){
   /* der Trennstrich wirkt am Zeilenanfang falsch, wenn der Schalter allein umbricht */
   .catbar__controls .view-switch { border-left:0; padding-left:0; }
+  .catbar__aside { border-left:0; padding-left:0; margin-left:0; }
 }
 
 /* ── Explorer-Schicht (pf-*) — GETEILT, nicht portfolio-eigen: pf-layout/
@@ -4043,160 +4075,120 @@ table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:
 }
 
 /* ========================= ROOM BOOKING ===================================
-   The task-level tabs contain a three-step CD wizard: portfolio-style location
-   selection, schedule and room selection, then review and confirmation. */
+   One page, direct booking. A search bar sets the criteria, the result list
+   answers them, and booking happens in a dialog on the room card — there is no
+   wizard and therefore no step chrome. Room cards carry a floor code instead of
+   a photograph: no meeting room has one, and the building interior shot that
+   used to fill the slot was identical for every room in the house. */
 .booking-tabs { margin-top:var(--sp-8); }
 .booking-find, .booking-manage { min-width:0; }
-.booking-wizard-head .steps { margin-bottom:1rem; }
-.booking-wizard-head .wizard-step__title { margin:0; }
-.booking-wizard-head > .small { margin:.75rem 0 0; }
-.booking-step { min-width:0; }
-.booking-step--review { width:100%; max-width:52rem; margin-inline:auto; }
 
-/* Step 1: the shared explorer composition, with booking-specific choices. */
-.booking-location-explorer { min-width:0; }
-.booking-location-sidebar { padding:.5rem; }
-.booking-location-list { min-width:0; margin:0; padding:0; border:0;
-  border-top:1px solid var(--color-secondary-200); }
-.booking-location-choice { position:relative; display:block; min-width:0; padding:.875rem .5rem;
-  border-bottom:1px solid var(--color-secondary-200);
-  cursor:pointer; transition:background var(--duration-fast), box-shadow var(--duration-fast); }
-.booking-location-choice:hover { background:var(--color-secondary-50); }
-.booking-location-choice:focus-within { outline:2px solid var(--color-focus-ring); outline-offset:-2px; }
-.booking-location-choice.is-selected { background:var(--color-primary-50);
-  box-shadow:inset 3px 0 0 var(--color-primary-600); }
-.booking-location-choice > input { position:absolute; width:1px; height:1px; min-height:0; margin:0; padding:0; opacity:0; }
-.booking-location-choice > span { display:flex; flex-direction:column; gap:.125rem; min-width:0; }
-.booking-location-choice > span > * { overflow-wrap:anywhere; }
-.booking-location-choice > span > span { color:var(--color-text-muted); font-size:var(--text-sm); }
-.booking-location-main { min-width:0; }
-.booking-step-actions.booking-step-actions--end { justify-content:flex-end; }
-
-/* Step 2: schedule search, comparable results, and one selected-room summary. */
-.booking-location-summary { display:flex; align-items:center; justify-content:space-between; gap:1rem;
-  padding:1rem 0; border-block:1px solid var(--color-secondary-200); }
-.booking-location-summary p { display:flex; flex-wrap:wrap; gap:.25rem 1rem; margin:0; }
-.booking-location-summary p span { color:var(--color-text-muted); }
-.booking-schedule { margin-top:1.5rem; padding:1.25rem; background:var(--color-secondary-50);
+/* Search bar. One row on desktop, stacked below — the submit button is the only
+   cell that may not shrink, because it ends the sentence the row starts. */
+.booking-bar { padding:1.25rem; background:var(--color-secondary-50);
   border-block:1px solid var(--color-secondary-200); }
-.booking-schedule .form__group__legend { margin:0; }
-.booking-schedule__grid { display:grid; grid-template-columns:minmax(0,1fr);
-  gap:1rem; align-items:end; margin-top:1rem; }
-.booking-schedule__grid > * { min-width:0; margin:0; }
-.booking-schedule__action .btn { width:100%; justify-content:center; }
-.booking-results > .catbar { margin-top:1.5rem; }
-@media (min-width:768px){
-  .booking-schedule { padding:1.5rem; }
-  .booking-schedule__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .booking-schedule__action { display:flex; grid-column:1 / -1; justify-content:flex-end; }
-  .booking-schedule__action .btn { width:auto; }
+.booking-bar__grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; align-items:end; }
+.booking-bar__grid > * { min-width:0; margin:0; }
+.booking-bar__location__row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.5rem; align-items:center; }
+.booking-bar__location__row .select { min-width:0; }
+.booking-bar__submit .btn { width:100%; justify-content:center; }
+
+/* The star is a state toggle, not a label: pressed = remembered. */
+.booking-fav[aria-pressed="true"] { border-color:var(--color-primary-600); color:var(--color-primary-600); }
+.booking-fav[aria-pressed="true"] .icon { color:var(--color-primary-600); }
+
+.booking-quick { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .75rem; margin-top:1rem; }
+.booking-quick__label { color:var(--color-text-muted); font-size:var(--text-sm); }
+.booking-quick__list { display:flex; flex-wrap:wrap; }
+
+@media (min-width:768px) {
+  .booking-bar { padding:1.5rem; }
+  .booking-bar__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .booking-bar__location { grid-column:1 / -1; }
+  .booking-bar__submit { grid-column:1 / -1; justify-self:end; }
+  .booking-bar__submit .btn { width:auto; }
 }
-@media (min-width:1200px){
-  .booking-schedule__grid { grid-template-columns:minmax(10rem,1.2fr) repeat(2,minmax(8rem,.8fr)) minmax(9rem,.8fr) auto; }
-  .booking-schedule__action { grid-column:auto; }
+@media (min-width:1024px) {
+  .booking-bar__grid { grid-template-columns:minmax(14rem,2.4fr) minmax(8rem,1fr) minmax(6rem,.7fr) minmax(6rem,.7fr) minmax(6rem,.6fr) auto; }
+  .booking-bar__location, .booking-bar__submit { grid-column:auto; }
 }
+
+/* Result header: the count is the heading, the criteria echo below it so the
+   list can never be read out of context. */
 .booking-results { min-width:0; }
-.booking-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1.5rem;
-  align-items:start; margin-top:1.5rem; }
-.booking-results__main, .booking-side, .booking-side__section { min-width:0; }
-.booking-side { background:var(--color-secondary-50);
-  border-block:1px solid var(--color-secondary-200); }
-.booking-side__section { padding:1.25rem; }
-.booking-side__section + .booking-side__section { border-top:1px solid var(--color-secondary-200); }
-.booking-side__section h3, .booking-side__section h4 { margin-top:0; }
-@media (min-width:1024px){
-  .booking-layout { grid-template-columns:minmax(0,1fr) minmax(19rem,22rem); }
-  .booking-side { position:sticky; top:1rem; }
-}
+.booking-resulthead { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:.5rem 1.5rem; }
+.booking-resulthead__count { min-width:0; }
+.booking-resulthead__count h3 { margin:0; }
+.booking-resulthead__count p { margin:.25rem 0 0; }
+.booking-results > .catbar { margin-top:1rem; }
 
-/* Comparable room rows. Availability is implicit because unavailable rooms do
-   not appear in this list; the floor plan still shows every state. */
-.booking-room-list { min-width:0; margin:0; padding:0;
-  border:0; border-top:1px solid var(--color-secondary-300); }
-.booking-room-row { display:grid; grid-template-columns:auto 6rem minmax(0,1fr);
-  gap:1rem; align-items:center; min-width:0; padding:1rem .5rem;
-  border-bottom:1px solid var(--color-secondary-300); cursor:pointer;
-  transition:background var(--duration-fast), box-shadow var(--duration-fast); }
-.booking-room-row:hover { background:var(--color-secondary-50); }
-.booking-room-row:focus-within { outline:2px solid var(--color-focus-ring); outline-offset:-2px; }
-.booking-room-row.is-selected { background:var(--color-primary-50);
-  box-shadow:inset 4px 0 0 var(--color-primary-600); }
-.booking-room-row > input { align-self:start; width:auto; min-height:0; margin:.35rem 0 0; padding:0; }
-.booking-room-row__body { display:flex; flex-direction:column; gap:.125rem; min-width:0; }
-.booking-room-row__body > * { overflow-wrap:anywhere; }
-.booking-room-row__meta, .booking-room-row__features { color:var(--color-text-muted); font-size:var(--text-sm); }
-.booking-show-all { margin-top:.75rem; }
-.booking-room-list > .badge--error { margin-top:.75rem; }
+/* Room rows. The first hit under "best match" carries the accent bar and the
+   filled action — everything below is an equal alternative, not a lesser one. */
+.booking-rooms { display:flex; flex-direction:column; gap:.75rem; margin-top:1.5rem; }
+.booking-room { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:1rem 1.25rem;
+  align-items:center; padding:1rem 1.25rem;
+  background:var(--color-bg); border:1px solid var(--color-secondary-100); }
+.booking-room--primary { border-color:var(--color-secondary-200);
+  border-left:4px solid var(--color-primary-600); padding-left:1rem; }
+.booking-room:hover { border-color:var(--color-secondary-200); }
+.booking-room__code { display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:.125rem; width:4rem; height:4rem; flex:none; margin:0;
+  background:var(--color-secondary-50); border:1px solid var(--color-secondary-100);
+  font-family:var(--font-mono, monospace); line-height:1.2; }
+.booking-room__code strong { font-size:var(--text-base); font-weight:500; }
+.booking-room__code span { color:var(--color-text-muted); font-size:var(--text-xs); }
+.booking-room__body { display:flex; flex-direction:column; gap:.5rem; min-width:0; }
+.booking-room__title { display:flex; flex-wrap:wrap; align-items:baseline; gap:.375rem .75rem;
+  margin:0; font-size:var(--text-xl); overflow-wrap:anywhere; }
+.booking-room__meta { color:var(--color-text-muted); font-size:var(--text-sm); font-weight:400; }
+.booking-room__actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:.5rem; }
+.booking-room__actions .btn { flex:none; }
 
-/* Room photography uses a real local image only where one is available. */
-.booking-room-image { position:relative; width:100%; aspect-ratio:16/9; overflow:hidden;
-  background:var(--color-secondary-100); }
-.booking-room-image > img { width:100%; height:100%; object-fit:cover; }
-.booking-room-image--thumb { width:6rem; height:4.5rem; aspect-ratio:auto; }
-.booking-room-image--empty { display:flex; flex-direction:column; align-items:center;
-  justify-content:center; gap:.375rem; color:var(--color-text-muted); text-align:center;
+.booking-chips { display:flex; flex-wrap:wrap; gap:.375rem; margin:0; padding:0; list-style:none;
   font-size:var(--text-sm); }
-.booking-room-image--thumb.booking-room-image--empty { font-size:var(--text-xs); }
-.booking-selected__figure { margin:0 0 1.25rem; }
-.booking-selected__figure figcaption { margin:0; }
-.booking-selected__facts { margin:0; }
+.booking-chips li { padding:.125rem .5rem; background:var(--color-secondary-50); color:var(--color-text); }
+.booking-chips .booking-chip--warn { background:var(--color-warning-bg-subtle); color:var(--color-warning-text); }
+.booking-more { margin-top:.25rem; align-self:flex-start; }
+
+/* Booking dialog. The facts block is a read-only echo of the search bar; the
+   only way to change it is to go back there, which is what «Ändern» does. */
+.booking-dialog__head { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;
+  margin-bottom:1.5rem; padding:1rem; background:var(--color-secondary-50); }
+.booking-dialog__head .btn { flex:none; }
+.booking-dialog__facts { margin:0; }
+.booking-dialog .form__group__input + .form__group { margin-top:1.25rem; }
+.booking-invite__control { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.5rem; align-items:start; }
+.booking-invite__control .btn { white-space:nowrap; }
+.booking-invitees { display:flex; flex-wrap:wrap; gap:.5rem; }
+.booking-invitees:not(:empty) { margin-top:.75rem; }
+.booking-invitees .tag-item { margin:0; }
+
 .booking-feature-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
   gap:.5rem 1rem; margin:1rem 0 0; padding:0; list-style:none; }
 .booking-feature-list li { display:flex; align-items:center; gap:.5rem; min-width:0;
   color:var(--color-text-muted); font-size:var(--text-sm); }
 .booking-feature-list .icon { flex:none; color:var(--color-secondary-500); }
+.booking-details__note { margin:1rem 0 0; }
 
-/* Step 3: invitees, review, and final confirmation */
-.booking-confirm { margin:0; }
-.booking-invite__control { display:grid; grid-template-columns:minmax(0,1fr) auto;
-  gap:.5rem; align-items:start; }
-.booking-invite__control .btn { white-space:nowrap; }
-.booking-invitees { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; }
-.booking-invitees .tag-item { margin:0; }
-.booking-confirm__summary { margin-top:2rem; border-block:1px solid var(--color-secondary-300); }
-.booking-confirm__summary > h4 { margin:0; padding:1.25rem 0; }
-.booking-review__section { padding:1.25rem 0; border-top:1px solid var(--color-secondary-200); }
-.booking-review__head { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
-.booking-review__head .btn { flex:none; }
-.booking-review__section > strong { display:block; }
-.booking-review__section .kv { margin:.75rem 0 0; }
-.booking-summary__facts { margin:0; }
-.booking-step-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
-  gap:1rem; margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--color-secondary-200); }
-.booking-confirm__submit { justify-content:center; }
-.booking-confirm__submit .btn__text { text-align:center; }
-
-/* Floor-plan view. The controls remain fixed over the scrollable drawing. */
+/* Floor plan and map are dialogs: they answer "where is that?", they are not
+   the route to a booking — though a free room in the plan still starts one. */
 .booking-floorbar { display:flex; flex-wrap:wrap; margin-bottom:1rem; }
-.booking-plan-shell { position:relative; min-width:0; }
-.booking-plan-stage { min-height:22rem; padding:0; }
-.booking-plan-canvas { min-width:100%; transform-origin:top left;
-  transition:width var(--duration-fast) var(--ease-out); }
-.booking-plan-canvas .fp { min-width:0; }
-.booking-plan-tools { position:absolute; top:.75rem; right:.75rem; z-index:3;
-  display:flex; flex-direction:column; background:var(--color-bg); box-shadow:var(--shadow-md); }
-.booking-plan-tools .btn { width:var(--target-min); height:var(--target-min); min-height:var(--target-min);
-  padding:0; border-radius:0; background:var(--color-bg); }
-.booking-plan-tools .btn + .btn { border-top:0; }
-.booking-plan-tools .btn:first-child { border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
-.booking-plan-tools .btn:last-child { border-radius:0 0 var(--radius-sm) var(--radius-sm); }
-.booking-plan-legend { display:flex; flex-wrap:wrap; gap:.5rem 1.25rem;
-  margin:1rem 0 0; padding:0; list-style:none; font-size:var(--text-sm); }
-.booking-plan-legend li { display:flex; align-items:center; gap:.5rem; }
-.booking-plan-legend__swatch { width:1rem; height:1rem; flex:none;
-  border:1px solid var(--color-secondary-400); }
-.booking-plan-legend__swatch--available { background:var(--color-success-bg); }
-.booking-plan-legend__swatch--unavailable { background:var(--color-secondary-200); }
-.booking-plan-legend__swatch--unsuitable { background:var(--color-secondary-50); border-style:dashed; }
-.booking-plan-legend__swatch--selected { background:var(--color-primary-100);
-  border:3px solid var(--color-primary-700); }
-.booking-floorplan .fp__room--booking-available rect { fill:var(--color-success-bg); }
-.booking-floorplan .fp__room--booking-unavailable rect { fill:var(--color-secondary-200); }
-.booking-floorplan .fp__room--booking-unsuitable rect { fill:var(--color-secondary-50); stroke-dasharray:18 10; }
-.booking-floorplan .fp__room.is-selected rect { fill:var(--color-primary-100); }
-.booking-floorplan .fp__room:not([data-space]) rect { cursor:default; }
-.booking-floorplan .fp__room:not([data-space]):hover rect { stroke:var(--color-secondary-400); stroke-width:4; }
-.booking-floorplan .fp__room--infra:not([data-space]):hover rect { fill:var(--color-secondary-50); }
+.booking-plan__stage { min-height:24rem; padding:0; }
+.booking-plan__stage .fp { min-width:0; }
+.booking-plan__legend { display:flex; flex-wrap:wrap; gap:.5rem 1.25rem;
+  margin:1rem 0 .5rem; padding:0; list-style:none; font-size:var(--text-sm); }
+.booking-plan__legend li { display:flex; align-items:center; gap:.5rem; }
+.booking-plan__swatch { width:1rem; height:1rem; flex:none; border:1px solid var(--color-secondary-400); }
+.booking-plan__swatch--available { background:var(--color-success-bg); }
+.booking-plan__swatch--unavailable { background:var(--color-secondary-200); }
+.booking-plan__swatch--unsuitable { background:var(--color-secondary-50); border-style:dashed; }
+.booking-plan .fp__room--booking-available rect { fill:var(--color-success-bg); }
+.booking-plan .fp__room--booking-unavailable rect { fill:var(--color-secondary-200); }
+.booking-plan .fp__room--booking-unsuitable rect { fill:var(--color-secondary-50); stroke-dasharray:18 10; }
+.booking-plan .fp__room:not([data-space]) rect { cursor:default; }
+.booking-plan .fp__room:not([data-space]):hover rect { stroke:var(--color-secondary-400); stroke-width:4; }
+.booking-plan .fp__room--infra:not([data-space]):hover rect { fill:var(--color-secondary-50); }
+.booking-map { height:min(60vh,32rem); }
 
 /* Personal bookings are dense records, not cards. */
 .booking-entry-list { border-top:1px solid var(--color-secondary-300); }
@@ -4210,33 +4202,47 @@ table.table .table__empty { text-align:center; padding-top:2rem; padding-bottom:
 .booking-entry__body p { margin-top:.25rem; }
 .booking-entry__status { padding-top:.125rem; }
 .booking-entry__actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.5rem; }
+
+/* Remembered locations: a list to maintain, not a control of the running search. */
+.booking-favs { padding:1.25rem; background:var(--color-secondary-50);
+  border-block:1px solid var(--color-secondary-200); }
+.booking-favs > h3 { margin-top:0; }
+.booking-favs__list { margin:0 0 1rem; padding:0; list-style:none;
+  border-top:1px solid var(--color-secondary-200); }
+.booking-favs__list li { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+  gap:.5rem 1rem; padding:.625rem 0; border-bottom:1px solid var(--color-secondary-200); }
+.booking-favs__list a { display:flex; align-items:center; gap:.5rem; min-width:0; overflow-wrap:anywhere; }
+.booking-favs__list .icon { flex:none; color:var(--color-primary-600); }
+.booking-favs .btn { margin:0; }
+
 .booking-done__summary { margin-top:1.5rem; padding:1.25rem;
   background:var(--color-secondary-50); border-block:1px solid var(--color-secondary-200); }
+.booking-done__summary .kv { margin:0; }
 .booking-done__summary p:last-child { margin:1rem 0 0; }
 
+@media (max-width:1023.98px){
+  .booking-room { grid-template-columns:auto minmax(0,1fr); }
+  .booking-room__actions { grid-column:1 / -1; justify-content:flex-start; }
+}
 @media (max-width:767.98px){
-  .booking-room-row { grid-template-columns:auto 4.5rem minmax(0,1fr); gap:.75rem; padding-inline:.25rem; }
-  .booking-room-image--thumb { width:4.5rem; height:3.5rem; }
-  .booking-plan-stage { min-height:18rem; }
   .booking-entry { grid-template-columns:minmax(0,1fr) auto; }
   .booking-entry__body, .booking-entry__actions { grid-column:1 / -1; }
   .booking-entry__actions { justify-content:flex-start; }
+  .booking-plan__stage { min-height:18rem; }
 }
 @media (max-width:479.98px){
   .booking-tabs .tab__control { padding-inline:.25rem; }
   .booking-tabs .tab__control:first-child { padding-left:0; }
   .booking-tabs .tab__control::after { right:.25rem; left:.25rem; }
   .booking-tabs .tab__control:first-child::after { left:0; }
-  .booking-schedule { padding:1rem; }
-  .booking-side__section { padding:1rem; }
-  .booking-location-summary { align-items:flex-start; flex-direction:column; }
-  .booking-room-row { grid-template-columns:auto minmax(0,1fr); }
-  .booking-room-image--thumb { display:none; }
+  .booking-bar, .booking-favs { padding:1rem; }
+  .booking-room { grid-template-columns:minmax(0,1fr); padding:1rem; }
+  .booking-room__code { display:none; }
+  .booking-room__actions .btn { flex:1 1 auto; justify-content:center; }
   .booking-feature-list { grid-template-columns:minmax(0,1fr); }
   .booking-invite__control { grid-template-columns:minmax(0,1fr); }
   .booking-invite__control .btn { width:100%; justify-content:center; }
-  .booking-step-actions { align-items:stretch; flex-direction:column; }
-  .booking-step-actions .btn { width:100%; justify-content:center; }
+  .booking-dialog__head { flex-direction:column; }
   .booking-entry { grid-template-columns:minmax(0,1fr); }
   .booking-entry__status, .booking-entry__body, .booking-entry__actions { grid-column:1; }
   .booking-entry__actions .btn { flex:1 1 auto; justify-content:center; }

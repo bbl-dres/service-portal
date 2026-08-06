@@ -14,12 +14,13 @@ const LOGIN = `(async () => {
 const CHECK = `(async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   let tries = 0;
-  while (!document.querySelector('#booking-location-search, .login-gate__btn') && tries++ < 120) await wait(100);
+  while (!document.querySelector('#booking-search, .login-gate__btn') && tries++ < 120) await wait(100);
   return {
     h1: document.querySelector('h1')?.textContent.trim() || '',
-    hasForm: !!document.querySelector('#booking-location-search'),
+    hasForm: !!document.querySelector('#booking-search'),
     hasGate: !!document.querySelector('.login-gate__btn'),
-    steps: document.querySelectorAll('.step__indicator-step').length,
+    rooms: document.querySelectorAll('.booking-room').length,
+    bookable: document.querySelectorAll('[data-book]').length,
   };
 })()`;
 
@@ -38,8 +39,8 @@ try {
   await sleep(1200);
   const result = await page.evaluate(CHECK);
   check(result.h1 === 'Raumbuchung', `route renders (h1: "${result.h1}")`);
-  check(result.hasForm && !result.hasGate, 'first booking step is present and login gate is gone');
-  check(result.steps === 3, 'three booking steps are announced');
+  check(result.hasForm && !result.hasGate, 'the search bar is present and the login gate is gone');
+  check(result.rooms > 0 && result.bookable === result.rooms, `results are bookable straight away (${result.rooms} rooms)`);
   const problems = await page.problems();
   check(problems.length === 0, `no exceptions / console errors / error banner${problems[0] ? ': ' + problems[0] : ''}`);
   await page.closeTarget();

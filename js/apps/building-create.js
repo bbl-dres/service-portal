@@ -22,6 +22,10 @@ import * as links from '../links.js';
 import { DIENSTLEISTUNGEN, trail } from '../crumbs.js';
 import { createListboxController } from '../combobox.js';
 
+// Wortlaut der Anmeldesperre, die der Router vor diese Anwendung zieht
+// (js/router.js).
+export const loginText = 'Das Erfassen eines Gebäudes wird als Vorgang unter «Meine Vorgänge» geführt. Bitte melden Sie sich mit AGOV / FedLogin an.';
+
 const SEARCH_URL = 'https://api3.geo.admin.ch/rest/services/api/SearchServer';
 const STEP_LABELS = ['Standort', 'Stammdaten', 'Prüfen & Absenden'];
 
@@ -61,23 +65,6 @@ export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs, navigate } = ctx;
   setTitle('Gebäude erfassen');
   setCrumbs(trail(DIENSTLEISTUNGEN, { label: 'Gebäude erfassen' }));
-
-  // Persönlicher Vorgang — abgemeldet zum Login auffordern, statt unten
-  // session.user() zu dereferenzieren (Direktaufruf-Schutz, wie space-request).
-  if (!session.isLoggedIn()) {
-    // Ausgeloggt derselbe Kopf wie eingeloggt (schmale Spalte, Rückweg zur
-    // Dienstleistungsbeschreibung) — nur statt des Formulars steht der Gate.
-    mount.innerHTML = `
-    <div class="container section container--grid">
-      <div class="container__center--xs">
-        ${C.backLink(links.dienstleistung('gebaeude-erfassen'), 'Dienstleistungsbeschreibung')}
-        <h1 tabindex="-1">Gebäude erfassen</h1>
-        <p class="lead">Ein neues Gebäude im Immobilien-Stammdatenbestand erfassen.</p>
-        ${C.loginGate('Das Erfassen eines Gebäudes wird als Vorgang unter «Meine Vorgänge» geführt. Bitte melden Sie sich mit AGOV / FedLogin an.')}
-      </div>
-    </div>`;
-    return;
-  }
 
   // Kontrollierte Vokabulare aus den Referenzdaten statt einer Liste im Formular:
   // `teilportfolios` (SAP-Feld bbl_port) und `gebaeudearten` (bbl_gbda1) tragen

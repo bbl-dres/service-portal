@@ -271,12 +271,29 @@ p = await openPage(browser, APP_BASE + '/applications/metadaten-katalog');
 await sleep(1200);
 o = JSON.parse(await p.evaluate(`JSON.stringify({
   h1: document.querySelector('h1')?.textContent.trim(),
-  einstieg: document.querySelector('.container__aside a[href*="metadata-catalog"]')?.getAttribute('href'),
-  bereich: [...document.querySelectorAll('.container__aside dd')].map(x => x.textContent.trim()),
+  // Abgemeldet trägt die Zugriff-Karte KEINEN Link, sondern den Anmeldeknopf
+  // mit dem Ziel im Datenattribut (C.accessCard) — die Fachanwendungen liegen
+  // hinter der Anmeldesperre. Beide Formen zählen als «verlinkt».
+  einstieg: document.querySelector('.container__aside a[href*="metadata-catalog"]')?.getAttribute('href')
+    || document.querySelector('.container__aside [data-login-next*="metadata-catalog"]')?.getAttribute('data-login-next'),
+  // «Bereich» stand in der Eckdaten-Karte; die ist entfallen (Nutzerentscheid
+  // 2026-08-06). Der Bereich ist jetzt eine Sache des Katalogs — geprüft wird
+  // deshalb dort, dass der Filter die Anwendung noch findet.
+  karten: [...document.querySelectorAll('.container__aside .box h3')].map(x => x.textContent.trim()),
 })`));
 check(o.h1 === 'Metadaten Katalog Bauten (Portal)', 'Landingpage der Anwendung', o.h1);
 check(o.einstieg === '#/app/metadata-catalog', 'Einstiegspunkt verlinkt die App', o.einstieg);
-check(o.bereich.includes('Immobilien & Bau'), 'Bereich «Immobilien & Bau»', o.bereich.join(' | '));
+check(o.karten.join('|') === 'Zugriff|Kontakt', 'Randspalte trägt nur noch Zugriff und Kontakt', o.karten.join(' | '));
+
+const imKatalog = JSON.parse(await p.evaluate(`(async () => {
+  location.hash = '#/applications?area=buildings';
+  await new Promise(r => setTimeout(r, 900));
+  return JSON.stringify({ treffer: !!document.querySelector('a[href*="metadaten-katalog"]') });
+})()`));
+check(imKatalog.treffer, 'Bereichsfilter «buildings» findet die Anwendung weiterhin');
+// Zurück auf die Landingpage — clean() prüft gleich sie, nicht den Katalog.
+await p.evaluate(`location.hash = '#/applications/metadaten-katalog'; true`);
+await sleep(900);
 await clean(p, 'Landingpage');
 
 o = JSON.parse(await p.evaluate(`(async () => {

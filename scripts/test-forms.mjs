@@ -43,8 +43,8 @@ const probeErrors = (clearIds, checkIds) => `(async () => {
 // count rendered fields (form groups) as a render sanity check
 const PROBE_RENDER = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
-  let n = 0; while (!document.querySelector('#wiz, #report-form, #booking-search-form') && n++ < 120) await s(100);
-  const form = document.querySelector('#wiz, #report-form, #booking-search-form');
+  let n = 0; while (!document.querySelector('#wiz, #report-form, #booking-search') && n++ < 120) await s(100);
+  const form = document.querySelector('#wiz, #report-form, #booking-search');
   return {
     ok: !!form,
     groups: form ? form.querySelectorAll('.form__group__input, .form__group__select').length : 0,
@@ -114,18 +114,16 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
     await p.closeTarget();
 
     // --- Room Booking: render + C5 on #booking-date ---
+    // Kein Assistent mehr: die Suchleiste steht direkt nach dem Anmelden.
     console.log('\n■ Room Booking');
     p = await openPage(cdp, `${APP_BASE}/app/room-booking`);
     await p.evaluate(`(async () => {
       const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
       let tries = 0;
-      while (!document.querySelector('#booking-location-next') && tries++ < 120) await wait(100);
-      document.querySelector('#booking-location-next')?.click();
-      tries = 0;
-      while (!document.querySelector('#booking-search-form') && tries++ < 80) await wait(50);
+      while (!document.querySelector('#booking-search') && tries++ < 120) await wait(100);
     })()`);
     const ws = await p.evaluate(PROBE_RENDER);
-    check(ws.ok && ws.pageSelects >= 1, `renders the schedule and room step (${ws.pageSelects} select)`);
+    check(ws.ok && ws.pageSelects >= 1, `renders the search bar (${ws.pageSelects} select)`);
     const wsE = await p.evaluate(probeErrors(['booking-date'], ['booking-date']));
     check(errOk(wsE.fields?.['booking-date']), 'C5: cleared #booking-date -> input--error + aria-invalid + badge');
     check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);

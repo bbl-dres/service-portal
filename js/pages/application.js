@@ -9,15 +9,14 @@
 // externes System), Berechtigung und Ansprechstelle — das gehört auf eine
 // Seite, bevor jemand auf «Öffnen» klickt.
 
-import { appAreaLabel, audienceTags } from '../domain.js';
-import { datum } from '../format.js';
+import { audienceTags } from '../domain.js';
 
 // Die Landingpage-Felder (long, entries, access, resources, contact, updated)
 // stehen seit 2026-07 am Anwendungsdatensatz selbst — es gab keinen Grund für
 // eine zweite Datei mit demselben Schlüssel. `page` bleibt als lokaler Alias
 // stehen, damit unten nicht jede Fundstelle umgeschrieben werden muss.
 export default function render(ctx, appId) {
-  const { mount, core, C, setTitle, setCrumbs } = ctx;
+  const { mount, core, session, C, setTitle, setCrumbs } = ctx;
   const a = core.application(C.safeDecode(appId));
 
   if (!a) {
@@ -53,10 +52,6 @@ export default function render(ctx, appId) {
   });
 
   const contact = page.contact ? core.contacts().find(c => c.contactId === page.contact) : null;
-
-  // Ohne echtes Ziel führt der Katalogeintrag ins Leere — das sagen wir hier,
-  // statt einen toten «Öffnen»-Button anzubieten.
-  const noTarget = !primary;
 
   const section = (title, body) => C.detailSection({ title, body });
 
@@ -95,41 +90,29 @@ export default function render(ctx, appId) {
             Haupt-h2 (Design-Review, pages). */}
       <aside class="container__aside" aria-labelledby="app-aside-head">
         <h2 class="sr-only" id="app-aside-head">Zugriff und Kontakt</h2>
-        <div class="box">
-          <h3>Zugriff</h3>
-          ${primary ? `<p class="mt-0 mb-4">
-            <a class="btn btn--outline btn--icon-right" href="${C.escape(primary.href)}"${
-              primary.kind === 'external' ? ' target="_blank" rel="noopener external"' : ''}>${
-              /* CD: das Icon steht im DOM zuerst, btn--icon-right dreht die Reihenfolge */
-              C.icon(primary.kind === 'external' ? 'External' : 'ArrowRight', 'btn__icon')
-              }<span class="btn__text">${C.escape(primary.label)}</span>
-            </a></p>` : ''}
-          ${page.access && page.access.note
-            ? `<p class="small m-0">${C.escape(page.access.note)}</p>` : ''}
-          ${page.access && page.access.steps && page.access.steps.length
-            ? `<ul class="list--default small muted mt-2">${
-                page.access.steps.map(s => `<li>${C.escape(s)}</li>`).join('')}</ul>` : ''}
-          ${noTarget ? `<p class="small muted m-0">Im Prototyp ist kein Zielsystem angebunden.</p>` : ''}
-        </div>
+        ${C.accessCard({
+          href: primary ? primary.href : '',
+          label: primary ? primary.label : `${a.name} öffnen`,
+          external: primary ? primary.kind === 'external' : false,
+          // Portalinterne Fachanwendungen (#/app/…) verlangen eine Anmeldung —
+          // dieselbe Sperre, die der Router vor der Anwendung selbst zieht
+          // (js/router.js). Externe Systeme bringen ihre eigene mit.
+          requiresLogin: !!primary && primary.kind !== 'external' && String(primary.href).startsWith('#/app/'),
+          loginLabel: 'Anmelden und öffnen',
+          loggedIn: session.isLoggedIn(), user: session.user(),
+          note: page.access && page.access.note ? page.access.note : '',
+          steps: (page.access && page.access.steps) || [],
+        })}
 
         ${C.contactBox(contact)}
-
-        <div class="box">
-          <h3>Eckdaten</h3>
-          <dl class="kv m-0">
-            <dt>Gruppe</dt><dd>${C.escape(a.group)}</dd>
-            ${a.area ? `<dt>Bereich</dt><dd>${C.escape(appAreaLabel(a.area))}</dd>` : ''}
-            ${''/* Die frühere «Zugang»-Zeile (accessNote: «Intern»/«Extern») ist
-                  entfallen — Zielgruppen heissen kanonisch «Mitarbeiter»/«Kunden»
-                  und stehen als Badges im Kopf; den ORT trägt «Einstieg»
-                  (Nutzerentscheid 2026-08-04). */}
-            <dt>Einstieg</dt><dd>${external ? 'Externes System' : 'Im Kundenportal'}</dd>
-            ${''/* «Stand» wie alle Datenstands-Zeilen (A13); applications.json
-                  liefert das Datum neu als ISO, datum() formatiert de-CH. */}
-            ${page.updated ? `<dt>Stand</dt><dd>${C.escape(datum(page.updated))}</dd>` : ''}
-            <dt>ID</dt><dd><code>${C.escape(a.appId)}</code></dd>
-          </dl>
-        </div>
+        ${/* «Eckdaten» ist entfallen (Nutzerentscheid 2026-08-06). Die Karte trug
+              sechs Zeilen, von denen «Einstieg» den Knopf darüber wiederholte und
+              «Stand» und «ID» auf einer Landingpage niemand sucht.
+              MIT ENTFALLEN sind «Gruppe» und «Bereich»: sie stehen jetzt auf
+              dieser Seite nirgends mehr. Erschlossen wird die Anwendung über den
+              Katalog (#/applications?area=…), der beide als Filter führt — die
+              Landingpage beantwortet «was ist das und wie komme ich rein?»,
+              nicht «wie ist das abgelegt?». */''}
       </aside>
     </div>
   </div>`;

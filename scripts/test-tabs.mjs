@@ -99,7 +99,9 @@ const check = (cond, label) => {
 
     for (const g of GATES) {
       console.log(`\n■ ${g.name}`);
-      const page = await openPage(cdp, g.url);
+      // Ausdrücklich ABGEMELDET: `openPage` startet App-Routen sonst mit einer
+      // Sitzung (die Sperre soll hier ja gerade geprüft werden).
+      const page = await openPage(cdp, g.url, { login: false });
       const r = await page.evaluate(PROBE_GATE);
       check(r.hasGate === true, `shows login gate (h1: "${r.h1}")`);
       check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);

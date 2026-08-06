@@ -1522,7 +1522,7 @@ export function catalogueBar({
   formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', countId = 'cat-count', count = '',
   sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
   panelId = '', panel = '', panelHidden = true,
-  view = 'gallery', views, showSearch = true,
+  view = 'gallery', views, showSearch = true, extra = '',
 }) {
   // Ein einmal geöffnetes Panel bleibt offen, bis der Nutzer es selbst zuklappt.
   if (panelId && PANEL_OPEN.has(panelId)) panelHidden = false;
@@ -1564,7 +1564,13 @@ export function catalogueBar({
   return `
     <div class="catbar${showSearch ? '' : ' catbar--no-search'}">${searchHtml}
       <div class="catbar__count" id="${escape(countId)}">${count}</div>
-      <div class="catbar__controls">${sortHtml}${filterHtml}${views ? viewSwitch(view, views) : ''}</div>
+      ${/* `extra`: RAW-HTML am Ende der Steuergruppe, für eine leistenweite
+            Nebenaktion, die weder Sortierung noch Filter noch Ansichtswechsel
+            ist — die Raumbuchung hängt hier «Grundriss ansehen» ein. Ohne den
+            Platz stünde sie in einer zweiten, sonst leeren rechtsbündigen
+            Zeile darüber. Standard leer: die vier Katalogleisten sehen davon
+            nichts. Der Aufrufer escaped selbst und verdrahtet selbst. */''}
+      <div class="catbar__controls">${sortHtml}${filterHtml}${views ? viewSwitch(view, views) : ''}${extra}</div>
     </div>${filterId ? `
     <div class="catbar__panel" id="${escape(panelId)}"${panelHidden ? ' hidden' : ''}>${panel}</div>` : ''}`;
 }
@@ -2030,9 +2036,16 @@ export function contextLine({ action, name = '', org, process = '' }) {
 
 // --- Login-Hinweis (AGOV / FedLogin) -----------------------------------------
 // Kein Inhalt wird versteckt; abgemeldet erscheint nur dieser Hinweis dort, wo
-// ein Vorgang ausgelöst würde. Der Button ruft window.__login() (in app.js
-// verdrahtet), das die Session setzt und die Seite neu zeichnet.
-export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.') {
+// ein Vorgang ausgelöst würde.
+//
+// `next` ist die Route, die die Anmeldung MITERLEDIGT. Ohne sie endete der
+// Weg auf halber Strecke: der Knopf stand da, wo sonst «Vorgang starten»
+// steht, meldete an, zeichnete die Seite neu — und der Nutzer musste den
+// eigentlichen Knopf ein zweites Mal drücken, an derselben Stelle, an der er
+// gerade geklickt hatte (Nutzerbefund 2026-08-06). Steht der Hinweis dagegen
+// SCHON auf der Zielseite (Formular-Apps, «Meine Vorgänge»), bleibt `next`
+// leer: dort ist das Neuzeichnen bereits das Ziel.
+export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.', opts = {}) {
   // Abstand vor dem Knopf über `.login-gate .btn { margin-top:1rem }` (app.css)
   // statt eines Inline-Stils — CDs Banner-Rampe (notification.postcss:89-92)
   // gilt hier nicht, weil der Knopf IM __content sitzt, nicht daneben.
@@ -2040,11 +2053,81 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
     ${icon('Lock', 'notification__icon')}
     <div class="notification__content">
       <p class="m-0">${text}</p>
-      <button type="button" class="btn btn--outline btn--icon-left login-gate__btn" onclick="window.__login && window.__login()">
-        ${icon('User', 'btn__icon')}<span class="btn__text">Anmelden mit AGOV / FedLogin</span>
-      </button>
+      ${loginButton({ ...opts, cls: 'btn btn--outline btn--icon-left login-gate__btn' })}
     </div>
   </div>`;
+}
+
+// Der EINE Anmeldeknopf (Hinweisband, Zugriff-Karte, Kopfzeile). Delegiert über
+// `data-login` statt inline onclick — Hausregel wie bei menu() und den
+// Notifications; `next` als Datenattribut ist ausserdem sicher escaped, während
+// eine URL in einem onclick-String an jedem Apostroph zerbricht.
+export function loginButton({ next = '', label = '', cls = 'btn btn--outline btn--icon-left', size = '' } = {}) {
+  return `<button type="button" class="${cls}${size ? ' ' + size : ''}" data-login${
+    next ? ` data-login-next="${escape(next)}"` : ''}>${icon('User', 'btn__icon')}<span class="btn__text">${
+    escape(label || 'Anmelden mit AGOV / FedLogin')}</span></button>`;
+}
+
+// --- Zugriff-Karte -----------------------------------------------------------
+// EINE Karte für die Frage «wie komme ich hier rein?» — auf der Dienstleistungs-
+// und auf der Anwendungs-Landingpage. Vorher waren es zwei Bauarten: die
+// Anwendung stellte den Knopf nach oben und den Text darunter, die
+// Dienstleistung umgekehrt und in halber Grösse. Der Knopf gehört nach oben
+// (Nutzerentscheid 2026-08-06) — er ist die Antwort, der Text die Fussnote.
+//
+// Der Knopf hat GENAU vier Zustände, und die Karte leitet sie aus dem Ziel und
+// der Sitzung ab, statt sie den Aufrufer zusammenbauen zu lassen:
+//   kein Ziel            → ausgegraut  («im Prototyp nicht angebunden»)
+//   externes System      → Link mit External-Symbol, neuer Tab, ohne Anmeldung
+//   intern, abgemeldet   → Anmeldeknopf MIT Ziel (meldet an UND öffnet)
+//   intern, angemeldet   → Link
+export function accessCard({
+  title = 'Zugriff', href = '', label = 'Öffnen', loginLabel = '',
+  external = false, requiresLogin = false, loggedIn = false, user = null,
+  note = '', steps = [], free = '',
+  missing = 'Im Prototyp ist kein Zielsystem angebunden.',
+} = {}) {
+  // `#` ist im Bestand der Platzhalter für «kennen wir, haben wir nicht».
+  const has = !!href && href !== '#';
+  const arrow = external ? 'External' : 'ArrowRight';
+  const linkAttrs = external ? ' target="_blank" rel="noopener external"' : '';
+  let action, context;
+
+  if (!has) {
+    // <span aria-disabled>, nicht <button disabled>: das Ziel ist ein Link, und
+    // ein deaktivierter Link ist im HTML kein Bedienelement (app.css:1375).
+    action = `<span class="btn btn--outline btn--icon-right" aria-disabled="true">${
+      icon(arrow, 'btn__icon')}<span class="btn__text">${escape(label)}</span></span>`;
+    context = `<p class="small muted m-0">${escape(missing)}</p>`;
+  } else if (requiresLogin && !loggedIn) {
+    action = loginButton({ next: href, label: loginLabel || `Anmelden und ${label}` });
+    context = `<p class="small m-0">${icon('Lock', 'icon--base')} Für den Zugriff ist eine Anmeldung mit AGOV / FedLogin erforderlich.</p>`;
+  } else {
+    action = `<a class="btn btn--outline btn--icon-right" href="${escape(href)}"${linkAttrs}>${
+      icon(arrow, 'btn__icon')}<span class="btn__text">${escape(label)}</span></a>`;
+    context = requiresLogin && loggedIn && user
+      ? `<p class="small muted m-0">Angemeldet als <strong>${escape(user.name)}</strong> · ${escape(user.org)}.</p>`
+      : (free ? `<p class="small muted m-0">${escape(free)}</p>` : '');
+  }
+
+  return `<div class="box access-card">
+    <h3>${escape(title)}</h3>
+    <p class="access-card__action">${action}</p>
+    ${context}
+    ${note ? `<p class="small m-0">${escape(note)}</p>` : ''}
+    ${steps.length ? `<ul class="list--default small muted mt-2">${
+      steps.map((s) => `<li>${escape(s)}</li>`).join('')}</ul>` : ''}
+  </div>`;
+}
+
+// Einmalige, delegierte Verdrahtung aller Anmeldeknöpfe (app.js). Delegiert am
+// Dokument, damit sie jeden Seitenwechsel überlebt — wie wireShare.
+export function wireLogin(root = document) {
+  root.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('[data-login]');
+    if (!btn || !window.__login) return;
+    window.__login(btn.dataset.loginNext || '');
+  });
 }
 
 export const C = {
@@ -2056,7 +2139,7 @@ export const C = {
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,
   actionCard, contactCard,
-  pagination, wirePagination, loginGate,
+  pagination, wirePagination, loginGate, loginButton, wireLogin, accessCard,
   preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, stepIndicator, processDone,
   mountDataTable, wireTableRows, cardAction, pageSection, heroFigure,
 };

@@ -11,6 +11,11 @@ import { DIENSTLEISTUNGEN, trail } from '../crumbs.js';
 // render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['buildings', 'contacts'];
+
+// Wortlaut der Anmeldesperre, die der Router vor diese Anwendung zieht
+// (js/router.js). Der Satz gehört zur Anwendung — «Diese Meldung wird als
+// persönlicher Vorgang erfasst» sagt mehr als ein Einheitssatz.
+export const loginText = "Diese Meldung wird als persönlicher Vorgang unter «Meine Vorgänge» erfasst. Bitte melden Sie sich mit AGOV / FedLogin an, um sie abzusenden.";
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs } = ctx;
 
@@ -68,21 +73,6 @@ export default async function render(ctx) {
 
   setTitle(cfg.title);
   setCrumbs(trail(DIENSTLEISTUNGEN, { label: cfg.title }));
-
-  // Meldung = persönlicher Vorgang — abgemeldet zum Login auffordern statt in der
-  // Formularansicht session.user() zu dereferenzieren (Direktaufruf-Schutz).
-  if (!session.isLoggedIn()) {
-    mount.innerHTML = `
-    <div class="container section container--grid">
-      <div class="container__center--xs">
-        ${C.backLink(links.dienstleistung(cfg.serviceId), 'Dienstleistungsbeschreibung')}
-        <h1 tabindex="-1">${C.escape(cfg.title)}</h1>
-        <p class="lead">${C.escape(cfg.lead)}</p>
-        ${C.loginGate('Diese Meldung wird als persönlicher Vorgang unter «Meine Vorgänge» erfasst. Bitte melden Sie sich mit AGOV / FedLogin an, um sie abzusenden.')}
-      </div>
-    </div>`;
-    return;
-  }
 
   const buildings = core.buildings();
   const isbo = core.contacts().find(c => c.contactId === 'isbo');

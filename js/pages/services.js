@@ -165,33 +165,35 @@ function detail(ctx, id) {
   // erscheint statt des Knopfs der Login-Hinweis (AGOV / FedLogin).
   const needsLogin = s.type === 'action' && !session.isLoggedIn();
 
+  // Ziel, das die Anmeldung gleich MITERLEDIGT: ein portalinterner Vorgang.
+  // Externe Zielsysteme bleiben aussen vor — ein neuer Tab nach der (asynchronen)
+  // Anmeldung fiele dem Popup-Blocker zum Opfer, und ein fremdes System hat
+  // ohnehin seine eigene Anmeldung.
+  const loginNext = hasTarget && !ext ? tgt.href : '';
+
   // «Zugriff»-Karte, erste Karte der Randspalte (Nutzerentscheid 2026-08-04):
-  // derselbe Ort wie auf der Anwendungs-Landingpage. Abgemeldet trägt sie die
-  // Aussage des login-gate-Bands in kompakter Form (kleiner Text, sm-Knopf,
-  // derselbe window.__login-Weg); ANGEMELDET den Sitzungskontext UND den
-  // Primär-CTA — ohne ihn führte nach dem Login kein Weg aus der Randspalte
-  // in den Vorgang (Nutzerbefund 2026-08-04). Gleicher Knopf wie im Inhalt
-  // (ctaBlock), nur in Kartengrösse (sm statt lg); Informationsangebote sind
-  // ausdrücklich frei zugänglich.
-  const cardCta = hasTarget
-    ? `<a class="btn btn--outline btn--sm btn--icon-right mt-3" href="${C.escape(tgt.href)}"${
-        ext ? ' target="_blank" rel="noopener external"' : ''}>${
-        C.icon(ext ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></a>`
-    : `<p class="small muted mt-3 m-0">Im Prototyp ist kein Zielsystem angebunden.</p>`;
-  const zugriffCard = `<div class="box">
-      <h3>Zugriff</h3>
-      ${s.type !== 'action'
-        ? '<p class="small muted m-0">Frei zugänglich — keine Anmeldung erforderlich.</p>'
-        : session.isLoggedIn()
-          ? `<p class="small muted m-0">Angemeldet als <strong>${C.escape(session.user().name)}</strong> · ${C.escape(session.user().org)}.</p>
-             ${cardCta}`
-          : `<p class="small m-0">${C.icon('Lock', 'icon--base')} Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.</p>
-             <button type="button" class="btn btn--outline btn--sm btn--icon-left mt-3" onclick="window.__login && window.__login()">
-               ${C.icon('User', 'btn__icon')}<span class="btn__text">Anmelden mit AGOV / FedLogin</span></button>`}
-    </div>`;
+  // derselbe Ort — und seit 2026-08-06 auch derselbe BAUSTEIN wie auf der
+  // Anwendungs-Landingpage (C.accessCard). Vorher stellte die Anwendung den
+  // Knopf nach oben und den Text darunter, die Dienstleistung umgekehrt und in
+  // halber Grösse; die Karte beantwortet aber auf beiden Seiten dieselbe Frage.
+  // Die vier Knopfzustände (kein Ziel · extern · abgemeldet · angemeldet)
+  // leitet der Baustein selbst ab.
+  const zugriffCard = C.accessCard({
+    href: hasTarget ? tgt.href : '', label: ctaLabel, external: ext,
+    // Nur das Auslösen eines Vorgangs (type=action) verlangt eine Anmeldung;
+    // Informationsangebote sind frei. Externe Zielsysteme bringen ihre eigene mit
+    // — ein neuer Tab nach der (asynchronen) Anmeldung fiele ohnehin dem
+    // Popup-Blocker zum Opfer.
+    requiresLogin: s.type === 'action' && !ext,
+    loggedIn: session.isLoggedIn(), user: session.user(),
+    free: s.type !== 'action' ? 'Frei zugänglich — keine Anmeldung erforderlich.' : '',
+  });
 
   const ctaBlock = needsLogin
-    ? C.loginGate(`Zum Starten des Vorgangs «${C.escape(s.title)}» ist eine Anmeldung mit AGOV / FedLogin erforderlich. Alle Informationen auf dieser Seite sind frei einsehbar.`)
+    ? C.loginGate(`Zum Starten des Vorgangs «${C.escape(s.title)}» ist eine Anmeldung mit AGOV / FedLogin erforderlich. Alle Informationen auf dieser Seite sind frei einsehbar.`,
+      // Der Knopf steht genau dort, wo sonst «Vorgang starten» steht — also tut
+      // er beides. Ohne Ziel (externes System) bleibt es beim reinen Anmelden.
+      { next: loginNext, label: loginNext ? `Anmelden und ${ctaLabel}` : '' })
     : `<div class="row mt-4">
         ${/* CD Btn.vue: das Icon steht im DOM zuerst, btn--icon-right dreht die
               Reihenfolge; das Label trägt IMMER den .btn__text-Wickel. */''}
@@ -242,18 +244,14 @@ function detail(ctx, id) {
       ${/* KEIN .stack-lg hier: den CD-Abstand der Aside-Module (1.75/2rem)
             liefert bereits .container__aside > * — ein zweites Rhythmus-Utility
             überschriebe ihn mit 3rem (Review layout/aside-1). */''}
+      ${/* «Gesetzliche Grundlagen» ist entfallen (Nutzerentscheid 2026-08-06):
+            die Karte trug je Dienstleistung denselben Satz und denselben Link
+            auf «Wissen und Hilfsmittel» — eine Karte ohne dienstleistungs-
+            eigene Aussage. Der Weg dorthin steht in der Hauptnavigation. */''}
       <aside class="container__aside" aria-labelledby="svc-aside-head">
-        <h2 class="sr-only" id="svc-aside-head">Zugriff, Kontakt und Grundlagen</h2>
+        <h2 class="sr-only" id="svc-aside-head">Zugriff und Kontakt</h2>
         ${zugriffCard}
         ${C.contactBox(contact)}
-        ${/* Die je Dienstleistung geltenden Weisungen wurden aus data/weisungen.json
-              gelesen; der Bestand ist zurückgezogen (docs/sitemap.md §2.4). Statt
-              einer erfundenen Liste steht hier der Verweis auf die Sammlung. */''}
-        <div class="box">
-          <h3>Gesetzliche Grundlagen</h3>
-          <p class="small muted">Die für diese Dienstleistung massgebenden Erlasse, Vorgaben und Weisungen finden Sie in der Sammlung.</p>
-          <a class="py-1-5 small" href="#/knowledge">Wissen und Hilfsmittel</a>
-        </div>
       </aside>
     </div>
   </div>`;
