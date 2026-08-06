@@ -102,6 +102,62 @@ const SUBMIT = `document.querySelector('#bc-form').dispatchEvent(new Event('subm
       { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, p.sessionId);
     await sleep(250);
 
+    console.log('■ Adresszustand und überholte Suchantworten');
+    r = await p.evaluate(`(async () => {
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+      window.__bcRealFetch = window.fetch;
+      window.fetch = (input, init) => {
+        const raw = input instanceof Request ? input.url : String(input);
+        if (!raw.includes('/rest/services/api/SearchServer')) return window.__bcRealFetch(input, init);
+        const text = new URL(raw).searchParams.get('searchText') || '';
+        const old = text.startsWith('Altstrasse');
+        const label = old ? 'Altstrasse 1 3003 Bern' : 'Neustrasse 2 3003 Bern';
+        return new Promise(resolve => setTimeout(() => resolve({
+          ok: true,
+          json: async () => ({ results: [{ attrs: {
+            label, lat: old ? 46.94 : 46.95, lon: old ? 7.43 : 7.44,
+          } }] }),
+        }), old ? 700 : 30));
+      };
+      const input = document.querySelector('#bc-address');
+      input.value = 'Altstrasse 1 Bern';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await wait(350); // erster Fetch läuft bereits
+      input.value = 'Neustrasse 2 Bern';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await wait(900); // die langsamere alte Antwort kommt zuletzt an
+      const first = document.querySelector('#bc-listbox [role="option"]')?.textContent.trim() || '';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await wait(80);
+      const selected = document.querySelector('#bc-address').value;
+      input.value = selected + ' geändert';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      document.querySelector('#bc-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await wait(100);
+      return {
+        first,
+        selected,
+        keptText: document.querySelector('#bc-address')?.value || '',
+        step: document.querySelector('#bc-step-head')?.textContent || '',
+        addressError: document.querySelector('#bc-address-msg')?.textContent.trim() || '',
+        staleFacts: !!document.querySelector('#bc-status .kv'),
+      };
+    })()`);
+    check(r.first.includes('Neustrasse') && !r.first.includes('Altstrasse'),
+      `späte alte Suchantwort überschreibt die neue nicht («${r.first}»)`);
+    check(r.selected.includes('Neustrasse') && /Schritt 1/.test(r.step),
+      'manuell geänderte Auswahl bleibt in Schritt 1');
+    check(r.keptText.endsWith('geändert') && /Vorschlägen/.test(r.addressError) && !r.staleFacts,
+      'Textänderung bleibt sichtbar und invalidiert alte Adresse und Koordinaten');
+
+    // Reale Suche und ein frischer App-Zustand für den vollständigen Durchlauf.
+    await p.evaluate(`window.fetch = window.__bcRealFetch; delete window.__bcRealFetch;
+      location.hash = '#/services'`);
+    await sleep(300);
+    await p.evaluate(`location.hash = '#/app/building-create'`);
+    await sleep(1200);
+
     console.log('■ swisstopo-Adresssuche');
     await p.evaluate(`(function(){var i=document.querySelector('#bc-address');i.focus();
       i.value='Fellerstrasse 21 Bern';i.dispatchEvent(new Event('input',{bubbles:true}));})()`);

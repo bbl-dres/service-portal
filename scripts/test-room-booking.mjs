@@ -119,6 +119,25 @@ const INVALID_RANGE = `(async () => {
   };
 })()`;
 
+const INVALID_PARTICIPANTS = `(async () => {
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const results = [];
+  for (const value of ['', '0', '-2', '1.5']) {
+    const input = document.querySelector('#booking-participants');
+    input.value = value;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('#booking-search').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await wait(80);
+    results.push({
+      value,
+      kept: document.querySelector('#booking-participants')?.value ?? null,
+      flagged: document.querySelector('#booking-participants')?.getAttribute('aria-invalid') === 'true',
+      message: document.querySelector('#booking-participants-msg')?.textContent.trim() || '',
+    });
+  }
+  return results;
+})()`;
+
 const RESET_RANGE = `(async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const end = document.querySelector('#booking-end');
@@ -322,6 +341,23 @@ try {
   check(await loginPage.evaluate(LOGIN) === true, 'login stub is available');
   await loginPage.closeTarget();
 
+  console.log('\n■ Room Booking invalid URL criteria');
+  const invalidPage = await openPage(cdp,
+    `${APP_BASE}/app/room-booking?building=${encodeURIComponent(buildingId)}&date=2020-01-01&start=99:00&end=99:30&participants=-2`);
+  check(await invalidPage.evaluate(READY) === true, 'search bar renders for invalid URL criteria');
+  const sanitised = await invalidPage.evaluate(`(() => ({
+    date: document.querySelector('#booking-date')?.value || '',
+    start: document.querySelector('#booking-start')?.value || '',
+    end: document.querySelector('#booking-end')?.value || '',
+    participants: document.querySelector('#booking-participants')?.value || '',
+    url: location.hash,
+  }))()`);
+  check(sanitised.date >= new Date().toISOString().slice(0, 10)
+      && sanitised.start === '09:00' && sanitised.end === '10:00' && sanitised.participants === '4',
+    `invalid/past URL slot is replaced (${sanitised.date}, ${sanitised.start}–${sanitised.end}, ${sanitised.participants})`);
+  check(!/2020-01-01|99%3A|99:|-2/.test(sanitised.url), `normalised criteria reach the URL (${sanitised.url.slice(0, 110)})`);
+  await invalidPage.closeTarget();
+
   console.log('\n■ Room Booking deep link (?room=)');
   const linkedPage = await openPage(cdp, `${APP_BASE}/app/room-booking?${q}&room=${encodeURIComponent(linkedRoomId)}`);
   const linked = await linkedPage.evaluate(DEEP_LINK);
@@ -371,6 +407,13 @@ try {
     check(invalid.summary && /Endzeit/.test(invalid.text), `an end before the start is refused ("${invalid.text.slice(0, 70)}")`);
     check(invalid.fieldFlagged, 'the offending field is marked aria-invalid');
     check(await page.evaluate(RESET_RANGE) > 0, 'a corrected range returns results');
+
+    const invalidParticipants = await page.evaluate(INVALID_PARTICIPANTS);
+    check(invalidParticipants.every((item) => item.flagged && /1 bis 100/.test(item.message)),
+      'blank, zero, negative, and fractional participant counts are refused');
+    check(invalidParticipants.every((item) => item.kept === item.value),
+      'invalid participant input is not silently normalised to 1');
+    check(await page.evaluate(RESET_RANGE) > 0, 'a valid integer participant count restores results');
 
     const filtered = await page.evaluate(FILTER);
     check(filtered.panelOpen, 'the filter panel opens from the results bar');

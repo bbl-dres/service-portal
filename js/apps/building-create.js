@@ -45,7 +45,7 @@ function splitAddress(label) {
   return { street: z ? label.slice(0, z.index).trim() : label, no: '', zip: z ? z[1] : '', city: z ? z[2].trim() : '' };
 }
 
-async function searchAddresses(query) {
+async function searchAddresses(query, { signal } = {}) {
   const url = new URL(SEARCH_URL);
   url.searchParams.set('type', 'locations');
   url.searchParams.set('origins', 'address');
@@ -53,7 +53,7 @@ async function searchAddresses(query) {
   url.searchParams.set('sr', '4326');
   url.searchParams.set('limit', '6');
   url.searchParams.set('lang', 'de');
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`swisstopo antwortete mit ${res.status}`);
   const data = await res.json();
   return (data.results || [])
@@ -82,7 +82,8 @@ export default async function render(ctx) {
   const state = {
     step: 1,
     // Schritt 1 — aus swisstopo abgeleitet, nicht eingetippt
-    address: '', street: '', no: '', zip: '', city: '', lat: null, lng: null,
+    address: '', addressSelected: false,
+    street: '', no: '', zip: '', city: '', lat: null, lng: null,
     // Schritt 2 — abgeleitet; bleibt leer, bis GWR/Kataster angebunden sind
     egid: '', egrid: '',
     // Schritt 2 — Handeingabe
@@ -97,9 +98,18 @@ export default async function render(ctx) {
 
   let pickerMap = null;
   let searchTimer = null;
+  let searchRequest = null;
+  let searchVersion = 0;
   let addressCombobox = null;
-  ctx.onUnmount(() => {
+  const cancelAddressSearch = () => {
     clearTimeout(searchTimer);
+    searchTimer = null;
+    searchVersion += 1;
+    searchRequest?.abort();
+    searchRequest = null;
+  };
+  ctx.onUnmount(() => {
+    cancelAddressSearch();
     addressCombobox?.destroy();
   });
 
@@ -153,7 +163,7 @@ export default async function render(ctx) {
             eine Statusmeldung, und C.wireFieldErrors räumt die Badge beim
             Korrigieren ab. */''}
       ${state.errors['bc-address'] ? `<div class="badge badge--sm badge--error" id="bc-address-msg">${C.escape(state.errors['bc-address'])}</div>` : ''}
-      <p id="bc-address-hint" class="small muted">Nadel ziehen oder in die Karte klicken, um die Lage zu justieren.</p>
+      <p id="bc-address-hint" class="small muted">Nach der Adressauswahl können Sie die Nadel ziehen oder die Lage in der Karte justieren.</p>
       <div id="bc-status" aria-live="polite"></div>
 
       ${state.lat != null ? `
@@ -240,7 +250,10 @@ export default async function render(ctx) {
   function validate() {
     const e = {};
     if (state.step === 1) {
-      if (state.lat == null) e['bc-address'] = 'Bitte eine Adresse suchen oder die Lage in der Karte anklicken';
+      if (!state.addressSelected || !state.address.trim()
+          || !Number.isFinite(state.lat) || !Number.isFinite(state.lng)) {
+        e['bc-address'] = 'Bitte eine Adresse aus den Vorschlägen wählen';
+      }
     }
     if (state.step === 2) {
       // Anweisende Formulierung wie in space-request.js / fault-report.js — der
@@ -271,6 +284,7 @@ export default async function render(ctx) {
   function draw() {
     if (state.created) return drawDone();
     const restore = C.preserveFocus(mount);
+    cancelAddressSearch();
     addressCombobox?.destroy();
     addressCombobox = null;
     freeMap();
@@ -337,9 +351,11 @@ export default async function render(ctx) {
 
   function pick(s) {
     if (!s) return;
+    cancelAddressSearch();
     const parts = splitAddress(s.label);
     Object.assign(state, {
-      address: s.label, street: parts.street, no: parts.no, zip: parts.zip, city: parts.city,
+      address: s.label, addressSelected: true,
+      street: parts.street, no: parts.no, zip: parts.zip, city: parts.city,
       lat: s.lat, lng: s.lon, errors: {},
     });
     closeList();
@@ -430,8 +446,12 @@ export default async function render(ctx) {
     initPickerMap(picker, {
       lat: state.lat, lng: state.lng,
       onPick: (la, ln) => {
-        // Nadel von Hand verschoben: Koordinaten übernehmen. Die Adresse aus
-        // swisstopo gilt danach nur noch als Hinweis auf die Umgebung.
+        // Eine Kartenposition ohne Adressauswahl wäre kein vollständiges
+        // Stammdatum. Die Karte verfeinert deshalb nur eine gewählte Adresse.
+        if (!state.addressSelected) {
+          C.announce('Bitte zuerst eine Adresse aus den Vorschlägen wählen.');
+          return;
+        }
         state.lat = la; state.lng = ln;
         redrawFacts();
         C.announce('Standort angepasst.');
@@ -440,24 +460,53 @@ export default async function render(ctx) {
     ctx.onUnmount(freeMap);
 
     if (clear) clear.addEventListener('click', () => {
-      inp.value = ''; clear.hidden = true; closeList(); inp.focus();
+      cancelAddressSearch();
+      Object.assign(state, {
+        address: '', addressSelected: false,
+        street: '', no: '', zip: '', city: '', lat: null, lng: null,
+      });
+      closeList();
+      redrawFacts();
+      inp.focus();
     });
 
     inp.addEventListener('input', () => {
-      clearTimeout(searchTimer);
+      cancelAddressSearch();
+      const typed = inp.value;
+      if (typed !== state.address) {
+        // Adresse, abgeleitete Felder und Koordinaten bilden eine Auswahl. Eine
+        // nachträgliche Textänderung darf nicht die alte Auswahl versteckt
+        // weiterverwenden.
+        Object.assign(state, {
+          address: typed, addressSelected: false,
+          street: '', no: '', zip: '', city: '', lat: null, lng: null,
+        });
+        redrawFacts();
+        // redrawFacts übernimmt den kontrollierten Wert; den Cursor ans Ende
+        // zurücksetzen, ohne ein weiteres input-Ereignis auszulösen.
+        inp.setSelectionRange(inp.value.length, inp.value.length);
+      }
       if (clear) clear.hidden = !inp.value;
       const q = inp.value.trim();
       if (q.length < 3) { closeList(); return; }
       // 300ms Ruhe vor dem Aufruf — sonst ein Treffer pro Tastendruck.
       searchTimer = setTimeout(async () => {
+        const version = searchVersion;
+        const request = new AbortController();
+        searchRequest = request;
         try {
-          renderList(await searchAddresses(q));
+          const items = await searchAddresses(q, { signal: request.signal });
+          if (version !== searchVersion || inp.value.trim() !== q) return;
+          renderList(items);
         } catch (err) {
+          if (err?.name === 'AbortError' || version !== searchVersion) return;
           closeList();
           C.announce('Die Adresssuche ist nicht erreichbar.');
           const st = mount.querySelector('#bc-status');
           if (st) st.innerHTML = `<div class="empty empty--unavailable">${C.icon('WarningCircle', 'icon--base')}
-            <span>Adresssuche nicht erreichbar (${C.escape(err.message)}). Sie können die Lage stattdessen direkt in der Karte anklicken.</span></div>`;
+            <span>Adresssuche nicht erreichbar (${C.escape(err.message)}). Bitte versuchen Sie es später erneut.</span></div>`;
+        } finally {
+          if (searchRequest === request) searchRequest = null;
         }
       }, 300);
     });

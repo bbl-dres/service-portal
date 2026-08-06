@@ -72,7 +72,9 @@ const nextWorkday = () => {
 
 const minuteOfDay = (value) => {
   const match = /^(\d{2}):(\d{2})$/.exec(String(value || ''));
-  return match ? Number(match[1]) * 60 + Number(match[2]) : NaN;
+  if (!match) return NaN;
+  const hours = Number(match[1]), minutes = Number(match[2]);
+  return hours <= 23 && minutes <= 59 ? hours * 60 + minutes : NaN;
 };
 const hhmm = (minutes) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 // Auf das nächste Viertel abrunden bzw. aufrunden — die Zeitfelder haben step=900,
@@ -81,8 +83,48 @@ const floorQuarter = (minutes) => Math.floor(minutes / 15) * 15;
 
 const rangesOverlap = (startA, endA, startB, endB) => startA < endB && startB < endA;
 const roomHash = (value) => [...String(value || '')].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 7);
-const safeDate = (value, fallback) => /^\d{4}-\d{2}-\d{2}$/.test(String(value || '')) ? String(value) : fallback;
-const safeTime = (value, fallback) => /^\d{2}:\d{2}$/.test(String(value || '')) ? String(value) : fallback;
+const isRealDate = (value) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+  if (!match) return false;
+  const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
+  if (year < 1000 || month < 1 || month > 12 || day < 1) return false;
+  return day <= new Date(Date.UTC(year, month, 0)).getUTCDate();
+};
+const participantCount = (value) => {
+  const raw = String(value ?? '').trim();
+  if (!/^\d+$/.test(raw)) return null;
+  const count = Number(raw);
+  return Number.isSafeInteger(count) && count >= 1 && count <= 100 ? count : null;
+};
+const slotValidation = ({ date, start, end, participants }, { today, capacity = null } = {}) => {
+  const errors = {};
+  const from = minuteOfDay(start), to = minuteOfDay(end);
+  const count = participantCount(participants);
+  if (!String(date || '').trim()) errors['booking-date'] = 'Bitte ein Datum wählen';
+  else if (!isRealDate(date)) errors['booking-date'] = 'Bitte ein gültiges Datum wählen';
+  else if (today && date < today) errors['booking-date'] = 'Bitte ein heutiges oder zukünftiges Datum wählen';
+  if (!Number.isFinite(from)) errors['booking-start'] = 'Bitte eine gültige Startzeit angeben';
+  else if (from < DAY_START || from >= DAY_END || from % 15) {
+    errors['booking-start'] = 'Bitte eine Startzeit zwischen 07:00 und 18:45 in Viertelstunden angeben';
+  }
+  if (!Number.isFinite(to)) errors['booking-end'] = 'Bitte eine gültige Endzeit angeben';
+  else if (to <= DAY_START || to > DAY_END || to % 15) {
+    errors['booking-end'] = 'Bitte eine Endzeit zwischen 07:15 und 19:00 in Viertelstunden angeben';
+  } else if (Number.isFinite(from) && to <= from) {
+    errors['booking-end'] = 'Die Endzeit muss nach der Startzeit liegen';
+  }
+  if (count == null) errors['booking-participants'] = 'Bitte 1 bis 100 Teilnehmende angeben';
+  else if (Number.isFinite(capacity) && count > capacity) {
+    errors['booking-participants'] = `Dieser Raum bietet höchstens ${capacity} Plätze`;
+  }
+  return { errors, participants: count };
+};
+const safeDate = (value, fallback, min = '') => isRealDate(value) && (!min || value >= min) ? String(value) : fallback;
+const safeTime = (value, fallback) => {
+  const minutes = minuteOfDay(value);
+  return Number.isFinite(minutes) && minutes >= DAY_START && minutes <= DAY_END && minutes % 15 === 0
+    ? String(value) : fallback;
+};
 // Kennungen tragen Schrägstriche und Punkte (1080/6650/AA, 1080-6650-AA-1og-16) —
 // als DOM-id müssen sie entschärft werden, sonst bricht jeder Selektor darauf.
 const domId = (prefix, value) => `${prefix}-${String(value).replace(/[^a-z0-9_-]/gi, '-')}`;
@@ -116,16 +158,23 @@ export default async function render(ctx) {
     || buildings[0];
 
   const today = localDate(new Date());
-  const requestedParticipants = Number.parseInt(query.get('participants'), 10);
+  const requestedParticipants = participantCount(query.get('participants'));
   const requestedEquipment = String(query.get('equipment') || '').split(',').filter((value) => EQUIPMENT_OPTIONS.includes(value));
+  const initialDate = safeDate(query.get('date'), nextWorkday(), today);
+  let initialStart = safeTime(query.get('start'), '09:00');
+  let initialEnd = safeTime(query.get('end'), '10:00');
+  if (minuteOfDay(initialEnd) <= minuteOfDay(initialStart)) {
+    initialStart = '09:00';
+    initialEnd = '10:00';
+  }
 
   const state = {
     tab: query.get('tab') === 'bookings' ? 'bookings' : 'find',
     buildingId: initialBuilding.bbl_id,
-    date: safeDate(query.get('date'), nextWorkday()),
-    start: safeTime(query.get('start'), '09:00'),
-    end: safeTime(query.get('end'), '10:00'),
-    participants: Number.isFinite(requestedParticipants) ? Math.max(1, Math.min(100, requestedParticipants)) : 4,
+    date: initialDate,
+    start: initialStart,
+    end: initialEnd,
+    participants: requestedParticipants ?? 4,
     sort: ['best', 'capacity', 'room'].includes(query.get('sort')) ? query.get('sort') : 'best',
     filters: {
       equipment: requestedEquipment,
@@ -211,8 +260,8 @@ export default async function render(ctx) {
   }
 
   function isAvailable(room) {
+    if (Object.keys(slotValidation(state, { today, capacity: room.capacity }).errors).length) return false;
     const start = minuteOfDay(state.start), end = minuteOfDay(state.end);
-    if (!state.date || !Number.isFinite(start) || !Number.isFinite(end) || end <= start) return false;
     return !bookedRanges(room).some((range) => rangesOverlap(start, end, range.start, range.end));
   }
 
@@ -233,7 +282,8 @@ export default async function render(ctx) {
 
   function matchesCriteria(room) {
     const profile = roomProfile(room);
-    if (room.capacity < state.participants) return false;
+    const count = participantCount(state.participants);
+    if (count == null || room.capacity < count) return false;
     if (state.filters.accessible.length && !profile.accessible) return false;
     return state.filters.equipment.every((item) => profile.equipment.includes(item));
   }
@@ -273,22 +323,16 @@ export default async function render(ctx) {
     state.date = C.val(mount, 'booking-date') || '';
     state.start = C.val(mount, 'booking-start') || '';
     state.end = C.val(mount, 'booking-end') || '';
-    state.participants = Math.max(1, Number.parseInt(C.val(mount, 'booking-participants'), 10) || 1);
+    // Den Rohwert bis zur Prüfung behalten. Eine leere, negative oder
+    // nichtnumerische Eingabe darf nicht vorab als «1» gültig gemacht werden.
+    state.participants = C.val(mount, 'booking-participants');
   }
 
-  function validate() {
-    const errors = {};
-    const start = minuteOfDay(state.start), end = minuteOfDay(state.end);
-    if (!state.date) errors['booking-date'] = 'Bitte ein Datum wählen';
-    else if (state.date < today) errors['booking-date'] = 'Bitte ein heutiges oder zukünftiges Datum wählen';
-    if (!Number.isFinite(start)) errors['booking-start'] = 'Bitte eine Startzeit angeben';
-    if (!Number.isFinite(end)) errors['booking-end'] = 'Bitte eine Endzeit angeben';
-    else if (Number.isFinite(start) && end <= start) errors['booking-end'] = 'Die Endzeit muss nach der Startzeit liegen';
-    if (!state.participants || state.participants < 1 || state.participants > 100) {
-      errors['booking-participants'] = 'Bitte 1 bis 100 Teilnehmende angeben';
-    }
-    state.errors = errors;
-    return Object.keys(errors).length === 0;
+  function validate(room = null) {
+    const result = slotValidation(state, { today, capacity: room?.capacity ?? null });
+    state.errors = result.errors;
+    if (!Object.keys(result.errors).length) state.participants = result.participants;
+    return Object.keys(result.errors).length === 0;
   }
 
   const slotLabel = () => `${state.start}–${state.end}`;
@@ -590,6 +634,15 @@ export default async function render(ctx) {
         titleInput?.classList.add('input--error');
         titleInput?.setAttribute('aria-invalid', 'true');
         titleInput?.focus();
+        return;
+      }
+      // URL, Suchleiste und Dialog münden in dieselbe Prüfung. So kann ein
+      // manipuliertes oder inzwischen veraltetes Zeitfenster nicht am Dialog
+      // vorbei persistiert werden.
+      if (!validate(room)) {
+        close();
+        draw();
+        C.wireErrorSummary(mount);
         return;
       }
       // Zwischen Öffnen und Absenden kann derselbe Raum vergeben worden sein —

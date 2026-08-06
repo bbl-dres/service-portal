@@ -41,6 +41,31 @@ try {
     console.log(`  ok  ${route.padEnd(28)} h1=«${got.h1.slice(0, 48)}»`);
   }
 
+  const failedAdd = await page.evaluate(`(async () => {
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    localStorage.removeItem('bbl_shop_cart_v1');
+    location.hash = '#/app/shop';
+    await wait(700);
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'bbl_shop_cart_v1') throw new DOMException('blocked for test', 'QuotaExceededError');
+      return original.call(this, key, value);
+    };
+    document.querySelector('[data-add]')?.click();
+    await wait(100);
+    Storage.prototype.setItem = original;
+    return {
+      cart: localStorage.getItem('bbl_shop_cart_v1'),
+      success: [...document.querySelectorAll('.toast__message .notification--success')]
+        .some(node => /hinzugefügt/.test(node.textContent)),
+      error: document.querySelector('#main-content .notification--error')?.textContent.trim() || '',
+    };
+  })()`);
+  if (failedAdd.cart !== null || failedAdd.success || !/nicht gespeichert/.test(failedAdd.error)) {
+    fails.push(`Warenkorb: Speicherfehler als Erfolg behandelt (${JSON.stringify(failedAdd)})`);
+  }
+  console.log('  ok  Warenkorb meldet fehlgeschlagenes Speichern ohne Erfolgstoast');
+
   const catalogueCard = await page.evaluate(`(async () => {
     localStorage.removeItem('bbl_shop_cart_v1');
     location.hash = '#/app/shop';
@@ -177,6 +202,43 @@ try {
   }
   if (checkout.cart !== null) fails.push('Checkout: Warenkorb wurde nach dem Absenden nicht geleert');
   console.log(`  ok  Checkout Vorgang=${checkout.defId || '-'} items=${checkout.itemCount}`);
+
+  const failedCheckoutCleanup = JSON.parse(await page.evaluate(`(async () => {
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const submit = () => document.querySelector('#shop-checkout')
+      ?.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
+    localStorage.setItem('bbl_shop_cart_v1', JSON.stringify([{ id: 3, qty: 1 }]));
+    location.hash = '#/app/shop';
+    await sleep(150);
+    location.hash = '#/app/shop/checkout';
+    await sleep(700);
+    submit();
+    await sleep(100);
+    document.querySelector('#shop-cc').value = '810.123';
+    document.querySelector('#shop-delivery').value = 'Fellerstrasse 21';
+    submit();
+    await sleep(100);
+    const original = Storage.prototype.removeItem;
+    Storage.prototype.removeItem = function (key) {
+      if (key === 'bbl_shop_cart_v1') throw new DOMException('blocked for test', 'SecurityError');
+      return original.call(this, key);
+    };
+    submit();
+    await sleep(200);
+    Storage.prototype.removeItem = original;
+    return JSON.stringify({
+      done: document.querySelector('#main-content')?.textContent.includes('Bestellung eingereicht') || false,
+      cart: localStorage.getItem('bbl_shop_cart_v1'),
+      error: document.querySelector('#main-content .notification--error')?.textContent.trim() || '',
+    });
+  })()`));
+  if (failedCheckoutCleanup.done || failedCheckoutCleanup.cart === null || !/nicht geleert/.test(failedCheckoutCleanup.error)) {
+    fails.push(`Checkout: fehlgeschlagenes Leeren als Erfolg behandelt (${JSON.stringify(failedCheckoutCleanup)})`);
+  }
+  console.log('  ok  Checkout bestätigt erst nach persistiertem Leeren des Warenkorbs');
+
+  await page.evaluate(`location.hash = '#/app/shop'; localStorage.removeItem('bbl_shop_cart_v1')`);
+  await sleep(300);
 
   const probs = await page.problems();
   if (probs.length) fails.push(...probs.map((p) => `Seitenproblem: ${p}`));

@@ -44,7 +44,7 @@ function readCart() {
 function writeCart(rows) {
   const cleaned = rows.filter((r) => r.qty > 0);
   const ok = cleaned.length ? writeJSON(CART_KEY, cleaned) : remove(CART_KEY);
-  window.dispatchEvent(new CustomEvent('shop:cartchange'));
+  if (ok) window.dispatchEvent(new CustomEvent('shop:cartchange'));
   return ok;
 }
 function addToCart(productId, qty = 1) {
@@ -53,14 +53,14 @@ function addToCart(productId, qty = 1) {
   const row = rows.find((r) => r.id === id);
   if (row) row.qty = Math.min(99, row.qty + qty);
   else rows.push({ id, qty });
-  writeCart(rows);
+  return writeCart(rows);
 }
 function setCartQty(productId, qty) {
   const id = asId(productId);
   const rows = readCart();
   const row = rows.find((r) => r.id === id);
   if (row) row.qty = Math.max(0, Math.min(99, Number.parseInt(qty, 10) || 0));
-  writeCart(rows);
+  return writeCart(rows);
 }
 
 function flattenCategories(categories, parent = null, depth = 0, out = []) {
@@ -468,6 +468,7 @@ function checkout(ctx) {
     note: '',
     errors: {},
     created: null,
+    pendingCreated: null,
   };
   const labels = { 'shop-cc': 'Kostenstelle', 'shop-delivery': 'Lieferadresse' };
 
@@ -565,7 +566,7 @@ function checkout(ctx) {
       if (state.step < 3) { state.step += 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step); return; }
       const lines = currentLines();
       if (!lines.length) { cart(ctx); return; }
-      state.created = engine.start('bestellung', {
+      const created = state.pendingCreated || engine.start('bestellung', {
         title: `Bestellung ${cartCount(lines)} Artikel`,
         requester: state.name,
         organization: state.org,
@@ -577,12 +578,23 @@ function checkout(ctx) {
           items: lines.map((r) => ({ productId: r.product.id, name: r.product.name, quantity: r.qty, unitPrice: r.product.price })),
         },
       });
-      if (state.created) {
-        remove(CART_KEY);
-        window.dispatchEvent(new CustomEvent('shop:cartchange'));
+      if (!created) {
+        C.flashError(mount, 'Die Bestellung konnte nicht gespeichert werden — bitte erneut versuchen.');
+        return;
       }
+      // Erst bestätigen, wenn auch das Leeren des Warenkorbs persistiert ist.
+      // Bei einem Storage-Fehler bleibt er sichtbar und kann erneut versucht
+      // werden; ein Erfolgsbild trotz noch vorhandener Positionen wäre falsch.
+      if (!writeCart([])) {
+        // Der Vorgang ist bereits persistiert. Für einen erneuten Klick in
+        // derselben Ansicht merken, damit daraus keine Doppelbestellung wird.
+        state.pendingCreated = created;
+        C.flashError(mount, 'Der Warenkorb konnte nach dem Speichern nicht geleert werden. Bitte erneut versuchen.');
+        return;
+      }
+      state.created = created;
+      state.pendingCreated = null;
       draw();
-      if (!state.created) C.flashError(mount, 'Die Bestellung konnte nicht gespeichert werden — bitte erneut versuchen.');
     });
     const back = mount.querySelector('[data-back]');
     if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step); });
@@ -596,9 +608,12 @@ function wireAddButtons(ctx) {
   mount.querySelectorAll('[data-add]').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      addToCart(btn.getAttribute('data-add'), 1);
-      updateCartBadges(mount, core);
-      C.toast('Produkt wurde dem Warenkorb hinzugefügt.', 'success', 'CheckmarkCircle');
+      if (addToCart(btn.getAttribute('data-add'), 1)) {
+        updateCartBadges(mount, core);
+        C.toast('Produkt wurde dem Warenkorb hinzugefügt.', 'success', 'CheckmarkCircle');
+      } else {
+        C.flashError(mount, 'Der Warenkorb konnte nicht gespeichert werden — bitte erneut versuchen.');
+      }
     });
   });
   const detailForm = mount.querySelector('#shop-add-detail');
@@ -606,17 +621,32 @@ function wireAddButtons(ctx) {
     e.preventDefault();
     const id = detailForm.querySelector('[data-add-detail]')?.getAttribute('data-add-detail');
     const qty = Number.parseInt(detailForm.querySelector('#shop-qty')?.value || '1', 10) || 1;
-    addToCart(id, Math.max(1, Math.min(99, qty)));
-    updateCartBadges(mount, core);
-    C.toast('Produkt wurde dem Warenkorb hinzugefügt.', 'success', 'CheckmarkCircle');
+    if (addToCart(id, Math.max(1, Math.min(99, qty)))) {
+      updateCartBadges(mount, core);
+      C.toast('Produkt wurde dem Warenkorb hinzugefügt.', 'success', 'CheckmarkCircle');
+    } else {
+      C.flashError(mount, 'Der Warenkorb konnte nicht gespeichert werden — bitte erneut versuchen.');
+    }
   });
 }
 function wireCart(ctx, redraw = () => cart(ctx)) {
   const { mount } = ctx;
   mount.querySelectorAll('[data-qty]').forEach((input) => {
-    input.addEventListener('change', () => { setCartQty(input.getAttribute('data-qty'), input.value); redraw(); });
+    input.addEventListener('change', () => {
+      if (setCartQty(input.getAttribute('data-qty'), input.value)) redraw();
+      else {
+        redraw();
+        C.flashError(mount, 'Der Warenkorb konnte nicht gespeichert werden — bitte erneut versuchen.');
+      }
+    });
   });
   mount.querySelectorAll('[data-remove]').forEach((btn) => {
-    btn.addEventListener('click', () => { setCartQty(btn.getAttribute('data-remove'), 0); redraw(); });
+    btn.addEventListener('click', () => {
+      if (setCartQty(btn.getAttribute('data-remove'), 0)) redraw();
+      else {
+        redraw();
+        C.flashError(mount, 'Der Warenkorb konnte nicht gespeichert werden — bitte erneut versuchen.');
+      }
+    });
   });
 }
