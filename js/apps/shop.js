@@ -215,7 +215,7 @@ function catalogue(ctx) {
       <main class="pf-main">
         ${C.catalogueResults({
           resetHref: '#/app/shop',
-          visible, count: sorted.length, total: products.length, view, page, totalPages, header: false,
+          visible, count: sorted.length, view, page, totalPages,
           card, listView, unit: { nom: 'Produkte', dat: 'Produkten' }, regionLabel: 'Produkte',
           paginationInputId: 'shop-page', paginationLabel: 'Seitennavigation Produkte',
           paginationHref: (p) => hash({ page: p }),

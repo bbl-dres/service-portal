@@ -67,6 +67,48 @@ const activeAnchor = `(document.querySelector('.anchor-nav [data-anchor].menu__i
     const serviceProblems = await servicesPage.problems();
     check(serviceProblems.length === 0, 'services page has no browser errors', serviceProblems[0] || '');
     await servicesPage.closeTarget();
+
+    console.log('\n■ global-search result targets');
+    const searchPage = await openPage(cdp, `${APP_BASE}/search?q=Datenportal`, { login: true });
+    await waitFor(searchPage, `[...document.querySelectorAll('.search-result__title')]
+      .some(node => node.textContent.trim() === 'Datenportal (Portal)')`);
+    const applicationHref = await searchPage.evaluate(`(() => {
+      const title = [...document.querySelectorAll('.search-result__title')]
+        .find(node => node.textContent.trim() === 'Datenportal (Portal)');
+      return title?.closest('a')?.getAttribute('href') || '';
+    })()`);
+    check(applicationHref === '#/applications/datenportal',
+      'application result uses the central detail link', applicationHref);
+    await searchPage.evaluate(`location.hash = ${JSON.stringify(applicationHref)}`);
+    await waitFor(searchPage, `!!document.querySelector('a[href="#/app/dataportal"]')`);
+    check(await searchPage.evaluate(`!!document.querySelector('a[href="#/app/dataportal"]')`),
+      'application detail retains its launch target');
+
+    const documentTitle = 'Dokumentenverzeichnis Bundeshaus West';
+    await searchPage.evaluate(`location.hash = ${JSON.stringify(`#/search?q=${encodeURIComponent(documentTitle)}`)}`);
+    await waitFor(searchPage, `[...document.querySelectorAll('.search-result__title')]
+      .some(node => node.textContent.trim() === ${JSON.stringify(documentTitle)})`);
+    const documentHref = await searchPage.evaluate(`(() => {
+      const title = [...document.querySelectorAll('.search-result__title')]
+        .find(node => node.textContent.trim() === ${JSON.stringify(documentTitle)});
+      return title?.closest('a')?.getAttribute('href') || '';
+    })()`);
+    const expectedDocumentHref = `#/app/document-archive?q=${encodeURIComponent(documentTitle)}`;
+    check(documentHref === expectedDocumentHref,
+      'document result uses the encoded archive-filter link', documentHref);
+    await searchPage.evaluate(`location.hash = ${JSON.stringify(documentHref)}`);
+    await waitFor(searchPage, `document.querySelector('#doc-q')?.value === ${JSON.stringify(documentTitle)}`);
+    const archive = await searchPage.evaluate(`(() => ({
+      h1: document.querySelector('h1')?.textContent.trim() || '',
+      q: document.querySelector('#doc-q')?.value || '',
+      rows: [...document.querySelectorAll('tbody tr')].map(row => row.textContent.trim()),
+    }))()`);
+    check(archive.h1 === 'Bauwerksdokumentation' && archive.q === documentTitle
+      && archive.rows.some(row => row.includes(documentTitle)),
+    'document link opens the archive with the exact result filtered in', `${archive.h1}; ${archive.rows.length} row(s)`);
+    const searchProblems = await searchPage.problems();
+    check(searchProblems.length === 0, 'global search flow has no browser errors', searchProblems[0] || '');
+    await searchPage.closeTarget();
   } finally {
     cdp.close();
   }

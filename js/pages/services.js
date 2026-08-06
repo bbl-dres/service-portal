@@ -116,7 +116,7 @@ export default async function render(ctx) {
     ${filterBar}
     ${C.catalogueResults({
       resetHref: '#/services',
-      visible: visibleServices, count: services.length, total: all.length, view, page, totalPages, header: false,
+      visible: visibleServices, count: services.length, view, page, totalPages,
       card, listView, unit: 'Dienstleistungen',
       paginationInputId: 'svc-page', paginationLabel: 'Seitennavigation Dienstleistungen',
       paginationHref: (p) => hash({ page: p }),

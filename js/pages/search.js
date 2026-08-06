@@ -123,7 +123,7 @@ export default async function render(ctx) {
       ? `<p class="muted">Geben Sie einen Suchbegriff ein — zum Beispiel «Störung», «Mustervorlage» oder «Guisanplatz». Durchsucht werden ${index.length} Einträge aus Dienstleistungen, Anwendungen, Wissen und Hilfsmitteln, Datensätzen, Dokumenten, News, Liegenschaften und Bauprojekten.</p>`
       : total
         ? `${toolbar}${activePills}${C.catalogueResults({
-            visible, count: sorted.length, total, view, page, totalPages, header: false,
+            visible, count: sorted.length, view, page, totalPages,
             card, listView, unit: 'Treffer',
             gridCls: 'grid grid--responsive-cols-3 catalogue-grid',
             paginationInputId: 'sr-page', paginationLabel: 'Seitennavigation Suchergebnisse',
@@ -198,7 +198,7 @@ function buildIndex(core) {
     rows.push({
       art: 'Dienstleistungen', type: s.type === 'action' ? 'Dienstleistung · Vorgang' : 'Dienstleistung',
       title: s.title, desc: s.short,
-      href: `#/services/${encodeURIComponent(s.serviceId)}`,
+      href: links.dienstleistung(s.serviceId),
       extra: [domainLabel(s.domain), s.description, (s.voraussetzungen || []).join(' '),
         contactName(s.contact), s.serviceId.replace(/-/g, ' ')].join(' '),
       // Rang 1 bekommt +18, Rang 8 noch +4; ein Vorgang generell +12.
@@ -209,7 +209,7 @@ function buildIndex(core) {
   for (const a of core.applications()) {
     rows.push({
       art: 'Anwendungen', type: 'Anwendung', title: a.name, desc: a.description,
-      href: `#/applications/${encodeURIComponent(a.appId)}`,
+      href: links.anwendung(a.appId),
       extra: [a.group, a.area, (a.entries || []).map(e => e.label).join(' '),
         contactName(a.contact), a.appId.replace(/-/g, ' ')].join(' '),
     });
@@ -242,7 +242,7 @@ function buildIndex(core) {
     rows.push({
       art: 'Dokumente', type: 'Dokument',
       title: d.title, desc: [d.type, d.category].filter(Boolean).join(' · '),
-      href: `#/app/document-archive?q=${encodeURIComponent(d.title)}`,
+      href: links.dokument(d.title),
       meta: [d.format, d.year].filter(Boolean).join(' · '),
       extra: [d.type, d.category, d.classification, ...objekt].join(' '),
     });

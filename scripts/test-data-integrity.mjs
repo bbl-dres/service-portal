@@ -82,11 +82,16 @@ console.log('■ Datenportal: genau ein Renderer und geschlossene Referenzen');
 const portal = json('data/dashboards.json');
 const topicIds = portal.topics.map((topic) => topic.id);
 const boardIds = portal.dashboards.map((board) => board.id);
+const boardTopicIds = portal.dashboards.map((board) => board.topicId);
 const genericTopicIds = topicIds.filter((id) => id !== 'immobilien');
 check(new Set(topicIds).size === topicIds.length, 'Themen-IDs sind eindeutig');
 check(new Set(boardIds).size === boardIds.length, 'Dashboard-IDs sind eindeutig');
+check(new Set(boardTopicIds).size === boardTopicIds.length, 'Dashboard-Themenverweise sind eindeutig');
 check(JSON.stringify([...boardIds].sort()) === JSON.stringify([...genericTopicIds].sort()),
   'sechs Themen haben genau ein generisches Dashboard; Immobilien bleibt spezialisiert');
+check(JSON.stringify([...boardTopicIds].sort()) === JSON.stringify([...genericTopicIds].sort())
+  && portal.dashboards.every((board) => board.id === board.topicId),
+  'Übersicht und Dashboard-Routen verwenden dieselbe Themenkennung');
 check(!portal.dashboards.some((board) => Object.hasOwn(board, 'hero')),
   'generische Dashboards verwenden ausschliesslich die kpis-Datenform');
 

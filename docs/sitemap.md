@@ -168,7 +168,7 @@ The service/information distinction becomes **structural** rather than a badge. 
    - **every specialist application** (`#/app/…`) — gated centrally in `js/router.js`, not per app; the application supplies only the wording via `export const loginText` (Nutzerentscheid 2026-08-06). Before that, five of seventeen brought their own gate and twelve were simply open.
    - `#/my-cases` and the CTA on a service detail page, which render `C.loginGate` **in place of the form**, keeping the surrounding page visible.
 
-   The login button carries its destination (`C.loginButton({ next })` → `window.__login(next)`), so signing in from a service or application page **also opens the target** — it used to log you in and leave you to press the real button a second time.
+   The login button rendered by `C.loginGate`/`C.accessCard` carries its destination (`data-login-next` → `window.__login(next)`), so signing in from a service or application page **also opens the target** — it used to log you in and leave you to press the real button a second time.
 
 4. **One access card.** `C.accessCard` answers «how do I get in?» on both the service and the application landing page, with the button on top and four derived states: no target → greyed out · external system → new tab, no login · internal + logged out → login-and-open · internal + logged in → link plus the session context.
 5. **State change ≠ navigation.** If only the query changed on the same path, focus returns to the triggering control and the page does not scroll (WCAG 3.2.2). Real navigation scrolls to top and focuses the `h1`.

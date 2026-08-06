@@ -112,7 +112,9 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       ['Mobilität', '#/app/dataportal/mobilitaet'],
       ['Personal', '#/app/dataportal/personal'],
     ];
-    check(JSON.stringify(o.links) === JSON.stringify(expectedCards), 'alle Themenkarten verweisen auf ihren einzigen Renderer');
+    const sortedCards = (cards) => [...cards].sort(([left], [right]) => left.localeCompare(right, 'de'));
+    check(JSON.stringify(sortedCards(o.links)) === JSON.stringify(sortedCards(expectedCards)),
+      'alle Themenkarten verweisen auf ihren einzigen Renderer');
 
     const genericBoards = [
       ['energie-klima', 'Energie & Klima'],

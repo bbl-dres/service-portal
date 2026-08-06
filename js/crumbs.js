@@ -8,14 +8,11 @@
 // `<span aria-current="page">` (router.js). Die Startseite selbst setzt
 // bewusst eine leere Brotkrume.
 
-export const HOME = { label: 'Startseite', href: '#/' };
+const HOME = { label: 'Startseite', href: '#/' };
 
 export const DIENSTLEISTUNGEN = [HOME, { label: 'Dienstleistungen', href: '#/services' }];
 export const DATEN = [HOME, { label: 'Daten und Digitalisierung', href: '#/data' }];
 export const ANWENDUNGEN = [...DATEN, { label: 'Anwendungen', href: '#/applications' }];
-export const WISSEN = [HOME, { label: 'Wissen und Hilfsmittel', href: '#/knowledge' }];
 
 /** trail(ANWENDUNGEN, { label: 'Mietende' }) → volle Kette mit letztem Glied ohne href */
 export const trail = (prefix, ...rest) => [...prefix, ...rest];
-
-export default { HOME, DIENSTLEISTUNGEN, DATEN, ANWENDUNGEN, WISSEN, trail };

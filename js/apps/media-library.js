@@ -209,7 +209,7 @@ export default async function render(ctx) {
     ${C.activeFilters({ filters: active, resetHref: '#/app/media-library' })}
     ${C.catalogueResults({
       resetHref: '#/app/media-library',
-      visible, count: sorted.length, total: all.length, view, page, totalPages, header: false,
+      visible, count: sorted.length, view, page, totalPages,
       card, listView, mapView, unit: 'Aufnahmen', regionLabel: 'Aufnahmen',
       paginationInputId: 'med-page', paginationLabel: 'Seitennavigation Mediathek',
       paginationHref: (p) => hash({ page: p }),

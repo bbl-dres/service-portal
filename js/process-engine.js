@@ -140,5 +140,3 @@ export const engine = {
   cancel,
   reset,
 };
-
-export default engine;

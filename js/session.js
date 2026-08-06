@@ -14,21 +14,15 @@ const DEMO_USER = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
 // einem halben Datensatz weiterarbeiten (M20).
 const isUser = (u) => !!u && typeof u === 'object' && typeof u.name === 'string' && u.name.trim() !== '';
 let user = readJSON(LS_KEY, null, isUser);
-const listeners = new Set();
 
 function save() {
   if (user) writeJSON(LS_KEY, user); else remove(LS_KEY);
 }
-function emit() { listeners.forEach(fn => { try { fn(user); } catch (e) { console.error(e); } }); }
 
 export const session = {
   user: () => user,
   isLoggedIn: () => !!user,
   // Anmelden über AGOV / FedLogin — im Prototyp ein Stub ohne echten Redirect.
-  login: () => { user = { ...DEMO_USER }; save(); emit(); return user; },
-  logout: () => { user = null; save(); emit(); },
-  // Header und aktive Seite abonnieren Änderungen, um sich neu zu zeichnen.
-  onChange: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
+  login: () => { user = { ...DEMO_USER }; save(); return user; },
+  logout: () => { user = null; save(); },
 };
-
-export default session;

@@ -6,9 +6,9 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently 28 supported `test-*.mjs` functional suites and 20 retained
+There are currently 29 supported `test-*.mjs` functional suites and 20 retained
 `check-*.mjs` diagnostics. Every browser suite uses `APP_BASE` to select the
-running app and exits non-zero on failure; the three pure-Node suites need no
+running app and exits non-zero on failure; the four pure-Node suites need no
 server. The older diagnostics are classified
 separately below because six are observation-only and deliberately do not act
 as regression gates.
@@ -53,13 +53,14 @@ inventory is `scripts/test-*.mjs`.
 | Script | What it checks |
 |---|---|
 | `test-tabs.mjs` | D1 tab component (`C.tabBar`/`C.tabPanels`/`C.wireTabs`) across portfolio · projects · dataportal: panel toggling, `aria-selected`, roving `tabindex`, focus-follows-active, keyboard (Arrow/Home/End), hash sync. Plus the logged-out gates for the action apps. |
-| `test-login.mjs` | Opens Room Booking with an explicitly empty session, verifies the login gate, then logs in via `window.__login` and asserts the form replaces the gate. |
+| `test-login.mjs` | Opens Room Booking with an explicitly empty session, verifies login persists and replaces the gate, then verifies logout clears storage and restores both the route gate and header without a subscription API. |
 | `test-workspace.mjs` | Standalone Workspace Management planning surface: no legacy tabs, live capacity scenario, floor-plan interaction, and desktop/mobile containment. |
 | `test-room-booking.mjs` | Room Booking on the one-page, direct-booking surface (`docs/room-booking-redesign.md`): search and sort behavior, one process snapshot per redraw, action-time conflict checks, favourites, dialogs, process creation, personal bookings, the `?room=` deep link, and desktop/mobile containment. |
 | `test-building-create.mjs` | Building creation: stale address responses, selection invalidation, map/search state, required fields, and process creation. |
 | `test-gallery-floorplan-state.mjs` | W-09/W-11 lifecycle regression: exact and stale gallery deep links, unknown image IDs, dialog focus, and tenancy floor-plan fullscreen/selection/focus preservation. |
-| `test-anchor-search-state.mjs` | W-15/W-16 navigation regression: document-relative anchor thresholds and search-query preservation across catalogue links. |
+| `test-anchor-search-state.mjs` | W-15/W-16/K-03 navigation regression: document-relative anchor thresholds, cross-catalogue query preservation, and exact global-search targets for application details and filtered documents. |
 | `test-process-dates.mjs` | W-21/K-06 pure Node regression: local date/history/reference consistency plus concurrent process-file loading, independent failures, and successful retry. |
+| `test-api-surface.mjs` | K-03 pure Node contract: exact ESM surfaces for session/links/crumbs/core/process engine/maps/components, removed object members, retained diagnostics, and encoded search-link builders. |
 | `test-ui-state.mjs` | W-03/W-04/W-05/W-22 state regression: catalogue debounce teardown, nested overlay ownership, route cleanup, action-menu ARIA, and mobile-shell reset. |
 | `test-document-archive.mjs` | Bauwerksdokumentation: reduced six-column table, KBOB document types, filename extensions, plain building cells, and viewer metadata at desktop/mobile widths. |
 | `test-catalogue.mjs` | D2 catalogue triplet (`C.catalogueHash`/`C.catalogueControls`/`C.wireCatalogue`) across services · applications · katalog: deep-link round-trips (q/view/filter), search-submit / view-switch / filter interactions, active-filter pill removal, the services multi-value `topic`, and detail-view render. |
