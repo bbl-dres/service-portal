@@ -126,58 +126,58 @@ Nicht übernommen wurden historische Vorher-Zustände und alte Testresultate. In
 
 Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Commit `fb9e9c2`. Der aktuelle Umsetzungsstatus und die zugehörigen Fix-Commits stehen in Abschnitt 1.1; erledigte Befunde bleiben hier als nachvollziehbarer Review-Nachweis erhalten.
 
-| Nr. | Modul | Kategorie | Kurzbeschreibung | Fundstelle |
-| --- | --- | --- | --- | --- |
-| B-01 | Immobilien-Dashboard | Blocker | Monatsansicht erzeugt `NaN` in SVG-Koordinaten | `js/apps/estate.js:216-221`, `js/charts.js:167-169` |
-| W-01 | Daten / Repository | Wichtig | Interne URLs und real wirkende Bundes-, Objekt- und Verantwortlichkeitsdaten liegen öffentlich vor | `data/applications.json:603-645`, `data/buildings.geojson:9-80`, `data/datasets.json:32` |
-| W-02 | Medien / Lizenzierung | Wichtig | 57 von 69 Medienrecords haben kein nachgewiesenes freies Weiterverteilungsrecht | `data/media.json:37`, `scripts/adopt-pdf-images.mjs:18-80` |
-| W-03 | Katalogzustand | Wichtig | Debounce schreibt nach einem Routenwechsel den alten Hash zurück | `js/components.js:1897-1901`, `js/components.js:1959` |
-| W-04 | Mobile Shell | Wichtig | Logout bei offenem Menü lässt Seite `inert` und Body gesperrt | `js/shell.js:397-434` |
-| W-05 | Overlays | Wichtig | Route- und verschachtelte Dialogwechsel räumen Overlay und Scroll-Lock falsch auf | `js/gallery.js:229-297`, `js/components.js:561-565` |
-| W-06 | Gebäude erfassen | Wichtig | Adressauswahl bleibt nach manueller Änderung gültig; ältere Suchantworten überschreiben neuere | `js/apps/building-create.js:240-244`, `js/apps/building-create.js:338-463` |
-| W-07 | Raumbuchung | Wichtig | Ungültige, vergangene oder unplausible Zeitfenster und Teilnehmerzahlen werden bestätigt | `js/apps/room-booking.js:84-85`, `js/apps/room-booking.js:272-289`, `js/apps/room-booking.js:583-623` |
-| W-08 | Shop | Wichtig | Speicherfehler werden als Bestellung/Warenkorb-Erfolg gemeldet | `js/apps/shop.js:44-63`, `js/apps/shop.js:580-612` |
-| W-09 | Mietflächen | Wichtig | Teilrender zerstört Grundriss-/Fullscreen-Zustand und bindet Tabellen neu | `js/apps/tenancies.js:855-905`, `js/apps/tenancies.js:920-948` |
-| W-10 | Portfolio | Wichtig | Kontextlinks verwenden falsche oder zu unspezifische Query-Parameter | `js/apps/portfolio.js:446`, `js/apps/portfolio.js:652` |
-| W-11 | Galerie | Wichtig | Geteilte Bild-URL stellt die Bildauswahl nicht wieder her | `js/gallery.js:218-226` |
-| W-12 | Flächendaten | Wichtig | BGF/NGF widersprechen zwischen Messungen und GeoJSON systematisch | `data/area-measurements.json:4-36`, `data/buildings.geojson:49-55` |
-| W-13 | Personal-Dashboard | Wichtig | Frauenanteil ist gleichzeitig 52 und 50,4 Prozent | `data/dashboards.json:547-548`, `data/dashboards.json:2265-2266` |
-| W-14 | Login-Gate | Wichtig | Fünf geschützte Routen fehlen im Anwendungskatalog und erhalten ein generisches Gate | `js/router.js:101-118`, `js/router.js:325-340` |
-| W-15 | Anchor-Navigation | Wichtig | Scroll-Spy vergleicht mount-relative `offsetTop`- mit dokumentrelativen Scrollwerten | `js/pages/anchor-nav.js:129-131`, `css/app.css:1195` |
-| W-16 | Dienstleistungen | Wichtig | «Auch in»-Treffer werden gezählt, die Ziel-Links verlieren aber den Suchbegriff | `js/pages/services.js:52-53`, `js/pages/services.js:85-89` |
-| W-17 | Testwerkzeug | Wichtig | Suiten können falsch bestehen, zu früh scheitern und Browserprozesse hinterlassen | `scripts/lib/cdp.mjs:65-152`, `scripts/test-login.mjs:35-42` |
-| W-18 | Asset-Skripte | Wichtig | Alte Bildpipelines arbeiten mit überholten Annahmen und können Assets überschreiben | `scripts/build-media-registry.mjs:162-170`, `scripts/fetch-building-images.mjs:109-121`, `scripts/link-building-images.mjs:67` |
-| W-19 | Teardown | Wichtig | Apps ignorieren Cleanup-Rückgaben für Karten, Observer, Tabellen und Listener | `js/apps/room-booking.js:473-483`, `js/apps/portfolio.js:697-700` |
-| W-20 | Mietflächen | Wichtig | Karten- und Leerergebnis-Pfad überspringen die Live-Region-Ansage | `js/apps/tenancies.js:227-259` |
-| W-21 | Prozess-Engine | Wichtig | «Heute» wird in UTC, die Referenz aber im lokalen Jahr berechnet | `js/process-engine.js:29-34` |
-| W-22 | Action-Menü | Wichtig | Beim Öffnen eines zweiten Menüs bleibt der alte Trigger für Assistive Technology expanded | `js/components.js:1790-1794` |
-| K-01 | Komponenten | Komplexität | Zentrale Komponenten- und App-Module bündeln zu viele Verantwortlichkeiten | `js/components.js:1-2146`, `js/apps/room-booking.js:1-1068` |
-| K-02 | Katalogseiten | Komplexität | Filter-, Hash-, Sortier- und Paging-Abläufe liegen in mehreren Varianten vor | `js/pages/services.js:15-201`, `js/components.js:1460-1959` |
-| K-03 | Öffentliche APIs | Komplexität | Nicht verwendete Exporte und Zustands-APIs vergrössern die Oberfläche | `js/session.js:17-31`, `js/core.js:186-359`, `js/components.js:1343-2143` |
-| K-04 | Dashboards | Komplexität | Generische Immobilien-/Hero-Konfiguration ist nicht erreichbar oder driftet | `js/apps/dataportal.js:138-236`, `data/dashboards.json:1782-2392` |
-| K-05 | Datenrouten | Komplexität | Unterrouten laden breitere Datenbereiche als sie verwenden | `js/pages/data.js:4-7`, `js/router.js:441-443` |
-| K-06 | Wiederholte Arbeit | Komplexität | Prozessdateien laden seriell; Raumsuche berechnet Profile und Sortierungen mehrfach | `js/process-engine.js:22-25`, `js/apps/room-booking.js:175-253` |
-| K-07 | CSS | Komplexität | Stylesheets dienen zugleich als Review-Historie; Kommentare und tote Regeln werden ausgeliefert | `css/app.css:8-139`, `css/app.css:3030-3103` |
-| K-08 | Repository | Komplexität | Binäre Review-Screenshots dominieren Grösse und History | `docs/review-assets/audit.json:1`, `docs/review-assets/accessibility.json:1` |
-| K-09 | Skripte | Komplexität | Diagnoseproben enthalten lokale Windows-Pfade und überlappende Einmalwerkzeuge | `scripts/check-hero.mjs:3`, `scripts/check-services.mjs:30` |
-| K-10 | Registries | Komplexität | Core- und Router-Metadaten werden in parallelen Tabellen über denselben Schlüsselraum geführt | `js/core.js:17-72`, `js/router.js:81-118` |
-| P-01 | Supply Chain | Produktionsrelevant | CDN-Code läuft ohne SRI; eine restriktive CSP fehlt | `index.html:3-13`, `js/buildings-map.js:20-28` |
-| P-02 | Web Storage | Produktionsrelevant | Storage-Zugriffe und korrupte gespeicherte Werte sind nicht durchgehend abgesichert | `js/router.js:299-311`, `js/search-log.js:23-50` |
-| P-03 | Datenloader | Produktionsrelevant | Loader prüfen Schemas nur grob und bündeln parallele gleiche Requests nicht | `js/core.js:200-206`, `js/dashboard-data.js:21-47` |
-| P-04 | CSV-Export | Produktionsrelevant | Zellen mit Formelpräfix werden nicht neutralisiert | `js/export.js:34` |
-| P-05 | URL-Zustand | Produktionsrelevant | Vererbte Objekteigenschaften können als gültiger Störungstyp interpretiert werden | `js/apps/fault-report.js:70-114` |
-| P-06 | Trust Boundaries | Produktionsrelevant | Einige Hrefs und externe Label gelangen ohne passenden Kontext-Check in Markup | `js/router.js:226-239`, `js/apps/building-create.js:32-61` |
-| P-07 | Datumsformatierung | Produktionsrelevant | Reine ISO-Daten können westlich von UTC am Vortag erscheinen | `js/format.js:32-35` |
-| P-08 | Bildauslieferung | Produktionsrelevant | Grosse Originalbilder werden ohne Derivate oder `srcset` ausgeliefert | `data/media.json:20,43`, `assets/images/` |
-| P-09 | Diagramm-Randfall | Produktionsrelevant | Ein vollständig leerer Pie-Chart zeigt intern ein Total von 1 | `js/charts.js:317-350` |
-| C-01 | Escaping | Kosmetisch | Bereits escapte Texte werden in Hero und Einheiten nochmals escaped | `js/hero-mosaic.js:21-27`, `js/components.js:1386` |
-| C-02 | Router | Kosmetisch | Gate-, 404- und Fehlerpfade teilen Scroll-/Fokus-Finalisierung nicht | `js/router.js:325-342`, `js/router.js:409-494` |
-| C-03 | URL-Verarbeitung | Kosmetisch | `URLSearchParams` wird teils nochmals decodiert; IDs werden teils roh angezeigt | `js/apps/metadata-catalog.js:75-76`, `js/pages/services.js:57-141` |
-| C-04 | Dokumentation | Kosmetisch | README, Review-Matrix und Kommentare beschreiben Runtime und Routenstand unvollständig oder veraltet | `README.md:31-37`, `docs/accessibility-review.md:5-16` |
-| C-05 | CSS-Details | Kosmetisch | Nicht animierbare Max-Height-Regel, Farbdrift und doppelte Deklarationen bleiben | `css/app.css:697-702`, `css/app.css:2107`, `css/app.css:3810` |
-| C-06 | Suche | Kosmetisch | Hash-Ersetzung schreibt denselben Wert ohne Wirkung erneut | `js/search-suggest.js:71` |
-| C-07 | Datenlabels | Kosmetisch | Papier-Dashboard deklariert eine leere Recycling-Spalte; Taglabels sind technisch | `data/dashboards.json:652`, `data/catalog-labels.json:36-37` |
-| C-08 | Tests | Kosmetisch | Template-Regex verliert `\s`; BPMN-Test hängt vom aktuellen Arbeitsverzeichnis ab | `scripts/lib/cdp.mjs:208-210`, `scripts/test-process-docs.mjs:28-31` |
+| Nr. | Status | Modul | Kategorie | Kurzbeschreibung | Fundstelle |
+| --- | --- | --- | --- | --- | --- |
+| B-01 | Erledigt | Immobilien-Dashboard | Blocker | Monatsansicht erzeugt `NaN` in SVG-Koordinaten | `js/apps/estate.js:216-221`, `js/charts.js:167-169` |
+| W-01 | Entscheid offen | Daten / Repository | Wichtig | Interne URLs und real wirkende Bundes-, Objekt- und Verantwortlichkeitsdaten liegen öffentlich vor | `data/applications.json:603-645`, `data/buildings.geojson:9-80`, `data/datasets.json:32` |
+| W-02 | Entscheid offen | Medien / Lizenzierung | Wichtig | 57 von 69 Medienrecords haben kein nachgewiesenes freies Weiterverteilungsrecht | `data/media.json:37`, `scripts/adopt-pdf-images.mjs:18-80` |
+| W-03 | Erledigt | Katalogzustand | Wichtig | Debounce schreibt nach einem Routenwechsel den alten Hash zurück | `js/components.js:1897-1901`, `js/components.js:1959` |
+| W-04 | Erledigt | Mobile Shell | Wichtig | Logout bei offenem Menü lässt Seite `inert` und Body gesperrt | `js/shell.js:397-434` |
+| W-05 | Erledigt | Overlays | Wichtig | Route- und verschachtelte Dialogwechsel räumen Overlay und Scroll-Lock falsch auf | `js/gallery.js:229-297`, `js/components.js:561-565` |
+| W-06 | Erledigt | Gebäude erfassen | Wichtig | Adressauswahl bleibt nach manueller Änderung gültig; ältere Suchantworten überschreiben neuere | `js/apps/building-create.js:240-244`, `js/apps/building-create.js:338-463` |
+| W-07 | Erledigt | Raumbuchung | Wichtig | Ungültige, vergangene oder unplausible Zeitfenster und Teilnehmerzahlen werden bestätigt | `js/apps/room-booking.js:84-85`, `js/apps/room-booking.js:272-289`, `js/apps/room-booking.js:583-623` |
+| W-08 | Erledigt | Shop | Wichtig | Speicherfehler werden als Bestellung/Warenkorb-Erfolg gemeldet | `js/apps/shop.js:44-63`, `js/apps/shop.js:580-612` |
+| W-09 | Erledigt | Mietflächen | Wichtig | Teilrender zerstört Grundriss-/Fullscreen-Zustand und bindet Tabellen neu | `js/apps/tenancies.js:855-905`, `js/apps/tenancies.js:920-948` |
+| W-10 | Erledigt | Portfolio | Wichtig | Kontextlinks verwenden falsche oder zu unspezifische Query-Parameter | `js/apps/portfolio.js:446`, `js/apps/portfolio.js:652` |
+| W-11 | Erledigt | Galerie | Wichtig | Geteilte Bild-URL stellt die Bildauswahl nicht wieder her | `js/gallery.js:218-226` |
+| W-12 | Fachentscheid offen | Flächendaten | Wichtig | BGF/NGF widersprechen zwischen Messungen und GeoJSON systematisch | `data/area-measurements.json:4-36`, `data/buildings.geojson:49-55` |
+| W-13 | Erledigt | Personal-Dashboard | Wichtig | Frauenanteil ist gleichzeitig 52 und 50,4 Prozent | `data/dashboards.json:547-548`, `data/dashboards.json:2265-2266` |
+| W-14 | Erledigt | Login-Gate | Wichtig | Fünf geschützte Routen fehlen im Anwendungskatalog und erhalten ein generisches Gate | `js/router.js:101-118`, `js/router.js:325-340` |
+| W-15 | Erledigt | Anchor-Navigation | Wichtig | Scroll-Spy vergleicht mount-relative `offsetTop`- mit dokumentrelativen Scrollwerten | `js/pages/anchor-nav.js:129-131`, `css/app.css:1195` |
+| W-16 | Erledigt | Dienstleistungen | Wichtig | «Auch in»-Treffer werden gezählt, die Ziel-Links verlieren aber den Suchbegriff | `js/pages/services.js:52-53`, `js/pages/services.js:85-89` |
+| W-17 | Erledigt | Testwerkzeug | Wichtig | Suiten können falsch bestehen, zu früh scheitern und Browserprozesse hinterlassen | `scripts/lib/cdp.mjs:65-152`, `scripts/test-login.mjs:35-42` |
+| W-18 | Erledigt | Asset-Skripte | Wichtig | Alte Bildpipelines arbeiten mit überholten Annahmen und können Assets überschreiben | `scripts/build-media-registry.mjs:162-170`, `scripts/fetch-building-images.mjs:109-121`, `scripts/link-building-images.mjs:67` |
+| W-19 | Erledigt | Teardown | Wichtig | Apps ignorieren Cleanup-Rückgaben für Karten, Observer, Tabellen und Listener | `js/apps/room-booking.js:473-483`, `js/apps/portfolio.js:697-700` |
+| W-20 | Erledigt | Mietflächen | Wichtig | Karten- und Leerergebnis-Pfad überspringen die Live-Region-Ansage | `js/apps/tenancies.js:227-259` |
+| W-21 | Erledigt | Prozess-Engine | Wichtig | «Heute» wird in UTC, die Referenz aber im lokalen Jahr berechnet | `js/process-engine.js:29-34` |
+| W-22 | Erledigt | Action-Menü | Wichtig | Beim Öffnen eines zweiten Menüs bleibt der alte Trigger für Assistive Technology expanded | `js/components.js:1790-1794` |
+| K-01 | Nicht begonnen | Komponenten | Komplexität | Zentrale Komponenten- und App-Module bündeln zu viele Verantwortlichkeiten | `js/components.js:1-2146`, `js/apps/room-booking.js:1-1068` |
+| K-02 | Nicht begonnen | Katalogseiten | Komplexität | Filter-, Hash-, Sortier- und Paging-Abläufe liegen in mehreren Varianten vor | `js/pages/services.js:15-201`, `js/components.js:1460-1959` |
+| K-03 | Nicht begonnen | Öffentliche APIs | Komplexität | Nicht verwendete Exporte und Zustands-APIs vergrössern die Oberfläche | `js/session.js:17-31`, `js/core.js:186-359`, `js/components.js:1343-2143` |
+| K-04 | Nicht begonnen | Dashboards | Komplexität | Generische Immobilien-/Hero-Konfiguration ist nicht erreichbar oder driftet | `js/apps/dataportal.js:138-236`, `data/dashboards.json:1782-2392` |
+| K-05 | Nicht begonnen | Datenrouten | Komplexität | Unterrouten laden breitere Datenbereiche als sie verwenden | `js/pages/data.js:4-7`, `js/router.js:441-443` |
+| K-06 | Nicht begonnen | Wiederholte Arbeit | Komplexität | Prozessdateien laden seriell; Raumsuche berechnet Profile und Sortierungen mehrfach | `js/process-engine.js:22-25`, `js/apps/room-booking.js:175-253` |
+| K-07 | Nicht begonnen | CSS | Komplexität | Stylesheets dienen zugleich als Review-Historie; Kommentare und tote Regeln werden ausgeliefert | `css/app.css:8-139`, `css/app.css:3030-3103` |
+| K-08 | Nicht begonnen | Repository | Komplexität | Binäre Review-Screenshots dominieren Grösse und History | `docs/review-assets/audit.json:1`, `docs/review-assets/accessibility.json:1` |
+| K-09 | Nicht begonnen | Skripte | Komplexität | Diagnoseproben enthalten lokale Windows-Pfade und überlappende Einmalwerkzeuge | `scripts/check-hero.mjs:3`, `scripts/check-services.mjs:30` |
+| K-10 | Nicht begonnen | Registries | Komplexität | Core- und Router-Metadaten werden in parallelen Tabellen über denselben Schlüsselraum geführt | `js/core.js:17-72`, `js/router.js:81-118` |
+| P-01 | Ausserhalb Runde | Supply Chain | Produktionsrelevant | CDN-Code läuft ohne SRI; eine restriktive CSP fehlt | `index.html:3-13`, `js/buildings-map.js:20-28` |
+| P-02 | Ausserhalb Runde | Web Storage | Produktionsrelevant | Storage-Zugriffe und korrupte gespeicherte Werte sind nicht durchgehend abgesichert | `js/router.js:299-311`, `js/search-log.js:23-50` |
+| P-03 | Ausserhalb Runde | Datenloader | Produktionsrelevant | Loader prüfen Schemas nur grob und bündeln parallele gleiche Requests nicht | `js/core.js:200-206`, `js/dashboard-data.js:21-47` |
+| P-04 | Ausserhalb Runde | CSV-Export | Produktionsrelevant | Zellen mit Formelpräfix werden nicht neutralisiert | `js/export.js:34` |
+| P-05 | Ausserhalb Runde | URL-Zustand | Produktionsrelevant | Vererbte Objekteigenschaften können als gültiger Störungstyp interpretiert werden | `js/apps/fault-report.js:70-114` |
+| P-06 | Ausserhalb Runde | Trust Boundaries | Produktionsrelevant | Einige Hrefs und externe Label gelangen ohne passenden Kontext-Check in Markup | `js/router.js:226-239`, `js/apps/building-create.js:32-61` |
+| P-07 | Ausserhalb Runde | Datumsformatierung | Produktionsrelevant | Reine ISO-Daten können westlich von UTC am Vortag erscheinen | `js/format.js:32-35` |
+| P-08 | Ausserhalb Runde | Bildauslieferung | Produktionsrelevant | Grosse Originalbilder werden ohne Derivate oder `srcset` ausgeliefert | `data/media.json:20,43`, `assets/images/` |
+| P-09 | Ausserhalb Runde | Diagramm-Randfall | Produktionsrelevant | Ein vollständig leerer Pie-Chart zeigt intern ein Total von 1 | `js/charts.js:317-350` |
+| C-01 | Nicht begonnen | Escaping | Kosmetisch | Bereits escapte Texte werden in Hero und Einheiten nochmals escaped | `js/hero-mosaic.js:21-27`, `js/components.js:1386` |
+| C-02 | Nicht begonnen | Router | Kosmetisch | Gate-, 404- und Fehlerpfade teilen Scroll-/Fokus-Finalisierung nicht | `js/router.js:325-342`, `js/router.js:409-494` |
+| C-03 | Nicht begonnen | URL-Verarbeitung | Kosmetisch | `URLSearchParams` wird teils nochmals decodiert; IDs werden teils roh angezeigt | `js/apps/metadata-catalog.js:75-76`, `js/pages/services.js:57-141` |
+| C-04 | Teilweise | Dokumentation | Kosmetisch | README, Review-Matrix und Kommentare beschreiben Runtime und Routenstand unvollständig oder veraltet | `README.md:31-37`, `docs/accessibility-review.md:5-16` |
+| C-05 | Nicht begonnen | CSS-Details | Kosmetisch | Nicht animierbare Max-Height-Regel, Farbdrift und doppelte Deklarationen bleiben | `css/app.css:697-702`, `css/app.css:2107`, `css/app.css:3810` |
+| C-06 | Nicht begonnen | Suche | Kosmetisch | Hash-Ersetzung schreibt denselben Wert ohne Wirkung erneut | `js/search-suggest.js:71` |
+| C-07 | Nicht begonnen | Datenlabels | Kosmetisch | Papier-Dashboard deklariert eine leere Recycling-Spalte; Taglabels sind technisch | `data/dashboards.json:652`, `data/catalog-labels.json:36-37` |
+| C-08 | Erledigt | Tests | Kosmetisch | Template-Regex verliert `\s`; BPMN-Test hängt vom aktuellen Arbeitsverzeichnis ab | `scripts/lib/cdp.mjs:208-210`, `scripts/test-process-docs.mjs:28-31` |
 
 ## 4. Systemische Befunde
 
@@ -300,19 +300,19 @@ Alle Punkte in diesem Abschnitt sind **heute im Frontend-Mockup kein Problem**. 
 
 Phase 5 wurde auf `code-review-2026-08` begonnen und für alle technisch entscheidbaren Punkte der empfohlenen ersten Runde abgeschlossen. Die ursprüngliche Priorisierung bleibt nachfolgend als Entscheidungs- und Review-Nachweis erhalten; der aktuelle Status steht in Abschnitt 1.1.
 
-| Priorität | Paket | Befunde | Wirkung | Geschätzter Aufwand | Abhängigkeit / Abnahmekriterium |
-| ---: | --- | --- | --- | ---: | --- |
-| 1 | Monatsdiagramm reparieren | B-01 | Beseitigt den einzigen bestätigten Vorführ-Blocker | S | Monats- und Jahresansicht enthalten keine `NaN`-/ungültigen SVG-Werte und stimmen in Tooltip/Skala |
-| 2 | Publikationsentscheid und Eindämmung | W-01, W-02, Q-01 bis Q-04 | Verhindert weitere Verteilung ungeklärter Daten und Medien | L–XL plus externe Entscheidung | Positivliste/Freigabe liegt vor; ungeklärte Inhalte sind aus öffentlichem Baum entfernt oder klar synthetisch ersetzt; History-Entscheid separat genehmigt |
-| 3 | Zustandsfehler in Kernpfaden | W-03, W-04, W-05, W-06, W-07, W-08 | Stabilisiert Navigation, Formulare, Buchung und Shop | L | Reproduktionsschritte jedes Befunds bestehen; keine Route oder Ansicht entfällt |
-| 4 | Lifecycle und Accessibility | W-09, W-19, W-20, W-22 | Verhindert stale UI, Leaks und falsche Assistive-Technology-Zustände | L | Wiederholtes Öffnen/Schliessen/Navigieren hinterlässt keine Karten, Observer, Listener oder Locks; Live-Regionen und ARIA stimmen |
-| 5 | Daten- und Deep-Link-Korrektheit | W-10 bis W-16, W-21 | Entfernt widersprüchliche Zahlen, falsche Links und Gate-/Scroll-Zustände | M–L | Fachliche Antworten zu Q-01/Q-07/Q-08 liegen vor; relevante Deep-Links und Dashboardwerte sind konsistent |
-| 6 | Testwerkzeug belastbar machen | W-17, C-08 | Macht Grün/Rot verlässlich und verhindert Prozessreste | M | Login startet nachweislich ausgeloggt; Karten warten auf Bedingung; Cleanup läuft auch bei Assertion-Fehlern; alle unterstützten Suiten enden ohne verwaiste Prozesse |
-| 7 | Riskante und lokale Skripte bereinigen | W-18, K-09 | Senkt versehentliche Schreib- und Onboarding-Risiken | M | Unterstützte Skripte sind relativ, dokumentiert und besitzen Dry-Run, Altproben sind klar archiviert oder entfernt |
-| 8 | Gezielte Vereinfachung | K-01 bis K-07, K-10 | Reduziert Drift und Wartungskosten ohne Funktionsänderung | L–XL | Pro eng zusammenhängender Gruppe eigener Commit; vor/nach jeder Gruppe Routen- und Hauptpfadvergleich |
-| 9 | Repository-Artefakte | K-08, C-04 | Reduziert Clone-/History-Grösse und aktualisiert Nachweise | L–XL | Aufbewahrungsort und History-Rewrite ausdrücklich freigegeben; aktuelle Manifest-/Review-Dokumentation bleibt erhalten |
-| 10 | Produktions-Backlog | P-01 bis P-09 | Bereitet eine allfällige Produktivierung vor | nicht Teil dieser Runde | Erst aufnehmen, wenn Backend, reale Nutzer oder produktiver Betrieb beschlossen sind |
-| 11 | Kosmetik | C-01 bis C-03, C-05 bis C-07 | Kleine Konsistenzverbesserungen | S–M | Nur zusammen mit berührten Modulen; keine eigene Priorität vor wichtigen Befunden |
+| Priorität | Status | Paket | Befunde | Wirkung | Geschätzter Aufwand | Abhängigkeit / Abnahmekriterium |
+| ---: | --- | --- | --- | --- | ---: | --- |
+| 1 | Erledigt | Monatsdiagramm reparieren | B-01 | Beseitigt den einzigen bestätigten Vorführ-Blocker | S | Monats- und Jahresansicht enthalten keine `NaN`-/ungültigen SVG-Werte und stimmen in Tooltip/Skala |
+| 2 | Entscheid offen | Publikationsentscheid und Eindämmung | W-01, W-02, Q-01 bis Q-04 | Verhindert weitere Verteilung ungeklärter Daten und Medien | L–XL plus externe Entscheidung | Positivliste/Freigabe liegt vor; ungeklärte Inhalte sind aus öffentlichem Baum entfernt oder klar synthetisch ersetzt; History-Entscheid separat genehmigt |
+| 3 | Erledigt | Zustandsfehler in Kernpfaden | W-03, W-04, W-05, W-06, W-07, W-08 | Stabilisiert Navigation, Formulare, Buchung und Shop | L | Reproduktionsschritte jedes Befunds bestehen; keine Route oder Ansicht entfällt |
+| 4 | Erledigt | Lifecycle und Accessibility | W-09, W-19, W-20, W-22 | Verhindert stale UI, Leaks und falsche Assistive-Technology-Zustände | L | Wiederholtes Öffnen/Schliessen/Navigieren hinterlässt keine Karten, Observer, Listener oder Locks; Live-Regionen und ARIA stimmen |
+| 5 | Teilweise – W-12 offen | Daten- und Deep-Link-Korrektheit | W-10 bis W-16, W-21 | Entfernt widersprüchliche Zahlen, falsche Links und Gate-/Scroll-Zustände | M–L | Fachliche Antworten zu Q-01/Q-07/Q-08 liegen vor; relevante Deep-Links und Dashboardwerte sind konsistent |
+| 6 | Erledigt | Testwerkzeug belastbar machen | W-17, C-08 | Macht Grün/Rot verlässlich und verhindert Prozessreste | M | Login startet nachweislich ausgeloggt; Karten warten auf Bedingung; Cleanup läuft auch bei Assertion-Fehlern; alle unterstützten Suiten enden ohne verwaiste Prozesse |
+| 7 | Teilweise – W-18 erledigt | Riskante und lokale Skripte bereinigen | W-18, K-09 | Senkt versehentliche Schreib- und Onboarding-Risiken | M | Unterstützte Skripte sind relativ, dokumentiert und besitzen Dry-Run, Altproben sind klar archiviert oder entfernt |
+| 8 | Nicht begonnen | Gezielte Vereinfachung | K-01 bis K-07, K-10 | Reduziert Drift und Wartungskosten ohne Funktionsänderung | L–XL | Pro eng zusammenhängender Gruppe eigener Commit; vor/nach jeder Gruppe Routen- und Hauptpfadvergleich |
+| 9 | Nicht begonnen | Repository-Artefakte | K-08, C-04 | Reduziert Clone-/History-Grösse und aktualisiert Nachweise | L–XL | Aufbewahrungsort und History-Rewrite ausdrücklich freigegeben; aktuelle Manifest-/Review-Dokumentation bleibt erhalten |
+| 10 | Ausserhalb Runde | Produktions-Backlog | P-01 bis P-09 | Bereitet eine allfällige Produktivierung vor | nicht Teil dieser Runde | Erst aufnehmen, wenn Backend, reale Nutzer oder produktiver Betrieb beschlossen sind |
+| 11 | Nicht begonnen | Kosmetik | C-01 bis C-03, C-05 bis C-07 | Kleine Konsistenzverbesserungen | S–M | Nur zusammen mit berührten Modulen; keine eigene Priorität vor wichtigen Befunden |
 
 ### 8.1 Freigegebene erste Runde
 
