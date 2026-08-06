@@ -164,9 +164,19 @@ function lineChart({ id, rows, x, y, series, unit, width }) {
   // rechts Platz für das Endpunkt-Label; auf schmalen Karten weniger
   const { W, H, P } = geom(width, { r: (width || 720) < 420 ? 44 : 76 });
   const names = series ? [...new Set(rows.map(r => r[series]))] : ['__single'];
-  const xs = [...new Set(rows.map(r => r[x]))].sort((a, b) => a - b);
+  const xs = [...new Set(rows.map(r => r[x]))];
+  const numericX = xs.every(v => Number.isFinite(Number(v)));
+  xs.sort(numericX
+    ? (a, b) => Number(a) - Number(b)
+    : (a, b) => String(a).localeCompare(String(b), 'de-CH', { numeric: true }));
+  const xIndex = new Map(xs.map((v, i) => [v, i]));
   const max = niceMax(Math.max(...rows.map(r => Number(r[y]) || 0)));
-  const px = (v) => P.l + ((v - xs[0]) / ((xs[xs.length - 1] - xs[0]) || 1)) * (W - P.l - P.r);
+  const firstX = numericX ? Number(xs[0]) : 0;
+  const lastX = numericX ? Number(xs[xs.length - 1]) : xs.length - 1;
+  const px = (v) => {
+    const position = numericX ? Number(v) : xIndex.get(v);
+    return P.l + ((position - firstX) / ((lastX - firstX) || 1)) * (W - P.l - P.r);
+  };
   const py = (v) => H - P.b - (v / max) * (H - P.t - P.b);
 
   const grid = ticks(max).map(t =>
