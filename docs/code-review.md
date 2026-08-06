@@ -25,7 +25,7 @@ Produktionsanforderungen wie echte Authentisierung, Backend-Fehlerbehandlung ode
 
 ### 1.1 Umsetzungsstand Phase 5
 
-Die freigegebene erste Runde und das anschliessende Paket K-09/C-04 wurden auf `code-review-2026-08` umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden, C-08, K-09 und C-04 sind erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
+Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04 sowie K-05/K-06 wurden auf `code-review-2026-08` umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden, C-08, K-05, K-06, K-09 und C-04 sind erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
 
 | Status | Befunde | Commit oder Abhängigkeit |
 | --- | --- | --- |
@@ -39,6 +39,8 @@ Die freigegebene erste Runde und das anschliessende Paket K-09/C-04 wurden auf `
 | Erledigt | W-19 | `b5213ad` – expliziter Besitz von Karten, Observern, Tabellen und Listenern |
 | Erledigt | W-21 | `39c7986` – ein lokaler Kalenderstempel für Datum, Historie und Referenzjahr |
 | Erledigt | C-08 | `3d0992a` – korrekte Template-Regex und arbeitsverzeichnisunabhängiger BPMN-Test |
+| Erledigt | K-05 | `05ca43f` – routenabhängige und alleinige Ladeverträge für Datenunterseiten |
+| Erledigt | K-06 | `5ecaa98` – paralleles Prozessladen und ein vorbereiteter Buchungskontext pro Render |
 | Erledigt | K-09 | `538975d` – portable Skriptpfade, klassifizierte Altproben und isolierbare Review-Ausgaben |
 | Erledigt | C-04 | `b480181` – vollständige Runtime-Dokumentation und wahrheitsgetreue 58-/57-State-Artefaktmetadaten |
 | Offen – Publikationsentscheid | W-01, W-02 | Q-01 bis Q-04, Positivliste und Medienfreigaben fehlen; Entfernung aus der History benötigt separate ausdrückliche Genehmigung |
@@ -46,13 +48,13 @@ Die freigegebene erste Runde und das anschliessende Paket K-09/C-04 wurden auf `
 
 | Verifikation nach Phase 5 | Ergebnis |
 | --- | --- |
-| Vollständige funktionale Suite | 27 von 27 `test-*.mjs` bestanden; 1'247 Ausgabezeilen, Laufzeit rund 288 Sekunden |
-| JavaScript-Syntax | 125 von 125 `.js`-/`.mjs`-Dateien bestehen `node --check` |
+| Vollständige funktionale Suite | 28 von 28 `test-*.mjs` bestanden; Laufzeit 278.9 Sekunden |
+| JavaScript-Syntax | 126 von 126 `.js`-/`.mjs`-Dateien bestehen `node --check` |
 | Routen und Redirects | 37 Routen und 13 Redirects bestanden innerhalb von `test-routes.mjs` |
 | C-08-Portabilität | `test-process-docs.mjs` besteht auch mit `scripts/` statt Repository-Root als Arbeitsverzeichnis |
 | K-09-Portabilität | Sechs historische Dry-Run-/Prüfwerkzeuge und acht geänderte Browserproben liefen aus einem Unterverzeichnis; kein entwicklerspezifischer Checkout-Pfad bleibt |
 | C-04-Artefakte | Isolierter Accessibility-Lauf: 58 von 58 Zuständen, null Befunde; erhaltener Audit 57 × 3 = 171 und Screenshot-Paar 171/171 konsistent |
-| Gezielte neue Regressionen | Monatsachse, UI-State, Galerie/Grundriss, Anchor-/Suchzustand, Prozessdatum sowie Dialog-/Karten-Teardown bestanden |
+| Gezielte neue Regressionen | Monatsachse, UI-State, Galerie/Grundriss, Anchor-/Suchzustand, Prozessdatum, exakte Datenrouten-Ladeverträge, unabhängige Prozessladefehler sowie Buchungskontext/Verfügbarkeits-Recheck bestanden |
 
 ### 1.2 Prüfumfang und Baseline
 
@@ -159,8 +161,8 @@ Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Com
 | K-02 | Nicht begonnen | Katalogseiten | Komplexität | Filter-, Hash-, Sortier- und Paging-Abläufe liegen in mehreren Varianten vor | `js/pages/services.js:15-201`, `js/components.js:1460-1959` |
 | K-03 | Nicht begonnen | Öffentliche APIs | Komplexität | Nicht verwendete Exporte und Zustands-APIs vergrössern die Oberfläche | `js/session.js:17-31`, `js/core.js:186-359`, `js/components.js:1343-2143` |
 | K-04 | Nicht begonnen | Dashboards | Komplexität | Generische Immobilien-/Hero-Konfiguration ist nicht erreichbar oder driftet | `js/apps/dataportal.js:138-236`, `data/dashboards.json:1782-2392` |
-| K-05 | Nicht begonnen | Datenrouten | Komplexität | Unterrouten laden breitere Datenbereiche als sie verwenden | `js/pages/data.js:4-7`, `js/router.js:441-443` |
-| K-06 | Nicht begonnen | Wiederholte Arbeit | Komplexität | Prozessdateien laden seriell; Raumsuche berechnet Profile und Sortierungen mehrfach | `js/process-engine.js:22-25`, `js/apps/room-booking.js:175-253` |
+| K-05 | Erledigt | Datenrouten | Komplexität | Unterrouten laden breitere Datenbereiche als sie verwenden | `js/pages/data.js:4-31`, `js/router.js:453-461` |
+| K-06 | Erledigt | Wiederholte Arbeit | Komplexität | Prozessdateien laden seriell; Raumsuche berechnet Profile und Sortierungen mehrfach | `js/process-engine.js:22-44`, `js/apps/room-booking.js:151-347,1145-1163` |
 | K-07 | Nicht begonnen | CSS | Komplexität | Stylesheets dienen zugleich als Review-Historie; Kommentare und tote Regeln werden ausgeliefert | `css/app.css:8-139`, `css/app.css:3030-3103` |
 | K-08 | Nicht begonnen | Repository | Komplexität | Binäre Review-Screenshots dominieren Grösse und History | `docs/review-assets/audit.json:1`, `docs/review-assets/accessibility.json:1` |
 | K-09 | Erledigt | Skripte | Komplexität | Diagnoseproben enthalten lokale Windows-Pfade und überlappende Einmalwerkzeuge | `scripts/check-hero.mjs:3`, `scripts/check-services.mjs:30` |
@@ -238,8 +240,8 @@ Aufwandsskala: **XS** unter 2 Stunden, **S** bis 0.5 Tag, **M** 1–2 Tage, **L*
 | K-02 | Nicht begonnen | `js/pages/services.js:15-201`; `js/pages/applications.js`; `js/pages/catalog.js`; `js/pages/search.js`; `js/apps/media-library.js`; `js/components.js:1460-1959` | Die Seiten teilen denselben Ablauf Hash lesen → filtern → sortieren → paginieren → Pills → Verdrahtung, führen aber lokale Varianten und mit `wireCatalogueState` einen zweiten Commit-Pfad. Das erhöht Drift und erschwert Fixes wie W-03. | Kleine gemeinsame Zustandsreduktion und einen Commit-Adapter für Hash versus lokalen State extrahieren; Seiten behalten Card-, Facet- und Textlogik. Q-05 vor Umbau klären. | L |
 | K-03 | Nicht begonnen | `js/session.js:17-31`; `js/links.js:19-24`; `js/crumbs.js:16`; `js/core.js:186,359`; `js/process-engine.js:107-120`; `js/components.js:1343-1352,2015-2143` | Listener-API, Link-/Crumb-Konstanten, Core-Zustände, Engine-Methoden und Komponentenexporte haben keine externen Aufrufer oder sind nur intern. Die öffentliche Oberfläche suggeriert nicht vorhandene Verträge. | Verwendungen mit statischer Suche/Importgraph bestätigen; ungenutzte Exporte entfernen oder intern machen; Engine-/Core-Diagnostik nur behalten, wenn ein konkreter Konsument benannt ist. | M |
 | K-04 | Nicht begonnen | `js/apps/dataportal.js:138-236`; `data/dashboards.json:1782-2392` | Generische Immobilienkarten-/Dashboard- und Hero-Konfiguration wird von den aktuellen Routen nicht erreicht oder parallel zur spezialisierten `estate.js`-Ansicht gepflegt. Daten und Texte können unbemerkt driften. | Pro Dashboard genau einen Renderer und eine Datenform festlegen; unerreichbare Konfiguration nach Routen-/Screenshotprüfung entfernen. | M |
-| K-05 | Nicht begonnen | `js/pages/data.js:4-7`; `js/router.js:441-443`; `js/pages/catalog.js:10-12` | Jede Datenunterroute lädt Anwendungen und Datensätze, auch wenn nur eine Teilansicht benötigt wird; deklarierte `needs` sind teils unvollständig oder ohne Wirkung. Die Datenmenge ist heute klein, der Vertrag bleibt aber irreführend. | `needs` zur einzigen Ladebeschreibung machen und pro Route nur tatsächlich verwendete Keys deklarieren. | S |
-| K-06 | Nicht begonnen | `js/process-engine.js:22-25`; `js/apps/room-booking.js:175-253,381-383` | Prozessdefinitionen und Instanzen laden unabhängig, aber seriell. Die Raumsuche berechnet Profil, Sortierung und `engine.instances()` wiederholt innerhalb der Raumiteration. Bei den kleinen Fixtures ist das nicht spürbar, erschwert aber die Logik. | Unabhängige Prozessdateien mit `Promise.allSettled` laden; Buchungskontext einmal pro Suche vorberechnen und in die Filterfunktion geben. | S |
+| K-05 | Erledigt | `js/pages/data.js:4-31`; `js/router.js:453-461`; `scripts/test-route-needs.mjs` | Jede Datenunterroute lud Anwendungen und Datensätze, auch wenn nur eine Teilansicht benötigt wurde; deklarierte `needs` waren teils unvollständig oder ohne Wirkung. Die Datenmenge ist heute klein, der Vertrag blieb aber irreführend. | `needs` ist jetzt die einzige Ladebeschreibung und deklariert pro Route nur tatsächlich verwendete Keys; kalte Seitenkontexte prüfen den Vertrag. | S |
+| K-06 | Erledigt | `js/process-engine.js:22-44`; `js/apps/room-booking.js:151-347,1145-1163`; `scripts/test-process-dates.mjs`; `scripts/test-room-booking.mjs` | Prozessdefinitionen und Instanzen luden unabhängig, aber seriell. Die Raumsuche berechnete Profil, Sortierung und `engine.instances()` wiederholt innerhalb der Raumiteration. Bei den kleinen Fixtures war das nicht spürbar, erschwerte aber die Logik. | Unabhängige Prozessdateien laden jetzt mit `Promise.allSettled`; ein Buchungskontext pro Render bündelt Räume, Profile, Favoriten und Belegungen, während Aktionen frisch nachprüfen. | S |
 | K-07 | Nicht begonnen | `css/app.css:8-139,517-519,3030-3103`; `css/tokens.css:23-143` | 45.3 Prozent der beiden CSS-Dateien sind Kommentare. Gzip-Grösse: 97'488 Byte mit, 31'198 Byte ohne Kommentare. Mehrere Kommentare sind bereits falsch, etwa «Spinner unreferenced» trotz Nutzung; tote Chart-/Service-/Filterregeln bleiben daneben bestehen. | Kurze Warum-Kommentare im CSS behalten, Review-Chronologie in ADR/Dokument verschieben, tote Regeln entfernen und für Deployment minifiziertes CSS ausliefern. | M |
 | K-08 | Nicht begonnen | `docs/review-assets/audit.json:1`; `docs/review-assets/accessibility.json:1`; `docs/review-assets/` | 342 Vorher-/Nachher-PNGs belegen 133.77 MiB und rund 72 Prozent des getrackten Baums. Zehn Hash-Duplikatgruppen sparen allein rund 1.13 MiB; die vollständige Matrix verteuert jeden Clone und die History dauerhaft. | Komplette Matrizen als CI-/Release-Artefakt speichern; in Git Manifest, Resultat-JSON und wenige repräsentative Bilder behalten. History-Bereinigung separat freigeben. | L–XL |
 | K-09 | Erledigt | `scripts/check-hero.mjs:3`; weitere `check-*`-Skripte; Daten-/Bildskripte | Neun Diagnoseproben referenzieren einen lokalen `file:///C:/.../cdp.mjs`-Pfad; weitere Generatoren enthalten einen fest codierten Repository-Pfad. Überlappende Einmalproben haben keinen gemeinsamen Entrypoint oder Status. | Benötigte Proben auf relative Imports/`import.meta.url` umstellen, Dubletten archivieren oder löschen, unterstützte Skripte im README mit Zweck und Schreibwirkung listen. | M |
@@ -313,14 +315,14 @@ Phase 5 wurde auf `code-review-2026-08` begonnen und für alle technisch entsche
 | 5 | Teilweise – W-12 offen | Daten- und Deep-Link-Korrektheit | W-10 bis W-16, W-21 | Entfernt widersprüchliche Zahlen, falsche Links und Gate-/Scroll-Zustände | M–L | Fachliche Antworten zu Q-01/Q-07/Q-08 liegen vor; relevante Deep-Links und Dashboardwerte sind konsistent |
 | 6 | Erledigt | Testwerkzeug belastbar machen | W-17, C-08 | Macht Grün/Rot verlässlich und verhindert Prozessreste | M | Login startet nachweislich ausgeloggt; Karten warten auf Bedingung; Cleanup läuft auch bei Assertion-Fehlern; alle unterstützten Suiten enden ohne verwaiste Prozesse |
 | 7 | Erledigt | Riskante und lokale Skripte bereinigen | W-18, K-09 | Senkt versehentliche Schreib- und Onboarding-Risiken | M | Unterstützte Skripte sind relativ und dokumentiert; Schreibwirkungen sind explizit, Altproben klar klassifiziert oder entfernt |
-| 8 | Nicht begonnen | Gezielte Vereinfachung | K-01 bis K-07, K-10 | Reduziert Drift und Wartungskosten ohne Funktionsänderung | L–XL | Pro eng zusammenhängender Gruppe eigener Commit; vor/nach jeder Gruppe Routen- und Hauptpfadvergleich |
+| 8 | Teilweise – K-05/K-06 erledigt | Gezielte Vereinfachung | K-01 bis K-07, K-10 | Reduziert Drift und Wartungskosten ohne Funktionsänderung | L–XL | Pro eng zusammenhängender Gruppe eigener Commit; vor/nach jeder Gruppe Routen- und Hauptpfadvergleich |
 | 9 | Teilweise – C-04 erledigt | Repository-Artefakte | K-08, C-04 | Reduziert Clone-/History-Grösse und aktualisiert Nachweise | L–XL | Aufbewahrungsort und History-Rewrite ausdrücklich freigegeben; aktuelle Manifest-/Review-Dokumentation bleibt erhalten |
 | 10 | Ausserhalb Runde | Produktions-Backlog | P-01 bis P-09 | Bereitet eine allfällige Produktivierung vor | nicht Teil dieser Runde | Erst aufnehmen, wenn Backend, reale Nutzer oder produktiver Betrieb beschlossen sind |
 | 11 | Nicht begonnen | Kosmetik | C-01 bis C-03, C-05 bis C-07 | Kleine Konsistenzverbesserungen | S–M | Nur zusammen mit berührten Modulen; keine eigene Priorität vor wichtigen Befunden |
 
 ### 8.1 Freigegebene erste Runde
 
-Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. Im anschliessenden Paket wurden K-09 und C-04 erledigt; K-01 bis K-08 und K-10 wurden nicht begonnen. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
+Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. In den anschliessenden Paketen wurden K-09/C-04 und K-05/K-06 erledigt. Offen bleiben K-01 bis K-04, K-07, K-08 und K-10. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
 
 Nach jeder Gruppe gelten die Guardrails des Auftrags: ein Commit pro Befund oder eng zusammenhängender Gruppe, Commit-Message mit Befundnummer, Syntax-/Datentests, relevante Browser-Suiten und manueller Hauptpfad. Wird eine Änderung grösser als geschätzt oder verlangt eine fachliche Entscheidung, wird angehalten.
 
