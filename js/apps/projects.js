@@ -12,7 +12,7 @@
 import { initEstateMap } from '../buildings-map.js';
 import { createMapSlot } from '../map-slot.js';
 import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../spatial-tree.js';
-import { openGallery } from '../gallery.js';
+import { openGallery, restoreGalleryFromQuery } from '../gallery.js';
 import { galleryItemsFrom } from '../hero-mosaic.js';
 import { chf } from '../format.js';
 import { landName, weOf, projectStatusLabel } from '../domain.js';
@@ -487,6 +487,7 @@ function detail(ctx, id) {
     // Routenwechsel gehören dem Router (Archetyp-Rezept Objekt-Detail).
     mount.querySelector('.pj-hero__btn')?.addEventListener('click', () =>
       openGallery(galleryItems, 0, C, { param: 'bild' }));
+    restoreGalleryFromQuery(query, galleryItems, C);
   }
   draw();
 }

@@ -26,6 +26,34 @@ function stageWidth() {
 }
 
 
+// Stellt einen mit dem Teilen-Knopf erzeugten Galerie-Link wieder her. Der
+// Router reicht die bereits gelesenen Hash-Parameter als URLSearchParams
+// durch; nur eine EXAKT bekannte Bild-ID darf ein Overlay öffnen. Damit wird
+// aus einem unbekannten/stale `?bild=` weder still das erste Bild noch eine
+// Navigation. Geöffnet wird im nächsten Frame: der Router setzt nach render()
+// den Fokus auf die Seitenüberschrift; erst danach darf der Dialog seinen
+// Schliessen-Knopf fokussieren. openGallery synchronisiert anschliessend
+// dieselbe ID per replaceState, löst also keinen Hashwechsel und keinen zweiten
+// Renderlauf aus.
+export function restoreGalleryFromQuery(query, items, C, opts = {}) {
+  const param = opts.param || 'bild';
+  const requested = query && typeof query.get === 'function' ? query.get(param) : '';
+  if (!requested || !Array.isArray(items) || !items.length) return null;
+  const index = items.findIndex((item) => item && item.id === requested);
+  if (index < 0) return null;
+  // Die vollständige Route gehört zum Auftrag. Im Portfolio steckt die
+  // Objektidentität z. B. in `?id=`; nur den Pfad und `bild` zu vergleichen
+  // liesse einen alten Frame die Galerie von Objekt A über Objekt B öffnen.
+  const expectedHash = String(location.hash || '#/');
+  return requestAnimationFrame(() => {
+    // Der Rahmen kann nach render() bereits einer neueren Navigation gehören.
+    // Dann darf der alte Wiederherstellungsauftrag dort kein Overlay öffnen.
+    if (String(location.hash || '#/') !== expectedHash) return;
+    openGallery(items, index, C, { ...opts, param });
+  });
+}
+
+
 export function openGallery(items, start, C, opts = {}) {
   // `opts.param`: Name eines Hash-Parameters, in dem das offene Bild steht
   // (z. B. ?bild=MED-007). Damit zeigt der Teilen-Knopf auf GENAU diese
@@ -308,4 +336,4 @@ export function openGallery(items, start, C, opts = {}) {
   return close;
 }
 
-export default { openGallery };
+export default { openGallery, restoreGalleryFromQuery };

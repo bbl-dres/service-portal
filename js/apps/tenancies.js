@@ -19,7 +19,7 @@ import { initEstateMap } from '../buildings-map.js';
 import { createMapSlot } from '../map-slot.js';
 import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../spatial-tree.js';
 import { heroMosaic, galleryItemsFrom } from '../hero-mosaic.js';
-import { openGallery } from '../gallery.js';
+import { openGallery, restoreGalleryFromQuery } from '../gallery.js';
 import { num, chf, m2, datum } from '../format.js';
 import { landName, statusLabel } from '../domain.js';
 import { ANWENDUNGEN } from '../crumbs.js';
@@ -519,9 +519,12 @@ function detail(ctx, id) {
   // Bildmosaik und Reiterleiste bleiben stehen, es wird nicht navigiert.
   function panelGrundriss() {
     return `<div id="mt-grundriss__body">${
-      !floors.length ? C.empty('Für dieses Mietverhältnis ist kein Grundriss hinterlegt.')
-        : floorId ? floorplanView() : floorTable()}</div>`;
+      grundrissBodyHtml()}</div>`;
   }
+
+  const grundrissBodyHtml = () => !floors.length
+    ? C.empty('Für dieses Mietverhältnis ist kein Grundriss hinterlegt.')
+    : floorId ? floorplanView() : floorTable();
 
   // Geschosszeilen — angereichert um die Summen aus den Räumen. Wird von der
   // Datentabelle unten gelesen.
@@ -844,10 +847,9 @@ function detail(ctx, id) {
     </div>`;
 
     C.wireTabs(mount, { syncHash: (tab) => { active = tab; syncHash(); } });
-    // KEIN mountTables() hier: wireGrundriss() montiert die Datentabellen
-    // bereits selbst — der doppelte Aufruf je Zeichnung liess jede Tabelle
-    // ihre Live-Region-Ansage zweimal sprechen (Review apps/mt-dblmount-1).
-    wireGrundriss();
+    // Alle Tabellen genau einmal beim Aufbau montieren. Partielle
+    // Grundriss-Neuzeichnungen fassen danach nur noch die Geschosstabelle an.
+    wireGrundriss({ mountAllTables: true });
     wireHero();
     // KEIN eigenes scrollTo/Fokussieren mehr: Scroll und Fokus gehören dem
     // Router — echte Navigation beginnt dort am Seitenanfang, ein reiner
@@ -862,9 +864,25 @@ function detail(ctx, id) {
   function redrawGrundriss() {
     const host = mount.querySelector('#mt-grundriss__body');
     if (!host) return draw();
-    // panelGrundriss() bringt die Hülle selbst mit — hier nur ihren Inhalt
-    // ersetzen, sonst verschachtelte sich #mt-grundriss__body bei jedem Klick.
-    host.outerHTML = panelGrundriss();
+    if (detach) { detach(); detach = null; }
+    unmountTable('mt-dt-floors');
+
+    const currentWrap = host.querySelector('#fp-wrap');
+    if (currentWrap && floorId) {
+      // Bei Raumwahl, Einfärbung und Geschosswechsel bleibt #fp-wrap selbst
+      // stehen. Ist er das native Fullscreen-Element, würde outerHTML/innerHTML
+      // am Host den Vollbildmodus sofort beenden. Nur seine Kinder werden aus
+      // der neu berechneten Ansicht übernommen; floorId/spaceId/colorMode sind
+      // weiterhin die einzige Zustandsquelle.
+      const template = document.createElement('template');
+      template.innerHTML = floorplanView();
+      const nextWrap = template.content.querySelector('#fp-wrap');
+      currentWrap.replaceChildren(...nextWrap.childNodes);
+    } else {
+      // Wechsel zwischen Geschosstabelle und Plan. In diesem Fall existiert
+      // kein stabiler Betrachter, den es zu erhalten gäbe.
+      host.innerHTML = grundrissBodyHtml();
+    }
     wireGrundriss();
   }
 
@@ -883,6 +901,7 @@ function detail(ctx, id) {
     mount.querySelectorAll('#mt-mosaic [data-gallery]').forEach((el) => {
       el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C, { param: 'bild' }));
     });
+    restoreGalleryFromQuery(query, galleryItems, C);
     const el = mount.querySelector('#mt-hero-map');
     if (!el || !Number.isFinite(t.lat) || !Number.isFinite(t.lon)) { heroMap.free(); return; }
     await heroMap.mount(el, (node) => initEstateMap(node,
@@ -893,22 +912,33 @@ function detail(ctx, id) {
   // Datentabellen in ihre Montagepunkte hängen. Alle Reiterpanels liegen im
   // DOM (inaktive sind `hidden`), deshalb werden alle drei gemountet — sonst
   // stünde beim Reiterwechsel ein leerer Kasten da.
-  let detachTables = [];
+  const detachTables = new Map();
+  function unmountTable(hostId) {
+    const off = detachTables.get(hostId);
+    if (off) { try { off(); } catch { /* schon abgebaut */ } }
+    detachTables.delete(hostId);
+  }
+  function mountTable(hostId, cfg) {
+    unmountTable(hostId);
+    const host = mount.querySelector('#' + hostId);
+    if (host && cfg) detachTables.set(hostId, C.mountDataTable(host, cfg) || (() => {}));
+  }
   function mountTables() {
-    detachTables.forEach((f) => { try { f(); } catch { /* egal */ } });
-    detachTables = [];
     const cfgs = dataTables();
     for (const [hostId, cfg] of Object.entries(cfgs)) {
-      if (!cfg) continue;
-      const host = mount.querySelector('#' + hostId);
-      if (host) detachTables.push(C.mountDataTable(host, cfg) || (() => {}));
+      mountTable(hostId, cfg);
     }
   }
 
   let detach = null;
-  function wireGrundriss() {
+  function wireGrundriss({ mountAllTables: allTables = false } = {}) {
     if (detach) { detach(); detach = null; }
-    mountTables();
+    // draw() montiert alle Tabellen genau einmal. Bei partiellen
+    // Grundriss-Neuzeichnungen wird ausschliesslich die allenfalls neu
+    // entstandene Geschosstabelle montiert; die versteckten Vertrags- und
+    // Vorgangstabellen behalten Zustand, Beobachter und genau einen Handler.
+    if (allTables) mountTables();
+    else mountTable('mt-dt-floors', dataTables()['mt-dt-floors']);
     // Rücksprung aus dem Betrachter in die Geschossübersicht.
     mount.querySelector('#fp-zurueck')?.addEventListener('click', (e) => {
       e.preventDefault();
@@ -925,9 +955,10 @@ function detail(ctx, id) {
       spaceId = spaceId === sid ? '' : sid;      // erneuter Klick hebt die Auswahl auf
       syncHash();
       redrawGrundriss();
-      // Fokus zurück auf den gewählten Raum, sonst landet er nach dem
-      // Neuzeichnen am Seitenanfang.
-      mount.querySelector(`[data-space="${CSS.escape(spaceId)}"] rect`)?.focus({ preventScroll: true });
+      // Fokus zurück auf denselben Raum, auch wenn der zweite Klick seine
+      // Auswahl gerade aufgehoben hat. `spaceId` ist dann leer, `sid` bleibt
+      // aber die Identität des ersetzten Controls.
+      mount.querySelector(`[data-space="${CSS.escape(sid)}"] rect`)?.focus({ preventScroll: true });
     });
     mount.querySelector('#fp-color')?.addEventListener('change', (e) => {
       colorMode = e.target.value; syncHash(); redrawGrundriss();
@@ -942,6 +973,9 @@ function detail(ctx, id) {
       if (el.dataset.floor === floorId) return;
       floorId = el.dataset.floor; spaceId = '';
       syncHash(); redrawGrundriss();
+      // Das angeklickte Element gehört zum ersetzten Teilbaum. Auf der neu
+      // gezeichneten Geschoss-Pille weiterarbeiten statt Fokus zu verlieren.
+      mount.querySelector(`[data-floor="${CSS.escape(floorId)}"]`)?.focus({ preventScroll: true });
     }));
 
     // Vollbild über die native Fullscreen-API auf `#fp-wrap` — also samt
@@ -972,6 +1006,7 @@ function detail(ctx, id) {
     if (detach) detach();
     heroMap.free();
     detachTables.forEach((f) => { try { f(); } catch { /* egal */ } });
+    detachTables.clear();
   });
   draw();
 }

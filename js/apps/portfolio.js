@@ -6,7 +6,7 @@
 // Baum (Land › Region › Stadt › Wirtschaftseinheit › Gebäude/Grundstück), rechts die
 // Ansicht Karte (Default, geclustert) · Galerie · Liste. Siehe docs/portfolio-redesign.md.
 
-import { openGallery } from '../gallery.js';
+import { openGallery, restoreGalleryFromQuery } from '../gallery.js';
 import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../hero-mosaic.js';
 import { initEstateMap } from '../buildings-map.js';
 import { createMapSlot } from '../map-slot.js';
@@ -701,6 +701,10 @@ function buildingDetail(ctx, b) {
   });
   // Jede Mosaik-Kachel öffnet die Galerie bei ihrem eigenen Bild.
   wireHeroMosaic(mount, openGallery, galleryItems, C);
+  // Ein geteilter Bildlink öffnet dieselbe Galerie direkt beim bezeichneten
+  // Bild. Ungültige IDs bleiben ohne Seiteneffekt; die Route selbst ändert
+  // sich nicht (openGallery verwendet replaceState, nicht location.hash).
+  restoreGalleryFromQuery(query, galleryItems, C);
   // Standortkarte im Hero: ein Punkt, auf das Objekt zentriert. Bisher hatte die
   // Gebäude-Detailansicht überhaupt keine Karte — die Lage stand nur als Adresse.
   const bMapEl = mount.querySelector('#pf-hero-map');
@@ -798,6 +802,7 @@ function parcelDetail(ctx, p) {
   // Gleiche Galerie-Verdrahtung wie beim Gebäude — sie fehlte hier ganz, weil das
   // Grundstück bisher gar keine Bilder zeigte.
   wireHeroMosaic(mount, openGallery, galleryItems, C);
+  restoreGalleryFromQuery(query, galleryItems, C);
   // KEIN eigenes scrollTo/Fokussieren: Scroll und Fokus gehören dem Router —
   // siehe js/apps/tenancies.js (Nutzerbefund 2026-07-30).
 }
