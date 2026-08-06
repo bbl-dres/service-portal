@@ -20,9 +20,10 @@
 // die Zustimmung der Urheber einzuholen.
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const pruefen = process.argv.includes('--pruefen');
-const ROOT = 'c:/Users/david/Documents/GitHub/service-portal/';
+const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const QUELLE = ROOT + 'research/pdf-bilder/';
 const ZIEL = 'assets/images/buildings/';
 const uebersicht = JSON.parse(readFileSync(QUELLE + 'UEBERSICHT.json', 'utf8'));

@@ -1,7 +1,7 @@
 // Prüft den erweiterten Dienstleistungskatalog Ende zu Ende: Anzahl, Themenfilter,
 // je eine neue Detailseite, den neuen Kleinauftrag-Zweig der Meldungs-App und
 // den Drawer-Zweig «Beschaffung» (Domäne E hatte vorher keinen Vorgang).
-const { launch, openPage, APP_BASE, sleep } = await import('file:///C:/Users/david/Documents/GitHub/service-portal/scripts/lib/cdp.mjs');
+import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const CASES = [
   ['/services', `(() => {

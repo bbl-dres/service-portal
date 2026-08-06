@@ -1,6 +1,6 @@
 // Galerie der Bauprojekte: keine Pillenzeile mehr, stattdessen Chips auf dem
 // Bild — und zwar geometrisch gleich wie im Liegenschaften-Inventar.
-const { launch, openPage, APP_BASE, sleep } = await import('file:///C:/Users/david/Documents/GitHub/service-portal/scripts/lib/cdp.mjs');
+import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const b = await launch({ port: 9350 });
 

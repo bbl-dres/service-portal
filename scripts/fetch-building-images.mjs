@@ -16,13 +16,14 @@
 // sein Platzhalterbild, und der Bildnachweis sagt, warum.
 
 import { writeFileSync, mkdirSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const flags = process.argv.slice(2);
 const unbekannt = flags.filter((flag) => flag !== '--write');
 if (unbekannt.length) throw new Error(`Unbekannte Option: ${unbekannt.join(', ')}`);
 const schreiben = flags.includes('--write');
 
-const ROOT = 'c:/Users/david/Documents/GitHub/service-portal/';
+const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const ZIEL = ROOT + 'assets/images/buildings/';
 const UA = 'bbl-kundenportal-prototyp/1.0 (Demodaten, nicht oeffentlich)';
 

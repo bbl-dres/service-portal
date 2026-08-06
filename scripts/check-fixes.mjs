@@ -1,5 +1,5 @@
 // Prüft die sieben Defekte aus docs/code-review.md §1 einzeln nach.
-const { launch, openPage, APP_BASE, sleep } = await import('file:///C:/Users/david/Documents/GitHub/service-portal/scripts/lib/cdp.mjs');
+import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 let fail = 0;
 const ok = (c, label, detail = '') => { if (!c) fail++; console.log(`${c ? '✓' : '✗'} ${label}${detail ? '  (' + detail + ')' : ''}`); };

@@ -1,6 +1,6 @@
 // Was kostet die Suchroute jetzt über die Leitung? Gemessen mit den
 // Komprimierungseinstellungen des Entwicklungsservers.
-const { launch, openPage, APP_BASE, sleep } = await import('file:///C:/Users/david/Documents/GitHub/service-portal/scripts/lib/cdp.mjs');
+import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const b = await launch({ port: 9347 });
 for (const route of ['/', '/search?q=mustervorlage']) {

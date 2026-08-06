@@ -17,6 +17,7 @@
 // `photo` trägt eine Unsplash-Kennung — im Portal als Platzhalter gekennzeichnet.
 
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const flags = process.argv.slice(2);
 const unbekannt = flags.filter((flag) => !['--pruefen', '--write'].includes(flag));
@@ -25,7 +26,7 @@ if (flags.includes('--pruefen') && flags.includes('--write')) {
   throw new Error('--pruefen und --write dürfen nicht kombiniert werden.');
 }
 const schreiben = flags.includes('--write');
-const ROOT = 'c:/Users/david/Documents/GitHub/service-portal/';
+const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const BILD = 'assets/images/buildings/';
 const J = (f) => JSON.parse(readFileSync(ROOT + f, 'utf8'));
 

@@ -18,8 +18,9 @@
 // 1880 px lässt Luft für hohe Pixeldichten, ohne die Datei aufzublähen.
 
 import { writeFileSync, mkdirSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const ZIEL = ROOT + 'assets/images/applications/';
 const W = 1880, H = 1253, Q = 72;
 

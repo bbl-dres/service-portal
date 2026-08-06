@@ -5,8 +5,13 @@
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 import { REVIEW_ROUTES, REVIEW_VIEWPORTS } from './review-routes.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const cdp = await launch({ webgl: true });
+const REVIEW_ASSETS = process.env.REVIEW_OUTPUT_DIR
+  ? resolve(process.env.REVIEW_OUTPUT_DIR)
+  : fileURLToPath(new URL('../docs/review-assets/', import.meta.url));
 const findings = [];
 const totals = {
   routes: 0, overflow: 0, h1: 0, duplicateIds: 0, labels: 0,
@@ -113,8 +118,16 @@ try {
 
 console.log('\nSUMMARY ' + JSON.stringify(totals));
 console.log('DETAILS ' + JSON.stringify(findings));
-mkdirSync('docs/review-assets', { recursive: true });
-writeFileSync('docs/review-assets/audit.json', JSON.stringify({
-  generated: new Date().toISOString(), viewports: REVIEW_VIEWPORTS,
+mkdirSync(REVIEW_ASSETS, { recursive: true });
+writeFileSync(join(REVIEW_ASSETS, 'audit.json'), JSON.stringify({
+  generated: new Date().toISOString(),
+  artifactMetadata: {
+    status: 'generated-snapshot',
+    routeStates: REVIEW_ROUTES.length,
+    viewportRenders: totals.routes,
+    routeInventorySource: 'scripts/review-routes.mjs',
+    note: 'Generated from the current review-routes.mjs inventory.',
+  },
+  viewports: REVIEW_VIEWPORTS,
   routes: REVIEW_ROUTES.map(x => x.route), totals, findings, advisories,
 }, null, 2));

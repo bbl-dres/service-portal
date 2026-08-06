@@ -1,6 +1,6 @@
 // Misst, ob die Hauptspalte links bündig mit dem übrigen Seiteninhalt steht,
 // und ob noch irgendwo eine pill-row über einem Titel hängt.
-const { launch, openPage, APP_BASE, sleep } = await import('file:///C:/Users/david/Documents/GitHub/service-portal/scripts/lib/cdp.mjs');
+import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const b = await launch({ port: 9370 });
 const probe = `(() => {

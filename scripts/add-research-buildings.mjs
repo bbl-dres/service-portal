@@ -16,12 +16,13 @@
 // © Data: swisstopo / amtliche Vermessung der Kantone. Siehe research/README.md.
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const pruefen = process.argv.includes('--pruefen');
-const D = 'c:/Users/david/Documents/GitHub/service-portal/data/';
+const D = fileURLToPath(new URL('../data/', import.meta.url));
 const J = (f) => JSON.parse(readFileSync(D + f, 'utf8'));
 const kataster = JSON.parse(readFileSync(
-  'c:/Users/david/Documents/GitHub/service-portal/research/daten/swisstopo-neu.json', 'utf8'));
+  new URL('../research/daten/swisstopo-neu.json', import.meta.url), 'utf8'));
 
 // bbl_id → belegte Angaben aus der jeweiligen Bautendokumentation
 const NEU = {

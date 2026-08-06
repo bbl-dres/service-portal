@@ -4,8 +4,13 @@
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 import { REVIEW_ROUTES } from './review-routes.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const cdp = await launch({ webgl: true });
+const REVIEW_ASSETS = process.env.REVIEW_OUTPUT_DIR
+  ? resolve(process.env.REVIEW_OUTPUT_DIR)
+  : fileURLToPath(new URL('../docs/review-assets/', import.meta.url));
 const findings = [];
 const totals = {
   routes: 0,
@@ -110,9 +115,17 @@ try {
   cdp.close();
 }
 
-mkdirSync('docs/review-assets', { recursive: true });
-writeFileSync('docs/review-assets/accessibility.json', JSON.stringify({
+mkdirSync(REVIEW_ASSETS, { recursive: true });
+writeFileSync(join(REVIEW_ASSETS, 'accessibility.json'), JSON.stringify({
   generated: new Date().toISOString(),
+  artifactMetadata: {
+    status: 'route-inventory-snapshot',
+    routeStates: REVIEW_ROUTES.length,
+    viewportRenders: totals.routes,
+    routeInventorySource: 'scripts/review-routes.mjs',
+    missingRoutes: [],
+    note: 'Generated from the current review-routes.mjs inventory.',
+  },
   method: '720 CSS px at deviceScaleFactor 2 (1440px/200% reflow proxy), keyboard Tab, Chromium accessibility tree',
   routes: REVIEW_ROUTES.map(item => item.route),
   totals,

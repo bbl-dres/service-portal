@@ -1,5 +1,5 @@
 // Titelbild + Vollbildgalerie eines Bauprojekts (Medien aus data/projects.json).
-const { launch, openPage, APP_BASE, sleep } = await import('file:///C:/Users/david/Documents/GitHub/service-portal/scripts/lib/cdp.mjs');
+import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const b = await launch({ port: 9352 });
 for (const id of ['PRJ-04', 'PRJ-02']) {

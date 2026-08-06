@@ -3,17 +3,28 @@
 // nach docs/review-assets/after/ — der Vergleich der beiden Ordner ist die
 // Regressionsprüfung der Refactoring-Wellen (docs/design-review.md, Phase 0/5).
 //
-//   APP_BASE=http://localhost:8848/# node scripts/review-screenshots.mjs [before|after]
+//   APP_BASE=http://localhost:8848/# node scripts/review-screenshots.mjs <before|after>
+//   REVIEW_OUTPUT_DIR=<temp> node scripts/review-screenshots.mjs current
 //
 // WebGL an, damit die MapLibre-Karten (Datenportal, Portfolio) rendern; vor der
 // Aufnahme wird einmal durchgescrollt, damit lazy geladene Bilder im Bild sind.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { REVIEW_ROUTES, REVIEW_VIEWPORTS } from './review-routes.mjs';
 
-const MODE = process.argv[2] || 'before';
-const OUT = join('docs', 'review-assets', MODE);
+const MODE = process.argv[2];
+if (!['before', 'after', 'current'].includes(MODE)) {
+  throw new Error('Modus erforderlich: before, after oder current.');
+}
+if (MODE === 'current' && !process.env.REVIEW_OUTPUT_DIR) {
+  throw new Error('Der Modus current verlangt REVIEW_OUTPUT_DIR, damit kein getracktes Baseline-Paar verändert wird.');
+}
+const REVIEW_ASSETS = process.env.REVIEW_OUTPUT_DIR
+  ? resolve(process.env.REVIEW_OUTPUT_DIR)
+  : fileURLToPath(new URL('../docs/review-assets/', import.meta.url));
+const OUT = join(REVIEW_ASSETS, MODE);
 
 const cdp = await launch({ webgl: true });
 try {

@@ -11,14 +11,23 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // Overridable per environment. APP_BASE must point at the app's index so that
-// `${APP_BASE}/app/portfolio/BLD-01` resolves — note the trailing `#`. The dev
-// server (python http.server) is often rooted at the user's home dir, so the app
-// lives under /Documents/GitHub/service-portal/; if you serve from the repo root
-// instead, set APP_BASE=http://localhost:8000/#
+// `${APP_BASE}/app/portfolio/BLD-01` resolves — note the trailing `#`. The
+// default matches `node scripts/serve.mjs`, which serves the repository root.
 export const APP_BASE = process.env.APP_BASE
-  || 'http://localhost:8000/Documents/GitHub/service-portal/#';
-export const EDGE = process.env.EDGE_PATH
-  || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+  || 'http://127.0.0.1:8848/#';
+
+function defaultEdgePath() {
+  if (process.platform === 'win32') {
+    const programme = process.env['ProgramFiles(x86)'] || process.env.ProgramFiles;
+    return programme ? join(programme, 'Microsoft', 'Edge', 'Application', 'msedge.exe') : 'msedge.exe';
+  }
+  if (process.platform === 'darwin') {
+    return '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
+  }
+  return 'microsoft-edge';
+}
+
+export const EDGE = process.env.EDGE_PATH || defaultEdgePath();
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

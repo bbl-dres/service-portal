@@ -8,8 +8,10 @@
 //   node scripts/make-image-variants.mjs        (Dev-Server muss laufen)
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 import { writeFileSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const SRC = 'assets/images/BBL-FE21_O-01.avif';
+const SRC_FILE = fileURLToPath(new URL(`../${SRC}`, import.meta.url));
 const WIDTHS = [800, 1400];
 const QUALITY = 0.82;
 const BASE = APP_BASE.replace(/#$/, '');
@@ -37,9 +39,10 @@ try {
       console.error('  ✗ ' + w + 'w — Encoder lieferte kein WebP:', String(dataUrl).slice(0, 40));
       continue;
     }
-    const out = SRC.replace(/\.avif$/, `-${w}.webp`);
+    const out = SRC_FILE.replace(/\.avif$/, `-${w}.webp`);
+    const label = SRC.replace(/\.avif$/, `-${w}.webp`);
     writeFileSync(out, Buffer.from(dataUrl.split(',')[1], 'base64'));
-    console.log('  ✓ ' + out.padEnd(46) + (statSync(out).size / 1024).toFixed(1).padStart(7) + ' KB');
+    console.log('  ✓ ' + label.padEnd(46) + (statSync(out).size / 1024).toFixed(1).padStart(7) + ' KB');
   }
   await p.closeTarget();
 } finally { cdp.close(); }

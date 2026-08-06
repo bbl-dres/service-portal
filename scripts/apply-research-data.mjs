@@ -25,9 +25,10 @@
 // Demo-Daten und als solche im Portal gekennzeichnet.
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const pruefen = process.argv.includes('--pruefen');
-const D = 'c:/Users/david/Documents/GitHub/service-portal/data/';
+const D = fileURLToPath(new URL('../data/', import.meta.url));
 const J = (f) => JSON.parse(readFileSync(D + f, 'utf8'));
 
 // ---------------------------------------------------------------------------
@@ -267,7 +268,8 @@ for (const f of bg.features) {
     : 'BBL / EDA, Koordinaten OpenStreetMap';
 
   if (b.bild) {
-    p.img_url = [b.bild.url, ...p.img_url.slice(1)];
+    const weitereBilder = Array.isArray(p.img_url) ? p.img_url.slice(1) : [];
+    p.img_url = [b.bild.url, ...weitereBilder];
     p.img_credit = `${b.bild.autor}, ${b.bild.lizenz} — ${b.bild.seite}`;
   } else {
     p.img_credit = 'Platzhalterbild (Unsplash) — für dieses Objekt existiert keine frei nutzbare Aufnahme';
@@ -282,7 +284,7 @@ for (const f of bg.features) {
 // Amtliche Parzellengeometrien, einmal abgeholt und in research/ abgelegt —
 // siehe research/README.md. Der Ordner ist nicht im Git, das Skript meldet
 // darum verständlich, wenn die Datei fehlt.
-const GEOM_PFAD = 'c:/Users/david/Documents/GitHub/service-portal/research/daten/parzellen-geometrie.json';
+const GEOM_PFAD = fileURLToPath(new URL('../research/daten/parzellen-geometrie.json', import.meta.url));
 let GEOM = {};
 try { GEOM = JSON.parse(readFileSync(GEOM_PFAD, 'utf8')); }
 catch { console.warn(`! ${GEOM_PFAD} fehlt — Parzellen behalten ihre Demo-Geometrie.\n`

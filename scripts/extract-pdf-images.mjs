@@ -22,8 +22,9 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { basename, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = 'c:/Users/david/Documents/GitHub/service-portal/';
+const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const AUS = ROOT + 'research/pdf-bilder/';
 const MIN_BYTES = 40 * 1024;    // kleiner ist Logo, Signet oder Farbfläche
 const MIN_KANTE = 500;          // Kantenlänge in Bildpunkten

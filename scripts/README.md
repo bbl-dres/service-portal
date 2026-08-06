@@ -6,9 +6,17 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently 27 `test-*.mjs` functional suites and 21
-`check-*.mjs` focused layout probes. Every script follows the same contract:
-`APP_BASE` selects the running app and a non-zero exit code means failure.
+There are currently 27 supported `test-*.mjs` functional suites and 20 retained
+`check-*.mjs` diagnostics. Every browser suite uses `APP_BASE` to select the
+running app and exits non-zero on failure; the three pure-Node suites need no
+server. The older diagnostics are classified
+separately below because six are observation-only and deliberately do not act
+as regression gates.
+
+Paths owned by a script are resolved relative to `import.meta.url`; the scripts
+therefore do not depend on the caller's current directory or on a particular
+checkout location. Explicit paths supplied on the command line, such as
+`fetch-swisstopo.mjs --datei/--aus`, remain relative to the caller by design.
 
 **Sessions.** `openPage(cdp, url, { login })` decides which session the page
 STARTS with, by writing (or clearing) `bbl_session_v1` before the first
@@ -28,10 +36,9 @@ and the three `review-*.mjs` — pass `{ login: true }` once at the top.
    ```
    node scripts/serve.mjs
    ```
-2. **`APP_BASE` must match where the app is served.** The default assumes the
-   server is rooted at the user's home directory (so the app is at
-   `/Documents/GitHub/service-portal/`). If you serve from the **repo root**,
-   override it:
+2. **`APP_BASE` must match where the app is served.** The default,
+   `http://127.0.0.1:8848/#`, matches `serve.mjs`. Override it when using another
+   port or a server that mounts the app below a path:
    ```
    $env:APP_BASE='http://127.0.0.1:8848/#'; node scripts/test-tabs.mjs
    ```
@@ -74,7 +81,55 @@ Get-ChildItem scripts/test-*.mjs | ForEach-Object {
 }
 ```
 
-## Historical image maintenance
+## Focused diagnostics
+
+The `check-*.mjs` files are retained probes from individual design and
+refactoring waves. They overlap intentionally with the durable `test-*.mjs`
+suites and are useful when changing the named surface, but they are not the
+authoritative regression inventory. New long-lived coverage belongs in a
+`test-*.mjs` suite.
+
+| Status | Scripts | Contract |
+|---|---|---|
+| Asserted diagnostic | `check-404`, `check-banner`, `check-consistency`, `check-detail-layout`, `check-done`, `check-fixes`, `check-floorplan-section`, `check-focus`, `check-kv`, `check-pfcard`, `check-ramps`, `check-services`, `check-tenancy-aside`, `check-tree` | Focused assertion; exits non-zero on a detected mismatch. |
+| Observation-only diagnostic | `check-layout`, `check-payload`, `check-pjcards`, `check-pj-gallery`, `check-projects`, `check-suggest` | Prints measurements or browser problems for manual interpretation; exit code is not a result. |
+| Retained one-off assertion | `probe-portfolio-images.mjs` | Historical portfolio image/default-filter probe. It overlaps `test-portfolio.mjs` and is not part of the supported suite glob. |
+
+All names in the table omit the `.mjs` suffix. Do not use a wildcard over
+`check-*.mjs` as a CI gate: the observation-only group can report an anomaly
+while still exiting zero.
+
+The obsolete `check-hero.mjs` probe was removed: it targeted the retired
+`.home-hero__figure` implementation and could only print `kein Bild` against the
+current homepage. Its original code remains recoverable from Git history.
+
+## Maintenance and reproduction scripts
+
+These utilities are intentionally kept because they explain how generated data
+or media was produced. They are not part of the functional regression run.
+Repository-owned input and output paths are checkout-relative; network and
+write effects are explicit here.
+
+| Script | Status and purpose | Write/network effect |
+|---|---|---|
+| `serve.mjs` | Supported local development server. | Read-only; serves the repository on port 8848 by default. |
+| `make-image-variants.mjs` | Supported home-hero image maintenance. | Overwrites the two generated WebP variants; requires the dev server and Edge. |
+| `fetch-application-images.mjs` | Application-card image maintenance. | Downloads from Unsplash and writes only missing JPGs. |
+| `fetch-swisstopo.mjs` | Reproducible address/cadastral research helper. | Calls public APIs; stdout-only unless `--aus <path>` is supplied. |
+| `build-tenancy-data.mjs` | Deterministic tenancy fixture generator. | Overwrites `data/tenancies.json`, `data/floors.json`, and `data/spaces.json`. |
+| `add-research-buildings.mjs` | Historical researched-building import. | `--pruefen` is read-only; without it, overwrites building, parcel, and child-register data. |
+| `apply-research-data.mjs` | Historical real-building enrichment. | `--pruefen` is read-only; without it, overwrites building and parcel data. |
+| `adopt-pdf-images.mjs` | Historical BBL-PDF image adoption. | `--pruefen` is read-only; without it, copies non-free images and overwrites `data/media.json`. |
+| `extract-pdf-images.mjs` | Historical PDF extraction recipe. | Reads PDFs and writes extracted images/manifests below `research/pdf-bilder/`; requires `pdftotext`. |
+| `fetch-building-images.mjs` | Historical free-building-image download. | Dry-run by default; `--write` downloads files and rewrites the image manifest. |
+| `link-building-images.mjs` | Historical building/image association. | Dry-run by default; `--write` overwrites `data/buildings.geojson`. |
+| `build-media-registry.mjs` | Historical media-registry rebuild. | Dry-run by default; `--write` may rename image files and overwrites four data files. |
+
+Run mutating reproduction scripts only from a clean branch and review their
+diff. In particular, the real-data and non-free-media scripts remain subject to
+the publication and licensing decisions tracked in the code review.
+
+### Historical image maintenance
 
 The three older building-image pipelines are safe by default: running them
 without a flag is a dry run and does not modify assets or data. `--write` is
@@ -92,19 +147,32 @@ its dry-run mode.
 
 ## Design review
 
-| Script | What it checks |
-|---|---|
-| `review-routes.mjs` | Shared inventory of 57 representative routes and states plus the 320/768/1440 viewport matrix. |
-| `review-audit.mjs` | Overflow, H1/heading structure, IDs, names, image/table semantics and responsive target-size policy across 171 renders. |
-| `review-accessibility.mjs` | 200% reflow proxy, keyboard focus visibility, tab-order hazards, ARIA references, landmarks and accessible control names across 57 states. |
-| `review-screenshots.mjs` | Full-page `before`/`after` screenshots for all 171 route/viewport combinations. |
+| Script | What it checks | Output / write effect |
+|---|---|---|
+| `review-routes.mjs` | Shared inventory of 58 representative routes and states plus the 320/768/1440 viewport matrix. | Read-only shared inventory. |
+| `review-audit.mjs` | Overflow, H1/heading structure, IDs, names, image/table semantics and responsive target-size policy across 174 renders. | Overwrites `audit.json` in the selected review output directory. |
+| `review-accessibility.mjs` | 200% reflow proxy, keyboard focus visibility, tab-order hazards, ARIA references, landmarks and accessible control names across 58 states. | Overwrites `accessibility.json` in the selected review output directory. |
+| `review-screenshots.mjs` | Full-page screenshots for all 174 route/viewport combinations. | Requires `before`, `after`, or `current`; writes/overwrites 174 PNGs below that subdirectory. |
+
+For an ordinary verification run, direct output to a temporary directory. The
+`current` screenshot mode is accepted only with this override, so it cannot
+silently alter the tracked baseline pair:
 
 ```powershell
 $env:APP_BASE='http://127.0.0.1:8848/#'
+$reviewOutput = Join-Path ([System.IO.Path]::GetTempPath()) ('service-portal-review-' + [guid]::NewGuid().ToString('N'))
+$env:REVIEW_OUTPUT_DIR=$reviewOutput
 node scripts/review-audit.mjs
 node scripts/review-accessibility.mjs
-node scripts/review-screenshots.mjs after
+node scripts/review-screenshots.mjs current
+Remove-Item Env:REVIEW_OUTPUT_DIR
 ```
+
+Without `REVIEW_OUTPUT_DIR`, the JSON generators overwrite the tracked files in
+`docs/review-assets/`, while `before` and `after` write the tracked screenshot
+pair. Refresh those artifacts only as one deliberate review operation from the
+appropriate revisions. Never add a new route to only one side of the pair, and
+update `docs/accessibility-review.md` together with any tracked refresh.
 
 > The driver kills each launch's full Edge process tree on close (matched by its throwaway `--user-data-dir`), so repeated runs don't pile up zombie processes and starve the machine.
 
@@ -116,7 +184,8 @@ The shared CDP driver: `launch({ port, webgl })`, `openPage(cdp, url)` →
 
 ### Gotchas (baked into the helpers)
 
-- **App base path is environment-specific** — see `APP_BASE` above.
+- **App base path is configurable** — the default matches `serve.mjs`; set
+  `APP_BASE` for another port or mount path.
 - **SPA renders async** (fetch + dynamic import): probes poll for a selector
   before asserting.
 - **WebGL:** use `webgl: true` (SwiftShader); never `--disable-gpu`. Map markers
