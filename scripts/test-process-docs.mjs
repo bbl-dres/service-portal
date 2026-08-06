@@ -152,7 +152,7 @@ const expectedSteps = (file) => {
 
     // 5) Register «Prozessschritte» per Deep-Link -------------------------
     head('Register «Prozessschritte» (?tab=schritte)');
-    const want = expectedSteps('assets/bpmn/TQ.21.00.00.02.bpmn');
+    const want = expectedSteps(new URL('../assets/bpmn/TQ.21.00.00.02.bpmn', import.meta.url));
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=TQ.21.00.00.02&tab=schritte`);
     await sleep(1800);
     o = JSON.parse(await p.evaluate(`JSON.stringify({

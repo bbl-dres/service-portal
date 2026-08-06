@@ -253,7 +253,7 @@ export async function openPage(cdp, url, { login } = {}) {
       // widersprechen.
       const err = await evaluate(`(function(){var n=[...document.querySelectorAll('.notification--error:not(.error-summary)')]
           .find(function(x){ return !x.closest('.toast__message'); });
-        return n ? (n.innerText||'').replace(/\s+/g,' ').slice(0,120) : '';})()`);
+        return n ? (n.innerText||'').replace(/[\\s\\u00a0]+/g,' ').slice(0,120) : '';})()`);
       if (err) out.push(`Fehlerbanner: ${err}`);
     } catch { /* Seite bereits zu */ }
     return out;
