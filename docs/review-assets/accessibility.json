@@ -1,5 +1,13 @@
 {
   "generated": "2026-08-06T09:44:34.876Z",
+  "artifactMetadata": {
+    "status": "route-inventory-snapshot",
+    "routeStates": 58,
+    "viewportRenders": 58,
+    "routeInventorySource": "scripts/review-routes.mjs",
+    "missingRoutes": [],
+    "note": "This newer accessibility snapshot includes Room Booking; the preserved render audit and paired screenshot snapshot contain the preceding 57-state inventory."
+  },
   "method": "720 CSS px at deviceScaleFactor 2 (1440px/200% reflow proxy), keyboard Tab, Chromium accessibility tree",
   "routes": [
     "/",

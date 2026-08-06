@@ -1,5 +1,23 @@
 {
   "generated": "2026-08-05T11:21:01.914Z",
+  "artifactMetadata": {
+    "status": "preserved-snapshot",
+    "routeStates": 57,
+    "viewportRenders": 171,
+    "comparisonInventory": {
+      "generated": "2026-08-06T09:44:34.876Z",
+      "source": "docs/review-assets/accessibility.json",
+      "routeStates": 58,
+      "missingFromThisSnapshot": [
+        "/app/room-booking"
+      ]
+    },
+    "pairedScreenshotRenders": {
+      "before": 171,
+      "after": 171
+    },
+    "note": "Room Booking was added after this render and paired-screenshot snapshot. It is intentionally not backfilled without a valid before/after baseline."
+  },
   "viewports": [
     320,
     768,

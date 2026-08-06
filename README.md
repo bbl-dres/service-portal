@@ -31,10 +31,11 @@ The BBL Kundenportal is a process-oriented prototype for the [Federal Office for
 ## Technical overview
 
 - Static single-page application with hash routing
-- Vanilla JavaScript ES modules, HTML, and CSS, with no build step or runtime package dependencies
-- Static JSON and GeoJSON mock data shared across the portal and its micro-apps
+- Vanilla JavaScript ES modules, HTML, and CSS, with no build step or installed package-manager dependencies
+- Static JSON and GeoJSON repository fixtures shared across the portal and its micro-apps
 - UI patterns and tokens aligned with the official [`swiss/designsystem`](https://github.com/swiss/designsystem)
-- MapLibre GL JS, Swagger UI, and bpmn-js loaded on demand from `unpkg.com`
+- Pinned MapLibre GL JS, Swagger UI, and bpmn-js runtime libraries loaded on demand from `unpkg.com`
+- Map views and address search use external Swisstopo, CARTO, MapLibre demo-tile, and geo.admin.ch services and therefore require network access
 - Dependency-free Node/CDP browser checks documented in [`scripts/README.md`](scripts/README.md)
 
 ## Run locally

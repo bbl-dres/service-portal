@@ -514,9 +514,8 @@ code { font-family:var(--font-mono); }
 }
 /* icon--full/3xl/4xl/5xl (CD icons.postcss:15-53) folgen mit dem ersten
    Konsumenten über 3rem — bis dahin wären sie tote Regeln. */
-/* Ladeanzeige (icons.postcss:55 `animate-spin-fast` = spin .5s linear infinite,
-   tailwind.config.js:17). assets/icons/Spinner.svg liegt im Repo und wurde bisher
-   von nichts referenziert; der reduced-motion-Ausstieg steht im Sammelblock unten. */
+/* C.loading() rendert Spinner.svg mit icon--spin; der Reduced-Motion-Ausstieg
+   steht im Sammelblock unten. */
 @keyframes spin { to { transform:rotate(360deg); } }
 .icon--spin { animation:spin .5s linear infinite; }
 
