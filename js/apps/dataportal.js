@@ -13,15 +13,8 @@
 
 import { dashData } from '../dashboard-data.js';
 import { chart, wireCharts, wireChartMenus, paintCharts } from '../charts.js';
-import { initBuildingsMap } from '../buildings-map.js';
 import { kpiTile, dashHeader, filterPanelShell, dashFooter, wireFilterCollapse, wireDashboardMenu } from '../dashboard-chrome.js';
 import { DATEN } from '../crumbs.js';
-
-
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
-export const needs = ['buildings'];
 
 export default async function render(ctx) {
   const { params } = ctx;
@@ -117,7 +110,7 @@ function withYearRange(spec, from, to) {
 
 /* ------------------------------------------------------------ dashboard ---- */
 function dashboardView(ctx, id) {
-  const { mount, core, C, setTitle, setCrumbs, query } = ctx;
+  const { mount, C, setTitle, setCrumbs, query } = ctx;
   const board = dashData.dashboard(id);
   if (!board) {
     C.renderNotFound(ctx, { thing: 'Dieses Dashboard', title: 'Dashboard nicht gefunden',
@@ -135,7 +128,6 @@ function dashboardView(ctx, id) {
   const tabs = (board.tabs && board.tabs.length)
     ? board.tabs
     : [{ id: 'overview', label: 'Überblick', charts: board.charts.map(c => c.id) }];
-  const buildings = core.buildings();
 
   // --- filter/tab state (mirrored in the hash query so it is shareable) ---
   const clampY = (v) => { const n = Number(v); return Number.isFinite(n) && years.includes(n) ? n : null; };
@@ -148,12 +140,12 @@ function dashboardView(ctx, id) {
 
   const yearOpts = (selected) => years.map(y => `<option value="${y}"${y === selected ? ' selected' : ''}>${y}</option>`).join('');
 
-  // Kachel-Markup aus dashboard-chrome.kpiTile; hier bleibt nur das Board-
-  // Spezifische — der {buildingCount}-Platzhalter aus dashboards.json.
-  const kpiTiles = (board.kpis && board.kpis.length ? board.kpis : (board.hero ? [board.hero] : []))
+  // Kachel-Markup aus dashboard-chrome.kpiTile; jedes generische Dashboard
+  // deklariert seine Kennzahlen in genau einer Datenform (`kpis`).
+  const kpiTiles = (board.kpis || [])
     .map(k => kpiTile(C, {
       label: k.label,
-      value: String(k.value).replace('{buildingCount}', String(buildings.filter(b => Number.isFinite(b.lat)).length)),
+      value: String(k.value),
       unit: k.unit, deltaLabel: k.deltaLabel, deltaGood: k.deltaGood,
     })).join('');
 
@@ -192,20 +184,11 @@ function dashboardView(ctx, id) {
 
   // --- render the chart grid for the active tab + filters ---
   let grid = mount.querySelector('#dash-grid');
-  let activeMaps = [];
   // Aufräumfunktion des ResizeObserver aus paintCharts — MUSS vor jedem
   // Neuzeichnen aufgerufen werden, sonst sammeln sich Observer an.
   let unpaint = null;
-  const freeMaps = () => {
-    const pending = activeMaps;
-    activeMaps = [];
-    pending.forEach((promise) => Promise.resolve(promise)
-      .then((map) => { if (map) map.remove(); })
-      .catch(() => {}));
-  };
   const freeGridResources = () => {
     if (unpaint) { unpaint(); unpaint = null; }
-    freeMaps();
   };
   ctx.onUnmount(freeGridResources);
 
@@ -220,16 +203,6 @@ function dashboardView(ctx, id) {
     const tab = tabs.find(t => t.id === state.tab) || tabs[0];
     const specs = tab.charts.map(cid => chartById[cid]).filter(Boolean);
     grid.innerHTML = specs.map(spec => {
-      if (spec.form === 'map') {
-        return `<figure class="chart card card--universal chart--map" id="${spec.id}">
-          <figcaption class="chart__head">
-            <h3 class="chart__title">${C.escape(spec.title)}</h3>
-            <div class="chart__actions">${C.menu({ menuId: spec.id, label: 'Karten-Aktionen', items: [{ action: 'link', label: 'Link kopieren' }] })}</div>
-          </figcaption>
-          <div class="dash-map" id="map-${spec.id}" role="group" aria-label="Karte der Gebäudestandorte">${C.loading({ label: 'Karte wird geladen…' })}</div>
-          ${spec.note ? `<p class="chart__note">${C.escape(spec.note)}</p>` : ''}
-        </figure>`;
-      }
       // withYearRange EINMAL berechnen (vorher zweimal pro Chart, code-review G2)
       const ranged = withYearRange(spec, state.from, state.to);
       return chart(ranged, dashData.query(ranged.query));
@@ -245,11 +218,6 @@ function dashboardView(ctx, id) {
     });
     wireCharts(grid);
     wireChartMenus(grid);   // per-chart action menu (re-wired each render)
-    // initialise any map in the freshly rendered grid
-    specs.filter(s => s.form === 'map').forEach(s => {
-      const el = grid.querySelector(`#map-${s.id}`);
-      if (el) activeMaps.push(initBuildingsMap(el, buildings));
-    });
   }
   renderGrid();
 

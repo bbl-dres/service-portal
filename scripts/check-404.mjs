@@ -19,7 +19,10 @@ const WEGE = [
 ];
 
 const cdp = await launch();
-const page = await openPage(cdp, `${APP_BASE}/`);
+// Der Test läuft alle Routen in derselben Seite ab. Deshalb muss die Sitzung
+// bereits am öffentlichen Start-URL gesetzt sein; spätere Hash-Wechsel können
+// openPage()s automatische /app/-Erkennung nicht erneut auslösen.
+const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
 await sleep(700);
 let fehler = 0;
 for (const [name, route, erwartet] of WEGE) {

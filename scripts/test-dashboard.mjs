@@ -99,9 +99,59 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     const o = JSON.parse(await p2.evaluate(`JSON.stringify({
       cards: document.querySelectorAll('.grid h3').length,
       bauprojekte: [...document.querySelectorAll('.grid h3')].some(h => /Bauprojekte & Investitionen/.test(h.textContent)),
+      links: [...document.querySelectorAll('.grid .card__link')].map(a => [a.textContent.trim(), a.getAttribute('href')]),
     })`));
     check(o.cards === 7, `7 Themenkarten (${o.cards})`);
     check(o.bauprojekte, 'Thema «Bauprojekte & Investitionen» vorhanden');
+    const expectedCards = [
+      ['Energie & Klima', '#/app/dataportal/energie-klima'],
+      ['Immobilienportfolio', '#/app/dataportal/immobilien'],
+      ['Bauprojekte & Investitionen', '#/app/dataportal/bauprojekte'],
+      ['Beschaffung', '#/app/dataportal/beschaffung'],
+      ['Logistik & Publikationen', '#/app/dataportal/logistik'],
+      ['Mobilität', '#/app/dataportal/mobilitaet'],
+      ['Personal', '#/app/dataportal/personal'],
+    ];
+    check(JSON.stringify(o.links) === JSON.stringify(expectedCards), 'alle Themenkarten verweisen auf ihren einzigen Renderer');
+
+    const genericBoards = [
+      ['energie-klima', 'Energie & Klima'],
+      ['bauprojekte', 'Bauprojekte & Investitionen'],
+      ['beschaffung', 'Beschaffung'],
+      ['logistik', 'Logistik & Publikationen'],
+      ['mobilitaet', 'Mobilität'],
+      ['personal', 'Personal'],
+    ];
+    for (const [id, title] of genericBoards) {
+      await p2.evaluate(`location.hash = ${JSON.stringify(`#/app/dataportal/${id}`)}`);
+      const smoke = JSON.parse(await p2.evaluate(`(async () => {
+        const expected = ${JSON.stringify(title)};
+        const deadline = performance.now() + 5000;
+        while ((document.querySelector('h1')?.textContent.trim() !== expected
+          || !document.querySelector('.dash-grid .chart')) && performance.now() < deadline) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        return JSON.stringify({
+          title: document.querySelector('h1')?.textContent.trim() || '',
+          dashPage: !!document.querySelector('.dash-page'),
+          kpis: document.querySelectorAll('.kpi-row .kpi').length,
+          charts: document.querySelectorAll('.dash-grid .chart').length,
+        });
+      })()`));
+      check(smoke.title === title && smoke.dashPage && smoke.kpis === 4 && smoke.charts >= 1,
+        `${title}: generisches Dashboard mit 4 Kennzahlen und Charts`);
+    }
+
+    await p2.evaluate(`location.hash = '#/app/dataportal/beschaffung?tab=vergleich'`);
+    await new Promise(r => setTimeout(r, 800));
+    const vergleich = JSON.parse(await p2.evaluate(`JSON.stringify({
+      active: document.querySelector('.tab__control--active')?.dataset.tab || '',
+      stellen: !!document.querySelector('#stellen'),
+      nachhaltig: !!document.querySelector('#nachhaltig'),
+    })`));
+    check(vergleich.active === 'vergleich' && vergleich.stellen && vergleich.nachhaltig,
+      'Beschaffung-Direktlink öffnet das Register Vergleich & Nachhaltigkeit');
+
     await p2.evaluate(`location.hash = '#/app/dataportal/energie-klima?tab=kennzahlen'`);
     await new Promise(r => setTimeout(r, 1200));
     const kz = JSON.parse(await p2.evaluate(`JSON.stringify({
@@ -136,6 +186,8 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
         hint: ([...document.querySelectorAll('.kpi__hint')][0] || {}).textContent || '',
         kz: document.querySelectorAll('#e-kz tbody tr').length,
         radios: document.querySelectorAll('#filter-body input[name="e-gran"]').length,
+        tabs: [...document.querySelectorAll('.tab__control')].map(x => x.dataset.tab),
+        oldGeneric: ['snbs', 'zert', 'portfolio-map'].some(id => !!document.getElementById(id)),
       });
     })()`));
     check(e.titel.includes('Gebäudebestand') && e.titel.includes('Indexierte Entwicklung (Basis 2019 = 100)')
@@ -145,6 +197,8 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(/^Stand: /.test(e.hint), `Stichtagszeile («${e.hint}»)`);
     check(e.kz === 8, `Kennzahlen-Tabelle 8 Zeilen (${e.kz})`);
     check(e.radios === 2, 'Körnung Jahres-/Monatsstände wählbar');
+    check(JSON.stringify(e.tabs) === JSON.stringify(['gebaeude', 'grundstuecke', 'bodenbedeckung', 'entwicklung'])
+      && !e.oldGeneric, 'Immobilien verwendet ausschliesslich den spezialisierten Vier-Register-Renderer');
     const g = JSON.parse(await p3.evaluate(`(async () => {
       const s = ms => new Promise(r => setTimeout(r, ms));
       document.querySelector('input[name="e-gran"][value="monat"]').click();

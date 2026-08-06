@@ -999,10 +999,9 @@ Datenportal — Superset-artige Analyse-Dashboards über data/dashboards.json: T
 - Themenübersicht: C.domainTile-Karten (Icon, Titel, Beschreibung, Zählzeile «N Auswertungen»; t.meta-Override fürs Immobilien-Board) (dataportal.js:63-76)
 - pageHeader mit Lead + externem MIS/SUPERB-Link (target _blank) (dataportal.js:84-89)
 - Dashboard-Seite: Zurück-Link, dashHeader (pageHeader + Dashboard-Aktionsmenü), Filterpanel, Tab-Leiste, Tab-Panel, dashFooter mit Quelle/Stand (format.datum)/«Demo-Daten» (dataportal.js:176-191, dashboard-chrome.js:76-104)
-- KPI-Zeile aus board.kpis bzw. board.hero; {buildingCount}-Platzhalter wird zur Laufzeit durch Gebäude mit Koordinaten ersetzt (dataportal.js:153-158)
+- KPI-Zeile aus der einzigen generischen Datenform board.kpis; Immobilien-Kennzahlen werden ausschliesslich in estate.js aus den Stammdaten berechnet
 - KPI-Kachel: Label, Wert+Einheit, Delta-Chip mit Pfeil + sr-only-Richtungswort, optional zweiter Delta-Chip (Vormonat/Vorjahr), achsenlose 24-Punkte-Sparkline (aria-hidden), Stichtags-Hinweis (dashboard-chrome.js:39-72)
 - Chart-Karten je Spec: Formen line/column/bar (horizontal)/pie (Ring mit Total in der Mitte)/area (gestapelt)/table (Kennzahlen-Mehrjahres-Tabelle mit Gruppenzeilen, einheit-Spalte, Fussnoten) (charts.js:159-435,488-495)
-- Karten-Chart (form 'map'): MapLibre-Gebäudekarte via initBuildingsMap, eigene figure mit C.loading-Spinner und reduziertem Menü (nur «Link kopieren») (dataportal.js:206-214,233-237)
 - Globaler Jahresbereichsfilter wirkt nur auf Zeitreihen-Datasets (jahr-Spalte); Snapshot-Charts bleiben unberührt (withYearRange, dataportal.js:111-116); Jahresdomäne aus allen Board-Datasets (boardYears, 98-107)
 - Legende ab 2 Serien, Direktlabel nur am Endpunkt, Tooltips (data-tip) an jedem Mark, «Ziel»-Serie gestrichelt (charts.js:128-134,196-200)
 - sr-only-Datentabelle je SVG-Chart als Textalternative (WCAG 1.1.1) und CSV/Excel-Exportquelle (charts.js:136-157)
@@ -1017,11 +1016,10 @@ Datenportal — Superset-artige Analyse-Dashboards über data/dashboards.json: T
 - Dashboard-ID unbekannt: C.renderNotFound mit Zurück-Link + Crumbs (dataportal.js:122-127)
 - Keine Zeitreihen im Board: Filterpanel zeigt Hinweistext statt Jahres-Selects (dataportal.js:162-172)
 - Chart ohne Daten/mit Query-Fehler: Karte mit «Keine Daten für diese Auswahl.» bzw. Fehlertext (charts.js:443-446)
-- Karte lädt: C.loading «Karte wird geladen…» im dash-map-Container (dataportal.js:212)
 - Tab aktiv (Default erster Tab), Jahresbereich aktiv (Default min/max); ungültige Query-Werte werden geklemmt, from>to korrigiert (dataportal.js:141-147)
 - Filterpanel ein-/ausgeklappt: Desktop via dashboard-layout--collapsed, unter 1024px via filter-panel--collapsed (mobil Default zu); aria-expanded/-label synchron, matchMedia-Wechsel beobachtet (dashboard-chrome.js:111-139)
 - Unsichtbare Plots (inaktiver Tab, Breite 0) werden ausgelassen und beim Sichtbarwerden per ResizeObserver nachgezeichnet (charts.js:510-512)
-- WebGL-Aufräumen: aktive Karten werden bei Grid-Neuzeichnen und onUnmount entfernt (dataportal.js:200-202,236)
+- Chart-Aufräumen: der aktive ResizeObserver wird vor jedem Grid-Neuzeichnen und bei onUnmount entfernt
 
 **Interaktionen**
 
@@ -1032,7 +1030,6 @@ Datenportal — Superset-artige Analyse-Dashboards über data/dashboards.json: T
 - Filterpanel-Toggle-Button (ChevronLeft) klappt Panel ein/aus (dashboard-chrome.js:129-133)
 - Dashboard-Toolbar-Menü: Aktualisieren (echtes Neuzeichnen + Toast) · Als PDF/Bild (simuliert, Toast) · Link kopieren (Clipboard, Fehlschlag als Error-Toast) · Per E-Mail (mailto) (dashboard-chrome.js:18-28,145-155)
 - Chart-Kebab-Menü je Diagramm: Vollbild (kanonisches Modal xl, SVG in Modalbreite NEU gezeichnet) · Als CSV · Als Excel · Als PNG (svgToPng) · Link kopieren; Tabellen-Charts ohne PNG (charts.js:60-69,412,556-630)
-- Karten-Chart-Menü: Vollbild via Fullscreen-API, PNG vom WebGL-Canvas, andere Aktionen → Warn-Toast «Für die Karte nicht verfügbar.» (charts.js:606-619)
 - Hover-/Fokus-Tooltip auf jedem Mark (data-tip); Escape schliesst Tooltip ohne Fokusverlust (WCAG 1.4.13); scroll versteckt (charts.js:527-554)
 - Toast-Rückmeldungen für alle Export-/Kopieraktionen inkl. Fehler-/Warn-Varianten (charts.js:602-628)
 - Link kopieren teilt die aktuelle URL inkl. Tab/Zeitraum-Query (Deep-Link)

@@ -1,16 +1,20 @@
-// K-05: each data route must load only the deferred files it actually reads.
+// K-05/K-04: each route must load only the deferred files it actually reads.
 // Every case starts in a fresh page context so the core/module cache of an
 // earlier route cannot conceal an unnecessary or missing request.
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
-const OWNED_FILES = ['applications.json', 'datasets.json', 'catalog-labels.json'];
+const DATA_FILES = ['applications.json', 'datasets.json', 'catalog-labels.json'];
+const ESTATE_FILES = ['buildings.geojson', 'parcels.geojson', 'landcovers.geojson'];
 const CASES = [
-  { route: '/data', want: ['applications.json', 'datasets.json'] },
-  { route: '/data/catalog', want: ['catalog-labels.json', 'datasets.json'] },
-  { route: '/data/catalog/11', want: ['catalog-labels.json', 'datasets.json'] },
-  { route: '/data/digitalisation/strategy', want: [] },
-  { route: '/data/ict-projects', want: [] },
-  { route: '/data/gibtsnicht', want: [], title: 'Seite nicht gefunden' },
+  { route: '/data', tracked: DATA_FILES, want: ['applications.json', 'datasets.json'] },
+  { route: '/data/catalog', tracked: DATA_FILES, want: ['catalog-labels.json', 'datasets.json'] },
+  { route: '/data/catalog/11', tracked: DATA_FILES, want: ['catalog-labels.json', 'datasets.json'] },
+  { route: '/data/digitalisation/strategy', tracked: DATA_FILES, want: [] },
+  { route: '/data/ict-projects', tracked: DATA_FILES, want: [] },
+  { route: '/data/gibtsnicht', tracked: DATA_FILES, want: [], title: 'Seite nicht gefunden' },
+  { route: '/app/dataportal', tracked: ESTATE_FILES, want: [] },
+  { route: '/app/dataportal/energie-klima', tracked: ESTATE_FILES, want: [] },
+  { route: '/app/dataportal/immobilien', tracked: ESTATE_FILES, want: ESTATE_FILES },
 ];
 
 let failures = 0;
@@ -39,7 +43,9 @@ try {
         });
       })()`));
 
-      const got = [...new Set(result.files.filter((name) => OWNED_FILES.includes(name)))].sort();
+      // Do not deduplicate: the Immobilien case also proves that each GeoJSON
+      // master file is fetched exactly once.
+      const got = result.files.filter((name) => testCase.tracked.includes(name)).sort();
       const want = [...testCase.want].sort();
       check(JSON.stringify(got) === JSON.stringify(want),
         `${testCase.route} lädt nur den deklarierten Bestand`, got.join(', ') || 'keiner');

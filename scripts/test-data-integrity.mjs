@@ -78,5 +78,56 @@ for (const s of declared) {
     `${s.serviceId} → ${file}: Daten «${s.processDefId}» = Code «${literals[0]}»`);
 }
 
+console.log('■ Datenportal: genau ein Renderer und geschlossene Referenzen');
+const portal = json('data/dashboards.json');
+const topicIds = portal.topics.map((topic) => topic.id);
+const boardIds = portal.dashboards.map((board) => board.id);
+const genericTopicIds = topicIds.filter((id) => id !== 'immobilien');
+check(new Set(topicIds).size === topicIds.length, 'Themen-IDs sind eindeutig');
+check(new Set(boardIds).size === boardIds.length, 'Dashboard-IDs sind eindeutig');
+check(JSON.stringify([...boardIds].sort()) === JSON.stringify([...genericTopicIds].sort()),
+  'sechs Themen haben genau ein generisches Dashboard; Immobilien bleibt spezialisiert');
+check(!portal.dashboards.some((board) => Object.hasOwn(board, 'hero')),
+  'generische Dashboards verwenden ausschliesslich die kpis-Datenform');
+
+const usedDatasets = new Set();
+const brokenChartRefs = [];
+const brokenDatasetRefs = [];
+const duplicateChartIds = [];
+for (const board of portal.dashboards) {
+  const chartIds = board.charts.map((chart) => chart.id);
+  if (new Set(chartIds).size !== chartIds.length) duplicateChartIds.push(board.id);
+  const knownCharts = new Set(chartIds);
+  for (const tab of board.tabs || []) {
+    for (const chartId of tab.charts || []) {
+      if (!knownCharts.has(chartId)) brokenChartRefs.push(`${board.id}/${tab.id}→${chartId}`);
+    }
+  }
+  for (const chart of board.charts) {
+    const datasetId = chart.query?.dataset;
+    if (!datasetId || !Object.hasOwn(portal.datasets, datasetId)) {
+      brokenDatasetRefs.push(`${board.id}/${chart.id}→${datasetId || 'keiner'}`);
+    } else {
+      usedDatasets.add(datasetId);
+    }
+  }
+}
+check(duplicateChartIds.length === 0,
+  `Chart-IDs sind je Dashboard eindeutig${duplicateChartIds.length ? ` — offen: ${duplicateChartIds.join(', ')}` : ''}`);
+check(brokenChartRefs.length === 0,
+  `alle Register verweisen auf vorhandene Charts${brokenChartRefs.length ? ` — offen: ${brokenChartRefs.join(', ')}` : ''}`);
+check(brokenDatasetRefs.length === 0,
+  `alle generischen Charts verweisen auf vorhandene Datensätze${brokenDatasetRefs.length ? ` — offen: ${brokenDatasetRefs.join(', ')}` : ''}`);
+
+// Diese beiden Zeitreihen liest der spezialisierte Immobilien-Renderer direkt;
+// alle übrigen Datensätze müssen über einen generischen Chart erreichbar sein.
+const specializedDatasets = new Set(['portfolio_jahr', 'portfolio_monat']);
+const orphanDatasets = Object.keys(portal.datasets)
+  .filter((id) => !usedDatasets.has(id) && !specializedDatasets.has(id));
+check(orphanDatasets.length === 0,
+  `jeder Datensatz hat einen Renderer${orphanDatasets.length ? ` — verwaist: ${orphanDatasets.join(', ')}` : ''}`);
+check([...specializedDatasets].every((id) => Object.hasOwn(portal.datasets, id)),
+  'die spezialisierten Immobilien-Zeitreihen bleiben vorhanden');
+
 console.log(failures ? `\n✗ ${failures} Prüfung(en) FEHLGESCHLAGEN` : '\n✓ alle Prüfungen bestanden');
 process.exit(failures ? 1 : 0);
