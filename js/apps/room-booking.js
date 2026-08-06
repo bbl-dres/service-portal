@@ -148,6 +148,23 @@ export default async function render(ctx) {
     return;
   }
 
+  // The room catalogue does not change during this route's lifetime. Group and
+  // sort it once; search criteria and process instances are the mutable parts.
+  const roomsByBuilding = new Map(buildings.map((item) => [item.bbl_id, []]));
+  meetingRooms.forEach((room) => roomsByBuilding.get(room.buildingId)?.push(room));
+  roomsByBuilding.forEach((rooms) => rooms.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, 'de', { numeric: true })));
+  const roomByIdMap = new Map(meetingRooms.map((room) => [room.spaceId, room]));
+  const roomIndexById = new Map();
+  const legacyRoomByBuilding = new Map();
+  roomsByBuilding.forEach((rooms, buildingId) => {
+    const byNumber = new Map();
+    rooms.forEach((room, index) => {
+      roomIndexById.set(room.spaceId, index);
+      byNumber.set(room.roomNumber, room);
+    });
+    legacyRoomByBuilding.set(buildingId, byNumber);
+  });
+
   const requestedRoom = meetingRooms.find((room) => room.spaceId === query.get('room')) || null;
   // Vorbelegung des Standorts, in dieser Reihenfolge: tief verlinkt → gemerkt →
   // der Standort des Prototyp-Datenbestands → der erste überhaupt.
@@ -195,6 +212,7 @@ export default async function render(ctx) {
   // nach dem ersten Zeichnen von selbst auf. Nur EINMAL: nach dem Buchen oder
   // Abbrechen darf er nicht bei jedem Neuzeichnen zurückkehren.
   let pendingDeepLink = requestedRoom?.spaceId || '';
+  let lastSearchSummary = null;
 
   const dialogMap = createMapSlot();
   let closeDialog = null;         // schliesst den offenen Dialog (Buchen/Details/Grundriss/Karte)
@@ -217,13 +235,14 @@ export default async function render(ctx) {
   });
 
   const building = () => buildings.find((item) => item.bbl_id === state.buildingId) || buildings[0];
-  const bookableRoomCount = (buildingId) => meetingRooms.filter((room) => room.buildingId === buildingId).length;
-  const buildingRooms = () => meetingRooms
-    .filter((room) => room.buildingId === state.buildingId)
-    .sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, 'de', { numeric: true }));
-  const floors = () => core.floors()
-    .filter((floor) => floor.buildingId === state.buildingId && buildingRooms().some((room) => room.floorId === floor.floorId))
-    .sort((a, b) => a.level - b.level);
+  const bookableRoomCount = (buildingId) => roomsByBuilding.get(buildingId)?.length || 0;
+  const buildingRooms = () => roomsByBuilding.get(state.buildingId) || [];
+  const floors = () => {
+    const roomFloorIds = new Set(buildingRooms().map((room) => room.floorId));
+    return core.floors()
+      .filter((floor) => floor.buildingId === state.buildingId && roomFloorIds.has(floor.floorId))
+      .sort((a, b) => a.level - b.level);
+  };
   const floorLabel = (room) => core.floor(room.floorId)?.label || room.roomNumber.split(' ')[0] || '—';
   // «1. OG 17» → «17»: die Raumnummer ohne das Geschoss, das daneben schon steht.
   const roomCode = (room) => String(room.roomNumber).replace(/^.*\s/, '') || room.roomNumber;
@@ -232,9 +251,8 @@ export default async function render(ctx) {
   // geführt und werden aus der Raumkennung abgeleitet — stabil je Raum, damit
   // Liste, Dialog und Grundriss dasselbe zeigen. Ein Prototyp-Behelf: sobald das
   // CAFM-System die Felder liefert, ersetzt ein Datenfeld diese Funktion.
-  function roomProfile(room) {
-    const rows = buildingRooms();
-    const index = Math.max(0, rows.findIndex((item) => item.spaceId === room.spaceId));
+  function roomProfile(room, favoriteRoomIds) {
+    const index = Math.max(0, roomIndexById.get(room.spaceId) ?? 0);
     const seed = roomHash(room.spaceId);
     const equipment = ['Bildschirm'];
     if (seed % 2 === 0) equipment.push('Teams');
@@ -244,7 +262,7 @@ export default async function render(ctx) {
       name: ROOM_NAMES[index % ROOM_NAMES.length],
       equipment: [...new Set(equipment)],
       accessible: floorLabel(room) === 'EG' || seed % 3 !== 0,
-      favorite: favorites.has('room', room.spaceId),
+      favorite: favoriteRoomIds.has(room.spaceId),
     };
   }
 
@@ -254,33 +272,46 @@ export default async function render(ctx) {
     return { start: minuteOfDay(data.start || stored[0]), end: minuteOfDay(data.ende || stored[1]) };
   }
 
-  function roomMatchesInstance(room, instance) {
-    const data = instance.data || {};
-    if (data.raumId) return data.raumId === room.spaceId;
-    return instance.linkedEntities?.buildingId === room.buildingId && data.raum === room.roomNumber;
+  // One process snapshot and one profile/range index serve a complete draw or
+  // availability-sensitive action. A later action creates a fresh context so a
+  // reservation made in the meantime is still observed.
+  function prepareBookingContext(instances = engine.instances()) {
+    const rooms = buildingRooms();
+    const favoriteRoomIds = new Set(favorites.list('room'));
+    const profiles = new Map(rooms.map((room) => [room.spaceId, roomProfile(room, favoriteRoomIds)]));
+    const rangesByRoom = new Map(rooms.map((room) => [room.spaceId, []]));
+
+    instances.forEach((instance) => {
+      const data = instance.data || {};
+      if (instance.defId !== 'buchung' || CANCELLED.has(instance.status) || data.datum !== state.date) return;
+      let room = null;
+      if (data.raumId) room = roomByIdMap.get(data.raumId) || null;
+      else if (instance.linkedEntities?.buildingId === state.buildingId) {
+        room = legacyRoomByBuilding.get(state.buildingId)?.get(data.raum) || null;
+      }
+      const ranges = room && rangesByRoom.get(room.spaceId);
+      if (!ranges) return;
+      const range = instanceRange(instance);
+      if (Number.isFinite(range.start) && Number.isFinite(range.end)) ranges.push(range);
+    });
+    rangesByRoom.forEach((ranges) => ranges.sort((a, b) => a.start - b.start));
+    return { rooms, profiles, rangesByRoom };
   }
 
   // Alle Belegungen eines Raums am gewählten Tag, nach Beginn sortiert.
-  function bookedRanges(room) {
-    return engine.instances()
-      .filter((instance) => instance.defId === 'buchung' && !CANCELLED.has(instance.status)
-        && instance.data?.datum === state.date && roomMatchesInstance(room, instance))
-      .map(instanceRange)
-      .filter((range) => Number.isFinite(range.start) && Number.isFinite(range.end))
-      .sort((a, b) => a.start - b.start);
-  }
+  const bookedRanges = (room, context) => context.rangesByRoom.get(room.spaceId) || [];
 
-  function isAvailable(room) {
+  function isAvailable(room, context) {
     if (Object.keys(slotValidation(state, { today, capacity: room.capacity }).errors).length) return false;
     const start = minuteOfDay(state.start), end = minuteOfDay(state.end);
-    return !bookedRanges(room).some((range) => rangesOverlap(start, end, range.start, range.end));
+    return !bookedRanges(room, context).some((range) => rangesOverlap(start, end, range.start, range.end));
   }
 
   // Das zusammenhängende freie Fenster um den gewünschten Zeitraum. `null`, wenn
   // der Raum den ganzen Tag frei ist: eine Angabe, die an JEDER Karte stünde,
   // unterscheidet nichts und wäre nur Rauschen.
-  function freeWindow(room) {
-    const ranges = bookedRanges(room);
+  function freeWindow(room, context) {
+    const ranges = bookedRanges(room, context);
     if (!ranges.length) return null;
     const start = minuteOfDay(state.start), end = minuteOfDay(state.end);
     let from = DAY_START, to = DAY_END;
@@ -291,22 +322,22 @@ export default async function render(ctx) {
     return { from, to };
   }
 
-  function matchesCriteria(room) {
-    const profile = roomProfile(room);
+  function matchesCriteria(room, context) {
+    const profile = context.profiles.get(room.spaceId);
     const count = participantCount(state.participants);
     if (count == null || room.capacity < count) return false;
     if (state.filters.accessible.length && !profile.accessible) return false;
     return state.filters.equipment.every((item) => profile.equipment.includes(item));
   }
 
-  function sortedAvailableRooms() {
-    const rooms = buildingRooms().filter((room) => matchesCriteria(room) && isAvailable(room));
+  function sortedAvailableRooms(context) {
+    const rooms = context.rooms.filter((room) => matchesCriteria(room, context) && isAvailable(room, context));
     if (state.sort === 'room') return rooms.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, 'de', { numeric: true }));
     if (state.sort === 'capacity') return rooms.sort((a, b) => a.capacity - b.capacity || a.roomNumber.localeCompare(b.roomNumber, 'de', { numeric: true }));
     // «Beste Übereinstimmung»: möglichst wenig überzähliger Platz, dafür viel
     // Ausstattung — und Gemerktes zuerst, denn wer einen Raum merkt, will ihn.
     return rooms.sort((a, b) => {
-      const pa = roomProfile(a), pb = roomProfile(b);
+      const pa = context.profiles.get(a.spaceId), pb = context.profiles.get(b.spaceId);
       if (pa.favorite !== pb.favorite) return pa.favorite ? -1 : 1;
       const scoreA = (a.capacity - state.participants) * 10 - pa.equipment.length;
       const scoreB = (b.capacity - state.participants) * 10 - pb.equipment.length;
@@ -314,7 +345,7 @@ export default async function render(ctx) {
     });
   }
 
-  const roomById = (id) => meetingRooms.find((room) => room.spaceId === id) || null;
+  const roomById = (id) => roomByIdMap.get(id) || null;
 
   function syncUrl() {
     const params = new URLSearchParams();
@@ -433,9 +464,9 @@ export default async function render(ctx) {
     return `<ul class="booking-chips" aria-label="Ausstattung von ${C.escape(profile.name)}">${items.join('')}</ul>`;
   }
 
-  function roomRow(room, { primary = false } = {}) {
-    const profile = roomProfile(room);
-    const window = freeWindow(room);
+  function roomRow(room, context, { primary = false } = {}) {
+    const profile = context.profiles.get(room.spaceId);
+    const window = freeWindow(room, context);
     const titleId = domId('booking-room-title', room.spaceId);
     return `<article class="booking-room${primary ? ' booking-room--primary' : ''}" aria-labelledby="${titleId}">
       <p class="booking-room__code" aria-hidden="true"><strong>${C.escape(roomCode(room))}</strong><span>${C.escape(floorLabel(room))}</span></p>
@@ -457,7 +488,7 @@ export default async function render(ctx) {
     </article>`;
   }
 
-  function resultList(rooms) {
+  function resultList(rooms, context) {
     if (!rooms.length) {
       return C.empty('Keine verfügbaren Räume gefunden.', {
         hint: 'Ändern Sie Zeitraum, Gruppengrösse oder Filter.',
@@ -467,16 +498,17 @@ export default async function render(ctx) {
     const visible = state.showAll ? rooms : rooms.slice(0, PAGE_SIZE);
     const rest = rooms.length - visible.length;
     return `<div class="booking-rooms">
-      ${visible.map((room, index) => roomRow(room, { primary: index === 0 && state.sort === 'best' })).join('')}
+      ${visible.map((room, index) => roomRow(room, context, { primary: index === 0 && state.sort === 'best' })).join('')}
       ${rest > 0 ? `<button type="button" class="btn btn--link booking-more" id="booking-show-all">
         <span class="btn__text">${num(rest)} weitere ${rest === 1 ? 'Raum' : 'Räume'} anzeigen</span>${C.icon('ArrowDown', 'btn__icon')}</button>` : ''}
     </div>`;
   }
 
-  function findView() {
+  function findView(context) {
     if (state.created) return doneView();
-    const rooms = sortedAvailableRooms();
-    const total = buildingRooms().length;
+    const rooms = sortedAvailableRooms(context);
+    const total = context.rooms.length;
+    lastSearchSummary = { available: rooms.length, total, date: state.date, slot: slotLabel() };
     const filterCount = state.filters.equipment.length + state.filters.accessible.length;
     return `<div class="vertical-spacing booking-find">
       ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS, id: 'booking-errors' })}
@@ -505,7 +537,7 @@ export default async function render(ctx) {
           extra: `<button type="button" class="btn btn--bare btn--sm btn--icon-left catbar__aside" id="booking-plan-open">
             ${C.icon('Map', 'btn__icon')}<span class="btn__text">Grundriss ansehen</span></button>`,
         })}
-        ${resultList(rooms)}
+        ${resultList(rooms, context)}
       </section>
     </div>`;
   }
@@ -563,12 +595,13 @@ export default async function render(ctx) {
   function openBookingDialog(spaceId) {
     const room = roomById(spaceId);
     if (!room) return;
-    if (!isAvailable(room)) {
+    const actionContext = prepareBookingContext();
+    if (!isAvailable(room, actionContext)) {
       C.flashError(mount, 'Dieser Raum ist im gewählten Zeitraum nicht mehr verfügbar.');
       draw();
       return;
     }
-    const profile = roomProfile(room);
+    const profile = actionContext.profiles.get(room.spaceId);
     // Zustand NUR dieses Dialogs — der Rest der Seite bleibt unberührt, damit
     // «Abbrechen» wirklich folgenlos ist.
     const invitees = [];
@@ -671,7 +704,7 @@ export default async function render(ctx) {
       }
       // Zwischen Öffnen und Absenden kann derselbe Raum vergeben worden sein —
       // die Prüfung wiederholt sich deshalb unmittelbar vor dem Schreiben.
-      if (!isAvailable(room)) {
+      if (!isAvailable(room, prepareBookingContext())) {
         close();
         C.flashError(mount, `${profile.name} ist im gewählten Zeitraum nicht mehr verfügbar.`);
         draw();
@@ -712,9 +745,10 @@ export default async function render(ctx) {
   function openDetailsDialog(spaceId) {
     const room = roomById(spaceId);
     if (!room) return;
-    const profile = roomProfile(room);
+    const actionContext = prepareBookingContext();
+    const profile = actionContext.profiles.get(room.spaceId);
     const currentBuilding = building();
-    const available = isAvailable(room);
+    const available = isAvailable(room, actionContext);
     const close = openDialog({
       id: 'booking-details-dialog', size: 'sm', title: `${profile.name} · ${room.roomNumber}`,
       body: dialogBody(`<dl class="kv kv--tight">
@@ -760,12 +794,13 @@ export default async function render(ctx) {
       if (unwirePlanScroll) { unwirePlanScroll(); unwirePlanScroll = null; }
       const activeFloor = floorRows.find((floor) => floor.floorId === floorId) || floorRows[0];
       const spaces = core.spacesForFloor(activeFloor.floorId);
+      const actionContext = prepareBookingContext();
       const statuses = {};
       const selectableIds = [];
       spaces.forEach((space) => {
         if (!space.bookable || space.useType !== 'sitzung') return;
-        if (!matchesCriteria(space)) statuses[space.spaceId] = 'unsuitable';
-        else if (isAvailable(space)) { statuses[space.spaceId] = 'available'; selectableIds.push(space.spaceId); }
+        if (!matchesCriteria(space, actionContext)) statuses[space.spaceId] = 'unsuitable';
+        else if (isAvailable(space, actionContext)) { statuses[space.spaceId] = 'available'; selectableIds.push(space.spaceId); }
         else statuses[space.spaceId] = 'unavailable';
       });
       host.innerHTML = `<div class="booking-floorbar" role="group" aria-label="Geschoss wechseln">
@@ -849,8 +884,8 @@ export default async function render(ctx) {
 
   // --- Meine Buchungen -------------------------------------------------------
 
-  function bookingInstances() {
-    return engine.instances().filter((instance) => instance.defId === 'buchung' && instance.requester === session.user().name);
+  function bookingInstances(instances) {
+    return instances.filter((instance) => instance.defId === 'buchung' && instance.requester === session.user().name);
   }
 
   function isUpcoming(instance) {
@@ -901,8 +936,7 @@ export default async function render(ctx) {
     </section>`;
   }
 
-  function bookingsView() {
-    const rows = bookingInstances();
+  function bookingsView(rows) {
     const upcoming = rows.filter(isUpcoming).sort((a, b) => `${a.data?.datum}${a.data?.start || ''}`.localeCompare(`${b.data?.datum}${b.data?.start || ''}`));
     const past = rows.filter((row) => !isUpcoming(row))
       .sort((a, b) => `${b.data?.datum || ''}${b.data?.start || ''}`.localeCompare(`${a.data?.datum || ''}${a.data?.start || ''}`));
@@ -967,8 +1001,8 @@ export default async function render(ctx) {
   // --- Verdrahtung -----------------------------------------------------------
 
   function announceResults() {
-    const rooms = sortedAvailableRooms();
-    C.announce(`${rooms.length} von ${buildingRooms().length} Räumen frei am ${datum(state.date)}, ${slotLabel()}.`);
+    if (!lastSearchSummary) return;
+    C.announce(`${lastSearchSummary.available} von ${lastSearchSummary.total} Räumen frei am ${datum(lastSearchSummary.date)}, ${lastSearchSummary.slot}.`);
   }
 
   // Schnellauswahl: setzt Datum und Zeit und sucht sofort — ein zweiter Klick auf
@@ -1089,7 +1123,7 @@ export default async function render(ctx) {
       // aufgelöst werden — ein Platzhalterobjekt gälte als «frei» und der
       // Dialog fiele danach wortlos aus.
       const repeatRoom = roomById(data.raumId);
-      if (repeatRoom && isAvailable(repeatRoom)) openBookingDialog(repeatRoom.spaceId);
+      if (repeatRoom && isAvailable(repeatRoom, prepareBookingContext())) openBookingDialog(repeatRoom.spaceId);
       else announceResults();
     }));
     mount.querySelector('#booking-map-open')?.addEventListener('click', openLocationMapDialog);
@@ -1111,8 +1145,11 @@ export default async function render(ctx) {
   function draw() {
     const restore = C.preserveFocus(mount);
     if (unwirePlan) { unwirePlan(); unwirePlan = null; }
-    const bookings = session.isLoggedIn() ? bookingInstances() : [];
+    const instanceSnapshot = session.isLoggedIn() ? engine.instances() : [];
+    const bookings = session.isLoggedIn() ? bookingInstances(instanceSnapshot) : [];
+    const bookingContext = session.isLoggedIn() ? prepareBookingContext(instanceSnapshot) : null;
     const upcomingCount = bookings.filter(isUpcoming).length;
+    lastSearchSummary = null;
     const tabs = [
       { id: 'find', label: 'Raum finden' },
       { id: 'bookings', label: `Meine Buchungen (${num(upcomingCount)})` },
@@ -1122,7 +1159,7 @@ export default async function render(ctx) {
       ${session.isLoggedIn() ? `<div class="tabs booking-tabs">
         ${C.tabBar({ items: tabs, active: state.tab, idPrefix: 'booking-tab', ariaLabel: 'Raumbuchung' })}
         ${C.tabPanels({ items: tabs, active: state.tab, idPrefix: 'booking-tab', heading: true,
-          render: (tab) => tab === 'find' ? findView() : bookingsView() })}
+          render: (tab) => tab === 'find' ? findView(bookingContext) : bookingsView(bookings) })}
       </div>` : C.loginGate('Raumbuchungen sind persönliche Vorgänge. Melden Sie sich mit AGOV / FedLogin an, um einen Raum zu reservieren.')}
     </div>`;
     wire();
@@ -1142,7 +1179,7 @@ export default async function render(ctx) {
   if (pendingDeepLink && session.isLoggedIn() && state.tab === 'find') {
     const room = roomById(pendingDeepLink);
     pendingDeepLink = '';
-    if (room && isAvailable(room)) openBookingDialog(room.spaceId);
+    if (room && isAvailable(room, prepareBookingContext())) openBookingDialog(room.spaceId);
     else if (room) openDetailsDialog(room.spaceId);
   }
 }

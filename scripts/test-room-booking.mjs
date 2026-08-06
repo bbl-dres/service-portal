@@ -176,6 +176,48 @@ const FILTER_RESET = `(async () => {
   return { rooms: document.querySelectorAll('.booking-room').length, url: location.hash };
 })()`;
 
+const SORTS_AND_SNAPSHOT = `(async () => {
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const nativeInstances = window.__engine.instances;
+  let calls = 0;
+  window.__engine.instances = (...args) => { calls++; return nativeInstances.apply(window.__engine, args); };
+
+  const sort = document.querySelector('#booking-sort');
+  sort.value = 'capacity';
+  sort.dispatchEvent(new Event('change', { bubbles: true }));
+  await wait(200);
+  const capacityCalls = calls;
+  const capacities = [...document.querySelectorAll('.booking-room__meta')]
+    .map((item) => Number(/(\\d+)\\s+Plätze/.exec(item.textContent)?.[1] || 0));
+
+  calls = 0;
+  const nextSort = document.querySelector('#booking-sort');
+  nextSort.value = 'room';
+  nextSort.dispatchEvent(new Event('change', { bubbles: true }));
+  await wait(200);
+  const roomCalls = calls;
+  const roomNumbers = [...document.querySelectorAll('.booking-room__meta')]
+    .map((item) => item.textContent.split('·')[0].trim());
+  calls = 0;
+  const bestSort = document.querySelector('#booking-sort');
+  bestSort.value = 'best';
+  bestSort.dispatchEvent(new Event('change', { bubbles: true }));
+  await wait(200);
+  const bestCalls = calls;
+  window.__engine.instances = nativeInstances;
+
+  return {
+    capacityCalls,
+    roomCalls,
+    bestCalls,
+    capacitySorted: capacities.every((value, index) => index === 0 || capacities[index - 1] <= value),
+    roomSorted: roomNumbers.every((value, index) => index === 0
+      || roomNumbers[index - 1].localeCompare(value, 'de', { numeric: true }) <= 0),
+    capacities,
+    roomNumbers,
+  };
+})()`;
+
 const FAVOURITE = `(async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const star = document.querySelector('.booking-room [data-fav-kind="room"]');
@@ -278,6 +320,66 @@ const BOOK_DIALOG = `(async () => {
   return result;
 })()`;
 
+const STALE_DIALOG_CONFLICT = `(async () => {
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const trigger = document.querySelector('[data-book]');
+  const roomId = trigger.dataset.book;
+  const roomNumber = trigger.closest('.booking-room').querySelector('.booking-room__meta').textContent.split('·')[0].trim();
+  trigger.click();
+  let tries = 0;
+  while (!document.querySelector('#booking-title') && tries++ < 80) await wait(50);
+  const title = document.querySelector('#booking-title');
+  title.value = 'Race condition sentinel';
+  title.dispatchEvent(new Event('input', { bubbles: true }));
+
+  const marker = 'test-concurrent-room-conflict';
+  const cancelledMarker = 'test-cancelled-room-conflict';
+  const rows = JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]');
+  rows.unshift({
+    instanceId: cancelledMarker,
+    defId: 'buchung',
+    requester: 'Andere Person',
+    status: 'zurueckgezogen',
+    data: {
+      datum: document.querySelector('#booking-date').value,
+      start: document.querySelector('#booking-start').value,
+      ende: document.querySelector('#booking-end').value,
+      raumId: roomId,
+    },
+    linkedEntities: { buildingId: document.querySelector('#booking-location').value },
+  });
+  rows.unshift({
+    instanceId: marker,
+    defId: 'buchung',
+    requester: 'Andere Person',
+    status: 'bestaetigt',
+    data: {
+      datum: document.querySelector('#booking-date').value,
+      start: document.querySelector('#booking-start').value,
+      ende: document.querySelector('#booking-end').value,
+      raum: roomNumber,
+    },
+    linkedEntities: { buildingId: document.querySelector('#booking-location').value },
+  });
+  localStorage.setItem('bbl_vorgaenge_v1', JSON.stringify(rows));
+  document.querySelector('#booking-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await wait(300);
+
+  const storedAfter = JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]');
+  const result = {
+    dialogClosed: !document.querySelector('#booking-form'),
+    notCreated: !storedAfter.some((item) => item.data?.zweck === 'Race condition sentinel'),
+    absentWhileConflicted: ![...document.querySelectorAll('[data-book]')].some((button) => button.dataset.book === roomId),
+  };
+  const withoutActive = storedAfter.filter((item) => item.instanceId !== marker);
+  localStorage.setItem('bbl_vorgaenge_v1', JSON.stringify(withoutActive));
+  document.querySelector('#booking-search').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await wait(250);
+  result.restoredAfterCleanup = [...document.querySelectorAll('[data-book]')].some((button) => button.dataset.book === roomId);
+  localStorage.setItem('bbl_vorgaenge_v1', JSON.stringify(withoutActive.filter((item) => item.instanceId !== cancelledMarker)));
+  return result;
+})()`;
+
 const SUBMIT = `(async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   document.querySelector('[data-book]').click();
@@ -310,7 +412,15 @@ const BOOK_AGAIN = `(async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   document.querySelector('#booking-again').click();
   await wait(250);
-  return { bar: !!document.querySelector('#booking-search'), done: !!document.querySelector('.booking-done') };
+  const rows = JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]');
+  const bookedRoomId = rows.find((item) => item.data?.zweck === 'Projektbesprechung Test')?.data?.raumId || '';
+  return {
+    bar: !!document.querySelector('#booking-search'),
+    done: !!document.querySelector('.booking-done'),
+    bookedRoomId,
+    bookedRoomStillListed: [...document.querySelectorAll('[data-book]')]
+      .some((button) => button.dataset.book === bookedRoomId),
+  };
 })()`;
 
 const MY_BOOKINGS = `(async () => {
@@ -460,6 +570,12 @@ try {
     const cleared = await page.evaluate(FILTER_RESET);
     check(cleared.rooms >= filtered.after && !/equipment=/.test(cleared.url), `the filter reset restores the list (${cleared.rooms})`);
 
+    const sorted = await page.evaluate(SORTS_AND_SNAPSHOT);
+    check(sorted.capacitySorted, `capacity sort is numeric (${sorted.capacities.join(', ')})`);
+    check(sorted.roomSorted, `room sort is natural (${sorted.roomNumbers.join(', ')})`);
+    check(sorted.capacityCalls === 1 && sorted.roomCalls === 1 && sorted.bestCalls === 1,
+      `each result redraw uses one process snapshot (${sorted.capacityCalls}/${sorted.roomCalls}/${sorted.bestCalls})`);
+
     const fav = await page.evaluate(FAVOURITE);
     check(fav.wasPressed === 'false' && fav.stored, 'the star remembers a room in localStorage');
     check(fav.firstAfter === fav.id && fav.badge.includes('Favorit'), `a remembered room sorts first and is badged ("${fav.badge}")`);
@@ -484,6 +600,11 @@ try {
     check(dialog.cancelled && dialog.roomsIntact > 0, 'cancelling closes the dialog and leaves the list untouched');
 
     if (width === 1440) {
+      const staleConflict = await page.evaluate(STALE_DIALOG_CONFLICT);
+      check(staleConflict.dialogClosed && staleConflict.notCreated && staleConflict.absentWhileConflicted,
+        'submission rechecks a legacy room booking created after the dialog opened');
+      check(staleConflict.restoredAfterCleanup, 'a cancelled booking does not keep the room unavailable');
+
       const submitted = await page.evaluate(SUBMIT);
       check(submitted.chips === 1, `an invitee becomes a removable chip (${submitted.chips})`);
       check(submitted.dialogClosed && submitted.success && submitted.heading === 'Buchung abgeschlossen',
@@ -494,6 +615,8 @@ try {
 
       const again = await page.evaluate(BOOK_AGAIN);
       check(again.bar && !again.done, '«Weiteren Raum buchen» returns to the one-page surface');
+      check(again.bookedRoomId && !again.bookedRoomStillListed,
+        'the new overlapping booking is removed from the available-room list');
 
       const bookings = await page.evaluate(MY_BOOKINGS);
       check(bookings.visible && bookings.entries > 0, `the new booking shows under Meine Buchungen (${bookings.entries})`);

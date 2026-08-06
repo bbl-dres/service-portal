@@ -21,8 +21,22 @@ function saveLS(arr) { return writeJSON(LS_KEY, arr); }   // → bool, damit Auf
 
 async function load() {
   FAILED.clear();
-  try { DEFS = await fetchJSON('data/process-definitions.json', { shape: 'array' }); } catch (e) { console.warn('[engine] definitions', e && e.message); DEFS = []; FAILED.add('definitions'); }
-  try { SEEDED = await fetchJSON('data/process-instances.json', { shape: 'array' }); } catch (e) { console.warn('[engine] instances', e && e.message); SEEDED = []; FAILED.add('instances'); }
+  const [definitions, instances] = await Promise.allSettled([
+    fetchJSON('data/process-definitions.json', { shape: 'array' }),
+    fetchJSON('data/process-instances.json', { shape: 'array' }),
+  ]);
+  if (definitions.status === 'fulfilled') DEFS = definitions.value;
+  else {
+    console.warn('[engine] definitions', definitions.reason?.message);
+    DEFS = [];
+    FAILED.add('definitions');
+  }
+  if (instances.status === 'fulfilled') SEEDED = instances.value;
+  else {
+    console.warn('[engine] instances', instances.reason?.message);
+    SEEDED = [];
+    FAILED.add('instances');
+  }
 }
 
 const definition = (id) => DEFS.find(d => d.defId === id);
