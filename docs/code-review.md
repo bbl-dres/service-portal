@@ -4,13 +4,13 @@
 
 **Geprüfter Stand:** `main`, Commit `fb9e9c2e60defc7ecdbf253e3b902446383971e3`
 
-**Review-Umfang:** Phase 0–4, ohne Codeänderungen
+**Review-Umfang:** Phase 0–4 auf `main`; Phase 5 auf Branch `code-review-2026-08`
 
 ## 1. Zusammenfassung
 
 Das Repository ist ein statisches, öffentliches Frontend-Mockup auf GitHub Pages. Es verwendet Vanilla JavaScript mit ES Modules, hashbasiertes Routing, statische JSON-/GeoJSON-/BPMN-Daten und drei zur Laufzeit geladene CDN-Bibliotheken. Es gibt keine Build-Kette, keinen Package-Manager und kein Backend. Diese Eigenschaften sind für den Mockup kein Mangel und wurden nicht als Befund gewertet.
 
-Die Architektur ist für die Grösse grundsätzlich tragfähig. Der aktuelle Stand enthält jedoch einen reproduzierbaren Vorführfehler: Die monatliche Immobilienentwicklung erzeugt ungültige SVG-Koordinaten und zeichnet das Diagramm nicht korrekt. Daneben liegen normale Bedienfehler in Navigation, Overlays, Gebäudeerfassung, Raumbuchung, Shop und Mietflächenansicht vor. Der zweite Schwerpunkt ist nicht funktional, sondern organisatorisch: Das öffentliche Repository enthält interne oder eingeschränkte Ziel-URLs, real wirkende Objekt- und Kontaktdaten sowie Medien ohne nachgewiesenes Weiterverteilungsrecht.
+Die Architektur ist für die Grösse grundsätzlich tragfähig. Der geprüfte Baseline-Stand enthielt jedoch einen reproduzierbaren Vorführfehler: Die monatliche Immobilienentwicklung erzeugte ungültige SVG-Koordinaten und zeichnete das Diagramm nicht korrekt. Daneben lagen normale Bedienfehler in Navigation, Overlays, Gebäudeerfassung, Raumbuchung, Shop und Mietflächenansicht vor. Diese technischen Punkte wurden in Phase 5 weitgehend behoben. Der verbleibende Schwerpunkt ist organisatorisch: Das öffentliche Repository enthält interne oder eingeschränkte Ziel-URLs, real wirkende Objekt- und Kontaktdaten sowie Medien ohne nachgewiesenes Weiterverteilungsrecht.
 
 Produktionsanforderungen wie echte Authentisierung, Backend-Fehlerbehandlung oder Lastverhalten sind bewusst nicht hochgestuft. Sie stehen separat in Abschnitt 6. Fehlende Mock-Funktionen, Platzhalter und nicht verdrahtete Buttons sind kein Befund.
 
@@ -23,7 +23,34 @@ Produktionsanforderungen wie echte Authentisierung, Backend-Fehlerbehandlung ode
 | Kosmetisch | 8 | Inkonsistenzen ohne wesentliche Funktionswirkung |
 | Offene Fragen | 10 | Absicht oder Datenstatus ist aus dem Repository nicht bestimmbar |
 
-### 1.1 Prüfumfang und Baseline
+### 1.1 Umsetzungsstand Phase 5
+
+Die freigegebene erste Runde wurde auf `code-review-2026-08` umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden und C-08 sind erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
+
+| Status | Befunde | Commit oder Abhängigkeit |
+| --- | --- | --- |
+| Erledigt | B-01 | `2bbf343` – kategoriale Monatsachse ohne ungültige SVG-Werte |
+| Erledigt | W-03, W-04, W-05, W-10, W-14, W-20, W-22 | `89af11e` – Katalog-, Shell-, Overlay-, Kontext-, Gate-, Live-Region- und ARIA-Zustand |
+| Erledigt | W-06, W-07, W-08 | `702964c` – Adress-, Buchungs- und Persistenzvalidierung |
+| Erledigt | W-09, W-11 | `352a629` – stabiler Grundriss-Teilbaum und wiederherstellbare Galerie-Deep-Links |
+| Erledigt | W-13 | `35be434` – einheitlicher Frauenanteil von 52 Prozent |
+| Erledigt | W-15, W-16 | `75dc977` – dokumentrelative Anchor-Navigation und erhaltener Suchkontext |
+| Erledigt | W-17, W-18 | `81a7e2f` – belastbarer CDP-Lebenszyklus und standardmässig schreibgeschützte Asset-Skripte |
+| Erledigt | W-19 | `b5213ad` – expliziter Besitz von Karten, Observern, Tabellen und Listenern |
+| Erledigt | W-21 | `39c7986` – ein lokaler Kalenderstempel für Datum, Historie und Referenzjahr |
+| Erledigt | C-08 | `3d0992a` – korrekte Template-Regex und arbeitsverzeichnisunabhängiger BPMN-Test |
+| Offen – Publikationsentscheid | W-01, W-02 | Q-01 bis Q-04, Positivliste und Medienfreigaben fehlen; Entfernung aus der History benötigt separate ausdrückliche Genehmigung |
+| Offen – fachliche Quelle | W-12 | Q-01 ist offen; ohne kanonische Quelle darf BGF/NGF nicht technisch überschrieben werden |
+
+| Verifikation nach Phase 5 | Ergebnis |
+| --- | --- |
+| Vollständige funktionale Suite | 27 von 27 `test-*.mjs` bestanden; 1'247 Ausgabezeilen, Laufzeit rund 288 Sekunden |
+| JavaScript-Syntax | 126 von 126 `.js`-/`.mjs`-Dateien bestehen `node --check` |
+| Routen und Redirects | 37 Routen und 13 Redirects bestanden innerhalb von `test-routes.mjs` |
+| C-08-Portabilität | `test-process-docs.mjs` besteht auch mit `scripts/` statt Repository-Root als Arbeitsverzeichnis |
+| Gezielte neue Regressionen | Monatsachse, UI-State, Galerie/Grundriss, Anchor-/Suchzustand, Prozessdatum sowie Dialog-/Karten-Teardown bestanden |
+
+### 1.2 Prüfumfang und Baseline
 
 Alle 60 JavaScript-Module unter `js/`, alle 62 Skripte unter `scripts/`, die HTML-/CSS-Einstiegspunkte, 30 Datenquellen, 18 BPMN-Dateien, statische Assets sowie die erreichbare Git-History wurden geprüft. Ein abgebrochener technischer Rohreview mit 101 Hinweisen diente nur als Suchliste: 84 Hinweise waren am aktuellen Stand noch beobachtbar, darunter Duplikate; 8 waren bereits behoben oder veraltet; 9 waren ohne fachliche Entscheidung nicht verifizierbar. Jeder übernommene Befund wurde am aktuellen `HEAD` erneut gelesen oder ausgeführt und anschliessend dedupliziert.
 
@@ -40,7 +67,7 @@ Alle 60 JavaScript-Module unter `js/`, alle 62 Skripte unter `scripts/`, die HTM
 
 Zwei Browserfehler sind Testwerkzeug- statt Produktfehler: Die Gebäudeerfassung benötigt externe Karten-/Adressdienste, und die Mietflächenkarte war im direkten Zeitprofil nach rund einer Sekunde vorhanden. Die festen Testannahmen stehen als W-17 im Review.
 
-### 1.2 Repo- und Laufzeitmetriken
+### 1.3 Repo- und Laufzeitmetriken
 
 | Messgrösse | Aktueller Wert |
 | --- | ---: |
@@ -96,6 +123,8 @@ Das bisherige Dokument vom 30. Juli 2026 war primär ein Refactoring-Tagebuch un
 Nicht übernommen wurden historische Vorher-Zustände und alte Testresultate. Insbesondere besteht `test-portfolio` aktuell, während andere aktuelle Testschwächen vorliegen. Die noch vorhandene Katalog-Duplizierung ist als K-02 neu und enger belegt. Ein separater `catalogue-page`-Baustein wurde nie eingeführt; das Fehlen einer früher vorgeschlagenen Abstraktion ist allein kein Fehler.
 
 ## 3. Befundübersicht
+
+Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Commit `fb9e9c2`. Der aktuelle Umsetzungsstatus und die zugehörigen Fix-Commits stehen in Abschnitt 1.1; erledigte Befunde bleiben hier als nachvollziehbarer Review-Nachweis erhalten.
 
 | Nr. | Modul | Kategorie | Kurzbeschreibung | Fundstelle |
 | --- | --- | --- | --- | --- |
@@ -269,7 +298,7 @@ Alle Punkte in diesem Abschnitt sind **heute im Frontend-Mockup kein Problem**. 
 
 ## 8. Massnahmenplan
 
-Phase 5 wurde nicht begonnen. Nach Freigabe erfolgt die Arbeit auf `code-review-2026-08`, ohne neue Frameworks oder Runtime-Dependencies und ohne Änderungen an bestehenden Routen-Hashes.
+Phase 5 wurde auf `code-review-2026-08` begonnen und für alle technisch entscheidbaren Punkte der empfohlenen ersten Runde abgeschlossen. Die ursprüngliche Priorisierung bleibt nachfolgend als Entscheidungs- und Review-Nachweis erhalten; der aktuelle Status steht in Abschnitt 1.1.
 
 | Priorität | Paket | Befunde | Wirkung | Geschätzter Aufwand | Abhängigkeit / Abnahmekriterium |
 | ---: | --- | --- | --- | ---: | --- |
@@ -285,8 +314,18 @@ Phase 5 wurde nicht begonnen. Nach Freigabe erfolgt die Arbeit auf `code-review-
 | 10 | Produktions-Backlog | P-01 bis P-09 | Bereitet eine allfällige Produktivierung vor | nicht Teil dieser Runde | Erst aufnehmen, wenn Backend, reale Nutzer oder produktiver Betrieb beschlossen sind |
 | 11 | Kosmetik | C-01 bis C-03, C-05 bis C-07 | Kleine Konsistenzverbesserungen | S–M | Nur zusammen mit berührten Modulen; keine eigene Priorität vor wichtigen Befunden |
 
-### 8.1 Vorschlag für diese Runde
+### 8.1 Freigegebene erste Runde
 
-Für die erste freizugebende Runde werden Priorität 1 bis 6 empfohlen: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. K-01 bis K-10 sollten erst danach und nur paketweise folgen. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
+Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. K-01 bis K-10 wurden nicht begonnen. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
 
 Nach jeder Gruppe gelten die Guardrails des Auftrags: ein Commit pro Befund oder eng zusammenhängender Gruppe, Commit-Message mit Befundnummer, Syntax-/Datentests, relevante Browser-Suiten und manueller Hauptpfad. Wird eine Änderung grösser als geschätzt oder verlangt eine fachliche Entscheidung, wird angehalten.
+
+### 8.2 Verbleibende Entscheidungen
+
+| Befunde | Benötigte Entscheidung | Nächster Schritt nach Freigabe |
+| --- | --- | --- |
+| W-01 | Positivliste für interne URLs, Objektkennungen, Kontakt- und Finanzdaten; Einordnung als synthetisch, öffentlich oder nicht freigegeben | Nicht freigegebene Werte im aktuellen Baum durch klar synthetische Fixtures ersetzen; History- und Credential-/Link-Rotation separat planen |
+| W-02 | Lizenz, Rechteinhaber und Weiterverteilungsfreigabe je Medium | Ungeklärte Medien aus der Auslieferung nehmen oder durch frei lizenzierte Assets ersetzen; History-Entscheid separat genehmigen |
+| W-12 | Kanonische Quelle für BGF und NGF | Sekundärdatei aus der führenden Quelle erzeugen und einen objektweisen Integritätstest ergänzen |
+
+Ohne diese Antworten würde eine automatische Bereinigung entweder möglicherweise freigegebene Inhalte entfernen oder fachliche Flächenwerte willkürlich überschreiben. Deshalb wurde an diesen drei Befunden nicht weitergearbeitet.

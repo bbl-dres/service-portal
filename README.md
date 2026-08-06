@@ -13,7 +13,7 @@
 
 > [!CAUTION]
 > **This is an unofficial prototype for demonstration purposes only.**
-> The data is fictional or publicly available, and not every function is fully implemented. The prototype is not intended for production use.
+> The repository is intended to contain only fictional or publicly releasable data, and not every function is fully implemented. The current [technical review](docs/code-review.md) lists data and media whose publication or redistribution status still requires owner confirmation. The prototype is not intended for production use.
 
 The BBL Kundenportal is a process-oriented prototype for the [Federal Office for Buildings and Logistics (BBL)](https://www.bbl.admin.ch). It brings services, cases, specialist applications, property information, documents, and data access together in one interface based on the Swiss Confederation design system.
 
@@ -34,7 +34,8 @@ The BBL Kundenportal is a process-oriented prototype for the [Federal Office for
 - Vanilla JavaScript ES modules, HTML, and CSS, with no build step or runtime package dependencies
 - Static JSON and GeoJSON mock data shared across the portal and its micro-apps
 - UI patterns and tokens aligned with the official [`swiss/designsystem`](https://github.com/swiss/designsystem)
-- MapLibre GL JS loaded on demand for map views
+- MapLibre GL JS, Swagger UI, and bpmn-js loaded on demand from `unpkg.com`
+- Dependency-free Node/CDP browser checks documented in [`scripts/README.md`](scripts/README.md)
 
 ## Run locally
 

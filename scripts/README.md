@@ -6,7 +6,7 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently 20 `test-*.mjs` functional suites and 21
+There are currently 27 `test-*.mjs` functional suites and 21
 `check-*.mjs` focused layout probes. Every script follows the same contract:
 `APP_BASE` selects the running app and a non-zero exit code means failure.
 
@@ -24,16 +24,16 @@ and the three `review-*.mjs` — pass `{ login: true }` once at the top.
 
 ## Prerequisites
 
-1. **Dev server running.** From wherever the app is served, e.g.:
+1. **Dev server running.** From the repository root:
    ```
-   python -m http.server 8000
+   node scripts/serve.mjs
    ```
 2. **`APP_BASE` must match where the app is served.** The default assumes the
    server is rooted at the user's home directory (so the app is at
    `/Documents/GitHub/service-portal/`). If you serve from the **repo root**,
    override it:
    ```
-   APP_BASE=http://localhost:8000/# node scripts/test-tabs.mjs
+   $env:APP_BASE='http://127.0.0.1:8848/#'; node scripts/test-tabs.mjs
    ```
 3. **Edge** at the default install path, or override `EDGE_PATH`.
 
@@ -48,6 +48,11 @@ inventory is `scripts/test-*.mjs`.
 | `test-login.mjs` | Opens Room Booking with an explicitly empty session, verifies the login gate, then logs in via `window.__login` and asserts the form replaces the gate. |
 | `test-workspace.mjs` | Standalone Workspace Management planning surface: no legacy tabs, live capacity scenario, floor-plan interaction, and desktop/mobile containment. |
 | `test-room-booking.mjs` | Room Booking on the one-page, direct-booking surface (`docs/room-booking-redesign.md`): search bar, quick choices, group size, invalid time range, equipment filter, the favourites store, the floor-plan and map dialogs, the booking dialog and its validation, process creation, personal bookings, the `?room=` deep link, and desktop/mobile containment. |
+| `test-building-create.mjs` | Building creation: stale address responses, selection invalidation, map/search state, required fields, and process creation. |
+| `test-gallery-floorplan-state.mjs` | W-09/W-11 lifecycle regression: exact and stale gallery deep links, unknown image IDs, dialog focus, and tenancy floor-plan fullscreen/selection/focus preservation. |
+| `test-anchor-search-state.mjs` | W-15/W-16 navigation regression: document-relative anchor thresholds and search-query preservation across catalogue links. |
+| `test-process-dates.mjs` | W-21 pure Node boundary case: process date/history/reference consistency across local midnight and New Year. |
+| `test-ui-state.mjs` | W-03/W-04/W-05/W-22 state regression: catalogue debounce teardown, nested overlay ownership, route cleanup, action-menu ARIA, and mobile-shell reset. |
 | `test-document-archive.mjs` | Bauwerksdokumentation: reduced six-column table, KBOB document types, filename extensions, plain building cells, and viewer metadata at desktop/mobile widths. |
 | `test-catalogue.mjs` | D2 catalogue triplet (`C.catalogueHash`/`C.catalogueControls`/`C.wireCatalogue`) across services · applications · katalog: deep-link round-trips (q/view/filter), search-submit / view-switch / filter interactions, active-filter pill removal, the services multi-value `topic`, and detail-view render. |
 | `test-forms.mjs` | D3 form helpers (`C.field`/`C.select`/`C.val`/`C.readForm`) + the C5 fix across the three wizards: renders, a custom validation error attaches `input--error`+`aria-invalid`+badge to the previously class-less fields (`#org`/`#cc`/`#beschreibung`/`#datum`), and a valid submit creates a Vorgang. Logs in via the stub first. |
