@@ -25,7 +25,7 @@ Produktionsanforderungen wie echte Authentisierung, Backend-Fehlerbehandlung ode
 
 ### 1.1 Umsetzungsstand Phase 5
 
-Die freigegebene erste Runde wurde auf `code-review-2026-08` umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden und C-08 sind erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
+Die freigegebene erste Runde und das anschliessende Paket K-09/C-04 wurden auf `code-review-2026-08` umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden, C-08, K-09 und C-04 sind erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
 
 | Status | Befunde | Commit oder Abhängigkeit |
 | --- | --- | --- |
@@ -39,15 +39,19 @@ Die freigegebene erste Runde wurde auf `code-review-2026-08` umgesetzt. Es wurde
 | Erledigt | W-19 | `b5213ad` – expliziter Besitz von Karten, Observern, Tabellen und Listenern |
 | Erledigt | W-21 | `39c7986` – ein lokaler Kalenderstempel für Datum, Historie und Referenzjahr |
 | Erledigt | C-08 | `3d0992a` – korrekte Template-Regex und arbeitsverzeichnisunabhängiger BPMN-Test |
+| Erledigt | K-09 | `538975d` – portable Skriptpfade, klassifizierte Altproben und isolierbare Review-Ausgaben |
+| Erledigt | C-04 | `b480181` – vollständige Runtime-Dokumentation und wahrheitsgetreue 58-/57-State-Artefaktmetadaten |
 | Offen – Publikationsentscheid | W-01, W-02 | Q-01 bis Q-04, Positivliste und Medienfreigaben fehlen; Entfernung aus der History benötigt separate ausdrückliche Genehmigung |
 | Offen – fachliche Quelle | W-12 | Q-01 ist offen; ohne kanonische Quelle darf BGF/NGF nicht technisch überschrieben werden |
 
 | Verifikation nach Phase 5 | Ergebnis |
 | --- | --- |
 | Vollständige funktionale Suite | 27 von 27 `test-*.mjs` bestanden; 1'247 Ausgabezeilen, Laufzeit rund 288 Sekunden |
-| JavaScript-Syntax | 126 von 126 `.js`-/`.mjs`-Dateien bestehen `node --check` |
+| JavaScript-Syntax | 125 von 125 `.js`-/`.mjs`-Dateien bestehen `node --check` |
 | Routen und Redirects | 37 Routen und 13 Redirects bestanden innerhalb von `test-routes.mjs` |
 | C-08-Portabilität | `test-process-docs.mjs` besteht auch mit `scripts/` statt Repository-Root als Arbeitsverzeichnis |
+| K-09-Portabilität | Sechs historische Dry-Run-/Prüfwerkzeuge und acht geänderte Browserproben liefen aus einem Unterverzeichnis; kein entwicklerspezifischer Checkout-Pfad bleibt |
+| C-04-Artefakte | Isolierter Accessibility-Lauf: 58 von 58 Zuständen, null Befunde; erhaltener Audit 57 × 3 = 171 und Screenshot-Paar 171/171 konsistent |
 | Gezielte neue Regressionen | Monatsachse, UI-State, Galerie/Grundriss, Anchor-/Suchzustand, Prozessdatum sowie Dialog-/Karten-Teardown bestanden |
 
 ### 1.2 Prüfumfang und Baseline
@@ -69,7 +73,7 @@ Zwei Browserfehler sind Testwerkzeug- statt Produktfehler: Die Gebäudeerfassung
 
 ### 1.3 Repo- und Laufzeitmetriken
 
-| Messgrösse | Aktueller Wert |
+| Messgrösse | Wert am Review-Baseline-Commit |
 | --- | ---: |
 | Getrackte Dateien | 939 |
 | Arbeitsbaum | rund 184 MiB |
@@ -159,7 +163,7 @@ Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Com
 | K-06 | Nicht begonnen | Wiederholte Arbeit | Komplexität | Prozessdateien laden seriell; Raumsuche berechnet Profile und Sortierungen mehrfach | `js/process-engine.js:22-25`, `js/apps/room-booking.js:175-253` |
 | K-07 | Nicht begonnen | CSS | Komplexität | Stylesheets dienen zugleich als Review-Historie; Kommentare und tote Regeln werden ausgeliefert | `css/app.css:8-139`, `css/app.css:3030-3103` |
 | K-08 | Nicht begonnen | Repository | Komplexität | Binäre Review-Screenshots dominieren Grösse und History | `docs/review-assets/audit.json:1`, `docs/review-assets/accessibility.json:1` |
-| K-09 | Nicht begonnen | Skripte | Komplexität | Diagnoseproben enthalten lokale Windows-Pfade und überlappende Einmalwerkzeuge | `scripts/check-hero.mjs:3`, `scripts/check-services.mjs:30` |
+| K-09 | Erledigt | Skripte | Komplexität | Diagnoseproben enthalten lokale Windows-Pfade und überlappende Einmalwerkzeuge | `scripts/check-hero.mjs:3`, `scripts/check-services.mjs:30` |
 | K-10 | Nicht begonnen | Registries | Komplexität | Core- und Router-Metadaten werden in parallelen Tabellen über denselben Schlüsselraum geführt | `js/core.js:17-72`, `js/router.js:81-118` |
 | P-01 | Ausserhalb Runde | Supply Chain | Produktionsrelevant | CDN-Code läuft ohne SRI; eine restriktive CSP fehlt | `index.html:3-13`, `js/buildings-map.js:20-28` |
 | P-02 | Ausserhalb Runde | Web Storage | Produktionsrelevant | Storage-Zugriffe und korrupte gespeicherte Werte sind nicht durchgehend abgesichert | `js/router.js:299-311`, `js/search-log.js:23-50` |
@@ -173,7 +177,7 @@ Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Com
 | C-01 | Nicht begonnen | Escaping | Kosmetisch | Bereits escapte Texte werden in Hero und Einheiten nochmals escaped | `js/hero-mosaic.js:21-27`, `js/components.js:1386` |
 | C-02 | Nicht begonnen | Router | Kosmetisch | Gate-, 404- und Fehlerpfade teilen Scroll-/Fokus-Finalisierung nicht | `js/router.js:325-342`, `js/router.js:409-494` |
 | C-03 | Nicht begonnen | URL-Verarbeitung | Kosmetisch | `URLSearchParams` wird teils nochmals decodiert; IDs werden teils roh angezeigt | `js/apps/metadata-catalog.js:75-76`, `js/pages/services.js:57-141` |
-| C-04 | Teilweise | Dokumentation | Kosmetisch | README, Review-Matrix und Kommentare beschreiben Runtime und Routenstand unvollständig oder veraltet | `README.md:31-37`, `docs/accessibility-review.md:5-16` |
+| C-04 | Erledigt | Dokumentation | Kosmetisch | README, Review-Matrix und Kommentare beschreiben Runtime und Routenstand unvollständig oder veraltet | `README.md:31-37`, `docs/accessibility-review.md:5-16` |
 | C-05 | Nicht begonnen | CSS-Details | Kosmetisch | Nicht animierbare Max-Height-Regel, Farbdrift und doppelte Deklarationen bleiben | `css/app.css:697-702`, `css/app.css:2107`, `css/app.css:3810` |
 | C-06 | Nicht begonnen | Suche | Kosmetisch | Hash-Ersetzung schreibt denselben Wert ohne Wirkung erneut | `js/search-suggest.js:71` |
 | C-07 | Nicht begonnen | Datenlabels | Kosmetisch | Papier-Dashboard deklariert eine leere Recycling-Spalte; Taglabels sind technisch | `data/dashboards.json:652`, `data/catalog-labels.json:36-37` |
@@ -187,7 +191,7 @@ Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Com
 | URL und lokaler State konkurrieren | Kataloge und Apps schreiben teils in den Hash, teils in lokales `state`, teils nur ins DOM. Validierung geschieht nicht an einer gemeinsamen Grenze. | URL-Parameter können alte Auswahl, ungültige Werte oder falsche Kontextlinks erzeugen. | W-06, W-07, W-10, W-11, P-05 |
 | Datenherkunft ist nicht als Publikationsvertrag geführt | Datensätze mischen synthetische, generierte, offizielle und intern wirkende Angaben. Medien führen verschiedene Quellen, aber keinen belastbaren Freigabestatus. | Technische Reviews können Vertraulichkeit und Lizenzlage nicht aus dem Code entscheiden; die öffentliche History konserviert Fehlpublikationen. | W-01, W-02, W-12, W-13, Q-01 bis Q-04 |
 | Tests prüfen häufig indirekte Signale | Einige Suiten authentisieren bereits im Setup, verwenden feste Wartezeiten oder verifizieren tote IDs. CDP-Cleanup ist bei Fehlerpfaden unvollständig. | Grün und Rot sind nicht in allen Suiten belastbar; lokale Läufe hinterlassen Ressourcen. | W-17, C-08 |
-| Review-Historie liegt im Produktartefakt | Ausführliche Vorher-/Nachher-Kommentare stehen in ausgeliefertem CSS; komplette Screenshot-Matrizen liegen in Git. | Kommentare driften, CSS-Transfer und Clone-Grösse steigen, während die operative Dokumentation trotzdem veraltet. | K-07, K-08, C-04 |
+| Review-Historie liegt im Produktartefakt | Ausführliche Vorher-/Nachher-Kommentare stehen in ausgeliefertem CSS; komplette Screenshot-Matrizen liegen in Git. | Kommentare können erneut driften, CSS-Transfer und Clone-Grösse steigen. C-04 gleicht den aktuellen Dokumentationsstand ab; K-07 und K-08 bleiben offen. | K-07, K-08, C-04 |
 
 ## 5. Befunde im Detail
 
@@ -238,7 +242,7 @@ Aufwandsskala: **XS** unter 2 Stunden, **S** bis 0.5 Tag, **M** 1–2 Tage, **L*
 | K-06 | Nicht begonnen | `js/process-engine.js:22-25`; `js/apps/room-booking.js:175-253,381-383` | Prozessdefinitionen und Instanzen laden unabhängig, aber seriell. Die Raumsuche berechnet Profil, Sortierung und `engine.instances()` wiederholt innerhalb der Raumiteration. Bei den kleinen Fixtures ist das nicht spürbar, erschwert aber die Logik. | Unabhängige Prozessdateien mit `Promise.allSettled` laden; Buchungskontext einmal pro Suche vorberechnen und in die Filterfunktion geben. | S |
 | K-07 | Nicht begonnen | `css/app.css:8-139,517-519,3030-3103`; `css/tokens.css:23-143` | 45.3 Prozent der beiden CSS-Dateien sind Kommentare. Gzip-Grösse: 97'488 Byte mit, 31'198 Byte ohne Kommentare. Mehrere Kommentare sind bereits falsch, etwa «Spinner unreferenced» trotz Nutzung; tote Chart-/Service-/Filterregeln bleiben daneben bestehen. | Kurze Warum-Kommentare im CSS behalten, Review-Chronologie in ADR/Dokument verschieben, tote Regeln entfernen und für Deployment minifiziertes CSS ausliefern. | M |
 | K-08 | Nicht begonnen | `docs/review-assets/audit.json:1`; `docs/review-assets/accessibility.json:1`; `docs/review-assets/` | 342 Vorher-/Nachher-PNGs belegen 133.77 MiB und rund 72 Prozent des getrackten Baums. Zehn Hash-Duplikatgruppen sparen allein rund 1.13 MiB; die vollständige Matrix verteuert jeden Clone und die History dauerhaft. | Komplette Matrizen als CI-/Release-Artefakt speichern; in Git Manifest, Resultat-JSON und wenige repräsentative Bilder behalten. History-Bereinigung separat freigeben. | L–XL |
-| K-09 | Nicht begonnen | `scripts/check-hero.mjs:3`; weitere `check-*`-Skripte; Daten-/Bildskripte | Neun Diagnoseproben referenzieren einen lokalen `file:///C:/.../cdp.mjs`-Pfad; weitere Generatoren enthalten einen fest codierten Repository-Pfad. Überlappende Einmalproben haben keinen gemeinsamen Entrypoint oder Status. | Benötigte Proben auf relative Imports/`import.meta.url` umstellen, Dubletten archivieren oder löschen, unterstützte Skripte im README mit Zweck und Schreibwirkung listen. | M |
+| K-09 | Erledigt | `scripts/check-hero.mjs:3`; weitere `check-*`-Skripte; Daten-/Bildskripte | Neun Diagnoseproben referenzieren einen lokalen `file:///C:/.../cdp.mjs`-Pfad; weitere Generatoren enthalten einen fest codierten Repository-Pfad. Überlappende Einmalproben haben keinen gemeinsamen Entrypoint oder Status. | Benötigte Proben auf relative Imports/`import.meta.url` umstellen, Dubletten archivieren oder löschen, unterstützte Skripte im README mit Zweck und Schreibwirkung listen. | M |
 | K-10 | Nicht begonnen | `js/core.js:17-72`; `js/router.js:81-118` | `FILES`, `DEFERRED`, `AREA` und `OBJECT_FILES` beziehungsweise `PAGES`, `APPS` und Abschnittszuordnung beschreiben dieselben Schlüssel in parallelen Tabellen. Ergänzungen können eine Tabelle vergessen, wie W-14 zeigt. | Je Bereich eine deklarative Registry mit URL, Shape, eager/area beziehungsweise Route, Modul, Abschnitt und Gate-Metadaten verwenden; bestehende Accessoren daraus ableiten. | M |
 
 ### 5.4 Kosmetisch
@@ -248,7 +252,7 @@ Aufwandsskala: **XS** unter 2 Stunden, **S** bis 0.5 Tag, **M** 1–2 Tage, **L*
 | C-01 | Nicht begonnen | `js/hero-mosaic.js:21-27`; `js/components.js:1386` | Alt-/Einheitstext wird vor Übergabe und im Zielbaustein escaped. Sichtbar werden bei entsprechenden Daten HTML-Entities statt Originalzeichen. Aktuelle Fixtures lösen es kaum aus. | Klartext als Komponentenvertrag festlegen und genau am HTML-Sink escapen. | XS |
 | C-02 | Nicht begonnen | `js/router.js:325-342,409-414,434,454-494` | Login-Gate, 404 und Fehlerpfad umgehen Teile des normalen Scroll-, Fokus- und Cleanup-Finales. Die Seite funktioniert, startet aber nicht immer an derselben Position oder mit demselben Fokus. | Gemeinsames Route-Finale für Erfolg, Gate, 404 und Fehler verwenden. | S |
 | C-03 | Nicht begonnen | `js/apps/metadata-catalog.js:75-76,467,633`; `js/apps/process-docs.js:157,337`; `js/pages/services.js:57,69,141` | Bereits decodierte `URLSearchParams`-Werte werden erneut decodiert; unbekannte Service-IDs erscheinen teilweise roh. Ungewöhnliche Prozentwerte können dadurch verändert oder als technische IDs gezeigt werden. | Einmaliges Decoding am Router festlegen; Anzeige unbekannter IDs über neutrale Labels führen. | XS |
-| C-04 | Teilweise | `README.md:31-37`; `docs/accessibility-review.md:5-16`; `docs/review-assets/audit.json:8-78`; `docs/review-assets/accessibility.json:5-65`; `css/app.css:517-519` | README nennt nur MapLibre, obwohl Swagger UI und bpmn-js ebenfalls zur Laufzeit vom CDN kommen. Accessibility-Dokumentation behauptet zwei gleiche 57-State-Läufe, der neue Lauf enthält 58 Routen; Room Booking fehlt in der Screenshot-Matrix. Kommentare widersprechen aktuellem Code. | README und Review-Metadaten aktualisieren; Artefaktstand und bewusst fehlende Screenshots explizit nennen; falsche CSS-Kommentare entfernen. | S |
+| C-04 | Erledigt | `README.md:31-37`; `docs/accessibility-review.md:5-16`; `docs/review-assets/audit.json:8-78`; `docs/review-assets/accessibility.json:5-65`; `css/app.css:517-519` | README nennt nur MapLibre, obwohl Swagger UI und bpmn-js ebenfalls zur Laufzeit vom CDN kommen. Accessibility-Dokumentation behauptet zwei gleiche 57-State-Läufe, der neue Lauf enthält 58 Routen; Room Booking fehlt in der Screenshot-Matrix. Kommentare widersprechen aktuellem Code. | README und Review-Metadaten aktualisieren; Artefaktstand und bewusst fehlende Screenshots explizit nennen; falsche CSS-Kommentare entfernen. | S |
 | C-05 | Nicht begonnen | `css/app.css:697-702,2107,3810` | `max-height` kann von `none` nach `0` nicht animieren; einzelne harte Farben driften von Tokens; Deklarationen und Kommentare sind mehrfach gesplittet. Kein aktueller Funktionsbruch. | Animation auf messbare Höhe/`grid-template-rows` umstellen; vorhandene Tokens nutzen; unmittelbar benachbarte Dubletten konsolidieren. | S |
 | C-06 | Nicht begonnen | `js/search-suggest.js:71` | Der Code ersetzt den Hash durch denselben Wert. Das erzeugt keinen Zustandswechsel und erschwert die Absicht. | No-op entfernen oder die beabsichtigte History-Semantik explizit implementieren. | XS |
 | C-07 | Nicht begonnen | `data/dashboards.json:652`; `data/catalog-labels.json:36-37` | Das Papier-Dashboard deklariert eine Recycling-Spalte ohne Zeilenwerte; `tag.tag1`/`tag.tag2` werden technisch beschriftet. | Leere Spalte entfernen oder Daten ergänzen; Tags fachlich benennen. | XS |
@@ -308,15 +312,15 @@ Phase 5 wurde auf `code-review-2026-08` begonnen und für alle technisch entsche
 | 4 | Erledigt | Lifecycle und Accessibility | W-09, W-19, W-20, W-22 | Verhindert stale UI, Leaks und falsche Assistive-Technology-Zustände | L | Wiederholtes Öffnen/Schliessen/Navigieren hinterlässt keine Karten, Observer, Listener oder Locks; Live-Regionen und ARIA stimmen |
 | 5 | Teilweise – W-12 offen | Daten- und Deep-Link-Korrektheit | W-10 bis W-16, W-21 | Entfernt widersprüchliche Zahlen, falsche Links und Gate-/Scroll-Zustände | M–L | Fachliche Antworten zu Q-01/Q-07/Q-08 liegen vor; relevante Deep-Links und Dashboardwerte sind konsistent |
 | 6 | Erledigt | Testwerkzeug belastbar machen | W-17, C-08 | Macht Grün/Rot verlässlich und verhindert Prozessreste | M | Login startet nachweislich ausgeloggt; Karten warten auf Bedingung; Cleanup läuft auch bei Assertion-Fehlern; alle unterstützten Suiten enden ohne verwaiste Prozesse |
-| 7 | Teilweise – W-18 erledigt | Riskante und lokale Skripte bereinigen | W-18, K-09 | Senkt versehentliche Schreib- und Onboarding-Risiken | M | Unterstützte Skripte sind relativ, dokumentiert und besitzen Dry-Run, Altproben sind klar archiviert oder entfernt |
+| 7 | Erledigt | Riskante und lokale Skripte bereinigen | W-18, K-09 | Senkt versehentliche Schreib- und Onboarding-Risiken | M | Unterstützte Skripte sind relativ und dokumentiert; Schreibwirkungen sind explizit, Altproben klar klassifiziert oder entfernt |
 | 8 | Nicht begonnen | Gezielte Vereinfachung | K-01 bis K-07, K-10 | Reduziert Drift und Wartungskosten ohne Funktionsänderung | L–XL | Pro eng zusammenhängender Gruppe eigener Commit; vor/nach jeder Gruppe Routen- und Hauptpfadvergleich |
-| 9 | Nicht begonnen | Repository-Artefakte | K-08, C-04 | Reduziert Clone-/History-Grösse und aktualisiert Nachweise | L–XL | Aufbewahrungsort und History-Rewrite ausdrücklich freigegeben; aktuelle Manifest-/Review-Dokumentation bleibt erhalten |
+| 9 | Teilweise – C-04 erledigt | Repository-Artefakte | K-08, C-04 | Reduziert Clone-/History-Grösse und aktualisiert Nachweise | L–XL | Aufbewahrungsort und History-Rewrite ausdrücklich freigegeben; aktuelle Manifest-/Review-Dokumentation bleibt erhalten |
 | 10 | Ausserhalb Runde | Produktions-Backlog | P-01 bis P-09 | Bereitet eine allfällige Produktivierung vor | nicht Teil dieser Runde | Erst aufnehmen, wenn Backend, reale Nutzer oder produktiver Betrieb beschlossen sind |
 | 11 | Nicht begonnen | Kosmetik | C-01 bis C-03, C-05 bis C-07 | Kleine Konsistenzverbesserungen | S–M | Nur zusammen mit berührten Modulen; keine eigene Priorität vor wichtigen Befunden |
 
 ### 8.1 Freigegebene erste Runde
 
-Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. K-01 bis K-10 wurden nicht begonnen. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
+Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. Im anschliessenden Paket wurden K-09 und C-04 erledigt; K-01 bis K-08 und K-10 wurden nicht begonnen. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
 
 Nach jeder Gruppe gelten die Guardrails des Auftrags: ein Commit pro Befund oder eng zusammenhängender Gruppe, Commit-Message mit Befundnummer, Syntax-/Datentests, relevante Browser-Suiten und manueller Hauptpfad. Wird eine Änderung grösser als geschätzt oder verlangt eine fachliche Entscheidung, wird angehalten.
 
