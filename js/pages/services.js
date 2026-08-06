@@ -84,8 +84,8 @@ export default async function render(ctx) {
 
   const relatedHits = otherHits && (otherHits.apps + otherHits.docs)
     ? `Auch in: ${[
-        otherHits.apps ? `<a href="#/applications">${otherHits.apps} Anwendung(en)</a>` : '',
-        otherHits.docs ? `<a href="#/app/document-archive">${otherHits.docs} Dokument(e)</a>` : '',
+        otherHits.apps ? `<a href="#/applications?q=${encodeURIComponent(rawQ)}">${otherHits.apps} Anwendung(en)</a>` : '',
+        otherHits.docs ? `<a href="#/app/document-archive?q=${encodeURIComponent(rawQ)}">${otherHits.docs} Dokument(e)</a>` : '',
       ].filter(Boolean).join(' · ')}`
     : '';
 

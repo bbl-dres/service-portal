@@ -128,7 +128,13 @@ function wireAnchorNav(mount, ctx) {
       if (!mount.querySelector('.anchor-nav')) { ac.abort(); return; }
       const y = window.scrollY || document.documentElement.scrollTop;
       let current = sections[0].id;
-      for (const s of sections) if (s.offsetTop - OFFSET <= y) current = s.id;
+      // `offsetTop` ist hier relativ zum positionierten #main-content, `y`
+      // dagegen dokumentrelativ. Die Viewportposition plus Scrollwert liegt im
+      // selben Koordinatensystem und bleibt auch bei vorgeschalteter Shell korrekt.
+      for (const s of sections) {
+        const top = s.getBoundingClientRect().top + y;
+        if (top - OFFSET <= y) current = s.id;
+      }
       links.forEach(a => a.classList.toggle('menu__item--active', a.getAttribute('data-anchor') === current));
     };
     window.addEventListener('scroll', onScroll, { passive: true, signal });
