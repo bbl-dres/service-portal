@@ -199,11 +199,22 @@ export default async function render(ctx) {
   const dialogMap = createMapSlot();
   let closeDialog = null;         // schliesst den offenen Dialog (Buchen/Details/Grundriss/Karte)
   let unwirePlan = null;
-  onUnmount(dialogMap.free);
-  onUnmount(() => { if (unwirePlan) unwirePlan(); });
+  let unwirePlanScroll = null;
+
+  // Alles, was innerhalb eines Dialogs lebt, gehört auch dessen Lebensdauer —
+  // nicht erst der Route. Insbesondere hält MapLibre einen WebGL-Kontext und
+  // wireScrollRegions zwei Observer, obwohl der Dialogknoten schon entfernt ist.
+  const freeDialogResources = () => {
+    dialogMap.free();
+    if (unwirePlan) { unwirePlan(); unwirePlan = null; }
+    if (unwirePlanScroll) { unwirePlanScroll(); unwirePlanScroll = null; }
+  };
   // Der Router tauscht beim Routenwechsel nur #main-content — ein Dialog hängt an
   // <body> und überlebte das, samt Scroll-Lock und Fokusfalle.
-  onUnmount(() => { if (closeDialog) closeDialog(); });
+  onUnmount(() => {
+    if (closeDialog) closeDialog();
+    freeDialogResources();
+  });
 
   const building = () => buildings.find((item) => item.bbl_id === state.buildingId) || buildings[0];
   const bookableRoomCount = (buildingId) => meetingRooms.filter((room) => room.buildingId === buildingId).length;
@@ -509,20 +520,33 @@ export default async function render(ctx) {
   // Ein Dialog nach dem anderen: `openModal` legt seine Hülle an <body>, und zwei
   // übereinander hiessen zwei Fokusfallen. Der neue schliesst deshalb den alten.
   //
-  // Der Rückgabewert von `openModal` ist NICHT idempotent: ein zweiter Aufruf
-  // gäbe den Fokus erneut an den alten Auslöser zurück und risse ihn damit dem
-  // gerade geöffneten Dialog weg. Escape und Backdrop schliessen aber am Wrapper
-  // vorbei, sodass `closeDialog` hier veraltet zurückbleiben kann — deshalb der
-  // Wächter auf `isConnected` statt eines eigenen Merkers.
+  // Der Rückgabewert von `openModal` ist idempotent, kennt aber keine onClose-
+  // Rückmeldung. Escape, Backdrop und der Schliessen-Knopf laufen direkt durch
+  // openModal; ein kurzer Observer übernimmt deshalb auch für diese Wege den
+  // Abbau der dialogeigenen Karte/Grundriss-Beobachter.
   function openDialog(opts) {
     if (closeDialog) closeDialog();
-    dialogMap.free();
+    freeDialogResources();
     const close = C.openModal(opts);
     const el = document.body.lastElementChild;
-    const wrapped = () => {
+    let finished = false;
+    let removalObserver = null;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      if (removalObserver) removalObserver.disconnect();
+      freeDialogResources();
       if (closeDialog === wrapped) closeDialog = null;
-      if (el && el.isConnected) close();
     };
+    const wrapped = () => {
+      if (finished) return;
+      finish();
+      if (el?.isConnected) close();
+    };
+    if (typeof MutationObserver === 'function' && el) {
+      removalObserver = new MutationObserver(() => { if (!el.isConnected) finish(); });
+      removalObserver.observe(document.body, { childList: true });
+    }
     closeDialog = wrapped;
     return wrapped;
   }
@@ -730,6 +754,10 @@ export default async function render(ctx) {
     function paint() {
       const host = document.querySelector('#booking-plan');
       if (!host) return;
+      // Der Geschosswechsel ersetzt den gesamten Plan. Erst die Verdrahtung und
+      // Observer des alten Teilbaums lösen, dann den Knoteninhalt austauschen.
+      if (unwirePlan) { unwirePlan(); unwirePlan = null; }
+      if (unwirePlanScroll) { unwirePlanScroll(); unwirePlanScroll = null; }
       const activeFloor = floorRows.find((floor) => floor.floorId === floorId) || floorRows[0];
       const spaces = core.spacesForFloor(activeFloor.floorId);
       const statuses = {};
@@ -759,10 +787,9 @@ export default async function render(ctx) {
         paint();
         document.querySelector('.booking-floorbar .tag-item--active')?.focus();
       }));
-      if (unwirePlan) { unwirePlan(); unwirePlan = null; }
       const stage = document.querySelector('#booking-plan-stage');
       if (stage) unwirePlan = wireFloorplan(stage, (picked) => { close(); openBookingDialog(picked); });
-      C.wireScrollRegions(host);
+      unwirePlanScroll = C.wireScrollRegions(host);
     }
     paint();
   }

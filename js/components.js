@@ -1652,6 +1652,7 @@ export function catalogueBar({
 //   foot(visible, filtered)  optionale <tfoot>-Zeile
 export function mountDataTable(host, opts = {}) {
   let unwireScroll = null;
+  let unwireRows = null;
   const {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
@@ -1659,6 +1660,11 @@ export function mountDataTable(host, opts = {}) {
   } = opts;
   const state = { q: '', sort: '', page: 1, open: false, sel: {} };
   facets.forEach((f) => { state.sel[f.dim] = []; });
+
+  const unwire = () => {
+    if (unwireRows) { try { unwireRows(); } catch { /* schon weg */ } unwireRows = null; }
+    if (unwireScroll) { try { unwireScroll(); } catch { /* schon weg */ } unwireScroll = null; }
+  };
 
   const matchQ = (row) => {
     if (!state.q) return true;
@@ -1673,6 +1679,10 @@ export function mountDataTable(host, opts = {}) {
   });
 
   const draw = () => {
+    // Verdrahtung hängt an `host`, der beim Zeichnen bestehen bleibt. Vor dem
+    // neuen Teilbaum deshalb die delegierten Zeilenklicks und Observer lösen —
+    // sonst käme je Suche/Sortierung/Seite ein weiterer Handler dazu.
+    unwire();
     const filtered = allRows.filter((r) => matchQ(r) && matchFacets(r));
     const sortDef = sorts.find((s) => s.value === state.sort);
     const sorted = sortDef && sortDef.cmp ? filtered.slice().sort(sortDef.cmp) : filtered;
@@ -1730,23 +1740,17 @@ export function mountDataTable(host, opts = {}) {
         state.page = 1; draw();
       });
     }
-    if (rowsClickable) wireTableRows(host);
+    if (rowsClickable) unwireRows = wireTableRows(host);
     // wirePagination bindet Eingabefeld UND die [data-page]-Buttons (Review A3).
     wirePagination(host, `${id}-page`, state.page, totalPages, (target) => { state.page = target; draw(); });
-    // Vorherige Beobachter ABMELDEN. `host` wird nie ersetzt, nur sein
-    // innerHTML — ohne das blieben MutationObserver und ResizeObserver je
-    // Suche/Sortierung/Filter/Seitenwechsel zusätzlich aktiv (quadratisch in
-    // der Zahl der Interaktionen). Der Router macht es an seiner Aufrufstelle
-    // bereits richtig (router.js:261-262).
-    if (unwireScroll) { try { unwireScroll(); } catch { /* schon weg */ } }
     unwireScroll = wireScrollRegions(host);
     restore();
     announce(`${sorted.length} von ${allRows.length} ${u.dat}${totalPages > 1 ? `, Seite ${state.page} von ${totalPages}` : ''}`);
   };
   draw();
-  // Abbaufunktion für den Aufrufer (ctx.onUnmount), damit die Beobachter auch
-  // beim Verlassen der Route verschwinden.
-  return () => { if (unwireScroll) { try { unwireScroll(); } catch { /* egal */ } unwireScroll = null; } };
+  // Abbaufunktion für den Aufrufer (ctx.onUnmount), damit Beobachter und der
+  // delegierte Zeilenklick auch beim Verlassen der Route verschwinden.
+  return unwire;
 }
 
 // Zeilenklick für `C.table({ rowsClickable: true })`. Die Zeile folgt dem

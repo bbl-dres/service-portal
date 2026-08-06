@@ -206,7 +206,8 @@ export default async function render(ctx) {
     ${sections}`;
 
   // Zeilenklick in der Vorgangstabelle (C.table `rowsClickable`).
-  C.wireTableRows(mount);
+  const unwireRows = C.wireTableRows(mount);
+  if (ctx.onUnmount) ctx.onUnmount(unwireRows);
 
   const searchForm = mount.querySelector('#home-search');
   searchForm.addEventListener('submit', (e) => {

@@ -8,7 +8,7 @@ import * as links from '../links.js';
 // und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['buildings', 'projects'];
 export default async function render(ctx) {
-  const { mount, params, session, core, engine, C, setTitle, setCrumbs } = ctx;
+  const { mount, params, session, core, engine, C, setTitle, setCrumbs, onUnmount } = ctx;
 
   // «Meine Vorgänge» ist der einzige persönliche Bereich — abgemeldet nicht den
   // Inhalt zeigen, sondern zur Anmeldung auffordern (Kataloginhalte bleiben frei).
@@ -52,7 +52,7 @@ export default async function render(ctx) {
     .map(s => ({ value: s, label: statusLabel(core, s) }));
   // `rowsClickable` wie in der gleichgebauten Vorgangstabelle der Startseite:
   // erste Spalte ist der Zeilenlink, die Zeile folgt ihm per Mausklick (tbl-8).
-  C.mountDataTable(mount.querySelector('#cases-table'), {
+  const unmountTable = C.mountDataTable(mount.querySelector('#cases-table'), {
     id: 'cases', rows: all, unit: { nom: 'Vorgänge', dat: 'Vorgängen' }, caption: 'Meine Vorgänge', rowsClickable: true,
     searchKeys: ['reference', 'title', 'defName'],
     searchLabel: 'Vorgang suchen', placeholder: 'Referenz oder Titel suchen…',
@@ -72,6 +72,7 @@ export default async function render(ctx) {
       { key: 'status', label: 'Status', render: r => C.statusBadge(r.status, statusLabel(core, r.status)) },
     ],
   });
+  onUnmount(unmountTable);
 }
 
 // Beschriftungen für die eingereichten Formularfelder (instance.data), damit die

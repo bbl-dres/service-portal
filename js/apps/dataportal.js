@@ -191,15 +191,32 @@ function dashboardView(ctx, id) {
   </div>`;
 
   // --- render the chart grid for the active tab + filters ---
-  const grid = mount.querySelector('#dash-grid');
+  let grid = mount.querySelector('#dash-grid');
   let activeMaps = [];
   // Aufräumfunktion des ResizeObserver aus paintCharts — MUSS vor jedem
   // Neuzeichnen aufgerufen werden, sonst sammeln sich Observer an.
   let unpaint = null;
-  function renderGrid() {
-    // free WebGL contexts from any map rendered in the previous grid
-    activeMaps.forEach(p => p && p.then && p.then(m => m && m.remove()));
+  const freeMaps = () => {
+    const pending = activeMaps;
     activeMaps = [];
+    pending.forEach((promise) => Promise.resolve(promise)
+      .then((map) => { if (map) map.remove(); })
+      .catch(() => {}));
+  };
+  const freeGridResources = () => {
+    if (unpaint) { unpaint(); unpaint = null; }
+    freeMaps();
+  };
+  ctx.onUnmount(freeGridResources);
+
+  function renderGrid() {
+    freeGridResources();
+    // wireCharts/wireChartMenus verdrahten delegiert auf der Grid-Wurzel und
+    // liefern keinen Destructor. Ein frischer Knoten je Durchgang gibt diese
+    // Listener zusammen mit den alten Diagrammen frei, statt sie anzuhäufen.
+    const nextGrid = grid.cloneNode(false);
+    grid.replaceWith(nextGrid);
+    grid = nextGrid;
     const tab = tabs.find(t => t.id === state.tab) || tabs[0];
     const specs = tab.charts.map(cid => chartById[cid]).filter(Boolean);
     grid.innerHTML = specs.map(spec => {
@@ -220,7 +237,6 @@ function dashboardView(ctx, id) {
     // Zweiter, SYNCHRONER Durchgang: erst jetzt stehen die Karten im Layout und
     // haben eine messbare Breite (Item 6.1). Synchron, damit Tests, die auf ein
     // gerendertes SVG pollen, es unmittelbar vorfinden.
-    if (unpaint) unpaint();
     unpaint = paintCharts(grid, (id) => {
       const spec = chartById[id];
       if (!spec) return null;
@@ -232,8 +248,7 @@ function dashboardView(ctx, id) {
     // initialise any map in the freshly rendered grid
     specs.filter(s => s.form === 'map').forEach(s => {
       const el = grid.querySelector(`#map-${s.id}`);
-      if (el) { const pm = initBuildingsMap(el, buildings); activeMaps.push(pm);
-        ctx.onUnmount(() => pm && pm.then && pm.then(m => m && m.remove()).catch(() => {})); }
+      if (el) activeMaps.push(initBuildingsMap(el, buildings));
     });
   }
   renderGrid();

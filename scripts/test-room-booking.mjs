@@ -201,6 +201,27 @@ const FAVOURITE = `(async () => {
 
 const PLAN_DIALOG = `(async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const NativeMutationObserver = window.MutationObserver;
+  const NativeResizeObserver = window.ResizeObserver;
+  let activeObservers = 0;
+  let peakObservers = 0;
+  const tracked = Native => class {
+    constructor(callback) {
+      this.inner = new Native(callback);
+      this.active = true;
+      activeObservers++;
+      peakObservers = Math.max(peakObservers, activeObservers);
+    }
+    observe(...args) { return this.inner.observe(...args); }
+    unobserve(...args) { return this.inner.unobserve?.(...args); }
+    takeRecords() { return this.inner.takeRecords(); }
+    disconnect() {
+      if (this.active) { this.active = false; activeObservers--; }
+      return this.inner.disconnect();
+    }
+  };
+  window.MutationObserver = tracked(NativeMutationObserver);
+  window.ResizeObserver = tracked(NativeResizeObserver);
   document.querySelector('#booking-plan-open').click();
   let tries = 0;
   while (!document.querySelector('.modal .fp') && tries++ < 80) await wait(50);
@@ -214,9 +235,16 @@ const PLAN_DIALOG = `(async () => {
     inMain: !!document.querySelector('#main-content .fp'),
     overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
   };
+  const otherFloor = [...document.querySelectorAll('[data-plan-floor]')].find(button => !button.disabled);
+  if (otherFloor) { otherFloor.click(); await wait(100); }
+  result.floorChanged = !!otherFloor;
   document.querySelector('.modal .modal__close').click();
   await wait(200);
   result.closed = !document.querySelector('.modal');
+  result.observersCreated = peakObservers;
+  result.observersReleased = activeObservers === 0;
+  window.MutationObserver = NativeMutationObserver;
+  window.ResizeObserver = NativeResizeObserver;
   return result;
 })()`;
 
@@ -310,9 +338,18 @@ const MAP_DIALOG = `(async () => {
     canvas: !!document.querySelector('#booking-map .maplibregl-canvas'),
     inMain: !!document.querySelector('#main-content .maplibregl-canvas'),
   };
+  const mapProto = window.maplibregl?.Map?.prototype;
+  const nativeRemove = mapProto?.remove;
+  let removals = 0;
+  if (nativeRemove) mapProto.remove = function(...args) {
+    removals++;
+    return nativeRemove.apply(this, args);
+  };
   document.querySelector('.modal .modal__close').click();
   await wait(300);
   result.closed = !document.querySelector('.modal');
+  result.removed = removals;
+  if (nativeRemove) mapProto.remove = nativeRemove;
   return result;
 })()`;
 
@@ -433,7 +470,9 @@ try {
     check(plan.floors > 0 && plan.legend === 3, `the plan offers floor switching and a legend (${plan.floors} floors, ${plan.legend} keys)`);
     check(!plan.inMain, 'the plan does not occupy the page itself');
     check(plan.overflow <= 1, `the plan dialog causes no document overflow (${plan.overflow}px)`);
+    check(plan.floorChanged && plan.observersCreated >= 3, `a floor change rewires the plan (${plan.observersCreated} owned observers)`);
     check(plan.closed, 'the plan dialog closes again');
+    check(plan.observersReleased, 'closing the plan disconnects all dialog-owned observers');
 
     const dialog = await page.evaluate(BOOK_DIALOG);
     check(dialog.title === `${dialog.roomName} buchen`, `the booking dialog names the room ("${dialog.title}")`);
@@ -466,6 +505,7 @@ try {
       check(map.open && map.canvas, 'the location map opens as a dialog and renders');
       check(!map.inMain, 'the map does not occupy the page itself');
       check(map.closed, 'the map dialog closes again');
+      check(map.removed > 0, 'closing the map dialog releases its MapLibre instance');
     }
 
     const problems = await page.problems();

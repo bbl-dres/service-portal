@@ -382,7 +382,7 @@ export default async function render(ctx) {
   // Zeilenklick der Listenansicht (Review tbl-8): EINMAL auf dem beständigen
   // Container delegiert — renderMain tauscht nur dessen innerHTML, ein Aufruf je
   // Render würde Listener anhäufen.
-  C.wireTableRows(mount.querySelector('#pf-main'));
+  ctx.onUnmount(C.wireTableRows(mount.querySelector('#pf-main')));
 
   // Baum-Auswahl aus der URL wiederherstellen (Review url-state-1): Pfad
   // aufklappen + markieren. Die FILTERUNG wirkt über state.sel ohnehin — hier
@@ -695,10 +695,12 @@ function buildingDetail(ctx, b) {
   // Jede Detail-Tabelle in ihren Montagepunkt hängen. Alle Panels liegen bereits
   // im DOM (Mehr-Panel-Muster), inaktive sind `hidden`; wireScrollRegions beobachtet
   // die Grösse, sodass der Scroll-Hinweis beim Sichtbarwerden nachgezogen wird.
+  const unmountTables = [];
   Object.values(DT).filter(Boolean).forEach((cfg) => {
     const host = mount.querySelector('#' + cfg.id);
-    if (host) C.mountDataTable(host, cfg);
+    if (host) unmountTables.push(C.mountDataTable(host, cfg));
   });
+  ctx.onUnmount(() => unmountTables.forEach((unmount) => unmount?.()));
   // Jede Mosaik-Kachel öffnet die Galerie bei ihrem eigenen Bild.
   wireHeroMosaic(mount, openGallery, galleryItems, C);
   // Ein geteilter Bildlink öffnet dieselbe Galerie direkt beim bezeichneten

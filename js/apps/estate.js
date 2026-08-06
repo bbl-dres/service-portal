@@ -400,7 +400,11 @@ export default async function render(ctx) {
 
   let unpaint = null;   // Aufräumer des ResizeObserver aus paintCharts
   const mapSlot = createMapSlot();   // Besitz/Abbau: js/map-slot.js
-  ctx.onUnmount(mapSlot.free);
+  const freeGridResources = () => {
+    if (unpaint) { unpaint(); unpaint = null; }
+    mapSlot.free();
+  };
+  ctx.onUnmount(freeGridResources);
 
   const syncHash = () => {
     const qs = new URLSearchParams();
@@ -417,15 +421,19 @@ export default async function render(ctx) {
     chartData.clear();                 // Specs des vorigen Durchgangs verwerfen
     const { kpis, figures, source } = tabContent();
     mount.querySelector('#dash-kpis').innerHTML = kpis.join('');
-    const grid = mount.querySelector('#dash-grid');
+    freeGridResources();
+    // Diagramm-Tooltips und -Menüs verdrahten delegiert auf der Grid-Wurzel und
+    // haben keinen eigenen Destructor. Den Knoten wie seinen Inhalt erneuern,
+    // damit ein Filter-/Registerwechsel die alten Listener sicher mit entsorgt.
+    const oldGrid = mount.querySelector('#dash-grid');
+    const grid = oldGrid.cloneNode(false);
+    oldGrid.replaceWith(grid);
     grid.innerHTML = figures.join('');
     mount.querySelector('#dash-source').textContent = source;
     // Zweiter, synchroner Durchgang mit gemessener Breite (Item 6.1).
-    if (unpaint) unpaint();
     unpaint = paintCharts(grid, (id) => chartData.get(id));
     wireCharts(grid);
     wireChartMenus(grid);
-    mapSlot.free();
     if (state.tab === 'gebaeude') {
       const el = grid.querySelector('#estate-map-el');
       if (el) mapSlot.mount(el, (node) => initEstateMap(node, mapPoints(), parcelFC()));
