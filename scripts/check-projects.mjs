@@ -16,7 +16,7 @@ console.log('Übersicht:', await p.evaluate(`(() => {
     zahl: document.querySelector('#pj-count, .catbar__count')?.textContent.replace(/\\s+/g,' ').trim(),
   });
 })()`));
-let errs = p.problems ? p.problems() : [...p.exceptions, ...p.consoleErrors];
+let errs = p.problems ? await p.problems() : [...p.exceptions, ...p.consoleErrors];
 console.log('   Fehler:', errs.length ? errs.join(' | ') : 'keine');
 console.log('   geladene Datendateien:', await p.evaluate(`JSON.stringify(performance.getEntriesByType('resource').filter(e=>/\\.(json|geojson)/.test(e.name)).map(e=>e.name.split('/').pop()))`));
 await p.closeTarget();
@@ -29,7 +29,7 @@ console.log('\nDetail PRJ-04:', await d.evaluate(`(() => {
     sub: document.querySelector('h1 + p, .mt-4 p.muted')?.textContent.replace(/\\s+/g,' ').trim(),
     bild: !!document.querySelector('.photo img'), kv: kv.slice(0,3) });
 })()`));
-errs = d.problems ? d.problems() : [...d.exceptions, ...d.consoleErrors];
+errs = d.problems ? await d.problems() : [...d.exceptions, ...d.consoleErrors];
 console.log('   Fehler:', errs.length ? errs.join(' | ') : 'keine');
 
 // Kartenansicht

@@ -2,8 +2,8 @@
 // buildings.geojson / parcels.geojson / projects.json nur noch eine Auswahl
 // («Favoriten») als Liste von mediaId.
 //
-//   node scripts/build-media-registry.mjs --pruefen
-//   node scripts/build-media-registry.mjs
+//   node scripts/build-media-registry.mjs           # Dry-Run (Standard)
+//   node scripts/build-media-registry.mjs --write   # Dateien wirklich ändern
 //
 // Anlass: nach dem Umhängen der Demo-Objekte auf echte Bauten passten die
 // Medientitel nicht mehr zum Objekt — «Bundeshaus Ost — Innenhof» hing an der
@@ -18,7 +18,13 @@
 
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 
-const pruefen = process.argv.includes('--pruefen');
+const flags = process.argv.slice(2);
+const unbekannt = flags.filter((flag) => !['--pruefen', '--write'].includes(flag));
+if (unbekannt.length) throw new Error(`Unbekannte Option: ${unbekannt.join(', ')}`);
+if (flags.includes('--pruefen') && flags.includes('--write')) {
+  throw new Error('--pruefen und --write dürfen nicht kombiniert werden.');
+}
+const schreiben = flags.includes('--write');
 const ROOT = 'c:/Users/david/Documents/GitHub/service-portal/';
 const BILD = 'assets/images/buildings/';
 const J = (f) => JSON.parse(readFileSync(ROOT + f, 'utf8'));
@@ -159,7 +165,10 @@ console.log('\nBeispiele:');
 for (const m of medien.filter((x) => x.file)) console.log(`  ${m.mediaId}  ${m.slug}.jpg`);
 for (const m of medien.filter((x) => !x.file).slice(0, 3)) console.log(`  ${m.mediaId}  ${m.slug}  (Platzhalter)`);
 
-if (pruefen) { console.log('\n(--pruefen: nichts geschrieben)'); process.exit(0); }
+if (!schreiben) {
+  console.log('\n(Dry-Run: nichts geschrieben; zum Anwenden ausdrücklich --write verwenden)');
+  process.exit(0);
+}
 
 for (const [von, nach] of umbenennen) {
   if (existsSync(ROOT + von) && von !== nach) renameSync(ROOT + von, ROOT + nach);

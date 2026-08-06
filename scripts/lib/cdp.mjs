@@ -62,45 +62,28 @@ export async function launch({ port, webgl = false } = {}) {
     '--disable-http-cache',
   ];
   if (webgl) flags.push('--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist');
-  const edge = spawn(EDGE, [...flags, 'about:blank'], { stdio: 'ignore' });
-
-  let wsUrl;
-  for (let i = 0; i < 60; i++) {
-    try {
-      const r = await fetch(`http://localhost:${port}/json/version`);
-      const j = await r.json();
-      if (j.webSocketDebuggerUrl) { wsUrl = j.webSocketDebuggerUrl; break; }
-    } catch { /* not up yet */ }
-    await sleep(200);
-  }
-  if (!wsUrl) { edge.kill(); throw new Error('CDP did not start — is Edge installed at ' + EDGE + '?'); }
-
-  const ws = new WebSocket(wsUrl);
-  await new Promise((res, rej) => {
-    ws.addEventListener('open', res, { once: true });
-    ws.addEventListener('error', () => rej(new Error('CDP websocket failed')), { once: true });
+  const edge = spawn(EDGE, [...flags, 'about:blank'], {
+    stdio: 'ignore',
+    // On Unix a separate process group lets close() terminate renderers too.
+    // Windows uses taskkill /T below instead.
+    detached: process.platform !== 'win32',
   });
+  let spawnError;
+  edge.once('error', (error) => { spawnError = error; });
 
+  let ws;
+  let closed = false;
   let id = 0;
   const pending = new Map();
   const listeners = [];
-  ws.addEventListener('message', (ev) => {
-    const m = JSON.parse(ev.data);
-    if (m.id && pending.has(m.id)) {
-      const p = pending.get(m.id); pending.delete(m.id);
-      m.error ? p.reject(new Error(JSON.stringify(m.error))) : p.resolve(m.result);
-    } else if (m.method) {
-      listeners.forEach((fn) => fn(m));
-    }
-  });
-  const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
-    const mid = ++id;
-    pending.set(mid, { resolve, reject });
-    ws.send(JSON.stringify({ id: mid, method, params, ...(sessionId ? { sessionId } : {}) }));
-  });
-  const on = (fn) => listeners.push(fn);
+
   const close = () => {
-    try { ws.close(); } catch { /* ignore */ }
+    if (closed) return;
+    closed = true;
+    process.removeListener('exit', close);
+    for (const request of pending.values()) request.reject(new Error('CDP browser closed'));
+    pending.clear();
+    try { ws?.close(); } catch { /* ignore */ }
     // Edge spawns a tree of child processes (renderer/gpu/utility); edge.kill()
     // only signals the root and leaves zombies that pile up across runs and starve
     // the machine. Kill every process of THIS launch — matched by its unique
@@ -108,15 +91,77 @@ export async function launch({ port, webgl = false } = {}) {
     try {
       if (process.platform === 'win32') {
         const tag = userDir.split(/[\\/]/).pop();   // e.g. edge-cdp-Abc123 (unique per launch)
-        spawnSync('taskkill', ['/F', '/T', '/PID', String(edge.pid)], { stdio: 'ignore' });
+        if (edge.pid) spawnSync('taskkill', ['/F', '/T', '/PID', String(edge.pid)], { stdio: 'ignore' });
         spawnSync('powershell', ['-NoProfile', '-Command',
           `Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -like '*${tag}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`],
           { stdio: 'ignore' });
-      } else edge.kill();
+      } else if (edge.pid) process.kill(-edge.pid, 'SIGKILL');
     } catch { try { edge.kill(); } catch { /* ignore */ } }
     try { rmSync(userDir, { recursive: true, force: true }); } catch { /* Edge may still hold it */ }
   };
-  return { send, on, close };
+
+  // This synchronous exit hook is the last line of defence for probes that
+  // throw before reaching their own finally block or call process.exit().
+  process.once('exit', close);
+
+  try {
+    let wsUrl;
+    for (let i = 0; i < 60 && !spawnError; i++) {
+      try {
+        const r = await fetch(`http://localhost:${port}/json/version`);
+        const j = await r.json();
+        if (j.webSocketDebuggerUrl) { wsUrl = j.webSocketDebuggerUrl; break; }
+      } catch { /* not up yet */ }
+      await sleep(200);
+    }
+    if (!wsUrl) {
+      throw new Error(spawnError
+        ? `CDP did not start: ${spawnError.message}`
+        : 'CDP did not start — is Edge installed at ' + EDGE + '?');
+    }
+
+    ws = new WebSocket(wsUrl);
+    await Promise.race([
+      new Promise((resolve, reject) => {
+        ws.addEventListener('open', resolve, { once: true });
+        ws.addEventListener('error', () => reject(new Error('CDP websocket failed')), { once: true });
+      }),
+      sleep(5000).then(() => { throw new Error('CDP websocket timed out'); }),
+    ]);
+
+    ws.addEventListener('message', (ev) => {
+      const m = JSON.parse(ev.data);
+      if (m.id && pending.has(m.id)) {
+        const p = pending.get(m.id); pending.delete(m.id);
+        m.error ? p.reject(new Error(JSON.stringify(m.error))) : p.resolve(m.result);
+      } else if (m.method) {
+        listeners.forEach((fn) => fn(m));
+      }
+    });
+    ws.addEventListener('close', () => {
+      if (!closed) close();
+    }, { once: true });
+
+    const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
+      if (closed || ws.readyState !== WebSocket.OPEN) {
+        reject(new Error('CDP browser is not connected'));
+        return;
+      }
+      const mid = ++id;
+      pending.set(mid, { resolve, reject });
+      try {
+        ws.send(JSON.stringify({ id: mid, method, params, ...(sessionId ? { sessionId } : {}) }));
+      } catch (error) {
+        pending.delete(mid);
+        reject(error);
+      }
+    });
+    const on = (fn) => listeners.push(fn);
+    return { send, on, close };
+  } catch (error) {
+    close();
+    throw error;
+  }
 }
 
 // Open a fresh page (flattened session), collect uncaught exceptions + console
@@ -144,6 +189,7 @@ const DEMO_SESSION = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' 
 export async function openPage(cdp, url, { login } = {}) {
   const wantsLogin = login === undefined ? /#\/app\//.test(String(url)) : !!login;
   const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' });
+  try {
   const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
   await cdp.send('Page.enable', {}, sessionId);
   await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
@@ -213,4 +259,8 @@ export async function openPage(cdp, url, { login } = {}) {
     return out;
   };
   return { sessionId, evaluate, exceptions, consoleErrors, problems, closeTarget };
+  } catch (error) {
+    try { await cdp.send('Target.closeTarget', { targetId }); } catch { /* browser already closed */ }
+    throw error;
+  }
 }

@@ -24,7 +24,7 @@ for (const id of ['PRJ-04', 'PRJ-02']) {
     console.log('   Galerie geöffnet:', g);
     await p.evaluate(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);
   }
-  const errs = p.problems ? p.problems() : [...p.exceptions, ...p.consoleErrors];
+  const errs = p.problems ? await p.problems() : [...p.exceptions, ...p.consoleErrors];
   console.log('   Fehler:', errs.length ? errs.join(' | ') : 'keine');
   await p.closeTarget();
 }

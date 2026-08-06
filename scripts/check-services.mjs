@@ -27,7 +27,7 @@ for (const [route, probe] of CASES) {
   const p = await openPage(b, APP_BASE + route);
   await sleep(700);
   const v = await p.evaluate(probe);
-  const errs = p.problems ? p.problems() : [...p.exceptions, ...p.consoleErrors];
+  const errs = p.problems ? await p.problems() : [...p.exceptions, ...p.consoleErrors];
   const ok = v && !String(v).includes('undefined') && !String(v).includes('nicht gefunden') && !errs.length;
   if (!ok) bad++;
   console.log((ok ? 'OK   ' : 'FEHL ') + route.padEnd(42) + ' → ' + v + (errs.length ? '  ⚠ ' + errs.join(' | ') : ''));

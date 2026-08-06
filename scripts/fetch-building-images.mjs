@@ -1,7 +1,8 @@
 // Holt echte, frei nutzbare Gebäudefotos und legt sie unter
 // assets/images/buildings/ ab — mit Urheber und Lizenz je Bild.
 //
-//   node scripts/fetch-building-images.mjs
+//   node scripts/fetch-building-images.mjs           # Dry-Run (Standard)
+//   node scripts/fetch-building-images.mjs --write   # Download und Schreiben
 //
 // Die Dateien werden NICHT über die Commons-API gesucht. Zwei Gründe:
 // die API drosselt hart (HTTP 429 schon nach wenigen Abfragen), und eine
@@ -15,6 +16,11 @@
 // sein Platzhalterbild, und der Bildnachweis sagt, warum.
 
 import { writeFileSync, mkdirSync, statSync } from 'node:fs';
+
+const flags = process.argv.slice(2);
+const unbekannt = flags.filter((flag) => flag !== '--write');
+if (unbekannt.length) throw new Error(`Unbekannte Option: ${unbekannt.join(', ')}`);
+const schreiben = flags.includes('--write');
 
 const ROOT = 'c:/Users/david/Documents/GitHub/service-portal/';
 const ZIEL = ROOT + 'assets/images/buildings/';
@@ -71,6 +77,13 @@ const OHNE_BILD = {
   '1000/6980/AA': 'Bundesverwaltungsgericht Schwarztorstrasse — keine geprüfte Aufnahme.',
   '1000/7090/AA': 'Bundeshaus Nord — keine geprüfte Aufnahme; die meisten Bilder zeigen das Bundeshaus Mitte.',
 };
+
+if (!schreiben) {
+  console.log('Dry-Run: keine Downloads und keine Dateien geschrieben.');
+  console.log(`Mit --write würden ${BILDER.length} geprüfte Aufnahmen nach ${ZIEL} geladen`);
+  console.log('und BILDNACHWEIS.json dort neu geschrieben.');
+  process.exit(0);
+}
 
 const dateiname = (id) => id.replace(/\//g, '-') + '.jpg';
 const schlaf = (ms) => new Promise((r) => setTimeout(r, ms));

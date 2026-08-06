@@ -26,7 +26,7 @@ for (const [route, label] of [['/app/projects', 'Bauprojekte'], ['/app/portfolio
   const p = await openPage(b, APP_BASE + route);
   await sleep(1800);
   console.log(label.padEnd(16), await p.evaluate(probe));
-  const errs = p.problems ? p.problems() : [...p.exceptions, ...p.consoleErrors];
+  const errs = p.problems ? await p.problems() : [...p.exceptions, ...p.consoleErrors];
   if (errs.length) console.log('   ⚠', errs.join(' | '));
   await p.closeTarget();
 }

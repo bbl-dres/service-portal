@@ -54,6 +54,6 @@ await p.evaluate(`location.hash = '#/services'`);
 await sleep(500);
 console.log('nach Routenwechsel: Liste im DOM?', await p.evaluate(`!!document.querySelector('#home-q-suggest')`));
 
-const errs = p.problems ? p.problems() : [...p.exceptions, ...p.consoleErrors];
+const errs = p.problems ? await p.problems() : [...p.exceptions, ...p.consoleErrors];
 console.log('Fehler:', errs.length ? errs.join(' | ') : 'keine');
 await b.close();

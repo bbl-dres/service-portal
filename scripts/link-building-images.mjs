@@ -1,6 +1,7 @@
 // Verknüpft die heruntergeladenen Aufnahmen mit den Gebäudedatensätzen.
 //
-//   node scripts/link-building-images.mjs
+//   node scripts/link-building-images.mjs           # Dry-Run (Standard)
+//   node scripts/link-building-images.mjs --write   # GeoJSON wirklich ändern
 //
 // Setzt je Gebäude:
 //   img_local   Pfad zur echten Aufnahme (oder null)
@@ -15,7 +16,18 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
+const flags = process.argv.slice(2);
+const unbekannt = flags.filter((flag) => flag !== '--write');
+if (unbekannt.length) throw new Error(`Unbekannte Option: ${unbekannt.join(', ')}`);
+const schreiben = flags.includes('--write');
+
 const ROOT = 'c:/Users/david/Documents/GitHub/service-portal/';
+if (!schreiben) {
+  console.log('Dry-Run: data/buildings.geojson nicht gelesen oder geschrieben.');
+  console.log('Mit --write würde die historische Zuordnung aus BILDNACHWEIS.json neu angewendet.');
+  process.exit(0);
+}
+
 const nachweis = JSON.parse(readFileSync(ROOT + 'assets/images/buildings/BILDNACHWEIS.json', 'utf8'));
 
 // Platzhalter je Nutzungsart — vorher trugen alle neuen Objekte dasselbe Bild,
@@ -65,6 +77,7 @@ for (const f of bg.features) {
 }
 
 writeFileSync(ROOT + 'data/buildings.geojson', JSON.stringify(bg, null, 1));
+console.log('data/buildings.geojson geschrieben.');
 console.log(`${echt} Objekte mit echter Aufnahme · ${platz} mit Platzhalter`);
 for (const f of bg.features) {
   const p = f.properties;

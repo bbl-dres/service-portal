@@ -45,7 +45,7 @@ inventory is `scripts/test-*.mjs`.
 | Script | What it checks |
 |---|---|
 | `test-tabs.mjs` | D1 tab component (`C.tabBar`/`C.tabPanels`/`C.wireTabs`) across portfolio · projects · dataportal: panel toggling, `aria-selected`, roving `tabindex`, focus-follows-active, keyboard (Arrow/Home/End), hash sync. Plus the logged-out gates for the action apps. |
-| `test-login.mjs` | Logs in via the `window.__login` stub and asserts the standalone Room Booking route renders its form instead of the login gate. |
+| `test-login.mjs` | Opens Room Booking with an explicitly empty session, verifies the login gate, then logs in via `window.__login` and asserts the form replaces the gate. |
 | `test-workspace.mjs` | Standalone Workspace Management planning surface: no legacy tabs, live capacity scenario, floor-plan interaction, and desktop/mobile containment. |
 | `test-room-booking.mjs` | Room Booking on the one-page, direct-booking surface (`docs/room-booking-redesign.md`): search bar, quick choices, group size, invalid time range, equipment filter, the favourites store, the floor-plan and map dialogs, the booking dialog and its validation, process creation, personal bookings, the `?room=` deep link, and desktop/mobile containment. |
 | `test-document-archive.mjs` | Bauwerksdokumentation: reduced six-column table, KBOB document types, filename extensions, plain building cells, and viewer metadata at desktop/mobile widths. |
@@ -68,6 +68,22 @@ Get-ChildItem scripts/test-*.mjs | ForEach-Object {
   if ($LASTEXITCODE) { exit $LASTEXITCODE }
 }
 ```
+
+## Historical image maintenance
+
+The three older building-image pipelines are safe by default: running them
+without a flag is a dry run and does not modify assets or data. `--write` is
+required to reproduce their original mutating workflow. Review their fixed
+source/target assumptions before enabling writes.
+
+```powershell
+node scripts/fetch-building-images.mjs --write
+node scripts/link-building-images.mjs --write
+node scripts/build-media-registry.mjs --write
+```
+
+`build-media-registry.mjs --pruefen` remains available as an explicit alias for
+its dry-run mode.
 
 ## Design review
 

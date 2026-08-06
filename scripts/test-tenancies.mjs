@@ -16,6 +16,7 @@ const clean = async (p, label) => {
 };
 
 const browser = await launch({ webgl: true });
+try {
 
 /* ------------------------------------------------------------- Übersicht -- */
 head('Übersicht');
@@ -93,7 +94,10 @@ o = JSON.parse(await p.evaluate(`(async () => {
   document.querySelector('#mt-clear').click();
   await new Promise(r => setTimeout(r, 250));
   document.querySelector('.view-switch__btn[data-view=map]').click();
-  await new Promise(r => setTimeout(r, 2500));
+  const deadline = performance.now() + 10000;
+  while (!document.querySelector('#mt-map-el canvas') && performance.now() < deadline) {
+    await new Promise(r => setTimeout(r, 100));
+  }
   const el = document.querySelector('#mt-map-el');
   return JSON.stringify({ container: !!el, canvas: !!el?.querySelector('canvas'),
     label: el?.getAttribute('aria-label') });
@@ -349,6 +353,8 @@ check(/nicht gefunden/i.test(await p.evaluate('document.querySelector("h1")?.tex
 await clean(p, 'Nicht gefunden');
 await p.closeTarget();
 
-await browser.close();
+} finally {
+  browser.close();
+}
 console.log(fail ? `\n✗ ${fail} Prüfung(en) fehlgeschlagen` : '\n✓ alle Prüfungen bestanden');
 process.exit(fail ? 1 : 0);
