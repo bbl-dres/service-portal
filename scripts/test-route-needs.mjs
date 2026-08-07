@@ -5,6 +5,8 @@ import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const DATA_FILES = ['applications.json', 'datasets.json', 'catalog-labels.json'];
 const ESTATE_FILES = ['buildings.geojson', 'parcels.geojson', 'landcovers.geojson'];
+const WORKSPACE_FILES = ['buildings.geojson', 'floors.json', 'spaces.json', 'workspace-planning.json'];
+const EDITOR_FILES = [...WORKSPACE_FILES, 'shop-products.json'];
 const CASES = [
   { route: '/data', tracked: DATA_FILES, want: ['applications.json', 'datasets.json'] },
   { route: '/data/catalog', tracked: DATA_FILES, want: ['catalog-labels.json', 'datasets.json'] },
@@ -15,6 +17,10 @@ const CASES = [
   { route: '/app/dataportal', tracked: ESTATE_FILES, want: [] },
   { route: '/app/dataportal/energie-klima', tracked: ESTATE_FILES, want: [] },
   { route: '/app/dataportal/immobilien', tracked: ESTATE_FILES, want: ESTATE_FILES },
+  { route: '/app/workspace', tracked: WORKSPACE_FILES, want: WORKSPACE_FILES },
+  { route: '/app/workspace?id=1080%2F6650%2FAA', tracked: WORKSPACE_FILES, want: WORKSPACE_FILES },
+  { route: '/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og',
+    tracked: EDITOR_FILES, want: EDITOR_FILES },
 ];
 
 let failures = 0;

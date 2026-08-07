@@ -116,7 +116,10 @@ o = JSON.parse(await p.evaluate(`JSON.stringify({
   reiter: [...document.querySelectorAll('.tab__control')].map(x => x.textContent.trim()),
   kv: [...document.querySelectorAll('.kv dt')].map(x => x.textContent.trim()).slice(0,4),
   kurzwege: [...document.querySelectorAll('.fp-svc span')].map(x => x.textContent.trim()),
+  raumbedarfLink: document.querySelector('a[href*="app/space-request"]')?.getAttribute('href'),
   inventarLink: document.querySelector('a[href*="app/portfolio?id="]')?.getAttribute('href'),
+  launchLinks: [...document.querySelectorAll('.detail-layout__aside a.fp-svc[href^="#/app/"]')]
+    .map(a => ({ target: a.getAttribute('target') || '', rel: a.getAttribute('rel') || '' })),
   antragTitel: [...document.querySelectorAll('.detail-layout h2')].map(h => h.textContent.trim())
     .find(x => /Anträge/.test(x)),
   antragTabelle: !!document.querySelector('#mt-dt-vorgaenge table'),
@@ -132,6 +135,11 @@ check(o.antragTitel === 'Anträge zu diesem Mietobjekt' && o.antragTabelle,
   'Anträge als Abschnitt der Übersicht', `${o.antragTitel} · Tabelle ${o.antragTabelle}`);
 check(o.kv.includes('Verwaltungseinheit') && o.kv.includes('Geschosse'), 'Kerndaten im Übersichtsreiter', o.kv.join(', '));
 check(o.kurzwege.length >= 4, 'Dienstleistungs-Kurzwege aus services.json', String(o.kurzwege.length));
+check(/building=1080%2F4850%2FAG/.test(o.raumbedarfLink || ''),
+  'Raumbedarf-Kurzweg übernimmt das Gebäude', o.raumbedarfLink);
+check(o.launchLinks.length >= 6 && o.launchLinks.every(a =>
+  a.target === '_blank' && a.rel.split(/\s+/).includes('noopener')),
+  'Anwendungs- und Vorgangsstarts der Aktionskarte öffnen neue Tabs', String(o.launchLinks.length));
 check(/1080%2F4850%2FAG/.test(o.inventarLink || ''), 'Querverweis ins Inventar', o.inventarLink);
 await clean(p, 'Detail');
 
@@ -280,7 +288,7 @@ check(/Quadratmeter/.test(o.ariaErster || ''), 'jeder Raum hat ein aria-label', 
 await clean(p, 'Grundriss');
 
 head('Einfärbemodi');
-for (const [mode, label] of [['use', 'Nutzung'], ['sia', 'SIA 416'], ['ve', 'Verwaltungseinheit'], ['capacity', 'Belegung']]) {
+for (const [mode, label] of [['use', 'Nutzung'], ['sia', 'SIA 416'], ['ve', 'Verwaltungseinheit'], ['capacity', 'Arbeitsplatzdichte']]) {
   const r = JSON.parse(await p.evaluate(`(async () => {
     location.hash = '#/app/tenancies/MV-2026-001?tab=grundriss&floor=1080-4850-AG-2og&color=${mode}';
     await new Promise(r => setTimeout(r, 420));
@@ -307,6 +315,8 @@ o = JSON.parse(await p.evaluate(`(async () => {
     markiert: document.querySelectorAll('.fp__room.is-selected').length,
     hash: location.hash,
     zielHref: document.querySelector('.fp-room .fp-svc')?.getAttribute('href'),
+    launchLinks: [...document.querySelectorAll('.fp-room a[href^="#/app/"]')]
+      .map(a => ({ target: a.getAttribute('target') || '', rel: a.getAttribute('rel') || '' })),
   });
 })()`));
 check(!!o.panelTitel, 'Raumdetail erscheint', o.panelTitel);
@@ -314,6 +324,9 @@ check(o.markiert === 1, 'gewählter Raum ist markiert');
 check(o.kurzwege >= 3, 'Kurzwege im Raumdetail', String(o.kurzwege));
 check(/space=/.test(o.hash), 'Auswahl steht im Hash (teilbar)', o.hash.split('?')[1]);
 check(/building=1080%2F4850%2FAG/.test(o.zielHref || ''), 'Dienstleistung mit vorbelegtem Objekt', o.zielHref);
+check(o.launchLinks.length >= 3 && o.launchLinks.every(a =>
+  a.target === '_blank' && a.rel.split(/\s+/).includes('noopener')),
+  'Raumaktionen öffnen ihre Zielanwendung in einem neuen Tab', String(o.launchLinks.length));
 await clean(p, 'Raumauswahl');
 
 head('Geschosswechsel');

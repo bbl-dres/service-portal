@@ -49,7 +49,9 @@ Zustände × 320/768/1440 px) liegen unter docs/review-assets/before/.
 | `#/app/tenancies/<id>?tab=<id>&floor=<id>&space=<id>` | Mietobjekt-, Vertrags- und Grundrissdetail |
 | `#/app/dataportal` | Datenportal (Dashboards) |
 | `#/app/dataportal/<dashboard>?tab=<id>` | Dashboard mit Filtern und Registern |
-| `#/app/workspace` | Workspace |
+| `#/app/workspace` | Workspace-Objektportal |
+| `#/app/workspace?id=<bbl_id>&floor=<floorId>&color=<mode>&space=<spaceId>` | Workspace-Grundrissvorschau (schreibgeschützt) |
+| `#/app/floorplan-editor?building=<bbl_id>&floor=<floorId>&color=<mode>&selected=<type:id>&view=<mode>&edit=1&library=<mode>` | Eigenständiger Plan-Editor / Viewer (Login-Gate; lokale Feedback-Arbeitskopie/-Publikation) |
 | `#/app/transaction` | Veräusserung |
 | `#/app/document-archive` | Bauwerksdokumentation |
 | `#/app/media-library` | Mediathek |
@@ -146,9 +148,9 @@ Geteilte Komponentenbibliothek (HTML-String-Fabriken + wire*-Verdrahtungen) im C
 - wireErrorSummary(mount, {focus}) — Sprungmarken-Klick → Feld-Fokus+Scroll; Fokus auf die Übersichts-Überschrift — components.js:1071
 - field(o) — Feld-Wrapper für input/textarea: name/autocomplete/inputmode, Hint VOR dem Feld, Fehler-Badge, control(cls, attrs)-Callback — components.js:1085
 - val(mount, id) / readForm(mount, map) — Formularwerte einzeln bzw. als Objekt lesen — components.js:1120, 1125
-- downloadItem(o) — CD-Download-Zeile (Dokument/App/Ressource/Anhang); Titel standardmässig h3, per `heading` auf h2–h6 anpassbar; href '#' degradiert zu aria-disabled «Im Prototyp nicht verfügbar»; meta-Zeile, wrapLi, download-Attribut — components.js:1137
+- downloadItem(o) — CD-Download-Zeile (Dokument/App/Ressource/Anhang); Titel standardmässig h3, per `heading` auf h2–h6 anpassbar; href '#' degradiert zu aria-disabled «Im Prototyp nicht verfügbar»; `newWindow` ist unabhängig von der Zielklassifikation `external`; meta-Zeile, wrapLi, download-Attribut — components.js
 - contactBox(contact, opts) — CD-Kontaktkasten (dl kv--stack, mailto escaped, unit = Direktionsbereich) — components.js:1160
-- actionCard({title, lead, links}) — Randspalten-Karte «Aktionen» (fp-svc-Zeilen mit Folgepfeil, bewusst ohne führende Icons) — components.js:1195
+- actionCard({title, lead, links|items}) — Randspalten-Karte «Aktionen» (fp-svc-Zeilen; `newWindow` bleibt auch im Legacy-`links`-Vertrag erhalten und verwendet External-Symbol plus `noopener`) — components.js
 - contactCard({title, contacts}) — Randspalten-Karte «Ansprechpersonen» (dt=Rolle, Name entfällt bei Dublette) — components.js:1209
 - downloadLink(url, label, icon) — Demo-Download als Link oder aria-disabled-Ersatz — components.js:1223
 - pagination({page, totalPages, href, inputId, label, align}) — CD-Blätterleiste: editierbares Seitenfeld, «von N Seiten», prev/next als echte disabled-Buttons; href-Modus (Hash) oder data-page-Modus (lokal); ab 2 Seiten — components.js:1235
@@ -235,14 +237,17 @@ Hash-Router: NAV-Definition, Seiten-/App-Registry mit dynamischem Import, Altlas
 - #/app/projects → apps/projects.js — router.js:105
 - #/app/document-archive → apps/document-archive.js — router.js:106
 - #/app/workspace → apps/workspace.js — router.js:107
-- #/app/transaction → apps/transaction.js — router.js:108
-- #/app/dataportal → apps/dataportal.js — router.js:109
-- #/app/api-docs → apps/api-docs.js — router.js:110
-- #/app/building-create → apps/building-create.js — router.js:111
-- #/app/media-library → apps/media-library.js — router.js:112
-- #/app/tenancies → apps/tenancies.js — router.js:113
-- #/app/metadata-catalog → apps/metadata-catalog.js — router.js:114
-- #/app/process-docs → apps/process-docs.js — router.js:115
+- #/app/floorplan-editor → apps/floorplan-editor.js (Standalone-Layout) — router.js:108
+- #/app/room-booking → apps/room-booking.js — router.js:109
+- #/app/transaction → apps/transaction.js — router.js:110
+- #/app/dataportal → apps/dataportal.js — router.js:111
+- #/app/api-docs → apps/api-docs.js — router.js:112
+- #/app/building-create → apps/building-create.js — router.js:113
+- #/app/media-library → apps/media-library.js — router.js:114
+- #/app/tenancies → apps/tenancies.js — router.js:115
+- #/app/metadata-catalog → apps/metadata-catalog.js — router.js:116
+- #/app/process-docs → apps/process-docs.js — router.js:117
+- #/app/shop → apps/shop.js — router.js:118
 - #/app/<segmente> — Segmente NACH dem App-Namen landen als ctx.params (Deep-Links in Apps) — router.js:340-344
 - Unbekannte Route → 404 «Seite nicht gefunden» mit Startseiten-Link — router.js:355-361
 - Redirect: #/knowledge/news(/*) → #/news(/*) — router.js:142
@@ -449,6 +454,7 @@ Anwendungskatalog nach demselben Muster wie #/services (catbar, Pills, Galerie/L
 - Standardreihenfolge: Schlüsselanwendungen (hero) zuerst, explizite Sortierung überschreibt (applications.js:71-73)
 - Screenreader-Ansage des Ergebnisstands via C.announceCatalogue (applications.js:150)
 - Seitenkopf mit festem Lead-Text; Brotkrumen Startseite › Daten und Digitalisierung (#/data) › Anwendungen (applications.js:47-52,120-123)
+- Anwendungs-Landingpage: Der primäre Einstieg heisst unabhängig vom Produktnamen «Anwendung starten». Zugriffskarte und generierter Einstieg öffnen interne wie externe Zielanwendungen in einem neuen Tab (`target=_blank`, mindestens `rel=noopener`); mehrere fachlich unterschiedliche externe Einstiegspunkte behalten in der Liste ihre unterscheidbaren Namen. Portalinterne Ziele bleiben als «Im Kundenportal» klassifiziert und zeigen ihren zentralen Router-Login-Gate erst im Ziel-Tab (application.js; components.js `accessCard`/`downloadItem`).
 
 **Zustände**
 
@@ -849,8 +855,8 @@ Dienstleistungskatalog (nur type=action) mit Suche/Filter/Sortierung/Galerie-Lis
 - Detail: Beschreibung mit sr-only-H2 «Beschreibung» (services.js:234-235)
 - Detail: Box «Das brauchen Sie» aus s.voraussetzungen, nur wenn vorhanden (services.js:236)
 - Detail: Box «So läuft es ab» — engine.definition(s.processDefId) als C.pipeline mit Schrittzahl und Link auf #/my-cases; entfällt wortlos ohne Definition (services.js:156,237-239)
-- Detail: Primär-CTA «Vorgang starten»/«Zum externen System»/«Öffnen» je nach type und target.kind; extern mit target=_blank rel=noopener external (services.js:158-162,198-204)
-- Detail-Randspalte: Zugriffskarte (Frei-zugänglich-Text / Sitzungskontext + Karten-CTA / Login-Hinweis mit Anmeldeknopf) (services.js:176-191)
+- Detail: Primär-CTA «Vorgang starten»/«Zum externen System»/«Öffnen» je nach type und target.kind; jedes echte Ziel öffnet mit `target=_blank` und `rel=noopener`, externe Ziele zusätzlich mit `rel=external` (services.js)
+- Detail-Randspalte: Zugriffskarte mit demselben Neues-Tab-Vertrag, Frei-zugänglich-/Sitzungskontext beziehungsweise Hinweis, dass die Anmeldung in der gestarteten Zielanwendung erfolgt (services.js; components.js `accessCard`)
 - Detail-Randspalte: Kontaktbox C.contactBox aus core.contacts via s.contact (services.js:151,248)
 - Detail-Randspalte: Box «Gesetzliche Grundlagen» mit Verweis auf #/knowledge statt zurückgezogener weisungen.json (services.js:249-256)
 - Titel/Brotkrumen je Route: Katalog «Dienstleistungen», Detail Startseite›Dienstleistungen›<Titel> (services.js:12-13,148-149)
@@ -865,10 +871,10 @@ Dienstleistungskatalog (nur type=action) mit Suche/Filter/Sortierung/Galerie-Lis
 - Pagination: page über totalPages wird auf letzte Seite geklemmt (services.js:44)
 - Sortierung leer (Datenreihenfolge, Platzhalter «Sortieren») vs title vs domain; unbekannte sort-Werte ignoriert (services.js:36)
 - Detail nicht gefunden: C.renderNotFound mit Rücklink und Brotkrumen (services.js:142-147)
-- Angemeldet vs. anonym: nur type=action verlangt Login; anonym zeigt C.loginGate statt CTA, Inhalte bleiben stets sichtbar (services.js:163-166,193-194)
-- Zugriffskarte dreistufig: Informationsangebot frei / angemeldet mit Name+Org+CTA / abgemeldet mit Lock-Hinweis+Anmeldeknopf (services.js:181-191)
+- Angemeldet vs. anonym: Inhalte und Launch-Link bleiben stets sichtbar. Bei internen Vorgängen übernimmt die in einem neuen Tab gestartete Fachanwendung den zentralen Router-Login-Gate; die Quellseite versucht kein asynchrones Popup nach der Anmeldung (services.js; router.js)
+- Zugriffskarte dreistufig: Informationsangebot frei / angemeldet mit Name+Org+CTA / abgemeldet mit Lock-Hinweis und echtem Neues-Tab-Link zur Zielanwendung (services.js; components.js `accessCard`)
 - Ziel fehlt oder «#»-Platzhalter: CTA als aria-disabled-Span bzw. Kartentext «Im Prototyp ist kein Zielsystem angebunden.» statt totem Knopf (services.js:160-162,180,202-204)
-- target.kind external vs intern steuert Label, Icon (External/ArrowRight) und _blank (services.js:158-159,177-179)
+- target.kind external vs intern steuert Label und den zusätzlichen `external`-Relationstoken; alle echten Launch-Ziele tragen External-Symbol und `_blank` (services.js)
 - Blöcke Voraussetzungen und Ablauf konditional (nur mit Daten) (services.js:236-239)
 
 **Interaktionen**
@@ -884,8 +890,7 @@ Dienstleistungskatalog (nur type=action) mit Suche/Filter/Sortierung/Galerie-Lis
 - Kartenklick und Zeilenklick (Listenansicht, C.wireTableRows mit Abbau via ctx.onUnmount gegen Listener-Anhäufung) (services.js:134-136)
 - Links im «Auch in»-Hinweis zu #/applications und #/app/document-archive (services.js:87-88)
 - Detail: Zurück-Link zu #/services (services.js:222)
-- Detail: CTA-Link/Knopf Inhalt (lg) und Zugriffskarte (sm), extern in neuem Tab (services.js:176-179,198-201)
-- Detail: Anmeldeknopf «Anmelden mit AGOV / FedLogin» via window.__login (services.js:189-190)
+- Detail: CTA-Link Inhalt (lg) und Zugriffskarte (sm) öffnen jedes echte Prozess-/Anwendungsziel in einem neuen Tab; interne Zielrouten führen dort bei Bedarf durch die Anmeldung (services.js)
 - Detail: Links auf #/my-cases (Ablauf-Box) und #/knowledge (Grundlagen-Box) (services.js:238,255)
 
 ## js/apps/api-docs.js
@@ -1339,7 +1344,7 @@ Liegenschaften Inventar — map-first Explorer über Gebäude UND Grundstücke a
 - URL-Vollzustand über history.replaceState ohne Router-Neurender (syncHash)
 - Gebäudedetail: C.detailBar (Zurück+Teilen), h1, Lead-Adresse, heroMosaic (Bildmosaik + Standortkarte mit einem Punkt, focusPopup:false, portfolio.js:707)
 - Gebäudedetail Übersicht: kv-Eckdaten (BBL-ID, WE, EGID, Adresse, Land/Region, Portfolio-Kategorie, Gebäudetyp, Eigentum, Baujahr+saniert, Architektur*, Nutzer*, GF, HNF, Erhaltungsstrategie*, Baudenkmal KGS*, Grundstück-Links, Status-Badge; *=nur wenn vorhanden)
-- Gebäudedetail Randspalte (im Übersichtspanel): C.actionCard mit vorbelegten Deep-Links (Stammdaten mutieren #/services/stammdaten-mutieren?building=, Störung melden #/app/fault-report?building=, Bautendokumentation #/app/document-archive?building=, Mediathek #/app/media-library?building=) + C.contactCard (max 4, Primär zuerst)
+- Gebäudedetail Randspalte (im Übersichtspanel): C.actionCard mit vorbelegten Deep-Links (Stammdaten mutieren #/services/stammdaten-mutieren?building= bleibt Navigation im aktuellen Tab; Störung, Bautendokumentation und Mediathek starten ihre `#/app/…`-Ziele in neuen Tabs) + C.contactCard (max 4, Primär zuerst)
 - Detail-Datentabellen via C.mountDataTable (je Suche/Sortierung/Facetten/10er-Blätterung): Flächen (Facette Standard), Ausstattungen (Facetten Kategorie/Status, Badges), Verträge (Facette Status, Statusvarianten portfolio.js:806), Kosten (Facette Kostengruppe, tfoot «Total (n)» über die GEFILTERTE Menge portfolio.js:584), Kontakte (Primär-Badge, tel:/mailto:-Links), Dokumente (Facetten Dokumenttyp/Klassifizierung, Klassifizierungs-Badge aus ref, Download-Knopf je Zeile, Folgelink «In der Bauwerksdokumentation öffnen»)
 - Vollbildgalerie aus den Mosaik-Kacheln (wireHeroMosaic→openGallery) inkl. Bildnachweis im Metadatenpanel; kuratierte Bilder aus o.bilder, NICHT media.json (portfolio.js:28)
 - Grundstücksdetail: kv-Eckdaten (Parzellen-ID, WE, Parzellen-Nr., EGRID, Gemeinde, Land/Region, GSF, Nutzungszone, Eigentum, Status, Link «Gebäude auf der Parzelle» via WE-Match portfolio.js:725), Reiter Bodenbedeckungen mit Total-Zeile + Tabelle (Fläche absteigend), Mini-Karte mit Bodenbedeckungs-/Parzellen-Polygonen als räumlicher Hero (portfolio.js:789)
@@ -1507,14 +1512,15 @@ Raumbedarf melden — 3-Schritt-Wizard (Angaben → Bedarf → Prüfen & Absende
 
 **Routen**
 
-- #/app/space-request — Raumbedarf-Wizard (router.js:102); keine Query-Varianten, verlinkt u. a. aus tenancies.js:695
+- #/app/space-request — Raumbedarf-Wizard (router.js:102); ohne Vorbelegung
+- #/app/space-request?building=<bbl_id> — Gebäude vorbelegt, sofern die BBL-ID im kanonischen Gebäudebestand existiert; ungültige Werte fallen auf den bisherigen Standard zurück; verlinkt u. a. aus tenancies.js und workspace.js
 
 **Funktionen**
 
 - 3-Schritt-Wizard mit gemeinsamem Gerüst C.wizardHead (Schrittanzeige + sr-only-Schrittüberschrift + Pflichtfeld-Legende) — STEP_LABELS Z.59, Z.74
 - Rück-Link zur Dienstleistungsbeschreibung «raumbedarf-melden» (C.backLink, Z.23/68) — auch im ausgeloggten Zustand
 - Kontextzeile: Aktion/Antragsteller/Org + Prozesspfad «Eingang → Prüfung GS → Prüfung PFM → Entscheid» (C.contextLine, Z.70)
-- Schritt 1: Verwaltungseinheit (vorbelegt aus session.user().org, Z.39), Kostenstelle, Gebäude-Select aus core.buildings() (Z.95-96), Anzahl Personen
+- Schritt 1: Verwaltungseinheit (vorbelegt aus session.user().org), Kostenstelle, Gebäude-Select aus core.buildings() mit optionaler Query-Vorbelegung, Anzahl Personen
 - Schritt 2: NAW-Klassen-Select aus core.ref().nawClasses (Z.33/107), Wunschtermin (date), Begründung (textarea)
 - Live-Flächenschätzung als Info-Notification: Personen × 12 m² × Desk-Sharing-Faktor aus core.ref().deskSharingFactor, Fallback 0.8 (Z.34-35, 50, 109)
 - Schritt 3: Zusammenfassung als kv-Liste (8 Positionen inkl. berechneter Fläche, Z.122-132) + Hinweis-Notification zum Vorgangsstart (Z.133)
@@ -1524,6 +1530,7 @@ Raumbedarf melden — 3-Schritt-Wizard (Angaben → Bedarf → Prüfen & Absende
 **Zustände**
 
 - Abgemeldet: Login-Gate (C.loginGate, AGOV/FedLogin-Aufforderung) statt Formular, gleicher Seitenkopf (Z.17-30)
+- Gebäudekontext: gültiges `building` wird exakt vorbelegt; fehlendes oder unbekanntes `building` verwendet den bisherigen Standardwert
 - Schrittzustand state.step 1-3; Feldwerte überleben Vor/Zurück im state-Objekt (Z.37-48)
 - Fehlerzustand je Feld (state.errors) + Fehlerübersicht C.errorSummary mit Klartext-Labels/Sprungmarken (FIELD_LABELS Z.54-57, Z.75)
 - Validierung Schritt 1: org/cc Pflicht, persons ganzzahlig 1-5000 (Rohwert wird erst NACH erfolgreicher Prüfung normalisiert, Z.171-174); bld bewusst optional (Z.175-177)
@@ -1547,7 +1554,7 @@ Raumbedarf melden — 3-Schritt-Wizard (Angaben → Bedarf → Prüfen & Absende
 
 ## js/apps/tenancies.js
 
-Mietende — Sicht der mietenden Verwaltungseinheit auf ihre Flächen; Einheit ist das MIETVERHÄLTNIS, nicht das Gebäude (tenancies.js:1-15); kein Join, buildingId nur Querverweis. needs=['tenancies','floors','spaces','contracts'] (tenancies.js:28). Einziges der drei Module mit Grundriss-Betrachter (floorplan.js: floorplanSvg/floorplanLegend/wireFloorplan/COLOR_MODES) und Vorgangs-Anbindung (engine.instances über linkedEntities.buildingId, tenancies.js:373). Geteilte Helfer: spatial-tree.js, map-slot.js, buildings-map.js, hero-mosaic.js (heroMosaic/galleryItemsFrom; Galerie-Klicks BEWUSST lokal verdrahtet, weil wireHeroMosaic auf #pf-mosaic gepinnt ist, tenancies.js:869-875), gallery.js, format.js, domain.js (landName/statusLabel), links.js (links.mietverhaeltnis/objekt/vorgang); C-Verträge wie die Geschwister + C.select, C.mountDataTable mit foot. NICHT genutzt: estate.js, dashboard-chrome.js.
+Mietende — Sicht der mietenden Verwaltungseinheit auf ihre Flächen; Einheit ist das MIETVERHÄLTNIS, nicht das Gebäude (tenancies.js:1-15); kein Join, buildingId nur Querverweis. needs=['tenancies','floors','spaces','contracts'] (tenancies.js:28). Einziges der drei Module mit Grundriss-Betrachter (floorplan.js: floorplanSvg/floorplanLegend/wireFloorplan/COLOR_MODES) und Vorgangs-Anbindung (engine.instances über linkedEntities.buildingId, tenancies.js:373). Geteilte Helfer: spatial-tree.js, map-slot.js, buildings-map.js, hero-mosaic.js (heroMosaic/galleryItemsFrom/wireHeroMosaic), gallery.js, format.js, domain.js (landName/statusLabel), links.js (links.mietverhaeltnis/objekt/vorgang); C-Verträge wie die Geschwister + C.select, C.mountDataTable mit foot. NICHT genutzt: estate.js, dashboard-chrome.js.
 
 **Routen**
 
@@ -1573,9 +1580,9 @@ Mietende — Sicht der mietenden Verwaltungseinheit auf ihre Flächen; Einheit i
 - Karte: Punkte aus lat/lon des Mietverhältnisses (Doppelbelegungen liegen exakt übereinander, Cluster fasst sie, tenancies.js:169), Popup «VE · Geschosse · HNF» mit Detail-Link
 - Blätterung, C.announceCatalogue (unit {nom,dat}), URL-Sync via replaceState
 - Detail-Kopf: detailBar (Zurück+Teilen), Augenbrauenzeile «tenancyId · Objekt buildingId» (tenancies.js:816), h1, Lead (Adresse · VE · Geschosse), Restlaufzeit-Badge als Pillenzeile
-- Detail-Hero: heroMosaic (#mt-mosaic) + Standortkarte (#mt-hero-map, Punkt, focusPopup:false); Kacheln öffnen Vollbildgalerie
+- Detail-Hero: geteilter heroMosaic (#mt-mosaic) + Standortkarte (#mt-hero-map, Punkt, focusPopup:false); mehrere Bilder erscheinen im Mosaik, genau ein Bild in der breiten Solo-Variante ohne leere Kacheln; wireHeroMosaic öffnet die Vollbildgalerie
 - Reiter Übersicht: KPI-Streifen (Fläche HNF, Arbeitsplätze, Fläche je AP, Jahresmiete, tenancies.js:446) + kv (VE, Objekt, Geschosse, Mietbeginn, Vertragsende, Kostenstelle, Objekt im Inventar als Link) + Abschnitt «Anträge zu diesem Mietobjekt» (Datentabelle der Engine-Vorgänge: Referenz-Link zu «Meine Vorgänge», Anliegen, Ablauf, Status-Badge, Aktualisiert)
-- Randspalte (im Übersichtspanel): C.actionCard (Störung melden, Kleinauftrag, Umzug, Raumbedarf melden, Reklamation — alle mit vorbelegtem building=/type=-Query; Zeile entfällt, wenn die Dienstleistung fehlt, tenancies.js:691) + «Dokumente zum Gebäude» → document-archive?building= + C.contactCard (Rolle als Beschriftung)
+- Randspalte (im Übersichtspanel): C.actionCard (Störung melden, Kleinauftrag, Umzug, Raumbedarf melden, Reklamation — alle mit vorbelegtem building=/type=-Query und als Neues-Tab-Start; Zeile entfällt, wenn die Dienstleistung fehlt) + «Dokumente zum Gebäude» → document-archive?building= ebenfalls in neuem Tab + C.contactCard (Rolle als Beschriftung)
 - Reiter Grundrisse — Zustand 1 Geschosstabelle (mountDataTable): Geschoss-Link + Badge «Ihr Standort», Räume, HNF, Arbeitsplätze, «Davon <VE>» (eigene Räume+Fläche, tenancies.js:738), tfoot-Totale über die GEFILTERTE Menge (tenancies.js:747), Suche + Sortierung Niveau/Fläche/Räume, rowsClickable
 - Reiter Grundrisse — Zustand 2 Betrachter (bei ?floor=): klebende Kopfleiste mit Rücksprung «Alle Geschosse» (echtes href ?tab=grundriss), Geschoss-Chips als tag-item mit ECHTEN ?floor=-Zielen (Mittelklick/Link-Kopieren funktioniert, tenancies.js:560-567), Einfärben-Select (C.select, COLOR_MODES, Default 've'), Vollbild- und Drucken-Knopf
 - Betrachter-Fläche: interaktives SVG (floorplanSvg) mit Raumauswahl, data-scroll-region für Überbreite (tenancies.js:608); Seitenpanel mit Geschoss-kv (Räume/HNF/Bruttofläche), Legende (floorplanLegend, entfällt bei color=none) und Raum-Panel (Raumnummer, Nutzung, Fläche, SIA 416, Arbeitsplätze, VE, Buchbar; «Raum buchen» → #/app/workspace; «Vorgang starten»-Kurzwege Störung/Kleinauftrag/Umzug mit building+room vorbelegt, tenancies.js:679)
@@ -1591,7 +1598,7 @@ Mietende — Sicht der mietenden Verwaltungseinheit auf ihre Flächen; Einheit i
 - Seitenklemme; aria-pressed am Ansichtsumschalter; Baum-Markierung + Clear-Knopf aus URL wiederhergestellt (tenancies.js:337)
 - Nicht-gefunden-Zustand; unbekannter/legacy ?tab → Übersicht
 - Grundriss: OHNE ?floor= steht die Geschosstabelle (bewusste Entscheidung, kein Auto-Erstgeschoss, tenancies.js:403-406); MIT ?floor= der Betrachter; keine Geschosse → C.empty «kein Grundriss hinterlegt» (tenancies.js:515)
-- Einfärbung Default 've' (Belegung), color=none blendet Legende aus; Raum gewählt/keiner (leeres Raum-Panel mit Hinweis, tenancies.js:644)
+- Einfärbung Default 've' (Verwaltungseinheit), color=none blendet Legende aus; Raum gewählt/keiner (leeres Raum-Panel mit Hinweis, tenancies.js:644)
 - Aktiver Geschoss-Chip: tag-item--active + aria-current, erneuter Enter-Klick ist abgewacht (tenancies.js:935)
 - Vollbild an/aus (Fullscreen-API auf #fp-wrap samt Bedienung; Esc beendet; Rücksprung verlässt Vollbild zuerst, tenancies.js:908-910)
 - Druckzustand body.print--plan (nur der Plan; afterprint + 1s-Sicherheitsnetz räumt auf, tenancies.js:954-960)
@@ -1607,7 +1614,7 @@ Mietende — Sicht der mietenden Verwaltungseinheit auf ihre Flächen; Einheit i
 - Geschosstabelle: Zeilen-/Link-Klick öffnet Betrachter (?floor=); eigene Suche/Sortierung
 - Betrachter: Geschoss-Chips (Klick zeichnet nur den Grundrissbereich um, Mittelklick folgt dem echten Link), Einfärben-Select (Fokus bleibt auf dem Select, tenancies.js:925-927), Raumklick im SVG wählt/hebt bei erneutem Klick auf (Fokus zurück auf das Raum-Rect, tenancies.js:917-923), Rücksprung «Alle Geschosse» (Fokus auf ersten Tabellen-Link, tenancies.js:913)
 - Vollbild-Knopf (beide Richtungen), Drucken-Knopf (window.print mit print--plan)
-- Raum-Panel: «Raum buchen»-Link (nur bookable), «Vorgang starten»-Dienstleistungslinks mit building+room
+- Raum-Panel: «Raum buchen»-Link (nur bookable), «Vorgang starten»-Dienstleistungslinks mit building+room; alle Zielanwendungen öffnen in neuen Tabs
 - Randspalte: vorbelegte Aktionslinks, Kontakt-Links; Teilen-Leiste + Zurück-Link
 - Anträge-Tabelle: Referenz-Link zum Vorgang; Verträge-Tabelle: Facette/Suche/Sortierung
 
@@ -1641,34 +1648,77 @@ Veräusserung von Bundesliegenschaften — statische Stub-/Demo-Seite der Transa
 
 ## js/apps/workspace.js
 
-Workspace Management — eigenständige Planungsanwendung für Arbeitsplatzkapazität, Geschosse, Zonen und Verwaltungseinheiten. Buchung und E-Shop sind getrennte Anwendungen; die Route enthält keine Tabs.
+Workspace Management — Prozesseinstieg und Objektportal der Workspace-Suite. Der Portalroute gehören Objektsuche, Projektkontext, Register und eine schreibgeschützte Grundrissvorschau; der spezialisierte Plan-Editor/-Viewer und die Planprüfung bleiben getrennte Anwendungen und werden nicht in diesen Modulbaum eingebettet. needs=['buildings','floors','spaces','workspacePlanning']; der Workspace-Overlay-Bestand ist über buildingId an den Golden Record gebunden. Geteilte Helfer: spatial-tree.js, map-slot.js/buildings-map.js, hero-mosaic.js + gallery.js sowie die auch im Mietendenportal verwendeten floorplan.js-Primitiven (floorplanSvg/floorplanLegend/wireFloorplan/COLOR_MODES). Die Vorschau mutiert keine Geometrie, Ausstattung oder Planversion.
 
 **Routen**
 
-- #/app/workspace — Planungsoberfläche
-- #/app/workspace?building=…&floor=…&color=… — Gebäude, Geschoss und Einfärbung direkt adressieren
+- #/app/workspace — Objektkatalog, Default Galerie
+- #/app/workspace?view=gallery|list|map&q=…&sort=availability|name|city|workplaces&page=N — vollständiger Katalogzustand in der URL
+- #/app/workspace?plan=planned|legacy&land=…&region=…&city=…&obj=… — Planungsverfügbarkeit und räumliche Baumauswahl
+- #/app/workspace?id=<bbl_id> — Objektdetail über SAP-RE-FX-ID
+- #/app/workspace?id=<bbl_id>&tab=uebersicht|grundrisse|ausstattung — teilbare Registerauswahl
+- #/app/workspace?id=<bbl_id>&floor=<floorId>&color=none|use|sia|ve|capacity&space=<spaceId> — schreibgeschützte Grundrissvorschau; `floor` öffnet auch ohne `tab` das Grundrissregister, Default-Einfärbung ist `ve`
+- Alte building=/floor=-Links öffnen das entsprechende Objektdetail direkt in der Grundrissvorschau und werden auf `id=` kanonisiert
 - Alte Tab-Links werden umgeleitet: `buchung` → `#/app/room-booking`, `moeblierung` → `#/app/shop`, `belegung` → `#/app/workspace`
 
 **Funktionen**
 
-- Gebäudeauswahl über alle Objekte mit planbaren Geschossen und Arbeitsplätzen
-- Kennzahlen für Arbeitsplätze, Szenario-Personalbestand, Arbeitsfläche und Verwaltungseinheiten
-- Live-Szenario aus Personalbestand und Ziel-Desk-Sharing-Faktor mit Bedarf, Reserve oder Fehlbestand
-- Geschosstabelle mit Räumen, Arbeitsfläche, Arbeitsplätzen, Verwaltungseinheiten und Zuteilungsgrad
-- Interaktiver SVG-Grundriss mit Geschosswahl, Einfärbung nach Verwaltungseinheit, Nutzung oder Belegungsdichte und Raumdetail
-- Verknüpfung zum Gebäude im Liegenschaften Inventar
+- Sieben kuratierte Workspace-Objekte mit hinterlegtem Geschoss als Galerie, kompakte Liste oder Karte; Suche nach Objekt, ID, Adresse, Ort und Nutzenden
+- Räumlicher Baum Land › Kanton › Ort › Objekt, Facette für Planungsverfügbarkeit, aktive Filter, Sortierung und Paginierung
+- Kartenpunkte und Detail-Standortkarte mit denselben BBL-IDs und Koordinaten wie das Liegenschaften Inventar
+- Objektdetail mit Projekt-/Auftragskontext, Stichtag, demselben adaptiven CD-Hero wie Mietende (Mosaik bzw. Solo-Bild ohne leere Kacheln) samt Bildergalerie und Standortkarte, KPI-Streifen und Inventarverknüpfung
+- Grundrissregister als durchsuch- und sortierbare Tabelle mit Räumen, HNF, Arbeitsplätzen, Ausstattung, Planstand und Synchronisation
+- Schreibgeschützte Grundrissvorschau mit Geschosswechsel, Einfärbung, SVG-Raumauswahl, Bestandsdaten, Legende, Vollbild und fokussiertem Plandruck
+- Ausstattungsregister mit elf Multispace-Modulgruppen und Mengensumme; ehrlich als aggregierte Prototypannahmen bezeichneter CSV-Export
+- Vorbelegte Vorgänge für Reparatur/Ersatz und Raumbedarf; der noch nicht implementierte SIA-Flächennachweis ist deaktiviert
+- Expliziter Handoff: Die Objekt-Aktionskarte öffnet den eigenständigen Plan-Editor in einem neuen Fenster; aus der Grundrissvorschau werden Gebäude und aktuelles Geschoss übergeben. Die separate Planprüfung bleibt als noch nicht verfügbare, deaktivierte Folgeanwendung bezeichnet; Schreib- oder Prüflogik liegt nicht im Portal.
 
 **Zustände**
 
-- Gewähltes Gebäude, Geschoss und Einfärbung werden aus der URL gelesen
-- Fehlende Geschoss-/Raumdaten ergeben einen expliziten Leer- oder Ausfallzustand
-- Das Planungsszenario aktualisiert Ergebnis und Kennzahl ohne Seitenwechsel
+- Katalogzustand und räumliche Auswahl sind vollständig über die Hash-Query rekonstruierbar; unbekannte Ansicht/Sortierung/Planungsverfügbarkeit (`planned`/`legacy`) fällt auf sichere Defaults zurück
+- Objekte mit `planAvailability=legacy` zeigen Bestandskennzahlen und Bestandsgrundrisse in derselben schreibgeschützten Vorschau; nur das nicht vorhandene Ausstattungs-Mengengerüst erhält einen erklärten Leerzustand
+- Ohne `floor` steht die Geschosstabelle, mit gültigem `floor` die Vorschau; unbekannte Geschoss-, Farb- und Raumwerte werden verworfen bzw. auf `ve` zurückgesetzt und aus der kanonischen URL entfernt
+- Raumauswahl und Einfärbung sind URL-reproduzierbar; die Vorschau besitzt bewusst keinen Änderungs-, Speichern- oder Freigabezustand
+- Unbekannte Objekt-ID ergibt eine benannte Nicht-gefunden-Seite; Datenladefehler bleiben vom Nullbestand unterscheidbar
+- Karte, Galerie, Tabellen- und Grundriss-Listener werden beim Routenwechsel abgebaut
 
 **Interaktionen**
 
-- Gebäude, Geschoss und Einfärbung wechseln über native CD-Auswahlfelder bzw. Tag-Links
-- Personalbestand und Desk-Sharing-Faktor rechnen das Szenario unmittelbar neu
-- Räume im Grundriss sind per Maus und Tastatur auswählbar
+- Suche, Sortierung, Filter für Planungsverfügbarkeit, Ansichtswechsel, aktive Filter, Standortbaum und Paginierung
+- Listenzeilen und Kartenpopups öffnen das Objektdetail
+- Registerwechsel mit APG-Tastaturmodell und ?tab=-Synchronisation per replaceState
+- Tabelleninterne Suche/Sortierung für Grundrisse und Ausstattung; Geschosszeile/-link öffnet die Vorschau
+- Vorschau: echte Geschosslinks, Einfärben-Select, Raum im SVG auswählen/abwählen, Raumaktion mit vorbelegtem Objekt/Raum, Vollbild, Plandruck und Rücksprung zur Geschosstabelle; alle Zustandswechsel synchronisieren die Hash-Query
+- CSV-Export der aggregierten Planannahmen aus der Aktionskarte; der Plan-Editor öffnet live in einem neuen Fenster, aus der Vorschau mit Gebäude-/Geschosskontext. Planprüfung und SIA-Flächennachweis bleiben deaktivierte Folgefunktionen.
+
+## js/apps/floorplan-editor.js
+
+Eigenständiger, loginpflichtiger Plan-Editor / Viewer der Workspace-Suite mit `layout='standalone'`. Er übernimmt stabile Fachschlüssel vom Portal, besitzt aber eigenes Chrome, eigenes Dokumentmodell und eigenen Lebenszyklus. Datenquellen sind die kanonischen Bestände `buildings`, `floors`, `spaces` und `shopProducts` sowie das kleine Overlay `workspacePlanning`; der Editor arbeitet stets auf einem Klon und mutiert diese Quellen nicht. `floorplan-editor-canvas.js` liefert die Autoren-Planfläche, `floorplan-editor-model.js` Baseline, Validierung und Verlauf, `floorplan-editor-repository.js` kapselt Arbeitskopie und lokale Publikationssimulation.
+
+**Routen**
+
+- `#/app/floorplan-editor?building=<bbl_id>&floor=<floorId>` — direkter Portal-Handoff; ohne Schlüssel wird das erste geplante Objekt und bevorzugt das 2. Obergeschoss gewählt, unbekanntes explizites Gebäude beziehungsweise fehlende Raumgeometrie ergibt einen erklärten Leer-/Fehlerzustand.
+- Optionale, kanonisierte Query: `color=none|use|sia|ve|module`, `selected=room:<spaceId>|placement:<placementId>`, `view=3d|walk`, `edit=1` und im Bearbeitungsmodus `library=modules`. Nur im aktuellen Dokument vorhandene Auswahlen und bekannte Modi werden übernommen; `history.replaceState` hält den Zustand teilbar.
+
+**Funktionen**
+
+- Lesemodus: Gebäude-/Geschosswahl, nach dem aktuellen Farbattribut gruppierter Ressourcen- und Ausstattungsbaum mit Suche, 2D-Einfärbung, Raum-/Objektinspektor, Schwenken, Zoomen, Plan-/Auswahl-Einpassen, dynamischer Massstab, Strecken-/Flächenmessung und Drucken. 3D und Begehung sind umschaltbare, eindeutig bezeichnete Referenzbild-Zustände zur Validierung des Navigationsmodells.
+- Bearbeitungsmodus: Produkt- und Modulbibliothek durchsuchen, Produkt mit gültiger/ungültiger Platzierungsvorschau in einem Raum setzen, ziehen, per Koordinaten oder Tastatur verschieben, drehen und entfernen; Modul zuweisen; Raumnutzung, SIA-Klasse, Verwaltungseinheit, Kapazität, Nummer, Bezeichnung und Reservierbarkeit pflegen; rechteckige Feedback-Fläche anlegen, verschieben und an acht Griffen oder über X/Y/Breite/Tiefe skalieren; Rückgängig/Wiederholen mit begrenztem Verlauf.
+- Der Rücksprung führt zur schreibgeschützten Portalvorschau desselben Gebäudes und Geschosses. Die bestehenden `floorplan.js`-Renderer von Workspace und Mietendenportal bleiben reine Lesekonsumenten.
+
+**Zustände**
+
+- `Ausgangsstand`, `Neue Arbeitskopie`, `Arbeitskopie — ungespeichert/nur auf diesem Gerät` und `Lokal publiziert — Vn`, Lesen versus Bearbeiten, sauber versus ungespeichert sowie Auswahl, Werkzeug, Messung, Darstellung und ein-/ausgeblendete Seitenpanels. Ungespeicherte Änderungen lösen vor Planwechsel, Rücksprung, Ende der Bearbeitung und Browser-Schliessen eine Verwerfungswarnung aus.
+- Explizites Speichern schreibt pro Geschoss unter `bbl_floorplan_editor_local_v1:<floorId>` ausschliesslich eine validierte Browser-Arbeitskopie mit Schema `bbl.floorplan-editor.draft/v1`. Struktur, IDs, Baseline-Revision, Grenzen und Referenzen werden geprüft; unpassende oder beschädigte Daten werden nicht geladen. «Veröffentlichen» hängt unter `bbl_floorplan_editor_history_v1:<floorId>` maximal fünf unveränderliche lokale Momentaufnahmen mit Schema `bbl.floorplan-editor.history/v1` an. Die Simulation wird vor der Aktion, im Status und im Verlauf als nur auf diesem Gerät sichtbar bezeichnet. Der kanonische Ausgangsbestand bleibt unverändert; die Arbeitskopie lässt sich gezielt verwerfen.
+- Initiale Ausstattung ist deterministisch erzeugte, als `illustrative-prototype` gekennzeichnete Prototypannahme und kein bestätigtes Inventar. Es gibt keine Backend-Synchronisation, gemeinsame Bearbeitung, produktive Versionierung oder fachliche Rollen-/Schreibrechteprüfung.
+- Der aktuelle Browser-Datensatz bettet `rooms[]` nur für den Feedback-Prototyp ein. Das Produktionsziel sind eigenständige Raumdatensätze, referenzierende Planplatzierungen, ein authentifizierter Repository/API-Adapter, serverseitige Versions-/Konfliktprüfung und Row-Level Security; lokale Session-, Query- oder Speicherschlüssel sind keine Autorisierung.
+- `Plan hochladen` bleibt sichtbar deaktiviert. DWG/DXF-Import, Regelprüfung, Befunde, Korrekturschleife und Freigabe sind ausdrücklich nicht Teil dieses Moduls, sondern bleiben Aufgabe der separaten, noch nicht implementierten Planprüfung.
+
+**Interaktionen und Barrierefreiheit**
+
+- Planentitäten und Ressourcen sind fokussierbare Bedienelemente mit Namen und Auswahlzustand; Enter/Leertaste wählen, Escape beendet das Werkzeug beziehungsweise hebt die Auswahl auf. Pfeiltasten verschieben ein gewähltes Objekt, `R` dreht, Delete/Backspace entfernt; `V` wählt, `H` aktiviert Pan, `F` passt den Plan ein, `+`/`-` zoomen und Ctrl/Cmd+Z, Shift+Ctrl/Cmd+Z beziehungsweise Ctrl/Cmd+Y steuern den Verlauf. Backspace entfernt beim Messen den letzten Punkt.
+- Werkzeugleiste und Darstellungsumschalter sind als Gruppen ausgezeichnet, Panel-Schalter synchronisieren `aria-pressed`, Mess- und Änderungsaktionen werden über Live-Region und globale Ansage angekündigt. Pointer-Ziehen, Mausrad-Zoom und Mitteltasten-/Werkzeug-Pan ergänzen die Tastaturbedienung.
+- Delegierte Klick-, Eingabe-, Pointer-, Rad-, Doppelklick- und Tastatur-Listener sowie `beforeunload` teilen einen `AbortController`; `ctx.onUnmount` baut sie beim Routenwechsel vollständig ab.
 
 ## js/apps/room-booking.js
 

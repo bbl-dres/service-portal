@@ -18,7 +18,7 @@ import { floorplanSvg, floorplanLegend, wireFloorplan, COLOR_MODES } from '../fl
 import { initEstateMap } from '../buildings-map.js';
 import { createMapSlot } from '../map-slot.js';
 import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../spatial-tree.js';
-import { heroMosaic, galleryItemsFrom } from '../hero-mosaic.js';
+import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../hero-mosaic.js';
 import { openGallery, restoreGalleryFromQuery } from '../gallery.js';
 import { num, chf, m2, datum } from '../format.js';
 import { landName, statusLabel } from '../domain.js';
@@ -405,7 +405,7 @@ function detail(ctx, id) {
   if (!tabs.some((x) => x.id === active)) active = 'uebersicht';
 
   // Zustand des Grundrisses lebt im Hash: Geschoss, Einfärbung, gewählter Raum.
-  // Damit ist eine bestimmte Ansicht teilbar — «schau dir 2. OG, nach Belegung
+  // Damit ist eine bestimmte Ansicht teilbar — «schau dir 2. OG, nach Verwaltungseinheit
   // eingefärbt, Raum 14 an» ist ein Link.
   // OHNE `?floor=` steht die GESCHOSSTABELLE, nicht gleich ein Plan: ein
   // Mietobjekt umfasst mehrere Geschosse, und welches man ansehen will, ist
@@ -420,7 +420,7 @@ function detail(ctx, id) {
   if (floorId && !query.get('tab')) active = 'grundriss';
   // VORGABE «Verwaltungseinheit», nicht «Keine»: ein einfarbiger Plan lässt
   // nicht erkennen, dass er überhaupt eingefärbt werden KANN — die Auswahl
-  // daneben las sich wie eine Zierde. Mit der Belegung als Startbild ist der
+  // daneben las sich wie eine Zierde. Mit der Verwaltungseinheit als Startbild ist der
   // Nutzen sofort sichtbar, und wer etwas anderes braucht, stellt um. Die
   // Verwaltungseinheit ist zudem die Frage, mit der man in ein Mietobjekt
   // schaut: wer sitzt wo.
@@ -518,7 +518,7 @@ function detail(ctx, id) {
   // Betrachter. Der Wechsel tauscht nur `#mt-grundriss__body` aus — Seitenkopf,
   // Bildmosaik und Reiterleiste bleiben stehen, es wird nicht navigiert.
   function panelGrundriss() {
-    return `<div id="mt-grundriss__body">${
+    return `<div id="mt-grundriss__body" class="floorplan-body">${
       grundrissBodyHtml()}</div>`;
   }
 
@@ -663,7 +663,7 @@ function detail(ctx, id) {
     return `<div class="box fp-room">
       <h3>${C.escape(s.roomNumber)}</h3>
       <dl class="kv kv--tight">${kv.map(([k, v]) => `<dt>${C.escape(k)}</dt><dd>${C.escape(v)}</dd>`).join('')}</dl>
-      ${s.bookable ? `<a class="btn btn--outline btn--sm" href="#/app/room-booking?building=${encodeURIComponent(t.buildingId)}&room=${encodeURIComponent(s.spaceId)}">${C.icon('Calendar', 'btn__icon icon--base')}<span class="btn__text">Raum buchen</span></a>` : ''}
+      ${s.bookable ? `<a class="btn btn--outline btn--sm" href="#/app/room-booking?building=${encodeURIComponent(t.buildingId)}&room=${encodeURIComponent(s.spaceId)}" target="_blank" rel="noopener">${C.icon('External', 'btn__icon icon--base')}<span class="btn__text">Raum buchen</span></a>` : ''}
       ${/* «Vorgang starten» (Sprachkanon): der Klick erstellt einen VORGANG im
             Portal — «Dienstleistung» ist die Katalogseite, nicht die Handlung. */''}
       <h4 class="fp-room__sub">Vorgang starten</h4>
@@ -682,8 +682,8 @@ function detail(ctx, id) {
   function serviceLink(serviceId, href) {
     const s = svc(serviceId);
     if (!s) return '';
-    return `<a class="fp-svc" href="${href}">
-      <span>${C.escape(s.title)}</span>${C.icon('ArrowRight', 'icon--sm fp-svc__go')}</a>`;
+    return `<a class="fp-svc" href="${href}" target="_blank" rel="noopener">
+      <span>${C.escape(s.title)}</span>${C.icon('External', 'icon--sm fp-svc__go')}</a>`;
   }
   const objektQ = `building=${encodeURIComponent(t.buildingId)}`;
   function serviceLinks(s) {
@@ -702,13 +702,13 @@ function detail(ctx, id) {
     ['stoerung-melden', `#/app/fault-report?${objektQ}`],
     ['kleinauftrag-gebaeude', `#/app/fault-report?type=kleinauftrag&${objektQ}`],
     ['umzug-anmelden', `#/app/fault-report?type=umzug&${objektQ}`],
-    ['raumbedarf-melden', '#/app/space-request'],
+    ['raumbedarf-melden', `#/app/space-request?${objektQ}`],
     ['reklamation', `#/app/fault-report?type=reklamation&${objektQ}`],
-  ].map(([sid, href]) => ({ label: (svc(sid) || {}).title, href })).filter((l) => l.label)
+  ].map(([sid, href]) => ({ label: (svc(sid) || {}).title, href, newWindow: true })).filter((l) => l.label)
     // Dokumente hängen am GEBÄUDE, nicht am Mietverhältnis — deshalb hier kein
     // Dokumentenabschnitt, sondern der Weg in die Bauwerksdokumentation, auf
     // dieses Gebäude vorgefiltert.
-    .concat({ label: 'Dokumente zum Gebäude', href: `#/app/document-archive?building=${encodeURIComponent(t.buildingId)}` });
+    .concat({ label: 'Dokumente zum Gebäude', href: `#/app/document-archive?building=${encodeURIComponent(t.buildingId)}`, newWindow: true });
 
   /* ------------------------------------------------- Vertrag und Vorgänge -- */
   // Beide Reiter tragen NUR ihre Tabelle. Die Vertragseckdaten standen zuvor
@@ -891,16 +891,9 @@ function detail(ctx, id) {
   // Koordinaten stehen im Mietverhältnis — kein Zugriff auf den Gebäudebestand.
   const heroMap = createMapSlot();
   async function wireHero() {
-    // BEWUSST der lokale Klick-Loop statt wireHeroMosaic (js/hero-mosaic.js):
-    // der geteilte Helfer bindet über den festen Selektor
-    // '#pf-mosaic [data-gallery]', dieses Mosaik heisst aber '#mt-mosaic' —
-    // und die id ist testgepinnt (scripts/test-tenancies.mjs,
-    // scripts/check-floorplan-section.mjs). Sobald wireHeroMosaic die Kacheln
-    // innerhalb der übergebenen Wurzel sucht statt über die feste id, ersetzt
-    // ein Aufruf diesen Loop.
-    mount.querySelectorAll('#mt-mosaic [data-gallery]').forEach((el) => {
-      el.addEventListener('click', () => openGallery(galleryItems, Number(el.dataset.gallery) || 0, C, { param: 'bild' }));
-    });
+    // Derselbe klassenbasierte Galerie-Vertrag wie Portfolio und Workspace;
+    // die app-eigene id bleibt nur ein stabiler Test-/Kartenanker.
+    wireHeroMosaic(mount, openGallery, galleryItems, C);
     restoreGalleryFromQuery(query, galleryItems, C);
     const el = mount.querySelector('#mt-hero-map');
     if (!el || !Number.isFinite(t.lat) || !Number.isFinite(t.lon)) { heroMap.free(); return; }

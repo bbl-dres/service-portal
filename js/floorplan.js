@@ -21,7 +21,7 @@ export const COLOR_MODES = [
   { value: 'use', label: 'Nutzung' },
   { value: 'sia', label: 'SIA 416' },
   { value: 've', label: 'Verwaltungseinheit' },
-  { value: 'capacity', label: 'Belegung' },
+  { value: 'capacity', label: 'Arbeitsplatzdichte' },
 ];
 
 // Die Farben liegen als CSS-Variablen im Stylesheet (--fp-*), damit Legende und
@@ -31,7 +31,7 @@ const GROUP_KEY = { arbeit: 'work', zusammen: 'collab', infra: 'infra', sonder: 
 const SIA_KEY = { HNF: 'hnf', NNF: 'nnf', VF: 'vf', FF: 'ff', TF: 'tf' };
 // Sechs unterscheidbare Töne; mehr VE je Geschoss kommen praktisch nicht vor.
 const VE_SLOTS = ['a', 'b', 'c', 'd', 'e', 'f'];
-// Belegung: leer / normal / dicht — bewusst eine Ampel, weil die Aussage
+// Arbeitsplatzdichte: leer / normal / dicht — bewusst eine Ampel, weil die Aussage
 // «zu dicht belegt» eine Bewertung ist und nicht bloss eine Kategorie.
 const CAP_KEY = (s) => {
   if (!s.capacity) return 'none';

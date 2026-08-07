@@ -160,51 +160,35 @@ function detail(ctx, id) {
   // Ein Ziel «#» ist ein Platzhalter — dann keinen toten Knopf anbieten,
   // sondern sagen, dass das System im Prototyp nicht angebunden ist.
   const hasTarget = tgt.href && tgt.href !== '#';
-  // Nur das Auslösen eines Vorgangs (type=action) verlangt eine Anmeldung;
-  // Informationsangebote sind frei. Inhalt wird nie versteckt — abgemeldet
-  // erscheint statt des Knopfs der Login-Hinweis (AGOV / FedLogin).
-  const needsLogin = s.type === 'action' && !session.isLoggedIn();
-
-  // Ziel, das die Anmeldung gleich MITERLEDIGT: ein portalinterner Vorgang.
-  // Externe Zielsysteme bleiben aussen vor — ein neuer Tab nach der (asynchronen)
-  // Anmeldung fiele dem Popup-Blocker zum Opfer, und ein fremdes System hat
-  // ohnehin seine eigene Anmeldung.
-  const loginNext = hasTarget && !ext ? tgt.href : '';
-
   // «Zugriff»-Karte, erste Karte der Randspalte (Nutzerentscheid 2026-08-04):
   // derselbe Ort — und seit 2026-08-06 auch derselbe BAUSTEIN wie auf der
   // Anwendungs-Landingpage (C.accessCard). Vorher stellte die Anwendung den
   // Knopf nach oben und den Text darunter, die Dienstleistung umgekehrt und in
   // halber Grösse; die Karte beantwortet aber auf beiden Seiten dieselbe Frage.
-  // Die vier Knopfzustände (kein Ziel · extern · abgemeldet · angemeldet)
-  // leitet der Baustein selbst ab.
+  // Ziel, Sitzungshinweis und sicherer Neues-Tab-Vertrag werden vom Baustein
+  // gemeinsam abgeleitet.
   const zugriffCard = C.accessCard({
-    href: hasTarget ? tgt.href : '', label: ctaLabel, external: ext,
+    href: hasTarget ? tgt.href : '', label: ctaLabel, external: ext, newWindow: true,
     // Nur das Auslösen eines Vorgangs (type=action) verlangt eine Anmeldung;
     // Informationsangebote sind frei. Externe Zielsysteme bringen ihre eigene mit
-    // — ein neuer Tab nach der (asynchronen) Anmeldung fiele ohnehin dem
-    // Popup-Blocker zum Opfer.
+    // — bei internen Zielen übernimmt die im neuen Tab geöffnete Anwendung
+    // ihren eigenen Router-Login-Gate.
     requiresLogin: s.type === 'action' && !ext,
     loggedIn: session.isLoggedIn(), user: session.user(),
     free: s.type !== 'action' ? 'Frei zugänglich — keine Anmeldung erforderlich.' : '',
   });
 
-  const ctaBlock = needsLogin
-    ? C.loginGate(`Zum Starten des Vorgangs «${C.escape(s.title)}» ist eine Anmeldung mit AGOV / FedLogin erforderlich. Alle Informationen auf dieser Seite sind frei einsehbar.`,
-      // Der Knopf steht genau dort, wo sonst «Vorgang starten» steht — also tut
-      // er beides. Ohne Ziel (externes System) bleibt es beim reinen Anmelden.
-      { next: loginNext, label: loginNext ? `Anmelden und ${ctaLabel}` : '' })
-    : `<div class="row mt-4">
-        ${/* CD Btn.vue: das Icon steht im DOM zuerst, btn--icon-right dreht die
-              Reihenfolge; das Label trägt IMMER den .btn__text-Wickel. */''}
-        ${hasTarget
-          ? `<a class="btn btn--outline btn--lg btn--icon-right" href="${C.escape(tgt.href)}"${
-              ext ? ' target="_blank" rel="noopener external"' : ''}>${
-              C.icon(ext ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></a>`
-          : `<span class="btn btn--outline btn--lg btn--icon-right" aria-disabled="true">${
-              C.icon(ext ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></span>
-             <span class="small muted">Im Prototyp ist kein Zielsystem angebunden.</span>`}
-      </div>`;
+  const ctaBlock = `<div class="row mt-4">
+      ${/* CD Btn.vue: das Icon steht im DOM zuerst, btn--icon-right dreht die
+            Reihenfolge; das Label trägt IMMER den .btn__text-Wickel. */''}
+      ${hasTarget
+        ? `<a class="btn btn--outline btn--lg btn--icon-right" href="${C.escape(tgt.href)}" target="_blank" rel="${
+            ext ? 'noopener external' : 'noopener'}">${
+            C.icon('External', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></a>`
+        : `<span class="btn btn--outline btn--lg btn--icon-right" aria-disabled="true">${
+            C.icon(ext ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></span>
+           <span class="small muted">Im Prototyp ist kein Zielsystem angebunden.</span>`}
+    </div>`;
 
   // Symbolbild je Thema (verifizierte Unsplash-ids aus dem Bestand); Fallback =
   // Farbfläche. Deckt sich mit den Themen-Bildern der Startseite/Bereiche.

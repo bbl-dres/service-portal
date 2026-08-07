@@ -13,7 +13,7 @@ export const needs = ['buildings'];
 // persönlicher Vorgang erfasst» sagt mehr als ein Einheitssatz.
 export const loginText = "«Raumbedarf melden» erfasst Ihren Bedarf als Vorgang unter «Meine Vorgänge». Bitte melden Sie sich mit AGOV / FedLogin an, um den Antrag zu erstellen.";
 export default async function render(ctx) {
-  const { mount, core, engine, session, C, setTitle, setCrumbs, navigate } = ctx;
+  const { mount, query, core, engine, session, C, setTitle, setCrumbs, navigate } = ctx;
   setTitle('Raumbedarf melden');
   setCrumbs(trail(DIENSTLEISTUNGEN, { label: 'Raumbedarf melden' }));
 
@@ -22,11 +22,18 @@ export default async function render(ctx) {
   const dsf = core.ref().deskSharingFactor || 0.8;
   const AREA_PER_WORKPLACE = 12;
 
+  // Objekt aus einem aufrufenden Portal vorbelegen, sofern die Kennung wirklich
+  // in der Gebäudeliste vorkommt. Ungültige bzw. veraltete Deep-Links fallen auf
+  // das bisherige Standardverhalten (erstes Gebäude) zurück.
+  const requestedBuildingId = query.get('building');
+  const requestedBuilding = requestedBuildingId
+    && buildings.some((building) => building.bbl_id === requestedBuildingId);
+
   const state = {
     step: 1,
     org: session.user().org,
     costCenter: '',
-    buildingId: buildings[0] ? buildings[0].bbl_id : '',
+    buildingId: requestedBuilding ? requestedBuildingId : (buildings[0] ? buildings[0].bbl_id : ''),
     persons: 10,
     nawClass: naw[1] ? naw[1].id : (naw[0] && naw[0].id),
     termin: '',

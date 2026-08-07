@@ -130,6 +130,9 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
     await new Promise(r => setTimeout(r, 600));
     const D = await d.evaluate(`(async () => { const s = ms => new Promise(r => setTimeout(r, ms)); let n = 0; while (!document.querySelector('.tab__control') && n++ < 100) await s(100);
       const r = { h1: (document.querySelector('h1') || {}).textContent, tabs: [...document.querySelectorAll('.tab__control')].map(t => t.textContent.trim()) };
+      r.launchLinks = [...document.querySelectorAll('.detail-layout__aside a.fp-svc[href^="#/app/"]')]
+        .map(a => ({ target: a.getAttribute('target') || '', rel: a.getAttribute('rel') || '' }));
+      r.serviceDetailTarget = document.querySelector('.detail-layout__aside a.fp-svc[href^="#/services/"]')?.getAttribute('target') || '';
       // Verträge tab → contracts table rows
       const vt = [...document.querySelectorAll('.tab__control')].find(t => /Verträge/.test(t.textContent)); if (vt) { vt.click(); await s(200); }
       const vp = document.querySelector('#pf-tab-panel-vertraege'); r.vertraegeRows = vp ? vp.querySelectorAll('table tbody tr').length : 0;
@@ -189,6 +192,10 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
     check(D.tabs.length === 7, `building detail has 7 tabs (${D.tabs.length})`);
     check(['Flächen', 'Ausstattung', 'Verträge', 'Kosten', 'Dokumente', 'Kontakte'].every(t => D.tabs.some(x => x.includes(t))), 'entity + core tabs present');
     check(!D.tabs.some(t => /Medien|Bauprojekte/.test(t)), 'Medien + Bauprojekte tabs removed');
+    check(D.launchLinks.length === 3 && D.launchLinks.every(a =>
+      a.target === '_blank' && a.rel.split(/\s+/).includes('noopener')),
+      `specialist-application launches open new tabs (${D.launchLinks.length})`);
+    check(!D.serviceDetailTarget, 'service-description navigation stays in the current tab');
     check(D.vertraegeRows >= 1, `Verträge tab shows contracts (${D.vertraegeRows} rows)`);
     check(D.kostenTotalRow && D.kostenRows >= 1, `Kosten tab shows table + total row (${D.kostenRows} rows)`);
     check(D.mosaicCells >= 2, `image mosaic renders its tiles (${D.mosaicCells})`);

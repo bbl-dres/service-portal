@@ -11,6 +11,8 @@
 
 import { audienceTags } from '../domain.js';
 
+const LAUNCH_LABEL = 'Anwendung starten';
+
 // Die Landingpage-Felder (long, entries, access, resources, contact, updated)
 // stehen seit 2026-07 am Anwendungsdatensatz selbst — es gab keinen Grund für
 // eine zweite Datei mit demselben Schlüssel. `page` bleibt als lokaler Alias
@@ -35,7 +37,7 @@ export default function render(ctx, appId) {
   // zusätzlichen aus den Seitendaten (BBL GIS IMMO hat z. B. Portal und
   // Liegenschaftsinventar). Ein Katalog-Link auf «#» ist ein Platzhalter.
   const catalogEntry = a.link && a.link.href && a.link.href !== '#'
-    ? { label: `${a.name} öffnen`, href: a.link.href, kind: a.link.kind }
+    ? { label: LAUNCH_LABEL, href: a.link.href, kind: a.link.kind }
     : null;
   const entries = [...(catalogEntry ? [catalogEntry] : []), ...(page.entries || [])];
   // Der Knopf im Zugriff-Kasten führt auf den ersten Einstiegspunkt.
@@ -43,7 +45,7 @@ export default function render(ctx, appId) {
 
   const entryItem = (e) => C.downloadItem({
     href: e.href, title: e.label, note: e.note, heading: 'h3', wrapLi: true,
-    external: e.kind === 'external', icon: e.kind === 'external' ? 'External' : 'ArrowRight',
+    external: e.kind === 'external', newWindow: true, icon: 'External',
     meta: [e.kind === 'external' ? 'Externes System' : 'Im Kundenportal'],
   });
   const resourceItem = (r) => C.downloadItem({
@@ -92,13 +94,14 @@ export default function render(ctx, appId) {
         <h2 class="sr-only" id="app-aside-head">Zugriff und Kontakt</h2>
         ${C.accessCard({
           href: primary ? primary.href : '',
-          label: primary ? primary.label : `${a.name} öffnen`,
+          label: LAUNCH_LABEL,
           external: primary ? primary.kind === 'external' : false,
+          newWindow: true,
           // Portalinterne Fachanwendungen (#/app/…) verlangen eine Anmeldung —
           // dieselbe Sperre, die der Router vor der Anwendung selbst zieht
-          // (js/router.js). Externe Systeme bringen ihre eigene mit.
+          // (js/router.js). Der Einstieg öffnet diese Sperre im neuen Tab;
+          // externe Systeme bringen ihre eigene Anmeldung mit.
           requiresLogin: !!primary && primary.kind !== 'external' && String(primary.href).startsWith('#/app/'),
-          loginLabel: 'Anmelden und öffnen',
           loggedIn: session.isLoggedIn(), user: session.user(),
           note: page.access && page.access.note ? page.access.note : '',
           steps: (page.access && page.access.steps) || [],

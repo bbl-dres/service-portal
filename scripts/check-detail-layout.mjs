@@ -8,6 +8,7 @@ import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 const SEITEN = [
   ['Liegenschaften Inventar', `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1080/4840/AF')}`],
   ['Mietende',                `${APP_BASE}/app/tenancies/MV-2026-001`],
+  ['Workspace Management',    `${APP_BASE}/app/workspace?id=${encodeURIComponent('1080/6650/AA')}`],
 ];
 
 const cdp = await launch({ webgl: true });

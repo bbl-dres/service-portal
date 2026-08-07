@@ -80,9 +80,15 @@ const activeAnchor = `(document.querySelector('.anchor-nav [data-anchor].menu__i
     check(applicationHref === '#/applications/datenportal',
       'application result uses the central detail link', applicationHref);
     await searchPage.evaluate(`location.hash = ${JSON.stringify(applicationHref)}`);
-    await waitFor(searchPage, `!!document.querySelector('a[href="#/app/dataportal"]')`);
-    check(await searchPage.evaluate(`!!document.querySelector('a[href="#/app/dataportal"]')`),
-      'application detail retains its launch target');
+    await waitFor(searchPage, `!!document.querySelector('.access-card a[href="#/app/dataportal"]')`);
+    const applicationLaunch = await searchPage.evaluate(`(() => {
+      const links = [...document.querySelectorAll('.access-card a[href="#/app/dataportal"], .download-item[href="#/app/dataportal"]')];
+      return links.map((a) => ({ label: (a.querySelector('.btn__text, .download-item__title') || a).textContent.trim(),
+        target: a.getAttribute('target') || '', rel: a.getAttribute('rel') || '' }));
+    })()`);
+    check(applicationLaunch.length >= 2 && applicationLaunch.every((a) =>
+      a.label === 'Anwendung starten' && a.target === '_blank' && a.rel.split(/\s+/).includes('noopener')),
+    'application detail retains a neutral, safe new-tab launch contract', JSON.stringify(applicationLaunch));
 
     const documentTitle = 'Dokumentenverzeichnis Bundeshaus West';
     await searchPage.evaluate(`location.hash = ${JSON.stringify(`#/search?q=${encodeURIComponent(documentTitle)}`)}`);

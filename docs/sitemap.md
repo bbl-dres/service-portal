@@ -85,8 +85,8 @@ Startseite  #/                    (reached via the logo, not a nav item)
 ├── Dienstleistungen  #/services
 │     Catalogue of startable services. Search, filters, gallery/list, pagination.
 │     └── #/services/<serviceId>
-│           CTA «Vorgang starten» (login-gated) or a link to the system that
-│           performs it. Starting one creates a Vorgang → Meine Vorgänge.
+│           CTA «Vorgang starten» opens the target in a new tab; an internal
+│           target shows its central login gate there when required.
 │
 ├── Daten und Digitalisierung  #/data
 │     ├── #/data/catalog (+ /<id>)      Datenbezug und API Verzeichnis (DCAT-AP-CH)
@@ -166,11 +166,11 @@ The service/information distinction becomes **structural** rather than a badge. 
 2. **Unknown route → a 404 place** with its own `h1` and a link home. Never a silent redirect to the Startseite.
 3. **Descriptions are public, systems are gated.** Every catalogue and detail page stays readable when logged out — including each application's landing page (`#/applications/<id>`), which says what the application does, who may use it and how to get an account. Login is required for anything that *is* a system or *starts* a process:
    - **every specialist application** (`#/app/…`) — gated centrally in `js/router.js`, not per app; the application supplies only the wording via `export const loginText` (Nutzerentscheid 2026-08-06). Before that, five of seventeen brought their own gate and twelve were simply open.
-   - `#/my-cases` and the CTA on a service detail page, which render `C.loginGate` **in place of the form**, keeping the surrounding page visible.
+   - `#/my-cases`, which renders `C.loginGate` **in place of the protected content**.
 
-   The login button rendered by `C.loginGate`/`C.accessCard` carries its destination (`data-login-next` → `window.__login(next)`), so signing in from a service or application page **also opens the target** — it used to log you in and leave you to press the real button a second time.
+   Application and service launch actions remain real links and open their target in a new tab. If that target is an internal `#/app/…` route, its central router gate performs the login there. Ordinary same-tab gates can still carry a destination (`data-login-next` → `window.__login(next)`).
 
-4. **One access card.** `C.accessCard` answers «how do I get in?» on both the service and the application landing page, with the button on top and four derived states: no target → greyed out · external system → new tab, no login · internal + logged out → login-and-open · internal + logged in → link plus the session context.
+4. **One access card.** `C.accessCard` answers «how do I get in?» on both service and application landing pages. Destination type (`external`) and window behavior (`newWindow`) are independent: launch actions open a new tab, internal targets retain their portal classification, missing targets remain greyed out, and authentication is explained without turning the source page into the authorization boundary.
 5. **State change ≠ navigation.** If only the query changed on the same path, focus returns to the triggering control and the page does not scroll (WCAG 3.2.2). Real navigation scrolls to top and focuses the `h1`.
 6. **Stale renders are dropped.** Every dispatch takes a ticket; a module that `await`s before writing must check `ctx.stale()` immediately before `mount.innerHTML =`.
 7. **Renamed routes redirect, never 404** — shared links are exactly the ones that break — the map lives in `js/router.js` (`REDIRECTS`).

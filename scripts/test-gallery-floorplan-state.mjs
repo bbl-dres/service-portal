@@ -34,7 +34,10 @@ async function galleryLink({ label, route, imageId, position, total }) {
     check(result.overlay, 'Overlay öffnet beim ersten Renderlauf');
     check(result.path === `#${route.split('?')[0]}`, 'Route bleibt unverändert', result.path);
     check(result.imageId === imageId, 'Bild-ID bleibt im Hash', result.imageId);
-    check(result.position.includes(`Bild ${position} von ${total}`),
+    const expectedPosition = total === 1
+      ? !/Bild \d+ von \d+/.test(result.position)
+      : result.position.includes(`Bild ${position} von ${total}`);
+    check(expectedPosition,
       'bezeichnetes Bild wird wiederhergestellt', result.position.trim());
     check(result.focus === 'close', 'Fokus steht im wiederhergestellten Dialog', result.focus);
     const problems = await page.problems();
@@ -117,6 +120,11 @@ try {
   await galleryLink({
     label: 'Mietverhältnis', route: '/app/tenancies/MV-2026-001',
     imageId: 'MV-2026-001-bild-1', position: 2, total: 3,
+  });
+  await galleryLink({
+    label: 'Workspace-Objekt',
+    route: `/app/workspace?id=${encodeURIComponent('1080/6650/AA')}`,
+    imageId: '1080-6650-AA-bild-0', position: 1, total: 1,
   });
   await unknownGalleryLink();
   await staleGalleryRestore();

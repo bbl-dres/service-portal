@@ -26,3 +26,15 @@ export const prozess = (processId) => `#/app/process-docs?id=${q(processId)}`;
 export const shop = () => '#/app/shop';
 export const shopProdukt = (productId) => `#/app/shop/product/${q(productId)}`;
 export const shopWarenkorb = () => '#/app/shop/cart';
+
+/**
+ * Standalone Plan-Editor. Nur dauerhafte Fachschlüssel gehören in die Übergabe;
+ * der Editor leitet seinen sicheren Rücksprung zum Workspace-Portal selbst ab.
+ */
+export const floorplanEditor = (buildingId, floorId = '') => {
+  const params = new URLSearchParams();
+  if (buildingId) params.set('building', String(buildingId));
+  if (floorId) params.set('floor', String(floorId));
+  const query = params.toString();
+  return `#/app/floorplan-editor${query ? `?${query}` : ''}`;
+};

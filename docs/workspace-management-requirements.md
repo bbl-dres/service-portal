@@ -295,21 +295,24 @@ Dritten**.
 
 ---
 
-## 7 Wo der heutige Mockup danebenliegt
+## 7 Welche Lücken der frühere Kapazitäts-Mockup zeigte
 
-[`js/apps/workspace.js`](../js/apps/workspace.js) (321 Zeilen) zeigt: Gebäudewahl ·
-vier Kennzahlen · ein «Planungsszenario» (Mitarbeitende × Desk-Sharing-Faktor) ·
-eine Geschosstabelle · den Grundriss mit drei Einfärbungen und einem Raum-Panel.
+Die frühere Fassung von [`js/apps/workspace.js`](../js/apps/workspace.js) zeigte:
+Gebäudewahl · vier Kennzahlen · ein «Planungsszenario» (Mitarbeitende ×
+Desk-Sharing-Faktor) · eine Geschosstabelle · den Grundriss mit drei
+Einfärbungen und einem Raum-Panel. Die Portalumsetzung vom 7. August 2026
+adressiert davon den Objekt-, Projekt-, Auftrags- und Lesekontext. Die übrigen
+Punkte bleiben Anforderungen an Plan-Editor und Planprüfung.
 
 | Befund | Warum es die Anforderung verfehlt |
 | --- | --- |
 | **Multispace-Module kommen nicht vor.** Kein Modul, kein Sub-Modul, kein Möbelstück, kein Artikel. | Das ist Layer 2 und damit **Anforderung Nr. 4, Prio 1, Muss** — und der eigentliche Gegenstand des Fachgebiets (WSM-D1…D7). Ohne Module ist es Flächenmanagement, nicht Workspace Management. |
 | **Kein Projekt, kein Auftrag, kein Stichtag.** Die App kennt keinen Planungsstand und keine Zeitachse. | Projekt je Gebäude + Stichtag sind die Klammer der realen Lösung; ohne sie gibt es weder Historie (WSM-F4) noch Nachvollziehbarkeit (WSM-B3). |
 | **Der Desk-Sharing-Rechner ist rückwärts gerechnet.** `state.people = workplaceCount / factor` — die App leitet den Personalbestand aus den Arbeitsplätzen ab und prüft dann, ob die Arbeitsplätze für diesen Bestand reichen. Das Ergebnis ist konstruktionsbedingt «ausgeglichen». | Anforderung ist die umgekehrte Richtung: aus Bedarf und Auslastung (SUS, WSM-E2) die nötige Fläche und Modulmenge ableiten. |
-| **Auslastung ist geschätzt, nicht erhoben.** «Belegungsdichte» ist m²/Arbeitsplatz aus `floorplan.js`, keine Nutzungsmessung. | WSM-E1 verlangt belegt / leer / **kalt belegt** je Platz samt Tätigkeit — auch für Sitzungs- und Lounge-Flächen. |
+| **Auslastung ist nicht erhoben.** «Arbeitsplatzdichte» ist m²/Arbeitsplatz aus `floorplan.js`, keine Nutzungsmessung. | WSM-E1 verlangt belegt / leer / **kalt belegt** je Platz samt Tätigkeit — auch für Sitzungs- und Lounge-Flächen. |
 | **Kein Inventar, keine Identifikation, kein Lifecycle.** | WSM-F1…F3; die Schnittstelle zum Assetmanagement ist «Muss». |
 | **Keine Szenarien / Varianten.** Ein Zustand, ein Ergebnis. | WSM-C2 verlangt Planszenarien; im UAT ist genau das die schmerzhafteste Lücke der echten Lösung. |
-| **Keine Planausgabe.** Kein Druck, kein Flächennachweis, kein Plankopf. | WSM-H1…H8 sind vollständig spezifiziert und gehen an Dritte. |
+| **Keine formelle Planausgabe.** Die Portalvorschau kann den sichtbaren Grundriss drucken; Flächennachweis, Massstab, Beilagen und Plankopf fehlen bewusst. | WSM-H1…H8 sind vollständig spezifiziert und gehen an Dritte. |
 | **Rollen fehlen.** Eine Sicht für alle. | ILBO, Portfoliomanager, Umzugsplaner, CAD-Planung und FM brauchen unterschiedliche Einstiege. |
 | **Was trägt:** Grundriss als Inline-SVG mit Einfärbung, Legende mit Σ m², Raumauswahl, Geschosswechsel ([`js/floorplan.js`](../js/floorplan.js)). | Bleibt — der SIA-416-Modus liegt bereits vor und ist genau der Report aus WSM-H6. |
 

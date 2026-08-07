@@ -1,6 +1,8 @@
 // Bildmosaik mit Standortkarte — der Kopf der Objekt-Detailseiten.
 //
 // Aufbau: ein grosses Bild links, bis zu vier Nebenkacheln, rechts die Karte.
+// Gibt es nur ein Bild, belegt es den gesamten Bildbereich ohne leere
+// Nebenkacheln; die Standortkarte bleibt daneben.
 // Jede Kachel öffnet die Vollbildgalerie (js/gallery.js) bei ihrem eigenen
 // Bild; die letzte echte Nebenkachel trägt die «Alle Bilder anzeigen»-Auflage
 // mit der Zahl der verdeckten Aufnahmen.
@@ -34,6 +36,7 @@ export function heroMosaic(C, { items = [], mapId, mapLabel, id = 'pf-mosaic', l
     </div>`;
 
   const side = items.slice(1, 1 + SIDE_SLOTS);
+  const hasSide = side.length > 0;
   const hidden = n - (1 + side.length);
   // Auflage auf der letzten ECHTEN Nebenkachel — nie auf einem Platzhalter, der
   // führt nirgendwohin. Bei genau zwei Bildern bleibt sie weg: dort verdeckte
@@ -72,9 +75,9 @@ export function heroMosaic(C, { items = [], mapId, mapLabel, id = 'pf-mosaic', l
     ? `<p class="pf-hero__maplink"><a href="${esc(mapsUrl)}" target="_blank" rel="external noopener noreferrer">Auf Google Maps ansehen</a></p>`
     : '';
 
-  return `<div class="pf-mosaic pf-mosaic--map" id="${esc(id)}">
+  return `<div class="pf-mosaic pf-mosaic--map${hasSide ? '' : ' pf-mosaic--solo'}" id="${esc(id)}">
     ${mainCell}
-    <div class="pf-mosaic__side">${sideTiles}</div>
+    ${hasSide ? `<div class="pf-mosaic__side">${sideTiles}</div>` : ''}
     <div class="pf-hero__mapcol">
       ${mapHead}
       <div class="pf-hero__map" id="${esc(mapId)}" role="group" aria-label="${esc(mapLabel)}"></div>

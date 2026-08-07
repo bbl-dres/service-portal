@@ -49,6 +49,11 @@ const DEFERRED = {
   tenancies:        'data/tenancies.json',
   floors:           'data/floors.json',
   spaces:           'data/spaces.json',
+  // Workspace-Management-Portal: nur der fachliche Overlay-Stand zur
+  // kanonischen Liegenschaft (Projekt, Planstände und Ausstattungssummen).
+  // Adresse, Bild, Koordinaten, Geschosse und Räume bleiben in ihren Golden-
+  // Record-Beständen und werden nicht in dieser Datei dupliziert.
+  workspacePlanning:'data/workspace-planning.json',
   // Metadatenkatalog (#/app/metadata-catalog): die beiden Schichten UNTER dem
   // DCAT-Katalog. `businessObjects` ist technologieneutral (Geschäftsobjekt mit
   // Attributen, je Datendomäne), `systemTables` systemgebunden (Tabelle bzw.
@@ -84,6 +89,7 @@ const AREA = {
   assets: 'Ausstattung', contracts: 'Verträge', costs: 'Kosten', areas: 'Flächen',
   buildingContacts: 'Objektkontakte', landcovers: 'Bodenbedeckung',
   tenancies: 'Mietverhältnisse', floors: 'Geschosse', spaces: 'Räume',
+  workspacePlanning: 'Workspace-Planungsstände',
   businessObjects: 'Geschäftsobjekte', systemTables: 'Systemtabellen',
   processes: 'Prozesse',
   shopProducts: 'Shop-Produkte', shopCategories: 'Shop-Kategorien',
@@ -107,7 +113,8 @@ function normalizeBuilding(f) {
     street: [p.adr_str, p.adr_hsnr].filter(Boolean).join(' ').trim(),
     zip: p.adr_plz || '', city: p.adr_ort || '', land: p.adr_land || '', canton: p.adr_reg || '',
     lat: p.wgs84_lat, lng: p.wgs84_lon,
-    gf: p.garea_gf || 0, hnf: p.garea_hnf || 0, buildYear: p.bbl_bjahr || '',
+    gf: p.garea_gf || 0, ngf: p.garea_ngf || 0, hnf: p.garea_hnf || 0,
+    totalFloors: p.gastw || 0, buildYear: p.bbl_bjahr || '',
     ownership: OWNERSHIP(p.bbl_eigen), erhaltung: p.bbl_ostr || '', heritage: p.bbl_arch === 'Ja',
     // Recherchierte, belegte Angaben zu den echten Bauten (siehe research/README.md).
     // Leer bei Objekten, für die nichts publiziert ist — dann entfällt die Zeile.
@@ -318,6 +325,7 @@ export const core = {
   tenancy: (id) => find(DATA.tenancies, 'tenancyId', id),
   floors: () => DATA.floors || [],
   floor: (id) => find(DATA.floors, 'floorId', id),
+  floorsForBuilding: (bid) => (DATA.floors || []).filter((floor) => floor.buildingId === bid),
   spaces: () => DATA.spaces || [],
   floorsForTenancy: (t) => (t && t.floors ? t.floors : []).map((fid) => find(DATA.floors, 'floorId', fid)).filter(Boolean),
   spacesForFloor: (fid) => (DATA.spaces || []).filter((s) => s.floorId === fid),

@@ -43,6 +43,7 @@ const ROUTES = [
   ['/app/fault-report',             'Störungs'],
   ['/app/building-create',          'Gebäude erfassen'],
   ['/app/workspace',                'Workspace Management'],
+  ['/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og', 'Plan-Editor'],
   ['/app/room-booking',             'Raumbuchung'],
   ['/app/transaction',              'Veräusserung'],
   ['/app/api-docs',                 'BBL Kundenportal'],

@@ -1223,15 +1223,17 @@ function readForm(mount, map) {
 
 // --- Download items (download-item.postcss) ----------------------------------
 // Eine CD-download-item-Zeile für alle Fälle (Dokument, App-Einstieg, Ressource,
-// Anhang). Ein echtes externes Ziel öffnet ein neues Fenster; `#` degradiert zu
-// einem deaktivierten Ersatz. `note`/`desc` sind austauschbar (Datenobjekte tragen
-// `desc`, App-Einträge `note`); `icon` überschreibt das Standardsymbol (extern →
-// External, sonst Download). `wrapLi` umschliesst mit `<li>` für `.download-items`.
+// Anhang). `external` bezeichnet ein fremdes System; `newWindow` kann unabhängig
+// davon auch einen portalinternen App-Einstieg in einem neuen Tab öffnen. `#`
+// degradiert zu einem deaktivierten Ersatz. `note`/`desc` sind austauschbar
+// (Datenobjekte tragen `desc`, App-Einträge `note`); `icon` überschreibt das
+// Standardsymbol. `wrapLi` umschliesst mit `<li>` für `.download-items`.
 function downloadItem({ href, title, note = '', desc = '', meta = [], icon: iconName,
-  external = false, heading = 'h3', wrapLi = false, download = false } = {}) {
+  external = false, newWindow = false, heading = 'h3', wrapLi = false, download = false } = {}) {
   const titleTag = /^h[2-6]$/.test(heading) ? heading : 'h3';
   const text = note || desc;
-  const sym = iconName || (external ? 'External' : 'Download');
+  const opensNewWindow = external || newWindow;
+  const sym = iconName || (opensNewWindow ? 'External' : 'Download');
   const inner = `${icon(sym, 'download-item__icon')}
     <div>
       <${titleTag} class="download-item__title">${escape(title)}</${titleTag}>
@@ -1240,7 +1242,9 @@ function downloadItem({ href, title, note = '', desc = '', meta = [], icon: icon
         meta.filter(Boolean).map(m => `<span class="meta-info__item">${escape(m)}</span>`).join('')}</p>` : ''}
     </div>`;
   const real = href && href !== '#';
-  const attrs = external ? ' target="_blank" rel="noopener external"' : (download ? ' download' : '');
+  const attrs = opensNewWindow
+    ? ` target="_blank" rel="${external ? 'noopener external' : 'noopener'}"`
+    : (download ? ' download' : '');
   const el = real
     ? `<a class="download-item" href="${escape(href)}"${attrs}>${inner}</a>`
     : `<span class="download-item" aria-disabled="true" title="Im Prototyp nicht verfügbar">${inner}
@@ -1278,22 +1282,65 @@ function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) {
 // Kastens pflegen — die Randspalte ist genau die Stelle, an der ein Nutzer
 // Wiedererkennung erwartet.
 
-// `links` = [{ label, href }]. Die Zeilen tragen dasselbe `.fp-svc`-Raster wie
-// die Kurzwege im Raumdetail: Beschriftung, Folgepfeil.
+// Altvertrag: `links` = [{ label, href }]. Die Zeilen tragen dasselbe
+// `.fp-svc`-Raster wie die Kurzwege im Raumdetail: Beschriftung, Folgepfeil.
+//
+// Der strukturierte Vertrag `items` ergänzt echte Links und Buttons sowie
+// noch nicht verfügbare Übergaben:
+//   { type:'link',     label, href, description?, icon?, id? }
+//   { type:'button',   label,       description?, icon?, id?, disabled? }
+//   { type:'handoff',  label,       description?, icon?, id? }
+// `disabled` ist ein Alias für `handoff`. Die Beschreibung bleibt sichtbar,
+// damit ein nicht verfügbares Ziel nicht wie ein defekter Link wirkt.
 //
 // OHNE führendes Symbol: die Symbole standen für die verlinkte Dienstleistung
 // («Wrench» für Störung melden, «File» für Dokumente) und wiederholten damit
 // nur die Beschriftung daneben — ein Symbol muss etwas beitragen, was der Text
 // nicht schon sagt. Der Pfeil rechts bleibt: er sagt, dass die Zeile wegführt.
-// `icon` an den Aufrufstellen wird ignoriert (Altbestand, schadet nicht).
-function actionCard({ title = 'Aktionen', lead = '', links = [] } = {}) {
-  if (!links.length) return '';
+// `icon` im alten `links`-Vertrag wird weiterhin ignoriert: bestehende
+// Inventar-Aufrufer behalten damit den Folgepfeil und ihr bisheriges Bild.
+const ACTION_ICON = /^[A-Za-z][A-Za-z0-9_-]*$/;
+function actionCardRow(item = {}) {
+  let type = ['link', 'button', 'handoff', 'disabled'].includes(item.type) ? item.type : 'disabled';
+  if (type === 'handoff') type = 'disabled';
+  if (type === 'link' && !item.href) type = 'disabled';
+
+  const description = item.description || '';
+  const content = `<span class="fp-svc__content"><span class="fp-svc__label">${escape(item.label)}</span>${
+    description ? `<small class="fp-svc__description">${escape(description)}</small>` : ''}</span>`;
+  const fallbackIcon = type === 'disabled' || item.disabled ? 'Lock' : item.newWindow ? 'External' : 'ArrowRight';
+  const iconName = ACTION_ICON.test(String(item.icon || '')) ? item.icon : fallbackIcon;
+  const rowIcon = icon(iconName, 'icon--sm fp-svc__go');
+  const id = item.id != null && item.id !== '' ? ` id="${escape(item.id)}"` : '';
+
+  if (type === 'link') {
+    const externalWindow = item.newWindow ? ' target="_blank" rel="noopener"' : '';
+    return `<a class="fp-svc" href="${escape(item.href)}"${id}${externalWindow}>${content}${rowIcon}</a>`;
+  }
+  if (type === 'button') {
+    const disabled = item.disabled ? ' disabled' : '';
+    const cls = item.disabled ? ' fp-svc--disabled' : '';
+    return `<button class="fp-svc${cls}" type="button"${id}${disabled}>${content}${rowIcon}</button>`;
+  }
+  return `<span class="fp-svc fp-svc--disabled" role="link" aria-disabled="true"${id}>${content}${rowIcon}</span>`;
+}
+
+function actionCard({ title = 'Aktionen', lead = '', links = [], items } = {}) {
+  // `items` ist absichtlich der Primärvertrag, sobald es als Liste übergeben
+  // wird. So kann ein Aufrufer mit `items:[]` die Karte explizit ausblenden.
+  // Legacy-Links werden auf die neue Form normalisiert; ihre historischen
+  // `icon`-Felder gelangen dabei nicht in die Darstellung (siehe oben), der
+  // explizite Fenstervertrag bleibt jedoch erhalten.
+  const rows = Array.isArray(items)
+    ? items
+    : (Array.isArray(links) ? links : []).map((link) => ({
+      type: 'link', label: link.label, href: link.href, newWindow: !!link.newWindow,
+    }));
+  if (!rows.length) return '';
   return `<div class="box">
     <h2>${escape(title)}</h2>
     ${lead ? `<p class="small muted">${escape(lead)}</p>` : ''}
-    <div class="fp-svc-list">${links.map((l) => `<a class="fp-svc" href="${escape(l.href)}">${
-      `<span>${escape(l.label)}</span>`}${
-      icon('ArrowRight', 'icon--sm fp-svc__go')}</a>`).join('')}</div>
+    <div class="fp-svc-list">${rows.map(actionCardRow).join('')}</div>
   </div>`;
 }
 
@@ -2133,22 +2180,24 @@ function loginButton({ next = '', label = '', cls = 'btn btn--outline btn--icon-
 // Dienstleistung umgekehrt und in halber Grösse. Der Knopf gehört nach oben
 // (Nutzerentscheid 2026-08-06) — er ist die Antwort, der Text die Fussnote.
 //
-// Der Knopf hat GENAU vier Zustände, und die Karte leitet sie aus dem Ziel und
-// der Sitzung ab, statt sie den Aufrufer zusammenbauen zu lassen:
-//   kein Ziel            → ausgegraut  («im Prototyp nicht angebunden»)
-//   externes System      → Link mit External-Symbol, neuer Tab, ohne Anmeldung
-//   intern, abgemeldet   → Anmeldeknopf MIT Ziel (meldet an UND öffnet)
-//   intern, angemeldet   → Link
+// Der Aufrufer trennt Zielart (`external`) und Fensterverhalten (`newWindow`).
+// Same-Tab-Ziele können die Anmeldung weiterhin direkt mit dem Einstieg
+// verbinden. Bei einem neuen Tab bleibt der Start ein echter Link; der Router
+// der Zielanwendung zeigt dort bei Bedarf seinen Login-Gate. So bleibt der
+// Browserklick synchron und wird nicht von Popup-Blockern abgefangen.
 function accessCard({
   title = 'Zugriff', href = '', label = 'Öffnen', loginLabel = '',
-  external = false, requiresLogin = false, loggedIn = false, user = null,
+  external = false, newWindow = false, requiresLogin = false, loggedIn = false, user = null,
   note = '', steps = [], free = '',
   missing = 'Im Prototyp ist kein Zielsystem angebunden.',
 } = {}) {
   // `#` ist im Bestand der Platzhalter für «kennen wir, haben wir nicht».
   const has = !!href && href !== '#';
-  const arrow = external ? 'External' : 'ArrowRight';
-  const linkAttrs = external ? ' target="_blank" rel="noopener external"' : '';
+  const opensNewWindow = external || newWindow;
+  const arrow = opensNewWindow ? 'External' : 'ArrowRight';
+  const linkAttrs = opensNewWindow
+    ? ` target="_blank" rel="${external ? 'noopener external' : 'noopener'}"`
+    : '';
   let action, context;
 
   if (!has) {
@@ -2157,14 +2206,16 @@ function accessCard({
     action = `<span class="btn btn--outline btn--icon-right" aria-disabled="true">${
       icon(arrow, 'btn__icon')}<span class="btn__text">${escape(label)}</span></span>`;
     context = `<p class="small muted m-0">${escape(missing)}</p>`;
-  } else if (requiresLogin && !loggedIn) {
+  } else if (requiresLogin && !loggedIn && !newWindow) {
     action = loginButton({ next: href, label: loginLabel || `Anmelden und ${label}` });
     context = `<p class="small m-0">${icon('Lock', 'icon--base')} Für den Zugriff ist eine Anmeldung mit AGOV / FedLogin erforderlich.</p>`;
   } else {
     action = `<a class="btn btn--outline btn--icon-right" href="${escape(href)}"${linkAttrs}>${
       icon(arrow, 'btn__icon')}<span class="btn__text">${escape(label)}</span></a>`;
-    context = requiresLogin && loggedIn && user
-      ? `<p class="small muted m-0">Angemeldet als <strong>${escape(user.name)}</strong> · ${escape(user.org)}.</p>`
+    context = requiresLogin
+      ? (loggedIn && user
+        ? `<p class="small muted m-0">Angemeldet als <strong>${escape(user.name)}</strong> · ${escape(user.org)}.</p>`
+        : `<p class="small m-0">${icon('Lock', 'icon--base')} Die Anmeldung erfolgt in der gestarteten Anwendung.</p>`)
       : (free ? `<p class="small muted m-0">${escape(free)}</p>` : '');
   }
 

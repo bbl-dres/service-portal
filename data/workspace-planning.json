@@ -1,0 +1,75 @@
+[
+  {
+    "buildingId": "1080/4840/AF",
+    "planAvailability": "legacy"
+  },
+  {
+    "buildingId": "1080/4100/AC",
+    "planAvailability": "legacy"
+  },
+  {
+    "buildingId": "1080/6100/AA",
+    "planAvailability": "legacy"
+  },
+  {
+    "buildingId": "1080/6430/AA",
+    "planAvailability": "legacy"
+  },
+  {
+    "buildingId": "1080/6540/AA",
+    "planAvailability": "legacy"
+  },
+  {
+    "buildingId": "1080/6650/AA",
+    "planAvailability": "planned",
+    "orderStatus": "open",
+    "projectId": "PMB-6650",
+    "inventoryOrder": "ZTU0 / 4000 218 774",
+    "targetDate": "2026-03-31",
+    "floors": [
+      {
+        "floorId": "1080-6650-AA-eg",
+        "equipmentCount": 49,
+        "planStatus": "accepted",
+        "lastSync": "28.03.2026, 14:12"
+      },
+      {
+        "floorId": "1080-6650-AA-1og",
+        "equipmentCount": 59,
+        "planStatus": "not_synced",
+        "lastSync": "30.09.2025, 09:40"
+      },
+      {
+        "floorId": "1080-6650-AA-2og",
+        "equipmentCount": 79,
+        "planStatus": "accepted",
+        "lastSync": "28.03.2026, 14:12"
+      }
+    ],
+    "equipmentGroups": [
+      { "number": 1, "name": "Einzel Arbeitsplatz", "count": 93 },
+      { "number": 2, "name": "Team Arbeitsplatz", "count": 4 },
+      { "number": 3, "name": "Fokus Arbeitsplatz", "count": 3 },
+      { "number": 4, "name": "Formelle Sitzungen", "count": 10 },
+      { "number": 5, "name": "Telefon- / Videokonferenzbox", "count": 4 },
+      { "number": 6, "name": "Informelle Sitzungen", "count": 1 },
+      { "number": 7, "name": "Coffee Point", "count": 5 },
+      { "number": 8, "name": "Interaktive Sitzungen", "count": 0 },
+      { "number": 9, "name": "Team Ablage", "count": 49 },
+      { "number": 10, "name": "Locker, Garderoben", "count": 15 },
+      { "number": 11, "name": "Service Funktionen", "count": 3 }
+    ],
+    "contacts": [
+      { "label": "Raumausstattung BBL", "email": "raumausstattung@bbl.admin.ch" },
+      { "label": "Portfoliomanagement", "email": "portfoliomanagement@bbl.admin.ch" }
+    ]
+  },
+  {
+    "buildingId": "1080/4850/AG",
+    "planAvailability": "legacy"
+  },
+  {
+    "buildingId": "1080/6210/AA",
+    "planAvailability": "legacy"
+  }
+]

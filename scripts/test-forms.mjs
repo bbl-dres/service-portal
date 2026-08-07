@@ -53,6 +53,16 @@ const PROBE_RENDER = `(async () => {
   };
 })()`;
 
+const PROBE_BUILDING_SELECTION = `(async () => {
+  const s = ms => new Promise(r => setTimeout(r, ms));
+  let n = 0; while (!document.getElementById('bld') && n++ < 120) await s(100);
+  const select = document.getElementById('bld');
+  return {
+    value: select?.value || '',
+    first: select?.options?.[0]?.value || '',
+  };
+})()`;
+
 // Gebäude wählen, beschreibung füllen, absenden → Erfolgsbildschirm (Vorgang).
 // Seit dem Review (forms/errsum-1-Umfeld) startet das Pflichtfeld «Gebäude»
 // LEER («Bitte wählen …») statt still mit dem ersten Gebäude vorbelegt — der
@@ -94,6 +104,22 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
     check(errOk(srE.fields?.org), 'C5: cleared #org → input--error + aria-invalid + badge');
     check(errOk(srE.fields?.cc), 'C5: cleared #cc → input--error + aria-invalid + badge');
     check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
+    await p.closeTarget();
+
+    console.log('\n■ space-request (building prefill)');
+    const requestedBuildingId = '1080/6650/AA';
+    p = await openPage(cdp, `${APP_BASE}/app/space-request?building=${encodeURIComponent(requestedBuildingId)}`);
+    const validPrefill = await p.evaluate(PROBE_BUILDING_SELECTION);
+    check(validPrefill.value === requestedBuildingId,
+      `valid ?building selects the requested object (${validPrefill.value})`);
+    check((await p.problems()).length === 0, 'valid building prefill has no runtime problems');
+    await p.closeTarget();
+
+    p = await openPage(cdp, `${APP_BASE}/app/space-request?building=not-a-building`);
+    const invalidPrefill = await p.evaluate(PROBE_BUILDING_SELECTION);
+    check(invalidPrefill.value === invalidPrefill.first && invalidPrefill.value !== 'not-a-building',
+      `invalid ?building keeps the normal first-building default (${invalidPrefill.value})`);
+    check((await p.problems()).length === 0, 'invalid building prefill has no runtime problems');
     await p.closeTarget();
 
     // --- fault-report: render + C5 on #beschreibung + success submit ---

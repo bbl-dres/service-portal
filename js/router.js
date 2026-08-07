@@ -105,6 +105,7 @@ const APPS = {
   'projects':        './apps/projects.js',
   'document-archive':'./apps/document-archive.js',
   'workspace':       './apps/workspace.js',
+  'floorplan-editor':'./apps/floorplan-editor.js',
   'room-booking':    './apps/room-booking.js',
   'transaction':     './apps/transaction.js',
   'dataportal':      './apps/dataportal.js',
@@ -134,6 +135,7 @@ const SECTION_OF = {
   'space-request': 'services', 'fault-report': 'services', 'building-create': 'services',
   'portfolio': 'data', 'projects': 'data',
   'workspace': 'data', 'room-booking': 'data', 'transaction': 'data', 'dataportal': 'data',
+  'floorplan-editor': 'data',
   'document-archive': 'data', 'media-library': 'data', 'api-docs': 'data',
   'tenancies': 'data', 'metadata-catalog': 'data', 'process-docs': 'data',
   'shop': 'data',
@@ -355,6 +357,11 @@ async function renderAppLoginGate(mount, name, stale, text = '') {
 }
 
 async function dispatch() {
+  // Standalone Fachwerkzeuge (z. B. der Plan-Editor) dürfen ihre kompakte
+  // Arbeitsflächen-Chrome nicht in die nächste Portalroute mitnehmen. Das
+  // Layout wird erst NACH der zentralen Login-Sperre wieder aktiviert, damit
+  // ein ausgeloggter Deep-Link weiterhin die normale Portal-Erklärung zeigt.
+  document.body.classList.remove('body--standalone-app');
   // Viewers and modals are appended to <body>, outside #main-content. Close
   // them before route cleanup/replacement so no stale overlay or global
   // listener survives navigation.
@@ -448,6 +455,7 @@ async function dispatch() {
     // Anmeldesperre VOR `needs`: eine Anwendung, die niemand öffnen darf, muss
     // auch ihre Bestände nicht laden (das Inventar allein sind 66 KB).
     if (gated) { await renderAppLoginGate(mount, segs[1], stale, mod.loginText); return; }
+    if (mod.layout === 'standalone') document.body.classList.add('body--standalone-app');
     const render = mod.default || mod.render;
     if (typeof render !== 'function') throw new Error('Modul exportiert kein render()');
     // Aufschiebbare Bestände (H4): das Modul nennt in `needs`, was es lesen will,
@@ -504,6 +512,7 @@ async function dispatch() {
     }
   } catch (e) {
     if (stale()) return;
+    document.body.classList.remove('body--standalone-app');
     console.error('[router] render failed for', modPath, e);
     mount.innerHTML = `<div class="container section">${C.notification(
       `<strong>Diese Ansicht konnte nicht geladen werden.</strong><br><span class="small">${C.escape(e.message)}</span>`,

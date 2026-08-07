@@ -271,18 +271,23 @@ p = await openPage(browser, APP_BASE + '/applications/metadaten-katalog');
 await sleep(1200);
 o = JSON.parse(await p.evaluate(`JSON.stringify({
   h1: document.querySelector('h1')?.textContent.trim(),
-  // Abgemeldet trägt die Zugriff-Karte KEINEN Link, sondern den Anmeldeknopf
-  // mit dem Ziel im Datenattribut (C.accessCard) — die Fachanwendungen liegen
-  // hinter der Anmeldesperre. Beide Formen zählen als «verlinkt».
-  einstieg: document.querySelector('.container__aside a[href*="metadata-catalog"]')?.getAttribute('href')
-    || document.querySelector('.container__aside [data-login-next*="metadata-catalog"]')?.getAttribute('data-login-next'),
+  // Der Einstieg bleibt auch abgemeldet ein echter Neues-Tab-Link. Der zentrale
+  // Router-Login-Gate erscheint in der gestarteten Fachanwendung.
+  einstieg: (() => {
+    const a = document.querySelector('.container__aside a[href*="metadata-catalog"]');
+    return a ? { href: a.getAttribute('href'), target: a.getAttribute('target'),
+      rel: a.getAttribute('rel') || '', label: a.querySelector('.btn__text')?.textContent.trim() } : null;
+  })(),
   // «Bereich» stand in der Eckdaten-Karte; die ist entfallen (Nutzerentscheid
   // 2026-08-06). Der Bereich ist jetzt eine Sache des Katalogs — geprüft wird
   // deshalb dort, dass der Filter die Anwendung noch findet.
   karten: [...document.querySelectorAll('.container__aside .box h3')].map(x => x.textContent.trim()),
 })`));
 check(o.h1 === 'Metadaten Katalog Bauten (Portal)', 'Landingpage der Anwendung', o.h1);
-check(o.einstieg === '#/app/metadata-catalog', 'Einstiegspunkt verlinkt die App', o.einstieg);
+check(o.einstieg?.href === '#/app/metadata-catalog'
+  && o.einstieg.label === 'Anwendung starten'
+  && o.einstieg.target === '_blank' && o.einstieg.rel.split(/\s+/).includes('noopener'),
+  'neutraler Einstieg öffnet die App sicher in einem neuen Tab', JSON.stringify(o.einstieg));
 check(o.karten.join('|') === 'Zugriff|Kontakt', 'Randspalte trägt nur noch Zugriff und Kontakt', o.karten.join(' | '));
 
 const imKatalog = JSON.parse(await p.evaluate(`(async () => {

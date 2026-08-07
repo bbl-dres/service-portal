@@ -8,8 +8,10 @@
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const CATS = [
-  { name: 'services',     base: `${APP_BASE}/services`,     detail: `${APP_BASE}/services/raumbedarf-melden` },
-  { name: 'applications', base: `${APP_BASE}/applications`, detail: `${APP_BASE}/applications/liegenschaften-inventar` },
+  { name: 'services',     base: `${APP_BASE}/services`,     detail: `${APP_BASE}/services/raumbedarf-melden`,
+    launch: { href: '#/app/space-request', label: 'Vorgang starten' } },
+  { name: 'applications', base: `${APP_BASE}/applications`, detail: `${APP_BASE}/applications/liegenschaften-inventar`,
+    launch: { href: '#/app/portfolio', label: 'Anwendung starten' } },
   { name: 'katalog',      base: `${APP_BASE}/data/catalog`, detail: `${APP_BASE}/data/catalog/1` },
 ];
 
@@ -180,6 +182,22 @@ const dec = (h) => decodeURIComponent(h);
       p = await openPage(cdp, cat.detail);
       const det = await p.evaluate(PROBE_DETAIL);
       check(det.h1 && !det.notFound, `detail renders ("${det.h1}")`);
+      if (cat.launch) {
+        const launch = await p.evaluate(`(() => {
+          const href = ${JSON.stringify(cat.launch.href)};
+          return [...document.querySelectorAll('a')]
+            .filter((a) => a.getAttribute('href') === href)
+            .map((a) => ({
+              label: (a.querySelector('.btn__text, .download-item__title') || a).textContent.trim(),
+              target: a.getAttribute('target') || '',
+              rel: a.getAttribute('rel') || '',
+            }));
+        })()`);
+        check(launch.length >= 2
+          && launch.every((item) => item.label === cat.launch.label
+            && item.target === '_blank' && item.rel.split(/\s+/).includes('noopener')),
+        `${cat.launch.label} opens every launch target in a new tab (${launch.length} links)`);
+      }
       check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
       await p.closeTarget();
     }

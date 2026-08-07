@@ -66,7 +66,7 @@
     "description": "Gemietete Flächen, Verträge und Grundrisse aus Sicht der mietenden Verwaltungseinheit.",
     "area": "buildings",
     "subtitle": "Mietverhältnisse der Verwaltungseinheiten",
-    "long": "Das Mietendenportal zeigt einer Verwaltungseinheit die Flächen, die sie beim BBL gemietet hat — nicht das Immobilienportfolio des Bundes, sondern den eigenen Ausschnitt daraus. Gemietet wird selten ein ganzes Gebäude, sondern ein Geschoss oder ein Geschossteil; die Einheit ist deshalb das Mietverhältnis. Je Mietverhältnis stehen Vertragsdaten, Flächen und Arbeitsplätze, die laufenden Vorgänge am Objekt sowie ein interaktiver Grundriss zur Verfügung, der sich nach Nutzung, SIA-416-Kategorie, Verwaltungseinheit oder Belegungsdichte einfärben lässt. Aus jedem Raum heraus lassen sich die passenden Dienstleistungen mit vorbelegtem Objekt starten.",
+    "long": "Das Mietendenportal zeigt einer Verwaltungseinheit die Flächen, die sie beim BBL gemietet hat — nicht das Immobilienportfolio des Bundes, sondern den eigenen Ausschnitt daraus. Gemietet wird selten ein ganzes Gebäude, sondern ein Geschoss oder ein Geschossteil; die Einheit ist deshalb das Mietverhältnis. Je Mietverhältnis stehen Vertragsdaten, Flächen und Arbeitsplätze, die laufenden Vorgänge am Objekt sowie ein interaktiver Grundriss zur Verfügung, der sich nach Nutzung, SIA-416-Kategorie, Verwaltungseinheit oder Arbeitsplatzdichte einfärben lässt. Aus jedem Raum heraus lassen sich die passenden Dienstleistungen mit vorbelegtem Objekt starten.",
     "access": {
       "note": "Für Mietende der Verwaltungseinheiten sowie das Portfoliomanagement und den Objektbetrieb des BBL.",
       "steps": [
@@ -455,12 +455,12 @@
       "kind": "app",
       "href": "#/app/workspace"
     },
-    "description": "Arbeitsplätze, Zonen, Belegung und Multispace-Planung für Bürogebäude.",
+    "description": "Objekte, Planstände, schreibgeschützte Grundrissvorschauen und Ausstattung der Arbeitsplatzplanung.",
     "area": "logistics",
-    "subtitle": "Arbeitsplatzplanung und Belegung",
-    "long": "Workspace Management bildet Arbeitsplätze, Zonen und Belegung der Bürogebäude ab. Es unterstützt die Planung nach Desk-Sharing-Faktor, die Zuteilung von Zonen an Verwaltungseinheiten und die Auswertung der tatsächlichen Nutzung. Im Zentrum stehen Planungsgrundlagen für moderne Arbeitswelten, Multispace-Konzepte und die laufende Abstimmung von Flächenbedarf und Nutzung.",
+    "subtitle": "Portal für Arbeitsplatzobjekte und Planstände",
+    "long": "Workspace Management ist der Prozesseinstieg für die Arbeitsplatzplanung. Das Portal erschliesst die relevanten Objekte über Galerie, Liste und Karte, zeigt Projekt- und Auftragskontext und führt die Register für Grundrisse und Ausstattung. Bestandsgrundrisse lassen sich darin schreibgeschützt einfärben, nach Räumen untersuchen, im Vollbild ansehen und drucken. Geometrie oder Ausstattung bearbeiten und Pläne prüfen bleiben Aufgaben eigenständiger Anwendungen mit derselben Datenbasis.",
     "access": {
-      "note": "Für Mitarbeitende der angeschlossenen Verwaltungseinheiten, die Arbeitsflächen planen oder auswerten.",
+      "note": "Für Mitarbeitende der angeschlossenen Verwaltungseinheiten, die Workspace-Objekte, Planstände oder Mengengerüste einsehen und Vorgänge starten.",
       "steps": [
         "Anmeldung über eIAM."
       ]
@@ -472,14 +472,64 @@
       }
     ],
     "related": [
+      "floorplan-editor",
       "raumbuchung",
       "flm"
     ],
     "contact": "campus",
-    "updated": "2026-08-05",
+    "updated": "2026-08-07",
     "bild": {
       "src": "assets/images/applications/workspace.jpg",
       "titel": "Spacious open-plan office with cubicles and modern furnishings, ideal for collaborative wo",
+      "fotograf": "DOAN THANH BINH",
+      "credit": "DOAN THANH BINH — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/modern-open-office-space-with-cubicles-36631700/"
+    }
+  },
+  {
+    "appId": "floorplan-editor",
+    "name": "Plan-Editor",
+    "group": "Arbeitsplatz & Logistik",
+    "icon": "Apps",
+    "audience": [
+      "staff"
+    ],
+    "link": {
+      "kind": "app",
+      "href": "#/app/floorplan-editor"
+    },
+    "description": "Flächen, Räume und Multispace-Ausstattung direkt im Grundriss verwalten, auswerten und planen.",
+    "area": "logistics",
+    "subtitle": "Flächenmanagement im Grundriss",
+    "long": "Der Plan-Editor ist die spezialisierte Arbeitsoberfläche für das Flächenmanagement. Er verbindet Gebäude, Geschosse und Räume mit Nutzungsarten, SIA-416-Flächen, Verwaltungseinheiten, Arbeitsplatzkapazitäten und Multispace-Modulen. Fachpersonen können den Flächenbestand im Grundriss suchen, vergleichen und auswerten, Raumattribute und Flächen bearbeiten sowie Ausstattungsobjekte aus dem Produktkatalog verorten. Im Feedback-Prototyp werden Entwürfe, Raumänderungen und simulierte Publikationen ausschliesslich im verwendeten Browser gespeichert. Planübernahme, DWG-/DXF-Prüfung und fachliche Freigabe gehören zur separaten Planprüfung.",
+    "access": {
+      "note": "Für angemeldete Fachpersonen der Arbeitsplatz- und Raumausstattungsplanung. Der Prototyp bildet noch keine produktive Schreibberechtigung ab.",
+      "steps": [
+        "Anmeldung über AGOV / FedLogin.",
+        "Workspace-Objekt und Geschoss auswählen."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Workspace Management (Portal)",
+        "href": "#/applications/workspace"
+      },
+      {
+        "label": "Weisung Neue Arbeitswelten (NAW)",
+        "href": "#/knowledge/accommodation?section=wi-standards"
+      }
+    ],
+    "related": [
+      "workspace",
+      "eshop",
+      "flm"
+    ],
+    "contact": "campus",
+    "updated": "2026-08-07",
+    "bild": {
+      "src": "assets/images/applications/workspace.jpg",
+      "titel": "Moderner offener Büroraum mit Arbeitsplätzen und Ausstattung.",
       "fotograf": "DOAN THANH BINH",
       "credit": "DOAN THANH BINH — Pexels",
       "lizenz": "Pexels-Lizenz",

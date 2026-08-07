@@ -434,7 +434,7 @@ function buildingDetail(ctx, b) {
   const asideHtml = () => {
     const dienst = (id, iconName, href) => {
       const s = core.service(id);
-      return s ? { icon: iconName, label: s.title, href } : null;
+      return s ? { icon: iconName, label: s.title, href, newWindow: href.startsWith('#/app/') } : null;
     };
     const bq = `building=${encodeURIComponent(b.bbl_id)}`;
     const aktionen = [
@@ -443,7 +443,7 @@ function buildingDetail(ctx, b) {
       dienst('stammdaten-mutieren', 'FileCheckmark', `#/services/stammdaten-mutieren?${bq}`),
       dienst('stoerung-melden', 'Wrench', `#/app/fault-report?${bq}`),
       dienst('bautendokumentation-abrufen', 'File', `#/app/document-archive?${bq}`),
-      { icon: 'Image', label: 'Aufnahmen in der Mediathek', href: `#/app/media-library?objekt=${encodeURIComponent(b.bbl_id)}` },
+      { icon: 'Image', label: 'Aufnahmen in der Mediathek', href: `#/app/media-library?objekt=${encodeURIComponent(b.bbl_id)}`, newWindow: true },
     ].filter(Boolean);
     return `<aside class="detail-layout__aside" aria-label="Aktionen und Ansprechpersonen">
       ${C.actionCard({ lead: 'Für dieses Objekt vorbelegt.', links: aktionen })}

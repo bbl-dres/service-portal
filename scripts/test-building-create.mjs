@@ -47,8 +47,14 @@ const SUBMIT = `document.querySelector('#bc-form').dispatchEvent(new Event('subm
     let r = await p.evaluate(`(function(){
       var a=[].slice.call(document.querySelectorAll('main a')).filter(function(x){
         return (x.getAttribute('href')||'').indexOf('building-create')>=0; });
-      return {n:a.length, dead:document.querySelectorAll('main a[href="#"]').length};})()`);
-    check(r.n > 0, `CTA verlinkt den Assistenten (${r.n})`);
+      return {launches:a.map(function(x){ return {
+        label:(x.querySelector('.btn__text')||x).textContent.trim(),
+        target:x.getAttribute('target')||'', rel:x.getAttribute('rel')||''}; }),
+        dead:document.querySelectorAll('main a[href="#"]').length};})()`);
+    check(r.launches.length >= 2 && r.launches.every(function(x){
+      return x.label === 'Vorgang starten' && x.target === '_blank'
+        && x.rel.split(/\s+/).includes('noopener');
+    }), `CTA öffnet den Assistenten konsistent in einem neuen Tab (${r.launches.length})`);
     check(r.dead === 0, `keine toten href="#"-Links (${r.dead})`);
 
     console.log('■ Schritt 1 — Karte mit Suchauflage');

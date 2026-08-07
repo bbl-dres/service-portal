@@ -5,6 +5,7 @@
 //
 //   APP_BASE=http://localhost:8848/# node scripts/review-screenshots.mjs <before|after>
 //   REVIEW_OUTPUT_DIR=<temp> node scripts/review-screenshots.mjs current
+//   REVIEW_SLUGS=app_floorplan-editor,app_floorplan-editor_edit …  # optional subset
 //
 // WebGL an, damit die MapLibre-Karten (Datenportal, Portfolio) rendern; vor der
 // Aufnahme wird einmal durchgescrollt, damit lazy geladene Bilder im Bild sind.
@@ -25,6 +26,9 @@ const REVIEW_ASSETS = process.env.REVIEW_OUTPUT_DIR
   ? resolve(process.env.REVIEW_OUTPUT_DIR)
   : fileURLToPath(new URL('../docs/review-assets/', import.meta.url));
 const OUT = join(REVIEW_ASSETS, MODE);
+const requestedSlugs = new Set(String(process.env.REVIEW_SLUGS || '').split(',').map(value => value.trim()).filter(Boolean));
+const routes = requestedSlugs.size ? REVIEW_ROUTES.filter(item => requestedSlugs.has(item.slug)) : REVIEW_ROUTES;
+if (!routes.length) throw new Error('REVIEW_SLUGS passt auf keine Review-Route.');
 
 const cdp = await launch({ webgl: true });
 try {
@@ -38,8 +42,13 @@ try {
   for (const w of REVIEW_VIEWPORTS) {
     await cdp.send('Emulation.setDeviceMetricsOverride',
       { width: w, height: 900, deviceScaleFactor: 1, mobile: false }, page.sessionId);
-    for (const { route, slug, slow } of REVIEW_ROUTES) {
-      await page.evaluate(`location.hash = '#${route}'; true`);
+    for (const { route, slug, slow } of routes) {
+      await page.evaluate(`(() => {
+        const next = '#${route}';
+        if (location.hash === next) window.dispatchEvent(new HashChangeEvent('hashchange'));
+        else location.hash = next;
+        return true;
+      })()`);
       await sleep(slow ? 3200 : 1100);
       // Einmal ans Ende und zurück: lazy Bilder laden, sticky Zustände beruhigen.
       await page.evaluate(`(async () => {
