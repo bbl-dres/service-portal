@@ -5,7 +5,7 @@
 // measurement overlays, so it gets a separate scene without changing those
 // stable consumers. Coordinates use the portal floor convention: 100 units = 1 m.
 
-import { escape as esc } from './components.js';
+import { escape as esc } from '../components.js';
 
 export const EDITOR_COLOR_MODES = [
   { value: 'none', label: 'Keine' },

@@ -143,7 +143,7 @@ try {
 
   const initial = await page.evaluate(`(async () => {
     const [{ core }, { createBaseline }] = await Promise.all([
-      import('./js/core.js'), import('./js/floorplan-editor-model.js'),
+      import('./js/core.js'), import('./js/floorplan-editor/model.js'),
     ]);
     const building = core.building(${JSON.stringify(BUILDING_ID)});
     const floor = core.floor(${JSON.stringify(FLOOR_ID)});
@@ -176,7 +176,7 @@ try {
       bannerDisplay: display('#banner-host'),
       breadcrumb: [...document.querySelectorAll('.fpe-breadcrumb :is(a,span[aria-current="page"])')]
         .map(node => node.textContent.replace(/\s+/g, ' ').trim()),
-      backHref: document.querySelector('[data-leave][aria-label="Zurück zu allen Geschossen"]')?.getAttribute('href') || '',
+      contextBack: !!document.querySelector('.fpe-context > [data-leave][aria-label="Zurück zu allen Geschossen"]'),
       left: dimensions('#fpe-left'), stage: dimensions('#fpe-stage'), right: dimensions('#fpe-right'),
       roomCount: roomIds.length, expectedRooms: rooms.length, declaredRooms: floor?.rooms || 0,
       uniqueRooms: new Set(roomIds).size,
@@ -202,6 +202,7 @@ try {
           .filter(node => getComputedStyle(node).listStyleType !== 'none').length,
         colorTrigger: document.querySelector('#fpe-color-trigger')?.getAttribute('aria-haspopup') || '',
         colorLabel: document.querySelector('#fpe-color-trigger')?.getAttribute('aria-label') || '',
+        colorIcon: document.querySelector('#fpe-color-trigger .icon')?.style.maskImage || '',
         panelGlyphs: document.querySelectorAll('.fpe-panel-toggle-icon').length,
       },
       planActions: {
@@ -215,11 +216,32 @@ try {
         active: document.querySelector('.fpe-view-nav [data-view-mode][aria-pressed="true"]')?.dataset.viewMode || '',
         tabbable: document.querySelectorAll('.fpe-view-nav [data-view-mode][tabindex="0"]').length,
         actions: document.querySelectorAll('.fpe-view-nav__actions [data-action]').length,
-        minimumTarget: Math.min(...[...document.querySelectorAll('.fpe-view-nav button')]
+        actionsSeparate: !document.querySelector('.fpe-view-nav__actions')?.closest('.fpe-view-nav'),
+        actionsOnRight: (() => {
+          const actions = document.querySelector('#fpe-view-actions-host')?.getBoundingClientRect();
+          const stage = document.querySelector('#fpe-stage')?.getBoundingClientRect();
+          return Boolean(actions && stage && actions.left > stage.left + stage.width / 2);
+        })(),
+        modeIcons: document.querySelectorAll('.fpe-view-nav [data-view-mode] .icon').length,
+        planarModeIcons: document.querySelectorAll('.fpe-view-nav :is([data-view-mode="2d"],[data-view-mode="3d"]) .icon').length,
+        minimumTarget: Math.min(...[...document.querySelectorAll('.fpe-view-nav button,.fpe-view-nav__actions button')]
           .map(button => button.getBoundingClientRect().height)),
         navigationInTopToolbar: document.querySelectorAll('#fpe-toolbar-host [data-action="zoom-in"],#fpe-toolbar-host [data-action="zoom-out"],#fpe-toolbar-host [data-action="fit"],#fpe-toolbar-host [data-action="fit-selection"],#fpe-toolbar-host [data-action="three-reset"]').length,
       },
-      prototypeLabel: document.querySelector('.fpe-local-note')?.getAttribute('aria-label') || '',
+      toolIcons: Object.fromEntries(['tool-select', 'tool-pan', 'tool-distance', 'tool-area'].map(action => [action,
+        document.querySelector('[data-action="' + action + '"] .icon')?.style.maskImage || ''])),
+      prototypeFooter: {
+        label: document.querySelector('.fpe-local-note > strong')?.textContent.trim() || '',
+        icons: document.querySelectorAll('.fpe-local-note .icon').length,
+        links: [...document.querySelectorAll('.fpe-local-note a')].map(link => ({
+          label: link.textContent.trim(), href: link.href, target: link.target, rel: link.rel,
+        })),
+        labelLeftOfLinks: (() => {
+          const label = document.querySelector('.fpe-local-note > strong')?.getBoundingClientRect();
+          const links = document.querySelector('.fpe-local-note nav')?.getBoundingClientRect();
+          return Boolean(label && links && label.right <= links.left);
+        })(),
+      },
       overflow: Math.max(
         document.documentElement.scrollWidth - document.documentElement.clientWidth,
         document.body.scrollWidth - document.body.clientWidth,
@@ -253,8 +275,8 @@ try {
   check(initial.breadcrumb.length === 3 && initial.breadcrumb[0] === 'Alle Objekte'
     && /Liebefeld/.test(initial.breadcrumb[1]) && initial.breadcrumb[2] === '2. OG'
     && /building=1080%2F6650%2FAA/i.test(initial.hash) && initial.hash.includes(`floor=${FLOOR_ID}`)
-    && /building=1080%2F6650%2FAA/i.test(initial.backHref) && !initial.backHref.includes('floor='),
-  'preserves the deep link and exposes deterministic editor breadcrumbs', `${initial.breadcrumb.join(' · ')} · ${initial.backHref}`);
+    && !initial.contextBack,
+  'preserves the deep link and exposes deterministic editor breadcrumbs without a redundant back button', initial.breadcrumb.join(' · '));
   check(initial.left.width > 0 && initial.stage.width > 0 && initial.right.width > 0
     && [initial.left, initial.stage, initial.right].every(pane => pane.height > 0),
   'renders the resources, drawing, and inspector as three visible panes',
@@ -274,19 +296,35 @@ try {
     && initial.resourceTree.roomNameInset >= 52 && initial.resourceTree.roomNameInset <= 54
     && initial.resourceTree.listMarkers === 0 && initial.resourceTree.colorTrigger === 'menu'
     && /Keine/.test(initial.resourceTree.colorLabel) && !new URLSearchParams(initial.hash.split('?')[1] || '').has('color')
-    && initial.resourceTree.panelGlyphs === 4,
+    && /Eyedropper\.svg/.test(initial.resourceTree.colorIcon) && initial.resourceTree.panelGlyphs === 4,
   'defaults to no coloring and renders a flat room tree without synthetic aggregation',
   `${initial.resourceTree.groups} groups · ${initial.resourceTree.roomRows} rooms · ${initial.resourceTree.roomNameInset}px name inset`);
   check(initial.planActions.more === 'menu' && initial.planActions.items === 3
-    && !initial.planActions.historyInToolbar && /nur in diesem Browser/i.test(initial.prototypeLabel),
-  'separates plan-level actions from canvas tools and keeps the prototype boundary concise',
-  `${initial.planActions.items} actions · ${initial.prototypeLabel}`);
-  check(initial.viewNavigation.label === 'Ansicht und Navigation'
+    && !initial.planActions.historyInToolbar,
+  'separates plan-level actions from canvas tools', `${initial.planActions.items} actions`);
+  check(initial.prototypeFooter.label === 'Feedback-Prototyp' && initial.prototypeFooter.icons === 0
+    && initial.prototypeFooter.labelLeftOfLinks
+    && initial.prototypeFooter.links.map(link => link.label).join(',') === 'Quellcode,Rechtliches,Kontakt'
+    && initial.prototypeFooter.links.map(link => link.href).join(',') === [
+      'https://github.com/bbl-dres/service-portal',
+      'https://www.admin.ch/de/rechtliches',
+      'https://www.bbl.admin.ch/de/kontakt',
+    ].join(',')
+    && initial.prototypeFooter.links.every(link => link.target === '_blank' && /noopener/.test(link.rel)),
+  'renders the text-only prototype footer with its label left and project links right');
+  check(initial.viewNavigation.label === 'Darstellung wechseln'
     && initial.viewNavigation.modes === 3 && initial.viewNavigation.active === '2d'
     && initial.viewNavigation.tabbable === 1 && initial.viewNavigation.actions === 4
+    && initial.viewNavigation.actionsSeparate && initial.viewNavigation.actionsOnRight
+    && initial.viewNavigation.modeIcons === 1 && initial.viewNavigation.planarModeIcons === 0
     && initial.viewNavigation.minimumTarget >= 44 && initial.viewNavigation.navigationInTopToolbar === 0,
-  'separates persistent view navigation from the canvas tool bar with touch-sized controls',
+  'separates the mode switcher from right-side camera controls with icon-free 2D and 3D toggles',
   `${initial.viewNavigation.modes} modes · ${initial.viewNavigation.actions} view actions · ${Math.round(initial.viewNavigation.minimumTarget)}px targets`);
+  check(/Pointer\.svg/.test(initial.toolIcons['tool-select'])
+    && /Move\.svg/.test(initial.toolIcons['tool-pan'])
+    && /Ruler\.svg/.test(initial.toolIcons['tool-distance'])
+    && /Crop\.svg/.test(initial.toolIcons['tool-area']),
+  'uses purpose-specific select, pan, distance, and area icons from the local icon set');
   check(initial.overflow <= 1 && initial.duplicateIds.length === 0
     && initial.unlabeledControls === 0 && initial.unnamedButtons === 0
     && initial.headingJumps.length === 0,
@@ -300,10 +338,11 @@ try {
     const groupedQuery = new URLSearchParams(location.hash.split('?')[1] || '').get('color') || '';
     const group = document.querySelector('.fpe-resource-group__head');
     const controlledId = group?.getAttribute('aria-controls') || '';
-    group?.click(); await pause();
-    const collapsed = document.querySelector('.fpe-resource-group__head')?.getAttribute('aria-expanded') === 'false'
+    const collapsedByDefault = group?.getAttribute('aria-expanded') === 'false'
       && document.getElementById(controlledId)?.hidden === true;
-    document.querySelector('.fpe-resource-group__head')?.click(); await pause();
+    group?.click(); await pause();
+    const groupOpened = document.querySelector('.fpe-resource-group__head')?.getAttribute('aria-expanded') === 'true'
+      && document.getElementById(controlledId)?.hidden === false;
     const roomToggle = document.querySelector('.fpe-resource-room-toggle');
     const assetsId = roomToggle?.getAttribute('aria-controls') || '';
     roomToggle?.click(); await pause();
@@ -326,6 +365,8 @@ try {
     const menuPosition = menu ? getComputedStyle(menu).position : '';
     document.querySelector('[data-color-mode="sia"]')?.click(); await pause();
     const siaQuery = new URLSearchParams(location.hash.split('?')[1] || '').get('color') || '';
+    const siaCollapsed = [...document.querySelectorAll('.fpe-resource-group__head')].every(head =>
+      head.getAttribute('aria-expanded') === 'false' && document.getElementById(head.getAttribute('aria-controls'))?.hidden === true);
     document.querySelector('#fpe-color-trigger')?.click(); await pause();
     document.querySelector('[data-color-mode="none"]')?.click(); await pause();
     const finalQuery = new URLSearchParams(location.hash.split('?')[1] || '').get('color') || '';
@@ -347,15 +388,16 @@ try {
     const secondAction = document.activeElement?.dataset.action || '';
     document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await pause();
     const moreFocusReturned = document.activeElement?.id === 'fpe-more-trigger';
-    return { groupedQuery, collapsed, roomOpened, roomClosed, menuOpen, menuAboveCanvas, menuPosition, siaQuery, finalQuery, finalFlat, finalGroups,
+    return { groupedQuery, collapsedByDefault, groupOpened, roomOpened, roomClosed, menuOpen, menuAboveCanvas, menuPosition, siaQuery, siaCollapsed, finalQuery, finalFlat, finalGroups,
       colorFocus, colorNextFocus, colorFocusReturned, moreOpen, firstAction, secondAction, moreFocusReturned,
       expanded: document.querySelector('.fpe-resource-group__head')?.getAttribute('aria-expanded') || '' };
   })()`);
-  check(treeControls.groupedQuery === 'use' && treeControls.collapsed && treeControls.roomOpened && treeControls.roomClosed
-    && treeControls.menuOpen && treeControls.siaQuery === 'sia'
+  check(treeControls.groupedQuery === 'use' && treeControls.collapsedByDefault && treeControls.groupOpened
+    && treeControls.roomOpened && treeControls.roomClosed
+    && treeControls.menuOpen && treeControls.siaQuery === 'sia' && treeControls.siaCollapsed
     && !treeControls.finalQuery && treeControls.finalFlat && treeControls.finalGroups === 0,
-  'aggregates only for an explicit color mode and returns to the flat default list',
-  `group collapsed/reopened · room opened/closed · color=${treeControls.siaQuery} → default`);
+  'collapses first-level color groups by default, lets users reveal rooms, and returns to the flat default list',
+  `groups collapsed · room opened/closed · color=${treeControls.siaQuery} → default`);
   check(treeControls.menuAboveCanvas && treeControls.menuPosition === 'fixed'
     && treeControls.colorFocus === 'none' && treeControls.colorNextFocus === 'use'
     && treeControls.colorFocusReturned && treeControls.moreOpen
@@ -416,6 +458,35 @@ try {
   `mouse ${directPan.before.slice(0, 2).map(Math.round).join('/')} → ${directPan.afterMouse.slice(0, 2).map(Math.round).join('/')} · touch → ${directPan.afterTouch.slice(0, 2).map(Math.round).join('/')}`);
 
   console.log('\n■ Camera scale and interactive Three.js modes');
+  const threeClickPoint = await page.evaluate(`(() => {
+    const button = document.querySelector('[data-action="view-3d"]');
+    const rect = button?.getBoundingClientRect();
+    if (!button || !rect) return null;
+    const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+    return { x, y, hit: document.elementFromPoint(x, y)?.closest('[data-action]')?.dataset.action || '' };
+  })()`);
+  if (threeClickPoint) {
+    await cdp.send('Input.dispatchMouseEvent', {
+      type: 'mousePressed', x: threeClickPoint.x, y: threeClickPoint.y,
+      button: 'left', buttons: 1, clickCount: 1,
+    }, page.sessionId);
+    await cdp.send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased', x: threeClickPoint.x, y: threeClickPoint.y,
+      button: 'left', buttons: 0, clickCount: 1,
+    }, page.sessionId);
+  }
+  await sleep(400);
+  const pointerThreeD = await page.evaluate(`(() => ({
+    active: document.querySelector('[data-action="view-3d"]')?.getAttribute('aria-pressed') || '',
+    view: new URLSearchParams(location.hash.split('?')[1] || '').get('view') || '',
+    host: !!document.querySelector('#fpe-three-host'),
+    twoD: !!document.querySelector('#fpe-canvas'),
+  }))()`);
+  check(threeClickPoint?.hit === 'view-3d' && pointerThreeD.active === 'true'
+    && pointerThreeD.view === '3d' && pointerThreeD.host && !pointerThreeD.twoD,
+  'opens the 3D view through a real hit-tested pointer click', threeClickPoint?.hit || 'missing hit target');
+  await page.evaluate(`document.querySelector('[data-action="view-2d"]')?.click()`);
+  await sleep(120);
   const views = await page.evaluate(`(async () => {
     const pause = (duration = 100) => new Promise(resolve => setTimeout(resolve, duration));
     const click = selector => document.querySelector(selector)?.click();
@@ -434,6 +505,40 @@ try {
     const keyboardThreeD = document.activeElement?.dataset.viewMode || '';
     const threeHost = document.querySelector('#fpe-three-host');
     const threeCanvas = document.querySelector('.fpe-three-canvas');
+    const vector = value => String(value || '').split(',').map(Number);
+    const changed = (left, right, epsilon = .0001) => left.length === right.length
+      && left.some((value, index) => Math.abs(value - right[index]) > epsilon);
+    const same = (left, right, epsilon = .0001) => left.length === right.length
+      && left.every((value, index) => Math.abs(value - right[index]) <= epsilon);
+    const orbitState = () => ({
+      camera: threeHost?.dataset.camera || '',
+      target: vector(threeHost?.dataset.orbitTarget),
+      yaw: Number(threeHost?.dataset.orbitYaw),
+      distance: Number(threeHost?.dataset.orbitDistance),
+    });
+    const dragOrbit = async (button, dx, dy, pointerId) => {
+      const rect = threeCanvas?.getBoundingClientRect();
+      if (!threeCanvas || !rect) return;
+      const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+      const buttons = button === 2 ? 2 : 1;
+      threeCanvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId, pointerType: 'mouse', button, buttons, clientX: x, clientY: y }));
+      threeCanvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId, pointerType: 'mouse', button, buttons, clientX: x + dx, clientY: y + dy }));
+      threeCanvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId, pointerType: 'mouse', button, buttons: 0, clientX: x + dx, clientY: y + dy }));
+      await pause();
+    };
+    click('[data-action="three-reset"]'); await pause();
+    const mouseStart = orbitState();
+    await dragOrbit(0, 44, 18, 81);
+    const afterLeft = orbitState();
+    click('[data-action="three-reset"]'); await pause();
+    const rotateStart = orbitState();
+    await dragOrbit(2, 44, 18, 82);
+    const afterRight = orbitState();
+    const zoomStart = afterRight.distance;
+    click('[data-action="zoom-in"]'); await pause();
+    const zoomedIn = orbitState().distance;
+    click('[data-action="zoom-out"]'); await pause();
+    const zoomedOut = orbitState().distance;
     const orbitBefore = threeHost?.dataset.camera || '';
     threeCanvas?.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -180 }));
     await pause();
@@ -454,25 +559,52 @@ try {
       hintCards: document.querySelectorAll('.fpe-three-status,.fpe-three-help').length,
       view: new URLSearchParams(location.hash.split('?')[1] || '').get('view') || '',
       twoDCanvas: !!document.querySelector('#fpe-canvas'),
+      toolbarVisible: Boolean(document.querySelector('#fpe-toolbar-host .fpe-toolbar')?.getBoundingClientRect().height),
+      toolbarHints: document.querySelectorAll('#fpe-toolbar-host .fpe-toolbar__hint').length,
+      toolbarPrint: !!document.querySelector('#fpe-toolbar-host [data-action="print"]'),
+      zoomButtons: document.querySelectorAll('#fpe-view-actions-host :is([data-action="zoom-in"],[data-action="zoom-out"])').length,
+      zoomButtonsWork: zoomedIn < zoomStart && Math.abs(zoomedOut - zoomStart) < .01,
+      leftPans: changed(mouseStart.target, afterLeft.target) && Math.abs(mouseStart.yaw - afterLeft.yaw) < .0001,
+      rightRotates: same(rotateStart.target, afterRight.target) && Math.abs(rotateStart.yaw - afterRight.yaw) > .0001,
       reset: !!document.querySelector('[data-action="three-reset"]'),
-      resetInViewNavigation: !!document.querySelector('.fpe-view-nav__actions [data-action="three-reset"]'),
-      topToolbarEmpty: !document.querySelector('#fpe-toolbar-host button'),
+      resetInViewActions: !!document.querySelector('#fpe-view-actions-host [data-action="three-reset"]'),
     };
     click('[data-action="view-walk"]'); await pause(350);
     const walkHost = document.querySelector('#fpe-three-host');
     const walkCanvas = document.querySelector('.fpe-three-canvas');
     walkCanvas?.focus();
-    const walkBefore = walkHost?.dataset.camera || '';
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w', bubbles: true }));
-    await pause(180);
-    window.dispatchEvent(new KeyboardEvent('keyup', { key: 'w', bubbles: true }));
-    await pause(50);
+    const walkPosition = () => vector(walkHost?.dataset.camera);
+    const moveWalk = async (key) => {
+      click('[data-action="three-reset"]'); await pause(30);
+      const start = walkPosition();
+      const yaw = Number(walkHost?.dataset.walkYaw);
+      window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+      await pause(180);
+      window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+      await pause(40);
+      return { start, end: walkPosition(), yaw };
+    };
+    const walkW = await moveWalk('w');
+    const walkS = await moveWalk('s');
+    const walkA = await moveWalk('a');
+    const walkD = await moveWalk('d');
+    const displacement = motion => [motion.end[0] - motion.start[0], motion.end[2] - motion.start[2]];
+    const dot = (left, right) => left[0] * right[0] + left[1] * right[1];
+    const forward = [-Math.sin(walkW.yaw), -Math.cos(walkW.yaw)];
+    const right = [Math.cos(walkW.yaw), -Math.sin(walkW.yaw)];
     const walk = {
       active: document.querySelector('[data-action="view-walk"]')?.getAttribute('aria-pressed') || '',
       classed: document.querySelector('.fpe-three-view')?.classList.contains('is-walk') || false,
       renderer: walkHost?.dataset.renderer || '',
       controls: walkHost?.dataset.controls || '',
-      moved: Boolean(walkBefore && walkBefore !== (walkHost?.dataset.camera || '')),
+      moved: changed(walkW.start, walkW.end),
+      directionsCorrect: dot(displacement(walkW), forward) > 0
+        && dot(displacement(walkS), forward) < 0
+        && dot(displacement(walkD), right) > 0
+        && dot(displacement(walkA), right) < 0,
+      toolbarVisible: Boolean(document.querySelector('#fpe-toolbar-host .fpe-toolbar')?.getBoundingClientRect().height),
+      toolbarHints: document.querySelectorAll('#fpe-toolbar-host .fpe-toolbar__hint').length,
+      toolbarPrint: !!document.querySelector('#fpe-toolbar-host [data-action="print"]'),
       reticle: !!document.querySelector('.fpe-walk-reticle'),
       view: new URLSearchParams(location.hash.split('?')[1] || '').get('view') || '',
     };
@@ -495,12 +627,17 @@ try {
     && /orbit/.test(views.threeD.controls) && views.threeD.rooms === initial.roomCount
     && views.threeD.placements === initial.placementCount && views.threeD.canvas.width > 0
     && views.threeD.canvas.height > 0 && views.threeD.orbitMoved && views.threeD.cameraPreserved && views.threeD.view === '3d'
-    && !views.threeD.twoDCanvas && views.threeD.reset && views.threeD.resetInViewNavigation
-    && views.threeD.topToolbarEmpty && views.threeD.hintCards === 0 && views.keyboardThreeD === '3d',
-  'builds the live Three.js model and preserves its camera across selection redraws',
+    && !views.threeD.twoDCanvas && views.threeD.reset && views.threeD.resetInViewActions
+    && views.threeD.toolbarVisible && views.threeD.toolbarHints === 3 && views.threeD.toolbarPrint
+    && views.threeD.zoomButtons === 2 && views.threeD.zoomButtonsWork
+    && views.threeD.leftPans && views.threeD.rightRotates
+    && views.threeD.hintCards === 0 && views.keyboardThreeD === '3d',
+  'builds the live Three.js model with visible controls, button zoom, left-pan/right-rotate, and preserved camera state',
   `${views.threeD.renderer} · ${views.threeD.rooms} rooms · ${views.threeD.placements} objects`);
   check(views.walk.active === 'true' && views.walk.classed && /^Three\.js r\d+/.test(views.walk.renderer)
-    && /keyboard-walk/.test(views.walk.controls) && views.walk.moved && views.walk.reticle && views.walk.view === 'walk'
+    && /keyboard-walk/.test(views.walk.controls) && views.walk.moved && views.walk.directionsCorrect
+    && views.walk.toolbarVisible && views.walk.toolbarHints === 2 && views.walk.toolbarPrint
+    && views.walk.reticle && views.walk.view === 'walk'
     && views.twoD && !views.finalView && views.keyboardTwoD === '2d',
   'walks through the generated floor and returns through keyboard-operable view navigation');
 
@@ -588,6 +725,14 @@ try {
       toolbarActions: [...document.querySelectorAll('#fpe-toolbar-host [data-action]')].map(node => node.dataset.action),
       addPressed: document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '',
     };
+    const editBorder = () => {
+      const style = getComputedStyle(document.querySelector('#fpe-stage'), '::after');
+      return { shadow: style.boxShadow, zIndex: Number(style.zIndex), pointerEvents: style.pointerEvents };
+    };
+    const twoDEditBorder = editBorder();
+    fire(document.querySelector('[data-action="view-3d"]')); await pause(350);
+    const threeDEditBorder = editBorder();
+    fire(document.querySelector('[data-action="view-2d"]')); await pause();
     fire(document.querySelector('[data-action="toggle-library"]')); await pause();
     const opened = {
       libraryOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
@@ -630,7 +775,7 @@ try {
       editStateCenterDelta: stateRect && headerRect
         ? Math.abs((stateRect.left + stateRect.right) / 2 - (headerRect.left + headerRect.right) / 2)
         : Number.POSITIVE_INFINITY,
-      entry, opened, staged,
+      entry, opened, staged, twoDEditBorder, threeDEditBorder,
       libraryKeyboard: modulesViaKeyboard && productsViaKeyboard,
       library: document.querySelector('#fpe-left')?.getAttribute('aria-label') || '',
       libraryOpenAfterPlacement: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
@@ -646,6 +791,8 @@ try {
   })()`);
   check(!added.error && added.editing && added.library === 'Produktbibliothek'
     && added.editStateInHeader && !added.editStateInContext && added.editStateCenterDelta <= 1
+    && /rgb/.test(added.twoDEditBorder.shadow) && added.twoDEditBorder.shadow === added.threeDEditBorder.shadow
+    && added.threeDEditBorder.zIndex === 30 && added.threeDEditBorder.pointerEvents === 'none'
     && !added.entry.libraryOpen && !added.entry.libraryQuery && added.entry.addPressed === 'false'
     && added.entry.toolbarActions.join(',') === 'toggle-library,tool-select,tool-distance,tool-area,toggle-structure-menu,undo,redo,version-history'
     && added.opened.libraryOpen && added.opened.libraryQuery === 'products' && added.opened.addPressed === 'true'
@@ -980,8 +1127,8 @@ try {
   check(!compactReset.left && !compactReset.right,
     'returns to compact mode with both drawers closed');
 
-  await page.evaluate(`document.querySelector('[data-leave][aria-label="Zurück zu allen Geschossen"]')?.click()`);
-  check(await waitFor(page, '#fpe-navigation[data-view="floors"]'), 'returns from the canvas to the editor floor navigation');
+  await page.evaluate(`document.querySelector('.fpe-breadcrumb a:nth-of-type(2)')?.click()`);
+  check(await waitFor(page, '#fpe-navigation[data-view="floors"]'), 'returns from the canvas to the editor floor navigation through the building breadcrumb');
   const returnedNavigation = await page.evaluate(`(() => {
     const visible = selector => {
       const node = document.querySelector(selector);

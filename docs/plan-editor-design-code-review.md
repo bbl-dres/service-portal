@@ -44,11 +44,11 @@ Die Anwendung ist für Desktop-Power-User optimiert. Auf schmalen Viewports blei
 
 ## Codebeurteilung
 
-Positiv sind die klare Trennung von kanonischem Lesebestand und abgelöstem Editor-Dokument, die strikte Repository-Validierung, deterministische Baselines, begrenzter Undo/Redo-Verlauf, URL-reproduzierbarer Zustand und das konsequente Aufräumen von Browser- und Three.js-Ressourcen. `floorplan-editor-canvas.js`, `floorplan-editor-three.js`, `floorplan-editor-model.js` und `floorplan-editor-repository.js` bilden bereits belastbare technische Nähte für die nächste Iteration.
+Positiv sind die klare Trennung von kanonischem Lesebestand und abgelöstem Editor-Dokument, die strikte Repository-Validierung, deterministische Baselines, begrenzter Undo/Redo-Verlauf, URL-reproduzierbarer Zustand und das konsequente Aufräumen von Browser- und Three.js-Ressourcen. `js/floorplan-editor/canvas.js`, `three.js`, `model.js`, `repository.js` und `commands.js` bilden belastbare technische Nähte für die nächste Iteration; der Router-Einstieg unter `js/apps/floorplan-editor.js` bleibt bewusst klein.
 
 Vor dem Produktionsausbau bleiben folgende Punkte bewusst offen:
 
-1. `js/apps/floorplan-editor.js` ist weiterhin ein grosser UI-Orchestrator. Beim Backend-Anschluss sollten Chrome/Navigation, Ressourcenbaum, Bibliothek, Inspektor und Aktionsdialoge in zustandsarme Controller oder View-Module zerlegt werden; das Dokumentmodell soll dabei die einzige fachliche Schreibschnittstelle bleiben.
+1. Navigation, HTML-Komposition und fachliche Schreiboperationen sind aus dem Workbench-Controller herausgelöst. `js/floorplan-editor/controller.js` bleibt jedoch der zentrale Besitzer von UI-Zustand und Interaktionslebenszyklus; bei weiterem Funktionswachstum sollten insbesondere Pointer-/Tastatursteuerung und Aktionsdialoge über schmale Controller-Schnittstellen weiter getrennt werden. `commands.js` beziehungsweise das Dokumentmodell bleiben dabei die fachliche Schreibschnittstelle.
 2. Vier seltene Verwerfungs-/Löschpfade verwenden noch native `confirm`-Dialoge. Für die Produktionsfassung sollten sie durch die vorhandenen CD-Modalmuster mit Aktionstitel, konkreter Auswirkung, destruktiver Schaltfläche und sauberem Fokusrücklauf ersetzt werden. `beforeunload` bleibt aus Browsergründen separat.
 3. Rendering und Suche müssen mit realistischen Grossplänen profiliert werden. Der aktuelle vollständige Baum- und Inspektor-Neuaufbau ist für die Prototypdaten angemessen; bei mehreren hundert Räumen und tausenden Objekten werden inkrementelle Updates oder Listen-Virtualisierung nötig.
 4. Die lokale Publikation ist keine Sicherheits- oder Kollaborationsgrenze. Produktion benötigt eigenständige Raum-Entitäten, authentifizierte API-Aufrufe, Row-Level Security, serverseitige Autorenschaft, Planrevisionen und optimistische Konfliktprüfung.
@@ -57,7 +57,8 @@ Vor dem Produktionsausbau bleiben folgende Punkte bewusst offen:
 ## Verifikation
 
 - `node --check js/apps/floorplan-editor.js`
-- `node --check js/floorplan-editor-three.js`
+- `node --check js/floorplan-editor/controller.js`
+- `node --check js/floorplan-editor/three.js`
 - `node scripts/test-floorplan-editor.mjs`
 - `node scripts/test-floorplan-editor-model.mjs`
 - `git diff --check`

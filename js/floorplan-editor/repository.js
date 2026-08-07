@@ -4,8 +4,8 @@
 // A production adapter will replace these functions with authenticated API
 // calls; authorization belongs to the backend/RLS, never to this UI adapter.
 
-import { readJSON, writeJSON, remove } from './storage.js';
-import { cloneDocument, validateEditorDocument } from './floorplan-editor-model.js';
+import { readJSON, writeJSON, remove } from '../storage.js';
+import { cloneDocument, validateEditorDocument } from './model.js';
 
 export const DRAFT_PREFIX = 'bbl_floorplan_editor_local_v1:';
 export const HISTORY_PREFIX = 'bbl_floorplan_editor_history_v1:';
@@ -117,4 +117,3 @@ export function removeRevisionHistory(floorId) {
   const requestedFloorId = String(floorId || '');
   return identifier(requestedFloorId) && remove(historyKey(requestedFloorId));
 }
-

@@ -2,7 +2,7 @@
 // Geometry is generated from the same browser-local room and placement model
 // as the 2D editor; no separate or pre-rendered 3D source is involved.
 
-import * as THREE from './vendor/three.module.min.js';
+import * as THREE from '../vendor/three.module.min.js';
 
 const CM_TO_M = 0.01;
 const WALK_EYE_HEIGHT = 1.65;
@@ -188,7 +188,7 @@ export function createFloorplanThreeViewer({
     renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   } catch (error) {
     host.innerHTML = `<div class="fpe-three-fallback" role="alert"><strong>3D-Darstellung nicht verfügbar</strong><span>${String(error?.message || error)}</span></div>`;
-    return { reset() {}, getViewState() { return null; }, dispose() {} };
+    return { reset() {}, zoom() {}, getViewState() { return null; }, dispose() {} };
   }
 
   const scene = new THREE.Scene();
@@ -212,13 +212,13 @@ export function createFloorplanThreeViewer({
   renderer.domElement.setAttribute('role', 'application');
   renderer.domElement.setAttribute('aria-label', mode === 'walk'
     ? 'Interaktive Begehung. Mit W A S D oder den Pfeiltasten bewegen, mit der Maus umsehen.'
-    : 'Interaktives 3D-Modell. Mit der Maus drehen und mit dem Mausrad zoomen.');
+    : 'Interaktives 3D-Modell. Linke Maustaste verschiebt, rechte Maustaste dreht, das Mausrad zoomt.');
   host.replaceChildren(renderer.domElement);
   host.dataset.renderer = `Three.js r${THREE.REVISION}`;
   host.dataset.rooms = String(rooms.length);
   host.dataset.placements = String(placements.length);
   host.dataset.mode = mode;
-  host.dataset.controls = mode === 'walk' ? 'pointer-look keyboard-walk' : 'orbit pan zoom select';
+  host.dataset.controls = mode === 'walk' ? 'pointer-look keyboard-walk' : 'orbit left-pan right-rotate wheel-zoom select';
 
   scene.add(new THREE.HemisphereLight(0xf8fbff, 0x768493, 2.25));
   const sun = new THREE.DirectionalLight(0xffffff, 2.7);
@@ -335,6 +335,9 @@ export function createFloorplanThreeViewer({
     );
     camera.lookAt(orbit.target);
     host.dataset.camera = camera.position.toArray().map((value) => value.toFixed(3)).join(',');
+    host.dataset.orbitTarget = orbit.target.toArray().map((value) => value.toFixed(3)).join(',');
+    host.dataset.orbitYaw = orbit.yaw.toFixed(6);
+    host.dataset.orbitDistance = orbit.distance.toFixed(3);
   }
 
   function updateWalkCamera() {
@@ -343,6 +346,7 @@ export function createFloorplanThreeViewer({
     camera.rotation.y = walk.yaw;
     camera.rotation.x = walk.pitch;
     host.dataset.camera = camera.position.toArray().map((value) => value.toFixed(3)).join(',');
+    host.dataset.walkYaw = walk.yaw.toFixed(6);
   }
 
   function reset() {
@@ -354,6 +358,12 @@ export function createFloorplanThreeViewer({
       orbit.target.set(0, 0.2, 0); orbit.yaw = -0.88; orbit.pitch = 0.72;
       orbit.distance = clamp(Math.hypot(floorWidth, floorDepth) * 0.78, 18, 78); updateOrbitCamera();
     }
+  }
+
+  function zoom(factor) {
+    if (mode !== '3d' || !Number.isFinite(factor) || factor <= 0) return;
+    orbit.distance = clamp(orbit.distance * factor, 3.5, 130);
+    updateOrbitCamera();
   }
 
   function resize() {
@@ -380,7 +390,9 @@ export function createFloorplanThreeViewer({
     interaction.active = true; interaction.moved = false; interaction.x = event.clientX; interaction.y = event.clientY; interaction.button = event.button;
     if (mode === 'walk' && event.button === 0 && document.pointerLockElement !== renderer.domElement) {
       renderer.domElement.requestPointerLock?.();
-    } else renderer.domElement.setPointerCapture?.(event.pointerId);
+    } else {
+      try { renderer.domElement.setPointerCapture?.(event.pointerId); } catch { /* synthetic or already released pointer */ }
+    }
   }, { signal });
   renderer.domElement.addEventListener('pointermove', (event) => {
     if (!interaction.active || document.pointerLockElement === renderer.domElement) return;
@@ -389,7 +401,7 @@ export function createFloorplanThreeViewer({
     interaction.moved ||= Math.hypot(dx, dy) > 2;
     if (mode === 'walk') {
       walk.yaw -= dx * 0.006; walk.pitch = clamp(walk.pitch - dy * 0.004, -1.35, 1.35); updateWalkCamera();
-    } else if (interaction.button === 2 || event.shiftKey) {
+    } else if (interaction.button === 0) {
       const factor = orbit.distance * 0.0016;
       orbit.target.x -= dx * factor; orbit.target.z += dy * factor; updateOrbitCamera();
     } else {
@@ -430,7 +442,7 @@ export function createFloorplanThreeViewer({
     previousTime = time;
     if (mode === 'walk' && walk.keys.size) {
       const forward = new THREE.Vector3(-Math.sin(walk.yaw), 0, -Math.cos(walk.yaw));
-      const right = new THREE.Vector3(forward.z, 0, -forward.x);
+      const right = new THREE.Vector3(-forward.z, 0, forward.x);
       const direction = new THREE.Vector3();
       if (walk.keys.has('w') || walk.keys.has('arrowup')) direction.add(forward);
       if (walk.keys.has('s') || walk.keys.has('arrowdown')) direction.sub(forward);
@@ -451,6 +463,7 @@ export function createFloorplanThreeViewer({
 
   return {
     reset,
+    zoom,
     getViewState,
     dispose() {
       if (document.pointerLockElement === renderer.domElement) document.exitPointerLock?.();

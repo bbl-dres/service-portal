@@ -15,11 +15,12 @@ globalThis.localStorage = {
   removeItem: key => storage.delete(key),
 };
 
-const [{ features }, floors, spaces, products, planning, model, repository] = await Promise.all([
+const [{ features }, floors, spaces, products, planning, model, repository, commands] = await Promise.all([
   json('data/buildings.geojson'), json('data/floors.json'), json('data/spaces.json'),
   json('data/shop-products.json'), json('data/workspace-planning.json'),
-  import('../js/floorplan-editor-model.js'),
-  import('../js/floorplan-editor-repository.js'),
+  import('../js/floorplan-editor/model.js'),
+  import('../js/floorplan-editor/repository.js'),
+  import('../js/floorplan-editor/commands.js'),
 ]);
 
 let failures = 0;
@@ -79,6 +80,28 @@ check(catalogueOnlyChange.baseRevision === repeated.baseRevision,
 baseline.rooms[0].occupierVe = 'Nur im Entwurf';
 check(JSON.stringify(sourceRoom) === sourceSnapshot,
   'das abgelöste Editor-Dokument mutiert den eingelesenen Raum nicht');
+
+console.log('■ Dokumentbefehle');
+const commandDocument = model.cloneDocument(repeated);
+const commandRoom = commandDocument.rooms.find(room => commandDocument.placements.some(item => item.roomId === room.spaceId));
+const roomPlacements = commandDocument.placements.filter(item => item.roomId === commandRoom.spaceId);
+const oldRect = commandRoom.rect.slice();
+const dx = oldRect[0] >= 10 ? -10 : 10;
+const oldPlacementX = roomPlacements[0].x;
+check(commands.updateRoomAttribute(commandDocument, commandRoom.spaceId, 'occupierVe', 'Befehlstest VE')
+  && commandRoom.occupierVe === 'Befehlstest VE',
+  'Raumattribute werden über die fachliche Befehlsschnittstelle geändert');
+check(commands.updateRoomGeometry(commandDocument, commandRoom.spaceId, 'x', oldRect[0] + dx, floor.extent)
+  && commandRoom.rect[0] === oldRect[0] + dx && roomPlacements[0].x === oldPlacementX + dx,
+  'Raumverschiebungen halten zugeordnete Objekte relativ zur Fläche');
+const validSnapshot = JSON.stringify(commandDocument);
+check(!commands.updateRoomGeometry(commandDocument, commandRoom.spaceId, 'width', floor.extent[0] + 100, floor.extent)
+  && JSON.stringify(commandDocument) === validSnapshot,
+  'ungültige Raumgeometrie wird ohne Teildokument-Änderung abgelehnt');
+const commandPlacement = commandDocument.placements[0];
+check(commands.updatePlacement(commandDocument, commandPlacement.placementId, 'rotation', 45, floor)
+  && commandPlacement.rotation === 45 && model.validateEditorDocument(commandDocument, repeated),
+  'Objektbefehle bewahren Raum-, Produkt- und Geschossinvarianten');
 
 console.log('■ Browser-lokaler Entwurf');
 const saved = repository.saveWorkingCopy(baseline);
