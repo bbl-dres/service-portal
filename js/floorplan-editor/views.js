@@ -48,9 +48,9 @@ export function createWorkbenchViews(context) {
       </nav>
       <div class="fpe-context__panel-mobile" role="group" aria-label="Seitenpanels">
         <button class="btn btn--bare btn--sm btn--icon-only${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left-mobile" type="button" data-action="toggle-left"
-          aria-label="${leftPanelLabel}" aria-pressed="${leftOpen}"${leftPanelUnavailable ? ' disabled' : ''}>${panelToggleIcon('left')}</button>
+          aria-label="${leftPanelLabel}" title="${leftPanelLabel}" aria-pressed="${leftOpen}"${leftPanelUnavailable ? ' disabled' : ''}>${panelToggleIcon('left')}</button>
         <button class="btn btn--bare btn--sm btn--icon-only${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right-mobile" type="button" data-action="toggle-right"
-          aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
+          aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" title="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
       </div>
       <span class="fpe-version">${C.escape(versionLabel)}</span>
       <span class="fpe-context__status">${planBadge()}</span>
@@ -60,21 +60,30 @@ export function createWorkbenchViews(context) {
         <button class="btn btn--outline btn--sm" id="fpe-more-trigger" type="button" data-action="toggle-more-menu"
           aria-haspopup="menu" aria-expanded="${moreMenuOpen}"><span class="btn__text">Mehr</span>${C.icon('ChevronDown', 'btn__icon')}</button>
         <div class="fpe-more-menu" id="fpe-more-menu" role="menu" aria-label="Weitere Planaktionen"${moreMenuOpen ? '' : ' hidden'}>
-          ${editMode ? '' : '<button type="button" role="menuitem" data-action="version-history">Versionsverlauf…</button>'}
+          ${editMode ? `<button class="fpe-menu-compact-only" type="button" role="menuitem" data-action="save"${dirty ? '' : ' disabled'}>Entwurf speichern</button>
+            <button class="fpe-menu-compact-only" type="button" role="menuitem" data-action="publish"${canPublish() ? '' : ' disabled'}>Veröffentlichen</button>
+            <button class="fpe-menu-phone-only" type="button" role="menuitem" data-action="undo"${editHistory.canUndo ? '' : ' disabled'}>Rückgängig</button>
+            <button class="fpe-menu-phone-only" type="button" role="menuitem" data-action="redo"${editHistory.canRedo ? '' : ' disabled'}>Wiederholen</button>
+            <button class="fpe-menu-compact-only" type="button" role="menuitem" data-action="end-edit">Bearbeitung beenden</button>
+            <span class="fpe-more-menu__separator fpe-menu-compact-only" role="separator"></span>`
+            : `<button class="fpe-menu-phone-only" type="button" role="menuitem" data-action="start-edit">Plan bearbeiten</button>
+              <span class="fpe-more-menu__separator fpe-menu-phone-only" role="separator"></span>`}
+          <button type="button" role="menuitem" data-action="version-history">Versionsverlauf…</button>
+          <button type="button" role="menuitem" data-action="print">Ansicht drucken</button>
           <button type="button" role="menuitem" data-action="copy-link">Link kopieren</button>
           <button type="button" role="menuitem" data-action="copy-plan-id">Plan-ID kopieren</button>
         </div>
       </div>
       ${editMode
-        ? `<button class="btn btn--outline btn--sm" id="fpe-save" type="button" data-action="save" title="Speichert die Arbeitskopie nur in diesem Browser"${dirty ? '' : ' disabled'}>${C.icon('Save', 'btn__icon')}<span class="btn__text">Entwurf speichern</span></button>
-           <button class="btn btn--filled btn--sm" id="fpe-publish" type="button" data-action="publish" title="Simuliert die Veröffentlichung nur in diesem Browser"${canPublish() ? '' : ' disabled'}><span class="btn__text">Veröffentlichen</span></button>
-           <button class="btn btn--outline btn--sm" id="fpe-end-edit" type="button" data-action="end-edit"><span class="btn__text">Beenden</span></button>`
-        : `<button class="btn btn--filled btn--sm" id="fpe-start-edit" type="button" data-action="start-edit"><span class="btn__text">Bearbeiten</span>${C.icon('ArrowRight', 'btn__icon')}</button>`}
+        ? `<button class="btn btn--outline btn--sm btn--icon-left fpe-context__edit-action" id="fpe-save" type="button" data-action="save" title="Speichert die Arbeitskopie nur in diesem Browser"${dirty ? '' : ' disabled'}>${C.icon('Save', 'btn__icon')}<span class="btn__text">Entwurf speichern</span></button>
+           <button class="btn btn--filled btn--sm fpe-context__edit-action" id="fpe-publish" type="button" data-action="publish" title="Simuliert die Veröffentlichung nur in diesem Browser"${canPublish() ? '' : ' disabled'}><span class="btn__text">Veröffentlichen</span></button>
+           <button class="btn btn--outline btn--sm fpe-context__edit-action" id="fpe-end-edit" type="button" data-action="end-edit"><span class="btn__text">Beenden</span></button>`
+        : `<button class="btn btn--filled btn--sm btn--icon-right fpe-context__start-edit" id="fpe-start-edit" type="button" data-action="start-edit">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Bearbeiten</span></button>`}
       <span class="fpe-header__divider" aria-hidden="true"></span>
       <button class="btn btn--bare btn--sm btn--icon-only${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left" type="button" data-action="toggle-left"
-        aria-label="${leftPanelLabel}" aria-pressed="${leftOpen}"${leftPanelUnavailable ? ' disabled' : ''}>${panelToggleIcon('left')}</button>
+        aria-label="${leftPanelLabel}" title="${leftPanelLabel}" aria-pressed="${leftOpen}"${leftPanelUnavailable ? ' disabled' : ''}>${panelToggleIcon('left')}</button>
       <button class="btn btn--bare btn--sm btn--icon-only${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right" type="button" data-action="toggle-right"
-        aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
+        aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" title="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
     </div>`;
   }
 
@@ -117,13 +126,13 @@ export function createWorkbenchViews(context) {
         : `${room.roomNumber} hat keine Ausstattung`;
       return `<li><div class="fpe-resource-room-line${roomSelected ? ' is-selected' : ''}">
         <button type="button" class="fpe-resource-room-toggle" data-resource-room="${C.escape(room.spaceId)}"${expansionAttributes}
-          aria-label="${C.escape(expansionLabel)}"${placements.length ? '' : ' disabled'}>${C.icon(open ? 'ChevronDown' : 'ChevronRight', 'icon--sm')}</button>
+          aria-label="${C.escape(expansionLabel)}"${placements.length ? '' : ' disabled'}>${C.icon(open ? 'ChevronDown' : 'ChevronRight', 'icon--base')}</button>
         <button type="button" class="fpe-resource-row${roomSelected ? ' is-selected' : ''}" data-select-type="room" data-select-id="${C.escape(room.spaceId)}" aria-pressed="${roomSelected}">
           <span>${C.escape(room.roomNumber)}</span><span>${Number(room.area).toLocaleString('de-CH')} m²</span></button>
       </div>
         ${placements.length ? `<ul class="fpe-resource-assets" id="${assetsId}"${open ? '' : ' hidden'}>${placements.map((placement) => {
           const active = selected?.type === 'placement' && selected.id === placement.placementId;
-          return `<li><button type="button" class="fpe-resource-row fpe-resource-row--asset${active ? ' is-selected' : ''}" data-select-type="placement" data-select-id="${C.escape(placement.placementId)}" aria-pressed="${active}">${C.icon('List', 'icon--sm')}<span>${C.escape(placement.name)}</span></button></li>`;
+          return `<li><button type="button" class="fpe-resource-row fpe-resource-row--asset${active ? ' is-selected' : ''}" data-select-type="placement" data-select-id="${C.escape(placement.placementId)}" aria-pressed="${active}"><span>${C.escape(placement.name)}</span></button></li>`;
         }).join('')}</ul>` : ''}</li>`;
     };
     if (colorMode === 'none') {
@@ -135,7 +144,7 @@ export function createWorkbenchViews(context) {
       const groupId = `fpe-resource-group-${groupIndex}`;
       return `<section class="fpe-resource-group">
       <h3><button type="button" class="fpe-resource-group__head" data-resource-group="${C.escape(group.key)}" aria-expanded="${!collapsed}" aria-controls="${groupId}">
-        ${C.icon(collapsed ? 'ChevronRight' : 'ChevronDown', 'icon--sm')}<span class="fpe-swatch fpe-swatch--${C.escape(group.swatch)}" aria-hidden="true"></span>
+        ${C.icon(collapsed ? 'ChevronRight' : 'ChevronDown', 'icon--base')}<span class="fpe-swatch fpe-swatch--${C.escape(group.swatch)}" aria-hidden="true"></span>
         <span>${C.escape(group.label)}</span><span>${group.rooms.length}</span><span>${group.area.toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²</span>
       </button></h3>
       <ul id="${groupId}"${collapsed ? ' hidden' : ''}>${group.rooms.map((entry, roomIndex) => roomRow(entry, `${groupIndex}-${roomIndex}`)).join('')}</ul>
@@ -188,30 +197,24 @@ export function createWorkbenchViews(context) {
     const editingProducts = editMode && libraryMode === 'products';
     const categories = [...new Set(products.map((product) => product.category).filter(Boolean))].sort();
     const search = `<label class="sr-only" for="fpe-left-search">${editMode ? (editingProducts ? 'Produkte' : 'Module') : 'Ressourcen'} suchen</label>
-      <div class="fpe-panel-search">${C.icon('Search', 'icon--sm')}<input id="fpe-left-search" type="search" placeholder="${editMode ? (editingProducts ? 'Produkte suchen…' : 'Module suchen…') : 'Schnellsuche…'}" value="${C.escape(editMode ? productQuery : resourceQuery)}"></div>`;
+      <div class="fpe-panel-search">${C.icon('Search', 'icon--base')}<input id="fpe-left-search" type="search" placeholder="${editMode ? (editingProducts ? 'Produkte suchen…' : 'Module suchen…') : 'Suchen…'}" value="${C.escape(editMode ? productQuery : resourceQuery)}"></div>`;
     const colorControl = `<div class="fpe-resource-tools">${search}<div class="fpe-color-picker">
-      <button class="btn btn--filled btn--sm btn--icon-only" id="fpe-color-trigger" type="button" data-action="toggle-color-menu"
-        aria-label="Farbe nach Attribut: ${C.escape(EDITOR_COLOR_MODES.find((item) => item.value === colorMode)?.label || '')}" aria-haspopup="menu" aria-expanded="${colorMenuOpen}" aria-controls="fpe-color-menu">${C.icon('Eyedropper', 'btn__icon')}</button>
+      <button class="btn btn--outline btn--sm btn--icon-left" id="fpe-color-trigger" type="button" data-action="toggle-color-menu"
+        aria-label="Farbe nach Attribut: ${C.escape(EDITOR_COLOR_MODES.find((item) => item.value === colorMode)?.label || '')}" aria-haspopup="menu" aria-expanded="${colorMenuOpen}" aria-controls="fpe-color-menu">${C.icon('Stack', 'btn__icon')}<span class="btn__text">Farbe</span></button>
     </div></div>`;
     return `<aside class="fpe-left" id="fpe-left" aria-label="${editMode ? 'Produktbibliothek' : 'Ressourcen'}">
-      <h2 class="sr-only">${editMode ? 'Produktbibliothek' : 'Ressourcen'}</h2>
       <div class="fpe-panel-head">
-        ${editMode ? `<div class="fpe-panel-title-row"><p class="fpe-overline">Bibliothek</p>
-          <button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="close-library" aria-label="Bibliothek schliessen">${C.icon('Cancel', 'btn__icon')}</button></div>`
-          : '<p class="fpe-overline">Ressourcen</p>'}
+        <div class="fpe-panel-title-row"><h2 class="fpe-panel-title">${editMode ? 'Bibliothek' : 'Ressourcen'}</h2>
+          <button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close${editMode ? ' fpe-library-close' : ''}" type="button" data-action="${editMode ? 'close-library' : 'toggle-left'}" aria-label="${editMode ? 'Bibliothek' : 'Ressourcen'} schliessen">${C.icon('Cancel', 'btn__icon')}</button></div>
         ${editMode ? `<div class="fpe-library-tabs" role="tablist" aria-label="Bibliothek">
-          <button type="button" role="tab" data-library="products" aria-controls="fpe-left-list" aria-selected="${libraryMode === 'products'}" tabindex="${libraryMode === 'products' ? '0' : '-1'}"${libraryMode === 'products' ? ' class="is-active"' : ''}>Produkte</button>
-          <button type="button" role="tab" data-library="modules" aria-controls="fpe-left-list" aria-selected="${libraryMode === 'modules'}" tabindex="${libraryMode === 'modules' ? '0' : '-1'}"${libraryMode === 'modules' ? ' class="is-active"' : ''}>Module</button>
+          <button type="button" id="fpe-library-tab-products" role="tab" data-library="products" aria-controls="fpe-left-list" aria-selected="${libraryMode === 'products'}" tabindex="${libraryMode === 'products' ? '0' : '-1'}"${libraryMode === 'products' ? ' class="is-active"' : ''}>Produkte</button>
+          <button type="button" id="fpe-library-tab-modules" role="tab" data-library="modules" aria-controls="fpe-left-list" aria-selected="${libraryMode === 'modules'}" tabindex="${libraryMode === 'modules' ? '0' : '-1'}"${libraryMode === 'modules' ? ' class="is-active"' : ''}>Module</button>
         </div>` : ''}
         ${editMode ? search : colorControl}
         ${editingProducts ? C.select({ id: 'fpe-product-category', label: 'Kategorie', size: 'sm', value: productCategory,
           options: [{ value: '', label: 'Alle Kategorien' }, ...categories.map((value) => ({ value, label: value }))] }) : ''}
-        ${editMode ? `<p class="small muted m-0">${editingProducts
-          ? 'Produkt wählen und anschliessend im Plan platzieren. Bei gewähltem Raum wird es mittig eingefügt.'
-          : 'Raum wählen und ein Multispace-Modul zuweisen. Die Zuordnung ist eine Prototypannahme.'}</p>`
-          : ''}
       </div>
-      <div class="fpe-panel-scroll" id="fpe-left-list"${editMode ? ' role="tabpanel"' : ''}>${editMode ? (editingProducts ? productListHTML() : moduleListHTML()) : resourceListHTML()}</div>
+      <div class="fpe-panel-scroll" id="fpe-left-list"${editMode ? ` role="tabpanel" aria-labelledby="fpe-library-tab-${libraryMode}"` : ''}>${editMode ? (editingProducts ? productListHTML() : moduleListHTML()) : resourceListHTML()}</div>
     </aside>`;
   }
 
@@ -223,20 +226,10 @@ export function createWorkbenchViews(context) {
   }
 
   function toolbarHTML() {
-    if (viewMode !== '2d') {
-      const hints = viewMode === 'walk'
-        ? `<span class="fpe-toolbar__hint">${C.icon('Keyboard', 'icon--sm')}<span>WASD: bewegen</span></span>
-           <span class="fpe-toolbar__hint">${C.icon('Eye', 'icon--sm')}<span>Maus: umsehen</span></span>`
-        : `<span class="fpe-toolbar__hint">${C.icon('Pointer', 'icon--sm')}<span>Klick: auswählen</span></span>
-           <span class="fpe-toolbar__hint">${C.icon('Move', 'icon--sm')}<span>Links: verschieben</span></span>
-           <span class="fpe-toolbar__hint">${C.icon('Refresh', 'icon--sm')}<span>Rechts: drehen</span></span>`;
-      return `<div class="fpe-toolbar fpe-toolbar--three" role="group" aria-label="${viewMode === 'walk' ? 'Steuerung der Begehung' : 'Steuerung der 3D-Ansicht'}">
-        ${hints}<span class="fpe-tool-sep"></span>${toolButton('print', 'Ansicht drucken', 'Printer')}
-      </div>`;
-    }
+    if (viewMode !== '2d') return '';
     if (editMode) {
       const libraryActive = assetLibraryOpen || ['add', 'place'].includes(tool);
-      return `<div class="fpe-toolbar" role="toolbar" aria-label="Bearbeitungswerkzeuge">
+      return `<div class="fpe-toolbar" role="group" aria-label="Bearbeitungswerkzeuge">
         <button class="btn ${libraryActive ? 'btn--filled' : 'btn--bare'} btn--sm fpe-tool fpe-tool--labelled${libraryActive ? ' is-active' : ''}" id="fpe-action-toggle-library"
           type="button" data-action="toggle-library" aria-label="Ausstattung hinzufügen" title="Ausstattung hinzufügen"
           aria-pressed="${libraryActive}">${C.icon('Plus', 'btn__icon')}<span class="btn__text">Hinzufügen</span></button>
@@ -247,36 +240,31 @@ export function createWorkbenchViews(context) {
         <span class="fpe-tool-sep"></span>
         <button class="btn btn--bare btn--sm fpe-tool fpe-structure-trigger${tool === 'room' ? ' is-active' : ''}" id="fpe-structure-trigger"
           type="button" data-action="toggle-structure-menu" aria-haspopup="menu" aria-expanded="${structureMenuOpen}"
-          title="Strukturbearbeitung ${structureUnlocked ? 'entsperrt' : 'gesperrt'}">${C.icon(structureUnlocked ? 'Building' : 'Lock', 'btn__icon')}
+          title="Strukturbearbeitung ${structureUnlocked ? 'entsperrt' : 'gesperrt'}">${C.icon(structureUnlocked ? 'Unlock' : 'Lock', 'btn__icon')}
           <span class="btn__text">Struktur ${structureUnlocked ? 'entsperrt' : 'gesperrt'}</span>${C.icon('ChevronDown', 'btn__icon')}</button>
         <span class="fpe-tool-sep"></span>
-        ${toolButton('undo', 'Rückgängig', 'ArrowLeft', { disabled: !editHistory.canUndo })}
-        ${toolButton('redo', 'Wiederholen', 'ArrowRight', { disabled: !editHistory.canRedo })}
-        ${toolButton('version-history', 'Versionsverlauf', 'History')}
+        <span class="fpe-toolbar__history-action">${toolButton('undo', 'Rückgängig', 'ArrowLeft', { disabled: !editHistory.canUndo })}</span>
+        <span class="fpe-toolbar__history-action">${toolButton('redo', 'Wiederholen', 'ArrowRight', { disabled: !editHistory.canRedo })}</span>
       </div>`;
     }
-    return `<div class="fpe-toolbar" role="toolbar" aria-label="Planwerkzeuge">
+    return `<div class="fpe-toolbar" role="group" aria-label="Planwerkzeuge">
       ${toolButton('tool-select', 'Auswählen', 'Pointer', { active: tool === 'select', pressed: tool === 'select' })}
       ${toolButton('tool-pan', 'Plan verschieben', 'Move', { active: tool === 'pan', pressed: tool === 'pan' })}
       <span class="fpe-tool-sep"></span>
       ${toolButton('tool-distance', 'Strecke messen', 'Ruler', { active: tool === 'distance', pressed: tool === 'distance' })}
       ${toolButton('tool-area', 'Fläche messen', 'Crop', { active: tool === 'area', pressed: tool === 'area' })}
-      <span class="fpe-tool-sep"></span>${toolButton('print', 'Plan drucken', 'Printer')}
     </div>`;
   }
 
   function structureMenuHTML() {
     if (!editMode || viewMode !== '2d') return '';
-    const unavailable = ['Wand', 'Tür', 'Fenster', 'Wandöffnung', 'Einbaumöbel', 'Teeküche', 'Stütze', 'Geländer', 'Treppe', 'Raumteiler'];
     return `<div class="fpe-structure-menu" id="fpe-structure-menu" role="menu" aria-label="Strukturbearbeitung"${structureMenuOpen ? '' : ' hidden'}>
       <p class="fpe-overline">Strukturwerkzeuge</p>
-      ${unavailable.map((label) => `<button type="button" role="menuitem" disabled title="In diesem Feedback-Prototyp noch nicht verfügbar">
-        ${C.icon('Minus', 'icon--sm')}<span>${label}</span></button>`).join('')}
       <button type="button" role="menuitem" data-action="tool-room"${structureUnlocked ? '' : ' disabled'}>
-        ${C.icon('Apps', 'icon--sm')}<span><strong>Raumfläche anlegen</strong><small>Im Plan aufziehen oder per Tastatur setzen</small></span></button>
+        ${C.icon('Apps', 'icon--base')}<span>Raumfläche anlegen</span></button>
       <span class="fpe-structure-menu__separator" aria-hidden="true"></span>
       <button type="button" role="menuitem" data-action="toggle-structure-lock">
-        ${C.icon(structureUnlocked ? 'Lock' : 'Unlock', 'icon--sm')}<span>Strukturbearbeitung ${structureUnlocked ? 'sperren' : 'entsperren'}</span></button>
+        ${C.icon(structureUnlocked ? 'Lock' : 'Unlock', 'icon--base')}<span>Strukturbearbeitung ${structureUnlocked ? 'sperren' : 'entsperren'}</span></button>
     </div>`;
   }
 
@@ -284,14 +272,14 @@ export function createWorkbenchViews(context) {
     const modes = [
       { value: '2d', label: '2D', accessible: '2D-Grundriss' },
       { value: '3d', label: '3D', accessible: '3D-Modell' },
-      { value: 'walk', label: 'Begehung', accessible: 'Begehungsansicht', icon: 'Eye' },
+      { value: 'walk', label: 'Begehung', accessible: 'Begehungsansicht' },
     ];
     const modeButtons = modes.map((mode) => {
       const active = viewMode === mode.value;
       return `<button type="button" class="fpe-view-nav__mode${active ? ' is-active' : ''}" id="fpe-view-${mode.value}"
         data-action="view-${mode.value}" data-view-mode="${mode.value}" aria-label="${mode.accessible}"
         title="${mode.accessible}" aria-pressed="${active}" tabindex="${active ? '0' : '-1'}">
-        ${mode.icon ? C.icon(mode.icon, 'icon--md') : ''}<span class="fpe-view-nav__label">${mode.label}</span></button>`;
+        <span class="fpe-view-nav__label">${mode.label}</span></button>`;
     }).join('');
     return `<div class="fpe-view-nav" role="group" aria-label="Darstellung wechseln">
       <div class="fpe-view-nav__modes">${modeButtons}</div>
@@ -300,9 +288,9 @@ export function createWorkbenchViews(context) {
 
   function viewActionsHTML() {
     const navigationActions = viewMode === '2d'
-      ? `${toolButton('zoom-out', 'Verkleinern', 'Minus')}${toolButton('zoom-in', 'Vergrössern', 'Plus')}${toolButton('fit', 'Plan einpassen', 'Compress')}${toolButton('fit-selection', 'Auswahl einpassen', 'Expand', { disabled: !selected })}`
+      ? `${toolButton('zoom-out', 'Verkleinern', 'Minus')}${toolButton('zoom-in', 'Vergrössern', 'Plus')}${toolButton('fit', 'Plan einpassen', 'Compress')}${toolButton('fit-selection', 'Auswahl einpassen', 'Bullseye', { disabled: !selected })}`
       : `${viewMode === '3d' ? `${toolButton('zoom-out', '3D-Ansicht verkleinern', 'Minus')}${toolButton('zoom-in', '3D-Ansicht vergrössern', 'Plus')}` : ''}${toolButton('three-reset', `${viewMode === 'walk' ? 'Begehung' : '3D-Ansicht'} zurücksetzen`, 'Compress')}`;
-    return `<div class="fpe-view-nav__actions" role="toolbar" aria-label="Ansicht navigieren">${navigationActions}</div>`;
+    return `<div class="fpe-view-nav__actions" role="group" aria-label="Ansicht navigieren">${navigationActions}</div>`;
   }
 
   function sceneContentHTML() {
@@ -350,12 +338,12 @@ export function createWorkbenchViews(context) {
       entry.area += Number(room.area || 0);
       groups.set(room.useLabel, entry);
     });
-    return `<div class="fpe-inspector-title">${C.icon('Building', 'icon--md')}<span>${C.escape(floor.label)}</span><small>Nichts ausgewählt</small></div>
+    return `<div class="fpe-inspector-title"><span><small>Geschoss</small>${C.escape(floor.label)}</span><button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close" type="button" data-action="toggle-right" aria-label="Inspektor schliessen">${panelToggleIcon('right')}</button></div>
       <section class="fpe-inspector-section"><h3>Geschosskennzahlen</h3><div class="fpe-kpis">
         <div><small>Bruttofläche</small><strong>${Number(floor.areaGross).toLocaleString('de-CH')} m²</strong></div>
         <div><small>Arbeitsplätze</small><strong>${workplaces.toLocaleString('de-CH')}</strong></div>
         <div><small>Räume</small><strong>${editorDocument.rooms.length}</strong></div>
-        <div><small>Verortet (illustrativ)</small><strong>${editorDocument.placements.length}</strong></div>
+        <div><small>Verortete Objekte</small><strong>${editorDocument.placements.length}</strong></div>
         <div><small>Verkehrsfläche</small><strong>${traffic.toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²</strong></div>
         <div><small>Planungsmenge</small><strong>${plan.equipmentCount == null ? '—' : Number(plan.equipmentCount).toLocaleString('de-CH')}</strong></div>
       </div></section>
@@ -365,7 +353,7 @@ export function createWorkbenchViews(context) {
         <dt>Geschoss-ID</dt><dd class="mono">${C.escape(floor.floorId)}</dd><dt>Gebäude</dt><dd>${C.escape(building.name)}</dd>
         <dt>Adresse</dt><dd>${C.escape(address(building))}</dd><dt>Variante</dt><dd>${C.escape(editorVersionLabel())}</dd>
         <dt>Letzte Synchronisation</dt><dd>${C.escape(plan.lastSync || 'nicht erfasst')}</dd><dt>Planstand</dt><dd>${planBadge()}</dd>
-      </dl><p class="small muted">Wählen Sie einen Raum oder ein Ausstattungsobjekt im Plan.</p></section>`;
+      </dl></section>`;
   }
 
   function roomInspectorHTML(room) {
@@ -373,7 +361,7 @@ export function createWorkbenchViews(context) {
     const moduleValue = String(room.moduleId || '');
     const [roomX, roomY, roomWidth, roomHeight] = room.rect;
     const localRoom = room.spaceId.startsWith('local-room-');
-    return `<div class="fpe-inspector-title"><span><small>Ausgewählter Raum</small>${C.escape(room.roomNumber)}</span><button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="clear-selection" aria-label="Auswahl aufheben">${C.icon('Cancel', 'btn__icon')}</button></div>
+    return `<div class="fpe-inspector-title"><span><small>Ausgewählter Raum</small>${C.escape(room.roomNumber)}</span><button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="clear-selection" aria-label="Auswahl aufheben">${C.icon('Cancel', 'btn__icon')}</button><button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close" type="button" data-action="toggle-right" aria-label="Inspektor schliessen">${panelToggleIcon('right')}</button></div>
       <section class="fpe-inspector-section"><h3>Details</h3><dl class="fpe-kv"><dt>Fläche</dt><dd>${Number(room.area).toLocaleString('de-CH')} m²</dd><dt>AOID</dt><dd class="mono">${C.escape(room.spaceId)}</dd><dt>Arbeitsplätze</dt><dd>${Number(room.capacity || 0)}</dd></dl></section>
       ${editMode ? `<form class="fpe-inspector-section fpe-form" id="fpe-room-form">
         <h3>Standard-Attribute</h3>
@@ -392,8 +380,8 @@ export function createWorkbenchViews(context) {
           <div class="fpe-field"><label for="fpe-room-width">Breite (cm)</label><input id="fpe-room-width" class="input--outline input--sm" type="number" min="100" step="10" data-room-geometry="width" value="${Math.round(roomWidth)}"${structureUnlocked ? '' : ' disabled'}></div>
           <div class="fpe-field"><label for="fpe-room-height">Tiefe (cm)</label><input id="fpe-room-height" class="input--outline input--sm" type="number" min="100" step="10" data-room-geometry="height" value="${Math.round(roomHeight)}"${structureUnlocked ? '' : ' disabled'}></div>
         </div>
-        <p class="small muted m-0">${structureUnlocked ? 'Kanten im Plan ziehen oder Werte eingeben. Zugeordnete Objekte müssen innerhalb der Fläche bleiben.' : 'Im Strukturmenü entsperren, um Raumkanten und Geometriewerte zu bearbeiten.'}</p>
-        ${localRoom ? `<button class="btn btn--outline btn--sm" type="button" data-action="delete-room"${structureUnlocked ? '' : ' disabled'}>${C.icon('Trash', 'btn__icon')}<span class="btn__text">Neue Fläche entfernen</span></button>` : ''}
+        ${structureUnlocked ? '' : '<p class="small muted m-0">Im Strukturmenü entsperren, um Raumkanten und Geometriewerte zu bearbeiten.</p>'}
+        ${localRoom ? `<button class="btn btn--outline btn--sm btn--icon-left" type="button" data-action="delete-room"${structureUnlocked ? '' : ' disabled'}>${C.icon('Trash', 'btn__icon')}<span class="btn__text">Neue Fläche entfernen</span></button>` : ''}
       </form>` : `<section class="fpe-inspector-section"><h3>Standard-Attribute</h3><dl class="fpe-kv"><dt>Nutzung</dt><dd>${C.escape(room.useLabel)}</dd><dt>Raumbezeichnung</dt><dd>${C.escape(room.roomName || room.useLabel)}</dd><dt>SIA 416</dt><dd>${C.escape(room.siaLabel)} (${C.escape(room.sia)})</dd><dt>Verwaltungseinheit</dt><dd>${C.escape(room.occupierVe || 'nicht zugeteilt')}</dd><dt>Reservierbar</dt><dd>${room.bookable ? 'Ja' : 'Nein'}</dd></dl></section>`}
       <section class="fpe-inspector-section"><h3>Ausstattung in diesem Raum <span>${items.length}</span></h3>${items.length
         ? `<ul class="fpe-inspector-list">${items.map((placement) => `<li><button type="button" data-select-type="placement" data-select-id="${C.escape(placement.placementId)}">${C.escape(placement.name)}${C.icon('ChevronRight', 'icon--sm')}</button></li>`).join('')}</ul>`
@@ -408,17 +396,16 @@ export function createWorkbenchViews(context) {
     const image = productImage(product);
     const sameRoom = editorDocument.placements.filter((item) => item.roomId === placement.roomId && item.productId === placement.productId).length;
     const sameFloor = editorDocument.placements.filter((item) => item.productId === placement.productId).length;
-    return `<div class="fpe-inspector-title">${C.icon('List', 'icon--md')}<span>Objekt</span><small>${C.escape(room?.roomNumber || 'nicht zugeordnet')}</small><button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="clear-selection" aria-label="Auswahl aufheben">${C.icon('Cancel', 'btn__icon')}</button></div>
+    return `<div class="fpe-inspector-title"><span><small>Ausgewähltes Objekt</small>${C.escape(placement.name)}</span><small>${C.escape(room?.roomNumber || 'nicht zugeordnet')}</small><button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="clear-selection" aria-label="Auswahl aufheben">${C.icon('Cancel', 'btn__icon')}</button><button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close" type="button" data-action="toggle-right" aria-label="Inspektor schliessen">${panelToggleIcon('right')}</button></div>
       <div class="fpe-product-preview">${image ? `<img src="${C.escape(image)}" alt="${C.escape(placement.name)}">` : C.icon('Image', 'icon--lg')}</div>
       <section class="fpe-inspector-section"><h3>Objektkennzahlen</h3><div class="fpe-kpis"><div><small>In diesem Raum</small><strong>${sameRoom}</strong></div><div><small>Auf diesem Geschoss</small><strong>${sameFloor}</strong></div></div></section>
       <section class="fpe-inspector-section"><h3>Standard-Attribute</h3><dl class="fpe-kv"><dt>Objektname</dt><dd>${C.escape(placement.name)}</dd><dt>Breite</dt><dd>${placement.width / 100} m</dd><dt>Tiefe</dt><dd>${placement.depth / 100} m</dd><dt>Marke</dt><dd>${C.escape(product?.brand || 'nicht erfasst')}</dd><dt>Katalog-ID</dt><dd class="mono">${C.escape(placement.articleId || String(placement.productId))}</dd><dt>Objekt-ID</dt><dd class="mono">${C.escape(placement.placementId)}</dd></dl></section>
       ${editMode ? `<form class="fpe-inspector-section fpe-form" id="fpe-placement-form"><h3>Position</h3>
         <div class="fpe-form-grid"><div class="fpe-field"><label for="fpe-placement-x">X (cm)</label><input id="fpe-placement-x" class="input--outline input--sm" type="number" step="10" data-placement-field="x" value="${Math.round(placement.x)}"></div><div class="fpe-field"><label for="fpe-placement-y">Y (cm)</label><input id="fpe-placement-y" class="input--outline input--sm" type="number" step="10" data-placement-field="y" value="${Math.round(placement.y)}"></div></div>
         <div class="fpe-field"><label for="fpe-placement-rotation">Drehung</label><select id="fpe-placement-rotation" class="input--outline input--sm" data-placement-field="rotation">${optionMarkup([0, 45, 90, 135, 180, 225, 270, 315].map((value) => ({ value, label: `${value}°` })), placement.rotation)}</select></div>
-        <div class="fpe-form-actions"><button class="btn btn--outline btn--sm" type="button" data-action="rotate-left" aria-label="Objekt 45 Grad nach links drehen">${C.icon('ArrowLeft', 'btn__icon')}<span class="btn__text">Drehen</span></button><button class="btn btn--outline btn--sm" type="button" data-action="delete-placement">${C.icon('Trash', 'btn__icon')}<span class="btn__text">Entfernen</span></button></div>
-        <p class="small muted">Im Plan ziehen oder mit den Pfeiltasten in 10-cm-Schritten bewegen.</p>
-      </form>` : `<section class="fpe-inspector-section"><p class="small muted">Verschieben, drehen und entfernen ist nur im Bearbeitungsmodus möglich.</p></section>`}
-      ${product ? `<section class="fpe-inspector-section"><a class="btn btn--outline btn--sm" href="#/app/shop/product/${encodeURIComponent(product.id)}" target="_blank" rel="noopener"><span class="btn__text">Im Produktkatalog öffnen</span>${C.icon('External', 'btn__icon')}</a></section>` : ''}`;
+        <div class="fpe-form-actions"><button class="btn btn--outline btn--sm btn--icon-left" type="button" data-action="rotate-left" aria-label="Objekt 45 Grad nach links drehen">${C.icon('ArrowLeft', 'btn__icon')}<span class="btn__text">Drehen</span></button><button class="btn btn--outline btn--sm btn--icon-left" type="button" data-action="delete-placement">${C.icon('Trash', 'btn__icon')}<span class="btn__text">Entfernen</span></button></div>
+      </form>` : ''}
+      ${product ? `<section class="fpe-inspector-section"><a class="btn btn--outline btn--sm btn--icon-right" href="#/app/shop/product/${encodeURIComponent(product.id)}" target="_blank" rel="noopener">${C.icon('External', 'btn__icon')}<span class="btn__text">Im Produktkatalog öffnen</span></a></section>` : ''}`;
   }
 
   function inspectorHTML() {

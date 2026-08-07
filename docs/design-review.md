@@ -260,3 +260,47 @@ Raumbuchung auf 58 Zustände erweitert.
 
 Die freigegebenen Phasen 5 und 6 sind umgesetzt. Die Nachher-Baseline und die
 strukturierten Prüfergebnisse bilden den Abnahmestand dieser Runde.
+
+## 9. Vertiefungsreview Plan-Editor
+
+Stand: 7. August 2026. Geprüft wurde ausschliesslich der eigenständige
+Plan-Editor in `js/floorplan-editor`: Gebäude- und Geschossnavigation,
+2D-Grundriss, 3D-Ansicht, Begehung, Bearbeitungsmodus, Bibliothek und
+Inspektor. Referenz waren die lokalen CD-Quellen der Version 1.0.5 sowie
+gerenderte Zustände bei 320, 768 und 1440 px.
+
+Der Plan-Editor bleibt bewusst eine kompakte Fachanwendung. Public-Site-
+Container oder der vollständige TopHeader wären hier nicht aufgabengerecht.
+CD-Konformität wird stattdessen über Schrift, Farbrampen, Abstände,
+Button-Anatomie, Fokus, Formulare und Interaktionszustände hergestellt.
+
+### Befunde und Umsetzung
+
+| Thema | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| Visuelle Hinweise | Dauerhafte 3D-/Begehungsanweisungen, Auswahlhinweise und Prototyp-Erklärungen konkurrierten mit dem Plan. | Selbsterklärende Hinweise entfernt; unsichtbare Tastaturhilfe, Fehlermeldungen und Live-Ansagen bleiben erhalten. | erledigt |
+| Unverfügbare Funktionen | Upload, zehn Strukturwerkzeuge und zwei Navigationsbereiche waren dauerhaft deaktiviert sichtbar. | Nicht verfügbare Funktionen ausgeblendet; sie werden erst mit funktionaler Umsetzung wieder angeboten. | erledigt |
+| Inspektor | Dekorative `Building`-/`List`-Icons waren optisch unruhig und teils falsch ausgerichtet. | Einheitliche textuelle Titelanatomie aus Kontextzeile und Objektname; Icons nur noch für echte Aktionen. | erledigt |
+| Ansichtswechsel | 2D/3D waren Text, Begehung war als einziges Segment Icon plus Text und mobil nur ein Auge. | Alle drei Modi als konsistente, immer lesbare Textsegmente. | erledigt |
+| Aktionshierarchie | Drucken und Versionsverlauf belegten Werkzeugleisten; mobile Speichern-/Publizieren-/Beenden-Aktionen lagen ausserhalb des sichtbaren Bereichs. | Planweite Aktionen nach «Mehr» verschoben; mobile Bearbeitungsaktionen dort explizit verfügbar; Canvas-Werkzeugleisten auf Werkzeuge begrenzt. | erledigt |
+| Kontrast | Bedeutungsvolle Grenzen nutzten `--color-border` mit rund 1.24:1. Warnungs- und Erfolgsumrisse nutzten zu helle Statusstufen. | Bediengruppen und auswählbare Karten verwenden `secondary-300` (gemessen 3.34:1); Statusumrisse verwenden die dunklen Texttokens. Dekorative Trenner bleiben bewusst zurückhaltend. | erledigt |
+| Touch | Eigene Baum-, Register- und Menücontrols unterschritten teilweise 44 × 44 px. | Unter 1024 px und bei grobem Zeiger mindestens 44 px; Chevron-Grafik bleibt optisch kleiner als ihre Trefferfläche. | erledigt |
+| Kompakte Panels | Seitenpanels überdeckten den Plan, ohne den Fokus in den Drawer zu führen. | Fokus auf die Drawer-Schliessen-Aktion, verdeckter Canvas `inert`, Escape/Backdrop schliessen und Fokus kehrt zum Auslöser zurück. | erledigt |
+| Bibliothek | Zwei Produktkarten pro schmalem Mobil-Drawer erzeugten sehr kleine Texte und Bilder. | Mobile einspaltige, horizontale Produktkarten; Textgrössen auf die CD-Rampe angehoben. | erledigt |
+| Mobile Navigation | Die 46-rem-Tabelle verlangte auf 320 px horizontales Scrollen. | Semantische Tabelle als kompakte, beschriftete Zeilen mit Identität, Kennzahl und Status dargestellt; kein horizontaler Scrollbereich. | erledigt |
+| Sichere Bildschirmränder | Bottom- und Side-Controls lagen fest an Standardabständen. | Safe-Area-Abstände für mobile Header, Footer und schwebende Viewer-Controls ergänzt. | erledigt |
+| Kurzes Querformat | Im 568 × 320-px-Bearbeitungsmodus ragten das Aktionsmenü und die vertikale Kameraleiste aus dem nutzbaren Bereich; der Fokus des aktiven Ansichtsmodus war zu kontrastarm. | Menü höhenbegrenzt, scrollbar und am Viewport geklemmt; Kameraaktionen horizontal; aktiver Fokus mit 5.17:1 Kontrast. | erledigt |
+
+### Abnahme
+
+- Vollständige Browser-Suite `scripts/test-floorplan-editor.mjs`: bestanden.
+- Automatisierter Kontrastnachweis für Toolbar- und Ansichtsgrenzen: 3.34:1.
+- 320-px-Prüfung: keine Dokumentüberläufe, kritische Aktionen im sichtbaren
+  «Mehr»-Menü, textuelle Ansichtsmodi und mindestens 44-px-Ziele.
+- 568 × 320-px-Prüfung: alle Planaktionen erreichbar, Kameraaktionen vollständig
+  im Workbench und aktiver Fokus mit 5.17:1 Kontrast.
+- Visuelle Nachprüfung der Editorzustände in 320, 768 und 1440 px.
+
+Raumfarben und Three.js-Materialien bleiben bewusst fachliche Datenfarben.
+Sie werden nicht auf Marken- oder Statusfarben reduziert; CD-Tokens gelten für
+das umgebende Chrome, Auswahl, Fokus und Zustände.

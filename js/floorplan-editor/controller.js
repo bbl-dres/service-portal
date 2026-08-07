@@ -339,11 +339,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   function syncDraftChrome() {
     const version = mount.querySelector('.fpe-version');
     if (version) version.textContent = editorVersionLabel();
-    const save = mount.querySelector('#fpe-save');
-    if (save) save.disabled = !dirty;
-    const publish = mount.querySelector('#fpe-publish');
-    if (publish) publish.disabled = !canPublish();
+    mount.querySelectorAll('[data-action="save"]').forEach((button) => { button.disabled = !dirty; });
+    mount.querySelectorAll('[data-action="publish"]').forEach((button) => { button.disabled = !canPublish(); });
+    mount.querySelectorAll('#fpe-more-menu [data-action="undo"]').forEach((button) => { button.disabled = !editHistory.canUndo; });
+    mount.querySelectorAll('#fpe-more-menu [data-action="redo"]').forEach((button) => { button.disabled = !editHistory.canRedo; });
   }
+
+  const visibleMenuItems = (menu) => [...(menu?.querySelectorAll('[role="menuitem"]:not([disabled])') || [])]
+    .filter((item) => item.getClientRects().length > 0);
 
   function positionMoreMenu() {
     if (!moreMenuOpen) return;
@@ -353,7 +356,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     const rect = trigger.getBoundingClientRect();
     const width = menu.offsetWidth || 240;
     menu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, rect.right - width))}px`;
-    menu.style.top = `${Math.min(window.innerHeight - menu.offsetHeight - 8, rect.bottom + 8)}px`;
+    menu.style.top = `${Math.max(8, Math.min(window.innerHeight - menu.offsetHeight - 8, rect.bottom + 8))}px`;
   }
 
   function positionColorMenu() {
@@ -384,7 +387,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (menu) menu.hidden = !moreMenuOpen;
     if (moreMenuOpen) queueFrame(() => {
       positionMoreMenu();
-      if (focusFirst) menu?.querySelector('[role="menuitem"]')?.focus({ preventScroll: true });
+      if (focusFirst) visibleMenuItems(menu)[0]?.focus({ preventScroll: true });
     });
     else if (restoreFocus) trigger?.focus({ preventScroll: true });
   }
@@ -414,6 +417,13 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   }
 
   const compactWorkbench = () => window.matchMedia('(max-width: 1023.98px)').matches;
+
+  function syncCompactDrawerState() {
+    const compact = compactWorkbench();
+    const drawerOpen = compact && (leftOpen || rightOpen);
+    const stage = mount.querySelector('#fpe-stage');
+    if (stage) stage.inert = drawerOpen;
+  }
 
   function setPanelOpen(side, open, { focusToggle = true } = {}) {
     const next = Boolean(open);
@@ -449,6 +459,10 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     syncQuery();
     draw();
     if (focusToggle) queueFrame(() => {
+      if (next && compactWorkbench()) {
+        mount.querySelector(`.fpe-${side} .fpe-drawer-close`)?.focus({ preventScroll: true });
+        return;
+      }
       const suffix = compactWorkbench() ? '-mobile' : '';
       mount.querySelector(`#fpe-toggle-${side}${suffix}`)?.focus({ preventScroll: true });
     });
@@ -519,6 +533,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   function draw() {
     disposeThreeViewer();
     mount.innerHTML = currentViews().shellHTML();
+    syncCompactDrawerState();
     syncQuery();
     if (viewMode !== '2d') queueFrame(initThreeViewer);
     queueFrame(observeSceneViewport);
@@ -1131,15 +1146,16 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       drawLeftPanel('fpe-color-trigger');
     }
     else if (action === 'start-edit') {
+      setMoreMenuOpen(false);
       editMode = true; tool = 'select'; assetLibraryOpen = false; leftOpen = false;
       if (!compactWorkbench()) desktopPanels.left = false;
       draw();
       queueFrame(() => mount.querySelector('#fpe-action-tool-select')?.focus({ preventScroll: true }));
       announce('Bearbeitungsmodus gestartet. Änderungen bleiben lokal, bis sie gespeichert werden.');
     }
-    else if (action === 'end-edit') endEditing();
-    else if (action === 'save') saveLocalDraft();
-    else if (action === 'publish') openPublishDialog();
+    else if (action === 'end-edit') { setMoreMenuOpen(false); endEditing(); }
+    else if (action === 'save') { setMoreMenuOpen(false); saveLocalDraft(); }
+    else if (action === 'publish') { setMoreMenuOpen(false); openPublishDialog(); }
     else if (action === 'clear-selection') selectEntity(null, null);
     else if (action === 'tool-select') chooseTool('select');
     else if (action === 'tool-pan') chooseTool('pan');
@@ -1157,8 +1173,8 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     }
     else if (action === 'fit') { set2dCamera(fit2dCamera(fitCamera(floor))); announce('Plan eingepasst.'); }
     else if (action === 'fit-selection') fitSelected();
-    else if (action === 'undo') restoreHistory('undo');
-    else if (action === 'redo') restoreHistory('redo');
+    else if (action === 'undo') { setMoreMenuOpen(false); restoreHistory('undo'); }
+    else if (action === 'redo') { setMoreMenuOpen(false); restoreHistory('redo'); }
     else if (action === 'version-history') { setMoreMenuOpen(false); setStructureMenuOpen(false); openVersionHistory(); }
     else if (action === 'copy-link') {
       setMoreMenuOpen(false);
@@ -1175,7 +1191,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       });
     }
     else if (action === 'three-reset') { threeViewer?.reset(); mount.querySelector('.fpe-three-canvas')?.focus({ preventScroll: true }); announce('3D-Ansicht zurückgesetzt.'); }
-    else if (action === 'print') window.print();
+    else if (action === 'print') { setMoreMenuOpen(false); window.print(); }
     else if (action === 'view-2d') setView('2d');
     else if (action === 'view-3d') setView('3d');
     else if (action === 'view-walk') setView('walk');
@@ -1551,7 +1567,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     }
     const menuItem = event.target.closest?.('#fpe-more-menu [role="menuitem"]');
     if (menuItem) {
-      const items = [...mount.querySelectorAll('#fpe-more-menu [role="menuitem"]:not([disabled])')];
+      const items = visibleMenuItems(mount.querySelector('#fpe-more-menu'));
       const index = items.indexOf(menuItem);
       if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
         event.preventDefault();

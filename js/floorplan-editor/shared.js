@@ -56,8 +56,7 @@ export function editorHeaderHTML(C, session, editMode = false) {
     </a>
     ${editMode ? '<span class="fpe-edit-state" title="Bearbeitungsmodus"><i aria-hidden="true"></i><span class="fpe-edit-state__text">Bearbeitungsmodus</span></span>' : ''}
     <span class="fpe-header__spacer"></span>
-    <button class="btn btn--bare btn--sm fpe-search-jump" id="fpe-search-jump" type="button" data-action="focus-search">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suche</span></button>
-    <button class="btn btn--outline btn--sm" id="fpe-upload" type="button" disabled title="Planübernahme und Prüfung folgen als separate Anwendung">${C.icon('CloudUpload', 'btn__icon')}<span class="btn__text">Plan hochladen</span></button>
+    <button class="btn btn--bare btn--sm btn--icon-left fpe-search-jump" id="fpe-search-jump" type="button" data-action="focus-search">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suche</span></button>
     <span class="fpe-header__divider" aria-hidden="true"></span>
     <span class="fpe-user" title="${C.escape(user?.name || '')}"><span>${C.escape(initials(user?.name))}</span><span class="sr-only">Angemeldet als ${C.escape(user?.name || '')}</span></span>
   </header>`;

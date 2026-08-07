@@ -3,7 +3,6 @@
 // independent state, markup and event lifecycles.
 
 import { floorplanEditor } from '../links.js';
-import { MODULE_OPTIONS } from './model.js';
 import {
   BASE, PLAN_STATUS, address, area, clean, editorHeaderHTML, number, prototypeFooterHTML,
 } from './shared.js';
@@ -70,23 +69,19 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
   const targetDate = object?.planning.targetDate
     ? object.planning.targetDate.split('-').reverse().join('.') : '';
 
-  const railLink = ({ label, count, href = '', active = false, disabled = false }) => {
+  const railLink = ({ label, count, href, active = false }) => {
     const content = `<span>${C.escape(label)}</span><span class="fpe-nav-rail__count">${number(count)}</span>`;
-    if (disabled) return `<span class="fpe-nav-rail__item is-disabled" aria-disabled="true">${content}</span>`;
     return `<a class="fpe-nav-rail__item${active ? ' is-active' : ''}" href="${href}"${active ? ' aria-current="page"' : ''}>${content}</a>`;
   };
 
   const rail = `<nav class="fpe-nav-rail" aria-label="Bereiche">
     ${railLink({ label: 'Aktive Geschosse', count: floorView ? object.floors.length : allFloorCount,
       href: floorplanEditor(inspectedObject.building.bbl_id), active: floorView })}
-    ${railLink({ label: 'Archivierte Geschosse', count: 0, disabled: true })}
     ${railLink({ label: 'Gebäude', count: objects.length, href: BASE, active: !floorView })}
-    ${railLink({ label: 'Ausstattungskatalog', count: MODULE_OPTIONS.length, disabled: true })}
     ${floorView ? `<div class="fpe-nav-order"><p class="fpe-overline">Auftrag</p>
       <p class="mono">${C.escape(object.planning.inventoryOrder || 'Nicht zugeordnet')}</p>
       ${object.planning.planAvailability === 'planned' ? C.badge('CAD-Planung in Arbeit', 'warning', 'sm') : C.badge('Bestandsgrundriss', 'gray', 'sm')}
-      <p class="small muted">Diese Navigation bündelt Gebäude und Geschosse innerhalb des Plan-Editors. Direkte Portal-Links öffnen weiterhin den gewählten Plan.</p>
-    </div>` : `<div class="fpe-nav-order"><p class="small muted">Wählen Sie ein Gebäude, um seine aktiven Geschosse zu verwalten und einen Plan zu öffnen.</p></div>`}
+    </div>` : ''}
   </nav>`;
 
   let rows = '';
@@ -96,13 +91,13 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
       const facts = floorNavigationFacts(core, object, floor);
       const selected = floor.floorId === pickedFloor.floorId;
       const status = PLAN_STATUS[facts.plan.planStatus] || PLAN_STATUS.inventory;
-      return `<tr class="fpe-nav-row${selected ? ' is-selected' : ''}" data-nav-row data-nav-href="${routeForPick(floor.floorId)}"
+      return `<tr role="row" class="fpe-nav-row${selected ? ' is-selected' : ''}" data-nav-row data-nav-href="${routeForPick(floor.floorId)}"
         data-search="${C.escape(clean(`${floor.label} ${floor.floorId} ${status.label} ${facts.plan.lastSync}`))}"
         data-sort-name="${C.escape(String(floor.level).padStart(4, '0'))}" data-sort-status="${C.escape(status.label)}" aria-selected="${selected}">
-        <th scope="row"><a href="${routeForPick(floor.floorId)}"><span class="mono">${C.escape(floor.floorId)}</span><strong>${C.escape(floor.label)}</strong></a></th>
-        <td>${C.escape(facts.plan.lastSync || '—')}</td><td class="text-right">${area(floor.areaHnf)}</td>
-        <td class="text-right">${number(facts.workplaces)}</td><td class="text-right">${facts.plan.equipmentCount == null ? '—' : number(facts.plan.equipmentCount)}</td>
-        <td>${planBadgeHTML(C, facts.plan)}</td>
+        <th scope="row" role="rowheader"><a href="${routeForPick(floor.floorId)}"><span class="mono">${C.escape(floor.floorId)}</span><strong>${C.escape(floor.label)}</strong></a></th>
+        <td role="cell">${C.escape(facts.plan.lastSync || '—')}</td><td role="cell" class="text-right"><span class="fpe-nav-mobile-label" aria-hidden="true">HNF: </span>${area(floor.areaHnf)}</td>
+        <td role="cell" class="text-right">${number(facts.workplaces)}</td><td role="cell" class="text-right">${facts.plan.equipmentCount == null ? '—' : number(facts.plan.equipmentCount)}</td>
+        <td role="cell">${planBadgeHTML(C, facts.plan)}</td>
       </tr>`;
     }).join('');
     inspector = `<aside class="fpe-nav-inspector" aria-label="Inspektor">
@@ -117,7 +112,7 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
         <dt>Geschoss-ID</dt><dd class="mono">${C.escape(pickedFloor.floorId)}</dd><dt>Gebäude</dt><dd class="mono">${C.escape(object.building.bbl_id)}</dd>
         <dt>Adresse</dt><dd>${C.escape(address(object.building))}</dd>${targetDate ? `<dt>Stichtag</dt><dd>${C.escape(targetDate)}</dd>` : ''}
         <dt>Synchronisation</dt><dd>${C.escape(pickedFacts.plan.lastSync || 'nicht erfasst')}</dd><dt>Status</dt><dd>${planBadgeHTML(C, pickedFacts.plan)}</dd>
-      </dl><a class="btn btn--filled btn--sm btn--icon-right" id="fpe-open-floor" href="${floorplanEditor(object.building.bbl_id, pickedFloor.floorId)}"><span class="btn__text">Im Editor öffnen</span>${C.icon('ArrowRight', 'btn__icon')}</a></section>
+      </dl><a class="btn btn--filled btn--sm btn--icon-right" id="fpe-open-floor" href="${floorplanEditor(object.building.bbl_id, pickedFloor.floorId)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Im Editor öffnen</span></a></section>
     </aside>`;
   } else {
     rows = objects.map((entry) => {
@@ -126,12 +121,12 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
       const workplaces = floorSpaces.reduce((sum, room) => sum + (Number(room.capacity) || 0), 0);
       const href = floorplanEditor(entry.building.bbl_id);
       const selected = entry === inspectedObject;
-      return `<tr class="fpe-nav-row${selected ? ' is-selected' : ''}" data-nav-row data-nav-href="${href}"
+      return `<tr role="row" class="fpe-nav-row${selected ? ' is-selected' : ''}" data-nav-row data-nav-href="${href}"
         data-search="${C.escape(clean(`${entry.building.name} ${entry.building.bbl_id} ${address(entry.building)} ${entry.building.nutzer || ''}`))}"
         data-sort-name="${C.escape(clean(entry.building.name))}" data-sort-status="${C.escape(entry.planning.planAvailability)}" aria-selected="${selected}">
-        <th scope="row"><a href="${href}"><strong>${C.escape(entry.building.name)}</strong><span class="mono">${C.escape(entry.building.bbl_id)}</span></a></th>
-        <td>${C.escape(entry.building.city || '—')}</td><td class="text-right">${number(entry.floors.length)}</td><td class="text-right">${area(hnf)}</td>
-        <td class="text-right">${number(workplaces)}</td><td>${entry.planning.planAvailability === 'planned' ? C.badge('Multispace geplant', 'success', 'sm') : C.badge('Bestand', 'gray', 'sm')}</td>
+        <th scope="row" role="rowheader"><a href="${href}"><strong>${C.escape(entry.building.name)}</strong><span class="mono">${C.escape(entry.building.bbl_id)}</span></a></th>
+        <td role="cell">${C.escape(entry.building.city || '—')}</td><td role="cell" class="text-right"><span class="fpe-nav-mobile-label" aria-hidden="true">Geschosse: </span>${number(entry.floors.length)}</td><td role="cell" class="text-right">${area(hnf)}</td>
+        <td role="cell" class="text-right">${number(workplaces)}</td><td role="cell">${entry.planning.planAvailability === 'planned' ? C.badge('Multispace geplant', 'success', 'sm') : C.badge('Bestand', 'gray', 'sm')}</td>
       </tr>`;
     }).join('');
     const inspectedFloors = inspectedObject.floors;
@@ -143,30 +138,29 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
       </div></section>
       <section class="fpe-inspector-section"><h2>Attribute</h2><dl class="fpe-kv"><dt>Gebäude-ID</dt><dd class="mono">${C.escape(inspectedObject.building.bbl_id)}</dd>
         <dt>Adresse</dt><dd>${C.escape(address(inspectedObject.building))}</dd><dt>Nutzende</dt><dd>${C.escape(inspectedObject.building.nutzer || 'nicht erfasst')}</dd>
-      </dl><a class="btn btn--filled btn--sm btn--icon-right" id="fpe-open-building" href="${floorplanEditor(inspectedObject.building.bbl_id)}"><span class="btn__text">Geschosse öffnen</span>${C.icon('ArrowRight', 'btn__icon')}</a></section>
+      </dl><a class="btn btn--filled btn--sm btn--icon-right" id="fpe-open-building" href="${floorplanEditor(inspectedObject.building.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Geschosse öffnen</span></a></section>
     </aside>`;
   }
 
   const title = floorView ? `Geschosse — ${object.building.name}` : 'Alle Objekte';
   const count = floorView ? object.floors.length : objects.length;
   const columns = floorView
-    ? '<th scope="col">Geschoss</th><th scope="col">Letzte Änderung</th><th scope="col" class="text-right">HNF</th><th scope="col" class="text-right">Arbeitsplätze</th><th scope="col" class="text-right">Ausstattung</th><th scope="col">Planstand</th>'
-    : '<th scope="col">Gebäude</th><th scope="col">Ort</th><th scope="col" class="text-right">Geschosse</th><th scope="col" class="text-right">HNF</th><th scope="col" class="text-right">Arbeitsplätze</th><th scope="col">Planung</th>';
+    ? '<th scope="col" role="columnheader">Geschoss</th><th scope="col" role="columnheader">Letzte Änderung</th><th scope="col" role="columnheader" class="text-right">HNF</th><th scope="col" role="columnheader" class="text-right">Arbeitsplätze</th><th scope="col" role="columnheader" class="text-right">Ausstattung</th><th scope="col" role="columnheader">Planstand</th>'
+    : '<th scope="col" role="columnheader">Gebäude</th><th scope="col" role="columnheader">Ort</th><th scope="col" role="columnheader" class="text-right">Geschosse</th><th scope="col" role="columnheader" class="text-right">HNF</th><th scope="col" role="columnheader" class="text-right">Arbeitsplätze</th><th scope="col" role="columnheader">Planung</th>';
 
   setTitle(floorView ? `Plan-Editor — Geschosse ${object.building.name}` : 'Plan-Editor — Gebäude');
   mount.innerHTML = `<div class="fpe-app fpe-nav-app" id="fpe-navigation" data-view="${floorView ? 'floors' : 'buildings'}">
     <h1 class="sr-only" tabindex="-1">Plan-Editor — ${C.escape(title)}</h1>
     ${editorHeaderHTML(C, session)}
     <div class="fpe-context fpe-nav-context">
-      ${floorView ? `<a class="btn btn--bare btn--sm btn--icon-only" href="${BASE}" aria-label="Zurück zu allen Objekten">${C.icon('ArrowLeft', 'btn__icon')}</a>` : ''}
       <span class="fpe-nav-context__title">${C.escape(title)} <span id="fpe-nav-count">${number(count)}</span></span>
       <span class="fpe-context__spacer"></span>
-      <label class="fpe-nav-search"><span class="sr-only">${floorView ? 'Geschosse' : 'Gebäude'} durchsuchen</span>${C.icon('Search', 'icon--sm')}<input id="fpe-nav-search" type="search" placeholder="Suchen…"></label>
+      <label class="fpe-nav-search"><span class="sr-only">${floorView ? 'Geschosse' : 'Gebäude'} durchsuchen</span>${C.icon('Search', 'icon--base')}<input id="fpe-nav-search" type="search" placeholder="Suchen…"></label>
       <label class="fpe-nav-sort"><span class="sr-only">Sortieren</span><select id="fpe-nav-sort" class="input--outline input--sm"><option value="name">Sortieren: Name</option><option value="status">Sortieren: Status</option></select></label>
     </div>
     ${message ? `<div class="fpe-nav-message">${C.notification(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}</div>` : ''}
     <div class="fpe-nav-layout">${rail}<main class="fpe-nav-main" data-scroll-region aria-label="${floorView ? 'Aktive Geschosse' : 'Gebäude'}">
-      <div class="fpe-nav-table"><table class="table"><caption class="sr-only">${floorView ? `Aktive Geschosse von ${C.escape(object.building.name)}` : 'Gebäude im Plan-Editor'}</caption><thead><tr>${columns}</tr></thead><tbody id="fpe-nav-rows">${rows}</tbody></table></div>
+      <div class="fpe-nav-table"><table class="table" role="table"><caption class="sr-only">${floorView ? `Aktive Geschosse von ${C.escape(object.building.name)}` : 'Gebäude im Plan-Editor'}</caption><thead role="rowgroup"><tr role="row">${columns}</tr></thead><tbody id="fpe-nav-rows" role="rowgroup">${rows}</tbody></table></div>
       <p class="fpe-panel-empty" id="fpe-nav-empty" hidden>Keine passenden ${floorView ? 'Geschosse' : 'Gebäude'} gefunden.</p>
     </main>${inspector}</div>
     ${prototypeFooterHTML()}

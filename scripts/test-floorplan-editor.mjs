@@ -104,7 +104,8 @@ try {
       selected: document.querySelector('.fpe-nav-row.is-selected a')?.textContent.replace(/\\s+/g, ' ').trim() || '',
       inspector: document.querySelector('.fpe-nav-inspector')?.textContent.replace(/\\s+/g, ' ').trim() || '',
       openHref: document.querySelector('#fpe-open-floor')?.getAttribute('href') || '',
-      backHref: document.querySelector('.fpe-nav-context a[aria-label="Zurück zu allen Objekten"]')?.getAttribute('href') || '',
+      buildingHref: [...document.querySelectorAll('.fpe-nav-rail__item')]
+        .find(node => /Gebäude/.test(node.textContent))?.getAttribute('href') || '',
       caption: document.querySelector('.fpe-nav-table caption')?.textContent.trim() || '',
       scrollRegion: document.querySelector('.fpe-nav-main')?.getAttribute('aria-label') || '',
     };
@@ -113,9 +114,9 @@ try {
     'lists all active floors, selects the preferred floor, and filters locally', `${floorNav.rows} · ${floorNav.filtered} filtered · ${floorNav.selected}`);
   check(/Kennzahlen des Geschosses/.test(floorNav.inspector)
     && /building=1080%2F6650%2FAA/i.test(floorNav.openHref) && floorNav.openHref.includes(`floor=${FLOOR_ID}`)
-    && floorNav.backHref === '#/app/floorplan-editor' && /Aktive Geschosse/.test(floorNav.caption)
+    && floorNav.buildingHref === '#/app/floorplan-editor' && /Aktive Geschosse/.test(floorNav.caption)
     && floorNav.scrollRegion === 'Aktive Geschosse',
-  'provides the wireframe inspector, exact editor handoff, and building-list breadcrumb', floorNav.openHref);
+  'provides the wireframe inspector, exact editor handoff, and building-list navigation', floorNav.openHref);
   await checkProblems(page, 'editor navigation has no runtime problems');
 
   console.log('\n■ Floor-plan editor deep link and standalone shell');
@@ -169,6 +170,16 @@ try {
     const display = selector => {
       const node = document.querySelector(selector);
       return node ? getComputedStyle(node).display : '';
+    };
+    const contrast = (foreground, background) => {
+      const channels = value => (value.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+      const luminance = value => channels(value).reduce((sum, channel, index) => {
+        const normalized = channel / 255;
+        const linear = normalized <= .04045 ? normalized / 12.92 : ((normalized + .055) / 1.055) ** 2.4;
+        return sum + linear * [.2126, .7152, .0722][index];
+      }, 0);
+      const left = luminance(foreground), right = luminance(background);
+      return (Math.max(left, right) + .05) / (Math.min(left, right) + .05);
     };
     const roomIds = [...document.querySelectorAll('.fpe-room[data-id]')].map(node => node.dataset.id);
     const placementIds = [...document.querySelectorAll('.fpe-placement[data-id]')].map(node => node.dataset.id);
@@ -234,6 +245,19 @@ try {
       },
       toolIcons: Object.fromEntries(['tool-select', 'tool-pan', 'tool-distance', 'tool-area'].map(action => [action,
         document.querySelector('[data-action="' + action + '"] .icon')?.style.maskImage || ''])),
+      designPolish: (() => {
+        const inspector = document.querySelector('#fpe-right');
+        const toolbar = document.querySelector('.fpe-toolbar');
+        const viewModes = document.querySelector('.fpe-view-nav');
+        const toolbarStyle = toolbar ? getComputedStyle(toolbar) : null;
+        const viewStyle = viewModes ? getComputedStyle(viewModes) : null;
+        return {
+          inspectorIcons: inspector?.querySelectorAll('.fpe-inspector-title .icon').length || 0,
+          redundantHints: /Wählen Sie einen Raum|Klick: auswählen|Links: verschieben|Rechts: drehen/.test(document.querySelector('#fpe-app')?.textContent || ''),
+          toolbarBorderContrast: toolbarStyle ? contrast(toolbarStyle.borderTopColor, toolbarStyle.backgroundColor) : 0,
+          viewBorderContrast: viewStyle ? contrast(viewStyle.borderTopColor, viewStyle.backgroundColor) : 0,
+        };
+      })(),
       prototypeFooter: {
         label: document.querySelector('.fpe-local-note > strong')?.textContent.trim() || '',
         icons: document.querySelectorAll('.fpe-local-note .icon').length,
@@ -300,10 +324,10 @@ try {
     && initial.resourceTree.roomNameInset >= 52 && initial.resourceTree.roomNameInset <= 54
     && initial.resourceTree.listMarkers === 0 && initial.resourceTree.colorTrigger === 'menu'
     && /Keine/.test(initial.resourceTree.colorLabel) && !new URLSearchParams(initial.hash.split('?')[1] || '').has('color')
-    && /Eyedropper\.svg/.test(initial.resourceTree.colorIcon) && initial.resourceTree.panelGlyphs === 4,
+    && /Stack\.svg/.test(initial.resourceTree.colorIcon) && initial.resourceTree.panelGlyphs === 5,
   'defaults to no coloring and renders a flat room tree without synthetic aggregation',
   `${initial.resourceTree.groups} groups · ${initial.resourceTree.roomRows} rooms · ${initial.resourceTree.roomNameInset}px name inset`);
-  check(initial.planActions.more === 'menu' && initial.planActions.items === 3
+  check(initial.planActions.more === 'menu' && initial.planActions.items === 5
     && !initial.planActions.historyInToolbar,
   'separates plan-level actions from canvas tools', `${initial.planActions.items} actions`);
   check(initial.prototypeFooter.label === 'Feedback-Prototyp' && initial.prototypeFooter.icons === 0
@@ -320,15 +344,19 @@ try {
     && initial.viewNavigation.modes === 3 && initial.viewNavigation.active === '2d'
     && initial.viewNavigation.tabbable === 1 && initial.viewNavigation.actions === 4
     && initial.viewNavigation.actionsSeparate && initial.viewNavigation.actionsOnRight
-    && initial.viewNavigation.modeIcons === 1 && initial.viewNavigation.planarModeIcons === 0
+    && initial.viewNavigation.modeIcons === 0 && initial.viewNavigation.planarModeIcons === 0
     && initial.viewNavigation.minimumTarget >= 44 && initial.viewNavigation.navigationInTopToolbar === 0,
-  'separates the mode switcher from right-side camera controls with icon-free 2D and 3D toggles',
+  'separates the mode switcher from right-side camera controls with consistent text-only modes',
   `${initial.viewNavigation.modes} modes · ${initial.viewNavigation.actions} view actions · ${Math.round(initial.viewNavigation.minimumTarget)}px targets`);
   check(/Pointer\.svg/.test(initial.toolIcons['tool-select'])
     && /Move\.svg/.test(initial.toolIcons['tool-pan'])
     && /Ruler\.svg/.test(initial.toolIcons['tool-distance'])
     && /Crop\.svg/.test(initial.toolIcons['tool-area']),
   'uses purpose-specific select, pan, distance, and area icons from the local icon set');
+  check(initial.designPolish.inspectorIcons === 0 && !initial.designPolish.redundantHints
+    && initial.designPolish.toolbarBorderContrast >= 3 && initial.designPolish.viewBorderContrast >= 3,
+  'keeps inspector chrome icon-free and gives meaningful viewer boundaries non-text contrast',
+  `${initial.designPolish.toolbarBorderContrast.toFixed(2)}:1 / ${initial.designPolish.viewBorderContrast.toFixed(2)}:1`);
   check(initial.overflow <= 1 && initial.duplicateIds.length === 0
     && initial.unlabeledControls === 0 && initial.unnamedButtons === 0
     && initial.headingJumps.length === 0,
@@ -405,7 +433,7 @@ try {
   check(treeControls.menuAboveCanvas && treeControls.menuPosition === 'fixed'
     && treeControls.colorFocus === 'none' && treeControls.colorNextFocus === 'use'
     && treeControls.colorFocusReturned && treeControls.moreOpen
-    && treeControls.firstAction === 'version-history' && treeControls.secondAction === 'copy-link'
+    && treeControls.firstAction === 'version-history' && treeControls.secondAction === 'print'
     && treeControls.moreFocusReturned,
   'keeps the color menu above the canvas and provides keyboard navigation with focus return',
   `${treeControls.colorFocus} → ${treeControls.colorNextFocus} · ${treeControls.firstAction} → ${treeControls.secondAction}`);
@@ -771,7 +799,7 @@ try {
     && views.threeD.placements === initial.placementCount && views.threeD.canvas.width > 0
     && views.threeD.canvas.height > 0 && views.threeD.orbitMoved && views.threeD.cameraPreserved && views.threeD.view === '3d'
     && !views.threeD.twoDCanvas && views.threeD.reset && views.threeD.resetInViewActions
-    && views.threeD.toolbarVisible && views.threeD.toolbarHints === 3 && views.threeD.toolbarPrint
+    && !views.threeD.toolbarVisible && views.threeD.toolbarHints === 0 && !views.threeD.toolbarPrint
     && views.threeD.zoomButtons === 2 && views.threeD.zoomButtonsWork
     && views.threeD.leftPans && views.threeD.leftPanDirection && views.threeD.clickJitterStable
     && views.threeD.cameraAspectMatches && views.threeD.normalizedPanScale && views.threeD.rightRotates
@@ -781,7 +809,7 @@ try {
   `${views.threeD.renderer} · ${views.threeD.rooms} rooms · ${views.threeD.placements} objects`);
   check(views.walk.active === 'true' && views.walk.classed && /^Three\.js r\d+/.test(views.walk.renderer)
     && /keyboard-walk/.test(views.walk.controls) && views.walk.moved && views.walk.directionsCorrect
-    && views.walk.toolbarVisible && views.walk.toolbarHints === 2 && views.walk.toolbarPrint
+    && !views.walk.toolbarVisible && views.walk.toolbarHints === 0 && !views.walk.toolbarPrint
     && views.walk.reticle && views.walk.view === 'walk'
     && views.twoD && !views.finalView && views.keyboardTwoD === '2d',
   'walks through the generated floor and returns through keyboard-operable view navigation');
@@ -939,7 +967,7 @@ try {
     && /rgb/.test(added.twoDEditBorder.shadow) && added.twoDEditBorder.shadow === added.threeDEditBorder.shadow
     && added.threeDEditBorder.zIndex === 30 && added.threeDEditBorder.pointerEvents === 'none'
     && !added.entry.libraryOpen && !added.entry.libraryQuery && added.entry.addPressed === 'false'
-    && added.entry.toolbarActions.join(',') === 'toggle-library,tool-select,tool-distance,tool-area,toggle-structure-menu,undo,redo,version-history'
+    && added.entry.toolbarActions.join(',') === 'toggle-library,tool-select,tool-distance,tool-area,toggle-structure-menu,undo,redo'
     && added.opened.libraryOpen && added.opened.libraryQuery === 'products' && added.opened.addPressed === 'true'
     && !added.staged.libraryOpen && !added.staged.libraryQuery && added.staged.addPressed === 'true' && added.staged.stageFocused
     && added.libraryKeyboard && !added.libraryOpenAfterPlacement && !added.libraryQueryAfterPlacement
@@ -1266,7 +1294,7 @@ try {
     && structure.handleHitWidth >= 32 && structure.handleVisualWidth >= 12
     && structure.middlePanDuringAuthoring
     && structure.menuKeyboard && structure.lockViaKeyboard && structure.structureFocusReturned
-    && structure.unavailableTools === 10 && structure.locked,
+    && structure.unavailableTools === 0 && structure.locked,
   'exposes the structural-edit menu, lock state, and rectangular area tool accessibly',
   structure.error || JSON.stringify({
     before: structure.before, after: structure.after, localId: structure.localId,
@@ -1410,8 +1438,23 @@ try {
       pressed: document.querySelector('[data-action="toggle-left"]')?.getAttribute('aria-pressed') || '',
       visibility: panelVisibility('left'), rightVisibility: panelVisibility('right'), overflow: overflow(),
       backdrop: getComputedStyle(document.querySelector('.fpe-panel-backdrop')).display !== 'none',
+      drawerFocused: document.activeElement?.classList.contains('fpe-drawer-close') || false,
+      stageInert: document.querySelector('#fpe-stage')?.inert || false,
     });
     const before = state();
+    const more = document.querySelector('#fpe-more-trigger');
+    const moreRect = more?.getBoundingClientRect();
+    more?.click(); await pause();
+    const compactActions = ['save', 'publish', 'end-edit'].every(action => {
+      const button = document.querySelector('#fpe-more-menu [data-action="' + action + '"]');
+      return button && getComputedStyle(button).display !== 'none';
+    });
+    const criticalActionsInViewport = Boolean(moreRect && moreRect.left >= 0 && moreRect.right <= innerWidth);
+    more?.click(); await pause();
+    const modeLabels = [...document.querySelectorAll('[data-view-mode]')].map(button => button.textContent.trim()).join(',');
+    const minimumCustomTarget = Math.min(...[...document.querySelectorAll('.fpe-library-tabs button,.fpe-resource-row,.fpe-resource-room-toggle')]
+      .map(control => Math.min(control.getBoundingClientRect().width, control.getBoundingClientRect().height))
+      .filter(Number.isFinite));
     document.querySelector('[data-action="toggle-left"]')?.click(); await pause();
     const shown = state();
     document.querySelector('[data-action="toggle-left"]')?.click(); await pause();
@@ -1422,7 +1465,8 @@ try {
     const right = state();
     document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await pause();
     const dismissed = state();
-    return { before, hidden, shown, restored, right, dismissed, viewport: document.documentElement.clientWidth };
+    return { before, hidden, shown, restored, right, dismissed, viewport: document.documentElement.clientWidth,
+      compactActions, criticalActionsInViewport, modeLabels, minimumCustomTarget };
   })()`);
   check([mobile.before, mobile.hidden, mobile.shown, mobile.restored].every(state => state.overflow <= 1)
     && mobile.viewport >= 300 && mobile.viewport <= 320,
@@ -1430,6 +1474,7 @@ try {
   `${mobile.viewport}px viewport · ${Math.max(mobile.before.overflow, mobile.hidden.overflow, mobile.shown.overflow)}px overflow`);
   check(!mobile.before.hasLeft && mobile.before.pressed === 'false'
     && mobile.shown.hasLeft && mobile.shown.pressed === 'true' && mobile.shown.visibility === 'visible'
+    && mobile.shown.drawerFocused && mobile.shown.stageInert
     && !mobile.hidden.hasLeft && mobile.hidden.pressed === 'false' && mobile.hidden.visibility === 'hidden'
     && mobile.restored.hasLeft && mobile.restored.pressed === 'true',
   'enters compact mode closed, then opens and restores the contextual library drawer with matching aria state',
@@ -1439,6 +1484,63 @@ try {
     && !mobile.dismissed.hasLeft && !mobile.dismissed.hasRight && !mobile.dismissed.backdrop,
   'keeps compact drawers mutually exclusive and dismisses them with Escape',
   `left=${mobile.right.hasLeft} · right=${mobile.right.hasRight} → closed`);
+  check(mobile.compactActions && mobile.criticalActionsInViewport
+    && mobile.modeLabels === '2D,3D,Begehung' && mobile.minimumCustomTarget >= 44,
+  'keeps critical edit actions explicit and custom controls touch-sized at 320px',
+  `${mobile.modeLabels} · ${Math.round(mobile.minimumCustomTarget)}px`);
+
+  await cdp.send('Emulation.setDeviceMetricsOverride',
+    { width: 568, height: 320, deviceScaleFactor: 1, mobile: false }, page.sessionId);
+  await sleep(160);
+  const landscape = await page.evaluate(`(async () => {
+    const pause = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const contrast = (foreground, background) => {
+      const channels = value => (value.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+      const luminance = value => channels(value).reduce((sum, channel, index) => {
+        const normalized = channel / 255;
+        const linear = normalized <= .04045 ? normalized / 12.92 : ((normalized + .055) / 1.055) ** 2.4;
+        return sum + linear * [.2126, .7152, .0722][index];
+      }, 0);
+      const left = luminance(foreground), right = luminance(background);
+      return (Math.max(left, right) + .05) / (Math.min(left, right) + .05);
+    };
+    const trigger = document.querySelector('#fpe-more-trigger');
+    trigger?.click(); await pause();
+    const menu = document.querySelector('#fpe-more-menu');
+    const menuRect = menu?.getBoundingClientRect();
+    const menuScrollable = !!menu && menu.scrollHeight > menu.clientHeight && getComputedStyle(menu).overflowY === 'auto';
+    if (menu) menu.scrollTop = menu.scrollHeight;
+    await pause();
+    const visibleItems = [...(menu?.querySelectorAll('[role="menuitem"]') || [])]
+      .filter(item => getComputedStyle(item).display !== 'none');
+    const lastRect = visibleItems.at(-1)?.getBoundingClientRect();
+    const menuLastReachable = !!(menuRect && lastRect && lastRect.bottom <= menuRect.bottom + 1);
+    trigger?.click(); await pause();
+    const stageRect = document.querySelector('#fpe-stage')?.getBoundingClientRect();
+    const actions = document.querySelector('.fpe-view-nav__actions');
+    const actionRect = actions?.getBoundingClientRect();
+    const actionButtons = [...(actions?.querySelectorAll('button') || [])].map(button => button.getBoundingClientRect());
+    const actionsContained = !!(stageRect && actionRect
+      && actionRect.top >= stageRect.top - 1 && actionRect.bottom <= stageRect.bottom + 1
+      && actionButtons.every(rect => rect.width >= 44 && rect.height >= 44));
+    const activeMode = document.querySelector('.fpe-view-nav__mode.is-active');
+    activeMode?.focus({ preventScroll:true });
+    const activeStyle = activeMode ? getComputedStyle(activeMode) : null;
+    return {
+      menuTop: menuRect?.top ?? -1, menuBottom: menuRect?.bottom ?? innerHeight + 1,
+      menuScrollable, menuLastReachable,
+      actionDirection: actions ? getComputedStyle(actions).flexDirection : '', actionsContained,
+      activeFocusContrast: activeStyle ? contrast(activeStyle.outlineColor, activeStyle.backgroundColor) : 0,
+    };
+  })()`);
+  check(landscape.menuTop >= 7 && landscape.menuBottom <= 313
+    && landscape.menuScrollable && landscape.menuLastReachable,
+  'keeps every compact plan action reachable in a short landscape viewport',
+  `${Math.round(landscape.menuTop)}–${Math.round(landscape.menuBottom)}px · scroll=${landscape.menuScrollable}`);
+  check(landscape.actionDirection === 'row' && landscape.actionsContained,
+    'keeps landscape camera actions inside the short workbench with full touch targets', landscape.actionDirection);
+  check(landscape.activeFocusContrast >= 3,
+    'keeps the active view mode focus indicator distinct from its selected fill', `${landscape.activeFocusContrast.toFixed(2)}:1`);
 
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }, page.sessionId);
@@ -1495,13 +1597,17 @@ try {
       hash: location.hash, rows: document.querySelectorAll('[data-nav-row]').length,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       tableScrolls: !!main && main.scrollWidth > main.clientWidth,
+      tableHeaderHeight: document.querySelector('.fpe-nav-table thead')?.getBoundingClientRect().height || 0,
       tabindex: main?.getAttribute('tabindex') || '', role: main?.getAttribute('role') || '',
     };
   })()`);
   check(home.hash === '#/app/floorplan-editor' && home.rows === 7 && home.overflow <= 1,
     'keeps the Plan-Editor root deterministic on mobile', `${home.hash} · ${home.rows} buildings · ${home.overflow}px overflow`);
-  check(home.tableScrolls && home.tabindex === '0' && home.role === 'group',
-    'makes the narrow building table a named keyboard-scroll region', `${home.tabindex} · ${home.role}`);
+  check(!home.tableScrolls && !home.tabindex && !home.role,
+    'condenses the mobile building table instead of requiring horizontal scrolling',
+    `scrolls=${home.tableScrolls} · tabindex=${home.tabindex || 'none'}`);
+  check(home.tableHeaderHeight <= 1,
+    'uses labelled compact rows instead of a cramped visible mobile table header', `${Math.round(home.tableHeaderHeight)}px`);
 
   console.log('\n■ Dirty history jumps and logout');
   const guardedHistory = await page.evaluate(`(async () => {
