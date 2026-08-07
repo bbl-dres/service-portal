@@ -7,6 +7,89 @@ import { engine } from './process-engine.js';
 import { session } from './session.js';
 import C from './components.js';
 
+// Route modules may protect transient work (for example an unsaved editor
+// draft) without owning global click/history listeners. Blockers are
+// deliberately synchronous: browsers only allow a synchronous decision while
+// restoring same-document history after Back/Forward navigation.
+const navigationBlockers = new Set();
+let acceptedRoute = null;
+let approvedHash = '';
+let restoringHash = '';
+
+const routeSnapshot = () => ({ hash: location.hash || '#/', state: history.state });
+
+function rememberCurrentRoute() {
+  acceptedRoute = routeSnapshot();
+}
+
+function mayNavigate(to, source = 'route') {
+  const from = acceptedRoute?.hash || location.hash || '#/';
+  for (const blocker of navigationBlockers) {
+    try {
+      if (blocker({ from, to, source }) === false) return false;
+    } catch (error) {
+      // A broken guard must not trap somebody permanently inside a route.
+      console.warn('[router] navigation blocker failed', error);
+    }
+  }
+  return true;
+}
+
+/**
+ * Ask every active route blocker for synchronous permission before an external
+ * state change would invalidate the mounted route. Session logout uses this
+ * before mutating authentication state; normal route changes use the same
+ * decision path through `navigateRoute`/`hashchange`.
+ */
+export function requestNavigationPermission(to = location.hash || '#/', source = 'programmatic') {
+  return mayNavigate(String(to || location.hash || '#/'), source);
+}
+
+/** Register a synchronous route-leave guard. Returns an idempotent disposer. */
+export function registerNavigationBlocker(blocker) {
+  if (typeof blocker !== 'function') throw new TypeError('Navigation blocker must be a function.');
+  navigationBlockers.add(blocker);
+  let active = true;
+  return () => {
+    if (!active) return;
+    active = false;
+    navigationBlockers.delete(blocker);
+  };
+}
+
+/** Replace query/route state without dispatching and keep guard restoration current. */
+export function replaceRoute(href) {
+  history.replaceState(history.state, '', href);
+  rememberCurrentRoute();
+}
+
+/** Navigate through the same blocker path used by route links. */
+export function navigateRoute(href, source = 'programmatic') {
+  const target = String(href || '');
+  if (!target || target === location.hash) return true;
+  if (!requestNavigationPermission(target, source)) return false;
+  approvedHash = target;
+  location.hash = target;
+  return true;
+}
+
+function restoreAcceptedRoute() {
+  if (!acceptedRoute) return;
+  const currentIdx = history.state?.bblIdx;
+  const acceptedIdx = acceptedRoute.state?.bblIdx;
+  if (Number.isInteger(currentIdx) && Number.isInteger(acceptedIdx) && currentIdx !== acceptedIdx) {
+    restoringHash = acceptedRoute.hash;
+    // Router-owned entries are stamped consecutively. Restore the complete
+    // distance so history-menu jumps and multi-entry history.go() calls return directly to the
+    // still-mounted accepted route without intermediate prompts/dispatches.
+    history.go(acceptedIdx - currentIdx);
+    return;
+  }
+  // A direct `location.hash = ...` entry may not have its own router index yet.
+  // Replacing that rejected entry preserves the mounted route and its state.
+  history.replaceState(acceptedRoute.state, '', acceptedRoute.hash);
+}
+
 // «Übersicht» ist bewusst kein L1-Eintrag mehr — die Startseite erreicht man
 // über das Logo. Die fünf Intranet-Aufgabenbereiche (Büroausrüstung, …) sind
 // keine eigenen L1-Einträge, sondern Unterzweige im Dienstleistungen-Drawer
@@ -263,7 +346,9 @@ function makeCtx(mount, params, query, stale, cleanups) {
     // Delegatoren) prüfen `ctx.stale()` unmittelbar vor `mount.innerHTML =`, damit
     // eine überholte Navigation die inzwischen neuere Seite nicht überschreibt (A2).
     stale: stale || (() => false),
-    navigate: (h) => { location.hash = h; },
+    navigate: (h) => navigateRoute(h),
+    replaceRoute,
+    blockNavigation: registerNavigationBlocker,
     setTitle: (t) => { document.title = t ? `${t} · BBL Kundenportal` : 'BBL Kundenportal'; },
     setCrumbs: renderCrumbs,
   };
@@ -309,13 +394,27 @@ function saveLeavingScroll() {
 // Nummeriert den AKTUELLEN Eintrag (falls neu) und liefert die zu
 // restaurierende Position — oder null für «neuer Eintrag, nach oben».
 function stampHistoryEntry() {
-  const known = history.state && typeof history.state.bblIdx === 'number';
+  const known = Number.isInteger(history.state?.bblIdx);
   let idx;
   if (known) { idx = history.state.bblIdx; }
   else {
-    idx = Number(sessionStorage.getItem(SCROLL_KEY + '_n') || 0) + 1;
+    const highestIdx = Number(sessionStorage.getItem(SCROLL_KEY + '_n') || 0);
+    // A new navigation after Back prunes the forward branch. Reuse the next
+    // positional index instead of the global high-water mark so bblIdx remains
+    // a real history offset and rejected multi-entry jumps can be restored in
+    // one history.go(delta) call.
+    idx = Number.isInteger(lastEntryIdx)
+      ? lastEntryIdx + 1
+      : (Number.isFinite(highestIdx) ? highestIdx : 0) + 1;
     try {
-      sessionStorage.setItem(SCROLL_KEY + '_n', String(idx));
+      // Reusing a positional index after pruning the forward branch must not
+      // inherit that discarded entry's saved scroll position.
+      const positions = scrollMap();
+      for (const key of Object.keys(positions)) {
+        if (Number(key) >= idx) delete positions[key];
+      }
+      sessionStorage.setItem(SCROLL_KEY, JSON.stringify(positions));
+      sessionStorage.setItem(SCROLL_KEY + '_n', String(Math.max(highestIdx || 0, idx)));
       history.replaceState({ bblIdx: idx }, '');
     } catch { /* ohne Stempel bleibt es beim Nach-oben-Standard */ }
   }
@@ -383,6 +482,9 @@ async function dispatch() {
   // Position sichern, dann den neuen Eintrag stempeln/nachschlagen.
   saveLeavingScroll();
   const restoreY = stampHistoryEntry();
+  // `stampHistoryEntry` may have replaced history.state. Store the final
+  // accepted entry so a rejected Back/Forward navigation can return here.
+  rememberCurrentRoute();
   const { segs, query } = parseHash();
   const mount = document.getElementById('main-content');
 
@@ -526,8 +628,40 @@ export function initRouter() {
   // Nur `#/…` ist eine Route. Bare `#` (Platzhalter-Links) und Sprungmarken
   // dürfen nicht dispatchen — ein leerer Hash hat sonst wortlos auf die
   // Startseite geworfen (docs/design-review.md P0-1).
+  // When a guarded route is mounted, route links go through the blocker before
+  // the browser mutates history. Direct hash writes and Back/Forward are caught
+  // by the hashchange path below.
+  document.addEventListener('click', (event) => {
+    if (!navigationBlockers.size || event.defaultPrevented || event.button !== 0
+      || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const anchor = event.target.closest?.('a[href]');
+    if (!anchor || anchor.target && anchor.target !== '_self' || anchor.hasAttribute('download')) return;
+    const target = anchor.getAttribute('href') || '';
+    if (!target.startsWith('#/') || target === location.hash) return;
+    event.preventDefault();
+    navigateRoute(target, 'link');
+  }, true);
+
   window.addEventListener('hashchange', () => {
     if (!location.hash.startsWith('#/')) return;
+    if (restoringHash) {
+      if (location.hash === restoringHash) {
+        restoringHash = '';
+        approvedHash = '';
+        return;
+      }
+      restoringHash = '';
+    }
+    if (approvedHash === location.hash) {
+      approvedHash = '';
+      dispatch();
+      return;
+    }
+    approvedHash = '';
+    if (!mayNavigate(location.hash, 'history')) {
+      restoreAcceptedRoute();
+      return;
+    }
     dispatch();
   });
   // Setzt `location.hash` neu, feuert das `hashchange` den dispatch (else-Zweig);
@@ -543,4 +677,7 @@ export function initRouter() {
 // sonst überschreibt der Fokus-Schritt des Routers ihn kurz danach wieder.
 export function redraw() { return dispatch(); }
 
-export default { initRouter, NAV, redraw };
+export default {
+  initRouter, NAV, redraw, navigateRoute, requestNavigationPermission,
+  registerNavigationBlocker, replaceRoute,
+};

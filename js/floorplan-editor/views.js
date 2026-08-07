@@ -3,6 +3,7 @@
 // presentation code independent from controller mutation and event handling.
 
 import { EDITOR_COLOR_MODES, measurementLabel, renderEditorSvg } from './canvas.js';
+import { createColorContext, roomColorDescriptor } from './colors.js';
 import { MODULE_OPTIONS, SIA_OPTIONS, USE_OPTIONS } from './model.js';
 import {
   BASE, COLOR_DESCRIPTIONS, address, clean, editorHeaderHTML,
@@ -14,20 +15,30 @@ export function createWorkbenchViews(context) {
     C, session, object, building, floor, plan, products, productsById,
     roomById, placementById, editorDocument, editHistory, selected, colorMode,
     viewMode, editMode, dirty, assetLibraryOpen, tool, placementProduct,
-    libraryMode, productCategory, measurement, roomDraft, placementGhost,
+    libraryMode, productCategory, measurement, roomDraft, placementGhost, keyboardCursor,
     camera, resourceQuery, productQuery, colorMenuOpen, moreMenuOpen,
     structureMenuOpen, structureUnlocked, expandedGroups, expandedRooms,
-    leftOpen, rightOpen, liveText, returnHref: returnUrl, versionLabel,
+    leftOpen, rightOpen, returnHref: returnUrl, versionLabel,
     publishable, planBadgeHtml,
   } = context;
   const returnHref = () => returnUrl;
   const editorVersionLabel = () => versionLabel;
   const canPublish = () => publishable;
   const planBadge = () => planBadgeHtml;
+  const placementsByRoom = new Map();
+  editorDocument.placements.forEach((placement) => {
+    const items = placementsByRoom.get(placement.roomId);
+    if (items) items.push(placement);
+    else placementsByRoom.set(placement.roomId, [placement]);
+  });
 
   function headerHTML() {
     const versionLabel = editorVersionLabel();
     const leftPanelName = editMode ? 'Bibliothek' : 'Ressourcen';
+    const leftPanelUnavailable = editMode && viewMode !== '2d';
+    const leftPanelLabel = leftPanelUnavailable
+      ? 'Bibliothek ist nur im 2D-Plan verfügbar'
+      : `${leftPanelName} ${leftOpen ? 'schliessen' : 'öffnen'}`;
     return `${editorHeaderHTML(C, session, editMode)}
     <div class="fpe-context">
       <nav class="fpe-breadcrumb" aria-label="Sie sind hier">
@@ -37,7 +48,7 @@ export function createWorkbenchViews(context) {
       </nav>
       <div class="fpe-context__panel-mobile" role="group" aria-label="Seitenpanels">
         <button class="btn btn--bare btn--sm btn--icon-only${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left-mobile" type="button" data-action="toggle-left"
-          aria-label="${leftPanelName} ${leftOpen ? 'schliessen' : 'öffnen'}" aria-pressed="${leftOpen}">${panelToggleIcon('left')}</button>
+          aria-label="${leftPanelLabel}" aria-pressed="${leftOpen}"${leftPanelUnavailable ? ' disabled' : ''}>${panelToggleIcon('left')}</button>
         <button class="btn btn--bare btn--sm btn--icon-only${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right-mobile" type="button" data-action="toggle-right"
           aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
       </div>
@@ -61,7 +72,7 @@ export function createWorkbenchViews(context) {
         : `<button class="btn btn--filled btn--sm" id="fpe-start-edit" type="button" data-action="start-edit"><span class="btn__text">Bearbeiten</span>${C.icon('ArrowRight', 'btn__icon')}</button>`}
       <span class="fpe-header__divider" aria-hidden="true"></span>
       <button class="btn btn--bare btn--sm btn--icon-only${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left" type="button" data-action="toggle-left"
-        aria-label="${leftPanelName} ${leftOpen ? 'schliessen' : 'öffnen'}" aria-pressed="${leftOpen}">${panelToggleIcon('left')}</button>
+        aria-label="${leftPanelLabel}" aria-pressed="${leftOpen}"${leftPanelUnavailable ? ' disabled' : ''}>${panelToggleIcon('left')}</button>
       <button class="btn btn--bare btn--sm btn--icon-only${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right" type="button" data-action="toggle-right"
         aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
     </div>`;
@@ -70,27 +81,16 @@ export function createWorkbenchViews(context) {
   function resourceGroups() {
     const term = clean(resourceQuery);
     const groups = new Map();
-    const occupiers = [...new Set(editorDocument.rooms.map((room) => room.occupierVe).filter(Boolean))].sort();
+    const colorContext = createColorContext(editorDocument.rooms);
     const moduleById = new Map(MODULE_OPTIONS.map((item) => [String(item.value), item]));
     const descriptor = (room) => {
-      if (colorMode === 'none') return { key: 'all', label: 'Alle Räume', swatch: 'none' };
-      if (colorMode === 'sia') return { key: `sia-${room.sia}`, label: `${room.sia} · ${room.siaLabel}`, swatch: `sia-${clean(room.sia)}` };
-      if (colorMode === 've') {
-        const index = Math.max(0, occupiers.indexOf(room.occupierVe));
-        return room.occupierVe
-          ? { key: `ve-${room.occupierVe}`, label: room.occupierVe, swatch: `ve-${String.fromCharCode(97 + (index % 6))}` }
-          : { key: 've-unassigned', label: 'Nicht zugeteilt', swatch: 'unassigned' };
-      }
-      if (colorMode === 'module') {
-        const option = moduleById.get(String(room.moduleId));
-        return option
-          ? { key: `module-${room.moduleId}`, label: option.label, swatch: `module-${room.moduleId}` }
-          : { key: 'module-unassigned', label: 'Ohne Ausstattungsstandard', swatch: 'unassigned' };
-      }
-      return { key: `use-${room.useLabel}`, label: room.useLabel || 'Ohne Nutzung', swatch: useSwatch(room.group) };
+      const option = moduleById.get(String(room.moduleId));
+      return roomColorDescriptor(room, colorMode, colorContext, {
+        module: option?.label || 'Ohne Ausstattungsstandard',
+      });
     };
     editorDocument.rooms.forEach((room) => {
-      const roomPlacements = editorDocument.placements.filter((placement) => placement.roomId === room.spaceId);
+      const roomPlacements = placementsByRoom.get(room.spaceId) || [];
       const haystack = clean(`${room.roomNumber} ${room.useLabel} ${room.occupierVe || ''} ${roomPlacements.map((item) => item.name).join(' ')}`);
       if (term && !haystack.includes(term)) return;
       const group = descriptor(room);
@@ -109,9 +109,15 @@ export function createWorkbenchViews(context) {
       const roomSelected = selected?.type === 'room' && selected.id === room.spaceId;
       const open = expandedRooms.has(room.spaceId);
       const assetsId = `fpe-resource-assets-${rowId}`;
+      const expansionAttributes = placements.length
+        ? ` aria-expanded="${open}" aria-controls="${assetsId}"`
+        : '';
+      const expansionLabel = placements.length
+        ? `Ausstattung von ${room.roomNumber} ${open ? 'ausblenden' : 'einblenden'}`
+        : `${room.roomNumber} hat keine Ausstattung`;
       return `<li><div class="fpe-resource-room-line${roomSelected ? ' is-selected' : ''}">
-        <button type="button" class="fpe-resource-room-toggle" data-resource-room="${C.escape(room.spaceId)}" aria-expanded="${open}"
-          aria-controls="${assetsId}" aria-label="Ausstattung von ${C.escape(room.roomNumber)} ${open ? 'ausblenden' : 'einblenden'}"${placements.length ? '' : ' disabled'}>${C.icon(open ? 'ChevronDown' : 'ChevronRight', 'icon--sm')}</button>
+        <button type="button" class="fpe-resource-room-toggle" data-resource-room="${C.escape(room.spaceId)}"${expansionAttributes}
+          aria-label="${C.escape(expansionLabel)}"${placements.length ? '' : ' disabled'}>${C.icon(open ? 'ChevronDown' : 'ChevronRight', 'icon--sm')}</button>
         <button type="button" class="fpe-resource-row${roomSelected ? ' is-selected' : ''}" data-select-type="room" data-select-id="${C.escape(room.spaceId)}" aria-pressed="${roomSelected}">
           <span>${C.escape(room.roomNumber)}</span><span>${Number(room.area).toLocaleString('de-CH')} m²</span></button>
       </div>
@@ -172,7 +178,7 @@ export function createWorkbenchViews(context) {
   function colorMenuHTML() {
     if (editMode) return '';
     return `<div class="fpe-color-menu" id="fpe-color-menu" role="menu" aria-label="Farbe nach"${colorMenuOpen ? '' : ' hidden'}>
-      <p class="fpe-overline">Farbe nach</p>${EDITOR_COLOR_MODES.map((item) => `<button type="button" role="menuitemradio" aria-checked="${item.value === colorMode}" data-color-mode="${C.escape(item.value)}">
+      <p class="fpe-overline">Farbe nach</p>${EDITOR_COLOR_MODES.map((item) => `<button type="button" role="menuitemradio" aria-checked="${item.value === colorMode}" tabindex="${item.value === colorMode ? '0' : '-1'}" data-color-mode="${C.escape(item.value)}">
         <span class="fpe-color-radio" aria-hidden="true"><i></i></span><span><strong>${C.escape(item.label)}</strong><small>${C.escape(COLOR_DESCRIPTIONS[item.value] || '')}</small></span>
       </button>`).join('')}
     </div>`;
@@ -267,7 +273,7 @@ export function createWorkbenchViews(context) {
       ${unavailable.map((label) => `<button type="button" role="menuitem" disabled title="In diesem Feedback-Prototyp noch nicht verfügbar">
         ${C.icon('Minus', 'icon--sm')}<span>${label}</span></button>`).join('')}
       <button type="button" role="menuitem" data-action="tool-room"${structureUnlocked ? '' : ' disabled'}>
-        ${C.icon('Apps', 'icon--sm')}<span><strong>Raumfläche anlegen</strong><small>Rechteckige Fläche im Plan aufziehen</small></span></button>
+        ${C.icon('Apps', 'icon--sm')}<span><strong>Raumfläche anlegen</strong><small>Im Plan aufziehen oder per Tastatur setzen</small></span></button>
       <span class="fpe-structure-menu__separator" aria-hidden="true"></span>
       <button type="button" role="menuitem" data-action="toggle-structure-lock">
         ${C.icon(structureUnlocked ? 'Lock' : 'Unlock', 'icon--sm')}<span>Strukturbearbeitung ${structureUnlocked ? 'sperren' : 'entsperren'}</span></button>
@@ -303,7 +309,7 @@ export function createWorkbenchViews(context) {
     if (viewMode === '2d') {
       return renderEditorSvg({ floor, rooms: editorDocument.rooms, placements: editorDocument.placements,
         selected, colorMode, camera, measurement, editableRooms: editMode && structureUnlocked,
-        roomDraft, placementGhost });
+        roomDraft, placementGhost, keyboardCursor });
     }
     return `<div class="fpe-three-view${viewMode === 'walk' ? ' is-walk' : ''}">
       <div class="fpe-three-host" id="fpe-three-host"><p class="fpe-three-loading">3D-Modell wird aufgebaut…</p></div>
@@ -313,7 +319,18 @@ export function createWorkbenchViews(context) {
 
   function stageHTML() {
     const directPan = viewMode === '2d' && (tool === 'pan' || (!editMode && tool === 'select'));
-    return `<section class="fpe-stage${directPan ? ' is-pan-ready' : ''}" id="fpe-stage" aria-label="Plan-Arbeitsfläche" tabindex="-1">
+    const keyboardHelp = tool === 'room'
+      ? 'Pfeiltasten bewegen den Planzeiger. Leertaste oder Eingabetaste setzt Anfang und Ende der neuen Raumfläche.'
+      : tool === 'distance'
+        ? 'Pfeiltasten bewegen den Planzeiger. Leertaste setzt die zwei Messpunkte.'
+        : tool === 'area'
+          ? 'Pfeiltasten bewegen den Planzeiger. Leertaste setzt Messpunkte. Eingabetaste schliesst die Fläche nach mindestens drei Punkten ab.'
+          : tool === 'place'
+            ? 'Pfeiltasten bewegen den Planzeiger. Leertaste oder Eingabetaste platziert das gewählte Produkt.'
+            : 'Pfeiltasten verschieben den sichtbaren Planausschnitt. Plus und Minus ändern den Zoom.';
+    const keyboardAttributes = viewMode === '2d' ? ' aria-describedby="fpe-stage-help" tabindex="0"' : ' tabindex="-1"';
+    return `<section class="fpe-stage${directPan ? ' is-pan-ready' : ''}" id="fpe-stage" aria-label="Plan-Arbeitsfläche"${keyboardAttributes}>
+      ${viewMode === '2d' ? `<p class="sr-only" id="fpe-stage-help">${keyboardHelp}</p>` : ''}
       <div id="fpe-toolbar-host"${viewMode === '2d' ? '' : ' class="fpe-toolbar-host--three"'}>${toolbarHTML()}</div>
       <div id="fpe-structure-menu-host">${structureMenuHTML()}</div>
       <div class="fpe-scene${viewMode === '2d' ? '' : ' fpe-scene--three'}" id="fpe-scene">${sceneContentHTML()}</div>
@@ -352,7 +369,7 @@ export function createWorkbenchViews(context) {
   }
 
   function roomInspectorHTML(room) {
-    const items = editorDocument.placements.filter((placement) => placement.roomId === room.spaceId);
+    const items = placementsByRoom.get(room.spaceId) || [];
     const moduleValue = String(room.moduleId || '');
     const [roomX, roomY, roomWidth, roomHeight] = room.rect;
     const localRoom = room.spaceId.startsWith('local-room-');
@@ -381,7 +398,7 @@ export function createWorkbenchViews(context) {
       <section class="fpe-inspector-section"><h3>Ausstattung in diesem Raum <span>${items.length}</span></h3>${items.length
         ? `<ul class="fpe-inspector-list">${items.map((placement) => `<li><button type="button" data-select-type="placement" data-select-id="${C.escape(placement.placementId)}">${C.escape(placement.name)}${C.icon('ChevronRight', 'icon--sm')}</button></li>`).join('')}</ul>`
         : '<p class="small muted">Noch keine Ausstattungsobjekte verortet.</p>'}
-        ${editMode ? '<button type="button" class="btn btn--outline btn--sm" data-action="focus-search"><span class="btn__text">Ausstattung hinzufügen</span></button>' : ''}
+        ${editMode && viewMode === '2d' ? '<button type="button" class="btn btn--outline btn--sm" data-action="focus-search"><span class="btn__text">Ausstattung hinzufügen</span></button>' : ''}
       </section>`;
   }
 
@@ -423,7 +440,6 @@ export function createWorkbenchViews(context) {
         <button class="fpe-panel-backdrop" type="button" data-action="close-panels" tabindex="-1" aria-hidden="true" aria-label="Seitenpanel schliessen"></button>
       </div>
       <div id="fpe-color-menu-host">${colorMenuHTML()}</div>
-      <div id="fpe-live" class="sr-only" role="status" aria-live="polite">${C.escape(liveText)}</div>
       ${prototypeFooterHTML()}
     </div>`;
   }

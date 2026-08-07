@@ -6,41 +6,14 @@
 // stable consumers. Coordinates use the portal floor convention: 100 units = 1 m.
 
 import { escape as esc } from '../components.js';
+import { EDITOR_COLOR_MODES, createColorContext, roomColor } from './colors.js';
+import { placementFootprintBounds } from './geometry.js';
 
-export const EDITOR_COLOR_MODES = [
-  { value: 'none', label: 'Keine' },
-  { value: 'use', label: 'Nutzung' },
-  { value: 'sia', label: 'SIA 416' },
-  { value: 've', label: 'Verwaltungseinheit' },
-  { value: 'module', label: 'Multispace-Modul' },
-];
-
-const GROUP_KEY = { arbeit: 'work', zusammen: 'collab', infra: 'infra', sonder: 'special' };
-const SIA_KEY = { HNF: 'hnf', NNF: 'nnf', VF: 'vf', FF: 'ff', TF: 'tf' };
-const VE_KEYS = ['a', 'b', 'c', 'd', 'e', 'f'];
-
-function veMap(rooms) {
-  const out = new Map();
-  [...new Set(rooms.map((room) => room.occupierVe).filter(Boolean))].sort()
-    .forEach((name, index) => out.set(name, VE_KEYS[index % VE_KEYS.length]));
-  return out;
-}
-
-function roomFill(room, mode, ves) {
-  if (mode === 'use') return `var(--fp-use-${GROUP_KEY[room.group] || 'infra'})`;
-  if (mode === 'sia') return `var(--fp-sia-${SIA_KEY[room.sia] || 'nnf'})`;
-  if (mode === 've') return room.occupierVe
-    ? `var(--fp-ve-${ves.get(room.occupierVe) || 'a'})`
-    : 'var(--fp-unassigned)';
-  if (mode === 'module') return room.moduleId
-    ? `var(--fpe-module-${Math.max(1, Math.min(11, Number(room.moduleId) || 1))})`
-    : 'var(--fp-unassigned)';
-  return room.group === 'infra' ? 'var(--color-secondary-50)' : 'var(--color-bg)';
-}
+export { EDITOR_COLOR_MODES } from './colors.js';
 
 const compactRoomNumber = (value) => String(value || '').replace(/^.*\s/, '');
 
-function roomMarkup(room, selected, mode, ves, editable = false) {
+function roomMarkup(room, selected, mode, colorContext, editable = false) {
   const [x, y, width, height] = room.rect;
   const showNumber = width >= 200 && height >= 200;
   const showUse = width >= 500 && height >= 390;
@@ -53,10 +26,13 @@ function roomMarkup(room, selected, mode, ves, editable = false) {
     ['nw', x, y], ['n', cx, y], ['ne', x + width, y],
     ['e', x + width, cy], ['se', x + width, y + height], ['s', cx, y + height],
     ['sw', x, y + height], ['w', x, cy],
-  ].map(([handle, hx, hy]) => `<circle class="fpe-room__handle" data-room-handle="${handle}" cx="${hx}" cy="${hy}" r="18"></circle>`).join('') : '';
+  ].map(([handle, hx, hy]) => `<g class="fpe-room__handle" data-room-handle="${handle}" transform="translate(${hx} ${hy})">
+      <circle class="fpe-room__handle-hit" r="40"></circle>
+      <circle class="fpe-room__handle-visual" r="18"></circle>
+    </g>`).join('') : '';
   return `<g class="fpe-room${selected ? ' is-selected' : ''}" data-entity="room" data-id="${esc(room.spaceId)}"
       tabindex="0" role="button" aria-pressed="${selected}" aria-label="${esc(label)}">
-    <rect x="${x}" y="${y}" width="${width}" height="${height}" style="fill:${roomFill(room, mode, ves)}"></rect>
+    <rect x="${x}" y="${y}" width="${width}" height="${height}" style="fill:${roomColor(room, mode, colorContext).css}"></rect>
     ${lines.map((line, index) => `<text x="${cx}" y="${firstY + index * 56}">${esc(line)}</text>`).join('')}
     ${handles}
   </g>`;
@@ -114,6 +90,17 @@ function roomDraftMarkup(roomDraft) {
   return `<g class="fpe-room-draft ${roomDraft.valid ? 'is-valid' : 'is-invalid'}" aria-hidden="true">
     <rect x="${x}" y="${y}" width="${width}" height="${height}"></rect>
     <text x="${x + width / 2}" y="${y + height / 2}">${esc(`${area.toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²`)}</text>
+  </g>`;
+}
+
+function keyboardCursorMarkup(cursor) {
+  const x = Number(cursor?.x);
+  const y = Number(cursor?.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return '';
+  return `<g class="fpe-keyboard-cursor" aria-hidden="true" pointer-events="none"
+      transform="translate(${x} ${y})" fill="var(--color-bg, #fff)" stroke="var(--color-primary-600, #1f57c3)"
+      stroke-width="6" vector-effect="non-scaling-stroke">
+    <circle r="24"></circle><path d="M -42 0 H -16 M 16 0 H 42 M 0 -42 V -16 M 0 16 V 42"></path>
   </g>`;
 }
 
@@ -179,6 +166,65 @@ export function fitCameraToRect(rect, paddingRatio = .22) {
   };
 }
 
+/**
+ * Expand a camera to the CSS viewport aspect ratio without cropping content or
+ * changing its effective SVG scale. This removes preserveAspectRatio
+ * letterboxing, whose unpainted bands otherwise map to points outside the
+ * viewBox when they receive a wheel or pointer event.
+ */
+export function cameraWithViewportAspect(camera, viewportWidth, viewportHeight) {
+  const x = Number(camera?.x);
+  const y = Number(camera?.y);
+  const width = Number(camera?.width);
+  const height = Number(camera?.height);
+  const cssWidth = Number(viewportWidth);
+  const cssHeight = Number(viewportHeight);
+  if (![x, y, width, height, cssWidth, cssHeight].every(Number.isFinite)
+    || width <= 0 || height <= 0 || cssWidth <= 0 || cssHeight <= 0) return { ...camera };
+  const unitsPerPixel = Math.max(width / cssWidth, height / cssHeight);
+  const nextWidth = cssWidth * unitsPerPixel;
+  const nextHeight = cssHeight * unitsPerPixel;
+  return {
+    x: x + (width - nextWidth) / 2,
+    y: y + (height - nextHeight) / 2,
+    width: nextWidth,
+    height: nextHeight,
+  };
+}
+
+/**
+ * Resize an already aspect-normalised camera while preserving plan units per
+ * CSS pixel. Unlike repeatedly expanding with `cameraWithViewportAspect`, this
+ * is reversible when panels open and close or the viewport changes orientation.
+ */
+export function resizeCameraToViewport(camera, previousViewport, nextViewport) {
+  const x = Number(camera?.x);
+  const y = Number(camera?.y);
+  const width = Number(camera?.width);
+  const height = Number(camera?.height);
+  const previousWidth = Number(previousViewport?.width);
+  const previousHeight = Number(previousViewport?.height);
+  const nextWidth = Number(nextViewport?.width);
+  const nextHeight = Number(nextViewport?.height);
+  if (![x, y, width, height, previousWidth, previousHeight, nextWidth, nextHeight]
+    .every(Number.isFinite)
+    || width <= 0 || height <= 0 || previousWidth <= 0 || previousHeight <= 0
+    || nextWidth <= 0 || nextHeight <= 0) {
+    return cameraWithViewportAspect(camera, nextWidth, nextHeight);
+  }
+  // For a normalised camera these two values are equal. `max` is a safe
+  // fallback for a legacy/mismatched camera because it cannot crop content.
+  const unitsPerPixel = Math.max(width / previousWidth, height / previousHeight);
+  const cameraWidth = nextWidth * unitsPerPixel;
+  const cameraHeight = nextHeight * unitsPerPixel;
+  return {
+    x: x + (width - cameraWidth) / 2,
+    y: y + (height - cameraHeight) / 2,
+    width: cameraWidth,
+    height: cameraHeight,
+  };
+}
+
 /** Return a rounded, camera-aware scale bar for a measured viewport width. */
 export function scaleBar(camera, viewportWidth, targetPixels = 120) {
   const width = Number(viewportWidth) || 0;
@@ -199,28 +245,95 @@ export function scaleBar(camera, viewportWidth, targetPixels = 120) {
 }
 
 export function zoomCamera(camera, factor, anchor = null) {
-  const safe = Math.max(.2, Math.min(5, Number(factor) || 1));
-  const nextWidth = Math.max(300, Math.min(camera.width * safe, 24000));
-  const nextHeight = Math.max(180, Math.min(camera.height * safe, 12000));
-  const ax = anchor?.x ?? camera.x + camera.width / 2;
-  const ay = anchor?.y ?? camera.y + camera.height / 2;
-  const rx = (ax - camera.x) / camera.width;
-  const ry = (ay - camera.y) / camera.height;
+  const requestedFactor = Number(factor);
+  const safe = Number.isFinite(requestedFactor) && requestedFactor > 0
+    ? Math.max(.2, Math.min(5, requestedFactor))
+    : 1;
+  const x = Number(camera?.x);
+  const y = Number(camera?.y);
+  const width = Number(camera?.width);
+  const height = Number(camera?.height);
+  if (![x, y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return { ...camera };
+  const minimumScale = Math.max(300 / width, 180 / height);
+  const maximumScale = Math.min(24000 / width, 12000 / height);
+  // A single scale keeps the viewBox aspect ratio stable. Valid editor cameras
+  // always have a feasible interval; retaining scale 1 is the safest fallback
+  // for an externally supplied camera with an impossible aspect ratio.
+  const scale = minimumScale <= maximumScale
+    ? Math.max(minimumScale, Math.min(safe, maximumScale))
+    : 1;
+  const nextWidth = width * scale;
+  const nextHeight = height * scale;
+  // A pointer in an SVG letterbox band transforms outside the viewBox. Clamp
+  // it to the nearest visible edge so one wheel tick cannot throw the camera.
+  const requestedX = Number(anchor?.x);
+  const requestedY = Number(anchor?.y);
+  const ax = Number.isFinite(requestedX) ? Math.max(x, Math.min(x + width, requestedX)) : x + width / 2;
+  const ay = Number.isFinite(requestedY) ? Math.max(y, Math.min(y + height, requestedY)) : y + height / 2;
+  const rx = (ax - x) / width;
+  const ry = (ay - y) / height;
   return { x: ax - nextWidth * rx, y: ay - nextHeight * ry, width: nextWidth, height: nextHeight };
 }
 
 export function panCamera(camera, dx, dy) {
-  return { ...camera, x: camera.x + dx, y: camera.y + dy };
+  const x = Number(camera?.x);
+  const y = Number(camera?.y);
+  const nextX = Number(dx);
+  const nextY = Number(dy);
+  if (![x, y, nextX, nextY].every(Number.isFinite)) return { ...camera };
+  return { ...camera, x: x + nextX, y: y + nextY };
+}
+
+/** Transform a CSS-pixel point through an inverse SVG screen matrix. */
+export function screenPointToPlan(inverseMatrix, clientX, clientY) {
+  if (!inverseMatrix || ![clientX, clientY].every(Number.isFinite)) return null;
+  const { a, b, c, d, e, f } = inverseMatrix;
+  if (![a, b, c, d, e, f].every(Number.isFinite)) return null;
+  return {
+    x: a * clientX + c * clientY + e,
+    y: b * clientX + d * clientY + f,
+  };
+}
+
+/** Snapshot the inverse transform once at gesture start to avoid resize drift. */
+export function inverseScreenMatrix(svg) {
+  if (!svg?.getScreenCTM) return null;
+  try {
+    return svg.getScreenCTM()?.inverse?.() || null;
+  } catch { return null; }
 }
 
 export function clientToPlan(svg, clientX, clientY) {
-  if (!svg || !svg.getScreenCTM) return null;
-  const matrix = svg.getScreenCTM();
-  if (!matrix) return null;
-  try {
-    const point = new DOMPoint(clientX, clientY).matrixTransform(matrix.inverse());
-    return { x: point.x, y: point.y };
-  } catch { return null; }
+  return screenPointToPlan(inverseScreenMatrix(svg), clientX, clientY);
+}
+
+/** Transform a CSS-pixel delta through an inverse SVG screen matrix. */
+export function screenDeltaToPlan(inverseMatrix, clientDx, clientDy) {
+  if (!inverseMatrix || ![clientDx, clientDy].every(Number.isFinite)) return null;
+  const { a, b, c, d } = inverseMatrix;
+  if (![a, b, c, d].every(Number.isFinite)) return null;
+  return {
+    x: a * clientDx + c * clientDy,
+    y: b * clientDx + d * clientDy,
+  };
+}
+
+/**
+ * Convert a pointer movement to plan units using the SVG's actual transform.
+ * Unlike element-width ratios, this remains correct with xMidYMid letterboxing.
+ */
+export function clientDeltaToPlan(svg, clientDx, clientDy) {
+  return screenDeltaToPlan(inverseScreenMatrix(svg), clientDx, clientDy);
+}
+
+/**
+ * Apply screen-space grab panning to a gesture's starting camera. Keeping the
+ * inverse matrix fixed for the gesture makes direction and speed independent
+ * of redraw timing or a ResizeObserver firing during the drag.
+ */
+export function panCameraFromScreenDelta(camera, inverseMatrix, clientDx, clientDy) {
+  const delta = screenDeltaToPlan(inverseMatrix, clientDx, clientDy);
+  return delta ? panCamera(camera, -delta.x, -delta.y) : { ...camera };
 }
 
 export function containingRoom(rooms, point) {
@@ -233,19 +346,38 @@ export function containingRoom(rooms, point) {
 
 export function clampPlacement(placement, floor) {
   const [floorWidth, floorHeight] = floor.extent || [4000, 1440];
-  const width = Math.max(18, Number(placement.width) || 60);
-  const depth = Math.max(18, Number(placement.depth) || 60);
-  return {
+  const sourceWidth = Number(placement.width);
+  const sourceDepth = Number(placement.depth);
+  // Preserve catalogue dimensions in the document. The footprint helper uses
+  // the renderer's 18-unit visual minimum internally when calculating bounds.
+  const width = Number.isFinite(sourceWidth) && sourceWidth > 0 ? sourceWidth : 60;
+  const depth = Number.isFinite(sourceDepth) && sourceDepth > 0 ? sourceDepth : 60;
+  const prepared = {
     ...placement,
-    x: Math.max(0, Math.min(floorWidth - width, Number(placement.x) || 0)),
-    y: Math.max(0, Math.min(floorHeight - depth, Number(placement.y) || 0)),
+    x: Number(placement.x) || 0,
+    y: Number(placement.y) || 0,
+    width,
+    depth,
+    rotation: Number(placement.rotation) || 0,
+  };
+  const bounds = placementFootprintBounds(prepared);
+  if (!bounds) return prepared;
+  const clampCentre = (value, footprintSize, limit) => footprintSize > limit
+    ? limit / 2
+    : Math.max(footprintSize / 2, Math.min(limit - footprintSize / 2, value));
+  const centreX = clampCentre(bounds.centreX, bounds.width, floorWidth);
+  const centreY = clampCentre(bounds.centreY, bounds.height, floorHeight);
+  return {
+    ...prepared,
+    x: prepared.x + centreX - bounds.centreX,
+    y: prepared.y + centreY - bounds.centreY,
   };
 }
 
 export function renderEditorSvg({ floor, rooms = [], placements = [], selected = null,
   colorMode = 'use', camera = fitCamera(floor), measurement = null,
-  editableRooms = false, roomDraft = null, placementGhost = null }) {
-  const ves = veMap(rooms);
+  editableRooms = false, roomDraft = null, placementGhost = null, keyboardCursor = null }) {
+  const colorContext = createColorContext(rooms);
   const selectedType = selected?.type || '';
   const selectedId = selected?.id || '';
   return `<svg class="fpe-canvas" id="fpe-canvas" viewBox="${camera.x} ${camera.y} ${camera.width} ${camera.height}"
@@ -253,17 +385,21 @@ export function renderEditorSvg({ floor, rooms = [], placements = [], selected =
       aria-label="Grundriss ${esc(floor.label)} mit ${rooms.length} Räumen und ${placements.length} Ausstattungsobjekten">
     <rect class="fpe-canvas__sheet" x="0" y="0" width="${floor.extent?.[0] || 4000}" height="${floor.extent?.[1] || 1440}"></rect>
     <g class="fpe-canvas__rooms">${rooms.map((room) => roomMarkup(room,
-      selectedType === 'room' && selectedId === room.spaceId, colorMode, ves, editableRooms)).join('')}</g>
+      selectedType === 'room' && selectedId === room.spaceId, colorMode, colorContext, editableRooms)).join('')}</g>
     <g class="fpe-canvas__placements">${placements.map((placement) => placementMarkup(placement,
       selectedType === 'placement' && selectedId === placement.placementId)).join('')}</g>
     ${placementGhostMarkup(placementGhost)}
     ${roomDraftMarkup(roomDraft)}
     ${measurementMarkup(measurement)}
+    ${keyboardCursorMarkup(keyboardCursor)}
   </svg>`;
 }
 
 export default {
   EDITOR_COLOR_MODES, renderEditorSvg, fitCamera, zoomCamera, panCamera,
-  fitCameraToRect, scaleBar, clientToPlan, containingRoom, clampPlacement,
+  fitCameraToRect, cameraWithViewportAspect, resizeCameraToViewport, scaleBar,
+  clientToPlan, clientDeltaToPlan, inverseScreenMatrix,
+  screenPointToPlan, screenDeltaToPlan, panCameraFromScreenDelta,
+  containingRoom, clampPlacement,
   distanceMetres, areaSquareMetres,
 };

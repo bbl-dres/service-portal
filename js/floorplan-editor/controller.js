@@ -8,7 +8,9 @@
 import { floorplanEditor } from '../links.js';
 import {
   EDITOR_COLOR_MODES, fitCamera, zoomCamera, panCamera,
-  fitCameraToRect, scaleBar, clientToPlan, containingRoom, clampPlacement,
+  fitCameraToRect, cameraWithViewportAspect, resizeCameraToViewport,
+  scaleBar, clientToPlan, inverseScreenMatrix, panCameraFromScreenDelta,
+  containingRoom, clampPlacement,
   measurementLabel,
 } from './canvas.js';
 import {
@@ -17,14 +19,22 @@ import {
   updatePlacement, updateRoomAttribute, updateRoomGeometry,
 } from './commands.js';
 import {
-  MODULE_OPTIONS, createBaseline, cloneDocument, EditorHistory,
+  MODULE_OPTIONS, createBaseline, cloneDocument, EditorHistory, validateEditorDocument,
 } from './model.js';
+import { placementFootprintBounds } from './geometry.js';
 import {
   loadWorkingCopy, saveWorkingCopy, removeWorkingCopy,
   loadRevisionHistory, publishLocalRevision,
 } from './repository.js';
 import { createFloorplanThreeViewer } from './three.js';
 import { createWorkbenchViews } from './views.js';
+import {
+  openConfirmationDialog, openPublishConfirmation, openVersionHistoryDialog,
+} from './dialogs.js';
+import {
+  arrowDirection, keyboardPanDelta, movementExceeded, pointerButtons,
+  pointerDragTolerance, roomRectFromDrag, rovingIndex, transformRoomRect, wheelZoomFactor,
+} from './interactions.js';
 import { copyText } from '../export.js';
 import { BASE, COLOR_DEFAULT, VIEW_MODES, PLAN_STATUS } from './shared.js';
 
@@ -40,7 +50,10 @@ function selectedFromQuery(query, document) {
 }
 
 export default async function renderWorkbench(ctx, { object, floor, plan, canonicalRooms }) {
-  const { mount, query, core, session, C, onUnmount, setTitle } = ctx;
+  const {
+    mount, query, core, session, C, onUnmount, setTitle,
+    replaceRoute: replaceCurrentRoute, blockNavigation,
+  } = ctx;
   const building = object.building;
 
   const baseline = createBaseline({
@@ -60,9 +73,12 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   let viewMode = VIEW_MODES.has(query.get('view')) ? query.get('view') : '2d';
   let selected = selectedFromQuery(query, editorDocument);
   let editMode = query.get('edit') === '1';
-  let dirty = false;
+  let reconciliationPending = Boolean(loaded.reconciled && !loaded.persistedReconciliation);
+  let dirty = reconciliationPending;
   const requestedLibrary = query.get('library');
-  let assetLibraryOpen = editMode && ['products', 'modules'].includes(requestedLibrary);
+  // Library placement is a 2D-only workflow. Normalise malformed/deprecated
+  // deep links before deriving tools and panel state from them.
+  let assetLibraryOpen = editMode && viewMode === '2d' && ['products', 'modules'].includes(requestedLibrary);
   let tool = assetLibraryOpen ? 'add' : 'select';
   let placementProduct = null;
   let libraryMode = requestedLibrary === 'modules' ? 'modules' : 'products';
@@ -70,6 +86,8 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   let measurement = null;
   let roomDraft = null;
   let placementGhost = null;
+  let keyboardCursor = null;
+  let keyboardRoomAnchor = null;
   let camera = fitCamera(floor);
   let resourceQuery = '';
   let productQuery = '';
@@ -89,15 +107,149 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   let rightOpen = !compactLayout;
   const desktopPanels = { left: leftOpen, right: rightOpen };
   let drag = null;
+  const twoDTouches = new Map();
   let threeViewer = null;
   const threeViewStates = { '3d': null, walk: null };
-  let liveText = '';
+  let mounted = true;
+  const queuedFrames = new Set();
+  let sceneFrame = 0;
+  let cameraChromeFrame = 0;
+  let cameraViewport = null;
 
-  const products = core.shopProducts();
+  function queueFrame(callback) {
+    const id = requestAnimationFrame(() => {
+      queuedFrames.delete(id);
+      if (mounted) callback();
+    });
+    queuedFrames.add(id);
+    return id;
+  }
+
+  function cancelQueuedFrames() {
+    mounted = false;
+    queuedFrames.forEach((id) => cancelAnimationFrame(id));
+    queuedFrames.clear();
+    sceneFrame = 0;
+    cameraChromeFrame = 0;
+  }
+
+  function cancelScheduledSceneDraw() {
+    if (!sceneFrame) return;
+    cancelAnimationFrame(sceneFrame);
+    queuedFrames.delete(sceneFrame);
+    sceneFrame = 0;
+  }
+
+  function scheduleSceneDraw() {
+    if (sceneFrame) return;
+    sceneFrame = queueFrame(() => {
+      sceneFrame = 0;
+      drawScene();
+    });
+  }
+
+  function current2dViewport() {
+    const svg = viewMode === '2d' ? mount.querySelector('#fpe-canvas') : null;
+    const width = Number(svg?.clientWidth);
+    const height = Number(svg?.clientHeight);
+    return svg && width > 0 && height > 0 ? { svg, width, height } : null;
+  }
+
+  function write2dCamera() {
+    const viewport = current2dViewport();
+    if (!viewport) return false;
+    viewport.svg.setAttribute('viewBox', `${camera.x} ${camera.y} ${camera.width} ${camera.height}`);
+    syncRoomHandleTargets(viewport.svg, viewport.width);
+    return true;
+  }
+
+  function syncRoomHandleTargets(svg, viewportWidth) {
+    const width = Number(viewportWidth);
+    if (!svg || !Number.isFinite(width) || width <= 0 || !Number.isFinite(camera.width)) return;
+    const unitsPerPixel = camera.width / width;
+    const visualRadius = Math.max(.5, unitsPerPixel * 7);
+    const hitRadius = Math.max(visualRadius, unitsPerPixel * 18);
+    svg.querySelectorAll('.fpe-room__handle').forEach((handle) => {
+      handle.querySelector('.fpe-room__handle-visual')?.setAttribute('r', visualRadius.toFixed(3));
+      handle.querySelector('.fpe-room__handle-hit')?.setAttribute('r', hitRadius.toFixed(3));
+    });
+  }
+
+  function scheduleCameraChrome() {
+    if (cameraChromeFrame) return;
+    cameraChromeFrame = queueFrame(() => {
+      cameraChromeFrame = 0;
+      syncScale();
+    });
+  }
+
+  function set2dCamera(nextCamera) {
+    camera = nextCamera;
+    if (write2dCamera()) scheduleCameraChrome();
+    else drawScene();
+  }
+
+  function fit2dCamera(nextCamera) {
+    const viewport = current2dViewport();
+    if (!viewport) {
+      cameraViewport = null;
+      return nextCamera;
+    }
+    cameraViewport = { width: viewport.width, height: viewport.height };
+    return cameraWithViewportAspect(nextCamera, viewport.width, viewport.height);
+  }
+
+  function sync2dViewport() {
+    const viewport = current2dViewport();
+    if (!viewport) return;
+    const nextViewport = { width: viewport.width, height: viewport.height };
+    if (cameraViewport
+      && Math.abs(cameraViewport.width - nextViewport.width) < .5
+      && Math.abs(cameraViewport.height - nextViewport.height) < .5) {
+      syncRoomHandleTargets(viewport.svg, viewport.width);
+      return;
+    }
+    camera = cameraViewport
+      ? resizeCameraToViewport(camera, cameraViewport, nextViewport)
+      : cameraWithViewportAspect(camera, nextViewport.width, nextViewport.height);
+    cameraViewport = nextViewport;
+    write2dCamera();
+    scheduleCameraChrome();
+  }
+
+  const sceneResizeObserver = typeof ResizeObserver === 'function'
+    ? new ResizeObserver(() => sync2dViewport())
+    : null;
+
+  function observeSceneViewport() {
+    sceneResizeObserver?.disconnect();
+    const scene = mount.querySelector('#fpe-scene');
+    if (scene) sceneResizeObserver?.observe(scene);
+    sync2dViewport();
+  }
+
+  function touchCameraMetrics() {
+    if (twoDTouches.size !== 2) return null;
+    const [first, second] = [...twoDTouches.values()];
+    const dx = second.x - first.x;
+    const dy = second.y - first.y;
+    return {
+      x: (first.x + second.x) / 2,
+      y: (first.y + second.y) / 2,
+      distance: Math.hypot(dx, dy),
+    };
+  }
+
+  // The baseline has already normalised and quarantined catalogue records.
+  // Keep UI choices aligned with the exact catalogue embedded in valid drafts.
+  const products = baseline.products;
   const productsById = new Map(products.map((product) => [String(product.id), product]));
   const roomById = () => new Map(editorDocument.rooms.map((room) => [room.spaceId, room]));
   const placementById = () => new Map(editorDocument.placements.map((placement) => [placement.placementId, placement]));
   const documentsEqual = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+  const unblockNavigation = typeof blockNavigation === 'function'
+    ? blockNavigation(() => !dirty || window.confirm('Nicht gespeicherte Änderungen verwerfen und Plan-Editor verlassen?'))
+    : () => {};
   const keepValidSelection = () => {
     if (selected?.type === 'room' && editorDocument.rooms.some((room) => room.spaceId === selected.id)) return;
     if (selected?.type === 'placement' && editorDocument.placements.some((placement) => placement.placementId === selected.id)) return;
@@ -114,16 +266,15 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (viewMode !== '2d') params.set('view', viewMode);
     if (selected) params.set('selected', `${selected.type}:${selected.id}`);
     if (editMode) params.set('edit', '1');
-    if (editMode && assetLibraryOpen) params.set('library', libraryMode);
+    if (editMode && viewMode === '2d' && assetLibraryOpen) params.set('library', libraryMode);
     const next = `${BASE}?${params}`;
-    if (location.hash !== next) window.history.replaceState(window.history.state, '', next);
+    if (location.hash !== next) {
+      if (typeof replaceCurrentRoute === 'function') replaceCurrentRoute(next);
+      else window.history.replaceState(window.history.state, '', next);
+    }
   }
 
   function announce(message) {
-    liveText = message;
-    const live = mount.querySelector('#fpe-live');
-    if (live) live.textContent = '';
-    requestAnimationFrame(() => { const node = mount.querySelector('#fpe-live'); if (node) node.textContent = message; });
     C.announce(message);
   }
 
@@ -131,9 +282,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     const next = cloneDocument(editorDocument);
     change(next);
     if (documentsEqual(next, editorDocument)) return false;
+    if (!validateEditorDocument(next, baseline)) {
+      console.warn('[floorplan-editor] rejected invalid command result', label);
+      announce('Änderung verworfen: Die Arbeitskopie würde dadurch ungültig.');
+      return false;
+    }
     editHistory.push(next);
     editorDocument = cloneDocument(editHistory.current);
-    dirty = !documentsEqual(editorDocument, lastSaved);
+    dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
     syncDraftChrome();
     announce(label);
     return true;
@@ -143,7 +299,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     const result = direction === 'undo' ? editHistory.undo() : editHistory.redo();
     if (!result) return;
     editorDocument = cloneDocument(result);
-    dirty = !documentsEqual(editorDocument, lastSaved);
+    dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
     syncDraftChrome();
     keepValidSelection();
     syncQuery();
@@ -172,10 +328,10 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     C, session, object, building, floor, plan, products, productsById,
     roomById, placementById, editorDocument, editHistory, selected, colorMode,
     viewMode, editMode, dirty, assetLibraryOpen, tool, placementProduct,
-    libraryMode, productCategory, measurement, roomDraft, placementGhost,
+    libraryMode, productCategory, measurement, roomDraft, placementGhost, keyboardCursor,
     camera, resourceQuery, productQuery, colorMenuOpen, moreMenuOpen,
     structureMenuOpen, structureUnlocked, expandedGroups, expandedRooms,
-    leftOpen, rightOpen, liveText, returnHref: returnHref(),
+    leftOpen, rightOpen, returnHref: returnHref(),
     versionLabel: editorVersionLabel(), publishable: canPublish(),
     planBadgeHtml: planBadge(),
   });
@@ -211,13 +367,22 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     menu.style.top = `${Math.max(8, Math.min(window.innerHeight - menu.offsetHeight - 8, rect.bottom + 8))}px`;
   }
 
+  function closeColorMenu({ restoreFocus = false } = {}) {
+    colorMenuOpen = false;
+    const trigger = mount.querySelector('#fpe-color-trigger');
+    const menu = mount.querySelector('#fpe-color-menu');
+    trigger?.setAttribute('aria-expanded', 'false');
+    if (menu) menu.hidden = true;
+    if (restoreFocus) trigger?.focus({ preventScroll: true });
+  }
+
   function setMoreMenuOpen(open, { focusFirst = false, restoreFocus = false } = {}) {
     moreMenuOpen = Boolean(open);
     const trigger = mount.querySelector('#fpe-more-trigger');
     const menu = mount.querySelector('#fpe-more-menu');
     trigger?.setAttribute('aria-expanded', String(moreMenuOpen));
     if (menu) menu.hidden = !moreMenuOpen;
-    if (moreMenuOpen) requestAnimationFrame(() => {
+    if (moreMenuOpen) queueFrame(() => {
       positionMoreMenu();
       if (focusFirst) menu?.querySelector('[role="menuitem"]')?.focus({ preventScroll: true });
     });
@@ -241,7 +406,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     const menu = mount.querySelector('#fpe-structure-menu');
     trigger?.setAttribute('aria-expanded', String(structureMenuOpen));
     if (menu) menu.hidden = !structureMenuOpen;
-    if (structureMenuOpen) requestAnimationFrame(() => {
+    if (structureMenuOpen) queueFrame(() => {
       positionStructureMenu();
       if (focusFirst) menu?.querySelector('[role="menuitem"]:not([disabled])')?.focus({ preventScroll: true });
     });
@@ -253,11 +418,15 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   function setPanelOpen(side, open, { focusToggle = true } = {}) {
     const next = Boolean(open);
     if (side === 'left') {
+      if (editMode && viewMode !== '2d' && next) {
+        announce('Die Produktbibliothek ist nur im 2D-Plan verfügbar.');
+        return;
+      }
       if (editMode) {
         assetLibraryOpen = next;
         if (next && !['add', 'place'].includes(tool)) tool = 'add';
         if (!next && ['add', 'place'].includes(tool)) {
-          tool = 'select'; placementProduct = null; placementGhost = null;
+          tool = 'select'; placementProduct = null; placementGhost = null; keyboardCursor = null;
         }
       }
       leftOpen = next;
@@ -269,7 +438,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
         leftOpen = false;
         if (editMode) {
           assetLibraryOpen = false;
-          if (['add', 'place'].includes(tool)) { tool = 'select'; placementProduct = null; placementGhost = null; }
+          if (['add', 'place'].includes(tool)) { tool = 'select'; placementProduct = null; placementGhost = null; keyboardCursor = null; }
         }
       }
       else if (!compactWorkbench()) desktopPanels.right = next;
@@ -279,7 +448,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     structureMenuOpen = false;
     syncQuery();
     draw();
-    if (focusToggle) requestAnimationFrame(() => {
+    if (focusToggle) queueFrame(() => {
       const suffix = compactWorkbench() ? '-mobile' : '';
       mount.querySelector(`#fpe-toggle-${side}${suffix}`)?.focus({ preventScroll: true });
     });
@@ -291,11 +460,11 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     leftOpen = false; rightOpen = false; colorMenuOpen = false; structureMenuOpen = false;
     if (editMode) {
       assetLibraryOpen = false;
-      if (['add', 'place'].includes(tool)) { tool = 'select'; placementProduct = null; placementGhost = null; }
+      if (['add', 'place'].includes(tool)) { tool = 'select'; placementProduct = null; placementGhost = null; keyboardCursor = null; }
     }
     syncQuery();
     draw();
-    if (focusToggle) requestAnimationFrame(() => mount.querySelector(`#fpe-toggle-${side}-mobile`)?.focus({ preventScroll: true }));
+    if (focusToggle) queueFrame(() => mount.querySelector(`#fpe-toggle-${side}-mobile`)?.focus({ preventScroll: true }));
     return true;
   }
 
@@ -324,6 +493,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       colorMode,
       initialViewState: threeViewStates[viewMode],
       onSelect: (type, id) => selectEntity(type, id, false),
+      onAnnounce: announce,
     });
   }
 
@@ -332,12 +502,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     const host = mount.querySelector('#fpe-scale');
     const scene = mount.querySelector('#fpe-scene');
     if (!host || !scene) return;
-    const matrix = mount.querySelector('#fpe-canvas')?.getScreenCTM?.();
+    const svg = mount.querySelector('#fpe-canvas');
+    const viewportWidth = svg?.clientWidth || scene.clientWidth;
+    const matrix = svg?.getScreenCTM?.();
     const pixelsPerUnit = matrix ? Math.hypot(matrix.a, matrix.b) : 0;
     const effectiveCamera = pixelsPerUnit > 0
-      ? { width: scene.clientWidth / pixelsPerUnit }
+      ? { width: viewportWidth / pixelsPerUnit }
       : camera;
-    const scale = scaleBar(effectiveCamera, scene.clientWidth);
+    const scale = scaleBar(effectiveCamera, viewportWidth);
     const label = host.querySelector('span');
     const line = host.querySelector('i');
     if (label) label.textContent = scale.label;
@@ -348,32 +520,42 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     disposeThreeViewer();
     mount.innerHTML = currentViews().shellHTML();
     syncQuery();
-    if (viewMode !== '2d') requestAnimationFrame(initThreeViewer);
-    requestAnimationFrame(syncScale);
-    requestAnimationFrame(positionColorMenu);
-    requestAnimationFrame(positionStructureMenu);
+    if (viewMode !== '2d') queueFrame(initThreeViewer);
+    queueFrame(observeSceneViewport);
+    queueFrame(syncScale);
+    queueFrame(positionColorMenu);
+    queueFrame(positionStructureMenu);
   }
 
   function redrawPreservingFocus(fallbackId = '') {
     const restore = C.preserveFocus(mount);
     draw();
-    if (!restore() && fallbackId) requestAnimationFrame(() => mount.querySelector(`#${CSS.escape(fallbackId)}`)?.focus({ preventScroll: true }));
+    if (!restore() && fallbackId) queueFrame(() => mount.querySelector(`#${CSS.escape(fallbackId)}`)?.focus({ preventScroll: true }));
   }
 
   function focusSelectedEntity() {
     const current = selected ? { ...selected } : null;
     if (!current) return;
-    requestAnimationFrame(() => mount.querySelector(`[data-entity="${current.type}"][data-id="${CSS.escape(current.id)}"]`)?.focus({ preventScroll: true }));
+    queueFrame(() => mount.querySelector(`[data-entity="${current.type}"][data-id="${CSS.escape(current.id)}"]`)?.focus({ preventScroll: true }));
   }
 
-  function drawScene(focus = false) {
+  function drawScene(focus = false, viewerUpdate = 'document', views = currentViews()) {
+    cancelScheduledSceneDraw();
     const restore = C.preserveFocus(mount);
-    const views = currentViews();
-    disposeThreeViewer();
     const scene = mount.querySelector('#fpe-scene');
-    if (scene) {
-      scene.classList.toggle('fpe-scene--three', viewMode !== '2d');
-      scene.innerHTML = views.sceneContentHTML();
+    const retainedThree = viewMode !== '2d' && threeViewer && mount.querySelector('#fpe-three-host');
+    if (retainedThree) {
+      if (viewerUpdate === 'selection') threeViewer.updateSelection(selected);
+      else if (viewerUpdate === 'colors') threeViewer.updateColors(colorMode, editorDocument.rooms);
+      else threeViewer.updateDocument({
+        floor, rooms: editorDocument.rooms, placements: editorDocument.placements, selected, colorMode,
+      });
+    } else {
+      disposeThreeViewer();
+      if (scene) {
+        scene.classList.toggle('fpe-scene--three', viewMode !== '2d');
+        scene.innerHTML = views.sceneContentHTML();
+      }
     }
     const toolbar = mount.querySelector('#fpe-toolbar-host');
     if (toolbar) {
@@ -393,14 +575,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (result) { result.textContent = label; result.hidden = !label; }
     const restored = restore();
     if (focus && selected && !restored) focusSelectedEntity();
-    if (viewMode !== '2d') requestAnimationFrame(initThreeViewer);
-    requestAnimationFrame(syncScale);
-    requestAnimationFrame(positionStructureMenu);
+    if (viewMode !== '2d' && !retainedThree) queueFrame(initThreeViewer);
+    if (viewMode === '2d') queueFrame(sync2dViewport);
+    queueFrame(syncScale);
+    queueFrame(positionStructureMenu);
   }
 
-  function drawLeft() {
+  function drawLeft(views = currentViews()) {
     const host = mount.querySelector('#fpe-left-list');
-    const views = currentViews();
     if (host) host.innerHTML = editMode
       ? (libraryMode === 'products' ? views.productListHTML() : views.moduleListHTML())
       : views.resourceListHTML();
@@ -415,25 +597,26 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     host.replaceWith(template.content.firstElementChild);
     const colorHost = mount.querySelector('#fpe-color-menu-host');
     if (colorHost) colorHost.innerHTML = views.colorMenuHTML();
-    requestAnimationFrame(positionColorMenu);
-    if (focusId) requestAnimationFrame(() => mount.querySelector(`#${CSS.escape(focusId)}`)?.focus({ preventScroll: true }));
+    queueFrame(positionColorMenu);
+    if (focusId) queueFrame(() => mount.querySelector(`#${CSS.escape(focusId)}`)?.focus({ preventScroll: true }));
   }
 
-  function drawInspector(preserveScroll = false) {
+  function drawInspector(preserveScroll = false, views = currentViews()) {
     const host = mount.querySelector('#fpe-right');
     if (host) {
       const scrollTop = preserveScroll ? host.scrollTop : 0;
       const template = document.createElement('template');
-      template.innerHTML = currentViews().inspectorHTML();
+      template.innerHTML = views.inspectorHTML();
       const next = template.content.firstElementChild;
       host.replaceWith(next);
       if (preserveScroll) next.scrollTop = scrollTop;
     }
   }
 
-  function drawWorkArea({ preserveFocus = false, focusSelected = false } = {}) {
+  function drawWorkArea({ preserveFocus = false, focusSelected = false, viewerUpdate = 'document' } = {}) {
     const restore = preserveFocus ? C.preserveFocus(mount) : () => false;
-    drawScene(); drawLeft(); drawInspector(preserveFocus);
+    const views = currentViews();
+    drawScene(false, viewerUpdate, views); drawLeft(views); drawInspector(preserveFocus, views);
     const restored = restore();
     if (focusSelected && selected && !restored) focusSelectedEntity();
   }
@@ -446,22 +629,26 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       if (placement) expandedRooms.add(placement.roomId);
     }
     syncQuery();
-    drawWorkArea();
+    drawWorkArea({ viewerUpdate: 'selection' });
     if (selected) announce(`${type === 'room' ? 'Raum' : 'Objekt'} ausgewählt.`);
     if (focus && selected) focusSelectedEntity();
   }
 
   function openAssetLibrary({ mode = libraryMode, focusSearch = true } = {}) {
     if (!editMode) return;
+    if (viewMode !== '2d') {
+      announce('Die Produktbibliothek ist nur im 2D-Plan verfügbar.');
+      return;
+    }
     libraryMode = mode === 'modules' ? 'modules' : 'products';
     assetLibraryOpen = true;
     leftOpen = true;
     tool = 'add'; placementProduct = null; placementGhost = null;
-    roomDraft = null; measurement = null; structureMenuOpen = false;
+    roomDraft = null; measurement = null; keyboardCursor = null; keyboardRoomAnchor = null; structureMenuOpen = false;
     if (compactWorkbench()) rightOpen = false;
     else desktopPanels.left = true;
     syncQuery(); draw();
-    if (focusSearch) requestAnimationFrame(() => mount.querySelector('#fpe-left-search')?.focus({ preventScroll: true }));
+    if (focusSearch) queueFrame(() => mount.querySelector('#fpe-left-search')?.focus({ preventScroll: true }));
     announce('Bibliothek geöffnet. Produkt oder Modul auswählen.');
   }
 
@@ -470,11 +657,63 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     assetLibraryOpen = false; leftOpen = false;
     if (!compactWorkbench()) desktopPanels.left = false;
     if (['add', 'place'].includes(tool)) tool = 'select';
-    placementProduct = null; placementGhost = null;
+    placementProduct = null; placementGhost = null; keyboardCursor = null; keyboardRoomAnchor = null;
     syncQuery(); draw();
-    if (focusToolbar) requestAnimationFrame(() => mount.querySelector('#fpe-action-toggle-library')?.focus({ preventScroll: true }));
+    if (focusToolbar) queueFrame(() => mount.querySelector('#fpe-action-toggle-library')?.focus({ preventScroll: true }));
     if (announceClose) announce('Bibliothek geschlossen.');
     return true;
+  }
+
+  function ensureKeyboardCursor() {
+    if (keyboardCursor) return keyboardCursor;
+    const [floorWidth, floorHeight] = floor.extent;
+    keyboardCursor = {
+      x: Math.max(0, Math.min(floorWidth, camera.x + camera.width / 2)),
+      y: Math.max(0, Math.min(floorHeight, camera.y + camera.height / 2)),
+    };
+    return keyboardCursor;
+  }
+
+  function updateKeyboardDrafts() {
+    const cursor = ensureKeyboardCursor();
+    if (tool === 'room' && keyboardRoomAnchor) {
+      const rect = roomRectFromDrag(keyboardRoomAnchor, cursor, floor.extent);
+      if (!rect) return;
+      roomDraft = {
+        rect,
+        valid: roomRectInsideFloor(rect, floor.extent, editorDocument.rooms),
+      };
+    } else if (tool === 'place' && placementProduct) {
+      const width = Number(placementProduct.dimensions?.width) || 60;
+      const depth = Number(placementProduct.dimensions?.depth) || 60;
+      placementGhost = {
+        x: cursor.x - width / 2, y: cursor.y - depth / 2, width, depth,
+        shape: placementProduct.shape2d || 'rect', rotation: 0,
+        valid: Boolean(containingRoom(editorDocument.rooms, cursor)),
+      };
+    }
+  }
+
+  function moveKeyboardCursor(dx, dy) {
+    const cursor = ensureKeyboardCursor();
+    const [floorWidth, floorHeight] = floor.extent;
+    keyboardCursor = {
+      x: Math.max(0, Math.min(floorWidth, cursor.x + dx)),
+      y: Math.max(0, Math.min(floorHeight, cursor.y + dy)),
+    };
+    updateKeyboardDrafts();
+    drawScene();
+  }
+
+  function addKeyboardMeasurementPoint() {
+    const point = { ...ensureKeyboardCursor() };
+    if (!measurement || measurement.complete) measurement = { kind: tool, points: [], complete: false };
+    measurement.points.push(point);
+    if (tool === 'distance' && measurement.points.length >= 2) measurement.complete = true;
+    drawScene();
+    announce(measurement.complete
+      ? `Messung ${measurementLabel(measurement)}.`
+      : `Messpunkt ${measurement.points.length} gesetzt.`);
   }
 
   function chooseTool(next) {
@@ -487,6 +726,8 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     placementProduct = next === 'place' ? placementProduct : null;
     placementGhost = null;
     roomDraft = null;
+    keyboardRoomAnchor = null;
+    keyboardCursor = ['room', 'distance', 'area'].includes(next) ? ensureKeyboardCursor() : null;
     measurement = ['distance', 'area'].includes(next) ? { kind: next, points: [], complete: false } : null;
     structureMenuOpen = false;
     if (closesLibrary) {
@@ -496,10 +737,13 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     } else {
       drawScene(); drawLeft();
     }
-    announce(next === 'distance' ? 'Streckenmessung aktiv. Wählen Sie zwei Punkte.'
-      : next === 'area' ? 'Flächenmessung aktiv. Wählen Sie mindestens drei Punkte und drücken Sie Enter.'
-        : next === 'room' ? 'Fläche anlegen aktiv. Ziehen Sie im Plan ein Rechteck von mindestens einem Meter Seitenlänge.'
-          : next === 'pan' ? 'Verschieben aktiv.' : 'Auswahl aktiv.');
+    if (['room', 'distance', 'area', 'pan'].includes(next)) {
+      queueFrame(() => mount.querySelector('#fpe-stage')?.focus({ preventScroll: true }));
+    }
+    announce(next === 'distance' ? 'Streckenmessung aktiv. Klicken Sie zwei Punkte oder setzen Sie sie mit Pfeiltasten und Leertaste.'
+      : next === 'area' ? 'Flächenmessung aktiv. Setzen Sie mindestens drei Punkte und drücken Sie Enter.'
+        : next === 'room' ? 'Fläche anlegen aktiv. Ziehen Sie ein Rechteck oder setzen Sie Anfang und Ende mit Pfeiltasten und Eingabetaste.'
+          : next === 'pan' ? 'Verschieben aktiv. Ziehen Sie den Plan oder verwenden Sie die Pfeiltasten.' : 'Auswahl aktiv.');
   }
 
   function addProduct(product, point = null) {
@@ -512,10 +756,13 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       placementProduct = product;
       tool = 'place';
       placementGhost = null;
+      keyboardCursor = null;
+      keyboardRoomAnchor = null;
+      updateKeyboardDrafts();
       assetLibraryOpen = false; leftOpen = false;
       if (!compactWorkbench()) desktopPanels.left = false;
       syncQuery(); draw();
-      requestAnimationFrame(() => mount.querySelector('#fpe-stage')?.focus?.({ preventScroll: true }));
+      queueFrame(() => mount.querySelector('#fpe-stage')?.focus?.({ preventScroll: true }));
       announce(`${product.name} gewählt. Position im Plan auswählen.`);
       return;
     }
@@ -536,9 +783,9 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     });
     if (!finalRoom) { announce('Das Produkt kann an dieser Position keinem Raum zugeordnet werden.'); return; }
     placement.roomId = finalRoom.spaceId;
-    commit(`${product.name} platziert.`, (next) => { next.placements.push(placement); });
+    if (!commit(`${product.name} platziert.`, (next) => { next.placements.push(placement); })) return;
     selected = { type: 'placement', id };
-    placementProduct = null; placementGhost = null; tool = 'select';
+    placementProduct = null; placementGhost = null; keyboardCursor = null; keyboardRoomAnchor = null; tool = 'select';
     assetLibraryOpen = false; leftOpen = false;
     if (!compactWorkbench()) desktopPanels.left = false;
     syncQuery(); draw(); focusSelectedEntity();
@@ -563,18 +810,22 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     commit('Raumgeometrie geändert.', (next) => {
       accepted = updateRoomGeometry(next, selected.id, field, value, floor.extent);
     });
-    if (!accepted) announce('Geometrie nicht geändert: Mindestgrösse, Geschossgrenze oder verortete Objekte verhindern die Änderung.');
+    if (!accepted) announce('Geometrie nicht geändert: Mindestgrösse, Geschossgrenze, andere Räume oder verortete Objekte verhindern die Änderung.');
     drawWorkArea({ preserveFocus: true });
   }
 
   function addRoom(rect) {
-    if (!roomRectInsideFloor(rect, floor.extent)) { announce('Neue Fläche ist zu klein oder liegt ausserhalb des Geschosses.'); return; }
+    if (!roomRectInsideFloor(rect, floor.extent, editorDocument.rooms)) {
+      announce('Neue Fläche ist zu klein, überschneidet einen Raum oder liegt ausserhalb des Geschosses.');
+      return;
+    }
     const id = `local-room-${floor.floorId}-${Date.now().toString(36)}`;
     const ordinal = editorDocument.rooms.filter((room) => room.spaceId.startsWith('local-room-')).length + 1;
-    const room = createLocalRoom({ floor, buildingId: building.bbl_id, rect, ordinal, id });
+    const room = createLocalRoom({ floor, buildingId: building.bbl_id, rect, ordinal, id, rooms: editorDocument.rooms });
     if (!room) return;
-    commit('Neue Fläche angelegt.', (next) => { next.rooms.push(room); });
+    if (!commit('Neue Fläche angelegt.', (next) => { next.rooms.push(room); })) return;
     selected = { type: 'room', id }; tool = 'select'; roomDraft = null;
+    keyboardCursor = null; keyboardRoomAnchor = null;
     syncQuery(); drawWorkArea({ focusSelected: true });
   }
 
@@ -583,9 +834,20 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     const room = roomById().get(selected.id);
     if (!room) return;
     const count = editorDocument.placements.filter((item) => item.roomId === room.spaceId).length;
-    if (count && !window.confirm(`Neue Fläche und ${count} zugeordnete Objekte entfernen?`)) return;
-    commit('Neue Fläche entfernt.', (next) => removeRoom(next, room.spaceId));
-    selected = null; syncQuery(); drawWorkArea();
+    const removeSelected = (close = () => {}) => {
+      close();
+      commit('Neue Fläche entfernt.', (next) => removeRoom(next, room.spaceId));
+      selected = null; syncQuery(); drawWorkArea();
+    };
+    if (!count) { removeSelected(); return; }
+    openConfirmationDialog({
+      C, queueFrame,
+      id: 'fpe-remove-room-modal',
+      title: 'Neue Fläche entfernen?',
+      body: `<p><strong>${C.escape(room.roomNumber || room.roomName)}</strong> und ${count} ${count === 1 ? 'zugeordnetes Ausstattungsobjekt werden' : 'zugeordnete Ausstattungsobjekte werden'} aus der Arbeitskopie entfernt.</p><p>Die Änderung kann anschliessend mit «Rückgängig» wiederhergestellt werden.</p>`,
+      confirmLabel: 'Fläche entfernen',
+      onConfirm: removeSelected,
+    });
   }
 
   function changePlacement(field, value) {
@@ -594,7 +856,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     commit('Objektposition geändert.', (next) => {
       accepted = updatePlacement(next, selected.id, field, value, floor);
     });
-    if (!accepted) announce('Position nicht geändert: Der Mittelpunkt muss in einem Raum liegen.');
+    if (!accepted) announce('Position nicht geändert: Das Objekt muss innerhalb des Geschosses liegen und sein Mittelpunkt einem Raum zugeordnet sein.');
     drawWorkArea({ preserveFocus: true });
   }
 
@@ -606,14 +868,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   }
 
   function saveLocalDraft(redraw = true, announceResult = true) {
-    const result = saveWorkingCopy(editorDocument);
+    const result = saveWorkingCopy(editorDocument, baseline);
     if (!result.ok) {
       announce(`Entwurf konnte nicht gespeichert werden: ${result.reason || 'Browserspeicher nicht verfügbar'}.`);
       return null;
     }
     editorDocument = cloneDocument(result.document);
     lastSaved = cloneDocument(editorDocument);
-    hasLocalDraft = true; dirty = false;
+    hasLocalDraft = true; reconciliationPending = false; dirty = false;
     editHistory.reset(editorDocument);
     if (redraw) draw(); else syncDraftChrome();
     if (announceResult) announce('Arbeitskopie nur in diesem Browser gespeichert.');
@@ -638,51 +900,68 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
 
   function openPublishDialog() {
     if (!canPublish()) return;
-    const id = `fpe-confirm-publish-${Date.now()}`;
-    const close = C.openModal({
-      id: 'fpe-publish-modal', size: 'sm', title: 'Veröffentlichung simulieren?',
-      body: `${C.notification('<strong>Nur Feedback-Prototyp.</strong> Die Version wird ausschliesslich in diesem Browser gespeichert. Es findet keine Freigabe, Synchronisation oder Berechtigungsprüfung statt.', 'info', 'InfoCircle')}
-        <p>Die aktuelle Arbeitskopie enthält <strong>${editorDocument.rooms.length} Räume</strong> und <strong>${editorDocument.placements.length} Ausstattungsobjekte</strong>.</p>`,
-      footer: `<button type="button" class="btn btn--outline" data-modal-close>Abbrechen</button>
-        <button type="button" class="btn btn--filled" id="${id}">Im Prototyp veröffentlichen</button>`,
+    openPublishConfirmation({
+      C, queueFrame,
+      rooms: editorDocument.rooms.length,
+      placements: editorDocument.placements.length,
+      onConfirm: (close) => publishCurrentVersion(close),
     });
-    requestAnimationFrame(() => document.getElementById(id)?.addEventListener('click', () => publishCurrentVersion(close), { once: true }));
   }
 
-  function resetWorkingCopy(closeModal = () => {}) {
-    if (dirty && !window.confirm('Nicht gespeicherte Änderungen verwerfen und den Ausgangsstand laden?')) return;
-    removeWorkingCopy(floor.floorId);
-    editorDocument = cloneDocument(baseline);
-    lastSaved = cloneDocument(baseline);
-    hasLocalDraft = false; dirty = false; selected = null;
-    editHistory.reset(editorDocument);
-    closeModal(); draw();
-    C.toast('Lokale Arbeitskopie verworfen.', 'success', 'CheckmarkCircle');
+  function resetWorkingCopy(closeParent = () => {}) {
+    const reset = (closeConfirm = () => {}, closeAfterSuccess = () => {}) => {
+      if (!removeWorkingCopy(floor.floorId)) {
+        announce('Lokale Arbeitskopie konnte nicht verworfen werden: Browserspeicher nicht verfügbar.');
+        return false;
+      }
+      closeConfirm();
+      closeAfterSuccess();
+      editorDocument = cloneDocument(baseline);
+      lastSaved = cloneDocument(baseline);
+      hasLocalDraft = false; reconciliationPending = false; dirty = false; selected = null;
+      editHistory.reset(editorDocument);
+      draw();
+      queueFrame(() => mount.querySelector('#fpe-action-version-history, #fpe-more-trigger')?.focus({ preventScroll: true }));
+      C.toast('Lokale Arbeitskopie verworfen.', 'success', 'CheckmarkCircle');
+      return true;
+    };
+    if (dirty) {
+      // Do not stack a confirmation dialog on top of version history. Closing
+      // first restores its trigger, which the confirmation can then capture as
+      // the correct focus-return target.
+      closeParent();
+      queueFrame(() => {
+        openConfirmationDialog({
+          C, queueFrame,
+          id: 'fpe-reset-copy-modal',
+          title: 'Arbeitskopie verwerfen?',
+          body: '<p>Alle nicht gespeicherten Änderungen und die lokale Arbeitskopie dieses Geschosses werden verworfen. Danach wird der aktuelle Ausgangsstand geladen.</p><p>Der separat geführte lokale Versionsverlauf bleibt erhalten.</p>',
+          confirmLabel: 'Arbeitskopie verwerfen',
+          onConfirm: (closeConfirm) => reset(closeConfirm),
+        });
+      });
+      return;
+    }
+    reset(() => {}, closeParent);
   }
 
   function openVersionHistory() {
-    const id = `fpe-reset-copy-${Date.now()}`;
-    const rows = [...revisions].reverse().map((revision) => `<li>
-      <strong>V${revision.number + 1} · lokal publiziert</strong>
-      <span>${C.escape(new Date(revision.createdAt).toLocaleString('de-CH'))} · ${C.escape(revision.createdBy)}</span>
-      <small>${revision.document.rooms.length} Räume · ${revision.document.placements.length} Objekte</small>
-    </li>`).join('');
-    const close = C.openModal({
-      id: 'fpe-history-modal', size: 'md', title: 'Versionsverlauf im Prototyp',
-      body: `${C.notification('Diese Einträge existieren nur auf diesem Gerät und sind keine freigegebenen Planrevisionen.', 'info', 'InfoCircle')}
-        <ol class="fpe-version-list">${rows || '<li><strong>Noch keine lokale Veröffentlichung</strong><span>Eine Publikation kann im Bearbeitungsmodus simuliert werden.</span></li>'}
-          <li><strong>V1 · Ausgangsstand</strong><span>${C.escape(plan.lastSync || 'Quellstand des Portals')}</span><small>${baseline.rooms.length} Räume · ${baseline.placements.length} illustrative Objekte</small></li>
-        </ol>`,
-      footer: `${hasLocalDraft || dirty ? `<button type="button" class="btn btn--outline" id="${id}">Arbeitskopie verwerfen</button>` : ''}
-        <button type="button" class="btn btn--filled" data-modal-close>Schliessen</button>`,
+    openVersionHistoryDialog({
+      C, queueFrame, revisions, baseline,
+      planLastSync: plan.lastSync,
+      showReset: hasLocalDraft || dirty,
+      onReset: (close) => resetWorkingCopy(close),
     });
-    if (hasLocalDraft || dirty) requestAnimationFrame(() => document.getElementById(id)?.addEventListener('click', () => resetWorkingCopy(close), { once: true }));
   }
 
-  function endEditing() {
-    if (dirty && !window.confirm('Nicht gespeicherte Änderungen verwerfen und Bearbeitung beenden?')) return;
+  function finishEditing(close = () => {}) {
+    close();
     if (dirty) {
-      editorDocument = cloneDocument(lastSaved); dirty = false;
+      editorDocument = cloneDocument(lastSaved);
+      // A reconciled draft whose storage write failed is not a saved snapshot.
+      // Discard only this edit session while keeping that reconciliation
+      // protected until an explicit Save succeeds.
+      dirty = reconciliationPending;
       keepValidSelection();
     }
     editHistory.reset(editorDocument);
@@ -690,8 +969,25 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     assetLibraryOpen = false; structureMenuOpen = false;
     leftOpen = !compactWorkbench();
     if (!compactWorkbench()) desktopPanels.left = true;
-    roomDraft = null; measurement = null;
-    draw(); announce('Bearbeitungsmodus beendet.');
+    roomDraft = null; measurement = null; keyboardCursor = null; keyboardRoomAnchor = null;
+    draw();
+    announce(reconciliationPending
+      ? 'Bearbeitungsmodus beendet. Die Katalogaktualisierung ist weiterhin ungespeichert.'
+      : 'Bearbeitungsmodus beendet.');
+  }
+
+  function endEditing() {
+    if (!dirty) { finishEditing(); return; }
+    openConfirmationDialog({
+      C, queueFrame,
+      id: 'fpe-end-edit-modal',
+      title: 'Bearbeitung beenden?',
+      body: reconciliationPending
+        ? '<p>Die Änderungen dieser Bearbeitungssitzung werden verworfen. Die noch nicht gespeicherte Katalogaktualisierung bleibt geschützt und wird weiterhin als ungespeichert markiert.</p>'
+        : '<p>Die nicht gespeicherten Änderungen dieser Sitzung werden verworfen. Eine zuvor gespeicherte lokale Arbeitskopie bleibt erhalten.</p>',
+      confirmLabel: 'Änderungen verwerfen',
+      onConfirm: finishEditing,
+    });
   }
 
   function fitSelected() {
@@ -700,11 +996,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       ? roomById().get(selected.id)?.rect
       : (() => {
           const item = placementById().get(selected.id);
-          return item ? [item.x, item.y, item.width, item.depth] : null;
+          const bounds = item ? placementFootprintBounds(item) : null;
+          return bounds ? [bounds.minX, bounds.minY, bounds.width, bounds.height] : null;
         })();
     const next = fitCameraToRect(rect);
     if (!next) return;
-    camera = next; viewMode = '2d'; syncQuery(); drawScene(true);
+    viewMode = '2d';
+    camera = fit2dCamera(next);
+    syncQuery(); drawScene(true);
     announce('Auswahl eingepasst.');
   }
 
@@ -712,13 +1011,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (!VIEW_MODES.has(next) || viewMode === next) return;
     viewMode = next;
     tool = 'select'; measurement = null; roomDraft = null; placementGhost = null;
+    keyboardCursor = null; keyboardRoomAnchor = null;
     structureMenuOpen = false;
     if (editMode && next !== '2d') {
       assetLibraryOpen = false; leftOpen = false; placementProduct = null;
       if (!compactWorkbench()) desktopPanels.left = false;
     }
     syncQuery(); draw();
-    requestAnimationFrame(() => mount.querySelector(`[data-action="view-${next}"]`)?.focus({ preventScroll: true }));
+    queueFrame(() => mount.querySelector(`[data-action="view-${next}"]`)?.focus({ preventScroll: true }));
     announce(next === '2d' ? '2D-Plan geöffnet.'
       : next === '3d' ? 'Interaktives 3D-Modell aus dem aktuellen Grundriss geöffnet.'
         : 'Interaktive Begehung geöffnet. Klicken Sie in die Ansicht und bewegen Sie sich mit W A S D oder den Pfeiltasten.');
@@ -746,17 +1046,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (moreMenuOpen && !event.target.closest('.fpe-more')) setMoreMenuOpen(false);
     if (structureMenuOpen && !event.target.closest('#fpe-structure-menu') && !event.target.closest('#fpe-structure-trigger')) setStructureMenuOpen(false);
     if (colorMenuOpen && !event.target.closest('.fpe-color-picker') && !event.target.closest('.fpe-color-menu')) {
-      colorMenuOpen = false;
-      drawLeftPanel();
+      closeColorMenu();
     }
-    const leave = event.target.closest('[data-leave]');
-    if (leave && dirty && !window.confirm('Nicht gespeicherte Änderungen verwerfen und Plan-Editor verlassen?')) { event.preventDefault(); return; }
     const groupToggle = event.target.closest('[data-resource-group]');
     if (groupToggle) {
       const key = groupToggle.dataset.resourceGroup;
       if (expandedGroups.has(key)) expandedGroups.delete(key); else expandedGroups.add(key);
       drawLeft();
-      requestAnimationFrame(() => mount.querySelector(`[data-resource-group="${CSS.escape(key)}"]`)?.focus({ preventScroll: true }));
+      queueFrame(() => mount.querySelector(`[data-resource-group="${CSS.escape(key)}"]`)?.focus({ preventScroll: true }));
       return;
     }
     const roomToggle = event.target.closest('[data-resource-room]');
@@ -764,7 +1061,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       const id = roomToggle.dataset.resourceRoom;
       if (expandedRooms.has(id)) expandedRooms.delete(id); else expandedRooms.add(id);
       drawLeft();
-      requestAnimationFrame(() => mount.querySelector(`[data-resource-room="${CSS.escape(id)}"]`)?.focus({ preventScroll: true }));
+      queueFrame(() => mount.querySelector(`[data-resource-room="${CSS.escape(id)}"]`)?.focus({ preventScroll: true }));
       return;
     }
     const select = event.target.closest('[data-select-type]');
@@ -778,7 +1075,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       colorMode = colorButton.dataset.colorMode;
       expandedGroups.clear();
       colorMenuOpen = false;
-      syncQuery(); drawScene(); drawLeftPanel('fpe-color-trigger');
+      syncQuery(); drawScene(false, 'colors'); drawLeftPanel('fpe-color-trigger');
       announce(`Einfärbung ${EDITOR_COLOR_MODES.find((item) => item.value === colorMode)?.label}.`);
       return;
     }
@@ -787,7 +1084,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       libraryMode = libraryTab.dataset.library === 'modules' ? 'modules' : 'products';
       productQuery = ''; placementProduct = null; tool = 'add';
       syncQuery(); redrawPreservingFocus();
-      requestAnimationFrame(() => mount.querySelector(`[data-library="${libraryMode}"]`)?.focus());
+      queueFrame(() => mount.querySelector(`[data-library="${libraryMode}"]`)?.focus());
       return;
     }
     const action = event.target.closest('[data-action]')?.dataset.action;
@@ -802,7 +1099,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
         if (compactWorkbench()) rightOpen = false;
         draw();
       }
-      requestAnimationFrame(() => mount.querySelector('#fpe-left-search')?.focus());
+      queueFrame(() => mount.querySelector('#fpe-left-search')?.focus());
     }
     else if (action === 'toggle-library') {
       if (assetLibraryOpen) closeAssetLibrary({ announceClose: true });
@@ -837,7 +1134,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       editMode = true; tool = 'select'; assetLibraryOpen = false; leftOpen = false;
       if (!compactWorkbench()) desktopPanels.left = false;
       draw();
-      requestAnimationFrame(() => mount.querySelector('#fpe-action-tool-select')?.focus({ preventScroll: true }));
+      queueFrame(() => mount.querySelector('#fpe-action-tool-select')?.focus({ preventScroll: true }));
       announce('Bearbeitungsmodus gestartet. Änderungen bleiben lokal, bis sie gespeichert werden.');
     }
     else if (action === 'end-edit') endEditing();
@@ -851,14 +1148,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     else if (action === 'tool-area') chooseTool('area');
     else if (action === 'cancel-place') chooseTool('select');
     else if (action === 'zoom-in') {
-      if (viewMode === '2d') { camera = zoomCamera(camera, .8); drawScene(); }
+      if (viewMode === '2d') set2dCamera(zoomCamera(camera, .8));
       else if (viewMode === '3d') { threeViewer?.zoom(.8); announce('3D-Ansicht vergrössert.'); }
     }
     else if (action === 'zoom-out') {
-      if (viewMode === '2d') { camera = zoomCamera(camera, 1.25); drawScene(); }
+      if (viewMode === '2d') set2dCamera(zoomCamera(camera, 1.25));
       else if (viewMode === '3d') { threeViewer?.zoom(1.25); announce('3D-Ansicht verkleinert.'); }
     }
-    else if (action === 'fit') { camera = fitCamera(floor); drawScene(); announce('Plan eingepasst.'); }
+    else if (action === 'fit') { set2dCamera(fit2dCamera(fitCamera(floor))); announce('Plan eingepasst.'); }
     else if (action === 'fit-selection') fitSelected();
     else if (action === 'undo') restoreHistory('undo');
     else if (action === 'redo') restoreHistory('redo');
@@ -898,7 +1195,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (event.target.id === 'fpe-color') {
       colorMode = validColors.has(event.target.value) ? event.target.value : COLOR_DEFAULT;
       expandedGroups.clear();
-      syncQuery(); drawScene(); drawLeft();
+      syncQuery(); drawScene(false, 'colors'); drawLeft();
       announce(`Einfärbung ${EDITOR_COLOR_MODES.find((item) => item.value === colorMode)?.label}.`); return;
     }
     if (event.target.id === 'fpe-product-category') { productCategory = event.target.value; drawLeft(); return; }
@@ -912,8 +1209,55 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     const svg = mount.querySelector('#fpe-canvas');
     if (!stage || !svg) return;
     if (event.target.closest('button,a,input,select,textarea')) return;
+    if (drag) {
+      if (event.pointerType === 'touch' && drag.type === 'pan'
+        && drag.pointerType === 'touch' && event.pointerId !== drag.pointerId) {
+        event.preventDefault();
+        twoDTouches.set(drag.pointerId, { x: drag.currentX, y: drag.currentY });
+        twoDTouches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        try { mount.setPointerCapture?.(event.pointerId); } catch { /* synthetic/ended pointer */ }
+        drag = {
+          type: 'touch-camera',
+          metrics: touchCameraMetrics(),
+          moved: true,
+        };
+      } else if (event.pointerType === 'touch') {
+        event.preventDefault();
+      }
+      return;
+    }
+    const buttons = pointerButtons(event, tool);
+    if (!buttons) return;
+    const { primary: primaryButton, middle: middleButton } = buttons;
     const point = clientToPlan(svg, event.clientX, event.clientY);
     if (!point) return;
+    keyboardCursor = null;
+    keyboardRoomAnchor = null;
+    const entity = event.target.closest('[data-entity]');
+    const roomHandle = event.target.closest('[data-room-handle]');
+    const directPrimaryPan = tool === 'select' && event.button === 0 && (!editMode || !entity);
+    // Middle-button pan is a temporary navigation override in every tool. It
+    // must run before authoring actions so users can reposition the viewport
+    // without cancelling an in-progress room, placement or measurement tool.
+    if ((tool === 'pan' && (primaryButton || middleButton)) || middleButton || directPrimaryPan) {
+      event.preventDefault();
+      try { mount.setPointerCapture?.(event.pointerId); } catch { /* synthetic/ended pointer */ }
+      stage.classList.add('is-panning');
+      drag = {
+        type: 'pan', pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY,
+        currentX: event.clientX, currentY: event.clientY,
+        pointerType: event.pointerType, tolerance: pointerDragTolerance(event.pointerType),
+        camera: { ...camera }, inverseMatrix: inverseScreenMatrix(svg), moved: false,
+        tapSelection: directPrimaryPan
+          ? (entity ? { type: entity.dataset.entity, id: entity.dataset.id } : { type: null, id: null })
+          : null,
+      };
+      if (event.pointerType === 'touch') {
+        twoDTouches.clear();
+        twoDTouches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      }
+      return;
+    }
     if (tool === 'place' && placementProduct) { event.preventDefault(); addProduct(placementProduct, point); return; }
     if (tool === 'room' && editMode) {
       event.preventDefault();
@@ -931,22 +1275,6 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       if (measurement.complete) announce(`Messung ${measurementLabel(measurement)}.`);
       return;
     }
-    const entity = event.target.closest('[data-entity]');
-    const roomHandle = event.target.closest('[data-room-handle]');
-    const directPrimaryPan = tool === 'select' && event.button === 0 && (!editMode || !entity);
-    if (tool === 'pan' || event.button === 1 || directPrimaryPan) {
-      event.preventDefault();
-      try { mount.setPointerCapture?.(event.pointerId); } catch { /* synthetic/ended pointer */ }
-      stage.classList.add('is-panning');
-      drag = {
-        type: 'pan', pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY,
-        camera: { ...camera }, moved: false,
-        tapSelection: directPrimaryPan
-          ? (entity ? { type: entity.dataset.entity, id: entity.dataset.id } : { type: null, id: null })
-          : null,
-      };
-      return;
-    }
     if (entity?.dataset.entity === 'placement' && editMode && tool === 'select') {
       event.preventDefault();
       const placement = placementById().get(entity.dataset.id);
@@ -954,7 +1282,9 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       selected = { type: 'placement', id: placement.placementId }; syncQuery();
       try { mount.setPointerCapture?.(event.pointerId); } catch { /* synthetic/ended pointer */ }
       drag = { type: 'placement', pointerId: event.pointerId, start: point, x: placement.x, y: placement.y,
-        roomId: placement.roomId, moved: false };
+        clientStart: { x: event.clientX, y: event.clientY },
+        pointerType: event.pointerType, tolerance: pointerDragTolerance(event.pointerType),
+        roomId: placement.roomId, before: cloneDocument(editorDocument), moved: false };
       drawWorkArea({ focusSelected: true });
       return;
     }
@@ -971,6 +1301,8 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       drag = {
         type: roomHandle ? 'room-resize' : 'room-move', pointerId: event.pointerId,
         handle: roomHandle?.dataset.roomHandle || '', start: point,
+        clientStart: { x: event.clientX, y: event.clientY },
+        pointerType: event.pointerType, tolerance: pointerDragTolerance(event.pointerType),
         rect: room.rect.slice(), before: cloneDocument(editorDocument), moved: false,
       };
       drawWorkArea({ focusSelected: true });
@@ -993,130 +1325,194 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
           x: point.x - width / 2, y: point.y - depth / 2, width, depth,
           shape: placementProduct.shape2d || 'rect', rotation: 0, valid: Boolean(room),
         };
-        drawScene();
+        scheduleSceneDraw();
       }
+      return;
+    }
+    if (drag.type === 'touch-camera') {
+      if (!twoDTouches.has(event.pointerId) || !svg) return;
+      event.preventDefault();
+      twoDTouches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      const nextMetrics = touchCameraMetrics();
+      const previous = drag.metrics;
+      if (!nextMetrics || !previous) { drag.metrics = nextMetrics; return; }
+      set2dCamera(panCameraFromScreenDelta(
+        camera,
+        inverseScreenMatrix(svg),
+        nextMetrics.x - previous.x,
+        nextMetrics.y - previous.y,
+      ));
+      if (previous.distance > 4 && nextMetrics.distance > 4) {
+        const anchor = clientToPlan(svg, nextMetrics.x, nextMetrics.y);
+        set2dCamera(zoomCamera(camera, previous.distance / nextMetrics.distance, anchor));
+      }
+      drag.metrics = nextMetrics;
       return;
     }
     if (drag.pointerId !== event.pointerId) return;
     if (drag.type === 'pan') {
-      const rect = svg?.getBoundingClientRect();
-      if (!rect?.width || !rect?.height) return;
       const pixelDx = event.clientX - drag.clientX;
       const pixelDy = event.clientY - drag.clientY;
-      drag.moved ||= Math.hypot(pixelDx, pixelDy) > 4;
+      drag.moved ||= movementExceeded(
+        { x: drag.clientX, y: drag.clientY },
+        { x: event.clientX, y: event.clientY },
+        drag.tolerance,
+      );
+      drag.currentX = event.clientX;
+      drag.currentY = event.clientY;
+      if (drag.pointerType === 'touch') {
+        twoDTouches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      }
       if (!drag.moved) return;
-      camera = panCamera(drag.camera,
-        -pixelDx * drag.camera.width / rect.width,
-        -pixelDy * drag.camera.height / rect.height);
-      drawScene(); return;
+      set2dCamera(panCameraFromScreenDelta(
+        drag.camera, drag.inverseMatrix, pixelDx, pixelDy,
+      ));
+      return;
     }
     const point = clientToPlan(svg, event.clientX, event.clientY);
     if (!point) return;
     if (drag.type === 'room-create') {
-      const [floorWidth, floorHeight] = floor.extent;
-      const x1 = Math.max(0, Math.min(floorWidth, drag.start.x));
-      const y1 = Math.max(0, Math.min(floorHeight, drag.start.y));
-      const x2 = Math.max(0, Math.min(floorWidth, point.x));
-      const y2 = Math.max(0, Math.min(floorHeight, point.y));
-      const rect = [Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1)];
-      roomDraft = { rect, valid: rect[2] >= 100 && rect[3] >= 100 };
-      drawScene(); return;
+      const rect = roomRectFromDrag(drag.start, point, floor.extent);
+      if (!rect) return;
+      roomDraft = { rect, valid: roomRectInsideFloor(rect, floor.extent, editorDocument.rooms) };
+      scheduleSceneDraw(); return;
     }
     if (drag.type === 'room-move' || drag.type === 'room-resize') {
       const room = selected?.type === 'room' ? roomById().get(selected.id) : null;
       if (!room) return;
-      const [floorWidth, floorHeight] = floor.extent;
-      let [x, y, width, height] = drag.rect;
+      drag.moved ||= movementExceeded(
+        drag.clientStart,
+        { x: event.clientX, y: event.clientY },
+        drag.tolerance,
+      );
+      if (!drag.moved) return;
+      const transformed = transformRoomRect({
+        type: drag.type, rect: drag.rect, handle: drag.handle,
+        start: drag.start, point, extent: floor.extent,
+      });
+      if (!transformed) return;
+      const [x, y, width, height] = transformed.rect;
       if (drag.type === 'room-move') {
-        const dx = point.x - drag.start.x, dy = point.y - drag.start.y;
-        x = Math.max(0, Math.min(floorWidth - width, drag.rect[0] + dx));
-        y = Math.max(0, Math.min(floorHeight - height, drag.rect[1] + dy));
-        const actualDx = x - drag.rect[0], actualDy = y - drag.rect[1];
         const beforeById = new Map(drag.before.placements.map((item) => [item.placementId, item]));
         editorDocument.placements.filter((item) => item.roomId === room.spaceId).forEach((item) => {
           const previous = beforeById.get(item.placementId);
-          if (previous) { item.x = previous.x + actualDx; item.y = previous.y + actualDy; }
+          if (previous) { item.x = previous.x + transformed.dx; item.y = previous.y + transformed.dy; }
         });
-      } else {
-        let left = x, top = y, right = x + width, bottom = y + height;
-        if (drag.handle.includes('w')) left = Math.max(0, Math.min(point.x, right - 100));
-        if (drag.handle.includes('e')) right = Math.min(floorWidth, Math.max(point.x, left + 100));
-        if (drag.handle.includes('n')) top = Math.max(0, Math.min(point.y, bottom - 100));
-        if (drag.handle.includes('s')) bottom = Math.min(floorHeight, Math.max(point.y, top + 100));
-        x = left; y = top; width = right - left; height = bottom - top;
       }
-      drag.moved ||= Math.hypot(point.x - drag.start.x, point.y - drag.start.y) > 3;
       stampRoomGeometry(room, [x, y, width, height]);
-      drawScene(); return;
+      scheduleSceneDraw(); return;
     }
     const placement = selected?.type === 'placement' ? placementById().get(selected.id) : null;
     if (!placement) return;
-    drag.moved ||= Math.hypot(point.x - drag.start.x, point.y - drag.start.y) > 3;
+    drag.moved ||= movementExceeded(
+      drag.clientStart,
+      { x: event.clientX, y: event.clientY },
+      drag.tolerance,
+    );
+    if (!drag.moved) return;
     placement.x = drag.x + point.x - drag.start.x;
     placement.y = drag.y + point.y - drag.start.y;
     Object.assign(placement, clampPlacement(placement, floor));
-    drawScene();
+    scheduleSceneDraw();
   }
 
   function onPointerUp(event) {
-    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (!drag) return;
+    if (drag.type === 'touch-camera') {
+      if (!twoDTouches.has(event.pointerId)) return;
+      twoDTouches.delete(event.pointerId);
+      try { mount.releasePointerCapture?.(event.pointerId); } catch { /* capture already gone */ }
+      if (twoDTouches.size === 1) {
+        const [pointerId, point] = twoDTouches.entries().next().value;
+        drag = {
+          type: 'pan', pointerId, pointerType: 'touch', tolerance: pointerDragTolerance('touch'),
+          clientX: point.x, clientY: point.y, currentX: point.x, currentY: point.y,
+          camera: { ...camera }, inverseMatrix: inverseScreenMatrix(mount.querySelector('#fpe-canvas')),
+          moved: true, tapSelection: null,
+        };
+      } else {
+        twoDTouches.clear();
+        drag = null;
+        mount.querySelector('#fpe-stage')?.classList.remove('is-panning');
+      }
+      return;
+    }
+    if (drag.pointerId !== event.pointerId) return;
+    const cancelled = event.type !== 'pointerup';
     let tapSelection = null;
     if (drag.type === 'room-create') {
       const draft = roomDraft;
       roomDraft = null;
-      if (event.type !== 'pointercancel' && draft?.valid) addRoom(draft.rect);
+      if (!cancelled && draft?.valid) addRoom(draft.rect);
       else { chooseTool('select'); announce('Neue Fläche verworfen.'); }
     } else if (drag.type === 'room-move' || drag.type === 'room-resize') {
       const room = selected?.type === 'room' ? roomById().get(selected.id) : null;
-      const accepted = drag.moved && event.type !== 'pointercancel' && room
-        && roomRectInsideFloor(room.rect, floor.extent) && placementsInsideRoom(editorDocument, room);
+      const accepted = drag.moved && !cancelled && room
+        && roomRectInsideFloor(room.rect, floor.extent, editorDocument.rooms, room.spaceId)
+        && placementsInsideRoom(editorDocument, room)
+        && validateEditorDocument(editorDocument, baseline);
       if (!drag.moved) {
         editorDocument = cloneDocument(drag.before);
       } else if (!accepted) {
         editorDocument = cloneDocument(drag.before);
-        announce('Raumgeometrie bleibt unverändert: Verortete Objekte müssen innerhalb der Fläche liegen.');
+        announce('Raumgeometrie bleibt unverändert: Geschossgrenze, andere Räume oder verortete Objekte verhindern die Änderung.');
       } else {
         editHistory.push(editorDocument);
         editorDocument = cloneDocument(editHistory.current);
-        dirty = !documentsEqual(editorDocument, lastSaved);
+        dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
         syncDraftChrome();
         announce(drag.type === 'room-move' ? 'Raum und Ausstattung verschoben.' : 'Raumkante verschoben.');
       }
       drawWorkArea({ focusSelected: true });
-    } else if (drag.type === 'placement' && drag.moved) {
-      const placement = selected?.type === 'placement' ? placementById().get(selected.id) : null;
-      if (placement) {
-        const cx = placement.x + placement.width / 2, cy = placement.y + placement.depth / 2;
-        const containing = containingRoom(editorDocument.rooms, { x: cx, y: cy });
-        if (!containing) {
-          placement.x = drag.x; placement.y = drag.y; placement.roomId = drag.roomId;
-          announce('Objekt bleibt am bisherigen Ort: Der Mittelpunkt muss in einem Raum liegen.');
-        } else {
-          placement.roomId = containing.spaceId;
-          if (placement.status !== 'new') placement.status = 'moved';
-          editHistory.push(editorDocument);
-          editorDocument = cloneDocument(editHistory.current);
-          dirty = !documentsEqual(editorDocument, lastSaved);
-          syncDraftChrome();
-          announce('Objekt verschoben.');
+    } else if (drag.type === 'placement') {
+      if (!drag.moved) {
+        // A click or sub-threshold jitter is not an edit. Restore the exact
+        // gesture-start document so cancellation can never bypass history.
+        editorDocument = cloneDocument(drag.before);
+      } else {
+        const placement = selected?.type === 'placement' ? placementById().get(selected.id) : null;
+        if (placement) {
+          const cx = placement.x + placement.width / 2, cy = placement.y + placement.depth / 2;
+          const containing = containingRoom(editorDocument.rooms, { x: cx, y: cy });
+          if (cancelled || !containing) {
+            editorDocument = cloneDocument(drag.before);
+            if (!cancelled) announce('Objekt bleibt am bisherigen Ort: Der Mittelpunkt muss in einem Raum liegen.');
+          } else {
+            placement.roomId = containing.spaceId;
+            if (placement.status !== 'new') placement.status = 'moved';
+            if (!validateEditorDocument(editorDocument, baseline)) {
+              editorDocument = cloneDocument(drag.before);
+              announce('Objekt bleibt am bisherigen Ort: Die neue Position wäre ungültig.');
+            } else {
+              editHistory.push(editorDocument);
+              editorDocument = cloneDocument(editHistory.current);
+              dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
+              syncDraftChrome();
+              announce('Objekt verschoben.');
+            }
+          }
+          drawWorkArea({ focusSelected: true });
         }
-        drawWorkArea({ focusSelected: true });
       }
-    } else if (drag.type === 'pan' && !drag.moved && event.type !== 'pointercancel') {
-      tapSelection = drag.tapSelection;
+    } else if (drag.type === 'pan') {
+      if (cancelled) set2dCamera({ ...drag.camera });
+      else if (!drag.moved) tapSelection = drag.tapSelection;
     }
     mount.querySelector('#fpe-stage')?.classList.remove('is-panning');
-    try { mount.releasePointerCapture?.(event.pointerId); } catch { /* capture already gone */ }
+    twoDTouches.delete(event.pointerId);
     drag = null;
+    try { mount.releasePointerCapture?.(event.pointerId); } catch { /* capture already gone */ }
     if (tapSelection) selectEntity(tapSelection.type, tapSelection.id, Boolean(tapSelection.type));
   }
 
   function onWheel(event) {
-    if (viewMode !== '2d' || !event.target.closest('#fpe-stage')) return;
+    const svg = event.target.closest?.('#fpe-canvas');
+    if (viewMode !== '2d' || !svg) return;
+    const factor = wheelZoomFactor(event, { pagePixels: svg.clientHeight });
+    if (factor === 1) return;
     event.preventDefault();
-    const point = clientToPlan(mount.querySelector('#fpe-canvas'), event.clientX, event.clientY);
-    camera = zoomCamera(camera, event.deltaY < 0 ? .88 : 1.14, point);
-    drawScene();
+    const point = clientToPlan(svg, event.clientX, event.clientY);
+    set2dCamera(zoomCamera(camera, factor, point));
   }
 
   function onDoubleClick(event) {
@@ -1135,6 +1531,17 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (!drag && placementGhost) { placementGhost = null; drawScene(); }
   }
 
+  function onFocusOut(event) {
+    if (!colorMenuOpen || !event.target.closest?.('#fpe-color-menu')) return;
+    const next = event.relatedTarget;
+    if (next && (next === mount.querySelector('#fpe-color-trigger') || mount.querySelector('#fpe-color-menu')?.contains(next))) return;
+    queueFrame(() => {
+      const menu = mount.querySelector('#fpe-color-menu');
+      const trigger = mount.querySelector('#fpe-color-trigger');
+      if (colorMenuOpen && !menu?.contains(document.activeElement) && document.activeElement !== trigger) closeColorMenu();
+    });
+  }
+
   function onKeyDown(event) {
     const textControl = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName);
     if (event.target.id === 'fpe-more-trigger' && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
@@ -1148,8 +1555,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       const index = items.indexOf(menuItem);
       if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
         event.preventDefault();
-        const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
-          : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        const next = rovingIndex(event.key, index, items.length);
         items[next]?.focus({ preventScroll: true });
         return;
       }
@@ -1166,8 +1572,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       const index = items.indexOf(structureItem);
       if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
         event.preventDefault();
-        const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
-          : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        const next = rovingIndex(event.key, index, items.length);
         items[next]?.focus({ preventScroll: true });
         return;
       }
@@ -1178,7 +1583,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       colorMenuOpen = true;
       setMoreMenuOpen(false);
       drawLeftPanel();
-      requestAnimationFrame(() => mount.querySelector('.fpe-color-menu [aria-checked="true"]')?.focus({ preventScroll: true }));
+      queueFrame(() => mount.querySelector('.fpe-color-menu [aria-checked="true"]')?.focus({ preventScroll: true }));
       return;
     }
     const colorItem = event.target.closest?.('.fpe-color-menu [role="menuitemradio"]');
@@ -1186,18 +1591,21 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       event.preventDefault();
       const items = [...mount.querySelectorAll('.fpe-color-menu [role="menuitemradio"]')];
       const index = items.indexOf(colorItem);
-      const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
-        : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      const next = rovingIndex(event.key, index, items.length);
+      items.forEach((item, itemIndex) => { item.tabIndex = itemIndex === next ? 0 : -1; });
       items[next]?.focus({ preventScroll: true });
       return;
+    }
+    if (colorItem && event.key === 'Tab') {
+      // Let the browser move focus first, then hide the now-abandoned popup.
+      queueFrame(() => closeColorMenu());
     }
     const libraryTab = event.target.closest?.('[data-library][role="tab"]');
     if (libraryTab && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
       event.preventDefault();
       const tabs = [...mount.querySelectorAll('[data-library][role="tab"]')];
       const index = tabs.indexOf(libraryTab);
-      const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
-        : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      const next = rovingIndex(event.key, index, tabs.length);
       tabs[next]?.click();
       return;
     }
@@ -1206,8 +1614,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       event.preventDefault();
       const buttons = [...mount.querySelectorAll('[data-view-mode]')];
       const index = buttons.indexOf(viewButton);
-      const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1
-        : (index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+      const next = rovingIndex(event.key, index, buttons.length);
       const nextMode = buttons[next]?.dataset.viewMode;
       if (nextMode && nextMode !== viewMode) setView(nextMode);
       else buttons[next]?.focus({ preventScroll: true });
@@ -1217,27 +1624,67 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       if (event.key.toLocaleLowerCase() === 'z') { event.preventDefault(); restoreHistory(event.shiftKey ? 'redo' : 'undo'); return; }
       if (event.key.toLocaleLowerCase() === 'y') { event.preventDefault(); restoreHistory('redo'); return; }
     }
+    const stageFocused = event.target.id === 'fpe-stage';
+    if (stageFocused && viewMode === '2d' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const direction = arrowDirection(event.key);
+      if (direction) {
+        event.preventDefault();
+        const [directionX, directionY] = direction;
+        if (['room', 'distance', 'area', 'place'].includes(tool)) {
+          const step = event.shiftKey ? 1 : 10;
+          moveKeyboardCursor(directionX * step, directionY * step);
+        } else {
+          const delta = keyboardPanDelta(camera, event.key, event.shiftKey);
+          set2dCamera(panCamera(camera, delta.x, delta.y));
+        }
+        return;
+      }
+      if (tool === 'place' && placementProduct && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        addProduct(placementProduct, { ...ensureKeyboardCursor() });
+        return;
+      }
+      if (tool === 'room' && editMode && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        if (!keyboardRoomAnchor) {
+          keyboardRoomAnchor = { ...ensureKeyboardCursor() };
+          roomDraft = { rect: [keyboardRoomAnchor.x, keyboardRoomAnchor.y, 0, 0], valid: false };
+          drawScene();
+          announce('Startpunkt gesetzt. Bewegen Sie den Planzeiger zum gegenüberliegenden Eckpunkt.');
+        } else if (roomDraft?.valid) {
+          addRoom(roomDraft.rect);
+        } else {
+          announce('Die neue Fläche muss mindestens einen Meter breit und tief sein, innerhalb des Geschosses liegen und darf keinen Raum überdecken.');
+        }
+        return;
+      }
+      if ((tool === 'distance' || tool === 'area') && event.key === ' ') {
+        event.preventDefault();
+        addKeyboardMeasurementPoint();
+        return;
+      }
+    }
     if (!textControl && !event.ctrlKey && !event.metaKey && !event.altKey && viewMode === '2d') {
       const key = event.key.toLocaleLowerCase();
       if (key === 'v') { event.preventDefault(); chooseTool('select'); return; }
       if (key === 'h') { event.preventDefault(); chooseTool('pan'); return; }
-      if (key === 'f') { event.preventDefault(); camera = fitCamera(floor); drawScene(); announce('Plan eingepasst.'); return; }
-      if (event.key === '+' || event.key === '=') { event.preventDefault(); camera = zoomCamera(camera, .8); drawScene(); return; }
-      if (event.key === '-') { event.preventDefault(); camera = zoomCamera(camera, 1.25); drawScene(); return; }
+      if (key === 'f') { event.preventDefault(); set2dCamera(fit2dCamera(fitCamera(floor))); announce('Plan eingepasst.'); return; }
+      if (event.key === '+' || event.key === '=') { event.preventDefault(); set2dCamera(zoomCamera(camera, .8)); return; }
+      if (event.key === '-') { event.preventDefault(); set2dCamera(zoomCamera(camera, 1.25)); return; }
     }
     if (event.key === 'Escape') {
       if (moreMenuOpen) { event.preventDefault(); setMoreMenuOpen(false, { restoreFocus: true }); }
       else if (structureMenuOpen) { event.preventDefault(); setStructureMenuOpen(false, { restoreFocus: true }); }
-      else if (colorMenuOpen) { event.preventDefault(); colorMenuOpen = false; drawLeftPanel('fpe-color-trigger'); }
+      else if (colorMenuOpen) { event.preventDefault(); closeColorMenu({ restoreFocus: true }); }
       else if (closeCompactPanels()) event.preventDefault();
       else if (tool !== 'select') { event.preventDefault(); chooseTool('select'); }
       else if (selected) { event.preventDefault(); selectEntity(null, null); }
       return;
     }
-    if (tool === 'area' && event.key === 'Enter' && measurement?.points.length >= 3 && !measurement.complete) {
+    if (stageFocused && tool === 'area' && event.key === 'Enter' && measurement?.points.length >= 3 && !measurement.complete) {
       event.preventDefault(); measurement.complete = true; drawScene(); announce(`Fläche ${measurementLabel(measurement)}.`); return;
     }
-    if ((tool === 'area' || tool === 'distance') && event.key === 'Backspace' && measurement?.points.length) {
+    if (stageFocused && (tool === 'area' || tool === 'distance') && event.key === 'Backspace' && measurement?.points.length) {
       event.preventDefault(); measurement.points.pop(); measurement.complete = false; drawScene(); announce('Letzten Messpunkt entfernt.'); return;
     }
     const entity = event.target.closest?.('[data-entity]');
@@ -1261,7 +1708,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
         placement.x += dx * (event.shiftKey ? .1 : 1); placement.y += dy * (event.shiftKey ? .1 : 1);
         accepted = finalisePlacementMove(next, placement, previous, floor);
       });
-      if (!accepted) announce('Objekt nicht verschoben: Der Mittelpunkt muss in einem Raum liegen.');
+      if (!accepted) announce('Objekt nicht verschoben: Es muss innerhalb des Geschosses liegen und sein Mittelpunkt einem Raum zugeordnet sein.');
       drawWorkArea({ focusSelected: true });
     } else if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); removeSelectedPlacement(); }
     else if (event.key.toLocaleLowerCase() === 'r') { event.preventDefault(); const placement = placementById().get(selected.id); if (placement) changePlacement('rotation', ((placement.rotation || 0) + 45) % 360); }
@@ -1289,7 +1736,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       draw();
       return;
     }
-    syncScale();
+    sync2dViewport();
     positionMoreMenu();
     positionColorMenu();
     positionStructureMenu();
@@ -1304,14 +1751,45 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   mount.addEventListener('pointermove', onPointerMove, { signal });
   mount.addEventListener('pointerup', onPointerUp, { signal });
   mount.addEventListener('pointercancel', onPointerUp, { signal });
+  mount.addEventListener('lostpointercapture', onPointerUp, { signal });
   mount.addEventListener('pointerleave', onPointerLeave, { signal });
   mount.addEventListener('wheel', onWheel, { signal, passive: false });
   mount.addEventListener('dblclick', onDoubleClick, { signal });
   mount.addEventListener('keydown', onKeyDown, { signal });
+  mount.addEventListener('focusout', onFocusOut, { signal });
   window.addEventListener('beforeunload', beforeUnload, { signal });
   window.addEventListener('resize', onWindowResize, { signal });
-  onUnmount(() => { disposeThreeViewer(); abort.abort(); });
+  onUnmount(() => {
+    cancelQueuedFrames();
+    sceneResizeObserver?.disconnect();
+    disposeThreeViewer();
+    abort.abort();
+    unblockNavigation();
+  });
 
   setTitle(`Plan-Editor — ${floor.label}`);
   draw();
+  if (loaded.discardedDraft) {
+    const message = loaded.archivedDraft
+      ? 'Die lokale Arbeitskopie war nicht mit dem aktuellen Plan kompatibel, wurde archiviert und der aktuelle Ausgangsstand wurde geladen.'
+      : 'Die lokale Arbeitskopie war nicht mit dem aktuellen Plan kompatibel und der aktuelle Ausgangsstand wurde geladen.';
+    queueFrame(() => C.toast(
+      message,
+      'warning', 'WarningCircle',
+    ));
+  } else if (loaded.reconciled) {
+    const dropped = loaded.droppedPlacementIds?.length || 0;
+    const persistence = loaded.persistedReconciliation ? ''
+      : loaded.archivedOriginalDraft
+        ? ' Der vorherige Entwurf wurde zur Wiederherstellung archiviert. Prüfen und speichern Sie die bereinigte Arbeitskopie, um sie zu übernehmen.'
+        : loaded.reconciliationPersistenceReason === 'storage-conflict'
+          ? ' Der Entwurf wurde zwischenzeitlich in einem anderen Tab geändert; diese Aktualisierung ist nicht gespeichert.'
+          : ' Die Aktualisierung konnte noch nicht gespeichert werden; speichern Sie den Entwurf erneut.';
+    const message = dropped
+      ? `Die lokale Arbeitskopie wurde mit dem aktuellen Produktkatalog abgeglichen. ${dropped} nicht mehr verfügbare ${dropped === 1 ? 'Platzierung wurde' : 'Platzierungen wurden'} entfernt.${persistence}`
+      : `Die lokale Arbeitskopie wurde mit dem aktuellen Produktkatalog abgeglichen.${persistence}`;
+    queueFrame(() => C.toast(message,
+      dropped || !loaded.persistedReconciliation ? 'warning' : 'info',
+      dropped || !loaded.persistedReconciliation ? 'WarningCircle' : 'InfoCircle'));
+  }
 }

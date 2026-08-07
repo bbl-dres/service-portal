@@ -3,7 +3,7 @@ import { core } from './core.js';
 import { engine } from './process-engine.js';
 import { session } from './session.js';
 import { shell } from './shell.js';
-import { initRouter, redraw } from './router.js';
+import { initRouter, redraw, requestNavigationPermission } from './router.js';
 import { notification, escape, announce, wireShare, wireLogin, mountBanner } from './components.js';
 
 // Datenausfall-Band (P0-4): Fehlt eine data/*.json, würde die betroffene Liste
@@ -98,7 +98,17 @@ async function boot() {
     const u = session.user();
     return refresh(`Angemeldet als ${u ? u.name : ''}.${next ? '' : ' Die Seite wurde aktualisiert.'}`, next);
   };
-  window.__logout = () => { session.logout(); return refresh('Abgemeldet. Die Seite wurde aktualisiert.'); };
+  window.__logout = () => {
+    // A guarded application may own unsaved state. Ask before changing the
+    // session or header: checking only inside redraw() would be too late because
+    // the logout mutation itself changes what the current route is allowed to
+    // render.
+    if (!requestNavigationPermission(location.hash || '#/', 'session-logout')) {
+      return Promise.resolve(false);
+    }
+    session.logout();
+    return refresh('Abgemeldet. Die Seite wurde aktualisiert.');
+  };
   // Nur für die Prüfskripte: die Prozess-Engine ohne Formularlauf erreichbar
   // machen. Anders lässt sich nicht belegen, dass start() eine unbekannte
   // Definition ablehnt, statt sich eine zu erfinden (H10).

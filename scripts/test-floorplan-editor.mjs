@@ -15,7 +15,8 @@ const FLOOR_ID = '1080-6650-AA-2og';
 const ROOM_ID = `${FLOOR_ID}-05`;
 const EDITED_OCCUPIER = 'Editor-Test VE';
 const DRAFT_KEY = `bbl_floorplan_editor_local_v1:${encodeURIComponent(FLOOR_ID)}`;
-const HISTORY_KEY = `bbl_floorplan_editor_history_v1:${encodeURIComponent(FLOOR_ID)}`;
+const HISTORY_KEY_PREFIX = `bbl_floorplan_editor_history_v1:${encodeURIComponent(FLOOR_ID)}:`;
+const HISTORY_INDEX_KEY = `bbl_floorplan_editor_history_v1:index:${encodeURIComponent(FLOOR_ID)}`;
 const ROUTE = `${APP_BASE}/app/floorplan-editor?building=${encodeURIComponent(BUILDING_ID)}&floor=${encodeURIComponent(FLOOR_ID)}`;
 
 async function waitFor(page, selector, timeout = 6000) {
@@ -123,7 +124,10 @@ try {
   // place so a developer can inspect it manually.
   await page.evaluate(`(() => {
     localStorage.removeItem(${JSON.stringify(DRAFT_KEY)});
-    localStorage.removeItem(${JSON.stringify(HISTORY_KEY)});
+    Object.keys(localStorage)
+      .filter(key => key.startsWith(${JSON.stringify(HISTORY_KEY_PREFIX)}))
+      .forEach(key => localStorage.removeItem(key));
+    localStorage.removeItem(${JSON.stringify(HISTORY_INDEX_KEY)});
   })()`);
   await cdp.send('Page.navigate', { url: ROUTE }, page.sessionId);
   await sleep(400);
@@ -441,7 +445,9 @@ try {
     return {
       before, afterMouse, afterTouch, mouse, touch, selectionBefore, selectionAfterMouse,
       selectionAfterTouch: selectedQuery(),
-      touchAction: getComputedStyle(document.querySelector('#fpe-stage')).touchAction,
+      stageTouchAction: getComputedStyle(document.querySelector('#fpe-stage')).touchAction,
+      canvasTouchAction: getComputedStyle(document.querySelector('#fpe-canvas')).touchAction,
+      toolbarTouchAction: getComputedStyle(document.querySelector('.fpe-toolbar')).touchAction,
       cursor: getComputedStyle(document.querySelector('#fpe-stage')).cursor,
     };
   })()`);
@@ -453,11 +459,114 @@ try {
     && cameraMoved(directPan.afterMouse, directPan.afterTouch)
     && directPan.selectionBefore === directPan.selectionAfterMouse
     && directPan.selectionBefore === directPan.selectionAfterTouch
-    && directPan.touchAction === 'none' && directPan.cursor === 'grab',
+    && directPan.canvasTouchAction === 'none' && directPan.stageTouchAction !== 'none'
+    && directPan.toolbarTouchAction !== 'none' && directPan.cursor === 'grab',
   'pans directly with primary-button drag and one-finger Pointer Events without turning the drag into selection',
   `mouse ${directPan.before.slice(0, 2).map(Math.round).join('/')} → ${directPan.afterMouse.slice(0, 2).map(Math.round).join('/')} · touch → ${directPan.afterTouch.slice(0, 2).map(Math.round).join('/')}`);
 
   console.log('\n■ Camera scale and interactive Three.js modes');
+  const twoDCameraInput = await page.evaluate(`(async () => {
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const viewBox = () => (document.querySelector('#fpe-canvas')?.getAttribute('viewBox') || '')
+      .split(/\\s+/).map(Number);
+    const moved = (left, right, epsilon = .01) => left.length === right.length
+      && left.some((value, index) => Math.abs(value - right[index]) > epsilon);
+    const same = (left, right, epsilon = .5) => left.length === right.length
+      && left.every((value, index) => Math.abs(value - right[index]) <= epsilon);
+    const svg = document.querySelector('#fpe-canvas');
+    const scene = document.querySelector('#fpe-scene');
+    const toolbar = document.querySelector('.fpe-toolbar');
+    const bounds = svg?.getBoundingClientRect();
+    if (!svg || !scene || !toolbar || !bounds) return { error: '2D gesture surface unavailable' };
+    const canvasIdentity = svg;
+    const x = bounds.left + bounds.width / 2;
+    const y = bounds.top + bounds.height / 2;
+
+    const beforeZero = viewBox();
+    const zeroAllowed = svg.dispatchEvent(new WheelEvent('wheel', {
+      bubbles: true, cancelable: true, deltaY: 0, clientX: x, clientY: y,
+    }));
+    await wait(40);
+    const afterZero = viewBox();
+    const wheelPrevented = !svg.dispatchEvent(new WheelEvent('wheel', {
+      bubbles: true, cancelable: true, deltaY: -12, clientX: x, clientY: y,
+    }));
+    await wait(60);
+    const afterWheel = viewBox();
+    const beforeToolbar = viewBox();
+    const toolbarAllowed = toolbar.dispatchEvent(new WheelEvent('wheel', {
+      bubbles: true, cancelable: true, deltaY: 120,
+    }));
+    await wait(40);
+    const afterToolbar = viewBox();
+
+    const touch = (type, pointerId, clientX, clientY, buttons) => svg.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerId, pointerType: 'touch', button: 0,
+      buttons, clientX, clientY,
+    }));
+    const beforePinch = viewBox();
+    touch('pointerdown', 73, x - 40, y, 1);
+    touch('pointerdown', 74, x + 40, y, 1);
+    touch('pointermove', 73, x - 65, y - 8, 1);
+    touch('pointermove', 74, x + 70, y + 8, 1);
+    await wait(60);
+    const afterPinch = viewBox();
+    touch('pointerup', 73, x - 65, y - 8, 0);
+    const beforeSingleTouchPan = viewBox();
+    touch('pointermove', 74, x + 88, y + 25, 1);
+    await wait(50);
+    const afterSingleTouchPan = viewBox();
+    touch('pointercancel', 74, x + 88, y + 25, 0);
+    await wait(40);
+
+    const beforePostGesturePan = viewBox();
+    svg.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, cancelable: true, pointerId: 75, pointerType: 'mouse', button: 0,
+      buttons: 1, clientX: x, clientY: y,
+    }));
+    svg.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, cancelable: true, pointerId: 75, pointerType: 'mouse', button: 0,
+      buttons: 1, clientX: x + 30, clientY: y + 12,
+    }));
+    svg.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true, cancelable: true, pointerId: 75, pointerType: 'mouse', button: 0,
+      buttons: 0, clientX: x + 30, clientY: y + 12,
+    }));
+    await wait(60);
+    const afterPostGesturePan = viewBox();
+
+    const beforeResize = viewBox();
+    const sceneWidth = scene.getBoundingClientRect().width;
+    scene.style.width = Math.max(240, sceneWidth * .65) + 'px';
+    await wait(160);
+    const narrow = viewBox();
+    scene.style.width = '';
+    await wait(160);
+    const restored = viewBox();
+    return {
+      identityRetained: document.querySelector('#fpe-canvas') === canvasIdentity,
+      zeroAllowed, zeroStable: same(beforeZero, afterZero, .001),
+      wheelPrevented, wheelContinuous: afterWheel[2] < afterZero[2] && afterWheel[2] > afterZero[2] * .9,
+      toolbarAllowed, toolbarStable: same(beforeToolbar, afterToolbar, .001),
+      pinchZoomed: afterPinch[2] < beforePinch[2],
+      singleTouchContinued: moved(beforeSingleTouchPan, afterSingleTouchPan),
+      postGesturePan: moved(beforePostGesturePan, afterPostGesturePan),
+      resized: moved(beforeResize, narrow),
+      resizeReversible: same(beforeResize, restored),
+    };
+  })()`);
+  check(!twoDCameraInput.error && twoDCameraInput.identityRetained
+    && twoDCameraInput.zeroAllowed && twoDCameraInput.zeroStable
+    && twoDCameraInput.wheelPrevented && twoDCameraInput.wheelContinuous
+    && twoDCameraInput.toolbarAllowed && twoDCameraInput.toolbarStable,
+  'updates the 2D camera in place with continuous wheel input scoped to the canvas',
+  twoDCameraInput.error || JSON.stringify(twoDCameraInput));
+  check(!twoDCameraInput.error && twoDCameraInput.pinchZoomed && twoDCameraInput.singleTouchContinued
+    && twoDCameraInput.postGesturePan
+    && twoDCameraInput.resized && twoDCameraInput.resizeReversible,
+  'supports pinch zoom without wedging later input and preserves scale across reversible viewport resizes',
+  twoDCameraInput.error || JSON.stringify(twoDCameraInput));
+
   const threeClickPoint = await page.evaluate(`(() => {
     const button = document.querySelector('[data-action="view-3d"]');
     const rect = button?.getBoundingClientRect();
@@ -514,7 +623,11 @@ try {
       camera: threeHost?.dataset.camera || '',
       target: vector(threeHost?.dataset.orbitTarget),
       yaw: Number(threeHost?.dataset.orbitYaw),
+      pitch: Number(threeHost?.dataset.orbitPitch),
       distance: Number(threeHost?.dataset.orbitDistance),
+      aspect: Number(threeHost?.dataset.cameraAspect),
+      panScale: Number(threeHost?.dataset.orbitPanScale),
+      verticalPanScale: Number(threeHost?.dataset.orbitVerticalPanScale),
     });
     const dragOrbit = async (button, dx, dy, pointerId) => {
       const rect = threeCanvas?.getBoundingClientRect();
@@ -530,6 +643,18 @@ try {
     const mouseStart = orbitState();
     await dragOrbit(0, 44, 18, 81);
     const afterLeft = orbitState();
+    const panDelta = [
+      afterLeft.target[0] - mouseStart.target[0],
+      afterLeft.target[2] - mouseStart.target[2],
+    ];
+    const backward = [Math.sin(mouseStart.yaw), Math.cos(mouseStart.yaw)];
+    const screenRight = [Math.cos(mouseStart.yaw), -Math.sin(mouseStart.yaw)];
+    const panDot = (left, right) => left[0] * right[0] + left[1] * right[1];
+    const leftPanDirection = panDot(panDelta, backward) < 0 && panDot(panDelta, screenRight) < 0;
+    click('[data-action="three-reset"]'); await pause();
+    const jitterStart = orbitState();
+    await dragOrbit(0, 2, 1, 83);
+    const jitterEnd = orbitState();
     click('[data-action="three-reset"]'); await pause();
     const rotateStart = orbitState();
     await dragOrbit(2, 44, 18, 82);
@@ -547,6 +672,17 @@ try {
     await pause(350);
     const rebuiltThreeHost = document.querySelector('#fpe-three-host');
     const rebuiltThreeCanvas = document.querySelector('.fpe-three-canvas');
+    const retainedViewer = rebuiltThreeHost === threeHost && rebuiltThreeCanvas === threeCanvas;
+    rebuiltThreeCanvas?.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
+    await pause();
+    const contextLost = rebuiltThreeHost?.dataset.context === 'lost'
+      && !!rebuiltThreeHost.querySelector('[role="alert"]')
+      && /unterbrochen/i.test(document.querySelector('#live')?.textContent || '');
+    rebuiltThreeCanvas?.dispatchEvent(new Event('webglcontextrestored'));
+    await pause();
+    const contextRestored = rebuiltThreeHost?.dataset.context === 'ready'
+      && !rebuiltThreeHost.querySelector('[role="alert"]')
+      && /wiederhergestellt/i.test(document.querySelector('#live')?.textContent || '');
     const threeD = {
       active: document.querySelector('[data-action="view-3d"]')?.getAttribute('aria-pressed') || '',
       renderer: rebuiltThreeHost?.dataset.renderer || '',
@@ -565,7 +701,14 @@ try {
       zoomButtons: document.querySelectorAll('#fpe-view-actions-host :is([data-action="zoom-in"],[data-action="zoom-out"])').length,
       zoomButtonsWork: zoomedIn < zoomStart && Math.abs(zoomedOut - zoomStart) < .01,
       leftPans: changed(mouseStart.target, afterLeft.target) && Math.abs(mouseStart.yaw - afterLeft.yaw) < .0001,
+      leftPanDirection,
+      clickJitterStable: same(jitterStart.target, jitterEnd.target),
+      cameraAspectMatches: Math.abs(mouseStart.aspect - threeCanvas.clientWidth / threeCanvas.clientHeight) < .01,
+      normalizedPanScale: mouseStart.panScale > 0
+        && mouseStart.verticalPanScale >= mouseStart.panScale
+        && mouseStart.pitch > 0,
       rightRotates: same(rotateStart.target, afterRight.target) && Math.abs(rotateStart.yaw - afterRight.yaw) > .0001,
+      retainedViewer, contextLost, contextRestored,
       reset: !!document.querySelector('[data-action="three-reset"]'),
       resetInViewActions: !!document.querySelector('#fpe-view-actions-host [data-action="three-reset"]'),
     };
@@ -630,7 +773,9 @@ try {
     && !views.threeD.twoDCanvas && views.threeD.reset && views.threeD.resetInViewActions
     && views.threeD.toolbarVisible && views.threeD.toolbarHints === 3 && views.threeD.toolbarPrint
     && views.threeD.zoomButtons === 2 && views.threeD.zoomButtonsWork
-    && views.threeD.leftPans && views.threeD.rightRotates
+    && views.threeD.leftPans && views.threeD.leftPanDirection && views.threeD.clickJitterStable
+    && views.threeD.cameraAspectMatches && views.threeD.normalizedPanScale && views.threeD.rightRotates
+    && views.threeD.retainedViewer && views.threeD.contextLost && views.threeD.contextRestored
     && views.threeD.hintCards === 0 && views.keyboardThreeD === '3d',
   'builds the live Three.js model with visible controls, button zoom, left-pan/right-rotate, and preserved camera state',
   `${views.threeD.renderer} · ${views.threeD.rooms} rooms · ${views.threeD.placements} objects`);
@@ -828,6 +973,69 @@ try {
   check(history.afterRedo === added.after && history.localAfterRedo && history.undoEnabled,
     'redo restores the same placement and enables undo', `${history.afterRedo} placements`);
 
+  const cancelledPlacementDrag = await page.evaluate(`(async () => {
+    const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const placementId = ${JSON.stringify(added.localId || '')};
+    const geometry = () => {
+      const group = document.querySelector('.fpe-placement[data-id="' + placementId + '"]');
+      const shape = [...(group?.children || [])].find(node => !node.classList.contains('fpe-placement__selection'));
+      return group && shape ? (group.getAttribute('transform') || '') + '|' + shape.outerHTML : '';
+    };
+    let group = document.querySelector('.fpe-placement[data-id="' + placementId + '"]');
+    const bounds = group?.getBoundingClientRect();
+    if (!group || !bounds) return { error: 'placement unavailable for pointer-cancel probe' };
+    const before = geometry();
+    const start = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
+    group.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, cancelable: true, pointerId: 90, pointerType: 'mouse',
+      button: 0, buttons: 1, clientX: start.x, clientY: start.y,
+    }));
+    document.querySelector('#fpe-canvas')?.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, cancelable: true, pointerId: 90, pointerType: 'mouse',
+      button: 0, buttons: 1, clientX: start.x + 2, clientY: start.y + 1,
+    }));
+    document.querySelector('#fpe-canvas')?.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true, cancelable: true, pointerId: 90, pointerType: 'mouse',
+      button: 0, buttons: 0, clientX: start.x + 2, clientY: start.y + 1,
+    }));
+    await pause(50);
+    const afterJitter = geometry();
+    group = document.querySelector('.fpe-placement[data-id="' + placementId + '"]');
+    const cancelBounds = group?.getBoundingClientRect();
+    if (!group || !cancelBounds) return { error: 'placement unavailable after pointer jitter' };
+    const cancelStart = {
+      x: cancelBounds.left + cancelBounds.width / 2,
+      y: cancelBounds.top + cancelBounds.height / 2,
+    };
+    group.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, cancelable: true, pointerId: 91, pointerType: 'mouse',
+      button: 0, buttons: 1, clientX: cancelStart.x, clientY: cancelStart.y,
+    }));
+    document.querySelector('#fpe-canvas')?.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, cancelable: true, pointerId: 91, pointerType: 'mouse',
+      button: 0, buttons: 1, clientX: cancelStart.x + 30, clientY: cancelStart.y + 20,
+    }));
+    await pause(50);
+    const during = geometry();
+    document.querySelector('#fpe-canvas')?.dispatchEvent(new PointerEvent('pointercancel', {
+      bubbles: true, cancelable: true, pointerId: 91, pointerType: 'mouse',
+      button: 0, buttons: 0, clientX: cancelStart.x + 30, clientY: cancelStart.y + 20,
+    }));
+    await pause(80);
+    return {
+      before, afterJitter, during, after: geometry(),
+      selected: document.querySelector('.fpe-placement.is-selected')?.dataset.id || '',
+    };
+  })()`);
+  check(!cancelledPlacementDrag.error
+    && cancelledPlacementDrag.before
+    && cancelledPlacementDrag.afterJitter === cancelledPlacementDrag.before
+    && cancelledPlacementDrag.during !== cancelledPlacementDrag.before
+    && cancelledPlacementDrag.after === cancelledPlacementDrag.before
+    && cancelledPlacementDrag.selected === added.localId,
+  'ignores sub-threshold placement jitter and rolls a live drag back on pointercancel',
+  cancelledPlacementDrag.error || cancelledPlacementDrag.selected);
+
   console.log('\n■ Detached room edit and browser-local save');
   const roomEdit = await page.evaluate(`(async () => {
     const pause = () => new Promise(resolve => setTimeout(resolve, 60));
@@ -872,6 +1080,58 @@ try {
     && roomEdit.canonicalAfter === initial.canonicalRoom,
   'keeps the in-memory canonical core space unchanged while editing');
 
+  const guardedNavigation = await page.evaluate(`(async () => {
+    const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const originalConfirm = window.confirm;
+    let prompts = 0;
+    window.confirm = () => { prompts += 1; return false; };
+    const before = location.hash;
+    const link = document.createElement('a');
+    link.href = '#/services';
+    link.textContent = 'Guard probe';
+    document.body.appendChild(link);
+    link.click();
+    await pause(80);
+    const afterLink = location.hash;
+    link.remove();
+    location.hash = '#/services';
+    await pause(180);
+    const afterDirectHash = location.hash;
+    const editorPresent = !!document.querySelector('#fpe-app');
+    window.confirm = originalConfirm;
+    return { before, afterLink, afterDirectHash, prompts, editorPresent };
+  })()`);
+  check(guardedNavigation.prompts === 2
+    && guardedNavigation.afterLink === guardedNavigation.before
+    && guardedNavigation.afterDirectHash === guardedNavigation.before
+    && guardedNavigation.editorPresent,
+  'guards dirty work across routed links and direct browser-history hash changes',
+  `${guardedNavigation.prompts} prompts · ${guardedNavigation.afterDirectHash}`);
+
+  const discardDialog = await page.evaluate(`(async () => {
+    const pause = () => new Promise(resolve => setTimeout(resolve, 80));
+    const trigger = document.querySelector('#fpe-end-edit');
+    trigger?.focus();
+    trigger?.click();
+    await pause();
+    const modal = document.querySelector('#fpe-end-edit-modal-desc')?.closest('.modal');
+    const title = modal?.querySelector('.modal__title')?.textContent.trim() || '';
+    const impact = modal?.querySelector('.modal__body')?.textContent.replace(/\\s+/g, ' ').trim() || '';
+    modal?.querySelector('[data-modal-close]')?.click();
+    await pause();
+    return {
+      title, impact,
+      editing: document.querySelector('#fpe-app')?.classList.contains('is-editing') || false,
+      dirty: !document.querySelector('[data-action="save"]')?.disabled,
+      focusReturned: document.activeElement?.id === 'fpe-end-edit',
+    };
+  })()`);
+  check(/Bearbeitung beenden/.test(discardDialog.title)
+    && /nicht gespeicherten Änderungen/.test(discardDialog.impact)
+    && discardDialog.editing && discardDialog.dirty && discardDialog.focusReturned,
+  'uses a focus-safe CD confirmation dialog without discarding work on cancel',
+  JSON.stringify(discardDialog));
+
   console.log('\n■ Constrained structural-editing and module feedback flow');
   const structure = await page.evaluate(`(async () => {
     const pause = () => new Promise(resolve => setTimeout(resolve, 80));
@@ -893,12 +1153,68 @@ try {
       && document.querySelectorAll('.fpe-room [data-room-handle]').length === 0;
     click('#fpe-structure-trigger'); await pause();
     click('[data-action="toggle-structure-lock"]'); await pause();
+    // This floor is completely partitioned into canonical rooms. Shrink the
+    // placement-free corridor first so the new-room workflow can exercise a
+    // genuinely free area under the editor's no-overlap invariant.
+    const corridorId = ${JSON.stringify(`${FLOOR_ID}-01`)};
+    const initialCorridor = document.querySelector('.fpe-room[data-id="' + corridorId + '"] > rect');
+    const initialCanvas = document.querySelector('#fpe-canvas');
+    if (!initialCorridor || !initialCanvas?.getScreenCTM()) {
+      return { error: 'corridor is unavailable for the structural fixture', before };
+    }
+    const corridorCentre = new DOMPoint(
+      Number(initialCorridor.getAttribute('x')) + Number(initialCorridor.getAttribute('width')) / 2,
+      Number(initialCorridor.getAttribute('y')) + Number(initialCorridor.getAttribute('height')) / 2,
+    ).matrixTransform(initialCanvas.getScreenCTM());
+    const selectPointer = type => new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerId: 43, button: 0,
+      clientX: corridorCentre.x, clientY: corridorCentre.y,
+    });
+    initialCorridor.parentElement.dispatchEvent(selectPointer('pointerdown'));
+    document.querySelector('#fpe-canvas')?.dispatchEvent(selectPointer('pointerup'));
+    await pause();
+    const corridorWidth = document.querySelector('[data-room-geometry="width"]');
+    const corridorBefore = Number(corridorWidth?.value || 0);
+    if (!corridorWidth || corridorBefore < 400) {
+      return { error: 'corridor geometry is unavailable for the structural fixture', before };
+    }
+    corridorWidth.value = String(corridorBefore - 200);
+    corridorWidth.dispatchEvent(new Event('change', { bubbles: true }));
+    await pause();
+    const corridor = document.querySelector('.fpe-room[data-id="' + corridorId + '"] > rect');
+    const corridorX = Number(corridor?.getAttribute('x'));
+    const corridorY = Number(corridor?.getAttribute('y'));
+    const corridorAfter = Number(corridor?.getAttribute('width'));
+    const corridorHeight = Number(corridor?.getAttribute('height'));
+    if (![corridorX, corridorY, corridorAfter, corridorHeight].every(Number.isFinite)
+      || corridorAfter !== corridorBefore - 200) {
+      return { error: 'corridor could not be shortened for the structural fixture', before };
+    }
     click('#fpe-structure-trigger'); await pause();
     click('[data-action="tool-room"]'); await pause();
     let svg = document.querySelector('#fpe-canvas');
     if (!svg?.getScreenCTM()) return { error: '2D canvas unavailable for area creation' };
+    const middleBefore = (svg.getAttribute('viewBox') || '').split(/\\s+/).map(Number);
+    const middleRoomCount = document.querySelectorAll('.fpe-room[data-id]').length;
+    const middleBounds = svg.getBoundingClientRect();
+    const middleStart = { x: middleBounds.left + middleBounds.width / 2, y: middleBounds.top + middleBounds.height / 2 };
+    const middleEvent = (type, x, y, buttons) => new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerId: 45, pointerType: 'mouse', button: 1,
+      buttons, clientX: x, clientY: y,
+    });
+    svg.dispatchEvent(middleEvent('pointerdown', middleStart.x, middleStart.y, 4));
+    svg.dispatchEvent(middleEvent('pointermove', middleStart.x + 32, middleStart.y + 18, 4));
+    svg.dispatchEvent(middleEvent('pointerup', middleStart.x + 32, middleStart.y + 18, 0));
+    await pause();
+    svg = document.querySelector('#fpe-canvas');
+    const middleAfter = (svg?.getAttribute('viewBox') || '').split(/\\s+/).map(Number);
+    const middleMoved = middleBefore.some((value, index) => Math.abs(value - middleAfter[index]) > .1);
+    const middleRoomStable = document.querySelectorAll('.fpe-room[data-id]').length === middleRoomCount;
+    const middleToolActive = document.querySelector('#fpe-structure-trigger')?.classList.contains('is-active');
+    const middlePanDuringAuthoring = middleMoved && middleRoomStable && middleToolActive;
     const client = (x, y) => new DOMPoint(x, y).matrixTransform(svg.getScreenCTM());
-    const start = client(40, 40), end = client(220, 210);
+    const start = client(corridorX + corridorAfter, corridorY);
+    const end = client(corridorX + corridorAfter + 180, corridorY + Math.min(170, corridorHeight));
     const init = (type, point) => new PointerEvent(type, {
       bubbles: true, cancelable: true, pointerId: 44, button: 0,
       clientX: point.x, clientY: point.y,
@@ -913,6 +1229,8 @@ try {
     if (!local) return { error: 'new local area was not created', before };
     const localId = local.dataset.id;
     const initialHandles = local.querySelectorAll('[data-room-handle]').length;
+    const handleHitWidth = local.querySelector('.fpe-room__handle-hit')?.getBoundingClientRect().width || 0;
+    const handleVisualWidth = local.querySelector('.fpe-room__handle-visual')?.getBoundingClientRect().width || 0;
     click('[data-action="focus-search"]'); await pause();
     click('[data-library="modules"]'); await pause();
     const module = document.querySelector('[data-module="1"]');
@@ -928,10 +1246,12 @@ try {
       before, after: document.querySelectorAll('.fpe-room[data-id]').length,
       localId, selected: document.querySelector('.fpe-room.is-selected')?.dataset.id || '',
       handles: document.querySelector('.fpe-room.is-selected')?.querySelectorAll('[data-room-handle]').length || 0,
-      initialHandles,
+      initialHandles, handleHitWidth, handleVisualWidth,
       inspector: document.querySelector('#fpe-right')?.textContent.replace(/\\s+/g, ' ').trim() || '',
       roomModule: document.querySelector('[data-room-field="moduleId"]')?.value || '',
       menuKeyboard, lockViaKeyboard, structureFocusReturned, unavailableTools, locked,
+      middlePanDuringAuthoring, middleMoved, middleRoomStable, middleToolActive,
+      middleBefore, middleAfter,
       libraryOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
       library: new URLSearchParams(location.hash.split('?')[1] || '').get('library') || '',
       selectedQuery: new URLSearchParams(location.hash.split('?')[1] || '').get('selected') || '',
@@ -943,10 +1263,23 @@ try {
   check(!structure.error && structure.after === structure.before + 1
     && /^local-room-/.test(structure.localId) && structure.selected === structure.localId
     && structure.initialHandles === 8 && structure.handles === 8
+    && structure.handleHitWidth >= 32 && structure.handleVisualWidth >= 12
+    && structure.middlePanDuringAuthoring
     && structure.menuKeyboard && structure.lockViaKeyboard && structure.structureFocusReturned
     && structure.unavailableTools === 10 && structure.locked,
   'exposes the structural-edit menu, lock state, and rectangular area tool accessibly',
-  structure.error || `${structure.before} → ${structure.after} · ${structure.localId}`);
+  structure.error || JSON.stringify({
+    before: structure.before, after: structure.after, localId: structure.localId,
+    initialHandles: structure.initialHandles, handles: structure.handles,
+    handleHitWidth: structure.handleHitWidth, handleVisualWidth: structure.handleVisualWidth,
+    middlePanDuringAuthoring: structure.middlePanDuringAuthoring,
+    middleMoved: structure.middleMoved, middleRoomStable: structure.middleRoomStable,
+    middleToolActive: structure.middleToolActive,
+    middleBefore: structure.middleBefore, middleAfter: structure.middleAfter,
+    menuKeyboard: structure.menuKeyboard, lockViaKeyboard: structure.lockViaKeyboard,
+    structureFocusReturned: structure.structureFocusReturned,
+    unavailableTools: structure.unavailableTools, locked: structure.locked,
+  }));
   check(structure.roomModule === '1' && !structure.libraryOpen && !structure.library
     && structure.selectedQuery === `room:${structure.localId}` && structure.width === '200'
     && structure.saveEnabled && !structure.prematurelyStored,
@@ -991,7 +1324,9 @@ try {
     const dialogText = document.querySelector('#fpe-publish-modal-desc')?.textContent.replace(/\\s+/g, ' ').trim() || '';
     const confirm = document.querySelector('[id^="fpe-confirm-publish-"]');
     confirm?.click(); await pause();
-    const raw = localStorage.getItem(${JSON.stringify(HISTORY_KEY)});
+    const historyKey = Object.keys(localStorage)
+      .find(key => key.startsWith(${JSON.stringify(HISTORY_KEY_PREFIX)}));
+    const raw = historyKey ? localStorage.getItem(historyKey) : null;
     let history = null;
     try { history = raw ? JSON.parse(raw) : null; } catch { /* assertion reports it */ }
     const afterPublish = {
@@ -1167,6 +1502,101 @@ try {
     'keeps the Plan-Editor root deterministic on mobile', `${home.hash} · ${home.rows} buildings · ${home.overflow}px overflow`);
   check(home.tableScrolls && home.tabindex === '0' && home.role === 'group',
     'makes the narrow building table a named keyboard-scroll region', `${home.tabindex} · ${home.role}`);
+
+  console.log('\n■ Dirty history jumps and logout');
+  const guardedHistory = await page.evaluate(`(async () => {
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const visit = async (hash, expectedHeading = '', selector = '') => {
+      const previousIdx = history.state?.bblIdx;
+      location.hash = hash;
+      let tries = 0;
+      while (tries++ < 100) {
+        const heading = document.querySelector('#main-content h1')?.textContent.trim() || '';
+        const ready = (!expectedHeading || heading.startsWith(expectedHeading))
+          && (!selector || document.querySelector(selector));
+        if (location.hash === hash && history.state?.bblIdx !== previousIdx && ready) break;
+        await wait(30);
+      }
+      await wait(80);
+      return { hash: location.hash, idx: history.state?.bblIdx };
+    };
+    const services = await visit('#/services', 'Dienstleistungen');
+    const knowledge = await visit('#/knowledge', 'Wissen und Hilfsmittel');
+    const editorHash = ${JSON.stringify(`${new URL(ROUTE).hash}&selected=${encodeURIComponent(`room:${ROOM_ID}`)}&edit=1`)};
+    const editor = await visit(editorHash, '', '#fpe-room-roomName');
+    const field = document.querySelector('#fpe-room-roomName');
+    if (field) {
+      field.value += ' Guard-Test';
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+      await wait(80);
+    }
+    const dirtyBefore = !document.querySelector('[data-action="save"]')?.disabled;
+    const originalConfirm = window.confirm;
+    let prompts = 0;
+    window.confirm = () => { prompts += 1; return false; };
+    history.go(-2);
+    let tries = 0;
+    while (prompts === 0 && tries++ < 100) await wait(30);
+    tries = 0;
+    while ((location.hash !== editor.hash || history.state?.bblIdx !== editor.idx)
+      && tries++ < 100) await wait(30);
+    await wait(100);
+    window.confirm = originalConfirm;
+    return {
+      services, knowledge, editor, prompts, dirtyBefore,
+      afterHash: location.hash,
+      afterIdx: history.state?.bblIdx,
+      editorPresent: !!document.querySelector('#fpe-app'),
+      dirtyAfter: !document.querySelector('[data-action="save"]')?.disabled,
+    };
+  })()`);
+  check(guardedHistory.dirtyBefore && guardedHistory.prompts === 1
+    && guardedHistory.afterHash === guardedHistory.editor.hash
+    && guardedHistory.afterIdx === guardedHistory.editor.idx
+    && guardedHistory.editorPresent && guardedHistory.dirtyAfter
+    && guardedHistory.editor.idx - guardedHistory.services.idx === 2
+    && guardedHistory.knowledge.idx - guardedHistory.services.idx === 1,
+  'restores a rejected two-entry history jump directly without dispatching or prompting twice',
+  `${guardedHistory.services.idx} → ${guardedHistory.editor.idx} · ${guardedHistory.prompts} prompt`);
+
+  const guardedLogout = await page.evaluate(`(async () => {
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const originalConfirm = window.confirm;
+    let rejectedPrompts = 0;
+    window.confirm = () => { rejectedPrompts += 1; return false; };
+    const rejectedResult = await window.__logout();
+    await wait(100);
+    const rejected = {
+      result: rejectedResult,
+      prompts: rejectedPrompts,
+      session: Boolean(localStorage.getItem('bbl_session_v1')),
+      editor: Boolean(document.querySelector('#fpe-app')),
+      dirty: !document.querySelector('[data-action="save"]')?.disabled,
+    };
+    let acceptedPrompts = 0;
+    window.confirm = () => { acceptedPrompts += 1; return true; };
+    await window.__logout();
+    let tries = 0;
+    while (!document.querySelector('.login-gate__btn') && tries++ < 100) await wait(30);
+    window.confirm = originalConfirm;
+    return {
+      rejected,
+      accepted: {
+        prompts: acceptedPrompts,
+        session: Boolean(localStorage.getItem('bbl_session_v1')),
+        gate: Boolean(document.querySelector('.login-gate__btn')),
+        editor: Boolean(document.querySelector('#fpe-app')),
+      },
+    };
+  })()`);
+  check(guardedLogout.rejected.result === false && guardedLogout.rejected.prompts === 1
+    && guardedLogout.rejected.session && guardedLogout.rejected.editor && guardedLogout.rejected.dirty,
+  'rejecting logout preserves the authenticated session and dirty editor',
+  `${guardedLogout.rejected.prompts} prompt · session=${guardedLogout.rejected.session}`);
+  check(guardedLogout.accepted.prompts === 1 && !guardedLogout.accepted.session
+    && guardedLogout.accepted.gate && !guardedLogout.accepted.editor,
+  'accepting logout clears the session and redraws the protected route as a login gate',
+  `${guardedLogout.accepted.prompts} prompt · gate=${guardedLogout.accepted.gate}`);
 
   await checkProblems(page, 'complete editor flow has no runtime problems');
 } finally {

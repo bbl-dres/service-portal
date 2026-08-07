@@ -7,6 +7,8 @@
 // Portal floor rectangles use 100 drawing units per metre. Shop dimensions are
 // centimetres, so one centimetre maps directly to one drawing unit here.
 
+import { placementFootprintInsideFloor } from './geometry.js';
+
 export const DRAFT_SCHEMA = 'bbl.floorplan-editor.draft/v1';
 
 const freezeOptions = (options) => Object.freeze(options.map((option) => Object.freeze(option)));
@@ -50,8 +52,8 @@ export const SIA_OPTIONS = freezeOptions([
 ]);
 
 const MODULE_VALUES = new Set(['', ...MODULE_OPTIONS.map(({ value }) => value)]);
-const USE_VALUES = new Set(USE_OPTIONS.map(({ value }) => value));
-const SIA_VALUES = new Set(SIA_OPTIONS.map(({ value }) => value));
+const USE_BY_VALUE = new Map(USE_OPTIONS.map((option) => [option.value, option]));
+const SIA_BY_VALUE = new Map(SIA_OPTIONS.map((option) => [option.value, option]));
 const PLACEMENT_STATUSES = new Set(['illustrative', 'existing', 'new', 'moved']);
 const PLACEMENT_SOURCES = new Set(['illustrative-prototype', 'user']);
 const SHAPES = new Set(['rect', 'circle', 'diamond']);
@@ -86,10 +88,7 @@ const PLACEMENT_KEYS = new Set([
   'name', 'category', 'x', 'y', 'width', 'depth', 'height', 'rotation', 'shape',
   'status', 'source',
 ]);
-const REQUIRED_PLACEMENT_KEYS = new Set([
-  'placementId', 'buildingId', 'floorId', 'roomId', 'productId', 'articleId',
-  'name', 'x', 'y', 'width', 'depth', 'rotation', 'shape', 'status',
-]);
+const MAX_ROOM_CAPACITY = 10000;
 
 const isPlainObject = (value) => value !== null
   && typeof value === 'object'
@@ -109,13 +108,6 @@ function hasExactKeys(value, keys) {
   if (!isPlainObject(value)) return false;
   const own = Object.keys(value);
   return own.length === keys.size && own.every((key) => keys.has(key));
-}
-
-function hasKnownKeys(value, allowed, required) {
-  if (!isPlainObject(value)) return false;
-  const own = Object.keys(value);
-  return own.every((key) => allowed.has(key))
-    && [...required].every((key) => Object.hasOwn(value, key));
 }
 
 function isJsonValue(value, seen = new Set()) {
@@ -272,11 +264,38 @@ function userLabel(user) {
 }
 
 function rectIsInside(rect, extent) {
-  if (!Array.isArray(rect) || rect.length !== 4 || !rect.every(isFiniteNumber)) return false;
+  if (!Array.isArray(rect) || rect.length !== 4 || !rect.every(isFiniteNumber)
+    || !Array.isArray(extent) || extent.length !== 2 || !extent.every(isPositive)) return false;
   const [x, y, width, height] = rect;
   return x >= 0 && y >= 0 && width > 0 && height > 0
     && x + width <= extent[0] + EPSILON
     && y + height <= extent[1] + EPSILON;
+}
+
+/** True only when two room rectangles share a positive area; touching edges are valid. */
+export function roomRectsOverlap(left, right) {
+  if (!Array.isArray(left) || !Array.isArray(right)
+    || left.length !== 4 || right.length !== 4
+    || !left.every(isFiniteNumber) || !right.every(isFiniteNumber)) return false;
+  const overlapWidth = Math.min(left[0] + left[2], right[0] + right[2])
+    - Math.max(left[0], right[0]);
+  const overlapHeight = Math.min(left[1] + left[3], right[1] + right[3])
+    - Math.max(left[1], right[1]);
+  return overlapWidth > 0 && overlapHeight > 0;
+}
+
+/** Validate the complete stored placement footprint against a floor extent. */
+export function placementRectInsideFloor(placement, extent) {
+  return placementFootprintInsideFloor(placement, { extent }, EPSILON);
+}
+
+function canonicalRoomArea(rect) {
+  if (!Array.isArray(rect) || rect.length !== 4 || !rect.every(isFiniteNumber)) return Number.NaN;
+  return Number((rect[2] * rect[3] / 10000).toFixed(1));
+}
+
+function validRotation(value) {
+  return Number.isInteger(value) && value >= 0 && value < 360 && value % 45 === 0;
 }
 
 function validBuilding(building, buildingId) {
@@ -314,20 +333,25 @@ function validPlanningFloor(planningFloor, floorId) {
 }
 
 function validRoom(room, buildingId, floorId, extent) {
+  const use = USE_BY_VALUE.get(room?.useType);
+  const sia = SIA_BY_VALUE.get(room?.sia);
   return hasExactKeys(room, ROOM_KEYS)
     && isIdentifier(room.spaceId)
     && room.buildingId === buildingId
     && room.floorId === floorId
-    && isSafeString(room.roomNumber)
+    && isIdentifier(room.roomNumber)
     && isSafeString(room.roomName)
-    && USE_VALUES.has(room.useType)
-    && isSafeString(room.useLabel)
-    && SIA_VALUES.has(room.sia)
-    && isSafeString(room.siaLabel)
-    && isIdentifier(room.group)
-    && isSafeString(room.groupLabel)
+    && Boolean(use)
+    && room.useLabel === use.label
+    && Boolean(sia)
+    && room.siaLabel === (sia.longLabel || sia.label)
+    && room.group === use.group
+    && room.groupLabel === use.groupLabel
     && isNonNegative(room.area)
-    && isNonNegative(room.capacity)
+    && Math.abs(room.area - canonicalRoomArea(room.rect)) <= EPSILON
+    && Number.isSafeInteger(room.capacity)
+    && room.capacity >= 0
+    && room.capacity <= MAX_ROOM_CAPACITY
     && typeof room.bookable === 'boolean'
     && (room.occupierVe === null || isSafeString(room.occupierVe))
     && rectIsInside(room.rect, extent)
@@ -360,36 +384,37 @@ function validProduct(product) {
 }
 
 function validPlacement(placement, document, roomsById, productsById) {
-  if (!hasKnownKeys(placement, PLACEMENT_KEYS, REQUIRED_PLACEMENT_KEYS)
+  if (!hasExactKeys(placement, PLACEMENT_KEYS)
     || !isIdentifier(placement.placementId)) return false;
   if (placement.buildingId !== document.buildingId || placement.floorId !== document.floorId) return false;
   const room = roomsById.get(placement.roomId);
   const product = productsById.get(productKey(placement.productId));
-  if (!room || !product || !isIdentifier(placement.articleId)) return false;
-  if (!isIdentifier(placement.name)
-    || (placement.category !== undefined && !isIdentifier(placement.category))) return false;
+  if (!room || !product
+    || placement.articleId !== String(product.id)
+    || placement.name !== product.name
+    || placement.category !== product.category
+    || placement.shape !== product.shape2d) return false;
   if (![placement.x, placement.y, placement.width, placement.depth, placement.rotation]
     .every(isFiniteNumber)
-    || (placement.height !== undefined && !isFiniteNumber(placement.height))) return false;
+    || !isFiniteNumber(placement.height)) return false;
   if (placement.x < 0 || placement.y < 0 || placement.width <= 0 || placement.depth <= 0
-    || (placement.height !== undefined && placement.height <= 0)) return false;
-  const [floorWidth, floorHeight] = document.floor.extent;
-  if (placement.x + placement.width > floorWidth + EPSILON
-    || placement.y + placement.depth > floorHeight + EPSILON) return false;
+    || placement.height <= 0 || !validRotation(placement.rotation)
+    || !placementRectInsideFloor(placement, document.floor.extent)) return false;
   const dimensionsMatch = (Math.abs(placement.width - product.dimensions.width) <= EPSILON
       && Math.abs(placement.depth - product.dimensions.depth) <= EPSILON)
     || (Math.abs(placement.width - product.dimensions.depth) <= EPSILON
       && Math.abs(placement.depth - product.dimensions.width) <= EPSILON);
-  if (!dimensionsMatch || (placement.height !== undefined
-    && Math.abs(placement.height - product.dimensions.height) > EPSILON)) return false;
+  if (!dimensionsMatch
+    || Math.abs(placement.height - product.dimensions.height) > EPSILON) return false;
   const centreX = placement.x + placement.width / 2;
   const centreY = placement.y + placement.depth / 2;
   const [roomX, roomY, roomWidth, roomHeight] = room.rect;
   if (centreX < roomX - EPSILON || centreX > roomX + roomWidth + EPSILON
     || centreY < roomY - EPSILON || centreY > roomY + roomHeight + EPSILON) return false;
-  return SHAPES.has(placement.shape)
-    && PLACEMENT_STATUSES.has(placement.status)
-    && (placement.source === undefined || PLACEMENT_SOURCES.has(placement.source));
+  return PLACEMENT_STATUSES.has(placement.status)
+    && PLACEMENT_SOURCES.has(placement.source)
+    && (placement.status !== 'illustrative' || placement.source === 'illustrative-prototype')
+    && (placement.status !== 'new' || placement.source === 'user');
 }
 
 function validDocument(document, baseline = null) {
@@ -408,6 +433,16 @@ function validDocument(document, baseline = null) {
     if (!validRoom(room, document.buildingId, document.floorId, document.floor.extent)
       || roomsById.has(room.spaceId)) return false;
     roomsById.set(room.spaceId, room);
+  }
+  const roomsByX = [...roomsById.values()].sort((left, right) => left.rect[0] - right.rect[0]);
+  for (let leftIndex = 0; leftIndex < roomsByX.length; leftIndex += 1) {
+    const left = roomsByX[leftIndex];
+    const leftEdge = left.rect[0] + left.rect[2];
+    for (let rightIndex = leftIndex + 1;
+      rightIndex < roomsByX.length && roomsByX[rightIndex].rect[0] < leftEdge;
+      rightIndex += 1) {
+      if (roomRectsOverlap(left.rect, roomsByX[rightIndex].rect)) return false;
+    }
   }
 
   const productsById = new Map();
@@ -430,9 +465,16 @@ function validDocument(document, baseline = null) {
     || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(document.updatedAt)
     || !Number.isFinite(Date.parse(document.updatedAt))) return false;
 
-  return !baseline || (document.buildingId === baseline.buildingId
+  if (!baseline) return true;
+  if (baseline === document || !validDocument(baseline)) return baseline === document;
+  return document.buildingId === baseline.buildingId
     && document.floorId === baseline.floorId
-    && document.baseRevision === baseline.baseRevision);
+    && document.baseRevision === baseline.baseRevision
+    && stableStringify(document.building) === stableStringify(baseline.building)
+    && stableStringify(document.floor) === stableStringify(baseline.floor)
+    && stableStringify(document.planningFloor) === stableStringify(baseline.planningFloor)
+    && stableStringify(document.products) === stableStringify(baseline.products)
+    && document.placementSource === baseline.placementSource;
 }
 
 /**
@@ -442,6 +484,121 @@ function validDocument(document, baseline = null) {
  */
 export function validateEditorDocument(document, baseline = null) {
   return validDocument(document, baseline);
+}
+
+function normaliseLegacyDraft(source) {
+  const draft = cloneDocument(source);
+  if (!isPlainObject(draft) || !Array.isArray(draft.products) || !Array.isArray(draft.placements)) {
+    return { document: draft, droppedPlacementIds: [] };
+  }
+  const productsById = new Map(draft.products.map((product) => [productKey(product?.id), product]));
+  draft.placements.forEach((placement) => {
+    if (!isPlainObject(placement)) return;
+    const product = productsById.get(productKey(placement.productId));
+    if (!product) return;
+    placement.articleId = String(product.id);
+    placement.name = product.name;
+    placement.category = product.category;
+    if (!Object.hasOwn(placement, 'height')) placement.height = product.dimensions?.height;
+    placement.shape = product.shape2d;
+    if (!Object.hasOwn(placement, 'source')) {
+      placement.source = placement.status === 'new' ? 'user' : 'illustrative-prototype';
+    }
+  });
+  if (validDocument(draft)) return { document: draft, droppedPlacementIds: [] };
+
+  // Earlier v1 drafts checked only the unrotated rectangle and allowed three
+  // placement fields to be omitted. Preserve their room edits and quarantine
+  // only placements that cannot satisfy today's stronger footprint/schema.
+  const withoutPlacements = { ...draft, placements: [] };
+  if (!validDocument(withoutPlacements)) return { document: draft, droppedPlacementIds: [] };
+  const placementIds = new Set();
+  const droppedPlacementIds = [];
+  draft.placements = draft.placements.filter((placement) => {
+    const id = placement?.placementId;
+    const valid = !placementIds.has(id)
+      && validDocument({ ...withoutPlacements, placements: [placement] });
+    if (valid) placementIds.add(id);
+    else droppedPlacementIds.push(typeof id === 'string' ? id : '(ungültige ID)');
+    return valid;
+  });
+  return { document: draft, droppedPlacementIds };
+}
+
+/**
+ * Rehydrate a compatible browser draft onto the current immutable baseline.
+ * The catalogue is reference data rather than user-owned draft state: current
+ * products replace the embedded snapshot, while placement coordinates and room
+ * edits are retained whenever their updated product still forms a valid object.
+ */
+export function rebaseEditorDocument(draft, baseline) {
+  const normalisedLegacy = normaliseLegacyDraft(draft);
+  const compatibleDraft = normalisedLegacy.document;
+  if (!validDocument(compatibleDraft) || !validDocument(baseline)
+    || compatibleDraft.buildingId !== baseline.buildingId
+    || compatibleDraft.floorId !== baseline.floorId
+    || compatibleDraft.baseRevision !== baseline.baseRevision) return null;
+
+  const oldProducts = new Map(compatibleDraft.products.map((product) => [productKey(product.id), product]));
+  const currentProducts = new Map(baseline.products.map((product) => [productKey(product.id), product]));
+  const roomsById = new Map(compatibleDraft.rooms.map((room) => [room.spaceId, room]));
+  const droppedPlacementIds = [...normalisedLegacy.droppedPlacementIds];
+  const placements = [];
+
+  compatibleDraft.placements.forEach((source) => {
+    const oldProduct = oldProducts.get(productKey(source.productId));
+    const product = currentProducts.get(productKey(source.productId));
+    if (!oldProduct || !product) {
+      droppedPlacementIds.push(source.placementId);
+      return;
+    }
+
+    const normalOrientation = Math.abs(source.width - oldProduct.dimensions.width) <= EPSILON
+      && Math.abs(source.depth - oldProduct.dimensions.depth) <= EPSILON;
+    const width = normalOrientation ? product.dimensions.width : product.dimensions.depth;
+    const depth = normalOrientation ? product.dimensions.depth : product.dimensions.width;
+    const centreX = source.x + source.width / 2;
+    const centreY = source.y + source.depth / 2;
+    const placement = {
+      ...cloneDocument(source),
+      articleId: String(product.id),
+      name: product.name,
+      category: product.category,
+      x: Number((centreX - width / 2).toFixed(3)),
+      y: Number((centreY - depth / 2).toFixed(3)),
+      width,
+      depth,
+      height: product.dimensions.height,
+      shape: product.shape2d,
+    };
+    const room = roomsById.get(placement.roomId);
+    const centreInsideRoom = room && centreX >= room.rect[0] - EPSILON
+      && centreX <= room.rect[0] + room.rect[2] + EPSILON
+      && centreY >= room.rect[1] - EPSILON
+      && centreY <= room.rect[1] + room.rect[3] + EPSILON;
+    if (!centreInsideRoom || !placementRectInsideFloor(placement, baseline.floor.extent)) {
+      droppedPlacementIds.push(source.placementId);
+      return;
+    }
+    placements.push(placement);
+  });
+
+  const document = {
+    ...cloneDocument(compatibleDraft),
+    schema: baseline.schema,
+    persistence: baseline.persistence,
+    buildingId: baseline.buildingId,
+    floorId: baseline.floorId,
+    building: cloneDocument(baseline.building),
+    floor: cloneDocument(baseline.floor),
+    planningFloor: cloneDocument(baseline.planningFloor),
+    products: cloneDocument(baseline.products),
+    placements,
+    placementSource: baseline.placementSource,
+    baseRevision: baseline.baseRevision,
+  };
+  if (!validDocument(document, baseline)) return null;
+  return { document: cloneDocument(document), droppedPlacementIds };
 }
 
 function productRoles(products) {
@@ -579,6 +736,9 @@ export function createBaseline({ building, floor, spaces, products, planningFloo
     .sort((left, right) => stableCompare(left.spaceId, right.spaceId));
   const catalogue = products
     .map(normaliseProduct)
+    // A single unrelated, incomplete shop record must not make every floor
+    // unavailable. Invalid records are quarantined at this adapter boundary.
+    .filter(validProduct)
     .sort((left, right) => stableCompare(left.id, right.id));
   const normalisedBuilding = normaliseBuilding(building, buildingId);
   const normalisedPlanning = normalisePlanningFloor(planningFloor, floorId);
