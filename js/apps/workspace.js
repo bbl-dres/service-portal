@@ -512,7 +512,7 @@ function detail(ctx, id) {
   const panels = { uebersicht: overviewPanel, grundrisse: floorPanel, ausstattung: equipmentPanel };
 
   function roomPanel(space) {
-    if (!space) return '<div class="box fp-room fp-room--empty"><p class="small muted">Wählen Sie einen Raum im Grundriss, um seine Bestandsdaten zu sehen. Die Vorschau ist schreibgeschützt.</p></div>';
+    if (!space) return '<div class="box fp-room fp-room--empty"><p class="small muted">Wählen Sie einen Raum im Grundriss, um seine Bestandsdaten zu sehen.</p></div>';
     const facts = [
       ['Nutzung', space.useLabel],
       ['Fläche', `${space.area} m²`],
@@ -542,23 +542,26 @@ function detail(ctx, id) {
 
     return `<div id="fp-wrap">
       <div class="fp-head">
-        <p class="fp-back"><a href="${BASE}?id=${encodeURIComponent(item.id)}&tab=grundrisse" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
         <div class="fp-head__top">
+          <p class="fp-back"><a href="${BASE}?id=${encodeURIComponent(item.id)}&tab=grundrisse" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
           ${floorLinks}
-          <span class="small muted workspace-readonly">Vorschau · nur Ansicht</span>
           ${C.select({ id: 'fp-color', label: 'Einfärben nach', value: colorMode, size: 'sm', wrapClass: 'fp-color', options: COLOR_MODES })}
           <div class="fp-head__actions">
-            <a class="btn btn--filled btn--sm" href="${floorplanEditor(item.id, floor.floorId)}" target="_blank" rel="noopener">
-              <span class="btn__text">Im Plan-Editor bearbeiten</span>${C.icon('External', 'btn__icon icon--base')}
-            </a>
             <button class="btn btn--outline btn--sm" type="button" id="fp-vollbild">${C.icon('Expand', 'btn__icon icon--base')}<span class="btn__text">Vollbild</span></button>
-            <button class="btn btn--outline btn--sm" type="button" id="fp-drucken">${C.icon('Printer', 'btn__icon icon--base')}<span class="btn__text">Grundriss drucken</span></button>
+            <button class="btn btn--outline btn--sm" type="button" id="fp-drucken">${C.icon('Printer', 'btn__icon icon--base')}<span class="btn__text">Drucken</span></button>
           </div>
         </div>
       </div>
       <div class="fp-viewer">
         <div class="fp-stage" id="fp-stage" data-scroll-region aria-label="Grundriss ${C.escape(floor.label)}">${floorplanSvg({ floor, spaces, mode: colorMode, selectedId: spaceId })}</div>
         <div class="fp-side">
+          <div class="box fp-editor-action">
+            <h2>Aktionen</h2>
+            <p class="small muted">Bearbeitung und Speicherung erfolgen im eigenständigen Plan-Editor.</p>
+            <a class="btn btn--filled btn--sm btn--full-width btn--icon-right" id="workspace-plan-editor" href="${floorplanEditor(item.id, floor.floorId)}" target="_blank" rel="noopener">
+              <span class="btn__text">Im Plan-Editor bearbeiten</span>${C.icon('External', 'btn__icon icon--base')}
+            </a>
+          </div>
           <dl class="kv kv--tight fp-facts">
             <dt>Räume</dt><dd>${num(floor.rooms)}</dd>
             <dt>Fläche (HNF)</dt><dd>${m2(floor.areaHnf)}</dd>

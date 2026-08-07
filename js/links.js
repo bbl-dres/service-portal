@@ -28,8 +28,10 @@ export const shopProdukt = (productId) => `#/app/shop/product/${q(productId)}`;
 export const shopWarenkorb = () => '#/app/shop/cart';
 
 /**
- * Standalone Plan-Editor. Nur dauerhafte Fachschlüssel gehören in die Übergabe;
- * der Editor leitet seinen sicheren Rücksprung zum Workspace-Portal selbst ab.
+ * Standalone Plan-Editor. Ohne Schlüssel öffnet sich die Gebäudenavigation,
+ * nur mit Gebäude die Geschossnavigation und mit Gebäude + Geschoss der Plan.
+ * So bleiben Portal-Handoffs und editorinterne Breadcrumbs dieselben stabilen
+ * URLs, ohne browserhistorienabhängige Rücksprünge.
  */
 export const floorplanEditor = (buildingId, floorId = '') => {
   const params = new URLSearchParams();

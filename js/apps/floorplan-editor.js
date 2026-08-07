@@ -19,17 +19,18 @@ import {
   loadWorkingCopy, saveWorkingCopy, removeWorkingCopy,
   loadRevisionHistory, publishLocalRevision,
 } from '../floorplan-editor-repository.js';
+import { createFloorplanThreeViewer } from '../floorplan-editor-three.js';
+import { copyText } from '../export.js';
 
 export const needs = ['buildings', 'floors', 'spaces', 'workspacePlanning', 'shopProducts'];
 export const layout = 'standalone';
 export const loginText = 'Der Plan-Editor enthält Arbeitsplatz- und Ausstattungsdaten. Melden Sie sich mit AGOV / FedLogin an, um einen Plan zu öffnen.';
 
 const BASE = '#/app/floorplan-editor';
-const COLOR_DEFAULT = 'use';
+const COLOR_DEFAULT = 'none';
 const VIEW_MODES = new Set(['2d', '3d', 'walk']);
-const THREE_D_REFERENCE = 'docs/wireframes/260806%20-%20Workpace%20Management/assets/images/editor-3d-ansicht.png';
 const PLAN_STATUS = {
-  accepted: { label: 'CAD abgenommen', variant: 'success' },
+  accepted: { label: 'abgenommen', variant: 'success' },
   not_synced: { label: 'nicht synchronisiert', variant: 'warning' },
   inventory: { label: 'Bestandsgrundriss', variant: 'gray' },
 };
@@ -47,19 +48,227 @@ const optionMarkup = (options, value) => options.map((option) => {
 const useSwatch = (group) => ({
   arbeit: 'work', zusammen: 'collab', infra: 'infra', sonder: 'special',
 })[group] || 'infra';
+const COLOR_DESCRIPTIONS = {
+  none: 'Keine Farbcodierung',
+  use: 'Raumfunktion / Nutzungstyp',
+  sia: 'Flächenart nach SIA 416',
+  ve: 'Zugeordnete Verwaltungseinheit',
+  module: 'Multispace-Ausstattungsstandard',
+};
+const panelToggleIcon = (side) => `<svg class="fpe-panel-toggle-icon fpe-panel-toggle-icon--${side}" viewBox="0 0 24 24" aria-hidden="true">
+  <rect x="3.5" y="5.5" width="17" height="13"></rect>
+  <rect class="fpe-panel-toggle-icon__pane" x="${side === 'left' ? '3.5' : '14.5'}" y="5.5" width="6" height="13"></rect>
+</svg>`;
+const number = (value) => Number(value || 0).toLocaleString('de-CH');
+const area = (value) => `${Number(value || 0).toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²`;
+
+function editorHeaderHTML(C, session, editMode = false) {
+  const user = session.user();
+  return `<header class="fpe-header">
+    <a class="fpe-brand" id="fpe-home" href="${BASE}" data-leave aria-label="Plan-Editor – Gebäudenavigation">
+      <img src="assets/swiss-logo-flag.svg" alt="" aria-hidden="true"><span>BBL <strong>Plan-Editor</strong></span>
+    </a>
+    ${editMode ? '<span class="fpe-edit-state" title="Bearbeitungsmodus"><i aria-hidden="true"></i><span class="fpe-edit-state__text">Bearbeitungsmodus</span></span>' : ''}
+    <span class="fpe-header__spacer"></span>
+    <button class="btn btn--bare btn--sm fpe-search-jump" id="fpe-search-jump" type="button" data-action="focus-search">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suche</span></button>
+    <button class="btn btn--outline btn--sm" id="fpe-upload" type="button" disabled title="Planübernahme und Prüfung folgen als separate Anwendung">${C.icon('CloudUpload', 'btn__icon')}<span class="btn__text">Plan hochladen</span></button>
+    <span class="fpe-header__divider" aria-hidden="true"></span>
+    <span class="fpe-user" title="${C.escape(user?.name || '')}"><span>${C.escape(initials(user?.name))}</span><span class="sr-only">Angemeldet als ${C.escape(user?.name || '')}</span></span>
+  </header>`;
+}
 
 function planningObjects(core) {
   return (core.data.workspacePlanning || []).map((planning) => {
     const building = core.building(planning.buildingId);
     const floors = core.floorsForBuilding(planning.buildingId).sort((a, b) => a.level - b.level);
     return building && floors.length ? { building, floors, planning } : null;
-  }).filter(Boolean);
+  }).filter(Boolean).sort((left, right) => {
+    const planned = Number(right.planning.planAvailability === 'planned') - Number(left.planning.planAvailability === 'planned');
+    return planned || left.building.name.localeCompare(right.building.name, 'de');
+  });
 }
 
 function planningFloor(planning, floorId) {
   return (planning?.floors || []).find((entry) => entry.floorId === floorId) || {
     floorId, planStatus: 'inventory', equipmentCount: null, lastSync: '',
   };
+}
+
+function floorNavigationFacts(core, object, floor) {
+  const spaces = core.spacesForFloor(floor.floorId);
+  const plan = planningFloor(object.planning, floor.floorId);
+  return {
+    spaces,
+    plan,
+    workplaces: spaces.reduce((sum, room) => sum + (Number(room.capacity) || 0), 0),
+    traffic: spaces.filter((room) => room.sia === 'VF').reduce((sum, room) => sum + (Number(room.area) || 0), 0),
+  };
+}
+
+function planBadgeHTML(C, plan) {
+  const status = PLAN_STATUS[plan.planStatus] || PLAN_STATUS.inventory;
+  return C.badge(status.label, status.variant, 'sm');
+}
+
+function floorPreviewHTML(C, floor, spaces) {
+  const rects = spaces.map((room) => room.rect).filter((rect) => Array.isArray(rect) && rect.length === 4);
+  if (!rects.length) return '<div class="fpe-nav-preview fpe-nav-preview--empty">Keine Geometrie</div>';
+  const minX = Math.min(...rects.map(([x]) => Number(x)));
+  const minY = Math.min(...rects.map(([, y]) => Number(y)));
+  const maxX = Math.max(...rects.map(([x, , width]) => Number(x) + Number(width)));
+  const maxY = Math.max(...rects.map(([, y, , height]) => Number(y) + Number(height)));
+  const pad = Math.max(30, Math.round(Math.max(maxX - minX, maxY - minY) * .025));
+  return `<div class="fpe-nav-preview"><svg viewBox="${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}" role="img" aria-label="Vorschau ${C.escape(floor.label)}">
+    ${rects.map(([x, y, width, height]) => `<rect x="${Number(x)}" y="${Number(y)}" width="${Number(width)}" height="${Number(height)}"></rect>`).join('')}
+  </svg></div>`;
+}
+
+function renderNavigation(ctx, objects, object = null, message = '') {
+  const { mount, query, core, session, C, onUnmount, setTitle } = ctx;
+  const floorView = !!object;
+  const defaultObject = objects.find((entry) => entry.planning.planAvailability === 'planned') || objects[0];
+  const inspectedObject = object || defaultObject;
+  const requestedPick = query.get('pick') || '';
+  const pickedFloor = floorView
+    ? object.floors.find((entry) => entry.floorId === requestedPick)
+      || object.floors.find((entry) => entry.key === '2og') || object.floors[0]
+    : null;
+  const pickedFacts = pickedFloor ? floorNavigationFacts(core, object, pickedFloor) : null;
+  const allFloorCount = objects.reduce((sum, entry) => sum + entry.floors.length, 0);
+  const routeForPick = (floorId) => `${floorplanEditor(object.building.bbl_id)}&pick=${encodeURIComponent(floorId)}`;
+  const targetDate = object?.planning.targetDate
+    ? object.planning.targetDate.split('-').reverse().join('.') : '';
+
+  const railLink = ({ label, count, href = '', active = false, disabled = false }) => {
+    const content = `<span>${C.escape(label)}</span><span class="fpe-nav-rail__count">${number(count)}</span>`;
+    if (disabled) return `<span class="fpe-nav-rail__item is-disabled" aria-disabled="true">${content}</span>`;
+    return `<a class="fpe-nav-rail__item${active ? ' is-active' : ''}" href="${href}"${active ? ' aria-current="page"' : ''}>${content}</a>`;
+  };
+
+  const rail = `<nav class="fpe-nav-rail" aria-label="Bereiche">
+    ${railLink({ label: 'Aktive Geschosse', count: floorView ? object.floors.length : allFloorCount,
+      href: floorplanEditor(inspectedObject.building.bbl_id), active: floorView })}
+    ${railLink({ label: 'Archivierte Geschosse', count: 0, disabled: true })}
+    ${railLink({ label: 'Gebäude', count: objects.length, href: BASE, active: !floorView })}
+    ${railLink({ label: 'Ausstattungskatalog', count: MODULE_OPTIONS.length, disabled: true })}
+    ${floorView ? `<div class="fpe-nav-order"><p class="fpe-overline">Auftrag</p>
+      <p class="mono">${C.escape(object.planning.inventoryOrder || 'Nicht zugeordnet')}</p>
+      ${object.planning.planAvailability === 'planned' ? C.badge('CAD-Planung in Arbeit', 'warning', 'sm') : C.badge('Bestandsgrundriss', 'gray', 'sm')}
+      <p class="small muted">Diese Navigation bündelt Gebäude und Geschosse innerhalb des Plan-Editors. Direkte Portal-Links öffnen weiterhin den gewählten Plan.</p>
+    </div>` : `<div class="fpe-nav-order"><p class="small muted">Wählen Sie ein Gebäude, um seine aktiven Geschosse zu verwalten und einen Plan zu öffnen.</p></div>`}
+  </nav>`;
+
+  let rows = '';
+  let inspector = '';
+  if (floorView) {
+    rows = object.floors.map((floor) => {
+      const facts = floorNavigationFacts(core, object, floor);
+      const selected = floor.floorId === pickedFloor.floorId;
+      const status = PLAN_STATUS[facts.plan.planStatus] || PLAN_STATUS.inventory;
+      return `<tr class="fpe-nav-row${selected ? ' is-selected' : ''}" data-nav-row data-nav-href="${routeForPick(floor.floorId)}"
+        data-search="${C.escape(clean(`${floor.label} ${floor.floorId} ${status.label} ${facts.plan.lastSync}`))}"
+        data-sort-name="${C.escape(String(floor.level).padStart(4, '0'))}" data-sort-status="${C.escape(status.label)}" aria-selected="${selected}">
+        <th scope="row"><a href="${routeForPick(floor.floorId)}"><span class="mono">${C.escape(floor.floorId)}</span><strong>${C.escape(floor.label)}</strong></a></th>
+        <td>${C.escape(facts.plan.lastSync || '—')}</td><td class="text-right">${area(floor.areaHnf)}</td>
+        <td class="text-right">${number(facts.workplaces)}</td><td class="text-right">${facts.plan.equipmentCount == null ? '—' : number(facts.plan.equipmentCount)}</td>
+        <td>${planBadgeHTML(C, facts.plan)}</td>
+      </tr>`;
+    }).join('');
+    inspector = `<aside class="fpe-nav-inspector" aria-label="Inspektor">
+      <div class="fpe-nav-inspector__title"><p>${C.escape(pickedFloor.label)} · ${C.escape(pickedFloor.floorId)}</p><small>${C.escape(object.building.name)}</small></div>
+      ${floorPreviewHTML(C, pickedFloor, pickedFacts.spaces)}
+      <section class="fpe-inspector-section"><h2>Kennzahlen des Geschosses</h2><div class="fpe-kpis">
+        <div><small>Geschossfläche</small><strong>${area(pickedFloor.areaGross)}</strong></div><div><small>Hauptnutzfläche</small><strong>${area(pickedFloor.areaHnf)}</strong></div>
+        <div><small>Arbeitsplätze</small><strong>${number(pickedFacts.workplaces)}</strong></div><div><small>Ausstattung</small><strong>${pickedFacts.plan.equipmentCount == null ? '—' : number(pickedFacts.plan.equipmentCount)}</strong></div>
+        <div><small>Räume</small><strong>${number(pickedFacts.spaces.length)}</strong></div><div><small>Verkehrsfläche</small><strong>${area(pickedFacts.traffic)}</strong></div>
+      </div></section>
+      <section class="fpe-inspector-section"><h2>Attribute</h2><dl class="fpe-kv">
+        <dt>Geschoss-ID</dt><dd class="mono">${C.escape(pickedFloor.floorId)}</dd><dt>Gebäude</dt><dd class="mono">${C.escape(object.building.bbl_id)}</dd>
+        <dt>Adresse</dt><dd>${C.escape(address(object.building))}</dd>${targetDate ? `<dt>Stichtag</dt><dd>${C.escape(targetDate)}</dd>` : ''}
+        <dt>Synchronisation</dt><dd>${C.escape(pickedFacts.plan.lastSync || 'nicht erfasst')}</dd><dt>Status</dt><dd>${planBadgeHTML(C, pickedFacts.plan)}</dd>
+      </dl><a class="btn btn--filled btn--sm btn--icon-right" id="fpe-open-floor" href="${floorplanEditor(object.building.bbl_id, pickedFloor.floorId)}"><span class="btn__text">Im Editor öffnen</span>${C.icon('ArrowRight', 'btn__icon')}</a></section>
+    </aside>`;
+  } else {
+    rows = objects.map((entry) => {
+      const floorSpaces = entry.floors.flatMap((floor) => core.spacesForFloor(floor.floorId));
+      const hnf = entry.floors.reduce((sum, floor) => sum + Number(floor.areaHnf || 0), 0);
+      const workplaces = floorSpaces.reduce((sum, room) => sum + (Number(room.capacity) || 0), 0);
+      const href = floorplanEditor(entry.building.bbl_id);
+      const selected = entry === inspectedObject;
+      return `<tr class="fpe-nav-row${selected ? ' is-selected' : ''}" data-nav-row data-nav-href="${href}"
+        data-search="${C.escape(clean(`${entry.building.name} ${entry.building.bbl_id} ${address(entry.building)} ${entry.building.nutzer || ''}`))}"
+        data-sort-name="${C.escape(clean(entry.building.name))}" data-sort-status="${C.escape(entry.planning.planAvailability)}" aria-selected="${selected}">
+        <th scope="row"><a href="${href}"><strong>${C.escape(entry.building.name)}</strong><span class="mono">${C.escape(entry.building.bbl_id)}</span></a></th>
+        <td>${C.escape(entry.building.city || '—')}</td><td class="text-right">${number(entry.floors.length)}</td><td class="text-right">${area(hnf)}</td>
+        <td class="text-right">${number(workplaces)}</td><td>${entry.planning.planAvailability === 'planned' ? C.badge('Multispace geplant', 'success', 'sm') : C.badge('Bestand', 'gray', 'sm')}</td>
+      </tr>`;
+    }).join('');
+    const inspectedFloors = inspectedObject.floors;
+    const inspectedHnf = inspectedFloors.reduce((sum, floor) => sum + Number(floor.areaHnf || 0), 0);
+    inspector = `<aside class="fpe-nav-inspector" aria-label="Inspektor">
+      <div class="fpe-nav-inspector__title"><p>${C.escape(inspectedObject.building.name)}</p><small class="mono">${C.escape(inspectedObject.building.bbl_id)}</small></div>
+      <section class="fpe-inspector-section"><h2>Gebäudekennzahlen</h2><div class="fpe-kpis">
+        <div><small>Aktive Geschosse</small><strong>${number(inspectedFloors.length)}</strong></div><div><small>Hauptnutzfläche</small><strong>${area(inspectedHnf)}</strong></div>
+      </div></section>
+      <section class="fpe-inspector-section"><h2>Attribute</h2><dl class="fpe-kv"><dt>Gebäude-ID</dt><dd class="mono">${C.escape(inspectedObject.building.bbl_id)}</dd>
+        <dt>Adresse</dt><dd>${C.escape(address(inspectedObject.building))}</dd><dt>Nutzende</dt><dd>${C.escape(inspectedObject.building.nutzer || 'nicht erfasst')}</dd>
+      </dl><a class="btn btn--filled btn--sm btn--icon-right" id="fpe-open-building" href="${floorplanEditor(inspectedObject.building.bbl_id)}"><span class="btn__text">Geschosse öffnen</span>${C.icon('ArrowRight', 'btn__icon')}</a></section>
+    </aside>`;
+  }
+
+  const title = floorView ? `Geschosse — ${object.building.name}` : 'Alle Objekte';
+  const count = floorView ? object.floors.length : objects.length;
+  const columns = floorView
+    ? '<th scope="col">Geschoss</th><th scope="col">Letzte Änderung</th><th scope="col" class="text-right">HNF</th><th scope="col" class="text-right">Arbeitsplätze</th><th scope="col" class="text-right">Ausstattung</th><th scope="col">Planstand</th>'
+    : '<th scope="col">Gebäude</th><th scope="col">Ort</th><th scope="col" class="text-right">Geschosse</th><th scope="col" class="text-right">HNF</th><th scope="col" class="text-right">Arbeitsplätze</th><th scope="col">Planung</th>';
+
+  setTitle(floorView ? `Plan-Editor — Geschosse ${object.building.name}` : 'Plan-Editor — Gebäude');
+  mount.innerHTML = `<div class="fpe-app fpe-nav-app" id="fpe-navigation" data-view="${floorView ? 'floors' : 'buildings'}">
+    <h1 class="sr-only" tabindex="-1">Plan-Editor — ${C.escape(title)}</h1>
+    ${editorHeaderHTML(C, session)}
+    <div class="fpe-context fpe-nav-context">
+      ${floorView ? `<a class="btn btn--bare btn--sm btn--icon-only" href="${BASE}" aria-label="Zurück zu allen Objekten">${C.icon('ArrowLeft', 'btn__icon')}</a>` : ''}
+      <span class="fpe-nav-context__title">${C.escape(title)} <span id="fpe-nav-count">${number(count)}</span></span>
+      <span class="fpe-context__spacer"></span>
+      <label class="fpe-nav-search"><span class="sr-only">${floorView ? 'Geschosse' : 'Gebäude'} durchsuchen</span>${C.icon('Search', 'icon--sm')}<input id="fpe-nav-search" type="search" placeholder="Suchen…"></label>
+      <label class="fpe-nav-sort"><span class="sr-only">Sortieren</span><select id="fpe-nav-sort" class="input--outline input--sm"><option value="name">Sortieren: Name</option><option value="status">Sortieren: Status</option></select></label>
+    </div>
+    ${message ? `<div class="fpe-nav-message">${C.notification(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}</div>` : ''}
+    <div class="fpe-nav-layout">${rail}<main class="fpe-nav-main" data-scroll-region aria-label="${floorView ? 'Aktive Geschosse' : 'Gebäude'}">
+      <div class="fpe-nav-table"><table class="table"><caption class="sr-only">${floorView ? `Aktive Geschosse von ${C.escape(object.building.name)}` : 'Gebäude im Plan-Editor'}</caption><thead><tr>${columns}</tr></thead><tbody id="fpe-nav-rows">${rows}</tbody></table></div>
+      <p class="fpe-panel-empty" id="fpe-nav-empty" hidden>Keine passenden ${floorView ? 'Geschosse' : 'Gebäude'} gefunden.</p>
+    </main>${inspector}</div>
+    <div class="fpe-local-note">${C.icon('InfoCircle', 'icon--sm')} Feedback-Prototyp: Navigation und Bearbeitung verwenden Demo-Daten; es gibt keine Backend-Synchronisation oder Berechtigungsprüfung.</div>
+  </div>`;
+
+  const filterRows = () => {
+    const term = clean(mount.querySelector('#fpe-nav-search')?.value);
+    const rows = [...mount.querySelectorAll('[data-nav-row]')];
+    let visible = 0;
+    rows.forEach((row) => { row.hidden = !!term && !row.dataset.search.includes(term); if (!row.hidden) visible++; });
+    const countNode = mount.querySelector('#fpe-nav-count');
+    if (countNode) countNode.textContent = number(visible);
+    const empty = mount.querySelector('#fpe-nav-empty');
+    if (empty) empty.hidden = visible > 0;
+  };
+  const sortRows = () => {
+    const key = mount.querySelector('#fpe-nav-sort')?.value === 'status' ? 'sortStatus' : 'sortName';
+    const body = mount.querySelector('#fpe-nav-rows');
+    if (!body) return;
+    [...body.querySelectorAll('[data-nav-row]')]
+      .sort((left, right) => left.dataset[key].localeCompare(right.dataset[key], 'de', { numeric: true }))
+      .forEach((row) => body.append(row));
+  };
+  const abort = new AbortController();
+  const { signal } = abort;
+  mount.addEventListener('click', (event) => {
+    if (event.target.closest('[data-action="focus-search"]')) mount.querySelector('#fpe-nav-search')?.focus();
+    const row = event.target.closest('[data-nav-href]');
+    if (row && !event.target.closest('a,button,input,select')) location.hash = row.dataset.navHref;
+  }, { signal });
+  mount.addEventListener('input', (event) => { if (event.target.id === 'fpe-nav-search') filterRows(); }, { signal });
+  mount.addEventListener('change', (event) => { if (event.target.id === 'fpe-nav-sort') sortRows(); }, { signal });
+  onUnmount(() => abort.abort());
 }
 
 function selectedFromQuery(query, document) {
@@ -78,7 +287,7 @@ function noPlan(ctx, message) {
   document.body.classList.remove('body--standalone-app');
   setTitle('Plan-Editor');
   mount.innerHTML = `<div class="container section">
-    ${C.backLink('#/app/workspace', 'Workspace Management')}
+    ${C.backLink(BASE, 'Plan-Editor Navigation')}
     <div class="page-header"><h1 tabindex="-1">Plan-Editor</h1></div>
     ${C.notification(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}
   </div>`;
@@ -90,13 +299,14 @@ export default async function render(ctx) {
   if (!objects.length) return noPlan(ctx, 'Es sind keine Gebäude mit einem bearbeitbaren Grundriss verfügbar.');
 
   const requestedBuilding = query.get('building') || '';
-  let object = requestedBuilding ? objects.find((entry) => entry.building.bbl_id === requestedBuilding) : null;
+  if (!requestedBuilding) return renderNavigation(ctx, objects);
+  const object = objects.find((entry) => entry.building.bbl_id === requestedBuilding);
   if (requestedBuilding && !object) return noPlan(ctx, 'Das angeforderte Workspace-Objekt oder seine Grundrisse wurden nicht gefunden.');
-  object ||= objects.find((entry) => entry.planning.planAvailability === 'planned') || objects[0];
 
   const requestedFloor = query.get('floor') || '';
-  let floor = requestedFloor ? object.floors.find((entry) => entry.floorId === requestedFloor) : null;
-  if (!floor) floor = object.floors.find((entry) => entry.key === '2og') || object.floors[0];
+  if (!requestedFloor) return renderNavigation(ctx, objects, object);
+  const floor = object.floors.find((entry) => entry.floorId === requestedFloor);
+  if (!floor) return renderNavigation(ctx, objects, object, 'Das angeforderte Geschoss wurde nicht gefunden. Wählen Sie einen verfügbaren Plan.');
   const building = object.building;
   const plan = planningFloor(object.planning, floor.floorId);
   const canonicalRooms = core.spacesForFloor(floor.floorId);
@@ -120,9 +330,11 @@ export default async function render(ctx) {
   let selected = selectedFromQuery(query, editorDocument);
   let editMode = query.get('edit') === '1';
   let dirty = false;
-  let tool = 'select';
+  const requestedLibrary = query.get('library');
+  let assetLibraryOpen = editMode && ['products', 'modules'].includes(requestedLibrary);
+  let tool = assetLibraryOpen ? 'add' : 'select';
   let placementProduct = null;
-  let libraryMode = query.get('library') === 'modules' ? 'modules' : 'products';
+  let libraryMode = requestedLibrary === 'modules' ? 'modules' : 'products';
   let productCategory = '';
   let measurement = null;
   let roomDraft = null;
@@ -130,9 +342,24 @@ export default async function render(ctx) {
   let camera = fitCamera(floor);
   let resourceQuery = '';
   let productQuery = '';
-  let leftOpen = !window.matchMedia('(max-width: 1023px)').matches;
-  let rightOpen = !window.matchMedia('(max-width: 1023px)').matches;
+  let colorMenuOpen = false;
+  let moreMenuOpen = false;
+  let structureMenuOpen = false;
+  let structureUnlocked = true;
+  const collapsedGroups = new Set();
+  const expandedRooms = new Set();
+  if (selected?.type === 'room') expandedRooms.add(selected.id);
+  if (selected?.type === 'placement') {
+    const selectedPlacement = editorDocument.placements.find((item) => item.placementId === selected.id);
+    if (selectedPlacement) expandedRooms.add(selectedPlacement.roomId);
+  }
+  let compactLayout = window.matchMedia('(max-width: 1023.98px)').matches;
+  let leftOpen = assetLibraryOpen || (!compactLayout && !editMode);
+  let rightOpen = !compactLayout;
+  const desktopPanels = { left: leftOpen, right: rightOpen };
   let drag = null;
+  let threeViewer = null;
+  const threeViewStates = { '3d': null, walk: null };
   let liveText = '';
 
   const products = core.shopProducts();
@@ -146,7 +373,7 @@ export default async function render(ctx) {
     selected = null;
   };
 
-  const returnHref = () => `#/app/workspace?id=${encodeURIComponent(building.bbl_id)}&floor=${encodeURIComponent(floor.floorId)}`;
+  const returnHref = () => floorplanEditor(building.bbl_id);
 
   function syncQuery() {
     const params = new URLSearchParams();
@@ -156,7 +383,7 @@ export default async function render(ctx) {
     if (viewMode !== '2d') params.set('view', viewMode);
     if (selected) params.set('selected', `${selected.type}:${selected.id}`);
     if (editMode) params.set('edit', '1');
-    if (editMode && libraryMode === 'modules') params.set('library', 'modules');
+    if (editMode && assetLibraryOpen) params.set('library', libraryMode);
     const next = `${BASE}?${params}`;
     if (location.hash !== next) window.history.replaceState(window.history.state, '', next);
   }
@@ -219,48 +446,156 @@ export default async function render(ctx) {
     if (publish) publish.disabled = !canPublish();
   }
 
+  function positionMoreMenu() {
+    if (!moreMenuOpen) return;
+    const trigger = mount.querySelector('#fpe-more-trigger');
+    const menu = mount.querySelector('#fpe-more-menu');
+    if (!trigger || !menu) return;
+    const rect = trigger.getBoundingClientRect();
+    const width = menu.offsetWidth || 240;
+    menu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, rect.right - width))}px`;
+    menu.style.top = `${Math.min(window.innerHeight - menu.offsetHeight - 8, rect.bottom + 8)}px`;
+  }
+
+  function positionColorMenu() {
+    if (!colorMenuOpen) return;
+    const trigger = mount.querySelector('#fpe-color-trigger');
+    const menu = mount.querySelector('#fpe-color-menu');
+    if (!trigger || !menu) return;
+    const rect = trigger.getBoundingClientRect();
+    const width = menu.offsetWidth || 300;
+    menu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, rect.left))}px`;
+    menu.style.top = `${Math.max(8, Math.min(window.innerHeight - menu.offsetHeight - 8, rect.bottom + 8))}px`;
+  }
+
+  function setMoreMenuOpen(open, { focusFirst = false, restoreFocus = false } = {}) {
+    moreMenuOpen = Boolean(open);
+    const trigger = mount.querySelector('#fpe-more-trigger');
+    const menu = mount.querySelector('#fpe-more-menu');
+    trigger?.setAttribute('aria-expanded', String(moreMenuOpen));
+    if (menu) menu.hidden = !moreMenuOpen;
+    if (moreMenuOpen) requestAnimationFrame(() => {
+      positionMoreMenu();
+      if (focusFirst) menu?.querySelector('[role="menuitem"]')?.focus({ preventScroll: true });
+    });
+    else if (restoreFocus) trigger?.focus({ preventScroll: true });
+  }
+
+  function positionStructureMenu() {
+    if (!structureMenuOpen) return;
+    const trigger = mount.querySelector('#fpe-structure-trigger');
+    const menu = mount.querySelector('#fpe-structure-menu');
+    if (!trigger || !menu) return;
+    const rect = trigger.getBoundingClientRect();
+    const width = menu.offsetWidth || 280;
+    menu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, rect.left))}px`;
+    menu.style.top = `${Math.min(window.innerHeight - menu.offsetHeight - 8, rect.bottom + 8)}px`;
+  }
+
+  function setStructureMenuOpen(open, { focusFirst = false, restoreFocus = false } = {}) {
+    structureMenuOpen = editMode && viewMode === '2d' && Boolean(open);
+    const trigger = mount.querySelector('#fpe-structure-trigger');
+    const menu = mount.querySelector('#fpe-structure-menu');
+    trigger?.setAttribute('aria-expanded', String(structureMenuOpen));
+    if (menu) menu.hidden = !structureMenuOpen;
+    if (structureMenuOpen) requestAnimationFrame(() => {
+      positionStructureMenu();
+      if (focusFirst) menu?.querySelector('[role="menuitem"]:not([disabled])')?.focus({ preventScroll: true });
+    });
+    else if (restoreFocus) trigger?.focus({ preventScroll: true });
+  }
+
+  const compactWorkbench = () => window.matchMedia('(max-width: 1023.98px)').matches;
+
+  function setPanelOpen(side, open, { focusToggle = true } = {}) {
+    const next = Boolean(open);
+    if (side === 'left') {
+      if (editMode) {
+        assetLibraryOpen = next;
+        if (next && !['add', 'place'].includes(tool)) tool = 'add';
+        if (!next && ['add', 'place'].includes(tool)) {
+          tool = 'select'; placementProduct = null; placementGhost = null;
+        }
+      }
+      leftOpen = next;
+      if (next && compactWorkbench()) rightOpen = false;
+      else if (!compactWorkbench()) desktopPanels.left = next;
+    } else {
+      rightOpen = next;
+      if (next && compactWorkbench()) {
+        leftOpen = false;
+        if (editMode) {
+          assetLibraryOpen = false;
+          if (['add', 'place'].includes(tool)) { tool = 'select'; placementProduct = null; placementGhost = null; }
+        }
+      }
+      else if (!compactWorkbench()) desktopPanels.right = next;
+    }
+    colorMenuOpen = false;
+    moreMenuOpen = false;
+    structureMenuOpen = false;
+    syncQuery();
+    draw();
+    if (focusToggle) requestAnimationFrame(() => {
+      const suffix = compactWorkbench() ? '-mobile' : '';
+      mount.querySelector(`#fpe-toggle-${side}${suffix}`)?.focus({ preventScroll: true });
+    });
+  }
+
+  function closeCompactPanels({ focusToggle = true } = {}) {
+    if (!compactWorkbench() || (!leftOpen && !rightOpen)) return false;
+    const side = rightOpen ? 'right' : 'left';
+    leftOpen = false; rightOpen = false; colorMenuOpen = false; structureMenuOpen = false;
+    if (editMode) {
+      assetLibraryOpen = false;
+      if (['add', 'place'].includes(tool)) { tool = 'select'; placementProduct = null; placementGhost = null; }
+    }
+    syncQuery();
+    draw();
+    if (focusToggle) requestAnimationFrame(() => mount.querySelector(`#fpe-toggle-${side}-mobile`)?.focus({ preventScroll: true }));
+    return true;
+  }
+
   function headerHTML() {
-    const user = session.user();
     const versionLabel = editorVersionLabel();
-    return `<header class="fpe-header">
-      <a class="fpe-brand" href="${returnHref()}" data-leave>
-        <img src="assets/swiss-logo-flag.svg" alt="" aria-hidden="true"><span>BBL <strong>Plan-Editor</strong></span>
-      </a>
-      <span class="fpe-header__spacer"></span>
-      <button class="btn btn--bare btn--sm fpe-search-jump" id="fpe-search-jump" type="button" data-action="focus-search">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suche</span></button>
-      <button class="btn btn--outline btn--sm" id="fpe-upload" type="button" disabled title="Planübernahme und Prüfung folgen als separate Anwendung">${C.icon('CloudUpload', 'btn__icon')}<span class="btn__text">Plan hochladen</span></button>
-      <span class="fpe-header__divider" aria-hidden="true"></span>
-      <span class="fpe-user" title="${C.escape(user?.name || '')}"><span>${C.escape(initials(user?.name))}</span><span class="sr-only">Angemeldet als ${C.escape(user?.name || '')}</span></span>
-    </header>
+    const leftPanelName = editMode ? 'Bibliothek' : 'Ressourcen';
+    return `${editorHeaderHTML(C, session, editMode)}
     <div class="fpe-context">
-      <a class="btn btn--bare btn--sm btn--icon-only" href="${returnHref()}" data-leave aria-label="Zurück zu Workspace Management">${C.icon('ArrowLeft', 'btn__icon')}</a>
-      <div class="fpe-context__selectors">
-        ${C.select({ id: 'fpe-building', label: 'Gebäude', hideLabel: true, size: 'sm', value: building.bbl_id,
-          options: objects.map((entry) => ({ value: entry.building.bbl_id, label: entry.building.name })) })}
-        ${C.select({ id: 'fpe-floor', label: 'Geschoss', hideLabel: true, size: 'sm', value: floor.floorId,
-          options: object.floors.map((entry) => ({ value: entry.floorId, label: entry.label })) })}
-      </div>
+      <a class="btn btn--bare btn--sm btn--icon-only" href="${returnHref()}" data-leave aria-label="Zurück zu allen Geschossen">${C.icon('ArrowLeft', 'btn__icon')}</a>
+      <nav class="fpe-breadcrumb" aria-label="Sie sind hier">
+        <a href="${BASE}" data-leave>Alle Objekte</a>${C.icon('ChevronRight', 'icon--sm')}
+        <a href="${returnHref()}" data-leave>${C.escape(building.name)}</a>${C.icon('ChevronRight', 'icon--sm')}
+        <span aria-current="page">${C.escape(floor.label)}</span>
+      </nav>
       <div class="fpe-context__panel-mobile" role="group" aria-label="Seitenpanels">
         <button class="btn btn--bare btn--sm btn--icon-only${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left-mobile" type="button" data-action="toggle-left"
-          aria-label="${leftOpen ? 'Linkes Panel ausblenden' : 'Linkes Panel einblenden'}" aria-pressed="${leftOpen}">${C.icon('List', 'btn__icon')}</button>
+          aria-label="${leftPanelName} ${leftOpen ? 'schliessen' : 'öffnen'}" aria-pressed="${leftOpen}">${panelToggleIcon('left')}</button>
         <button class="btn btn--bare btn--sm btn--icon-only${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right-mobile" type="button" data-action="toggle-right"
-          aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${C.icon('Apps', 'btn__icon')}</button>
+          aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
       </div>
       <span class="fpe-version">${C.escape(versionLabel)}</span>
       <span class="fpe-context__status">${planBadge()}</span>
       ${object.planning.targetDate ? `<span class="fpe-date">${C.icon('Calendar', 'icon--sm')} Stichtag ${C.escape(object.planning.targetDate.split('-').reverse().join('.'))}</span>` : ''}
       <span class="fpe-context__spacer"></span>
+      <div class="fpe-more">
+        <button class="btn btn--outline btn--sm" id="fpe-more-trigger" type="button" data-action="toggle-more-menu"
+          aria-haspopup="menu" aria-expanded="${moreMenuOpen}"><span class="btn__text">Mehr</span>${C.icon('ChevronDown', 'btn__icon')}</button>
+        <div class="fpe-more-menu" id="fpe-more-menu" role="menu" aria-label="Weitere Planaktionen"${moreMenuOpen ? '' : ' hidden'}>
+          ${editMode ? '' : '<button type="button" role="menuitem" data-action="version-history">Versionsverlauf…</button>'}
+          <button type="button" role="menuitem" data-action="copy-link">Link kopieren</button>
+          <button type="button" role="menuitem" data-action="copy-plan-id">Plan-ID kopieren</button>
+        </div>
+      </div>
       ${editMode
-        ? `<span class="fpe-edit-state">Bearbeitungsmodus</span>
-           <button class="btn btn--outline btn--sm" id="fpe-save" type="button" data-action="save" title="Speichert die Arbeitskopie nur in diesem Browser"${dirty ? '' : ' disabled'}>${C.icon('Save', 'btn__icon')}<span class="btn__text">Entwurf speichern</span></button>
+        ? `<button class="btn btn--outline btn--sm" id="fpe-save" type="button" data-action="save" title="Speichert die Arbeitskopie nur in diesem Browser"${dirty ? '' : ' disabled'}>${C.icon('Save', 'btn__icon')}<span class="btn__text">Entwurf speichern</span></button>
            <button class="btn btn--filled btn--sm" id="fpe-publish" type="button" data-action="publish" title="Simuliert die Veröffentlichung nur in diesem Browser"${canPublish() ? '' : ' disabled'}><span class="btn__text">Veröffentlichen</span></button>
            <button class="btn btn--outline btn--sm" id="fpe-end-edit" type="button" data-action="end-edit"><span class="btn__text">Beenden</span></button>`
         : `<button class="btn btn--filled btn--sm" id="fpe-start-edit" type="button" data-action="start-edit"><span class="btn__text">Bearbeiten</span>${C.icon('ArrowRight', 'btn__icon')}</button>`}
       <span class="fpe-header__divider" aria-hidden="true"></span>
       <button class="btn btn--bare btn--sm btn--icon-only${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left" type="button" data-action="toggle-left"
-        aria-label="${leftOpen ? 'Linkes Panel ausblenden' : 'Linkes Panel einblenden'}" aria-pressed="${leftOpen}">${C.icon('List', 'btn__icon')}</button>
+        aria-label="${leftPanelName} ${leftOpen ? 'schliessen' : 'öffnen'}" aria-pressed="${leftOpen}">${panelToggleIcon('left')}</button>
       <button class="btn btn--bare btn--sm btn--icon-only${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right" type="button" data-action="toggle-right"
-        aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${C.icon('Apps', 'btn__icon')}</button>
+        aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
     </div>`;
   }
 
@@ -302,19 +637,36 @@ export default async function render(ctx) {
   function resourceListHTML() {
     const groups = resourceGroups();
     if (!groups.length) return `<div class="fpe-panel-empty">Keine Ressourcen gefunden.</div>`;
-    return groups.map((group) => `<section class="fpe-resource-group">
-      <h3><span class="fpe-swatch fpe-swatch--${C.escape(group.swatch)}" aria-hidden="true"></span><span>${C.escape(group.label)}</span><span>${group.rooms.length}</span><span>${group.area.toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²</span></h3>
-      <ul>${group.rooms.map(({ room, placements }) => {
-        const roomSelected = selected?.type === 'room' && selected.id === room.spaceId;
-        const open = roomSelected || placements.some((placement) => selected?.type === 'placement' && selected.id === placement.placementId);
-        return `<li><button type="button" class="fpe-resource-row${roomSelected ? ' is-selected' : ''}" data-select-type="room" data-select-id="${C.escape(room.spaceId)}" aria-pressed="${roomSelected}">
-          <span>${C.icon(open ? 'ChevronDown' : 'ChevronRight', 'icon--sm')}</span><span>${C.escape(room.roomNumber)}</span><span>${Number(room.area).toLocaleString('de-CH')} m²</span></button>
-          ${open && placements.length ? `<ul class="fpe-resource-assets">${placements.map((placement) => {
-            const active = selected?.type === 'placement' && selected.id === placement.placementId;
-            return `<li><button type="button" class="fpe-resource-row fpe-resource-row--asset${active ? ' is-selected' : ''}" data-select-type="placement" data-select-id="${C.escape(placement.placementId)}" aria-pressed="${active}">${C.icon('List', 'icon--sm')}<span>${C.escape(placement.name)}</span></button></li>`;
-          }).join('')}</ul>` : ''}</li>`;
-      }).join('')}</ul>
-    </section>`).join('');
+    const roomRow = ({ room, placements }, rowId) => {
+      const roomSelected = selected?.type === 'room' && selected.id === room.spaceId;
+      const open = expandedRooms.has(room.spaceId);
+      const assetsId = `fpe-resource-assets-${rowId}`;
+      return `<li><div class="fpe-resource-room-line${roomSelected ? ' is-selected' : ''}">
+        <button type="button" class="fpe-resource-room-toggle" data-resource-room="${C.escape(room.spaceId)}" aria-expanded="${open}"
+          aria-controls="${assetsId}" aria-label="Ausstattung von ${C.escape(room.roomNumber)} ${open ? 'ausblenden' : 'einblenden'}"${placements.length ? '' : ' disabled'}>${C.icon(open ? 'ChevronDown' : 'ChevronRight', 'icon--sm')}</button>
+        <button type="button" class="fpe-resource-row${roomSelected ? ' is-selected' : ''}" data-select-type="room" data-select-id="${C.escape(room.spaceId)}" aria-pressed="${roomSelected}">
+          <span>${C.escape(room.roomNumber)}</span><span>${Number(room.area).toLocaleString('de-CH')} m²</span></button>
+      </div>
+        ${placements.length ? `<ul class="fpe-resource-assets" id="${assetsId}"${open ? '' : ' hidden'}>${placements.map((placement) => {
+          const active = selected?.type === 'placement' && selected.id === placement.placementId;
+          return `<li><button type="button" class="fpe-resource-row fpe-resource-row--asset${active ? ' is-selected' : ''}" data-select-type="placement" data-select-id="${C.escape(placement.placementId)}" aria-pressed="${active}">${C.icon('List', 'icon--sm')}<span>${C.escape(placement.name)}</span></button></li>`;
+        }).join('')}</ul>` : ''}</li>`;
+    };
+    if (colorMode === 'none') {
+      const rooms = groups.flatMap((group) => group.rooms);
+      return `<ul class="fpe-resource-tree fpe-resource-tree--flat" aria-label="Räume">${rooms.map((entry, index) => roomRow(entry, `flat-${index}`)).join('')}</ul>`;
+    }
+    return `<div class="fpe-resource-tree">${groups.map((group, groupIndex) => {
+      const collapsed = collapsedGroups.has(group.key);
+      const groupId = `fpe-resource-group-${groupIndex}`;
+      return `<section class="fpe-resource-group">
+      <h3><button type="button" class="fpe-resource-group__head" data-resource-group="${C.escape(group.key)}" aria-expanded="${!collapsed}" aria-controls="${groupId}">
+        ${C.icon(collapsed ? 'ChevronRight' : 'ChevronDown', 'icon--sm')}<span class="fpe-swatch fpe-swatch--${C.escape(group.swatch)}" aria-hidden="true"></span>
+        <span>${C.escape(group.label)}</span><span>${group.rooms.length}</span><span>${group.area.toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²</span>
+      </button></h3>
+      <ul id="${groupId}"${collapsed ? ' hidden' : ''}>${group.rooms.map((entry, roomIndex) => roomRow(entry, `${groupIndex}-${roomIndex}`)).join('')}</ul>
+    </section>`;
+    }).join('')}</div>`;
   }
 
   function productListHTML() {
@@ -349,27 +701,43 @@ export default async function render(ctx) {
     }).join('')}</div>`;
   }
 
+  function colorMenuHTML() {
+    if (editMode) return '';
+    return `<div class="fpe-color-menu" id="fpe-color-menu" role="menu" aria-label="Farbe nach"${colorMenuOpen ? '' : ' hidden'}>
+      <p class="fpe-overline">Farbe nach</p>${EDITOR_COLOR_MODES.map((item) => `<button type="button" role="menuitemradio" aria-checked="${item.value === colorMode}" data-color-mode="${C.escape(item.value)}">
+        <span class="fpe-color-radio" aria-hidden="true"><i></i></span><span><strong>${C.escape(item.label)}</strong><small>${C.escape(COLOR_DESCRIPTIONS[item.value] || '')}</small></span>
+      </button>`).join('')}
+    </div>`;
+  }
+
   function leftPanelHTML() {
     const editingProducts = editMode && libraryMode === 'products';
     const categories = [...new Set(products.map((product) => product.category).filter(Boolean))].sort();
+    const search = `<label class="sr-only" for="fpe-left-search">${editMode ? (editingProducts ? 'Produkte' : 'Module') : 'Ressourcen'} suchen</label>
+      <div class="fpe-panel-search">${C.icon('Search', 'icon--sm')}<input id="fpe-left-search" type="search" placeholder="${editMode ? (editingProducts ? 'Produkte suchen…' : 'Module suchen…') : 'Schnellsuche…'}" value="${C.escape(editMode ? productQuery : resourceQuery)}"></div>`;
+    const colorControl = `<div class="fpe-resource-tools">${search}<div class="fpe-color-picker">
+      <button class="btn btn--filled btn--sm btn--icon-only" id="fpe-color-trigger" type="button" data-action="toggle-color-menu"
+        aria-label="Farbe nach Attribut: ${C.escape(EDITOR_COLOR_MODES.find((item) => item.value === colorMode)?.label || '')}" aria-haspopup="menu" aria-expanded="${colorMenuOpen}" aria-controls="fpe-color-menu">${C.icon('Eye', 'btn__icon')}</button>
+    </div></div>`;
     return `<aside class="fpe-left" id="fpe-left" aria-label="${editMode ? 'Produktbibliothek' : 'Ressourcen'}">
       <h2 class="sr-only">${editMode ? 'Produktbibliothek' : 'Ressourcen'}</h2>
       <div class="fpe-panel-head">
-        <p class="fpe-overline">${editMode ? 'Bibliothek' : 'Ressourcen'}</p>
+        ${editMode ? `<div class="fpe-panel-title-row"><p class="fpe-overline">Bibliothek</p>
+          <button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="close-library" aria-label="Bibliothek schliessen">${C.icon('Cancel', 'btn__icon')}</button></div>`
+          : '<p class="fpe-overline">Ressourcen</p>'}
         ${editMode ? `<div class="fpe-library-tabs" role="tablist" aria-label="Bibliothek">
-          <button type="button" role="tab" data-library="products" aria-selected="${libraryMode === 'products'}"${libraryMode === 'products' ? ' class="is-active"' : ''}>Produkte</button>
-          <button type="button" role="tab" data-library="modules" aria-selected="${libraryMode === 'modules'}"${libraryMode === 'modules' ? ' class="is-active"' : ''}>Module</button>
+          <button type="button" role="tab" data-library="products" aria-controls="fpe-left-list" aria-selected="${libraryMode === 'products'}" tabindex="${libraryMode === 'products' ? '0' : '-1'}"${libraryMode === 'products' ? ' class="is-active"' : ''}>Produkte</button>
+          <button type="button" role="tab" data-library="modules" aria-controls="fpe-left-list" aria-selected="${libraryMode === 'modules'}" tabindex="${libraryMode === 'modules' ? '0' : '-1'}"${libraryMode === 'modules' ? ' class="is-active"' : ''}>Module</button>
         </div>` : ''}
-        <label class="sr-only" for="fpe-left-search">${editMode ? (editingProducts ? 'Produkte' : 'Module') : 'Ressourcen'} suchen</label>
-        <div class="fpe-panel-search">${C.icon('Search', 'icon--sm')}<input id="fpe-left-search" type="search" placeholder="${editMode ? (editingProducts ? 'Produkte suchen…' : 'Module suchen…') : 'Schnellsuche…'}" value="${C.escape(editMode ? productQuery : resourceQuery)}"></div>
+        ${editMode ? search : colorControl}
         ${editingProducts ? C.select({ id: 'fpe-product-category', label: 'Kategorie', size: 'sm', value: productCategory,
           options: [{ value: '', label: 'Alle Kategorien' }, ...categories.map((value) => ({ value, label: value }))] }) : ''}
         ${editMode ? `<p class="small muted m-0">${editingProducts
           ? 'Produkt wählen und anschliessend im Plan platzieren. Bei gewähltem Raum wird es mittig eingefügt.'
           : 'Raum wählen und ein Multispace-Modul zuweisen. Die Zuordnung ist eine Prototypannahme.'}</p>`
-          : C.select({ id: 'fpe-color', label: 'Einfärben nach', size: 'sm', value: colorMode, options: EDITOR_COLOR_MODES })}
+          : ''}
       </div>
-      <div class="fpe-panel-scroll" id="fpe-left-list">${editMode ? (editingProducts ? productListHTML() : moduleListHTML()) : resourceListHTML()}</div>
+      <div class="fpe-panel-scroll" id="fpe-left-list"${editMode ? ' role="tabpanel"' : ''}>${editMode ? (editingProducts ? productListHTML() : moduleListHTML()) : resourceListHTML()}</div>
     </aside>`;
   }
 
@@ -381,51 +749,95 @@ export default async function render(ctx) {
   }
 
   function toolbarHTML() {
-    if (viewMode !== '2d') {
-      return `<div class="fpe-toolbar fpe-toolbar--reference" role="toolbar" aria-label="${viewMode === '3d' ? '3D-Ansicht' : 'Begehungsansicht'}">
-        ${C.icon(viewMode === '3d' ? 'Apps' : 'Eye', 'icon--sm')}
-        <span>${viewMode === '3d' ? '3D-Referenzansicht' : 'Begehungs-Prototyp'}</span>
+    if (viewMode !== '2d') return '';
+    if (editMode) {
+      const libraryActive = assetLibraryOpen || ['add', 'place'].includes(tool);
+      return `<div class="fpe-toolbar" role="toolbar" aria-label="Bearbeitungswerkzeuge">
+        <button class="btn ${libraryActive ? 'btn--filled' : 'btn--bare'} btn--sm fpe-tool fpe-tool--labelled${libraryActive ? ' is-active' : ''}" id="fpe-action-toggle-library"
+          type="button" data-action="toggle-library" aria-label="Ausstattung hinzufügen" title="Ausstattung hinzufügen"
+          aria-pressed="${libraryActive}">${C.icon('Plus', 'btn__icon')}<span class="btn__text">Hinzufügen</span></button>
+        <span class="fpe-tool-sep"></span>
+        ${toolButton('tool-select', 'Auswählen', 'ArrowUp', { active: tool === 'select', pressed: tool === 'select' })}
+        ${toolButton('tool-distance', 'Strecke messen', 'ArrowRight', { active: tool === 'distance', pressed: tool === 'distance' })}
+        ${toolButton('tool-area', 'Fläche messen', 'Apps', { active: tool === 'area', pressed: tool === 'area' })}
+        <span class="fpe-tool-sep"></span>
+        <button class="btn btn--bare btn--sm fpe-tool fpe-structure-trigger${tool === 'room' ? ' is-active' : ''}" id="fpe-structure-trigger"
+          type="button" data-action="toggle-structure-menu" aria-haspopup="menu" aria-expanded="${structureMenuOpen}"
+          title="Strukturbearbeitung ${structureUnlocked ? 'entsperrt' : 'gesperrt'}">${C.icon(structureUnlocked ? 'Building' : 'Lock', 'btn__icon')}
+          <span class="btn__text">Struktur ${structureUnlocked ? 'entsperrt' : 'gesperrt'}</span>${C.icon('ChevronDown', 'btn__icon')}</button>
+        <span class="fpe-tool-sep"></span>
+        ${toolButton('undo', 'Rückgängig', 'ArrowLeft', { disabled: !editHistory.canUndo })}
+        ${toolButton('redo', 'Wiederholen', 'ArrowRight', { disabled: !editHistory.canRedo })}
+        ${toolButton('version-history', 'Versionsverlauf', 'History')}
       </div>`;
     }
-    const placing = tool === 'place' && placementProduct;
     return `<div class="fpe-toolbar" role="toolbar" aria-label="Planwerkzeuge">
-      ${placing ? `<button class="btn btn--filled btn--sm" type="button" data-action="cancel-place">${C.icon('Cancel', 'btn__icon')}<span class="btn__text">${C.escape(placementProduct.name)}</span></button><span class="fpe-tool-sep"></span>` : ''}
       ${toolButton('tool-select', 'Auswählen', 'ArrowUp', { active: tool === 'select', pressed: tool === 'select' })}
       ${toolButton('tool-pan', 'Plan verschieben', 'Expand', { active: tool === 'pan', pressed: tool === 'pan' })}
-      ${editMode ? toolButton('tool-room', 'Fläche anlegen', 'Plus', { active: tool === 'room', pressed: tool === 'room' }) : ''}
       <span class="fpe-tool-sep"></span>
       ${toolButton('tool-distance', 'Strecke messen', 'ArrowRight', { active: tool === 'distance', pressed: tool === 'distance' })}
       ${toolButton('tool-area', 'Fläche messen', 'Apps', { active: tool === 'area', pressed: tool === 'area' })}
-      <span class="fpe-tool-sep"></span>
-      ${toolButton('zoom-in', 'Vergrössern', 'Plus')}${toolButton('zoom-out', 'Verkleinern', 'Minus')}${toolButton('fit', 'Plan einpassen', 'Compress')}${toolButton('fit-selection', 'Auswahl einpassen', 'Expand', { disabled: !selected })}
-      ${editMode ? `<span class="fpe-tool-sep"></span>${toolButton('undo', 'Rückgängig', 'ArrowLeft', { disabled: !editHistory.canUndo })}${toolButton('redo', 'Wiederholen', 'ArrowRight', { disabled: !editHistory.canRedo })}` : ''}
-      ${toolButton('version-history', 'Versionsverlauf', 'Clock')}
       <span class="fpe-tool-sep"></span>${toolButton('print', 'Plan drucken', 'Printer')}
+    </div>`;
+  }
+
+  function structureMenuHTML() {
+    if (!editMode || viewMode !== '2d') return '';
+    const unavailable = ['Wand', 'Tür', 'Fenster', 'Wandöffnung', 'Einbaumöbel', 'Teeküche', 'Stütze', 'Geländer', 'Treppe', 'Raumteiler'];
+    return `<div class="fpe-structure-menu" id="fpe-structure-menu" role="menu" aria-label="Strukturbearbeitung"${structureMenuOpen ? '' : ' hidden'}>
+      <p class="fpe-overline">Strukturwerkzeuge</p>
+      ${unavailable.map((label) => `<button type="button" role="menuitem" disabled title="In diesem Feedback-Prototyp noch nicht verfügbar">
+        ${C.icon('Minus', 'icon--sm')}<span>${label}</span></button>`).join('')}
+      <button type="button" role="menuitem" data-action="tool-room"${structureUnlocked ? '' : ' disabled'}>
+        ${C.icon('Apps', 'icon--sm')}<span><strong>Raumfläche anlegen</strong><small>Rechteckige Fläche im Plan aufziehen</small></span></button>
+      <span class="fpe-structure-menu__separator" aria-hidden="true"></span>
+      <button type="button" role="menuitem" data-action="toggle-structure-lock">
+        ${C.icon(structureUnlocked ? 'Lock' : 'Unlock', 'icon--sm')}<span>Strukturbearbeitung ${structureUnlocked ? 'sperren' : 'entsperren'}</span></button>
+    </div>`;
+  }
+
+  function viewNavigationHTML() {
+    const modes = [
+      { value: '2d', label: '2D', accessible: '2D-Grundriss', icon: 'Map' },
+      { value: '3d', label: '3D', accessible: '3D-Modell', icon: 'Building' },
+      { value: 'walk', label: 'Begehung', accessible: 'Begehungsansicht', icon: 'Eye' },
+    ];
+    const modeButtons = modes.map((mode) => {
+      const active = viewMode === mode.value;
+      return `<button type="button" class="fpe-view-nav__mode${active ? ' is-active' : ''}" id="fpe-view-${mode.value}"
+        data-action="view-${mode.value}" data-view-mode="${mode.value}" aria-label="${mode.accessible}"
+        title="${mode.accessible}" aria-pressed="${active}" tabindex="${active ? '0' : '-1'}">
+        ${C.icon(mode.icon, 'icon--md')}<span class="fpe-view-nav__label">${mode.label}</span></button>`;
+    }).join('');
+    const navigationActions = viewMode === '2d'
+      ? `${toolButton('zoom-out', 'Verkleinern', 'Minus')}${toolButton('zoom-in', 'Vergrössern', 'Plus')}${toolButton('fit', 'Plan einpassen', 'Compress')}${toolButton('fit-selection', 'Auswahl einpassen', 'Expand', { disabled: !selected })}`
+      : toolButton('three-reset', `${viewMode === 'walk' ? 'Begehung' : '3D-Ansicht'} zurücksetzen`, 'Compress');
+    return `<div class="fpe-view-nav" role="group" aria-label="Ansicht und Navigation">
+      <div class="fpe-view-nav__modes" role="group" aria-label="Darstellung">${modeButtons}</div>
+      <span class="fpe-view-nav__separator" aria-hidden="true"></span>
+      <div class="fpe-view-nav__actions" role="group" aria-label="Ansicht navigieren">${navigationActions}</div>
     </div>`;
   }
 
   function sceneContentHTML() {
     if (viewMode === '2d') {
       return renderEditorSvg({ floor, rooms: editorDocument.rooms, placements: editorDocument.placements,
-        selected, colorMode, camera, measurement, editableRooms: editMode,
+        selected, colorMode, camera, measurement, editableRooms: editMode && structureUnlocked,
         roomDraft, placementGhost });
     }
-    return `<div class="fpe-reference-view${viewMode === 'walk' ? ' is-walk' : ''}">
-      <img src="${THREE_D_REFERENCE}" alt="Referenzdarstellung einer möblierten Büroetage">
+    return `<div class="fpe-three-view${viewMode === 'walk' ? ' is-walk' : ''}">
+      <div class="fpe-three-host" id="fpe-three-host"><p class="fpe-three-loading">3D-Modell wird aufgebaut…</p></div>
       ${viewMode === 'walk' ? '<span class="fpe-walk-reticle" aria-hidden="true"></span>' : ''}
-      <p><strong>${viewMode === '3d' ? '3D-Referenzansicht' : 'Begehungs-Prototyp'}</strong><br>Platzhalter zur Validierung der Navigation; nicht aus diesem Plan berechnet.</p>
     </div>`;
   }
 
   function stageHTML() {
-    return `<section class="fpe-stage" id="fpe-stage" aria-label="Plan-Arbeitsfläche">
-      <div id="fpe-toolbar-host">${toolbarHTML()}</div>
-      <div class="fpe-scene${viewMode === '2d' ? '' : ' fpe-scene--reference'}" id="fpe-scene">${sceneContentHTML()}</div>
-      <div class="fpe-view-switch" role="group" aria-label="Darstellung">
-        <button type="button" data-action="view-2d"${viewMode === '2d' ? ' class="is-active"' : ''} aria-pressed="${viewMode === '2d'}">2D</button>
-        <button type="button" data-action="view-3d"${viewMode === '3d' ? ' class="is-active"' : ''} aria-pressed="${viewMode === '3d'}">3D</button>
-        <button type="button" data-action="view-walk"${viewMode === 'walk' ? ' class="is-active"' : ''} aria-pressed="${viewMode === 'walk'}">Begehung</button>
-      </div>
+    const directPan = viewMode === '2d' && (tool === 'pan' || (!editMode && tool === 'select'));
+    return `<section class="fpe-stage${directPan ? ' is-pan-ready' : ''}" id="fpe-stage" aria-label="Plan-Arbeitsfläche" tabindex="-1">
+      <div id="fpe-toolbar-host"${viewMode === '2d' ? '' : ' class="fpe-toolbar-host--three"'}>${toolbarHTML()}</div>
+      <div id="fpe-structure-menu-host">${structureMenuHTML()}</div>
+      <div class="fpe-scene${viewMode === '2d' ? '' : ' fpe-scene--three'}" id="fpe-scene">${sceneContentHTML()}</div>
+      <div id="fpe-view-nav-host">${viewNavigationHTML()}</div>
       <div class="fpe-scale" id="fpe-scale" aria-hidden="true"${viewMode === '2d' ? '' : ' hidden'}><span></span><i></i></div>
       <div class="fpe-measure-result" role="status"${measurementLabel(measurement || {}) ? '' : ' hidden'}>${C.escape(measurementLabel(measurement || {}))}</div>
     </section>`;
@@ -475,15 +887,15 @@ export default async function render(ctx) {
         <div class="fpe-field"><label for="fpe-room-roomNumber">Raumnummer</label><input id="fpe-room-roomNumber" class="input--outline input--sm" type="text" data-room-field="roomNumber" value="${C.escape(room.roomNumber)}" required></div>
         <div class="fpe-field"><label for="fpe-room-roomName">Raumbezeichnung</label><input id="fpe-room-roomName" class="input--outline input--sm" type="text" data-room-field="roomName" value="${C.escape(room.roomName || room.useLabel)}"></div>
         <label class="fpe-check" for="fpe-room-bookable"><input id="fpe-room-bookable" type="checkbox" data-room-field="bookable"${room.bookable ? ' checked' : ''}> Fläche ist reservierbar</label>
-        <h3>Geometrie <span>Feedback-Prototyp</span></h3>
+        <h3>Geometrie <span>${structureUnlocked ? 'entsperrt' : 'gesperrt'}</span></h3>
         <div class="fpe-form-grid">
-          <div class="fpe-field"><label for="fpe-room-x">X (cm)</label><input id="fpe-room-x" class="input--outline input--sm" type="number" min="0" step="10" data-room-geometry="x" value="${Math.round(roomX)}"></div>
-          <div class="fpe-field"><label for="fpe-room-y">Y (cm)</label><input id="fpe-room-y" class="input--outline input--sm" type="number" min="0" step="10" data-room-geometry="y" value="${Math.round(roomY)}"></div>
-          <div class="fpe-field"><label for="fpe-room-width">Breite (cm)</label><input id="fpe-room-width" class="input--outline input--sm" type="number" min="100" step="10" data-room-geometry="width" value="${Math.round(roomWidth)}"></div>
-          <div class="fpe-field"><label for="fpe-room-height">Tiefe (cm)</label><input id="fpe-room-height" class="input--outline input--sm" type="number" min="100" step="10" data-room-geometry="height" value="${Math.round(roomHeight)}"></div>
+          <div class="fpe-field"><label for="fpe-room-x">X (cm)</label><input id="fpe-room-x" class="input--outline input--sm" type="number" min="0" step="10" data-room-geometry="x" value="${Math.round(roomX)}"${structureUnlocked ? '' : ' disabled'}></div>
+          <div class="fpe-field"><label for="fpe-room-y">Y (cm)</label><input id="fpe-room-y" class="input--outline input--sm" type="number" min="0" step="10" data-room-geometry="y" value="${Math.round(roomY)}"${structureUnlocked ? '' : ' disabled'}></div>
+          <div class="fpe-field"><label for="fpe-room-width">Breite (cm)</label><input id="fpe-room-width" class="input--outline input--sm" type="number" min="100" step="10" data-room-geometry="width" value="${Math.round(roomWidth)}"${structureUnlocked ? '' : ' disabled'}></div>
+          <div class="fpe-field"><label for="fpe-room-height">Tiefe (cm)</label><input id="fpe-room-height" class="input--outline input--sm" type="number" min="100" step="10" data-room-geometry="height" value="${Math.round(roomHeight)}"${structureUnlocked ? '' : ' disabled'}></div>
         </div>
-        <p class="small muted m-0">Kanten im Plan ziehen oder Werte eingeben. Zugeordnete Objekte müssen innerhalb der Fläche bleiben.</p>
-        ${localRoom ? `<button class="btn btn--outline btn--sm" type="button" data-action="delete-room">${C.icon('Trash', 'btn__icon')}<span class="btn__text">Neue Fläche entfernen</span></button>` : ''}
+        <p class="small muted m-0">${structureUnlocked ? 'Kanten im Plan ziehen oder Werte eingeben. Zugeordnete Objekte müssen innerhalb der Fläche bleiben.' : 'Im Strukturmenü entsperren, um Raumkanten und Geometriewerte zu bearbeiten.'}</p>
+        ${localRoom ? `<button class="btn btn--outline btn--sm" type="button" data-action="delete-room"${structureUnlocked ? '' : ' disabled'}>${C.icon('Trash', 'btn__icon')}<span class="btn__text">Neue Fläche entfernen</span></button>` : ''}
       </form>` : `<section class="fpe-inspector-section"><h3>Standard-Attribute</h3><dl class="fpe-kv"><dt>Nutzung</dt><dd>${C.escape(room.useLabel)}</dd><dt>Raumbezeichnung</dt><dd>${C.escape(room.roomName || room.useLabel)}</dd><dt>SIA 416</dt><dd>${C.escape(room.siaLabel)} (${C.escape(room.sia)})</dd><dt>Verwaltungseinheit</dt><dd>${C.escape(room.occupierVe || 'nicht zugeteilt')}</dd><dt>Reservierbar</dt><dd>${room.bookable ? 'Ja' : 'Nein'}</dd></dl></section>`}
       <section class="fpe-inspector-section"><h3>Ausstattung in diesem Raum <span>${items.length}</span></h3>${items.length
         ? `<ul class="fpe-inspector-list">${items.map((placement) => `<li><button type="button" data-select-type="placement" data-select-id="${C.escape(placement.placementId)}">${C.escape(placement.name)}${C.icon('ChevronRight', 'icon--sm')}</button></li>`).join('')}</ul>`
@@ -522,15 +934,43 @@ export default async function render(ctx) {
   }
 
   function shellHTML() {
-    return `<div class="fpe-app${editMode ? ' is-editing' : ''}${leftOpen ? ' has-left' : ''}${rightOpen ? ' has-right' : ''}" id="fpe-app">
+    return `<div class="fpe-app${editMode ? ' is-editing' : ''}${editMode && !structureUnlocked ? ' is-structure-locked' : ''}${leftOpen ? ' has-left' : ''}${rightOpen ? ' has-right' : ''}" id="fpe-app">
       <h1 class="sr-only" tabindex="-1">Plan-Editor — ${C.escape(floor.label)}, ${C.escape(building.name)}</h1>
       ${headerHTML()}
       <div class="fpe-workbench">
         ${leftPanelHTML()}${stageHTML()}${inspectorHTML()}
+        <button class="fpe-panel-backdrop" type="button" data-action="close-panels" tabindex="-1" aria-hidden="true" aria-label="Seitenpanel schliessen"></button>
       </div>
+      <div id="fpe-color-menu-host">${colorMenuHTML()}</div>
       <div id="fpe-live" class="sr-only" role="status" aria-live="polite">${C.escape(liveText)}</div>
-      <div class="fpe-local-note">${C.icon('InfoCircle', 'icon--sm')} Feedback-Prototyp: Entwürfe, Publikationen und Raumänderungen existieren nur in diesem Browser; keine Backend-Synchronisation oder Berechtigungsprüfung.</div>
+      <div class="fpe-local-note" title="Feedback-Prototyp: keine Backend-Synchronisation oder Berechtigungsprüfung. Änderungen existieren nur in diesem Browser."
+        aria-label="Feedback-Prototyp. Keine Backend-Synchronisation oder Berechtigungsprüfung. Änderungen existieren nur in diesem Browser.">${C.icon('InfoCircle', 'icon--sm')}<strong>Feedback-Prototyp</strong><span aria-hidden="true">·</span><span>Änderungen nur in diesem Browser</span></div>
     </div>`;
+  }
+
+  function disposeThreeViewer() {
+    const state = threeViewer?.getViewState?.();
+    if (state?.mode && Object.hasOwn(threeViewStates, state.mode)) threeViewStates[state.mode] = state;
+    threeViewer?.dispose();
+    threeViewer = null;
+  }
+
+  function initThreeViewer() {
+    if (viewMode === '2d') return;
+    const host = mount.querySelector('#fpe-three-host');
+    if (!host || host.dataset.viewerReady === 'true') return;
+    host.dataset.viewerReady = 'true';
+    threeViewer = createFloorplanThreeViewer({
+      host,
+      mode: viewMode,
+      floor,
+      rooms: editorDocument.rooms,
+      placements: editorDocument.placements,
+      selected,
+      colorMode,
+      initialViewState: threeViewStates[viewMode],
+      onSelect: (type, id) => selectEntity(type, id, false),
+    });
   }
 
   function syncScale() {
@@ -551,9 +991,13 @@ export default async function render(ctx) {
   }
 
   function draw() {
+    disposeThreeViewer();
     mount.innerHTML = shellHTML();
     syncQuery();
+    if (viewMode !== '2d') requestAnimationFrame(initThreeViewer);
     requestAnimationFrame(syncScale);
+    requestAnimationFrame(positionColorMenu);
+    requestAnimationFrame(positionStructureMenu);
   }
 
   function redrawPreservingFocus(fallbackId = '') {
@@ -563,19 +1007,28 @@ export default async function render(ctx) {
   }
 
   function focusSelectedEntity() {
-    if (!selected) return;
-    requestAnimationFrame(() => mount.querySelector(`[data-entity="${selected.type}"][data-id="${CSS.escape(selected.id)}"]`)?.focus({ preventScroll: true }));
+    const current = selected ? { ...selected } : null;
+    if (!current) return;
+    requestAnimationFrame(() => mount.querySelector(`[data-entity="${current.type}"][data-id="${CSS.escape(current.id)}"]`)?.focus({ preventScroll: true }));
   }
 
   function drawScene(focus = false) {
     const restore = C.preserveFocus(mount);
+    disposeThreeViewer();
     const scene = mount.querySelector('#fpe-scene');
     if (scene) {
-      scene.classList.toggle('fpe-scene--reference', viewMode !== '2d');
+      scene.classList.toggle('fpe-scene--three', viewMode !== '2d');
       scene.innerHTML = sceneContentHTML();
     }
     const toolbar = mount.querySelector('#fpe-toolbar-host');
-    if (toolbar) toolbar.innerHTML = toolbarHTML();
+    if (toolbar) {
+      toolbar.classList.toggle('fpe-toolbar-host--three', viewMode !== '2d');
+      toolbar.innerHTML = toolbarHTML();
+    }
+    const structureMenu = mount.querySelector('#fpe-structure-menu-host');
+    if (structureMenu) structureMenu.innerHTML = structureMenuHTML();
+    const viewNavigation = mount.querySelector('#fpe-view-nav-host');
+    if (viewNavigation) viewNavigation.innerHTML = viewNavigationHTML();
     const scale = mount.querySelector('#fpe-scale');
     if (scale) scale.hidden = viewMode !== '2d';
     const result = mount.querySelector('.fpe-measure-result');
@@ -583,7 +1036,9 @@ export default async function render(ctx) {
     if (result) { result.textContent = label; result.hidden = !label; }
     const restored = restore();
     if (focus && selected && !restored) focusSelectedEntity();
+    if (viewMode !== '2d') requestAnimationFrame(initThreeViewer);
     requestAnimationFrame(syncScale);
+    requestAnimationFrame(positionStructureMenu);
   }
 
   function drawLeft() {
@@ -593,37 +1048,95 @@ export default async function render(ctx) {
       : resourceListHTML();
   }
 
-  function drawInspector() {
+  function drawLeftPanel(focusId = '') {
+    const host = mount.querySelector('#fpe-left');
+    if (!host) return;
+    const template = document.createElement('template');
+    template.innerHTML = leftPanelHTML();
+    host.replaceWith(template.content.firstElementChild);
+    const colorHost = mount.querySelector('#fpe-color-menu-host');
+    if (colorHost) colorHost.innerHTML = colorMenuHTML();
+    requestAnimationFrame(positionColorMenu);
+    if (focusId) requestAnimationFrame(() => mount.querySelector(`#${CSS.escape(focusId)}`)?.focus({ preventScroll: true }));
+  }
+
+  function drawInspector(preserveScroll = false) {
     const host = mount.querySelector('#fpe-right');
     if (host) {
+      const scrollTop = preserveScroll ? host.scrollTop : 0;
       const template = document.createElement('template');
       template.innerHTML = inspectorHTML();
-      host.replaceWith(template.content.firstElementChild);
+      const next = template.content.firstElementChild;
+      host.replaceWith(next);
+      if (preserveScroll) next.scrollTop = scrollTop;
     }
   }
 
   function drawWorkArea({ preserveFocus = false, focusSelected = false } = {}) {
     const restore = preserveFocus ? C.preserveFocus(mount) : () => false;
-    drawScene(); drawLeft(); drawInspector();
+    drawScene(); drawLeft(); drawInspector(preserveFocus);
     const restored = restore();
     if (focusSelected && selected && !restored) focusSelectedEntity();
   }
 
   function selectEntity(type, id, focus = false) {
     selected = type && id ? { type, id } : null;
+    if (selected?.type === 'room') expandedRooms.add(selected.id);
+    if (selected?.type === 'placement') {
+      const placement = placementById().get(selected.id);
+      if (placement) expandedRooms.add(placement.roomId);
+    }
     syncQuery();
     drawWorkArea();
     if (selected) announce(`${type === 'room' ? 'Raum' : 'Objekt'} ausgewählt.`);
     if (focus && selected) focusSelectedEntity();
   }
 
+  function openAssetLibrary({ mode = libraryMode, focusSearch = true } = {}) {
+    if (!editMode) return;
+    libraryMode = mode === 'modules' ? 'modules' : 'products';
+    assetLibraryOpen = true;
+    leftOpen = true;
+    tool = 'add'; placementProduct = null; placementGhost = null;
+    roomDraft = null; measurement = null; structureMenuOpen = false;
+    if (compactWorkbench()) rightOpen = false;
+    else desktopPanels.left = true;
+    syncQuery(); draw();
+    if (focusSearch) requestAnimationFrame(() => mount.querySelector('#fpe-left-search')?.focus({ preventScroll: true }));
+    announce('Bibliothek geöffnet. Produkt oder Modul auswählen.');
+  }
+
+  function closeAssetLibrary({ focusToolbar = true, announceClose = false } = {}) {
+    if (!editMode || (!assetLibraryOpen && !leftOpen)) return false;
+    assetLibraryOpen = false; leftOpen = false;
+    if (!compactWorkbench()) desktopPanels.left = false;
+    if (['add', 'place'].includes(tool)) tool = 'select';
+    placementProduct = null; placementGhost = null;
+    syncQuery(); draw();
+    if (focusToolbar) requestAnimationFrame(() => mount.querySelector('#fpe-action-toggle-library')?.focus({ preventScroll: true }));
+    if (announceClose) announce('Bibliothek geschlossen.');
+    return true;
+  }
+
   function chooseTool(next) {
+    if (next === 'room' && !structureUnlocked) {
+      announce('Strukturbearbeitung ist gesperrt. Entsperren Sie sie zuerst im Strukturmenü.');
+      return;
+    }
+    const closesLibrary = editMode && (assetLibraryOpen || leftOpen) && !['add', 'place'].includes(next);
     tool = next;
     placementProduct = next === 'place' ? placementProduct : null;
     placementGhost = null;
     roomDraft = null;
     measurement = ['distance', 'area'].includes(next) ? { kind: next, points: [], complete: false } : null;
-    drawScene(); drawLeft();
+    structureMenuOpen = false;
+    if (closesLibrary) {
+      assetLibraryOpen = false; leftOpen = false;
+      if (!compactWorkbench()) desktopPanels.left = false;
+      syncQuery(); draw();
+    } else {
+      drawScene(); drawLeft();
+    }
     announce(next === 'distance' ? 'Streckenmessung aktiv. Wählen Sie zwei Punkte.'
       : next === 'area' ? 'Flächenmessung aktiv. Wählen Sie mindestens drei Punkte und drücken Sie Enter.'
         : next === 'room' ? 'Fläche anlegen aktiv. Ziehen Sie im Plan ein Rechteck von mindestens einem Meter Seitenlänge.'
@@ -640,7 +1153,10 @@ export default async function render(ctx) {
       placementProduct = product;
       tool = 'place';
       placementGhost = null;
-      drawScene(); drawLeft();
+      assetLibraryOpen = false; leftOpen = false;
+      if (!compactWorkbench()) desktopPanels.left = false;
+      syncQuery(); draw();
+      requestAnimationFrame(() => mount.querySelector('#fpe-stage')?.focus?.({ preventScroll: true }));
       announce(`${product.name} gewählt. Position im Plan auswählen.`);
       return;
     }
@@ -663,7 +1179,10 @@ export default async function render(ctx) {
     placement.roomId = finalRoom.spaceId;
     commit(`${product.name} platziert.`, (next) => { next.placements.push(placement); });
     selected = { type: 'placement', id };
-    placementProduct = null; placementGhost = null; tool = 'select'; syncQuery(); drawWorkArea({ focusSelected: true });
+    placementProduct = null; placementGhost = null; tool = 'select';
+    assetLibraryOpen = false; leftOpen = false;
+    if (!compactWorkbench()) desktopPanels.left = false;
+    syncQuery(); draw(); focusSelectedEntity();
   }
 
   function finalisePlacementMove(next, placement, previous) {
@@ -726,7 +1245,7 @@ export default async function render(ctx) {
   }
 
   function changeRoomGeometry(field, control) {
-    if (!editMode || selected?.type !== 'room') return;
+    if (!editMode || !structureUnlocked || selected?.type !== 'room') return;
     const value = Number(control.value);
     if (!Number.isFinite(value)) return;
     let accepted = true;
@@ -887,14 +1406,11 @@ export default async function render(ctx) {
     }
     editHistory.reset(editorDocument);
     editMode = false; tool = 'select'; placementProduct = null; placementGhost = null;
+    assetLibraryOpen = false; structureMenuOpen = false;
+    leftOpen = !compactWorkbench();
+    if (!compactWorkbench()) desktopPanels.left = true;
     roomDraft = null; measurement = null;
     draw(); announce('Bearbeitungsmodus beendet.');
-  }
-
-  function navigateTo(buildingId, floorId) {
-    if (dirty && !window.confirm('Nicht gespeicherte Änderungen verwerfen und den Plan wechseln?')) return false;
-    location.hash = floorplanEditor(buildingId, floorId);
-    return true;
   }
 
   function fitSelected() {
@@ -915,11 +1431,16 @@ export default async function render(ctx) {
     if (!VIEW_MODES.has(next) || viewMode === next) return;
     viewMode = next;
     tool = 'select'; measurement = null; roomDraft = null; placementGhost = null;
+    structureMenuOpen = false;
+    if (editMode && next !== '2d') {
+      assetLibraryOpen = false; leftOpen = false; placementProduct = null;
+      if (!compactWorkbench()) desktopPanels.left = false;
+    }
     syncQuery(); draw();
     requestAnimationFrame(() => mount.querySelector(`[data-action="view-${next}"]`)?.focus({ preventScroll: true }));
     announce(next === '2d' ? '2D-Plan geöffnet.'
-      : next === '3d' ? '3D-Referenzansicht geöffnet. Sie ist nicht aus diesem Plan berechnet.'
-        : 'Begehungs-Prototyp geöffnet. Die Darstellung ist ein Referenzbild.');
+      : next === '3d' ? 'Interaktives 3D-Modell aus dem aktuellen Grundriss geöffnet.'
+        : 'Interaktive Begehung geöffnet. Klicken Sie in die Ansicht und bewegen Sie sich mit W A S D oder den Pfeiltasten.');
   }
 
   function assignModule(moduleId) {
@@ -935,22 +1456,54 @@ export default async function render(ctx) {
       const room = next.rooms.find((item) => item.spaceId === selected.id);
       if (room) room.moduleId = String(option.value);
     });
-    drawWorkArea({ preserveFocus: true });
+    assetLibraryOpen = false; leftOpen = false; tool = 'select';
+    if (!compactWorkbench()) desktopPanels.left = false;
+    syncQuery(); draw(); focusSelectedEntity();
   }
 
   function onClick(event) {
+    if (moreMenuOpen && !event.target.closest('.fpe-more')) setMoreMenuOpen(false);
+    if (structureMenuOpen && !event.target.closest('#fpe-structure-menu') && !event.target.closest('#fpe-structure-trigger')) setStructureMenuOpen(false);
+    if (colorMenuOpen && !event.target.closest('.fpe-color-picker') && !event.target.closest('.fpe-color-menu')) {
+      colorMenuOpen = false;
+      drawLeftPanel();
+    }
     const leave = event.target.closest('[data-leave]');
     if (leave && dirty && !window.confirm('Nicht gespeicherte Änderungen verwerfen und Plan-Editor verlassen?')) { event.preventDefault(); return; }
+    const groupToggle = event.target.closest('[data-resource-group]');
+    if (groupToggle) {
+      const key = groupToggle.dataset.resourceGroup;
+      if (collapsedGroups.has(key)) collapsedGroups.delete(key); else collapsedGroups.add(key);
+      drawLeft();
+      requestAnimationFrame(() => mount.querySelector(`[data-resource-group="${CSS.escape(key)}"]`)?.focus({ preventScroll: true }));
+      return;
+    }
+    const roomToggle = event.target.closest('[data-resource-room]');
+    if (roomToggle) {
+      const id = roomToggle.dataset.resourceRoom;
+      if (expandedRooms.has(id)) expandedRooms.delete(id); else expandedRooms.add(id);
+      drawLeft();
+      requestAnimationFrame(() => mount.querySelector(`[data-resource-room="${CSS.escape(id)}"]`)?.focus({ preventScroll: true }));
+      return;
+    }
     const select = event.target.closest('[data-select-type]');
     if (select) { selectEntity(select.dataset.selectType, select.dataset.selectId, true); return; }
     const productButton = event.target.closest('[data-product]');
     if (productButton && editMode) { const product = productsById.get(productButton.dataset.product); if (product) addProduct(product); return; }
     const moduleButton = event.target.closest('[data-module]');
     if (moduleButton && editMode) { assignModule(moduleButton.dataset.module); return; }
+    const colorButton = event.target.closest('[data-color-mode]');
+    if (colorButton && validColors.has(colorButton.dataset.colorMode)) {
+      colorMode = colorButton.dataset.colorMode;
+      colorMenuOpen = false;
+      syncQuery(); drawScene(); drawLeftPanel('fpe-color-trigger');
+      announce(`Einfärbung ${EDITOR_COLOR_MODES.find((item) => item.value === colorMode)?.label}.`);
+      return;
+    }
     const libraryTab = event.target.closest('[data-library]');
     if (libraryTab && editMode) {
       libraryMode = libraryTab.dataset.library === 'modules' ? 'modules' : 'products';
-      productQuery = ''; placementProduct = null; tool = tool === 'place' ? 'select' : tool;
+      productQuery = ''; placementProduct = null; tool = 'add';
       syncQuery(); redrawPreservingFocus();
       requestAnimationFrame(() => mount.querySelector(`[data-library="${libraryMode}"]`)?.focus());
       return;
@@ -958,14 +1511,51 @@ export default async function render(ctx) {
     const action = event.target.closest('[data-action]')?.dataset.action;
     if (!action) return;
     if (action === 'focus-search') {
-      if (!leftOpen) { leftOpen = true; draw(); }
+      if (editMode) {
+        openAssetLibrary();
+        return;
+      }
+      if (!leftOpen || (compactWorkbench() && rightOpen)) {
+        leftOpen = true;
+        if (compactWorkbench()) rightOpen = false;
+        draw();
+      }
       requestAnimationFrame(() => mount.querySelector('#fpe-left-search')?.focus());
     }
-    else if (action === 'toggle-left') { leftOpen = !leftOpen; redrawPreservingFocus('fpe-toggle-left'); }
-    else if (action === 'toggle-right') { rightOpen = !rightOpen; redrawPreservingFocus('fpe-toggle-right'); }
+    else if (action === 'toggle-library') {
+      if (assetLibraryOpen) closeAssetLibrary({ announceClose: true });
+      else openAssetLibrary();
+    }
+    else if (action === 'close-library') closeAssetLibrary({ announceClose: true });
+    else if (action === 'toggle-left') setPanelOpen('left', !leftOpen);
+    else if (action === 'toggle-right') setPanelOpen('right', !rightOpen);
+    else if (action === 'close-panels') closeCompactPanels({ focusToggle: false });
+    else if (action === 'toggle-more-menu') {
+      if (colorMenuOpen) { colorMenuOpen = false; drawLeftPanel(); }
+      setStructureMenuOpen(false);
+      setMoreMenuOpen(!moreMenuOpen);
+    }
+    else if (action === 'toggle-structure-menu') {
+      setMoreMenuOpen(false);
+      setStructureMenuOpen(!structureMenuOpen);
+    }
+    else if (action === 'toggle-structure-lock') {
+      structureUnlocked = !structureUnlocked;
+      if (!structureUnlocked && tool === 'room') tool = 'select';
+      setStructureMenuOpen(false);
+      draw();
+      announce(`Strukturbearbeitung ${structureUnlocked ? 'entsperrt' : 'gesperrt'}.`);
+    }
+    else if (action === 'toggle-color-menu') {
+      setMoreMenuOpen(false);
+      colorMenuOpen = !colorMenuOpen;
+      drawLeftPanel('fpe-color-trigger');
+    }
     else if (action === 'start-edit') {
-      editMode = true; tool = 'select'; draw();
-      requestAnimationFrame(() => mount.querySelector('#fpe-left-search')?.focus());
+      editMode = true; tool = 'select'; assetLibraryOpen = false; leftOpen = false;
+      if (!compactWorkbench()) desktopPanels.left = false;
+      draw();
+      requestAnimationFrame(() => mount.querySelector('#fpe-action-tool-select')?.focus({ preventScroll: true }));
       announce('Bearbeitungsmodus gestartet. Änderungen bleiben lokal, bis sie gespeichert werden.');
     }
     else if (action === 'end-edit') endEditing();
@@ -984,7 +1574,22 @@ export default async function render(ctx) {
     else if (action === 'fit-selection') fitSelected();
     else if (action === 'undo') restoreHistory('undo');
     else if (action === 'redo') restoreHistory('redo');
-    else if (action === 'version-history') openVersionHistory();
+    else if (action === 'version-history') { setMoreMenuOpen(false); setStructureMenuOpen(false); openVersionHistory(); }
+    else if (action === 'copy-link') {
+      setMoreMenuOpen(false);
+      copyText(location.href).then((ok) => {
+        C.toast(ok ? 'Link kopiert.' : 'Link konnte nicht kopiert werden.', ok ? 'success' : 'error', ok ? 'CheckmarkCircle' : 'WarningCircle');
+        announce(ok ? 'Link kopiert.' : 'Link konnte nicht kopiert werden.');
+      });
+    }
+    else if (action === 'copy-plan-id') {
+      setMoreMenuOpen(false);
+      copyText(floor.floorId).then((ok) => {
+        C.toast(ok ? 'Plan-ID kopiert.' : 'Plan-ID konnte nicht kopiert werden.', ok ? 'success' : 'error', ok ? 'CheckmarkCircle' : 'WarningCircle');
+        announce(ok ? 'Plan-ID kopiert.' : 'Plan-ID konnte nicht kopiert werden.');
+      });
+    }
+    else if (action === 'three-reset') { threeViewer?.reset(); mount.querySelector('.fpe-three-canvas')?.focus({ preventScroll: true }); announce('3D-Ansicht zurückgesetzt.'); }
     else if (action === 'print') window.print();
     else if (action === 'view-2d') setView('2d');
     else if (action === 'view-3d') setView('3d');
@@ -1002,17 +1607,6 @@ export default async function render(ctx) {
   }
 
   function onChange(event) {
-    if (event.target.id === 'fpe-building') {
-      const next = objects.find((entry) => entry.building.bbl_id === event.target.value);
-      if (next && !navigateTo(next.building.bbl_id, next.floors.find((entry) => entry.key === '2og')?.floorId || next.floors[0].floorId)) {
-        event.target.value = building.bbl_id;
-      }
-      return;
-    }
-    if (event.target.id === 'fpe-floor') {
-      if (!navigateTo(building.bbl_id, event.target.value)) event.target.value = floor.floorId;
-      return;
-    }
     if (event.target.id === 'fpe-color') {
       colorMode = validColors.has(event.target.value) ? event.target.value : COLOR_DEFAULT;
       syncQuery(); drawScene(); drawLeft();
@@ -1049,10 +1643,18 @@ export default async function render(ctx) {
     }
     const entity = event.target.closest('[data-entity]');
     const roomHandle = event.target.closest('[data-room-handle]');
-    if (tool === 'pan' || event.button === 1) {
+    const directPrimaryPan = tool === 'select' && event.button === 0 && (!editMode || !entity);
+    if (tool === 'pan' || event.button === 1 || directPrimaryPan) {
       event.preventDefault();
       try { mount.setPointerCapture?.(event.pointerId); } catch { /* synthetic/ended pointer */ }
-      drag = { type: 'pan', pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, camera: { ...camera } };
+      stage.classList.add('is-panning');
+      drag = {
+        type: 'pan', pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY,
+        camera: { ...camera }, moved: false,
+        tapSelection: directPrimaryPan
+          ? (entity ? { type: entity.dataset.entity, id: entity.dataset.id } : { type: null, id: null })
+          : null,
+      };
       return;
     }
     if (entity?.dataset.entity === 'placement' && editMode && tool === 'select') {
@@ -1071,6 +1673,10 @@ export default async function render(ctx) {
       const room = roomById().get(entity.dataset.id);
       if (!room) return;
       selected = { type: 'room', id: room.spaceId }; syncQuery();
+      if (!structureUnlocked) {
+        drawWorkArea({ focusSelected: true });
+        return;
+      }
       try { mount.setPointerCapture?.(event.pointerId); } catch { /* synthetic/ended pointer */ }
       drag = {
         type: roomHandle ? 'room-resize' : 'room-move', pointerId: event.pointerId,
@@ -1105,9 +1711,13 @@ export default async function render(ctx) {
     if (drag.type === 'pan') {
       const rect = svg?.getBoundingClientRect();
       if (!rect?.width || !rect?.height) return;
+      const pixelDx = event.clientX - drag.clientX;
+      const pixelDy = event.clientY - drag.clientY;
+      drag.moved ||= Math.hypot(pixelDx, pixelDy) > 4;
+      if (!drag.moved) return;
       camera = panCamera(drag.camera,
-        -(event.clientX - drag.clientX) * drag.camera.width / rect.width,
-        -(event.clientY - drag.clientY) * drag.camera.height / rect.height);
+        -pixelDx * drag.camera.width / rect.width,
+        -pixelDy * drag.camera.height / rect.height);
       drawScene(); return;
     }
     const point = clientToPlan(svg, event.clientX, event.clientY);
@@ -1160,6 +1770,7 @@ export default async function render(ctx) {
 
   function onPointerUp(event) {
     if (!drag || drag.pointerId !== event.pointerId) return;
+    let tapSelection = null;
     if (drag.type === 'room-create') {
       const draft = roomDraft;
       roomDraft = null;
@@ -1201,9 +1812,13 @@ export default async function render(ctx) {
         }
         drawWorkArea({ focusSelected: true });
       }
+    } else if (drag.type === 'pan' && !drag.moved && event.type !== 'pointercancel') {
+      tapSelection = drag.tapSelection;
     }
+    mount.querySelector('#fpe-stage')?.classList.remove('is-panning');
     try { mount.releasePointerCapture?.(event.pointerId); } catch { /* capture already gone */ }
     drag = null;
+    if (tapSelection) selectEntity(tapSelection.type, tapSelection.id, Boolean(tapSelection.type));
   }
 
   function onWheel(event) {
@@ -1232,6 +1847,82 @@ export default async function render(ctx) {
 
   function onKeyDown(event) {
     const textControl = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName);
+    if (event.target.id === 'fpe-more-trigger' && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+      event.preventDefault();
+      setMoreMenuOpen(true, { focusFirst: true });
+      return;
+    }
+    const menuItem = event.target.closest?.('#fpe-more-menu [role="menuitem"]');
+    if (menuItem) {
+      const items = [...mount.querySelectorAll('#fpe-more-menu [role="menuitem"]:not([disabled])')];
+      const index = items.indexOf(menuItem);
+      if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+        event.preventDefault();
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+          : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        items[next]?.focus({ preventScroll: true });
+        return;
+      }
+      if (event.key === 'Tab') setMoreMenuOpen(false);
+    }
+    if (event.target.id === 'fpe-structure-trigger' && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+      event.preventDefault();
+      setStructureMenuOpen(true, { focusFirst: true });
+      return;
+    }
+    const structureItem = event.target.closest?.('#fpe-structure-menu [role="menuitem"]');
+    if (structureItem) {
+      const items = [...mount.querySelectorAll('#fpe-structure-menu [role="menuitem"]:not([disabled])')];
+      const index = items.indexOf(structureItem);
+      if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+        event.preventDefault();
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+          : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        items[next]?.focus({ preventScroll: true });
+        return;
+      }
+      if (event.key === 'Tab') setStructureMenuOpen(false);
+    }
+    if (event.target.id === 'fpe-color-trigger' && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+      event.preventDefault();
+      colorMenuOpen = true;
+      setMoreMenuOpen(false);
+      drawLeftPanel();
+      requestAnimationFrame(() => mount.querySelector('.fpe-color-menu [aria-checked="true"]')?.focus({ preventScroll: true }));
+      return;
+    }
+    const colorItem = event.target.closest?.('.fpe-color-menu [role="menuitemradio"]');
+    if (colorItem && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      const items = [...mount.querySelectorAll('.fpe-color-menu [role="menuitemradio"]')];
+      const index = items.indexOf(colorItem);
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+        : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items[next]?.focus({ preventScroll: true });
+      return;
+    }
+    const libraryTab = event.target.closest?.('[data-library][role="tab"]');
+    if (libraryTab && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      const tabs = [...mount.querySelectorAll('[data-library][role="tab"]')];
+      const index = tabs.indexOf(libraryTab);
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
+        : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      tabs[next]?.click();
+      return;
+    }
+    const viewButton = event.target.closest?.('[data-view-mode]');
+    if (viewButton && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      const buttons = [...mount.querySelectorAll('[data-view-mode]')];
+      const index = buttons.indexOf(viewButton);
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1
+        : (index + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+      const nextMode = buttons[next]?.dataset.viewMode;
+      if (nextMode && nextMode !== viewMode) setView(nextMode);
+      else buttons[next]?.focus({ preventScroll: true });
+      return;
+    }
     if ((event.ctrlKey || event.metaKey) && !event.altKey && !textControl) {
       if (event.key.toLocaleLowerCase() === 'z') { event.preventDefault(); restoreHistory(event.shiftKey ? 'redo' : 'undo'); return; }
       if (event.key.toLocaleLowerCase() === 'y') { event.preventDefault(); restoreHistory('redo'); return; }
@@ -1245,7 +1936,11 @@ export default async function render(ctx) {
       if (event.key === '-') { event.preventDefault(); camera = zoomCamera(camera, 1.25); drawScene(); return; }
     }
     if (event.key === 'Escape') {
-      if (tool !== 'select') { event.preventDefault(); chooseTool('select'); }
+      if (moreMenuOpen) { event.preventDefault(); setMoreMenuOpen(false, { restoreFocus: true }); }
+      else if (structureMenuOpen) { event.preventDefault(); setStructureMenuOpen(false, { restoreFocus: true }); }
+      else if (colorMenuOpen) { event.preventDefault(); colorMenuOpen = false; drawLeftPanel('fpe-color-trigger'); }
+      else if (closeCompactPanels()) event.preventDefault();
+      else if (tool !== 'select') { event.preventDefault(); chooseTool('select'); }
       else if (selected) { event.preventDefault(); selectEntity(null, null); }
       return;
     }
@@ -1287,6 +1982,29 @@ export default async function render(ctx) {
     event.preventDefault(); event.returnValue = '';
   }
 
+  function onWindowResize() {
+    const nextCompact = compactWorkbench();
+    if (nextCompact !== compactLayout) {
+      compactLayout = nextCompact;
+      if (compactLayout) {
+        desktopPanels.left = leftOpen;
+        desktopPanels.right = rightOpen;
+        leftOpen = editMode && assetLibraryOpen;
+        rightOpen = false;
+      } else {
+        leftOpen = editMode ? assetLibraryOpen : desktopPanels.left;
+        rightOpen = desktopPanels.right;
+      }
+      structureMenuOpen = false;
+      draw();
+      return;
+    }
+    syncScale();
+    positionMoreMenu();
+    positionColorMenu();
+    positionStructureMenu();
+  }
+
   const abort = new AbortController();
   const { signal } = abort;
   mount.addEventListener('click', onClick, { signal });
@@ -1301,8 +2019,8 @@ export default async function render(ctx) {
   mount.addEventListener('dblclick', onDoubleClick, { signal });
   mount.addEventListener('keydown', onKeyDown, { signal });
   window.addEventListener('beforeunload', beforeUnload, { signal });
-  window.addEventListener('resize', syncScale, { signal });
-  onUnmount(() => abort.abort());
+  window.addEventListener('resize', onWindowResize, { signal });
+  onUnmount(() => { disposeThreeViewer(); abort.abort(); });
 
   setTitle(`Plan-Editor — ${floor.label}`);
   draw();

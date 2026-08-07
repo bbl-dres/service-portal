@@ -577,10 +577,10 @@ function detail(ctx, id) {
             C.escape(f.label)}</span></span></a>`;
         }).join('')}</div>`;
 
-    // Kopfleiste des Betrachters — EINE Zeile: Geschossname · Geschosswahl ·
-    // Einfärbung · Vollbild/Drucken. Vorher standen Titel und Bedienelemente in
-    // zwei Reihen (`.fp-head__top` über `.fp-toolbar`), was einen Umbruch
-    // erzwang, den nichts nötig machte, und die Leiste auf 134px trieb.
+    // Kopfleiste des Betrachters — EINE Zeile: Rücksprung · Geschosswahl ·
+    // Einfärbung · Vollbild/Drucken. Der Rücksprung gehört als erstes Element
+    // in dieselbe Leiste; eine eigene Zeile darüber verbrauchte Höhe, ohne eine
+    // zweite Informationsebene zu bilden.
     // Klebend, damit die Bedienung beim Scrollen eines hohen Plans erreichbar
     // bleibt — dasselbe Idiom wie `.docviewer__bar`. `#fp-wrap` umschliesst
     // Kopf UND Betrachter, damit im Vollbild die Bedienung mitkommt und nicht
@@ -589,11 +589,11 @@ function detail(ctx, id) {
     return `
       <div id="fp-wrap">
         <div class="fp-head">
-          ${/* Auch der Rücksprung trägt sein echtes Ziel (wie die Geschoss-
-                Chips, Review apps/floors-chip-1): die Geschosstabelle ist die
-                Detailseite mit tab=grundriss ohne floor-Parameter. */''}
-          <p class="fp-back"><a href="${links.mietverhaeltnis(t.tenancyId)}?tab=grundriss" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
           <div class="fp-head__top">
+            ${/* Auch der Rücksprung trägt sein echtes Ziel (wie die Geschoss-
+                  Chips, Review apps/floors-chip-1): die Geschosstabelle ist die
+                  Detailseite mit tab=grundriss ohne floor-Parameter. */''}
+            <p class="fp-back"><a href="${links.mietverhaeltnis(t.tenancyId)}?tab=grundriss" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
             ${/* KEIN eigener Geschossname mehr: die aktive Pille der Geschosswahl
                   sagt bereits, welches Geschoss gezeichnet ist — zwei Angaben
                   nebeneinander waren eine zu viel. Bei nur EINEM Geschoss

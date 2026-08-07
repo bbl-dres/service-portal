@@ -243,10 +243,15 @@ await clean(p, 'Rücksprung');
 
 /* -------------------------------------------------------------- Grundriss -- */
 head('Grundriss');
+await browser.send('Emulation.setDeviceMetricsOverride',
+  { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }, p.sessionId);
 o = JSON.parse(await p.evaluate(`(async () => {
   location.hash = '#/app/tenancies/MV-2026-001?tab=grundriss&floor=1080-4850-AG-2og';
   await new Promise(r => setTimeout(r, 600));
   const svg = document.querySelector('svg.fp');
+  const header = document.querySelector('.fp-head__top');
+  const headerChildren = [...(header?.children || [])]
+    .filter((node) => getComputedStyle(node).display !== 'none');
   return JSON.stringify({
     svg: !!svg,
     viewBox: svg?.getAttribute('viewBox'),
@@ -259,6 +264,12 @@ o = JSON.parse(await p.evaluate(`(async () => {
     kopf: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
     fakten: document.querySelector('.fp-side .fp-facts')?.textContent.replace(/s+/g,' ').trim(),
     knoepfe: [document.querySelector('#fp-vollbild'), document.querySelector('#fp-drucken')].map(Boolean),
+    headerBackFirst: header?.firstElementChild?.classList.contains('fp-back') || false,
+    headerRows: [...new Set(headerChildren.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return Math.round(rect.top + rect.height / 2);
+    }))].length,
+    headerOverflow: header ? Math.round(header.scrollWidth - header.clientWidth) : -1,
     ariaErster: document.querySelector('.fp__room rect')?.getAttribute('aria-label'),
   });
 })()`));
@@ -275,6 +286,8 @@ check(o.legende > 0, 'Legende ohne Zutun sichtbar', String(o.legende));
 check(o.kopf === '2. OG', 'aktives Geschoss als Pille in der Kopfleiste', o.kopf);
 check(/Räume/.test(o.fakten || '') && /HNF/.test(o.fakten || ''), 'Kennzahlen in der Auswertungsspalte', o.fakten);
 check(o.knoepfe.every(Boolean), 'Vollbild- und Druckknopf vorhanden', o.knoepfe.join(','));
+check(o.headerBackFirst && o.headerRows === 1 && o.headerOverflow <= 1,
+  'Rücksprung und Viewer-Werkzeuge teilen eine Desktop-Zeile', `${o.headerRows} Zeile · ${o.headerOverflow}px Überlauf`);
 
 // Und «Keine» bleibt wählbar — dann darf keine Legende stehen.
 const ohne = JSON.parse(await p.evaluate(`(async () => {

@@ -227,7 +227,7 @@ try {
     activeTab: document.querySelector('.tab__control--active')?.dataset.tab || '',
     activeFloor: document.querySelector('.fp-floors .tag-item--active')?.dataset.floor || '',
     rooms: document.querySelectorAll('.fp__room').length,
-    readonly: document.querySelector('.workspace-readonly')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+    redundantReadonlyLabel: !!document.querySelector('.workspace-readonly'),
     availability: [...document.querySelectorAll('.pill-row .badge')]
       .map(node => node.textContent.trim()).find(label => /Bestand vor Multispace/.test(label)) || '',
     hero: (() => { const mosaic = document.querySelector('#workspace-mosaic'); return {
@@ -242,8 +242,8 @@ try {
   check(/Zollanlage Brig-Glis/.test(legacy.h1), 'opens the canonical legacy object', legacy.h1);
   check(legacy.activeTab === 'grundrisse' && legacy.activeFloor === legacyFloor && legacy.rooms === 19,
     'opens its existing canonical floor in the shared preview', `${legacy.activeTab} · ${legacy.activeFloor} · ${legacy.rooms} rooms`);
-  check(/Vorschau/.test(legacy.readonly) && /nur Ansicht/.test(legacy.readonly),
-    'labels the floor plan as a read-only preview', legacy.readonly);
+  check(!legacy.redundantReadonlyLabel,
+    'omits the redundant read-only label from the shared viewer header');
   check(legacy.hero.galleryCells === 5 && legacy.hero.sideCells === 4
     && legacy.hero.placeholders === 0 && !legacy.hero.solo,
   'matches the five-image Tenancies hero for the same Brig-Glis object',
@@ -276,6 +276,8 @@ try {
   console.log('\n■ Floor preview state, focus, fullscreen, print, and table isolation');
   const viewerPage = await openPage(cdp,
     `${APP_BASE}/app/workspace?id=${plannedId}&floor=${encodeURIComponent(plannedFloor)}`);
+  await cdp.send('Emulation.setDeviceMetricsOverride',
+    { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }, viewerPage.sessionId);
   await sleep(900);
 
   const prepared = await viewerPage.evaluate(`(async () => {
@@ -286,13 +288,26 @@ try {
     await new Promise(resolve => setTimeout(resolve, 80));
     window.__workspaceEquipmentSearch = document.querySelector('#workspace-equipment-q');
     window.__workspaceWrap = document.querySelector('#fp-wrap');
+    const header = document.querySelector('.fp-head__top');
+    const headerChildren = [...(header?.children || [])]
+      .filter((node) => getComputedStyle(node).display !== 'none');
     return {
       equipmentRows: document.querySelectorAll('#workspace-equipment-table tbody tr').length,
       equipmentValue: window.__workspaceEquipmentSearch?.value || '',
       floor: document.querySelector('.fp-floors .tag-item--active')?.dataset.floor || '',
       rooms: document.querySelectorAll('.fp__room').length,
-      editorHref: document.querySelector('.fp-head__actions a[href^="#/app/floorplan-editor"]')?.getAttribute('href') || '',
-      editorTarget: document.querySelector('.fp-head__actions a[href^="#/app/floorplan-editor"]')?.getAttribute('target') || '',
+      editorHref: document.querySelector('#workspace-plan-editor')?.getAttribute('href') || '',
+      editorTarget: document.querySelector('#workspace-plan-editor')?.getAttribute('target') || '',
+      editorLabel: document.querySelector('#workspace-plan-editor .btn__text')?.textContent.trim() || '',
+      editorCardFirst: document.querySelector('.fp-side')?.firstElementChild?.classList.contains('fp-editor-action') || false,
+      headerBackFirst: header?.firstElementChild?.classList.contains('fp-back') || false,
+      headerRows: [...new Set(headerChildren.map((node) => {
+        const rect = node.getBoundingClientRect();
+        return Math.round(rect.top + rect.height / 2);
+      }))].length,
+      headerOverflow: header ? Math.round(header.scrollWidth - header.clientWidth) : -1,
+      actionLabels: [...document.querySelectorAll('.fp-head__actions .btn__text')].map((node) => node.textContent.trim()),
+      redundantReadonlyLabel: !!document.querySelector('.workspace-readonly'),
     };
   })()`);
   check(prepared.equipmentRows === 1 && prepared.equipmentValue === 'Interaktive',
@@ -300,8 +315,15 @@ try {
   check(prepared.floor === plannedFloor && prepared.rooms === 26,
     'opens the requested planned floor', `${prepared.floor} · ${prepared.rooms} rooms`);
   check(/building=1080%2F6650%2FAA/i.test(prepared.editorHref)
-    && prepared.editorHref.includes(`floor=${plannedFloor}`) && prepared.editorTarget === '_blank',
-  'hands the exact preview floor to the standalone editor', prepared.editorHref);
+    && prepared.editorHref.includes(`floor=${plannedFloor}`) && prepared.editorTarget === '_blank'
+    && prepared.editorLabel === 'Im Plan-Editor bearbeiten' && prepared.editorCardFirst,
+  'hands the exact preview floor to the standalone editor from the first sidebar card', prepared.editorHref);
+  check(prepared.headerBackFirst && prepared.headerRows === 1 && prepared.headerOverflow <= 1
+    && !prepared.redundantReadonlyLabel,
+  'uses one shared desktop viewer-header row without the read-only label',
+  `${prepared.headerRows} row · ${prepared.headerOverflow}px overflow`);
+  check(prepared.actionLabels.join('|') === 'Vollbild|Drucken',
+    'keeps only the shared viewer actions in the header', prepared.actionLabels.join(' · '));
 
   // Fullscreen requires a user activation; CDP provides it only for this call.
   await cdp.send('Runtime.evaluate', {
@@ -415,14 +437,14 @@ try {
     };
     return {
       main: visibility('#main-content'), body: visibility('.floorplan-body'), plan: visibility('svg.fp'),
-      actions: display('.fp-head__actions'), room: display('#fp-room'), readonly: display('.workspace-readonly'),
+      actions: display('.fp-head__actions'), editor: display('.fp-editor-action'), room: display('#fp-room'),
       foot: display('.fp-print-foot'), legend: display('.fp-legend'),
     };
   })()`);
   check(printLayout.main === 'hidden' && printLayout.body === 'visible' && printLayout.plan === 'visible',
     'print media isolates the floor-plan body');
-  check(printLayout.actions === 'none' && printLayout.room === 'none' && printLayout.readonly === 'none',
-    'print media removes interactive/read-only chrome');
+  check(printLayout.actions === 'none' && printLayout.editor === 'none' && printLayout.room === 'none',
+    'print media removes interactive chrome');
   check(printLayout.foot === 'block' && printLayout.legend !== 'none',
     'print media keeps the object footer and color legend');
   await viewerPage.evaluate(`window.dispatchEvent(new Event('afterprint'))`);
@@ -462,6 +484,9 @@ try {
   const mobile = await mobilePage.evaluate(`(() => {
     const stage = document.querySelector('#fp-stage');
     const tabs = document.querySelector('.tab__controls');
+    const actions = document.querySelector('.fp-head__actions');
+    const actionButtons = [...(actions?.querySelectorAll('.btn') || [])];
+    const editor = document.querySelector('#workspace-plan-editor');
     return {
       h1: document.querySelector('#main-content h1')?.textContent.trim() || '',
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -470,8 +495,12 @@ try {
       stageRole: stage?.getAttribute('role') || '',
       stageLabel: stage?.getAttribute('aria-label') || '',
       tabsOverflow: !!tabs && tabs.scrollWidth > tabs.clientWidth,
-      readonly: !!document.querySelector('.workspace-readonly'),
+      redundantReadonlyLabel: !!document.querySelector('.workspace-readonly'),
       mutationControls: document.querySelectorAll('input[type="file"],[contenteditable="true"],[data-editor-action],[data-checker-action],#workspace-floorplan').length,
+      actionLabels: actionButtons.map((node) => node.textContent.replace(/\s+/g, ' ').trim()),
+      actionsOverflow: actions ? Math.round(actions.scrollWidth - actions.clientWidth) : -1,
+      editorVisible: !!editor && getComputedStyle(editor).display !== 'none',
+      editorLabel: editor?.textContent.replace(/\s+/g, ' ').trim() || '',
     };
   })()`);
   check(/Liebefeld/.test(mobile.h1), 'renders the floor preview on a narrow viewport', mobile.h1);
@@ -480,8 +509,12 @@ try {
     && /Grundriss/.test(mobile.stageLabel),
   'makes the overflowing plan a named keyboard-scroll region', `${mobile.stageTabindex} · ${mobile.stageRole} · ${mobile.stageLabel}`);
   check(mobile.tabsOverflow, 'keeps the object registers horizontally scrollable');
-  check(mobile.readonly && mobile.mutationControls === 0,
-    'keeps the mobile preview explicitly read-only without mutation controls');
+  check(!mobile.redundantReadonlyLabel && mobile.mutationControls === 0,
+    'keeps the mobile preview free of redundant labelling and mutation controls');
+  check(mobile.actionLabels.join('|') === 'Vollbild|Drucken' && mobile.actionsOverflow <= 1,
+    'keeps both shared viewer actions reachable on mobile', `${mobile.actionLabels.join(' · ')} · ${mobile.actionsOverflow}px overflow`);
+  check(mobile.editorVisible && mobile.editorLabel === 'Im Plan-Editor bearbeiten',
+    'keeps the separate Plan-Editor action reachable in the mobile sidebar', mobile.editorLabel);
   const mobileAccess = await mobilePage.evaluate(ACCESSIBILITY);
   check(mobileAccess.unlabeledControls === 0, 'mobile preview controls have accessible labels');
   check(mobileAccess.duplicateIds.length === 0, 'mobile preview has no duplicate IDs', mobileAccess.duplicateIds.join(', '));
