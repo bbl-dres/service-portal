@@ -2,10 +2,13 @@
 //
 //   node scripts/css-bundle.mjs
 //   node scripts/css-bundle.mjs --output=.tmp/app.concat.css
+//   node scripts/css-bundle.mjs --verify-legacy
 //
 // `--split-legacy` is intentionally narrow: it only accepts the audited legacy
 // app.css hash and writes the contiguous byte ranges below. It exists so the
-// pure-move commit is reproducible; normal development only needs the verifier.
+// pure-move commit is reproducible. `--verify-legacy` is the Step-1 equivalence
+// gate; the default command concatenates the current, intentionally refactored
+// cascade and reports its digest.
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -82,13 +85,15 @@ function splitLegacy() {
 }
 
 const split = process.argv.includes('--split-legacy');
+const verifyLegacy = process.argv.includes('--verify-legacy');
 const outputArg = process.argv.find((arg) => arg.startsWith('--output='));
 
 if (split) splitLegacy();
 
 const result = concatenate();
 const resultHash = digest(result);
-if (result.length !== LEGACY_APP_CSS.bytes || resultHash !== LEGACY_APP_CSS.sha256) {
+const isLegacyExact = result.length === LEGACY_APP_CSS.bytes && resultHash === LEGACY_APP_CSS.sha256;
+if (verifyLegacy && !isLegacyExact) {
   throw new Error(`CSS concatenation differs: ${result.length} bytes, sha256 ${resultHash}`);
 }
 
@@ -96,7 +101,7 @@ if (outputArg) {
   const output = resolve(ROOT, outputArg.slice('--output='.length));
   mkdirSync(dirname(output), { recursive: true });
   writeFileSync(output, result);
-  console.log(`Wrote byte-identical legacy cascade to ${output}`);
+  console.log(`Wrote current ordered cascade to ${output}`);
 } else {
-  console.log(`CSS split verified: ${result.length} bytes, sha256 ${resultHash}`);
+  console.log(`CSS cascade: ${result.length} bytes, sha256 ${resultHash}${isLegacyExact ? ' (legacy exact)' : ''}`);
 }

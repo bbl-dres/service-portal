@@ -2,10 +2,10 @@
    Application 1 of the workspace suite: catalogue + process portal with the
    shared read-only floor preview. Editor chrome and validation UI stay out. */
 .workspace-portal .pf-layout { margin-top:var(--sp-6); }
-.workspace-card .pill-row { margin-top:.75rem; }
+.workspace-card .pill-row { margin-top:var(--sp-3); }
 .workspace-card .card__description { line-height:1.45; }
-.workspace-card .card__footer { justify-content:space-between; gap:1rem; }
-.workspace-object-facts { margin:1.5rem 0 0; }
+.workspace-card .card__footer { justify-content:space-between; gap:var(--sp-4); }
+.workspace-object-facts { margin:var(--sp-6) 0 0; }
 .workspace-detail .mono { font-family:var(--font-mono); }
 
 /* ========================= ROOM BOOKING ===================================
@@ -19,10 +19,9 @@
 
 /* Search bar. One row on desktop, stacked below — the submit button is the only
    cell that may not shrink, because it ends the sentence the row starts. */
-.booking-bar { padding:1.25rem; background:var(--color-secondary-50);
-  border-block:1px solid var(--color-secondary-200); }
-.booking-bar__grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; align-items:end; }
+.booking-bar { padding:var(--sp-5); background:var(--color-secondary-50);
+  border-block:var(--stroke-1) solid var(--color-secondary-200); }
+.booking-bar__grid { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-4); align-items:end; }
 .booking-bar__grid > * { min-width:0; margin:0; }
-.booking-bar__location__row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.5rem; align-items:center; }
+.booking-bar__location__row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--sp-2); align-items:center; }
 .booking-bar__location__row .select { min-width:0; }
-

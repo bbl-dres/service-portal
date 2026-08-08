@@ -16,9 +16,9 @@
 .top-bar { background:var(--color-secondary-600); color:var(--color-text-negative); font-size:var(--fs-sm); }
 /* CD top-bar.postcss:7 `text-sm 2xl:text-base` — feste Stufen, keine Rampe. */
 @media (min-width:1544px){ .top-bar { font-size:var(--fs-base); } }
-.top-bar .container--flex { min-height:var(--target-min); align-items:center; gap:1rem; }
-.top-bar__btn { display:inline-flex; align-items:center; gap:.5rem; min-height:var(--target-min); min-width:var(--target-min); background:none; border:0;
-  color:var(--color-text-negative); cursor:pointer; font:inherit; padding:.25rem 0 .25rem 1rem; margin-left:-1rem; text-decoration:none;
+.top-bar .container--flex { min-height:var(--target-min); align-items:center; gap:var(--sp-4); }
+.top-bar__btn { display:inline-flex; align-items:center; gap:var(--sp-2); min-height:var(--target-min); min-width:var(--target-min); background:none; border:0;
+  color:var(--color-text-negative); cursor:pointer; font:inherit; padding:var(--sp-1) 0 var(--sp-1) var(--sp-4); margin-left:calc(-1 * var(--sp-4)); text-decoration:none;
   transition:color var(--duration-fast); }
 /* Hover UND Fokus hellen auf (CD top-bar.postcss:130 `hover:text-text-300
    focus:text-text-300`) — Tastaturfokus bekam sonst keinen Farbwechsel. */
@@ -39,20 +39,20 @@
    Sprachwähler-Padding). Nur der portal-eigene Demo-Chip braucht einen
    eigenen Rand (CDs Badge in diesem Slot trägt mr-2). */
 .top-bar__right { display:flex; align-items:stretch; }
-.top-bar__right > .demo-chip { align-self:center; margin-right:.5rem; }
+.top-bar__right > .demo-chip { align-self:center; margin-right:var(--sp-2); }
 .top-bar-navigation { display:flex; height:100%; }
 .top-bar-navigation ul { list-style:none; display:flex; }
 .top-bar-navigation a { display:flex; align-items:center; height:100%; min-height:var(--target-min);
-  padding-inline:.25rem; color:var(--color-text-negative); text-decoration:none; transition:color var(--duration-fast); }
+  padding-inline:var(--sp-1); color:var(--color-text-negative); text-decoration:none; transition:color var(--duration-fast); }
 .top-bar-navigation a:hover, .top-bar-navigation a:focus { color:var(--color-gray-300); text-decoration:none; }
 /* Nur das Label ist ausgeblendet (sr-only-Sammelregel), nie das Icon-<span>
    (Item 2.4). Sichtbar erst ab 1024: CD zeigt die Beschriftungen der
    Werkzeuglinks erst ab lg (top-bar-navigation.postcss:7-11 `hidden lg:block`),
    dazwischen bleibt die Leiste icon-only. */
 @media (min-width:1024px){
-  .top-bar-navigation a { padding-inline:.5rem; }
+  .top-bar-navigation a { padding-inline:var(--sp-2); }
   .top-bar-navigation a > span:not(.icon) { position:static; width:auto; height:auto; margin:0;
-    overflow:visible; clip:auto; padding-left:1rem; padding-right:.5rem; }
+    overflow:visible; clip:auto; padding-left:var(--sp-4); padding-right:var(--sp-2); }
 }
 
 /* Language switcher (language-switcher.postcss:5-59) */
@@ -60,10 +60,10 @@
 .language-switcher .form__group__select,
 .language-switcher .select { display:flex; align-items:stretch; position:relative; height:auto; }
 .language-switcher select { appearance:none; -webkit-appearance:none; height:100%; min-height:var(--control-h);
-  width:3.5em; padding:.5rem 1.5rem .5rem .25rem;
-  background:transparent; border:1px solid transparent; box-shadow:none;
+  width:3.5em; padding:var(--sp-2) var(--sp-6) var(--sp-2) var(--sp-1);
+  background:transparent; border:var(--stroke-1) solid transparent; box-shadow:none;
   color:var(--color-text-negative); font:inherit; font-size:var(--text-sm); cursor:pointer; transition:color var(--duration-fast); }
-@media (min-width:1024px){ .language-switcher select { width:4.5em; padding-left:1rem; } }
+@media (min-width:1024px){ .language-switcher select { width:4.5em; padding-left:var(--sp-4); } }
 .language-switcher select option { color:var(--color-text); background:var(--color-bg); }
 .language-switcher select option:disabled { color:var(--color-gray-400); }
 /* Deaktiviert (Prototyp: nur DE): CDs Disabled-Rezept ist NUR opacity-40
@@ -72,20 +72,20 @@
    den erklärenden title-Tooltip töten. */
 .language-switcher select:disabled { color:var(--color-text-negative); opacity:.4;
   pointer-events:auto; cursor:default; }
-.language-switcher .select__icon { position:absolute; top:0; right:0; width:1.5rem; height:100%;
+.language-switcher .select__icon { position:absolute; top:0; right:0; width:var(--sp-6); height:100%;
   display:flex; align-items:center; justify-content:center; border-left:0; background:transparent;
   color:var(--color-text-negative); pointer-events:none; transition:color var(--duration-fast); }
 .language-switcher select:hover + .select__icon, .language-switcher select:focus + .select__icon { color:var(--color-gray-300); }
 
 /* Brand / title row (top-header.postcss + logo.postcss) */
-.top-header { background:var(--color-bg); border-bottom:1px solid var(--color-border); position:relative;
-  padding:.75rem 0; font-size:var(--fs-sm); }
-@media (min-width:768px){ .top-header { padding:1rem 0; } }
-@media (min-width:1024px){ .top-header { padding:1.5rem 0; } }
-@media (min-width:1280px){ .top-header { padding:2rem 0; } }
+.top-header { background:var(--color-bg); border-bottom:var(--stroke-1) solid var(--color-border); position:relative;
+  padding:var(--sp-3) 0; font-size:var(--fs-sm); }
+@media (min-width:768px){ .top-header { padding:var(--sp-4) 0; } }
+@media (min-width:1024px){ .top-header { padding:var(--sp-6) 0; } }
+@media (min-width:1280px){ .top-header { padding:var(--sp-8) 0; } }
 /* CD top-header.postcss:8 `text-sm 3xl:text-base`. */
-@media (min-width:1920px){ .top-header { padding:2.5rem 0; font-size:var(--fs-base); } }
-.top-header .container--flex { min-height:0; align-items:center; gap:1rem; }
+@media (min-width:1920px){ .top-header { padding:var(--sp-10) 0; font-size:var(--fs-base); } }
+.top-header .container--flex { min-height:0; align-items:center; gap:var(--sp-4); }
 /* Die Transition trägt BEIDE Ausblendungen (offene Suche unter lg, offenes
    Mobilmenü) — CD logo.postcss:5-13, dort mit derselben duration-700. */
 .logo { display:flex; align-items:center; flex-wrap:nowrap; text-decoration:none;
@@ -98,11 +98,11 @@
 .logo__name { flex:none; display:none; width:174px; height:50px; overflow:visible; }
 @media (min-width:1280px){ .logo__name { display:block; } }
 @media (min-width:1920px){ .logo__name { width:244px; height:70px; } }
-.logo__separator { flex:none; width:1px; height:2.5rem; background:var(--color-border-strong); margin-inline:.5rem; }
-@media (min-width:640px){ .logo__separator { margin-inline:1rem; } }
-@media (min-width:768px){ .logo__separator { height:3.5rem; } }
-@media (min-width:1024px){ .logo__separator { margin-inline:1.5rem; } }
-@media (min-width:1920px){ .logo__separator { height:70px; margin-inline:2rem; } }
+.logo__separator { flex:none; width:var(--stroke-1); height:var(--sp-10); background:var(--color-border-strong); margin-inline:var(--sp-2); }
+@media (min-width:640px){ .logo__separator { margin-inline:var(--sp-4); } }
+@media (min-width:768px){ .logo__separator { height:var(--sp-14); } }
+@media (min-width:1024px){ .logo__separator { margin-inline:var(--sp-6); } }
+@media (min-width:1920px){ .logo__separator { height:70px; margin-inline:var(--sp-8); } }
 .logo-title__container { display:flex; flex-direction:column; min-width:0; }
 .logo__accronym { font-weight:var(--fw-bold); line-height:var(--lh-snug); color:var(--color-text); }
 @media (min-width:480px){ .logo__accronym { display:none; } }
@@ -128,40 +128,40 @@
    nur die Pille am Akronym (<480px) bleibt auf text-xs gepinnt (intranet.postcss:42). */
 .body--intranet .logo__title::after,
 .body--intranet .logo__accronym::after {
-  content:'Intranet'; display:block; width:fit-content; margin-top:.25rem; margin-left:-1px;
+  content:'Intranet'; display:block; width:fit-content; margin-top:var(--sp-1); margin-left:calc(-1 * var(--stroke-1));
   padding:.219em 1em; border-radius:var(--radius-full);
   background:var(--color-info-bg); color:var(--color-info-text);
-  font-size:var(--fs-xs); font-weight:var(--fw-regular); line-height:1.25rem; }
+  font-size:var(--fs-xs); font-weight:var(--fw-regular); line-height:var(--line-5); }
 @media (min-width:768px){ .body--intranet .logo__title::after { font-size:var(--fs-sm); } }
-@media (min-width:1024px){ .body--intranet .logo__title::after { font-size:var(--fs-base); line-height:1.5rem; } }
+@media (min-width:1024px){ .body--intranet .logo__title::after { font-size:var(--fs-base); line-height:var(--line-6); } }
 .top-header__right { display:flex; align-items:center; }
-@media (min-width:1024px){ .top-header__right { flex-direction:column; align-items:flex-end; margin-right:-.75rem; } }
+@media (min-width:1024px){ .top-header__right { flex-direction:column; align-items:flex-end; margin-right:calc(-1 * var(--sp-3)); } }
 .top-header__container-flex { display:flex; align-items:center; }
-.top-header__shopping-cart-button-mobile { display:flex; align-items:center; margin-left:.625rem; margin-right:.75rem; }
+.top-header__shopping-cart-button-mobile { display:flex; align-items:center; margin-left:var(--sp-2-5); margin-right:var(--sp-3); }
 @media (min-width:1024px){ .top-header__shopping-cart-button-mobile { display:none; } }
 .top-header__shopping-cart-button-desktop { display:none; }
 @media (min-width:1024px){
-  .top-header__shopping-cart-button-desktop { display:block; margin-right:.7rem; margin-left:1rem; }
+  .top-header__shopping-cart-button-desktop { display:block; margin-right:var(--sp-3); margin-left:var(--sp-4); }
 }
 .shopping-cart__button { display:flex; align-items:center; cursor:pointer; color:var(--color-text); text-decoration:none; min-height:var(--control-h); }
 .shopping-cart__button:hover { color:var(--color-primary-600); text-decoration:none; }
 .shopping-cart__button-label { display:none; }
-@media (min-width:1024px){ .shopping-cart__button-label { display:block; margin:0 .375rem 0 0; } }
+@media (min-width:1024px){ .shopping-cart__button-label { display:block; margin:0 var(--sp-1-5) 0 0; } }
 .shopping-cart__icon-group { position:relative; display:flex; align-items:center; }
-.shopping-cart__icon { width:2.25rem; height:2.25rem; }
-@media (min-width:1024px){ .shopping-cart__icon { width:1.75rem; height:1.75rem; } }
+.shopping-cart__icon { width:var(--sp-9); height:var(--sp-9); }
+@media (min-width:1024px){ .shopping-cart__icon { width:var(--sp-7); height:var(--sp-7); } }
 .shopping__cart-amount-indicator { position:absolute; top:-5px; left:20px; display:flex; align-items:center; justify-content:center;
-  width:var(--sp-5); height:var(--sp-5); border-radius:var(--radius-full); background:var(--color-error); color:var(--color-text-negative); font-size:.7rem; line-height:1; }
+  width:var(--sp-5); height:var(--sp-5); border-radius:var(--radius-full); background:var(--color-error); color:var(--color-text-negative); font-size:var(--fs-xs); line-height:1; }
 @media (min-width:1024px){ .shopping__cart-amount-indicator { left:15px; } }
 
 /* Mobiler Titelstreifen (top-header.postcss:13-31, Markup TopHeader.vue:3-8).
    Das CD verbirgt den langen Amtstitel unter 480 absichtlich (logo.postcss:76)
    und kompensiert ihn mit diesem getönten Band unter der Top-Bar — ohne das
    Band besteht die sichtbare Marke bei 320/390 nur aus «BBL» + Intranet-Pille. */
-.top-header__mobile-title { position:relative; top:-.75rem; overflow:hidden;
+.top-header__mobile-title { position:relative; top:calc(-1 * var(--sp-3)); overflow:hidden;
   background:var(--color-secondary-100); color:var(--color-text-muted);
   font-size:var(--fs-xs); line-height:1.4; transition:max-height var(--duration-slow) var(--ease-out); }
-.top-header__mobile-title .container { padding-block:.5rem; }
+.top-header__mobile-title .container { padding-block:var(--sp-2); }
 @media (min-width:480px){ .top-header__mobile-title { display:none; } }
 .body--mobile-menu-is-open .top-header__mobile-title { max-height:0; }
 
@@ -172,25 +172,25 @@
    mass 109x23px, weil hier gar keine Höhe gesetzt war (Item 2.5b). */
 .meta-navigation a, .meta-navigation__auth, .meta-navigation__user { min-height:var(--control-h); }
 .meta-navigation ul { list-style:none; display:flex; align-items:center; }
-.meta-navigation a { display:flex; align-items:center; padding-inline:.75rem; color:var(--color-text); text-decoration:none; }
+.meta-navigation a { display:flex; align-items:center; padding-inline:var(--sp-3); color:var(--color-text); text-decoration:none; }
 .meta-navigation a:hover { color:var(--color-primary-600); text-decoration:none; }
 .meta-navigation--desktop { display:none; }
-@media (min-width:1024px){ .meta-navigation--desktop { display:flex; margin-bottom:.75rem; } }
-@media (min-width:1280px){ .meta-navigation--desktop { margin-bottom:1rem; } }
+@media (min-width:1024px){ .meta-navigation--desktop { display:flex; margin-bottom:var(--sp-3); } }
+@media (min-width:1280px){ .meta-navigation--desktop { margin-bottom:var(--sp-4); } }
 /* Anmeldestatus (AGOV / FedLogin) rechts in der Meta-Navigation. EIN Linkstil
    für die ganze Leiste (CD meta-navigation.postcss:5-12 + MetaNavigation.vue:4-20:
    alle Einträge uniform, kein Akzent-Variant) — die Betonung trägt das User-Icon
    des Eintrags, nicht eine zweite Linkfarbe. Icon-Abstand .5rem wie CDs ml-2. */
-.meta-navigation__auth { display:flex; align-items:center; gap:.5rem;
+.meta-navigation__auth { display:flex; align-items:center; gap:var(--sp-2);
   min-height:var(--control-h);
   background:none; border:0; font:inherit; color:var(--color-text);
-  padding-inline:.75rem; cursor:pointer; }
+  padding-inline:var(--sp-3); cursor:pointer; }
 .meta-navigation__auth:hover { color:var(--color-primary-600); }
 /* Die Trennlinie übernimmt .separator--vertical im Markup (Item 4.2) — eine
    nackte Haarlinie am Zeilenanfang liest sich als Tippfehler. */
-.meta-navigation__user { display:flex; align-items:center; gap:.5rem; padding-inline:.75rem;
+.meta-navigation__user { display:flex; align-items:center; gap:var(--sp-2); padding-inline:var(--sp-3);
   min-height:var(--control-h); border-left:0; }
-.meta-navigation__name { display:flex; align-items:center; gap:.375rem; color:var(--color-text-muted); }
+.meta-navigation__name { display:flex; align-items:center; gap:var(--sp-1-5); color:var(--color-text-muted); }
 .meta-navigation__name .icon { color:var(--color-primary-600); }
 
 /* Login-Hinweis dort, wo ein Vorgang ausgelöst würde. */
@@ -201,18 +201,18 @@
 /* `height:100%` kollabierte im zentrierten Flex-Elternteil auf die Icon-Höhe —
    der einzige Menüzugang unter 1024 px war 20 px hoch (P0-5). */
 .burger { display:flex; align-items:center; justify-content:center;
-  min-height:var(--target-min); min-width:var(--target-min); padding:0 1rem; margin-right:-1rem;
+  min-height:var(--target-min); min-width:var(--target-min); padding:0 var(--sp-4); margin-right:calc(-1 * var(--sp-4));
   background:none; border:0; cursor:pointer; }
 @media (min-width:1024px){ .burger { display:none; } }
-.burger__icon { display:block; position:relative; width:1.75rem; height:1.25rem;
+.burger__icon { display:block; position:relative; width:var(--sp-7); height:var(--sp-5);
   color:var(--color-text-500); transition:color var(--duration-fast); }   /* CD burger.postcss:10-17: Ruhefarbe text-500 */
 .burger:hover .burger__icon { color:var(--color-primary-600); }
 .burger__bar { display:block; position:absolute; width:100%; height:100%; color:inherit; transition:transform var(--duration-fast); }
-.burger__bar::after { content:""; display:block; position:absolute; width:100%; height:2px;
+.burger__bar::after { content:""; display:block; position:absolute; width:100%; height:var(--stroke-2);
   border-color:currentColor; transition:transform var(--duration-fast) var(--duration-fast); }
-.burger__bar:nth-of-type(1)::after { top:-1px; border-top:2px solid; transform-origin:top; }
-.burger__bar:nth-of-type(2) { top:50%; height:2px; background-color:currentColor; transform:translateY(-50%); }
-.burger__bar:nth-of-type(3)::after { bottom:-1px; border-bottom:2px solid; transform-origin:bottom; }
+.burger__bar:nth-of-type(1)::after { top:calc(-1 * var(--stroke-1)); border-top:var(--stroke-2) solid; transform-origin:top; }
+.burger__bar:nth-of-type(2) { top:50%; height:var(--stroke-2); background-color:currentColor; transform:translateY(-50%); }
+.burger__bar:nth-of-type(3)::after { bottom:calc(-1 * var(--stroke-1)); border-bottom:var(--stroke-2) solid; transform-origin:bottom; }
 .body--mobile-menu-is-open .burger__bar:nth-of-type(1) { transform:translateY(50%); }
 .body--mobile-menu-is-open .burger__bar:nth-of-type(1)::after { transform:rotate(45deg); }
 .body--mobile-menu-is-open .burger__bar:nth-of-type(2) { transform:scaleX(0); }
@@ -228,15 +228,15 @@
    das 44px-Tippziel. */
 .search__button { display:inline-flex; align-items:center; justify-content:center; background:none; border:0; font:inherit;
   color:var(--color-text); min-height:var(--target-min); min-width:var(--target-min); padding:0; cursor:pointer; transition:color var(--duration-fast),opacity var(--duration); }
-@media (min-width:1024px){ .search__button { padding:.25rem; } }
-@media (min-width:1280px){ .search__button { padding:.5rem; } }
-@media (min-width:1544px){ .search__button { padding-block:.75rem; } }
+@media (min-width:1024px){ .search__button { padding:var(--sp-1); } }
+@media (min-width:1280px){ .search__button { padding:var(--sp-2); } }
+@media (min-width:1544px){ .search__button { padding-block:var(--sp-3); } }
 .search__button:hover { color:var(--color-primary-600); }
 @media (min-width:1024px){
   /* -mt-0.5 = CDs optischer Ausgleich der Beschriftung neben der Lupe
      (search.postcss:84-86 `lg:pr-1.5 lg:-mt-0.5`). */
-  .search__button__title { position:static; width:auto; height:auto; margin:-.125rem 0 0; overflow:visible; clip:auto;
-    padding-right:.375rem; }
+  .search__button__title { position:static; width:auto; height:auto; margin:calc(-1 * var(--sp-0-5)) 0 0; overflow:visible; clip:auto;
+    padding-right:var(--sp-1-5); }
 }
 .search--main.open .search__button { opacity:0; visibility:hidden; pointer-events:none; }
 .search__form { position:absolute; right:0; top:50%; transform:translateY(-50%); display:flex; align-items:stretch;
@@ -250,7 +250,7 @@
    an die Zustandsklasse (search.postcss:113-146). */
 .search--main.open .search__form {
   width:18rem; max-width:60vw; opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
-.search__form input { width:100%; padding:.625rem 3rem .625rem 1rem; border:1px solid var(--color-border-input);
+.search__form input { width:100%; padding:var(--sp-2-5) var(--sp-12) var(--sp-2-5) var(--sp-4); border:var(--stroke-1) solid var(--color-border-input);
   border-radius:var(--radius-xs); background:var(--color-bg); box-shadow:var(--shadow-2xl); min-height:var(--input-h); }
 /* CDs Fokusring am offenen Kopf-Suchfeld ist PURPUR (ring-2 ring-purple-500,
    global.postcss:75-77). Der globale :focus-visible-Ring dieses Blatts liegt
@@ -258,10 +258,10 @@
    trägt die Aufklapp-Animation), sichtbar blieb nur der dunkle UA-Ring
    (Nutzerbefund 2026-08-04). Deshalb hier INSET (-2px) und auf :focus statt
    nur :focus-visible — CD stylt das Feld ebenfalls ab Fokus (search.postcss:22). */
-.search__form input:focus { outline:2px solid var(--color-focus-ring); outline-offset:-2px; }
+.search__form input:focus { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
 /* CD search.postcss:120-123: ab lg bekommt das offene Kopffeld py-4. */
-@media (min-width:1024px){ .search__form input { padding-top:1rem; padding-bottom:1rem; } }
-.search__submit { position:absolute; right:0; top:0; bottom:0; width:3rem; background:none; border:0;
+@media (min-width:1024px){ .search__form input { padding-top:var(--sp-4); padding-bottom:var(--sp-4); } }
+.search__submit { position:absolute; right:0; top:0; bottom:0; width:var(--sp-12); background:none; border:0;
   cursor:pointer; color:var(--color-secondary-700); display:inline-flex; align-items:center; justify-content:center; }
 .search__submit:hover { color:var(--color-primary-600); }
 /* Das offene Feld lag quer über der Bundesmarke: es überlappte das Logo um 64px
@@ -277,15 +277,14 @@
   .search--main, .search--main .search__group { position:static; }
   .search--main.open .search__form {
     position:absolute; left:0; right:0; top:100%; transform:none;
-    width:auto; max-width:none; margin-top:.5rem;
-    padding-inline:.875rem; z-index:var(--header-z); }   /* CD search.postcss:37-42 `.search--mobile { mt-2 px-3.5 }` */
+    width:auto; max-width:none; margin-top:var(--sp-2);
+    padding-inline:var(--sp-3-5); z-index:var(--header-z); }   /* CD search.postcss:37-42 `.search--mobile { mt-2 px-3.5 }` */
   .top-header { position:relative; }
   /* KEINE eigene Transition mehr: die EINE duration-700 auf .logo (oben) trägt
      beide Ausblendungen — Suche offen UND Mobilmenü offen (CD logo.postcss:8). */
   .body--search-is-open .logo { opacity:0; pointer-events:none; }
 }
 /* CD search.postcss:88-92 — auf dem Handy war die einzige Suchaffordanz eine 24px-Lupe */
-.search__button .icon { width:2.25rem; height:2.25rem; }
-@media (min-width:1024px){ .search__button .icon { width:1.75rem; height:1.75rem; } }
-.search__submit .icon { width:1.5rem; height:1.5rem; }
-
+.search__button .icon { width:var(--sp-9); height:var(--sp-9); }
+@media (min-width:1024px){ .search__button .icon { width:var(--sp-7); height:var(--sp-7); } }
+.search__submit .icon { width:var(--sp-6); height:var(--sp-6); }

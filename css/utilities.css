@@ -2,7 +2,7 @@
 /* CD tfoot (table.postcss:45-67): 2px-Rahmen oben UND unten in text-300, kein
    Flächenton, bold nur auf th — td bleibt regular. Die Klasse .table__total im
    Markup ist damit reine Semantik ohne eigene Optik. */
-table.table tfoot { border-top:2px solid var(--color-border-strong); border-bottom:2px solid var(--color-border-strong); }
+table.table tfoot { border-top:var(--stroke-2) solid var(--color-border-strong); border-bottom:var(--stroke-2) solid var(--color-border-strong); }
 table.table tfoot th { font-weight:var(--fw-bold); color:var(--color-gray-800); }
 
 /* ---- Barrierefreiheit (Design-Review Stage 2) ---------------------------- */
@@ -11,11 +11,11 @@ table.table tfoot th { font-weight:var(--fw-bold); color:var(--color-gray-800); 
    Badges, Meldungen (deckt auch die Toasts ab — beide hosten eine .notification)
    und die graue Standard-Tag-Pille. */
 @media (forced-colors:active){
-  .badge, .notification, .tag-item__inner { border:1px solid currentColor; }
+  .badge, .notification, .tag-item__inner { border:var(--stroke-1) solid currentColor; }
 }
 /* Klickbare Pillen erreichen ~2rem (näher an WCAG 2.5.8) statt ~24-30px.
    cursor:pointer ist CDs einzige eigene Deklaration (badge.postcss:99-101). */
-.badge--clickable { min-height:2rem; cursor:pointer; }
+.badge--clickable { min-height:var(--sp-8); cursor:pointer; }
 /* Hover-Akzente nur auf echten Zeigern — auf Touch bleibt die Farbe sonst „kleben“. */
 /* Auf Touch bleibt :hover nach dem Antippen kleben, bis anderswo getippt wird —
    der Guard deckte bisher nur Farbwechsel ab, nicht Transforms und Schatten
@@ -34,24 +34,24 @@ table.table tfoot th { font-weight:var(--fw-bold); color:var(--color-gray-800); 
   .back-to-top-btn:hover { box-shadow:var(--shadow-lg); }
 }
 /* Seltene Eingabetypen (CD-Parität) */
-input[type="color"] { height:3rem; padding:.25rem; }
+input[type="color"] { height:var(--sp-12); padding:var(--sp-1); }
 input[type="range"] { border:0; box-shadow:none; padding:0; }
 
 /* ---- CD-Angleichung (Design-Review Stage 5/6) --------------------------- */
 /* Separator (separator.postcss): vertikaler Strich + Abstands-/Negativ-Varianten */
-.separator--vertical { display:inline-block; align-self:stretch; width:0; border-right:1px solid var(--color-secondary-400); margin-inline:1rem; }
-.separator--xl { display:block; height:1rem; }
+.separator--vertical { display:inline-block; align-self:stretch; width:0; border-right:var(--stroke-1) solid var(--color-secondary-400); margin-inline:var(--sp-4); }
+.separator--xl { display:block; height:var(--sp-4); }
 .separator--negative { border-color:var(--color-secondary-300); }
 /* Gestapelte Link-Liste (.link--block). `.section__action` stand hier
    byte-identisch ein zweites Mal — die eine Definition lebt jetzt unten im
    Startseiten-Block (Item 1.12). */
 .link--block { display:block; }
-.link--block + .link--block { margin-top:.75rem; }
+.link--block + .link--block { margin-top:var(--sp-3); }
 /* Pagination rechtsbündig unter Trefferlisten (CD) */
 .pagination-wrap--right { justify-content:flex-end; }
 
 /* Misc utility */
-.row { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; }
+.row { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; }
 /* `.row > * { min-width:0 }` lets flex children shrink — icons must not, or a
    long label next to one squashes it to a sliver. */
 .row > .icon { flex:none; }
@@ -64,14 +64,14 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    Titel oben, «Alle …»-Verweis unten rechts. */
 /* pb statt mb wie CD (section.postcss:53-56 pb-10): Padding kollabiert nicht mit
    dem margin-top eines Folgeblocks (.grid + .grid, mt-*-Utilities). */
-.section__title { font-weight:var(--fw-bold); font-size:var(--text-2xl); margin:0; padding-bottom:2.5rem; }
+.section__title { font-weight:var(--fw-bold); font-size:var(--text-2xl); margin:0; padding-bottom:var(--sp-10); }
 /* CD section.postcss:89-97 gibt der Abschnitts-CTA `relative; top-6 lg:top-8
    3xl:top-12` — die Aktion wird in die untere Polsterung des Bandes hineingezogen.
    Ohne das stehen (gemessen auf home-1440) 50px vor und 97px nach dem Verweis. */
-.section__action { display:flex; justify-content:flex-end; padding-top:1rem;
-  position:relative; top:1.5rem; }
-@media (min-width:1024px){ .section__action { top:2rem; } }
-@media (min-width:1920px){ .section__action { top:3rem; } }
+.section__action { display:flex; justify-content:flex-end; padding-top:var(--sp-4);
+  position:relative; top:var(--sp-6); }
+@media (min-width:1024px){ .section__action { top:var(--sp-8); } }
+@media (min-width:1920px){ .section__action { top:var(--sp-12); } }
 
 /* CD section.postcss:80-87 — der kanonische Weg, eine Section in zwei benannte
    Kartengruppen zu teilen (heute erledigt das ein `mt-8`). */
@@ -86,7 +86,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    width:100 % (globale Input-Regel) und würde den Knopf sonst in die zweite
    Zeile drängen — Feld und «Suchen» bleiben eine Zeile, unter 640 px stapelt
    die Regel unten weiterhin bewusst. */
-.home-search { display:flex; flex-wrap:nowrap; gap:.5rem; align-items:stretch; max-width:40rem; }
+.home-search { display:flex; flex-wrap:nowrap; gap:var(--sp-2); align-items:stretch; max-width:40rem; }
 .home-search input { flex:1 1 auto; min-width:0; min-height:var(--input-h); font-size:var(--text-base); }
 /* Der Knopf darf NICHT schrumpfen: `.btn__text` trägt CDs `overflow-wrap:anywhere`
    (btn.postcss:133-137), was die min-content-Breite auf ein Zeichen senkt — als
@@ -107,33 +107,33 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    Adresssuche im Karten-Wähler): border secondary-300 + shadow-lg + radius —
    vorher zwei Rezepte (randlos/shadow-2xl gegen Rand/shadow-lg), zwei Produkte
    (Design-Review C12). Die Invertierungs-Regel unten gilt wortgleich dort. */
-.suggest { position:absolute; z-index:var(--z-header); top:calc(100% + .25rem); left:0; right:0;
-  margin:0; padding:.25rem 0; list-style:none; max-height:22rem; overflow-y:auto;
-  background:var(--color-bg); border:1px solid var(--color-secondary-300);
+.suggest { position:absolute; z-index:var(--z-header); top:calc(100% + var(--sp-1)); left:0; right:0;
+  margin:0; padding:var(--sp-1) 0; list-style:none; max-height:22rem; overflow-y:auto;
+  background:var(--color-bg); border:var(--stroke-1) solid var(--color-secondary-300);
   border-radius:var(--radius); box-shadow:var(--shadow-lg); }
-.suggest__item { display:flex; flex-direction:column; gap:.125rem; padding:.5rem .875rem; cursor:pointer; }
-.suggest__item + .suggest__item { border-top:1px solid var(--color-secondary-200); }
+.suggest__item { display:flex; flex-direction:column; gap:var(--sp-0-5); padding:var(--sp-2) var(--sp-3-5); cursor:pointer; }
+.suggest__item + .suggest__item { border-top:var(--stroke-1) solid var(--color-secondary-200); }
 .suggest__item:hover { background:var(--color-secondary-50); }
 .suggest__item.is-active { background:var(--color-gray-600); }
 .suggest__item.is-active .suggest__title,
 .suggest__item.is-active .suggest__meta { color:var(--color-text-negative); }
 .suggest__title { font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--color-text); }
 .suggest__meta { font-size:var(--text-xs); color:var(--color-text-muted); }
-@media (max-width:639.98px){ .suggest { position:static; margin-top:.5rem; max-height:none; } }
+@media (max-width:639.98px){ .suggest { position:static; margin-top:var(--sp-2); max-height:none; } }
 
 /* Schnelleinstiege — Text vor Bild: hier zählt das Ziel, nicht die Illustration. */
 /* min(20rem,100%) statt 20rem als Spalten-Minimum: unter 320px Viewport würde
    ein festes 20rem-Minimum die Kachel breiter als den Bildschirm machen und die
    Seite horizontal scrollen lassen. */
-.quick-tile { display:flex; gap:1rem; align-items:flex-start; padding:1.25rem;
+.quick-tile { display:flex; gap:var(--sp-4); align-items:flex-start; padding:var(--sp-5);
   background:var(--color-bg); color:inherit; text-decoration:none;
-  border-left:3px solid transparent; box-shadow:var(--shadow-lg);
+  border-left:var(--stroke-3) solid transparent; box-shadow:var(--shadow-lg);
   /* Schatten-Lift im Karten-Takt (CD card.postcss:17 duration-300 ease-in-out) —
      die beiden Lift-Komponenten der Startseite bewegen sich gleich. */
   transition:box-shadow var(--duration-slow) var(--ease-in-out), border-color var(--duration); }
 .quick-tile:hover, .quick-tile:focus-visible { box-shadow:var(--shadow-2xl);
   border-left-color:var(--color-primary-600); }
-.quick-tile > .icon { flex:none; color:var(--color-primary-600); margin-top:.125rem; }
+.quick-tile > .icon { flex:none; color:var(--color-primary-600); margin-top:var(--sp-0-5); }
 /* Der Text-Wrapper ist ein Flex-Kind: ohne min-width:0 schrumpft er nicht unter
    seine intrinsische Mindestbreite, und lange Komposita (Datenschutzvorfall,
    Verbrauchsmaterial) laufen aus der Kachel. */
@@ -143,7 +143,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .quick-tile__label { margin:0; display:block; font-size:var(--text-base);
   font-weight:var(--fw-bold); line-height:var(--lh-snug); overflow-wrap:anywhere; }
 .quick-tile:hover .quick-tile__label { color:var(--color-primary-700); }
-.quick-tile__meta { display:block; margin-top:.125rem; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
+.quick-tile__meta { display:block; margin-top:var(--sp-0-5); font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
 /* Auf grauen Abschnitten heben sich die weissen Kacheln ab — auf weissen
    Abschnitten brauchen sie eine leichte Tönung, damit sie als Fläche lesbar bleiben. */
 .section--default:not([class*="bg--"]) .quick-tile { background:var(--color-secondary-50); box-shadow:none; }
@@ -154,7 +154,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
   .quick-tile:hover { box-shadow:var(--shadow-lg); border-left-color:transparent; }
   .section--default:not([class*="bg--"]) .quick-tile:hover { background:var(--color-secondary-50); }
 }
-.gap-sm { gap:.5rem; }
+.gap-sm { gap:var(--sp-2); }
 .py-1-5 { padding-block:var(--sp-1-5); }   /* Zeilen-Link im Aside-Kasten (services) — statt Inline-Style */
 .mt-2 { margin-top:var(--sp-2); } .mt-3 { margin-top:var(--sp-3); } .mt-4 { margin-top:var(--sp-4); } .mt-6 { margin-top:var(--sp-6); }
 .mt-8 { margin-top:var(--sp-8); }
@@ -175,7 +175,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .detail-layout > * { min-width:0; }
 @media (min-width:1024px){
   .detail-layout { grid-template-columns:minmax(0,1fr) 22rem; align-items:start; }
-  .detail-layout__aside { position:sticky; top:1rem; }
+  .detail-layout__aside { position:sticky; top:var(--sp-4); }
 }
 /* Abstand zwischen den Karten der Randspalte. `.box + .box` legt sie sonst mit
    einer 1px-Naht zu EINER Fläche zusammen — das ist richtig für gestapelte
@@ -187,11 +187,11 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    Beschriftungen, oben und unten eine Linie. Beantwortet «wie gross, wie
    teuer» auf einen Blick, bevor die Merkmalliste ins Detail geht. Ohne
    Kartenrahmen — der Kontrast entsteht allein über die Schriftgrade. */
-.kpi-strip { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem;
-  margin:0 0 1.5rem; padding:1rem 0;
-  border-top:1px solid var(--color-secondary-100); border-bottom:1px solid var(--color-secondary-100); }
-@media (min-width:768px){ .kpi-strip { grid-template-columns:repeat(4,minmax(0,1fr)); gap:1.5rem; } }
-.kpi-strip__item { display:flex; flex-direction:column; gap:.125rem; }
+.kpi-strip { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-4);
+  margin:0 0 var(--sp-6); padding:var(--sp-4) 0;
+  border-top:var(--stroke-1) solid var(--color-secondary-100); border-bottom:var(--stroke-1) solid var(--color-secondary-100); }
+@media (min-width:768px){ .kpi-strip { grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--sp-6); } }
+.kpi-strip__item { display:flex; flex-direction:column; gap:var(--sp-0-5); }
 .kpi-strip__label { font-size:var(--text-sm); color:var(--color-text-muted); }
 /* Typografie aus dem geteilten Grossziffer-Rezept (.stat__num) — der Streifen
    bleibt rahmenlos (dokumentierter Flächen-Entscheid). */
@@ -199,7 +199,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 
 /* Augenbrauenzeile über der Seitenüberschrift: Kennungen, die man sucht
    (MV-Nummer, WE, EGID), aber nicht liest wie Fliesstext. */
-.eyebrow { margin:0 0 .25rem; font-size:var(--text-xs); text-transform:uppercase;
+.eyebrow { margin:0 0 var(--sp-1); font-size:var(--text-xs); text-transform:uppercase;
   letter-spacing:.08em; color:var(--color-text-muted); }
 
 /* Lesebreiten-Deckel. Fünf verschiedene `style="max-width:…"` standen dafür in
@@ -210,7 +210,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    Erfolgspanel) nutzt jetzt die 46rem-Formularspalte der Geschwister. */
 .measure-sm { max-width:34rem; } .measure    { max-width:42rem; }
 .measure-xl { max-width:60rem; }
-.pill-row { display:flex; flex-wrap:wrap; gap:.5rem; }
+.pill-row { display:flex; flex-wrap:wrap; gap:var(--sp-2); }
 /* Merkmalliste (Beschriftung · Wert), u. a. der Reiter «Übersicht» aller
    Detailansichten. Die Beschriftungsspalte ist bewusst BREITER als ihr
    längster Eintrag: mit `max-content` klebte der Wert direkt an der längsten
@@ -220,7 +220,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    von 18rem verhindert, dass eine einzelne lange Beschriftung dem Wert die
    Breite nimmt. */
 .kv { display:grid; grid-template-columns:fit-content(18rem) minmax(0,1fr);
-  gap:.5rem 2rem; font-size:var(--text-sm); }
+  gap:var(--sp-2) var(--sp-8); font-size:var(--text-sm); }
 .kv dt { color:var(--color-text-muted); }
 /* Doppelpunkt aus dem Blatt, nicht aus den Zeichenketten: er gehört zur
    Darstellung der Liste, und so tragen ihn alle neun Konsumenten gleich,
@@ -234,7 +234,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    Werte, die auch in einer 411px-Seitenspalte nicht neben ihre Beschriftung
    passen: eine E-Mail-Adresse bräche dort mitten im Namen um. */
 .kv--stack { grid-template-columns:minmax(0,1fr); gap:0; }
-.kv--stack dt { margin-top:1rem; }
+.kv--stack dt { margin-top:var(--sp-4); }
 .kv--stack dt:first-of-type { margin-top:0; }
 /* Kein Einzug am Wert: in der Seitenspalte fluchten Beschriftung und Wert an
    derselben Kante wie die Kartenüberschrift darüber. Ein halber Zentimeter
@@ -248,25 +248,25 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    (Datenkatalog-Metadaten, lange Distributionslisten); eine Implementierung,
    zwei Oberflächen (Design-Review C7). */
 .kv--ruled { row-gap:0; }
-.kv--ruled dt, .kv--ruled dd { padding:.5rem 0; border-bottom:1px solid var(--color-border); margin:0; }
+.kv--ruled dt, .kv--ruled dd { padding:var(--sp-2) 0; border-bottom:var(--stroke-1) solid var(--color-border); margin:0; }
 /* In der schmalen Seitenspalte reicht die Breite für zwei Spalten nicht — dort
    steht die Beschriftung über dem Wert, statt Wörter zu zerbrechen. */
 .box { container-type:inline-size; }
 @container (max-width:22rem){
   .kv { grid-template-columns:minmax(0,1fr); gap:0; }
-  .kv dt { margin-top:.625rem; }
+  .kv dt { margin-top:var(--sp-2-5); }
   .kv dt:first-of-type { margin-top:0; }
 }
-@media (max-width:639.98px){ .kv { grid-template-columns:minmax(0,1fr); gap:.125rem 0; } .kv dt { margin-top:.5rem; } }
-.empty { text-align:center; color:var(--color-text-muted); padding:3rem 1rem; }
+@media (max-width:639.98px){ .kv { grid-template-columns:minmax(0,1fr); gap:var(--sp-0-5) 0; } .kv dt { margin-top:var(--sp-2); } }
+.empty { text-align:center; color:var(--color-text-muted); padding:var(--sp-12) var(--sp-4); }
 .empty__title { margin:0; font-size:var(--fs-lg); color:var(--color-text); }
-.empty__hint { margin:.5rem auto 0; max-width:44ch; font-size:var(--fs-sm); }
+.empty__hint { margin:var(--sp-2) auto 0; max-width:44ch; font-size:var(--fs-sm); }
 /* Ausweg aus dem Leerzustand (Item 5.10): «Filter zurücksetzen» / «Alle ansehen». */
-.empty__actions { display:flex; justify-content:center; gap:.75rem; margin-top:1.25rem; flex-wrap:wrap; }
-.empty__action { margin-top:1.25rem; }
+.empty__actions { display:flex; justify-content:center; gap:var(--sp-3); margin-top:var(--sp-5); flex-wrap:wrap; }
+.empty__action { margin-top:var(--sp-5); }
 /* «Nicht verfügbar» (Ladefehler) — vom neutralen Leer-Zustand abgesetzt (P0-4). */
-.empty--unavailable { display:flex; align-items:center; justify-content:center; gap:.5rem;
-  padding:2rem 1rem; color:var(--color-error-text); background:var(--color-error-bg);
+.empty--unavailable { display:flex; align-items:center; justify-content:center; gap:var(--sp-2);
+  padding:var(--sp-8) var(--sp-4); color:var(--color-error-text); background:var(--color-error-bg);
   border-radius:var(--radius-lg); text-align:left; }
 .empty--unavailable .icon { flex:none; }
 
@@ -280,7 +280,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 
 /* ============================== PRINT (print.postcss) ============================== */
 @media print {
-  html { font-size:13px !important; max-width:80% !important; margin:2rem auto !important; }
+  html { font-size:13px !important; max-width:80% !important; margin:var(--sp-8) auto !important; }
   body { display:block; }
   .top-bar, .desktop-menu, .desktop-menu__overlay, .mobile-menu, .burger,
   .top-header__right, .breadcrumb, #main-footer,
@@ -289,15 +289,15 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
      fehlte hier, jede gedruckte Detailseite trug den «Zurück»-Knopf (Review C19) */
   .btn--back, .back-link-row, .notification-banner,
   .pf-map, video, audio, object, iframe { display:none !important; }
-  .top-header { border:0 !important; padding:0 0 1rem !important; }
+  .top-header { border:0 !important; padding:0 0 var(--sp-4) !important; }
   .logo { align-items:flex-start !important; }
   .logo__name { display:block !important; }
   .grid, .grid--auto, .stats, .container--grid { display:block !important; }
   p, img, ul, ol, .card, .notification, .box, table.table { position:relative; display:block; break-inside:avoid; }
   table.table { display:table; }
-  .card { margin-bottom:2em; box-shadow:none !important; border:1px solid var(--color-border-strong); }
+  .card { margin-bottom:2em; box-shadow:none !important; border:var(--stroke-1) solid var(--color-border-strong); }
   .stat, .notification, table.table { box-shadow:none !important; }
-  a { color:#000 !important; text-decoration:underline; }
+  a { color:var(--color-print) !important; text-decoration:underline; }
   #main-content a[href^="http"]::after { content:" (" attr(href) ")"; font-size:.85em; }
   /* Datensatzblatt & FAQ vollständig drucken: eingeklappte Akkordeon-Panels
      aufklappen (das globale [hidden]{display:none} unterdrückt sie sonst) und

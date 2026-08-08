@@ -13,12 +13,12 @@
    Vorher lagen hier drei überlappende Breakpoint-Systeme über einer 22rem-Zeile:
    bei 700px ergab das einen 800px hohen Hero mit einem 393px hohen Bild (mehr
    Hero als Inhalt), bei 1024px ein auf 1.74 gedehntes Bild. */
-.pf-mosaic { display:grid; grid-template-columns:1fr; gap:.5rem; }
+.pf-mosaic { display:grid; grid-template-columns:1fr; gap:var(--sp-2); }
 .pf-mosaic__cell--main { aspect-ratio:16/10; }
 /* Feste Zeilen statt auto: sonst bestimmt der INHALT der Platzhalterkacheln
    (Symbol + «Kein Bild») die Höhe der Spalte, und sie wächst über das Hauptbild
    hinaus, statt sich dessen Höhe zu teilen. */
-.pf-mosaic__side { display:grid; gap:.5rem; min-height:0;
+.pf-mosaic__side { display:grid; gap:var(--sp-2); min-height:0;
   grid-template-columns:repeat(2,minmax(0,1fr));
   grid-template-rows:repeat(2,minmax(0,1fr)); }
 /* Kartenspalte: Kopfzeile mit dem Weg nach draussen, darunter die Karte auf
@@ -32,7 +32,7 @@
 .pf-hero__mapcol { display:flex; flex-direction:column; min-height:0; }
 /* Getönte Leiste, nicht weiss auf weiss: die Zeile steht über einer randlosen
    Karte und ohne eigene Fläche schwebte sie im Nichts. */
-.pf-hero__maplink { margin:0; padding:.375rem .75rem; font-size:var(--text-sm);
+.pf-hero__maplink { margin:0; padding:var(--sp-1-5) var(--sp-3); font-size:var(--text-sm);
   background:var(--color-secondary-50);
   border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
 .pf-hero__map { position:relative; overflow:hidden; flex:1 1 auto; min-height:0;
@@ -101,17 +101,17 @@
 .map-picker__canvas { position:absolute; inset:0; width:100%; height:100%; }
 /* Der Abstand nach unten hält die Auflage auch von der Attribution (unten links)
    frei — die stand ihr bei kleineren Werten direkt unter dem Feld. */
-.map-search { position:absolute; left:1rem; right:1rem; bottom:2rem; z-index:2;
-  display:flex; flex-direction:column; gap:.5rem; max-width:32rem; margin-inline:auto; }
+.map-search { position:absolute; left:var(--sp-4); right:var(--sp-4); bottom:var(--sp-8); z-index:var(--z-local-control);
+  display:flex; flex-direction:column; gap:var(--sp-2); max-width:32rem; margin-inline:auto; }
 /* Ab 640px (CDs sm) statt erst ab 768px: dort ist die Karte schon ~390px hoch
    und verträgt den grösseren Abstand — nur auf dem Telefon (288px Karte) bliebe
    sonst zu wenig Kartenfläche über dem Feld. */
-@media (min-width:640px){ .map-search { bottom:3.5rem; } }
+@media (min-width:640px){ .map-search { bottom:var(--sp-14); } }
 .map-search__field { position:relative; display:flex; }
 .map-search__field input { width:100%; min-height:var(--input-h);
   padding-left:var(--target-min); padding-right:var(--target-min); background:var(--color-bg);
   box-shadow:var(--shadow-lg); border-radius:var(--radius); }
-.map-search__icon { position:absolute; left:.85rem; top:50%; transform:translateY(-50%);
+.map-search__icon { position:absolute; left:var(--sp-3-5); top:50%; transform:translateY(-50%);
   color:var(--color-text-muted); pointer-events:none; }
 /* 44px-Ziel (--target-min): das Feld reserviert rechts genau diese Breite. */
 .map-search__clear { position:absolute; right:0; top:50%; transform:translateY(-50%);
@@ -122,12 +122,12 @@
 /* Liste über dem Feld: `order` dreht die optische Reihenfolge, ohne die
    DOM-Reihenfolge zu ändern — Feld zuerst im Quelltext wäre für die
    Combobox-Semantik falsch (aria-controls zeigt vorwärts auf die Liste). */
-.map-search__list { order:-1; margin:0; padding:.25rem; list-style:none;
+.map-search__list { order:-1; margin:0; padding:var(--sp-1); list-style:none;
   max-height:13rem; overflow-y:auto; background:var(--color-bg);
-  border:1px solid var(--color-secondary-300);
+  border:var(--stroke-1) solid var(--color-secondary-300);
   border-radius:var(--radius); box-shadow:var(--shadow-lg); }   /* Chrome = .suggest (EIN Listbox-Rezept, C12) */
-.map-search__option { display:flex; align-items:center; gap:.5rem;
-  min-height:var(--target-min); padding:.5rem .75rem; border-radius:var(--radius-sm); cursor:pointer;
+.map-search__option { display:flex; align-items:center; gap:var(--sp-2);
+  min-height:var(--target-min); padding:var(--sp-2) var(--sp-3); border-radius:var(--radius-sm); cursor:pointer;
   font-size:var(--text-sm); line-height:var(--lh-snug); }
 .map-search__option .icon { flex:none; color:var(--color-text-muted); }
 .map-search__option:hover { background:var(--color-secondary-50); }
@@ -139,9 +139,9 @@
 .map-search__option.is-active { background:var(--color-gray-600); color:var(--color-text-negative); }
 .map-search__option.is-active .icon { color:inherit; }
 /* Stecknadel: Kreis mit Spitze, in der Primärfarbe der aktiven Marke. */
-.map-pin { width:1.5rem; height:1.5rem; border-radius:50% 50% 50% 0;
+.map-pin { width:var(--sp-6); height:var(--sp-6); border-radius:50% 50% 50% 0;
   transform:rotate(-45deg); background:var(--color-primary-600);
-  border:2px solid var(--color-bg); box-shadow:var(--shadow-md); cursor:grab; }
+  border:var(--stroke-2) solid var(--color-bg); box-shadow:var(--shadow-md); cursor:grab; }
 .map-pin:active { cursor:grabbing; }
 
 .pf-mosaic__cell { position:relative; display:block; padding:0; border:0; background:none; cursor:zoom-in;
@@ -160,17 +160,17 @@
 /* `.photo > *` als Kindselektor, weil `.photo > :not(img)` (0,1,1) sonst unser
    `position:absolute` (0,1,0) überstimmt und die Auflage in den normalen Fluss
    an den Kachelanfang kippt. */
-.photo > .pf-mosaic__more { position:absolute; inset:0; display:flex; flex-direction:column; gap:.125rem;
-  align-items:center; justify-content:center; text-align:center; padding:.5rem;
+.photo > .pf-mosaic__more { position:absolute; inset:0; display:flex; flex-direction:column; gap:var(--sp-0-5);
+  align-items:center; justify-content:center; text-align:center; padding:var(--sp-2);
   background:var(--scrim-chip); color:var(--color-text-negative); font-weight:var(--fw-bold); }
 .pf-mosaic__cell:hover .pf-mosaic__more { background:var(--scrim-chip-hover); }
 .pf-mosaic__more-num { font-size:var(--fs-2xl); line-height:1.1; }
 .pf-mosaic__more-label { font-size:var(--fs-xs); font-weight:var(--fw-regular); text-decoration:underline;
-  text-underline-offset:2px; }
+  text-underline-offset:var(--stroke-2); }
 @media (max-width:767.98px){ .pf-mosaic__more-label { display:none; } }
 /* Kindselektor, siehe Hinweis oben zu `.photo > :not(img)`. */
-.photo > .pf-hero__badge { position:absolute; right:.85rem; bottom:.75rem; display:inline-flex; align-items:center; gap:.5rem;
-  padding:.25rem .75rem; border-radius:var(--radius-full); background:var(--scrim-chip); color:var(--color-text-negative);
+.photo > .pf-hero__badge { position:absolute; right:var(--sp-3-5); bottom:var(--sp-3); display:inline-flex; align-items:center; gap:var(--sp-2);
+  padding:var(--sp-1) var(--sp-3); border-radius:var(--radius-full); background:var(--scrim-chip); color:var(--color-text-negative);
   font-size:var(--fs-sm); font-weight:var(--fw-bold); }   /* statisch wie alle Bild-Chips (.pf-card__land): Auflagen skalieren mit dem Bild, nicht mit dem Viewport */
 .pf-mosaic__cell:hover .photo > .pf-hero__badge { background:var(--scrim-chip-hover); }
 
@@ -187,12 +187,12 @@
 /* z-viewer wie der Dokumentbetrachter: beide Vollbild-Betrachter liegen ÜBER dem
    Toast (tokens.css) — ein Toast darunter wäre unerreichbar. */
 .pf-lightbox { position:fixed; inset:0; z-index:var(--z-viewer);
-  --lb-top:3.5rem; --lb-bottom:0px;
+  --lb-top:var(--sp-14); --lb-bottom:0px;
   background:var(--color-secondary-900); }
-.pf-lightbox__bar { position:absolute; top:0; left:0; right:0; z-index:3;
-  display:flex; align-items:center; justify-content:space-between; gap:1rem;
-  padding:.625rem .75rem; background:var(--color-secondary-800); color:var(--color-text-negative); }
-@media (min-width:768px){ .pf-lightbox__bar { padding:.625rem 1.25rem; } }
+.pf-lightbox__bar { position:absolute; top:0; left:0; right:0; z-index:var(--z-local-chrome);
+  display:flex; align-items:center; justify-content:space-between; gap:var(--sp-4);
+  padding:var(--sp-2-5) var(--sp-3); background:var(--color-secondary-800); color:var(--color-text-negative); }
+@media (min-width:768px){ .pf-lightbox__bar { padding:var(--sp-2-5) var(--sp-5); } }
 /* Kopfzeile, Titel, Aktionen und Knöpfe teilen sich das EINE Dunkel-Chrome-
    Rezept mit dem Dokumentbetrachter — als GRUPPENSELEKTOR bei der
    Dokumentvorschau (Design-Review A12). Vorher standen die Paare als Kopien
@@ -211,7 +211,7 @@
   color:var(--color-text-negative); pointer-events:none; }
 
 /* CD share-bar.postcss:16 — Kopierzeile im Teilen-Dialog. */
-.share-url { display:flex; flex-wrap:wrap; align-items:center; gap:.75rem; }
+.share-url { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-3); }
 @media (min-width:480px){ .share-url { min-width:22rem; } }
 @media (min-width:1280px){ .share-url { min-width:24rem; } }
 [data-share-url] { width:100%; }
@@ -231,12 +231,12 @@
   min-width:0; min-height:0;
   /* Innenabstand = gemessene Chrome-Höhe: im Fit-Zustand bleibt das Bild frei,
      gescrollt läuft es darunter durch. */
-  padding:calc(var(--lb-top) + 1rem) 1rem calc(var(--lb-bottom) + 1rem);
-  scroll-padding:calc(var(--lb-top) + 1rem) 1rem calc(var(--lb-bottom) + 1rem); }
+  padding:calc(var(--lb-top) + var(--sp-4)) var(--sp-4) calc(var(--lb-bottom) + var(--sp-4));
+  scroll-padding:calc(var(--lb-top) + var(--sp-4)) var(--sp-4) calc(var(--lb-bottom) + var(--sp-4)); }
 .pf-lightbox__stage.is-zoomed .pf-lightbox__scroll { overflow:auto; align-items:flex-start; justify-content:flex-start; cursor:grab; }
 .pf-lightbox__stage.is-zoomed .pf-lightbox__scroll:active { cursor:grabbing; }
-.pf-lightbox__scroll:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
-.pf-lightbox__stage:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
+.pf-lightbox__scroll:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
+.pf-lightbox__stage:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
 /* Im Fit-Modus braucht der Rahmen eine DEFINITE Höhe: `max-height:100%` am Bild
    löst gegen die Höhe seines Elternteils auf, und gegen `auto` greift eine
    Prozentangabe nicht — das Bild stand dann in natürlicher Grösse da (gemessen:
@@ -256,10 +256,10 @@
    Kopfzeile. Sie schwebt über dem Bild, deshalb Abstand nach unten. */
 /* Gleiche Leisten-Oberfläche wie .docviewer__toolbar (secondary-900 + border-negativ):
    EIN Zoomleisten-Rezept für beide Betrachter. */
-.pf-lightbox__zoom { position:absolute; left:50%; bottom:calc(var(--lb-bottom) + 1rem); transform:translateX(-50%);
-  z-index:2; gap:var(--sp-1); padding-inline:var(--sp-1-5); }
-@media (min-width:768px){ .pf-lightbox__zoom { bottom:calc(var(--lb-bottom) + 1.5rem); } }
-.pf-lightbox__zoom .pf-lightbox__btn { width:2.25rem; height:2.25rem; }
+.pf-lightbox__zoom { position:absolute; left:50%; bottom:calc(var(--lb-bottom) + var(--sp-4)); transform:translateX(-50%);
+  z-index:var(--z-local-control); gap:var(--sp-1); padding-inline:var(--sp-1-5); }
+@media (min-width:768px){ .pf-lightbox__zoom { bottom:calc(var(--lb-bottom) + var(--sp-6)); } }
+.pf-lightbox__zoom .pf-lightbox__btn { width:var(--sp-9); height:var(--sp-9); }
 /* 44-px-Ziel ohne Zeigegerät (WCAG 2.5.5) — Spiegel der Docviewer-Zoomregel. */
 @media (max-width:1023.98px), (hover:none){
   .pf-lightbox__zoom .pf-lightbox__btn { width:var(--target-min); height:var(--target-min); }
@@ -271,32 +271,32 @@
    Ab 768px als Spalte NEBEN der Bühne (das Bild bleibt sichtbar), darunter als
    Band darüber; auf dem Telefon wäre eine dritte Spalte nicht lesbar. */
 .pf-lightbox__meta { flex:0 0 auto; overflow-y:auto; max-height:40vh;
-  padding:calc(var(--lb-top) + 1rem) 1.25rem 1rem; background:var(--surface-negative); color:var(--color-text-negative);
-  border-top:1px solid var(--border-negative); }
-.pf-lightbox__meta-title { margin:0 0 .5rem; font-size:var(--text-sm); font-weight:var(--fw-bold);
+  padding:calc(var(--lb-top) + var(--sp-4)) var(--sp-5) var(--sp-4); background:var(--surface-negative); color:var(--color-text-negative);
+  border-top:var(--stroke-1) solid var(--border-negative); }
+.pf-lightbox__meta-title { margin:0 0 var(--sp-2); font-size:var(--text-sm); font-weight:var(--fw-bold);
   text-transform:none; color:var(--text-negative-muted); }
 .pf-lightbox__meta .kv { margin:0; color:var(--color-text-negative); }
 .pf-lightbox__meta .kv dt { color:var(--text-negative-muted); }
 .pf-lightbox__meta .kv dd { color:var(--color-text-negative); }
 /* Der Meta-Knopf ist ein echter .btn--outline-negative (btn.postcss:87-98) —
    keine Ad-hoc-Geistervariante mit 16%-Weiss-Rand mehr (die lag unter 3:1). */
-.pf-lightbox__meta .btn { margin-top:.75rem; }
+.pf-lightbox__meta .btn { margin-top:var(--sp-3); }
 @media (min-width:768px){
   /* Bühne und Panel nebeneinander — im .pf-lightbox__body, NICHT indem das
      Overlay selbst zur Zeile wird: dann verliert die Bühne ihre feste Höhe. */
   .pf-lightbox__body { flex-direction:row; }
   .pf-lightbox__meta { flex:0 0 20rem; max-height:none;
-    border-top:0; border-left:1px solid var(--border-negative); }
+    border-top:0; border-left:var(--stroke-1) solid var(--border-negative); }
 }
 .pf-lightbox__img { display:block; max-width:100%; max-height:100%; object-fit:contain; }
 /* z-index: .pf-lightbox__canvas ist positioniert und steht im Quelltext NACH
    dem Zurück-Pfeil — ohne eigene Ebene malte das Bild ihn zu. */
-.pf-lightbox__nav { z-index:2; position:absolute; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; justify-content:center;
+.pf-lightbox__nav { z-index:var(--z-local-control); position:absolute; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; justify-content:center;
   width:var(--target-min); height:var(--target-min); border:0; border-radius:var(--radius-full);
   /* Kein Wert der Negativ-Ebene: die Blätterpfeile sind HELLE, deckende Knöpfe
      mit dunklem Symbol auf dem Bild — sie liegen über der Aufnahme, nicht über
      der Chrome. .85 lässt das Bild durchscheinen, ohne den Kontrast zu brechen. */
-  background:rgba(255,255,255,.85); color:var(--color-text); cursor:pointer; transition:background var(--duration-fast); }
+  background:var(--surface-lightbox-control); color:var(--color-text); cursor:pointer; transition:background var(--duration-fast); }
 .pf-lightbox__nav:hover { background:var(--color-bg); }
-.pf-lightbox__nav--prev { left:.75rem; } .pf-lightbox__nav--next { right:.75rem; }
+.pf-lightbox__nav--prev { left:var(--sp-3); } .pf-lightbox__nav--next { right:var(--sp-3); }
 .pf-lightbox__count { flex:none; color:var(--color-secondary-200); font-size:var(--fs-sm); }

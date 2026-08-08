@@ -6,9 +6,9 @@
    (Design-Review C14). */
 .docviewer { position:fixed; inset:0; z-index:var(--z-viewer); display:flex; flex-direction:column;
   overflow:hidden; background:var(--color-secondary-900); }
-.docviewer__bar { position:relative; z-index:5; display:flex; align-items:center; flex:none;
-  justify-content:space-between; gap:1rem; padding:.75rem 1rem;
-  background:var(--color-secondary-900); border-bottom:1px solid var(--border-negative); }
+.docviewer__bar { position:relative; z-index:var(--z-local-popover); display:flex; align-items:center; flex:none;
+  justify-content:space-between; gap:var(--sp-4); padding:var(--sp-3) var(--sp-4);
+  background:var(--color-secondary-900); border-bottom:var(--stroke-1) solid var(--border-negative); }
 /* EIN Dunkel-Chrome-Rezept für BEIDE Vollbild-Betrachter (Dokumentvorschau +
    Bildergalerie) — Gruppenselektoren statt der früheren Kopie im Lightbox-
    Block, die bereits gedriftet war (Design-Review A12). Aufgelöste Drifts:
@@ -17,111 +17,113 @@
    ein Aussenring würde dort beschnitten). 44px-Ziel, radius-sm,
    surface-negative-Hover; der frühere primary-600-Hover wechselte mit dem
    Skin die Farbe — Chrome ist markenneutral. */
-.docviewer__heading, .pf-lightbox__heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
+.docviewer__heading, .pf-lightbox__heading { display:flex; align-items:center; gap:var(--sp-3); min-width:0; }
 .docviewer__heading-icon, .pf-lightbox__heading-icon { color:var(--text-negative-muted); flex:none; }
 .docviewer__heading-text, .pf-lightbox__heading-text { min-width:0; }   /* Titel dürfen kürzen */
 .docviewer__title, .pf-lightbox__title { margin:0; color:var(--color-text-negative); font-weight:var(--fw-bold); font-size:var(--text-base);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .docviewer__sub, .pf-lightbox__sub { margin:0; color:var(--text-negative-muted); font-size:var(--text-xs); }
 .docviewer__docnum { white-space:nowrap; }
-.docviewer__actions, .pf-lightbox__actions { display:flex; align-items:center; gap:.25rem; flex:none; }
+.docviewer__actions, .pf-lightbox__actions { display:flex; align-items:center; gap:var(--sp-1); flex:none; }
 .docviewer__btn, .pf-lightbox__btn { display:inline-flex; align-items:center; justify-content:center;
   width:var(--target-min); height:var(--target-min); padding:0; background:none; border:0; border-radius:var(--radius-sm);
   color:var(--color-text-negative); cursor:pointer; transition:background var(--duration-fast); }
 .docviewer__btn:hover, .pf-lightbox__btn:hover { background:var(--surface-negative-hover); }
 .docviewer__btn.is-active { background:var(--surface-negative-active); }
-.docviewer__btn:focus-visible, .pf-lightbox__btn:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
+.docviewer__btn:focus-visible, .pf-lightbox__btn:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
 .docviewer__body { display:flex; flex:1 1 auto; flex-direction:column; min-height:0; }
 .docviewer__main { position:relative; flex:1 1 auto; min-width:0; min-height:0;
   overflow:auto; background:var(--color-secondary-800); }
-.docviewer__stage { padding:2.5rem 1rem; cursor:default; }
-.docviewer__stage:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
+.docviewer__stage { padding:var(--sp-10) var(--sp-4); cursor:default; }
+.docviewer__stage:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
 .docviewer__pages { --docpage-w:760px; display:flex; flex-direction:column; align-items:center;
-  gap:1.5rem; min-width:min-content; }
+  gap:var(--sp-6); min-width:min-content; }
 /* Vor/Zurück: am Viewport fixiert, damit sie beim Scrollen stehen bleiben. */
-.docviewer__nav { position:fixed; top:50%; transform:translateY(-50%); z-index:6;
+.docviewer__nav { position:fixed; top:50%; transform:translateY(-50%); z-index:var(--z-local-floating);
   display:inline-flex; align-items:center; justify-content:center; width:var(--target-min); height:var(--target-min);
   background:var(--surface-negative); border:0; border-radius:var(--radius-sm); color:var(--color-text-negative); cursor:pointer;
   transition:background var(--duration-fast); }
 .docviewer__nav:hover { background:var(--surface-negative-hover); }
-.docviewer__nav:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
-.docviewer__nav--prev { left:1rem; }
-.docviewer__nav--next { right:1rem; }
+.docviewer__nav:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:var(--stroke-2); }
+.docviewer__nav--prev { left:var(--sp-4); }
+.docviewer__nav--next { right:var(--sp-4); }
 
 /* Metadaten folgen dem Muster des Bildbetrachters: auf kleinen Viewports als
    begrenztes Band, ab md als feste Spalte neben der Vorschau. */
-.docviewer__meta { flex:0 0 auto; overflow-y:auto; max-height:40vh; padding:1rem 1.25rem;
+.docviewer__meta { flex:0 0 auto; overflow-y:auto; max-height:40vh; padding:var(--sp-4) var(--sp-5);
   container-type:inline-size;
   background:var(--surface-negative); color:var(--color-text-negative);
-  border-top:1px solid var(--border-negative); }
-.docviewer__meta-title { margin:0 0 .5rem; color:var(--text-negative-muted);
+  border-top:var(--stroke-1) solid var(--border-negative); }
+.docviewer__meta-title { margin:0 0 var(--sp-2); color:var(--text-negative-muted);
   font-size:var(--text-sm); font-weight:var(--fw-bold); }
 .docviewer__meta .kv { margin:0; color:var(--color-text-negative); }
 .docviewer__meta .kv dt { color:var(--text-negative-muted); }
 .docviewer__meta .kv dd { color:var(--color-text-negative); }
-.docviewer__meta .btn { margin-top:.75rem; }
+.docviewer__meta .btn { margin-top:var(--sp-3); }
 @media (min-width:768px){
   .docviewer__body { flex-direction:row; }
   .docviewer__meta { flex:0 0 20rem; max-height:none; border-top:0;
-    border-left:1px solid var(--border-negative); }
+    border-left:var(--stroke-1) solid var(--border-negative); }
   .docviewer--meta-open .docviewer__toolbar { left:calc((100% - 20rem) / 2); }
   .docviewer--meta-open .docviewer__nav--next { right:21rem; }
 }
 
 .docpage { width:var(--docpage-w); min-height:calc(var(--docpage-w) * 1.414); flex:none;
   background:var(--color-bg); color:var(--color-text); box-shadow:var(--shadow-viewer);
-  padding:clamp(28px,6%,56px); box-sizing:border-box; display:flex; flex-direction:column; }
-.docpage__footer { display:flex; justify-content:space-between; gap:.75rem; margin-top:auto;
-  padding-top:.75rem; border-top:1px solid var(--color-secondary-200);
+  padding:clamp(var(--sp-7),6%,var(--sp-14)); box-sizing:border-box; display:flex; flex-direction:column; }
+.docpage__footer { display:flex; justify-content:space-between; gap:var(--sp-3); margin-top:auto;
+  padding-top:var(--sp-3); border-top:var(--stroke-1) solid var(--color-secondary-200);
   font-size:var(--text-xs); color:var(--color-text-muted); }
 .docpage__crest { width:38px; height:auto; flex:none; }
-.docpage--text .docpage__letterhead { display:flex; align-items:center; gap:.75rem; margin-bottom:1.5rem; }
+.docpage--text .docpage__letterhead { display:flex; align-items:center; gap:var(--sp-3); margin-bottom:var(--sp-6); }
 .docpage__org { font-size:var(--text-xs); color:var(--color-text-muted); line-height:var(--lh-snug); }
-.docpage__title { font-size:var(--text-2xl); font-weight:var(--fw-bold); margin:0 0 1rem; }
-.docpage__subtitle { font-size:var(--text-lg); margin:0 0 1rem; color:var(--color-text-muted); }
-.docpage__metagrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:.25rem 1.5rem; margin:0 0 1.5rem;
-  padding:1rem; background:var(--color-secondary-50); }
+.docpage__title { font-size:var(--text-2xl); font-weight:var(--fw-bold); margin:0 0 var(--sp-4); }
+.docpage__subtitle { font-size:var(--text-lg); margin:0 0 var(--sp-4); color:var(--color-text-muted); }
+.docpage__metagrid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:var(--sp-1) var(--sp-6); margin:0 0 var(--sp-6);
+  padding:var(--sp-4); background:var(--color-secondary-50); }
 .docpage__metagrid div { display:flex; flex-direction:column; }
 .docpage__metagrid dt { font-size:var(--text-xs); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.04em; }
 .docpage__metagrid dd { margin:0; font-size:var(--text-sm); font-weight:var(--fw-bold); }
 /* Blocksatz ohne Silbentrennung erzeugt bei schmalen Spalten «Flüsse» aus
    Leerraum. Mit hyphens:auto bleibt der Blocksatz sauber; ohne Unterstützung
    fällt der Absatz auf Flattersatz zurück (Item 2.26). */
-.docpage__p { margin:0 0 1rem; font-size:var(--text-sm); line-height:var(--lh-relaxed);
+.docpage__p { margin:0 0 var(--sp-4); font-size:var(--text-sm); line-height:var(--lh-relaxed);
   text-align:justify; hyphens:auto; word-spacing:normal; }
 @supports not (hyphens: auto) { .docpage__p { text-align:left; } }
-.docpage--plan { padding:clamp(16px,3%,32px); justify-content:center; }
+.docpage--plan { padding:clamp(var(--sp-4),3%,var(--sp-8)); justify-content:center; }
 .docpage__plan { display:block; width:100%; height:auto; }
 .docpage__plan .plan-sheet { fill:var(--color-secondary-50); stroke:var(--color-secondary-200); stroke-width:1; }
 .docpage__plan .plan-wall { fill:none; stroke:var(--color-secondary-700); stroke-width:3; stroke-linecap:square; }
-.docpage__plan .plan-room { fill:#f7f9fb; stroke:var(--color-secondary-300); stroke-width:1; }
+/* Fixed drafting-paper tint: unlike UI chrome, this technical drawing surface
+   must not be re-tinted by a brand skin. */
+.docpage__plan .plan-room { fill:var(--surface-drafting); stroke:var(--color-secondary-300); stroke-width:1; }
 .docpage__plan .plan-label { fill:var(--color-text-muted); font-size:var(--fs-xs); font-weight:var(--fw-bold); text-anchor:middle; }
 .docpage__plan .plan-north line { stroke:var(--color-text-muted); stroke-width:1.5; }
 .docpage__plan .plan-titleblock { fill:var(--color-bg); stroke:var(--color-secondary-700); stroke-width:1.5; }
 .docpage__plan .plan-title { fill:var(--color-text); font-size:13px; font-weight:var(--fw-bold); }
 .docpage__plan .plan-meta { fill:var(--color-text-muted); font-size:11px; }
 
-.docviewer__toolbar { position:fixed; bottom:var(--sp-6); left:50%; transform:translateX(-50%); z-index:6; }
-.docviewer__zoom { display:inline-flex; align-items:center; justify-content:center; min-width:2.25rem; height:2.25rem;
-  padding:0 .75rem; background:none; border:0; border-radius:var(--radius-full); color:var(--color-text-negative);
+.docviewer__toolbar { position:fixed; bottom:var(--sp-6); left:50%; transform:translateX(-50%); z-index:var(--z-local-floating); }
+.docviewer__zoom { display:inline-flex; align-items:center; justify-content:center; min-width:var(--sp-9); height:var(--sp-9);
+  padding:0 var(--sp-3); background:none; border:0; border-radius:var(--radius-full); color:var(--color-text-negative);
   font-size:var(--text-sm); cursor:pointer; transition:background var(--duration-fast); }
 .docviewer__zoom:hover { background:var(--surface-negative-hover); }
-.docviewer__zoom:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:-2px; }
-.docviewer__zoom--reset { min-width:3.5rem; font-variant-numeric:tabular-nums; }
+.docviewer__zoom:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
+.docviewer__zoom--reset { min-width:var(--sp-14); font-variant-numeric:tabular-nums; }
 /* 44-px-Ziel ohne Zeigegerät (WCAG 2.5.5). Muss HINTER den Basisgrössen stehen —
    im allgemeinen Touch-Block weiter oben verlor die Regel gegen sie. */
 @media (max-width:1023.98px), (hover:none){
   .docviewer__zoom { min-width:var(--target-min); height:var(--target-min); }
-  .docviewer__zoom--reset { min-width:4rem; }
+  .docviewer__zoom--reset { min-width:var(--sp-16); }
 }
 
 /* Gleicher Toast wie überall (CD notification im Host), nur INNERHALB des
    Betrachters gehostet: --z-viewer (200) läge sonst über dem globalen Toast (110).
    Der schwere Schatten ist die dokumentierte Negativ-Ebenen-Ausnahme (wie
    .docviewer__toolbar) — var(--shadow-lg) verschwände auf dunklem Grund. */
-.docviewer__toast { position:fixed; left:0; right:0; bottom:5rem; z-index:7;
+.docviewer__toast { position:fixed; left:0; right:0; bottom:var(--sp-20); z-index:var(--z-local-status);
   display:flex; justify-content:center; pointer-events:none; }
-.docviewer__toast .notification { max-width:500px; margin-inline:1.25rem; pointer-events:auto;
+.docviewer__toast .notification { max-width:500px; margin-inline:var(--sp-5); pointer-events:auto;
   box-shadow:var(--shadow-viewer); }
 
 /* Dateiname in der Tabelle: sieht aus wie ein Link, ist ein Viewer-Button. */
@@ -133,19 +135,19 @@
    klemmte bei 40ch, der Blocksatz erzeugte Flüsse, und die fixierten Pfeile
    lagen mitten auf der Seite statt am unteren Rand. */
 @media (max-width:639.98px){
-  .docviewer__bar { display:grid; grid-template-columns:minmax(0,1fr); gap:.375rem;
-    padding:.5rem; }
+  .docviewer__bar { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-1-5);
+    padding:var(--sp-2); }
   .docviewer__heading { width:100%; }
   .docviewer__heading-icon { display:none; }
   .docviewer__actions { width:100%; justify-content:flex-end; }
   .docviewer__sub { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .docviewer__stage  { padding:1.5rem .5rem; }
+  .docviewer__stage  { padding:var(--sp-6) var(--sp-2); }
   .docpage__metagrid { grid-template-columns:minmax(0,1fr); }
   .docpage__p        { text-align:left; }
   .docviewer__nav    { position:fixed; top:50%; bottom:auto; transform:translateY(-50%); }
-  .docviewer__nav--prev { left:.5rem; }
-  .docviewer__nav--next { right:.5rem; }
+  .docviewer__nav--prev { left:var(--sp-2); }
+  .docviewer__nav--next { right:var(--sp-2); }
   .docviewer__title  { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .docviewer--meta-open .docviewer__toolbar { bottom:calc(40vh + 1rem); }
+  .docviewer--meta-open .docviewer__toolbar { bottom:calc(40vh + var(--sp-4)); }
 }
 

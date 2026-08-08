@@ -2,8 +2,8 @@
    Datenbezug, Anwendungen. Eine Zeile: Suche + Trefferzahl links; hinter EINER
    Trennlinie rechts Sortierung, Filter-Umschalter und Ansichtswechsel. Der Filter
    öffnet ein einklappbares Panel darunter (nimmt die früheren Filter-Dropdowns auf). */
-.catbar { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; margin-top:1.25rem;
-  padding-bottom:.5rem; border-bottom:1px solid var(--color-secondary-300); font-size:var(--text-sm); }
+.catbar { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4); margin-top:var(--sp-5);
+  padding-bottom:var(--sp-2); border-bottom:var(--stroke-1) solid var(--color-secondary-300); font-size:var(--text-sm); }
 /* Anatomie (Lupe im Feld, absoluter Submit) oben im «In-page search»-Block;
    hier nur die Unterschiede. */
 .catbar__search { flex:1 1 15rem; min-width:11rem; max-width:24rem; }
@@ -27,7 +27,7 @@
    Überhang dann ohne Scrollbalken abgeschnitten — bei 320 lagen BEIDE
    Ansichtsknöpfe ausserhalb, bei 390 der zweite (WCAG 1.4.10 + 2.1.1).
    CDs Pendant ist ausdrücklich umbrechend (search.postcss:208-211). */
-.catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .25rem;
+.catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-1);
   margin-left:auto; min-width:0; max-width:100%; }
 /* Ohne Suchfeld (Suchergebnisse): Trefferzahl links, Steuerung rechts — CDs
    `.search-results__header` (flex, justify-between, ml-auto rechts). */
@@ -51,14 +51,14 @@
    Popup-Liste und zeichnen die Optionen dann hell auf hell (unlesbar). Deshalb
    hier — wie beim .language-switcher select — Textfarbe und weisser Grund direkt
    an der Option. */
-.catbar__sort select option { padding-right:.75rem; color:var(--color-text); background:var(--color-bg); }
+.catbar__sort select option { padding-right:var(--sp-3); color:var(--color-text); background:var(--color-bg); }
 .catbar__sort select option:disabled { color:var(--color-gray-400); }
 /* CD-Padding (px-4) links; rechts Platz für das Chevron (der zugleich den Abstand
    für die rechtsbündige Ausrichtung oben liefert). */
-.catbar__sort select { min-height:var(--target-min); padding-left:1rem; padding-right:1.75rem; font-size:var(--text-sm); color:var(--color-text); }
+.catbar__sort select { min-height:var(--target-min); padding-left:var(--sp-4); padding-right:var(--sp-7); font-size:var(--text-sm); color:var(--color-text); }
 .catbar__sort .select__icon { color:var(--color-text-muted); }
 .catbar__filter { min-height:var(--target-min); white-space:nowrap; }
-.catbar__fcount { margin-left:.25rem; font-weight:var(--fw-bold); }
+.catbar__fcount { margin-left:var(--sp-1); font-weight:var(--fw-bold); }
 /* Im Knopf-Kontext notiert, sonst gewinnt «.btn .icon» (0,2,0) und der Pfeil
    erschiene mit 1.4em deutlich zu gross neben der Beschriftung. */
 .btn .catbar__chev, .catbar__chev { width:1em; height:1em; transition:transform var(--duration); }
@@ -68,31 +68,31 @@
    Ansichtswechsel — sie steht auf derselben Stufe und darf nicht wie ein
    weiterer Filter neben «Filter» kleben. */
 .catbar__aside { min-height:var(--target-min); white-space:nowrap;
-  border-left:1px solid var(--color-secondary-300); padding-left:1rem; margin-left:.75rem; }
+  border-left:var(--stroke-1) solid var(--color-secondary-300); padding-left:var(--sp-4); margin-left:var(--sp-3); }
 /* Die getönte, gerundete Karte ist eine bewusste Entscheidung und BLEIBT —
    umgestellt wird nur die umbrechende Flex-Zeile, die bei 1440 rund 60% des
    Panels leer liess und «Zurücksetzen» wie eine dritte Facetten-Überschrift
    aussehen liess (Item 2.13). */
 /* Rastermetrik nach CD (search.postcss:257-264 `gap-3 lg:gap-4`): einheitliche
    Lücke .75rem → 1rem ab lg, KEIN eigener 2rem-Spaltengraben. */
-.catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:.75rem;
+.catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-3);
   /* Das Panel besitzt seinen Abstand nach UNTEN selbst (1.5rem = `mt-6`).
      Ergebnisblock und C.mountDataTable schliessen ohne eigenen oberen Rand an;
      so bleibt der Abstand für Katalogseiten und eingebettete Tabellen gleich. */
-  align-items:start; padding:1rem 1.25rem; margin:.75rem 0 1.5rem; background:var(--color-secondary-50);
-  border:1px solid var(--panel-border); border-radius:var(--radius-lg); }   /* Randton wie .filter-panel — EIN Kartenrezept */
+  align-items:start; padding:var(--sp-4) var(--sp-5); margin:var(--sp-3) 0 var(--sp-6); background:var(--color-secondary-50);
+  border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius-lg); }   /* Randton wie .filter-panel — EIN Kartenrezept */
 @media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; } }
+@media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-4); } }
 .catbar__panel .filter-group { margin:0; }
 .catbar__panel__actions { grid-column:1 / -1; display:flex; justify-content:flex-end;
-  padding-top:.75rem; border-top:1px solid var(--color-secondary-200); }
+  padding-top:var(--sp-3); border-top:var(--stroke-1) solid var(--color-secondary-200); }
 /* Dasselbe für die Seitenleisten-Filter (Dashboards, Portfolio-Karte): der
    Zurücksetzen-Knopf sass als letztes Geschwister direkt unter der letzten
    Filtergruppe und las sich wie ein weiterer Filter statt wie die Aktion für
    alle (Item 5.18). Eigene Zeile mit Trennlinie, hier linksbündig, weil die
    Leiste schmal ist und ein rechtsbündiger Knopf vom Text weglaufen würde. */
-.filter-panel__actions { display:flex; margin-top:1rem; padding-top:.75rem;
-  border-top:1px solid var(--color-secondary-200); }
+.filter-panel__actions { display:flex; margin-top:var(--sp-4); padding-top:var(--sp-3);
+  border-top:var(--stroke-1) solid var(--color-secondary-200); }
 /* Filter-Dropdowns der Katalogseiten (C.select) im Panel. */
 .catbar__panel .form__group__select { min-width:0; margin:0; }
 /* CD-md (767.98) statt der Sonderbreite 700 — live gegengeprüft bei 320/390 auf
@@ -132,29 +132,29 @@
 
 /* Mobile-first: unter lg steht der Baum ÜBER der Karte statt in einer 288px-Spalte,
    die auf dem Handy die Karte auf Briefmarkengrösse quetscht (Item 2.15). */
-.pf-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; align-items:start; margin-top:1rem; }
-.pf-sidebar { position:static; max-height:22rem; overflow:auto; background:var(--color-bg); border:1px solid var(--panel-border); border-radius:var(--radius-lg); padding:.5rem; }
+.pf-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-5); align-items:start; margin-top:var(--sp-4); }
+.pf-sidebar { position:static; max-height:22rem; overflow:auto; background:var(--color-bg); border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius-lg); padding:var(--sp-2); }
 @media (min-width:1024px){
   .pf-layout  { grid-template-columns:minmax(15rem,18rem) minmax(0,1fr); }
-  .pf-sidebar { position:sticky; top:1rem; max-height:calc(100vh - 7rem); }
+  .pf-sidebar { position:sticky; top:var(--sp-4); max-height:calc(100vh - var(--sp-28)); }
 }
-.pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.375rem .5rem .5rem; }
+.pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); padding:var(--sp-1-5) var(--sp-2) var(--sp-2); }
 .pf-sidebar__title { font-size:var(--text-lg); margin:0; }
 
 /* Tree — flat indent; the icon shows the level, the two-tone highlight the path.
    .is-path (light grey) = an ancestor of the selection · .is-active (blue) = selected. */
 .pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; }   /* no indent — icon + grey path carry the hierarchy */
-.pf-tree__node, .pf-tree__leaf { display:flex; align-items:center; gap:.5rem; width:100%; padding:.375rem .5rem; border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
+.pf-tree__node, .pf-tree__leaf { display:flex; align-items:center; gap:var(--sp-2); width:100%; padding:var(--sp-1-5) var(--sp-2); border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
 .pf-tree__node:hover, .pf-tree__leaf:hover { background:var(--color-secondary-50); color:var(--color-text); text-decoration:none; }
 .pf-tree__node.is-path { background:var(--color-gray-100); }
-.pf-tree__node.is-active, .pf-tree__leaf.is-active { background:var(--color-primary-50); color:var(--color-primary-700); font-weight:var(--fw-bold); box-shadow:inset 3px 0 0 var(--color-primary-600); }
+.pf-tree__node.is-active, .pf-tree__leaf.is-active { background:var(--color-primary-50); color:var(--color-primary-700); font-weight:var(--fw-bold); box-shadow:var(--state-bar-primary); }
 .pf-tree__chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-muted); }
 .pf-tree__node[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
 .pf-tree__ico { flex:none; color:var(--color-text-muted); }
-.pf-tree__leaf > .pf-tree__ico { margin-left:1.5rem; }   /* align the leaf icon under the parent icon (past the chevron column) */
+.pf-tree__leaf > .pf-tree__ico { margin-left:var(--sp-6); }   /* align the leaf icon under the parent icon (past the chevron column) */
 /* Touch/ohne Zeigegerät: 44px garantieren, Desktop-Dichte behalten (Item 2.5d). */
 @media (max-width:1023.98px), (hover:none){
-  .pf-tree__node, .pf-tree__leaf { min-height:var(--target-min); padding-block:.625rem; }
+  .pf-tree__node, .pf-tree__leaf { min-height:var(--target-min); padding-block:var(--sp-2-5); }
   /* Die Knöpfe des Dokumentbetrachters standen hier — 700 Zeilen VOR ihrer
      eigenen Basisregel und damit wirkungslos (WCAG 2.5.5). Sie stehen jetzt
      direkt hinter der Komponente. */
@@ -163,7 +163,7 @@
 .pf-tree__id { flex:none; font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--color-text-muted); }
 .pf-tree__node.is-active .pf-tree__id, .pf-tree__leaf.is-active .pf-tree__id { color:var(--color-primary-700); }
 .pf-tree__label { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pf-tree__n { flex:none; margin-left:.375rem; font-size:var(--fs-xs); color:var(--color-text-muted); }
+.pf-tree__n { flex:none; margin-left:var(--sp-1-5); font-size:var(--fs-xs); color:var(--color-text-muted); }
 .pf-tree__node.is-active .pf-tree__n { color:var(--color-primary-700); }
 
 /* Variante OHNE Symbolspalte (Metadatenkatalog, js/apps/metadata-catalog.js).
@@ -174,7 +174,7 @@
    (Land › Region › Stadt › WE) in einem Baum, der gar nicht einrückt.
    Der Zweig selbst bleibt wie im Inventar ein <button> mit dem Chevron IN sich;
    gefiltert wird über seine Blätter (das erste heisst «Alle …»). */
-.pf-tree--plain .pf-tree__leaf { padding-left:2rem; }   /* Einrückung ersetzt die Symbolspalte */
+.pf-tree--plain .pf-tree__leaf { padding-left:var(--sp-8); }   /* Einrückung ersetzt die Symbolspalte */
 
 .pf-main { min-width:0; }
 
@@ -186,46 +186,46 @@
 .shop-layout { margin-top:var(--sp-6); }
 .shop-layout .pf-sidebar { display:none; max-height:28rem; }
 .shop-categories-filter { padding-bottom:var(--sp-5); margin-bottom:var(--sp-5);
-  border-bottom:1px solid var(--color-secondary-200); }
+  border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
 .shop-categories-filter .filter-group__legend { margin-bottom:var(--sp-2); }
 @media (min-width:1024px){
-  .shop-layout .pf-sidebar { display:block; max-height:calc(100vh - 8rem); }
+  .shop-layout .pf-sidebar { display:block; max-height:calc(100vh - var(--sp-32)); }
   .shop-categories-filter { display:none; }
 }
 
 .shop-card .card__title a { color:inherit; text-decoration:none; }
-.shop-card .card__footer__action { position:relative; z-index:2; }
-.shop-card .card__footer__action > .btn { pointer-events:auto; position:relative; z-index:2; }
+.shop-card .card__footer__action { position:relative; z-index:var(--z-local-control); }
+.shop-card .card__footer__action > .btn { pointer-events:auto; position:relative; z-index:var(--z-local-control); }
 .shop-card .card__footer__info { color:var(--color-text); }
 .shop-card__image { background:var(--color-secondary-50); }
-.shop-card__image > img { z-index:1; object-fit:contain; padding:1rem; box-sizing:border-box; }
-.shop-card__badge { position:absolute; z-index:2; top:.75rem; left:.75rem; }
+.shop-card__image > img { z-index:var(--z-local-content); object-fit:contain; padding:var(--sp-4); box-sizing:border-box; }
+.shop-card__badge { position:absolute; z-index:var(--z-local-control); top:var(--sp-3); left:var(--sp-3); }
 @media (max-width:767.98px){
   .catalogue-grid .shop-card .card__image { display:block; padding-bottom:56.25%; }
   .catalogue-grid .shop-card.card--default { box-shadow:var(--shadow-lg); border-bottom:0; }
-  .catalogue-grid .shop-card .card__body { padding:1.5rem; }
-  .catalogue-grid .shop-card .card__footer { padding:0 1.5rem 1.5rem; }
+  .catalogue-grid .shop-card .card__body { padding:var(--sp-6); }
+  .catalogue-grid .shop-card .card__footer { padding:0 var(--sp-6) var(--sp-6); }
 }
 
 .shop-product-hero { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap-responsive); align-items:center; }
 @media (min-width:768px){ .shop-product-hero { grid-template-columns:minmax(16rem,24rem) minmax(0,1fr); } }
 .shop-product-hero__media { display:flex; align-items:center; justify-content:center; min-height:18rem;
-  background:var(--color-secondary-50); border:1px solid var(--panel-border); border-radius:var(--radius-lg); padding:1.5rem; }
+  background:var(--color-secondary-50); border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius-lg); padding:var(--sp-6); }
 .shop-product-hero__media img { max-width:100%; max-height:24rem; object-fit:contain; }
-.shop-thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(7rem,1fr)); gap:.75rem; margin-top:1rem; }
-.shop-thumbs img { width:100%; aspect-ratio:4/3; object-fit:contain; background:var(--color-secondary-50); border:1px solid var(--panel-border); border-radius:var(--radius); padding:.5rem; }
-.shop-price { font-size:var(--text-2xl); font-weight:var(--fw-bold); margin-block:0 1rem; }
+.shop-thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(7rem,1fr)); gap:var(--sp-3); margin-top:var(--sp-4); }
+.shop-thumbs img { width:100%; aspect-ratio:4/3; object-fit:contain; background:var(--color-secondary-50); border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius); padding:var(--sp-2); }
+.shop-price { font-size:var(--text-2xl); font-weight:var(--fw-bold); margin-block:0 var(--sp-4); }
 
 .shopping__cart-card-list { list-style:none; margin:0; padding:0; }
-.shopping__card { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; padding:1rem 0; border-bottom:1px solid var(--color-secondary-200); }
-.shopping__card:first-child { border-top:1px solid var(--color-secondary-200); }
+.shopping__card { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-4); padding:var(--sp-4) 0; border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
+.shopping__card:first-child { border-top:var(--stroke-1) solid var(--color-secondary-200); }
 @media (min-width:1024px){ .shopping__card { grid-template-columns:10.5rem minmax(0,1fr) 9.5rem 8rem; align-items:center; } }
-.shopping__card__image { position:relative; display:flex; align-items:center; justify-content:center; min-height:10.5rem; background:var(--color-secondary-50); overflow:hidden; }
-.shopping__card-image-background { position:absolute; inset:0; z-index:30; background:var(--color-secondary-50); border:2px solid var(--color-bg); opacity:.7; }
-.shopping__card__image > img { position:relative; z-index:40; max-width:90%; max-height:90%; width:auto; height:auto; object-fit:contain; }
+.shopping__card__image { --shopping-z-overlay:30; --shopping-z-image:40; position:relative; display:flex; align-items:center; justify-content:center; min-height:10.5rem; background:var(--color-secondary-50); overflow:hidden; }
+.shopping__card-image-background { position:absolute; inset:0; z-index:var(--shopping-z-overlay); background:var(--color-secondary-50); border:var(--stroke-2) solid var(--color-bg); opacity:.7; }
+.shopping__card__image > img { position:relative; z-index:var(--shopping-z-image); max-width:90%; max-height:90%; width:auto; height:auto; object-fit:contain; }
 .shopping__card-details-container { min-width:0; }
-.shopping__card-details-container .card__title { margin-bottom:.5rem; }
-.shopping__card-action-container { display:flex; flex-direction:column; justify-content:space-between; gap:1rem; }
+.shopping__card-details-container .card__title { margin-bottom:var(--sp-2); }
+.shopping__card-action-container { display:flex; flex-direction:column; justify-content:space-between; gap:var(--sp-4); }
 .shopping__card-price, .shopping__card-price-mobile { font-weight:var(--fw-bold); margin:0; }
 @media (min-width:1024px){ .shopping__card-price { text-align:right; } .shopping__card-price-mobile { display:none; } }
 @media (max-width:1023.98px){ .shopping__card-price { display:none; } }
@@ -236,14 +236,14 @@
 .shopping__cart-order-overview-container { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap-responsive); align-items:start; }
 @media (min-width:1024px){ .shopping__cart-order-overview-container { grid-template-columns:minmax(0,1fr) 22rem; } }
 .shopping__cart-delivery-summary { position:static; }
-@media (min-width:1024px){ .shopping__cart-delivery-summary { position:sticky; top:1rem; } }
+@media (min-width:1024px){ .shopping__cart-delivery-summary { position:sticky; top:var(--sp-4); } }
 /* zweite .pf-map-Deklaration: behält nur noch, was sie wirklich ergänzt — die
    Höhe steht in der Basisregel oben (sonst überschriebe eine tote 34rem-Zeile
    das clamp()). */
 .pf-map { border-radius:var(--radius-lg); }
 /* align-items:stretch (Vorgabe) statt `start`: nur so sind alle Karten einer
    Reihe gleich hoch und ihre Fusszeilen fluchten. */
-.pf-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr)); gap:1.25rem 1rem; }
+.pf-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr)); gap:var(--sp-5) var(--sp-4); }
 /* Ab xl wird die Spaltenzahl fest auf drei begrenzt statt weiter zu füllen:
    auto-fill ergab bei 1440–1920px vier Karten von 243–298px — für ein Bild,
    zwei Textzeilen und eine Fusszeile zu dicht. Drei Spalten bleiben über die
@@ -262,27 +262,27 @@
 .pf-card__img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .pf-card__parcel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);
   background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
-.pf-card__chips { position:absolute; top:.5rem; left:.5rem; right:.5rem; display:flex; flex-wrap:wrap; gap:.25rem; }
+.pf-card__chips { position:absolute; top:var(--sp-2); left:var(--sp-2); right:var(--sp-2); display:flex; flex-wrap:wrap; gap:var(--sp-1); }
 /* Titelbild eines Bauprojekts: der Knopf trägt KEINE Knopfoptik — er ist nur
    die zugängliche Hülle um das Bild, damit die Galerie auch per Tastatur
    aufgeht. Sichtbar wird er erst im Fokus. */
-.pj-hero { margin:1rem 0 0; }
+.pj-hero { margin:var(--sp-4) 0 0; }
 /* Verhältnis und Radius am Bild selbst (16/10 wie Mosaik und Mediathek) —
    projects.js gibt der C.photo-Hülle diese Klasse mit. */
 .pj-hero__photo { aspect-ratio:16/10; border-radius:var(--radius-lg); }
 .pj-hero__btn { display:block; width:100%; padding:0; border:0; background:none; cursor:zoom-in; border-radius:var(--radius-lg); }
-.pj-hero__btn:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:3px; }
-.pj-hero .legend { margin-top:.5rem; }
-.pf-card__land { background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); padding:.125rem .5rem; border-radius:var(--radius-full); }
+.pj-hero__btn:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-3); }
+.pj-hero .legend { margin-top:var(--sp-2); }
+.pf-card__land { background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); padding:var(--sp-0-5) var(--sp-2); border-radius:var(--radius-full); }
 /* Galerie-Karte: kompaktere, stimmige Typo & Abstände. Nur die Galerie — die
    Listenansicht nutzt das C.table-Layout und bleibt unberührt. Rhythmus:
    Name (fett) → eng darunter die bbl_id (mono) → Adresse; der Fuss (Kategorie ·
    Fläche) bleibt unten bündig. gap:0 + gezielte margins statt der luftigen 1rem-Lücke. */
-.pf-card .card__body { padding:1.25rem 1.5rem 1rem; gap:0; }
+.pf-card .card__body { padding:var(--sp-5) var(--sp-6) var(--sp-4); gap:0; }
 .pf-card .card__title { font-size:var(--text-lg); line-height:1.3; }
-.pf-card__id { margin:.375rem 0 0; font-family:var(--font-mono); font-size:var(--text-sm);
+.pf-card__id { margin:var(--sp-1-5) 0 0; font-family:var(--font-mono); font-size:var(--text-sm);
   font-weight:var(--fw-regular); color:var(--color-text-muted); letter-spacing:.01em; }
-.pf-card .card__description { margin:.625rem 0 0; font-size:var(--text-sm); }
+.pf-card .card__description { margin:var(--sp-2-5) 0 0; font-size:var(--text-sm); }
 /* Karten füllen ihre Rasterzeile, der Fuss (Kategorie · Fläche) sitzt an der
    UNTERKANTE. Vorher stand hier `align-self:start` mit Inhaltshöhe: jede Karte
    endete dort, wo ihr Text aufhörte, und weil Bezeichnung und Adresse
@@ -291,6 +291,6 @@
    Spalte — der Höhenausgleich landet als Lücke ÜBER dem Fuss, nicht in ihm. */
 .pf-card { height:100%; }
 .pf-card .card__content { height:100%; justify-content:flex-start; }
-.pf-card .card__footer { margin:auto 1.5rem 0; padding:.875rem 0 1.25rem; font-size:var(--text-sm); }
+.pf-card .card__footer { margin:auto var(--sp-6) 0; padding:var(--sp-3-5) 0 var(--sp-5); font-size:var(--text-sm); }
 .pf-typ { display:inline-flex; color:var(--color-text-muted); }
 

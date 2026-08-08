@@ -19,6 +19,5 @@ body {
 /* Inline-Element-Normalisierung (CD-Parität) */
 address { font-style:normal; }
 del, s { text-decoration:line-through; }
-u { text-decoration:underline; text-underline-offset:2px; }
-[id] { scroll-margin-top:2rem; }                       /* global.postcss:88-90 */
-
+u { text-decoration:underline; text-underline-offset:var(--stroke-2); }
+[id] { scroll-margin-top:var(--sp-8); }                       /* global.postcss:88-90 */

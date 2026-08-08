@@ -1,14 +1,14 @@
 /* Main navigation (main-navigation.postcss:11-56) */
-.desktop-menu { background:var(--color-bg); border-bottom:1px solid var(--color-border); position:relative; z-index:var(--z-nav); }
+.desktop-menu { background:var(--color-bg); border-bottom:var(--stroke-1) solid var(--color-border); position:relative; z-index:var(--z-nav); }
 /* top:100% = Unterkante der gesamten Navigation (auch wenn sie umbricht),
    gleich wie der Drawer — sonst tönt der Overlay eine umgebrochene zweite
    Navigationszeile grau ein und es entsteht eine Lücke über dem Drawer. */
-.desktop-menu__overlay { position:absolute; top:100%; right:0; bottom:0; left:0; z-index:2; height:120vh;
-  background:linear-gradient(to bottom, rgba(17,24,39,.2) 0%, rgba(17,24,39,.2) 50%, rgba(17,24,39,0) 100%);
+.desktop-menu__overlay { position:absolute; top:100%; right:0; bottom:0; left:0; z-index:var(--z-local-control); height:120vh;
+  background:var(--scrim-navigation);
   opacity:1; pointer-events:auto; transition:opacity var(--duration-slow) var(--ease-in-out); }
 .desktop-menu__overlay.hidden { height:0; overflow:hidden; opacity:0; pointer-events:none; }
 .desktop-menu .main-navigation, .mobile-menu .main-navigation { border-bottom:0; }
-.main-navigation { width:100%; background:var(--color-bg); border-bottom:1px solid var(--color-border); position:relative; }
+.main-navigation { width:100%; background:var(--color-bg); border-bottom:var(--stroke-1) solid var(--color-border); position:relative; }
 /* BEWUSSTE ABWEICHUNG vom CD (Review 2026-07, nav/l1-1): CDs Antwort auf zu
    viele L1-Einträge ist der «Mehr»-Überlauf-Flyout (MainNavigation.vue MenuMore,
    navy.postcss:25-27), nie eine zweite Zeile. Hier dürfen die neun Einträge
@@ -19,18 +19,18 @@
    Zur selben Entscheidung gehört der dichtere 0.7rem-Rhythmus (Padding,
    Negativrand, Unterstrich-Insets — CD: 1rem, main-navigation.postcss:16,29,38):
    er hält die neun Einträge länger in einer Zeile (nav/l1-2). */
-.main-navigation > ul { list-style:none; display:flex; flex-wrap:wrap; margin-left:-.7rem; min-height:3.5rem; }
+.main-navigation > ul { list-style:none; display:flex; flex-wrap:wrap; margin-left:calc(-1 * var(--sp-3)); min-height:var(--sp-14); }
 @media (max-width:1023.98px){ .desktop-menu { display:none; } }
-@media (min-width:1280px){ .main-navigation > ul { min-height:4rem; } }
-@media (min-width:1920px){ .main-navigation > ul { min-height:5rem; } }
+@media (min-width:1280px){ .main-navigation > ul { min-height:var(--sp-16); } }
+@media (min-width:1920px){ .main-navigation > ul { min-height:var(--sp-20); } }
 .main-navigation > ul > li > a,
-.main-navigation > ul > li > button { position:relative; display:flex; align-items:center; gap:.5rem; color:var(--color-text);
-  height:100%; min-height:3.5rem; padding:1rem .75rem; font:inherit; font-size:var(--text-base); line-height:var(--lh-tight); white-space:nowrap;
+.main-navigation > ul > li > button { position:relative; display:flex; align-items:center; gap:var(--sp-2); color:var(--color-text);
+  height:100%; min-height:var(--sp-14); padding:var(--sp-4) var(--sp-3); font:inherit; font-size:var(--text-base); line-height:var(--lh-tight); white-space:nowrap;
   background:none; border:0; cursor:pointer; text-decoration:none; transition:color var(--duration-fast),box-shadow var(--duration); }
-@media (min-width:1280px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:4rem; } }
-@media (min-width:1920px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:5rem; } }
+@media (min-width:1280px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:var(--sp-16); } }
+@media (min-width:1920px){ .main-navigation > ul > li > a, .main-navigation > ul > li > button { min-height:var(--sp-20); } }
 .main-navigation > ul > li > a::after,
-.main-navigation > ul > li > button::after { content:""; position:absolute; left:.7rem; right:.7rem; bottom:0; height:3px;
+.main-navigation > ul > li > button::after { content:""; position:absolute; left:var(--sp-3); right:var(--sp-3); bottom:0; height:var(--stroke-3);
   background:transparent; transition:background var(--duration-fast); }
 .main-navigation > ul > li > a:hover,
 .main-navigation > ul > li > button:hover { color:var(--color-primary-600); text-decoration:none; }
@@ -43,7 +43,7 @@
    die Leistenhöhe — der Ring liegt innen, statt Leistenrand und Nachbarn zu
    schneiden. */
 .main-navigation > ul > li > a:focus-visible,
-.main-navigation > ul > li > button:focus-visible { outline-offset:-2px; }
+.main-navigation > ul > li > button:focus-visible { outline-offset:calc(-1 * var(--stroke-2)); }
 /* CD: der aktive L1-Eintrag wird NUR durch den Unterstrich (::after) markiert,
    nicht durch Fettschrift (main-navigation.postcss:46); mobil trägt allein der
    3px-Balken den Zustand (navy.postcss:18-23 — auch dort kennt CD kein Fett). */
@@ -57,7 +57,7 @@
    in der Reihenfolge. Der geöffnete Zweig würde beim Überfahren grau statt
    weiss. Die Alternative wäre, die Regel aus ihrem Nav-Block herauszureissen. */
 .main-navigation > ul > li > .clicked { background:var(--color-bg) !important; position:relative; z-index:var(--z-nav-active); box-shadow:var(--shadow-2xl);
-  clip-path:inset(-50px -50px -1px -50px); }
+  clip-path:inset(-50px -50px calc(-1 * var(--stroke-1)) -50px); }
 .main-navigation--desktop > ul > li > .navy__has-children > .icon { display:none; }
 
 /* Desktop drawer (desktop-menu.postcss:9-19 + navy.postcss + menu.postcss) */
@@ -65,12 +65,12 @@
    1366x768 waren die letzten drei Einträge unerreichbar, weil overflow:hidden
    ohne inneren Scroll galt. CD deckelt ein Flyout gegen den Viewport
    (top-bar.postcss:101-108, max-h-[60vh]). overflow-x bleibt hidden. */
-.desktop-menu__drawer { position:absolute; left:0; top:100%; width:450px; max-width:calc(100vw - 1.5rem);
-  padding:4rem 2rem 2rem; z-index:var(--z-drawer); background:var(--color-bg); overflow:hidden;
-  max-height:calc(100vh - var(--shell-top, 14rem) - 1.5rem); overflow-y:auto; overscroll-behavior:contain;
+.desktop-menu__drawer { position:absolute; left:0; top:100%; width:450px; max-width:calc(100vw - var(--sp-6));
+  padding:var(--sp-16) var(--sp-8) var(--sp-8); z-index:var(--z-drawer); background:var(--color-bg); overflow:hidden;
+  max-height:calc(100vh - var(--shell-top, 14rem) - var(--sp-6)); overflow-y:auto; overscroll-behavior:contain;
   box-shadow:var(--shadow-2xl); opacity:1; animation:navMenuIn var(--duration) var(--ease-out); }
-@media (min-width:1280px){ .desktop-menu__drawer { width:650px; padding:5rem 3rem 3rem; } }
-@media (min-width:1920px){ .desktop-menu__drawer { width:850px; padding:6rem; } }
+@media (min-width:1280px){ .desktop-menu__drawer { width:650px; padding:var(--sp-20) var(--sp-12) var(--sp-12); } }
+@media (min-width:1920px){ .desktop-menu__drawer { width:850px; padding:var(--sp-24); } }
 /* Nur ein dezentes Einschieben — die Sichtbarkeit steuert das hidden-Attribut.
    Keine Opazität im Keyframe: sonst blieb der Drawer je nach Fill-Mode/Timing
    durchscheinend hängen.
@@ -78,18 +78,18 @@
    Schliessen (desktop-menu.postcss:19-34, opacity+height über eine Klasse) —
    hier schliesst `hidden` hart; eine Transition bräuchte Klassen- statt
    Attribut-Steuerung in shell.js. */
-@keyframes navMenuIn { from { transform:translateY(-.375rem); } to { transform:translateY(0); } }
+@keyframes navMenuIn { from { transform:translateY(calc(-1 * var(--sp-1-5))); } to { transform:translateY(0); } }
 /* Schliessen-Knopf: Position und Icongrösse nach desktop-menu.postcss:75-88
    (lg:top-4 right-0 → xl:top-6 right-4 → 3xl:top-8 right-20; Icon h-5 = 1.25rem)
    statt bisher in der Drawer-Ecke (top/right:0) mit zu kleinem Icon (0.75rem).
    Tinte = CDs menu__action-btn (menu.postcss:116-122): text-500 ruhend, Hover
    text-600 auf secondary-50 — dieselbe Paarung wie .navy__back daneben. */
-.desktop-menu__close { position:absolute; top:1rem; right:0; display:inline-flex; align-items:center; gap:.5rem;
-  padding:.75rem 1rem; color:var(--color-text-500); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
+.desktop-menu__close { position:absolute; top:var(--sp-4); right:0; display:inline-flex; align-items:center; gap:var(--sp-2);
+  padding:var(--sp-3) var(--sp-4); color:var(--color-text-500); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
 .desktop-menu__close:hover { color:var(--color-text-600); background:var(--color-secondary-50); }
-.desktop-menu__close .icon { width:1.25rem; height:1.25rem; }
-@media (min-width:1280px){ .desktop-menu__close { top:1.5rem; right:1rem; } }
-@media (min-width:1920px){ .desktop-menu__close { top:2rem; right:5rem; font-size:var(--fs-base); } }
+.desktop-menu__close .icon { width:var(--sp-5); height:var(--sp-5); }
+@media (min-width:1280px){ .desktop-menu__close { top:var(--sp-6); right:var(--sp-4); } }
+@media (min-width:1920px){ .desktop-menu__close { top:var(--sp-8); right:var(--sp-20); font-size:var(--fs-base); } }
 .navy { position:relative; }
 /* CD navy multi-level (navy.postcss): Ebene 0 = Dienstleistungen + Bereichszweige,
    Ebene 1 = Kinder eines Bereichs. Robuster Display-Wechsel statt Slider-Transform
@@ -115,7 +115,7 @@
    (menu.postcss:109-123 — px-4 py-3, text-500, Hover secondary-50/text-600) wie
    der Schliessen-Knopf, mit dem er die Kopfzeile teilt; die frühere
    Primary-Linkfarbe las sich als Navigationslink statt als Menü-Aktion. */
-.navy__back { display:inline-flex; align-items:center; gap:.5rem; margin:0 0 .5rem; padding:.75rem 1rem;
+.navy__back { display:inline-flex; align-items:center; gap:var(--sp-2); margin:0 0 var(--sp-2); padding:var(--sp-3) var(--sp-4);
   min-height:var(--target-min); background:none; border:0; font:inherit; font-size:var(--fs-sm);
   color:var(--color-text-500); cursor:pointer; }
 .navy__back:hover { color:var(--color-text-600); background:var(--color-secondary-50); }
@@ -123,7 +123,7 @@
 /* CD navy.postcss:69-73: der Paneltitel ist `menu__item--title` — Basisgrösse,
    GEERBTE Tinte, Zeileneinzug px-4 mit lg:px-0 (menu.postcss:68-71); nur das
    Fett bleibt. Die frühere fs-lg/secondary-700-Fassung war eine Eigenstimme. */
-.navy__title { display:block; margin:0 0 .5rem; padding:0 1rem; font-size:var(--fs-base); font-weight:var(--fw-bold);
+.navy__title { display:block; margin:0 0 var(--sp-2); padding:0 var(--sp-4); font-size:var(--fs-base); font-weight:var(--fw-bold);
   line-height:var(--lh-tight); color:inherit; cursor:default; }
 @media (min-width:1024px){ .navy__title { padding:0; } }
 /* Item 4.10 zurückgenommen: CDs Drawer hat keine Abschnittstitel. Die Klasse
@@ -140,13 +140,13 @@
    Rund 16px jeder Zeile waren totes Feld unter dem Zeiger. */
 .navy .menu__item { padding:0; }
 .navy .menu__item > .menu__item__flex,
-.navy .menu__item > .navy-branch { padding:.75rem 1rem; min-height:var(--target-min); box-sizing:border-box; }
+.navy .menu__item > .navy-branch { padding:var(--sp-3) var(--sp-4); min-height:var(--target-min); box-sizing:border-box; }
 /* CD-Zeilenrampe (navy.postcss:13-15: menu__item px-4 py-3, ab xl px-3) — der
    frühere --condensed-Umweg ist raus: shell.js emittiert den Modifier nicht
    mehr, in CD ist --condensed eine EIGENE Variante (menu.postcss:87-93). */
 @media (min-width:1280px){
   .navy .menu__item > .menu__item__flex,
-  .navy .menu__item > .navy-branch { padding:.75rem; }
+  .navy .menu__item > .navy-branch { padding:var(--sp-3); }
 }
 .navy .menu__item:hover { background:none; }
 .navy .menu__item > .menu__item__flex:hover,
@@ -159,24 +159,24 @@
   .desktop-menu__drawer .navy,
   .desktop-menu__drawer .navy--drill { position:static; }
   /* CDs lg:-left-5 gegen das 2rem-Drawer-Polster aufgelöst = .75rem vom Rand. */
-  .desktop-menu__drawer .navy__back { position:absolute; top:1rem; left:.75rem; margin:0; }
+  .desktop-menu__drawer .navy__back { position:absolute; top:var(--sp-4); left:var(--sp-3); margin:0; }
 }
-@media (min-width:1280px){ .desktop-menu__drawer .navy__back { top:1.5rem; left:1rem; font-size:var(--fs-sm); } }
-@media (min-width:1920px){ .desktop-menu__drawer .navy__back { top:2rem; left:5rem; font-size:var(--fs-base); } }
+@media (min-width:1280px){ .desktop-menu__drawer .navy__back { top:var(--sp-6); left:var(--sp-4); font-size:var(--fs-sm); } }
+@media (min-width:1920px){ .desktop-menu__drawer .navy__back { top:var(--sp-8); left:var(--sp-20); font-size:var(--fs-base); } }
 /* Menu rows (menu.postcss:5-60) — CD's canonical list-row anatomy, as used by
    the live intranet: li.menu__item > a.menu__item__flex > label + icon. */
 .menu { list-style:none; }
 .menu a, .menu a:hover { color:inherit; text-decoration:none; }
 .menu__item { display:flex; align-items:center; justify-content:space-between; position:relative;
-  padding:.75rem 1rem; cursor:pointer; transition:color var(--duration-fast), background-color var(--duration-fast); }
+  padding:var(--sp-3) var(--sp-4); cursor:pointer; transition:color var(--duration-fast), background-color var(--duration-fast); }
 .menu__item:hover { background:var(--color-secondary-50); }
-.menu__item--condensed { padding:.75rem; }
-.menu__item--border { border-bottom:1px solid var(--color-secondary-100); }
+.menu__item--condensed { padding:var(--sp-3); }
+.menu__item--border { border-bottom:var(--stroke-1) solid var(--color-secondary-100); }
 .menu__item--active::after { content:""; display:block; position:absolute; top:0; bottom:0; left:0;
-  width:3px; background:var(--color-primary-500); }
-.menu__item__flex { display:flex; width:100%; align-items:center; justify-content:space-between; gap:.5rem; }
-.menu__item__icon { flex:none; width:1.5rem; height:1.5rem; color:var(--color-text-muted); }
-@media (min-width:768px){ .menu__item__icon { width:1.75rem; height:1.75rem; } }
+  width:var(--stroke-3); background:var(--color-primary-500); }
+.menu__item__flex { display:flex; width:100%; align-items:center; justify-content:space-between; gap:var(--sp-2); }
+.menu__item__icon { flex:none; width:var(--sp-6); height:var(--sp-6); color:var(--color-text-muted); }
+@media (min-width:768px){ .menu__item__icon { width:var(--sp-7); height:var(--sp-7); } }
 .menu__item:hover .menu__item__icon { color:var(--color-primary-600); }
 /* CD menu.postcss:21 `focus:text-primary-600` — Tastaturfokus bekommt dieselbe
    Tinten-Rückmeldung wie Hover, zusätzlich zum globalen Ring. */
@@ -188,7 +188,7 @@
   visibility:hidden; opacity:0; overflow:hidden; background:var(--color-bg);
   box-shadow:var(--shadow-2xl); transition:opacity var(--duration-slowest); }   /* CD mobile-menu.postcss:10 duration-700 */
 @media (min-width:1024px){ .mobile-menu { display:none; } }
-.body--mobile-menu-is-open .mobile-menu { height:calc(100vh - var(--shell-top, 8rem));
+.body--mobile-menu-is-open .mobile-menu { height:calc(100vh - var(--shell-top, var(--sp-32)));
   visibility:visible; opacity:1; overflow-y:auto; }
 /* CD-Slide (global.postcss:34-38): die Seite rückt um die Top-Bar-Höhe nach
    oben — bei offenem Menü füllen weisse Kopfzeile + Drawer den ganzen Schirm.
@@ -196,8 +196,8 @@
    zum Containing Block aller fixed-Nachfahren; Banner/Back-to-top sind bei
    offenem Menü ohnehin ausgeblendet. */
 .body--mobile-menu-is-open { overflow:hidden;
-  height:calc(100vh + var(--topbar-h, 3rem));
-  transform:translateY(calc(-1 * var(--topbar-h, 3rem))); }
+  height:calc(100vh + var(--topbar-h, var(--sp-12)));
+  transform:translateY(calc(-1 * var(--topbar-h, var(--sp-12)))); }
 /* Bei offenem Menü KEINE zweite Suchaffordanz in der Kopfzeile (die Suche
    steht im Panel) und kein schwebender Hinweisstreifen über dem Menü. */
 @media (max-width:1023.98px){
@@ -205,12 +205,12 @@
   .body--mobile-menu-is-open .notification-banner--fixed { display:none; }
 }
 /* Suchzeile zuoberst im Panel — CD search--mobile (weisses Feld, Schattenwurf). */
-.mobile-menu__search { padding:.75rem 1rem; background:var(--color-bg);
-  border-bottom:1px solid var(--color-secondary-100); }
+.mobile-menu__search { padding:var(--sp-3) var(--sp-4); background:var(--color-bg);
+  border-bottom:var(--stroke-1) solid var(--color-secondary-100); }
 .mobile-menu__search-form { position:relative; display:flex; }
 .mobile-menu__search input { width:100%; min-height:var(--input-h);
-  padding-right:3rem; box-shadow:var(--shadow-2xl); }
-.mobile-menu__search-submit { position:absolute; top:0; right:0; bottom:0; width:3rem; }
+  padding-right:var(--sp-12); box-shadow:var(--shadow-2xl); }
+.mobile-menu__search-submit { position:absolute; top:0; right:0; bottom:0; width:var(--sp-12); }
 .mobile-menu ul { list-style:none; }
 .mobile-menu .main-navigation { border-bottom:0; }
 .mobile-menu .main-navigation > ul { flex-direction:column; margin-left:0; min-height:0; }
@@ -228,8 +228,8 @@
 .mobile-menu .meta-navigation li > button,
 .mobile-menu .top-bar-navigation--mobile li > a {
   display:flex; align-items:center; justify-content:space-between; width:100%; min-height:var(--target-min);
-  padding:.75rem 1rem; position:relative; font:inherit; font-size:var(--fs-sm); text-align:left;
-  border:0; border-bottom:1px solid var(--color-secondary-100); cursor:pointer; text-decoration:none;
+  padding:var(--sp-3) var(--sp-4); position:relative; font:inherit; font-size:var(--fs-sm); text-align:left;
+  border:0; border-bottom:var(--stroke-1) solid var(--color-secondary-100); cursor:pointer; text-decoration:none;
   transition:background var(--duration-fast); }
 .mobile-menu .main-navigation > ul > li > a,
 .mobile-menu .main-navigation > ul > li > button { background:var(--color-bg); color:var(--color-text); }
@@ -241,15 +241,15 @@
    3px-Balken (navy.postcss:18-23); ein 700er-Gewicht verschob zudem die
    Zeilenlänge — CDs «bold» ist ein 400er-Familienwechsel (nav/mob-4). */
 .mobile-menu .main-navigation .active::before { content:""; position:absolute; left:0; top:0; bottom:0;
-  width:3px; background:var(--color-primary-500); }
+  width:var(--stroke-3); background:var(--color-primary-500); }
 /* app.css setzte hier display:inline-block ohne Grösse, sodass icon--sm = 12px
    stehenblieb (CD: 20px, navy.postcss:47-51) und das Chevron beim Aufklappen nie
    rotierte. CSS-Hälfte von Item 4.6 — gehört in denselben Block wie oben. */
-.mobile-menu .navy__has-children .icon { display:inline-block; width:1.25rem; height:1.25rem;
+.mobile-menu .navy__has-children .icon { display:inline-block; width:var(--sp-5); height:var(--sp-5);
   color:var(--color-text-muted); transition:transform var(--duration); }
 .mobile-menu .navy__has-children[aria-expanded="true"] .icon { transform:rotate(90deg); }
 @media (prefers-reduced-motion: reduce){ .mobile-menu .navy__has-children .icon { transition:none; } }
-.navy__back .icon { width:1.25rem; height:1.25rem; }
+.navy__back .icon { width:var(--sp-5); height:var(--sp-5); }
 /* BEWUSSTE ABWEICHUNG vom CD (Review 2026-07, nav/mob-1): CDs Mobilmenü schiebt
    GANZE Ebenen-Panels per translateX (navy.postcss:79-99, 600ms) — das setzt
    einen einzigen Navy-Baum voraus. Unsere Shell führt je L1-Eintrag einen
@@ -264,7 +264,7 @@
 /* Einzug wandert mit der Polsterung auf das interaktive Element (Item 2.9b). */
 .mobile-menu__drawer .menu__item { padding-left:0; background:var(--color-secondary-50); }
 .mobile-menu__drawer .menu__item > .menu__item__flex,
-.mobile-menu__drawer .menu__item > .navy-branch { padding-left:2.25rem; }
+.mobile-menu__drawer .menu__item > .navy-branch { padding-left:var(--sp-9); }
 .mobile-menu .meta-navigation { display:block; }
 .mobile-menu .meta-navigation ul { display:block; }
 .mobile-menu .meta-navigation li > a,
@@ -279,26 +279,26 @@
 .mobile-menu .top-bar-navigation--mobile li > a:hover { background:var(--color-secondary-700); color:var(--color-text-negative); }
 
 /* Detail-Kopfleiste: Zurück-Link links, Share-Bar rechts, eine Zeile. */
-.detail-bar { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;
-  margin-bottom:1.5rem; }
-@media (min-width:1024px){ .detail-bar { margin-bottom:2.5rem; } }
+.detail-bar { display:flex; justify-content:space-between; align-items:center; gap:var(--sp-4); flex-wrap:wrap;
+  margin-bottom:var(--sp-6); }
+@media (min-width:1024px){ .detail-bar { margin-bottom:var(--sp-10); } }
 .detail-bar .back-link-row { padding-bottom:0; }
 .detail-bar .share-bar { margin:0; }
 /* The detail-bar owns the gap to the following hero (its margin-bottom); the hero
    must not add its own top padding on top of that, or the title floats too low. */
 .detail-bar + .hero { padding-top:0; }
 /* Share-Bar (share-bar.postcss:5-16) — rechtsbündig nach der Brotkrume. */
-.share-bar { display:flex; flex-direction:row-reverse; align-items:flex-end; margin:1.25rem -.75rem 0 0; }
-@media (min-width:1024px){ .share-bar { margin-top:1rem; } }
-.share-container { display:flex; gap:.25rem; }
+.share-bar { display:flex; flex-direction:row-reverse; align-items:flex-end; margin:var(--sp-5) calc(-1 * var(--sp-3)) 0 0; }
+@media (min-width:1024px){ .share-bar { margin-top:var(--sp-4); } }
+.share-container { display:flex; gap:var(--sp-1); }
 .share-bar__btn { min-width:var(--target-min); min-height:var(--target-min); justify-content:center; color:var(--color-secondary-700); }
 .share-bar__btn:hover { color:var(--color-primary-600); background:none; }
 /* These are .btn--bare buttons, so `.btn .icon { width:1.4em }` (0,2,0) would
    clobber the icon-size class and leave the icons ~1.4em. Re-assert CD's ShareBar
    size (SvgIcon size="xl" → icon--xl: h-7 md:h-8 lg:h-9) at higher specificity.
    Masked icons need an explicit width (see .icon note), so width tracks height. */
-.share-bar .share-bar__btn .icon { width:1.75rem; height:1.75rem; }
-@media (min-width:768px){ .share-bar .share-bar__btn .icon { width:2rem; height:2rem; } }
-@media (min-width:1024px){ .share-bar .share-bar__btn .icon { width:2.25rem; height:2.25rem; } }
+.share-bar .share-bar__btn .icon { width:var(--sp-7); height:var(--sp-7); }
+@media (min-width:768px){ .share-bar .share-bar__btn .icon { width:var(--sp-8); height:var(--sp-8); } }
+@media (min-width:1024px){ .share-bar .share-bar__btn .icon { width:var(--sp-9); height:var(--sp-9); } }
 @media print { .share-bar { display:none; } }
 

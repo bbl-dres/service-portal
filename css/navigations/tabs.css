@@ -2,18 +2,18 @@
 .tab__controls-container { position:relative; }
 /* bottom-1 (.25rem) wie CD (tab.postcss:15-17): der Verlauf endet über der
    Unterstrich-Zone, nicht 1px darüber. */
-.tab__controls-container::after { content:""; position:absolute; right:0; top:0; bottom:.25rem; width:2.5rem;
-  pointer-events:none; background:linear-gradient(to left, var(--color-bg) 0%, rgba(255,255,255,0) 100%); }
-@media (min-width:640px){ .tab__controls-container::after { width:5rem; } }
-.box .tab__controls-container::after { background:linear-gradient(to left, var(--color-secondary-50) 0%, rgba(240,244,247,0) 100%); }
+.tab__controls-container::after { content:""; position:absolute; right:0; top:0; bottom:var(--sp-1); width:var(--sp-10);
+  pointer-events:none; background:linear-gradient(to left, var(--color-bg) 0%, var(--fade-bg-transparent) 100%); }
+@media (min-width:640px){ .tab__controls-container::after { width:var(--sp-20); } }
+.box .tab__controls-container::after { background:linear-gradient(to left, var(--color-secondary-50) 0%, var(--fade-subtle-transparent) 100%); }
 .box .tab__controls { border-bottom-color:var(--color-border-strong); }   /* CD tab.postcss:36-38: auf secondary-50 border-gray-300 */
 .tab__controls { display:flex; overflow-x:auto; overflow-y:hidden; white-space:nowrap;
-  border-bottom:1px solid var(--color-border); -ms-overflow-style:none; scrollbar-width:none; }
+  border-bottom:var(--stroke-1) solid var(--color-border); -ms-overflow-style:none; scrollbar-width:none; }
 .tab__controls::-webkit-scrollbar { display:none; }
-.tab__control { position:relative; padding:1rem; background:none; border:0; margin:0;
+.tab__control { position:relative; padding:var(--sp-4); background:none; border:0; margin:0;
   font:inherit; color:inherit; text-decoration:none; cursor:pointer; }
-.tab__control::after { content:""; display:block; height:3px; position:absolute;
-  right:1rem; bottom:0; left:1rem; background:transparent; transition:background var(--duration-fast); }
+.tab__control::after { content:""; display:block; height:var(--stroke-3); position:absolute;
+  right:var(--sp-4); bottom:0; left:var(--sp-4); background:transparent; transition:background var(--duration-fast); }
 .tab__control--active::after, .tab__control:hover::after { background:var(--color-primary-500); }
 .tab__control:hover:not(.tab__control--active) { color:var(--color-primary-600); }
 .tab__control:first-child { padding-left:0; }
@@ -24,20 +24,20 @@
 /* EIN pt-8 trägt den ganzen Abstand Leiste↔Panel (tab.postcss:79-82) — kein
    Leisten-Margin obendrauf. Die dichtere Dashboard-Stufe (1.25rem, unten) ist
    der dortige Karten-Rhythmus und bleibt. */
-.tab__container { padding-top:2rem; }
+.tab__container { padding-top:var(--sp-8); }
 
 /* Pagination (pagination.postcss:5-31) */
-.pagination-wrap { display:flex; padding-block:1.5rem; }
-@media (min-width:1024px){ .pagination-wrap { padding-block:1.75rem; } }
-@media (min-width:1544px){ .pagination-wrap { padding-block:2rem; } }
-.pagination { display:flex; align-items:stretch; gap:.75rem; flex-wrap:wrap; list-style:none; }
+.pagination-wrap { display:flex; padding-block:var(--sp-6); }
+@media (min-width:1024px){ .pagination-wrap { padding-block:var(--sp-7); } }
+@media (min-width:1544px){ .pagination-wrap { padding-block:var(--sp-8); } }
+.pagination { display:flex; align-items:stretch; gap:var(--sp-3); flex-wrap:wrap; list-style:none; }
 /* CD gibt dem Seitenfeld die KNOPF-Rampe (pagination.postcss:8-11 `@apply
    btn--base` → 44/48/52) — --control-h, nicht das starre --target-min. */
-.pagination__input { width:3rem; min-height:var(--control-h); text-align:center; padding:.5rem; }
+.pagination__input { width:var(--sp-12); min-height:var(--control-h); text-align:center; padding:var(--sp-2); }
 .pagination__text { display:flex; align-items:center; white-space:nowrap; }
-.pagination_items { display:flex; align-items:center; gap:.25rem; list-style:none; flex-wrap:wrap; white-space:nowrap; height:100%; }
-@media (min-width:1024px){ .pagination_items { gap:.5rem; } }
-@media (min-width:1280px){ .pagination_items { gap:.75rem; } }
+.pagination_items { display:flex; align-items:center; gap:var(--sp-1); list-style:none; flex-wrap:wrap; white-space:nowrap; height:100%; }
+@media (min-width:1024px){ .pagination_items { gap:var(--sp-2); } }
+@media (min-width:1280px){ .pagination_items { gap:var(--sp-3); } }
 /* CDs .pagination--right (pagination.postcss:29-31) lebt hier als
    .pagination-wrap--right (unten) — die Polsterrampe trägt .pagination-wrap. */
 

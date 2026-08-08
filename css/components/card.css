@@ -2,7 +2,7 @@
 /* KEIN overflow:hidden (card.postcss:5-8): nur .card__image beschneidet sein
    Medium; Texte kappt der line-clamp. Der Beschnitt an der Karte selbst zwang
    die Fokusringe auf −2px nach innen und schnitt bei 200% Zoom Pillen ab. */
-.card { background:var(--color-bg); border:0; border-radius:0; box-shadow:none;
+.card { background:var(--color-bg); border:0; border-radius:var(--radius-none); box-shadow:none;
   display:flex; flex-direction:column; height:100%; position:relative; container-type:inline-size; }
 .card--default, .card--universal { box-shadow:var(--shadow-lg); }
 /* card--universal: Bild wird eingepasst (object-contain) statt beschnitten (CD card.postcss). */
@@ -19,7 +19,7 @@
    bg-secondary-50 + 2px weisser Innenrand bei 70% Deckkraft) — das geladene
    Bild malt darüber, sichtbar ist der Rahmen nur ohne Bild. */
 .card__image::before { content:""; position:absolute; inset:0;
-  background:var(--color-secondary-50); border:2px solid var(--color-bg); opacity:.7; }
+  background:var(--color-secondary-50); border:var(--stroke-2) solid var(--color-bg); opacity:.7; }
 .card__image > img, .card__image > .photo {
   position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 /* 2:1 statt 16:9 im zweispaltigen Raster — CDs Karten-Kontrakt
@@ -32,7 +32,7 @@
 /* card.postcss:210 — px-6 py-10, space-y-4. Kein flex:1 auf Body oder
    Description: das liess den Textkasten den Resthöhenausgleich der Rasterzeile
    aufsaugen, statt ihn als eine Lücke über dem Footer stehen zu lassen. */
-.card__body { padding:2.5rem 1.5rem; display:flex; flex-direction:column; gap:1rem; }
+.card__body { padding:var(--sp-10) var(--sp-6); display:flex; flex-direction:column; gap:var(--sp-4); }
 .card__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); line-height:1.375; transition:color var(--duration) var(--ease-in-out); overflow-wrap:anywhere; }
 .card__description { color:var(--color-text-muted); overflow-wrap:anywhere; }
 /* card.postcss:226-234 — lange Beschreibungen werden gekappt, damit eine
@@ -60,13 +60,13 @@
    (card.postcss:27-40); der Knopf behält seinen Ruhezustand. */
 .card__footer__action > .btn { pointer-events:none; }
 .card--clickable { cursor:pointer; transition:box-shadow var(--duration-slow) var(--ease-in-out); text-decoration:none; color:inherit; }
-.card--clickable::after { content:""; position:absolute; inset:0; border:2px solid transparent; transition:border-color var(--duration-slow) var(--ease-in-out); pointer-events:none; }
+.card--clickable::after { content:""; position:absolute; inset:0; border:var(--stroke-2) solid transparent; transition:border-color var(--duration-slow) var(--ease-in-out); pointer-events:none; }
 /* Stretched Link: der Titel-<a> überdeckt die ganze Karte (klickbar), ohne die Karte
    selbst zum Link zu machen — so bleiben Dokument-Gliederung + gültige Verschachtelung. */
 .card--clickable .card__link { text-decoration:none; color:inherit; }
-.card--clickable .card__link::after { content:""; position:absolute; inset:0; z-index:1; }
+.card--clickable .card__link::after { content:""; position:absolute; inset:0; z-index:var(--z-local-content); }
 .card--clickable .card__link:focus-visible { outline:none; }
-.card--clickable .card__link:focus-visible::after { outline:2px solid var(--color-focus-ring); outline-offset:2px; }   /* Standard-Versatz — die Karte beschneidet nicht mehr */
+.card--clickable .card__link:focus-visible::after { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }   /* Standard-Versatz — die Karte beschneidet nicht mehr */
 .card--clickable:hover, .card--clickable:focus-within { box-shadow:var(--shadow-2xl); text-decoration:none; }
 .card--clickable:hover::after, .card--clickable:focus-within::after { border-color:var(--color-gray-50); }
 .card--clickable:hover .card__title, .card--clickable:focus-within .card__title { color:var(--color-primary-700); }
@@ -82,29 +82,29 @@
   .catalogue-grid { gap:0; }
   .catalogue-grid .card__image { display:none; }
   .catalogue-grid .card--default { box-shadow:none;
-    border-bottom:1px solid var(--color-secondary-200); }
-  .catalogue-grid .card__body   { padding:1rem .25rem; }
-  .catalogue-grid .card__footer { padding:0 .25rem 1rem; }
+    border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
+  .catalogue-grid .card__body   { padding:var(--sp-4) var(--sp-1); }
+  .catalogue-grid .card__footer { padding:0 var(--sp-1) var(--sp-4); }
 }
 
 /* Placeholder photography (C.photo) */
 .photo { position:relative; overflow:hidden; }
 .photo > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
-.photo > :not(img) { position:relative; z-index:1; }
-.photo--scrim::before { content:""; position:absolute; inset:0; z-index:0;
+.photo > :not(img) { position:relative; z-index:var(--z-local-content); }
+.photo--scrim::before { content:""; position:absolute; inset:0; z-index:var(--z-local-base);
   background:var(--scrim-gradient); }
 .photo--16x9 { aspect-ratio:16/9; } .photo--4x3 { aspect-ratio:4/3; }
 .photo--21x9 { aspect-ratio:21/9; max-height:22rem; }
 .photo--fill { height:100%; }
-.photo--overlay-bottom { display:flex; align-items:flex-end; justify-content:space-between; padding:.75rem; }
+.photo--overlay-bottom { display:flex; align-items:flex-end; justify-content:space-between; padding:var(--sp-3); }
 .photo--overlay-center { display:flex; align-items:center; justify-content:center; color:var(--color-text-negative); }
 /* Kein Bild-Zoom beim Karten-Hover: das CD kennt keinen Transform auf Kartenbildern
    (einziger Scale im System ist card--highlight's Hintergrundebene, scale-102). */
 /* image-not-available (image-not-available.postcss:5-17) */
 .image__not-available { display:flex; flex-direction:column; align-items:center; justify-content:center;
   width:100%; height:100%; text-align:center; color:var(--color-text-muted); background:var(--color-secondary-50); }
-.image__not-available .icon { width:3rem; height:3rem; }
-.image__not-available-text { margin:.5rem 5px 0; font-size:var(--text-sm); }
+.image__not-available .icon { width:var(--sp-12); height:var(--sp-12); }
+.image__not-available-text { margin:var(--sp-2) 5px 0; font-size:var(--text-sm); }
 
 /* Badges (badge.postcss:5-82) — die Basis kennt weder gap noch nowrap (CD
    badge.postcss:5-9: nur inline-flex, items-center, Polster, rounded-full);
@@ -123,10 +123,10 @@
    Umbruch-Erlauben nichts ändert, deshalb `overflow-wrap`. Bei normaler
    Textgrösse passen die Pillen, die Regel ist dort also unsichtbar. */
 .pill-row .badge { overflow-wrap:anywhere; }
-.badge, .badge--base { font-size:var(--fs-xs); line-height:1.25rem; }
+.badge, .badge--base { font-size:var(--fs-xs); line-height:var(--line-5); }
 @media (min-width:768px) { .badge, .badge--base { font-size:var(--fs-sm); } }
-@media (min-width:1024px){ .badge, .badge--base { font-size:var(--fs-base); line-height:1.5rem; } }
-.badge--sm { font-size:10px; line-height:1rem; }
+@media (min-width:1024px){ .badge, .badge--base { font-size:var(--fs-base); line-height:var(--line-6); } }
+.badge--sm { font-size:10px; line-height:var(--line-4); }
 @media (min-width:768px) { .badge--sm { font-size:var(--fs-xs); line-height:1.35rem; } }
 @media (min-width:1024px){ .badge--sm { font-size:var(--fs-sm); } }
 /* CD-Icon-Anatomie (badge.postcss:84-97 + Badge.vue:11-18): das Symbol wird
@@ -151,22 +151,22 @@
 /* min-height über --control-h: das Token trägt exakt CDs 44/48/52-Knopframpe
    (min-h-[44px] xl:48 3xl:52) — vorher standen dieselben Stufen hier als
    Literale ein zweites Mal. */
-.tag-item { display:inline-flex; align-items:center; margin-right:.75rem;
-  min-height:var(--control-h); font:inherit; font-size:var(--text-base); line-height:1.25rem;
+.tag-item { display:inline-flex; align-items:center; margin-right:var(--sp-3);
+  min-height:var(--control-h); font:inherit; font-size:var(--text-base); line-height:var(--line-5);
   background:none; border:0; padding:0; color:inherit; text-decoration:none; cursor:pointer; }
 /* Randrampe unter der Pille: CD tag-item.postcss:9 `mr-3 md:mb-0.5 lg:mb-1` —
    unter 768 KEIN unterer Rand. */
-@media (min-width:768px){ .tag-item { margin-bottom:.125rem; } }
-@media (min-width:1024px){ .tag-item { line-height:1.5rem; margin-bottom:.25rem; } }
+@media (min-width:768px){ .tag-item { margin-bottom:var(--sp-0-5); } }
+@media (min-width:1024px){ .tag-item { line-height:var(--line-6); margin-bottom:var(--sp-1); } }
 .tag-item:hover { color:inherit; text-decoration:none; }
 .tag-item--sm { font-size:var(--text-sm); }
 /* Die Hover-Transition ist eine BEWUSSTE portalweite Politur (CD schaltet
    Tag-/Badge-Hover hart um): über die --duration-Tokens reduced-motion-sicher. */
-.tag-item__inner { display:inline-flex; align-items:center; gap:.5rem; padding-inline:1rem; line-height:1.25;
+.tag-item__inner { display:inline-flex; align-items:center; gap:var(--sp-2); padding-inline:var(--sp-4); line-height:1.25;
   border-radius:var(--radius-full); background:var(--color-gray-200); transition:background var(--duration-fast),color var(--duration-fast); }
-@media (min-width:1544px){ .tag-item__inner { padding-inline:1.25rem; } }
-.tag-item__text { display:inline-block; padding-block:.375rem; text-align:left; }
-@media (min-width:1280px){ .tag-item__text { padding-block:.5rem; } }
+@media (min-width:1544px){ .tag-item__inner { padding-inline:var(--sp-5); } }
+.tag-item__text { display:inline-block; padding-block:var(--sp-1-5); text-align:left; }
+@media (min-width:1280px){ .tag-item__text { padding-block:var(--sp-2); } }
 .tag-item:hover .tag-item__inner { background:var(--color-gray-300); }
 .tag-item--active .tag-item__inner { background:var(--color-gray-800); color:var(--color-text-negative); }
 /* CD tag-item.postcss:61-67: die aktive Pille ist inert (der Zustand ist die
@@ -176,13 +176,13 @@
 .tag-item:focus-visible { outline:none; }
 /* Versatz 0: CDs Ring liegt AN der Pille (tag-item.postcss:17-19 ring-2 ohne
    Offset) und folgt dank outline-Radius-Verhalten der Rundung. */
-.tag-item:focus-visible .tag-item__inner { outline:2px solid var(--color-focus-ring); outline-offset:0; }
+.tag-item:focus-visible .tag-item__inner { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:0; }
 /* CD tag-item.postcss:80-85 — Icon-Slot (z. B. Cancel-X der Entfernen-Pille).
    `align-self:stretch` + height:auto statt CDs h-full: `height:100%` löst im
    auto-hohen Flex-Container auf `auto` auf und kollabierte den Masken-Span auf
    0 — das X der Entfernen-Pille war unsichtbar (gemessen 27x0px). */
 .tag-item__icon { align-self:stretch; height:auto; width:1.5em; position:relative; left:.4em; flex:none; }
-@media (forced-colors: active) { .tag-item--active .tag-item__inner { outline:2px solid CanvasText; outline-offset:-3px; } }
+@media (forced-colors: active) { .tag-item--active .tag-item__inner { outline:var(--stroke-2) solid CanvasText; outline-offset:calc(-1 * var(--stroke-3)); } }
 
 /* ---- Scroll-Regionen ------------------------------------------------------
    Jeder horizontale Scroll-Host ist (1) POSITIONIERT, damit kein `.sr-only`

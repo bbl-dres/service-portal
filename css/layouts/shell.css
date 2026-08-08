@@ -3,18 +3,18 @@
    #6b7280 misst 4.83:1 auf Weiss (AA). Ausrichtung/Lücke hier statt auf der
    CD-neutralen .container--flex-Basis. */
 .breadcrumb { background:transparent; border-bottom:0; font-size:var(--fs-sm); color:var(--color-text-500);
-  align-items:center; gap:1rem; position:relative; z-index:var(--breadcrumb-z); }
-.breadcrumb ul { list-style:none; display:flex; flex-wrap:wrap; align-items:center; padding-block:.5rem; margin-left:-1rem; }
-@media (min-width:1280px){ .breadcrumb ul { padding-block:.75rem; } }
+  align-items:center; gap:var(--sp-4); position:relative; z-index:var(--breadcrumb-z); }
+.breadcrumb ul { list-style:none; display:flex; flex-wrap:wrap; align-items:center; padding-block:var(--sp-2); margin-left:calc(-1 * var(--sp-4)); }
+@media (min-width:1280px){ .breadcrumb ul { padding-block:var(--sp-3); } }
 .breadcrumb li { display:flex; align-items:center; color:var(--color-text-500); }
 /* py-4 (1rem): die Brotkrume rendert nur ≥1024px, dort gilt CDs md:py-4
    (breadcrumb.postcss:23-27) — py-2 war die unsichtbare Mobilstufe. */
-.breadcrumb a, .breadcrumb [aria-current] { display:flex; align-items:center; padding:1rem; text-decoration:none; }
+.breadcrumb a, .breadcrumb [aria-current] { display:flex; align-items:center; padding:var(--sp-4); text-decoration:none; }
 .breadcrumb a { color:var(--color-text-500); }
 .breadcrumb a:hover { color:var(--color-primary-600); text-decoration:none; }
 /* Trenn-Chevron in SvgIcon-Basisgrösse 1rem (BreadcrumbNavigation.vue:108-112 →
    icons.postcss:23-25 h-4); die Ränder sind CDs -ml-5 mr-3 und stimmen bereits. */
-.breadcrumb__include-icon { margin-left:-1.25rem; margin-right:.75rem; width:1rem; height:1rem; }
+.breadcrumb__include-icon { margin-left:calc(-1 * var(--sp-5)); margin-right:var(--sp-3); width:var(--sp-4); height:var(--sp-4); }
 @media (max-width:1023.98px){ .breadcrumb { display:none; } }
 
 /* Footer (footer.postcss:5-104) */
@@ -24,38 +24,38 @@
    ist, ohne Modale zu überdecken. */
 #main-footer { position:relative; z-index:var(--z-footer); }
 .footer-information { display:flex; flex-direction:column; color:var(--color-text-negative); padding-block:var(--section-py); }
-@media (min-width:1024px){ .footer-information { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4rem; } }
+@media (min-width:1024px){ .footer-information { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-16); } }
 @media (min-width:1280px){ .footer-information { grid-template-columns:repeat(4,minmax(0,1fr)); } }
-.footer-information__entry { color:var(--color-text-negative); margin-bottom:4rem; }
+.footer-information__entry { color:var(--color-text-negative); margin-bottom:var(--sp-16); }
 .footer-information__entry:last-child { margin-bottom:0; }
 @media (min-width:1024px){ .footer-information__entry { margin-bottom:0; } }
 @media (min-width:1280px){ .footer-information__entry--big { grid-column:span 2; } }
-.footer-information__entry h3 { font-size:var(--text-xl); color:var(--color-text-negative); margin-bottom:1.5rem; }
-@media (min-width:1024px){ .footer-information__entry h3 { margin-bottom:2.5rem; } }
-.footer-information__entry p { margin-bottom:.75rem; }   /* CD footer.postcss:54-60 mb-3 xl:mb-4 */
-@media (min-width:1280px){ .footer-information__entry p { margin-bottom:1rem; } }
+.footer-information__entry h3 { font-size:var(--text-xl); color:var(--color-text-negative); margin-bottom:var(--sp-6); }
+@media (min-width:1024px){ .footer-information__entry h3 { margin-bottom:var(--sp-10); } }
+.footer-information__entry p { margin-bottom:var(--sp-3); }   /* CD footer.postcss:54-60 mb-3 xl:mb-4 */
+@media (min-width:1280px){ .footer-information__entry p { margin-bottom:var(--sp-4); } }
 .footer-information__entry p:last-child { margin-bottom:0; }
-.footer__link { display:inline-flex; align-items:center; padding-block:.5rem; color:var(--color-text-negative); cursor:pointer; text-decoration:none; }
+.footer__link { display:inline-flex; align-items:center; padding-block:var(--sp-2); color:var(--color-text-negative); cursor:pointer; text-decoration:none; }
 .footer__link:hover { color:var(--color-gray-300); text-decoration:none; }
-.footer-information__icon { display:inline-block; margin-right:.25rem; width:1.4em; height:1.4em; flex:none; }
-.footer-information__links { display:flex; flex-direction:column; margin-top:-1rem; }
-@media (min-width:640px){ .footer-information__links { flex-direction:row; gap:4rem; } }
+.footer-information__icon { display:inline-block; margin-right:var(--sp-1); width:1.4em; height:1.4em; flex:none; }
+.footer-information__links { display:flex; flex-direction:column; margin-top:calc(-1 * var(--sp-4)); }
+@media (min-width:640px){ .footer-information__links { flex-direction:row; gap:var(--sp-16); } }
 @media (min-width:1024px){ .footer-information__links { flex-direction:column; gap:0; } }
-@media (min-width:1280px){ .footer-information__links { flex-direction:row; gap:4rem; } }
+@media (min-width:1280px){ .footer-information__links { flex-direction:row; gap:var(--sp-16); } }
 .footer-information__links-column { flex:1; }
 .footer-information__links .footer__link { width:100%; display:flex; justify-content:space-between;
-  padding:1rem .5rem; border-bottom:1px solid var(--color-secondary-300); }
+  padding:var(--sp-4) var(--sp-2); border-bottom:var(--stroke-1) solid var(--color-secondary-300); }
 .footer-information__links .footer__link:hover { background:var(--color-secondary-700); color:var(--color-text-negative); }
 /* CD footer.postcss:100-102: in den Linkzeilen wächst NUR die Icon-Höhe auf h-6
    (1.5rem); die Breite bleibt CDs w-[1.4em] (footer.postcss:28). */
-.footer-information__links .footer-information__icon { height:1.5rem; }
+.footer-information__links .footer-information__icon { height:var(--sp-6); }
 .footer-information__link--icon-right { flex-direction:row-reverse; }
 /* CD footer.postcss:33-38: relative ml-[0.2em] left-[0.1em] — der optische Nudge
    rückt das rechtsstehende Icon an die Zeilenkante. */
 .footer-information__link--icon-right .footer-information__icon { position:relative; left:.1em; margin-left:.2em; margin-right:0; }
-.footer-navigation { list-style:none; display:flex; flex-wrap:wrap; padding-block:.75rem; gap:.5rem;
+.footer-navigation { list-style:none; display:flex; flex-wrap:wrap; padding-block:var(--sp-3); gap:var(--sp-2);
   font-size:var(--text-xs); color:var(--color-secondary-100); }
-@media (min-width:640px){ .footer-navigation { gap:1rem; } }
+@media (min-width:640px){ .footer-navigation { gap:var(--sp-4); } }
 /* Keine eigene Linkfarbe im Rechtsband: die Basis .footer__link gilt unverändert
    (weiss ruhend → gray-300 Hover/Fokus, CD footer.postcss:19-23) — die frühere
    Invertierung (grau → weiss) stand dem CD genau entgegen (nav/ft-2). */
@@ -71,8 +71,8 @@
    wirkte willkürlich. Das Mass regelt jetzt allein die Spalte, in der der Kopf
    steht (CD macht es genauso: kein max-width auf Textklassen, sondern
    container__center--* um den Inhalt). */
-.page-header { padding:.25rem 0 1.5rem; }
-.page-header h1 { margin-bottom:.25rem; }
+.page-header { padding:var(--sp-1) 0 var(--sp-6); }
+.page-header h1 { margin-bottom:var(--sp-1); }
 /* EIN Lead-Rezept, ungebunden (statt je Kontext kopiert). */
 .lead { font-size:var(--text-lg); color:var(--color-text-muted); }
 /* Keine max-width-Deckel mehr auf Lead, Seitenkopf oder Lead-Hinweis: sie
@@ -111,9 +111,9 @@
 /* Der frühere :has()-Sonderfall für Nur-Titel-Heros ist entfallen: sein einziger
    Konsument (Metadatenkatalog-Details) trägt jetzt das App-Detail-Rezept
    detailBar + h1 statt eines Heros (Design-Review B2). */
-.hero__content { display:flex; flex-direction:column; gap:1.5rem; max-width:60rem; }
-@media (min-width:1024px){ .hero__content { gap:2rem; } }
-@media (min-width:1920px){ .hero__content { gap:2.5rem; } }   /* hero.postcss:14-16 3xl:space-y-10 */
+.hero__content { display:flex; flex-direction:column; gap:var(--sp-6); max-width:60rem; }
+@media (min-width:1024px){ .hero__content { gap:var(--sp-8); } }
+@media (min-width:1920px){ .hero__content { gap:var(--sp-10); } }   /* hero.postcss:14-16 3xl:space-y-10 */
 /* CD hero--title-only = 6/12 Spalten (container__center--xs). BEWUSSTE
    ABWEICHUNG: das CD ZENTRIERT diese Spalte (container.postcss:65-87); hier
    bleibt sie linksbündig — dieselbe Entscheidung wie bei .container__main
@@ -132,9 +132,9 @@
 .hero__description { font-size:var(--text-lg); line-height:var(--lh-snug); color:var(--color-text-muted); margin:0; }
 /* CD-Abstandsrampe der CTA-Zeile (hero.postcss:36-39 mr/mb-4 md:5 xl:6 auf den
    Knöpfen — hier als flex-gap, gleiches Mass). */
-.hero__cta { display:flex; flex-wrap:wrap; gap:1rem; }
-@media (min-width:768px){ .hero__cta { gap:1.25rem; } }
-@media (min-width:1280px){ .hero__cta { gap:1.5rem; } }
+.hero__cta { display:flex; flex-wrap:wrap; gap:var(--sp-4); }
+@media (min-width:768px){ .hero__cta { gap:var(--sp-5); } }
+@media (min-width:1280px){ .hero__cta { gap:var(--sp-6); } }
 /* hero--main-image (hero.postcss:70-88): content and image share the 12-col
    grid from md up; below that the content stacks above the image. */
 /* Kein eigenes Padding: oben nullt die .detail-bar-Regel (unten §Detailseiten),

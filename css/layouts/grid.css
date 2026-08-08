@@ -19,30 +19,30 @@
 /* .ratio--* (ratio.postcss:5-33) exzidiert — null Konsumenten (Design-Review C10). */
 
 /* ---- Icons (monochrome SVGs via CSS mask -> currentColor) ---- */
-.icon { display:inline-block; width:auto; height:1rem; vertical-align:-.15em;
+.icon { display:inline-block; width:auto; height:var(--sp-4); vertical-align:-.15em;
   background-color:currentColor; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
   -webkit-mask-position:center; mask-position:center; -webkit-mask-size:contain; mask-size:contain; flex:none; }
 /* the mask needs an intrinsic box; width tracks height for the square CD icons */
-.icon { width:1rem; }
-.icon--sm   { width:.75rem;  height:.75rem; }
-.icon--base { width:1rem;    height:1rem; }
-.icon--md   { width:1.25rem; height:1.25rem; }
-.icon--lg   { width:1.5rem;  height:1.5rem; }
-.icon--xl   { width:1.75rem; height:1.75rem; }
-.icon--2xl  { width:2.25rem; height:2.25rem; }
+.icon { width:var(--sp-4); }
+.icon--sm   { width:var(--sp-3);  height:var(--sp-3); }
+.icon--base { width:var(--sp-4);    height:var(--sp-4); }
+.icon--md   { width:var(--sp-5); height:var(--sp-5); }
+.icon--lg   { width:var(--sp-6);  height:var(--sp-6); }
+.icon--xl   { width:var(--sp-7); height:var(--sp-7); }
+.icon--2xl  { width:var(--sp-9); height:var(--sp-9); }
 @media (min-width:768px){
-  .icon--md { width:1.5rem; height:1.5rem; } .icon--lg { width:1.75rem; height:1.75rem; }
-  .icon--xl { width:2rem; height:2rem; }     .icon--2xl{ width:2.5rem; height:2.5rem; }
+  .icon--md { width:var(--sp-6); height:var(--sp-6); } .icon--lg { width:var(--sp-7); height:var(--sp-7); }
+  .icon--xl { width:var(--sp-8); height:var(--sp-8); }     .icon--2xl{ width:var(--sp-10); height:var(--sp-10); }
 }
 @media (min-width:1024px){
-  .icon--xl { width:2.25rem; height:2.25rem; } .icon--2xl{ width:3rem; height:3rem; }
+  .icon--xl { width:var(--sp-9); height:var(--sp-9); } .icon--2xl{ width:var(--sp-12); height:var(--sp-12); }
 }
 /* icon--full/3xl/4xl/5xl (CD icons.postcss:15-53) folgen mit dem ersten
    Konsumenten über 3rem — bis dahin wären sie tote Regeln. */
 /* C.loading() rendert Spinner.svg mit icon--spin; der Reduced-Motion-Ausstieg
    steht im Sammelblock unten. */
 @keyframes spin { to { transform:rotate(360deg); } }
-.icon--spin { animation:spin .5s linear infinite; }
+.icon--spin { animation:spin var(--duration-spin) linear infinite; }
 
 /* Masked icons are dropped by forced-colors; repaint them with a system colour */
 @media (forced-colors: active) {
@@ -55,6 +55,6 @@
      dieselbe Spezifität, hier stünde die Korrektur 1000 Zeilen zu früh und
      verlöre. */
   /* Gedrückter Ansichtsschalter braucht eine Form, nicht nur eine Fläche */
-  .view-switch__btn[aria-pressed="true"] { outline:2px solid CanvasText; outline-offset:-2px; }
+  .view-switch__btn[aria-pressed="true"] { outline:var(--stroke-2) solid CanvasText; outline-offset:calc(-1 * var(--stroke-2)); }
 }
 

@@ -116,20 +116,27 @@
      NICHT auf .btn anwenden — .btn führt seine Rampe bereits selbst (app.css,
      «.btn min-height»-Rampe im Buttons-Abschnitt). Die Stufen stehen unten bei
      den Typo-Rampen. */
-  --control-h: 2.75rem;
+  --control-size-compact: 2.125rem;
+  --control-size-sm: 2.75rem;
+  --control-size-md: 3rem;
+  --control-size-lg: 3.25rem;
+  --control-h: var(--control-size-sm);
 
   /* Feste Mindest-Tippfläche (WCAG 2.5.8 «Target Size», 44px). BEWUSST getrennt
      von --control-h: die Bedienhöhe skaliert mit dem Viewport, ein Tippziel muss
      das nicht — Icon-Knöpfe ohne Beschriftung sollen bei 1544px nicht auf 48px
      aufgehen. Vorher trugen beide Absichten dasselbe Literal 2.75rem, was die
      Rampe unbemerkt mitgerissen hätte. */
-  --target-min: 2.75rem;
+  --target-min: var(--control-size-sm);
 
   /* Eingabefeld-Rampe — CD input.postcss:1-4,16: Felder steigen NUR bei 2xl/1544
      von 44 auf 48 px und enden dort; die xl/3xl-Stufen (48/52) gehören allein den
      Knöpfen. Vorher ritten die Felder auf --control-h mit und waren auf
      1280-1543-px-Laptops 4 px höher als das CD vorsieht. */
-  --input-h: 2.75rem;
+  --input-h: var(--control-size-sm);
+  /* Portal-local compact checkbox/radio mark after snapping the former 1.15rem
+     literal to the CD 1.125rem type/size step. */
+  --check-size: 1.125rem;
 
   /* Negativ-Ebene — helle Bedienelemente auf dunkler Chrome (Lightbox,
      Dokumentbetrachter). Das CD führt dafür `btn--*-negative`, `link--negative`
@@ -141,6 +148,17 @@
   --surface-negative-hover:  rgba(255,255,255,.14);
   --surface-negative-active: rgba(255,255,255,.22);
   --border-negative:         rgba(255,255,255,.16);
+
+  /* Portal-local fixed rendering surfaces. These are deliberately outside the
+     skin ramps: document paper, 3D canvas and image controls must keep their
+     physical/contrast meaning when the surrounding brand changes. */
+  --surface-drafting: #f7f9fb;
+  --surface-canvas-3d: #e9eef3;
+  --surface-lightbox-control: rgba(255,255,255,.85);
+  --fade-bg-transparent: rgba(255,255,255,0);
+  --fade-subtle-transparent: rgba(240,244,247,0);
+  --scrim-navigation: linear-gradient(to bottom, rgba(17,24,39,.2) 0%, rgba(17,24,39,.2) 50%, rgba(17,24,39,0) 100%);
+  --scrim-editor-panel: rgba(22,36,56,.18);
 
   /* --- Kategoriale Chart-Palette — CD-Hue-Stufen, alle ≥4.5:1 auf Weiss, keine
      kollidiert mit --color-primary-600 (rot #d8232a / intranet-blau #2563eb).
@@ -192,8 +210,8 @@
      Rohe Werte bleiben nur für einmalige CD-Geometrie, Typografie, Medien-
      verhältnisse und fachliche Viewer-Masse stehen; skalenfremde Werte werden
      nicht ohne Prüfung auf eine benachbarte Stufe gerundet. --- */
-  --sp-0: 0;        --sp-1: .25rem;   --sp-1-5: .375rem; --sp-2: .5rem;
-  --sp-2-5: .625rem; --sp-3: .75rem;
+  --sp-0: 0; --sp-0-5: .125rem; --sp-1: .25rem; --sp-1-5: .375rem; --sp-2: .5rem;
+  --sp-2-5: .625rem; --sp-3: .75rem;  --sp-3-5: .875rem;
   --sp-4: 1rem;     --sp-5: 1.25rem;  --sp-6: 1.5rem;   --sp-7: 1.75rem;
   --sp-8: 2rem;     --sp-9: 2.25rem;  --sp-10: 2.5rem;  --sp-12: 3rem;
   --sp-14: 3.5rem;  --sp-16: 4rem;    --sp-20: 5rem;    --sp-24: 6rem;
@@ -211,6 +229,12 @@
   --radius-3xl: 0.625rem; --radius-4xl: 0.75rem;  --radius-5xl: 0.9375rem; --radius-6xl: 1.5rem;
   --radius-full: 9999px;
 
+  /* --- Stroke / fixed leading ------------------------------------------------
+     Portal-local aliases of CD's Tailwind borderWidth and lineHeight scales.
+     CD v1.0.5 does not expose CSS custom-property names for these scales. */
+  --stroke-1: 1px; --stroke-2: 2px; --stroke-3: 3px; --stroke-4: 4px;
+  --line-4: 1rem; --line-5: 1.25rem; --line-6: 1.5rem; --line-7: 1.75rem;
+
   /* --- Shadow --- */
   --shadow-none: 0 0 0 0 rgba(0,0,0,0);
   --shadow-sm: 0 1px 2px 0 rgba(0,0,0,.05);
@@ -224,9 +248,21 @@
      Vorher stand das Literal dreimal im Blatt, und die erklärte Zwillingsregel
      (.pf-lightbox__zoom) nutzte stattdessen shadow-lg (Design-Review C16). */
   --shadow-viewer: 0 10px 40px rgba(0,0,0,.45);
+  /* Component-state indicators are rings/bars rather than elevations. Keeping
+     them beside the elevation scale prevents one-off shadow recipes. */
+  --state-bar-primary: inset var(--stroke-3) 0 0 var(--color-primary-600);
+  --state-underline-primary: inset 0 calc(-1 * var(--stroke-3)) 0 var(--color-primary-600);
+  --state-ring-primary: inset 0 0 0 var(--stroke-1) var(--color-primary-600);
+  --state-ring-warning: inset 0 0 0 var(--stroke-2) var(--color-warning-text);
+  --state-ring-focus: inset 0 0 0 var(--stroke-4) var(--color-focus-ring);
+  --state-ring-focus-compact: inset 0 0 0 var(--stroke-3) var(--color-focus-ring);
+  --state-ring-primary-soft: 0 0 0 var(--stroke-3) var(--color-primary-100);
+  --reticle-ring: 0 0 0 var(--stroke-1) rgba(255,255,255,.9), 0 0 0 var(--stroke-3) rgba(22,36,56,.42);
+  --reticle-ring-muted: 0 0 0 var(--stroke-1) rgba(255,255,255,.82);
 
   /* --- Motion (tailwind.config duration/easing) — eine Quelle, auditierbar für reduced-motion --- */
-  --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms; --duration-slowest: 700ms;
+  --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
+  --duration-spin: 500ms; --duration-slowest: 700ms;
   --ease-out: cubic-bezier(0,0,.2,1); --ease-in-out: cubic-bezier(.4,0,.2,1);
   --scale-hover: 1.02;    /* CD scale-102 Hover-Lift */
 
@@ -246,6 +282,9 @@
   --scrim-chip:       rgba(19,27,34,.72);        /* secondary-900, Chips auf Bildern */
   --scrim-chip-hover: rgba(19,27,34,.9);
   --scrim-gradient: linear-gradient(180deg, rgba(19,27,34,.15) 0%, rgba(19,27,34,.72) 100%);
+
+  /* Print is deliberately device-black rather than a skin color. */
+  --color-print: #000000;
 
   /* --- Responsive Abstandsrampen ---------------------------------------------
      CD grids.postcss:25-56 und container.postcss:29-49. Beide Rampen standen
@@ -267,6 +306,17 @@
   --container-max-2xl: 1544px;
   --container-max-3xl: 1676px;
   --container-max: var(--container-max-2xl);
+  /* Component-local stack. Consumers establish their own stacking context;
+     these values express sibling order and never compete with page chrome. */
+  --z-local-base: 0;
+  --z-local-content: 1;
+  --z-local-control: 2;
+  --z-local-chrome: 3;
+  --z-local-popover: 5;
+  --z-local-floating: 6;
+  --z-local-status: 7;
+  --z-local-toolbar: 8;
+
   /* Z-Index-Skala (statt verstreuter Magic Numbers) — governt Stapelordnung.
      Von unten nach oben gelesen ist das die vollständige Ordnung der Seite; die
      Lücken zwischen Nav (40-50) und Overlay (90) sind Reserve, keine Zufälle. */
@@ -377,7 +427,7 @@
 }
 @media (min-width:1280px) {          /* xl */
   :root {
-    --control-h: 3rem;               /* CD btn.postcss:112-127 xl:min-h-[48px] */
+    --control-h: var(--control-size-md); /* CD btn.postcss:112-127 xl:min-h-[48px] */
     --gap-responsive: 3rem; --container-px: 3rem;
     --text-xs:  var(--fs-sm);  --text-sm:  var(--fs-base); --text-base: var(--fs-lg);
     --text-lg:  var(--fs-xl);  --text-xl:  var(--fs-3xl);  --text-2xl:  var(--fs-4xl);
@@ -385,11 +435,11 @@
   }
 }
 @media (min-width:1544px) {          /* 2xl — Eingabefeld-Rampe + Sektionsrhythmus */
-  :root { --input-h: 3rem; --stack-gap: 3.5rem; }
+  :root { --input-h: var(--control-size-md); --stack-gap: 3.5rem; }
 }
 @media (min-width:1920px) {          /* 3xl */
   :root {
-    --control-h: 3.25rem;            /* CD btn.postcss:112-127 3xl:min-h-[52px] */
+    --control-h: var(--control-size-lg); /* CD btn.postcss:112-127 3xl:min-h-[52px] */
     --gap-responsive: 4rem; --container-px: 4rem;
     --section-py: 8rem; --section-py-half: 4rem; --section-pt: 5rem;
     --text-xs:  var(--fs-base); --text-sm:  var(--fs-lg);  --text-base: var(--fs-xl);
@@ -407,7 +457,7 @@
    Verdrahtungen sich verlassen dürfen. */
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --duration-fast: .01ms; --duration: .01ms;
-    --duration-slow: .01ms; --duration-slowest: .01ms;
+    --duration-fast: .01ms; --duration: .01ms; --duration-slow: .01ms;
+    --duration-spin: .01ms; --duration-slowest: .01ms;
   }
 }

@@ -18,7 +18,7 @@ a { color:var(--color-link); text-decoration:none; }
 #main-content a:not(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a),
 .modal a:not(.btn, .notification a),
 .link {
-  color:var(--color-primary-600); text-decoration:underline; text-underline-offset:2px; overflow-wrap:break-word; cursor:pointer;
+  color:var(--color-primary-600); text-decoration:underline; text-underline-offset:var(--stroke-2); overflow-wrap:break-word; cursor:pointer;
 }
 #main-content a:not(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a):is(:hover, :focus),
 .modal a:not(.btn, .notification a):is(:hover, :focus),
@@ -33,16 +33,16 @@ a { color:var(--color-link); text-decoration:none; }
   -webkit-mask-size:contain; mask-size:contain;
 }
 
-mark { background:var(--color-primary-200); padding:.125rem .25rem; }   /* CD typography.postcss:157-159: py-0.5 px-1, kein Radius */
+mark { background:var(--color-primary-200); padding:var(--sp-0-5) var(--sp-1); }   /* CD typography.postcss:157-159: py-0.5 px-1, kein Radius */
 img { max-width:100%; display:block; }
 ul,ol { margin:0; padding:0; }
 
 /* Lists (list.postcss:5-67) */
-#main-content ul:not([class]), .list--default { list-style:disc outside; padding-left:1.25rem; }
-#main-content ol:not([class]), .list--ordered { list-style:decimal outside; padding-left:1.25rem; }
+#main-content ul:not([class]), .list--default { list-style:disc outside; padding-left:var(--sp-5); }
+#main-content ol:not([class]), .list--ordered { list-style:decimal outside; padding-left:var(--sp-5); }
 #main-content ul:not([class]) > li + li, #main-content ol:not([class]) > li + li,
-.list--default > li + li, .list--ordered > li + li { margin-top:.5rem; }
-.list--loose > li + li { margin-top:.75rem; }
+.list--default > li + li, .list--ordered > li + li { margin-top:var(--sp-2); }
+.list--loose > li + li { margin-top:var(--sp-3); }
 .list--bare { list-style:none; padding-left:0; }
 .list--flex { display:flex; } .list--wrap { flex-wrap:wrap; }
 
@@ -57,7 +57,7 @@ ul,ol { margin:0; padding:0; }
    (global.postcss:75-86, ring-2 ring-purple-500, Versatz 0). Der 2px-Versatz
    hier ist bewusst — auf gefüllten Flächen deutlich sichtbarer; eine
    z-Anhebung braucht ein Outline nicht, es malt ohnehin über Nachbarn. */
-:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
 .top-bar :focus-visible, .footer-information :focus-visible, .footer-navigation :focus-visible,
 .mobile-menu .top-bar-navigation--mobile :focus-visible,
 .bg--secondary-500 :focus-visible, [class*="bg--secondary-6"] :focus-visible,
@@ -86,10 +86,10 @@ h4[tabindex="-1"]:focus, h4[tabindex="-1"]:focus-visible,
 .logo__title,
 .search__button__title,
 .btn--icon-only .btn__text,
-table.table caption { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+table.table caption { position:absolute; width:var(--stroke-1); height:var(--stroke-1); padding:0; margin:calc(-1 * var(--stroke-1)); overflow:hidden;
   clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .skip-to-content { position:absolute; left:50%; top:0; z-index:var(--z-skiplink); background:var(--color-secondary-900);
-  color:var(--color-text-negative); border:2px solid var(--color-bg); box-shadow:var(--shadow-md); padding:.5rem 1rem; font:inherit; cursor:pointer;
+  color:var(--color-text-negative); border:var(--stroke-2) solid var(--color-bg); box-shadow:var(--shadow-md); padding:var(--sp-2) var(--sp-4); font:inherit; cursor:pointer;
   transform:translate(-50%,-200%); transition:transform var(--duration-fast); }   /* CD: transition-transform = 150ms */
 .skip-to-content:focus { transform:translate(-50%,0); }
 

@@ -4,24 +4,24 @@
    Kasten (Klasse von wireScrollRegions). sticky/left:0 hält ihn beim Scrollen. */
 .table-wrapper__hint { display:none; }
 .table-wrapper.is-scrollable > .table-wrapper__hint {
-  display:flex; align-items:center; gap:.5rem;
+  display:flex; align-items:center; gap:var(--sp-2);
   position:sticky; left:0; width:max-content;
-  margin:.5rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); }
+  margin:var(--sp-2) 0 0; font-size:var(--text-sm); color:var(--color-text-muted); }
 .table-wrapper.is-scrollable > .table-wrapper__hint .icon { flex:none; }
 table.table { width:100%; border-collapse:collapse; background:var(--color-bg); box-shadow:var(--shadow-md);
-  border:1px solid var(--color-border); }
+  border:var(--stroke-1) solid var(--color-border); }
 /* pre-line wie CD (table.postcss:13-15): mehrzeilige Legenden behalten ihre
    gesetzten Umbrüche, lange Zeilen brechen weiter normal um. */
 table.table--caption caption { position:static; width:auto; height:auto; clip:auto; white-space:pre-line;
-  display:table-caption; caption-side:bottom; text-align:left; padding-top:.5rem;
+  display:table-caption; caption-side:bottom; text-align:left; padding-top:var(--sp-2);
   font-size:var(--text-xs); color:var(--color-text-muted); }
 /* Kein nowrap: CDs Kopfzellen dürfen umbrechen (table.postcss:37-42 setzt
    align-top GENAU dafür); Identifikatorspalten pinnt .text-nowrap gezielt.
    Trennlinie unter dem Kopf in text-300 wie ALLE Zeilenlinien (table.postcss:45-50). */
 table.table thead th { background:var(--color-secondary-50); text-align:left; padding:var(--sp-4) var(--sp-6);
   font-size:var(--text-sm); text-transform:uppercase; color:var(--color-gray-700);
-  border-bottom:1px solid var(--color-border-strong); vertical-align:top; }
-table.table td, table.table tbody th { padding:var(--sp-4) var(--sp-6); border-bottom:1px solid var(--color-border-strong);
+  border-bottom:var(--stroke-1) solid var(--color-border-strong); vertical-align:top; }
+table.table td, table.table tbody th { padding:var(--sp-4) var(--sp-6); border-bottom:var(--stroke-1) solid var(--color-border-strong);
   vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
 /* EINE Schriftstärke in der ganzen Zeile. Das erste Feld bleibt semantisch ein
    `<th scope="row">` — Hilfsmittel brauchen den Zeilenkopf, um beim Vorlesen
@@ -34,7 +34,7 @@ table.table tbody th { text-align:left; font-weight:var(--fw-regular); color:var
 /* Summenzeile: das erste Feld (z. B. «Total (4)») ist ein <th> im <tfoot> und
    fiel bisher durch beide Polster-Regeln (thead th / tbody th) — also linksbündig
    ohne Einzug. Gleiches Zellpolster wie die übrigen Zeilen. */
-table.table tfoot th { padding:1rem 1.5rem; vertical-align:top; }
+table.table tfoot th { padding:var(--sp-4) var(--sp-6); vertical-align:top; }
 /* Die Ausrichtungs-Utilities (.text-right/-center/-left) sind (0,1,0) und
    verloren gegen `table.table thead th` (0,1,3) bzw. `table.table tbody th` —
    die Kopfzeile blieb also linksbündig, während die Werte rechts standen.
@@ -94,10 +94,10 @@ table.table--rows-clickable tbody tr { cursor:pointer; }
    (`aria-hidden` bräuchte ein Element; ein ::after ist für AT ohnehin nicht
    da), die Bedienung trägt weiterhin der echte Link in der ersten Zelle. */
 table.table--rows-clickable tbody td:last-child,
-table.table--rows-clickable tbody th:last-child { position:relative; padding-right:2.25rem; }
+table.table--rows-clickable tbody th:last-child { position:relative; padding-right:var(--sp-9); }
 table.table--rows-clickable tbody tr > :last-child::after {
-  content:""; position:absolute; right:.85rem; top:50%; transform:translateY(-50%);
-  width:1rem; height:1rem; background-color:var(--color-text-muted);
+  content:""; position:absolute; right:var(--sp-3-5); top:50%; transform:translateY(-50%);
+  width:var(--sp-4); height:var(--sp-4); background-color:var(--color-text-muted);
   -webkit-mask:url('../assets/icons/ChevronRight.svg') no-repeat center/contain;
   mask:url('../assets/icons/ChevronRight.svg') no-repeat center/contain; }
 table.table--rows-clickable tbody tr:hover > :last-child::after { background-color:var(--color-primary-700); }
@@ -116,19 +116,19 @@ table.table--rows-clickable tfoot tr > :last-child::after { content:none; }
   .table-wrapper table.table thead th,
   .table-wrapper table.table td,
   .table-wrapper table.table tbody th,
-  .table-wrapper table.table tfoot th { padding:.5rem .75rem; font-size:var(--text-sm); }
+  .table-wrapper table.table tfoot th { padding:var(--sp-2) var(--sp-3); font-size:var(--text-sm); }
   table.table td:first-child a, table.table tbody th a { white-space:nowrap; }
 }
 /* table.table-Präfix: die Basisregeln tragen (0,1,1)+Element — ohne den Präfix
    verlor --compact gegen sie und Rahmen/Schatten blieben stehen. */
 table.table--compact { border:0; box-shadow:none; }
-table.table--compact thead th, table.table--compact td, table.table--compact tbody th { padding:.5rem; font-size:var(--text-sm); }
+table.table--compact thead th, table.table--compact td, table.table--compact tbody th { padding:var(--sp-2); font-size:var(--text-sm); }
 
 /* Forms (form.postcss + input.postcss + select.postcss) */
-.form > * + * { margin-top:1.5rem; }
+.form > * + * { margin-top:var(--sp-6); }
 .form__group { border:0; margin:0; padding:0; min-width:0; }
-.form__group__legend { margin-bottom:.5rem; padding:0; }
-.form__group__input, .form__group__select { width:100%; display:flex; flex-direction:column; gap:.5rem; }
+.form__group__legend { margin-bottom:var(--sp-2); padding:0; }
+.form__group__input, .form__group__select { width:100%; display:flex; flex-direction:column; gap:var(--sp-2); }
 /* message/hint pills hug their text rather than stretching in the column */
 .form__group__input > .badge, .form__group__select > .badge { align-self:flex-start; }
 /* .form__group__radio/__checkbox (form.postcss:19-22) exzidiert — beide ohne
@@ -147,7 +147,7 @@ table.table--compact thead th, table.table--compact td, table.table--compact tbo
    zuletzt (Tab-Reihenfolge Feld→…→Absenden) und zeigt sie auf Mobile ZUERST und
    vollbreit — wie CDs eigene Formularaktion (newsletter.postcss:35-39,
    btn.postcss:193-195). */
-.form__actions { display:flex; flex-direction:column-reverse; gap:.75rem; margin-top:1.5rem; }
+.form__actions { display:flex; flex-direction:column-reverse; gap:var(--sp-3); margin-top:var(--sp-6); }
 .form__actions .btn { width:100%; justify-content:center; }
 .form__actions .btn .btn__text { text-align:center; }
 @media (min-width:480px){
@@ -161,9 +161,9 @@ table.table--compact thead th, table.table--compact td, table.table--compact tbo
    selbst keinen Aussenabstand mit, also klebte sie am ersten Feldnamen — die
    Meldung las sich wie dessen Beschriftung. Der Abstand gehört an die
    Fehlerübersicht, nicht an jede Benachrichtigung. */
-.error-summary { margin-bottom:2rem; }
-.error-summary__title { font-size:var(--text-lg); font-weight:var(--fw-bold); margin:0 0 .5rem; }
-.error-summary__list  { margin:0; padding-left:1.25rem; }
+.error-summary { margin-bottom:var(--sp-8); }
+.error-summary__title { font-size:var(--text-lg); font-weight:var(--fw-bold); margin:0 0 var(--sp-2); }
+.error-summary__list  { margin:0; padding-left:var(--sp-5); }
 /* (c) Feldhinweis ≠ Validierungsmeldung. CDs Input.vue:24-30 nutzt die Badge NUR
    für `message`; ein Hinweis ist Prosa und steht VOR dem Control. */
 /* margin:0 — den 0.5rem-Rhythmus liefert bereits der flex-gap der Feldgruppe
@@ -179,25 +179,25 @@ table.table--compact thead th, table.table--compact td, table.table--compact tbo
 .form__group__select > .badge--sm { font-size:var(--fs-sm); line-height:1.35rem; padding:.219em .75em; }
 /* (e) Fieldset-Gruppierung (Item 3.14) — vollständig gestaltet, bisher ohne
    Konsumenten. */
-.form > .form__group > * + * { margin-top:1.5rem; }
+.form > .form__group > * + * { margin-top:var(--sp-6); }
 .form__group__legend { font-size:var(--text-lg); font-weight:var(--fw-bold); }
 /* Luft zwischen Feldgruppen: die Legende einer Folgegruppe («Weitere
    Stammdaten») klebte sonst am letzten Feld der Gruppe darüber. */
-.form__group + .form__group { margin-top:2.5rem; }
+.form__group + .form__group { margin-top:var(--sp-10); }
 
 /* Eingabefelder auf der FELD-Rampe (--input-h, 44 → 48 erst bei 2xl/1544 und
    Schluss — CD input.postcss:1-4,16); die Knopf-Rampe --control-h (44/48/52 bei
    xl/3xl) gilt nur für knopfartige Bedienelemente. Die frühere Vereinheitlichung
    (Item 2.5e) machte Felder auf 1280-1543-px-Laptops 4 px höher als das CD. */
-input, select, textarea { font:inherit; width:100%; min-height:var(--input-h); padding:.625rem 1rem; line-height:1;
-  border:1px solid var(--color-border-input); border-radius:var(--radius-xs); background:var(--color-bg);
+input, select, textarea { font:inherit; width:100%; min-height:var(--input-h); padding:var(--sp-2-5) var(--sp-4); line-height:1;
+  border:var(--stroke-1) solid var(--color-border-input); border-radius:var(--radius-xs); background:var(--color-bg);
   color:var(--color-text); box-shadow:var(--shadow); }
 input::placeholder, textarea::placeholder { color:var(--color-placeholder); }
-textarea { min-height:6rem; resize:vertical; line-height:1.5rem; }
+textarea { min-height:var(--sp-24); resize:vertical; line-height:var(--line-6); }
 .textarea--no-resize, textarea.input--no-resize { resize:none; }
 input:focus, select:focus, textarea:focus { outline:none; }
 input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+  outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
 input[disabled], select[disabled], textarea[disabled], .input--disabled {
   background:var(--color-gray-50); color:var(--color-gray-400); border-color:var(--color-border-strong);
   pointer-events:none; cursor:not-allowed; }
@@ -217,7 +217,7 @@ input[type='search']::-webkit-search-decoration { display:none; }
    akzeptiert; wo Löschen zum Ablauf gehört, steht ein echter, browserneutraler
    Knopf (.map-search__clear). */
 input[type='search']::-webkit-search-cancel-button {
-  -webkit-appearance:none; appearance:none; width:1rem; height:1rem; margin-left:.5rem; cursor:pointer;
+  -webkit-appearance:none; appearance:none; width:var(--sp-4); height:var(--sp-4); margin-left:var(--sp-2); cursor:pointer;
   background-color:var(--color-text-muted);
   -webkit-mask:url('../assets/icons/Cancel.svg') center/contain no-repeat;
   mask:url('../assets/icons/Cancel.svg') center/contain no-repeat; }
@@ -225,7 +225,7 @@ input[type='search']::-webkit-search-cancel-button:hover { background-color:var(
 /* CD-Leadings (input.postcss:21-31): sm/base leading-6, lg leading-7. Textareas
    tragen die 1.5rem schon über die Basisregel; einzeilige sm/base-Felder wachsen
    damit auf 46px (24+20+2) — exakt wie CDs eigenes input--base. */
-.input--sm { font-size:var(--text-sm); line-height:1.5rem; } .input--base { font-size:var(--text-base); line-height:1.5rem; } .input--lg { font-size:var(--text-lg); line-height:1.75rem; }
+.input--sm { font-size:var(--text-sm); line-height:var(--line-6); } .input--base { font-size:var(--text-base); line-height:var(--line-6); } .input--lg { font-size:var(--text-lg); line-height:var(--line-7); }
 .input--outline { border-color:var(--color-border-input); color:var(--color-text); }
 .input--error { color:var(--color-error-text); border-color:var(--color-error); }
 .input--error::placeholder { color:var(--color-error-400); }
@@ -236,7 +236,7 @@ input[type='search']::-webkit-search-cancel-button:hover { background-color:var(
    Beschriftung FOLGT dem Feld), Negativ-Hover/-Disabled, Fehler auf Negativ-
    flächen. Fehlerrot über die dedizierten --color-error-*-Töne, damit es unter
    .body--intranet rot bleibt. */
-.input--error + label { color:var(--color-error-text); margin-right:.75rem; }
+.input--error + label { color:var(--color-error-text); margin-right:var(--sp-3); }
 .input--negative:hover, .input--negative:focus { color:var(--color-text-300); }
 .input--negative:disabled, .input--negative.input--disabled { background:var(--color-secondary-300); color:var(--color-secondary-200); }
 .input--error.input--negative { color:var(--color-error-200); border-color:var(--color-error-300); }
@@ -244,13 +244,13 @@ input[type='search']::-webkit-search-cancel-button:hover { background-color:var(
 /* Select (select.postcss:1-78) */
 .select { position:relative; }
 .select select { box-sizing:border-box; -webkit-appearance:none; -moz-appearance:none; appearance:none;
-  padding-right:5rem; }
+  padding-right:var(--sp-20); }
 .select select::-ms-expand { display:none; }
-.select__icon { position:absolute; top:0; right:0; width:3rem; height:100%;
+.select__icon { position:absolute; top:0; right:0; width:var(--sp-12); height:100%;
   display:flex; align-items:center; justify-content:center;
-  border-left:1px solid var(--color-border-input); pointer-events:none;
+  border-left:var(--stroke-1) solid var(--color-border-input); pointer-events:none;
   background:transparent; color:var(--color-text); }
-.select__icon svg { width:2rem; height:100%; fill:currentColor; display:block; }
+.select__icon svg { width:var(--sp-8); height:100%; fill:currentColor; display:block; }
 select:disabled, .input--disabled select { opacity:.4; }
 select:disabled + .select__icon, .input--disabled select + .select__icon { opacity:.4; }
 .input--error + .select__icon { color:var(--color-error-700); border-left-color:var(--color-error-400); }
@@ -262,16 +262,16 @@ select:disabled + .select__icon, .input--disabled select + .select__icon { opaci
    (0,2,0) darf ihn nicht treffen. Dafür stand hier ein `!important`; eine
    Selektorstufe mehr reicht und lässt sich weiterhin überschreiben. */
 .form .select--bare { margin-top:0; }
-.select--bare select { display:inline-block; width:auto; padding-right:1.5rem;
+.select--bare select { display:inline-block; width:auto; padding-right:var(--sp-6);
   box-shadow:none; border-color:transparent; background-color:transparent; }
-.select--bare .select__icon { width:1.5rem; border-left:0; }
+.select--bare .select__icon { width:var(--sp-6); border-left:0; }
 .select--bare .input--negative + .select__icon { background-color:transparent; }
 
 /* Checkbox / radio (input.postcss:78-152) */
 input[type='checkbox'], input[type='radio'] {
-  width:.9rem; height:.9rem; min-height:0; flex-shrink:0; margin:0 .5rem 0 0; padding:0;
+  width:var(--sp-3-5); height:var(--sp-3-5); min-height:0; flex-shrink:0; margin:0 var(--sp-2) 0 0; padding:0;
   -webkit-appearance:none; -moz-appearance:none; appearance:none;
-  background-color:var(--color-text-negative); border:1px solid var(--color-border-input); border-radius:var(--radius-xs);
+  background-color:var(--color-text-negative); border:var(--stroke-1) solid var(--color-border-input); border-radius:var(--radius-xs);
   box-shadow:var(--shadow); }
 input[type='radio'] { border-radius:var(--radius-full); }
 input[type='checkbox']:checked, input[type='radio']:checked {
@@ -280,8 +280,8 @@ input[type='radio']:checked { background-image:url("data:image/svg+xml,%3Csvg vi
 input[type='checkbox']:checked { background-image:url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 10 7' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9.2.29A1 1 0 0 1 9.2 1.7l-5 5a1 1 0 0 1-1.42 0l-2-2A1 1 0 0 1 2.2 3.29L3.5 4.59 7.79.29a1 1 0 0 1 1.41 0Z' fill='white'/%3E%3C/svg%3E"); }
 input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
 /* CD-Grössenvarianten (input.postcss:95-108): sm h-3, lg h-4; Basis .9rem oben. */
-input[type='checkbox'].input--sm, input[type='radio'].input--sm { width:.75rem; height:.75rem; }
-input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; height:1rem; }
+input[type='checkbox'].input--sm, input[type='radio'].input--sm { width:var(--sp-3); height:var(--sp-3); }
+input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:var(--sp-4); height:var(--sp-4); }
 /* CD form.postcss:25-27 + input.postcss:82: in der Checkbox-Zeile liefert schon
    der flex-gap die 0.5rem — das mr-2 des Feldes käme dazu (1rem statt CDs
    0.5rem). Die RADIO-Zeile behält ihr mr-2: dort ergeben gap+Rand CDs

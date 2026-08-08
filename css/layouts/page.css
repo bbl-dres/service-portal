@@ -53,8 +53,8 @@
   .container__center--sm { grid-column:3 / span 8; }
   .container__center--md { grid-column:2 / span 10; }
 }
-.container__aside > * { margin-bottom:1.75rem; }
-@media (min-width:1024px){ .container__aside > * { margin-bottom:2rem; } }
+.container__aside > * { margin-bottom:var(--sp-7); }
+@media (min-width:1024px){ .container__aside > * { margin-bottom:var(--sp-8); } }
 
 /* Die `container__center--*`-Klassen sind reine `grid-column`-Regeln und tun
    ausserhalb von `.container--grid` GAR NICHTS — eine Auslassung, die im Code-
@@ -93,12 +93,12 @@
 .container--pb      { padding-block:0 var(--section-py); }
 .container--py-half { padding-block:var(--section-py-half); }
 /* Klebende Ankernavigation (sticky.postcss: top-4 md:top-10 lg:top-12). */
-.sticky--top { position:sticky; top:1rem; }
-@media (min-width:768px){ .sticky--top { top:2.5rem; } }
-@media (min-width:1024px){ .sticky--top { top:3rem; } }
+.sticky--top { position:sticky; top:var(--sp-4); }
+@media (min-width:768px){ .sticky--top { top:var(--sp-10); } }
+@media (min-width:1024px){ .sticky--top { top:var(--sp-12); } }
 /* Inhaltsverzeichnis rechts: erst ab lg neben dem Inhalt, darunter normal. */
 .anchor-nav .card__title { font-size:var(--text-lg); }
-.anchor-nav .menu { margin-top:.5rem; }
+.anchor-nav .menu { margin-top:var(--sp-2); }
 /* Abschnittstitel im Inhaltsverzeichnis sind lange deutsche Komposita
    («Informationssicherheitsgesetz»). Bei 200% Textzoom lief die Zeile aus der
    Karte und wurde von deren `overflow:hidden` abgeschnitten (WCAG 1.4.4). */
@@ -112,7 +112,7 @@
    Überschrift (HTML erlaubt darin genau ein Überschriftenelement), sodass die
    Gliederung auf jeder Breite dieselbe bleibt. */
 .anchor-nav__summary { display:flex; align-items:center; justify-content:space-between;
-  gap:.5rem; cursor:pointer; list-style:none; min-height:var(--target-min); }
+  gap:var(--sp-2); cursor:pointer; list-style:none; min-height:var(--target-min); }
 .anchor-nav__summary::-webkit-details-marker { display:none; }
 .anchor-nav__chev { flex:none; color:var(--color-text-muted); transition:transform var(--duration-slow) var(--ease-in-out); }
 .anchor-nav__disclosure[open] .anchor-nav__chev { transform:rotate(180deg); }
@@ -127,7 +127,7 @@
 }
 /* Saubere Themenabschnitte (bk.admin.ch/de/vorgaben): Überschrift + sichtbare
    Liste; der Abstand zwischen Abschnitten kommt von .vertical-spacing. */
-.anchor-section__title { margin-bottom:1rem; }
+.anchor-section__title { margin-bottom:var(--sp-4); }
 
 /* Section rhythm (section.postcss:5-51) — bare .section has no padding */
 .section { width:100%; }
@@ -185,14 +185,14 @@
    später in der Datei, gewann also bei gleicher Spezifität. Das Band bekam
    einen umlaufenden Rand statt «Xrem 0», wodurch der __wrapper (der selbst
    padding:0 1rem mitbringt) doppelt einrückte und nicht mehr zur Seite passte. */
-.notification-banner.notification-banner { padding:1rem 0; font-size:var(--text-sm); box-shadow:none; }
-@media (min-width:640px){ .notification-banner.notification-banner { padding:2rem 0; } }
-@media (min-width:1024px){ .notification-banner.notification-banner { padding:2.5rem 0; } }
+.notification-banner.notification-banner { padding:var(--sp-4) 0; font-size:var(--text-sm); box-shadow:none; }
+@media (min-width:640px){ .notification-banner.notification-banner { padding:var(--sp-8) 0; } }
+@media (min-width:1024px){ .notification-banner.notification-banner { padding:var(--sp-10) 0; } }
 /* Doppelte Klasse, damit die Regel .notification (setzt position:relative und
    steht später in der Datei) nicht gewinnt — das Band lag sonst 3600px unter
    dem Sichtfeld im Dokumentfluss. */
 .notification-banner.notification-banner--fixed { position:fixed; z-index:var(--z-toast); right:0; bottom:0; left:0; width:100%;
-  border-top:1px solid var(--color-bg); box-shadow:var(--shadow-2xl); }
+  border-top:var(--stroke-1) solid var(--color-bg); box-shadow:var(--shadow-2xl); }
 /* Der fixe Streifen erhält im Dokumentfluss exakt seine gemessene Höhe. Damit
    lassen sich Footer, Kartenunterkanten und Viewer vollständig darüber scrollen. */
 body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
@@ -216,9 +216,9 @@ body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
    Kein nowrap auf .btn__text: CDs Knopftext darf überall umbrechen
    (btn.postcss:133-137), die Spalten-/Zeilenanatomie hält den Knopf ohnehin
    auf seiner eigenen Zeile bzw. rechts. */
-.notification-banner .btn { flex:none; margin-top:1rem; }
-@media (min-width:640px){ .notification-banner .btn { margin-top:2rem; } }
-@media (min-width:1024px){ .notification-banner .btn { margin-top:0; margin-left:1.5rem; } }
+.notification-banner .btn { flex:none; margin-top:var(--sp-4); }
+@media (min-width:640px){ .notification-banner .btn { margin-top:var(--sp-8); } }
+@media (min-width:1024px){ .notification-banner .btn { margin-top:0; margin-left:var(--sp-6); } }
 
 /* Backgrounds (backgrounds.postcss:5-38) */
 .bg--white { background:var(--color-bg); }
@@ -249,7 +249,7 @@ body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
 .vertical-spacing > :is(h1,h2,h3,h4,h5) + p { margin-top:1em; }
 .vertical-spacing > p + p, .vertical-spacing > p + ul, .vertical-spacing > p + ol,
 .vertical-spacing > ul + p, .vertical-spacing > ol + p { margin-top:1em; }
-.stack > * + * { margin-top:1rem; }
+.stack > * + * { margin-top:var(--sp-4); }
 /* .muted ist BEWUSST dunkler als CDs .text--light (text-600 statt text-500):
    text-500 fiele auf secondary-50-Flächen auf ~4.1:1 unter AA. .text--light
    selbst steht oben bei den CD-Utilities auf dem CD-Wert. */
