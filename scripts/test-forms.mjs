@@ -47,6 +47,7 @@ const PROBE_RENDER = `(async () => {
   const form = document.querySelector('#wiz, #report-form, #booking-search');
   return {
     ok: !!form,
+    title: document.querySelector('#main-content h1')?.textContent || '',
     groups: form ? form.querySelectorAll('.form__group__input, .form__group__select').length : 0,
     selects: form ? form.querySelectorAll('select').length : 0,
     pageSelects: document.querySelectorAll('#main-content select').length,
@@ -137,6 +138,14 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
     const ok = await p.evaluate(PROBE_SUCCESS);
     check(ok.success && ok.noError, 'valid submit → success screen (Vorgang created)');
     check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
+    await p.closeTarget();
+
+    console.log('\n■ fault-report (inherited query key)');
+    p = await openPage(cdp, `${APP_BASE}/app/fault-report?type=toString`);
+    const inheritedType = await p.evaluate(PROBE_RENDER);
+    check(inheritedType.ok && inheritedType.title.includes('Störungs-'),
+      'an inherited Object key falls back to the default report type');
+    check((await p.problems()).length === 0, 'inherited query key has no runtime problems');
     await p.closeTarget();
 
     // --- Room Booking: render + C5 on #booking-date ---

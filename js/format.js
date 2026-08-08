@@ -31,6 +31,18 @@ export const m2 = (x) => `${num(x)} m²`;
  */
 export const datum = (iso) => {
   if (!iso) return '—';
+  const calendar = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+  if (calendar) {
+    const [, yearText, monthText, dayText] = calendar;
+    const year = Number(yearText), month = Number(monthText), day = Number(dayText);
+    const check = new Date(Date.UTC(year, month - 1, day));
+    if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) {
+      return String(iso);
+    }
+    // A date-only value is a calendar date, not a UTC instant. Formatting its
+    // numeric parts directly prevents western time zones from showing yesterday.
+    return `${day}.${month}.${year}`;
+  }
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString(LOC);
 };

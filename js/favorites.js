@@ -20,20 +20,22 @@ const LS_KEY = 'bbl_favorites_v1';
 // halb brauchbare Liste durchgehen. Erwartet wird { <art>: [<kennung>, …] }.
 const isMap = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const clean = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.trim()) : []);
+const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
 let store = null;
 
 function read() {
   if (store) return store;
   const raw = readJSON(LS_KEY, {}, isMap) || {};
-  store = {};
+  store = Object.create(null);
   for (const [kind, ids] of Object.entries(raw)) store[kind] = clean(ids);
   return store;
 }
 
 /** Alle gemerkten Kennungen einer Art, in der Reihenfolge des Merkens. */
 function list(kind) {
-  return [...(read()[kind] || [])];
+  const data = read();
+  return [...(hasOwn(data, kind) ? data[kind] : [])];
 }
 
 function has(kind, id) {
@@ -45,7 +47,7 @@ function toggle(kind, id) {
   const key = String(id || '');
   if (!key) return false;
   const data = read();
-  const ids = data[kind] || (data[kind] = []);
+  const ids = hasOwn(data, kind) ? data[kind] : (data[kind] = []);
   const at = ids.indexOf(key);
   if (at >= 0) ids.splice(at, 1); else ids.push(key);
   writeJSON(LS_KEY, data);

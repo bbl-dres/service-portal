@@ -14,28 +14,115 @@
 
 import { fetchJSON } from './fetch-json.js';
 
-const DATA = { datasets: {}, topics: [], dashboards: [] };
+const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+const safeDictionary = (value = {}) => Object.assign(Object.create(null), value);
+const DATA = { datasets: Object.create(null), topics: [], dashboards: [] };
 // Fällt die Datei aus, sieht das Datenportal aus wie ein Portal ohne Auswertungen
 // — nicht wie ein Ladefehler (M18). `ok()` unterscheidet beides, so wie
 // core.available() es für die übrigen Bestände tut.
 let loaded = false;
+let pending = null;
 
-async function load() {
-  try {
-    const json = await fetchJSON('data/dashboards.json', { shape: 'object' });
-    DATA.datasets = json.datasets || {};
-    DATA.topics = json.topics || [];
-    DATA.dashboards = json.dashboards || [];
-    loaded = true;
-  } catch (e) {
-    console.warn('[dashboard-data] could not load data/dashboards.json', e.message);
-    loaded = false;
+function validateRecords(records, path) {
+  if (!Array.isArray(records) || records.some((record) => !isRecord(record))) {
+    throw new Error(`erwartet Datensatzliste: ${path}`);
   }
-  return DATA;
+  return records;
+}
+
+function validatePayload(json) {
+  if (!isRecord(json.datasets)) throw new Error('erwartet Objekt: dashboards.datasets');
+  const topics = validateRecords(json.topics, 'dashboards.topics');
+  const dashboards = validateRecords(json.dashboards, 'dashboards.dashboards');
+  const topicIds = new Set();
+
+  for (const [id, dataset] of Object.entries(json.datasets)) {
+    if (!isRecord(dataset)) throw new Error(`erwartet Dataset-Objekt: dashboards.datasets.${id}`);
+    const columns = validateRecords(dataset.columns, `dashboards.datasets.${id}.columns`);
+    if (columns.some((column) => typeof column.name !== 'string' || !column.name.trim())) {
+      throw new Error(`ungültige Spalte: dashboards.datasets.${id}.columns`);
+    }
+    if (!Array.isArray(dataset.rows) || dataset.rows.some((row) => !Array.isArray(row))) {
+      throw new Error(`erwartet Zeilenlisten: dashboards.datasets.${id}.rows`);
+    }
+  }
+
+  for (const topic of topics) {
+    if (typeof topic.id !== 'string' || !topic.id.trim()) throw new Error('ungültige Topic-ID');
+    topicIds.add(topic.id);
+  }
+  for (const dashboard of dashboards) {
+    if (typeof dashboard.id !== 'string' || !dashboard.id.trim()) throw new Error('ungültige Dashboard-ID');
+    if (typeof dashboard.topicId !== 'string' || !topicIds.has(dashboard.topicId)) {
+      throw new Error(`ungültiges Dashboard-Thema: dashboard.${dashboard.id}.topicId`);
+    }
+    if (dashboard.kpis != null) validateRecords(dashboard.kpis, `dashboard.${dashboard.id}.kpis`);
+    const charts = validateRecords(dashboard.charts, `dashboard.${dashboard.id}.charts`);
+    if (dashboard.tabs != null) validateRecords(dashboard.tabs, `dashboard.${dashboard.id}.tabs`);
+    const chartIds = new Set();
+    for (const chart of charts) {
+      if (typeof chart.id !== 'string' || !chart.id.trim() || chartIds.has(chart.id)) {
+        throw new Error(`ungültige Diagramm-ID: dashboard.${dashboard.id}.charts`);
+      }
+      chartIds.add(chart.id);
+      if (!isRecord(chart.query) || typeof chart.query.dataset !== 'string'
+        || !hasOwn(json.datasets, chart.query.dataset)) {
+        throw new Error(`ungültige Abfrage: dashboard.${dashboard.id}.charts.${chart.id}`);
+      }
+      if (chart.query.orderBy != null && typeof chart.query.orderBy !== 'string') {
+        throw new Error(`ungültige Sortierung: dashboard.${dashboard.id}.charts.${chart.id}`);
+      }
+      if (chart.query.select != null && (!Array.isArray(chart.query.select)
+        || chart.query.select.some((column) => typeof column !== 'string'))) {
+        throw new Error(`ungültige Spaltenauswahl: dashboard.${dashboard.id}.charts.${chart.id}`);
+      }
+      if (chart.query.where != null && !isRecord(chart.query.where)) {
+        throw new Error(`ungültiger Filter: dashboard.${dashboard.id}.charts.${chart.id}`);
+      }
+    }
+    for (const tab of dashboard.tabs || []) {
+      if (typeof tab.id !== 'string' || !tab.id.trim()
+        || !Array.isArray(tab.charts)
+        || tab.charts.some((chartId) => typeof chartId !== 'string' || !chartIds.has(chartId))) {
+        throw new Error(`ungültige Diagrammliste: dashboard.${dashboard.id}.tabs`);
+      }
+    }
+  }
+
+  return { datasets: safeDictionary(json.datasets), topics, dashboards };
+}
+
+function clearData() {
+  DATA.datasets = Object.create(null);
+  DATA.topics = [];
+  DATA.dashboards = [];
+}
+
+function load() {
+  if (loaded) return Promise.resolve(DATA);
+  if (pending) return pending;
+  pending = (async () => {
+    try {
+      const next = validatePayload(await fetchJSON('data/dashboards.json', { shape: 'object' }));
+      DATA.datasets = next.datasets;
+      DATA.topics = next.topics;
+      DATA.dashboards = next.dashboards;
+      loaded = true;
+    } catch (e) {
+      console.warn('[dashboard-data] could not load data/dashboards.json', e.message);
+      clearData();
+      loaded = false;
+    } finally {
+      pending = null;
+    }
+    return DATA;
+  })();
+  return pending;
 }
 
 const datasets = () => DATA.datasets;
-const dataset = (id) => DATA.datasets[id];
+const dataset = (id) => hasOwn(DATA.datasets, id) ? DATA.datasets[id] : undefined;
 const topics = () => DATA.topics;
 const dashboards = () => DATA.dashboards;
 const dashboard = (id) => DATA.dashboards.find(d => d.id === id);
@@ -101,6 +188,15 @@ function applyOrder(rows, orderBy) {
  * label } where rows are objects keyed by column name.
  */
 function query(spec) {
+  if (!isRecord(spec) || typeof spec.dataset !== 'string') {
+    return { columns: [], rows: [], label: '', error: 'Ungültige Dataset-Abfrage' };
+  }
+  if ((spec.orderBy != null && typeof spec.orderBy !== 'string')
+    || (spec.select != null && (!Array.isArray(spec.select)
+      || spec.select.some((column) => typeof column !== 'string')))
+    || (spec.where != null && !isRecord(spec.where))) {
+    return { columns: [], rows: [], label: spec.dataset, error: 'Ungültige Dataset-Abfrage' };
+  }
   const ds = dataset(spec.dataset);
   if (!ds) return { columns: [], rows: [], label: spec.dataset, error: `Unbekanntes Dataset «${spec.dataset}»` };
 

@@ -4,8 +4,8 @@
 // Tracking darüber (FAILED-Merkliste, Fallback-Werte, stilles Weiterlaufen).
 // Vereinheitlicht die zuvor drei divergenten `fetch→json→fallback`-Varianten
 // (code-review D6) und schliesst die Form-Lücke (parst-aber-falsch-geformt, C4).
-export async function fetchJSON(url, { shape } = {}) {
-  const r = await fetch(url);
+export async function fetchJSON(url, { shape, signal } = {}) {
+  const r = await fetch(url, { signal });
   if (!r.ok) throw new Error(`${r.status} ${url}`);
   const json = await r.json();
   if (shape === 'array' && !Array.isArray(json)) throw new Error(`erwartet Array: ${url}`);

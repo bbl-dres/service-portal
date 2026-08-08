@@ -48,14 +48,29 @@ const LC_LABEL = { Gebaeude: 'Gebäude', befestigt: 'Befestigt', humusiert: 'Hum
 const FIELD = { land: 'land', region: 'region', typ: 'typ', eigentum: 'ownership', status: 'status' };
 const FILTER_KEYS = ['land', 'region', 'typ', 'eigentum', 'status'];
 
+const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+function requireFeatureCollection(value, source) {
+  if (!isRecord(value) || value.type !== 'FeatureCollection' || !Array.isArray(value.features)
+    || value.features.some((feature) => !isRecord(feature) || feature.type !== 'Feature'
+      || !isRecord(feature.properties) || feature.properties.bbl_id == null
+      || String(feature.properties.bbl_id).trim() === ''
+      || (feature.geometry !== null && !isRecord(feature.geometry)))) {
+    throw new Error(`Ungültige GeoJSON FeatureCollection: ${source}`);
+  }
+  return value;
+}
+
 let CACHE = null;
-async function loadData() {
-  if (CACHE) return CACHE;
+let PENDING = null;
+async function fetchData() {
   const [b, p, l] = await Promise.all([
     fetchJSON('data/buildings.geojson', { shape: 'object' }),
     fetchJSON('data/parcels.geojson', { shape: 'object' }),
     fetchJSON('data/landcovers.geojson', { shape: 'object' }),
   ]);
+  requireFeatureCollection(b, 'buildings.geojson');
+  requireFeatureCollection(p, 'parcels.geojson');
+  requireFeatureCollection(l, 'landcovers.geojson');
   const props = (g) => (g.features || []).map((f) => f.properties || {});
   const buildings = props(b).map((x) => ({
     land: x.adr_land, region: x.adr_reg, ort: x.adr_ort, ownership: ownership(x.bbl_eigen),
@@ -80,6 +95,15 @@ async function loadData() {
   } catch { /* Auswertung entfällt */ }
   CACHE = { buildings, parcels, landcovers, contracts };
   return CACHE;
+}
+
+// The data belongs to this module-level cache, not to one route dispatch.
+// Concurrent leave/re-enter renders therefore share one request set; failures
+// clear PENDING so a later navigation can retry.
+function loadData() {
+  if (CACHE) return Promise.resolve(CACHE);
+  if (!PENDING) PENDING = fetchData().finally(() => { PENDING = null; });
+  return PENDING;
 }
 
 // --- aggregation helpers ---------------------------------------------------
@@ -121,10 +145,13 @@ export default async function render(ctx) {
     if (!dashData.ok()) await dashData.load();
     if (ctx.stale && ctx.stale()) return;
   } catch (e) {
+    if (ctx.stale && ctx.stale()) return;
     // Über C.notification statt von Hand: die handgebaute Fassung hatte kein
     // `.notification__content`, also weder die Textbreitenbegrenzung noch die
     // Live-Region, die eine erst nach dem Laden eintreffende Meldung braucht.
-    mount.innerHTML = `<div class="container section">${C.notification(
+    mount.innerHTML = `<div class="container section">
+      <div class="page-header"><h1 tabindex="-1">${C.escape(META.title)}</h1></div>
+      ${C.notification(
       `<strong>Die Immobilien-Stammdaten konnten nicht geladen werden.</strong><br><span class="small">${C.escape(e.message)}</span>`,
       'error', 'WarningCircle', { live: true })}</div>`;
     return;

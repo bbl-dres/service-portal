@@ -33,11 +33,13 @@ export default async function render(ctx) {
     const { mount, C, setTitle, setCrumbs } = ctx;
     setTitle('Datenportal');
     setCrumbs([...DATEN, { label: 'Datenportal' }]);
-    mount.innerHTML = `<div class="container section">${C.notification(
+    mount.innerHTML = `<div class="container section">
+      <div class="page-header"><h1 tabindex="-1">Datenportal</h1></div>
+      ${C.notification(
       '<strong>Die Auswertungen konnten nicht geladen werden.</strong> '
       + 'Das ist ein Ladefehler, kein leeres Portal. '
       + '<button type="button" class="link" onclick="location.reload()">Seite neu laden</button>',
-      'error', 'WarningCircle')}</div>`;
+      'error', 'WarningCircle', { live: true })}</div>`;
     return;
   }
   if (params[0]) return dashboardView(ctx, params[0]);

@@ -327,7 +327,7 @@ function pieChart({ id, rows, x, y, unit, width }) {
   // Vollkreis mit aufgelegtem Deckel — ein Deckel müsste die Hintergrundfarbe
   // treffen und würde im Vollbild-Overlay oder auf getönten Karten auffallen.
   const Ri = Math.round(R * 0.58);
-  const total = rows.reduce((s, r) => s + (Number(r[y]) || 0), 0) || 1;
+  const total = rows.reduce((sum, row) => sum + Math.max(0, Number(row[y]) || 0), 0);
   const at = (a, rad) => `${(cx + rad * Math.cos(a)).toFixed(1)} ${(cy + rad * Math.sin(a)).toFixed(1)}`;
   const ring = (a0, a1, frac) => {
     const big = frac > 0.5 ? 1 : 0;
@@ -341,7 +341,7 @@ function pieChart({ id, rows, x, y, unit, width }) {
   let a0 = -Math.PI / 2;
   const mid = (R + Ri) / 2;   // Beschriftung mittig im Ringband
   const slices = rows.map((r, i) => {
-    const v = Number(r[y]) || 0, frac = v / total, a1 = a0 + frac * 2 * Math.PI, am = (a0 + a1) / 2;
+    const v = Math.max(0, Number(r[y]) || 0), frac = v / total, a1 = a0 + frac * 2 * Math.PI, am = (a0 + a1) / 2;
     const s = { path: ring(a0, a1, frac), color: SER[i % SER.length], v, frac, label: String(r[x]),
       lx: cx + mid * Math.cos(am), ly: cy + mid * Math.sin(am) };
     a0 = a1; return s;
@@ -501,6 +501,9 @@ export function chart(spec, result) {
 export function renderSvg(spec, result, width) {
   const rows = (result && result.rows) || [];
   if (!rows.length) return '';
+  if (spec.form === 'pie' && rows.every((row) => !(Number(row[spec.y]) > 0))) {
+    return '<div class="empty empty--compact" role="status"><p class="empty__title">Keine Daten für diese Auswahl.</p></div>';
+  }
   const render = spec.form === 'line' ? lineChart : spec.form === 'column' ? columnChart
     : spec.form === 'pie' ? pieChart : spec.form === 'area' ? areaChart : barChart;
   const { svg } = render({ id: spec.id, rows, x: spec.x, y: spec.y, series: spec.series, unit: spec.unit, width });

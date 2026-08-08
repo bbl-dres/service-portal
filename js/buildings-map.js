@@ -15,15 +15,46 @@ function loadMapLibre() {
   if (window.maplibregl) return Promise.resolve(window.maplibregl);
   if (mlPromise) return mlPromise;
   mlPromise = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Zeitüberschreitung beim Laden der Karte')), 12000);
     const css = document.createElement('link');
     css.rel = 'stylesheet';
     css.href = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VER}/dist/maplibre-gl.css`;
-    document.head.appendChild(css);
     const s = document.createElement('script');
     s.src = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VER}/dist/maplibre-gl.js`;
-    s.onload = () => { clearTimeout(timer); window.maplibregl ? resolve(window.maplibregl) : reject(new Error('maplibregl fehlt')); };
-    s.onerror = () => { clearTimeout(timer); reject(new Error('MapLibre konnte nicht geladen werden')); };
+    let settled = false;
+    let cssReady = false;
+    let scriptReady = false;
+    const clearHandlers = () => {
+      css.onload = null;
+      css.onerror = null;
+      s.onload = null;
+      s.onerror = null;
+    };
+    const fail = (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      clearHandlers();
+      css.remove();
+      s.remove();
+      reject(error);
+    };
+    const finish = () => {
+      if (settled || !cssReady || !scriptReady) return;
+      if (!window.maplibregl) { fail(new Error('maplibregl fehlt')); return; }
+      settled = true;
+      clearTimeout(timer);
+      clearHandlers();
+      resolve(window.maplibregl);
+    };
+    const timer = setTimeout(
+      () => fail(new Error('Zeitüberschreitung beim Laden der Karte')),
+      12000,
+    );
+    css.onload = () => { cssReady = true; finish(); };
+    css.onerror = () => fail(new Error('MapLibre-Styles konnten nicht geladen werden'));
+    s.onload = () => { scriptReady = true; finish(); };
+    s.onerror = () => fail(new Error('MapLibre konnte nicht geladen werden'));
+    document.head.appendChild(css);
     document.head.appendChild(s);
   }).catch((e) => { mlPromise = null; throw e; });   // Fehler nicht cachen → späterer Aufruf lädt neu (C2)
   return mlPromise;
@@ -71,11 +102,18 @@ function showMapSpinner(container, map) {
   sp.innerHTML = loading({ label: 'Karte wird geladen…', hideLabel: true, size: '2xl' });
   container.appendChild(sp);
   let done = false;
-  const clear = () => { if (done) return; done = true; sp.remove(); };
+  let fallbackTimer = null;
+  const clear = () => {
+    if (done) return;
+    done = true;
+    if (fallbackTimer) clearTimeout(fallbackTimer);
+    sp.remove();
+  };
   map.once('idle', clear);
+  map.once('remove', clear);
   // Sicherheitsnetz: bleibt `idle` aus (blockierte Kachelquelle), soll der Hinweis
   // nicht dauerhaft stehen.
-  setTimeout(clear, 12000);
+  fallbackTimer = setTimeout(clear, 12000);
 }
 
 // Worldwide estate buildings on CARTO grey — CLUSTERED so dense areas don't
@@ -117,6 +155,8 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
   if (!container.isConnected) return null;
   // Ladeplatzhalter entfernen, BEVOR MapLibre anhängt (Item 6.14).
   container.textContent = '';
+  let map = null;
+  try {
 
   // Skin-abhängige Farben erst hier (Renderzeit) auflösen, nicht beim Modul-Load.
   const MARKER = cssVar('--color-primary-600', '#d8232a');   // Gebäude-Marker = Primärfarbe des Skins
@@ -141,7 +181,7 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
     camera = { center: [c[0].lon, c[0].lat], zoom: 9 };
   }
 
-  const map = new maplibregl.Map({ container, style: CARTO_STYLE, attributionControl: { compact: true }, preserveDrawingBuffer: true,
+  map = new maplibregl.Map({ container, style: CARTO_STYLE, attributionControl: { compact: true }, preserveDrawingBuffer: true,
     // siehe oben (Item 6.5)
     cooperativeGestures: true,
     locale: {
@@ -219,15 +259,17 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
     // Zoom 2. Gemessen: der Klick brachte 1.52 -> 2.0, optisch also nichts, und
     // wirkte deshalb wie ein toter Klick. fitBounds über die Blätter zeigt
     // stattdessen immer genau die Objekte, die im Cluster stecken.
-    Promise.resolve(src.getClusterLeaves(id, Infinity, 0)).then((leaves) => {
+    Promise.resolve().then(() => src.getClusterLeaves(id, Infinity, 0)).then((leaves) => {
       if (!leaves || !leaves.length) throw new Error('keine Blätter');
       const b = new maplibregl.LngLatBounds();
       leaves.forEach((l) => b.extend(l.geometry.coordinates));
       map.fitBounds(b, { padding: 64, maxZoom: 15, duration: 600 });
-    }).catch(() => {
-      Promise.resolve(src.getClusterExpansionZoom(id))
-        .then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: z })).catch(() => {});
-    });
+    }).catch(() => Promise.resolve()
+      // Defer the call itself: MapLibre may throw synchronously when the route
+      // removed the source while getClusterLeaves was still pending.
+      .then(() => src.getClusterExpansionZoom(id))
+      .then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: z }))
+      .catch(() => null));
   });
   map.on('click', 'points', (e) => {
     const p = e.features[0].properties;
@@ -252,6 +294,15 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
   }
   container._map = map;   // handle for debugging / headless tests (drive camera, query layers)
   return map;
+  } catch (error) {
+    if (map) { try { map.remove(); } catch { /* partially constructed */ } }
+    container._map = null;
+    if (container.isConnected) {
+      container.innerHTML = `<div class="empty empty--unavailable h-full">
+        <span>Die Karte konnte nicht initialisiert werden (${esc(error.message)}).</span></div>`;
+    }
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -276,9 +327,11 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
   // nicht die Suchauflage: die ist ein Geschwisterknoten im Wrapper.
   const holder = container.querySelector('.map-picker__canvas') || container;
   holder.textContent = '';
+  let map = null;
+  try {
 
   const hasStart = Number.isFinite(lat) && Number.isFinite(lng);
-  const map = new maplibregl.Map({
+  map = new maplibregl.Map({
     // Attribution NICHT automatisch: unten rechts stiess sie mit der zentrierten
     // Suchauflage zusammen. Sie kommt unten links dazu (siehe unten).
     container: holder, style: CARTO_STYLE, attributionControl: false,
@@ -323,4 +376,13 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
   };
   container._map = map;   // Griff für die kopflosen Tests
   return map;
+  } catch (error) {
+    if (map) { try { map.remove(); } catch { /* partially constructed */ } }
+    container._map = null;
+    if (holder.isConnected) {
+      holder.innerHTML = `<div class="empty empty--unavailable h-full">
+        <span>Die Karte konnte nicht initialisiert werden (${esc(error.message)}).</span></div>`;
+    }
+    return null;
+  }
 }

@@ -334,7 +334,9 @@ function list(ctx) {
 // ============================================================================
 async function detail(ctx, rawId) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  const p = core.processDoc(C.safeDecode(rawId));
+  // URLSearchParams already decodes query values once. Decoding again corrupts
+  // valid identifiers containing a literal percent escape such as "%2F".
+  const p = core.processDoc(rawId);
   if (!p) {
     return C.renderNotFound(ctx, {
       thing: 'Dieser Prozess', title: 'Prozess nicht gefunden',
@@ -353,7 +355,7 @@ async function detail(ctx, rawId) {
   // Scheitert er, degradieren beide Register einzeln (Meldung statt Inhalt).
   let xml = '', xmlError = '';
   try {
-    const res = await fetch(encodeURI(p.bpmn));
+    const res = await fetch(encodeURI(p.bpmn), { signal: ctx.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     xml = await res.text();
   } catch (e) { xmlError = e.message; }

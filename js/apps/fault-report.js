@@ -67,7 +67,8 @@ export default async function render(ctx) {
     },
   };
 
-  const typeKey = TYPES[query.get('type')] ? query.get('type') : 'default';
+  const requestedType = query.get('type');
+  const typeKey = requestedType && Object.hasOwn(TYPES, requestedType) ? requestedType : 'default';
   const cfg = TYPES[typeKey];
   const isSecurity = typeKey === 'sicherheit';
 

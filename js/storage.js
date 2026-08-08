@@ -9,21 +9,25 @@
 // bbl_session_v1 (etwa die blosse Zahl 1) machte isLoggedIn() wahr, user().name
 // blieb undefined — und die Assistenten schrieben `requester: undefined` in einen
 // dauerhaft gespeicherten Vorgang.
-export function readJSON(key, fallback = null, valid = null) {
+export function readJSONResult(key, fallback = null, valid = null) {
   try {
     const raw = localStorage.getItem(key);
-    if (raw == null) return fallback;
+    if (raw == null) return { ok: true, value: fallback, found: false };
     const val = JSON.parse(raw);
-    if (val == null) return fallback;
+    if (val == null) return { ok: true, value: fallback, found: true };
     if (typeof valid === 'function' && !valid(val)) {
       console.warn('[storage] unerwartete Form, verworfen:', key);
-      return fallback;
+      return { ok: false, value: fallback, found: true, reason: 'invalid' };
     }
-    return val;
+    return { ok: true, value: val, found: true };
   } catch (e) {
     console.warn('[storage] read failed', key, e && e.message);
-    return fallback;
+    return { ok: false, value: fallback, found: false, reason: 'read', error: e };
   }
+}
+
+export function readJSON(key, fallback = null, valid = null) {
+  return readJSONResult(key, fallback, valid).value;
 }
 
 export function writeJSON(key, val) {
@@ -46,4 +50,47 @@ export function remove(key) {
   }
 }
 
-export default { readJSON, writeJSON, remove };
+// localStorage has no atomic compare-and-swap operation. This short lease is a
+// best-effort guard for the prototype's synchronous read-modify-write paths. A
+// caller must still verify ownership immediately before its write via `owns`.
+export function withStorageLock(key, callback, { ttl = 2000 } = {}) {
+  const lockKey = `${key}.__lock__`;
+  const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  let acquired = false;
+
+  const readLock = () => {
+    const raw = localStorage.getItem(lockKey);
+    if (!raw) return null;
+    try {
+      const lock = JSON.parse(raw);
+      return lock && typeof lock === 'object' ? lock : null;
+    } catch {
+      return null;
+    }
+  };
+  const owns = () => readLock()?.token === token;
+
+  try {
+    const current = readLock();
+    if (current && Number(current.expires) > Date.now()) {
+      return { ok: false, reason: 'busy' };
+    }
+    localStorage.setItem(lockKey, JSON.stringify({ token, expires: Date.now() + ttl }));
+    acquired = owns();
+    if (!acquired) return { ok: false, reason: 'busy' };
+    return { ok: true, value: callback(owns) };
+  } catch (e) {
+    console.warn('[storage] lock failed', key, e && e.message);
+    return { ok: false, reason: 'storage', error: e };
+  } finally {
+    if (acquired) {
+      try {
+        if (owns()) localStorage.removeItem(lockKey);
+      } catch (e) {
+        console.warn('[storage] unlock failed', key, e && e.message);
+      }
+    }
+  }
+}
+
+export default { readJSON, readJSONResult, writeJSON, remove, withStorageLock };

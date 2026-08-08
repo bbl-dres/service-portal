@@ -4,7 +4,7 @@ import { engine } from './process-engine.js';
 import { session } from './session.js';
 import { shell } from './shell.js';
 import { initRouter, redraw, requestNavigationPermission } from './router.js';
-import { notification, escape, announce, wireShare, wireLogin, mountBanner } from './components.js';
+import { notification, escape, announce, toast, wireShare, wireLogin, mountBanner } from './components.js';
 
 // Datenausfall-Band (P0-4): Fehlt eine data/*.json, würde die betroffene Liste
 // als leer (statt «nicht verfügbar») erscheinen. Ein persistentes Fehlerband über
@@ -43,6 +43,7 @@ async function boot() {
   // Nachgeladene Bestände (core.ensure) können später ausfallen — das Band wurde
   // da längst gezeichnet. Ohne diesen Horcher bliebe so ein Ausfall unsichtbar.
   window.addEventListener('core:data-failed', renderDataStatus);
+  window.addEventListener('core:data-loaded', renderDataStatus);
   const header = document.getElementById('main-header');
   shell.renderHeader(header);
   shell.renderFooter(document.getElementById('main-footer'));
@@ -72,7 +73,10 @@ async function boot() {
   // dabei zerstört, sodass der Fokus auf <body> fiel und nichts angesagt wurde.
   // Jetzt: Statusmeldung in die Live-Region und Fokus zurück auf den (neu
   // gerenderten) Auth-Knopf (Item 3.7).
+  let refreshId = 0;
   const refresh = async (msg, next = '') => {
+    const ownRefresh = ++refreshId;
+    const startHash = location.hash;
     shell.renderHeader(header);
     // Anmeldung MIT Ziel: der Knopf stand dort, wo sonst «Vorgang starten»
     // steht, also erledigt er beides. Die Navigation ersetzt das Neuzeichnen —
@@ -88,14 +92,33 @@ async function boot() {
       return;
     }
     await redraw();          // erst abwarten — der Router setzt am Ende selbst den Fokus
+    if (ownRefresh !== refreshId) return false;
     announce(msg);
+    // A navigation that superseded this redraw owns focus. The session change
+    // remains announced, but the late auth refresh must not steal focus from
+    // the newly requested route.
+    if (location.hash !== startHash) return true;
     const btn = header.querySelector('.meta-navigation--desktop .meta-navigation__auth')
              || header.querySelector('.meta-navigation__auth');
     if (btn) btn.focus({ preventScroll: true });
+    return true;
   };
+  window.addEventListener('session:changed', () => {
+    const ownRefresh = ++refreshId;
+    shell.renderHeader(header);
+    void redraw().then(() => {
+      if (ownRefresh !== refreshId) return;
+      announce(session.isLoggedIn()
+        ? 'Die Anmeldung aus einem anderen Tab wurde übernommen.'
+        : 'Die Sitzung wurde in einem anderen Tab beendet.');
+    }).catch((error) => console.error('[app] cross-tab session refresh failed', error));
+  });
   window.__login = (next = '') => {
-    session.login();
-    const u = session.user();
+    const u = session.login();
+    if (!u) {
+      toast('Die Anmeldung konnte auf diesem Gerät nicht gespeichert werden. Bitte prüfen Sie die Browser-Einstellungen.', 'error', 'WarningCircle');
+      return Promise.resolve(false);
+    }
     return refresh(`Angemeldet als ${u ? u.name : ''}.${next ? '' : ' Die Seite wurde aktualisiert.'}`, next);
   };
   window.__logout = () => {
@@ -106,7 +129,10 @@ async function boot() {
     if (!requestNavigationPermission(location.hash || '#/', 'session-logout')) {
       return Promise.resolve(false);
     }
-    session.logout();
+    if (!session.logout()) {
+      toast('Die Abmeldung konnte auf diesem Gerät nicht gespeichert werden. Bitte versuchen Sie es erneut.', 'error', 'WarningCircle');
+      return Promise.resolve(false);
+    }
     return refresh('Abgemeldet. Die Seite wurde aktualisiert.');
   };
   // Nur für die Prüfskripte: die Prozess-Engine ohne Formularlauf erreichbar

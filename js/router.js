@@ -335,14 +335,14 @@ function renderCrumbs(crumbs) {
   }).join('');
 }
 
-function makeCtx(mount, params, query, stale, cleanups) {
+function makeCtx(mount, params, query, stale, lifecycle, signal) {
   return {
-    mount, params, query, core, engine, session, C,
+    mount, params, query, core, engine, session, C, signal,
     // Aufräumen beim Verlassen der Route. Der Router tauschte bisher nur
     // `mount.innerHTML` — Karten, Observer, Media-Query-Listener und Overlays
     // überlebten damit die Route, die sie erzeugt hat. Wer etwas anlegt, das den
     // DOM-Tausch überdauert, meldet hier seine Abbaufunktion an.
-    onUnmount: (fn) => { if (typeof fn === 'function') cleanups.push(fn); },
+    onUnmount: lifecycle.onUnmount,
     // Async-Seiten (die vor dem Schreiben `await`en, z. B. dynamische Import-
     // Delegatoren) prüfen `ctx.stale()` unmittelbar vor `mount.innerHTML =`, damit
     // eine überholte Navigation die inzwischen neuere Seite nicht überschreibt (A2).
@@ -370,7 +370,7 @@ function focusHeading(mount) {
 // additionally check `ctx.stale()` right before `mount.innerHTML =`, or its late
 // write overwrites the newer page (code-review A2).
 let dispatchId = 0;
-let prevPath = null;
+let mountedPath = null;
 
 // --- Scroll-Strategie (Review-Auftrag 2026-07) -------------------------------
 // Das CD selbst definiert kein Scroll-Verhalten; sein Referenz-Stack (Nuxt)
@@ -422,12 +422,62 @@ function stampHistoryEntry() {
   lastEntryIdx = idx;
   return known ? (scrollMap()[idx] ?? 0) : null;
 }
-// ResizeObserver der Scrollbereiche der aktuellen Ansicht — beim Ansichtswechsel
-// abmelden, sonst beobachtet er entfernte Knoten weiter.
+// The current view's scroll-region observers are detached at dispatch start so
+// they never retain nodes replaced by an early gate, not-found or error view.
 let unwireScroll = null;
-// Abbaufunktionen der AKTUELLEN Route (ctx.onUnmount). Werden zu Beginn des
-// nächsten Dispatch abgearbeitet — also bevor die neue Ansicht etwas anlegt.
-let routeCleanups = [];
+// Lifecycle for the visible or still-loading dispatch. A superseding dispatch
+// closes it immediately. If stale route code registers a disposer afterwards,
+// onUnmount executes it at once instead of leaking it in an orphaned array.
+let activeDispatch = null;
+
+function runRouteCleanup(fn) {
+  try { fn(); } catch (error) { console.warn('[router] cleanup failed', error); }
+}
+
+function createRouteLifecycle(stale) {
+  const cleanups = [];
+  let active = true;
+  return {
+    onUnmount(fn) {
+      if (typeof fn !== 'function') return;
+      if (!active || stale()) { runRouteCleanup(fn); return; }
+      cleanups.push(fn);
+    },
+    dispose() {
+      if (!active) return;
+      active = false;
+      for (const fn of cleanups.splice(0)) runRouteCleanup(fn);
+    },
+  };
+}
+
+function finalizeRoute({ mount, stale, pathKey, isStateChange, activeId, previousHeading, restoreY }) {
+  if (stale()) return false;
+
+  // All terminal route outcomes own the same post-render contract. This also
+  // wires gate, not-found and error views, which used to return before scroll
+  // observers, focus and scroll position were finalised.
+  unwireScroll = C.wireScrollRegions(mount);
+  if (isStateChange) {
+    const heading = mount.querySelector('h1')?.textContent || '';
+    if (restoreY != null) {
+      window.scrollTo({ top: restoreY, behavior: 'instant' });
+      focusHeading(mount);
+    } else if (heading && heading !== previousHeading) {
+      window.scrollTo({ top: mount.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
+      focusHeading(mount);
+    } else {
+      const active = activeId ? document.getElementById(activeId) : null;
+      if (active) active.focus({ preventScroll: true });
+      else focusHeading(mount);
+    }
+  } else {
+    window.scrollTo({ top: restoreY != null ? restoreY : 0, behavior: 'instant' });
+    focusHeading(mount);
+  }
+  mountedPath = pathKey;
+  return true;
+}
 
 // Anmeldesperre einer Fachanwendung. Der Name der Anwendung steht nicht im
 // Router, sondern im Anwendungskatalog — der wird dafür nachgeladen (nur im
@@ -452,11 +502,27 @@ async function renderAppLoginGate(mount, name, stale, text = '') {
     ${C.loginGate(text || 'Diese Fachanwendung arbeitet mit Betriebsdaten des BBL. Melden Sie sich mit AGOV / FedLogin an, um sie zu öffnen. '
       + 'Was die Anwendung tut und wer sie nutzen darf, steht frei zugänglich auf ihrer Beschreibungsseite.')}
   </div>`;
-  focusHeading(mount);
   return true;
 }
 
 async function dispatch() {
+  const ticket = ++dispatchId;
+  const stale = () => ticket !== dispatchId;
+
+  // Supersede in-flight work before touching the new route. Core-owned cache
+  // loads deliberately have no dispatch signal and continue to populate the
+  // shared cache; route-owned requests receive the controller below.
+  if (activeDispatch) {
+    activeDispatch.controller.abort();
+    activeDispatch.lifecycle.dispose();
+    activeDispatch = null;
+  }
+  if (unwireScroll) { unwireScroll(); unwireScroll = null; }
+
+  const controller = new AbortController();
+  const lifecycle = createRouteLifecycle(stale);
+  activeDispatch = { ticket, controller, lifecycle };
+
   // Standalone Fachwerkzeuge (z. B. der Plan-Editor) dürfen ihre kompakte
   // Arbeitsflächen-Chrome nicht in die nächste Portalroute mitnehmen. Das
   // Layout wird erst NACH der zentralen Login-Sperre wieder aktiviert, damit
@@ -466,10 +532,6 @@ async function dispatch() {
   // them before route cleanup/replacement so no stale overlay or global
   // listener survives navigation.
   C.closeOverlays();
-  // Erst aufräumen, dann neu bauen. Fehler einer einzelnen Abbaufunktion dürfen
-  // die Navigation nicht anhalten.
-  for (const fn of routeCleanups) { try { fn(); } catch (e) { console.warn('[router] cleanup failed', e); } }
-  routeCleanups = [];
   // Altlast-Pfad? Adresse ERSETZEN, nicht anhängen — sonst führt «Zurück» auf
   // den alten Pfad und von dort sofort wieder hierher (Endlosfalle). replaceState
   // feuert kein `hashchange`, also läuft dieser Aufruf danach einfach weiter und
@@ -477,8 +539,6 @@ async function dispatch() {
   const redirect = legacyTarget(location.hash);
   if (redirect) { try { history.replaceState(history.state, '', redirect); } catch { location.hash = redirect; } }
 
-  const ticket = ++dispatchId;
-  const stale = () => ticket !== dispatchId;
   // Beim hashchange steht das DOM noch auf der VERLASSENEN Seite — jetzt ihre
   // Position sichern, dann den neuen Eintrag stempeln/nachschlagen.
   saveLeavingScroll();
@@ -494,12 +554,11 @@ async function dispatch() {
   // H1 springen (WCAG 3.2.2) und die Seite nicht nach oben scrollen — stattdessen
   // den auslösenden Bedienpfad (per id) wiederherstellen.
   const pathKey = segs.join('/');
-  const isStateChange = prevPath !== null && prevPath === pathKey;
+  const isStateChange = mountedPath !== null && mountedPath === pathKey;
   const activeId = isStateChange && document.activeElement && mount.contains(document.activeElement)
     ? document.activeElement.id : '';
   // H1 der VERLASSENEN Sicht — Referenz für die Drill-in-Erkennung unten.
   const prevH1 = isStateChange ? (mount.querySelector('h1')?.textContent || '') : '';
-  prevPath = pathKey;
 
   let modPath, params, navBase;
 
@@ -536,7 +595,7 @@ async function dispatch() {
     document.title = 'Seite nicht gefunden · BBL Kundenportal';
     mount.innerHTML = `<div class="container section"><div class="page-header"><h1 tabindex="-1">Seite nicht gefunden</h1></div>
       <p class="muted">Diese Seite existiert nicht. <a href="#/">Zur Startseite</a></p></div>`;
-    focusHeading(mount);
+    finalizeRoute({ mount, stale, pathKey, isStateChange, activeId, previousHeading: prevH1, restoreY });
     return;
   }
 
@@ -563,7 +622,13 @@ async function dispatch() {
     if (stale()) return;
     // Anmeldesperre VOR `needs`: eine Anwendung, die niemand öffnen darf, muss
     // auch ihre Bestände nicht laden (das Inventar allein sind 66 KB).
-    if (gated) { await renderAppLoginGate(mount, segs[1], stale, mod.loginText); return; }
+    if (gated) {
+      await renderAppLoginGate(mount, segs[1], stale, mod.loginText);
+      if (!stale()) finalizeRoute({
+        mount, stale, pathKey, isStateChange, activeId, previousHeading: prevH1, restoreY,
+      });
+      return;
+    }
     if (mod.layout === 'standalone') document.body.classList.add('body--standalone-app');
     const render = mod.default || mod.render;
     if (typeof render !== 'function') throw new Error('Modul exportiert kein render()');
@@ -576,56 +641,22 @@ async function dispatch() {
       await core.ensure(routeNeeds);
       if (stale()) return;
     }
-    const ctx = makeCtx(mount, params, query, stale, routeCleanups);
+    const ctx = makeCtx(mount, params, query, stale, lifecycle, controller.signal);
     await render(ctx);
     if (stale()) return;
-    // Überlaufende Bereiche (Tabellen, Code-/SQL-Kästen) bekommen erst hier ihren
-    // Tastaturzugang: `C.wireScrollRegions` gab es seit Stufe 3, war aber nirgends
-    // aufgerufen — waagrecht scrollende Flächen waren also nur mit der Maus
-    // erreichbar (WCAG 2.1.1). Zentral im Router, damit es für jede Ansicht gilt,
-    // auch für die, die ihre Tabellen später nachrendern (siehe unten: erneuter
-    // Lauf nach Zustandswechseln in mountDataTable/renderMain über den Aufrufer).
-    if (unwireScroll) { unwireScroll(); unwireScroll = null; }
-    unwireScroll = C.wireScrollRegions(mount);
-    if (isStateChange) {
-      // Drill-in-Regel (Nutzerauftrag 2026-07-30, wiederverwendbar für JEDE
-      // Sicht): wechselt ein Zustandswechsel die SICHT-IDENTITÄT — erkennbar
-      // an einer anderen H1 (Liste → Objekt, z. B. portfolio?id=…) — ist er
-      // Navigation im Query-Gewand. Ziel ist dann der INHALTSANFANG
-      // (#main-content, also .container.section unterhalb der Bundes-Chrome):
-      // nicht Seitenanfang 0 (die Chrome hat man beim Absprung gerade gesehen)
-      // und nicht die alte Position (die zeigte irgendwo in die neue Sicht).
-      // Reine Verfeinerungen (Filter, Sortierung, Seite, ?floor=, ?tab=)
-      // lassen die H1 unverändert und behalten Position + Bedienpfad;
-      // Zurück/Vorwärts stellt weiterhin die gemerkte Position wieder her.
-      const h1Now = mount.querySelector('h1')?.textContent || '';
-      if (restoreY != null) {
-        window.scrollTo({ top: restoreY, behavior: 'instant' });
-        focusHeading(mount);
-      } else if (h1Now && h1Now !== prevH1) {
-        window.scrollTo({ top: mount.getBoundingClientRect().top + window.scrollY, behavior: 'instant' });
-        focusHeading(mount);
-      } else {
-        const el = activeId ? document.getElementById(activeId) : null;
-        if (el) el.focus({ preventScroll: true });   // Fokus zurück auf den Filter/Schalter
-        else focusHeading(mount);                    // A10: nie an <body> verlieren
-      }
-    } else {
-      // Zurück/Vorwärts stellt die gemerkte Position wieder her, jede andere
-      // Navigation beginnt am Seitenanfang. `instant` umgeht das globale
-      // scroll-behavior:smooth — ein Seitenwechsel ist ein Schnitt, kein Gleiten
-      // (so auch der Nuxt-Standard); die weichen Sprünge bleiben den echten
-      // In-Page-Ankern vorbehalten. Fokus auf die Überschrift, preventScroll.
-      window.scrollTo({ top: restoreY != null ? restoreY : 0, behavior: 'instant' });
-      focusHeading(mount);
-    }
+    finalizeRoute({ mount, stale, pathKey, isStateChange, activeId, previousHeading: prevH1, restoreY });
   } catch (e) {
     if (stale()) return;
+    controller.abort();
+    lifecycle.dispose();
     document.body.classList.remove('body--standalone-app');
     console.error('[router] render failed for', modPath, e);
-    mount.innerHTML = `<div class="container section">${C.notification(
-      `<strong>Diese Ansicht konnte nicht geladen werden.</strong><br><span class="small">${C.escape(e.message)}</span>`,
+    mount.innerHTML = `<div class="container section">
+      <div class="page-header"><h1 tabindex="-1">Diese Ansicht konnte nicht geladen werden.</h1></div>
+      ${C.notification(
+      `<span class="small">${C.escape(e.message)}</span>`,
       'error', 'WarningCircle', { live: true })}</div>`;
+    finalizeRoute({ mount, stale, pathKey, isStateChange, activeId, previousHeading: prevH1, restoreY });
   }
 }
 

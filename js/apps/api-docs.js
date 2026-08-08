@@ -123,15 +123,15 @@ function toOpenApi(spec, exampleFor) {
 }
 
 export default async function render(ctx) {
-  const { mount, params, query, core, C, setTitle, setCrumbs, stale } = ctx;
+  const { mount, params, query, core, C, setTitle, setCrumbs, stale, signal } = ctx;
   const specId = C.safeDecode(params[0] || 'kundenportal');
 
   let specs = {};
-  try { specs = await fetchJSON('data/api-specs.json', { shape: 'object' }); } catch (e) { /* unten behandelt */ }
+  try { specs = await fetchJSON('data/api-specs.json', { shape: 'object', signal }); } catch (e) { /* unten behandelt */ }
   // Prozessdefinitionen liest sonst nur die Engine — für die Live-Beispiele
   // der Ressource process-definitions einmal direkt dazuladen (kein core-Bestand).
   let processDefs = [];
-  try { processDefs = await fetchJSON('data/process-definitions.json', { shape: 'array' }); } catch (e) { /* Beispiele entfallen */ }
+  try { processDefs = await fetchJSON('data/process-definitions.json', { shape: 'array', signal }); } catch (e) { /* Beispiele entfallen */ }
   if (stale && stale()) return;
   const spec = specs[specId];
 
@@ -238,7 +238,13 @@ export default async function render(ctx) {
   host.innerHTML = '';
   const swaggerObserver = new MutationObserver(() => enhanceSwagger(host));
   swaggerObserver.observe(host, { childList: true, subtree: true });
-  if (ctx.onUnmount) ctx.onUnmount(() => swaggerObserver.disconnect());
+  let disposed = false;
+  let tagPollTimer = null;
+  if (ctx.onUnmount) ctx.onUnmount(() => {
+    disposed = true;
+    swaggerObserver.disconnect();
+    if (tagPollTimer) clearTimeout(tagPollTimer);
+  });
   SwaggerUIBundle({
     spec: toOpenApi(spec, exampleFor),
     domNode: host,
@@ -252,6 +258,7 @@ export default async function render(ctx) {
     supportedSubmitMethods: [],     // kein Backend → kein «Try it out»
     validatorUrl: null,             // kein Anruf beim externen Validator-Badge
     onComplete: () => {
+      if (disposed) return;
       enhanceSwagger(host);
       // ?tag=<resource> aus dem Datenbezug-Katalog: zur Ressource scrollen.
       // onComplete feuert, BEVOR Swaggers React-Baum fertig im DOM steht —
@@ -262,10 +269,11 @@ export default async function render(ctx) {
       if (!wanted) return;
       let tries = 0;
       const hin = () => {
+        if (disposed) return;
         const el = [...host.querySelectorAll('.opblock-tag')]
           .find((h) => h.getAttribute('data-tag') === wanted.label);
         if (el) { el.scrollIntoView({ block: 'start' }); return; }
-        if (tries++ < 30) setTimeout(hin, 100);
+        if (tries++ < 30) tagPollTimer = setTimeout(hin, 100);
       };
       hin();
     },

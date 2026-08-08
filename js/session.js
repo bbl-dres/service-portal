@@ -15,14 +15,34 @@ const DEMO_USER = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
 const isUser = (u) => !!u && typeof u === 'object' && typeof u.name === 'string' && u.name.trim() !== '';
 let user = readJSON(LS_KEY, null, isUser);
 
-function save() {
-  if (user) writeJSON(LS_KEY, user); else remove(LS_KEY);
+// A session mutation in another tab must update this module's cached value.
+// The storage listener is application-wide (not route-owned), so it lives for
+// exactly as long as the page and asks app.js to redraw the current gate/header.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key !== LS_KEY && event.key !== null) return;
+    const nextUser = readJSON(LS_KEY, null, isUser);
+    const unchanged = user === nextUser
+      || (user && nextUser && user.name === nextUser.name && user.org === nextUser.org);
+    if (unchanged) return;
+    user = nextUser;
+    window.dispatchEvent(new CustomEvent('session:changed', { detail: { source: 'storage' } }));
+  });
 }
 
 export const session = {
   user: () => user,
   isLoggedIn: () => !!user,
   // Anmelden über AGOV / FedLogin — im Prototyp ein Stub ohne echten Redirect.
-  login: () => { user = { ...DEMO_USER }; save(); return user; },
-  logout: () => { user = null; save(); },
+  login: () => {
+    const nextUser = { ...DEMO_USER };
+    if (!writeJSON(LS_KEY, nextUser)) return false;
+    user = nextUser;
+    return user;
+  },
+  logout: () => {
+    if (!remove(LS_KEY)) return false;
+    user = null;
+    return true;
+  },
 };

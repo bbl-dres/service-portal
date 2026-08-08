@@ -53,6 +53,7 @@ const check = (condition, label) => {
 
 const cdp = await launch();
 let page;
+let otherPage;
 try {
   console.log('■ Room Booking [logged out → logged in]');
   page = await openPage(cdp, `${APP_BASE}/app/room-booking`, { login: false });
@@ -74,9 +75,26 @@ try {
     'logout clears storage and restores the route gate without a listener API');
   check(loggedOutAgain.authLabel === 'Anmelden', 'the header returns to the logged-out action');
 
+  console.log('■ Cross-tab session synchronization');
+  otherPage = await openPage(cdp, `${APP_BASE}/services`, { login: true });
+  const crossTabLogin = await page.evaluate(CHECK_LOGGED_IN);
+  check(crossTabLogin.hasForm && !crossTabLogin.hasGate,
+    'a login persisted by another tab redraws the protected route');
+  const otherLogout = await otherPage.evaluate(LOGOUT)
+    .catch((error) => 'logout-eval-destroyed: ' + error.message);
+  check(otherLogout === 'logout-called', `the second tab logs out (${otherLogout})`);
+  const crossTabLogout = await page.evaluate(CHECK_LOGGED_OUT);
+  check(crossTabLogout.hasGate && !crossTabLogout.hasForm && !crossTabLogout.hasSession,
+    'a logout in another tab restores the route gate');
+  check(crossTabLogout.authLabel === 'Anmelden',
+    'the first tab header follows the cross-tab logout');
+
   const problems = await page.problems();
   check(problems.length === 0, `no exceptions / console errors / error banner${problems[0] ? ': ' + problems[0] : ''}`);
+  const otherProblems = await otherPage.problems();
+  check(otherProblems.length === 0, `the second tab has no runtime problems${otherProblems[0] ? ': ' + otherProblems[0] : ''}`);
 } finally {
+  if (otherPage) await otherPage.closeTarget().catch(() => {});
   if (page) await page.closeTarget().catch(() => {});
   cdp.close();
 }

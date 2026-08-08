@@ -464,7 +464,8 @@ function list(ctx) {
 // ---------------------------------------------------------------------------
 function objectDetail(ctx, id) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  const o = core.businessObject(C.safeDecode(id));
+  // URLSearchParams already decodes query values exactly once.
+  const o = core.businessObject(id);
   if (!o) {
     return C.renderNotFound(ctx, {
       thing: 'Dieses Geschäftsobjekt', title: 'Geschäftsobjekt nicht gefunden',
@@ -630,7 +631,8 @@ function objectDetail(ctx, id) {
 // ---------------------------------------------------------------------------
 async function tableDetail(ctx, id) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  const t = core.systemTable(C.safeDecode(id));
+  // URLSearchParams already decodes query values exactly once.
+  const t = core.systemTable(id);
   if (!t) {
     return C.renderNotFound(ctx, {
       thing: 'Diese Tabelle', title: 'Tabelle nicht gefunden',

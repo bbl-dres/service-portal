@@ -3,7 +3,10 @@
 
 import { fetchJSON } from './fetch-json.js';
 
-const DATA = {};
+const DATA = Object.create(null);
+const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+const safeDictionary = (value = {}) => Object.assign(Object.create(null), value);
 
 // EAGER — nur, was die Shell braucht, bevor der Router überhaupt verteilt.
 // js/shell.js liest genau zwei Schlüssel: `ref().domains` und `services()` für
@@ -97,6 +100,14 @@ const AREA = {
 
 // Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
 const OBJECT_FILES = new Set(['reference', 'catalogLabels']);
+const RECORD_IDS = {
+  services: 'serviceId', applications: 'appId', news: 'id', contacts: 'contactId',
+  documents: 'docId', projects: 'projectId', media: 'mediaId', datasets: 'id',
+  assets: 'assetId', contracts: 'contractId', costs: 'costId', areas: 'areaMeasurementId',
+  buildingContacts: 'contactId', tenancies: 'tenancyId', floors: 'floorId', spaces: 'spaceId',
+  workspacePlanning: 'buildingId', businessObjects: 'objectId', systemTables: 'tableId',
+  processes: 'processId', shopProducts: 'id', shopCategories: 'id',
+};
 
 // Gebäude kommen aus dem SAP-RE-FX-Golden-Record (data/buildings.geojson) — dieselbe
 // Quelle und dieselben bbl_id wie das Immobilienportfolio-Dashboard, damit die
@@ -160,6 +171,66 @@ function normalizeLandcover(f) {
   };
 }
 
+function validateRecords(records, url, key) {
+  const idField = RECORD_IDS[key];
+  const invalid = records.findIndex((record) => !isRecord(record)
+    || (idField && (record[idField] == null || String(record[idField]).trim() === '')));
+  if (invalid >= 0) throw new Error(`ungültiger Datensatz ${invalid}: ${url}`);
+  if (key === 'businessObjects') {
+    const nested = records.findIndex((record) => !Array.isArray(record.attributes)
+      || record.attributes.some((attribute) => !isRecord(attribute)
+        || !Array.isArray(attribute.mappings)
+        || attribute.mappings.some((mapping) => !isRecord(mapping))));
+    if (nested >= 0) throw new Error(`ungültige Geschäftsobjekt-Struktur ${nested}: ${url}`);
+  }
+  if (key === 'systemTables') {
+    const nested = records.findIndex((record) => !Array.isArray(record.fields)
+      || record.fields.some((field) => !isRecord(field)));
+    if (nested >= 0) throw new Error(`ungültige Tabellenstruktur ${nested}: ${url}`);
+  }
+  if (key === 'tenancies') {
+    const nested = records.findIndex((record) => !Array.isArray(record.floors)
+      || record.floors.some((floorId) => typeof floorId !== 'string'));
+    if (nested >= 0) throw new Error(`ungültige Mietverhältnis-Struktur ${nested}: ${url}`);
+  }
+  if (key === 'workspacePlanning') {
+    const nested = records.findIndex((record) => record.floors != null
+      && (!Array.isArray(record.floors) || record.floors.some((floor) => !isRecord(floor))));
+    if (nested >= 0) throw new Error(`ungültige Workspace-Struktur ${nested}: ${url}`);
+  }
+  if (key === 'shopCategories') {
+    const validCategory = (record) => isRecord(record)
+      && record.id != null && String(record.id).trim() !== ''
+      && Array.isArray(record.children) && record.children.every(validCategory);
+    const nested = records.findIndex((record) => !validCategory(record));
+    if (nested >= 0) throw new Error(`ungültige Shop-Kategorie ${nested}: ${url}`);
+  }
+  return records;
+}
+
+function validateFeatureCollection(collection, url) {
+  if (collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
+    throw new Error(`erwartet GeoJSON FeatureCollection: ${url}`);
+  }
+  const requiredProperty = 'bbl_id';
+  const invalid = collection.features.findIndex((feature) => !isRecord(feature)
+    || feature.type !== 'Feature'
+    || !isRecord(feature.properties)
+    || feature.properties[requiredProperty] == null
+    || String(feature.properties[requiredProperty]).trim() === ''
+    || (feature.geometry !== null && !isRecord(feature.geometry)));
+  if (invalid >= 0) throw new Error(`ungültiges GeoJSON-Feature ${invalid}: ${url}`);
+  return collection;
+}
+
+function fallbackFor(key) {
+  return OBJECT_FILES.has(key) ? Object.create(null) : [];
+}
+
+function dispatchDataEvent(name, key) {
+  try { window.dispatchEvent(new CustomEvent(name, { detail: { key } })); } catch { /* kein DOM */ }
+}
+
 async function load() {
   const entries = await Promise.all(Object.entries(FILES).map(async ([k, url]) => {
     const isObj = OBJECT_FILES.has(k);
@@ -167,11 +238,15 @@ async function load() {
       // Formprüfung (C4): eine Datei, die zwar parst, aber die falsche Grundform
       // hat (z. B. projects.json → {}), landet so im Ausfallpfad statt später
       // beim ersten Accessor (`{}.find`) zu werfen.
-      return [k, await fetchJSON(url, { shape: isObj ? 'object' : 'array' })];
+      let value = await fetchJSON(url, { shape: isObj ? 'object' : 'array' });
+      if (!isObj) value = validateRecords(value, url, k);
+      if (k === 'reference') value = safeDictionary(value);
+      FAILED.delete(k);
+      return [k, value];
     } catch (e) {
       console.warn('[core] could not load', url, e.message);
       FAILED.add(k);
-      return [k, isObj ? {} : []];
+      return [k, fallbackFor(k)];
     }
   }));
   for (const [k, v] of entries) DATA[k] = v;
@@ -198,6 +273,7 @@ function linkMedia() {
 // wer später kommt, wartet auf dieselbe. Fehlschläge landen im selben Register
 // wie beim Start, damit das Fehlerband auch nachgeladene Ausfälle zeigt.
 const PENDING = new Map();
+const LOADED = new Set();
 
 async function loadDeferred(key) {
   const url = DEFERRED[key];
@@ -208,40 +284,59 @@ async function loadDeferred(key) {
     const GEO = { buildings: normalizeBuilding, parcels: normalizeParcel, landcovers: normalizeLandcover };
     const ID = { buildings: 'bbl_id', parcels: 'bbl_id', landcovers: 'parcelId' };
     if (GEO[key]) {
-      const fc = await fetchJSON(url, { shape: 'object' });
+      const fc = validateFeatureCollection(await fetchJSON(url, { shape: 'object' }), url);
       DATA[key] = (fc.features || []).map(GEO[key]).filter((x) => x[ID[key]]);
       // Hauptbild/Bildnachweis stehen an den Objekten selbst; nach jedem der
       // beiden Bestände neu verknüpfen, weil sie unabhängig eintreffen können.
       if (key === 'buildings' || key === 'parcels') linkMedia();
     } else {
-      DATA[key] = await fetchJSON(url, { shape: isObj ? 'object' : 'array' });
+      let value = await fetchJSON(url, { shape: isObj ? 'object' : 'array' });
+      if (isObj) value = safeDictionary(value);
+      else value = validateRecords(value, url, key);
+      DATA[key] = value;
       // Der Rückwärtsindex der Abbildungen wurde womöglich schon gebaut, als
       // der Bestand noch leer war (zwei Routen, zwei ensure-Aufrufe) — dann
       // zeigte die Tabellenansicht dauerhaft «keine Begriffe realisiert».
       if (key === 'businessObjects') MAP_INDEX = null;
     }
+    const recovered = FAILED.delete(key);
+    LOADED.add(key);
+    if (recovered) dispatchDataEvent('core:data-loaded', key);
+    return true;
   } catch (e) {
     console.warn('[core] could not load', url, e.message);
     FAILED.add(key);
-    DATA[key] = isObj ? {} : [];
+    LOADED.delete(key);
+    DATA[key] = fallbackFor(key);
     // Das Fehlerband wurde beim Start gezeichnet und kennt diesen Ausfall noch
     // nicht — ohne das Ereignis bliebe er unsichtbar.
-    try { window.dispatchEvent(new CustomEvent('core:data-failed', { detail: { key } })); } catch { /* kein DOM */ }
+    dispatchDataEvent('core:data-failed', key);
+    return false;
   }
 }
 
-// ensure('assets','costs') → Promise. Unbekannte oder bereits beim Start
-// geladene Schlüssel werden still übergangen, damit Aufrufer nicht wissen
-// müssen, welcher Bestand aufschiebbar ist.
+// ensure('assets','costs') → Promise. Bereits beim Start geladene Schlüssel
+// werden übergangen; unbekannte Schlüssel lehnen das Versprechen ab, damit ein
+// Tippfehler in einer Route nicht wie ein erfolgreich geladener Bestand wirkt.
 function ensure(...keys) {
-  const list = keys.flat().filter((k) => DEFERRED[k]);
+  const requested = keys.flat();
+  const unknown = requested.filter((key) => typeof key !== 'string'
+    || (!hasOwn(DEFERRED, key) && !hasOwn(FILES, key)));
+  if (unknown.length) {
+    return Promise.reject(new Error(`Unbekannte Datenschlüssel: ${unknown.map(String).join(', ')}`));
+  }
+  const list = [...new Set(requested.filter((key) => hasOwn(DEFERRED, key)))];
   return Promise.all(list.map((k) => {
-    if (!PENDING.has(k)) PENDING.set(k, loadDeferred(k));
+    if (LOADED.has(k)) return true;
+    if (!PENDING.has(k)) {
+      const pending = loadDeferred(k).finally(() => PENDING.delete(k));
+      PENDING.set(k, pending);
+    }
     return PENDING.get(k);
   }));
 }
 
-const find = (arr, key, id) => (arr || []).find(x => x[key] === id);
+const find = (arr, key, id) => (arr || []).find(x => x && x[key] === id);
 
 // --- Metadatenkatalog: Gegenrichtung der Abbildung --------------------------
 // Die Abbildungen stehen AM ATTRIBUT des Geschäftsobjekts — das ist die
@@ -257,8 +352,8 @@ function mapIndex() {
   if (MAP_INDEX) return MAP_INDEX;
   MAP_INDEX = new Map();
   for (const o of DATA.businessObjects || []) {
-    for (const a of o.attributes || []) {
-      for (const m of a.mappings || []) {
+    for (const a of Array.isArray(o?.attributes) ? o.attributes : []) {
+      for (const m of Array.isArray(a?.mappings) ? a.mappings : []) {
         const k = `${m.tableId}|${m.field}`;
         if (!MAP_INDEX.has(k)) MAP_INDEX.set(k, []);
         MAP_INDEX.get(k).push({ objectId: o.objectId, objectName: o.name, attribute: a.name, match: m.match });
@@ -307,14 +402,15 @@ export const core = {
   shopCategories: () => DATA.shopCategories || [],
   dataDomains: () => (DATA.reference || {}).dataDomains || [],
   realisedBy: (tableId, field) => mapIndex().get(`${tableId}|${field}`) || [],
-  realisationsOf: (o) => (o && o.attributes ? o.attributes : [])
-    .flatMap((a) => (a.mappings || []).map((m) => ({ attribute: a.name, ...m }))),
+  realisationsOf: (o) => (Array.isArray(o?.attributes) ? o.attributes : [])
+    .flatMap((a) => (Array.isArray(a?.mappings) ? a.mappings : [])
+      .map((m) => ({ attribute: a.name, ...m }))),
   // Alle Abbildungen, die in EINE Tabelle zeigen — für die Tabellen-Detailseite.
   realisationsForTable: (tableId) => {
     const out = [];
     for (const o of DATA.businessObjects || []) {
-      for (const a of o.attributes || []) {
-        for (const m of a.mappings || []) {
+      for (const a of Array.isArray(o?.attributes) ? o.attributes : []) {
+        for (const m of Array.isArray(a?.mappings) ? a.mappings : []) {
           if (m.tableId === tableId) out.push({ objectId: o.objectId, objectName: o.name, attribute: a.name, field: m.field, match: m.match });
         }
       }
@@ -350,9 +446,12 @@ export const core = {
   datasets: () => DATA.datasets || [],
   dataset: (id) => find(DATA.datasets, 'id', id),
   t: (v) => (v && typeof v === 'object') ? (v.de ?? v.en ?? '') : (v ?? ''),
-  label: (key, fallback) => (DATA.catalogLabels || {})[key] || fallback || key,
+  label: (key, fallback) => {
+    const labels = DATA.catalogLabels;
+    return labels && hasOwn(labels, key) ? labels[key] : (fallback || key);
+  },
   // Datenausfall-Status (P0-4): available() sagt, ob ein Schlüssel geladen wurde;
   // failedAreas() liefert die fachlichen Namen der ausgefallenen Bereiche.
   available: (key) => !FAILED.has(key),
-  failedAreas: () => Array.from(FAILED).map(k => AREA[k] || k),
+  failedAreas: () => Array.from(FAILED).map(k => hasOwn(AREA, k) ? AREA[k] : k),
 };
