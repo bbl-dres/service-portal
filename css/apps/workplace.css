@@ -1,7 +1,6 @@
 /* ========================= WORKSPACE MANAGEMENT ===========================
    Application 1 of the workspace suite: catalogue + process portal with the
    shared read-only floor preview. Editor chrome and validation UI stay out. */
-.workspace-portal .pf-layout { margin-top:var(--sp-6); }
 .workspace-card .pill-row { margin-top:var(--sp-3); }
 .workspace-card .card__description { line-height:1.45; }
 .workspace-card .card__footer { justify-content:space-between; gap:var(--sp-4); }
@@ -14,7 +13,9 @@
    wizard and therefore no step chrome. Room cards carry a floor code instead of
    a photograph: no meeting room has one, and the building interior shot that
    used to fill the slot was identical for every room in the house. */
-.booking-tabs { margin-top:var(--sp-8); }
+/* Match the shared catalogue/dashboard transition from page header to app
+   chrome; the tab panel keeps its own CD pt-8 content separation. */
+.booking-tabs { margin-top:var(--sp-5); }
 .booking-find, .booking-manage { min-width:0; }
 
 /* Search bar. One row on desktop, stacked below — the submit button is the only

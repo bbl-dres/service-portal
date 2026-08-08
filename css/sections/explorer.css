@@ -9,7 +9,9 @@
 /* Mobile-first: unter lg steht der Baum ÜBER der Karte statt in einer 288px-Spalte,
    die auf dem Handy die Karte auf Briefmarkengrösse quetscht (Item 2.15). */
 .pf-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-5); align-items:start; margin-top:var(--sp-4); }
-.pf-sidebar { position:static; max-height:22rem; overflow:auto; background:var(--color-bg); border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius-lg); padding:var(--sp-2); }
+.pf-sidebar { position:static; max-height:22rem; overflow:auto; padding:var(--sp-2);
+  background:var(--surface-bg); border:var(--stroke-1) solid var(--surface-border);
+  border-radius:var(--surface-radius); box-shadow:var(--surface-elevation); }
 @media (min-width:1024px){
   .pf-layout  { grid-template-columns:minmax(15rem,18rem) minmax(0,1fr); }
   .pf-sidebar { position:sticky; top:var(--sp-4); max-height:calc(100vh - var(--sp-28)); }
@@ -85,11 +87,12 @@
 
 .shop-product-hero { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap-responsive); align-items:center; }
 @media (min-width:768px){ .shop-product-hero { grid-template-columns:minmax(16rem,24rem) minmax(0,1fr); } }
-.shop-product-hero__media { display:flex; align-items:center; justify-content:center; min-height:18rem;
-  background:var(--color-secondary-50); border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius-lg); padding:var(--sp-6); }
+.shop-product-hero__media { display:flex; align-items:center; justify-content:center; min-height:18rem; padding:var(--sp-6);
+  background:var(--surface-bg-muted); border:var(--stroke-1) solid var(--surface-border);
+  border-radius:var(--surface-radius); box-shadow:var(--surface-elevation); }
 .shop-product-hero__media img { max-width:100%; max-height:24rem; object-fit:contain; }
 .shop-thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(7rem,1fr)); gap:var(--sp-3); margin-top:var(--sp-4); }
-.shop-thumbs img { width:100%; aspect-ratio:4/3; object-fit:contain; background:var(--color-secondary-50); border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius); padding:var(--sp-2); }
+.shop-thumbs img { width:100%; aspect-ratio:4/3; object-fit:contain; background:var(--surface-bg-muted); border:var(--stroke-1) solid var(--surface-border); border-radius:var(--radius); padding:var(--sp-2); }
 .shop-price { font-size:var(--text-2xl); font-weight:var(--fw-bold); margin-block:0 var(--sp-4); }
 
 .shopping__cart-card-list { list-style:none; margin:0; padding:0; }

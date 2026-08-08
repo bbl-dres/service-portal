@@ -3,7 +3,7 @@
    ausgeschrieben, und dadurch unbeabsichtigt eine Abweichung von CD
    box.postcss. Eine Deklaration für beide; die Kennzahl-Kachel ist eine Box,
    die Zahl und Beschriftung trägt (siehe .stat__num/.stat__label unten). */
-.box, .stat { padding:var(--sp-4); background:var(--color-secondary-50); border:0; border-radius:var(--radius-none); }
+.box, .stat { padding:var(--sp-4); background:var(--surface-bg-muted); border:0; border-radius:var(--radius-none); }
 @media (min-width:480px) { .box, .stat { padding:var(--sp-5); } }
 @media (min-width:1024px){ .box, .stat { padding:var(--sp-6); } }
 @media (min-width:1544px){ .box, .stat { padding:var(--sp-8); } }
@@ -27,7 +27,7 @@
    liess xs/xl/3xl aus und war der dritte Klon der konsolidierten Rampe
    (Design-Review C3). */
 .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--gap-responsive); }
-.stat { box-shadow:none; }
+.stat { box-shadow:var(--shadow-none); }
 /* DIE Grossziffer-Typografie des Portals: text-3xl · fw-bold · lh-tight ·
    secondary-600 · Tabellenziffern. Drei Flächen konsumieren sie — .stat (Box),
    .kpi (Dashboard-Karte), .kpi-strip (rahmenloser Streifen, dokumentiert) —

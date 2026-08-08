@@ -2,8 +2,10 @@
 /* KEIN overflow:hidden (card.postcss:5-8): nur .card__image beschneidet sein
    Medium; Texte kappt der line-clamp. Der Beschnitt an der Karte selbst zwang
    die Fokusringe auf −2px nach innen und schnitt bei 200% Zoom Pillen ab. */
-.card { background:var(--color-bg); border:0; border-radius:var(--radius-none); box-shadow:none;
+.card { background:var(--surface-bg); border:0; border-radius:var(--radius-none); box-shadow:var(--shadow-none);
   display:flex; flex-direction:column; height:100%; position:relative; container-type:inline-size; }
+/* Deliberate CD surface tier: card.postcss keeps default/universal cards
+   square and borderless, one elevation step above tables at shadow-lg. */
 .card--default, .card--universal { box-shadow:var(--shadow-lg); }
 /* card--universal: Bild wird eingepasst (object-contain) statt beschnitten (CD card.postcss). */
 .card--universal .card__image > img, .card--universal .card__image > .photo { object-fit:contain; }
@@ -86,7 +88,7 @@
 .card:where(.card--loading,[aria-busy="true"]) {
   cursor:progress; box-shadow:var(--state-ring-primary-soft); }
 .card:where(.card--disabled,[aria-disabled="true"]) {
-  color:var(--color-text-muted); cursor:not-allowed; box-shadow:none; }
+  color:var(--color-text-muted); cursor:not-allowed; box-shadow:var(--shadow-none); }
 .card:where(.card--disabled,[aria-disabled="true"]) .card__link { pointer-events:none; text-decoration:none; }
 /* flat card (card.postcss:109-141) — replaces the old .tile */
 /* .card--flat/.card--list (card.postcss:331-400) EXZIDIERT — null Konsumenten
@@ -99,7 +101,7 @@
 @media (max-width:767.98px){
   .catalogue-grid { gap:0; }
   .catalogue-grid .card__image { display:none; }
-  .catalogue-grid .card--default { box-shadow:none;
+  .catalogue-grid .card--default { box-shadow:var(--shadow-none);
     border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
   .catalogue-grid .card__body   { padding:var(--sp-4) var(--sp-1); }
   .catalogue-grid .card__footer { padding:0 var(--sp-1) var(--sp-4); }

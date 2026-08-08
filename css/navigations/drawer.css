@@ -87,7 +87,6 @@
 .desktop-menu__close { position:absolute; top:var(--sp-4); right:0; display:inline-flex; align-items:center; gap:var(--sp-2);
   padding:var(--sp-3) var(--sp-4); color:var(--color-text-500); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
 .desktop-menu__close:hover { color:var(--color-text-600); background:var(--color-secondary-50); }
-.desktop-menu__close .icon { width:var(--sp-5); height:var(--sp-5); }
 @media (min-width:1280px){ .desktop-menu__close { top:var(--sp-6); right:var(--sp-4); } }
 @media (min-width:1920px){ .desktop-menu__close { top:var(--sp-8); right:var(--sp-20); font-size:var(--fs-base); } }
 .navy { position:relative; }
@@ -245,11 +244,14 @@
 /* app.css setzte hier display:inline-block ohne Grösse, sodass icon--sm = 12px
    stehenblieb (CD: 20px, navy.postcss:47-51) und das Chevron beim Aufklappen nie
    rotierte. CSS-Hälfte von Item 4.6 — gehört in denselben Block wie oben. */
-.mobile-menu .navy__has-children .icon { display:inline-block; width:var(--sp-5); height:var(--sp-5);
+.mobile-menu .navy__has-children .icon { display:inline-block;
   color:var(--color-text-muted); transition:transform var(--duration); }
 .mobile-menu .navy__has-children[aria-expanded="true"] .icon { transform:rotate(90deg); }
 @media (prefers-reduced-motion: reduce){ .mobile-menu .navy__has-children .icon { transition:none; } }
-.navy__back .icon { width:var(--sp-5); height:var(--sp-5); }
+/* Close, back and drill-down are one 20px navigation-glyph tier. */
+:is(.desktop-menu__close, .navy__back, .mobile-menu .navy__has-children) .icon {
+  width:var(--sp-5); height:var(--sp-5); align-self:center; vertical-align:middle;
+}
 /* BEWUSSTE ABWEICHUNG vom CD (Review 2026-07, nav/mob-1): CDs Mobilmenü schiebt
    GANZE Ebenen-Panels per translateX (navy.postcss:79-99, 600ms) — das setzt
    einen einzigen Navy-Baum voraus. Unsere Shell führt je L1-Eintrag einen
@@ -291,14 +293,14 @@
 .share-bar { display:flex; flex-direction:row-reverse; align-items:flex-end; margin:var(--sp-5) calc(-1 * var(--sp-3)) 0 0; }
 @media (min-width:1024px){ .share-bar { margin-top:var(--sp-4); } }
 .share-container { display:flex; gap:var(--sp-1); }
-.share-bar__btn { min-width:var(--target-min); min-height:var(--target-min); justify-content:center; color:var(--color-secondary-700); }
+.share-bar__btn { --control-icon-size:var(--sp-7); min-width:var(--target-min); min-height:var(--target-min); justify-content:center; color:var(--color-secondary-700); }
 .share-bar__btn:hover { color:var(--color-primary-600); background:none; }
 /* These are .btn--bare buttons, so `.btn .icon { width:1.4em }` (0,2,0) would
    clobber the icon-size class and leave the icons ~1.4em. Re-assert CD's ShareBar
    size (SvgIcon size="xl" → icon--xl: h-7 md:h-8 lg:h-9) at higher specificity.
    Masked icons need an explicit width (see .icon note), so width tracks height. */
-.share-bar .share-bar__btn .icon { width:var(--sp-7); height:var(--sp-7); }
-@media (min-width:768px){ .share-bar .share-bar__btn .icon { width:var(--sp-8); height:var(--sp-8); } }
-@media (min-width:1024px){ .share-bar .share-bar__btn .icon { width:var(--sp-9); height:var(--sp-9); } }
+.share-bar .share-bar__btn .icon { width:var(--control-icon-size); height:var(--control-icon-size); align-self:center; vertical-align:middle; }
+@media (min-width:768px){ .share-bar__btn { --control-icon-size:var(--sp-8); } }
+@media (min-width:1024px){ .share-bar__btn { --control-icon-size:var(--sp-9); } }
 @media print { .share-bar { display:none; } }
 

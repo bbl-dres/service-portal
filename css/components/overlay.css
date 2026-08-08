@@ -11,6 +11,12 @@
   border-radius:var(--radius-full); background:var(--color-secondary-900); box-shadow:var(--shadow-viewer); }
 .viewer-toolbar__readout { font-variant-numeric:tabular-nums; }
 .viewer-toolbar__separator { width:var(--stroke-1); align-self:stretch; background:var(--border-negative); }
+/* Icon classes retain their CD size tier; every icon-only overlay control uses
+   the same centred square glyph box instead of inheriting inline baselines. */
+:is(.viewer-toolbar__button, .docviewer__btn, .pf-lightbox__btn,
+  .action-menu__trigger, .modal__close) .icon {
+  align-self:center; vertical-align:middle;
+}
 .viewer-toolbar--light .viewer-toolbar__button:hover { background:var(--color-secondary-50); }
 .viewer-toolbar--light .viewer-toolbar__button:active { background:var(--color-secondary-100); }
 .viewer-toolbar--negative .viewer-toolbar__button:hover { background:var(--surface-negative-hover); }
@@ -19,10 +25,8 @@
 .viewer-toolbar__button[aria-busy="true"] { cursor:progress; opacity:.7; }
 .viewer-toolbar__button[aria-invalid="true"] { color:var(--color-error-400); }
 .viewer-toolbar__button[data-empty="true"] { cursor:default; opacity:.55; }
-.viewer-toolbar--light .viewer-toolbar__button:focus-visible { position:relative; z-index:var(--z-local-content);
-  outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-3)); }
-.viewer-toolbar--negative .viewer-toolbar__button:focus-visible { position:relative; z-index:var(--z-local-content);
-  outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-3)); }
+.viewer-toolbar__button:focus-visible { position:relative; z-index:var(--z-local-content);
+  outline-offset:calc(-1 * var(--stroke-3)); }
 
 /* Shared dark chrome for the document viewer and portfolio lightbox. These
    rules stay static because the two viewers belong to different lazy apps. */
@@ -44,7 +48,7 @@
 .docviewer__btn[aria-busy="true"], .pf-lightbox__btn[aria-busy="true"] { cursor:progress; opacity:.7; }
 .docviewer__btn[aria-invalid="true"], .pf-lightbox__btn[aria-invalid="true"] { color:var(--color-error-400); }
 .docviewer__btn[data-empty="true"], .pf-lightbox__btn[data-empty="true"] { cursor:default; opacity:.55; }
-.docviewer__btn:focus-visible, .pf-lightbox__btn:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
+.docviewer__btn:focus-visible, .pf-lightbox__btn:focus-visible { outline-offset:calc(-1 * var(--stroke-2)); }
 
 /* Shared metadata-panel chrome; app sheets retain only their distinct padding
    and responsive viewer positioning. :where() keeps the shared recipe at zero
@@ -76,7 +80,6 @@
   padding:var(--sp-1); border:0; border-radius:var(--radius-sm); background:none; color:var(--color-text-muted); cursor:pointer; }
 .action-menu__trigger:hover { background:var(--color-secondary-100); color:var(--color-text); }
 .action-menu__trigger:active { background:var(--color-secondary-200); color:var(--color-text); }
-.action-menu__trigger:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
 .action-menu__trigger:is(:disabled, [aria-disabled="true"]) { cursor:not-allowed; opacity:.55; }
 .action-menu__trigger[aria-busy="true"] { cursor:progress; opacity:.7; }
 .action-menu__trigger[aria-invalid="true"] { color:var(--color-error-text); }
@@ -97,7 +100,7 @@
   font-size:var(--text-sm); font-family:inherit; }
 .action-menu__item:hover, .action-menu__item:focus-visible { background:var(--color-secondary-50); }
 .action-menu__item:active { background:var(--color-secondary-100); }
-.action-menu__item:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
+.action-menu__item:focus-visible { outline-offset:calc(-1 * var(--stroke-2)); }
 .action-menu__item:is(:disabled, [aria-disabled="true"]) { cursor:not-allowed; opacity:.55; }
 .action-menu__item[aria-busy="true"] { cursor:progress; opacity:.7; }
 .action-menu__item[aria-invalid="true"] { color:var(--color-error-text); }
@@ -190,7 +193,7 @@ html:has(> body > .docviewer) { overflow:hidden; scrollbar-gutter:auto; }
   background:none; color:var(--color-text-negative); cursor:pointer; }
 @media (min-width:1024px){ .modal__close { margin-top:calc(-1 * var(--sp-2)); } }
 .modal__close:hover { opacity:.5; }
-.modal__close:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:var(--stroke-2); }
+.modal__close:focus-visible { outline-offset:var(--stroke-2); }
 
 .tabs { display:block; }
 .breadcrumb-navigation { width:100%; }

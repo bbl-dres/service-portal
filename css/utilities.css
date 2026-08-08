@@ -51,6 +51,7 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
 .row { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; }
 /* `.row > * { min-width:0 }` lets flex children shrink — icons must not, or a
    long label next to one squashes it to a sliver. */
+.row > * { min-width:0; }
 .row > .icon { flex:none; }
 .break-all { overflow-wrap:anywhere; word-break:break-word; }
 

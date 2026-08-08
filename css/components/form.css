@@ -2,7 +2,8 @@
 .form > * + * { margin-top:var(--sp-6); }
 .form__group { border:0; margin:0; padding:0; min-width:0; }
 .form__group__legend { margin-bottom:var(--sp-2); padding:0; }
-.form__group__input, .form__group__select { width:100%; display:flex; flex-direction:column; gap:var(--sp-2); }
+.form__group__input, .form__group__select { width:100%; min-width:0;
+  display:flex; flex-direction:column; gap:var(--sp-2); }
 /* message/hint pills hug their text rather than stretching in the column */
 .form__group__input > .badge, .form__group__select > .badge {
   align-self:flex-start; text-align:left; }
@@ -64,7 +65,7 @@
    Schluss — CD input.postcss:1-4,16); die Knopf-Rampe --control-h (44/48/52 bei
    xl/3xl) gilt nur für knopfartige Bedienelemente. Die frühere Vereinheitlichung
    (Item 2.5e) machte Felder auf 1280-1543-px-Laptops 4 px höher als das CD. */
-input, select, textarea { font:inherit; width:100%; min-height:var(--input-h); padding:var(--sp-2-5) var(--sp-4); line-height:1;
+input, select, textarea { box-sizing:border-box; font:inherit; width:100%; max-width:100%; min-height:var(--input-h); padding:var(--sp-2-5) var(--sp-4); line-height:1;
   border:var(--stroke-1) solid var(--color-border-input); border-radius:var(--radius-xs); background:var(--color-bg);
   color:var(--color-text); box-shadow:var(--shadow); }
 input::placeholder, textarea::placeholder { color:var(--color-placeholder); }
@@ -132,7 +133,7 @@ input[type='search']::-webkit-search-cancel-button:hover { background-color:var(
   background:var(--color-secondary-300); color:var(--color-secondary-200); }
 
 /* Select (select.postcss:1-78) */
-.select { position:relative; }
+.select { position:relative; width:100%; min-width:0; }
 .select select { box-sizing:border-box; -webkit-appearance:none; -moz-appearance:none; appearance:none;
   padding-right:var(--sp-20); }
 .select select::-ms-expand { display:none; }
@@ -149,7 +150,7 @@ select:where(.input--empty,[data-empty="true"]) + .select__icon { color:var(--co
 select:where(.input--error,[aria-invalid="true"]) + .select__icon { color:var(--color-error-700); border-left-color:var(--color-error-400); }
 .input--negative + .select__icon { color:var(--color-text-negative); border-left-color:var(--color-secondary-300); background:var(--color-secondary-500); }
 .input--negative:where(.input--error,[aria-invalid="true"]) + .select__icon { color:var(--color-error-200); border-left-color:var(--color-error-300); }   /* CD select.postcss:66-72 */
-.select--bare { width:auto; display:inline-block; }
+.select--bare { width:auto; max-width:100%; display:inline-block; }
 /* Der bare Select steht in Werkzeugleisten NEBEN anderen Bedienelementen, nicht
    als eigene Formularzeile — der Zeilenabstand von `.form > .form__group > * + *`
    (0,2,0) darf ihn nicht treffen. Dafür stand hier ein `!important`; eine

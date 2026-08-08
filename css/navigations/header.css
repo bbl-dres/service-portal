@@ -143,13 +143,12 @@
 @media (min-width:1024px){
   .top-header__shopping-cart-button-desktop { display:block; margin-right:var(--sp-3); margin-left:var(--sp-4); }
 }
-.shopping-cart__button { display:flex; align-items:center; cursor:pointer; color:var(--color-text); text-decoration:none; min-height:var(--control-h); }
+.shopping-cart__button { --control-icon-size:var(--sp-9); display:flex; align-items:center; cursor:pointer; color:var(--color-text); text-decoration:none; min-height:var(--control-h); }
 .shopping-cart__button:hover { color:var(--color-primary-600); text-decoration:none; }
 .shopping-cart__button-label { display:none; }
 @media (min-width:1024px){ .shopping-cart__button-label { display:block; margin:0 var(--sp-1-5) 0 0; } }
 .shopping-cart__icon-group { position:relative; display:flex; align-items:center; }
-.shopping-cart__icon { width:var(--sp-9); height:var(--sp-9); }
-@media (min-width:1024px){ .shopping-cart__icon { width:var(--sp-7); height:var(--sp-7); } }
+@media (min-width:1024px){ .shopping-cart__button { --control-icon-size:var(--sp-7); } }
 .shopping__cart-amount-indicator { position:absolute; top:-5px; left:20px; display:flex; align-items:center; justify-content:center;
   width:var(--sp-5); height:var(--sp-5); border-radius:var(--radius-full); background:var(--color-error); color:var(--color-text-negative); font-size:var(--fs-xs); line-height:1; }
 @media (min-width:1024px){ .shopping__cart-amount-indicator { left:15px; } }
@@ -226,7 +225,7 @@
    min-width + Zentrierung sind der portal-eigene Zusatz: min-height garantiert
    nur die HÖHE — ohne Polster wäre der icon-only-Schalter sonst schmaler als
    das 44px-Tippziel. */
-.search__button { display:inline-flex; align-items:center; justify-content:center; background:none; border:0; font:inherit;
+.search__button { --control-icon-size:var(--sp-9); display:inline-flex; align-items:center; justify-content:center; background:none; border:0; font:inherit;
   color:var(--color-text); min-height:var(--target-min); min-width:var(--target-min); padding:0; cursor:pointer; transition:color var(--duration-fast),opacity var(--duration); }
 @media (min-width:1024px){ .search__button { padding:var(--sp-1); } }
 @media (min-width:1280px){ .search__button { padding:var(--sp-2); } }
@@ -261,7 +260,7 @@
 .search__form input:focus { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
 /* CD search.postcss:120-123: ab lg bekommt das offene Kopffeld py-4. */
 @media (min-width:1024px){ .search__form input { padding-top:var(--sp-4); padding-bottom:var(--sp-4); } }
-.search__submit { position:absolute; right:0; top:0; bottom:0; width:var(--sp-12); background:none; border:0;
+.search__submit { --control-icon-size:var(--sp-6); position:absolute; right:0; top:0; bottom:0; width:var(--sp-12); background:none; border:0;
   cursor:pointer; color:var(--color-secondary-700); display:inline-flex; align-items:center; justify-content:center; }
 .search__submit:hover { color:var(--color-primary-600); }
 /* Das offene Feld lag quer über der Bundesmarke: es überlappte das Logo um 64px
@@ -285,6 +284,9 @@
   .body--search-is-open .logo { opacity:0; pointer-events:none; }
 }
 /* CD search.postcss:88-92 — auf dem Handy war die einzige Suchaffordanz eine 24px-Lupe */
-.search__button .icon { width:var(--sp-9); height:var(--sp-9); }
-@media (min-width:1024px){ .search__button .icon { width:var(--sp-7); height:var(--sp-7); } }
-.search__submit .icon { width:var(--sp-6); height:var(--sp-6); }
+/* Shared square-glyph recipe: cart and main search retain CD's 36 -> 28px
+   ramp; the submit glyph remains 24px. The control boxes provide centring. */
+:is(.shopping-cart__button, .search__button, .search__submit) .icon {
+  width:var(--control-icon-size); height:var(--control-icon-size); align-self:center; vertical-align:middle;
+}
+@media (min-width:1024px){ .search__button { --control-icon-size:var(--sp-7); } }

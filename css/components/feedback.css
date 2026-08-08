@@ -12,6 +12,7 @@
   padding:var(--sp-8) var(--sp-4); color:var(--color-error-text); background:var(--color-error-bg);
   border-radius:var(--radius-lg); text-align:left; }
 .empty--unavailable .icon { flex:none; }
+.empty--unavailable > span { min-width:0; overflow-wrap:anywhere; }
 
 /* Notifications (notification.postcss:5-58) */
 .notification { display:flex; position:relative; gap:var(--sp-3); align-items:flex-start; padding:var(--sp-2);

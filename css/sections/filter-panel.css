@@ -3,10 +3,11 @@
 .filter-group { border:0; margin:0 0 var(--sp-5); padding:0; }
 .filter-group__legend { margin:0 0 var(--sp-2); padding:0; color:var(--color-text);
   font-size:var(--text-sm); font-weight:var(--fw-bold); }
-.filter-check { display:flex; align-items:center; gap:var(--sp-2-5); min-height:var(--target-min);
+.filter-check { display:flex; align-items:flex-start; gap:var(--sp-2); min-width:0; min-height:var(--target-min);
   padding:var(--sp-1-5) var(--sp-1); margin:0 calc(-1 * var(--sp-1));
   border-radius:var(--radius-xs); color:var(--color-text); cursor:pointer; font-size:var(--text-sm); }
-.filter-check input { flex:none; width:var(--check-size); height:var(--check-size); margin:0; }
+.filter-check input { flex:none; width:var(--check-size); height:var(--check-size); margin:var(--sp-1) 0 0; }
+.filter-check > :last-child { min-width:0; overflow-wrap:anywhere; }
 .filter-check:hover { color:var(--color-primary-700); background:var(--color-secondary-100); }
 .filter-check:active { background:var(--color-secondary-200); }
 .filter-check:focus-within { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }

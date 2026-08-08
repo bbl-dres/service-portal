@@ -525,6 +525,7 @@ body.body--standalone-app { height:100dvh; min-height:0; overflow:hidden; paddin
 }
 
 @media (max-width:479.98px) {
+  .fpe-form-grid { grid-template-columns:minmax(0,1fr); }
   .fpe-brand > span, .fpe-header__divider { display:none; }
 }
 

@@ -250,3 +250,7 @@ code { font-family:var(--font-mono); }
 
 /* Grids — mobile-first, CD breakpoints and responsive gaps (grids.postcss:10,25-56) */
 .grid { display:grid; gap:var(--gap-responsive); }
+/* Grid tracks already use minmax(0,1fr), but their children otherwise retain
+   the min-content floor. Let long identifiers and locally scrollable tables
+   shrink with the track instead of widening a 320px page. */
+:where(.grid, .container--grid) > * { min-width:0; }

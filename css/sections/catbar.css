@@ -81,8 +81,9 @@
   /* Das Panel besitzt seinen Abstand nach UNTEN selbst (1.5rem = `mt-6`).
      Ergebnisblock und C.mountDataTable schliessen ohne eigenen oberen Rand an;
      so bleibt der Abstand für Katalogseiten und eingebettete Tabellen gleich. */
-  align-items:start; padding:var(--sp-4) var(--sp-5); margin:var(--sp-3) 0 var(--sp-6); background:var(--color-secondary-50);
-  border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius-lg); }   /* Randton wie .filter-panel — EIN Kartenrezept */
+  align-items:start; padding:var(--sp-4) var(--sp-5); margin:var(--sp-3) 0 var(--sp-6); background:var(--surface-bg-muted);
+  border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius);
+  box-shadow:var(--surface-elevation); }
 @media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-4); } }
 .catbar__panel .filter-group { margin:0; }

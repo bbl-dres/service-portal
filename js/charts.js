@@ -28,7 +28,10 @@ import { download, tableToCsv, tableToXls, svgToPng, copyText, fileSlug } from '
 // Custom Properties nicht mehr auflösen würden. Fallbacks entsprechen den Tokens.
 const cssVar = (name, fallback) => {
   if (typeof document === 'undefined') return fallback;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  // Skin overrides are body-scoped. The body's computed style includes both
+  // inherited root tokens and `.body--intranet` overrides.
+  const scope = document.body || document.documentElement;
+  const v = getComputedStyle(scope).getPropertyValue(name).trim();
   return v || fallback;
 };
 const paletteCache = { key: '' };

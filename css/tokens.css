@@ -106,7 +106,18 @@
      Töne für dieselbe Rolle (secondary-100 / border / secondary-200) — unter
      .body--intranet drifteten Grau- und Skin-Ränder zusätzlich auseinander
      (Design-Review C11). */
-  --panel-border:      var(--color-secondary-100);
+  /* Portal-local surface recipe. CD v1.0.5 exposes these scales through
+     Tailwind, not as CSS custom properties. These aliases name the portal's
+     outlined panel tier without pretending to be authoritative CD tokens.
+     CD cards and tables retain their documented square shadow-lg/shadow-md
+     shapes in their component rules. */
+  --surface-bg:        var(--color-bg);
+  --surface-bg-muted:  var(--color-bg-subtle);
+  --surface-border:    var(--color-secondary-100);
+  --surface-radius:    var(--radius-lg);
+  --surface-elevation: var(--shadow-sm);
+  /* Compatibility alias for route-lazy panels while they adopt the recipe. */
+  --panel-border:      var(--surface-border);
   --color-focus-ring:  #8655F6;   /* CD Bund focus purple-500 */
   --color-focus-ring-negative: #c4b5fd;   /* purple-300 — on dark chrome (global.postcss:78-85) */
 

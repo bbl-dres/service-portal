@@ -9,7 +9,6 @@
 .booking-quick__list { display:flex; flex-wrap:wrap; }
 
 @media (min-width:768px) {
-  .booking-bar { padding:var(--sp-6); }
   .booking-bar__grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .booking-bar__location { grid-column:1 / -1; }
   .booking-bar__submit { grid-column:1 / -1; justify-self:end; }
@@ -127,6 +126,11 @@
 .booking-done__summary .kv { margin:0; }
 .booking-done__summary p:last-child { margin:var(--sp-4) 0 0; }
 
+/* The search, favourites and completion panels share one responsive inset. */
+@media (min-width:768px){
+  .booking-bar, .booking-favs, .booking-done__summary { padding:var(--sp-6); }
+}
+
 @media (max-width:1023.98px){
   .booking-room { grid-template-columns:auto minmax(0,1fr); }
   .booking-room__actions { grid-column:1 / -1; justify-content:flex-start; }
@@ -142,7 +146,7 @@
   .booking-tabs .tab__control:first-child { padding-left:0; }
   .booking-tabs .tab__control::after { right:var(--sp-1); left:var(--sp-1); }
   .booking-tabs .tab__control:first-child::after { left:0; }
-  .booking-bar, .booking-favs { padding:var(--sp-4); }
+  .booking-bar, .booking-favs, .booking-done__summary { padding:var(--sp-4); }
   .booking-room { grid-template-columns:minmax(0,1fr); padding:var(--sp-4); }
   .booking-room__code { display:none; }
   .booking-room__actions .btn { flex:1 1 auto; justify-content:center; }

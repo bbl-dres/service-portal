@@ -55,12 +55,26 @@ ul,ol { margin:0; padding:0; }
    (global.postcss:75-86, ring-2 ring-purple-500, Versatz 0). Der 2px-Versatz
    hier ist bewusst — auf gefüllten Flächen deutlich sichtbarer; eine
    z-Anhebung braucht ein Outline nicht, es malt ohnehin über Nachbarn. */
-:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
-.top-bar :focus-visible, .footer-information :focus-visible, .footer-navigation :focus-visible,
-.mobile-menu .top-bar-navigation--mobile :focus-visible,
-.bg--secondary-500 :focus-visible, [class*="bg--secondary-6"] :focus-visible,
-[class*="bg--secondary-7"] :focus-visible, [class*="bg--secondary-8"] :focus-visible,
-[class*="bg--secondary-9"] :focus-visible { outline-color:var(--color-focus-ring-negative); }
+:focus-visible { outline:var(--stroke-2) solid var(--focus-ring-color, var(--color-focus-ring)); outline-offset:var(--stroke-2); }
+/* Focus colour belongs to the surface, not to each control. The inherited local
+   property keeps the federal purple on light surfaces and switches every dark
+   chrome descendant to CD's purple-300 negative ring. Keep this list aligned
+   with the actual dark backgrounds; a light card nested in one must reset the
+   property explicitly. */
+:where(.top-bar, .footer-information, .footer-navigation,
+  .mobile-menu .top-bar-navigation--mobile,
+  .viewer-toolbar--negative, .docviewer, .pf-lightbox, .modal__header,
+  .bg--secondary-500, [class*="bg--secondary-6"], [class*="bg--secondary-7"],
+  [class*="bg--secondary-8"], [class*="bg--secondary-9"]) {
+  --focus-ring-color:var(--color-focus-ring-negative);
+}
+/* Viewer chrome is dark, but its document paper, notifications, menus and the
+   light paging controls are not. Reset at each light island so inheritance can
+   never put the low-contrast negative ring on a pale surface. Metadata panels
+   intentionally stay dark and therefore keep the negative ring. */
+:where(.docviewer, .pf-lightbox) :where(
+  .docpage, .card, .notification, .action-menu__popup, .pf-lightbox__nav
+) { --focus-ring-color:var(--color-focus-ring); }
 /* Route-change focus targets are not interactive controls: move focus for screen
    readers (router.js focusHeading) without painting a ring for mouse users.
    #main-header gehört dazu: der Nach-oben-Knopf fokussiert ihn programmatisch

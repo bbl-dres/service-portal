@@ -19,11 +19,13 @@
 /* .ratio--* (ratio.postcss:5-33) exzidiert — null Konsumenten (Design-Review C10). */
 
 /* ---- Icons (monochrome SVGs via CSS mask -> currentColor) ---- */
-.icon { display:inline-block; width:auto; height:var(--sp-4); vertical-align:-.15em;
+/* CD keeps width:auto because SvgIcon renders an intrinsic SVG. Mask spans have
+   no intrinsic box, so the portal deliberately uses a square box. The eighth-em
+   baseline correction optically centres the default 16px icon in body text;
+   flex/grid contexts ignore vertical-align and retain their own alignment. */
+.icon { display:inline-block; width:var(--sp-4); height:var(--sp-4); vertical-align:-.125em;
   background-color:currentColor; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
   -webkit-mask-position:center; mask-position:center; -webkit-mask-size:contain; mask-size:contain; flex:none; }
-/* the mask needs an intrinsic box; width tracks height for the square CD icons */
-.icon { width:var(--sp-4); }
 .icon--sm   { width:var(--sp-3);  height:var(--sp-3); }
 .icon--base { width:var(--sp-4);    height:var(--sp-4); }
 .icon--md   { width:var(--sp-5); height:var(--sp-5); }

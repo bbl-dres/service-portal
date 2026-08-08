@@ -86,11 +86,14 @@ function showMapSpinner(container, map) {
 // Farben kommen aus dem Token-Layer (Muster wie js/charts.js): MapLibre-Paint-
 // Specs können kein `var(...)` tragen, also werden die Tokens zur Renderzeit
 // per getComputedStyle AUFGELÖST. So folgen Marker und Labels dem aktiven Skin
-// (rot/intranet/freebrand) statt fest auf Intranet-Blau zu stehen. Fallbacks
+// (rot/intranet) statt fest auf Intranet-Blau zu stehen. Fallbacks
 // entsprechen den Standardwerten in css/tokens.css.
 const cssVar = (name, fallback) => {
   if (typeof document === 'undefined') return fallback;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  // Skins live on <body>, so read the inherited computed value there. Reading
+  // <html> bypassed `.body--intranet` and silently returned the federal ramp.
+  const scope = document.body || document.documentElement;
+  const v = getComputedStyle(scope).getPropertyValue(name).trim();
   return v || fallback;
 };
 // `opts.focusPopup: false` zoomt auf das Objekt, öffnet aber KEIN Info-Popup.
