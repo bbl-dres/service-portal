@@ -116,5 +116,3 @@ export function wireHeroMosaic(root, openGallery, items, C, { param = 'bild' } =
     el.addEventListener('click', () => openGallery(items, Number(el.dataset.gallery) || 0, C, { param }));
   });
 }
-
-export default { heroMosaic, galleryItemsFrom, wireHeroMosaic };

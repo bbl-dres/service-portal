@@ -43,7 +43,7 @@ const CAPACITY_LABEL = { none: 'Ohne Arbeitsplätze', low: 'Grosszügig (ab 12 m
 
 // Administrative-unit colours are assigned alphabetically so the same unit
 // gets the same colour on every floor while the set remains the same.
-export function administrativeUnitColorSlots(spaces) {
+function administrativeUnitColorSlots(spaces) {
   const administrativeUnits = [...new Set(spaces.map((space) => space.occupierVe).filter(Boolean))].sort();
   const map = new Map();
   administrativeUnits.forEach((unit, index) => map.set(unit, ADMINISTRATIVE_UNIT_SLOTS[index % ADMINISTRATIVE_UNIT_SLOTS.length]));
@@ -164,5 +164,3 @@ export function wireFloorplan(root, onSelect) {
   }, { signal });
   return () => ctrl.abort();
 }
-
-export default { COLOR_MODES, floorplanSvg, floorplanLegend, wireFloorplan, administrativeUnitColorSlots };

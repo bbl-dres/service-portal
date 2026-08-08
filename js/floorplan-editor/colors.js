@@ -17,11 +17,10 @@ const color = (token, hex, cssVariable = '') => Object.freeze({
   swatch: token,
   hex,
   rgb: Number.parseInt(hex.slice(1), 16),
-  cssVariable,
   css: cssVariable ? `var(${cssVariable})` : hex,
 });
 
-export const FLOORPLAN_COLORS = Object.freeze({
+const FLOORPLAN_COLORS = Object.freeze({
   none: color('none', '#f7f8fa'),
   unassigned: color('unassigned', '#f1f3f5', '--fp-unassigned'),
   use: Object.freeze({
@@ -113,14 +112,13 @@ export function roomColorDescriptor(room = {}, mode = 'use', context = createCol
   const normalized = normalizeColorMode(mode);
   const resolved = roomColor(room, normalized, context);
   if (normalized === 'none') {
-    return { key: 'all', label: labels.all || 'Alle Räume', swatch: resolved.swatch, color: resolved };
+    return { key: 'all', label: labels.all || 'Alle Räume', swatch: resolved.swatch };
   }
   if (normalized === 'sia') {
     return {
       key: `sia-${room.sia || 'unassigned'}`,
       label: labels.sia || [room.sia, room.siaLabel].filter(Boolean).join(' · ') || 'Ohne SIA-Zuordnung',
       swatch: resolved.swatch,
-      color: resolved,
     };
   }
   if (normalized === 've') {
@@ -129,7 +127,6 @@ export function roomColorDescriptor(room = {}, mode = 'use', context = createCol
       key: occupier ? `administrative-unit-${occupier}` : 'administrative-unit-unassigned',
       label: labels.administrativeUnit || occupier || 'Nicht zugeteilt',
       swatch: resolved.swatch,
-      color: resolved,
     };
   }
   if (normalized === 'module') {
@@ -139,22 +136,11 @@ export function roomColorDescriptor(room = {}, mode = 'use', context = createCol
       key: assigned ? `module-${moduleId}` : 'module-unassigned',
       label: labels.module || (assigned ? `Multispace-Modul ${moduleId}` : 'Ohne Ausstattungsstandard'),
       swatch: resolved.swatch,
-      color: resolved,
     };
   }
   return {
     key: `use-${room.useLabel || room.group || 'unassigned'}`,
     label: labels.use || room.useLabel || 'Ohne Nutzung',
     swatch: resolved.swatch.replace(/^use-/, ''),
-    color: resolved,
   };
 }
-
-export default {
-  EDITOR_COLOR_MODES,
-  FLOORPLAN_COLORS,
-  normalizeColorMode,
-  createColorContext,
-  roomColor,
-  roomColorDescriptor,
-};

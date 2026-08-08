@@ -173,7 +173,6 @@ export function wireTabs(root, { onSelect, syncHash } = {}) {
   // scrolls only when necessary.
   const cur = root.querySelector('.tab__control--active');
   if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  return { activate };
 }
 
 // --- Pagination (pagination.postcss) -----------------------------------------

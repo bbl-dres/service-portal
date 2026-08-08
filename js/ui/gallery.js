@@ -328,5 +328,3 @@ export function openGallery(items, start, C, options = {}) {
   requestAnimationFrame(syncChrome);
   return close;
 }
-
-export default { openGallery, restoreGalleryFromQuery };

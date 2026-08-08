@@ -15,7 +15,6 @@
     },
     "description": "Karten-, Listen- und Detailansicht des Immobilienportfolios des Bundes.",
     "area": "buildings",
-    "subtitle": "Immobilienportfolio des Bundes",
     "long": "Das Liegenschafteninventar führt sämtliche Liegenschaften und Gebäude im Eigentum oder in der Verwaltung des Bundes. Führungssystem ist SAP RE-FX: die Wirtschaftseinheit als Bewirtschaftungsebene, darunter Gebäude, Grundstücke und Bemessungen. Das Portal stellt diesen Bestand mit Flächen, Nutzungen, Portfolio-Zuordnung und Standortangaben als Karte, Liste und Detailansicht bereit — Grundlage für Portfoliosteuerung und Reporting. Die Zustandsbewertung der Bauteile führt die Erhaltungsplanung (EHP), nicht das Inventar.",
     "access": {
       "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
@@ -65,7 +64,6 @@
     },
     "description": "Gemietete Flächen, Verträge und Grundrisse aus Sicht der mietenden Verwaltungseinheit.",
     "area": "buildings",
-    "subtitle": "Mietverhältnisse der Verwaltungseinheiten",
     "long": "Das Mietendenportal zeigt einer Verwaltungseinheit die Flächen, die sie beim BBL gemietet hat — nicht das Immobilienportfolio des Bundes, sondern den eigenen Ausschnitt daraus. Gemietet wird selten ein ganzes Gebäude, sondern ein Geschoss oder ein Geschossteil; die Einheit ist deshalb das Mietverhältnis. Je Mietverhältnis stehen Vertragsdaten, Flächen und Arbeitsplätze, die laufenden Vorgänge am Objekt sowie ein interaktiver Grundriss zur Verfügung, der sich nach Nutzung, SIA-416-Kategorie, Verwaltungseinheit oder Arbeitsplatzdichte einfärben lässt. Aus jedem Raum heraus lassen sich die passenden Dienstleistungen mit vorbelegtem Objekt starten.",
     "access": {
       "note": "Für Mietende der Verwaltungseinheiten sowie das Portfoliomanagement und den Objektbetrieb des BBL.",
@@ -116,7 +114,6 @@
     },
     "description": "Vereinfachte Leseansicht der Bauprojekte — Karte, Liste und Projektdetails.",
     "area": "buildings",
-    "subtitle": "Bauprojekte einsehen (Leseansicht)",
     "long": "Die Portalansicht zeigt die Neu-, Um- und Instandsetzungsprojekte des BBL als Karte, Galerie und Liste, je Projekt mit Standort, Projektphase nach SIA 112, Kosten, Terminen und der Ampelbewertung aus dem Projektreporting. Sie ist eine vereinfachte Leseansicht: erfasst, bewirtschaftet und freigegeben werden die Projektdaten ausschliesslich im Führungssystem SAP ePPM, das Portal schreibt nichts zurück. Für die Verwaltungseinheiten ist sie der Zugang zum Stand ihrer Bauvorhaben, ohne dass eine SAP-Berechtigung nötig ist.",
     "access": {
       "note": "Für BBL-Mitarbeitende und für die Verwaltungseinheiten als Kundschaft — durchgehend nur lesend.",
@@ -173,7 +170,6 @@
     },
     "description": "Bauwerksdokumentationen, Grundrisse und Pläne pro Gebäude durchsuchen und beziehen.",
     "area": "buildings",
-    "subtitle": "Bauwerksdokumentation",
     "long": "Die Bauwerksdokumentation bündelt Pläne, Dokumentationen und Nachweise pro Gebäude — von der Projektierung über die Realisierung bis zum Betrieb. Dokumente lassen sich nach Gebäude, Dokumenttyp und Baujahr suchen und beziehen. Umfang und Struktur richten sich nach der Weisung Bauwerksdokumentation.",
     "access": {
       "note": "Intern und für berechtigte externe Planende.",
@@ -222,7 +218,6 @@
     },
     "description": "Recherche- und Bezugsansicht auf die Mediathek Bauten: Fotos und Videos der Bundesbauten suchen, ansehen und beziehen. Die Verwaltung der Assets erfolgt im DAM.",
     "area": "buildings",
-    "subtitle": "Digital Asset Management",
     "long": "Diese Ansicht im Kundenportal erschliesst die Mediathek Bauten für die Recherche: Fotos und Videos der Bundesbauten suchen, ansehen und beziehen — aktuelle Aufnahmen ebenso wie historisches Archivmaterial. Zu jedem Medium sind Objektbezug, Datum, Urheberschaft und Nutzungsrechte erfasst; die Verwendung in Publikationen ist nur im Rahmen der angegebenen Rechte zulässig. Erfasst und verwaltet werden die Medien im Digital-Asset-Management der Mediathek Bauten.",
     "access": {
       "note": "Intern; einzelne Bestände sind öffentlich freigegeben.",
@@ -267,7 +262,6 @@
     },
     "description": "Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und die Felder, die sie tragen.",
     "area": "buildings",
-    "subtitle": "Geschäftsobjekte, Attribute und Systemtabellen",
     "long": "Der Metadaten Katalog Bauten beschreibt die Daten des Immobilienbereichs auf zwei Ebenen. Technologieneutral steht das Geschäftsobjekt: was ein Gebäude, ein Mietobjekt oder eine Wirtschaftseinheit fachlich ist, welche Attribute dazugehören, welche Norm sie belegt und wer sie verantwortet — unabhängig davon, in welchem System sie gerade liegen. Systemgebunden stehen daneben die Tabellen und Layer der Führungssysteme SAP RE-FX und GIS IMMO mit ihren Feldern. Verbunden sind beide Ebenen über die Abbildung am Attribut; sie beantwortet die Frage, an der Datenprojekte sonst hängenbleiben: welches Feld welchen Systems trägt diesen Begriff. Der Katalog ergänzt damit das «Datenbezug und API Verzeichnis», das die publizierten Datensätze nach DCAT-AP CH beschreibt — dort steht, was man beziehen kann, hier, was es bedeutet und wo es herkommt.",
     "access": {
       "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
@@ -316,7 +310,6 @@
     },
     "description": "Die Prozesse des Immobilienmanagements als navigierbare Prozesslandkarte — BPMN-Diagramme, Prozessschritte und Verantwortlichkeiten je Prozess.",
     "area": "buildings",
-    "subtitle": "Prozesslandkarte, BPMN-Diagramme und Prozessschritte",
     "long": "Die Prozessdokumentation Bauten erschliesst die Prozesse des Immobilienmanagements über die Prozesshierarchie: vom Prozessbereich über die Prozessgruppe bis zum einzelnen Prozess. Jeder Prozess trägt sein BPMN-Diagramm, die aus dem Diagramm gelesenen Prozessschritte mit Rollen sowie Verantwortlichkeiten, Status und die unterstützenden Systeme. Die Diagramme folgen BPMN 2.0 und werden direkt im Portal dargestellt — von der Akquisition über Vollzug und Bewirtschaftung bis zur Rückgabe.",
     "access": {
       "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
@@ -365,7 +358,6 @@
     },
     "description": "Auswertungen und Dashboards zu den Kennzahlen des BBL — Energie, Immobilien, Beschaffung, Personal und Logistik.",
     "area": "central",
-    "subtitle": "Auswertungen und Kennzahlen",
     "long": "Das Datenportal bündelt die Auswertungen des BBL zu Themenboards — Energie und Klima, Immobilien, Beschaffung, Personal und Logistik. Je Board stehen eine Kennzahlenzeile und Diagramme über einem gemeinsamen Jahresfilter zur Verfügung. Die Werte stammen aus den Führungssystemen und werden periodisch nachgeführt; das Portal ist eine Auswertungsansicht und keine Erfassungsoberfläche.",
     "access": {
       "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
@@ -410,7 +402,6 @@
     },
     "description": "Katalog der Datensätze und Schnittstellen des BBL — Inhalt, Bezugswege, Klassifizierung und Verantwortlichkeiten.",
     "area": "central",
-    "subtitle": "Datenbezug und Schnittstellen",
     "long": "Das Verzeichnis beschreibt die Datensätze des BBL nach DCAT-AP-CH: Inhalt und Abgrenzung, führendes System, Aktualisierungsintervall, Klassifizierung sowie Dateneigner und Datenverwalter. Je Datensatz sind die Bezugswege als Distributionen erfasst — Datei, Tabelle oder API. Das Verzeichnis sagt, welche Daten es gibt, wem sie gehören und wie man sie bezieht; die Daten selbst bleiben in den Führungssystemen.",
     "access": {
       "note": "Für alle Mitarbeitenden des BBL sowie berechtigte Nutzende der Verwaltungseinheiten.",
@@ -457,7 +448,6 @@
     },
     "description": "Objekte, Planstände, schreibgeschützte Grundrissvorschauen und Ausstattung der Arbeitsplatzplanung.",
     "area": "logistics",
-    "subtitle": "Portal für Arbeitsplatzobjekte und Planstände",
     "long": "Workspace Management ist der Prozesseinstieg für die Arbeitsplatzplanung. Das Portal erschliesst die relevanten Objekte über Galerie, Liste und Karte, zeigt Projekt- und Auftragskontext und führt die Register für Grundrisse und Ausstattung. Bestandsgrundrisse lassen sich darin schreibgeschützt einfärben, nach Räumen untersuchen, im Vollbild ansehen und drucken. Geometrie oder Ausstattung bearbeiten und Pläne prüfen bleiben Aufgaben eigenständiger Anwendungen mit derselben Datenbasis.",
     "access": {
       "note": "Für Mitarbeitende der angeschlossenen Verwaltungseinheiten, die Workspace-Objekte, Planstände oder Mengengerüste einsehen und Vorgänge starten.",
@@ -501,7 +491,6 @@
     },
     "description": "Flächen, Räume und Multispace-Ausstattung direkt im Grundriss verwalten, auswerten und planen.",
     "area": "logistics",
-    "subtitle": "Flächenmanagement im Grundriss",
     "long": "Der Plan-Editor ist die spezialisierte Arbeitsoberfläche für das Flächenmanagement. Er verbindet Gebäude, Geschosse und Räume mit Nutzungsarten, SIA-416-Flächen, Verwaltungseinheiten, Arbeitsplatzkapazitäten und Multispace-Modulen. Fachpersonen können den Flächenbestand im Grundriss suchen, vergleichen und auswerten, Raumattribute und Flächen bearbeiten sowie Ausstattungsobjekte aus dem Produktkatalog verorten. Im Feedback-Prototyp werden Entwürfe, Raumänderungen und simulierte Publikationen ausschliesslich im verwendeten Browser gespeichert. Planübernahme, DWG-/DXF-Prüfung und fachliche Freigabe gehören zur separaten Planprüfung.",
     "access": {
       "note": "Für angemeldete Fachpersonen der Arbeitsplatz- und Raumausstattungsplanung. Der Prototyp bildet noch keine produktive Schreibberechtigung ab.",
@@ -551,7 +540,6 @@
     },
     "description": "Sitzungs- und Besprechungsräume an den Standorten des Bundes reservieren.",
     "area": "logistics",
-    "subtitle": "Sitzungsräume finden und reservieren",
     "long": "Die Raumbuchung zeigt verfügbare Sitzungs- und Besprechungsräume an den angeschlossenen Standorten des Bundes. Mitarbeitende wählen Gebäude, Termin und Gruppengrösse und reservieren einen passenden Raum. Arbeitsplatzkapazitäten, Zonen und Desk-Sharing werden separat in Workspace Management geplant.",
     "access": {
       "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
@@ -598,7 +586,6 @@
     },
     "description": "Führungssystem der Bauprojekte — Erfassung, Freigabe und Controlling (Fachanwendung).",
     "area": "buildings",
-    "subtitle": "Führungssystem Bauprojekte",
     "long": "SAP ePPM (Enterprise Portfolio and Project Management) führt alle Neu-, Um- und Instandsetzungsprojekte des BBL von der Bedarfsmeldung bis zur Übergabe. Hier werden Projektstruktur, Phasen nach SIA 112, Kosten, Termine und Freigaben erfasst und bewirtschaftet; das System ist damit die führende Quelle für den Projektstatus im Reporting. Das Kundenportal zeigt daraus eine vereinfachte Leseansicht («Bauprojekte / EPPM») — die Bewirtschaftung bleibt in SAP ePPM.",
     "access": {
       "note": "Nur BBL-Personal: Projektleitende, Portfoliomanagement und Projektcontrolling.",
@@ -654,7 +641,6 @@
     },
     "description": "Geoinformationssystem Immobilien (Fachanwendung).",
     "area": "buildings",
-    "subtitle": "Geoinformationssystem",
     "long": "BBL GIS IMMO ist eine strategische Initiative des Bundesamtes für Bauten und Logistik, um Geoinformationssysteme für das Immobilienmanagement zu etablieren. Das System basiert auf der ArcGIS-Enterprise-Plattform von ESRI und bietet Werkzeuge, Vorlagen und Dienste zur Erstellung, Veröffentlichung und Verwaltung räumlicher Daten — Karten, Anwendungen und Services. Ziel ist es, räumliche Daten effizient zu nutzen, um die Qualität von Entscheidungsprozessen im Immobilienmanagement zu verbessern und datenbasierte Entscheide zu unterstützen.",
     "entries": [
       {
@@ -726,7 +712,6 @@
     },
     "description": "Planverwaltungstool (Fachanwendung).",
     "area": "buildings",
-    "subtitle": "Digitales Planarchiv",
     "long": "DALA ist das digitale Langzeitarchiv für Pläne und Bauakten des BBL auf Basis von IBM FileNET. Es sichert die revisionssichere Ablage archivwürdiger Unterlagen und dient als Quelle für die Bauwerksdokumentation. Neue Dokumente gelangen aus den Projektablagen ins Archiv.",
     "access": {
       "note": "Eingeschränkt auf Mitarbeitende mit Archivrolle.",
@@ -783,7 +768,6 @@
     },
     "description": "Gemeinsame Datenumgebung / Digital Twin (Fachanwendung).",
     "area": "buildings",
-    "subtitle": "Common Data Environment",
     "long": "Das CDE Bund ist die gemeinsame Datenumgebung für Bauprojekte: Planende, Unternehmer und Bauherrschaft arbeiten auf einem gemeinsamen Modell- und Dokumentenstand. Das CDE ist die verbindliche Ablage während der Projektlaufzeit; bei Projektabschluss werden die archivwürdigen Unterlagen in die Bauwerksdokumentation überführt.",
     "access": {
       "note": "Projektbeteiligte intern und extern, pro Projekt berechtigt.",
@@ -851,7 +835,6 @@
     },
     "description": "Erhaltungs- und Instandsetzungsplanung (Fachanwendung).",
     "area": "buildings",
-    "subtitle": "Erhaltungsplanung",
     "long": "Die Erhaltungsplanung bewertet den Zustand der Bauteile und leitet daraus den mittelfristigen Instandsetzungsbedarf ab. Sie verbindet Zustandsaufnahmen mit Kostenkennwerten und liefert die Grundlage für die Priorisierung im Investitionsprogramm.",
     "access": {
       "note": "Fachstellen Erhaltung und Portfoliomanagement.",
@@ -913,7 +896,6 @@
     },
     "description": "Flächen- und Belegungsmanagement (Fachanwendung).",
     "area": "buildings",
-    "subtitle": "Flächenmanagement",
     "long": "Das Flächenmanagement führt die Flächen der Bundesbauten nach Nutzungsart, Verwaltungseinheit und Arbeitsplatzzahl. Es liefert die Kennzahlen für die Flächenstandards nach der Weisung Neue Arbeitswelten und ist Grundlage für Flächenverrechnung und Belegungsplanung.",
     "access": {
       "note": "Flächenverantwortliche der Verwaltungseinheiten und Portfoliomanagement.",
@@ -969,7 +951,6 @@
     },
     "description": "Energiedaten der Liegenschaften (Fachanwendung).",
     "area": "buildings",
-    "subtitle": "Energiedatenmanagement",
     "long": "Das Energiedatenmanagement erfasst Verbräuche für Wärme, Strom und Wasser je Gebäude und Zählpunkt. Die Daten sind Grundlage für die Treibhausgasbilanz, das Energiereporting nach Vorbildfunktion des Bundes und die Wirkungskontrolle von Sanierungen.",
     "access": {
       "note": "Fachstellen Energie und Objektbetrieb.",
@@ -1025,7 +1006,6 @@
     },
     "description": "Monitoring Photovoltaikanlagen (Fachanwendung).",
     "area": "buildings",
-    "subtitle": "Photovoltaikanlagen",
     "long": "Die Anwendung führt die Photovoltaikanlagen auf Bundesbauten mit Standort, Leistung, Inbetriebnahme und Ertrag. Sie dient dem Ausbaumonitoring im Rahmen der Klimaziele und der Betriebsüberwachung der bestehenden Anlagen.",
     "access": {
       "note": "Fachstellen Energie und Objektbetrieb.",
@@ -1081,7 +1061,6 @@
     },
     "description": "Qualitätssicherung Bauprojekte (Fachanwendung).",
     "area": "buildings",
-    "subtitle": "Qualitätssicherung Bauprojekte",
     "long": "QualityGate prüft Projektdaten und Modelllieferungen automatisiert gegen die Vorgaben des BBL, bevor sie in die führenden Systeme übernommen werden. Geprüft werden Vollständigkeit, Struktur und Benennung — Abweichungen gehen als Prüfbericht an die Projektleitung zurück.",
     "access": {
       "note": "Projektleitende und Planende mit CDE-Zugang.",
@@ -1134,7 +1113,6 @@
     },
     "description": "Büromaterial, Mobiliar, Hausdienst- und IT-Verbrauchsmaterial bestellen.",
     "area": "logistics",
-    "subtitle": "Intranetshop des BBL",
     "long": "Über den Intranetshop beziehen Verwaltungseinheiten Büromaterial, Hausdienstmaterial, IT-Verbrauchsmaterial und Mobiliar aus dem Sortiment des BBL. Bestellungen laufen über die Kostenstelle der Verwaltungseinheit; Lieferung und Retouren erfolgen über die Logistik des BBL. Der Shop richtet sich an die Bundesverwaltung — amtliche Publikationen für ein breiteres Publikum laufen über den Publikationsshop.",
     "access": {
       "note": "Für bestellberechtigte Personen der Verwaltungseinheiten.",
@@ -1184,7 +1162,6 @@
     },
     "description": "Intranet und zentrales Einstiegsportal der Bundesverwaltung.",
     "area": "federal",
-    "subtitle": "Zentrales Portal der Bundesverwaltung",
     "long": "eGate ist das gemeinsame Einstiegsportal der Bundesverwaltung. Es bündelt personalisierte Informationen, Anwendungen und Dienste der Departemente und Ämter und ist für alle Mitarbeitenden der Bundesverwaltung der zentrale Startpunkt. eGate ist das Portal, nicht der Anmeldedienst: die Authentisierung und das Single Sign-on leisten die Identitätsdienste des Bundes (eIAM, AGOV).",
     "access": {
       "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
@@ -1238,7 +1215,6 @@
     },
     "description": "HR-Self-Service der Bundesverwaltung.",
     "area": "federal",
-    "subtitle": "Personalinformationssystem",
     "long": "InfoPers ist das Personalinformationssystem der Bundesverwaltung. Mitarbeitende sehen und pflegen dort ihre Personaldaten, Zeitsaldi und Abwesenheiten; Führungskräfte nutzen es für Bewilligungen und Auswertungen.",
     "access": {
       "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
@@ -1284,7 +1260,6 @@
     },
     "description": "Zentrales ERP-System der Bundesverwaltung für Finanzen, Personal, Logistik, Beschaffung und Immobilienmanagement.",
     "area": "federal",
-    "subtitle": "ERP-Kernsystem der Bundesverwaltung",
     "long": "SAP ERP unterstützt die durchgängige Abwicklung der bundesweiten Supportprozesse und stellt gemeinsame Stamm- und Bewegungsdaten für angebundene Fachanwendungen bereit. Für das BBL umfasst die Nutzung insbesondere Finanzen, Beschaffung, Logistik und Immobilienmanagement: SAP RE-FX führt unter anderem Wirtschaftseinheiten, Gebäude, Grundstücke, Bemessungen und Mietverhältnisse; SAP ePPM unterstützt die Bauprojekte. Die Erneuerung der zivilen SAP-Landschaft von SAP ECC auf SAP S/4HANA wird im Programm SUPERB umgesetzt. SUPERB ist damit das Transformationsprogramm; die hier beschriebene Anwendung ist das SAP-ERP-System für den laufenden Betrieb.",
     "access": {
       "note": "Rollenbasiert für Mitarbeitende mit SAP-Berechtigung.",
@@ -1336,7 +1311,6 @@
     },
     "description": "Personen- und Organisationsverzeichnis der Bundesverwaltung (ersetzt das PDF-Verzeichnis).",
     "area": "federal",
-    "subtitle": "Personen- und Organisationsverzeichnis",
     "long": "Das Admin-Directory ist das Verzeichnis der Personen, Organisationseinheiten und Standorte der Bundesverwaltung. Es liefert die Referenz für Zuständigkeiten — unter anderem für die Dateneigner und Datenverwalter im Datenbezug.",
     "access": {
       "note": "Für alle Mitarbeitenden der Bundesverwaltung.",
@@ -1392,7 +1366,6 @@
     },
     "description": "Broschüren, Formulare und amtliche Publikationen des Bundes bestellen und Lagerbestände abfragen (Warengruppe Publikationen).",
     "area": "logistics",
-    "subtitle": "Amtliche Publikationen bestellen",
     "long": "Über den Publikationsshop werden Broschüren, Formulare und amtliche Publikationen des Bundes bestellt. Der Shop weist die verfügbaren Lagerbestände aus; das BBL führt die Warengruppe Publikationen, die Lagerhaltung und den Versand. Anders als der Intranetshop richtet er sich nicht nur an die Verwaltungseinheiten.",
     "access": {
       "note": "Offen für die Verwaltungseinheiten; ein Teil des Sortiments ist öffentlich bestellbar.",
@@ -1441,7 +1414,6 @@
     },
     "description": "Umzüge, interne Transporte und Entsorgungsaufträge erfassen, disponieren und den Status verfolgen.",
     "area": "logistics",
-    "subtitle": "Umzüge, Transporte und Entsorgung",
     "long": "Über das Umzugs- und Transportmanagement melden Verwaltungseinheiten Büroumzüge, interne Transporte und Entsorgungsaufträge an. Erfasst werden Ausgangs- und Zielort, Umfang und Wunschtermin; die Disposition übernimmt der Hausdienst des BBL, der Auftragsstatus bleibt nachvollziehbar. Freiwerdendes Mobiliar geht wo möglich in die Möbelbörse statt in die Entsorgung.",
     "access": {
       "note": "Für die Verwaltungseinheiten sowie Mobiliar und Hausdienst des BBL.",
@@ -1491,7 +1463,6 @@
     },
     "description": "Kreislauf-Plattform für gebrauchtes Mobiliar: Möbel intern weiterverwenden, reservieren oder im Mobiliarverkauf für Bundesmitarbeitende beziehen.",
     "area": "logistics",
-    "subtitle": "Mobiliar wiederverwenden",
     "long": "Die Möbelbörse führt gebrauchtes Mobiliar aus Umzügen und Auflösungen und stellt es für die Wiederverwendung innerhalb der Bundesverwaltung bereit. Verwaltungseinheiten reservieren Stücke für den eigenen Bedarf; was nicht weiterverwendet wird, geht in den Mobiliarverkauf für Bundesmitarbeitende. Ziel ist die Verlängerung der Nutzungsdauer — Wiederverwendung vor Neubeschaffung.",
     "access": {
       "note": "Für die Verwaltungseinheiten; der Mobiliarverkauf steht Mitarbeitenden des Bundes offen.",
@@ -1539,7 +1510,6 @@
     },
     "description": "Kurieraufträge des BBL aufgeben, Sendungen verfolgen und Fahrzeuge des Fuhrparks reservieren.",
     "area": "logistics",
-    "subtitle": "Kurierdienst und Fahrzeuge",
     "long": "Der Kurierdienst des BBL befördert Sendungen zwischen den Standorten der Bundesverwaltung. Über die Anwendung werden Kurieraufträge aufgegeben und Sendungen verfolgt; zusätzlich lassen sich Fahrzeuge des BBL-Fuhrparks für Dienstfahrten reservieren. Für den externen Postversand grösserer Aussendungen ist die Produktion des BBL zuständig.",
     "access": {
       "note": "Für Mitarbeitende des BBL und beauftragte Verwaltungseinheiten.",
@@ -1584,7 +1554,6 @@
     },
     "description": "Druck-, Serienbrief- und Versandaufträge einreichen (Arbeitsvorbereitung AVOR, Digital Druck, Versenden).",
     "area": "logistics",
-    "subtitle": "Druck, Serienbriefe und Versand",
     "long": "Die Produktion des BBL übernimmt Digitaldruck, Serienbriefe und den Versand für die Bundesverwaltung. Aufträge gehen über die Arbeitsvorbereitung (AVOR) ein, die Umfang, Material und Termin klärt und den Auftrag einplant. Abgedeckt sind Kleinserien bis zu grossen Aussendungen mit Adressaufbereitung und Postaufgabe.",
     "access": {
       "note": "Für die Verwaltungseinheiten; Auftragsannahme und Beratung über die Arbeitsvorbereitung (AVOR).",
@@ -1637,7 +1606,6 @@
     },
     "description": "Reinigungs-, Hausdienst- und Kleinaufträge bestellen und beauftragen (ergänzt die Störungsmeldung).",
     "area": "logistics",
-    "subtitle": "Reinigung, Hausdienst und Kleinaufträge",
     "long": "Über das Facility-Auftragssystem bestellen Verwaltungseinheiten Leistungen des Objektbetriebs: Sonderreinigungen, Hausdienstarbeiten sowie Klein- und Reparaturaufträge am Gebäude. Es ergänzt die Störungsmeldung — dort wird ein Mangel gemeldet, hier eine Leistung beauftragt. Aufträge werden über den Objektbetrieb des jeweiligen Standorts disponiert.",
     "access": {
       "note": "Für die Verwaltungseinheiten sowie den Objektbetrieb des BBL.",
@@ -1690,7 +1658,6 @@
     },
     "description": "Fahnenmanagement, Blumendekorationen und Ausstattung für Anlässe des Bundes planen und bestellen.",
     "area": "logistics",
-    "subtitle": "Fahnen, Dekoration und Anlässe",
     "long": "Das BBL stattet Anlässe des Bundes aus: Beflaggung der Bundesbauten, Blumen- und Raumdekoration sowie Mobiliar und Material für Empfänge und Konferenzen. Über die Anwendung werden Bedarf, Ort und Termin gemeldet; die Logistik des BBL stellt bereit, liefert und baut zurück. Die Beflaggung folgt den Vorgaben des Bundes zu Anlass und Rangordnung.",
     "access": {
       "note": "Für die Verwaltungseinheiten; Bereitstellung durch Mobiliar und Hausdienst des BBL.",
@@ -1738,7 +1705,6 @@
     },
     "description": "Lagerbestände, Warengruppen und Nachschub für Büro- und Hausdienstmaterial bewirtschaften.",
     "area": "logistics",
-    "subtitle": "Lager und Nachschub",
     "long": "Die Lager- und Materialwirtschaft führt die Bestände des BBL an Büromaterial, Hausdienstmaterial und Mobiliar. Sie bewirtschaftet Warengruppen, Mindestbestände und Nachschub und ist damit die Grundlage für die Lieferfähigkeit des Intranetshops. Bestellungen der Verwaltungseinheiten laufen nicht hier, sondern über den Shop.",
     "access": {
       "note": "Nur BBL-Personal: Lagerbewirtschaftung und Einkauf.",
@@ -1783,7 +1749,6 @@
     },
     "description": "Amtliches Register aller Gebäude und Wohnungen der Schweiz — Quelle des EGID, mit dem auch die Bundesbauten identifiziert werden.",
     "area": "federal",
-    "subtitle": "Gebäude, Wohnungen und ihre eidgenössischen Identifikatoren",
     "long": "Das eidgenössische Gebäude- und Wohnungsregister führt die Grunddaten aller Gebäude und Wohnungen der Schweiz — Bauprojekte, Gebäude, Wohnungen, Gebäudeeingänge und Strassen. Jedes Gebäude trägt darin einen eidgenössischen Gebäudeidentifikator (EGID), jede Wohnung einen Wohnungsidentifikator (EWID). Geführt wird das Register vom Bundesamt für Statistik zusammen mit den Bau- und Meldestellen von Bund, Kantonen und Gemeinden; die Nachführung läuft über die Webanwendung housing-stat.ch. Für das BBL ist es die Quelle der Gebäudeidentität: der EGID verbindet den eigenen Liegenschaftsbestand mit den Geodaten des Bundes und mit jeder anderen Stelle, die dasselbe Gebäude führt. Im Metadaten Katalog ist er als Attribut des Geschäftsobjekts «Gebäude» erfasst.",
     "access": {
       "note": "Die Abfrage einzelner Gebäude- und Wohnungsdaten ist öffentlich; die Erfassung und Nachführung läuft über die zuständigen kommunalen und kantonalen Meldestellen.",
@@ -1832,7 +1797,6 @@
     },
     "description": "Amtliches Register aller Unternehmen und Arbeitsstätten mit wirtschaftlicher Tätigkeit in der Schweiz — Adressregister der Bundesstatistik.",
     "area": "federal",
-    "subtitle": "Unternehmen, Arbeitsstätten und die BUR-Nummer",
     "long": "Das Betriebs- und Unternehmensregister des Bundesamts für Statistik enthält alle örtlichen Einheiten und Unternehmen, die in der Schweiz eine wirtschaftliche Tätigkeit ausüben. Es dient dem BFS als Adressregister für die statistischen Erhebungen bei Unternehmen und Arbeitsstätten; weitere Ämter der Bundesverwaltung und zahlreiche Kantone nutzen es für statistische und administrative Zwecke. Jede Betriebsstätte trägt eine achtstellige BUR-Nummer, die über «MyUID» im UID-Register abrufbar ist; über Name und Adresse lässt sich eine Arbeitsstätte durch Verknüpfung mit dem Gebäude- und Wohnungsregister meist exakt verorten. Für das BBL ist das Register die Referenz, wenn ein Geschäftspartner — Lieferantin, Vermieter oder Kundin — eindeutig identifiziert werden muss.",
     "access": {
       "note": "Der Registerzugang ist Behörden vorbehalten; die eigene BUR-Nummer können Unternehmen im UID-Register abrufen.",
@@ -1882,7 +1846,6 @@
     },
     "description": "Öffentliches Verzeichnis der Datensammlungen, Schnittstellen und Codelisten der öffentlichen Verwaltung — Bund, Kantone und Gemeinden.",
     "area": "federal",
-    "subtitle": "Datenkatalog der öffentlichen Verwaltung",
     "long": "Die Interoperabilitätsplattform I14Y beschreibt, welche Daten die öffentliche Verwaltung führt und wie man sie bezieht. Katalogisiert werden Datensätze, elektronische Schnittstellen, organisationsübergreifend nutzbare Konzepte und Codelisten sowie Behördenleistungen — von Bund, Kantonen und Gemeinden. Die Plattform steht seit Sommer 2021 zur Verfügung und wird im Auftrag des Bundes vom Bundesamt für Statistik zusammen mit dem Bundesamt für Informatik und Telekommunikation entwickelt und betrieben. Für das BBL ist sie zweierlei: Bezugsquelle für Referenzdaten anderer Stellen und Veröffentlichungsweg für eigene Datensätze, die sich zur Mehrfachnutzung eignen. Das portalinterne Verzeichnis «Datenbezug und API Verzeichnis» folgt demselben Metadatenmodell (DCAT-AP CH) — ein Eintrag bleibt damit übertragbar.",
     "access": {
       "note": "Der Katalog ist öffentlich und ohne Anmeldung einsehbar.",
@@ -1932,7 +1895,6 @@
     },
     "description": "Terminologiedatenbank der Bundesverwaltung — Fachbegriffe der Rechts- und Verwaltungssprache in den vier Landessprachen und auf Englisch.",
     "area": "federal",
-    "subtitle": "Terminologie der Rechts- und Verwaltungssprache",
     "long": "TERMDAT führt den Fachwortschatz der Bundesverwaltung in den vier Landessprachen — Deutsch, Französisch, Italienisch, Rätoromanisch — sowie zunehmend auf Englisch. Erfasst sind die Rechts- und Verwaltungsterminologie und die Begriffe zahlreicher Sachgebiete, darunter Bau, Energie, Finanzen, Informatik, Umwelt und Verkehr. Zu den Benennungen kommen Definitionen, Anmerkungen und Quellen, dazu die offiziellen Bezeichnungen und Abkürzungen schweizerischer und internationaler Behörden und Organisationen sowie die Titel und Abkürzungen der Bundeserlasse. Betrieben wird die Datenbank von der Sektion Terminologie der Zentralen Sprachdienste der Bundeskanzlei. Sie ist der Beleg, wenn eine Benennung amtlich sein muss — für Weisungen, Formulare und Übersetzungen ebenso wie für die Beschriftungen einer Fachanwendung.",
     "access": {
       "note": "Frei zugänglich, ohne Anmeldung und ohne Konto.",
@@ -1981,7 +1943,6 @@
     },
     "description": "Kartenviewer und Geodienste des Bundes — Landeskarten, Luftbilder, Höhenmodelle und über tausend Fachdatensätze.",
     "area": "federal",
-    "subtitle": "Karten, Luftbilder und Geodienste der Schweiz",
     "long": "geo.admin.ch ist die Plattform für Geoinformationen, Geodaten und Geodienste der Bundesverwaltung; betrieben wird sie vom Bundesamt für Landestopografie swisstopo. Der Kartenviewer map.geo.admin.ch kombiniert Karten, Luftbilder und Fachdaten frei wählbar, misst Strecken und Flächen, vergleicht aktuelle mit historischen Aufnahmen und lässt sich als Link teilen, drucken oder mobil offline nutzen; seit Mai 2026 umfasst das Portal 1000 Datensätze. Für Fachanwendungen stehen dieselben Daten als Dienste bereit — WMS und WMTS für Karten, REST-Schnittstellen für Suche, Adressen und Höhen, die STAC-API für Datendownloads —, dokumentiert auf docs.geo.admin.ch. Das Kundenportal nutzt beides selbst: die Objektkarten des Liegenschafteninventars liegen auf den swisstopo-Kacheln, und die Adresssuche der Gebäudeerfassung fragt den SearchServer von geo.admin.ch. Die Bundesbauten selbst sind dort allerdings nicht als Ebene geführt — dafür ist dieses Portal zuständig.",
     "access": {
       "note": "Kartenviewer und Geodienste sind öffentlich; die Geobasisdaten von swisstopo stehen als Open Government Data zur Verfügung.",
@@ -2045,7 +2006,6 @@
     },
     "description": "Metadatenkatalog der Schweizer Geodaten — wer welche Geodaten führt, wie aktuell sie sind und wie man sie bezieht.",
     "area": "federal",
-    "subtitle": "Schweizer Katalog der Geometadaten",
     "long": "In geocat.ch beschreiben Bundesstellen, Kantone, Gemeinden und private Betreiber die Metadaten ihrer Geodaten: Inhalt und Abgrenzung, Aktualität, Zuständigkeit, Nutzungsbedingungen und Bezugswege. Der Katalog wird von der Abteilung Koordination, Geo-Information und Services (KOGIS) des Bundesamts für Landestopografie swisstopo im Auftrag des Koordinationsorgans für Geoinformation des Bundes (GKG) betrieben, läuft seit 2004 und beruht auf der Open-Source-Anwendung GeoNetwork. Beschrieben wird nach dem Schweizer Metadatenmodell GM03 beziehungsweise dem Profil ISO 19139_CHE — den nationalen Ausprägungen der internationalen Norm ISO 19115. Die Einträge speisen weitere Portale: map.geo.admin.ch und opendata.swiss lesen ihre Metadaten von hier. Fachlich ist geocat.ch für Geodaten das, was das portalinterne «Datenbezug und API Verzeichnis» für die Datensätze des BBL ist.",
     "access": {
       "note": "Der Katalog ist öffentlich; für das Publizieren eigener Metadaten braucht es ein Konto.",
@@ -2099,7 +2059,6 @@
     },
     "description": "Gemeinsame Ausschreibungsplattform von Bund, Kantonen und Gemeinden — Ausschreibungen, Anbieterfragen, elektronische Angebote und Zuschläge.",
     "area": "federal",
-    "subtitle": "Ausschreibungsplattform des öffentlichen Beschaffungswesens",
     "long": "simap.ch ist die gemeinsame Plattform des öffentlichen Beschaffungswesens von Bund, Kantonen und Gemeinden; getragen wird sie vom Verein simap.ch, dem seit 2011 alle Kantone und der Bund angehören. Beschaffungsstellen veröffentlichen dort ihre Ausschreibungen samt Unterlagen, beantworten Anbieterfragen und publizieren die Zuschläge; Anbieterinnen und Anbieter suchen Ausschreibungen, abonnieren Benachrichtigungen, laden die Unterlagen herunter und reichen ihre Angebote elektronisch ein. Das BBL publiziert als zentrale Beschaffungsstelle des Bundes seine Ausschreibungen über simap.ch — insbesondere die Verfahren im Staatsvertragsbereich (WTO). Die Plattform wurde per 1. Juli 2024 vollständig erneuert.",
     "access": {
       "note": "Ausschreibungen und Zuschläge sind öffentlich einsehbar; für Angebote und Publikationen braucht es ein Konto.",

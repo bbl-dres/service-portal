@@ -52,7 +52,7 @@ export function requestNavigationPermission(to = location.hash || '#/', source =
 }
 
 /** Register a synchronous route-leave guard. Returns an idempotent disposer. */
-export function registerNavigationBlocker(blocker) {
+function registerNavigationBlocker(blocker) {
   if (typeof blocker !== 'function') throw new TypeError('Navigation blocker must be a function.');
   navigationBlockers.add(blocker);
   let active = true;
@@ -64,13 +64,13 @@ export function registerNavigationBlocker(blocker) {
 }
 
 /** Replace query/route state without dispatching and keep guard restoration current. */
-export function replaceRoute(href) {
+function replaceRoute(href) {
   history.replaceState(history.state, '', href);
   rememberCurrentRoute();
 }
 
 /** Navigate through the same blocker path used by route links. */
-export function navigateRoute(href, source = 'programmatic') {
+function navigateRoute(href, source = 'programmatic') {
   const target = String(href || '');
   if (!target || target === location.hash) return true;
   if (!requestNavigationPermission(target, source)) return false;
@@ -109,7 +109,7 @@ function setActiveNav(base) {
 // Does a dropdown entry describe the route we are on? The header is rendered
 // once, so this has to be recomputed on every dispatch — otherwise the drawer
 // keeps highlighting whatever was open when the page first loaded.
-export function matchesSubNav(childHref, currentHash) {
+function matchesSubNav(childHref, currentHash) {
   const split = (h) => {
     const [path, qs] = String(h || '').split('?');
     return { path, params: new URLSearchParams(qs || '') };
@@ -445,7 +445,7 @@ async function dispatch() {
       return;
     }
     if (mod.layout === 'standalone') document.body.classList.add('body--standalone-app');
-    const render = mod.default || mod.render;
+    const render = mod.default;
     if (typeof render !== 'function') throw new Error('Modul exportiert kein render()');
     // Deferred datasets (H4): the module declares what it will read through
     // `needs` and receives it BEFORE first access. A resolver may derive the list
@@ -527,8 +527,3 @@ export function initRouter() {
 // `dispatch()` is async (dynamic import), and callers that set focus afterwards
 // must wait or the router's focus step will overwrite theirs moments later.
 export function redraw() { return dispatch(); }
-
-export default {
-  initRouter, NAV, redraw, navigateRoute, requestNavigationPermission,
-  registerNavigationBlocker, replaceRoute,
-};

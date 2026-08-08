@@ -77,7 +77,7 @@ function categoryHelpers(categories) {
     const ids = descendants.get(catId) || [catId];
     return ids.includes(p.category) || ids.includes(p.subcategory);
   };
-  return { flat, byId, descendants, label, contains };
+  return { byId, label, contains };
 }
 function cartLines(core) {
   const products = core.shopProducts();

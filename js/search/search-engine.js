@@ -27,7 +27,7 @@ export function fold(s) {
 // belong here. Domain vocabulary comes from the data itself (see `extra` on
 // index rows), because a hand-maintained list inevitably drifts. Keys and values
 // are already folded; they are compared directly rather than passed to fold().
-export const COLLOQUIAL = {
+const COLLOQUIAL = {
   // Building services and defects → fault report
   'heizung': ['stoerung', 'reparatur'], 'lueftung': ['stoerung'], 'klima': ['stoerung'],
   'kaputt': ['stoerung', 'reparatur'], 'defekt': ['stoerung', 'reparatur'],
@@ -83,7 +83,7 @@ export const COLLOQUIAL = {
 // The length threshold (remainder ≥ 4 characters) prevents short words from
 // being stripped: «bern» keeps its n and «haus» keeps its s.
 const SUFFIXES = ['ungen', 'ung', 'eren', 'ern', 'end', 'en', 'er', 'es', 'em', 'n', 's', 'e'];
-export function stem(w) {
+function stem(w) {
   for (const s of SUFFIXES) {
     if (w.length - s.length >= 4 && w.endsWith(s)) return w.slice(0, -s.length);
   }
@@ -179,7 +179,7 @@ function bestField(row, variants) {
 // did the opposite, making «heizung» lose the fault report as soon as any record
 // contained the literal word.
 const SYNONYM_FACTOR = 0.45;
-export function tokenScore(row, token) {
+function tokenScore(row, token) {
   const direct = bestField(row, token.variants);
   if (direct) return direct;
   if (!token.syn || !token.syn.length) return 0;
@@ -188,7 +188,7 @@ export function tokenScore(row, token) {
 
 // Score a prepared row against a tokenised query. A return value of 0 means no
 // match (at least one term is entirely absent).
-export function score(row, tokens, phrase) {
+function score(row, tokens, phrase) {
   if (!tokens.length) return 0;
   let sum = 0;
   for (const token of tokens) {

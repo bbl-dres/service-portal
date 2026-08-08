@@ -54,9 +54,4 @@ function toggle(kind, id) {
   return at < 0;
 }
 
-function count(kind) {
-  return list(kind).length;
-}
-
-export const favorites = { list, has, toggle, count };
-export default favorites;
+export const favorites = { list, has, toggle };

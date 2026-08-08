@@ -83,5 +83,3 @@ export function loadAppStyles(appName) {
   if (!keys) return Promise.reject(new Error(`Keine CSS-Zuordnung für Anwendung: ${appName}`));
   return Promise.all(keys.map((key) => loadSheet(byKey.get(key))));
 }
-
-export const appStyleKeys = (appName) => [...(APP_SHEETS[appName] || [])];

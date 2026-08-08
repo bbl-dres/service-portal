@@ -91,5 +91,3 @@ export function withStorageLock(key, callback, { ttl = 2000 } = {}) {
     }
   }
 }
-
-export default { readJSON, readJSONResult, writeJSON, remove, withStorageLock };

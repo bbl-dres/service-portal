@@ -9,7 +9,7 @@
 // Country codes in the federal portfolio. Deliberately a short list rather than
 // a complete ISO table: these are the countries where the Confederation owns
 // buildings.
-export const COUNTRY_NAMES = {
+const COUNTRY_NAMES = {
   CH: 'Schweiz', DE: 'Deutschland', US: 'USA',
   JP: 'Japan', BR: 'Brasilien', AU: 'Australien',
 };
@@ -37,8 +37,6 @@ export const APP_AREAS = [
   { key: 'central',   label: 'Daten und Auswertungen',  navLabel: 'Daten und Auswertungen' },
   { key: 'federal',   label: 'Bundesverwaltung',        navLabel: 'Fachanwendungen Bundesverwaltung' },
 ];
-export const appAreaLabel = (key) => (APP_AREAS.find((a) => a.key === key) || {}).navLabel || key;
-
 // Target audiences (`audience` in services.json/applications.json) have been an
 // ARRAY of identifiers since August 2026: an offering for both groups carries
 // both values instead of the pseudo-value `both`, and the labels are now simply
@@ -46,7 +44,7 @@ export const appAreaLabel = (key) => (APP_AREAS.find((a) => a.key === key) || {}
 // «Intern/Extern» wording as well). The list itself — identifier, wording and
 // badge colour — lives in data/reference-data.json (`audiences`); only its
 // lookups live here.
-export const audiences = (core) => core.ref().audiences || [];
+const audiences = (core) => core.ref().audiences || [];
 export const audienceOptions = (core) => audiences(core).map((a) => ({ value: a.id, label: a.label }));
 export const audienceLabel = (core, id) => refLabel(core, 'audiences', id);
 // Label row for cards, lists and detail headers: one badge per audience in
@@ -63,7 +61,7 @@ export const audienceTags = (core, C, audience) => {
  * `classificationTiers` …), while `idKey` is the identifier field. Without a
  * match, the identifier itself is returned: visible, but not broken.
  */
-export function refLabel(core, listName, id, idKey = 'id') {
+function refLabel(core, listName, id, idKey = 'id') {
   const list = core.ref()[listName] || [];
   const hit = list.find((x) => x[idKey] === id);
   return hit ? hit.label : id;
@@ -72,5 +70,3 @@ export function refLabel(core, listName, id, idKey = 'id') {
 export const statusLabel = (core, id) => refLabel(core, 'statusModel', id);
 export const projectStatusLabel = (core, id) => refLabel(core, 'projectStatuses', id);
 export const domainLabel = (core, key) => refLabel(core, 'domains', key, 'key');
-
-export default { COUNTRY_NAMES, countryName, businessEntityIdFromBblId, APP_AREAS, appAreaLabel, audiences, audienceOptions, audienceLabel, audienceTags, refLabel, statusLabel, projectStatusLabel, domainLabel };

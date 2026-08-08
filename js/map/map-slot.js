@@ -58,5 +58,5 @@ export function createMapSlot() {
     return created;
   }
 
-  return { mount, free, get: () => map };
+  return { mount, free };
 }

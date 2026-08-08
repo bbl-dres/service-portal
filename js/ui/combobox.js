@@ -122,10 +122,7 @@ export function createListboxController({
 
   return {
     close,
-    highlight,
     setItems,
-    get activeIndex() { return active; },
-    get items() { return items; },
     destroy() {
       clearTimeout(blurTimer);
       input.removeEventListener('keydown', onKeydown);
@@ -141,5 +138,3 @@ export function createListboxController({
     },
   };
 }
-
-export default createListboxController;

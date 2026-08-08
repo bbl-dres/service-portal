@@ -162,7 +162,7 @@ console.log('■ Own-property favorite maps');
 values.set('bbl_favorites_v1', '{"__proto__":["proto-id"],"toString":["string-id"]}');
 const { favorites } = await import('../js/core/favorites.js');
 check(favorites.has('__proto__', 'proto-id') && favorites.has('toString', 'string-id')
-  && favorites.count('constructor') === 0,
+  && favorites.list('constructor').length === 0,
   'favorite kinds remain data, never object prototypes');
 
 console.log('■ Process storage and malformed records');

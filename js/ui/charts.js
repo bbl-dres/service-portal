@@ -643,5 +643,3 @@ export function wireChartMenus(root) {
     toast('Für dieses Diagramm nicht verfügbar.', 'warning', 'WarningCircle');
   });
 }
-
-export default { chart, wireCharts, wireChartMenus, renderSvg, paintCharts };

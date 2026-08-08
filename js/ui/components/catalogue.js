@@ -451,9 +451,8 @@ export function catalogueState(query, { base, perPage = 12, sortOpts = [], defau
 //   onReset   replaces default onChange after the full filter reset
 //             (explorers additionally reset tree selection here)
 //
-// Returns { updateFilterBadge, syncFilterChecks, clearFilters, destroy } for
-// callers that manipulate panel state themselves (URL restoration). `destroy`
-// belongs in ctx.onUnmount and notably discards the delayed search.
+// Returns { clearFilters, destroy } for callers that reset the panel externally.
+// `destroy` belongs in ctx.onUnmount and notably discards the delayed search.
 export function wireCatalogueState(mount, {
   formId, inputId, sortId = '', filterToggleId = '', panelId = '', resetId = '',
   activeFiltersId = '', state, onChange, onRemove, onReset, debounceMs = 250,
@@ -534,7 +533,7 @@ export function wireCatalogueState(mount, {
     if (timer !== null) clearTimeout(timer);
     timer = null;
   };
-  return { updateFilterBadge, syncFilterChecks, clearFilters, destroy };
+  return { clearFilters, destroy };
 }
 
 // Canonical filter-panel reset — ONE anatomy for 13 panels that previously

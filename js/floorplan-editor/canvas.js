@@ -120,7 +120,7 @@ function measurementMarkup(measurement = {}) {
     ? `<text x="${last.x + 30}" y="${last.y - 30}">${esc(value)}</text>` : ''}</g>`;
 }
 
-export function distanceMetres(points = []) {
+function distanceMetres(points = []) {
   let units = 0;
   for (let index = 1; index < points.length; index++) {
     units += Math.hypot(points[index].x - points[index - 1].x, points[index].y - points[index - 1].y);
@@ -128,7 +128,7 @@ export function distanceMetres(points = []) {
   return units / 100;
 }
 
-export function areaSquareMetres(points = []) {
+function areaSquareMetres(points = []) {
   if (points.length < 3) return 0;
   let twiceArea = 0;
   points.forEach((point, index) => {
@@ -320,14 +320,6 @@ export function screenDeltaToPlan(inverseMatrix, clientDx, clientDy) {
 }
 
 /**
- * Convert a pointer movement to plan units using the SVG's actual transform.
- * Unlike element-width ratios, this remains correct with xMidYMid letterboxing.
- */
-export function clientDeltaToPlan(svg, clientDx, clientDy) {
-  return screenDeltaToPlan(inverseScreenMatrix(svg), clientDx, clientDy);
-}
-
-/**
  * Apply screen-space grab panning to a gesture's starting camera. Keeping the
  * inverse matrix fixed for the gesture makes direction and speed independent
  * of redraw timing or a ResizeObserver firing during the drag.
@@ -395,12 +387,3 @@ export function renderEditorSvg({ floor, rooms = [], placements = [], selected =
     ${keyboardCursorMarkup(keyboardCursor)}
   </svg>`;
 }
-
-export default {
-  EDITOR_COLOR_MODES, renderEditorSvg, fitCamera, zoomCamera, panCamera,
-  fitCameraToRect, cameraWithViewportAspect, resizeCameraToViewport, scaleBar,
-  clientToPlan, clientDeltaToPlan, inverseScreenMatrix,
-  screenPointToPlan, screenDeltaToPlan, panCameraFromScreenDelta,
-  containingRoom, clampPlacement,
-  distanceMetres, areaSquareMetres,
-};

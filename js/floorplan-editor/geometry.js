@@ -6,7 +6,7 @@ const toFinite = (value) => {
   return Number.isFinite(number) ? number : null;
 };
 
-export function placementFootprintCorners(placement = {}) {
+function placementFootprintCorners(placement = {}) {
   const x = toFinite(placement.x);
   const y = toFinite(placement.y);
   const rawWidth = toFinite(placement.width);
@@ -66,9 +66,3 @@ export function placementFootprintInsideFloor(placement, floor, epsilon = 1e-6) 
     && bounds.maxX <= floorWidth + tolerance
     && bounds.maxY <= floorHeight + tolerance;
 }
-
-export default {
-  placementFootprintCorners,
-  placementFootprintBounds,
-  placementFootprintInsideFloor,
-};

@@ -304,5 +304,3 @@ export function openDocumentViewer(doc, siblings, options = {}) {
   requestAnimationFrame(() => { try { stage.focus(); } catch { /* No-op. */ } });
   return close;
 }
-
-export default openDocumentViewer;

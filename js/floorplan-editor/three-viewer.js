@@ -1069,5 +1069,3 @@ export function createFloorplanThreeViewer({
     },
   };
 }
-
-export default { createFloorplanThreeViewer };

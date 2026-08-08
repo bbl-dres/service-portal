@@ -121,12 +121,10 @@ function load() {
   return pending;
 }
 
-const datasets = () => DATA.datasets;
 const dataset = (id) => hasOwn(DATA.datasets, id) ? DATA.datasets[id] : undefined;
 const topics = () => DATA.topics;
 const dashboards = () => DATA.dashboards;
 const dashboard = (id) => DATA.dashboards.find(d => d.id === id);
-const topic = (id) => DATA.topics.find(t => t.id === id);
 
 // Turn a dataset's row arrays into objects, so the rest is plain JS.
 function toObjects(ds) {
@@ -213,6 +211,5 @@ function query(spec) {
 }
 
 export const dashData = {
-  load, ok: () => loaded, datasets, dataset, topics, dashboards, dashboard, topic, query,
+  load, ok: () => loaded, dataset, topics, dashboards, dashboard, query,
 };
-export default dashData;

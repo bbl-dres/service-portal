@@ -55,5 +55,3 @@ export const formatFileSize = (kb) => {
     ? `${(n / 1024).toLocaleString(LOC, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`
     : `${formatNumber(n)} KB`;
 };
-
-export default { formatNumber, formatCurrency, formatArea, formatDate, formatFileSize };
