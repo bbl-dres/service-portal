@@ -79,27 +79,20 @@ recorded in [`js/vendor/libredwg/README.md`](js/vendor/libredwg/README.md) and
 
 ## Run locally
 
-Serve the repository over HTTP because ES modules and `fetch()` do not work reliably from `file://`:
+No build tools, no dependencies — just static files. From the repo root:
 
 ```bash
-node scripts/serve.mjs
+# Python
+python -m http.server 8000
+
+# Node
+npx http-server
+
+# PHP
+php -S localhost:8000
 ```
 
-Then open http://127.0.0.1:8848/.
-
-The development server binds to loopback by default. To test from another
-device, opt in to a LAN bind and allow every hostname or IP that clients will
-send in the HTTP `Host` header (comma-separated):
-
-```powershell
-$env:SERVICE_PORTAL_HOST = '0.0.0.0'
-$env:SERVICE_PORTAL_ALLOWED_HOSTS = '192.168.1.25,devbox.local'
-node scripts/serve.mjs
-```
-
-This is a hardened development server, not a production TLS endpoint. Its
-request and compression behavior is documented in
-[`scripts/README.md`](scripts/README.md#development-server).
+Then open <http://localhost:8000/>. The root redirects to the main app.
 
 ## Documentation
 
