@@ -395,25 +395,33 @@ try {
   await dataFailurePage.closeTarget();
 
   console.log('■ Map constructor failure degrades in place');
-  // Seed the authenticated origin once, then perform a full navigation. The
-  // new-document hook runs before any application module on the target page.
+  // Perform a full navigation so the new-document hook runs before any
+  // application module. The external-assets suite owns live SRI/timeout/retry
+  // coverage; this lifecycle probe supplies deterministic authenticated-loader
+  // completion and isolates the post-load Map constructor boundary.
   const mapPage = await openPage(cdp, `${APP_BASE}/services`, { login: true });
   await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
-    // The authenticated loader intentionally ignores a pre-existing global.
-    // Wrap the global assigned by the SRI-verified bundle instead, replacing
-    // only its constructor so this remains a post-load initialization probe.
     source: `(() => {
-      let loaded;
-      Object.defineProperty(window, 'maplibregl', {
-        configurable: true,
-        get: () => loaded,
-        set: (value) => {
-          loaded = new Proxy(value, { get(target, property, receiver) {
-            if (property === 'Map') return class { constructor() { throw new Error('mock Map constructor failure'); } };
-            return Reflect.get(target, property, receiver);
-          } });
-        },
-      });
+      const cssUrl = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
+      const scriptUrl = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
+      const nativeAppendChild = Node.prototype.appendChild;
+      Node.prototype.appendChild = function appendChild(node) {
+        const url = String(node?.href || node?.src || '');
+        if (node?.tagName === 'LINK' && url === cssUrl) {
+          queueMicrotask(() => node.onload?.());
+          return node;
+        }
+        if (node?.tagName === 'SCRIPT' && url === scriptUrl) {
+          queueMicrotask(() => {
+            window.maplibregl = {
+              Map: class { constructor() { throw new Error('mock Map constructor failure'); } },
+            };
+            node.onload?.();
+          });
+          return node;
+        }
+        return nativeAppendChild.call(this, node);
+      };
     })();`,
   }, mapPage.sessionId);
   const freshMapUrl = `${APP_BASE.replace(/#$/, '')}?map-constructor-probe=1#/app/portfolio?view=map`;
