@@ -9,6 +9,7 @@ import { formatNumber, formatArea, formatCurrency, formatDate, formatFileSize } 
 import { countryName, businessEntityIdFromBblId } from '../domain.js';
 import { APPLICATIONS } from '../crumbs.js';
 import { preparePage, uniqueOptions } from '../collections.js';
+import { safeMailto, safeResourceUrl, safeTel } from '../security/urls.js';
 
 const imageGalleryItems = (o) => galleryItemsFrom(o.images, {
   idPrefix: o.bbl_id, title: o.name, location: o.city,
@@ -503,8 +504,14 @@ function buildingDetail(ctx, b) {
         { key: 'name', label: 'Name', render: (c) => `<strong>${C.escape(c.name)}</strong>${c.isPrimary ? ' ' + C.badge('Primär', 'info') : ''}` },
         { key: 'role', label: 'Rolle', render: (c) => C.escape(c.role || '—') },
         { key: 'organisation', label: 'Organisation', render: (c) => C.escape(c.organisation || '—') },
-        { key: 'phone', label: 'Telefon', render: (c) => c.phone ? `<a href="tel:${C.escape(String(c.phone).replace(/\s/g, ''))}">${C.escape(c.phone)}</a>` : '—' },
-        { key: 'email', label: 'E-Mail', render: (c) => c.email ? `<a href="mailto:${C.escape(c.email)}">${C.escape(c.email)}</a>` : '—' },
+        { key: 'phone', label: 'Telefon', render: (c) => {
+          const href = safeTel(c.phone);
+          return href ? `<a href="${C.escape(href)}">${C.escape(c.phone)}</a>` : '—';
+        } },
+        { key: 'email', label: 'E-Mail', render: (c) => {
+          const href = safeMailto(c.email);
+          return href ? `<a href="${C.escape(href)}">${C.escape(c.email)}</a>` : '—';
+        } },
       ],
     },
 
@@ -530,7 +537,13 @@ function buildingDetail(ctx, b) {
         { key: 'sizeKB', label: 'Grösse', align: 'right', render: (d) => C.escape(formatFileSize(d.sizeKB)) },
         { key: 'year', label: 'Jahr', align: 'right', render: (d) => C.escape(String(d.year)) },
         { key: 'classification', label: 'Klassifizierung', render: (d) => classBadge(C, ref, d.classification) },
-        { key: 'url', label: 'Aktion', render: (d) => `<a class="btn btn--outline btn--sm btn--icon-left" href="${C.escape(d.url || '#')}">${C.icon('Download', 'btn__icon icon--base')}<span class="btn__text">Herunterladen</span></a>` },
+        { key: 'url', label: 'Aktion', render: (d) => {
+          const href = safeResourceUrl(d.url);
+          const content = `${C.icon('Download', 'btn__icon icon--base')}<span class="btn__text">Herunterladen</span>`;
+          return href
+            ? `<a class="btn btn--outline btn--sm btn--icon-left" href="${C.escape(href)}">${content}</a>`
+            : `<span class="btn btn--outline btn--sm btn--icon-left" aria-disabled="true">${content}</span>`;
+        } },
       ],
     },
   };

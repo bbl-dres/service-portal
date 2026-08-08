@@ -6,6 +6,7 @@ import { core } from '../core/index.js';
 import { engine } from '../process-engine.js';
 import { session } from '../core/session.js';
 import C from '../components.js';
+import { safeLinkUrl } from '../security/urls.js';
 import { loadAppStyles } from './css-loader.js';
 import {
   APPS, APP_GATE_META, NAV, PAGES, SECTION_OF, legacyTarget, parseHash,
@@ -148,9 +149,12 @@ function renderCrumbs(crumbs) {
   ul.innerHTML = crumbs.map((c, i) => {
     const last = i === crumbs.length - 1;
     const sep = i > 0 ? C.icon('ChevronRight', 'breadcrumb__include-icon') : '';
+    const href = safeLinkUrl(c.href);
     return last
       ? `<li><span aria-current="page">${sep}${C.escape(c.label)}</span></li>`
-      : `<li><a href="${c.href}">${sep}<span>${C.escape(c.label)}</span></a></li>`;
+      : href
+        ? `<li><a href="${C.escape(href)}">${sep}<span>${C.escape(c.label)}</span></a></li>`
+        : `<li><span aria-disabled="true">${sep}${C.escape(c.label)}</span></li>`;
   }).join('');
 }
 
@@ -468,7 +472,7 @@ async function dispatch() {
     console.error('[router] render failed for', modPath, e);
     mount.innerHTML = `<div class="container section">
       <div class="page-header"><h1 tabindex="-1">Diese Ansicht konnte nicht geladen werden.</h1></div>
-      ${C.notification(
+      ${C.notificationHtml(
       `<span class="small">${C.escape(e.message)}</span>`,
       'error', 'WarningCircle', { live: true })}</div>`;
     finalizeRoute({ mount, stale, pathKey, isStateChange, activeId, previousHeading: prevH1, restoreY });

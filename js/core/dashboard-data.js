@@ -16,6 +16,7 @@ import { fetchJSON } from './fetch-json.js';
 
 const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+const DOM_ID = /^[A-Za-z][A-Za-z0-9_-]*$/;
 const safeDictionary = (value = {}) => Object.assign(Object.create(null), value);
 const DATA = { datasets: Object.create(null), topics: [], dashboards: [] };
 // If the file fails, the data portal looks like a portal without dashboards
@@ -49,11 +50,17 @@ function validatePayload(json) {
   }
 
   for (const topic of topics) {
-    if (typeof topic.id !== 'string' || !topic.id.trim()) throw new Error('invalid topic ID');
+    if (typeof topic.id !== 'string' || !DOM_ID.test(topic.id) || topicIds.has(topic.id)) {
+      throw new Error('invalid topic ID');
+    }
     topicIds.add(topic.id);
   }
+  const dashboardIds = new Set();
   for (const dashboard of dashboards) {
-    if (typeof dashboard.id !== 'string' || !dashboard.id.trim()) throw new Error('invalid dashboard ID');
+    if (typeof dashboard.id !== 'string' || !DOM_ID.test(dashboard.id) || dashboardIds.has(dashboard.id)) {
+      throw new Error('invalid dashboard ID');
+    }
+    dashboardIds.add(dashboard.id);
     if (typeof dashboard.topicId !== 'string' || !topicIds.has(dashboard.topicId)) {
       throw new Error(`invalid dashboard topic: dashboard.${dashboard.id}.topicId`);
     }
@@ -62,7 +69,7 @@ function validatePayload(json) {
     if (dashboard.tabs != null) validateRecords(dashboard.tabs, `dashboard.${dashboard.id}.tabs`);
     const chartIds = new Set();
     for (const chart of charts) {
-      if (typeof chart.id !== 'string' || !chart.id.trim() || chartIds.has(chart.id)) {
+      if (typeof chart.id !== 'string' || !DOM_ID.test(chart.id) || chartIds.has(chart.id)) {
         throw new Error(`invalid chart ID: dashboard.${dashboard.id}.charts`);
       }
       chartIds.add(chart.id);
@@ -81,12 +88,14 @@ function validatePayload(json) {
         throw new Error(`invalid filter: dashboard.${dashboard.id}.charts.${chart.id}`);
       }
     }
+    const tabIds = new Set();
     for (const tab of dashboard.tabs || []) {
-      if (typeof tab.id !== 'string' || !tab.id.trim()
+      if (typeof tab.id !== 'string' || !DOM_ID.test(tab.id) || tabIds.has(tab.id)
         || !Array.isArray(tab.charts)
         || tab.charts.some((chartId) => typeof chartId !== 'string' || !chartIds.has(chartId))) {
         throw new Error(`invalid chart list: dashboard.${dashboard.id}.tabs`);
       }
+      tabIds.add(tab.id);
     }
   }
 

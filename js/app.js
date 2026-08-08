@@ -5,6 +5,7 @@ import { session } from './core/session.js';
 import { shell } from './ui/shell/index.js';
 import { initRouter, redraw, requestNavigationPermission } from './routing/router.js';
 import { notification, escape, announce, toast, wireShare, wireLogin, mountBanner } from './components.js';
+import { notificationHtml } from './ui/components/feedback.js';
 
 // Data-failure banner (P0-4): if a data/*.json file is missing, the affected
 // list would look empty rather than unavailable. A persistent banner above the
@@ -19,10 +20,10 @@ function renderDataStatus() {
   // With { live:true }, the container is a named region (index.html), no longer
   // a live region. The notification itself makes the one-time insertion
   // announcement through role="alert" (review a11y-datastatus-1).
-  el.innerHTML = `<div class="container" style="padding-top:1rem">${notification(
+  el.innerHTML = `<div class="container" style="padding-top:1rem">${notificationHtml(
     `<strong>Einige Daten konnten nicht geladen werden</strong> (${escape(areas.join(', '))}). `
     + 'Betroffene Listen sind unvollständig oder leer — das ist ein Ladefehler, keine leere Ablage. '
-    + '<button type="button" class="link" onclick="location.reload()">Seite neu laden</button>',
+    + '<button type="button" class="link" data-reload-page>Seite neu laden</button>',
     'error', 'WarningCircle', { live: true })}</div>`;
 }
 

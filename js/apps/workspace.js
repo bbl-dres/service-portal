@@ -12,6 +12,8 @@ import { formatArea, formatNumber, formatDate } from '../format.js';
 import { countryName } from '../domain.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
 import { floorplanEditor } from '../links.js';
+import { exitFullscreen, requestFullscreen } from '../ui/fullscreen.js';
+import { download, fileSlug, rowsToCsv } from '../export.js';
 
 export const needs = ['buildings', 'floors', 'spaces', 'workspacePlanning'];
 
@@ -381,7 +383,7 @@ function catalogue(ctx, objects) {
 
 /* ================================= DETAIL ================================ */
 function detail(ctx, id) {
-  const { mount, query, core, C, setTitle, setCrumbs, onUnmount } = ctx;
+  const { mount, query, core, C, setTitle, setCrumbs, onUnmount, stale } = ctx;
   workspaceMap.free();
   const item = joinedObjects(core).find((entry) => entry.id === id);
   if (!item) {
@@ -465,8 +467,8 @@ function detail(ctx, id) {
           <div class="kpi-strip__item"><span class="kpi-strip__label">Arbeitsfläche je Arbeitsplatz</span><span class="kpi-strip__value">${planned && item.workArea && item.workplaces ? `${formatNumber(item.workArea / item.workplaces, { maximumFractionDigits: 1 })}<small> m²</small>` : '—'}</span></div>
         </div>
         <div class="mt-4">${planned
-          ? C.notification('<p class="m-0"><strong>Prototypdaten:</strong> Ausstattungsgruppen und Planstände sind Annahmen für den Wireframe. Sie sind noch kein freigegebenes Mengengerüst oder Bestellnachweis.</p>', 'hint', 'InfoCircle')
-          : C.notification('<p class="m-0">Für dieses Objekt ist noch keine Multispace-Planung erfasst. Die vorhandenen Bestandsgrundrisse können im Register «Grundrisse» schreibgeschützt angesehen werden.</p>', 'info', 'InfoCircle')}</div>
+          ? C.notificationHtml('<p class="m-0"><strong>Prototypdaten:</strong> Ausstattungsgruppen und Planstände sind Annahmen für den Wireframe. Sie sind noch kein freigegebenes Mengengerüst oder Bestellnachweis.</p>', 'hint', 'InfoCircle')
+          : C.notificationHtml('<p class="m-0">Für dieses Objekt ist noch keine Multispace-Planung erfasst. Die vorhandenen Bestandsgrundrisse können im Register «Grundrisse» schreibgeschützt angesehen werden.</p>', 'info', 'InfoCircle')}</div>
         <dl class="kv workspace-object-facts">
           <dt>Verwaltungseinheiten</dt><dd>${C.escape(item.occupants || 'Nicht erfasst')}</dd>
           <dt>Objekt</dt><dd>${C.escape(item.name)}<br><span class="small muted">${C.escape(address(item))}</span></dd>
@@ -509,8 +511,8 @@ function detail(ctx, id) {
     ? C.empty('Für dieses Objekt ist kein Grundriss hinterlegt.')
     : floorId ? floorplanView() : '<div id="workspace-floor-table"></div>';
   const equipmentPanel = () => `<div class="mt-4">${planned
-    ? C.notification('<p class="m-0">Die aggregierten Ausstattungsgruppen sind Prototypannahmen. Ein belastbares Mengengerüst benötigt Positionen je Gebäude, Geschoss, Raum, Modul und Artikel.</p>', 'hint', 'InfoCircle')
-    : C.notification('<p class="m-0">Für den Bestand vor Multispace ist kein Ausstattungs-Mengengerüst hinterlegt.</p>', 'info', 'InfoCircle')}</div><div id="workspace-equipment-table" class="mt-4"></div>`;
+    ? C.notificationHtml('<p class="m-0">Die aggregierten Ausstattungsgruppen sind Prototypannahmen. Ein belastbares Mengengerüst benötigt Positionen je Gebäude, Geschoss, Raum, Modul und Artikel.</p>', 'hint', 'InfoCircle')
+    : C.notificationHtml('<p class="m-0">Für den Bestand vor Multispace ist kein Ausstattungs-Mengengerüst hinterlegt.</p>', 'info', 'InfoCircle')}</div><div id="workspace-equipment-table" class="mt-4"></div>`;
   const panels = { overview: overviewPanel, floorplans: floorPanel, equipment: equipmentPanel };
 
   function roomPanel(space) {
@@ -527,7 +529,7 @@ function detail(ctx, id) {
       <h3>${C.escape(space.roomNumber)}</h3>
       <dl class="kv kv--tight">${facts.map(([key, value]) => `<dt>${C.escape(key)}</dt><dd>${C.escape(value)}</dd>`).join('')}</dl>
       <h4 class="fp-room__sub">Vorgang starten</h4>
-      <div class="fp-svc-list"><a class="fp-svc" href="#/app/fault-report?${buildingQuery}" target="_blank" rel="noopener"><span>Ersatz- oder Reparaturauftrag</span>${C.icon('External', 'icon--sm fp-svc__go')}</a></div>
+      <div class="fp-svc-list"><a class="fp-svc" href="#/app/fault-report?${buildingQuery}" target="_blank" rel="noopener noreferrer"><span>Ersatz- oder Reparaturauftrag</span>${C.icon('External', 'icon--sm fp-svc__go')}</a></div>
     </div>`;
   }
 
@@ -560,7 +562,7 @@ function detail(ctx, id) {
           <div class="box fp-editor-action">
             <h2>Aktionen</h2>
             <p class="small muted">Bearbeitung und Speicherung erfolgen im eigenständigen Plan-Editor.</p>
-            <a class="btn btn--filled btn--sm btn--full-width btn--icon-right" id="workspace-plan-editor" href="${floorplanEditor(item.id, floor.floorId)}" target="_blank" rel="noopener">
+            <a class="btn btn--filled btn--sm btn--full-width btn--icon-right" id="workspace-plan-editor" href="${floorplanEditor(item.id, floor.floorId)}" target="_blank" rel="noopener noreferrer">
               <span class="btn__text">Im Plan-Editor bearbeiten</span>${C.icon('External', 'btn__icon icon--base')}
             </a>
           </div>
@@ -710,7 +712,11 @@ function detail(ctx, id) {
 
     mount.querySelector('#workspace-floorplan-back')?.addEventListener('click', (event) => {
       event.preventDefault();
-      if (document.fullscreenElement) document.exitFullscreen?.();
+      void exitFullscreen({
+        source: 'workspace',
+        onUnavailable: () => !stale() && C.toast('Vollbild konnte nicht beendet werden.', 'warning', 'WarningCircle'),
+        onRejected: () => !stale() && C.toast('Vollbild konnte nicht beendet werden.', 'error', 'WarningCircle'),
+      });
       floorId = '';
       spaceId = '';
       syncHash();
@@ -742,10 +748,20 @@ function detail(ctx, id) {
       mount.querySelector(`[data-floor="${CSS.escape(floorId)}"]`)?.focus({ preventScroll: true });
     }));
     const wrap = mount.querySelector('#fp-wrap');
-    mount.querySelector('#workspace-floorplan-fullscreen')?.addEventListener('click', () => {
-      if (document.fullscreenElement) { document.exitFullscreen?.(); return; }
-      const request = wrap?.requestFullscreen?.();
-      request?.catch?.(() => { /* browser rejected fullscreen */ });
+    mount.querySelector('#workspace-floorplan-fullscreen')?.addEventListener('click', async () => {
+      if (document.fullscreenElement) {
+        await exitFullscreen({
+          source: 'workspace',
+          onUnavailable: () => !stale() && C.toast('Vollbild konnte nicht beendet werden.', 'warning', 'WarningCircle'),
+          onRejected: () => !stale() && C.toast('Vollbild konnte nicht beendet werden.', 'error', 'WarningCircle'),
+        });
+        return;
+      }
+      requestFullscreen(wrap, {
+        source: 'workspace',
+        onUnavailable: () => !stale() && C.toast('Vollbild ist in diesem Browser nicht verfügbar.', 'warning', 'WarningCircle'),
+        onRejected: () => !stale() && C.toast('Vollbild konnte nicht geöffnet werden.', 'error', 'WarningCircle'),
+      });
     });
     mount.querySelector('#workspace-floorplan-print')?.addEventListener('click', beginPlanPrint);
   }
@@ -779,19 +795,11 @@ function detail(ctx, id) {
 
 function exportPlanningSummary(item, groups) {
   if (!groups.length) return;
-  const cell = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
   const lines = [
     ['Hinweis', 'Aggregierte Prototypannahmen; kein freigegebenes Mengengerüst oder Bestellnachweis', '', '', ''],
     ['Objekt-ID', 'Projekt', 'Modul', 'Ausstattungsstandard', 'Positionen'],
     ...groups.map((group) => [item.id, item.planning.projectId || '', `M${group.number}`, group.name, group.count]),
   ];
-  const blob = new Blob([`\uFEFF${lines.map((line) => line.map(cell).join(';')).join('\r\n')}`], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `workspace-planannahmen-${item.id.replaceAll('/', '-')}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  const objectSlug = fileSlug(item.id, 'objekt');
+  download(rowsToCsv(lines, { quoteAll: true }), `workspace-planannahmen-${objectSlug}.csv`, 'text/csv;charset=utf-8');
 }

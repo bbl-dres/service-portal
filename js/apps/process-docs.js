@@ -1,5 +1,7 @@
 import { APPLICATIONS, trail } from '../crumbs.js';
+import { loadExternalAssets } from '../core/external-assets.js';
 import { formatDate } from '../format.js';
+import { safeAssetUrl } from '../security/urls.js';
 // Real-estate management process catalogue.
 // Route: #/app/process-docs, with ?id=<processId> details and stable ?tab values.
 // It mirrors the metadata catalogue: a process-area/group tree, catalogue bar,
@@ -21,29 +23,37 @@ const CONTACT_ID = 'immobilienmanagement';
 
 // Lazily load the bpmn-js NavigatedViewer bundle and its three stylesheets.
 const BPMNJS_VER = '17.11.1';
-let bjsPromise = null;
+const BPMNJS_ASSETS = {
+  key: `bpmn-js@${BPMNJS_VER}`,
+  globalName: 'BpmnJS',
+  styles: [
+    {
+      url: `https://unpkg.com/bpmn-js@${BPMNJS_VER}/dist/assets/diagram-js.css`,
+      integrity: 'sha384-2WPRuHNLlqer/8fKQLOMZSWVINTz4vDTnIB1SXm75ubMI3oBGJyfvuOcPPc0Pfjh',
+    },
+    {
+      url: `https://unpkg.com/bpmn-js@${BPMNJS_VER}/dist/assets/bpmn-js.css`,
+      integrity: 'sha384-d5fPuJ8qoomhVwsLNT3CIO4Wr1Ur5kNIP6IkZ1c1m5deqBd43hlGyuXPeFUiuA0N',
+    },
+    {
+      url: `https://unpkg.com/bpmn-js@${BPMNJS_VER}/dist/assets/bpmn-font/css/bpmn.css`,
+      integrity: 'sha384-8tty/x85ufSya/WwOVNWRKW8kN5cRZBN72EY7ldimsrm+XdO5m9J3JGDkzv6YFWN',
+    },
+  ],
+  script: {
+    url: `https://unpkg.com/bpmn-js@${BPMNJS_VER}/dist/bpmn-navigated-viewer.production.min.js`,
+    integrity: 'sha384-izUzsqBpTLenW0ylFgbiLMoW5T0/fTAi+oOM/yuwnzOZAc8OFynG1LHJGsCWEP4G',
+  },
+  messages: {
+    timeout: 'Zeitüberschreitung beim Laden des BPMN-Viewers',
+    style: 'Der BPMN-Viewer konnte nicht geladen werden',
+    script: 'Der BPMN-Viewer konnte nicht geladen werden',
+    global: 'BpmnJS fehlt',
+  },
+};
+
 function loadBpmnJS() {
-  if (window.BpmnJS) return Promise.resolve(window.BpmnJS);
-  if (bjsPromise) return bjsPromise;
-  bjsPromise = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Zeitüberschreitung beim Laden des BPMN-Viewers')), 12000);
-    for (const href of [
-      `https://unpkg.com/bpmn-js@${BPMNJS_VER}/dist/assets/diagram-js.css`,
-      `https://unpkg.com/bpmn-js@${BPMNJS_VER}/dist/assets/bpmn-js.css`,
-      `https://unpkg.com/bpmn-js@${BPMNJS_VER}/dist/assets/bpmn-font/css/bpmn.css`,
-    ]) {
-      const css = document.createElement('link');
-      css.rel = 'stylesheet';
-      css.href = href;
-      document.head.appendChild(css);
-    }
-    const s = document.createElement('script');
-    s.src = `https://unpkg.com/bpmn-js@${BPMNJS_VER}/dist/bpmn-navigated-viewer.production.min.js`;
-    s.onload = () => { clearTimeout(timer); window.BpmnJS ? resolve(window.BpmnJS) : reject(new Error('BpmnJS fehlt')); };
-    s.onerror = () => { clearTimeout(timer); reject(new Error('Der BPMN-Viewer konnte nicht geladen werden')); };
-    document.head.appendChild(s);
-  }).catch((e) => { bjsPromise = null; throw e; });   // Do not cache failures; a later visit may retry.
-  return bjsPromise;
+  return loadExternalAssets(BPMNJS_ASSETS);
 }
 
 // Parse typed BPMN flow elements in document order, independent of namespace
@@ -217,15 +227,15 @@ function list(ctx) {
   const row = (label, count) => `<span class="pf-tree__label">${esc(label)}</span><span class="pf-tree__n">${count}</span>`;
   const leaf = (label, count, href, on) =>
     `<li class="pf-tree__item"><a class="pf-tree__leaf plain-link interactive-control${on ? ' is-active' : ''}" href="${href}"${on ? ' aria-current="true"' : ''}>${row(label, count)}</a></li>`;
-  const branch = (key, label, count, href, on, open, children) => `
+  const branch = (key, domId, label, count, href, on, open, children) => `
     <li class="pf-tree__item">
-      <button type="button" class="pf-tree__node interactive-control${on ? ' is-active' : ''}" data-branch="${key}"
-        data-href="${esc(href)}" aria-expanded="${open}" aria-controls="pd-branch-${key}">
+      <button type="button" class="pf-tree__node interactive-control${on ? ' is-active' : ''}" data-branch="${esc(key)}"
+        data-href="${esc(href)}" aria-expanded="${open}" aria-controls="${domId}">
         ${C.icon('ChevronRight', 'pf-tree__chev')}${row(label, count)}</button>
-      <ul class="pf-tree__children" id="pd-branch-${key}"${open ? '' : ' hidden'}>${children}</ul>
+      <ul class="pf-tree__children" id="${domId}"${open ? '' : ' hidden'}>${children}</ul>
     </li>`;
   const treeHTML = () => `<ul class="pf-tree pf-tree--plain">
-    ${areas.map((a) => {
+    ${areas.map((a, areaIndex) => {
       const inArea = all.filter((p) => p.area === a.key);
       const items = groups
         .filter((g) => inArea.some((p) => p.group === g.key))
@@ -233,7 +243,7 @@ function list(ctx) {
           hash({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
           selGroups.length === 1 && selGroups[0] === g.key))
         .join('');
-      return branch(a.key, `${a.label}`, inArea.length,
+      return branch(a.key, `pd-branch-${areaIndex}`, `${a.label}`, inArea.length,
         // Preserve query and view when building branch links so an active branch
         // can toggle without discarding search state.
         hash({ sort: '', group: [], status: [], page: 1 }),
@@ -329,7 +339,9 @@ async function detail(ctx, rawId) {
   // On failure, each tab degrades independently to a message.
   let xml = '', xmlError = '';
   try {
-    const res = await fetch(encodeURI(p.bpmn), { signal: ctx.signal });
+    const bpmnUrl = safeAssetUrl(p.bpmn, 'assets/bpmn/');
+    if (!bpmnUrl || !bpmnUrl.toLowerCase().endsWith('.bpmn')) throw new Error('Ungültiger BPMN-Dateipfad');
+    const res = await fetch(encodeURI(bpmnUrl), { signal: ctx.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     xml = await res.text();
   } catch (e) { xmlError = e.message; }
@@ -357,7 +369,7 @@ async function detail(ctx, rawId) {
     <div class="box">${persons && persons.length ? `<dl class="kv kv--ruled">${persons.map((x) => `
       <dt>${esc(x.role)}</dt>
       <dd><a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(x.admindirId)}"
-           target="_blank" rel="noopener external">AdminDir ${esc(x.admindirId)}</a></dd>`).join('')}
+           target="_blank" rel="noopener noreferrer external">AdminDir ${esc(x.admindirId)}</a></dd>`).join('')}
     </dl>` : '<p class="muted m-0">Für diesen Prozess ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
 
   const overviewHTML = () => `<div class="detail-layout"><div>${personsSection(p.responsiblePersons)}
@@ -419,7 +431,7 @@ async function detail(ctx, rawId) {
   // Accessible process-step tab.
   const stepsHost = mount.querySelector('#pd-steps');
   if (!xml) {
-    stepsHost.innerHTML = C.notification(
+    stepsHost.innerHTML = C.notificationHtml(
       `<strong>Die Prozessschritte können nicht gelesen werden.</strong> Das BPMN-Diagramm (${esc(p.bpmn)}) ist nicht erreichbar${xmlError ? ` — ${esc(xmlError)}` : ''}.`,
       'error', 'WarningCircle');
   } else {
@@ -462,7 +474,7 @@ async function detail(ctx, rawId) {
     viewerStarted = true;
     const host = mount.querySelector('#pd-bpmn-canvas');
     if (!xml) {
-      host.innerHTML = C.notification(
+      host.innerHTML = C.notificationHtml(
         `<strong>Das Prozessdiagramm kann nicht angezeigt werden.</strong> ${esc(xmlError || 'Die BPMN-Datei fehlt.')}`,
         'error', 'WarningCircle');
       return;
@@ -472,23 +484,25 @@ async function detail(ctx, rawId) {
       BpmnJS = await loadBpmnJS();
     } catch (e) {
       if (ctx.stale()) return;
-      host.innerHTML = C.notification(
+      host.innerHTML = C.notificationHtml(
         `<strong>Der BPMN-Viewer konnte nicht geladen werden.</strong> ${esc(e.message)} — er kommt von unpkg.com und braucht Netzzugang. `
-        + '<button type="button" class="link" onclick="location.reload()">Seite neu laden</button>',
+        + '<button type="button" class="link" data-reload-page>Seite neu laden</button>',
         'error', 'WarningCircle', { live: true });
       return;
     }
     if (ctx.stale()) return;
     host.innerHTML = '';
-    viewer = new BpmnJS({ container: host });
     try {
+      viewer = new BpmnJS({ container: host });
       await viewer.importXML(xml);
       if (ctx.stale()) return;
       fitDiagram();
       // Enable zoom controls only after a viewer exists.
       mount.querySelectorAll('[data-bpmn]').forEach((b) => { b.disabled = false; });
     } catch (e) {
-      host.innerHTML = C.notification(
+      if (viewer) { try { viewer.destroy(); } catch { /* Partially initialised. */ } viewer = null; }
+      if (ctx.stale()) return;
+      host.innerHTML = C.notificationHtml(
         `<strong>Das Diagramm konnte nicht gezeichnet werden.</strong> ${esc(e.message)}`,
         'error', 'WarningCircle');
     }

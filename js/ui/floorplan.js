@@ -78,22 +78,36 @@ function bucket(space, mode, slots) {
 // area in between. Without levels, either no labels appeared (threshold too
 // high) or they overlapped in narrow auxiliary spaces.
 const ROOM_NUMBER_MIN = 200, AREA_LABEL_MIN = 330, USE_LABEL_MIN = 500;
+const SPACE_GROUPS = new Set(Object.keys(GROUP_KEY));
+const BOOKING_STATUSES = new Set(['available', 'unavailable', 'unsuitable']);
+const finiteNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
 
 export function floorplanSvg({ floor, spaces, mode = 'none', selectedId = '', statuses = {}, selectableIds = null }) {
-  const [w, h] = floor.extent || [4000, 1440];
+  const extent = Array.isArray(floor?.extent) ? floor.extent : [];
+  const w = Math.max(1, finiteNumber(extent[0], 4000));
+  const h = Math.max(1, finiteNumber(extent[1], 1440));
   const slots = administrativeUnitColorSlots(spaces);
   const selectable = selectableIds ? new Set(selectableIds) : null;
   const pad = 40;
 
   const renderSpace = (space) => {
-    const [x, y, width, height] = space.rect;
+    const rect = Array.isArray(space?.rect) ? space.rect : [];
+    const x = finiteNumber(rect[0]);
+    const y = finiteNumber(rect[1]);
+    const width = Math.max(0, finiteNumber(rect[2]));
+    const height = Math.max(0, finiteNumber(rect[3]));
     const key = fillKey(space, mode, slots);
-    const status = statuses[space.spaceId] || '';
+    const rawStatus = Object.hasOwn(statuses, space.spaceId) ? statuses[space.spaceId] : '';
+    const status = BOOKING_STATUSES.has(rawStatus) ? rawStatus : '';
+    const group = SPACE_GROUPS.has(space.group) ? space.group : 'infra';
     const canSelect = !selectable || selectable.has(space.spaceId);
-    const classes = ['fp__room', `fp__room--${space.group}`, key ? `fp__room--fill` : '',
+    const classes = ['fp__room', `fp__room--${group}`, key ? `fp__room--fill` : '',
       status ? `fp__room--booking-${status}` : '', selectedId === space.spaceId ? 'is-selected' : ''].filter(Boolean).join(' ');
     const centerX = x + width / 2, centerY = y + height / 2;
-    const roomNumber = space.roomNumber.replace(/^.*\s/, '');
+    const roomNumber = String(space.roomNumber || '').replace(/^.*\s/, '');
     // The corridor is shallow (240 units) yet can still carry a label, so the
     // height threshold for its number is lower than for the stacked lines below.
     const showNumber = width >= ROOM_NUMBER_MIN && height >= 200;

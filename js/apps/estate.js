@@ -131,7 +131,7 @@ export default async function render(ctx) {
 
     mount.innerHTML = `<div class="container section">
       <div class="page-header"><h1 tabindex="-1">${C.escape(META.title)}</h1></div>
-      ${C.notification(
+      ${C.notificationHtml(
       `<strong>Die Immobilien-Stammdaten konnten nicht geladen werden.</strong><br><span class="small">${C.escape(e.message)}</span>`,
       'error', 'WarningCircle', { live: true })}</div>`;
     return;
@@ -426,7 +426,7 @@ export default async function render(ctx) {
     ${C.backLink('#/app/dataportal', 'Datenportal')}
     ${dashHeader(C, {
       title: META.title, lead: META.lead,
-      extra: `<p class="small muted lead-hint">Detaillierte Objektinformationen und Bewirtschaftung im <a href="${INVENTORY}" target="_blank" rel="noopener">Liegenschaften Inventar</a>.</p>`,
+      extraHtml: `<p class="small muted lead-hint">Detaillierte Objektinformationen und Bewirtschaftung im <a href="${INVENTORY}" target="_blank" rel="noopener noreferrer">Liegenschaften Inventar</a>.</p>`,
     })}
     <div class="dashboard-layout" id="dashboard">
       ${''

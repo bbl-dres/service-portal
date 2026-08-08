@@ -3,6 +3,7 @@
 // covers faults, cleaning, and repairs. Small orders share the central OM helpdesk.
 import * as links from '../links.js';
 import { SERVICES, trail } from '../crumbs.js';
+import { safeMailto } from '../security/urls.js';
 
 // Deferred datasets are declared so the router calls core.ensure(needs) before
 // render; otherwise accessors would read an empty inventory.
@@ -102,9 +103,12 @@ export default async function render(ctx) {
       { value: 'hoch', label: 'Hoch' },
     ];
 
+    const isboMail = isbo && safeMailto(isbo.email);
     const securityNote = isSecurity ? `
-      ${C.notification(`<strong>Bei akuter Gefahr: Alarmzentrale +41 58 465 65 65</strong><br>Lebensbedrohliche Lagen sofort telefonisch melden – nicht über dieses Formular.`, 'warning', 'WarningCircle')}
-      ${isbo ? C.notification(`Fachstelle <strong>${C.escape(isbo.name)}</strong> · <a href="mailto:${C.escape(isbo.email)}">${C.escape(isbo.email)}</a> · ${C.escape(isbo.phone)}`, 'info', 'Lock') : ''}
+      ${C.notificationHtml(`<strong>Bei akuter Gefahr: Alarmzentrale +41 58 465 65 65</strong><br>Lebensbedrohliche Lagen sofort telefonisch melden – nicht über dieses Formular.`, 'warning', 'WarningCircle')}
+      ${isbo ? C.notificationHtml(`Fachstelle <strong>${C.escape(isbo.name)}</strong> · ${isboMail
+        ? `<a href="${C.escape(isboMail)}">${C.escape(isbo.email)}</a>`
+        : C.escape(isbo.email)} · ${C.escape(isbo.phone)}`, 'info', 'Lock') : ''}
     ` : '';
 
     // Preserve focus and selection across redraws.
@@ -133,7 +137,7 @@ export default async function render(ctx) {
         ${C.field({ id: 'description', label: 'Beschreibung', required: true, message: state.errors.description,
           control: (cls, attrs) => `<textarea id="description" placeholder="Beschreiben Sie den Sachverhalt möglichst genau." class="${cls}"${attrs}>${C.escape(state.description)}</textarea>` })}
         ${C.select({ id: 'urgency', name: 'urgency', label: 'Dringlichkeit', value: state.urgency, options: urgencyOptions })}
-        ${C.notification('Mit dem Absenden wird ein Vorgang erstellt. Sie können den Status jederzeit unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
+        ${C.notificationHtml('Mit dem Absenden wird ein Vorgang erstellt. Sie können den Status jederzeit unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
         <div class="form__actions">
           <a class="btn btn--outline" href="${links.service(cfg.serviceId)}"><span class="btn__text">Abbrechen</span></a>
           <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Meldung absenden</span></button>
@@ -152,7 +156,7 @@ export default async function render(ctx) {
       <div class="container__center--xs">
       ${C.processDone({ instance: i, lead: 'Meldung erfasst.', title: 'Vielen Dank',
         text: 'Ihre Meldung wurde erfasst und an die zuständige Stelle weitergeleitet. Den Bearbeitungsstand sehen Sie jederzeit unter «Meine Vorgänge».',
-        extra: isSecurity ? C.notification('Bei akuter Gefahr wenden Sie sich umgehend an die <strong>Alarmzentrale +41 58 465 65 65</strong>.', 'warning', 'WarningCircle') : '',
+        extraHtml: isSecurity ? C.notificationHtml('Bei akuter Gefahr wenden Sie sich umgehend an die <strong>Alarmzentrale +41 58 465 65 65</strong>.', 'warning', 'WarningCircle') : '',
         actions: [
           { href: links.caseDetails(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
           { href: '#/services', label: 'Zu den Dienstleistungen' },

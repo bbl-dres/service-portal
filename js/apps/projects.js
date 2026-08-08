@@ -339,7 +339,7 @@ function detail(ctx, id) {
       ${row('CheckmarkCircle', 'Projektziele', p['zielAmpel'], targetGoalDescription)}
       ${row('WarningCircle', 'Risiken', p['risikoAmpel'], riskDescription)}
     </div>
-    ${C.notification('Ampelbewertung gemäss BBL-Projektreporting (Demo-Daten): <strong>Grün</strong> = im Plan, <strong>Gelb</strong> = unter Beobachtung, <strong>Rot</strong> = kritisch.', 'info')}`;
+    ${C.notificationHtml('Ampelbewertung gemäss BBL-Projektreporting (Demo-Daten): <strong>Grün</strong> = im Plan, <strong>Gelb</strong> = unter Beobachtung, <strong>Rot</strong> = kritisch.', 'info')}`;
   }
   const panels = { overview: overviewPanel, metrics: metricsPanel, risks: risksPanel };
 

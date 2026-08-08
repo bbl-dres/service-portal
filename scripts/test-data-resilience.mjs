@@ -121,6 +121,21 @@ queue('data/dashboards.json', {
   datasets: { sample: { label: 'Sample', columns: [{ name: 'value' }], rows: [[1]] } },
 }, {
   topics: [{ id: 'topic-1' }],
+  dashboards: [{
+    id: 'dashboard-1', topicId: 'topic-1', tabs: [], kpis: [],
+    charts: [{ id: 'x\"><img src=x onerror=alert(1)>', query: { dataset: 'sample' } }],
+  }],
+  datasets: { sample: { label: 'Sample', columns: [{ name: 'value' }], rows: [[1]] } },
+}, {
+  topics: [{ id: 'topic-1' }],
+  dashboards: [{
+    id: 'dashboard-1', topicId: 'topic-1', kpis: [],
+    charts: [{ id: 'chart-1', query: { dataset: 'sample' } }],
+    tabs: [{ id: 'x\" autofocus onfocus=alert(1)', charts: ['chart-1'] }],
+  }],
+  datasets: { sample: { label: 'Sample', columns: [{ name: 'value' }], rows: [[1]] } },
+}, {
+  topics: [{ id: 'topic-1' }],
   dashboards: [{ id: 'dashboard-1', topicId: 'topic-1', charts: [], tabs: [], kpis: [] }],
   datasets: { sample: { label: 'Sample', columns: [{ name: 'value' }], rows: [[1]] } },
 });
@@ -136,8 +151,12 @@ check(!dashData.ok(), 'a dashboard without its required charts list is rejected'
 await dashData.load();
 check(!dashData.ok(), 'malformed chart query fields are rejected at the load boundary');
 await dashData.load();
+check(!dashData.ok(), 'chart IDs that cannot form safe DOM tokens are rejected');
+await dashData.load();
+check(!dashData.ok(), 'tab IDs that cannot form safe DOM tokens are rejected');
+await dashData.load();
 check(dashData.ok() && dashData.dataset('sample')?.rows.length === 1
-  && requests.get('data/dashboards.json') === 4,
+  && requests.get('data/dashboards.json') === 6,
   'dashboard data retries after a failed shape check');
 check(dashData.dataset('toString') === undefined,
   'dashboard dataset lookup ignores inherited properties');

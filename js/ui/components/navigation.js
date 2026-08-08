@@ -1,4 +1,9 @@
-import { escape, icon } from './primitives.js';
+import { escape, icon, safeClassList } from './primitives.js';
+import { safeLinkUrl } from '../../security/urls.js';
+
+const MENU_ALIGNMENTS = new Set(['start', 'end']);
+const DOM_TOKEN = /^[A-Za-z][A-Za-z0-9_-]*$/;
+const domToken = (value, fallback) => DOM_TOKEN.test(String(value || '')) ? String(value) : fallback;
 
 // CD back button. Anatomy copied from the design system's own detail pages
 // (app/pages/detailPressRelease.vue, detailPublicationCatalog.vue):
@@ -7,9 +12,12 @@ import { escape, icon } from './primitives.js';
 // The visible label is always the back action; `label` names its target for
 // screen readers. `.back-link-row` clears the CD float.
 export function backLink(href, label) {
-  return `<div class="back-link-row"><a class="btn btn--outline btn--sm btn--icon-left btn--back" href="${escape(href)}"${
-    label ? ` aria-label="Zurück zu ${escape(label)}"` : ''}>${
-    icon('ArrowLeft', 'btn__icon')}<span class="btn__text">Zurück</span></a></div>`;
+  const safeHref = safeLinkUrl(href);
+  const content = `${icon('ArrowLeft', 'btn__icon')}<span class="btn__text">Zurück</span>`;
+  return safeHref
+    ? `<div class="back-link-row"><a class="btn btn--outline btn--sm btn--icon-left btn--back" href="${escape(safeHref)}"${
+      label ? ` aria-label="Zurück zu ${escape(label)}"` : ''}>${content}</a></div>`
+    : `<div class="back-link-row"><span class="btn btn--outline btn--sm btn--icon-left btn--back" aria-disabled="true">${content}</span></div>`;
 }
 
 // Horizontal status stepper (CD steps / tenant-portal pipeline): chevron segments
@@ -102,15 +110,19 @@ export function wireAccordion(root) {
 // each tab points to its own `${idPrefix}-panel-${id}` (multi-panel pattern; see
 // tabPanels).
 export function tabBar({ items, active, idPrefix = 'tab', ariaLabel = '', panelId = '', controlsClass = '' } = {}) {
-  const btns = items.map((t) => {
+  const prefix = domToken(idPrefix, 'tab');
+  const sharedPanel = panelId ? domToken(panelId, `${prefix}-panel`) : '';
+  const classes = safeClassList(controlsClass);
+  const btns = items.map((t, index) => {
     const on = t.id === active;
-    const controls = panelId || `${idPrefix}-panel-${t.id}`;
-    return `<button type="button" role="tab" id="${idPrefix}-${t.id}" aria-controls="${controls}"`
+    const key = domToken(t.id, `item-${index}`);
+    const controls = sharedPanel || `${prefix}-panel-${key}`;
+    return `<button type="button" role="tab" id="${prefix}-${key}" aria-controls="${controls}"`
       + ` class="tab__control${on ? ' tab__control--active' : ''}" aria-selected="${on}"`
-      + ` tabindex="${on ? '0' : '-1'}" data-tab="${t.id}">`
+      + ` tabindex="${on ? '0' : '-1'}" data-tab="${escape(t.id)}">`
       + `${t.icon ? icon(t.icon, 'icon--base') + ' ' : ''}${escape(t.label)}</button>`;
   }).join('');
-  return `<div class="tab__controls-container"><div class="tab__controls${controlsClass ? ' ' + controlsClass : ''}"`
+  return `<div class="tab__controls-container"><div class="tab__controls${classes ? ' ' + classes : ''}"`
     + ` role="tablist"${ariaLabel ? ` aria-label="${escape(ariaLabel)}"` : ''}>${btns}</div></div>`;
 }
 
@@ -122,12 +134,15 @@ export function tabBar({ items, active, idPrefix = 'tab', ariaLabel = '', panelI
 // navigation (WCAG 2.4.10), tab-only pages previously had no level between <h1>
 // and the <h3> elements in panel content.
 export function tabPanels({ items, active, idPrefix = 'tab', render, heading = false }) {
-  return items.map((t) =>
-    `<div class="tab__container" role="tabpanel" id="${idPrefix}-panel-${t.id}"`
-    + ` aria-labelledby="${idPrefix}-${t.id}" tabindex="0" data-panel="${t.id}"`
+  const prefix = domToken(idPrefix, 'tab');
+  return items.map((t, index) => {
+    const key = domToken(t.id, `item-${index}`);
+    return `<div class="tab__container" role="tabpanel" id="${prefix}-panel-${key}"`
+    + ` aria-labelledby="${prefix}-${key}" tabindex="0" data-panel="${escape(t.id)}"`
     + `${t.id === active ? '' : ' hidden'}>`
     + `${heading ? `<h2 class="sr-only">${escape(t.label || t.id)}</h2>` : ''}`
-    + `${render(t.id)}</div>`).join('');
+    + `${render(t.id)}</div>`;
+  }).join('');
 }
 
 // Wire tab bars in `root`: click + arrow keys/Home/End, roving tabindex, and
@@ -155,7 +170,7 @@ export function wireTabs(root, { onSelect, syncHash } = {}) {
     // Query again for focus so it survives an onSelect rerender. It stays
     // invisible for mouse clicks (:focus-visible applies only for keyboard),
     // and correct for keyboard roving. No-op when the bar remains unchanged.
-    (root.querySelector(`.tab__control[data-tab="${id}"]`) || activeBtn)?.focus();
+    ([...root.querySelectorAll('.tab__control')].find((button) => button.dataset.tab === id) || activeBtn)?.focus();
   };
   btns.forEach((btn, i) => {
     btn.addEventListener('click', () => activate(btn.dataset.tab));
@@ -190,8 +205,11 @@ export function pagination({ page, totalPages, href, inputId, label = 'Seitennav
     if (disabled) return `<li><button type="button" class="btn btn--outline btn--icon-only" disabled aria-label="${text}">${inner}</button></li>`;
     // Without an `href` builder: local state rather than hash navigation
     // (C.mountDataTable), using the same CD anatomy as <button data-page>.
-    return href
-      ? `<li><a class="btn btn--outline btn--icon-only"${id} href="${escape(href(target))}" aria-label="${text}">${inner}</a></li>`
+    const targetHref = href && safeLinkUrl(href(target));
+    return targetHref
+      ? `<li><a class="btn btn--outline btn--icon-only"${id} href="${escape(targetHref)}" aria-label="${text}">${inner}</a></li>`
+      : href
+        ? `<li><button type="button" class="btn btn--outline btn--icon-only" disabled aria-label="${text}">${inner}</button></li>`
       : `<li><button type="button" class="btn btn--outline btn--icon-only"${id} data-page="${target}" aria-label="${text}">${inner}</button></li>`;
   };
   return `
@@ -240,6 +258,8 @@ export function wirePagination(mount, inputId, page, totalPages, go) {
 // C.wireMenu; `data-action` passes the action to the caller (no inline onclick).
 // `menuId` identifies the menu in the shared onAction handler.
 export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', triggerIcon = 'More', triggerClass = '' }) {
+  const menuAlign = MENU_ALIGNMENTS.has(align) ? align : 'end';
+  const triggerClasses = safeClassList(triggerClass);
   const row = (it) => {
     if (it.separator) return '<div class="action-menu__sep" role="separator"></div>';
     if (it.heading) return `<div class="action-menu__heading">${escape(it.heading)}</div>`;
@@ -250,8 +270,8 @@ export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', tr
   // opens (menuIds are unique per page; see callers).
   const popupId = `${menuId}-popup`;
   return `<div class="action-menu" data-menu="${escape(menuId)}">
-    <button type="button" class="action-menu__trigger interactive-control${triggerClass ? ' ' + triggerClass : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="${escape(popupId)}" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
-    <div class="action-menu__popup action-menu__popup--${align}" id="${escape(popupId)}" role="menu" aria-label="${escape(label)}" hidden>${items.map(row).join('')}</div>
+    <button type="button" class="action-menu__trigger interactive-control${triggerClasses ? ' ' + triggerClasses : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="${escape(popupId)}" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
+    <div class="action-menu__popup action-menu__popup--${menuAlign}" id="${escape(popupId)}" role="menu" aria-label="${escape(label)}" hidden>${items.map(row).join('')}</div>
   </div>`;
 }
 

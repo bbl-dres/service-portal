@@ -10,6 +10,7 @@ import * as links from '../links.js';
 import { preparePage } from '../collections.js';
 // Reuse one module-level escape helper and badge factory across all views.
 import { escape as esc, badge } from '../components.js';
+import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 
 // contacts supplies stewardship for both layers. Load the large datasets
 // inventory only for a system-table detail that needs its title.
@@ -87,7 +88,7 @@ const personsSection = (persons) => `
     <div class="box">${persons && persons.length ? `<dl class="kv kv--ruled">${persons.map((p) => `
       <dt>${esc(p.role)}</dt>
       <dd><a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
-           target="_blank" rel="noopener external">AdminDir ${esc(p.admindirId)}</a></dd>`).join('')}
+           target="_blank" rel="noopener noreferrer external">AdminDir ${esc(p.admindirId)}</a></dd>`).join('')}
     </dl>` : '<p class="muted m-0">Für diesen Eintrag ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
 
 const objectHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
@@ -561,6 +562,7 @@ async function tableDetail(ctx, id) {
     if (tab !== tabs[0].id) p.set('tab', legacyValueByTab[tab]);
     history.replaceState(history.state, '', `${BASE}?${p}`);
   };
+  const sourceHref = safeLinkUrl(t.sourceUrl);
   const panelHtml = (id) => {
     if (id === 'fields') return '<div id="mc-fields"></div>';
     // As above, retain table headers when there are no rows.
@@ -578,7 +580,7 @@ async function tableDetail(ctx, id) {
           ${/* Keep the DCAT bridge in metadata rather than a separate access box. */''}
           ${dataset ? `<dt>Publiziert als</dt><dd><a href="${esc(links.dataset(dataset.id))}">${esc(core.t(dataset.title))}</a></dd>` : ''}
           ${/* External source links carry target and rel and display their hostname. */''}
-          ${t.sourceUrl ? `<dt>Quellsystem</dt><dd><a href="${esc(t.sourceUrl)}" target="_blank" rel="noopener external">${esc(hostOf(t.sourceUrl))}</a></dd>` : ''}
+          ${sourceHref ? `<dt>Quellsystem</dt><dd><a href="${esc(sourceHref)}"${newWindowAttrs(sourceHref, { external: classifyUrl(sourceHref) === 'external' })}>${esc(hostOf(sourceHref))}</a></dd>` : ''}
           ${t.updated ? `<dt>Stand</dt><dd>${esc(formatDate(t.updated))}</dd>` : ''}
           <dt>ID</dt><dd><code>${esc(t.tableId)}</code></dd>
         </dl>

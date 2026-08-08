@@ -5,59 +5,39 @@
 // blocked network). CARTO Positron is the calm worldwide basemap used by the
 // portfolio, project, room and location-picker views.
 
-import { escape as esc, loading } from '../components.js';
+import { escape as esc, loading, toast } from '../components.js';
+import { loadExternalAssets } from '../core/external-assets.js';
 import { formatArea } from '../format.js';
+import { safeLinkUrl } from '../security/urls.js';
+import { navigateCluster } from './cluster-navigation.js';
 
 const MAPLIBRE_VERSION = '4.7.1';
-let mapLibrePromise = null;
+const MAPLIBRE_ASSETS = {
+  key: `maplibre-gl@${MAPLIBRE_VERSION}`,
+  globalName: 'maplibregl',
+  styles: [{
+    url: `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/maplibre-gl.css`,
+    integrity: 'sha384-MinO0mNliZ3vwppuPOUnGa+iq619pfMhLVUXfC4LHwSCvF9H+6P/KO4Q7qBOYV5V',
+  }],
+  script: {
+    url: `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/maplibre-gl.js`,
+    integrity: 'sha384-SYKAG6cglRMN0RVvhNeBY0r3FYKNOJtznwA0v7B5Vp9tr31xAHsZC0DqkQ/pZDmj',
+  },
+  messages: {
+    timeout: 'Zeitüberschreitung beim Laden der Karte',
+    style: 'MapLibre-Styles konnten nicht geladen werden',
+    script: 'MapLibre konnte nicht geladen werden',
+    global: 'maplibregl fehlt',
+  },
+};
 
 function loadMapLibre() {
-  if (window.maplibregl) return Promise.resolve(window.maplibregl);
-  if (mapLibrePromise) return mapLibrePromise;
-  mapLibrePromise = new Promise((resolve, reject) => {
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/maplibre-gl.css`;
-    const script = document.createElement('script');
-    script.src = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/maplibre-gl.js`;
-    let settled = false;
-    let cssReady = false;
-    let scriptReady = false;
-    const clearHandlers = () => {
-      css.onload = null;
-      css.onerror = null;
-      script.onload = null;
-      script.onerror = null;
-    };
-    const fail = (error) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      clearHandlers();
-      css.remove();
-      script.remove();
-      reject(error);
-    };
-    const finish = () => {
-      if (settled || !cssReady || !scriptReady) return;
-      if (!window.maplibregl) { fail(new Error('maplibregl fehlt')); return; }
-      settled = true;
-      clearTimeout(timer);
-      clearHandlers();
-      resolve(window.maplibregl);
-    };
-    const timer = setTimeout(
-      () => fail(new Error('Zeitüberschreitung beim Laden der Karte')),
-      12000,
-    );
-    css.onload = () => { cssReady = true; finish(); };
-    css.onerror = () => fail(new Error('MapLibre-Styles konnten nicht geladen werden'));
-    script.onload = () => { scriptReady = true; finish(); };
-    script.onerror = () => fail(new Error('MapLibre konnte nicht geladen werden'));
-    document.head.appendChild(css);
-    document.head.appendChild(script);
-  }).catch((error) => { mapLibrePromise = null; throw error; }); // Do not cache failure; a later call retries (C2).
-  return mapLibrePromise;
+  return loadExternalAssets(MAPLIBRE_ASSETS);
+}
+
+function popupLink(href) {
+  const safeHref = safeLinkUrl(href);
+  return safeHref ? `<br><a class="link" href="${esc(safeHref)}">Objekt ansehen →</a>` : '';
 }
 
 // `esc` / `formatArea` come from shared modules (imports above), replacing the
@@ -227,7 +207,7 @@ export async function initEstateMap(container, points, parcels, focus, options =
         if (focusPopup) popup.setLngLat([bp.lon, bp.lat]).setHTML(
           `<strong>${esc(bp.label)}</strong>${bp.sub ? `<br><span class="small muted">${esc(bp.sub)}</span>` : ''}`
           + `${bp.bblId ? `<br><span class="small muted">${esc(bp.bblId)}</span>` : ''}`
-          + `${bp.href ? `<br><a class="link" href="${esc(bp.href)}">Objekt ansehen →</a>` : ''}`,
+          + popupLink(bp.href),
         ).addTo(map);
       } else {
         const pf = ((parcels && parcels.features) || []).find((f) => f.properties && f.properties.id === focus);
@@ -239,7 +219,7 @@ export async function initEstateMap(container, points, parcels, focus, options =
           if (focusPopup) popup.setLngLat(ct).setHTML(
             `<strong>${esc(pr.label)}</strong>${pr.sub ? `<br><span class="small muted">${esc(pr.sub)}</span>` : ''}`
             + `<br><span class="small muted">Grundstück ${esc(pr.id)}${pr.area ? ' · ' + formatArea(pr.area) : ''}</span>`
-            + `${pr.href ? `<br><a class="link" href="${esc(pr.href)}">Objekt ansehen →</a>` : ''}`,
+            + popupLink(pr.href),
           ).addTo(map);
         }
       }
@@ -257,24 +237,21 @@ export async function initEstateMap(container, points, parcels, focus, options =
     // properties across Switzerland in the world view, that is zoom 2. Measured
     // behaviour was 1.52 → 2.0, visually no change and therefore a dead-looking
     // click. fitBounds over the leaves always shows exactly the clustered objects.
-    Promise.resolve().then(() => src.getClusterLeaves(id, Infinity, 0)).then((leaves) => {
-      if (!leaves || !leaves.length) throw new Error('keine Blätter');
-      const b = new maplibregl.LngLatBounds();
-      leaves.forEach((l) => b.extend(l.geometry.coordinates));
-      map.fitBounds(b, { padding: 64, maxZoom: 15, duration: 600 });
-    }).catch(() => Promise.resolve()
-      // Defer the call itself: MapLibre may throw synchronously when the route
-      // removed the source while getClusterLeaves was still pending.
-      .then(() => src.getClusterExpansionZoom(id))
-      .then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: z }))
-      .catch(() => null));
+    void navigateCluster({
+      source: src, clusterId: id, feature: f, map, LngLatBounds: maplibregl.LngLatBounds,
+      isCurrent: () => container.isConnected && container._map === map,
+      onFailure: (details) => {
+        console.warn('MapLibre cluster navigation failed', details);
+        toast('Die Kartengruppe konnte nicht geöffnet werden.', 'warning', 'WarningCircle');
+      },
+    });
   });
   map.on('click', 'points', (e) => {
     const p = e.features[0].properties;
     popup.setLngLat(e.features[0].geometry.coordinates).setHTML(
       `<strong>${esc(p.label)}</strong>${p.sub ? `<br><span class="small muted">${esc(p.sub)}</span>` : ''}`
       + `${p.bbl_id ? `<br><span class="small muted">${esc(p.bbl_id)}</span>` : ''}`
-      + `${p.href ? `<br><a class="link" href="${esc(p.href)}">Objekt ansehen →</a>` : ''}`,
+      + popupLink(p.href),
     ).addTo(map);
   });
   // Parcel polygon → same basic popup as a building, with the inventory deep-link.
@@ -283,7 +260,7 @@ export async function initEstateMap(container, points, parcels, focus, options =
     popup.setLngLat(e.lngLat).setHTML(
       `<strong>${esc(p.label)}</strong>${p.sub ? `<br><span class="small muted">${esc(p.sub)}</span>` : ''}`
       + `<br><span class="small muted">Grundstück ${esc(p.id)}${p.area ? ' · ' + formatArea(p.area) : ''}</span>`
-      + `${p.href ? `<br><a class="link" href="${esc(p.href)}">Objekt ansehen →</a>` : ''}`,
+      + popupLink(p.href),
     ).addTo(map);
   });
   for (const lyr of ['clusters', 'points', 'parcels-fill']) {

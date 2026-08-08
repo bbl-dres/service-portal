@@ -5,6 +5,7 @@ import { NAV } from '../../routing/routes.js';
 import { core } from '../../core/index.js';
 import { session } from '../../core/session.js';
 import { icon, escape as escapeHtml, select } from '../../components.js';
+import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../../security/urls.js';
 
 // renderHeader() runs again on every login/logout. Each render gets an
 // AbortController that removes the previous global document/window/matchMedia
@@ -16,9 +17,14 @@ let shellAbort = null;
 // used by navy. Rows carry CD's base padding from the stylesheet
 // (review nav/drawer-2).
 function navyRow(child) {
+  const href = safeLinkUrl(child.href);
+  if (!href) {
+    return `<li class="menu__item menu__item--border"><span class="menu__item__flex" aria-disabled="true">
+      <span>${escapeHtml(child.label)}</span></span></li>`;
+  }
   return `<li class="menu__item menu__item--border">
-    <a class="menu__item__flex" href="${child.href}"${
-      child.external ? ' target="_blank" rel="noopener external"' : ' data-navsub="' + escapeHtml(child.href) + '"'}>
+    <a class="menu__item__flex" href="${escapeHtml(href)}"${
+      child.external ? newWindowAttrs(href, { external: classifyUrl(href) === 'external' }) : ' data-navsub="' + escapeHtml(href) + '"'}>
       <span>${escapeHtml(child.label)}</span>
       ${child.external ? icon('External', 'menu__item__icon') : ''}
     </a></li>`;
@@ -190,7 +196,7 @@ function headerHTML() {
   const mobileNavItems = NAV.map(item => renderNavItem(item, 'mobile')).join('');
 
   const topBarNav = TOP_BAR_LINKS.map(l =>
-    `<li><a href="${l.href}"${l.external ? ' target="_blank" rel="noopener external"' : ''}><span>${escapeHtml(l.label)}</span>${icon(l.icon, 'icon--base')}</a></li>`
+    `<li><a href="${l.href}"${l.external ? ' target="_blank" rel="noopener noreferrer external"' : ''}><span>${escapeHtml(l.label)}</span>${icon(l.icon, 'icon--base')}</a></li>`
   ).join('');
   const metaNav = META_LINKS.map(l =>
     `<li><a class="meta-navigation__item" href="${l.href}">${escapeHtml(l.label)}</a></li>`
@@ -206,7 +212,7 @@ function headerHTML() {
   const authNav = user
     ? `<li class="meta-navigation__user"><span class="meta-navigation__name">${icon('User', 'icon--md')} ${escapeHtml(user.name)}</span>
         <span class="separator separator--vertical" aria-hidden="true"></span>
-        <button type="button" class="meta-navigation__item meta-navigation__auth" onclick="window.__logout && window.__logout()">Abmelden</button></li>`
+        <button type="button" class="meta-navigation__item meta-navigation__auth" data-logout>Abmelden</button></li>`
     // No target: the header does not know the user's intent, so it redraws the
     // current page. Only buttons located WHERE a case would otherwise start carry
     // a target (C.loginGate/accessCard).
@@ -219,7 +225,7 @@ function headerHTML() {
   const langSwitcher = `<div class="language-switcher">${select({
     id: 'lang', label: 'Sprache: Deutsch — weitere Sprachen sind im Prototyp nicht verfügbar',
     hideLabel: true, bare: true, variant: 'negative', size: 'sm', value: 'DE',
-    disabled: true, attrs: 'title="Im Prototyp ist nur Deutsch verfügbar"',
+    disabled: true, attrsHtml: 'title="Im Prototyp ist nur Deutsch verfügbar"',
     options: ['DE'],
   })}</div>`;
 
@@ -229,7 +235,7 @@ function headerHTML() {
     <div class="container container--flex">
       <!-- icon--md rather than --base: below 640, the icon is this link's ONLY
            visible affordance (the label is then sr-only, item 2.4). -->
-      <a class="top-bar__btn" href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener external"><span>Alle Schweizer Bundesbehörden</span>${icon('External', 'icon--md')}</a>
+      <a class="top-bar__btn" href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener noreferrer external"><span>Alle Schweizer Bundesbehörden</span>${icon('External', 'icon--md')}</a>
       <div class="top-bar__right">
         <span class="demo-chip" title="Prototyp mit Demo-Daten — Login, Prozess-Engine, Datenkern und Schnittstellen sind simuliert">Prototyp<span class="sr-only"> — Prototyp mit Demo-Daten; Login, Prozess-Engine, Datenkern und Schnittstellen sind simuliert</span></span>
         <nav class="top-bar-navigation" aria-label="Bundesangebote"><ul>${topBarNav}</ul></nav>
@@ -318,8 +324,8 @@ function headerHTML() {
     <nav class="meta-navigation meta-navigation--mobile" aria-label="Meta Mobil"><ul>${metaNav}${authNav}</ul></nav>
     <nav class="top-bar-navigation--mobile" aria-label="Bundesangebote Mobil">
       <ul>
-        ${TOP_BAR_LINKS.map(l => `<li><a href="${l.href}" target="_blank" rel="noopener external">${escapeHtml(l.label)}</a></li>`).join('')}
-        <li><a href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener external">Alle Schweizer Bundesbehörden</a></li>
+        ${TOP_BAR_LINKS.map(l => `<li><a href="${l.href}" target="_blank" rel="noopener noreferrer external">${escapeHtml(l.label)}</a></li>`).join('')}
+        <li><a href="https://www.admin.ch/de/bundesverwaltung" target="_blank" rel="noopener noreferrer external">Alle Schweizer Bundesbehörden</a></li>
       </ul>
     </nav>
   </div>

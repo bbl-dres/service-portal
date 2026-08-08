@@ -171,7 +171,7 @@ function detail(ctx, id) {
           look like a case with no steps, while the footer also said «completed»
           even though the badge said «in progress» (M17). */''}
     ${definition ? `<div class="mt-4">${C.pipeline(steps, caseInstance.stepIndex)}</div>`
-      : `<div class="mt-4">${C.notification(
+      : `<div class="mt-4">${C.notificationHtml(
           `<strong>Ablauf nicht verfügbar</strong> — zu diesem Vorgang fehlt die Prozessdefinition «${C.escape(caseInstance.defId || '—')}». `
           + 'Status und Verlauf unten stammen aus dem Vorgang selbst; der Schrittfortschritt lässt sich nicht anzeigen.',
           'warning', 'WarningCircle')}</div>`}

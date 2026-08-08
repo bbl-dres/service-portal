@@ -28,20 +28,57 @@ function tableMatrix(table) {
     [...tr.querySelectorAll('th,td')].map((c) => c.textContent.replace(/\s+/g, ' ').trim()));
 }
 
+// Spreadsheet programs interpret cells beginning with =, +, - or @ as
+// formulas. HTML escaping does not change that second interpretation context.
+// Prefix formula-like text with an apostrophe before producing either export
+// format. Plain negative numbers remain numeric-looking data rather than being
+// converted to text; expressions such as -1+2 are still neutralised.
+function spreadsheetCell(value) {
+  const text = String(value == null ? '' : value);
+  const candidate = text.replace(/^[\u0000-\u0020\u007f]+/, '');
+  const plainNegativeNumber = /^-\d+(?:[.,]\d+)?$/.test(candidate);
+  return (/^[=+@]/.test(candidate) || (/^-/.test(candidate) && !plainNegativeNumber))
+    ? `'${text}`
+    : text;
+}
+
+function csvCell(value, quoteAll = false) {
+  const text = spreadsheetCell(value);
+  return quoteAll || /[";\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+// Matrix-to-CSV boundary for exports that are not backed by a rendered table.
+// Keeping it here ensures every spreadsheet download gets the same formula
+// neutralisation and de-CH delimiter contract.
+export function rowsToCsv(rows, { bom = true, quoteAll = false } = {}) {
+  const body = (Array.isArray(rows) ? rows : [])
+    .map((row) => (Array.isArray(row) ? row : []).map((value) => csvCell(value, quoteAll)).join(';'))
+    .join('\r\n');
+  return `${bom ? '\ufeff' : ''}${body}`;
+}
+
 // Semicolon-separated (the delimiter Excel expects in de-CH/de locales), CRLF
 // rows, RFC-4180 quoting. UTF-8 BOM so Excel reads umlauts correctly.
 export function tableToCsv(table) {
-  const cell = (s) => (/[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s);
-  const body = tableMatrix(table).map((r) => r.map(cell).join(';')).join('\r\n');
-  return '﻿' + body;
+  return rowsToCsv(tableMatrix(table));
 }
 
 // Excel opens a plain HTML table; the .xls + ms-excel mime makes it open directly.
 export function tableToXls(table, title = 'Tabelle') {
+  const clone = table.cloneNode(true);
+  clone.querySelectorAll('th,td').forEach((cell) => {
+    // Replacing the cell content also removes data-controlled links or markup
+    // that an office suite could otherwise interpret in a different context.
+    cell.textContent = spreadsheetCell(cell.textContent.replace(/\s+/g, ' ').trim());
+  });
+  const worksheetName = String(title || 'Tabelle')
+    .replace(/[\u0000-\u001f\\/?*[\]:]/g, '')
+    .trim().slice(0, 31) || 'Tabelle';
+  const escapedName = worksheetName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">`
     + `<head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>`
-    + `<x:Name>${title.replace(/[<>&]/g, '')}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>`
-    + `</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>${table.outerHTML}</body></html>`;
+    + `<x:Name>${escapedName}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>`
+    + `</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>${clone.outerHTML}</body></html>`;
 }
 
 // --- SVG → PNG ---------------------------------------------------------------

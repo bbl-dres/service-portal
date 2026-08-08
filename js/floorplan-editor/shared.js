@@ -2,6 +2,7 @@
 // Keep this module stateless: navigation and the workbench both use it.
 
 import { formatArea, formatNumber } from '../format.js';
+import { safeAssetUrl } from '../security/urls.js';
 
 export const BASE = '#/app/floorplan-editor';
 export const COLOR_DEFAULT = 'none';
@@ -15,7 +16,7 @@ export const PLAN_STATUS = {
 export const clean = (value) => String(value || '').trim().toLocaleLowerCase('de');
 export const address = (building) => `${building.street || ''}, ${building.zip || ''} ${building.city || ''}`.replace(/^,\s*/, '').trim();
 export const productImage = (product) => product?.photo
-  ? `assets/images/shop/${String(product.photo).replace(/^images\//, '')}` : '';
+  ? safeAssetUrl(`assets/images/shop/${String(product.photo).replace(/^images\//, '')}`, 'assets/images/shop/') : '';
 const initials = (name) => String(name || '').split(/\s+/).filter(Boolean).slice(0, 2)
   .map((part) => part[0]).join('').toLocaleUpperCase('de') || 'BBL';
 export const optionMarkup = (options, value) => options.map((option) => {

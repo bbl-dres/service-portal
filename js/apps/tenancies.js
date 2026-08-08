@@ -11,10 +11,15 @@ import { countryName, statusLabel } from '../domain.js';
 import { APPLICATIONS } from '../crumbs.js';
 import * as links from '../links.js';
 import { preparePage, uniqueOptions } from '../collections.js';
+import { exitFullscreen, requestFullscreen } from '../ui/fullscreen.js';
 
 export const needs = ['tenancies', 'floors', 'spaces', 'contracts'];
 
 const CRUMBS = APPLICATIONS;
+const finiteNumber = (value, fallback = 0) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+};
 // Adapt the persisted German registry schema at the app boundary.
 const tenancyView = (tenancyRecord) => ({
   ...tenancyRecord,
@@ -22,6 +27,18 @@ const tenancyView = (tenancyRecord) => ({
   administrativeUnit: tenancyRecord['ve'],
   administrativeUnitName: tenancyRecord['veName'],
   images: tenancyRecord['bilder'],
+  areaHnf: finiteNumber(tenancyRecord.areaHnf),
+  workstations: finiteNumber(tenancyRecord.workstations),
+  yearlyCost: finiteNumber(tenancyRecord.yearlyCost),
+  lat: finiteNumber(tenancyRecord.lat, Number.NaN),
+  lon: finiteNumber(tenancyRecord.lon, Number.NaN),
+});
+const floorView = (floor) => ({
+  ...floor,
+  level: finiteNumber(floor.level),
+  rooms: finiteNumber(floor.rooms),
+  areaHnf: finiteNumber(floor.areaHnf),
+  areaGross: finiteNumber(floor.areaGross),
 });
 
 const monthsUntil = (iso) => {
@@ -112,7 +129,7 @@ function overview(ctx) {
     href: links.tenancy(t.tenancyId),
     photo: { src: t.photoSrc, color: 'var(--color-secondary-600)', alt: `${t.buildingName}, ${t.city}` },
     chips: [t.administrativeUnit, t.floorLabels.join(' + ')],
-    footerInfo: `${formatArea(t.areaHnf)} · ${t.workstations} AP`,
+    footerInfo: `${formatArea(t.areaHnf)} · ${formatNumber(t.workstations)} AP`,
     footerAction: C.cardAction(),
   });
   const galleryHTML = (slice) => `<div class="pf-gallery">${slice.map(card).join('')}</div>`;
@@ -124,7 +141,7 @@ function overview(ctx) {
       { key: 'administrativeUnit', label: 'Verwaltungseinheit', render: (t) => `${esc(t.administrativeUnit)}<br><span class="small muted">${esc(t.department)}</span>` },
       { key: 'floors', label: 'Geschosse', render: (t) => esc(t.floorLabels.join(', ')) },
       { key: 'areaHnf', label: 'Fläche', align: 'right', render: (t) => formatArea(t.areaHnf) },
-      { key: 'workstations', label: 'AP', align: 'right', render: (t) => String(t.workstations) },
+      { key: 'workstations', label: 'AP', align: 'right', render: (t) => formatNumber(t.workstations) },
       { key: 'leaseEnd', label: 'Vertragsende', render: (t) => `${formatDate(t.leaseEnd)}<br>${remainingTermBadge(C, t.leaseEnd)}` },
     ],
     rows: slice,
@@ -289,7 +306,7 @@ function overview(ctx) {
 }
 
 function detail(ctx, id) {
-  const { mount, query, core, engine, session, C, setTitle, setCrumbs, onUnmount } = ctx;
+  const { mount, query, core, engine, session, C, setTitle, setCrumbs, onUnmount, stale } = ctx;
   const tenancyRecord = core.tenancy(id);
   if (!tenancyRecord) {
     C.renderNotFound(ctx, { thing: 'Dieses Mietverhältnis', title: 'Mietverhältnis nicht gefunden',
@@ -301,7 +318,7 @@ function detail(ctx, id) {
   setTitle(t.buildingName);
   setCrumbs([...CRUMBS, { label: 'Mietende', href: '#/app/tenancies' }, { label: t.buildingName }]);
 
-  const floors = core.floorsForTenancy(t);
+  const floors = core.floorsForTenancy(t).map(floorView);
   const contracts = core.contractsForBuilding(t.buildingId);
 
   const cases = (engine.instances() || []).filter((i) => i.linkedEntities && i.linkedEntities.buildingId === t.buildingId);
@@ -349,9 +366,9 @@ function detail(ctx, id) {
       <div class="kpi-strip__item"><span class="kpi-strip__label">Fläche (HNF)</span>
         <span class="kpi-strip__value">${formatNumber(t.areaHnf)}<small> m²</small></span></div>
       <div class="kpi-strip__item"><span class="kpi-strip__label">Arbeitsplätze</span>
-        <span class="kpi-strip__value">${t.workstations}</span></div>
+        <span class="kpi-strip__value">${formatNumber(t.workstations)}</span></div>
       <div class="kpi-strip__item"><span class="kpi-strip__label">Fläche je Arbeitsplatz</span>
-        <span class="kpi-strip__value">${(t.areaHnf / t.workstations).toFixed(1)}<small> m²</small></span></div>
+        <span class="kpi-strip__value">${t.workstations ? (t.areaHnf / t.workstations).toFixed(1) : '—'}<small> m²</small></span></div>
       <div class="kpi-strip__item"><span class="kpi-strip__label">Jahresmiete</span>
         <span class="kpi-strip__value">${formatCurrency(t.yearlyCost)}</span></div>
     </div>`;
@@ -405,9 +422,9 @@ function detail(ctx, id) {
     const assignedToTenant = sp.filter((s) => s['occupierVe'] === t.administrativeUnit);
     return {
       ...f,
-      workplaces: sp.reduce((n, s) => n + (s.capacity || 0), 0),
+      workplaces: sp.reduce((n, s) => n + finiteNumber(s.capacity), 0),
       tenantRooms: assignedToTenant.length,
-      tenantArea: assignedToTenant.reduce((n, s) => n + (s.area || 0), 0),
+      tenantArea: assignedToTenant.reduce((n, s) => n + finiteNumber(s.area), 0),
       occupancy: [...new Set(sp.map((s) => s['occupierVe']).filter(Boolean))].sort().join(', ') || '—',
     };
   });
@@ -467,7 +484,7 @@ function detail(ctx, id) {
 
 ''}
             <dl class="kv kv--tight fp-facts">
-              <dt>Räume</dt><dd>${floor.rooms}</dd>
+              <dt>Räume</dt><dd>${formatNumber(floor.rooms)}</dd>
               <dt>Fläche (HNF)</dt><dd>${formatArea(floor.areaHnf)}</dd>
               <dt>Bruttofläche</dt><dd>${formatArea(floor.areaGross)}</dd>
             </dl>
@@ -500,7 +517,7 @@ function detail(ctx, id) {
     return `<div class="box fp-room">
       <h3>${C.escape(s.roomNumber)}</h3>
       <dl class="kv kv--tight">${kv.map(([k, v]) => `<dt>${C.escape(k)}</dt><dd>${C.escape(v)}</dd>`).join('')}</dl>
-      ${s.bookable ? `<a class="btn btn--outline btn--sm" href="#/app/room-booking?building=${encodeURIComponent(t.buildingId)}&room=${encodeURIComponent(s.spaceId)}" target="_blank" rel="noopener">${C.icon('External', 'btn__icon icon--base')}<span class="btn__text">Raum buchen</span></a>` : ''}
+      ${s.bookable ? `<a class="btn btn--outline btn--sm" href="#/app/room-booking?building=${encodeURIComponent(t.buildingId)}&room=${encodeURIComponent(s.spaceId)}" target="_blank" rel="noopener noreferrer">${C.icon('External', 'btn__icon icon--base')}<span class="btn__text">Raum buchen</span></a>` : ''}
       ${
 ''}
       <h4 class="fp-room__sub">Vorgang starten</h4>
@@ -513,7 +530,7 @@ function detail(ctx, id) {
   function serviceLink(serviceId, href) {
     const s = svc(serviceId);
     if (!s) return '';
-    return `<a class="fp-svc" href="${href}" target="_blank" rel="noopener">
+    return `<a class="fp-svc" href="${href}" target="_blank" rel="noopener noreferrer">
       <span>${C.escape(s.title)}</span>${C.icon('External', 'icon--sm fp-svc__go')}</a>`;
   }
   const buildingQuery = `building=${encodeURIComponent(t.buildingId)}`;
@@ -554,19 +571,19 @@ function detail(ctx, id) {
             label: 'Geschoss',
             render: (f) => `<a href="${links.tenancy(t.tenancyId)}?floor=${encodeURIComponent(f.floorId)}">${C.escape(f.label)}</a>${
               f.tenantRooms ? ` ${C.badge('Ihr Standort', 'success')}` : ''}` },
-          { key: 'rooms', label: 'Räume', align: 'right', render: (f) => String(f.rooms) },
+          { key: 'rooms', label: 'Räume', align: 'right', render: (f) => formatNumber(f.rooms) },
           { key: 'areaHnf', label: 'HNF', align: 'right', render: (f) => formatArea(f.areaHnf) },
-          { key: 'workplaces', label: 'Arbeitsplätze', align: 'right', render: (f) => String(f.workplaces) },
+          { key: 'workplaces', label: 'Arbeitsplätze', align: 'right', render: (f) => formatNumber(f.workplaces) },
           { key: 'tenantRooms', label: `Davon ${t.administrativeUnit}`, align: 'right',
-            render: (f) => f.tenantRooms ? `${f.tenantRooms} <span class="small muted">(${formatArea(f.tenantArea)})</span>` : '<span class="muted">—</span>' },
+            render: (f) => f.tenantRooms ? `${formatNumber(f.tenantRooms)} <span class="small muted">(${formatArea(f.tenantArea)})</span>` : '<span class="muted">—</span>' },
         ],
 
         foot: (_visible, filteredRows) => `<tr>
           <th scope="row" class="text-left">Total (${filteredRows.length})</th>
-          <td class="text-right">${filteredRows.reduce((n, f) => n + f.rooms, 0)}</td>
+          <td class="text-right">${formatNumber(filteredRows.reduce((n, f) => n + f.rooms, 0))}</td>
           <td class="text-right">${formatArea(filteredRows.reduce((n, f) => n + f.areaHnf, 0))}</td>
-          <td class="text-right">${filteredRows.reduce((n, f) => n + f.workplaces, 0)}</td>
-          <td class="text-right">${filteredRows.reduce((n, f) => n + f.tenantRooms, 0)}</td></tr>`,
+          <td class="text-right">${formatNumber(filteredRows.reduce((n, f) => n + f.workplaces, 0))}</td>
+          <td class="text-right">${formatNumber(filteredRows.reduce((n, f) => n + f.tenantRooms, 0))}</td></tr>`,
       },
       'tenancy-contract-table': {
         id: 'tenancy-contract-data-table', rows: contracts, unit: { nom: 'Verträge', dat: 'Verträgen' },
@@ -708,7 +725,11 @@ function detail(ctx, id) {
     mount.querySelector('#floorplan-back')?.addEventListener('click', (e) => {
       e.preventDefault();
 
-      if (document.fullscreenElement) document.exitFullscreen?.();
+      void exitFullscreen({
+        source: 'tenancies',
+        onUnavailable: () => !stale() && C.toast('Vollbild konnte nicht beendet werden.', 'warning', 'WarningCircle'),
+        onRejected: () => !stale() && C.toast('Vollbild konnte nicht beendet werden.', 'error', 'WarningCircle'),
+      });
       floorId = ''; spaceId = '';
       syncHash(); redrawFloorplan();
       mount.querySelector('#tenancy-floor-table a')?.focus({ preventScroll: true });
@@ -738,9 +759,20 @@ function detail(ctx, id) {
 
     const wrap = mount.querySelector('#fp-wrap');
     const fullscreenButton = mount.querySelector('#floorplan-fullscreen');
-    fullscreenButton?.addEventListener('click', () => {
-      if (document.fullscreenElement) { document.exitFullscreen?.(); return; }
-      wrap?.requestFullscreen?.().catch(() => {  });
+    fullscreenButton?.addEventListener('click', async () => {
+      if (document.fullscreenElement) {
+        await exitFullscreen({
+          source: 'tenancies',
+          onUnavailable: () => !stale() && C.toast('Vollbild konnte nicht beendet werden.', 'warning', 'WarningCircle'),
+          onRejected: () => !stale() && C.toast('Vollbild konnte nicht beendet werden.', 'error', 'WarningCircle'),
+        });
+        return;
+      }
+      requestFullscreen(wrap, {
+        source: 'tenancies',
+        onUnavailable: () => !stale() && C.toast('Vollbild ist in diesem Browser nicht verfügbar.', 'warning', 'WarningCircle'),
+        onRejected: () => !stale() && C.toast('Vollbild konnte nicht geöffnet werden.', 'error', 'WarningCircle'),
+      });
     });
 
     mount.querySelector('#floorplan-print')?.addEventListener('click', () => {

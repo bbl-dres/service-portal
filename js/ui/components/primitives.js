@@ -1,7 +1,23 @@
+import { safeAssetUrl } from '../../security/urls.js';
+
 // Shared UI component helpers — all return HTML strings (pages compose via templates).
 // Class names follow the CD Bund design system; see docs/cd-gap-analysis.md.
 
 const ICON_BASE = 'assets/icons/';
+const ICON_NAME = /^[A-Za-z][A-Za-z0-9-]*$/;
+const CLASS_TOKEN = /^-?[_A-Za-z][_A-Za-z0-9-]*$/;
+const SAFE_COLOR = /^(?:#[0-9a-f]{3,4}|#[0-9a-f]{6}|#[0-9a-f]{8}|var\(--[a-z0-9-]+\))$/i;
+const BADGE_VARIANTS = new Set(['gray', 'blue', 'purple', 'teal', 'green', 'yellow', 'orange', 'red', 'info', 'success', 'warning', 'error']);
+const BADGE_SIZES = new Set(['', 'base', 'sm']);
+
+export function safeClassList(value, fallback = '') {
+  const tokens = String(value || '').split(/\s+/).filter((token) => CLASS_TOKEN.test(token));
+  return tokens.join(' ') || fallback;
+}
+
+export function safeHeadingTag(value, fallback = 'h2') {
+  return /^h[1-6]$/.test(String(value || '')) ? String(value) : fallback;
+}
 
 // CD's own chevron path (Select.vue:19 — identical to assets/icons/ChevronDown.svg)
 export const CHEVRON_SVG = '<svg role="presentation" aria-hidden="true" viewBox="0 0 24 24">'
@@ -18,8 +34,11 @@ const PHOTO_ID = /^[A-Za-z0-9_-]+$/;
 
 export function photoUrl(id, { w = 800, h = 0, q = 70, gray = false } = {}) {
   if (!id || !PHOTO_ID.test(id)) return '';
-  let u = `${PHOTO_BASE}${id}?auto=format&fit=crop&w=${w}&q=${q}`;
-  if (h) u += `&h=${h}`;
+  const width = Number.isFinite(Number(w)) && Number(w) > 0 ? Math.round(Number(w)) : 800;
+  const height = Number.isFinite(Number(h)) && Number(h) > 0 ? Math.round(Number(h)) : 0;
+  const quality = Number.isFinite(Number(q)) && Number(q) > 0 && Number(q) <= 100 ? Math.round(Number(q)) : 70;
+  let u = `${PHOTO_BASE}${id}?auto=format&fit=crop&w=${width}&q=${quality}`;
+  if (height) u += `&h=${height}`;
   if (gray) u += '&sat=-100';   // historic material reads as archival b/w
   return u;
 }
@@ -27,19 +46,35 @@ export function photoUrl(id, { w = 800, h = 0, q = 70, gray = false } = {}) {
 // `src` takes precedence over `id`: use a real locally stored image when present
 // (assets/images/buildings/…), otherwise retain the Unsplash placeholder via id.
 // Both fall back to the colour field if loading fails.
-const LOCAL_ASSET = /^assets\/[A-Za-z0-9/_.-]+$/;
+let photoFallbackWired = false;
+
+function ensurePhotoFallback() {
+  if (photoFallbackWired || typeof document === 'undefined') return;
+  photoFallbackWired = true;
+  // Resource errors do not bubble, so use one capture listener for every photo
+  // instead of executable inline onerror attributes in generated markup.
+  document.addEventListener('error', (event) => {
+    const image = event.target;
+    if (image && image.matches && image.matches('img[data-photo-fallback]')) image.remove();
+  }, true);
+}
 
 export function photo(o = {}) {
-  const src = (o.src && LOCAL_ASSET.test(o.src)) ? o.src : photoUrl(o.id, { w: o.w, h: o.h, q: o.q, gray: o.gray });
+  const src = safeAssetUrl(o.src) || photoUrl(o.id, { w: o.w, h: o.h, q: o.q, gray: o.gray });
+  if (src) ensurePhotoFallback();
+  const cls = safeClassList(o.cls);
+  const color = SAFE_COLOR.test(String(o.color || '')) ? o.color : 'var(--color-secondary-600)';
   const img = src
-    ? `<img src="${src}" alt="${escape(o.alt || '')}" loading="lazy" decoding="async" onerror="this.remove()">`
+    ? `<img src="${src}" alt="${escape(o.alt || '')}" loading="lazy" decoding="async" data-photo-fallback>`
     : '';
-  return `<div class="photo${o.cls ? ' ' + o.cls : ''}" style="background-color:${escape(o.color || 'var(--color-secondary-600)')}${o.style ? ';' + o.style : ''}">${img}${o.overlay || ''}</div>`;
+  return `<div class="photo${cls ? ' ' + cls : ''}" style="background-color:${color}">${img}${o.overlayHtml || ''}</div>`;
 }
 
 export function icon(name, cls = 'icon--base') {
-  const u = ICON_BASE + name + '.svg';
-  return `<span class="icon ${cls}" style="-webkit-mask-image:url('${u}');mask-image:url('${u}')" aria-hidden="true"></span>`;
+  const safeName = ICON_NAME.test(String(name || '')) ? name : 'InfoCircle';
+  const safeClasses = safeClassList(cls, 'icon--base');
+  const u = ICON_BASE + safeName + '.svg';
+  return `<span class="icon ${safeClasses}" style="-webkit-mask-image:url('${u}');mask-image:url('${u}')" aria-hidden="true"></span>`;
 }
 
 export function escape(s) {
@@ -84,7 +119,9 @@ export function markLang(text, terms = EN_TERMS) {
 // use .badge__icon / .badge__icon-left (scaled in em and optically pulled into
 // the 1em padding), not generic icon--* classes plus a flex gap.
 export function badge(text, variant = 'gray', size = '') {
-  return `<span class="badge badge--${variant}${size ? ' badge--' + size : ''}"><span class="badge__text">${escape(text)}</span></span>`;
+  const safeVariant = BADGE_VARIANTS.has(variant) ? variant : 'gray';
+  const safeSize = BADGE_SIZES.has(size) ? size : '';
+  return `<span class="badge badge--${safeVariant}${safeSize ? ' badge--' + safeSize : ''}"><span class="badge__text">${escape(text)}</span></span>`;
 }
 
 // Loading state — the ONE pattern for «loading / processing» (user decision,

@@ -79,7 +79,7 @@ function newsDetail(ctx, id) {
           <p class="small muted">${C.escape(formatDate(n.date))} · ${C.escape(n.source)}</p>
           <h1 tabindex="-1">${C.escape(n.title)}</h1>
         </header>
-        ${C.photo({ src: n['bild'] && n['bild'].src, color: n.color, alt: '', w: 1200, style: 'aspect-ratio:21/9;max-height:20rem;border-radius:var(--radius-lg)' })}
+        ${C.photo({ src: n['bild'] && n['bild'].src, color: n.color, alt: '', w: 1200, cls: 'news-detail__photo' })}
         <p class="lead">${C.escape(n.teaser)}</p>
         <div class="separator separator--md"></div>
         <p>${C.escape(n.body)}</p>

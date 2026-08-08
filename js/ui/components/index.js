@@ -8,7 +8,7 @@ import {
   heroFigure, pageHeader, pageSection, renderNotFound, table,
 } from './content.js';
 import {
-  announce, flashError, mountBanner, notification, processDone, toast,
+  announce, flashError, mountBanner, notification, notificationHtml, processDone, toast,
 } from './feedback.js';
 import {
   acquireOverlayLock, closeOverlays, openModal, openShareModal, registerOverlay,
@@ -54,7 +54,7 @@ const C = {
   catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,
   catalogueState, wireCatalogueState, panelReset, wireFieldErrors, focusProcessDone, wizardHead, focusWizardStep, contextLine,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
-  notification, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,
+  notification, notificationHtml, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,
   actionCard, contactCard,
   pagination, wirePagination, loginGate, accessCard,
   preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, processDone,

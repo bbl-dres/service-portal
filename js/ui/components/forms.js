@@ -1,13 +1,14 @@
-import { CHEVRON_SVG, escape, icon } from './primitives.js';
+import { CHEVRON_SVG, escape, icon, safeClassList } from './primitives.js';
 import { announce } from './feedback.js';
+import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../../security/urls.js';
 
 // --- Forms (form.postcss + input.postcss + select.postcss) -------------------
 // CD select: label + .select wrapper + native <select> + .select__icon chevron.
 export function select(o = {}) {
   const id = o.id;
-  const size = o.size || 'base';
-  const variant = o.variant || 'outline';
-  const msgType = o.messageType || 'error';
+  const size = ['sm', 'base', 'lg'].includes(o.size) ? o.size : 'base';
+  const variant = ['outline', 'negative'].includes(o.variant) ? o.variant : 'outline';
+  const msgType = ['error', 'hint', 'info', 'success', 'warning'].includes(o.messageType) ? o.messageType : 'error';
   const isError = Boolean(o.message) && msgType === 'error';
   const hintId = o.hint ? `${id}-hint` : '';
   const msgId = o.message ? `${id}-msg` : '';
@@ -31,7 +32,8 @@ export function select(o = {}) {
     return `<option value="${escape(v)}"${sel}${dis}>${escape(t)}</option>`;
   }).join('');
 
-  return `<div class="form__group__select${o.wrapClass ? ' ' + o.wrapClass : ''}">
+  const wrapClass = safeClassList(o.wrapClass);
+  return `<div class="form__group__select${wrapClass ? ' ' + wrapClass : ''}">
   ${o.label ? `<label for="${escape(id)}"${lbl.length ? ` class="${lbl.join(' ')}"` : ''}>${escape(o.label)}${
       o.required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>` : ''}
   ${o.hint ? `<p class="form__group__hint" id="${escape(hintId)}">${escape(o.hint)}</p>` : ''}
@@ -40,7 +42,7 @@ export function select(o = {}) {
       o.required ? ' required aria-required="true"' : ''}${
       o.disabled ? ' disabled' : ''}${
       isError ? ' aria-invalid="true"' : ''}${
-      described ? ` aria-describedby="${escape(described)}"` : ''}${o.attrs ? ' ' + o.attrs : ''}>${opts}</select>
+      described ? ` aria-describedby="${escape(described)}"` : ''}${o.attrsHtml ? ' ' + o.attrsHtml : ''}>${opts}</select>
     <div class="select__icon">${CHEVRON_SVG}</div>
   </div>
   ${/* NO live role on the field message: every form page renders one errorSummary
@@ -76,8 +78,9 @@ export function errorSummary({ errors = {}, labels = {}, id = 'err-summary' } = 
 // CD select wrapper: `<select>` plus an overlaid chevron. `CHEVRON_SVG` is the
 // module constant above. The former `chevron` export merely aliased it and had
 // no callers.
-export function selectBox(inner, extraCls = '', style = '') {
-  return `<div class="select${extraCls ? ' ' + extraCls : ''}"${style ? ` style="${style}"` : ''}>${inner}<div class="select__icon">${CHEVRON_SVG}</div></div>`;
+export function selectBox(innerHtml, extraClass = '') {
+  const classes = safeClassList(extraClass);
+  return `<div class="select${classes ? ' ' + classes : ''}">${innerHtml}<div class="select__icon">${CHEVRON_SVG}</div></div>`;
 }
 
 // Wire error-summary anchors and focus its heading; otherwise focus lands on
@@ -98,7 +101,7 @@ export function wireErrorSummary(mount, { focus = true } = {}) {
 // so required/aria-describedby/aria-invalid land on the control itself.
 export function field(o = {}) {
   const id = o.id;
-  const msgType = o.messageType || 'error';
+  const msgType = ['error', 'hint', 'info', 'success', 'warning'].includes(o.messageType) ? o.messageType : 'error';
   const isError = Boolean(o.message) && msgType === 'error';
   const hintId = o.hint ? `${id}-hint` : '';
   const msgId = o.message ? `${id}-msg` : '';
@@ -237,7 +240,7 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
   return `<div class="notification notification--hint login-gate">
     ${icon('Lock', 'notification__icon')}
     <div class="notification__content">
-      <p class="m-0">${text}</p>
+      <p class="m-0">${escape(text)}</p>
       ${loginButton({ ...opts, cls: 'btn btn--outline btn--icon-left login-gate__btn' })}
     </div>
   </div>`;
@@ -248,8 +251,9 @@ export function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung
 // notifications. `next` as a data attribute is also safely escaped, while a URL
 // inside an onclick string breaks at every apostrophe.
 function loginButton({ next = '', label = '', cls = 'btn btn--outline btn--icon-left', size = '' } = {}) {
+  const safeNext = safeLinkUrl(next);
   return `<button type="button" class="${cls}${size ? ' ' + size : ''}" data-login${
-    next ? ` data-login-next="${escape(next)}"` : ''}>${icon('User', 'btn__icon')}<span class="btn__text">${
+    safeNext ? ` data-login-next="${escape(safeNext)}"` : ''}>${icon('User', 'btn__icon')}<span class="btn__text">${
     escape(label || 'Anmelden mit AGOV / FedLogin')}</span></button>`;
 }
 
@@ -271,12 +275,13 @@ export function accessCard({
   note = '', steps = [], free = '',
   missing = 'Im Prototyp ist kein Zielsystem angebunden.',
 } = {}) {
-  // `#` is the inventory placeholder for «known, but unavailable».
-  const has = !!href && href !== '#';
+  // `#` and rejected URL schemes are unavailable targets.
+  const safeHref = safeLinkUrl(href);
+  const has = !!safeHref;
   const opensNewWindow = external || newWindow;
   const arrow = opensNewWindow ? 'External' : 'ArrowRight';
   const linkAttrs = opensNewWindow
-    ? ` target="_blank" rel="${external ? 'noopener external' : 'noopener'}"`
+    ? newWindowAttrs(safeHref, { external: external && classifyUrl(safeHref) === 'external' })
     : '';
   let action, context;
 
@@ -287,10 +292,10 @@ export function accessCard({
       icon(arrow, 'btn__icon')}<span class="btn__text">${escape(label)}</span></span>`;
     context = `<p class="small muted m-0">${escape(missing)}</p>`;
   } else if (requiresLogin && !loggedIn && !newWindow) {
-    action = loginButton({ next: href, label: loginLabel || `Anmelden und ${label}` });
+    action = loginButton({ next: safeHref, label: loginLabel || `Anmelden und ${label}` });
     context = `<p class="small m-0">${icon('Lock', 'icon--base')} Für den Zugriff ist eine Anmeldung mit AGOV / FedLogin erforderlich.</p>`;
   } else {
-    action = `<a class="btn btn--outline btn--icon-right" href="${escape(href)}"${linkAttrs}>${
+    action = `<a class="btn btn--outline btn--icon-right" href="${escape(safeHref)}"${linkAttrs}>${
       icon(arrow, 'btn__icon')}<span class="btn__text">${escape(label)}</span></a>`;
     context = requiresLogin
       ? (loggedIn && user
@@ -313,8 +318,12 @@ export function accessCard({
 // it survives every page change, like wireShare.
 export function wireLogin(root = document) {
   root.addEventListener('click', (e) => {
-    const btn = e.target.closest && e.target.closest('[data-login]');
-    if (!btn || !window.__login) return;
-    window.__login(btn.dataset.loginNext || '');
+    const login = e.target.closest && e.target.closest('[data-login]');
+    if (login && window.__login) {
+      window.__login(login.dataset.loginNext || '');
+      return;
+    }
+    const logout = e.target.closest && e.target.closest('[data-logout]');
+    if (logout && window.__logout) window.__logout();
   });
 }

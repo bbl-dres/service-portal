@@ -63,7 +63,7 @@ function overview(ctx) {
       <ul class="list--default">
         <li><a href="#/data/ict-projects">IKT-Vorhaben — laufende und geplante Informatik-Vorhaben des BBL</a></li>
         <li><a href="#/knowledge/it">Informatik und IKT-Beschaffung — Vorgaben und Mustervorlagen</a></li>
-        <li><a href="https://www.bk.admin.ch/de/digitale-bundesverwaltung" target="_blank" rel="noopener external">Strategie Digitale Bundesverwaltung (Bundeskanzlei)</a></li>
+        <li><a href="https://www.bk.admin.ch/de/digitale-bundesverwaltung" target="_blank" rel="noopener noreferrer external">Strategie Digitale Bundesverwaltung (Bundeskanzlei)</a></li>
         <li><a href="#/app/dataportal">Datenportal — Auswertungen und Kennzahlen</a></li>
         <li><a href="#/data/catalog">Datenbezug und API Verzeichnis — Datenkatalog nach DCAT-AP-CH</a></li>
       </ul>`) })}`;

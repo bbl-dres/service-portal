@@ -764,7 +764,7 @@
     ],
     "link": {
       "kind": "external",
-      "href": "http://bbl.libal-tech.ch/#/projects"
+      "href": "https://bbl.libal-tech.ch/#/projects"
     },
     "description": "Gemeinsame Datenumgebung / Digital Twin (Fachanwendung).",
     "area": "buildings",
@@ -807,7 +807,7 @@
     "entries": [
       {
         "label": "CDE Libal",
-        "href": "http://bbl.libal-tech.ch/#/projects",
+        "href": "https://bbl.libal-tech.ch/#/projects",
         "kind": "external",
         "note": "Gemeinsame Datenumgebung der laufenden Projekte."
       }
@@ -892,7 +892,7 @@
     ],
     "link": {
       "kind": "external",
-      "href": "http://intranet.egate.admin.ch/"
+      "href": "https://intranet.egate.admin.ch/"
     },
     "description": "Flächen- und Belegungsmanagement (Fachanwendung).",
     "area": "buildings",
@@ -923,7 +923,7 @@
     "entries": [
       {
         "label": "FLM über eGate",
-        "href": "http://intranet.egate.admin.ch/",
+        "href": "https://intranet.egate.admin.ch/",
         "kind": "external",
         "note": "Zugriff über das eGate-Portal der Bundesverwaltung."
       }
@@ -1172,7 +1172,7 @@
     "entries": [
       {
         "label": "eGate öffnen",
-        "href": "http://intranet.egate.admin.ch/",
+        "href": "https://intranet.egate.admin.ch/",
         "kind": "external",
         "note": "Einstiegsportal der Bundesverwaltung."
       }

@@ -141,7 +141,7 @@ export function openDocumentViewer(doc, siblings, options = {}) {
     C.announce(message); // As in C.toast: aria-live does not fire in newly created nodes.
     const toastElement = document.createElement('div');
     toastElement.className = 'toast__message docviewer__toast';
-    toastElement.innerHTML = C.notification(C.escape(message), variant, iconName);
+    toastElement.innerHTML = C.notification(message, variant, iconName);
     backdrop.appendChild(toastElement);
     requestAnimationFrame(() => toastElement.classList.add('toast__message--in'));
     setTimeout(() => { toastElement.classList.remove('toast__message--in'); setTimeout(() => toastElement.remove(), 300); }, 5000);

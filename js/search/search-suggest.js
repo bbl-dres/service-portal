@@ -14,6 +14,7 @@
 import { search as runSearch, prepare } from './search-engine.js';
 import { knowledgeIndex } from '../knowledge-content.js';
 import { createListboxController } from '../ui/combobox.js';
+import { classifyUrl, safeLinkUrl } from '../security/urls.js';
 
 const MAX = 7;
 
@@ -65,8 +66,10 @@ export function attachSuggest(input, form, core, C) {
     input,
     list,
     onChoose: (item) => {
-      if (item.external) window.open(item.href, '_blank', 'noopener');
-      else location.hash = item.href.replace(/^#/, '#');
+      const href = safeLinkUrl(item.href);
+      const kind = classifyUrl(href);
+      if (item.external && kind === 'external') window.open(href, '_blank', 'noopener,noreferrer');
+      else if (!item.external && kind === 'route') location.hash = href;
     },
   });
   const close = controller.close;

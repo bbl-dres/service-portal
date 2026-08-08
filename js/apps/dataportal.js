@@ -29,10 +29,10 @@ export default async function render(ctx) {
     setCrumbs([...DATA, { label: 'Datenportal' }]);
     mount.innerHTML = `<div class="container section">
       <div class="page-header"><h1 tabindex="-1">Datenportal</h1></div>
-      ${C.notification(
+      ${C.notificationHtml(
       '<strong>Die Auswertungen konnten nicht geladen werden.</strong> '
       + 'Das ist ein Ladefehler, kein leeres Portal. '
-      + '<button type="button" class="link" onclick="location.reload()">Seite neu laden</button>',
+      + '<button type="button" class="link" data-reload-page>Seite neu laden</button>',
       'error', 'WarningCircle', { live: true })}</div>`;
     return;
   }
@@ -68,7 +68,7 @@ function overview(ctx) {
       title: 'Datenportal',
       leadHtml: 'Auswertungen zu den Kennzahlen des BBL — Energie und Klima, Immobilienportfolio, Bauprojekte und Investitionen, Beschaffung, Logistik, Mobilität und Personal. '
         + 'Behördenübergreifende Kennzahlen und Auswertungen bietet das Management-Informationssystem (MIS) der Bundesverwaltung — aufgebaut im '
-        + '<a href="https://www.bbl.admin.ch/de/programm-superb" target="_blank" rel="noopener external">Programm SUPERB</a> (SAP S/4HANA).',
+        + '<a href="https://www.bbl.admin.ch/de/programm-superb" target="_blank" rel="noopener noreferrer external">Programm SUPERB</a> (SAP S/4HANA).',
     })}
     <h2 class="sr-only">Themen</h2>
     <div class="grid grid--responsive-cols-3 mt-8">${topics.map(topicCard).join('')}</div>

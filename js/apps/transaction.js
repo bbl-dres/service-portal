@@ -69,7 +69,7 @@ export default async function render(ctx) {
       lead: 'Transaktionsplattform für die Veräusserung von Bundesliegenschaften (Divestment) — koordiniert die Zusammenarbeit zwischen Portfoliomanagement, internen Stellen und beauftragten Maklerinnen und Maklern.',
     })}
 
-    ${C.notification('Dieses Modul ist im Prototyp ein <strong>Stub</strong>: Die hier gezeigten Objekte, Status und Schritte sind fiktive Demo-Daten. Die produktive Anbindung an die Transaktionsplattform (Auftragsverwaltung, Bieterverfahren, Beurkundung) ist noch nicht umgesetzt.', 'warning', 'WarningCircle')}
+    ${C.notificationHtml('Dieses Modul ist im Prototyp ein <strong>Stub</strong>: Die hier gezeigten Objekte, Status und Schritte sind fiktive Demo-Daten. Die produktive Anbindung an die Transaktionsplattform (Auftragsverwaltung, Bieterverfahren, Beurkundung) ist noch nicht umgesetzt.', 'warning', 'WarningCircle')}
 
     ${''
 }

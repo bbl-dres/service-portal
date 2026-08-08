@@ -5,6 +5,7 @@ import { createMapSlot } from '../map/map-slot.js';
 import { openGallery } from '../ui/gallery.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
 import { preparePage } from '../collections.js';
+import { safeResourceUrl } from '../security/urls.js';
 
 export const needs = ['buildings', 'media', 'parcels', 'projects'];
 const isHistoric = (m) => m.historicPeriod === 'historisch';
@@ -257,6 +258,7 @@ function detail(ctx, id) {
   const isPublic = m.accessLevel === 'öffentlich';
   const hist = isHistoric(m);
   const hasGeo = Number.isFinite(m.lat) && Number.isFinite(m.lon);
+  const downloadHref = safeResourceUrl(m.url);
 
   const siblings = all.filter(x => relatedObjectId(x) === objectId);
 
@@ -280,14 +282,16 @@ function detail(ctx, id) {
       aria-label="${C.escape(m.title)} — in der Galerie öffnen">
       ${C.photo({ src: m.file || '', id: m.photo, color: m.color, alt: '', w: 1600, gray: hist,
         cls: 'med-shot__photo',
-        overlay: isVideo ? `<span class="med-shot__play" aria-hidden="true">${C.icon('Video', 'icon--xl')}</span>` : '' })}
+        overlayHtml: isVideo ? `<span class="med-shot__play" aria-hidden="true">${C.icon('Video', 'icon--xl')}</span>` : '' })}
     </button>
     ${
 ''}
     ${isPublic ? '<p class="small muted">Frei verwendbar gemäss angegebenem Copyright.</p>' : ''}
     ${''}
     <div class="row mt-4">
-      <a class="btn btn--filled btn--icon-left" href="${C.escape(m.url || '#')}">${C.icon('Download', 'btn__icon icon--base')}<span class="btn__text">Herunterladen</span></a>
+      ${downloadHref
+        ? `<a class="btn btn--filled btn--icon-left" href="${C.escape(downloadHref)}">${C.icon('Download', 'btn__icon icon--base')}<span class="btn__text">Herunterladen</span></a>`
+        : `<span class="btn btn--filled btn--icon-left" aria-disabled="true">${C.icon('Download', 'btn__icon icon--base')}<span class="btn__text">Herunterladen</span></span>`}
       <button type="button" class="btn btn--outline btn--icon-left" data-open-gallery>${C.icon('Image', 'btn__icon icon--base')}<span class="btn__text">In der Galerie öffnen</span></button>
     </div>`;
 

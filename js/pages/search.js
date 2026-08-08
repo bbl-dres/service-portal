@@ -17,6 +17,7 @@ import { domainLabel as domainLabelShared } from '../domain.js';
 import * as links from '../links.js';
 import { knowledgeIndex } from '../knowledge-content.js';
 import { record as logQuery, summary as logSummary, clear as logClear } from '../search/search-log.js';
+import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 
 // Deferred collections for this route. The router calls core.ensure(needs)
 // BEFORE render(); without this declaration, an accessor would read the still
@@ -48,19 +49,21 @@ export default async function render(ctx) {
   const total = hits.length;
   if (rawQ && !showLog) logQuery(rawQ, total);
 
-  const resultRow = (r) => `
-    <li class="search-result">
-      <a class="search-result__link plain-link" href="${C.escape(r.href)}"${
-        r.external ? ' target="_blank" rel="noopener external"' : ''}>
+  const resultRow = (r) => {
+    const href = safeLinkUrl(r.href);
+    const body = `
         <p class="meta-info search-result__meta">
           <span class="meta-info__item">${C.escape(r.type)}</span>
           ${r.meta ? `<span class="meta-info__item">${C.escape(r.meta)}</span>` : ''}
         </p>
         <h3 class="search-result__title">${C.escape(r.title)}${
           r.external ? ' ' + C.icon('External', 'icon--sm') : ''}</h3>
-        ${r.desc ? `<p class="search-result__desc">${C.escape(r.desc)}</p>` : ''}
-      </a>
-    </li>`;
+        ${r.desc ? `<p class="search-result__desc">${C.escape(r.desc)}</p>` : ''}`;
+    return `<li class="search-result">${href
+      ? `<a class="search-result__link plain-link" href="${C.escape(href)}"${
+        r.external ? newWindowAttrs(href, { external: classifyUrl(href) === 'external' }) : ''}>${body}</a>`
+      : `<div class="search-result__link plain-link" aria-disabled="true">${body}</div>`}</li>`;
+  };
 
   // --- State from the shareable hash, as in the three catalogues ---
   const selectedKinds = state.selected.kind;
@@ -314,7 +317,7 @@ function noResults(C, rawQ, index) {
         <li>Verwenden Sie einen anderen oder allgemeineren Begriff.</li>
         <li>Verwenden Sie weniger Suchbegriffe — es müssen alle vorkommen.</li>
       </ul>
-      ${C.notification(`<strong>Nicht gefunden, wonach Sie suchen?</strong><br>
+      ${C.notificationHtml(`<strong>Nicht gefunden, wonach Sie suchen?</strong><br>
         Wenden Sie sich an die zuständige Stelle oder öffnen Sie die
         <a href="#/services">Dienstleistungen</a>.`, 'info')}
     </div>`;
@@ -329,8 +332,8 @@ function logView(C, indexSize) {
         zebra: true,
         columns: [
           { key: 'q', label: 'Suchbegriff', render: r => `<a href="#/search?q=${encodeURIComponent(r.q)}">${C.escape(r.q)}</a>` },
-          { key: 'count', label: 'Anfragen', render: r => String(r.count) },
-          { key: 'hits', label: 'Treffer', render: r => r.hits === 0 ? C.badge('0 Treffer', 'error') : String(r.hits) },
+          { key: 'count', label: 'Anfragen', render: r => C.escape(String(r.count)) },
+          { key: 'hits', label: 'Treffer', render: r => r.hits === 0 ? C.badge('0 Treffer', 'error') : C.escape(String(r.hits)) },
         ],
         rows,
       })
@@ -340,7 +343,7 @@ function logView(C, indexSize) {
     <h2>Suchprotokoll</h2>
     <p class="muted">${total} Anfragen, ${rows.length} verschiedene Begriffe, davon <strong>${zero} ohne Treffer</strong>.
       Index: ${indexSize} Einträge.</p>
-    ${C.notification(`Nur auf diesem Gerät gespeichert (localStorage), ohne Kennung und ohne Übertragung —
+    ${C.notificationHtml(`Nur auf diesem Gerät gespeichert (localStorage), ohne Kennung und ohne Übertragung —
       ein Notizblock, kein Tracking. Er beantwortet die Frage, welche Begriffe ins Leere laufen.
       <a href="#/search">Zurück zur Suche</a>`, 'info')}
     ${body}

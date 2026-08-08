@@ -406,7 +406,7 @@ export function createWorkbenchViews(context) {
         <div class="fpe-field"><label for="fpe-placement-rotation">Drehung</label><select id="fpe-placement-rotation" class="input--outline input--sm" data-placement-field="rotation">${optionMarkup([0, 45, 90, 135, 180, 225, 270, 315].map((value) => ({ value, label: `${value}°` })), placement.rotation)}</select></div>
         <div class="fpe-form-actions"><button class="btn btn--outline btn--sm btn--icon-left" type="button" data-action="rotate-left" aria-label="Objekt 45 Grad nach links drehen">${C.icon('ArrowLeft', 'btn__icon')}<span class="btn__text">Drehen</span></button><button class="btn btn--outline btn--sm btn--icon-left" type="button" data-action="delete-placement">${C.icon('Trash', 'btn__icon')}<span class="btn__text">Entfernen</span></button></div>
       </form>` : ''}
-      ${product ? `<section class="fpe-inspector-section"><a class="btn btn--outline btn--sm btn--icon-right" href="#/app/shop/product/${encodeURIComponent(product.id)}" target="_blank" rel="noopener">${C.icon('External', 'btn__icon')}<span class="btn__text">Im Produktkatalog öffnen</span></a></section>` : ''}`;
+      ${product ? `<section class="fpe-inspector-section"><a class="btn btn--outline btn--sm btn--icon-right" href="#/app/shop/product/${encodeURIComponent(product.id)}" target="_blank" rel="noopener noreferrer">${C.icon('External', 'btn__icon')}<span class="btn__text">Im Produktkatalog öffnen</span></a></section>` : ''}`;
   }
 
   function inspectorHTML() {

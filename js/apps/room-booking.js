@@ -740,8 +740,8 @@ export default async function render(ctx) {
         lead: instance.status === 'abgeschlossen' ? 'Raum gebucht.' : 'Buchung erfasst.',
         title: 'Buchung abgeschlossen',
         heading: 'h2',
-        text: `Ihre Buchung «${C.escape(instance.data?.['zweck'] || instance.title)}» wurde bestätigt.`,
-        extra: room ? `<div class="booking-done__summary">
+        text: `Ihre Buchung «${instance.data?.['zweck'] || instance.title}» wurde bestätigt.`,
+        extraHtml: room ? `<div class="booking-done__summary">
           <dl class="kv">
             <dt>Gebäude</dt><dd>${C.escape(instance.data?.['gebaeude'] || '')}</dd>
             <dt>Raum</dt><dd>${C.escape(instance.data?.['raumname'] || '')} · ${C.escape(room.roomNumber)}</dd>

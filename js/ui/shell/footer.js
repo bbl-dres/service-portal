@@ -2,7 +2,7 @@ import { icon, escape as escapeHtml } from '../../components.js';
 
 function footerHTML() {
   const fLink = (href, label, ext) =>
-    `<a class="footer__link footer-information__link--icon-right" href="${href}"${ext ? ' target="_blank" rel="noopener external"' : ''}>${icon(ext ? 'External' : 'ArrowRight', 'footer-information__icon')}${escapeHtml(label)}</a>`;
+    `<a class="footer__link footer-information__link--icon-right" href="${href}"${ext ? ' target="_blank" rel="noopener noreferrer external"' : ''}>${icon(ext ? 'External' : 'ArrowRight', 'footer-information__icon')}${escapeHtml(label)}</a>`;
 
   return `
   <!-- No inner .container (item 4.12): it aligned the sticky button with the
@@ -55,10 +55,10 @@ function footerHTML() {
   <div class="bg--secondary-700">
     <nav class="container" aria-label="Rechtliches">
       <ul class="footer-navigation">
-        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/impressum.html" target="_blank" rel="noopener external">Impressum</a></li>
-        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches.html" target="_blank" rel="noopener external">Rechtliches</a></li>
-        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/datenschutzerklaerung.html" target="_blank" rel="noopener external">Datenschutz</a></li>
-        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/barrierefreiheit-bund.html" target="_blank" rel="noopener external">Barrierefreiheit</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/impressum.html" target="_blank" rel="noopener noreferrer external">Impressum</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches.html" target="_blank" rel="noopener noreferrer external">Rechtliches</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/datenschutzerklaerung.html" target="_blank" rel="noopener noreferrer external">Datenschutz</a></li>
+        <li><a class="footer__link" href="https://www.admin.ch/gov/de/start/rechtliches/barrierefreiheit-bund.html" target="_blank" rel="noopener noreferrer external">Barrierefreiheit</a></li>
       </ul>
     </nav>
   </div>`;

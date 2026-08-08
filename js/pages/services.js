@@ -1,5 +1,6 @@
 // Services — service directory (catalogue) and service detail.
 import { audienceOptions, audienceLabel, audienceTags } from '../domain.js';
+import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 const MISSING_TARGET_MESSAGE = 'Im Prototyp ist kein Zielsystem angebunden.';
 
 // Deferred collections for this route. The router calls core.ensure(needs)
@@ -54,8 +55,10 @@ export default async function render(ctx) {
     docs: core.documents().filter(d => d.title.toLowerCase().includes(q)).length,
   } : null;
 
+  const serviceHref = (serviceId) => `#/services/${encodeURIComponent(String(serviceId ?? ''))}`;
+
   const card = (s) => C.card({
-    title: s.title, desc: s.short, href: `#/services/${s.serviceId}`,
+    title: s.title, desc: s.short, href: serviceHref(s.serviceId),
     badges: [audienceTags(core, C, s.audience)],
     footerInfo: C.escape(domainLabel(domains, s.domain)), footerAction: C.cardAction(),
   });
@@ -67,7 +70,7 @@ export default async function render(ctx) {
     // anywhere on the row follows it (consistent affordance, tbl-8).
     rowsClickable: true,
     columns: [
-      { key: 'title', label: 'Dienstleistung', render: s => `<a href="#/services/${s.serviceId}">${C.escape(s.title)}</a><br><span class="small muted">${C.escape(s.short)}</span>` },
+      { key: 'title', label: 'Dienstleistung', render: s => `<a href="${serviceHref(s.serviceId)}">${C.escape(s.title)}</a><br><span class="small muted">${C.escape(s.short)}</span>` },
       { key: 'domain', label: 'Bereich', render: s => C.escape(domainLabel(domains, s.domain)) },
       { key: 'audience', label: 'Zielgruppe', render: s => audienceTags(core, C, s.audience) },
     ],
@@ -121,7 +124,7 @@ export default async function render(ctx) {
       card, listView, unit: 'Dienstleistungen',
       paginationInputId: 'svc-page', paginationLabel: 'Seitennavigation Dienstleistungen',
       paginationHref: (p) => hash({ page: p }),
-      available: core.available('services'), note: relatedHits || '',
+      available: core.available('services'), noteHtml: relatedHits || '',
     })}
   </div>`;
 
@@ -157,10 +160,11 @@ function detail(ctx, id) {
   const definition = service.processDefId ? engine.definition(service.processDefId) : null;
   const target = service.target || {};   // Information offerings have no `target`; do not dereference it (A5).
   const isExternal = target.kind === 'external';
+  const targetHref = safeLinkUrl(target.href);
   const ctaLabel = service.type === 'action' ? (isExternal ? 'Zum externen System' : 'Vorgang starten') : 'Öffnen';
   // A «#» target is a placeholder. Do not offer a dead button; explain that the
   // prototype is not connected to the target system.
-  const hasTarget = target.href && target.href !== '#';
+  const hasTarget = !!targetHref;
   // «Zugriff» card, first card in the side column (user decision, 2026-08-04):
   // the same location and, since 2026-08-06, the same BUILDING BLOCK as on the
   // application landing page (C.accessCard). Previously the application placed
@@ -168,7 +172,7 @@ function detail(ctx, id) {
   // although the card answers the same question on both pages. The building block
   // derives target, session hint, and safe new-tab contract together.
   const accessCard = C.accessCard({
-    href: hasTarget ? target.href : '', label: ctaLabel, external: isExternal, newWindow: true,
+    href: targetHref, label: ctaLabel, external: isExternal, newWindow: true,
     // Only starting a case (type=action) requires authentication. Information
     // offerings are public. External target systems provide their own login;
     // internal targets rely on the newly opened application's router login gate.
@@ -181,8 +185,8 @@ function detail(ctx, id) {
       ${/* CD Btn.vue: the icon comes first in the DOM, btn--icon-right reverses
             the order, and the label ALWAYS uses the .btn__text wrapper. */''}
       ${hasTarget
-        ? `<a class="btn btn--outline btn--lg btn--icon-right" href="${C.escape(target.href)}" target="_blank" rel="${
-            isExternal ? 'noopener external' : 'noopener'}">${
+        ? `<a class="btn btn--outline btn--lg btn--icon-right" href="${C.escape(targetHref)}"${
+            newWindowAttrs(targetHref, { external: isExternal && classifyUrl(targetHref) === 'external' })}>${
             C.icon('External', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></a>`
         : `<span class="btn btn--outline btn--lg btn--icon-right" aria-disabled="true">${
             C.icon(isExternal ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></span>

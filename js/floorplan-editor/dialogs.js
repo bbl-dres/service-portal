@@ -39,7 +39,7 @@ export function openPublishConfirmation({ C, queueFrame, rooms, placements, onCo
     id: 'fpe-publish-modal',
     size: 'sm',
     title: 'Veröffentlichung simulieren?',
-    body: `${C.notification('<strong>Nur Feedback-Prototyp.</strong> Die Version wird ausschliesslich in diesem Browser gespeichert. Es findet keine Freigabe, Synchronisation oder Berechtigungsprüfung statt.', 'info', 'InfoCircle')}
+    body: `${C.notificationHtml('<strong>Nur Feedback-Prototyp.</strong> Die Version wird ausschliesslich in diesem Browser gespeichert. Es findet keine Freigabe, Synchronisation oder Berechtigungsprüfung statt.', 'info', 'InfoCircle')}
       <p>Die aktuelle Arbeitskopie enthält <strong>${rooms} Räume</strong> und <strong>${placements} Ausstattungsobjekte</strong>.</p>`,
     footer: `<button type="button" class="btn btn--outline" data-modal-close>Abbrechen</button>
       <button type="button" class="btn btn--filled" id="${confirmId}">Im Prototyp veröffentlichen</button>`,

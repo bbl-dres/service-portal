@@ -69,11 +69,11 @@ export function kpiTile(C, { label, value, unit = '', deltaLabel = '', deltaGood
   </div>`;
 }
 
-// Header: pageHeader on the left, action menu on the right. `extra` is optional
+// Header: pageHeader on the left, action menu on the right. `extraHtml` is optional
 // HTML below the lead (for example the property board's inventory notice).
-export function dashHeader(C, { title, lead = '', leadHtml = '', extra = '' } = {}) {
+export function dashHeader(C, { title, lead = '', leadHtml = '', extraHtml = '' } = {}) {
   return `<div class="dash-header">
-      <div class="dash-header__text">${C.pageHeader(leadHtml ? { title, leadHtml } : { title, lead })}${extra}</div>
+      <div class="dash-header__text">${C.pageHeader(leadHtml ? { title, leadHtml } : { title, lead })}${extraHtml}</div>
       ${C.menu({ menuId: 'dashboard', label: 'Dashboard-Aktionen', items: DASHBOARD_MENU })}
     </div>`;
 }

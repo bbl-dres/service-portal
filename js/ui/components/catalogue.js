@@ -2,6 +2,7 @@ import { CHEVRON_SVG, escape, icon, preserveFocus, wireScrollRegions } from './p
 import { empty, table } from './content.js';
 import { announce } from './feedback.js';
 import { pagination, wirePagination } from './navigation.js';
+import { safeLinkUrl } from '../../security/urls.js';
 
 // --- Results header (search.postcss:208-234) --------------------------------
 // Bar above the results list: count on the left, controls on the right. The view
@@ -27,7 +28,7 @@ export function catalogueResults({
   visible, count, view = 'gallery', page = 1, totalPages = 1,
   card, listView, mapView, unit, gridCls = 'grid grid--responsive-cols-3',
   paginationHref, paginationInputId, paginationLabel,
-  available = true, emptyMsg, unavailableMsg, note = '',
+  available = true, emptyMsg, unavailableMsg, note = '', noteHtml = '',
   regionLabel = '', resetHref = '',
 }) {
   // Map view deliberately shows ALL hits rather than one page. A map with 10 of
@@ -59,7 +60,7 @@ export function catalogueResults({
   // the same information.
   return `<section>
       <h2 class="sr-only">${escape(regionLabel || unitCase(unit).nom || 'Ergebnisse')}</h2>
-      ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
+      ${noteHtml || note ? `<p class="muted small mt-4">${noteHtml || escape(note)}</p>` : ''}
       ${body}
     </section>`;
 }
@@ -309,7 +310,7 @@ export function mountDataTable(host, opts = {}) {
         panel: facets.map((f) => filterGroup({ dim: f.dim, legend: f.legend, options: f.options, selected: state.sel[f.dim], idPrefix: id })).join(''),
         panelHidden: !state.open,
       })}
-      ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
+      ${note ? `<p class="muted small mt-4">${escape(note)}</p>` : ''}
       ${/* Keep the table even with NO hits, with a row explaining why. Replacing
             it with an empty state removed header and columns: people could no
             longer see what the table represented, and filtering shifted the
@@ -544,8 +545,11 @@ export function wireCatalogueState(mount, {
 // .filter-panel__actions).
 export function panelReset({ href = '', id = '', label = 'Filter zurücksetzen', wrap = 'catbar__panel-actions' } = {}) {
   const inner = `${icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">${escape(label)}</span>`;
-  const ctl = href
-    ? `<a class="btn btn--bare btn--sm btn--icon-left" href="${escape(href)}">${inner}</a>`
+  const safeHref = safeLinkUrl(href);
+  const ctl = safeHref
+    ? `<a class="btn btn--bare btn--sm btn--icon-left" href="${escape(safeHref)}">${inner}</a>`
+    : href
+      ? `<span class="btn btn--bare btn--sm btn--icon-left" aria-disabled="true">${inner}</span>`
     : `<button type="button" class="btn btn--bare btn--sm btn--icon-left"${id ? ` id="${escape(id)}"` : ''}>${inner}</button>`;
   return wrap ? `<div class="${escape(wrap)}">${ctl}</div>` : ctl;
 }

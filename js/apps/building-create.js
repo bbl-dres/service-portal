@@ -10,6 +10,7 @@
 import { initPickerMap } from '../map/buildings-map.js';
 import * as links from '../links.js';
 import { SERVICES, trail } from '../crumbs.js';
+import { swisstopoLabelText } from '../security/untrusted-text.js';
 import { createListboxController } from '../ui/combobox.js';
 
 // Copy shown by the router's authentication gate for this application.
@@ -17,14 +18,6 @@ export const loginText = 'Das Erfassen eines Gebäudes wird als Vorgang unter «
 
 const SEARCH_URL = 'https://api3.geo.admin.ch/rest/services/api/SearchServer';
 const STEP_LABELS = ['Standort', 'Stammdaten', 'Prüfen & Absenden'];
-
-// swisstopo returns label as an HTML fragment with <b> highlighting. Treat it
-// as untrusted text and never reuse it as markup.
-function plainLabel(html) {
-  const d = document.createElement('div');
-  d.innerHTML = String(html || '');
-  return (d.textContent || '').replace(/\s+/g, ' ').trim();
-}
 
 // Parse an address such as Fellerstrasse 21 3003 Bern into street, number,
 // postal code, and place.
@@ -48,7 +41,7 @@ async function searchAddresses(query, { signal } = {}) {
   const data = await res.json();
   return (data.results || [])
     .filter(r => r.attrs && Number.isFinite(r.attrs.lat) && Number.isFinite(r.attrs.lon))
-    .map(r => ({ label: plainLabel(r.attrs.label), lat: r.attrs.lat, lon: r.attrs.lon }));
+    .map(r => ({ label: swisstopoLabelText(r.attrs.label), lat: r.attrs.lat, lon: r.attrs.lon }));
 }
 
 export default async function render(ctx) {
@@ -287,8 +280,8 @@ export default async function render(ctx) {
     <div class="container section container--grid">
       <div class="container__center--xs">
         ${C.processDone({ instance: i, lead: 'Erfassung eingereicht.', title: 'Vielen Dank',
-          text: `Das Objekt «${C.escape(buildingName())}» ist zur Prüfung beim Portfoliomanagement.`,
-          extra: `<dl class="kv">
+          text: `Das Objekt «${buildingName()}» ist zur Prüfung beim Portfoliomanagement.`,
+          extraHtml: `<dl class="kv">
             <dt>Referenz</dt><dd>${C.escape(i.reference)}</dd>
             <dt>Adresse</dt><dd>${C.escape(`${state.street} ${state.no}, ${state.zip} ${state.city}`.trim())}</dd>
             <dt>Status</dt><dd>${C.statusBadge(i.status, 'Eingereicht')}</dd>

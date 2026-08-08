@@ -399,11 +399,22 @@ try {
   // new-document hook runs before any application module on the target page.
   const mapPage = await openPage(cdp, `${APP_BASE}/services`, { login: true });
   await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
-    source: `Object.defineProperty(window, 'maplibregl', {
-      configurable: true,
-      writable: true,
-      value: { Map: class { constructor() { throw new Error('mock Map constructor failure'); } } },
-    });`,
+    // The authenticated loader intentionally ignores a pre-existing global.
+    // Wrap the global assigned by the SRI-verified bundle instead, replacing
+    // only its constructor so this remains a post-load initialization probe.
+    source: `(() => {
+      let loaded;
+      Object.defineProperty(window, 'maplibregl', {
+        configurable: true,
+        get: () => loaded,
+        set: (value) => {
+          loaded = new Proxy(value, { get(target, property, receiver) {
+            if (property === 'Map') return class { constructor() { throw new Error('mock Map constructor failure'); } };
+            return Reflect.get(target, property, receiver);
+          } });
+        },
+      });
+    })();`,
   }, mapPage.sessionId);
   const freshMapUrl = `${APP_BASE.replace(/#$/, '')}?map-constructor-probe=1#/app/portfolio?view=map`;
   await cdp.send('Page.navigate', { url: freshMapUrl }, mapPage.sessionId);

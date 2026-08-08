@@ -13,6 +13,7 @@
 // The former live-data action survives as read-only response examples. Endpoints
 // covered by LIVE[...] show actual portal data in their 200 response example.
 import { fetchJSON } from '../core/fetch-json.js';
+import { loadExternalAssets } from '../core/external-assets.js';
 import { DATA } from '../crumbs.js';
 
 // Breadcrumb prefix: this route belongs below the data-access catalogue.
@@ -30,23 +31,27 @@ export const needs = [
 
 // Lazily load swagger-ui-dist from the CDN, following the MapLibre pattern.
 const SWAGGER_VER = '5.17.14';
-let suPromise = null;
+const SWAGGER_ASSETS = {
+  key: `swagger-ui-dist@${SWAGGER_VER}`,
+  globalName: 'SwaggerUIBundle',
+  styles: [{
+    url: `https://unpkg.com/swagger-ui-dist@${SWAGGER_VER}/swagger-ui.css`,
+    integrity: 'sha384-wxLW6kwyHktdDGr6Pv1zgm/VGJh99lfUbzSn6HNHBENZlCN7W602k9VkGdxuFvPn',
+  }],
+  script: {
+    url: `https://unpkg.com/swagger-ui-dist@${SWAGGER_VER}/swagger-ui-bundle.js`,
+    integrity: 'sha384-wmyclcVGX/WhUkdkATwhaK1X1JtiNrr2EoYJ+diV3vj4v6OC5yCeSu+yW13SYJep',
+  },
+  messages: {
+    timeout: 'Zeitüberschreitung beim Laden der Swagger-Oberfläche',
+    style: 'Swagger UI konnte nicht geladen werden',
+    script: 'Swagger UI konnte nicht geladen werden',
+    global: 'SwaggerUIBundle fehlt',
+  },
+};
+
 function loadSwaggerUI() {
-  if (window.SwaggerUIBundle) return Promise.resolve(window.SwaggerUIBundle);
-  if (suPromise) return suPromise;
-  suPromise = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Zeitüberschreitung beim Laden der Swagger-Oberfläche')), 12000);
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = `https://unpkg.com/swagger-ui-dist@${SWAGGER_VER}/swagger-ui.css`;
-    document.head.appendChild(css);
-    const s = document.createElement('script');
-    s.src = `https://unpkg.com/swagger-ui-dist@${SWAGGER_VER}/swagger-ui-bundle.js`;
-    s.onload = () => { clearTimeout(timer); window.SwaggerUIBundle ? resolve(window.SwaggerUIBundle) : reject(new Error('SwaggerUIBundle fehlt')); };
-    s.onerror = () => { clearTimeout(timer); reject(new Error('Swagger UI konnte nicht geladen werden')); };
-    document.head.appendChild(s);
-  }).catch((e) => { suPromise = null; throw e; });   // Do not cache failures; a later visit may retry.
-  return suPromise;
+  return loadExternalAssets(SWAGGER_ASSETS);
 }
 
 // Swagger adds parts of its tree after onComplete and creates more controls
@@ -212,10 +217,10 @@ export default async function render(ctx) {
     if (stale && stale()) return;
   } catch (e) {
     if (stale && stale()) return;
-    host.innerHTML = C.notification(
+    host.innerHTML = C.notificationHtml(
       '<strong>Die Swagger-Oberfläche konnte nicht geladen werden.</strong> '
       + `${C.escape(e.message)} — sie kommt von unpkg.com und braucht Netzzugang. `
-      + '<button type="button" class="link" onclick="location.reload()">Seite neu laden</button>',
+      + '<button type="button" class="link" data-reload-page>Seite neu laden</button>',
       'error', 'WarningCircle', { live: true });
     return;
   }

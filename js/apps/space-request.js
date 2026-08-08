@@ -15,7 +15,10 @@ export default async function render(ctx) {
 
   const buildings = core.buildings();
   const naw = core.ref().nawClasses || [];
-  const dsf = core.ref().deskSharingFactor || 0.8;
+  const configuredDsf = Number(core.ref().deskSharingFactor);
+  const dsf = Number.isFinite(configuredDsf) && configuredDsf > 0 && configuredDsf <= 1
+    ? configuredDsf
+    : 0.8;
   const AREA_PER_WORKPLACE = 12;
 
   // Prefill a calling portal's building only when its ID exists. Invalid or stale
@@ -87,7 +90,7 @@ export default async function render(ctx) {
     return `
       ${C.select({ id: 'naw', name: 'naw', label: 'Arbeitswelt (NAW-Klasse)', value: state.nawClass,
         options: naw.map(n => ({ value: n.id, label: n.label })) })}
-      ${C.notification(`Geschätzter Flächenbedarf: <strong>${area()} m² HNF</strong><br><span class="small">${state.persons} Arbeitsplätze × ${AREA_PER_WORKPLACE} m² × Desk-Sharing-Faktor ${dsf}</span>`, 'info', 'InfoCircle')}
+      ${C.notificationHtml(`Geschätzter Flächenbedarf: <strong>${area()} m² HNF</strong><br><span class="small">${state.persons} Arbeitsplätze × ${AREA_PER_WORKPLACE} m² × Desk-Sharing-Faktor ${dsf}</span>`, 'info', 'InfoCircle')}
       ${C.field({ id: 'requested-date', label: 'Gewünschter Termin',
         control: (cls, attrs) => `<input id="requested-date" type="date" value="${C.escape(state.requestedDate)}" class="${cls}"${attrs}>` })}
       ${C.field({ id: 'justification', label: 'Begründung', required: true, message: state.errors.justification,
@@ -111,7 +114,7 @@ export default async function render(ctx) {
         <dt>Wunschtermin</dt><dd>${C.escape(state.requestedDate || '—')}</dd>
         <dt>Begründung</dt><dd>${C.escape(state.justification)}</dd>
       </dl>
-      ${C.notification('Mit dem Absenden wird ein Vorgang erstellt und an die Prüfung weitergeleitet. Sie können den Status unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
+      ${C.notificationHtml('Mit dem Absenden wird ein Vorgang erstellt und an die Prüfung weitergeleitet. Sie können den Status unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
       <div class="form__actions form__actions--between"><button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button><button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Antrag absenden</span></button></div>`;
   }
 

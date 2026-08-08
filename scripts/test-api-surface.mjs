@@ -121,7 +121,7 @@ check(components.default.actionCard({ links: [{ label: 'Alt', href: '#/alt' }], 
 const newWindowAction = components.default.actionCard({
   links: [{ label: 'Plan-Editor', href: '#/app/floorplan-editor?building=A%2FB', newWindow: true }],
 });
-check(newWindowAction.includes('target="_blank" rel="noopener"')
+check(newWindowAction.includes('target="_blank" rel="noopener noreferrer"')
   && newWindowAction.includes('External.svg'),
   'standalone domain applications receive a safe new-window contract and External icon');
 
@@ -129,7 +129,7 @@ console.log('■ New-window contract for application launches');
 const applicationEntry = components.default.downloadItem({
   href: '#/app/portfolio', title: 'Anwendung starten', newWindow: true,
 });
-check(applicationEntry.includes('href="#/app/portfolio" target="_blank" rel="noopener"')
+check(applicationEntry.includes('href="#/app/portfolio" target="_blank" rel="noopener noreferrer"')
   && applicationEntry.includes('External.svg'),
   'portal-internal application entry points open safely in a new tab');
 const anonymousApplicationAccess = components.default.accessCard({
@@ -137,7 +137,7 @@ const anonymousApplicationAccess = components.default.accessCard({
   requiresLogin: true, loggedIn: false,
 });
 check(anonymousApplicationAccess.includes('<a class="btn btn--outline btn--icon-right"')
-  && anonymousApplicationAccess.includes('target="_blank" rel="noopener"')
+  && anonymousApplicationAccess.includes('target="_blank" rel="noopener noreferrer"')
   && anonymousApplicationAccess.includes('Anwendung starten')
   && anonymousApplicationAccess.includes('Die Anmeldung erfolgt in der gestarteten Anwendung.')
   && !anonymousApplicationAccess.includes('data-login'),

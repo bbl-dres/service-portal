@@ -216,7 +216,7 @@ export const AREAS = {
         <div class="row mt-4">
           ${/* CD Btn.vue: icon comes first in the DOM; btn--icon-right reverses
                 order, and the label uses the .btn__text wrapper. */''}
-          <a class="btn btn--outline btn--lg btn--icon-right" href="https://prozesse-archimap.admin.ch" target="_blank" rel="noopener external">${C.icon('External', 'btn__icon')}<span class="btn__text">Zum Prozessportal (Archimap)</span></a>
+          <a class="btn btn--outline btn--lg btn--icon-right" href="https://prozesse-archimap.admin.ch" target="_blank" rel="noopener noreferrer external">${C.icon('External', 'btn__icon')}<span class="btn__text">Zum Prozessportal (Archimap)</span></a>
         </div>` },
       { id: 'faq', title: 'Häufige Fragen (FAQ)', faq: true },
     ],

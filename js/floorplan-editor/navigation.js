@@ -158,7 +158,7 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
       <label class="fpe-nav-search"><span class="sr-only">${floorView ? 'Geschosse' : 'Gebäude'} durchsuchen</span>${C.icon('Search', 'icon--base')}<input id="fpe-nav-search" type="search" placeholder="Suchen…"></label>
       <label class="fpe-nav-sort"><span class="sr-only">Sortieren</span><select id="fpe-nav-sort" class="input--outline input--sm"><option value="name">Sortieren: Name</option><option value="status">Sortieren: Status</option></select></label>
     </div>
-    ${message ? `<div class="fpe-nav-message">${C.notification(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}</div>` : ''}
+    ${message ? `<div class="fpe-nav-message">${C.notificationHtml(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}</div>` : ''}
     <div class="fpe-nav-layout">${rail}<main class="fpe-nav-main" data-scroll-region aria-label="${floorView ? 'Aktive Geschosse' : 'Gebäude'}">
       <div class="fpe-nav-table"><table class="table" role="table"><caption class="sr-only">${floorView ? `Aktive Geschosse von ${C.escape(object.building.name)}` : 'Gebäude im Plan-Editor'}</caption><thead role="rowgroup"><tr role="row">${columns}</tr></thead><tbody id="fpe-nav-rows" role="rowgroup">${rows}</tbody></table></div>
       <p class="fpe-panel-empty" id="fpe-nav-empty" hidden>Keine passenden ${floorView ? 'Geschosse' : 'Gebäude'} gefunden.</p>

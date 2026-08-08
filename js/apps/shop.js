@@ -6,6 +6,7 @@ import { formatCurrency } from '../format.js';
 import * as links from '../links.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
 import { preparePage } from '../collections.js';
+import { safeAssetUrl } from '../security/urls.js';
 
 export const needs = ['shopProducts', 'shopCategories'];
 
@@ -23,10 +24,13 @@ const SORT_OPTS = [
 ];
 const STEP_LABELS = ['Warenkorb', 'Lieferung', 'Prüfen & Absenden'];
 
-const productImage = (p) => p && p.photo ? `assets/images/shop/${String(p.photo).replace(/^images\//, '')}` : '';
+const productImage = (p) => p && p.photo
+  ? safeAssetUrl(`assets/images/shop/${String(p.photo).replace(/^images\//, '')}`, 'assets/images/shop/') : '';
 const productPhotos = (p) => {
   const photos = Array.isArray(p.photos) && p.photos.length ? p.photos : [p.photo].filter(Boolean);
-  return photos.map((x) => `assets/images/shop/${String(x).replace(/^images\//, '')}`);
+  return photos
+    .map((x) => safeAssetUrl(`assets/images/shop/${String(x).replace(/^images\//, '')}`, 'assets/images/shop/'))
+    .filter(Boolean);
 };
 const asId = (id) => Number(id);
 
@@ -167,7 +171,7 @@ function catalogue(ctx) {
       { key: 'brand', label: 'Marke', render: (p) => C.escape(p.brand) },
       { key: 'category', label: 'Kategorie', render: (p) => C.escape(cat.label(p.subcategory) || cat.label(p.category)) },
       { key: 'price', label: 'Preis', align: 'right', render: (p) => C.escape(formatCurrency(p.price, p.currency || 'CHF')) },
-      { key: 'action', label: 'Aktion', render: (p) => `<button type="button" class="btn btn--outline btn--sm btn--icon-left" data-add="${p.id}">${C.icon('ShoppingCart', 'btn__icon')}<span class="btn__text">In den Warenkorb</span></button>` },
+      { key: 'action', label: 'Aktion', render: (p) => `<button type="button" class="btn btn--outline btn--sm btn--icon-left" data-add="${C.escape(p.id)}">${C.icon('ShoppingCart', 'btn__icon')}<span class="btn__text">In den Warenkorb</span></button>` },
     ],
     rows,
   });
@@ -233,6 +237,7 @@ function catalogue(ctx) {
 }
 
 function productCard(C, p) {
+  const productId = C.escape(p.id);
   return `<div class="card card--default card--clickable shop-card">
     <div class="card__image shop-card__image">
       ${productImage(p) ? `<img src="${C.escape(productImage(p))}" alt="${C.escape(p.name)}" loading="lazy" decoding="async">` : C.icon('Image', 'icon--xl')}
@@ -247,7 +252,7 @@ function productCard(C, p) {
       <div class="card__footer">
         <div class="card__footer__info"><strong>${C.escape(formatCurrency(p.price, p.currency || 'CHF'))}</strong></div>
         <div class="card__footer__action">
-          <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-add="${p.id}">
+          <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-add="${productId}">
             ${C.icon('ShoppingCart', 'btn__icon')}<span class="btn__text">Hinzufügen</span>
           </button>
         </div>
@@ -294,6 +299,11 @@ function detail(ctx, id) {
     .filter((x) => x.id !== p.id && (x.subcategory === p.subcategory || x.category === p.category))
     .sort((a, b) => Number(Boolean(b.isNew)) - Number(Boolean(a.isNew)) || a.name.localeCompare(b.name, 'de-CH'))
     .slice(0, 3);
+  const productId = C.escape(p.id);
+  const articleNumber = C.escape(String(p.id).padStart(5, '0'));
+  const dimensions = p.dimensions
+    ? `${C.escape(p.dimensions.width)} x ${C.escape(p.dimensions.depth)} x ${C.escape(p.dimensions.height)} ${C.escape(p.dimensions.unit || 'cm')}`
+    : '—';
   mount.innerHTML = `
   <div class="container section">
     ${C.detailBar({ backHref: links.shop(), backLabel: 'BBL Intranetshop' })}
@@ -318,10 +328,10 @@ function detail(ctx, id) {
         <section class="detail-section">
           <h2 class="detail-section__title">Produktangaben</h2>
           <dl class="kv">
-            <dt>Artikelnummer</dt><dd>ART-${String(p.id).padStart(5, '0')}</dd>
+            <dt>Artikelnummer</dt><dd>ART-${articleNumber}</dd>
             <dt>Marke</dt><dd>${C.escape(p.brand)}</dd>
             <dt>Kategorie</dt><dd>${C.escape(cat.label(p.subcategory) || cat.label(p.category))}</dd>
-            <dt>Masse</dt><dd>${p.dimensions ? `${p.dimensions.width} x ${p.dimensions.depth} x ${p.dimensions.height} ${C.escape(p.dimensions.unit || 'cm')}` : '—'}</dd>
+            <dt>Masse</dt><dd>${dimensions}</dd>
             <dt>Preis</dt><dd>${C.escape(formatCurrency(p.price, p.currency || 'CHF'))}</dd>
           </dl>
         </section>
@@ -347,7 +357,7 @@ function detail(ctx, id) {
           <form id="shop-add-detail" class="form">
             ${C.field({ id: 'shop-qty', label: 'Menge',
               control: (cls, attrs) => `<input id="shop-qty" type="number" min="1" max="99" value="1" class="${cls}"${attrs}>` })}
-            <button class="btn btn--filled btn--full-width btn--icon-left" type="submit" data-add-detail="${p.id}">
+            <button class="btn btn--filled btn--full-width btn--icon-left" type="submit" data-add-detail="${productId}">
               ${C.icon('ShoppingCart', 'btn__icon')}<span class="btn__text">In den Warenkorb</span>
             </button>
           </form>
@@ -396,6 +406,8 @@ function cart(ctx) {
 
 function cartItem(C, line) {
   const p = line.product;
+  const productId = C.escape(p.id);
+  const articleNumber = C.escape(String(p.id).padStart(5, '0'));
   return `<li class="shopping__card shopping__card--edit">
     <div class="shopping__card__image">
       <span class="shopping__card-image-background"></span>
@@ -404,17 +416,17 @@ function cartItem(C, line) {
     <div class="shopping__card-details-container">
       <h2 class="card__title"><a href="${links.shopProduct(p.id)}">${C.escape(p.name)}</a></h2>
       <p class="card__description">${C.escape(p.description)}</p>
-      <p class="small muted">${C.escape(p.brand)} · ART-${String(p.id).padStart(5, '0')}</p>
+      <p class="small muted">${C.escape(p.brand)} · ART-${articleNumber}</p>
       <p class="shopping__card-price-mobile">${C.escape(formatCurrency(p.price, p.currency || 'CHF'))}</p>
     </div>
     <div class="shopping__card-amount-input">
-      <label class="sr-only" for="cart-qty-${p.id}">Menge ${C.escape(p.name)}</label>
-      <input id="cart-qty-${p.id}" class="input--outline input--sm shop-qty-input" type="number" min="0" max="99" value="${line.qty}" data-qty="${p.id}">
+      <label class="sr-only" for="cart-qty-${productId}">Menge ${C.escape(p.name)}</label>
+      <input id="cart-qty-${productId}" class="input--outline input--sm shop-qty-input" type="number" min="0" max="99" value="${C.escape(line.qty)}" data-qty="${productId}">
     </div>
     <div class="shopping__card-action-container">
       <p class="shopping__card-price">${C.escape(formatCurrency(p.price * line.qty, p.currency || 'CHF'))}</p>
       <div class="shopping__card-action">
-        <button type="button" class="btn btn--bare btn--sm btn--icon-left" data-remove="${p.id}">
+        <button type="button" class="btn btn--bare btn--sm btn--icon-left" data-remove="${productId}">
           ${C.icon('Trash', 'btn__icon')}<span class="btn__text">Entfernen</span>
         </button>
       </div>
@@ -518,7 +530,7 @@ function checkout(ctx) {
           { key: 'price', label: 'Betrag', align: 'right', render: (r) => C.escape(formatCurrency(r.qty * r.product.price, r.product.currency || 'CHF')) },
         ],
       })}
-      ${C.notification('Mit dem Absenden wird eine Bestellung erstellt und an die Logistik BBL weitergeleitet. Der Status erscheint unter <strong>Meine Vorgänge</strong>.', 'info')}
+      ${C.notificationHtml('Mit dem Absenden wird eine Bestellung erstellt und an die Logistik BBL weitergeleitet. Der Status erscheint unter <strong>Meine Vorgänge</strong>.', 'info')}
       <div class="form__actions form__actions--between">
         <button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>
         <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Bestellung absenden</span></button>
@@ -625,7 +637,7 @@ function wireAddButtons(ctx) {
   });
 }
 function wireCart(ctx, redraw = () => cart(ctx)) {
-  const { mount } = ctx;
+  const { mount, C } = ctx;
   mount.querySelectorAll('[data-qty]').forEach((input) => {
     input.addEventListener('change', () => {
       if (setCartQty(input.getAttribute('data-qty'), input.value)) redraw();

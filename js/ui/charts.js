@@ -20,6 +20,7 @@
 
 import C, { menu, wireMenu, toast } from '../components.js';
 import { download, tableToCsv, tableToXls, svgToPng, copyText, fileSlug } from '../export.js';
+import { requestFullscreen } from './fullscreen.js';
 
 // The categorical palette and chart ink come from the token layer
 // (css/tokens.css --chart-series-* / --chart-ink*). Values are RESOLVED at
@@ -619,7 +620,15 @@ export function wireChartMenus(root) {
     // The map is a WebGL canvas (no SVG/table): Vollbild uses the Fullscreen API,
     // Image export reads the canvas (needs preserveDrawingBuffer on the map).
     if (figure.classList.contains('chart--map')) {
-      if (action === 'fullscreen') { const el = figure.querySelector('.dash-map') || figure; if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); return; }
+      if (action === 'fullscreen') {
+        const el = figure.querySelector('.dash-map') || figure;
+        requestFullscreen(el, {
+          source: 'charts',
+          onUnavailable: () => figure.isConnected && toast('Vollbild ist in diesem Browser nicht verfügbar.', 'warning', 'WarningCircle'),
+          onRejected: () => figure.isConnected && toast('Vollbild konnte nicht geöffnet werden.', 'error', 'WarningCircle'),
+        });
+        return;
+      }
       if (action === 'png') {
         const canvas = figure.querySelector('canvas');
         if (!canvas || !canvas.toBlob) { toast('Bild-Export fehlgeschlagen.', 'error', 'WarningCircle'); return; }

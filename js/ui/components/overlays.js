@@ -1,5 +1,7 @@
 import { escape, icon } from './primitives.js';
 
+const MODAL_SIZES = new Set(['xs', 'sm', 'md', 'lg', 'xl']);
+
 // Focus trap for modal overlays (lightbox, full-screen chart, document preview):
 // Tab/Shift+Tab stay within `container`. Returns an unsubscribe function. Shared
 // through C.trapFocus so overlays with their own keyboard logic (gallery,
@@ -71,6 +73,7 @@ export function closeOverlays() {
 // [data-modal-close], and restores focus. Primitive for new dialogs; `body` and
 // `footer` are RAW HTML (caller escapes). `size` = sm|md|lg|xl.
 function modal({ title = '', body = '', footer = '', size = 'md', id = 'modal' } = {}) {
+  const modalSize = MODAL_SIZES.has(size) ? size : 'md';
   const titleId = `${id}-title`, bodyId = `${id}-desc`;
   // Accessible name «Dialog schliessen». This family names context everywhere
   // («Galerie schliessen», «Vorschau schliessen», «Hinweis schliessen»); modal
@@ -81,7 +84,7 @@ function modal({ title = '', body = '', footer = '', size = 'md', id = 'modal' }
   // the referenced id. The header ALWAYS exists (without it, the flex column
   // stretched the close button to full width); `--with-title` changes only
   // distribution.
-  return `<div class="modal modal--${size}" aria-modal="true">
+  return `<div class="modal modal--${modalSize}" aria-modal="true">
     <div class="modal__backdrop" data-modal-close></div>
     <div class="modal__content" role="dialog"${title ? ` aria-labelledby="${escape(titleId)}"` : ''} aria-describedby="${escape(bodyId)}">
       <div class="modal__header${title ? ' modal__header--with-title' : ''}">${title ? `<h2 class="modal__title" id="${escape(titleId)}">${escape(title)}</h2>` : ''}${closeBtn}</div>
@@ -133,7 +136,7 @@ export function shareBar() {
   // URL, or fallback when the Clipboard API was blocked.
   return `<div class="share-bar">
     <div class="share-container">
-      <button class="btn btn--bare share-bar__btn" type="button" onclick="window.print()" aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--xl')}</button>
+      <button class="btn btn--bare share-bar__btn" type="button" data-print-page aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--xl')}</button>
       <button class="btn btn--bare share-bar__btn share-bar__share-button" type="button" data-share
         aria-label="Inhalt teilen" title="Teilen">${icon('Share', 'icon--xl')}</button>
     </div>
@@ -196,6 +199,12 @@ export function openShareModal(url = location.href, title = 'Inhalt teilen') {
 // with a share bar gets it without additional setup.
 export function wireShare(root = document) {
   root.addEventListener('click', (e) => {
+    const print = e.target.closest('[data-print-page]');
+    if (print) {
+      e.preventDefault();
+      window.print();
+      return;
+    }
     const b = e.target.closest('[data-share]');
     if (!b) return;
     e.preventDefault();

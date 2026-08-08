@@ -4,6 +4,8 @@
 // and a detail view at #/data/catalog/<id>. The data model and preview images
 // come from the data catalogue prototype (data/datasets.json).
 
+import { classifyUrl, newWindowAttrs, safeLinkUrl, safeMailto, safeResourceUrl } from '../security/urls.js';
+
 // 12, matching the sibling catalogues (B16).
 const PER_PAGE = 12;
 const NO_RESPONSIBLE_PERSON_MESSAGE = 'Für diesen Datensatz ist keine verantwortliche Person hinterlegt.';
@@ -175,12 +177,12 @@ function detail(ctx, id) {
   const persons = (d.responsiblePersons || []).map(p => `
       <dt>${C.escape(p.role)}</dt>
       <dd><a href="https://admindir.verzeichnisse.admin.ch/person/${encodeURIComponent(p.admindirId)}"
-           target="_blank" rel="noopener external">AdminDir ${C.escape(p.admindirId)}</a></dd>`).join('');
+           target="_blank" rel="noopener noreferrer external">AdminDir ${C.escape(p.admindirId)}</a></dd>`).join('');
 
   // Metadata in data-catalogue order (config.metaFields.dataset).
   const metaRows = [
-    ['Kontaktstelle', d.meta['kontaktstelle']
-      ? `<a href="mailto:${C.escape(d.meta['kontaktstelle'])}">${C.escape(d.meta['kontaktstelle'])}</a>` : ''],
+    ['Kontaktstelle', safeMailto(d.meta['kontaktstelle'])
+      ? `<a href="${C.escape(safeMailto(d.meta['kontaktstelle']))}">${C.escape(d.meta['kontaktstelle'])}</a>` : ''],
     ['Ausgabedatum', C.escape(d.meta['ausgabedatum'])],
     ['Aktualisierungsintervall', C.escape(core.label(`enum.frequency.${d.meta['aktualisierungsintervall']}`, d.meta['aktualisierungsintervall']))],
     ['Status', C.escape(core.label(`enum.status.${d.meta.status}`, d.meta.status))],
@@ -208,7 +210,12 @@ function detail(ctx, id) {
     const raw = dist[f.key] || (f.fallback ? dist[f.fallback] : '');
     const val = t(raw);
     if (!val) return '<span class="muted">—</span>';
-    if (f.link) return `<a href="${C.escape(val)}" target="_blank" rel="noopener external" class="break-all">${C.escape(val)}</a>`;
+    if (f.link) {
+      const href = safeLinkUrl(val);
+      return href
+        ? `<a href="${C.escape(href)}"${newWindowAttrs(href, { external: classifyUrl(href) === 'external' })} class="break-all">${C.escape(val)}</a>`
+        : `<span class="break-all" aria-disabled="true">${C.escape(val)}</span>`;
+    }
     if (f.enumPrefix) return C.escape(core.label(`${f.enumPrefix}.${val}`, val));
     if (f.key === 'lizenz') return C.escape(licenceLabel(val));
     return C.escape(val);
@@ -233,10 +240,11 @@ function detail(ctx, id) {
   // on the access URLs above.
   const publications = (d.publications || []).map(p => {
     const name = C.escape(t(p.value));
+    const href = safeLinkUrl(p.url);
     return `
       <dt>${C.escape(t(p.catalog))}</dt>
-      <dd>${p.url
-        ? `<a href="${C.escape(p.url)}" target="_blank" rel="noopener external" class="break-all">${name}</a>`
+      <dd>${href
+        ? `<a href="${C.escape(href)}"${newWindowAttrs(href, { external: classifyUrl(href) === 'external' })} class="break-all">${name}</a>`
         : name}</dd>`;
   }).join('');
 
@@ -294,7 +302,7 @@ function uniq(arr) { return [...new Set(arr.filter(Boolean))]; }
 // fallback was removed after the image review (2026-08-04); all 19 illustrated
 // datasets carry `image`.
 function preview(C, d) {
-  return d.image ? encodeURI(d.image) : '';
+  return safeResourceUrl(d.image);
 }
 
 function formats(d) { return uniq((d.distributions || []).map(x => x['dateiformat'] || x.format)); }

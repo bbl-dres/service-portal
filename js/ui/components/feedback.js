@@ -1,11 +1,17 @@
-import { escape, icon } from './primitives.js';
+import { escape, icon, safeHeadingTag } from './primitives.js';
+import { safeLinkUrl } from '../../security/urls.js';
+
+const NOTIFICATION_VARIANTS = new Set(['alert', 'error', 'hint', 'info', 'success', 'warning']);
+const BUTTON_VARIANTS = new Set(['bare', 'filled', 'link', 'outline']);
+const notificationVariant = (value) => NOTIFICATION_VARIANTS.has(value) ? value : 'info';
 
 // Fixed notice strip at the bottom of the viewport — CD's consent component
 // (notification-banner.postcss + NotificationBanner.vue). Anatomy matches it:
 // `.notification-banner` (+ `--fixed`) also carries `.notification` classes,
 // containing a `__wrapper` with `__infos` and the action.
 function notificationBanner({ id, html, actionLabel = 'Verstanden', variant = 'info', label = 'Hinweis' }) {
-  return `<div class="notification-banner notification-banner--fixed notification notification--${escape(variant)}"
+  const safeVariant = notificationVariant(variant);
+  return `<div class="notification-banner notification-banner--fixed notification notification--${safeVariant}"
       role="region" aria-label="${escape(label)}" data-banner="${escape(id)}">
     <div class="notification-banner__wrapper">
       <p class="notification-banner__infos">${html}</p>
@@ -97,20 +103,48 @@ function ensureNotificationClose() {
   });
 }
 
-// variant: info | success | warning | error | hint | alert
-export function notification(text, variant = 'info', iconName = 'InfoCircle', opts = {}) {
+let reloadActionWired = false;
+function ensureReloadAction() {
+  if (reloadActionWired || typeof document === 'undefined') return;
+  reloadActionWired = true;
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest && event.target.closest('[data-reload-page]');
+    if (!button) return;
+    event.preventDefault();
+    location.reload();
+  });
+}
+
+// Shared notification anatomy. The public `notification` helper treats its
+// input as text. Author-owned markup must opt into `notificationHtml`, making
+// the trust boundary visible at every call site.
+function notificationMarkup(content, variant = 'info', iconName = 'InfoCircle', opts = {}) {
   // `live: true` ONLY for messages arriving as the result of an action. Every
   // notification previously carried a live role, including static notices
   // already present at load. Screen readers then read the page as a sequence of
   // status messages, and aria-live does not fire in a newly created region
   // anyway (Item 3.9).
-  const role = opts.live ? ((variant === 'error' || variant === 'alert') ? 'alert' : 'status') : '';
+  const safeVariant = notificationVariant(variant);
+  const role = opts.live ? ((safeVariant === 'error' || safeVariant === 'alert') ? 'alert' : 'status') : '';
   if (opts.dismissible) ensureNotificationClose();
   const close = opts.dismissible
     ? `<button type="button" class="notification__close interactive-control" aria-label="Hinweis schliessen" data-notification-close>${icon('Cancel', 'icon--md')}</button>`
     : '';
-  const cls = `notification notification--${variant}${opts.dismissible ? ' notification--dismissible' : ''}`;
-  return `<div class="${cls}"${role ? ` role="${role}"` : ''}>${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div>${close}</div>`;
+  const cls = `notification notification--${safeVariant}${opts.dismissible ? ' notification--dismissible' : ''}`;
+  return `<div class="${cls}"${role ? ` role="${role}"` : ''}>${icon(iconName, 'notification__icon')}<div class="notification__content">${content}</div>${close}</div>`;
+}
+
+// variant: info | success | warning | error | hint | alert
+export function notification(text, variant = 'info', iconName = 'InfoCircle', opts = {}) {
+  return notificationMarkup(escape(text), variant, iconName, opts);
+}
+
+// Deliberate raw-HTML counterpart for static, author-owned component markup.
+// Data, URL parameters, storage values, and user input must be escaped before
+// they are included in `html`.
+export function notificationHtml(html, variant = 'info', iconName = 'InfoCircle', opts = {}) {
+  ensureReloadAction();
+  return notificationMarkup(String(html || ''), variant, iconName, opts);
 }
 
 // Completion state for a submitted case. Four form apps hand-built it: success
@@ -124,23 +158,27 @@ export function notification(text, variant = 'info', iconName = 'InfoCircle', op
 //   lead     sentence in the success message («Antrag eingereicht.»)
 //   title    heading; use `heading:'h2'` where the page already has an h1
 //   text     explanatory sentence below
-//   extra    optional HTML block between them (attribute list, extra notice)
+//   extraHtml optional author-owned HTML block (attribute list, extra notice)
 //   actions  [{ href | id, label, variant, icon }] — first action filled
 export function processDone({ instance, lead, title, heading = 'h1', text,
-  extra = '', actions = [] } = {}) {
+  extraHtml = '', actions = [] } = {}) {
+  const headingTag = safeHeadingTag(heading, 'h1');
   const button = (a, i) => {
-    const cls = `btn btn--${a.variant || (i === 0 ? 'filled' : 'outline')}${a.icon ? ' btn--icon-right' : ''}`;
+    const fallbackVariant = i === 0 ? 'filled' : 'outline';
+    const variant = BUTTON_VARIANTS.has(a.variant) ? a.variant : fallbackVariant;
+    const cls = `btn btn--${variant}${a.icon ? ' btn--icon-right' : ''}`;
     const content = `${a.icon ? icon(a.icon, 'btn__icon') : ''}<span class="btn__text">${escape(a.label)}</span>`;
-    return a.href
-      ? `<a class="${cls}" href="${escape(a.href)}">${content}</a>`
-      : `<button class="${cls}" type="button" id="${escape(a.id)}">${content}</button>`;
+    const href = safeLinkUrl(a.href);
+    if (href) return `<a class="${cls}" href="${escape(href)}">${content}</a>`;
+    if (a.id) return `<button class="${cls}" type="button" id="${escape(a.id)}">${content}</button>`;
+    return `<span class="${cls}" aria-disabled="true">${content}</span>`;
   };
   return `
-    ${notification(`<strong>${escape(lead)}</strong> Ihre Referenz: <strong>${escape(instance.reference)}</strong>`,
+    ${notificationHtml(`<strong>${escape(lead)}</strong> Ihre Referenz: <strong>${escape(instance.reference)}</strong>`,
       'success', 'CheckmarkCircle')}
-    <${heading} tabindex="-1" class="mt-6">${escape(title)}</${heading}>
-    <p class="lead">${text}</p>
-    ${extra}
+    <${headingTag} tabindex="-1" class="mt-6">${escape(title)}</${headingTag}>
+    <p class="lead">${escape(text)}</p>
+    ${extraHtml}
     ${actions.length ? `<div class="row mt-6">${actions.map(button).join('')}</div>` : ''}`;
 }
 
@@ -149,7 +187,7 @@ export function processDone({ instance, lead, title, heading = 'h1', text,
 export function flashError(mount, msg) {
   announce(msg);
   const host = mount && mount.querySelector('.container');
-  if (host) host.insertAdjacentHTML('afterbegin', notification(escape(msg), 'error', 'WarningCircle'));
+  if (host) host.insertAdjacentHTML('afterbegin', notification(msg, 'error', 'WarningCircle'));
 }
 
 // Short, self-dismissed status message for simulated/completed actions. CD
@@ -163,7 +201,7 @@ export function toast(msg, variant = 'success', iconName = 'CheckmarkCircle') {
   if (typeof document === 'undefined') return;
   const t = document.createElement('div');
   t.className = 'toast__message';
-  t.innerHTML = notification(escape(msg), variant, iconName);
+  t.innerHTML = notification(msg, variant, iconName);
   document.body.appendChild(t);
   requestAnimationFrame(() => t.classList.add('toast__message--in'));
   setTimeout(() => { t.classList.remove('toast__message--in'); setTimeout(() => t.remove(), 300); }, 5000);

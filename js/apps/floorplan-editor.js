@@ -19,7 +19,7 @@ function renderNoPlan(ctx, message) {
   mount.innerHTML = `<div class="container section">
     ${C.backLink(BASE, 'Plan-Editor Navigation')}
     <div class="page-header"><h1 tabindex="-1">Plan-Editor</h1></div>
-    ${C.notification(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}
+    ${C.notificationHtml(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}
   </div>`;
 }
 

@@ -16,6 +16,8 @@
 // <img> elements (images came from cache, nodes did not). This was perceptible
 // when holding an arrow key, and focus jumped back to «Schliessen» each time.
 
+import { safeLinkUrl, safeResourceUrl } from '../security/urls.js';
+
 // Width steps for fullscreen. A fixed 2000px loaded an image a 390px phone would
 // never need, while unrestricted widths would fragment the cache.
 const WIDTH_STEPS = [640, 1024, 1600, 2000];
@@ -75,7 +77,9 @@ export function openGallery(items, start, C, options = {}) {
   const hasDetails = (it) => !!(it && it.details && it.details.length);
   // Prefer a real local image; otherwise use the Unsplash placeholder. Local
   // files have fixed dimensions, so stageWidth() applies only to Unsplash.
-  const fullUrl = (it) => (it && it.photoSrc) ? it.photoSrc : C.photoUrl(it.photo, { w: stageWidth(), gray: it.gray });
+  const fullUrl = (it) => safeResourceUrl(
+    (it && it.photoSrc) ? it.photoSrc : C.photoUrl(it && it.photo, { w: stageWidth(), gray: it && it.gray }),
+  );
 
   const overlay = document.createElement('div');
   overlay.className = 'pf-lightbox';
@@ -96,8 +100,8 @@ export function openGallery(items, start, C, options = {}) {
         </div>
       </div>
       <div class="pf-lightbox__actions">
-        <a class="pf-lightbox__btn interactive-control interactive-control--negative" data-el="download" href="#" download target="_blank" rel="noopener"
-           aria-label="Bild herunterladen" title="Herunterladen">${C.icon('Download', 'icon--md')}</a>
+        <a class="pf-lightbox__btn interactive-control interactive-control--negative" data-el="download" download target="_blank" rel="noopener noreferrer"
+           aria-label="Bild herunterladen" title="Herunterladen" hidden>${C.icon('Download', 'icon--md')}</a>
         <button type="button" class="pf-lightbox__btn interactive-control interactive-control--negative" data-act="meta" data-el="metabtn"
            aria-expanded="false" aria-controls="lb-meta"
            aria-label="Metadaten anzeigen" title="Metadaten" hidden>${C.icon('InfoCircle', 'icon--md')}</button>
@@ -119,7 +123,7 @@ export function openGallery(items, start, C, options = {}) {
         <div class="pf-lightbox__scroll" data-el="scroll" tabindex="0"
           aria-label="Bildfläche — mit den Bild-auf/ab-Tasten verschieben">
           <div class="pf-lightbox__canvas" data-el="canvas">
-            <img class="pf-lightbox__img" data-el="img" src="" alt="" decoding="async">
+            <img class="pf-lightbox__img" data-el="img" alt="" decoding="async">
           </div>
         </div>
         ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next interactive-control" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
@@ -141,7 +145,7 @@ export function openGallery(items, start, C, options = {}) {
         <dl class="kv kv--tight" data-el="metakv"></dl>
         ${/* btn--outline-negative, not btn--outline: the panel is dark. The ad-hoc
               recolouring in app.css (16% white border, below 3:1) is gone. */''}
-        <a class="btn btn--outline-negative btn--sm btn--icon-right" data-el="metalink" data-act="close-nav" href="#" hidden></a>
+        <a class="btn btn--outline-negative btn--sm btn--icon-right" data-el="metalink" data-act="close-nav" hidden></a>
       </div>
     </div>`;
 
@@ -153,7 +157,8 @@ export function openGallery(items, start, C, options = {}) {
   // between keystroke and image.
   const warm = (i) => {
     const it = items[(i + items.length) % items.length];
-    if (it && (it.photo || it.photoSrc)) { const im = new Image(); im.decoding = 'async'; im.src = fullUrl(it); }
+    const url = it && (it.photo || it.photoSrc) ? fullUrl(it) : '';
+    if (url) { const im = new Image(); im.decoding = 'async'; im.src = url; }
   };
 
   // Standard image-viewer zoom steps. Include 1 (=100%) deliberately so original
@@ -207,17 +212,20 @@ export function openGallery(items, start, C, options = {}) {
 
   function update(first) {
     const it = items[idx];
+    const imageUrl = fullUrl(it);
+    const metaHref = safeLinkUrl(it.href);
     el.icon.innerHTML = C.icon(it.type === 'video' ? 'Video' : 'Image', 'icon--lg');
     el.title.textContent = it.title || '';
     el.sub.textContent = `${it.meta || ''}${multi ? ` · Bild ${idx + 1} von ${items.length}` : ''}`;
     zoom = 'fit';
     el.img.style.width = ''; el.img.style.height = '';
-    el.img.src = fullUrl(it);
+    if (imageUrl) el.img.src = imageUrl; else el.img.removeAttribute('src');
     el.img.alt = it.title || '';
     // naturalWidth is known only after loading; fit-mode percentage needs it, so
     // update after the load event.
     if (el.img.complete) applyZoom(); else el.img.addEventListener('load', applyZoom, { once: true });
-    el.download.href = fullUrl(it);
+    el.download.hidden = !imageUrl;
+    if (imageUrl) el.download.href = imageUrl; else el.download.removeAttribute('href');
 
     el.metabtn.hidden = !hasDetails(it);
     el.metabtn.setAttribute('aria-expanded', String(showMeta && hasDetails(it)));
@@ -226,10 +234,15 @@ export function openGallery(items, start, C, options = {}) {
     el.meta.hidden = !(showMeta && hasDetails(it));
     if (hasDetails(it)) {
       el.metakv.innerHTML = it.details.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
-      el.metalink.hidden = !it.href;
+      el.metalink.hidden = !metaHref;
       // “View object” follows the other reference actions; the former detail-page
       // wording was the only outlier (design review D8).
-      if (it.href) { el.metalink.href = it.href; el.metalink.innerHTML = `${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Aufnahme ansehen</span>`; }
+      if (metaHref) {
+        el.metalink.href = metaHref;
+        el.metalink.innerHTML = `${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Aufnahme ansehen</span>`;
+      } else {
+        el.metalink.removeAttribute('href');
+      }
     }
 
     // Set focus ONLY when opening. It previously returned to «Schliessen» after
