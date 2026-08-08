@@ -1,28 +1,19 @@
-// D3 form-helper consolidation + C5 fix — verifies the three wizards (space-request,
-// fault-report, Room Booking) after routing through C.field / C.select /
-// C.val / C.readForm. The C5 check: a custom validation error must attach the
-// `input--error` class to previously class-less fields (#org, #cc, #beschreibung,
-// #booking-date) — the old regex only did so when a class already existed.
-//
-// Dispatching a synthetic 'submit' bypasses native required-validation, isolating
-// the custom validate() path where C5 lives. Forms are login-gated, so we log in
-// once (localStorage persists across tabs in the one browser profile).
-//
-//   node scripts/test-forms.mjs      (dev server must be running; see README)
+// Cross-flow form-helper checks cover space request, fault report, and room
+// booking through C.field, C.select, C.val, and C.readForm. Custom validation
+// must add input--error to controls that started without a class. Synthetic
+// submit bypasses native validation so the shared path is isolated.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const LOGIN = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
-  // __login is exposed at the end of app.js boot() (after core.load()); poll for it
-  // instead of racing boot, or the login silently no-ops and the forms stay gated.
+  // Poll __login after app boot and core loading instead of racing the gate.
   let n = 0; while (typeof window.__login !== 'function' && n++ < 120) await s(50);
   if (typeof window.__login !== 'function') return 'no __login';
   window.__login(); return 'ok';
 })()`;
 
-// clear the given fields, fire the custom submit handler, report each field's state.
-// Scope to the WIZARD form via a field's closest('form') — the shell's header
-// search is also a <form> and comes first in the DOM.
+// Clear fields, submit through the custom handler, and report state. Scope to
+// the field's closest form because the shell search form appears first.
 const probeErrors = (clearIds, checkIds) => `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
   let n = 0; while (!document.getElementById(${JSON.stringify(clearIds[0])}) && n++ < 120) await s(100);
@@ -40,7 +31,7 @@ const probeErrors = (clearIds, checkIds) => `(async () => {
   return { ok: true, fields };
 })()`;
 
-// count rendered fields (form groups) as a render sanity check
+// Count rendered form groups as a basic render check.
 const PROBE_RENDER = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
   let n = 0; while (!document.querySelector('#wiz, #report-form, #booking-search') && n++ < 120) await s(100);
@@ -64,21 +55,19 @@ const PROBE_BUILDING_SELECTION = `(async () => {
   };
 })()`;
 
-// Gebäude wählen, beschreibung füllen, absenden → Erfolgsbildschirm (Vorgang).
-// Seit dem Review (forms/errsum-1-Umfeld) startet das Pflichtfeld «Gebäude»
-// LEER («Bitte wählen …») statt still mit dem ersten Gebäude vorbelegt — der
-// Test muss wie ein Mensch zuerst wählen.
+// Select a building, fill the description, and submit. The required building
+// starts empty, so the test follows the same explicit choice as a user.
 const PROBE_SUCCESS = `(async () => {
   const s = ms => new Promise(r => setTimeout(r, ms));
-  let n = 0; while (!document.getElementById('beschreibung') && n++ < 120) await s(100);
+  let n = 0; while (!document.getElementById('description') && n++ < 120) await s(100);
   const bld = document.getElementById('bld');
   if (bld && bld.tagName === 'SELECT') {
     const opt = [...bld.options].find(o => o.value);
     if (opt) { bld.value = opt.value; bld.dispatchEvent(new Event('change', { bubbles: true })); }
   }
-  const bes = document.getElementById('beschreibung');
-  bes.value = 'Testmeldung aus dem Formulartest';
-  bes.closest('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+  const description = document.getElementById('description');
+  description.value = 'Testmeldung aus dem Formulartest';
+  description.closest('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
   await s(300);
   return { success: !!document.querySelector('.notification--success'), noError: !document.querySelector('.input--error') };
 })()`;
@@ -90,13 +79,13 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
 (async () => {
   const cdp = await launch();
   try {
-    // log in once (persists across tabs via localStorage)
+    // Log in once; localStorage shares the session across tabs.
     let p = await openPage(cdp, `${APP_BASE}/app/room-booking`);
     await p.evaluate(LOGIN);
     await sleep(800);
     await p.closeTarget();
 
-    // --- space-request: render + C5 on #org/#cc ---
+    // Space request: rendering and validation on #org and #cc.
     console.log('\n■ space-request (step 1)');
     p = await openPage(cdp, `${APP_BASE}/app/space-request`);
     const sr = await p.evaluate(PROBE_RENDER);
@@ -123,20 +112,20 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
     check((await p.problems()).length === 0, 'invalid building prefill has no runtime problems');
     await p.closeTarget();
 
-    // --- fault-report: render + C5 on #beschreibung + success submit ---
+    // Fault report: validation on #description and successful submission.
     console.log('\n■ fault-report');
     p = await openPage(cdp, `${APP_BASE}/app/fault-report`);
     const fr = await p.evaluate(PROBE_RENDER);
     check(fr.ok && fr.groups >= 5, `renders form (${fr.groups} field groups, ${fr.selects} selects)`);
-    const frE = await p.evaluate(probeErrors(['beschreibung'], ['beschreibung']));
-    check(errOk(frE.fields?.beschreibung), 'C5: cleared #beschreibung → input--error + aria-invalid + badge');
+    const frE = await p.evaluate(probeErrors(['description'], ['description']));
+    check(errOk(frE.fields?.description), 'C5: cleared #description → input--error + aria-invalid + badge');
     check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
     await p.closeTarget();
 
     console.log('\n■ fault-report (successful submit)');
     p = await openPage(cdp, `${APP_BASE}/app/fault-report`);
     const ok = await p.evaluate(PROBE_SUCCESS);
-    check(ok.success && ok.noError, 'valid submit → success screen (Vorgang created)');
+    check(ok.success && ok.noError, 'valid submit → success screen (case created)');
     check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
     await p.closeTarget();
 
@@ -148,8 +137,7 @@ const errOk = (f) => f && f !== 'MISSING' && f.err === true && f.ariaInvalid ===
     check((await p.problems()).length === 0, 'inherited query key has no runtime problems');
     await p.closeTarget();
 
-    // --- Room Booking: render + C5 on #booking-date ---
-    // Kein Assistent mehr: die Suchleiste steht direkt nach dem Anmelden.
+    // Room booking: validation on #booking-date; the former wizard is absent.
     console.log('\n■ Room Booking');
     p = await openPage(cdp, `${APP_BASE}/app/room-booking`);
     await p.evaluate(`(async () => {

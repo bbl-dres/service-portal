@@ -1,43 +1,33 @@
-// Gebäude erfassen — Anlegen eines neuen Objekts im Immobilien-Stammdatenbestand.
+// Building registration adds an object to the real-estate master inventory.
+// It follows property-inventory/prototype-workflows and derives address, place,
+// coordinates, and object name from open swisstopo services. The operator only
+// selects the map location. EGID and EGRID remain read-only and empty until
+// later REST lookups resolve them from the selected location.
 //
-// Vorbild: property-inventory/prototype-workflows. Von dort übernommen ist die
-// Kernidee «Datenqualität von Anfang an»: Adresse, Ort, Koordinaten UND die
-// Objektbezeichnung werden nicht abgetippt, sondern aus den offenen
-// swisstopo-Diensten abgeleitet; der Erfassende setzt nur die Lage auf der
-// Karte. EGID und EGRID stehen als Nur-Lese-Felder im Formular, bleiben hier
-// aber leer: sie gehören nicht in die Handeingabe, sondern werden später über
-// REST anhand der Lage aufgelöst (GWR-Layer für die EGID, MapServer/find für
-// EGRID und Parzelle — mehrere abhängige Aufrufe je Objekt, wie in
-// property-inventory/prototype-workflows).
-//
-// Genutzt wird ein einziger Endpunkt, schlüssellos und CORS-freigegeben:
-//   GET https://api3.geo.admin.ch/rest/services/api/SearchServer
-//       ?type=locations&origins=address&sr=4326&searchText=…
-//
-// Drei Schritte: Standort (Suche als Auflage IN der Karte) → Stammdaten →
-// Prüfen und Absenden. Der Vorgang landet unter «Meine Vorgänge».
-
+// The keyless, CORS-enabled SearchServer endpoint provides address suggestions.
+// The three steps cover location, master data, and review/submission; successful
+// submission creates an entry under the German UI term: `Meine Vorgänge`.
 import { initPickerMap } from '../buildings-map.js';
 import * as links from '../links.js';
-import { DIENSTLEISTUNGEN, trail } from '../crumbs.js';
+import { SERVICES, trail } from '../crumbs.js';
 import { createListboxController } from '../combobox.js';
 
-// Wortlaut der Anmeldesperre, die der Router vor diese Anwendung zieht
-// (js/router.js).
+// Copy shown by the router's authentication gate for this application.
 export const loginText = 'Das Erfassen eines Gebäudes wird als Vorgang unter «Meine Vorgänge» geführt. Bitte melden Sie sich mit AGOV / FedLogin an.';
 
 const SEARCH_URL = 'https://api3.geo.admin.ch/rest/services/api/SearchServer';
 const STEP_LABELS = ['Standort', 'Stammdaten', 'Prüfen & Absenden'];
 
-// swisstopo liefert `label` als HTML-Schnipsel mit <b>-Hervorhebungen. Als Text
-// weiterverwenden, nie als Markup: es ist Fremdinhalt.
+// swisstopo returns label as an HTML fragment with <b> highlighting. Treat it
+// as untrusted text and never reuse it as markup.
 function plainLabel(html) {
   const d = document.createElement('div');
   d.innerHTML = String(html || '');
   return (d.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
-// «Fellerstrasse 21 3003 Bern» → Strasse / Hausnummer / PLZ / Ort.
+// Parse an address such as Fellerstrasse 21 3003 Bern into street, number,
+// postal code, and place.
 function splitAddress(label) {
   const m = /^(.*?)\s+(\d+\s*[a-zA-Z]?)\s+(\d{4})\s+(.+)$/.exec(label);
   if (m) return { street: m[1].trim(), no: m[2].replace(/\s+/g, ''), zip: m[3], city: m[4].trim() };
@@ -64,34 +54,31 @@ async function searchAddresses(query, { signal } = {}) {
 export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs, navigate } = ctx;
   setTitle('Gebäude erfassen');
-  setCrumbs(trail(DIENSTLEISTUNGEN, { label: 'Gebäude erfassen' }));
+  setCrumbs(trail(SERVICES, { label: 'Gebäude erfassen' }));
 
-  // Kontrollierte Vokabulare aus den Referenzdaten statt einer Liste im Formular:
-  // `teilportfolios` (SAP-Feld bbl_port) und `gebaeudearten` (bbl_gbda1) tragen
-  // genau die Werte, die der Golden Record führt — so kann die Erfassung keinen
-  // Wert erzeugen, den das Inventar hinterher nicht kennt.
+  // Use controlled reference-data vocabularies instead of form-local lists.
+  // Raw keys `teilportfolios` and `gebaeudearten` contain the Golden Record
+  // values, preventing registration from creating unknown inventory values.
   const ref = core.ref();
   const asOptions = (list) => (list || []).map((x) => ({ value: x.id, label: x.label }));
-  const TEILPORTFOLIO = asOptions(ref.teilportfolios);
-  const GEBAEUDEART = asOptions(ref.gebaeudearten);
+  const PORTFOLIO_OPTIONS = asOptions(ref['teilportfolios']);
+  const BUILDING_TYPE_OPTIONS = asOptions(ref['gebaeudearten']);
   const OWNERSHIP = ['Eigentum Bund', 'Miete'];
-  // Leere Vorauswahl: eine Pflichtauswahl, die schon ausgefüllt ist, ist keine.
-  // Ein stillschweigend gesetztes Teilportfolio wäre erfundenes Stammdatum.
+  // Keep required selects empty initially; silently choosing a portfolio would
+  // invent master data.
   const PLEASE_PICK = { value: '', label: 'Bitte wählen…' };
 
   const state = {
     step: 1,
-    // Schritt 1 — aus swisstopo abgeleitet, nicht eingetippt
+    // Step 1 values are derived from swisstopo, never typed manually.
     address: '', addressSelected: false,
     street: '', no: '', zip: '', city: '', lat: null, lng: null,
-    // Schritt 2 — abgeleitet; bleibt leer, bis GWR/Kataster angebunden sind
+    // Step 2 values remain derived and empty until GWR/cadastre integration.
     egid: '', egrid: '',
-    // Schritt 2 — Handeingabe
-    portfolio: '', gebaeudeart: '', ownership: OWNERSHIP[0], baujahr: '',
-    // Kein Formularfeld: die verantwortliche OE steht in der Sitzung. Sie als
-    // Feld anzubieten hiesse, sie zur Debatte zu stellen — der Vorgang wird
-    // ohnehin unter der angemeldeten Einheit geführt. Sichtbar ist sie in der
-    // Kopfzeile und in der Zusammenfassung.
+    // Step 2 manual input.
+    portfolio: '', buildingType: '', ownership: OWNERSHIP[0], constructionYear: '',
+    // The responsible organisational unit comes from the session, not a form
+    // control. It remains visible in the context header and review summary.
     org: session.user().org,
     errors: {}, created: null,
   };
@@ -113,20 +100,20 @@ export default async function render(ctx) {
     addressCombobox?.destroy();
   });
 
-  // Die Objektbezeichnung IST die Adresse — sie wird abgeleitet, nicht getippt.
-  // Damit kann sie nicht von den Adressfeldern abweichen (der frühere Freitext
-  // liess genau das zu, inklusive Tippfehlern im Inventarnamen).
-  const bezeichnung = () => [`${state.street} ${state.no}`.trim(), `${state.zip} ${state.city}`.trim()]
+  // The building name is the derived address, preventing it from diverging
+  // from address fields or acquiring inventory-name typos.
+  const buildingName = () => [`${state.street} ${state.no}`.trim(), `${state.zip} ${state.city}`.trim()]
     .filter(Boolean).join(', ');
 
-  const freeMap = () => { if (pickerMap) { try { pickerMap.remove(); } catch { /* schon weg */ } pickerMap = null; } };
+  const freeMap = () => { if (pickerMap) { try { pickerMap.remove(); } catch { /* Already removed. */ } pickerMap = null; } };
 
   const FIELD_LABELS = {
     'bc-address': 'Adresse',
-    'bc-portfolio': 'Teilportfolio', 'bc-gebart': 'Gebäudeart', 'bc-baujahr': 'Baujahr',
+    'bc-portfolio': 'Teilportfolio', 'bc-building-type': 'Gebäudeart', 'bc-construction-year': 'Baujahr',
   };
 
-  /* ------------------------------------------------------------ Schritt 1 -- */
+  /* --------------------------------------------------------------- Step 1 -- */
+
   function step1() {
     const coords = state.lat != null
       ? `${state.lat.toFixed(5)}, ${state.lng.toFixed(5)}`
@@ -134,17 +121,13 @@ export default async function render(ctx) {
     return `
       <p class="small muted">Adresse suchen und die Lage auf der Karte bestätigen.</p>
 
-      ${/* Die Suche liegt als Auflage IN der Karte (unten zentriert). Die
-            Vorschlagsliste öffnet deshalb NACH OBEN, sonst stünde sie ausserhalb
-            des Kartenrahmens. Combobox-Semantik nach WAI-ARIA APG. */''}
+      ${/* Search is an overlay centred inside the bottom of the map. */''}
       <div class="map-picker" id="bc-picker">
         <div class="map-picker__canvas"></div>
         <div class="map-search">
           <ul class="listbox listbox--map" id="bc-listbox" role="listbox" aria-label="Adressvorschläge" hidden></ul>
           <div class="map-search__field">
-            ${/* sr-only-Label wie bei der CD-Suche (search.postcss): der Platz-
-                  halter verschwindet beim Tippen und ist für manche Hilfsmittel
-                  kein zugänglicher Name. */''}
+            ${/* Match the CD search pattern with a visually hidden label. */''}
             <label class="sr-only" for="bc-address">Adresse suchen</label>
             ${C.icon('Search', 'map-search__icon')}
             <input id="bc-address" class="input--outline input--base${state.errors['bc-address'] ? ' input--error' : ''}" type="text" role="combobox"
@@ -158,10 +141,7 @@ export default async function render(ctx) {
           </div>
         </div>
       </div>
-      ${/* Adressfehler als Standard-Feld-Badge unter dem Suchfeld (id-Konvention
-            `<id>-msg`, wie C.field) — OHNE Live-Rolle: die errorSummary ist die
-            eine Statusmeldung, und C.wireFieldErrors räumt die Badge beim
-            Korrigieren ab. */''}
+      ${/* Render the address error as a standard field badge below the search. */''}
       ${state.errors['bc-address'] ? `<div class="badge badge--sm badge--error" id="bc-address-msg">${C.escape(state.errors['bc-address'])}</div>` : ''}
       <p id="bc-address-hint" class="small muted">Nach der Adressauswahl können Sie die Nadel ziehen oder die Lage in der Karte justieren.</p>
       <div id="bc-status" aria-live="polite"></div>
@@ -173,26 +153,22 @@ export default async function render(ctx) {
           <dt>Koordinaten (WGS 84)</dt><dd>${C.escape(coords)}</dd>
         </dl>` : ''}
 
-      ${/* form__actions statt .row: Primäraktion auf Mobile zuerst und vollbreit
-            (app.css, Item 3.12). Icon VOR dem btn__text im DOM — die rechte
-            Position stellt btn--icon-right per row-reverse her (CD Btn.vue). */''}
+      ${/* form__actions keeps the primary mobile action first and full width. */''}
       <div class="form__actions">
         <button class="btn btn--filled btn--icon-right" type="submit">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Weiter</span></button>
       </div>`;
   }
 
-  /* ------------------------------------------------------------ Schritt 2 -- */
+  /* --------------------------------------------------------------- Step 2 -- */
+
   function step2() {
     return `
-      ${/* Zuerst die abgeleiteten Felder (nur lesbar, gestrichelter Rahmen), dann
-            die Handeingabe — als zwei <fieldset class="form__group">, damit die
-            Zweiteilung nicht nur erzählt wird, sondern auch für Hilfsmittel als
-            Gruppe hörbar ist (CD Fieldset.vue, Item 3.14). */''}
+      ${/* Show derived read-only fields before manually entered master data. */''}
       <fieldset class="form__group">
         <legend class="form__group__legend">Abgeleitete Angaben</legend>
-        ${C.field({ id: 'bc-bez', label: 'Objektbezeichnung',
+        ${C.field({ id: 'bc-name', label: 'Objektbezeichnung',
           hint: 'Wird aus der Adresse übernommen und kann hier nicht geändert werden.',
-          control: (cls, attrs) => `<input id="bc-bez" value="${C.escape(bezeichnung())}" class="${cls}" readonly${attrs}>` })}
+          control: (cls, attrs) => `<input id="bc-name" value="${C.escape(buildingName())}" class="${cls}" readonly${attrs}>` })}
         ${C.field({ id: 'bc-egid', label: 'EGID (Eidg. Gebäudeidentifikator)',
           hint: 'Wird anhand der Lage aus dem Gebäude- und Wohnungsregister (GWR) ermittelt.',
           control: (cls, attrs) => `<input id="bc-egid" value="${C.escape(state.egid)}" placeholder="wird ermittelt" class="${cls}" readonly${attrs}>` })}
@@ -201,20 +177,18 @@ export default async function render(ctx) {
           control: (cls, attrs) => `<input id="bc-egrid" value="${C.escape(state.egrid)}" placeholder="wird ermittelt" class="${cls}" readonly${attrs}>` })}
       </fieldset>
       <fieldset class="form__group">
-        ${/* «Weitere Stammdaten», nicht «Klassifizierung» (Nutzerentscheid
-              2026-07-30): der Begriff ist im Sicherheitskontext besetzt
-              (Informationsklassifizierung) und hier irreführend. */''}
+        ${/* The German UI term: `Weitere Stammdaten` reflects the user's chosen wording. */''}
         <legend class="form__group__legend">Weitere Stammdaten</legend>
         ${C.select({ id: 'bc-portfolio', name: 'bc-portfolio', label: 'Teilportfolio', required: true,
           value: state.portfolio, message: state.errors['bc-portfolio'],
-          options: [PLEASE_PICK, ...TEILPORTFOLIO] })}
-        ${C.select({ id: 'bc-gebart', name: 'bc-gebart', label: 'Gebäudeart', required: true,
-          value: state.gebaeudeart, message: state.errors['bc-gebart'],
-          options: [PLEASE_PICK, ...GEBAEUDEART] })}
+          options: [PLEASE_PICK, ...PORTFOLIO_OPTIONS] })}
+        ${C.select({ id: 'bc-building-type', name: 'bc-building-type', label: 'Gebäudeart', required: true,
+          value: state.buildingType, message: state.errors['bc-building-type'],
+          options: [PLEASE_PICK, ...BUILDING_TYPE_OPTIONS] })}
         ${C.select({ id: 'bc-ownership', name: 'bc-ownership', label: 'Eigentumsverhältnis', value: state.ownership,
           options: OWNERSHIP.map(v => ({ value: v, label: v })) })}
-        ${C.field({ id: 'bc-baujahr', label: 'Baujahr', required: true, message: state.errors['bc-baujahr'],
-          control: (cls, attrs) => `<input id="bc-baujahr" type="number" min="1200" max="2100" placeholder="z. B. 1974" value="${C.escape(state.baujahr)}" class="${cls}"${attrs}>` })}
+        ${C.field({ id: 'bc-construction-year', label: 'Baujahr', required: true, message: state.errors['bc-construction-year'],
+          control: (cls, attrs) => `<input id="bc-construction-year" type="number" min="1200" max="2100" placeholder="z. B. 1974" value="${C.escape(state.constructionYear)}" class="${cls}"${attrs}>` })}
       </fieldset>
       <div class="form__actions form__actions--between">
         <button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button>
@@ -222,21 +196,22 @@ export default async function render(ctx) {
       </div>`;
   }
 
-  /* ------------------------------------------------------------ Schritt 3 -- */
+  /* --------------------------------------------------------------- Step 3 -- */
+
   function step3() {
     return `
-      ${/* h3, nicht h2: die Schrittüberschrift oben ist die h2 dieses Abschnitts. */''}
+      ${/* Use h3 because the wizard step heading is this section's h2. */''}
       <h3>Zusammenfassung</h3>
       <dl class="kv">
-        <dt>Objektbezeichnung</dt><dd>${C.escape(bezeichnung())}</dd>
+        <dt>Objektbezeichnung</dt><dd>${C.escape(buildingName())}</dd>
         <dt>Adresse</dt><dd>${C.escape(`${state.street} ${state.no}, ${state.zip} ${state.city}`.trim())}</dd>
         <dt>Koordinaten (WGS 84)</dt><dd>${state.lat != null ? `${state.lat.toFixed(5)}, ${state.lng.toFixed(5)}` : '—'}</dd>
         <dt>EGID</dt><dd>${C.escape(state.egid) || '<span class="muted">wird ermittelt</span>'}</dd>
         <dt>EGRID</dt><dd>${C.escape(state.egrid) || '<span class="muted">wird ermittelt</span>'}</dd>
         <dt>Teilportfolio</dt><dd>${C.escape(state.portfolio)}</dd>
-        <dt>Gebäudeart</dt><dd>${C.escape(state.gebaeudeart)}</dd>
+        <dt>Gebäudeart</dt><dd>${C.escape(state.buildingType)}</dd>
         <dt>Eigentumsverhältnis</dt><dd>${C.escape(state.ownership)}</dd>
-        <dt>Baujahr</dt><dd>${C.escape(state.baujahr)}</dd>
+        <dt>Baujahr</dt><dd>${C.escape(state.constructionYear)}</dd>
         <dt>Verantwortliche OE</dt><dd>${C.escape(state.org)}</dd>
       </dl>
       ${C.notification('Mit dem Absenden wird ein Vorgang erstellt. EGID und EGRID löst der Kataster­dienst anhand der Lage auf; die Objekt-ID (bbl_id), die Flächen (GF/HNF) und die weiteren Stammdaten vergibt das Portfoliomanagement bei der Prüfung.', 'info')}
@@ -246,7 +221,8 @@ export default async function render(ctx) {
       </div>`;
   }
 
-  /* ------------------------------------------------------------ Prüfungen -- */
+  /* ------------------------------------------------------------ Validation -- */
+
   function validate() {
     const e = {};
     if (state.step === 1) {
@@ -256,16 +232,14 @@ export default async function render(ctx) {
       }
     }
     if (state.step === 2) {
-      // Anweisende Formulierung wie in space-request.js / fault-report.js — der
-      // Fehler sagt, was zu tun ist, nicht bloss «Pflichtfeld».
+      // Use actionable validation copy that tells the user how to fix the field.
       if (!state.portfolio) e['bc-portfolio'] = 'Bitte ein Teilportfolio wählen';
-      if (!state.gebaeudeart) e['bc-gebart'] = 'Bitte eine Gebäudeart wählen';
-      const y = Number(state.baujahr);
-      if (!String(state.baujahr).trim()) e['bc-baujahr'] = 'Bitte das Baujahr angeben';
-      else if (!Number.isInteger(y) || y < 1200 || y > 2100) e['bc-baujahr'] = 'Bitte ein Jahr zwischen 1200 und 2100 angeben';
-      // `bc-ownership` steht bewusst ohne required: die Auswahl ist zweiwertig und
-      // «Eigentum Bund» ist der belegte Regelfall — Markup und Prüfung beschreiben
-      // damit dieselbe Menge (vgl. space-request.js zum Standort-Feld).
+      if (!state.buildingType) e['bc-building-type'] = 'Bitte eine Gebäudeart wählen';
+      const y = Number(state.constructionYear);
+      if (!String(state.constructionYear).trim()) e['bc-construction-year'] = 'Bitte das Baujahr angeben';
+      else if (!Number.isInteger(y) || y < 1200 || y > 2100) e['bc-construction-year'] = 'Bitte ein Jahr zwischen 1200 und 2100 angeben';
+      // bc-ownership intentionally has no required attribute: it is binary and
+      // the documented default is federal ownership, keeping markup and validation aligned.
     }
     state.errors = e;
     return !Object.keys(e).length;
@@ -274,13 +248,14 @@ export default async function render(ctx) {
   function readStep() {
     if (state.step === 2) {
       Object.assign(state, C.readForm(mount, {
-        portfolio: 'bc-portfolio', gebaeudeart: 'bc-gebart', ownership: 'bc-ownership',
-        baujahr: 'bc-baujahr',
+        portfolio: 'bc-portfolio', buildingType: 'bc-building-type', ownership: 'bc-ownership',
+        constructionYear: 'bc-construction-year',
       }));
     }
   }
 
-  /* ---------------------------------------------------------------- Draw --- */
+  /* ----------------------------------------------------------------- Render -- */
+
   function draw() {
     if (state.created) return drawDone();
     const restore = C.preserveFocus(mount);
@@ -291,19 +266,14 @@ export default async function render(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--sm">
-        ${C.backLink(links.dienstleistung('gebaeude-erfassen'), 'Dienstleistungsbeschreibung')}
+        ${C.backLink(links.service('gebaeude-erfassen'), 'Dienstleistungsbeschreibung')}
         <h1 tabindex="-1">Gebäude erfassen</h1>
-        ${/* Wie space-request.js: unter wem erfasst wird und wohin der Vorgang
-              läuft, steht als Kontextzeile — nicht als Formularfeld. */''}
+        ${/* Explain the responsible unit and where the submitted case will appear. */''}
         ${C.contextLine({ action: 'Erfassung', name: session.user().name, org: state.org, process: 'Eingang → Prüfung PFM → Genehmigung → Publikation' })}
-        ${/* Gemeinsames Wizard-Gerüst (Review B8). headId 'bc-step-head' ist im
-              Test gepinnt. Legende nur auf Schritt 2: nur dort gibt es mit «*»
-              markierte Felder — auf Schritt 1 stand sie zu einem Zeichen, das
-              dort nirgends vorkommt. */''}
+        ${/* Shared wizard structure; bc-step-head is the focused step heading. */''}
         ${C.wizardHead(STEP_LABELS, state.step, { headId: 'bc-step-head', label: 'Erfassungsschritte', legend: state.step === 2 })}
         ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
-        <!-- novalidate — siehe space-request.js: ohne das Attribut feuert das
-             submit-Event nie und validate() bleibt unerreichbar. -->
+        <!-- novalidate keeps the submit event available to the custom validator. -->
         <form id="bc-form" class="form" novalidate>${state.step === 1 ? step1() : state.step === 2 ? step2() : step3()}</form>
       </div>
     </div>`;
@@ -317,23 +287,24 @@ export default async function render(ctx) {
     <div class="container section container--grid">
       <div class="container__center--xs">
         ${C.processDone({ instance: i, lead: 'Erfassung eingereicht.', title: 'Vielen Dank',
-          text: `Das Objekt «${C.escape(bezeichnung())}» ist zur Prüfung beim Portfoliomanagement.`,
+          text: `Das Objekt «${C.escape(buildingName())}» ist zur Prüfung beim Portfoliomanagement.`,
           extra: `<dl class="kv">
             <dt>Referenz</dt><dd>${C.escape(i.reference)}</dd>
             <dt>Adresse</dt><dd>${C.escape(`${state.street} ${state.no}, ${state.zip} ${state.city}`.trim())}</dd>
             <dt>Status</dt><dd>${C.statusBadge(i.status, 'Eingereicht')}</dd>
           </dl>`,
           actions: [
-            { href: links.vorgang(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            { href: links.caseDetails(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
             { href: '#/services', label: 'Zu den Dienstleistungen' },
           ] })}
       </div>
     </div>`;
-    // Fokus auf die Erfolgsüberschrift + Ansage der Referenz (gemeinsamer Helfer).
+    // Focus the success heading and announce the reference through the shared helper.
     C.focusProcessDone(mount, i);
   }
 
-  /* ------------------------------------------------------------- Verkabeln - */
+  /* ---------------------------------------------------------------- Wiring -- */
+
   function closeList() {
     if (addressCombobox) addressCombobox.close();
   }
@@ -359,14 +330,13 @@ export default async function render(ctx) {
       lat: s.lat, lng: s.lon, errors: {},
     });
     closeList();
-    // Karte NICHT neu aufbauen: nur die Nadel setzen und heranfahren. Ein
-    // Neurender würde die MapLibre-Instanz wegwerfen und das Kachelnachladen
-    // bei jedem Tastendruck neu auslösen.
+    // Do not rebuild the map. Move its marker and camera so each keystroke does
+    // not discard MapLibre and reload tiles.
     if (pickerMap && pickerMap.__setPin) pickerMap.__setPin(s.lat, s.lon);
     redrawFacts();
   }
 
-  // Nur die Faktenliste + Bestätigungshaken neu schreiben, damit die Karte steht.
+  // Refresh only the facts and confirmation control, leaving the map intact.
   function redrawFacts() {
     const inp = mount.querySelector('#bc-address');
     if (inp) inp.value = state.address;
@@ -387,46 +357,43 @@ export default async function render(ctx) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       readStep();
-      // Fehlversuch: neu zeichnen, dann die Fehlerübersicht verdrahten. C.wireErrorSummary
-      // setzt den Fokus auf ihre Überschrift UND macht ihre Sprungmarken funktionsfähig —
-      // vorher waren es nackte Anker, und der Fokus sprang auf den ersten Link statt auf
-      // die Überschrift, die sagt, wie viele Felder zu korrigieren sind (WCAG 3.3.1).
+      // After a failed attempt, redraw before wiring the error summary. The shared
+      // helper focuses its heading and activates field links, satisfying WCAG 3.3.1.
       if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
       if (state.step < 3) { state.step += 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step, { headId: 'bc-step-head' }); return; }
       const inst = engine.start('gebaeude-erfassung', {
-        title: `Gebäude erfassen — ${bezeichnung()}`.trim(),
+        title: `Gebäude erfassen — ${buildingName()}`.trim(),
         organization: state.org,
         requester: session.user().name,
         data: {
-          bezeichnung: bezeichnung(), strasse: `${state.street} ${state.no}`.trim(),
-          plz: state.zip, ort: state.city, lat: state.lat, lng: state.lng,
+          'bezeichnung': buildingName(), 'strasse': `${state.street} ${state.no}`.trim(),
+          'plz': state.zip, 'ort': state.city, lat: state.lat, lng: state.lng,
           egid: state.egid, egrid: state.egrid,
-          teilportfolio: state.portfolio, gebaeudeart: state.gebaeudeart,
-          eigentum: state.ownership, baujahr: state.baujahr,
+          'teilportfolio': state.portfolio, 'gebaeudeart': state.buildingType,
+          'eigentum': state.ownership, 'baujahr': state.constructionYear,
         },
       });
-      // engine.start() liefert null, wenn localStorage nicht schreiben konnte —
-      // ohne diese Abzweigung liefe drawDone() auf `null.reference` (gleiches
-      // Muster wie in space-request.js).
+      // engine.start returns null when localStorage fails; guard it before
+      // drawDone reads the reference, matching space-request.
       if (!inst) { C.flashError(mount, 'Der Vorgang konnte nicht gespeichert werden — bitte erneut versuchen.'); return; }
       state.created = inst;
       freeMap();
-      // drawDone() fokussiert die Erfolgsüberschrift und sagt die Referenz an
-      // (C.focusProcessDone) — kein eigener announce mehr nötig.
+      // drawDone delegates success focus and reference announcement to
+      // C.focusProcessDone.
       draw();
     });
 
     const back = form.querySelector('[data-back]');
     if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step, { headId: 'bc-step-head' }); });
 
-    // Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert —
-    // gemeinsamer Helfer (id-Konvention `<id>-msg`, `input` + `change`, weil
-    // zwei der Pflichtfelder <select> sind). Deckt auch die Adress-Badge ab.
+    // Clear field errors as values change. The shared helper covers input and
+    // select change events plus the derived-address badge.
     C.wireFieldErrors(mount, state.errors);
 
     if (state.step !== 1) return;
 
-    /* ---- Schritt 1: Karte + Suchauflage ---- */
+    /* Step 1: map and search overlay. */
+
     const picker = mount.querySelector('#bc-picker');
     const inp = mount.querySelector('#bc-address');
     const clear = mount.querySelector('#bc-clear');
@@ -435,9 +402,8 @@ export default async function render(ctx) {
 
     addressCombobox = createListboxController({ input: inp, list: box, onChoose: pick });
 
-    // Die Auflage liegt ÜBER dem MapLibre-Canvas. Ohne das Stoppen der
-    // Weitergabe würde jeder Klick ins Feld die Karte verschieben und jedes
-    // Scrollen in der Vorschlagsliste sie zoomen.
+    // The overlay sits above MapLibre. Stop pointer and wheel propagation so
+    // editing or scrolling suggestions does not pan or zoom the map.
     const swallow = (e) => e.stopPropagation();
     const overlay = picker.querySelector('.map-search');
     ['pointerdown', 'mousedown', 'click', 'dblclick', 'wheel', 'touchstart'].forEach(
@@ -446,8 +412,7 @@ export default async function render(ctx) {
     initPickerMap(picker, {
       lat: state.lat, lng: state.lng,
       onPick: (la, ln) => {
-        // Eine Kartenposition ohne Adressauswahl wäre kein vollständiges
-        // Stammdatum. Die Karte verfeinert deshalb nur eine gewählte Adresse.
+        // A map position alone is incomplete master data; only refine a selected address.
         if (!state.addressSelected) {
           C.announce('Bitte zuerst eine Adresse aus den Vorschlägen wählen.');
           return;
@@ -456,7 +421,7 @@ export default async function render(ctx) {
         redrawFacts();
         C.announce('Standort angepasst.');
       },
-    }).then((m) => { pickerMap = m; }).catch(() => { /* Karte optional */ });
+    }).then((m) => { pickerMap = m; }).catch(() => { /* The map is optional. */ });
     ctx.onUnmount(freeMap);
 
     if (clear) clear.addEventListener('click', () => {
@@ -474,22 +439,21 @@ export default async function render(ctx) {
       cancelAddressSearch();
       const typed = inp.value;
       if (typed !== state.address) {
-        // Adresse, abgeleitete Felder und Koordinaten bilden eine Auswahl. Eine
-        // nachträgliche Textänderung darf nicht die alte Auswahl versteckt
-        // weiterverwenden.
+        // Address, derived fields, and coordinates form one selection. Editing
+        // the query invalidates the former selection.
         Object.assign(state, {
           address: typed, addressSelected: false,
           street: '', no: '', zip: '', city: '', lat: null, lng: null,
         });
         redrawFacts();
-        // redrawFacts übernimmt den kontrollierten Wert; den Cursor ans Ende
-        // zurücksetzen, ohne ein weiteres input-Ereignis auszulösen.
+        // redrawFacts restores the controlled value; move the cursor to the end
+        // without dispatching another input event.
         inp.setSelectionRange(inp.value.length, inp.value.length);
       }
       if (clear) clear.hidden = !inp.value;
       const q = inp.value.trim();
       if (q.length < 3) { closeList(); return; }
-      // 300ms Ruhe vor dem Aufruf — sonst ein Treffer pro Tastendruck.
+      // Debounce by 300 ms to avoid one request per keystroke.
       searchTimer = setTimeout(async () => {
         const version = searchVersion;
         const request = new AbortController();
@@ -511,11 +475,8 @@ export default async function render(ctx) {
       }, 300);
     });
 
-    // Klick ausserhalb schliesst die Vorschlagsliste. `{ once: true }` allein
-    // genügte NICHT: der Horcher verschwindet erst, wenn irgendwo geklickt WIRD —
-    // wer die Seite ohne Klick verlässt, hinterlässt ihn. Gemessen: ein
-    // lebender document-click je Besuch, ohne Obergrenze (code-review §4).
-    // Der Controller hängt am Routenwechsel und räumt unabhängig davon auf.
+    // An outside click closes suggestions. A once-only document listener would
+    // leak if the route changed before a click, so the route controller always removes it.
     const outsideAc = new AbortController();
     ctx.onUnmount(() => outsideAc.abort());
     document.addEventListener('click', (e) => {

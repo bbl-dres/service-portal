@@ -1,4 +1,4 @@
-// Dashboard data layer — the Datenportal's analytics provider.
+// Dashboard data layer: the data portal's analytics provider.
 //
 // All data comes from data/dashboards.json (plain JSON): each dataset is a small
 // row table, and every chart declares a *query spec* rather than reaching into the
@@ -18,44 +18,44 @@ const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key
 const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
 const safeDictionary = (value = {}) => Object.assign(Object.create(null), value);
 const DATA = { datasets: Object.create(null), topics: [], dashboards: [] };
-// Fällt die Datei aus, sieht das Datenportal aus wie ein Portal ohne Auswertungen
-// — nicht wie ein Ladefehler (M18). `ok()` unterscheidet beides, so wie
-// core.available() es für die übrigen Bestände tut.
+// If the file fails, the data portal looks like a portal without dashboards
+// rather than one with a loading error (M18). `ok()` distinguishes the cases,
+// as core.available() does for other datasets.
 let loaded = false;
 let pending = null;
 
 function validateRecords(records, path) {
   if (!Array.isArray(records) || records.some((record) => !isRecord(record))) {
-    throw new Error(`erwartet Datensatzliste: ${path}`);
+    throw new Error(`expected a record list: ${path}`);
   }
   return records;
 }
 
 function validatePayload(json) {
-  if (!isRecord(json.datasets)) throw new Error('erwartet Objekt: dashboards.datasets');
+  if (!isRecord(json.datasets)) throw new Error('expected an object: dashboards.datasets');
   const topics = validateRecords(json.topics, 'dashboards.topics');
   const dashboards = validateRecords(json.dashboards, 'dashboards.dashboards');
   const topicIds = new Set();
 
   for (const [id, dataset] of Object.entries(json.datasets)) {
-    if (!isRecord(dataset)) throw new Error(`erwartet Dataset-Objekt: dashboards.datasets.${id}`);
+    if (!isRecord(dataset)) throw new Error(`expected a dataset object: dashboards.datasets.${id}`);
     const columns = validateRecords(dataset.columns, `dashboards.datasets.${id}.columns`);
     if (columns.some((column) => typeof column.name !== 'string' || !column.name.trim())) {
-      throw new Error(`ungültige Spalte: dashboards.datasets.${id}.columns`);
+      throw new Error(`invalid column: dashboards.datasets.${id}.columns`);
     }
     if (!Array.isArray(dataset.rows) || dataset.rows.some((row) => !Array.isArray(row))) {
-      throw new Error(`erwartet Zeilenlisten: dashboards.datasets.${id}.rows`);
+      throw new Error(`expected row arrays: dashboards.datasets.${id}.rows`);
     }
   }
 
   for (const topic of topics) {
-    if (typeof topic.id !== 'string' || !topic.id.trim()) throw new Error('ungültige Topic-ID');
+    if (typeof topic.id !== 'string' || !topic.id.trim()) throw new Error('invalid topic ID');
     topicIds.add(topic.id);
   }
   for (const dashboard of dashboards) {
-    if (typeof dashboard.id !== 'string' || !dashboard.id.trim()) throw new Error('ungültige Dashboard-ID');
+    if (typeof dashboard.id !== 'string' || !dashboard.id.trim()) throw new Error('invalid dashboard ID');
     if (typeof dashboard.topicId !== 'string' || !topicIds.has(dashboard.topicId)) {
-      throw new Error(`ungültiges Dashboard-Thema: dashboard.${dashboard.id}.topicId`);
+      throw new Error(`invalid dashboard topic: dashboard.${dashboard.id}.topicId`);
     }
     if (dashboard.kpis != null) validateRecords(dashboard.kpis, `dashboard.${dashboard.id}.kpis`);
     const charts = validateRecords(dashboard.charts, `dashboard.${dashboard.id}.charts`);
@@ -63,29 +63,29 @@ function validatePayload(json) {
     const chartIds = new Set();
     for (const chart of charts) {
       if (typeof chart.id !== 'string' || !chart.id.trim() || chartIds.has(chart.id)) {
-        throw new Error(`ungültige Diagramm-ID: dashboard.${dashboard.id}.charts`);
+        throw new Error(`invalid chart ID: dashboard.${dashboard.id}.charts`);
       }
       chartIds.add(chart.id);
       if (!isRecord(chart.query) || typeof chart.query.dataset !== 'string'
         || !hasOwn(json.datasets, chart.query.dataset)) {
-        throw new Error(`ungültige Abfrage: dashboard.${dashboard.id}.charts.${chart.id}`);
+        throw new Error(`invalid query: dashboard.${dashboard.id}.charts.${chart.id}`);
       }
       if (chart.query.orderBy != null && typeof chart.query.orderBy !== 'string') {
-        throw new Error(`ungültige Sortierung: dashboard.${dashboard.id}.charts.${chart.id}`);
+        throw new Error(`invalid sort: dashboard.${dashboard.id}.charts.${chart.id}`);
       }
       if (chart.query.select != null && (!Array.isArray(chart.query.select)
         || chart.query.select.some((column) => typeof column !== 'string'))) {
-        throw new Error(`ungültige Spaltenauswahl: dashboard.${dashboard.id}.charts.${chart.id}`);
+        throw new Error(`invalid column selection: dashboard.${dashboard.id}.charts.${chart.id}`);
       }
       if (chart.query.where != null && !isRecord(chart.query.where)) {
-        throw new Error(`ungültiger Filter: dashboard.${dashboard.id}.charts.${chart.id}`);
+        throw new Error(`invalid filter: dashboard.${dashboard.id}.charts.${chart.id}`);
       }
     }
     for (const tab of dashboard.tabs || []) {
       if (typeof tab.id !== 'string' || !tab.id.trim()
         || !Array.isArray(tab.charts)
         || tab.charts.some((chartId) => typeof chartId !== 'string' || !chartIds.has(chartId))) {
-        throw new Error(`ungültige Diagrammliste: dashboard.${dashboard.id}.tabs`);
+        throw new Error(`invalid chart list: dashboard.${dashboard.id}.tabs`);
       }
     }
   }
@@ -135,7 +135,7 @@ function toObjects(ds) {
 }
 
 // A range predicate is a plain object like { gte, lte, gt, lt } — used by the
-// dashboard year filter (Start Zeitreihe / bis Jahr) to trim time series.
+// dashboard's start/end year filter to trim time series.
 function isRange(want) {
   return want && typeof want === 'object' && !Array.isArray(want)
     && ['gte', 'lte', 'gt', 'lt'].some(k => k in want);

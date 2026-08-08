@@ -1,6 +1,5 @@
-// Grundrisse als ABSCHNITT der Übersicht statt als Reiter: Tabelle im Ruhe-
-// zustand, Betrachter an ihrer Stelle nach dem Klick — und alles darüber
-// (Seitenkopf, Bildmosaik, Reiterleiste, Eckdaten, Anträge) bleibt stehen.
+// Check the floor-plan tab in both states: floor table at rest and the viewer
+// in its place after a row click. The page header, mosaic and tabs must persist.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const URL = `${APP_BASE}/app/tenancies/MV-2026-001`;
@@ -10,98 +9,92 @@ await cdp.send('Emulation.setDeviceMetricsOverride',
   { width: 1440, height: 1400, deviceScaleFactor: 1, mobile: false }, page.sessionId);
 await sleep(1600);
 
-const lies = () => page.evaluate(`(() => {
-  const q = (s) => document.querySelector(s);
-  const sichtbar = (s) => { const e = q(s); return !!e && e.offsetParent !== null; };
+const readState = () => page.evaluate(`(() => {
+  const query = (selector) => document.querySelector(selector);
+  const isVisible = (selector) => { const element = query(selector); return !!element && element.offsetParent !== null; };
   return {
-    reiter: [...document.querySelectorAll('[role="tab"]')].map(t => t.textContent.trim()),
-    reiterleiste: sichtbar('.tab__controls'),
-    abschnitt: [...document.querySelectorAll('[role="tab"]')].map(t=>t.textContent.trim()).find(x=>/Grundriss/.test(x)),
-    tabelle: !!q('#mt-dt-floors table'),
-    betrachter: !!q('#fp-wrap'),
-    kopfPille: q('.fp-floors .tag-item--active')?.textContent.trim(),
-    seitenFakten: q('.fp-side .fp-facts')?.textContent.replace(/\s+/g,' ').trim(),
-    vollbild: !!q('#fp-vollbild'), drucken: !!q('#fp-drucken'), zurueck: !!q('#fp-zurueck'),
-    farbe: q('#fp-color')?.value,
-    legende: document.querySelectorAll('.fp-legend__item').length,
-    raumPanel: !!q('#fp-room'),
-    // Bleibt der Kontext über dem Abschnitt stehen?
-    eckdaten: !!q('.kpi-strip'), antraege: !!q('#mt-dt-vorgaenge table'), mosaik: !!q('#mt-mosaic'),
-    // Reihenfolge der drei Abschnitte in der Übersicht.
-    reihenfolge: [...document.querySelectorAll('.tab__container:not([hidden]) section, .detail-layout__aside .box')]
-      .map(e => (e.querySelector(':scope > h2')?.textContent.trim() || '').split(' ')[0]),
-    klebt: q('.fp-head') ? getComputedStyle(q('.fp-head')).position : null,
+    tabs: [...document.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent.trim()),
+    tabBar: isVisible('.tab__controls'),
+    floorplanTab: [...document.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent.trim()).find((label) => /Grundriss/.test(label)),
+    table: !!query('#tenancy-floor-table table'),
+    viewer: !!query('#fp-wrap'),
+    activeFloor: query('.fp-floors .tag-item--active')?.textContent.trim(),
+    sideFacts: query('.fp-side .fp-facts')?.textContent.replace(/\\s+/g, ' ').trim(),
+    fullscreen: !!query('#floorplan-fullscreen'),
+    print: !!query('#floorplan-print'),
+    back: !!query('#floorplan-back'),
+    color: query('#fp-color')?.value,
+    legend: document.querySelectorAll('.fp-legend__item').length,
+    roomPanel: !!query('#fp-room'),
+    metrics: !!query('.kpi-strip'),
+    requests: !!query('#tenancy-case-table table'),
+    mosaic: !!query('#mt-mosaic'),
+    sectionOrder: [...document.querySelectorAll('.tab__container:not([hidden]) section, .detail-layout__aside .box')]
+      .map((element) => (element.querySelector(':scope > h2')?.textContent.trim() || '').split(' ')[0]),
+    headerPosition: query('.fp-head') ? getComputedStyle(query('.fp-head')).position : null,
     hash: location.hash,
   };
 })()`);
 
-const vorher = await lies();
-// Erste Geschosszeile anklicken.
-await page.evaluate(`document.querySelector('#mt-dt-floors tbody a')?.click()`);
+const before = await readState();
+await page.evaluate(`document.querySelector('#tenancy-floor-table tbody a')?.click()`);
 await sleep(800);
-const nachher = await lies();
+const after = await readState();
 
-// Zurück zur Tabelle.
-await page.evaluate(`document.querySelector('#fp-zurueck')?.click()`);
+await page.evaluate(`document.querySelector('#floorplan-back')?.click()`);
 await sleep(700);
-const zurueck = await lies();
+const back = await readState();
 
-// Alter Deep-Link mit ?tab=grundriss muss weiterhin den Plan öffnen.
-const alt = await page.evaluate(`(async () => {
+// The legacy tab query value remains a supported compatibility adapter.
+const legacyLink = await page.evaluate(`(async () => {
   location.hash = '#/app/tenancies/MV-2026-001?tab=grundriss&floor=1080-4850-AG-2og&color=use';
-  await new Promise(r => setTimeout(r, 800));
-  return JSON.stringify({ betrachter: !!document.querySelector('#fp-wrap'),
-    farbe: document.querySelector('#fp-color')?.value,
-    aktiverReiter: document.querySelector('[role="tab"][aria-selected="true"]')?.textContent.trim() });
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  return JSON.stringify({ viewer: !!document.querySelector('#fp-wrap'),
+    color: document.querySelector('#fp-color')?.value,
+    activeTab: document.querySelector('[role="tab"][aria-selected="true"]')?.textContent.trim() });
 })()`).then(JSON.parse);
 
-// Druckmarke: nur der Grundrissabschnitt bleibt sichtbar. Die Regeln stehen in
-// `@media print` — ohne umgeschaltetes Medium misst man den Bildschirmzustand.
 await page.evaluate(`document.body.classList.add('print--plan')`);
 await cdp.send('Emulation.setEmulatedMedia', { media: 'print' }, page.sessionId);
 await sleep(200);
-const druck = await page.evaluate(`(() => {
-  const sicht = (s) => { const e = document.querySelector(s); return e ? getComputedStyle(e).visibility : null; };
-  const zeigt = (s) => { const e = document.querySelector(s); return e ? getComputedStyle(e).display : null; };
+const printState = await page.evaluate(`(() => {
+  const visibility = (selector) => { const element = document.querySelector(selector); return element ? getComputedStyle(element).visibility : null; };
+  const display = (selector) => { const element = document.querySelector(selector); return element ? getComputedStyle(element).display : null; };
   return JSON.stringify({
-    inhalt: sicht('#main-content'), abschnitt: sicht('#mt-grundriss__body'), plan: sicht('svg.fp'),
-    legende: zeigt('.fp-legend'),            // der Schlüssel zur Einfärbung MUSS mitdrucken
-    raumdetail: zeigt('#fp-room'),           // Bedienelemente nicht
-    knoepfe: zeigt('.fp-head__actions'),
-    geschosswahl: zeigt('.fp-color'),
-    fusszeile: zeigt('.fp-print-foot'),      // nur im Druck sichtbar
+    content: visibility('#main-content'), section: visibility('#tenancy-floorplan__body'), plan: visibility('svg.fp'),
+    legend: display('.fp-legend'), roomDetails: display('#fp-room'), buttons: display('.fp-head__actions'),
+    floorSelection: display('.fp-color'), footer: display('.fp-print-foot'),
   });
 })()`).then(JSON.parse);
 await cdp.send('Emulation.setEmulatedMedia', { media: '' }, page.sessionId);
 await page.evaluate(`document.body.classList.remove('print--plan')`);
 
 await cdp.close();
-console.log(JSON.stringify({ vorher, nachher, zurueck, alt, druck }, null, 1));
+console.log(JSON.stringify({ before, after, back, legacyLink, printState }, null, 1));
 
-const p = [
-  ['drei Reiter, Grundrisse als eigener', vorher.reiter.length === 3 && vorher.reiter.some((x) => /^Grundrisse/.test(x))],
-  ['Reiter «Grundrisse» mit Zähler', /^Grundrisse \(\d+\)$/.test(vorher.abschnitt || '')],
-  ['Übersicht: Vertrag → Anträge (+ Randspalte)',
-    vorher.reihenfolge.join('>') === 'Vertrag>Anträge>Aktionen>Ansprechpersonen'],
-  ['Ruhezustand: Geschosstabelle', vorher.tabelle && !vorher.betrachter],
-  ['Klick öffnet den Betrachter an ihrer Stelle', nachher.betrachter && !nachher.tabelle],
-  ['Reiterleiste bleibt sichtbar', nachher.reiterleiste],
-  ['Eckdaten, Anträge und Mosaik bleiben stehen', nachher.eckdaten && nachher.antraege && nachher.mosaik],
-  ['Aktives Geschoss als Pille (kein zweiter Name)', !!nachher.kopfPille && !nachher.kopfName],
-  ['Kennzahlen in der Auswertungsspalte', /Räume/.test(nachher.seitenFakten || '')],
-  ['Kopfleiste: Zurück, Vollbild, Drucken', nachher.zurueck && nachher.vollbild && nachher.drucken],
-  ['Kopfleiste klebt', nachher.klebt === 'sticky'],
-  ['Vorgabe-Einfärbung Verwaltungseinheit, Legende gefüllt', nachher.farbe === 've' && nachher.legende > 0],
-  ['Raumdetail vorhanden', nachher.raumPanel],
-  ['Zurück führt in die Tabelle', zurueck.tabelle && !zurueck.betrachter],
-  ['alter ?tab=grundriss-Link öffnet weiterhin den Plan', alt.betrachter && alt.farbe === 'use'],
-  ['… und landet auf dem Grundriss-Reiter', /^Grundrisse/.test(alt.aktiverReiter || '')],
-  ['Druck: nur der Grundriss sichtbar', druck.inhalt === 'hidden' && druck.abschnitt === 'visible' && druck.plan === 'visible'],
-  ['Druck: Legende ist dabei (Schlüssel zur Einfärbung)', druck.legende !== 'none'],
-  ['Druck: Bedienelemente und Raumdetail nicht', ['raumdetail', 'knoepfe', 'geschosswahl'].every((k) => druck[k] === 'none')],
-  ['Druck: Fusszeile mit Objekt/Geschoss/Einfärbung', druck.fusszeile === 'block'],
+const checks = [
+  ['Three tabs include a dedicated floor-plan tab', before.tabs.length === 3 && before.tabs.some((label) => /^Grundrisse/.test(label))],
+  ['The floor-plan tab includes its count', /^Grundrisse \(\d+\)$/.test(before.floorplanTab || '')],
+  ['The overview keeps the expected section order', before.sectionOrder.join('>') === 'Vertrag>Anträge>Aktionen>Ansprechpersonen'],
+  ['The resting state shows the floor table', before.table && !before.viewer],
+  ['A row click replaces the table with the viewer', after.viewer && !after.table],
+  ['The tab bar remains visible', after.tabBar],
+  ['Metrics, requests and mosaic remain in place', after.metrics && after.requests && after.mosaic],
+  ['The active floor is shown as a chip', !!after.activeFloor],
+  ['Floor metrics appear in the analysis column', /Räume/.test(after.sideFacts || '')],
+  ['The header includes back, fullscreen and print controls', after.back && after.fullscreen && after.print],
+  ['The floor-plan header is sticky', after.headerPosition === 'sticky'],
+  ['The default administrative-unit colour mode has a legend', after.color === 've' && after.legend > 0],
+  ['The room-details panel exists', after.roomPanel],
+  ['The back link returns to the table', back.table && !back.viewer],
+  ['The legacy floor-plan tab link still opens the plan', legacyLink.viewer && legacyLink.color === 'use'],
+  ['The legacy link selects the floor-plan tab', /^Grundrisse/.test(legacyLink.activeTab || '')],
+  ['Print shows only the floor plan', printState.content === 'hidden' && printState.section === 'visible' && printState.plan === 'visible'],
+  ['Print includes the colour legend', printState.legend !== 'none'],
+  ['Print hides controls and room details', ['roomDetails', 'buttons', 'floorSelection'].every((key) => printState[key] === 'none')],
+  ['Print includes the contextual footer', printState.footer === 'block'],
 ];
-let fehler = 0;
-for (const [was, ok] of p) { if (!ok) fehler++; console.log(`${ok ? '  ok ' : ' FEHL'} ${was}`); }
-console.log(fehler ? `\n${fehler} Abweichungen` : '\nGrundriss-Abschnitt, Kopfleiste und Druck verhalten sich wie entworfen.');
-process.exit(fehler ? 1 : 0);
+let failures = 0;
+for (const [label, ok] of checks) { if (!ok) failures++; console.log(`${ok ? '  ok ' : ' FAIL'} ${label}`); }
+console.log(failures ? `\n${failures} deviations` : '\nThe floor-plan tab, header and print view behave as designed.');
+process.exit(failures ? 1 : 0);

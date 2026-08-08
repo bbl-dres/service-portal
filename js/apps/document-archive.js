@@ -1,15 +1,9 @@
-// Bauwerksdokumentation — durchsuchbares, filterbares Archiv (Liste). Verwendet die
-// gemeinsame `catbar` (Suche + Sortierung + Filter, ohne Ansichtswechsel, da nur Liste)
-// + die Aktive-Filter-Zeile, wie die übrigen Katalogansichten. Der Dateiname öffnet
-// den Dokument-Viewer mit der aktuellen Trefferliste als Blätter-Kontext.
+// Searchable construction-document archive with the shared document viewer.
+
 import { documentFileName, openDocumentViewer } from '../doc-viewer.js';
-import { dateiGroesse } from '../format.js';
-import { ANWENDUNGEN, trail } from '../crumbs.js';
+import { formatFileSize } from '../format.js';
+import { APPLICATIONS, trail } from '../crumbs.js';
 
-
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['buildings', 'documents'];
 const typeKey = (d) => d.typeCode || d.type || '';
 const typeLabel = (d) => [d.typeCode, d.type].filter(Boolean).join(' · ') || '—';
@@ -31,8 +25,8 @@ const PER_PAGE = 10;
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   setTitle('Bauwerksdokumentation');
-  // Die App steht im Anwendungskatalog — Kette über «Anwendungen» (js/crumbs.js).
-  setCrumbs(trail(ANWENDUNGEN, { label: 'Bauwerksdokumentation' }));
+
+  setCrumbs(trail(APPLICATIONS, { label: 'Bauwerksdokumentation' }));
 
   const all = core.documents();
   const buildings = core.buildings();
@@ -41,14 +35,11 @@ export default async function render(ctx) {
     .sort((a, b) => a.value.localeCompare(b.value, 'de'));
   const years = [...new Set(all.map(d => d.year))].sort((a, b) => b - a);
   const tierVariant = (id) => { const t = tiers.find(x => x.id === id); return t ? t.variant : 'gray'; };
-  // C.escape stringifiziert selbst (String(s == null ? '' : s)) — der lokale
-  // Wrapper war eine Doppelung.
+
   const esc = C.escape;
 
   const parseArr = (k) => (query.get(k) || '').split(',').map(s => s.trim()).filter(Boolean);
-  // Auch Sortierung und Seite aus der URL lesen: syncHash() schreibt beide,
-  // also muss der Start-Zustand sie ebenso einlesen — sonst reproduziert ein
-  // kopierter Link nicht die sichtbare Trefferliste (Muster: media-library).
+
   const state = {
     filters: { building: parseArr('building'), type: parseArr('type'), year: parseArr('year'), class: parseArr('class') },
     q: query.get('q') || '',
@@ -69,7 +60,7 @@ export default async function render(ctx) {
       { key: 'type', label: 'KBOB-Typ', render: r => esc(typeLabel(r)) },
       { key: 'building', label: 'Gebäude', render: r => { const bid = (r.linkedTo || [])[0]; const b = bid ? core.building(bid) : null; return b ? esc(b.name) : '<span class="muted">—</span>'; } },
       { key: 'year', label: 'Jahr', align: 'right', render: r => esc(r.year) },
-      { key: 'size', label: 'Grösse', align: 'right', render: r => dateiGroesse(r.sizeKB) },
+      { key: 'size', label: 'Grösse', align: 'right', render: r => formatFileSize(r.sizeKB) },
       { key: 'classification', label: 'Klassifizierung', render: r => C.badge(r.classification, tierVariant(r.classification)) },
     ], rows });
   }
@@ -91,12 +82,11 @@ export default async function render(ctx) {
     for (const [k, dim] of [['building', 'building'], ['type', 'type'], ['year', 'year'], ['class', 'class']]) {
       if (state.filters[dim].length) qp.set(k, state.filters[dim].join(','));
     }
-    // Defaults (Titel-Sortierung, Seite 1) bleiben aus der URL — kurz und
-    // teilbar, wie C.catalogueHash es für das Katalog-Trio handhabt.
+
     if (state.sort !== 'title') qp.set('sort', state.sort);
     if (state.page > 1) qp.set('page', String(state.page));
     const qs = qp.toString();
-    try { history.replaceState(history.state, '', '#/app/document-archive' + (qs ? '?' + qs : '')); } catch { /* nicht kritisch */ }
+    try { history.replaceState(history.state, '', '#/app/document-archive' + (qs ? '?' + qs : '')); } catch {  }
   }
 
   function renderMain() {
@@ -105,13 +95,11 @@ export default async function render(ctx) {
     if (state.page > totalPages) state.page = totalPages;
     const visible = rows.slice((state.page - 1) * PER_PAGE, state.page * PER_PAGE);
     const cnt = mount.querySelector('#doc-count');
-    // Dativ nach «von» («… von N Dokumenten»), wie bei den Mietverhältnissen.
+
     if (cnt) cnt.innerHTML = `<strong>${rows.length}</strong> von ${all.length} Dokumenten${totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`;
     const main = mount.querySelector('#doc-main');
     main.innerHTML = rows.length
-      // Ohne `href`-Builder: C.pagination rendert <button data-page> statt
-      // <a href="#">. Die Seite hält ihren Zustand in JS, `#` war ein toter
-      // Link — kopierbar, in neuem Tab öffenbar, und führte nirgendwohin.
+
       ? resultTable(visible) + C.pagination({ page: state.page, totalPages, inputId: 'doc-page', label: 'Seitennavigation Bauwerksdokumentation' })
       : C.empty('Keine Dokumente gefunden.', {
           hint: 'Passen Sie Ihre Suche oder die Filter an.',
@@ -120,12 +108,10 @@ export default async function render(ctx) {
     if (totalPages > 1) C.wirePagination(mount, 'doc-page', state.page, totalPages, (t) => { state.page = t; renderMain(); });
     renderActiveFilters();
     syncHash();
-    // Live-Region: ohne Ansage bleibt eine Suche/Filterung für Screenreader
-    // stumm — gleiche Konvention wie tenancies/media-library nach jedem Render.
+
     C.announceCatalogue({ count: rows.length, total: all.length, unit: 'Dokumenten', page: state.page, totalPages, view: 'list' });
   }
 
-  // --- chrome (once) ------------------------------------------------------
   const filterPanel = `
       ${C.filterGroup({ dim: 'building', legend: 'Gebäude', selected: state.filters.building, options: buildings.map(b => ({ value: b.bbl_id, label: b.name })) })}
       ${C.filterGroup({ dim: 'type', legend: 'KBOB-Dokumenttyp', selected: state.filters.type, options: types })}
@@ -151,10 +137,6 @@ export default async function render(ctx) {
     <div id="doc-main" class="mt-4"></div>
   </div>`;
 
-  // --- wiring -------------------------------------------------------------
-  // Suche (mit Tipp-Verzögerung), Sortierung, Filterpanel samt Badge, Panel-
-  // Reset und Aktiv-Pillen über die geteilte Explorer-Verdrahtung — diese
-  // Datei war die Vorlage der lokalen Kopien (Design-Review A2).
   const catalogue = C.wireCatalogueState(mount, {
     formId: 'doc-search', inputId: 'doc-q', sortId: 'doc-sort',
     filterToggleId: 'doc-filter-btn', panelId: 'doc-filters', resetId: 'doc-freset',
@@ -163,11 +145,8 @@ export default async function render(ctx) {
   const { clearFilters } = catalogue;
   ctx.onUnmount(catalogue.destroy);
 
-  // Delegated: Dokument-Vorschau (Blätter-Kontext = aktuelle Treffer) + Null-
-  // zustands-Reset. KEIN eigener [data-page]-Handler mehr: C.wirePagination
-  // (in renderMain) bindet die Buttons der Paginierung bereits selbst.
   mount.querySelector('#doc-main').addEventListener('click', (e) => {
-    // Nullzustand: Suche + Filter in einem Klick zurücksetzen (Item 5.13).
+
     if (e.target.closest('#doc-empty-reset')) {
       const q = mount.querySelector('#doc-q');
       state.q = ''; if (q) q.value = '';

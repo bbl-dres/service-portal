@@ -122,7 +122,7 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
       const href = floorplanEditor(entry.building.bbl_id);
       const selected = entry === inspectedObject;
       return `<tr role="row" class="fpe-nav-row${selected ? ' is-selected' : ''}" data-nav-row data-nav-href="${href}"
-        data-search="${C.escape(clean(`${entry.building.name} ${entry.building.bbl_id} ${address(entry.building)} ${entry.building.nutzer || ''}`))}"
+        data-search="${C.escape(clean(`${entry.building.name} ${entry.building.bbl_id} ${address(entry.building)} ${entry.building.occupants || ''}`))}"
         data-sort-name="${C.escape(clean(entry.building.name))}" data-sort-status="${C.escape(entry.planning.planAvailability)}" aria-selected="${selected}">
         <th scope="row" role="rowheader"><a href="${href}"><strong>${C.escape(entry.building.name)}</strong><span class="mono">${C.escape(entry.building.bbl_id)}</span></a></th>
         <td role="cell">${C.escape(entry.building.city || '—')}</td><td role="cell" class="text-right"><span class="fpe-nav-mobile-label" aria-hidden="true">Geschosse: </span>${number(entry.floors.length)}</td><td role="cell" class="text-right">${area(hnf)}</td>
@@ -137,7 +137,7 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
         <div><small>Aktive Geschosse</small><strong>${number(inspectedFloors.length)}</strong></div><div><small>Hauptnutzfläche</small><strong>${area(inspectedHnf)}</strong></div>
       </div></section>
       <section class="fpe-inspector-section"><h2>Attribute</h2><dl class="fpe-kv"><dt>Gebäude-ID</dt><dd class="mono">${C.escape(inspectedObject.building.bbl_id)}</dd>
-        <dt>Adresse</dt><dd>${C.escape(address(inspectedObject.building))}</dd><dt>Nutzende</dt><dd>${C.escape(inspectedObject.building.nutzer || 'nicht erfasst')}</dd>
+        <dt>Adresse</dt><dd>${C.escape(address(inspectedObject.building))}</dd><dt>Nutzende</dt><dd>${C.escape(inspectedObject.building.occupants || 'nicht erfasst')}</dd>
       </dl><a class="btn btn--filled btn--sm btn--icon-right" id="fpe-open-building" href="${floorplanEditor(inspectedObject.building.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Geschosse öffnen</span></a></section>
     </aside>`;
   }

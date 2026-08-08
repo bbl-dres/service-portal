@@ -1,32 +1,32 @@
-/* ===================== Suche (search.postcss «SEARCH RESULTS PAGE») ===================== */
-/* Grosses Suchfeld (search--large): fettes h-16-Feld mit Icon-Knopf rechts. */
+/* ===================== Search (search.postcss “SEARCH RESULTS PAGE”) ===================== */
+/* Large search field (search--large): bold h-16 field with an icon button on the right. */
 .search--large .search__group { display:flex; align-items:stretch; position:relative; height:var(--sp-16); max-width:52rem; }
-/* CD search.postcss:135-152: statisches text-xl (1.25rem, KEINE responsive Rampe —
-   2rem fett bei 1920 wäre sichtbar ausserhalb des CD), Input-Rahmenfarbe, kein
-   Feld-Schatten; rechts 3.5rem Luft, damit Text und natives Lösch-X nicht unter
-   den absolut gesetzten Suchknopf laufen (pr-12-Prinzip, wie die Kopfsuche). */
+/* CD search.postcss:135-152: static text-xl (1.25rem, NO responsive scale — bold
+   2rem at 1920 would visibly depart from CD), input border color, no field shadow;
+   3.5rem of room on the right prevents text and the native clear button from
+   running beneath the absolutely positioned search button (the same pr-12
+   principle as the header search). */
 .search__field { flex:1 1 auto; min-width:0; width:100%; padding:var(--sp-3) var(--sp-14) var(--sp-3) var(--sp-4);
   border:var(--stroke-1) solid var(--color-border-input); box-shadow:none;
   background:var(--color-bg); font-size:var(--fs-xl); font-weight:var(--fw-bold); }
-/* war --color-secondary-300 #828e9a auf Weiss = 3.34:1 (Soll 4.5:1) auf dem
-   prominentesten Eingabefeld des Produkts; --color-placeholder = 5.65:1. */
+/* --color-secondary-300 #828e9a on white was 3.34:1 (target 4.5:1) on the most
+   prominent input in the product; --color-placeholder is 5.65:1. */
 .search__field::placeholder { color:var(--color-placeholder); font-weight:var(--fw-regular); }
 .search--large .search__submit { position:absolute; top:0; right:0; bottom:0; z-index:var(--z-local-control); }
 .search--page-result { padding-top:var(--sp-4); }
 @media (min-width:1544px){ .search--page-result { padding-top:var(--sp-8); } }
 
-/* Trefferliste (SearchResultsList): schlanke Zeilen mit Meta, Titel, Text.
-   Die `.search-group*`-Regeln sind mit der Umstellung auf einen Ergebnisstrom
-   mit Art-Facette entfallen (kein Konsument mehr im JS). */
+/* Results list (SearchResultsList): lean rows with metadata, title, and text.
+   The `.search-group*` rules were removed when the page changed to a single
+   results stream with a type facet (there is no remaining JS consumer). */
 .search-results-list { list-style:none; margin:0; padding:0; }
-/* NUR unten eine Linie — wie die CD-Karte, die diese Zeilen trägt
-   (card.postcss:106-112 `.card--list`: `border-b border-secondary-200`). Vorher
-   trug jede Zeile eine Linie OBEN plus die letzte eine unten. Das erzeugte
-   direkt unter der Katalogleiste, die selbst schon `border-bottom` hat, eine
-   doppelte Trennlinie — die erste Zeile sah aus, als stünde sie in einem
-   eigenen Kasten. */
+/* A rule ONLY at the bottom, like the CD card containing these rows
+   (card.postcss:106-112 `.card--list`: `border-b border-secondary-200`). Before,
+   every row had a TOP rule and the last also had a bottom rule. That created a
+   double divider directly below the catalogue bar, which already has
+   `border-bottom`; the first row looked as though it occupied a separate box. */
 .search-result { border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
-/* Innenabstand wie `.card--list` (py-4 lg:py-6 2xl:py-8, px-1). */
+/* Inner spacing matches `.card--list` (py-4 lg:py-6 2xl:py-8, px-1). */
 .search-result__link { display:block; padding:var(--sp-4) var(--sp-1); color:inherit; text-decoration:none; }
 @media (min-width:1024px){ .search-result__link { padding-top:var(--sp-6); padding-bottom:var(--sp-6); } }
 @media (min-width:1544px){ .search-result__link { padding-top:var(--sp-8); padding-bottom:var(--sp-8); } }
@@ -35,10 +35,10 @@
 .search-result__meta { margin:0 0 var(--sp-0-5); }
 .search-result__title { font-size:var(--text-base); font-weight:var(--fw-bold); line-height:var(--lh-snug); margin:0; }
 .search-result__desc { margin:var(--sp-1) 0 0; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
-/* Nulltreffer-Block nach search.postcss:240-247: eigener vertikaler Innenabstand,
-   und der Abstand UNTER Überschrift und Liste wächst mit der Ansicht
-   (`mb-6 lg:mb-8 2xl:mb-10`). Vorher trug nur die h2 einen festen Wert und die
-   Liste gar keinen — Tipps und Hinweisband klebten aneinander. */
+/* No-results block follows search.postcss:240-247: its own vertical padding,
+   while spacing BELOW the heading and list grows with the viewport
+   (`mb-6 lg:mb-8 2xl:mb-10`). Previously only h2 had a fixed value and the list
+   had none, so the tips and notification band touched. */
 .search-results__no-results { padding-top:var(--sp-8); padding-bottom:var(--sp-8); }
 @media (min-width:1024px){ .search-results__no-results { padding-top:var(--sp-12); padding-bottom:var(--sp-12); } }
 .search-results__no-results h2,
@@ -46,40 +46,40 @@
 @media (min-width:1024px){ .search-results__no-results h2, .search-results__no-results ul { margin-bottom:var(--sp-8); } }
 @media (min-width:1544px){ .search-results__no-results h2, .search-results__no-results ul { margin-bottom:var(--sp-10); } }
 .search-results__no-results h3 { margin-top:var(--sp-8); }
-/* `.search-results .notification { my-16 }` (search.postcss:236-238) — das
-   Hinweisband steht bewusst frei, nicht als Anhängsel der Tippliste. */
+/* `.search-results .notification { my-16 }` (search.postcss:236-238) — the
+   notification band deliberately stands apart instead of trailing the tips list. */
 .search-results .notification { margin-top:var(--sp-16); margin-bottom:var(--sp-16); }
 
-/* Schematische Portfolio-Karte (der tote `.map`-Platzhalter mit fester 420px-Höhe
-   ist gelöscht — kein Emitter, und die Festhöhe widersprach der clamp()-Linie). */
-/* Feste Kartenhöhen ignorierten den Viewport: 440px/34rem/30rem galten auch auf
-   einem 844px hohen Handybildschirm. clamp() skaliert mit, behält aber die
-   Desktop-Höhe (Item 2.27). ACHTUNG: .pf-map ist zweimal deklariert — hier die
-   Basis, die zweite bei ~2127 ergänzt nur noch Radius. */
-/* Die Explorer-Karte trägt im Markup BEIDE Klassen (`pf-map dash-map`), und
-   `.dash-map` steht später im Blatt — ihre 30rem-Obergrenze hat die hiesige Höhe
-   überstimmt (gemessen 480px statt der gewünschten). Darum zusätzlich als
-   `.pf-map.dash-map` (0,2,0) festschreiben. Die Karte ist auf dieser Seite der
-   Hauptinhalt und darf höher sein als eine Dashboard-Kachel. */
+/* Schematic portfolio map (the dead `.map` placeholder with a fixed 420px height
+   was deleted — it had no emitter, and the fixed height opposed the clamp scale). */
+/* Fixed map heights ignored the viewport: 440px/34rem/30rem also applied on an
+   844px-high phone screen. clamp() scales with it while preserving the desktop
+   height (Item 2.27). NOTE: .pf-map is declared twice — this is the base; the
+   second declaration near ~2127 adds only the radius. */
+/* The explorer map carries BOTH classes (`pf-map dash-map`) in the markup, and
+   `.dash-map` appears later in the sheet, so its 30rem upper bound overrode this
+   height (measured at 480px instead of the intended value). Also lock it in as
+   `.pf-map.dash-map` (0,2,0). The map is the main content on this page and may
+   be taller than a dashboard tile. */
 .pf-map, .pf-map.dash-map { position:relative; height:clamp(20rem, 78vw, 44rem); overflow:hidden; background:var(--color-secondary-50); }
 
 /* Active filter pills — a portal composition of CD badges. CD ships
    badge-filter, but that is a filter *chooser*; it has no removable pill. */
-/* Abstand über der Pillenreihe: CDs Rampe (search.postcss:266-269
-   `.search__filters__tags { pt-4 sm:pt-6 2xl:pt-8 }`) — die Komponentenregel
-   trägt ihn, nicht eine mt-Utility am Call-Site (components.js verweist hierher). */
+/* Spacing above the pill row follows CD's scale (search.postcss:266-269
+   `.search__filters__tags { pt-4 sm:pt-6 2xl:pt-8 }`). The component rule owns
+   it, not an mt utility at the call site (components.js points here). */
 .active-filters { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2); padding-top:var(--sp-4); }
 @media (min-width:640px){ .active-filters { padding-top:var(--sp-6); } }
 @media (min-width:1544px){ .active-filters { padding-top:var(--sp-8); } }
-/* Entfernen-Pillen sind seit dem Umbau echte .tag-item (CDs interaktive Pille mit
-   voller 44px-Rampe, tag-item.postcss:7-42) — hier nur noch die Einfärbung der
-   Innenpille. Das Cancel-X bleibt voll deckend: CD dimmt Pillen-Icons nie
-   (badge.postcss:85-90 / tag-item.postcss:80-85). */
+/* Since the refactor, removable pills are genuine .tag-item components (CD's
+   interactive pill with a full 44px scale, tag-item.postcss:7-42); only the inner
+   pill's tint remains here. The cancel X stays fully opaque: CD never dims pill
+   icons (badge.postcss:85-90 / tag-item.postcss:80-85). */
 .active-filter { text-decoration:none; }
 .active-filter .tag-item__inner { background:var(--color-secondary-100); }
 .active-filter:hover .tag-item__inner { background:var(--color-secondary-200); }
 
-/* Topic tile icon (Datenportal) */
+/* Topic tile icon (data portal) */
 .domain-tile__icon { display:block; color:var(--color-primary-600); margin-bottom:var(--sp-1); }
 .card--clickable:hover .domain-tile__icon { color:var(--color-primary-700); }
 

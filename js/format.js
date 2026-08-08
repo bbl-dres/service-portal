@@ -1,35 +1,35 @@
-// Zahlen, Beträge, Flächen, Daten und Dateigrössen — eine Quelle fürs ganze
-// Portal.
+// Numbers, amounts, areas, dates and file sizes — one source for the entire
+// portal.
 //
-// Vorher lagen diese fünf Formate verstreut: `chf()` stand zeichengleich in
-// zwei Apps, der Datumsformatierer zweimal mit UNTERSCHIEDLICHER Wache
-// (`isNaN(d)` gegen `isNaN(d.getTime())`), und `toLocaleString('de-CH') + ' m²'`
-// war neunmal von Hand ausgeschrieben.
+// These five formats used to be scattered: `formatCurrency()` appeared
+// identically in two apps, the date formatter existed twice with DIFFERENT
+// guards (`isNaN(d)` versus `isNaN(d.getTime())`), and
+// `toLocaleString('de-CH') + ' m²'` was written out by hand nine times.
 //
-// Sichtbar wurde die Streuung bei den Dateigrössen: das Liegenschafteninventar
-// schrieb «4,7 MB», das Bauwerksdokumenten-Archiv «4.7 MB» — für DIESELBE
-// Datei. Die Inventar-Fassung ersetzte den Punkt aktiv durch ein Komma und
-// erzeugte damit eine deutsche Schreibweise in einem Schweizer Produkt; `de-CH`
-// setzt den Dezimalpunkt und das Apostroph als Tausendertrennung.
-// Massgebend ist ab hier durchgängig `toLocaleString('de-CH')`.
+// The inconsistency was visible in file sizes: the property inventory showed
+// «4,7 MB», while the building-document archive showed «4.7 MB» for THE SAME
+// file. The inventory version actively replaced the decimal point with a comma,
+// producing German notation in a Swiss product; `de-CH` uses the decimal point
+// and apostrophe as the thousands separator. From here on,
+// `toLocaleString('de-CH')` is authoritative throughout.
 
 const LOC = 'de-CH';
 
 /** 1234567 → «1'234'567» */
-export const num = (x) => Number(x || 0).toLocaleString(LOC);
+export const formatNumber = (x) => Number(x || 0).toLocaleString(LOC);
 
 /** 1920000 → «CHF 1'920'000» */
-export const chf = (x, currency = 'CHF') => `${currency} ${num(x)}`;
+export const formatCurrency = (x, currency = 'CHF') => `${currency} ${formatNumber(x)}`;
 
 /** 1180 → «1'180 m²» */
-export const m2 = (x) => `${num(x)} m²`;
+export const formatArea = (x) => `${formatNumber(x)} m²`;
 
 /**
- * ISO-Datum → «31.3.2034». Leere Werte werden zum Gedankenstrich, unlesbare
- * Werte unverändert durchgereicht — eine kaputte Rohangabe ist als solche
- * nützlicher denn als «Invalid Date».
+ * ISO date → «31.3.2034». Empty values become an em dash; unreadable values
+ * pass through unchanged — a broken raw value is more useful as such than as
+ * «Invalid Date».
  */
-export const datum = (iso) => {
+export const formatDate = (iso) => {
   if (!iso) return '—';
   const calendar = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
   if (calendar) {
@@ -48,12 +48,12 @@ export const datum = (iso) => {
 };
 
 /** 4820 → «4.7 MB», 512 → «512 KB» */
-export const dateiGroesse = (kb) => {
+export const formatFileSize = (kb) => {
   if (kb == null) return '';
   const n = Number(kb) || 0;
   return n >= 1024
     ? `${(n / 1024).toLocaleString(LOC, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MB`
-    : `${num(n)} KB`;
+    : `${formatNumber(n)} KB`;
 };
 
-export default { num, chf, m2, datum, dateiGroesse };
+export default { formatNumber, formatCurrency, formatArea, formatDate, formatFileSize };

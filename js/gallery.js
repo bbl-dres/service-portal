@@ -1,24 +1,23 @@
-// Vollbild-Bildergalerie — geteilt von der Objekt-Detailansicht
-// (js/apps/portfolio.js) und der Mediathek (js/apps/media-library.js).
+// Fullscreen image gallery shared by the property detail view
+// (js/apps/portfolio.js) and media library (js/apps/media-library.js).
 //
-// Folgt dem CD-Overlay-Muster wie die Dokumentvorschau (js/doc-viewer.js):
-// Kopfzeile mit Titel und Aktionen, darunter die Bildfläche. Tastatur: Esc
-// schliesst, Pfeil links/rechts blättert, Tab bleibt in der Galerie gefangen.
+// Follows the CD overlay pattern used by document preview (js/doc-viewer.js):
+// header with title and actions above the image stage. Keyboard: Escape closes,
+// left/right arrows navigate, and Tab remains trapped in the gallery.
 //
 // items = [{ photo, title, meta, type, gray, href?, details? }]
-//   details = [[Bezeichnung, Wert], …] — schaltet den Metadaten-Knopf frei.
-//   href    = Detailseite des Mediums, aus dem Metadaten-Panel verlinkt.
-// C wird durchgereicht (das Modul importiert components.js nicht selbst).
+//   details = [[label, value], …] — enables the metadata button.
+//   href    = media detail page linked from the metadata panel.
+// C is passed through; this module does not import components.js itself.
 //
-// AUFBAU: das Gerüst wird EINMAL gebaut, `update()` schreibt danach nur noch,
-// was sich je Bild ändert. Die frühere Fassung baute bei jedem Blättern das
-// ganze Overlay per innerHTML neu. Gemessen bei 17
-// Bildern: 77 DOM-Knoten und 18 <img> pro Tastendruck neu erzeugt (die Bilder
-// kamen aus dem Cache, die Knoten nicht). Beim Halten der Pfeiltaste ist das
-// spürbar, und der Fokus sprang dabei jedes Mal auf «Schliessen» zurück.
+// STRUCTURE: build the shell ONCE; `update()` then writes only what changes per
+// image. The former version rebuilt the entire overlay through innerHTML on each
+// navigation. With 17 images, every keystroke recreated 77 DOM nodes and 18
+// <img> elements (images came from cache, nodes did not). This was perceptible
+// when holding an arrow key, and focus jumped back to «Schliessen» each time.
 
-// Breitenstufen für das Vollbild. Feste 2000px luden auf einem 390px-Telefon ein
-// Bild, das dort nie gebraucht wird; freie Breiten würden den Cache zersplittern.
+// Width steps for fullscreen. A fixed 2000px loaded an image a 390px phone would
+// never need, while unrestricted widths would fragment the cache.
 const WIDTH_STEPS = [640, 1024, 1600, 2000];
 function stageWidth() {
   const want = Math.round((window.innerWidth || 1024) * Math.min(window.devicePixelRatio || 1, 2));
@@ -26,59 +25,56 @@ function stageWidth() {
 }
 
 
-// Stellt einen mit dem Teilen-Knopf erzeugten Galerie-Link wieder her. Der
-// Router reicht die bereits gelesenen Hash-Parameter als URLSearchParams
-// durch; nur eine EXAKT bekannte Bild-ID darf ein Overlay öffnen. Damit wird
-// aus einem unbekannten/stale `?bild=` weder still das erste Bild noch eine
-// Navigation. Geöffnet wird im nächsten Frame: der Router setzt nach render()
-// den Fokus auf die Seitenüberschrift; erst danach darf der Dialog seinen
-// Schliessen-Knopf fokussieren. openGallery synchronisiert anschliessend
-// dieselbe ID per replaceState, löst also keinen Hashwechsel und keinen zweiten
-// Renderlauf aus.
-export function restoreGalleryFromQuery(query, items, C, opts = {}) {
-  const param = opts.param || 'bild';
+// Restore a gallery link created by the share button. The router passes parsed
+// hash parameters as URLSearchParams; only an EXACTLY known image ID may open an
+// overlay. Query value: `bild`; an unknown or stale value therefore becomes neither the first image
+// nor a navigation. Open in the next frame: after render(), the router first
+// focuses the page heading, then the dialog may focus its close button.
+// openGallery subsequently synchronises the same ID through replaceState,
+// causing neither a hash change nor a second render.
+export function restoreGalleryFromQuery(query, items, C, options = {}) {
+  const param = options.param || 'bild';
   const requested = query && typeof query.get === 'function' ? query.get(param) : '';
   if (!requested || !Array.isArray(items) || !items.length) return null;
   const index = items.findIndex((item) => item && item.id === requested);
   if (index < 0) return null;
-  // Die vollständige Route gehört zum Auftrag. Im Portfolio steckt die
-  // Objektidentität z. B. in `?id=`; nur den Pfad und `bild` zu vergleichen
-  // liesse einen alten Frame die Galerie von Objekt A über Objekt B öffnen.
+  // The complete route belongs to this request. In portfolio, object identity
+  // lives in `?id=`; query value: `bild`. Comparing only path and that value would let an old frame open
+  // object A's gallery over object B.
   const expectedHash = String(location.hash || '#/');
   return requestAnimationFrame(() => {
-    // Der Rahmen kann nach render() bereits einer neueren Navigation gehören.
-    // Dann darf der alte Wiederherstellungsauftrag dort kein Overlay öffnen.
+    // After render(), the frame may already belong to a newer navigation. The
+    // stale restoration request must not open an overlay there.
     if (String(location.hash || '#/') !== expectedHash) return;
-    openGallery(items, index, C, { ...opts, param });
+    openGallery(items, index, C, { ...options, param });
   });
 }
 
 
-export function openGallery(items, start, C, opts = {}) {
-  // `opts.param`: Name eines Hash-Parameters, in dem das offene Bild steht
-  // (z. B. ?bild=MED-007). Damit zeigt der Teilen-Knopf auf GENAU diese
-  // Aufnahme statt nur auf die Seite. Gesetzt wird er mit history.replaceState —
-  // ein direktes Schreiben auf location.hash löste ein hashchange aus, der
-  // Router würde neu rendern und das Overlay unter sich wegziehen.
-  const param = opts.param || '';
+export function openGallery(items, start, C, options = {}) {
+  // `options.param`: name of the hash parameter containing the open image (for
+  // example, the image compatibility query). The share button then points to EXACTLY this image,
+  // not merely the page. history.replaceState sets it; writing location.hash
+  // directly would fire hashchange, make the router rerender and remove the
+  // overlay from underneath itself.
+  const param = options.param || '';
   if (!items || !items.length) return;
   const openedPath = String(location.hash || '#/').split('?')[0];
   let idx = Math.max(0, Math.min(start || 0, items.length - 1));
-  // Metadaten sind standardmässig EINGEKLAPPT: im Vollbild ist das Bild die
-  // Hauptinformation. Der Zustand bleibt über den Bildwechsel erhalten — wer
-  // Metadaten sehen will, will sie meist für mehrere Bilder hintereinander.
+  // Metadata is COLLAPSED by default because the image is primary in fullscreen.
+  // State persists across image changes; someone viewing metadata usually wants
+  // it for several consecutive images.
   let showMeta = false;
-  // Zoom: 'fit' (Standard — das ganze Bild passt in die Bühne) oder ein Faktor,
-  // wobei 1 = ein Bildpunkt der gelieferten Datei je CSS-Pixel. Jeder Bildwechsel
-  // setzt auf 'fit' zurück; ein mitgeschleppter Zoom vom vorigen Bild wäre bei
-  // abweichenden Seitenverhältnissen desorientierend.
+  // Zoom: 'fit' (default: the whole image fits the stage) or a factor, where
+  // 1 = one source-image pixel per CSS pixel. Every image change resets to
+  // 'fit'; carrying zoom across aspect ratios would be disorienting.
   let zoom = 'fit';
   const multi = items.length > 1;
   const trigger = document.activeElement;
   const esc = (s) => C.escape(String(s == null ? '' : s));
   const hasDetails = (it) => !!(it && it.details && it.details.length);
-  // Echte, lokal abgelegte Aufnahme geht vor; sonst das Unsplash-Platzhalterbild.
-  // Lokale Dateien haben eine feste Grösse — stageWidth() gilt nur für Unsplash.
+  // Prefer a real local image; otherwise use the Unsplash placeholder. Local
+  // files have fixed dimensions, so stageWidth() applies only to Unsplash.
   const fullUrl = (it) => (it && it.photoSrc) ? it.photoSrc : C.photoUrl(it.photo, { w: stageWidth(), gray: it.gray });
 
   const overlay = document.createElement('div');
@@ -87,8 +83,8 @@ export function openGallery(items, start, C, opts = {}) {
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-label', 'Bildergalerie');
 
-  // Gerüst — einmalig. Alles, was sich je Bild ändert, trägt eine id/Klasse und
-  // wird in update() beschrieben.
+  // One-time shell. Everything that changes per image has an ID/class and is
+  // written by update().
   //
     overlay.innerHTML = `
     <div class="pf-lightbox__bar">
@@ -109,17 +105,17 @@ export function openGallery(items, start, C, opts = {}) {
         <button type="button" class="pf-lightbox__btn interactive-control interactive-control--negative" data-act="close" aria-label="Galerie schliessen" title="Schliessen">${C.icon('Cancel', 'icon--md')}</button>
       </div>
     </div>
-    ${/* Bühne und Metadaten teilen sich EINE Zeile innerhalb der Spalte. Vorher
-          war das Overlay selbst `flex-flow:row wrap` — dann hat die Bühne keine
-          feste Höhe mehr, `max-height:100%` am Bild löst gegen `auto` auf und das
-          Bild stand in seiner natürlichen Grösse da (gemessen: Bühne 955px in
-          einem 900px hohen Overlay, Bildunterkante unter dem Sichtfeld). */''}
+    ${/* Stage and metadata share ONE row within the column. Previously the
+          overlay itself used `flex-flow:row wrap`, leaving the stage without a
+          fixed height. Image `max-height:100%` resolved against `auto`, so the
+          image used its natural size (measured: 955px stage in a 900px overlay,
+          with the image bottom below the viewport). */''}
     <div class="pf-lightbox__body">
       <div class="pf-lightbox__stage" data-el="stage">
         ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--prev interactive-control" data-act="prev" aria-label="Vorheriges Bild">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
-        ${/* Gescrollt wird NUR dieser innere Rahmen. Läge der Überlauf auf der
-              Bühne, wanderten Zoomleiste und Blätterpfeile beim Scrollen mit dem
-              Bild aus dem Blick — sie sind absolut in der Bühne positioniert. */''}
+        ${/* ONLY this inner frame scrolls. If overflow lived on the stage, the
+              zoom bar and navigation arrows would scroll out of view with the
+              image; they are positioned absolutely within the stage. */''}
         <div class="pf-lightbox__scroll" data-el="scroll" tabindex="0"
           aria-label="Bildfläche — mit den Bild-auf/ab-Tasten verschieben">
           <div class="pf-lightbox__canvas" data-el="canvas">
@@ -138,13 +134,13 @@ export function openGallery(items, start, C, opts = {}) {
             aria-label="An Bildschirm anpassen" title="An Bildschirm anpassen">${C.icon('Expand', 'icon--md')}</button>
         </div>
       </div>
-      ${/* Das Panel existiert IMMER, es wird nur ein-/ausgeblendet: aria-controls
-            muss auf ein vorhandenes Element zeigen, sonst geht der Bezug ins Leere. */''}
+      ${/* The panel ALWAYS exists and is merely shown/hidden: aria-controls must
+            point to an existing element or the relationship becomes empty. */''}
       <div class="pf-lightbox__meta" id="lb-meta" data-el="meta" hidden>
         <h2 class="pf-lightbox__meta-title">Metadaten</h2>
         <dl class="kv kv--tight" data-el="metakv"></dl>
-        ${/* btn--outline-negative, nicht btn--outline: das Panel ist dunkel, die
-              Ad-hoc-Umfärbung in app.css (16%-Weiss-Rand, unter 3:1) ist weg. */''}
+        ${/* btn--outline-negative, not btn--outline: the panel is dark. The ad-hoc
+              recolouring in app.css (16% white border, below 3:1) is gone. */''}
         <a class="btn btn--outline-negative btn--sm btn--icon-right" data-el="metalink" data-act="close-nav" href="#" hidden></a>
       </div>
     </div>`;
@@ -153,18 +149,18 @@ export function openGallery(items, start, C, opts = {}) {
   overlay.querySelectorAll('[data-el]').forEach((n) => { el[n.dataset.el] = n; });
 
 
-  // Nachbarbilder vorwärmen: beim Blättern lag sonst immer eine frische
-  // Anfrage zwischen Tastendruck und Bild.
+  // Preload neighbouring images; otherwise each navigation put a fresh request
+  // between keystroke and image.
   const warm = (i) => {
     const it = items[(i + items.length) % items.length];
     if (it && (it.photo || it.photoSrc)) { const im = new Image(); im.decoding = 'async'; im.src = fullUrl(it); }
   };
 
-  // Zoomstufen wie in Bildbetrachtern üblich; 1 (=100 %) liegt bewusst drin,
-  // damit «Originalgrösse» genau getroffen wird.
+  // Standard image-viewer zoom steps. Include 1 (=100%) deliberately so original
+  // size can be reached exactly.
   const STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.25, 1.5, 2, 3, 4];
-  // Faktor, bei dem das Bild genau in die Bühne passt — Basis für die
-  // Prozentanzeige im Fit-Modus und Startpunkt beim ersten Zoomschritt.
+  // Factor at which the image exactly fits the stage; basis for fit-mode
+  // percentage and starting point for the first zoom step.
   function fitFactor() {
     const im = el.img;
     if (!im || !im.naturalWidth || !el.canvas) return 1;
@@ -180,8 +176,8 @@ export function openGallery(items, start, C, opts = {}) {
     if (fit) {
       im.style.width = ''; im.style.height = '';
     } else {
-      // Feste Pixelmasse statt transform: so bekommt die Bühne echten
-      // Scroll-Überlauf und damit Tastatur- und Touch-Verschiebung geschenkt.
+      // Fixed pixel dimensions rather than transform give the stage real scroll
+      // overflow and therefore keyboard and touch panning for free.
       im.style.width = `${Math.round(im.naturalWidth * zoom)}px`;
       im.style.height = 'auto';
     }
@@ -202,7 +198,7 @@ export function openGallery(items, start, C, opts = {}) {
     if (next == null) return;
     zoom = next;
     applyZoom();
-    // Nach dem Vergrössern mittig einsteigen, statt oben links.
+    // After zooming in, start in the centre rather than top left.
     if (el.scroll) {
       el.scroll.scrollLeft = (el.scroll.scrollWidth - el.scroll.clientWidth) / 2;
       el.scroll.scrollTop = (el.scroll.scrollHeight - el.scroll.clientHeight) / 2;
@@ -218,8 +214,8 @@ export function openGallery(items, start, C, opts = {}) {
     el.img.style.width = ''; el.img.style.height = '';
     el.img.src = fullUrl(it);
     el.img.alt = it.title || '';
-    // naturalWidth steht erst nach dem Laden fest — die Prozentanzeige im
-    // Fit-Modus braucht sie, also nach dem Ladeereignis nachziehen.
+    // naturalWidth is known only after loading; fit-mode percentage needs it, so
+    // update after the load event.
     if (el.img.complete) applyZoom(); else el.img.addEventListener('load', applyZoom, { once: true });
     el.download.href = fullUrl(it);
 
@@ -231,14 +227,14 @@ export function openGallery(items, start, C, opts = {}) {
     if (hasDetails(it)) {
       el.metakv.innerHTML = it.details.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
       el.metalink.hidden = !it.href;
-      // «‹Objekt› ansehen» — das Muster der übrigen Verweis-Aktionen; «Zur
-      // Detailseite» war der einzige Ausreisser (Design-Review D8).
+      // “View object” follows the other reference actions; the former detail-page
+      // wording was the only outlier (design review D8).
       if (it.href) { el.metalink.href = it.href; el.metalink.innerHTML = `${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Aufnahme ansehen</span>`; }
     }
 
-    // Fokus NUR beim Öffnen setzen. Vorher lief er bei jedem Blättern auf
-    // «Schliessen» zurück — wer sich mit den Pfeilknöpfen durch die Galerie
-    // klickte, verlor nach jedem Klick den Knopf unter dem Finger.
+    // Set focus ONLY when opening. It previously returned to «Schliessen» after
+    // every navigation, so arrow-button users lost the button under their finger
+    // after each click.
     if (first) { const cl = overlay.querySelector('[data-act="close"]'); if (cl) cl.focus(); }
     syncUrl(false);
     if (multi) { warm(idx + 1); warm(idx - 1); }
@@ -274,9 +270,9 @@ export function openGallery(items, start, C, opts = {}) {
     if (trigger && trigger.focus) trigger.focus();
   };
   function onKey(e) {
-    // Liegt ein Modal (Teilen-Dialog) ÜBER der Galerie, gehört ihm die Tastatur:
-    // sonst schlösse ein Escape beides auf einmal. (Tab fängt C.trapFocus direkt
-    // am Overlay — das Modal hängt ausserhalb und bleibt davon unberührt.)
+    // When a modal (share dialog) sits ABOVE the gallery, it owns the keyboard;
+    // otherwise Escape would close both at once. (C.trapFocus catches Tab on the
+    // overlay itself; the external modal is unaffected.)
     if (document.querySelector('.modal')) return;
     if (e.key === 'Escape') { e.preventDefault(); close(); }
     else if (e.key === '+' || e.key === '=') { e.preventDefault(); stepZoom(1); }
@@ -286,11 +282,10 @@ export function openGallery(items, start, C, opts = {}) {
     else if (multi && e.key === 'ArrowRight') { e.preventDefault(); go(1); }
   }
   overlay.addEventListener('click', (e) => {
-    // Der Hintergrund schliesst NICHT: beim Schieben eines gezoomten Bildes
-    // endet fast jede Geste auf der dunklen Fläche, und ein versehentliches
-    // Schliessen kostet die Zoomstufe und die Position in der Galerie.
-    // Schliessen geht über das Kreuz — und über Esc, das bleibt Pflicht (das
-    // Overlay ist ein Dialog).
+    // The background does NOT close the gallery. When panning a zoomed image,
+    // almost every gesture ends on the dark surface, and accidental closure
+    // loses zoom and gallery position. Close through the cross or Escape, which
+    // remains required because the overlay is a dialog.
     const btn = e.target.closest('[data-act]'); if (!btn) return;
     if (btn.dataset.act === 'close') close();
     else if (btn.dataset.act === 'prev') go(-1);
@@ -301,16 +296,15 @@ export function openGallery(items, start, C, opts = {}) {
     else if (btn.dataset.act === 'meta') { showMeta = !showMeta; update(false); }
     else if (btn.dataset.act === 'close-nav') { close(); }
     else if (btn.dataset.act === 'share') {
-      // Derselbe CD-Dialog wie in der share-bar. location.hash trägt dank
-      // syncUrl() bereits das offene Bild, der geteilte Link öffnet also genau
-      // diese Aufnahme.
+      // The same CD dialog as the share bar. Thanks to syncUrl(), location.hash
+      // already carries the open image, so the shared link opens that exact item.
       const url = `${location.origin}${location.pathname}${location.search}${location.hash}`;
       C.openShareModal(url, 'Aufnahme teilen');
     }
   });
-  // Die Kopfzeile liegt ÜBER der Bildfläche; ihre Höhe wird gemessen und als
-  // Innenabstand an den Scrollrahmen gegeben, damit im Fit-Zustand nichts unter
-  // ihr verschwindet und die Bildlaufleiste trotzdem über die volle Fensterhöhe läuft.
+  // The header sits ABOVE the image stage. Its measured height becomes padding
+  // on the scroll frame so fit mode hides nothing beneath it while the scrollbar
+  // still spans the full viewport height.
   const syncChrome = () => {
     const bar = overlay.querySelector('.pf-lightbox__bar');
     overlay.style.setProperty('--lb-top', `${bar ? Math.round(bar.offsetHeight) : 0}px`);
@@ -319,19 +313,18 @@ export function openGallery(items, start, C, opts = {}) {
   const onResize = () => { syncChrome(); if (zoom === 'fit') applyZoom(); };
   window.addEventListener('resize', onResize);
   document.addEventListener('keydown', onKey);
-  // Tab/Shift+Tab über die GETEILTE Fokusfalle aus components.js: deren Liste
-  // schliesst [disabled] aus und nimmt [tabindex="0"] (die Bildfläche) mit. Die
-  // frühere Eigenliste ('button, a[href]') zählte den abgeschalteten Fit-Knopf
-  // als letztes Element — Tab fiel damit aus dem Dialog heraus (Review lb-trap-1).
+  // Tab/Shift+Tab use the SHARED focus trap from components.js. Its list excludes
+  // [disabled] and includes [tabindex="0"] (the image stage). The former local
+  // list ('button, a[href]') counted the disabled fit button as the last element,
+  // allowing Tab to escape the dialog (review lb-trap-1).
   const untrap = C.trapFocus(overlay);
   document.body.appendChild(overlay);
   releaseOverlayLock = C.acquireOverlayLock();
   unregisterOverlay = C.registerOverlay(close);
   syncChrome();
   update(true);
-  // Noch einmal nach dem ersten Bild: beim Anhängen steht die Zeilenhöhe der
-  // Kopfzeile noch nicht endgültig fest (gemessen 63px, final 67px), und der
-  // Innenabstand der Bildfläche hing an diesem Wert.
+  // Repeat after the first image: header line height is not final when attached
+  // (measured 63px, final 67px), and the image-stage padding depends on it.
   requestAnimationFrame(syncChrome);
   return close;
 }

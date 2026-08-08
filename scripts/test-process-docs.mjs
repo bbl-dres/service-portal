@@ -1,10 +1,6 @@
-// Prozessdokumentation Bauten (js/apps/process-docs.js + data/processes.json +
-// assets/bpmn/) — Landkarte (Baum L1→L2, Katalogleiste, Liste), Prozess-Detail
-// («Übersicht» mit Metadaten + bpmn-js-Diagramm, «Prozessschritte» aus dem
-// BPMN-XML), Deep-Links (?id=, ?tab=), Katalog-/Übersichts-Einbindung.
-// Braucht Netzzugang (unpkg.com, bpmn-js) — wie die MapLibre-/Swagger-Suiten.
-//
-//   node scripts/test-process-docs.mjs        (dev server must be running)
+// Process-documentation checks cover the L1/L2 map, catalogue list, overview,
+// lazy BPMN diagram, parsed steps, deep links, and catalogue integration. The
+// bpmn-js CDN requires network access.
 import { readFileSync } from 'node:fs';
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
@@ -16,11 +12,10 @@ const check = (cond, label, detail = '') => {
 const head = (s) => console.log(`■ ${s}`);
 const clean = async (p, label) => {
   const errs = await p.problems();
-  check(!errs.length, `${label}: keine Fehler`, errs.join(' | '));
+  check(!errs.length, `${label}: no errors`, errs.join(' | '));
 };
 
-// Erwartete Schrittzahl node-seitig aus derselben Quelle wie die App: alle
-// typisierten Flusselemente (Präfix bpmn:, die BBL-Dateien sind einheitlich).
+// Derive expected step count from the same typed BPMN flow elements as the app.
 const STEP_TAGS = ['startEvent', 'endEvent', 'intermediateCatchEvent', 'intermediateThrowEvent',
   'boundaryEvent', 'task', 'userTask', 'serviceTask', 'manualTask', 'scriptTask', 'sendTask',
   'receiveTask', 'businessRuleTask', 'callActivity', 'subProcess', 'exclusiveGateway',
@@ -33,8 +28,8 @@ const expectedSteps = (file) => {
 (async () => {
   const cdp = await launch();
   try {
-    // 1) Landkarte ---------------------------------------------------------
-    head('Landkarte');
+    // 1. Process map.
+    head('Process map');
     let p = await openPage(cdp, `${APP_BASE}/app/process-docs`);
     await sleep(1600);
     let o = JSON.parse(await p.evaluate(`JSON.stringify({
@@ -46,17 +41,17 @@ const expectedSteps = (file) => {
       rows: document.querySelectorAll('.pf-main tbody tr').length,
       cols: [...document.querySelectorAll('.pf-main thead th')].map(t => t.textContent.trim()),
     })`));
-    check(o.h1 === 'Prozessdokumentation Bauten', 'Seitentitel', o.h1);
-    check(/18 von 18 Prozessen/.test(o.count), 'Trefferzahl 18', o.count);
-    check(o.branches === 1, 'ein Prozessbereich (L1)', String(o.branches));
-    check(o.leaves.length === 5, '5 Prozessgruppen (L2)', o.leaves.join(', '));
-    check(o.leafCounts.reduce((a, b) => a + b, 0) === 18, 'Gruppenzähler summieren auf 18', o.leafCounts.join('+'));
-    check(o.rows === 12, '12 Zeilen je Seite', String(o.rows));
-    check(o.cols.join('|') === 'Nr.|Prozess|Prozessgruppe|Status', 'Spalten der Listenansicht', o.cols.join('|'));
-    await clean(p, 'Landkarte');
+    check(o.h1 === 'Prozessdokumentation Bauten', 'page title', o.h1);
+    check(/18 von 18 Prozessen/.test(o.count), 'result count is 18', o.count);
+    check(o.branches === 1, 'one process area (L1)', String(o.branches));
+    check(o.leaves.length === 5, 'five process groups (L2)', o.leaves.join(', '));
+    check(o.leafCounts.reduce((a, b) => a + b, 0) === 18, 'group counts sum to 18', o.leafCounts.join('+'));
+    check(o.rows === 12, '12 rows per page', String(o.rows));
+    check(o.cols.join('|') === 'Nr.|Prozess|Prozessgruppe|Status', 'list-view columns', o.cols.join('|'));
+    await clean(p, 'process map');
 
-    // 2) Gruppenfilter über den Baum --------------------------------------
-    head('Gruppenfilter (Baum → Hash → Pille)');
+    // 2. Group filter through the tree.
+    head('Group filter (tree → hash → chip)');
     o = JSON.parse(await p.evaluate(`(async () => {
       const a = [...document.querySelectorAll('.pf-tree__leaf')].find(x => /Bewirtschaftung/.test(x.textContent));
       a.click();
@@ -64,19 +59,19 @@ const expectedSteps = (file) => {
       return JSON.stringify({
         hash: location.hash,
         count: document.getElementById('pd-count').textContent.replace(/[\\s\\u00a0]+/g, ' ').trim(),
-        pille: (document.querySelector('.active-filter') || {}).textContent,
-        aktiv: (document.querySelector('.pf-tree__leaf.is-active .pf-tree__label') || {}).textContent,
+        chip: (document.querySelector('.active-filter') || {}).textContent,
+        active: (document.querySelector('.pf-tree__leaf.is-active .pf-tree__label') || {}).textContent,
       });
     })()`));
-    check(/group=bewirtschaftung/.test(o.hash), 'Gruppe steht im Hash', o.hash);
-    check(/3 von 18/.test(o.count), 'gefilterte Trefferzahl', o.count);
-    check(/Bewirtschaftung/.test(o.pille || ''), 'Filterpille', o.pille);
-    check(o.aktiv === 'Bewirtschaftung', 'aktiver Baum-Eintrag', o.aktiv);
+    check(/group=bewirtschaftung/.test(o.hash), 'group appears in the hash', o.hash);
+    check(/3 von 18/.test(o.count), 'filtered result count', o.count);
+    check(/Bewirtschaftung/.test(o.chip || ''), 'filter chip', o.chip);
+    check(o.active === 'Bewirtschaftung', 'active tree entry', o.active);
     await clean(p, 'Filter');
     await p.closeTarget();
 
-    // 3) Prozess-Detail: Uebersicht ohne Diagramm -------------------------
-    head('Detail Uebersicht (Metadaten ohne BPMN-Diagramm)');
+    // 3. Process overview without the diagram.
+    head('Detail overview (metadata without BPMN diagram)');
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=TQ.21.00.00.02`);
     o = JSON.parse(await p.evaluate(`(async () => {
       const s = ms => new Promise(r => setTimeout(r, ms));
@@ -85,37 +80,37 @@ const expectedSteps = (file) => {
         h1: document.querySelector('h1').textContent.trim(),
         tabs: [...document.querySelectorAll('.tab__control')].map(b => b.textContent.trim()),
         active: (document.querySelector('.tab__control--active') || {}).dataset?.tab || '',
-        bpmnHost: !!document.querySelector('#pd-tab-panel-uebersicht #pd-bpmn'),
-        toolbar: document.querySelectorAll('#pd-tab-panel-uebersicht [data-bpmn]').length,
+        bpmnHost: !!document.querySelector('#pd-tab-panel-overview #pd-bpmn'),
+        toolbar: document.querySelectorAll('#pd-tab-panel-overview [data-bpmn]').length,
         dts: [...document.querySelectorAll('.detail-layout dl.kv--ruled dt')].map(d => d.textContent),
         admindir: document.querySelectorAll('a[href*="admindir"]').length,
         statusPill: (document.querySelector('.detail-layout dl.kv--ruled .badge') || {}).textContent || '',
         oldStatusText: document.querySelector('.detail-layout dl.kv--ruled')?.textContent.includes('Freigegeben und aktiv bewirtschaftet') || false,
-        kontakt: !!document.querySelector('.detail-layout__aside .box'),
+        contactCard: !!document.querySelector('.detail-layout__aside .box'),
       });
     })()`));
-    check(o.h1 === 'Machbarkeit Projektdefinition', 'Prozessname als h1', o.h1);
-    check(o.tabs.length === 3 && o.tabs[0] === 'Übersicht' && o.tabs[1] === 'Prozessdiagramm', 'drei Register', o.tabs.join(' | '));
-    check(/Prozessschritte \(\d+\)/.test(o.tabs[2] || ''), 'Schrittzahl im Registertitel', o.tabs[2]);
-    check(o.active === 'uebersicht', 'Uebersicht ist Standardregister', o.active);
-    check(!o.bpmnHost && o.toolbar === 0, 'kein Diagramm in der Uebersicht');
+    check(o.h1 === 'Machbarkeit Projektdefinition', 'process name is the h1', o.h1);
+    check(o.tabs.length === 3 && o.tabs[0] === 'Übersicht' && o.tabs[1] === 'Prozessdiagramm', 'three tabs', o.tabs.join(' | '));
+    check(/Prozessschritte \(\d+\)/.test(o.tabs[2] || ''), 'step count appears in the tab label', o.tabs[2]);
+    check(o.active === 'overview', 'overview is the default tab', o.active);
+    check(!o.bpmnHost && o.toolbar === 0, 'overview has no diagram');
     check(o.dts.includes('Prozessbereich') && o.dts.includes('Prozessgruppe') && o.dts.includes('Status') && o.dts.includes('ID'),
       'Metadaten-Zeilen', o.dts.join(', '));
-    check(o.admindir >= 2, 'Verantwortliche als AdminDir-Links', String(o.admindir));
-    check(/Gültig/.test(o.statusPill), 'Status als Pill-Tag', o.statusPill);
-    check(!o.oldStatusText, 'Status ohne Beschreibungstext');
-    check(o.kontakt, 'Kontakt-Karte in der Randspalte');
+    check(o.admindir >= 2, 'responsible people link to AdminDir', String(o.admindir));
+    check(/Gültig/.test(o.statusPill), 'status uses a pill tag', o.statusPill);
+    check(!o.oldStatusText, 'status has no duplicate description');
+    check(o.contactCard, 'contact card appears in the aside');
     await clean(p, 'Detail');
     await p.closeTarget();
 
-    // 4) Register Prozessdiagramm per Deep-Link ---------------------------
-    head('Register Prozessdiagramm (?tab=diagramm)');
+    // 4. Diagram tab through a deep link.
+    head('Process-diagram tab (?tab=diagramm)');
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=TQ.21.00.00.02&tab=diagramm`);
     o = JSON.parse(await p.evaluate(`(async () => {
       const s = ms => new Promise(r => setTimeout(r, ms));
       let n = 0; while (!document.querySelector('#pd-bpmn svg .djs-element') && n++ < 200) await s(100);
       await s(300);
-      const firstTool = document.querySelector('#pd-tab-panel-diagramm [data-bpmn]');
+      const firstTool = document.querySelector('#pd-tab-panel-diagram [data-bpmn]');
       firstTool?.focus();
       const focusOutline = firstTool ? getComputedStyle(firstTool).outlineStyle : '';
       if (firstTool) firstTool.disabled = true;
@@ -126,87 +121,87 @@ const expectedSteps = (file) => {
         active: (document.querySelector('.tab__control--active') || {}).dataset?.tab || '',
         djs: document.querySelectorAll('#pd-bpmn .djs-element').length,
         loadingLeft: !!document.querySelector('#pd-bpmn .loading'),
-        toolbar: document.querySelectorAll('#pd-tab-panel-diagramm [data-bpmn]').length,
-        tools: [...document.querySelectorAll('#pd-tab-panel-diagramm [data-bpmn]')].map(b => b.dataset.bpmn).join('|'),
-        toolbarPosition: getComputedStyle(document.querySelector('#pd-tab-panel-diagramm .bpmn-toolbar')).position,
-        toolbarDirection: getComputedStyle(document.querySelector('#pd-tab-panel-diagramm .bpmn-toolbar')).flexDirection,
-        sharedToolbar: !!document.querySelector('#pd-tab-panel-diagramm .viewer-toolbar--vertical .viewer-toolbar__button'),
+        toolbar: document.querySelectorAll('#pd-tab-panel-diagram [data-bpmn]').length,
+        tools: [...document.querySelectorAll('#pd-tab-panel-diagram [data-bpmn]')].map(b => b.dataset.bpmn).join('|'),
+        toolbarPosition: getComputedStyle(document.querySelector('#pd-tab-panel-diagram .bpmn-toolbar')).position,
+        toolbarDirection: getComputedStyle(document.querySelector('#pd-tab-panel-diagram .bpmn-toolbar')).flexDirection,
+        sharedToolbar: !!document.querySelector('#pd-tab-panel-diagram .viewer-toolbar--vertical .viewer-toolbar__button'),
         focusOutline,
         disabledOpacity,
         disabledCursor,
-        asideInPanel: !!document.querySelector('#pd-tab-panel-diagramm .detail-layout__aside'),
+        asideInPanel: !!document.querySelector('#pd-tab-panel-diagram .detail-layout__aside'),
       });
     })()`));
-    check(o.active === 'diagramm', 'Diagramm-Register aktiv per Deep-Link', o.active);
-    check(o.djs >= 20, 'Diagramm gerendert (bpmn-js)', `${o.djs} Elemente`);
-    check(!o.loadingLeft, 'Ladezustand abgeraeumt');
-    check(o.toolbar === 3, 'Zoomleiste (3 Knoepfe)', String(o.toolbar));
-    check(o.tools === 'in|out|reset', 'Zoomleiste mit Reset', o.tools);
-    check(o.toolbarPosition === 'absolute' && o.toolbarDirection === 'column', 'Zoomleiste als vertikales Overlay', `${o.toolbarPosition}/${o.toolbarDirection}`);
-    check(o.sharedToolbar, 'Gemeinsame Viewer-Toolbar-Anatomie');
-    check(o.focusOutline !== 'none' && o.focusOutline !== '', 'Viewer-Werkzeug mit sichtbarem Fokus', o.focusOutline);
-    check(Number(o.disabledOpacity) < 1 && o.disabledCursor === 'not-allowed', 'Viewer-Disabled-Zustand sichtbar', `${o.disabledOpacity}/${o.disabledCursor}`);
-    check(!o.asideInPanel, 'Diagramm nutzt volle Panelbreite');
-    await clean(p, 'Diagramm');
+    check(o.active === 'diagram', 'diagram tab is active through the deep link', o.active);
+    check(o.djs >= 20, 'diagram renders with bpmn-js', `${o.djs} elements`);
+    check(!o.loadingLeft, 'loading state is removed');
+    check(o.toolbar === 3, 'zoom toolbar has three buttons', String(o.toolbar));
+    check(o.tools === 'in|out|reset', 'zoom toolbar includes reset', o.tools);
+    check(o.toolbarPosition === 'absolute' && o.toolbarDirection === 'column', 'zoom toolbar is a vertical overlay', `${o.toolbarPosition}/${o.toolbarDirection}`);
+    check(o.sharedToolbar, 'viewer uses the shared toolbar anatomy');
+    check(o.focusOutline !== 'none' && o.focusOutline !== '', 'viewer tool has a visible focus state', o.focusOutline);
+    check(Number(o.disabledOpacity) < 1 && o.disabledCursor === 'not-allowed', 'disabled viewer state is visible', `${o.disabledOpacity}/${o.disabledCursor}`);
+    check(!o.asideInPanel, 'diagram uses the full panel width');
+    await clean(p, 'diagram');
     await p.closeTarget();
 
-    // 5) Register «Prozessschritte» per Deep-Link -------------------------
-    head('Register «Prozessschritte» (?tab=schritte)');
+    // 5. Process-steps tab through a deep link.
+    head('Process-steps tab (?tab=schritte)');
     const want = expectedSteps(new URL('../assets/bpmn/TQ.21.00.00.02.bpmn', import.meta.url));
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=TQ.21.00.00.02&tab=schritte`);
     await sleep(1800);
     o = JSON.parse(await p.evaluate(`JSON.stringify({
-      aktiv: (document.querySelector('.tab__control--active') || {}).textContent,
+      active: (document.querySelector('.tab__control--active') || {}).textContent,
       cols: [...document.querySelectorAll('#pd-steps thead th')].map(t => t.textContent.trim()),
       count: (document.getElementById('pd-st-count') || {}).textContent.replace(/[\\s\\u00a0]+/g, ' ').trim(),
       rows: document.querySelectorAll('#pd-steps tbody tr').length,
-      facetten: [...document.querySelectorAll('#pd-steps legend')].map(l => l.textContent.trim()),
-      rollen: [...document.querySelectorAll('#pd-steps tbody tr')].some(tr => /TQ /.test(tr.textContent)),
+      facets: [...document.querySelectorAll('#pd-steps legend')].map(l => l.textContent.trim()),
+      hasLanes: [...document.querySelectorAll('#pd-steps tbody tr')].some(tr => /TQ /.test(tr.textContent)),
     })`));
-    check(/Prozessschritte/.test(o.aktiv || ''), 'Register aktiv per Deep-Link', o.aktiv);
-    check(o.cols.join('|') === 'Nr.|Schritt|Typ|Rolle', 'Spalten der Schrittliste', o.cols.join('|'));
-    check(new RegExp(`${want} von ${want} Schritten`).test(o.count), `Schrittzahl = BPMN-Inhalt (${want})`, o.count);
-    check(o.rows === Math.min(want, 15), 'Zeilen der ersten Seite', String(o.rows));
-    check(o.facetten.includes('Art') && o.facetten.includes('Rolle'), 'Facetten Art + Rolle', o.facetten.join(', '));
-    check(o.rollen, 'Lanes als Rollen in den Zeilen');
-    await clean(p, 'Schritte');
+    check(/Prozessschritte/.test(o.active || ''), 'tab is active through the deep link', o.active);
+    check(o.cols.join('|') === 'Nr.|Schritt|Typ|Rolle', 'step-list columns', o.cols.join('|'));
+    check(new RegExp(`${want} von ${want} Schritten`).test(o.count), `step count matches BPMN content (${want})`, o.count);
+    check(o.rows === Math.min(want, 15), 'rows on the first page', String(o.rows));
+    check(o.facets.includes('Art') && o.facets.includes('Rolle'), 'type and role facets', o.facets.join(', '));
+    check(o.hasLanes, 'lanes appear as roles in the rows');
+    await clean(p, 'steps');
     await p.closeTarget();
 
-    // 6) Unbekannte Kennung ------------------------------------------------
-    head('Unbekannte Kennung');
+    // 6. Unknown identifier.
+    head('Unknown identifier');
     p = await openPage(cdp, `${APP_BASE}/app/process-docs?id=GIBTS-NICHT`);
     await sleep(1200);
     o = JSON.parse(await p.evaluate(`JSON.stringify({
       h1: document.querySelector('h1').textContent.trim(),
-      zurueck: !!document.querySelector('a[href="#/app/process-docs"]'),
+      backLink: !!document.querySelector('a[href="#/app/process-docs"]'),
     })`));
     check(/nicht gefunden/.test(o.h1), 'renderNotFound', o.h1);
-    check(o.zurueck, 'Rückweg in die Landkarte');
+    check(o.backLink, 'back link returns to the process map');
     await clean(p, 'NotFound');
     await p.closeTarget();
 
-    // 7) Einbindung: Anwendungskatalog + Daten-Übersicht ------------------
-    head('Einbindung (Landingpage + Daten-Übersicht)');
+    // 7. Application-catalogue and data-overview integration.
+    head('Integration (landing page and data overview)');
     p = await openPage(cdp, `${APP_BASE}/applications/prozessdokumentation`);
     await sleep(1400);
     o = JSON.parse(await p.evaluate(`JSON.stringify({
       h1: document.querySelector('h1').textContent.trim(),
-      einstieg: !!document.querySelector('a[href="#/app/process-docs"]'),
+      entryLink: !!document.querySelector('a[href="#/app/process-docs"]'),
     })`));
-    check(o.h1 === 'Prozessdokumentation Bauten (Portal)', 'Anwendungs-Landingpage', o.h1);
-    check(o.einstieg, 'Einstieg führt in die App');
-    await clean(p, 'Landingpage');
+    check(o.h1 === 'Prozessdokumentation Bauten (Portal)', 'application landing page', o.h1);
+    check(o.entryLink, 'entry link opens the app');
+    await clean(p, 'landing page');
     await p.evaluate(`location.hash = '#/data'`);
     await sleep(1200);
     o = JSON.parse(await p.evaluate(`JSON.stringify({
-      kachel: [...document.querySelectorAll('a')].some(a => /Prozessdokumentation Bauten/.test(a.textContent)),
+      tile: [...document.querySelectorAll('a')].some(a => /Prozessdokumentation Bauten/.test(a.textContent)),
     })`));
-    check(o.kachel, 'Kachel auf der Daten-Übersicht');
-    await clean(p, 'Daten-Übersicht');
+    check(o.tile, 'tile appears on the data overview');
+    await clean(p, 'data overview');
     await p.closeTarget();
   } finally {
     cdp.close();
   }
-  console.log(`\n${fail ? `✗ ${fail} check(s) FAILED` : '✓ alle Prüfungen bestanden'}`);
+  console.log(`\n${fail ? `✗ ${fail} check(s) FAILED` : '✓ all checks passed'}`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error('DRIVER ERROR', e); process.exit(2); });

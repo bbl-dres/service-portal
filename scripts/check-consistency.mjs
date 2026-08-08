@@ -1,7 +1,6 @@
-// Konsistenz-Proben der Design-Review-Welle (docs/design-review.md, Aug 2026):
-// misst die riskanten COMPUTED-Werte statt Markup — Grossziffer-Typografie,
-// Panel-Randton, Rinnenbreiten, Listbox-Chrome und den Nutzerbefund C23
-// (purpurner Fokusring am Kopf-Suchfeld trotz overflow:hidden).
+// Computed-value probes from the August 2026 design review. These cover KPI
+// typography, panel borders, gutters, listbox chrome, and the purple focus ring
+// within the header search field's overflow clipping.
 import { launch, openPage, sleep, APP_BASE } from './lib/cdp.mjs';
 
 let fails = 0;
@@ -12,7 +11,7 @@ const ok = (cond, label, detail = '') => {
 
 const cdp = await launch();
 
-// --- C8: EINE Grossziffer-Typografie (Dashboard-KPI = .stat-Rezept) ----------
+// C8: one large-number recipe; dashboard KPIs match .stat.
 {
   const p = await openPage(cdp, APP_BASE + '/app/dataportal/immobilien');
   await sleep(2500);
@@ -20,8 +19,8 @@ const cdp = await launch();
     const v = document.querySelector('.kpi__value');
     const cs = v ? getComputedStyle(v) : null;
     const panel = document.querySelector('.filter-panel');
-    // Erwartungswert TOKENBASIERT auflösen — der Skin (body--intranet) tauscht
-    // secondary-600; ein fester Hex prüfte sonst den falschen Skin.
+    // Resolve the expected token in the active skin; body--intranet replaces
+    // secondary-600, so a fixed hex value would test the wrong skin.
     const probe = document.createElement('span');
     probe.style.color = 'var(--color-secondary-600)';
     document.body.appendChild(probe);
@@ -32,17 +31,15 @@ const cdp = await launch();
       panelBorder: panel && getComputedStyle(panel).borderTopColor,
     });
   })()`));
-  ok(r.color === r.expected, 'C8 KPI-Ziffer in secondary-600 (skin-bewusst)', `${r.color} = ${r.expected}`);
-  ok(/tabular-nums/.test(r.numeric || ''), 'C8 KPI-Ziffer mit Tabellenziffern', r.numeric);
-  ok(r.panelBorder === 'rgb(223, 228, 233)', 'C11 Filterpanel-Rand = --panel-border', r.panelBorder);
+  ok(r.color === r.expected, 'C8 KPI number uses skin-aware secondary-600', `${r.color} = ${r.expected}`);
+  ok(/tabular-nums/.test(r.numeric || ''), 'C8 KPI number uses tabular figures', r.numeric);
+  ok(r.panelBorder === 'rgb(223, 228, 233)', 'C11 filter panel border equals --panel-border', r.panelBorder);
   await p.closeTarget();
 }
 
-// --- api-docs: Portal-Kopf + Standard-Swagger darunter (Umbau 2026-08-04) ----
-// Die früheren C20/C11-Proben (api-layout-Rinne, api-meta-Rand) sind mit dem
-// entfernten Eigenbau entfallen; scripts/test-apidocs.mjs prüft die
-// Swagger-Oberfläche selbst. Hier nur: der Kopf bleibt Portal (genau eine h1,
-// Swaggers doppelter Info-Block ist aus).
+// API docs: portal heading above standard Swagger. Former C20/C11 probes were
+// retired with the custom implementation; test-apidocs covers Swagger itself.
+// This check ensures one portal h1 and no duplicate Swagger information block.
 {
   const p = await openPage(cdp, APP_BASE + '/app/api-docs');
   await sleep(2500);
@@ -51,12 +48,12 @@ const cdp = await launch();
     infoHidden: (() => { const i = document.querySelector('.swagger-host .information-container');
       return !i || getComputedStyle(i).display === 'none'; })(),
   }))()`));
-  ok(r.h1 === 1, 'api-docs: genau eine h1 (Portal-Kopf)', String(r.h1));
-  ok(r.infoHidden, 'api-docs: Swaggers Info-Block doppelt den Kopf nicht', String(r.infoHidden));
+  ok(r.h1 === 1, 'api-docs: exactly one portal h1', String(r.h1));
+  ok(r.infoHidden, 'api-docs: Swagger information does not duplicate the heading', String(r.infoHidden));
   await p.closeTarget();
 }
 
-// --- C23 (Nutzerbefund): Kopf-Suchfeld fokussiert = purpurner INSET-Ring -----
+// C23: focused header search field has an inset purple ring.
 {
   const p = await openPage(cdp, APP_BASE + '/');
   await sleep(1500);
@@ -70,13 +67,13 @@ const cdp = await launch();
     return JSON.stringify({ focused: document.activeElement === input,
       color: cs.outlineColor, style: cs.outlineStyle, offset: cs.outlineOffset });
   })()`));
-  ok(r.focused, 'C23 Feld ist fokussiert');
-  ok(r.style === 'solid' && r.color === 'rgb(134, 85, 246)', 'C23 Fokusring purpur (CD focus-ring)', `${r.style} ${r.color}`);
-  ok(r.offset === '-2px', 'C23 Ring INSET (übersteht das overflow:hidden)', r.offset);
+  ok(r.focused, 'C23 field is focused');
+  ok(r.style === 'solid' && r.color === 'rgb(134, 85, 246)', 'C23 ring uses the purple CD focus colour', `${r.style} ${r.color}`);
+  ok(r.offset === '-2px', 'C23 inset ring survives overflow clipping', r.offset);
   await p.closeTarget();
 }
 
-// --- C25: das Lesemass sitzt an der Spalte, nicht an Textklassen -------------
+// C25: reading measure belongs to the column, not individual text classes.
 {
   const p = await openPage(cdp, APP_BASE + '/services/raumbedarf-melden');
   await sleep(2000);
@@ -88,12 +85,12 @@ const cdp = await launch();
       paraMax: para && getComputedStyle(para).maxWidth,
     });
   })()`));
-  ok(r.mainMax === '960px', 'C25 container__main misst 60rem', r.mainMax);
-  ok(r.paraMax === 'none', 'C25 keine 70ch-Einzeldeckel an der Prosa', r.paraMax);
+  ok(r.mainMax === '960px', 'C25 container__main measures 60rem', r.mainMax);
+  ok(r.paraMax === 'none', 'C25 prose has no isolated 70ch cap', r.paraMax);
   await p.closeTarget();
 }
 
-// --- C7: Datensatz-Detail nutzt dl.kv (kv--ruled) statt .data-rows -----------
+// C7: dataset detail uses dl.kv--ruled instead of .data-rows.
 {
   const p = await openPage(cdp, APP_BASE + '/data/catalog/1');
   await sleep(2000);
@@ -101,13 +98,12 @@ const cdp = await launch();
     ruled: document.querySelectorAll('dl.kv--ruled').length,
     dataRows: document.querySelectorAll('.data-rows').length,
   }))()`));
-  ok(r.ruled >= 2 && r.dataRows === 0, 'C7 kv--ruled statt data-rows', `ruled:${r.ruled} data-rows:${r.dataRows}`);
+  ok(r.ruled >= 2 && r.dataRows === 0, 'C7 kv--ruled replaces data-rows', `ruled:${r.ruled} data-rows:${r.dataRows}`);
   await p.closeTarget();
 }
 
-// --- C24 (Nutzerbefund): gestapelte Kästen folgen dem Kontextrhythmus --------
-// «Das brauchen Sie» + «So läuft es ab» klebten als EIN Block zusammen — das
-// 1px-Naht-Fossil (.box + .box) schlug den Spaltenrhythmus.
+// C24: stacked boxes follow contextual rhythm. A legacy 1px .box + .box seam
+// previously overrode the column rhythm and joined separate sections.
 {
   const p = await openPage(cdp, APP_BASE + '/services/raumbedarf-melden');
   await sleep(2200);
@@ -117,22 +113,22 @@ const cdp = await launch();
     const gap = boxes[1].getBoundingClientRect().top - boxes[0].getBoundingClientRect().bottom;
     return JSON.stringify({ gap: Math.round(gap) });
   })()`));
-  ok(r.gap === null || r.gap >= 40, 'C24 Kasten-Abstand = Spaltenrhythmus (kein 1px-Fossil)', r.gap + 'px');
+  ok(r.gap === null || r.gap >= 40, 'C24 box gap follows column rhythm', r.gap + 'px');
   await p.closeTarget();
 }
 
-// --- D2/B17: Panel-Reset heisst «Filter zurücksetzen» und sitzt im Aktionszeilen-Wrapper
+// D2/B17: the panel reset uses the canonical German label and action-row wrapper.
 {
   const p = await openPage(cdp, APP_BASE + '/services');
   await sleep(1800);
   const r = JSON.parse(await p.evaluate(`(() => {
-    const a = [...document.querySelectorAll('.catbar__panel__actions .btn__text')].map((x) => x.textContent.trim());
+    const a = [...document.querySelectorAll('.catbar__panel-actions .btn__text')].map((x) => x.textContent.trim());
     return JSON.stringify(a);
   })()`));
-  ok(r.includes('Filter zurücksetzen'), 'B17/D2 kanonischer Panel-Reset', JSON.stringify(r));
+  ok(r.includes('Filter zurücksetzen'), 'B17/D2 canonical panel reset', JSON.stringify(r));
   await p.closeTarget();
 }
 
 await cdp.close();
-console.log(fails ? `\n✗ ${fails} Probe(n) FEHLGESCHLAGEN` : '\nAlle Konsistenz-Proben grün.');
+console.log(fails ? `\n${fails} probe(s) failed` : '\nAll consistency probes passed.');
 process.exit(fails ? 1 : 0);

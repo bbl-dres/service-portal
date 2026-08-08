@@ -1,35 +1,31 @@
-// Übernimmt Fotos aus den BBL-Datenblättern in den Bildbestand.
+// Adopt photos from BBL building sheets into the portal image collection.
 //
-//   node scripts/adopt-pdf-images.mjs --pruefen
+//   node scripts/adopt-pdf-images.mjs --check
 //   node scripts/adopt-pdf-images.mjs
 //
-// Auswahl: je Objekt das grösste Foto im QUERFORMAT. Querformat, weil die
-// Datenblätter Grundrisse, Schnitte und Pläne fast immer hochkant setzen und
-// Aussenaufnahmen quer — ohne diese Vorauswahl landete leicht ein Grundriss auf
-// der Objektkarte.
+// Select the largest landscape photo per building. Sheets normally place floor
+// plans and sections in portrait while exterior photos are landscape; this
+// avoids choosing a plan as the building-card image.
 //
-// ACHTUNG, ehrlich gesagt: die Bilder wurden maschinell ausgewählt, nicht
-// gesichtet. Die Heuristik trifft meistens, aber nicht immer. Vor einer
-// Vorführung sollten die übernommenen Aufnahmen einmal durchgesehen werden;
-// research/pdf-bilder/ hält je Objekt alle Kandidaten bereit.
+// The images are selected mechanically, not reviewed by a person. Inspect them
+// before a demonstration; research/pdf-images contains all candidates.
 //
-// RECHTE: Die Datenblätter sind vom BBL veröffentlicht; die Fotos darin sind
-// einzelnen Fotografinnen und Fotografen zugeschrieben und NICHT frei
-// lizenziert. Für einen internen BBL-Prototyp über BBL-eigene Bauten ist das
-// vertretbar, der Nachweis läuft je Bild mit. Für eine Veröffentlichung wäre
-// die Zustimmung der Urheber einzuholen.
+// RIGHTS: BBL publishes the sheets, but their attributed photos are not freely
+// licensed. Attribution travels with each image; public reuse requires the
+// copyright holder's permission.
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const pruefen = process.argv.includes('--pruefen');
+// Keep the former German flag as a quoted compatibility value.
+const checkOnly = process.argv.includes('--check') || process.argv.includes('--pruefen');
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-const QUELLE = ROOT + 'research/pdf-bilder/';
-const ZIEL = 'assets/images/buildings/';
-const uebersicht = JSON.parse(readFileSync(QUELLE + 'UEBERSICHT.json', 'utf8'));
+const SOURCE_DIR = ROOT + 'research/pdf-images/';
+const TARGET_DIR = 'assets/images/buildings/';
+const manifest = JSON.parse(readFileSync(SOURCE_DIR + 'INDEX.json', 'utf8'));
 
-// bbl_id → Ordner in research/pdf-bilder/ (= Datenblatt des Objekts)
-const ZUORDNUNG = {
+// Map each bbl_id to the source directory named after its building sheet.
+const SOURCE_MAPPING = {
   '1080/4100/AC': '2015_liestal_zollschule',
   '1080/6100/AA': 'p045_Landesmuseum_Erweiterung',
   '1080/6210/AA': 'p124_BrigGlis_Zollanlage',
@@ -40,56 +36,66 @@ const ZUORDNUNG = {
   '1080/6760/AA': 'p108_Magglingen_Laerchenplatz',
   '1080/6870/AA': 'p132_Wabern_swisstopo',
   '1080/6980/AA': 'p019_Bundesverwaltungsgericht',
-  // Objekte, für die schon eine geprüfte Commons-Aufnahme vorliegt, bleiben
-  // unangetastet — Commons ist frei lizenziert, das Datenblatt nicht.
+  // Buildings with a reviewed Commons image remain untouched because Commons
+  // is freely licensed while the building-sheet photography is not.
 };
 
-const medien = JSON.parse(readFileSync(ROOT + 'data/media.json', 'utf8'));
-const bericht = [];
-let uebernommen = 0;
+const media = JSON.parse(readFileSync(ROOT + 'data/media.json', 'utf8'));
+const report = [];
+let adoptedCount = 0;
 
-for (const [bblId, ordner] of Object.entries(ZUORDNUNG)) {
-  const u = uebersicht[ordner];
-  if (!u || !u.bilder.length) { bericht.push(`  – ${bblId}  ${ordner}: keine Fotos`); continue; }
+for (const [bblId, folder] of Object.entries(SOURCE_MAPPING)) {
+  const entry = manifest[folder];
+  const images = entry?.images || entry?.['bilder'];
+  if (!Array.isArray(images) || !images.length) {
+    report.push(`  – ${bblId}  ${folder}: no photos`);
+    continue;
+  }
 
-  // Querformat bevorzugen, danach Fläche. Absurd grosse Panoramen (Seitenverhältnis
-  // über 3:1) sind Schnitte oder Bildstreifen über die ganze Seitenbreite.
-  const kandidaten = u.bilder
-    // Obergrenze: ein Foto mit 21691×13353 Bildpunkten (so eines steckt in der
-    // Magglingen-Dokumentation) belegt entpackt über 1 GB im Browser, egal wie
-    // klein die Datei ist. Alles über 6000 Punkten Kantenlänge fliegt raus.
-    .filter((b) => b.w > b.h && b.w / b.h < 3 && b.w >= 700 && b.w <= 6000 && b.h <= 6000)
-    .sort((a, b) => (b.w * b.h) - (a.w * a.h));
-  const wahl = kandidaten[0];
-  if (!wahl) { bericht.push(`  – ${bblId}  ${ordner}: nichts im Querformat`); continue; }
+  // Prefer landscape images by area. Panoramas wider than 3:1 are normally
+  // sections or full-page strips. Cap dimensions at 6000px because one source
+  // image expands beyond 1 GB in browser memory despite its compressed size.
+  const dimensions = (image) => ({
+    width: image.width ?? image.w,
+    height: image.height ?? image.h,
+    file: image.file ?? image['datei'],
+  });
+  const candidates = images
+    .map((image) => ({ ...image, ...dimensions(image) }))
+    .filter((image) => image.width > image.height && image.width / image.height < 3
+      && image.width >= 700 && image.width <= 6000 && image.height <= 6000)
+    .sort((a, b) => (b.width * b.height) - (a.width * a.height));
+  const choice = candidates[0];
+  if (!choice) { report.push(`  – ${bblId}  ${folder}: no landscape image`); continue; }
 
-  // Das Hauptmedium des Objekts ist der erste Favorit — dessen slug gibt den
-  // Dateinamen vor, damit die Benennung dem übrigen Bestand entspricht.
-  const haupt = medien.find((m) => m.buildingId === bblId);
-  if (!haupt) { bericht.push(`  ! ${bblId}: kein Medieneintrag gefunden`); continue; }
+  // The first media favourite is the primary image; its slug keeps naming
+  // consistent with the existing collection.
+  const primary = media.find((item) => item.buildingId === bblId);
+  if (!primary) { report.push(`  ! ${bblId}: media record not found`); continue; }
 
-  const zielname = `${haupt.slug}.jpg`;
-  if (!pruefen) copyFileSync(QUELLE + ordner + '/' + wahl.datei, ROOT + ZIEL + zielname);
+  const targetName = `${primary.slug}.jpg`;
+  if (!checkOnly) copyFileSync(SOURCE_DIR + folder + '/' + choice.file, ROOT + TARGET_DIR + targetName);
 
-  haupt.file = ZIEL + zielname;
-  haupt.photographer = u.fotograf || 'BBL-Bautendokumentation';
-  haupt.copyright = `${u.fotograf || 'Fotograf nicht genannt'} — aus der Bautendokumentation des BBL`;
-  haupt.license = 'BBL-Bautendokumentation, nicht frei lizenziert';
-  haupt.sourceUrl = (haupt.sourceUrl || null);
-  haupt.isPlaceholder = false;
-  haupt.photo = '';
-  haupt.reviewNeeded = true;   // maschinell gewählt, noch nicht gesichtet
-  uebernommen++;
-  bericht.push(`  ✓ ${bblId}  ${String(wahl.w + '×' + wahl.h).padEnd(11)} ${wahl.kb} KB  ← ${ordner}/${wahl.datei}`
-    + `\n      ${zielname}`);
+  primary.file = TARGET_DIR + targetName;
+  const photographer = entry.photographer || entry['fotograf'];
+  primary.photographer = photographer || 'BBL-Bautendokumentation';
+  primary.copyright = `${photographer || 'Fotograf nicht genannt'} — aus der Bautendokumentation des BBL`;
+  primary.license = 'BBL-Bautendokumentation, nicht frei lizenziert';
+  primary.sourceUrl = primary.sourceUrl || null;
+  primary.isPlaceholder = false;
+  primary.photo = '';
+  primary.reviewNeeded = true;
+  adoptedCount++;
+  report.push(`  ✓ ${bblId}  ${String(choice.width + '×' + choice.height).padEnd(11)} ${choice.kb} KB  ← ${folder}/${choice.file}`
+    + `\n      ${targetName}`);
 }
 
-console.log(bericht.join('\n'));
-const echt = medien.filter((m) => m.file).length;
-console.log(`\n${uebernommen} Fotos übernommen · ${echt} von ${medien.length} Medien haben jetzt eine echte Aufnahme`);
+console.log(report.join('\n'));
+const realImageCount = media.filter((item) => item.file).length;
+console.log(`\n${adoptedCount} photos adopted · ${realImageCount} of ${media.length} media records now have a real image`);
 
-if (pruefen) console.log('\n(--pruefen: nichts geschrieben)');
+if (checkOnly) console.log('\n(--check: no files written)');
 else {
-  writeFileSync(ROOT + 'data/media.json', JSON.stringify(medien, null, 1));
-  console.log('→ data/media.json aktualisiert');
+  writeFileSync(ROOT + 'data/media.json', JSON.stringify(media, null, 1));
+  console.log('→ updated data/media.json');
 }

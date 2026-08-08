@@ -5,39 +5,39 @@
    `--color-primary-*` is blue, which disappeared against the blue top bar. Pinned
    to the federal red so the "this is a prototype" marker always stands out.
    White on #d8232a = 5.01:1.
-   Geometrie = CDs Badge (badge.postcss:5-9 py-[0.219em] px-[1em] rounded-full,
-   kein uppercase/tracking) — CDs Top-Bar hostet in diesem Slot genau eine Badge
-   (top-bar.postcss:154-166); nur die Farbe bleibt gepinnt. */
+   Geometry = CD's badge (badge.postcss:5-9 py-[0.219em] px-[1em] rounded-full,
+   no uppercase/tracking). CD's top bar hosts exactly one badge in this slot
+   (top-bar.postcss:154-166); only the color stays pinned. */
 .demo-chip { display:inline-flex; align-items:center; padding:.219em 1em; font-size:var(--text-xs);
   font-weight:var(--fw-bold);
   background:var(--color-federal-red); color:var(--color-text-negative); border-radius:var(--radius-full); white-space:nowrap; }
 
 /* Top bar (top-bar.postcss + top-bar-navigation.postcss) */
 .top-bar { background:var(--color-secondary-600); color:var(--color-text-negative); font-size:var(--fs-sm); }
-/* CD top-bar.postcss:7 `text-sm 2xl:text-base` — feste Stufen, keine Rampe. */
+/* CD top-bar.postcss:7 `text-sm 2xl:text-base`: fixed steps, no ramp. */
 @media (min-width:1544px){ .top-bar { font-size:var(--fs-base); } }
 .top-bar .container--flex { min-height:var(--target-min); align-items:center; gap:var(--sp-4); }
 .top-bar__btn { display:inline-flex; align-items:center; gap:var(--sp-2); min-height:var(--target-min); min-width:var(--target-min); background:none; border:0;
   color:var(--color-text-negative); cursor:pointer; font:inherit; padding:var(--sp-1) 0 var(--sp-1) var(--sp-4); margin-left:calc(-1 * var(--sp-4)); text-decoration:none;
   transition:color var(--duration-fast); }
-/* Hover UND Fokus hellen auf (CD top-bar.postcss:130 `hover:text-text-300
-   focus:text-text-300`) — Tastaturfokus bekam sonst keinen Farbwechsel. */
+/* Hover AND focus lighten (CD top-bar.postcss:130 `hover:text-text-300
+   focus:text-text-300`); keyboard focus otherwise received no color change. */
 .top-bar__btn:hover, .top-bar__btn:focus { color:var(--color-gray-300); text-decoration:none; }
-/* Die Beschriftung bleibt auf JEDER Breite sichtbar — CD top-bar.postcss:136-138
-   `span { w-min sm:w-full }`: unter 640 wird sie zur min-content-Spalte und
-   bricht um, statt zu verschwinden. Die frühere sr-only-Behandlung war die
-   Reparatur eines schlimmeren Fehlers (Label UND Icon unsichtbar, WCAG 4.1.2);
-   CDs schmale umbrechende Spalte löst dasselbe Problem ohne Textverlust. */
+/* The label stays visible at EVERY width: CD top-bar.postcss:136-138
+   `span { w-min sm:w-full }`. Below 640 it becomes a min-content column and
+   wraps instead of disappearing. The former sr-only treatment repaired a worse
+   bug (label AND icon invisible, WCAG 4.1.2); CD's narrow wrapping column solves
+   the same problem without losing text. */
 .top-bar__btn > span:not(.icon) { width:min-content; text-align:left; }
 @media (min-width:640px){ .top-bar__btn > span:not(.icon) { width:auto; } }
-/* align-items:stretch statt center: der Sprachwähler soll die volle 44px-Zeile
-   füllen. Mit `center` war das Elternteil auto-hoch, und ein height:100% dagegen
-   löst zu auto auf — genau der Fehler, der bei .burger schon gefunden und
-   behoben wurde (Kommentar app.css:420-421, P0-5); hier war er übersehen. */
-/* Kein flex-gap (CD top-bar.postcss:154-166 — nur `flex items-center`): den
-   Rhythmus tragen die Innenabstände der Einträge selbst (Nav-Padding,
-   Sprachwähler-Padding). Nur der portal-eigene Demo-Chip braucht einen
-   eigenen Rand (CDs Badge in diesem Slot trägt mr-2). */
+/* align-items:stretch instead of center: the language switcher should fill the
+   full 44px row. With `center`, its parent had auto height and height:100%
+   resolved back to auto, exactly the bug already found and fixed for .burger
+   (comment app.css:420-421, P0-5); it had been missed here. */
+/* No flex gap (CD top-bar.postcss:154-166 uses only `flex items-center`): entry
+   padding carries the rhythm (navigation padding, language-switcher padding).
+   Only the portal-specific demo chip needs its own margin (CD's badge in this
+   slot carries mr-2). */
 .top-bar__right { display:flex; align-items:stretch; }
 .top-bar__right > .demo-chip { align-self:center; margin-right:var(--sp-2); }
 .top-bar-navigation { display:flex; height:100%; }
@@ -45,10 +45,10 @@
 .top-bar-navigation a { display:flex; align-items:center; height:100%; min-height:var(--target-min);
   padding-inline:var(--sp-1); color:var(--color-text-negative); text-decoration:none; transition:color var(--duration-fast); }
 .top-bar-navigation a:hover, .top-bar-navigation a:focus { color:var(--color-gray-300); text-decoration:none; }
-/* Nur das Label ist ausgeblendet (sr-only-Sammelregel), nie das Icon-<span>
-   (Item 2.4). Sichtbar erst ab 1024: CD zeigt die Beschriftungen der
-   Werkzeuglinks erst ab lg (top-bar-navigation.postcss:7-11 `hidden lg:block`),
-   dazwischen bleibt die Leiste icon-only. */
+/* Only the label is hidden (shared sr-only rule), never the icon <span>
+   (Item 2.4). Visible from 1024: CD reveals utility-link labels at lg
+   (top-bar-navigation.postcss:7-11 `hidden lg:block`); between those widths the
+   bar remains icon-only. */
 @media (min-width:1024px){
   .top-bar-navigation a { padding-inline:var(--sp-2); }
   .top-bar-navigation a > span:not(.icon) { position:static; width:auto; height:auto; margin:0;
@@ -66,10 +66,10 @@
 @media (min-width:1024px){ .language-switcher select { width:4.5em; padding-left:var(--sp-4); } }
 .language-switcher select option { color:var(--color-text); background:var(--color-bg); }
 .language-switcher select option:disabled { color:var(--color-gray-400); }
-/* Deaktiviert (Prototyp: nur DE): CDs Disabled-Rezept ist NUR opacity-40
-   (select.postcss:28-35). Die generischen [disabled]-Feldregeln unten würden
-   sonst helles Grau-auf-Grau auf die Navy-Leiste malen und mit pointer-events:none
-   den erklärenden title-Tooltip töten. */
+/* Disabled (prototype: German only): CD's disabled recipe is ONLY opacity-40
+   (select.postcss:28-35). The generic [disabled] field rules below would
+   otherwise paint light gray-on-gray on the navy bar and pointer-events:none
+   would kill the explanatory title tooltip. */
 .language-switcher select:disabled { color:var(--color-text-negative); opacity:.4;
   pointer-events:auto; cursor:default; }
 .language-switcher .select__icon { position:absolute; top:0; right:0; width:var(--sp-6); height:100%;
@@ -86,8 +86,8 @@
 /* CD top-header.postcss:8 `text-sm 3xl:text-base`. */
 @media (min-width:1920px){ .top-header { padding:var(--sp-10) 0; font-size:var(--fs-base); } }
 .top-header .container--flex { min-height:0; align-items:center; gap:var(--sp-4); }
-/* Die Transition trägt BEIDE Ausblendungen (offene Suche unter lg, offenes
-   Mobilmenü) — CD logo.postcss:5-13, dort mit derselben duration-700. */
+/* The transition carries BOTH disappearances (open search below lg and open
+   mobile menu): CD logo.postcss:5-13 uses the same duration-700. */
 .logo { display:flex; align-items:center; flex-wrap:nowrap; text-decoration:none;
   transition:opacity var(--duration-slowest); }
 @media (min-width:768px){ .logo { align-items:flex-start; } }
@@ -107,25 +107,24 @@
 .logo__accronym { font-weight:var(--fw-bold); line-height:var(--lh-snug); color:var(--color-text); }
 @media (min-width:480px){ .logo__accronym { display:none; } }
 @media (min-width:480px){
-  /* Der negative obere Rand ist CDs optischer Ausgleich gegen die Oberkante der
-     Flagge (logo.postcss:81 `mt-[-0.160rem]`) — sichtbar ab md, wo .logo auf
-     flex-start ausrichtet. */
+  /* The negative top margin is CD's optical correction against the flag's top
+     edge (logo.postcss:81 `mt-[-0.160rem]`), visible from md where .logo aligns
+     to flex-start. */
   .logo__title { position:static; width:auto; height:auto; margin:-.16rem 0 0; overflow:visible; clip:auto;
     font-size:var(--fs-xs); font-weight:var(--fw-bold); color:var(--color-text);
     line-height:1.375; }
 }
-/* nowrap erst ab md (logo.postcss:78 `md:whitespace-nowrap`): zwischen 480 und
-   767 darf der lange Amtstitel umbrechen, statt neben Flagge + Trenner
-   überzulaufen. Der Produktname darunter ist ein Block-Kind und behält ohnehin
-   seine eigene Zeile. */
+/* nowrap only from md (logo.postcss:78 `md:whitespace-nowrap`): between 480 and
+   767 the long office title may wrap instead of overflowing beside flag and
+   divider. The product name below is a block child and keeps its own line. */
 @media (min-width:768px){ .logo__title { white-space:nowrap; } }
 @media (min-width:640px){ .logo__title { font-size:var(--fs-sm); } }
 @media (min-width:1280px){ .logo__title { font-size:var(--fs-base); } }
 @media (min-width:1920px){ .logo__title { font-size:var(--fs-lg); } }   /* logo.postcss:77 3xl:text-lg */
 .logo__title span { display:block; font-weight:var(--fw-regular); color:var(--color-text-muted); }
 /* Intranet skin stamps its own badge after the title (intranet.postcss:32-43).
-   Die Pille am TITEL reitet die Badge-Grössenrampe (badge.postcss:73-77) mit;
-   nur die Pille am Akronym (<480px) bleibt auf text-xs gepinnt (intranet.postcss:42). */
+   The pill on the TITLE follows the badge size ramp (badge.postcss:73-77); only
+   the pill beside the acronym (<480px) stays pinned to text-xs (intranet.postcss:42). */
 .body--intranet .logo__title::after,
 .body--intranet .logo__accronym::after {
   content:'Intranet'; display:block; width:fit-content; margin-top:var(--sp-1); margin-left:calc(-1 * var(--stroke-1));
@@ -153,10 +152,10 @@
   width:var(--sp-5); height:var(--sp-5); border-radius:var(--radius-full); background:var(--color-error); color:var(--color-text-negative); font-size:var(--fs-xs); line-height:1; }
 @media (min-width:1024px){ .shopping__cart-amount-indicator { left:15px; } }
 
-/* Mobiler Titelstreifen (top-header.postcss:13-31, Markup TopHeader.vue:3-8).
-   Das CD verbirgt den langen Amtstitel unter 480 absichtlich (logo.postcss:76)
-   und kompensiert ihn mit diesem getönten Band unter der Top-Bar — ohne das
-   Band besteht die sichtbare Marke bei 320/390 nur aus «BBL» + Intranet-Pille. */
+/* Mobile title strip (top-header.postcss:13-31, markup TopHeader.vue:3-8).
+   CD intentionally hides the long office title below 480 (logo.postcss:76) and
+   compensates with this tinted band under the top bar. Without it, the visible
+   brand at 320/390 consists only of `BBL` + intranet pill. */
 .top-header__mobile-title { position:relative; top:calc(-1 * var(--sp-3)); overflow:hidden;
   background:var(--color-secondary-100); color:var(--color-text-muted);
   font-size:var(--fs-xs); line-height:1.4; transition:max-height var(--duration-slow) var(--ease-out); }
@@ -164,11 +163,11 @@
 @media (min-width:480px){ .top-header__mobile-title { display:none; } }
 .body--mobile-menu-is-open .top-header__mobile-title { max-height:0; }
 
-/* Meta navigation (meta-navigation.postcss:5-42) — der Anmelde-Slot lebt HIER
-   (shell.js rendert ihn in der Meta-ul); der frühere .top-header__auth-Block
-   war die tote Hülle einer aufgegebenen Markup-Struktur. */
-/* Der An-/Abmelden-Knopf — der einzige Einstieg in jeden persönlichen Ablauf —
-   mass 109x23px, weil hier gar keine Höhe gesetzt war (Item 2.5b). */
+/* Meta navigation (meta-navigation.postcss:5-42): the sign-in slot lives HERE
+   (shell.js renders it in the meta ul); the former .top-header__auth block was
+   the dead shell of an abandoned markup structure. */
+/* The sign-in/out button, the only entry to every personal flow, measured
+   109x23px because no height was set here (Item 2.5b). */
 .meta-navigation a, .meta-navigation__auth, .meta-navigation__user { min-height:var(--control-h); }
 .meta-navigation ul { list-style:none; display:flex; align-items:center; }
 .meta-navigation a { display:flex; align-items:center; padding-inline:var(--sp-3); color:var(--color-text); text-decoration:none; }
@@ -176,35 +175,35 @@
 .meta-navigation--desktop { display:none; }
 @media (min-width:1024px){ .meta-navigation--desktop { display:flex; margin-bottom:var(--sp-3); } }
 @media (min-width:1280px){ .meta-navigation--desktop { margin-bottom:var(--sp-4); } }
-/* Anmeldestatus (AGOV / FedLogin) rechts in der Meta-Navigation. EIN Linkstil
-   für die ganze Leiste (CD meta-navigation.postcss:5-12 + MetaNavigation.vue:4-20:
-   alle Einträge uniform, kein Akzent-Variant) — die Betonung trägt das User-Icon
-   des Eintrags, nicht eine zweite Linkfarbe. Icon-Abstand .5rem wie CDs ml-2. */
+/* Sign-in state (AGOV / FedLogin) on the right of the meta navigation. ONE link
+   style for the entire bar (CD meta-navigation.postcss:5-12 +
+   MetaNavigation.vue:4-20: uniform entries, no accent variant). The entry's
+   user icon carries emphasis, not a second link color. Icon gap .5rem as in CD's ml-2. */
 .meta-navigation__auth { display:flex; align-items:center; gap:var(--sp-2);
   min-height:var(--control-h);
   background:none; border:0; font:inherit; color:var(--color-text);
   padding-inline:var(--sp-3); cursor:pointer; }
 .meta-navigation__auth:hover { color:var(--color-primary-600); }
-/* Die Trennlinie übernimmt .separator--vertical im Markup (Item 4.2) — eine
-   nackte Haarlinie am Zeilenanfang liest sich als Tippfehler. */
+/* .separator--vertical in markup provides the divider (Item 4.2); a bare
+   hairline at the line start reads as a typo. */
 .meta-navigation__user { display:flex; align-items:center; gap:var(--sp-2); padding-inline:var(--sp-3);
   min-height:var(--control-h); border-left:0; }
 .meta-navigation__name { display:flex; align-items:center; gap:var(--sp-1-5); color:var(--color-text-muted); }
 .meta-navigation__name .icon { color:var(--color-primary-600); }
 
-/* Login-Hinweis dort, wo ein Vorgang ausgelöst würde. */
+/* Sign-in notice where an operation would be started. */
 .login-gate .btn { margin-top:0; }
 .login-gate__btn { align-self:flex-start; }
 
 /* Burger (burger.postcss:5-76) */
-/* `height:100%` kollabierte im zentrierten Flex-Elternteil auf die Icon-Höhe —
-   der einzige Menüzugang unter 1024 px war 20 px hoch (P0-5). */
+/* `height:100%` collapsed to icon height in the centered flex parent; the only
+   menu access below 1024px was 20px high (P0-5). */
 .burger { display:flex; align-items:center; justify-content:center;
   min-height:var(--target-min); min-width:var(--target-min); padding:0 var(--sp-4); margin-right:calc(-1 * var(--sp-4));
   background:none; border:0; cursor:pointer; }
 @media (min-width:1024px){ .burger { display:none; } }
 .burger__icon { display:block; position:relative; width:var(--sp-7); height:var(--sp-5);
-  color:var(--color-text-500); transition:color var(--duration-fast); }   /* CD burger.postcss:10-17: Ruhefarbe text-500 */
+  color:var(--color-text-500); transition:color var(--duration-fast); }   /* CD burger.postcss:10-17: resting color text-500 */
 .burger:hover .burger__icon { color:var(--color-primary-600); }
 .burger__bar { display:block; position:absolute; width:100%; height:100%; color:inherit; transition:transform var(--duration-fast); }
 .burger__bar::after { content:""; display:block; position:absolute; width:100%; height:var(--stroke-2);
@@ -221,10 +220,10 @@
 /* Header search (search.postcss:5-31,113-146) */
 .search--main { position:relative; display:flex; align-items:center; justify-content:flex-end; min-height:var(--target-min); z-index:var(--z-header); }
 .search__group { display:flex; align-items:stretch; justify-content:flex-end; position:relative; }
-/* CD-Polsterrampe (search.postcss:79-82 `lg:p-1 xl:p-2 2xl:py-3`, Basis p-0).
-   min-width + Zentrierung sind der portal-eigene Zusatz: min-height garantiert
-   nur die HÖHE — ohne Polster wäre der icon-only-Schalter sonst schmaler als
-   das 44px-Tippziel. */
+/* CD padding ramp (search.postcss:79-82 `lg:p-1 xl:p-2 2xl:py-3`, base p-0).
+   min-width + centering are portal additions: min-height guarantees only
+   HEIGHT; without padding the icon-only control would be narrower than the
+   44px touch target. */
 .search__button { --control-icon-size:var(--sp-9); display:inline-flex; align-items:center; justify-content:center; background:none; border:0; font:inherit;
   color:var(--color-text); min-height:var(--target-min); min-width:var(--target-min); padding:0; cursor:pointer; transition:color var(--duration-fast),opacity var(--duration); }
 @media (min-width:1024px){ .search__button { padding:var(--sp-1); } }
@@ -232,7 +231,7 @@
 @media (min-width:1544px){ .search__button { padding-block:var(--sp-3); } }
 .search__button:hover { color:var(--color-primary-600); }
 @media (min-width:1024px){
-  /* -mt-0.5 = CDs optischer Ausgleich der Beschriftung neben der Lupe
+  /* -mt-0.5 = CD's optical correction for the label beside the magnifier
      (search.postcss:84-86 `lg:pr-1.5 lg:-mt-0.5`). */
   .search__button__title { position:static; width:auto; height:auto; margin:calc(-1 * var(--sp-0-5)) 0 0; overflow:visible; clip:auto;
     padding-right:var(--sp-1-5); }
@@ -241,49 +240,50 @@
 .search__form { position:absolute; right:0; top:50%; transform:translateY(-50%); display:flex; align-items:stretch;
   width:0; opacity:0; visibility:hidden; pointer-events:none; overflow:hidden;
   transition:width var(--duration-slow) var(--ease-in-out), opacity var(--duration) var(--ease-in-out), visibility 0s linear var(--duration-slow); }
-/* KEIN :focus-within — blosses Tabben auf den «Suche»-Schalter hätte sonst das
-   Feld aufgeklappt, während aria-expanded="false" blieb und der Schalter darunter
-   sichtbar stehenblieb: unangeforderter Kontextwechsel (WCAG 3.2.1) plus falsch
-   angesagter Zustand (4.1.2). Genau die Regression, die der JS-Kommentar in
-   shell.js zu beheben beansprucht. CD koppelt den offenen Zustand ebenfalls nur
-   an die Zustandsklasse (search.postcss:113-146). */
+/* NO :focus-within: merely tabbing to the search control would otherwise open
+   the field while aria-expanded="false" remained and the control stayed visible
+   below it: an unsolicited context change (WCAG 3.2.1) plus an incorrectly
+   announced state (4.1.2). This is exactly the regression the JS comment in
+   shell.js addresses. CD also ties the open state only to the state class
+   (search.postcss:113-146). */
 .search--main.open .search__form {
   width:18rem; max-width:60vw; opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
 .search__form input { width:100%; padding:var(--sp-2-5) var(--sp-12) var(--sp-2-5) var(--sp-4); border:var(--stroke-1) solid var(--color-border-input);
   border-radius:var(--radius-xs); background:var(--color-bg); box-shadow:var(--shadow-2xl); min-height:var(--input-h); }
-/* CDs Fokusring am offenen Kopf-Suchfeld ist PURPUR (ring-2 ring-purple-500,
-   global.postcss:75-77). Der globale :focus-visible-Ring dieses Blatts liegt
-   2px AUSSERHALB des Felds — .search__form beschneidet ihn (overflow:hidden
-   trägt die Aufklapp-Animation), sichtbar blieb nur der dunkle UA-Ring
-   (Nutzerbefund 2026-08-04). Deshalb hier INSET (-2px) und auf :focus statt
-   nur :focus-visible — CD stylt das Feld ebenfalls ab Fokus (search.postcss:22). */
+/* CD's focus ring on the open header search field is PURPLE (ring-2
+   ring-purple-500, global.postcss:75-77). This sheet's global :focus-visible
+   ring sits 2px OUTSIDE the field, where .search__form clips it (overflow:hidden
+   carries the disclosure animation); only the dark user-agent ring remained
+   visible (user finding 2026-08-04). It is therefore INSET (-2px) here and
+   applies on :focus, not only :focus-visible; CD also styles the field from
+   focus onward (search.postcss:22). */
 .search__form input:focus { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
-/* CD search.postcss:120-123: ab lg bekommt das offene Kopffeld py-4. */
+/* CD search.postcss:120-123: from lg, the open header field receives py-4. */
 @media (min-width:1024px){ .search__form input { padding-top:var(--sp-4); padding-bottom:var(--sp-4); } }
 .search__submit { --control-icon-size:var(--sp-6); position:absolute; right:0; top:0; bottom:0; width:var(--sp-12); background:none; border:0;
   cursor:pointer; color:var(--color-secondary-700); display:inline-flex; align-items:center; justify-content:center; }
 .search__submit:hover { color:var(--color-primary-600); }
-/* Das offene Feld lag quer über der Bundesmarke: es überlappte das Logo um 64px
-   bei 320, 173px bei 480 und 176px bei 640. CD legt dafür eine eigene, volle
-   Zeile UNTER den Kopf (search.postcss:37-56) und blendet das Logo aus (:99-103).
-   Unser Markenblock ist breiter als CDs (Amt + Produkt + Intranet-Pille), darum
-   gilt das bis lg statt nur bis xs — ein 35vw breites Feld wäre untippbar.
-   Die Klasse .body--search-is-open setzt Item 4.5. */
+/* The open field crossed the federal brand: it overlapped the logo by 64px at
+   320, 173px at 480 and 176px at 640. CD gives it a dedicated full row BELOW
+   the header (search.postcss:37-56) and hides the logo (:99-103). Our brand
+   block is wider than CD's (office + product + intranet pill), so this applies
+   up to lg rather than only xs; a 35vw-wide field would be untappable.
+   .body--search-is-open implements Item 4.5. */
 @media (max-width:1023.98px){
-  /* BEIDE Zwischenebenen entpositionieren: .search__group ist ebenfalls
-     `position:relative` und nur ~52px breit, sodass `left:0;right:0` sonst
-     gegen die Gruppe statt gegen den Kopf auflöst (gemessen: 52px statt 390px). */
+  /* Unposition BOTH intermediate layers: .search__group is also
+     `position:relative` and only ~52px wide, so `left:0;right:0` would otherwise
+     resolve against the group rather than the header (measured: 52px vs 390px). */
   .search--main, .search--main .search__group { position:static; }
   .search--main.open .search__form {
     position:absolute; left:0; right:0; top:100%; transform:none;
     width:auto; max-width:none; margin-top:var(--sp-2);
     padding-inline:var(--sp-3-5); z-index:var(--header-z); }   /* CD search.postcss:37-42 `.search--mobile { mt-2 px-3.5 }` */
   .top-header { position:relative; }
-  /* KEINE eigene Transition mehr: die EINE duration-700 auf .logo (oben) trägt
-     beide Ausblendungen — Suche offen UND Mobilmenü offen (CD logo.postcss:8). */
+  /* NO independent transition: the ONE duration-700 on .logo above carries
+     both disappearances, open search AND open mobile menu (CD logo.postcss:8). */
   .body--search-is-open .logo { opacity:0; pointer-events:none; }
 }
-/* CD search.postcss:88-92 — auf dem Handy war die einzige Suchaffordanz eine 24px-Lupe */
+/* CD search.postcss:88-92: on mobile, the only search affordance was a 24px magnifier */
 /* Shared square-glyph recipe: cart and main search retain CD's 36 -> 28px
    ramp; the submit glyph remains 24px. The control boxes provide centring. */
 :is(.shopping-cart__button, .search__button, .search__submit) .icon {

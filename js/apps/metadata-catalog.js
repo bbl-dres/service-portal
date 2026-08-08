@@ -1,48 +1,26 @@
-// Metadaten Katalog Bauten — der Data-Governance-Katalog des Immobilienbereichs.
-//
-// Er trägt die beiden Schichten UNTER dem Datenkatalog (#/data/catalog, DCAT-AP CH):
-//
-//   Geschäftsobjekt (technologieneutral)   data/business-objects.json
-//     └── Attribut ──abgebildet auf──▶ Feld
-//                                        └── Tabelle/Layer (systemgebunden)
-//                                                                data/system-tables.json
-//                                                └── datasetId ──▶ #/data/catalog/<id>
-//
-// Die Frage, für die es den Katalog gibt, ist die Abbildung: WELCHES FELD WELCHEN
-// SYSTEMS trägt diesen Fachbegriff. Gepflegt wird sie am Attribut (dort weiss man
-// es), gelesen wird sie in beide Richtungen — die Gegenrichtung liefert core.js
-// über einen Rückwärtsindex, nicht über eine dritte Datei.
-//
-// Aufbau wie die übrigen Katalogseiten (#/data/catalog, #/applications) und NICHT
-// wie das Liegenschafteninventar: der Zustand steht im Hash, nicht in einer
-// lokalen Variablen — jede Auswahl ist damit teilbar. Optik und Seitenbaum
-// (pf-layout/pf-sidebar/pf-tree) sind die des Inventars, damit sich beide
-// Bestandsansichten gleich anfühlen; die Detailansichten tragen dieselbe
-// Reiterstruktur (Übersicht · Liste · Realisierung) wie die Objekt-Detailseite
-// dort. Beide Detailansichten dieses Katalogs sind untereinander gleich gebaut.
-
-import { ANWENDUNGEN, trail } from '../crumbs.js';
-import { num, datum } from '../format.js';
+import { APPLICATIONS, trail } from '../crumbs.js';
+import { formatNumber, formatDate } from '../format.js';
+// Data-governance catalogue for the real-estate domain.
+// It connects technology-neutral business-object attributes to system-bound
+// table fields, then to published datasets. Mappings live on attributes and
+// core provides the reverse field-to-term index. State remains in the hash so
+// every selection is shareable. List and detail anatomy matches the other portal
+// catalogues and inventory explorer.
 import * as links from '../links.js';
-// escape/badge direkt aus components.js (Muster buildings-map.js/floorplan.js):
-// EIN modulweites `esc` statt dreier funktionslokaler `const esc = C.escape;`-
-// Aliase — und matchBadge (unten) braucht beide schon auf Modulebene.
+// Reuse one module-level escape helper and badge factory across all views.
 import { escape as esc, badge } from '../components.js';
 
-// `contacts` trägt die Datenverwaltung (steward) beider Schichten. `datasets`
-// wird NUR in der Tabellen-Detailansicht gebraucht (115 KB für einen Titel) und
-// dort einzeln nachgefordert.
+// contacts supplies stewardship for both layers. Load the large datasets
+// inventory only for a system-table detail that needs its title.
 export const needs = ['businessObjects', 'systemTables', 'contacts'];
 
 const BASE = '#/app/metadata-catalog';
-// «… Bauten» wie bei der Mediathek Bauten: der Bestand deckt den Immobilien-
-// bereich ab (SAP RE-FX, GIS IMMO), nicht das ganze Amt. Der Name steht EINMAL
-// hier — er trägt Seitentitel, Brotkrume, Überschrift und jeden Rück-Link.
-const TITEL = 'Metadaten Katalog Bauten';
+// The catalogue covers the real-estate domain, not the complete office. Keep
+// its single title source for document title, breadcrumb, heading, and back links.
+const TITLE = 'Metadaten Katalog Bauten';
 const PER_PAGE = 12;
 
-// Beschriftungen der Typ-Kennungen aus den Daten. Bewusst hier und nicht in
-// reference-data.json: es sind Formen der Ablage, keine fachliche Codeliste.
+// Type labels describe storage forms, so keep them here rather than in the domain code lists.
 const TABLE_TYPE = {
   table: 'Tabelle', view: 'Sicht', gis_layer: 'GIS-Layer',
   bim_model: 'BIM-Modell', file: 'Datei', api_resource: 'API-Ressource',
@@ -57,11 +35,8 @@ const VALUE_TYPE = {
 };
 const KEY_ROLE = { PK: 'Primärschlüssel', FK: 'Fremdschlüssel', UK: 'Eindeutig' };
 
-// Definitionen sind ganze Sätze. In einer Tabellenzelle drängen sie die übrigen
-// Spalten aus dem Bild (die Spaltenbreiten unten fangen das ab, aber ein
-// sechszeiliger Zellentext bleibt unlesbar) — hier steht der Anfang, den ganzen
-// Satz trägt die Detailansicht.
-const kurz = (s, n = 110) => {
+// Truncate sentence-length definitions in table cells; detail views retain the full text.
+const truncateText = (s, n = 110) => {
   const t = String(s || '').trim();
   if (t.length <= n) return t;
   const cut = t.slice(0, n);
@@ -69,9 +44,8 @@ const kurz = (s, n = 110) => {
 };
 
 export default async function render(ctx) {
-  // Detailansichten per ?id=/?table= statt eigener Routensegmente — bewusste
-  // Wiederverwendung des Inventar-Idioms (Design-Review «Bewusste Abweichungen»
-  // Nr. 7): ein Routenwechsel bräche bereits geteilte Links ohne Nutzergewinn.
+  // Keep ?id and ?table detail links instead of route segments to preserve
+  // already shared inventory-style URLs.
   const objectId = ctx.query.get('id');
   const tableId = ctx.query.get('table');
   if (objectId) return objectDetail(ctx, objectId);
@@ -79,45 +53,34 @@ export default async function render(ctx) {
   return list(ctx);
 }
 
-// --- gemeinsame Nachschläge --------------------------------------------------
+// Shared lookups.
 const refList = (core, key) => core.ref()[key] || [];
 const domainOf = (core, key) => core.dataDomains().find((d) => d.key === key) || {};
 const domainLabel = (core, key) => domainOf(core, key).label || key;
 const statusOf = (core, id) => refList(core, 'objectStatuses').find((s) => s.id === id) || { label: id, variant: 'gray' };
 const matchOf = (core, id) => refList(core, 'mappingMatches').find((m) => m.id === id) || { label: id, variant: 'gray' };
-// Hostname einer Quell-URL; unparsbare Werte kommen unverändert zurück, damit
-// eine kaputte Rohangabe sichtbar bleibt statt zu verschwinden.
+// Return a source URL's hostname, or the original malformed value so bad raw data remains visible.
 const hostOf = (url) => { try { return new URL(url).host; } catch { return String(url || ''); } };
-// Auf-/zugeklappte Zweige des Seitenbaums. Die Seite wird bei JEDEM Hash-Wechsel
-// neu gebaut, das Modul aber nur einmal geladen — der Zustand gehört deshalb
-// hierher und nicht in die Renderfunktion, sonst klappte jeder Filterklick den
-// Baum wieder auf den Standard zurück. Nur echte Nutzerentscheide landen hier;
-// ohne Eintrag gilt der Standard (der Zweig der aktuellen Sicht ist offen).
+// Store explicit tree expansion choices at module scope because hash changes
+// rebuild the page but not the module. Without a choice, open the active branch.
 const OPEN = new Map();
 const isOpen = (key, fallback) => (OPEN.has(key) ? OPEN.get(key) : fallback);
 
-// Was «Exakt», «Nahe» und «Teilweise» bedeuten, steht am Wert selbst (title)
-// statt als Legende unter der Tabelle: eine Legende erklärt drei Marken für alle
-// Zeilen und steht dort, wo man sie beim Lesen der Zeile nicht sieht.
+// Put exact/near/partial explanations on each value instead of a distant shared legend.
 const MATCH_HINT = {
   exact: 'Exakt — Feldinhalt und Begriff sind deckungsgleich.',
   close: 'Nahe — inhaltlich dasselbe, aber mit abweichender Kodierung oder Einheit.',
   partial: 'Teilweise — das Feld deckt nur einen Teil des Begriffs ab.',
 };
 
-// Güte-Marke mit Erklärung am Element (siehe MATCH_HINT): beide Detailansichten
-// zeigen dieselbe Marke — die Definition steht deshalb EINMAL hier statt
-// wortgleich in beiden Renderfunktionen; `core` reicht der Aufrufer durch.
+// Build the shared match-quality badge once for both detail views.
 const matchBadge = (core, id) => {
   const m = matchOf(core, id);
   return `<span title="${esc(MATCH_HINT[id] || m.label)}">${badge(m.label, m.variant, 'sm')}</span>`;
 };
 
-// «Verantwortliche Personen» — exakt das Muster des Datensatzblatts
-// (js/pages/catalog.js): eine PERSON ist ein AdminDir-Eintrag (Rolle →
-// Verzeichnis-Link), KEINE Sammeladresse — die generische Datenverwaltung
-// steht als «Kontakt»-Karte in der Randspalte (Nutzerentscheid 2026-08-04).
-// Beide Detailansichten teilen den Baustein.
+// Responsible people are individual AdminDir entries. The generic stewardship
+// mailbox remains a separate contact card shared by both detail views.
 const personsSection = (persons) => `
     <h2 class="detail-section__title">Verantwortliche Personen</h2>
     <div class="box">${persons && persons.length ? `<dl class="kv kv--ruled">${persons.map((p) => `
@@ -126,22 +89,20 @@ const personsSection = (persons) => `
            target="_blank" rel="noopener external">AdminDir ${esc(p.admindirId)}</a></dd>`).join('')}
     </dl>` : '<p class="muted m-0">Für diesen Eintrag ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
 
-const objHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
-const tblHref = (id) => `${BASE}?table=${encodeURIComponent(id)}`;
+const objectHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
+const tableHref = (id) => `${BASE}?table=${encodeURIComponent(id)}`;
 
-// ---------------------------------------------------------------------------
-// Bestandsansicht
-// ---------------------------------------------------------------------------
+// Inventory view.
 function list(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  setTitle(TITEL);
-  setCrumbs(trail(ANWENDUNGEN, { label: TITEL }));
+  setTitle(TITLE);
+  setCrumbs(trail(APPLICATIONS, { label: TITLE }));
 
   const objects = core.businessObjects();
   const tables = core.systemTables();
   const domains = core.dataDomains();
 
-  // --- Zustand aus dem Hash ---------------------------------------------------
+  // State from the hash.
   const kind = query.get('kind') === 'tabellen' ? 'tabellen' : 'objekte';
   const rawQ = query.get('q') || '';
   const q = rawQ.toLowerCase();
@@ -154,7 +115,7 @@ function list(ctx) {
   const view = query.get('view') === 'gallery' ? 'gallery' : 'list';
   const wantedPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
 
-  // --- Kennzahlen je Eintrag --------------------------------------------------
+  // Per-entry metrics.
   const mapCount = (o) => core.realisationsOf(o).length;
   const realCount = (t) => core.realisationsForTable(t.tableId).length;
 
@@ -173,7 +134,7 @@ function list(ctx) {
     ];
   const sortKey = SORTS.some((s) => s.value === query.get('sort')) ? query.get('sort') : '';
 
-  // --- Filterung --------------------------------------------------------------
+  // Filtering.
   const objMatches = (o) => {
     const hay = `${o.name} ${o.definition} ${o.comment} ${o.attributes.map((a) => a.name).join(' ')}`.toLowerCase();
     return (!q || hay.includes(q))
@@ -197,21 +158,18 @@ function list(ctx) {
   const page = Math.min(wantedPage, totalPages);
   const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  // --- Hash-Bau ---------------------------------------------------------------
-  // `kind` bleibt aus der Adresse, solange die Standardsicht (Geschäftsobjekte)
-  // gilt — dieselbe Regel wie für page 1 und die Standardansicht.
+  // Hash construction. Omit kind for the default business-object view.
   const base = {
     kind: kind === 'objekte' ? '' : kind, q: rawQ, sort: sortKey, view,
     domain: selDomains, system: selSystems, schema: selSchemas, status: selStatus, mapped,
   };
   const hash = (patch = {}) => C.catalogueHash(BASE, { ...base, ...patch, defaultView: 'list' });
-  // Ein Sichtwechsel nimmt die Filter der anderen Sicht nicht mit: `domain` gilt
-  // nur für Begriffe, `system`/`schema` nur für Tabellen.
+  // Switching views drops filters owned exclusively by the other view.
   const kindHref = (k) => C.catalogueHash(BASE, {
     kind: k === 'objekte' ? '' : k, q: rawQ, view, defaultView: 'list',
   });
 
-  // --- aktive Filter als Pillen ------------------------------------------------
+  // Active filter pills.
   const active = [
     ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
     ...selDomains.map((x) => ({ label: domainLabel(core, x), href: hash({ domain: selDomains.filter((y) => y !== x) }) })),
@@ -221,16 +179,14 @@ function list(ctx) {
     ...(mapped ? [{ label: mapped === 'ja' ? 'Mit Realisierung' : 'Ohne Realisierung', href: hash({ mapped: '' }) }] : []),
   ];
 
-  // --- Karten und Listen -------------------------------------------------------
-  // Ohne Bildmaterial trägt die Liste den Bestand; die Galerie bleibt über den
-  // Ansichtswechsel erreichbar und benutzt die gewöhnliche CD-Karte OHNE Bild
-  // (card--default) statt der bildgeführten Inventarkarte.
+  // Cards and lists. Without imagery, list view leads; gallery uses the
+  // ordinary image-free CD card instead of the inventory media card.
   const objCard = (o) => {
     const n = mapCount(o);
     return C.card({
       title: o.name,
       desc: o.definition,
-      href: objHref(o.objectId),
+      href: objectHref(o.objectId),
       badges: [
         C.badge(domainLabel(core, o.domain), 'blue'),
         C.badge(statusOf(core, o.status).label, statusOf(core, o.status).variant),
@@ -243,31 +199,25 @@ function list(ctx) {
   const tblCard = (t) => C.card({
     title: t.displayName,
     desc: t.description,
-    href: tblHref(t.tableId),
+    href: tableHref(t.tableId),
     badges: [
       C.badge(t.systemName, 'blue'),
       C.badge(TABLE_TYPE[t.type] || t.type, 'gray'),
       ...(t.certified ? [C.badge('Zertifiziert', 'success')] : []),
     ],
-    footerInfo: `${t.fields.length} Felder${t.rowCount ? ` · ${num(t.rowCount)} Zeilen` : ''}`,
+    footerInfo: `${t.fields.length} Felder${t.rowCount ? ` · ${formatNumber(t.rowCount)} Zeilen` : ''}`,
     footerAction: C.cardAction(),
   });
 
-  // Spaltenbreiten sind hier NICHT Kosmetik: ohne sie verteilt der Browser die
-  // Breite nach Inhalt, die Definitionsspalte frisst alles und die letzte Spalte
-  // rutscht aus dem Bild (sie bleibt scrollbar, aber niemand findet sie).
-  // Fünf Spalten je Bestand, eine Angabe pro Spalte. Domäne und System stehen
-  // als Marke, nicht als Fliesstext: es sind dieselben endlichen Werte, die im
-  // Filter und im Seitenbaum auftauchen — als Marke liest man sie als Kategorie
-  // und findet die Zeilen einer Gruppe beim Überfliegen wieder. Der Status ist
-  // aus demselben Grund eine Marke.
+  // Column widths preserve discoverability and comparison. Domain, system,
+  // and status use badges because they repeat the same finite filter categories.
   const objList = (rows) => C.table({
     caption: 'Geschäftsobjekte', zebra: true, rowsClickable: true,
     columns: [
       { key: 'name', label: 'Geschäftsobjekt', width: '13rem', render: (o) =>
-        `<a href="${objHref(o.objectId)}">${esc(o.name)}</a>` },
+        `<a href="${objectHref(o.objectId)}">${esc(o.name)}</a>` },
       { key: 'domain', label: 'Domäne', width: '12rem', render: (o) => C.badge(domainLabel(core, o.domain), 'blue') },
-      { key: 'definition', label: 'Beschreibung', render: (o) => esc(kurz(o.definition, 130)) },
+      { key: 'definition', label: 'Beschreibung', render: (o) => esc(truncateText(o.definition, 130)) },
       { key: 'attrs', label: 'Attribute', align: 'right', render: (o) => String(o.attributes.length) },
       { key: 'status', label: 'Status', width: '9rem', render: (o) => C.badge(statusOf(core, o.status).label, statusOf(core, o.status).variant) },
     ],
@@ -277,20 +227,19 @@ function list(ctx) {
     caption: 'Systemtabellen', zebra: true, rowsClickable: true,
     columns: [
       { key: 'name', label: 'Tabelle', width: '13rem', render: (t) =>
-        `<a href="${tblHref(t.tableId)}">${esc(t.displayName)}</a><br><span class="small muted"><code>${esc(t.name)}</code></span>` },
+        `<a href="${tableHref(t.tableId)}">${esc(t.displayName)}</a><br><span class="small muted"><code>${esc(t.name)}</code></span>` },
       { key: 'system', label: 'System', width: '10rem', render: (t) => C.badge(t.systemName, 'blue') },
-      { key: 'description', label: 'Beschreibung', render: (t) => esc(kurz(t.description, 130)) },
+      { key: 'description', label: 'Beschreibung', render: (t) => esc(truncateText(t.description, 130)) },
       { key: 'fields', label: 'Felder', align: 'right', render: (t) => String(t.fields.length) },
-      // «Status» ist bei einer Systemtabelle die Zertifizierung — die einzige
-      // Zustandsangabe, die der Bestand führt. Art und Datensatzzahl stehen im
-      // Detail; in der Liste trugen sie wenig zum Vergleich bei.
+      // System-table status means certification, its only lifecycle value;
+      // type and dataset count remain in detail where they aid comparison less.
       { key: 'certified', label: 'Status', width: '9rem', render: (t) =>
         C.badge(t.certified ? 'Zertifiziert' : 'Nicht zertifiziert', t.certified ? 'success' : 'gray') },
     ],
     rows,
   });
 
-  // --- Filterpanel -------------------------------------------------------------
+  // Filter panel.
   const panel = kind === 'objekte' ? `
       ${C.filterGroup({ dim: 'domain', legend: 'Domäne', selected: selDomains, idPrefix: 'mc',
         options: domains.map((d) => ({ value: d.key, label: d.label })) })}
@@ -312,9 +261,8 @@ function list(ctx) {
     ? selDomains.length + selStatus.length + (mapped ? 1 : 0)
     : selSystems.length + selSchemas.length + (mapped ? 1 : 0);
 
-  // `unit` als { nom, dat }: «19 von 19 Geschäftsobjekten» (Dativ nach «von»),
-  // aber «Keine Geschäftsobjekte gefunden.» (Nominativ der Leertexte) — ein
-  // einzelner String traf nur einen der beiden Kasus (Design-Review A14).
+  // Keep nominative and dative German UI count forms separately so result
+  // summaries and empty states use the correct grammar.
   const unit = kind === 'objekte'
     ? { nom: 'Geschäftsobjekte', dat: 'Geschäftsobjekten' }
     : { nom: 'Systemtabellen', dat: 'Systemtabellen' };
@@ -322,7 +270,7 @@ function list(ctx) {
   mount.innerHTML = `
   <div class="container section">
     ${C.pageHeader({
-      title: TITEL,
+      title: TITLE,
       lead: 'Fachbegriffe des BBL und ihre Realisierung in den Führungssystemen — welches Geschäftsobjekt welche Attribute hat, und welches Feld welcher Tabelle sie trägt.',
     })}
     ${C.catalogueBar({
@@ -365,10 +313,8 @@ function list(ctx) {
   });
   ctx.onUnmount(C.wireTableRows(mount));
 
-  // Zweigknöpfe des Seitenbaums. Ein Klick bedeutet zweierlei, je nachdem, wo
-  // man steht: von woanders führt er auf den ganzen Zweig (und öffnet ihn), im
-  // Zweig selbst klappt er auf und zu. Kein onUnmount nötig — der Horcher hängt
-  // an der Seitenleiste, die der Router beim nächsten Rendern wegwirft.
+  // A tree branch navigates and opens from another branch, or toggles in place.
+  // Its listener dies with the sidebar on the next render.
   mount.querySelector('.pf-sidebar').addEventListener('click', (e) => {
     const btn = e.target.closest('.pf-tree__node[data-branch]');
     if (!btn) return;
@@ -384,31 +330,17 @@ function list(ctx) {
     OPEN.set(btn.dataset.branch, !open);
   });
 
-  // --- Seitenbaum ---------------------------------------------------------------
-  // Zweige sind Links (Filter) MIT eigenem Klappknopf davor; die Blätter sind
-  // reine Links. Ohne Symbole — die Einrückung trägt die Ebene (siehe
-  // .pf-tree--plain in css/app.css).
+  // Page tree. Branches are filter links with toggles; leaves are links. Plain
+  // indentation communicates the two levels without icons.
   function treeHTML() {
     const row = (label, count) =>
       `<span class="pf-tree__label">${esc(label)}</span><span class="pf-tree__n">${count}</span>`;
-    // `plain-link` ist der Ausweg aus der :not()-Kette von «#main-content a»
-    // (css/app.css:135): das CD unterstreicht jeden Inhaltslink im Hauptbereich,
-    // und diese Regel schlägt mit (1,1,1) das `text-decoration:none` der
-    // Baum-Klasse. Im Inventar fällt das nicht auf, weil dessen Baum aus
-    // <button> besteht; hier sind es Links, weil der Zustand im Hash steht.
-    // Navigation wird nicht unterstrichen — dieselbe Ausnahme nimmt die
-    // Sprungleiste des API-Verzeichnisses (js/apps/api-docs.js).
+    // plain-link opts navigation out of the high-specificity content-link underline.
     const leaf = (label, count, href, on) =>
       `<li class="pf-tree__item"><a class="pf-tree__leaf plain-link interactive-control${on ? ' is-active' : ''}" href="${href}"${
         on ? ' aria-current="true"' : ''}>${row(label, count)}</a></li>`;
-    // Aufbau wie im Inventar: der Zweig IST der Knopf, das Chevron sitzt in ihm,
-    // und ein Klick tut beides — er zeigt den ganzen Zweig und klappt ihn auf.
-    // Genauer (siehe Verdrahtung unten): steht man noch woanders, führt der
-    // Klick auf die Sicht «alles in diesem Zweig» und öffnet ihn; ist man schon
-    // dort, klappt derselbe Klick auf und zu. Damit braucht es keine
-    // «Alle …»-Zeile — die wäre eine zweite Beschriftung für dasselbe Ziel.
-    // `open`: der Zweig der aktuellen Sicht ist offen, der andere zu — bis der
-    // Nutzer selbst klappt; dann gilt seine Entscheidung (OPEN, modulweit).
+    // A branch itself represents all items in that branch. It navigates and opens
+    // from elsewhere, then toggles when already active, avoiding a duplicate all row.
     const branch = (key, label, count, href, on, open, children) => `
       <li class="pf-tree__item">
         <button type="button" class="pf-tree__node interactive-control${on ? ' is-active' : ''}" data-branch="${key}"
@@ -426,12 +358,8 @@ function list(ctx) {
       kind === 'objekte' && selDomains.length === 1 && selDomains[0] === d.key,
     )).join('');
 
-    // Genau ZWEI Ebenen, in beiden Ästen dieselben: Wurzel → Filterwert. Eine
-    // dritte Ebene (System › Schema) hatte der geteilte Baum optisch nicht
-    // hergegeben — `.pf-tree__leaf` rückt genau eine Stufe ein, also standen
-    // die Systeme auf Wurzelhöhe und lasen sich als Geschwister von «Systeme».
-    // Die drei Schemata bleiben als Filter im Panel erreichbar; im Baum hätten
-    // sie ohnehin fast dieselbe Menge gezeigt wie ihr System.
+    // Keep exactly root and filter-value levels. A third system/schema level
+    // would exceed the tree's one-step leaf indentation; schemas stay in the panel.
     const bySystem = new Map();
     for (const t of tables) {
       if (!bySystem.has(t.system)) bySystem.set(t.system, { name: t.systemName, n: 0 });
@@ -443,100 +371,77 @@ function list(ctx) {
       kind === 'tabellen' && selSystems.length === 1 && selSystems[0] === key,
     )).join('');
 
-    // Ein Zweig, in dem gerade gefiltert wird, ist IMMER offen — sonst läge die
-    // hervorgehobene Auswahl hinter einem zugeklappten Knoten. Sonst gilt die
-    // Entscheidung des Nutzers, und ohne eine solche der Zweig der aktuellen Sicht.
-    // Standardsicht ist «Geschäftsobjekte»: ohne Filter ist ihr Zweig markiert
-    // und offen, «Systeme» zu.
+    // Always open a branch containing the active filter. Otherwise respect the
+    // explicit choice, defaulting to the active business-object branch.
     return `<ul class="pf-tree pf-tree--plain">
-      ${branch('objekte', 'Geschäftsobjekte', objects.length, kindHref('objekte'),
+      ${branch('objects', 'Geschäftsobjekte', objects.length, kindHref('objekte'),
         kind === 'objekte' && !selDomains.length,
-        selDomains.length ? true : isOpen('objekte', kind === 'objekte'), domainItems)}
-      ${branch('systeme', 'Systeme', tables.length, kindHref('tabellen'),
+        selDomains.length ? true : isOpen('objects', kind === 'objekte'), domainItems)}
+      ${branch('systems', 'Systeme', tables.length, kindHref('tabellen'),
         kind === 'tabellen' && !selSystems.length,
-        selSystems.length ? true : isOpen('systeme', kind === 'tabellen'), systemItems)}
+        selSystems.length ? true : isOpen('systems', kind === 'tabellen'), systemItems)}
     </ul>`;
   }
 }
 
-// ---------------------------------------------------------------------------
-// Geschäftsobjekt — Detail
-// ---------------------------------------------------------------------------
+// Business-object detail.
 function objectDetail(ctx, id) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  // URLSearchParams already decodes query values exactly once.
+  // URLSearchParams decodes query values exactly once.
   const o = core.businessObject(id);
   if (!o) {
     return C.renderNotFound(ctx, {
       thing: 'Dieses Geschäftsobjekt', title: 'Geschäftsobjekt nicht gefunden',
-      backHref: BASE, backLabel: TITEL,
-      crumbs: trail(ANWENDUNGEN, { label: TITEL, href: BASE }),
+      backHref: BASE, backLabel: TITLE,
+      crumbs: trail(APPLICATIONS, { label: TITLE, href: BASE }),
     });
   }
   setTitle(o.name);
-  setCrumbs(trail(ANWENDUNGEN, { label: TITEL, href: BASE }, { label: o.name }));
+  setCrumbs(trail(APPLICATIONS, { label: TITLE, href: BASE }, { label: o.name }));
 
   const st = statusOf(core, o.status);
   const maps = core.realisationsOf(o);
   const contact = core.contacts().find((c) => c.contactId === o.steward);
 
-  // Registerkarten wie in der Objekt-Detailansicht des Inventars: der Einstieg
-  // zeigt, WO der Begriff in den Systemen liegt; die Attributliste — die lange
-  // Tabelle — liegt einen Klick daneben, statt die Seite zu verlängern.
-  // Beide Panels stehen im DOM (C.tabPanels blendet nur um), deshalb lassen sich
-  // ihre Tabellen unten in einem Zug montieren.
+  // Match inventory-detail tabs. Overview locates the concept in systems while
+  // the adjacent attribute tab contains the long searchable table.
+  const tabByLegacyValue = { 'uebersicht': 'overview', 'attribute': 'attributes', 'realisierung': 'realisations' };
+  const legacyValueByTab = Object.fromEntries(Object.entries(tabByLegacyValue).map(([legacy, tab]) => [tab, legacy]));
   const tabs = [
-    { id: 'uebersicht', label: 'Übersicht' },
-    { id: 'attribute', label: `Attribute (${o.attributes.length})` },
-    { id: 'realisierung', label: `Realisierung (${maps.length})` },
+    { id: 'overview', label: 'Übersicht' },
+    { id: 'attributes', label: `Attribute (${o.attributes.length})` },
+    { id: 'realisations', label: `Realisierung (${maps.length})` },
   ];
-  // ?tab= steht in der Adresse (App-Detail-Rezept, Design-Review B3): ein
-  // geteilter Link öffnet denselben Reiter; unbekannte Werte fallen still auf
-  // die Übersicht zurück. replaceState statt location.hash — ein Reiterwechsel
-  // ist ein Zustandswechsel, der Router soll weder neu rendern noch fokussieren.
-  let active = query.get('tab') || tabs[0].id;
+  // Persist ?tab in the URL. Unknown values fall back to overview; replaceState
+  // avoids a router redraw or focus reset for an in-place tab change.
+  let active = tabByLegacyValue[query.get('tab')] || tabs[0].id;
   if (!tabs.some((x) => x.id === active)) active = tabs[0].id;
   const syncHash = (tab) => {
     const p = new URLSearchParams({ id: o.objectId });
-    if (tab !== tabs[0].id) p.set('tab', tab);
+    if (tab !== tabs[0].id) p.set('tab', legacyValueByTab[tab]);
     history.replaceState(history.state, '', `${BASE}?${p}`);
   };
-  // Die Übersicht trägt, was den Begriff AUSMACHT — Definition, Abgrenzung,
-  // gebräuchliche Benennungen. Als eigene Abschnitte waren sie zu viel für den
-  // Einstieg (siehe unten); als erster Reiter sind sie genau das, was man beim
-  // Aufschlagen lesen will, ohne die langen Tabellen davor.
+  // Overview leads with definition, scope, and common names before long tables.
   const panelHtml = (id) => {
-    if (id === 'attribute') return '<div id="mc-attrs"></div>';
-    // Auch ohne Abbildung die TABELLE, nicht ein Leerzustand an ihrer Stelle:
-    // C.mountDataTable behält Kopfzeile und Spalten und schreibt eine Zeile
-    // hinein, die sagt warum — dasselbe Muster wie «Anträge zu diesem
-    // Mietobjekt» im Mietendenportal. So sieht man, WAS hier stünde.
-    if (id === 'realisierung') return '<div id="mc-maps"></div>';
-    // Übersicht im Muster des Datensatzblatts (js/pages/catalog.js,
-    // Nutzerentscheid 2026-08-04): Definition als Lead unter der H1, dann
-    // «Verantwortliche Personen» (AdminDir-Einträge) und «Metadaten» als
-    // linierte kv-Listen — «Metadaten» statt «Eckdaten», weil die Einträge
-    // dieses Katalogs Metadaten SIND (dieselbe Ausnahme wie das DCAT-Blatt,
-    // Kanon D26). Die Randspalte trägt die «Kontakt»-Karte (generische
-    // Sammeladresse der Datenverwaltung — Person ≠ Postfach). Attribut- und
-    // Realisierungszahl fehlen bewusst — sie stehen in den Reiterbeschriftungen.
+    if (id === 'attributes') return '<div id="mc-attrs"></div>';
+    // Mount an empty data table with headers when no mapping exists so users can
+    // see what information would appear and why rows are absent.
+    if (id === 'realisations') return '<div id="mc-maps"></div>';
+    // Follow dataset-detail anatomy: lead definition, responsible people, and
+    // metadata lists, with the generic contact card in the side column. Tab labels
+    // already carry attribute and realisation counts.
     return `<div class="detail-layout"><div>${personsSection(o.responsiblePersons)}
       <section class="detail-section">
         <h2 class="detail-section__title">Metadaten</h2>
         <dl class="kv kv--ruled">
           <dt>Datendomäne</dt><dd><a href="${C.catalogueHash(BASE, { domain: [o.domain] })}">${esc(domainLabel(core, o.domain))}</a></dd>
-          ${/* Der Lebenszyklus (DRAFT/VALID/SUPERSEDED/ARCHIVED, Nutzerentscheid
-                2026-08-04) trägt Definition + Konsequenz in der Referenzliste —
-                beim Badge steht die Kurzform, damit «Gültig» nicht Deutungssache
-                bleibt («was heisst das für die Verwendung?»). */''}
+          ${/* Show the shared object lifecycle consistently with other catalogues. */''}
           <dt>Status</dt><dd>${C.badge(st.label, st.variant)}${st.definition
             ? `<br><span class="small muted">${esc(st.definition)} — ${esc(st.consequence)}</span>` : ''}</dd>
           ${o.standardRef ? `<dt>Norm-Referenz</dt><dd>${esc(o.standardRef)}</dd>` : ''}
-          ${/* Abgrenzung, Zweitbenennungen und EGID/EGRID-Relevanz sind im
-                Bestand zu EINER Bemerkung zusammengefasst — drei dünne Zeilen,
-                von denen keine gefiltert oder sortiert wurde. */''}
+          ${/* Scope, alternate names, and identifier relevance belong in metadata. */''}
           ${o.comment ? `<dt>Bemerkung</dt><dd>${esc(o.comment)}</dd>` : ''}
-          ${o.updated ? `<dt>Stand</dt><dd>${esc(datum(o.updated))}</dd>` : ''}
+          ${o.updated ? `<dt>Stand</dt><dd>${esc(formatDate(o.updated))}</dd>` : ''}
           <dt>ID</dt><dd><code>${esc(o.objectId)}</code></dd>
         </dl>
       </section></div>
@@ -547,16 +452,10 @@ function objectDetail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${/* App-Detailkopf (detailBar + h1, Design-Review B2) statt des Hero-Bands:
-          diese Ansichten folgen dem Objekt-Detail-Rezept der Apps — der Hero
-          gehört den Inhaltsseiten. Ohne Pillenzeile: Domäne, Status und
-          Realisierungsgrad standen dort als Marken UND direkt darunter in den
-          Eckdaten — zweimal dasselbe, und die Marken sagten es unpräziser. */''}
-    ${C.detailBar({ backHref: BASE, backLabel: TITEL })}
+    ${/* Use the application detail header instead of a landing-page hero. */''}
+    ${C.detailBar({ backHref: BASE, backLabel: TITLE })}
     <h1 tabindex="-1">${esc(o.name)}</h1>
-    ${/* Die Definition ist die Beschreibung des Begriffs und steht als Lead
-          unter der H1 — wie auf dem Datensatzblatt (Nutzerentscheid
-          2026-08-04); in der Metadaten-Liste wiederholt sie sich nicht. */''}
+    ${/* The concept definition is the lead rather than a separate repeated section. */''}
     ${o.definition ? `<p class="lead">${esc(o.definition)}</p>` : ''}
 
     <div class="tabs mt-6">
@@ -567,9 +466,7 @@ function objectDetail(ctx, id) {
 
   C.wireTabs(mount, { syncHash });
 
-  // Attribute — die Tabelle trägt die eigentliche Substanz des Geschäftsobjekts
-  // und wird bei grösseren Objekten lang; darum C.mountDataTable mit Suche,
-  // Sortierung und Blätterleiste statt einer nackten C.table.
+  // Use the searchable, sortable, paginated data table for potentially long attribute lists.
   ctx.onUnmount(C.mountDataTable(mount.querySelector('#mc-attrs'), {
     id: 'mc-at', unit: { nom: 'Attribute', dat: 'Attributen' }, caption: `Attribute von ${o.name}`, perPage: 15,
     rows: o.attributes,
@@ -586,12 +483,8 @@ function objectDetail(ctx, id) {
         options: [{ value: 'ja', label: 'Pflicht' }, { value: 'nein', label: 'Optional' }],
         match: (r, vals) => vals.includes(r.required ? 'ja' : 'nein') },
     ],
-    // Eine Angabe je Spalte, nichts übereinandergestapelt. «Realisiert durch»
-    // steht bewusst NICHT hier: die Abbildung hat einen eigenen Abschnitt
-    // darunter, mit eigenen Spalten für System, Tabelle, Feld und Güte — hier
-    // wäre sie eine gedrängte Wiederholung. Die Norm-Referenz je Attribut
-    // entfällt aus demselben Grund; die des Geschäftsobjekts steht in den
-    // Metadaten.
+    // Keep one value per column. The separate mapping section owns system,
+    // table, field, and quality details, avoiding compressed duplication here.
     columns: [
       { key: 'name', label: 'Attribut', width: '14rem', render: (a) =>
         `<strong>${esc(a.name)}</strong>${a.required ? '' : ' <span class="small muted">optional</span>'}` },
@@ -619,66 +512,58 @@ function objectDetail(ctx, id) {
       { key: 'attribute', label: 'Attribut', render: (m) => esc(m.attribute) },
       { key: 'systemName', label: 'System', render: (m) => esc(m.systemName) },
       { key: 'tableName', label: 'Tabelle', render: (m) =>
-        `<a href="${tblHref(m.tableId)}">${esc(m.tableName)}</a><br><span class="small muted"><code>${esc(m.technical)}</code></span>` },
+        `<a href="${tableHref(m.tableId)}">${esc(m.tableName)}</a><br><span class="small muted"><code>${esc(m.technical)}</code></span>` },
       { key: 'field', label: 'Feld', render: (m) => `<code>${esc(m.field)}</code>` },
       { key: 'match', label: 'Güte', render: (m) => matchBadge(core, m.match) },
     ],
   }));
 }
 
-// ---------------------------------------------------------------------------
-// Systemtabelle — Detail
-// ---------------------------------------------------------------------------
+// System-table detail.
 async function tableDetail(ctx, id) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  // URLSearchParams already decodes query values exactly once.
+  // URLSearchParams decodes query values exactly once.
   const t = core.systemTable(id);
   if (!t) {
     return C.renderNotFound(ctx, {
       thing: 'Diese Tabelle', title: 'Tabelle nicht gefunden',
-      backHref: BASE, backLabel: TITEL,
-      crumbs: trail(ANWENDUNGEN, { label: TITEL, href: BASE }),
+      backHref: BASE, backLabel: TITLE,
+      crumbs: trail(APPLICATIONS, { label: TITLE, href: BASE }),
     });
   }
-  // Der publizierte Datensatz wird NUR hier gebraucht — 115 KB lädt man nicht
-  // für die Bestandsansicht mit. Nach dem await prüft ctx.stale(), damit eine
-  // zwischenzeitliche Navigation nicht überschrieben wird (docs/code-review.md A2).
+  // Fetch the large published-dataset inventory only here. Check ctx.stale after
+  // awaiting so intervening navigation is never overwritten.
   if (t.datasetId) {
     await core.ensure('datasets');
     if (ctx.stale()) return;
   }
   setTitle(t.displayName);
-  setCrumbs(trail(ANWENDUNGEN, { label: TITEL, href: BASE }, { label: t.displayName }));
+  setCrumbs(trail(APPLICATIONS, { label: TITLE, href: BASE }, { label: t.displayName }));
 
   const real = core.realisationsForTable(t.tableId);
   const contact = core.contacts().find((c) => c.contactId === t.steward);
   const dataset = t.datasetId ? core.dataset(t.datasetId) : null;
-  // Gleicher Aufbau wie das Geschäftsobjekt: drei Reiter, in der Übersicht die
-  // Gleicher Aufbau wie das Geschäftsobjekt (Lead + Verantwortliche Personen +
-  // Metadaten) — beide Detailansichten dieses Katalogs sollen sich gleich
-  // bedienen lassen; nur die Felder unterscheiden sich.
+  // Mirror business-object detail with overview, people, metadata, and two data tabs.
+  const tabByLegacyValue = { 'uebersicht': 'overview', 'felder': 'fields', 'realisierung': 'realisations' };
+  const legacyValueByTab = Object.fromEntries(Object.entries(tabByLegacyValue).map(([legacy, tab]) => [tab, legacy]));
   const tabs = [
-    { id: 'uebersicht', label: 'Übersicht' },
-    { id: 'felder', label: `Felder (${t.fields.length})` },
-    { id: 'realisierung', label: `Realisierung (${real.length})` },
+    { id: 'overview', label: 'Übersicht' },
+    { id: 'fields', label: `Felder (${t.fields.length})` },
+    { id: 'realisations', label: `Realisierung (${real.length})` },
   ];
-  // ?tab= wie beim Geschäftsobjekt (Design-Review B3): geteilter Link öffnet
-  // denselben Reiter; replaceState, weil ein Reiterwechsel kein Neuaufbau ist.
-  let active = query.get('tab') || tabs[0].id;
+  // Persist ?tab as above; replaceState reflects an in-place tab change.
+  let active = tabByLegacyValue[query.get('tab')] || tabs[0].id;
   if (!tabs.some((x) => x.id === active)) active = tabs[0].id;
   const syncHash = (tab) => {
     const p = new URLSearchParams({ table: t.tableId });
-    if (tab !== tabs[0].id) p.set('tab', tab);
+    if (tab !== tabs[0].id) p.set('tab', legacyValueByTab[tab]);
     history.replaceState(history.state, '', `${BASE}?${p}`);
   };
   const panelHtml = (id) => {
-    if (id === 'felder') return '<div id="mc-fields"></div>';
-    // Wie beim Geschäftsobjekt: leere Tabelle mit Kopfzeile statt Leerzustand.
-    if (id === 'realisierung') return '<div id="mc-real"></div>';
-    // Wie beim Geschäftsobjekt (Nutzerentscheid 2026-08-04): Beschreibung als
-    // Lead unter der H1, dann «Verantwortliche Personen» und «Metadaten» als
-    // linierte kv-Listen; die Zahlen der Reiterbeschriftungen (Felder,
-    // Realisierungen) stehen nicht ein zweites Mal hier.
+    if (id === 'fields') return '<div id="mc-fields"></div>';
+    // As above, retain table headers when there are no rows.
+    if (id === 'realisations') return '<div id="mc-real"></div>';
+    // Mirror the business-object overview and avoid duplicating counts from tab labels.
     return `<div class="detail-layout"><div>${personsSection(t.responsiblePersons)}
       <section class="detail-section">
         <h2 class="detail-section__title">Metadaten</h2>
@@ -687,31 +572,21 @@ async function tableDetail(ctx, id) {
           <dt>Schema</dt><dd>${esc(t.schemaLabel)}<br><span class="small muted"><code>${esc(t.schema)}</code> · ${esc(SCHEMA_TYPE[t.schemaType] || t.schemaType)}</span></dd>
           <dt>Technischer Name</dt><dd><code>${esc(t.name)}</code></dd>
           <dt>Art</dt><dd>${esc(TABLE_TYPE[t.type] || t.type)}</dd>
-          ${/* «Zertifiziert» und «Zeilen» sind auf Nutzerentscheid (2026-08-04)
-                aus dem Blatt entfallen — Betriebs-/Volumenangaben, die für die
-                Katalogfrage («welches Feld trägt welchen Begriff?») nichts
-                beitragen; die Kartenansicht der Liste nennt die Zeilenzahl. */''}
-          ${/* Die Brücke in den DCAT-Katalog steht in den Metadaten statt in einer
-                eigenen Karte: sie ist eine EIGENSCHAFT dieser Tabelle («wird als
-                dieser Datensatz publiziert»), keine Aktion. */''}
-          ${dataset ? `<dt>Publiziert als</dt><dd><a href="${esc(links.datensatz(dataset.id))}">${esc(core.t(dataset.title))}</a></dd>` : ''}
-          ${/* Externer Sprung, darum mit target/rel; beschriftet mit dem Host statt
-                mit der ganzen REST-Adresse, die 70 Zeichen lang nichts hinzufügt. */''}
+          ${/* Certification and row count stay in metadata by explicit product decision. */''}
+          ${/* Keep the DCAT bridge in metadata rather than a separate access box. */''}
+          ${dataset ? `<dt>Publiziert als</dt><dd><a href="${esc(links.dataset(dataset.id))}">${esc(core.t(dataset.title))}</a></dd>` : ''}
+          ${/* External source links carry target and rel and display their hostname. */''}
           ${t.sourceUrl ? `<dt>Quellsystem</dt><dd><a href="${esc(t.sourceUrl)}" target="_blank" rel="noopener external">${esc(hostOf(t.sourceUrl))}</a></dd>` : ''}
-          ${t.updated ? `<dt>Stand</dt><dd>${esc(datum(t.updated))}</dd>` : ''}
+          ${t.updated ? `<dt>Stand</dt><dd>${esc(formatDate(t.updated))}</dd>` : ''}
           <dt>ID</dt><dd><code>${esc(t.tableId)}</code></dd>
         </dl>
       </section></div>
       <aside class="detail-layout__aside" aria-label="Zugriff und Kontakt">
-        ${/* «Zugriff» zuoberst (Nutzerentscheid 2026-08-04, nur Tabellenblatt):
-              der Bezug einer Systemtabelle läuft über ihren publizierten
-              DCAT-Datensatz — die Karte ist der Aktionsweg dorthin, die
-              «Publiziert als»-Zeile in den Metadaten bleibt die Eigenschaft.
-              Ohne Datensatz entfällt die Karte (nichts zu beziehen). */''}
+        ${/* Put access first in this table-only side column. */''}
         ${dataset ? `<div class="box">
           <h2>Zugriff</h2>
           <p class="small muted">Bezug und Bereitstellungsformen stehen beim publizierten Datensatz im Datenbezug und API Verzeichnis.</p>
-          <a class="btn btn--outline btn--sm btn--icon-left" href="${esc(links.datensatz(dataset.id))}">
+          <a class="btn btn--outline btn--sm btn--icon-left" href="${esc(links.dataset(dataset.id))}">
             ${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Datensatz ansehen</span></a>
         </div>` : ''}
         ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
@@ -720,9 +595,7 @@ async function tableDetail(ctx, id) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${/* App-Detailkopf (detailBar + h1, Design-Review B2) statt des Hero-Bands
-          — wie beim Geschäftsobjekt. Ohne Pillenzeile: System, Art und
-          Zertifizierung stehen in den Metadaten. */''}
+    ${/* Use the application detail header instead of a landing-page hero. */''}
     ${C.detailBar({
       backHref: C.catalogueHash(BASE, { kind: 'tabellen', system: [t.system] }),
       backLabel: t.systemName,
@@ -756,21 +629,18 @@ async function tableDetail(ctx, id) {
         match: (r, vals) => vals.includes(r.real.length ? 'ja' : 'nein') },
     ],
     columns: [
-      // Wie die Attributtabelle: eine Angabe je Spalte, die Beschreibung mit
-      // eigener Spalte statt unter dem Feldnamen gestapelt.
+      // Keep one value per column, with description in its own column.
       { key: 'name', label: 'Feld', width: '13rem', render: (f) => `<code>${esc(f.name)}</code>` },
       { key: 'description', label: 'Beschreibung', render: (f) =>
-        f.description ? esc(kurz(f.description, 120)) : '<span class="muted">—</span>' },
+        f.description ? esc(truncateText(f.description, 120)) : '<span class="muted">—</span>' },
       { key: 'dataType', label: 'Datentyp', width: '9rem', render: (f) => `<code class="small">${esc(f.dataType)}</code>` },
       { key: 'key', label: 'Schlüssel', width: '7rem', render: (f) =>
         [f.primaryKey ? C.badge('PK', 'info', 'sm') : '', f.foreignKey ? C.badge('FK', 'gray', 'sm') : ''].filter(Boolean).join(' ')
         || (f.nullable ? '<span class="muted">optional</span>' : '<span class="muted">—</span>') },
-      // Nur das Geschäftsobjekt, nicht zusätzlich das Attribut: das Paar
-      // «Objekt · Attribut» zwang die Spalte auf eine Breite, die der Tabelle
-      // bei 1280px nicht mehr blieb. Welches Attribut es ist, steht im
-      // Abschnitt «Realisierte Geschäftsobjekte» darunter — und im Titel.
+      // Show only the business object in this constrained column. The realised
+      // attribute remains available in the mapping section and page title.
       { key: 'real', label: 'Realisiert', render: (f) => f.real.length
-        ? f.real.map((r) => `<a class="badge badge--info" href="${objHref(r.objectId)}" title="${esc(`${r.objectName} · ${r.attribute}`)}">${esc(r.objectName)}</a>`).join(' ')
+        ? f.real.map((r) => `<a class="badge badge--info" href="${objectHref(r.objectId)}" title="${esc(`${r.objectName} · ${r.attribute}`)}">${esc(r.objectName)}</a>`).join(' ')
         : '<span class="muted">—</span>' },
     ],
   }));
@@ -785,7 +655,7 @@ async function tableDetail(ctx, id) {
       { value: 'field', label: 'Feld (A–Z)', cmp: (a, b) => a.field.localeCompare(b.field, 'de') },
     ],
     columns: [
-      { key: 'objectName', label: 'Geschäftsobjekt', render: (r) => `<a href="${objHref(r.objectId)}">${esc(r.objectName)}</a>` },
+      { key: 'objectName', label: 'Geschäftsobjekt', render: (r) => `<a href="${objectHref(r.objectId)}">${esc(r.objectName)}</a>` },
       { key: 'attribute', label: 'Attribut', render: (r) => esc(r.attribute) },
       { key: 'field', label: 'Feld', render: (r) => `<code>${esc(r.field)}</code>` },
       { key: 'match', label: 'Güte', render: (r) => matchBadge(core, r.match) },

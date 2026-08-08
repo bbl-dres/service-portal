@@ -1,8 +1,8 @@
-// Digitalisierung — Themenbereich mit Übersicht (Karten) und Detailseiten.
-// Unterseiten: Digitalisierungsstrategie, Vision, Prinzipien (Ankernavigation)
-// sowie Info-Landingpages zu Programm SUPERB und BIM/CDE. Inhalte der Strategie
-// stammen aus der «Gesamtstrategie Digitale Immobilien» (BBL Bauten / DRES,
-// Arbeitsentwurf, Stand 15.07.2026); für den Prototyp gekürzt.
+// Digitalisation topic area with an overview (cards) and detail pages.
+// Child pages: digitalisation strategy, vision, principles (anchor navigation),
+// plus information landing pages for the SUPERB programme and BIM/CDE. Strategy
+// content comes from «Gesamtstrategie Digitale Immobilien» (BBL Buildings / DRES,
+// working draft dated 15 July 2026) and is shortened for the prototype.
 
 import { anchorNavPage } from './anchor-nav.js';
 
@@ -13,17 +13,17 @@ const CRUMB = [
 ];
 
 export default function render(ctx) {
-  const sub = ctx.params[1];
-  if (!sub) return uebersicht(ctx);
-  if (sub === 'strategy') return strategiePage(ctx);
-  if (sub === 'vision') return visionPage(ctx);
-  if (sub === 'principles') return prinzipienPage(ctx);
-  if (sub === 'superb') return superbPage(ctx);
-  if (sub === 'bim') return bimPage(ctx);
+  const subpage = ctx.params[1];
+  if (!subpage) return overview(ctx);
+  if (subpage === 'strategy') return strategyPage(ctx);
+  if (subpage === 'vision') return visionPage(ctx);
+  if (subpage === 'principles') return principlesPage(ctx);
+  if (subpage === 'superb') return superbPage(ctx);
+  if (subpage === 'bim') return bimPage(ctx);
   return notFound(ctx);
 }
 
-/* ================================ ÜBERSICHT ============================== */
+/* ================================ OVERVIEW =============================== */
 
 const CARDS = [
   { icon: 'Book', title: 'Digitalisierungsstrategie', href: '#/data/digitalisation/strategy',
@@ -38,16 +38,16 @@ const CARDS = [
     desc: 'Modellbasierte Planung und die gemeinsame Datenumgebung (CDE) über den Bauwerkslebenszyklus.', meta: 'Vorhaben' },
 ];
 
-function uebersicht(ctx) {
+function overview(ctx) {
   const { mount, C, setTitle, setCrumbs } = ctx;
   setTitle('Digitalisierung');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Digitalisierung' }]);
 
-  // Vier Bänder statt eines weissen Feldes (Item 7.7). Die beiden Fliesstext-
-  // Bänder liegen in CDs Container-Raster, damit `container__center--xs` wirklich
-  // Spalten zuweist statt sich auf die max-width-Notbremse zu verlassen — und
-  // damit die Aufzählung dasselbe Mass bekommt wie der Absatz darüber. Sie stand
-  // voll ausgestellt bei 1309px (145 Zeichen pro Zeile), doppelt so breit.
+  // Four bands instead of one white field (Item 7.7). Both prose bands use the
+  // CD container grid so `container__center--xs` assigns actual columns instead
+  // of relying on the max-width safety net, and so the list uses the same measure
+  // as the paragraph above. It was fully stretched at 1309px (145 characters per
+  // line), twice as wide.
   const prose = (html) => `<div class="container--grid"><div class="container__center--xs">${html}</div></div>`;
   mount.innerHTML = `
     ${C.pageSection({
@@ -69,14 +69,14 @@ function uebersicht(ctx) {
       </ul>`) })}`;
 }
 
-/* =========================== STRATEGIE (Ankernav) ======================= */
+/* ======================== STRATEGY (ANCHOR NAV) ========================= */
 
-function strategiePage(ctx) {
+function strategyPage(ctx) {
   const { C, setTitle, setCrumbs } = ctx;
   setTitle('Digitalisierungsstrategie');
   setCrumbs([...CRUMB, { label: 'Digitalisierungsstrategie' }]);
 
-  const handlungsfelder = [
+  const fieldsOfAction = [
     ['Durchgängige und nutzerorientierte digitale Dienstleistungen',
       'Die wesentlichen Dienstleistungen des BBL Bauten sind nutzerorientiert gestaltet, durchgängig digital unterstützt und über Organisationsgrenzen hinweg nachvollziehbar. Mehrfacherfassungen und manuelle Übertragungen werden schrittweise reduziert.'],
     ['Verlässliche und mehrfach nutzbare Daten und Informationen',
@@ -93,7 +93,7 @@ function strategiePage(ctx) {
         <p>Der Handlungsbedarf entsteht weniger aus fehlenden Einzelwerkzeugen als aus der ungenügenden Abstimmung von Leistungen, Daten, Lösungen und Verantwortlichkeiten. Ziel ist keine neue Systemlandschaft auf der grünen Wiese, sondern die gezielte und schrittweise Weiterentwicklung des Bestehenden.</p>` },
     { id: 'st-handlungsfelder', title: 'Vier Handlungsfelder mit Zielzustand 2030',
       html: `<p class="muted">Bis 2030 verfolgt das BBL Bauten vier Handlungsfelder mit je einem Zielzustand.</p>
-        <div class="grid grid--responsive-cols-2 mt-4">${handlungsfelder.map(([t, d], i) => `<div class="box">
+        <div class="grid grid--responsive-cols-2 mt-4">${fieldsOfAction.map(([t, d], i) => `<div class="box">
           <h3>${i + 1}. ${C.escape(t)}</h3><p class="m-0">${C.escape(d)}</p></div>`).join('')}</div>` },
     { id: 'st-umsetzung', title: 'Umsetzung und Steuerung',
       html: `<p>Die Strategie gibt die Ausrichtung bis 2030 vor; die konkrete Umsetzung erfolgt über einen jährlich aktualisierten Umsetzungsplan «Digitale Immobilien» mit Massnahmen, Verantwortlichkeiten, Ressourcen, Abhängigkeiten und wenigen geeigneten Indikatoren. Die Wirkungsmessung stützt sich vorrangig auf amtsbezogene Indikatoren übergeordneter Bundesstrategien.</p>
@@ -114,7 +114,7 @@ function strategiePage(ctx) {
   });
 }
 
-/* ============================= VISION (Ankernav) ======================== */
+/* ========================== VISION (ANCHOR NAV) ========================= */
 
 function visionPage(ctx) {
   const { setTitle, setCrumbs } = ctx;
@@ -147,9 +147,9 @@ function visionPage(ctx) {
   });
 }
 
-/* =========================== PRINZIPIEN (Ankernav) ====================== */
+/* ======================== PRINCIPLES (ANCHOR NAV) ======================= */
 
-const PRINZIPIEN = [
+const PRINCIPLES = [
   ['pr-1', 'Digital by Design', 'Digitale Möglichkeiten werden von Beginn an in Leistungen und Prozessen berücksichtigt (auch Digital First und Digital Only).'],
   ['pr-2', 'Datengetrieben', 'Daten und Informationen werden verantwortungsvoll bewirtschaftet und, soweit sinnvoll, mehrfach genutzt (Once-Only).'],
   ['pr-3', 'Verwaltung als Plattform', 'Gemeinsame Dienste, Standards und wiederverwendbare Lösungen haben Vorrang vor isolierten Einzellösungen (Interoperabilität).'],
@@ -160,13 +160,13 @@ const PRINZIPIEN = [
   ['pr-8', 'Nachhaltigkeit', 'Digitale Lösungen werden wirtschaftlich, ökologisch und sozial nachhaltig gestaltet und betrieben.'],
 ];
 
-function prinzipienPage(ctx) {
+function principlesPage(ctx) {
   const { C, setTitle, setCrumbs } = ctx;
   setTitle('Prinzipien');
   setCrumbs([...CRUMB, { label: 'Prinzipien' }]);
 
-  const sections = PRINZIPIEN.map(([id, titel, text], i) => ({
-    id, title: `${i + 1}. ${titel}`, html: `<p>${C.markLang(text)}</p>`,
+  const sections = PRINCIPLES.map(([id, title, text], i) => ({
+    id, title: `${i + 1}. ${title}`, html: `<p>${C.markLang(text)}</p>`,
   }));
   sections.push({
     id: 'pr-leitplanken', title: 'Verbindliche Leitplanken',
@@ -181,7 +181,7 @@ function prinzipienPage(ctx) {
   });
 }
 
-/* ===================== INFO-LANDINGPAGES (Platzhalter) ================== */
+/* ================= INFO LANDING PAGES (PLACEHOLDERS) =================== */
 
 function infoPage(ctx, { title, lead, note, photo }) {
   const { mount, C, setTitle, setCrumbs } = ctx;

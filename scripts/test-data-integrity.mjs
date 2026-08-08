@@ -1,14 +1,11 @@
-// Referenzprüfung ohne Browser — data/ gegen sich selbst UND gegen die Literale
-// im Code.
+// Browser-free reference check across data/ and code literals.
 //
-// Anlass (H11): die Kante Dienstleistung → Prozess war doppelt deklariert
-// (services.processDefId, process-definitions.serviceId) und wurde von keinem
-// Modul gelesen. Jedes Modul nannte seine defId stattdessen als Zeichenkette.
-// Damit konnte eine Umbenennung in JSON in sich stimmig bleiben, während die
-// Anwendungen weiter die alte Kennung starteten — und engine.start() erfand
-// sich früher stillschweigend eine Ersatzdefinition dazu.
+// H11 exposed a duplicated service-to-process relationship that no module read:
+// services.processDefId, process-definitions.serviceId, and app literals could
+// drift independently. engine.start() also used to invent a fallback definition,
+// hiding that mismatch.
 //
-// Diese Prüfung läuft in Millisekunden und braucht keinen Server:
+// This check completes in milliseconds and needs no server:
 //   node scripts/test-data-integrity.mjs
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -25,28 +22,28 @@ const defs = json('data/process-definitions.json');
 const defIds = new Set(defs.map(d => d.defId));
 const serviceIds = new Set(services.map(s => s.serviceId));
 
-console.log('■ Dienstleistung → Prozessdefinition');
+console.log('Service to process definition');
 const declared = services.filter(s => s.processDefId);
 const danglingFwd = declared.filter(s => !defIds.has(s.processDefId));
 check(danglingFwd.length === 0,
-  `${declared.length} von ${services.length} Dienstleistungen deklarieren processDefId, alle auflösbar${
-    danglingFwd.length ? ` — offen: ${danglingFwd.map(s => `${s.serviceId}→${s.processDefId}`).join(', ')}` : ''}`);
+  `${declared.length} of ${services.length} services declare a resolvable processDefId${
+    danglingFwd.length ? `; unresolved: ${danglingFwd.map(s => `${s.serviceId}->${s.processDefId}`).join(', ')}` : ''}`);
 
 const danglingBack = defs.filter(d => d.serviceId && !serviceIds.has(d.serviceId));
 check(danglingBack.length === 0,
-  `${defs.length} Definitionen verweisen auf bestehende Dienstleistungen${
-    danglingBack.length ? ` — offen: ${danglingBack.map(d => `${d.defId}→${d.serviceId}`).join(', ')}` : ''}`);
+  `${defs.length} definitions reference existing services${
+    danglingBack.length ? `; unresolved: ${danglingBack.map(d => `${d.defId}->${d.serviceId}`).join(', ')}` : ''}`);
 
-console.log('■ Schritte je Definition');
+console.log('Steps per definition');
 const noSteps = defs.filter(d => !Array.isArray(d.steps) || !d.steps.length);
 check(noSteps.length === 0,
-  `jede Definition hat Schritte${noSteps.length ? ` — leer: ${noSteps.map(d => d.defId).join(', ')}` : ''}`);
+  `every definition has steps${noSteps.length ? `; empty: ${noSteps.map(d => d.defId).join(', ')}` : ''}`);
 const noLabel = defs.flatMap(d => (d.steps || []).filter(st => !st.label || !st.status).map(st => d.defId));
-check(noLabel.length === 0, `jeder Schritt hat label + status${noLabel.length ? ` — offen: ${noLabel.join(', ')}` : ''}`);
-check(defs.every(d => d.name), 'jede Definition hat einen Namen (start() übernimmt ihn als defName)');
+check(noLabel.length === 0, `every step has label and status${noLabel.length ? `; unresolved: ${noLabel.join(', ')}` : ''}`);
+check(defs.every(d => d.name), 'every definition has a name for start() to use as defName');
 
-console.log('■ Code-Literale gegen die Definitionen');
-// engine.start('…') und defId: '…' — beides sind Kennungen, die es geben MUSS.
+console.log('Code literals against definitions');
+// Values passed to engine.start() and defId literals must exist.
 const appDir = join(ROOT, 'js', 'apps');
 const used = new Map();   // defId → Dateien
 for (const f of readdirSync(appDir).filter(n => n.endsWith('.js'))) {
@@ -55,45 +52,44 @@ for (const f of readdirSync(appDir).filter(n => n.endsWith('.js'))) {
   for (const m of src.matchAll(/\bdefId:\s*'([^']+)'/g)) used.set(m[1], [...(used.get(m[1]) || []), f]);
 }
 const unknown = [...used.keys()].filter(id => !defIds.has(id));
-check(used.size > 0, `Literale gefunden (${used.size}: ${[...used.keys()].sort().join(', ')})`);
+check(used.size > 0, `definition literals found (${used.size}: ${[...used.keys()].sort().join(', ')})`);
 check(unknown.length === 0,
-  `alle im Code genannten defIds existieren${unknown.length ? ` — unbekannt: ${unknown.map(id => `${id} (${used.get(id).join(', ')})`).join('; ')}` : ''}`);
+  `every defId named in code exists${unknown.length ? `; unknown: ${unknown.map(id => `${id} (${used.get(id).join(', ')})`).join('; ')}` : ''}`);
 
-// Umgekehrt: eine Definition, die niemand startet, ist totes Gewicht — kein
-// Fehler, aber meldenswert.
+// Conversely, an unstarted definition is noteworthy dead weight, not a failure.
 const unstarted = [...defIds].filter(id => !used.has(id));
-if (unstarted.length) console.log(`   – Hinweis: von keiner Anwendung gestartet: ${unstarted.join(', ')}`);
+if (unstarted.length) console.log(`   note: no application starts ${unstarted.join(', ')}`);
 
-console.log('■ Route → Prozess, wo die Zuordnung eindeutig ist');
-// Nennt eine Dienstleistung «#/app/x» und startet js/apps/x.js genau eine
-// Definition, müssen beide dieselbe sein.
+console.log('Route to process where the relationship is unambiguous');
+// A service targeting #/app/x and an app module starting exactly one definition
+// must reference the same definition.
 for (const s of declared) {
   const href = (s.target && s.target.href) || '';
-  const m = href.match(/^#\/app\/([a-z-]+)$/);          // ohne Query = eindeutig
+  const m = href.match(/^#\/app\/([a-z-]+)$/); // A route without a query is unambiguous.
   if (!m) continue;
   const file = `${m[1]}.js`;
   const literals = [...used.entries()].filter(([, files]) => files.includes(file)).map(([id]) => id);
   if (literals.length !== 1) continue;
   check(literals[0] === s.processDefId,
-    `${s.serviceId} → ${file}: Daten «${s.processDefId}» = Code «${literals[0]}»`);
+    `${s.serviceId} -> ${file}: data ${s.processDefId} equals code ${literals[0]}`);
 }
 
-console.log('■ Datenportal: genau ein Renderer und geschlossene Referenzen');
+console.log('Data portal: one renderer and closed references');
 const portal = json('data/dashboards.json');
 const topicIds = portal.topics.map((topic) => topic.id);
 const boardIds = portal.dashboards.map((board) => board.id);
 const boardTopicIds = portal.dashboards.map((board) => board.topicId);
 const genericTopicIds = topicIds.filter((id) => id !== 'immobilien');
-check(new Set(topicIds).size === topicIds.length, 'Themen-IDs sind eindeutig');
-check(new Set(boardIds).size === boardIds.length, 'Dashboard-IDs sind eindeutig');
-check(new Set(boardTopicIds).size === boardTopicIds.length, 'Dashboard-Themenverweise sind eindeutig');
+check(new Set(topicIds).size === topicIds.length, 'topic IDs are unique');
+check(new Set(boardIds).size === boardIds.length, 'dashboard IDs are unique');
+check(new Set(boardTopicIds).size === boardTopicIds.length, 'dashboard topic references are unique');
 check(JSON.stringify([...boardIds].sort()) === JSON.stringify([...genericTopicIds].sort()),
-  'sechs Themen haben genau ein generisches Dashboard; Immobilien bleibt spezialisiert');
+  'six topics have one generic dashboard; real estate remains specialised');
 check(JSON.stringify([...boardTopicIds].sort()) === JSON.stringify([...genericTopicIds].sort())
   && portal.dashboards.every((board) => board.id === board.topicId),
-  'Übersicht und Dashboard-Routen verwenden dieselbe Themenkennung');
+  'overview and dashboard routes use the same topic identifier');
 check(!portal.dashboards.some((board) => Object.hasOwn(board, 'hero')),
-  'generische Dashboards verwenden ausschliesslich die kpis-Datenform');
+  'generic dashboards use only the kpis data shape');
 
 const usedDatasets = new Set();
 const brokenChartRefs = [];
@@ -118,23 +114,23 @@ for (const board of portal.dashboards) {
   }
 }
 check(duplicateChartIds.length === 0,
-  `Chart-IDs sind je Dashboard eindeutig${duplicateChartIds.length ? ` — offen: ${duplicateChartIds.join(', ')}` : ''}`);
+  `chart IDs are unique within each dashboard${duplicateChartIds.length ? `; unresolved: ${duplicateChartIds.join(', ')}` : ''}`);
 check(brokenChartRefs.length === 0,
-  `alle Register verweisen auf vorhandene Charts${brokenChartRefs.length ? ` — offen: ${brokenChartRefs.join(', ')}` : ''}`);
+  `every tab references existing charts${brokenChartRefs.length ? `; unresolved: ${brokenChartRefs.join(', ')}` : ''}`);
 check(brokenDatasetRefs.length === 0,
-  `alle generischen Charts verweisen auf vorhandene Datensätze${brokenDatasetRefs.length ? ` — offen: ${brokenDatasetRefs.join(', ')}` : ''}`);
+  `every generic chart references an existing dataset${brokenDatasetRefs.length ? `; unresolved: ${brokenDatasetRefs.join(', ')}` : ''}`);
 
-// Diese beiden Zeitreihen liest der spezialisierte Immobilien-Renderer direkt;
-// alle übrigen Datensätze müssen über einen generischen Chart erreichbar sein.
+// The specialised real-estate renderer reads these series directly; every
+// other dataset must be reachable through a generic chart.
 const specializedDatasets = new Set(['portfolio_jahr', 'portfolio_monat']);
 const orphanDatasets = Object.keys(portal.datasets)
   .filter((id) => !usedDatasets.has(id) && !specializedDatasets.has(id));
 check(orphanDatasets.length === 0,
-  `jeder Datensatz hat einen Renderer${orphanDatasets.length ? ` — verwaist: ${orphanDatasets.join(', ')}` : ''}`);
+  `every dataset has a renderer${orphanDatasets.length ? `; orphaned: ${orphanDatasets.join(', ')}` : ''}`);
 check([...specializedDatasets].every((id) => Object.hasOwn(portal.datasets, id)),
-  'die spezialisierten Immobilien-Zeitreihen bleiben vorhanden');
+  'the specialised real-estate series remain available');
 
-console.log('■ Workspace-Overlay bleibt frei von Golden-Record-Duplikaten');
+console.log('Workspace overlay remains free of golden-record duplication');
 const buildingCollection = json('data/buildings.geojson');
 const buildingsById = new Map((buildingCollection.features || [])
   .map((feature) => [feature.properties?.bbl_id, feature.properties]));
@@ -145,35 +141,35 @@ const workspacePlanning = json('data/workspace-planning.json');
 const planningIds = workspacePlanning.map((planning) => planning.buildingId);
 
 check(new Set(planningIds).size === planningIds.length,
-  'jedes Workspace-Objekt hat höchstens einen Planungs-Overlay');
+  'each workspace object has at most one planning overlay');
 const missingPlanningBuildings = planningIds.filter((id) => !buildingsById.has(id));
 check(missingPlanningBuildings.length === 0,
-  `alle Workspace-Overlays verweisen auf ein kanonisches Gebäude${missingPlanningBuildings.length
-    ? ` — offen: ${missingPlanningBuildings.join(', ')}` : ''}`);
+  `all workspace overlays reference a canonical building${missingPlanningBuildings.length
+    ? `; unresolved: ${missingPlanningBuildings.join(', ')}` : ''}`);
 
 const derivedWorkspaceKeys = ['catalogue', 'totalFloors', 'plannedHnf', 'workArea', 'equipmentCount', 'planState'];
 const duplicatedWorkspaceValues = workspacePlanning.flatMap((planning) => derivedWorkspaceKeys
   .filter((key) => Object.hasOwn(planning, key)).map((key) => `${planning.buildingId}.${key}`));
 check(duplicatedWorkspaceValues.length === 0,
-  `Overlay speichert keine aus Gebäude-, Geschoss-, Raum- oder Ausstattungsdaten ableitbaren Summen${
-    duplicatedWorkspaceValues.length ? ` — offen: ${duplicatedWorkspaceValues.join(', ')}` : ''}`);
+  `the overlay stores no totals derivable from building, floor, space, or equipment data${
+    duplicatedWorkspaceValues.length ? `; unresolved: ${duplicatedWorkspaceValues.join(', ')}` : ''}`);
 
 const availabilityValues = new Set(['legacy', 'planned']);
 const orderValues = new Set(['open', 'completed']);
 const invalidAvailability = workspacePlanning.filter((planning) => !availabilityValues.has(planning.planAvailability));
 check(invalidAvailability.length === 0,
-  `Planverfügbarkeit verwendet ausschliesslich legacy/planned${invalidAvailability.length
-    ? ` — offen: ${invalidAvailability.map((planning) => planning.buildingId).join(', ')}` : ''}`);
+  `plan availability uses only legacy/planned${invalidAvailability.length
+    ? `; unresolved: ${invalidAvailability.map((planning) => planning.buildingId).join(', ')}` : ''}`);
 const invalidOrders = workspacePlanning.filter((planning) => planning.orderStatus
   && (!orderValues.has(planning.orderStatus) || planning.planAvailability !== 'planned'));
 check(invalidOrders.length === 0,
-  `Auftragsstatus verwendet ausschliesslich open/completed und gehört zu einer Planung${invalidOrders.length
-    ? ` — offen: ${invalidOrders.map((planning) => planning.buildingId).join(', ')}` : ''}`);
+  `order status uses only open/completed and belongs to a planned record${invalidOrders.length
+    ? `; unresolved: ${invalidOrders.map((planning) => planning.buildingId).join(', ')}` : ''}`);
 const invalidTargets = workspacePlanning.filter((planning) => planning.targetDate
   && (!/^\d{4}-\d{2}-\d{2}$/.test(planning.targetDate) || !planning.orderStatus));
 check(invalidTargets.length === 0,
-  `jeder Stichtag ist ein ISO-Datum eines Auftrags${invalidTargets.length
-    ? ` — offen: ${invalidTargets.map((planning) => planning.buildingId).join(', ')}` : ''}`);
+  `every target date is an ISO date attached to an order${invalidTargets.length
+    ? `; unresolved: ${invalidTargets.map((planning) => planning.buildingId).join(', ')}` : ''}`);
 
 const workspaceFloorRefs = workspacePlanning.flatMap((planning) => (planning.floors || [])
   .map((entry) => ({ ...entry, buildingId: planning.buildingId })));
@@ -181,28 +177,28 @@ const duplicateFloorRefs = workspaceFloorRefs
   .filter((entry, index, all) => all.findIndex((candidate) => candidate.floorId === entry.floorId) !== index)
   .map((entry) => entry.floorId);
 check(duplicateFloorRefs.length === 0,
-  `jeder geplante Grundriss kommt höchstens einmal vor${duplicateFloorRefs.length
-    ? ` — doppelt: ${duplicateFloorRefs.join(', ')}` : ''}`);
+  `each planned floor plan appears at most once${duplicateFloorRefs.length
+    ? `; duplicates: ${duplicateFloorRefs.join(', ')}` : ''}`);
 const brokenFloorRefs = workspaceFloorRefs.filter((entry) => {
   const floor = floorById.get(entry.floorId);
   return !floor || floor.buildingId !== entry.buildingId;
 });
 check(brokenFloorRefs.length === 0,
-  `alle geplanten Grundrisse gehören zum angegebenen Gebäude${brokenFloorRefs.length
-    ? ` — offen: ${brokenFloorRefs.map((entry) => entry.floorId).join(', ')}` : ''}`);
+  `all planned floor plans belong to the stated building${brokenFloorRefs.length
+    ? `; unresolved: ${brokenFloorRefs.map((entry) => entry.floorId).join(', ')}` : ''}`);
 
 const roomCountMismatches = floors.filter((floor) =>
   spaces.filter((space) => space.floorId === floor.floorId).length !== floor.rooms);
 check(roomCountMismatches.length === 0,
-  `Geschoss-Raumzahlen sind aus dem Raumregister ableitbar${roomCountMismatches.length
-    ? ` — offen: ${roomCountMismatches.map((floor) => floor.floorId).join(', ')}` : ''}`);
+  `floor room counts are derivable from the space registry${roomCountMismatches.length
+    ? `; unresolved: ${roomCountMismatches.map((floor) => floor.floorId).join(', ')}` : ''}`);
 const brokenSpaceRefs = spaces.filter((space) => {
   const floor = floorById.get(space.floorId);
   return !floor || floor.buildingId !== space.buildingId;
 });
 check(brokenSpaceRefs.length === 0,
-  `alle Räume gehören zu ihrem kanonischen Geschoss und Gebäude${brokenSpaceRefs.length
-    ? ` — offen: ${brokenSpaceRefs.map((space) => space.spaceId).join(', ')}` : ''}`);
+  `all spaces belong to their canonical floor and building${brokenSpaceRefs.length
+    ? `; unresolved: ${brokenSpaceRefs.map((space) => space.spaceId).join(', ')}` : ''}`);
 
 const nonDerivablePlans = workspacePlanning.filter((planning) => planning.planAvailability === 'planned').filter((planning) => {
   const plannedFloorIds = new Set((planning.floors || []).map((entry) => entry.floorId));
@@ -214,8 +210,8 @@ const nonDerivablePlans = workspacePlanning.filter((planning) => planning.planAv
   return !plannedFloors.length || plannedHnf <= 0 || workArea <= 0;
 });
 check(nonDerivablePlans.length === 0,
-  `geplante HNF und Arbeitsfläche sind aus Geschossen und Räumen ableitbar${nonDerivablePlans.length
-    ? ` — offen: ${nonDerivablePlans.map((planning) => planning.buildingId).join(', ')}` : ''}`);
+  `planned primary usable area and work area are derivable from floors and spaces${nonDerivablePlans.length
+    ? `; unresolved: ${nonDerivablePlans.map((planning) => planning.buildingId).join(', ')}` : ''}`);
 
 const equipmentMismatches = workspacePlanning.filter((planning) => {
   const floorTotal = (planning.floors || []).reduce((sum, floor) => sum + (Number(floor.equipmentCount) || 0), 0);
@@ -223,20 +219,20 @@ const equipmentMismatches = workspacePlanning.filter((planning) => {
   return floorTotal !== groupTotal;
 });
 check(equipmentMismatches.length === 0,
-  `Ausstattungstotal ist aus Geschossen oder Modulgruppen identisch ableitbar${equipmentMismatches.length
-    ? ` — offen: ${equipmentMismatches.map((planning) => planning.buildingId).join(', ')}` : ''}`);
+  `equipment totals are identical when derived from floors or module groups${equipmentMismatches.length
+    ? `; unresolved: ${equipmentMismatches.map((planning) => planning.buildingId).join(', ')}` : ''}`);
 
 const missingBuildingMeasures = workspacePlanning.filter((planning) => {
   const building = buildingsById.get(planning.buildingId);
   return building && (!Number.isFinite(building.garea_ngf) || !Number.isFinite(building.gastw));
 });
 check(missingBuildingMeasures.length === 0,
-  `NGF und Gesamtgeschosszahl stehen für jedes Workspace-Gebäude im Golden Record${missingBuildingMeasures.length
-    ? ` — offen: ${missingBuildingMeasures.map((planning) => planning.buildingId).join(', ')}` : ''}`);
+  `net floor area and total floor count exist in the golden record for every workspace building${missingBuildingMeasures.length
+    ? `; unresolved: ${missingBuildingMeasures.map((planning) => planning.buildingId).join(', ')}` : ''}`);
 const coreSource = readFileSync(join(ROOT, 'js/core.js'), 'utf8');
-check(/\bngf:\s*p\.garea_ngf\s*\|\|\s*0/.test(coreSource)
-  && /\btotalFloors:\s*p\.gastw\s*\|\|\s*0/.test(coreSource),
-  'Core-Normalisierung stellt NGF und Gesamtgeschosszahl unter stabilen Feldnamen bereit');
+check(/\bngf:\s*raw\[['"]garea_ngf['"]\]\s*\|\|\s*0/.test(coreSource)
+  && /\btotalFloors:\s*raw\[['"]gastw['"]\]\s*\|\|\s*0/.test(coreSource),
+  'core normalisation exposes net floor area and total floor count under stable field names');
 
-console.log(failures ? `\n✗ ${failures} Prüfung(en) FEHLGESCHLAGEN` : '\n✓ alle Prüfungen bestanden');
+console.log(failures ? `\nfailed: ${failures} check(s)` : '\nall checks passed');
 process.exit(failures ? 1 : 0);

@@ -8,83 +8,81 @@ const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key
 const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
 const safeDictionary = (value = {}) => Object.assign(Object.create(null), value);
 
-// EAGER — nur, was die Shell braucht, bevor der Router überhaupt verteilt.
-// js/shell.js liest genau zwei Schlüssel: `ref().domains` und `services()` für
-// den Dienstleistungs-Drawer. Alles andere gehört einer Route und wird über
-// `needs` nachgeladen.
+// EAGER: only what the shell needs before the router dispatches. js/shell.js
+// reads exactly two keys: `ref().domains` and `services()` for the service
+// drawer. Everything else belongs to a route and is loaded through `needs`.
 //
-// Vorher standen hier elf Dateien (275 KB, 13 Requests), und `boot()` wartete
-// auf jede einzelne, bevor irgendetwas gezeichnet wurde — gedrosselt gemessen
-// 7.7 s bis zum ersten Inhalt, obwohl die Startseite fünf davon braucht und die
-// Wissensseiten gar keine (docs/code-review.md §1/§3).
+// This used to list eleven files (275 KB, 13 requests), and `boot()` waited for
+// every one before drawing anything. Under throttling, first content took 7.7 s
+// even though the home page needs five of them and knowledge pages need none
+// (docs/code-review.md §1/§3).
 const FILES = {
   services:     'data/services.json',
   reference:    'data/reference-data.json',
 };
 
-// Aufschiebbar (H4): der Router ruft core.ensure(mod.needs) VOR dem Rendern auf,
-// die Zusage je Schlüssel wird gemerkt (PENDING) — zehn Aufrufer erzeugen eine
-// Anfrage. Ausfälle landen im selben FAILED-Register wie die Startdateien und
-// erscheinen im Fehlerband.
+// Deferred (H4): the router calls core.ensure(mod.needs) BEFORE rendering and
+// remembers the promise per key (PENDING), so ten callers create one request.
+// Failures enter the same FAILED register as startup files and appear in the
+// error banner.
 const DEFERRED = {
-  applications: 'data/applications.json',           // Anwendungskatalog + Landingpages
-  news:         'data/news.json',                   // Startseite, #/news, Suche
-  contacts:     'data/contacts.json',               // Dienstleistungs- und Anwendungskontakte
-  documents:    'data/documents.json',              // Dokumentenarchiv, Suche
-  projects:     'data/projects.json',               // Bauprojekte, Meine Vorgänge
-  media:        'data/media.json',                  // 55 KB, NUR die Mediathek
-  catalogLabels:'data/catalog-labels.json',         // nur der Datenkatalog
-  datasets:     'data/datasets.json',               // 115 KB, nur Datenkatalog + Suche
-  // Golden Record — GeoJSON, wird beim Laden normalisiert (siehe loadDeferred).
-  buildings:    'data/buildings.geojson',           // 66 KB, Portfolio + 9 weitere Apps
-  parcels:      'data/parcels.geojson',             // 79 KB, NUR Portfolio + Mediathek
-  // Liegenschaften-Inventar-Detailregister (SAP RE-FX-Untertabellen, re-keyed auf bbl_id):
-  assets:           'data/assets.json',            // Ausstattung
-  contracts:        'data/contracts.json',         // Verträge
-  costs:            'data/costs.json',              // Kosten
-  areas:            'data/area-measurements.json',  // Flächen / Bemessungen
-  buildingContacts: 'data/building-contacts.json',  // Objektkontakte (nicht die Dienstleistungs-Kontakte)
-  landcovers:       'data/landcovers.geojson',      // Bodenbedeckung, nur im Grundstück-Register
-  // Mietendenportal (#/app/tenancies): Mietverhältnisse, Geschosse, Räume.
-  // Die drei Bestände sind selbsttragend — Standort, Bild und Ansprechstellen
-  // stehen im Mietverhältnis, Nutzung und SIA-Kategorie am Raum. Erzeugt von
+  applications: 'data/applications.json',           // Application catalogue + landing pages
+  news:         'data/news.json',                   // Home page, #/news, search
+  contacts:     'data/contacts.json',               // Service and application contacts
+  documents:    'data/documents.json',              // Document archive, search
+  projects:     'data/projects.json',               // Construction projects, My cases
+  media:        'data/media.json',                  // 55 KB, media library ONLY
+  catalogLabels:'data/catalog-labels.json',         // Data catalogue only
+  datasets:     'data/datasets.json',               // 115 KB, data catalogue + search only
+  // Golden Record: GeoJSON, normalised during loading (see loadDeferred).
+  buildings:    'data/buildings.geojson',           // 66 KB, portfolio + 9 other apps
+  parcels:      'data/parcels.geojson',             // 79 KB, portfolio + media library ONLY
+  // Property-inventory detail registers (SAP RE-FX subtables, re-keyed by bbl_id):
+  assets:           'data/assets.json',              // Equipment
+  contracts:        'data/contracts.json',           // Contracts
+  costs:            'data/costs.json',               // Costs
+  areas:            'data/area-measurements.json',   // Areas / measurements
+  buildingContacts: 'data/building-contacts.json',   // Property contacts (not service contacts)
+  landcovers:       'data/landcovers.geojson',       // Land cover, parcel tab only
+  // Tenant portal (#/app/tenancies): tenancies, floors and spaces. These three
+  // datasets are self-contained: location, image and contacts live on the
+  // tenancy; use and SIA category live on the space. Generated by
   // scripts/build-tenancy-data.mjs.
   tenancies:        'data/tenancies.json',
   floors:           'data/floors.json',
   spaces:           'data/spaces.json',
-  // Workspace-Management-Portal: nur der fachliche Overlay-Stand zur
-  // kanonischen Liegenschaft (Projekt, Planstände und Ausstattungssummen).
-  // Adresse, Bild, Koordinaten, Geschosse und Räume bleiben in ihren Golden-
-  // Record-Beständen und werden nicht in dieser Datei dupliziert.
+  // Workspace-management portal: only the domain overlay state for the
+  // canonical property (project, plan revisions and equipment totals). Address,
+  // image, coordinates, floors and spaces remain in their Golden Record
+  // datasets and are not duplicated in this file.
   workspacePlanning:'data/workspace-planning.json',
-  // Metadatenkatalog (#/app/metadata-catalog): die beiden Schichten UNTER dem
-  // DCAT-Katalog. `businessObjects` ist technologieneutral (Geschäftsobjekt mit
-  // Attributen, je Datendomäne), `systemTables` systemgebunden (Tabelle bzw.
-  // Layer mit Feldern, je System). Verbunden sind sie über die Abbildungen am
-  // Attribut; `datasetId` an der Tabelle führt weiter in data/datasets.json.
+  // Metadata catalogue (#/app/metadata-catalog): the two layers BELOW the DCAT
+  // catalogue. `businessObjects` is technology-neutral (a business object with
+  // attributes per data domain), while `systemTables` is system-specific (a
+  // table or layer with fields per system). Attribute mappings connect them;
+  // `datasetId` on a table continues into data/datasets.json.
   businessObjects:  'data/business-objects.json',
   systemTables:     'data/system-tables.json',
-  // Prozessdokumentation Bauten (#/app/process-docs): die Prozesse des
-  // Immobilienmanagements (L1–L3 denormalisiert am Datensatz, BPMN-Pfad je
-  // Prozess → assets/bpmn/). Die Diagramme selbst lädt die App je Detailseite.
+  // Building process documentation (#/app/process-docs): property-management
+  // processes (L1–L3 denormalised on the record, BPMN path per process under
+  // assets/bpmn/). The app loads each diagram on its detail page.
   processes:        'data/processes.json',
-  // BBL Intranetshop (#/app/shop): Produktkatalog aus dem Workspace-Management-
-  // Prototyp. Bilder liegen gespiegelt unter assets/images/shop/.
+  // BBL intranet shop (#/app/shop): product catalogue from the workspace-
+  // management prototype. Images are mirrored under assets/images/shop/.
   shopProducts:     'data/shop-products.json',
   shopCategories:   'data/shop-categories.json',
 };
-// data/data-products.json bleibt liegen (DataService- und Concept-Einträge für
-// einen künftigen Metadatenkatalog), wird aber von keiner Ansicht mehr gelesen
-// und daher auch nicht mehr geladen.
+// data/data-products.json remains in place (DataService and Concept entries for
+// a future metadata catalogue), but no view reads or loads it any longer.
 
-// Schlüssel, deren Datei nicht geladen werden konnte. Ohne diese Merkliste würde
-// ein Ausfall als plausible Null durchgehen (leere Liste = «keine Einträge»); die
-// Shell blendet stattdessen ein Fehlerband ein und C.empty() unterscheidet
-// «leer» von «nicht verfügbar» (core.available()).
+// Keys whose files could not be loaded. Without this record, failure would look
+// like a plausible zero (an empty list means «no entries»). The shell instead
+// shows an error banner, while C.empty() distinguishes «empty» from
+// «unavailable» (core.available()).
 const FAILED = new Set();
 
-// Fachlicher Name je Datenschlüssel — für das Fehlerband der Shell.
-const AREA = {
+// Domain label per data key for the shell's error banner.
+const DATA_AREA_LABELS = {
   buildings: 'Liegenschaften', parcels: 'Grundstücke', projects: 'Bauprojekte', services: 'Dienstleistungen',
   applications: 'Anwendungen', documents: 'Dokumente', media: 'Mediathek',
   news: 'News', contacts: 'Kontakte', reference: 'Referenzdaten',
@@ -98,7 +96,7 @@ const AREA = {
   shopProducts: 'Shop-Produkte', shopCategories: 'Shop-Kategorien',
 };
 
-// Objekt-Dateien (Key-Value-Maps) vs. Listen — bestimmt Fallback und Formprüfung.
+// Object files (key-value maps) versus lists; determines fallback and validation.
 const OBJECT_FILES = new Set(['reference', 'catalogLabels']);
 const RECORD_IDS = {
   services: 'serviceId', applications: 'appId', news: 'id', contacts: 'contactId',
@@ -109,65 +107,65 @@ const RECORD_IDS = {
   processes: 'processId', shopProducts: 'id', shopCategories: 'id',
 };
 
-// Gebäude kommen aus dem SAP-RE-FX-Golden-Record (data/buildings.geojson) — dieselbe
-// Quelle und dieselben bbl_id wie das Immobilienportfolio-Dashboard, damit die
-// Karten-Deeplinks (#/app/portfolio?id=<bbl_id>) im Inventar aufgehen. Die rohen
-// SAP-Felder werden hier auf die schlanke Gebäudeform normalisiert, die alle
-// Ansichten (Liste, Detail, Formular-Auswahllisten, Verknüpfungen) lesen.
+// Buildings come from the SAP RE-FX Golden Record (data/buildings.geojson): the
+// same source and bbl_id values as the property-portfolio dashboard, so map deep
+// links (#/app/portfolio?id=<bbl_id>) open in the inventory. Raw SAP fields are
+// normalised here into the compact building shape consumed by all views (list,
+// detail, form pickers and relations).
 const OWNERSHIP = (v) => v === 'Eigentum Bund' ? 'Im Eigentum' : v === 'Miete' ? 'Anmieter' : 'Sonderfall';
-function normalizeBuilding(f) {
-  const p = (f && f.properties) || {};
-  const isDiplo = /Botschaft|Konsulat|Diplomat|Vertretung/i.test(`${p.bbl_bez || ''} ${p.bbl_port || ''}`);
+function normalizeBuilding(feature) {
+  const raw = (feature && feature.properties) || {};
+  const isDiplomatic = /Botschaft|Konsulat|Diplomat|Vertretung/i.test(`${raw['bbl_bez'] || ''} ${raw['bbl_port'] || ''}`);
   return {
-    bbl_id: p.bbl_id, bbl_we: p.bbl_we || '', egid: p.av_egid || '',
-    name: p.bbl_bez || p.bbl_id, portfolioCategory: p.bbl_port || p.bbl_gbda1 || '—', typ: p.bbl_gbda1 || '',
-    street: [p.adr_str, p.adr_hsnr].filter(Boolean).join(' ').trim(),
-    zip: p.adr_plz || '', city: p.adr_ort || '', land: p.adr_land || '', canton: p.adr_reg || '',
-    lat: p.wgs84_lat, lng: p.wgs84_lon,
-    gf: p.garea_gf || 0, ngf: p.garea_ngf || 0, hnf: p.garea_hnf || 0,
-    totalFloors: p.gastw || 0, buildYear: p.bbl_bjahr || '',
-    ownership: OWNERSHIP(p.bbl_eigen), erhaltung: p.bbl_ostr || '', heritage: p.bbl_arch === 'Ja',
-    // Recherchierte, belegte Angaben zu den echten Bauten (siehe research/README.md).
-    // Leer bei Objekten, für die nichts publiziert ist — dann entfällt die Zeile.
-    architekt: p.bbl_architekt || '', nutzer: p.bbl_nutzer || '',
-    renovationYear: p.bbl_vjahr || '', kgsKat: p.kgs_kat || '', kgsNr: p.kgs_nr || null,
-    quellen: Array.isArray(p.quellen) ? p.quellen : [],
-    status: p.bbl_stat || '',                          // Aktiv | Abgang | Löschvermerk (reference.buildingStatuses)
-    classification: isDiplo ? 'VERTRAULICH' : 'INTERN', // im Golden Record nicht geführt → aus dem Portfolio-Typ abgeleitet
-    // `media` = Auswahl von mediaId ins Register data/media.json (nur noch für die Mediathek).
-    media: Array.isArray(p.media) ? p.media : [],
-    // Portfolio-Bilder kommen aus der kuratierten Auswahl `bilder` DIREKT am Objekt
-    // (geojson); erstes Bild = Hauptbild, aufgelöst in linkMedia() unten.
-    bilder: Array.isArray(p.bilder) ? p.bilder : [],
-    photoSrc: '', photo: '', bildCredit: '', bildQuelle: '', color: 'var(--color-secondary-600)',
+    bbl_id: raw['bbl_id'], businessEntityId: raw['bbl_we'] || '', egid: raw['av_egid'] || '',
+    name: raw['bbl_bez'] || raw['bbl_id'], portfolioCategory: raw['bbl_port'] || raw['bbl_gbda1'] || '—', buildingType: raw['bbl_gbda1'] || '',
+    street: [raw['adr_str'], raw['adr_hsnr']].filter(Boolean).join(' ').trim(),
+    zip: raw['adr_plz'] || '', city: raw['adr_ort'] || '', country: raw['adr_land'] || '', canton: raw['adr_reg'] || '',
+    lat: raw['wgs84_lat'], lng: raw['wgs84_lon'],
+    gf: raw['garea_gf'] || 0, ngf: raw['garea_ngf'] || 0, hnf: raw['garea_hnf'] || 0,
+    totalFloors: raw['gastw'] || 0, buildYear: raw['bbl_bjahr'] || '',
+    ownership: OWNERSHIP(raw['bbl_eigen']), preservationStrategy: raw['bbl_ostr'] || '', heritage: raw['bbl_arch'] === 'Ja',
+    // Researched, sourced facts about the real buildings (see research/README.md).
+    // Empty for properties without published information, in which case the row is omitted.
+    architect: raw['bbl_architekt'] || '', occupants: raw['bbl_nutzer'] || '',
+    renovationYear: raw['bbl_vjahr'] || '', kgsCategory: raw['kgs_kat'] || '', kgsNumber: raw['kgs_nr'] || null,
+    sources: Array.isArray(raw['quellen']) ? raw['quellen'] : [],
+    status: raw['bbl_stat'] || '',                       // Raw status values; see reference.buildingStatuses.
+    classification: isDiplomatic ? 'VERTRAULICH' : 'INTERN', // Not in Golden Record; derived from portfolio type
+    // `media` selects mediaId values from data/media.json (media library only).
+    media: Array.isArray(raw['media']) ? raw['media'] : [],
+    // Portfolio images come DIRECTLY from the curated raw `bilder` selection on
+    // the object (GeoJSON); the first becomes the main image via linkMedia().
+    images: Array.isArray(raw['bilder']) ? raw['bilder'] : [],
+    photoSrc: '', photo: '', imageCredit: '', imageSource: '', color: 'var(--color-secondary-600)',
   };
 }
 
-// Grundstücke (parcels.geojson) — Polygon-Geometrie, verknüpft mit dem Gebäude über
-// das WE-Segment der bbl_id (1080/4840/01 ↔ 1080/4840/AF). Geometrie bleibt erhalten
-// für die Karten-Polygone und die Detail-Minikarte.
-function normalizeParcel(f) {
-  const p = (f && f.properties) || {};
+// Parcels (parcels.geojson): polygon geometry linked to the building through
+// the business-entity segment of bbl_id (1080/4840/01 ↔ 1080/4840/AF). Geometry
+// is retained for map polygons and the detail mini-map.
+function normalizeParcel(feature) {
+  const raw = (feature && feature.properties) || {};
   return {
-    bbl_id: p.bbl_id, bbl_we: p.bbl_we || '', name: p.bbl_bez || p.bbl_id, plotNumber: p.av_nr || '',
-    street: [p.adr_str, p.adr_hsnr].filter(Boolean).join(' ').trim(),
-    zip: p.adr_plz || '', city: p.adr_ort || '', land: p.adr_land || '', canton: p.adr_reg || '',
-    gemeinde: p.bfs_gem || p.adr_ort || '', egrid: p.av_egrid || '',
-    gsf: p.larea_gsf || 0, zone: p.av_znut || p.av_zbez || '', portfolio: p.bbl_port || '—',
-    ownership: OWNERSHIP(p.bbl_eigen), status: p.bbl_stat || '',
-    lat: p.wgs84_lat, lng: p.wgs84_lon, geom: (f && f.geometry) || null,
-    bilder: Array.isArray(p.bilder) ? p.bilder : [],
+    bbl_id: raw['bbl_id'], businessEntityId: raw['bbl_we'] || '', name: raw['bbl_bez'] || raw['bbl_id'], plotNumber: raw['av_nr'] || '',
+    street: [raw['adr_str'], raw['adr_hsnr']].filter(Boolean).join(' ').trim(),
+    zip: raw['adr_plz'] || '', city: raw['adr_ort'] || '', country: raw['adr_land'] || '', canton: raw['adr_reg'] || '',
+    municipality: raw['bfs_gem'] || raw['adr_ort'] || '', egrid: raw['av_egrid'] || '',
+    gsf: raw['larea_gsf'] || 0, zone: raw['av_znut'] || raw['av_zbez'] || '', portfolio: raw['bbl_port'] || '—',
+    ownership: OWNERSHIP(raw['bbl_eigen']), status: raw['bbl_stat'] || '',
+    lat: raw['wgs84_lat'], lng: raw['wgs84_lon'], geom: (feature && feature.geometry) || null,
+    images: Array.isArray(raw['bilder']) ? raw['bilder'] : [],
   };
 }
 
-// Bodenbedeckung (AV-Landcover) — Polygone je Grundstück; verknüpft über bbl_id
-// (= Grundstück-ID) bzw. geb_id (= Gebäude-ID). Für das Grundstück-Register «Bodenbedeckung».
-function normalizeLandcover(f) {
-  const p = (f && f.properties) || {};
+// Land cover (AV): polygons per parcel linked through bbl_id (= parcel ID) or
+// geb_id (= building ID), for the parcel's «Bodenbedeckung» tab.
+function normalizeLandcover(feature) {
+  const raw = (feature && feature.properties) || {};
   return {
-    parcelId: p.bbl_id, buildingId: p.geb_id, type: p.av_type || '—', area: p.lc_area || 0,
-    status: p.av_stat || '', egid: p.av_egid || '', egrid: p.av_egrid || '',
-    geom: (f && f.geometry) || null, lat: p.wgs84_lat, lng: p.wgs84_lon,
+    parcelId: raw['bbl_id'], buildingId: raw['geb_id'], type: raw['av_type'] || '—', area: raw['lc_area'] || 0,
+    status: raw['av_stat'] || '', egid: raw['av_egid'] || '', egrid: raw['av_egrid'] || '',
+    geom: (feature && feature.geometry) || null, lat: raw['wgs84_lat'], lng: raw['wgs84_lon'],
   };
 }
 
@@ -175,42 +173,42 @@ function validateRecords(records, url, key) {
   const idField = RECORD_IDS[key];
   const invalid = records.findIndex((record) => !isRecord(record)
     || (idField && (record[idField] == null || String(record[idField]).trim() === '')));
-  if (invalid >= 0) throw new Error(`ungültiger Datensatz ${invalid}: ${url}`);
+  if (invalid >= 0) throw new Error(`invalid record ${invalid}: ${url}`);
   if (key === 'businessObjects') {
     const nested = records.findIndex((record) => !Array.isArray(record.attributes)
       || record.attributes.some((attribute) => !isRecord(attribute)
         || !Array.isArray(attribute.mappings)
         || attribute.mappings.some((mapping) => !isRecord(mapping))));
-    if (nested >= 0) throw new Error(`ungültige Geschäftsobjekt-Struktur ${nested}: ${url}`);
+    if (nested >= 0) throw new Error(`invalid business-object structure ${nested}: ${url}`);
   }
   if (key === 'systemTables') {
     const nested = records.findIndex((record) => !Array.isArray(record.fields)
       || record.fields.some((field) => !isRecord(field)));
-    if (nested >= 0) throw new Error(`ungültige Tabellenstruktur ${nested}: ${url}`);
+    if (nested >= 0) throw new Error(`invalid table structure ${nested}: ${url}`);
   }
   if (key === 'tenancies') {
     const nested = records.findIndex((record) => !Array.isArray(record.floors)
       || record.floors.some((floorId) => typeof floorId !== 'string'));
-    if (nested >= 0) throw new Error(`ungültige Mietverhältnis-Struktur ${nested}: ${url}`);
+    if (nested >= 0) throw new Error(`invalid tenancy structure ${nested}: ${url}`);
   }
   if (key === 'workspacePlanning') {
     const nested = records.findIndex((record) => record.floors != null
       && (!Array.isArray(record.floors) || record.floors.some((floor) => !isRecord(floor))));
-    if (nested >= 0) throw new Error(`ungültige Workspace-Struktur ${nested}: ${url}`);
+    if (nested >= 0) throw new Error(`invalid workspace structure ${nested}: ${url}`);
   }
   if (key === 'shopCategories') {
     const validCategory = (record) => isRecord(record)
       && record.id != null && String(record.id).trim() !== ''
       && Array.isArray(record.children) && record.children.every(validCategory);
     const nested = records.findIndex((record) => !validCategory(record));
-    if (nested >= 0) throw new Error(`ungültige Shop-Kategorie ${nested}: ${url}`);
+    if (nested >= 0) throw new Error(`invalid shop category ${nested}: ${url}`);
   }
   return records;
 }
 
 function validateFeatureCollection(collection, url) {
   if (collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
-    throw new Error(`erwartet GeoJSON FeatureCollection: ${url}`);
+    throw new Error(`expected a GeoJSON FeatureCollection: ${url}`);
   }
   const requiredProperty = 'bbl_id';
   const invalid = collection.features.findIndex((feature) => !isRecord(feature)
@@ -219,7 +217,7 @@ function validateFeatureCollection(collection, url) {
     || feature.properties[requiredProperty] == null
     || String(feature.properties[requiredProperty]).trim() === ''
     || (feature.geometry !== null && !isRecord(feature.geometry)));
-  if (invalid >= 0) throw new Error(`ungültiges GeoJSON-Feature ${invalid}: ${url}`);
+  if (invalid >= 0) throw new Error(`invalid GeoJSON feature ${invalid}: ${url}`);
   return collection;
 }
 
@@ -228,18 +226,18 @@ function fallbackFor(key) {
 }
 
 function dispatchDataEvent(name, key) {
-  try { window.dispatchEvent(new CustomEvent(name, { detail: { key } })); } catch { /* kein DOM */ }
+  try { window.dispatchEvent(new CustomEvent(name, { detail: { key } })); } catch { /* No DOM. */ }
 }
 
 async function load() {
   const entries = await Promise.all(Object.entries(FILES).map(async ([k, url]) => {
-    const isObj = OBJECT_FILES.has(k);
+    const isObject = OBJECT_FILES.has(k);
     try {
-      // Formprüfung (C4): eine Datei, die zwar parst, aber die falsche Grundform
-      // hat (z. B. projects.json → {}), landet so im Ausfallpfad statt später
-      // beim ersten Accessor (`{}.find`) zu werfen.
-      let value = await fetchJSON(url, { shape: isObj ? 'object' : 'array' });
-      if (!isObj) value = validateRecords(value, url, k);
+      // Shape validation (C4) sends a file that parses but has the wrong root
+      // shape (for example projects.json → {}) down the failure path instead of
+      // throwing later in the first accessor (`{}.find`).
+      let value = await fetchJSON(url, { shape: isObject ? 'object' : 'array' });
+      if (!isObject) value = validateRecords(value, url, k);
       if (k === 'reference') value = safeDictionary(value);
       FAILED.delete(k);
       return [k, value];
@@ -253,50 +251,50 @@ async function load() {
   return DATA;
 }
 
-// Hauptbild + Bildnachweis kommen aus der kuratierten Auswahl `bilder` DIREKT am
-// Objekt (buildings.geojson / parcels.geojson) — das erste Bild ist das Hauptbild.
-// data/media.json wird dafür NICHT mehr gelesen (das Register bleibt allein der
-// Mediathek vorbehalten). Ohne `bilder` bleibt das Objekt bildlos (Farbfläche),
-// statt einen Unsplash-Platzhalter zu zeigen.
+// Main image and attribution come DIRECTLY from the object's curated raw
+// `bilder` selection (buildings.geojson / parcels.geojson); the first image is
+// the main image. data/media.json is NO LONGER read for this purpose (the
+// register belongs solely to the media library). Without `bilder`, the object
+// remains image-free (a colour surface) instead of showing an Unsplash filler.
 function linkMedia() {
-  for (const o of [...(DATA.buildings || []), ...(DATA.parcels || [])]) {
-    const b0 = (o.bilder || [])[0];
-    o.photoSrc = b0 ? (b0.src || '') : '';
-    o.photo = '';
-    o.bildCredit = b0 ? (b0.credit || '') : '';
-    o.bildQuelle = b0 ? (b0.sourceUrl || '') : '';
+  for (const object of [...(DATA.buildings || []), ...(DATA.parcels || [])]) {
+    const firstImage = (object.images || [])[0];
+    object.photoSrc = firstImage ? (firstImage.src || '') : '';
+    object.photo = '';
+    object.imageCredit = firstImage ? (firstImage.credit || '') : '';
+    object.imageSource = firstImage ? (firstImage.sourceUrl || '') : '';
   }
 }
 
-// --- Nachladen aufschiebbarer Bestände (H4) ---------------------------------
-// Je Schlüssel EIN Versprechen, gemerkt: zehn Aufrufe erzeugen eine Anfrage, und
-// wer später kommt, wartet auf dieselbe. Fehlschläge landen im selben Register
-// wie beim Start, damit das Fehlerband auch nachgeladene Ausfälle zeigt.
+// --- Loading deferred datasets (H4) -----------------------------------------
+// ONE remembered promise per key means ten calls create one request and later
+// callers await the same one. Failures enter the same register as startup
+// failures so the error banner also shows deferred failures.
 const PENDING = new Map();
 const LOADED = new Set();
 
 async function loadDeferred(key) {
   const url = DEFERRED[key];
-  const isObj = OBJECT_FILES.has(key);
+  const isObject = OBJECT_FILES.has(key);
   try {
-    // GeoJSON-Bestände tragen {type,features} statt einer Liste und werden beim
-    // Laden auf die schlanke Form normalisiert, die alle Ansichten lesen.
-    const GEO = { buildings: normalizeBuilding, parcels: normalizeParcel, landcovers: normalizeLandcover };
-    const ID = { buildings: 'bbl_id', parcels: 'bbl_id', landcovers: 'parcelId' };
-    if (GEO[key]) {
-      const fc = validateFeatureCollection(await fetchJSON(url, { shape: 'object' }), url);
-      DATA[key] = (fc.features || []).map(GEO[key]).filter((x) => x[ID[key]]);
-      // Hauptbild/Bildnachweis stehen an den Objekten selbst; nach jedem der
-      // beiden Bestände neu verknüpfen, weil sie unabhängig eintreffen können.
+    // GeoJSON datasets carry {type,features} rather than a list and are
+    // normalised during loading into the compact shape consumed by every view.
+    const NORMALIZERS = { buildings: normalizeBuilding, parcels: normalizeParcel, landcovers: normalizeLandcover };
+    const ID_FIELDS = { buildings: 'bbl_id', parcels: 'bbl_id', landcovers: 'parcelId' };
+    if (NORMALIZERS[key]) {
+      const featureCollection = validateFeatureCollection(await fetchJSON(url, { shape: 'object' }), url);
+      DATA[key] = (featureCollection.features || []).map(NORMALIZERS[key]).filter((item) => item[ID_FIELDS[key]]);
+      // Main image and attribution live on the objects. Relink after either
+      // dataset because buildings and parcels can arrive independently.
       if (key === 'buildings' || key === 'parcels') linkMedia();
     } else {
-      let value = await fetchJSON(url, { shape: isObj ? 'object' : 'array' });
-      if (isObj) value = safeDictionary(value);
+      let value = await fetchJSON(url, { shape: isObject ? 'object' : 'array' });
+      if (isObject) value = safeDictionary(value);
       else value = validateRecords(value, url, key);
       DATA[key] = value;
-      // Der Rückwärtsindex der Abbildungen wurde womöglich schon gebaut, als
-      // der Bestand noch leer war (zwei Routen, zwei ensure-Aufrufe) — dann
-      // zeigte die Tabellenansicht dauerhaft «keine Begriffe realisiert».
+      // The reverse mapping index may have been built while the dataset was
+      // still empty (two routes, two ensure calls), which would leave the table
+      // view permanently showing an empty-realisation message.
       if (key === 'businessObjects') MAP_INDEX = null;
     }
     const recovered = FAILED.delete(key);
@@ -308,22 +306,22 @@ async function loadDeferred(key) {
     FAILED.add(key);
     LOADED.delete(key);
     DATA[key] = fallbackFor(key);
-    // Das Fehlerband wurde beim Start gezeichnet und kennt diesen Ausfall noch
-    // nicht — ohne das Ereignis bliebe er unsichtbar.
+    // The error banner was rendered at startup and does not know about this
+    // failure yet; without the event, it would remain invisible.
     dispatchDataEvent('core:data-failed', key);
     return false;
   }
 }
 
-// ensure('assets','costs') → Promise. Bereits beim Start geladene Schlüssel
-// werden übergangen; unbekannte Schlüssel lehnen das Versprechen ab, damit ein
-// Tippfehler in einer Route nicht wie ein erfolgreich geladener Bestand wirkt.
+// ensure('assets','costs') → Promise. Keys loaded at startup are skipped;
+// unknown keys reject the promise so a route typo cannot look like a successful
+// dataset load.
 function ensure(...keys) {
   const requested = keys.flat();
   const unknown = requested.filter((key) => typeof key !== 'string'
     || (!hasOwn(DEFERRED, key) && !hasOwn(FILES, key)));
   if (unknown.length) {
-    return Promise.reject(new Error(`Unbekannte Datenschlüssel: ${unknown.map(String).join(', ')}`));
+    return Promise.reject(new Error(`Unknown data keys: ${unknown.map(String).join(', ')}`));
   }
   const list = [...new Set(requested.filter((key) => hasOwn(DEFERRED, key)))];
   return Promise.all(list.map((k) => {
@@ -338,15 +336,15 @@ function ensure(...keys) {
 
 const find = (arr, key, id) => (arr || []).find(x => x && x[key] === id);
 
-// --- Metadatenkatalog: Gegenrichtung der Abbildung --------------------------
-// Die Abbildungen stehen AM ATTRIBUT des Geschäftsobjekts — das ist die
-// Richtung, in der sie gepflegt werden («welches Feld trägt diesen Begriff?»).
-// Die Tabellenansicht braucht die Gegenfrage («welchen Begriff realisiert
-// dieses Feld?»). Statt sie je Feld über den ganzen Bestand zu suchen, wird der
-// Index einmal je Laden gebaut; loadDeferred() verwirft ihn, wenn der Bestand
-// neu eintrifft. Der Schlüssel verbindet Tabellen- und Feldname mit «|» — das
-// Zeichen kommt in keiner Kennung vor (Tabellen: a-z0-9-, Felder: A-Za-z0-9_),
-// mit einem gewöhnlichen Trenner kollidierte «a.b»+«c» mit «a»+«b.c».
+// --- Metadata catalogue: reverse mapping direction -------------------------
+// Mappings live ON THE ATTRIBUTE of a business object; that is their authoring
+// direction («which field carries this concept?»). The table view needs the
+// inverse question («which concept does this field realise?»). Instead of
+// searching the entire dataset for each field, the index is built once per load;
+// loadDeferred() discards it when fresh data arrives. Its key joins table and
+// field names with «|», a character absent from both identifier alphabets
+// (tables: a-z0-9-, fields: A-Za-z0-9_). A common separator would make
+// «a.b»+«c» collide with «a»+«b.c».
 let MAP_INDEX = null;
 function mapIndex() {
   if (MAP_INDEX) return MAP_INDEX;
@@ -371,30 +369,29 @@ export const core = {
   building: (id) => find(DATA.buildings, 'bbl_id', id),
   parcels: () => DATA.parcels || [],
   parcel: (id) => find(DATA.parcels, 'bbl_id', id),
-  // Grundstücke eines Gebäudes (oder umgekehrt) über das WE-Segment der bbl_id.
+  // Parcels for a building (or vice versa) through the business-entity segment of bbl_id.
   parcelsForBuilding: (bid) => { const we = String(bid || '').split('/')[1]; return (DATA.parcels || []).filter(p => String(p.bbl_id).split('/')[1] === we); },
   projects: () => DATA.projects || [],
   project: (id) => find(DATA.projects, 'projectId', id),
-  // Liegenschaften-Inventar-Detailregister — je Gebäude über buildingId (= bbl_id).
+  // Property-inventory detail registers per building via buildingId (= bbl_id).
   assetsForBuilding: (bid) => (DATA.assets || []).filter(a => a.buildingId === bid),
   contractsForBuilding: (bid) => (DATA.contracts || []).filter(c => c.buildingId === bid),
   costsForBuilding: (bid) => (DATA.costs || []).filter(c => c.buildingId === bid),
   areasForBuilding: (bid) => (DATA.areas || []).filter(a => a.buildingId === bid),
   buildingContactsFor: (bid) => (DATA.buildingContacts || []).filter(c => c.buildingId === bid),
-  // Bodenbedeckung je Grundstück (parcelId = bbl_id des Grundstücks).
+  // Land cover per parcel (parcelId = the parcel's bbl_id).
   landcoversForParcel: (pid) => (DATA.landcovers || []).filter(l => l.parcelId === pid),
-  // Mietendenportal. `floorsForTenancy` liest die Geschossliste AM
-  // Mietverhältnis (gemietet ist ein Geschoss, nicht das Gebäude) — nicht alle
-  // Geschosse des Hauses.
-  // Metadatenkatalog. `realisedBy` beantwortet die Gegenfrage zur Abbildung
-  // (Feld → Begriffe), `realisationsOf` sammelt alle Abbildungen EINES
-  // Geschäftsobjekts über seine Attribute hinweg — beides braucht keine dritte
-  // Datei, nur den Index oben.
+  // Tenant portal. `floorsForTenancy` reads the floor list ON the tenancy (a
+  // floor is rented, not the building), rather than every floor in the building.
+  // Metadata catalogue. `realisedBy` answers the inverse mapping question
+  // (field → concepts), while `realisationsOf` gathers every mapping for ONE
+  // business object across its attributes. Both need only the index above, not
+  // a third file.
   businessObjects: () => DATA.businessObjects || [],
   businessObject: (id) => find(DATA.businessObjects, 'objectId', id),
   systemTables: () => DATA.systemTables || [],
   systemTable: (id) => find(DATA.systemTables, 'tableId', id),
-  // Prozessdokumentation Bauten — flache Liste, Detailsuche über die processId.
+  // Building process documentation: flat list, detail lookup by processId.
   processes: () => DATA.processes || [],
   processDoc: (id) => find(DATA.processes, 'processId', id),
   shopProducts: () => DATA.shopProducts || [],
@@ -405,7 +402,7 @@ export const core = {
   realisationsOf: (o) => (Array.isArray(o?.attributes) ? o.attributes : [])
     .flatMap((a) => (Array.isArray(a?.mappings) ? a.mappings : [])
       .map((m) => ({ attribute: a.name, ...m }))),
-  // Alle Abbildungen, die in EINE Tabelle zeigen — für die Tabellen-Detailseite.
+  // Every mapping that points to ONE table, for the table detail page.
   realisationsForTable: (tableId) => {
     const out = [];
     for (const o of DATA.businessObjects || []) {
@@ -432,11 +429,11 @@ export const core = {
   documents: () => DATA.documents || [],
   documentsForBuilding: (bid) => (DATA.documents || []).filter(d => (d.linkedTo || []).includes(bid)),
   media: () => DATA.media || [],
-  // «Wissen und Hilfsmittel» hat KEINEN Bestand: Vorgaben, Vorlagen, Anleitungen
-  // und Prozesse sind statische Seiten (js/pages/knowledge.js, regulations.js).
-  // Es sind Dokumentenverzeichnisse zum Nachlesen und Herunterladen — eine
-  // Weisung ist ein anderswo erlassenes Dokument, und das Portal verlinkt sie,
-  // statt sie zu katalogisieren (docs/sitemap.md §2.4).
+  // The knowledge-and-resources area has NO dataset: standards, templates, instructions
+  // and processes are static pages (js/pages/knowledge.js, regulations.js).
+  // These are document directories for reading and downloading. A directive is
+  // a document issued elsewhere, and the portal links to it instead of
+  // cataloguing it (docs/sitemap.md §2.4).
   news: () => DATA.news || [],
   newsItem: (id) => find(DATA.news, 'id', id),
   contacts: () => DATA.contacts || [],
@@ -450,8 +447,8 @@ export const core = {
     const labels = DATA.catalogLabels;
     return labels && hasOwn(labels, key) ? labels[key] : (fallback || key);
   },
-  // Datenausfall-Status (P0-4): available() sagt, ob ein Schlüssel geladen wurde;
-  // failedAreas() liefert die fachlichen Namen der ausgefallenen Bereiche.
+  // Data-failure state (P0-4): available() reports whether a key loaded, while
+  // failedAreas() returns the domain labels of failed areas.
   available: (key) => !FAILED.has(key),
-  failedAreas: () => Array.from(FAILED).map(k => hasOwn(AREA, k) ? AREA[k] : k),
+  failedAreas: () => Array.from(FAILED).map(k => hasOwn(DATA_AREA_LABELS, k) ? DATA_AREA_LABELS[k] : k),
 };

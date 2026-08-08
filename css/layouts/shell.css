@@ -1,27 +1,26 @@
 /* Breadcrumb (breadcrumb.postcss:5-70) */
-/* Tinte text-500 wie CD (breadcrumb.postcss:8) — JEDE Krume, auch die aktive;
-   #6b7280 misst 4.83:1 auf Weiss (AA). Ausrichtung/Lücke hier statt auf der
-   CD-neutralen .container--flex-Basis. */
+/* Ink text-500 as in CD (breadcrumb.postcss:8), for EVERY crumb including the
+   active one; #6b7280 measures 4.83:1 on white (AA). Alignment/gap live here,
+   not on the CD-neutral .container--flex base. */
 .breadcrumb { background:transparent; border-bottom:0; font-size:var(--fs-sm); color:var(--color-text-500);
   align-items:center; gap:var(--sp-4); position:relative; z-index:var(--breadcrumb-z); }
 .breadcrumb ul { list-style:none; display:flex; flex-wrap:wrap; align-items:center; padding-block:var(--sp-2); margin-left:calc(-1 * var(--sp-4)); }
 @media (min-width:1280px){ .breadcrumb ul { padding-block:var(--sp-3); } }
 .breadcrumb li { display:flex; align-items:center; color:var(--color-text-500); }
-/* py-4 (1rem): die Brotkrume rendert nur ≥1024px, dort gilt CDs md:py-4
-   (breadcrumb.postcss:23-27) — py-2 war die unsichtbare Mobilstufe. */
+/* py-4 (1rem): the breadcrumb renders only at ≥1024px, where CD's md:py-4
+   applies (breadcrumb.postcss:23-27); py-2 was the invisible mobile step. */
 .breadcrumb a, .breadcrumb [aria-current] { display:flex; align-items:center; padding:var(--sp-4); text-decoration:none; }
 .breadcrumb a { color:var(--color-text-500); }
 .breadcrumb a:hover { color:var(--color-primary-600); text-decoration:none; }
-/* Trenn-Chevron in SvgIcon-Basisgrösse 1rem (BreadcrumbNavigation.vue:108-112 →
-   icons.postcss:23-25 h-4); die Ränder sind CDs -ml-5 mr-3 und stimmen bereits. */
+/* Separator chevron at SvgIcon's 1rem base size (BreadcrumbNavigation.vue:108-112
+   → icons.postcss:23-25 h-4); margins already match CD's -ml-5 mr-3. */
 .breadcrumb__include-icon { margin-left:calc(-1 * var(--sp-5)); margin-right:var(--sp-3); width:var(--sp-4); height:var(--sp-4); }
 @media (max-width:1023.98px){ .breadcrumb { display:none; } }
 
 /* Footer (footer.postcss:5-104) */
-/* Der Footer bildet den Bezugsrahmen für den Back-to-top-Knopf; sein
-   Stacking-Context liegt über dem Inhalt (--z-content), aber unter dem
-   Dokumentbetrachter (--z-viewer), damit der Knopf stets sichtbar
-   ist, ohne Modale zu überdecken. */
+/* The footer forms the back-to-top button's reference frame; its stacking
+   context sits above content (--z-content) but below the document viewer
+   (--z-viewer), keeping the button visible without covering modals. */
 .site-footer { position:relative; z-index:var(--z-footer); }
 .footer-information { display:flex; flex-direction:column; color:var(--color-text-negative); padding-block:var(--section-py); }
 @media (min-width:1024px){ .footer-information { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-16); } }
@@ -46,100 +45,99 @@
 .footer-information__links .footer__link { width:100%; display:flex; justify-content:space-between;
   padding:var(--sp-4) var(--sp-2); border-bottom:var(--stroke-1) solid var(--color-secondary-300); }
 .footer-information__links .footer__link:hover { background:var(--color-secondary-700); color:var(--color-text-negative); }
-/* CD footer.postcss:100-102: in den Linkzeilen wächst NUR die Icon-Höhe auf h-6
-   (1.5rem); die Breite bleibt CDs w-[1.4em] (footer.postcss:28). */
+/* CD footer.postcss:100-102: in link rows ONLY icon height grows to h-6
+   (1.5rem); width remains CD's w-[1.4em] (footer.postcss:28). */
 .footer-information__links .footer-information__icon { height:var(--sp-6); }
 .footer-information__link--icon-right { flex-direction:row-reverse; }
-/* CD footer.postcss:33-38: relative ml-[0.2em] left-[0.1em] — der optische Nudge
-   rückt das rechtsstehende Icon an die Zeilenkante. */
+/* CD footer.postcss:33-38: relative ml-[0.2em] left-[0.1em]; the optical nudge
+   moves the right-hand icon to the line edge. */
 .footer-information__link--icon-right .footer-information__icon { position:relative; left:.1em; margin-left:.2em; margin-right:0; }
 .footer-navigation { list-style:none; display:flex; flex-wrap:wrap; padding-block:var(--sp-3); gap:var(--sp-2);
   font-size:var(--text-xs); color:var(--color-secondary-100); }
 @media (min-width:640px){ .footer-navigation { gap:var(--sp-4); } }
-/* Keine eigene Linkfarbe im Rechtsband: die Basis .footer__link gilt unverändert
-   (weiss ruhend → gray-300 Hover/Fokus, CD footer.postcss:19-23) — die frühere
-   Invertierung (grau → weiss) stand dem CD genau entgegen (nav/ft-2). */
+/* No dedicated link color in the right band: base .footer__link applies
+   unchanged (white at rest → gray-300 on hover/focus, CD footer.postcss:19-23).
+   The former inversion (gray → white) directly opposed CD (nav/ft-2). */
 
 /* Page chrome */
 .site-main { min-height:50vh; flex:1 0 auto; position:relative; z-index:var(--z-content); }
-/* Lesbare Zeilenlänge (Item 2.18). CD erzwingt sie strukturell über
-   container__center--*; .page-header und .detail-section sitzen aber nicht im
-   12-Spalten-Raster, darum hier als Kappung. Gemessen bei 1440: Leads 133ch,
-   Fliesstext 148-166ch — rund das Doppelte des Lesbaren. */
-/* Ohne eigenen Deckel: die 60rem liessen Titel und Lead mitten im Textfluss
-   umbrechen, während der Container ringsum deutlich breiter war — der Umbruch
-   wirkte willkürlich. Das Mass regelt jetzt allein die Spalte, in der der Kopf
-   steht (CD macht es genauso: kein max-width auf Textklassen, sondern
-   container__center--* um den Inhalt). */
+/* Readable line length (Item 2.18). CD enforces it structurally through
+   container__center--*, but .page-header and .detail-section do not sit in the
+   12-column grid, hence this cap. Measured at 1440: leads 133ch, body copy
+   148-166ch, roughly twice a readable length. */
+/* No independent cap: 60rem made title and lead wrap in mid-flow while the
+   surrounding container was much wider, making the wrap look arbitrary. The
+   column containing the header now controls measure alone (CD does the same:
+   no max-width on text classes, but container__center--* around content). */
 .page-header { padding:var(--sp-1) 0 var(--sp-6); }
 .page-header h1 { margin-bottom:var(--sp-1); }
-/* EIN Lead-Rezept, ungebunden (statt je Kontext kopiert). */
+/* ONE unscoped lead recipe, instead of one copy per context. */
 .lead { font-size:var(--text-lg); color:var(--color-text-muted); }
-/* Keine max-width-Deckel mehr auf Lead, Seitenkopf oder Lead-Hinweis: sie
-   brachen den Text mitten im Fluss um, während der Container ringsum breiter
-   war. Das Mass kommt jetzt ausschliesslich aus der Spalte, in der der Text
-   steht — genau wie im CD, das keine Deckel auf Textklassen kennt, sondern
-   `container__center--*` um den Inhalt legt. Wo eine Fläche zu breit misst, ist
-   die Antwort das Spaltenraster (Stufe 7), nicht ein Deckel an der Klasse. */
-/* KEINE 70ch-Einzeldeckel mehr an detail-/anchor-section-Prosa: das Mass
-   kommt aus der Spalte (container__main 60rem bzw. der measure-xl-Artikel-
-   Wrapper der Blattseiten) — Einzeldeckel erzeugten genau die ausgefransten
-   Breiten («Text endet, Kasten läuft weiter»), die die Review moniert (C25). */
-/* Der 70ch-Deckel auf `.search-result` ist ENTFALLEN: das CD legt die
-   Ergebnisliste ohne `container__center--*` direkt in den `.container`
-   (searchResults.vue:45-46), die Treffer nehmen also die volle Containerbreite.
-   Der Deckel liess die Zeile bei 70ch enden, während Trennlinie und Umgebung
-   weiterliefen — die Liste wirkte eingerückt statt bündig. Die lange Zeile ist
-   dabei in Kauf genommen: Titel und zweizeiliger Beschreibungstext sind kurz,
-   und das CD kennt für diese Komponente keinen Deckel. */
-/* DOKUMENTIERTE AUSNAHME vom Spalten-Mass (C25): Notifications können in
-   vollbreiten Kontexten stehen (Fehlerbänder, Dashboards) — die 70ch sind
-   eine komponenten-interne Lesbarkeitsgrenze, kein Spalten-Ersatz. */
+/* No more max-width caps on lead, page header or lead notice: they wrapped text
+   in mid-flow while the surrounding container was wider. Measure now comes
+   exclusively from the column containing the text, exactly as in CD, which
+   places `container__center--*` around content instead of capping text classes.
+   Where a surface measures too wide, the answer is the column grid (Stage 7),
+   not a cap on the class. */
+/* NO individual 70ch caps on detail-/anchor-section prose: measure comes from
+   the column (container__main at 60rem or the measure-xl article wrapper on
+   sheet pages). Individual caps created exactly the ragged widths ("text ends,
+   box continues") criticized in the review (C25). */
+/* The 70ch cap on `.search-result` was REMOVED: CD places the result list
+   directly in `.container` without `container__center--*`
+   (searchResults.vue:45-46), so results use the full container width. The cap
+   ended the line at 70ch while divider and surroundings continued, making the
+   list look indented instead of aligned. The long line is accepted: titles and
+   two-line descriptions are short, and CD defines no cap for this component. */
+/* DOCUMENTED EXCEPTION to column measure (C25): notifications can appear in
+   full-width contexts (error banners, dashboards); 70ch is a component-internal
+   readability limit, not a substitute for a column. */
 .notification__content > p,
-.notification__content > ul { max-width:70ch; }       /* die Login-Gates massen 137ch */
-/* Der frühere 70ch-Vorgriff auf .container__main-Kinder ist entfallen —
-   die Spalte selbst misst 60rem (siehe Rasterregeln oben, C25). */
-/* De-emphasised suffix in a case title: «BBL-2026-1042 — <Titel>» (tenant-portal page-header__count) */
+.notification__content > ul { max-width:70ch; }       /* Login gates measured 137ch */
+/* The former 70ch preemption on .container__main children is gone; the column
+   itself measures 60rem (see grid rules above, C25). */
+/* De-emphasized suffix in a case title: `BBL-2026-1042 — <title>` (tenant-portal page-header__count) */
 .case-title-sub { font-weight:var(--fw-regular); color:var(--color-text-muted); }
-/* Mass am Elternelement statt am Absatz (C25): der Einleitungskopf der
-   Anker-Seiten deckelt als Block — Lead und Intro enden damit bündig. */
+/* Measure on the parent instead of the paragraph (C25): the introductory
+   header of anchor pages is capped as a block, aligning the lead and intro. */
 .anchor-page__header { max-width:60rem; }
 .page-intro { margin-top:0; }
 
 /* Hero (hero.postcss:5-155) — CD heroes sit on white; tint comes from bg-- sections */
 .hero { padding-top:var(--section-pt); padding-bottom:var(--section-py); background:none; border-bottom:0; }
-/* Der frühere :has()-Sonderfall für Nur-Titel-Heros ist entfallen: sein einziger
-   Konsument (Metadatenkatalog-Details) trägt jetzt das App-Detail-Rezept
-   detailBar + h1 statt eines Heros (Design-Review B2). */
+/* The former :has() special case for title-only heroes is gone: its only
+   consumer (metadata-catalogue details) now uses the app-detail recipe
+   detailBar + h1 instead of a hero (Design Review B2). */
 .hero__content { display:flex; flex-direction:column; gap:var(--sp-6); max-width:60rem; }
 @media (min-width:1024px){ .hero__content { gap:var(--sp-8); } }
 @media (min-width:1920px){ .hero__content { gap:var(--sp-10); } }   /* hero.postcss:14-16 3xl:space-y-10 */
-/* CD hero--title-only = 6/12 Spalten (container__center--xs). BEWUSSTE
-   ABWEICHUNG: das CD ZENTRIERT diese Spalte (container.postcss:65-87); hier
-   bleibt sie linksbündig — dieselbe Entscheidung wie bei .container__main
-   (oben): über den Detailköpfen stehen Zurück-Leiste und Reiter in Spalte 1,
-   eine zentrierte Überschrift läse sich als Fehlausrichtung. */
+/* CD hero--title-only = 6/12 columns (container__center--xs). DELIBERATE
+   DEVIATION: CD CENTERS this column (container.postcss:65-87); here it stays
+   flush left, the same decision as .container__main above. The back bar and
+   tabs over detail headers start in column 1, so a centered heading would read
+   as misalignment. */
 .hero:not(.hero--main-image) .hero__content { max-width:42rem; }
-/* text--3xl wie CDs .hero__title (hero.postcss:18-22) UND wie h1/.h1 — text--4xl
-   ist im CD allein hero--main vorbehalten. Vorher war die Hero-h1 eine Stufe
-   grösser als jede andere h1 im Produkt. */
+/* text--3xl matches CD's .hero__title (hero.postcss:18-22) AND h1/.h1; text--4xl
+   is reserved for hero--main in CD. Previously the hero h1 was one step larger
+   than every other h1 in the product. */
 .hero__title { font-size:var(--text-3xl); font-weight:var(--fw-bold); line-height:var(--lh-tight);
   overflow-wrap:anywhere; margin:0; }
-/* BEWUSSTE ABWEICHUNG: CD lässt die Hero-Beschreibung in Standardtinte
-   (hero.postcss:30-34 — nur text--lg leading-snug). Der gedämpfte Lead ist
-   eine portalweite Konvention — .page-header .lead und der Startseiten-Lead
-   tragen dieselbe muted text-lg-Stimme; EINE Lead-Optik im ganzen Produkt. */
+/* DELIBERATE DEVIATION: CD leaves the hero description in default ink
+   (hero.postcss:30-34, only text--lg leading-snug). The muted lead is a
+   portal-wide convention: .page-header .lead and the home-page lead share the
+   same muted text-lg voice; ONE lead treatment across the product. */
 .hero__description { font-size:var(--text-lg); line-height:var(--lh-snug); color:var(--color-text-muted); margin:0; }
-/* CD-Abstandsrampe der CTA-Zeile (hero.postcss:36-39 mr/mb-4 md:5 xl:6 auf den
-   Knöpfen — hier als flex-gap, gleiches Mass). */
+/* CD spacing ramp for the CTA row (hero.postcss:36-39 mr/mb-4 md:5 xl:6 on
+   buttons; represented here as flex-gap at the same measure). */
 .hero__cta { display:flex; flex-wrap:wrap; gap:var(--sp-4); }
 @media (min-width:768px){ .hero__cta { gap:var(--sp-5); } }
 @media (min-width:1280px){ .hero__cta { gap:var(--sp-6); } }
 /* hero--main-image (hero.postcss:70-88): content and image share the 12-col
    grid from md up; below that the content stacks above the image. */
-/* Kein eigenes Padding: oben nullt die .detail-bar-Regel (unten §Detailseiten),
-   unten gilt .heros var(--section-py) — CDs container--py-Rhythmus. Der Spalten-
-   abstand ist CDs gap--responsive (hero.postcss:79 grid--responsive-cols-2). */
+/* No independent padding: the .detail-bar rule (Detail pages below) resets the
+   top; .heros var(--section-py) applies below, following CD's container--py
+   rhythm. Column spacing is CD's gap--responsive
+   (hero.postcss:79 grid--responsive-cols-2). */
 .hero--main-image { display:grid; gap:var(--gap-responsive); }
 .hero--main-image .hero__content { max-width:none; }
 @media (min-width:768px){
@@ -147,12 +145,12 @@
   .hero--main-image .hero__content { justify-content:center; }
 }
 .hero__image { display:block; position:relative; overflow:hidden; width:100%; }
-/* Die <figure> im Hero trägt sonst den UA-Standardrand `margin:1em 40px`: das
-   Bild füllte seine Rasterspalte nicht, sondern stand links wie rechts 40px
-   eingerückt, und die 1em oben/unten verschoben es gegen die mittig gesetzte
-   Textspalte. `.chart` und `.home-hero__figure` nullen genau denselben Rand je
-   für sich — hier strukturell über `.hero__image figure`, damit die nächste
-   Hero-Seite nicht die vierte Einzelfallregel braucht. */
+/* Otherwise the <figure> in a hero carries the user-agent default
+   `margin:1em 40px`: the image did not fill its grid column, sat 40px inset on
+   both sides, and the 1em above/below offset it from the vertically centered
+   text column. `.chart` and `.home-hero__figure` each reset the same margin;
+   this structural `.hero__image figure` rule prevents the next hero page from
+   needing a fourth special case. */
 .hero__image figure, .hero__figure { margin:0; }
 .hero__image .photo { width:100%; }
 .hero__image .hero-media--natural > img { position:static; width:100%; height:auto; object-fit:contain; }

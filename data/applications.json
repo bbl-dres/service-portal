@@ -41,7 +41,7 @@
     "contact": "immobilienmanagement",
     "updated": "2026-07-30",
     "bild": {
-      "src": "assets/images/applications/liegenschaften-inventar.jpg",
+      "src": "assets/images/applications/property-inventory.jpg",
       "titel": "Contemporary building facade with reflective glass windows in an urban environment.",
       "fotograf": "Mindaugas U",
       "credit": "Mindaugas U — Pexels",
@@ -92,7 +92,7 @@
     "contact": "immobilienmanagement",
     "updated": "2026-07-30",
     "bild": {
-      "src": "assets/images/applications/mietende.jpg",
+      "src": "assets/images/applications/tenants.jpg",
       "titel": "Spacious empty office with rows of desks and large windows.",
       "fotograf": "cottonbro studio",
       "credit": "cottonbro studio — Pexels",
@@ -150,7 +150,7 @@
     "contact": "projektmanagement",
     "updated": "2026-07-30",
     "bild": {
-      "src": "assets/images/applications/bauprojekte-eppm.jpg",
+      "src": "assets/images/applications/construction-projects-eppm.jpg",
       "titel": "Urban construction site featuring multiple tower cranes against a city skyline.",
       "fotograf": "Engin Akyurt",
       "credit": "Engin Akyurt — Pexels",
@@ -199,7 +199,7 @@
     "contact": "lcdm-bim",
     "updated": "2026-05-20",
     "bild": {
-      "src": "assets/images/applications/dokumentenarchiv.jpg",
+      "src": "assets/images/applications/document-archive.jpg",
       "titel": "Engineer reviewing architectural blueprints on a desk with technical drawings.",
       "fotograf": "Tima Miroshnichenko",
       "credit": "Tima Miroshnichenko — Pexels",
@@ -245,7 +245,7 @@
     "contact": "kommunikation",
     "updated": "2026-07-30",
     "bild": {
-      "src": "assets/images/applications/mediathek.jpg",
+      "src": "assets/images/applications/media-library.jpg",
       "titel": "A photographer focuses on Seattle's architecture through a camera lens, highlighting the c",
       "fotograf": "Josh Hild",
       "credit": "Josh Hild — Pexels",
@@ -387,7 +387,7 @@
     "contact": "dres",
     "updated": "2026-07-30",
     "bild": {
-      "src": "assets/images/applications/datenportal.jpg",
+      "src": "assets/images/applications/data-portal.jpg",
       "titel": "A laptop displaying an analytics dashboard with real-time data tracking and analysis tools",
       "fotograf": "Atlantic Ambience",
       "credit": "Atlantic Ambience — Pexels",
@@ -435,7 +435,7 @@
     "contact": "dres",
     "updated": "2026-07-30",
     "bild": {
-      "src": "assets/images/applications/datenbezug.jpg",
+      "src": "assets/images/applications/data-access.jpg",
       "titel": "Detailed view of programming code in a dark theme on a computer screen.",
       "fotograf": "Stanislav Kondratiev",
       "credit": "Stanislav Kondratiev — Pexels",
@@ -576,7 +576,7 @@
     "contact": "campus",
     "updated": "2026-08-05",
     "bild": {
-      "src": "assets/images/applications/raumbuchung.jpg",
+      "src": "assets/images/applications/room-booking.jpg",
       "titel": "Sleek, minimalist conference room with glass walls, long table, and office chairs.",
       "fotograf": "Pixabay",
       "credit": "Pixabay — Pexels",
@@ -1418,7 +1418,7 @@
     "contact": "warengruppe-publikationen",
     "updated": "2026-07-30",
     "bild": {
-      "src": "assets/images/applications/bundespublikationen.jpg",
+      "src": "assets/images/applications/federal-publications.jpg",
       "titel": "Colorful collection of travel brochures on display at a bookstore.",
       "fotograf": "Owen.outdoors",
       "credit": "Owen.outdoors — Pexels",

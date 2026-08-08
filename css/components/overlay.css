@@ -67,14 +67,14 @@
     border-top:0; border-left:var(--stroke-1) solid var(--border-negative); }
 }
 
-/* ---- Aktionsmenü (Kebab-Dropdown, wiederverwendbar) ------------------------
-   Eigener Namensraum `.action-menu` — `.menu`/`.menu__item` gehören der CD-
-   Navigations-Flyout-Komponente (menu.postcss) und dürfen nicht überschrieben
-   werden (sonst kippt das Drawer-Menü von Spalte auf Zeile). */
+/* ---- Action menu (reusable kebab dropdown) --------------------------------
+   Dedicated `.action-menu` namespace: `.menu`/`.menu__item` belong to CD's
+   navigation flyout component (menu.postcss) and must not be overridden, or
+   the drawer menu flips from column to row. */
 .action-menu { position:relative; display:inline-flex; }
-/* Auf den Dashboards ist dieser Kebab der EINZIGE Weg zu Export und Vollbild
-   eines Diagramms und mass 32x32 bzw. 40x40 (28 Treffer in smallTargets). Die
-   verkleinernde .dash-header-Überschreibung entfällt; nur Rahmen/Fläche bleiben. */
+/* On dashboards this kebab is the ONLY route to chart export and full screen,
+   and measured 32x32 or 40x40 (28 smallTargets hits). The shrinking
+   .dash-header override is gone; only border/surface remain. */
 .action-menu__trigger { display:inline-flex; align-items:center; justify-content:center;
   min-width:var(--control-h); min-height:var(--control-h);
   padding:var(--sp-1); border:0; border-radius:var(--radius-sm); background:none; color:var(--color-text-muted); cursor:pointer; }
@@ -89,8 +89,8 @@
 .action-menu__popup { position:absolute; top:calc(100% + var(--sp-1-5)); min-width:13rem; z-index:var(--z-nav);
   background:var(--color-bg); border:var(--stroke-1) solid var(--color-secondary-200); border-radius:var(--radius-lg);
   box-shadow:var(--shadow-lg); padding:var(--sp-1-5); }
-/* min-width:13rem sitzt auf .action-menu__popup: bei 320 öffnete das Menü teils
-   ausserhalb des Bildschirms. Gegen den Viewport klemmen (Item 2.29). */
+/* min-width:13rem sits on .action-menu__popup: at 320 the menu sometimes opened
+   partly off screen. Clamp it to the viewport (Item 2.29). */
 .action-menu__popup { max-width:calc(100vw - var(--sp-6)); }
 @media (max-width:479.98px){ .action-menu__popup { min-width:0; width:max-content; } }
 .action-menu__popup--end { right:0; }
@@ -109,84 +109,83 @@
 .action-menu__heading { padding:var(--sp-2) var(--sp-2-5) var(--sp-1); font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--color-text-muted); }
 .action-menu__sep { height:var(--stroke-1); background:var(--color-secondary-100); margin:var(--sp-1-5) var(--sp-1); }
 
-/* ---- Toast — CD toast-message (toast-message.postcss:5-18 + ToastMessage.vue):
-   fester Host bei bottom 10 %, innen eine normale .notification (Standard:
-   success + CheckmarkCircle), max. 500px breit. Die frühere dunkle Eigenbau-
-   Pille ist ersetzt; die Ansage für Screenreader läuft über #live (announce). */
+/* ---- Toast: CD toast-message (toast-message.postcss:5-18 + ToastMessage.vue).
+   Fixed host at bottom 10%, containing a normal .notification (default:
+   success + CheckmarkCircle), max 500px wide. This replaces the former dark
+   custom pill; #live (announce) handles the screen-reader announcement. */
 .toast__message { position:fixed; left:0; right:0; bottom:10%; z-index:var(--z-toast);
   display:flex; justify-content:center; pointer-events:none;
   opacity:0; transition:opacity var(--duration-slow); }
 .toast__message--in { opacity:1; }
 .toast__message .notification { max-width:500px; margin-inline:var(--sp-5); pointer-events:auto; }
-@media (prefers-reduced-motion: reduce) { .icon--spin { animation:none; } }   /* Toast-Transition deckt der Token-Killswitch (tokens.css) ab */
+@media (prefers-reduced-motion: reduce) { .icon--spin { animation:none; } }   /* The token kill switch (tokens.css) covers the toast transition */
 
-/* ---- Chart-Vollbild (Overlay) -------------------------------------------- */
-/* Scroll-Sperre für alle Vollbild-Overlays (Diagramm, Modal, Bildergalerie).
-   `overflow:hidden` allein auf dem <body> genügt NICHT: der Dokument-Scroller
-   ist hier das <html>-Element (app.css:33 setzt dort `overflow-y:scroll`, damit
-   die Bildlaufleiste keinen Layout-Sprung verursacht). Die Seitenleiste blieb
-   deshalb hinter dem Overlay aktiv — im Fit-Zustand eine nutzlose Leiste, beim
-   Hineinzoomen zwei senkrechte nebeneinander.
-   `scrollbar-gutter:stable` hält die Rinne beim Sperren frei, sonst würde die
-   Seite darunter um die Leistenbreite springen. */
+/* ---- Chart full screen (overlay) ----------------------------------------- */
+/* Scroll lock for every full-screen overlay (chart, modal, image gallery).
+   `overflow:hidden` on <body> alone is NOT enough: the document scroller here
+   is <html> (app.css:33 sets `overflow-y:scroll` there to prevent layout shift
+   from the scrollbar). The page scrollbar therefore stayed active behind the
+   overlay: useless in fit state and doubled vertically when zoomed in.
+   `scrollbar-gutter:stable` reserves the gutter during locking, or the page
+   beneath would jump by the scrollbar width. */
 html { scrollbar-gutter:stable; }
 html:has(> body.body--overlay-open) { overflow:hidden; }
 body.body--overlay-open { overflow:hidden; }
-/* Opaque Vollbildbetrachter müssen bis an den physischen Viewportrand reichen.
-   Mit `stable` bleibt die Wurzelrinne auch bei overflow:hidden 15 px breit;
-   fixed/inset:0 endet davor und lässt rechts einen leeren weissen Streifen.
-   Modale Dialoge behalten die stabile Rinne, damit der sichtbare Hintergrund
-   beim Öffnen nicht springt. */
+/* Opaque full-screen viewers must reach the physical viewport edge. With
+   `stable`, the root gutter stays 15px wide even under overflow:hidden;
+   fixed/inset:0 stops before it and leaves an empty white strip on the right.
+   Modal dialogs retain the stable gutter so their visible background does not
+   jump when opened. */
 html:has(> body > .pf-lightbox),
 html:has(> body > .docviewer) { overflow:hidden; scrollbar-gutter:auto; }
-/* ---- Kanonisches Modal (CD modal.postcss BEM) ----------------------------
-   Primitive für neue Dialoge (Bestätigungen, Formulare). Die bestehenden Overlays
-   (pf-lightbox, docviewer) bleiben eigenständig, teilen aber die
-   --z-*-Skala und das --overlay-scrim-Token. C.openModal() verdrahtet Fokusfalle,
-   Escape, Backdrop-Klick und Fokus-Rückgabe. */
-/* CD modal.postcss:10-35 — Dialog sitzt 10vh unter der Oberkante (nicht mittig),
-   Scrim ist text-900/70 (der hellere Bild-Scrim liess den Negativ-Fokusring
-   auf 1.82:1 fallen, WCAG 1.4.11). */
+/* ---- Canonical modal (CD modal.postcss BEM) ------------------------------
+   Primitive for new dialogs (confirmations, forms). Existing overlays
+   (pf-lightbox, docviewer) remain independent but share the --z-* scale and
+   --overlay-scrim token. C.openModal() wires focus trap, Escape, backdrop click
+   and focus restoration. */
+/* CD modal.postcss:10-35: dialog sits 10vh below the top edge (not centered),
+   and scrim is text-900/70. The lighter image scrim reduced the negative focus
+   ring to 1.82:1 (WCAG 1.4.11). */
 .modal { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:flex-start; justify-content:center; padding:10vh var(--sp-8); }
-/* Auf dem Telefon frisst 2rem+2rem Rahmen ~40 % der Breite. */
+/* On mobile, 2rem+2rem of framing consumes ~40% of the width. */
 @media (max-width:639.98px){ .modal { padding:5vh var(--sp-2); } }
 .modal__backdrop { position:absolute; inset:0; background:var(--modal-scrim); }
-/* CD-Anatomie (modal.postcss:31-104): der INHALT ist durchsichtig, die Kopfzeile
-   steht in weisser Schrift auf dem Scrim, und der eigentliche Inhalt sitzt in
-   einer weissen .card darin. Vorher war .modal__content selbst der weisse
-   Kasten mit einer Trennlinie unter dem Titel — das gibt es im CD nicht. */
+/* CD anatomy (modal.postcss:31-104): CONTENT is transparent, the header uses
+   white text on the scrim, and actual content sits in a white .card within it.
+   Previously .modal__content itself was the white box with a divider below the
+   title, which does not exist in CD. */
 .modal__content { position:relative; z-index:var(--z-local-content); width:min(640px,100%); max-height:80vh;
   display:flex; flex-direction:column; align-items:stretch; }
-/* CDs layout="xs" ist max-w-screen-xs = 480px. Mit 340px passte .share-url
-   (min-width 22rem = 352px) nicht hinein — daher die waagrechte Bildlaufleiste. */
-/* Grössenskala = CD-Screen-Token (modal.postcss:52-70 max-w-screen-*):
-   xs 480 · sm 640 · md 768 · lg 1024 · xl 1280. Vorher war sm (420) < xs (480). */
+/* CD's layout="xs" is max-w-screen-xs = 480px. At 340px, .share-url
+   (min-width 22rem = 352px) did not fit, causing a horizontal scrollbar. */
+/* Size scale = CD screen tokens (modal.postcss:52-70 max-w-screen-*):
+   xs 480 · sm 640 · md 768 · lg 1024 · xl 1280. Previously sm (420) < xs (480). */
 .modal--xs .modal__content { width:min(480px,100%); }
 .modal--sm .modal__content { width:min(640px,100%); }
 .modal--md .modal__content { width:min(768px,100%); }
 .modal--lg .modal__content { width:min(1024px,100%); }
 .modal--xl .modal__content { width:min(1280px,100%); }
-/* CD Modal.vue:9-25 + modal.postcss:77-86: der Kopf existiert IMMER (justify-end,
-   der Schliessen-Knopf sitzt rechts); erst --with-title schaltet auf between. */
+/* CD Modal.vue:9-25 + modal.postcss:77-86: the header ALWAYS exists
+   (justify-end, close button on the right); only --with-title switches to between. */
 .modal__header { display:flex; align-items:flex-start; justify-content:flex-end; gap:var(--sp-4);
   width:100%; margin-bottom:var(--sp-2); color:var(--color-text-negative); }
 .modal__header--with-title { justify-content:space-between; }
 @media (min-width:1024px){ .modal__header { margin-bottom:var(--sp-4); } }
-/* CDs Modal-Titel ist eine h4 = text--lg (Modal.vue:13, typography.postcss:121-124). */
+/* CD's modal title is an h4 = text--lg (Modal.vue:13, typography.postcss:121-124). */
 .modal__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--color-text-negative); }
 .modal__body { width:100%; overflow:auto; }
-/* Das Chart-Vollbild nutzt die .modal-Ebene; ohne diese Regel würde das
-   Diagramm dort als gerahmte Schattenkarte erscheinen. */
+/* Chart full screen uses the .modal layer; without this rule, the chart would
+   appear there as a bordered shadow card. */
 .modal__body .chart { padding:0; box-shadow:none; border:0; }
 .modal__body > .card { margin:0; }
 .modal__body .card__body { padding:var(--sp-6); }
-.modal--xl .modal__body { overflow:visible; }   /* Endpunkt-Label des Liniencharts nicht abschneiden */
-/* CD modal.postcss:103-107: p-4 auf WEISSER Fläche mit border-t — der Fuss steht
-   als Geschwister des Rumpfs auf dem Scrim und trägt seinen weissen Grund selbst. */
+.modal--xl .modal__body { overflow:visible; }   /* Do not clip the line chart's endpoint label */
+/* CD modal.postcss:103-107: p-4 on a WHITE surface with border-t. The footer is
+   a sibling of the body on the scrim and provides its own white background. */
 .modal__footer { display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-2);
   padding:var(--sp-4); background:var(--color-bg); border-top:var(--stroke-1) solid var(--color-secondary-100); }
-/* Optische Kantenbündigkeit wie CD (modal.postcss:88-97 -mr-3 -mt-1 lg:-mt-2):
-   die 44px-Box hängt über die Inhaltskante hinaus, das Icon steht bündig. */
+/* Optical edge alignment as in CD (modal.postcss:88-97 -mr-3 -mt-1 lg:-mt-2):
+   the 44px box overhangs the content edge while the icon sits flush. */
 .modal__close { flex:none; display:inline-flex; align-items:center; justify-content:center;
   min-width:var(--target-min); min-height:var(--target-min); padding:var(--sp-1-5); margin:calc(-1 * var(--sp-1)) calc(-1 * var(--sp-3)) 0 0;
   border:0; border-radius:var(--radius-sm);

@@ -1,20 +1,18 @@
-// Das gemeinsame Detailseiten-Muster: Reiterleiste über die VOLLE
-// Containerbreite (fluchtet mit dem Hero darüber), darunter im Reiter
-// «Übersicht» die Inhaltsspalte plus die klebende Randspalte mit «Aktionen»
-// und «Ansprechpersonen». Geprüft über alle Apps, die das Muster verwenden —
-// die Regel heisst Konsistenz, also muss sie überall gleich messbar sein.
+// Shared detail-page pattern: a full-width tab bar aligned with the hero, then
+// a content column and sticky aside within the overview tab. Verify identical
+// measurable structure in every application that uses the pattern.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
-const SEITEN = [
-  ['Liegenschaften Inventar', `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1080/4840/AF')}`],
-  ['Mietende',                `${APP_BASE}/app/tenancies/MV-2026-001`],
+const PAGES = [
+  ['Property inventory',      `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1080/4840/AF')}`],
+  ['Tenancies',               `${APP_BASE}/app/tenancies/MV-2026-001`],
   ['Workspace Management',    `${APP_BASE}/app/workspace?id=${encodeURIComponent('1080/6650/AA')}`],
 ];
 
 const cdp = await launch({ webgl: true });
-let fehler = 0;
+let failures = 0;
 
-for (const [name, url] of SEITEN) {
+for (const [name, url] of PAGES) {
   const page = await openPage(cdp, url);
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }, page.sessionId);
@@ -26,53 +24,55 @@ for (const [name, url] of SEITEN) {
     const aside = q('.detail-layout__aside');
     return {
       hero: b('.pf-mosaic'),
-      reiterleiste: b('.tab__controls-container'),
-      // Die Randspalte muss IM Übersichtspanel liegen, nicht daneben.
-      imPanel: !!q('.tab__container .detail-layout__aside'),
-      klebt: aside ? getComputedStyle(aside).position : null,
-      karten: [...document.querySelectorAll('.detail-layout__aside .box > h2')].map(h => h.textContent.trim()),
-      // Beschriftungen der Aktionszeilen müssen alle an derselben Kante beginnen.
+      tabBar: b('.tab__controls-container'),
+      // The aside must be inside the overview panel, not beside it.
+      insidePanel: !!q('.tab__container .detail-layout__aside'),
+      position: aside ? getComputedStyle(aside).position : null,
+      cards: [...document.querySelectorAll('.detail-layout__aside .box > h2')].map(h => h.textContent.trim()),
+      // Every action label must begin on the same edge.
       labelX: [...new Set([...document.querySelectorAll('.detail-layout__aside .fp-svc span:not(.icon)')]
         .map(s => Math.round(s.getBoundingClientRect().left)))],
-      luecke: (() => { const k = [...document.querySelectorAll('.detail-layout__aside > .box')];
-        return k.length > 1 ? Math.round(k[1].getBoundingClientRect().top - k[0].getBoundingClientRect().bottom) : null; })(),
-      // Karte im Hero: Aussenverweis bündig auf der Karte.
+      gap: (() => { const cards = [...document.querySelectorAll('.detail-layout__aside > .box')];
+        return cards.length > 1 ? Math.round(cards[1].getBoundingClientRect().top - cards[0].getBoundingClientRect().bottom) : null; })(),
+      // Hero map: external link is flush with the map.
       mapLink: q('.pf-hero__maplink a')?.getAttribute('href') || '',
-      mapLuecke: (() => { const l = q('.pf-hero__maplink'), m = q('.pf-hero__map');
+      mapGap: (() => { const l = q('.pf-hero__maplink'), m = q('.pf-hero__map');
         return l && m ? Math.round(m.getBoundingClientRect().top - l.getBoundingClientRect().bottom) : null; })(),
     };
   })()`);
 
-  // Auf einem anderen Reiter darf die Randspalte NICHT stehen — dort will die
-  // Tabelle die volle Breite.
-  const andererReiter = await page.evaluate(`(async () => {
+  // Other tabs must omit the aside so their tables can use the full width.
+  const otherTab = await page.evaluate(`(async () => {
     const t = [...document.querySelectorAll('[role="tab"]')][1];
     if (t) t.click();
     await new Promise(r => setTimeout(r, 500));
     return JSON.stringify({
-      reiter: t ? t.textContent.trim() : null,
+      tab: t ? t.textContent.trim() : null,
       aside: !!document.querySelector('.tab__container:not([hidden]) .detail-layout__aside'),
-      panelBreite: Math.round(document.querySelector('.tab__container:not([hidden])').getBoundingClientRect().width),
+      panelWidth: Math.round(document.querySelector('.tab__container:not([hidden])').getBoundingClientRect().width),
     });
   })()`).then(JSON.parse);
 
   const p = [
-    ['Reiterleiste so breit wie der Hero', r.reiterleiste === r.hero],
-    ['Randspalte im Übersichtspanel', r.imPanel],
-    ['Randspalte klebt', r.klebt === 'sticky'],
-    ['Karten: Aktionen · Ansprechpersonen', r.karten.join(' · ') === 'Aktionen · Ansprechpersonen'],
-    ['Abstand zwischen den Karten', r.luecke >= 16],
-    ['Aktionsbeschriftungen auf EINER Kante', r.labelX.length === 1],
-    ['Kartenverweis auf Google Maps', /google\.com\/maps\/search/.test(r.mapLink)],
-    ['Verweisleiste bündig auf der Karte', r.mapLuecke === 0],
-    [`«${andererReiter.reiter}» ohne Randspalte, volle Breite`,
-      !andererReiter.aside && andererReiter.panelBreite === r.hero],
+    ['tab bar matches hero width', r.tabBar === r.hero],
+    ['aside is inside the overview panel', r.insidePanel],
+    ['aside is sticky', r.position === 'sticky'],
+    ['cards use the expected German UI headings', r.cards.join(' · ') === 'Aktionen · Ansprechpersonen'],
+    ['cards have contextual spacing', r.gap >= 16],
+    ['action labels share one edge', r.labelX.length === 1],
+    ['map link targets Google Maps', /google\.com\/maps\/search/.test(r.mapLink)],
+    ['link bar is flush with the map', r.mapGap === 0],
+    [`${otherTab.tab} has no aside and uses full width`,
+      !otherTab.aside && otherTab.panelWidth === r.hero],
   ];
-  console.log(`\n■ ${name}  (Hero ${r.hero}px · Reiterleiste ${r.reiterleiste}px)`);
-  for (const [was, ok] of p) { if (!ok) fehler++; console.log(`${ok ? '  ok ' : ' FEHL'} ${was}`); }
+  console.log(`\n${name}  (hero ${r.hero}px / tab bar ${r.tabBar}px)`);
+  for (const [description, passed] of p) {
+    if (!passed) failures++;
+    console.log(`${passed ? '  ok ' : 'FAIL '} ${description}`);
+  }
   await page.closeTarget();
 }
 
 await cdp.close();
-console.log(fehler ? `\n${fehler} Abweichungen` : '\nDas Detailseiten-Muster ist in allen Apps gleich aufgebaut.');
-process.exit(fehler ? 1 : 0);
+console.log(failures ? `\n${failures} discrepancies` : '\nAll applications use the same detail-page pattern.');
+process.exit(failures ? 1 : 0);

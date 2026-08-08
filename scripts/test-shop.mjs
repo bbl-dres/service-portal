@@ -1,8 +1,5 @@
-// Smoke test for the portal-native BBL Intranetshop.
-// Requires the dev server and uses the same dependency-free CDP helper as the
-// rest of the project:
-//   APP_BASE=http://127.0.0.1:8848/# node scripts/test-shop.mjs
-
+// Smoke test for the portal-native BBL intranet shop. Requires the development
+// server and the project's dependency-free CDP helper.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const ROUTES = [
@@ -33,10 +30,10 @@ try {
         imgs,
       };
     })()`);
-    if (got.err) fails.push(`${route} → Fehlerband: ${got.err}`);
-    if (!got.h1 || !got.h1.startsWith(h1Prefix)) fails.push(`${route} → h1 «${got.h1}», erwartet «${h1Prefix}…»`);
+    if (got.err) fails.push(`${route} → error banner: ${got.err}`);
+    if (!got.h1 || !got.h1.startsWith(h1Prefix)) fails.push(`${route} → h1 «${got.h1}», expected «${h1Prefix}…»`);
     if (route === '/app/shop/product/3' && got.imgs.length && got.imgs.some((img) => !img.ok)) {
-      fails.push(`${route} → Produktbild nicht geladen: ${got.imgs.filter((img) => !img.ok).map((img) => img.src).join(', ')}`);
+      fails.push(`${route} → product image did not load: ${got.imgs.filter((img) => !img.ok).map((img) => img.src).join(', ')}`);
     }
     console.log(`  ok  ${route.padEnd(28)} h1=«${got.h1.slice(0, 48)}»`);
   }
@@ -62,9 +59,9 @@ try {
     };
   })()`);
   if (failedAdd.cart !== null || failedAdd.success || !/nicht gespeichert/.test(failedAdd.error)) {
-    fails.push(`Warenkorb: Speicherfehler als Erfolg behandelt (${JSON.stringify(failedAdd)})`);
+    fails.push(`Cart: storage failure was treated as success (${JSON.stringify(failedAdd)})`);
   }
-  console.log('  ok  Warenkorb meldet fehlgeschlagenes Speichern ohne Erfolgstoast');
+  console.log('  ok  cart reports a storage failure without a success toast');
 
   const catalogueCard = await page.evaluate(`(async () => {
     localStorage.removeItem('bbl_shop_cart_v1');
@@ -87,15 +84,15 @@ try {
     };
   })()`);
   if (!catalogueCard.clickable || !catalogueCard.hasLink || !catalogueCard.hasImage) {
-    fails.push(`Katalogkarte: CD-Kartenanatomie unvollständig (${JSON.stringify(catalogueCard)})`);
+    fails.push(`Catalogue card: CD card anatomy is incomplete (${JSON.stringify(catalogueCard)})`);
   }
   if (catalogueCard.buttonPointer === 'none' || catalogueCard.added < 1) {
-    fails.push(`Katalogkarte: Warenkorb-Knopf nicht bedienbar (${JSON.stringify(catalogueCard)})`);
+    fails.push(`Catalogue card: cart button is not operable (${JSON.stringify(catalogueCard)})`);
   }
   if (catalogueCard.headerCart < 1 || !/(^|\\|)1(\\||$)/.test(catalogueCard.headerCount) || catalogueCard.pageCartLink) {
-    fails.push(`Warenkorb: Platzierung/Zaehler nicht im Top-Header (${JSON.stringify(catalogueCard)})`);
+    fails.push(`Cart: placement or count is missing from the top header (${JSON.stringify(catalogueCard)})`);
   }
-  console.log(`  ok  Katalogkarte CD-Anatomie add=${catalogueCard.added}`);
+  console.log(`  ok  catalogue card uses the CD anatomy add=${catalogueCard.added}`);
 
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 320, height: 900, deviceScaleFactor: 1, mobile: false }, page.sessionId);
@@ -123,9 +120,9 @@ try {
       || mobileCategories.expanded !== 'true' || !mobileCategories.panelVisible
       || !mobileCategories.mobileNavVisible || mobileCategories.categoryLinks < 2
       || mobileCategories.addHeight < 44) {
-    fails.push(`Mobile Kategorien: Filter-Disclosure unvollständig (${JSON.stringify(mobileCategories)})`);
+    fails.push(`Mobile categories: filter disclosure is incomplete (${JSON.stringify(mobileCategories)})`);
   }
-  console.log(`  ok  Mobile Kategorien im Filter (${mobileCategories.categoryLinks} Links)`);
+  console.log(`  ok  mobile categories appear in the filter (${mobileCategories.categoryLinks} links)`);
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, page.sessionId);
 
@@ -139,9 +136,9 @@ try {
     };
   })()`);
   if (globalCart.headerCart < 1 || !/(^|\\|)1(\\||$)/.test(globalCart.headerCount)) {
-    fails.push(`Warenkorb: Top-Header nicht global sichtbar (${JSON.stringify(globalCart)})`);
+    fails.push(`Cart: top-header entry is not globally visible (${JSON.stringify(globalCart)})`);
   }
-  console.log(`  ok  Warenkorb im globalen Top-Header count=${globalCart.headerCount}`);
+  console.log(`  ok  cart appears in the global top header count=${globalCart.headerCount}`);
 
   const add = await page.evaluate(`(async () => {
     localStorage.removeItem('bbl_shop_cart_v1');
@@ -157,8 +154,8 @@ try {
       total: document.querySelector('.total__summary-container')?.textContent.trim() || '',
     };
   })()`);
-  if (add.rows < 1) fails.push('Warenkorb: Produkt wurde nicht hinzugefügt');
-  console.log(`  ok  Warenkorb nach Hinzufügen rows=${add.rows}`);
+  if (add.rows < 1) fails.push('Cart: product was not added');
+  console.log(`  ok  cart after adding an item rows=${add.rows}`);
 
   const login = await page.evaluate(`(async () => {
     const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -198,10 +195,10 @@ try {
     };
   })()`);
   if (!checkout.done || checkout.defId !== 'bestellung' || checkout.itemCount < 1) {
-    fails.push(`Checkout: Vorgang nicht korrekt erstellt (${JSON.stringify(checkout)})`);
+    fails.push(`Checkout: case was not created correctly (${JSON.stringify(checkout)})`);
   }
-  if (checkout.cart !== null) fails.push('Checkout: Warenkorb wurde nach dem Absenden nicht geleert');
-  console.log(`  ok  Checkout Vorgang=${checkout.defId || '-'} items=${checkout.itemCount}`);
+  if (checkout.cart !== null) fails.push('Checkout: cart was not cleared after submission');
+  console.log(`  ok  checkout case=${checkout.defId || '-'} items=${checkout.itemCount}`);
 
   const failedCheckoutCleanup = JSON.parse(await page.evaluate(`(async () => {
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -233,23 +230,23 @@ try {
     });
   })()`));
   if (failedCheckoutCleanup.done || failedCheckoutCleanup.cart === null || !/nicht geleert/.test(failedCheckoutCleanup.error)) {
-    fails.push(`Checkout: fehlgeschlagenes Leeren als Erfolg behandelt (${JSON.stringify(failedCheckoutCleanup)})`);
+    fails.push(`Checkout: failed cart cleanup was treated as success (${JSON.stringify(failedCheckoutCleanup)})`);
   }
-  console.log('  ok  Checkout bestätigt erst nach persistiertem Leeren des Warenkorbs');
+  console.log('  ok  checkout confirms only after the cleared cart is persisted');
 
   await page.evaluate(`location.hash = '#/app/shop'; localStorage.removeItem('bbl_shop_cart_v1')`);
   await sleep(300);
 
   const probs = await page.problems();
-  if (probs.length) fails.push(...probs.map((p) => `Seitenproblem: ${p}`));
+  if (probs.length) fails.push(...probs.map((p) => `Page problem: ${p}`));
   await page.closeTarget();
 } finally {
   cdp.close();
 }
 
 if (fails.length) {
-  console.error('\nFEHLER:\n' + fails.map((f) => `  ✗ ${f}`).join('\n'));
+  console.error('\nFAILURES:\n' + fails.map((f) => `  ✗ ${f}`).join('\n'));
   process.exit(1);
 }
 
-console.log('\nShop-Routen ok.');
+console.log('\nShop routes passed.');

@@ -240,7 +240,7 @@ try {
     mutationControls: document.querySelectorAll('input[type="file"],[contenteditable="true"],[data-editor-action],[data-checker-action],#workspace-floorplan').length,
   }))()`);
   check(/Zollanlage Brig-Glis/.test(legacy.h1), 'opens the canonical legacy object', legacy.h1);
-  check(legacy.activeTab === 'grundrisse' && legacy.activeFloor === legacyFloor && legacy.rooms === 19,
+  check(legacy.activeTab === 'floorplans' && legacy.activeFloor === legacyFloor && legacy.rooms === 19,
     'opens its existing canonical floor in the shared preview', `${legacy.activeTab} · ${legacy.activeFloor} · ${legacy.rooms} rooms`);
   check(!legacy.redundantReadonlyLabel,
     'omits the redundant read-only label from the shared viewer header');
@@ -265,7 +265,7 @@ try {
     viewer: !!document.querySelector('#fp-wrap'),
     hash: location.hash,
   }))()`);
-  check(invalid.activeTab === 'grundrisse' && invalid.table && !invalid.viewer,
+  check(invalid.activeTab === 'floorplans' && invalid.table && !invalid.viewer,
     'falls back to the planned object floor table without opening a foreign plan');
   check(!/[?&]floor=/.test(invalid.hash) && !/[?&]space=/.test(invalid.hash)
     && !/[?&]color=/.test(invalid.hash),
@@ -421,7 +421,7 @@ try {
   const printStart = await viewerPage.evaluate(`(() => {
     window.__workspacePrintCalls = 0;
     window.print = () => { window.__workspacePrintCalls++; };
-    document.querySelector('#fp-drucken')?.click();
+    document.querySelector('#workspace-floorplan-print')?.click();
     return { active: document.body.classList.contains('print--plan'), calls: window.__workspacePrintCalls };
   })()`);
   check(printStart.active && printStart.calls === 1, 'plan print applies its scoped print class before invoking print');
@@ -454,7 +454,7 @@ try {
   check(printClean, 'afterprint removes the scoped print class');
 
   const back = await viewerPage.evaluate(`(async () => {
-    document.querySelector('#fp-zurueck')?.click();
+    document.querySelector('#workspace-floorplan-back')?.click();
     await new Promise(resolve => setTimeout(resolve, 120));
     return {
       table: !!document.querySelector('#workspace-floor-table table'),

@@ -1,13 +1,13 @@
-// Wiederverwendbares CD-Ankernavigations-Layout (detailPageAnchorNav.vue):
-// links thematische Abschnitte mit id, rechts ein klebendes «Inhaltsverzeichnis»,
-// das zu ihnen springt. Geteilt von den Fachgebietsseiten unter «Wissen und
-// Hilfsmittel» (js/pages/knowledge.js) und den Digitalisierungs-Unterseiten.
+// Reusable CD anchor-navigation layout (detailPageAnchorNav.vue): thematic
+// sections with IDs on the left and a sticky table of contents on the right that
+// jumps to them. Shared by knowledge-and-resources subject pages
+// (js/pages/knowledge.js) and digitalisation subpages.
 
-// `ctx.query.get('section')` springt beim Rendern direkt zu einem Abschnitt.
-// Warum ein Query-Parameter und keine Sprungmarke: die App ist hash-geroutet,
-// ein zweites `#` im Hash (`#/knowledge/it#wi-vorlagen`) zerlegt der Router nicht
-// — er sähe das Segment «it#wi-vorlagen» und zeigte 404. Der Abschnitt ist
-// ausserdem Zustand INNERHALB der Seite, nicht ein eigener Ort (sitemap §1.1).
+// `ctx.query.get('section')` jumps directly to a section during render. Why a
+// query parameter rather than an anchor: the app is hash-routed, and the router
+// cannot split a second `#` (`#/knowledge/it#wi-vorlagen`). It would see the
+// segment «it#wi-vorlagen» and show 404. A section is also state WITHIN the page,
+// not a separate location (sitemap §1.1).
 export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
   const { mount, C } = ctx;
 
@@ -17,12 +17,11 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
       ${s.html}
     </section>`).join('');
 
-  // Inhaltsverzeichnis (CD: Card + menu). Ohne Zeilen-Icon — CD-Blattzeilen
-  // tragen keines; der aktive Abschnitt wird per .menu__item--active markiert.
-  // Unter 768px ist das Verzeichnis eine eingeklappte <details>: dort steht es
-  // (mit container--reverse-mobile) VOR dem Inhalt und kostet so ~48px statt
-  // ~260px. Ab 768px blendet die CSS die <summary> aus und klappt den Inhalt
-  // dauerhaft auf — das Verzeichnis steht dann wie bisher offen in der Randspalte.
+  // Table of contents (CD: card + menu). No row icon because CD leaf rows carry
+  // none; .menu__item--active marks the current section. Below 768px the table is
+  // a collapsed <details>. With container--reverse-mobile it appears BEFORE the
+  // content and costs ~48px rather than ~260px. From 768px, CSS hides <summary>
+  // and permanently expands the content, leaving the table open in the sidebar.
   const toc = `<nav class="anchor-nav sticky--top" aria-label="Inhaltsverzeichnis">
     <div class="card card--default">
       <div class="card__content"><div class="card__body">
@@ -47,9 +46,9 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
   mount.innerHTML = `
   <div class="container section">
     ${C.detailBar({ backHref: back && back.href, backLabel: back && back.label })}
-    ${/* container--reverse-mobile: unter 768px stand das Inhaltsverzeichnis am
-          Seitenende, direkt über dem Footer — also erst NACHDEM man an allem
-          vorbeigescrollt ist, was es indexiert (CD container.postcss:100-101). */''}
+    ${/* container--reverse-mobile: below 768px the table of contents previously
+          appeared at page end, directly above the footer, only AFTER users had
+          scrolled past everything it indexes (CD container.postcss:100-101). */''}
     <div class="container--grid gap--responsive container--reverse-mobile">
       <div class="anchor-page__header">
         ${C.pageHeader({ title, lead })}
@@ -62,8 +61,8 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
 
   wireAnchorNav(mount, ctx);
 
-  // Direktsprung aus einem Kurzlink («Häufig gebraucht»). Nach dem Fokus-Setzen
-  // des Routers ausführen, sonst zieht dessen h1-Fokus die Seite zurück nach oben.
+  // Direct jump from a frequently-used shortcut. Run after router focus;
+  // otherwise its h1 focus pulls the page back to the top.
   const want = ctx.query && ctx.query.get('section');
   if (want) {
     const target = mount.querySelector('#' + CSS.escape(want));
@@ -74,35 +73,33 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
   }
 }
 
-// Verdrahtung: (1) Klick im Inhaltsverzeichnis scrollt zum Abschnitt und setzt
-// den Fokus auf dessen Überschrift; (2) Scroll-Spy markiert den aktuellen
-// Abschnitt mit .menu__item--active (CD detailPageAnchorNav JS-Beispiel);
-// (3) etwaige Akkordeons im Inhalt werden aktiviert.
-// `ctx` wird durchgereicht, damit die globalen Horcher beim Verlassen der Route
-// wieder abgemeldet werden. Ohne das sammelte jede Ankernavigations-Seite pro
-// Besuch je einen matchMedia- und einen scroll-Listener an — gemessen +1/+1 pro
-// Aufruf, ohne Obergrenze, und der matchMedia-Horcher hielt über seine Closure
-// den ausgetauschten `mount`-Teilbaum am Leben (docs/code-review.md §4).
-// Diese Seiten sind die meistbesuchten der App: sechs Wissens- und fünf
-// Digitalisierungs-Seiten teilen sich dieses Layout.
+// Wiring: (1) clicking the table of contents scrolls to the section and focuses
+// its heading; (2) scroll spy marks the current section with
+// .menu__item--active (CD detailPageAnchorNav JS example); (3) content accordions
+// are activated. `ctx` is passed through so global listeners are removed on
+// route exit. Without it, every anchor-navigation visit added one matchMedia and
+// one scroll listener (+1/+1 measured per call, without a limit), and the
+// matchMedia closure retained the replaced `mount` subtree
+// (docs/code-review.md §4). These are the app's most visited pages: six knowledge
+// and five digitalisation pages share this layout.
 function wireAnchorNav(mount, ctx) {
-  // Ein AbortController je Render — dasselbe Muster wie in js/shell.js. Alle
-  // Listener werden mit `signal` registriert und mit einem `abort()` gelöst.
+  // One AbortController per render, matching js/shell.js. Every listener is
+  // registered with `signal` and removed by one `abort()`.
   const ac = new AbortController();
   const { signal } = ac;
   if (ctx && ctx.onUnmount) ctx.onUnmount(() => ac.abort());
 
-  // Das Inhaltsverzeichnis ist NUR unter 768px ein Ausklapper. Der Zustand muss
-  // vom JS kommen: Browser klappen <details> heute über
-  // `::details-content { content-visibility:hidden }` ein, und dagegen kommt
-  // keine display-Regel auf dem Kind an. Ab 768px also `open` setzen (die CSS
-  // blendet dort die <summary> aus), darunter zuklappen.
+  // The table of contents is collapsible ONLY below 768px. JS must own the state:
+  // browsers now collapse <details> through
+  // `::details-content { content-visibility:hidden }`, which a display rule on a
+  // child cannot override. Set `open` from 768px (CSS hides <summary> there) and
+  // close it below.
   const details = mount.querySelector('.anchor-nav__disclosure');
   if (details && window.matchMedia) {
     const wide = window.matchMedia('(min-width:768px)');
     const sync = () => { details.open = wide.matches; };
     sync();
-    // Beim Breitenwechsel nachziehen; auf `change` statt Resize-Sturm.
+    // Synchronise on width changes through `change`, not a resize storm.
     wide.addEventListener('change', sync, { signal });
   }
 
@@ -117,10 +114,10 @@ function wireAnchorNav(mount, ctx) {
     }, { signal });
   });
 
-  // Scroll-Spy: den zuletzt überschrittenen Abschnitt aktiv setzen. Die
-  // Selbstabmeldung beim ersten Scroll nach dem Seitenwechsel bleibt als Netz
-  // bestehen — sie griff aber nur, WENN nach dem Verlassen überhaupt noch
-  // gescrollt wurde. Der Controller räumt jetzt unabhängig davon auf.
+  // Scroll spy: activate the most recently passed section. Self-removal on the
+  // first scroll after navigation remains as a safety net, but it worked only IF
+  // any scrolling occurred after leaving. The controller now cleans up
+  // independently.
   const sections = [...mount.querySelectorAll('.anchor-section[id]')];
   if (sections.length) {
     const OFFSET = 140;
@@ -128,9 +125,9 @@ function wireAnchorNav(mount, ctx) {
       if (!mount.querySelector('.anchor-nav')) { ac.abort(); return; }
       const y = window.scrollY || document.documentElement.scrollTop;
       let current = sections[0].id;
-      // `offsetTop` ist hier relativ zum positionierten #main-content, `y`
-      // dagegen dokumentrelativ. Die Viewportposition plus Scrollwert liegt im
-      // selben Koordinatensystem und bleibt auch bei vorgeschalteter Shell korrekt.
+      // Here `offsetTop` would be relative to positioned #main-content, while `y`
+      // is document-relative. Viewport position plus scroll value shares one
+      // coordinate system and remains correct with the shell before it.
       for (const s of sections) {
         const top = s.getBoundingClientRect().top + y;
         if (top - OFFSET <= y) current = s.id;
@@ -141,9 +138,9 @@ function wireAnchorNav(mount, ctx) {
     onScroll();
   }
 
-  // Akkordeons (z. B. FAQ auf der Prozesse-Seite): gemeinsame Verdrahtung statt
-  // der früher hier kopierten Toggle-Logik — so landen Verhaltensänderungen
-  // (etwa die CD-Animation) an EINER Stelle. Kein `signal` nötig: die Horcher
-  // hängen an Knoten innerhalb von `mount` und verschwinden mit dem DOM-Tausch.
+  // Accordions (for example FAQ on the process page): shared wiring replaces the
+  // former copied toggle logic, putting behaviour changes such as CD animation
+  // in ONE place. No `signal` is needed: listeners live on nodes within `mount`
+  // and disappear with DOM replacement.
   ctx.C.wireAccordion(mount);
 }

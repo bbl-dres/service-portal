@@ -9,7 +9,7 @@ Konzept- und Review-Dokumente des Service-Portal-Prototyps. Leseordnung:
 3. **[requirements.md](requirements.md)** — priorisierte Anforderungen (MoSCoW).
 4. **[data-model.md](data-model.md)** — Datenkern + DCAT-Katalogmodell.
 5. **[services.md](services.md)** — der Dienstleistungskatalog fachlich.
-6. **[bbl-vokabular.md](bbl-vokabular.md)** — Terminologie-Autorität (BKP, SIA, Rollen, Objektbegriffe).
+6. **[bbl-vocabulary.md](bbl-vocabulary.md)** — Terminologie-Autorität (BKP, SIA, Rollen, Objektbegriffe).
 7. **[legacy-analysis.md](legacy-analysis.md)** — Analyse des heutigen Intranets.
 8. **[swisstopo-api.md](swisstopo-api.md)** — Karten-/Geodatengrundlagen.
 9. **[portfolio-redesign.md](portfolio-redesign.md)** — Entwurfsnotizen zum Liegenschaften-Explorer.

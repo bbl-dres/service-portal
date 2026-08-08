@@ -1,6 +1,6 @@
 // Mock process engine ("Camunda, but mocked").
 // Process definitions + seeded instances come from data/. User-created instances
-// (Vorgänge) live in localStorage so the service->process->Meine-Vorgänge loop works.
+// (cases) live in localStorage so the service → process → My cases loop works.
 // NOTE: this is the *demo* engine — see docs/expert-review.md for the real-vs-mocked register.
 
 import { readJSON, readJSONResult, writeJSON, withStorageLock } from './storage.js';
@@ -10,11 +10,11 @@ const LS_KEY = 'bbl_vorgaenge_v1';
 let DEFS = [];
 let SEEDED = [];
 
-// Ausfallregister — dasselbe Prinzip wie in core.js. Ohne das blieb ein 404 auf
-// process-definitions.json unsichtbar: DEFS = [], keine Meldung, und start()
-// erfand sich eine Ersatzdefinition (H10).
+// Failure register: the same principle as core.js. Without it, a 404 for
+// process-definitions.json remained invisible: DEFS = [], no message, and
+// start() invented a replacement definition (H10).
 const FAILED = new Set();
-const AREA = { definitions: 'Prozessdefinitionen', instances: 'Vorgänge' };
+const DATA_AREA_LABELS = { definitions: 'Prozessdefinitionen', instances: 'Vorgänge' };
 
 const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
 const isInstance = (value) => isRecord(value)
@@ -72,7 +72,7 @@ function loadLS() {
   const a = readJSON(LS_KEY, []);
   return cleanInstances(a, 'local');
 }
-function saveLS(arr) { return writeJSON(LS_KEY, arr); }   // → bool, damit Aufrufer stillen Verlust erkennen (C1)
+function saveLS(records) { return writeJSON(LS_KEY, records); } // → bool so callers detect silent loss (C1)
 
 // Mutations are synchronous because localStorage is synchronous. A short lease
 // narrows the cross-tab read-modify-write race; ownership is checked again just
@@ -124,26 +124,26 @@ const localDateStamp = (date = new Date()) => {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
 
-function genRef(date = new Date()) {
-  const y = date.getFullYear();
-  const n = Math.floor(1000 + Math.random() * 9000);
-  return `BBL-${y}-${n}`;
+function generateReference(date = new Date()) {
+  const year = date.getFullYear();
+  const sequence = Math.floor(1000 + Math.random() * 9000);
+  return `BBL-${year}-${sequence}`;
 }
 
-// all instances visible to the current (mock) user = seeded + locally created
+// All instances visible to the current (mock) user = seeded + locally created.
 function instances() { return [...loadLS(), ...SEEDED]; }
 const instance = (id) => instances().find(i => i && i.instanceId === id);
 
-// Gibt die neue Instanz zurück. null bezeichnet eine unbekannte Definition
-// (No-op), false einen Speicher-/Sperrfehler; so kann ein Aufrufer die beiden
-// Fehlerarten unterscheiden, ohne den bisherigen Objektvertrag zu verlieren.
+// Returns the new instance. null means an unknown definition (no-op), while
+// false means a storage/lock failure. Callers can distinguish the two failure
+// modes without changing the existing object contract.
 function start(defId, payload = {}) {
   const def = definition(defId);
-  // Ohne Definition KEIN Vorgang. Vorher wurde eine Ersatzdefinition erfunden und
-  // dauerhaft gespeichert — ein Datensatz, der zu keinem Prozess mehr gehört und
-  // beim nächsten Laden auch nicht repariert wird.
+  // No definition means NO case. The previous version invented and persisted a
+  // replacement definition, producing a record that belonged to no process and
+  // could not be repaired on the next load.
   if (!def || !Array.isArray(def.steps) || !def.steps.length) {
-    console.error(`[engine] unbekannte Prozessdefinition «${defId}» — kein Vorgang angelegt`);
+    console.error(`[engine] unknown process definition «${defId}»; no case created`);
     return null;
   }
   const steps = def.steps;
@@ -154,7 +154,7 @@ function start(defId, payload = {}) {
     instanceId: 'inst-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
     defId,
     defName: def.name,
-    reference: genRef(now),
+    reference: generateReference(now),
     title: payload.title || def.name,
     requester: payload.requester || 'Andrea Muster',
     organization: payload.organization || 'Bundesamt (Demo)',
@@ -229,7 +229,7 @@ function reset() {
 export const engine = {
   load,
   available: (key) => !FAILED.has(key),
-  failedAreas: () => Array.from(FAILED).map(k => AREA[k] || k),
+  failedAreas: () => Array.from(FAILED).map(k => DATA_AREA_LABELS[k] || k),
   definitions: () => DEFS,
   definition,
   instances,

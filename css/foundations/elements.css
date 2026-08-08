@@ -1,20 +1,20 @@
-/* Links — CD underlines every content link in main (link.postcss:5-38) */
+/* Links: CD underlines every content link in main (link.postcss:5-38) */
 a { color:var(--color-link); text-decoration:none; }
-/* Die Ausnahmeliste stand DREIMAL vollständig ausgeschrieben und ergab durch
-   die Kette einzelner :not() die Spezifität (1,11,1) — jede spätere Link-Regel
-   musste dagegen anschreiben, was der Grund für mehrere !important im Blatt
-   war. `:not(a, b, c)` zählt nur sein spezifischstes Argument, das ergibt
-   (1,1,1); `:is(:hover,:focus)` erspart die zweite und dritte Kopie.
-   `.tile` ist aus der Liste raus — die Klasse existiert nicht mehr (§5). */
-/* `.notification a` steht als KOMPLEXES :not()-Argument in der Liste (Selectors 4):
-   Links in Meldungen erben die Meldungsfarbe (currentColor, Regel bei .notification),
-   nie Brand-Primary — CD notification.postcss:11-21. */
-/* `.modal a` steht MIT im Rezept: Modale montieren auf document.body, also
-   ausserhalb von #main-content — ein nackter Anker dort erhielte sonst die
-   Markenfarbe OHNE Unterstrich (Farbe als einziges Merkmal). Toasts brauchen
-   keinen Eintrag: toast() rendert über textContent, nie Markup.
-   cursor:pointer wie CD (link.postcss:8) — `.link` auf einem <button> oder
-   einem Anker ohne href zeigte sonst den Text-Cursor. */
+/* The exclusion list was written out in full THREE times. Its chain of separate
+   :not() selectors produced specificity (1,11,1), forcing every later link rule
+   to compete with it and causing several !important declarations. `:not(a, b, c)`
+   counts only its most specific argument, producing (1,1,1); `:is(:hover,:focus)`
+   avoids the second and third copies. `.tile` has left the list because that
+   class no longer exists (§5). */
+/* `.notification a` is a COMPLEX :not() argument in the list (Selectors 4):
+   links in notifications inherit the notification color (currentColor, set on
+   .notification), never brand primary; see CD notification.postcss:11-21. */
+/* `.modal a` IS part of the recipe: modals mount on document.body, outside
+   #main-content, so a bare anchor there would otherwise receive the brand color
+   WITHOUT an underline (color as its only affordance). Toasts need no entry:
+   toast() renders with textContent, never markup. cursor:pointer follows CD
+   (link.postcss:8); `.link` on a <button> or an anchor without href otherwise
+   showed the text cursor. */
 :where(.site-main, .modal) a:not(:where(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a)),
 .link {
   color:var(--color-primary-600); text-decoration:underline; text-underline-offset:var(--stroke-2); overflow-wrap:break-word; cursor:pointer;
@@ -23,7 +23,7 @@ a { color:var(--color-link); text-decoration:none; }
 .link:hover, .link:focus { color:var(--color-primary-800); }
 /* automatic external-link affordance (link.postcss:21-38) */
 :root { --icon-external-link:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m14.5 2.7v1.9h3.8l.6-.5.3.1-.7.6-6.4 6.4 1.4 1.4 6.4-6.4.6-.7.1.3-.5.7v3.7h1.9v-7.5z'/%3E%3Cpath d='m16.9 19.9h-12v-12.2h5.7v-1.9h-7.6v16h15.9v-7.7h-2z'/%3E%3C/svg%3E"); }
-/* .download-item und .card--clickable führen ihr Icon bereits selbst */
+/* .download-item and .card--clickable already provide their own icon */
 :where(.site-main) a[rel~="external"]:not(:where(.btn, .card--clickable, .card__link, .download-item))::after,
 .link--external::after {
   content:""; display:inline-block; position:relative; width:1em; height:1em; top:.2em; margin:0 .125em;
@@ -31,7 +31,7 @@ a { color:var(--color-link); text-decoration:none; }
   -webkit-mask-size:contain; mask-size:contain;
 }
 
-mark { background:var(--color-primary-200); padding:var(--sp-0-5) var(--sp-1); }   /* CD typography.postcss:157-159: py-0.5 px-1, kein Radius */
+mark { background:var(--color-primary-200); padding:var(--sp-0-5) var(--sp-1); }   /* CD typography.postcss:157-159: py-0.5 px-1, no radius */
 img { max-width:100%; display:block; }
 ul,ol { margin:0; padding:0; }
 
@@ -44,17 +44,16 @@ ul,ol { margin:0; padding:0; }
 .list--bare { list-style:none; padding-left:0; }
 .list--flex { display:flex; } .list--wrap { flex-wrap:wrap; }
 
-/* Focus — CD ring, with the negative variant on dark chrome (global.postcss:75-86) */
-/* Diese EINE Regel deckt jedes fokussierbare Element ab. Sieben Komponenten
-   wiederholten sie wortgleich — nachgeprüft steht zwischen hier und ihnen keine
-   Regel, die den Ring wegnähme, sie waren also reine Doubletten. Eine eigene
-   :focus-visible-Regel braucht nur, wer den Ring vorher abschaltet
-   (input, .tag-item, .card--clickable .card__link) oder wer einen anderen
-   Versatz bzw. den Negativ-Ring braucht.
-   ABWEICHUNG vom CD: dort ist es ein ANLIEGENDER box-shadow-Ring mit z-10
-   (global.postcss:75-86, ring-2 ring-purple-500, Versatz 0). Der 2px-Versatz
-   hier ist bewusst — auf gefüllten Flächen deutlich sichtbarer; eine
-   z-Anhebung braucht ein Outline nicht, es malt ohnehin über Nachbarn. */
+/* Focus: CD ring, with the negative variant on dark chrome (global.postcss:75-86) */
+/* This ONE rule covers every focusable element. Seven components repeated it
+   verbatim; verification found no intervening rule that removed the ring, so
+   they were pure duplicates. A dedicated :focus-visible rule is needed only
+   when a component first disables the ring (input, .tag-item,
+   .card--clickable .card__link), needs a different offset, or uses the
+   negative ring. DEVIATION from CD: CD uses an ADJACENT box-shadow ring with
+   z-10 (global.postcss:75-86, ring-2 ring-purple-500, offset 0). The 2px offset
+   here is deliberate and is much clearer on filled surfaces; an outline needs
+   no z-index lift because it already paints over neighboring elements. */
 :focus-visible { outline:var(--stroke-2) solid var(--focus-ring-color, var(--color-focus-ring)); outline-offset:var(--stroke-2); }
 /* Focus colour belongs to the surface, not to each control. The inherited local
    property keeps the federal purple on light surfaces and switches every dark
@@ -77,9 +76,9 @@ ul,ol { margin:0; padding:0; }
 ) { --focus-ring-color:var(--color-focus-ring); }
 /* Route-change focus targets are not interactive controls: move focus for screen
    readers (router.js focusHeading) without painting a ring for mouse users.
-   #main-header gehört dazu: der Nach-oben-Knopf fokussiert ihn programmatisch
-   (shell.js renderFooter) — ohne Eintrag malte Enter den Ring um den ganzen
-   Kopfbereich (a11y-backtotop-1). */
+   #main-header is included: the back-to-top button focuses it programmatically
+   (shell.js renderFooter); without this entry, Enter painted the ring around
+   the entire header (a11y-backtotop-1). */
 h1[tabindex="-1"]:focus, h1[tabindex="-1"]:focus-visible,
 h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 h3[tabindex="-1"]:focus, h3[tabindex="-1"]:focus-visible,
@@ -87,12 +86,11 @@ h4[tabindex="-1"]:focus, h4[tabindex="-1"]:focus-visible,
 .site-header:focus, .site-header:focus-visible,
 .site-main:focus, .site-main:focus-visible { outline:none; }
 
-/* Visuell verborgen, für Screenreader lesbar. Das Rezept stand SIEBENMAL im
-   Blatt, in drei Fassungen (mal mit padding/margin/border, mal ohne) — jede
-   Kopie eine Gelegenheit zum Auseinanderlaufen. Hier einmal für alle
-   Konsumenten; die Gegenregeln, die den Text ab einer Breite wieder
-   einblenden, stehen weiterhin bei ihrer Komponente und gewinnen, weil sie
-   im Blatt später kommen. */
+/* Visually hidden but available to screen readers. The recipe appeared SEVEN
+   times in three variants (sometimes with padding/margin/border, sometimes
+   without), giving every copy a chance to drift. It now lives here once for
+   every consumer; the counter-rules that reveal text above a given width stay
+   with their components and win because they occur later in the style sheet. */
 .sr-only,
 .top-bar-navigation a > span:not(.icon),
 .logo__title,

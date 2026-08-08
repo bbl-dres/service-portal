@@ -1,27 +1,27 @@
 import { anchorNavPage } from './anchor-nav.js';
-// Der Inhalt liegt seit der Suchüberarbeitung in js/knowledge-content.js: er hat
-// zwei Leser (diese Seite rendert ihn, die Suche indexiert ihn) und gehört
-// deshalb nicht mehr in das Seitenmodul.
+// Since the search overhaul, content lives in js/knowledge-content.js. It has
+// two consumers (this page renders it and search indexes it), so it no longer
+// belongs in the page module.
 import { AREAS, FAQS, sectionDomId } from '../knowledge-content.js';
 
-// Wissen und Hilfsmittel — die Referenzschicht des Portals.
+// Knowledge and resources — the portal's reference layer.
 //
-// GEGLIEDERT NACH FACHGEBIET (L2), innerhalb dessen nach Materialart (L3).
-// Nicht umgekehrt. Begründung aus dem Altbestand (docs/legacy-analysis.md):
-// die Kundenplattform hat Hilfsmittel NIE gepoolt — der Werkzeugkasten und die
-// Mustervorlagen liegen unter «Informatik», die BKB-Dokumente unter «Beschaffen».
-// Material hängt am Fachgebiet, in dem man gerade arbeitet. Und der Bedarf ist
-// stark konzentriert: von 91 Referenzdokumenten entfallen 40 auf Informatik und
-// Beschaffung. Wer Möbel bestellt, kommt nie hierher — er braucht eine
-// Dienstleistung, kein Hilfsmittel.
+// ORGANISED BY SUBJECT AREA (L2), then by material type within it (L3), not the
+// other way around. The rationale comes from the legacy inventory
+// (docs/legacy-analysis.md): the customer platform NEVER pooled resources. The
+// toolkit and templates live under «Informatik», while BKB documents live under
+// «Beschaffen». Material belongs to the subject area in which someone is
+// working. Demand is also highly concentrated: IT and procurement account for
+// 40 of 91 reference documents. Someone ordering furniture never comes here;
+// they need a service, not a resource.
 //
-// L3 sind Abschnitte INNERHALB der Fachgebietsseite, keine eigenen Routen: es
-// sind Facetten einer Sammlung, und das CD-Ankernavigations-Layout
-// (detailPageAnchorNav) trägt sie mit klebendem Inhaltsverzeichnis. Eigene
-// Routen ergäben Seiten mit drei Dokumenten.
+// L3 entries are sections WITHIN a subject-area page, not separate routes. They
+// are facets of a collection, and the CD anchor-navigation layout
+// (detailPageAnchorNav) presents them in a sticky table of contents. Separate
+// routes would produce pages with three documents.
 //
-// Alle Seiten sind BEWUSST statisch: Dokumentenverzeichnisse zum Nachlesen und
-// Herunterladen, keine abfragbaren Bestände (docs/sitemap.md §2.4).
+// All pages are DELIBERATELY static: document directories for reading and
+// downloading, not queryable collections (docs/sitemap.md §2.4).
 
 export default async function render(ctx) {
   const area = ctx.params[0];
@@ -30,7 +30,7 @@ export default async function render(ctx) {
   return areaPage(ctx, AREAS[area]);
 }
 
-/* ================================ ÜBERSICHT =============================== */
+/* ================================ OVERVIEW ================================ */
 
 function overview(ctx) {
   const { mount, C, setTitle, setCrumbs } = ctx;
@@ -64,29 +64,29 @@ function overview(ctx) {
     ${C.pageSection({ title: 'Fachgebiete', alt: true, body: `<div class="grid grid--responsive-cols-2">${areaTiles}</div>` })}`;
 }
 
-/* ============================== FACHGEBIETSSEITE ========================== */
+/* ============================= SUBJECT-AREA PAGE ========================== */
 
-// Eine Seite je Fachgebiet, innerhalb nach Materialart gegliedert (L3). Das
-// klebende Inhaltsverzeichnis der Ankernavigation IST die L3-Navigation.
+// One page per subject area, organised internally by material type (L3). The
+// anchor navigation's sticky table of contents IS the L3 navigation.
 function areaPage(ctx, area) {
   const { C, setTitle, setCrumbs } = ctx;
   setTitle(area.title);
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Wissen und Hilfsmittel', href: '#/knowledge' }, { label: area.title }]);
 
-  // Ein Abschnitt ist entweder eine Dokumentliste (`items`), freier Inhalt
-  // (`html`) oder das FAQ-Akkordeon (`faq`) — die Prozessseite braucht alle drei
-  // Formen nicht als Liste.
+  // A section is either a document list (`items`), free-form content (`html`),
+  // or the FAQ accordion (`faq`); the process page needs all three forms rather
+  // than forcing them into a list.
   const sections = area.sections.map(s => ({
     id: sectionDomId(s.id),
     title: s.title,
     html: [
       s.intro ? `<p class="muted">${C.escape(s.intro)}</p>` : '',
       typeof s.html === 'function' ? s.html(C) : (s.html || ''),
-      // KEIN `icon` vorgeben: C.downloadItem wählt selbst — «Download» für eine
-      // Datei, «External» für ein Ziel ausserhalb des Portals. Genau diese
-      // Unterscheidung macht das CD (DownloadItem.vue trägt fix das
-      // Download-Symbol; externe Ziele tragen External). Ein pauschales
-      // Datei-Symbol hätte beide gleich aussehen lassen.
+      // Do NOT provide `icon`: C.downloadItem chooses «Download» for a file and
+      // «External» for a destination outside the portal. The CD makes exactly
+      // this distinction (DownloadItem.vue always carries the Download symbol;
+      // external destinations carry External). A generic file symbol would make
+      // both look alike.
       s.items ? `<ul class="download-items">${s.items.map(it => C.downloadItem({
         href: '#', ...it, download: !it.external, wrapLi: true,
       })).join('')}</ul>` : '',

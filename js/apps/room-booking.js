@@ -1,39 +1,19 @@
-// Raumbuchung — eine Seite, Direktbuchung.
-//
-// Vorher trug diese App einen dreistufigen Assistenten: Standort wählen (mit
-// Katalogleiste, Seitenliste und Karte), dann Termin und Raum, dann prüfen und
-// buchen. Der häufigste Fall ist aber immer derselbe — «morgen früh ein Zimmer
-// am eigenen Standort» — und der kostete drei Seitenwechsel, obwohl alle dafür
-// nötigen Angaben in eine Zeile passen.
-//
-// Jetzt: Suchleiste oben, Ergebnisse darunter, Buchen im Dialog an der Raumkarte
-// (Entwurf 1a, docs/wireframes/260806 - Room Booking.html). Standort, Datum und
-// Zeit sind vorbelegt — gemerkter Standort bzw. nächster Arbeitstag —, sodass
-// die Liste beim Öffnen bereits steht und eine Buchung zwei Klicks braucht.
-//
-// Karte und Grundriss bleiben erhalten, aber als DIALOGE. Beide beantworten die
-// Frage «wo ist das?»; sie sind nicht der Weg zur Buchung und dürfen ihn deshalb
-// auch nicht mehr verstellen.
-//
-// Raumkarten tragen bewusst kein Foto mehr: es gab für die 68 buchbaren Räume
-// nie eines, sondern nur die Innenansicht des GEBÄUDES als Platzhalter — ein
-// Bild, das für jeden Raum im Haus dasselbe zeigte. An seiner Stelle steht jetzt
-// das Geschoss-Kennzeichen (Raumnummer + Geschoss), das die Räume tatsächlich
-// unterscheidet.
-
-import { ANWENDUNGEN, trail } from '../crumbs.js';
+import { APPLICATIONS, trail } from '../crumbs.js';
+// Direct room booking on one page.
+// The former three-step wizard made the common next-morning booking require
+// three page changes. The current surface shows a prefilled search bar, results,
+// and a card-level booking dialog. Map and floor plan remain supporting dialogs.
+// Room cards use floor identifiers instead of repeated building placeholder photos.
 import { initEstateMap } from '../buildings-map.js';
 import { createMapSlot } from '../map-slot.js';
 import { floorplanSvg, wireFloorplan } from '../floorplan.js';
 import { download, fileSlug } from '../export.js';
 import { favorites } from '../favorites.js';
-import { datum, m2, num } from '../format.js';
+import { formatDate, formatArea, formatNumber } from '../format.js';
 
 export const needs = ['buildings', 'floors', 'spaces'];
 
-// Wortlaut der Anmeldesperre, die der Router vor diese Anwendung zieht
-// (js/router.js). Der Satz gehört zur Anwendung — «Diese Meldung wird als
-// persönlicher Vorgang erfasst» sagt mehr als ein Einheitssatz.
+// Application-specific copy shown by the router's authentication gate.
 export const loginText = "Raumbuchungen sind persönliche Vorgänge. Melden Sie sich mit AGOV / FedLogin an, um einen Raum zu reservieren.";
 
 const PREFERRED_BUILDING = '1080/6650/AA';
@@ -47,8 +27,8 @@ const DIRECTORY = [
   { name: 'Nina Meier', email: 'nina.meier@bbl.admin.ch' },
 ];
 const CANCELLED = new Set(['zurueckgezogen', 'storniert']);
-// Buchbarer Tag. Das Fenster begrenzt die Angabe «frei von–bis» an der Raumkarte;
-// ohne Grenze wäre jeder Raum «frei 00:00–24:00» und die Angabe wertlos.
+// Booking-day bounds make the card's free-from/to range meaningful; without
+// them every fully free room would display an unhelpful all-day range.
 const DAY_START = 7 * 60, DAY_END = 19 * 60;
 const PAGE_SIZE = 6;
 const FIELD_LABELS = {
@@ -77,8 +57,7 @@ const minuteOfDay = (value) => {
   return hours <= 23 && minutes <= 59 ? hours * 60 + minutes : NaN;
 };
 const hhmm = (minutes) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
-// Auf das nächste Viertel abrunden bzw. aufrunden — die Zeitfelder haben step=900,
-// eine Vorbelegung wie «10:07» wäre für sie kein gültiger Wert.
+// Round down or up to quarter hours because time controls use step=900.
 const floorQuarter = (minutes) => Math.floor(minutes / 15) * 15;
 
 const rangesOverlap = (startA, endA, startB, endB) => startA < endB && startB < endA;
@@ -125,20 +104,19 @@ const safeTime = (value, fallback) => {
   return Number.isFinite(minutes) && minutes >= DAY_START && minutes <= DAY_END && minutes % 15 === 0
     ? String(value) : fallback;
 };
-// Kennungen tragen Schrägstriche und Punkte (1080/6650/AA, 1080-6650-AA-1og-16) —
-// als DOM-id müssen sie entschärft werden, sonst bricht jeder Selektor darauf.
+// Sanitize slash- and dot-bearing inventory IDs before using them as DOM IDs.
 const domId = (prefix, value) => `${prefix}-${String(value).replace(/[^a-z0-9_-]/gi, '-')}`;
 
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs, onUnmount } = ctx;
   setTitle('Raumbuchung');
-  setCrumbs(trail(ANWENDUNGEN, { label: 'Raumbuchung' }));
+  setCrumbs(trail(APPLICATIONS, { label: 'Raumbuchung' }));
 
   const meetingRooms = core.spaces().filter((space) => space.bookable && space.useType === 'sitzung');
   const buildingIds = new Set(meetingRooms.map((space) => space.buildingId));
   const buildings = core.buildings()
     .filter((building) => buildingIds.has(building.bbl_id))
-    .sort((a, b) => `${a.land} ${a.city} ${a.name}`.localeCompare(`${b.land} ${b.city} ${b.name}`, 'de'));
+    .sort((a, b) => `${a.country} ${a.city} ${a.name}`.localeCompare(`${b.country} ${b.city} ${b.name}`, 'de'));
 
   if (!buildings.length) {
     mount.innerHTML = `<div class="container section">
@@ -148,8 +126,8 @@ export default async function render(ctx) {
     return;
   }
 
-  // The room catalogue does not change during this route's lifetime. Group and
-  // sort it once; search criteria and process instances are the mutable parts.
+  // The room catalogue is immutable during this route. Group and sort once;
+  // search criteria and process instances remain mutable.
   const roomsByBuilding = new Map(buildings.map((item) => [item.bbl_id, []]));
   meetingRooms.forEach((room) => roomsByBuilding.get(room.buildingId)?.push(room));
   roomsByBuilding.forEach((rooms) => rooms.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, 'de', { numeric: true })));
@@ -166,8 +144,7 @@ export default async function render(ctx) {
   });
 
   const requestedRoom = meetingRooms.find((room) => room.spaceId === query.get('room')) || null;
-  // Vorbelegung des Standorts, in dieser Reihenfolge: tief verlinkt → gemerkt →
-  // der Standort des Prototyp-Datenbestands → der erste überhaupt.
+  // Location precedence: deep link, favourite, prototype default, then first available.
   const favouriteBuilding = favorites.list('building').find((id) => buildings.some((item) => item.bbl_id === id));
   const initialBuilding = buildings.find((item) => item.bbl_id === (requestedRoom?.buildingId || query.get('building')))
     || buildings.find((item) => item.bbl_id === favouriteBuilding)
@@ -201,34 +178,30 @@ export default async function render(ctx) {
     showAll: false,
     errors: {},
     created: null,
-    // Die Eingeladenen leben im Buchungsdialog und sind mit ihm weg — der
-    // Abschlussschirm braucht sie aber noch, und der Vorgang speichert sie als
-    // Zeichenkette («Name <mail>»), nicht als Liste.
+    // Invitees belong to the booking dialog, but copy them for confirmation and
+    // persist the compatibility string format `Name <mail>`.
     createdInvitees: null,
   };
 
-  // Ein tief verlinkter Raum (#/app/room-booking?room=… aus dem Mietendenportal)
-  // ist eine Buchungsabsicht, keine blosse Vorauswahl — der Dialog geht deshalb
-  // nach dem ersten Zeichnen von selbst auf. Nur EINMAL: nach dem Buchen oder
-  // Abbrechen darf er nicht bei jedem Neuzeichnen zurückkehren.
+  // A room deep link from the tenancy portal expresses booking intent, so open
+  // its dialog after the first draw exactly once.
   let pendingDeepLink = requestedRoom?.spaceId || '';
   let lastSearchSummary = null;
 
   const dialogMap = createMapSlot();
-  let closeDialog = null;         // schliesst den offenen Dialog (Buchen/Details/Grundriss/Karte)
+  let closeDialog = null;         // Closes whichever booking, detail, floor-plan, or map dialog is open.
   let unwirePlan = null;
   let unwirePlanScroll = null;
 
-  // Alles, was innerhalb eines Dialogs lebt, gehört auch dessen Lebensdauer —
-  // nicht erst der Route. Insbesondere hält MapLibre einen WebGL-Kontext und
-  // wireScrollRegions zwei Observer, obwohl der Dialogknoten schon entfernt ist.
+  // Resources created inside a dialog share its lifetime. Tear down MapLibre's
+  // WebGL context and scroll observers as soon as the dialog closes.
   const freeDialogResources = () => {
     dialogMap.free();
     if (unwirePlan) { unwirePlan(); unwirePlan = null; }
     if (unwirePlanScroll) { unwirePlanScroll(); unwirePlanScroll = null; }
   };
-  // Der Router tauscht beim Routenwechsel nur #main-content — ein Dialog hängt an
-  // <body> und überlebte das, samt Scroll-Lock und Fokusfalle.
+  // Dialogs attach to body while the router replaces only #main-content; route
+  // cleanup must remove the dialog, scroll lock, and focus trap.
   onUnmount(() => {
     if (closeDialog) closeDialog();
     freeDialogResources();
@@ -244,13 +217,11 @@ export default async function render(ctx) {
       .sort((a, b) => a.level - b.level);
   };
   const floorLabel = (room) => core.floor(room.floorId)?.label || room.roomNumber.split(' ')[0] || '—';
-  // «1. OG 17» → «17»: die Raumnummer ohne das Geschoss, das daneben schon steht.
+  // Remove the already displayed floor from a label such as 1. OG 17.
   const roomCode = (room) => String(room.roomNumber).replace(/^.*\s/, '') || room.roomNumber;
 
-  // Ausstattung und Barrierefreiheit sind im Bestand (data/spaces.json) nicht
-  // geführt und werden aus der Raumkennung abgeleitet — stabil je Raum, damit
-  // Liste, Dialog und Grundriss dasselbe zeigen. Ein Prototyp-Behelf: sobald das
-  // CAFM-System die Felder liefert, ersetzt ein Datenfeld diese Funktion.
+  // The source inventory lacks equipment and accessibility fields, so derive
+  // stable prototype values from the room ID until CAFM supplies real fields.
   function roomProfile(room, favoriteRoomIds) {
     const index = Math.max(0, roomIndexById.get(room.spaceId) ?? 0);
     const seed = roomHash(room.spaceId);
@@ -268,13 +239,12 @@ export default async function render(ctx) {
 
   function instanceRange(instance) {
     const data = instance.data || {};
-    const stored = String(data.zeit || '').split(/\s*[–-]\s*/);
-    return { start: minuteOfDay(data.start || stored[0]), end: minuteOfDay(data.ende || stored[1]) };
+    const stored = String(data['zeit'] || '').split(/\s*[–-]\s*/);
+    return { start: minuteOfDay(data.start || stored[0]), end: minuteOfDay(data['ende'] || stored[1]) };
   }
 
-  // One process snapshot and one profile/range index serve a complete draw or
-  // availability-sensitive action. A later action creates a fresh context so a
-  // reservation made in the meantime is still observed.
+  // One process snapshot and profile/range index serve a draw or availability
+  // action. A later action gets fresh context to observe intervening reservations.
   function prepareBookingContext(instances = engine.instances()) {
     const rooms = buildingRooms();
     const favoriteRoomIds = new Set(favorites.list('room'));
@@ -283,11 +253,11 @@ export default async function render(ctx) {
 
     instances.forEach((instance) => {
       const data = instance.data || {};
-      if (instance.defId !== 'buchung' || CANCELLED.has(instance.status) || data.datum !== state.date) return;
+      if (instance.defId !== 'buchung' || CANCELLED.has(instance.status) || data['datum'] !== state.date) return;
       let room = null;
-      if (data.raumId) room = roomByIdMap.get(data.raumId) || null;
+      if (data['raumId']) room = roomByIdMap.get(data['raumId']) || null;
       else if (instance.linkedEntities?.buildingId === state.buildingId) {
-        room = legacyRoomByBuilding.get(state.buildingId)?.get(data.raum) || null;
+        room = legacyRoomByBuilding.get(state.buildingId)?.get(data['raum']) || null;
       }
       const ranges = room && rangesByRoom.get(room.spaceId);
       if (!ranges) return;
@@ -298,7 +268,7 @@ export default async function render(ctx) {
     return { rooms, profiles, rangesByRoom };
   }
 
-  // Alle Belegungen eines Raums am gewählten Tag, nach Beginn sortiert.
+  // Return a room's reservations for the selected day, ordered by start time.
   const bookedRanges = (room, context) => context.rangesByRoom.get(room.spaceId) || [];
 
   function isAvailable(room, context) {
@@ -307,9 +277,8 @@ export default async function render(ctx) {
     return !bookedRanges(room, context).some((range) => rangesOverlap(start, end, range.start, range.end));
   }
 
-  // Das zusammenhängende freie Fenster um den gewünschten Zeitraum. `null`, wenn
-  // der Raum den ganzen Tag frei ist: eine Angabe, die an JEDER Karte stünde,
-  // unterscheidet nichts und wäre nur Rauschen.
+  // Return the continuous free window around the requested range. null means
+  // all-day availability, which cards omit because it does not distinguish rooms.
   function freeWindow(room, context) {
     const ranges = bookedRanges(room, context);
     if (!ranges.length) return null;
@@ -334,8 +303,7 @@ export default async function render(ctx) {
     const rooms = context.rooms.filter((room) => matchesCriteria(room, context) && isAvailable(room, context));
     if (state.sort === 'room') return rooms.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber, 'de', { numeric: true }));
     if (state.sort === 'capacity') return rooms.sort((a, b) => a.capacity - b.capacity || a.roomNumber.localeCompare(b.roomNumber, 'de', { numeric: true }));
-    // «Beste Übereinstimmung»: möglichst wenig überzähliger Platz, dafür viel
-    // Ausstattung — und Gemerktes zuerst, denn wer einen Raum merkt, will ihn.
+    // Best match favours minimal excess capacity, more equipment, then favourites.
     return rooms.sort((a, b) => {
       const pa = context.profiles.get(a.spaceId), pb = context.profiles.get(b.spaceId);
       if (pa.favorite !== pb.favorite) return pa.favorite ? -1 : 1;
@@ -365,8 +333,8 @@ export default async function render(ctx) {
     state.date = C.val(mount, 'booking-date') || '';
     state.start = C.val(mount, 'booking-start') || '';
     state.end = C.val(mount, 'booking-end') || '';
-    // Den Rohwert bis zur Prüfung behalten. Eine leere, negative oder
-    // nichtnumerische Eingabe darf nicht vorab als «1» gültig gemacht werden.
+    // Keep raw capacity through validation; never coerce empty, negative, or
+    // nonnumeric input into a valid value of one.
     state.participants = C.val(mount, 'booking-participants');
   }
 
@@ -379,14 +347,13 @@ export default async function render(ctx) {
 
   const slotLabel = () => `${state.start}–${state.end}`;
 
-  // --- Suchleiste ------------------------------------------------------------
-
+  // Search bar.
   function locationSelect() {
     const favIds = favorites.list('building');
     const fav = buildings.filter((item) => favIds.includes(item.bbl_id));
     const rest = buildings.filter((item) => !favIds.includes(item.bbl_id));
     const option = (item) => `<option value="${C.escape(item.bbl_id)}"${item.bbl_id === state.buildingId ? ' selected' : ''}>${
-      C.escape(item.name)} · ${C.escape(item.city)} (${num(bookableRoomCount(item.bbl_id))})</option>`;
+      C.escape(item.name)} · ${C.escape(item.city)} (${formatNumber(bookableRoomCount(item.bbl_id))})</option>`;
     const groups = fav.length
       ? `<optgroup label="★ Meine Standorte">${fav.map(option).join('')}</optgroup>`
         + `<optgroup label="Alle Standorte">${rest.map(option).join('')}</optgroup>`
@@ -400,8 +367,7 @@ export default async function render(ctx) {
     </div>`;
   }
 
-  // Ein Umschalter, zwei Orte (Standortfeld und Raumkarte): gedrückt = gemerkt.
-  // aria-pressed statt zweier Beschriftungen — der Zustand IST die Information.
+  // One favourite toggle appears in two places. aria-pressed communicates its state.
   function favoriteButton(kind, id, name, { size = '' } = {}) {
     const on = favorites.has(kind, id);
     const what = kind === 'building' ? 'Standort' : 'Raum';
@@ -443,8 +409,7 @@ export default async function render(ctx) {
     </form>`;
   }
 
-  // --- Ergebnisliste ---------------------------------------------------------
-
+  // Result list.
   function filterPanel() {
     return `<div class="catbar__panel-grid">
       ${C.filterGroup({ dim: 'equipment', legend: 'Ausstattung', selected: state.filters.equipment,
@@ -457,9 +422,8 @@ export default async function render(ctx) {
   function chips(room, profile) {
     const items = profile.equipment.map((value) => `<li class="booking-chip">${C.escape(value)}</li>`);
     if (profile.accessible) items.push('<li class="booking-chip">Barrierefrei</li>');
-    // Der fehlende Videodienst ist die einzige Lücke, nach der in der Praxis
-    // gefragt wird — sie steht deshalb als Warnung an der Karte statt nur als
-    // Auslassung, die man mit den anderen Räumen vergleichen müsste.
+    // Missing video service is the only commonly requested gap, so show it as
+    // an explicit card warning instead of an absence users must infer.
     if (!profile.equipment.includes('Teams')) items.push('<li class="booking-chip booking-chip--warn">Kein Teams</li>');
     return `<ul class="booking-chips" aria-label="Ausstattung von ${C.escape(profile.name)}">${items.join('')}</ul>`;
   }
@@ -472,7 +436,7 @@ export default async function render(ctx) {
       <p class="booking-room__code" aria-hidden="true"><strong>${C.escape(roomCode(room))}</strong><span>${C.escape(floorLabel(room))}</span></p>
       <div class="booking-room__body">
         <h4 class="booking-room__title" id="${titleId}">${C.escape(profile.name)}
-          <span class="booking-room__meta">${C.escape(room.roomNumber)} · ${num(room.capacity)} Plätze · ${m2(room.area)}</span>
+          <span class="booking-room__meta">${C.escape(room.roomNumber)} · ${formatNumber(room.capacity)} Plätze · ${formatArea(room.area)}</span>
           ${window ? C.badge(`Frei ${hhmm(window.from)}–${hhmm(window.to)}`, 'success', 'sm') : ''}
           ${profile.favorite ? C.badge('★ Favorit', 'gray', 'sm') : ''}
         </h4>
@@ -500,7 +464,7 @@ export default async function render(ctx) {
     return `<div class="booking-rooms">
       ${visible.map((room, index) => roomRow(room, context, { primary: index === 0 && state.sort === 'best' })).join('')}
       ${rest > 0 ? `<button type="button" class="btn btn--link booking-more" id="booking-show-all">
-        <span class="btn__text">${num(rest)} weitere ${rest === 1 ? 'Raum' : 'Räume'} anzeigen</span>${C.icon('ArrowDown', 'btn__icon')}</button>` : ''}
+        <span class="btn__text">${formatNumber(rest)} weitere ${rest === 1 ? 'Raum' : 'Räume'} anzeigen</span>${C.icon('ArrowDown', 'btn__icon')}</button>` : ''}
     </div>`;
   }
 
@@ -516,14 +480,14 @@ export default async function render(ctx) {
       <section class="booking-results" aria-labelledby="booking-results-title">
         <div class="booking-resulthead">
           <div class="booking-resulthead__count">
-            <h3 id="booking-results-title"><strong>${num(rooms.length)}</strong> von ${num(total)} Räumen frei</h3>
-            <p class="small muted">${C.escape(building().city)} · ${C.escape(datum(state.date))}, ${C.escape(slotLabel())} · ab ${num(state.participants)} Plätze</p>
+            <h3 id="booking-results-title"><strong>${formatNumber(rooms.length)}</strong> von ${formatNumber(total)} Räumen frei</h3>
+            <p class="small muted">${C.escape(building().city)} · ${C.escape(formatDate(state.date))}, ${C.escape(slotLabel())} · ab ${formatNumber(state.participants)} Plätze</p>
           </div>
         </div>
         ${C.catalogueBar({
           showSearch: false,
           countId: 'booking-count',
-          count: `<span class="sr-only">${num(rooms.length)} von ${num(total)} Räumen frei</span>`,
+          count: `<span class="sr-only">${formatNumber(rooms.length)} von ${formatNumber(total)} Räumen frei</span>`,
           sort: { id: 'booking-sort', label: 'Sortierung', value: state.sort, options: [
             { value: 'best', label: 'Beste Übereinstimmung' },
             { value: 'capacity', label: 'Kapazität' },
@@ -531,9 +495,8 @@ export default async function render(ctx) {
           ] },
           filterId: 'booking-filter-toggle', filterLabel: 'Ausstattung filtern', filterCount,
           panelId: 'booking-filter-panel', panel: filterPanel(), panelHidden: !state.filterOpen,
-          // KEIN view-switch: der Grundriss ist keine zweite Ansicht derselben
-          // Liste, sondern eine Nebenansicht («wo im Haus ist das?»). Er steht
-          // deshalb als Nebenaktion in der Leiste, nicht als Ansichtsumschalter.
+          // The floor plan is a supporting location view, not an alternate list
+          // view, so expose it as a secondary action rather than a view switch.
           extra: `<button type="button" class="btn btn--bare btn--sm btn--icon-left catbar__aside" id="booking-plan-open">
             ${C.icon('Map', 'btn__icon')}<span class="btn__text">Grundriss ansehen</span></button>`,
         })}
@@ -542,20 +505,13 @@ export default async function render(ctx) {
     </div>`;
   }
 
-  // --- Dialoge ---------------------------------------------------------------
-
-  // Der Rumpf eines CD-Modals bringt seine weisse Fläche selbst mit: .modal__body
-  // liegt auf dem Scrim, der Inhalt sitzt in einer Karte darin (modal.postcss:31-104,
-  // vgl. C.openShareModal).
+  // Dialogs.
+  // CD modal body supplies the white surface over the scrim; content uses a card within it.
   const dialogBody = (html) => `<div class="card card--default"><div class="card__content"><div class="card__body">${html}</div></div></div>`;
 
-  // Ein Dialog nach dem anderen: `openModal` legt seine Hülle an <body>, und zwei
-  // übereinander hiessen zwei Fokusfallen. Der neue schliesst deshalb den alten.
-  //
-  // Der Rückgabewert von `openModal` ist idempotent, kennt aber keine onClose-
-  // Rückmeldung. Escape, Backdrop und der Schliessen-Knopf laufen direkt durch
-  // openModal; ein kurzer Observer übernimmt deshalb auch für diese Wege den
-  // Abbau der dialogeigenen Karte/Grundriss-Beobachter.
+  // Open only one dialog to avoid stacked focus traps. openModal closes through
+  // Escape, backdrop, and its button without an onClose callback, so a short
+  // observer also tears down dialog-owned map and floor-plan resources.
   function openDialog(opts) {
     if (closeDialog) closeDialog();
     freeDialogResources();
@@ -586,9 +542,9 @@ export default async function render(ctx) {
   function roomFacts(room, profile) {
     const currentBuilding = building();
     return `<dl class="kv kv--tight booking-dialog__facts">
-      <dt>Wann</dt><dd>${C.escape(datum(state.date))}, ${C.escape(slotLabel())}</dd>
+      <dt>Wann</dt><dd>${C.escape(formatDate(state.date))}, ${C.escape(slotLabel())}</dd>
       <dt>Wo</dt><dd>${C.escape(room.roomNumber)} · ${C.escape(currentBuilding.name)}</dd>
-      <dt>Raum</dt><dd>${num(room.capacity)} Plätze · ${C.escape(profile.equipment.join(', '))}</dd>
+      <dt>Raum</dt><dd>${formatNumber(room.capacity)} Plätze · ${C.escape(profile.equipment.join(', '))}</dd>
     </dl>`;
   }
 
@@ -602,8 +558,7 @@ export default async function render(ctx) {
       return;
     }
     const profile = actionContext.profiles.get(room.spaceId);
-    // Zustand NUR dieses Dialogs — der Rest der Seite bleibt unberührt, damit
-    // «Abbrechen» wirklich folgenlos ist.
+    // Keep dialog-local state isolated so Cancel has no effect on the page.
     const invitees = [];
     let inviteError = '';
 
@@ -674,8 +629,8 @@ export default async function render(ctx) {
     q('#booking-invite')?.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') { event.preventDefault(); addInvitee(); }
     });
-    // «Ändern» führt zurück in die Suchleiste — der Dialog ist dafür der falsche
-    // Ort, die Zeit gilt für die ganze Liste.
+    // The German UI term: `Ändern` returns to the search bar because time
+    // applies to the complete result list.
     q('#booking-dialog-change')?.addEventListener('click', () => {
       close();
       mount.querySelector('#booking-date')?.focus();
@@ -693,17 +648,16 @@ export default async function render(ctx) {
         titleInput?.focus();
         return;
       }
-      // URL, Suchleiste und Dialog münden in dieselbe Prüfung. So kann ein
-      // manipuliertes oder inzwischen veraltetes Zeitfenster nicht am Dialog
-      // vorbei persistiert werden.
+      // URL, search bar, and dialog share validation so manipulated or stale
+      // ranges cannot bypass checks and persist.
       if (!validate(room)) {
         close();
         draw();
         C.wireErrorSummary(mount);
         return;
       }
-      // Zwischen Öffnen und Absenden kann derselbe Raum vergeben worden sein —
-      // die Prüfung wiederholt sich deshalb unmittelbar vor dem Schreiben.
+      // Recheck immediately before writing because the room may have been booked
+      // since the dialog opened.
       if (!isAvailable(room, prepareBookingContext())) {
         close();
         C.flashError(mount, `${profile.name} ist im gewählten Zeitraum nicht mehr verfügbar.`);
@@ -715,18 +669,18 @@ export default async function render(ctx) {
         organization: session.user().org,
         requester: session.user().name,
         data: {
-          gebaeude: building().name,
-          raum: room.roomNumber,
-          raumId: room.spaceId,
-          raumname: profile.name,
-          geschoss: floorLabel(room),
-          datum: state.date,
+          'gebaeude': building().name,
+          'raum': room.roomNumber,
+          'raumId': room.spaceId,
+          'raumname': profile.name,
+          'geschoss': floorLabel(room),
+          'datum': state.date,
           start: state.start,
-          ende: state.end,
-          zeit: slotLabel(),
-          teilnehmende: state.participants,
-          zweck: meetingTitle,
-          eingeladene: invitees.map((person) => person.email ? `${person.name} <${person.email}>` : person.name),
+          'ende': state.end,
+          'zeit': slotLabel(),
+          'teilnehmende': state.participants,
+          'zweck': meetingTitle,
+          'eingeladene': invitees.map((person) => person.email ? `${person.name} <${person.email}>` : person.name),
         },
         linkedEntities: { buildingId: state.buildingId },
       });
@@ -754,8 +708,8 @@ export default async function render(ctx) {
       body: dialogBody(`<dl class="kv kv--tight">
           <dt>Standort</dt><dd>${C.escape(currentBuilding.name)}<br>${C.escape(currentBuilding.street)}, ${C.escape(currentBuilding.zip)} ${C.escape(currentBuilding.city)}</dd>
           <dt>Geschoss</dt><dd>${C.escape(floorLabel(room))}</dd>
-          <dt>Kapazität</dt><dd>${num(room.capacity)} Plätze</dd>
-          <dt>Fläche</dt><dd>${m2(room.area)}</dd>
+          <dt>Kapazität</dt><dd>${formatNumber(room.capacity)} Plätze</dd>
+          <dt>Fläche</dt><dd>${formatArea(room.area)}</dd>
         </dl>
         <ul class="booking-feature-list" aria-label="Raumausstattung">
           ${profile.equipment.map((feature) => `<li>${C.icon(feature === 'Teams' || feature === 'Videokonferenz' ? 'Video' : 'Desktop', 'icon--base')}<span>${C.escape(feature)}</span></li>`).join('')}
@@ -769,8 +723,8 @@ export default async function render(ctx) {
     document.querySelector('#booking-details-book')?.addEventListener('click', () => { close(); openBookingDialog(room.spaceId); });
   }
 
-  // Der Grundriss beantwortet «wo im Haus ist das?» und bleibt gleichzeitig ein
-  // Auswahlweg: ein Klick auf einen freien Raum führt direkt in den Buchungsdialog.
+  // The floor plan answers location and remains a selection path: clicking an
+  // available room opens its booking dialog.
   function openFloorplanDialog(spaceId = '') {
     const floorRows = floors();
     if (!floorRows.length) { C.flashError(mount, 'Für dieses Gebäude ist kein Grundriss verfügbar.'); return; }
@@ -778,9 +732,8 @@ export default async function render(ctx) {
     let floorId = room?.floorId || floorRows[0].floorId;
 
     const close = openDialog({
-      // lg, nicht xl: `.modal--xl .modal__body` schaltet overflow auf visible
-      // (für die Endpunkt-Beschriftung der Liniencharts) — ein hoher Grundriss
-      // liefe damit unten aus dem Dialog heraus, statt zu scrollen.
+      // Use modal--lg: modal--xl exposes overflow for chart endpoint labels and
+      // would let a tall floor plan escape instead of scrolling.
       id: 'booking-plan-dialog', size: 'lg', title: `Grundriss · ${building().name}`,
       body: dialogBody(`<div class="booking-plan" id="booking-plan"></div>`),
     });
@@ -788,8 +741,8 @@ export default async function render(ctx) {
     function paint() {
       const host = document.querySelector('#booking-plan');
       if (!host) return;
-      // Der Geschosswechsel ersetzt den gesamten Plan. Erst die Verdrahtung und
-      // Observer des alten Teilbaums lösen, dann den Knoteninhalt austauschen.
+      // Changing floors replaces the complete plan; dispose old wiring and
+      // observers before replacing its subtree.
       if (unwirePlan) { unwirePlan(); unwirePlan = null; }
       if (unwirePlanScroll) { unwirePlanScroll(); unwirePlanScroll = null; }
       const activeFloor = floorRows.find((floor) => floor.floorId === floorId) || floorRows[0];
@@ -841,20 +794,18 @@ export default async function render(ctx) {
     if (!el) return;
     dialogMap.mount(el, (node) => initEstateMap(node, mapped.map((item) => ({
       lat: item.lat, lon: item.lng, label: item.name,
-      sub: `${item.street}, ${item.zip} ${item.city} · ${num(bookableRoomCount(item.bbl_id))} buchbare Räume`,
+      sub: `${item.street}, ${item.zip} ${item.city} · ${formatNumber(bookableRoomCount(item.bbl_id))} buchbare Räume`,
       bblId: item.bbl_id,
       href: `#/app/portfolio?id=${encodeURIComponent(item.bbl_id)}`,
-      // Ohne Fokusobjekt: der Dialog heisst «Alle Standorte» und muss deshalb
-      // alle zeigen; ein Zoom auf den gewählten Standort beantwortete die Frage
-      // «wo sonst noch?» gerade nicht.
+      // With no focused building, the all-locations dialog must show all locations
+      // rather than zooming to the selected one.
     })), null, null, { focusPopup: false }));
   }
 
-  // --- Bestätigung -----------------------------------------------------------
-
+  // Confirmation.
   function doneView() {
     const instance = state.created;
-    const room = roomById(instance.data?.raumId);
+    const room = roomById(instance.data?.['raumId']);
     const invited = state.createdInvitees || [];
     return `<div class="vertical-spacing container__center--sm booking-done">
       ${C.processDone({
@@ -862,14 +813,14 @@ export default async function render(ctx) {
         lead: instance.status === 'abgeschlossen' ? 'Raum gebucht.' : 'Buchung erfasst.',
         title: 'Buchung abgeschlossen',
         heading: 'h2',
-        text: `Ihre Buchung «${C.escape(instance.data?.zweck || instance.title)}» wurde bestätigt.`,
+        text: `Ihre Buchung «${C.escape(instance.data?.['zweck'] || instance.title)}» wurde bestätigt.`,
         extra: room ? `<div class="booking-done__summary">
           <dl class="kv">
-            <dt>Gebäude</dt><dd>${C.escape(instance.data?.gebaeude || '')}</dd>
-            <dt>Raum</dt><dd>${C.escape(instance.data?.raumname || '')} · ${C.escape(room.roomNumber)}</dd>
-            <dt>Datum</dt><dd>${C.escape(datum(instance.data?.datum))}</dd>
-            <dt>Zeit</dt><dd>${C.escape(instance.data?.zeit || '')}</dd>
-            <dt>Teilnehmende</dt><dd>${num(instance.data?.teilnehmende || 0)}</dd>
+            <dt>Gebäude</dt><dd>${C.escape(instance.data?.['gebaeude'] || '')}</dd>
+            <dt>Raum</dt><dd>${C.escape(instance.data?.['raumname'] || '')} · ${C.escape(room.roomNumber)}</dd>
+            <dt>Datum</dt><dd>${C.escape(formatDate(instance.data?.['datum']))}</dd>
+            <dt>Zeit</dt><dd>${C.escape(instance.data?.['zeit'] || '')}</dd>
+            <dt>Teilnehmende</dt><dd>${formatNumber(instance.data?.['teilnehmende'] || 0)}</dd>
           </dl>
           ${invited.length ? `<p class="small"><strong>Eingeladen:</strong> ${C.escape(invited.join(', '))}</p>` : ''}
         </div>` : '',
@@ -882,8 +833,7 @@ export default async function render(ctx) {
     </div>`;
   }
 
-  // --- Meine Buchungen -------------------------------------------------------
-
+  // Personal bookings.
   function bookingInstances(instances) {
     return instances.filter((instance) => instance.defId === 'buchung' && instance.requester === session.user().name);
   }
@@ -891,25 +841,25 @@ export default async function render(ctx) {
   function isUpcoming(instance) {
     if (CANCELLED.has(instance.status)) return false;
     const data = instance.data || {};
-    const end = data.ende || String(data.zeit || '').split(/\s*[–-]\s*/)[1] || '23:59';
-    const stamp = new Date(`${data.datum || '1900-01-01'}T${end}:00`).getTime();
+    const end = data['ende'] || String(data['zeit'] || '').split(/\s*[–-]\s*/)[1] || '23:59';
+    const stamp = new Date(`${data['datum'] || '1900-01-01'}T${end}:00`).getTime();
     return Number.isFinite(stamp) && stamp >= Date.now();
   }
 
   function bookingItem(instance) {
     const data = instance.data || {};
-    const room = roomById(data.raumId)
-      || meetingRooms.find((item) => item.buildingId === instance.linkedEntities?.buildingId && item.roomNumber === data.raum);
+    const room = roomById(data['raumId'])
+      || meetingRooms.find((item) => item.buildingId === instance.linkedEntities?.buildingId && item.roomNumber === data['raum']);
     const currentBuilding = core.building(instance.linkedEntities?.buildingId);
     const cancelled = CANCELLED.has(instance.status);
-    const roomLabel = data.raumname ? `${data.raumname} · ${data.raum || ''}` : (room ? room.roomNumber : data.raum || 'Raum');
-    const invitees = Array.isArray(data.eingeladene) ? data.eingeladene : [];
+    const roomLabel = data['raumname'] ? `${data['raumname']} · ${data['raum'] || ''}` : (room ? room.roomNumber : data['raum'] || 'Raum');
+    const invitees = Array.isArray(data['eingeladene']) ? data['eingeladene'] : [];
     return `<article class="booking-entry">
-      <div class="booking-entry__date"><strong>${C.escape(datum(data.datum))}</strong><span>${C.escape(data.zeit || `${data.start || ''}–${data.ende || ''}`)}</span></div>
+      <div class="booking-entry__date"><strong>${C.escape(formatDate(data['datum']))}</strong><span>${C.escape(data['zeit'] || `${data.start || ''}–${data['ende'] || ''}`)}</span></div>
       <div class="booking-entry__body">
-        <h4>${C.escape(data.zweck || instance.title)}</h4>
-        <p>${C.escape(roomLabel)} · ${C.escape(currentBuilding?.name || data.gebaeude || '')}</p>
-        <p class="small muted">${num(data.teilnehmende || 0)} Teilnehmende${invitees.length ? ` · ${num(invitees.length)} eingeladen` : ''}</p>
+        <h4>${C.escape(data['zweck'] || instance.title)}</h4>
+        <p>${C.escape(roomLabel)} · ${C.escape(currentBuilding?.name || data['gebaeude'] || '')}</p>
+        <p class="small muted">${formatNumber(data['teilnehmende'] || 0)} Teilnehmende${invitees.length ? ` · ${formatNumber(invitees.length)} eingeladen` : ''}</p>
       </div>
       <div class="booking-entry__status">${cancelled ? C.badge('Storniert', 'gray', 'sm') : C.badge('Bestätigt', 'success', 'sm')}</div>
       <div class="booking-entry__actions">
@@ -920,8 +870,7 @@ export default async function render(ctx) {
     </article>`;
   }
 
-  // Die gemerkten Standorte gehören hierher und nicht in die Suchleiste: sie sind
-  // eine Liste zum Pflegen, kein Bedienelement der laufenden Suche.
+  // Favourite locations belong to the maintained list here, not the active search controls.
   function favouriteLocations() {
     const ids = favorites.list('building');
     const rows = ids.map((id) => buildings.find((item) => item.bbl_id === id)).filter(Boolean);
@@ -929,17 +878,17 @@ export default async function render(ctx) {
       <h3 id="booking-favs-title">Meine Standorte</h3>
       ${rows.length ? `<ul class="booking-favs__list">${rows.map((item) => `<li>
           <a href="#/app/room-booking?building=${encodeURIComponent(item.bbl_id)}">${C.icon('StarFilled', 'icon--base')}<span>${C.escape(item.name)}</span></a>
-          <span class="small muted">${num(bookableRoomCount(item.bbl_id))} Räume</span>
+          <span class="small muted">${formatNumber(bookableRoomCount(item.bbl_id))} Räume</span>
         </li>`).join('')}</ul>`
         : `<p class="small muted">Noch keine Standorte gemerkt. Der Stern neben dem Standortfeld merkt einen Standort für die nächste Suche.</p>`}
-      <button type="button" class="btn btn--link btn--icon-left" id="booking-map-open">${C.icon('Map', 'btn__icon')}<span class="btn__text">Alle ${num(buildings.length)} Standorte auf der Karte</span></button>
+      <button type="button" class="btn btn--link btn--icon-left" id="booking-map-open">${C.icon('Map', 'btn__icon')}<span class="btn__text">Alle ${formatNumber(buildings.length)} Standorte auf der Karte</span></button>
     </section>`;
   }
 
   function bookingsView(rows) {
-    const upcoming = rows.filter(isUpcoming).sort((a, b) => `${a.data?.datum}${a.data?.start || ''}`.localeCompare(`${b.data?.datum}${b.data?.start || ''}`));
+    const upcoming = rows.filter(isUpcoming).sort((a, b) => `${a.data?.['datum']}${a.data?.start || ''}`.localeCompare(`${b.data?.['datum']}${b.data?.start || ''}`));
     const past = rows.filter((row) => !isUpcoming(row))
-      .sort((a, b) => `${b.data?.datum || ''}${b.data?.start || ''}`.localeCompare(`${a.data?.datum || ''}${a.data?.start || ''}`));
+      .sort((a, b) => `${b.data?.['datum'] || ''}${b.data?.start || ''}`.localeCompare(`${a.data?.['datum'] || ''}${a.data?.start || ''}`));
     return `<div class="booking-manage vertical-spacing">
       <section aria-labelledby="booking-upcoming-title">
         <h3 id="booking-upcoming-title">Bevorstehende Buchungen</h3>
@@ -952,24 +901,24 @@ export default async function render(ctx) {
     </div>`;
   }
 
-  // --- Kalender und Eingeladene ----------------------------------------------
-
+  // Calendar and invitees.
   function calendarFile(instance) {
     const data = instance.data || {};
     const compact = (date, time) => `${String(date || '').replaceAll('-', '')}T${String(time || '').replace(':', '')}00`;
     const escIcs = (value) => String(value || '').replaceAll('\\', '\\\\').replaceAll('\n', '\\n').replaceAll(',', '\\,').replaceAll(';', '\\;');
-    const invitees = (Array.isArray(data.eingeladene) ? data.eingeladene : []).map((value) => {
+    const invitees = (Array.isArray(data['eingeladene']) ? data['eingeladene'] : []).map((value) => {
       const match = /^(.*?)\s*<([^>]+)>$/.exec(String(value));
       return match ? `ATTENDEE;CN=${escIcs(match[1])}:mailto:${match[2]}` : '';
     }).filter(Boolean);
-    const location = `${data.gebaeude || ''}, ${data.raum || ''}`;
+    const location = `${data['gebaeude'] || ''}, ${data['raum'] || ''}`;
+    const bookingDate = data['datum'];
     const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     const content = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//BBL//Raumbuchung Prototype//DE', 'BEGIN:VEVENT',
-      `UID:${escIcs(instance.reference)}@bbl.demo`, `DTSTAMP:${now}`, `DTSTART;TZID=Europe/Zurich:${compact(data.datum, data.start)}`,
-      `DTEND;TZID=Europe/Zurich:${compact(data.datum, data.ende)}`, `SUMMARY:${escIcs(data.zweck || instance.title)}`,
-      `LOCATION:${escIcs(location)}`, `DESCRIPTION:${escIcs(`${data.teilnehmende || ''} Teilnehmende`)}`, ...invitees,
+      `UID:${escIcs(instance.reference)}@bbl.demo`, `DTSTAMP:${now}`, `DTSTART;TZID=Europe/Zurich:${compact(bookingDate, data.start)}`,
+      `DTEND;TZID=Europe/Zurich:${compact(bookingDate, data['ende'])}`, `SUMMARY:${escIcs(data['zweck'] || instance.title)}`,
+      `LOCATION:${escIcs(location)}`, `DESCRIPTION:${escIcs(`${data['teilnehmende'] || ''} Teilnehmende`)}`, ...invitees,
       'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
-    download(content, `${fileSlug(data.zweck || 'raumbuchung')}.ics`, 'text/calendar;charset=utf-8');
+    download(content, `${fileSlug(data['zweck'] || 'raumbuchung')}.ics`, 'text/calendar;charset=utf-8');
   }
 
   function parseInvitee(value) {
@@ -986,7 +935,7 @@ export default async function render(ctx) {
   function confirmCancellation(instance) {
     const close = openDialog({
       id: 'booking-cancel-modal', size: 'sm', title: 'Buchung stornieren?',
-      body: dialogBody(`<p class="m-0">Die Buchung <strong>${C.escape(instance.data?.zweck || instance.title)}</strong> wird aufgehoben und der Raum wieder freigegeben.</p>`),
+      body: dialogBody(`<p class="m-0">Die Buchung <strong>${C.escape(instance.data?.['zweck'] || instance.title)}</strong> wird aufgehoben und der Raum wieder freigegeben.</p>`),
       footer: `<button type="button" class="btn btn--outline" data-modal-close>Abbrechen</button>
         <button type="button" class="btn btn--filled" id="booking-cancel-confirm">Buchung stornieren</button>`,
     });
@@ -998,15 +947,14 @@ export default async function render(ctx) {
     });
   }
 
-  // --- Verdrahtung -----------------------------------------------------------
-
+  // Wiring.
   function announceResults() {
     if (!lastSearchSummary) return;
-    C.announce(`${lastSearchSummary.available} von ${lastSearchSummary.total} Räumen frei am ${datum(lastSearchSummary.date)}, ${lastSearchSummary.slot}.`);
+    C.announce(`${lastSearchSummary.available} von ${lastSearchSummary.total} Räumen frei am ${formatDate(lastSearchSummary.date)}, ${lastSearchSummary.slot}.`);
   }
 
-  // Schnellauswahl: setzt Datum und Zeit und sucht sofort — ein zweiter Klick auf
-  // «Räume anzeigen» wäre hier reine Bestätigungsarbeit.
+  // A quick choice sets date and time and searches immediately; requiring another
+  // show-rooms click would add confirmation work only.
   function applyQuick(kind) {
     const now = new Date();
     if (kind === 'today') state.date = localDate(now);
@@ -1111,18 +1059,16 @@ export default async function render(ctx) {
       const data = instance.data || {};
       state.tab = 'find';
       state.buildingId = instance.linkedEntities?.buildingId || state.buildingId;
-      state.participants = Number(data.teilnehmende) || state.participants;
+      state.participants = Number(data['teilnehmende']) || state.participants;
       state.date = nextWorkday();
       state.start = safeTime(data.start, state.start);
-      state.end = safeTime(data.ende, state.end);
+      state.end = safeTime(data['ende'], state.end);
       state.created = null;
       state.showAll = false;
       syncUrl(); draw();
-      // Ist derselbe Raum am neuen Termin frei, geht es direkt weiter; sonst
-      // steht die Liste des Standorts bereit. `roomById` muss VOR isAvailable
-      // aufgelöst werden — ein Platzhalterobjekt gälte als «frei» und der
-      // Dialog fiele danach wortlos aus.
-      const repeatRoom = roomById(data.raumId);
+      // Continue directly if the same room is free at the new time; otherwise show
+      // its location list. Resolve roomById before isAvailable to avoid a false placeholder.
+      const repeatRoom = roomById(data['raumId']);
       if (repeatRoom && isAvailable(repeatRoom, prepareBookingContext())) openBookingDialog(repeatRoom.spaceId);
       else announceResults();
     }));
@@ -1131,8 +1077,8 @@ export default async function render(ctx) {
 
   function wire() {
     C.wireTabs(mount, { onSelect: (tab) => { state.tab = tab; syncUrl(); } });
-    // Die Merkliste wirkt auf Vorbelegung, Sortierung und Abzeichen — deshalb
-    // ein volles Neuzeichnen; preserveFocus() in draw() hält den Stern im Fokus.
+    // Favourites affect defaults, ordering, and badges, so redraw fully while
+    // preserveFocus keeps the toggle focused.
     mount.querySelectorAll('[data-fav-kind]').forEach((button) => button.addEventListener('click', () => {
       const on = favorites.toggle(button.dataset.favKind, button.dataset.favId);
       C.announce(on ? 'Als Favorit gemerkt.' : 'Favorit entfernt.');
@@ -1152,7 +1098,7 @@ export default async function render(ctx) {
     lastSearchSummary = null;
     const tabs = [
       { id: 'find', label: 'Raum finden' },
-      { id: 'bookings', label: `Meine Buchungen (${num(upcomingCount)})` },
+      { id: 'bookings', label: `Meine Buchungen (${formatNumber(upcomingCount)})` },
     ];
     mount.innerHTML = `<div class="container section">
       ${C.pageHeader({ title: 'Raumbuchung', lead: 'Sitzungs- und Besprechungsräume an den Standorten des Bundes finden und reservieren.' })}
@@ -1167,15 +1113,11 @@ export default async function render(ctx) {
   }
 
   draw();
-  // Die Adresse trägt den VOLLEN Suchzustand, auch beim ersten Aufschlag: sonst
-  // wäre eine frisch geöffnete Seite nicht teilbar (die Vorbelegung aus Favorit
-  // und nächstem Arbeitstag stünde nirgends), und der Empfänger sähe eine andere
-  // Liste als der Absender. replaceState hängt keinen History-Eintrag an und
-  // reicht `history.state` durch — die Scroll-Nummer des Routers überlebt.
+  // Keep the full search state in the URL from first load so shared links render
+  // identically. replaceState avoids history noise and preserves router scroll state.
   syncUrl();
 
-  // Tief verlinkter Raum: erst jetzt öffnen — der Dialog braucht die gezeichnete
-  // Seite als Rückfallebene, wenn er geschlossen wird.
+  // Open a deep-linked room only after drawing its page fallback.
   if (pendingDeepLink && session.isLoggedIn() && state.tab === 'find') {
     const room = roomById(pendingDeepLink);
     pendingDeepLink = '';

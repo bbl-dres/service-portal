@@ -1,17 +1,15 @@
-// Suchvorschläge für das grosse Feld auf der Startseite (ARIA-Combobox).
+// Search suggestions for the home page's large field (ARIA combobox).
 //
-// BEWUSST NUR AUF DEM, WAS OHNEHIN DA IST: Dienstleistungen (eager geladen) und
-// «Wissen und Hilfsmittel» (JS-Literale, kein Request). Das sind 150 Einträge
-// und genau die beiden Inhaltsarten, auf die alle Signale zeigen — Vorgänge und
-// Vorlagen (docs/search-review.md §2). Den vollen Index zu bauen hiesse, auf der
-// Startseite 236 KB nachzuladen, nur damit jemand VIELLEICHT tippt; das würde
-// die Startzeit-Arbeit aus docs/code-review.md §1 rückgängig machen. Wer mehr
-// sucht, drückt Enter und bekommt auf #/search alles.
+// DELIBERATELY LIMITED TO WHAT IS ALREADY PRESENT: eagerly loaded services and
+// knowledge and resources (JS literals, no request). These 150 entries are the
+// two content types indicated by every signal: cases and templates
+// (docs/search-review.md §2). Building the full index would load another 236 KB
+// on the home page just in case someone MIGHT type, undoing the startup work in
+// docs/code-review.md §1. Pressing Enter searches everything at #/search.
 //
-// Tastatur nach WAI-ARIA 1.2 (combobox mit listbox-popup): ↓/↑ wandern,
-// Enter übernimmt, Escape schliesst, Tab verlässt. Die Auswahl wird über
-// aria-activedescendant angesagt — der Fokus bleibt im Eingabefeld, sonst
-// verlöre die Schreibmarke ihre Position.
+// Keyboard follows WAI-ARIA 1.2 (combobox with listbox popup): ↓/↑ move, Enter
+// selects, Escape closes and Tab leaves. aria-activedescendant announces the
+// selection while focus remains in the input, preserving the caret position.
 
 import { search as runSearch, prepare } from './search-engine.js';
 import { knowledgeIndex } from './knowledge-content.js';
@@ -19,25 +17,25 @@ import { createListboxController } from './combobox.js';
 
 const MAX = 7;
 
-// Der Index wird einmal je Seitenaufbau gebaut und gemerkt — bei jedem
-// Tastendruck neu zu falten wäre bei 150 Einträgen zwar bezahlbar, aber unnötig.
+// Build and cache the index once per page load. Refolding 150 entries on every
+// keystroke would be affordable but unnecessary.
 let CACHE = null;
 function suggestIndex(core) {
   if (CACHE) return CACHE;
   const domainLabel = (k) => (core.ref().domains || []).find((d) => d.key === k)?.label || k;
   const rows = [];
   for (const s of core.services()) {
-    if (s.type !== 'action') continue;   // Vorschläge führen zu etwas Startbarem
+    if (s.type !== 'action') continue;   // Suggestions lead to something startable.
     rows.push({
-      title: s.title, desc: domainLabel(s.domain), art: 'Dienstleistung',
+      title: s.title, desc: domainLabel(s.domain), resultType: 'Dienstleistung',
       href: `#/services/${encodeURIComponent(s.serviceId)}`,
-      extra: [domainLabel(s.domain), s.short, (s.voraussetzungen || []).join(' ')].join(' '),
+      extra: [domainLabel(s.domain), s.short, (s['voraussetzungen'] || []).join(' ')].join(' '),
       boost: s.popular ? Math.max(0, 20 - s.popular * 2) : 0,
     });
   }
   for (const k of knowledgeIndex()) {
     rows.push({
-      title: k.title, desc: k.area, art: 'Unterlage',
+      title: k.title, desc: k.area, resultType: 'Unterlage',
       href: k.href, external: k.external, extra: k.extra,
     });
   }
@@ -45,9 +43,9 @@ function suggestIndex(core) {
   return CACHE;
 }
 
-// `input` ist das Eingabefeld, `form` sein Formular. Gibt eine Aufräumfunktion
-// zurück; der Aufrufer hängt sie an ctx.onUnmount, damit beim Routenwechsel
-// keine Liste im DOM zurückbleibt.
+// `input` is the field and `form` its form. Returns a cleanup function which the
+// caller attaches to ctx.onUnmount so no list remains in the DOM after a route
+// change.
 export function attachSuggest(input, form, core, C) {
   const listId = input.id + '-suggest';
   const list = document.createElement('ul');
@@ -56,8 +54,8 @@ export function attachSuggest(input, form, core, C) {
   list.setAttribute('role', 'listbox');
   list.setAttribute('aria-label', 'Suchvorschläge');
   list.hidden = true;
-  // Das Feld liegt in einem Flex-Container; die Liste gehört unter das FELD,
-  // nicht unter die Zeile mit dem Knopf.
+  // The field sits in a flex container; the list belongs below the FIELD, not
+  // below the row containing the button.
   const anchor = input.parentElement;
   anchor.classList.add('listbox-anchor');
   anchor.appendChild(list);
@@ -79,7 +77,7 @@ export function attachSuggest(input, form, core, C) {
     list.innerHTML = items.map((r, i) => `
       <li class="listbox__option" role="option" id="${listId}-${i}" aria-selected="false" data-i="${i}">
         <span class="listbox__title">${C.escape(r.title)}</span>
-        <span class="listbox__meta">${C.escape(r.art)}${r.desc ? ' · ' + C.escape(r.desc) : ''}</span>
+        <span class="listbox__meta">${C.escape(r.resultType)}${r.desc ? ' · ' + C.escape(r.desc) : ''}</span>
       </li>`).join('');
     controller.setItems(items);
   };

@@ -1,38 +1,25 @@
-// Prozessdokumentation Bauten — Prozesslandkarte des Immobilienmanagements.
-//
-// Route: #/app/process-docs (Detail per ?id=<processId>, Register per ?tab=).
-// Geschwister des Metadatenkatalogs und bewusst dieselbe Anatomie: pf-Baum
-// (Prozessbereich → Prozessgruppe) links, Katalogleiste mit Suche/Sortierung/
-// Filtern, Liste/Galerie rechts; das Detail trägt die Register «Übersicht»
-// (Verantwortliche, Metadaten), «Prozessdiagramm» (BPMN-Viewer) und
-// «Prozessschritte» (aus dem BPMN gelesene Schrittliste). Datenbestand:
-// data/processes.json (L1–L3
-// denormalisiert am Datensatz), Diagramme: assets/bpmn/<processId>.bpmn.
-//
-// Der BPMN-Viewer ist bpmn-js (NavigatedViewer) — wie MapLibre und Swagger UI
-// lazy vom CDN, mit Zeitüberschreitung und Degradation zur Fehlermeldung.
-// Die Schrittliste entsteht ohne den Viewer: ein DOMParser liest die typisierten
-// Flusselemente in Dokumentreihenfolge (übernommen aus dem process-hub-
-// Prototyp) — sie ist zugleich die zugängliche Alternative zum Diagramm.
-
-import { ANWENDUNGEN, trail } from '../crumbs.js';
-import { datum } from '../format.js';
+import { APPLICATIONS, trail } from '../crumbs.js';
+import { formatDate } from '../format.js';
+// Real-estate management process catalogue.
+// Route: #/app/process-docs, with ?id=<processId> details and stable ?tab values.
+// It mirrors the metadata catalogue: a process-area/group tree, catalogue bar,
+// list/gallery, and overview, BPMN, and accessible process-step tabs. Processes
+// come from data/processes.json and diagrams from assets/bpmn/<processId>.bpmn.
+// NavigatedViewer loads lazily from a CDN; DOMParser independently derives the
+// ordered accessible step list and degrades failures to messages.
 import * as links from '../links.js';
-// escape/badge direkt aus components.js (Muster metadata-catalog.js).
+// Reuse escape and badge directly from components.js, as metadata-catalog does.
 import { escape as esc, badge } from '../components.js';
 
 export const needs = ['processes', 'contacts'];
 
 const BASE = '#/app/process-docs';
-const TITEL = 'Prozessdokumentation Bauten';   // steht EINMAL hier — Seitentitel, Krume, Überschrift, Rück-Links
+const TITLE = 'Prozessdokumentation Bauten';   // Single source for title, breadcrumb, heading, and back links.
 const PER_PAGE = 12;
-// Generische Ansprechstelle der Prozesse (data/contacts.json); die PERSONEN
-// je Prozess sind AdminDir-Einträge (responsiblePersons, wie im Metadatenkatalog).
+// Generic process contact comes from contacts; responsiblePersons are individual AdminDir entries.
 const CONTACT_ID = 'immobilienmanagement';
 
-// --- bpmn-js lazy vom CDN (Muster: loadMapLibre / loadSwaggerUI) -------------
-// NavigatedViewer-Prebundle (Ansehen + Pan/Zoom, kein Modellieren); die drei
-// Stylesheets (diagram-js, bpmn-js, BPMN-Font) gehören zum Viewer.
+// Lazily load the bpmn-js NavigatedViewer bundle and its three stylesheets.
 const BPMNJS_VER = '17.11.1';
 let bjsPromise = null;
 function loadBpmnJS() {
@@ -55,14 +42,12 @@ function loadBpmnJS() {
     s.onload = () => { clearTimeout(timer); window.BpmnJS ? resolve(window.BpmnJS) : reject(new Error('BpmnJS fehlt')); };
     s.onerror = () => { clearTimeout(timer); reject(new Error('Der BPMN-Viewer konnte nicht geladen werden')); };
     document.head.appendChild(s);
-  }).catch((e) => { bjsPromise = null; throw e; });   // Fehler nicht cachen → späterer Aufruf lädt neu
+  }).catch((e) => { bjsPromise = null; throw e; });   // Do not cache failures; a later visit may retry.
   return bjsPromise;
 }
 
-// --- Schrittliste aus dem BPMN-XML (DOMParser, viewer-unabhängig) ------------
-// Übernommen aus dem process-hub-Prototyp (js/bpmn.js): alle typisierten
-// Flusselemente in Dokumentreihenfolge; Sequenzflüsse liefern nur die
-// Ein-/Ausgangszahlen. Namespace-präfix-agnostisch über getElementsByTagNameNS.
+// Parse typed BPMN flow elements in document order, independent of namespace
+// prefixes. Sequence flows contribute only incoming and outgoing counts.
 const BPMN_NS = 'http://www.omg.org/spec/BPMN/20100524/MODEL';
 const STEP_TYPES = [
   { tag: 'startEvent', label: 'Start', kind: 'event' },
@@ -123,7 +108,7 @@ function parseBpmnSteps(xmlString) {
       if (t) documentation = documentation ? `${documentation}\n${t}` : t;
     }
     return {
-      nr: i + 1, id,
+      number: i + 1, id,
       name: n.getAttribute('name') || '',
       typeLabel: meta ? meta.label : n.localName,
       kind: meta ? meta.kind : 'other',
@@ -135,21 +120,19 @@ function parseBpmnSteps(xmlString) {
   });
 }
 
-// --- Modulweite Nachschläge --------------------------------------------------
+// Module-level lookups.
 const refList = (core, key) => core.ref()[key] || [];
-// Prozesse tragen denselben Lebenszyklus wie die Katalogobjekte
-// (reference-data.json → objectStatuses: DRAFT/VALID/SUPERSEDED/ARCHIVED).
+// Processes use the catalogue object's DRAFT/VALID/SUPERSEDED/ARCHIVED lifecycle.
 const statusOf = (core, id) => refList(core, 'objectStatuses').find((s) => s.id === id) || { label: id, variant: 'gray' };
-const prozHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
-const kurz = (s, n = 130) => {
+const processHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
+const truncateText = (s, n = 130) => {
   const t = String(s || '');
   if (t.length <= n) return t;
   const cut = t.slice(0, n);
   return `${cut.slice(0, cut.lastIndexOf(' '))}…`;
 };
 
-// Nur echte Nutzerentscheide landen hier (Baum offen/zu); ohne Eintrag gilt
-// der Standard. Das Modul lebt über Neu-Renders hinweg, die Seite nicht.
+// Persist only explicit tree expand/collapse choices across this module's redraws.
 const OPEN = new Map();
 const isOpen = (key, fallback) => (OPEN.has(key) ? OPEN.get(key) : fallback);
 
@@ -159,16 +142,14 @@ export default async function render(ctx) {
   return list(ctx);
 }
 
-// ============================================================================
-// Landkarte (Liste + Baum)
-// ============================================================================
+// Process map: list and tree.
 function list(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  setTitle(TITEL);
-  setCrumbs(trail(ANWENDUNGEN, { label: TITEL }));
+  setTitle(TITLE);
+  setCrumbs(trail(APPLICATIONS, { label: TITLE }));
 
   const all = core.processes();
-  // L1/L2 aus den Daten (Reihenfolge des ersten Auftretens = Prozesslebenslauf).
+  // Derive L1/L2 ordering from first appearance in the process inventory.
   const areas = [...new Map(all.map((p) => [p.area, { key: p.area, code: p.areaCode, label: p.areaLabel }])).values()];
   const groups = [...new Map(all.map((p) => [p.group, { key: p.group, label: p.groupLabel }])).values()];
 
@@ -216,8 +197,8 @@ function list(ctx) {
   const card = (p) => C.card({
     title: p.name,
     idLine: p.processId,
-    desc: kurz(p.description),
-    href: prozHref(p.processId),
+    desc: truncateText(p.description),
+    href: processHref(p.processId),
     badges: [badge(p.groupLabel, 'blue')],
     footerInfo: esc(p.areaLabel), footerAction: C.cardAction(),
   });
@@ -225,16 +206,15 @@ function list(ctx) {
   const listView = (rows) => C.table({
     caption: 'Prozesse', zebra: true, rowsClickable: true,
     columns: [
-      { key: 'nr', label: 'Nr.', width: '10rem', render: (p) => `<code>${esc(p.processId)}</code>` },
-      { key: 'name', label: 'Prozess', render: (p) => `<a href="${prozHref(p.processId)}">${esc(p.name)}</a><br><span class="small muted">${esc(kurz(p.description, 90))}</span>` },
+      { key: 'number', label: 'Nr.', width: '10rem', render: (p) => `<code>${esc(p.processId)}</code>` },
+      { key: 'name', label: 'Prozess', render: (p) => `<a href="${processHref(p.processId)}">${esc(p.name)}</a><br><span class="small muted">${esc(truncateText(p.description, 90))}</span>` },
       { key: 'group', label: 'Prozessgruppe', width: '13rem', render: (p) => esc(p.groupLabel) },
       { key: 'status', label: 'Status', width: '8rem', render: (p) => { const st = statusOf(core, p.status); return badge(st.label, st.variant); } },
     ],
     rows,
   });
 
-  // Baum: Prozessbereich (L1) → Prozessgruppen (L2); die Prozesse (L3) stehen
-  // als gefilterte Liste rechts — ein Gruppenklick IST der Filter.
+  // The tree contains L1 areas and L2 groups; filtered L3 processes appear in the list.
   const row = (label, count) => `<span class="pf-tree__label">${esc(label)}</span><span class="pf-tree__n">${count}</span>`;
   const leaf = (label, count, href, on) =>
     `<li class="pf-tree__item"><a class="pf-tree__leaf plain-link interactive-control${on ? ' is-active' : ''}" href="${href}"${on ? ' aria-current="true"' : ''}>${row(label, count)}</a></li>`;
@@ -255,9 +235,8 @@ function list(ctx) {
           selGroups.length === 1 && selGroups[0] === g.key))
         .join('');
       return branch(a.key, `${a.label}`, inArea.length,
-        // Wie kindHref des Geschwisters: Suche und Ansicht wandern mit, sonst
-        // könnte der Zweigknopf bei gesetztem ?q/?view nie klappen (er
-        // navigierte immer) und würfe beim Navigieren die Suche weg.
+        // Preserve query and view when building branch links so an active branch
+        // can toggle without discarding search state.
         C.catalogueHash(BASE, { q: rawQ, view, defaultView: 'list' }),
         !selGroups.length && !selStatus.length && !rawQ,
         selGroups.length ? true : isOpen(a.key, true), items);
@@ -273,7 +252,7 @@ function list(ctx) {
   mount.innerHTML = `
   <div class="container section">
     ${C.pageHeader({
-      title: TITEL,
+      title: TITLE,
       lead: 'Die Prozesse des Immobilienmanagements als navigierbare Landkarte — je Prozess mit BPMN-Diagramm, Prozessschritten und Verantwortlichkeiten.',
     })}
     ${C.catalogueBar({
@@ -312,7 +291,7 @@ function list(ctx) {
   });
   ctx.onUnmount(C.wireTableRows(mount));
 
-  // Baumklicks: Zweigknopf navigiert, wenn er woandershin führt, sonst klappt er.
+  // A branch control navigates when changing branch and toggles when already active.
   mount.querySelector('.pf-sidebar').addEventListener('click', (e) => {
     const btn = e.target.closest('.pf-tree__node[data-branch]');
     if (!btn) return;
@@ -329,30 +308,26 @@ function list(ctx) {
   });
 }
 
-// ============================================================================
-// Prozess-Detail (Übersicht · Prozessdiagramm · Prozessschritte)
-// ============================================================================
+// Process detail: overview, diagram, and steps.
 async function detail(ctx, rawId) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  // URLSearchParams already decodes query values once. Decoding again corrupts
-  // valid identifiers containing a literal percent escape such as "%2F".
+  // URLSearchParams already decodes once; decoding again would corrupt literal percent escapes.
   const p = core.processDoc(rawId);
   if (!p) {
     return C.renderNotFound(ctx, {
       thing: 'Dieser Prozess', title: 'Prozess nicht gefunden',
-      backHref: BASE, backLabel: TITEL,
-      crumbs: trail(ANWENDUNGEN, { label: TITEL, href: BASE }),
+      backHref: BASE, backLabel: TITLE,
+      crumbs: trail(APPLICATIONS, { label: TITLE, href: BASE }),
     });
   }
   setTitle(p.name);
-  setCrumbs(trail(ANWENDUNGEN, { label: TITEL, href: BASE }, { label: p.name }));
+  setCrumbs(trail(APPLICATIONS, { label: TITLE, href: BASE }, { label: p.name }));
 
   const st = statusOf(core, p.status);
   const contact = core.contacts().find((c) => c.contactId === CONTACT_ID);
 
-  // BPMN-XML VOR dem Zeichnen holen: die Schrittliste (und ihre Registerzahl)
-  // kommt aus demselben Dokument wie das Diagramm — ein Abruf für beides.
-  // Scheitert er, degradieren beide Register einzeln (Meldung statt Inhalt).
+  // Fetch BPMN XML before rendering because step count and diagram share it.
+  // On failure, each tab degrades independently to a message.
   let xml = '', xmlError = '';
   try {
     const res = await fetch(encodeURI(p.bpmn), { signal: ctx.signal });
@@ -362,21 +337,22 @@ async function detail(ctx, rawId) {
   if (ctx.stale()) return;
   const steps = xml ? parseBpmnSteps(xml) : [];
 
+  const tabByLegacyValue = { 'uebersicht': 'overview', 'diagramm': 'diagram', 'schritte': 'steps' };
+  const legacyValueByTab = Object.fromEntries(Object.entries(tabByLegacyValue).map(([legacy, tab]) => [tab, legacy]));
   const tabs = [
-    { id: 'uebersicht', label: 'Übersicht' },
-    { id: 'diagramm', label: 'Prozessdiagramm' },
-    { id: 'schritte', label: `Prozessschritte (${steps.length})` },
+    { id: 'overview', label: 'Übersicht' },
+    { id: 'diagram', label: 'Prozessdiagramm' },
+    { id: 'steps', label: `Prozessschritte (${steps.length})` },
   ];
-  let active = query.get('tab') || tabs[0].id;
+  let active = tabByLegacyValue[query.get('tab')] || tabs[0].id;
   if (!tabs.some((x) => x.id === active)) active = tabs[0].id;
   const syncHash = (tab) => {
     const qs = new URLSearchParams({ id: p.processId });
-    if (tab !== tabs[0].id) qs.set('tab', tab);
+    if (tab !== tabs[0].id) qs.set('tab', legacyValueByTab[tab]);
     history.replaceState(history.state, '', `${BASE}?${qs}`);
   };
 
-  // Verantwortliche wie im Metadatenkatalog: eine PERSON ist ein AdminDir-
-  // Eintrag; die generische Ansprechstelle steht als Kontakt-Karte daneben.
+  // Responsible people are AdminDir entries; the generic contact remains a side card.
   const personsSection = (persons) => `
     <h2 class="detail-section__title">Verantwortliche Personen</h2>
     <div class="box">${persons && persons.length ? `<dl class="kv kv--ruled">${persons.map((x) => `
@@ -385,7 +361,7 @@ async function detail(ctx, rawId) {
            target="_blank" rel="noopener external">AdminDir ${esc(x.admindirId)}</a></dd>`).join('')}
     </dl>` : '<p class="muted m-0">Für diesen Prozess ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
 
-  const uebersichtHTML = () => `<div class="detail-layout"><div>${personsSection(p.responsiblePersons)}
+  const overviewHTML = () => `<div class="detail-layout"><div>${personsSection(p.responsiblePersons)}
     <section class="detail-section">
       <h2 class="detail-section__title">Metadaten</h2>
       <dl class="kv kv--ruled">
@@ -395,7 +371,7 @@ async function detail(ctx, rawId) {
         <dt>Version</dt><dd>${esc(p.version || '—')}</dd>
         ${p.systems && p.systems.length ? `<dt>Unterstützende Systeme</dt><dd>${p.systems.map((s) => badge(s, 'gray', 'sm')).join(' ')}</dd>` : ''}
         ${p.standards && p.standards.length ? `<dt>Grundlagen</dt><dd>${p.standards.map((s) => esc(s)).join('<br>')}</dd>` : ''}
-        ${p.updated ? `<dt>Stand</dt><dd>${esc(datum(p.updated))}</dd>` : ''}
+        ${p.updated ? `<dt>Stand</dt><dd>${esc(formatDate(p.updated))}</dd>` : ''}
         <dt>ID</dt><dd><code>${esc(p.processId)}</code></dd>
       </dl>
     </section></div>
@@ -404,19 +380,16 @@ async function detail(ctx, rawId) {
         <h2>Verwandte Prozesse</h2>
         <ul class="list--default small m-0">${p.related.map((r) => {
           const rp = core.processDoc(r);
-          return `<li><a href="${esc(links.prozess(r))}">${esc(rp ? rp.name : r)}</a></li>`;
+          return `<li><a href="${esc(links.processDocumentation(r))}">${esc(rp ? rp.name : r)}</a></li>`;
         }).join('')}</ul>
       </div>` : ''}
       ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
     </aside></div>`;
 
-  const diagrammHTML = () => `
+  const diagramHTML = () => `
     <section class="detail-section">
-      ${''/* KEIN role=img am Host: der Viewer injiziert interaktive Inhalte
-            (bpmn.io-Link) und im Fehlerfall Meldungen mit Knopf — unter img
-            wären sie für Screenreader weg. Das Tabpanel hat bereits eine
-            sr-only-h2; die zugängliche Alternative steht im Register
-            «Prozessschritte». */}
+      ${''/* Do not give the host role=img: the viewer injects interactive content
+            and error actions. The steps tab provides the accessible alternative. */}
       <div class="bpmn-host" id="pd-bpmn">
         <div class="viewer-toolbar viewer-toolbar--light viewer-toolbar--vertical bpmn-toolbar" role="group" aria-label="Diagrammansicht">
           <button type="button" class="viewer-toolbar__button btn btn--bare btn--icon-only" data-bpmn="in" title="Vergrössern" disabled>${C.icon('Plus', 'btn__icon')}<span class="btn__text">Vergrössern</span></button>
@@ -431,20 +404,20 @@ async function detail(ctx, rawId) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${C.detailBar({ backHref: BASE, backLabel: TITEL })}
+    ${C.detailBar({ backHref: BASE, backLabel: TITLE })}
     <h1 tabindex="-1">${esc(p.name)}</h1>
     ${p.description ? `<p class="lead">${esc(p.description)}</p>` : ''}
     <div class="tabs mt-6">
       ${C.tabBar({ items: tabs, active, idPrefix: 'pd-tab', ariaLabel: 'Prozess' })}
       ${C.tabPanels({ items: tabs, active, idPrefix: 'pd-tab', heading: true, render: (tid) => (
-        tid === 'uebersicht' ? uebersichtHTML()
-          : tid === 'diagramm' ? diagrammHTML()
+        tid === 'overview' ? overviewHTML()
+          : tid === 'diagram' ? diagramHTML()
             : '<div id="pd-steps"></div>'
       ) })}
     </div>
   </div>`;
 
-  // --- Schrittliste (Register «Prozessschritte») ----------------------------
+  // Accessible process-step tab.
   const stepsHost = mount.querySelector('#pd-steps');
   if (!xml) {
     stepsHost.innerHTML = C.notification(
@@ -458,7 +431,7 @@ async function detail(ctx, rawId) {
       rows: steps,
       searchKeys: ['name', 'typeLabel', 'lane'],
       sorts: [
-        { value: 'ord', label: 'Reihenfolge', cmp: (a, b) => a.nr - b.nr },
+        { value: 'ord', label: 'Reihenfolge', cmp: (a, b) => a.number - b.number },
         { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
       ],
       facets: [
@@ -466,7 +439,7 @@ async function detail(ctx, rawId) {
         ...(lanes.length ? [{ dim: 'lane', legend: 'Rolle', options: lanes.map((l) => ({ value: l, label: l })), match: (r, vals) => vals.includes(r.lane) }] : []),
       ],
       columns: [
-        { key: 'nr', label: 'Nr.', width: '4rem', align: 'right', render: (s) => String(s.nr) },
+        { key: 'number', label: 'Nr.', width: '4rem', align: 'right', render: (s) => String(s.number) },
         { key: 'name', label: 'Schritt', render: (s) => s.name ? esc(s.name) : `<span class="muted">ohne Bezeichnung</span> <code class="small">${esc(s.id)}</code>` },
         { key: 'typeLabel', label: 'Typ', width: '11rem', render: (s) => esc(s.typeLabel) },
         { key: 'lane', label: 'Rolle', width: '14rem', render: (s) => s.lane ? esc(s.lane) : '<span class="muted">—</span>' },
@@ -474,15 +447,11 @@ async function detail(ctx, rawId) {
     }));
   }
 
-  // --- BPMN-Viewer (Register «Prozessdiagramm») ------------------------------
-  // Erst beim ersten sichtbaren Aufruf des Registers: bpmn-js misst seinen
-  // Behälter, und ein verstecktes Panel misst 0×0 (Einpassen liefe ins Leere).
+  // Initialise the BPMN viewer only after its tab first becomes visible; bpmn-js
+  // cannot measure or fit a hidden 0×0 container.
   let viewer = null, viewerStarted = false, needsFit = false;
-  // Einpassen nur bei messbarem Behälter: wechselt jemand WÄHREND des Ladens
-  // (CDN, bis 12 s) aufs Schritte-Register, ist das Diagramm-Panel hidden —
-  // diagram-js rechnete aus 0×0 eine nicht-endliche Matrix, der Fang unten
-  // ersetzte das ganze Diagramm durch die Fehlermeldung (Review-Repro
-  // 2026-08-04). Stattdessen merken und beim Rückwechsel nachholen.
+  // Fit only a measurable container. If the user changes tabs during CDN load,
+  // defer fitting instead of producing a non-finite diagram-js matrix.
   const fitDiagram = () => {
     const host = mount.querySelector('#pd-bpmn-canvas');
     if (!viewer || !host) return;
@@ -517,7 +486,7 @@ async function detail(ctx, rawId) {
       await viewer.importXML(xml);
       if (ctx.stale()) return;
       fitDiagram();
-      // Zoomleiste erst jetzt bedienbar — vorher wären die Knöpfe stumme Nieten.
+      // Enable zoom controls only after a viewer exists.
       mount.querySelectorAll('[data-bpmn]').forEach((b) => { b.disabled = false; });
     } catch (e) {
       host.innerHTML = C.notification(
@@ -525,11 +494,10 @@ async function detail(ctx, rawId) {
         'error', 'WarningCircle');
     }
   };
-  ctx.onUnmount(() => { if (viewer) { try { viewer.destroy(); } catch { /* schon weg */ } viewer = null; } });
+  ctx.onUnmount(() => { if (viewer) { try { viewer.destroy(); } catch { /* Already removed. */ } viewer = null; } });
 
-  // Zoomleiste (delegiert). Am .tabs-KIND statt am mount: der Router verwendet
-  // den mount wieder, ein Horcher dort sammelte sich je Besuch an — der
-  // Teilbaum hier stirbt mit dem nächsten innerHTML (Muster pf-sidebar).
+  // Delegate zoom controls from the tab subtree, which is replaced on redraw,
+  // to avoid accumulating listeners on the router-reused mount.
   mount.querySelector('.tabs').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-bpmn]');
     if (!btn || !viewer) return;
@@ -539,10 +507,10 @@ async function detail(ctx, rawId) {
   });
 
   C.wireTabs(mount, { syncHash, onSelect: (tab) => {
-    if (tab !== 'diagramm') return;
+    if (tab !== 'diagram') return;
     startViewer();
-    // Aufgeschobenes Einpassen nachholen, sobald das Panel wieder Masse hat.
+    // Complete deferred fitting once the panel is visible and measurable again.
     if (needsFit) requestAnimationFrame(fitDiagram);
   } });
-  if (active === 'diagramm') startViewer();
+  if (active === 'diagram') startViewer();
 }

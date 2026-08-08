@@ -27,7 +27,7 @@ export const COLOR_DESCRIPTIONS = {
   none: 'Keine Farbcodierung',
   use: 'Raumfunktion / Nutzungstyp',
   sia: 'Flächenart nach SIA 416',
-  ve: 'Zugeordnete Verwaltungseinheit',
+  've': 'Zugeordnete Verwaltungseinheit',
   module: 'Multispace-Ausstattungsstandard',
 };
 export const panelToggleIcon = (side) => `<svg class="fpe-panel-toggle-icon fpe-panel-toggle-icon--${side}" viewBox="0 0 24 24" aria-hidden="true">

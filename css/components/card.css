@@ -1,72 +1,71 @@
 /* Cards (card.postcss:5-248) — the base carries no shadow */
-/* KEIN overflow:hidden (card.postcss:5-8): nur .card__image beschneidet sein
-   Medium; Texte kappt der line-clamp. Der Beschnitt an der Karte selbst zwang
-   die Fokusringe auf −2px nach innen und schnitt bei 200% Zoom Pillen ab. */
+/* NO overflow:hidden (card.postcss:5-8): only .card__image clips its media;
+   line-clamp clips text. Clipping the card itself forced focus rings 2px inward
+   and cut off pills at 200% zoom. */
 .card { background:var(--surface-bg); border:0; border-radius:var(--radius-none); box-shadow:var(--shadow-none);
   display:flex; flex-direction:column; height:100%; position:relative; container-type:inline-size; }
 /* Deliberate CD surface tier: card.postcss keeps default/universal cards
    square and borderless, one elevation step above tables at shadow-lg. */
 .card--default, .card--universal { box-shadow:var(--shadow-lg); }
-/* card--universal: Bild wird eingepasst (object-contain) statt beschnitten (CD card.postcss). */
+/* card--universal: image is fitted (object-contain), not cropped (CD card.postcss). */
 .card--universal .card__image > img, .card--universal .card__image > .photo { object-fit:contain; }
-/* card.postcss:165 — das CD erzeugt 16/9 über `pb-[56.25%]`, nicht über
-   aspect-ratio. Das ist hier wesentlich: als Flex-Element in der Spalte wird
-   eine aspect-ratio-Box geschrumpft, sobald `.card__content { height:100% }`
-   die volle Kartenhöhe verlangt. Das Bild verlor dadurch seine Proportion und
-   die Differenz landete als Leerraum über dem Footer. Mit padding-bottom hat
-   die Box die Höhe 0 und bleibt unantastbar. */
+/* card.postcss:165: CD creates 16:9 through `pb-[56.25%]`, not aspect-ratio.
+   That matters here: as a flex item in the column, an aspect-ratio box shrinks
+   once `.card__content { height:100% }` demands the full card height. The image
+   then lost its proportion and the difference became empty space above the
+   footer. With padding-bottom the box has zero height and cannot be compressed. */
 .card__image { position:relative; height:0; padding-bottom:56.25%; flex:none;
   background:var(--color-secondary-50); overflow:hidden; }
-/* Platzhalterrahmen des leeren/ladenden Bildkastens (card.postcss:173-179:
-   bg-secondary-50 + 2px weisser Innenrand bei 70% Deckkraft) — das geladene
-   Bild malt darüber, sichtbar ist der Rahmen nur ohne Bild. */
+/* Placeholder frame for an empty/loading image box (card.postcss:173-179:
+   bg-secondary-50 + 2px white inner border at 70% opacity). A loaded image
+   paints over it, so the frame is visible only without an image. */
 .card__image::before { content:""; position:absolute; inset:0;
   background:var(--color-secondary-50); border:var(--stroke-2) solid var(--color-bg); opacity:.7; }
 .card__image > img, .card__image > .photo {
   position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-/* 2:1 statt 16:9 im zweispaltigen Raster — CDs Karten-Kontrakt
+/* 2:1 instead of 16:9 in a two-column grid: CD's card contract
    (card.postcss:169-171 `.grid--responsive-cols-2 & { pb-[50%] }`). */
 .grid--responsive-cols-2 .card__image { padding-bottom:50%; }
 
 .card__content { display:flex; flex-direction:column; justify-content:space-between; height:100%; background:transparent; }
-/* card.postcss:210 — px-6 py-10, space-y-4. Kein flex:1 auf Body oder
-   Description: das liess den Textkasten den Resthöhenausgleich der Rasterzeile
-   aufsaugen, statt ihn als eine Lücke über dem Footer stehen zu lassen. */
+/* card.postcss:210: px-6 py-10, space-y-4. No flex:1 on body or description: it
+   made the text box absorb the grid row's remaining-height adjustment instead
+   of leaving it as a gap above the footer. */
 .card__body { padding:var(--sp-10) var(--sp-6); display:flex; flex-direction:column; gap:var(--sp-4); }
 .card__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); line-height:1.375; transition:color var(--duration) var(--ease-in-out); overflow-wrap:anywhere; }
 .card__description { color:var(--color-text-muted); overflow-wrap:anywhere; }
-/* card.postcss:226-234 — lange Beschreibungen werden gekappt, damit eine
-   einzelne Karte die Zeilenhöhe nicht sprengt. */
+/* card.postcss:226-234: long descriptions are clamped so one card cannot blow
+   out the row height. */
 .card__description, .card__body p { display:-webkit-box; -webkit-box-orient:vertical;
   -webkit-line-clamp:6; overflow:hidden; }
 @container (min-width:500px){
   .card__description, .card__body p { -webkit-line-clamp:4; }
 }
-/* Erweiterung über das CD hinaus: In einem 3-spaltigen Raster ist eine Karte
-   ~400px breit; py-10 (2×40px) sind dort 14% der Kartenhöhe. Das CD nutzt
-   500px selbst als Schwelle für „schmale Karte“ (card.postcss:230). */
+/* Extension beyond CD: in a three-column grid a card is ~400px wide; py-10
+   (2×40px) is 14% of its height. CD itself uses 500px as the threshold for a
+   "narrow card" (card.postcss:230). */
 @container (max-width:499px){
   .card__body { padding:var(--sp-6); }
   .card__footer { padding:0 var(--sp-6) var(--sp-6); }
 }
 .card__footer { padding:0 var(--sp-6) var(--sp-6); border-top:0;
   display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); font-size:var(--text-sm); color:var(--color-text-muted); }
-/* card.postcss:250-257 — ohne Info-Slot rückt die Aktion nach rechts. */
+/* card.postcss:250-257: without an info slot, the action moves right. */
 .card__footer--icon-only { justify-content:flex-end; }
 .card__footer__info { min-width:0; padding-right:var(--sp-6); color:var(--color-secondary-500); }
 .card__footer__action { flex:none; }
-/* Der Pfeil im Kartenfuss ist Dekoration (der Kartenlink trägt die Aktion).
-   KEINE Hover-Inversion: CDs Karten-Hover ist Schatten + Titelfarbe + Randoverlay
-   (card.postcss:27-40); der Knopf behält seinen Ruhezustand. */
+/* The arrow in the card footer is decorative (the card link carries the action).
+   NO hover inversion: CD card hover is shadow + title color + edge overlay
+   (card.postcss:27-40); the button keeps its resting state. */
 .card__footer__action > .btn { pointer-events:none; }
 .card--clickable { cursor:pointer; transition:box-shadow var(--duration-slow) var(--ease-in-out); text-decoration:none; color:inherit; }
 .card--clickable::after { content:""; position:absolute; inset:0; border:var(--stroke-2) solid transparent; transition:border-color var(--duration-slow) var(--ease-in-out); pointer-events:none; }
-/* Stretched Link: der Titel-<a> überdeckt die ganze Karte (klickbar), ohne die Karte
-   selbst zum Link zu machen — so bleiben Dokument-Gliederung + gültige Verschachtelung. */
+/* Stretched link: the title <a> covers the whole clickable card without making
+   the card itself a link, preserving document outline + valid nesting. */
 .card--clickable .card__link { text-decoration:none; color:inherit; }
 .card--clickable .card__link::after { content:""; position:absolute; inset:0; z-index:var(--z-local-content); }
 .card--clickable .card__link:focus-visible { outline:none; }
-.card--clickable .card__link:focus-visible::after { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }   /* Standard-Versatz — die Karte beschneidet nicht mehr */
+.card--clickable .card__link:focus-visible::after { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }   /* Standard offset; the card no longer clips */
 .card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):where(:hover,:focus-within) {
   box-shadow:var(--shadow-2xl); text-decoration:none; }
 .card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):where(:hover,:focus-within)::after {
@@ -91,13 +90,13 @@
   color:var(--color-text-muted); cursor:not-allowed; box-shadow:var(--shadow-none); }
 .card:where(.card--disabled,[aria-disabled="true"]) .card__link { pointer-events:none; text-decoration:none; }
 /* flat card (card.postcss:109-141) — replaces the old .tile */
-/* .card--flat/.card--list (card.postcss:331-400) EXZIDIERT — null Konsumenten
-   über zwei Wellen; die angekündigte Adoption (Item 5.10) kam nie. Die mobile
-   Verdichtung der Trefferlisten übernimmt .catalogue-grid unten, .search-result
-   führt seine Polsterrampe selbst (Design-Review C10). */
+/* .card--flat/.card--list (card.postcss:331-400) were EXCISED: zero consumers
+   across two waves; the announced adoption (Item 5.10) never happened. The
+   .catalogue-grid below handles mobile result-list density, while .search-result
+   carries its own padding ramp (Design Review C10). */
 
-/* Katalog-Ergebnisraster: unter md dieselbe Dichte wie CDs card--list, ohne das
-   Karten-Markup anzufassen (die `.card`-Klasse bleibt überall stehen). */
+/* Catalogue result grid: below md, use the same density as CD's card--list
+   without touching card markup (the `.card` class remains everywhere). */
 @media (max-width:767.98px){
   .catalogue-grid { gap:0; }
   .catalogue-grid .card__image { display:none; }
@@ -118,17 +117,17 @@
 .photo--fill { height:100%; }
 .photo--overlay-bottom { display:flex; align-items:flex-end; justify-content:space-between; padding:var(--sp-3); }
 .photo--overlay-center { display:flex; align-items:center; justify-content:center; color:var(--color-text-negative); }
-/* Kein Bild-Zoom beim Karten-Hover: das CD kennt keinen Transform auf Kartenbildern
-   (einziger Scale im System ist card--highlight's Hintergrundebene, scale-102). */
+/* No image zoom on card hover: CD defines no transform on card images (the only
+   scale in the system is card--highlight's background layer, scale-102). */
 /* image-not-available (image-not-available.postcss:5-17) */
 .image__not-available { display:flex; flex-direction:column; align-items:center; justify-content:center;
   width:100%; height:100%; text-align:center; color:var(--color-text-muted); background:var(--color-secondary-50); }
 .image__not-available .icon { width:var(--sp-12); height:var(--sp-12); }
 .image__not-available-text { margin:var(--sp-2) 5px 0; font-size:var(--text-sm); }
 
-/* Badges (badge.postcss:5-82) — die Basis kennt weder gap noch nowrap (CD
-   badge.postcss:5-9: nur inline-flex, items-center, Polster, rounded-full);
-   Pillen dürfen also überall umbrechen, u. a. bei 200% Textzoom (WCAG 1.4.4). */
+/* Badges (badge.postcss:5-82): the base defines neither gap nor nowrap (CD
+   badge.postcss:5-9: only inline-flex, items-center, padding, rounded-full), so
+   pills may wrap everywhere, including at 200% text zoom (WCAG 1.4.4). */
 .badge { display:inline-flex; align-items:center; padding:.219em 1em;
   border-radius:var(--radius-full); font-weight:var(--fw-regular);
   background:var(--color-secondary-100); color:var(--color-gray-800); }
@@ -145,12 +144,11 @@
   cursor:progress; opacity:.7; pointer-events:none; }
 .badge--clickable:is([aria-invalid="true"],.badge--error) { outline:var(--stroke-2) solid var(--color-error); }
 .badge--clickable:is([data-empty="true"],.badge--empty) { cursor:default; opacity:.55; }
-/* Kartenpillen (.pill-row) müssen bei 200% Textzoom umbrechen dürfen (WCAG 1.4.4).
-   Gemessen auf #/data/katalog: das Themen-Badge «Immobilienmanagement» wuchs auf
-   439px in einer 347px breiten Karte und wurde von deren `overflow:hidden`
-   abgeschnitten — ein einzelnes deutsches Kompositum, an dem blosses
-   Umbruch-Erlauben nichts ändert, deshalb `overflow-wrap`. Bei normaler
-   Textgrösse passen die Pillen, die Regel ist dort also unsichtbar. */
+/* Card pills (.pill-row) must be allowed to wrap at 200% text zoom (WCAG 1.4.4).
+   Measured on #/data/katalog: a long German compound topic badge grew to 439px
+   inside a 347px card and was clipped by its `overflow:hidden`. Merely allowing
+   wrapping cannot split one compound, hence `overflow-wrap`. At normal text
+   size the pills fit, so the rule is invisible there. */
 .pill-row .badge { overflow-wrap:anywhere; }
 .badge, .badge--base { font-size:var(--fs-xs); line-height:var(--line-5); }
 @media (min-width:768px) { .badge, .badge--base { font-size:var(--fs-sm); } }
@@ -158,13 +156,13 @@
 .badge--sm { font-size:10px; line-height:var(--line-4); }
 @media (min-width:768px) { .badge--sm { font-size:var(--fs-xs); line-height:1.35rem; } }
 @media (min-width:1024px){ .badge--sm { font-size:var(--fs-sm); } }
-/* CD-Icon-Anatomie (badge.postcss:84-97 + Badge.vue:11-18): das Symbol wird
-   0.4em optisch ins 1em-Polster gezogen; den Abstand zur Beschriftung
-   (.badge__text) liefert allein dieser Versatz, kein flex-gap. CDs stroke-*
-   entfällt — unsere Icons sind Masken, keine gestrichenen SVGs.
-   `align-self:stretch` + height:auto statt CDs h-full: `height:100%` löst im
-   auto-hohen Flex-Container auf `auto` auf und kollabierte den Masken-Span auf
-   0 (gemessen) — Stretchen liefert dieselbe volle Pillenhöhe definit. */
+/* CD icon anatomy (badge.postcss:84-97 + Badge.vue:11-18): the icon is pulled
+   optically 0.4em into the 1em padding; that offset alone supplies the gap to
+   the label (.badge__text), with no flex gap. CD's stroke-* does not apply;
+   our icons are masks, not stroked SVGs. `align-self:stretch` + height:auto
+   replaces CD's h-full: `height:100%` resolves to `auto` in an auto-height flex
+   container and collapsed the mask span to 0 (measured). Stretching reliably
+   produces the same full pill height. */
 .badge__icon      { align-self:stretch; height:auto; width:1.5em; position:relative; left:.4em;  flex:none; }
 .badge__icon-left { align-self:stretch; height:auto; width:1.5em; position:relative; right:.4em; flex:none; }
 .badge--gray    { background:var(--color-secondary-100); color:var(--color-gray-800); }
@@ -172,25 +170,25 @@
 .badge--warning, .badge--orange { background:var(--color-warning-bg); color:var(--color-warning-text); }
 .badge--error, .badge--red { background:var(--color-error-bg); color:var(--color-error-text); }
 .badge--info, .badge--blue { background:var(--color-info-bg); color:var(--color-info-text); }
-/* badge--yellow/indigo/purple/pink/teal/negative/disabled exzidiert — null
-   Produzenten (auch nicht über badge--${variant}); die Akzent-Tokens in
-   tokens.css bleiben als CD-Kanon dokumentiert (Design-Review C9). */
+/* badge--yellow/indigo/purple/pink/teal/negative/disabled were excised: zero
+   producers, including badge--${variant}. Accent tokens in tokens.css remain
+   documented as CD canon (Design Review C9). */
 
 /* Tag items — CD's filter control (tag-item.postcss:7-85) */
-/* min-height über --control-h: das Token trägt exakt CDs 44/48/52-Knopframpe
-   (min-h-[44px] xl:48 3xl:52) — vorher standen dieselben Stufen hier als
-   Literale ein zweites Mal. */
+/* min-height through --control-h: the token carries CD's exact 44/48/52 button
+   ramp (min-h-[44px] xl:48 3xl:52). Previously the same steps appeared here a
+   second time as literals. */
 .tag-item { display:inline-flex; align-items:center; margin-right:var(--sp-3);
   min-height:var(--control-h); font:inherit; font-size:var(--text-base); line-height:var(--line-5);
   background:none; border:0; padding:0; color:inherit; text-decoration:none; cursor:pointer; }
-/* Randrampe unter der Pille: CD tag-item.postcss:9 `mr-3 md:mb-0.5 lg:mb-1` —
-   unter 768 KEIN unterer Rand. */
+/* Margin ramp below the pill: CD tag-item.postcss:9 `mr-3 md:mb-0.5 lg:mb-1`;
+   below 768 there is NO bottom margin. */
 @media (min-width:768px){ .tag-item { margin-bottom:var(--sp-0-5); } }
 @media (min-width:1024px){ .tag-item { line-height:var(--line-6); margin-bottom:var(--sp-1); } }
 .tag-item:where(:hover,:active) { color:inherit; text-decoration:none; }
 .tag-item--sm { font-size:var(--text-sm); }
-/* Die Hover-Transition ist eine BEWUSSTE portalweite Politur (CD schaltet
-   Tag-/Badge-Hover hart um): über die --duration-Tokens reduced-motion-sicher. */
+/* The hover transition is DELIBERATE portal-wide polish (CD switches tag/badge
+   hover instantly), made reduced-motion-safe through --duration tokens. */
 .tag-item__inner { display:inline-flex; align-items:center; gap:var(--sp-2); padding-inline:var(--sp-4); line-height:1.25;
   border-radius:var(--radius-full); background:var(--color-gray-200); transition:background var(--duration-fast),color var(--duration-fast); }
 @media (min-width:1544px){ .tag-item__inner { padding-inline:var(--sp-5); } }
@@ -201,13 +199,13 @@
 .tag-item:not(:where(:disabled,[aria-disabled="true"],.tag-item--disabled,.tag-item--loading,[aria-busy="true"],.tag-item--error,[aria-invalid="true"])):active .tag-item__inner,
 .tag-item:where(.tag-item--active,[aria-current="true"]) .tag-item__inner {
   background:var(--color-gray-800); color:var(--color-text-negative); }
-/* CD tag-item.postcss:61-67: die aktive Pille ist inert (der Zustand ist die
-   Aktion). Tastatur: der JS-Wächter der Konsumenten fängt Enter auf dem
-   aktiven Chip ab (tenancies [data-floor]). */
+/* CD tag-item.postcss:61-67: the active pill is inert (the state is the action).
+   Keyboard: each consumer's JS guard intercepts Enter on the active chip
+   (tenancies [data-floor]). */
 .tag-item:where(.tag-item--active,[aria-current="true"]) { pointer-events:none; }
 .tag-item:focus-visible { outline:none; }
-/* Versatz 0: CDs Ring liegt AN der Pille (tag-item.postcss:17-19 ring-2 ohne
-   Offset) und folgt dank outline-Radius-Verhalten der Rundung. */
+/* Offset 0: CD's ring sits AGAINST the pill (tag-item.postcss:17-19 ring-2 with
+   no offset) and follows its rounding through outline-radius behavior. */
 .tag-item:focus-visible .tag-item__inner { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:0; }
 /* The same semantic/BEM state vocabulary as buttons and cards. `empty` means
    an applicable filter currently has no value; it remains reachable so the
@@ -224,10 +222,10 @@
   color:var(--color-secondary-300); cursor:not-allowed; pointer-events:none; }
 .tag-item:where(:disabled,[aria-disabled="true"],.tag-item--disabled) .tag-item__inner {
   color:inherit; background:var(--color-secondary-50); }
-/* CD tag-item.postcss:80-85 — Icon-Slot (z. B. Cancel-X der Entfernen-Pille).
-   `align-self:stretch` + height:auto statt CDs h-full: `height:100%` löst im
-   auto-hohen Flex-Container auf `auto` auf und kollabierte den Masken-Span auf
-   0 — das X der Entfernen-Pille war unsichtbar (gemessen 27x0px). */
+/* CD tag-item.postcss:80-85: icon slot (e.g. cancel X on a removal pill).
+   `align-self:stretch` + height:auto replaces CD's h-full: `height:100%`
+   resolves to `auto` in an auto-height flex container and collapsed the mask
+   span to 0; the removal pill's X was invisible (measured 27x0px). */
 .tag-item__icon { align-self:stretch; height:auto; width:1.5em; position:relative; left:.4em; flex:none; }
 @media (forced-colors: active) { .tag-item--active .tag-item__inner { outline:var(--stroke-2) solid CanvasText; outline-offset:calc(-1 * var(--stroke-3)); } }
 

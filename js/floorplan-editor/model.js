@@ -165,10 +165,10 @@ function stableCompare(left, right) {
 function normaliseBuilding(building, buildingId) {
   return {
     buildingId,
-    name: String(building?.name || building?.bbl_bez || buildingId),
-    street: String(building?.street || building?.adr_str || ''),
-    zip: String(building?.zip || building?.adr_plz || ''),
-    city: String(building?.city || building?.adr_ort || ''),
+    name: String(building?.name || building?.['bbl_bez'] || buildingId),
+    street: String(building?.street || building?.['adr_str'] || ''),
+    zip: String(building?.zip || building?.['adr_plz'] || ''),
+    city: String(building?.city || building?.['adr_ort'] || ''),
   };
 }
 
@@ -198,8 +198,8 @@ function normalisePlanningFloor(planningFloor, floorId) {
 
 function inferredModule(useType) {
   return ({
-    buero: '1', openspace: '2', fokusraum: '3', sitzung: '4', lounge: '6',
-    empfang: '6', teekueche: '7', archiv: '9', lager: '9', druckraum: '11',
+    'buero': '1', 'openspace': '2', 'fokusraum': '3', 'sitzung': '4', lounge: '6',
+    'empfang': '6', 'teekueche': '7', 'archiv': '9', 'lager': '9', 'druckraum': '11',
   })[useType] || '';
 }
 
@@ -220,7 +220,7 @@ function normaliseRoom(space, buildingId, floorId) {
     area: Number(space?.area) || 0,
     capacity: Math.max(0, Number(space?.capacity) || 0),
     bookable: Boolean(space?.bookable),
-    occupierVe: space?.occupierVe == null ? null : String(space.occupierVe),
+    'occupierVe': space?.['occupierVe'] == null ? null : String(space['occupierVe']),
     rect: Array.isArray(space?.rect) ? space.rect.slice(0, 4).map(Number) : [],
     moduleId: MODULE_VALUES.has(moduleId) ? moduleId : '',
   };
@@ -353,7 +353,7 @@ function validRoom(room, buildingId, floorId, extent) {
     && room.capacity >= 0
     && room.capacity <= MAX_ROOM_CAPACITY
     && typeof room.bookable === 'boolean'
-    && (room.occupierVe === null || isSafeString(room.occupierVe))
+    && (room['occupierVe'] === null || isSafeString(room['occupierVe']))
     && rectIsInside(room.rect, extent)
     && MODULE_VALUES.has(room.moduleId);
 }

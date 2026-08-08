@@ -1,33 +1,33 @@
-// Daten und Digitalisierung — Abschnitts-Übersicht. Die Unterseiten liegen in
-// eigenen Modulen: catalog.js (Datenbezug), ict-projects.js, digitalisation.js.
+// Data and digitalisation section overview. Its child pages live in separate
+// modules: catalog.js (data access), ict-projects.js, and digitalisation.js.
 
-// Eine Registry trägt Modul und Bestand jeder delegierten Unteransicht. Der
-// Router fragt `needs(params)` ab, bevor render() den ersten Accessor erreicht;
-// data.js selbst lädt deshalb keine Bestände neben diesem Vertrag nach.
-const SUBS = {
-  catalog:        { mod: './catalog.js',        needs: ['datasets', 'catalogLabels'] },
-  'ict-projects': { mod: './ict-projects.js',   needs: [] },
-  digitalisation: { mod: './digitalisation.js', needs: [] },
+// A registry holds the module and collections for each delegated child view.
+// The router calls `needs(params)` before render() reaches its first accessor,
+// so data.js loads no collections outside this contract.
+const SUBPAGES = {
+  catalog:        { modulePath: './catalog.js',        needs: ['datasets', 'catalogLabels'] },
+  'ict-projects': { modulePath: './ict-projects.js',   needs: [] },
+  digitalisation: { modulePath: './digitalisation.js', needs: [] },
 };
 
 const OVERVIEW_NEEDS = ['applications', 'datasets'];
 
-// Ohne Unterroute zeichnet data.js die Übersicht; bekannte Unterrouten lesen
-// ihren Eintrag aus derselben Registry wie der Delegator. Auch ein unbekannter
-// Pfad braucht keinen Bestand, bevor er die lokale 404-Ansicht zeichnet.
+// With no child route, data.js renders the overview. Known child routes read
+// their entry from the same registry as the delegate. An unknown path also
+// needs no collection before it renders the local 404 view.
 export function needs(params = []) {
   if (!params.length) return OVERVIEW_NEEDS;
-  return SUBS[params[0]]?.needs || [];
+  return SUBPAGES[params[0]]?.needs || [];
 }
 
 export default async function render(ctx) {
   const { params } = ctx;
   if (!params.length) return overview(ctx);
-  const sub = SUBS[params[0]];
-  if (!sub) return notFound(ctx);
-  const mod = await import(sub.mod);
-  if (ctx.stale()) return;   // A2: nach dem await keine überholte Navigation überschreiben
-  return mod.default(ctx);
+  const subpage = SUBPAGES[params[0]];
+  if (!subpage) return notFound(ctx);
+  const module = await import(subpage.modulePath);
+  if (ctx.stale()) return;   // A2: do not overwrite newer navigation after await
+  return module.default(ctx);
 }
 
 // Section overview — the CD pattern for a top-level area: a short lead plus
@@ -48,12 +48,12 @@ function overview(ctx) {
     { title: 'Datenbezug und API Verzeichnis', icon: 'FileDatabase', href: '#/data/catalog',
       desc: 'Datensatzkatalog nach DCAT-AP-CH: Beschreibung, Klassifizierung und Bezugswege der Datensätze des BBL.',
       meta: `${datasets} Datensätze` },
-    // Ohne Zahl: der Metadatenbestand hängt an dieser Übersicht nicht (`needs`),
-    // und eine fest eingetragene Zahl liefe der Datei davon.
+    // No count: this overview does not depend on the metadata collection
+    // (`needs`), and a hard-coded count would drift from the file.
     { title: 'Metadaten Katalog Bauten', icon: 'Stack', href: '#/app/metadata-catalog',
       desc: 'Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und Systemtabellen.',
       meta: 'Geschäftsobjekte und Systemtabellen' },
-    // Ohne Zahl — gleiche Begründung wie beim Metadatenkatalog.
+    // No count, for the same reason as the metadata catalogue.
     { title: 'Prozessdokumentation Bauten', icon: 'Share', href: '#/app/process-docs',
       desc: 'Die Prozesse des Immobilienmanagements mit BPMN-Diagrammen und Prozessschritten — von der Akquisition bis zur Rückgabe.',
       meta: 'Prozesslandkarte und BPMN' },
@@ -80,10 +80,10 @@ function overview(ctx) {
       meta: 'Strategie & Vorhaben' },
   ].map(C.domainTile).join('');
 
-  // CDs Section-Anatomie: <section> aussen, .container innen — erst dadurch kann
-  // das zweite Band von Rand zu Rand getönt sein. Die Kachelüberschrift war
-  // sr-only, weil sie im weissen Einheitsfeld nichts zu gliedern hatte; als
-  // .section__title eines eigenen Bandes wird sie sichtbar (Item 7.7).
+  // CD section anatomy: <section> outside, .container inside. Only then can the
+  // second band be tinted edge to edge. The tile heading was sr-only because it
+  // had nothing to organise in the single white field; as the .section__title
+  // of its own band, it becomes visible (Item 7.7).
   mount.innerHTML = `
     ${C.pageSection({
       body: C.pageHeader({

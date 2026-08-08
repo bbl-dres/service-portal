@@ -1,4 +1,4 @@
-// Client-side export helpers for the Datenportal (no libraries — the portal is
+// Client-side export helpers for the data portal (no libraries — the portal is
 // no-build). Real where the platform allows it: CSV/Excel from a rendered table,
 // PNG from an SVG chart, clipboard copy, and mailto share. Whole-dashboard PDF/
 // image would need a rasteriser library and stays a simulated affordance.

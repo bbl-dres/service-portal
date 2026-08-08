@@ -1,16 +1,16 @@
-// Suche — föderierte Ergebnisseite über alle Inhaltsarten (#/search?q=…).
-// Aufbau nach dem CD (searchResults.vue, search.postcss «SEARCH RESULTS PAGE»):
-// grosses Suchfeld (search--large search--page-result), darunter der Ergebniskopf
-// mit Trefferzahl links und Sortierung rechts, dann die Treffer.
+// Search — federated results page across all content types (#/search?q=…).
+// Structured after the CD (searchResults.vue, search.postcss «SEARCH RESULTS PAGE»):
+// a large search field (search--large search--page-result), followed by the
+// results header with the count on the left and sorting on the right, then hits.
 //
-// Ein Ergebnisstrom statt Gruppen pro Inhaltsart: die Art ist eine Facette. Damit
-// wirken Sortierung, Filter, Ansichtswechsel und Paginierung über ALLE Treffer.
-// Ansicht: Liste ist der Standard (wie im CD), Galerie ist zuschaltbar.
+// Use one result stream rather than groups by content type; type is a facet, so
+// sorting, filtering, view switching, and pagination work across ALL hits. List
+// view is the default (as in the CD), with gallery view available.
 //
-// TRENNUNG: diese Datei baut den INDEX (was ist durchsuchbar, wie heisst der
-// Treffer, wohin führt er) und stellt ihn dar. Das Suchen selbst — falten,
-// zerlegen, bewerten — liegt in js/search-engine.js, damit es ohne Browser
-// prüfbar ist (scripts/test-search.mjs).
+// SEPARATION: this file builds and renders the INDEX (what is searchable, what
+// a hit is called, and where it leads). Search itself — folding, tokenising,
+// and scoring — lives in js/search-engine.js so it can be tested without a
+// browser (scripts/test-search.mjs).
 
 import { search as runSearch, fold, prepare as prepareRow } from '../search-engine.js';
 import { domainLabel as domainLabelShared } from '../domain.js';
@@ -18,14 +18,15 @@ import * as links from '../links.js';
 import { knowledgeIndex } from '../knowledge-content.js';
 import { record as logQuery, summary as logSummary, clear as logClear } from '../search-log.js';
 
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+// Deferred collections for this route. The router calls core.ensure(needs)
+// BEFORE render(); without this declaration, an accessor would read the still
+// empty list and the view would show «no entries» instead of data
+// (docs/code-review.md §3).
 //
-// `buildings` und `projects` kamen mit der Suchüberarbeitung dazu: «Guisanplatz»
-// fand vorher nur Dokumente ÜBER das Objekt, nie das Objekt selbst. Das kostet
-// rund 76 KB — vertretbar, weil beide Bestände auf anderen Routen ohnehin
-// geladen werden und der Browser sie dann im Cache hat.
+// `buildings` and `projects` were added during the search overhaul. Previously,
+// «Guisanplatz» found only documents ABOUT the property, never the property
+// itself. This costs about 76KB, acceptable because other routes load both
+// collections anyway and the browser then has them cached.
 export const needs = ['applications', 'datasets', 'documents', 'news', 'contacts', 'buildings', 'projects'];
 
 export default async function render(ctx) {
@@ -34,7 +35,7 @@ export default async function render(ctx) {
   setTitle(rawQ ? `Suche: ${rawQ}` : 'Suche');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Suche' }]);
 
-  // Diagnoseansicht statt Ergebnissen (#/search?log=1) — siehe js/search-log.js.
+  // Diagnostic view instead of results (#/search?log=1); see js/search-log.js.
   const showLog = query.get('log') === '1';
 
   const index = buildIndex(core);
@@ -56,64 +57,64 @@ export default async function render(ctx) {
       </a>
     </li>`;
 
-  // --- Zustand aus dem Hash (teilbar), wie beim Katalog-Trio ---
-  const selectedArt = (query.get('kind') || '').split(',').map(s => s.trim()).filter(Boolean);
-  // CD zeigt Suchergebnisse zuerst als LISTE (searchResults.vue → SearchResultsList).
+  // --- State from the shareable hash, as in the three catalogues ---
+  const selectedKinds = (query.get('kind') || '').split(',').map(s => s.trim()).filter(Boolean);
+  // CD presents search results as a LIST first (searchResults.vue → SearchResultsList).
   const view = query.get('view') === 'gallery' ? 'gallery' : 'list';
-  const SORT_OPTS = [
+  const SORT_OPTIONS = [
     { value: '', label: 'Relevanz' },
     { value: 'title', label: 'Titel (A–Z)' },
     { value: 'kind', label: 'Inhaltsart' },
   ];
   const SORTS = {
     title: (a, b) => String(a.title).localeCompare(String(b.title), 'de'),
-    kind: (a, b) => String(a.art).localeCompare(String(b.art), 'de') || b._score - a._score,
+    kind: (a, b) => String(a.kind).localeCompare(String(b.kind), 'de') || b._score - a._score,
   };
-  const sortKey = SORT_OPTS.some(o => o.value && o.value === query.get('sort')) ? query.get('sort') : '';
+  const sortKey = SORT_OPTIONS.some(o => o.value && o.value === query.get('sort')) ? query.get('sort') : '';
   const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
   const perPage = 10;
 
-  const filtered = hits.filter(r => !selectedArt.length || selectedArt.includes(r.art));
-  // Ohne Sortierwahl gilt die Bewertung aus der Suchmaschine — die Reihenfolge
-  // von runSearch() ist bereits die Relevanzordnung.
+  const filtered = hits.filter(r => !selectedKinds.length || selectedKinds.includes(r.kind));
+  // With no explicit sort, use the search engine's score; runSearch() already
+  // returns relevance order.
   const sorted = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
   const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
   const page = Math.min(currentPage, totalPages);
   const visible = sorted.slice((page - 1) * perPage, page * perPage);
 
-  const base = { q: rawQ, kind: selectedArt, sort: sortKey, view };
+  const base = { q: rawQ, kind: selectedKinds, sort: sortKey, view };
   const hash = (patch = {}) => C.catalogueHash('#/search', { ...base, ...patch, defaultView: 'list' });
 
-  // Facettenoptionen mit Trefferzahl je Inhaltsart — aus den TREFFERN, nicht aus
-  // dem Index, damit keine leeren Kästchen erscheinen.
-  const artCount = new Map();
-  for (const r of hits) artCount.set(r.art, (artCount.get(r.art) || 0) + 1);
-  const artOptions = [...artCount.entries()].map(([a, n]) => ({ value: a, label: `${a} (${n})` }));
+  // Facet options with a hit count per content type, derived from HITS rather
+  // than the index so no empty checkboxes appear.
+  const kindCounts = new Map();
+  for (const r of hits) kindCounts.set(r.kind, (kindCounts.get(r.kind) || 0) + 1);
+  const kindOptions = [...kindCounts.entries()].map(([kind, count]) => ({ value: kind, label: `${kind} (${count})` }));
 
   const listView = (items) => `<ul class="search-results-list">${items.map(resultRow).join('')}</ul>`;
   const card = (r) => C.card({
     title: r.title, desc: r.desc, href: r.href, titleTag: 'h3',
-    badges: [C.badge(r.art, 'blue')],
+    badges: [C.badge(r.kind, 'blue')],
     footerInfo: C.escape(r.type) + (r.meta ? ` · ${C.escape(r.meta)}` : ''),
     footerAction: C.cardAction(r.external),
   });
 
   const toolbar = C.catalogueBar({
-    // Kein zweites Suchfeld: die Anfrage kommt aus dem grossen Feld im Hero.
+    // No second search field; the query comes from the large field in the hero.
     showSearch: false, formId: 'sr-form', inputId: 'sr-q', searchLabel: 'Treffer eingrenzen',
     countId: 'sr-count',
     count: `<strong>${sorted.length}</strong> von ${total} Treffern für «${C.escape(rawQ)}»${
       totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
-    sort: { id: 'sr-sort', value: sortKey, options: SORT_OPTS.filter(o => o.value) },
-    filterId: 'sr-filter', filterCount: selectedArt.length,
+    sort: { id: 'sr-sort', value: sortKey, options: SORT_OPTIONS.filter(o => o.value) },
+    filterId: 'sr-filter', filterCount: selectedKinds.length,
     panelId: 'sr-filters',
-    panel: C.filterGroup({ dim: 'kind', legend: 'Inhaltsart', selected: selectedArt, options: artOptions })
+    panel: C.filterGroup({ dim: 'kind', legend: 'Inhaltsart', selected: selectedKinds, options: kindOptions })
       + C.panelReset({ href: hash({ kind: [] }) }),
     view, views: [['list', 'Listenansicht', 'List'], ['gallery', 'Galerieansicht', 'Apps']],
   });
 
   const activePills = C.activeFilters({
-    filters: selectedArt.map(a => ({ label: a, href: hash({ kind: selectedArt.filter(x => x !== a) }) })),
+    filters: selectedKinds.map(kind => ({ label: kind, href: hash({ kind: selectedKinds.filter(x => x !== kind) }) })),
     resetHref: hash({ kind: [] }),
   });
 
@@ -131,8 +132,8 @@ export default async function render(ctx) {
           })}`
         : noResults(C, rawQ, index);
 
-  // Bänder über C.pageSection — die Seite war die einzige, die die
-  // Section-Anatomie von Hand schrieb (B18); Ausgabe ist byte-gleich.
+  // Bands through C.pageSection. This was the only page that hand-wrote the
+  // section anatomy (B18); output is byte-identical.
   mount.innerHTML = C.pageSection({
     alt: true,
     body: `<h1 tabindex="-1">Suche</h1>
@@ -147,13 +148,13 @@ export default async function render(ctx) {
           </div>
         </form>`,
   }) + C.pageSection({
-    // Kein aria-live hier: der Knoten wird bei jedem Rendern NEU erzeugt, und
-    // eine frisch eingefügte Live-Region feuert nicht. Die Ansage läuft über
-    // die persistente Region #live via C.announce() (Item 3.8).
+    // No aria-live here: the node is created NEW on every render, and a newly
+    // inserted live region does not fire. Announcements use the persistent
+    // #live region through C.announce() (Item 3.8).
     body: `<div class="search-results">${body}</div>`,
   });
 
-  // Trefferzahl ansagen — bisher war das Ergebnis für Screenreader stumm.
+  // Announce the hit count; results were previously silent for screen readers.
   if (!showLog) C.announce(rawQ
     ? (total ? `${total} Treffer für ${rawQ}` : `Keine Treffer für ${rawQ}`)
     : 'Suchbegriff eingeben');
@@ -167,8 +168,8 @@ export default async function render(ctx) {
 
   mount.querySelector('#log-clear')?.addEventListener('click', () => { logClear(); location.reload(); });
 
-  // Sortierung, Facette, Ansichtswechsel und Paginierung der Ergebnisleiste —
-  // dieselbe Verdrahtung wie auf den Katalogseiten.
+  // Sorting, facet, view switching, and pagination use the same result-bar
+  // wiring as the catalogue pages.
   if (rawQ && total && !showLog) {
     C.wireCatalogue(mount, {
       formId: 'sr-form', inputId: 'sr-q', pageInputId: 'sr-page', page, totalPages, hash,
@@ -178,50 +179,50 @@ export default async function render(ctx) {
 }
 
 /* ================================== INDEX ================================= */
-// Eine Zeile je auffindbarem Ding. `extra` ist durchsuchbar, aber unsichtbar —
-// dort steht das Fachvokabular AUS DEN DATEN (Domänenlabel, Voraussetzungen,
-// Schlagwörter, zuständige Stelle, Ort). Das ersetzt eine handgepflegte
-// Synonymtabelle, die unweigerlich veraltet (docs/search-review.md B8).
+// One row per discoverable item. `extra` is searchable but invisible and holds
+// domain vocabulary FROM THE DATA (domain label, prerequisites, keywords,
+// responsible office, location). This replaces a hand-maintained synonym table
+// that would inevitably become stale (docs/search-review.md B8).
 //
-// `boost` ordnet bei ähnlicher Textgüte: ein startbarer Vorgang schlägt eine
-// Nachschlageseite, und was die Startseite als häufig gebraucht führt, kommt
-// zuerst. Beides sind kleine Ausschläge, keine Rangdiktate.
+// `boost` orders similarly matched text: a startable case outranks a reference
+// page, and items the home page marks as frequently used come first. Both are
+// small nudges, not ranking dictates.
 function buildIndex(core) {
   const t = core.t;
-  // domainLabel kommt aus js/domain.js — die lokale Kopie war genau der Drift,
-  // den das Modul beenden sollte (B23).
+  // domainLabel comes from js/domain.js. The local copy was exactly the drift
+  // that module was introduced to eliminate (B23).
   const domainLabel = (k) => domainLabelShared(core, k);
   const contactName = (id) => (core.contacts() || []).find(c => c.contactId === id)?.name || '';
   const rows = [];
 
   for (const s of core.services()) {
     rows.push({
-      art: 'Dienstleistungen', type: s.type === 'action' ? 'Dienstleistung · Vorgang' : 'Dienstleistung',
+      kind: 'Dienstleistungen', type: s.type === 'action' ? 'Dienstleistung · Vorgang' : 'Dienstleistung',
       title: s.title, desc: s.short,
-      href: links.dienstleistung(s.serviceId),
-      extra: [domainLabel(s.domain), s.description, (s.voraussetzungen || []).join(' '),
+      href: links.service(s.serviceId),
+      extra: [domainLabel(s.domain), s.description, (s['voraussetzungen'] || []).join(' '),
         contactName(s.contact), s.serviceId.replace(/-/g, ' ')].join(' '),
-      // Rang 1 bekommt +18, Rang 8 noch +4; ein Vorgang generell +12.
+      // Rank 1 receives +18, rank 8 still +4; any case receives +12.
       boost: (s.type === 'action' ? 12 : 0) + (s.popular ? Math.max(0, 20 - s.popular * 2) : 0),
     });
   }
 
   for (const a of core.applications()) {
     rows.push({
-      art: 'Anwendungen', type: 'Anwendung', title: a.name, desc: a.description,
-      href: links.anwendung(a.appId),
+      kind: 'Anwendungen', type: 'Anwendung', title: a.name, desc: a.description,
+      href: links.application(a.appId),
       extra: [a.group, a.area, (a.entries || []).map(e => e.label).join(' '),
         contactName(a.contact), a.appId.replace(/-/g, ' ')].join(' '),
     });
   }
 
-  // Wissen und Hilfsmittel — 113 Unterlagen, bis zur Suchüberarbeitung
-  // vollständig unauffindbar (docs/search-review.md B1). Ziel ist der ABSCHNITT
-  // der Fachgebietsseite, nicht die Datei: die Unterlage steht dort mit ihrem
-  // fachlichen Umfeld, und im Prototyp gibt es ohnehin keine echte Datei-URL.
+  // Knowledge and resources — 113 documents that were entirely undiscoverable
+  // before the search overhaul (docs/search-review.md B1). The target is the
+  // subject page SECTION, not the file: the document appears there in its domain
+  // context, and the prototype has no real file URL anyway.
   for (const k of knowledgeIndex()) {
     rows.push({
-      art: 'Wissen und Hilfsmittel', type: k.sectionTitle ? `Unterlage · ${k.sectionTitle}` : 'Unterlage',
+      kind: 'Wissen und Hilfsmittel', type: k.sectionTitle ? `Unterlage · ${k.sectionTitle}` : 'Unterlage',
       title: k.title, desc: k.desc, href: k.href, external: k.external,
       meta: k.area, extra: k.extra,
     });
@@ -229,76 +230,76 @@ function buildIndex(core) {
 
   for (const d of core.datasets()) {
     rows.push({
-      art: 'Datensätze', type: 'Datensatz', title: t(d.title), desc: t(d.description),
-      href: links.datensatz(d.id),
-      extra: [t(d.fullDescription), (d.tags || []).join(' '), t(d.meta && d.meta.thema)].join(' '),
+      kind: 'Datensätze', type: 'Datensatz', title: t(d.title), desc: t(d.description),
+      href: links.dataset(d.id),
+      extra: [t(d.fullDescription), (d.tags || []).join(' '), t(d.meta && d.meta['thema'])].join(' '),
     });
   }
 
-  // Ziel mit `q`: das Archiv kann filtern (`?q=`), bekam den Begriff aber nie
-  // übergeben — jeder Dokumenttreffer landete im ungefilterten Archiv (B6).
+  // Target with `q`: the archive can filter (`?q=`) but was never given the
+  // term, so every document hit landed in the unfiltered archive (B6).
   for (const d of core.documents()) {
-    const objekt = (d.linkedTo || []).map(id => core.building(id)?.name).filter(Boolean);
+    const linkedProperties = (d.linkedTo || []).map(id => core.building(id)?.name).filter(Boolean);
     rows.push({
-      art: 'Dokumente', type: 'Dokument',
+      kind: 'Dokumente', type: 'Dokument',
       title: d.title, desc: [d.type, d.category].filter(Boolean).join(' · '),
-      href: links.dokument(d.title),
+      href: links.documentSearch(d.title),
       meta: [d.format, d.year].filter(Boolean).join(' · '),
-      extra: [d.type, d.category, d.classification, ...objekt].join(' '),
+      extra: [d.type, d.category, d.classification, ...linkedProperties].join(' '),
     });
   }
 
   for (const n of core.news()) {
     rows.push({
-      art: 'News', type: 'News', title: n.title, desc: n.teaser, meta: n.date,
+      kind: 'News', type: 'News', title: n.title, desc: n.teaser, meta: n.date,
       href: links.news(n.id), extra: n.body || '',
     });
   }
 
-  // Liegenschaften: die bbl_id wird mitindexiert, aber ohne Schrägstriche —
-  // «1080 4840» und «1080/4840/AF» führen so beide zum Objekt.
+  // Properties: index bbl_id without slashes, so both «1080 4840» and
+  // «1080/4840/AF» lead to the property.
   for (const b of core.buildings()) {
     rows.push({
-      art: 'Liegenschaften', type: 'Liegenschaft',
+      kind: 'Liegenschaften', type: 'Liegenschaft',
       title: b.name, desc: [b.street, [b.zip, b.city].filter(Boolean).join(' ')].filter(Boolean).join(', '),
-      href: links.objekt(b.bbl_id),
+      href: links.portfolioItem(b.bbl_id),
       meta: b.portfolioCategory,
       extra: [String(b.bbl_id).replace(/\//g, ' '), b.city, b.canton, b.portfolioCategory,
-        b.typ, b.architekt, b.nutzer, b.ownership].join(' '),
+        b.buildingType, b.architect, b.occupants, b.ownership].join(' '),
     });
   }
 
-  // Bauprojekte adressiert die App über ein Pfadsegment, nicht über `?id=` —
-  // anders als das Portfolio (dort ist die Detailansicht ein Zustand der Karte).
-  // Standort direkt aus dem Projektdatensatz: EPPM führt ihn selbst, es gibt
-  // keinen Join ins Liegenschaftsinventar (js/apps/projects.js).
+  // The construction-project app addresses projects through a path segment, not
+  // `?id=`, unlike the portfolio where detail view is map state. Location comes
+  // directly from the project record: EPPM stores it itself, with no join to the
+  // property inventory (js/apps/projects.js).
   for (const p of core.projects()) {
     rows.push({
-      art: 'Bauprojekte', type: 'Bauprojekt', title: p.name, desc: p.teaser || '',
-      href: links.bauprojekt(p.projectId),
+      kind: 'Bauprojekte', type: 'Bauprojekt', title: p.name, desc: p.teaser || '',
+      href: links.constructionProject(p.projectId),
       meta: [p.projectNumber, p.status].filter(Boolean).join(' · '),
       extra: [p.projectId, p.projectNumber, p.status, p.siaPhaseLabel, p.subPortfolio,
         p.pm, p.buildingId, p.siteName, p.street, p.city, p.canton].filter(Boolean).join(' '),
     });
   }
 
-  // BEWUSST NICHT INDEXIERT: die eigenen Vorgänge. «Meine Vorgänge» ist eine
-  // persönliche Arbeitsliste mit eigener Filterung, kein Portalinhalt — wer
-  // seinen Fall sucht, geht dorthin, nicht in die Portalsuche. Sie hier zu
-  // führen hätte ausserdem Antragstellende und Organisationen in einen
-  // Ergebnisstrom gemischt, der sonst nur veröffentlichte Inhalte zeigt.
+  // DELIBERATELY NOT INDEXED: personal cases. This is a personal work
+  // list with its own filtering, not portal content. Anyone looking for their
+  // case goes there, not to portal search. Including it here would also mix
+  // applicants and organisations into a result stream that otherwise contains
+  // only published content.
 
-  // prepare() faltet Titel/Beschreibung/extra EINMAL vor. Ohne das würde jede
-  // Zeile für jeden Begriff neu normalisiert.
+  // prepare() folds title/description/extra ONCE up front. Otherwise every row
+  // would be normalised again for every term.
   return rows.map(prepareRow);
 }
 
-/* ============================== LEERE TREFFER ============================= */
-// CD-Muster (searchResults.vue): Suchbegriff wiederholen, Tipps, Kontakthinweis.
-// Neu mit Vorschlägen: wenn die ganze Anfrage nichts bringt, wird sie
-// begriffsweise wiederholt — «vorlage vertrag xyz» findet nichts, «vorlage»
-// aber schon. Das ist billiger als eine Rechtschreibkorrektur und trifft den
-// häufigsten Fall (ein zu enger Begriff zu viel).
+/* ============================== EMPTY RESULTS ============================= */
+// CD pattern (searchResults.vue): repeat the search term, then tips and a contact
+// hint. Suggestions add term-by-term retries when the full query returns nothing:
+// «vorlage vertrag xyz» finds nothing, while «vorlage» does. This costs less than
+// spelling correction and addresses the most common case (one restrictive term
+// too many).
 function noResults(C, rawQ, index) {
   const words = fold(rawQ).split(/[^a-z0-9]+/).filter(w => w.length >= 3);
   const alt = words.length > 1
@@ -324,7 +325,7 @@ function noResults(C, rawQ, index) {
     </div>`;
 }
 
-/* ============================== SUCHPROTOKOLL ============================= */
+/* ================================ SEARCH LOG ============================== */
 function logView(C, indexSize) {
   const { rows, total, zero } = logSummary();
   const body = rows.length

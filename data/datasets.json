@@ -19,7 +19,7 @@
       "it": "Questo set di dati comprende i dati di base di tutti gli edifici nel portafoglio della Confederazione. Contiene informazioni fondamentali come indirizzi, numeri ufficiali degli edifici (EGID), tipo di utilizzo, anno di costruzione, superfici e valutazioni dello stato. I dati servono come base per la gestione del patrimonio, la pianificazione delle misure di manutenzione e il reporting strategico. La base dati viene aggiornata mensilmente dal sistema ERP.",
       "en": "This dataset comprises the master data of all buildings in the federal portfolio. It contains fundamental information such as addresses, official building identification numbers (EGID), usage type, year of construction, area specifications and condition assessments. The data serves as the basis for portfolio management, maintenance planning and strategic reporting. The database is updated monthly from the ERP system."
     },
-    "image": "assets/images/datasets/SAP Gebäude.jpg",
+    "image": "assets/images/datasets/sap-buildings.jpg",
     "tags": [
       "building",
       "erp_immo"
@@ -135,7 +135,7 @@
       "it": "Contiene i dati di base di tutti i fondi di proprietà o gestiti dalla Confederazione. Il set di dati comprende informazioni ufficiali come numeri di parcella, superfici, tipo di zona e rapporti di proprietà. Questi dati costituiscono la base per la gestione giuridica e amministrativa del patrimonio fondiario e lo sviluppo del portafoglio. La base dati viene aggiornata mensilmente dal sistema ERP.",
       "en": "Contains the master data of all land parcels owned or managed by the federal government. The dataset includes official information such as parcel numbers, area specifications, zone types and ownership details. This data forms the basis for the legal and administrative management of land holdings and portfolio development. The database is updated monthly from the ERP system."
     },
-    "image": "assets/images/datasets/SAP Grundstück.jpg",
+    "image": "assets/images/datasets/sap-parcels.jpg",
     "tags": [
       "land_parcel",
       "erp_immo"
@@ -246,7 +246,7 @@
       "it": "Elenca tutti i progetti di nuova costruzione e ristrutturazione di cui è responsabile la Confederazione. Il set di dati contiene informazioni dinamiche sulla denominazione del progetto, l'ubicazione, il tipo di progetto (nuova costruzione, risanamento), il budget, le tempistiche (previste/effettive) e lo stato attuale del progetto. È la fonte centrale per il controlling dei progetti, la pianificazione delle risorse e la pianificazione strategica della costruzione. La base dati viene aggiornata mensilmente dal sistema ERP.",
       "en": "Lists all new construction and renovation projects managed by the federal government. The dataset contains dynamic information on project designation, location, project type (new build, renovation), budget, schedules (planned/actual) and current project status. It is the central source for project controlling, resource planning and strategic construction planning. The database is updated monthly from the ERP system."
     },
-    "image": "assets/images/datasets/SAP Bauprojekte.jpg",
+    "image": "assets/images/datasets/sap-construction-projects.jpg",
     "tags": [
       "construction_project",
       "erp_immo"
@@ -347,7 +347,7 @@
       "it": "Questo set di dati elenca tutti i contratti di locazione e affitto in cui la Confederazione interviene come locatario o locatore. Sono registrati i dettagli contrattuali come le parti, l'oggetto locato, le durate, i canoni di locazione e le condizioni di pagamento. I dati sono essenziali per la gestione commerciale dei contratti, la contabilità finanziaria e la gestione dell'occupazione. La base dati viene aggiornata mensilmente dal sistema ERP.",
       "en": "This dataset lists all lease and rental agreements in which the federal government acts as tenant or landlord. Contractual details such as parties, rental object, terms, rents and payment conditions are recorded. The data is essential for commercial contract management, financial accounting and occupancy management. The database is updated monthly from the ERP system."
     },
-    "image": "assets/images/datasets/SAP Mietverträge.jpg",
+    "image": "assets/images/datasets/sap-tenancies.jpg",
     "tags": [
       "lease",
       "erp_immo"
@@ -611,7 +611,7 @@
       }
     ],
     "publications": [],
-    "image": "assets/images/datasets/CDE Bauprojekte.jpg"
+    "image": "assets/images/datasets/cde-construction-projects.jpg"
   },
   {
     "id": "7",
@@ -633,7 +633,7 @@
       "it": "Questo set di dati visualizza i progetti di costruzione come geometrie nel sistema informativo geografico. Viene registrato il perimetro del progetto, ovvero l'ambito spaziale di un progetto edilizio. I dati consentono la rappresentazione cartografica dei cantieri attuali e previsti, l'analisi degli impatti spaziali e il coordinamento con altri progetti infrastrutturali. È la vista geografica sui dati di progetto dall'ERP.",
       "en": "This dataset visualises construction projects as geometries in the geographic information system. The project perimeter, i.e. the spatial scope of a construction project, is recorded. The data enables cartographic representation of current and planned construction sites, analysis of spatial impacts and coordination with other infrastructure projects. It is the geographic view of the project data from the ERP."
     },
-    "image": "assets/images/datasets/GIS Gebäude.jpg",
+    "image": "assets/images/datasets/gis-buildings.jpg",
     "tags": [
       "construction_project",
       "gis_immo"
@@ -762,7 +762,7 @@
       "it": "Questo set di dati analizza le quote di superficie della copertura del suolo sui fondi della Confederazione. Viene generato attraverso un'intersezione spaziale delle geometrie dei propri fondi con i dati della misurazione ufficiale (MU) della Svizzera. Il risultato comprende misurazioni esatte per diversi tipi di utilizzo come superfici a terra degli edifici, superfici impermeabilizzate (ad es. parcheggi), aree verdi e superfici aperte. I dati sono una base importante per i rapporti ambientali, il calcolo di indicatori di sostenibilità (ad es. grado di impermeabilizzazione) e la gestione operativa degli immobili.",
       "en": "This dataset analyses the land cover area shares on federal land parcels. It is generated by a spatial intersection of the own parcel geometries with the data from the official cadastral survey of Switzerland. The result comprises exact measurements for various usage types such as building footprints, sealed surfaces (e.g. car parks), green spaces and open areas. The data is an important basis for environmental reporting, the calculation of sustainability indicators (e.g. sealing ratio) and operational property management."
     },
-    "image": "assets/images/datasets/SAP Grundstück.jpg",
+    "image": "assets/images/datasets/sap-parcels.jpg",
     "tags": [
       "land_cover",
       "gis_immo"
@@ -974,7 +974,7 @@
       "it": "Mette a disposizione le geometrie e i dati di localizzazione geografica di tutti i fondi di proprietà della Confederazione. Il set di dati dal GIS contiene i confini esatti delle parcelle ed è collegato ai dati della misurazione ufficiale. Viene utilizzato per la rappresentazione visiva del patrimonio fondiario, lo sviluppo strategico delle aree e le analisi spaziali.",
       "en": "Provides the geometries and geographic location data of all federally owned land parcels. The GIS dataset contains the exact parcel boundaries and is linked to official cadastral survey data. It is used for visual representation of land holdings, strategic site development and spatial analyses."
     },
-    "image": "assets/images/datasets/SAP Grundstück.jpg",
+    "image": "assets/images/datasets/sap-parcels.jpg",
     "tags": [
       "land_parcel",
       "gis_immo"
@@ -1139,7 +1139,7 @@
       "it": "Questo set di dati contiene i geodati di tutti gli edifici nel portafoglio della Confederazione dal sistema informativo geografico (GIS IMMO). Comprende le ubicazioni esatte e i contorni geometrici (poligoni degli edifici) delle costruzioni. I dati servono come base per analisi spaziali, rappresentazioni cartografiche e pianificazione dei siti. È il complemento geografico ai dati di base alfanumerici degli edifici dall'ERP.",
       "en": "This dataset contains the geodata of all buildings in the federal portfolio from the geographic information system (GIS IMMO). It comprises the exact locations and geometric outlines (building polygons) of the structures. The data serves as the basis for spatial analyses, cartographic representations and site planning. It is the geographic complement to the alphanumeric master data of the buildings from the ERP."
     },
-    "image": "assets/images/datasets/GIS Gebäude.jpg",
+    "image": "assets/images/datasets/gis-buildings.jpg",
     "tags": [
       "building",
       "gis_immo"
@@ -1304,7 +1304,7 @@
       "it": "L’unità economica (UE) è il livello organizzativo e gestionale centrale in SAP RE-FX. Un’UE raggruppa edifici, fondi e oggetti locati di un sito e funge da riferimento per costi, ricavi, superfici e mandati di gestione. Il set di dati contiene la denominazione, le responsabilità, l’assegnazione al portafoglio e il collegamento agli oggetti associati. La base dati viene aggiornata mensilmente dal sistema ERP.",
       "en": "The economic unit (WE) is the central organisational and management layer in SAP RE-FX. A WE groups the buildings, land parcels and rental objects of a site and serves as the reference for costs, revenues, areas and management orders. The dataset contains designation, responsibilities, portfolio assignment and the link to the associated objects. The database is updated monthly from the ERP system."
     },
-    "image": "assets/images/datasets/SAP Grundstück.jpg",
+    "image": "assets/images/datasets/sap-parcels.jpg",
     "tags": [
       "spatial_structure",
       "erp_immo"
@@ -1400,7 +1400,7 @@
       "it": "Questo set di dati fornisce i partner commerciali gestiti centralmente in SAP Master Data Governance (MDG): locatari, locatori, proprietari, fornitori e altre parti contraenti della Confederazione. Sono registrati nome, indirizzo, ruoli, coordinate bancarie e identificatori. Come golden record dei dati di base dei partner, costituisce la base per i processi contrattuali, di acquisto e finanziari. I dati vengono aggiornati in caso di modifica.",
       "en": "This dataset provides the business partners maintained centrally in SAP Master Data Governance (MDG): tenants, landlords, owners, suppliers and other contractual parties of the federal government. Recorded are name, address, roles, bank details and identifiers. As the golden record of partner master data, it forms the basis for contract, procurement and financial processes. The data is updated on change."
     },
-    "image": "assets/images/datasets/SAP Mietverträge.jpg",
+    "image": "assets/images/datasets/sap-tenancies.jpg",
     "tags": [
       "contractual_view"
     ],
@@ -1600,7 +1600,7 @@
       "it": "Il set di dati fornisce gli edifici gestiti nella gestione dei dati energetici (EDM) con i loro indicatori rilevanti dal punto di vista energetico — superficie di riferimento energetico, vettori energetici, classi di efficienza e assegnazione dei consumi. Costituisce la vista energetica del patrimonio edilizio ed è la base per la contabilità energetica, l’ottimizzazione dell’esercizio e il reporting sugli obiettivi climatici della Confederazione. Messa a disposizione tramite un’API REST.",
       "en": "The dataset provides the buildings maintained in Energy Data Management (EDM) with their energy-relevant key figures — energy reference area, energy carriers, efficiency classes and consumption assignment. It forms the energy view of the building portfolio and is the basis for energy accounting, operational optimisation and reporting on the federal climate targets. Provided via a REST API."
     },
-    "image": "assets/images/datasets/SAP Gebäude.jpg",
+    "image": "assets/images/datasets/sap-buildings.jpg",
     "tags": [
       "building",
       "energy"
@@ -1896,7 +1896,7 @@
       "it": "Il set di dati contiene le valutazioni dello stato e i dati di pianificazione della manutenzione degli edifici dallo strumento specializzato Wüest Dimensions. Sono registrati lo stato dei componenti, le durate di utilizzo residue, i cicli di ripristino nonché i costi stimati di manutenzione e rinnovo lungo il ciclo di vita. Questi dati costituiscono la base per la pianificazione strategica della manutenzione, la pianificazione degli investimenti a medio termine e la definizione delle priorità dei risanamenti. Messa a disposizione come esportazione Excel e API REST.",
       "en": "The dataset contains the condition assessments and maintenance planning data of the buildings from the Wüest Dimensions specialist tool. Recorded are component conditions, remaining useful lives, refurbishment cycles as well as estimated maintenance and renewal costs over the lifecycle. This data forms the basis for strategic maintenance planning, medium-term investment planning and the prioritisation of renovations. Provided as an Excel export and REST API."
     },
-    "image": "assets/images/datasets/SAP Gebäude.jpg",
+    "image": "assets/images/datasets/sap-buildings.jpg",
     "tags": [
       "building",
       "construction_planning"

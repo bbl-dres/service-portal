@@ -1,180 +1,223 @@
-// Holt zu Schweizer Adressen die amtlichen Angaben aus den keylosen Diensten des
-// Bundes und der Kantone — Koordinaten, EGID, EGRID, Parzellennummer, amtliche
-// Fläche und die echte Parzellengeometrie.
+// Retrieves official coordinates, EGID, EGRID, parcel numbers, areas, and
+// parcel geometry for Swiss addresses from keyless federal and cantonal APIs.
 //
-// Das Rezept steht in docs/swisstopo-api.md; dort ist jeder Aufruf mit einer
-// echten Antwort belegt. Dieses Skript ist die ausführbare Fassung davon.
+// docs/swisstopo-api.md documents every request with a real response; this is
+// the executable version of that recipe.
 //
-//   node scripts/fetch-swisstopo.mjs                          → die drei Testadressen
-//   node scripts/fetch-swisstopo.mjs "Bundesplatz 3 Bern" …   → beliebige Adressen
-//   node scripts/fetch-swisstopo.mjs --datei adressen.json    → [{bbl_id, adresse}, …]
+//   node scripts/fetch-swisstopo.mjs                          default addresses
+//   node scripts/fetch-swisstopo.mjs "Bundesplatz 3 Bern"     arbitrary addresses
+//   node scripts/fetch-swisstopo.mjs --file addresses.json   [{bbl_id, adresse}, ...]
 //
-// Ergebnis nach stdout und (mit --aus <pfad>) in eine Datei.
+// Results go to stdout and, with --output <path>, to a file. The German keys in
+// the input and output records are a compatibility contract with the research
+// snapshots consumed by apply-research-data.mjs.
 //
-// QUELLENANGABE: © Data: swisstopo (BGDI) · amtliche Vermessung der Kantone
-// (geodienste.ch). Beides ist ohne Schlüssel nutzbar, verlangt aber die Nennung
-// der Quelle — siehe docs/swisstopo-api.md Kap. 8.
+// ATTRIBUTION: (c) Data: swisstopo (Federal Spatial Data Infrastructure) and
+// official cadastral surveying by the cantons (geodienste.ch). Both APIs are
+// keyless but require attribution; see section 8 of docs/swisstopo-api.md.
 
-const BGDI = 'https://api3.geo.admin.ch/rest/services';
-const WFS = 'https://geodienste.ch/db/av_0/deu';
+const FEDERAL_API = 'https://api3.geo.admin.ch/rest/services';
+const CADASTRAL_WFS = 'https://geodienste.ch/db/av_0/deu';
 
-// Fair Use: BGDI 40 Anfragen/Minute, geodienste.ch nur 10/Minute bei 1 MB.
-// Der WFS ist der Engpass — darum die grosszügige Pause vor jedem WFS-Aufruf.
-const PAUSE_BGDI = 400;
-const PAUSE_WFS = 6500;
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Fair use: 40 federal API requests per minute and only 10 WFS requests per
+// minute at 1 MB. WFS is the bottleneck, hence the longer pause before it.
+const FEDERAL_PAUSE_MS = 400;
+const WFS_PAUSE_MS = 6500;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function getJSON(url, was) {
-  const res = await fetch(url, { headers: { 'User-Agent': 'bbl-kundenportal-prototyp/1.0 (Demodaten)' } });
-  if (!res.ok) throw new Error(`${was}: HTTP ${res.status}`);
-  const text = await res.text();
-  try { return JSON.parse(text); } catch { throw new Error(`${was}: keine JSON-Antwort (${text.slice(0, 120)})`); }
+async function getJson(url, subject) {
+  const response = await fetch(url, { headers: { 'User-Agent': 'bbl-service-portal-prototype/1.0 (demo data)' } });
+  if (!response.ok) throw new Error(`${subject}: HTTP ${response.status}`);
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`${subject}: response is not JSON (${text.slice(0, 120)})`);
+  }
 }
 
-// (A) Adresse → Koordinaten. ACHTUNG: attrs.x ist der NORDwert, attrs.y der
-// OSTwert — in der Antwort vertauscht gegenüber der üblichen Lesart.
-async function geocode(adresse) {
-  const url = `${BGDI}/api/SearchServer?searchText=${encodeURIComponent(adresse)}`
+// (A) Address to coordinates. The response's attrs.x is northing and attrs.y
+// is easting, which is the reverse of their usual visual order.
+async function geocode(address) {
+  const url = `${FEDERAL_API}/api/SearchServer?searchText=${encodeURIComponent(address)}`
     + '&type=locations&origins=address&sr=2056&limit=1';
-  const j = await getJSON(url, 'SearchServer');
-  const hit = (j.results || [])[0];
+  const response = await getJson(url, 'SearchServer');
+  const hit = (response.results || [])[0];
   if (!hit) return null;
-  const a = hit.attrs;
-  const label = String(a.label || '').replace(/<[^>]+>/g, '').trim();
-  // «Bundesplatz 3 3011 Bern» → Strasse / Nr. / PLZ / Ort
-  const m = label.match(/^(.*?)\s+(\d+[a-zA-Z]?)\s+(\d{4})\s+(.+)$/);
+  const attributes = hit.attrs;
+  const label = String(attributes.label || '').replace(/<[^>]+>/g, '').trim();
+  // Parse the German label into street, number, postcode, and place.
+  const match = label.match(/^(.*?)\s+(\d+[a-zA-Z]?)\s+(\d{4})\s+(.+)$/);
   return {
     label,
-    strasse: m ? m[1] : label, hausnummer: m ? m[2] : '',
-    plz: m ? m[3] : '', ort: m ? m[4] : '',
-    lat: a.lat, lon: a.lon,
-    lv95_e: a.y, lv95_n: a.x,
-    egid_aus_suche: String(a.featureId || '').split('_')[0] || null,
+    'strasse': match ? match[1] : label,
+    'hausnummer': match ? match[2] : '',
+    'plz': match ? match[3] : '',
+    'ort': match ? match[4] : '',
+    lat: attributes.lat,
+    lon: attributes.lon,
+    'lv95_e': attributes.y,
+    'lv95_n': attributes.x,
+    'egid_aus_suche': String(attributes.featureId || '').split('_')[0] || null,
   };
 }
 
-// (B) Gebäude- und Wohnungsregister → EGID und Gebäudemerkmale.
-async function gwr(lat, lon) {
-  // tolerance > 0 verlangt mapExtent UND imageDisplay — ohne die beiden antwortet
-  // der Dienst mit HTTP 400. Nur bei tolerance=0 sind sie weglassbar.
-  const d = 0.0005;   // ~50 m Suchfenster um den Punkt
-  const extent = `${lon - d},${lat - d},${lon + d},${lat + d}`;
-  const url = `${BGDI}/api/MapServer/identify?geometry=${lon},${lat}`
+// (B) Federal Register of Buildings and Dwellings: EGID and characteristics.
+async function loadBuildingRegister(lat, lon) {
+  // tolerance > 0 requires mapExtent and imageDisplay. The service responds
+  // with HTTP 400 if either is omitted; only tolerance=0 permits omission.
+  const delta = 0.0005; // Approximately 50 m around the point.
+  const extent = `${lon - delta},${lat - delta},${lon + delta},${lat + delta}`;
+  const url = `${FEDERAL_API}/api/MapServer/identify?geometry=${lon},${lat}`
     + '&geometryType=esriGeometryPoint&layers=all:ch.bfs.gebaeude_wohnungs_register'
     + `&sr=4326&tolerance=5&returnGeometry=false&mapExtent=${extent}&imageDisplay=100,100,96`;
-  const j = await getJSON(url, 'GWR');
-  const r = (j.results || [])[0];
-  if (!r) return null;
-  const a = r.attributes || r.properties || {};
+  const response = await getJson(url, 'GWR');
+  const result = (response.results || [])[0];
+  if (!result) return null;
+  const attributes = result.attributes || result.properties || {};
   return {
-    egid: a.egid || null, baujahr: a.gbauj || null, geschosse: a.gastw || null,
-    grundflaeche: a.garea || null, kategorie: a.gkat || null, status: a.gstat || null,
-    egrid_aus_gwr: a.egrid || null, parzelle_aus_gwr: a.lparz || null, gemeindenr: a.ggdenr || null,
+    egid: attributes.egid || null,
+    'baujahr': attributes.gbauj || null,
+    'geschosse': attributes.gastw || null,
+    'grundflaeche': attributes.garea || null,
+    'kategorie': attributes.gkat || null,
+    status: attributes.gstat || null,
+    'egrid_aus_gwr': attributes.egrid || null,
+    'parzelle_aus_gwr': attributes.lparz || null,
+    'gemeindenr': attributes.ggdenr || null,
   };
 }
 
-// (C1) Amtliche Vermessung → EGRID, Parzellennummer, BFS-Nr., Polygon (WGS 84).
-async function parzelle(lat, lon) {
-  const url = `${BGDI}/all/MapServer/identify?geometry=${lon},${lat}`
+// (C1) Official cadastral survey: EGRID, parcel number, municipality number,
+// canton, and WGS 84 polygon.
+async function loadParcel(lat, lon) {
+  const url = `${FEDERAL_API}/all/MapServer/identify?geometry=${lon},${lat}`
     + '&geometryType=esriGeometryPoint&layers=all:ch.swisstopo-vd.amtliche-vermessung'
     + '&sr=4326&tolerance=0&returnGeometry=true&geometryFormat=geojson';
-  const j = await getJSON(url, 'Amtliche Vermessung');
-  const r = (j.results || [])[0];
-  if (!r) return null;
-  const p = r.properties || r.attributes || {};
+  const response = await getJson(url, 'Official cadastral survey');
+  const result = (response.results || [])[0];
+  if (!result) return null;
+  const properties = result.properties || result.attributes || {};
   return {
-    egrid: p.egris_egrid || null, nummer: p.number || p.name || null,
-    bfsnr: p.bfsnr || null, kanton: p.ak || null, identnd: p.identnd || null,
-    geometrie: r.geometry || null,
+    egrid: properties.egris_egrid || null,
+    'nummer': properties.number || properties.name || null,
+    'bfsnr': properties.bfsnr || null,
+    'kanton': properties.ak || null,
+    identnd: properties.identnd || null,
+    'geometrie': result.geometry || null,
   };
 }
 
-// (C2) Amtliche FLÄCHE — die fehlt in der BGDI und kommt nur aus dem WFS der
-// Kantone. Filter über den EGRID, damit genau eine Liegenschaft zurückkommt.
-async function flaeche(egrid) {
+// (C2) Official area. The federal API omits this value, so it comes from the
+// cantonal WFS. Filtering by EGRID selects exactly one real-estate parcel.
+async function loadArea(egrid) {
   const filter = `<fes:Filter xmlns:fes="http://www.opengis.net/fes/2.0">`
     + `<fes:PropertyIsEqualTo><fes:ValueReference>EGRIS_EGRID</fes:ValueReference>`
     + `<fes:Literal>${egrid}</fes:Literal></fes:PropertyIsEqualTo></fes:Filter>`;
-  const url = `${WFS}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=ms:RESF`
+  const url = `${CADASTRAL_WFS}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=ms:RESF`
     + '&SRSNAME=urn:ogc:def:crs:EPSG::4326'
     + `&OUTPUTFORMAT=${encodeURIComponent('application/json; subtype=geojson')}`
     + `&FILTER=${encodeURIComponent(filter)}`;
-  const j = await getJSON(url, 'geodienste WFS');
-  const f = (j.features || [])[0];
-  if (!f) return null;
-  const p = f.properties || {};
+  const response = await getJson(url, 'geodienste WFS');
+  const feature = (response.features || [])[0];
+  if (!feature) return null;
+  const properties = feature.properties || {};
   return {
-    flaeche_m2: p.Flaeche ?? null, nummer: p.Nummer ?? null,
-    nbident: p.NBIdent ?? null, bfsnr: p.BFSNr ?? null,
-    vollstaendigkeit: p.Vollstaendigkeit ?? null,
-    geometrie: f.geometry || null,
+    'flaeche_m2': properties.Flaeche ?? null,
+    'nummer': properties.Nummer ?? null,
+    nbident: properties.NBIdent ?? null,
+    'bfsnr': properties.BFSNr ?? null,
+    'vollstaendigkeit': properties.Vollstaendigkeit ?? null,
+    'geometrie': feature.geometry || null,
   };
 }
 
-const vertices = (g) => {
-  if (!g || !g.coordinates) return 0;
-  const flat = JSON.stringify(g.coordinates).match(/\],\[/g);
-  return flat ? flat.length + 1 : 0;
+const countVertices = (geometry) => {
+  if (!geometry || !geometry.coordinates) return 0;
+  const separators = JSON.stringify(geometry.coordinates).match(/\],\[/g);
+  return separators ? separators.length + 1 : 0;
 };
 
-async function aufloesen(eintrag) {
-  const adresse = typeof eintrag === 'string' ? eintrag : eintrag.adresse;
-  const bbl_id = typeof eintrag === 'string' ? null : eintrag.bbl_id;
-  const out = { bbl_id, angefragt: adresse, fehler: [] };
+async function resolveEntry(entry) {
+  const address = typeof entry === 'string' ? entry : entry['adresse'];
+  const buildingId = typeof entry === 'string' ? null : entry['bbl_id'];
+  const output = { 'bbl_id': buildingId, 'angefragt': address, 'fehler': [] };
   try {
-    const g = await geocode(adresse);
-    if (!g) { out.fehler.push('keine Adresse gefunden'); return out; }
-    Object.assign(out, g);
-    await sleep(PAUSE_BGDI);
-
-    try { out.gwr = await gwr(g.lat, g.lon); } catch (e) { out.fehler.push('GWR: ' + e.message); }
-    await sleep(PAUSE_BGDI);
-
-    try { out.parzelle = await parzelle(g.lat, g.lon); } catch (e) { out.fehler.push('AV: ' + e.message); }
-
-    if (out.parzelle && out.parzelle.egrid) {
-      await sleep(PAUSE_WFS);
-      try {
-        const f = await flaeche(out.parzelle.egrid);
-        if (f) { out.flaeche = f; out.parzelle.geometrie = f.geometrie || out.parzelle.geometrie; }
-        else out.fehler.push('WFS: keine Liegenschaft zum EGRID');
-      } catch (e) { out.fehler.push('WFS: ' + e.message); }
+    const geocoded = await geocode(address);
+    if (!geocoded) {
+      output['fehler'].push('address not found');
+      return output;
     }
-  } catch (e) { out.fehler.push(e.message); }
-  return out;
+    Object.assign(output, geocoded);
+    await sleep(FEDERAL_PAUSE_MS);
+
+    try {
+      output.gwr = await loadBuildingRegister(geocoded.lat, geocoded.lon);
+    } catch (error) {
+      output['fehler'].push('GWR: ' + error.message);
+    }
+    await sleep(FEDERAL_PAUSE_MS);
+
+    try {
+      output['parzelle'] = await loadParcel(geocoded.lat, geocoded.lon);
+    } catch (error) {
+      output['fehler'].push('cadastral survey: ' + error.message);
+    }
+
+    if (output['parzelle']?.egrid) {
+      await sleep(WFS_PAUSE_MS);
+      try {
+        const area = await loadArea(output['parzelle'].egrid);
+        if (area) {
+          output['flaeche'] = area;
+          output['parzelle']['geometrie'] = area['geometrie'] || output['parzelle']['geometrie'];
+        } else {
+          output['fehler'].push('WFS: no parcel found for EGRID');
+        }
+      } catch (error) {
+        output['fehler'].push('WFS: ' + error.message);
+      }
+    }
+  } catch (error) {
+    output['fehler'].push(error.message);
+  }
+  return output;
 }
 
-// --- Aufruf -----------------------------------------------------------------
-const argv = process.argv.slice(2);
-const idxAus = argv.indexOf('--aus');
-const ziel = idxAus >= 0 ? argv[idxAus + 1] : null;
-if (idxAus >= 0) argv.splice(idxAus, 2);
-const idxDatei = argv.indexOf('--datei');
-let eintraege;
-if (idxDatei >= 0) {
+// Command-line entry point. German flag spellings remain accepted as legacy
+// compatibility values, while all documentation uses the English forms.
+const args = process.argv.slice(2);
+const outputFlagIndex = Math.max(args.indexOf('--output'), args.indexOf('--aus'));
+const target = outputFlagIndex >= 0 ? args[outputFlagIndex + 1] : null;
+if (outputFlagIndex >= 0) args.splice(outputFlagIndex, 2);
+const fileFlagIndex = Math.max(args.indexOf('--file'), args.indexOf('--datei'));
+let entries;
+if (fileFlagIndex >= 0) {
   const { readFileSync } = await import('node:fs');
-  eintraege = JSON.parse(readFileSync(argv[idxDatei + 1], 'utf8'));
-} else if (argv.length) {
-  eintraege = argv;
+  entries = JSON.parse(readFileSync(args[fileFlagIndex + 1], 'utf8'));
+} else if (args.length) {
+  entries = args;
 } else {
-  eintraege = ['Bundesplatz 3 Bern', 'Papiermühlestrasse 172 Ittigen', 'Monbijoustrasse 40 Bern'];
+  entries = ['Bundesplatz 3 Bern', 'Papiermühlestrasse 172 Ittigen', 'Monbijoustrasse 40 Bern'];
 }
 
-const ergebnisse = [];
-for (const e of eintraege) {
-  const r = await aufloesen(e);
-  ergebnisse.push(r);
-  const p = r.parzelle || {}; const f = r.flaeche || {}; const gw = r.gwr || {};
-  console.log(`${String(r.angefragt).padEnd(34)} ${r.label || '—'}`);
-  console.log(`   ${r.lat ? r.lat.toFixed(6) + ' / ' + r.lon.toFixed(6) : '—'}`
-    + `  EGID ${gw.egid || r.egid_aus_suche || '—'}  EGRID ${p.egrid || '—'}`
-    + `  Parz. ${p.nummer || '—'}  ${f.flaeche_m2 != null ? f.flaeche_m2 + ' m²' : '— m²'}`
-    + `  BFS ${p.bfsnr || '—'}  Polygon ${vertices(p.geometrie)} Punkte`
-    + (r.fehler.length ? `\n   ⚠ ${r.fehler.join(' · ')}` : ''));
+const results = [];
+for (const entry of entries) {
+  const result = await resolveEntry(entry);
+  results.push(result);
+  const parcel = result['parzelle'] || {};
+  const area = result['flaeche'] || {};
+  const building = result.gwr || {};
+  console.log(`${String(result['angefragt']).padEnd(34)} ${result.label || '-'}`);
+  console.log(`   ${result.lat ? result.lat.toFixed(6) + ' / ' + result.lon.toFixed(6) : '-'}`
+    + `  EGID ${building.egid || result['egid_aus_suche'] || '-'}  EGRID ${parcel.egrid || '-'}`
+    + `  parcel ${parcel['nummer'] || '-'}  ${area['flaeche_m2'] != null ? area['flaeche_m2'] + ' m2' : '- m2'}`
+    + `  BFS ${parcel['bfsnr'] || '-'}  polygon ${countVertices(parcel['geometrie'])} points`
+    + (result['fehler'].length ? `\n   warning ${result['fehler'].join(' / ')}` : ''));
 }
 
-if (ziel) {
+if (target) {
   const { writeFileSync } = await import('node:fs');
-  writeFileSync(ziel, JSON.stringify(ergebnisse, null, 2));
-  console.log(`\n→ ${ziel}`);
+  writeFileSync(target, JSON.stringify(results, null, 2));
+  console.log(`\nWrote ${target}`);
 }

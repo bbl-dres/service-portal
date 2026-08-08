@@ -1,9 +1,5 @@
-/* ===================== Dokumentvorschau (Lightbox) ===================== */
-/* Dunkle Chrome fest verdrahtet, damit die Vorschau in beiden Skins wie ein
-   Viewer wirkt. Portiert aus dem BBL Mieterportal (tenant-portal). */
-/* Scroll-Lock: die EINE Klasse body--overlay-open (Modal, Galerie, Betrachter)
-   — das zweite Regelpaar unter dem alten Namen docviewer-open ist entfallen
-   (Design-Review C14). */
+/* Fullscreen construction-document viewer. */
+
 .docviewer { position:fixed; inset:0; z-index:var(--z-viewer); display:flex; flex-direction:column;
   overflow:hidden; background:var(--color-secondary-900); }
 .docviewer__bar { position:relative; z-index:var(--z-local-popover); display:flex; align-items:center; flex:none;
@@ -16,7 +12,7 @@
 .docviewer__stage:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
 .docviewer__pages { --docpage-w:760px; display:flex; flex-direction:column; align-items:center;
   gap:var(--sp-6); min-width:min-content; }
-/* Vor/Zurück: am Viewport fixiert, damit sie beim Scrollen stehen bleiben. */
+
 .docviewer__nav { position:fixed; top:50%; transform:translateY(-50%); z-index:var(--z-local-floating);
   display:inline-flex; align-items:center; justify-content:center; width:var(--target-min); height:var(--target-min);
   background:var(--surface-negative); border:0; border-radius:var(--radius-sm); color:var(--color-text-negative); cursor:pointer;
@@ -26,8 +22,6 @@
 .docviewer__nav--prev { left:var(--sp-4); }
 .docviewer__nav--next { right:var(--sp-4); }
 
-/* Metadaten folgen dem Muster des Bildbetrachters: auf kleinen Viewports als
-   begrenztes Band, ab md als feste Spalte neben der Vorschau. */
 .docviewer__meta { padding:var(--sp-4) var(--sp-5); container-type:inline-size; }
 @media (min-width:768px){
   .docviewer__body { flex-direction:row; }
@@ -51,9 +45,7 @@
 .docpage__metagrid div { display:flex; flex-direction:column; }
 .docpage__metagrid dt { font-size:var(--text-xs); color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.04em; }
 .docpage__metagrid dd { margin:0; font-size:var(--text-sm); font-weight:var(--fw-bold); }
-/* Blocksatz ohne Silbentrennung erzeugt bei schmalen Spalten «Flüsse» aus
-   Leerraum. Mit hyphens:auto bleibt der Blocksatz sauber; ohne Unterstützung
-   fällt der Absatz auf Flattersatz zurück (Item 2.26). */
+
 .docpage__p { margin:0 0 var(--sp-4); font-size:var(--text-sm); line-height:var(--lh-relaxed);
   text-align:justify; hyphens:auto; word-spacing:normal; }
 @supports not (hyphens: auto) { .docpage__p { text-align:left; } }
@@ -61,8 +53,7 @@
 .docpage__plan { display:block; width:100%; height:auto; }
 .docpage__plan .plan-sheet { fill:var(--color-secondary-50); stroke:var(--color-secondary-200); stroke-width:1; }
 .docpage__plan .plan-wall { fill:none; stroke:var(--color-secondary-700); stroke-width:3; stroke-linecap:square; }
-/* Fixed drafting-paper tint: unlike UI chrome, this technical drawing surface
-   must not be re-tinted by a brand skin. */
+
 .docpage__plan .plan-room { fill:var(--surface-drafting); stroke:var(--color-secondary-300); stroke-width:1; }
 .docpage__plan .plan-label { fill:var(--color-text-muted); font-size:var(--fs-xs); font-weight:var(--fw-bold); text-anchor:middle; }
 .docpage__plan .plan-north line { stroke:var(--color-text-muted); stroke-width:1.5; }
@@ -77,30 +68,21 @@
 .docviewer__zoom:hover { background:var(--surface-negative-hover); }
 .docviewer__zoom:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
 .docviewer__zoom--reset { min-width:var(--sp-14); font-variant-numeric:tabular-nums; }
-/* 44-px-Ziel ohne Zeigegerät (WCAG 2.5.5). Muss HINTER den Basisgrössen stehen —
-   im allgemeinen Touch-Block weiter oben verlor die Regel gegen sie. */
+
 @media (max-width:1023.98px), (hover:none){
   .docviewer__zoom { min-width:var(--target-min); height:var(--target-min); }
   .docviewer__zoom--reset { min-width:var(--sp-16); }
 }
 
-/* Gleicher Toast wie überall (CD notification im Host), nur INNERHALB des
-   Betrachters gehostet: --z-viewer (200) läge sonst über dem globalen Toast (110).
-   Der schwere Schatten ist die dokumentierte Negativ-Ebenen-Ausnahme (wie
-   .docviewer__toolbar) — var(--shadow-lg) verschwände auf dunklem Grund. */
 .docviewer__toast { position:fixed; left:0; right:0; bottom:var(--sp-20); z-index:var(--z-local-status);
   display:flex; justify-content:center; pointer-events:none; }
 .docviewer__toast .notification { max-width:500px; margin-inline:var(--sp-5); pointer-events:auto;
   box-shadow:var(--shadow-viewer); }
 
-/* Dateiname in der Tabelle: sieht aus wie ein Link, ist ein Viewer-Button. */
 .doc-open { display:inline-flex; align-items:center; min-height:var(--target-min); background:none; border:0;
   padding:0; font:inherit; color:var(--color-primary-600); cursor:pointer; text-align:left; }
 .doc-open:hover { color:var(--color-primary-800); text-decoration:underline; }
 
-/* Dokumentvorschau auf dem Handy (Item 2.26): die Metadaten-Zweispaltigkeit
-   klemmte bei 40ch, der Blocksatz erzeugte Flüsse, und die fixierten Pfeile
-   lagen mitten auf der Seite statt am unteren Rand. */
 @media (max-width:639.98px){
   .docviewer__bar { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-1-5);
     padding:var(--sp-2); }

@@ -1,22 +1,22 @@
-// Landingpage einer Anwendung — #/applications/<appId>.
+// Application landing page: #/applications/<appId>.
 //
-// Aufbau nach der heutigen Intranetseite «BBL GIS IMMO (Geoinformationssystem)»:
-// Beschreibung · Zugriff (Einstiegspunkte + Hinweise) · Schulung und weitere
-// Informationen · Kontakt · Letzte Änderung.
+// Anatomy follows the current intranet page «BBL GIS IMMO
+// (Geoinformationssystem)»: description · access (entry points + notices) ·
+// training and further information · contact · last updated.
 //
-// Der Katalog verlinkt bewusst hierher statt direkt in die Anwendung: die
-// Anwendungen unterscheiden sich in Einstieg (eingebettete Micro-App vs.
-// externes System), Berechtigung und Ansprechstelle — das gehört auf eine
-// Seite, bevor jemand auf «Öffnen» klickt.
+// The catalogue deliberately links here rather than directly into the app.
+// Applications differ in entry point (embedded micro-app vs external system),
+// access and contact; users need that context before opening it.
 
 import { audienceTags } from '../domain.js';
 
 const LAUNCH_LABEL = 'Anwendung starten';
+const NO_ENTRY_POINT_MESSAGE = 'Für diese Anwendung ist im Prototyp kein Einstiegspunkt hinterlegt.';
 
-// Die Landingpage-Felder (long, entries, access, resources, contact, updated)
-// stehen seit 2026-07 am Anwendungsdatensatz selbst — es gab keinen Grund für
-// eine zweite Datei mit demselben Schlüssel. `page` bleibt als lokaler Alias
-// stehen, damit unten nicht jede Fundstelle umgeschrieben werden muss.
+// Since July 2026, landing-page fields (long, entries, access, resources,
+// contact, updated) live on the application record itself; a second file with
+// the same key had no purpose. `page` remains a local alias to keep references
+// below concise.
 export default function render(ctx, appId) {
   const { mount, core, session, C, setTitle, setCrumbs } = ctx;
   const a = core.application(C.safeDecode(appId));
@@ -33,14 +33,14 @@ export default function render(ctx, appId) {
 
   const external = a.link && a.link.kind === 'external';
 
-  // ---- Einstiegspunkte: der Haupteinstieg aus dem Katalog plus die
-  // zusätzlichen aus den Seitendaten (BBL GIS IMMO hat z. B. Portal und
-  // Liegenschaftsinventar). Ein Katalog-Link auf «#» ist ein Platzhalter.
+  // Entry points: the main catalogue entry plus additional page-data entries
+  // (BBL GIS IMMO, for example, has the portal and property inventory). A
+  // catalogue link to «#» is a placeholder.
   const catalogEntry = a.link && a.link.href && a.link.href !== '#'
     ? { label: LAUNCH_LABEL, href: a.link.href, kind: a.link.kind }
     : null;
   const entries = [...(catalogEntry ? [catalogEntry] : []), ...(page.entries || [])];
-  // Der Knopf im Zugriff-Kasten führt auf den ersten Einstiegspunkt.
+  // The access-card button uses the first entry point.
   const primary = entries[0] || null;
 
   const entryItem = (e) => C.downloadItem({
@@ -64,20 +64,20 @@ export default function render(ctx, appId) {
       title: a.name, lead: a.description,
       tags: `${audienceTags(core, C, a.audience)}${a.hero ? C.badge('Schlüsselanwendung', 'info') : ''}${
         external ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue')}`,
-      image: heroBild(C, a),
+      image: heroImage(C, a),
     })}
 
-    ${''/* Kein mt-6 mehr: den Abstand unter dem Hero trägt die geteilte Regel
-          .hero + .container--grid (EIN Wert für alle Detail-Geschwister). */}
+    ${''/* No mt-6: the shared .hero + .container--grid rule provides spacing
+          below the hero (ONE value for every sibling detail page). */}
     <div class="container--grid gap--responsive">
-      ${/* .stack-lg kodierte dieselbe Rampe wie CDs .vertical-spacing (3/3.5rem)
-            ein zweites Mal — hier steht der kanonische Name (Review layout/main-1). */''}
+      ${/* .stack-lg duplicated the same scale as CD's .vertical-spacing
+            (3/3.5rem); use the canonical name (review layout/main-1). */''}
       <div class="container__main vertical-spacing">
         ${page.long ? section('Über die Anwendung', `<p>${C.escape(page.long)}</p>`) : ''}
 
         ${section('Einstieg', entries.length
           ? `<ul class="download-items">${entries.map(entryItem).join('')}</ul>`
-          : `<p class="muted">Für diese Anwendung ist im Prototyp kein Einstiegspunkt hinterlegt.</p>`)}
+          : `<p class="muted">${NO_ENTRY_POINT_MESSAGE}</p>`)}
 
         ${page.resources && page.resources.length
           ? section('Schulung und weitere Informationen',
@@ -85,11 +85,11 @@ export default function render(ctx, appId) {
           : ''}
       </div>
 
-      ${/* KEIN .stack-lg hier: den CD-Abstand der Aside-Module (1.75/2rem)
-            liefert bereits .container__aside > * (Review layout/aside-1). */''}
-      ${''/* Benannte Randspalte mit sr-h2 — wie das Dienstleistungs-Detail; ohne
-            die Stufe hingen die Box-h3 in der Gliederung unter der letzten
-            Haupt-h2 (Design-Review, pages). */}
+      ${/* NO .stack-lg here: .container__aside > * already provides CD spacing
+            between sidebar modules (1.75/2rem; review layout/aside-1). */''}
+      ${''/* Named sidebar with sr-h2, matching service detail. Without this level,
+            box h3 headings followed the final main h2 in the outline
+            (design review, pages). */}
       <aside class="container__aside" aria-labelledby="app-aside-head">
         <h2 class="sr-only" id="app-aside-head">Zugriff und Kontakt</h2>
         ${C.accessCard({
@@ -97,10 +97,9 @@ export default function render(ctx, appId) {
           label: LAUNCH_LABEL,
           external: primary ? primary.kind === 'external' : false,
           newWindow: true,
-          // Portalinterne Fachanwendungen (#/app/…) verlangen eine Anmeldung —
-          // dieselbe Sperre, die der Router vor der Anwendung selbst zieht
-          // (js/router.js). Der Einstieg öffnet diese Sperre im neuen Tab;
-          // externe Systeme bringen ihre eigene Anmeldung mit.
+          // Portal-internal domain apps (#/app/…) require login, using the same
+          // gate the router places before the app itself (js/router.js). The entry
+          // opens that gate in a new tab; external systems own their login.
           requiresLogin: !!primary && primary.kind !== 'external' && String(primary.href).startsWith('#/app/'),
           loggedIn: session.isLoggedIn(), user: session.user(),
           note: page.access && page.access.note ? page.access.note : '',
@@ -108,30 +107,27 @@ export default function render(ctx, appId) {
         })}
 
         ${C.contactBox(contact)}
-        ${/* «Eckdaten» ist entfallen (Nutzerentscheid 2026-08-06). Die Karte trug
-              sechs Zeilen, von denen «Einstieg» den Knopf darüber wiederholte und
-              «Stand» und «ID» auf einer Landingpage niemand sucht.
-              MIT ENTFALLEN sind «Gruppe» und «Bereich»: sie stehen jetzt auf
-              dieser Seite nirgends mehr. Erschlossen wird die Anwendung über den
-              Katalog (#/applications?area=…), der beide als Filter führt — die
-              Landingpage beantwortet «was ist das und wie komme ich rein?»,
-              nicht «wie ist das abgelegt?». */''}
+        ${/* «Eckdaten» was removed (user decision 2026-08-06). Its six rows
+              included an «Einstieg» that repeated the button above, while nobody
+              looks for «Stand» or «ID» on a landing page. «Gruppe» and «Bereich»
+              were removed with it and no longer appear here. The catalogue
+              (#/applications?area=…) exposes both as filters. The landing page
+              answers «what is this and how do I enter?», not «how is it filed?». */''}
       </aside>
     </div>
   </div>`;
 }
 
-// Titelbild — ohne Bildlegende. Die Aufnahmen sind Stockbilder von Pexels und
-// liegen lokal unter assets/images/applications/. Die Pexels-Lizenz erlaubt die
-// Nutzung auch kommerziell und verlangt KEINE Namensnennung, der Nachweis ist
-// hier also keine Bedingung, sondern nur Zierde — und eine Zeile «Fotograf —
-// Pexels» unter jedem Symbolbild sagt der Leserin nichts über die Anwendung.
-// Urheber, Lizenz und Quellseite bleiben in data/applications.json `bild`
-// erfasst, damit die Herkunft beim Pflegen nachvollziehbar bleibt.
-function heroBild(C, a) {
-  const b = a.bild;
-  if (!b || !b.src) return '';
-  return C.photo({ src: b.src, alt: b.titel || a.name, w: 800, cls: 'photo--16x9' });
+// Hero image without caption. Pexels stock photos are stored locally under
+// assets/images/applications/. The Pexels licence permits commercial use and
+// requires NO attribution, so a credit here would be decoration rather than a
+// condition and would tell readers nothing about the app. Author, licence and
+// source page remain recorded in raw field: `bild` in data/applications.json, so
+// maintainers can trace provenance.
+function heroImage(C, application) {
+  const image = application['bild'];
+  if (!image || !image.src) return '';
+  return C.photo({ src: image.src, alt: image['titel'] || application.name, w: 800, cls: 'photo--16x9' });
 }
 
 function crumbs() {

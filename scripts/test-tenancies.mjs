@@ -1,7 +1,7 @@
-// Mietendenportal (#/app/tenancies) — Übersicht, Detail, Grundriss.
-// Geprüft wird vor allem das, was die App von den anderen unterscheidet: der
-// SVG-Grundriss mit seinen vier Einfärbemodi, die Raumauswahl samt
-// Dienstleistungs-Kurzwegen und der teilbare Zustand im Hash.
+
+
+
+
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 let fail = 0;
@@ -12,84 +12,84 @@ const check = (cond, label, detail = '') => {
 const head = (s) => console.log('\n■ ' + s);
 const clean = async (p, label) => {
   const errs = await p.problems();
-  check(!errs.length, `${label}: keine Fehler`, errs.join(' | '));
+  check(!errs.length, `${label}: no errors`, errs.join(' | '));
 };
 
 const browser = await launch({ webgl: true });
 try {
 
-/* ------------------------------------------------------------- Übersicht -- */
-head('Übersicht');
+
+head('Overview');
 let p = await openPage(browser, APP_BASE + '/app/tenancies');
 await sleep(1400);
 let o = JSON.parse(await p.evaluate(`JSON.stringify({
   h1: document.querySelector('h1')?.textContent.trim(),
-  karten: document.querySelectorAll('.pf-gallery .card').length,
-  zahl: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
-  kachelraster: document.querySelectorAll('.grid--3').length,
+  cards: document.querySelectorAll('.pf-gallery .card').length,
+  count: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
+  tileGrid: document.querySelectorAll('.grid--3').length,
   chips: [...document.querySelectorAll('.card__chips .card__chip')].slice(0,2).map(x => x.textContent),
-  veFilter: [...document.querySelectorAll('[data-fdim=ve]')].map(x => x.value),
-  ansichten: [...document.querySelectorAll('.view-switch__btn')].map(x => x.dataset.view),
+  administrativeUnitFilter: [...document.querySelectorAll('[data-fdim=administrativeUnits]')].map(x => x.value),
+  views: [...document.querySelectorAll('.view-switch__btn')].map(x => x.dataset.view),
 })`));
-check(o.h1 === 'Mietende', 'Seitentitel', o.h1);
-check(o.karten === 9, '9 Karten je Seite in der Galerie', String(o.karten));
-check(/18 von 18/.test(o.zahl || ''), 'Trefferzahl', o.zahl);
-check(!/m²/.test(o.zahl || '') && !/CHF/.test(o.zahl || ''), 'keine Kennzahlen in der Zählzeile — Auswertungen gehören ins Datenportal');
-check(o.kachelraster === 0, 'kein grid--3-Kachelraster mehr');
-check(o.chips.length === 2, 'Chips (VE + Geschosse) auf dem Bild', o.chips.join(' | '));
-check(o.veFilter.length === 9, '9 Verwaltungseinheiten im Filter', o.veFilter.join(','));
-check(o.ansichten.join(',') === 'gallery,list,map', 'drei Ansichten inkl. Karte', o.ansichten.join(','));
-await clean(p, 'Übersicht');
+check(o.h1 === 'Mietende', 'The page has its title', o.h1);
+check(o.cards === 9, 'The gallery shows nine cards per page', String(o.cards));
+check(/18 von 18/.test(o.count || ''), 'The result count is complete', o.count);
+check(!/m²/.test(o.count || '') && !/CHF/.test(o.count || ''), 'The count line contains no dashboard metrics');
+check(o.tileGrid === 0, 'The retired three-column tile grid is absent');
+check(o.chips.length === 2, 'Each image has administrative-unit and floor chips', o.chips.join(' | '));
+check(o.administrativeUnitFilter.length === 9, 'The filter lists nine administrative units', o.administrativeUnitFilter.join(','));
+check(o.views.join(',') === 'gallery,list,map', 'Gallery, list and map views are available', o.views.join(','));
+await clean(p, 'Overview');
 
-head('Filter und räumlicher Baum');
+head('Filters and spatial tree');
 o = JSON.parse(await p.evaluate(`(async () => {
-  const cb = [...document.querySelectorAll('[data-fdim=ve]')].find(x => x.value === 'BAFU');
+  const cb = [...document.querySelectorAll('[data-fdim=administrativeUnits]')].find(x => x.value === 'BAFU');
   cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true }));
   await new Promise(r => setTimeout(r, 350));
-  return JSON.stringify({ zahl: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
-    pille: document.querySelector('.active-filter')?.textContent.trim() });
+  return JSON.stringify({ count: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
+    chip: document.querySelector('.active-filter')?.textContent.trim() });
 })()`));
-check(/3 von 18/.test(o.zahl || ''), 'Filter BAFU greift', o.zahl);
-check(o.pille === 'BAFU', 'Filterpille sichtbar', o.pille);
+check(/3 von 18/.test(o.count || ''), 'The BAFU filter applies', o.count);
+check(o.chip === 'BAFU', 'The filter chip is visible', o.chip);
 
 o = JSON.parse(await p.evaluate(`(async () => {
   document.querySelector('.active-filter')?.click();
   await new Promise(r => setTimeout(r, 300));
-  const seite = document.querySelector('.pf-sidebar');
-  const wurzeln = [...seite.querySelectorAll('.pf-tree > .pf-tree__item > .pf-tree__node')];
-  const laender = wurzeln.map(n => n.querySelector('.pf-tree__label').textContent + ' ' + n.querySelector('.pf-tree__n').textContent);
-  const ch = wurzeln.find(n => n.dataset.land === 'CH');
+  const sidebar = document.querySelector('.pf-sidebar');
+  const roots = [...sidebar.querySelectorAll('.pf-tree > .pf-tree__item > .pf-tree__node')];
+  const countries = roots.map(n => n.querySelector('.pf-tree__label').textContent + ' ' + n.querySelector('.pf-tree__n').textContent);
+  const ch = roots.find(n => n.dataset.country === 'CH');
   ch.click();
   await new Promise(r => setTimeout(r, 300));
-  const kantone = [...ch.closest('.pf-tree__item').querySelectorAll(':scope > .pf-tree__children > .pf-tree__item > .pf-tree__node .pf-tree__label')].map(x => x.textContent);
+  const cantons = [...ch.closest('.pf-tree__item').querySelectorAll(':scope > .pf-tree__children > .pf-tree__item > .pf-tree__node .pf-tree__label')].map(x => x.textContent);
   return JSON.stringify({
-    sidebar: !!seite,
-    titel: seite.querySelector('.pf-sidebar__title')?.textContent.trim(),
-    laender,
-    chZahl: ch.querySelector('.pf-tree__n')?.textContent,
-    kantone,
-    zahl: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
+    sidebar: !!sidebar,
+    title: sidebar.querySelector('.pf-sidebar__title')?.textContent.trim(),
+    countries,
+    chCount: ch.querySelector('.pf-tree__n')?.textContent,
+    cantons,
+    count: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
   });
 })()`));
-check(o.sidebar, 'pf-sidebar vorhanden', o.titel);
-check(o.laender.length === 6, 'sechs Länder im Baum', o.laender.join(' · '));
-check(o.chZahl === '11', 'Schweiz mit Zähler 11', o.chZahl);
-check(o.kantone.length >= 3, 'Kantone als zweite Stufe unter der Schweiz', o.kantone.join(', '));
+check(o.sidebar, 'The spatial sidebar exists', o.title);
+check(o.countries.length === 6, 'The tree contains six countries', o.countries.join(' · '));
+check(o.chCount === '11', 'Switzerland has the expected count of 11', o.chCount);
+check(o.cantons.length >= 3, 'Cantons form the second level below Switzerland', o.cantons.join(', '));
 
 o = JSON.parse(await p.evaluate(`(async () => {
   const bern = [...document.querySelectorAll('.pf-sidebar .pf-tree__node')].find(n => n.dataset.region === 'BE' && !n.dataset.city);
   bern.click();
   await new Promise(r => setTimeout(r, 350));
-  return JSON.stringify({ zahl: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
-    pille: document.querySelector('.active-filter')?.textContent.trim(),
-    loeschen: !document.querySelector('#mt-clear')?.hidden });
+  return JSON.stringify({ count: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
+    chip: document.querySelector('.active-filter')?.textContent.trim(),
+    clearVisible: !document.querySelector('#mt-clear')?.hidden });
 })()`));
-check(/ von 18 /.test(o.zahl || '') && !/18 von 18/.test(o.zahl || ''), 'Kanton BE grenzt ein', o.zahl);
-check(o.pille === 'BE', 'Auswahl als Pille', o.pille);
-check(o.loeschen, 'Auswahl-Zurücksetzen wird sichtbar');
-await clean(p, 'Baum');
+check(/ von 18 /.test(o.count || '') && !/18 von 18/.test(o.count || ''), 'Canton BE narrows the result set', o.count);
+check(o.chip === 'BE', 'The tree selection appears as a chip', o.chip);
+check(o.clearVisible, 'The clear-selection control becomes visible');
+await clean(p, 'Tree');
 
-head('Kartenansicht');
+head('Map view');
 o = JSON.parse(await p.evaluate(`(async () => {
   document.querySelector('#mt-clear').click();
   await new Promise(r => setTimeout(r, 250));
@@ -102,62 +102,62 @@ o = JSON.parse(await p.evaluate(`(async () => {
   return JSON.stringify({ container: !!el, canvas: !!el?.querySelector('canvas'),
     label: el?.getAttribute('aria-label') });
 })()`));
-check(o.container, 'Kartencontainer wird gerendert');
-check(o.canvas, 'Karte zeichnet (MapLibre-Canvas)', o.label);
-await clean(p, 'Karte');
+check(o.container, 'The map container renders');
+check(o.canvas, 'MapLibre renders a canvas', o.label);
+await clean(p, 'Map');
 await p.closeTarget();
 
 /* ----------------------------------------------------------------- Detail -- */
-head('Detail — Übersicht und Vertrag');
+head('Detail — overview and contracts');
 p = await openPage(browser, APP_BASE + '/app/tenancies/MV-2026-001');
 await sleep(1400);
 o = JSON.parse(await p.evaluate(`JSON.stringify({
   h1: document.querySelector('h1')?.textContent.trim(),
-  reiter: [...document.querySelectorAll('.tab__control')].map(x => x.textContent.trim()),
+  tabs: [...document.querySelectorAll('.tab__control')].map(x => x.textContent.trim()),
   kv: [...document.querySelectorAll('.kv dt')].map(x => x.textContent.trim()).slice(0,4),
-  kurzwege: [...document.querySelectorAll('.fp-svc span')].map(x => x.textContent.trim()),
-  raumbedarfLink: document.querySelector('a[href*="app/space-request"]')?.getAttribute('href'),
-  inventarLink: document.querySelector('a[href*="app/portfolio?id="]')?.getAttribute('href'),
+  shortcuts: [...document.querySelectorAll('.fp-svc span')].map(x => x.textContent.trim()),
+  spaceRequestLink: document.querySelector('a[href*="app/space-request"]')?.getAttribute('href'),
+  inventoryLink: document.querySelector('a[href*="app/portfolio?id="]')?.getAttribute('href'),
   launchLinks: [...document.querySelectorAll('.detail-layout__aside a.fp-svc[href^="#/app/"]')]
     .map(a => ({ target: a.getAttribute('target') || '', rel: a.getAttribute('rel') || '' })),
-  antragTitel: [...document.querySelectorAll('.detail-layout h2')].map(h => h.textContent.trim())
+  requestTitle: [...document.querySelectorAll('.detail-layout h2')].map(h => h.textContent.trim())
     .find(x => /Anträge/.test(x)),
-  antragTabelle: !!document.querySelector('#mt-dt-vorgaenge table'),
+  requestTable: !!document.querySelector('#tenancy-case-table table'),
 })`));
-check(o.h1 === 'Verwaltungszentrum Guisanplatz', 'Objektname als h1', o.h1);
-// Drei Reiter: «Vorgänge» ist kein eigener Reiter mehr, sondern der Abschnitt
-// «Anträge zu diesem Mietobjekt» am Fuss der Übersicht — dort, wo die Frage
-// gestellt wird, statt einen Klick daneben.
-// Zwei Reiter: «Vorgänge» und «Grundrisse» sind Abschnitte der Übersicht
-// geworden — als Reiter wurden sie nicht gefunden.
-check(o.reiter.length === 3 && /^Grundrisse/.test(o.reiter[1]), 'drei Reiter mit eigenem Grundriss-Reiter', o.reiter.join(' | '));
-check(o.antragTitel === 'Anträge zu diesem Mietobjekt' && o.antragTabelle,
-  'Anträge als Abschnitt der Übersicht', `${o.antragTitel} · Tabelle ${o.antragTabelle}`);
-check(o.kv.includes('Verwaltungseinheit') && o.kv.includes('Geschosse'), 'Kerndaten im Übersichtsreiter', o.kv.join(', '));
-check(o.kurzwege.length >= 4, 'Dienstleistungs-Kurzwege aus services.json', String(o.kurzwege.length));
-check(/building=1080%2F4850%2FAG/.test(o.raumbedarfLink || ''),
-  'Raumbedarf-Kurzweg übernimmt das Gebäude', o.raumbedarfLink);
+check(o.h1 === 'Verwaltungszentrum Guisanplatz', 'The property name is the h1', o.h1);
+
+
+
+
+
+check(o.tabs.length === 3 && /^Grundrisse/.test(o.tabs[1]), 'There are three tabs including floor plans', o.tabs.join(' | '));
+check(o.requestTitle === 'Anträge zu diesem Mietobjekt' && o.requestTable,
+  'Requests appear in the overview section', `${o.requestTitle} · table ${o.requestTable}`);
+check(o.kv.includes('Verwaltungseinheit') && o.kv.includes('Geschosse'), 'The overview contains its core facts', o.kv.join(', '));
+check(o.shortcuts.length >= 4, 'Service shortcuts are sourced from the service registry', String(o.shortcuts.length));
+check(/building=1080%2F4850%2FAG/.test(o.spaceRequestLink || ''),
+  'The space-request shortcut carries the building', o.spaceRequestLink);
 check(o.launchLinks.length >= 6 && o.launchLinks.every(a =>
   a.target === '_blank' && a.rel.split(/\s+/).includes('noopener')),
-  'Anwendungs- und Vorgangsstarts der Aktionskarte öffnen neue Tabs', String(o.launchLinks.length));
-check(/1080%2F4850%2FAG/.test(o.inventarLink || ''), 'Querverweis ins Inventar', o.inventarLink);
+  'Action-card application and case launches open new tabs', String(o.launchLinks.length));
+check(/1080%2F4850%2FAG/.test(o.inventoryLink || ''), 'The detail links back to the inventory', o.inventoryLink);
 await clean(p, 'Detail');
 
-head('Kopf: Bildmosaik mit Standortkarte');
+head('Header image mosaic and location map');
 o = JSON.parse(await p.evaluate(`(async () => {
   for (let i = 0; i < 60 && !document.querySelector('#mt-hero-map canvas'); i++) await new Promise(r => setTimeout(r, 100));
   const m = document.querySelector('#mt-mosaic');
   return JSON.stringify({
-    mosaik: !!m, klassen: m?.className,
-    kacheln: m?.querySelectorAll('[data-gallery]').length,
-    karte: !!document.querySelector('#mt-hero-map canvas'),
-    einzelbild: !!document.querySelector('.container.section > .photo'),
+    mosaic: !!m, classes: m?.className,
+    tiles: m?.querySelectorAll('[data-gallery]').length,
+    map: !!document.querySelector('#mt-hero-map canvas'),
+    singleImage: !!document.querySelector('.container.section > .photo'),
   });
 })()`));
-check(o.mosaik && /pf-mosaic--map/.test(o.klassen || ''), 'Mosaik mit Karte im Kopf', o.klassen);
-check(o.kacheln >= 3, 'Kacheln öffnen die Galerie', String(o.kacheln));
-check(o.karte, 'Standortkarte zeichnet');
-check(!o.einzelbild, 'kein einzelnes Hero-Bild mehr');
+check(o.mosaic && /pf-mosaic--map/.test(o.classes || ''), 'The header contains a mosaic and map', o.classes);
+check(o.tiles >= 3, 'Mosaic tiles open the gallery', String(o.tiles));
+check(o.map, 'The location map renders');
+check(!o.singleImage, 'There is no redundant standalone hero image');
 
 o = JSON.parse(await p.evaluate(`(async () => {
   document.querySelector('#mt-mosaic [data-gallery]').click();
@@ -167,82 +167,82 @@ o = JSON.parse(await p.evaluate(`(async () => {
   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   return JSON.stringify(res);
 })()`));
-check(o.overlay, 'Kachelklick öffnet die Vollbildgalerie');
-check(/bild=/.test(o.hash), 'Bild steht im Hash (teilbar)', o.hash.split('?')[1]);
-await clean(p, 'Kopf');
+check(o.overlay, 'A tile click opens the fullscreen gallery');
+check(o.hash.includes('bild='), 'The legacy image query value is shareable', o.hash.split('?')[1]);
+await clean(p, 'Header');
 
 o = JSON.parse(await p.evaluate(`(async () => {
   location.hash = '#/app/tenancies/MV-2026-001?tab=vertrag';
   await new Promise(r => setTimeout(r, 400));
-  return JSON.stringify({ zeilen: document.querySelectorAll('#mt-tab-panel-vertrag tbody tr').length,
-    // Der Reiter trägt NUR die Tabelle — keine Merkmalliste, kein Kasten.
-    kv: document.querySelectorAll('#mt-tab-panel-vertrag .kv').length,
-    boxen: document.querySelectorAll('#mt-tab-panel-vertrag .box').length,
-    catbar: !!document.querySelector('#mt-tab-panel-vertrag .catbar'),
-    betrag: [...document.querySelectorAll('#mt-tab-panel-vertrag tbody td')].map(x => x.textContent.trim()).find(x => /CHF/.test(x)) });
-})()`));
-check(o.zeilen > 0, 'Verträge zum Objekt gelistet', String(o.zeilen) + ' Zeilen');
-check(o.kv === 0 && o.boxen === 0, 'Reiter trägt nur die Tabelle (keine kv-Liste, keine box)');
-check(o.catbar, 'Tabelle mit Katalogleiste');
-check(/CHF/.test(o.betrag || ''), 'Beträge in der Tabelle', o.betrag);
+  return JSON.stringify({ rows: document.querySelectorAll('#mt-tab-panel-contracts tbody tr').length,
 
-/* --------------------------------------------------- Geschosstabelle ------ */
-head('Grundriss — Geschosse als Datentabelle');
+    kv: document.querySelectorAll('#mt-tab-panel-contracts .kv').length,
+    boxes: document.querySelectorAll('#mt-tab-panel-contracts .box').length,
+    catbar: !!document.querySelector('#mt-tab-panel-contracts .catbar'),
+    amount: [...document.querySelectorAll('#mt-tab-panel-contracts tbody td')].map(x => x.textContent.trim()).find(x => /CHF/.test(x)) });
+})()`));
+check(o.rows > 0, 'Contracts for the property are listed', String(o.rows) + ' rows');
+check(o.kv === 0 && o.boxes === 0, 'The tab contains only the table (no key-value list or box)');
+check(o.catbar, 'The table has catalogue controls');
+check(/CHF/.test(o.amount || ''), 'The table contains currency amounts', o.amount);
+
+/* ---------------------------------------------------------- Floor table -- */
+head('Floor plans — floors as a data table');
 o = JSON.parse(await p.evaluate(`(async () => {
   location.hash = '#/app/tenancies/MV-2026-001?tab=grundriss';
-  // Auf die fertig montierte Tabelle warten statt auf eine feste Frist: die
-  // Route zeichnet nach dem Hashwechsel neu und montiert die Datentabellen
-  // danach — eine Pauschalpause misst mal den einen, mal den anderen Zustand.
-  for (let i = 0; i < 40 && !document.querySelector('#mt-dt-floors table'); i++) await new Promise(r => setTimeout(r, 50));
+
+
+
+  for (let i = 0; i < 40 && !document.querySelector('#tenancy-floor-table table'); i++) await new Promise(r => setTimeout(r, 50));
   await new Promise(r => setTimeout(r, 250));
-  const host = document.querySelector('#mt-dt-floors');
-  const kopf = [...host.querySelectorAll('thead th')].map(x => x.textContent.trim());
+  const host = document.querySelector('#tenancy-floor-table');
+  const headers = [...host.querySelectorAll('thead th')].map(x => x.textContent.trim());
   return JSON.stringify({
-    keinPlan: !document.querySelector('svg.fp'),
+    noPlan: !document.querySelector('svg.fp'),
     catbar: !!host.querySelector('.catbar'),
-    zeilen: host.querySelectorAll('tbody tr').length,
-    klickbar: !!host.querySelector('table.table--rows-clickable'),
-    kopf,
+    rows: host.querySelectorAll('tbody tr').length,
+    clickable: !!host.querySelector('table.table--rows-clickable'),
+    headers,
     total: [...host.querySelectorAll('tfoot td, tfoot th')].map(x => x.textContent.trim()),
-    zahl: host.querySelector('.catbar__count')?.textContent.replace(/\\s+/g,' ').trim(),
+    count: host.querySelector('.catbar__count')?.textContent.replace(/\\s+/g,' ').trim(),
   });
 })()`));
-check(o.keinPlan, 'ohne Geschosswahl zuerst die Tabelle, nicht der Plan');
-check(o.catbar, 'Tabelle trägt eine Katalogleiste (C.mountDataTable)');
-check(o.zeilen === 2, 'zwei gemietete Geschosse als Zeilen', String(o.zeilen));
-check(o.klickbar, 'Zeilen sind klickbar (table--rows-clickable)');
-check(o.kopf.includes('Räume') && o.kopf.includes('HNF') && o.kopf.includes('Arbeitsplätze'), 'Mengenspalten', o.kopf.join(' | '));
-// Summenzeile im Stil des Liegenschafteninventars: Klasse `table__total`,
-// «Total (n)» mit der Anzahl in der Beschriftung, Summen fett.
-check(/^Total \(\d+\)$/.test((o.total[0] || '').replace(/\s+/g, ' ').trim()),
-  'Summenzeile im Stil des Inventars: «Total (n)»', o.total.join(' '));
-check(/2 von 2 Geschosse/.test(o.zahl || ''), 'Trefferzahl der Tabelle', o.zahl);
-await clean(p, 'Geschosstabelle');
+check(o.noPlan, 'The table appears before a floor is selected');
+check(o.catbar, 'The table has shared catalogue controls');
+check(o.rows === 2, 'Two rented floors appear as rows', String(o.rows));
+check(o.clickable, 'Rows expose the shared clickable-row treatment');
+check(o.headers.includes('Räume') && o.headers.includes('HNF') && o.headers.includes('Arbeitsplätze'), 'The expected quantity columns are present', o.headers.join(' | '));
 
-head('Zeilenklick öffnet den Grundriss');
+
+check(/^Total \(\d+\)$/.test((o.total[0] || '').replace(/\s+/g, ' ').trim()),
+  'The footer follows the inventory “Total (n)” pattern', o.total.join(' '));
+check(/2 von 2 Geschosse/.test(o.count || ''), 'The table reports its result count', o.count);
+await clean(p, 'Floor table');
+
+head('Row click opens a floor plan');
 o = JSON.parse(await p.evaluate(`(async () => {
-  const tr = document.querySelector('#mt-dt-floors tbody tr');
+  const tr = document.querySelector('#tenancy-floor-table tbody tr');
   tr.dispatchEvent(new MouseEvent('click', { bubbles: true }));
   await new Promise(r => setTimeout(r, 600));
   return JSON.stringify({ svg: !!document.querySelector('svg.fp'), hash: location.hash,
-    zurueck: !!document.querySelector('#fp-zurueck') });
+    backLink: !!document.querySelector('#floorplan-back') });
 })()`));
-check(o.svg, 'Zeilenklick zeigt den Grundriss');
-check(/floor=/.test(o.hash), 'Geschoss steht im Hash', o.hash.split('?')[1]);
-check(o.zurueck, 'Rücksprung in die Geschossübersicht vorhanden');
+check(o.svg, 'A row click shows the floor plan');
+check(o.hash.includes('floor='), 'The floor is represented in the hash', o.hash.split('?')[1]);
+check(o.backLink, 'A back link to the floor overview is available');
 
 o = JSON.parse(await p.evaluate(`(async () => {
-  document.querySelector('#fp-zurueck').click();
+  document.querySelector('#floorplan-back').click();
   await new Promise(r => setTimeout(r, 500));
-  return JSON.stringify({ tabelle: !!document.querySelector('#mt-dt-floors table'),
+  return JSON.stringify({ table: !!document.querySelector('#tenancy-floor-table table'),
     svg: !!document.querySelector('svg.fp'), hash: location.hash });
 })()`));
-check(o.tabelle && !o.svg, 'Rücksprung führt zurück zur Tabelle');
-check(!/floor=/.test(o.hash), 'Geschoss aus dem Hash entfernt', o.hash);
-await clean(p, 'Rücksprung');
+check(o.table && !o.svg, 'The back link returns to the table');
+check(!o.hash.includes('floor='), 'The floor is removed from the hash', o.hash);
+await clean(p, 'Back link');
 
-/* -------------------------------------------------------------- Grundriss -- */
-head('Grundriss');
+/* ----------------------------------------------------------- Floor plan -- */
+head('Floor plan');
 await browser.send('Emulation.setDeviceMetricsOverride',
   { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false }, p.sessionId);
 o = JSON.parse(await p.evaluate(`(async () => {
@@ -255,132 +255,132 @@ o = JSON.parse(await p.evaluate(`(async () => {
   return JSON.stringify({
     svg: !!svg,
     viewBox: svg?.getAttribute('viewBox'),
-    raeume: document.querySelectorAll('.fp__room').length,
-    geschosse: document.querySelectorAll('.fp-floors .tag-item').length,
-    aktiv: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
-    modi: [...document.querySelectorAll('#fp-color option')].map(x => x.value),
-    legende: document.querySelectorAll('.fp-legend__item').length,
-    gewaehlt: document.querySelector('#fp-color')?.value,
-    kopf: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
-    fakten: document.querySelector('.fp-side .fp-facts')?.textContent.replace(/s+/g,' ').trim(),
-    knoepfe: [document.querySelector('#fp-vollbild'), document.querySelector('#fp-drucken')].map(Boolean),
+    rooms: document.querySelectorAll('.fp__room').length,
+    floors: document.querySelectorAll('.fp-floors .tag-item').length,
+    activeFloor: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
+    modes: [...document.querySelectorAll('#fp-color option')].map(x => x.value),
+    legend: document.querySelectorAll('.fp-legend__item').length,
+    selectedMode: document.querySelector('#fp-color')?.value,
+    headerFloor: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
+    facts: document.querySelector('.fp-side .fp-facts')?.textContent.replace(/s+/g,' ').trim(),
+    buttons: [document.querySelector('#floorplan-fullscreen'), document.querySelector('#floorplan-print')].map(Boolean),
     headerBackFirst: header?.firstElementChild?.classList.contains('fp-back') || false,
     headerRows: [...new Set(headerChildren.map((node) => {
       const rect = node.getBoundingClientRect();
       return Math.round(rect.top + rect.height / 2);
     }))].length,
     headerOverflow: header ? Math.round(header.scrollWidth - header.clientWidth) : -1,
-    ariaErster: document.querySelector('.fp__room rect')?.getAttribute('aria-label'),
+    firstAriaLabel: document.querySelector('.fp__room rect')?.getAttribute('aria-label'),
   });
 })()`));
-check(o.svg, 'Grundriss wird als SVG gezeichnet (kein WebGL)');
-check(/^-40 -40 /.test(o.viewBox || ''), 'viewBox aus dem Zeichnungsmass', o.viewBox);
-check(o.raeume === 22, '22 Räume im 2. OG', String(o.raeume));
-check(o.geschosse === 2, 'zwei gemietete Geschosse zur Wahl', o.aktiv);
-check(o.modi.join(',') === 'none,use,sia,ve,capacity', 'fünf Einfärbemodi', o.modi.join(','));
-// VORGABE ist die Verwaltungseinheit, nicht «Keine»: ein einfarbiger Plan
-// verriet nicht, dass er eingefärbt werden kann. Also OHNE `color=` im Hash
-// muss der Plan bereits eingefärbt und die Legende gefüllt sein.
-check(o.gewaehlt === 've', 'Vorgabe-Einfärbung: Verwaltungseinheit', o.gewaehlt);
-check(o.legende > 0, 'Legende ohne Zutun sichtbar', String(o.legende));
-check(o.kopf === '2. OG', 'aktives Geschoss als Pille in der Kopfleiste', o.kopf);
-check(/Räume/.test(o.fakten || '') && /HNF/.test(o.fakten || ''), 'Kennzahlen in der Auswertungsspalte', o.fakten);
-check(o.knoepfe.every(Boolean), 'Vollbild- und Druckknopf vorhanden', o.knoepfe.join(','));
-check(o.headerBackFirst && o.headerRows === 1 && o.headerOverflow <= 1,
-  'Rücksprung und Viewer-Werkzeuge teilen eine Desktop-Zeile', `${o.headerRows} Zeile · ${o.headerOverflow}px Überlauf`);
+check(o.svg, 'The floor plan renders as SVG without WebGL');
+check(/^-40 -40 /.test(o.viewBox || ''), 'The drawing dimensions define the viewBox', o.viewBox);
+check(o.rooms === 22, 'The second floor contains 22 rooms', String(o.rooms));
+check(o.floors === 2, 'Two rented floors are available', o.activeFloor);
+check(o.modes.join(',') === 'none,use,sia,ve,capacity', 'All five colour modes remain available', o.modes.join(','));
 
-// Und «Keine» bleibt wählbar — dann darf keine Legende stehen.
-const ohne = JSON.parse(await p.evaluate(`(async () => {
+
+
+check(o.selectedMode === 've', 'The default compatibility mode colours by administrative unit', o.selectedMode);
+check(o.legend > 0, 'The default mode shows a legend', String(o.legend));
+check(o.headerFloor === '2. OG', 'The active floor appears as a header chip', o.headerFloor);
+check(/Räume/.test(o.facts || '') && /HNF/.test(o.facts || ''), 'Metrics appear in the analysis column', o.facts);
+check(o.buttons.every(Boolean), 'Fullscreen and print buttons are available', o.buttons.join(','));
+check(o.headerBackFirst && o.headerRows === 1 && o.headerOverflow <= 1,
+  'Back and viewer controls share one desktop row', `${o.headerRows} row(s) · ${o.headerOverflow}px overflow`);
+
+
+const noColour = JSON.parse(await p.evaluate(`(async () => {
   location.hash = '#/app/tenancies/MV-2026-001?floor=1080-4850-AG-2og&color=none';
   await new Promise(r => setTimeout(r, 600));
-  return JSON.stringify({ legende: document.querySelectorAll('.fp-legend__item').length,
-    gewaehlt: document.querySelector('#fp-color')?.value });
+  return JSON.stringify({ legend: document.querySelectorAll('.fp-legend__item').length,
+    selectedMode: document.querySelector('#fp-color')?.value });
 })()`));
-check(ohne.gewaehlt === 'none' && ohne.legende === 0, 'mit «Keine» keine Legende', `${ohne.gewaehlt} / ${ohne.legende}`);
-check(/Quadratmeter/.test(o.ariaErster || ''), 'jeder Raum hat ein aria-label', (o.ariaErster || '').slice(0, 60));
-await clean(p, 'Grundriss');
+check(noColour.selectedMode === 'none' && noColour.legend === 0, 'The no-colour mode has no legend', `${noColour.selectedMode} / ${noColour.legend}`);
+check(/Quadratmeter/.test(o.firstAriaLabel || ''), 'Every room has an accessible label', (o.firstAriaLabel || '').slice(0, 60));
+await clean(p, 'Floor plan');
 
-head('Einfärbemodi');
+head('Colour modes');
 for (const [mode, label] of [['use', 'Nutzung'], ['sia', 'SIA 416'], ['ve', 'Verwaltungseinheit'], ['capacity', 'Arbeitsplatzdichte']]) {
   const r = JSON.parse(await p.evaluate(`(async () => {
     location.hash = '#/app/tenancies/MV-2026-001?tab=grundriss&floor=1080-4850-AG-2og&color=${mode}';
     await new Promise(r => setTimeout(r, 420));
     const fills = [...document.querySelectorAll('.fp__room rect')].map(el => getComputedStyle(el).fill);
-    const summen = [...document.querySelectorAll('.fp-legend__val')].map(x => x.textContent.trim());
-    return JSON.stringify({ legende: document.querySelectorAll('.fp-legend__item').length,
-      farben: new Set(fills).size, summen: summen.slice(0,2) });
+    const totals = [...document.querySelectorAll('.fp-legend__val')].map(x => x.textContent.trim());
+    return JSON.stringify({ legend: document.querySelectorAll('.fp-legend__item').length,
+      colors: new Set(fills).size, totals: totals.slice(0,2) });
   })()`));
-  check(r.legende >= 2 && r.farben >= 2, `${label}: Legende (${r.legende}) und ${r.farben} Farben`, r.summen.join(' / '));
+  check(r.legend >= 2 && r.colors >= 2, `${label}: ${r.legend} legend entries and ${r.colors} colours`, r.totals.join(' / '));
 }
 
-head('Raumauswahl');
+head('Room selection');
 o = JSON.parse(await p.evaluate(`(async () => {
   location.hash = '#/app/tenancies/MV-2026-001?tab=grundriss&floor=1080-4850-AG-2og&color=use';
   await new Promise(r => setTimeout(r, 500));
-  const ziel = [...document.querySelectorAll('.fp__room')].find(g => /buero|arbeit/.test(g.className.baseVal));
-  const id = ziel?.dataset.space;
-  ziel?.querySelector('rect').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  const targetRoom = [...document.querySelectorAll('.fp__room')].find(g => /buero|arbeit/.test(g.className.baseVal));
+  const id = targetRoom?.dataset.space;
+  targetRoom?.querySelector('rect').dispatchEvent(new MouseEvent('click', { bubbles: true }));
   await new Promise(r => setTimeout(r, 420));
   return JSON.stringify({
     id,
-    panelTitel: document.querySelector('.fp-room h3')?.textContent.trim(),
-    kurzwege: document.querySelectorAll('.fp-room .fp-svc').length,
-    markiert: document.querySelectorAll('.fp__room.is-selected').length,
+    panelTitle: document.querySelector('.fp-room h3')?.textContent.trim(),
+    shortcuts: document.querySelectorAll('.fp-room .fp-svc').length,
+    selectedCount: document.querySelectorAll('.fp__room.is-selected').length,
     hash: location.hash,
-    zielHref: document.querySelector('.fp-room .fp-svc')?.getAttribute('href'),
+    targetHref: document.querySelector('.fp-room .fp-svc')?.getAttribute('href'),
     launchLinks: [...document.querySelectorAll('.fp-room a[href^="#/app/"]')]
       .map(a => ({ target: a.getAttribute('target') || '', rel: a.getAttribute('rel') || '' })),
   });
 })()`));
-check(!!o.panelTitel, 'Raumdetail erscheint', o.panelTitel);
-check(o.markiert === 1, 'gewählter Raum ist markiert');
-check(o.kurzwege >= 3, 'Kurzwege im Raumdetail', String(o.kurzwege));
-check(/space=/.test(o.hash), 'Auswahl steht im Hash (teilbar)', o.hash.split('?')[1]);
-check(/building=1080%2F4850%2FAG/.test(o.zielHref || ''), 'Dienstleistung mit vorbelegtem Objekt', o.zielHref);
+check(!!o.panelTitle, 'Room details appear', o.panelTitle);
+check(o.selectedCount === 1, 'The selected room is highlighted once');
+check(o.shortcuts >= 3, 'Room details contain service shortcuts', String(o.shortcuts));
+check(o.hash.includes('space='), 'The selection is represented in the shareable hash', o.hash.split('?')[1]);
+check(/building=1080%2F4850%2FAG/.test(o.targetHref || ''), 'The service link carries the building', o.targetHref);
 check(o.launchLinks.length >= 3 && o.launchLinks.every(a =>
   a.target === '_blank' && a.rel.split(/\s+/).includes('noopener')),
-  'Raumaktionen öffnen ihre Zielanwendung in einem neuen Tab', String(o.launchLinks.length));
-await clean(p, 'Raumauswahl');
+  'Room actions open their target applications in new tabs', String(o.launchLinks.length));
+await clean(p, 'Room selection');
 
-head('Geschosswechsel');
+head('Floor change');
 o = JSON.parse(await p.evaluate(`(async () => {
   const chip = [...document.querySelectorAll('.fp-floors .tag-item')].find(c => !c.classList.contains('tag-item--active'));
   const label = chip.textContent.trim();
   chip.click();
   await new Promise(r => setTimeout(r, 420));
-  return JSON.stringify({ label, aktiv: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
-    raeume: document.querySelectorAll('.fp__room').length, hash: location.hash });
+  return JSON.stringify({ label, activeFloor: document.querySelector('.fp-floors .tag-item--active')?.textContent.trim(),
+    rooms: document.querySelectorAll('.fp__room').length, hash: location.hash });
 })()`));
-check(o.aktiv === o.label, 'Geschoss gewechselt', `${o.label} · ${o.raeume} Räume`);
-check(/floor=/.test(o.hash), 'Geschoss steht im Hash');
-check(!/space=/.test(o.hash), 'Raumauswahl beim Geschosswechsel zurückgesetzt');
-await clean(p, 'Geschosswechsel');
+check(o.activeFloor === o.label, 'The active floor changes', `${o.label} · ${o.rooms} rooms`);
+check(o.hash.includes('floor='), 'The new floor is represented in the hash');
+check(!o.hash.includes('space='), 'Changing floors clears the room selection');
+await clean(p, 'Floor change');
 
 await p.closeTarget();
 
-head('Kurzweg belegt die Meldung vor');
+head('Shortcut prefills the report');
 p = await openPage(browser, APP_BASE + '/app/fault-report?building=1080%2F4850%2FAG&room=2.%20OG%2005');
 await sleep(1200);
 o = JSON.parse(await p.evaluate(`(async () => {
-  // Der Vorgang verlangt eine Anmeldung; angemeldet erscheint das Formular.
+
   const btn = [...document.querySelectorAll('button, a')].find(el => /anmelden/i.test(el.textContent));
   if (btn) { btn.click(); await new Promise(r => setTimeout(r, 900)); }
   const sel = document.querySelector('#bld');
-  return JSON.stringify({ gebaeude: sel ? sel.value : null, ort: document.querySelector('#ort')?.value });
+  return JSON.stringify({ building: sel ? sel.value : null, location: document.querySelector('#location-detail')?.value });
 })()`));
-check(o.gebaeude === '1080/4850/AG', 'Gebäude aus dem Grundriss übernommen', o.gebaeude);
-check(o.ort === '2. OG 05', 'Raumnummer als Ort übernommen', o.ort);
+check(o.building === '1080/4850/AG', 'The building is carried over from the floor plan', o.building);
+check(o.location === '2. OG 05', 'The room number is carried over as the location', o.location);
 await p.closeTarget();
 
-head('Nicht gefunden');
+head('Not found');
 p = await openPage(browser, APP_BASE + '/app/tenancies/GIBTESNICHT');
 await sleep(900);
-check(/nicht gefunden/i.test(await p.evaluate('document.querySelector("h1")?.textContent || ""')), 'unbekannte ID → Hinweis statt Absturz');
-await clean(p, 'Nicht gefunden');
+check(/nicht gefunden/i.test(await p.evaluate('document.querySelector("h1")?.textContent || ""')), 'An unknown ID shows a notice instead of crashing');
+await clean(p, 'Not found');
 await p.closeTarget();
 
 } finally {
   browser.close();
 }
-console.log(fail ? `\n✗ ${fail} Prüfung(en) fehlgeschlagen` : '\n✓ alle Prüfungen bestanden');
+console.log(fail ? `\n✗ ${fail} check(s) failed` : '\n✓ all checks passed');
 process.exit(fail ? 1 : 0);

@@ -1,4 +1,4 @@
-// Suchvorschläge auf der Startseite: Tastaturbedienung und ARIA.
+// Home-page search suggestions: keyboard behaviour and ARIA.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const b = await launch({ port: 9349 });
@@ -12,13 +12,13 @@ const type = async (text) => p.evaluate(`(async () => {
   await new Promise(r => setTimeout(r, 200));
   const l = document.querySelector('#home-q-suggest');
   return JSON.stringify({
-    offen: i.getAttribute('aria-expanded'),
-    rolle: i.getAttribute('role'),
+    open: i.getAttribute('aria-expanded'),
+    role: i.getAttribute('role'),
     controls: i.getAttribute('aria-controls'),
-    sichtbar: l ? !l.hidden : null,
-    n: l ? l.querySelectorAll('.listbox__option').length : 0,
-    erste: l?.querySelector('.listbox__title')?.textContent,
-    listRolle: l?.getAttribute('role'),
+    visible: l ? !l.hidden : null,
+    count: l ? l.querySelectorAll('.listbox__option').length : 0,
+    first: l?.querySelector('.listbox__title')?.textContent,
+    listRole: l?.getAttribute('role'),
   });
 })()`);
 
@@ -28,32 +28,32 @@ const key = async (k) => p.evaluate(`(async () => {
   await new Promise(r => setTimeout(r, 120));
   const l = document.querySelector('#home-q-suggest');
   return JSON.stringify({
-    aktiv: i.getAttribute('aria-activedescendant'),
-    markiert: l?.querySelector('.listbox__option.is-active .listbox__title')?.textContent || null,
-    offen: i.getAttribute('aria-expanded'),
+    active: i.getAttribute('aria-activedescendant'),
+    selected: l?.querySelector('.listbox__option.is-active .listbox__title')?.textContent || null,
+    open: i.getAttribute('aria-expanded'),
     hash: location.hash,
   });
 })()`);
 
-console.log('tippen «vorlage»   →', await type('vorlage'));
-console.log('ArrowDown          →', await key('ArrowDown'));
-console.log('ArrowDown          →', await key('ArrowDown'));
-console.log('ArrowUp            →', await key('ArrowUp'));
-console.log('Enter              →', await key('Enter'));
+console.log('type German query   ->', await type('vorlage'));
+console.log('ArrowDown           ->', await key('ArrowDown'));
+console.log('ArrowDown           ->', await key('ArrowDown'));
+console.log('ArrowUp             ->', await key('ArrowUp'));
+console.log('Enter               ->', await key('Enter'));
 await sleep(400);
-console.log('Route nach Enter   →', await p.evaluate(`location.hash`));
+console.log('route after Enter   ->', await p.evaluate(`location.hash`));
 
-// Kurze Eingabe darf nicht öffnen
+// A one-character query must not open suggestions.
 await p.evaluate(`location.hash = '#/'`);
 await sleep(500);
-console.log('tippen «v»         →', await type('v'));
-console.log('Escape             →', await key('Escape'));
+console.log('type "v"           ->', await type('v'));
+console.log('Escape             ->', await key('Escape'));
 
-// Aufräumen beim Routenwechsel
+// Route changes must clean up the list.
 await p.evaluate(`location.hash = '#/services'`);
 await sleep(500);
-console.log('nach Routenwechsel: Liste im DOM?', await p.evaluate(`!!document.querySelector('#home-q-suggest')`));
+console.log('list remains after route change?', await p.evaluate(`!!document.querySelector('#home-q-suggest')`));
 
 const errs = p.problems ? await p.problems() : [...p.exceptions, ...p.consoleErrors];
-console.log('Fehler:', errs.length ? errs.join(' | ') : 'keine');
+console.log('errors:', errs.length ? errs.join(' | ') : 'none');
 await b.close();

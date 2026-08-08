@@ -1,13 +1,13 @@
-// Dokumentvorschau — Vollbild-Lightbox mit schematischer Mock-Darstellung.
-// Portiert und verschlankt aus dem BBL Mieterportal (tenant-portal). Analyse-
-// Prototyp: es wird kein echtes PDF gerendert, sondern eine schematische Seite
-// (Grundriss bzw. Textdokument) mit Titelblock — deutlich als «Mock-Vorschau».
+// Document preview: fullscreen lightbox with a schematic mock representation.
+// Ported and simplified from the BBL tenant portal. This analysis prototype does
+// not render a real PDF; it shows a schematic page (floor plan or text document)
+// with a title block and is clearly labelled «Mock-Vorschau».
 //
-// openDocumentViewer(doc, siblings, options): doc = Datensatz aus documents.json,
-// siblings = geordnete Liste (aktuelle Trefferliste) für Vor/Zurück.
+// openDocumentViewer(doc, siblings, options): doc = record from documents.json;
+// siblings = ordered list (current results) for previous/next navigation.
 
 import C from './components.js';
-import { dateiGroesse } from './format.js';
+import { formatFileSize } from './format.js';
 
 export function documentFileName(doc) {
   const name = String(doc?.fileName || doc?.title || doc?.docId || 'Dokument');
@@ -109,11 +109,10 @@ export function openDocumentViewer(doc, siblings, options = {}) {
   document.body.appendChild(backdrop);
   const releaseOverlayLock = C.acquireOverlayLock();
 
-  // Tab-Falle über das geteilte C.trapFocus statt einer eigenen Selektorliste:
-  // drei abweichende Kopien der Fokusliste haben bereits einen Trap-Ausbruch
-  // produziert (Review lb-trap-1). Der Listener sitzt auf dem Backdrop und
-  // überlebt mount() (innerHTML ersetzt nur die Kinder); die übrigen Tasten
-  // bleiben in onKeydown.
+  // Use shared C.trapFocus rather than a local selector list: three divergent
+  // focus-list copies had already caused focus to escape (review lb-trap-1).
+  // Its listener sits on the backdrop and survives mount() because innerHTML
+  // replaces only children; other keys remain in onKeydown.
   const untrap = C.trapFocus(backdrop);
 
   let stage, scrollHost, pagesEl, readout, indicator, total, baseW, zoom = 1;
@@ -132,20 +131,20 @@ export function openDocumentViewer(doc, siblings, options = {}) {
 
   function onResize() { measurePages(); }
 
-  // Kurzer Hinweis für simulierte Aktionen (Download/Upload/Teilen). Gleiche
-  // Anatomie und Dauer wie C.toast (CD toast-message: Notification im Host,
-  // Einblenden, 5 s + 300 ms Ausblenden) — nur im Backdrop gehostet, weil
-  // --z-viewer (200) über --z-toast (110) liegt: ein Toast auf dem <body>
-  // wäre hinter dem Betrachter unerreichbar (tokens.css z-Skala).
-  // .toast__message liefert die Blende, .docviewer__toast nur Position/Schatten.
-  function toast(msg, variant = 'success', iconName = 'CheckmarkCircle') {
-    C.announce(msg); // wie C.toast: aria-live feuert in frisch erzeugten Knoten nicht.
-    const t = document.createElement('div');
-    t.className = 'toast__message docviewer__toast';
-    t.innerHTML = C.notification(C.escape(msg), variant, iconName);
-    backdrop.appendChild(t);
-    requestAnimationFrame(() => t.classList.add('toast__message--in'));
-    setTimeout(() => { t.classList.remove('toast__message--in'); setTimeout(() => t.remove(), 300); }, 5000);
+  // Brief notice for simulated actions (download/upload/share). Anatomy and
+  // duration match C.toast (CD toast-message: notification in host, enter,
+  // 5 s + 300 ms exit), but it is hosted inside the backdrop because --z-viewer
+  // (200) sits above --z-toast (110). A <body> toast would be unreachable behind
+  // the viewer (tokens.css z scale). .toast__message supplies transition, while
+  // .docviewer__toast supplies only position and shadow.
+  function toast(message, variant = 'success', iconName = 'CheckmarkCircle') {
+    C.announce(message); // As in C.toast: aria-live does not fire in newly created nodes.
+    const toastElement = document.createElement('div');
+    toastElement.className = 'toast__message docviewer__toast';
+    toastElement.innerHTML = C.notification(C.escape(message), variant, iconName);
+    backdrop.appendChild(toastElement);
+    requestAnimationFrame(() => toastElement.classList.add('toast__message--in'));
+    setTimeout(() => { toastElement.classList.remove('toast__message--in'); setTimeout(() => toastElement.remove(), 300); }, 5000);
   }
 
   let closed = false;
@@ -166,7 +165,7 @@ export function openDocumentViewer(doc, siblings, options = {}) {
     if (list.length < 2) return;
     pos = (pos + delta + list.length) % list.length;
     mount();
-    try { stage.focus(); } catch (e) { /* stage may be gone */ }
+    try { stage.focus(); } catch { /* The stage may be gone. */ }
   }
 
   function onKeydown(e) {
@@ -195,7 +194,7 @@ export function openDocumentViewer(doc, siblings, options = {}) {
       ['Gebäude', buildingName || buildingId || '—'],
       ['Jahr', String(d.year || '—')],
       ['Format', d.format || '—'],
-      ['Grösse', dateiGroesse(d.sizeKB)],
+      ['Grösse', formatFileSize(d.sizeKB)],
       ['Klassifizierung', d.classification || '—'],
       ['Taxonomie', 'KBOB/IPB Dokumenttypenkatalog 2016'],
     ];
@@ -253,9 +252,9 @@ export function openDocumentViewer(doc, siblings, options = {}) {
 
     const on = (act, fn) => { const el = backdrop.querySelector(`[data-act="${act}"]`); if (el) el.addEventListener('click', fn); };
     on('close', close);
-    // EIN Suffix für alle Fake-Aktionen: «— im Prototyp simuliert.» — vorher
-    // drei Grammatiken («simuliert:», «— simuliert.», «(Demo)») nebeneinander
-    // im selben Menü (Design-Review D13).
+    // ONE suffix for every fake action: «— im Prototyp simuliert.». Previously,
+    // three grammatical forms appeared beside each other in the same menu
+    // (design review D13).
     on('download', () => toast(`Download «${documentFileName(d)}» — im Prototyp simuliert.`));
     on('meta', () => {
       showMeta = !showMeta;
@@ -273,7 +272,7 @@ export function openDocumentViewer(doc, siblings, options = {}) {
     });
     on('upload', () => toast('Neue Version hochladen — im Prototyp simuliert.'));
     on('share', () => toast('Link kopieren — im Prototyp simuliert.'));
-    // «nicht verfügbar» ist kein Erfolg — als Info-Notification, nicht mit Häkchen.
+    // «Not available» is not success: use an info notification, not a checkmark.
     on('comment', () => toast('Kommentare sind im Prototyp nicht verfügbar.', 'info', 'InfoCircle'));
     on('zoom-in', () => { zoom += 0.25; applyZoom(); });
     on('zoom-out', () => { zoom -= 0.25; applyZoom(); });
@@ -282,8 +281,8 @@ export function openDocumentViewer(doc, siblings, options = {}) {
     on('next', () => go(1));
     on('building', close);
 
-    // Die Dokumentfläche ist der Scroll-Host. Sie wird beim Blättern ersetzt,
-    // deshalb gehört auch der Listener an die jeweils neue Instanz.
+    // The document surface is the scroll host. Navigation replaces it, so the
+    // listener belongs on each new instance.
     let raf = null;
     scrollHost?.addEventListener('scroll', () => {
       if (raf) return;
@@ -302,7 +301,7 @@ export function openDocumentViewer(doc, siblings, options = {}) {
   window.addEventListener('resize', onResize);
   unregisterOverlay = C.registerOverlay(close);
   mount();
-  requestAnimationFrame(() => { try { stage.focus(); } catch (e) { /* noop */ } });
+  requestAnimationFrame(() => { try { stage.focus(); } catch { /* No-op. */ } });
   return close;
 }
 

@@ -1,6 +1,6 @@
 // Calendar dates must not shift with the machine time zone, and HTML helpers
 // must escape a value exactly once at their final markup sink.
-import { datum } from '../js/format.js';
+import { formatDate } from '../js/format.js';
 import components from '../js/components.js';
 import { heroMosaic } from '../js/hero-mosaic.js';
 import { renderSvg } from '../js/charts.js';
@@ -11,12 +11,12 @@ const check = (condition, label, actual = '') => {
   if (!condition) failures++;
 };
 
-check(datum('2034-03-31') === '31.3.2034',
-  'date-only values preserve their calendar day', datum('2034-03-31'));
-check(datum('2026-02-29') === '2026-02-29',
-  'invalid calendar dates remain visibly invalid', datum('2026-02-29'));
-check(datum('not-a-date') === 'not-a-date',
-  'unparseable values remain visible', datum('not-a-date'));
+check(formatDate('2034-03-31') === '31.3.2034',
+  'date-only values preserve their calendar day', formatDate('2034-03-31'));
+check(formatDate('2026-02-29') === '2026-02-29',
+  'invalid calendar dates remain visibly invalid', formatDate('2026-02-29'));
+check(formatDate('not-a-date') === 'not-a-date',
+  'unparseable values remain visible', formatDate('not-a-date'));
 
 const mosaic = heroMosaic(components, {
   items: [{ id: 'one', title: 'A & B', photoSrc: 'assets/images/social1.jpg' }],

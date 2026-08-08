@@ -1,13 +1,9 @@
-/* ── Explorer-Schicht (pf-*) — GETEILT, nicht portfolio-eigen: pf-layout/
-   pf-sidebar/pf-tree/pf-main tragen Inventar, Bauprojekte, Mietende und den
-   Metadatenkatalog (Baum: js/spatial-tree.js); pf-gallery/pf-card zusätzlich
-   die Galerie-Karten (auch via C.card idLine/chips); pf-mosaic/pf-lightbox
-   liegen bei den Medien-Blöcken (js/hero-mosaic.js, js/gallery.js). Der
-   pf-Präfix ist historisch («Portfolio») und bleibt — sechs Testskripte
-   greppen ihn; ein Umbenennen wäre Churn ohne Nutzwert (Design-Review C22). ── */
-
-/* Mobile-first: unter lg steht der Baum ÜBER der Karte statt in einer 288px-Spalte,
-   die auf dem Handy die Karte auf Briefmarkengrösse quetscht (Item 2.15). */
+/* Shared explorer layer. pf-layout, sidebar, tree, main, gallery, and cards
+   serve inventory, construction projects, tenancies, and metadata. Mosaic and
+   lightbox serve media blocks. The historical pf prefix remains a tested public
+   hook; renaming it would add churn without user value. */
+/* Mobile first: below lg, place the tree above the map instead of squeezing
+   content beside a fixed-width sidebar. */
 .pf-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-5); align-items:start; margin-top:var(--sp-4); }
 .pf-sidebar { position:static; max-height:22rem; overflow:auto; padding:var(--sp-2);
   background:var(--surface-bg); border:var(--stroke-1) solid var(--surface-border);
@@ -19,9 +15,8 @@
 .pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); padding:var(--sp-1-5) var(--sp-2) var(--sp-2); }
 .pf-sidebar__title { font-size:var(--text-lg); margin:0; }
 
-/* Tree — flat indent; the icon shows the level, the two-tone highlight the path.
-   .is-path (light grey) = an ancestor of the selection · .is-active (blue) = selected. */
-.pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; }   /* no indent — icon + grey path carry the hierarchy */
+/* Flat tree hierarchy. Icons convey level; path and active colours convey selection. */
+.pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; } /* Icons and path state carry hierarchy without indentation. */
 .pf-tree__node, .pf-tree__leaf { display:flex; align-items:center; gap:var(--sp-2); width:100%; padding:var(--sp-1-5) var(--sp-2); border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
 .pf-tree__node:hover, .pf-tree__leaf:hover { background:var(--color-secondary-50); color:var(--color-text); text-decoration:none; }
 .pf-tree__node.is-path { background:var(--color-gray-100); }
@@ -29,13 +24,12 @@
 .pf-tree__chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-muted); }
 .pf-tree__node[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
 .pf-tree__ico { flex:none; color:var(--color-text-muted); }
-.pf-tree__leaf > .pf-tree__ico { margin-left:var(--sp-6); }   /* align the leaf icon under the parent icon (past the chevron column) */
-/* Touch/ohne Zeigegerät: 44px garantieren, Desktop-Dichte behalten (Item 2.5d). */
+.pf-tree__leaf > .pf-tree__ico { margin-left:var(--sp-6); } /* Align leaf icons with parent icons past the chevron. */
+/* Guarantee 44 px targets on touch devices while preserving desktop density. */
 @media (max-width:1023.98px), (hover:none){
   .pf-tree__node, .pf-tree__leaf { min-height:var(--target-min); padding-block:var(--sp-2-5); }
-  /* Die Knöpfe des Dokumentbetrachters standen hier — 700 Zeilen VOR ihrer
-     eigenen Basisregel und damit wirkungslos (WCAG 2.5.5). Sie stehen jetzt
-     direkt hinter der Komponente. */
+  /* Document-viewer controls now follow their component base rule so cascade order
+     cannot make their target sizing ineffective. */
 }
 .pf-tree__node.is-active .pf-tree__ico, .pf-tree__leaf.is-active .pf-tree__ico { color:var(--color-primary-600); }
 .pf-tree__id { flex:none; font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--color-text-muted); }
@@ -44,22 +38,13 @@
 .pf-tree__n { flex:none; margin-left:var(--sp-1-5); font-size:var(--fs-xs); color:var(--color-text-muted); }
 .pf-tree__node.is-active .pf-tree__n { color:var(--color-primary-700); }
 
-/* Variante OHNE Symbolspalte (Metadatenkatalog, js/apps/metadata-catalog.js).
-   Dort führt der Baum Datendomänen und Systeme — Begriffe, für die es kein
-   Symbol gibt, das mehr sagt als das Wort selbst; fünf verschiedene Glyphen
-   untereinander waren Rauschen. Statt des Symbols trägt hier die Einrückung
-   die Ebene. Im Inventar bleibt das Symbol: dort kodiert es die Ebene
-   (Land › Region › Stadt › WE) in einem Baum, der gar nicht einrückt.
-   Der Zweig selbst bleibt wie im Inventar ein <button> mit dem Chevron IN sich;
-   gefiltert wird über seine Blätter (das erste heisst «Alle …»). */
-.pf-tree--plain .pf-tree__leaf { padding-left:var(--sp-8); }   /* Einrückung ersetzt die Symbolspalte */
+/* Plain tree variant for concepts without meaningful icons. Indentation conveys
+   its two levels; inventory keeps icons where they encode geographic hierarchy. */
+.pf-tree--plain .pf-tree__leaf { padding-left:var(--sp-8); } /* Indentation replaces the icon column. */
 
 .pf-main { min-width:0; }
 
-/* ---- BBL Intranetshop -----------------------------------------------------
-   Native portal implementation of the workspace-management shop, using the
-   official CD shopping component vocabulary where it maps cleanly:
-   shopping__card / shopping__cart-* / total__summary-*. */
+/* Portal-native intranet shop using the CD shopping vocabulary where applicable. */
 .shop-head { max-width:60rem; }
 .shop-layout { margin-top:var(--sp-6); }
 .shop-layout .pf-sidebar { display:none; max-height:28rem; }
@@ -116,56 +101,38 @@
 @media (min-width:1024px){ .shopping__cart-order-overview-container { grid-template-columns:minmax(0,1fr) 22rem; } }
 .shopping__cart-delivery-summary { position:static; }
 @media (min-width:1024px){ .shopping__cart-delivery-summary { position:sticky; top:var(--sp-4); } }
-/* zweite .pf-map-Deklaration: behält nur noch, was sie wirklich ergänzt — die
-   Höhe steht in der Basisregel oben (sonst überschriebe eine tote 34rem-Zeile
-   das clamp()). */
+/* This secondary map rule contains additions only; height belongs to the base rule. */
 .pf-map { border-radius:var(--radius-lg); }
-/* align-items:stretch (Vorgabe) statt `start`: nur so sind alle Karten einer
-   Reihe gleich hoch und ihre Fusszeilen fluchten. */
+/* Stretch cards so row heights and footers align. */
 .pf-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr)); gap:var(--sp-5) var(--sp-4); }
-/* Ab xl wird die Spaltenzahl fest auf drei begrenzt statt weiter zu füllen:
-   auto-fill ergab bei 1440–1920px vier Karten von 243–298px — für ein Bild,
-   zwei Textzeilen und eine Fusszeile zu dicht. Drei Spalten bleiben über die
-   ganze obere Bandbreite gleich (331px bei 1440 → 405px bei 1920). */
+/* Cap wide galleries at three columns so media cards remain comfortably readable. */
 @media (min-width:1280px){
   .pf-gallery { grid-template-columns:repeat(3, minmax(0, 1fr)); }
 }
 .pf-card { display:flex; flex-direction:column; overflow:hidden; }
-/* Bildkasten wie .card__image über padding-bottom (16/10 = 62.5%), nicht über
-   aspect-ratio: `.card { height:100% }` streckt die Karte auf die Rasterzeile,
-   und ein aspect-ratio-Flexkind wird dabei gestaucht — das Bild verlor seine
-   Proportion (131px statt 186px) und die Differenz stand als Leerraum über der
-   Fusszeile. Mit height:0 + padding-bottom + flex:none ist der Kasten fix. */
-/* 16:9 wie jedes Kartenbild (card.postcss:166) — 16:10 war ein drittes Medienmass. */
+/* Fix the media box with padding so stretched flex cards cannot collapse
+   its aspect ratio or introduce space above the footer. */
+/* Use the shared 16:9 card-image ratio instead of a third media proportion. */
 .pf-card__vis { position:relative; height:0; padding-bottom:56.25%; flex:none; overflow:hidden; background:var(--color-secondary-100); }
 .pf-card__img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .pf-card__parcel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);
   background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
 .pf-card__chips { position:absolute; top:var(--sp-2); left:var(--sp-2); right:var(--sp-2); display:flex; flex-wrap:wrap; gap:var(--sp-1); }
-/* Titelbild eines Bauprojekts: der Knopf trägt KEINE Knopfoptik — er ist nur
-   die zugängliche Hülle um das Bild, damit die Galerie auch per Tastatur
-   aufgeht. Sichtbar wird er erst im Fokus. */
+/* A construction-project hero image uses a visually neutral button so keyboard
+   users can open its gallery; only the focus treatment reveals the control. */
 .pj-hero { margin:var(--sp-4) 0 0; }
-/* Verhältnis und Radius am Bild selbst (16/10 wie Mosaik und Mediathek) —
-   projects.js gibt der C.photo-Hülle diese Klasse mit. */
+/* Apply the shared mosaic/media-library ratio and radius to the image itself. */
 .pj-hero__photo { aspect-ratio:16/10; border-radius:var(--radius-lg); }
 .pj-hero__btn { display:block; width:100%; padding:0; border:0; background:none; cursor:zoom-in; border-radius:var(--radius-lg); }
 .pj-hero__btn:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-3); }
 .pj-hero .legend { margin-top:var(--sp-2); }
-.pf-card__land { background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); padding:var(--sp-0-5) var(--sp-2); border-radius:var(--radius-full); }
-/* Galerie-Karte: kompaktere, stimmige Typo & Abstände. Nur die Galerie — die
-   Listenansicht nutzt das C.table-Layout und bleibt unberührt. Rhythmus:
-   Name (fett) → eng darunter die bbl_id (mono) → Adresse; der Fuss (Kategorie ·
-   Fläche) bleibt unten bündig. gap:0 + gezielte margins statt der luftigen 1rem-Lücke. */
+.pf-card__country { background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); padding:var(--sp-0-5) var(--sp-2); border-radius:var(--radius-full); }
+/* Gallery-only compact rhythm: name, ID, address, then aligned category and area footer. */
 .pf-card .card__body { padding:var(--sp-5) var(--sp-6) var(--sp-4); gap:0; }
 .pf-card .card__title { font-size:var(--text-lg); line-height:1.3; }
 .pf-card .card__description { margin:var(--sp-2-5) 0 0; font-size:var(--text-sm); }
-/* Karten füllen ihre Rasterzeile, der Fuss (Kategorie · Fläche) sitzt an der
-   UNTERKANTE. Vorher stand hier `align-self:start` mit Inhaltshöhe: jede Karte
-   endete dort, wo ihr Text aufhörte, und weil Bezeichnung und Adresse
-   unterschiedlich viele Zeilen brauchen, lagen die Fusszeilen einer Reihe auf
-   drei verschiedenen Höhen. `margin-top:auto` schiebt den Fuss ans Ende der
-   Spalte — der Höhenausgleich landet als Lücke ÜBER dem Fuss, nicht in ihm. */
+/* Cards fill their grid row and margin-top:auto pins varied-content footers to
+   a common bottom edge. */
 .pf-card { height:100%; }
 .pf-card .card__content { height:100%; justify-content:flex-start; }
 .pf-card .card__footer { margin:auto var(--sp-6) 0; padding:var(--sp-3-5) 0 var(--sp-5); font-size:var(--text-sm); }

@@ -230,9 +230,9 @@ const buildings = [
   "floors": 1,
   "rooms": 14,
   "ap": 23,
-  "img": "assets/images/buildings/1080-4840-AF_bundeshaus-west_aussenansicht.jpg",
+  "img": "assets/images/buildings/1080-4840-AF_federal-palace-west_exterior.jpg",
   "imgs": [
-   "assets/images/buildings/1080-4840-AF_bundeshaus-west_aussenansicht.jpg"
+   "assets/images/buildings/1080-4840-AF_federal-palace-west_exterior.jpg"
   ]
  },
  {
@@ -257,9 +257,9 @@ const buildings = [
   "floors": 2,
   "rooms": 57,
   "ap": 205,
-  "img": "assets/images/buildings/1080-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg",
+  "img": "assets/images/buildings/1080-4100-AC_campus-bazg-training-centre-liestal_exterior.jpg",
   "imgs": [
-   "assets/images/buildings/1080-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg"
+   "assets/images/buildings/1080-4100-AC_campus-bazg-training-centre-liestal_exterior.jpg"
   ]
  },
  {
@@ -284,9 +284,9 @@ const buildings = [
   "floors": 2,
   "rooms": 84,
   "ap": 229,
-  "img": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_aussenansicht.jpg",
+  "img": "assets/images/buildings/1080-6100-AA_swiss-national-museum-zurich_exterior.jpg",
   "imgs": [
-   "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_aussenansicht.jpg"
+   "assets/images/buildings/1080-6100-AA_swiss-national-museum-zurich_exterior.jpg"
   ]
  },
  {
@@ -311,9 +311,9 @@ const buildings = [
   "floors": 2,
   "rooms": 69,
   "ap": 271,
-  "img": "assets/images/buildings/1080-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg",
+  "img": "assets/images/buildings/1080-6430-AA_swiss-national-library-underground-storage_exterior.jpg",
   "imgs": [
-   "assets/images/buildings/1080-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg"
+   "assets/images/buildings/1080-6430-AA_swiss-national-library-underground-storage_exterior.jpg"
   ]
  },
  {
@@ -338,9 +338,9 @@ const buildings = [
   "floors": 0,
   "rooms": 0,
   "ap": 0,
-  "img": "assets/images/buildings/1080-6540-AA_verwaltungsgebaeude-eichenweg-5-areal-meielen-_aussenansicht.jpg",
+  "img": "assets/images/buildings/1080-6540-AA_eichenweg-5-administrative-building_exterior.jpg",
   "imgs": [
-   "assets/images/buildings/1080-6540-AA_verwaltungsgebaeude-eichenweg-5-areal-meielen-_aussenansicht.jpg"
+   "assets/images/buildings/1080-6540-AA_eichenweg-5-administrative-building_exterior.jpg"
   ]
  },
  {
@@ -365,9 +365,9 @@ const buildings = [
   "floors": 3,
   "rooms": 80,
   "ap": 262,
-  "img": "assets/images/buildings/1080-6650-AA_verwaltungsgebaeude-liebefeld-bag-blv_aussenansicht.jpg",
+  "img": "assets/images/buildings/1080-6650-AA_liebefeld-administrative-building-bag-blv_exterior.jpg",
   "imgs": [
-   "assets/images/buildings/1080-6650-AA_verwaltungsgebaeude-liebefeld-bag-blv_aussenansicht.jpg"
+   "assets/images/buildings/1080-6650-AA_liebefeld-administrative-building-bag-blv_exterior.jpg"
   ]
  },
  {
@@ -392,11 +392,11 @@ const buildings = [
   "floors": 2,
   "rooms": 45,
   "ap": 88,
-  "img": "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
+  "img": "assets/images/buildings/1080-4850-AG_guisanplatz-administrative-centre_exterior.jpg",
   "imgs": [
-   "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
-   "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_innenansicht.jpg",
-   "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_umgebung.jpg"
+   "assets/images/buildings/1080-4850-AG_guisanplatz-administrative-centre_exterior.jpg",
+   "assets/images/buildings/1080-4850-AG_guisanplatz-administrative-centre_interior.jpg",
+   "assets/images/buildings/1080-4850-AG_guisanplatz-administrative-centre_surroundings.jpg"
   ]
  },
  {
@@ -421,10 +421,10 @@ const buildings = [
   "floors": 1,
   "rooms": 19,
   "ap": 27,
-  "img": "assets/images/buildings/1080-6210-AA_zollanlage-brig-glis_aussenansicht.jpg",
+  "img": "assets/images/buildings/1080-6210-AA_customs-facility-brig-glis_exterior.jpg",
   "imgs": [
-   "assets/images/buildings/1080-6210-AA_zollanlage-brig-glis_aussenansicht.jpg",
-   "assets/images/buildings/1080-6210-AA_zollanlage-brig-glis_innenansicht.jpg"
+   "assets/images/buildings/1080-6210-AA_customs-facility-brig-glis_exterior.jpg",
+   "assets/images/buildings/1080-6210-AA_customs-facility-brig-glis_interior.jpg"
   ]
  }
 ];

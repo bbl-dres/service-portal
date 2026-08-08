@@ -1,6 +1,4 @@
-// Bauwerksdokumentation: KBOB-Typen, reduzierte Tabelle und Metadaten im Viewer.
-//
-//   node scripts/test-document-archive.mjs   (dev server must be running)
+// Construction-document archive integration suite.
 import { readFileSync } from 'node:fs';
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 

@@ -1,49 +1,48 @@
-// Alle dreizehn «nicht gefunden»-Wege: Überschrift, Zurück-Leiste, Brotkrumen
-// mit dem Abschluss «Nicht gefunden» und ein Satz, der auf die Übersicht führt.
+// Verify all thirteen not-found paths: heading, back link, final breadcrumb,
+// and a sentence linking to the relevant overview.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
-const WEGE = [
-  ['Dashboard',      '/app/dataportal/gibtsnicht',   'Dashboard nicht gefunden'],
-  ['Medium',         '/app/media-library/MED-9999',  'Medium nicht gefunden'],
-  ['Objekt',         '/app/portfolio?id=XX%2F9999',  'Objekt nicht gefunden'],
-  ['Bauprojekt',     '/app/projects/PRJ-9999',       'Projekt nicht gefunden'],
-  ['Mietverhältnis', '/app/tenancies/MV-9999',       'Mietverhältnis nicht gefunden'],
-  ['Anwendung',      '/applications/gibtsnicht',     'Anwendung nicht gefunden'],
-  ['Datensatz',      '/data/catalog/gibtsnicht',     'Datensatz nicht gefunden'],
-  ['Daten-Seite',    '/data/gibtsnicht',             'Seite nicht gefunden'],
-  ['Digi-Seite',     '/data/digitalisation/gibtsnicht', 'Seite nicht gefunden'],
-  ['Fachgebiet',     '/knowledge/gibtsnicht',        'Seite nicht gefunden'],
-  ['Dienstleistung', '/services/gibtsnicht',         'Dienstleistung nicht gefunden'],
-  ['API',            '/app/api-docs/gibtsnicht',     'API nicht gefunden'],
-  ['Mitteilung',     '/news/gibtsnicht',             'Mitteilung nicht gefunden'],
+const CASES = [
+  ['Dashboard',    '/app/dataportal/gibtsnicht',      'Dashboard nicht gefunden'],
+  ['Media item',   '/app/media-library/MED-9999',     'Medium nicht gefunden'],
+  ['Object',       '/app/portfolio?id=XX%2F9999',     'Objekt nicht gefunden'],
+  ['Project',      '/app/projects/PRJ-9999',          'Projekt nicht gefunden'],
+  ['Tenancy',      '/app/tenancies/MV-9999',         'Mietverhältnis nicht gefunden'],
+  ['Application',  '/applications/gibtsnicht',        'Anwendung nicht gefunden'],
+  ['Dataset',      '/data/catalog/gibtsnicht',        'Datensatz nicht gefunden'],
+  ['Data page',    '/data/gibtsnicht',                'Seite nicht gefunden'],
+  ['Digital page', '/data/digitalisation/gibtsnicht', 'Seite nicht gefunden'],
+  ['Subject area', '/knowledge/gibtsnicht',           'Seite nicht gefunden'],
+  ['Service',      '/services/gibtsnicht',            'Dienstleistung nicht gefunden'],
+  ['API',          '/app/api-docs/gibtsnicht',        'API nicht gefunden'],
+  ['News item',    '/news/gibtsnicht',                'Mitteilung nicht gefunden'],
 ];
 
 const cdp = await launch();
-// Der Test läuft alle Routen in derselben Seite ab. Deshalb muss die Sitzung
-// bereits am öffentlichen Start-URL gesetzt sein; spätere Hash-Wechsel können
-// openPage()s automatische /app/-Erkennung nicht erneut auslösen.
+// All routes run in one page, so establish the session on the public entry URL.
+// Later hash changes do not rerun openPage()'s automatic /app/ detection.
 const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
 await sleep(700);
-let fehler = 0;
-for (const [name, route, erwartet] of WEGE) {
+let failures = 0;
+for (const [name, route, expected] of CASES) {
   const r = await page.evaluate(`(async () => {
     location.hash = '#${route}';
     await new Promise(r => setTimeout(r, 800));
     const h1 = document.querySelector('#main-content h1');
-    const zurueck = document.querySelector('#main-content .back-link, #main-content .back-link-row a, #main-content a[class*=back]');
-    const krumen = [...document.querySelectorAll('.breadcrumb-navigation li, .breadcrumb li')].map(li => li.textContent.trim()).filter(Boolean);
-    const satz = document.querySelector('#main-content p.muted');
+    const backLink = document.querySelector('#main-content .back-link, #main-content .back-link-row a, #main-content a[class*=back]');
+    const breadcrumbs = [...document.querySelectorAll('.breadcrumb-navigation li, .breadcrumb li')].map(li => li.textContent.trim()).filter(Boolean);
+    const message = document.querySelector('#main-content p.muted');
     return {
       h1: h1 ? h1.textContent.trim() : '',
-      zurueck: !!zurueck,
-      letzteKrume: krumen[krumen.length - 1] || '',
-      link: satz ? !!satz.querySelector('a') : false,
+      backLink: !!backLink,
+      finalBreadcrumb: breadcrumbs[breadcrumbs.length - 1] || '',
+      link: message ? !!message.querySelector('a') : false,
     };
   })()`);
-  const ok = r.h1 === erwartet && r.zurueck && r.link && r.letzteKrume === 'Nicht gefunden';
-  if (!ok) fehler++;
-  console.log(`${ok ? '  ok ' : ' FEHL'} ${name.padEnd(16)} h1=«${r.h1}» · Zurück ${r.zurueck ? 'ja' : 'NEIN'} · Krume «${r.letzteKrume}» · Link ${r.link ? 'ja' : 'NEIN'}`);
+  const ok = r.h1 === expected && r.backLink && r.link && r.finalBreadcrumb === 'Nicht gefunden';
+  if (!ok) failures++;
+  console.log(`${ok ? '  ok ' : 'FAIL '} ${name.padEnd(16)} h1="${r.h1}" / back ${r.backLink ? 'yes' : 'NO'} / breadcrumb "${r.finalBreadcrumb}" / link ${r.link ? 'yes' : 'NO'}`);
 }
 await cdp.close();
-console.log(fehler ? `\n${fehler} Abweichungen` : `\nAlle ${WEGE.length} Wege liefern denselben Aufbau.`);
-process.exit(fehler ? 1 : 0);
+console.log(failures ? `\n${failures} discrepancies` : `\nAll ${CASES.length} paths use the same structure.`);
+process.exit(failures ? 1 : 0);

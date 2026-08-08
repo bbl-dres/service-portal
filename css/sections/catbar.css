@@ -1,86 +1,83 @@
-/* ── Kompakte Katalogleiste (catbar) — geteilt: Portfolio, Dienstleistungen,
-   Datenbezug, Anwendungen. Eine Zeile: Suche + Trefferzahl links; hinter EINER
-   Trennlinie rechts Sortierung, Filter-Umschalter und Ansichtswechsel. Der Filter
-   öffnet ein einklappbares Panel darunter (nimmt die früheren Filter-Dropdowns auf). */
+/* ── Compact catalogue bar (catbar) — shared by portfolio, services, data access,
+   and applications. One row: search + result count on the left; beyond ONE
+   divider, sorting, filter toggle, and view switch on the right. The filter opens
+   a collapsible panel below (containing the former filter dropdowns). */
 .catbar { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4); margin-top:var(--sp-5);
   padding-bottom:var(--sp-2); border-bottom:var(--stroke-1) solid var(--color-secondary-300); font-size:var(--text-sm); }
-/* Anatomie (Lupe im Feld, absoluter Submit) oben im «In-page search»-Block;
-   hier nur die Unterschiede. */
+/* Anatomy (magnifier inside the field, absolutely positioned submit) is defined
+   above in the “In-page search” block; only the differences live here. */
 .catbar__search { position:relative; flex:1 1 15rem; min-width:11rem; max-width:24rem; }
-/* BEWUSSTE AUSNAHME von der Feld-Rampe: die Katalogleiste ist eine kompakte
-   Werkzeugzeile — Feld, Sortier-Select, Filter- und Ansichtsknöpfe teilen die
-   feste 44px-Höhe (--target-min), damit die Zeile auf keiner Breite springt.
-   Das WEICHT vom CD ab: dort wachsen Knöpfe ab xl auf 48px (btn.postcss:112-117)
-   und Felder ab 2xl auf 48px (input.postcss:1-16) — bewusst nicht übernommen. */
+/* DELIBERATE EXCEPTION to the field scale: the catalogue bar is a compact
+   toolbar — field, sort select, filter button, and view buttons share the fixed
+   44px height (--target-min), so the row never jumps between viewport widths.
+   This DEVIATES from CD: buttons grow to 48px at xl (btn.postcss:112-117) and
+   fields at 2xl (input.postcss:1-16); that growth is deliberately not adopted. */
 .catbar__search input { width:100%; min-height:var(--target-min); padding-left:var(--target-min); }
 .catbar__submit { position:absolute; top:0; bottom:0; left:0; width:var(--target-min);
   min-height:0; padding:0; justify-content:center; color:var(--color-text-muted); }
 .catbar__submit:hover { color:var(--color-primary-600); background:none; }
 .catbar__count { color:var(--color-text-muted); white-space:nowrap; }
-/* CD hält die Trefferzahl regular (search.postcss:215-217) — wie unsere eigene
-   .search-results__header-Zeile; nur die Tinte bleibt dunkler als der Suffix. */
+/* CD keeps the result count regular (search.postcss:215-217), matching our own
+   .search-results__header row; only its ink remains darker than the suffix. */
 .catbar__count strong { font-weight:var(--fw-regular); color:var(--color-text); }
-/* Steuerungscluster rechts (bare Controls, CD-Muster): Sortierung · Filter · │ ·
-   Ansichtswechsel. Alle Controls gleich hoch (--target-min); die EINE
-   Trennlinie ist der View-Switch-Strich zwischen Filter und Ansichtswechsel. */
-/* Die Gruppe hatte kein flex-wrap und kein min-width:0, sodass bares Sort-Select
-   + nowrap-Filter + Ansichtswechsel eine unteilbare 402-520px-Zeile bildeten.
-   .container{overflow-x:clip} (CDs eigene Regel, container.postcss:8) hat den
-   Überhang dann ohne Scrollbalken abgeschnitten — bei 320 lagen BEIDE
-   Ansichtsknöpfe ausserhalb, bei 390 der zweite (WCAG 1.4.10 + 2.1.1).
-   CDs Pendant ist ausdrücklich umbrechend (search.postcss:208-211). */
+/* Control cluster on the right (bare controls, CD pattern): sort · filter · │ ·
+   view switch. Every control has the same height (--target-min); the ONE
+   divider is the view-switch rule between the filter and view controls. */
+/* The group lacked flex-wrap and min-width:0, so the bare sort select + nowrap
+   filter + view switch formed one indivisible 402–520px row.
+   .container{overflow-x:clip} (CD's own rule, container.postcss:8) then clipped
+   the overflow without a scrollbar — at 320 BOTH view buttons were outside the
+   viewport, and at 390 the second was outside (WCAG 1.4.10 + 2.1.1).
+   CD's counterpart explicitly wraps (search.postcss:208-211). */
 .catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-1);
   margin-left:auto; min-width:0; max-width:100%; }
-/* Ohne Suchfeld (Suchergebnisse): Trefferzahl links, Steuerung rechts — CDs
-   `.search-results__header` (flex, justify-between, ml-auto rechts). */
+/* Without a search field (search results): result count left, controls right —
+   CD's `.search-results__header` (flex, justify-between, ml-auto on the right). */
 .catbar--no-search .catbar__count { flex:1 1 auto; }
 .catbar__sort { position:relative; min-width:0; max-width:100%; }
 .catbar__sort select { max-width:100%; text-overflow:ellipsis; }
-/* CD richtet das Sortier-Select im Ergebniskopf RECHTS aus
+/* CD aligns the sort select in the results header to the RIGHT
    (search.postcss:229-233 `.search-results__header__right select { text-right }`).
-   Der frühere Kommentar entschied dagegen, weil kurze Optionen dann am Rand
-   kleben — das `padding-right` für das Chevron liefert diesen Abstand aber
-   bereits. Nur dort links, wo wir das Feld auf Mobil vollbreit ziehen. */
+   An earlier comment rejected this because short options would touch the edge,
+   but `padding-right` for the chevron already provides that space. Align left
+   only where the field becomes full-width on mobile. */
 .catbar__sort select { text-align:right; }
 @media (max-width:767.98px){ .catbar__sort select { text-align:left; } }
-/* BEWUSSTE ABWEICHUNG vom CD: rechtsbündige Optionen klebten in der aufgeklappten
-   Liste direkt an der Kante des Popups (das CD setzt `text-right` ohne Polsterung).
-   Chromium respektiert `padding` auf <option> in der Popup-Liste, also gibt es hier
-   denselben optischen Rand wie im geschlossenen Zustand. */
-/* Optionsfarbe explizit setzen: das bare Select erbt nur `color` auf dem
-   <select>; die <option> selbst hat keine eigene Farbe und keinen deckenden
-   Hintergrund. Manche Browser vererben die Select-Farbe NICHT in die native
-   Popup-Liste und zeichnen die Optionen dann hell auf hell (unlesbar). Deshalb
-   hier — wie beim .language-switcher select — Textfarbe und weisser Grund direkt
-   an der Option. */
+/* DELIBERATE DEVIATION from CD: right-aligned options touched the edge of the
+   open popup (CD sets `text-right` without padding). Chromium honors `padding`
+   on <option> in the popup, so this adds the same optical edge as the closed state. */
+/* Set option colors explicitly: the bare select only inherits `color` on the
+   <select>; <option> itself has neither a color nor an opaque background. Some
+   browsers do NOT inherit the select color into the native popup and render the
+   options light on light (unreadable). Therefore, as for .language-switcher
+   select, apply text color and a white background directly to each option. */
 .catbar__sort select option { padding-right:var(--sp-3); color:var(--color-text); background:var(--color-bg); }
 .catbar__sort select option:disabled { color:var(--color-gray-400); }
-/* CD-Padding (px-4) links; rechts Platz für das Chevron (der zugleich den Abstand
-   für die rechtsbündige Ausrichtung oben liefert). */
+/* CD padding (px-4) on the left; space for the chevron on the right (which also
+   supplies the inset for the right alignment above). */
 .catbar__sort select { min-height:var(--target-min); padding-left:var(--sp-4); padding-right:var(--sp-7); font-size:var(--text-sm); color:var(--color-text); }
 .catbar__sort .select__icon { color:var(--color-text-muted); }
 .catbar__filter { min-height:var(--target-min); white-space:nowrap; }
 .catbar__fcount { margin-left:var(--sp-1); font-weight:var(--fw-bold); }
-/* Im Knopf-Kontext notiert, sonst gewinnt «.btn .icon» (0,2,0) und der Pfeil
-   erschiene mit 1.4em deutlich zu gross neben der Beschriftung. */
+/* Scoped to the button context; otherwise `.btn .icon` (0,2,0) wins and makes
+   the 1.4em arrow noticeably too large beside the label. */
 .btn .catbar__chev, .catbar__chev { width:1em; height:1em; transition:transform var(--duration); }
 .catbar__filter[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
 .catbar .view-switch__btn { min-height:var(--target-min); }
-/* `extra`-Steckplatz der Leiste: eine Nebenaktion ganz rechts, abgesetzt wie der
-   Ansichtswechsel — sie steht auf derselben Stufe und darf nicht wie ein
-   weiterer Filter neben «Filter» kleben. */
+/* The bar's `extra` slot: a secondary action at the far right, separated like
+   the view switch. It has the same hierarchy and must not read as another
+   filter attached to “Filter”. */
 .catbar__aside { min-height:var(--target-min); white-space:nowrap;
   border-left:var(--stroke-1) solid var(--color-secondary-300); padding-left:var(--sp-4); margin-left:var(--sp-3); }
-/* Die getönte, gerundete Karte ist eine bewusste Entscheidung und BLEIBT —
-   umgestellt wird nur die umbrechende Flex-Zeile, die bei 1440 rund 60% des
-   Panels leer liess und «Zurücksetzen» wie eine dritte Facetten-Überschrift
-   aussehen liess (Item 2.13). */
-/* Rastermetrik nach CD (search.postcss:257-264 `gap-3 lg:gap-4`): einheitliche
-   Lücke .75rem → 1rem ab lg, KEIN eigener 2rem-Spaltengraben. */
+/* The tinted, rounded card is a deliberate decision and STAYS. Only the wrapping
+   flex row changes: at 1440 it left roughly 60% of the panel empty and made
+   “Reset” look like a third facet heading (Item 2.13). */
+/* Grid metrics follow CD (search.postcss:257-264 `gap-3 lg:gap-4`): one consistent
+   gap from .75rem to 1rem at lg, with NO separate 2rem column gutter. */
 .catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-3);
-  /* Das Panel besitzt seinen Abstand nach UNTEN selbst (1.5rem = `mt-6`).
-     Ergebnisblock und C.mountDataTable schliessen ohne eigenen oberen Rand an;
-     so bleibt der Abstand für Katalogseiten und eingebettete Tabellen gleich. */
+  /* The panel owns its BOTTOM spacing (1.5rem = `mt-6`). The results block and
+     C.mountDataTable follow without their own top margin, keeping spacing equal
+     for catalogue pages and embedded tables. */
   align-items:start; padding:var(--sp-4) var(--sp-5); margin:var(--sp-3) 0 var(--sp-6); background:var(--surface-bg-muted);
   border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius);
   box-shadow:var(--surface-elevation); }
@@ -89,38 +86,38 @@
 .catbar__panel .filter-group { margin:0; }
 .catbar__panel-actions { grid-column:1 / -1; display:flex; justify-content:flex-end;
   padding-top:var(--sp-3); border-top:var(--stroke-1) solid var(--color-secondary-200); }
-/* Dasselbe für die Seitenleisten-Filter (Dashboards, Portfolio-Karte): der
-   Zurücksetzen-Knopf sass als letztes Geschwister direkt unter der letzten
-   Filtergruppe und las sich wie ein weiterer Filter statt wie die Aktion für
-   alle (Item 5.18). Eigene Zeile mit Trennlinie, hier linksbündig, weil die
-   Leiste schmal ist und ein rechtsbündiger Knopf vom Text weglaufen würde. */
+/* The same applies to sidebar filters (dashboards, portfolio map): the reset
+   button sat as the last sibling directly below the final filter group and read
+   like another filter instead of an action for all groups (Item 5.18). Give it
+   a separate row with a divider, left-aligned here because the bar is narrow
+   and a right-aligned button would become detached from the text. */
 .filter-panel__actions { display:flex; margin-top:var(--sp-4); padding-top:var(--sp-3);
   border-top:var(--stroke-1) solid var(--color-secondary-200); }
-/* Filter-Dropdowns der Katalogseiten (C.select) im Panel. */
+/* Catalogue-page filter dropdowns (C.select) inside the panel. */
 .catbar__panel .form__group__select { min-width:0; margin:0; }
-/* CD-md (767.98) statt der Sonderbreite 700 — live gegengeprüft bei 320/390 auf
-   katalog, portfolio, services und projects: alle Ansichtsknöpfe wieder im
-   Viewport, die Leiste wächst um genau eine Zeile. */
+/* CD-md (767.98) instead of the custom 700 width — live-checked at 320/390 on
+   catalogue, portfolio, services, and projects: all view buttons return to the
+   viewport and the bar grows by exactly one row. */
 @media (max-width:767.98px){
-  /* Die Trefferzahl bekommt KEINE eigene Zeile mehr erzwungen: `flex:0 1 auto`
-     lässt sie neben dem Suchfeld sitzen, solange sie dort hinpasst, und erst bei
-     echtem Platzmangel umbrechen. Mit `flex:1 1 100%` stand sie auch dann allein
-     in einer Zeile, wenn rechts neben der 24rem breiten Suche noch 190px frei
-     waren (gemessen bei 630px). `white-space:nowrap` oben hält sie zusammen. */
+  /* Do NOT force the result count onto its own row: `flex:0 1 auto` keeps it next
+     to the search field while it fits, wrapping only when space is genuinely
+     tight. With `flex:1 1 100%` it occupied a row alone even when 190px remained
+     beside the 24rem search field (measured at 630px). `white-space:nowrap`
+     above keeps the count together. */
   .catbar__count    { flex:0 1 auto; }
   .catbar__controls { flex:1 1 100%; margin-left:0; justify-content:space-between; }
   .catbar__sort     { flex:1 1 8rem; }
   .catbar__sort select { width:100%; }
-  .catbar__controls .view-switch { margin-left:auto; }   /* bleibt rechts, wie am Desktop */
+  .catbar__controls .view-switch { margin-left:auto; }   /* stays right-aligned, as on desktop */
 }
-/* Unter 480px reicht die Breite nicht mehr für Suche UND Zahl nebeneinander:
-   das Suchfeld schrumpfte bis an seine min-width und der Platzhalter wurde
-   abgeschnitten. Dort bleibt die Zahl auf ihrer eigenen Zeile. */
+/* Below 480px there is no longer room for search AND count side by side: the
+   search field shrank to its min-width and clipped the placeholder. Keep the
+   count on its own row there. */
 @media (max-width:479.98px){
   .catbar__count { flex:1 1 100%; }
 }
 @media (max-width:479.98px){
-  /* der Trennstrich wirkt am Zeilenanfang falsch, wenn der Schalter allein umbricht */
+  /* The divider looks wrong at the row start when the switch wraps by itself. */
   .catbar__controls .view-switch { border-left:0; padding-left:0; }
   .catbar__aside { border-left:0; padding-left:0; margin-left:0; }
 }

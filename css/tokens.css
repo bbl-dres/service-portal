@@ -1,5 +1,5 @@
 /* ============================================================================
-   BBL Plattform — Design Tokens
+   BBL Platform — Design Tokens
    Translated from the Swiss Confederation Design System (CD Bund) v1.0.5
    Sources: css/skins/default.postcss + css/skins/intranet.postcss (brand colors),
             app/tailwind.config.js (scales), css/foundations/typography.postcss (ramps)
@@ -20,9 +20,9 @@
   --color-primary-800: #99191e;
   --color-primary-900: #801519;
 
-  /* Skin-unabhängiges Hoheitsrot. Anders als --color-primary-600 bleibt dieser
-     Wert auch im Intranet-Skin rot und eignet sich deshalb für den globalen
-     Prototyp-Hinweis, nicht für normale Aktionen. */
+  /* Skin-independent federal red. Unlike --color-primary-600, this value stays
+     red in the intranet skin and therefore suits the global prototype notice,
+     not ordinary actions. */
   --color-federal-red: #d8232a;
 
   /* --- Brand: secondary = dark blue-gray (header/footer/filled buttons) --- */
@@ -49,8 +49,9 @@
   --color-gray-800: #1f2937;
   --color-gray-900: #111827;
 
-  /* CD nennt die neutrale Ramp `text-*` (typography.postcss). Alias der grauen Werte,
-     damit CD-Markup/Regeln die kanonische Vokabel treffen; die Rollen unten zeigen darauf. */
+  /* CD calls the neutral ramp `text-*` (typography.postcss). Alias the gray
+     values so CD markup/rules use the canonical vocabulary; the roles below
+     point to these aliases. */
   --color-text-50:  #f9fafb; --color-text-100: #f3f4f6; --color-text-200: #e5e7eb; --color-text-300: #d1d5db;
   --color-text-400: #9ca3af; --color-text-500: #6b7280; --color-text-600: #4b5563; --color-text-700: #374151;
   --color-text-800: #1f2937; --color-text-900: #111827;
@@ -69,18 +70,18 @@
   --color-info-text-subtle: #1d4ed8;
   --color-alert-bg: #801519;     /* notification--alert (danger to life) */
 
-  /* Dedizierte Rot-Töne für Fehlerzustände — entkoppelt vom (skin-getauschten)
-     Primary-Ramp, damit Fehler auch unter .body--intranet ROT bleiben, nicht blau. */
+  /* Dedicated red tones for error states, decoupled from the skin-swapped
+     primary ramp so errors remain RED under .body--intranet instead of blue. */
   --color-error-400: #fc656b;    --color-error-700: #bf1f25;
-  /* red-200/300 (CD input.postcss:74-76, select.postcss:66-72) für Fehler auf
-     Negativflächen (.input--error.input--negative). */
+  /* red-200/300 (CD input.postcss:74-76, select.postcss:66-72) for errors on
+     negative surfaces (.input--error.input--negative). */
   --color-error-200: #ffccce;    --color-error-300: #fa9da1;
 
-  /* CD-Akzent-Hues für Badges/Tags: 100-bg / 800-text (garantiert AA auf Weiss,
-     badge.postcss:23-72). Ergänzt die vier fehlenden Hues + trennt Gelb von Orange.
-     Teal ist dabei eine PORTAL-Erweiterung: badge.postcss kennt kein badge--teal;
-     die Werte sind CDs teal-100/800 (tailwind.config.js), formeltreu ergänzt —
-     bei einem CD-Sync nicht als Kanon missverstehen. */
+  /* CD accent hues for badges/tags: 100 background / 800 text (guaranteed AA
+     on white, badge.postcss:23-72). Adds the four missing hues and separates
+     yellow from orange. Teal is a PORTAL extension: badge.postcss has no
+     badge--teal; these are CD's teal-100/800 values (tailwind.config.js), added
+     by the same formula. Do not mistake them for canonical CD during a sync. */
   --color-yellow-bg: #fef3c7;    --color-yellow-text: #92400e;
   --color-indigo-bg: #e0e7ff;    --color-indigo-text: #3730a3;
   --color-pink-bg:   #fce7f3;    --color-pink-text:   #9d174d;
@@ -89,23 +90,23 @@
 
   --color-text:        var(--color-text-800);   /* body text */
   --color-text-muted:  var(--color-text-600);   /* passes AA on white AND on secondary-50 */
-  --color-text-light:  var(--color-text-500); /* CDs .text--light/.color--light = text-500
-                                      (typography.postcss:87-89). Vorher text-400
-                                      (#9ca3af, 2.54:1 auf Weiss) — eine Falle. */
+  --color-text-light:  var(--color-text-500); /* CD's .text--light/.color--light = text-500
+                                      (typography.postcss:87-89). Previously text-400
+                                      (#9ca3af, 2.54:1 on white), which was a trap. */
   --color-link:        var(--color-primary-600);
   --color-border:      #e5e7eb;
   --color-border-strong:#d1d5db;
   --color-border-input: #6b7280;   /* CD Bund input border = gray-500 (more visible) */
-  --color-placeholder: var(--color-secondary-400);  /* CD input.postcss:18 — folgt dem Skin.
-                                      Default 5.65:1, Intranet #5076b3 4.58:1 — beide AA. */
+  --color-placeholder: var(--color-secondary-400);  /* CD input.postcss:18: follows the skin.
+                                      Default 5.65:1, intranet #5076b3 4.58:1; both pass AA. */
   --color-bg:          #ffffff;
-  --color-bg-subtle:   var(--color-secondary-50);   /* CD's only neutral surface — folgt dem Skin */
+  --color-bg-subtle:   var(--color-secondary-50);   /* CD's only neutral surface; follows the skin */
   --color-bg-muted:    var(--color-secondary-100);
-  /* Randton des EINEN Panel-Karten-Rezepts (Filterpanel, KPI-Kachel,
-     catbar-Schublade, Chart-Karte, Karten-Popup, Seitenrails). Vorher drei
-     Töne für dieselbe Rolle (secondary-100 / border / secondary-200) — unter
-     .body--intranet drifteten Grau- und Skin-Ränder zusätzlich auseinander
-     (Design-Review C11). */
+  /* Border tone for the ONE panel-card recipe (filter panel, KPI tile, catbar
+     drawer, chart card, map popup, page rails). Previously three tones served
+     the same role (secondary-100 / border / secondary-200); under
+     .body--intranet the gray and skin borders also drifted apart
+     (Design Review C11). */
   /* Portal-local surface recipe. CD v1.0.5 exposes these scales through
      Tailwind, not as CSS custom properties. These aliases name the portal's
      outlined panel tier without pretending to be authoritative CD tokens.
@@ -121,41 +122,40 @@
   --color-focus-ring:  #8655F6;   /* CD Bund focus purple-500 */
   --color-focus-ring-negative: #c4b5fd;   /* purple-300 — on dark chrome (global.postcss:78-85) */
 
-  /* Gestufte Control-Höhe (CD btn.postcss:112-127 «.btn--base min-h-[44px]
-     xl:min-h-[48px] 3xl:min-h-[52px]», input.postcss:1-4). EIN Token für die
-     Touch-Rampe aller Bedienelemente; die Konsumenten kommen in Item 2.7.
-     NICHT auf .btn anwenden — .btn führt seine Rampe bereits selbst (app.css,
-     «.btn min-height»-Rampe im Buttons-Abschnitt). Die Stufen stehen unten bei
-     den Typo-Rampen. */
+  /* Stepped control height (CD btn.postcss:112-127 `.btn--base min-h-[44px]
+     xl:min-h-[48px] 3xl:min-h-[52px]`, input.postcss:1-4). ONE token for every
+     control's touch ramp; consumers arrive in Item 2.7. Do NOT apply it to
+     .btn: .btn already carries its own ramp (app.css, `.btn min-height` ramp in
+     the Buttons section). The steps are defined below with the type ramps. */
   --control-size-compact: 2.125rem;
   --control-size-sm: 2.75rem;
   --control-size-md: 3rem;
   --control-size-lg: 3.25rem;
   --control-h: var(--control-size-sm);
 
-  /* Feste Mindest-Tippfläche (WCAG 2.5.8 «Target Size», 44px). BEWUSST getrennt
-     von --control-h: die Bedienhöhe skaliert mit dem Viewport, ein Tippziel muss
-     das nicht — Icon-Knöpfe ohne Beschriftung sollen bei 1544px nicht auf 48px
-     aufgehen. Vorher trugen beide Absichten dasselbe Literal 2.75rem, was die
-     Rampe unbemerkt mitgerissen hätte. */
+  /* Fixed minimum touch target (WCAG 2.5.8 "Target Size", 44px). DELIBERATELY
+     separate from --control-h: control height scales with the viewport, but a
+     touch target need not. Unlabeled icon buttons should not grow to 48px at
+     1544px. Previously both intentions used the same 2.75rem literal, which
+     would have swept the ramp along unnoticed. */
   --target-min: var(--control-size-sm);
 
-  /* Eingabefeld-Rampe — CD input.postcss:1-4,16: Felder steigen NUR bei 2xl/1544
-     von 44 auf 48 px und enden dort; die xl/3xl-Stufen (48/52) gehören allein den
-     Knöpfen. Vorher ritten die Felder auf --control-h mit und waren auf
-     1280-1543-px-Laptops 4 px höher als das CD vorsieht. */
+  /* Input-field ramp: CD input.postcss:1-4,16. Fields grow ONLY at 2xl/1544
+     from 44 to 48px and stop there; the xl/3xl steps (48/52) belong only to
+     buttons. Previously fields rode on --control-h and were 4px taller than
+     CD specifies on 1280-1543px laptops. */
   --input-h: var(--control-size-sm);
   /* Portal-local compact checkbox/radio mark after snapping the former 1.15rem
      literal to the CD 1.125rem type/size step. */
   --check-size: 1.125rem;
 
-  /* Negativ-Ebene — helle Bedienelemente auf dunkler Chrome (Lightbox,
-     Dokumentbetrachter). Das CD führt dafür `btn--*-negative`, `link--negative`
-     und --color-focus-ring-negative; hier die fehlenden Flächen- und Textwerte,
-     damit nicht jede Regel ihre eigene Weiss-Deckkraft erfindet. */
+  /* Negative layer: light controls on dark chrome (lightbox, document viewer).
+     CD provides `btn--*-negative`, `link--negative` and
+     --color-focus-ring-negative; these are the missing surface and text values,
+     so each rule does not invent its own white opacity. */
   --color-text-negative:     #ffffff;
   --text-negative-muted:     rgba(255,255,255,.65);
-  --surface-negative:        rgba(255,255,255,.06);  /* ruhende Fläche: Panel, Leiste */
+  --surface-negative:        rgba(255,255,255,.06);  /* resting surface: panel, bar */
   --surface-negative-hover:  rgba(255,255,255,.14);
   --surface-negative-active: rgba(255,255,255,.22);
   --border-negative:         rgba(255,255,255,.16);
@@ -171,10 +171,10 @@
   --scrim-navigation: linear-gradient(to bottom, rgba(17,24,39,.2) 0%, rgba(17,24,39,.2) 50%, rgba(17,24,39,0) 100%);
   --scrim-editor-panel: rgba(22,36,56,.18);
 
-  /* --- Kategoriale Chart-Palette — CD-Hue-Stufen, alle ≥4.5:1 auf Weiss, keine
-     kollidiert mit --color-primary-600 (rot #d8232a / intranet-blau #2563eb).
-     Bewusst NIE in einem Skin-Block überschrieben (gleiches Vorgehen wie
-     --color-error-400/700 oben): eine Datenserie ist keine Markenfarbe. --- */
+  /* --- Categorical chart palette: CD hue steps, all ≥4.5:1 on white; none
+     conflicts with --color-primary-600 (red #d8232a / intranet blue #2563eb).
+     Deliberately NEVER overridden in a skin block (the same approach as
+     --color-error-400/700 above): a data series is not a brand color. --- */
   --chart-series-1: #0f6b75;  /* teal-700   6.2:1 */
   --chart-series-2: #c2410c;  /* orange-700 5.2:1 */
   --chart-series-3: #6d28d9;  /* purple-700 7.1:1 */
@@ -182,7 +182,7 @@
   --chart-series-5: #be185d;  /* pink-700   6.0:1 */
   --chart-series-6: #4b5563;  /* text-600   7.6:1 */
   --chart-series-7: #b45309;  /* yellow-700 5.0:1 */
-  /* Chart-Tinte: benannte Aliase der bereits vorhandenen Neutralrampe */
+  /* Chart ink: named aliases of the existing neutral ramp */
   --chart-ink:       var(--color-text-800);   /* #1f2937 */
   --chart-ink-muted: var(--color-text-600);   /* #4b5563 */
   --chart-grid:      var(--color-text-200);   /* #e5e7eb */
@@ -191,7 +191,7 @@
 
   /* --- Typography --- */
   --font-sans: 'Noto Sans', 'Hind', 'Fallback-font', sans-serif;
-  /* Identifikatoren, Pfade, Code — stand 9× wörtlich im Blatt */
+  /* Identifiers, paths and code: this appeared verbatim nine times */
   --font-mono: Consolas, Menlo, monospace;
 
   /* Immutable scale steps (tailwind.config.js fontSize) */
@@ -201,11 +201,11 @@
   --fs-9xl: 5rem;
 
   --lh-tight: 1.25;   --lh-snug: 1.375;  --lh-normal: 1.5;  --lh-relaxed: 1.625;
-  /* CDs Bold-Idiom ist «fontWeight.bold: 400 + Familienwechsel auf Font-Bold»
-     (tailwind.config.js:200-222, font-face.postcss:13-19); hier trägt die
-     wght-Achse 700 der EINEN variablen Datei denselben Schnitt. NICHT auf 400
-     «korrigieren»: ohne Bold-Familie und ohne Gewichts-Synthese (app.css
-     font-synthesis) verschwände sonst stumm jedes Fett. */
+  /* CD's bold idiom is `fontWeight.bold: 400 + switch to the Font-Bold family`
+     (tailwind.config.js:200-222, font-face.postcss:13-19); here the 700 wght axis
+     of the ONE variable file provides the same face. Do NOT "correct" it to
+     400: without a bold family or weight synthesis (app.css font-synthesis),
+     every bold face would silently disappear. */
   --fw-regular: 400;  --fw-bold: 700;
 
   /* CD `text--*` responsive ramps (typography.postcss:18-57) — base step.
@@ -214,13 +214,13 @@
   --text-lg:  var(--fs-lg);   --text-xl:  var(--fs-xl);   --text-2xl:  var(--fs-2xl);
   --text-3xl: var(--fs-3xl);  --text-4xl: var(--fs-4xl);  --text-5xl:  var(--fs-5xl);
 
-  /* --- Spacing — BEWUSST beschnittene Teilmenge der Tailwind/CD-Standardskala:
-     nur die Stufen, die app.css konsumiert. Stufen über 8rem (hero 3xl:py-40)
-     fehlen absichtlich, bis ein Konsument sie braucht.
-     KONVENTION: Wiederkehrende Komponentenabstände konsumieren diese Tokens.
-     Rohe Werte bleiben nur für einmalige CD-Geometrie, Typografie, Medien-
-     verhältnisse und fachliche Viewer-Masse stehen; skalenfremde Werte werden
-     nicht ohne Prüfung auf eine benachbarte Stufe gerundet. --- */
+  /* --- Spacing: DELIBERATELY trimmed subset of the standard Tailwind/CD scale,
+     containing only the steps app.css consumes. Steps above 8rem (hero
+     3xl:py-40) are intentionally absent until a consumer needs them.
+     CONVENTION: recurring component spacing consumes these tokens. Raw values
+     remain only for one-off CD geometry, typography, media proportions and
+     domain-specific viewer dimensions; off-scale values are not rounded to a
+     neighboring step without review. --- */
   --sp-0: 0; --sp-0-5: .125rem; --sp-1: .25rem; --sp-1-5: .375rem; --sp-2: .5rem;
   --sp-2-5: .625rem; --sp-3: .75rem;  --sp-3-5: .875rem;
   --sp-4: 1rem;     --sp-5: 1.25rem;  --sp-6: 1.5rem;   --sp-7: 1.75rem;
@@ -228,13 +228,13 @@
   --sp-14: 3.5rem;  --sp-16: 4rem;    --sp-20: 5rem;    --sp-24: 6rem;
   --sp-28: 7rem;    --sp-32: 8rem;
 
-  /* Sektionsrhythmus der Inhaltsspalten — CD «mt-12 2xl:mt-14»
-     (spacings.postcss:7-8). Vorher stand die 3rem→3.5rem-Rampe dreimal im
-     Blatt, und .detail-section stufte abweichend schon bei 1024px (Design-
-     Review C2); die Stufung steht unten im 1544-Block. */
+  /* Section rhythm for content columns: CD `mt-12 2xl:mt-14`
+     (spacings.postcss:7-8). Previously the 3rem→3.5rem ramp appeared three
+     times in the style sheet, and .detail-section stepped early at 1024px
+     (Design Review C2); the step now lives in the 1544 block below. */
   --stack-gap: 3rem;
 
-  /* --- Radius (voller CD-Maßstab, tailwind.config.js borderRadius) --- */
+  /* --- Radius (full CD scale, tailwind.config.js borderRadius) --- */
   --radius-none: 0;       --radius-xs: 0.0625rem; --radius-sm: 0.125rem; --radius: 0.1875rem;
   --radius-lg: 0.3125rem; --radius-xl: 0.375rem;  --radius-2xl: 0.5rem;
   --radius-3xl: 0.625rem; --radius-4xl: 0.75rem;  --radius-5xl: 0.9375rem; --radius-6xl: 1.5rem;
@@ -254,10 +254,11 @@
   --shadow-lg: 0 2px 6px -1px rgba(0,0,0,.06), 0 5px 20px -3px rgba(0,0,0,.08);
   --shadow-xl: 0 6px 10px -5px rgba(0,0,0,.06), 0 15px 25px -3px rgba(0,0,0,.09);
   --shadow-2xl:0 10px 20px 0 rgba(0,0,0,.06), 1px 10px 70px -8px rgba(0,0,0,.13);
-  /* Negativ-Ebene: auf dunklem Viewer-Chrome verschwände --shadow-lg — dieser
-     kräftige Wurf trennt Werkzeugleiste/Blatt/Toast vom fast schwarzen Grund.
-     Vorher stand das Literal dreimal im Blatt, und die erklärte Zwillingsregel
-     (.pf-lightbox__zoom) nutzte stattdessen shadow-lg (Design-Review C16). */
+  /* Negative layer: --shadow-lg would disappear on dark viewer chrome; this
+     strong cast separates toolbar/page/toast from the nearly black ground.
+     Previously the literal appeared three times in the style sheet, while its
+     documented twin rule (.pf-lightbox__zoom) used shadow-lg instead
+     (Design Review C16). */
   --shadow-viewer: 0 10px 40px rgba(0,0,0,.45);
   /* Component-state indicators are rings/bars rather than elevations. Keeping
      them beside the elevation scale prevents one-off shadow recipes. */
@@ -271,47 +272,46 @@
   --reticle-ring: 0 0 0 var(--stroke-1) rgba(255,255,255,.9), 0 0 0 var(--stroke-3) rgba(22,36,56,.42);
   --reticle-ring-muted: 0 0 0 var(--stroke-1) rgba(255,255,255,.82);
 
-  /* --- Motion (tailwind.config duration/easing) — eine Quelle, auditierbar für reduced-motion --- */
+  /* --- Motion (tailwind.config duration/easing): one source, auditable for reduced motion --- */
   --duration-fast: 150ms; --duration: 200ms; --duration-slow: 300ms;
   --duration-spin: 500ms; --duration-slowest: 700ms;
   --ease-out: cubic-bezier(0,0,.2,1); --ease-in-out: cubic-bezier(.4,0,.2,1);
-  --scale-hover: 1.02;    /* CD scale-102 Hover-Lift */
+  --scale-hover: 1.02;    /* CD scale-102 hover lift */
 
-  /* --- Scrims: Abdunkelung, damit Text/Chips über Bildern lesbar bleiben ---
-     Vorher standen fünf Rezepte für dieselbe Aufgabe im Blatt (reines Schwarz,
-     text-800, und ein #0d1b2a, das in keiner Rampe vorkommt). Die Chip-Scrims
-     nehmen den Ton von secondary-900 des DEFAULT-Skins (#131b22) und sind —
-     wie --color-error-400/700 und die Chart-Palette — BEWUSST skin-eingefroren,
-     NICHT skin-geschaltet: ein Foto-Scrim bleibt neutral dunkel; unter
-     .body--intranet wäre secondary-900 blau (#1c3c7d). Die Deckkraft trägt
-     die Bedeutung, nicht der Ton. */
-  --overlay-scrim: rgba(0,0,0,.45);              /* ganzflächig, Mediathek-Kacheln */
-  /* Modal-Scrim getrennt vom Bild-Scrim: CD modal.postcss:25-29 nimmt text-900/70
-     (#111827 zu 70 %). Auf dem hellen .45-Schwarz fiel der negative Fokusring
-     (#c4b5fd) auf 1.82:1 — unter WCAG 1.4.11 (3:1); auf text-900/70 misst er 3.6:1. */
+  /* --- Scrims darken images so overlaid text/chips remain readable. Previously
+     five recipes performed the same task (pure black, text-800, and #0d1b2a,
+     which belongs to no ramp). Chip scrims use secondary-900 from the DEFAULT
+     skin (#131b22) and, like --color-error-400/700 and the chart palette, are
+     DELIBERATELY frozen across skins, NOT skin-switched: a photo scrim stays
+     neutral-dark; under .body--intranet secondary-900 would be blue (#1c3c7d).
+     Opacity carries the meaning, not the hue. --- */
+  --overlay-scrim: rgba(0,0,0,.45);              /* full surface, media-library tiles */
+  /* Keep the modal scrim separate from the image scrim: CD modal.postcss:25-29
+     uses text-900/70 (#111827 at 70%). On the lighter .45 black, the negative
+     focus ring (#c4b5fd) fell to 1.82:1, below WCAG 1.4.11 (3:1); on text-900/70
+     it measures 3.6:1. */
   --modal-scrim: rgba(17,24,39,.7);
-  --scrim-chip:       rgba(19,27,34,.72);        /* secondary-900, Chips auf Bildern */
+  --scrim-chip:       rgba(19,27,34,.72);        /* secondary-900, chips on images */
   --scrim-chip-hover: rgba(19,27,34,.9);
   --scrim-gradient: linear-gradient(180deg, rgba(19,27,34,.15) 0%, rgba(19,27,34,.72) 100%);
 
   /* Print is deliberately device-black rather than a skin color. */
   --color-print: #000000;
 
-  /* --- Responsive Abstandsrampen ---------------------------------------------
-     CD grids.postcss:25-56 und container.postcss:29-49. Beide Rampen standen
-     vorher vollständig ausgeschrieben im Blatt — die Spalten-Rampe zweimal
-     (Utilities und `.grid`), die Abschnitts-Rampe fünfmal. Die Stufen leben
-     jetzt hier, genau wie --control-h es vormacht; die Konsumenten in app.css
-     sind wieder einzeilig und können nicht mehr auseinanderlaufen. */
+  /* --- Responsive spacing ramps ----------------------------------------------
+     CD grids.postcss:25-56 and container.postcss:29-49. Both ramps were
+     previously written out in full: the column ramp twice (utilities and
+     `.grid`), the section ramp five times. The steps now live here, following
+     --control-h; consumers in app.css are one line again and cannot drift. */
   --gap-responsive:  1.25rem;   /* 480 → 1.75 · 640 → 2.25 · 1024 → 2.5 · 1280 → 3 · 1920 → 4 */
-  /* Container-Seitenabstand: identisch mit der Spalten-Rampe AB xs — nur die
-     Basisstufe weicht ab (container.postcss:7 px-4 = 1rem vs grids.postcss:10
-     gap-5 = 1.25rem). Ein gemeinsames Token gäbe jeder Seite unter 480 px
-     4 px zu viel Rand. */
+  /* Container side padding: identical to the column ramp FROM xs upward; only
+     the base step differs (container.postcss:7 px-4 = 1rem vs grids.postcss:10
+     gap-5 = 1.25rem). A shared token would give every page below 480px 4px too
+     much edge space. */
   --container-px:    1rem;
   --section-py:      3.5rem;    /* 1024 → 5 · 1920 → 8 */
   --section-py-half: 1.75rem;   /* 1024 → 2.5 · 1920 → 4 */
-  --section-pt:      3rem;      /* 1024 → 3.5 · 1920 → 5 — oben schmaler als unten, wie im CD */
+  --section-pt:      3rem;      /* 1024 → 3.5 · 1920 → 5; tighter above than below, as in CD */
 
   /* --- Layout --- */
   --container-max-2xl: 1544px;
@@ -328,49 +328,48 @@
   --z-local-status: 7;
   --z-local-toolbar: 8;
 
-  /* Z-Index-Skala (statt verstreuter Magic Numbers) — governt Stapelordnung.
-     Von unten nach oben gelesen ist das die vollständige Ordnung der Seite; die
-     Lücken zwischen Nav (40-50) und Overlay (90) sind Reserve, keine Zufälle. */
-  --z-content: 10;        /* #main-content, .mobile-menu — der Fluss selbst */
+  /* Z-index scale (instead of scattered magic numbers) governs stacking order.
+     Read bottom to top, this is the page's complete order; gaps between nav
+     (40-50) and overlay (90) are reserves, not accidents. */
+  --z-content: 10;        /* #main-content, .mobile-menu: the flow itself */
   --z-dropdown: 10;
   --z-breadcrumb: 20;
-  --z-footer: 20;         /* Bezugsrahmen «nach oben»: über dem Inhalt (10), unter
-                             Header (30) und Nav (40). CD stapelt den Footer
-                             zuunterst (z-0, global.postcss:59-61) — 0 geht hier
-                             nicht, weil der sticky Nach-oben-Knopf im Footer
-                             über #main-content schweben muss. */
+  --z-footer: 20;         /* Reference frame for "back to top": above content
+                             (10), below header (30) and nav (40). CD stacks the
+                             footer at the bottom (z-0, global.postcss:59-61),
+                             but 0 cannot work here because the sticky back-to-top
+                             button in the footer must float above #main-content. */
   --z-header: 30;         /* .search--main, .suggest */
   --z-nav: 40;            /* .desktop-menu, .action-menu__popup */
-  --z-drawer: 45;         /* .desktop-menu__drawer — über seiner Leiste */
-  --z-nav-active: 50;     /* die geöffnete Nav-Schaltfläche über dem Drawer-Rand */
+  --z-drawer: 45;         /* .desktop-menu__drawer: above its bar */
+  --z-nav-active: 50;     /* open navigation control above the drawer border */
   --z-overlay: 90;
   --z-modal: 100;
   --z-toast: 110;
-  --z-viewer: 200;        /* .docviewer — bewusst ÜBER dem Toast: der Betrachter
-                             ist Vollbild, ein Toast darunter wäre unerreichbar */
+  --z-viewer: 200;        /* .docviewer: deliberately ABOVE the toast; the viewer
+                             is full screen, so a toast below it would be unreachable */
   --z-sticky: 1000;
-  --z-skiplink: 2000;     /* muss alles überlagern, sonst ist er wertlos */
-  /* KONVENTION: diese Skala gilt für Chrome auf Seitenebene. Kleine Ganzzahlen
-     (0-7) INNERHALB des eigenen Stacking-Context einer Komponente — etwa
-     .pf-lightbox__bar über .pf-lightbox__stage — bleiben roh; sie sagen «über
-     meinem Geschwister», nicht «über der Seite», und ein Token verspräche dort
-     eine Ordnung, die gar nicht global gilt. */
-  /* Rückwärtskompatible Aliase */
+  --z-skiplink: 2000;     /* must overlay everything or it is worthless */
+  /* CONVENTION: this scale applies to page-level chrome. Small integers (0-7)
+     INSIDE a component's own stacking context, such as .pf-lightbox__bar above
+     .pf-lightbox__stage, remain raw. They mean "above my sibling," not "above
+     the page," and a token would promise an order that is not global. */
+  /* Backward-compatible aliases */
   --header-z: var(--z-header); --breadcrumb-z: var(--z-breadcrumb); --modal-z: var(--z-modal); --sticky-z: var(--z-sticky);
 
   /* --- Breakpoints (for reference; used in media queries) ---
      xs 480 · sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1544 · 3xl 1920
 
-     KONVENTION: `min-width` nimmt die Stufe selbst (640px), `max-width` die
-     Stufe minus 0.02px (639.98px). Vorher liefen vier Schreibweisen für
-     dieselbe sm-Grenze nebeneinander — `max-width:640px` überlappte bei genau
-     640px mit `min-width:640px` (beide Regeln aktiv), `max-width:639px` liess
-     zwischen 639 und 640 eine Lücke, in der keine von beiden griff. */
+     CONVENTION: `min-width` uses the step itself (640px); `max-width` uses the
+     step minus 0.02px (639.98px). Previously four spellings coexisted for the
+     same sm boundary: `max-width:640px` overlapped `min-width:640px` at exactly
+     640px (both rules active), while `max-width:639px` left a gap from 639 to
+     640 where neither applied. */
 }
 
 /* Responsive ramps — CD steps at xs 480 / sm 640 / lg 1024 / xl 1280 / 3xl 1920
-   (css/foundations/typography.postcss:18-57 und grids.postcss:25-56,
-   gegen das kompilierte Bundle geprüft) */
+   (css/foundations/typography.postcss:18-57 and grids.postcss:25-56,
+   verified against the compiled bundle) */
 @media (min-width:480px)  { :root { --gap-responsive: 1.75rem; --container-px: 1.75rem; } }   /* xs */
 @media (min-width:640px)  { :root { --gap-responsive: 2.25rem; --container-px: 2.25rem; } }   /* sm */
 @media (min-width:1024px) {          /* lg */
@@ -390,7 +389,7 @@
     --text-3xl: var(--fs-5xl); --text-4xl: var(--fs-6xl);  --text-5xl:  var(--fs-7xl);
   }
 }
-@media (min-width:1544px) {          /* 2xl — Eingabefeld-Rampe + Sektionsrhythmus */
+@media (min-width:1544px) {          /* 2xl: input-field ramp + section rhythm */
   :root { --input-h: var(--control-size-md); --stack-gap: 3.5rem; }
 }
 @media (min-width:1920px) {          /* 3xl */
@@ -405,12 +404,11 @@
   }
 }
 
-/* Der versprochene Nutzen der Motion-Tokens: seit alle Übergänge in app.css
-   --duration-* konsumieren (§3.2 der Review), schaltet EINE Regel die Bewegung
-   für `prefers-reduced-motion` ab — vorher hätte man 64 Zeitliterale einzeln
-   nachziehen müssen und hatte entsprechend nur zwei davon abgedeckt.
-   Nicht 0s: eine messbar kurze Dauer feuert `transitionend` weiterhin, worauf
-   Verdrahtungen sich verlassen dürfen. */
+/* The promised value of motion tokens: now that every transition in app.css
+   consumes --duration-* (§3.2 of the review), ONE rule disables motion for
+   `prefers-reduced-motion`. Previously 64 duration literals needed individual
+   maintenance and only two were covered. Not 0s: a measurably short duration
+   still fires `transitionend`, which integrations may rely on. */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --duration-fast: .01ms; --duration: .01ms; --duration-slow: .01ms;

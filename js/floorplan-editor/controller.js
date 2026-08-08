@@ -1,7 +1,7 @@
 // BBL Plan-Editor — standalone feedback workbench for rooms and furniture.
 //
 // This is deliberately a separate micro-app from Workspace (portal/read-only)
-// and Planprüfung (DWG import/rules/approval). The browser prototype writes only
+
 // clearly labelled local workspaces/revision simulations; canonical core data is
 // cloned and never mutated. Upload and plan checking remain a separate micro-app.
 

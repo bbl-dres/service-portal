@@ -1,5 +1,4 @@
-// Login-gate complement: after using the AGOV/FedLogin stub, the standalone
-// Room Booking route must render its form instead of the gate.
+// After the AGOV/FedLogin stub, the gated room-booking route must render its form.
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const LOGIN = `(async () => {

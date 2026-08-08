@@ -1,33 +1,32 @@
-// Galerie der Bauprojekte: keine Pillenzeile mehr, stattdessen Chips auf dem
-// Bild — und zwar geometrisch gleich wie im Liegenschaften-Inventar.
+// Compare construction-project and portfolio image chips.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
-const b = await launch({ port: 9350 });
+const browser = await launch({ port: 9350 });
 
 const probe = `(() => {
   const card = document.querySelector('.grid .card, .pf-gallery .card');
-  if (!card) return JSON.stringify({ fehler: 'keine Karte' });
+  if (!card) return JSON.stringify({ error: 'no card' });
   const chips = card.querySelector('.card__chips');
-  const box = chips && chips.getBoundingClientRect();
-  const img = card.querySelector('.card__image, .pf-card__vis');
-  const ibox = img && img.getBoundingClientRect();
-  const cs = chips && getComputedStyle(chips);
+  const chipBox = chips && chips.getBoundingClientRect();
+  const image = card.querySelector('.card__image, .pf-card__vis');
+  const imageBox = image && image.getBoundingClientRect();
+  const style = chips && getComputedStyle(chips);
   return JSON.stringify({
     pillRows: document.querySelectorAll('.grid .pill-row, .pf-gallery .pill-row').length,
-    chipsGesamt: document.querySelectorAll('.card__chips').length,
-    texte: chips ? [...chips.querySelectorAll('.card__chip')].map(x => x.textContent) : [],
-    imBild: !!(box && ibox && box.top >= ibox.top - 1 && box.left >= ibox.left - 1),
-    position: cs && cs.position,
-    inset: cs && [cs.top, cs.left, cs.right].join(' '),
+    chipGroups: document.querySelectorAll('.card__chips').length,
+    labels: chips ? [...chips.querySelectorAll('.card__chip')].map((chip) => chip.textContent) : [],
+    insideImage: !!(chipBox && imageBox && chipBox.top >= imageBox.top - 1 && chipBox.left >= imageBox.left - 1),
+    position: style && style.position,
+    inset: style && [style.top, style.left, style.right].join(' '),
   });
 })()`;
 
-for (const [route, label] of [['/app/projects', 'Bauprojekte'], ['/app/portfolio', 'Liegenschaften']]) {
-  const p = await openPage(b, APP_BASE + route);
+for (const [route, label] of [['/app/projects', 'Construction projects'], ['/app/portfolio', 'Portfolio']]) {
+  const page = await openPage(browser, APP_BASE + route);
   await sleep(1800);
-  console.log(label.padEnd(16), await p.evaluate(probe));
-  const errs = p.problems ? await p.problems() : [...p.exceptions, ...p.consoleErrors];
-  if (errs.length) console.log('   ⚠', errs.join(' | '));
-  await p.closeTarget();
+  console.log(label.padEnd(22), await page.evaluate(probe));
+  const errors = page.problems ? await page.problems() : [...page.exceptions, ...page.consoleErrors];
+  if (errors.length) console.log('   warning:', errors.join(' | '));
+  await page.closeTarget();
 }
-await b.close();
+await browser.close();

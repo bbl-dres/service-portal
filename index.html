@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BBL Kundenportal</title>
   <meta name="description" content="BBL Kundenportal — Prototyp. Dienstleistungen, Anwendungen, Dokumente und Daten des Bundesamts für Bauten und Logistik an einem Ort.">
-  <!-- Eine variable woff2 (latin-Subset, wght 100–900) deckt Regular und Bold
-       ab — vorher zwei TTF à 569 KB, jetzt 35 KB gesamt. -->
+  <!-- One variable WOFF2 file (Latin subset, weights 100–900) covers regular
+       and bold; it replaces two 569 KB TTF files with 35 KB total. -->
   <link rel="preload" href="assets/fonts/NotoSans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/skins/intranet.css">
@@ -40,20 +40,19 @@
 </head>
 <body class="body--intranet">
   <header id="main-header" class="site-header"></header>
-  <!-- Datenausfall-Band (P0-4): von js/app.js nach dem Laden befüllt, wenn eine
-       data/*.json fehlt. Persistent, weil der Router nur #main-content neu zeichnet.
-       Benannte Region statt role="alert" am Container: das Band samt «Neu laden»-
-       Knopf liegt sonst in KEINER Landmark und ist über die Landmark-Navigation
-       unauffindbar; die einmalige Ansage beim Einfügen trägt die injizierte
-       Notification selbst (role="alert" via { live:true } in js/app.js). -->
+  <!-- Data-failure banner (P0-4): js/app.js fills it after loading when a
+       data/*.json file is missing. It persists because the router redraws only
+       #main-content. The container is a named region rather than an alert so its
+       reload action remains discoverable through landmark navigation. The
+       injected notification makes the one-time announcement with role="alert". -->
   <div id="data-status" class="data-status" role="region" aria-label="Hinweis zum Datenbestand"></div>
   <main id="main-content" class="site-main" tabindex="-1"></main>
-  <!-- Persistente Live-Region: Router/Katalogseiten schreiben hier Treffer-,
-       Ansichts- und Seitenwechsel hinein (WCAG 4.1.3). Nur Text mutieren. -->
+  <!-- Persistent live region: the router and catalogue pages announce result,
+       view and page changes here (WCAG 4.1.3). Mutate text only. -->
   <div id="live" role="status" aria-live="polite" class="sr-only"></div>
   <footer id="main-footer" class="site-footer"></footer>
-  <!-- Hinweisstreifen (CD notification-banner), am Seitenende: fix positioniert,
-       liegt damit in der Lesereihenfolge NACH dem Inhalt. -->
+  <!-- Notice strip (CD notification-banner) at the end of the page. Its fixed
+       position keeps it after the content in reading order. -->
   <div id="banner-host" class="banner-host"></div>
   <script type="module" src="js/app.js"></script>
 </body>

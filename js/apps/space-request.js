@@ -1,30 +1,25 @@
-// Raumbedarf melden — the hero service flow (external → mock process → Meine Vorgänge).
-
+// Space-demand request: external service entry, mock process, and persisted case.
 import * as links from '../links.js';
-import { DIENSTLEISTUNGEN, trail } from '../crumbs.js';
+import { SERVICES, trail } from '../crumbs.js';
 
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+// Declare deferred datasets so the router calls core.ensure(needs) before render
+// instead of exposing an empty inventory.
 export const needs = ['buildings'];
 
-// Wortlaut der Anmeldesperre, die der Router vor diese Anwendung zieht
-// (js/router.js). Der Satz gehört zur Anwendung — «Diese Meldung wird als
-// persönlicher Vorgang erfasst» sagt mehr als ein Einheitssatz.
+// Application-specific copy shown by the router's authentication gate.
 export const loginText = "«Raumbedarf melden» erfasst Ihren Bedarf als Vorgang unter «Meine Vorgänge». Bitte melden Sie sich mit AGOV / FedLogin an, um den Antrag zu erstellen.";
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs, navigate } = ctx;
   setTitle('Raumbedarf melden');
-  setCrumbs(trail(DIENSTLEISTUNGEN, { label: 'Raumbedarf melden' }));
+  setCrumbs(trail(SERVICES, { label: 'Raumbedarf melden' }));
 
   const buildings = core.buildings();
   const naw = core.ref().nawClasses || [];
   const dsf = core.ref().deskSharingFactor || 0.8;
   const AREA_PER_WORKPLACE = 12;
 
-  // Objekt aus einem aufrufenden Portal vorbelegen, sofern die Kennung wirklich
-  // in der Gebäudeliste vorkommt. Ungültige bzw. veraltete Deep-Links fallen auf
-  // das bisherige Standardverhalten (erstes Gebäude) zurück.
+  // Prefill a calling portal's building only when its ID exists. Invalid or stale
+  // deep links fall back to the established first-building behaviour.
   const requestedBuildingId = query.get('building');
   const requestedBuilding = requestedBuildingId
     && buildings.some((building) => building.bbl_id === requestedBuildingId);
@@ -36,44 +31,37 @@ export default async function render(ctx) {
     buildingId: requestedBuilding ? requestedBuildingId : (buildings[0] ? buildings[0].bbl_id : ''),
     persons: 10,
     nawClass: naw[1] ? naw[1].id : (naw[0] && naw[0].id),
-    termin: '',
-    begruendung: '',
+    requestedDate: '',
+    justification: '',
     created: null,
     errors: {},
   };
 
   const area = () => Math.round(state.persons * AREA_PER_WORKPLACE * dsf);
 
-  // Klartextnamen für die Fehlerübersicht. Die Schlüssel sind DOM-ids, damit die
-  // Sprungmarken auflösen (Item 3.5).
+  // Human-readable error-summary labels are keyed by DOM IDs so links resolve.
   const FIELD_LABELS = {
     org: 'Verwaltungseinheit', cc: 'Kostenstelle',
-    persons: 'Anzahl Personen / Arbeitsplätze', beg: 'Begründung',
+    persons: 'Anzahl Personen / Arbeitsplätze', justification: 'Begründung',
   };
 
   const STEP_LABELS = ['Angaben', 'Bedarf', 'Prüfen & Absenden'];
 
   function draw() {
     if (state.created) return drawDone();
-    // Fokus + Schreibmarke über den Schrittwechsel bzw. den Fehler-Neuaufbau retten.
+    // Preserve focus and selection across step changes and failed redraws.
     const restore = C.preserveFocus(mount);
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-        ${C.backLink(links.dienstleistung('raumbedarf-melden'), 'Dienstleistungsbeschreibung')}
+        ${C.backLink(links.service('raumbedarf-melden'), 'Dienstleistungsbeschreibung')}
         <h1 tabindex="-1">Raumbedarf melden</h1>
         ${C.contextLine({ action: 'Antrag', name: session.user().name, org: state.org, process: 'Eingang → Prüfung GS → Prüfung PFM → Entscheid' })}
-        ${/* Gemeinsames Wizard-Gerüst: Schrittanzeige + sr-only-Schrittüberschrift
-              (Fokusziel beim Wechsel) + Pflichtfeld-Legende — Schritt 3 hat keine
-              mit «*» markierten Felder, dort entfällt die Legende (Review B8). */''}
+        ${/* Shared wizard structure combines progress and the visually hidden step heading. */''}
         ${C.wizardHead(STEP_LABELS, state.step, { legend: state.step < 3 })}
         ${C.errorSummary({ errors: state.errors, labels: FIELD_LABELS })}
-        <!-- novalidate: ohne das Attribut bricht die HTML-Constraint-Validierung
-             die Absendung ab, BEVOR das submit-Event feuert - validate() lief nie
-             und die gesamte CD-Fehlerebene (.input--error / badge--error /
-             aria-invalid / role=alert) war auf dem echten Nutzerpfad toter Code.
-             required/aria-required bleiben auf den Feldern: sie tragen die
-             Semantik fuer Screenreader und steuern die Pflichtfeld-Markierung. -->
+        <!-- novalidate keeps custom validation reachable while required and
+             aria-required preserve control semantics. -->
         <form id="wiz" class="form" novalidate>${state.step === 1 ? step1() : state.step === 2 ? step2() : step3()}</form>
       </div>
     </div>`;
@@ -91,9 +79,7 @@ export default async function render(ctx) {
         options: buildings.map(b => ({ value: b.bbl_id, label: `${b.name} — ${b.city}` })) })}
       ${C.field({ id: 'persons', label: 'Anzahl Personen / Arbeitsplätze', required: true, message: state.errors.persons,
         control: (cls, attrs) => `<input id="persons" type="number" min="1" value="${state.persons}" class="${cls}"${attrs}>` })}
-      ${/* form__actions statt .row: hält die Primäraktion auf Mobile zuerst und
-            vollbreit (app.css, Item 3.12). Icon VOR dem btn__text im DOM — die
-            rechte Position stellt btn--icon-right per row-reverse her (CD Btn.vue). */''}
+      ${/* form__actions keeps the primary mobile action first and full width. */''}
       <div class="form__actions"><button class="btn btn--filled btn--icon-right" type="submit">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Weiter</span></button></div>`;
   }
 
@@ -102,10 +88,10 @@ export default async function render(ctx) {
       ${C.select({ id: 'naw', name: 'naw', label: 'Arbeitswelt (NAW-Klasse)', value: state.nawClass,
         options: naw.map(n => ({ value: n.id, label: n.label })) })}
       ${C.notification(`Geschätzter Flächenbedarf: <strong>${area()} m² HNF</strong><br><span class="small">${state.persons} Arbeitsplätze × ${AREA_PER_WORKPLACE} m² × Desk-Sharing-Faktor ${dsf}</span>`, 'info', 'InfoCircle')}
-      ${C.field({ id: 'termin', label: 'Gewünschter Termin',
-        control: (cls, attrs) => `<input id="termin" type="date" value="${C.escape(state.termin)}" class="${cls}"${attrs}>` })}
-      ${C.field({ id: 'beg', label: 'Begründung', required: true, message: state.errors.beg,
-        control: (cls, attrs) => `<textarea id="beg" placeholder="Weshalb wird der zusätzliche Raum benötigt?" class="${cls}"${attrs}>${C.escape(state.begruendung)}</textarea>` })}
+      ${C.field({ id: 'requested-date', label: 'Gewünschter Termin',
+        control: (cls, attrs) => `<input id="requested-date" type="date" value="${C.escape(state.requestedDate)}" class="${cls}"${attrs}>` })}
+      ${C.field({ id: 'justification', label: 'Begründung', required: true, message: state.errors.justification,
+        control: (cls, attrs) => `<textarea id="justification" placeholder="Weshalb wird der zusätzliche Raum benötigt?" class="${cls}"${attrs}>${C.escape(state.justification)}</textarea>` })}
       <div class="form__actions form__actions--between"><button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button><button class="btn btn--filled btn--icon-right" type="submit">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Weiter</span></button></div>`;
   }
 
@@ -113,7 +99,7 @@ export default async function render(ctx) {
     const b = core.building(state.buildingId);
     const n = naw.find(x => x.id === state.nawClass);
     return `
-      ${/* h3, nicht h2: die Schrittüberschrift oben ist die h2 dieses Abschnitts. */''}
+      ${/* Use h3 because the wizard step heading is this section's h2. */''}
       <h3>Zusammenfassung</h3>
       <dl class="kv">
         <dt>Verwaltungseinheit</dt><dd>${C.escape(state.org)}</dd>
@@ -122,8 +108,8 @@ export default async function render(ctx) {
         <dt>Arbeitsplätze</dt><dd>${state.persons}</dd>
         <dt>Arbeitswelt</dt><dd>${n ? C.escape(n.label) : '—'}</dd>
         <dt>Flächenbedarf</dt><dd>${area()} m² HNF</dd>
-        <dt>Wunschtermin</dt><dd>${C.escape(state.termin || '—')}</dd>
-        <dt>Begründung</dt><dd>${C.escape(state.begruendung)}</dd>
+        <dt>Wunschtermin</dt><dd>${C.escape(state.requestedDate || '—')}</dd>
+        <dt>Begründung</dt><dd>${C.escape(state.justification)}</dd>
       </dl>
       ${C.notification('Mit dem Absenden wird ein Vorgang erstellt und an die Prüfung weitergeleitet. Sie können den Status unter <strong>Meine Vorgänge</strong> verfolgen.', 'info')}
       <div class="form__actions form__actions--between"><button class="btn btn--bare btn--icon-left" type="button" data-back>${C.icon('ChevronLeft', 'btn__icon')}<span class="btn__text">Zurück</span></button><button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Checkmark', 'btn__icon')}<span class="btn__text">Antrag absenden</span></button></div>`;
@@ -137,41 +123,38 @@ export default async function render(ctx) {
         ${C.processDone({ instance: i, lead: 'Antrag eingereicht.', title: 'Vielen Dank',
           text: 'Ihr Raumbedarf-Antrag wurde erfasst und an die Prüfung weitergeleitet. Den Status sehen Sie jederzeit unter «Meine Vorgänge».',
           actions: [
-            { href: links.vorgang(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            { href: links.caseDetails(i.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
             { href: '#/services', label: 'Zu den Dienstleistungen' },
           ] })}
       </div>
     </div>`;
-    // Fokus auf die Erfolgsüberschrift + Ansage der Referenz (gemeinsamer Helfer).
+    // Focus the success heading and announce the reference through the shared helper.
     C.focusProcessDone(mount, i);
   }
 
   function readStep() {
     if (state.step === 1) {
       Object.assign(state, C.readForm(mount, { org: 'org', costCenter: 'cc', buildingId: 'bld' }));
-      // Rohwert übernehmen, NICHT stillschweigend auf >=1 klemmen: `Math.max(1, …)`
-      // schrieb die Eingabe des Nutzers um, sodass eine 0 oder ein Tippfehler
-      // unbemerkt zu 1 wurde und validate() nie etwas zu meckern hatte (Item 3.15).
+      // Preserve the raw value instead of clamping it to at least one. Validation
+      // must expose zero, empty, and nonnumeric input rather than silently changing it.
       state.persons = C.val(mount, 'persons');
     } else if (state.step === 2) {
-      Object.assign(state, C.readForm(mount, { nawClass: 'naw', termin: 'termin', begruendung: 'beg' }));
+      Object.assign(state, C.readForm(mount, { nawClass: 'naw', requestedDate: 'requested-date', justification: 'justification' }));
     }
   }
   function validate() {
     const e = {};
     if (state.step === 1) {
-      // Anweisende Formulierung wie in fault-report.js — nicht «Pflichtfeld».
+      // Use actionable validation copy instead of a generic required-field label.
       if (!state.org.trim()) e.org = 'Bitte die Verwaltungseinheit angeben';
       if (!state.costCenter.trim()) e.cc = 'Bitte die Kostenstelle angeben';
       const n = Number.parseInt(state.persons, 10);
       if (!Number.isFinite(n) || n < 1) e.persons = 'Bitte eine Anzahl ab 1 angeben';
       else if (n > 5000) e.persons = 'Bitte einen Wert bis 5000 angeben';
-      else state.persons = n;   // erst nach erfolgreicher Prüfung normalisieren
-      // `bld` (Standort) wird von C.select OHNE required gerendert und ist damit
-      // bewusst optional — hier absichtlich nicht geprüft, damit Markup und
-      // Validierung dieselbe Menge beschreiben.
+      else state.persons = n;   // Normalize only after validation succeeds.
+      // bld is intentionally optional in both C.select markup and validation.
     } else if (state.step === 2) {
-      if (!state.begruendung.trim()) e.beg = 'Bitte begründen Sie den Bedarf';
+      if (!state.justification.trim()) e.justification = 'Bitte begründen Sie den Bedarf';
     }
     state.errors = e;
     return Object.keys(e).length === 0;
@@ -183,17 +166,17 @@ export default async function render(ctx) {
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       readStep();
-      // Fehlversuch: neu zeichnen, dann Fokus auf die Fehlerübersicht — sonst
-      // landet er auf <body> und der Nutzer erfährt nichts (WCAG 3.3.1).
+      // Redraw a failed attempt, then focus the error summary so focus does not
+      // fall back to body (WCAG 3.3.1).
       if (!validate()) { draw(); C.wireErrorSummary(mount); return; }
       if (state.step < 3) { state.step += 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step); return; }
-      // submit
+      // Submit the completed request.
       const b = core.building(state.buildingId);
       state.created = engine.start('raumbedarf', {
         title: `Raumbedarf ${state.persons} AP — ${b ? b.name : ''}`.trim(),
         organization: state.org,
         requester: session.user().name,
-        data: { costCenter: state.costCenter, persons: state.persons, naw: state.nawClass, area: area(), termin: state.termin, begruendung: state.begruendung },
+        data: { costCenter: state.costCenter, persons: state.persons, naw: state.nawClass, area: area(), 'termin': state.requestedDate, 'begruendung': state.justification },
         linkedEntities: state.buildingId ? { buildingId: state.buildingId } : {},
       });
       draw();
@@ -201,13 +184,11 @@ export default async function render(ctx) {
     });
     const back = mount.querySelector('[data-back]');
     if (back) back.addEventListener('click', () => { readStep(); state.step -= 1; draw(); C.focusWizardStep(mount, STEP_LABELS, state.step); });
-    // `#persons` wird hier gebunden, weil der Wert die Flächenschätzung in Schritt 2
-    // speist (der frühere Kommentar behauptete das Gegenteil direkt über dem Code).
+    // Bind #persons here because it drives the step-two area estimate.
     const personsEl = mount.querySelector('#persons');
-    // Rohwert halten (siehe readStep) — die Prüfung meldet Ungültiges, statt es
-    // stillschweigend zu korrigieren.
+    // Keep the raw value so validation reports invalid input instead of correcting it.
     if (personsEl) personsEl.addEventListener('input', () => { state.persons = personsEl.value; });
-    // Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert (Item 3.6).
+    // Remove a field error immediately after the user corrects its value.
     C.wireFieldErrors(mount, state.errors);
   }
 

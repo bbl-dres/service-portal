@@ -7,22 +7,21 @@
 /* message/hint pills hug their text rather than stretching in the column */
 .form__group__input > .badge, .form__group__select > .badge {
   align-self:flex-start; text-align:left; }
-/* .form__group__radio/__checkbox (form.postcss:19-22) exzidiert — beide ohne
-   Konsument seit Einführung (Design-Review C10). */
+/* .form__group__radio/__checkbox (form.postcss:19-22) were excised; both have
+   had no consumer since introduction (Design Review C10). */
 .form__group__input > label, .form__group__select > label {
   display:block; font-weight:var(--fw-regular); font-size:var(--text-base); color:var(--color-text); }
-/* Die Legende teilt Darstellung und Farbe mit den Feldbeschriftungen, aber weder
-   Gewicht noch Grösse: sie ist die Überschrift der Gruppe und steht weiter unten
-   auf --text-lg/--fw-bold. Vorher standen hier (und eine Zeile höher) zwei
-   font-weight-Angaben, die beide nie gewinnen konnten. */
+/* The legend shares presentation and color with field labels, but neither
+   weight nor size: it is the group heading and uses --text-lg/--fw-bold below.
+   Previously two font-weight declarations lived here (and one line above),
+   neither of which could ever win. */
 .form__group__legend { display:block; color:var(--color-text); }
 
-/* ---- Formular-Ebene für Stage 3 (Items 3.5, 3.12, 3.13, 3.14) -------------- */
-/* (a) Aktionsreihe. `.row` bricht in DOM-Reihenfolge um, also landet «Abbrechen»
-   bei 390px ÜBER «Absenden». `column-reverse` hält die Primäraktion im DOM
-   zuletzt (Tab-Reihenfolge Feld→…→Absenden) und zeigt sie auf Mobile ZUERST und
-   vollbreit — wie CDs eigene Formularaktion (newsletter.postcss:35-39,
-   btn.postcss:193-195). */
+/* ---- Form layer for Stage 3 (Items 3.5, 3.12, 3.13, 3.14) ------------------- */
+/* (a) Action row. `.row` wraps in DOM order, so at 390px the cancel action
+   landed ABOVE submit. `column-reverse` keeps the primary action last in the DOM
+   (tab order field→…→submit) while showing it FIRST and full-width on mobile,
+   like CD's own form action (newsletter.postcss:35-39, btn.postcss:193-195). */
 .form__actions { display:flex; flex-direction:column-reverse; gap:var(--sp-3); margin-top:var(--sp-6); }
 .form__actions .btn { width:100%; justify-content:center; }
 .form__actions .btn .btn__text { text-align:center; }
@@ -31,40 +30,38 @@
   .form__actions .btn { width:auto; }
   .form__actions--between { justify-content:space-between; }
 }
-/* (b) Fehlerübersicht. `.notification a` (unten) liefert currentColor +
-   Unterstreichung, also trägt das unter beiden Skins. */
-/* Die Übersicht steht unmittelbar über dem Formular. `.notification` bringt
-   selbst keinen Aussenabstand mit, also klebte sie am ersten Feldnamen — die
-   Meldung las sich wie dessen Beschriftung. Der Abstand gehört an die
-   Fehlerübersicht, nicht an jede Benachrichtigung. */
+/* (b) Error summary. `.notification a` below supplies currentColor + underline,
+   so it works in both skins. */
+/* The summary sits directly above the form. `.notification` has no outer margin,
+   so it touched the first field name and read like that field's label. Spacing
+   belongs on the error summary, not every notification. */
 .error-summary { margin-bottom:var(--sp-8); }
 .error-summary__title { font-size:var(--text-lg); font-weight:var(--fw-bold); margin:0 0 var(--sp-2); }
 .error-summary__list  { margin:0; padding-left:var(--sp-5); }
-/* (c) Feldhinweis ≠ Validierungsmeldung. CDs Input.vue:24-30 nutzt die Badge NUR
-   für `message`; ein Hinweis ist Prosa und steht VOR dem Control. */
-/* margin:0 — den 0.5rem-Rhythmus liefert bereits der flex-gap der Feldgruppe
-   (CD form.postcss:12-15 space-y-2); ein Eigenrand käme oben drauf. */
+/* (c) Field hint ≠ validation message. CD's Input.vue:24-30 uses the badge ONLY
+   for `message`; a hint is prose and comes BEFORE the control. */
+/* margin:0: the field group's flex gap already supplies the 0.5rem rhythm
+   (CD form.postcss:12-15 space-y-2); an independent margin would accumulate. */
 .form__group__hint { margin:0; font-size:var(--text-sm); color:var(--color-text-muted); }
-/* (d) Meldungsgrösse. `.badge--sm` startet bei 10px (CD badge.postcss:76) — das
-   ist die kleinste Schrift der App und trägt die folgenreichste Microcopy. Nur
-   dort anheben, wo die Badge Prosa ist; die globale Badge-Skala und die
-   dekorativen Zählmarken (Katalog-Formatchips, .api-rail__n) bleiben unberührt.
-   Auf der FESTEN Stufe (--fs-sm): CDs badge--sm endet bei lg:text-sm — die
-   responsive Rampe liefe bei 1920 auf 1.125rem hinaus. */
+/* (d) Message size. `.badge--sm` starts at 10px (CD badge.postcss:76), the
+   application's smallest type carrying its most consequential microcopy. Raise
+   it only where a badge is prose; the global badge scale and decorative counts
+   (catalogue format chips, .api-rail__n) remain untouched. Use the FIXED step
+   (--fs-sm): CD's badge--sm ends at lg:text-sm, while the responsive ramp would
+   reach 1.125rem at 1920. */
 .form__group__input > .badge--sm,
 .form__group__select > .badge--sm { font-size:var(--fs-sm); line-height:1.35rem; padding:.219em .75em; }
-/* (e) Fieldset-Gruppierung (Item 3.14) — vollständig gestaltet, bisher ohne
-   Konsumenten. */
+/* (e) Fieldset grouping (Item 3.14): fully styled, currently without consumers. */
 .form > .form__group > * + * { margin-top:var(--sp-6); }
 .form__group__legend { font-size:var(--text-lg); font-weight:var(--fw-bold); }
-/* Luft zwischen Feldgruppen: die Legende einer Folgegruppe («Weitere
-   Stammdaten») klebte sonst am letzten Feld der Gruppe darüber. */
+/* Space between field groups: a following group's legend otherwise touched the
+   preceding group's last field. */
 .form__group + .form__group { margin-top:var(--sp-10); }
 
-/* Eingabefelder auf der FELD-Rampe (--input-h, 44 → 48 erst bei 2xl/1544 und
-   Schluss — CD input.postcss:1-4,16); die Knopf-Rampe --control-h (44/48/52 bei
-   xl/3xl) gilt nur für knopfartige Bedienelemente. Die frühere Vereinheitlichung
-   (Item 2.5e) machte Felder auf 1280-1543-px-Laptops 4 px höher als das CD. */
+/* Inputs use the FIELD ramp (--input-h, 44 → 48 only at 2xl/1544, then stop;
+   CD input.postcss:1-4,16). The button ramp --control-h (44/48/52 at xl/3xl)
+   applies only to button-like controls. The former unification (Item 2.5e)
+   made fields 4px taller than CD on 1280-1543px laptops. */
 input, select, textarea { box-sizing:border-box; font:inherit; width:100%; max-width:100%; min-height:var(--input-h); padding:var(--sp-2-5) var(--sp-4); line-height:1;
   border:var(--stroke-1) solid var(--color-border-input); border-radius:var(--radius-xs); background:var(--color-bg);
   color:var(--color-text); box-shadow:var(--shadow); }
@@ -73,39 +70,38 @@ textarea { min-height:var(--sp-24); resize:vertical; line-height:var(--line-6); 
 input:focus, select:focus, textarea:focus { outline:none; }
 input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
-/* Nur-Lese-Felder tragen einen ABGELEITETEN Wert (z. B. die Objektbezeichnung
-   aus der Adresse). Sie sehen anders aus als deaktivierte Felder — der Wert ist
-   gültig und wird gespeichert, er lässt sich hier bloss nicht ändern —, bleiben
-   aber fokussierbar und damit für Hilfsmittel lesbar. */
+/* Read-only fields carry a DERIVED value (e.g. an object name from its address).
+   They look different from disabled fields: the value is valid and saved but
+   cannot be changed here. They remain focusable and readable by assistive technology. */
 input[readonly], textarea[readonly] {
   background:var(--color-secondary-50); color:var(--color-text);
   border-style:dashed; cursor:default; }
 input[type='search']::-webkit-search-decoration { display:none; }
-/* Native Löschen-Schaltfläche (X) sichtbar lassen, im CD-Stil (Cancel-Icon) —
-   erscheint, sobald Text eingegeben ist, und leert das Feld. BEWUSSTE ABWEICHUNG
-   von CD input.postcss:165-171 (dort unterdrückt); Kollisionen mit dem
-   aufgelegten Suchknopf verhindert das reservierte padding-right der Felder.
-   WebKit-only: Firefox kennt das Pseudo-Element nicht und zeigt kein X —
-   akzeptiert; wo Löschen zum Ablauf gehört, steht ein echter, browserneutraler
-   Knopf (.map-search__clear). */
+/* Keep the native clear control (X) visible in CD style (cancel icon). It
+   appears once text is entered and clears the field. DELIBERATE DEVIATION from
+   CD input.postcss:165-171, where it is suppressed; reserved field padding-right
+   prevents collision with the overlaid search button. WebKit only: Firefox
+   does not implement this pseudo-element and shows no X, which is accepted.
+   Where clearing is part of the flow, a real cross-browser button is present
+   (.map-search__clear). */
 input[type='search']::-webkit-search-cancel-button {
   -webkit-appearance:none; appearance:none; width:var(--sp-4); height:var(--sp-4); margin-left:var(--sp-2); cursor:pointer;
   background-color:var(--color-text-muted);
   -webkit-mask:url('../../assets/icons/Cancel.svg') center/contain no-repeat;
   mask:url('../../assets/icons/Cancel.svg') center/contain no-repeat; }
 input[type='search']::-webkit-search-cancel-button:hover { background-color:var(--color-primary-600); }
-/* CD-Leadings (input.postcss:21-31): sm/base leading-6, lg leading-7. Textareas
-   tragen die 1.5rem schon über die Basisregel; einzeilige sm/base-Felder wachsen
-   damit auf 46px (24+20+2) — exakt wie CDs eigenes input--base. */
+/* CD line heights (input.postcss:21-31): sm/base leading-6, lg leading-7.
+   Textareas already carry 1.5rem through the base rule; single-line sm/base
+   fields therefore grow to 46px (24+20+2), exactly like CD's own input--base. */
 .input--sm { font-size:var(--text-sm); line-height:var(--line-6); } .input--base { font-size:var(--text-base); line-height:var(--line-6); } .input--lg { font-size:var(--text-lg); line-height:var(--line-7); }
 .input--outline { border-color:var(--color-border-input); color:var(--color-text); }
 .input--negative { color:var(--color-text-negative); background:var(--color-secondary-500); border-color:var(--color-secondary-300); }
 .input--negative::placeholder { color:var(--color-secondary-50); }
 .input--negative option { background:var(--color-secondary-600); color:var(--color-text-negative); }
-/* CD-Zustandsregeln (input.postcss:55-76): Fehler-Label (Checkbox/Radio-Muster,
-   Beschriftung FOLGT dem Feld), Negativ-Hover/-Disabled, Fehler auf Negativ-
-   flächen. Fehlerrot über die dedizierten --color-error-*-Töne, damit es unter
-   .body--intranet rot bleibt. */
+/* CD state rules (input.postcss:55-76): error label (checkbox/radio pattern,
+   label FOLLOWS field), negative hover/disabled, errors on negative surfaces.
+   Error red uses dedicated --color-error-* tones so it stays red under
+   .body--intranet. */
 /* Interactive state contract. Empty is opt-in because an ordinary blank field
    is the default form state; data-empty denotes an empty data-backed control,
    not a validation failure. Error and disabled rules follow hover/active so
@@ -151,10 +147,10 @@ select:where(.input--error,[aria-invalid="true"]) + .select__icon { color:var(--
 .input--negative + .select__icon { color:var(--color-text-negative); border-left-color:var(--color-secondary-300); background:var(--color-secondary-500); }
 .input--negative:where(.input--error,[aria-invalid="true"]) + .select__icon { color:var(--color-error-200); border-left-color:var(--color-error-300); }   /* CD select.postcss:66-72 */
 .select--bare { width:auto; max-width:100%; display:inline-block; }
-/* Der bare Select steht in Werkzeugleisten NEBEN anderen Bedienelementen, nicht
-   als eigene Formularzeile — der Zeilenabstand von `.form > .form__group > * + *`
-   (0,2,0) darf ihn nicht treffen. Dafür stand hier ein `!important`; eine
-   Selektorstufe mehr reicht und lässt sich weiterhin überschreiben. */
+/* The bare select sits BESIDE other controls in toolbars, not on its own form
+   row. Row spacing from `.form > .form__group > * + *` (0,2,0) must not reach
+   it. This used an `!important`; one more selector level is sufficient and
+   remains overridable. */
 .form .select--bare { margin-top:0; }
 .select--bare select { display:inline-block; width:auto; padding-right:var(--sp-6);
   box-shadow:none; border-color:transparent; background-color:transparent; }
@@ -173,7 +169,7 @@ input[type='checkbox']:checked, input[type='radio']:checked {
 input[type='radio']:checked { background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='6' cy='6' r='3' fill='white'/%3E%3C/svg%3E"); }
 input[type='checkbox']:checked { background-image:url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 10 7' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9.2.29A1 1 0 0 1 9.2 1.7l-5 5a1 1 0 0 1-1.42 0l-2-2A1 1 0 0 1 2.2 3.29L3.5 4.59 7.79.29a1 1 0 0 1 1.41 0Z' fill='white'/%3E%3C/svg%3E"); }
 input:is([type='checkbox'],[type='radio']):is(:disabled,[aria-disabled="true"],.input--disabled) { opacity:.4; }
-/* CD-Grössenvarianten (input.postcss:95-108): sm h-3, lg h-4; Basis .9rem oben. */
+/* CD size variants (input.postcss:95-108): sm h-3, lg h-4; base .9rem above. */
 input[type='checkbox'].input--sm, input[type='radio'].input--sm { width:var(--sp-3); height:var(--sp-3); }
 input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:var(--sp-4); height:var(--sp-4); }
 input:is([type='checkbox'],[type='radio']):not(:where(:disabled,[aria-disabled="true"],.input--disabled,.input--loading,[aria-busy="true"],.input--error,[aria-invalid="true"])):where(:hover,:active) {
@@ -190,14 +186,13 @@ input:is([type='checkbox'],[type='radio']):is(:disabled,[aria-disabled="true"],.
   background-color:var(--color-gray-50); border-color:var(--color-border-strong); }
 input:is([type='checkbox'],[type='radio']):checked:is(:disabled,[aria-disabled="true"],.input--disabled) {
   background-color:var(--color-gray-700); }
-/* Ankreuzfelder im hohen Kontrast — muss DIREKT hinter der Basisregel stehen.
-   `appearance:none` oben und `appearance:auto` hier haben dieselbe Spezifität;
-   die spätere Regel gewinnt. Stand die Korrektur wie früher 1000 Zeilen weiter
-   oben im allgemeinen forced-colors-Block, griff sie nie.
-   Warum überhaupt: forced-colors erzwingt die Fläche auf Canvas, behält aber
-   das SVG-Häkchen in Weiss — auf hellen Themes wurde daraus ein weisses Häkchen
-   auf weissem Grund, der Zustand also unsichtbar. Native Steuerung zeichnen
-   lassen, die Systemfarben tragen den Zustand (Item 2.6). */
+/* Checkboxes in high contrast: must sit DIRECTLY after the base rule.
+   `appearance:none` above and `appearance:auto` here have equal specificity,
+   so the later rule wins. When the correction lived 1,000 lines earlier in the
+   general forced-colors block, it never applied.
+   Why needed: forced-colors makes the surface Canvas but preserves the white
+   SVG checkmark. On light themes this became a white check on white, hiding the
+   state. Let the native control draw; system colors convey state (Item 2.6). */
 @media (forced-colors: active) {
   input[type='checkbox'], input[type='radio'] {
     -webkit-appearance:auto; appearance:auto; background-image:none; box-shadow:none; }

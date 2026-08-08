@@ -1,26 +1,26 @@
 /* ============================== LAYOUT ============================== */
-/* Container-Seitenabstand: eigene Rampe (--container-px), die ab xs mit der
-   Spalten-Rampe zusammenfällt — nur die Basisstufe ist CD-gemäss 1rem statt
-   1.25rem (container.postcss:7 px-4 vs grids.postcss:10 gap-5). */
+/* Container side padding: its own ramp (--container-px), which converges with
+   the column ramp from xs upward; only the base step follows CD at 1rem instead
+   of 1.25rem (container.postcss:7 px-4 vs grids.postcss:10 gap-5). */
 .container { width:100%; max-width:var(--container-max); margin:0 auto;
   padding:0 var(--container-px); overflow-x:clip; }
-/* CD-neutral (container.postcss:23-25: nur flex + justify-between) — Ausrichtung
-   und Lücke setzen die Shell-Kontexte selbst (Top-Bar, Kopfzeile, Brotkrume);
-   der frühere align-items:stretch-Gegenschlag im .desktop-menu entfällt damit. */
+/* CD-neutral (container.postcss:23-25: flex + justify-between only). Shell
+   contexts set alignment and gap themselves (top bar, header, breadcrumb), so
+   the former align-items:stretch countermeasure in .desktop-menu disappears. */
 .container--flex { display:flex; justify-content:space-between; }
 
 /* CD 12-column container grid (container.postcss:53-146) */
 .container--grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); }
 .container__full, .container__center--xs, .container__center--sm, .container__center--md,
 .container__main, .container__aside { grid-column:span 12; }
-/* DAS Lesemass des Portals sitzt an der SPALTE, nie an Textklassen
-   (Nutzerentscheid 2026-08-04, Design-Review C25): .container__main misst
-   60rem — dieselbe Breite wie .hero__content darüber, sodass Kopf und Spalte
-   auf Detailseiten bündig enden. Unterhalb ~1300px Viewport ist die
-   Rasterspalte ohnehin schmaler, der Deckel greift nur auf breiten Schirmen.
-   Kinder (Kästen, Listen, Prosa) füllen die gemessene Spalte — die früheren
-   70ch-Einzeldeckel an p/ul sind entfallen. Datentabellen und Registerpanels
-   stehen NICHT in container__main und laufen bewusst vollbreit. */
+/* THE portal reading measure belongs to the COLUMN, never to text classes
+   (user decision 2026-08-04, Design Review C25): .container__main measures
+   60rem, the same width as .hero__content above it, so header and column end
+   flush on detail pages. Below a ~1300px viewport the grid column is narrower
+   anyway; the cap applies only on wide screens. Children (boxes, lists, prose)
+   fill the measured column; the former individual 70ch caps on p/ul are gone.
+   Data tables and tab panels are NOT in container__main and intentionally run
+   full width. */
 .container__main { max-width:60rem; }
 @media (min-width:768px){
   .container__center--xs, .container__center--sm { grid-column:2 / span 10; }
@@ -29,22 +29,20 @@
 }
 @media (min-width:1024px){
   .container__center--xs { grid-column:3 / span 8; }
-  /* BEWUSSTE ABWEICHUNG VOM CD: dort ist es `lg:col-span-6 lg:col-start-2`
-     (container.postcss:94-98), die Hauptspalte beginnt also erst in Spalte 2.
-     Im CD sind das Artikelseiten, bei denen der eingerückte Fliesstext unter
-     einem Hero eine gewollte optische Marge bildet.
-     Unsere Detailseiten sind Anwendungsseiten: darüber stehen Seitenkopf,
-     Reiterleiste und Katalogleiste, die alle in Spalte 1 beginnen. Die
-     Einrückung las sich dort nicht als Marge, sondern als Fehlausrichtung —
-     der Inhalt wirkte gegenüber allem darüber verschoben. Die Hauptspalte
-     beginnt deshalb links bündig und nimmt die frei gewordene Spalte mit.
-     ZWEITE ABWEICHUNG: sie nimmt auch die achte Spalte. Beim CD trennt eine
-     ganze leere Rasterspalte Haupt- und Seitenspalte (main 2-7, aside 9-12);
-     nachdem die Hauptspalte links bündig beginnt, blieb daraus eine tote Zone
-     von rund 150px in der Mitte — Tabellen brachen dort um oder liefen rechts
-     aus dem Bild, während daneben Platz frei stand. Jetzt grenzen die Spalten
-     aneinander, und der Abstand ist derselbe wie zwischen allen Rasterspalten
-     (die `gap--responsive` der Call-Sites). */
+  /* DELIBERATE DEVIATION FROM CD: CD uses `lg:col-span-6 lg:col-start-2`
+     (container.postcss:94-98), so the main column starts in column 2. Those are
+     article pages in CD, where indented body copy below a hero forms an
+     intentional optical margin.
+     Our detail pages are application pages: page header, tab bar and catalogue
+     bar above all start in column 1. The indentation read as misalignment, not
+     as a margin; content looked shifted from everything above. The main column
+     therefore starts flush left and takes the released column with it.
+     SECOND DEVIATION: it also takes the eighth column. In CD, one entire empty
+     grid column separates main and aside (main 2-7, aside 9-12). Once main
+     started flush left, this left a dead zone around 150px wide in the center;
+     tables wrapped there or ran off the right while space stood unused beside
+     them. The columns now meet, with the same gap as every other grid column
+     (the call sites' `gap--responsive`). */
   .container__main  { grid-column:1 / span 8; }
   .container__aside { grid-column:9 / span 4; }
 }
@@ -56,11 +54,11 @@
 .container__aside > * { margin-bottom:var(--sp-7); }
 @media (min-width:1024px){ .container__aside > * { margin-bottom:var(--sp-8); } }
 
-/* Die `container__center--*`-Klassen sind reine `grid-column`-Regeln und tun
-   ausserhalb von `.container--grid` GAR NICHTS — eine Auslassung, die im Code-
-   Review unsichtbar ist (gemessen: p.container__center--xs mit 148ch bei 1440).
-   Eine schlichte `max-width` als Fallback macht das Versäumnis unmöglich; im
-   Rasterkontext übernimmt wieder die Spaltenregel. Call-Sites: Item 7.2. */
+/* The `container__center--*` classes are pure `grid-column` rules and do
+   NOTHING outside `.container--grid`, an omission invisible in code review
+   (measured: p.container__center--xs at 148ch on 1440). A simple `max-width`
+   fallback makes the oversight impossible; in a grid, the column rule takes
+   over again. Call sites: Item 7.2. */
 .container__center--xs { max-width:46rem; }
 .container__center--sm { max-width:60rem; }
 .container__center--md { max-width:76rem; }
@@ -68,9 +66,9 @@
 .container--grid > .container__center--sm,
 .container--grid > .container__center--md { max-width:none; }
 
-/* CD container.postcss:100-101 / :135-141 (detailPageAnchorNav.vue:48) — auf
-   Mobile steht das Inhaltsverzeichnis VOR dem Inhalt, den es indexiert.
-   Adoption + eingeklapptes Mobil-TOC: Item 7.4. */
+/* CD container.postcss:100-101 / :135-141 (detailPageAnchorNav.vue:48): on
+   mobile, the table of contents comes BEFORE the content it indexes.
+   Adoption + collapsed mobile TOC: Item 7.4. */
 .container--reverse-mobile .container__main  { order:2; }
 .container--reverse-mobile .container__aside { order:1; }
 @media (min-width:768px){
@@ -78,85 +76,84 @@
   .container--reverse-mobile .container__aside { order:2; }
 }
 
-/* Abstands-Utilities (CD grids.postcss:9-19, :222-224, :56-58 und
-   container.postcss:29-49). `gap--responsive` war hier auf `.container--grid`
-   verengt UND hatte eine kürzere Rampe als das CD — obwohl `.grid` (unten)
-   dieselbe CD-Rampe korrekt führt. Jetzt eine Quelle für beide. */
+/* Spacing utilities (CD grids.postcss:9-19, :222-224, :56-58 and
+   container.postcss:29-49). `gap--responsive` was narrowed here to
+   `.container--grid` AND used a shorter ramp than CD, even though `.grid`
+   below carries the same CD ramp correctly. Both now use one source. */
 .gap--responsive { gap:var(--gap-responsive); }
 .gap--top    { padding-top:var(--gap-responsive); }
 .gap--bottom { padding-bottom:var(--gap-responsive); }
 .grid + .grid { margin-top:var(--gap-responsive); }
-.container--grid + .container--grid { padding-top:var(--gap-responsive); }   /* CD container.postcss:56-58 `& + &` = gap--top-Rampe, kein Literal */
+.container--grid + .container--grid { padding-top:var(--gap-responsive); }   /* CD container.postcss:56-58 `& + &` = gap--top ramp, not a literal */
 
 .container--py      { padding-block:var(--section-py); }
 .container--pt      { padding-block:var(--section-py) 0; }
 .container--pb      { padding-block:0 var(--section-py); }
 .container--py-half { padding-block:var(--section-py-half); }
-/* Klebende Ankernavigation (sticky.postcss: top-4 md:top-10 lg:top-12). */
+/* Sticky anchor navigation (sticky.postcss: top-4 md:top-10 lg:top-12). */
 .sticky--top { position:sticky; top:var(--sp-4); }
 @media (min-width:768px){ .sticky--top { top:var(--sp-10); } }
 @media (min-width:1024px){ .sticky--top { top:var(--sp-12); } }
-/* Inhaltsverzeichnis rechts: erst ab lg neben dem Inhalt, darunter normal. */
+/* Table of contents on the right: beside content from lg upward, normal below. */
 .anchor-nav .card__title { font-size:var(--text-lg); }
 .anchor-nav .menu { margin-top:var(--sp-2); }
-/* Abschnittstitel im Inhaltsverzeichnis sind lange deutsche Komposita
-   («Informationssicherheitsgesetz»). Bei 200% Textzoom lief die Zeile aus der
-   Karte und wurde von deren `overflow:hidden` abgeschnitten (WCAG 1.4.4). */
+/* Table-of-contents section titles include long German compound UI terms. At
+   200% text zoom, the line escaped the card and was clipped by its
+   `overflow:hidden` (WCAG 1.4.4). */
 .anchor-nav .menu__item { overflow-wrap:anywhere; }
-/* Ankernavigations-Seite (CD detailPageAnchorNav): der Kopf spannt die volle
-   Rasterbreite. Die frühere lg-Einrückung (Spalte 2/12) zielte auf CDs
-   col-start-2-Hauptspalte — die dieses Blatt oben BEWUSST auf Spalte 1 legt;
-   der Kopf muss dieselbe Bündigkeit teilen, sonst steht er versetzt. */
+/* Anchor-navigation page (CD detailPageAnchorNav): the header spans the full
+   grid width. The former lg indentation (column 2/12) targeted CD's
+   col-start-2 main column, which this sheet DELIBERATELY places in column 1;
+   the header must share that alignment or it appears offset. */
 .anchor-page__header { grid-column:1 / -1; }
-/* Inhaltsverzeichnis als Ausklapper — nur unter 768px. Die <summary> trägt die
-   Überschrift (HTML erlaubt darin genau ein Überschriftenelement), sodass die
-   Gliederung auf jeder Breite dieselbe bleibt. */
+/* Table of contents as disclosure, only below 768px. The <summary> carries the
+   heading (HTML permits exactly one heading element there), so the document
+   outline stays the same at every width. */
 .anchor-nav__summary { display:flex; align-items:center; justify-content:space-between;
   gap:var(--sp-2); cursor:pointer; list-style:none; min-height:var(--target-min); }
 .anchor-nav__summary::-webkit-details-marker { display:none; }
 .anchor-nav__chev { flex:none; color:var(--color-text-muted); transition:transform var(--duration-slow) var(--ease-in-out); }
 .anchor-nav__disclosure[open] .anchor-nav__chev { transform:rotate(180deg); }
 @media (min-width:768px){
-  /* Ab hier ist es kein Ausklapper mehr: Auslöser weg, Inhalt dauerhaft offen.
-     Das `open`-Attribut setzt JS (wireAnchorNav) — per CSS geht es NICHT:
-     moderne Browser klappen <details> über `::details-content { content-
-     visibility:hidden }` ein, eine `display`-Regel auf dem Kind greift dort
-     nicht (gemessen: Verzeichnis blieb bei 1440px auf 103px zugeklappt). */
+  /* From here it is no longer a disclosure: the trigger disappears and content
+     stays open. JS sets the `open` attribute (wireAnchorNav); CSS CANNOT do it:
+     modern browsers collapse <details> through `::details-content { content-
+     visibility:hidden }`, so a `display` rule on the child does not apply
+     (measured: the directory stayed collapsed to 103px at 1440px). */
   .anchor-nav__summary { display:block; cursor:auto; min-height:0; }
   .anchor-nav__chev { display:none; }
 }
-/* Saubere Themenabschnitte (bk.admin.ch/de/vorgaben): Überschrift + sichtbare
-   Liste; der Abstand zwischen Abschnitten kommt von .vertical-spacing. */
+/* Clear topic sections (bk.admin.ch guidance): heading + visible list; spacing
+   between sections comes from .vertical-spacing. */
 .anchor-section__title { margin-bottom:var(--sp-4); }
 
 /* Section rhythm (section.postcss:5-51) — bare .section has no padding */
 .section { width:100%; }
 
-/* Seitenwurzel: jede Seite rendert <div class="container section">. Im CD ist
-   ein blankes .section absichtlich abstandslos — den Abstand liefert dort der
-   Hero bzw. ein .section--default. Weil hier Container und Section dasselbe
-   Element sind, bekommt diese Kombination die Werte direkt.
-   Oben schmaler als unten, wie im CD selbst:
-     oben  = .hero            → pt-12 lg:pt-14 3xl:pt-20   (3 / 3.5 / 5rem)
-     unten = .container--pb   → pb-14 lg:pb-20 3xl:pb-32   (3.5 / 5 / 8rem)
-   Der Breadcrumb erzeugt bewusst keinen Abstand
+/* Page root: every page renders <div class="container section">. In CD, a bare
+   .section intentionally has no spacing; a hero or .section--default supplies
+   it. Because container and section are the same element here, this combination
+   receives the values directly. Tighter above than below, as in CD itself:
+     top    = .hero            → pt-12 lg:pt-14 3xl:pt-20   (3 / 3.5 / 5rem)
+     bottom = .container--pb   → pb-14 lg:pb-20 3xl:pb-32   (3.5 / 5 / 8rem)
+   The breadcrumb deliberately creates no spacing
    (container.postcss:20 `.container:not(.breadcrumb) + .container`). */
 .container.section { padding-top:var(--section-pt); padding-bottom:var(--section-py); }
-/* Am Seitenanfang — auch direkt unter dem Zurück-Button — braucht der Hero
-   keinen eigenen oberen Abstand mehr; den liefert bereits die Seitenwurzel. */
+/* At the page start, including directly below the back button, the hero no
+   longer needs its own top spacing; the page root already supplies it. */
 .container.section > .hero:first-child,
 .container.section > .back-link-row:first-child + .hero { padding-top:0; }
 
 .section--default, .section--py, .section[class*="bg--"] { padding-block:var(--section-py); }
 .section--py-half { padding-block:var(--section-py-half); }
-/* Aufeinanderfolgende Abschnitte GLEICHER Hintergrundfarbe: oberen Abstand des
-   zweiten entfernen (section.postcss:31-49, dortige Absicht laut Kommentar:
-   «same background»). Bei Farbwechsel behält der zweite Abschnitt seinen
-   Abstand, sonst klebt der Inhalt eines farbigen Bandes an dessen Oberkante.
-   `section--default` ohne bg-- ist weiss; mit bg-- zählt die bg-Farbe.
-   Volle CD-Paarliste (section.postcss:31-51): auch die --py/--py-half-
-   Permutationen und die Selbstpaare 200-900 — mit demselben Farbwechsel-Guard,
-   damit künftige farbige Bänder ohne Nachpflege korrekt kollabieren. */
+/* Consecutive sections with the SAME background color: remove the second one's
+   top spacing (section.postcss:31-49, whose comment says "same background").
+   On a color change, the second section keeps its spacing; otherwise content
+   in a colored band sticks to its top edge. `section--default` without bg-- is
+   white; with bg--, the background color counts. Full CD pair list
+   (section.postcss:31-51), including --py/--py-half permutations and self-pairs
+   200-900, with the same color-change guard so future colored bands collapse
+   correctly without maintenance. */
 .section--default:not([class*="bg--"]) + .section--default:not([class*="bg--"]),
 .section--default:not([class*="bg--"]) + .section--py:not([class*="bg--"]),
 .section--py:not([class*="bg--"]) + .section--default:not([class*="bg--"]),
@@ -179,16 +176,16 @@
 .hero + .section--py:not([class*="bg--"]),
 .hero + .bg--white { padding-top:0; }
 
-/* Der fixe Streifen erhält im Dokumentfluss exakt seine gemessene Höhe. Damit
-   lassen sich Footer, Kartenunterkanten und Viewer vollständig darüber scrollen. */
+/* The fixed strip retains exactly its measured height in document flow. This
+   lets the footer, card bottoms and viewer scroll fully above it. */
 body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
 .body--banner-visible .back-to-top-btn { bottom:calc(var(--sp-6) + var(--banner-offset, 0px)); }
-/* CD schreibt `.notification-banner__wrapper { @apply container }`
-   (notification-banner.postcss:20) — der Streifen richtet seinen Inhalt also an
-   derselben Kante aus wie jeder andere Seiteninhalt. Hier stand stattdessen ein
-   festes `padding:0 1rem`: auf breiten Fenstern klebte der Text am Fensterrand,
-   während oben und unten 2.5rem Luft standen, und er stimmte nicht mit der
-   Textkante der Seite überein. Jetzt dieselbe Rampe wie .container. */
+/* CD declares `.notification-banner__wrapper { @apply container }`
+   (notification-banner.postcss:20), so the strip aligns its content to the same
+   edge as every other page element. This used fixed `padding:0 1rem` instead:
+   on wide windows text hugged the window edge while 2.5rem of space stood above
+   and below, and it did not align with the page text edge. It now uses the same
+   ramp as .container. */
 .notification-banner__wrapper { width:100%; max-width:var(--container-max); margin:0 auto;
   padding:0 var(--container-px);
   display:flex; flex-direction:column; align-items:flex-start; }
@@ -197,11 +194,11 @@ body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
     justify-content:space-between; }
 }
 .notification-banner__infos { margin:0; overflow-wrap:break-word; }
-/* CD notification-banner.postcss:24-27: den Abstand trägt der KNOPF (mt-4
-   sm:mt-8 lg:mt-0 lg:ml-6), kein Wrapper-gap — beides zusammen addierte sich.
-   Kein nowrap auf .btn__text: CDs Knopftext darf überall umbrechen
-   (btn.postcss:133-137), die Spalten-/Zeilenanatomie hält den Knopf ohnehin
-   auf seiner eigenen Zeile bzw. rechts. */
+/* CD notification-banner.postcss:24-27: the BUTTON carries spacing (mt-4
+   sm:mt-8 lg:mt-0 lg:ml-6), not a wrapper gap; both together accumulated.
+   No nowrap on .btn__text: CD button text may wrap anywhere
+   (btn.postcss:133-137), while the column/row anatomy already keeps the button
+   on its own line or on the right. */
 .notification-banner .btn { flex:none; margin-top:var(--sp-4); }
 @media (min-width:640px){ .notification-banner .btn { margin-top:var(--sp-8); } }
 @media (min-width:1024px){ .notification-banner .btn { margin-top:0; margin-left:var(--sp-6); } }
@@ -212,10 +209,10 @@ body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
 .bg--secondary-100{ background:var(--color-secondary-100); }
 .bg--secondary-200{ background:var(--color-secondary-200); }
 .bg--secondary-300{ background:var(--color-secondary-300); }
-/* BEWUSSTE ABWEICHUNG (Review 2026-07, layout/bg-1): CDs Negativ-Schwelle beginnt
-   erst bei 500 (section.postcss:58-70), auf 400 hält CD dunkle Tinte — gemessen
-   scheitert die aber an AA: text-800 auf #596978 = 2.6:1, auf Intranet-#5076b3
-   = 3.2:1. Weiss misst 5.65:1 (Default) bzw. 4.58:1 (Intranet) — negativ ab 400. */
+/* DELIBERATE DEVIATION (Review 2026-07, layout/bg-1): CD's negative threshold
+   begins at 500 (section.postcss:58-70); CD keeps dark ink on 400, but measured
+   contrast fails AA: text-800 on #596978 = 2.6:1, on intranet #5076b3 = 3.2:1.
+   White measures 5.65:1 (default) and 4.58:1 (intranet), so negative begins at 400. */
 .bg--secondary-400{ background:var(--color-secondary-400); color:var(--color-text-negative); }
 .bg--secondary-500{ background:var(--color-secondary-500); color:var(--color-text-negative); }
 .bg--secondary-600{ background:var(--color-secondary-600); color:var(--color-text-negative); }
@@ -225,24 +222,23 @@ body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }
 
 .vertical-spacing > * { margin-top:var(--stack-gap); }
 .vertical-spacing > *:first-child { margin-top:0; }
-/* 3.5rem-Stufe ab 1544px kommt aus --stack-gap (tokens.css) */
-/* CD spacings.postcss:17-41 — die INTRA-Block-Regeln fehlten. Ohne sie stehen
-   3rem zwischen einer <h2> und ihrem eigenen ersten Absatz, weshalb die Klasse
-   bisher nur dort einsetzbar war, wo alle Kinder <section>-Wrapper sind
-   (js/pages/grundlagen.js:120). Adoption: Item 7.5. */
+/* The 3.5rem step from 1544px comes from --stack-gap (tokens.css) */
+/* CD spacings.postcss:17-41: the INTRA-block rules were missing. Without them,
+   3rem separates an <h2> from its own first paragraph, so the class previously
+   worked only where every child is a <section> wrapper. Adoption: Item 7.5. */
 .vertical-spacing > :is(h1,h2,h3,h4,h5) { margin-bottom:0; }
 .vertical-spacing > :is(h1,h2,h3,h4,h5) + * { margin-top:1.5em; }
 .vertical-spacing > :is(h1,h2,h3,h4,h5) + p { margin-top:1em; }
 .vertical-spacing > p + p, .vertical-spacing > p + ul, .vertical-spacing > p + ol,
 .vertical-spacing > ul + p, .vertical-spacing > ol + p { margin-top:1em; }
 .stack > * + * { margin-top:var(--sp-4); }
-/* .muted ist BEWUSST dunkler als CDs .text--light (text-600 statt text-500):
-   text-500 fiele auf secondary-50-Flächen auf ~4.1:1 unter AA. .text--light
-   selbst steht oben bei den CD-Utilities auf dem CD-Wert. */
+/* .muted is DELIBERATELY darker than CD's .text--light (text-600 instead of
+   text-500): text-500 would fall below AA at ~4.1:1 on secondary-50 surfaces.
+   .text--light itself uses the CD value in the CD utilities above. */
 .muted { color:var(--color-text-muted); }
-/* Identifikatoren, Pfade, Schemanamen — EIN Mono-Rezept für jedes <code>.
-   Vorher war die Familie dreimal api-scoped gesetzt, und die <code> des
-   Metadatenkatalogs fielen auf die UA-Monoschrift zurück (Design-Review C13). */
+/* Identifiers, paths and schema names: ONE monospace recipe for every <code>.
+   Previously the family was API-scoped three times, while metadata-catalogue
+   <code> elements fell back to the user-agent monospace font (Design Review C13). */
 code { font-family:var(--font-mono); }
 .text-center { text-align:center; }
 .text-right { text-align:right; }

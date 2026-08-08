@@ -1,14 +1,13 @@
-// Design-Review-Screenshots: jede Route in drei Viewports (320/768/1440) als
-// Ganzseiten-PNG. Vorher-Stand nach docs/review-assets/before/, Nachher-Stand
-// nach docs/review-assets/after/ — der Vergleich der beiden Ordner ist die
-// Regressionsprüfung der Refactoring-Wellen (docs/design-review.md, Phase 0/5).
+// Design-review screenshots: render every route as a full-page PNG at
+// 320/768/1440. Comparing docs/review-assets/before and after is the visual
+// regression record for the refactoring waves.
 //
 //   APP_BASE=http://localhost:8848/# node scripts/review-screenshots.mjs <before|after>
 //   REVIEW_OUTPUT_DIR=<temp> node scripts/review-screenshots.mjs current
 //   REVIEW_SLUGS=app_floorplan-editor,app_floorplan-editor_edit …  # optional subset
 //
-// WebGL an, damit die MapLibre-Karten (Datenportal, Portfolio) rendern; vor der
-// Aufnahme wird einmal durchgescrollt, damit lazy geladene Bilder im Bild sind.
+// Enable WebGL for MapLibre maps and scroll once before capture so lazy images
+// have loaded.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -17,10 +16,10 @@ import { REVIEW_ROUTES, REVIEW_VIEWPORTS } from './review-routes.mjs';
 
 const MODE = process.argv[2];
 if (!['before', 'after', 'current'].includes(MODE)) {
-  throw new Error('Modus erforderlich: before, after oder current.');
+  throw new Error('Mode required: before, after or current.');
 }
 if (MODE === 'current' && !process.env.REVIEW_OUTPUT_DIR) {
-  throw new Error('Der Modus current verlangt REVIEW_OUTPUT_DIR, damit kein getracktes Baseline-Paar verändert wird.');
+  throw new Error('Mode current requires REVIEW_OUTPUT_DIR so tracked baselines remain unchanged.');
 }
 const REVIEW_ASSETS = process.env.REVIEW_OUTPUT_DIR
   ? resolve(process.env.REVIEW_OUTPUT_DIR)
@@ -28,14 +27,13 @@ const REVIEW_ASSETS = process.env.REVIEW_OUTPUT_DIR
 const OUT = join(REVIEW_ASSETS, MODE);
 const requestedSlugs = new Set(String(process.env.REVIEW_SLUGS || '').split(',').map(value => value.trim()).filter(Boolean));
 const routes = requestedSlugs.size ? REVIEW_ROUTES.filter(item => requestedSlugs.has(item.slug)) : REVIEW_ROUTES;
-if (!routes.length) throw new Error('REVIEW_SLUGS passt auf keine Review-Route.');
+if (!routes.length) throw new Error('REVIEW_SLUGS does not match a review route.');
 
 const cdp = await launch({ webgl: true });
 try {
   for (const w of REVIEW_VIEWPORTS) mkdirSync(join(OUT, String(w)), { recursive: true });
-  // Angemeldet: die Prüfmatrix läuft ALLE Zustände per Hash-Navigation ab,
-  // darunter die Fachanwendungen — die liegen seit 2026-08 hinter der
-  // Anmeldesperre (js/router.js) und zeigten sonst nur noch deren Band.
+  // Start signed in so the matrix exercises every micro-app rather than only
+  // the router's mock sign-in gate.
   const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
   await sleep(1500);
 
@@ -50,7 +48,7 @@ try {
         return true;
       })()`);
       await sleep(slow ? 3200 : 1100);
-      // Einmal ans Ende und zurück: lazy Bilder laden, sticky Zustände beruhigen.
+      // Scroll to the end and back to load images and settle sticky elements.
       await page.evaluate(`(async () => {
         await document.fonts.ready;
         const h = document.documentElement.scrollHeight;
@@ -70,4 +68,4 @@ try {
   }
   await page.closeTarget();
 } finally { cdp.close(); }
-console.log(`Fertig → ${OUT}`);
+console.log(`Finished → ${OUT}`);

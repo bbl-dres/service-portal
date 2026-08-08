@@ -1,93 +1,80 @@
-// Mediathek Bauten (js/apps/mediathek.js) — Übersicht, Sortierungen, die drei
-// Ansichten und die Detailseite.
-//
-// Anlass: das Bildregister data/media.json umfasst Gebäude, Grundstücke UND
-// Bauprojekte. Ein Medium trägt je nach Bezug buildingId, parcelId oder
-// projectId. Die Mediathek las nur buildingId — bei einem Grundstücksbild war
-// das null, und `sort=objekt` lief auf `null.localeCompare`. Die Route war
-// vollständig kaputt, ohne dass eine Suite es gemerkt hätte.
-//
-// Darum prüft diese Suite JEDE Sortierung und JEDE Ansicht einzeln: der Fehler
-// trat nur bei einer von vier Sortierungen auf.
-//
-//   node scripts/test-mediathek.mjs      (dev server must be running)
+// Media-library integration suite: views, sort modes and related-object details.
 import { readFileSync } from 'node:fs';
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 let failures = 0;
 const check = (ok, label) => { console.log(`   ${ok ? '✓' : '✗'} ${label}`); if (!ok) failures++; };
 
-const MEDIEN = JSON.parse(readFileSync(new URL('../data/media.json', import.meta.url), 'utf8'));
-const ECHT = MEDIEN.filter((m) => m.file);
-console.log(`   (Register: ${MEDIEN.length} Medien, davon ${ECHT.length} mit echter Aufnahme)`);
+const media = JSON.parse(readFileSync(new URL('../data/media.json', import.meta.url), 'utf8'));
+const localMedia = media.filter((item) => item.file);
+console.log(`   (Registry: ${media.length} media records, ${localMedia.length} with local images)`);
 
 (async () => {
   const cdp = await launch();
   try {
-    const p = await openPage(cdp, `${APP_BASE}/`);
+    const page = await openPage(cdp, `${APP_BASE}/`);
     await sleep(1400);
-    await p.evaluate('window.__login && window.__login()');
+    await page.evaluate('window.__login && window.__login()');
     await sleep(600);
-    const go = async (hash, ms = 2000) => { await p.evaluate(`location.hash='${hash}'`); await sleep(ms); };
-    const lies = () => p.evaluate(`(function(){var m=document.querySelector('#main-content');
+    const navigate = async (hash, ms = 2000) => { await page.evaluate(`location.hash='${hash}'`); await sleep(ms); };
+    const readView = () => page.evaluate(`(function(){var main=document.querySelector('#main-content');
       return JSON.stringify({
         h1:(document.querySelector('h1')||{}).innerText||'',
         count:(document.querySelector('.catbar__count')||{}).innerText||'',
-        karten:document.querySelectorAll('.card').length,
-        zeilen:document.querySelectorAll('table tbody tr').length,
+        cards:document.querySelectorAll('.card').length,
+        rows:document.querySelectorAll('table tbody tr').length,
         canvas:!!document.querySelector('canvas'),
-        leer:/konnte nicht|nicht verf/.test(m.innerText)});})()`);
+        empty:/konnte nicht|nicht verf/.test(main.innerText)});})()`);
 
-    console.log('■ Übersicht');
-    await go('#/app/media-library', 2400);
-    let r = JSON.parse(await lies());
-    check(/Mediathek Bauten/.test(r.h1), `Seitentitel (${r.h1})`);
-    check(new RegExp(`^${MEDIEN.length} von ${MEDIEN.length}`).test(r.count), `alle ${MEDIEN.length} Aufnahmen gezählt (${r.count})`);
-    check(r.karten > 0 && !r.leer, `Galerie zeigt Karten (${r.karten})`);
+    console.log('■ Overview');
+    await navigate('#/app/media-library', 2400);
+    let result = JSON.parse(await readView());
+    check(/Mediathek Bauten/.test(result.h1), `The page has its title (${result.h1})`);
+    check(new RegExp(`^${media.length} von ${media.length}`).test(result.count), `All ${media.length} records are counted (${result.count})`);
+    check(result.cards > 0 && !result.empty, `The gallery renders cards (${result.cards})`);
 
-    console.log('■ Sortierungen — jede einzeln (der Fehler traf nur eine)');
-    for (const s of ['datum-desc', 'datum-asc', 'titel', 'objekt']) {
-      await go(`#/app/media-library?sort=${s}`, 1800);
-      const x = JSON.parse(await lies());
-      const probleme = await p.problems();
-      check(x.karten > 0 && !x.leer && probleme.length === 0,
-        `sort=${s} rendert (${x.karten} Karten${probleme.length ? ' — ' + probleme[0] : ''})`);
+    console.log('■ Sort modes');
+    for (const sort of ['datum-desc', 'datum-asc', 'titel', 'objekt']) {
+      await navigate(`#/app/media-library?sort=${sort}`, 1800);
+      const view = JSON.parse(await readView());
+      const problems = await page.problems();
+      check(view.cards > 0 && !view.empty && problems.length === 0,
+        `Compatibility sort value ${sort} renders (${view.cards} cards${problems.length ? ' — ' + problems[0] : ''})`);
     }
 
-    console.log('■ Ansichten');
-    await go('#/app/media-library?view=list', 1800);
-    r = JSON.parse(await lies());
-    check(r.zeilen > 0, `Liste zeigt Zeilen (${r.zeilen})`);
-    await go('#/app/media-library?view=map', 3000);
-    r = JSON.parse(await lies());
-    check(r.canvas, 'Karte rendert');
+    console.log('■ Views');
+    await navigate('#/app/media-library?view=list', 1800);
+    result = JSON.parse(await readView());
+    check(result.rows > 0, `The list view renders rows (${result.rows})`);
+    await navigate('#/app/media-library?view=map', 3000);
+    result = JSON.parse(await readView());
+    check(result.canvas, 'The map view renders a canvas');
 
-    console.log('■ Objektbezug über alle Bestandsarten');
-    // Je ein Medium mit Gebäude-, Grundstück- und Projektbezug ansteuern.
-    for (const [art, feld] of [['Gebäude', 'buildingId'], ['Grundstück', 'parcelId'], ['Bauprojekt', 'projectId']]) {
-      const m = MEDIEN.find((x) => x[feld]);
-      if (!m) { console.log(`   – kein Medium mit ${feld}`); continue; }
-      await go(`#/app/media-library/${encodeURIComponent(m.mediaId)}`, 2000);
-      const x = JSON.parse(await lies());
-      const probleme = await p.problems();
-      check(!!x.h1 && !x.leer && probleme.length === 0,
-        `${art}-Bild ${m.mediaId} öffnet («${x.h1.slice(0, 40)}»)${probleme.length ? ' — ' + probleme[0] : ''}`);
+    console.log('■ Related object types');
+    for (const [label, field] of [['Building', 'buildingId'], ['Parcel', 'parcelId'], ['Construction project', 'projectId']]) {
+      const item = media.find((entry) => entry[field]);
+      if (!item) { console.log(`   – no record with ${field}`); continue; }
+      await navigate(`#/app/media-library/${encodeURIComponent(item.mediaId)}`, 2000);
+      const view = JSON.parse(await readView());
+      const problems = await page.problems();
+      check(!!view.h1 && !view.empty && problems.length === 0,
+        `${label} image ${item.mediaId} opens (“${view.h1.slice(0, 40)}”)${problems.length ? ' — ' + problems[0] : ''}`);
     }
 
-    console.log('■ Echte Aufnahmen werden auch wirklich geladen');
-    const echt = ECHT[0];
-    await go(`#/app/media-library/${encodeURIComponent(echt.mediaId)}`, 2200);
-    const bild = await p.evaluate(`(function(){
-      var i=[].slice.call(document.querySelectorAll('img')).filter(function(x){
-        return (x.getAttribute('src')||'').indexOf('assets/images/buildings')>=0;})[0];
-      return JSON.stringify({gefunden:!!i, geladen:i?(i.complete&&i.naturalWidth>0):false,
-        src:i?i.getAttribute('src'):''});})()`);
-    const b = JSON.parse(bild);
-    check(b.gefunden && b.geladen, `lokale Datei geladen (${b.src.split('/').pop() || '—'})`);
+    console.log('■ Local images');
+    const localItem = localMedia[0];
+    await navigate(`#/app/media-library/${encodeURIComponent(localItem.mediaId)}`, 2200);
+    const imageState = await page.evaluate(`(function(){
+      var image=[].slice.call(document.querySelectorAll('img')).filter(function(element){
+        return (element.getAttribute('src')||'').indexOf('assets/images/buildings')>=0;})[0];
+      return JSON.stringify({found:!!image, loaded:image?(image.complete&&image.naturalWidth>0):false,
+        src:image?image.getAttribute('src'):''});})()`);
+    const image = JSON.parse(imageState);
+    check(image.found && image.loaded, `A local image loads (${image.src.split('/').pop() || '—'})`);
 
-    check((await p.problems()).length === 0, 'no exceptions / console errors / error banner');
+    check((await page.problems()).length === 0, 'No exceptions, console errors or error banner');
   } finally {
-    console.log(failures ? `\n✗ ${failures} check(s) FAILED` : '\n✓ all checks passed');
+    console.log(failures ? `\n✗ ${failures} check(s) failed` : '\n✓ all checks passed');
     process.exit(failures ? 1 : 0);
   }
 })();

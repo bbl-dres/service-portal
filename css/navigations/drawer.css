@@ -1,24 +1,24 @@
 /* Main navigation (main-navigation.postcss:11-56) */
 .desktop-menu { background:var(--color-bg); border-bottom:var(--stroke-1) solid var(--color-border); position:relative; z-index:var(--z-nav); }
-/* top:100% = Unterkante der gesamten Navigation (auch wenn sie umbricht),
-   gleich wie der Drawer — sonst tönt der Overlay eine umgebrochene zweite
-   Navigationszeile grau ein und es entsteht eine Lücke über dem Drawer. */
+/* top:100% = bottom edge of the entire navigation (even when it wraps), matching
+   the drawer. Otherwise the overlay grays out a wrapped second navigation row
+   and leaves a gap above the drawer. */
 .desktop-menu__overlay { position:absolute; top:100%; right:0; bottom:0; left:0; z-index:var(--z-local-control); height:120vh;
   background:var(--scrim-navigation);
   opacity:1; pointer-events:auto; transition:opacity var(--duration-slow) var(--ease-in-out); }
 .desktop-menu__overlay.hidden { height:0; overflow:hidden; opacity:0; pointer-events:none; }
 .desktop-menu .main-navigation, .mobile-menu .main-navigation { border-bottom:0; }
 .main-navigation { width:100%; background:var(--color-bg); border-bottom:var(--stroke-1) solid var(--color-border); position:relative; }
-/* BEWUSSTE ABWEICHUNG vom CD (Review 2026-07, nav/l1-1): CDs Antwort auf zu
-   viele L1-Einträge ist der «Mehr»-Überlauf-Flyout (MainNavigation.vue MenuMore,
-   navy.postcss:25-27), nie eine zweite Zeile. Hier dürfen die neun Einträge
-   umbrechen: der Mehr-Flyout bräuchte Breitenmessung bei jedem Resize und
-   versteckt Einträge, die im Intranet-Kontext alle gleichrangig sind; die
-   Zeilen behalten die feste CD-Zeilenhöhe, der Bruch tritt nur zwischen
-   1024-1280 px auf. Kein overflow:hidden, sonst würden Einträge verschluckt.
-   Zur selben Entscheidung gehört der dichtere 0.7rem-Rhythmus (Padding,
-   Negativrand, Unterstrich-Insets — CD: 1rem, main-navigation.postcss:16,29,38):
-   er hält die neun Einträge länger in einer Zeile (nav/l1-2). */
+/* DELIBERATE DEVIATION from CD (Review 2026-07, nav/l1-1): CD handles excess
+   L1 entries with the "More" overflow flyout (MainNavigation.vue MenuMore,
+   navy.postcss:25-27), never a second row. Here the nine entries may wrap: a
+   More flyout would need width measurement on every resize and would hide
+   entries that are equal peers in an intranet context. Rows retain CD's fixed
+   height and wrap only between 1024-1280px. No overflow:hidden, or entries
+   would be swallowed. The same decision includes the denser 0.7rem rhythm
+   (padding, negative margin, underline insets; CD: 1rem,
+   main-navigation.postcss:16,29,38), which keeps nine entries on one row for
+   longer (nav/l1-2). */
 .main-navigation > ul { list-style:none; display:flex; flex-wrap:wrap; margin-left:calc(-1 * var(--sp-3)); min-height:var(--sp-14); }
 @media (max-width:1023.98px){ .desktop-menu { display:none; } }
 @media (min-width:1280px){ .main-navigation > ul { min-height:var(--sp-16); } }
@@ -39,61 +39,61 @@
 .main-navigation > ul > li > a.active::after,
 .main-navigation > ul > li > button.active::after,
 .main-navigation > ul > li > .clicked::after { background:var(--color-primary-500); }
-/* CD main-navigation.postcss:42-44 `focus-visible:ring-inset`: der Eintrag füllt
-   die Leistenhöhe — der Ring liegt innen, statt Leistenrand und Nachbarn zu
-   schneiden. */
+/* CD main-navigation.postcss:42-44 `focus-visible:ring-inset`: the entry fills
+   the bar height, so the ring lies inside instead of cutting the bar edge and
+   neighboring entries. */
 .main-navigation > ul > li > a:focus-visible,
 .main-navigation > ul > li > button:focus-visible { outline-offset:calc(-1 * var(--stroke-2)); }
-/* CD: der aktive L1-Eintrag wird NUR durch den Unterstrich (::after) markiert,
-   nicht durch Fettschrift (main-navigation.postcss:46); mobil trägt allein der
-   3px-Balken den Zustand (navy.postcss:18-23 — auch dort kennt CD kein Fett). */
+/* CD marks the active L1 entry ONLY with the underline (::after), not bold
+   type (main-navigation.postcss:46); on mobile only the 3px bar conveys state
+   (navy.postcss:18-23, where CD likewise uses no bold). */
 .main-navigation:has(.navy__has-children[aria-expanded="true"]) [data-nav].active::after { background:transparent; }
 .main-navigation:has(.navy__has-children[aria-expanded="true"]) .clicked::after { background:var(--color-primary-500); }
-/* `!important` bleibt hier, entgegen der ersten Einschätzung der Review. Der
-   Grund ist nachgeprüft: `[data-menu]` wird über die GANZE Shell verdrahtet
-   (shell.js:374), `.clicked` kann also auch im mobilen Menü stehen — und
-   `.mobile-menu .main-navigation > ul > li > button:hover` (0,4,2, weiter
-   unten im Blatt) schlägt diese Regel (0,2,2) sowohl in Spezifität als auch
-   in der Reihenfolge. Der geöffnete Zweig würde beim Überfahren grau statt
-   weiss. Die Alternative wäre, die Regel aus ihrem Nav-Block herauszureissen. */
+/* `!important` remains here, contrary to the review's initial assessment. The
+   reason was verified: `[data-menu]` is wired across the ENTIRE shell
+   (shell.js:374), so `.clicked` can also appear in the mobile menu, while
+   `.mobile-menu .main-navigation > ul > li > button:hover` (0,4,2, later in
+   the sheet) beats this rule (0,2,2) in both specificity and order. The open
+   branch would turn gray rather than white on hover. The alternative would be
+   to tear the rule out of its navigation block. */
 .main-navigation > ul > li > .clicked { background:var(--color-bg) !important; position:relative; z-index:var(--z-nav-active); box-shadow:var(--shadow-2xl);
   clip-path:inset(-50px -50px calc(-1 * var(--stroke-1)) -50px); }
 .main-navigation--desktop > ul > li > .navy__has-children > .icon { display:none; }
 
 /* Desktop drawer (desktop-menu.postcss:9-19 + navy.postcss + menu.postcss) */
-/* Die Ebene-0-Fläche ist ≈730px hoch und öffnet bei y≈252: auf 1440x800 und
-   1366x768 waren die letzten drei Einträge unerreichbar, weil overflow:hidden
-   ohne inneren Scroll galt. CD deckelt ein Flyout gegen den Viewport
-   (top-bar.postcss:101-108, max-h-[60vh]). overflow-x bleibt hidden. */
+/* The level-0 surface is ≈730px tall and opens at y≈252: at 1440x800 and
+   1366x768 the last three entries were unreachable because overflow:hidden
+   applied without inner scrolling. CD caps a flyout against the viewport
+   (top-bar.postcss:101-108, max-h-[60vh]). overflow-x remains hidden. */
 .desktop-menu__drawer { position:absolute; left:0; top:100%; width:450px; max-width:calc(100vw - var(--sp-6));
   padding:var(--sp-16) var(--sp-8) var(--sp-8); z-index:var(--z-drawer); background:var(--color-bg); overflow:hidden;
   max-height:calc(100vh - var(--shell-top, 14rem) - var(--sp-6)); overflow-y:auto; overscroll-behavior:contain;
   box-shadow:var(--shadow-2xl); opacity:1; animation:navMenuIn var(--duration) var(--ease-out); }
 @media (min-width:1280px){ .desktop-menu__drawer { width:650px; padding:var(--sp-20) var(--sp-12) var(--sp-12); } }
 @media (min-width:1920px){ .desktop-menu__drawer { width:850px; padding:var(--sp-24); } }
-/* Nur ein dezentes Einschieben — die Sichtbarkeit steuert das hidden-Attribut.
-   Keine Opazität im Keyframe: sonst blieb der Drawer je nach Fill-Mode/Timing
-   durchscheinend hängen.
-   BEWUSSTE REDUKTION (Review 2026-07, nav/drawer-4): CD animiert auch das
-   Schliessen (desktop-menu.postcss:19-34, opacity+height über eine Klasse) —
-   hier schliesst `hidden` hart; eine Transition bräuchte Klassen- statt
-   Attribut-Steuerung in shell.js. */
+/* Only a subtle slide-in; the hidden attribute controls visibility. No opacity
+   in the keyframe, or the drawer remained translucent depending on fill mode
+   and timing. DELIBERATE REDUCTION (Review 2026-07, nav/drawer-4): CD also
+   animates closing (desktop-menu.postcss:19-34, opacity+height through a class).
+   Here `hidden` closes immediately; a transition would require class-based
+   instead of attribute-based control in shell.js. */
 @keyframes navMenuIn { from { transform:translateY(calc(-1 * var(--sp-1-5))); } to { transform:translateY(0); } }
-/* Schliessen-Knopf: Position und Icongrösse nach desktop-menu.postcss:75-88
-   (lg:top-4 right-0 → xl:top-6 right-4 → 3xl:top-8 right-20; Icon h-5 = 1.25rem)
-   statt bisher in der Drawer-Ecke (top/right:0) mit zu kleinem Icon (0.75rem).
-   Tinte = CDs menu__action-btn (menu.postcss:116-122): text-500 ruhend, Hover
-   text-600 auf secondary-50 — dieselbe Paarung wie .navy__back daneben. */
+/* Close button: position and icon size follow desktop-menu.postcss:75-88
+   (lg:top-4 right-0 → xl:top-6 right-4 → 3xl:top-8 right-20; icon h-5 = 1.25rem)
+   instead of the drawer corner (top/right:0) with an undersized icon (0.75rem).
+   Ink = CD's menu__action-btn (menu.postcss:116-122): text-500 at rest, text-600
+   on secondary-50 during hover, matching .navy__back beside it. */
 .desktop-menu__close { position:absolute; top:var(--sp-4); right:0; display:inline-flex; align-items:center; gap:var(--sp-2);
   padding:var(--sp-3) var(--sp-4); color:var(--color-text-500); background:none; border:0; cursor:pointer; font:inherit; font-size:var(--fs-sm); }
 .desktop-menu__close:hover { color:var(--color-text-600); background:var(--color-secondary-50); }
 @media (min-width:1280px){ .desktop-menu__close { top:var(--sp-6); right:var(--sp-4); } }
 @media (min-width:1920px){ .desktop-menu__close { top:var(--sp-8); right:var(--sp-20); font-size:var(--fs-base); } }
 .navy { position:relative; }
-/* CD navy multi-level (navy.postcss): Ebene 0 = Dienstleistungen + Bereichszweige,
-   Ebene 1 = Kinder eines Bereichs. Robuster Display-Wechsel statt Slider-Transform
-   (width:200% + flex + translateX rendert je nach Browser Glyphen nicht) — nur die
-   aktive Ebene ist im Layout, die andere ist display:none (auch aus dem AT-Baum). */
+/* CD navy multi-level (navy.postcss): level 0 = services + domain branches;
+   level 1 = children of a domain. A robust display switch replaces the slider
+   transform (width:200% + flex + translateX fails to render glyphs in some
+   browsers). Only the active level participates in layout; the other is
+   display:none and absent from the accessibility tree. */
 .navy--drill { position:relative; }
 .navy__slider { display:block; }
 .navy__pane[data-pane="1"] { display:none; }
@@ -102,47 +102,47 @@
 /* Fade, not a translateX slide: a transformed pane becomes a containing block,
    which would re-anchor the absolutely-positioned .navy__back to the pane instead
    of the drawer's top row. Opacity has no such side effect.
-   Tempo var(--duration-slowest): CDs Ebenenwechsel läuft 600ms ease-in-out
-   (navy.postcss:97-98) — 700ms ist die nächste Token-Stufe; 300ms las sich als
-   fremdes Motion-Idiom (nav/drawer-5). */
+   Timing var(--duration-slowest): CD's level change runs 600ms ease-in-out
+   (navy.postcss:97-98); 700ms is the nearest token step, while 300ms read as a
+   foreign motion idiom (nav/drawer-5). */
 @keyframes navyDrillIn { from { opacity:0; } to { opacity:1; } }
 @media (prefers-reduced-motion: reduce){ .navy--drill[data-level="1"] .navy__pane[data-pane="1"] { animation:none; } }
-/* Der Zweig-Knopf muss zeichengenau wie die «Übersicht»-Zeile (<a>) ausgerichtet
-   sein — die UA-Vorgabepolsterung des <button> sonst schiebt den Text nach rechts. */
+/* The branch button must align exactly like the overview row (<a>); otherwise
+   the user-agent default padding on <button> shifts text to the right. */
 .navy-branch { background:none; border:0; padding:0; margin:0; text-align:left; font:inherit; cursor:pointer; color:inherit; }
-/* CD navy.postcss:54-58: der Zurück-Knopf trägt die menu__action-btn-Anatomie
-   (menu.postcss:109-123 — px-4 py-3, text-500, Hover secondary-50/text-600) wie
-   der Schliessen-Knopf, mit dem er die Kopfzeile teilt; die frühere
-   Primary-Linkfarbe las sich als Navigationslink statt als Menü-Aktion. */
+/* CD navy.postcss:54-58: the back button uses menu__action-btn anatomy
+   (menu.postcss:109-123: px-4 py-3, text-500, hover secondary-50/text-600), like
+   the close button sharing its header row. The former primary link color read
+   as a navigation link rather than a menu action. */
 .navy__back { display:inline-flex; align-items:center; gap:var(--sp-2); margin:0 0 var(--sp-2); padding:var(--sp-3) var(--sp-4);
   min-height:var(--target-min); background:none; border:0; font:inherit; font-size:var(--fs-sm);
   color:var(--color-text-500); cursor:pointer; }
 .navy__back:hover { color:var(--color-text-600); background:var(--color-secondary-50); }
 .navy__level-0 { list-style:none; margin:0; padding:0; }
-/* CD navy.postcss:69-73: der Paneltitel ist `menu__item--title` — Basisgrösse,
-   GEERBTE Tinte, Zeileneinzug px-4 mit lg:px-0 (menu.postcss:68-71); nur das
-   Fett bleibt. Die frühere fs-lg/secondary-700-Fassung war eine Eigenstimme. */
+/* CD navy.postcss:69-73: the panel title is `menu__item--title`: base size,
+   INHERITED ink, row indentation px-4 with lg:px-0 (menu.postcss:68-71); only
+   bold remains. The former fs-lg/secondary-700 version was a separate voice. */
 .navy__title { display:block; margin:0 0 var(--sp-2); padding:0 var(--sp-4); font-size:var(--fs-base); font-weight:var(--fw-bold);
   line-height:var(--lh-tight); color:inherit; cursor:default; }
 @media (min-width:1024px){ .navy__title { padding:0; } }
-/* Item 4.10 zurückgenommen: CDs Drawer hat keine Abschnittstitel. Die Klasse
-   `menu__item--title` existiert in menu.postcss, aber keine CD-Komponente wendet
-   sie an — sie gehört nicht zum Drawer-Muster. Die Liste bleibt flach. */
+/* Item 4.10 reverted: CD's drawer has no section titles. The class
+   `menu__item--title` exists in menu.postcss, but no CD component applies it;
+   it does not belong to the drawer pattern. The list remains flat. */
 /* Navy menu rows use CD's fixed row size (menu.postcss:24 menu__item--small =
    text-sm 3xl:text-base), never the responsive body ramp — otherwise the flyout
    rows balloon at ≥1280px. */
 .navy .menu__item { font-size:var(--fs-sm); }
-/* navy.postcss:9-16 legt die Zeilenpolsterung auf das INTERAKTIVE Element; wir
-   hatten sie auf dem <li>, sodass Anker/Knopf auf Texthöhe blieben: die Zeilen
-   sahen 44px hoch aus, Trefferfläche und Hover-Hervorhebung waren aber nur die
-   ~28px Textzeile (gemessen: 530x28 für alle zehn Zweig-Knöpfe im Desktop-Drawer).
-   Rund 16px jeder Zeile waren totes Feld unter dem Zeiger. */
+/* navy.postcss:9-16 puts row padding on the INTERACTIVE element. We put it on
+   <li>, leaving anchors/buttons at text height: rows looked 44px tall, but the
+   hit area and hover highlight covered only the ~28px text line (measured:
+   530x28 for all ten branch buttons in the desktop drawer). About 16px of each
+   row was dead space under the pointer. */
 .navy .menu__item { padding:0; }
 .navy .menu__item > .menu__item__flex,
 .navy .menu__item > .navy-branch { padding:var(--sp-3) var(--sp-4); min-height:var(--target-min); box-sizing:border-box; }
-/* CD-Zeilenrampe (navy.postcss:13-15: menu__item px-4 py-3, ab xl px-3) — der
-   frühere --condensed-Umweg ist raus: shell.js emittiert den Modifier nicht
-   mehr, in CD ist --condensed eine EIGENE Variante (menu.postcss:87-93). */
+/* CD row ramp (navy.postcss:13-15: menu__item px-4 py-3, px-3 from xl). The
+   former --condensed detour is gone: shell.js no longer emits the modifier;
+   in CD, --condensed is a DISTINCT variant (menu.postcss:87-93). */
 @media (min-width:1280px){
   .navy .menu__item > .menu__item__flex,
   .navy .menu__item > .navy-branch { padding:var(--sp-3); }
@@ -152,12 +152,12 @@
 .navy .menu__item > .navy-branch:hover { background:var(--color-secondary-50); }
 @media (min-width:1920px){ .navy .menu__item { font-size:var(--fs-base); } }
 /* Desktop: the drill-down back button shares the drawer's top row with the close
-   button (CD navy.postcss:56 — lg:absolute -top-12 -left-5, mirroring
+   button (CD navy.postcss:56: lg:absolute -top-12 -left-5, mirroring
    desktop-menu__close top-right). On mobile it stays inline atop the pane. */
 @media (min-width:1024px){
   .desktop-menu__drawer .navy,
   .desktop-menu__drawer .navy--drill { position:static; }
-  /* CDs lg:-left-5 gegen das 2rem-Drawer-Polster aufgelöst = .75rem vom Rand. */
+  /* CD's lg:-left-5 resolved against 2rem drawer padding = .75rem from the edge. */
   .desktop-menu__drawer .navy__back { position:absolute; top:var(--sp-4); left:var(--sp-3); margin:0; }
 }
 @media (min-width:1280px){ .desktop-menu__drawer .navy__back { top:var(--sp-6); left:var(--sp-4); font-size:var(--fs-sm); } }
@@ -177,8 +177,8 @@
 .menu__item__icon { flex:none; width:var(--sp-6); height:var(--sp-6); color:var(--color-text-muted); }
 @media (min-width:768px){ .menu__item__icon { width:var(--sp-7); height:var(--sp-7); } }
 .menu__item:hover .menu__item__icon { color:var(--color-primary-600); }
-/* CD menu.postcss:21 `focus:text-primary-600` — Tastaturfokus bekommt dieselbe
-   Tinten-Rückmeldung wie Hover, zusätzlich zum globalen Ring. */
+/* CD menu.postcss:21 `focus:text-primary-600`: keyboard focus receives the same
+   ink feedback as hover, in addition to the global ring. */
 .menu__item a:focus-visible,
 .navy .menu__item > .navy-branch:focus-visible { color:var(--color-primary-600); }
 
@@ -189,21 +189,21 @@
 @media (min-width:1024px){ .mobile-menu { display:none; } }
 .body--mobile-menu-is-open .mobile-menu { height:calc(100vh - var(--shell-top, var(--sp-32)));
   visibility:visible; opacity:1; overflow-y:auto; }
-/* CD-Slide (global.postcss:34-38): die Seite rückt um die Top-Bar-Höhe nach
-   oben — bei offenem Menü füllen weisse Kopfzeile + Drawer den ganzen Schirm.
-   shell.js misst --topbar-h/--shell-top beim Öffnen. Transform macht den Body
-   zum Containing Block aller fixed-Nachfahren; Banner/Back-to-top sind bei
-   offenem Menü ohnehin ausgeblendet. */
+/* CD slide (global.postcss:34-38): the page moves up by the top-bar height; with
+   the menu open, white header + drawer fill the whole screen. shell.js measures
+   --topbar-h/--shell-top on opening. Transform makes body the containing block
+   for all fixed descendants; banner/back-to-top are hidden while the menu is
+   open anyway. */
 .body--mobile-menu-is-open { overflow:hidden;
   height:calc(100vh + var(--topbar-h, var(--sp-12)));
   transform:translateY(calc(-1 * var(--topbar-h, var(--sp-12)))); }
-/* Bei offenem Menü KEINE zweite Suchaffordanz in der Kopfzeile (die Suche
-   steht im Panel) und kein schwebender Hinweisstreifen über dem Menü. */
+/* With the menu open, NO second search affordance in the header (search lives
+   in the panel) and no floating notice strip above the menu. */
 @media (max-width:1023.98px){
   .body--mobile-menu-is-open .search--main { display:none; }
   .body--mobile-menu-is-open .notification-banner--fixed { display:none; }
 }
-/* Suchzeile zuoberst im Panel — CD search--mobile (weisses Feld, Schattenwurf). */
+/* Search row at the top of the panel: CD search--mobile (white field, shadow). */
 .mobile-menu__search { padding:var(--sp-3) var(--sp-4); background:var(--color-bg);
   border-bottom:var(--stroke-1) solid var(--color-secondary-100); }
 .mobile-menu__search-form { position:relative; display:flex; }
@@ -213,14 +213,13 @@
 .mobile-menu ul { list-style:none; }
 .mobile-menu .main-navigation { border-bottom:0; }
 .mobile-menu .main-navigation > ul { flex-direction:column; margin-left:0; min-height:0; }
-/* `li > a` griff als Nachfahrenselektor (0,2,2) auch in den geöffneten Drawer
-   hinein und stempelte einen ZWEITEN weissen 44px-Block mit eigener Polsterung
-   und eigener Haarlinie INNERHALB der grauen navy-Zeile — gemessene Zeilenhöhe
-   74px statt 46px, optisch eingerückte schwebende Kärtchen mit doppelten Linien.
-   Mit explizitem Kindpfad `> ul > li >` kann die Regel den Drawer nicht mehr
-   erreichen (CD wendet die Zeilenanatomie ebenfalls nur auf die oberste Ebene an,
-   mobile-menu.postcss:150-160). Gehört zwingend mit der Polsterverschiebung
-   unten zusammen, sonst fallen die Drawer-Ziele auf 28px. */
+/* As a descendant selector (0,2,2), `li > a` also reached into the open drawer
+   and stamped a SECOND white 44px block with its own padding and hairline INSIDE
+   the gray navy row. Measured row height became 74px instead of 46px, producing
+   visually indented floating cards with doubled lines. With the explicit child
+   path `> ul > li >`, the rule cannot reach the drawer (CD likewise applies row
+   anatomy only to the top level, mobile-menu.postcss:150-160). This must stay
+   paired with the padding move below or drawer targets fall to 28px. */
 .mobile-menu .main-navigation > ul > li > a,
 .mobile-menu .main-navigation > ul > li > button,
 .mobile-menu .meta-navigation li > a,
@@ -236,14 +235,14 @@
 .mobile-menu .main-navigation > ul > li > button::after { display:none; }
 .mobile-menu .main-navigation > ul > li > a:hover,
 .mobile-menu .main-navigation > ul > li > button:hover { background:var(--color-secondary-50); color:var(--color-text); }
-/* Kein Fett auf der aktiven Zeile: CDs navy markiert mobil NUR über den
-   3px-Balken (navy.postcss:18-23); ein 700er-Gewicht verschob zudem die
-   Zeilenlänge — CDs «bold» ist ein 400er-Familienwechsel (nav/mob-4). */
+/* No bold on the active row: CD's navy marks mobile state ONLY with the 3px bar
+   (navy.postcss:18-23); a 700 weight also shifted line length, while CD's
+   "bold" is a family switch at 400 (nav/mob-4). */
 .mobile-menu .main-navigation .active::before { content:""; position:absolute; left:0; top:0; bottom:0;
   width:var(--stroke-3); background:var(--color-primary-500); }
-/* app.css setzte hier display:inline-block ohne Grösse, sodass icon--sm = 12px
-   stehenblieb (CD: 20px, navy.postcss:47-51) und das Chevron beim Aufklappen nie
-   rotierte. CSS-Hälfte von Item 4.6 — gehört in denselben Block wie oben. */
+/* app.css set display:inline-block here without a size, leaving icon--sm at 12px
+   (CD: 20px, navy.postcss:47-51), and the chevron never rotated on disclosure.
+   CSS half of Item 4.6; belongs in the same block as above. */
 .mobile-menu .navy__has-children .icon { display:inline-block;
   color:var(--color-text-muted); transition:transform var(--duration); }
 .mobile-menu .navy__has-children[aria-expanded="true"] .icon { transform:rotate(90deg); }
@@ -252,18 +251,18 @@
 :is(.desktop-menu__close, .navy__back, .mobile-menu .navy__has-children) .icon {
   width:var(--sp-5); height:var(--sp-5); align-self:center; vertical-align:middle;
 }
-/* BEWUSSTE ABWEICHUNG vom CD (Review 2026-07, nav/mob-1): CDs Mobilmenü schiebt
-   GANZE Ebenen-Panels per translateX (navy.postcss:79-99, 600ms) — das setzt
-   einen einzigen Navy-Baum voraus. Unsere Shell führt je L1-Eintrag einen
-   eigenen Drawer; der Drill-down öffnet darum als Inline-Akkordeon mit
-   getönter Einrückung. Der Umbau auf CDs Slider hiesse, die Drawer-Anatomie
-   der ganzen Shell umzustrukturieren — Aufwand/Nutzen dokumentiert im Review. */
+/* DELIBERATE DEVIATION from CD (Review 2026-07, nav/mob-1): CD's mobile menu
+   shifts WHOLE level panels with translateX (navy.postcss:79-99, 600ms), which
+   assumes one navy tree. Our shell has a dedicated drawer per L1 entry, so
+   drill-down opens as an inline accordion with tinted indentation. Adopting
+   CD's slider would mean restructuring the entire shell's drawer anatomy;
+   cost/benefit is documented in the review. */
 .mobile-menu__drawer { position:static; width:100%; padding:0; background:var(--color-secondary-50); }
-/* Nur den Drawer-Schliessen-Knopf und den Ebene-0-Titel (redundant zum
-   Trigger) ausblenden — der Zweigtitel auf Ebene 1 muss sichtbar bleiben. */
+/* Hide only the drawer close button and level-0 title (redundant with its
+   trigger); the branch title on level 1 must remain visible. */
 .mobile-menu__drawer .desktop-menu__close,
 .mobile-menu__drawer .navy__pane[data-pane="0"] .navy__title { display:none; }
-/* Einzug wandert mit der Polsterung auf das interaktive Element (Item 2.9b). */
+/* Indentation moves with padding onto the interactive element (Item 2.9b). */
 .mobile-menu__drawer .menu__item { padding-left:0; background:var(--color-secondary-50); }
 .mobile-menu__drawer .menu__item > .menu__item__flex,
 .mobile-menu__drawer .menu__item > .navy-branch { padding-left:var(--sp-9); }
@@ -273,14 +272,14 @@
 .mobile-menu .meta-navigation li > button { background:var(--color-secondary-50); color:var(--color-text); }
 .mobile-menu .meta-navigation li > a:hover,
 .mobile-menu .meta-navigation li > button:hover { background:var(--color-secondary-100); }
-/* Kein padding-bottom mehr: es malte einen leeren dunklen Streifen unter die
-   letzte Zeile (Nutzerbefund). Die Zeilen tragen ihre Fläche selbst. */
+/* No padding-bottom: it painted an empty dark strip below the last row (user
+   finding). Rows carry their own surface. */
 .mobile-menu .top-bar-navigation--mobile { background:var(--color-secondary-500); }
 .mobile-menu .top-bar-navigation--mobile li > a { background:var(--color-secondary-500); color:var(--color-text-negative);
   border-bottom-color:var(--color-secondary-300); }
 .mobile-menu .top-bar-navigation--mobile li > a:hover { background:var(--color-secondary-700); color:var(--color-text-negative); }
 
-/* Detail-Kopfleiste: Zurück-Link links, Share-Bar rechts, eine Zeile. */
+/* Detail header bar: back link left, share bar right, one row. */
 .detail-bar { display:flex; justify-content:space-between; align-items:center; gap:var(--sp-4); flex-wrap:wrap;
   margin-bottom:var(--sp-6); }
 @media (min-width:1024px){ .detail-bar { margin-bottom:var(--sp-10); } }
@@ -289,7 +288,7 @@
 /* The detail-bar owns the gap to the following hero (its margin-bottom); the hero
    must not add its own top padding on top of that, or the title floats too low. */
 .detail-bar + .hero { padding-top:0; }
-/* Share-Bar (share-bar.postcss:5-16) — rechtsbündig nach der Brotkrume. */
+/* Share bar (share-bar.postcss:5-16): right-aligned after the breadcrumb. */
 .share-bar { display:flex; flex-direction:row-reverse; align-items:flex-end; margin:var(--sp-5) calc(-1 * var(--sp-3)) 0 0; }
 @media (min-width:1024px){ .share-bar { margin-top:var(--sp-4); } }
 .share-container { display:flex; gap:var(--sp-1); }

@@ -1,38 +1,36 @@
 /* Box (box.postcss:5-11) */
-/* `.stat` war `.box` minus der 1544er-Stufe — dieselbe Fläche, zweimal
-   ausgeschrieben, und dadurch unbeabsichtigt eine Abweichung von CD
-   box.postcss. Eine Deklaration für beide; die Kennzahl-Kachel ist eine Box,
-   die Zahl und Beschriftung trägt (siehe .stat__num/.stat__label unten). */
+/* `.stat` was `.box` minus the 1544 step: the same surface written twice,
+   unintentionally deviating from CD box.postcss. One declaration serves both;
+   the metric tile is a box carrying a number and label (see
+   .stat__num/.stat__label below). */
 .box, .stat { padding:var(--sp-4); background:var(--surface-bg-muted); border:0; border-radius:var(--radius-none); }
 @media (min-width:480px) { .box, .stat { padding:var(--sp-5); } }
 @media (min-width:1024px){ .box, .stat { padding:var(--sp-6); } }
 @media (min-width:1544px){ .box, .stat { padding:var(--sp-8); } }
-/* KEIN `.box + .box { margin-top:1px }` mehr — das war das Fossil der alten
-   1px-Naht-Idee (die :has()-Ausnahme dazu war schon länger weg, weil die Naht
-   auf hellem Grund «nicht trägt»). Die Regel schlug mit (0,2,0) aber weiter
-   den Spaltenrhythmus `.vertical-spacing > *` (0,1,0): auf der Dienstleistungs-
-   Landingpage klebten «Das brauchen Sie» und «So läuft es ab» als EIN Block
-   zusammen, während alles andere 3rem Abstand hatte (Nutzerbefund 2026-08-04).
-   Gestapelte Kästen beziehen ihren Abstand jetzt überall aus ihrem Kontext:
-   `.vertical-spacing > *` (Hauptspalte, 3/3.5rem), `.container__aside > *`
-   (1.75/2rem) bzw. `.detail-layout__aside .box + .box` (1.5rem). */
-/* h2 mitgeführt: der Kastentitel ist optisch immer derselbe, unabhängig davon,
-   auf welcher Ebene der Gliederung er steht. Die Seitenspalte der
-   Mietende-Detailansicht trägt h2, weil die Seite sonst von h1 direkt auf h3
-   springt (die Reiterpanels bringen keine Zwischenebene mit). */
+/* NO more `.box + .box { margin-top:1px }`: it was a fossil of the old 1px seam
+   idea (the :has() exception had already gone because the seam did not hold on
+   light backgrounds). At (0,2,0), however, the rule still beat the column
+   rhythm `.vertical-spacing > *` (0,1,0): two boxes on the service landing page
+   stuck together as ONE block while everything else had 3rem spacing (user
+   finding 2026-08-04). Stacked boxes now get spacing from their context:
+   `.vertical-spacing > *` (main column, 3/3.5rem), `.container__aside > *`
+   (1.75/2rem), or `.detail-layout__aside .box + .box` (1.5rem). */
+/* h2 included: the box title always looks the same regardless of outline level.
+   The tenant-detail sidebar uses h2 because otherwise the page jumps directly
+   from h1 to h3 (tab panels introduce no intermediate level). */
 .box h2, .box h3 { font-size:var(--text-base); }
 
 /* Stat figures — expressed on .box (no CD component) */
-/* Spaltenrampe aus --gap-responsive — die private Teilkopie (1.25/2.25/2.5)
-   liess xs/xl/3xl aus und war der dritte Klon der konsolidierten Rampe
-   (Design-Review C3). */
+/* Column ramp from --gap-responsive: the private partial copy (1.25/2.25/2.5)
+   omitted xs/xl/3xl and was the consolidated ramp's third clone
+   (Design Review C3). */
 .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--gap-responsive); }
 .stat { box-shadow:var(--shadow-none); }
-/* DIE Grossziffer-Typografie des Portals: text-3xl · fw-bold · lh-tight ·
-   secondary-600 · Tabellenziffern. Drei Flächen konsumieren sie — .stat (Box),
-   .kpi (Dashboard-Karte), .kpi-strip (rahmenloser Streifen, dokumentiert) —
-   vorher mit drei Grössen, zwei Farben und zwei Beschriftungspositionen für
-   dasselbe Element (Design-Review C8). Die Flächen bleiben Modifier. */
+/* THE portal's large-number typography: text-3xl · fw-bold · lh-tight ·
+   secondary-600 · tabular figures. Three surfaces consume it: .stat (box),
+   .kpi (dashboard card), .kpi-strip (documented borderless strip). Previously
+   the same element used three sizes, two colors and two label positions
+   (Design Review C8). Surfaces remain modifiers. */
 .stat__num, .kpi__value, .kpi-strip__value { font-size:var(--text-3xl); font-weight:var(--fw-bold);
   line-height:var(--lh-tight); color:var(--color-secondary-600); font-variant-numeric:tabular-nums; }
 .stat__label { font-size:var(--text-sm); color:var(--color-text-muted); margin-top:var(--sp-1-5); }
@@ -49,8 +47,8 @@
 .download-item[aria-busy="true"] { cursor:progress; opacity:.7; }
 .download-item[aria-invalid="true"] { color:var(--color-error-text); border-bottom-color:var(--color-error); }
 .download-item[data-empty="true"] { cursor:default; color:var(--color-text-muted); }
-/* Auf getönten Flächen die dunklere Trennlinie (download-item.postcss:12-14
-   `.bg--secondary-50 &`) — secondary-200 wäre dort kaum sichtbar. */
+/* On tinted surfaces use the darker divider (download-item.postcss:12-14
+   `.bg--secondary-50 &`); secondary-200 would barely show there. */
 .bg--secondary-50 .download-item, .box .download-item { border-bottom-color:var(--color-secondary-300); }
 .download-item__icon { flex:none; width:var(--sp-7); height:var(--sp-7);
   margin:calc(-1 * var(--sp-1)) 0 calc(-1 * var(--sp-1)) calc(-1 * var(--sp-1)); padding-right:var(--sp-1); color:var(--color-primary-600); }
@@ -64,10 +62,10 @@
 .download-item__meta-info { padding-top:var(--sp-3); }
 
 /* Meta info (meta-info.postcss:5-18) */
-/* BEWUSSTE ABWEICHUNG: CD startet auf text-gray-500 und dunkelt nur in
-   .box/.bg--secondary-50 auf text-600 nach — gray-500 misst auf secondary-50
-   aber nur ~4.4:1 (unter AA), weshalb CD selbst dort wechselt. EIN Wert
-   (--color-text-muted = text-600, tokens.css) trägt beide Flächen. */
+/* DELIBERATE DEVIATION: CD starts at text-gray-500 and darkens to text-600 only
+   inside .box/.bg--secondary-50, but gray-500 measures only ~4.4:1 on
+   secondary-50 (below AA), which is why CD switches there. ONE value
+   (--color-text-muted = text-600, tokens.css) serves both surfaces. */
 .meta-info { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
 .meta-info__item:not(:last-child)::after { content:"|"; padding:0 var(--sp-2); }
 @media (min-width:1024px){ .meta-info__item:not(:last-child)::after { padding:0 var(--sp-3); } }  /* CD: px-2 lg:px-3 */
@@ -80,34 +78,34 @@
 @media (min-width:768px){ .separator--md::before, .separator--md::after { height:var(--sp-3); } }
 @media (min-width:1024px){ .separator--md::before, .separator--md::after { height:var(--sp-4); } }
 
-/* Back to top — der Knopf schwebt beim Scrollen unten rechts und dockt am unteren
-   Seitenende an der oberen rechten Ecke der Fussinformationen (CD-Vorgabe). Die
-   Schiene (rail) hängt an der Footer-Oberkante (#main-footer ist position:relative)
-   und reicht als voll­breiter, unsichtbarer Streifen nach oben. Darin liegt ein
-   normaler `.container` — dieselbe zentrierte Max-Breite wie im Footer —, sodass
-   der Knopf mit der rechten Kante von `.footer-information` fluchtet (statt am
-   Viewport-Rand in der Gasse zu kleben). Angedockt sitzt die obere rechte Ecke des
-   Knopfs `--btt-margin` innerhalb der oberen rechten Ecke der Fussinformationen. */
+/* Back to top: while scrolling, the button floats at bottom right and docks at
+   the footer information's top-right corner at the page end (CD requirement).
+   The rail hangs from the footer's top edge (#main-footer is position:relative)
+   and extends upward as a full-width invisible strip. It contains a normal
+   `.container`, using the same centered max width as the footer, so the button
+   aligns with `.footer-information`'s right edge instead of sticking to the
+   viewport gutter. When docked, the button's top-right corner sits
+   `--btt-margin` inside the footer information's top-right corner. */
 @media screen and (prefers-reduced-motion: no-preference){ html { scroll-behavior:smooth; } }
-/* Das angedockte weisse Kästchen im Footer ist CD-Verhalten und BLEIBT:
-   back-to-top-btn.postcss:11-13 setzt bottom:-3.5rem (−4rem lg, −5rem xl) =
-   genau eine Knopfhöhe Überstand in das folgende Band, auf einem bg-white-Knopf.
-   Zwei echte Symptome bleiben: die Schiene war 1000vh hoch und damit ab dem
-   Seitenanfang sichtbar (auf portfolio/dash-immobilien landete der Knopf auf dem
-   MapLibre-Zoomcluster), und sie richtete sich am Inhaltscontainer statt am
-   Viewport-Rand aus, sodass er bei 1440 auf dem «Öffnen» der dritten Karte lag.
-   200vh ist die CSS-Näherung an CDs top-[80vh]. */
+/* The docked white box in the footer is CD behavior and STAYS:
+   back-to-top-btn.postcss:11-13 sets bottom:-3.5rem (−4rem lg, −5rem xl),
+   exactly one button-height protrusion into the following band on a bg-white
+   button. Two real symptoms remain: the rail was 1000vh tall and therefore
+   visible from the page start (on portfolio/dash-real-estate the button landed
+   on the MapLibre zoom cluster), and it aligned to the content container rather
+   than the viewport edge, so at 1440 it covered the third card's open action.
+   200vh is the CSS approximation of CD's top-[80vh]. */
 .back-to-top-rail { position:absolute; left:0; right:0; height:200vh; pointer-events:none; z-index:var(--z-local-control);
-  /* Dock: Knopf-Unterkante = (Rand + Knopfhöhe) unterhalb der Footer-Oberkante,
-     also Knopf-Oberkante = Rand darunter. */
+  /* Dock: button bottom = (margin + button height) below the footer top edge,
+     therefore button top = margin below it. */
   bottom:calc(100% - (var(--sp-4) + var(--target-min))); }
 .back-to-top-track { padding-inline-end:var(--sp-3); }
 @media (min-width:1280px){ .back-to-top-track { padding-inline-end:var(--sp-4); } }
-/* Freiraum unter der Attribution, damit der sticky «Nach oben»-Knopf (unten
-   rechts, 2.75–4rem hoch) sie nicht überdeckt. 3.5rem waren dafür grosszügig
-   gerechnet und schoben die Attribution sichtbar von der Kartenkante weg; der
-   Knopf steht bei `bottom:1.5rem`, ~1.5rem Abstand genügen. Nur auf den grossen
-   Karten im Seitenfluss — der Hero-Karte kommt der Knopf nie in die Quere. */
+/* Space below attribution keeps the sticky back-to-top button (bottom right,
+   2.75–4rem tall) from covering it. 3.5rem was overly generous and visibly
+   pushed attribution away from the map edge; with the button at `bottom:1.5rem`,
+   ~1.5rem is enough. This applies only to large maps in page flow; the button
+   never interferes with the hero map. */
 .dash-map .maplibregl-ctrl-bottom-right,
 .pf-map .maplibregl-ctrl-bottom-right { padding-bottom:var(--sp-6); }
 @media (min-width:1024px){ .back-to-top-rail { bottom:calc(100% - (var(--sp-4) + var(--sp-12))); } }
@@ -120,8 +118,8 @@
   border-radius:var(--radius-sm); box-shadow:var(--shadow-lg); background:var(--color-bg);
   transition:box-shadow var(--duration-fast), border-color var(--duration-fast); }
 @media (min-width:1024px){ .back-to-top-btn { width:var(--sp-12); height:var(--sp-12); } }
-/* CDs xl:w-16 setzt eine Platzierung im Seitengraben voraus, die erst ab 1920
-   gilt — DORT greift sie dann auch (back-to-top-btn.postcss:27-30). */
+/* CD's xl:w-16 assumes placement in the side gutter, which applies only from
+   1920; it takes effect THERE as well (back-to-top-btn.postcss:27-30). */
 @media (min-width:1280px){ .back-to-top-btn { width:var(--sp-12); height:var(--sp-12); } }
 @media (min-width:1920px){ .back-to-top-btn { width:var(--sp-16); height:var(--sp-16); } }
 @media (hover:none), (max-width:767.98px){
@@ -132,7 +130,7 @@
 .back-to-top-btn--outline:hover { border-color:var(--color-primary-700); }
 .back-to-top-btn__icon { width:50%; height:100%; background-color:var(--color-primary-600); }   /* CD: w-1/2 h-full */
 .back-to-top-btn--outline:hover .back-to-top-btn__icon { background-color:var(--color-primary-700); }
-/* Bei offenem Mobilmenü oder Dokumentbetrachter ausblenden. */
+/* Hide while the mobile menu or document viewer is open. */
 .body--mobile-menu-is-open .back-to-top-rail,
 body.body--overlay-open .back-to-top-rail { display:none; }
 
@@ -149,8 +147,8 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 .view-switch__btn[aria-busy="true"] { cursor:progress; opacity:.7; }
 .view-switch__btn[aria-invalid="true"] { color:var(--color-error-text); }
 .view-switch__btn[data-empty="true"] { cursor:default; color:var(--color-text-muted); }
-/* Zustand nicht allein über Farbe (WCAG 1.4.1, P2-10) — die Fläche allein war
-   genau das; forced-colors entfernt sie ersatzlos. Der Unterstrich trägt den
-   Zustand jetzt als Form (Item 2.6). */
+/* Do not convey state by color alone (WCAG 1.4.1, P2-10): the surface alone did
+   exactly that, and forced-colors removes it without replacement. The underline
+   now conveys state through shape (Item 2.6). */
 .view-switch__btn[aria-pressed="true"] { color:var(--color-text); background:var(--color-secondary-100);
   box-shadow:var(--state-underline-primary); }

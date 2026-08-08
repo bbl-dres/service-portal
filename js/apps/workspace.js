@@ -8,9 +8,9 @@ import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } fr
 import { floorplanSvg, floorplanLegend, wireFloorplan, COLOR_MODES } from '../floorplan.js';
 import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../hero-mosaic.js';
 import { openGallery, restoreGalleryFromQuery } from '../gallery.js';
-import { m2, num, datum } from '../format.js';
-import { landName } from '../domain.js';
-import { ANWENDUNGEN, trail } from '../crumbs.js';
+import { formatArea, formatNumber, formatDate } from '../format.js';
+import { countryName } from '../domain.js';
+import { APPLICATIONS, trail } from '../crumbs.js';
 import { floorplanEditor } from '../links.js';
 
 export const needs = ['buildings', 'floors', 'spaces', 'workspacePlanning'];
@@ -46,7 +46,7 @@ const availabilityMeta = (key) => PLAN_AVAILABILITY[key] || PLAN_AVAILABILITY.le
 const floorMeta = (key) => FLOOR_STATES[key] || FLOOR_STATES.inventory;
 const csv = (query, key) => (query.get(key) || '').split(',').map((value) => value.trim()).filter(Boolean);
 const address = (building) => `${building.street}, ${building.zip} ${building.city}`.replace(/^,\s*/, '').trim();
-const floorWord = (count) => `${num(count)} ${count === 1 ? 'Geschoss' : 'Geschosse'}`;
+const floorWord = (count) => `${formatNumber(count)} ${count === 1 ? 'Geschoss' : 'Geschosse'}`;
 const syncValue = (value) => {
   const match = String(value || '').match(/^(\d{2})\.(\d{2})\.(\d{4}),\s*(\d{2}):(\d{2})$/);
   return match ? Date.UTC(Number(match[3]), Number(match[2]) - 1, Number(match[1]), Number(match[4]), Number(match[5])) : 0;
@@ -63,8 +63,8 @@ function orderMeta(planning) {
     const overdue = planning.targetDate < todayKey();
     return {
       label: overdue
-        ? `Auftrag offen · Stichtag überschritten – ${datum(planning.targetDate)}`
-        : `Auftrag offen · Stichtag ${datum(planning.targetDate)}`,
+        ? `Auftrag offen · Stichtag überschritten – ${formatDate(planning.targetDate)}`
+        : `Auftrag offen · Stichtag ${formatDate(planning.targetDate)}`,
       variant: overdue ? 'error' : 'warning',
     };
   }
@@ -124,7 +124,7 @@ function catalogue(ctx, objects) {
   const { mount, query, core, C, setTitle, setCrumbs, onUnmount } = ctx;
   workspaceMap.free();
   setTitle('Workspace Management');
-  setCrumbs(trail(ANWENDUNGEN, { label: 'Workspace Management' }));
+  setCrumbs(trail(APPLICATIONS, { label: 'Workspace Management' }));
 
   if (!objects.length) {
     mount.innerHTML = `<div class="container section">
@@ -149,15 +149,15 @@ function catalogue(ctx, objects) {
   const requestedObject = objects.find((item) => item.id === query.get('obj'));
   if (requestedObject) {
     state.sel = {
-      land: requestedObject.land,
+      country: requestedObject.country,
       region: requestedObject.region,
       city: requestedObject.city,
       id: requestedObject.id,
     };
   } else {
     let candidates = objects;
-    for (const key of ['land', 'region', 'city']) {
-      const value = query.get(key);
+    for (const [key, legacyKey] of [['country', 'land'], ['region', 'region'], ['city', 'city']]) {
+      const value = query.get(legacyKey);
       if (!value || !candidates.some((item) => item[key] === value)) break;
       state.sel[key] = value;
       candidates = candidates.filter((item) => item[key] === value);
@@ -165,12 +165,12 @@ function catalogue(ctx, objects) {
   }
 
   const inSelection = (item) => (!state.sel.id || item.id === state.sel.id)
-    && (!state.sel.land || item.land === state.sel.land)
+    && (!state.sel.country || item.country === state.sel.country)
     && (!state.sel.region || item.region === state.sel.region)
     && (!state.sel.city || item.city === state.sel.city);
   const inSearch = (item) => {
     const value = state.q.trim().toLocaleLowerCase('de');
-    return !value || `${item.name} ${item.id} ${item.street} ${item.zip} ${item.city} ${item.nutzer}`
+    return !value || `${item.name} ${item.id} ${item.street} ${item.zip} ${item.city} ${item.occupants}`
       .toLocaleLowerCase('de').includes(value);
   };
   const inFilters = (item) => !state.filters.plan.length || state.filters.plan.includes(item.planAvailability);
@@ -178,7 +178,7 @@ function catalogue(ctx, objects) {
 
   const treeMarkup = treeHTML(C, objects, {
     levels: [
-      { key: 'land', icon: 'Globe', label: (value) => landName(value) },
+      { key: 'country', icon: 'Globe', label: (value) => countryName(value) },
       { key: 'region', icon: 'Map' },
       { key: 'city', icon: 'MapMarker' },
     ],
@@ -196,13 +196,13 @@ function catalogue(ctx, objects) {
     return C.card({
       cls: 'workspace-card',
       photo: { src: item.photoSrc, id: item.photo, color: 'var(--color-secondary-600)', alt: `${item.name}, ${item.city}` },
-      chips: [floorWord(item.floors), `${num(item.workplaces)} AP`],
+      chips: [floorWord(item.floors), `${formatNumber(item.workplaces)} AP`],
       title: item.name,
       href: `${BASE}?id=${encodeURIComponent(item.id)}`,
       idLine: item.id,
-      desc: `${address(item)}${item.nutzer ? ` · ${item.nutzer}` : ''}`,
+      desc: `${address(item)}${item.occupants ? ` · ${item.occupants}` : ''}`,
       badges: [C.badge(meta.label, meta.variant, 'sm')],
-      footerInfo: `${m2(item.hnf)} HNF · ${item.planAvailability === 'planned' ? `${num(item.equipment)} Ausstattung` : 'Planung offen'}`,
+      footerInfo: `${formatArea(item.hnf)} HNF · ${item.planAvailability === 'planned' ? `${formatNumber(item.equipment)} Ausstattung` : 'Planung offen'}`,
       footerAction: C.cardAction(),
     });
   };
@@ -213,9 +213,9 @@ function catalogue(ctx, objects) {
     columns: [
       { key: 'name', label: 'Objekt', render: (item) => `<a href="${BASE}?id=${encodeURIComponent(item.id)}">${C.escape(item.name)}</a><br><span class="small muted">${C.escape(item.id)}</span>` },
       { key: 'city', label: 'Ort', render: (item) => `${C.escape(item.city)}<br><span class="small muted">${C.escape(address(item))}</span>` },
-      { key: 'floors', label: 'Geschosse', align: 'right', render: (item) => num(item.floors) },
-      { key: 'workplaces', label: 'Arbeitsplätze', align: 'right', render: (item) => num(item.workplaces) },
-      { key: 'equipment', label: 'Ausstattung', align: 'right', render: (item) => item.planAvailability === 'planned' ? num(item.equipment) : '<span class="muted">Planung offen</span>' },
+      { key: 'floors', label: 'Geschosse', align: 'right', render: (item) => formatNumber(item.floors) },
+      { key: 'workplaces', label: 'Arbeitsplätze', align: 'right', render: (item) => formatNumber(item.workplaces) },
+      { key: 'equipment', label: 'Ausstattung', align: 'right', render: (item) => item.planAvailability === 'planned' ? formatNumber(item.equipment) : '<span class="muted">Planung offen</span>' },
       { key: 'planAvailability', label: 'Planungsverfügbarkeit', render: (item) => {
         const meta = availabilityMeta(item.planAvailability);
         return C.badge(meta.label, meta.variant, 'sm');
@@ -241,7 +241,7 @@ function catalogue(ctx, objects) {
 
   const syncTree = () => syncTreeCounts(mount.querySelector('.pf-tree'),
     objects.filter((item) => inSearch(item) && inFilters(item)),
-    (item) => [item.land, item.region, item.city], (item) => item.id);
+    (item) => [item.country, item.region, item.city], (item) => item.id);
 
   function renderMain() {
     syncTree();
@@ -251,7 +251,7 @@ function catalogue(ctx, objects) {
       view: state.view,
       sort: state.sort === 'availability' ? '' : state.sort,
       plan: state.filters.plan,
-      land: state.sel.land,
+      'land': state.sel.country,
       region: state.sel.region,
       city: state.sel.city,
       obj: state.sel.id,
@@ -273,7 +273,7 @@ function catalogue(ctx, objects) {
         ...(state.sel.id ? [{ label: objects.find((item) => item.id === state.sel.id)?.name || state.sel.id, remove: 'sel' }]
           : state.sel.city ? [{ label: state.sel.city, remove: 'sel' }]
           : state.sel.region ? [{ label: state.sel.region, remove: 'sel' }]
-          : state.sel.land ? [{ label: landName(state.sel.land), remove: 'sel' }] : []),
+          : state.sel.country ? [{ label: countryName(state.sel.country), remove: 'sel' }] : []),
       ],
     });
 
@@ -364,10 +364,10 @@ function catalogue(ctx, objects) {
   onUnmount(catalogueWire.destroy);
 
   wireTree(sidebar, {
-    attrs: ['land', 'region', 'city'], clearBtn: clearButton,
+    attrs: ['country', 'region', 'city'], clearBtn: clearButton,
     onSelect: (selection) => { state.sel = selection; state.page = 1; renderMain(); },
   });
-  restoreTreeSelection(sidebar, state.sel, { attrs: ['land', 'region', 'city'], clearBtn: clearButton });
+  restoreTreeSelection(sidebar, state.sel, { attrs: ['country', 'region', 'city'], clearBtn: clearButton });
   onUnmount(C.wireTableRows(mount.querySelector('#workspace-main')));
   mount.querySelector('#workspace-main').addEventListener('click', (event) => {
     if (!event.target.closest('#workspace-empty-reset')) return;
@@ -387,7 +387,7 @@ function detail(ctx, id) {
   if (!item) {
     C.renderNotFound(ctx, {
       title: 'Workspace-Objekt nicht gefunden', backHref: BASE, backLabel: 'Workspace Management',
-      crumbs: trail(ANWENDUNGEN, { label: 'Workspace Management', href: BASE }),
+      crumbs: trail(APPLICATIONS, { label: 'Workspace Management', href: BASE }),
       body: `Zu der ID «${C.escape(id)}» gibt es kein Workspace-Objekt mit hinterlegtem Geschoss. <a href="${BASE}">Zur Übersicht</a>`,
     });
     return;
@@ -410,71 +410,73 @@ function detail(ctx, id) {
   }).sort((a, b) => a.level - b.level);
   const equipment = planning.equipmentGroups || [];
   const planned = item.planAvailability === 'planned';
+  const tabByLegacyValue = { 'uebersicht': 'overview', 'grundrisse': 'floorplans', 'ausstattung': 'equipment' };
+  const legacyValueByTab = Object.fromEntries(Object.entries(tabByLegacyValue).map(([legacy, tab]) => [tab, legacy]));
   const tabs = [
-    { id: 'uebersicht', label: 'Übersicht' },
-    { id: 'grundrisse', label: `Grundrisse (${floors.length})` },
-    { id: 'ausstattung', label: `Ausstattung (${equipment.length ? item.equipment : 0})` },
+    { id: 'overview', label: 'Übersicht' },
+    { id: 'floorplans', label: `Grundrisse (${floors.length})` },
+    { id: 'equipment', label: `Ausstattung (${equipment.length ? item.equipment : 0})` },
   ];
 
   let floorId = query.get('floor') || '';
   if (floorId && !floors.some((floor) => floor.floorId === floorId)) floorId = '';
-  let active = query.get('tab') || (floorId ? 'grundrisse' : 'uebersicht');
-  if (!tabs.some((tab) => tab.id === active)) active = floorId ? 'grundrisse' : 'uebersicht';
+  let active = tabByLegacyValue[query.get('tab')] || (floorId ? 'floorplans' : 'overview');
+  if (!tabs.some((tab) => tab.id === active)) active = floorId ? 'floorplans' : 'overview';
   let colorMode = COLOR_MODES.some((mode) => mode.value === query.get('color')) ? query.get('color') : COLOR_DEFAULT;
   let spaceId = query.get('space') || '';
   if (!floorId || !core.spacesForFloor(floorId).some((space) => space.spaceId === spaceId)) spaceId = '';
 
   setTitle(item.name);
-  setCrumbs(trail(ANWENDUNGEN, { label: 'Workspace Management', href: BASE }, { label: item.name }));
+  setCrumbs(trail(APPLICATIONS, { label: 'Workspace Management', href: BASE }, { label: item.name }));
 
   const syncHash = () => {
     const params = new URLSearchParams({ id: item.id });
     // A floor already implies the Grundrisse register, so that common shared
     // link stays short. An overview with a remembered floor needs an explicit
     // tab; otherwise reloading it would unexpectedly reopen the preview.
-    if ((active === 'uebersicht' && floorId)
-      || (active === 'grundrisse' && !floorId)
-      || !['uebersicht', 'grundrisse'].includes(active)) params.set('tab', active);
+    if ((active === 'overview' && floorId)
+      || (active === 'floorplans' && !floorId)
+      || !['overview', 'floorplans'].includes(active)) params.set('tab', legacyValueByTab[active]);
     if (floorId) params.set('floor', floorId);
     if (colorMode !== COLOR_DEFAULT) params.set('color', colorMode);
     if (spaceId) params.set('space', spaceId);
-    // The shared gallery owns `bild`; preserve its current value while this
+
     // detail synchronises its independent tab/floor state.
     const liveQuery = new URLSearchParams((location.hash.split('?')[1] || ''));
     if (liveQuery.get('bild')) params.set('bild', liveQuery.get('bild'));
     history.replaceState(history.state, '', `${BASE}?${params}`);
   };
 
-  const galleryItems = galleryItemsFrom(item.bilder, {
-    idPrefix: item.id.replaceAll('/', '-'), title: item.name, ort: item.city,
+  const galleryItems = galleryItemsFrom(item.images, {
+    idPrefix: item.id.replaceAll('/', '-'), title: item.name, location: item.city,
   });
   const availability = availabilityMeta(item.planAvailability);
   const order = orderMeta(planning);
 
-  const metricArea = (value) => `${num(Math.round(Number(value) || 0))}<small> m²</small>`;
+  const metricArea = (value) => `${formatNumber(Math.round(Number(value) || 0))}<small> m²</small>`;
   const overviewPanel = () => `<div class="detail-layout workspace-overview">
     <div>
       <section>
         <h3 class="detail-section__title">${planned ? 'Ausstattung und Mengengerüst' : 'Workspace-Bestand'}</h3>
         <div class="kpi-strip" aria-label="Workspace-Kennzahlen">
           <div class="kpi-strip__item"><span class="kpi-strip__label">${planned ? 'HNF der geplanten Geschosse' : 'HNF der erfassten Geschosse'}</span><span class="kpi-strip__value">${metricArea(planned ? item.plannedHnf : floors.reduce((total, floor) => total + floor.areaHnf, 0))}</span></div>
-          <div class="kpi-strip__item"><span class="kpi-strip__label">Arbeitsplätze</span><span class="kpi-strip__value">${num(item.workplaces)}</span></div>
-          <div class="kpi-strip__item"><span class="kpi-strip__label">Ausstattung</span><span class="kpi-strip__value">${planned ? num(item.equipment) : '—'}</span></div>
+          <div class="kpi-strip__item"><span class="kpi-strip__label">Arbeitsplätze</span><span class="kpi-strip__value">${formatNumber(item.workplaces)}</span></div>
+          <div class="kpi-strip__item"><span class="kpi-strip__label">Ausstattung</span><span class="kpi-strip__value">${planned ? formatNumber(item.equipment) : '—'}</span></div>
           <div class="kpi-strip__item"><span class="kpi-strip__label">Arbeitsfläche je Arbeitsplatz</span><span class="kpi-strip__value">${planned && item.workArea && item.workplaces ? `${(item.workArea / item.workplaces).toLocaleString('de-CH', { maximumFractionDigits: 1 })}<small> m²</small>` : '—'}</span></div>
         </div>
         <div class="mt-4">${planned
           ? C.notification('<p class="m-0"><strong>Prototypdaten:</strong> Ausstattungsgruppen und Planstände sind Annahmen für den Wireframe. Sie sind noch kein freigegebenes Mengengerüst oder Bestellnachweis.</p>', 'hint', 'InfoCircle')
           : C.notification('<p class="m-0">Für dieses Objekt ist noch keine Multispace-Planung erfasst. Die vorhandenen Bestandsgrundrisse können im Register «Grundrisse» schreibgeschützt angesehen werden.</p>', 'info', 'InfoCircle')}</div>
         <dl class="kv workspace-object-facts">
-          <dt>Verwaltungseinheiten</dt><dd>${C.escape(item.nutzer || 'Nicht erfasst')}</dd>
+          <dt>Verwaltungseinheiten</dt><dd>${C.escape(item.occupants || 'Nicht erfasst')}</dd>
           <dt>Objekt</dt><dd>${C.escape(item.name)}<br><span class="small muted">${C.escape(address(item))}</span></dd>
-          <dt>Geschosse gesamt</dt><dd>${num(item.totalFloors || floors.length)} · ${planned
-            ? `davon ${num(item.plannedFloorCount)} mit Multispace-Planung`
+          <dt>Geschosse gesamt</dt><dd>${formatNumber(item.totalFloors || floors.length)} · ${planned
+            ? `davon ${formatNumber(item.plannedFloorCount)} mit Multispace-Planung`
             : `${floorWord(floors.length)} als Bestandsgrundriss im Portal`}</dd>
           <dt>Baujahr</dt><dd>${C.escape(String(item.buildYear || 'Nicht erfasst'))}</dd>
           <dt>Teilportfolio</dt><dd>${C.escape(item.portfolioCategory || 'Nicht erfasst')}</dd>
-          <dt>Nettogeschossfläche (NGF)</dt><dd>${m2(item.ngf)}</dd>
-          <dt>Hauptnutzfläche (HNF)</dt><dd>${m2(item.hnf)}</dd>
+          <dt>Nettogeschossfläche (NGF)</dt><dd>${formatArea(item.ngf)}</dd>
+          <dt>Hauptnutzfläche (HNF)</dt><dd>${formatArea(item.hnf)}</dd>
           ${planning.inventoryOrder ? `<dt>Inventarauftrag</dt><dd><span class="mono">${C.escape(planning.inventoryOrder)}</span></dd>` : ''}
           <dt>Liegenschaften-Inventar</dt><dd><a href="#/app/portfolio?id=${encodeURIComponent(item.id)}">Objekt im Inventar öffnen</a></dd>
         </dl>
@@ -509,7 +511,7 @@ function detail(ctx, id) {
   const equipmentPanel = () => `<div class="mt-4">${planned
     ? C.notification('<p class="m-0">Die aggregierten Ausstattungsgruppen sind Prototypannahmen. Ein belastbares Mengengerüst benötigt Positionen je Gebäude, Geschoss, Raum, Modul und Artikel.</p>', 'hint', 'InfoCircle')
     : C.notification('<p class="m-0">Für den Bestand vor Multispace ist kein Ausstattungs-Mengengerüst hinterlegt.</p>', 'info', 'InfoCircle')}</div><div id="workspace-equipment-table" class="mt-4"></div>`;
-  const panels = { uebersicht: overviewPanel, grundrisse: floorPanel, ausstattung: equipmentPanel };
+  const panels = { overview: overviewPanel, floorplans: floorPanel, equipment: equipmentPanel };
 
   function roomPanel(space) {
     if (!space) return '<div class="box fp-room fp-room--empty"><p class="small muted">Wählen Sie einen Raum im Grundriss, um seine Bestandsdaten zu sehen.</p></div>';
@@ -518,7 +520,7 @@ function detail(ctx, id) {
       ['Fläche', `${space.area} m²`],
       ['SIA 416', `${space.siaLabel} (${space.sia})`],
       space.capacity ? ['Arbeitsplätze', String(space.capacity)] : null,
-      ['Verwaltungseinheit', space.occupierVe || 'nicht zugeteilt'],
+      ['Verwaltungseinheit', space['occupierVe'] || 'nicht zugeteilt'],
     ].filter(Boolean);
     const buildingQuery = `building=${encodeURIComponent(item.id)}&room=${encodeURIComponent(space.roomNumber)}`;
     return `<div class="box fp-room">
@@ -543,12 +545,12 @@ function detail(ctx, id) {
     return `<div class="fp-wrap" id="fp-wrap">
       <div class="fp-head">
         <div class="fp-head__top">
-          <p class="fp-back"><a href="${BASE}?id=${encodeURIComponent(item.id)}&tab=grundrisse" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
+          <p class="fp-back"><a href="${BASE}?id=${encodeURIComponent(item.id)}&tab=grundrisse" id="workspace-floorplan-back">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
           ${floorLinks}
           ${C.select({ id: 'fp-color', label: 'Einfärben nach', value: colorMode, size: 'sm', wrapClass: 'fp-color', options: COLOR_MODES })}
           <div class="fp-head__actions">
-            <button class="btn btn--outline btn--sm" type="button" id="fp-vollbild">${C.icon('Expand', 'btn__icon icon--base')}<span class="btn__text">Vollbild</span></button>
-            <button class="btn btn--outline btn--sm" type="button" id="fp-drucken">${C.icon('Printer', 'btn__icon icon--base')}<span class="btn__text">Drucken</span></button>
+            <button class="btn btn--outline btn--sm" type="button" id="workspace-floorplan-fullscreen">${C.icon('Expand', 'btn__icon icon--base')}<span class="btn__text">Vollbild</span></button>
+            <button class="btn btn--outline btn--sm" type="button" id="workspace-floorplan-print">${C.icon('Printer', 'btn__icon icon--base')}<span class="btn__text">Drucken</span></button>
           </div>
         </div>
       </div>
@@ -563,12 +565,12 @@ function detail(ctx, id) {
             </a>
           </div>
           <dl class="kv kv--tight fp-facts">
-            <dt>Räume</dt><dd>${num(floor.rooms)}</dd>
-            <dt>Fläche (HNF)</dt><dd>${m2(floor.areaHnf)}</dd>
-            <dt>Bruttofläche</dt><dd>${m2(floor.areaGross)}</dd>
-            <dt>Arbeitsplätze</dt><dd>${num(floor.workplaces)}</dd>
+            <dt>Räume</dt><dd>${formatNumber(floor.rooms)}</dd>
+            <dt>Fläche (HNF)</dt><dd>${formatArea(floor.areaHnf)}</dd>
+            <dt>Bruttofläche</dt><dd>${formatArea(floor.areaGross)}</dd>
+            <dt>Arbeitsplätze</dt><dd>${formatNumber(floor.workplaces)}</dd>
             <dt>Planstand</dt><dd>${C.badge(status.label, status.variant, 'sm')}</dd>
-            ${floor.equipmentCount == null ? '' : `<dt>Ausstattung</dt><dd>${num(floor.equipmentCount)}</dd>`}
+            ${floor.equipmentCount == null ? '' : `<dt>Ausstattung</dt><dd>${formatNumber(floor.equipmentCount)}</dd>`}
             ${floor.lastSync ? `<dt>Letzte Synchronisation</dt><dd>${C.escape(floor.lastSync)}</dd>` : ''}
           </dl>
           ${colorMode === 'none' ? '' : `<div><h4 class="fp-side__title">Einfärbung: ${C.escape(colorLabel)}</h4>${floorplanLegend(spaces, colorMode)}</div>`}
@@ -594,17 +596,17 @@ function detail(ctx, id) {
       ],
       columns: [
         { key: 'label', label: 'Geschoss', render: (floor) => `<a href="${BASE}?id=${encodeURIComponent(item.id)}&floor=${encodeURIComponent(floor.floorId)}">${C.escape(floor.label)}</a>` },
-        { key: 'rooms', label: 'Räume', align: 'right', render: (floor) => num(floor.rooms) },
-        { key: 'areaHnf', label: 'HNF', align: 'right', render: (floor) => m2(floor.areaHnf) },
-        { key: 'workplaces', label: 'Arbeitsplätze', align: 'right', render: (floor) => num(floor.workplaces) },
-        { key: 'equipmentCount', label: 'Ausstattung', align: 'right', render: (floor) => floor.equipmentCount == null ? '<span class="muted">—</span>' : num(floor.equipmentCount) },
+        { key: 'rooms', label: 'Räume', align: 'right', render: (floor) => formatNumber(floor.rooms) },
+        { key: 'areaHnf', label: 'HNF', align: 'right', render: (floor) => formatArea(floor.areaHnf) },
+        { key: 'workplaces', label: 'Arbeitsplätze', align: 'right', render: (floor) => formatNumber(floor.workplaces) },
+        { key: 'equipmentCount', label: 'Ausstattung', align: 'right', render: (floor) => floor.equipmentCount == null ? '<span class="muted">—</span>' : formatNumber(floor.equipmentCount) },
         { key: 'planStatus', label: 'Planstand', render: (floor) => {
           const status = floorMeta(floor.planStatus);
           return C.badge(status.label, status.variant, 'sm');
         } },
         { key: 'lastSync', label: 'Letzte Synchronisation', render: (floor) => `<span class="small muted">${C.escape(floor.lastSync || '—')}</span>` },
       ],
-      foot: (_visible, filteredRows) => `<tr><th scope="row">Total (${filteredRows.length})</th><td class="text-right">${num(filteredRows.reduce((sum, floor) => sum + floor.rooms, 0))}</td><td class="text-right">${m2(filteredRows.reduce((sum, floor) => sum + floor.areaHnf, 0))}</td><td class="text-right">${num(filteredRows.reduce((sum, floor) => sum + floor.workplaces, 0))}</td><td class="text-right">${hasEquipment ? num(filteredRows.reduce((sum, floor) => sum + (floor.equipmentCount || 0), 0)) : '<span class="muted">—</span>'}</td><td colspan="2"></td></tr>`,
+      foot: (_visible, filteredRows) => `<tr><th scope="row">Total (${filteredRows.length})</th><td class="text-right">${formatNumber(filteredRows.reduce((sum, floor) => sum + floor.rooms, 0))}</td><td class="text-right">${formatArea(filteredRows.reduce((sum, floor) => sum + floor.areaHnf, 0))}</td><td class="text-right">${formatNumber(filteredRows.reduce((sum, floor) => sum + floor.workplaces, 0))}</td><td class="text-right">${hasEquipment ? formatNumber(filteredRows.reduce((sum, floor) => sum + (floor.equipmentCount || 0), 0)) : '<span class="muted">—</span>'}</td><td colspan="2"></td></tr>`,
     };
   }
 
@@ -621,9 +623,9 @@ function detail(ctx, id) {
       columns: [
         { key: 'number', label: 'Modul', render: (group) => `<span class="mono">M${C.escape(group.number)}</span>` },
         { key: 'name', label: 'Ausstattungsstandard', render: (group) => `<strong>${C.escape(group.name)}</strong>` },
-        { key: 'count', label: 'Positionen', align: 'right', render: (group) => num(group.count) },
+        { key: 'count', label: 'Positionen', align: 'right', render: (group) => formatNumber(group.count) },
       ],
-      foot: (_visible, filteredRows) => `<tr><th scope="row" colspan="2">Total (${filteredRows.length})</th><td class="text-right">${num(filteredRows.reduce((sum, group) => sum + group.count, 0))}</td></tr>`,
+      foot: (_visible, filteredRows) => `<tr><th scope="row" colspan="2">Total (${filteredRows.length})</th><td class="text-right">${formatNumber(filteredRows.reduce((sum, group) => sum + group.count, 0))}</td></tr>`,
     };
   }
 
@@ -632,7 +634,7 @@ function detail(ctx, id) {
       ${C.detailBar({ backHref: BASE, backLabel: 'Workspace Management' })}
       <p class="eyebrow">Objekt ${C.escape(item.id)}${planning.projectId ? ` · Projekt ${C.escape(planning.projectId)}` : ''}</p>
       <h1 tabindex="-1">${C.escape(item.name)}</h1>
-      <p class="lead">${C.escape(address(item))}${item.nutzer ? ` · ${C.escape(item.nutzer)}` : ''}</p>
+      <p class="lead">${C.escape(address(item))}${item.occupants ? ` · ${C.escape(item.occupants)}` : ''}</p>
       <p class="pill-row mt-2">${C.badge(availability.label, availability.variant, 'sm')}${order ? C.badge(order.label, order.variant, 'sm') : ''}</p>
       ${heroMosaic(C, { items: galleryItems, id: 'workspace-mosaic', mapId: 'workspace-hero-map', lat: item.lat, lon: item.lon,
         mapLabel: `Standort von ${item.name} auf der Karte` })}
@@ -706,7 +708,7 @@ function detail(ctx, id) {
     if (mountAllTables) mountTables();
     else mountTable('workspace-floor-table', floorTableConfig());
 
-    mount.querySelector('#fp-zurueck')?.addEventListener('click', (event) => {
+    mount.querySelector('#workspace-floorplan-back')?.addEventListener('click', (event) => {
       event.preventDefault();
       if (document.fullscreenElement) document.exitFullscreen?.();
       floorId = '';
@@ -740,12 +742,12 @@ function detail(ctx, id) {
       mount.querySelector(`[data-floor="${CSS.escape(floorId)}"]`)?.focus({ preventScroll: true });
     }));
     const wrap = mount.querySelector('#fp-wrap');
-    mount.querySelector('#fp-vollbild')?.addEventListener('click', () => {
+    mount.querySelector('#workspace-floorplan-fullscreen')?.addEventListener('click', () => {
       if (document.fullscreenElement) { document.exitFullscreen?.(); return; }
       const request = wrap?.requestFullscreen?.();
       request?.catch?.(() => { /* browser rejected fullscreen */ });
     });
-    mount.querySelector('#fp-drucken')?.addEventListener('click', beginPlanPrint);
+    mount.querySelector('#workspace-floorplan-print')?.addEventListener('click', beginPlanPrint);
   }
 
   function redrawFloorArea() {

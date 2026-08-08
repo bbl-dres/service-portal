@@ -1,10 +1,6 @@
-// Room Booking regression for the one-page, direct-booking surface (Entwurf 1a):
-// search bar → result rows → booking dialog. Also covers the floor-plan and map
-// dialogs, the favourites store, the personal bookings tab, and deep links.
-//
-// The three-step wizard is gone; anything asserting on `#booking-location-next`,
-// `.booking-room-row`, or `Schritt n von 3` belongs to the old surface and was
-// removed with it.
+// Regression coverage for one-page direct booking: search, results, booking,
+// map and floor-plan dialogs, favourites, personal bookings, and deep links.
+// Assertions for the removed three-step wizard intentionally stay absent.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 let failures = 0;
@@ -42,7 +38,7 @@ const SURFACE = `(() => {
   return {
     h1: document.querySelector('h1')?.textContent.trim() || '',
     tabs: document.querySelectorAll('.tab__control').length,
-    // Der Assistent ist weg: keine Schrittanzeige, keine Schritt-Navigation.
+    // The former wizard has no step indicator or step navigation.
     steps: document.querySelectorAll('.step__indicator-step').length,
     stepNav: document.querySelectorAll('#booking-location-next,#booking-step-next,[data-booking-edit-step],[data-booking-back]').length,
     bar: !!document.querySelector('#booking-search'),
@@ -53,7 +49,7 @@ const SURFACE = `(() => {
     rooms: document.querySelectorAll('.booking-room').length,
     bookButtons: document.querySelectorAll('[data-book]').length,
     detailButtons: document.querySelectorAll('[data-details]').length,
-    // Raumkarten tragen kein Foto mehr, sondern das Geschoss-Kennzeichen.
+    // Room cards use floor identifiers instead of photos.
     photos: document.querySelectorAll('.booking-room img').length,
     codes: document.querySelectorAll('.booking-room__code').length,
     radios: document.querySelectorAll('input[name="booking-room"]').length,
@@ -97,7 +93,7 @@ const SEARCH = `(async () => {
     after: document.querySelectorAll('.booking-room').length,
     participants: document.querySelector('#booking-participants').value,
     url: location.hash,
-    // Jede verbliebene Karte muss die Gruppengrösse wirklich fassen.
+    // Every remaining card must fit its actual group size.
     tooSmall: [...document.querySelectorAll('.booking-room__meta')]
       .map(el => Number(/(\\d+)\\s+Plätze/.exec(el.textContent)?.[1] || 0))
       .filter(seats => seats < 13).length,
@@ -229,7 +225,7 @@ const FAVOURITE = `(async () => {
   const after = document.querySelector('.booking-room [data-fav-kind="room"][data-fav-id]');
   const badge = document.querySelector('.booking-room__title .badge')?.textContent.trim() || '';
   const stored = localStorage.getItem('bbl_favorites_v1') || '';
-  // Zurücknehmen, damit die Merkliste die folgenden Prüfungen nicht verschiebt.
+  // Restore the favourite so later assertions keep their expected ordering.
   document.querySelector('[data-fav-kind="room"][aria-pressed="true"]')?.click();
   await wait(250);
   return {
@@ -308,7 +304,7 @@ const BOOK_DIALOG = `(async () => {
     focused: document.activeElement?.id || '',
     card: !!document.querySelector('.modal__body > .card'),
   };
-  // Leerer Titel darf NICHT buchen.
+  // An empty title must never create a booking.
   document.querySelector('#booking-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   await wait(200);
   result.blockedEmpty = !!document.querySelector('#booking-form');
@@ -341,10 +337,10 @@ const STALE_DIALOG_CONFLICT = `(async () => {
     requester: 'Andere Person',
     status: 'zurueckgezogen',
     data: {
-      datum: document.querySelector('#booking-date').value,
+      'datum': document.querySelector('#booking-date').value,
       start: document.querySelector('#booking-start').value,
-      ende: document.querySelector('#booking-end').value,
-      raumId: roomId,
+      'ende': document.querySelector('#booking-end').value,
+      'raumId': roomId,
     },
     linkedEntities: { buildingId: document.querySelector('#booking-location').value },
   });
@@ -354,10 +350,10 @@ const STALE_DIALOG_CONFLICT = `(async () => {
     requester: 'Andere Person',
     status: 'bestaetigt',
     data: {
-      datum: document.querySelector('#booking-date').value,
+      'datum': document.querySelector('#booking-date').value,
       start: document.querySelector('#booking-start').value,
-      ende: document.querySelector('#booking-end').value,
-      raum: roomNumber,
+      'ende': document.querySelector('#booking-end').value,
+      'raum': roomNumber,
     },
     linkedEntities: { buildingId: document.querySelector('#booking-location').value },
   });
@@ -368,7 +364,7 @@ const STALE_DIALOG_CONFLICT = `(async () => {
   const storedAfter = JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]');
   const result = {
     dialogClosed: !document.querySelector('#booking-form'),
-    notCreated: !storedAfter.some((item) => item.data?.zweck === 'Race condition sentinel'),
+    notCreated: !storedAfter.some((item) => item.data?.['zweck'] === 'Race condition sentinel'),
     absentWhileConflicted: ![...document.querySelectorAll('[data-book]')].some((button) => button.dataset.book === roomId),
   };
   const withoutActive = storedAfter.filter((item) => item.instanceId !== marker);
@@ -413,7 +409,7 @@ const BOOK_AGAIN = `(async () => {
   document.querySelector('#booking-again').click();
   await wait(250);
   const rows = JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]');
-  const bookedRoomId = rows.find((item) => item.data?.zweck === 'Projektbesprechung Test')?.data?.raumId || '';
+  const bookedRoomId = rows.find((item) => item.data?.['zweck'] === 'Projektbesprechung Test')?.data?.['raumId'] || '';
   return {
     bar: !!document.querySelector('#booking-search'),
     done: !!document.querySelector('.booking-done'),
@@ -477,8 +473,7 @@ const DEEP_LINK = `(async () => {
 
 const buildingId = '1080/6650/AA';
 const linkedRoomId = '1080-6650-AA-1og-16';
-// Ein Samstag wäre leer gebucht, aber die Vorbelegung ist ein Arbeitstag —
-// 14 Tage voraus liegt sicher hinter dem heutigen Datum und ist frei.
+// Use a free weekday two weeks ahead; the default is also a working day.
 const futureDate = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
 const q = `building=${encodeURIComponent(buildingId)}&date=${futureDate}`;
 
@@ -543,7 +538,7 @@ try {
     check(/date=/.test(s.url) && /participants=/.test(s.url), `criteria are mirrored into the URL (${s.url.slice(0, 90)})`);
 
     const quick = await page.evaluate(QUICK_TOMORROW);
-    check(quick.after === quick.iso, `"Morgen" sets tomorrow's date (${quick.before} → ${quick.after})`);
+check(quick.after === quick.iso, `tomorrow quick choice sets the expected date (${quick.before} → ${quick.after})`);
     check(quick.url.includes(quick.iso), 'the quick choice reaches the URL');
 
     const searched = await page.evaluate(SEARCH);
@@ -594,7 +589,7 @@ try {
     check(dialog.title === `${dialog.roomName} buchen`, `the booking dialog names the room ("${dialog.title}")`);
     check(dialog.card, 'the dialog body sits on the CD card surface');
     check(/Wann/.test(dialog.facts) && /Wo/.test(dialog.facts), `it echoes when and where ("${dialog.facts.slice(0, 60)}")`);
-    check(dialog.titleField && dialog.invite && dialog.change && dialog.submit, 'it carries title, invitees, «Ändern» and the binding action');
+check(dialog.titleField && dialog.invite && dialog.change && dialog.submit, 'it carries title, invitees, the change action, and the binding action');
     check(dialog.focused === 'booking-title', `focus lands on the first field ("${dialog.focused}")`);
     check(dialog.blockedEmpty && /Sitzungstitel/.test(dialog.emptyMsg), `an empty title is refused ("${dialog.emptyMsg}")`);
     check(dialog.cancelled && dialog.roomsIntact > 0, 'cancelling closes the dialog and leaves the list untouched');
@@ -614,12 +609,12 @@ try {
       check(submitted.again && submitted.ics, 'the confirmation offers a calendar file and a way back into the list');
 
       const again = await page.evaluate(BOOK_AGAIN);
-      check(again.bar && !again.done, '«Weiteren Raum buchen» returns to the one-page surface');
+check(again.bar && !again.done, 'the book-another-room action returns to the one-page surface');
       check(again.bookedRoomId && !again.bookedRoomStillListed,
         'the new overlapping booking is removed from the available-room list');
 
       const bookings = await page.evaluate(MY_BOOKINGS);
-      check(bookings.visible && bookings.entries > 0, `the new booking shows under Meine Buchungen (${bookings.entries})`);
+check(bookings.visible && bookings.entries > 0, `the new booking appears on the personal-bookings tab (${bookings.entries})`);
       check(bookings.titles.includes('Projektbesprechung Test'), `the meeting title survives (${bookings.titles.join(', ')})`);
       check(bookings.cancellable > 0, 'a locally created future booking can be cancelled');
       check(bookings.favs && bookings.mapButton, 'the tab carries the remembered locations and the map entry point');

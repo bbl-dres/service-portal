@@ -25,10 +25,10 @@
 @media (min-width:1280px){ .notification__content { margin-block:var(--sp-2); } }
 .notification__content > p { margin:0; overflow-wrap:anywhere; }
 .notification__content > p + p { margin-top:var(--sp-1); }
-/* KEINE .notification__title-Regel: nichts emittiert die Klasse, und CDs
-   Titel-Anatomie ist grösser (__header + --with-title + __content-offset,
-   notification.postcss:98-112) — eine halbe Implementation wäre eine Falle.
-   Kommt vollständig, wenn eine betitelte Meldung gebraucht wird. */
+/* NO .notification__title rule: nothing emits the class, and CD's title anatomy
+   is larger (__header + --with-title + __content-offset,
+   notification.postcss:98-112). A partial implementation would be a trap; add
+   it in full when a titled notification is needed. */
 .notification--info    { background:var(--color-info-bg-subtle);    color:var(--color-info-text-subtle); }
 .notification--success { background:var(--color-success-bg-subtle); color:var(--color-success-text); }
 .notification--warning { background:var(--color-warning-bg-subtle); color:var(--color-warning-text); }
@@ -42,21 +42,21 @@
 @media (min-width:1024px){ .notification-banner { padding:var(--sp-10) 0; } }
 .notification-banner--fixed { position:fixed; z-index:var(--z-toast); right:0; bottom:0; left:0; width:100%;
   border-top:var(--stroke-1) solid var(--color-bg); box-shadow:var(--shadow-2xl); }
-/* --alert (Lebensgefahr, notification.postcss:29-58) hat bewusst KEINEN
-   Portal-Konsumenten — die Variante bleibt als CD-Kanon stehen, weil
-   --color-alert-bg und der notification()-role-Zweig sie referenzieren;
-   löschen würde die Kette verwaisen (Design-Review, Entscheid zu C9). */
+/* --alert (danger to life, notification.postcss:29-58) DELIBERATELY has NO
+   portal consumer. The variant remains as CD canon because --color-alert-bg
+   and the notification() role branch reference it; deleting it would orphan
+   that chain (Design Review, C9 decision). */
 .notification--alert   { background:var(--color-alert-bg);          color:var(--color-text-negative); }
-/* JEDES interaktive Kind einer Meldung erbt die Meldungsfarbe (currentColor) statt
-   Brand-Primary — CD notification.postcss:11-21 (text-current, hover brightness-50).
-   Deckt <a>, button.link UND .btn ab; die frühere --alert-Sonderregel ist damit
-   der Spezialfall der allgemeinen Regel. Hover pinnt die Farbe erneut, weil
-   .link:hover (0,2,0) sonst Brand-Primary zurückholte. */
+/* EVERY interactive child of a notification inherits its color (currentColor)
+   instead of brand primary: CD notification.postcss:11-21 (text-current, hover
+   brightness-50). Covers <a>, button.link AND .btn; the former --alert special
+   rule becomes a case of the general rule. Hover pins color again because
+   .link:hover (0,2,0) would otherwise restore brand primary. */
 .notification a, .notification .link { color:currentColor; text-decoration:underline; text-underline-offset:var(--stroke-2); }
 .notification a:hover, .notification a:focus, .notification .link:hover, .notification .link:focus { color:currentColor; filter:brightness(.5); }
 .notification .btn { color:currentColor; border-color:currentColor; }
 .notification .btn:hover { color:currentColor; border-color:currentColor; filter:brightness(.5); }
-/* Schliessen-Knopf (CD notification.postcss) — 44px-Trefferfläche um das 2rem-Icon. */
+/* Close button (CD notification.postcss): 44px hit area around the 2rem icon. */
 .notification--dismissible { padding-right:var(--target-min); }
 .notification__close { position:absolute; top:0; right:0; display:inline-flex; align-items:center; justify-content:center;
   min-width:var(--target-min); min-height:var(--target-min); padding:var(--sp-1-5); border:0; background:none; color:inherit; cursor:pointer; }
@@ -64,33 +64,32 @@
 .notification__close:hover { opacity:.7; }
 
 /* Step indicator (step-indicator.postcss:5-23) */
-/* row-gap kleiner als column-gap: bei 320/390 bricht die Leiste um, und die
-   engere Zeilenlücke lässt den Umbruch als absichtliche Reihe lesen. */
+/* row-gap is smaller than column-gap: at 320/390 the bar wraps, and the tighter
+   row gap makes the wrap read as an intentional row. */
 .steps { display:flex; gap:var(--sp-4); row-gap:var(--sp-3); list-style:none; margin:0 0 var(--sp-8); flex-wrap:wrap; padding:0; }
 .steps li { display:flex; align-items:center; gap:var(--sp-2); font-size:var(--text-sm); color:var(--color-text-muted); }
 .steps li[aria-current="step"] { color:var(--color-text); font-weight:var(--fw-bold); }
-/* CD skopiert jede Step-Regel unter `.step__indicator` (step-indicator.postcss:5-24,
-   StepIndicator.vue:2-9); unser Markup lässt diesen Wrapper heute weg. Deshalb
-   UNION beider Formen: das heutige `<ol class="steps"><li><span …>` UND CDs
-   Wrapper, den Item 3.10 nachliefert. Item 7.8 löscht danach die `.steps > li >`-
-   Hälfte — CD-verbatim, ohne kaputten Zwischenzustand. Item 2.3 nutzt dieselbe
-   Union-Form. */
-/* Kontrast (Item 2.3): die CD-Vorlage selbst ist hier nicht AA-konform
-   (step-indicator.postcss:6-24 nutzt gray-400) — bewusste Abweichung nach
-   BehiG/P028, aber innerhalb von CDs Token-Vokabular. Gemessene Verhältnisse:
-     alt  #9ca3af auf Weiss und Weiss auf #9ca3af  = 2.54:1  (Soll 4.5:1)
-     alt  Weiss auf --color-success #10b981        = 2.54:1  (Soll 3:1)
-     neu  --color-text-600 auf Weiss               = 7.56:1
-     neu  Rahmen --color-secondary-400             = 5.65:1 rot / 4.58:1 intranet
-     neu  Weiss auf --color-primary-600            = 5.01:1 rot / 5.17:1 intranet
-     neu  Weiss auf --color-success-text #065f46   = 7.68:1
-   «Aktuell» ist jetzt primary-600 wie .pipeline__step--active — EINE
-   Du-bist-hier-Farbe im Produkt; vorher war der aktuelle Schritt schwächer als
-   die erledigten. Der primary-100-Ring trägt den Zustand zusätzlich zur Farbe
-   (WCAG 1.4.1). */
-/* Nur noch CDs Wrapper-Form (Item 7.8 eingelöst): stepIndicator() rendert den
-   .step__indicator-Wrapper seit Item 3.10, die `.steps > li >`-Hälften waren
-   redundant. */
+/* CD scopes every step rule under `.step__indicator`
+   (step-indicator.postcss:5-24, StepIndicator.vue:2-9); current markup omits
+   this wrapper. Therefore use the UNION of both forms: today's
+   `<ol class="steps"><li><span …>` AND CD's wrapper, supplied by Item 3.10.
+   Item 7.8 then removes the `.steps > li >` half, CD-verbatim without a broken
+   intermediate state. Item 2.3 uses the same union form. */
+/* Contrast (Item 2.3): the CD template itself is not AA-conformant here
+   (step-indicator.postcss:6-24 uses gray-400). This is a deliberate deviation
+   under BehiG/P028, but stays within CD's token vocabulary. Measured ratios:
+     old  #9ca3af on white and white on #9ca3af  = 2.54:1  (target 4.5:1)
+     old  white on --color-success #10b981       = 2.54:1  (target 3:1)
+     new  --color-text-600 on white              = 7.56:1
+     new  border --color-secondary-400           = 5.65:1 red / 4.58:1 intranet
+     new  white on --color-primary-600           = 5.01:1 red / 5.17:1 intranet
+     new  white on --color-success-text #065f46  = 7.68:1
+   Current now uses primary-600 like .pipeline__step--active: ONE you-are-here
+   color in the product. Previously the current step was weaker than completed
+   steps. The primary-100 ring conveys state in addition to color (WCAG 1.4.1). */
+/* Only CD's wrapper form remains (Item 7.8 fulfilled): stepIndicator() has
+   rendered the .step__indicator wrapper since Item 3.10, so the
+   `.steps > li >` halves were redundant. */
 .step__indicator .step__indicator-step { display:inline-flex; align-items:center; justify-content:center;
   width:36px; height:36px; flex:none; border-radius:var(--radius-full);
   background:transparent; color:var(--color-text-600); border:var(--stroke-2) solid var(--color-secondary-400);
@@ -108,33 +107,31 @@
 .timeline li.current::before { background:var(--color-gray-400); }
 .timeline .when { font-size:var(--text-xs); color:var(--color-text-muted); }
 
-/* Status-Stepper (C.pipeline) — Chevron-Segmente via clip-path, damit die Pfeile
-   ohne z-index-Tricks ineinandergreifen. Erledigt = grün, aktuell = Primärfarbe,
-   offen = grau. Auf schmalen Viewports horizontal scrollbar. */
-/* `position:relative` ist hier der P0-Fix, nicht Kosmetik: ohne einen
-   positionierten Vorfahren lösen die `<span class="sr-only">`-Marker in den
-   Schritten ihren umgebenden Block bis `#main-content{position:relative}` auf —
-   absolut positionierte Nachkommen werden NICHT vom overflow eines
-   unpositionierten Vorfahren beschnitten. Einer landete bei x=338 und trieb
-   documentElement.scrollWidth in einem 320px-Viewport auf 339, d. h. die ganze
-   case-detail-Seite scrollte seitwärts (WCAG 1.4.10). Live gemessen: 339 → 320. */
-/* UMBRUCH STATT SEITWÄRTSSCROLLEN: Abläufe mit sechs und mehr Schritten
-   («Raumbedarf-Antrag») passten nie in eine Zeile — die letzten Schritte lagen
-   hinter einem waagrechten Scrollbalken und damit faktisch unsichtbar. Ein
-   Ablauf ist aber genau die Information, die man VOLLSTÄNDIG sehen will.
-   Die Segmente brechen jetzt um; die Chevron-Optik bleibt zeilenweise erhalten.
+/* Status stepper (C.pipeline): chevron segments use clip-path so arrows
+   interlock without z-index tricks. Completed = green, current = primary,
+   open = gray. Horizontally scrollable on narrow viewports. */
+/* `position:relative` is the P0 fix here, not cosmetics: without a positioned
+   ancestor, `<span class="sr-only">` markers in the steps resolve their
+   containing block all the way to `#main-content{position:relative}`. Absolutely
+   positioned descendants are NOT clipped by an unpositioned ancestor's
+   overflow. One landed at x=338 and drove documentElement.scrollWidth to 339
+   in a 320px viewport, making the entire case-detail page scroll sideways
+   (WCAG 1.4.10). Measured live: 339 → 320. */
+/* WRAP INSTEAD OF SIDEWAYS SCROLLING: flows with six or more steps never fit
+   one row. Final steps sat behind a horizontal scrollbar and were effectively
+   invisible, even though a process is precisely the information users need to
+   see IN FULL. Segments now wrap while preserving the chevron treatment per row.
 
-   `padding-left:var(--arrow)` gleicht den negativen Rand aus, mit dem die
-   Segmente ineinandergreifen — sonst ragte die erste Kachel JEDER Folgezeile
-   um eine Pfeilbreite nach links aus dem Container. */
-/* `--seg-gap` = sichtbarer Spalt zwischen den Segmenten. Vorher griffen die
-   Chevrons exakt ineinander (Überlappung = volle Pfeilbreite): die Kette sah
-   aus wie EIN Balken, die einzelnen Pfeilspitzen verschwanden. Ein paar Pixel
-   Luft lassen den helleren Kastenhintergrund durchscheinen und machen die
-   Pfeilform — und damit die Leserichtung — überhaupt erst sichtbar.
-   Die Überlappung wird um genau diesen Spalt verringert; das
-   `padding-left` gleicht den verbleibenden negativen Rand wieder aus, damit
-   die erste Kachel jeder Zeile bündig am Container beginnt. */
+   `padding-left:var(--arrow)` offsets the negative margin used to interlock
+   segments. Otherwise the first tile of EVERY following row protruded one
+   arrow width to the left of the container. */
+/* `--seg-gap` = visible gap between segments. Previously the chevrons
+   interlocked exactly (overlap = full arrow width), so the chain looked like
+   ONE bar and individual arrowheads disappeared. A few pixels reveal the
+   lighter box background, making the arrow shape and reading direction visible.
+   The overlap is reduced by exactly this gap; `padding-left` offsets the
+   remaining negative margin so each row's first tile begins flush with the
+   container. */
 .pipeline {
   --arrow:var(--sp-3);
   --seg-gap:var(--sp-1);
@@ -143,22 +140,21 @@
 }
 .pipeline-wrap { position:relative; }
 .pipeline__step {
-  /* Die Segmente füllen die Zeile aus (`1 1 auto`): die Kette bleibt ein
-     durchgehender Balken bis zum rechten Rand, statt mit einer Lücke zu enden. */
+  /* Segments fill the row (`1 1 auto`): the chain stays continuous to the
+     right edge rather than ending with a gap. */
   flex:1 1 auto; max-width:100%;
   display:flex; align-items:center; justify-content:center; gap:var(--sp-2);
   min-height:var(--target-min); padding:var(--sp-2) var(--sp-4) var(--sp-2) calc(var(--sp-4) + var(--arrow));
   margin-left:calc(var(--seg-gap) - var(--arrow));
   background:var(--color-secondary-100); color:var(--color-text-muted);
   font-size:var(--fs-sm); font-weight:var(--fw-bold); line-height:1.2;
-  /* Kein `nowrap` mehr: ein langer Schritttitel («In Projekt überführt») darf
-     im Segment umbrechen, statt die Zeile zu sprengen. */
+  /* No more `nowrap`: a long step title may wrap within its segment instead of
+     breaking the row. */
   text-align:center; hyphens:auto;
   clip-path:polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%, var(--arrow) 50%);
 }
-/* Nur das ERSTE Segment der Liste bekommt eine glatte linke Kante. Das erste
-   Segment einer Folgezeile behält die Einkerbung — sie liest sich als
-   Fortsetzung der Zeile darüber. */
+/* Only the list's FIRST segment gets a straight left edge. The first segment in
+   a following row keeps its notch, making it read as a continuation of the row above. */
 .pipeline__step:first-child {
   clip-path:polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%); }
 .pipeline__step:last-child {
@@ -185,8 +181,8 @@
 .accordion__item[aria-invalid="true"] > .accordion__heading > .accordion__button { color:var(--color-error-text); }
 .accordion__item[data-empty="true"] > .accordion__heading > .accordion__button {
   cursor:default; color:var(--color-text-muted); }
-/* Lange, unbrechbare Komposita (z. B. «Bauwerksdokumentationen») müssen umbrechen,
-   sonst schiebt der Text das Chevron bei 320px aus dem Viewport. */
+/* Long, unbreakable compound UI terms must wrap, or text pushes the chevron out
+   of the viewport at 320px. */
 .accordion__button > span { min-width:0; overflow-wrap:anywhere; }
 .accordion__heading { margin:0; font-size:inherit; font-weight:inherit; }
 .accordion__title { font-size:var(--fs-base); text-align:left; padding:var(--sp-1) var(--sp-4) var(--sp-1) 0; margin:0; overflow-wrap:anywhere; }
@@ -202,32 +198,30 @@
 .accordion__drawer { width:100%; max-height:none; overflow:hidden;
   transition:max-height var(--duration-slow) var(--ease-out); }
 .accordion__content { width:100%; padding:var(--sp-4) var(--sp-2) var(--sp-10); }
-/* CD accordion.postcss:70-73 2xl:px-3 — hält den Inhalt bündig mit dem Knopf,
-   der bei 1544 ebenfalls auf .75rem Inline-Polster springt. */
+/* CD accordion.postcss:70-73 2xl:px-3: keeps content aligned with the button,
+   which also jumps to .75rem inline padding at 1544. */
 @media (min-width:1544px){ .accordion__content { padding-inline:var(--sp-3); } }
 /* right-hand cluster in an accordion header (format badge + chevron) */
 .accordion__meta { display:flex; align-items:center; gap:var(--sp-3); flex:none; }
 
-/* .data-rows/.data-row sind GELÖSCHT: die Parallel-Implementierung des
-   Schlüssel-Wert-Musters (nur Datenkatalog + my-cases) ist auf das EINE
-   Rezept dl.kv (+ .kv--ruled für die Trennlinien) umgezogen — die alte
-   Begründung «eine dl bräuchte ein Grid je Paar» widerlegt .kv selbst
-   (Design-Review C7). */
+/* .data-rows/.data-row are DELETED: the parallel implementation of the
+   key-value pattern (data catalogue + my-cases only) moved to the ONE recipe
+   dl.kv (+ .kv--ruled for dividers). .kv itself disproves the old claim that a
+   dl would need one grid per pair (Design Review C7). */
 
 /* Detail page section rhythm (CD vertical-spacing between content blocks) */
-/* Rhythmus aus --stack-gap: stuft bei 1544px wie CD (spacings.postcss:7-8) —
-   vorher stufte NUR diese Regel schon bei 1024px, Detailabschnitte der Apps
-   sassen zwischen 1024 und 1544 8px weiter auseinander als jede
-   .vertical-spacing-Spalte (Design-Review C2). */
+/* Rhythm from --stack-gap: steps at 1544px like CD (spacings.postcss:7-8).
+   Previously ONLY this rule stepped at 1024px, placing app detail sections 8px
+   farther apart than every .vertical-spacing column between 1024 and 1544
+   (Design Review C2). */
 .detail-section { margin-top:var(--stack-gap); }
-/* Abstand unter dem Detail-Hero: EIN Wert für alle Geschwister. Vorher trugen
-   Dienstleistung/Anwendung/Info-Seite mt-6 (1.5rem), nur der Datensatz stand
-   auf dem 3rem-Abschnittsrhythmus — dieselbe Stelle, zwei Lufträume
-   (Design-Review, pages-Befund). Die Seiten tragen kein mt-6 mehr. */
+/* Space below the detail hero: ONE value for every sibling. Previously service,
+   application and info pages used mt-6 (1.5rem), while only the dataset used
+   the 3rem section rhythm: the same location with two spacing systems
+   (Design Review, pages finding). Pages no longer carry mt-6. */
 .hero + .container--grid, .hero + .measure-xl { margin-top:var(--stack-gap); }
-/* Der Abstand unter dem Hero liegt am Wrapper — das erste .detail-section-Kind
-   darf ihn nicht verdoppeln (6rem statt 3rem, sichtbar auf Anwendungs- und
-   Datensatzblatt). */
+/* The wrapper owns spacing below the hero; the first .detail-section child must
+   not double it (6rem instead of 3rem, visible on application and dataset sheets). */
 .container__main > .detail-section:first-child,
 .measure-xl > .detail-section:first-child { margin-top:0; }
 .detail-section__title { margin-bottom:var(--sp-4); }

@@ -28,7 +28,7 @@ const check = (condition, label, detail = '') => {
   console.log(`   ${condition ? '✓' : '✗'} ${label}${detail ? ` (${detail})` : ''}`);
   if (!condition) failures++;
 };
-const buildings = new Map(features.map(feature => [feature.properties.bbl_id, feature.properties]));
+const buildings = new Map(features.map(feature => [feature.properties['bbl_id'], feature.properties]));
 const planningByBuilding = new Map(planning.map(entry => [entry.buildingId, entry]));
 const planningFloor = floor => planningByBuilding.get(floor.buildingId)?.floors
   ?.find(entry => entry.floorId === floor.floorId) || null;
@@ -38,7 +38,7 @@ const baselineFor = floor => model.createBaseline({
   products, planningFloor: planningFloor(floor), user: { name: 'Modelltest' },
 });
 
-console.log('■ Kanonische Baselines');
+console.log('■ Canonical baselines');
 let placementCount = 0;
 let relationshipErrors = 0;
 for (const floor of floors) {
@@ -56,8 +56,8 @@ for (const floor of floors) {
       || cx < x || cx > x + width || cy < y || cy > y + height) relationshipErrors++;
   }
 }
-check(relationshipErrors === 0, 'alle Geschosse behalten geschlossene Raum-/Produkt-/Geometriebezüge',
-  `${floors.length} Geschosse · ${spaces.length} Räume · ${placementCount} illustrative Positionen`);
+check(relationshipErrors === 0, 'All floors retain complete room, product and geometry relationships',
+  `${floors.length} floors · ${spaces.length} rooms · ${placementCount} illustrative placements`);
 
 const floor = floors.find(entry => entry.floorId === '1080-6650-AA-2og');
 const sourceRoom = spaces.find(entry => entry.floorId === floor.floorId);
@@ -68,7 +68,7 @@ check(baseline.baseRevision === repeated.baseRevision
   && JSON.stringify(baseline.rooms) === JSON.stringify(repeated.rooms)
   && JSON.stringify(baseline.products) === JSON.stringify(repeated.products)
   && JSON.stringify(baseline.placements) === JSON.stringify(repeated.placements),
-'gleiche Kerndaten erzeugen dieselbe Revision und dieselben Startpositionen', baseline.baseRevision);
+'Identical core data produces the same revision and initial placements', baseline.baseRevision);
 const changedCatalogue = products.map((product, index) => index ? product : { ...product, price: Number(product.price || 0) + 1 });
 const catalogueOnlyChange = model.createBaseline({
   building: buildings.get(floor.buildingId), floor,
@@ -76,12 +76,12 @@ const catalogueOnlyChange = model.createBaseline({
   products: changedCatalogue, planningFloor: planningFloor(floor), user: { name: 'Modelltest' },
 });
 check(catalogueOnlyChange.baseRevision === repeated.baseRevision,
-  'Katalogänderungen machen eine Raum-Arbeitskopie nicht unnötig ungültig');
-baseline.rooms[0].occupierVe = 'Nur im Entwurf';
+  'Catalogue changes do not invalidate a room draft unnecessarily');
+baseline.rooms[0]['occupierVe'] = 'Nur im Entwurf';
 check(JSON.stringify(sourceRoom) === sourceSnapshot,
-  'das abgelöste Editor-Dokument mutiert den eingelesenen Raum nicht');
+  'The detached editor document does not mutate the source room');
 
-console.log('■ Dokumentbefehle');
+console.log('■ Document commands');
 const commandDocument = model.cloneDocument(repeated);
 const commandRoom = commandDocument.rooms.find(room => commandDocument.placements.some(item => item.roomId === room.spaceId));
 commandDocument.rooms = [commandRoom];
@@ -91,20 +91,20 @@ const oldRect = commandRoom.rect.slice();
 const dx = oldRect[0] >= 10 ? -10 : 10;
 const oldPlacementX = roomPlacements[0].x;
 check(commands.updateRoomAttribute(commandDocument, commandRoom.spaceId, 'occupierVe', 'Befehlstest VE')
-  && commandRoom.occupierVe === 'Befehlstest VE',
-  'Raumattribute werden über die fachliche Befehlsschnittstelle geändert');
+  && commandRoom['occupierVe'] === 'Befehlstest VE',
+  'Room attributes change through the domain command interface');
 check(commands.updateRoomGeometry(commandDocument, commandRoom.spaceId, 'x', oldRect[0] + dx, floor.extent)
   && commandRoom.rect[0] === oldRect[0] + dx && roomPlacements[0].x === oldPlacementX + dx,
-  'Raumverschiebungen halten zugeordnete Objekte relativ zur Fläche');
+  'Moving a room keeps its placements relative to the room');
 const validSnapshot = JSON.stringify(commandDocument);
 check(!commands.updateRoomGeometry(commandDocument, commandRoom.spaceId, 'width', floor.extent[0] + 100, floor.extent)
   && JSON.stringify(commandDocument) === validSnapshot,
-  'ungültige Raumgeometrie wird ohne Teildokument-Änderung abgelehnt');
+  'Invalid room geometry is rejected without partially changing the document');
 const commandPlacement = commandDocument.placements[0];
 const commandPlacementX = commandPlacement.x;
 check(commands.updatePlacement(commandDocument, commandPlacement.placementId, 'x', commandPlacementX, floor)
   && commandPlacement.x === commandPlacementX && model.validateEditorDocument(commandDocument, repeated),
-  'Objektbefehle bewahren Raum-, Produkt- und Geschossinvarianten');
+  'Placement commands preserve room, product and floor invariants');
 
 const commandGuardSnapshot = JSON.stringify(commandDocument);
 check(!commands.updateRoomAttribute(commandDocument, commandRoom.spaceId, 'unbekannt', 'Wert')
@@ -113,7 +113,7 @@ check(!commands.updateRoomAttribute(commandDocument, commandRoom.spaceId, 'unbek
   && !commands.updatePlacement(commandDocument, commandPlacement.placementId, 'width', 20, floor)
   && !commands.updatePlacement(commandDocument, commandPlacement.placementId, 'rotation', 22, floor)
   && JSON.stringify(commandDocument) === commandGuardSnapshot,
-  'Befehle lehnen unbekannte Felder und ungültige Fachwerte ohne Mutation ab');
+  'Commands reject unknown fields and invalid domain values without mutation');
 
 const overlapDocument = model.cloneDocument(repeated);
 overlapDocument.rooms = overlapDocument.rooms.slice(0, 2);
@@ -123,20 +123,20 @@ commands.stampRoomGeometry(overlapDocument.rooms[1], [300, 0, 300, 300]);
 const touchingSnapshot = JSON.stringify(overlapDocument);
 check(model.validateEditorDocument(overlapDocument, repeated)
   && !model.roomRectsOverlap(overlapDocument.rooms[0].rect, overlapDocument.rooms[1].rect),
-  'sich nur berührende Raumkanten bleiben zulässig');
+  'Room edges may touch without overlapping');
 check(!commands.updateRoomGeometry(overlapDocument, overlapDocument.rooms[0].spaceId,
   'width', 301, floor.extent)
   && JSON.stringify(overlapDocument) === touchingSnapshot,
-  'Raumänderungen mit positiver Überlappung werden atomar abgelehnt');
+  'Room changes that create overlap are rejected atomically');
 check(commands.createLocalRoom({
   floor, buildingId: repeated.buildingId, rect: [250, 50, 100, 100], ordinal: 1,
   id: 'local-room-overlap-test', rooms: overlapDocument.rooms,
 }) === null,
-'neue Räume dürfen bestehende Flächen nicht überlagern');
+'New rooms cannot overlap existing rooms');
 const invalidOverlap = model.cloneDocument(overlapDocument);
 commands.stampRoomGeometry(invalidOverlap.rooms[1], [299, 0, 300, 300]);
 check(!model.validateEditorDocument(invalidOverlap),
-  'die Dokumentvalidierung weist positive Raumüberlappungen unabhängig vom UI zurück');
+  'Document validation rejects room overlap independently of the UI');
 
 const atomicMove = model.cloneDocument(repeated);
 const boundaryPlacement = atomicMove.placements[0];
@@ -154,7 +154,7 @@ const atomicSnapshot = JSON.stringify(atomicMove);
 check(model.validateEditorDocument(atomicMove, repeated)
   && !commands.updateRoomGeometry(atomicMove, boundaryRoom.spaceId, 'x', 0, floor.extent)
   && JSON.stringify(atomicMove) === atomicSnapshot,
-  'Raumverschiebungen werden verworfen, wenn ein vollständiger Objekt-Fussabdruck das Geschoss verlässt');
+  'Room moves are rejected when a complete placement footprint leaves the floor');
 
 const rotationBoundary = model.cloneDocument(atomicMove);
 const rotatedPlacement = rotationBoundary.placements[0];
@@ -169,9 +169,9 @@ const rotationSnapshot = JSON.stringify(rotationBoundary);
 check(model.validateEditorDocument(rotationBoundary, repeated)
   && !commands.updatePlacement(rotationBoundary, rotatedPlacement.placementId, 'rotation', rejectedRotation, floor)
   && JSON.stringify(rotationBoundary) === rotationSnapshot,
-  'Drehungen ausserhalb der Geschossgrenze werden ohne Positionsverschiebung abgelehnt');
+  'Rotations outside the floor boundary are rejected without shifting position');
 
-console.log('■ Strikte Fachvalidierung');
+console.log('■ Strict domain validation');
 const wrongArea = model.cloneDocument(repeated);
 wrongArea.rooms[0].area += 1;
 const wrongLabels = model.cloneDocument(repeated);
@@ -186,7 +186,7 @@ const wrongRotation = model.cloneDocument(repeated);
 wrongRotation.placements[0].rotation = -45;
 check([wrongArea, wrongLabels, wrongSia, wrongCapacity, wrongPlacementMetadata, wrongRotation]
   .every(document => !model.validateEditorDocument(document)),
-'abgeleitete Raumdaten, Kapazitäten, Artikelmetadaten und Drehungen bleiben kanonisch');
+'Derived room data, capacities, product metadata and rotations remain canonical');
 const changedImmutable = model.cloneDocument(repeated);
 changedImmutable.building.name = 'Manipulierter Referenzname';
 const changedProductReference = model.cloneDocument(repeated);
@@ -197,7 +197,7 @@ check(model.validateEditorDocument(changedImmutable)
   && !model.validateEditorDocument(changedProductReference, repeated)
   && !repository.saveWorkingCopy(changedImmutable, repeated).ok
   && !repository.saveWorkingCopy(changedProductReference, repeated).ok,
-  'eine Basisprüfung schützt Gebäude-, Geschoss- und aktuelle Katalogreferenzen');
+  'Baseline validation protects building, floor and current catalogue references');
 const catalogueWithInvalidRecord = model.createBaseline({
   building: buildings.get(floor.buildingId), floor,
   spaces: spaces.filter(space => space.floorId === floor.floorId),
@@ -206,14 +206,14 @@ const catalogueWithInvalidRecord = model.createBaseline({
 });
 check(model.validateEditorDocument(catalogueWithInvalidRecord)
   && !catalogueWithInvalidRecord.products.some(product => product.id === 'kaputt'),
-  'unvollständige, fachfremde Katalogdatensätze sperren den Editor nicht');
+  'Incomplete unrelated catalogue records do not block the editor');
 
-console.log('■ Browser-lokaler Entwurf');
+console.log('■ Browser-local draft');
 const saved = repository.saveWorkingCopy(baseline);
 const loaded = repository.loadWorkingCopy(floor.floorId, repeated);
 check(saved.ok && loaded.ok && loaded.source === 'browser-local'
-  && loaded.document.rooms[0].occupierVe === 'Nur im Entwurf',
-'ein valider Entwurf wird gestempelt und getrennt wieder geladen');
+  && loaded.document.rooms[0]['occupierVe'] === 'Nur im Entwurf',
+'A valid draft is stamped and loaded independently');
 
 const draftKey = `${repository.DRAFT_PREFIX}${encodeURIComponent(floor.floorId)}`;
 const stale = model.cloneDocument(repeated);
@@ -224,20 +224,20 @@ check(staleResult.ok && staleResult.source === 'baseline'
   && staleResult.document.baseRevision === repeated.baseRevision
   && staleResult.archivedDraft
   && Boolean(localStorage.getItem(staleResult.archiveKey)),
-'eine fremde Basisrevision fällt sicher zurück und bleibt archiviert wiederherstellbar');
+'A foreign baseline revision falls back safely and remains recoverable from the archive');
 
 localStorage.setItem(draftKey, '{kaputt');
 const corruptResult = repository.loadWorkingCopy(floor.floorId, repeated);
 check(corruptResult.ok && corruptResult.source === 'baseline',
-  'beschädigtes JSON wird nicht als Entwurf übernommen');
+  'Corrupt JSON is not accepted as a draft');
 
 const invalid = model.cloneDocument(repeated);
 const placement = invalid.placements[0];
 placement.roomId = invalid.rooms.find(room => room.spaceId !== placement.roomId).spaceId;
 check(!repository.saveWorkingCopy(invalid).ok,
-  'ein Objekt ausserhalb seines referenzierten Raums wird nicht gespeichert');
+  'A placement outside its referenced room is not saved');
 check(repository.removeWorkingCopy(floor.floorId) && !localStorage.getItem(draftKey),
-  'Entfernen löscht nur den geschossbezogenen Editor-Schlüssel');
+  'Removing a draft deletes only its floor-specific editor key');
 
 const draftLockKey = `bbl_floorplan_editor_lock_v1:draft:${encodeURIComponent(floor.floorId)}`;
 localStorage.setItem(draftLockKey, JSON.stringify({ token: 'anderer-tab', expiresAt: Date.now() + 5000 }));
@@ -245,13 +245,13 @@ const conflictedSave = repository.saveWorkingCopy(repeated, repeated);
 localStorage.removeItem(draftLockKey);
 check(!conflictedSave.ok && conflictedSave.reason === 'storage-conflict'
   && !localStorage.getItem(draftKey),
-  'ein aktiver Schreibvorgang in einem anderen Tab wird nicht still überschrieben');
+  'An active write in another tab is not silently overwritten');
 
-console.log('■ Katalog-Rebase und Draft-Migration');
+console.log('■ Catalogue rebase and draft migration');
 const catalogueDraft = model.cloneDocument(repeated);
 catalogueDraft.rooms[0].roomName = 'Bleibt beim Katalog-Rebase erhalten';
 check(repository.saveWorkingCopy(catalogueDraft, repeated).ok,
-  'Ausgangsentwurf für die Katalogmigration ist gespeichert');
+  'The source draft for catalogue migration is saved');
 const referencedPlacement = repeated.placements[0];
 const referencedProduct = repeated.products.find(product => `${typeof product.id}:${product.id}`
   === `${typeof referencedPlacement.productId}:${referencedPlacement.productId}`);
@@ -270,7 +270,7 @@ check(extendedLoad.ok && extendedLoad.source === 'browser-local' && extendedLoad
   && extendedLoad.droppedPlacementIds.length === 0
   && extendedLoad.document.rooms[0].roomName === 'Bleibt beim Katalog-Rebase erhalten'
   && extendedLoad.document.products.some(product => product.id === addedProduct.id),
-  'ein kompatibler Entwurf übernimmt den aktuellen Katalog ohne Raumänderungen zu verlieren');
+  'A compatible draft adopts the current catalogue without losing room changes');
 const currentNewProduct = extendedLoad.document.products.find(product => product.id === addedProduct.id);
 const newProductPlacement = {
   ...model.cloneDocument(referencedPlacement),
@@ -289,7 +289,7 @@ const newProductPlacement = {
 extendedLoad.document.placements.push(newProductPlacement);
 check(model.validateEditorDocument(extendedLoad.document, extendedBaseline)
   && repository.saveWorkingCopy(extendedLoad.document, extendedBaseline).ok,
-  'neu hinzugekommene Katalogprodukte sind im alten Entwurf direkt platzier- und speicherbar');
+  'New catalogue products can be placed and saved in an existing draft');
 
 const legacyDraft = model.cloneDocument(repeated);
 legacyDraft.rooms[0].roomName = 'Migrierter v1-Entwurf';
@@ -303,14 +303,14 @@ check(legacyLoad.ok && legacyLoad.source === 'browser-local' && legacyLoad.recon
   && Object.hasOwn(legacyLoad.document.placements[0], 'category')
   && Object.hasOwn(legacyLoad.document.placements[0], 'height')
   && Object.hasOwn(legacyLoad.document.placements[0], 'source'),
-  'bereits gültige v1-Entwürfe mit früher optionalen Objektfeldern werden kanonisch migriert');
+  'Valid v1 drafts with formerly optional placement fields migrate canonically');
 const legacyFootprintDraft = model.cloneDocument(rotationBoundary);
 legacyFootprintDraft.placements[0].rotation = rejectedRotation;
 const legacyFootprintRebase = model.rebaseEditorDocument(legacyFootprintDraft, repeated);
 check(legacyFootprintRebase
   && legacyFootprintRebase.droppedPlacementIds.includes(rotatedPlacement.placementId)
   && legacyFootprintRebase.document.placements.length === 0,
-  'früher zulässige Randdrehungen erhalten den Raumentwurf und werden gezielt als Objektverlust gemeldet');
+  'Formerly valid boundary rotations preserve rooms and report the dropped placement');
 
 const resizedProducts = products.map(product => `${typeof product.id}:${product.id}`
   === `${typeof referencedProduct.id}:${referencedProduct.id}`
@@ -337,7 +337,7 @@ check(resizeLoad.ok && resizeLoad.reconciled && resizedPlacement
   && resizedPlacement.depth === referencedPlacement.depth + 2
   && Math.abs(resizedPlacement.x + resizedPlacement.width / 2 - oldCentreX) < 0.001
   && Math.abs(resizedPlacement.y + resizedPlacement.depth / 2 - oldCentreY) < 0.001,
-  'geänderte Produktmasse werden bei erhaltenem Mittelpunkt sicher nachgeführt');
+  'Changed product dimensions retain the placement centre safely');
 
 const catalogueWithoutReferenced = products.filter(product => `${typeof product.id}:${product.id}`
   !== `${typeof referencedProduct.id}:${referencedProduct.id}`);
@@ -359,7 +359,7 @@ check(removedProductLoad.ok && removedProductLoad.reconciled
   && removedProductLoad.reconciliationPersistenceReason === 'review-required'
   && archivedRemovedProductDraft.placements.some(item => item.placementId === referencedPlacement.placementId)
   && JSON.stringify(JSON.parse(localStorage.getItem(draftKey))) === JSON.stringify(repeated),
-  'Objektverlust wird gemeldet, exakt archiviert und erst nach explizitem Speichern übernommen');
+  'Placement loss is reported, archived exactly and applied only after explicit save');
 
 const archivalFailureDraft = model.cloneDocument(repeated);
 archivalFailureDraft.rooms[0].roomName = 'Darf bei Archivfehler nicht überschrieben werden';
@@ -368,7 +368,7 @@ const originalSetItem = localStorage.setItem;
 let archivalFailureLoad;
 try {
   localStorage.setItem = (key, value) => {
-    if (key.startsWith(repository.DRAFT_ARCHIVE_PREFIX)) throw new Error('Archiv absichtlich nicht verfügbar');
+    if (key.startsWith(repository.DRAFT_ARCHIVE_PREFIX)) throw new Error('Archive intentionally unavailable');
     return originalSetItem(key, value);
   };
   archivalFailureLoad = repository.loadWorkingCopy(floor.floorId, removedProductBaseline);
@@ -380,10 +380,10 @@ check(archivalFailureLoad.ok && archivalFailureLoad.reconciled
   && !archivalFailureLoad.archivedOriginalDraft
   && archivalFailureLoad.reconciliationPersistenceReason === 'archive-unavailable'
   && JSON.stringify(JSON.parse(localStorage.getItem(draftKey))) === JSON.stringify(archivalFailureDraft),
-  'ein fehlgeschlagenes Sicherungsarchiv lässt die aktive Arbeitskopie unverändert');
+  'A failed safety archive leaves the active working copy unchanged');
 repository.removeWorkingCopy(floor.floorId);
 
-console.log('■ Simulierte lokale Publikationen');
+console.log('■ Simulated local publications');
 const firstPublish = repository.publishLocalRevision(saved.document, repeated, 'Modelltest');
 const changed = model.cloneDocument(saved.document);
 changed.rooms[0].roomName = 'Zweite lokale Version';
@@ -392,10 +392,10 @@ const revisions = repository.loadRevisionHistory(floor.floorId, repeated);
 changed.rooms[0].roomName = 'Nachträglich verändert';
 check(firstPublish.ok && secondPublish.ok && revisions.length === 2
   && revisions[0].number === 1 && revisions[1].number === 2,
-  'Publizieren hängt nummerierte lokale Revisionen an');
+  'Publishing appends numbered local revisions');
 check(revisions[0].document.rooms[0].roomName !== 'Nachträglich verändert'
   && revisions[1].document.rooms[0].roomName === 'Zweite lokale Version',
-  'lokale Publikationen bleiben von späteren Änderungen abgelöst');
+  'Local publications remain detached from later changes');
 const historyAfterCatalogueChange = repository.loadRevisionHistory(floor.floorId, catalogueOnlyChange);
 const changedCatalogueProduct = catalogueOnlyChange.products.find(product => `${typeof product.id}:${product.id}`
   === `${typeof repeated.products[0].id}:${repeated.products[0].id}`);
@@ -405,7 +405,7 @@ const historicalCatalogueProduct = historyAfterCatalogueChange[0]?.document.prod
 check(historyAfterCatalogueChange.length === 2
   && historicalCatalogueProduct.price === repeated.products[0].price
   && historicalCatalogueProduct.price !== changedCatalogueProduct.price,
-  'publizierte Versionen behalten ihren damaligen Katalog-Snapshot unverändert');
+  'Published versions retain their original catalogue snapshot');
 const historyKey = repository.revisionHistoryKey(floor.floorId, repeated.baseRevision);
 const legacyHistoryKey = `${repository.HISTORY_PREFIX}${encodeURIComponent(floor.floorId)}`;
 const legacyEnvelope = localStorage.getItem(historyKey);
@@ -413,13 +413,13 @@ repository.removeRevisionHistory(floor.floorId);
 localStorage.setItem(legacyHistoryKey, legacyEnvelope);
 check(repository.loadRevisionHistory(floor.floorId, repeated).length === 2
   && !localStorage.getItem(legacyHistoryKey) && Boolean(localStorage.getItem(historyKey)),
-  'frühere geschossbezogene Versionsschlüssel migrieren einmalig auf die Basisrevision');
+  'Earlier floor-specific history keys migrate once to the baseline revision');
 const unexpectedHistoryKey = JSON.parse(localStorage.getItem(historyKey));
 unexpectedHistoryKey.unexpected = true;
 localStorage.setItem(historyKey, JSON.stringify(unexpectedHistoryKey));
 check(repository.loadRevisionHistory(floor.floorId, repeated).length === 0
   && Boolean(localStorage.getItem(historyKey)),
-  'Versionsumschläge mit unbekannten Feldern werden abgelehnt, aber wiederherstellbar behalten');
+  'History envelopes with unknown fields are rejected but kept recoverable');
 repository.removeRevisionHistory(floor.floorId, repeated.baseRevision);
 repository.publishLocalRevision(saved.document, repeated, 'Modelltest');
 repository.publishLocalRevision(secondPublish.revision.document, repeated, 'Modelltest');
@@ -428,7 +428,7 @@ unorderedHistory.revisions[1].number = unorderedHistory.revisions[0].number;
 localStorage.setItem(historyKey, JSON.stringify(unorderedHistory));
 check(repository.loadRevisionHistory(floor.floorId, repeated).length === 0
   && Boolean(localStorage.getItem(historyKey)),
-  'doppelte oder ungeordnete Versionsnummern werden nicht akzeptiert oder überschrieben');
+  'Duplicate or unordered revision numbers are neither accepted nor overwritten');
 repository.removeRevisionHistory(floor.floorId, repeated.baseRevision);
 repository.publishLocalRevision(saved.document, repeated, 'Modelltest');
 const changedSpaces = spaces.filter(space => space.floorId === floor.floorId)
@@ -440,11 +440,11 @@ const rolledBaseline = model.createBaseline({
 check(rolledBaseline.baseRevision !== repeated.baseRevision
   && repository.loadRevisionHistory(floor.floorId, rolledBaseline).length === 0
   && Boolean(localStorage.getItem(historyKey)),
-  'ein neuer Raum-Basisstand lässt frühere lokale Publikationen wiederherstellbar bestehen');
+  'A new room baseline leaves earlier local publications recoverable');
 check(repository.removeRevisionHistory(floor.floorId) && !localStorage.getItem(historyKey),
-  'der lokale Versionsverlauf ist separat und gezielt entfernbar');
+  'Local revision history can be removed independently');
 
-console.log('■ Verlauf');
+console.log('■ History');
 const history = new model.EditorHistory(repeated, 2);
 for (const name of ['A', 'B', 'C']) {
   const next = history.current;
@@ -457,7 +457,7 @@ const undoLimit = history.undo();
 const redo = history.redo();
 check(undoOne.rooms[0].roomName === 'B' && undoTwo.rooms[0].roomName === 'A'
   && undoLimit === null && redo.rooms[0].roomName === 'B',
-'Rückgängig/Wiederholen bleibt geklont, verzweigt korrekt und hält das Limit ein');
+'Undo and redo stay cloned, branch correctly and respect the history limit');
 
-console.log(failures ? `\n✗ ${failures} Prüfung(en) FEHLGESCHLAGEN` : '\n✓ alle Modellprüfungen bestanden');
+console.log(failures ? `\n✗ ${failures} check(s) failed` : '\n✓ all model checks passed');
 process.exit(failures ? 1 : 0);

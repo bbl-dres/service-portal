@@ -10,9 +10,9 @@ import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 // Each view: tab ids in DOM order and whether the active tab is mirrored into
 // the hash (?tab=).
 const VIEWS = [
-  { name: 'portfolio (Bundeshaus West)', url: `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1080/4840/AF')}`, tabs: ['uebersicht', 'flaechen', 'ausstattung', 'vertraege', 'kosten', 'dokumente', 'kontakte'], hashSync: false },
-  { name: 'projects (PRJ-01)',         url: `${APP_BASE}/app/projects/PRJ-01`,       tabs: ['uebersicht', 'kennzahlen', 'risiken'],             hashSync: true },
-  { name: 'dataportal (energie-klima)', url: `${APP_BASE}/app/dataportal/energie-klima`, tabs: ['ueberblick', 'energiepfad', 'kennzahlen'],       hashSync: true },
+  { name: 'portfolio ("Bundeshaus West")', url: `${APP_BASE}/app/portfolio?id=${encodeURIComponent('1080/4840/AF')}`, tabs: ['overview', 'areas', 'equipment', 'contracts', 'costs', 'documents', 'contacts'], hashValues: [null, 'flaechen', 'ausstattung', 'vertraege', 'kosten', 'dokumente', 'kontakte'] },
+  { name: 'projects (PRJ-01)',         url: `${APP_BASE}/app/projects/PRJ-01`,       tabs: ['overview', 'metrics', 'risks'], hashValues: [null, 'kennzahlen', 'risiken'] },
+  { name: 'data portal ("energie-klima")', url: `${APP_BASE}/app/dataportal/energie-klima`, tabs: ['overview', 'energyPath', 'metrics'], hashValues: [null, 'energiepfad', 'kennzahlen'] },
 ];
 const GATES = [
   { name: 'space-request [logged out]', url: `${APP_BASE}/app/space-request` },
@@ -85,7 +85,12 @@ const check = (cond, label) => {
         check(s.tabindexActive === '0' && s.othersTabindex.every(t => t === '-1'), `  roving tabindex (active 0, others -1)`);
         check(s.focusTab === tab, `  focus moves to "${tab}"`);
         check(s.visiblePanels.length === 1, `  exactly one panel visible`);
-        if (v.hashSync) check(i === 0 ? !/\?tab=/.test(s.hash) : s.hash.includes(`?tab=${tab}`), `  hash ${i === 0 ? 'clean on default' : '= ?tab=' + tab}`);
+        if (v.hashValues) {
+          const hashValue = v.hashValues[i];
+          check(hashValue === null ? !/[?&]tab=/.test(s.hash) : new URLSearchParams(s.hash.split('?')[1] || '').get('tab') === hashValue,
+            `  hash ${hashValue === null ? 'clean on default' : '= ?tab=' + hashValue}`);
+        }
+        else if (v.hashSync) check(i === 0 ? !/\?tab=/.test(s.hash) : s.hash.includes(`?tab=${tab}`), `  hash ${i === 0 ? 'clean on default' : '= ?tab=' + tab}`);
         else check(!/\?tab=/.test(s.hash), `  hash unchanged (no ?tab=)`);
       });
       check(r.kbd[0].focus === v.tabs[1] && r.kbd[0].active === v.tabs[1], `ArrowRight → "${v.tabs[1]}"`);
@@ -99,8 +104,8 @@ const check = (cond, label) => {
 
     for (const g of GATES) {
       console.log(`\n■ ${g.name}`);
-      // Ausdrücklich ABGEMELDET: `openPage` startet App-Routen sonst mit einer
-      // Sitzung (die Sperre soll hier ja gerade geprüft werden).
+      // Explicitly logged out: openPage otherwise starts app routes with a
+      // session, while this probe specifically verifies the login gate.
       const page = await openPage(cdp, g.url, { login: false });
       const r = await page.evaluate(PROBE_GATE);
       check(r.hasGate === true, `shows login gate (h1: "${r.h1}")`);

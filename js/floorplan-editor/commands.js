@@ -158,7 +158,7 @@ export function createLocalRoom({ floor, buildingId, rect, ordinal, id, rooms = 
     area: 0,
     capacity: 0,
     bookable: false,
-    occupierVe: null,
+    'occupierVe': null,
     rect: rect.slice(),
     moduleId: '',
   }, rect);

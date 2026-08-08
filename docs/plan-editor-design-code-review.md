@@ -4,7 +4,7 @@ Stand: 7. August 2026
 
 ## Review-Rahmen
 
-Geprüft wurden die Plan-Editor-Wireframes 2a-4 bis 2a-9 in `docs/wireframes/260806 - Workpace Management`, die vorhandenen Muster des Portals und des Mietendenportals sowie die Komponenten- und Interaktionsmuster des Swiss Federal Design Systems. Der Review umfasst Informationsarchitektur, visuelle Hierarchie, Interaktion, responsive Zustände, Barrierefreiheit, Daten- und Lebenszyklusgrenzen sowie Regressionstests.
+Geprüft wurden die Plan-Editor-Wireframes 2a-4 bis 2a-9 in `docs/wireframes/260806 - Workspace Management`, die vorhandenen Muster des Portals und des Mietendenportals sowie die Komponenten- und Interaktionsmuster des Swiss Federal Design Systems. Der Review umfasst Informationsarchitektur, visuelle Hierarchie, Interaktion, responsive Zustände, Barrierefreiheit, Daten- und Lebenszyklusgrenzen sowie Regressionstests.
 
 Der Plan-Editor ist als eigenständige Power-User-Anwendung richtig geschnitten. Portal, schreibgeschützte Vorschau, Autorenwerkzeug und spätere Planprüfung bleiben getrennte Produkte mit stabilen Übergabeschlüsseln. Die aktuelle Implementierung eignet sich als Feedback-Prototyp; sie ist bewusst noch kein Mehrbenutzer-CAD-System.
 

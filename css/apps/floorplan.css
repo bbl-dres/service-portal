@@ -1,95 +1,58 @@
-/* ========================= GETEILTER GRUNDRISS-BETRACHTER ==================
-   Mietende und Workspace verwenden dieselbe schreibgeschützte SVG-Vorschau:
-   eine lokale Zeichnung braucht weder WebGL noch einen Kartendienst
-   (js/floorplan.js erklärt die Wahl). Die Palette liegt
-   hier, damit Zeichnung und Legende dieselbe Quelle haben — die Legende setzt
-   `background:var(--fp-…)`, die Räume `fill:var(--fp-…)`.
+/* Shared read-only floor-plan renderer and colour scales. */
 
-   Alle Töne sind helle Flächen: auf einem Grundriss trägt die Fläche die Farbe
-   und die Beschriftung muss darauf lesbar bleiben. Kräftige Töne bleiben der
-   Auswahl vorbehalten. */
 :root {
-  /* Nutzung (grobe Gruppen) */
+  /* Broad room-use groups. */
   --fp-use-work:    #dbe7f6;
   --fp-use-collab:#fbeccd;
   --fp-use-infra:#e9edf1;
   --fp-use-special:#e4dcf2;
-  /* SIA 416 — SIA schreibt KEINE Palette vor, die Norm regelt die Einteilung.
-     Fünf gut unterscheidbare Töne gleicher Helligkeit, ohne Wertung. */
+
   --fp-sia-hnf: #d6e6f5;
   --fp-sia-nnf:#e6ddf2;
   --fp-sia-vf:#e9edf1;
   --fp-sia-ff:#dcecdd;
   --fp-sia-tf:#f7e2d6;
-  /* Verwaltungseinheiten — sechs Töne, mehr VE je Geschoss kommen kaum vor */
-  --fp-ve-a: #d6e6f5;  --fp-ve-b:#fbeccd;  --fp-ve-c:#e4dcf2;
-  --fp-ve-d:#f8dcdf;  --fp-ve-e:#d9ecdb;  --fp-ve-f:#d5eaf0;
+
+  --fp-administrative-unit-a: #d6e6f5;  --fp-administrative-unit-b:#fbeccd;  --fp-administrative-unit-c:#e4dcf2;
+  --fp-administrative-unit-d:#f8dcdf;  --fp-administrative-unit-e:#d9ecdb;  --fp-administrative-unit-f:#d5eaf0;
   --fp-unassigned:#f1f3f5;
-  /* Arbeitsplatzdichte — hier IST eine Ampel gemeint: «dicht» ist eine Bewertung */
+
   --fp-cap-none: #f1f3f5;
   --fp-cap-low:#dcecdd;
   --fp-cap-ok:#d6e6f5;
   --fp-cap-high:#f8dcdf;
 }
 
-/* Kopfleiste des Grundriss-Betrachters: Rücksprung · Geschosswahl · Einfärbung ·
-   Aktionen in EINER gemeinsamen Flexzeile. KLEBEND, weil ein Geschossplan
-   höher ist als das Fenster — ohne das wandern «Alle Geschosse» und
-   «Einfärben nach» beim Scrollen aus dem Bild. Idiom wie `.docviewer__bar`.
-   `top:0` genügt: die Seitenkopfzeile scrollt mit. */
 .fp-head { position:sticky; top:0; z-index:var(--z-dropdown);
   background:var(--color-bg); padding-bottom:var(--sp-3); margin-bottom:var(--sp-1); }
-/* Unter md NICHT klebend: dort darf die gemeinsame Leiste responsiv umbrechen;
-   sie scrollt dann mit und nimmt dem Plan keine dauerhafte Bildschirmhöhe. */
+
 @media (max-width:767.98px){ .fp-head { position:static; } }
-/* `.fp-color` trägt `margin-left:auto` und schiebt sich mit der Knopfgruppe
-   nach rechts; Rücksprung und Chips teilen sich die linke Seite. Umbruch erst,
-   wenn die verfügbare Breite wirklich nicht reicht. */
+
 .fp-head__top { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2-5) var(--sp-4);
   padding-bottom:var(--sp-3); border-bottom:var(--stroke-1) solid var(--color-secondary-300); }
 .fp-head__actions { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2); flex:none; max-width:100%; }
 .fp-color { margin-left:auto; }
 .fp-back { flex:none; margin:0; font-size:var(--text-sm); white-space:nowrap; }
 .fp-back a { display:inline-flex; align-items:center; gap:var(--sp-2); }
-/* Nur für den Druck: Objekt, Geschoss, Adresse und aktive Einfärbung. Auf dem
-   Schirm stünde das alles doppelt (Seitenkopf und Kopfleiste). */
+
 .fp-print-foot { display:none; }
-/* Der Betrachter im nativen Vollbild — er füllt dort den Schirm und braucht
-   den weissen Grund, den das Element sonst vom Seitenhintergrund erbt. */
+
 .fp-wrap:fullscreen { background:var(--color-bg); padding:var(--sp-4) var(--sp-5); overflow:auto; }
 .fp-wrap:fullscreen .fp-viewer { height:auto; }
-/* Geschosswahl trägt jetzt CDs `.tag-item` — die Chip-Komponente, die auch die
-   Katalogfilter verwenden. Der eigene `.fp-floors__chip` mit voller
-   Markenfläche im aktiven Zustand ist entfallen: er war ein zweites Chip-
-   Vokabular für dieselbe Aufgabe und dominierte die Leiste. */
-/* Kein flex-gap: den Abstand zwischen den Chips trägt allein das mr-3/mb der
-   .tag-item selbst (tag-item.postcss:9) — ein Container-gap käme oben drauf. */
+
 .fp-floors { display:flex; flex-wrap:wrap; }
-/* Kennzahlen des Geschosses, jetzt in der Auswertungsspalte über der Legende. */
+
 .fp-facts { margin:0; padding:var(--sp-3) var(--sp-3-5); background:var(--color-secondary-50); }
 .fp-side__title { margin:0 0 var(--sp-1-5); font-size:var(--text-sm); color:var(--color-text-muted); font-weight:var(--fw-regular); }
-/* Kompaktes Auswahlfeld in der Werkzeugleiste: Beschriftung daneben statt
-   darüber, damit die Leiste eine Zeile bleibt. */
-/* `flex-direction:row` MUSS hier stehen: `.form__group__select` (die Hülle, die
-   C.select liefert) setzt `column` — ohne die Umkehr stünde die Beschriftung
-   über dem Feld und die Leiste wäre doppelt so hoch. */
-/* `width:auto` und `flex-direction:row` MÜSSEN hier stehen: die Hülle, die
-   C.select liefert (`.form__group__select`), ist auf `width:100%` und
-   `flex-direction:column` ausgelegt — sie ist für Formularspalten gedacht, wo
-   ein Feld die Zeile füllt und die Beschriftung darüber steht. In einer
-   Werkzeugleiste beansprucht sie damit eine ganze Zeile für sich und schiebt
-   alles Folgende darunter: die Kopfzeile fiel in drei Reihen auseinander. */
+
 .fp-color { display:flex; flex-direction:row; align-items:center; gap:var(--sp-2-5);
   width:auto; flex:0 0 auto; }
 .fp-color > label { margin:0; white-space:nowrap; font-size:var(--text-sm); color:var(--color-text-muted); }
 .fp-color .select { min-width:13rem; }
 
-/* Zeichnung links, Legende und Raumdetail rechts. Unter 1024px stapeln — der
-   Plan braucht Breite, die Seitenspalte darf sie ihm nicht nehmen. */
 .fp-viewer { display:grid; gap:var(--sp-6); }
 @media (min-width:1024px){ .fp-viewer { grid-template-columns:minmax(0,1fr) 20rem; align-items:start; } }
-/* position:relative — Pflicht für Scroll-Regionen (siehe .table-wrapper):
-   data-scroll-region am Element macht die Bühne fokussierbar mit Hinweis. */
+
 .fp-stage { position:relative; overflow:auto; padding:var(--sp-4); background:var(--color-secondary-50); border:var(--stroke-1) solid var(--panel-border); }
 .fp-side { display:flex; flex-direction:column; gap:var(--sp-4); }
 
@@ -101,10 +64,7 @@
 .fp__room:hover rect { stroke:var(--color-primary-600); stroke-width:8; }
 .fp__room rect:focus-visible { outline:none; stroke:var(--color-primary-700); stroke-width:12; }
 .fp__room.is-selected rect { stroke:var(--color-primary-700); stroke-width:14; }
-/* Beschriftung: nicht anklickbar, sonst fängt der Text den Klick auf dem Raum ab. */
-/* Schriftgrade in ZEICHNUNGSEINHEITEN (100 = 1 m): der Plan wird über die
-   viewBox skaliert, ein 4980 Einheiten breiter Grundriss auf ~1000 px also mit
-   Faktor 0.2. 68 Einheiten ergeben damit rund 13 px auf dem Schirm. */
+
 .fp__nr, .fp__use, .fp__area { pointer-events:none; text-anchor:middle; fill:var(--color-text); }
 .fp__nr   { font-size:68px; font-weight:var(--fw-bold); }
 .fp__use  { font-size:58px; fill:var(--color-text-muted); }
@@ -123,21 +83,8 @@
 .fp-room--empty { display:flex; align-items:center; min-height:var(--sp-32); }
 .kv--tight { gap:var(--sp-1) var(--sp-3); font-size:var(--text-sm); }
 
-/* Kurzweg in eine Dienstleistung — eine Zeile, kein Knopf: es sind mehrere
-   gleichrangige Ziele, und fünf Knöpfe untereinander lesen sich als Formular.
-   GETEILT: emittiert von C.actionCard (components.js) — Konsumenten sind
-   Inventar UND Mietende; der fp-Präfix ist historisch (Design-Review C22). */
 .fp-svc-list { display:flex; flex-direction:column; }
-/* RASTER statt Flexbox: zwei feste Spuren — Beschriftung, Folgepfeil. Vorher
-   war das eine Flexzeile mit `.fp-svc span { flex:1 1 auto }`, und weil die
-   Symbole selbst `<span class="icon">` sind, traf diese Regel sie mit (0,2,0) —
-   spezifischer als das `flex:none` an `.icon` (0,1,0). Die Symbole wuchsen also
-   mit, und jede Beschriftung begann an einer anderen Stelle. Mit Rasterspuren
-   fluchten Beschriftungen und Pfeile über alle Zeilen.
-   Die führende Symbolspalte ist entfallen: die Symbole standen für DIENSTLEISTUNGEN
-   («Wrench», «File», «Image») und wiederholten nur, was daneben stand — ein
-   Symbol muss verdient sein. Der Folgepfeil rechts bleibt, er sagt etwas, was
-   der Text nicht sagt: dass die Zeile wegführt. */
+
 .fp-svc { display:grid; grid-template-columns:minmax(0,1fr) 1rem;
   align-items:center; width:100%; column-gap:var(--sp-2-5); padding:var(--sp-2) var(--sp-0-5); text-align:left;
   background:transparent; border:0; border-bottom:var(--stroke-1) solid var(--color-secondary-100);
@@ -151,41 +98,21 @@
 .fp-svc__go { justify-self:end; color:var(--color-text-muted); }
 .fp-svc--disabled, .fp-svc--disabled:hover { color:var(--color-text-muted); cursor:not-allowed; }
 
-/* Farbkodierung ist beim Grundriss die INFORMATION, nicht Dekoration: ohne
-   `exact` wirft ein Browser im Sparmodus die Raumfarben weg und das Blatt ist
-   nicht mehr lesbar. Die Füllungen sind SVG-`fill`, keine Hintergründe — der
-   Hinweis kostet nichts und deckt den Sparmodus mit ab. */
 .fp, .fp-legend__swatch { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
 
 @media print {
-  /* Auf dem Blatt bleiben: Zeichnung, Legende (der SCHLÜSSEL zur Einfärbung —
-     sie war bisher ausgeblendet, was einen eingefärbten Plan unlesbar machte)
-     und die Fusszeile mit Objekt/Geschoss/Einfärbung.
-     Weg: Geschosswahl, Viewer-Aktionen, die Editor-Aktionskarte und das
-     Raumdetail samt seinen Dienstleistungs-Kurzwegen — Bedienelemente drucken
-     nicht mit. */
+
   .fp-floors, .fp-color, .fp-head__actions, .fp-back, .fp-editor-action, .fp-room-host { display:none; }
   .fp-head { position:static; }
   .fp-stage { overflow:visible; padding:0; background:none; border:0; }
   .fp-viewer { display:block; }
   .fp-legend { break-inside:avoid; margin-top:var(--sp-4); }
   .fp-print-foot { display:block; margin-top:var(--sp-4); font-size:.85em; color:var(--color-text-muted); }
-  /* `body.print--plan` setzt der Druckknopf für die Dauer des Dialogs: dann
-     druckt NUR der Grundrissabschnitt. Ohne die Marke käme die ganze
-     Detailseite mit — Eckdaten, Seitenspalte, Anträge, Reiterleiste.
-     Über `visibility`, nicht `display`: der Abschnitt liegt drei Ebenen tief
-     im Raster, eine `:not()`-Liste auf Geschwistern träfe ihn also gar nicht.
-     `visibility` vererbt sich und lässt sich am Ziel wieder einschalten — das
-     Standardverfahren, um genau einen Teilbaum zu drucken. `position:absolute`
-     holt ihn an den Blattanfang (Bezug: `.site-main{position:relative}`).
-     Ziel ist der Rumpf des Grundriss-Reiters — die Reiterleiste selbst und
-     alles andere bleiben unsichtbar. */
+
   body.print--plan .site-main { visibility:hidden; }
   body.print--plan .floorplan-body { visibility:visible; position:absolute; inset:0 0 auto 0; margin:0; }
   body.print--plan .floorplan-body * { visibility:visible; }
 }
 
-/* Leerzeile einer Datentabelle: mittig gesetzt, damit sie als Zustand lesbar
-   ist und nicht wie ein leerer erster Datensatz. */
 .table .table__empty { text-align:center; padding-top:var(--sp-8); padding-bottom:var(--sp-8); }
 

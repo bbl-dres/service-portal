@@ -1,22 +1,21 @@
-// Prüft den erweiterten Dienstleistungskatalog Ende zu Ende: Anzahl, Themenfilter,
-// je eine neue Detailseite, den neuen Kleinauftrag-Zweig der Meldungs-App und
-// den Drawer-Zweig «Beschaffung» (Domäne E hatte vorher keinen Vorgang).
+// End-to-end coverage for the expanded service catalogue: count, topic filter,
+// representative detail pages, the small-order report branch, and procurement.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const CASES = [
   ['/services', `(() => {
      const n = document.querySelector('#svc-count')?.textContent.replace(/\\s+/g,' ').trim();
      const themes = [...document.querySelectorAll('#svc-filters input[name=topic]')].map(i => i.value).join(',');
-     return n + ' | Themen: ' + themes;
+     return n + ' | topics: ' + themes;
    })()`],
   ['/services?topic=E', `(() => {
      const n = document.querySelector('#svc-count')?.textContent.replace(/\\s+/g,' ').trim();
      const pill = document.querySelector('.active-filter')?.textContent.trim();
-     return n + ' | Pille: ' + pill;
+     return n + ' | pill: ' + pill;
    })()`],
-  ['/services/mobiliarschluessel-bestellen', `document.querySelector('h1')?.textContent.trim() + ' | Kontakt: ' + (document.querySelector('.container__aside')?.textContent.match(/[\\w._-]+@bbl\\.admin\\.ch/)||['—'])[0]`],
-  ['/services/delegation-beantragen', `document.querySelector('h1')?.textContent.trim() + ' | Schritte: ' + document.querySelectorAll('.pipeline__step').length`],
-  ['/services/publikationsauftrag', `document.querySelector('h1')?.textContent.trim() + ' | Ablaufblock: ' + !!document.querySelector('.pipeline')`],
+  ['/services/mobiliarschluessel-bestellen', `document.querySelector('h1')?.textContent.trim() + ' | contact: ' + (document.querySelector('.container__aside')?.textContent.match(/[\\w._-]+@bbl\\.admin\\.ch/)||['—'])[0]`],
+  ['/services/delegation-beantragen', `document.querySelector('h1')?.textContent.trim() + ' | steps: ' + document.querySelectorAll('.pipeline__step').length`],
+  ['/services/publikationsauftrag', `document.querySelector('h1')?.textContent.trim() + ' | pipeline: ' + !!document.querySelector('.pipeline')`],
   ['/services/unbefangenheitserklaerung', `document.querySelector('h1')?.textContent.trim()`],
   ['/app/fault-report?type=kleinauftrag', `document.querySelector('h1')?.textContent.trim()`],
 ];
@@ -30,9 +29,9 @@ for (const [route, probe] of CASES) {
   const errs = p.problems ? await p.problems() : [...p.exceptions, ...p.consoleErrors];
   const ok = v && !String(v).includes('undefined') && !String(v).includes('nicht gefunden') && !errs.length;
   if (!ok) bad++;
-  console.log((ok ? 'OK   ' : 'FEHL ') + route.padEnd(42) + ' → ' + v + (errs.length ? '  ⚠ ' + errs.join(' | ') : ''));
+  console.log((ok ? 'OK   ' : 'FAIL ') + route.padEnd(42) + ' -> ' + v + (errs.length ? '  errors: ' + errs.join(' | ') : ''));
   await p.closeTarget();
 }
 await b.close();
-console.log(bad ? `\n${bad} Fehler` : '\nAlle Fälle grün.');
+console.log(bad ? `\n${bad} failures` : '\nAll cases passed.');
 process.exit(bad ? 1 : 0);

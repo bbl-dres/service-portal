@@ -1,18 +1,18 @@
-// Inhalt von «Wissen und Hilfsmittel» — 113 Unterlagen in 22 Abschnitten,
-// gegliedert nach Fachgebiet (L2) und darin nach Materialart (L3).
+// Knowledge-and-resources content: 113 resources in 22 sections, grouped by
+// subject area (L2) and then by material type (L3).
 //
-// WARUM EIN EIGENES MODUL: der Bestand hat jetzt zwei Leser. Die Seite
-// (js/pages/knowledge.js) rendert ihn, die Suche (js/pages/search.js)
-// indexiert ihn. Solange die Literale in der Seite lagen, war der grösste
-// Inhaltsbestand des Portals unauffindbar — 113 Einträge gegenüber 108 im
-// gesamten damaligen Suchindex (docs/search-review.md B1). Der Bestand bleibt
-// bewusst JS statt JSON: er trägt Auszeichnung (`intro` mit Links) und eine
-// Render-Funktion (`html`), und er soll KEINEN zusätzlichen Request kosten.
+// WHY A SEPARATE MODULE: this content now has two consumers. The page
+// (js/pages/knowledge.js) renders it, while search (js/pages/search.js) indexes
+// it. While literals lived in the page, the portal's largest content collection
+// was unfindable: 113 entries compared with 108 in the entire search index at
+// the time (docs/search-review.md B1). It deliberately remains JS rather than
+// JSON because it carries markup (`intro` with links) and a render function
+// (`html`), and should cost NO additional request.
 //
-// Gliederung nach Fachgebiet, nicht nach Materialart: die Kundenplattform hat
-// Hilfsmittel NIE gepoolt — Werkzeugkasten und Mustervorlagen liegen unter
-// «Informatik», die BKB-Dokumente unter «Beschaffen». Material hängt am
-// Fachgebiet, in dem man gerade arbeitet (docs/legacy-analysis.md).
+// Group by subject, not material type: the customer platform NEVER pooled tools.
+// Toolkits and templates sit under «Informatik», while BKB documents sit under
+// «Beschaffen». Material belongs to the subject currently being worked on
+// (docs/legacy-analysis.md).
 
 export const AREAS = {
   it: {
@@ -174,11 +174,11 @@ export const AREAS = {
     ],
   },
 
-  // Kein Sammelbecken «Übergreifendes» mehr: das war eine Restekiste neben den
-  // Fachgebieten und damit redundant. Die wenigen fachgebietslosen Erlasse und
-  // Vorgaben stehen jetzt dort, wo sie angewandt werden (Sicherheit/CD/DTI unter
-  // Informatik, Energie/Klima unter Unterbringung). Übrig bleibt, was wirklich
-  // keinem Fachgebiet gehört: die Anleitung zum Portal selbst.
+  // No more cross-cutting catch-all: it was a leftovers box beside subject
+  // areas and therefore redundant. The few cross-cutting statutes and standards
+  // now sit where they are applied (security/CD/DTI under IT, energy/climate
+  // under accommodation). What remains genuinely belongs to no subject: guidance
+  // for the portal itself.
   guides: {
     title: 'Anleitungen und Schulungen',
     lead: 'Kurzanleitungen, Schulungsunterlagen und Lernvideos zur Nutzung des Kundenportals und seiner Dienstleistungen.',
@@ -199,9 +199,9 @@ export const AREAS = {
     ],
   },
 
-  // Prozessdokumentation steht als eigener Eintrag im Menü: sie ist kein
-  // Fachgebiet, sondern die Ablaufbeschreibung QUER über alle — und wird
-  // entsprechend anders gesucht («wie läuft das ab?»), nicht als Unterlage.
+  // Process documentation has its own menu entry. It is not a subject area but
+  // a description of workflows ACROSS all of them, and is searched accordingly
+  // («how does this work?»), not as a document.
   processes: {
     title: 'Prozessdokumentation',
     lead: 'Die Prozesslandschaft des BBL im Prozessportal Archimap sowie häufige Fragen zur Zusammenarbeit.',
@@ -209,14 +209,13 @@ export const AREAS = {
     sections: [
       { id: 'portal', title: 'Prozessportal', html: (C) => `
         <p>Die vollständige Prozesslandschaft des BBL — Abläufe, Rollen und Zuständigkeiten — wird im Prozessportal Archimap gepflegt.</p>
-        ${/* Begriffsklärung (wie Bautendokumentation ↔ Bauwerksdokumentation):
-              diese Seite ist der Wegweiser QUER über alle Prozesse; die
-              Prozesse des Immobilienmanagements stehen zusätzlich als eigene
-              Anwendung «Prozessdokumentation Bauten» im Portal. */''}
+        ${/* Terminology clarification (as with two building-documentation terms):
+              this page is the guide ACROSS all processes; property-management
+              processes also have their own «Prozessdokumentation Bauten» app. */''}
         <p>Die Prozesse des Immobilienmanagements sind zusätzlich direkt im Portal dokumentiert — mit BPMN-Diagramm und Prozessschritten je Prozess: <a href="#/app/process-docs">Prozessdokumentation Bauten</a>.</p>
         <div class="row mt-4">
-          ${/* CD Btn.vue: Icon im DOM zuerst, btn--icon-right dreht die
-                Reihenfolge; das Label trägt den .btn__text-Wickel. */''}
+          ${/* CD Btn.vue: icon comes first in the DOM; btn--icon-right reverses
+                order, and the label uses the .btn__text wrapper. */''}
           <a class="btn btn--outline btn--lg btn--icon-right" href="https://prozesse-archimap.admin.ch" target="_blank" rel="noopener external">${C.icon('External', 'btn__icon')}<span class="btn__text">Zum Prozessportal (Archimap)</span></a>
         </div>` },
       { id: 'faq', title: 'Häufige Fragen (FAQ)', faq: true },
@@ -232,19 +231,18 @@ export const FAQS = [
   { q: 'An wen wende ich mich bei Rückfragen zu einem Vorgang?', a: 'Verwenden Sie die Referenznummer (Format BBL-JJJJ-XXXX) aus der Detailansicht Ihres Vorgangs für Rückfragen.' },
 ];
 
-// Die DOM-id eines Abschnitts. Ein Präfix, weil die ids sonst mit generischen
-// Ankern der Seite kollidieren könnten («preise» kommt zweimal vor, in zwei
-// Fachgebieten — innerhalb einer Seite bleibt sie eindeutig).
+// DOM ID for a section. A prefix avoids collisions with generic page anchors
+// («preise» occurs twice in two subject areas but remains unique per page). The
+// `wi-` prefix is retained as a stable deep-link compatibility literal.
 export const sectionDomId = (id) => 'wi-' + id;
 
-// Flacher Index für die Suche: eine Zeile je Unterlage, plus je eine Zeile für
-// den Abschnitt selbst und für jede FAQ-Frage.
+// Flat search index: one row per resource, plus one for the section itself and
+// each FAQ question.
 //
-// Das Ziel ist IMMER der Abschnitt, nie die Datei: die Unterlagen sind im
-// Prototyp Platzhalter ohne echte URL (`href: '#'` in der Seite). Ein Treffer
-// bringt die Nutzerin also an die Stelle, wo die Unterlage steht — mit ihrem
-// fachlichen Umfeld. Bei externen Zielen (Fedlex, BKB) führt der Treffer direkt
-// dorthin, weil es dort etwas zu holen gibt.
+// The target is ALWAYS the section, never the file: resources are placeholders
+// without real URLs in the prototype (`href: '#'` on the page). A result takes
+// the user to where the resource appears, with its domain context. External
+// targets (Fedlex, BKB) link directly because they provide a real resource.
 export function knowledgeIndex() {
   const out = [];
   for (const [key, area] of Object.entries(AREAS)) {
@@ -259,8 +257,8 @@ export function knowledgeIndex() {
       for (const it of s.items || []) {
         out.push({
           title: it.title, desc: it.desc || '',
-          // Externe Quellen (Erlasse, BKB) sind direkt erreichbar und deshalb das
-          // bessere Ziel als der Abschnitt, in dem sie aufgelistet sind.
+          // External sources (statutes, BKB) are directly available and therefore
+          // a better target than the section where they are listed.
           href: it.external && it.href ? it.href : (it.href && it.href.startsWith('#/') ? it.href : sectionHref),
           external: !!it.external,
           extra: [area.title, s.title, ...(it.meta || [])].join(' '),

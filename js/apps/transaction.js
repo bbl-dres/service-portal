@@ -1,19 +1,15 @@
-// Veräusserung von Bundesliegenschaften — Transaktionsplattform (STUB / Prototyp).
-// Bildet den Veräusserungsprozess von Bundesliegenschaften ab (intern + Makler).
+// Read-only federal-property transaction overview.
 
-import { ANWENDUNGEN, trail } from '../crumbs.js';
+import { APPLICATIONS, trail } from '../crumbs.js';
+import { portfolioItem } from '../links.js';
 
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
 export const needs = ['buildings'];
 export default async function render(ctx) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
 
   setTitle('Veräusserung von Bundesliegenschaften');
-  setCrumbs(trail(ANWENDUNGEN, { label: 'Veräusserung von Bundesliegenschaften' }));
+  setCrumbs(trail(APPLICATIONS, { label: 'Veräusserung von Bundesliegenschaften' }));
 
-  // 7-stufiger Verkaufslebenszyklus.
   const LIFECYCLE = [
     { label: 'Neuer Auftrag', desc: 'Veräusserungsauftrag erfasst' },
     { label: 'Auftrag geprüft', desc: 'Formelle und rechtliche Prüfung' },
@@ -24,32 +20,26 @@ export default async function render(ctx) {
     { label: 'Objekt verkauft', desc: 'Beurkundung und Eigentumsübergang' },
   ];
 
-  // Aktueller (fiktiver) Stand der Demo-Pipeline für die Schrittanzeige.
-  const CURRENT_STEP = 4; // 0-basiert -> "Vermarktung" laufend
+  const CURRENT_STEP = 4;
 
-  // Fiktive Status-Zuordnung je Objekt (Demo).
   const FICTIVE = [
-    { id: '1080/4850/AG', status: 'In Vermarktung', variant: 'warning' },       // Ehem. Verwaltungsgebäude Bern Nord (Abgang · Verkauft)
-    { id: '1080/2800/AD', status: 'Zum Verkauf freigegeben', variant: 'info' },  // Wohnliegenschaft Basel
-    { id: '1080/5320/AA', status: 'Auftrag in Prüfung', variant: 'gray' },       // Generalkonsulat New York (Miete)
+    { id: '1080/4850/AG', status: 'In Vermarktung', variant: 'warning' },
+    { id: '1080/2800/AD', status: 'Zum Verkauf freigegeben', variant: 'info' },
+    { id: '1080/5320/AA', status: 'Auftrag in Prüfung', variant: 'gray' },
   ];
 
-  // Auf vorhandene Gebäude abbilden; nicht gefundene auslassen, bei Bedarf auffüllen.
   let objects = FICTIVE
-    .map(f => ({ ...f, b: core.building(f.id) }))
-    .filter(o => o.b);
+    .map(f => ({ ...f, building: core.building(f.id) }))
+    .filter(o => o.building);
   if (objects.length < 2) {
     const fallback = core.buildings().slice(0, 3);
-    objects = fallback.map((b, i) => ({
-      b,
+    objects = fallback.map((building, i) => ({
+      building,
       status: ['In Vermarktung', 'Zum Verkauf freigegeben', 'Auftrag in Prüfung'][i % 3],
       variant: ['warning', 'info', 'gray'][i % 3],
     }));
   }
 
-  // C.pipeline statt C.stepIndicator: die Anzeige ist ein PASSIVER Prozessstatus
-  // (wie my-cases/services), kein interaktiver Wizard — der Stepper bleibt den
-  // Antragsstrecken vorbehalten. pipeline liest nur `label`, LIFECYCLE passt direkt.
   const stepsBar = C.pipeline(LIFECYCLE, CURRENT_STEP, { label: 'Verkaufslebenszyklus' });
 
   const timeline = `<ul class="timeline">${LIFECYCLE.map((s, idx) => {
@@ -60,12 +50,11 @@ export default async function render(ctx) {
   const tableHtml = C.table({
     zebra: true,
     caption: 'Positionen',
-    // Erste Zelle ist der Zeilenlink → Zeilenklick wie in den übrigen
-    // Listen des Portals (Portal-Standard, einheitliche Affordanz).
+
     rowsClickable: true,
     columns: [
-      { key: 'objekt', label: 'Objekt', render: r => `<a href="#/app/portfolio?id=${encodeURIComponent(r.b.bbl_id)}">${C.escape(r.b.name)}</a><br><span class="small muted">${C.escape(r.b.bbl_id)}</span>` },
-      { key: 'standort', label: 'Standort', render: r => `${C.escape(r.b.street)}<br><span class="small muted">${C.escape(r.b.zip)} ${C.escape(r.b.city)}</span>` },
+      { key: 'property', label: 'Objekt', render: r => `<a href="${portfolioItem(r.building.bbl_id)}">${C.escape(r.building.name)}</a><br><span class="small muted">${C.escape(r.building.bbl_id)}</span>` },
+      { key: 'location', label: 'Standort', render: r => `${C.escape(r.building.street)}<br><span class="small muted">${C.escape(r.building.zip)} ${C.escape(r.building.city)}</span>` },
       { key: 'status', label: 'Fiktiver Status', render: r => C.badge(r.status, r.variant) },
     ],
     rows: objects,
@@ -73,8 +62,8 @@ export default async function render(ctx) {
 
   mount.innerHTML = `
   <div class="container section">
-    ${''/* Deutscher Titel statt «Verkauf / Divestment»; der englische Fachbegriff
-          bleibt als Klammerzusatz im Lead auffindbar. */}
+    ${''
+}
     ${C.pageHeader({
       title: 'Veräusserung von Bundesliegenschaften',
       lead: 'Transaktionsplattform für die Veräusserung von Bundesliegenschaften (Divestment) — koordiniert die Zusammenarbeit zwischen Portfoliomanagement, internen Stellen und beauftragten Maklerinnen und Maklern.',
@@ -82,8 +71,8 @@ export default async function render(ctx) {
 
     ${C.notification('Dieses Modul ist im Prototyp ein <strong>Stub</strong>: Die hier gezeigten Objekte, Status und Schritte sind fiktive Demo-Daten. Die produktive Anbindung an die Transaktionsplattform (Auftragsverwaltung, Bieterverfahren, Beurkundung) ist noch nicht umgesetzt.', 'warning', 'WarningCircle')}
 
-    ${''/* .detail-section statt mt-8-Inseln: geteilter Abschnittsrhythmus
-          (--stack-gap) wie auf den übrigen Detailseiten. */}
+    ${''
+}
     <section class="detail-section">
       <h2 class="detail-section__title">${C.icon('ShoppingCart', 'icon--base')} Verkaufslebenszyklus</h2>
       <p class="muted">Sieben Phasen vom Veräusserungsauftrag bis zum vollzogenen Verkauf. Hervorgehoben ist der aktuelle Demo-Stand.</p>
@@ -103,8 +92,8 @@ export default async function render(ctx) {
     <section class="detail-section">
       <div class="box measure">
         <h3>Beteiligte</h3>
-        ${''/* Kanonisches Listenrezept statt Inline-Einzug (1.1rem wich vom
-              1.25rem-Standard in .list--default ab). */}<ul class="list--default small">
+        ${''
+}<ul class="list--default small">
           <li><strong>Portfoliomanagement BBL</strong> — Priorisierung und Verkaufsfreigabe</li>
           <li><strong>Recht / Beurkundung</strong> — Prüfung, Verträge, Eigentumsübergang</li>
           <li><strong>Externe Maklerinnen und Makler</strong> — Vermarktung und Bieterverfahren</li>
@@ -113,8 +102,5 @@ export default async function render(ctx) {
     </section>
   </div>`;
 
-  // Zeilenklick (C.table rowsClickable): am pro Render neu erzeugten Container
-  // verdrahtet — ein Horcher direkt auf #main-content überlebte jeden
-  // Seitenwechsel und sammelte sich an (vgl. js/apps/media-library.js).
   C.wireTableRows(mount.querySelector('.container.section'));
 }

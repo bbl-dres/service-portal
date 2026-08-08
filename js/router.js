@@ -91,35 +91,34 @@ function restoreAcceptedRoute() {
   history.replaceState(acceptedRoute.state, '', acceptedRoute.hash);
 }
 
-// «Übersicht» ist bewusst kein L1-Eintrag mehr — die Startseite erreicht man
-// über das Logo. Die fünf Intranet-Aufgabenbereiche (Büroausrüstung, …) sind
-// keine eigenen L1-Einträge, sondern Unterzweige im Dienstleistungen-Drawer
-// (CD navy drill-down, siehe shell.js).
+// Overview is deliberately no longer an L1 item; the logo reaches the home
+// page. The five intranet task areas (office equipment, etc.) are not separate
+// L1 items but sub-branches in the service drawer (CD navy drill-down; shell.js).
 export const NAV = [
   {
     path: '#/services',
     base: 'services',
     label: 'Dienstleistungen',
     icon: 'Briefcase',
-    // CD drawer: "Übersicht" (the gallery by Bereich), then one row per Thema —
-    // each sets the topic filter on the catalogue. The Themen are resolved from
-    // the data core at render time (see shell.js) so the menu cannot drift.
+    // CD drawer: overview (the gallery by area), then one row per domain; each
+    // sets the catalogue's topic filter. Domains resolve from the data core at
+    // render time (shell.js), preventing menu drift.
     children: [{ href: '#/services', label: 'Übersicht' }],
-    childrenFrom: 'themen',
+    childrenFrom: 'topics',
   },
   {
     path: '#/data',
     base: 'data',
     label: 'Daten und Digitalisierung',
     icon: 'FileDatabase',
-    // CD pattern: a section "Übersicht" first, then the areas it contains.
-    // Datenportal and der vollständige Anwendungskatalog werden über die
-    // Übersichtsseite erschlossen, nicht über das Menü.
-    // Bauwerksdokumentation und Mediathek stehen im Anwendungskatalog
-    // (#/applications?bereich=bauten) und auf der Übersicht — das Menü bleibt kurz.
+    // CD pattern: an overview section first, then the areas it contains.
+    // The data portal and full application catalogue are available through the
+    // overview rather than the menu. Building documentation and the media
+    // library appear in the application catalogue (#/applications?area=buildings)
+    // and overview, keeping the menu short.
     children: [
       { href: '#/data', label: 'Übersicht' },
-      // «Digitalisierung» ist ein Drill-down-Zweig (CD navy) mit eigenen L2-Seiten.
+      // «Digitalisierung» is a drill-down branch (CD navy) with its own L2 pages.
       { label: 'Digitalisierung', branchKey: 'digitalisation', branches: [
         { href: '#/data/digitalisation', label: 'Übersicht' },
         { href: '#/data/digitalisation/strategy', label: 'Digitalisierungsstrategie' },
@@ -128,32 +127,32 @@ export const NAV = [
       ] },
       { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/catalog', label: 'Datenbezug und API Verzeichnis' },
-      // Der Metadatenkatalog steht bewusst NICHT im Menü: er ist ein Werkzeug
-      // der Datenverwaltung, nicht der täglichen Nutzung. Erreichbar über den
-      // Anwendungskatalog (Fachanwendungen Bauten) und die Daten-Übersicht.
+      // The metadata catalogue is deliberately NOT in the menu. It is a data-
+      // management tool rather than an everyday destination, available through
+      // the application catalogue and data overview.
       { href: '#/applications?area=buildings', label: 'Fachanwendungen Bauten' },
       { href: '#/applications?area=logistics', label: 'Fachanwendungen Logistik' },
-      // Die gemeinsam genutzten Anwendungen der Bundesverwaltung — eGate,
-      // InfoPers, SAP ERP, Admin-Directory und die Bundesplattformen I14Y,
-      // TERMDAT, Geoportal, geocat.ch und simap.ch. Sie gehören nicht dem BBL,
-      // werden hier aber täglich gebraucht; ohne diesen Eintrag findet sie nur,
-      // wer den Anwendungskatalog von sich aus filtert.
+      // Shared federal-administration applications: eGate, InfoPers, SAP ERP,
+      // Admin Directory and federal platforms I14Y, TERMDAT, Geoportal,
+      // geocat.ch and simap.ch. They are not owned by the BBL but are used here
+      // daily; without this entry, only people who proactively filter the
+      // application catalogue would find them.
       { href: '#/applications?area=federal', label: 'Fachanwendungen Bundesverwaltung' },
     ],
   },
-  // «Wissen und Hilfsmittel» trägt die Referenzschicht: Vorgaben, Vorlagen,
-  // Anleitungen, Prozesse. News ist daraus herausgelöst (docs/sitemap.md §2.1) —
-  // eine Nachricht wird einmal gelesen, ein Hilfsmittel immer wieder benutzt.
+  // Knowledge and resources carries the reference layer: standards, templates,
+  // guidance and processes. News is separate (docs/sitemap.md §2.1): a news item
+  // is read once, while a tool is reused.
   {
     path: '#/knowledge',
     base: 'knowledge',
     label: 'Wissen und Hilfsmittel',
     icon: 'Book',
-    // Gegliedert nach FACHGEBIET, nicht nach Materialart: Hilfsmittel werden
-    // dort gebraucht, wo man arbeitet — im Altbestand lagen Werkzeugkasten und
-    // Mustervorlagen unter «Informatik», die BKB-Dokumente unter «Beschaffen»
-    // (docs/legacy-analysis.md). Die Materialarten sind Abschnitte INNERHALB
-    // der Fachgebietsseite; ihr Inhaltsverzeichnis trägt die dritte Ebene.
+    // Grouped by SUBJECT AREA, not material type: tools are needed where work
+    // happens. Legacy content placed toolkits and templates under «Informatik»
+    // and BKB documents under «Beschaffen» (docs/legacy-analysis.md). Material
+    // types are sections WITHIN the subject page; its table of contents provides
+    // the third level.
     children: [
       { href: '#/knowledge', label: 'Übersicht' },
       { href: '#/knowledge/it', label: 'Informatik und IKT-Beschaffung' },
@@ -164,9 +163,9 @@ export const NAV = [
       { href: '#/knowledge/processes', label: 'Prozessdokumentation' },
     ],
   },
-  // News ist flach — kein Drawer.
+  // News is flat: no drawer.
   { path: '#/news',         base: 'news',         label: 'News',               icon: 'Bell' },
-  // «Meine Vorgänge» steht immer zuletzt.
+  // Personal cases always comes last.
   { path: '#/my-cases',     base: 'my-cases',     label: 'Meine Vorgänge',     icon: 'List' },
 ];
 
@@ -201,9 +200,9 @@ const APPS = {
   'process-docs':    './apps/process-docs.js',
   'shop':            './apps/shop.js',
 };
-// Nicht jede direkte Fachroute besitzt eine Landingpage im Anwendungskatalog:
-// formular- und datengetriebene Werkzeuge brauchen für das zentrale Login-Gate
-// trotzdem einen verständlichen Namen und einen fachlich passenden Rückweg.
+// Not every direct domain route has an application-catalogue landing page. Form-
+// and data-driven tools still need a comprehensible name and appropriate return
+// path for the central login gate.
 const APP_GATE_META = {
   'space-request': { title: 'Raumbedarf melden', back: '#/services/raumbedarf-melden', backLabel: 'Beschreibung der Dienstleistung' },
   'fault-report': { title: 'Meldung erfassen', back: '#/services', backLabel: 'Dienstleistungen' },
@@ -211,9 +210,9 @@ const APP_GATE_META = {
   'api-docs': { title: 'API-Dokumentation', back: '#/data/catalog', backLabel: 'Datenkatalog' },
   'building-create': { title: 'Gebäude erfassen', back: '#/services/stammdaten-mutieren', backLabel: 'Beschreibung der Dienstleistung' },
 };
-// Which top-nav item to highlight for pages and apps that are not themselves a
-// top-level entry. Anwendungen is no longer an L1 item — it lives under Daten
-// und Digitalisierung, so it and every micro-app highlight that section.
+// Top-navigation item to highlight for pages and apps that are not themselves a
+// top-level entry. Applications is no longer L1; it lives under data and
+// digitalisation, so it and every micro-app highlight that section.
 const SECTION_OF = {
   'applications': 'data',
   'space-request': 'services', 'fault-report': 'services', 'building-create': 'services',
@@ -232,31 +231,31 @@ function parseHash() {
   return { segs, query: new URLSearchParams(queryPart || '') };
 }
 
-// --- Altlasten-Weiterleitungen (docs/sitemap.md §7) -------------------------
-// Die Routen tragen jetzt durchgehend englische Segmente. Geteilte Links auf die
-// alten deutschen Pfade dürfen deswegen nicht ins Leere laufen — sie sind genau
-// die, die jemand weitergegeben hat. Reihenfolge zählt: längere Pfade zuerst,
-// sonst schluckt `#/knowledge/news` die Regel für `#/knowledge/news/<id>` nicht.
+// --- Legacy redirects (docs/sitemap.md §7) ----------------------------------
+// Routes now use English segments throughout. Shared links to former German
+// paths must not break; those are precisely the links somebody distributed.
+// Order matters: longer paths first, otherwise the `#/knowledge/news` rule does
+// not preserve `#/knowledge/news/<id>` correctly.
 const REDIRECTS = [
   [/^#\/knowledge\/news(\/.*)?$/,        (m) => `#/news${m[1] || ''}`],
-  // «Wissen» ist nach Fachgebiet gegliedert. Die alten materialart-basierten
-  // Abschnitte haben kein 1:1-Ziel mehr — ihre Inhalte liegen verteilt in den
-  // Fachgebieten —, also führt der Weg auf die Übersicht statt in eine falsche
-  // Ecke. Anleitungen und Prozessdokumentation bleiben eigene Seiten.
-  [/^#\/knowledge\/(grundlagen|regulations|general)(\/.*)?$/, () => '#/knowledge'],
-  [/^#\/knowledge\/anleitungen$/,                     () => '#/knowledge/guides'],
-  [/^#\/knowledge\/prozesse$/,                        () => '#/knowledge/processes'],
+  // Knowledge is grouped by subject. Former material-type sections no longer
+  // have one-to-one targets because content is distributed across subjects, so
+  // they lead to the overview rather than the wrong corner. Guidance and process
+  // documentation remain distinct pages.
+  [new RegExp('^#/knowledge/(grundlagen|regulations|general)(/.*)?$'), () => '#/knowledge'],
+  [new RegExp('^#/knowledge/anleitungen$'),            () => '#/knowledge/guides'],
+  [new RegExp('^#/knowledge/prozesse$'),               () => '#/knowledge/processes'],
   [/^#\/knowledge\/templates$/,                       () => '#/knowledge'],
-  [/^#\/data\/katalog(\/.*)?$/,          (m) => `#/data/catalog${m[1] || ''}`],
-  [/^#\/data\/digitalisierung(\/.*)?$/,  (m) => `#/data/digitalisation${SUBS[(m[1] || '').slice(1)] || m[1] || ''}`],
-  [/^#\/data\/ikt-vorhaben$/,            () => '#/data/ict-projects'],
-  [/^#\/app\/mediathek(\/.*)?$/,         (m) => `#/app/media-library${m[1] || ''}`],
+  [new RegExp('^#/data/katalog(/.*)?$'),  (m) => `#/data/catalog${m[1] || ''}`],
+  [new RegExp('^#/data/digitalisierung(/.*)?$'), (m) => `#/data/digitalisation${SUBS[(m[1] || '').slice(1)] || m[1] || ''}`],
+  [new RegExp('^#/data/ikt-vorhaben$'),            () => '#/data/ict-projects'],
+  [new RegExp('^#/app/mediathek(/.*)?$'), (m) => `#/app/media-library${m[1] || ''}`],
 ];
-const SUBS = { strategie: '/strategy', prinzipien: '/principles', vision: '/vision', superb: '/superb', bim: '/bim' };
+const SUBS = { 'strategie': '/strategy', 'prinzipien': '/principles', vision: '/vision', superb: '/superb', bim: '/bim' };
 
-// Gibt das Ziel zurück, wenn der aktuelle Hash eine Altlast ist — sonst ''.
-// Der Query-Teil bleibt erhalten; veraltete Parameter fallen still weg (sie
-// werden von der Zielseite schlicht nicht gelesen).
+// Return a target when the current hash is legacy, otherwise ''. Preserve the
+// query; obsolete parameters disappear naturally because the target does not
+// read them.
 export function legacyTarget(hash) {
   const [path, qs] = String(hash || '').split('?');
   if (path === '#/app/workspace' && qs) {
@@ -300,7 +299,7 @@ export function matchesSubNav(childHref, currentHash) {
   if (child.path !== here.path) return false;
 
   const childKeys = [...child.params.keys()];
-  // "Übersicht" (#/knowledge) must not light up on #/knowledge/news …
+  // The knowledge overview must not light up on #/knowledge/news …
   if (!childKeys.length) return ![...here.params.keys()].length;
   // … while #/services?topic=bauten stays active once &view=liste is appended.
   return childKeys.every(k => {
@@ -338,14 +337,14 @@ function renderCrumbs(crumbs) {
 function makeCtx(mount, params, query, stale, lifecycle, signal) {
   return {
     mount, params, query, core, engine, session, C, signal,
-    // Aufräumen beim Verlassen der Route. Der Router tauschte bisher nur
-    // `mount.innerHTML` — Karten, Observer, Media-Query-Listener und Overlays
-    // überlebten damit die Route, die sie erzeugt hat. Wer etwas anlegt, das den
-    // DOM-Tausch überdauert, meldet hier seine Abbaufunktion an.
+    // Cleanup on route exit. The router previously replaced only
+    // `mount.innerHTML`, allowing maps, observers, media-query listeners and
+    // overlays to outlive their creating route. Anything that survives a DOM
+    // replacement registers its disposer here.
     onUnmount: lifecycle.onUnmount,
-    // Async-Seiten (die vor dem Schreiben `await`en, z. B. dynamische Import-
-    // Delegatoren) prüfen `ctx.stale()` unmittelbar vor `mount.innerHTML =`, damit
-    // eine überholte Navigation die inzwischen neuere Seite nicht überschreibt (A2).
+    // Async pages that `await` before writing (for example dynamic-import
+    // delegates) check `ctx.stale()` immediately before `mount.innerHTML =`, so
+    // a superseded navigation cannot overwrite the newer page (A2).
     stale: stale || (() => false),
     navigate: (h) => navigateRoute(h),
     replaceRoute,
@@ -372,16 +371,16 @@ function focusHeading(mount) {
 let dispatchId = 0;
 let mountedPath = null;
 
-// --- Scroll-Strategie (Review-Auftrag 2026-07) -------------------------------
-// Das CD selbst definiert kein Scroll-Verhalten; sein Referenz-Stack (Nuxt)
-// nutzt den Plattform-Standard, und genau der gilt jetzt auch hier:
-//   · NEUE Navigation (neuer History-Eintrag)  → Seitenanfang
-//   · Zurück/Vorwärts (bekannter Eintrag)      → gemerkte Position
-//   · reiner Zustandswechsel (gleicher Pfad)   → Position unangetastet
-// Jeder History-Eintrag bekommt beim ersten Besuch eine Nummer in history.state;
-// die Positionen liegen je Nummer in sessionStorage (überleben ein Neuladen).
-// Browser stellen bei Same-Document-Hash-Navigation selbst NICHTS wieder her —
-// ohne das hier warf «Zurück» aus einer Detailansicht die Liste an den Anfang.
+// --- Scroll strategy (review request 2026-07) -------------------------------
+// CD itself defines no scroll behaviour. Its reference stack (Nuxt) follows the
+// platform standard, now used here too:
+//   · NEW navigation (new history entry)       → page top
+//   · Back/Forward (known entry)               → remembered position
+//   · state-only change (same path)            → position untouched
+// Each history entry receives an index in history.state on first visit;
+// positions are stored per index in sessionStorage and survive reload. Browsers
+// restore NOTHING for same-document hash navigation themselves. Without this,
+// «Back» from a detail view moved the list to its beginning.
 const SCROLL_KEY = 'bbl_scroll_v1';
 let lastEntryIdx = null;
 const scrollMap = () => { try { return JSON.parse(sessionStorage.getItem(SCROLL_KEY)) || {}; } catch { return {}; } };
@@ -390,10 +389,10 @@ function saveLeavingScroll() {
   try {
     const m = scrollMap(); m[lastEntryIdx] = window.scrollY;
     sessionStorage.setItem(SCROLL_KEY, JSON.stringify(m));
-  } catch { /* Speicher gesperrt — dann eben ohne Wiederherstellung */ }
+  } catch { /* Blocked storage: continue without restoration. */ }
 }
-// Nummeriert den AKTUELLEN Eintrag (falls neu) und liefert die zu
-// restaurierende Position — oder null für «neuer Eintrag, nach oben».
+// Index the CURRENT entry if new and return its restoration position, or null
+// for «new entry, scroll to top».
 function stampHistoryEntry() {
   const known = Number.isInteger(history.state?.bblIdx);
   let idx;
@@ -417,7 +416,7 @@ function stampHistoryEntry() {
       sessionStorage.setItem(SCROLL_KEY, JSON.stringify(positions));
       sessionStorage.setItem(SCROLL_KEY + '_n', String(Math.max(highestIdx || 0, idx)));
       history.replaceState({ bblIdx: idx }, '');
-    } catch { /* ohne Stempel bleibt es beim Nach-oben-Standard */ }
+    } catch { /* Without a stamp, retain the scroll-to-top default. */ }
   }
   lastEntryIdx = idx;
   return known ? (scrollMap()[idx] ?? 0) : null;
@@ -479,11 +478,10 @@ function finalizeRoute({ mount, stale, pathKey, isStateChange, activeId, previou
   return true;
 }
 
-// Anmeldesperre einer Fachanwendung. Der Name der Anwendung steht nicht im
-// Router, sondern im Anwendungskatalog — der wird dafür nachgeladen (nur im
-// abgemeldeten Fall, also selten). Ohne ihn bleibt es bei einer neutralen
-// Überschrift; eine fehlende Beschriftung darf die Sperre nicht aushebeln.
-// Gibt `true` zurück, wenn die Sperre gezeichnet wurde.
+// Login gate for a domain app. Its name comes from the application catalogue,
+// not the router, so load that catalogue on demand (only while logged out, thus
+// rarely). Without it, retain a neutral heading; a missing label must never
+// bypass the gate. Returns `true` when the gate was rendered.
 async function renderAppLoginGate(mount, name, stale, text = '') {
   await core.ensure(['applications']);
   if (stale()) return true;
@@ -492,8 +490,8 @@ async function renderAppLoginGate(mount, name, stale, text = '') {
   const fallback = APP_GATE_META[name];
   const title = app ? app.name : (fallback?.title || 'Anwendung');
   document.title = `${title} · BBL Kundenportal`;
-  // Rückweg auf die Landingpage: dort steht frei lesbar, was die Anwendung tut,
-  // wer sie nutzen darf und wie man zu einem Konto kommt.
+  // Return to the landing page, where anyone can read what the app does, who may
+  // use it and how to obtain an account.
   const back = app ? `#/applications/${encodeURIComponent(app.appId)}` : (fallback?.back || '#/applications');
   const backLabel = app ? 'Beschreibung der Anwendung' : (fallback?.backLabel || 'Anwendungen');
   mount.innerHTML = `<div class="container section">
@@ -523,24 +521,24 @@ async function dispatch() {
   const lifecycle = createRouteLifecycle(stale);
   activeDispatch = { ticket, controller, lifecycle };
 
-  // Standalone Fachwerkzeuge (z. B. der Plan-Editor) dürfen ihre kompakte
-  // Arbeitsflächen-Chrome nicht in die nächste Portalroute mitnehmen. Das
-  // Layout wird erst NACH der zentralen Login-Sperre wieder aktiviert, damit
-  // ein ausgeloggter Deep-Link weiterhin die normale Portal-Erklärung zeigt.
+  // Standalone domain tools (for example the floor-plan editor) must not carry
+  // compact workspace chrome into the next portal route. Reactivate that layout
+  // only AFTER the central login gate so a logged-out deep link still shows the
+  // normal portal explanation.
   document.body.classList.remove('body--standalone-app');
   // Viewers and modals are appended to <body>, outside #main-content. Close
   // them before route cleanup/replacement so no stale overlay or global
   // listener survives navigation.
   C.closeOverlays();
-  // Altlast-Pfad? Adresse ERSETZEN, nicht anhängen — sonst führt «Zurück» auf
-  // den alten Pfad und von dort sofort wieder hierher (Endlosfalle). replaceState
-  // feuert kein `hashchange`, also läuft dieser Aufruf danach einfach weiter und
-  // rendert das Ziel; parseHash() liest die bereits ersetzte Adresse.
+  // Legacy path? REPLACE the address rather than appending it. Otherwise «Back»
+  // reaches the old path and immediately returns here (an endless loop).
+  // replaceState does not fire `hashchange`, so this dispatch continues and
+  // renders the target; parseHash() reads the replaced address.
   const redirect = legacyTarget(location.hash);
   if (redirect) { try { history.replaceState(history.state, '', redirect); } catch { location.hash = redirect; } }
 
-  // Beim hashchange steht das DOM noch auf der VERLASSENEN Seite — jetzt ihre
-  // Position sichern, dann den neuen Eintrag stempeln/nachschlagen.
+  // During hashchange, the DOM still contains the DEPARTED page. Save its
+  // position now, then stamp or look up the new entry.
   saveLeavingScroll();
   const restoreY = stampHistoryEntry();
   // `stampHistoryEntry` may have replaced history.state. Store the final
@@ -549,15 +547,14 @@ async function dispatch() {
   const { segs, query } = parseHash();
   const mount = document.getElementById('main-content');
 
-  // Zustandswechsel (nur die Query änderte sich, gleiche Seite) von echter
-  // Navigation trennen: bei einem Zustandswechsel darf der Fokus NICHT auf die
-  // H1 springen (WCAG 3.2.2) und die Seite nicht nach oben scrollen — stattdessen
-  // den auslösenden Bedienpfad (per id) wiederherstellen.
+  // Distinguish a state change (query only, same page) from real navigation. A
+  // state change must NOT move focus to h1 (WCAG 3.2.2) or scroll to the top;
+  // instead restore the initiating control path by ID.
   const pathKey = segs.join('/');
   const isStateChange = mountedPath !== null && mountedPath === pathKey;
   const activeId = isStateChange && document.activeElement && mount.contains(document.activeElement)
     ? document.activeElement.id : '';
-  // H1 der VERLASSENEN Sicht — Referenz für die Drill-in-Erkennung unten.
+  // H1 from the DEPARTED view, used below to detect drill-in.
   const prevH1 = isStateChange ? (mount.querySelector('h1')?.textContent || '') : '';
 
   let modPath, params, navBase;
@@ -577,18 +574,17 @@ async function dispatch() {
   setActiveNav(navBase);
   document.getElementById('breadcrumb').hidden = true;
 
-  // --- Anmeldesperre der Fachanwendungen (Nutzerentscheid 2026-08-06) --------
-  // Eine Fachanwendung ist ein System mit echten Betriebsdaten, kein Katalog-
-  // inhalt: der Zugriff verlangt eine Anmeldung. FREI bleibt alles, was
-  // BESCHREIBT — die Anwendungs-Landingpage (#/applications/<id>), der
-  // Dienstleistungskatalog, Wissen, News, der Datenbezug.
+  // --- Domain-app login gate (user decision 2026-08-06) ---------------------
+  // A domain app is a system with real operational data, not catalogue content;
+  // access requires login. Anything that DESCRIBES remains OPEN: application
+  // landing pages (#/applications/<id>), the service catalogue, knowledge, news
+  // and data access.
   //
-  // Die Sperre sitzt hier und nicht in den Anwendungen: fünf von siebzehn
-  // brachten sie selbst mit, zwölf nicht, und eine vergessene Sperre sieht man
-  // einer Anwendung nicht an. Zentral gilt sie auch für jede künftige.
-  // Den WORTLAUT bringt die Anwendung weiterhin selbst mit (`loginText`) —
-  // «Diese Meldung wird als persönlicher Vorgang erfasst» sagt mehr als ein
-  // Einheitssatz. Gegriffen wird er unten, nach dem Import des Moduls.
+  // The gate lives here, not in apps. Five of seventeen implemented it while
+  // twelve did not, and a forgotten gate is invisible from the outside. A
+  // central gate also covers every future app. Each app still provides its own
+  // WORDING (`loginText`), which is more informative than one generic sentence.
+  // It is read below after importing the module.
   const gated = segs[0] === 'app' && modPath && !session.isLoggedIn();
 
   if (!modPath) {
@@ -599,13 +595,12 @@ async function dispatch() {
     return;
   }
 
-  // Kein «Lädt…»-Aufblitzen bei einem reinen Zustandswechsel (Modul ist im Cache).
-  // Ladezustand: statt eines nackten «Lädt…»-Absatzes eine echte Statusregion mit
-  // aria-busy und einer Ladeanzeige (Item 3.17). Der sichtbare Text ist sr-only —
-  // das Spinner-Symbol trägt die Information optisch. Die ANSAGE geht über die
-  // persistente Live-Region: eine frisch MIT Inhalt erzeugte role=status-Region
-  // feuert nicht (components.js, Item 3.9); das Ende signalisiert der h1-Fokus
-  // nach dem Rendern (Review a11y-loading-1).
+  // No loading flash on state-only changes because the module is cached. For
+  // loading, use a real status region with aria-busy and an indicator rather than
+  // a bare paragraph (item 3.17). Visible text is sr-only; the spinner conveys it
+  // visually. ANNOUNCEMENT uses the persistent live region: a role=status region
+  // created WITH content does not fire (components.js, item 3.9). H1 focus after
+  // render signals completion (review a11y-loading-1).
   if (!isStateChange) {
     C.announce('Inhalt wird geladen…');
     mount.innerHTML = `<div class="container section" aria-busy="true">`
@@ -620,8 +615,8 @@ async function dispatch() {
       appName && !gated ? loadAppStyles(appName) : Promise.resolve(),
     ]);
     if (stale()) return;
-    // Anmeldesperre VOR `needs`: eine Anwendung, die niemand öffnen darf, muss
-    // auch ihre Bestände nicht laden (das Inventar allein sind 66 KB).
+    // Login gate BEFORE `needs`: an app nobody may open need not load its
+    // datasets (the inventory alone is 66 KB).
     if (gated) {
       await renderAppLoginGate(mount, segs[1], stale, mod.loginText);
       if (!stale()) finalizeRoute({
@@ -632,10 +627,10 @@ async function dispatch() {
     if (mod.layout === 'standalone') document.body.classList.add('body--standalone-app');
     const render = mod.default || mod.render;
     if (typeof render !== 'function') throw new Error('Modul exportiert kein render()');
-    // Aufschiebbare Bestände (H4): das Modul nennt in `needs`, was es lesen will,
-    // und bekommt es VOR dem ersten Zugriff. Ein Resolver darf die Liste aus den
-    // Routenparametern ableiten, wenn ein Modul mehrere Unteransichten delegiert.
-    // Beim zweiten Besuch ist das Versprechen erfüllt und die Sperre kostet nichts.
+    // Deferred datasets (H4): the module declares what it will read through
+    // `needs` and receives it BEFORE first access. A resolver may derive the list
+    // from route parameters when a module delegates several subviews. On the
+    // second visit the promise is fulfilled and adds no delay.
     const routeNeeds = typeof mod.needs === 'function' ? mod.needs(params, query) : mod.needs;
     if (Array.isArray(routeNeeds) && routeNeeds.length) {
       await core.ensure(routeNeeds);
@@ -663,9 +658,8 @@ async function dispatch() {
 export function initRouter() {
   // Only `#/…` is a route. Bare `#` and in-page fragments (e.g. the skip link's
   // `#main-content`) must not dispatch — that used to render a 404 over the page.
-  // Nur `#/…` ist eine Route. Bare `#` (Platzhalter-Links) und Sprungmarken
-  // dürfen nicht dispatchen — ein leerer Hash hat sonst wortlos auf die
-  // Startseite geworfen (docs/design-review.md P0-1).
+  // Bare `#` placeholder links and in-page anchors must not dispatch. An empty
+  // hash otherwise silently returned to the home page (docs/design-review.md P0-1).
   // When a guarded route is mounted, route links go through the blocker before
   // the browser mutates history. Direct hash writes and Back/Forward are caught
   // by the hashchange path below.
@@ -702,17 +696,16 @@ export function initRouter() {
     }
     dispatch();
   });
-  // Setzt `location.hash` neu, feuert das `hashchange` den dispatch (else-Zweig);
-  // ein zusätzliches explizites dispatch() würde die Startseite doppelt rendern.
+  // When assigning `location.hash`, hashchange dispatches through the else path;
+  // an additional explicit dispatch() would render the home page twice.
   if (!location.hash || !location.hash.startsWith('#/')) location.hash = '#/';
   else dispatch();
 }
 
-// Aktuelle Route neu zeichnen, ohne zu navigieren — z. B. nach An-/Abmeldung,
-// damit der Login-Hinweis auf der Seite verschwindet bzw. erscheint.
-// Gibt das dispatch-Promise zurück: `dispatch()` ist async (dynamischer Import),
-// und wer nach einem Neuzeichnen selbst den Fokus setzen will, muss abwarten —
-// sonst überschreibt der Fokus-Schritt des Routers ihn kurz danach wieder.
+// Redraw the current route without navigating, for example after login/logout so
+// its login notice disappears or appears. Returns the dispatch promise:
+// `dispatch()` is async (dynamic import), and callers that set focus afterwards
+// must wait or the router's focus step will overwrite theirs moments later.
 export function redraw() { return dispatch(); }
 
 export default {

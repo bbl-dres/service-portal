@@ -12,7 +12,7 @@
     "land": "CH",
     "lat": 46.94707107543945,
     "lon": 7.445525169372559,
-    "photoSrc": "assets/images/buildings/1080-7090-AA_bundeshaus-nord_aussenansicht.jpg",
+    "photoSrc": "assets/images/buildings/1080-7090-AA_federal-palace-north_exterior.jpg",
     "siaPhase": "41",
     "siaPhaseLabel": "Ausführung",
     "status": "aktiv",
@@ -29,7 +29,7 @@
     "media": [
       {
         "mediaId": "MED-153",
-        "src": "assets/images/buildings/1080-7090-AA_bundeshaus-nord_aussenansicht.jpg",
+        "src": "assets/images/buildings/1080-7090-AA_federal-palace-north_exterior.jpg",
         "titel": "Bundeshaus Nord — aussenansicht",
         "fotograf": "Brutusaurus",
         "credit": "Brutusaurus — Wikimedia Commons, CC BY-SA 4.0",
@@ -109,7 +109,7 @@
     "land": "CH",
     "lat": 46.959785,
     "lon": 7.463306,
-    "photoSrc": "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
+    "photoSrc": "assets/images/buildings/1080-4850-AG_guisanplatz-administrative-centre_exterior.jpg",
     "siaPhase": "33",
     "siaPhaseLabel": "Ausschreibung",
     "status": "aktiv",
@@ -126,7 +126,7 @@
     "media": [
       {
         "mediaId": "MED-159",
-        "src": "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_aussenansicht.jpg",
+        "src": "assets/images/buildings/1080-4850-AG_guisanplatz-administrative-centre_exterior.jpg",
         "titel": "Verwaltungszentrum Guisanplatz — aussenansicht",
         "fotograf": "Rolf Siegenthaler",
         "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
@@ -135,7 +135,7 @@
       },
       {
         "mediaId": "MED-065",
-        "src": "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_umgebung.jpg",
+        "src": "assets/images/buildings/1080-4850-AG_guisanplatz-administrative-centre_surroundings.jpg",
         "titel": "Verwaltungszentrum Guisanplatz — umgebung",
         "fotograf": "Rolf Siegenthaler",
         "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
@@ -144,7 +144,7 @@
       },
       {
         "mediaId": "MED-066",
-        "src": "assets/images/buildings/1080-4850-AG_verwaltungszentrum-guisanplatz_innenansicht.jpg",
+        "src": "assets/images/buildings/1080-4850-AG_guisanplatz-administrative-centre_interior.jpg",
         "titel": "Verwaltungszentrum Guisanplatz — innenansicht",
         "fotograf": "Rolf Siegenthaler",
         "credit": "Rolf Siegenthaler — BBL-Mediendatenbank",
@@ -166,7 +166,7 @@
     "land": "CH",
     "lat": 46.946346,
     "lon": 7.442977,
-    "photoSrc": "assets/images/buildings/1080-4840-AF_bundeshaus-west_aussenansicht.jpg",
+    "photoSrc": "assets/images/buildings/1080-4840-AF_federal-palace-west_exterior.jpg",
     "siaPhase": "61",
     "siaPhaseLabel": "Betrieb",
     "status": "abgeschlossen",
@@ -183,7 +183,7 @@
     "media": [
       {
         "mediaId": "MED-163",
-        "src": "assets/images/buildings/1080-4840-AF_bundeshaus-west_aussenansicht.jpg",
+        "src": "assets/images/buildings/1080-4840-AF_federal-palace-west_exterior.jpg",
         "titel": "Bundeshaus West — aussenansicht",
         "fotograf": "Arkhein Drakenov",
         "credit": "Arkhein Drakenov · CC BY-SA 4.0",
@@ -192,7 +192,7 @@
       },
       {
         "mediaId": "MED-003",
-        "src": "assets/images/buildings/1080-4840-AF_bundeshaus-west_innenansicht.jpg",
+        "src": "assets/images/buildings/1080-4840-AF_federal-palace-west_interior.jpg",
         "titel": "Bundeshaus West — innenansicht",
         "fotograf": "Alexander Gempeler",
         "credit": "Alexander Gempeler — BBL-Mediendatenbank",
@@ -201,7 +201,7 @@
       },
       {
         "mediaId": "MED-004",
-        "src": "assets/images/buildings/1080-4840-AF_bundeshaus-west_fassadendetail.jpg",
+        "src": "assets/images/buildings/1080-4840-AF_federal-palace-west_facade-detail.jpg",
         "titel": "Bundeshaus West — fassadendetail",
         "fotograf": "Alexander Gempeler",
         "credit": "Alexander Gempeler — BBL-Mediendatenbank",
@@ -210,7 +210,7 @@
       },
       {
         "mediaId": "MED-005",
-        "src": "assets/images/buildings/1080-4840-AF_bundeshaus-west_eingangsbereich.jpg",
+        "src": "assets/images/buildings/1080-4840-AF_federal-palace-west_entrance.jpg",
         "titel": "Bundeshaus West — eingangsbereich",
         "fotograf": "Alexander Gempeler",
         "credit": "Alexander Gempeler — BBL-Mediendatenbank",
@@ -232,7 +232,7 @@
     "land": "CH",
     "lat": 46.94121551513672,
     "lon": 7.449760913848877,
-    "photoSrc": "assets/images/buildings/1080-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg",
+    "photoSrc": "assets/images/buildings/1080-6430-AA_swiss-national-library-underground-storage_exterior.jpg",
     "siaPhase": "61",
     "siaPhaseLabel": "Betrieb",
     "status": "abgeschlossen",
@@ -249,7 +249,7 @@
     "media": [
       {
         "mediaId": "MED-147",
-        "src": "assets/images/buildings/1080-6430-AA_schweizerische-nationalbibliothek-tiefmagazin-_aussenansicht.jpg",
+        "src": "assets/images/buildings/1080-6430-AA_swiss-national-library-underground-storage_exterior.jpg",
         "titel": "Schweizerische Nationalbibliothek, Tiefmagazin West — aussenansicht",
         "fotograf": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern",
         "credit": "Prof. Dr. Bernhard Furrer, Denkmalpfleger der Stadt Bern — aus der Bautendokumentation des BBL",
@@ -271,7 +271,7 @@
     "land": "AU",
     "lat": -35.313476,
     "lon": 149.121046,
-    "photoSrc": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_aussenansicht.jpg",
+    "photoSrc": "assets/images/buildings/1080-5620-AA_swiss-embassy-canberra_exterior.jpg",
     "siaPhase": "31",
     "siaPhaseLabel": "Vorprojekt",
     "status": "sistiert",
@@ -288,7 +288,7 @@
     "media": [
       {
         "mediaId": "MED-160",
-        "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_aussenansicht.jpg",
+        "src": "assets/images/buildings/1080-5620-AA_swiss-embassy-canberra_exterior.jpg",
         "titel": "Schweizerische Botschaft Canberra — aussenansicht",
         "fotograf": "Anthony Basheer",
         "credit": "Anthony Basheer — BBL-Mediendatenbank",
@@ -297,7 +297,7 @@
       },
       {
         "mediaId": "MED-059",
-        "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_umgebung.jpg",
+        "src": "assets/images/buildings/1080-5620-AA_swiss-embassy-canberra_surroundings.jpg",
         "titel": "Schweizerische Botschaft Canberra — umgebung",
         "fotograf": "Anthony Basheer",
         "credit": "Anthony Basheer — BBL-Mediendatenbank",
@@ -306,7 +306,7 @@
       },
       {
         "mediaId": "MED-060",
-        "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_innenansicht.jpg",
+        "src": "assets/images/buildings/1080-5620-AA_swiss-embassy-canberra_interior.jpg",
         "titel": "Schweizerische Botschaft Canberra — innenansicht",
         "fotograf": "Anthony Basheer",
         "credit": "Anthony Basheer — BBL-Mediendatenbank",
@@ -315,7 +315,7 @@
       },
       {
         "mediaId": "MED-061",
-        "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_fassadendetail.jpg",
+        "src": "assets/images/buildings/1080-5620-AA_swiss-embassy-canberra_facade-detail.jpg",
         "titel": "Schweizerische Botschaft Canberra — fassadendetail",
         "fotograf": "Anthony Basheer",
         "credit": "Anthony Basheer — BBL-Mediendatenbank",
@@ -324,7 +324,7 @@
       },
       {
         "mediaId": "MED-062",
-        "src": "assets/images/buildings/1080-5620-AA_schweizerische-botschaft-canberra_eingangsbereich.jpg",
+        "src": "assets/images/buildings/1080-5620-AA_swiss-embassy-canberra_entrance.jpg",
         "titel": "Schweizerische Botschaft Canberra — eingangsbereich",
         "fotograf": "Anthony Basheer",
         "credit": "Anthony Basheer — BBL-Mediendatenbank",
@@ -346,7 +346,7 @@
     "land": "CH",
     "lat": 47.479862,
     "lon": 7.744051,
-    "photoSrc": "assets/images/buildings/1080-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg",
+    "photoSrc": "assets/images/buildings/1080-4100-AC_campus-bazg-training-centre-liestal_exterior.jpg",
     "siaPhase": "32",
     "siaPhaseLabel": "Bauprojekt",
     "status": "aktiv",
@@ -363,7 +363,7 @@
     "media": [
       {
         "mediaId": "MED-161",
-        "src": "assets/images/buildings/1080-4100-AC_campus-bazg-ausbildungszentrum-liestal_aussenansicht.jpg",
+        "src": "assets/images/buildings/1080-4100-AC_campus-bazg-training-centre-liestal_exterior.jpg",
         "titel": "Campus BAZG (Ausbildungszentrum Liestal) — aussenansicht",
         "fotograf": "Franz Rindlisbacher, Zürich",
         "credit": "Franz Rindlisbacher, Zürich — aus der Bautendokumentation des BBL",
@@ -414,7 +414,7 @@
     "land": "CH",
     "lat": 47.379024505615234,
     "lon": 8.540567398071289,
-    "photoSrc": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_aussenansicht.jpg",
+    "photoSrc": "assets/images/buildings/1080-6100-AA_swiss-national-museum-zurich_exterior.jpg",
     "siaPhase": "51",
     "siaPhaseLabel": "Inbetriebnahme",
     "status": "aktiv",
@@ -431,7 +431,7 @@
     "media": [
       {
         "mediaId": "MED-144",
-        "src": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_aussenansicht.jpg",
+        "src": "assets/images/buildings/1080-6100-AA_swiss-national-museum-zurich_exterior.jpg",
         "titel": "Landesmuseum Zürich — aussenansicht",
         "fotograf": "Walter Mair",
         "credit": "Walter Mair — BBL-Mediendatenbank",
@@ -440,7 +440,7 @@
       },
       {
         "mediaId": "MED-071",
-        "src": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_umgebung.jpg",
+        "src": "assets/images/buildings/1080-6100-AA_swiss-national-museum-zurich_surroundings.jpg",
         "titel": "Landesmuseum Zürich — umgebung",
         "fotograf": "Walter Mair",
         "credit": "Walter Mair — BBL-Mediendatenbank",
@@ -449,7 +449,7 @@
       },
       {
         "mediaId": "MED-072",
-        "src": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_innenansicht.jpg",
+        "src": "assets/images/buildings/1080-6100-AA_swiss-national-museum-zurich_interior.jpg",
         "titel": "Landesmuseum Zürich — innenansicht",
         "fotograf": "Walter Mair",
         "credit": "Walter Mair — BBL-Mediendatenbank",
@@ -458,7 +458,7 @@
       },
       {
         "mediaId": "MED-073",
-        "src": "assets/images/buildings/1080-6100-AA_landesmuseum-zuerich_fassadendetail.jpg",
+        "src": "assets/images/buildings/1080-6100-AA_swiss-national-museum-zurich_facade-detail.jpg",
         "titel": "Landesmuseum Zürich — fassadendetail",
         "fotograf": "Walter Mair",
         "credit": "Walter Mair — BBL-Mediendatenbank",

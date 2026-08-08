@@ -1,37 +1,36 @@
-// Die Zahlen im Strukturbaum müssen der aktiven Filterlage folgen: die Summe
-// über die sichtbaren Wurzelknoten muss der Trefferzahl in der Werkzeugleiste
-// entsprechen — vor und nach dem Umschalten eines Filters.
+// Structure-tree counts must follow active filters. The sum of visible root
+// nodes must equal the toolbar result count before and after toggling a filter.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const APPS = [
   ['Portfolio',   `${APP_BASE}/app/portfolio`,  '#pf-count'],
-  ['Bauprojekte', `${APP_BASE}/app/projects`,   '#pj-count'],
-  ['Mietende',    `${APP_BASE}/app/tenancies`,  '#mt-count'],
+  ['Projects',    `${APP_BASE}/app/projects`,   '#pj-count'],
+  ['Tenancies',   `${APP_BASE}/app/tenancies`,  '#mt-count'],
 ];
 
-const LIES = (zaehler) => `(() => {
-  const wurzeln = [...document.querySelectorAll('.pf-tree > .pf-tree__item')].filter(li => !li.hidden);
-  const summe = wurzeln.reduce((s, li) => s + Number(li.querySelector('.pf-tree__n').textContent || 0), 0);
-  const c = document.querySelector('${zaehler}');
-  // «21 von 41 Objekte · Seite 1 von 3» → die erste Zahl ist die Trefferzahl.
-  const treffer = c ? Number((c.textContent.match(/[0-9'’]+/) || ['0'])[0].replace(/['’]/g, '')) : null;
-  return { summe, treffer, wurzeln: wurzeln.length,
-           blaetter: [...document.querySelectorAll('.pf-tree__leaf')].filter(b => !b.closest('.pf-tree__item').hidden).length };
+const READ_COUNTS = (counterSelector) => `(() => {
+  const roots = [...document.querySelectorAll('.pf-tree > .pf-tree__item')].filter(li => !li.hidden);
+  const sum = roots.reduce((total, li) => total + Number(li.querySelector('.pf-tree__n').textContent || 0), 0);
+  const counter = document.querySelector('${counterSelector}');
+  // The first number in the German toolbar string is the result count.
+  const matches = counter ? Number((counter.textContent.match(/[0-9'’]+/) || ['0'])[0].replace(/['’]/g, '')) : null;
+  return { sum, matches, roots: roots.length,
+           leaves: [...document.querySelectorAll('.pf-tree__leaf')].filter(b => !b.closest('.pf-tree__item').hidden).length };
 })()`;
 
 const cdp = await launch();
-let fehler = 0;
-for (const [name, url, zaehler] of APPS) {
+let failures = 0;
+for (const [name, url, counterSelector] of APPS) {
   const page = await openPage(cdp, url);
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, page.sessionId);
   await sleep(1300);
 
-  const vorher = await page.evaluate(LIES(zaehler));
-  // Ersten Facettenfilter umschalten und erneut messen.
-  const umgeschaltet = await page.evaluate(`(async () => {
-    const knopf = document.querySelector('[id$="-ftoggle"], .catbar__filter');
-    if (knopf) knopf.click();
+  const before = await page.evaluate(READ_COUNTS(counterSelector));
+  // Toggle the first facet filter and measure again.
+  const toggled = await page.evaluate(`(async () => {
+    const button = document.querySelector('[id$="-ftoggle"], .catbar__filter');
+    if (button) button.click();
     await new Promise(r => setTimeout(r, 150));
     const box = document.querySelector('.filter-check input[type=checkbox]');
     if (!box) return false;
@@ -39,15 +38,15 @@ for (const [name, url, zaehler] of APPS) {
     await new Promise(r => setTimeout(r, 400));
     return true;
   })()`);
-  const nachher = umgeschaltet ? await page.evaluate(LIES(zaehler)) : null;
+  const after = toggled ? await page.evaluate(READ_COUNTS(counterSelector)) : null;
 
-  const ok = vorher.summe === vorher.treffer
-    && (!nachher || (nachher.summe === nachher.treffer && nachher.summe !== vorher.summe));
-  if (!ok) fehler++;
-  console.log(`${ok ? '  ok ' : ' FEHL'} ${name.padEnd(12)} vorher Baum ${vorher.summe} / Treffer ${vorher.treffer}` +
-    (nachher ? ` · nach Filterwechsel Baum ${nachher.summe} / Treffer ${nachher.treffer}` : ' · kein Filter gefunden'));
+  const ok = before.sum === before.matches
+    && (!after || (after.sum === after.matches && after.sum !== before.sum));
+  if (!ok) failures++;
+  console.log(`${ok ? '  ok ' : 'FAIL '} ${name.padEnd(12)} before tree ${before.sum} / results ${before.matches}` +
+    (after ? ` / after filter tree ${after.sum} / results ${after.matches}` : ' / no filter found'));
   await page.closeTarget();
 }
 await cdp.close();
-console.log(fehler ? `\n${fehler} Abweichungen` : '\nDie Baumzahlen folgen der Filterlage.');
-process.exit(fehler ? 1 : 0);
+console.log(failures ? `\n${failures} discrepancies` : '\nTree counts follow filter state.');
+process.exit(failures ? 1 : 0);

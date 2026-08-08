@@ -1,181 +1,218 @@
-// Baut data/media.json als EINZIGES Bildregister neu auf und hinterlegt in
-// buildings.geojson / parcels.geojson / projects.json nur noch eine Auswahl
-// («Favoriten») als Liste von mediaId.
+// Rebuilds data/media.json as the single image registry. The building, parcel,
+// and project records retain only a curated list of mediaId references.
 //
-//   node scripts/build-media-registry.mjs           # Dry-Run (Standard)
-//   node scripts/build-media-registry.mjs --write   # Dateien wirklich ändern
+//   node scripts/build-media-registry.mjs           # Dry run (default)
+//   node scripts/build-media-registry.mjs --write   # Rename and write files
 //
-// Anlass: nach dem Umhängen der Demo-Objekte auf echte Bauten passten die
-// Medientitel nicht mehr zum Objekt — «Bundeshaus Ost — Innenhof» hing an der
-// Botschaft Berlin, «Campus Guisanplatz» an der Botschaft Tokio. Ein Register,
-// das aus den Objekten selbst erzeugt wird, kann nicht mehr auseinanderlaufen.
+// This was introduced after demo records were mapped to real buildings and old
+// media titles no longer matched their owners. Generating the registry from the
+// objects keeps those relationships aligned.
 //
-// Dateinamen sind sprechend: <bbl-id>_<objekt-slug>_<inhalt>.jpg
+// Filenames are descriptive: <bbl-id>_<object-slug>_<content>.jpg.
 //
-// ECHT vs. PLATZHALTER: `file` zeigt auf eine tatsächlich vorhandene, geprüfte
-// Aufnahme (mit Urheber und Lizenz). Wo es keine gibt, bleibt `file` null und
-// `photo` trägt eine Unsplash-Kennung — im Portal als Platzhalter gekennzeichnet.
+// VERIFIED vs PLACEHOLDER: `file` names a reviewed local photograph with author
+// and licence. Otherwise it is null and `photo` contains an Unsplash identifier
+// that the portal explicitly labels as a placeholder.
 
 import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const flags = process.argv.slice(2);
-const unbekannt = flags.filter((flag) => !['--pruefen', '--write'].includes(flag));
-if (unbekannt.length) throw new Error(`Unbekannte Option: ${unbekannt.join(', ')}`);
-if (flags.includes('--pruefen') && flags.includes('--write')) {
-  throw new Error('--pruefen und --write dürfen nicht kombiniert werden.');
+const unknownFlags = flags.filter((flag) => !['--check', '--pruefen', '--write'].includes(flag));
+if (unknownFlags.length) throw new Error(`Unknown option: ${unknownFlags.join(', ')}`);
+if ((flags.includes('--check') || flags.includes('--pruefen')) && flags.includes('--write')) {
+  throw new Error('--check and --write cannot be combined.');
 }
-const schreiben = flags.includes('--write');
+const write = flags.includes('--write');
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-const BILD = 'assets/images/buildings/';
-const J = (f) => JSON.parse(readFileSync(ROOT + f, 'utf8'));
+const IMAGE_DIR = 'assets/images/buildings/';
+const readJson = (file) => JSON.parse(readFileSync(ROOT + file, 'utf8'));
 
 const slug = (s) => String(s).toLowerCase()
   .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
   .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 46);
 const idSlug = (id) => String(id).replace(/\//g, '-');
 
-// Geprüfte Aufnahmen: Datei (bisheriger Name) → Inhalt + Rechte.
-// «inhalt» beschreibt NUR, was der Commons-Titel belegt — ich habe die Bilder
-// nicht gesichtet, also keine erfundenen Bildinhalte.
-const ECHT = {
-  '1000/4840/AF': { alt: '1000-4840-AF.jpg', inhalt: 'aussenansicht', jahr: '2019',
-    autor: 'Arkhein Drakenov', lizenz: 'CC BY-SA 4.0',
-    quelle: 'https://commons.wikimedia.org/wiki/File:Bundeshaus_West_(2019-06-23).jpg' },
-  '1000/3120/AB': { alt: '1000-3120-AB.jpg', inhalt: 'drohnenaufnahme', jahr: '2022',
-    autor: 'Schweizerisches Nationalmuseum', lizenz: 'CC BY-SA 4.0',
-    quelle: 'https://commons.wikimedia.org/wiki/File:Sammlungszentrum_Affoltern_am_Albis._Drohnenaufnahme.jpg' },
-  '1000/5210/AA': { alt: '1000-5210-AA.jpg', inhalt: 'aussenansicht', jahr: '2022',
-    autor: 'Lukas Beck', lizenz: 'CC BY-SA 4.0',
-    quelle: 'https://commons.wikimedia.org/wiki/File:Schweizerische_Botschaft_in_Berlin.jpg' },
-  '1000/5410/AA': { alt: '1000-5410-AA.jpg', inhalt: 'aussenansicht', jahr: '2020',
-    autor: 'Syced', lizenz: 'CC0 1.0 (gemeinfrei)',
-    quelle: 'https://commons.wikimedia.org/wiki/File:Embassy_of_Switzerland,_Tokyo.jpg' },
-  '1000/5620/AA': { alt: '1000-5620-AA.jpg', inhalt: 'aussenansicht', jahr: '2015',
-    autor: 'Nomisztif', lizenz: 'CC BY-SA 4.0',
-    quelle: 'https://commons.wikimedia.org/wiki/File:Embassy_of_Switzerland_in_Canberra.jpg' },
+// Verified photographs: legacy filename, proven content, and rights. `content`
+// describes only what the Commons title establishes; no details are invented.
+const VERIFIED = {
+  '1000/4840/AF': { previousFile: '1000-4840-AF.jpg', content: 'exterior', year: '2019',
+    author: 'Arkhein Drakenov', license: 'CC BY-SA 4.0',
+    source: 'https://commons.wikimedia.org/wiki/File:Bundeshaus_West_(2019-06-23).jpg' },
+  '1000/3120/AB': { previousFile: '1000-3120-AB.jpg', content: 'aerial-view', year: '2022',
+    author: 'Schweizerisches Nationalmuseum', license: 'CC BY-SA 4.0',
+    source: 'https://commons.wikimedia.org/wiki/File:Sammlungszentrum_Affoltern_am_Albis._Drohnenaufnahme.jpg' },
+  '1000/5210/AA': { previousFile: '1000-5210-AA.jpg', content: 'exterior', year: '2022',
+    author: 'Lukas Beck', license: 'CC BY-SA 4.0',
+    source: 'https://commons.wikimedia.org/wiki/File:Schweizerische_Botschaft_in_Berlin.jpg' },
+  '1000/5410/AA': { previousFile: '1000-5410-AA.jpg', content: 'exterior', year: '2020',
+    author: 'Syced', license: 'CC0 1.0 (gemeinfrei)',
+    source: 'https://commons.wikimedia.org/wiki/File:Embassy_of_Switzerland,_Tokyo.jpg' },
+  '1000/5620/AA': { previousFile: '1000-5620-AA.jpg', content: 'exterior', year: '2015',
+    author: 'Nomisztif', license: 'CC BY-SA 4.0',
+    source: 'https://commons.wikimedia.org/wiki/File:Embassy_of_Switzerland_in_Canberra.jpg' },
 };
 
-// Platzhalter je Nutzungsart — alle Kennungen einzeln gegen images.unsplash.com
-// geprüft (eine erfundene lieferte 404 und wäre stumm ausgefallen).
-const PLATZ = {
-  Verwaltung: '1486406146926-c627a92ad1ab', Zoll: '1449157291145-7efd050a4d0e',
-  Ausbildung: '1564501049412-61c2a3083791', Sport: '1461896836934-ffe607ba8211',
-  Kultur: '1503152394-c571994fd383', Bildung: '1568667256549-094345857637',
-  Lager: '1553413077-190dd305871c', Justiz: '1589829545856-d10d557cf95f',
-  Infrastruktur: '1558494949-ef010cbdcc31', Produktion: '1581092160562-40aa08e78837',
-  Wohnen: '1502005229762-cf1b2da7c5d6', Grundstueck: '1500382017468-9049fed747ef',
+// Placeholder by raw German usage-category value. Each Unsplash identifier was
+// checked; one fabricated value returned 404 and would have failed silently.
+const PLACEHOLDER_BY_USAGE = {
+  'Verwaltung': '1486406146926-c627a92ad1ab', 'Zoll': '1449157291145-7efd050a4d0e',
+  'Ausbildung': '1564501049412-61c2a3083791', 'Sport': '1461896836934-ffe607ba8211',
+  'Kultur': '1503152394-c571994fd383', 'Bildung': '1568667256549-094345857637',
+  'Lager': '1553413077-190dd305871c', 'Justiz': '1589829545856-d10d557cf95f',
+  'Infrastruktur': '1558494949-ef010cbdcc31', 'Produktion': '1581092160562-40aa08e78837',
+  'Wohnen': '1502005229762-cf1b2da7c5d6', 'Grundstueck': '1500382017468-9049fed747ef',
 };
 
-const bg = J('data/buildings.geojson');
-const pc = J('data/parcels.geojson');
-const pj = J('data/projects.json');
+const buildings = readJson('data/buildings.geojson');
+const parcels = readJson('data/parcels.geojson');
+const projects = readJson('data/projects.json');
 
-const medien = [];
-const umbenennen = [];
-let n = 0;
-const neueId = () => 'MED-' + String(++n).padStart(3, '0');
+const media = [];
+const renames = [];
+let sequence = 0;
+const nextMediaId = () => 'MED-' + String(++sequence).padStart(3, '0');
 
-function eintrag({ objektId, objektName, kind, inhalt, echt, lat, lon, typ = 'photo', epoche = 'aktuell', datum, kat }) {
-  const name = `${idSlug(objektId)}_${slug(objektName)}_${inhalt}`;
-  const id = neueId();
-  const datei = echt ? `${BILD}${name}.jpg` : null;
-  if (echt) umbenennen.push([BILD + echt.alt, `${BILD}${name}.jpg`]);
+const CONTENT_LABELS = {
+  exterior: 'aussenansicht',
+  'aerial-view': 'drohnenaufnahme',
+  surroundings: 'umgebung',
+  interior: 'innenansicht',
+  'facade-detail': 'fassadendetail',
+  entrance: 'eingangsbereich',
+  'site-plan': 'lageplan',
+  'historic-view': 'historische aufnahme',
+  'parcel-aerial': 'luftbild',
+  'construction-site': 'baustelle',
+};
+
+function createEntry({ objectId, objectName, kind, content, verified, lat, lon, type = 'photo', period = 'aktuell', date, category }) {
+  const name = `${idSlug(objectId)}_${slug(objectName)}_${content}`;
+  const id = nextMediaId();
+  const file = verified ? `${IMAGE_DIR}${name}.jpg` : null;
+  if (verified) renames.push([IMAGE_DIR + verified.previousFile, `${IMAGE_DIR}${name}.jpg`]);
   return {
     mediaId: id,
-    mediaType: typ,
-    title: `${objektName} — ${inhalt.replace(/-/g, ' ')}`,
+    mediaType: type,
+    title: `${objectName} — ${CONTENT_LABELS[content] || content.replace(/-/g, ' ')}`,
     slug: name,
-    buildingId: kind === 'building' ? objektId : null,
-    parcelId: kind === 'parcel' ? objektId : null,
-    projectId: kind === 'project' ? objektId : null,
-    date: datum || (echt ? echt.jahr : '2025'),
-    historicPeriod: epoche,
-    photographer: echt ? echt.autor : 'Platzhalter (Unsplash)',
-    copyright: echt ? `${echt.autor} · ${echt.lizenz}` : 'Unsplash-Lizenz — Platzhalterbild, zeigt nicht das reale Objekt',
-    license: echt ? echt.lizenz : 'Unsplash',
-    sourceUrl: echt ? echt.quelle : null,
-    isPlaceholder: !echt,
+    buildingId: kind === 'building' ? objectId : null,
+    parcelId: kind === 'parcel' ? objectId : null,
+    projectId: kind === 'project' ? objectId : null,
+    date: date || (verified ? verified.year : '2025'),
+    historicPeriod: period,
+    photographer: verified ? verified.author : 'Platzhalter (Unsplash)',
+    copyright: verified ? `${verified.author} · ${verified.license}` : 'Unsplash-Lizenz — Platzhalterbild, zeigt nicht das reale Objekt',
+    license: verified ? verified.license : 'Unsplash',
+    sourceUrl: verified ? verified.source : null,
+    isPlaceholder: !verified,
     accessLevel: 'öffentlich',
     color: '#2f4356',
     url: '#',
-    file: datei,
-    photo: echt ? '' : (PLATZ[kat] || PLATZ.Verwaltung),
+    file,
+    photo: verified ? '' : (PLACEHOLDER_BY_USAGE[category] || PLACEHOLDER_BY_USAGE['Verwaltung']),
     lat: lat ?? null, lon: lon ?? null,
   };
 }
 
-// --- Gebäude ---------------------------------------------------------------
-for (const f of bg.features) {
-  const p = f.properties;
-  const echt = ECHT[p.bbl_id];
-  const favoriten = [];
-  const basis = { objektId: p.bbl_id, objektName: p.bbl_bez, kind: 'building',
-    lat: p.wgs84_lat, lon: p.wgs84_lon, kat: p.bbl_gbda1 };
+// Buildings.
+for (const feature of buildings.features) {
+  const properties = feature.properties;
+  const verified = VERIFIED[properties.bbl_id];
+  const favourites = [];
+  const base = {
+    objectId: properties.bbl_id,
+    objectName: properties.bbl_bez,
+    kind: 'building',
+    lat: properties.wgs84_lat,
+    lon: properties.wgs84_lon,
+    category: properties.bbl_gbda1,
+  };
 
-  const haupt = eintrag({ ...basis, inhalt: echt ? echt.inhalt : 'aussenansicht', echt });
-  medien.push(haupt); favoriten.push(haupt.mediaId);
+  const primary = createEntry({ ...base, content: verified ? verified.content : 'exterior', verified });
+  media.push(primary);
+  favourites.push(primary.mediaId);
 
-  // Das Bildmosaik der Detailseite zeigt eine Hauptkachel und vier Nebenkacheln
-  // und blendet auf der letzten «Alle Bilder anzeigen» ein — dafür braucht ein
-  // Objekt mehr als fünf Aufnahmen. In der Produktion hat jedes Objekt ohnehin
-  // Dutzende.
-  for (const inhalt of ['umgebung', 'innenansicht', 'fassadendetail', 'eingangsbereich', 'lageplan']) {
-    const e = eintrag({ ...basis, inhalt, echt: null });
-    medien.push(e); favoriten.push(e.mediaId);
+  // The detail mosaic needs a primary tile and at least five secondary entries
+  // to expose the German UI's show-all action. Production objects have dozens.
+  for (const content of ['surroundings', 'interior', 'facade-detail', 'entrance', 'site-plan']) {
+    const entry = createEntry({ ...base, content, verified: null });
+    media.push(entry);
+    favourites.push(entry.mediaId);
   }
 
-  // Historische Aufnahme nur, wo das Objekt alt genug ist.
-  if (p.bbl_bjahr && p.bbl_bjahr < 1960) {
-    const hist = eintrag({ ...basis, inhalt: 'historische-aufnahme', echt: null,
-      epoche: 'historisch', datum: String(p.bbl_bjahr + 10) });
-    medien.push(hist); favoriten.push(hist.mediaId);
+  // Add a historical photograph placeholder only for sufficiently old objects.
+  if (properties.bbl_bjahr && properties.bbl_bjahr < 1960) {
+    const historical = createEntry({
+      ...base,
+      content: 'historic-view',
+      verified: null,
+      period: 'historisch',
+      date: String(properties.bbl_bjahr + 10),
+    });
+    media.push(historical);
+    favourites.push(historical.mediaId);
   }
 
-  p.media = favoriten;          // Auswahl; das Register steht in media.json
-  delete p.img_url; delete p.img_local; delete p.img_credit; delete p.img_quelle;
+  properties.media = favourites; // The complete registry lives in media.json.
+  delete properties.img_url;
+  delete properties.img_local;
+  delete properties.img_credit;
+  delete properties.img_quelle;
 }
 
-// --- Grundstücke -----------------------------------------------------------
-for (const f of pc.features) {
-  const p = f.properties;
-  const basis = { objektId: p.bbl_id, objektName: p.bbl_bez, kind: 'parcel',
-    lat: p.wgs84_lat, lon: p.wgs84_lon, kat: 'Grundstueck' };
-  const luft = eintrag({ ...basis, inhalt: 'luftbild', echt: null });
-  medien.push(luft);
-  p.media = [luft.mediaId];
+// Parcels.
+for (const feature of parcels.features) {
+  const properties = feature.properties;
+  const base = {
+    objectId: properties.bbl_id,
+    objectName: properties.bbl_bez,
+    kind: 'parcel',
+    lat: properties.wgs84_lat,
+    lon: properties.wgs84_lon,
+    category: 'Grundstueck',
+  };
+  const aerial = createEntry({ ...base, content: 'parcel-aerial', verified: null });
+  media.push(aerial);
+  properties.media = [aerial.mediaId];
 }
 
-// --- Bauprojekte -----------------------------------------------------------
-for (const pr of pj) {
-  const name = pr.name || pr.projectId;
-  const b = bg.features.find((f) => f.properties.bbl_id === pr.buildingId);
-  const bp = b ? b.properties : {};
-  const basis = { objektId: pr.projectId, objektName: name, kind: 'project',
-    lat: bp.wgs84_lat ?? null, lon: bp.wgs84_lon ?? null, kat: 'Verwaltung' };
-  const bau = eintrag({ ...basis, inhalt: 'baustelle', echt: null });
-  medien.push(bau);
-  pr.media = [bau.mediaId];
+// Construction projects.
+for (const project of projects) {
+  const name = project.name || project.projectId;
+  const building = buildings.features.find((feature) => feature.properties.bbl_id === project.buildingId);
+  const buildingProperties = building ? building.properties : {};
+  const base = {
+    objectId: project.projectId,
+    objectName: name,
+    kind: 'project',
+    lat: buildingProperties.wgs84_lat ?? null,
+    lon: buildingProperties.wgs84_lon ?? null,
+    category: 'Verwaltung',
+  };
+  const construction = createEntry({ ...base, content: 'construction-site', verified: null });
+  media.push(construction);
+  project.media = [construction.mediaId];
 }
 
-console.log(`Register: ${medien.length} Medien`);
-console.log(`  echt:        ${medien.filter((m) => m.file).length}`);
-console.log(`  Platzhalter: ${medien.filter((m) => m.isPlaceholder).length}`);
-console.log(`Favoriten: ${bg.features.length} Gebäude · ${pc.features.length} Grundstücke · ${pj.length} Projekte`);
-console.log('\nBeispiele:');
-for (const m of medien.filter((x) => x.file)) console.log(`  ${m.mediaId}  ${m.slug}.jpg`);
-for (const m of medien.filter((x) => !x.file).slice(0, 3)) console.log(`  ${m.mediaId}  ${m.slug}  (Platzhalter)`);
+console.log(`Registry: ${media.length} media entries`);
+console.log(`  verified:    ${media.filter((entry) => entry.file).length}`);
+console.log(`  placeholder: ${media.filter((entry) => entry.isPlaceholder).length}`);
+console.log(`Favourites: ${buildings.features.length} buildings / ${parcels.features.length} parcels / ${projects.length} projects`);
+console.log('\nExamples:');
+for (const entry of media.filter((item) => item.file)) console.log(`  ${entry.mediaId}  ${entry.slug}.jpg`);
+for (const entry of media.filter((item) => !item.file).slice(0, 3)) console.log(`  ${entry.mediaId}  ${entry.slug}  (placeholder)`);
 
-if (!schreiben) {
-  console.log('\n(Dry-Run: nichts geschrieben; zum Anwenden ausdrücklich --write verwenden)');
+if (!write) {
+  console.log('\nDry run: nothing written; use --write explicitly to apply changes.');
   process.exit(0);
 }
 
-for (const [von, nach] of umbenennen) {
-  if (existsSync(ROOT + von) && von !== nach) renameSync(ROOT + von, ROOT + nach);
+for (const [source, target] of renames) {
+  if (existsSync(ROOT + source) && source !== target) renameSync(ROOT + source, ROOT + target);
 }
-writeFileSync(ROOT + 'data/media.json', JSON.stringify(medien, null, 1));
-writeFileSync(ROOT + 'data/buildings.geojson', JSON.stringify(bg, null, 1));
-writeFileSync(ROOT + 'data/parcels.geojson', JSON.stringify(pc, null, 1));
-writeFileSync(ROOT + 'data/projects.json', JSON.stringify(pj, null, 1));
-console.log('\n→ media.json, buildings.geojson, parcels.geojson, projects.json geschrieben');
+writeFileSync(ROOT + 'data/media.json', JSON.stringify(media, null, 1));
+writeFileSync(ROOT + 'data/buildings.geojson', JSON.stringify(buildings, null, 1));
+writeFileSync(ROOT + 'data/parcels.geojson', JSON.stringify(parcels, null, 1));
+writeFileSync(ROOT + 'data/projects.json', JSON.stringify(projects, null, 1));
+console.log('\nWrote media.json, buildings.geojson, parcels.geojson, and projects.json.');

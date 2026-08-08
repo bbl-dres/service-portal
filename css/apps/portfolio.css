@@ -1,111 +1,57 @@
-/* ---- Bildmosaik über der Objekt-Detailansicht ----------------------------
-   Links das Hauptbild auf voller Höhe, rechts ein 2x2-Raster. Jede Kachel ist ein
-   eigener Knopf und öffnet die Galerie bei genau ihrem Bild; die letzte Nebenkachel
-   trägt bei mehr als fünf Bildern die Auflage «Alle Bilder anzeigen». */
-/* BEWUSSTE ABWEICHUNG (Rundung): CD-abgeleitete Karten- und Hero-Medien bleiben
-   ECKIG wie im CD; die PORTAL-EIGENEN Medienkompositionen —
-   Mosaik, Karten (.pf-map/.dash-map/.map-picker), .med-shot — tragen durchgängig
-   radius-lg, dieselbe Kartenrundung wie die Dashboard-Chrome (Superset-Muster).
-   Nicht stückweise «korrigieren»: entweder alle Portal-Medien oder keines. */
-/* EIN Prinzip über alle Breiten: die Zeilenhöhe kommt aus dem Seitenverhältnis
-   des Hauptbilds, nie aus einer festen rem-Zeile. Die Kachelspalte und die Karte
-   ziehen sich auf diese Höhe.
-   Vorher lagen hier drei überlappende Breakpoint-Systeme über einer 22rem-Zeile:
-   bei 700px ergab das einen 800px hohen Hero mit einem 393px hohen Bild (mehr
-   Hero als Inhalt), bei 1024px ein auf 1.74 gedehntes Bild. */
+/* Shared property, project and media-detail presentation. */
+
 .pf-mosaic { display:grid; grid-template-columns:1fr; gap:var(--sp-2); }
 .pf-mosaic__cell--main { aspect-ratio:16/10; }
-/* Feste Zeilen statt auto: sonst bestimmt der INHALT der Platzhalterkacheln
-   (Symbol + «Kein Bild») die Höhe der Spalte, und sie wächst über das Hauptbild
-   hinaus, statt sich dessen Höhe zu teilen. */
+
 .pf-mosaic__side { display:grid; gap:var(--sp-2); min-height:0;
   grid-template-columns:repeat(2,minmax(0,1fr));
   grid-template-rows:repeat(2,minmax(0,1fr)); }
-/* Kartenspalte: Kopfzeile mit dem Weg nach draussen, darunter die Karte auf
-   der Resthöhe. Die RASTERPLATZIERUNG hängt jetzt an dieser Spalte, nicht mehr
-   an der Karte selbst — sonst läge die Kopfzeile als eigenes Rasterkind
-   irgendwo im Mosaik. */
-/* KEIN gap: Leiste und Karte bilden EINEN Block. Die Rundung läuft aussen
-   herum — oben an der Leiste, unten an der Karte —, dazwischen stossen sie
-   auf Kante. Mit einer Lücke sah die Leiste aus wie ein versehentlich
-   danebengeratener Absatz. */
+
 .pf-hero__mapcol { display:flex; flex-direction:column; min-height:0; }
-/* Getönte Leiste, nicht weiss auf weiss: die Zeile steht über einer randlosen
-   Karte und ohne eigene Fläche schwebte sie im Nichts. */
+
 .pf-hero__maplink { margin:0; padding:var(--sp-1-5) var(--sp-3); font-size:var(--text-sm);
   background:var(--color-secondary-50);
   border-radius:var(--radius-lg) var(--radius-lg) 0 0; }
 .pf-hero__map { position:relative; overflow:hidden; flex:1 1 auto; min-height:0;
   border-radius:var(--radius-lg); background:var(--color-secondary-100); }
-/* Trägt die Leiste, wird die obere Rundung der Karte zur geraden Stosskante. */
+
 .pf-hero__maplink + .pf-hero__map { border-radius:0 0 var(--radius-lg) var(--radius-lg); }
 
-/* Bis 640px — gestapelt. Flacheres Hauptbild (16/9) und eine Viererreihe
-   Kacheln: auf dem Telefon zählt, wie schnell man an den Inhalt DARUNTER kommt,
-   nicht wie gross das Bild ist. */
 @media (max-width:639.98px){
   .pf-mosaic__cell--main { aspect-ratio:16/9; }
-  /* Feste Kachelzeile statt quadratischer Kacheln: quadratisch wuchsen sie mit
-     der Breite mit (120px bei 560px) und machten den gestapelten Hero höher als
-     den zweispaltigen direkt darüber — bei 560px 612px gegen 465px bei 640px. */
+
   .pf-mosaic__side { grid-template-columns:repeat(4,minmax(0,1fr));
     grid-template-rows:5rem; }
   .pf-hero__map { height:12rem; flex:none; }
 }
-/* 640–1279px — Hauptbild und Karte nebeneinander, die Kacheln als Streifen
-   darunter. Drei Drittel wären hier je nur ~300px breit; Bild und Karte teilen
-   sich dafür eine Zeile und sind damit per Konstruktion gleich hoch — dieselbe
-   Balance wie im Dreispalter darüber.
-   Vorher stand hier 2fr/1fr mit `max-height:22rem` auf dem Bild. Das war der
-   Fehler: `max-height` UND `aspect-ratio` auf demselben Element deckeln nicht
-   nur die Höhe, sie rechnen auch die BREITE zurück (352 × 1.6 = 563px) — bei
-   1268px blieben so ~234px der 797px-Spalte als weisse Lücke stehen. */
+
 @media (min-width:640px) and (max-width:1279.98px){
   .pf-mosaic--map { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .pf-mosaic--map .pf-mosaic__cell--main { grid-column:1; grid-row:1; }
   .pf-mosaic--map .pf-hero__mapcol { grid-column:2; grid-row:1; }
-  /* Der Streifen läuft hier über die volle Breite, die Kacheln werden also
-     deutlich breiter als hoch — etwas mehr Zeilenhöhe als auf dem Telefon. */
+
   .pf-mosaic--map .pf-mosaic__side { grid-column:1 / -1; grid-row:2;
     grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:6rem; }
 }
-/* Ab 1280px — drei gleiche Drittel, die Karte wird zur dritten Spalte. */
+
 @media (min-width:1280px){
   .pf-mosaic--map { grid-template-columns:repeat(3, minmax(0, 1fr)); }
-  /* Ein einzelnes kanonisches Bild nicht mit vier leeren Galeriekacheln
-     umstellen. Es belegt dieselben zwei Bildspalten wie das volle Mosaik;
-     32/10 hält dabei exakt dessen Zeilenhöhe, die Karte bleibt im dritten
-     Drittel. Diese Variante gilt geteilt für Portfolio, Mietende und
-     Workspace — fehlende Objektbilder werden weder erfunden noch dupliziert. */
+
   .pf-mosaic--map.pf-mosaic--solo .pf-mosaic__cell--main {
     grid-column:1 / span 2;
     aspect-ratio:32/10;
   }
   .pf-mosaic--map.pf-mosaic--solo .pf-hero__mapcol { grid-column:3; }
 }
-/* ── Standort-Wähler (js/apps/building-create.js) ─────────────────────────
-   Karte mit der Adresssuche als Auflage darin, unten zentriert. Die
-   Vorschlagsliste öffnet deshalb NACH OBEN — nach unten stünde sie ausserhalb
-   des Kartenrahmens. */
+
 .map-picker { position:relative; height:clamp(18rem, 52vw, 30rem);
   border-radius:var(--radius-lg); overflow:hidden; background:var(--color-secondary-100); }
-/* Höhe EXPLIZIT, nicht über `inset:0`: MapLibre hängt seine eigene Klasse
-   `.maplibregl-map` an den Container, und deren `position:relative` schlägt
-   unsere gleich spezifische `absolute` (beide 0,1,0) — das MapLibre-Stylesheet
-   wird zur Laufzeit NACH app.css in den <head> gehängt, Quellreihenfolge
-   entscheidet. Der Kasten fiel damit auf Höhe 0 zusammen, das Canvas malte
-   ausserhalb und das `overflow:hidden` des Rahmens schnitt es weg: die Karte
-   blieb grau, obwohl die Kacheln geladen waren. Die übrigen Karten trifft es
-   nicht, weil MapLibre dort an `.pf-map` / `.dash-map` hängt — die haben eine
-   eigene `height`. */
+
 .map-picker__canvas { position:absolute; inset:0; width:100%; height:100%; }
-/* Der Abstand nach unten hält die Auflage auch von der Attribution (unten links)
-   frei — die stand ihr bei kleineren Werten direkt unter dem Feld. */
+
 .map-search { position:absolute; left:var(--sp-4); right:var(--sp-4); bottom:var(--sp-8); z-index:var(--z-local-control);
   display:flex; flex-direction:column; gap:var(--sp-2); max-width:32rem; margin-inline:auto; }
-/* Ab 640px (CDs sm) statt erst ab 768px: dort ist die Karte schon ~390px hoch
-   und verträgt den grösseren Abstand — nur auf dem Telefon (288px Karte) bliebe
-   sonst zu wenig Kartenfläche über dem Feld. */
+
 @media (min-width:640px){ .map-search { bottom:var(--sp-14); } }
 .map-search__field { position:relative; display:flex; }
 .map-search__field input { width:100%; min-height:var(--input-h);
@@ -113,13 +59,13 @@
   box-shadow:var(--shadow-lg); border-radius:var(--radius); }
 .map-search__icon { position:absolute; left:var(--sp-3-5); top:50%; transform:translateY(-50%);
   color:var(--color-text-muted); pointer-events:none; }
-/* 44px-Ziel (--target-min): das Feld reserviert rechts genau diese Breite. */
+
 .map-search__clear { position:absolute; right:0; top:50%; transform:translateY(-50%);
   display:inline-flex; align-items:center; justify-content:center;
   width:var(--target-min); height:var(--target-min); border:0; background:none; cursor:pointer;
   color:var(--color-text-muted); border-radius:var(--radius); }
 .map-search__clear:hover { color:var(--color-primary-600); }
-/* Stecknadel: Kreis mit Spitze, in der Primärfarbe der aktiven Marke. */
+
 .map-pin { width:var(--sp-6); height:var(--sp-6); border-radius:50% 50% 50% 0;
   transform:rotate(-45deg); background:var(--color-primary-600);
   border:var(--stroke-2) solid var(--color-bg); box-shadow:var(--shadow-md); cursor:grab; }
@@ -127,20 +73,14 @@
 
 .pf-mosaic__cell { position:relative; display:block; padding:0; border:0; background:none; cursor:zoom-in;
   border-radius:var(--radius-lg); overflow:hidden; min-height:0; }
-/* Platzhalterkachel: gleiche Fläche wie ein Bild, aber ohne Zeigerhand — dahinter
-   liegt nichts, was sich öffnen liesse. Muss NACH der Grundregel stehen: beide
-   sind (0,1,0), vorher gewann die spätere Grundregel und die Zeigerhand blieb. */
+
 .pf-mosaic__cell--empty { cursor:default; background:var(--color-secondary-50); }
 .pf-mosaic__cell--empty .image__not-available { width:100%; height:100%; }
-/* Die Kacheln füllen ihre Gitterzelle vollständig — sonst entsteht neben dem Bild
-   eine tote Klickzone, die trotzdem die Galerie öffnet. */
+
 .pf-mosaic__photo { width:100%; height:100%; }
 .pf-mosaic__photo img { width:100%; height:100%; object-fit:cover; }
 .pf-mosaic__cell:hover .pf-mosaic__photo img { opacity:.92; }
-/* Auflage der letzten Kachel: grau-transparent mit Restanzahl + Beschriftung. */
-/* `.photo > *` als Kindselektor, weil `.photo > :not(img)` (0,1,1) sonst unser
-   `position:absolute` (0,1,0) überstimmt und die Auflage in den normalen Fluss
-   an den Kachelanfang kippt. */
+
 .photo > .pf-mosaic__more { position:absolute; inset:0; display:flex; flex-direction:column; gap:var(--sp-0-5);
   align-items:center; justify-content:center; text-align:center; padding:var(--sp-2);
   background:var(--scrim-chip); color:var(--color-text-negative); font-weight:var(--fw-bold); }
@@ -149,24 +89,12 @@
 .pf-mosaic__more-label { font-size:var(--fs-xs); font-weight:var(--fw-regular); text-decoration:underline;
   text-underline-offset:var(--stroke-2); }
 @media (max-width:767.98px){ .pf-mosaic__more-label { display:none; } }
-/* Kindselektor, siehe Hinweis oben zu `.photo > :not(img)`. */
+
 .photo > .pf-hero__badge { position:absolute; right:var(--sp-3-5); bottom:var(--sp-3); display:inline-flex; align-items:center; gap:var(--sp-2);
   padding:var(--sp-1) var(--sp-3); border-radius:var(--radius-full); background:var(--scrim-chip); color:var(--color-text-negative);
-  font-size:var(--fs-sm); font-weight:var(--fw-bold); }   /* statisch wie alle Bild-Chips (.pf-card__land): Auflagen skalieren mit dem Bild, nicht mit dem Viewport */
+  font-size:var(--fs-sm); font-weight:var(--fw-bold); }
 .pf-mosaic__cell:hover .photo > .pf-hero__badge { background:var(--scrim-chip-hover); }
 
-/* ---- Bildbetrachter: VOLLBILD mit Kopfzeile, analog zur Dokumentvorschau ----
-   Vorher eine zentrierte Karte mit max-height:70vh — auf einem Bild, das die
-   Hauptinformation IST, verschenkt das die Fläche. Jetzt dieselbe Anatomie wie
-   .docviewer: dunkle Vollfläche, Kopfzeile mit Titel/Meta links und Aktionen
-   (Herunterladen · Teilen · Schliessen) rechts. */
-/* Die BILDFLÄCHE füllt das ganze Overlay, die Kopfzeile schwebt darüber — so
-   läuft die Bildlaufleiste über die volle Fensterhöhe am Fensterrand und liest
-   sich als «die Seite scrollt», obwohl weiterhin ein Element im Dialog scrollt
-   (Fokusfalle, Rückkehr an die alte Scrollposition und aria-modal bleiben).
-   --lb-top / --lb-bottom misst syncChrome() in js/gallery.js. */
-/* z-viewer wie der Dokumentbetrachter: beide Vollbild-Betrachter liegen ÜBER dem
-   Toast (tokens.css) — ein Toast darunter wäre unerreichbar. */
 .pf-lightbox { position:fixed; inset:0; z-index:var(--z-viewer);
   --lb-top:var(--sp-14); --lb-bottom:0px;
   background:var(--color-secondary-900); }
@@ -174,15 +102,7 @@
   display:flex; align-items:center; justify-content:space-between; gap:var(--sp-4);
   padding:var(--sp-2-5) var(--sp-3); background:var(--color-secondary-800); color:var(--color-text-negative); }
 @media (min-width:768px){ .pf-lightbox__bar { padding:var(--sp-2-5) var(--sp-5); } }
-/* Kopfzeile, Titel, Aktionen und Knöpfe teilen sich das EINE Dunkel-Chrome-
-   Rezept mit dem Dokumentbetrachter — als GRUPPENSELEKTOR bei der
-   Dokumentvorschau (Design-Review A12). Vorher standen die Paare als Kopien
-   hier und drifteten bereits: Kopfzeilen-Icon secondary-200 gegen
-   text-negative-muted, Subzeile fs-sm gegen text-xs, Fokus-Offset 2 gegen -2. */
-/* Aufnahme auf der Medien-Detailseite: volle Breite der Inhaltsspalte, als
-   Knopf (öffnet die Vollbildgalerie). Seitenverhältnis statt fester Höhe —
-   dieselbe Regel wie im Objekt-Hero, damit hohe und breite Aufnahmen gleich
-   behandelt werden. */
+
 .med-shot { display:block; width:100%; padding:0; border:0; background:none;
   cursor:zoom-in; border-radius:var(--radius-lg); overflow:hidden; }
 .med-shot__photo { width:100%; aspect-ratio:16/10; }
@@ -191,7 +111,6 @@
 .med-shot__play { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
   color:var(--color-text-negative); pointer-events:none; }
 
-/* CD share-bar.postcss:16 — Kopierzeile im Teilen-Dialog. */
 .share-url { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-3); }
 @media (min-width:480px){ .share-url { min-width:22rem; } }
 @media (min-width:1280px){ .share-url { min-width:24rem; } }
@@ -200,73 +119,51 @@
 .pf-lightbox__btn.is-active { background:var(--surface-negative-active); }
 .pf-lightbox__btn:disabled { opacity:.35; cursor:default; }
 .pf-lightbox__btn:disabled:hover { background:none; }
-/* Zeile zwischen Kopf und Miniaturen: trägt Bühne und Metadaten-Panel und
-   begrenzt beide der Höhe nach (min-height:0 bricht die Flex-Mindesthöhe auf). */
+
 .pf-lightbox__body { position:absolute; inset:0; display:flex; flex-direction:column; min-height:0; }
 .pf-lightbox__stage { position:relative; flex:1 1 auto; min-height:0; min-width:0; }
-/* Beim Zoom wird die Bühne zum Scrollrahmen — dadurch gibt es Verschieben per
-   Touch, Rad UND Tastatur geschenkt, ohne eigene Zieh-Logik. */
-/* Die Bühne selbst scrollt NIE — sie ist der Bezugsrahmen für Zoomleiste und
-   Blätterpfeile. Den Überlauf trägt .pf-lightbox__scroll darin. */
+
 .pf-lightbox__scroll { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   min-width:0; min-height:0;
-  /* Innenabstand = gemessene Chrome-Höhe: im Fit-Zustand bleibt das Bild frei,
-     gescrollt läuft es darunter durch. */
+
   padding:calc(var(--lb-top) + var(--sp-4)) var(--sp-4) calc(var(--lb-bottom) + var(--sp-4));
   scroll-padding:calc(var(--lb-top) + var(--sp-4)) var(--sp-4) calc(var(--lb-bottom) + var(--sp-4)); }
 .pf-lightbox__stage.is-zoomed .pf-lightbox__scroll { overflow:auto; align-items:flex-start; justify-content:flex-start; cursor:grab; }
 .pf-lightbox__stage.is-zoomed .pf-lightbox__scroll:active { cursor:grabbing; }
 .pf-lightbox__scroll:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
 .pf-lightbox__stage:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
-/* Im Fit-Modus braucht der Rahmen eine DEFINITE Höhe: `max-height:100%` am Bild
-   löst gegen die Höhe seines Elternteils auf, und gegen `auto` greift eine
-   Prozentangabe nicht — das Bild stand dann in natürlicher Grösse da (gemessen:
-   1393x923 in einer 762px hohen Bühne). Beim Zoom umgekehrt `auto`, damit der
-   Rahmen mit dem Bild mitwächst und die Bühne echten Scroll-Überlauf bekommt. */
+
 .pf-lightbox__canvas { position:relative; display:flex; align-items:center; justify-content:center;
   width:100%; height:100%; min-width:0; min-height:0; }
-/* flex:none: als Flex-Element schrumpfte der Rahmen sonst auf die Breite des
-   Scrollrahmens zurück — das Bild lief darüber hinaus, statt den Scrollbereich
-   zu vergrössern, und liess sich seitlich nicht schieben. */
+
 .pf-lightbox__stage.is-zoomed .pf-lightbox__canvas { flex:none; width:auto; height:auto; margin:auto; }
-/* Im Zoom dürfen die Fit-Deckel nicht mehr greifen, sonst bleibt die Bildbreite
-   an den Rahmen gefesselt und es entsteht nie waagrechter Überlauf. */
+
 .pf-lightbox__stage.is-zoomed .pf-lightbox__img { max-width:none; max-height:none; }
 .pf-lightbox__stage { overflow:hidden; }
-/* Zoomleiste: unten mittig über der Bühne, dunkel mit hellen Symbolen wie die
-   Kopfzeile. Sie schwebt über dem Bild, deshalb Abstand nach unten. */
-/* Gleiche Leisten-Oberfläche wie .docviewer__toolbar (secondary-900 + border-negativ):
-   EIN Zoomleisten-Rezept für beide Betrachter. */
+
 .pf-lightbox__zoom { position:absolute; left:50%; bottom:calc(var(--lb-bottom) + var(--sp-4)); transform:translateX(-50%);
   z-index:var(--z-local-control); gap:var(--sp-1); padding-inline:var(--sp-1-5); }
 @media (min-width:768px){ .pf-lightbox__zoom { bottom:calc(var(--lb-bottom) + var(--sp-6)); } }
 .pf-lightbox__zoom .pf-lightbox__btn { width:var(--sp-9); height:var(--sp-9); }
-/* 44-px-Ziel ohne Zeigegerät (WCAG 2.5.5) — Spiegel der Docviewer-Zoomregel. */
+
 @media (max-width:1023.98px), (hover:none){
   .pf-lightbox__zoom .pf-lightbox__btn { width:var(--target-min); height:var(--target-min); }
 }
 .pf-lightbox__zoom-val { min-width:3.75rem; text-align:center; color:var(--color-text-negative);
   font-size:var(--text-sm); font-variant-numeric:tabular-nums; }
 .pf-lightbox__zoom-sep { margin-inline:var(--sp-1); }
-/* Metadaten-Panel — standardmässig eingeklappt, per Knopf in der Kopfzeile.
-   Ab 768px als Spalte NEBEN der Bühne (das Bild bleibt sichtbar), darunter als
-   Band darüber; auf dem Telefon wäre eine dritte Spalte nicht lesbar. */
+
 .pf-lightbox__meta { padding:calc(var(--lb-top) + var(--sp-4)) var(--sp-5) var(--sp-4); }
-/* Der Meta-Knopf ist ein echter .btn--outline-negative (btn.postcss:87-98) —
-   keine Ad-hoc-Geistervariante mit 16%-Weiss-Rand mehr (die lag unter 3:1). */
+
 @media (min-width:768px){
-  /* Bühne und Panel nebeneinander — im .pf-lightbox__body, NICHT indem das
-     Overlay selbst zur Zeile wird: dann verliert die Bühne ihre feste Höhe. */
+
   .pf-lightbox__body { flex-direction:row; }
 }
 .pf-lightbox__img { display:block; max-width:100%; max-height:100%; object-fit:contain; }
-/* z-index: .pf-lightbox__canvas ist positioniert und steht im Quelltext NACH
-   dem Zurück-Pfeil — ohne eigene Ebene malte das Bild ihn zu. */
+
 .pf-lightbox__nav { z-index:var(--z-local-control); position:absolute; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; justify-content:center;
   width:var(--target-min); height:var(--target-min); border:0; border-radius:var(--radius-full);
-  /* Kein Wert der Negativ-Ebene: die Blätterpfeile sind HELLE, deckende Knöpfe
-     mit dunklem Symbol auf dem Bild — sie liegen über der Aufnahme, nicht über
-     der Chrome. .85 lässt das Bild durchscheinen, ohne den Kontrast zu brechen. */
+
   background:var(--surface-lightbox-control); color:var(--color-text); cursor:pointer; transition:background var(--duration-fast); }
 .pf-lightbox__nav:hover { background:var(--color-bg); }
 .pf-lightbox__nav--prev { left:var(--sp-3); } .pf-lightbox__nav--next { right:var(--sp-3); }

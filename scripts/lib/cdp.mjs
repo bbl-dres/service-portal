@@ -31,8 +31,8 @@ export const EDGE = process.env.EDGE_PATH || defaultEdgePath();
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Ist auf diesem Port schon ein Debug-Endpunkt erreichbar?
-async function portBelegt(port) {
+// Return whether a debugging endpoint already answers on this port.
+async function isPortOccupied(port) {
   try {
     const r = await fetch(`http://localhost:${port}/json/version`, { signal: AbortSignal.timeout(400) });
     return r.ok;
@@ -43,31 +43,25 @@ async function portBelegt(port) {
 // `webgl: true` enables SwiftShader so MapLibre/WebGL renders (never --disable-gpu,
 // which blanks WebGL). Returns { send, on, close }.
 //
-// PORTWAHL: ohne `port` sucht `launch()` selbst einen freien. Vorher stand hier
-// die feste Vorgabe 9333 — drei Suiten teilten sie sich, und weil die Schleife
-// unten sich mit dem verbindet, was auf dem Port ANTWORTET, übernahm ein Lauf
-// den Browser eines anderen Laufs mitsamt dessen warmem HTTP-Cache. Ergebnis
-// waren Phantomfehler: geänderte Dateien kamen im Test nie an. Zweimal
-// aufgetreten (29./30. Juli), zweimal als vermeintlicher Code-Fehler gejagt.
-//
-// Wird ein Port ausdrücklich genannt und ist er belegt, bricht `launch()` ab,
-// statt sich anzuhängen — lieber ein lauter Fehler als ein stiller Fremdbrowser.
+// PORT SELECTION: without `port`, `launch()` finds a free one. The former fixed
+// port 9333 let concurrent suites attach to another run and inherit its warm
+// HTTP cache, which made changed files appear stale. An explicitly requested
+// occupied port therefore fails loudly instead of attaching to another browser.
 export async function launch({ port, webgl = false } = {}) {
   if (port == null) {
     for (let p = 9400 + Math.floor(Math.random() * 400); ; p++) {
-      if (!(await portBelegt(p))) { port = p; break; }
+      if (!(await isPortOccupied(p))) { port = p; break; }
     }
-  } else if (await portBelegt(port)) {
-    throw new Error(`Auf Port ${port} antwortet bereits ein Browser. `
-      + 'Verwaiste msedge-Prozesse beenden oder launch() ohne Port aufrufen.');
+  } else if (await isPortOccupied(port)) {
+    throw new Error(`A browser already answers on port ${port}. `
+      + 'Stop orphaned msedge processes or call launch() without a port.');
   }
 
   const userDir = mkdtempSync(join(tmpdir(), 'edge-cdp-'));
   const flags = [
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${userDir}`,
     '--no-first-run', '--no-default-browser-check',
-    // Kein HTTP-Cache: der Testlauf soll die Dateien auf der Platte prüfen,
-    // nicht eine ältere Fassung aus dem Profil.
+    // Disable HTTP caching so the run checks files on disk, not stale profile data.
     '--disable-http-cache',
   ];
   if (webgl) flags.push('--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist');
@@ -175,25 +169,22 @@ export async function launch({ port, webgl = false } = {}) {
 
 // Open a fresh page (flattened session), collect uncaught exceptions + console
 // errors. `evaluate(expr)` runs an async expression in-page and returns its value.
-// Die Demo-Sitzung, wie js/session.js sie schreibt. Wird VOR dem ersten
-// Anwendungsskript in den localStorage gelegt, damit `session.js` sie beim
-// Modulstart schon vorfindet — ein späteres window.__login() käme für die
-// erste Zeichnung zu spät und die Seite müsste neu gezeichnet werden.
+// The demo session as written by js/session.js. Install it before the first app
+// script so session.js sees it during module initialization; a later login call
+// would otherwise require an avoidable second render.
 const DEMO_SESSION = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
 
 /**
- * `login` steuert die Sitzung, mit der die Seite STARTET:
- *   true   angemeldet · false  abgemeldet · undefined  automatisch
+ * `login` controls the session with which the page starts:
+ *   true   signed in · false signed out · undefined automatic
  *
- * Automatisch heisst: Routen unter `#/app/…` starten angemeldet. Die
- * Fachanwendungen liegen seit 2026-08 hinter einer Anmeldesperre (js/router.js);
- * ohne Sitzung prüfte sonst jede App-Suite nur noch das Anmeldeband. Wer die
- * SPERRE selbst prüfen will, verlangt `login: false` ausdrücklich.
+ * Automatic mode signs into routes under `#/app/…`. Since August 2026 those
+ * micro-apps are behind the router's mock sign-in gate; without a session each
+ * app suite would exercise only that gate. Gate tests request `login: false`.
  *
- * Die Sitzung liegt im localStorage und gilt für das ganze Profil — deshalb
- * wird sie hier bei JEDEM Seitenaufbau gesetzt bzw. gelöscht und nicht nur
- * beim ersten; sonst erbte eine abgemeldete Prüfung die Sitzung ihrer
- * Vorgängerin.
+ * The session lives in localStorage for the entire browser profile. Set or
+ * remove it on every page creation so signed-out checks cannot inherit state
+ * from a preceding check.
  */
 export async function openPage(cdp, url, { login, skin } = {}) {
   const wantsLogin = login === undefined ? /#\/app\//.test(String(url)) : !!login;
@@ -228,9 +219,8 @@ export async function openPage(cdp, url, { login, skin } = {}) {
   const exceptions = [];
   const consoleErrors = [];
   let loaded = false;
-  // Horcher und Runtime.enable stehen VOR der Navigation: sonst feuert das
-  // Ladeereignis der Zielseite ins Leere, und Ausnahmen des Startlaufs — genau
-  // die interessanten — zählte niemand mit.
+  // Register listeners and enable Runtime before navigation so the initial load
+  // event and startup exceptions cannot escape the probe.
   cdp.on((m) => {
     if (m.sessionId !== sessionId) return;
     if (m.method === 'Page.loadEventFired') loaded = true;
@@ -262,28 +252,24 @@ export async function openPage(cdp, url, { login, skin } = {}) {
     }
   };
   const closeTarget = () => cdp.send('Target.closeTarget', { targetId });
-  // Sammelprüfung «nichts kaputt». WICHTIG: `exceptions` allein genügt NICHT —
-  // js/router.js fängt jeden Render-Fehler ab, loggt ihn auf console.error und
-  // malt eine .notification--error. Nichts davon erreicht Runtime.exceptionThrown,
-  // eine geworfene Ansicht lieferte also ein grünes «keine Ausnahmen».
-  // Liefert [] wenn sauber, sonst die Befunde als Text.
+  // Aggregate "nothing broke" check. `exceptions` alone is insufficient:
+  // js/router.js catches render failures, logs them and paints an error
+  // notification without triggering Runtime.exceptionThrown. Return [] when
+  // clean, otherwise return readable findings.
   const problems = async () => {
     const out = [];
-    if (exceptions.length) out.push(`Ausnahme: ${exceptions[0]}`);
-    if (consoleErrors.length) out.push(`Konsolenfehler: ${consoleErrors[0]}`);
+    if (exceptions.length) out.push(`Exception: ${exceptions[0]}`);
+    if (consoleErrors.length) out.push(`Console error: ${consoleErrors[0]}`);
     try {
-      // .error-summary ist die Fehlerübersicht eines Formulars — sie MELDET eine
-      // Falscheingabe, sie IST kein Defekt. Ebenso ausgenommen: error-Toasts
-      // (.toast__message) — seit der Sprach-Review trägt ein fehlgeschlagenes
-      // Kopieren korrekt die error-Variante (Design-Review D5); headless gibt es
-      // keine Clipboard-Berechtigung, der Toast ist dort also ERWARTET. Nur
-      // Bannern der Anwendung selbst (Router, Datenladen) darf ein Test
-      // widersprechen.
+      // .error-summary reports invalid form input; it is not an application
+      // defect. Error toasts are also excluded because headless browsers lack
+      // clipboard permission and a failed copy correctly uses the error state.
+      // Only application-level router or data-loading banners fail this check.
       const err = await evaluate(`(function(){var n=[...document.querySelectorAll('.notification--error:not(.error-summary)')]
           .find(function(x){ return !x.closest('.toast__message'); });
         return n ? (n.innerText||'').replace(/[\\s\\u00a0]+/g,' ').slice(0,120) : '';})()`);
-      if (err) out.push(`Fehlerbanner: ${err}`);
-    } catch { /* Seite bereits zu */ }
+      if (err) out.push(`Error banner: ${err}`);
+    } catch { /* page already closed */ }
     return out;
   };
   return { sessionId, evaluate, exceptions, consoleErrors, problems, closeTarget };

@@ -1,4 +1,4 @@
-// Minimal SVG chart renderers for the Datenportal.
+// Minimal SVG chart renderers for the data portal.
 //
 // No chart library (the portal is no-build), so the marks follow the house specs
 // explicitly: bars <= 24px with a 4px rounded data-end and a square baseline,
@@ -21,22 +21,24 @@
 import C, { menu, wireMenu, toast } from './components.js';
 import { download, tableToCsv, tableToXls, svgToPng, copyText, fileSlug } from './export.js';
 
-// Kategoriale Palette und Diagramm-Tinte kommen aus dem Token-Layer
-// (css/tokens.css --chart-series-* / --chart-ink*). Die Werte werden zur
-// Renderzeit AUFGELÖST, nicht als `var(...)` in die SVG-Attribute geschrieben:
-// der PNG-Export serialisiert das SVG und zeichnet es auf ein Canvas, wo
-// Custom Properties nicht mehr auflösen würden. Fallbacks entsprechen den Tokens.
+// The categorical palette and chart ink come from the token layer
+// (css/tokens.css --chart-series-* / --chart-ink*). Values are RESOLVED at
+// render time rather than written as `var(...)` into SVG attributes: PNG export
+// serialises the SVG and draws it onto canvas, where custom properties would no
+// longer resolve. Fallbacks match the tokens.
+const DEFAULT_CHART_FILE_SLUG = 'diagramm';
+
 const cssVar = (name, fallback) => {
   if (typeof document === 'undefined') return fallback;
   // Skin overrides are body-scoped. The body's computed style includes both
   // inherited root tokens and `.body--intranet` overrides.
   const scope = document.body || document.documentElement;
-  const v = getComputedStyle(scope).getPropertyValue(name).trim();
-  return v || fallback;
+  const value = getComputedStyle(scope).getPropertyValue(name).trim();
+  return value || fallback;
 };
 const paletteCache = { key: '' };
 function palette() {
-  // Der Skin kann die Tokens theoretisch überschreiben — Cache pro body-Klasse.
+  // The skin can override tokens in principle, so cache per body class.
   const key = typeof document === 'undefined' ? 'ssr' : document.body.className;
   if (paletteCache.key === key) return paletteCache.val;
   const val = {
@@ -55,9 +57,9 @@ function palette() {
   paletteCache.key = key; paletteCache.val = val;
   return val;
 }
-// Der frühere SERIES-Export ist weg: er war eine Literal-Kopie von
-// --chart-series-1..7 (tokens.css) MIT null Importern — die Legende liest in
-// Wahrheit palette().series, das die CSS-Variablen auflöst (Design-Review C20).
+// The former SERIES export is gone. It was a literal copy of
+// --chart-series-1..7 (tokens.css) WITH zero importers; the legend actually reads
+// palette().series, which resolves the CSS variables (design review C20).
 
 // Per-chart action menu (Superset-style). Actions are handled in wireChartMenus.
 const CHART_MENU = [
@@ -70,20 +72,20 @@ const CHART_MENU = [
   { separator: true },
   { action: 'link', label: 'Link kopieren' },
 ];
-// --- Breitenabhängige Geometrie (Item 6.1) ----------------------------------
-// Vorher: fester viewBox 720x300 plus `.chart__svg{width:100%}` — SVG skaliert
-// Text mit der Geometrie, also schrumpfte JEDE Beschriftung mit der Karte.
-// Gemessen: 4.10px bei 320, 5.27px bei 390, 10.65px bei 768 und 7.7px bei 1440
-// (zweispaltiges Grid) — die Desktop-Darstellung war unlesbarer als die Tablet-
-// Darstellung. Jetzt wird in CSS-Pixeln gezeichnet: 1 User-Unit = 1 px, damit
-// font-size="12" wirklich 12px ergibt (CDs kleinste Stufe ist 0.75rem).
+// --- Width-dependent geometry (item 6.1) ------------------------------------
+// Previously: fixed viewBox 720x300 plus `.chart__svg{width:100%}`. SVG scaled
+// text with geometry, so EVERY label shrank with the card. Measurements were
+// 4.10px at 320, 5.27px at 390, 10.65px at 768 and 7.7px at 1440 (two-column
+// grid), making desktop less legible than tablet. Drawing in CSS pixels now
+// makes 1 user unit = 1 px, so font-size="12" is truly 12px (the smallest CD
+// step is 0.75rem).
 function geom(width, { r = 20, t = 20, b = 40 } = {}) {
   const W = Math.max(240, Math.round(width || 720));
   const H = Math.round(Math.max(200, Math.min(320, W * 0.5)));
   return { W, H, P: { t, r, b, l: W < 420 ? 36 : 52 } };
 }
-// Nur so viele x-Beschriftungen zeichnen, wie nebeneinander Platz haben — sonst
-// überlappen sie auf schmalen Karten statt zu verschwinden.
+// Draw only as many x labels as fit side by side; on narrow cards they should
+// thin out rather than overlap.
 const labelStride = (count, inner) => Math.max(1, Math.ceil((count * 34) / Math.max(1, inner)));
 
 const esc = (s) => String(s == null ? '' : s)
@@ -105,9 +107,8 @@ function niceMax(v) {
   return step * mag;
 }
 
-// Zähl-Achsen dürfen keine Bruchteile anzeigen («2,5 Gebäude», Item 6.7): wenn
-// das Maximum ganzzahlig und klein ist, die Tick-Zahl so wählen, dass alle
-// Schritte ganzzahlig bleiben.
+// Count axes must not show fractional buildings (item 6.7). For a small
+// integer maximum, choose the tick count so every step remains an integer.
 const ticks = (max, count = 4) => {
   let n = count;
   if (Number.isInteger(max) && max <= 20) {
@@ -136,19 +137,19 @@ function legend(names) {
   ).join('')}</div>`;
 }
 
-// Textalternative zum Diagramm (Item 6.2) — OHNE sichtbare Affordanz.
+// Text alternative for the chart (item 6.2), WITHOUT a visible affordance.
 //
-// Ausgangslage: die Tabelle lag `hidden` im DOM und diente nur als Quelle für den
-// CSV/Excel-Export. `hidden` nimmt sie aber auch aus dem Accessibility-Baum, und
-// das äussere <svg> ist `role="img"`, was alle Nachfahren daraus entfernt — KEIN
-// Diagramm hatte also eine erreichbare Textalternative (WCAG 1.1.1).
+// Previously, the table was `hidden` in the DOM and served only as the CSV/Excel
+// source. `hidden` also removes it from the accessibility tree, while the outer
+// <svg> has `role="img"`, removing all descendants. NO chart therefore had an
+// accessible text alternative (WCAG 1.1.1).
 //
-// Entscheid: keine «Daten als Tabelle»-Aufklappzeile (visuelle Ruhe; Sehende
-// nutzen CSV/Excel im Diagrammmenü). Stattdessen bleibt die Tabelle für
-// Hilfsmittel erreichbar — `.sr-only` statt `hidden` — mit <caption>, damit
-// Screenreader wissen, zu welchem Diagramm sie gehört. Bewusst KEIN
-// `.table-wrapper`/`data-scroll-region`: das würde einen Tabulator-Stopp in
-// visuell verborgenen Inhalt setzen. Der Export liest weiter `.chart__table table`.
+// Decision: no expandable data-as-table row (visual calm; sighted users
+// use CSV/Excel in the chart menu). Instead, the table remains available to
+// assistive technology through `.sr-only` rather than `hidden`, with a <caption>
+// that associates it with the chart. Deliberately NO `.table-wrapper` /
+// `data-scroll-region`, which would add a tab stop inside visually hidden
+// content. Export continues to read `.chart__table table`.
 function tableView(id, columns, rows, unit, title = '') {
   const head = columns.map(c => `<th scope="col">${esc(c)}</th>`).join('');
   const body = rows.map(r => `<tr>${columns.map((c, i) =>
@@ -164,7 +165,7 @@ function lineChart({ id, rows, x, y, series, unit, width }) {
   const pal = palette();
   const { INK, INK_MUTED, GRID, AXIS, SURFACE } = { INK: pal.ink, INK_MUTED: pal.inkMuted, GRID: pal.grid, AXIS: pal.axis, SURFACE: pal.surface };
   const SER = pal.series;
-  // rechts Platz für das Endpunkt-Label; auf schmalen Karten weniger
+  // Leave room on the right for the endpoint label, less on narrow cards.
   const { W, H, P } = geom(width, { r: (width || 720) < 420 ? 44 : 76 });
   const names = series ? [...new Set(rows.map(r => r[series]))] : ['__single'];
   const xs = [...new Set(rows.map(r => r[x]))];
@@ -187,7 +188,7 @@ function lineChart({ id, rows, x, y, series, unit, width }) {
      <text x="${P.l - 10}" y="${py(t) + 4}" text-anchor="end" fill="${INK_MUTED}" font-size="12">${fmt(t)}</text>`
   ).join('');
 
-  // Ausdünnen statt kollidieren; erste und letzte Marke bleiben immer stehen.
+  // Thin labels rather than collide; always keep the first and last marks.
   const stride = labelStride(xs.length, W - P.l - P.r);
   const xLabels = xs.map((v, i) =>
     (i % stride === 0 || i === xs.length - 1)
@@ -206,8 +207,8 @@ function lineChart({ id, rows, x, y, series, unit, width }) {
          data-tip="${esc(name === '__single' ? '' : name + ' · ')}${esc(p[x])}: ${esc(fmt(p[y], unit))}"
        ><title>${esc(p[x])}: ${esc(fmt(p[y], unit))}</title></circle>`).join('');
     const last = pts[pts.length - 1];
-    // direct label on the endpoint only — 14px (--fs-sm-Äquivalent): 13 liegt
-    // zwischen den CD-Stufen (Item chart-fs-1)
+    // Direct label on the endpoint only — 14px (--fs-sm equivalent). 13 falls
+    // between CD scale steps (item chart-fs-1).
     const label = `<text x="${px(last[x]) + 12}" y="${py(last[y]) + 4}" fill="${INK}" font-size="14" font-weight="700">${esc(fmt(last[y], unit))}</text>`;
     const dash = name === 'Ziel' ? ' stroke-dasharray="6 5"' : '';
     return `<path d="${d}" fill="none" stroke="${colour}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${dash}/>${dots}${label}`;
@@ -229,8 +230,8 @@ function columnChart({ id, rows, x, y, series, unit, width }) {
   const cats = [...new Set(rows.map(r => r[x]))];
   const max = niceMax(Math.max(...rows.map(r => Number(r[y]) || 0)));
   const band = (W - P.l - P.r) / cats.length;
-  // max(1, …): auf schmalen Karten mit vielen Kategorien wurde `per` negativ
-  // und die Balken verschwanden (code-review A11).
+  // max(1, …): `per` became negative on narrow cards with many categories and
+  // bars disappeared (code-review A11).
   const per = Math.max(1, Math.min(24, (band - 8) / names.length));
   const py = (v) => H - P.b - (v / max) * (H - P.t - P.b);
 
@@ -271,9 +272,9 @@ function barChart({ id, rows, x, y, unit, width }) {
   const pal = palette();
   const INK = pal.ink, INK_MUTED = pal.inkMuted, GRID = pal.grid, AXIS = pal.axis, SURFACE = pal.surface;
   const SER = pal.series;
-  // Breite aus dem Container; die Beschriftungsspalte war fix 210 von 720 (29%)
-  // und blieb auf einer 300px-Karte 29% breit, obwohl dort nur ~8 Zeichen passen
-  // (Item 6.10). Jetzt anteilig mit Ober- und Untergrenze.
+  // Width comes from the container. The label column was fixed at 210 of 720
+  // (29%) and stayed 29% wide on a 300px card even though only ~8 characters fit
+  // (item 6.10). It is now proportional with upper and lower bounds.
   const W = Math.max(240, Math.round(width || 720));
   const rowH = W < 480 ? 30 : 34;
   const labelW = Math.round(Math.max(72, Math.min(210, W * 0.32)));
@@ -283,8 +284,8 @@ function barChart({ id, rows, x, y, unit, width }) {
   const max = niceMax(Math.max(...rows.map(r => Number(r[y]) || 0)));
   const bw = Math.max(8, W - P.l - P.r);
   const thick = Math.min(24, rowH - 12);
-  // Beschriftung an der verfügbaren Spaltenbreite kürzen, nicht an einer festen
-  // Zeichenzahl — der volle Text steht im <title> und in der Datentabelle.
+  // Truncate labels to available column width rather than a fixed character
+  // count. Full text remains in <title> and the data table.
   const maxChars = Math.max(8, Math.floor((labelW - 14) / 6.2));
 
   const bars = rows.map((r, i) => {
@@ -293,8 +294,8 @@ function barChart({ id, rows, x, y, unit, width }) {
     const by = P.t + i * rowH + (rowH - thick) / 2;
     const label = String(r[x]);
     const short = label.length > maxChars ? label.slice(0, maxChars - 1) + '…' : label;
-    // 12/14 statt 13: die CD-Skala kennt keine 13px-Stufe — 12 für die
-    // Kategorie-Beschriftung, 14 für den betonten Wert (Item chart-fs-1).
+    // 12/14 instead of 13: the CD scale has no 13px step. Use 12 for category
+    // labels and 14 for the emphasised value (item chart-fs-1).
     return `<text x="${P.l - 12}" y="${by + thick / 2 + 4}" text-anchor="end" fill="${INK}" font-size="12">${esc(short)}<title>${esc(label)}</title></text>
       <path d="${barPath(P.l, by, Math.max(w, 2), thick, 4, 'right')}" fill="${SER[0]}"
         class="chart__bar" data-tip="${esc(label)}: ${esc(fmt(v, unit))}"
@@ -308,38 +309,38 @@ function barChart({ id, rows, x, y, unit, width }) {
 }
 
 /* ----------------------------------------------------------------- pie ---- */
-// Parts-of-whole for a small set of categories (e.g. Eigentumsverhältnis). Slices
+// Parts-of-whole for a small set of categories (for example ownership type). Slices
 // use the categorical palette in order so they match the legend the wrapper draws;
 // a 2px surface ring separates them; the share (%) is labelled on slices >= 6%.
 function pieChart({ id, rows, x, y, unit, width }) {
   const pal = palette();
   const INK = pal.ink, INK_MUTED = pal.inkMuted, GRID = pal.grid, AXIS = pal.axis, SURFACE = pal.surface;
   const SER = pal.series;
-  // Vorher 720x300 mit R=118: der Kreis füllte ein Drittel der Karte, zwei Drittel
-  // blieben leer (Item 6.9). Jetzt ein annähernd quadratisches Feld aus der
-  // Containerbreite, Radius aus der kleineren Kante.
+  // Previously 720x300 with R=118: the circle filled one third of the card and
+  // left two thirds blank (item 6.9). The plot is now approximately square from
+  // container width, with radius based on the shorter side.
   const W = Math.max(240, Math.round(width || 720));
   const H = Math.round(Math.max(200, Math.min(340, W * 0.62)));
   const cx = W / 2, cy = H / 2 + 2;
   const R = Math.round(Math.min(W, H) / 2 - 12);
-  // Ring statt Vollkreis: ruhigere Form, und die Mitte trägt die Gesamtsumme.
-  // Als echte Kreisring-Pfade (äusserer Bogen + innerer Bogen zurück), NICHT als
-  // Vollkreis mit aufgelegtem Deckel — ein Deckel müsste die Hintergrundfarbe
-  // treffen und würde im Vollbild-Overlay oder auf getönten Karten auffallen.
+  // A ring is calmer than a full circle and its centre carries the total. Draw
+  // true annulus paths (outer arc + returning inner arc), NOT a full circle with
+  // a cover on top. A cover would need to match the background and stand out in
+  // a fullscreen overlay or on tinted cards.
   const Ri = Math.round(R * 0.58);
   const total = rows.reduce((sum, row) => sum + Math.max(0, Number(row[y]) || 0), 0);
   const at = (a, rad) => `${(cx + rad * Math.cos(a)).toFixed(1)} ${(cy + rad * Math.sin(a)).toFixed(1)}`;
   const ring = (a0, a1, frac) => {
     const big = frac > 0.5 ? 1 : 0;
     if (frac >= 0.999) {
-      // geschlossener Ring: zwei Halbbögen aussen, zwei zurück innen
+      // Closed ring: two outer semicircles and two returning inner semicircles.
       return `M${at(-Math.PI / 2, R)} A${R} ${R} 0 1 1 ${at(Math.PI / 2, R)} A${R} ${R} 0 1 1 ${at(-Math.PI / 2, R)} Z`
         + `M${at(-Math.PI / 2, Ri)} A${Ri} ${Ri} 0 1 0 ${at(Math.PI / 2, Ri)} A${Ri} ${Ri} 0 1 0 ${at(-Math.PI / 2, Ri)} Z`;
     }
     return `M${at(a0, R)} A${R} ${R} 0 ${big} 1 ${at(a1, R)} L${at(a1, Ri)} A${Ri} ${Ri} 0 ${big} 0 ${at(a0, Ri)} Z`;
   };
   let a0 = -Math.PI / 2;
-  const mid = (R + Ri) / 2;   // Beschriftung mittig im Ringband
+  const mid = (R + Ri) / 2;   // Centre labels in the ring band.
   const slices = rows.map((r, i) => {
     const v = Math.max(0, Number(r[y]) || 0), frac = v / total, a1 = a0 + frac * 2 * Math.PI, am = (a0 + a1) / 2;
     const s = { path: ring(a0, a1, frac), color: SER[i % SER.length], v, frac, label: String(r[x]),
@@ -350,13 +351,13 @@ function pieChart({ id, rows, x, y, unit, width }) {
     const tip = `${esc(s.label)}: ${esc(fmt(s.v, unit))} (${Math.round(s.frac * 100)}%)`;
     return `<path d="${s.path}" fill="${s.color}" stroke="${SURFACE}" stroke-width="2" class="chart__bar" data-tip="${tip}" fill-rule="evenodd"><title>${tip}</title></path>`;
   }).join('');
-  // Prozentwert nur, wenn das Segment breit genug ist — im Ringband ist weniger
-  // Platz als in einem Vollkreis-Keil. Oberflächenfarbe (Token --chart-surface,
-  // Standard Weiss) statt Literal #fff, wie bei allen anderen Mark-Konturen;
-  // auf den 700er-Tönen: >= 5.02:1. 14 statt 13: keine 13px-Stufe im CD.
+  // Show percentage only when the segment is wide enough. A ring band has less
+  // room than a full-circle wedge. Use surface colour (token --chart-surface,
+  // white by default), not literal #fff, as for every other mark outline; on the
+  // 700 shades contrast is >= 5.02:1. Use 14 rather than off-scale 13px.
   const labels = slices.filter((s) => s.frac >= 0.08).map((s) =>
     `<text x="${s.lx.toFixed(1)}" y="${s.ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${SURFACE}" font-size="14" font-weight="700">${Math.round(s.frac * 100)}%</text>`).join('');
-  // Gesamtsumme in der Mitte — nur wenn der Innenkreis sie trägt.
+  // Show the total in the centre only when the inner circle can carry it.
   const totalText = fmt(total, unit);
   const centre = Ri >= 44 && totalText.length <= 12
     ? `<text x="${cx}" y="${cy - 4}" text-anchor="middle" dominant-baseline="middle" fill="${INK}" font-size="${Ri >= 60 ? 20 : 16}" font-weight="700">${esc(totalText)}</text>`
@@ -367,10 +368,10 @@ function pieChart({ id, rows, x, y, unit, width }) {
 }
 
 /* ------------------------------------------------------ stacked area ------- */
-// Zusammensetzung über die Zeit (Muster: Energiedashboard Bund) — Serien werden
-// kumulativ gestapelt; jede Fläche ist ein geschlossener Pfad (obere Kante hin,
-// untere Kante zurück). Reihenfolge der Serien = erste Vorkommnis in den Daten;
-// die Legende kommt vom Wrapper. Hover trägt jede Fläche als data-tip.
+// Composition over time (federal energy-dashboard pattern). Series are stacked
+// cumulatively and each area is a closed path (upper edge forward, lower edge
+// back). Series order follows first occurrence in the data; the wrapper supplies
+// the legend. Each area carries data-tip for hover.
 function areaChart({ id, rows, x, y, series, unit, width }) {
   const pal = palette();
   const INK_MUTED = pal.inkMuted, GRID = pal.grid, AXIS = pal.axis, SURFACE = pal.surface;
@@ -378,7 +379,7 @@ function areaChart({ id, rows, x, y, series, unit, width }) {
   const { W, H, P } = geom(width);
   const names = series ? [...new Set(rows.map((r) => r[series]))] : ['__single'];
   const xs = [...new Set(rows.map((r) => r[x]))].sort((a, b) => a - b);
-  // Kumulative Summen je x — das Maximum der Achse ist die Gesamthöhe.
+  // Cumulative sums per x; the axis maximum is the total height.
   const val = (name, xv) => { const r = rows.find((q) => q[x] === xv && (!series || q[series] === name)); return Number(r && r[y]) || 0; };
   const totals = xs.map((xv) => names.reduce((s, n) => s + val(n, xv), 0));
   const max = niceMax(Math.max(...totals));
@@ -415,18 +416,18 @@ function areaChart({ id, rows, x, y, series, unit, width }) {
     </svg>`, names: names.filter((n) => n !== '__single') };
 }
 
-/* -------------------------------------------------- Kennzahlen-Tabelle ----- */
-// Sichtbare Mehrjahres-Tabelle (Muster: Geschäftsbericht Stadt Zürich, «State of
-// the Estate» UK): Zeilen = Kennzahlen, Spalten = Jahre, optional Fussnoten.
-// Bewusst KEIN SVG — die Tabelle IST die Darstellung und zugleich ihre eigene
-// Textalternative; im Menü entfällt deshalb «Als Bild (PNG)». Eine Zeile, deren
-// Jahreswerte alle leer sind, ist ein Gruppentitel (Zürich-Anatomie); eine
-// `einheit`-Spalte im Dataset beschriftet die Zeile statt jeder Zelle.
+/* ------------------------------------------------------- Metrics table ----- */
+// Visible multi-year table (Zurich annual-report / UK «State of the Estate»
+// pattern): rows = metrics, columns = years, with optional footnotes.
+// Deliberately NO SVG: the table IS the visualisation and its own text
+// alternative, so the PNG export is absent from the menu. A row with all year
+// values empty is a group heading (Zurich anatomy); raw field: `einheit` labels
+// the row instead of every cell.
 const TABLE_MENU = CHART_MENU.filter((m) => m.action !== 'png');
-function kennzahlenTable(spec, result) {
+function metricsTable(spec, result) {
   const cols = result.columns;
   const x = spec.x || cols[0];
-  const hasEinheit = cols.includes('einheit');
+  const hasUnitColumn = cols.includes('einheit');
   const yearCols = cols.filter((c) => c !== x && c !== 'einheit');
   const head = `<tr><th scope="col">${esc(spec.xLabel || 'Kennzahl')}</th>${
     yearCols.map((c) => `<th scope="col" class="num">${esc(c)}</th>`).join('')}</tr>`;
@@ -435,7 +436,7 @@ function kennzahlenTable(spec, result) {
     if (isGroup) {
       return `<tr class="chart__trow-group"><th scope="colgroup" colspan="${yearCols.length + 1}">${esc(r[x])}</th></tr>`;
     }
-    const unit = hasEinheit ? r.einheit : spec.unit;
+    const unit = hasUnitColumn ? r['einheit'] : spec.unit;
     return `<tr><th scope="row">${esc(r[x])}${unit ? ` <span class="muted">(${esc(unit)})</span>` : ''}</th>${
       yearCols.map((c) => `<td class="num">${r[c] == null || r[c] === '' ? '—' : esc(typeof r[c] === 'number' ? fmt(r[c]) : r[c])}</td>`).join('')}</tr>`;
   }).join('');
@@ -457,27 +458,27 @@ export function chart(spec, result) {
     return `<figure class="chart card card--universal"><figcaption class="chart__head"><h3 class="chart__title" id="${id}-t">${esc(title)}</h3></figcaption>
       <div class="empty">${esc(result.error || 'Keine Daten für diese Auswahl.')}</div></figure>`;
   }
-  // Kennzahlen-Tabelle: kein Plot-Feld, kein zweiter Durchgang — die Tabelle
-  // steht direkt in der Karte (und ersetzt die sr-only-Zwillingstabelle).
+  // Metrics table: no plot field and no second pass. The table sits directly in
+  // the card and replaces the sr-only twin table.
   if (spec.form === 'table') {
     return `<figure class="chart card card--universal chart--table" id="${id}">
       <figcaption class="chart__head">
         <h3 class="chart__title" id="${id}-t">${esc(title)}</h3>
         <div class="chart__actions">${menu({ menuId: id, label: 'Tabellen-Aktionen', items: TABLE_MENU })}</div>
       </figcaption>
-      ${kennzahlenTable(spec, result)}
+      ${metricsTable(spec, result)}
       ${note ? `<p class="chart__note">${esc(note)}</p>` : ''}
     </figure>`;
   }
-  // Namen für die Legende ohne Geometrie ermitteln (die Legende steht über dem
-  // Feld, das erst im zweiten Durchgang gefüllt wird).
+  // Determine legend names without geometry; the legend sits above a plot that
+  // is filled only in the second pass.
   const names = spec.series ? [...new Set(rows.map((r) => r[spec.series]))]
     : spec.form === 'pie' ? rows.map((r) => String(r[spec.x])) : [];
-  // `.chart__plot` bleibt LEER: die Breite ist erst bekannt, wenn die Karte im
-  // Layout steht. Der Aufrufer füllt sie synchron per renderSvg() (Item 6.1).
-  // Keine `.chart__unit`-Pille mehr im Kopf: die Einheit steht ohnehin an jedem
-  // Wert (Achsenticks, Direktlabels, Tooltip, Datentabelle) — im Kopf war sie
-  // eine Dopplung, die dem Kebab Platz wegnahm.
+  // `.chart__plot` remains EMPTY because width is known only once the card is in
+  // layout. The caller fills it synchronously via renderSvg() (item 6.1). There
+  // is no `.chart__unit` pill in the header: the unit already appears at every
+  // value (axis ticks, direct labels, tooltip, data table), so the header copy
+  // was duplication that reduced room for the kebab menu.
   return `<figure class="chart card card--universal" id="${id}">
     <figcaption class="chart__head">
       <h3 class="chart__title" id="${id}-t">${esc(title)}</h3>
@@ -493,10 +494,10 @@ export function chart(spec, result) {
 }
 
 /**
- * Zeichnet das SVG für eine bereits im Layout stehende Karte. `width` ist die
- * gemessene Innenbreite von `.chart__plot`; 1 User-Unit = 1 CSS-Pixel, damit
- * font-size="12" auch 12px ergibt. Muss SYNCHRON nach dem innerHTML-Schreiben
- * laufen, damit Tests, die auf ein gerendertes SVG pollen, es vorfinden.
+ * Draw the SVG for a card already in layout. `width` is the measured inner
+ * width of `.chart__plot`; 1 user unit = 1 CSS pixel, making font-size="12"
+ * truly 12px. Must run SYNCHRONOUSLY after writing innerHTML so tests polling
+ * for a rendered SVG can find it.
  */
 export function renderSvg(spec, result, width) {
   const rows = (result && result.rows) || [];
@@ -510,12 +511,12 @@ export function renderSvg(spec, result, width) {
   return svg;
 }
 
-/** Füllt jedes leere `.chart__plot[data-chart]` unter `root`. `lookup(id)`
- *  liefert `{ spec, result }`. Gibt eine Aufräumfunktion für den ResizeObserver
- *  zurück — der Aufrufer MUSS sie beim Neuzeichnen der Route aufrufen. */
-// Das Vollbild (Item 6.12) zeichnet mit spec/result in Modalbreite NEU statt das
-// skalierte SVG zu klonen — paintCharts merkt sich beide je Diagramm-ID, damit
-// wireChartMenus keinen lookup-Parameter durch alle Seiten schleifen muss.
+/** Fill every empty `.chart__plot[data-chart]` under `root`. `lookup(id)` returns
+ *  `{ spec, result }`. Returns a ResizeObserver cleanup function that the caller
+ *  MUST invoke when redrawing the route. */
+// Fullscreen (item 6.12) redraws with spec/result at modal width instead of
+// cloning a scaled SVG. paintCharts remembers both per chart ID so
+// wireChartMenus need not carry a lookup parameter through every page.
 const chartRegistry = new Map();
 export function paintCharts(root, lookup) {
   const paint = () => {
@@ -524,7 +525,7 @@ export function paintCharts(root, lookup) {
       if (!found || !found.spec) return;
       chartRegistry.set(p.dataset.chart, found);
       const w = p.clientWidth || p.getBoundingClientRect().width;
-      if (!w) return;                       // unsichtbar (z. B. inaktiver Tab)
+      if (!w) return;                       // Invisible, for example in an inactive tab.
       p.innerHTML = renderSvg(found.spec, found.result, w);
     });
   };
@@ -533,7 +534,7 @@ export function paintCharts(root, lookup) {
   let raf = 0;
   const ro = new ResizeObserver(() => {
     cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(paint);     // ein Neuzeichnen pro Frame
+    raf = requestAnimationFrame(paint);     // One redraw per frame.
   });
   ro.observe(root);
   return () => { cancelAnimationFrame(raf); ro.disconnect(); };
@@ -564,43 +565,41 @@ export function wireCharts(root) {
     el.addEventListener('blur', hide);
   });
   root.addEventListener('scroll', hide, { passive: true });
-  // WCAG 1.4.13: der eingeblendete Tooltip muss mit Escape schliessbar sein,
-  // ohne den Fokus zu verlieren.
+  // WCAG 1.4.13: an open tooltip must close with Escape without losing focus.
   root.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
 }
 
 /* -------------------------------------------------------- fullscreen ------- */
-// «Vollbild» (Item 6.12): läuft über das kanonische Modal (C.openModal, Grösse
-// xl) statt über das frühere chart-spezifische Overlay — EINE Dialog-Anatomie für
-// alle Dialoge; Fokusfalle, Escape, Backdrop-Klick und Fokus-Rückgabe verdrahtet
-// openModal. Der Titel wandert in den Modal-Kopf (weiss auf dem Scrim, CD-
-// Anatomie), darum verliert der Klon seinen eigenen Kopf samt Kebab-Menü.
-// Wichtig: das SVG wird mit der GEMESSENEN Modalbreite neu gezeichnet, nicht als
-// skalierter Klon übernommen — der Klon trüge den viewBox der Karte, und auf dem
-// Telefon wäre «Vollbild» damit KLEINER als die Inline-Darstellung (Item 6.1:
-// 1 User-Unit = 1 CSS-Pixel, Beschriftungen bleiben 12/14px).
+// «Vollbild» (item 6.12) uses the canonical modal (C.openModal, size xl) rather
+// than the former chart-specific overlay: ONE dialog anatomy for every dialog,
+// with focus trap, Escape, backdrop click and focus return wired by openModal.
+// The title moves into the modal header (white on the scrim, CD anatomy), so the
+// clone loses its own header and kebab menu. Crucially, the SVG is redrawn at the
+// MEASURED modal width, not copied as a scaled clone. The clone would retain the
+// card viewBox, making phone «Vollbild» SMALLER than inline (item 6.1: 1 user
+// unit = 1 CSS pixel, labels remain 12/14px).
 function openChartFullscreen(figure) {
   const title = ((figure.querySelector('.chart__title') || {}).textContent || 'Diagramm').trim();
   const found = chartRegistry.get(figure.id);
 
   const clone = figure.cloneNode(true);
-  clone.removeAttribute('id');   // querySelectorAll('[id]') fasst die Wurzel nicht — sonst doppelte ID
-  clone.querySelectorAll('.chart__head').forEach((h) => h.remove());   // Titel + Menü stehen nicht doppelt
+  clone.removeAttribute('id');   // querySelectorAll('[id]') excludes the root; avoid a duplicate ID.
+  clone.querySelectorAll('.chart__head').forEach((h) => h.remove()); // Do not duplicate title and menu.
   clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
   clone.querySelectorAll('[aria-labelledby]').forEach((el) => el.removeAttribute('aria-labelledby'));
   clone.querySelectorAll('details').forEach((d) => d.removeAttribute('open'));
 
   C.openModal({ title, size: 'xl', body: clone.outerHTML });
   const dialogs = document.querySelectorAll('.modal');
-  const dlg = dialogs[dialogs.length - 1];   // openModal hängt das Modal zuletzt an
+  const dlg = dialogs[dialogs.length - 1];   // openModal appends the modal last.
   if (!dlg) return;
   const plot = dlg.querySelector('.chart__plot[data-chart]');
   if (found && found.spec && plot) {
     const w = plot.clientWidth || plot.getBoundingClientRect().width;
     if (w) plot.innerHTML = renderSvg(found.spec, found.result, w);
   }
-  // Tooltip NACH dem Neuzeichnen verdrahten (sonst hingen die Listener am
-  // ersetzten SVG) und am positionierten Vorfahren verankern.
+  // Wire the tooltip AFTER redrawing (otherwise listeners remain on the replaced
+  // SVG) and anchor it to the positioned ancestor.
   wireCharts(dlg.querySelector('.modal__content') || dlg);
 }
 
@@ -612,13 +611,13 @@ export function wireChartMenus(root) {
     const figure = trigger.closest('.chart');
     if (!figure) return;
     const title = ((figure.querySelector('.chart__title') || {}).textContent || 'Diagramm').trim();
-    const name = fileSlug(title, 'diagramm');
-    // Fehl- und «nicht verfügbar»-Pfade melden sich als error-/warning-Toast
-    // (CD-Notification-Anatomie), nicht mit dem Erfolgs-Grün des Standardfalls.
+    const name = fileSlug(title, DEFAULT_CHART_FILE_SLUG);
+    // Failure and unavailable paths use error/warning toasts (CD notification
+    // anatomy), not the default success green.
     if (action === 'link') { copyText(location.href).then((ok) => (ok ? toast('Link kopiert.') : toast('Kopieren nicht möglich.', 'error', 'WarningCircle'))); return; }
 
     // The map is a WebGL canvas (no SVG/table): Vollbild uses the Fullscreen API,
-    // "Als Bild" reads the canvas (needs preserveDrawingBuffer on the map).
+    // Image export reads the canvas (needs preserveDrawingBuffer on the map).
     if (figure.classList.contains('chart--map')) {
       if (action === 'fullscreen') { const el = figure.querySelector('.dash-map') || figure; if (el.requestFullscreen) el.requestFullscreen().catch(() => {}); return; }
       if (action === 'png') {

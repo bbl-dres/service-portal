@@ -1,68 +1,68 @@
-// IKT-Vorhaben — Überblick über die laufenden Informatik-Vorhaben des BBL.
-// Demo-Inhalt: Die Vorhaben sind an real existierende Programme angelehnt
-// (SUPERB, BIM/CDE, GEVER), Status und Termine sind für den Prototyp gesetzt.
+// ICT projects — overview of the BBL's current IT projects.
+// Demo content: projects are based on real programmes (SUPERB, BIM/CDE, GEVER),
+// while status and dates are set for the prototype.
 
-const VORHABEN = [
+const PROJECTS = [
   {
-    titel: 'SUPERB — SAP S/4HANA',
-    kuerzel: 'SUPERB',
-    status: 'in_umsetzung',
-    zeitraum: '2021–2028',
+    title: 'SUPERB — SAP S/4HANA',
+    abbreviation: 'SUPERB',
+    status: 'implementation',
+    period: '2021–2028',
     lead: 'EFV / EFD (Programmleitung)',
-    beschreibung: 'Migration der SAP-Systeme der Bundesverwaltung auf SAP S/4HANA (Ablösung der bisherigen Version ECC). Für das BBL betrifft das Beschaffung, Logistik und Immobilienbewirtschaftung.',
+    description: 'Migration der SAP-Systeme der Bundesverwaltung auf SAP S/4HANA (Ablösung der bisherigen Version ECC). Für das BBL betrifft das Beschaffung, Logistik und Immobilienbewirtschaftung.',
     href: '#/applications',
   },
   {
-    titel: 'BIM und Common Data Environment',
-    kuerzel: 'CDE',
-    status: 'in_umsetzung',
-    zeitraum: '2022–2027',
+    title: 'BIM und Common Data Environment',
+    abbreviation: 'CDE',
+    status: 'implementation',
+    period: '2022–2027',
     lead: 'BBL Bau',
-    beschreibung: 'Modellbasierte Planung und Übergabe von Bauprojekten mit einer gemeinsamen Datenumgebung über den Lebenszyklus.',
+    description: 'Modellbasierte Planung und Übergabe von Bauprojekten mit einer gemeinsamen Datenumgebung über den Lebenszyklus.',
     href: '#/applications?area=buildings',
   },
   {
-    titel: 'Kundenportal BBL',
-    kuerzel: 'KP',
-    status: 'in_umsetzung',
-    zeitraum: '2025–2027',
+    title: 'Kundenportal BBL',
+    abbreviation: 'KP',
+    status: 'implementation',
+    period: '2025–2027',
     lead: 'Informatik BBL',
-    beschreibung: 'Ein gemeinsames Portal für Dienstleistungen, Anwendungen, Daten und Vorgänge — dieses Portal.',
+    description: 'Ein gemeinsames Portal für Dienstleistungen, Anwendungen, Daten und Vorgänge — dieses Portal.',
     href: '#/services',
   },
   {
-    titel: 'Metadatenkatalog und Data Governance',
-    kuerzel: 'MDK',
-    status: 'in_planung',
-    zeitraum: '2026–2028',
+    title: 'Metadatenkatalog und Data Governance',
+    abbreviation: 'MDK',
+    status: 'planning',
+    period: '2026–2028',
     lead: 'Informatik BBL',
-    beschreibung: 'Dokumentation der Datenarchitektur, Verantwortlichkeiten und Schnittstellen als Grundlage für den Datenbezug.',
+    description: 'Dokumentation der Datenarchitektur, Verantwortlichkeiten und Schnittstellen als Grundlage für den Datenbezug.',
     href: '#/data/catalog',
   },
   {
-    titel: 'Ablösung Dokumentenablage (GEVER)',
-    kuerzel: 'GEVER',
-    status: 'in_planung',
-    zeitraum: '2027–2029',
+    title: 'Ablösung Dokumentenablage (GEVER)',
+    abbreviation: 'GEVER',
+    status: 'planning',
+    period: '2027–2029',
     lead: 'Informatik BBL',
-    beschreibung: 'Überführung der Bauwerksdokumentation in die Geschäftsverwaltung des Bundes mit Aufbewahrungs- und Archivierungsregeln.',
+    description: 'Überführung der Bauwerksdokumentation in die Geschäftsverwaltung des Bundes mit Aufbewahrungs- und Archivierungsregeln.',
     href: '#/app/document-archive',
   },
   {
-    titel: 'Photovoltaik-Monitoring',
-    kuerzel: 'PVA-M',
-    status: 'abgeschlossen',
-    zeitraum: '2024–2025',
+    title: 'Photovoltaik-Monitoring',
+    abbreviation: 'PVA-M',
+    status: 'completed',
+    period: '2024–2025',
     lead: 'Nachhaltigkeit BBL',
-    beschreibung: 'Anbindung der Photovoltaikanlagen an die Energiestatistik und das Datenportal.',
+    description: 'Anbindung der Photovoltaikanlagen an die Energiestatistik und das Datenportal.',
     href: '#/app/dataportal/energie-klima',
   },
 ];
 
 const STATUS = {
-  in_planung: ['In Planung', 'info'],
-  in_umsetzung: ['In Umsetzung', 'warning'],
-  abgeschlossen: ['Abgeschlossen', 'success'],
+  planning: ['In Planung', 'info'],
+  implementation: ['In Umsetzung', 'warning'],
+  completed: ['Abgeschlossen', 'success'],
 };
 
 export default function render(ctx) {
@@ -74,7 +74,7 @@ export default function render(ctx) {
     { label: 'IKT-Vorhaben' },
   ]);
 
-  const rows = VORHABEN;
+  const rows = PROJECTS;
 
   mount.innerHTML = `
   <div class="container section">
@@ -83,20 +83,20 @@ export default function render(ctx) {
       lead: 'Die laufenden und geplanten Informatik-Vorhaben des BBL — was sie umfassen, wer sie führt und wann sie wirken.',
     })}
     ${C.notification('Demo-Inhalt: Die Vorhaben sind an real existierende Programme angelehnt; Status und Termine sind für den Prototyp gesetzt.', 'hint', 'InfoCircle')}
-    ${''/* mt-6 wie jeder Geschwister-Block nach dem Seitenkopf — die Seite war
-          die einzige mt-8-Nutzerin (Design-Review, pages). */}
+    ${''/* mt-6, as on every sibling block after the page header; this page was
+          the only mt-8 user (design review, pages). */}
     <div class="mt-6">
       ${C.table({
         caption: 'IKT-Vorhaben des BBL',
         zebra: true,
-        // Erste Spalte ist der Zeilenlink — wie in allen Listentabellen folgt
-        // die ganze Zeile ihm per Mausklick (einheitliche Affordanz, tbl-8).
+        // The first column is the row link; as in every list table, clicking
+        // anywhere on the row follows it (consistent affordance, tbl-8).
         rowsClickable: true,
         columns: [
-          { key: 'titel', label: 'Vorhaben', render: r => `<a href="${r.href}">${C.escape(r.titel)}</a><br><span class="small muted">${C.escape(r.kuerzel)}</span>` },
-          { key: 'beschreibung', label: 'Inhalt', render: r => C.escape(r.beschreibung) },
+          { key: 'title', label: 'Vorhaben', render: r => `<a href="${r.href}">${C.escape(r.title)}</a><br><span class="small muted">${C.escape(r.abbreviation)}</span>` },
+          { key: 'description', label: 'Inhalt', render: r => C.escape(r.description) },
           { key: 'lead', label: 'Federführung', render: r => C.escape(r.lead) },
-          { key: 'zeitraum', label: 'Zeitraum', render: r => C.escape(r.zeitraum) },
+          { key: 'period', label: 'Zeitraum', render: r => C.escape(r.period) },
           { key: 'status', label: 'Status', render: r => C.badge(...(STATUS[r.status] || [r.status, 'gray'])) },
         ],
         rows,
@@ -104,7 +104,7 @@ export default function render(ctx) {
     </div>
   </div>`;
 
-  // Zeilenklick der Tabelle. Abbau via onUnmount, sonst sammelt der
-  // wiederverwendete mount pro Besuch einen weiteren Klick-Horcher an.
+  // Table row clicks. Clean up through onUnmount so the reused mount does not
+  // accumulate another click listener on every visit.
   ctx.onUnmount(C.wireTableRows(mount));
 }

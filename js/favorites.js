@@ -1,23 +1,23 @@
-// Persönliche Merkliste — «meine Standorte», «meine Räume».
+// Personal favourite locations and rooms.
 //
-// Die Raumbuchung ist eine Wiederholungstat: dieselbe Person bucht Woche für
-// Woche am selben Standort, oft denselben Raum. Ohne Merkliste beginnt jede
-// Buchung wieder bei der Vorauswahl des Prototyps, und der häufigste Fall kostet
-// so viele Klicks wie der seltenste. Gemerkt wird deshalb nur, was die nächste
-// Suche vorbelegen kann — Kennungen, keine Kopien der Objekte selbst.
+// Room booking is repetitive: the same person books the same location week
+// after week, often the same room. Without favourites, every booking restarts
+// from the prototype's initial choice, making the common case as expensive as
+// the rare one. Store only what can prefill the next search — identifiers, not
+// copies of the objects themselves.
 //
-// Bewusst gerätelokal (localStorage) und ohne Personenbezug: der Prototyp hat
-// keine Nutzerablage, und eine Merkliste ist kein Vorgang. Schlägt das Schreiben
-// fehl (Quota, gesperrter Speicher), bleibt die Wahl für diese Sitzung wirksam
-// und geht beim Neuladen verloren — anders als bei einem Vorgang ist das ein
-// hinnehmbarer Verlust, weshalb hier kein Fehlerband nötig ist (vgl. code-review C1).
+// Deliberately device-local (localStorage) and not tied to a person: the
+// prototype has no user storage, and a favourite is not a case. If writing
+// fails (quota, blocked storage), the choice remains effective for this session
+// and is lost on reload. Unlike losing a case, that is acceptable, so no error
+// banner is needed here (see code-review C1).
 
 import { readJSON, writeJSON } from './storage.js';
 
 const LS_KEY = 'bbl_favorites_v1';
 
-// Form prüfen wie überall sonst (M20): ein beschädigter Eintrag darf nicht als
-// halb brauchbare Liste durchgehen. Erwartet wird { <art>: [<kennung>, …] }.
+// Validate shape as everywhere else (M20): a damaged entry must not pass as a
+// partly usable list. Expected shape: { <kind>: [<identifier>, …] }.
 const isMap = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const clean = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x.trim()) : []);
 const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
@@ -32,7 +32,7 @@ function read() {
   return store;
 }
 
-/** Alle gemerkten Kennungen einer Art, in der Reihenfolge des Merkens. */
+/** All saved identifiers of one kind, in insertion order. */
 function list(kind) {
   const data = read();
   return [...(hasOwn(data, kind) ? data[kind] : [])];
@@ -42,7 +42,7 @@ function has(kind, id) {
   return !!id && list(kind).includes(String(id));
 }
 
-/** Merkt bzw. vergisst und liefert den NEUEN Zustand (true = gemerkt). */
+/** Saves or removes an item and returns the NEW state (true = saved). */
 function toggle(kind, id) {
   const key = String(id || '');
   if (!key) return false;

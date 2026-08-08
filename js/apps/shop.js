@@ -1,20 +1,14 @@
-// BBL Intranetshop — portal-native first version.
-//
-// Data and product imagery are adapted from the workspace-management prototype:
-// data/shop-products.json, data/shop-categories.json and assets/images/shop/.
-// The UI follows this portal's CD Bund layer: catalogueBar/results, pf-tree,
-// shopping-card/cart vocabulary, wizardHead and processDone.
-
+// Portal-native first version of the BBL intranet shop.
+// Data and imagery come from the workspace-management prototype. The UI uses
+// the portal's CD Bund catalogue, tree, cart, wizard, and process components.
 import { readJSON, writeJSON, remove } from '../storage.js';
-import { chf } from '../format.js';
+import { formatCurrency } from '../format.js';
 import * as links from '../links.js';
-import { ANWENDUNGEN, trail } from '../crumbs.js';
+import { APPLICATIONS, trail } from '../crumbs.js';
 
 export const needs = ['shopProducts', 'shopCategories'];
 
-// Wortlaut der Anmeldesperre, die der Router vor diese Anwendung zieht
-// (js/router.js). Der Satz gehört zur Anwendung — «Diese Meldung wird als
-// persönlicher Vorgang erfasst» sagt mehr als ein Einheitssatz.
+// Application-specific copy shown by the router's authentication gate.
 export const loginText = "Der Intranetshop bestellt auf Rechnung Ihrer Verwaltungseinheit. Bitte melden Sie sich mit AGOV / FedLogin an, um Sortiment und Preise zu sehen und zu bestellen.";
 
 const CART_KEY = 'bbl_shop_cart_v1';
@@ -109,7 +103,7 @@ export default async function render(ctx) {
 function catalogue(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   setTitle('BBL Intranetshop');
-  setCrumbs(trail(ANWENDUNGEN, { label: 'BBL Intranetshop' }));
+  setCrumbs(trail(APPLICATIONS, { label: 'BBL Intranetshop' }));
 
   const products = core.shopProducts();
   const categories = core.shopCategories();
@@ -167,10 +161,10 @@ function catalogue(ctx) {
     zebra: true,
     rowsClickable: true,
     columns: [
-      { key: 'name', label: 'Produkt', render: (p) => `<a href="${links.shopProdukt(p.id)}">${C.escape(p.name)}</a><br><span class="small muted">${C.escape(p.description)}</span>` },
+      { key: 'name', label: 'Produkt', render: (p) => `<a href="${links.shopProduct(p.id)}">${C.escape(p.name)}</a><br><span class="small muted">${C.escape(p.description)}</span>` },
       { key: 'brand', label: 'Marke', render: (p) => C.escape(p.brand) },
       { key: 'category', label: 'Kategorie', render: (p) => C.escape(cat.label(p.subcategory) || cat.label(p.category)) },
-      { key: 'price', label: 'Preis', align: 'right', render: (p) => C.escape(chf(p.price, p.currency || 'CHF')) },
+      { key: 'price', label: 'Preis', align: 'right', render: (p) => C.escape(formatCurrency(p.price, p.currency || 'CHF')) },
       { key: 'action', label: 'Aktion', render: (p) => `<button type="button" class="btn btn--outline btn--sm btn--icon-left" data-add="${p.id}">${C.icon('ShoppingCart', 'btn__icon')}<span class="btn__text">In den Warenkorb</span></button>` },
     ],
     rows,
@@ -244,12 +238,12 @@ function productCard(C, p) {
     </div>
     <div class="card__content">
       <div class="card__body">
-        <h3 class="card__title"><a class="card__link" href="${links.shopProdukt(p.id)}">${C.escape(p.name)}</a></h3>
+        <h3 class="card__title"><a class="card__link" href="${links.shopProduct(p.id)}">${C.escape(p.name)}</a></h3>
         <div class="pill-row">${C.badge(p.brand, 'gray')}</div>
         <p class="card__description">${C.escape(p.description)}</p>
       </div>
       <div class="card__footer">
-        <div class="card__footer__info"><strong>${C.escape(chf(p.price, p.currency || 'CHF'))}</strong></div>
+        <div class="card__footer__info"><strong>${C.escape(formatCurrency(p.price, p.currency || 'CHF'))}</strong></div>
         <div class="card__footer__action">
           <button type="button" class="btn btn--outline btn--sm btn--icon-left" data-add="${p.id}">
             ${C.icon('ShoppingCart', 'btn__icon')}<span class="btn__text">Hinzufügen</span>
@@ -285,13 +279,13 @@ function detail(ctx, id) {
     C.renderNotFound(ctx, {
       title: 'Produkt nicht gefunden',
       backHref: links.shop(), backLabel: 'BBL Intranetshop',
-      crumbs: trail(ANWENDUNGEN, { label: 'BBL Intranetshop', href: links.shop() }),
+      crumbs: trail(APPLICATIONS, { label: 'BBL Intranetshop', href: links.shop() }),
       body: 'Dieses Produkt ist im aktuellen Sortiment nicht vorhanden.',
     });
     return;
   }
   setTitle(p.name);
-  setCrumbs(trail(ANWENDUNGEN, { label: 'BBL Intranetshop', href: links.shop() }, { label: p.name }));
+  setCrumbs(trail(APPLICATIONS, { label: 'BBL Intranetshop', href: links.shop() }, { label: p.name }));
 
   const photos = productPhotos(p);
   const similar = core.shopProducts()
@@ -326,7 +320,7 @@ function detail(ctx, id) {
             <dt>Marke</dt><dd>${C.escape(p.brand)}</dd>
             <dt>Kategorie</dt><dd>${C.escape(cat.label(p.subcategory) || cat.label(p.category))}</dd>
             <dt>Masse</dt><dd>${p.dimensions ? `${p.dimensions.width} x ${p.dimensions.depth} x ${p.dimensions.height} ${C.escape(p.dimensions.unit || 'cm')}` : '—'}</dd>
-            <dt>Preis</dt><dd>${C.escape(chf(p.price, p.currency || 'CHF'))}</dd>
+            <dt>Preis</dt><dd>${C.escape(formatCurrency(p.price, p.currency || 'CHF'))}</dd>
           </dl>
         </section>
         ${similar.length ? `<section class="detail-section">
@@ -335,10 +329,10 @@ function detail(ctx, id) {
             ${similar.map((item) => C.card({
               title: item.name,
               desc: item.description,
-              href: links.shopProdukt(item.id),
+              href: links.shopProduct(item.id),
               photo: { src: productImage(item), alt: item.name, color: 'var(--color-secondary-50)' },
               badges: [C.badge(item.brand, 'gray')],
-              footerInfo: `<strong>${C.escape(chf(item.price, item.currency || 'CHF'))}</strong>`,
+              footerInfo: `<strong>${C.escape(formatCurrency(item.price, item.currency || 'CHF'))}</strong>`,
               footerAction: C.cardAction(),
             })).join('')}
           </div>
@@ -347,7 +341,7 @@ function detail(ctx, id) {
       <aside class="detail-layout__aside">
         <div class="box">
           <h2>Bestellen</h2>
-          <p class="shop-price">${C.escape(chf(p.price, p.currency || 'CHF'))}</p>
+          <p class="shop-price">${C.escape(formatCurrency(p.price, p.currency || 'CHF'))}</p>
           <form id="shop-add-detail" class="form">
             ${C.field({ id: 'shop-qty', label: 'Menge',
               control: (cls, attrs) => `<input id="shop-qty" type="number" min="1" max="99" value="1" class="${cls}"${attrs}>` })}
@@ -357,8 +351,8 @@ function detail(ctx, id) {
           </form>
         </div>
         ${C.actionCard({ title: 'Weitere Aktionen', links: [
-          { href: links.shopWarenkorb(), label: `Warenkorb ansehen (${cartCount(cartLines(core))})` },
-          { href: links.dienstleistung('eshop-bestellen'), label: 'Dienstleistung ansehen' },
+          { href: links.shopCart(), label: `Warenkorb ansehen (${cartCount(cartLines(core))})` },
+          { href: links.service('eshop-bestellen'), label: 'Dienstleistung ansehen' },
         ] })}
       </aside>
     </div>
@@ -369,7 +363,7 @@ function detail(ctx, id) {
 function cart(ctx) {
   const { mount, core, C, setTitle, setCrumbs } = ctx;
   setTitle('Warenkorb');
-  setCrumbs(trail(ANWENDUNGEN, { label: 'BBL Intranetshop', href: links.shop() }, { label: 'Warenkorb' }));
+  setCrumbs(trail(APPLICATIONS, { label: 'BBL Intranetshop', href: links.shop() }, { label: 'Warenkorb' }));
   const lines = cartLines(core);
   const total = cartTotal(lines);
 
@@ -406,17 +400,17 @@ function cartItem(C, line) {
       ${productImage(p) ? `<img src="${C.escape(productImage(p))}" alt="${C.escape(p.name)}" loading="lazy" decoding="async">` : C.icon('Image', 'icon--xl')}
     </div>
     <div class="shopping__card-details-container">
-      <h2 class="card__title"><a href="${links.shopProdukt(p.id)}">${C.escape(p.name)}</a></h2>
+      <h2 class="card__title"><a href="${links.shopProduct(p.id)}">${C.escape(p.name)}</a></h2>
       <p class="card__description">${C.escape(p.description)}</p>
       <p class="small muted">${C.escape(p.brand)} · ART-${String(p.id).padStart(5, '0')}</p>
-      <p class="shopping__card-price-mobile">${C.escape(chf(p.price, p.currency || 'CHF'))}</p>
+      <p class="shopping__card-price-mobile">${C.escape(formatCurrency(p.price, p.currency || 'CHF'))}</p>
     </div>
     <div class="shopping__card-amount-input">
       <label class="sr-only" for="cart-qty-${p.id}">Menge ${C.escape(p.name)}</label>
       <input id="cart-qty-${p.id}" class="input--outline input--sm shop-qty-input" type="number" min="0" max="99" value="${line.qty}" data-qty="${p.id}">
     </div>
     <div class="shopping__card-action-container">
-      <p class="shopping__card-price">${C.escape(chf(p.price * line.qty, p.currency || 'CHF'))}</p>
+      <p class="shopping__card-price">${C.escape(formatCurrency(p.price * line.qty, p.currency || 'CHF'))}</p>
       <div class="shopping__card-action">
         <button type="button" class="btn btn--bare btn--sm btn--icon-left" data-remove="${p.id}">
           ${C.icon('Trash', 'btn__icon')}<span class="btn__text">Entfernen</span>
@@ -432,7 +426,7 @@ function summaryBox(C, lines, delivery = null) {
     <dl class="kv">
       <dt>Positionen</dt><dd>${lines.length}</dd>
       <dt>Artikel</dt><dd>${cartCount(lines)}</dd>
-      <dt>Total</dt><dd><strong>${C.escape(chf(cartTotal(lines)))}</strong></dd>
+      <dt>Total</dt><dd><strong>${C.escape(formatCurrency(cartTotal(lines)))}</strong></dd>
       ${delivery ? `<dt>Kostenstelle</dt><dd>${C.escape(delivery.costCenter || '—')}</dd>
       <dt>Lieferadresse</dt><dd>${C.escape(delivery.delivery || '—')}</dd>` : ''}
     </dl>
@@ -442,7 +436,7 @@ function summaryBox(C, lines, delivery = null) {
 function checkout(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs } = ctx;
   setTitle('Bestellung absenden');
-  setCrumbs(trail(ANWENDUNGEN, { label: 'BBL Intranetshop', href: links.shop() }, { label: 'Warenkorb', href: links.shopWarenkorb() }, { label: 'Bestellung absenden' }));
+  setCrumbs(trail(APPLICATIONS, { label: 'BBL Intranetshop', href: links.shop() }, { label: 'Warenkorb', href: links.shopCart() }, { label: 'Bestellung absenden' }));
 
   const currentLines = () => cartLines(core);
   if (!currentLines().length) { cart(ctx); return; }
@@ -450,7 +444,7 @@ function checkout(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--xs">
-        ${C.backLink(links.shopWarenkorb(), 'Warenkorb')}
+        ${C.backLink(links.shopCart(), 'Warenkorb')}
         <h1 tabindex="-1">Bestellung absenden</h1>
         <p class="lead">Die Bestellung wird als persönlicher Vorgang unter «Meine Vorgänge» geführt.</p>
         ${C.loginGate('Bitte melden Sie sich mit AGOV / FedLogin an, um die Bestellung abzusenden. Ihr Warenkorb bleibt erhalten.')}
@@ -479,7 +473,7 @@ function checkout(ctx) {
     mount.innerHTML = `
     <div class="container section container--grid">
       <div class="container__center--sm">
-        ${C.backLink(links.shopWarenkorb(), 'Warenkorb')}
+        ${C.backLink(links.shopCart(), 'Warenkorb')}
         <h1 tabindex="-1">Bestellung absenden</h1>
         ${C.contextLine({ action: 'Bestellung', name: state.name, org: state.org, process: 'Bestellt → In Bearbeitung → Geliefert' })}
         ${C.wizardHead(STEP_LABELS, state.step, { legend: state.step === 2 })}
@@ -519,7 +513,7 @@ function checkout(ctx) {
         columns: [
           { key: 'product', label: 'Produkt', render: (r) => C.escape(r.product.name) },
           { key: 'qty', label: 'Menge', align: 'right', render: (r) => String(r.qty) },
-          { key: 'price', label: 'Betrag', align: 'right', render: (r) => C.escape(chf(r.qty * r.product.price, r.product.currency || 'CHF')) },
+          { key: 'price', label: 'Betrag', align: 'right', render: (r) => C.escape(formatCurrency(r.qty * r.product.price, r.product.currency || 'CHF')) },
         ],
       })}
       ${C.notification('Mit dem Absenden wird eine Bestellung erstellt und an die Logistik BBL weitergeleitet. Der Status erscheint unter <strong>Meine Vorgänge</strong>.', 'info')}
@@ -548,7 +542,7 @@ function checkout(ctx) {
         ${C.processDone({ instance: state.created, lead: 'Bestellung eingereicht.', title: 'Vielen Dank',
           text: 'Ihre Bestellung wurde erfasst und an die Logistik BBL weitergeleitet. Den Status sehen Sie jederzeit unter «Meine Vorgänge».',
           actions: [
-            { href: links.vorgang(state.created.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
+            { href: links.caseDetails(state.created.instanceId), label: 'Vorgang ansehen', icon: 'ArrowRight' },
             { href: links.shop(), label: 'Weiter einkaufen' },
           ] })}
       </div>
@@ -582,12 +576,11 @@ function checkout(ctx) {
         C.flashError(mount, 'Die Bestellung konnte nicht gespeichert werden — bitte erneut versuchen.');
         return;
       }
-      // Erst bestätigen, wenn auch das Leeren des Warenkorbs persistiert ist.
-      // Bei einem Storage-Fehler bleibt er sichtbar und kann erneut versucht
-      // werden; ein Erfolgsbild trotz noch vorhandener Positionen wäre falsch.
+      // Show confirmation only after the emptied cart persists. On storage
+      // failure keep its items visible so submission can be retried.
       if (!writeCart([])) {
-        // Der Vorgang ist bereits persistiert. Für einen erneuten Klick in
-        // derselben Ansicht merken, damit daraus keine Doppelbestellung wird.
+        // The case already persisted; remember it within this view so another
+        // click cannot create a duplicate order.
         state.pendingCreated = created;
         C.flashError(mount, 'Der Warenkorb konnte nach dem Speichern nicht geleert werden. Bitte erneut versuchen.');
         return;

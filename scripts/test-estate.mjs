@@ -1,9 +1,4 @@
-// Immobilienportfolio — record-based Stammdaten dashboard (js/apps/estate.js).
-// Verifies the four tabs (Gebäude/Grundstücke/Bodenbedeckung/Entwicklung), KPIs, runtime-
-// aggregated charts, the worldwide CARTO map with markers, and live filtering
-// (Land=CH shrinks the building count). Saves a screenshot to $SHOT.
-//
-//   node scripts/test-estate.mjs      (dev server must be running; see README)
+// Property-dashboard integration suite for tabs, filters, charts and world map.
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -24,25 +19,25 @@ const PROBE = `(async () => {
     filters: [...document.querySelectorAll('.filter-group__legend')].map(x => x.textContent.trim()),
     kpiLabels: [...document.querySelectorAll('.kpi__label')].map(x => x.textContent.trim()),
     kpisAll: kpiVals(),
-    chartsGeb: document.querySelectorAll('.dash-grid .chart').length,
+    buildingCharts: document.querySelectorAll('.dash-grid .chart').length,
     hasMapEl: !!document.getElementById('estate-map-el'),
     hasLeadHint: !!document.querySelector('.lead-hint a[href*="app/portfolio"]'),
   };
-  // wait for the CARTO map canvas (MapLibre loads from CDN; markers are clustered GeoJSON layers)
+  // Wait for the MapLibre canvas; markers use clustered GeoJSON layers.
   let m = 0; while (!document.querySelector('.dash-map canvas') && m++ < 100) await s(100);
   R.mapCanvas = !!document.querySelector('.dash-map canvas');
   await s(2500);   // let the basemap tiles + glyph PBFs load so any parse error fires
   R.mapErrs = (window.__mapErrs || []).filter(e => /Unimplemented|glyph|type: 4/i.test(e));
 
-  // multi-select filter Land = CH → building count should drop (worldwide → Swiss)
-  const cb = document.querySelector('input[type=checkbox][data-fdim="land"][value="CH"]');
+  // Selecting country CH must reduce the worldwide building count.
+  const cb = document.querySelector('input[type=checkbox][data-fdim="country"][value="CH"]');
   cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true }));
   await s(250);
   R.kpisCH = kpiVals();
   R.hashAfterFilter = location.hash;
 
-  // switch to Grundstücke tab
-  document.querySelector('.tab__control[data-tab="grundstuecke"]').click();
+
+  document.querySelector('.tab__control[data-tab="parcels"]').click();
   await s(250);
   R.tab2Active = (document.querySelector('.tab__control--active') || {}).dataset?.tab;
   R.tab2Charts = [...document.querySelectorAll('.dash-grid .chart .chart__title')].map(t => t.textContent.trim());
@@ -60,23 +55,23 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1500, deviceScaleFactor: 1, mobile: false }, page.sessionId);
     await new Promise(r => setTimeout(r, 900));
     const r = await page.evaluate(PROBE);
-    console.log('■ Immobilienportfolio dashboard');
+    console.log('■ Property-portfolio dashboard');
     console.log('   tabs:', JSON.stringify(r.tabs), '| filter groups:', JSON.stringify(r.filters));
     console.log('   KPIs (all):', JSON.stringify(r.kpisAll), '| map canvas:', r.mapCanvas);
-    console.log('   KPIs (Land=CH):', JSON.stringify(r.kpisCH));
+    console.log('   KPIs (country=CH):', JSON.stringify(r.kpisCH));
 
-    check(JSON.stringify(r.tabs) === JSON.stringify(['Gebäude', 'Grundstücke', 'Bodenbedeckung', 'Entwicklung']), 'four tabs Gebäude/Grundstücke/Bodenbedeckung/Entwicklung');
+    check(JSON.stringify(r.tabs) === JSON.stringify(['Gebäude', 'Grundstücke', 'Bodenbedeckung', 'Entwicklung']), 'All four expected tabs are present');
     check(r.filters.length === 5 && r.filters[0] === 'Land', `five filter groups (${JSON.stringify(r.filters)})`);
-    check(r.kpisAll.length === 4 && !r.kpiLabels.includes('Länder'), `4 KPI tiles, no Länder count (${JSON.stringify(r.kpiLabels)})`);
-    check(r.hasLeadHint, 'lead hint links to Liegenschaften Inventar');
-    check(r.chartsGeb >= 5, `Gebäude tab has map + charts (${r.chartsGeb} figures)`);
-    check(r.hasMapEl, 'map container present on Gebäude tab');
+    check(r.kpisAll.length === 4 && !r.kpiLabels.includes('Länder'), `Four KPI tiles and no country-count tile (${JSON.stringify(r.kpiLabels)})`);
+    check(r.hasLeadHint, 'The lead hint links to the property inventory');
+    check(r.buildingCharts >= 5, `The buildings tab has a map and charts (${r.buildingCharts} figures)`);
+    check(r.hasMapEl, 'The buildings tab contains the map');
     check(r.mapCanvas, 'CARTO map canvas renders (clustered layers)');
     check((r.mapErrs || []).length === 0, `map renders without glyph/tile parse errors${r.mapErrs && r.mapErrs.length ? ' — ' + r.mapErrs[0] : ''}`);
-    check(Number(r.kpisCH[0].replace(/\\D/g, '')) < Number(r.kpisAll[0].replace(/\\D/g, '')), `Land=CH reduces building count (${r.kpisAll[0]} → ${r.kpisCH[0]})`);
-    check(/land=CH/.test(r.hashAfterFilter), `filter mirrored to hash (${r.hashAfterFilter})`);
-    check(r.tab2Active === 'grundstuecke', 'switch to Grundstücke tab');
-    check(r.tab2Charts.some(t => /Grundstücksfläche/.test(t)), `Grundstücke charts (${JSON.stringify(r.tab2Charts)})`);
+    check(Number(r.kpisCH[0].replace(/\\D/g, '')) < Number(r.kpisAll[0].replace(/\\D/g, '')), `Country CH reduces the building count (${r.kpisAll[0]} → ${r.kpisCH[0]})`);
+    check(r.hashAfterFilter.includes('land=CH'), `The compatibility filter is mirrored to the hash (${r.hashAfterFilter})`);
+    check(r.tab2Active === 'parcels', 'The parcels tab can be selected');
+    check(r.tab2Charts.some(t => /Grundstücksfläche/.test(t)), `The parcels tab renders its charts (${JSON.stringify(r.tab2Charts)})`);
     check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
 
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, page.sessionId);

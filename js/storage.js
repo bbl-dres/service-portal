@@ -1,28 +1,27 @@
-// Kleiner localStorage-Wrapper — zentralisiert die zwei Fehlerfälle, die sonst in
-// session.js und process-engine.js doppelt (und leicht unterschiedlich) behandelt
-// wurden: Korruption/Verfügbarkeit beim Lesen (Fallback) und Quota/Verfügbarkeit
-// beim Schreiben. `writeJSON`/`remove` melden Erfolg als bool, damit Aufrufer einen
-// stillen Datenverlust nicht als Erfolg verbuchen (code-review C1).
+// Small localStorage wrapper that centralises two failure modes previously
+// handled twice (and slightly differently) in session.js and process-engine.js:
+// corruption/availability while reading (fallback) and quota/availability while
+// writing. `writeJSON` and `remove` report success as booleans so callers do not
+// record silent data loss as success (code-review C1).
 
-// `valid` prüft die gelesene Form, so wie fetchJSON das für Dateien tut (M20).
-// Ohne diese Prüfung galt JEDER nicht-leere Wert als brauchbar: ein beschädigter
-// bbl_session_v1 (etwa die blosse Zahl 1) machte isLoggedIn() wahr, user().name
-// blieb undefined — und die Assistenten schrieben `requester: undefined` in einen
-// dauerhaft gespeicherten Vorgang.
+// `valid` checks the stored shape as fetchJSON does for files (M20). Without it,
+// EVERY non-empty value counted as usable: a damaged bbl_session_v1 (for example
+// the number 1) made isLoggedIn() true while user().name remained undefined, and
+// wizards wrote `requester: undefined` into a persistent case.
 export function readJSONResult(key, fallback = null, valid = null) {
   try {
     const raw = localStorage.getItem(key);
     if (raw == null) return { ok: true, value: fallback, found: false };
-    const val = JSON.parse(raw);
-    if (val == null) return { ok: true, value: fallback, found: true };
-    if (typeof valid === 'function' && !valid(val)) {
-      console.warn('[storage] unerwartete Form, verworfen:', key);
+    const value = JSON.parse(raw);
+    if (value == null) return { ok: true, value: fallback, found: true };
+    if (typeof valid === 'function' && !valid(value)) {
+      console.warn('[storage] unexpected shape, discarded:', key);
       return { ok: false, value: fallback, found: true, reason: 'invalid' };
     }
-    return { ok: true, value: val, found: true };
-  } catch (e) {
-    console.warn('[storage] read failed', key, e && e.message);
-    return { ok: false, value: fallback, found: false, reason: 'read', error: e };
+    return { ok: true, value, found: true };
+  } catch (error) {
+    console.warn('[storage] read failed', key, error && error.message);
+    return { ok: false, value: fallback, found: false, reason: 'read', error };
   }
 }
 
@@ -30,12 +29,12 @@ export function readJSON(key, fallback = null, valid = null) {
   return readJSONResult(key, fallback, valid).value;
 }
 
-export function writeJSON(key, val) {
+export function writeJSON(key, value) {
   try {
-    localStorage.setItem(key, JSON.stringify(val));
+    localStorage.setItem(key, JSON.stringify(value));
     return true;
-  } catch (e) {
-    console.warn('[storage] write failed', key, e && e.message);
+  } catch (error) {
+    console.warn('[storage] write failed', key, error && error.message);
     return false;
   }
 }
@@ -44,8 +43,8 @@ export function remove(key) {
   try {
     localStorage.removeItem(key);
     return true;
-  } catch (e) {
-    console.warn('[storage] remove failed', key, e && e.message);
+  } catch (error) {
+    console.warn('[storage] remove failed', key, error && error.message);
     return false;
   }
 }
@@ -79,15 +78,15 @@ export function withStorageLock(key, callback, { ttl = 2000 } = {}) {
     acquired = owns();
     if (!acquired) return { ok: false, reason: 'busy' };
     return { ok: true, value: callback(owns) };
-  } catch (e) {
-    console.warn('[storage] lock failed', key, e && e.message);
-    return { ok: false, reason: 'storage', error: e };
+  } catch (error) {
+    console.warn('[storage] lock failed', key, error && error.message);
+    return { ok: false, reason: 'storage', error };
   } finally {
     if (acquired) {
       try {
         if (owns()) localStorage.removeItem(lockKey);
-      } catch (e) {
-        console.warn('[storage] unlock failed', key, e && e.message);
+      } catch (error) {
+        console.warn('[storage] unlock failed', key, error && error.message);
       }
     }
   }

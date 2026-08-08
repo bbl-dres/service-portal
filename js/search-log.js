@@ -1,30 +1,27 @@
-// Suchprotokoll — der einzige Weg, die Frage «wonach suchen die Leute?»
-// dauerhaft zu beantworten. Die Suchüberarbeitung musste sie mit
-// Stellvertretern beantworten (Fusszeilen-Kurzwahl der Altplattform,
-// Dokumentenmasse im Export, `popular`-Ränge), weil es keinerlei Telemetrie
-// gibt (docs/search-review.md §2).
+// Search log: the only durable way to answer «what do people search for?».
+// The search redesign had to use proxies (legacy-platform footer shortcuts,
+// document volume in the export, `popular` ranks) because no telemetry exists
+// (docs/search-review.md §2).
 //
-// BEWUSST KLEIN GEHALTEN: nur der Suchbegriff und die Trefferzahl, nur im
-// localStorage des eigenen Geräts, kein Backend, keine Kennung, keine
-// Verknüpfung mit der Anmeldung. Damit ist es kein Tracking, sondern ein
-// Notizblock — und für die Priorisierung reicht genau das: nach zwei Wochen
-// Pilotbetrieb weiss man, welche Begriffe ins Leere laufen.
+// DELIBERATELY SMALL: only the term and result count, only in this device's
+// localStorage, with no backend, identifier or login association. This is a
+// notebook rather than tracking, and it is enough for prioritisation: after two
+// pilot weeks it reveals which terms lead nowhere.
 //
-// Einsehbar unter #/search?log=1.
+// Available at #/search?log=1.
 
 import { readJSON, writeJSON, remove } from './storage.js';
 
 const KEY = 'bbl.searchlog';
 const MAX = 200;
 
-// Lesen/Schreiben über js/storage.js — das Modul existiert genau, um die
-// localStorage-Fehlerfälle (Korruption, privater Modus, Kontingent) EINMAL zu
-// behandeln; hier standen alle drei Pfade nochmals von Hand (Design-Review B23).
+// Read/write through js/storage.js, which exists specifically to handle
+// localStorage failures (corruption, private mode, quota) ONCE. All three paths
+// were previously repeated here by hand (design review B23).
 const read = () => readJSON(KEY, [], Array.isArray);
 
-// Aufeinanderfolgende Tastendrücke auf demselben Begriff sollen nicht 20 Zeilen
-// erzeugen: derselbe Begriff direkt nacheinander aktualisiert den letzten
-// Eintrag, statt einen neuen anzulegen.
+// Consecutive keystrokes for the same term must not create 20 rows. Repeating a
+// term directly updates the last entry rather than adding another.
 export function record(q, hits) {
   const term = String(q || '').trim();
   if (!term) return;
@@ -32,11 +29,11 @@ export function record(q, hits) {
   const last = log[log.length - 1];
   if (last && last.q === term) { last.n = hits; last.at = Date.now(); }
   else log.push({ q: term, n: hits, at: Date.now() });
-  writeJSON(KEY, log.slice(-MAX));   // Fehlschlag ist hier entbehrlich (Notizblock)
+  writeJSON(KEY, log.slice(-MAX));   // Failure is acceptable for this notebook.
 }
 
-// Ausgewertet: je Begriff die Häufigkeit und die zuletzt gemessene Trefferzahl,
-// Nulltreffer zuerst — das ist die Arbeitsliste.
+// Summary by term: frequency and latest measured result count, with zero-result
+// terms first. This is the working list.
 export function summary() {
   const by = new Map();
   for (const e of read()) {

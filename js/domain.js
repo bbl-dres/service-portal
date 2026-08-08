@@ -1,36 +1,36 @@
-// Fachliche Kleinigkeiten, die mehrere Apps brauchen: Ländernamen, das
-// WE-Segment der bbl_id und die Nachschläge in die Referenzdaten.
+// Small domain helpers needed by several apps: country names, the business-
+// entity segment of bbl_id, and lookups into reference data.
 //
-// Alle drei lagen zuvor je Datei kopiert vor — `LAND`/`landName` dreimal
-// zeichengleich, `weOf` dreimal, die Status-Nachschläge in vier Fassungen mit
-// vier Namen (`statusLabel`, `sLabel`, `m`, inline).
+// All three were previously copied into individual files: `COUNTRY_NAMES` /
+// `countryName` three times verbatim, `businessEntityIdFromBblId` three times,
+// and status lookups in four versions under four names (`statusLabel`, `sLabel`,
+// `m`, inline).
 
-// Ländercodes des Bundesportfolios. Bewusst eine kurze Liste statt einer
-// vollständigen ISO-Tabelle: es sind die Länder, in denen der Bund Bauten hat.
-export const LAND = {
+// Country codes in the federal portfolio. Deliberately a short list rather than
+// a complete ISO table: these are the countries where the Confederation owns
+// buildings.
+export const COUNTRY_NAMES = {
   CH: 'Schweiz', DE: 'Deutschland', US: 'USA',
   JP: 'Japan', BR: 'Brasilien', AU: 'Australien',
 };
-export const landName = (code) => LAND[code] || code || '—';
+export const countryName = (code) => COUNTRY_NAMES[code] || code || '—';
 
-// Wirtschaftseinheit = zweites Segment der bbl_id (1080/4840/AF → 4840).
-// Darüber hängen Gebäude und Grundstücke zusammen.
-export const weOf = (id) => String(id || '').split('/')[1] || '';
+// Business entity = second segment of bbl_id (1080/4840/AF → 4840).
+// It links buildings and parcels.
+export const businessEntityIdFromBblId = (id) => String(id || '').split('/')[1] || '';
 
-// Bereiche des Anwendungskatalogs — das Feld `area` in data/applications.json.
-// Zwei Beschriftungen je Bereich, weil sie an zwei Stellen Verschiedenes
-// leisten: `label` steht im Bereichsfilter und ist deckungsgleich mit `group`
-// (kurz, es sortiert Karten), `navLabel` steht im Menü, auf der Kachel der
-// Daten-Übersicht und in den Eckdaten der Landingpage (es benennt die Gattung
-// mit). Beide lagen zuvor getrennt in pages/applications.js und
-// pages/application.js und wichen bereits voneinander ab.
+// Application-catalogue areas: the `area` field in data/applications.json.
+// Each area has two labels because they serve different purposes: `label`
+// appears in the area filter and matches `group` (short, for sorting cards),
+// while `navLabel` appears in the menu, the data-overview tile and landing-page
+// facts (where it also names the category). They previously lived separately in
+// pages/applications.js and pages/application.js and had already diverged.
 //
-// `federal` trägt die Anwendungen, die nicht dem BBL gehören, sondern der
-// Bundesverwaltung als Ganzes. `central` hiess bis Aug. 2026 «Zentrale Systeme»
-// und meinte genau diese bundesweiten Systeme; nachdem sie ausgezogen sind,
-// trägt der Schlüssel nur noch die beiden Datenanwendungen des Portals und
-// heisst nach ihnen — die alte Beschriftung hätte sonst weitergelebt und
-// etwas anderes bedeutet.
+// `federal` contains applications owned by the federal administration as a
+// whole rather than by the BBL. Until August 2026, `central` was labelled
+// «Zentrale Systeme» and meant those same federal systems; after they moved,
+// the key contains only the portal's two data applications and is named after
+// them. Keeping the old label would have described something else.
 export const APP_AREAS = [
   { key: 'buildings', label: 'Immobilien & Bau',        navLabel: 'Fachanwendungen Bauten' },
   { key: 'logistics', label: 'Arbeitsplatz & Logistik', navLabel: 'Fachanwendungen Logistik' },
@@ -39,18 +39,18 @@ export const APP_AREAS = [
 ];
 export const appAreaLabel = (key) => (APP_AREAS.find((a) => a.key === key) || {}).navLabel || key;
 
-// Zielgruppen (`audience` in services.json/applications.json) — seit Aug. 2026
-// ein ARRAY von Kennungen: ein Angebot für beide Gruppen trägt beide Werte
-// statt des Pseudowerts «both», und die Etiketten heissen nur noch
-// «Mitarbeiter» und «Kunden» (Nutzerentscheid; das frühere «Intern/Extern»
-// der Anwendungen ist damit ebenfalls abgelöst). Die Liste selbst — Kennung,
-// Wortlaut, Badge-Farbe — liegt als Referenzliste in data/reference-data.json
-// (`audiences`); hier stehen nur die Nachschläge darauf.
+// Target audiences (`audience` in services.json/applications.json) have been an
+// ARRAY of identifiers since August 2026: an offering for both groups carries
+// both values instead of the pseudo-value `both`, and the labels are now simply
+// «Mitarbeiter» and «Kunden» (user decision, replacing the applications' former
+// «Intern/Extern» wording as well). The list itself — identifier, wording and
+// badge colour — lives in data/reference-data.json (`audiences`); only its
+// lookups live here.
 export const audiences = (core) => core.ref().audiences || [];
 export const audienceOptions = (core) => audiences(core).map((a) => ({ value: a.id, label: a.label }));
 export const audienceLabel = (core, id) => refLabel(core, 'audiences', id);
-// Etikettenreihe für Karten, Listen und Detailköpfe: ein Badge je Zielgruppe,
-// in Referenzreihenfolge (Mitarbeiter vor Kunden, egal wie die Daten sortieren).
+// Label row for cards, lists and detail headers: one badge per audience in
+// reference order (employees before customers, regardless of data order).
 export const audienceTags = (core, C, audience) => {
   const ids = Array.isArray(audience) ? audience : [audience].filter(Boolean);
   return audiences(core).filter((a) => ids.includes(a.id))
@@ -58,10 +58,10 @@ export const audienceTags = (core, C, audience) => {
 };
 
 /**
- * Beschriftung aus einer Referenzliste. `listName` ist der Schlüssel in
+ * Label from a reference list. `listName` is the key in
  * data/reference-data.json (`statusModel`, `projectStatuses`, `domains`,
- * `classificationTiers` …), `idKey` das Feld, das die Kennung trägt.
- * Ohne Treffer kommt die Kennung selbst zurück — sichtbar, aber nicht kaputt.
+ * `classificationTiers` …), while `idKey` is the identifier field. Without a
+ * match, the identifier itself is returned: visible, but not broken.
  */
 export function refLabel(core, listName, id, idKey = 'id') {
   const list = core.ref()[listName] || [];
@@ -73,4 +73,4 @@ export const statusLabel = (core, id) => refLabel(core, 'statusModel', id);
 export const projectStatusLabel = (core, id) => refLabel(core, 'projectStatuses', id);
 export const domainLabel = (core, key) => refLabel(core, 'domains', key, 'key');
 
-export default { LAND, landName, weOf, APP_AREAS, appAreaLabel, audiences, audienceOptions, audienceLabel, audienceTags, refLabel, statusLabel, projectStatusLabel, domainLabel };
+export default { COUNTRY_NAMES, countryName, businessEntityIdFromBblId, APP_AREAS, appAreaLabel, audiences, audienceOptions, audienceLabel, audienceTags, refLabel, statusLabel, projectStatusLabel, domainLabel };

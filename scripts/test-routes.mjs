@@ -1,13 +1,11 @@
-// Routen-Rundlauf: jede Route der Spezifikation (docs/sitemap.md §3) rendern und
-// auf Fehlerfreiheit prüfen, plus jede Altlast-Weiterleitung (§7) auf ihr Ziel.
+// Route sweep: render every route in docs/sitemap.md section 3 and verify every
+// legacy redirect in section 7.
 //
-// Warum eigene Suite: die übrigen Tests prüfen je ein Bauteil. Nach der
-// Umbenennung der Routen und Parameter braucht es einen Test, der die
-// VOLLSTÄNDIGE Adressierbarkeit abdeckt — sonst fällt eine vergessene Route erst
-// im Betrieb auf.
+// Component suites cover one area at a time. This sweep protects complete
+// addressability after route and parameter changes.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
-// [Hash, erwarteter h1-Anfang]
+// [hash, expected German UI h1 prefix]
 const ROUTES = [
   ['/',                             'Willkommen'],
   ['/services',                     'Dienstleistungen'],
@@ -49,7 +47,7 @@ const ROUTES = [
   ['/app/api-docs',                 'BBL Kundenportal'],
 ];
 
-// [Altlast, erwartetes Ziel]
+// [legacy route, expected target]
 const REDIRECTS = [
   ['/knowledge/news',                 '#/news'],
   ['/knowledge/grundlagen',           '#/knowledge'],
@@ -70,9 +68,8 @@ const fails = [];
 
 const cdp = await launch();
 try {
-  // Angemeldet: die Liste läuft ALLE Routen per Hash-Navigation ab, darunter die
-  // Fachanwendungen. Ohne Sitzung prüfte sie dort nur noch die Anmeldesperre —
-  // die hat ihre eigene Suite (scripts/test-tabs.mjs, GATES).
+  // Run authenticated so application routes render their contents. The login
+  // gate has dedicated coverage in scripts/test-tabs.mjs.
   const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
   await sleep(1200);
 
@@ -84,10 +81,10 @@ try {
       const err = document.querySelector('#main-content .notification--error');
       return { h1: h1 ? h1.textContent.trim() : '', err: err ? err.textContent.trim().slice(0, 120) : '' };
     })()`);
-    if (got.err) { fails.push(`${route} → Fehlerband: ${got.err}`); continue; }
-    if (!got.h1) { fails.push(`${route} → keine h1`); continue; }
-    if (wantH1 && !got.h1.startsWith(wantH1)) fails.push(`${route} → h1 «${got.h1}», erwartet «${wantH1}…»`);
-    else console.log(`  ok  ${route.padEnd(34)} h1=«${got.h1.slice(0, 44)}»`);
+    if (got.err) { fails.push(`${route} -> error banner: ${got.err}`); continue; }
+    if (!got.h1) { fails.push(`${route} -> missing h1`); continue; }
+    if (wantH1 && !got.h1.startsWith(wantH1)) fails.push(`${route} -> h1 "${got.h1}", expected "${wantH1}..."`);
+    else console.log(`  ok  ${route.padEnd(34)} h1="${got.h1.slice(0, 44)}"`);
   }
 
   for (const [from, want] of REDIRECTS) {
@@ -96,18 +93,17 @@ try {
       await new Promise(r => setTimeout(r, 700));
       return location.hash;
     })()`);
-    // Nennt das Ziel keine Query, zählt nur der PFAD: Ansichten, die ihren
-    // Suchzustand in die Adresse spiegeln (Raumbuchung), hängen nach dem
-    // Zeichnen ihre Kriterien an — das ist kein Weiterleitungsfehler.
+    // When the target declares no query, compare only the path. Views that
+    // mirror search state into the URL may append criteria after rendering.
     const norm = (h) => (want.includes('?') ? h : String(h).split('?')[0]);
-    if (norm(got) !== want) fails.push(`Weiterleitung ${from} → «${got}», erwartet «${want}»`);
-    else console.log(`  ok  ${from.padEnd(34)} → ${got}`);
+    if (norm(got) !== want) fails.push(`redirect ${from} -> "${got}", expected "${want}"`);
+    else console.log(`  ok  ${from.padEnd(34)} -> ${got}`);
   }
 
   const probs = await page.problems();
-  if (probs.length) fails.push(...probs.map(p => `Seitenproblem: ${p}`));
+  if (probs.length) fails.push(...probs.map(p => `page problem: ${p}`));
   await page.closeTarget();
 } finally { cdp.close(); }
 
-if (fails.length) { console.error('\nFEHLER:\n' + fails.map(f => '  ✗ ' + f).join('\n')); process.exit(1); }
-console.log('\nAlle Routen und Weiterleitungen ok.');
+if (fails.length) { console.error('\nFAILURES:\n' + fails.map(f => '  failed ' + f).join('\n')); process.exit(1); }
+console.log('\nAll routes and redirects passed.');

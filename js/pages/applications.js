@@ -1,32 +1,32 @@
-// Anwendungen — Katalog und Landingpage je Anwendung.
+// Applications: catalogue and landing page for each app.
 //
-// Gleiches Muster wie #/services: Suche links, zwei Filter-Dropdowns,
-// Ansichtswechsel rechts, aktive Filter als Pills, Galerie/Liste, Pagination.
-// Die Seite hat immer denselben Kopf — «Fachanwendungen Bauten» ist kein
-// eigener Seitentyp, sondern nur ?area=buildings.
+// Same pattern as #/services: search on the left, two filter dropdowns, view
+// switcher on the right, active-filter pills, gallery/list and pagination. The
+// page always has the same header; «Fachanwendungen Bauten» is a filter state
+// (?area=buildings), not a separate page type.
 //
-// Karten führen auf #/applications/<appId>, nicht direkt in die Anwendung:
-// jede Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen.
+// Cards lead to #/applications/<appId>, not directly into the app: each has its
+// own entry points, access rules and contacts.
 
 
 import { APP_AREAS, audienceOptions, audienceLabel, audienceTags } from '../domain.js';
 
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+// Deferred datasets for this route. The router calls core.ensure(needs) BEFORE
+// render(); without the declaration an accessor would read a still-empty list
+// and show «no entries» instead of data (docs/code-review.md §3).
 export const needs = ['applications', 'contacts'];
-// 12 wie die Geschwister-Kataloge: teilbar durch 2 UND 3 Rasterspalten (B16).
+// 12, matching sibling catalogues: divisible by BOTH 2 and 3 grid columns (B16).
 const PER_PAGE = 12;
 
-// Die Bereiche stehen in js/domain.js — dieselbe Liste trägt den Filter hier
-// und die Bereichszeile der Landingpage (application.js).
+// Areas live in js/domain.js; the same list drives this filter and the landing-
+// page area row (application.js).
 const AREAS = APP_AREAS;
 
-// Zielgruppen-Nachschläge kommen aus js/domain.js, die Liste selbst aus
-// data/reference-data.json (`audiences`) — `audience` ist ein Array (B23).
+// Audience lookups come from js/domain.js and the list itself from
+// data/reference-data.json (`audiences`); `audience` is an array (B23).
 
-// Sortierung (catbar): leer = Standard (Schlüsselanwendungen zuerst, «Sortieren»-Platzhalter).
-// «Bezeichnung (A–Z)» — Kanon: «Titel» nur für Titel-Felder, sonst Bezeichnung (B24).
+// Sorting (catbar): empty = default (key apps first, «Sortieren» placeholder).
+// Use «Bezeichnung (A–Z)»: canonical «Titel» applies only to title fields (B24).
 const SORT_OPTS = [{ value: 'name', label: 'Bezeichnung (A–Z)' }, { value: 'group', label: 'Bereich' }];
 const SORTS = {
   name: (a, b) => a.name.localeCompare(b.name, 'de'),
@@ -36,11 +36,10 @@ const SORTS = {
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
   if (params[0]) {
-    // Die Landingpage-Inhalte stehen am Anwendungsdatensatz selbst (siehe
-    // application.js), es gibt also keinen nachzuladenden Bestand mehr — nur
-    // das Modul selbst wird dynamisch geladen.
+    // Landing-page content lives on the application record (application.js), so
+    // there is no additional dataset; only the module is loaded dynamically.
     const mod = await import('./application.js');
-    if (ctx.stale()) return;   // A2: nach dem await keine überholte Navigation überschreiben
+    if (ctx.stale()) return;   // A2: do not overwrite newer navigation after await.
     return mod.default(ctx, params[0]);
   }
 
@@ -51,8 +50,9 @@ export default async function render(ctx) {
     { label: 'Anwendungen' },
   ]);
 
-  // Lese-Seite des Katalog-Musters aus EINER Quelle (C.catalogueState, B16) —
-  // vorher trug das Quartett je ~35 Zeilen identisches Parsen/Klemmen/Schneiden.
+  // Read the catalogue pattern from ONE source (C.catalogueState, B16). Each of
+  // four catalogues previously carried ~35 identical parsing/clamping/slicing
+  // lines.
   const st = C.catalogueState(query, {
     base: '#/applications', perPage: PER_PAGE,
     sortOpts: SORT_OPTS.map(o => o.value),
@@ -68,12 +68,12 @@ export default async function render(ctx) {
     (!areas.length || areas.includes(a.area)) &&
     (!audiences.length || audiences.some(v => (a.audience || []).includes(v)));
 
-  // Standard: Schlüsselanwendungen zuerst; explizite Sortierung überschreibt das.
+  // Default: key applications first; an explicit sort overrides this.
   const filtered = all.filter(matches);
   const apps = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered.slice().sort((a, b) => (b.hero ? 1 : 0) - (a.hero ? 1 : 0));
   const { visible, totalPages, page } = st.clamp(apps);
 
-  // Jede Pill verlinkt auf dieselbe Ansicht ohne diesen einen Wert.
+  // Each pill links to the same view without that one value.
   const active = [
     ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
     ...areas.map(x => ({ label: areaLabel(x), href: hash({ area: areas.filter(y => y !== x) }) })),
@@ -85,10 +85,10 @@ export default async function render(ctx) {
     title: a.name,
     desc: a.description,
     href: `#/applications/${encodeURIComponent(a.appId)}`,
-    // Die Aufnahmen liegen lokal und frei lizenziert unter
-    // assets/images/applications/ (Nachweis in `bild`). Kein Unsplash-Rückfall
-    // mehr — wie beim Gebäudebestand bleibt ohne Datei die Farbfläche.
-    photo: { src: a.bild && a.bild.src, alt: '' },
+    // Images are local and freely licensed under assets/images/applications/
+    // (provenance in raw field: `bild`). There is no Unsplash fallback; as with building
+    // data, a missing file leaves a colour surface.
+    photo: { src: a['bild'] && a['bild'].src, alt: '' },
     badges: [
       audienceTags(core, C, a.audience),
       ...(a.hero ? [C.badge('Schlüsselanwendung', 'info')] : []),
@@ -100,8 +100,8 @@ export default async function render(ctx) {
   const listView = (rows) => C.table({
     caption: 'Anwendungen',
     zebra: true,
-    // Erste Spalte ist der Zeilenlink — wie in allen Katalog-Listenansichten
-    // folgt die ganze Zeile ihm per Mausklick (einheitliche Affordanz, tbl-8).
+    // The first column is the row link. As in every catalogue list, clicking the
+    // whole row follows it (consistent affordance, tbl-8).
     rowsClickable: true,
     columns: [
       { key: 'name', label: 'Anwendung', render: a =>
@@ -127,10 +127,10 @@ export default async function render(ctx) {
       sort: { id: 'app-sort', value: sortKey, options: SORT_OPTS },
       filterId: 'app-filter', filterLabel: 'Filter', filterCount: areas.length + audiences.length,
       panelId: 'app-filters', panel: `
-        ${/* navLabel auch im Filter: der Nav-Klick «Fachanwendungen Bauten»
-              erzeugte vorher die Pille «Immobilien & Bau» — zwei Namen für
-              denselben Wert in EINEM Klickpfad (D24); `label` bleibt der
-              group-Spaltenwert. */''}
+        ${/* Use navLabel in the filter too. Clicking «Fachanwendungen Bauten»
+              previously created a pill labelled «Immobilien & Bau»: two names
+              for one value in ONE interaction path (D24). `label` remains the
+              group-column value. */''}
         ${C.filterGroup({ dim: 'area', legend: 'Bereich', selected: areas, options: AREAS.map(b => ({ value: b.key, label: b.navLabel })) })}
         ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: audienceOptions(core) })}
         ${C.panelReset({ href: hash({ area: [], audience: [] }) })}`,
@@ -153,8 +153,8 @@ export default async function render(ctx) {
     formId: 'app-search', inputId: 'aq', pageInputId: 'app-page', page, totalPages, hash,
     sortId: 'app-sort', filterToggleId: 'app-filter', panelId: 'app-filters',
   });
-  // Zeilenklick der Listenansicht. Abbau via onUnmount, sonst sammelt der
-  // wiederverwendete mount pro Besuch einen weiteren Klick-Horcher an.
+  // List-view row click. Dispose through onUnmount; otherwise the reused mount
+  // collects another click listener on every visit.
   ctx.onUnmount(C.wireTableRows(mount));
 }
 

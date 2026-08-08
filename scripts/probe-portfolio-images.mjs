@@ -1,7 +1,7 @@
 // Verifies the portfolio image + default-filter fixes (fresh browser, no cache):
 //  - building detail hero (pf-mosaic) loads a REAL local file, not a placeholder
 //  - the portfolio list defaults to buildings only
-//  - a placeholder-only building falls back to «Kein Bild» (no broken img)
+//  - a placeholder-only building falls back to the German UI's no-image state
 //   node scripts/probe-portfolio-images.mjs      (dev server must be running)
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
@@ -18,7 +18,7 @@ const check = (ok, label) => { console.log(`   ${ok ? '✓' : '✗'} ${label}`);
     const go = async (hash, ms = 2200) => { await p.evaluate(`location.hash='${hash}'`); await sleep(ms); };
 
     console.log('■ Building detail hero (pf-mosaic) shows the real image');
-    await go('#/app/portfolio?id=' + encodeURIComponent('1080/5510/AA'), 2600); // Brasília (was placeholder)
+    await go('#/app/portfolio?id=' + encodeURIComponent('1080/5510/AA'), 2600); // Brasilia previously used a placeholder.
     let r = JSON.parse(await p.evaluate(`(function(){
       var cell=document.querySelector('#pf-mosaic .pf-mosaic__cell:not(.pf-mosaic__cell--empty)');
       var img=document.querySelector('#pf-mosaic img');
@@ -37,14 +37,14 @@ const check = (ok, label) => { console.log(`   ${ok ? '✓' : '✗'} ${label}`);
     r = JSON.parse(await p.evaluate(`(function(){
       var rows=[].slice.call(document.querySelectorAll('#pf-main table tbody tr'));
       var txt=(document.querySelector('#pf-activefilters')||{}).innerText||'';
-      // count parcel rows by the Crop/Grundstück marker in the Typ cell
+      // Count parcel rows by the German parcel marker in the type cell.
       var parcel=rows.filter(function(tr){return /Grundst/.test(tr.getAttribute('title')||'')||/Grundst/.test(tr.innerHTML);}).length;
       return JSON.stringify({rows:rows.length, activeFilters:txt.trim(), count:(document.querySelector('.catbar__count')||{}).innerText||''});})()`));
     check(r.rows > 0, `list renders rows (${r.rows})`);
-    check(/Gebäude/.test(r.activeFilters), `active filter shows «Gebäude» (${r.activeFilters||'—'})`);
+    check(/Gebäude/.test(r.activeFilters), `active filter shows the German building label (${r.activeFilters || '—'})`);
 
     console.log('■ Placeholder-only building falls back cleanly (no broken image)');
-    await go('#/app/portfolio?id=' + encodeURIComponent('1080/1950/AE'), 2400); // Frauenfeld (no image)
+    await go('#/app/portfolio?id=' + encodeURIComponent('1080/1950/AE'), 2400); // Frauenfeld has no image.
     r = JSON.parse(await p.evaluate(`(function(){
       var imgs=[].slice.call(document.querySelectorAll('#pf-mosaic img'));
       var broken=imgs.filter(function(i){return i.complete&&i.naturalWidth===0&&(i.getAttribute('src')||'');}).length;

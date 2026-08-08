@@ -1,13 +1,13 @@
 /* ============================== COMPONENTS ============================== */
 
 /* Buttons (btn.postcss:6-186) */
-/* CD zentriert NICHT pauschal (btn.postcss): der Text sitzt links, zentriert wird
-   nur bei btn--icon-only und btn--full-width. Pauschales Zentrieren fiel bei
-   mehrzeiligen Beschriftungen auf den Login-Gates auseinander (Item 2.21). */
-/* KEIN gap und KEIN Block-Padding auf .btn selbst (btn.postcss:6-13: nur px-4):
-   die vertikale Luft trägt allein .btn__text (py-2), den Icon-Abstand allein
-   der icon-left/right-Versatz. Vorher ergaben Basis-Padding + Wrapper-Padding
-   zwei verschiedene Knopfhöhen für dieselbe Variante, je nach Markup. */
+/* CD does NOT center universally (btn.postcss): text sits left; only
+   btn--icon-only and btn--full-width are centered. Universal centering broke
+   down on multiline labels in login gates (Item 2.21). */
+/* NO gap and NO block padding on .btn itself (btn.postcss:6-13: px-4 only):
+   .btn__text alone provides vertical space (py-2), and icon-left/right offsets
+   alone provide icon spacing. Previously base padding + wrapper padding gave
+   the same variant two different button heights depending on markup. */
 .btn { display:inline-flex; align-items:center;
   min-height:var(--target-min); padding:0 var(--sp-4); border-radius:var(--radius-sm); border:var(--stroke-1) solid transparent;
   font:inherit; font-weight:var(--fw-regular); font-size:var(--text-base); cursor:pointer; text-decoration:none;
@@ -22,23 +22,23 @@
 .btn--filled { background:var(--color-secondary-500); border-color:var(--color-secondary-500); color:var(--color-text-negative); font-weight:var(--fw-bold); }
 .btn--filled:hover { color:var(--color-secondary-100); }
 .btn--filled:active { background:var(--color-secondary-600); border-color:var(--color-secondary-600); color:var(--color-text-negative); }
-.btn--bare { background:none; border:0; color:var(--color-secondary-800); padding-left:var(--sp-2); padding-right:var(--sp-2); }   /* border:0 wie die übrigen randlosen Varianten (CD btn--bare kennt keinen Rand) */
+.btn--bare { background:none; border:0; color:var(--color-secondary-800); padding-left:var(--sp-2); padding-right:var(--sp-2); }   /* border:0 like the other borderless variants (CD btn--bare has no border) */
 .btn--bare:where(:hover,:active) { color:var(--color-primary-600); }
 .btn--bare:active { color:var(--color-primary-700); }
-/* Negativ-Varianten (auf dunklem Grund, z. B. Top-Bar/Footer) — CD btn.postcss:78-109 */
+/* Negative variants (on dark backgrounds, e.g. top bar/footer): CD btn.postcss:78-109 */
 .btn--outline-negative { background:var(--color-secondary-500); border-color:var(--color-text-negative); color:var(--color-text-negative); font-weight:var(--fw-bold); }
 .btn--outline-negative:hover { background:var(--color-secondary-500); border-color:var(--color-secondary-100); color:var(--color-secondary-100); }
 .btn--outline-negative:active { background:var(--color-secondary-600); border-color:var(--color-text-negative); color:var(--color-text-negative); }
-.btn--bare-negative { background:none; border:0; color:var(--color-text-negative); }   /* behält CDs px-4 — nur .btn--bare hat px-2 (btn.postcss:28,101-109) */
+.btn--bare-negative { background:none; border:0; color:var(--color-text-negative); }   /* keeps CD's px-4; only .btn--bare has px-2 (btn.postcss:28,101-109) */
 .btn--bare-negative:hover { background:none; color:var(--color-secondary-100); }
 .btn--bare-negative:active { color:var(--color-secondary-50); }
-/* Link-Varianten behalten die volle CD-Höhenrampe (btn.postcss:112-117 gilt für
-   JEDE Variante) — min-height:0 drückte das Tippziel auf ~27px. CD-Padding pr-2 pl-0. */
+/* Link variants keep the full CD height ramp (btn.postcss:112-117 applies to
+   EVERY variant); min-height:0 compressed the touch target to ~27px. CD padding pr-2 pl-0. */
 .btn--link-negative { background:none; border:0; color:var(--color-text-negative); text-decoration:underline; text-underline-offset:var(--stroke-2); padding:0 var(--sp-2) 0 0; }
 .btn--link-negative:hover { color:var(--color-secondary-100); }
 .btn--link-negative:active { color:var(--color-secondary-50); }
 .btn--link { background:none; border:0; color:var(--color-primary-600); padding:0 var(--sp-2) 0 0; }
-.btn--link:hover { color:var(--color-primary-700); }   /* CD btn.postcss:38-41: Hover dunkelt (600→700), unterstreicht nie */
+.btn--link:hover { color:var(--color-primary-700); }   /* CD btn.postcss:38-41: hover darkens (600→700), never underlines */
 .btn--link:active { color:var(--color-primary-800); }
 .btn--sm { min-height:var(--control-size-compact); font-size:var(--text-sm); line-height:var(--line-4); }
 /* btn.postcss:171-191 — icon-left nudges the icon; btn--back floats the button
@@ -50,38 +50,37 @@
 @media (min-width:1024px){ .btn--back { margin-top:var(--sp-1); } }
 .back-link-row { display:flow-root; padding-bottom:var(--sp-4); }
 .btn--lg { min-height:var(--sp-12); font-size:var(--text-lg); line-height:var(--line-6); }
-/* CD-Zeilenrampe (btn.postcss:112-129): Basis leading-5 lg:leading-6, sm
-   leading-4 lg:leading-5, lg leading-6 — feste rem-Stufen, Sprung bei lg.
-   Wirkt nur auf mehrzeilige Beschriftungen; einzeilige regelt min-height. */
+/* CD line-height ramp (btn.postcss:112-129): base leading-5 lg:leading-6, sm
+   leading-4 lg:leading-5, lg leading-6; fixed rem steps, jump at lg. Applies
+   only to multiline labels; min-height governs single-line labels. */
 @media (min-width:1024px){ .btn, .btn--base { line-height:var(--line-6); } .btn--sm { line-height:var(--line-5); } }
 @media (min-width:1280px){ .btn, .btn--base { min-height:var(--control-size-md); } .btn--sm { min-height:var(--sp-10); } .btn--lg { min-height:var(--control-size-lg); } }
 @media (min-width:1920px){ .btn, .btn--base { min-height:var(--control-size-lg); } .btn--sm { min-height:var(--control-size-sm); } .btn--lg { min-height:var(--sp-14); } }
-/* Der CD-Kompaktknopf bleibt am feinen Desktop-Zeiger erhalten. Bis Tablet
-   und auf groben Zeigern gilt die 44-px-Zielgrösse des Portal-Auftrags. */
+/* The compact CD button remains on fine desktop pointers. Up through tablet
+   and on coarse pointers, the portal brief's 44px target size applies. */
 @media (max-width:1023.98px), (pointer:coarse), (hover:none){
   .btn--sm { min-height:var(--target-min); }
 }
-/* Symbole im Knopf wachsen mit dem Knopf — beabsichtigt und stärker (0,2,0) als
-   jede .icon--*-Grössenklasse (0,1,0). Ein `icon('X','icon--base')` INNERHALB
-   eines Knopfes bleibt darum wirkungslos; wer eine eigene Grösse braucht,
-   überschreibt sie mit einer Regel im Knopf-Kontext (siehe .btn .catbar__chev).
-   Quadratische 1.4em-Box statt CDs h-full: die Masken-Technik braucht eine
-   intrinsische Box. transition-transform wie CD (btn.postcss:147-152) — die
-   zusätzlichen Farb-Transitions auf .btn bleiben als bewusste Politur. */
+/* Icons grow with the button, intentionally, at higher specificity (0,2,0)
+   than any .icon--* size class (0,1,0). Thus `icon('X','icon--base')` INSIDE a
+   button has no effect; a custom size needs a rule in button context (see
+   .btn .catbar__chev). A square 1.4em box replaces CD's h-full because mask
+   technique needs an intrinsic box. transition-transform follows CD
+   (btn.postcss:147-152); additional color transitions on .btn remain as
+   deliberate polish. */
 .btn .icon, .btn__icon { width:1.4em; height:1.4em; flex:none; transition:transform var(--duration); }
-/* Wie CDs Btn.vue steht das Icon bei beiden Varianten zuerst im DOM;
-   `.btn--icon-right` dreht die visuelle Reihenfolge deshalb per row-reverse. */
-/* CD w-8 für Link-Icons (btn.postcss:43-47) — grösser als die 1.4em-Basis. */
+/* As in CD's Btn.vue, the icon comes first in the DOM for both variants;
+   `.btn--icon-right` therefore reverses visual order with row-reverse. */
+/* CD w-8 for link icons (btn.postcss:43-47), larger than the 1.4em base. */
 .btn--link .btn__icon, .btn--link-negative .btn__icon { width:var(--sp-8); }
 .btn--full-width { width:100%; }
-.btn--icon-only { padding-left:.625em; padding-right:.625em; }   /* CD px-[0.625em] — skaliert mit der Schrift */
-/* Zugriff-Karte (C.accessCard): der Knopf steht oben und trägt den Abstand zum
-   erklärenden Text darunter. Volle Breite, damit die vier Zustände — öffnen,
-   anmelden, extern, ausgegraut — dieselbe Silhouette haben und der Wechsel
-   zwischen ihnen die Karte nicht springen lässt. */
+.btn--icon-only { padding-left:.625em; padding-right:.625em; }   /* CD px-[0.625em], scales with type */
+/* Access card (C.accessCard): the button sits at the top and provides spacing
+   to explanatory text below. Full width gives the four states (open, sign in,
+   external, disabled) the same silhouette so switching does not make the card jump. */
 .access-card__action { margin:0 0 var(--sp-3); }
-/* Sitzungskontext, Zugangshinweis und Schrittliste sind je ein eigener Absatz
-   mit m-0 — ohne diese Regel klebten sie aneinander und lasen sich als ein Satz. */
+/* Session context, access notice and step list are separate paragraphs with
+   m-0; without this rule they touched and read as one sentence. */
 .access-card p + p, .access-card p + ul { margin-top:var(--sp-2); }
 .access-card__action > .btn { width:100%; justify-content:space-between; text-align:left; }
 .access-card__action > .btn.btn--icon-left { justify-content:flex-start; gap:var(--sp-2); }
@@ -104,9 +103,9 @@
 .btn--filled:is(.btn--error,[aria-invalid="true"]) { background:var(--color-error-bg-subtle); }
 .btn:where(.btn--outline-negative,.btn--bare-negative,.btn--link-negative):is(.btn--error,[aria-invalid="true"]) {
   color:var(--color-error-200); border-color:var(--color-error-300); }
-/* Nicht verfügbare Ziele werden auch als <span aria-disabled> gerendert. Das
-   gemeinsame Rezept entspricht CD btn.postcss:21-24; der native Zustand, das
-   ARIA-Attribut und der BEM-Modifier haben deshalb dieselbe Darstellung. */
+/* Unavailable targets also render as <span aria-disabled>. The shared recipe
+   matches CD btn.postcss:21-24, so native state, ARIA attribute and BEM modifier
+   receive the same presentation. */
 .btn:is(:disabled,[aria-disabled="true"],.btn--disabled) {
   cursor:not-allowed; pointer-events:none; opacity:1; text-decoration:none; }
 .btn--outline:is(:disabled,[aria-disabled="true"],.btn--disabled) {

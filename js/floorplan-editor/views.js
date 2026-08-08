@@ -100,7 +100,7 @@ export function createWorkbenchViews(context) {
     };
     editorDocument.rooms.forEach((room) => {
       const roomPlacements = placementsByRoom.get(room.spaceId) || [];
-      const haystack = clean(`${room.roomNumber} ${room.useLabel} ${room.occupierVe || ''} ${roomPlacements.map((item) => item.name).join(' ')}`);
+      const haystack = clean(`${room.roomNumber} ${room.useLabel} ${room['occupierVe'] || ''} ${roomPlacements.map((item) => item.name).join(' ')}`);
       if (term && !haystack.includes(term)) return;
       const group = descriptor(room);
       const entry = groups.get(group.key) || { ...group, rooms: [], area: 0 };
@@ -368,11 +368,11 @@ export function createWorkbenchViews(context) {
         <div class="fpe-field"><label for="fpe-room-useType">Nutzungsart</label><select id="fpe-room-useType" class="input--outline input--sm" data-room-field="useType">${optionMarkup(USE_OPTIONS, room.useType)}</select></div>
         <div class="fpe-field"><label for="fpe-room-sia">Flächenart SIA 416</label><select id="fpe-room-sia" class="input--outline input--sm" data-room-field="sia">${optionMarkup(SIA_OPTIONS, room.sia)}</select></div>
         <div class="fpe-field"><label for="fpe-room-moduleId">Multispace-Modul</label><select id="fpe-room-moduleId" class="input--outline input--sm" data-room-field="moduleId"><option value="">Ohne Ausstattungsstandard</option>${optionMarkup(MODULE_OPTIONS, moduleValue)}</select></div>
-        <div class="fpe-field"><label for="fpe-room-occupierVe">Verwaltungseinheit</label><input id="fpe-room-occupierVe" class="input--outline input--sm" type="text" data-room-field="occupierVe" value="${C.escape(room.occupierVe || '')}"></div>
+        <div class="fpe-field"><label for="fpe-room-administrative-unit">Verwaltungseinheit</label><input id="fpe-room-administrative-unit" class="input--outline input--sm" type="text" data-room-field="occupierVe" value="${C.escape(room['occupierVe'] || '')}"></div>
         <div class="fpe-field"><label for="fpe-room-capacity">Arbeitsplätze</label><input id="fpe-room-capacity" class="input--outline input--sm" type="number" min="0" step="1" data-room-field="capacity" value="${Number(room.capacity) || 0}"></div>
         <div class="fpe-field"><label for="fpe-room-roomNumber">Raumnummer</label><input id="fpe-room-roomNumber" class="input--outline input--sm" type="text" data-room-field="roomNumber" value="${C.escape(room.roomNumber)}" required></div>
         <div class="fpe-field"><label for="fpe-room-roomName">Raumbezeichnung</label><input id="fpe-room-roomName" class="input--outline input--sm" type="text" data-room-field="roomName" value="${C.escape(room.roomName || room.useLabel)}"></div>
-        <label class="fpe-check" for="fpe-room-bookable"><input id="fpe-room-bookable" type="checkbox" data-room-field="bookable"${room.bookable ? ' checked' : ''}> Fläche ist reservierbar</label>
+        <label class="fpe-check" for="fpe-room-bookable"><input id="fpe-room-bookable" type="checkbox" data-room-field="bookable"${room.bookable ? ' checked' : ''}> Fläche ${'ist'} reservierbar</label>
         <h3>Geometrie <span>${structureUnlocked ? 'entsperrt' : 'gesperrt'}</span></h3>
         <div class="fpe-form-grid">
           <div class="fpe-field"><label for="fpe-room-x">X (cm)</label><input id="fpe-room-x" class="input--outline input--sm" type="number" min="0" step="10" data-room-geometry="x" value="${Math.round(roomX)}"${structureUnlocked ? '' : ' disabled'}></div>
@@ -382,7 +382,7 @@ export function createWorkbenchViews(context) {
         </div>
         ${structureUnlocked ? '' : '<p class="small muted m-0">Im Strukturmenü entsperren, um Raumkanten und Geometriewerte zu bearbeiten.</p>'}
         ${localRoom ? `<button class="btn btn--outline btn--sm btn--icon-left" type="button" data-action="delete-room"${structureUnlocked ? '' : ' disabled'}>${C.icon('Trash', 'btn__icon')}<span class="btn__text">Neue Fläche entfernen</span></button>` : ''}
-      </form>` : `<section class="fpe-inspector-section"><h3>Standard-Attribute</h3><dl class="fpe-kv"><dt>Nutzung</dt><dd>${C.escape(room.useLabel)}</dd><dt>Raumbezeichnung</dt><dd>${C.escape(room.roomName || room.useLabel)}</dd><dt>SIA 416</dt><dd>${C.escape(room.siaLabel)} (${C.escape(room.sia)})</dd><dt>Verwaltungseinheit</dt><dd>${C.escape(room.occupierVe || 'nicht zugeteilt')}</dd><dt>Reservierbar</dt><dd>${room.bookable ? 'Ja' : 'Nein'}</dd></dl></section>`}
+      </form>` : `<section class="fpe-inspector-section"><h3>Standard-Attribute</h3><dl class="fpe-kv"><dt>Nutzung</dt><dd>${C.escape(room.useLabel)}</dd><dt>Raumbezeichnung</dt><dd>${C.escape(room.roomName || room.useLabel)}</dd><dt>SIA 416</dt><dd>${C.escape(room.siaLabel)} (${C.escape(room.sia)})</dd><dt>Verwaltungseinheit</dt><dd>${C.escape(room['occupierVe'] || 'nicht zugeteilt')}</dd><dt>Reservierbar</dt><dd>${room.bookable ? 'Ja' : 'Nein'}</dd></dl></section>`}
       <section class="fpe-inspector-section"><h3>Ausstattung in diesem Raum <span>${items.length}</span></h3>${items.length
         ? `<ul class="fpe-inspector-list">${items.map((placement) => `<li><button type="button" data-select-type="placement" data-select-id="${C.escape(placement.placementId)}">${C.escape(placement.name)}${C.icon('ChevronRight', 'icon--sm')}</button></li>`).join('')}</ul>`
         : '<p class="small muted">Noch keine Ausstattungsobjekte verortet.</p>'}

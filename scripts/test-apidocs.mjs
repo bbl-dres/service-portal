@@ -1,12 +1,7 @@
-// API-Dokumentation (js/apps/api-docs.js + data/api-specs.json) — seit dem
-// Umbau 2026-08-04 rendert unterhalb der detail-bar das ECHTE Swagger UI
-// (swagger-ui-dist vom CDN). Geprüft wird: Portal-Kopf bleibt (h1/Badges),
-// Swagger rendert alle Ressourcen-Abschnitte und Operationen, die Live-
-// Beispiele tragen echte Portaldaten, «Try it out» ist aus, ?tag scrollt zur
-// Ressource, und der Kundenportal-Katalogeintrag verlinkt weiter hierher.
-// Braucht Netzzugang (unpkg.com) — wie die MapLibre-Suiten.
-//
-//   node scripts/test-apidocs.mjs        (dev server must be running; see README)
+// API-documentation integration checks cover portal chrome, standard Swagger
+// resources and operations, live examples, disabled Try it out, ?tag scrolling,
+// and the customer-portal catalogue link. CDN rendering requires network access.
+// Run with a development server as described in README.
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,17 +13,16 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
 (async () => {
   const cdp = await launch({ webgl: false });
   try {
-    // 1) Docs-Seite: Portal-Kopf + Standard-Swagger ------------------------
+    // 1. Documentation page: portal chrome and standard Swagger.
     const p = await openPage(cdp, `${APP_BASE}/app/api-docs/kundenportal`);
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1500, deviceScaleFactor: 1, mobile: false }, p.sessionId);
     await new Promise(r => setTimeout(r, 700));
     const D = await p.evaluate(`(async () => {
       const s = ms => new Promise(r => setTimeout(r, ms));
-      // CDN-Laden + Rendern — grosszügig pollen (bis ~20s).
+      // Poll CDN loading and rendering for up to roughly 20 seconds.
       let n = 0; while (!document.querySelector('.swagger-ui .opblock') && n++ < 200) await s(100);
       const tagEls = [...document.querySelectorAll('.swagger-ui .opblock-tag')];
-      // Beispielantwort: erste /liegenschaften-Operation aufklappen und den
-      // gerenderten Beispieltext lesen (Live-Daten aus dem core).
+      // Expand the first property operation and inspect its core-backed example.
       let example = '';
       const summary = [...document.querySelectorAll('.opblock-summary')]
         .find(el => /\\/buildings$/.test((el.querySelector('.opblock-summary-path') || {}).textContent || ''));
@@ -50,7 +44,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
         resourcesLabelled: document.querySelector('#api-swagger')?.getAttribute('aria-labelledby') || '',
         tagHeadingLevels: [...document.querySelectorAll('.swagger-ui .opblock-tag')].map(el => el.tagName),
         badges: [...document.querySelectorAll('.pill-row .badge')].map(b => b.textContent.trim()),
-        infoDoppelt: !!document.querySelector('.swagger-host .information-container') &&
+        duplicateInfo: !!document.querySelector('.swagger-host .information-container') &&
           getComputedStyle(document.querySelector('.swagger-host .information-container')).display !== 'none',
         server: (document.querySelector('.swagger-ui .servers, .swagger-ui .scheme-container') || {}).textContent || '',
         tags: tagEls.map(t => t.getAttribute('data-tag')),
@@ -66,47 +60,46 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
         example,
       };
     })()`);
-    console.log('■ API-Dokumentation (Swagger UI)');
+    console.log('■ API documentation (Swagger UI)');
     console.log('   h1:', JSON.stringify(D.h1), '| badges:', JSON.stringify(D.badges));
     console.log('   tags:', D.tags.length, '| ops:', D.ops, `(get ${D.get} / post ${D.post})`, '| try-out:', D.tryOut);
-    check(/Kundenportal API/.test(D.h1 || ''), `Portal-h1 bleibt (${D.h1})`);
-    check(D.resourcesH2 === 'H2' && D.resourcesLabelled === 'api-resources-title', 'Swagger-Ressourcen liegen unter einer benannten H2-Gruppe');
-    check(D.tagHeadingLevels.every(level => level === 'H3'), 'Ressourcentitel folgen als H3');
-    check(D.badges.some(b => /^v/.test(b)), `Versions-Badge im Kopf (${JSON.stringify(D.badges)})`);
-    check(!D.infoDoppelt, 'Swaggers Info-Block doppelt den Kopf nicht');
-    // Seit der Englisch-Umbenennung (2026-08-04) deckt die API den ganzen
-    // Datenbestand: 17 Ressourcen, 47 Endpunkte (data/api-specs.json).
-    check(D.tags.length === 17, `17 Ressourcen-Abschnitte (${D.tags.length})`);
-    check(D.ops >= 40, `Operationen gerendert (${D.ops})`);
-    check(D.get > 0 && D.post > 0, `GET- und POST-Blöcke (${D.get}/${D.post})`);
-    check(/api\.bbl\.admin\.ch\/kundenportal/.test(D.server), 'Server-Zeile zeigt die Basis-URL');
-    check(D.tryOut === 0, 'kein «Try it out» (kein Backend)');
-    check(!D.loadingLeft, 'Ladezustand (C.loading) ist nach dem Rendern abgeräumt');
-    check(D.smallControls === 0, `Swagger-Bedienelemente mindestens 44 × 44 px (${D.smallControls} kleiner)`);
-    check(D.focusOutline !== 'none' && D.focusOutline !== '', `sichtbarer Fokuszustand (${D.focusOutline})`);
-    check(D.authName === 'Authorize API access', 'Autorisierungsknopf hat einen stabilen Namen');
-    // Auf die FORM der bbl_id prüfen (1080/4840/AF), nicht auf ein festes Präfix.
-    check(/\b\d{4}\/\d{4}\//.test(D.example), 'Live-Beispiel trägt echte Gebäudedaten (bbl_id)');
+    check(/Kundenportal API/.test(D.h1 || ''), `portal h1 remains (${D.h1})`);
+    check(D.resourcesH2 === 'H2' && D.resourcesLabelled === 'api-resources-title', 'Swagger resources sit under a labelled h2 group');
+    check(D.tagHeadingLevels.every(level => level === 'H3'), 'resource titles follow as h3 headings');
+    check(D.badges.some(b => /^v/.test(b)), `header includes a version badge (${JSON.stringify(D.badges)})`);
+    check(!D.duplicateInfo, 'Swagger info block does not duplicate the portal header');
+    // The complete inventory currently contains 17 resources and 47 endpoints.
+    check(D.tags.length === 17, `17 resource sections render (${D.tags.length})`);
+    check(D.ops >= 40, `operations render (${D.ops})`);
+    check(D.get > 0 && D.post > 0, `GET and POST blocks render (${D.get}/${D.post})`);
+    check(/api\.bbl\.admin\.ch\/kundenportal/.test(D.server), 'server row shows the base URL');
+    check(D.tryOut === 0, '“Try it out” is absent because there is no backend');
+    check(!D.loadingLeft, 'loading state is removed after rendering');
+    check(D.smallControls === 0, `Swagger controls are at least 44 × 44 px (${D.smallControls} smaller)`);
+    check(D.focusOutline !== 'none' && D.focusOutline !== '', `focus state is visible (${D.focusOutline})`);
+    check(D.authName === 'Authorize API access', 'authorization button has a stable accessible name');
+    // Validate the bbl_id shape, not a fixed prefix.
+    check(/\b\d{4}\/\d{4}\//.test(D.example), 'live example contains real building data (bbl_id)');
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, p.sessionId);
     writeFileSync(process.env.SHOT || join(tmpdir(), 'bbl-apidocs.png'), Buffer.from(shot.data, 'base64'));
     await p.closeTarget();
 
-    // 2) Deep-Link ?tag=… scrollt zur Ressource ----------------------------
+    // 2. A ?tag deep link scrolls to its resource.
     const p2 = await openPage(cdp, `${APP_BASE}/app/api-docs/kundenportal?tag=projects`);
     await new Promise(r => setTimeout(r, 800));
     const T = await p2.evaluate(`(async () => {
       const s = ms => new Promise(r => setTimeout(r, ms));
       let n = 0; while (!document.querySelector('.swagger-ui .opblock-tag') && n++ < 200) await s(100);
-      await s(600);   // onComplete + Router-Scroll abwarten
+      await s(600);   // Wait for onComplete and router scrolling.
       const el = [...document.querySelectorAll('.opblock-tag')].find(h => (h.getAttribute('data-tag') || '') === 'projects');
       const top = el ? el.getBoundingClientRect().top : 9999;
-      return { da: !!el, top: Math.round(top), scrollY: Math.round(scrollY) };
+      return { exists: !!el, top: Math.round(top), scrollY: Math.round(scrollY) };
     })()`);
-    check(T.da, 'Ressource «projects» vorhanden');
-    check(T.scrollY > 0 && T.top > -120 && T.top < 300, `?tag scrollt zur Ressource (top ${T.top}, scrollY ${T.scrollY})`);
+    check(T.exists, 'projects resource exists');
+    check(T.scrollY > 0 && T.top > -120 && T.top < 300, `?tag scrolls to the resource (top ${T.top}, scrollY ${T.scrollY})`);
     await p2.closeTarget();
 
-    // 3) Kundenportal-Katalogeintrag verlinkt in die Docs -------------------
+    // 3. The customer-portal catalogue entry links to these docs.
     const p3 = await openPage(cdp, `${APP_BASE}/data/catalog/20`);
     await new Promise(r => setTimeout(r, 700));
     const K = await p3.evaluate(`(async () => {
@@ -115,7 +108,7 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       return { h1: (document.querySelector('h1') || {}).textContent,
         docsLinks: document.querySelectorAll('a[href*="app/api-docs"]').length };
     })()`);
-    console.log('■ Katalog-Eintrag:', JSON.stringify(K.h1), '| Links in die Docs:', K.docsLinks);
+    console.log('■ Catalogue entry:', JSON.stringify(K.h1), '| documentation links:', K.docsLinks);
     check(/Kundenportal/.test(K.h1 || ''), `catalog dataset renders (${K.h1})`);
     check(K.docsLinks >= 17, `distributions deep-link into the docs (${K.docsLinks})`);
     check([...(await p.problems()), ...(await p2.problems()), ...(await p3.problems())].length === 0,

@@ -8,11 +8,11 @@ const CHEVRON_SVG = '<svg role="presentation" aria-hidden="true" viewBox="0 0 24
   + '<path d="m5.706 10.015 6.669 3.85 6.669-3.85.375.649-7.044 4.067-7.044-4.067z"/></svg>';
 
 // --- Placeholder photography -------------------------------------------------
-// SEIT DEM BILD-SCREENING (2026-08-04) trägt KEIN Datenbestand mehr Unsplash-
-// photo-Ids — alle Bilder liegen lokal unter assets/images/ (Nachweis im
-// jeweiligen JSON bzw. assets/images/heroes/README.md). photoUrl/`id` bleibt
-// als Rückfallebene für Altstände: die Id wird nur nach strikter Zeichen-
-// prüfung interpoliert, und die `color` der Karte bleibt hinter dem Bild.
+// SINCE THE IMAGE REVIEW (2026-08-04), NO collection carries Unsplash photo IDs.
+// All images live locally under assets/images/ (provenance in the respective
+// JSON or assets/images/heroes/README.md). photoUrl/`id` remains as a fallback
+// for legacy states: the ID is interpolated only after strict character
+// validation, and the card's `color` remains behind the image.
 const PHOTO_BASE = 'https://images.unsplash.com/photo-';
 const PHOTO_ID = /^[A-Za-z0-9_-]+$/;
 
@@ -24,14 +24,13 @@ function photoUrl(id, { w = 800, h = 0, q = 70, gray = false } = {}) {
   return u;
 }
 
-// `src` schlägt `id`: liegt eine echte, lokal abgelegte Aufnahme vor
-// (assets/images/buildings/…), wird die genommen; sonst greift wie bisher das
-// Unsplash-Platzhalterbild über die id. Beides fällt bei einem Ladefehler auf
-// die Farbfläche zurück.
-const LOKAL = /^assets\/[A-Za-z0-9/_.-]+$/;
+// `src` takes precedence over `id`: use a real locally stored image when present
+// (assets/images/buildings/…), otherwise retain the Unsplash placeholder via id.
+// Both fall back to the colour field if loading fails.
+const LOCAL_ASSET = /^assets\/[A-Za-z0-9/_.-]+$/;
 
 function photo(o = {}) {
-  const src = (o.src && LOKAL.test(o.src)) ? o.src : photoUrl(o.id, { w: o.w, h: o.h, q: o.q, gray: o.gray });
+  const src = (o.src && LOCAL_ASSET.test(o.src)) ? o.src : photoUrl(o.id, { w: o.w, h: o.h, q: o.q, gray: o.gray });
   const img = src
     ? `<img src="${src}" alt="${escape(o.alt || '')}" loading="lazy" decoding="async" onerror="this.remove()">`
     : '';
@@ -48,28 +47,29 @@ export function escape(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// Umbruchstellen für lange deutsche Komposita: UAX#14 erlaubt nach «/» und nach
-// einem Bindestrich von sich aus keinen Umbruch, sodass «Sicherheits-/Datenschutz-
-// vorfall» als ein unteilbares Wort galt und mitten im Wort abriss (sichtbar bei
-// 1440 UND 320). <wbr> gibt die Stelle frei, ohne ein Zeichen hinzuzufügen —
-// `textContent` bleibt identisch, die Tests bleiben also unberührt (Item 5.8).
+// Break opportunities for long German compounds: UAX#14 does not permit a break
+// after «/» or a hyphen by default, so «Sicherheits-/Datenschutzvorfall» was
+// treated as one indivisible word and broke mid-word (visible at BOTH 1440 and
+// 320). <wbr> enables the position without adding a character, so `textContent`
+// remains identical and tests are unaffected (Item 5.8).
 function breakable(s) {
   return escape(s).replace(/([/–—-])(?=\S)/g, '$1<wbr>');
 }
 
-// decodeURIComponent, das bei malformten Sequenzen (roh getippter Hash wie
-// `#/applications/%`) nicht wirft, sondern den Rohwert zurückgibt (code-review A6).
+// decodeURIComponent that returns the raw value rather than throwing on
+// malformed sequences (such as a manually typed `#/applications/%` hash)
+// (code review A6).
 function safeDecode(s) {
   try { return decodeURIComponent(s); } catch { return s; }
 }
 
-// Wiederkehrende englische Fachbegriffe im sonst deutschen Text. Für WCAG 3.1.2
-// (Sprache von Teilen) werden sie inline mit lang="en" ausgezeichnet, damit
-// Screenreader sie englisch aussprechen.
+// Recurring English terms within otherwise German text. For WCAG 3.1.2
+// (language of parts), mark them inline with lang="en" so screen readers
+// pronounce them in English.
 const EN_TERMS = ['Digital by Design', 'Digital First', 'Digital Only', 'Once-Only', 'Common Data Environment'];
 
-// Escaped den Text und zeichnet bekannte fremdsprachige Phrasen mit lang aus.
-// Längere Phrasen zuerst, damit Teilphrasen nicht vorzeitig umschlossen werden.
+// Escape text and mark known foreign-language phrases with lang. Process longer
+// phrases first so partial phrases are not wrapped prematurely.
 function markLang(text, terms = EN_TERMS) {
   let out = escape(text);
   for (const phrase of [...terms].sort((a, b) => b.length - a.length)) {
@@ -80,21 +80,21 @@ function markLang(text, terms = EN_TERMS) {
 }
 
 // --- Badges (badge.postcss) --------------------------------------------------
-// CD-Anatomie (Badge.vue:11-18): die Beschriftung liegt in einem .badge__text-
-// Span; Symbole tragen .badge__icon / .badge__icon-left (em-skaliert, optisch
-// ins 1em-Polster gezogen) statt generischer icon--*-Klassen plus Flex-gap.
+// CD anatomy (Badge.vue:11-18): the label sits in a .badge__text span. Symbols
+// use .badge__icon / .badge__icon-left (scaled in em and optically pulled into
+// the 1em padding), not generic icon--* classes plus a flex gap.
 export function badge(text, variant = 'gray', size = '') {
   return `<span class="badge badge--${variant}${size ? ' badge--' + size : ''}"><span class="badge__text">${escape(text)}</span></span>`;
 }
 
-// Ladezustand — das EINE Muster für «lädt / verarbeitet» (Nutzerentscheid
-// 2026-08-04): das CD-Spinner-Symbol (icon--spin; reduced-motion-Killswitch
-// in app.css) plus Wortlaut als Statuszeile. role="status" macht den Text zur
-// Live-Meldung für Screenreader; das Symbol ist dekorativ. Wortlaut-Kanon:
-// «<Gegenstand> wird geladen…», ohne Gegenstand «Wird geladen…». `hideLabel`
-// versteckt den Wortlaut sr-only, wo das Symbol optisch reicht (Router,
-// Karten-Overlay). Ersetzt die früheren Einzelbauten (Router-Inline,
-// map-spinner-Inline, dash-map__loading-Textzeile).
+// Loading state — the ONE pattern for «loading / processing» (user decision,
+// 2026-08-04): the CD spinner symbol (icon--spin; reduced-motion kill switch in
+// app.css) plus wording as a status row. role="status" makes the text a live
+// announcement for screen readers; the symbol is decorative. German UI term:
+// subject-specific wording, or generic wording without a subject. `hideLabel`
+// makes the wording sr-only where the symbol is visually sufficient (router,
+// card overlay). Replaces former one-off implementations (router inline,
+// map spinner inline, dash-map__loading text row).
 export function loading({ label = 'Wird geladen…', hideLabel = false, size = 'xl' } = {}) {
   return `<div class="loading" role="status">
     ${icon('Spinner', `icon--${size} icon--spin`)}
@@ -103,31 +103,29 @@ export function loading({ label = 'Wird geladen…', hideLabel = false, size = '
 }
 
 const STATUS_VARIANT = {
-  entwurf: 'gray', eingereicht: 'info', in_pruefung: 'warning', in_pruefung_gs: 'warning',
-  in_pruefung_pfm: 'warning', rueckfrage: 'warning', in_arbeit: 'warning', triage: 'info',
-  genehmigt: 'success', in_projekt: 'info', abgeschlossen: 'success', erledigt: 'success',
-  geliefert: 'success', abgelehnt: 'error', zurueckgezogen: 'gray', in_bearbeitung: 'warning',
+  'entwurf': 'gray', 'eingereicht': 'info', 'in_pruefung': 'warning', 'in_pruefung_gs': 'warning',
+  'in_pruefung_pfm': 'warning', 'rueckfrage': 'warning', 'in_arbeit': 'warning', 'triage': 'info',
+  'genehmigt': 'success', 'in_projekt': 'info', 'abgeschlossen': 'success', 'erledigt': 'success',
+  'geliefert': 'success', 'abgelehnt': 'error', 'zurueckgezogen': 'gray', 'in_bearbeitung': 'warning',
 };
 function statusBadge(status, label) {
   return badge(label || status, STATUS_VARIANT[status] || 'gray');
 }
 
 
-// Seitenabschnitt in CDs Anatomie (section.postcss): das <section> ist das
-// ÄUSSERE Element, der .container liegt darin. Nur so kann ein Hintergrund von
-// Rand zu Rand laufen — `bg--*` gehört auf die Section, nie auf den Container.
+// Page section in CD anatomy (section.postcss): <section> is the OUTER element,
+// with .container inside. Only this allows a background to run edge to edge;
+// `bg--*` belongs on the section, never on the container.
 //
-// 40 von 42 Seiten rendern `<div class="container section">`, verschmelzen also
-// beide Rollen in einem Element. Die Folge ist strukturell, nicht kosmetisch:
-// keine solche Seite kann ein Wechselband, einen getönten Einstieg oder einen
-// vollbreiten Aufruf tragen — sie ist ein einziges weisses Feld von der
-// Brotkrume bis zum Footer. Die Startseite baut es richtig und liest sich
-// dadurch als komponierte Seite.
+// 40 of 42 pages render `<div class="container section">`, merging both roles in
+// one element. The consequence is structural, not cosmetic: none can support
+// alternating bands, a tinted introduction, or a full-width callout. Each is a
+// single white field from breadcrumb to footer. The home page constructs it
+// correctly and therefore reads as a composed page.
 //
-// `alt` färbt das Band (secondary-50). Aufrufer wechseln es nach Reihenfolge
-// durch, damit die Bänder sauber alternieren. Kein neues CSS: .section,
-// .section--default, .section__title, .section__action und .bg--secondary-50
-// existieren alle bereits.
+// `alt` tints the band (secondary-50). Callers alternate it by position so bands
+// switch cleanly. No new CSS: .section, .section--default, .section__title,
+// .section__action, and .bg--secondary-50 already exist.
 function pageSection({ title = '', body = '', more = null, alt = false, titleTag = 'h2' }) {
   return `<section class="section section--default${alt ? ' bg--secondary-50' : ''}">
       <div class="container">
@@ -140,14 +138,14 @@ function pageSection({ title = '', body = '', more = null, alt = false, titleTag
     </section>`;
 }
 
-// `lead` wird escaped (Normalfall). `leadHtml` ist die bewusste Ausnahme für
-// Leads mit Auszeichnung — etwa einem Verweis auf ein Nachbarsystem. Sie ist
-// AUSSCHLIESSLICH für autoreneigenes Markup gedacht, nie für Daten aus dem Core
-// oder aus Fremddiensten: dort bleibt `lead` und damit das Escaping Pflicht.
-// Fixierter Hinweisstreifen am Fensterboden — CDs Consent-Bauteil
-// (notification-banner.postcss + NotificationBanner.vue). Anatomie wie dort:
-// `.notification-banner` (+ `--fixed`) trägt zusätzlich die `.notification`-
-// Klassen, darin ein `__wrapper` mit `__infos` und der Aktion.
+// `lead` is escaped (the normal case). `leadHtml` is the deliberate exception
+// for leads with markup, such as a link to a neighbouring system. It is ONLY
+// for author-owned markup, never data from core or external services; those keep
+// `lead`, and therefore escaping, mandatory.
+// Fixed notice strip at the bottom of the viewport — CD's consent component
+// (notification-banner.postcss + NotificationBanner.vue). Anatomy matches it:
+// `.notification-banner` (+ `--fixed`) also carries `.notification` classes,
+// containing a `__wrapper` with `__infos` and the action.
 function notificationBanner({ id, html, actionLabel = 'Verstanden', variant = 'info', label = 'Hinweis' }) {
   return `<div class="notification-banner notification-banner--fixed notification notification--${escape(variant)}"
       role="region" aria-label="${escape(label)}" data-banner="${escape(id)}">
@@ -159,14 +157,13 @@ function notificationBanner({ id, html, actionLabel = 'Verstanden', variant = 'i
   </div>`;
 }
 
-// Einhängen und das Wegklicken merken. Ohne Merken erschiene der Hinweis bei
-// jedem Seitenwechsel neu — das ist der Grund, weshalb Consent-Bänder überhaupt
-// einen Speicher brauchen.
+// Mount and remember dismissal. Without persistence, the notice would reappear
+// after every page change, which is why consent banners need storage at all.
 export function mountBanner(host, opts) {
   if (!host) return;
   const key = 'bbl_banner_' + opts.id;
   let seen = false;
-  try { seen = localStorage.getItem(key) === '1'; } catch { /* Speicher gesperrt */ }
+  try { seen = localStorage.getItem(key) === '1'; } catch { /* Storage blocked. */ }
   if (seen) return;
   host.innerHTML = notificationBanner(opts);
   const banner = host.querySelector('.notification-banner--fixed');
@@ -209,7 +206,7 @@ export function mountBanner(host, opts) {
   if (btn) btn.addEventListener('click', () => {
     releaseSpace();
     host.innerHTML = '';
-    try { localStorage.setItem(key, '1'); } catch { /* dann kommt er eben wieder */ }
+    try { localStorage.setItem(key, '1'); } catch { /* It will simply return. */ }
     announce('Hinweis geschlossen.');
   });
   return releaseSpace;
@@ -223,21 +220,20 @@ function pageHeader({ title, lead, leadHtml }) {
 
 // --- Cards (card.postcss) ----------------------------------------------------
 function card(o) {
-  // `chips`: kurze Merkmale ALS AUFLAGE auf dem Bild statt als Pillenzeile im
-  // Kartenkörper — dasselbe Muster wie die Galerie des Liegenschaften-Inventars
-  // (`.card__chips`). Sinnvoll für Angaben, die man beim
-  // Überfliegen des Rasters mitliest (Land, Status) und die im Text nur Platz
-  // vor Titel und Beschreibung wegnehmen würden. `.card__image` ist bereits
-  // `position:relative`, die Auflage braucht deshalb keinen eigenen Kasten.
+  // `chips`: short attributes OVERLAID on the image rather than a pill row in the
+  // card body, matching the property inventory gallery (`.card__chips`). Useful
+  // for details read while scanning the grid (country, status) that would only
+  // consume space before title and description in the text. `.card__image` is
+  // already `position:relative`, so the overlay needs no separate box.
   const chips = (o.chips || []).filter(Boolean);
   const overlay = chips.length
     ? `<div class="card__chips">${chips.map((c) => `<span class="card__chip">${escape(c)}</span>`).join('')}</div>`
     : '';
-  // `media` = fertiges Medien-HTML des Aufrufers (RAW — er escaped selbst): die
-  // Explorer-Galerie braucht ihren eigenen Vis-Block (16:10-Kachel, Parzellen-
-  // Schraffur) und rollte dafür vorher die GANZE Karte von Hand nach (portfolio
-  // pfCard, Design-Review A11). Jetzt liefert sie nur das Medium, Körper und
-  // Fuss kommen aus dieser einen Quelle.
+  // `media` = caller-supplied, ready media HTML (RAW; caller escapes it). The
+  // explorer gallery needs its own visual block (16:10 tile, parcel hatching)
+  // and previously rebuilt the ENTIRE card by hand for it (portfolio pfCard,
+  // design review A11). It now supplies only the media; body and footer come
+  // from this single source.
   const media = o.media
     ? o.media
     : o.photo
@@ -251,19 +247,20 @@ function card(o) {
   const variant = o.variant || 'default';
   const tag = o.titleTag || 'h3';
   const ext = o.external ? ' target="_blank" rel="noopener external"' : '';
-  // Stretched-Link-Muster (CD/WAI-ARIA APG): die Karte ist ein <div>, der Titel eine
-  // echte Überschrift mit einem <a>, dessen ::after die ganze Karte klickbar macht.
-  // So behält das Dokument seine Gliederung UND verschachtelte Links (Badges) bleiben
-  // gültig (kein <a> in <a> mehr).
-  // `breakable`: lange deutsche Komposita dürfen nach «/» und «-» umbrechen, sonst
-  // reisst z. B. «Sicherheits-/Datenschutzvorfall» mitten im Wort (Item 5.8).
+  // Stretched-link pattern (CD/WAI-ARIA APG): the card is a <div>, and its title
+  // is a real heading containing an <a> whose ::after makes the whole card
+  // clickable. This preserves the document outline AND keeps nested links
+  // (badges) valid, with no more <a> inside <a>.
+  // `breakable`: long German compounds may break after «/» and «-»; otherwise,
+  // for example, «Sicherheits-/Datenschutzvorfall» breaks mid-word (Item 5.8).
   const titleInner = o.href
     ? `<a class="card__link" href="${escape(o.href)}"${ext}>${breakable(o.title)}</a>`
     : breakable(o.title);
-  // CD baut den Fuss aus ZWEI benannten Slots (card.postcss:245-257, Card.vue:27-37):
-  // `footerInfo` (Metazeile) und `footerAction` (CTA). `footer` bleibt als Roh-Slot
-  // für Altaufrufer. Ohne Info-Slot greift CDs --icon-only-Modifier, der den
-  // früheren leeren <span></span>-Trick ersetzt (Item 5.12).
+  // CD builds the footer from TWO named slots (card.postcss:245-257,
+  // Card.vue:27-37): `footerInfo` (metadata row) and `footerAction` (CTA).
+  // `footer` remains as a raw slot for legacy callers. Without an info slot,
+  // CD's --icon-only modifier replaces the former empty <span></span> trick
+  // (Item 5.12).
   const footerSlots = (o.footerInfo || o.footerAction)
     ? `<div class="card__footer${o.footerInfo ? '' : ' card__footer--icon-only'}">${
         o.footerInfo ? `<div class="card__footer__info">${o.footerInfo}</div>` : ''}${
@@ -273,8 +270,8 @@ function card(o) {
     <div class="card__content">
       <div class="card__body">
         <${tag} class="card__title">${titleInner}</${tag}>
-        ${/* `idLine`: Kennungszeile in Mono direkt unter dem Titel (bbl_id,
-              Projektnummer) — gemeinsames Kartenrezept (.card__identifier). */''}
+        ${/* `idLine`: monospace identifier row directly below the title (bbl_id,
+              project number), using the shared card recipe (.card__identifier). */''}
         ${o.idLine ? `<p class="card__identifier">${escape(o.idLine)}</p>` : ''}
         ${o.badges ? `<div class="pill-row">${o.badges.join('')}</div>` : ''}
         ${o.desc ? `<p class="card__description">${escape(o.desc)}</p>` : ''}
@@ -285,21 +282,21 @@ function card(o) {
 }
 
 // --- Tables (table.postcss) --------------------------------------------------
-// DIE Tabelle des Portals. Jede Tabelle läuft hier durch — direkt oder über
-// C.mountDataTable, das dieselbe Funktion mit Katalogleiste und Blätterleiste
-// umgibt. Zweck ist die Einheitlichkeit: eine Schriftstärke je Zeile, Text
-// links, Zahlen rechts, gleiche Polster, gleiche Trennlinien.
+// THE portal table. Every table passes through here, either directly or through
+// C.mountDataTable, which wraps the same function with catalogue and pagination
+// bars. The purpose is consistency: one font weight per row, text on the left,
+// numbers on the right, and matching padding and separators.
 //
 // columns: [{ key, label, render?(row), align?, width? }]
-//   align: 'right' für Zahlen — richtet Kopf UND Zelle aus, macht die Spalte
-//          schmal und setzt Tabellenziffern (siehe app.css).
-//   width: explizite Spaltenbreite ('12rem', '25%') für die Fälle, in denen das
-//          Schrumpfen nach Inhalt kein gutes Bild gibt. Landet im <colgroup>.
+//   align: 'right' for numbers — aligns BOTH header and cell, narrows the column,
+//          and applies tabular figures (see app.css).
+//   width: explicit column width ('12rem', '25%') where content-based shrinking
+//          produces a poor result. Rendered in <colgroup>.
 // rows: object[]; caption names the table.
-// `foot` = fertiges <tr>…</tr>-HTML für eine <tfoot>-Zeile (z. B. eine Summenzeile);
-// der Aufrufer escaped den Inhalt.
+// `foot` = ready <tr>…</tr> HTML for a <tfoot> row (for example, a total row);
+// the caller escapes its content.
 function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable, emptyText }) {
-  // `align: 'right'|'center'|'left'` je Spalte → CD-Ausrichtungs-Utility auf Kopf + Zelle.
+  // Per-column `align: 'right'|'center'|'left'` maps to the CD alignment utility on header + cell.
   const al = (c) => c.align ? ` class="text-${c.align}"` : '';
   const head = columns.map(c => `<th scope="col"${al(c)}>${escape(c.label)}</th>`).join('');
   const body = (rows || []).map(r =>
@@ -308,19 +305,18 @@ function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable
       return i === 0 ? `<th scope="row"${al(c)}>${cell}</th>` : `<td${al(c)}>${cell}</td>`;
     }).join('')}</tr>`
   ).join('');
-  // `rowsClickable`: die ganze Zeile folgt dem ERSTEN Link in ihr. Das ist reine
-  // Mausbequemlichkeit — die Bedienung mit Tastatur und Screenreader läuft
-  // weiterhin über diesen Link. Ohne einen solchen Link tut die Zeile nichts;
-  // ein `onclick` auf `<tr>` ohne Linkziel wäre für beide unerreichbar.
+  // `rowsClickable`: the entire row follows its FIRST link. This is purely a
+  // mouse convenience; keyboard and screen-reader interaction still uses that
+  // link. A row without such a link does nothing; an `onclick` on `<tr>` without
+  // a link target would be unreachable to both.
   const cls = ['table', zebra ? 'table--zebra' : '', showCaption ? 'table--caption' : '',
     rowsClickable ? 'table--rows-clickable' : ''].filter(Boolean).join(' ');
-  // Nur eine benannte Tabelle wird zur benannten Region: `aria-label="Tabelle"`
-  // war für 11 der 15 Tabellen der Name — im Landmarkenbaum standen elf
-  // gleichnamige «Tabelle»-Regionen ohne Unterscheidungsmerkmal (Item 5.6).
-  // Ohne Namen bleibt der Kasten ein reiner Scrollbereich; tabindex/role setzt
-  // `wireScrollRegions` erst, wenn er wirklich überläuft.
-  // <colgroup> nur, wenn mindestens eine Spalte eine Breite vorgibt — ein
-  // colgroup aus lauter leeren <col> wäre wirkungslos, aber nicht kostenlos.
+  // Only a named table becomes a named region. `aria-label="Tabelle"` named 11 of
+  // 15 tables, producing eleven indistinguishable «Tabelle» regions in the
+  // landmarks tree (Item 5.6). Without a name, the box remains only a scrolling
+  // surface; `wireScrollRegions` adds tabindex/role only when it actually
+  // overflows. Render <colgroup> only when at least one column supplies a width;
+  // a group of empty <col> elements would be ineffective but not free.
   const colgroup = columns.some((c) => c.width)
     ? `<colgroup>${columns.map((c) => `<col${c.width ? ` style="width:${escape(c.width)}"` : ''}>`).join('')}</colgroup>`
     : '';
@@ -332,34 +328,34 @@ function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable
     <tbody>${body || `<tr><td colspan="${columns.length}" class="table__empty muted">${escape(emptyText || 'Keine Einträge.')}</td></tr>`}</tbody>
     ${foot ? `<tfoot>${foot}</tfoot>` : ''}
   </table>
-  ${/* Sichtbarer Hinweis auf den waagrechten Überlauf (Item 5.7): eine Tabelle,
-        die rechts weitergeht, sah bisher aus wie eine Tabelle, die dort endet —
-        die abgeschnittene Spalte fand niemand. `position:sticky; left:0` hält den
-        Hinweis beim Scrollen an seinem Platz; die Klasse `is-scrollable` setzt
-        `wireScrollRegions`, der Hinweis erscheint also nur bei echtem Überlauf.
-        aria-hidden: der Wrapper trägt Name + tabindex, und Hilfsmittel lesen
-        Tabellen zellenweise statt zu scrollen. */''}
+  ${/* Visible horizontal-overflow hint (Item 5.7). A table continuing to the
+        right previously looked as though it ended there, so nobody discovered
+        the clipped column. `position:sticky; left:0` keeps the hint in place
+        while scrolling. `wireScrollRegions` sets `is-scrollable`, so it appears
+        only for real overflow. aria-hidden because the wrapper carries name +
+        tabindex, and assistive technology reads tables cell by cell rather than
+        scrolling them. */''}
   <p class="table-wrapper__hint" aria-hidden="true">${icon('ArrowRight', 'icon--sm')}Tabelle seitlich scrollbar</p></div>`;
 }
 
-// Leerer Zustand. `unavailable: true` (P0-4) markiert «Daten nicht verfügbar»
-// (Ladefehler) statt «keine Einträge» — mit Warnsymbol und error-Tönung.
-// `hint` ergänzt einen zweiten, helfenden Satz (z. B. «Suche/Filter anpassen»).
+// Empty state. `unavailable: true` (P0-4) marks a load failure rather than a
+// zero-result state, using a warning icon and error tint. `hint` adds a second,
+// helpful sentence. German UI term: `Daten nicht verfügbar`.
 export function empty(msg, opts = {}) {
-  // EIN Name für diesen Zustand: `available: false`. Vorher hiess er hier
-  // `unavailable: true` und im Zwillingsbauteil `catalogueResults` `available` —
-  // gegenläufig benannt und gegenläufig gepolt. `news.js` übergab `available`
-  // und erreichte den Ausfallpfad damit nie: fiel `news.json` aus, behauptete
-  // die Seite, es gebe keine Meldungen. `unavailable` bleibt als Altname
-  // gelesen, damit kein Aufrufer stillschweigend umkippt.
+  // ONE name for this state: `available: false`. It was previously called
+  // `unavailable: true` here and `available` in the twin `catalogueResults`
+  // component, with opposite names and polarity. `news.js` passed `available`
+  // and could therefore never reach the failure path: if `news.json` failed,
+  // the page claimed there were no messages. Continue reading `unavailable` as
+  // a legacy name so no caller silently breaks.
   if (opts.available === false || opts.unavailable) {
     return `<div class="empty empty--unavailable">${icon('WarningCircle', 'icon--base')}<span>${escape(msg)}</span></div>`;
   }
-  // Angereicherter Leerzustand nur mit Hinweis; ohne bleibt es die schlichte Variante.
-  // `action` gibt dem Nullzustand ein Bedienelement statt nur eines Rats: bisher
-  // stand dort «Passen Sie Ihre Suche oder die Filter an» und der Weg dahin war
-  // wieder nach oben zu scrollen und die Leiste zu finden. `href` navigiert,
-  // `id` erwartet, dass der Aufrufer den Button verdrahtet.
+  // Enrich the empty state only with a hint; without one, keep the plain variant.
+  // `action` gives the zero state a control rather than advice alone. Previously
+  // it offered text-only advice, but acting on that meant
+  // scrolling back up and finding the bar. `href` navigates; `id` expects the
+  // caller to wire the button.
   const action = opts.action
     ? (opts.action.href
       ? `<a class="btn btn--outline btn--sm empty__action" href="${escape(opts.action.href)}">${icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">${escape(opts.action.label)}</span></a>`
@@ -371,8 +367,8 @@ export function empty(msg, opts = {}) {
     : `<div class="empty">${escape(msg)}</div>`;
 }
 
-// Standard-«nicht gefunden»-Block für Detailrouten (zuvor mehrfach kopiert).
-// Titel/Brotkrume setzt die aufrufende Seite; `body` ist HTML (mit Rück-Link).
+// Standard «not found» block for detail routes (formerly copied repeatedly).
+// The calling page sets title/breadcrumb; `body` is HTML (including a back link).
 function notFound({ backHref, backLabel, title, body }) {
   return `<div class="container section">
     ${backLink(backHref, backLabel)}
@@ -381,18 +377,17 @@ function notFound({ backHref, backLabel, title, body }) {
   </div>`;
 }
 
-// Der ganze ABLAUF einer «nicht gefunden»-Antwort, nicht nur ihr Markup.
+// The complete FLOW of a «not found» response, not just its markup.
 //
-// Elf Stellen (acht Seiten, fünf Apps) hatten dieselben vier Schritte von Hand
-// geschrieben: setTitle · setCrumbs · mount.innerHTML = notFound({…}) · return.
-// `notFound` vereinheitlichte nur den letzten davon, und die elf Kopien liefen
-// prompt auseinander — zwei setzten überhaupt keine Brotkrumen (die des zuvor
-// besuchten Datensatzes blieben stehen), sechs schlossen sie mit «Nicht
-// gefunden» ab, drei nicht.
+// Eleven places (eight pages, five apps) hand-wrote the same four steps:
+// setTitle · setCrumbs · mount.innerHTML = notFound({…}) · return. `notFound`
+// standardised only the last one, and the eleven copies promptly drifted: two
+// set no breadcrumbs at all (leaving those of the previously visited record),
+// six added a not-found suffix, and three did not.
 //
-// `thing` trägt das Geschlecht, das je Gegenstand wechselt («Dieses
-// Bauprojekt», «Diese Anwendung», «Dieser Datensatz»). Wo der Satz mehr sagen
-// muss als «… existiert nicht», ersetzt `body` ihn vollständig.
+// `thing` carries the grammatical gender that varies by subject. Where the
+// sentence must say more than the default missing-item message, `body` replaces
+// it completely.
 function renderNotFound(ctx, {
   thing, title, backHref, backLabel, overview = backLabel, crumbs, body,
 } = {}) {
@@ -403,18 +398,18 @@ function renderNotFound(ctx, {
     body: body || `${thing} existiert nicht. <a href="${backHref}">Zur Übersicht «${escape(overview)}»</a>` });
 }
 
-// Aktive-Filter-Pillenreihe (zuvor in services/applications/katalog kopiert).
-// filters = [{ label, href }] — href = dieselbe Ansicht ohne diesen einen Filter.
-// Zwei Modi, gleiche Optik (`.active-filters` / `.active-filter`): Katalogseiten
-// geben `href` je Pille + `resetHref` (Hash-Navigation, teilbar); JS-State-Seiten
-// (Portfolio) geben stattdessen `remove` (Daten-Token je Pille) — dann werden die
-// Pillen zu <button data-remove> und der Reset zu <button data-reset>, die der
-// Aufrufer verdrahtet. `label` überschreibt den Vorspann «Aktive Filter:».
+// Active-filter pill row (formerly copied in services/applications/catalogue).
+// filters = [{ label, href }] — href is the same view without that one filter.
+// Two modes with the same appearance (`.active-filters` / `.active-filter`):
+// catalogue pages pass an `href` per pill plus `resetHref` (shareable hash
+// navigation). JS-state pages (portfolio) pass `remove` instead (one data token
+// per pill), turning pills into <button data-remove> and reset into <button
+// data-reset>, which the caller wires. `label` overrides the «Aktive Filter:» prefix.
 function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurücksetzen', label = 'Aktive Filter:' }) {
   if (!filters || !filters.length) return '';
-  // id je Pille — sonst verliert das Entfernen einer Pille den Fokus an <body> (Item 3.3).
-  // CDs interaktive Pille ist .tag-item (volle 44px-Höhenrampe + Fokusring,
-  // tag-item.postcss:7-42) — die frühere 32px-Badge lag unter der Zielgrösse.
+  // One id per pill, or removing one loses focus to <body> (Item 3.3). CD's
+  // interactive pill is .tag-item (full 44px height scale + focus ring,
+  // tag-item.postcss:7-42); the former 32px badge was below the target size.
   const inner = (f) => `<span class="tag-item__inner"><span class="tag-item__text">${escape(f.label)}</span>${icon('Cancel', 'tag-item__icon')}</span>`;
   const pill = (f, i) => f.href != null
     ? `<a class="tag-item tag-item--sm active-filter" id="af-${i}" href="${escape(f.href)}" aria-label="Filter «${escape(f.label)}» entfernen">${inner(f)}</a>`
@@ -422,9 +417,9 @@ function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurückse
   const reset = resetHref != null
     ? `<a class="btn btn--link" href="${escape(resetHref)}"><span class="btn__text">${escape(resetLabel)}</span></a>`
     : `<button type="button" class="btn btn--link" data-reset><span class="btn__text">${escape(resetLabel)}</span></button>`;
-  // Der Abstand über der Pillenreihe liegt in der Komponentenregel
-  // (.active-filters, CD-Rampe pt-4/sm:pt-6/2xl:pt-8 — search.postcss:266-269),
-  // nicht in einer festen mt-4-Utility, die die Rampe bei >=640px festnageln würde.
+  // Spacing above the pill row lives in the component rule (.active-filters, CD
+  // scale pt-4/sm:pt-6/2xl:pt-8 — search.postcss:266-269), not a fixed mt-4
+  // utility that would pin the scale at >=640px.
   return `<div class="active-filters" role="group" aria-label="Aktive Filter">
     <span class="small muted">${escape(label)}</span>
     ${filters.map(pill).join('')}
@@ -432,24 +427,22 @@ function activeFilters({ filters, resetHref, resetLabel = 'Alle Filter zurückse
   </div>`;
 }
 
-// Ansage in die persistente Live-Region (#live in index.html) — für Trefferzahl-,
-// Ansichts- und Seitenwechsel, die sonst still wären (WCAG 4.1.3). Nur Text
-// mutieren, nie den Knoten neu erzeugen, sonst feuert aria-live nicht.
+// Announce into the persistent live region (#live in index.html) for result-count,
+// view, and page changes that would otherwise be silent (WCAG 4.1.3). Mutate
+// text only; never recreate the node, or aria-live will not fire.
 export function announce(msg) {
   const n = document.getElementById('live');
   if (n) n.textContent = msg;
 }
 
-// Ersetzt `mount.innerHTML` und stellt Fokus + Cursorposition wieder her, sofern
-// das aktive Element eine id trägt. Ein voller innerHTML-Austausch lässt
-// document.activeElement sonst auf <body> zurückfallen: im Buchungsformular ging
-// nach jeder Auswahl Fokus UND Schreibmarke verloren und Tab begann wieder am
-// Seitenkopf (WCAG 2.4.3 / 3.2.2). Rückgabe: true, wenn der Fokus zurückgesetzt wurde.
-// Merkt sich Fokus + Schreibmarke und gibt eine Funktion zurück, die beides nach
-// dem Neuaufbau wiederherstellt. Als Paar (statt als rerender(mount, html)), weil
-// die draw()-Funktionen mehrzeilige Template-Literale mit verschachtelten
-// Backticks schreiben und weil der Fokus so auch das erneute Verdrahten in
-// wire() überlebt:
+// Replace `mount.innerHTML` and restore focus + cursor position when the active
+// element has an id. A full innerHTML replacement otherwise drops
+// document.activeElement back to <body>: in the booking form, each selection
+// lost BOTH focus and caret, and Tab restarted at the page header (WCAG 2.4.3 /
+// 3.2.2). Returns true when focus was restored. Capture focus + caret and return
+// a function that restores both after rebuilding. This is a pair (not
+// rerender(mount, html)) because draw() functions write multiline template
+// literals with nested backticks, and focus then also survives rewiring in wire():
 //     const restore = C.preserveFocus(mount);
 //     mount.innerHTML = `…`;  wire();  restore();
 function preserveFocus(mount) {
@@ -461,17 +454,16 @@ function preserveFocus(mount) {
     const el = mount.querySelector('#' + CSS.escape(id));
     if (!el) return false;
     el.focus({ preventScroll: true });
-    if (sel && el.setSelectionRange) { try { el.setSelectionRange(sel[0], sel[1]); } catch { /* nicht alle Feldtypen */ } }
+    if (sel && el.setSelectionRange) { try { el.setSelectionRange(sel[0], sel[1]); } catch { /* Not supported by every field type. */ } }
     return true;
   };
 }
 
 
-// Macht `tabindex` an Scrollbereichen davon abhängig, dass wirklich etwas
-// überläuft — ein unbedingtes tabindex="0" erzeugt auf breiten Viewports einen
-// toten Tab-Stopp. `.table-wrapper` machte das bisher unbedingt; hier ist es
-// gemessen. Ausserdem wird die Region nur dann als Gruppe angesagt, wenn sie
-// wirklich scrollt (Item 3.21).
+// Make `tabindex` on scroll regions conditional on real overflow. An unconditional
+// tabindex="0" creates a dead tab stop on wide viewports; `.table-wrapper` used
+// to add it unconditionally, while this measures it. The region is also
+// announced as a group only when it truly scrolls (Item 3.21).
 const SCROLL_SEL = '[data-scroll-region], .table-wrapper, pre.api-code';
 function wireScrollRegions(root) {
   const scan = () => {
@@ -480,9 +472,9 @@ function wireScrollRegions(root) {
       el.classList.toggle('is-scrollable', scrolls);
       if (scrolls) {
         el.setAttribute('tabindex', '0');
-        // Eine Region/Gruppe OHNE Namen ist für Hilfsmittel schlechter als keine:
-        // sie erscheint als anonymer Knoten im Landmarken-/Gruppenbaum. Nur wer
-        // einen Namen mitbringt, wird auch zur benannten Gruppe erklärt.
+        // An UNNAMED region/group is worse for assistive technology than none: it
+        // appears as an anonymous node in the landmark/group tree. Only elements
+        // that provide a name are declared as named groups.
         const named = el.getAttribute('aria-label') || el.getAttribute('aria-labelledby');
         if (named && !el.hasAttribute('role')) el.setAttribute('role', 'group');
         if (!named) el.removeAttribute('role');
@@ -493,9 +485,9 @@ function wireScrollRegions(root) {
     });
   };
   scan();
-  // Zwei Auslöser: Breitenwechsel (Überlauf entsteht/verschwindet) UND
-  // Nachrendern (mountDataTable, renderMain, Tabwechsel tauschen ganze Teilbäume
-  // aus — die neuen Wrapper waren sonst nie erfasst und blieben ohne tabindex).
+  // Two triggers: width changes (overflow appears/disappears) AND rerenders
+  // (mountDataTable, renderMain, and tab changes replace entire subtrees; new
+  // wrappers were otherwise never discovered and remained without tabindex).
   let pending = 0;
   const queue = () => { if (pending) return; pending = requestAnimationFrame(() => { pending = 0; scan(); }); };
   const mo = typeof MutationObserver === 'function' ? new MutationObserver(queue) : null;
@@ -509,12 +501,11 @@ function wireScrollRegions(root) {
   };
 }
 
-// Fokusfalle für modale Overlays (Lightbox, Chart-Vollbild, Dokumentvorschau):
-// Tab/Shift+Tab bleiben innerhalb von `container`. Gibt eine Abmelde-Funktion
-// zurück. Geteilt über C.trapFocus, damit auch Overlays mit eigener
-// Tastaturlogik (Galerie, Dokumentbetrachter) identisch fangen — drei
-// abweichende Kopien dieser Liste hatten einen Trap-Ausbruch produziert
-// (WCAG 2.4.3 / 2.1.2; Review lb-trap-1).
+// Focus trap for modal overlays (lightbox, full-screen chart, document preview):
+// Tab/Shift+Tab stay within `container`. Returns an unsubscribe function. Shared
+// through C.trapFocus so overlays with their own keyboard logic (gallery,
+// document viewer) trap identically. Three divergent copies of this list had
+// produced an escape from the trap (WCAG 2.4.3 / 2.1.2; review lb-trap-1).
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 function trapFocus(container) {
   const onKey = (e) => {
@@ -576,20 +567,21 @@ function closeOverlays() {
   });
 }
 
-// Kanonisches Modal (CD modal.postcss BEM). `modal()` liefert das Markup, `openModal()`
-// hängt es an document.body, fängt den Fokus, schliesst bei Escape / Backdrop-Klick /
-// [data-modal-close] und gibt den Fokus zurück. Primitive für neue Dialoge; `body`/
-// `footer` sind RAW-HTML (Aufrufer escaped). `size` = sm|md|lg|xl.
+// Canonical modal (CD modal.postcss BEM). `modal()` supplies markup; `openModal()`
+// appends it to document.body, traps focus, closes on Escape / backdrop click /
+// [data-modal-close], and restores focus. Primitive for new dialogs; `body` and
+// `footer` are RAW HTML (caller escapes). `size` = sm|md|lg|xl.
 function modal({ title = '', body = '', footer = '', size = 'md', id = 'modal' } = {}) {
   const titleId = `${id}-title`, bodyId = `${id}-desc`;
-  // Zugänglicher Name «Dialog schliessen» — die Familie benennt überall den
-  // Kontext («Galerie schliessen», «Vorschau schliessen», «Hinweis schliessen»);
-  // das Modal war das einzige nackte «Schliessen» (Design-Review D15).
+  // Accessible name «Dialog schliessen». This family names context everywhere
+  // («Galerie schliessen», «Vorschau schliessen», «Hinweis schliessen»); modal
+  // was the only bare «Schliessen» (design review D15).
   const closeBtn = `<button type="button" class="modal__close" data-modal-close aria-label="Dialog schliessen">${icon('Cancel', 'icon--2xl')}</button>`;
-  // CD Modal.vue:2-27 — aria-modal auf der Hülle; role="dialog" + aria-labelledby
-  // + aria-describedby auf .modal__content; der Körper trägt die referenzierte id.
-  // Der Header existiert IMMER (ohne ihn streckte die Flex-Spalte den Schliessen-
-  // Knopf auf volle Breite); `--with-title` schaltet nur die Verteilung um.
+  // CD Modal.vue:2-27: aria-modal on the wrapper; role="dialog" plus
+  // aria-labelledby and aria-describedby on .modal__content; the body carries
+  // the referenced id. The header ALWAYS exists (without it, the flex column
+  // stretched the close button to full width); `--with-title` changes only
+  // distribution.
   return `<div class="modal modal--${size}" aria-modal="true">
     <div class="modal__backdrop" data-modal-close></div>
     <div class="modal__content" role="dialog"${title ? ` aria-labelledby="${escape(titleId)}"` : ''} aria-describedby="${escape(bodyId)}">
@@ -617,10 +609,10 @@ function openModal(opts = {}) {
     untrap(); el.remove(); releaseOverlayLock();
     if (trigger && trigger.focus) trigger.focus();
   };
-  // stopPropagation, nicht nur preventDefault: ein Modal ist modal. Ohne das
-  // erreichte dasselbe Escape auch die Galerie darunter und schloss BEIDE auf
-  // einmal — der Listener des Modals läuft in der Erfassungsphase und damit
-  // zuerst, sodass ein blosser Wächter «liegt ein Modal darüber?» ins Leere lief.
+  // stopPropagation, not just preventDefault: a modal is modal. Otherwise the
+  // same Escape reached the gallery underneath and closed BOTH at once. The
+  // modal listener runs first in capture phase, so a simple «is a modal above?»
+  // guard was ineffective.
   const onKey = (e) => {
     if (e.key !== 'Escape') return;
     e.preventDefault(); e.stopPropagation();
@@ -633,18 +625,17 @@ function openModal(opts = {}) {
   return close;
 }
 
-// Kartenfuss in der CD-Anatomie (Card.vue:27-37, card.postcss:245-257):
-// `card__footer__info` links, `card__footer__action` rechts. Die Aktion ist im
-// CD ein Icon-only-Outline-Button — der Pfeil ist sichtbar, die Beschriftung
-// steht sr-only (btn.postcss:160-166). Es gibt im CD also gar keinen sichtbaren
-// «Öffnen»-Text.
+// Card footer in CD anatomy (Card.vue:27-37, card.postcss:245-257):
+// `card__footer__info` on the left, `card__footer__action` on the right. In CD,
+// the action is an icon-only outline button; the arrow is visible and the label
+// is sr-only (btn.postcss:160-166). CD therefore has no visible action text.
 //
-// Hier ist die ganze Karte ein <a>, deshalb darf die Aktion kein zweiter Link
-// sein (verschachtelte <a> sind ungültig und erzeugten bisher einen Pseudolink:
-// ein <span class="btn btn--link">Öffnen</span>, das wie ein Bedienelement
-// aussah, aber weder fokussierbar war noch als Link angekündigt wurde). Sie ist
-// deshalb rein dekorativ und für Hilfsmittel ausgeblendet — den zugänglichen
-// Namen und die Aktion trägt der Kartenlink selbst.
+// Here the entire card is an <a>, so the action cannot be a second link (nested
+// <a> elements are invalid and previously produced a pseudo-link: a styled
+// <span> that looked interactive but could not
+// receive focus and was not announced as a link). It is therefore decorative
+// and hidden from assistive technology; the card link itself carries the
+// accessible name and action.
 function cardAction({ external = false } = {}) {
   return `<span class="btn btn--outline btn--icon-only" aria-hidden="true">${icon(external ? 'External' : 'ArrowRight', 'btn__icon icon--base')}</span>`;
 }
@@ -656,15 +647,15 @@ function cardFooter(meta = '', opts = {}) {
   </div>`;
 }
 
-// Icon-Kachel (domain-tile): bildlose Karte mit grossem Icon, Titel, Text und
-// Pfeil-Fuss. Eine Quelle für die Übersichtskarten (Daten, Wissen,
-// Digitalisierung) — bildlose Karten sind card--default (CD, nicht --universal).
+// Icon tile (domain-tile): image-free card with a large icon, title, text, and
+// arrow footer. One source for overview cards (data, knowledge, digitalisation);
+// image-free cards are card--default (CD), not --universal.
 function domainTile({ icon: ic, title, desc, meta = '', href, external = false, titleTag = 'h3' }) {
   const ext = external ? ' target="_blank" rel="noopener external"' : '';
-  // Dasselbe Stretched-Link-Muster wie card(): die Karte ist ein <div>, der
-  // Titel-<a> deckt sie per ::after ab. Im CD ist die Kartenwurzel IMMER ein div
-  // (Card.vue:2-39) — die frühere Ganzkarten-<a> gab Screenreadern Titel +
-  // Beschreibung + Meta als einen langen Linknamen.
+  // Same stretched-link pattern as card(): the card is a <div>, and the title's
+  // <a> covers it through ::after. In CD, the card root is ALWAYS a div
+  // (Card.vue:2-39). The former whole-card <a> gave screen readers title +
+  // description + metadata as one long link name.
   return `<div class="card card--default card--clickable">
     <div class="card__content">
       <div class="card__body">
@@ -677,13 +668,13 @@ function domainTile({ icon: ic, title, desc, meta = '', href, external = false, 
   </div>`;
 }
 
-// Share-Bar (share-bar.postcss) — nach der Brotkrume auf Detailseiten: Drucken
-// und Link kopieren. Rechtsbündig (flex-row-reverse) wie im CD.
+// Share bar (share-bar.postcss) after the breadcrumb on detail pages: print and
+// copy link. Right-aligned (flex-row-reverse), as in CD.
 function shareBar() {
-  // CD: nur Icons (aria-label), keine sichtbaren Beschriftungen, grosse Icons (ShareBar.vue, SvgIcon size="xl").
-  // Der Teilen-Knopf öffnet den CD-Dialog (openShareModal) — vorher kopierte er
-  // still in die Zwischenablage: ohne Rückmeldung, ohne sichtbare URL und ohne
-  // Ausweg, wenn die Clipboard-API blockiert ist.
+  // CD: icons only (aria-label), no visible labels, large icons (ShareBar.vue,
+  // SvgIcon size="xl"). The share button opens the CD dialog (openShareModal).
+  // It previously copied silently to the clipboard, with no feedback, visible
+  // URL, or fallback when the Clipboard API was blocked.
   return `<div class="share-bar">
     <div class="share-container">
       <button class="btn btn--bare share-bar__btn" type="button" onclick="window.print()" aria-label="Seite drucken" title="Drucken">${icon('Printer', 'icon--xl')}</button>
@@ -693,28 +684,27 @@ function shareBar() {
   </div>`;
 }
 
-// «Inhalt teilen» — CDs Muster (detailPageSimple.vue:810-866): ein Modal in der
-// Grösse xs mit einem SCHREIBGESCHÜTZTEN Eingabefeld, das die URL zeigt, darunter
-// `.share-url` mit dem Kopieren-Knopf und einer Live-Region, die den Erfolg
-// meldet. CDs Vorlage führt darüber noch eine Reihe sozialer Netzwerke
-// (Facebook/X/LinkedIn/Xing/WhatsApp); die lassen wir weg — ein internes
-// Bundesportal teilt seine Inhalte nicht auf kommerziellen Plattformen.
+// «Inhalt teilen» — CD pattern (detailPageSimple.vue:810-866): an xs modal with
+// a READ-ONLY input showing the URL, followed by `.share-url` containing the
+// copy button and a live region that reports success. CD's template also lists
+// social networks above it (Facebook/X/LinkedIn/Xing/WhatsApp); omit them because
+// an internal federal portal does not share content on commercial platforms.
 //
-// Warum ein sichtbares Feld statt nur «kopiert»: die Clipboard-API braucht einen
-// sicheren Kontext und kann blockiert sein. Steht die URL im Feld, lässt sie sich
-// immer noch von Hand markieren — die Funktion fällt also nie ganz aus.
+// Why show a field rather than only «copied»: the Clipboard API requires a secure
+// context and may be blocked. With the URL visible in the field, it can still be
+// selected manually, so the function never fails completely.
 function shareUrlBlock(url, { id = 'share-url-input' } = {}) {
   return `<div class="pt-3">
     <label class="sr-only" for="${escape(id)}">Link zu diesem Inhalt</label>
     <input id="${escape(id)}" class="input--outline input--base" type="text" readonly
       value="${escape(url)}" data-share-url>
     <div class="share-url">
-      ${/* CD detailPageSimple.vue:847-853: reiner Beschriftungs-Button (outline,
-            mt-3) — die Vorlage führt KEIN Link-Icon auf dem Kopieren-Knopf. */''}
-      ${/* «Link kopieren» wie die fünf Menü-Einträge und der Toast «Link
-            kopiert.» — CDs Demo sagt «URL Kopieren» (detailPageSimple.vue:850),
-            dessen Binnengrosschreibung aber kein Standarddeutsch ist; bewusste
-            Abweichung, dokumentiert in docs/design-review.md. */''}
+      ${/* CD detailPageSimple.vue:847-853: label-only button (outline, mt-3). The
+            template has NO link icon on the copy button. */''}
+      ${/* «Link kopieren», matching the five menu entries and «Link kopiert.»
+            toast. CD's demo says «URL Kopieren» (detailPageSimple.vue:850), whose
+            internal capitalisation is not standard German. This deliberate
+            deviation is documented in docs/design-review.md. */''}
       <button type="button" class="btn btn--outline mt-3" data-share-copy>
         <span class="btn__text">Link kopieren</span></button>
       <div aria-live="polite" data-share-done></div>
@@ -723,8 +713,8 @@ function shareUrlBlock(url, { id = 'share-url-input' } = {}) {
 }
 
 function openShareModal(url = location.href, title = 'Inhalt teilen') {
-  // CD legt den Inhalt in eine weisse .card (detailPageSimple.vue:817) — die
-  // Kopfzeile steht darüber in weisser Schrift auf dem Scrim.
+  // CD places content in a white .card (detailPageSimple.vue:817); the header
+  // sits above it in white on the scrim.
   const close = openModal({ title, size: 'xs',
     body: `<div class="card card--default"><div class="card__content"><div class="card__body">${shareUrlBlock(url)}</div></div></div>` });
   const root = document.querySelector('.modal--xs') || document;
@@ -733,21 +723,21 @@ function openShareModal(url = location.href, title = 'Inhalt teilen') {
   const done = root.querySelector('[data-share-done]');
   if (input) { input.focus(); input.select(); }
   if (btn) btn.addEventListener('click', () => {
-    // Badge-Anatomie wie CD (Badge.vue:11-12): badge__icon-left vor badge__text.
+    // Badge anatomy as in CD (Badge.vue:11-12): badge__icon-left before badge__text.
     const ok = () => { if (done) done.innerHTML = `<span class="badge badge--success badge--sm mt-3">${icon('Checkmark', 'badge__icon-left')}<span class="badge__text">Link kopiert</span></span>`; };
     const fail = () => { if (done) done.innerHTML = `<span class="badge badge--warning badge--sm mt-3">${icon('WarningCircle', 'badge__icon-left')}<span class="badge__text">Kopieren nicht möglich — bitte von Hand markieren</span></span>`; };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(ok, fail);
     } else if (input) {
-      // Rückfallebene ohne Clipboard-API.
+      // Fallback without the Clipboard API.
       try { input.select(); document.execCommand('copy'); ok(); } catch { fail(); }
     } else fail();
   });
   return close;
 }
 
-// Ein Klick auf einen Teilen-Knopf öffnet den Dialog — einmal global verdrahtet,
-// damit jede Seite mit einer share-bar ihn bekommt, ohne selbst etwas zu tun.
+// Clicking a share button opens the dialog. Wire once globally so every page
+// with a share bar gets it without additional setup.
 export function wireShare(root = document) {
   root.addEventListener('click', (e) => {
     const b = e.target.closest('[data-share]');
@@ -757,28 +747,27 @@ export function wireShare(root = document) {
   });
 }
 
-// Kopfleiste einer Detailseite: Zurück-Link links, Share-Bar rechts — in EINER
-// Zeile (CD: .back-bar + .share-bar auf derselben Höhe nach der Brotkrume).
+// Detail-page top bar: back link on the left, share bar on the right, in ONE row
+// (CD: .back-bar + .share-bar at the same height after the breadcrumb).
 function detailBar({ backHref, backLabel } = {}) {
   return `<div class="detail-bar">${
     backHref ? backLink(backHref, backLabel) : '<span></span>'}${shareBar()}</div>`;
 }
 
-// Vereinheitlichter Detailseiten-Kopf (CD detailPage*-Muster): detailBar (Zurück +
-// Share) und danach ein Hero mit Titel, Lead, Auszeichnungen und optionalem
-// Kontextbild (hero--main-image). Ohne `image` fällt der Hero auf die schmale
-// Variante zurück. `tags`/`image` sind fertiges HTML; `title`/`lead` werden escaped.
-// Kontextbild für den Detailseiten-Hero. Stand wortgleich in services.js und
-// digitalisierung.js — inklusive der `<figure>` ohne Randrücksetzung, die dort
-// den UA-Standardrand (margin:1em 40px) behielt: das Bild füllte seine
-// Rasterspalte nicht und stand links wie rechts 40px eingerückt. Die figcaption
-// trug ausserdem `class="small muted"`, obwohl `figcaption` seit Item 1.6 global
-// von `.legend` erbt — die Klassen setzten also einen fünften Legendenstil.
-// KEINE Bildlegende auf Detailseiten (Nutzerentscheid 2026-07-30): die
-// Unsplash-Platzhalter trugen mal einen «Symbolbild»-Vermerk, mal keinen —
-// für den Prototyp einheitlich ohne. Die Startseite (echtes BBL-Foto mit
-// ©-Vermerk) schreibt ihre figcaption selbst und behält sie. Der `credit`-
-// Parameter bleibt als Schnittstelle bestehen, wird aber nicht gerendert.
+// Standardised detail-page header (CD detailPage* pattern): detailBar (back +
+// share), then a hero with title, lead, badges, and optional contextual image
+// (hero--main-image). Without `image`, the hero falls back to its narrow variant.
+// `tags`/`image` are ready HTML; `title`/`lead` are escaped. The contextual image
+// helper appeared verbatim in services.js and digitalisation.js, including a
+// `<figure>` without margin reset that retained the UA default (margin:1em 40px):
+// its image did not fill the grid column and was inset 40px on both sides. Its
+// figcaption also carried `class="small muted"`, although `figcaption` globally
+// inherits `.legend` since Item 1.6, creating a fifth legend style. NO image
+// caption on detail pages (user decision, 2026-07-30): Unsplash placeholders
+// inconsistently carried a «Symbolbild» notice. Omit it consistently in the
+// prototype. The home page (a real BBL photo with © notice) writes and retains
+// its own figcaption. The `credit` parameter remains in the interface but is
+// not rendered.
 function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt = '', w = 800, ratio = '' } = {}) {
   if (!src && !id) return '';
   const ratioClass = { '16x9': 'photo--16x9', '4x3': 'photo--4x3', '21x9': 'photo--21x9' }[ratio]
@@ -792,8 +781,8 @@ function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = 
         ${lead ? `<p class="hero__description">${escape(lead)}</p>` : ''}
         ${tags ? `<div class="pill-row">${tags}</div>` : ''}
       </div>`;
-  // CD Hero.vue:8 — der Hero ist ein <section>-Band, kein blosses <div>: gleiche
-  // Optik (alle Regeln sind Klassenselektoren), aber Gliederungs-/Outline-Parität.
+  // CD Hero.vue:8: the hero is a <section> band, not a plain <div>. Appearance is
+  // identical (all rules use class selectors), with correct document-outline parity.
   const hero = image
     ? `<section class="hero hero--main-image">${content}<div class="hero__image">${image}</div></section>`
     : `<section class="hero">${content}</section>`;
@@ -801,9 +790,10 @@ function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = 
     ${hero}`;
 }
 
-// Horizontaler Status-Stepper (CD steps / tenant-portal pipeline): Chevron-Segmente
-// — erledigt (grün, Haken) · aktuell (Primärfarbe, Uhr) · offen (grau). `steps` =
-// [{ label }]; `currentIndex` = Index des aktuellen Schritts. Scrollt horizontal auf Mobil.
+// Horizontal status stepper (CD steps / tenant-portal pipeline): chevron segments
+// — done (green, check) · current (primary colour, clock) · open (grey). `steps`
+// = [{ label }]; `currentIndex` is the current step index. Scrolls horizontally
+// on mobile.
 function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = {}) {
   const seg = (st, i) => {
     const state = i < currentIndex ? 'done' : i === currentIndex ? 'active' : 'todo';
@@ -813,19 +803,17 @@ function pipeline(steps, currentIndex = 0, { label = 'Statusverlauf' } = {}) {
       : state === 'active' ? '<span class="sr-only">Aktueller Schritt: </span>' : '';
     return `<li class="pipeline__step pipeline__step--${state}"${state === 'active' ? ' aria-current="step"' : ''}>${glyph}<span>${sr}${escape(st.label)}</span></li>`;
   };
-  // aria-label wandert auf den Wrapper, das <ol> bleibt eine reine Liste (damit
-  // die Listensemantik erhalten bleibt). KEIN `data-scroll-region` mehr: der
-  // Streifen bricht um, statt zu scrollen — es gibt also nichts mehr zu
-  // scrollen und damit auch keinen Tastaturzugang zu einer Scrollfläche.
+  // Move aria-label to the wrapper so <ol> remains a pure list and retains list
+  // semantics. No more `data-scroll-region`: the strip wraps instead of
+  // scrolling, so there is no scroll surface requiring keyboard access.
   return `<div class="pipeline-wrap" role="group" aria-label="${escape(label)}">`
     + `<ol class="pipeline">${steps.map(seg).join('')}</ol></div>`;
 }
 
 
-// Ein Detailseiten-Abschnitt: Titel + Inhalt. `body` ist fertiges HTML.
-// `titleTag` wie bei pageSection — in Registerkarten sitzt der Abschnitt unter
-// einer h2 und braucht eine h3; vorher kopierten zwei Aufrufer dafür das ganze
-// Markup von Hand (Design-Review, pages).
+// Detail-page section: title + content. `body` is ready HTML. `titleTag` works as
+// in pageSection. Inside tabs, the section sits below an h2 and needs an h3; two
+// callers previously copied all markup by hand for this (design review, pages).
 function detailSection({ title, body = '', titleTag = 'h2' }) {
   return `<section class="detail-section">
       <${titleTag} class="detail-section__title">${escape(title)}</${titleTag}>
@@ -833,10 +821,10 @@ function detailSection({ title, body = '', titleTag = 'h2' }) {
     </section>`;
 }
 
-// CD-Akkordeon (accordion.postcss): ul > li > h3 > button (.accordion__title +
-// optionale .accordion__meta + .accordion__arrow) + .accordion__drawer >
-// .accordion__content. `items` = [{ title, meta?, body, open? }]; `title` wird
-// escaped, `meta`/`body` sind fertiges HTML. Verdrahtung über wireAccordion().
+// CD accordion (accordion.postcss): ul > li > h3 > button (.accordion__title +
+// optional .accordion__meta + .accordion__arrow) + .accordion__drawer >
+// .accordion__content. `items` = [{ title, meta?, body, open? }]; `title` is
+// escaped, while `meta`/`body` are ready HTML. Wired through wireAccordion().
 function accordion(items, { id = 'acc' } = {}) {
   const li = ({ title, meta = '', body = '', open = false }, i) => {
     const bid = `${id}-b-${i}`, pid = `${id}-p-${i}`;
@@ -855,8 +843,8 @@ function accordion(items, { id = 'acc' } = {}) {
   return `<ul class="accordion" id="${id}-acc">${items.map(li).join('')}</ul>`;
 }
 
-// Klick-Verdrahtung für ein oder mehrere Akkordeons in `root` (aria-expanded +
-// Drawer ein-/ausblenden). Ersetzt die je Seite kopierte Toggle-Logik.
+// Click wiring for one or more accordions in `root` (aria-expanded + show/hide
+// drawer). Replaces toggle logic copied per page.
 function wireAccordion(root) {
   root.querySelectorAll('.accordion__button').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -864,11 +852,11 @@ function wireAccordion(root) {
       btn.setAttribute('aria-expanded', String(!open));
       const drawer = root.querySelector('#' + CSS.escape(btn.getAttribute('aria-controls')));
       if (!drawer) return;
-      // CD Accordion.js:27-43 — max-height wird animiert (300ms ease-out, Regel
-      // am .accordion__drawer); [hidden] fällt erst nach `transitionend`, damit
-      // Messung und Übergang greifen. `_accSeq` entwertet den Abschluss-Handler,
-      // wenn ein schneller Gegenklick die Richtung wechselt. Bei reduced-motion
-      // ist die Dauer ~0 (tokens.css), transitionend feuert trotzdem.
+      // CD Accordion.js:27-43: animate max-height (300ms ease-out on
+      // .accordion__drawer). Apply [hidden] only after `transitionend` so
+      // measurement and transition work. `_accSeq` invalidates the completion
+      // handler if a quick counter-click reverses direction. With reduced motion,
+      // duration is ~0 (tokens.css), but transitionend still fires.
       const seq = (drawer._accSeq = (drawer._accSeq || 0) + 1);
       const done = (fn) => {
         const te = (e) => {
@@ -893,15 +881,15 @@ function wireAccordion(root) {
 }
 
 // --- Tabs (tab.postcss) ------------------------------------------------------
-// Eine APG-Tab-Implementierung (roving tabindex, Klick + Pfeil/Home/End) statt
-// fünf leicht abweichender Kopien — davon eine ohne Tastatur (projects). `items`
-// = [{ id, label, icon? }]; `id` ist ein Entwickler-Slug (dient zugleich als
-// Selektor-/aria-Ziel, daher nicht escaped), `label` wird escaped.
+// One APG tabs implementation (roving tabindex, click + arrow/Home/End) instead
+// of five slightly divergent copies, one without keyboard support (projects).
+// `items` = [{ id, label, icon? }]; `id` is a developer slug that also serves as
+// selector/ARIA target and is therefore not escaped; `label` is escaped.
 //
-// tabBar rendert nur die Registerkarten-Leiste. `panelId` verlinkt ALLE Tabs auf
-// EIN gemeinsames Panel (Einzel-Panel-/Neurender-Muster, z. B. dataportal); ohne
-// `panelId` zeigt jeder Tab auf sein eigenes `${idPrefix}-panel-${id}` (Mehr-
-// Panel-Muster, s. tabPanels).
+// tabBar renders only the tab bar. `panelId` links ALL tabs to ONE shared panel
+// (single-panel/rerender pattern, for example data portal). Without `panelId`,
+// each tab points to its own `${idPrefix}-panel-${id}` (multi-panel pattern; see
+// tabPanels).
 function tabBar({ items, active, idPrefix = 'tab', ariaLabel = '', panelId = '', controlsClass = '' } = {}) {
   const btns = items.map((t) => {
     const on = t.id === active;
@@ -915,13 +903,13 @@ function tabBar({ items, active, idPrefix = 'tab', ariaLabel = '', panelId = '',
     + ` role="tablist"${ariaLabel ? ` aria-label="${escape(ariaLabel)}"` : ''}>${btns}</div></div>`;
 }
 
-// Mehr-Panel-Markup (Pattern A): ein .tab__container je Tab, inaktive `hidden`.
-// `render(id)` liefert das fertige Panel-HTML. Für das Einzel-Panel-Muster stellt
-// der Aufrufer sein eigenes Panel und lässt wireTabs den Inhalt neu rendern.
-// `heading: true` stellt jedem Panel eine sr-only-<h2> mit der Tab-Beschriftung
-// voran. `aria-labelledby` benennt das Panel nur, sobald der Fokus darin liegt —
-// für die Überschriftennavigation (WCAG 2.4.10) fehlte auf reinen Tab-Seiten
-// jede Stufe zwischen der <h1> und den <h3> im Panelinhalt.
+// Multi-panel markup (Pattern A): one .tab__container per tab, inactive ones
+// `hidden`. `render(id)` returns ready panel HTML. For the single-panel pattern,
+// the caller supplies its own panel and lets wireTabs rerender content.
+// `heading: true` prefixes every panel with an sr-only <h2> using the tab label.
+// `aria-labelledby` names the panel once focus is inside it. For heading
+// navigation (WCAG 2.4.10), tab-only pages previously had no level between <h1>
+// and the <h3> elements in panel content.
 function tabPanels({ items, active, idPrefix = 'tab', render, heading = false }) {
   return items.map((t) =>
     `<div class="tab__container" role="tabpanel" id="${idPrefix}-panel-${t.id}"`
@@ -931,11 +919,11 @@ function tabPanels({ items, active, idPrefix = 'tab', render, heading = false })
     + `${render(t.id)}</div>`).join('');
 }
 
-// Verdrahtet die Tab-Leiste(n) in `root`: Klick + Pfeiltasten/Home/End, roving
-// tabindex, aria-selected. Vorhandene [data-panel]-Panels werden automatisch
-// umgeblendet (Pattern A); `onSelect(id)` rendert bei Einzel-Panel/Neurender den
-// Inhalt (Pattern B). `syncHash(id)` spiegelt optional den Tab in die Hash-Query.
-// Fokus wird nach `onSelect` per Neuabfrage gesetzt, überlebt also ein Neurender.
+// Wire tab bars in `root`: click + arrow keys/Home/End, roving tabindex, and
+// aria-selected. Existing [data-panel] panels switch automatically (Pattern A);
+// `onSelect(id)` renders content for single-panel/rerender use (Pattern B).
+// `syncHash(id)` optionally mirrors the tab into the hash query. Focus is set by
+// querying again after `onSelect`, so it survives a rerender.
 function wireTabs(root, { onSelect, syncHash } = {}) {
   const btns = [...root.querySelectorAll('.tab__control')];
   const panels = [...root.querySelectorAll('[data-panel]')];
@@ -953,9 +941,9 @@ function wireTabs(root, { onSelect, syncHash } = {}) {
     if (single.length === 1 && activeBtn) single[0].setAttribute('aria-labelledby', activeBtn.id);
     if (onSelect) onSelect(id);
     if (syncHash) syncHash(id);
-    // Fokus per Neuabfrage — überlebt ein Neurender durch onSelect; für Maus-
-    // Klicks unsichtbar (:focus-visible greift nur bei Tastatur), für die Tastatur
-    // korrekt (roving). No-op, wenn die Leiste unverändert bleibt.
+    // Query again for focus so it survives an onSelect rerender. It stays
+    // invisible for mouse clicks (:focus-visible applies only for keyboard),
+    // and correct for keyboard roving. No-op when the bar remains unchanged.
     (root.querySelector(`.tab__control[data-tab="${id}"]`) || activeBtn)?.focus();
   };
   btns.forEach((btn, i) => {
@@ -969,19 +957,19 @@ function wireTabs(root, { onSelect, syncHash } = {}) {
       if (ni !== null) { e.preventDefault(); activate(btns[ni].dataset.tab); }
     });
   });
-  // Ein per `?tab=` tief verlinkter Tab kann in einer scrollenden Leiste ausserhalb
-  // des Sichtfelds liegen — dann sieht der Nutzer eine Leiste, in der scheinbar
-  // kein Tab aktiv ist (Item 3.18). `nearest` scrollt nur, wenn nötig.
+  // A tab deep-linked through `?tab=` may sit outside the viewport in a scrolling
+  // bar, making the bar appear to have no active tab (Item 3.18). `nearest`
+  // scrolls only when necessary.
   const cur = root.querySelector('.tab__control--active');
   if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   return { activate };
 }
 
 // --- Notifications (notification.postcss) ------------------------------------
-// Einmalige, delegierte Verdrahtung des Schliessen-Knopfs aller Notifications —
-// Hausregel «kein inline onclick» (vgl. menu()); die Ansage über die persistente
-// #live-Region entspricht mountBanner («Hinweis geschlossen.», CD Notification.vue
-// bindet den Handler ebenfalls programmatisch).
+// One delegated wiring for every notification close button. House rule: no
+// inline onclick (see menu()). Announcement through the persistent #live region
+// matches mountBanner («Hinweis geschlossen.»); CD Notification.vue also binds
+// the handler programmatically.
 let notifCloseWired = false;
 function ensureNotificationClose() {
   if (notifCloseWired || typeof document === 'undefined') return;
@@ -998,11 +986,11 @@ function ensureNotificationClose() {
 
 // variant: info | success | warning | error | hint | alert
 export function notification(text, variant = 'info', iconName = 'InfoCircle', opts = {}) {
-  // `live: true` NUR für Meldungen, die als Ergebnis einer Aktion neu eintreffen.
-  // Vorher trug jede Notification eine Live-Rolle — auch die statischen Hinweise,
-  // die schon beim Laden im Markup stehen. Screenreader lasen die Seite dann als
-  // Folge von Statusmeldungen vor, und in einer neu erzeugten Region feuert
-  // aria-live ohnehin nicht (Item 3.9).
+  // `live: true` ONLY for messages arriving as the result of an action. Every
+  // notification previously carried a live role, including static notices
+  // already present at load. Screen readers then read the page as a sequence of
+  // status messages, and aria-live does not fire in a newly created region
+  // anyway (Item 3.9).
   const role = opts.live ? ((variant === 'error' || variant === 'alert') ? 'alert' : 'status') : '';
   if (opts.dismissible) ensureNotificationClose();
   const close = opts.dismissible
@@ -1012,27 +1000,27 @@ export function notification(text, variant = 'info', iconName = 'InfoCircle', op
   return `<div class="${cls}"${role ? ` role="${role}"` : ''}>${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div>${close}</div>`;
 }
 
-// Der Abschluss eines eingereichten Vorgangs. Vier Formular-Apps hatten ihn von
-// Hand gebaut — Erfolgsmeldung mit Referenz, Dankesüberschrift, Erklärsatz,
-// Knopfreihe — und liefen genau dort auseinander, wo es zählt: space-request
-// schrieb sein `<div class="notification notification--success">` selbst und
-// verlor damit `.notification__content`, also die Textbreitenbegrenzung;
-// workspace nutzt eine h2 (richtig, die Seite hat schon eine h1), die anderen
-// eine h1; die Knöpfe waren dreimal `btn--outline`, einmal `btn--filled`.
+// Completion state for a submitted case. Four form apps hand-built it: success
+// message with reference, thank-you heading, explanatory sentence, and action
+// row. They diverged exactly where it matters: space-request wrote its own
+// `<div class="notification notification--success">` and lost
+// `.notification__content`, the text-width constraint. workspace uses an h2
+// (correct because the page already has an h1), while the others use h1. Buttons
+// were `btn--outline` three times and `btn--filled` once.
 //
-//   lead     Satz in der Erfolgsmeldung («Antrag eingereicht.»)
-//   title    Überschrift · `heading:'h2'`, wo die Seite ihre h1 schon hat
-//   text     Erklärsatz darunter
-//   extra    optionaler HTML-Block dazwischen (Merkmalliste, Zusatzhinweis)
-//   actions  [{ href | id, label, variant, icon }] — erste Aktion gefüllt
+//   lead     sentence in the success message («Antrag eingereicht.»)
+//   title    heading; use `heading:'h2'` where the page already has an h1
+//   text     explanatory sentence below
+//   extra    optional HTML block between them (attribute list, extra notice)
+//   actions  [{ href | id, label, variant, icon }] — first action filled
 function processDone({ instance, lead, title, heading = 'h1', text,
   extra = '', actions = [] } = {}) {
-  const knopf = (a, i) => {
+  const button = (a, i) => {
     const cls = `btn btn--${a.variant || (i === 0 ? 'filled' : 'outline')}${a.icon ? ' btn--icon-right' : ''}`;
-    const inhalt = `${a.icon ? icon(a.icon, 'btn__icon') : ''}<span class="btn__text">${escape(a.label)}</span>`;
+    const content = `${a.icon ? icon(a.icon, 'btn__icon') : ''}<span class="btn__text">${escape(a.label)}</span>`;
     return a.href
-      ? `<a class="${cls}" href="${escape(a.href)}">${inhalt}</a>`
-      : `<button class="${cls}" type="button" id="${escape(a.id)}">${inhalt}</button>`;
+      ? `<a class="${cls}" href="${escape(a.href)}">${content}</a>`
+      : `<button class="${cls}" type="button" id="${escape(a.id)}">${content}</button>`;
   };
   return `
     ${notification(`<strong>${escape(lead)}</strong> Ihre Referenz: <strong>${escape(instance.reference)}</strong>`,
@@ -1040,13 +1028,13 @@ function processDone({ instance, lead, title, heading = 'h1', text,
     <${heading} tabindex="-1" class="mt-6">${escape(title)}</${heading}>
     <p class="lead">${text}</p>
     ${extra}
-    ${actions.length ? `<div class="row mt-6">${actions.map(knopf).join('')}</div>` : ''}`;
+    ${actions.length ? `<div class="row mt-6">${actions.map(button).join('')}</div>` : ''}`;
 }
 
-// CD step-indicator.postcss:5-24 / StepIndicator.vue:2-9 — EINE nummerierte
-// Schrittanzeige statt der zwei hand-gerollten Kopien in space-request und
-// transaction (Item 3.10). Liefert CDs `.step__indicator`-Wrapper, auf den die
-// Union-Selektoren aus Item 1.17d/2.3 schon vorbereitet sind.
+// CD step-indicator.postcss:5-24 / StepIndicator.vue:2-9 — ONE numbered step
+// indicator instead of two hand-rolled copies in space-request and transaction
+// (Item 3.10). Supplies CD's `.step__indicator` wrapper, which the union selectors
+// from Item 1.17d/2.3 already support.
 function stepIndicator(labels, current = 0, { label = 'Fortschritt' } = {}) {
   const li = (l, i) => {
     const done = i < current, active = i === current;
@@ -1059,8 +1047,8 @@ function stepIndicator(labels, current = 0, { label = 'Fortschritt' } = {}) {
   return `<ol class="steps" aria-label="${escape(label)}">${labels.map(li).join('')}</ol>`;
 }
 
-// Blendet einen Fehler oben in der Seite ein und sagt ihn an — für clientseitige
-// Aktionsfehler (z. B. localStorage-Speichern fehlgeschlagen, code-review C1).
+// Display and announce an error at the top of the page for client-side action
+// failures (for example, localStorage persistence failed; code review C1).
 function flashError(mount, msg) {
   announce(msg);
   const host = mount && mount.querySelector('.container');
@@ -1070,9 +1058,9 @@ function flashError(mount, msg) {
 // CD back button. Anatomy copied from the design system's own detail pages
 // (app/pages/detailPressRelease.vue, detailPublicationCatalog.vue):
 //   <Btn variant="outline" size="sm" icon="ArrowLeft" iconPos="left"
-//        label="Zurück" class="btn--back" />
-// The visible label is always «Zurück»; `label` names the target for screen
-// readers ("Zurück zu Datenbezug"). `.back-link-row` clears the CD float.
+//        class="btn--back" />
+// The visible label is always the back action; `label` names its target for
+// screen readers. `.back-link-row` clears the CD float.
 function backLink(href, label) {
   return `<div class="back-link-row"><a class="btn btn--outline btn--sm btn--icon-left btn--back" href="${escape(href)}"${
     label ? ` aria-label="Zurück zu ${escape(label)}"` : ''}>${
@@ -1101,8 +1089,8 @@ export function select(o = {}) {
 
   const opts = (o.options || []).map((x) => {
     const v = (x && typeof x === 'object') ? x.value : x;
-    // Options-Schlüssel ist einheitlich `label` — der frühere `text`-Zweitweg
-    // hatte nur noch fault-report als Konsument und ist migriert (Review B14).
+    // Option key is consistently `label`. Only fault-report still consumed the
+    // former secondary `text` path, and it has been migrated (review B14).
     const t = (x && typeof x === 'object') ? x.label : x;
     const sel = String(v) === String(o.value == null ? '' : o.value) ? ' selected' : '';
     const dis = (x && typeof x === 'object' && x.disabled) ? ' disabled' : '';
@@ -1121,22 +1109,21 @@ export function select(o = {}) {
       described ? ` aria-describedby="${escape(described)}"` : ''}${o.attrs ? ' ' + o.attrs : ''}>${opts}</select>
     <div class="select__icon">${CHEVRON_SVG}</div>
   </div>
-  ${/* KEINE Live-Rolle an der Feldmeldung: jede Formularseite rendert eine
-        errorSummary (role="alert") als die EINE Statusmeldung (WCAG 4.1.3) —
-        mit role am Feld wurde derselbe Fehler zwei- bis dreimal angesagt. CD
-        Input.vue gibt der Meldung ebenfalls keine Live-Rolle; aria-describedby
-        liest sie am Feld weiterhin vor. Der frühere `quiet`-Parameter hatte
-        null Aufrufer und ist entfallen (Design-Review B9). */''}
+  ${/* NO live role on the field message: every form page renders one errorSummary
+        (role="alert") as its ONE status message (WCAG 4.1.3). A role on the field
+        announced the same error two or three times. CD Input.vue likewise gives
+        the message no live role; aria-describedby still reads it with the field.
+        The former `quiet` parameter had zero callers and was removed (design
+        review B9). */''}
   ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}">${escape(o.message)}</div>` : ''}
 </div>`;
 }
 
 
-// Fehlerübersicht am Formularkopf (WCAG 3.3.1/3.3.3). Bisher gab es nur
-// Feldmeldungen: bei einem mehrseitigen Behördenformular muss der Nutzer nach
-// einer fehlgeschlagenen Absendung an einer Stelle sehen, WAS zu korrigieren ist,
-// und direkt dorthin springen können. `errors` ist nach DOM-id verschlüsselt,
-// damit die Sprungmarken auflösen; `labels` liefert die Klartextnamen.
+// Error summary at the form header (WCAG 3.3.1/3.3.3). Previously only field
+// messages existed. After a failed submission of a multi-page government form,
+// the user must see in one place WHAT needs correction and be able to jump there.
+// `errors` is keyed by DOM id so anchors resolve; `labels` supplies plain names.
 function errorSummary({ errors = {}, labels = {}, id = 'err-summary' } = {}) {
   const ids = Object.keys(errors);
   if (!ids.length) return '';
@@ -1152,15 +1139,15 @@ function errorSummary({ errors = {}, labels = {}, id = 'err-summary' } = {}) {
     </div></div>`;
 }
 
-// Die CD-Auswahlhülle: `<select>` plus das Chevron als Overlay. `CHEVRON_SVG`
-// steht als Modulkonstante oben — der frühere Export `chevron` war nur ein
-// Alias darauf und hatte keinen einzigen Aufrufer.
+// CD select wrapper: `<select>` plus an overlaid chevron. `CHEVRON_SVG` is the
+// module constant above. The former `chevron` export merely aliased it and had
+// no callers.
 function selectBox(inner, extraCls = '', style = '') {
   return `<div class="select${extraCls ? ' ' + extraCls : ''}"${style ? ` style="${style}"` : ''}>${inner}<div class="select__icon">${CHEVRON_SVG}</div></div>`;
 }
 
-// Verdrahtet die Sprungmarken der Fehlerübersicht und setzt den Fokus auf ihre
-// Überschrift — ohne das landet der Fokus nach einem Fehlversuch auf <body>.
+// Wire error-summary anchors and focus its heading; otherwise focus lands on
+// <body> after an unsuccessful attempt.
 function wireErrorSummary(mount, { focus = true } = {}) {
   mount.querySelectorAll('[data-err-link]').forEach((a) => a.addEventListener('click', (e) => {
     e.preventDefault();
@@ -1184,9 +1171,9 @@ function field(o = {}) {
   const described = [hintId, msgId].filter(Boolean).join(' ');
   const lblCls = [o.required ? 'text--asterisk' : '', o.hideLabel ? 'sr-only' : ''].filter(Boolean).join(' ');
   const lbl = lblCls ? ` class="${lblCls}"` : '';
-  // `name` fehlte durchgängig (ein Formularfeld ohne name ist für Autofill und für
-  // jedes echte Backend unsichtbar); `autocomplete`/`inputmode` steuern auf dem
-  // Handy Tastatur und Vorschläge (Item 3.11).
+  // `name` was missing throughout (a field without name is invisible to autofill
+  // and any real backend). `autocomplete`/`inputmode` control the mobile keyboard
+  // and suggestions (Item 3.11).
   const attrs = ` name="${escape(o.name || id)}"`
     + `${o.required ? ' required aria-required="true"' : ''}`
     + `${o.autocomplete ? ` autocomplete="${escape(o.autocomplete)}"` : ''}`
@@ -1194,27 +1181,27 @@ function field(o = {}) {
     + `${isError ? ' aria-invalid="true"' : ''}`
     + `${described ? ` aria-describedby="${escape(described)}"` : ''}`;
   const cls = `input--outline input--base${isError ? ' input--error' : ''}`;
-  // Der Hinweis steht VOR dem Feld (man braucht ihn beim Ausfüllen, nicht danach)
-  // und ist ein Absatz, keine Pille; nur die Fehlermeldung bleibt eine Badge mit
-  // role="alert" — vorher trugen beide dieselbe Optik und der Hinweis erschien
-  // unterhalb des Feldes (Item 3.12).
+  // The hint appears BEFORE the field (needed while completing it, not after) and
+  // is a paragraph rather than a pill. Only the error message remains a badge
+  // with role="alert". Previously both looked alike and the hint appeared below
+  // the field (Item 3.12).
   return `<div class="form__group__input">
     <label for="${escape(id)}"${lbl}>${escape(o.label)}${o.required ? '<span class="sr-only"> Pflichtfeld</span>' : ''}</label>
     ${o.hint ? `<p class="form__group__hint" id="${escape(hintId)}">${escape(o.hint)}</p>` : ''}
     ${o.control(cls, attrs)}
-    ${/* Keine Live-Rolle — wie bei select(): die errorSummary ist die eine
-          Statusmeldung (WCAG 4.1.3, Design-Review B9). */''}
+    ${/* No live role. As with select(), errorSummary is the single status
+          message (WCAG 4.1.3, design review B9). */''}
     ${o.message ? `<div class="badge badge--sm badge--${escape(msgType)}" id="${escape(msgId)}">${escape(o.message)}</div>` : ''}
   </div>`;
 }
 
-// Formularwert aus `mount` lesen (ersetzt das 3× kopierte lokale val()); '' wenn
-// das Feld fehlt.
+// Read a form value from `mount` (replaces three copied local val() functions);
+// return '' when the field is absent.
 function val(mount, id) { const el = mount.querySelector('#' + id); return el ? el.value : ''; }
 
-// Mehrere Felder in ein Objekt lesen. `map` = { zielSchlüssel: feldId }. Fehlende
-// Felder liefern ''; Coercion (Zahlen) und `|| alt`-Fallbacks macht der Aufrufer.
-// Typisch: Object.assign(state, C.readForm(mount, { buildingId: 'bld', ort: 'ort' })).
+// Read several fields into an object. `map` = { targetKey: fieldId }. Missing
+// fields return ''; callers handle coercion (numbers) and `|| fallback` logic.
+// Typical: Object.assign(state, C.readForm(mount, { buildingId: 'bld', 'ort': 'ort' })).
 function readForm(mount, map) {
   const out = {};
   for (const [key, id] of Object.entries(map)) out[key] = val(mount, id);
@@ -1222,12 +1209,12 @@ function readForm(mount, map) {
 }
 
 // --- Download items (download-item.postcss) ----------------------------------
-// Eine CD-download-item-Zeile für alle Fälle (Dokument, App-Einstieg, Ressource,
-// Anhang). `external` bezeichnet ein fremdes System; `newWindow` kann unabhängig
-// davon auch einen portalinternen App-Einstieg in einem neuen Tab öffnen. `#`
-// degradiert zu einem deaktivierten Ersatz. `note`/`desc` sind austauschbar
-// (Datenobjekte tragen `desc`, App-Einträge `note`); `icon` überschreibt das
-// Standardsymbol. `wrapLi` umschliesst mit `<li>` für `.download-items`.
+// One CD download-item row for every case (document, app entry, resource,
+// attachment). `external` identifies another system; independently, `newWindow`
+// can open a portal-internal app entry in a new tab. `#` degrades to a disabled
+// substitute. `note`/`desc` are interchangeable (data objects carry `desc`, app
+// entries `note`); `icon` overrides the default symbol. `wrapLi` wraps the row in
+// `<li>` for `.download-items`.
 function downloadItem({ href, title, note = '', desc = '', meta = [], icon: iconName,
   external = false, newWindow = false, heading = 'h3', wrapLi = false, download = false } = {}) {
   const titleTag = /^h[2-6]$/.test(heading) ? heading : 'h3';
@@ -1252,16 +1239,15 @@ function downloadItem({ href, title, note = '', desc = '', meta = [], icon: icon
   return wrapLi ? `<li>${el}</li>` : el;
 }
 
-// CD-Kontaktkasten (.box): Name/Rolle/E-Mail(mailto)/Telefon, alle escaped —
-// ersetzt die je Seite kopierte Kontaktmarkup und schliesst die unescapten
-// mailto-Stellen (code-review B4).
+// CD contact box (.box): name/role/email (mailto)/phone, all escaped. Replaces
+// contact markup copied per page and closes unescaped mailto sites (code review B4).
 function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) {
   if (!contact) return '';
-  // DIESELBE Anatomie wie contactCard (dl.kv--stack): der Kontakt-Slot der
-  // Detailseiten trug zwei Typografien für denselben Zweck — Zeilenliste hier,
-  // beschriftete kv-Zeilen dort (Design-Review B22). dt = Rolle; `unit` =
-  // Direktionsbereich nach dem BBL-Organigramm («Portfoliomanagement» sagt
-  // wenig, «Direktionsbereich Bauten — Portfoliomanagement» verortet).
+  // SAME anatomy as contactCard (dl.kv--stack). Detail-page contact slots used
+  // two typographies for the same purpose: line list here, labelled key-value
+  // rows there (design review B22). dt = role; `unit` = directorate according to
+  // the BBL organisation chart («Portfoliomanagement» says little, while
+  // «Direktionsbereich Bauten — Portfoliomanagement» provides context).
   const dd = [
     contact.name ? `<strong>${escape(contact.name)}</strong>` : '',
     contact.unit ? escape(contact.unit) : '',
@@ -1275,30 +1261,29 @@ function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) {
     </dl></div>`;
 }
 
-// --- Randspalte der Detailansichten -----------------------------------------
-// Zwei Karten, die auf jeder Objekt-Detailseite dasselbe leisten: was kann ich
-// hier auslösen, und wen frage ich. Sie stehen als Bausteine hier, damit
-// Liegenschafteninventar und Mietendenportal nicht zwei Fassungen desselben
-// Kastens pflegen — die Randspalte ist genau die Stelle, an der ein Nutzer
-// Wiedererkennung erwartet.
+// --- Detail-view side column ------------------------------------------------
+// Two cards that serve the same purpose on every property detail page: what can
+// I start here, and whom can I ask? They live here as building blocks so the
+// property inventory and tenant portal do not maintain two versions of the same
+// box. The side column is exactly where users expect familiarity.
 
-// Altvertrag: `links` = [{ label, href }]. Die Zeilen tragen dasselbe
-// `.fp-svc`-Raster wie die Kurzwege im Raumdetail: Beschriftung, Folgepfeil.
+// Legacy contract: `links` = [{ label, href }]. Rows use the same `.fp-svc` grid
+// as shortcuts in room detail: label, follow arrow.
 //
-// Der strukturierte Vertrag `items` ergänzt echte Links und Buttons sowie
-// noch nicht verfügbare Übergaben:
+// The structured `items` contract adds real links and buttons, plus unavailable
+// handoffs:
 //   { type:'link',     label, href, description?, icon?, id? }
 //   { type:'button',   label,       description?, icon?, id?, disabled? }
 //   { type:'handoff',  label,       description?, icon?, id? }
-// `disabled` ist ein Alias für `handoff`. Die Beschreibung bleibt sichtbar,
-// damit ein nicht verfügbares Ziel nicht wie ein defekter Link wirkt.
+// `disabled` aliases `handoff`. The description remains visible so an unavailable
+// destination does not look like a broken link.
 //
-// OHNE führendes Symbol: die Symbole standen für die verlinkte Dienstleistung
-// («Wrench» für Störung melden, «File» für Dokumente) und wiederholten damit
-// nur die Beschriftung daneben — ein Symbol muss etwas beitragen, was der Text
-// nicht schon sagt. Der Pfeil rechts bleibt: er sagt, dass die Zeile wegführt.
-// `icon` im alten `links`-Vertrag wird weiterhin ignoriert: bestehende
-// Inventar-Aufrufer behalten damit den Folgepfeil und ihr bisheriges Bild.
+// WITHOUT a leading symbol. Symbols represented the linked service («Wrench» for
+// fault reporting, «File» for documents) and merely repeated the adjacent label;
+// a symbol must add something the text does not already say. The arrow remains
+// on the right because it indicates that the row leads away. `icon` in the old
+// `links` contract remains ignored, so existing inventory callers retain their
+// follow arrow and current appearance.
 const ACTION_ICON = /^[A-Za-z][A-Za-z0-9_-]*$/;
 function actionCardRow(item = {}) {
   let type = ['link', 'button', 'handoff', 'disabled'].includes(item.type) ? item.type : 'disabled';
@@ -1326,11 +1311,11 @@ function actionCardRow(item = {}) {
 }
 
 function actionCard({ title = 'Aktionen', lead = '', links = [], items } = {}) {
-  // `items` ist absichtlich der Primärvertrag, sobald es als Liste übergeben
-  // wird. So kann ein Aufrufer mit `items:[]` die Karte explizit ausblenden.
-  // Legacy-Links werden auf die neue Form normalisiert; ihre historischen
-  // `icon`-Felder gelangen dabei nicht in die Darstellung (siehe oben), der
-  // explizite Fenstervertrag bleibt jedoch erhalten.
+  // `items` deliberately becomes the primary contract whenever passed as an
+  // array, allowing a caller to hide the card explicitly with `items:[]`.
+  // Legacy links are normalised to the new shape; their historical `icon` fields
+  // do not reach rendering (see above), while the explicit window contract is
+  // preserved.
   const rows = Array.isArray(items)
     ? items
     : (Array.isArray(links) ? links : []).map((link) => ({
@@ -1344,9 +1329,9 @@ function actionCard({ title = 'Aktionen', lead = '', links = [], items } = {}) {
   </div>`;
 }
 
-// `contacts` = [{ label, name, email, phone }]. `name` entfällt, wo er die
-// Rolle nur wiederholt — «Portfoliomanagement / Portfoliomanagement» las sich
-// wie ein Anzeigefehler.
+// `contacts` = [{ label, name, email, phone }]. Omit `name` where it merely
+// repeats the role; «Portfoliomanagement / Portfoliomanagement» looked like a
+// display error.
 function contactCard({ title = 'Ansprechpersonen', contacts = [] } = {}) {
   if (!contacts.length) return '';
   return `<div class="box">
@@ -1377,12 +1362,12 @@ function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation
   if (totalPages <= 1) return '';
   const control = (target, text, iconName, disabled, key) => {
     const inner = `${icon(iconName, 'btn__icon')}<span class="btn__text">${text}</span>`;
-    const id = inputId ? ` id="${escape(inputId)}-${key}"` : '';   // Fokus-Wiederherstellung (Item 3.3)
-    // Echte deaktivierte <button> wie CDs PaginationItem.vue — ein <span> mit
-    // aria-label ist role=generic (Name verboten) und für SR unzuverlässig.
+    const id = inputId ? ` id="${escape(inputId)}-${key}"` : '';   // Focus restoration (Item 3.3).
+    // Real disabled <button>, as in CD PaginationItem.vue. A <span> with
+    // aria-label has role=generic (name prohibited) and is unreliable for SR.
     if (disabled) return `<li><button type="button" class="btn btn--outline btn--icon-only" disabled aria-label="${text}">${inner}</button></li>`;
-    // Ohne `href`-Builder: lokaler Zustand statt Hash-Navigation (C.mountDataTable)
-    // — dieselbe CD-Anatomie, aber als <button data-page>.
+    // Without an `href` builder: local state rather than hash navigation
+    // (C.mountDataTable), using the same CD anatomy as <button data-page>.
     return href
       ? `<li><a class="btn btn--outline btn--icon-only"${id} href="${escape(href(target))}" aria-label="${text}">${inner}</a></li>`
       : `<li><button type="button" class="btn btn--outline btn--icon-only"${id} data-page="${target}" aria-label="${text}">${inner}</button></li>`;
@@ -1390,9 +1375,9 @@ function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation
   return `
     <nav class="pagination-wrap${align === 'right' ? ' pagination-wrap--right' : ''}" aria-label="${escape(label)}">
       <div class="pagination">
-        ${/* EIN Name je Bedienelement (CD Pagination.vue führt genau eine Quelle):
-              das sr-only-Label benennt das Feld — ein zusätzliches aria-label
-              würde es stumm überschreiben und könnte auseinanderdriften. */''}
+        ${/* ONE name per control (CD Pagination.vue uses exactly one source): the
+              sr-only label names the field. An additional aria-label would
+              silently override it and could drift. */''}
         <label class="sr-only" for="${inputId}">Seite</label>
         <input id="${inputId}" class="pagination__input input--outline input--base" type="text" inputmode="numeric"
           value="${page}" autocomplete="off">
@@ -1406,10 +1391,10 @@ function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation
 }
 
 // Wires the editable page field AND the prev/next `<button data-page>` controls
-// of a pagination block. `go(target)` navigates. Vorher banden drei Explorer die
-// Buttons selbst — über einen Regex auf das deutsche aria-label («/Nächste/»),
-// der bei jeder Umbenennung stumm gebrochen wäre (Design-Review A3); die
-// data-page-Bindung wohnt jetzt hier, mountDataTable nutzt denselben Weg.
+// of a pagination block. `go(target)` navigates. Three explorers previously bound
+// buttons themselves through a regex on the German next-page aria-label,
+// which would silently break on any rename (design review A3). The data-page
+// binding now lives here, and mountDataTable uses the same path.
 function wirePagination(mount, inputId, page, totalPages, go) {
   const clamp = (n) => Math.min(totalPages, Math.max(1, Number.isFinite(n) ? n : page));
   mount.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => {
@@ -1426,27 +1411,26 @@ function wirePagination(mount, inputId, page, totalPages, go) {
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); jump(); } });
 }
 
-// --- Ergebniskopf (search.postcss:208-234) ----------------------------------
-// Die Leiste über der Trefferliste: Anzahl links, Steuerung rechts. Der
-// Ansichtswechsel steht als Icon-Gruppe rechts, abgetrennt durch einen Strich.
+// --- Results header (search.postcss:208-234) --------------------------------
+// Bar above the results list: count on the left, controls on the right. The view
+// switcher is an icon group on the right, separated by a rule.
 
-// EIN `unit`-String diente zwei Kasus zugleich: dem Dativ nach «von» («3 von
-// 6 Verträgen») und dem Nominativ der Leer-/Suchtexte («Keine Verträge …») —
-// je nach übergebener Form war die eine oder die andere Hälfte falsches
-// Deutsch («3 von 6 Verträge», Design-Review A14). `unit` darf deshalb ein
-// Objekt `{ nom, dat }` sein; ein einfacher String gilt weiter für beide
-// Slots (die meisten Plurale sind kasusinvariant: Objekte, Dokumente, Kosten).
+// ONE `unit` string previously served both dative and nominative contexts.
+// Depending on the supplied form, one half was grammatically incorrect German
+// (design review A14). `unit` may therefore be an object `{ nom, dat }`;
+// a plain string continues to serve both slots (most plurals are case-invariant:
+// Objekte, Dokumente, Kosten).
 const unitCase = (unit) => (unit && typeof unit === 'object')
   ? { nom: unit.nom || unit.dat || '', dat: unit.dat || unit.nom || '' }
   : { nom: unit || '', dat: unit || '' };
 
-// Gemeinsamer Ergebnisblock der Katalogseiten (Dienstleistungen/Anwendungen/
-// Datensätze) — bisher 3× kopiert (P1-7). Filterung/Sortierung/Slicing bleibt in
-// der Seite (unterschiedlich); hier vereinheitlicht: Galerie-/Listenumschaltung,
-// Paginierung und der Leer-/Nicht-verfügbar-Zustand. Den sichtbaren Ergebniskopf
-// rendert für alle Aufrufer bereits catalogueBar.
-// `visible` = die aktuell sichtbare (bereits geschnittene) Seite; `count` = Anzahl
-// gefilterter Treffer gesamt; `card(item)`/`listView(items)` rendern die Ansicht.
+// Shared result block for catalogue pages (services/applications/datasets),
+// previously copied three times (P1-7). Filtering/sorting/slicing stays in each
+// page because it differs. This standardises gallery/list switching, pagination,
+// and empty/unavailable state. catalogueBar already renders the visible results
+// header for every caller. `visible` is the currently visible (already sliced)
+// page; `count` is the total filtered hit count; `card(item)`/`listView(items)`
+// render the view.
 function catalogueResults({
   visible, count, view = 'gallery', page = 1, totalPages = 1,
   card, listView, mapView, unit, gridCls = 'grid grid--responsive-cols-3',
@@ -1454,34 +1438,33 @@ function catalogueResults({
   available = true, emptyMsg, unavailableMsg, note = '',
   regionLabel = '', resetHref = '',
 }) {
-  // Die Kartenansicht zeigt bewusst ALLE Treffer statt einer Seite: eine Karte
-  // mit 10 von 17 Punkten wäre ein falsches Bild der Verteilung. Deshalb bekommt
-  // sie auch keine Blätterleiste — `mapView` erhält die volle gefilterte Menge.
+  // Map view deliberately shows ALL hits rather than one page. A map with 10 of
+  // 17 points would misrepresent the distribution, so it gets no pagination;
+  // `mapView` receives the full filtered collection.
   const isMap = view === 'map' && typeof mapView === 'function';
   const body = count
     ? isMap
       ? mapView()
       : `${view === 'list'
         ? listView(visible)
-        // Die Galerie trägt CDs responsive `gap--top`-Rampe über dem Raster
-        // (search.postcss:196-201) — feste mt-4/mt-6 blieben bei 1024px auf
-        // 1rem stehen, wo das CD 2.5rem vorsieht; nur die LISTE schliesst
-        // bündig an die Trennlinie an.
+        // Gallery uses CD's responsive `gap--top` scale above the grid
+        // (search.postcss:196-201). Fixed mt-4/mt-6 remained at 1rem at 1024px,
+        // where CD specifies 2.5rem. Only the LIST aligns flush with the rule.
         : `<div class="${gridCls} gap--top">${visible.map(card).join('')}</div>`}${
       paginationHref ? pagination({ page, totalPages, inputId: paginationInputId, label: paginationLabel, href: paginationHref }) : ''}`
     : available
-      // Nullzustand mit Ausweg: der Rat «oben lassen sich aktive Filter
-      // zurücksetzen» verlangte, wieder hochzuscrollen und die Leiste zu finden
-      // (Item 5.13). `resetHref` gibt dem Zustand denselben Weg als Bedienelement.
+      // Zero state with an exit. Advice that active filters could be reset above
+      // required scrolling back and finding the bar (Item 5.13). `resetHref`
+      // gives the state the same route as a control.
       ? empty(emptyMsg || `Keine ${escape(unitCase(unit).nom)} gefunden.`, {
           hint: 'Passen Sie Ihre Suche oder die Filter an.',
           action: resetHref ? { label: 'Suche und Filter zurücksetzen', href: resetHref } : null,
         })
       : empty(unavailableMsg || `${unitCase(unit).nom} konnten nicht geladen werden (Ladefehler).`, { available: false });
-  // Die Trefferliste braucht eine eigene Überschrift: die Karten darin sind
-  // <h3>, und ohne <h2> sprang die Gliederung von der Seiten-<h1> direkt auf
-  // Stufe 3 (WCAG 1.3.1 / 2.4.10). Sie bleibt sr-only, weil die sichtbare
-  // Trefferzahl in der catalogueBar dieselbe Information trägt.
+  // The results list needs its own heading. Cards inside are <h3>, and without
+  // <h2> the outline jumped directly from the page <h1> to level 3 (WCAG 1.3.1 /
+  // 2.4.10). Keep it sr-only because the visible count in catalogueBar carries
+  // the same information.
   return `<section>
       <h2 class="sr-only">${escape(regionLabel || unitCase(unit).nom || 'Ergebnisse')}</h2>
       ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
@@ -1489,21 +1472,21 @@ function catalogueResults({
     </section>`;
 }
 
-// Standard-Ansage für die Live-Region der Katalogseiten (Trefferzahl · Seite · Ansicht).
+// Standard catalogue-page live-region announcement (hit count · page · view).
 function announceCatalogue({ count, total, unit, page = 1, totalPages = 1, view = 'gallery' }) {
   announce(`${count} von ${total} ${unitCase(unit).dat}${totalPages > 1 ? `, Seite ${page} von ${totalPages}` : ''}, Ansicht ${view === 'list' ? 'Liste' : view === 'map' ? 'Karte' : 'Galerie'}`);
 }
 
-// Icon-Umschalter Galerie/Liste — keine Beschriftung, der Zustand steht in
-// aria-pressed und im aria-label.
-// CD-Ansichtsschalter (Icon-Umschaltgruppe, aria-pressed). `items` erlaubt andere
-// Ansichtspaare (z. B. Karten/Liste bei Projekten) statt harter btn--filled-Betonung.
+// Gallery/list icon switcher with no visible label; state is in aria-pressed and
+// aria-label. CD view switcher (icon toggle group, aria-pressed). `items` permits
+// other view pairs (for example, map/list for projects), rather than hard-coded
+// btn--filled emphasis.
 function viewSwitch(view = 'gallery', items = [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']]) {
   const btn = ([key, label, iconName]) => {
     const on = view === key;
-    // Stabile id (aus den Daten, feste Reihenfolge): der Router stellt den Fokus
-    // nach einem Zustandswechsel per `document.getElementById(activeId)` her —
-    // ohne id war activeId '' und der Fokus fiel auf <body> (WCAG 2.4.3).
+    // Stable id (from data in fixed order): after a state change, the router
+    // restores focus through `document.getElementById(activeId)`. Without id,
+    // activeId was '' and focus fell to <body> (WCAG 2.4.3).
     return `<button type="button" class="view-switch__btn interactive-control" id="view-${escape(key)}" data-view="${key}"
       aria-pressed="${on}" aria-label="${escape(label)}" title="${escape(label)}">${icon(iconName, 'icon--md')}</button>`;
   };
@@ -1512,14 +1495,14 @@ function viewSwitch(view = 'gallery', items = [['gallery', 'Galerieansicht', 'Ap
   </div>`;
 }
 
-// --- Katalog-Trio (services / applications / katalog teilen dieses Muster) -----
-// Ein Katalog-Hash: q/page/view einheitlich, alle weiteren Filter aus `filters`
-// als Query-Parameter (String → gesetzt wenn truthy; Array → komma-verbunden wenn
-// nicht leer). Default-Werte (page 1, view 'gallery') bleiben aus der URL, damit
-// sie kurz und teilbar bleibt. Schlüssel = Parametername (z. B. `topic`, `tag`).
-// `defaultView` bleibt bei 'gallery' (Katalog-Trio, unverändert). Die Suchseite
-// setzt 'list' als Standard — CD zeigt Suchergebnisse zuerst als Liste — und
-// braucht die Umkehrung: dort wandert 'gallery' in die URL.
+// --- Catalogue trio (services / applications / catalogue share this pattern) --
+// One catalogue hash: consistent q/page/view, with all further filters from
+// `filters` as query parameters (string is set when truthy; non-empty arrays are
+// comma-joined). Default values (page 1, view 'gallery') stay out of the URL so
+// it remains short and shareable. Key = parameter name (for example, `topic`,
+// `tag`). `defaultView` remains 'gallery' (catalogue trio, unchanged). Search
+// uses 'list' by default because CD presents search results as a list first, and
+// needs the inverse: 'gallery' enters the URL there.
 function catalogueHash(base, { q = '', page = 1, view = '', defaultView = 'gallery', ...filters } = {}) {
   const p = new URLSearchParams();
   if (q) p.set('q', q);
@@ -1534,11 +1517,11 @@ function catalogueHash(base, { q = '', page = 1, view = '', defaultView = 'galle
 }
 
 
-// Verdrahtet die gemeinsamen Katalog-Interaktionen: Suchformular (Submit → Seite 1),
-// einfache Filter-Dropdowns (`filters: [{id, param}]` → Wert setzen, Seite 1),
-// Ansichtswechsel (behält die Seite) und Pagination. `hash(patch)` baut den Ziel-
-// Hash aus Basiszustand + patch (Aufrufer bäckt die Basis ein). Mehrwertige Filter
-// (z. B. Themen bei services) verdrahtet der Aufrufer separat.
+// Wire shared catalogue interactions: search form (submit → page 1), simple
+// filter dropdowns (`filters: [{id, param}]` → set value, page 1), view switching
+// (keeps page), and pagination. `hash(patch)` builds the target hash from base
+// state + patch (caller closes over the base). The caller separately wires
+// multi-value filters (for example, service topics).
 function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, totalPages = 1, hash, filters = [],
   sortId, sortParam = 'sort', filterToggleId, panelId }) {
   const form = mount.querySelector('#' + formId);
@@ -1551,21 +1534,21 @@ function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, totalPag
     const el = mount.querySelector('#' + id);
     if (el) el.addEventListener('change', (e) => { location.hash = hash({ [param]: e.target.value, page: 1 }); });
   });
-  // Sortierung (catbar): Wert → Hash, Seite 1.
+  // Sorting (catbar): value → hash, page 1.
   if (sortId) {
     const s = mount.querySelector('#' + sortId);
     if (s) s.addEventListener('change', (e) => { location.hash = hash({ [sortParam]: e.target.value, page: 1 }); });
   }
-  // Filter-Umschalter (catbar): Panel ein-/ausblenden (rein clientseitig, kein Hash)
-  // + Mehrfachauswahl-Checkboxen: bei Änderung alle angehakten Werte der Dimension
-  // (data-fdim = Parametername) komma-verbunden in den Hash, Seite 1.
+  // Filter toggle (catbar): show/hide panel (client-side only, no hash) plus
+  // multi-select checkboxes. On change, comma-join every checked value in the
+  // dimension (data-fdim = parameter name) into the hash, page 1.
   if (filterToggleId && panelId) {
     const btn = mount.querySelector('#' + filterToggleId), panel = mount.querySelector('#' + panelId);
     if (btn && panel) btn.addEventListener('click', () => {
       const open = !panel.hidden;
       panel.hidden = open;
       btn.setAttribute('aria-expanded', String(!open));
-      // Zustand über den Neuaufbau hinweg merken (Item 3.4).
+      // Preserve state across the rebuild (Item 3.4).
       if (open) PANEL_OPEN.delete(panelId); else PANEL_OPEN.add(panelId);
     });
     if (panel) panel.addEventListener('change', (e) => {
@@ -1581,23 +1564,21 @@ function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, totalPag
   if (pageInputId) wirePagination(mount, pageInputId, page, totalPages, (target) => { location.hash = hash({ page: target }); });
 }
 
-// --- Kompakte Katalogleiste (catbar) ----------------------------------------
-// Einzeilige, wiederverwendbare Toolbar für alle Katalogansichten (Portfolio,
-// Dienstleistungen, Datenbezug, Anwendungen): Suche + Trefferzahl links; dann —
-// hinter EINER Trennlinie rechts — Sortierung, Filter-Umschalter (mit Aktiv-Zähler)
-// und der Ansichtswechsel. Der Filter öffnet ein einklappbares Panel darunter, das
-// die früher fest sichtbaren Filter-Dropdowns aufnimmt. Reines Markup; jede Seite
-// verdrahtet Suche/Sort/Filter/Ansicht selbst (Portfolio: JS-State, Katalogseiten:
-// Hash). `countId` benennt den (per JS gefüllten) Trefferzähler; `sort` = optionales
-// Dropdown {id,name,label,value,options:[{value,label}]}; `views` = viewSwitch-Items;
-// `panel` = fertiges Filter-HTML (RAW, der Aufrufer escaped).
-// Offene Filter-Panels überleben den Neuaufbau: auf den Katalogseiten schreibt
-// eine Checkbox in den Hash, der Router zeichnet die Seite neu und catalogueBar()
-// gab das Panel wieder mit [hidden] aus — das Panel schlug also nach JEDEM Haken
-// zu. Drei Themen auszuwählen bedeutete, die Schublade dreimal zu öffnen. CDs
-// `filtersAreOpen` ist ebenfalls Zustand, der Filteränderungen überlebt
-// (SearchResultsFilters.vue:42-104). Modulweit, weil der Zustand eine Eigenschaft
-// der Ansicht ist, nicht der Daten.
+// --- Compact catalogue bar (catbar) -----------------------------------------
+// Single-row reusable toolbar for every catalogue view (portfolio, services,
+// data access, applications): search + hit count on the left; after ONE rule on
+// the right, sorting, filter toggle (with active count), and view switcher. The
+// filter opens a collapsible panel below containing the formerly persistent
+// filter dropdowns. Markup only; each page wires search/sort/filter/view itself
+// (portfolio: JS state, catalogue pages: hash). `countId` names the JS-populated
+// hit count; `sort` = optional dropdown {id,name,label,value,options:[{value,label}]};
+// `views` = viewSwitch items; `panel` = ready filter HTML (RAW, caller escapes).
+// Open filter panels survive rebuilding. On catalogue pages, a checkbox writes
+// to the hash, the router redraws the page, and catalogueBar() used to return the
+// panel with [hidden] again, so it closed after EVERY check. Selecting three
+// topics meant opening the drawer three times. CD's `filtersAreOpen` is likewise
+// state that survives filter changes (SearchResultsFilters.vue:42-104). It is
+// module-wide because it belongs to the view, not the data.
 const PANEL_OPEN = new Set();
 
 function catalogueBar({
@@ -1606,12 +1587,12 @@ function catalogueBar({
   panelId = '', panel = '', panelHidden = true,
   view = 'gallery', views, showSearch = true, extra = '',
 }) {
-  // Ein einmal geöffnetes Panel bleibt offen, bis der Nutzer es selbst zuklappt.
+  // Once opened, a panel stays open until the user closes it.
   if (panelId && PANEL_OPEN.has(panelId)) panelHidden = false;
-  // Sortierung: bare Select, KEIN sichtbares Label (CD-Muster, vgl. indexPage.vue) —
-  // eine deaktivierte «Sortieren»-Option dient als In-Control-Hinweis, ein sr-only-
-  // Label als Zugänglichkeit. Passt keine Option (kein/leerer Sortierwert), zeigt die
-  // Platzhalter-Option «Sortieren»; sonst ist die aktuelle Sortierung selected.
+  // Sorting: bare select with NO visible label (CD pattern; see indexPage.vue).
+  // A disabled «Sortieren» option provides an in-control hint, with an sr-only
+  // label for accessibility. If no option matches (missing/empty sort value),
+  // show the «Sortieren» placeholder; otherwise select the current sort.
   const sortHtml = sort ? (() => {
     const cur = sort.value == null ? '' : String(sort.value);
     const hasSel = (sort.options || []).some((o) => String(o.value) === cur);
@@ -1624,20 +1605,20 @@ function catalogueBar({
         <div class="select__icon">${CHEVRON_SVG}</div>
       </div>`;
   })() : '';
-  // Filter-Umschalter: bare Button mit Chevron, der beim Öffnen kippt (CD .search__filters__actions).
+  // Filter toggle: bare button with a chevron that rotates when open (CD .search__filters__actions).
   const filterHtml = filterId ? `
       <button type="button" class="btn btn--bare btn--sm catbar__filter" id="${escape(filterId)}" aria-expanded="${!panelHidden}"${panelId ? ` aria-controls="${escape(panelId)}"` : ''}>
         ${icon('Filter', 'btn__icon')}<span class="btn__text">${escape(filterLabel)}</span><span class="catbar__fcount"${filterCount ? '' : ' hidden'}>${filterCount ? `(${filterCount})` : ''}</span>${icon('ChevronDown', 'catbar__chev')}
       </button>` : '';
-  // `showSearch:false` — die Suchseite bringt ihr Suchfeld schon im Hero mit; CDs
-  // `.search-results__header` trägt dort nur Trefferzahl links und Sortierung
-  // rechts (search.postcss:208-233), kein zweites Feld.
+  // `showSearch:false`: search already supplies its field in the hero. CD's
+  // `.search-results__header` carries only hit count left and sorting right there
+  // (search.postcss:208-233), not a second field.
   const searchHtml = showSearch ? `
-      ${/* role=search kommt mehrfach je Seite vor (Kopfzeilen-Suche + je Katalog-/
-            Tabellenleiste eine) — jede Landmarke braucht darum einen eigenen Namen;
-            `searchLabel` ist je Leiste bereits eindeutig («Verträge durchsuchen»).
-            Der Submit-Knopf hat EINE Namensquelle: das sr-only btn__text (CD-Muster
-            btn.postcss:160-166) — kein doppeltes aria-label daneben. */''}
+      ${/* role=search occurs multiple times per page (header search plus one for
+            each catalogue/table bar), so every landmark needs its own name.
+            `searchLabel` is already unique per bar. The
+            submit button has ONE naming source: sr-only btn__text (CD pattern,
+            btn.postcss:160-166), with no duplicate aria-label beside it. */''}
       <form class="catbar__search" id="${escape(formId)}" role="search" aria-label="${escape(searchLabel)}">
         <label class="sr-only" for="${escape(inputId)}">${escape(searchLabel)}</label>
         <input id="${escape(inputId)}" type="search" placeholder="${escape(placeholder)}" value="${escape(q)}" autocomplete="off">
@@ -1646,39 +1627,39 @@ function catalogueBar({
   return `
     <div class="catbar${showSearch ? '' : ' catbar--no-search'}">${searchHtml}
       <div class="catbar__count" id="${escape(countId)}">${count}</div>
-      ${/* `extra`: RAW-HTML am Ende der Steuergruppe, für eine leistenweite
-            Nebenaktion, die weder Sortierung noch Filter noch Ansichtswechsel
-            ist — die Raumbuchung hängt hier «Grundriss ansehen» ein. Ohne den
-            Platz stünde sie in einer zweiten, sonst leeren rechtsbündigen
-            Zeile darüber. Standard leer: die vier Katalogleisten sehen davon
-            nichts. Der Aufrufer escaped selbst und verdrahtet selbst. */''}
+      ${/* `extra`: RAW HTML at the end of the control group for a bar-level
+            secondary action that is neither sorting, filtering, nor view
+            switching. Room booking inserts «Grundriss ansehen» here. Without
+            this slot it would sit in a second, otherwise empty right-aligned row
+            above. Empty by default, so the four catalogue bars see nothing.
+            Caller escapes and wires it. */''}
       <div class="catbar__controls">${sortHtml}${filterHtml}${views ? viewSwitch(view, views) : ''}${extra}</div>
     </div>${filterId ? `
     <div class="catbar__panel" id="${escape(panelId)}"${panelHidden ? ' hidden' : ''}>${panel}</div>` : ''}`;
 }
 
-// --- Datentabelle mit Katalogleiste + Paginierung ---------------------------
-// EIN Baustein für das wiederkehrende Muster «lange Tabelle in einer Detailansicht»:
-// Suche + Trefferzahl + Sortierung (+ optionale Facetten) über der Tabelle,
-// Paginierung darunter. Vorher trug nur das Katalog-Trio eine Leiste, während die
-// Tabellen in «Meine Vorgänge» und in der Objekt-Detailansicht (Bemessungen,
-// Ausstattung, Verträge, Kosten, Kontakte, Dokumente) ungefiltert und unbegrenzt
-// ausgegeben wurden — bei realen Gebäuden werden die sehr lang.
+// --- Data table with catalogue bar + pagination -----------------------------
+// ONE building block for the recurring «long table in a detail view» pattern:
+// search + hit count + sorting (+ optional facets) above the table, pagination
+// below. Previously only the catalogue trio had a bar, while tables in «Meine
+// personal cases and the property detail view (dimensions, equipment, contracts,
+// costs, contacts, documents) were unfiltered and unlimited. They become very
+// long for real buildings.
 //
-// Bewusst LOKALER Zustand statt Hash: diese Tabellen sitzen in Registerkarten, und
-// eine Hash-Änderung würde die ganze Seite neu zeichnen und den Tab zurücksetzen.
-// Gezeichnet wird nur der eigene Teilbaum, der Fokus bleibt dadurch erhalten.
+// Deliberately LOCAL state rather than the hash: these tables sit in tabs, and a
+// hash change would redraw the entire page and reset the tab. Only their own
+// subtree is rendered, preserving focus.
 //
-//   host      Element, in das gerendert wird
-//   id        eindeutiges Präfix für alle ids in diesem Block
-//   rows      Datenzeilen
-//   columns   wie bei C.table
-//   unit      Plural für die Trefferzahl («Verträge»)
-//   searchKeys / search  Felder bzw. Prädikat für die Suche
+//   host      element into which content is rendered
+//   id        unique prefix for every id in this block
+//   rows      data rows
+//   columns   as in C.table
+//   unit      plural used in the hit count
+//   searchKeys / search  fields or search predicate
 //   sorts     [{ value, label, cmp }]
 //   facets    [{ dim, legend, options:[{value,label}], match(row, values) }]
-//   perPage   Standard 10
-//   foot(visible, filtered)  optionale <tfoot>-Zeile
+//   perPage   default 10
+//   foot(visible, filtered)  optional <tfoot> row
 function mountDataTable(host, opts = {}) {
   let unwireScroll = null;
   let unwireRows = null;
@@ -1691,8 +1672,8 @@ function mountDataTable(host, opts = {}) {
   facets.forEach((f) => { state.sel[f.dim] = []; });
 
   const unwire = () => {
-    if (unwireRows) { try { unwireRows(); } catch { /* schon weg */ } unwireRows = null; }
-    if (unwireScroll) { try { unwireScroll(); } catch { /* schon weg */ } unwireScroll = null; }
+    if (unwireRows) { try { unwireRows(); } catch { /* Already gone. */ } unwireRows = null; }
+    if (unwireScroll) { try { unwireScroll(); } catch { /* Already gone. */ } unwireScroll = null; }
   };
 
   const matchQ = (row) => {
@@ -1708,9 +1689,9 @@ function mountDataTable(host, opts = {}) {
   });
 
   const draw = () => {
-    // Verdrahtung hängt an `host`, der beim Zeichnen bestehen bleibt. Vor dem
-    // neuen Teilbaum deshalb die delegierten Zeilenklicks und Observer lösen —
-    // sonst käme je Suche/Sortierung/Seite ein weiterer Handler dazu.
+    // Wiring attaches to `host`, which persists across drawing. Before inserting
+    // the new subtree, dispose delegated row clicks and observers; otherwise each
+    // search/sort/page change would add another handler.
     unwire();
     const filtered = allRows.filter((r) => matchQ(r) && matchFacets(r));
     const sortDef = sorts.find((s) => s.value === state.sort);
@@ -1737,11 +1718,11 @@ function mountDataTable(host, opts = {}) {
         panelHidden: !state.open,
       })}
       ${note ? `<p class="muted small mt-4">${note}</p>` : ''}
-      ${/* Auch OHNE Treffer bleibt die Tabelle stehen — mit einer Zeile, die
-            sagt warum. Ein Leerzustand an ihrer Stelle liess Kopfzeile und
-            Spalten verschwinden: man sah nicht mehr, was die Tabelle überhaupt
-            zeigt, und beim Filtern sprang das Layout. Der Text unterscheidet
-            «gar keine Daten» von «nichts für diese Auswahl». */''}
+      ${/* Keep the table even with NO hits, with a row explaining why. Replacing
+            it with an empty state removed header and columns: people could no
+            longer see what the table represented, and filtering shifted the
+            layout. Text distinguishes «no data at all» from «nothing for this
+            selection». */''}
       ${table({ columns, rows: visible, zebra: true, caption, rowsClickable,
         emptyText: allRows.length
           ? `Keine ${u.nom} für diese Suche oder Filterung.`
@@ -1749,7 +1730,7 @@ function mountDataTable(host, opts = {}) {
         foot: sorted.length && foot ? foot(visible, sorted) : undefined })}
       ${pagination({ page: state.page, totalPages, inputId: `${id}-page`, label: `Seitennavigation ${u.nom}` })}`;
 
-    // --- Verdrahtung (nur innerhalb von host) ---
+    // --- Wiring (within host only) ---
     const form = host.querySelector(`#${id}-form`);
     if (form) form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -1770,24 +1751,23 @@ function mountDataTable(host, opts = {}) {
       });
     }
     if (rowsClickable) unwireRows = wireTableRows(host);
-    // wirePagination bindet Eingabefeld UND die [data-page]-Buttons (Review A3).
+    // wirePagination binds BOTH the input and [data-page] buttons (review A3).
     wirePagination(host, `${id}-page`, state.page, totalPages, (target) => { state.page = target; draw(); });
     unwireScroll = wireScrollRegions(host);
     restore();
     announce(`${sorted.length} von ${allRows.length} ${u.dat}${totalPages > 1 ? `, Seite ${state.page} von ${totalPages}` : ''}`);
   };
   draw();
-  // Abbaufunktion für den Aufrufer (ctx.onUnmount), damit Beobachter und der
-  // delegierte Zeilenklick auch beim Verlassen der Route verschwinden.
+  // Disposal function for the caller (ctx.onUnmount), ensuring observers and
+  // delegated row clicks disappear when leaving the route.
   return unwire;
 }
 
-// Zeilenklick für `C.table({ rowsClickable: true })`. Die Zeile folgt dem
-// ERSTEN Link in sich; Tastatur und Screenreader benutzen weiterhin diesen
-// Link. Klicks auf ein Bedienelement oder auf markierten Text bleiben
-// unangetastet — sonst liesse sich in der Tabelle nichts mehr kopieren.
-// C.mountDataTable ruft das selbst auf; wer C.table direkt rendert, ruft es
-// nach dem Einfügen einmal auf `root` auf.
+// Row click for `C.table({ rowsClickable: true })`. The row follows its FIRST
+// link; keyboard and screen readers still use that link. Clicks on a control or
+// selected text remain untouched, or nothing in the table could be copied.
+// C.mountDataTable calls this itself. Callers rendering C.table directly invoke
+// it once on `root` after insertion.
 function wireTableRows(root) {
   if (!root) return () => {};
   const ctrl = new AbortController();
@@ -1801,17 +1781,17 @@ function wireTableRows(root) {
   return () => ctrl.abort();
 }
 
-// Mehrfachauswahl-Filtergruppe (Checkboxen) — dieselbe Optik wie das Portfolio-
-// Panel (.filter-group / .filter-check). `dim` = Hash-Parametername (steht auf jeder
-// Checkbox als data-fdim), `selected` = aktuell angehakte Werte. Verdrahtet über
-// C.wireCatalogue: Panel-Change → alle angehakten Werte der Dimension → Hash.
+// Multi-select filter group (checkboxes), matching the portfolio panel
+// (.filter-group / .filter-check). `dim` is the hash parameter name (placed on
+// every checkbox as data-fdim); `selected` contains currently checked values.
+// Wired through C.wireCatalogue: panel change → all checked values in the
+// dimension → hash.
 function filterGroup({ dim, legend, options = [], selected = [], idPrefix = '', max = 0 }) {
-  // `id="${idPrefix}f-${dim}-${i}"` — der Index ist stabil, weil die Optionen aus
-  // den Daten in fester Reihenfolge kommen; nötig für die Fokus-Wiederherstellung
-  // (Item 3.3). `idPrefix` hält die ids dokumentweit eindeutig, wenn zwei
-  // Tabellen dieselbe Facetten-Dimension führen (Review a11y-dup-ids-1).
-  // `max` kappt lange Wertelisten: der Rest liegt in einem versteckten Span,
-  // den der Aufrufer über den [data-fmore]-Knopf aufdeckt (estate).
+  // `id="${idPrefix}f-${dim}-${i}"`: the index is stable because options come from
+  // data in fixed order, which focus restoration requires (Item 3.3). `idPrefix`
+  // keeps ids document-wide unique when two tables use the same facet dimension
+  // (review a11y-dup-ids-1). `max` truncates long value lists: the remainder sits
+  // in a hidden span revealed by the caller through [data-fmore] (estate).
   const p = idPrefix ? escape(idPrefix) + '-' : '';
   const cb = (o, i) => `<label class="filter-check"><input type="checkbox" id="${p}f-${escape(dim)}-${i}" data-fdim="${escape(dim)}" value="${escape(o.value)}"${
     selected.includes(o.value) ? ' checked' : ''}><span>${escape(o.label)}</span></label>`;
@@ -1824,12 +1804,12 @@ function filterGroup({ dim, legend, options = [], selected = [], idPrefix = '', 
       : ''}</fieldset>`;
 }
 
-// --- Aktionsmenü (Kebab-Dropdown) --------------------------------------------
-// Ein wiederverwendbares Aktionsmenü für die Dashboard-Toolbar und jede Chart-
-// Karte (Superset-Muster). `items` = flache Liste aus `{ action, label, icon }`
-// (Menüpunkt), `{ heading }` (Gruppentitel) oder `{ separator:true }`. Verhalten
-// via C.wireMenu; die Aktion wird per `data-action` an den Aufrufer gereicht (kein
-// inline onclick). `menuId` identifiziert das Menü im gemeinsamen onAction-Handler.
+// --- Action menu (kebab dropdown) -------------------------------------------
+// Reusable action menu for the dashboard toolbar and every chart card (Superset
+// pattern). `items` is a flat list of `{ action, label, icon }` (menu item),
+// `{ heading }` (group title), or `{ separator:true }`. Behaviour comes through
+// C.wireMenu; `data-action` passes the action to the caller (no inline onclick).
+// `menuId` identifies the menu in the shared onAction handler.
 export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', triggerIcon = 'More', triggerClass = '' }) {
   const row = (it) => {
     if (it.separator) return '<div class="action-menu__sep" role="separator"></div>';
@@ -1837,8 +1817,8 @@ export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', tr
     return `<button type="button" role="menuitem" class="action-menu__item" data-action="${escape(it.action)}" tabindex="-1">`
       + `${it.icon ? icon(it.icon, 'action-menu__icon') : ''}<span>${escape(it.label)}</span></button>`;
   };
-  // aria-controls + Popup-id wie CDs Popover.vue:3-9 — der Auslöser benennt,
-  // WAS er aufklappt (menuIds sind je Seite eindeutig, s. Aufrufer).
+  // aria-controls + popup id as in CD Popover.vue:3-9. The trigger names WHAT it
+  // opens (menuIds are unique per page; see callers).
   const popupId = `${menuId}-popup`;
   return `<div class="action-menu" data-menu="${escape(menuId)}">
     <button type="button" class="action-menu__trigger interactive-control${triggerClass ? ' ' + triggerClass : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="${escape(popupId)}" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
@@ -1846,9 +1826,9 @@ export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', tr
   </div>`;
 }
 
-// Ein einmaliger globaler Schliesser (Klick ausserhalb schliesst offene Menüs),
-// damit wiederholtes wireMenu() keine Listener anhäuft. Eigener `.action-menu`-
-// Namensraum — `.menu` gehört der CD-Navigations-Flyout-Komponente.
+// One global closer (clicking outside closes open menus), preventing repeated
+// wireMenu() calls from accumulating listeners. Uses its own `.action-menu`
+// namespace; `.menu` belongs to CD's navigation flyout component.
 let menuGlobalWired = false;
 function ensureMenuGlobal() {
   if (menuGlobalWired || typeof document === 'undefined') return;
@@ -1865,8 +1845,8 @@ function ensureMenuGlobal() {
   });
 }
 
-// Verdrahtet alle .action-menu in `root`: Öffnen/Schliessen, Pfeiltasten/Home/End,
-// Escape, Klick ausserhalb. Bei Auswahl → onAction(action, menuId, triggerEl).
+// Wire every .action-menu in `root`: open/close, arrow keys/Home/End, Escape, and
+// outside click. On selection → onAction(action, menuId, triggerEl).
 export function wireMenu(root, onAction) {
   ensureMenuGlobal();
   root.querySelectorAll('.action-menu').forEach((m) => {
@@ -1896,11 +1876,11 @@ export function wireMenu(root, onAction) {
       });
     });
     m.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !popup.hidden) { e.stopPropagation(); close(true); } });
-    // APG-Menü-Muster: verlässt der Fokus das Menü (Tab aus einem menuitem, Klick
-    // auf ein fokussierbares Ziel aussen), schliesst es — sonst bliebe ein offen
-    // sichtbares Menü mit aria-expanded="true" zurück; der globale Schliesser
-    // reagiert nur auf Zeigerklicks. Kein preventDefault: der Fokus zieht
-    // natürlich weiter (relatedTarget null = Ziel nicht fokussierbar → zu).
+    // APG menu pattern: close when focus leaves the menu (Tab from a menuitem or
+    // click on a focusable outside target). Otherwise an open visible menu with
+    // aria-expanded="true" remains; the global closer responds only to pointer
+    // clicks. No preventDefault, so focus proceeds naturally (relatedTarget null
+    // means the target cannot receive focus → close).
     m.addEventListener('focusout', (e) => {
       if (popup.hidden) return;
       if (!m.contains(e.relatedTarget)) close(false);
@@ -1908,12 +1888,12 @@ export function wireMenu(root, onAction) {
   });
 }
 
-// Kurze, selbst-verschwindende Statusmeldung (für simulierte/erledigte Aktionen).
-// CD toast-message (toast-message.postcss:5-18 + ToastMessage.vue): fixer Host
-// bei bottom 10 %, innen eine normale Notification (Standard: success mit
-// CheckmarkCircle, Fehlerpfade geben 'error'/'warning' mit), 5 s sichtbar.
-// Die Meldung ist rein visuell — die SR-Ansage läuft über die persistente
-// #live-Region (announce): in einem frisch erzeugten Knoten feuert aria-live nicht.
+// Short, self-dismissed status message for simulated/completed actions. CD
+// toast-message (toast-message.postcss:5-18 + ToastMessage.vue): fixed host at
+// bottom 10%, containing a normal notification (default: success with
+// CheckmarkCircle; failure paths pass 'error'/'warning'), visible for 5s. The
+// message is visual only; the SR announcement uses the persistent #live region
+// (announce), because aria-live does not fire in a newly created node.
 export function toast(msg, variant = 'success', iconName = 'CheckmarkCircle') {
   announce(msg);
   if (typeof document === 'undefined') return;
@@ -1925,22 +1905,22 @@ export function toast(msg, variant = 'success', iconName = 'CheckmarkCircle') {
   setTimeout(() => { t.classList.remove('toast__message--in'); setTimeout(() => t.remove(), 300); }, 5000);
 }
 
-// --- Katalog-Zustand aus der Hash-Query (Katalog-Quartett) -------------------
-// Die Lese-Seite des Katalog-Musters: services/applications/catalog/search
-// rollten je ~35 Zeilen identisches Parsen/Validieren/Klemmen/Schneiden von
-// Hand (Design-Review B16) — nur die Schreib-Seite (catalogueHash/wireCatalogue)
-// war geteilt. Hier beides aus einer Quelle.
+// --- Catalogue state from the hash query (catalogue quartet) ----------------
+// Read side of the catalogue pattern. services/applications/catalog/search each
+// hand-rolled ~35 identical lines of parsing/validation/clamping/slicing (design
+// review B16); only the write side (catalogueHash/wireCatalogue) was shared.
+// Both now come from one source.
 //
-//   query      URLSearchParams der Route
-//   base       Basis-Hash der Seite ('#/services')
-//   perPage    Galerieseiten-Grösse (Standard 12 — teilbar durch 2 UND 3 Spalten)
-//   sortOpts   erlaubte Sortierwerte (Array der option-values); '' = Datenreihenfolge
-//   filters    { param: erlaubteWerte[]|null } — mehrwertig, komma-verbunden
-//   views      erlaubte Ansichten; defaultView bleibt aus der URL
+//   query      route URLSearchParams
+//   base       page base hash ('#/services')
+//   perPage    gallery page size (default 12, divisible by BOTH 2 and 3 columns)
+//   sortOpts   allowed sort values (array of option values); '' = data order
+//   filters    { param: allowedValues[]|null } — multi-value, comma-joined
+//   views      allowed views; defaultView stays out of the URL
 //
-// Rückgabe: { q, view, page, sort, selected, hash(patch), clamp(list) } —
-// clamp() schneidet die sortierte Liste auf die Seite zu und liefert
-// { visible, totalPages, page } (page ggf. auf den gültigen Bereich geklemmt).
+// Returns { q, view, page, sort, selected, hash(patch), clamp(list) }.
+// clamp() slices the sorted list to the page and returns
+// { visible, totalPages, page }, clamping page to the valid range if necessary.
 function catalogueState(query, { base, perPage = 12, sortOpts = [], defaultSort = '',
   views = ['gallery', 'list'], defaultView = 'gallery', filters = {} } = {}) {
   const q = (query.get('q') || '').trim();
@@ -1964,23 +1944,22 @@ function catalogueState(query, { base, perPage = 12, sortOpts = [], defaultSort 
   return { q, view, page, sort, selected, perPage, hash, clamp };
 }
 
-// --- JS-State-Katalogverdrahtung (Explorer) ----------------------------------
-// Der lokale Zwilling von wireCatalogue: Portfolio, Bauprojekte, Mietende und
-// die Bauwerksdokumentation halten ihren Zustand in einer Variablen statt im
-// Hash (Registerkarten/Baum, dokumentiert je App) und trugen dafür je eine
-// ~45-Zeilen-Kopie derselben Verdrahtung — Suche mit Tipp-Verzögerung, Sort,
-// Filterpanel samt Zähler-Badge, Aktiv-Pillen (Design-Review A2). Die Kopien
-// waren bereits gedriftet (toter Reset in Mietende).
+// --- JS-state catalogue wiring (explorer) -----------------------------------
+// Local twin of wireCatalogue. Portfolio, construction projects, tenants, and
+// building documentation keep state in a variable rather than the hash (tabs/
+// tree, documented per app), and each carried a ~45-line copy of the same wiring:
+// debounced search, sort, filter panel with count badge, and active pills (design
+// review A2). Copies had already drifted (dead reset in tenants).
 //
-//   state     { q, sort, page, view, filters: { dim: wert[] } } — wird hier mutiert
-//   onChange  Neuzeichnen der Trefferfläche (renderMain)
-//   onRemove  (token) für Pillen-Tokens ausserhalb von 'q'/'dim:wert' (z. B. 'sel')
-//   onReset   ersetzt das Standard-onChange nach «Alle Filter zurücksetzen»
-//             (Explorer setzen hier zusätzlich die Baum-Auswahl zurück)
+//   state     { q, sort, page, view, filters: { dim: value[] } } — mutated here
+//   onChange  redraw results surface (renderMain)
+//   onRemove  (token) for pill tokens outside 'q'/'dim:value' (for example, 'sel')
+//   onReset   replaces default onChange after the full filter reset
+//             (explorers additionally reset tree selection here)
 //
-// Rückgabe: { updateFilterBadge, syncFilterChecks, clearFilters, destroy } für
-// Aufrufer, die den Panel-Zustand selbst anfassen (URL-Wiederherstellung).
-// `destroy` gehört in ctx.onUnmount und verwirft insbesondere die verzögerte Suche.
+// Returns { updateFilterBadge, syncFilterChecks, clearFilters, destroy } for
+// callers that manipulate panel state themselves (URL restoration). `destroy`
+// belongs in ctx.onUnmount and notably discards the delayed search.
 function wireCatalogueState(mount, {
   formId, inputId, sortId = '', filterToggleId = '', panelId = '', resetId = '',
   activeFiltersId = '', state, onChange, onRemove, onReset, debounceMs = 250,
@@ -2019,8 +1998,8 @@ function wireCatalogueState(mount, {
   };
   const syncFilterChecks = () => { if (fpanel) fpanel.querySelectorAll('input[data-fdim]').forEach((cb) => { cb.checked = (state.filters[cb.dataset.fdim] || []).includes(cb.value); }); };
   const clearFilters = () => { dims().forEach((d) => { state.filters[d] = []; }); syncFilterChecks(); updateFilterBadge(); };
-  // Aus der URL wiederhergestellte Filter sofort am Knopf anzeigen (url-state-1);
-  // die Checkboxen selbst sind schon richtig, wenn filterGroup `selected` erhielt.
+  // Immediately show URL-restored filters on the button (url-state-1). Checkboxes
+  // are already correct when filterGroup received `selected`.
   updateFilterBadge();
   if (fbtn && fpanel) fbtn.addEventListener('click', () => {
     const open = !fpanel.hidden; fpanel.hidden = open; fbtn.setAttribute('aria-expanded', String(!open));
@@ -2052,7 +2031,7 @@ function wireCatalogueState(mount, {
       state.filters[dim] = (state.filters[dim] || []).filter((x) => x !== tok.slice(i + 1));
       syncFilterChecks(); updateFilterBadge(); state.page = 1; onChange(); return;
     }
-    if (onRemove) onRemove(tok);   // z. B. 'sel' — die Baum-Auswahl des Aufrufers
+    if (onRemove) onRemove(tok);   // For example, 'sel' — the caller's tree selection.
   });
 
   const destroy = () => {
@@ -2064,12 +2043,12 @@ function wireCatalogueState(mount, {
   return { updateFilterBadge, syncFilterChecks, clearFilters, destroy };
 }
 
-// Kanonischer Filterpanel-Reset — EINE Anatomie für die 13 Panels, die vorher
-// in ~7 Varianten auseinanderliefen (Icon-Klasse, Modifier, Wrapper; Design-
-// Review B17). Beschriftung «Filter zurücksetzen» (CD-Wortlaut, eventsList.vue)
-// — die Pillenreihe darunter behält ihr «Alle Filter zurücksetzen» (sie räumt
-// auch Suche und Baum-Auswahl ab). `wrap:''` für Panels mit eigener Aktionszeile
-// (Dashboards: .filter-panel__actions).
+// Canonical filter-panel reset — ONE anatomy for 13 panels that previously
+// diverged into ~7 variants (icon class, modifier, wrapper; design review B17).
+// The reset label follows CD wording (eventsList.vue). The pill row below retains
+// its full-reset wording because it also clears search and tree
+// selection. Use `wrap:''` for panels with their own action row (dashboards:
+// .filter-panel__actions).
 function panelReset({ href = '', id = '', label = 'Filter zurücksetzen', wrap = 'catbar__panel-actions' } = {}) {
   const inner = `${icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">${escape(label)}</span>`;
   const ctl = href
@@ -2078,12 +2057,12 @@ function panelReset({ href = '', id = '', label = 'Filter zurücksetzen', wrap =
   return wrap ? `<div class="${escape(wrap)}">${ctl}</div>` : ctl;
 }
 
-// --- Formular-Seams (Design-Review A8/A9/B8/B12) -----------------------------
-// Fehlermeldung verschwindet, sobald der Nutzer das Feld korrigiert (Item 3.6).
-// Superset-Fassung aus building-create: `change` zusätzlich zu `input`, weil
-// ein <select> beim Zeigerklick kein input-Ereignis feuert. Vorher trugen
-// space-request und building-create je eine Kopie, fault-report und workspace
-// gar keine — gleiche Formulare verziehen ungleich.
+// --- Form seams (design review A8/A9/B8/B12) --------------------------------
+// Remove an error message as soon as the user corrects its field (Item 3.6).
+// Superset version from building-create: listen to `change` in addition to
+// `input`, because pointer interaction with <select> fires no input event.
+// space-request and building-create previously had one copy each, while
+// fault-report and workspace had none, making equivalent forms behave differently.
 function wireFieldErrors(mount, errors) {
   Object.keys(errors).forEach((id) => {
     const el = mount.querySelector('#' + CSS.escape(id));
@@ -2101,18 +2080,18 @@ function wireFieldErrors(mount, errors) {
   });
 }
 
-// Fokus + Ansage auf dem Erfolgsscreen: processDone rendert seine Überschrift
-// mit tabindex="-1" GENAU dafür — aber nur building-create nutzte das; in den
-// drei Geschwister-Flows fiel der Fokus nach dem Absenden auf <body>.
+// Focus + announcement on the success screen. processDone renders its heading
+// with tabindex="-1" PRECISELY for this, but only building-create used it. In
+// three sibling flows, focus fell to <body> after submission.
 function focusProcessDone(mount, instance) {
   const h = mount.querySelector('h1[tabindex="-1"], h2[tabindex="-1"]');
   if (h) h.focus();
   if (instance && instance.reference) announce(`Vorgang erstellt. Referenz ${instance.reference}.`);
 }
 
-// Wizard-Kopf: Schrittanzeige + Schrittüberschrift (standardmässig sr-only,
-// optional sichtbar und mit passender Ebene) + Pflichtfeld-Legende. `step` ist
-// 1-basiert wie in den Apps.
+// Wizard header: step indicator + step heading (sr-only by default, optionally
+// visible at the appropriate level) + required-field legend. `step` is one-based,
+// matching the apps.
 function wizardHead(labels, step, { headId = 'wiz-step-head', label = 'Antragsschritte', legend = true,
   heading = 'h2', title = '', visible = false } = {}) {
   const headingTag = ['h2', 'h3', 'h4'].includes(heading) ? heading : 'h2';
@@ -2122,38 +2101,38 @@ function wizardHead(labels, step, { headId = 'wiz-step-head', label = 'Antragssc
     ${legend ? '<p class="small muted">Mit <span class="text--asterisk" aria-hidden="true"></span> markierte Felder sind Pflichtfelder.</p>' : ''}`;
 }
 
-// Schrittwechsel ist ein Kontextwechsel: Fokus auf die Schrittüberschrift, Ansage
-// MIT Schrittnamen («Schritt 2 von 3: Bedarf») — vorher sagte space-request nur
-// die Nummer an, building-create auch den Namen (Design-Review D31).
+// A step change is a context change: focus the step heading and announce WITH
+// its name («Schritt 2 von 3: Bedarf»). space-request previously announced only
+// the number, while building-create included the name (design review D31).
 function focusWizardStep(mount, labels, step, { headId = 'wiz-step-head' } = {}) {
   const h = mount.querySelector('#' + headId) || mount.querySelector('h1');
   if (h) h.focus({ preventScroll: true });
   announce(`Schritt ${step} von ${labels.length}: ${labels[step - 1]}`);
 }
 
-// Kontextzeile unter der Formular-h1 — EINE Formel für alle vier Flows:
-// «<Aktion> als NAME · ORG (· Prozess: …)». Vorher entschied jede App selbst,
-// ob Name und Prozessvorschau erscheinen (Design-Review B12).
+// Context row below the form h1 — ONE formula for all four flows:
+// «<action> als NAME · ORG (· Prozess: …)». Previously every app decided
+// independently whether to show name and process preview (design review B12).
 function contextLine({ action, name = '', org, process = '' }) {
   return `<p class="muted">${escape(action)} als ${name ? `<strong>${escape(name)}</strong> · ` : ''}<strong>${escape(org)}</strong>${
     process ? ` · Prozess: ${escape(process)}` : ''}.</p>`;
 }
 
-// --- Login-Hinweis (AGOV / FedLogin) -----------------------------------------
-// Kein Inhalt wird versteckt; abgemeldet erscheint nur dieser Hinweis dort, wo
-// ein Vorgang ausgelöst würde.
+// --- Login notice (AGOV / FedLogin) -----------------------------------------
+// No content is hidden; when signed out, only this notice appears where a case
+// would be started.
 //
-// `next` ist die Route, die die Anmeldung MITERLEDIGT. Ohne sie endete der
-// Weg auf halber Strecke: der Knopf stand da, wo sonst «Vorgang starten»
-// steht, meldete an, zeichnete die Seite neu — und der Nutzer musste den
-// eigentlichen Knopf ein zweites Mal drücken, an derselben Stelle, an der er
-// gerade geklickt hatte (Nutzerbefund 2026-08-06). Steht der Hinweis dagegen
-// SCHON auf der Zielseite (Formular-Apps, «Meine Vorgänge»), bleibt `next`
-// leer: dort ist das Neuzeichnen bereits das Ziel.
+// `next` is the route that COMPLETES login. Without it, the path stopped halfway:
+// the button sat where the start-case action normally appears, signed in, redrew the
+// page, and forced the user to press the real button a second time in the same
+// place they had just clicked (user finding, 2026-08-06). When the notice is
+// ALREADY on the target page (form apps, personal cases), leave `next` empty;
+// redrawing is already the destination there.
 function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung erforderlich.', opts = {}) {
-  // Abstand vor dem Knopf über `.login-gate .btn { margin-top:1rem }` (app.css)
-  // statt eines Inline-Stils — CDs Banner-Rampe (notification.postcss:89-92)
-  // gilt hier nicht, weil der Knopf IM __content sitzt, nicht daneben.
+  // Space before the button through `.login-gate .btn { margin-top:1rem }`
+  // (app.css), not an inline style. CD's banner scale
+  // (notification.postcss:89-92) does not apply because the button sits INSIDE
+  // __content, not beside it.
   return `<div class="notification notification--hint login-gate">
     ${icon('Lock', 'notification__icon')}
     <div class="notification__content">
@@ -2163,35 +2142,35 @@ function loginGate(text = 'Zum Starten dieses Vorgangs ist eine Anmeldung erford
   </div>`;
 }
 
-// Der EINE Anmeldeknopf (Hinweisband, Zugriff-Karte, Kopfzeile). Delegiert über
-// `data-login` statt inline onclick — Hausregel wie bei menu() und den
-// Notifications; `next` als Datenattribut ist ausserdem sicher escaped, während
-// eine URL in einem onclick-String an jedem Apostroph zerbricht.
+// The ONE login button (notice banner, access card, header). Delegated through
+// `data-login`, not inline onclick, matching the house rule for menu() and
+// notifications. `next` as a data attribute is also safely escaped, while a URL
+// inside an onclick string breaks at every apostrophe.
 function loginButton({ next = '', label = '', cls = 'btn btn--outline btn--icon-left', size = '' } = {}) {
   return `<button type="button" class="${cls}${size ? ' ' + size : ''}" data-login${
     next ? ` data-login-next="${escape(next)}"` : ''}>${icon('User', 'btn__icon')}<span class="btn__text">${
     escape(label || 'Anmelden mit AGOV / FedLogin')}</span></button>`;
 }
 
-// --- Zugriff-Karte -----------------------------------------------------------
-// EINE Karte für die Frage «wie komme ich hier rein?» — auf der Dienstleistungs-
-// und auf der Anwendungs-Landingpage. Vorher waren es zwei Bauarten: die
-// Anwendung stellte den Knopf nach oben und den Text darunter, die
-// Dienstleistung umgekehrt und in halber Grösse. Der Knopf gehört nach oben
-// (Nutzerentscheid 2026-08-06) — er ist die Antwort, der Text die Fussnote.
+// --- Access card ------------------------------------------------------------
+// ONE card for the question «how do I get in here?» on both service and
+// application landing pages. Previously there were two constructions: the
+// application put the button above the text, while the service reversed them at
+// half the size. The button belongs above (user decision, 2026-08-06): it is the
+// answer, and the text is the footnote.
 //
-// Der Aufrufer trennt Zielart (`external`) und Fensterverhalten (`newWindow`).
-// Same-Tab-Ziele können die Anmeldung weiterhin direkt mit dem Einstieg
-// verbinden. Bei einem neuen Tab bleibt der Start ein echter Link; der Router
-// der Zielanwendung zeigt dort bei Bedarf seinen Login-Gate. So bleibt der
-// Browserklick synchron und wird nicht von Popup-Blockern abgefangen.
+// The caller separates target kind (`external`) from window behaviour
+// (`newWindow`). Same-tab targets can continue connecting login directly to the
+// entry. In a new tab, the start remains a real link; the target application's
+// router shows its login gate there if required. The browser click remains
+// synchronous and is not intercepted by popup blockers.
 function accessCard({
   title = 'Zugriff', href = '', label = 'Öffnen', loginLabel = '',
   external = false, newWindow = false, requiresLogin = false, loggedIn = false, user = null,
   note = '', steps = [], free = '',
   missing = 'Im Prototyp ist kein Zielsystem angebunden.',
 } = {}) {
-  // `#` ist im Bestand der Platzhalter für «kennen wir, haben wir nicht».
+  // `#` is the inventory placeholder for «known, but unavailable».
   const has = !!href && href !== '#';
   const opensNewWindow = external || newWindow;
   const arrow = opensNewWindow ? 'External' : 'ArrowRight';
@@ -2201,8 +2180,8 @@ function accessCard({
   let action, context;
 
   if (!has) {
-    // <span aria-disabled>, nicht <button disabled>: das Ziel ist ein Link, und
-    // ein deaktivierter Link ist im HTML kein Bedienelement (app.css:1375).
+    // <span aria-disabled>, not <button disabled>: the target is a link, and a
+    // disabled link is not an HTML control (app.css:1375).
     action = `<span class="btn btn--outline btn--icon-right" aria-disabled="true">${
       icon(arrow, 'btn__icon')}<span class="btn__text">${escape(label)}</span></span>`;
     context = `<p class="small muted m-0">${escape(missing)}</p>`;
@@ -2229,8 +2208,8 @@ function accessCard({
   </div>`;
 }
 
-// Einmalige, delegierte Verdrahtung aller Anmeldeknöpfe (app.js). Delegiert am
-// Dokument, damit sie jeden Seitenwechsel überlebt — wie wireShare.
+// One delegated wiring for all login buttons (app.js). Delegate on document so
+// it survives every page change, like wireShare.
 export function wireLogin(root = document) {
   root.addEventListener('click', (e) => {
     const btn = e.target.closest && e.target.closest('[data-login]');

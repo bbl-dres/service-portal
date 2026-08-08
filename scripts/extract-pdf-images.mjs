@@ -1,23 +1,22 @@
-// Zieht die Fotos aus den BBL-Bautendokumentationen heraus.
+// Extracts photographs from BBL building documentation PDFs.
 //
-//   node scripts/extract-pdf-images.mjs                 alle PDFs in research/
-//   node scripts/extract-pdf-images.mjs <datei.pdf>     eine einzelne
+//   node scripts/extract-pdf-images.mjs                 all PDFs in research/
+//   node scripts/extract-pdf-images.mjs <file.pdf>      one PDF
 //
-// Warum von Hand statt mit pdfimages: poppler ist hier nur mit pdftotext
-// installiert. Die Fotos in diesen PDFs sind aber durchweg JPEG-Ströme
-// (DCTDecode) — die lassen sich direkt aus den Bytes schneiden: ein JPEG
-// beginnt mit FF D8 FF und endet mit FF D9. Bilder in anderer Kodierung
-// (Flate, JPX) werden dabei übergangen; das sind hier Logos und Flächen.
+// This is implemented directly instead of using pdfimages because only
+// pdftotext is available from Poppler here. The photographs in these PDFs are
+// JPEG streams (DCTDecode), so they can be cut directly from the bytes: a JPEG
+// starts with FF D8 FF and ends with FF D9. Other encodings such as Flate and
+// JPX are skipped; in this corpus they are logos and flat-colour graphics.
 //
-// Ausgabe nach research/pdf-bilder/<pdf-name>/NNN_<breite>x<hoehe>.jpg
-// samt einer Übersicht je PDF (Fotograf aus dem Impressum, Bildliste).
+// Output: research/pdf-images/<pdf-name>/NNN_<width>x<height>.jpg, plus one
+// index per run with the photographer from the imprint and the image list.
 //
-// RECHTE: Die Bautendokumentationen sind vom BBL veröffentlicht, die Fotos darin
-// aber einzeln Fotografinnen und Fotografen zugeschrieben (im Impressum unter
-// «Fotografie»). Sie sind NICHT frei lizenziert. Für einen internen Prototyp
-// des BBL über BBL-eigene Bauten ist die Verwendung vertretbar; der Nachweis
-// wird je Bild mitgeführt. Für eine Veröffentlichung wäre die Zustimmung der
-// Urheber einzuholen.
+// RIGHTS: BBL publishes the building documentation, but credits individual
+// photographers for the photographs in each imprint. The images are NOT
+// freely licensed. Using them in an internal BBL prototype about BBL buildings
+// is defensible when the credit remains attached. Publication would require
+// permission from the respective copyright holders.
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -25,94 +24,109 @@ import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-const AUS = ROOT + 'research/pdf-bilder/';
-const MIN_BYTES = 40 * 1024;    // kleiner ist Logo, Signet oder Farbfläche
-const MIN_KANTE = 500;          // Kantenlänge in Bildpunkten
+const OUTPUT_DIR = ROOT + 'research/pdf-images/';
+const MIN_BYTES = 40 * 1024; // Smaller files are logos, marks, or flat-colour graphics.
+const MIN_EDGE = 500; // Edge length in image pixels.
 
-// Bildmasse aus dem JPEG-Kopf lesen (SOF0/1/2/…): so lassen sich Kacheln und
-// Farbverläufe aussortieren, ohne die Datei zu dekodieren.
-function masse(buf) {
-  let i = 2;
-  while (i < buf.length - 9) {
-    if (buf[i] !== 0xFF) { i++; continue; }
-    const marker = buf[i + 1];
+// Read dimensions from the JPEG header (SOF0/1/2/etc.) so tiles and gradients
+// can be rejected without decoding the file.
+function readDimensions(buffer) {
+  let offset = 2;
+  while (offset < buffer.length - 9) {
+    if (buffer[offset] !== 0xFF) { offset++; continue; }
+    const marker = buffer[offset + 1];
     if (marker >= 0xC0 && marker <= 0xCF && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) {
-      return { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7) };
+      return { height: buffer.readUInt16BE(offset + 5), width: buffer.readUInt16BE(offset + 7) };
     }
-    if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) { i += 2; continue; }
-    const len = buf.readUInt16BE(i + 2);
-    if (len < 2) break;
-    i += 2 + len;
+    if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) {
+      offset += 2;
+      continue;
+    }
+    const length = buffer.readUInt16BE(offset + 2);
+    if (length < 2) break;
+    offset += 2 + length;
   }
   return null;
 }
 
-// Alle JPEG-Ströme aus den Rohbytes schneiden.
-function jpegs(buf) {
-  const out = [];
-  for (let i = 0; i < buf.length - 3; i++) {
-    if (buf[i] !== 0xFF || buf[i + 1] !== 0xD8 || buf[i + 2] !== 0xFF) continue;
-    // Ende suchen: FF D9. Verschachtelte Thumbnails im EXIF können ein frühes
-    // FFD9 haben — darum bis zum LETZTEN plausiblen Ende innerhalb des Stroms.
-    let ende = -1;
-    for (let j = i + 3; j < buf.length - 1; j++) {
-      if (buf[j] === 0xFF && buf[j + 1] === 0xD9) { ende = j + 2; break; }
+// Cut every JPEG stream from the raw PDF bytes.
+function extractJpegs(buffer) {
+  const images = [];
+  for (let offset = 0; offset < buffer.length - 3; offset++) {
+    if (buffer[offset] !== 0xFF || buffer[offset + 1] !== 0xD8 || buffer[offset + 2] !== 0xFF) continue;
+    // Find FF D9. Embedded EXIF thumbnails may contain an earlier marker, so
+    // this locates the first plausible end of the current stream.
+    let end = -1;
+    for (let cursor = offset + 3; cursor < buffer.length - 1; cursor++) {
+      if (buffer[cursor] === 0xFF && buffer[cursor + 1] === 0xD9) { end = cursor + 2; break; }
     }
-    if (ende < 0) break;
-    const teil = buf.subarray(i, ende);
-    if (teil.length >= MIN_BYTES) {
-      const m = masse(teil);
-      if (m && m.w >= MIN_KANTE && m.h >= MIN_KANTE) out.push({ buf: teil, ...m });
+    if (end < 0) break;
+    const bytes = buffer.subarray(offset, end);
+    if (bytes.length >= MIN_BYTES) {
+      const dimensions = readDimensions(bytes);
+      if (dimensions && dimensions.width >= MIN_EDGE && dimensions.height >= MIN_EDGE) {
+        images.push({ bytes, ...dimensions });
+      }
     }
-    i = ende - 1;
+    offset = end - 1;
   }
-  return out;
+  return images;
 }
 
-// Fotograf aus dem Impressum des Datenblatts.
-function fotograf(pdf) {
+// Read the photographer credit from the German data-sheet imprint.
+function findPhotographer(pdf) {
   try {
-    const t = execFileSync('pdftotext', ['-layout', pdf, '-'], { encoding: 'utf8', maxBuffer: 32e6 });
-    const m = t.match(/Fotografie[^\n]*\n?([^\n]*)/i) || t.match(/Fotos?\s*[:\s]([^\n]*)/i);
-    return m ? m[0].replace(/\s+/g, ' ').replace(/^Fotografien?\s*/i, '').trim().slice(0, 90) : '';
-  } catch { return ''; }
-}
-
-const argv = process.argv.slice(2);
-const quellen = [];
-for (const dir of ['research/pdfs', 'research/pdfs-agent']) {
-  if (!existsSync(ROOT + dir)) continue;
-  for (const f of readdirSync(ROOT + dir).filter((x) => x.toLowerCase().endsWith('.pdf'))) {
-    quellen.push(join(ROOT + dir, f));
+    const text = execFileSync('pdftotext', ['-layout', pdf, '-'], { encoding: 'utf8', maxBuffer: 32e6 });
+    const match = text.match(/Fotografie[^\n]*\n?([^\n]*)/i) || text.match(/Fotos?\s*[:\s]([^\n]*)/i);
+    return match ? match[0].replace(/\s+/g, ' ').replace(/^Fotografien?\s*/i, '').trim().slice(0, 90) : '';
+  } catch {
+    return '';
   }
 }
-const liste = argv.length ? argv : quellen;
 
-mkdirSync(AUS, { recursive: true });
-const uebersicht = {};
-let gesamt = 0;
+const arguments_ = process.argv.slice(2);
+const sources = [];
+for (const directory of ['research/pdfs', 'research/pdfs-agent']) {
+  if (!existsSync(ROOT + directory)) continue;
+  for (const filename of readdirSync(ROOT + directory).filter((entry) => entry.toLowerCase().endsWith('.pdf'))) {
+    sources.push(join(ROOT + directory, filename));
+  }
+}
+const pdfs = arguments_.length ? arguments_ : sources;
 
-for (const pdf of liste) {
+mkdirSync(OUTPUT_DIR, { recursive: true });
+const index = {};
+let total = 0;
+
+for (const pdf of pdfs) {
   const name = basename(pdf, '.pdf');
-  let bilder = [];
-  try { bilder = jpegs(readFileSync(pdf)); } catch (e) { console.log(`  ! ${name}: ${e.message}`); continue; }
-  if (!bilder.length) { console.log(`  – ${name.slice(0, 52).padEnd(54)} keine verwertbaren Fotos`); continue; }
+  let images = [];
+  try {
+    images = extractJpegs(readFileSync(pdf));
+  } catch (error) {
+    console.log(`  ! ${name}: ${error.message}`);
+    continue;
+  }
+  if (!images.length) {
+    console.log(`  - ${name.slice(0, 52).padEnd(54)} no usable photographs`);
+    continue;
+  }
 
-  const ordner = AUS + name + '/';
-  mkdirSync(ordner, { recursive: true });
-  // Grösste zuerst — das Titelbild ist fast immer das grösste.
-  bilder.sort((a, b) => (b.w * b.h) - (a.w * a.h));
-  const dateien = [];
-  bilder.slice(0, 12).forEach((b, i) => {
-    const dn = `${String(i + 1).padStart(2, '0')}_${b.w}x${b.h}.jpg`;
-    writeFileSync(ordner + dn, b.buf);
-    dateien.push({ datei: dn, w: b.w, h: b.h, kb: Math.round(b.buf.length / 1024) });
+  const directory = OUTPUT_DIR + name + '/';
+  mkdirSync(directory, { recursive: true });
+  // The title image is almost always the largest, so write it first.
+  images.sort((a, b) => (b.width * b.height) - (a.width * a.height));
+  const files = [];
+  images.slice(0, 12).forEach((image, imageIndex) => {
+    const filename = `${String(imageIndex + 1).padStart(2, '0')}_${image.width}x${image.height}.jpg`;
+    writeFileSync(directory + filename, image.bytes);
+    files.push({ file: filename, width: image.width, height: image.height, kb: Math.round(image.bytes.length / 1024) });
   });
-  uebersicht[name] = { pdf: basename(pdf), fotograf: fotograf(pdf), bilder: dateien };
-  gesamt += dateien.length;
-  console.log(`  ✓ ${name.slice(0, 52).padEnd(54)} ${String(dateien.length).padStart(2)} Fotos  (grösstes ${bilder[0].w}×${bilder[0].h})`);
+  index[name] = { pdf: basename(pdf), photographer: findPhotographer(pdf), images: files };
+  total += files.length;
+  console.log(`  ok ${name.slice(0, 52).padEnd(54)} ${String(files.length).padStart(2)} photos  (largest ${images[0].width}x${images[0].height})`);
 }
 
-writeFileSync(AUS + 'UEBERSICHT.json', JSON.stringify(uebersicht, null, 1));
-console.log(`\n${gesamt} Fotos aus ${Object.keys(uebersicht).length} Datenblättern → research/pdf-bilder/`);
-console.log('Übersicht: research/pdf-bilder/UEBERSICHT.json');
+writeFileSync(OUTPUT_DIR + 'INDEX.json', JSON.stringify(index, null, 1));
+console.log(`\n${total} photos from ${Object.keys(index).length} data sheets -> research/pdf-images/`);
+console.log('Index: research/pdf-images/INDEX.json');

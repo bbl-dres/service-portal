@@ -25,10 +25,10 @@ export const FLOORPLAN_COLORS = Object.freeze({
   none: color('none', '#f7f8fa'),
   unassigned: color('unassigned', '#f1f3f5', '--fp-unassigned'),
   use: Object.freeze({
-    arbeit: color('use-work', '#dbe7f6', '--fp-use-work'),
-    zusammen: color('use-collab', '#fbeccd', '--fp-use-collab'),
+    'arbeit': color('use-work', '#dbe7f6', '--fp-use-work'),
+    'zusammen': color('use-collab', '#fbeccd', '--fp-use-collab'),
     infra: color('use-infra', '#e9edf1', '--fp-use-infra'),
-    sonder: color('use-special', '#e4dcf2', '--fp-use-special'),
+    'sonder': color('use-special', '#e4dcf2', '--fp-use-special'),
   }),
   sia: Object.freeze({
     HNF: color('sia-hnf', '#d6e6f5', '--fp-sia-hnf'),
@@ -37,13 +37,13 @@ export const FLOORPLAN_COLORS = Object.freeze({
     FF: color('sia-ff', '#dcecdd', '--fp-sia-ff'),
     TF: color('sia-tf', '#f7e2d6', '--fp-sia-tf'),
   }),
-  ve: Object.freeze([
-    color('ve-a', '#d6e6f5', '--fp-ve-a'),
-    color('ve-b', '#fbeccd', '--fp-ve-b'),
-    color('ve-c', '#e4dcf2', '--fp-ve-c'),
-    color('ve-d', '#f8dcdf', '--fp-ve-d'),
-    color('ve-e', '#d9ecdb', '--fp-ve-e'),
-    color('ve-f', '#d5eaf0', '--fp-ve-f'),
+  administrativeUnit: Object.freeze([
+    color('administrative-unit-a', '#d6e6f5', '--fp-administrative-unit-a'),
+    color('administrative-unit-b', '#fbeccd', '--fp-administrative-unit-b'),
+    color('administrative-unit-c', '#e4dcf2', '--fp-administrative-unit-c'),
+    color('administrative-unit-d', '#f8dcdf', '--fp-administrative-unit-d'),
+    color('administrative-unit-e', '#d9ecdb', '--fp-administrative-unit-e'),
+    color('administrative-unit-f', '#d5eaf0', '--fp-administrative-unit-f'),
   ]),
   module: Object.freeze([
     color('module-1', '#dbe7f6', '--fpe-module-1'),
@@ -67,16 +67,16 @@ export function normalizeColorMode(value) {
   return EDITOR_COLOR_MODES.some((mode) => mode.value === value) ? value : 'use';
 }
 
-/** Build a deterministic VE palette from all room occupiers in the document. */
+/** Build a deterministic administrative-unit palette from all room occupiers. */
 export function createColorContext(rooms = []) {
   const occupiers = [...new Set(rooms
-    .map((room) => String(room?.occupierVe || '').trim())
+    .map((room) => String(room?.['occupierVe'] || '').trim())
     .filter(Boolean))].sort();
   return Object.freeze({
     occupiers: Object.freeze(occupiers),
-    veByOccupier: new Map(occupiers.map((name, index) => [
+    administrativeUnitByOccupier: new Map(occupiers.map((name, index) => [
       name,
-      FLOORPLAN_COLORS.ve[index % FLOORPLAN_COLORS.ve.length],
+      FLOORPLAN_COLORS.administrativeUnit[index % FLOORPLAN_COLORS.administrativeUnit.length],
     ])),
   });
 }
@@ -89,8 +89,10 @@ export function roomColor(room = {}, mode = 'use', context = createColorContext(
     case 'sia':
       return FLOORPLAN_COLORS.sia[room.sia] || SIA_FALLBACK;
     case 've': {
-      const occupier = String(room.occupierVe || '').trim();
-      return occupier ? context.veByOccupier.get(occupier) || FLOORPLAN_COLORS.ve[0] : FLOORPLAN_COLORS.unassigned;
+      const occupier = String(room['occupierVe'] || '').trim();
+      return occupier
+        ? context.administrativeUnitByOccupier.get(occupier) || FLOORPLAN_COLORS.administrativeUnit[0]
+        : FLOORPLAN_COLORS.unassigned;
     }
     case 'module': {
       const index = Number(room.moduleId) - 1;
@@ -122,10 +124,10 @@ export function roomColorDescriptor(room = {}, mode = 'use', context = createCol
     };
   }
   if (normalized === 've') {
-    const occupier = String(room.occupierVe || '').trim();
+    const occupier = String(room['occupierVe'] || '').trim();
     return {
-      key: occupier ? `ve-${occupier}` : 've-unassigned',
-      label: labels.ve || occupier || 'Nicht zugeteilt',
+      key: occupier ? `administrative-unit-${occupier}` : 'administrative-unit-unassigned',
+      label: labels.administrativeUnit || occupier || 'Nicht zugeteilt',
       swatch: resolved.swatch,
       color: resolved,
     };

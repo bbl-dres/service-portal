@@ -57,7 +57,7 @@
 .booking-more { margin-top:var(--sp-1); align-self:flex-start; }
 
 /* Booking dialog. The facts block is a read-only echo of the search bar; the
-   only way to change it is to go back there, which is what «Ändern» does. */
+   change action returns there. */
 .booking-dialog__head { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--sp-4);
   margin-bottom:var(--sp-6); padding:var(--sp-4); background:var(--color-secondary-50); }
 .booking-dialog__head .btn { flex:none; }

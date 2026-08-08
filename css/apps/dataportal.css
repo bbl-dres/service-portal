@@ -1,53 +1,34 @@
-/* ---- Dashboards (dash-*/dashboard-*/kpi/filter-panel) — geteilt von
-        js/apps/dataportal.js und js/apps/estate.js über js/dashboard-chrome.js ---- */
-/* Der frühere .dash-hero-Block (Grossziffer über dem Raster) ist gelöscht —
-   kein Emitter mehr in js/; die Grossziffern tragen heute die .kpi-Kacheln. */
+/* Dashboard chrome shared by the data-portal and property-dashboard apps. */
+
 .dash-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-6); position:relative; }
 @media (min-width:1280px){ .dash-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-8); } }
 
-/* Dashboard-Layout (Datenportal, Superset-Muster): linkes Filterpanel + Hauptbereich */
-/* Superset-Rahmung: die ganze Dashboard-Fläche ist eine graue Leinwand, die
-   weisse Karten (Filter, KPIs, Charts) rahmt. align-items:stretch → das Filter-
-   panel füllt die volle Zeilenhöhe (voll-hohe Leiste im Desktop). */
 .dashboard-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-4); margin-top:var(--sp-5); align-items:stretch; }
 @media (min-width:1024px){ .dashboard-layout { grid-template-columns:16rem minmax(0,1fr); gap:var(--sp-5); } }
 .dashboard-main { min-width:0; }
-/* Filterpanel — links, weisse Leiste (voll-hoch via Grid-Stretch), einklappbar.
-   EIN Kartenrezept mit .catbar__panel (Rand secondary-100, Polster 1rem 1.25rem,
-   radius-lg); nur die Fläche ist INVERTIERT, weil die Leinwände es sind:
-   weisse Karte auf getönter Dashboard-Fläche hier, getönte Karte auf weisser
-   Seite dort — beide Entscheidungen sind dokumentiert. */
+
 .filter-panel { background:var(--color-bg); border:var(--stroke-1) solid var(--panel-border);
   border-radius:var(--radius-lg); padding:var(--sp-4) var(--sp-5); }
 .filter-panel__head { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); margin-bottom:var(--sp-4); }
 .filter-panel__title { font-size:var(--text-lg); font-weight:var(--fw-bold); margin:0; }
-/* Der Umschalter war unter 1024 `display:none` und die Einklapp-Regeln standen
-   INNERHALB derselben ≥1024-Abfrage — die Affordanz existierte also genau dort,
-   wo sie nicht gebraucht wird. Gemessen bei 390: .filter-panel 358×946 in einem
-   844 px hohen Viewport, d. h. mehr als ein Bildschirm Checkboxen vor der ersten
-   Kennzahl. CDs Facettenfilter ist auf jeder Breite ein standardmässig
-   geschlossenes Panel (search.postcss:249-265) — dasselbe Muster, das dieses
-   Repo bei den Katalogseiten (.catbar__panel) schon verwendet. */
+
 .filter-panel__toggle { display:inline-flex; align-items:center; justify-content:center;
   min-width:var(--control-h); min-height:var(--control-h);
   color:var(--color-text-muted); }
 .filter-panel__toggle:hover { color:var(--color-primary-600); }
 .filter-panel__toggle .icon { transition:transform var(--duration); }
-/* Unter lg klappt das Panel nach OBEN zusammen — der Pfeil zeigt die Richtung:
-   offen nach oben (einklappen), zu nach unten (aufklappen). */
+
 @media (max-width:1023.98px){
   .filter-panel__toggle .icon { transform:rotate(90deg); }
   .dashboard-layout--collapsed .filter-panel__toggle .icon { transform:rotate(-90deg); }
 }
-/* Unter lg: eigene Klasse .filter-panel--collapsed. Die bestehende
-   .dashboard-layout--collapsed-Desktopmechanik bleibt unangetastet, damit die
-   filterFullHeight-Zusicherung in test-dashboard.mjs grün bleibt. */
+
 @media (max-width:1023.98px){
   .filter-panel { padding:var(--sp-3) var(--sp-4); }
   .filter-panel__toggle { width:100%; justify-content:space-between; }
   .filter-panel--collapsed .filter-panel__body { display:none; }
   .filter-panel--collapsed .filter-panel__head { margin-bottom:0; }
-  /* offen: auf Tablets in Spalten statt in die Höhe */
+
   .filter-panel__body { display:grid; grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));
     gap:0 var(--sp-6); }
 }
@@ -59,56 +40,39 @@
   .dashboard-layout--collapsed .filter-panel__head { margin:0; justify-content:center; }
   .dashboard-layout--collapsed .filter-panel__toggle .icon { transform:rotate(180deg); }
 }
-/* KPI-Reihe (Big-Number-Kacheln) über dem Chart-Grid */
+
 .kpi-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-4); margin-bottom:var(--sp-6); }
 @media (max-width:479.98px){ .kpi-row { grid-template-columns:minmax(0,1fr); } }
 @media (min-width:768px){ .kpi-row { grid-template-columns:repeat(4,minmax(0,1fr)); } }
 .kpi { background:var(--color-bg); border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius-lg);
   padding:var(--sp-4); box-shadow:var(--shadow-sm); }
-/* Lange Kennzahlnamen liefen aus der Kachel; Einheit brach allein um (Item 2.16). */
+
 .kpi__label { font-size:var(--text-sm); color:var(--color-text-muted);
   overflow-wrap:anywhere; hyphens:auto; }
-/* Typografie (Grösse/Farbe/Ziffern) kommt aus dem geteilten Grossziffer-Rezept
-   bei .stat__num — hier nur Layout der Kachel. */
+
 .kpi__value { display:flex; flex-wrap:wrap; align-items:baseline; gap:var(--sp-1);
   margin-top:var(--sp-1); overflow-wrap:anywhere; }
 .kpi__unit { font-size:var(--fs-base); font-weight:var(--fw-regular); color:var(--color-text-muted); margin-left:0; }
 .kpi__delta { font-size:var(--fs-xs); color:var(--color-text-muted); margin-top:var(--sp-1); }
 .kpi__delta.is-good { color:var(--color-success-text); }
-/* Gegenstück zu .is-good — fehlte, sodass eine Verschlechterung im neutralen Grau
-   erschien. Richtung darf nicht allein über Farbe laufen (WCAG 1.4.1): Item 6.11
-   ergänzt zusätzlich ein Pfeilglyph und ein sr-only-Wort. */
+
 .kpi__delta.is-bad { color:var(--color-error-text); }
 .kpi__arrow { margin-right:var(--sp-1); font-size:.8em; }
-/* Karte im Dashboard (MapLibre) — spannt beide Grid-Spalten */
+
 .chart--map { grid-column:1 / -1; }
-/* MapLibre wird verzögert vom CDN geladen (12-s-Timeout, buildings-map.js:16) und
-   schreibt den Container nur im Fehlerfall — ohne Platzhalter steht bis dahin ein
-   leeres graues Rechteck ohne Eintrag im Accessibility-Baum (Item 6.14). */
+
 .dash-map { width:100%; height:clamp(15rem, 60vw, 30rem); border-radius:var(--radius); overflow:hidden; background:var(--color-secondary-100); }
-/* Nur zentrieren, SOLANGE der Platzhalter da ist — MapLibre bekommt den Container
-   danach unverändert als normalen Block zurück (`place-items` auf dem fertigen
-   Kartencontainer wäre ein Eingriff in fremdes Layout). Ohne :has()-Unterstützung
-   steht der Platzhalter oben links: rein kosmetisch, kein Funktionsverlust. */
+
 .dash-map:has(> .loading) { display:grid; place-items:center; }
 
-/* Zentrierter Ladehinweis ÜBER der Karte, bis Kacheln und Cluster stehen
-   (showMapSpinner). z-index unter den MapLibre-Bedienelementen (die liegen bei 2). */
 .map-spinner { position:absolute; inset:0; z-index:var(--z-local-content); display:flex; align-items:center; justify-content:center;
   color:var(--color-text-muted); background:var(--color-secondary-100); pointer-events:none; }
 .dash-map, .pf-map { position:relative; }
-/* Popups auf .pf-map bekamen bisher MapLibre-Defaults — an die Dashboard-Popups
-   angleichen (Item 2.5d). */
+
 .dash-map .maplibregl-popup-content, .pf-map .maplibregl-popup-content {
   padding:var(--sp-3) var(--sp-3-5); border-radius:var(--radius-lg);
   border:var(--stroke-1) solid var(--panel-border); box-shadow:var(--shadow-lg); font-size:var(--text-sm); }
-/* MapLibre liefert seine Bedienknöpfe ungestylt mit 29x29 aus — auf CDs Rampe
-   holen (in diag.json auf dash-immobilien, portfolio und projects bei JEDER Breite).
-   Die Rampe wächst hier BEWUSST nicht mit der Breite wie sonst (--control-h):
-   Kartenknöpfe liegen ÜBER dem Inhalt, den sie verdecken, und ab 1024px zeigt
-   praktisch immer ein feiner Zeiger auf sie — 48px wirkten dort klobig. 44px auf
-   Touch bleiben (WCAG 2.5.5 AAA), 40px am Zeiger liegen weit über der
-   AA-Mindestgrösse von 24px (WCAG 2.5.8). */
+
 .maplibregl-map .maplibregl-ctrl-group button { width:var(--target-min); height:var(--target-min); }
 @media (min-width:1024px) and (pointer:fine){
   .maplibregl-map .maplibregl-ctrl-group button { width:var(--sp-10); height:var(--sp-10); } }
@@ -124,8 +88,7 @@
   outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-1); }
 .chart { padding:var(--sp-5); margin:0; }
 @media (min-width:1024px){ .chart { padding:var(--sp-6); } }
-/* Bei 320 lief der Diagrammkopf aus der Karte und schob den Kebab — den einzigen
-   Weg zu Export und Vollbild — aus dem Bild (Item 2.17). */
+
 .chart__head { display:flex; align-items:flex-start; justify-content:space-between;
   gap:var(--sp-2) var(--sp-4); flex-wrap:wrap; }
 .chart__title { min-width:0; flex:1 1 12rem; overflow-wrap:anywhere;
@@ -139,22 +102,13 @@
 .chart__bar, .chart__dot { transition:opacity var(--duration-fast); }
 .chart__bar:hover, .chart__dot:hover, .chart__bar:focus-visible, .chart__dot:focus-visible { opacity:.78; }
 .chart__note { font-size:var(--text-sm); color:var(--color-text-muted); margin:var(--sp-3) 0 0; }
-/* `.chart__table` trägt `.sr-only` (Item 6.2): Textalternative für Hilfsmittel,
-   keine sichtbare Aufklappzeile — Sehende exportieren über das Diagrammmenü
-   (CSV/Excel). Darum braucht die Tabelle keine eigene Optik; die früheren
-   .chart__sql-Regeln (SQL-Ausklapper) sind mit ihrem Emitter entfallen. */
-/* Sichtbare Kennzahlen-Tabelle (chart form 'table', Muster Geschäftsbericht
-   Stadt Zürich): Jahresspalten rechtsbündig mit Tabellenziffern, Gruppentitel-
-   Zeilen als Zwischenüberschriften, Fussnoten klein darunter. Überschreibt
-   punktuell das sr-only der Zwillingstabellen (Item 6.2) — hier IST die
-   Tabelle die Darstellung. */
+
 .chart__table--visible { margin:var(--sp-1) 0 0; }
 .chart__table--visible th.num, .chart__table--visible td.num { text-align:right; font-variant-numeric:tabular-nums; }
 .chart__table--visible .chart__trow-group th { padding-top:var(--sp-4); font-weight:var(--fw-bold); border-bottom:0; }
 .chart__footnotes { margin:var(--sp-2) 0 0; padding-left:var(--sp-5); color:var(--color-text-muted); font-size:var(--text-xs); }
 .chart__footnotes li + li { margin-top:var(--sp-0-5); }
 
-/* KPI-Kachel-Zusätze (Datenportal-Ausbau Aug. 2026): Sparkline + Stichtagszeile. */
 .kpi__spark { display:block; width:var(--sp-24); height:1.625rem; margin-top:var(--sp-1-5); color:var(--color-secondary-600); opacity:.7; }
 .kpi__hint { font-size:var(--text-xs); color:var(--color-text-muted); margin-top:var(--sp-1-5); }
 
@@ -163,47 +117,34 @@
   font-size:var(--text-xs); white-space:nowrap; box-shadow:var(--shadow-md); }
 @media (prefers-reduced-motion: reduce) { .chart__bar, .chart__dot { transition:none; } }
 
-/* ---- Dashboard-Chrome (Superset-Muster) ---------------------------------- */
 .dash-page { background:var(--color-secondary-50); }
 .dash-header { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--sp-4); }
 .dash-header__text { min-width:0; }
 .dash-footer { margin-top:var(--sp-6); padding-top:var(--sp-4); border-top:var(--stroke-1) solid var(--color-border);
   color:var(--color-text-muted); font-size:var(--text-sm); display:flex; flex-wrap:wrap; align-items:center; }
 .dash-footer .meta-info__item:not(:last-child)::after { content:"|"; padding:0 var(--sp-3); color:var(--color-secondary-300); }
-/* weisse Karten auf grauer Leinwand — flacher als der Default-Schatten */
+
 .dashboard-layout .chart, .dashboard-layout .kpi { box-shadow:var(--shadow-sm); border:var(--stroke-1) solid var(--panel-border); }
 .dashboard-layout .tab__container { padding-top:var(--sp-5); }
 .chart__actions { display:flex; align-items:center; gap:var(--sp-2); flex:none; }
 .lead-hint { margin-top:var(--sp-1-5); }
-/* ── API-Dokumentation (js/apps/api-docs.js) ─────────────────────────────
-   Unterhalb der detail-bar rendert das ECHTE Swagger UI (swagger-ui-dist vom
-   CDN, Lademuster wie MapLibre) — der frühere CD-nachgebaute api-*-Block
-   (59 Selektoren) ist mit dem Umbau entfallen (Nutzerentscheid 2026-08-04).
-   Swaggers Stile leben unter .swagger-ui und bleiben dort; hier nur die
-   Einbettung. */
+
 .swagger-host { margin-top:var(--sp-4); }
-/* Titel, Version und Beschreibung trägt der Portal-Seitenkopf (h1/pill-row/
-   lead) — Swaggers eigener Info-Block stünde doppelt darunter. */
+
 .swagger-host .swagger-ui .information-container { display:none; }
-/* Drittanbieter-Adapter: Swagger liefert mehrere 25–33-px-Controls. Im Portal
-   gelten 44 px sowie derselbe sichtbare Fokus wie für native Komponenten. */
+
 .swagger-host .swagger-ui button { min-width:var(--target-min); min-height:var(--target-min); }
 .swagger-host .swagger-ui input:not([type="hidden"]),
 .swagger-host .swagger-ui select,
 .swagger-host .swagger-ui textarea { min-height:var(--target-min); }
 .swagger-host .swagger-ui input:is([type="checkbox"],[type="radio"]) {
   width:var(--target-min); min-width:var(--target-min); height:var(--target-min); }
-/* Third-party boundary: Swagger's injected selectors cannot be reordered or
-   weakened, so the portal focus ring must explicitly win here. */
+
 .swagger-host .swagger-ui :is(button,input,select,textarea,[tabindex]):focus-visible {
   outline:var(--stroke-2) solid var(--color-focus-ring) !important; outline-offset:var(--stroke-2); box-shadow:none; }
 .swagger-host .swagger-ui :is(button,input,select,textarea):disabled {
   cursor:not-allowed; opacity:.55; }
 
-/* ── Prozessdokumentation: BPMN-Viewer (bpmn-js, #/app/process-docs) ─────────
-   Wie der Swagger-Host: die Bibliothek bringt ihre Stile mit (diagram-js/
-   bpmn-js vom CDN), hier nur Einbettung und Zoomleiste. Der Behälter braucht
-   eine feste Höhe — bpmn-js misst ihn beim Einpassen. */
 .bpmn-host { position:relative; height:34rem; border:var(--stroke-1) solid var(--panel-border); background:var(--color-bg); overflow:hidden; }
 .bpmn-canvas { height:100%; }
 .bpmn-host .loading { height:100%; }

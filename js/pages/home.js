@@ -1,35 +1,36 @@
-// Übersicht (Startseite) — Arbeitsfläche, keine Nachrichtenwand.
+// Overview (home page) — a workspace, not a news wall.
 //
-// Aufbau nach der Reihenfolge, in der jemand die Seite benutzt:
-//   Suche → offene Vorgänge → häufige Dienstleistungen →
-//   Anwendungen und Hilfsmittel → Aktuelles.
-// Begründung siehe docs/design-review.md P1-1: ein Intranet dient der
-// wiederholten Aufgabenerledigung, nicht der Erstorientierung — deshalb
-// ausdrücklich nicht dem Aufbau öffentlicher Bundesauftritte folgend.
+// Ordered by how someone uses the page:
+//   search → open cases → frequently used services →
+//   applications and resources → news.
+// See docs/design-review.md P1-1 for the rationale: an intranet supports
+// repeated task completion rather than first-time orientation, so this
+// deliberately does not follow the structure of public federal websites.
 
 import { attachSuggest } from '../search-suggest.js';
 import { statusLabel } from '../domain.js';
-import { datum } from '../format.js';
+import { formatDate } from '../format.js';
 import * as links from '../links.js';
 
 
 
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
-export const needs = ['news', 'applications'];   // Kachelbilder kommen aus den Anwendungsdatensätzen
+// Deferred collections for this route. The router calls core.ensure(needs)
+// BEFORE render(); without this declaration, an accessor would read the still
+// empty list and the view would show «no entries» instead of data
+// (docs/code-review.md §3).
+export const needs = ['news', 'applications'];   // Tile images come from application records.
 const CLOSED = ['abgeschlossen', 'erledigt', 'geliefert'];
 
-// Die Themenkacheln (Bauprojekte · Unterbringung · Objektbetrieb · Sicherheit)
-// standen hier als eigener Startseiten-Block. Sie sind entfallen: die Themen
-// erschliesst der Dienstleistungs-Drawer (router.js, `childrenFrom: 'themen'`)
-// und die Katalogseite #/services?topic=… — die Startseite trägt dafür die
-// Aufgaben, nicht die Gliederung.
+// Topic tiles (construction projects · accommodation · building operations ·
+// security) once formed a separate home-page block. They were removed because
+// the service drawer (router.js, `childrenFrom: 'topics'`) and the catalogue at
+// #/services?topic=… expose these topics; the home page represents tasks, not
+// the information hierarchy.
 
 export default async function render(ctx) {
   const { mount, core, engine, session, C, setTitle, setCrumbs } = ctx;
-  // «Startseite» wie die Brotkrumen-Wurzel — der Tab hiess als einziger Ort
-  // «Übersicht», das Wort gehört den Drawer-Erstzeilen und Detail-Tabs (D7).
+  // Use «Startseite», matching the breadcrumb root. This tab alone was labelled
+  // “Overview”, a word reserved for drawer first rows and detail tabs (D7).
   setTitle('Startseite');
   setCrumbs([]);
 
@@ -38,23 +39,23 @@ export default async function render(ctx) {
   const cases = engine.instances();
   const open = cases.filter(i => !CLOSED.includes(i.status));
 
-  /* ---------------------------------------------------------- Bausteine -- */
+  /* ---------------------------------------------------------- BUILDING BLOCKS -- */
 
-  // CD-Muster (indexPage.vue, ServicesSection.vue): volle-Breite-Abschnitte,
-  // die Weiss / secondary-50 abwechseln; Titel oben als .section__title, der
-  // «Alle …»-Verweis unten rechts als .section__action mit btn--bare. Der
-  // Inhalt sitzt im .container. `alt` wird beim Zusammenbau nach Reihenfolge
-  // gesetzt, damit die Bänder immer sauber wechseln.
-  // Derselbe Baustein wie auf den Hub-Seiten (C.pageSection) — die lokale Kopie
-  // war die einzige Stelle, die CDs Section-Anatomie korrekt aufbaute.
+  // CD pattern (indexPage.vue, ServicesSection.vue): full-width sections
+  // alternate white / secondary-50; the title sits at the top as .section__title
+  // and the “all” link at bottom right as .section__action with btn--bare.
+  // Content lives in .container. `alt` is assigned by position during assembly
+  // so the bands always alternate cleanly.
+  // This is the same building block used on hub pages (C.pageSection). The local
+  // copy was the only place that constructed the CD section anatomy correctly.
   const section = ({ title, body, more }, alt) => C.pageSection({ title, body, more, alt });
 
-  // Häufige Dienstleistung — Textkachel, kein Bild: hier zählt das Ziel,
-  // nicht die Illustration.
-  // Die Kachelbeschriftung ist eine echte <h3>: sie war ein <span> und fehlte
-  // damit in der Dokumentgliederung — die Startseite bot Hilfsmitteln unter
-  // «Häufig gebraucht» keinen einzigen Sprungpunkt an. <a> hat im HTML5 ein
-  // transparentes Inhaltsmodell, eine Überschrift darin ist gültig.
+  // Frequently used service — a text tile without an image, because the
+  // destination matters here rather than the illustration.
+  // The tile label is a real <h3>. It was a <span>, so it was absent from the
+  // document outline and the home page offered no heading jump within
+  // the frequently-used section. <a> has a transparent HTML5 content model, so a heading
+  // inside it is valid.
   const serviceTile = (s) => `
     <a class="quick-tile plain-link" href="#/services/${encodeURIComponent(s.serviceId)}">
       ${C.icon(s.icon || 'ArrowRight', 'icon--md')}
@@ -64,39 +65,38 @@ export default async function render(ctx) {
       </div>
     </a>`;
 
-  /* ------------------------------------------------------------- Blöcke -- */
+  /* ------------------------------------------------------------- BLOCKS -- */
 
   const blocks = [];
 
-  // 1 · Offene Vorgänge — nur angemeldet und nur wenn es welche gibt.
+  // 1 · Open cases — only when signed in and when any exist.
   if (session.isLoggedIn() && open.length) blocks.push({
     title: 'Meine offenen Vorgänge',
-    // Über C.table statt von Hand: die Startseite hatte als einzige Ansicht
-    // eine eigene Tabellen-Auszeichnung und wich damit in Polster, Trennlinien
-    // und Scrollhinweis von allen anderen ab.
+    // Use C.table rather than hand-built markup. The home page alone had custom
+    // table markup, making its padding, separators, and scroll hint differ from
+    // every other view.
     body: C.table({
       caption: 'Meine offenen Vorgänge', zebra: true, rowsClickable: true,
       columns: [
         { key: 'reference', label: 'Referenz', width: '10rem',
-          render: (i) => `<a href="${links.vorgang(i.instanceId)}">${C.escape(i.reference)}</a>` },
+          render: (i) => `<a href="${links.caseDetails(i.instanceId)}">${C.escape(i.reference)}</a>` },
         { key: 'title', label: 'Titel', render: (i) => C.escape(i.title) },
-        { key: 'updatedAt', label: 'Aktualisiert', width: '9rem', render: (i) => C.escape(datum(i.updatedAt || i.createdAt)) },
+        { key: 'updatedAt', label: 'Aktualisiert', width: '9rem', render: (i) => C.escape(formatDate(i.updatedAt || i.createdAt)) },
         { key: 'status', label: 'Status', width: '11rem', render: (i) => C.statusBadge(i.status, statusLabel(core, i.status)) },
       ],
       rows: open.slice(0, 5),
     }),
-    // «Alle ‹Einheit› anzeigen» — das Muster aller geteilten Mehr-Verweise; die
-    // Zahl trug nur dieser eine Link und ist entfallen (D4).
+    // The “show all” wording follows the shared more-link pattern. Only this
+    // link carried a count, which was therefore removed (D4).
     more: { href: '#/my-cases', label: 'Alle Vorgänge anzeigen' },
   });
 
-  // 2 · Häufig gebrauchte Dienstleistungen
-  // `popular` ist ein RANG (1 = erste Kachel), keine Fahne. Das Raster ist
-  // gleichmässig — die Gewichtung trägt also allein die Leserichtung, und die
-  // gehört in die Daten, nicht in die Dateireihenfolge von services.json.
-  // Auswahl nach der echten Kundenplattform (Fusszeilen-Kurzwahl: E-Shop,
-  // Reklamationsmeldung, Vorlagen, Störungsmeldungen) — also nach Häufigkeit,
-  // nicht nach redaktioneller Prominenz.
+  // 2 · Frequently used services
+  // `popular` is a RANK (1 = first tile), not a flag. The grid is uniform, so
+  // reading order alone carries the weighting, and that belongs in the data,
+  // not in the file order of services.json. Selection follows the real customer
+  // platform's footer shortcuts (e-shop, complaint, templates, fault reports),
+  // hence frequency rather than editorial prominence.
   const popular = services.filter(s => s.popular).sort((a, b) => a.popular - b.popular);
   if (popular.length) blocks.push({
     title: 'Häufig gebraucht',
@@ -104,23 +104,23 @@ export default async function render(ctx) {
     more: { href: '#/services', label: 'Alle Dienstleistungen anzeigen' },
   });
 
-  // 3 · Anwendungen, Hilfsmittel und weitere Angebote — die meistgebrauchten
-  //     Einstiege quer über die Plattform: zwei Anwendungen, eine Hilfsmittel-
-  //     Sammlung, ein externer Shop, ein Dokumentenbestand. Bewusst gemischt und
-  //     bewusst kurz: es ist eine Auswahl, kein zweites Menü.
-  //     Fünf Karten im Dreierraster ergeben 3+2 — keine einzeln verwaiste Karte.
+  // 3 · Applications, resources, and other offerings — the most-used entry
+  //     points across the platform: two applications, one resource collection,
+  //     one external shop, and one document collection. Deliberately mixed and
+  //     deliberately short: this is a selection, not a second menu.
+  //     Five cards in a three-column grid produce 3+2, with no orphaned card.
   //
-  //     Anwendungen führen auf ihre LANDINGPAGE (#/applications/<appId>), nicht
-  //     direkt ins System — dieselbe Regel wie im Anwendungskatalog: jede
-  //     Anwendung hat eigene Einstiegspunkte, Zugriffsregeln und Ansprechstellen,
-  //     und die stehen auf der Landingpage. Nur Hilfsmittel verweisen direkt auf
-  //     ihre Sammlung, weil es dort nichts zu erklären gibt.
-  /* Anwendungs-Kacheln tragen das BILD DES ANWENDUNGSDATENSATZES
-        (applications.json `bild`) — Startseite, Katalogkarte und Landingpage
-        zeigen damit dasselbe Motiv (Nutzerbefund 2026-08-04: das Datenportal
-        hatte hier ein anderes Bild als auf seiner Landingpage). Nur die
-        Wissens-Kachel hat keinen Datensatz und bringt ihr Bild aus dem
-        heroes-Pool mit. */
+  //     Applications lead to their LANDING PAGE (#/applications/<appId>), not
+  //     directly into the system. This is the same rule as in the application
+  //     catalogue: each application has its own entry points, access rules, and
+  //     contacts, all explained on the landing page. Only resources link directly
+  //     to their collection because there is nothing else to explain.
+  /* Application tiles use the APPLICATION RECORD'S IMAGE
+        (applications.json compatibility key `bild`), so the home page,
+        catalogue card, and landing page show the same subject (user finding,
+        2026-08-04: the data portal previously used a different image here from
+        its landing page). Only the knowledge tile has no record and therefore
+        brings its image from the heroes pool. */
   const HIGHLIGHTS = [
     { appId: 'datenportal', href: '#/applications/datenportal',
       title: 'Datenportal',
@@ -146,32 +146,32 @@ export default async function render(ctx) {
     title: 'Anwendungen, Hilfsmittel und weitere Angebote',
     body: `<div class="grid grid--responsive-cols-3">${HIGHLIGHTS.map(h => C.card({
       title: h.title, desc: h.desc, href: h.href,
-      photo: { src: h.appId ? (core.application(h.appId)?.bild?.src || '') : h.src, alt: '' },
+      photo: { src: h.appId ? (core.application(h.appId)?.['bild']?.src || '') : h.src, alt: '' },
       footerInfo: h.foot, footerAction: C.cardAction(),
     })).join('')}</div>`,
   });
 
-  // 5 · News — Galerie mit Bildern (CD TopNewsSection). «News» wie Navigation
-  // und Zielseite: der Klickpfad zeigte drei Namen für einen Ort (D3).
+  // 5 · News — image gallery (CD TopNewsSection). Use «News», matching navigation
+  // and destination; the click path previously used three names for one place (D3).
   if (news.length) blocks.push({
     title: 'News',
     body: `<div class="grid grid--responsive-cols-3">${news.map(n => C.card({
       title: n.title, desc: n.teaser,
       href: links.news(n.id),
-      photo: { src: n.bild && n.bild.src, color: n.color, alt: '' },
-      footerInfo: `${C.escape(datum(n.date))} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
+      photo: { src: n['bild'] && n['bild'].src, color: n.color, alt: '' },
+      footerInfo: `${C.escape(formatDate(n.date))} · ${C.escape(n.source)}`, footerAction: C.cardAction(),
     })).join('')}</div>`,
     more: { href: '#/news', label: 'Alle News anzeigen' },
   });
 
-  // Der Hero ist weiss; danach wechseln die Bänder — erstes Band grau.
+  // The hero is white; bands alternate after it, starting with grey.
   const sections = blocks.map((b, i) => section(b, i % 2 === 0)).join('');
 
   mount.innerHTML = `
     <div class="container">
-      ${/* CDs hero--main-image (hero.postcss:73-90): Inhalt links, Bild rechts im
-            selben Raster; der Hero trägt den Abschnittsrhythmus selbst. Die
-            Suchzeile ist der CTA-Slot. */''}
+      ${/* CD hero--main-image (hero.postcss:73-90): content on the left and image
+            on the right in the same grid. The hero supplies its own section
+            rhythm; the search row occupies the CTA slot. */''}
       <div class="hero hero--main-image">
         <div class="hero__content">
           <h1 class="hero__title" tabindex="-1">Willkommen im BBL Kundenportal</h1>
@@ -183,13 +183,13 @@ export default async function render(ctx) {
           </form>
         </div>
         <div class="hero__image">
-          ${/* Das Bild misst 2048×1258, dargestellt wird es mit höchstens ~714 px
-                — vorher lud jede Startseite 511 KB für rund ein Neuntel der
-                Pixel (docs/code-review.md §5). `srcset` lässt den Browser die
-                passende Grösse wählen; das AVIF bleibt als grösste Stufe für
-                sehr breite oder hochauflösende Anzeigen. `width`/`height` geben
-                das Seitenverhältnis vor, damit beim Laden nichts springt.
-                Varianten erzeugt scripts/make-image-variants.mjs. */''}
+          ${/* The source image is 2048×1258 and displays at no more than ~714px.
+                Previously each home-page visit loaded 511KB for about one ninth
+                of those pixels (docs/code-review.md §5). `srcset` lets the browser
+                choose the appropriate size; AVIF remains the largest tier for
+                very wide or high-resolution displays. `width`/`height` establish
+                the aspect ratio to prevent layout shift while loading. Variants
+                are generated by scripts/make-image-variants.mjs. */''}
           <figure class="hero__figure">
             <img class="hero-media hero-media--16x9" src="assets/images/BBL-FE21_O-01-800.webp"
                  srcset="assets/images/BBL-FE21_O-01-800.webp 800w,
@@ -205,7 +205,7 @@ export default async function render(ctx) {
     </div>
     ${sections}`;
 
-  // Zeilenklick in der Vorgangstabelle (C.table `rowsClickable`).
+  // Row clicks in the cases table (C.table `rowsClickable`).
   const unwireRows = C.wireTableRows(mount);
   if (ctx.onUnmount) ctx.onUnmount(unwireRows);
 
@@ -216,10 +216,10 @@ export default async function render(ctx) {
     location.hash = q ? `#/search?q=${encodeURIComponent(q)}` : '#/search';
   });
 
-  // Suchvorschläge — nur über Dienstleistungen und «Wissen und Hilfsmittel»,
-  // beide ohne zusätzlichen Request (js/search-suggest.js erklärt, warum nicht
-  // über den vollen Index). Aufräumen über den Unmount-Vertrag des Routers,
-  // sonst bliebe die Liste beim Routenwechsel im DOM.
+  // Search suggestions cover only services and knowledge/resources, both
+  // without an extra request (js/search-suggest.js explains why the full index
+  // is not used). Clean up through the router's unmount contract so the list
+  // does not remain in the DOM after navigation.
   const detach = attachSuggest(mount.querySelector('#home-q'), searchForm, core, C);
   if (ctx.onUnmount) ctx.onUnmount(detach);
 }

@@ -1,44 +1,42 @@
-// Verknüpft die heruntergeladenen Aufnahmen mit den Gebäudedatensätzen.
+// Links downloaded photographs to building records.
 //
-//   node scripts/link-building-images.mjs           # Dry-Run (Standard)
-//   node scripts/link-building-images.mjs --write   # GeoJSON wirklich ändern
+//   node scripts/link-building-images.mjs           # Dry run (default)
+//   node scripts/link-building-images.mjs --write   # Update the GeoJSON
 //
-// Setzt je Gebäude:
-//   img_local   Pfad zur echten Aufnahme (oder null)
-//   img_credit  Urheber + Lizenz — bei CC-BY/CC-BY-SA Pflicht — oder der
-//               ehrliche Hinweis, dass ein Platzhalter steht und warum.
+// Sets per building:
+//   img_local   path to the real photograph, or null
+//   img_credit  required CC BY/CC BY-SA author and licence attribution, or an
+//               honest explanation of why a placeholder is shown
 //
-// Ausserdem wird img_url wieder auf eine Unsplash-Kennung zurückgesetzt.
-// apply-research-data.mjs hatte dort eine Commons-URL eingetragen; core.js
-// schneidet aus img_url aber die Unsplash-id (`photo-<id>`), fand nichts mehr
-// und liess die Karte auf die leere Farbfläche fallen. Die Commons-Angaben
-// gehören nach img_local/img_credit, nicht in img_url.
+// The script also restores img_url to an Unsplash identifier. The historical
+// apply-research-data.mjs script put a Commons URL there, but core.js extracts
+// an Unsplash `photo-<id>` token from img_url. Commons metadata belongs in
+// img_local/img_credit instead.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const flags = process.argv.slice(2);
-const unbekannt = flags.filter((flag) => flag !== '--write');
-if (unbekannt.length) throw new Error(`Unbekannte Option: ${unbekannt.join(', ')}`);
-const schreiben = flags.includes('--write');
+const unknownFlags = flags.filter((flag) => flag !== '--write');
+if (unknownFlags.length) throw new Error(`Unknown option: ${unknownFlags.join(', ')}`);
+const write = flags.includes('--write');
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-if (!schreiben) {
-  console.log('Dry-Run: data/buildings.geojson nicht gelesen oder geschrieben.');
-  console.log('Mit --write würde die historische Zuordnung aus BILDNACHWEIS.json neu angewendet.');
+if (!write) {
+  console.log('Dry run: data/buildings.geojson was not read or written.');
+  console.log('Use --write to reapply the historical mapping from IMAGE-CREDITS.json.');
   process.exit(0);
 }
 
-const nachweis = JSON.parse(readFileSync(ROOT + 'assets/images/buildings/BILDNACHWEIS.json', 'utf8'));
+const credits = JSON.parse(readFileSync(ROOT + 'assets/images/buildings/IMAGE-CREDITS.json', 'utf8'));
 
-// Platzhalter je Nutzungsart — vorher trugen alle neuen Objekte dasselbe Bild,
-// wodurch die Galerie wie ein einziges wiederholtes Foto aussah.
-const PLATZHALTER = {
+// Placeholder by raw German usage category. Previously every new object shared
+// one image, which made the gallery look like a repeated photograph.
+const PLACEHOLDER_BY_USAGE = {
   Verwaltung: '1486406146926-c627a92ad1ab',
   Zoll: '1449157291145-7efd050a4d0e',
-  // Alle Kennungen einzeln gegen images.unsplash.com geprüft — eine erfundene
-  // (1523050854058-…) lieferte 404, die Karte wäre stumm auf die Farbfläche
-  // zurückgefallen.
+  // Every identifier was checked against images.unsplash.com. One fabricated
+  // identifier returned 404 and would have silently fallen back to flat colour.
   Ausbildung: '1564501049412-61c2a3083791',
   Sport: '1461896836934-ffe607ba8211',
   Kultur: '1503152394-c571994fd383',
@@ -51,36 +49,37 @@ const PLATZHALTER = {
 };
 
 const bg = JSON.parse(readFileSync(ROOT + 'data/buildings.geojson', 'utf8'));
-let echt = 0; let platz = 0;
+let verifiedCount = 0;
+let placeholderCount = 0;
 
-for (const f of bg.features) {
-  const p = f.properties;
-  const n = nachweis.bilder[p.bbl_id];
+for (const feature of bg.features) {
+  const properties = feature.properties;
+  const image = credits.images[properties.bbl_id];
 
-  if (n && existsSync(ROOT + n.datei)) {
-    p.img_local = n.datei;
-    p.img_credit = `${n.autor} · ${n.lizenz} · Wikimedia Commons`;
-    p.img_quelle = n.commons;
-    echt++;
+  if (image && existsSync(ROOT + image.file)) {
+    properties.img_local = image.file;
+    properties.img_credit = `${image.author} · ${image.license} · Wikimedia Commons`;
+    properties.img_quelle = image.commons;
+    verifiedCount++;
   } else {
-    p.img_local = null;
-    p.img_quelle = null;
-    const grund = nachweis.ohne_bild[p.bbl_id];
-    p.img_credit = 'Platzhalterbild (Unsplash) — keine frei nutzbare Aufnahme dieses Objekts'
-      + (grund ? `: ${String(grund).replace(/^[^—]*—\s*/, '')}` : '.');
-    platz++;
+    properties.img_local = null;
+    properties.img_quelle = null;
+    const reason = credits.missingImages[properties.bbl_id];
+    properties.img_credit = 'Platzhalterbild (Unsplash) — keine frei nutzbare Aufnahme dieses Objekts'
+      + (reason ? `: ${String(reason).replace(/^[^—]*—\s*/, '')}` : '.');
+    placeholderCount++;
   }
 
-  // img_url bleibt die Unsplash-Rückfallebene; nach Nutzungsart gewählt, damit
-  // nicht jede Karte dasselbe Bild zeigt.
-  const id = PLATZHALTER[p.bbl_gbda1] || PLATZHALTER.Verwaltung;
-  p.img_url = [`https://images.unsplash.com/photo-${id}?w=800&h=600&fit=crop`];
+  // img_url remains the Unsplash fallback. Select by the raw usage category so
+  // every card does not show the same photograph.
+  const id = PLACEHOLDER_BY_USAGE[properties.bbl_gbda1] || PLACEHOLDER_BY_USAGE.Verwaltung;
+  properties.img_url = [`https://images.unsplash.com/photo-${id}?w=800&h=600&fit=crop`];
 }
 
 writeFileSync(ROOT + 'data/buildings.geojson', JSON.stringify(bg, null, 1));
-console.log('data/buildings.geojson geschrieben.');
-console.log(`${echt} Objekte mit echter Aufnahme · ${platz} mit Platzhalter`);
-for (const f of bg.features) {
-  const p = f.properties;
-  console.log(`  ${p.img_local ? '📷' : '  '} ${p.bbl_id.padEnd(14)} ${p.bbl_bez.slice(0, 44).padEnd(46)} ${p.img_local ? p.img_credit : '(' + p.bbl_gbda1 + ')'}`);
+console.log('Wrote data/buildings.geojson.');
+console.log(`${verifiedCount} objects with a verified photograph; ${placeholderCount} with a placeholder`);
+for (const feature of bg.features) {
+  const properties = feature.properties;
+  console.log(`  ${properties.img_local ? 'photo' : '     '} ${properties.bbl_id.padEnd(14)} ${properties.bbl_bez.slice(0, 44).padEnd(46)} ${properties.img_local ? properties.img_credit : '(' + properties.bbl_gbda1 + ')'}`);
 }

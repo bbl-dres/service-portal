@@ -74,9 +74,8 @@ const probe = `(() => {
 })()`;
 
 try {
-  // Angemeldet: die Prüfmatrix läuft ALLE Zustände per Hash-Navigation ab,
-  // darunter die Fachanwendungen — die liegen seit 2026-08 hinter der
-  // Anmeldesperre (js/router.js) und zeigten sonst nur noch deren Band.
+  // Start signed in so the matrix exercises every micro-app rather than only
+  // the router's mock sign-in gate.
   const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
   for (const width of REVIEW_VIEWPORTS) {
     await cdp.send('Emulation.setDeviceMetricsOverride',

@@ -1,13 +1,11 @@
 #!/usr/bin/env node
-// Statischer Entwicklungsserver MIT Kompression — abhängigkeitsfrei, wie der Rest
-// des Projekts (nur node:-Module).
+// Dependency-free static development server with compression, using node:
+// modules only.
 //
-// Warum nicht `python -m http.server`: der komprimiert nichts. Damit misst und
-// erlebt man beim Entwickeln 213 KB CSS statt der 47 KB, die ein echter Server
-// ausliefert — und die Startzeit sieht dreimal schlechter aus, als sie ist
-// (docs/code-review.md §2). Ausserdem fehlen dort brauchbare Cache-Header.
+// Unlike `python -m http.server`, this reflects production-style compressed
+// transfer sizes and supplies useful cache headers during local measurements.
 //
-//   node scripts/serve.mjs [port]        Standard: 8848
+//   node scripts/serve.mjs [port]        default: 8848
 import { createServer } from 'node:http';
 import { createReadStream, statSync } from 'node:fs';
 import { createGzip, createBrotliCompress, constants as z } from 'node:zlib';
@@ -25,15 +23,14 @@ const MIME = {
   '.png': 'image/png', '.avif': 'image/avif', '.webp': 'image/webp', '.ico': 'image/x-icon',
   '.pdf': 'application/pdf', '.txt': 'text/plain; charset=utf-8',
 };
-// Nur Text komprimieren. Schriften, Bilder und PDFs sind bereits komprimiert —
-// sie noch einmal durchzuschicken kostet CPU und bringt nichts.
+// Compress text only; fonts, images and PDFs are already compressed.
 const COMPRESSIBLE = /^(text\/|application\/(json|javascript|xml)|image\/svg)/;
 
 createServer((req, res) => {
   let path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (path.endsWith('/')) path += 'index.html';
   const file = normalize(join(ROOT, path));
-  // Pfad-Ausbruch verhindern (../).
+  // Prevent path traversal through ../ segments.
   if (!file.startsWith(ROOT + sep) && file !== ROOT) { res.writeHead(403).end('forbidden'); return; }
 
   let st;
@@ -43,7 +40,7 @@ createServer((req, res) => {
   const type = MIME[extname(file).toLowerCase()] || 'application/octet-stream';
   const headers = {
     'Content-Type': type,
-    // Entwicklung: nicht cachen, damit Änderungen sofort sichtbar sind.
+    // Do not cache during development so edits are immediately visible.
     'Cache-Control': 'no-cache',
   };
 
@@ -63,5 +60,5 @@ createServer((req, res) => {
     stream.pipe(res);
   }
 }).listen(PORT, () => {
-  console.log(`BBL Kundenportal → http://127.0.0.1:${PORT}/  (gzip/brotli aktiv)`);
+  console.log(`BBL Kundenportal → http://127.0.0.1:${PORT}/  (gzip/brotli enabled)`);
 });

@@ -1,4 +1,4 @@
-// MapLibre GL point map for the Datenportal dashboards.
+// MapLibre GL point map for data-portal dashboards.
 //
 // The portal is otherwise dependency-free; MapLibre is loaded lazily from a CDN
 // only when a map is opened, and degrades to a message if unavailable (offline /
@@ -6,28 +6,28 @@
 // portfolio, project, room and location-picker views.
 
 import { escape as esc, loading } from './components.js';
-import { m2 } from './format.js';
+import { formatArea } from './format.js';
 
-const MAPLIBRE_VER = '4.7.1';
-let mlPromise = null;
+const MAPLIBRE_VERSION = '4.7.1';
+let mapLibrePromise = null;
 
 function loadMapLibre() {
   if (window.maplibregl) return Promise.resolve(window.maplibregl);
-  if (mlPromise) return mlPromise;
-  mlPromise = new Promise((resolve, reject) => {
+  if (mapLibrePromise) return mapLibrePromise;
+  mapLibrePromise = new Promise((resolve, reject) => {
     const css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VER}/dist/maplibre-gl.css`;
-    const s = document.createElement('script');
-    s.src = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VER}/dist/maplibre-gl.js`;
+    css.href = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/maplibre-gl.css`;
+    const script = document.createElement('script');
+    script.src = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/maplibre-gl.js`;
     let settled = false;
     let cssReady = false;
     let scriptReady = false;
     const clearHandlers = () => {
       css.onload = null;
       css.onerror = null;
-      s.onload = null;
-      s.onerror = null;
+      script.onload = null;
+      script.onerror = null;
     };
     const fail = (error) => {
       if (settled) return;
@@ -35,7 +35,7 @@ function loadMapLibre() {
       clearTimeout(timer);
       clearHandlers();
       css.remove();
-      s.remove();
+      script.remove();
       reject(error);
     };
     const finish = () => {
@@ -52,18 +52,18 @@ function loadMapLibre() {
     );
     css.onload = () => { cssReady = true; finish(); };
     css.onerror = () => fail(new Error('MapLibre-Styles konnten nicht geladen werden'));
-    s.onload = () => { scriptReady = true; finish(); };
-    s.onerror = () => fail(new Error('MapLibre konnte nicht geladen werden'));
+    script.onload = () => { scriptReady = true; finish(); };
+    script.onerror = () => fail(new Error('MapLibre konnte nicht geladen werden'));
     document.head.appendChild(css);
-    document.head.appendChild(s);
-  }).catch((e) => { mlPromise = null; throw e; });   // Fehler nicht cachen → späterer Aufruf lädt neu (C2)
-  return mlPromise;
+    document.head.appendChild(script);
+  }).catch((error) => { mapLibrePromise = null; throw error; }); // Do not cache failure; a later call retries (C2).
+  return mapLibrePromise;
 }
 
-// `esc`/`m2` kommen aus den Sammelmodulen (Imports oben) — die frühere lokale
-// Escape-Neuimplementierung und das handgeschriebene de-CH-Format sind weg
-// (Design-Review B23); components.js/format.js sind selbst import-frei, das
-// lazy geladene Kartenmodul zieht also keine Kette nach.
+// `esc` / `formatArea` come from shared modules (imports above), replacing the
+// former local escape reimplementation and handwritten de-CH formatter (design
+// review B23). components.js and format.js have no imports themselves, so the
+// lazy map module does not pull in a dependency chain.
 
 // CARTO Positron grey (worldwide) — calm ground for a global portfolio.
 // `glyphs` (Noto Sans font PBFs) are needed for the cluster counts + id labels.
@@ -90,29 +90,29 @@ const CARTO_STYLE = {
   layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
 };
 
-// Zentrierter Ladehinweis, bis die Karte wirklich steht. Der Platzhalter im
-// Markup deckt nur die Zeit BIS MapLibre geladen ist; danach dauert es je nach
-// Netz und Clusterberechnung weiter, und der Nutzer sah eine leere graue Fläche.
-// `idle` feuert, wenn Kacheln UND Cluster-Layer fertig gezeichnet sind.
+// Centred loading notice until the map is genuinely ready. The markup placeholder
+// covers only the period UNTIL MapLibre loads; network and cluster calculation
+// continue afterwards, previously leaving a blank grey surface. `idle` fires
+// once tiles AND cluster layers have rendered.
 function showMapSpinner(container, map) {
   if (!container) return;
-  const sp = document.createElement('div');
-  sp.className = 'map-spinner';
-  // role="status" bringt C.loading selbst mit — hier nur die Überlagerung.
-  sp.innerHTML = loading({ label: 'Karte wird geladen…', hideLabel: true, size: '2xl' });
-  container.appendChild(sp);
+  const spinner = document.createElement('div');
+  spinner.className = 'map-spinner';
+  // C.loading already supplies role="status"; this element only adds the overlay.
+  spinner.innerHTML = loading({ label: 'Karte wird geladen…', hideLabel: true, size: '2xl' });
+  container.appendChild(spinner);
   let done = false;
   let fallbackTimer = null;
   const clear = () => {
     if (done) return;
     done = true;
     if (fallbackTimer) clearTimeout(fallbackTimer);
-    sp.remove();
+    spinner.remove();
   };
   map.once('idle', clear);
   map.once('remove', clear);
-  // Sicherheitsnetz: bleibt `idle` aus (blockierte Kachelquelle), soll der Hinweis
-  // nicht dauerhaft stehen.
+  // Safety net: if `idle` never fires because a tile source is blocked, the
+  // notice must not remain forever.
   fallbackTimer = setTimeout(clear, 12000);
 }
 
@@ -121,28 +121,27 @@ function showMapSpinner(container, map) {
 // closer zoom, show the bbl_id as a label. The nav control's compass resets the
 // rotation to north. `points` = [{ lat, lon, label, sub?, bblId?, href? }].
 //
-// Farben kommen aus dem Token-Layer (Muster wie js/charts.js): MapLibre-Paint-
-// Specs können kein `var(...)` tragen, also werden die Tokens zur Renderzeit
-// per getComputedStyle AUFGELÖST. So folgen Marker und Labels dem aktiven Skin
-// (rot/intranet) statt fest auf Intranet-Blau zu stehen. Fallbacks
-// entsprechen den Standardwerten in css/tokens.css.
+// Colours come from the token layer (as in js/charts.js). MapLibre paint specs
+// cannot carry `var(...)`, so tokens are RESOLVED at render time through
+// getComputedStyle. Markers and labels therefore follow the active skin
+// (red/intranet) instead of being fixed to intranet blue. Fallbacks match the
+// defaults in css/tokens.css.
 const cssVar = (name, fallback) => {
   if (typeof document === 'undefined') return fallback;
   // Skins live on <body>, so read the inherited computed value there. Reading
   // <html> bypassed `.body--intranet` and silently returned the federal ramp.
   const scope = document.body || document.documentElement;
-  const v = getComputedStyle(scope).getPropertyValue(name).trim();
-  return v || fallback;
+  const value = getComputedStyle(scope).getPropertyValue(name).trim();
+  return value || fallback;
 };
-// `opts.focusPopup: false` zoomt auf das Objekt, öffnet aber KEIN Info-Popup.
-// Nötig für die Hero-Karte der Detailseite: MapLibre setzt den Fokus auf den
-// Schliessen-Knopf des Popups, sobald es angehängt wird — beim Seitenaufbau
-// sprang der Fokus damit von der <h1> in die Karte (WCAG 2.4.3), und die
-// Tastaturtests der Registerleiste wurden dadurch sporadisch rot. Auf der
-// Übersichtskarte bleibt das Popup: dort ist es die Antwort auf eine Auswahl
-// im Baum, also eine bewusste Nutzeraktion.
-export async function initEstateMap(container, points, parcels, focus, opts = {}) {
-  const focusPopup = opts.focusPopup !== false;
+// `options.focusPopup: false` zooms to the object without opening an info popup.
+// This is required for the detail page's hero map: MapLibre focuses the popup's
+// close button as soon as it is attached, which moved focus from <h1> into the
+// map during page setup (WCAG 2.4.3) and intermittently failed tab keyboard
+// tests. The overview map keeps its popup because it responds to an intentional
+// tree selection.
+export async function initEstateMap(container, points, parcels, focus, options = {}) {
+  const focusPopup = options.focusPopup !== false;
   const c = (points || []).filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon));
   let maplibregl;
   try {
@@ -153,14 +152,14 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
     return null;
   }
   if (!container.isConnected) return null;
-  // Ladeplatzhalter entfernen, BEVOR MapLibre anhängt (Item 6.14).
+  // Remove the loading placeholder BEFORE MapLibre attaches (item 6.14).
   container.textContent = '';
   let map = null;
   try {
 
-  // Skin-abhängige Farben erst hier (Renderzeit) auflösen, nicht beim Modul-Load.
-  const MARKER = cssVar('--color-primary-600', '#d8232a');   // Gebäude-Marker = Primärfarbe des Skins
-  const PARCEL = cssVar('--chart-series-1', '#0f6b75');      // teal — Grundstücke, distinct from the building markers
+  // Resolve skin-dependent colours here at render time, not during module load.
+  const MARKER = cssVar('--color-primary-600', '#d8232a');   // Building marker = skin primary colour.
+  const PARCEL = cssVar('--chart-series-1', '#0f6b75');      // Teal parcels, distinct from building markers.
   const LABEL_INK = cssVar('--chart-ink', '#1f2937');
   const LABEL_HALO = cssVar('--chart-surface', '#ffffff');
 
@@ -182,7 +181,7 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
   }
 
   map = new maplibregl.Map({ container, style: CARTO_STYLE, attributionControl: { compact: true }, preserveDrawingBuffer: true,
-    // siehe oben (Item 6.5)
+    // See above (item 6.5).
     cooperativeGestures: true,
     locale: {
       'CooperativeGesturesHandler.WindowsHelpText': 'Strg + Scrollen zum Zoomen',
@@ -200,7 +199,7 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
       map.addLayer({ id: 'clusters', type: 'circle', source: 'estate', filter: ['has', 'point_count'],
         paint: { 'circle-color': MARKER, 'circle-opacity': 0.85, 'circle-stroke-color': '#fff', 'circle-stroke-width': 2,
           'circle-radius': ['step', ['get', 'point_count'], 16, 3, 20, 6, 26, 10, 32] } });
-      // text-size 12 = --fs-xs, die kleinste Stufe der CD-Schriftskala (11/13 lagen daneben).
+      // text-size 12 = --fs-xs, the smallest CD type-scale step (11/13 were off-scale).
       map.addLayer({ id: 'cluster-count', type: 'symbol', source: 'estate', filter: ['has', 'point_count'],
         layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 12 },
         paint: { 'text-color': '#fff' } });
@@ -220,7 +219,7 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
           paint: { 'line-color': PARCEL, 'line-width': 1.5, 'line-opacity': 0.85 } }, 'clusters');
       }
     }
-    // Fokus (Auswahl aus dem Baum): das Objekt heranzoomen und sein Info-Popup öffnen.
+    // Focus from tree selection: zoom to the object and open its info popup.
     if (focus) {
       const bp = c.find((p) => p.bblId === focus);
       if (bp) {
@@ -239,7 +238,7 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
           map.easeTo({ center: ct, zoom: 16 });
           if (focusPopup) popup.setLngLat(ct).setHTML(
             `<strong>${esc(pr.label)}</strong>${pr.sub ? `<br><span class="small muted">${esc(pr.sub)}</span>` : ''}`
-            + `<br><span class="small muted">Grundstück ${esc(pr.id)}${pr.area ? ' · ' + m2(pr.area) : ''}</span>`
+            + `<br><span class="small muted">Grundstück ${esc(pr.id)}${pr.area ? ' · ' + formatArea(pr.area) : ''}</span>`
             + `${pr.href ? `<br><a class="link" href="${esc(pr.href)}">Objekt ansehen →</a>` : ''}`,
           ).addTo(map);
         }
@@ -253,12 +252,11 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
     if (!f) return;
     const src = map.getSource('estate');
     const id = f.properties.cluster_id;
-    // Auf die tatsächliche Ausdehnung der enthaltenen Objekte zoomen statt auf den
-    // «expansion zoom». Letzterer sagt nur, ab wann DIESES Cluster zerfällt — bei
-    // sieben über die Schweiz verteilten Objekten in der Weltansicht ist das
-    // Zoom 2. Gemessen: der Klick brachte 1.52 -> 2.0, optisch also nichts, und
-    // wirkte deshalb wie ein toter Klick. fitBounds über die Blätter zeigt
-    // stattdessen immer genau die Objekte, die im Cluster stecken.
+    // Zoom to the actual extent of contained objects instead of the «expansion
+    // zoom». The latter only indicates when THIS cluster splits; for seven
+    // properties across Switzerland in the world view, that is zoom 2. Measured
+    // behaviour was 1.52 → 2.0, visually no change and therefore a dead-looking
+    // click. fitBounds over the leaves always shows exactly the clustered objects.
     Promise.resolve().then(() => src.getClusterLeaves(id, Infinity, 0)).then((leaves) => {
       if (!leaves || !leaves.length) throw new Error('keine Blätter');
       const b = new maplibregl.LngLatBounds();
@@ -284,7 +282,7 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
     const p = e.features[0].properties;
     popup.setLngLat(e.lngLat).setHTML(
       `<strong>${esc(p.label)}</strong>${p.sub ? `<br><span class="small muted">${esc(p.sub)}</span>` : ''}`
-      + `<br><span class="small muted">Grundstück ${esc(p.id)}${p.area ? ' · ' + m2(p.area) : ''}</span>`
+      + `<br><span class="small muted">Grundstück ${esc(p.id)}${p.area ? ' · ' + formatArea(p.area) : ''}</span>`
       + `${p.href ? `<br><a class="link" href="${esc(p.href)}">Objekt ansehen →</a>` : ''}`,
     ).addTo(map);
   });
@@ -306,13 +304,12 @@ export async function initEstateMap(container, points, parcels, focus, opts = {}
 }
 
 // ---------------------------------------------------------------------------
-// Standort-Wähler: eine Karte mit EINEM ziehbaren Stecknadelkopf, für das
-// Erfassen eines neuen Objekts (js/apps/building-create.js). Der Aufrufer
-// bekommt über `onPick(lat, lng)` jede Verschiebung gemeldet — durch Ziehen der
-// Nadel ODER durch Klick in die Karte.
+// Location picker: a map with ONE draggable pin for creating a new property
+// (js/apps/building-create.js). `onPick(lat, lng)` reports every move, whether
+// caused by dragging the pin OR clicking the map.
 //
-// CARTO-Graubasis (wie die Portfolio-Karten): ruhiger Untergrund, und der
-// Ausschnitt ist nicht auf die Schweiz begrenzt.
+// CARTO grey base (as in portfolio maps): a calm surface without restricting
+// the viewport to Switzerland.
 export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } = {}) {
   let maplibregl;
   try {
@@ -323,8 +320,8 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
     return null;
   }
   if (!container.isConnected) return null;
-  // Ladeplatzhalter entfernen, BEVOR MapLibre anhängt — aber NUR die Karte,
-  // nicht die Suchauflage: die ist ein Geschwisterknoten im Wrapper.
+  // Remove the loading placeholder BEFORE MapLibre attaches, but remove ONLY the
+  // map; the search overlay is its sibling in the wrapper.
   const holder = container.querySelector('.map-picker__canvas') || container;
   holder.textContent = '';
   let map = null;
@@ -332,8 +329,8 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
 
   const hasStart = Number.isFinite(lat) && Number.isFinite(lng);
   map = new maplibregl.Map({
-    // Attribution NICHT automatisch: unten rechts stiess sie mit der zentrierten
-    // Suchauflage zusammen. Sie kommt unten links dazu (siehe unten).
+    // Do NOT add attribution automatically: at bottom right it collided with the
+    // centred search overlay. Add it at bottom left instead (see below).
     container: holder, style: CARTO_STYLE, attributionControl: false,
     cooperativeGestures: true,
     locale: {
@@ -341,7 +338,7 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
       'CooperativeGesturesHandler.MacHelpText': '⌘ + Scrollen zum Zoomen',
       'CooperativeGesturesHandler.MobileHelpText': 'Mit zwei Fingern verschieben',
     },
-    center: hasStart ? [lng, lat] : [8.2275, 46.8182],   // Landesmitte, bis eine Adresse gewählt ist
+    center: hasStart ? [lng, lat] : [8.2275, 46.8182],   // Country centre until an address is selected.
     zoom: hasStart ? zoom : 7,
   });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -355,7 +352,7 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
   const marker = new maplibregl.Marker({ element: el, draggable: true, anchor: 'bottom' })
     .setLngLat(hasStart ? [lng, lat] : [8.2275, 46.8182])
     .addTo(map);
-  if (!hasStart) el.style.display = 'none';   // erst zeigen, wenn ein Standort gesetzt ist
+  if (!hasStart) el.style.display = 'none';   // Show only after a location is set.
 
   const report = () => { const p = marker.getLngLat(); if (onPick) onPick(p.lat, p.lng); };
   marker.on('dragend', report);
@@ -365,16 +362,16 @@ export async function initPickerMap(container, { lat, lng, zoom = 17, onPick } =
     report();
   });
 
-  // Steuer-API für den Aufrufer: Adresse gewählt → Nadel setzen und heranfahren.
-  // `flyTo`, nicht `easeTo`: der Sprung von der Übersicht (Zoom 5) auf die
-  // Hausnummer (Zoom 17) sind zwölf Stufen — easeTo schiebt die Kacheln linear
-  // durch, flyTo zoomt heraus und wieder hinein und bleibt dabei lesbar.
+  // Control API for the caller: selected address → place pin and approach.
+  // Use `flyTo`, not `easeTo`: moving from overview (zoom 5) to a house number
+  // (zoom 17) spans twelve levels. easeTo slides tiles through linearly, while
+  // flyTo zooms out and back in and remains legible.
   map.__setPin = (la, ln, z) => {
     el.style.display = '';
     marker.setLngLat([ln, la]);
     map.flyTo({ center: [ln, la], zoom: z || zoom, duration: 1200, essential: true });
   };
-  container._map = map;   // Griff für die kopflosen Tests
+  container._map = map;   // Handle for headless tests.
   return map;
   } catch (error) {
     if (map) { try { map.remove(); } catch { /* partially constructed */ } }

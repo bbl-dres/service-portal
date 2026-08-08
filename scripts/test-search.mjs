@@ -1,18 +1,18 @@
-// Suchmaschine prüfen — ohne Browser, weil js/search-engine.js reine Funktionen
-// enthält. Geprüft werden genau die Fehlerbilder aus docs/search-review.md:
-// Diakritika (B2), Mehrwortanfragen (B3), Rangfolge (B4), Wortgrenzen (B5),
-// Flexion (B7) und Umgangssprache (B8).
+// Test the search engine without a browser because js/search-engine.js exports
+// pure functions. These cases cover the exact failures from docs/search-review.md:
+// diacritics (B2), multi-word queries (B3), ranking (B4), word boundaries (B5),
+// inflection (B7), and colloquial terms (B8).
 import { fold, tokenize, prepare, search } from '../js/search-engine.js';
 
-let fail = 0;
-const ok = (cond, label, detail = '') => {
-  if (!cond) fail++;
-  console.log(`   ${cond ? '✓' : '✗'} ${label}${detail ? '  — ' + detail : ''}`);
+let failures = 0;
+const check = (condition, label, detail = '') => {
+  if (!condition) failures++;
+  console.log(`   ${condition ? '✓' : '✗'} ${label}${detail ? '  — ' + detail : ''}`);
 };
-const head = (s) => console.log('\n■ ' + s);
+const section = (title) => console.log('\n■ ' + title);
 
-/* Ein kleiner, aber echter Ausschnitt des Index. */
-const ROWS = [
+/* A small but representative slice of the search index. */
+const SEARCH_INDEX = [
   { title: 'Störungs-, Reinigungs- & Reparaturmeldung', desc: 'Defekte in einem Gebäude melden.', extra: 'Objektbetrieb', boost: 30 },
   { title: 'Raum buchen', desc: 'Sitzungs- oder Besprechungsraum reservieren.', extra: 'Arbeitsplatz und Logistik', boost: 26 },
   { title: 'Mobiliarschlüssel bestellen', desc: 'Ersatzschlüssel für Büromobiliar.', extra: 'Büroausrüstung Schlossnummer', boost: 12 },
@@ -25,62 +25,62 @@ const ROWS = [
   { title: 'BBL-2026-1042 — Zusätzliche 12 Arbeitsplätze', desc: 'Bundesamt für Umwelt BAFU', extra: 'BBL-2026-1042 Raumbedarf-Antrag' },
 ].map(prepare);
 
-const find = (q) => search(ROWS, q);
-const titles = (q) => find(q).map((r) => r.title);
-const first = (q) => titles(q)[0];
+const find = (query) => search(SEARCH_INDEX, query);
+const titles = (query) => find(query).map((result) => result.title);
+const first = (query) => titles(query)[0];
 
-head('Falten (B2) — Umlaute und ihre Umschreibung sind dasselbe');
-ok(fold('Störung') === 'stoerung', 'ö → oe');
-ok(fold('Grüsse Übermorgen') === 'gruesse uebermorgen', 'mehrere Umlaute');
-ok(find('stoerung').length === find('störung').length && find('stoerung').length > 0,
-  'stoerung == störung', `${find('stoerung').length} Treffer`);
-ok(first('gebaeude') === 'Störungs-, Reinigungs- & Reparaturmeldung', 'gebaeude findet «Gebäude»');
+section('Folding (B2) — umlauts and their transliterations are equivalent');
+check(fold('Störung') === 'stoerung', 'folds "ö" to "oe"');
+check(fold('Grüsse Übermorgen') === 'gruesse uebermorgen', 'folds multiple umlauts');
+check(find('stoerung').length === find('störung').length && find('stoerung').length > 0,
+  '"stoerung" and "störung" return the same results', `${find('stoerung').length} result(s)`);
+check(first('gebaeude') === 'Störungs-, Reinigungs- & Reparaturmeldung', '"gebaeude" finds "Gebäude"');
 
-head('Mehrwortanfragen (B3) — alle Begriffe müssen treffen');
-ok(find('raum buchen').length > 0, '«raum buchen» findet etwas', first('raum buchen') || '—');
-ok(first('raum buchen') === 'Raum buchen', 'und zwar die Buchung');
-ok(find('mustervorlage ikt').length === 1, '«mustervorlage ikt» grenzt ein');
-ok(find('mustervorlage xyzzy').length === 0, 'ein unbekannter Begriff schliesst aus (UND)');
+section('Multi-word queries (B3) — every term must match');
+check(find('raum buchen').length > 0, '"raum buchen" returns a result', first('raum buchen') || 'no result');
+check(first('raum buchen') === 'Raum buchen', 'returns the booking result first');
+check(find('mustervorlage ikt').length === 1, '"mustervorlage ikt" narrows the results');
+check(find('mustervorlage xyzzy').length === 0, 'an unknown term excludes the result (AND)');
 
-head('Rangfolge (B4) — Titeltreffer schlägt Beschreibungstreffer');
-ok(first('mobiliar') === 'Mobiliarschlüssel bestellen',
-  'mobiliar → Mobiliarschlüssel zuerst', titles('mobiliar').join(' | '));
-ok(first('umzug anmelden') === 'Umzug, Transport & Entsorgung', 'Wortfolge im Titel gewinnt');
-const sc = find('mobiliar');
-ok(sc[0]._score > sc[1]._score, 'die Punktzahlen unterscheiden sich', `${sc[0]._score} > ${sc[1]._score}`);
+section('Ranking (B4) — a title match outranks a description match');
+check(first('mobiliar') === 'Mobiliarschlüssel bestellen',
+  '"mobiliar" ranks "Mobiliarschlüssel bestellen" first', titles('mobiliar').join(' | '));
+check(first('umzug anmelden') === 'Umzug, Transport & Entsorgung', 'the title phrase wins');
+const scoredResults = find('mobiliar');
+check(scoredResults[0]._score > scoredResults[1]._score, 'the scores differ', `${scoredResults[0]._score} > ${scoredResults[1]._score}`);
 
-head('Wortgrenzen (B5) — kein Treffer mitten im Wort bei kurzen Begriffen');
-ok(!titles('bern').includes('Layout- oder Output-Design-Auftrag erteilen'),
-  '«bern» trifft nicht mehr über «übernimmt»');
-ok(titles('bern').includes('Bundeshaus West'), '«bern» findet weiterhin Bern');
-ok(find('is').length === 0, 'zweistellige Anfrage ohne Wortanfang → keine Treffer');
-ok(find('it').length > 0, '«it» trifft am Wortanfang (IKT/IT)', String(find('it').length));
+section('Word boundaries (B5) — short terms do not match inside words');
+check(!titles('bern').includes('Layout- oder Output-Design-Auftrag erteilen'),
+  '"bern" no longer matches inside "übernimmt"');
+check(titles('bern').includes('Bundeshaus West'), '"bern" still finds Bern');
+check(find('is').length === 0, 'a two-letter query without a word-prefix match returns nothing');
+check(find('it').length > 0, '"it" matches at a word prefix (IKT/IT)', String(find('it').length));
 
-head('Flexion (B7) — Präfixe decken Mehrzahl und Zusammensetzung');
-ok(find('vorlage').length >= 1 && find('vorlagen').length >= 1, 'Einzahl und Mehrzahl finden beide');
-ok(find('störung').length === find('störungen').length, 'störung == störungen');
-ok(titles('mustervorlage').includes('Mustervorlagen für IKT-Beschaffungen'), 'mustervorlage → Mustervorlagen');
+section('Inflection (B7) — prefixes cover plurals and compound words');
+check(find('vorlage').length >= 1 && find('vorlagen').length >= 1, 'singular and plural both return results');
+check(find('störung').length === find('störungen').length, '"störung" and "störungen" return the same results');
+check(titles('mustervorlage').includes('Mustervorlagen für IKT-Beschaffungen'), '"mustervorlage" finds "Mustervorlagen"');
 
-head('Umgangssprache (B8) — was getippt wird, führt zu dem, was dasteht');
-for (const [q, want] of [
+section('Colloquial terms (B8) — common wording finds the canonical content');
+for (const [query, expectedTitle] of [
   ['heizung', 'Störungs-, Reinigungs- & Reparaturmeldung'],
   ['kaputt', 'Störungs-, Reinigungs- & Reparaturmeldung'],
   ['sitzungszimmer', 'Raum buchen'],
   ['möbel', 'Mobiliarschlüssel bestellen'],
   ['agb', 'Allgemeine Geschäftsbedingungen des Bundes'],
   ['ausschreibung', 'Mustervorlagen für IKT-Beschaffungen'],
-]) ok(titles(q).includes(want), `«${q}» → ${want}`, titles(q)[0] || 'nichts');
+]) check(titles(query).includes(expectedTitle), `"${query}" finds "${expectedTitle}"`, titles(query)[0] || 'no result');
 
-head('Referenznummern und Objekt-IDs');
-ok(first('BBL-2026-1042') === 'BBL-2026-1042 — Zusätzliche 12 Arbeitsplätze', 'Vorgangsnummer exakt');
-ok(titles('1080 4840').includes('Bundeshaus West'), 'bbl_id ohne Schrägstriche');
+section('Reference numbers and object IDs');
+check(first('BBL-2026-1042') === 'BBL-2026-1042 — Zusätzliche 12 Arbeitsplätze', 'matches the exact case number');
+check(titles('1080 4840').includes('Bundeshaus West'), 'matches bbl_id without slashes');
 
-head('Randfälle');
-ok(find('').length === 0, 'leere Anfrage → keine Treffer');
-ok(find('   ').length === 0, 'nur Leerzeichen → keine Treffer');
-ok(find('!!!').length === 0, 'nur Satzzeichen → keine Treffer');
-ok(tokenize('Störung, Raum').length === 2, 'Satzzeichen trennen Begriffe');
-ok(prepare({ title: 'x' })._d.text === '', 'fehlende Beschreibung wirft nicht');
+section('Edge cases');
+check(find('').length === 0, 'an empty query returns nothing');
+check(find('   ').length === 0, 'a whitespace-only query returns nothing');
+check(find('!!!').length === 0, 'a punctuation-only query returns nothing');
+check(tokenize('Störung, Raum').length === 2, 'punctuation separates terms');
+check(prepare({ title: 'x' })._d.text === '', 'a missing description does not throw');
 
-console.log(fail ? `\n✗ ${fail} Prüfung(en) fehlgeschlagen` : '\n✓ alle Prüfungen bestanden');
-process.exit(fail ? 1 : 0);
+console.log(failures ? `\n✗ ${failures} check(s) FAILED` : '\n✓ all checks passed');
+process.exit(failures ? 1 : 0);

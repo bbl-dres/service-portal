@@ -1,23 +1,23 @@
 /* ============================== BASE ============================== */
 *,*::before,*::after { box-sizing:border-box; }
-/* -webkit-fill-available: CD global.postcss:7,29-30 — sonst läuft die Flex-Shell
-   hinter iOS-Safaris eingeklappter Werkzeugleiste durch. */
+/* -webkit-fill-available: CD global.postcss:7,29-30; otherwise the flex shell
+   extends behind Safari's collapsed toolbar on iOS. */
 html { -webkit-text-size-adjust:100%; height:100%; height:-webkit-fill-available; overflow-y:scroll; }
 body {
   margin:0; font-family:var(--font-sans); font-size:var(--text-base);
   line-height:var(--lh-normal); color:var(--color-text); background:var(--color-bg);
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; word-spacing:.0625em;
-  /* Kein synthetisches Bold (die variable Datei trägt die echte wght-Achse
-     100-900), aber Oblique-Synthese ERLAUBT: es gibt keine Italic-Datei, und
-     `none` hätte em/i/.text--italic stumm aufrecht gerendert — das Blatt
-     verspricht bei den @font-face-Regeln ausdrücklich synthetisierte Kursive. */
+  /* No synthesized bold (the variable file provides the real 100-900 wght
+     axis), but oblique synthesis is ALLOWED: there is no italic file, and
+     `none` would silently render em/i/.text--italic upright. The style sheet
+     explicitly promises synthesized italics in the @font-face rules. */
   font-synthesis:style;
   min-height:100vh; min-height:-webkit-fill-available;
   display:flex; flex-direction:column; transition:transform var(--duration-slowest);
 }
 /* The HTML hidden contract must win over every component display declaration. */
 [hidden] { display:none !important; }
-/* Inline-Element-Normalisierung (CD-Parität) */
+/* Inline element normalization (CD parity) */
 address { font-style:normal; }
 del, s { text-decoration:line-through; }
 u { text-decoration:underline; text-underline-offset:var(--stroke-2); }

@@ -1,7 +1,7 @@
 /* Tables (table.postcss:5-135) */
 .table-wrapper { position:relative; overflow-x:auto; }
-/* Überlauf-Hinweis: nur sichtbar, wenn die Tabelle wirklich breiter ist als ihr
-   Kasten (Klasse von wireScrollRegions). sticky/left:0 hält ihn beim Scrollen. */
+/* Overflow notice: visible only when the table is actually wider than its box
+   (class from wireScrollRegions). sticky/left:0 keeps it visible while scrolling. */
 .table-wrapper__hint { display:none; }
 .table-wrapper.is-scrollable > .table-wrapper__hint {
   display:flex; align-items:center; gap:var(--sp-2);
@@ -12,91 +12,83 @@
   border:var(--stroke-1) solid var(--color-border); }
 /* Deliberate CD surface tier (table.postcss: text-200 border + shadow-md):
    tables stay square; portal panels alone use the rounded outlined recipe. */
-/* pre-line wie CD (table.postcss:13-15): mehrzeilige Legenden behalten ihre
-   gesetzten Umbrüche, lange Zeilen brechen weiter normal um. */
+/* pre-line as in CD (table.postcss:13-15): multiline captions preserve explicit
+   breaks while long lines continue to wrap normally. */
 .table--caption caption { position:static; width:auto; height:auto; clip:auto; white-space:pre-line;
   display:table-caption; caption-side:bottom; text-align:left; padding-top:var(--sp-2);
   font-size:var(--text-xs); color:var(--color-text-muted); }
-/* Kein nowrap: CDs Kopfzellen dürfen umbrechen (table.postcss:37-42 setzt
-   align-top GENAU dafür); Identifikatorspalten pinnt .text-nowrap gezielt.
-   Trennlinie unter dem Kopf in text-300 wie ALLE Zeilenlinien (table.postcss:45-50). */
+/* No nowrap: CD header cells may wrap (table.postcss:37-42 sets align-top
+   PRECISELY for this); .text-nowrap pins identifier columns selectively.
+   Divider below the header uses text-300 like ALL row dividers
+   (table.postcss:45-50). */
 .table thead th { background:var(--color-secondary-50); text-align:left; padding:var(--sp-4) var(--sp-6);
   font-size:var(--text-sm); text-transform:uppercase; color:var(--color-gray-700);
   border-bottom:var(--stroke-1) solid var(--color-border-strong); vertical-align:top; }
 .table td, .table tbody th { padding:var(--sp-4) var(--sp-6); border-bottom:var(--stroke-1) solid var(--color-border-strong);
   vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
-/* EINE Schriftstärke in der ganzen Zeile. Das erste Feld bleibt semantisch ein
-   `<th scope="row">` — Hilfsmittel brauchen den Zeilenkopf, um beim Vorlesen
-   einer Zelle zu sagen, zu welcher Zeile sie gehört. Es wird nur nicht mehr
-   fett und nicht mehr dunkler gesetzt: der Fettdruck hat in Listenansichten
-   ganze Beschreibungstexte erfasst und liess jede Tabelle wie eine Rangliste
-   aussehen. Auszeichnung übernimmt jetzt allein die Ausrichtung — Text links,
-   Zahlen rechts. */
+/* ONE font weight across the row. The first field remains semantically
+   `<th scope="row">`; assistive technology needs the row header to announce
+   which row a cell belongs to. It is simply no longer bold or darker: in list
+   views, bold captured entire descriptions and made every table look ranked.
+   Alignment alone now distinguishes content: text left, numbers right. */
 .table tbody th { text-align:left; font-weight:var(--fw-regular); color:var(--color-gray-600); }
-/* Summenzeile: das erste Feld (z. B. «Total (4)») ist ein <th> im <tfoot> und
-   fiel bisher durch beide Polster-Regeln (thead th / tbody th) — also linksbündig
-   ohne Einzug. Gleiches Zellpolster wie die übrigen Zeilen. */
+/* Total row: its first field is a <th> in <tfoot> and previously fell through
+   both padding rules (thead th / tbody th), leaving it flush left with no inset.
+   Give it the same cell padding as the other rows. */
 .table tfoot { border-block:var(--stroke-2) solid var(--color-border-strong); }
 .table tfoot th { padding:var(--sp-4) var(--sp-6); vertical-align:top;
   text-align:left; font-size:var(--text-base); color:var(--color-gray-800); }
-/* Die Ausrichtungs-Utilities (.text-right/-center/-left) sind (0,1,0) und
-   verloren gegen `.table thead th` (0,1,3) bzw. `.table tbody th` —
-   die Kopfzeile blieb also linksbündig, während die Werte rechts standen.
-   Innerhalb der Tabelle mit passender Spezifität nachziehen, damit `align` in
-   C.table() Kopf UND Zelle gemeinsam ausrichtet. */
+/* Alignment utilities (.text-right/-center/-left) are (0,1,0) and lost to
+   `.table thead th` (0,1,3) or `.table tbody th`, so headers stayed left-aligned
+   while values sat right. Match specificity inside the table so `align` in
+   C.table() aligns header AND cell together. */
 .table thead th.text-right, .table tbody th.text-right, .table td.text-right,
 .table tfoot th.text-right, .table tfoot td.text-right { text-align:right; }
 .table thead th.text-center, .table tbody th.text-center, .table td.text-center,
 .table tfoot th.text-center, .table tfoot td.text-center { text-align:center; }
 .table thead th.text-left, .table tbody th.text-left, .table td.text-left,
 .table tfoot th.text-left, .table tfoot td.text-left { text-align:left; }
-/* Die früheren Ausnahmen für `.small`, `.meta-info` und `<p>` im Zeilenkopf
-   sind entfallen: sie hoben den Fettdruck stellenweise wieder auf, den es
-   jetzt gar nicht mehr gibt. */
+/* Former exceptions for `.small`, `.meta-info` and `<p>` in row headers are
+   gone: they locally removed bold that no longer exists. */
 .table tbody tr:last-child td, .table tbody tr:last-child th { border-bottom:0; }
-/* SPALTENBREITEN. Zahlenspalten (`align: 'right'`) schrumpfen auf ihren Inhalt
-   und brechen nicht um; die verbleibende Breite verteilt sich auf die
-   Textspalten. Damit stehen gleichartige Tabellen im ganzen Portal gleich
-   breit, ohne dass jede ihre Spalten von Hand vermessen muss. `width:1%` ist
-   dabei kein echtes Mass, sondern das übliche Signal an den Tabellensatz,
-   diese Spalte so schmal wie möglich zu halten.
-   Ziffern laufen auf Tabellenziffern, damit Beträge untereinander fluchten. */
+/* COLUMN WIDTHS. Numeric columns (`align: 'right'`) shrink to their content and
+   do not wrap; remaining width is distributed across text columns. Similar
+   tables therefore align consistently throughout the portal without hand-
+   measuring every column. `width:1%` is not a real measure, but the customary
+   signal to the table layout to keep this column as narrow as possible.
+   Numbers use tabular figures so amounts align vertically. */
 .table td.text-right, .table tbody th.text-right,
 .table tfoot td.text-right, .table tfoot th.text-right {
   width:1%; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .table thead th.text-right { width:1%; }
-/* Reihenfolge ist hier die Korrektur: Zebra und Hover hatten dieselbe Spezifität
-   (0,2,3), Zebra stand zuletzt und gewann — auf den GERADEN Zeilen war Hover
-   wirkungslos. Hover kommt jetzt nach der Zebra-Regel und nutzt die nächste
-   Stufe, damit der Unterschied auch auf getönten Zeilen sichtbar ist. */
+/* Source order is the fix here: zebra and hover had equal specificity (0,2,3),
+   with zebra last and winning, so hover did nothing on EVEN rows. Hover now
+   follows zebra and uses the next step so the difference is visible on tinted rows. */
 .table--zebra tbody tr:nth-child(even),
 .table--zebra tfoot tr:nth-child(even) { background:var(--color-secondary-50); }
-/* … ausser die Tabelle steht SELBST auf secondary-50. Das CD kennt genau EINE
-   neutrale Fläche, und die benutzen beide: das getönte Abschnittsband
-   (.bg--secondary-50) und die Tabelle für Kopfzeile und Zebrastreifen. Liegt
-   das eine auf dem anderen, sind Streifen und Grund identisch — die Streifen
-   werden zu Löchern, durch die das Band scheint, und nur die ungeraden Zeilen
-   sehen aus wie Zeilen (Nutzerbefund 2026-08-06, Startseite «Meine offenen
-   Vorgänge»).
-   Statt eine zweite Tönung zu erfinden, gibt die Tabelle ihre eigene auf: sie
-   ist ohnehin schon eine weisse Karte mit Rahmen und Schatten, und Kopfzeile
-   wie Zeilen bleiben durch Trennlinien und den fetten Kopf unterscheidbar.
-   Gilt für JEDE Tabelle auf dem Band — der Fehler hing nur an der Verschachtelung,
-   nicht an der Seite. */
+/* … unless the table ITSELF sits on secondary-50. CD has exactly ONE neutral
+   surface, used by both the tinted section band (.bg--secondary-50) and the
+   table's header and zebra stripes. When nested, stripes and ground are
+   identical: stripes become holes exposing the band, and only odd rows look
+   like rows (user finding 2026-08-06, home page open-cases table).
+   Rather than inventing a second tint, the table gives up its own: it is already
+   a white card with border and shadow, while dividers and the bold header keep
+   header and rows distinguishable. Applies to EVERY table on the band; the bug
+   depended only on nesting, not on the page. */
 .bg--secondary-50 .table thead th,
 .bg--secondary-50 .table--zebra tbody tr:nth-child(even),
 .bg--secondary-50 .table--zebra tfoot tr:nth-child(even) { background:transparent; }
-/* Hover NUR auf klickbaren Zeilen — CDs Tabelle kennt keinen Zeilen-Hover
-   (table.postcss); eine statische Datentabelle darf keine Klickbarkeit signalisieren. */
+/* Hover ONLY on clickable rows: CD tables define no row hover (table.postcss),
+   and a static data table must not signal clickability. */
 .table--rows-clickable tbody tr:hover { background:var(--color-secondary-100); }
-/* Ganze Zeile klickbar (C.table `rowsClickable`): der Zeiger zeigt es an, die
-   Bedienung läuft aber weiter über den Link in der Zeile — deshalb steht hier
-   nur der Cursor und kein eigener Fokusstil. */
+/* Whole row clickable (C.table `rowsClickable`): the cursor signals it, but
+   interaction still runs through the row's link, so only cursor and no custom
+   focus style belongs here. */
 .table--rows-clickable tbody tr { cursor:pointer; }
-/* Klick-Hinweis am Zeilenende. Der Zeigefinger allein verrät die anklickbare
-   Zeile erst BEIM Überfahren — der Winkel sagt es vorher. Rein dekorativ
-   (`aria-hidden` bräuchte ein Element; ein ::after ist für AT ohnehin nicht
-   da), die Bedienung trägt weiterhin der echte Link in der ersten Zelle. */
+/* Click hint at the row end. A pointer reveals a clickable row only DURING
+   hover; the angle signals it beforehand. Purely decorative (`aria-hidden`
+   would need an element; ::after is absent from the accessibility tree anyway).
+   The real link in the first cell still provides interaction. */
 .table--rows-clickable tbody td:last-child,
 .table--rows-clickable tbody th:last-child { position:relative; padding-right:var(--sp-9); }
 .table--rows-clickable tbody tr > :last-child::after {
@@ -105,17 +97,17 @@
   -webkit-mask:url('../../assets/icons/ChevronRight.svg') no-repeat center/contain;
   mask:url('../../assets/icons/ChevronRight.svg') no-repeat center/contain; }
 .table--rows-clickable tbody tr:hover > :last-child::after { background-color:var(--color-primary-700); }
-/* Die Summenzeile im tfoot ist keine Zeile zum Anklicken. */
+/* The total row in tfoot is not clickable. */
 .table--rows-clickable tfoot tr > :last-child::after { content:none; }
 @media (hover:none){
   .table--rows-clickable tbody tr:hover { background:inherit; }
-  /* Zebra-Streifen überlebt das Antippen: die inherit-Regel oben würde ihn
-     sonst auf getippten geraden Zeilen löschen (beide Konsumenten sind Zebra). */
+  /* Zebra striping survives tapping: the inherit rule above would otherwise
+     remove it from tapped even rows (both consumers use zebra). */
   .table--rows-clickable.table--zebra tbody tr:nth-child(even):hover { background:var(--color-secondary-50); }
 }
-/* Dichte + Umbruch auf schmalen Viewports (Item 2.11). tfoot th steht MIT in
-   der Liste: die Summenzeile schrumpft sonst nur in den Wertzellen (td), ihr
-   Beschriftungsfeld behielte als einzige Zelle das volle Polster. */
+/* Density + wrapping on narrow viewports (Item 2.11). tfoot th IS included:
+   otherwise the total row shrinks only in value cells (td), leaving its label
+   cell as the only one with full padding. */
 @media (max-width:767.98px){
   .table-wrapper .table thead th,
   .table-wrapper .table td,

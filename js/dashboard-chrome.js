@@ -1,20 +1,18 @@
-// Gemeinsames Dashboard-Chrome (Superset-Muster) — die Extraktion, die
-// estate.js:152-154 lange angekündigt hat («… bis das Dashboard-Chrome in ein
-// Modul extrahiert ist»). Vorher trugen dataportal.js und estate.js je eine
-// wortgleiche Kopie von Menü, KPI-Kachel, Filterpanel-Hülle, Einklapp-Logik,
-// Menü-Handler und Fusszeile (~120 Zeilen) — inklusive derselben DOM-ids in
-// beiden Dateien. Hier steht jede davon EINMAL; die Apps behalten nur ihre
-// Daten- und Chart-Logik.
+// Shared dashboard chrome (Superset pattern), completing the extraction long
+// announced by estate.js:152-154. dataportal.js and estate.js previously carried
+// matching copies of the menu, KPI tile, filter-panel shell, collapse logic,
+// menu handler and footer (~120 lines), including identical DOM IDs in both
+// files. Each now exists ONCE; apps retain only data and chart logic.
 //
-// Klassennamen bleiben unverändert (.dash-header/.dash-grid/.filter-panel …):
-// scripts/test-dashboard.mjs greppt sie, und ein Rename wäre Churn ohne
-// Nutzwert (docs/design-review.md, C22).
+// Class names remain unchanged (.dash-header/.dash-grid/.filter-panel …):
+// scripts/test-dashboard.mjs checks them, and renaming would add churn without
+// value (docs/design-review.md, C22).
 
 import { copyText, shareMail } from './export.js';
-import { datum } from './format.js';
+import { formatDate } from './format.js';
 
-// Dashboard-Toolbar-Menü. Ganzes-Dashboard-Export (PDF/Bild) bleibt eine
-// simulierte Affordanz (bräuchte einen Rasterisierer); Aktualisieren/Teilen sind echt.
+// Dashboard toolbar menu. Whole-dashboard PDF/image export remains simulated
+// because it would need a rasteriser; refresh and share are real.
 export const DASHBOARD_MENU = [
   { action: 'refresh', label: 'Dashboard aktualisieren' },
   { separator: true },
@@ -27,15 +25,15 @@ export const DASHBOARD_MENU = [
   { action: 'mail', label: 'Per E-Mail' },
 ];
 
-// KPI-Kachel inkl. Delta-Pfeil + sr-only-Wort (WCAG 1.4.1: Richtung nicht nur
-// über Farbe). `deltaGood` undefined = neutral (z. B. ein Zielwert), der dann
-// auch nicht wie ein Erfolg aussieht.
+// KPI tile with delta arrow and sr-only wording (WCAG 1.4.1: direction is not
+// conveyed by colour alone). `deltaGood` undefined means neutral (for example a
+// target), which must not look like success.
 //
-// Seit dem Datenportal-Ausbau (Aug. 2026, Muster Energiedashboard Bund /
-// Covid-Dashboard) zusätzlich: `delta2Label/delta2Good` als zweiter Chip
-// (Vormonat UND Vorjahr — Immobilien sind saisonal, erst das Jahresdelta ist
-// ehrlich), `spark` als achsenlose 24-Punkte-Miniaturlinie im Kachelfuss und
-// `hint` als Stichtags-/Referenznotiz («Stand: 30.06.2026»).
+// Since the data-portal expansion (August 2026, federal energy dashboard / COVID
+// dashboard pattern), it also supports `delta2Label/delta2Good` as a second chip
+// (previous month AND previous year: property is seasonal, so the annual delta
+// adds necessary context), `spark` as an axis-free 24-point miniature line in
+// the tile footer, and `hint` as a reference-date note.
 const deltaChip = (C, deltaLabel, deltaGood) => `<div class="kpi__delta${
   deltaGood === true ? ' is-good' : deltaGood === false ? ' is-bad' : ''}">${
   deltaGood === undefined ? ''
@@ -43,9 +41,9 @@ const deltaChip = (C, deltaLabel, deltaGood) => `<div class="kpi__delta${
       + `<span class="sr-only">${deltaGood ? 'positive Entwicklung' : 'negative Entwicklung'}: </span>`
 }${C.escape(deltaLabel)}</div>`;
 
-// Achsenlose Miniaturlinie (Sparkline) — nur Verlauf + Endpunkt, bewusst ohne
-// Werte/Ticks: die Zahl steht gross darüber, die Linie beantwortet «woher kommt
-// sie?». Dekorativ (aria-hidden); die belastbare Reihe steht in den Diagrammen.
+// Axis-free sparkline: only trend and endpoint, deliberately without values or
+// ticks. The number sits prominently above; the line explains where it came
+// from. It is decorative (aria-hidden); the authoritative series is in charts.
 function sparkline(values) {
   const v = (values || []).map(Number).filter(Number.isFinite);
   if (v.length < 2) return '';
@@ -71,8 +69,8 @@ export function kpiTile(C, { label, value, unit = '', deltaLabel = '', deltaGood
   </div>`;
 }
 
-// Kopfzeile: pageHeader links, Aktionsmenü rechts. `extra` = optionales
-// Zusatz-HTML unter dem Lead (z. B. der Inventar-Hinweis des Immobilien-Boards).
+// Header: pageHeader on the left, action menu on the right. `extra` is optional
+// HTML below the lead (for example the property board's inventory notice).
 export function dashHeader(C, { title, lead = '', leadHtml = '', extra = '' } = {}) {
   return `<div class="dash-header">
       <div class="dash-header__text">${C.pageHeader(leadHtml ? { title, leadHtml } : { title, lead })}${extra}</div>
@@ -80,7 +78,7 @@ export function dashHeader(C, { title, lead = '', leadHtml = '', extra = '' } = 
     </div>`;
 }
 
-// Filterpanel-Hülle (Kopf + Einklapp-Knopf); `body` ist fertiges HTML des Aufrufers.
+// Filter-panel shell (header + collapse button); `body` is caller-provided HTML.
 export function filterPanelShell(C, body) {
   return `<aside class="filter-panel" id="dash-filters" aria-label="Filter">
       <div class="filter-panel__head">
@@ -91,30 +89,30 @@ export function filterPanelShell(C, body) {
     </aside>`;
 }
 
-// Fusszeile. `sourceId` rendert die Quelle als per JS gefülltes <span> (Immobilien-
-// Board wechselt sie je Tab); `updated` ist ISO und wird hier — EINMAL für beide
-// Boards — über format.datum ausgegeben (vorher stand rohes «Stand: 2026-03-31»
-// auf beiden Flächen, Design-Review A13).
+// Footer. `sourceId` renders the source as a JS-populated <span> (the property
+// board changes it per tab). `updated` is ISO and formatted here ONCE for both
+// boards through formatDate (both surfaces previously showed a raw date, design
+// review A13).
 export function dashFooter(C, { source = '', sourceId = '', updated = '' } = {}) {
   return `<footer class="dash-footer">
       <span class="meta-info__item">Quelle: ${sourceId ? `<span id="${C.escape(sourceId)}"></span>` : C.escape(source)}</span>
-      ${updated ? `<span class="meta-info__item">Stand: ${C.escape(datum(updated))}</span>` : ''}
+      ${updated ? `<span class="meta-info__item">Stand: ${C.escape(formatDate(updated))}</span>` : ''}
       <span class="meta-info__item">Demo-Daten</span>
     </footer>`;
 }
 
-// Item 6.13: unter lg trägt `.filter-panel--collapsed` das Einklappen (die
-// Desktop-Mechanik `.dashboard-layout--collapsed` bleibt unangetastet, damit die
-// filterFullHeight-Zusicherung in test-dashboard.mjs grün bleibt). Auf dem Handy
-// stand sonst mehr als ein Bildschirm Checkboxen VOR der ersten Kennzahl.
-// Meldet seinen matchMedia-Horcher über ctx.onUnmount ab.
+// Item 6.13: below lg, `.filter-panel--collapsed` handles collapse. The desktop
+// `.dashboard-layout--collapsed` mechanism remains intact so the
+// filterFullHeight assertion in test-dashboard.mjs keeps passing. Otherwise a
+// phone showed more than one screen of checkboxes BEFORE the first metric.
+// Unregisters its matchMedia listener through ctx.onUnmount.
 export function wireFilterCollapse(ctx, mount) {
   const layout = mount.querySelector('#dashboard');
   const panel = mount.querySelector('#dash-filters');
   const toggle = mount.querySelector('#filter-toggle');
   const isDesktop = () => window.matchMedia('(min-width:1024px)').matches;
-  // Unter lg standardmässig zugeklappt — wie CDs Facettenfilter und wie die
-  // .catbar__panel-Schublade auf den Katalogseiten.
+  // Collapsed by default below lg, matching CD facet filters and the
+  // .catbar__panel drawer on catalogue pages.
   if (panel && !isDesktop()) panel.classList.add('filter-panel--collapsed');
   const syncToggle = () => {
     if (!toggle) return;
@@ -131,17 +129,17 @@ export function wireFilterCollapse(ctx, mount) {
     else panel.classList.toggle('filter-panel--collapsed');
     syncToggle();
   });
-  // Beim Verlassen der Route abmelden: der Horcher hängt an window und
-  // überlebte den DOM-Tausch sonst — ein weiterer je Besuch (code-review §4).
+  // Unregister on route exit. The listener is attached to window and would
+  // otherwise survive the DOM replacement, adding another on every visit
+  // (code-review §4).
   const mqAc = new AbortController();
   ctx.onUnmount(() => mqAc.abort());
   window.matchMedia('(min-width:1024px)').addEventListener('change', syncToggle, { signal: mqAc.signal });
 }
 
-// Toolbar-Menü-Handler: Aktualisieren (echt) · Herunterladen (Demo) · Teilen
-// (echt: Zwischenablage / E-Mail). Der Kopier-Fehlschlag erscheint als ERROR-
-// Toast — vorher ritt «Kopieren nicht möglich.» in beiden Boards auf dem
-// Erfolgs-Standard (grüner Haken, Design-Review D5).
+// Toolbar menu handler: refresh (real), download (demo), share (real: clipboard
+// / email). Copy failure appears as an ERROR toast; both boards previously used
+// the success default (green check, design review D5).
 export function wireDashboardMenu(mount, C, { title, onRefresh } = {}) {
   C.wireMenu(mount.querySelector('.dash-header'), (action) => {
     if (action === 'refresh') { onRefresh(); C.toast('Dashboard aktualisiert.'); }

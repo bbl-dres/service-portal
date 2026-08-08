@@ -1,9 +1,9 @@
-/* Nur noch die CD-Namen (grids.postcss:25-54) — die Portal-Aliase grid--2/3/4
-   sind nach abgeschlossener Migration entfallen (Design-Review C17). */
+/* Only the CD names remain (grids.postcss:25-54); the portal aliases grid--2/3/4
+   were removed after migration completed (Design Review C17). */
 .grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:minmax(0,1fr); }
-/* min(260px,100%) statt 260px: verschachtelt in einer schmalen Spalte (oder unter
-   320px Viewport) würde ein festes Minimum die Spur breiter als ihren Container
-   machen — dieselbe Absicherung wie beim Kachelraster der Startseite. */
+/* min(260px,100%) instead of 260px: nested in a narrow column (or below a 320px
+   viewport), a fixed minimum would make the track wider than its container.
+   This is the same safeguard used by the home-page tile grid. */
 .grid--auto { grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr)); }
 @media (min-width:768px) {
   .grid--responsive-cols-2, .grid--responsive-cols-3, .grid--responsive-cols-4 { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -12,11 +12,11 @@
   .grid--responsive-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .grid--responsive-cols-4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
 }
-/* .grid--items-N (CD grids.postcss:226-271, Zeilen-Balancierung) ist EXZIDIERT:
-   null Konsumenten seit zwei Wellen — Regel des Blatts: Parity-Klassen erst mit
-   dem ersten Konsumenten (Design-Review C10). */
+/* .grid--items-N (CD grids.postcss:226-271, row balancing) was EXCISED: zero
+   consumers for two waves. Style-sheet rule: parity classes arrive with their
+   first consumer (Design Review C10). */
 
-/* .ratio--* (ratio.postcss:5-33) exzidiert — null Konsumenten (Design-Review C10). */
+/* .ratio--* (ratio.postcss:5-33) was excised: zero consumers (Design Review C10). */
 
 /* ---- Icons (monochrome SVGs via CSS mask -> currentColor) ---- */
 /* CD keeps width:auto because SvgIcon renders an intrinsic SVG. Mask spans have
@@ -39,24 +39,23 @@
 @media (min-width:1024px){
   .icon--xl { width:var(--sp-9); height:var(--sp-9); } .icon--2xl{ width:var(--sp-12); height:var(--sp-12); }
 }
-/* icon--full/3xl/4xl/5xl (CD icons.postcss:15-53) folgen mit dem ersten
-   Konsumenten über 3rem — bis dahin wären sie tote Regeln. */
-/* C.loading() rendert Spinner.svg mit icon--spin; der Reduced-Motion-Ausstieg
-   steht im Sammelblock unten. */
+/* icon--full/3xl/4xl/5xl (CD icons.postcss:15-53) will arrive with the first
+   consumer above 3rem; until then they would be dead rules. */
+/* C.loading() renders Spinner.svg with icon--spin; the reduced-motion escape
+   is in the shared block below. */
 @keyframes spin { to { transform:rotate(360deg); } }
 .icon--spin { animation:spin var(--duration-spin) linear infinite; }
 
 /* Masked icons are dropped by forced-colors; repaint them with a system colour */
 @media (forced-colors: active) {
-  /* currentColor folgt der ERZWUNGENEN Farbe des Kontexts (ButtonText/LinkText/
-     CanvasText) — wie CDs fill-current (icons.postcss:5-13). Ein statisches
-     LinkText malte Knopf-Symbole andersfarbig als ihre Beschriftung. */
+  /* currentColor follows the context's FORCED color (ButtonText/LinkText/
+     CanvasText), like CD's fill-current (icons.postcss:5-13). A static
+     LinkText painted button icons differently from their labels. */
   .icon { forced-color-adjust:none; background-color:currentColor; }
-  /* Die Ankreuzfelder stehen NICHT hier, sondern direkt hinter ihrer Basisregel
-     (siehe «Ankreuzfelder im hohen Kontrast» weiter unten): beide Regeln haben
-     dieselbe Spezifität, hier stünde die Korrektur 1000 Zeilen zu früh und
-     verlöre. */
-  /* Gedrückter Ansichtsschalter braucht eine Form, nicht nur eine Fläche */
+  /* Checkboxes are NOT handled here, but directly after their base rule (see
+     "Checkboxes in high contrast" below): both rules have equal specificity;
+     here the correction would occur 1,000 lines too early and lose. */
+  /* A pressed view switch needs a shape, not only a filled surface */
   .view-switch__btn[aria-pressed="true"] { outline:var(--stroke-2) solid CanvasText; outline-offset:calc(-1 * var(--stroke-2)); }
 }
 

@@ -1,9 +1,11 @@
-// Dienstleistungen - service directory (catalog) + service detail.
+// Services — service directory (catalogue) and service detail.
 import { audienceOptions, audienceLabel, audienceTags } from '../domain.js';
+const MISSING_TARGET_MESSAGE = 'Im Prototyp ist kein Zielsystem angebunden.';
 
-// Aufschiebbare Bestände dieser Route. Der Router ruft core.ensure(needs) VOR
-// render() auf — ohne die Deklaration läse ein Accessor die noch leere Liste
-// und die Ansicht zeigte «keine Einträge» statt Daten (docs/code-review.md §3).
+// Deferred collections for this route. The router calls core.ensure(needs)
+// BEFORE render(); without this declaration, an accessor would read the still
+// empty list and the view would show «no entries» instead of data
+// (docs/code-review.md §3).
 export const needs = ['applications', 'contacts', 'documents'];
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
@@ -14,26 +16,26 @@ export default async function render(ctx) {
 
   const rawQ = query.get('q') || '';
   const q = rawQ.toLowerCase();
-  // Filter sind mehrwertig (Mehrfachauswahl-Checkboxen): komma-getrennt im Hash.
+  // Filters accept multiple values (multi-select checkboxes), comma-separated in the hash.
   const selectedAudiences = (query.get('audience') || '').split(',').map(t => t.trim()).filter(Boolean);
   const selectedTopics = (query.get('topic') || '').split(',').map(t => t.trim()).filter(Boolean);
   const view = query.get('view') === 'list' ? 'list' : 'gallery';
   const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
   const perPage = 12;
   const domains = core.ref().domains || [];
-  // Der Katalog führt NUR startbare Dienstleistungen (docs/sitemap.md §2.3).
-  // `type: info` sind Referenzseiten im Dienstleistungskostüm; sie sind über
-  // «Wissen und Hilfsmittel» bzw. «Daten und Digitalisierung» erschlossen. Ihre
-  // Detailseite bleibt erreichbar, damit geteilte Links nicht ins Leere laufen.
+  // The catalogue contains ONLY startable services (docs/sitemap.md §2.3).
+  // `type: info` entries are reference pages dressed as services; the knowledge/
+  // resources and data/digitalisation areas expose them. Their detail pages
+  // remain reachable so shared links do not become dead ends.
   const all = core.services().filter(s => s.type === 'action');
 
-  // Sortierung (catbar): leer = Datenreihenfolge (Platzhalter «Sortieren»).
-  const SORT_OPTS = [{ value: 'title', label: 'Bezeichnung (A–Z)' }, { value: 'domain', label: 'Bereich' }];
+  // Sorting (catbar): empty means data order (the «Sortieren» placeholder).
+  const SORT_OPTIONS = [{ value: 'title', label: 'Bezeichnung (A–Z)' }, { value: 'domain', label: 'Bereich' }];
   const SORTS = {
     title: (a, b) => a.title.localeCompare(b.title, 'de'),
     domain: (a, b) => domainLabel(domains, a.domain).localeCompare(domainLabel(domains, b.domain), 'de') || a.title.localeCompare(b.title, 'de'),
   };
-  const sortKey = SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
+  const sortKey = SORT_OPTIONS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
 
   const matches = (s) => !q || (s.title + ' ' + s.short + ' ' + s.description).toLowerCase().includes(q);
   const matchesAudience = (s) => !selectedAudiences.length || selectedAudiences.some(v => (s.audience || []).includes(v));
@@ -47,7 +49,7 @@ export default async function render(ctx) {
   const base = { q: rawQ, audience: selectedAudiences, topic: selectedTopics, sort: sortKey, view };
   const hash = (patch = {}) => C.catalogueHash('#/services', { ...base, ...patch });
 
-  // also-in hint across other surfaces (services-first, then content)
+  // “Also in” hint across other surfaces (services first, then content).
   const otherHits = q ? {
     apps: core.applications().filter(a => (a.name + a.description).toLowerCase().includes(q)).length,
     docs: core.documents().filter(d => d.title.toLowerCase().includes(q)).length,
@@ -62,8 +64,8 @@ export default async function render(ctx) {
   const listView = (list) => C.table({
     caption: 'Dienstleistungen',
     zebra: true,
-    // Erste Spalte ist der Zeilenlink — wie in allen Katalog-Listenansichten
-    // folgt die ganze Zeile ihm per Mausklick (einheitliche Affordanz, tbl-8).
+    // The first column is the row link; as in all catalogue list views, clicking
+    // anywhere on the row follows it (consistent affordance, tbl-8).
     rowsClickable: true,
     columns: [
       { key: 'title', label: 'Dienstleistung', render: s => `<a href="#/services/${s.serviceId}">${C.escape(s.title)}</a><br><span class="small muted">${C.escape(s.short)}</span>` },
@@ -92,12 +94,12 @@ export default async function render(ctx) {
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   const filterPanel = `
     ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: selectedAudiences, options: audienceOptions(core) })}
-    ${/* Themen aus den Daten ableiten — dieselbe Regel wie im Drawer (shell.js):
-          ein Thema erscheint, sobald ein Vorgang dahintersteht. Vorher entschied
-          die Fahne `thema` in reference-data.json, und sie war veraltet: der
-          Drawer bot «Alle anzeigen» für Beschaffung oder Publizieren an, im
-          Filter fehlten dieselben Themen — man konnte den Filter setzen, aber
-          nicht sehen und nicht abwählen. Die Fahne ist entfallen. */''}
+    ${/* Derive topics from the data using the same rule as the drawer (shell.js):
+          a topic appears as soon as it has a case behind it. Raw field: `thema`
+          compatibility flag in reference-data.json previously decided this and
+          was stale: the drawer offered «Alle anzeigen» for procurement or
+          publishing while the filter omitted those same topics. The filter could
+          be set but neither seen nor deselected. The flag has been removed. */''}
     ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: selectedTopics,
       options: domains.filter(d => all.some(s => s.domain === d.key)).map(d => ({ value: d.key, label: d.label })) })}
     ${C.panelReset({ href: hash({ audience: [], topic: [] }) })}`;
@@ -108,7 +110,7 @@ export default async function render(ctx) {
     ${C.catalogueBar({
       formId: 'svc-search', inputId: 'sq', searchLabel: 'Dienstleistung suchen', placeholder: 'Dienstleistung suchen…', q: rawQ,
       countId: 'svc-count', count: `<strong>${services.length}</strong> von ${all.length} Dienstleistungen${pageInfo}`,
-      sort: { id: 'svc-sort', value: sortKey, options: SORT_OPTS },
+      sort: { id: 'svc-sort', value: sortKey, options: SORT_OPTIONS },
       filterId: 'svc-filter', filterLabel: 'Filter', filterCount: selectedAudiences.length + selectedTopics.length,
       panelId: 'svc-filters', panel: filterPanel,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
@@ -126,121 +128,119 @@ export default async function render(ctx) {
 
   C.announceCatalogue({ count: services.length, total: all.length, unit: 'Dienstleistungen', page, totalPages, view });
 
-  // Mehrfachauswahl-Filter (Zielgruppe/Thema) verdrahtet C.wireCatalogue über das Panel.
+  // C.wireCatalogue wires the multi-select filters (audience/topic) through the panel.
   C.wireCatalogue(mount, {
     formId: 'svc-search', inputId: 'sq', pageInputId: 'svc-page', page, totalPages, hash,
     sortId: 'svc-sort', filterToggleId: 'svc-filter', panelId: 'svc-filters',
   });
-  // Zeilenklick der Listenansicht. Abbau via onUnmount, sonst sammelt der
-  // wiederverwendete mount pro Besuch einen weiteren Klick-Horcher an.
+  // Row clicks in list view. Clean up through onUnmount so the reused mount does
+  // not accumulate another click listener on every visit.
   ctx.onUnmount(C.wireTableRows(mount));
 }
 
 function detail(ctx, id) {
   const { mount, core, engine, session, C, setTitle, setCrumbs } = ctx;
-  const s = core.service(id);
-  if (!s) {
+  const service = core.service(id);
+  if (!service) {
     C.renderNotFound(ctx, { thing: 'Diese Dienstleistung', title: 'Dienstleistung nicht gefunden',
       backHref: '#/services', backLabel: 'Dienstleistungen',
       crumbs: [{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }] });
     return;
   }
-  setTitle(s.title);
-  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }, { label: s.title }]);
+  setTitle(service.title);
+  setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen', href: '#/services' }, { label: service.title }]);
 
-  const contact = core.contacts().find(c => c.contactId === s.contact);
-  // processDefId war reine Deklaration — 10 Dienstleistungen trugen das Feld, kein
-  // Modul las es (H11). Hier wird die Kante benutzt: der Ablauf, den der Vorgang
-  // durchläuft, steht VOR dem Absenden auf der Seite. Fehlt die Definition,
-  // entfällt der Block wortlos — er ist Zusatzinformation, keine Bedingung.
-  const def = s.processDefId ? engine.definition(s.processDefId) : null;
-  const tgt = s.target || {};   // Informationsangebote haben kein `target` — nicht dereferenzieren (A5)
-  const ext = tgt.kind === 'external';
-  const ctaLabel = s.type === 'action' ? (ext ? 'Zum externen System' : 'Vorgang starten') : 'Öffnen';
-  // Ein Ziel «#» ist ein Platzhalter — dann keinen toten Knopf anbieten,
-  // sondern sagen, dass das System im Prototyp nicht angebunden ist.
-  const hasTarget = tgt.href && tgt.href !== '#';
-  // «Zugriff»-Karte, erste Karte der Randspalte (Nutzerentscheid 2026-08-04):
-  // derselbe Ort — und seit 2026-08-06 auch derselbe BAUSTEIN wie auf der
-  // Anwendungs-Landingpage (C.accessCard). Vorher stellte die Anwendung den
-  // Knopf nach oben und den Text darunter, die Dienstleistung umgekehrt und in
-  // halber Grösse; die Karte beantwortet aber auf beiden Seiten dieselbe Frage.
-  // Ziel, Sitzungshinweis und sicherer Neues-Tab-Vertrag werden vom Baustein
-  // gemeinsam abgeleitet.
-  const zugriffCard = C.accessCard({
-    href: hasTarget ? tgt.href : '', label: ctaLabel, external: ext, newWindow: true,
-    // Nur das Auslösen eines Vorgangs (type=action) verlangt eine Anmeldung;
-    // Informationsangebote sind frei. Externe Zielsysteme bringen ihre eigene mit
-    // — bei internen Zielen übernimmt die im neuen Tab geöffnete Anwendung
-    // ihren eigenen Router-Login-Gate.
-    requiresLogin: s.type === 'action' && !ext,
+  const contact = core.contacts().find(c => c.contactId === service.contact);
+  // processDefId was declaration-only: ten services carried the field and no
+  // module read it (H11). This uses that edge so the case's process appears on
+  // the page BEFORE submission. If the definition is missing, omit the block
+  // silently because it is supplementary information, not a prerequisite.
+  const definition = service.processDefId ? engine.definition(service.processDefId) : null;
+  const target = service.target || {};   // Information offerings have no `target`; do not dereference it (A5).
+  const isExternal = target.kind === 'external';
+  const ctaLabel = service.type === 'action' ? (isExternal ? 'Zum externen System' : 'Vorgang starten') : 'Öffnen';
+  // A «#» target is a placeholder. Do not offer a dead button; explain that the
+  // prototype is not connected to the target system.
+  const hasTarget = target.href && target.href !== '#';
+  // «Zugriff» card, first card in the side column (user decision, 2026-08-04):
+  // the same location and, since 2026-08-06, the same BUILDING BLOCK as on the
+  // application landing page (C.accessCard). Previously the application placed
+  // the button above the text, while the service reversed them at half the size,
+  // although the card answers the same question on both pages. The building block
+  // derives target, session hint, and safe new-tab contract together.
+  const accessCard = C.accessCard({
+    href: hasTarget ? target.href : '', label: ctaLabel, external: isExternal, newWindow: true,
+    // Only starting a case (type=action) requires authentication. Information
+    // offerings are public. External target systems provide their own login;
+    // internal targets rely on the newly opened application's router login gate.
+    requiresLogin: service.type === 'action' && !isExternal,
     loggedIn: session.isLoggedIn(), user: session.user(),
-    free: s.type !== 'action' ? 'Frei zugänglich — keine Anmeldung erforderlich.' : '',
+    free: service.type !== 'action' ? 'Frei zugänglich — keine Anmeldung erforderlich.' : '',
   });
 
   const ctaBlock = `<div class="row mt-4">
-      ${/* CD Btn.vue: das Icon steht im DOM zuerst, btn--icon-right dreht die
-            Reihenfolge; das Label trägt IMMER den .btn__text-Wickel. */''}
+      ${/* CD Btn.vue: the icon comes first in the DOM, btn--icon-right reverses
+            the order, and the label ALWAYS uses the .btn__text wrapper. */''}
       ${hasTarget
-        ? `<a class="btn btn--outline btn--lg btn--icon-right" href="${C.escape(tgt.href)}" target="_blank" rel="${
-            ext ? 'noopener external' : 'noopener'}">${
+        ? `<a class="btn btn--outline btn--lg btn--icon-right" href="${C.escape(target.href)}" target="_blank" rel="${
+            isExternal ? 'noopener external' : 'noopener'}">${
             C.icon('External', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></a>`
         : `<span class="btn btn--outline btn--lg btn--icon-right" aria-disabled="true">${
-            C.icon(ext ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></span>
-           <span class="small muted">Im Prototyp ist kein Zielsystem angebunden.</span>`}
+            C.icon(isExternal ? 'External' : 'ArrowRight', 'btn__icon')}<span class="btn__text">${ctaLabel}</span></span>
+           <span class="small muted">${MISSING_TARGET_MESSAGE}</span>`}
     </div>`;
 
-  // Symbolbild je Thema (verifizierte Unsplash-ids aus dem Bestand); Fallback =
-  // Farbfläche. Deckt sich mit den Themen-Bildern der Startseite/Bereiche.
-  // Lokaler Heldenpool (assets/images/heroes, Nachweis im README dort) statt
-  // Unsplash-Hotlinks — Bild-Screening 2026-08-04.
-  const H = 'assets/images/heroes/';
-  const DOMAIN_PHOTO = {
-    A: H + 'domain-a.jpg', B: H + 'domain-b.jpg', U: H + 'domain-u.jpg',
-    O: H + 'domain-o.jpg', G: H + 'domain-g.jpg', C: H + 'domain-c.jpg',
-    D: H + 'domain-g.jpg', E: H + 'domain-o.jpg', F: H + 'domain-b.jpg',
+  // One symbolic image per topic (verified inventory IDs), with a colour field
+  // as fallback. This matches the topic images on the home and area pages. Use
+  // the local hero pool (assets/images/heroes, attribution in its README) rather
+  // than Unsplash hotlinks, following the 2026-08-04 image review.
+  const HERO_BASE = 'assets/images/heroes/';
+  const DOMAIN_PHOTOS = {
+    A: HERO_BASE + 'domain-a.jpg', B: HERO_BASE + 'domain-b.jpg', U: HERO_BASE + 'domain-u.jpg',
+    O: HERO_BASE + 'domain-o.jpg', G: HERO_BASE + 'domain-g.jpg', C: HERO_BASE + 'domain-c.jpg',
+    D: HERO_BASE + 'domain-g.jpg', E: HERO_BASE + 'domain-o.jpg', F: HERO_BASE + 'domain-b.jpg',
   };
-  const img = DOMAIN_PHOTO[s.domain] || H + 'domain-o.jpg';
+  const image = DOMAIN_PHOTOS[service.domain] || HERO_BASE + 'domain-o.jpg';
 
   mount.innerHTML = `
   <div class="container section">
     ${C.detailHead({
       backHref: '#/services', backLabel: 'Dienstleistungen',
-      title: s.title, lead: s.short,
-      tags: `${audienceTags(core, C, s.audience)}${s.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
-      image: C.heroFigure({ src: img, ratio: '16x9' }),
+      title: service.title, lead: service.short,
+      tags: `${audienceTags(core, C, service.audience)}${service.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
+      image: C.heroFigure({ src: image, ratio: '16x9' }),
     })}
     <div class="container--grid gap--responsive">
-      ${/* CD-Inhaltsrhythmus (.vertical-spacing, 3/3.5rem) statt des portal-
-            eigenen .stack — die Detail-Hauptspalten sollen alle dieselbe
-            Rampe tragen (Review layout/main-1). */''}
+      ${/* CD content rhythm (.vertical-spacing, 3/3.5rem), not the portal-specific
+            .stack. All primary detail columns should use the same scale
+            (review layout/main-1). */''}
       <div class="container__main vertical-spacing">
-        ${/* Die Detailseite hatte ausser der <h1> keine Gliederungsstufe: ohne
-              Voraussetzungen und ohne Weisungen blieb sie ganz ohne <h2>/<h3>. */''}
+        ${/* Apart from <h1>, the detail page had no outline level. Without
+              prerequisites or guidance, it had no <h2>/<h3> at all. */''}
         <h2 class="sr-only">Beschreibung</h2>
-        <p>${C.escape(s.description)}</p>
-        ${s.voraussetzungen && s.voraussetzungen.length ? `<div class="box"><h3>Das brauchen Sie</h3><ul class="list--default">${s.voraussetzungen.map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
-        ${def && Array.isArray(def.steps) && def.steps.length ? `<div class="box"><h3>So läuft es ab</h3>
-          <p class="small muted">${C.escape(def.name)} — ${def.steps.length} Schritte. Den Stand sehen Sie danach unter <a href="#/my-cases">Meine Vorgänge</a>.</p>
-          ${C.pipeline(def.steps, 0, { label: `Ablauf «${def.name}»` })}</div>` : ''}
+        <p>${C.escape(service.description)}</p>
+        ${service['voraussetzungen'] && service['voraussetzungen'].length ? `<div class="box"><h3>Das brauchen Sie</h3><ul class="list--default">${service['voraussetzungen'].map(v => `<li>${C.escape(v)}</li>`).join('')}</ul></div>` : ''}
+        ${definition && Array.isArray(definition.steps) && definition.steps.length ? `<div class="box"><h3>So läuft es ab</h3>
+          <p class="small muted">${C.escape(definition.name)} — ${definition.steps.length} Schritte. Den Stand sehen Sie danach unter <a href="#/my-cases">Meine Vorgänge</a>.</p>
+          ${C.pipeline(definition.steps, 0, { label: `Ablauf «${definition.name}»` })}</div>` : ''}
         ${ctaBlock}
       </div>
-      ${/* KEIN .stack-lg hier: den CD-Abstand der Aside-Module (1.75/2rem)
-            liefert bereits .container__aside > * — ein zweites Rhythmus-Utility
-            überschriebe ihn mit 3rem (Review layout/aside-1). */''}
-      ${/* «Gesetzliche Grundlagen» ist entfallen (Nutzerentscheid 2026-08-06):
-            die Karte trug je Dienstleistung denselben Satz und denselben Link
-            auf «Wissen und Hilfsmittel» — eine Karte ohne dienstleistungs-
-            eigene Aussage. Der Weg dorthin steht in der Hauptnavigation. */''}
+      ${/* Do NOT use .stack-lg here: .container__aside > * already supplies the
+            CD spacing between aside modules (1.75/2rem). A second rhythm utility
+            would override it with 3rem (review layout/aside-1). */''}
+      ${/* The legal-foundations card was removed (user decision, 2026-08-06). Every
+            service repeated the same sentence and link to knowledge/resources,
+            Hilfsmittel», without any service-specific information. The main
+            navigation already provides the route there. */''}
       <aside class="container__aside" aria-labelledby="svc-aside-head">
         <h2 class="sr-only" id="svc-aside-head">Zugriff und Kontakt</h2>
-        ${zugriffCard}
+        ${accessCard}
         ${C.contactBox(contact)}
       </aside>
     </div>
   </div>`;
 }
 
-// Bewusst die Listen-Variante (Aufrufer reicht seine Themenliste durch) — die
-// core-gebundene Fassung steht in domain.js; s. Design-Review B23.
-function domainLabel(domains, key) { const d = domains.find(x => x.key === key); return d ? d.label : key; }
+// Deliberately use the list variant (the caller supplies its topic list). The
+// core-bound version lives in domain.js; see design review B23.
+function domainLabel(domains, key) { const domain = domains.find(x => x.key === key); return domain ? domain.label : key; }

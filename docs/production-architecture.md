@@ -287,7 +287,7 @@ Because the temptation in a rewrite is to throw all of it away:
 1. The **information architecture** and the URL contract, including `legacyTarget` redirects.
 2. The **route module contract** — `needs`, `render(ctx)`, `onUnmount`, `stale()`.
 3. The **empty-vs-unavailable failure rule**, as an explicit, tested design rule.
-4. The **domain vocabulary and reference lists** (`reference-data.json`, [bbl-vokabular.md](bbl-vokabular.md)) — these are agreed terminology, not code.
+4. The **domain vocabulary and reference lists** (`reference-data.json`, [bbl-vocabulary.md](bbl-vocabulary.md)) — these are agreed terminology, not code.
 5. The **data model** and the Swiss join keys (`bbl_id`, `bbl_we`, `egid`, `egrid`).
 6. The **DCAT catalogue model** and the metadata-catalogue concept.
 7. The **role vocabulary** hiding in the process definitions.

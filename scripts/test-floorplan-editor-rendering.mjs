@@ -43,18 +43,18 @@ import {
 } from '../js/floorplan-editor/three-viewer.js';
 
 const rooms = [
-  { spaceId: '2', occupierVe: 'Zulu', group: 'zusammen', sia: 'VF', moduleId: 4, useLabel: 'Treffen' },
-  { spaceId: '1', occupierVe: 'Alpha', group: 'arbeit', sia: 'HNF', moduleId: 1, useLabel: 'Arbeiten' },
+  { spaceId: '2', 'occupierVe': 'Zulu', group: 'zusammen', sia: 'VF', moduleId: 4, useLabel: 'Treffen' },
+  { spaceId: '1', 'occupierVe': 'Alpha', group: 'arbeit', sia: 'HNF', moduleId: 1, useLabel: 'Arbeiten' },
 ];
 const context = createColorContext(rooms);
 assert.deepEqual(context.occupiers, ['Alpha', 'Zulu']);
-assert.equal(roomColor(rooms[1], 've', context).token, 've-a');
-assert.equal(roomColor(rooms[0], 've', context).token, 've-b');
+assert.equal(roomColor(rooms[1], 've', context).token, 'administrative-unit-a');
+assert.equal(roomColor(rooms[0], 've', context).token, 'administrative-unit-b');
 assert.equal(roomColor(rooms[1], 'sia', context).hex, '#d6e6f5');
 assert.equal(roomColor(rooms[0], 'use', context).css, 'var(--fp-use-collab)');
 assert.equal(roomColor(rooms[0], 'module', context).rgb, 0xfbeccd);
-assert.equal(roomColor({ occupierVe: '' }, 've', context).token, 'unassigned');
-assert.equal(roomColorDescriptor(rooms[1], 've', context).swatch, 've-a');
+assert.equal(roomColor({ 'occupierVe': '' }, 've', context).token, 'unassigned');
+assert.equal(roomColorDescriptor(rooms[1], 've', context).swatch, 'administrative-unit-a');
 
 const camera = { x: 10, y: 20, width: 1000, height: 500 };
 const zoomed = zoomCamera(camera, 0.1, { x: 260, y: 145 });

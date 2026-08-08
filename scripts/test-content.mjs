@@ -1,5 +1,5 @@
 // D4 download-item + contact-box unification — verifies the pages that render
-// C.downloadItem (grundlagen, anleitungen, digitalisierung docs, application
+// C.downloadItem (foundations, guides, digitalisation docs, application
 // entries, my-cases attachments) and C.contactBox (application, services detail)
 // still render, with the expected download-items / mailto links and no exceptions.
 //
@@ -7,14 +7,14 @@
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const ROUTES = [
-  { name: 'knowledge/it (Fachgebiet)',         url: `${APP_BASE}/knowledge/it`,                items: 1 },
-  { name: 'knowledge/anleitungen',             url: `${APP_BASE}/knowledge/guides`,           items: 1 },
-  { name: 'digitalisierung/strategie',         url: `${APP_BASE}/data/digitalisation/strategy`,  items: 2 },
-  { name: 'applications/liegenschaften',       url: `${APP_BASE}/applications/liegenschaften-inventar`, items: 1, mailto: true, hero: true },
+  { name: 'knowledge/it (subject area)',        url: `${APP_BASE}/knowledge/it`,                items: 1 },
+  { name: 'knowledge/guides',                   url: `${APP_BASE}/knowledge/guides`,            items: 1 },
+  { name: 'digitalisation/strategy',            url: `${APP_BASE}/data/digitalisation/strategy`, items: 2 },
+  { name: 'applications/property inventory',   url: `${APP_BASE}/applications/liegenschaften-inventar`, items: 1, mailto: true, hero: true },
   { name: 'applications/superb (SAP ERP)',     url: `${APP_BASE}/applications/superb`, items: 2, mailto: true, hero: true, expectedTitle: 'ERP SAP (Supportprozesse)' },
   { name: 'app/workspace (planning)',           url: `${APP_BASE}/app/workspace` },
   { name: 'app/room-booking (form)',            url: `${APP_BASE}/app/room-booking` },
-  { name: 'services/raumbedarf-melden',        url: `${APP_BASE}/services/raumbedarf-melden`,       mailto: true, hero: true },
+  { name: 'services/report space requirement', url: `${APP_BASE}/services/raumbedarf-melden`,       mailto: true, hero: true },
   { name: 'my-cases/seed-1 (attachments)',     url: `${APP_BASE}/my-cases/seed-1`,                  items: 1, login: true },
 ];
 
@@ -44,24 +44,23 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
 (async () => {
   const cdp = await launch();
   try {
-    // Die Sitzung setzt `openPage` je Seite (scripts/lib/cdp.mjs): App-Routen
-    // starten angemeldet, alle anderen abgemeldet. Routen, die ausserhalb von
-    // `#/app/…` eine Sitzung brauchen — «Meine Vorgänge» —, sagen es über
-    // `login: true` in der Liste oben. Ein einmaliges Anmelden auf einer
-    // Vorschaltseite genügt dafür nicht mehr.
-    for (const r of ROUTES) {
-      console.log(`\n■ ${r.name}`);
-      const p = await openPage(cdp, r.url, r.login ? { login: true } : {});
-      const res = await p.evaluate(PROBE);
-      check(res.h1 && !res.notFound, `renders ("${res.h1}")`);
-      if (r.expectedTitle) check(res.h1 === r.expectedTitle, `uses the expected title ("${r.expectedTitle}")`);
-      if (r.items) check(res.downloadItems >= r.items, `≥${r.items} download-item(s) (got ${res.downloadItems})`);
-      if (r.items) check(res.downloadHeadings.every(tag => tag === 'H3'), 'download-item titles use the contextual h3 level');
-      check(res.headingJumps.length === 0, `unbroken heading hierarchy (${res.headingJumps.join(', ') || 'ok'})`);
-      if (r.mailto) check(res.mailto === true, 'renders a contact mailto link');
-      if (r.hero) check(res.heroRatio === '16 / 9', `consumer declares its hero ratio (${res.heroRatio})`);
-      check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
-      await p.closeTarget();
+    // openPage sets the session independently for each page (scripts/lib/cdp.mjs):
+    // app routes start logged in and all other routes start logged out. Routes
+    // outside `#/app/…` that require a session declare `login: true` above.
+    // Logging in once on an intermediate page is no longer sufficient.
+    for (const route of ROUTES) {
+      console.log(`\n■ ${route.name}`);
+      const page = await openPage(cdp, route.url, route.login ? { login: true } : {});
+      const result = await page.evaluate(PROBE);
+      check(result.h1 && !result.notFound, `renders ("${result.h1}")`);
+      if (route.expectedTitle) check(result.h1 === route.expectedTitle, `uses the expected title ("${route.expectedTitle}")`);
+      if (route.items) check(result.downloadItems >= route.items, `≥${route.items} download-item(s) (got ${result.downloadItems})`);
+      if (route.items) check(result.downloadHeadings.every(tag => tag === 'H3'), 'download-item titles use the contextual h3 level');
+      check(result.headingJumps.length === 0, `unbroken heading hierarchy (${result.headingJumps.join(', ') || 'ok'})`);
+      if (route.mailto) check(result.mailto === true, 'renders a contact mailto link');
+      if (route.hero) check(result.heroRatio === '16 / 9', `consumer declares its hero ratio (${result.heroRatio})`);
+      check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ": " + (await page.problems())[0] : ""}`);
+      await page.closeTarget();
     }
   } finally {
     cdp.close();

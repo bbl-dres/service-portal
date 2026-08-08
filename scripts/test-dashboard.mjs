@@ -1,4 +1,4 @@
-// Datenportal dashboard redesign — Superset-style framing + reusable action
+// Data portal dashboard redesign — Superset-style framing + reusable action
 // menus. Verifies: the grey-canvas/white-card chrome, a full-height filter panel,
 // the footer, the dashboard toolbar menu (refresh/share) and the per-chart menu
 // (fullscreen overlay, CSV/PNG downloads, copy-link). Also saves a screenshot.
@@ -10,50 +10,50 @@ import { join } from 'node:path';
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const PROBE = `(async () => {
-  const s = ms => new Promise(r => setTimeout(r, ms));
-  let n = 0; while (!document.querySelector('.dash-grid .chart') && n++ < 120) await s(100);
-  // Seit dem CD-Review ist der Toast eine CD toast-message (Notification im Host).
-  const lastToast = () => { const t = [...document.querySelectorAll('.toast__message .notification__content')].pop(); return t ? t.textContent : null; };
-  const R = {
+  const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+  let attempts = 0; while (!document.querySelector('.dash-grid .chart') && attempts++ < 120) await sleep(100);
+  // Since the CD review, the toast uses a CD toast message (a host notification).
+  const lastToast = () => { const toast = [...document.querySelectorAll('.toast__message .notification__content')].pop(); return toast ? toast.textContent : null; };
+  const result = {
     dashPage: !!document.querySelector('.dash-page'),
     headerMenu: !!document.querySelector('.dash-header .action-menu'),
     footer: !!document.querySelector('.dash-footer'),
     charts: document.querySelectorAll('.dash-grid .chart').length,
     chartMenus: document.querySelectorAll('.dash-grid .chart .action-menu').length,
   };
-  const fp = document.querySelector('.filter-panel'), dm = document.querySelector('.dashboard-main');
-  R.filterH = Math.round(fp.getBoundingClientRect().height);
-  R.mainH = Math.round(dm.getBoundingClientRect().height);
-  R.filterFullHeight = Math.abs(R.filterH - R.mainH) <= 2;
+  const filterPanel = document.querySelector('.filter-panel'), dashboardMain = document.querySelector('.dashboard-main');
+  result.filterH = Math.round(filterPanel.getBoundingClientRect().height);
+  result.mainH = Math.round(dashboardMain.getBoundingClientRect().height);
+  result.filterFullHeight = Math.abs(result.filterH - result.mainH) <= 2;
 
-  // dashboard toolbar menu → open + "Link kopieren"
-  document.querySelector('.dash-header .action-menu__trigger').click(); await s(60);
-  R.dashPopupOpen = !document.querySelector('.dash-header .action-menu__popup').hidden;
-  [...document.querySelectorAll('.dash-header .action-menu__item')].find(i => i.dataset.action === 'copy').click(); await s(150);
-  R.toastCopy = lastToast();
+  // Open the dashboard toolbar menu and activate the "Link kopieren" UI fixture.
+  document.querySelector('.dash-header .action-menu__trigger').click(); await sleep(60);
+  result.dashPopupOpen = !document.querySelector('.dash-header .action-menu__popup').hidden;
+  [...document.querySelectorAll('.dash-header .action-menu__item')].find(item => item.dataset.action === 'copy').click(); await sleep(150);
+  result.toastCopy = lastToast();
 
-  // chart menu → Vollbild
+  // Open the chart menu and activate the "Vollbild" UI fixture.
   const chartMenuTrigger = () => document.querySelector('.dash-grid .chart .action-menu__trigger');
-  chartMenuTrigger().click(); await s(60);
-  R.chartPopupOpen = !document.querySelector('.dash-grid .chart .action-menu__popup').hidden;
-  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'fullscreen').click(); await s(180);
-  // Chart-Vollbild läuft seit dem Review über das kanonische Modal (C.openModal, xl).
-  R.overlay = !!document.querySelector('.modal--xl');
-  R.overlaySvg = document.querySelectorAll('.modal--xl .chart__svg').length;
-  R.overlayHasMenu = !!document.querySelector('.modal--xl .action-menu');   // should be false (stripped)
-  document.querySelector('.modal--xl .modal__close').click(); await s(120);
-  R.overlayClosed = !document.querySelector('.modal--xl');
+  chartMenuTrigger().click(); await sleep(60);
+  result.chartPopupOpen = !document.querySelector('.dash-grid .chart .action-menu__popup').hidden;
+  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(item => item.dataset.action === 'fullscreen').click(); await sleep(180);
+  // Since the review, chart fullscreen uses the canonical xl modal (C.openModal).
+  result.overlay = !!document.querySelector('.modal--xl');
+  result.overlaySvg = document.querySelectorAll('.modal--xl .chart__svg').length;
+  result.overlayHasMenu = !!document.querySelector('.modal--xl .action-menu'); // Must be false because the menu is stripped.
+  document.querySelector('.modal--xl .modal__close').click(); await sleep(120);
+  result.overlayClosed = !document.querySelector('.modal--xl');
 
-  // chart menu → CSV then PNG
-  chartMenuTrigger().click(); await s(60);
-  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'csv').click(); await s(150);
-  R.toastCsv = lastToast();
-  chartMenuTrigger().click(); await s(60);
+  // Export CSV and then PNG from the chart menu.
+  chartMenuTrigger().click(); await sleep(60);
+  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(item => item.dataset.action === 'csv').click(); await sleep(150);
+  result.toastCsv = lastToast();
+  chartMenuTrigger().click(); await sleep(60);
   // PNG export renders the SVG to a canvas asynchronously — give it room (was 400ms, too tight).
-  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(i => i.dataset.action === 'png').click();
-  { let k = 0; while (!/Bild heruntergeladen|fehlgeschlagen/.test(lastToast() || '') && k++ < 40) await s(50); }
-  R.toastPng = lastToast();
-  return R;
+  [...document.querySelectorAll('.dash-grid .action-menu__item')].find(item => item.dataset.action === 'png').click();
+  { let attempts = 0; while (!/Bild heruntergeladen|fehlgeschlagen/.test(lastToast() || '') && attempts++ < 40) await sleep(50); }
+  result.toastPng = lastToast();
+  return result;
 })()`;
 
 let failures = 0;
@@ -72,37 +72,37 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, page.sessionId);
     const out = process.env.SHOT || join(tmpdir(), 'bbl-dashboard.png');
     writeFileSync(out, Buffer.from(shot.data, 'base64'));
-    console.log('■ Datenportal dashboard');
+    console.log('■ Data portal dashboard');
     console.log(`   screenshot → ${out}`);
 
-    const r = await page.evaluate(PROBE);
-    check(r.dashPage, 'grey-canvas dash-page present');
-    check(r.headerMenu, 'dashboard toolbar menu present');
-    check(r.footer, 'meta-info footer present');
-    check(r.charts >= 2 && r.chartMenus >= 2, `charts (${r.charts}) each have a menu (${r.chartMenus})`);
-    check(r.filterFullHeight, `filter panel full height (${r.filterH}px vs main ${r.mainH}px)`);
-    check(r.dashPopupOpen, 'dashboard menu opens');
-    check(/kopiert|nicht möglich/i.test(r.toastCopy || ''), `toolbar "Link kopieren" → toast ("${r.toastCopy}")`);
-    check(r.chartPopupOpen, 'chart menu opens');
-    check(r.overlay && r.overlaySvg > 0, 'Vollbild overlay shows the chart');
-    check(!r.overlayHasMenu, 'overlay has no nested menu');
-    check(r.overlayClosed, 'overlay closes');
-    check(r.toastCsv === 'CSV heruntergeladen.', `CSV → toast ("${r.toastCsv}")`);
-    check(/Bild heruntergeladen|fehlgeschlagen/.test(r.toastPng || ''), `PNG → toast ("${r.toastPng}")`);
+    const result = await page.evaluate(PROBE);
+    check(result.dashPage, 'grey-canvas dash-page present');
+    check(result.headerMenu, 'dashboard toolbar menu present');
+    check(result.footer, 'meta-information footer present');
+    check(result.charts >= 2 && result.chartMenus >= 2, `charts (${result.charts}) each have a menu (${result.chartMenus})`);
+    check(result.filterFullHeight, `filter panel full height (${result.filterH}px vs main ${result.mainH}px)`);
+    check(result.dashPopupOpen, 'dashboard menu opens');
+    check(/kopiert|nicht möglich/i.test(result.toastCopy || ''), `toolbar copy action shows a toast ("${result.toastCopy}")`);
+    check(result.chartPopupOpen, 'chart menu opens');
+    check(result.overlay && result.overlaySvg > 0, 'fullscreen overlay shows the chart');
+    check(!result.overlayHasMenu, 'overlay has no nested menu');
+    check(result.overlayClosed, 'overlay closes');
+    check(result.toastCsv === 'CSV heruntergeladen.', `CSV export shows a toast ("${result.toastCsv}")`);
+    check(/Bild heruntergeladen|fehlgeschlagen/.test(result.toastPng || ''), `PNG export shows a completion toast ("${result.toastPng}")`);
     check((await page.problems()).length === 0, `no exceptions / console errors / error banner${(await page.problems())[0] ? ': ' + (await page.problems())[0] : ''}`);
     await page.closeTarget();
 
-    // --- Datenportal-Ausbau (Aug. 2026): 7 Themen, neue Chart-Formen, Zeitachse ---
-    console.log('■ Datenportal-Ausbau (Themen · Kennzahlen-Tabelle · Fläche · Zeitachse)');
-    const p2 = await openPage(cdp, `${APP_BASE}/app/dataportal`);
-    await new Promise(r => setTimeout(r, 1200));
-    const o = JSON.parse(await p2.evaluate(`JSON.stringify({
+    // Data portal expansion (August 2026): seven topics, new chart forms, and a timeline.
+    console.log('■ Data portal expansion (topics · metrics table · area chart · timeline)');
+    const portalPage = await openPage(cdp, `${APP_BASE}/app/dataportal`);
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    const overview = JSON.parse(await portalPage.evaluate(`JSON.stringify({
       cards: document.querySelectorAll('.grid h3').length,
-      bauprojekte: [...document.querySelectorAll('.grid h3')].some(h => /Bauprojekte & Investitionen/.test(h.textContent)),
-      links: [...document.querySelectorAll('.grid .card__link')].map(a => [a.textContent.trim(), a.getAttribute('href')]),
+      constructionProjects: [...document.querySelectorAll('.grid h3')].some(heading => /Bauprojekte & Investitionen/.test(heading.textContent)),
+      links: [...document.querySelectorAll('.grid .card__link')].map(link => [link.textContent.trim(), link.getAttribute('href')]),
     })`));
-    check(o.cards === 7, `7 Themenkarten (${o.cards})`);
-    check(o.bauprojekte, 'Thema «Bauprojekte & Investitionen» vorhanden');
+    check(overview.cards === 7, `seven topic cards (${overview.cards})`);
+    check(overview.constructionProjects, '"Bauprojekte & Investitionen" topic is present');
     const expectedCards = [
       ['Energie & Klima', '#/app/dataportal/energie-klima'],
       ['Immobilienportfolio', '#/app/dataportal/immobilien'],
@@ -113,8 +113,8 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       ['Personal', '#/app/dataportal/personal'],
     ];
     const sortedCards = (cards) => [...cards].sort(([left], [right]) => left.localeCompare(right, 'de'));
-    check(JSON.stringify(sortedCards(o.links)) === JSON.stringify(sortedCards(expectedCards)),
-      'alle Themenkarten verweisen auf ihren einzigen Renderer');
+    check(JSON.stringify(sortedCards(overview.links)) === JSON.stringify(sortedCards(expectedCards)),
+      'every topic card points to its single renderer');
 
     const genericBoards = [
       ['energie-klima', 'Energie & Klima'],
@@ -125,8 +125,8 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
       ['personal', 'Personal'],
     ];
     for (const [id, title] of genericBoards) {
-      await p2.evaluate(`location.hash = ${JSON.stringify(`#/app/dataportal/${id}`)}`);
-      const smoke = JSON.parse(await p2.evaluate(`(async () => {
+      await portalPage.evaluate(`location.hash = ${JSON.stringify(`#/app/dataportal/${id}`)}`);
+      const smoke = JSON.parse(await portalPage.evaluate(`(async () => {
         const expected = ${JSON.stringify(title)};
         const deadline = performance.now() + 5000;
         while ((document.querySelector('h1')?.textContent.trim() !== expected
@@ -141,76 +141,77 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
         });
       })()`));
       check(smoke.title === title && smoke.dashPage && smoke.kpis === 4 && smoke.charts >= 1,
-        `${title}: generisches Dashboard mit 4 Kennzahlen und Charts`);
+        `"${title}": generic dashboard with four metrics and charts`);
     }
 
-    await p2.evaluate(`location.hash = '#/app/dataportal/beschaffung?tab=vergleich'`);
-    await new Promise(r => setTimeout(r, 800));
-    const vergleich = JSON.parse(await p2.evaluate(`JSON.stringify({
+    await portalPage.evaluate(`location.hash = '#/app/dataportal/beschaffung?tab=vergleich'`);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    const comparison = JSON.parse(await portalPage.evaluate(`JSON.stringify({
       active: document.querySelector('.tab__control--active')?.dataset.tab || '',
-      stellen: !!document.querySelector('#stellen'),
-      nachhaltig: !!document.querySelector('#nachhaltig'),
+      procurementOffices: !!document.querySelector('#stellen'),
+      sustainability: !!document.querySelector('#nachhaltig'),
     })`));
-    check(vergleich.active === 'vergleich' && vergleich.stellen && vergleich.nachhaltig,
-      'Beschaffung-Direktlink öffnet das Register Vergleich & Nachhaltigkeit');
+    check(comparison.active === 'comparison' && comparison.procurementOffices && comparison.sustainability,
+      'procurement deep link opens the "Vergleich & Nachhaltigkeit" tab');
 
-    await p2.evaluate(`location.hash = '#/app/dataportal/energie-klima?tab=kennzahlen'`);
-    await new Promise(r => setTimeout(r, 1200));
-    const kz = JSON.parse(await p2.evaluate(`JSON.stringify({
+    await portalPage.evaluate(`location.hash = '#/app/dataportal/energie-klima?tab=kennzahlen'`);
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    const metricsTable = JSON.parse(await portalPage.evaluate(`JSON.stringify({
       table: !!document.querySelector('#energie-kz .chart__table--visible table'),
       rows: document.querySelectorAll('#energie-kz tbody tr').length,
-      fussnoten: document.querySelectorAll('#energie-kz .chart__footnotes li').length,
+      footnotes: document.querySelectorAll('#energie-kz .chart__footnotes li').length,
     })`));
-    check(kz.table && kz.rows >= 5, `Kennzahlen-Tabelle sichtbar (${kz.rows} Zeilen)`);
-    check(kz.fussnoten >= 1, `Fussnoten (${kz.fussnoten})`);
-    await p2.evaluate(`location.hash = '#/app/dataportal/energie-klima?tab=energiepfad'`);
-    await new Promise(r => setTimeout(r, 1200));
-    const ar = JSON.parse(await p2.evaluate(`JSON.stringify({
+    check(metricsTable.table && metricsTable.rows >= 5, `metrics table is visible (${metricsTable.rows} rows)`);
+    check(metricsTable.footnotes >= 1, `footnotes (${metricsTable.footnotes})`);
+    await portalPage.evaluate(`location.hash = '#/app/dataportal/energie-klima?tab=energiepfad'`);
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    const areaChart = JSON.parse(await portalPage.evaluate(`JSON.stringify({
       bands: document.querySelectorAll('#traeger svg path[fill-opacity]').length,
-      legende: document.querySelectorAll('#traeger .chart__legend-item').length,
+      legendItems: document.querySelectorAll('#traeger .chart__legend-item').length,
     })`));
-    check(ar.bands === 4 && ar.legende === 4, `Flächendiagramm gestapelt (${ar.bands} Bänder, ${ar.legende} Legendeneinträge)`);
-    check((await p2.problems()).length === 0, 'Ausbau: keine Fehler');
-    await p2.closeTarget();
+    check(areaChart.bands === 4 && areaChart.legendItems === 4,
+      `stacked area chart (${areaChart.bands} bands, ${areaChart.legendItems} legend items)`);
+    check((await portalPage.problems()).length === 0, 'expanded data portal has no errors');
+    await portalPage.closeTarget();
 
-    // Immobilien: Register «Entwicklung» (Zeitachse, Nutzerwunsch 2026-08-05).
-    console.log('■ Immobilienportfolio — Register «Entwicklung»');
-    const p3 = await openPage(cdp, `${APP_BASE}/app/dataportal/immobilien?tab=entwicklung`);
-    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1400, deviceScaleFactor: 1, mobile: false }, p3.sessionId);
-    await new Promise(r => setTimeout(r, 1800));
-    const e = JSON.parse(await p3.evaluate(`(async () => {
-      const s = ms => new Promise(r => setTimeout(r, ms));
-      let n = 0; while (!document.querySelector('#dash-grid svg') && n++ < 80) await s(100);
+    // Estate portfolio: the "Entwicklung" timeline tab requested on 2026-08-05.
+    console.log('■ Estate portfolio — "Entwicklung" tab');
+    const developmentPage = await openPage(cdp, `${APP_BASE}/app/dataportal/immobilien?tab=entwicklung`);
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1400, deviceScaleFactor: 1, mobile: false }, developmentPage.sessionId);
+    await new Promise(resolve => setTimeout(resolve, 1800));
+    const development = JSON.parse(await developmentPage.evaluate(`(async () => {
+      const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+      let attempts = 0; while (!document.querySelector('#dash-grid svg') && attempts++ < 80) await sleep(100);
       return JSON.stringify({
-        titel: [...document.querySelectorAll('#dash-grid .chart__title')].map(x => x.textContent),
+        titles: [...document.querySelectorAll('#dash-grid .chart__title')].map(element => element.textContent),
         sparks: document.querySelectorAll('.kpi__spark').length,
-        deltas: [...document.querySelectorAll('.kpi__delta')].map(x => x.textContent.trim()),
+        deltas: [...document.querySelectorAll('.kpi__delta')].map(element => element.textContent.trim()),
         hint: ([...document.querySelectorAll('.kpi__hint')][0] || {}).textContent || '',
-        kz: document.querySelectorAll('#e-kz tbody tr').length,
-        radios: document.querySelectorAll('#filter-body input[name="e-gran"]').length,
-        tabs: [...document.querySelectorAll('.tab__control')].map(x => x.dataset.tab),
+        metricRows: document.querySelectorAll('#estate-development-metrics tbody tr').length,
+        granularityRadios: document.querySelectorAll('#filter-body input[name="estate-granularity"]').length,
+        tabs: [...document.querySelectorAll('.tab__control')].map(element => element.dataset.tab),
         oldGeneric: ['snbs', 'zert', 'portfolio-map'].some(id => !!document.getElementById(id)),
       });
     })()`));
-    check(e.titel.includes('Gebäudebestand') && e.titel.includes('Indexierte Entwicklung (Basis 2019 = 100)')
-      && e.titel.includes('Auslaufende Verträge je Jahr'), `Zeitachsen-Auswertungen (${e.titel.length})`);
-    check(e.sparks >= 3, `Sparklines in den Kacheln (${e.sparks})`);
-    check(e.deltas.some(d => /ggü\. Vorjahr/.test(d)), `Vorjahres-Deltas (${e.deltas[0]})`);
-    check(/^Stand: /.test(e.hint), `Stichtagszeile («${e.hint}»)`);
-    check(e.kz === 8, `Kennzahlen-Tabelle 8 Zeilen (${e.kz})`);
-    check(e.radios === 2, 'Körnung Jahres-/Monatsstände wählbar');
-    check(JSON.stringify(e.tabs) === JSON.stringify(['gebaeude', 'grundstuecke', 'bodenbedeckung', 'entwicklung'])
-      && !e.oldGeneric, 'Immobilien verwendet ausschliesslich den spezialisierten Vier-Register-Renderer');
-    const g = JSON.parse(await p3.evaluate(`(async () => {
-      const s = ms => new Promise(r => setTimeout(r, ms));
-      document.querySelector('input[name="e-gran"][value="monat"]').click();
-      await s(800);
-      return JSON.stringify({ hash: location.hash, dots: document.querySelectorAll('#e-bestand svg circle').length });
+    check(development.titles.includes('Gebäudebestand') && development.titles.includes('Indexierte Entwicklung (Basis 2019 = 100)')
+      && development.titles.includes('Auslaufende Verträge je Jahr'), `timeline analyses (${development.titles.length})`);
+    check(development.sparks >= 3, `sparklines in metric cards (${development.sparks})`);
+    check(development.deltas.some(delta => /ggü\. Vorjahr/.test(delta)), `year-over-year deltas (${development.deltas[0]})`);
+    check(/^Stand: /.test(development.hint), `reference-date line ("${development.hint}")`);
+    check(development.metricRows === 8, `metrics table has eight rows (${development.metricRows})`);
+    check(development.granularityRadios === 2, 'yearly and monthly granularity can be selected');
+    check(JSON.stringify(development.tabs) === JSON.stringify(['buildings', 'parcels', 'landcover', 'development'])
+      && !development.oldGeneric, 'estate view exclusively uses the specialised four-tab renderer');
+    const granularity = JSON.parse(await developmentPage.evaluate(`(async () => {
+      const sleep = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+      document.querySelector('input[name="estate-granularity"][value="monat"]').click();
+      await sleep(800);
+      return JSON.stringify({ hash: location.hash, dots: document.querySelectorAll('#estate-development-buildings svg circle').length });
     })()`));
-    check(/gran=monat/.test(g.hash), 'Körnung steht im Hash');
-    check(g.dots >= 24, `Monatsstände gezeichnet (${g.dots} Punkte)`);
-    check((await p3.problems()).length === 0, 'Entwicklung: keine Fehler');
-    await p3.closeTarget();
+    check(/gran=monat/.test(granularity.hash), 'selected granularity is stored in the hash');
+    check(granularity.dots >= 24, `monthly values are drawn (${granularity.dots} points)`);
+    check((await developmentPage.problems()).length === 0, 'development tab has no errors');
+    await developmentPage.closeTarget();
   } finally {
     cdp.close();
   }

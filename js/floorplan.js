@@ -1,21 +1,21 @@
-// Grundriss als SVG — Räume einfärben, auswählen, Legende mit Σ m².
+// SVG floor plan: colour and select spaces, with a Σ m² legend.
 //
-// WARUM SVG UND NICHT MAPLIBRE: der Referenzprototyp (tenant-portal) zeichnet
-// Räume als GeoJSON-Polygone in MapLibre. Das erkauft man mit WebGL, einer
-// CDN-Abhängigkeit und Weltkoordinaten für etwas, das keine Geografie ist —
-// und der Kartendienst kann im Bundesnetz gesperrt sein (docs/code-review.md).
-// Ein Grundriss ist eine lokale Zeichnung. Als Inline-SVG ist er
-// abhängigkeitsfrei, in jeder Zoomstufe scharf, druckbar, und jeder Raum ist
-// ein einzeln fokussierbares Element mit eigenem Namen für Screenreader.
+// WHY SVG RATHER THAN MAPLIBRE: the reference prototype (tenant-portal) draws
+// spaces as GeoJSON polygons in MapLibre. That adds WebGL, a CDN dependency and
+// world coordinates for something that is not geography, while the map service
+// may be blocked on the federal network (docs/code-review.md). A floor plan is a
+// local drawing. Inline SVG is dependency-free, sharp at every zoom level and
+// printable, and every space is an individually focusable element with its own
+// accessible name.
 //
-// Das Modul ist rein: es bekommt Räume und einen Einfärbemodus und gibt HTML
-// zurück. Ereignisse verdrahtet der Aufrufer (js/apps/tenancies.js).
+// The module is pure: it receives spaces and a colour mode and returns HTML.
+// The caller wires events (js/apps/tenancies.js).
 
 import { escape as esc } from './components.js';
-import { m2 } from './format.js';
+import { formatArea } from './format.js';
 
-// Einfärbemodi. `none` zeigt die reine Zeichnung — die Voreinstellung, weil ein
-// Grundriss zuerst ein Plan ist und erst auf Verlangen eine Auswertung.
+// Colour modes. `none` shows the plain drawing and is the default because a
+// floor plan is first a plan and becomes an analysis only when requested.
 export const COLOR_MODES = [
   { value: 'none', label: 'Keine' },
   { value: 'use', label: 'Nutzung' },
@@ -24,95 +24,94 @@ export const COLOR_MODES = [
   { value: 'capacity', label: 'Arbeitsplatzdichte' },
 ];
 
-// Die Farben liegen als CSS-Variablen im Stylesheet (--fp-*), damit Legende und
-// Zeichnung dieselbe Quelle haben und ein Palettenwechsel eine Datei berührt.
-// Hier stehen nur die Schlüssel; `fill` setzt `var(--fp-…)`.
+// Colours live as CSS variables in the stylesheet (--fp-*), giving the legend
+// and drawing one source and keeping palette changes in one file. Only keys
+// live here; `fill` sets `var(--fp-…)`.
 const GROUP_KEY = { arbeit: 'work', zusammen: 'collab', infra: 'infra', sonder: 'special' };
 const SIA_KEY = { HNF: 'hnf', NNF: 'nnf', VF: 'vf', FF: 'ff', TF: 'tf' };
-// Sechs unterscheidbare Töne; mehr VE je Geschoss kommen praktisch nicht vor.
-const VE_SLOTS = ['a', 'b', 'c', 'd', 'e', 'f'];
-// Arbeitsplatzdichte: leer / normal / dicht — bewusst eine Ampel, weil die Aussage
-// «zu dicht belegt» eine Bewertung ist und nicht bloss eine Kategorie.
-const CAP_KEY = (s) => {
-  if (!s.capacity) return 'none';
-  const proPlatz = s.area / s.capacity;
-  return proPlatz >= 12 ? 'low' : proPlatz >= 8 ? 'ok' : 'high';
+// Six distinguishable shades; more administrative units per floor are rare.
+const ADMINISTRATIVE_UNIT_SLOTS = ['a', 'b', 'c', 'd', 'e', 'f'];
+// Workplace density: empty / normal / dense. This deliberately uses traffic-
+// light semantics because «too densely occupied» is an assessment, not merely
+// a category.
+const CAPACITY_KEY = (space) => {
+  if (!space.capacity) return 'none';
+  const areaPerWorkstation = space.area / space.capacity;
+  return areaPerWorkstation >= 12 ? 'low' : areaPerWorkstation >= 8 ? 'ok' : 'high';
 };
-const CAP_LABEL = { none: 'Ohne Arbeitsplätze', low: 'Grosszügig (ab 12 m²/AP)', ok: 'Standard (8–12 m²/AP)', high: 'Dicht (unter 8 m²/AP)' };
+const CAPACITY_LABEL = { none: 'Ohne Arbeitsplätze', low: 'Grosszügig (ab 12 m²/AP)', ok: 'Standard (8–12 m²/AP)', high: 'Dicht (unter 8 m²/AP)' };
 
-// Reihenfolge der VE-Farbzuteilung: alphabetisch, damit dieselbe VE auf jedem
-// Geschoss dieselbe Farbe bekommt, solange die Menge gleich bleibt.
-export function veSlots(spaces) {
-  const ves = [...new Set(spaces.map((s) => s.occupierVe).filter(Boolean))].sort();
+// Administrative-unit colours are assigned alphabetically so the same unit
+// gets the same colour on every floor while the set remains the same.
+export function administrativeUnitColorSlots(spaces) {
+  const administrativeUnits = [...new Set(spaces.map((space) => space.occupierVe).filter(Boolean))].sort();
   const map = new Map();
-  ves.forEach((ve, i) => map.set(ve, VE_SLOTS[i % VE_SLOTS.length]));
+  administrativeUnits.forEach((unit, index) => map.set(unit, ADMINISTRATIVE_UNIT_SLOTS[index % ADMINISTRATIVE_UNIT_SLOTS.length]));
   return map;
 }
 
-// Füllschlüssel eines Raums im gewählten Modus — `null` = neutrale Fläche.
-function fillKey(s, mode, slots) {
-  if (mode === 'use') return `use-${GROUP_KEY[s.group] || 'infra'}`;
-  if (mode === 'sia') return `sia-${SIA_KEY[s.sia] || 'nnf'}`;
-  if (mode === 've') return s.occupierVe ? `ve-${slots.get(s.occupierVe)}` : 'unassigned';
-  if (mode === 'capacity') return `cap-${CAP_KEY(s)}`;
+// Fill key for a space in the selected mode; `null` means a neutral surface.
+function fillKey(space, mode, slots) {
+  if (mode === 'use') return `use-${GROUP_KEY[space.group] || 'infra'}`;
+  if (mode === 'sia') return `sia-${SIA_KEY[space.sia] || 'nnf'}`;
+  if (mode === 've') return space.occupierVe ? `administrative-unit-${slots.get(space.occupierVe)}` : 'unassigned';
+  if (mode === 'capacity') return `cap-${CAPACITY_KEY(space)}`;
   return null;
 }
 
-// Kategorie eines Raums im gewählten Modus: [Schlüssel, Beschriftung].
-function bucket(s, mode, slots) {
-  if (mode === 'use') return [s.group, s.groupLabel];
-  if (mode === 'sia') return [s.sia, `${s.siaLabel} (${s.sia})`];
-  if (mode === 've') return [s.occupierVe || '—', s.occupierVe || 'Nicht zugeteilt'];
-  if (mode === 'capacity') { const k = CAP_KEY(s); return [k, CAP_LABEL[k]]; }
+// Space category in the selected mode: [key, label].
+function bucket(space, mode, slots) {
+  if (mode === 'use') return [space.group, space.groupLabel];
+  if (mode === 'sia') return [space.sia, `${space.siaLabel} (${space.sia})`];
+  if (mode === 've') return [space.occupierVe || '—', space.occupierVe || 'Nicht zugeteilt'];
+  if (mode === 'capacity') { const key = CAPACITY_KEY(space); return [key, CAPACITY_LABEL[key]]; }
   return [null, null];
 }
 
-/* ------------------------------------------------------------- Zeichnung ---- */
-// `extent` ist das Zeichnungsmass des Geschosses ([Breite, Höhe] in Einheiten
-// zu 1 cm). Das SVG skaliert über die viewBox — es gibt keine Pixelmasse im
-// Markup, damit der Plan auf jeder Breite und im Druck stimmt.
-// Beschriftungsschwellen in ZEICHNUNGSEINHEITEN (100 = 1 m). Ein Regelbüro ist
-// 360–540 Einheiten breit; bei der üblichen Darstellungsbreite entspricht das
-// rund 70–110 Bildpunkten. Deshalb drei Stufen statt alles oder nichts: die
-// Raumnummer passt immer, die Nutzung erst ab ~100 px, die Fläche dazwischen.
-// Ohne Stufen standen entweder gar keine Beschriftungen (Schwelle zu hoch) oder
-// sie überlagerten sich in den schmalen Nebenräumen.
-const NR_AB = 200, FLAECHE_AB = 330, NUTZUNG_AB = 500;
+/* --------------------------------------------------------------- Drawing ---- */
+// `extent` is the floor's drawing size ([width, height] in 1 cm units). The SVG
+// scales through its viewBox; the markup has no pixel dimensions, so the plan
+// works at every width and in print. Label thresholds use DRAWING UNITS
+// (100 = 1 m). A standard office is 360–540 units wide, corresponding to about
+// 70–110 pixels at the usual display width. Three levels work better than all
+// or nothing: the room number always fits, the use appears from ~100 px, and the
+// area in between. Without levels, either no labels appeared (threshold too
+// high) or they overlapped in narrow auxiliary spaces.
+const ROOM_NUMBER_MIN = 200, AREA_LABEL_MIN = 330, USE_LABEL_MIN = 500;
 
 export function floorplanSvg({ floor, spaces, mode = 'none', selectedId = '', statuses = {}, selectableIds = null }) {
   const [w, h] = floor.extent || [4000, 1440];
-  const slots = veSlots(spaces);
+  const slots = administrativeUnitColorSlots(spaces);
   const selectable = selectableIds ? new Set(selectableIds) : null;
   const pad = 40;
 
-  const raum = (s) => {
-    const [x, y, bw, bh] = s.rect;
-    const key = fillKey(s, mode, slots);
-    const status = statuses[s.spaceId] || '';
-    const canSelect = !selectable || selectable.has(s.spaceId);
-    const cls = ['fp__room', `fp__room--${s.group}`, key ? `fp__room--fill` : '',
-      status ? `fp__room--booking-${status}` : '', selectedId === s.spaceId ? 'is-selected' : ''].filter(Boolean).join(' ');
-    const cx = x + bw / 2, cy = y + bh / 2;
-    const nr = s.roomNumber.replace(/^.*\s/, '');
-    // Der Korridor ist flach (240 Einheiten) und trotzdem beschriftbar —
-    // deshalb greift die Höhenschwelle für die Nummer tiefer als für die
-    // gestapelten Zeilen darunter.
-    const zeigNr = bw >= NR_AB && bh >= 200;
-    const zeigFl = bw >= FLAECHE_AB && bh >= 400;
-    const zeigNu = bw >= NUTZUNG_AB && bh >= 400;
-    // Zeilen mittig stapeln: je nach Anzahl sichtbarer Zeilen verschiebt sich
-    // der Block, damit er nicht aus dem Raum kippt.
-    const zeilen = [zeigNr && ['fp__nr', nr], zeigNu && ['fp__use', s.useLabel], zeigFl && ['fp__area', m2(s.area)]].filter(Boolean);
+  const renderSpace = (space) => {
+    const [x, y, width, height] = space.rect;
+    const key = fillKey(space, mode, slots);
+    const status = statuses[space.spaceId] || '';
+    const canSelect = !selectable || selectable.has(space.spaceId);
+    const classes = ['fp__room', `fp__room--${space.group}`, key ? `fp__room--fill` : '',
+      status ? `fp__room--booking-${status}` : '', selectedId === space.spaceId ? 'is-selected' : ''].filter(Boolean).join(' ');
+    const centerX = x + width / 2, centerY = y + height / 2;
+    const roomNumber = space.roomNumber.replace(/^.*\s/, '');
+    // The corridor is shallow (240 units) yet can still carry a label, so the
+    // height threshold for its number is lower than for the stacked lines below.
+    const showNumber = width >= ROOM_NUMBER_MIN && height >= 200;
+    const showArea = width >= AREA_LABEL_MIN && height >= 400;
+    const showUse = width >= USE_LABEL_MIN && height >= 400;
+    // Centre the stack: its block shifts with the number of visible lines so it
+    // does not fall outside the space.
+    const lines = [showNumber && ['fp__nr', roomNumber], showUse && ['fp__use', space.useLabel], showArea && ['fp__area', formatArea(space.area)]].filter(Boolean);
     const dy = 78;
-    const y0 = cy - ((zeilen.length - 1) * dy) / 2 + 22;
+    const firstLineY = centerY - ((lines.length - 1) * dy) / 2 + 22;
     const statusLabel = status === 'available' ? ', verfügbar' : status === 'unavailable' ? ', belegt' : status === 'unsuitable' ? ', nicht passend' : '';
-    return `<g class="${cls}"${canSelect ? ` data-space="${esc(s.spaceId)}"` : ''} role="listitem">
-      <rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="6"
+    return `<g class="${classes}"${canSelect ? ` data-space="${esc(space.spaceId)}"` : ''} role="listitem">
+      <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="6"
         ${key ? `style="fill:var(--fp-${key})"` : ''}
         ${canSelect ? 'tabindex="0" role="button"' : 'aria-disabled="true"'}
-        aria-label="${esc(`${s.roomNumber}, ${s.useLabel}, ${s.area} Quadratmeter${s.occupierVe ? ', ' + s.occupierVe : ''}${statusLabel}`)}"
-        ${canSelect ? `aria-pressed="${selectedId === s.spaceId ? 'true' : 'false'}"` : ''}></rect>
-      ${zeilen.map(([c, txt], i) => `<text class="${c}" x="${cx}" y="${y0 + i * dy}">${esc(txt)}</text>`).join('')}
+        aria-label="${esc(`${space.roomNumber}, ${space.useLabel}, ${space.area} Quadratmeter${space.occupierVe ? ', ' + space.occupierVe : ''}${statusLabel}`)}"
+        ${canSelect ? `aria-pressed="${selectedId === space.spaceId ? 'true' : 'false'}"` : ''}></rect>
+      ${lines.map(([className, text], index) => `<text class="${className}" x="${centerX}" y="${firstLineY + index * dy}">${esc(text)}</text>`).join('')}
     </g>`;
   };
 
@@ -120,38 +119,38 @@ export function floorplanSvg({ floor, spaces, mode = 'none', selectedId = '', st
       role="list" aria-label="Grundriss ${esc(floor.label)} — ${spaces.length} Räume"
       preserveAspectRatio="xMidYMid meet">
     <rect class="fp__shell" x="-8" y="-8" width="${w + 16}" height="${h + 16}" rx="10"></rect>
-    ${spaces.map(raum).join('')}
+    ${spaces.map(renderSpace).join('')}
   </svg>`;
 }
 
-/* --------------------------------------------------------------- Legende ---- */
-// Σ m² je Kategorie — die Legende ist zugleich die Auswertung des Geschosses.
-// Ohne Summen wäre sie nur eine Farbtabelle; mit ihnen beantwortet sie
-// «wie viel Fläche geht für Verkehr drauf?» ohne eine zweite Ansicht.
+/* ---------------------------------------------------------------- Legend ---- */
+// Σ m² by category: the legend also analyses the floor. Without totals it would
+// only be a colour table; with them it answers «how much area is circulation?»
+// without a second view.
 export function floorplanLegend(spaces, mode) {
   if (mode === 'none') return '';
-  const slots = veSlots(spaces);
-  const agg = new Map();
-  for (const s of spaces) {
-    const [key, label] = bucket(s, mode, slots);
-    const cur = agg.get(key) || { label, area: 0, n: 0, fill: fillKey(s, mode, slots) };
-    cur.area += s.area; cur.n++;
-    agg.set(key, cur);
+  const slots = administrativeUnitColorSlots(spaces);
+  const totalsByCategory = new Map();
+  for (const space of spaces) {
+    const [key, label] = bucket(space, mode, slots);
+    const current = totalsByCategory.get(key) || { label, area: 0, count: 0, fill: fillKey(space, mode, slots) };
+    current.area += space.area; current.count++;
+    totalsByCategory.set(key, current);
   }
-  const total = [...agg.values()].reduce((n, x) => n + x.area, 0) || 1;
-  const rows = [...agg.values()].sort((a, b) => b.area - a.area);
+  const total = [...totalsByCategory.values()].reduce((sum, entry) => sum + entry.area, 0) || 1;
+  const rows = [...totalsByCategory.values()].sort((a, b) => b.area - a.area);
   return `<ul class="fp-legend" aria-label="Legende mit Flächenanteilen">
     ${rows.map((r) => `<li class="fp-legend__item">
       <span class="fp-legend__swatch" style="background:var(--fp-${r.fill})" aria-hidden="true"></span>
       <span class="fp-legend__label">${esc(r.label)}</span>
-      <span class="fp-legend__val">${m2(Math.round(r.area))}<span class="fp-legend__pct">${Math.round(r.area / total * 100)} %</span></span>
+      <span class="fp-legend__val">${formatArea(Math.round(r.area))}<span class="fp-legend__pct">${Math.round(r.area / total * 100)} %</span></span>
     </li>`).join('')}
   </ul>`;
 }
 
-/* ------------------------------------------------------------ Verdrahten ---- */
-// Klick und Tastatur auf den Räumen. Gibt eine Aufräumfunktion zurück; der
-// Aufrufer hängt sie an ctx.onUnmount.
+/* ---------------------------------------------------------------- Wiring ---- */
+// Click and keyboard interaction on spaces. Returns a cleanup function which
+// the caller attaches to ctx.onUnmount.
 export function wireFloorplan(root, onSelect) {
   const ctrl = new AbortController();
   const { signal } = ctrl;
@@ -166,4 +165,4 @@ export function wireFloorplan(root, onSelect) {
   return () => ctrl.abort();
 }
 
-export default { COLOR_MODES, floorplanSvg, floorplanLegend, wireFloorplan, veSlots };
+export default { COLOR_MODES, floorplanSvg, floorplanLegend, wireFloorplan, administrativeUnitColorSlots };

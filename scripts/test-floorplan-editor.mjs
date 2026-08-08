@@ -199,7 +199,7 @@ try {
       uniquePlacements: new Set(placementIds).size,
       canvasLabel: document.querySelector('#fpe-canvas')?.getAttribute('aria-label') || '',
       canonicalRoom: canonicalRoom ? JSON.stringify(canonicalRoom) : '',
-      canonicalOccupier: canonicalRoom?.occupierVe ?? null,
+      canonicalOccupier: canonicalRoom?.['occupierVe'] ?? null,
       resourceTree: {
         roomNameInset: (() => {
           const line = document.querySelector('.fpe-resource-room-line');
@@ -1326,7 +1326,7 @@ try {
     return {
       hasDraft: !!draft,
       schema: draft?.schema || '', persistence: draft?.persistence || '',
-      floorId: draft?.floorId || '', roomValue: room?.occupierVe || '',
+      floorId: draft?.floorId || '', roomValue: room?.['occupierVe'] || '',
       placements: draft?.placements?.length || 0,
       containsLocal: draft?.placements?.some(entry => entry.placementId === ${JSON.stringify(added.localId || '')}) || false,
       containsRoom: !!localRoom, roomModule: localRoom?.moduleId || '', roomWidth: localRoom?.rect?.[2] || 0,
@@ -1401,7 +1401,7 @@ try {
       selected: document.querySelector('.fpe-room.is-selected')?.dataset.id || '',
       editMode: document.querySelector('#fpe-app')?.classList.contains('is-editing') || false,
       canonical: canonical ? JSON.stringify(canonical) : '',
-      storedRoom: draft?.rooms?.find(room => room.spaceId === ${JSON.stringify(ROOM_ID)})?.occupierVe || '',
+      storedRoom: draft?.rooms?.find(room => room.spaceId === ${JSON.stringify(ROOM_ID)})?.['occupierVe'] || '',
       storedLocalModule: draft?.rooms?.find(room => room.spaceId === ${JSON.stringify(structure.localId || '')})?.moduleId || '',
       version: document.querySelector('.fpe-version')?.textContent.replace(/\\s+/g, ' ').trim() || '',
       hash: location.hash,
@@ -1417,8 +1417,8 @@ try {
   let reloadedCanonical = null;
   try { reloadedCanonical = reloaded.canonical ? JSON.parse(reloaded.canonical) : null; } catch { /* failed below */ }
   check(reloaded.canonical === initial.canonicalRoom
-    && reloadedCanonical?.occupierVe === initial.canonicalOccupier
-    && reloadedCanonical?.occupierVe !== EDITED_OCCUPIER,
+    && reloadedCanonical?.['occupierVe'] === initial.canonicalOccupier
+    && reloadedCanonical?.['occupierVe'] !== EDITED_OCCUPIER,
   'leaves the canonical core room byte-for-byte unchanged after save and reload');
 
   console.log('\n■ Narrow editor panels and return to editor navigation');

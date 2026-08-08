@@ -1,60 +1,57 @@
-// Lebenszyklus EINER MapLibre-Karte in einer Ansicht.
+// Lifecycle of ONE MapLibre map in a view.
 //
-// Fünf Apps hielten sich dafür ihre eigene Buchführung: portfolio/projects/
-// tenancies je eine Modulvariable + `freeXxMap()` + ein Rennmarken-Zähler,
-// media-library/estate stattdessen ein festgehaltenes Promise, das im
-// `onUnmount` aufgelöst und abgebaut wurde. Beide Bauarten lösen dasselbe
-// Problem, und beide hatten dieselben Fallstricke — die hier einmal
-// zusammengefasst sind:
+// Five apps previously kept their own bookkeeping: portfolio/projects/tenancies
+// each had a module variable, `freeXxMap()` and a race-ticket counter, while
+// media-library/estate retained a promise resolved and removed in `onUnmount`.
+// Both designs solve the same problem and shared the same traps, now handled in
+// one place:
 //
-//  * `initEstateMap` lädt MapLibre erst vom CDN. Ohne Rennmarke kann ein
-//    zweiter Aufruf (Suche, zweiter Baumknoten) starten, während der erste noch
-//    offen ist; `free()` läuft dann gegen `null` und die zuerst aufgelöste
-//    Karte bleibt als WebGL-Kontext auf einem entfernten Knoten liegen.
-//  * `free()` läuft pro Renderdurchgang ZWEIMAL (am Kopf von `renderMain` und
-//    noch einmal in `mount`) und muss deshalb idempotent sein.
-//  * Der Container kann zwischen Start und Auflösung aus dem Dokument fallen;
-//    dann darf die Karte gar nicht erst zugewiesen, sondern muss sofort wieder
-//    abgebaut werden.
+//  * `initEstateMap` first loads MapLibre from a CDN. Without a race ticket, a
+//    second call (search, second tree node) can begin while the first is pending;
+//    `free()` then sees `null`, while the first resolved map leaves a WebGL
+//    context attached to a removed node.
+//  * `free()` runs TWICE per render cycle (at the start of `renderMain` and again
+//    in `mount`) and must therefore be idempotent.
+//  * The container may leave the document between start and resolution. The map
+//    must then be removed immediately rather than assigned.
 //
-// Der Aufrufer bringt weiterhin sein eigenes `initEstateMap(...)` mit — die
-// Argumente unterscheiden sich je App (nur das Portfolio übergibt eine echte
-// Parzellen-FeatureCollection, die anderen eine leere oder `null`, und
-// `initEstateMap` behandelt beides verschieden). Der Slot kümmert sich
-// ausschliesslich um Besitz und Abbau.
+// The caller still supplies its own `initEstateMap(...)`; arguments differ by
+// app (only portfolio passes a real parcel FeatureCollection, while others pass
+// an empty one or `null`, and `initEstateMap` treats those differently). The slot
+// handles ownership and disposal only.
 //
-//   const karte = createMapSlot();
-//   karte.mount(el, (el) => initEstateMap(el, points, parcels, focus));
+//   const mapSlot = createMapSlot();
+//   mapSlot.mount(element, (element) => initEstateMap(element, points, parcels, focus));
 //   …
-//   karte.free();                       // idempotent, jederzeit
-//   ctx.onUnmount(karte.free);          // eine Zeile statt eines Promise-Ketten
+//   mapSlot.free();                      // Idempotent at any time.
+//   ctx.onUnmount(mapSlot.free);         // One line instead of promise chains.
 export function createMapSlot() {
   let map = null;
   let ticket = 0;
 
-  // Baut die aktuelle Karte ab und entwertet jeden noch laufenden Ladevorgang.
-  // Mehrfachaufruf ist ausdrücklich erlaubt und tut beim zweiten Mal nichts.
+  // Remove the current map and invalidate every pending load. Repeated calls are
+  // explicitly allowed and become no-ops after the first.
   function free() {
     ticket++;
     if (!map) return;
-    try { map.remove(); } catch { /* schon weg */ }
+    try { map.remove(); } catch { /* Already removed. */ }
     map = null;
   }
 
-  // `init(el)` liefert das Karten-Promise. Gibt die Karte zurück, oder `null`,
-  // wenn der Aufruf überholt wurde bzw. der Container verschwunden ist.
+  // `init(element)` returns the map promise. Returns the map or `null` if the
+  // call was superseded or the container disappeared.
   async function mount(el, init) {
     free();
     if (!el) return null;
-    const meins = ++ticket;
+    const ownTicket = ++ticket;
     let created = null;
     try {
       created = await init(el);
     } catch {
-      return null;                 // Karte ist optional; der Fehlertext steht im Container
+      return null;                 // The map is optional; its error appears in the container.
     }
-    if (meins !== ticket || !el.isConnected) {
-      if (created) { try { created.remove(); } catch { /* egal */ } }
+    if (ownTicket !== ticket || !el.isConnected) {
+      if (created) { try { created.remove(); } catch { /* Disposal is best-effort. */ } }
       return null;
     }
     map = created;
