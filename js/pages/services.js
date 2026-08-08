@@ -14,14 +14,6 @@ export default async function render(ctx) {
   setTitle('Dienstleistungen');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Dienstleistungen' }]);
 
-  const rawQ = query.get('q') || '';
-  const q = rawQ.toLowerCase();
-  // Filters accept multiple values (multi-select checkboxes), comma-separated in the hash.
-  const selectedAudiences = (query.get('audience') || '').split(',').map(t => t.trim()).filter(Boolean);
-  const selectedTopics = (query.get('topic') || '').split(',').map(t => t.trim()).filter(Boolean);
-  const view = query.get('view') === 'list' ? 'list' : 'gallery';
-  const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
-  const perPage = 12;
   const domains = core.ref().domains || [];
   // The catalogue contains ONLY startable services (docs/sitemap.md §2.3).
   // `type: info` entries are reference pages dressed as services; the knowledge/
@@ -35,19 +27,26 @@ export default async function render(ctx) {
     title: (a, b) => a.title.localeCompare(b.title, 'de'),
     domain: (a, b) => domainLabel(domains, a.domain).localeCompare(domainLabel(domains, b.domain), 'de') || a.title.localeCompare(b.title, 'de'),
   };
-  const sortKey = SORT_OPTIONS.some(o => o.value === query.get('sort')) ? query.get('sort') : '';
+  // Read and validate the shared catalogue query contract in one place. Both
+  // filters intentionally accept unknown values: the previous route preserved
+  // them in shareable links and rendered a removable active-filter pill.
+  const state = C.catalogueState(query, {
+    base: '#/services', perPage: 12,
+    sortOpts: SORT_OPTIONS.map((o) => o.value),
+    filters: { audience: null, topic: null },
+    trimQuery: false,
+  });
+  const { q: rawQ, view, sort: sortKey, hash } = state;
+  const q = rawQ.toLowerCase();
+  const selectedAudiences = state.selected.audience;
+  const selectedTopics = state.selected.topic;
 
   const matches = (s) => !q || (s.title + ' ' + s.short + ' ' + s.description).toLowerCase().includes(q);
   const matchesAudience = (s) => !selectedAudiences.length || selectedAudiences.some(v => (s.audience || []).includes(v));
   const matchesTopic = (s) => !selectedTopics.length || selectedTopics.includes(s.domain);
   const filtered = all.filter(s => matches(s) && matchesAudience(s) && matchesTopic(s));
   const services = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
-  const totalPages = Math.max(1, Math.ceil(services.length / perPage));
-  const page = Math.min(currentPage, totalPages);
-  const visibleServices = services.slice((page - 1) * perPage, page * perPage);
-
-  const base = { q: rawQ, audience: selectedAudiences, topic: selectedTopics, sort: sortKey, view };
-  const hash = (patch = {}) => C.catalogueHash('#/services', { ...base, ...patch });
+  const { visible: visibleServices, totalPages, page } = state.clamp(services);
 
   // “Also in” hint across other surfaces (services first, then content).
   const otherHits = q ? {
@@ -78,9 +77,9 @@ export default async function render(ctx) {
   // Active-filter pills. Each pill links to the same view minus that one value,
   // so removing a filter needs no JS and stays deep-linkable.
   const activeFilters = [
-    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
-    ...selectedAudiences.map(a => ({ label: audienceLabel(core, a), href: hash({ audience: selectedAudiences.filter(x => x !== a) }) })),
-    ...selectedTopics.map(t => ({ label: domainLabel(domains, t), href: hash({ topic: selectedTopics.filter(x => x !== t) }) })),
+    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '', page: 1 }) }] : []),
+    ...selectedAudiences.map(a => ({ label: audienceLabel(core, a), href: hash({ audience: selectedAudiences.filter(x => x !== a), page: 1 }) })),
+    ...selectedTopics.map(t => ({ label: domainLabel(domains, t), href: hash({ topic: selectedTopics.filter(x => x !== t), page: 1 }) })),
   ];
   const filterBar = C.activeFilters({ filters: activeFilters, resetHref: '#/services' });
 
@@ -102,7 +101,7 @@ export default async function render(ctx) {
           be set but neither seen nor deselected. The flag has been removed. */''}
     ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: selectedTopics,
       options: domains.filter(d => all.some(s => s.domain === d.key)).map(d => ({ value: d.key, label: d.label })) })}
-    ${C.panelReset({ href: hash({ audience: [], topic: [] }) })}`;
+    ${C.panelReset({ href: hash({ audience: [], topic: [], page: 1 }) })}`;
 
   mount.innerHTML = `
   <div class="container section">

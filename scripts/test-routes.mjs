@@ -73,10 +73,19 @@ try {
   const page = await openPage(cdp, `${APP_BASE}/`, { login: true });
   await sleep(1200);
 
-  for (const [route, wantH1] of ROUTES) {
-    const got = await page.evaluate(`(async () => {
+  for (const [index, [route, wantH1]] of ROUTES.entries()) {
+    const marker = `route-probe-${index}`;
+    await page.evaluate(`(() => {
+      const previous = document.querySelector('#main-content h1');
+      if (previous) previous.dataset.routeProbe = ${JSON.stringify(marker)};
       location.hash = '#${route}';
-      await new Promise(r => setTimeout(r, 700));
+    })()`);
+    await page.waitFor(`(() => {
+      const h1 = document.querySelector('#main-content h1');
+      const err = document.querySelector('#main-content .notification--error');
+      return Boolean(err || (h1 && h1.dataset.routeProbe !== ${JSON.stringify(marker)}));
+    })()`);
+    const got = await page.evaluate(`(() => {
       const h1 = document.querySelector('#main-content h1');
       const err = document.querySelector('#main-content .notification--error');
       return { h1: h1 ? h1.textContent.trim() : '', err: err ? err.textContent.trim().slice(0, 120) : '' };
@@ -87,15 +96,23 @@ try {
     else console.log(`  ok  ${route.padEnd(34)} h1="${got.h1.slice(0, 44)}"`);
   }
 
-  for (const [from, want] of REDIRECTS) {
-    const got = await page.evaluate(`(async () => {
+  for (const [index, [from, want]] of REDIRECTS.entries()) {
+    const marker = `redirect-probe-${index}`;
+    await page.evaluate(`(() => {
+      const previous = document.querySelector('#main-content h1');
+      if (previous) previous.dataset.routeProbe = ${JSON.stringify(marker)};
       location.hash = '#${from}';
-      await new Promise(r => setTimeout(r, 700));
-      return location.hash;
     })()`);
     // When the target declares no query, compare only the path. Views that
     // mirror search state into the URL may append criteria after rendering.
     const norm = (h) => (want.includes('?') ? h : String(h).split('?')[0]);
+    await page.waitFor(`(() => {
+      const h1 = document.querySelector('#main-content h1');
+      const err = document.querySelector('#main-content .notification--error');
+      const hash = ${JSON.stringify(want.includes('?'))} ? location.hash : location.hash.split('?')[0];
+      return hash === ${JSON.stringify(want)} && Boolean(err || (h1 && h1.dataset.routeProbe !== ${JSON.stringify(marker)}));
+    })()`);
+    const got = await page.evaluate('location.hash');
     if (norm(got) !== want) fails.push(`redirect ${from} -> "${got}", expected "${want}"`);
     else console.log(`  ok  ${from.padEnd(34)} -> ${got}`);
   }

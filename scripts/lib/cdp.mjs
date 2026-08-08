@@ -251,6 +251,14 @@ export async function openPage(cdp, url, { login, skin } = {}) {
       }
     }
   };
+  const waitFor = (expression, { timeout = 6000, interval = 50 } = {}) => evaluate(`(async () => {
+    const deadline = Date.now() + ${Math.max(0, Number(timeout) || 0)};
+    do {
+      if (${expression}) return true;
+      await new Promise((resolve) => setTimeout(resolve, ${Math.max(1, Number(interval) || 1)}));
+    } while (Date.now() < deadline);
+    return Boolean(${expression});
+  })()`);
   const closeTarget = () => cdp.send('Target.closeTarget', { targetId });
   // Aggregate "nothing broke" check. `exceptions` alone is insufficient:
   // js/routing/router.js catches render failures, logs them and paints an error
@@ -272,7 +280,7 @@ export async function openPage(cdp, url, { login, skin } = {}) {
     } catch { /* page already closed */ }
     return out;
   };
-  return { sessionId, evaluate, exceptions, consoleErrors, problems, closeTarget };
+  return { sessionId, evaluate, waitFor, exceptions, consoleErrors, problems, closeTarget };
   } catch (error) {
     try { await cdp.send('Target.closeTarget', { targetId }); } catch { /* browser already closed */ }
     throw error;

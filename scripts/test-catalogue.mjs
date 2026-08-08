@@ -6,6 +6,7 @@
 //
 //   node scripts/test-catalogue.mjs      (dev server must be running; see README)
 import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
+import { catalogueState } from '../js/ui/components/catalogue.js';
 
 const CATS = [
   { name: 'services',     base: `${APP_BASE}/services`,     detail: `${APP_BASE}/services/raumbedarf-melden`,
@@ -100,6 +101,15 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
 const dec = (h) => decodeURIComponent(h);
 
 (async () => {
+  console.log('\n■ catalogueState query whitespace');
+  const query = new URLSearchParams('q=%20Raum%2520A%20');
+  const preserved = catalogueState(query, { base: '#/services', trimQuery: false });
+  const trimmed = catalogueState(query, { base: '#/search' });
+  check(preserved.q === ' Raum%20A ', 'opt-out preserves surrounding query whitespace');
+  check(trimmed.q === 'Raum%20A', 'default trims surrounding query whitespace');
+  check(new URLSearchParams(preserved.hash().split('?')[1]).get('q') === ' Raum%20A ',
+    'query is decoded and encoded exactly once');
+
   const cdp = await launch();
   try {
     for (const cat of CATS) {

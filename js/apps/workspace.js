@@ -462,7 +462,7 @@ function detail(ctx, id) {
           <div class="kpi-strip__item"><span class="kpi-strip__label">${planned ? 'HNF der geplanten Geschosse' : 'HNF der erfassten Geschosse'}</span><span class="kpi-strip__value">${metricArea(planned ? item.plannedHnf : floors.reduce((total, floor) => total + floor.areaHnf, 0))}</span></div>
           <div class="kpi-strip__item"><span class="kpi-strip__label">Arbeitsplätze</span><span class="kpi-strip__value">${formatNumber(item.workplaces)}</span></div>
           <div class="kpi-strip__item"><span class="kpi-strip__label">Ausstattung</span><span class="kpi-strip__value">${planned ? formatNumber(item.equipment) : '—'}</span></div>
-          <div class="kpi-strip__item"><span class="kpi-strip__label">Arbeitsfläche je Arbeitsplatz</span><span class="kpi-strip__value">${planned && item.workArea && item.workplaces ? `${(item.workArea / item.workplaces).toLocaleString('de-CH', { maximumFractionDigits: 1 })}<small> m²</small>` : '—'}</span></div>
+          <div class="kpi-strip__item"><span class="kpi-strip__label">Arbeitsfläche je Arbeitsplatz</span><span class="kpi-strip__value">${planned && item.workArea && item.workplaces ? `${formatNumber(item.workArea / item.workplaces, { maximumFractionDigits: 1 })}<small> m²</small>` : '—'}</span></div>
         </div>
         <div class="mt-4">${planned
           ? C.notification('<p class="m-0"><strong>Prototypdaten:</strong> Ausstattungsgruppen und Planstände sind Annahmen für den Wireframe. Sie sind noch kein freigegebenes Mengengerüst oder Bestellnachweis.</p>', 'hint', 'InfoCircle')

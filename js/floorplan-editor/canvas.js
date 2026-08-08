@@ -6,6 +6,7 @@
 // stable consumers. Coordinates use the portal floor convention: 100 units = 1 m.
 
 import { escape as esc } from '../components.js';
+import { formatArea, formatNumber } from '../format.js';
 import { EDITOR_COLOR_MODES, createColorContext, roomColor } from './colors.js';
 import { placementFootprintBounds } from './geometry.js';
 
@@ -89,7 +90,7 @@ function roomDraftMarkup(roomDraft) {
   const area = width * height / 10000;
   return `<g class="fpe-room-draft ${roomDraft.valid ? 'is-valid' : 'is-invalid'}" aria-hidden="true">
     <rect x="${x}" y="${y}" width="${width}" height="${height}"></rect>
-    <text x="${x + width / 2}" y="${y + height / 2}">${esc(`${area.toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²`)}</text>
+    <text x="${x + width / 2}" y="${y + height / 2}">${esc(formatArea(area, { maximumFractionDigits: 1 }))}</text>
   </g>`;
 }
 
@@ -140,10 +141,10 @@ export function areaSquareMetres(points = []) {
 export function measurementLabel(measurement = {}) {
   const points = measurement?.points || [];
   if (measurement?.kind === 'area' && measurement.complete) {
-    return `${areaSquareMetres(points).toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²`;
+    return formatArea(areaSquareMetres(points), { maximumFractionDigits: 1 });
   }
   if (points.length >= 2) {
-    return `${distanceMetres(points).toLocaleString('de-CH', { maximumFractionDigits: 2 })} m`;
+    return `${formatNumber(distanceMetres(points), { maximumFractionDigits: 2 })} m`;
   }
   return '';
 }
@@ -240,7 +241,7 @@ export function scaleBar(camera, viewportWidth, targetPixels = 120) {
   return {
     metres,
     pixels,
-    label: `${metres.toLocaleString('de-CH', { maximumFractionDigits: 2 })} m`,
+    label: `${formatNumber(metres, { maximumFractionDigits: 2 })} m`,
   };
 }
 

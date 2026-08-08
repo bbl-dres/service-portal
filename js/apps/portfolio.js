@@ -8,6 +8,7 @@ import { treeHTML, wireTree, restoreTreeSelection, markTree, syncTreeCounts } fr
 import { formatNumber, formatArea, formatCurrency, formatDate, formatFileSize } from '../format.js';
 import { countryName, businessEntityIdFromBblId } from '../domain.js';
 import { APPLICATIONS } from '../crumbs.js';
+import { preparePage, uniqueOptions } from '../collections.js';
 
 const imageGalleryItems = (o) => galleryItemsFrom(o.images, {
   idPrefix: o.bbl_id, title: o.name, location: o.city,
@@ -176,10 +177,17 @@ export default async function render(ctx) {
 
   function renderMain() {
     syncTree();
-    const list = filtered().sort(SORTS[state.sort] || SORTS.name);
+    const filteredRows = filtered();
+    const pageSize = state.perPage[state.view] || Math.max(1, filteredRows.length);
+    const { sorted: list, visible, page, totalPages } = preparePage(filteredRows, {
+      compare: SORTS[state.sort] || SORTS.name,
+      page: state.page,
+      perPage: pageSize,
+    });
     const cnt = mount.querySelector('#pf-count');
     const main = mount.querySelector('#pf-main');
-    let pages = 1;
+    const pages = state.view === 'map' ? 1 : totalPages;
+    if (state.view !== 'map') state.page = page;
     pfMap.free();
     if (state.view === 'map') {
 
@@ -197,14 +205,9 @@ export default async function render(ctx) {
       const rst = mount.querySelector('#pf-empty-reset');
       if (rst) rst.addEventListener('click', fullReset);
     } else {
-      const per = state.perPage[state.view];
-      pages = Math.max(1, Math.ceil(list.length / per));
-      if (state.page > pages) state.page = pages;
-      const slice = list.slice((state.page - 1) * per, state.page * per);
-
       if (cnt) cnt.innerHTML = `<strong>${list.length}</strong> von ${objects.length} Objekten${pages > 1 ? ` · Seite ${state.page} von ${pages}` : ''}`;
 
-      main.innerHTML = (state.view === 'gallery' ? galleryHTML(slice) : listHTML(slice))
+      main.innerHTML = (state.view === 'gallery' ? galleryHTML(visible) : listHTML(visible))
         + C.pagination({ page: state.page, totalPages: pages, inputId: 'pf-page' });
       if (pages > 1) C.wirePagination(mount, 'pf-page', state.page, pages, (t) => { state.page = t; renderMain(); });
     }
@@ -399,10 +402,6 @@ function buildingDetail(ctx, b) {
 
   }
 
-  const uniqOpts = (arr, key) => [...new Set(arr.map((x) => x[key]).filter(Boolean))]
-    .sort((a, z) => String(a).localeCompare(String(z), 'de'))
-    .map((v) => ({ value: String(v), label: String(v) }));
-
   const FACETS = (list) => list.filter((f) => (f.options || []).length);
 
   const DT = {
@@ -414,7 +413,7 @@ function buildingDetail(ctx, b) {
         { value: 'value', label: 'Wert (grösste zuerst)', cmp: (x, y) => (Number(y.value) || 0) - (Number(x.value) || 0) },
       ],
 
-      facets: FACETS([{ dim: 'standard', legend: 'Standard', options: uniqOpts(areas, 'standard'),
+      facets: FACETS([{ dim: 'standard', legend: 'Standard', options: uniqueOptions(areas, 'standard', { locale: 'de' }),
         match: (r, v) => v.includes(String(r.standard)) }]),
       columns: [
         { key: 'type', label: 'Bemessungsart', render: (a) => C.escape(a.type) },
@@ -435,8 +434,8 @@ function buildingDetail(ctx, b) {
       ],
 
       facets: FACETS([
-        { dim: 'category', legend: 'Kategorie', options: uniqOpts(assets, 'category'), match: (r, v) => v.includes(String(r.category)) },
-        { dim: 'status', legend: 'Status', options: uniqOpts(assets, 'status'), match: (r, v) => v.includes(String(r.status)) },
+        { dim: 'category', legend: 'Kategorie', options: uniqueOptions(assets, 'category', { locale: 'de' }), match: (r, v) => v.includes(String(r.category)) },
+        { dim: 'status', legend: 'Status', options: uniqueOptions(assets, 'status', { locale: 'de' }), match: (r, v) => v.includes(String(r.status)) },
       ]),
       columns: [
         { key: 'name', label: 'Bezeichnung', render: (a) => `<strong>${C.escape(a.name)}</strong>` },
@@ -458,7 +457,7 @@ function buildingDetail(ctx, b) {
         { value: 'from', label: 'Beginn (neueste zuerst)', cmp: (x, y) => String(y.validFrom || '').localeCompare(String(x.validFrom || '')) },
       ],
 
-      facets: FACETS([{ dim: 'status', legend: 'Status', options: uniqOpts(contracts, 'status'), match: (r, v) => v.includes(String(r.status)) }]),
+      facets: FACETS([{ dim: 'status', legend: 'Status', options: uniqueOptions(contracts, 'status', { locale: 'de' }), match: (r, v) => v.includes(String(r.status)) }]),
       columns: [
         { key: 'type', label: 'Vertragsart', render: (c) => C.escape(c.type) },
         { key: 'contractPartner', label: 'Vertragspartner', render: (c) => C.escape(c.contractPartner || '—') },
@@ -475,7 +474,7 @@ function buildingDetail(ctx, b) {
         { value: 'amount', label: 'Betrag (grösste zuerst)', cmp: (x, y) => (Number(y.amount) || 0) - (Number(x.amount) || 0) },
       ],
 
-      facets: FACETS([{ dim: 'costGroup', legend: 'Kostengruppe', options: uniqOpts(costs, 'costGroup'), match: (r, v) => v.includes(String(r.costGroup)) }]),
+      facets: FACETS([{ dim: 'costGroup', legend: 'Kostengruppe', options: uniqueOptions(costs, 'costGroup', { locale: 'de' }), match: (r, v) => v.includes(String(r.costGroup)) }]),
       columns: [
         { key: 'costGroup', label: 'Kostengruppe', render: (c) => C.escape(c.costGroup) },
         { key: 'costType', label: 'Kostenart', render: (c) => C.escape(c.costType) },
@@ -521,8 +520,8 @@ function buildingDetail(ctx, b) {
       ],
 
       facets: FACETS([
-        { dim: 'type', legend: 'Dokumenttyp', options: uniqOpts(documents, 'type'), match: (r, v) => v.includes(String(r.type)) },
-        { dim: 'classification', legend: 'Klassifizierung', options: uniqOpts(documents, 'classification'), match: (r, v) => v.includes(String(r.classification)) },
+        { dim: 'type', legend: 'Dokumenttyp', options: uniqueOptions(documents, 'type', { locale: 'de' }), match: (r, v) => v.includes(String(r.type)) },
+        { dim: 'classification', legend: 'Klassifizierung', options: uniqueOptions(documents, 'classification', { locale: 'de' }), match: (r, v) => v.includes(String(r.classification)) },
       ]),
       columns: [
         { key: 'title', label: 'Titel', render: (d) => `${C.icon('File', 'icon--base')} <strong>${C.escape(d.title)}</strong>` },

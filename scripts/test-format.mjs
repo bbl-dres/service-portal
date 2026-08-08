@@ -1,6 +1,6 @@
 // Calendar dates must not shift with the machine time zone, and HTML helpers
 // must escape a value exactly once at their final markup sink.
-import { formatDate } from '../js/format.js';
+import { formatArea, formatDate, formatNumber } from '../js/format.js';
 import components from '../js/components.js';
 import { heroMosaic } from '../js/ui/hero-mosaic.js';
 import { renderSvg } from '../js/ui/charts.js';
@@ -17,6 +17,16 @@ check(formatDate('2026-02-29') === '2026-02-29',
   'invalid calendar dates remain visibly invalid', formatDate('2026-02-29'));
 check(formatDate('not-a-date') === 'not-a-date',
   'unparseable values remain visible', formatDate('not-a-date'));
+
+check(formatNumber(1234567) === "1'234'567" && formatArea(1180) === "1'180 m²",
+  'number and area defaults remain unchanged');
+check(formatNumber(12.345, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) === '12.35'
+  && formatArea(12.345, { maximumFractionDigits: 1 }) === '12.3 m²',
+  'number and area formatters accept precision options');
+check(formatNumber(null) === '0' && formatArea(null) === '0 m²',
+  'null numeric values remain zero');
+check(formatArea(1).endsWith(' m²'),
+  'area values retain their square-metre unit', formatArea(1));
 
 const mosaic = heroMosaic(components, {
   items: [{ id: 'one', title: 'A & B', photoSrc: 'assets/images/social1.jpg' }],

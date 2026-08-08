@@ -4,6 +4,7 @@
 
 import { EDITOR_COLOR_MODES, measurementLabel, renderEditorSvg } from './canvas.js';
 import { createColorContext, roomColorDescriptor } from './colors.js';
+import { formatArea, formatNumber } from '../format.js';
 import { MODULE_OPTIONS, SIA_OPTIONS, USE_OPTIONS } from './model.js';
 import {
   BASE, COLOR_DESCRIPTIONS, address, clean, editorHeaderHTML,
@@ -128,7 +129,7 @@ export function createWorkbenchViews(context) {
         <button type="button" class="fpe-resource-room-toggle" data-resource-room="${C.escape(room.spaceId)}"${expansionAttributes}
           aria-label="${C.escape(expansionLabel)}"${placements.length ? '' : ' disabled'}>${C.icon(open ? 'ChevronDown' : 'ChevronRight', 'icon--base')}</button>
         <button type="button" class="fpe-resource-row${roomSelected ? ' is-selected' : ''}" data-select-type="room" data-select-id="${C.escape(room.spaceId)}" aria-pressed="${roomSelected}">
-          <span>${C.escape(room.roomNumber)}</span><span>${Number(room.area).toLocaleString('de-CH')} m²</span></button>
+          <span>${C.escape(room.roomNumber)}</span><span>${formatArea(room.area)}</span></button>
       </div>
         ${placements.length ? `<ul class="fpe-resource-assets" id="${assetsId}"${open ? '' : ' hidden'}>${placements.map((placement) => {
           const active = selected?.type === 'placement' && selected.id === placement.placementId;
@@ -145,7 +146,7 @@ export function createWorkbenchViews(context) {
       return `<section class="fpe-resource-group">
       <h3><button type="button" class="fpe-resource-group__head" data-resource-group="${C.escape(group.key)}" aria-expanded="${!collapsed}" aria-controls="${groupId}">
         ${C.icon(collapsed ? 'ChevronRight' : 'ChevronDown', 'icon--base')}<span class="fpe-swatch fpe-swatch--${C.escape(group.swatch)}" aria-hidden="true"></span>
-        <span>${C.escape(group.label)}</span><span>${group.rooms.length}</span><span>${group.area.toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²</span>
+        <span>${C.escape(group.label)}</span><span>${group.rooms.length}</span><span>${formatArea(group.area, { maximumFractionDigits: 1 })}</span>
       </button></h3>
       <ul id="${groupId}"${collapsed ? ' hidden' : ''}>${group.rooms.map((entry, roomIndex) => roomRow(entry, `${groupIndex}-${roomIndex}`)).join('')}</ul>
     </section>`;
@@ -340,15 +341,15 @@ export function createWorkbenchViews(context) {
     });
     return `<div class="fpe-inspector-title"><span><small>Geschoss</small>${C.escape(floor.label)}</span><button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close" type="button" data-action="toggle-right" aria-label="Inspektor schliessen">${panelToggleIcon('right')}</button></div>
       <section class="fpe-inspector-section"><h3>Geschosskennzahlen</h3><div class="fpe-kpis">
-        <div><small>Bruttofläche</small><strong>${Number(floor.areaGross).toLocaleString('de-CH')} m²</strong></div>
-        <div><small>Arbeitsplätze</small><strong>${workplaces.toLocaleString('de-CH')}</strong></div>
+        <div><small>Bruttofläche</small><strong>${formatArea(floor.areaGross)}</strong></div>
+        <div><small>Arbeitsplätze</small><strong>${formatNumber(workplaces)}</strong></div>
         <div><small>Räume</small><strong>${editorDocument.rooms.length}</strong></div>
         <div><small>Verortete Objekte</small><strong>${editorDocument.placements.length}</strong></div>
-        <div><small>Verkehrsfläche</small><strong>${traffic.toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²</strong></div>
-        <div><small>Planungsmenge</small><strong>${plan.equipmentCount == null ? '—' : Number(plan.equipmentCount).toLocaleString('de-CH')}</strong></div>
+        <div><small>Verkehrsfläche</small><strong>${formatArea(traffic, { maximumFractionDigits: 1 })}</strong></div>
+        <div><small>Planungsmenge</small><strong>${plan.equipmentCount == null ? '—' : formatNumber(plan.equipmentCount)}</strong></div>
       </div></section>
       <section class="fpe-inspector-section"><h3>Flächen nach Nutzung</h3><ul class="fpe-breakdown">${[...groups.entries()].sort((a, b) => b[1].area - a[1].area).slice(0, 6)
-        .map(([label, entry]) => `<li><span class="fpe-swatch fpe-swatch--${useSwatch(entry.group)}"></span><span>${C.escape(label)}</span><strong>${entry.area.toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²</strong></li>`).join('')}</ul></section>
+        .map(([label, entry]) => `<li><span class="fpe-swatch fpe-swatch--${useSwatch(entry.group)}"></span><span>${C.escape(label)}</span><strong>${formatArea(entry.area, { maximumFractionDigits: 1 })}</strong></li>`).join('')}</ul></section>
       <section class="fpe-inspector-section"><h3>Attribute</h3><dl class="fpe-kv">
         <dt>Geschoss-ID</dt><dd class="mono">${C.escape(floor.floorId)}</dd><dt>Gebäude</dt><dd>${C.escape(building.name)}</dd>
         <dt>Adresse</dt><dd>${C.escape(address(building))}</dd><dt>Variante</dt><dd>${C.escape(editorVersionLabel())}</dd>
@@ -362,7 +363,7 @@ export function createWorkbenchViews(context) {
     const [roomX, roomY, roomWidth, roomHeight] = room.rect;
     const localRoom = room.spaceId.startsWith('local-room-');
     return `<div class="fpe-inspector-title"><span><small>Ausgewählter Raum</small>${C.escape(room.roomNumber)}</span><button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="clear-selection" aria-label="Auswahl aufheben">${C.icon('Cancel', 'btn__icon')}</button><button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close" type="button" data-action="toggle-right" aria-label="Inspektor schliessen">${panelToggleIcon('right')}</button></div>
-      <section class="fpe-inspector-section"><h3>Details</h3><dl class="fpe-kv"><dt>Fläche</dt><dd>${Number(room.area).toLocaleString('de-CH')} m²</dd><dt>AOID</dt><dd class="mono">${C.escape(room.spaceId)}</dd><dt>Arbeitsplätze</dt><dd>${Number(room.capacity || 0)}</dd></dl></section>
+      <section class="fpe-inspector-section"><h3>Details</h3><dl class="fpe-kv"><dt>Fläche</dt><dd>${formatArea(room.area)}</dd><dt>AOID</dt><dd class="mono">${C.escape(room.spaceId)}</dd><dt>Arbeitsplätze</dt><dd>${Number(room.capacity || 0)}</dd></dl></section>
       ${editMode ? `<form class="fpe-inspector-section fpe-form" id="fpe-room-form">
         <h3>Standard-Attribute</h3>
         <div class="fpe-field"><label for="fpe-room-useType">Nutzungsart</label><select id="fpe-room-useType" class="input--outline input--sm" data-room-field="useType">${optionMarkup(USE_OPTIONS, room.useType)}</select></div>

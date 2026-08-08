@@ -5,6 +5,7 @@ import { readJSON, writeJSON, remove } from '../core/storage.js';
 import { formatCurrency } from '../format.js';
 import * as links from '../links.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
+import { preparePage } from '../collections.js';
 
 export const needs = ['shopProducts', 'shopCategories'];
 
@@ -133,10 +134,11 @@ function catalogue(ctx) {
     'price-desc': (a, b) => (b.price || 0) - (a.price || 0),
     new: (a, b) => Number(Boolean(b.isNew)) - Number(Boolean(a.isNew)) || a.name.localeCompare(b.name, 'de-CH'),
   };
-  const sorted = hits.slice().sort(SORTS[sortKey]);
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PER_PAGE));
-  const page = Math.min(Math.max(1, parseInt(query.get('page') || '1', 10) || 1), totalPages);
-  const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const { sorted, visible, page, totalPages } = preparePage(hits, {
+    compare: SORTS[sortKey],
+    page: query.get('page'),
+    perPage: PER_PAGE,
+  });
 
   const brandOpts = [...new Set(products.map((p) => p.brand).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, 'de-CH'))

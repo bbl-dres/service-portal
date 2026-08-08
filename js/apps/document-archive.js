@@ -3,6 +3,7 @@
 import { documentFileName, openDocumentViewer } from '../ui/doc-viewer.js';
 import { formatFileSize } from '../format.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
+import { preparePage } from '../collections.js';
 
 export const needs = ['buildings', 'documents'];
 const typeKey = (d) => d.typeCode || d.type || '';
@@ -52,7 +53,7 @@ export default async function render(ctx) {
     && (!state.filters.year.length || state.filters.year.includes(String(d.year)))
     && (!state.filters.class.length || state.filters.class.includes(d.classification));
   const inSearch = (d) => { const q = state.q.trim().toLowerCase(); return !q || `${documentFileName(d)} ${d.typeCode || ''} ${d.type} ${d.category}`.toLowerCase().includes(q); };
-  const filtered = () => all.filter(d => inFilters(d) && inSearch(d)).sort(SORTS[state.sort] || SORTS.title);
+  const filtered = () => all.filter(d => inFilters(d) && inSearch(d));
 
   function resultTable(rows) {
     return C.table({ zebra: true, caption: 'Bauwerksdokumentation', columns: [
@@ -90,10 +91,12 @@ export default async function render(ctx) {
   }
 
   function renderMain() {
-    const rows = filtered();
-    const totalPages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
-    if (state.page > totalPages) state.page = totalPages;
-    const visible = rows.slice((state.page - 1) * PER_PAGE, state.page * PER_PAGE);
+    const { sorted: rows, visible, page, totalPages } = preparePage(filtered(), {
+      compare: SORTS[state.sort] || SORTS.title,
+      page: state.page,
+      perPage: PER_PAGE,
+    });
+    state.page = page;
     const cnt = mount.querySelector('#doc-count');
 
     if (cnt) cnt.innerHTML = `<strong>${rows.length}</strong> von ${all.length} Dokumenten${totalPages > 1 ? ` · Seite ${state.page} von ${totalPages}` : ''}`;

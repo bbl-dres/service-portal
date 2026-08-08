@@ -408,13 +408,16 @@ export function filterGroup({ dim, legend, options = [], selected = [], idPrefix
 //   sortOpts   allowed sort values (array of option values); '' = data order
 //   filters    { param: allowedValues[]|null } — multi-value, comma-joined
 //   views      allowed views; defaultView stays out of the URL
+//   trimQuery  trim surrounding q whitespace (default true); routes whose
+//              historical deep links preserve it can opt out
 //
 // Returns { q, view, page, sort, selected, hash(patch), clamp(list) }.
 // clamp() slices the sorted list to the page and returns
 // { visible, totalPages, page }, clamping page to the valid range if necessary.
 export function catalogueState(query, { base, perPage = 12, sortOpts = [], defaultSort = '',
-  views = ['gallery', 'list'], defaultView = 'gallery', filters = {} } = {}) {
-  const q = (query.get('q') || '').trim();
+  views = ['gallery', 'list'], defaultView = 'gallery', filters = {}, trimQuery = true } = {}) {
+  const rawQ = query.get('q') || '';
+  const q = trimQuery ? rawQ.trim() : rawQ;
   const rawView = query.get('view') || defaultView;
   const view = views.includes(rawView) ? rawView : defaultView;
   const rawSort = query.get('sort') || defaultSort;

@@ -1,6 +1,8 @@
 // Shared presentation primitives for the standalone floor-plan editor.
 // Keep this module stateless: navigation and the workbench both use it.
 
+import { formatArea, formatNumber } from '../format.js';
+
 export const BASE = '#/app/floorplan-editor';
 export const COLOR_DEFAULT = 'none';
 export const VIEW_MODES = new Set(['2d', '3d', 'walk']);
@@ -34,8 +36,8 @@ export const panelToggleIcon = (side) => `<svg class="fpe-panel-toggle-icon fpe-
   <rect x="3.5" y="5.5" width="17" height="13"></rect>
   <rect class="fpe-panel-toggle-icon__pane" x="${side === 'left' ? '3.5' : '14.5'}" y="5.5" width="6" height="13"></rect>
 </svg>`;
-export const number = (value) => Number(value || 0).toLocaleString('de-CH');
-export const area = (value) => `${Number(value || 0).toLocaleString('de-CH', { maximumFractionDigits: 1 })} m²`;
+export const number = (value) => formatNumber(value);
+export const area = (value) => formatArea(value, { maximumFractionDigits: 1 });
 
 export function prototypeFooterHTML() {
   return `<footer class="fpe-local-note">

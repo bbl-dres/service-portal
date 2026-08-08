@@ -4,6 +4,7 @@ import { initEstateMap } from '../map/buildings-map.js';
 import { createMapSlot } from '../map/map-slot.js';
 import { openGallery } from '../ui/gallery.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
+import { preparePage } from '../collections.js';
 
 export const needs = ['buildings', 'media', 'parcels', 'projects'];
 const isHistoric = (m) => m.historicPeriod === 'historisch';
@@ -85,11 +86,11 @@ export default async function render(ctx) {
     'titel': (a, b) => a.title.localeCompare(b.title, 'de-CH'),
     'objekt': (a, b) => resolveObjectName(relatedObjectId(a)).localeCompare(resolveObjectName(relatedObjectId(b)), 'de-CH'),
   };
-  const sorted = hits.slice().sort(SORTS[sortKey] || SORTS['datum-desc']);
-
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PER_PAGE));
-  const page = Math.min(Math.max(1, parseInt(query.get('page') || '1', 10) || 1), totalPages);
-  const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const { sorted, visible, page, totalPages } = preparePage(hits, {
+    compare: SORTS[sortKey] || SORTS['datum-desc'],
+    page: query.get('page'),
+    perPage: PER_PAGE,
+  });
 
   const periodBadge = (p) => p === 'historisch' ? C.badge('Historisch', 'warning') : C.badge('Aktuell', 'info');
   const mediaTypeLabel = (t) => t === 'video' ? 'Video' : 'Foto';

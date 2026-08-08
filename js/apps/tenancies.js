@@ -10,6 +10,7 @@ import { formatNumber, formatCurrency, formatArea, formatDate } from '../format.
 import { countryName, statusLabel } from '../domain.js';
 import { APPLICATIONS } from '../crumbs.js';
 import * as links from '../links.js';
+import { preparePage, uniqueOptions } from '../collections.js';
 
 export const needs = ['tenancies', 'floors', 'spaces', 'contracts'];
 
@@ -154,7 +155,15 @@ function overview(ctx) {
     }));
 
     mount.querySelectorAll('.view-switch__btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === state.view)));
-    const list = filtered().slice().sort(SORTS[state.sort] || SORTS.end);
+    const filteredRows = filtered();
+    const pageSize = state.perPage[state.view] || Math.max(1, filteredRows.length);
+    const { sorted: list, visible, page, totalPages } = preparePage(filteredRows, {
+      compare: SORTS[state.sort] || SORTS.end,
+      page: state.page,
+      perPage: pageSize,
+    });
+    const pages = state.view === 'map' ? 1 : totalPages;
+    if (state.view !== 'map') state.page = page;
     const cnt = mount.querySelector('#mt-count');
     const main = mount.querySelector('#mt-main');
     mtMap.free();
@@ -195,13 +204,9 @@ function overview(ctx) {
         page: 1, totalPages: 1, view: state.view });
       return;
     }
-    const per = state.perPage[state.view];
-    const pages = Math.max(1, Math.ceil(list.length / per));
-    if (state.page > pages) state.page = pages;
-    const slice = list.slice((state.page - 1) * per, state.page * per);
     updateCount(list.length, pages > 1 ? ` · Seite ${state.page} von ${pages}` : '');
 
-    main.innerHTML = (state.view === 'gallery' ? galleryHTML(slice) : listHTML(slice))
+    main.innerHTML = (state.view === 'gallery' ? galleryHTML(visible) : listHTML(visible))
       + C.pagination({ page: state.page, totalPages: pages, inputId: 'mt-page' });
     C.wirePagination(main, 'mt-page', state.page, pages, (p) => { state.page = p; renderMain(); });
     C.announceCatalogue({ count: list.length, total: all.length,
@@ -533,9 +538,6 @@ function detail(ctx, id) {
 
   const contractsPanel = () => '<div id="tenancy-contract-table"></div>';
 
-  const uniqOpts = (rows, key) => [...new Set(rows.map((r) => String(r[key] || '')).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, 'de')).map((v) => ({ value: v, label: v }));
-
   function dataTables() {
     return {
       'tenancy-floor-table': {
@@ -576,7 +578,7 @@ function detail(ctx, id) {
           { value: 'until', label: 'Gültig bis (nächstes zuerst)', cmp: (a, b) => String(a.validUntil).localeCompare(String(b.validUntil)) },
           { value: 'amount', label: 'Betrag (höchster zuerst)', cmp: (a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0) },
         ],
-        facets: [{ dim: 'type', legend: 'Vertragsart', options: uniqOpts(contracts, 'type'), match: (r, v) => v.includes(String(r.type)) }],
+        facets: [{ dim: 'type', legend: 'Vertragsart', options: uniqueOptions(contracts, 'type', { locale: 'de' }), match: (r, v) => v.includes(String(r.type)) }],
         columns: [
           { key: 'contractId', label: 'Vertrag', render: (c) => C.escape(c.contractId) },
           { key: 'type', label: 'Art', render: (c) => C.escape(c.type) },

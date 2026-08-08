@@ -7,6 +7,7 @@ import { formatNumber, formatDate } from '../format.js';
 // every selection is shareable. List and detail anatomy matches the other portal
 // catalogues and inventory explorer.
 import * as links from '../links.js';
+import { preparePage } from '../collections.js';
 // Reuse one module-level escape helper and badge factory across all views.
 import { escape as esc, badge } from '../components.js';
 
@@ -153,10 +154,11 @@ function list(ctx) {
   const all = kind === 'objekte' ? objects : tables;
   const filtered = all.filter(kind === 'objekte' ? objMatches : tblMatches);
   const sortDef = SORTS.find((s) => s.value === sortKey);
-  const sorted = sortDef ? filtered.slice().sort(sortDef.cmp) : filtered.slice().sort(SORTS[0].cmp);
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PER_PAGE));
-  const page = Math.min(wantedPage, totalPages);
-  const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const { sorted, visible, page, totalPages } = preparePage(filtered, {
+    compare: (sortDef || SORTS[0]).cmp,
+    page: wantedPage,
+    perPage: PER_PAGE,
+  });
 
   // Hash construction. Omit kind for the default business-object view.
   const base = {

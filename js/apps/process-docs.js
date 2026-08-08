@@ -153,20 +153,24 @@ function list(ctx) {
   const areas = [...new Map(all.map((p) => [p.area, { key: p.area, code: p.areaCode, label: p.areaLabel }])).values()];
   const groups = [...new Map(all.map((p) => [p.group, { key: p.group, label: p.groupLabel }])).values()];
 
-  const rawQ = query.get('q') || '';
-  const q = rawQ.toLowerCase();
-  const multi = (param, valid) => (query.get(param) || '').split(',').map((s) => s.trim()).filter((x) => valid.includes(x));
-  const selGroups = multi('group', groups.map((g) => g.key));
-  const selStatus = multi('status', refList(core, 'objectStatuses').map((s) => s.id));
-  const view = query.get('view') === 'gallery' ? 'gallery' : 'list';
-  const wantedPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
-
   const SORTS = [
     { value: 'nr', label: 'Nummer', cmp: (a, b) => a.processId.localeCompare(b.processId, undefined, { numeric: true }) },
     { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
     { value: 'group', label: 'Prozessgruppe', cmp: (a, b) => a.groupLabel.localeCompare(b.groupLabel, 'de') || a.processId.localeCompare(b.processId, undefined, { numeric: true }) },
   ];
-  const sortKey = SORTS.some((s) => s.value === query.get('sort')) ? query.get('sort') : '';
+  const state = C.catalogueState(query, {
+    base: BASE, perPage: PER_PAGE,
+    sortOpts: SORTS.map((s) => s.value),
+    defaultView: 'list', trimQuery: false,
+    filters: {
+      group: groups.map((g) => g.key),
+      status: refList(core, 'objectStatuses').map((s) => s.id),
+    },
+  });
+  const { q: rawQ, view, sort: sortKey, hash } = state;
+  const q = rawQ.toLowerCase();
+  const selGroups = state.selected.group;
+  const selStatus = state.selected.status;
 
   const matches = (p) => {
     if (q) {
@@ -180,18 +184,13 @@ function list(ctx) {
   const filtered = all.filter(matches);
   const sortDef = SORTS.find((s) => s.value === sortKey);
   const sorted = sortDef ? filtered.slice().sort(sortDef.cmp) : filtered.slice().sort(SORTS[0].cmp);
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PER_PAGE));
-  const page = Math.min(wantedPage, totalPages);
-  const visible = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const { visible, totalPages, page } = state.clamp(sorted);
   const unit = { nom: 'Prozesse', dat: 'Prozessen' };
 
-  const base = { q: rawQ, sort: sortKey, view, group: selGroups, status: selStatus };
-  const hash = (patch = {}) => C.catalogueHash(BASE, { ...base, ...patch, defaultView: 'list' });
-
   const active = [
-    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
-    ...selGroups.map((x) => ({ label: (groups.find((g) => g.key === x) || {}).label || x, href: hash({ group: selGroups.filter((y) => y !== x) }) })),
-    ...selStatus.map((x) => ({ label: statusOf(core, x).label, href: hash({ status: selStatus.filter((y) => y !== x) }) })),
+    ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '', page: 1 }) }] : []),
+    ...selGroups.map((x) => ({ label: (groups.find((g) => g.key === x) || {}).label || x, href: hash({ group: selGroups.filter((y) => y !== x), page: 1 }) })),
+    ...selStatus.map((x) => ({ label: statusOf(core, x).label, href: hash({ status: selStatus.filter((y) => y !== x), page: 1 }) })),
   ];
 
   const card = (p) => C.card({
@@ -231,13 +230,13 @@ function list(ctx) {
       const items = groups
         .filter((g) => inArea.some((p) => p.group === g.key))
         .map((g) => leaf(g.label, inArea.filter((p) => p.group === g.key).length,
-          C.catalogueHash(BASE, { group: [g.key], view, defaultView: 'list' }),
+          hash({ q: '', sort: '', group: [g.key], status: [], page: 1 }),
           selGroups.length === 1 && selGroups[0] === g.key))
         .join('');
       return branch(a.key, `${a.label}`, inArea.length,
         // Preserve query and view when building branch links so an active branch
         // can toggle without discarding search state.
-        C.catalogueHash(BASE, { q: rawQ, view, defaultView: 'list' }),
+        hash({ sort: '', group: [], status: [], page: 1 }),
         !selGroups.length && !selStatus.length && !rawQ,
         selGroups.length ? true : isOpen(a.key, true), items);
     }).join('')}
@@ -247,7 +246,7 @@ function list(ctx) {
   const panel = `
     ${C.filterGroup({ dim: 'group', legend: 'Prozessgruppe', selected: selGroups, idPrefix: 'pd', options: groups.map((g) => ({ value: g.key, label: g.label })) })}
     ${C.filterGroup({ dim: 'status', legend: 'Status', selected: selStatus, idPrefix: 'pd', options: refList(core, 'objectStatuses').map((s) => ({ value: s.id, label: s.label })) })}
-    ${C.panelReset({ href: hash({ group: [], status: [] }) })}`;
+    ${C.panelReset({ href: hash({ group: [], status: [], page: 1 }) })}`;
 
   mount.innerHTML = `
   <div class="container section">

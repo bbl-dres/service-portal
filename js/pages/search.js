@@ -31,7 +31,12 @@ export const needs = ['applications', 'datasets', 'documents', 'news', 'contacts
 
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
-  const rawQ = (query.get('q') || '').trim();
+  const state = C.catalogueState(query, {
+    base: '#/search', perPage: 10,
+    sortOpts: ['title', 'kind'],
+    defaultView: 'list', filters: { kind: null },
+  });
+  const { q: rawQ, view, sort: sortKey, hash } = state;
   setTitle(rawQ ? `Suche: ${rawQ}` : 'Suche');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Suche' }]);
 
@@ -58,9 +63,8 @@ export default async function render(ctx) {
     </li>`;
 
   // --- State from the shareable hash, as in the three catalogues ---
-  const selectedKinds = (query.get('kind') || '').split(',').map(s => s.trim()).filter(Boolean);
+  const selectedKinds = state.selected.kind;
   // CD presents search results as a LIST first (searchResults.vue → SearchResultsList).
-  const view = query.get('view') === 'gallery' ? 'gallery' : 'list';
   const SORT_OPTIONS = [
     { value: '', label: 'Relevanz' },
     { value: 'title', label: 'Titel (A–Z)' },
@@ -70,20 +74,11 @@ export default async function render(ctx) {
     title: (a, b) => String(a.title).localeCompare(String(b.title), 'de'),
     kind: (a, b) => String(a.kind).localeCompare(String(b.kind), 'de') || b._score - a._score,
   };
-  const sortKey = SORT_OPTIONS.some(o => o.value && o.value === query.get('sort')) ? query.get('sort') : '';
-  const currentPage = Math.max(1, Number.parseInt(query.get('page') || '1', 10) || 1);
-  const perPage = 10;
-
   const filtered = hits.filter(r => !selectedKinds.length || selectedKinds.includes(r.kind));
   // With no explicit sort, use the search engine's score; runSearch() already
   // returns relevance order.
   const sorted = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
-  const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
-  const page = Math.min(currentPage, totalPages);
-  const visible = sorted.slice((page - 1) * perPage, page * perPage);
-
-  const base = { q: rawQ, kind: selectedKinds, sort: sortKey, view };
-  const hash = (patch = {}) => C.catalogueHash('#/search', { ...base, ...patch, defaultView: 'list' });
+  const { visible, totalPages, page } = state.clamp(sorted);
 
   // Facet options with a hit count per content type, derived from HITS rather
   // than the index so no empty checkboxes appear.
@@ -109,13 +104,13 @@ export default async function render(ctx) {
     filterId: 'sr-filter', filterCount: selectedKinds.length,
     panelId: 'sr-filters',
     panel: C.filterGroup({ dim: 'kind', legend: 'Inhaltsart', selected: selectedKinds, options: kindOptions })
-      + C.panelReset({ href: hash({ kind: [] }) }),
+      + C.panelReset({ href: hash({ kind: [], page: 1 }) }),
     view, views: [['list', 'Listenansicht', 'List'], ['gallery', 'Galerieansicht', 'Apps']],
   });
 
   const activePills = C.activeFilters({
-    filters: selectedKinds.map(kind => ({ label: kind, href: hash({ kind: selectedKinds.filter(x => x !== kind) }) })),
-    resetHref: hash({ kind: [] }),
+    filters: selectedKinds.map(kind => ({ label: kind, href: hash({ kind: selectedKinds.filter(x => x !== kind), page: 1 }) })),
+    resetHref: hash({ kind: [], page: 1 }),
   });
 
   const body = showLog

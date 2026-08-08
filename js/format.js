@@ -16,13 +16,13 @@
 const LOC = 'de-CH';
 
 /** 1234567 → «1'234'567» */
-export const formatNumber = (x) => Number(x || 0).toLocaleString(LOC);
+export const formatNumber = (x, options) => Number(x || 0).toLocaleString(LOC, options);
 
 /** 1920000 → «CHF 1'920'000» */
 export const formatCurrency = (x, currency = 'CHF') => `${currency} ${formatNumber(x)}`;
 
 /** 1180 → «1'180 m²» */
-export const formatArea = (x) => `${formatNumber(x)} m²`;
+export const formatArea = (x, options) => `${formatNumber(x, options)} m²`;
 
 /**
  * ISO date → «31.3.2034». Empty values become an em dash; unreadable values
