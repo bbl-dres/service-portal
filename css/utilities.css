@@ -1,0 +1,308 @@
+/* Summenzeile (tfoot) in Detailtabellen */
+/* CD tfoot (table.postcss:45-67): 2px-Rahmen oben UND unten in text-300, kein
+   Flächenton, bold nur auf th — td bleibt regular. Die Klasse .table__total im
+   Markup ist damit reine Semantik ohne eigene Optik. */
+table.table tfoot { border-top:2px solid var(--color-border-strong); border-bottom:2px solid var(--color-border-strong); }
+table.table tfoot th { font-weight:var(--fw-bold); color:var(--color-gray-800); }
+
+/* ---- Barrierefreiheit (Design-Review Stage 2) ---------------------------- */
+/* Reine Flächen-Komponenten behalten in Windows High Contrast / forced-colors
+   einen sichtbaren Rand, sonst wird die Füllung entfernt und sie verschwimmen:
+   Badges, Meldungen (deckt auch die Toasts ab — beide hosten eine .notification)
+   und die graue Standard-Tag-Pille. */
+@media (forced-colors:active){
+  .badge, .notification, .tag-item__inner { border:1px solid currentColor; }
+}
+/* Klickbare Pillen erreichen ~2rem (näher an WCAG 2.5.8) statt ~24-30px.
+   cursor:pointer ist CDs einzige eigene Deklaration (badge.postcss:99-101). */
+.badge--clickable { min-height:2rem; cursor:pointer; }
+/* Hover-Akzente nur auf echten Zeigern — auf Touch bleibt die Farbe sonst „kleben“. */
+/* Auf Touch bleibt :hover nach dem Antippen kleben, bis anderswo getippt wird —
+   der Guard deckte bisher nur Farbwechsel ab, nicht Transforms und Schatten
+   (Item 2.25). */
+@media (hover:none){
+  .accordion__button:hover { color:inherit; }
+  .tab__control:hover:not(.tab__control--active) { color:inherit; }
+  .tab__control:hover:not(.tab__control--active)::after { background:transparent; }
+  .card--clickable:hover .card__title { color:inherit; }
+  .card--clickable:hover { box-shadow:var(--shadow-lg); }
+  .card--clickable:hover::after { border-color:transparent; }
+  .card--clickable:hover .domain-tile__icon { color:var(--color-primary-600); }
+  /* `.quick-tile:hover` stand hier, wird aber erst weiter unten definiert und
+     verlor deshalb — der Klebe-Hover blieb auf Touch stehen. Steht jetzt hinter
+     der Komponente. */
+  .back-to-top-btn:hover { box-shadow:var(--shadow-lg); }
+}
+/* Seltene Eingabetypen (CD-Parität) */
+input[type="color"] { height:3rem; padding:.25rem; }
+input[type="range"] { border:0; box-shadow:none; padding:0; }
+
+/* ---- CD-Angleichung (Design-Review Stage 5/6) --------------------------- */
+/* Separator (separator.postcss): vertikaler Strich + Abstands-/Negativ-Varianten */
+.separator--vertical { display:inline-block; align-self:stretch; width:0; border-right:1px solid var(--color-secondary-400); margin-inline:1rem; }
+.separator--xl { display:block; height:1rem; }
+.separator--negative { border-color:var(--color-secondary-300); }
+/* Gestapelte Link-Liste (.link--block). `.section__action` stand hier
+   byte-identisch ein zweites Mal — die eine Definition lebt jetzt unten im
+   Startseiten-Block (Item 1.12). */
+.link--block { display:block; }
+.link--block + .link--block { margin-top:.75rem; }
+/* Pagination rechtsbündig unter Trefferlisten (CD) */
+.pagination-wrap--right { justify-content:flex-end; }
+
+/* Misc utility */
+.row { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; }
+/* `.row > * { min-width:0 }` lets flex children shrink — icons must not, or a
+   long label next to one squashes it to a sliver. */
+.row > .icon { flex:none; }
+.break-all { overflow-wrap:anywhere; word-break:break-word; }
+
+.row--end { justify-content:flex-end; }
+
+/* ===================== Startseite (Arbeitsfläche) ===================== */
+/* CD-Abschnittskopf und -aktion (section.postcss:55,89 · ServicesSection.vue):
+   Titel oben, «Alle …»-Verweis unten rechts. */
+/* pb statt mb wie CD (section.postcss:53-56 pb-10): Padding kollabiert nicht mit
+   dem margin-top eines Folgeblocks (.grid + .grid, mt-*-Utilities). */
+.section__title { font-weight:var(--fw-bold); font-size:var(--text-2xl); margin:0; padding-bottom:2.5rem; }
+/* CD section.postcss:89-97 gibt der Abschnitts-CTA `relative; top-6 lg:top-8
+   3xl:top-12` — die Aktion wird in die untere Polsterung des Bandes hineingezogen.
+   Ohne das stehen (gemessen auf home-1440) 50px vor und 97px nach dem Verweis. */
+.section__action { display:flex; justify-content:flex-end; padding-top:1rem;
+  position:relative; top:1.5rem; }
+@media (min-width:1024px){ .section__action { top:2rem; } }
+@media (min-width:1920px){ .section__action { top:3rem; } }
+
+/* CD section.postcss:80-87 — der kanonische Weg, eine Section in zwei benannte
+   Kartengruppen zu teilen (heute erledigt das ein `mt-8`). */
+
+/* Startseiten-Hero = der ECHTE CD hero--main-image (hero.postcss:73-90) — die
+   frühere Parallel-Implementation .home-hero (eigenes Raster, 900px-Breakpoint
+   ausserhalb der CD-Skala, 4:3-Bild) ist ersetzt; nur die Suchzeile bleibt
+   eine Portalklasse. `height:auto` am Bild ist Pflicht: das `height`-Attribut
+   würde als Presentational Hint das aspect-ratio aushebeln. */
+.hero__image figure > img { display:block; width:100%; height:auto; background:var(--color-secondary-50); }
+/* nowrap schlägt das flex-wrap:wrap der .hero__cta-Basisklasse: das Feld trägt
+   width:100 % (globale Input-Regel) und würde den Knopf sonst in die zweite
+   Zeile drängen — Feld und «Suchen» bleiben eine Zeile, unter 640 px stapelt
+   die Regel unten weiterhin bewusst. */
+.home-search { display:flex; flex-wrap:nowrap; gap:.5rem; align-items:stretch; max-width:40rem; }
+.home-search input { flex:1 1 auto; min-width:0; min-height:var(--input-h); font-size:var(--text-base); }
+/* Der Knopf darf NICHT schrumpfen: `.btn__text` trägt CDs `overflow-wrap:anywhere`
+   (btn.postcss:133-137), was die min-content-Breite auf ein Zeichen senkt — als
+   Flex-Element neben dem wachsenden Feld wurde «Suchen» dadurch zu «Such/en»
+   umgebrochen. Das Feld wächst, der Knopf behält seine Eigenbreite. */
+.home-search .btn { flex:0 0 auto; }
+@media (max-width:639.98px){ .home-search { flex-direction:column; } }
+
+/* Suchvorschläge (ARIA-Combobox, js/search-suggest.js). Die Liste hängt
+   ABSOLUT unter dem Formular — als Flex-Element hätte sie sich neben Feld und
+   Knopf gestellt. Optik nach dem CD-Menü (menu__item): flache Zeilen, Trennung
+   nur zwischen den Einträgen. Die TASTATUR-aktive Zeile nimmt CDs
+   Listbox-Invertierung (multiselect.postcss:70-71), nicht die Menü-
+   Sekundärfläche — die war als aria-activedescendant-Cue zu schwach und von
+   Hover nicht unterscheidbar. */
+.suggest-anchor { position:relative; }
+/* EIN Listbox-Chrome für beide Komboboxen des Portals (Suchvorschläge hier,
+   Adresssuche im Karten-Wähler): border secondary-300 + shadow-lg + radius —
+   vorher zwei Rezepte (randlos/shadow-2xl gegen Rand/shadow-lg), zwei Produkte
+   (Design-Review C12). Die Invertierungs-Regel unten gilt wortgleich dort. */
+.suggest { position:absolute; z-index:var(--z-header); top:calc(100% + .25rem); left:0; right:0;
+  margin:0; padding:.25rem 0; list-style:none; max-height:22rem; overflow-y:auto;
+  background:var(--color-bg); border:1px solid var(--color-secondary-300);
+  border-radius:var(--radius); box-shadow:var(--shadow-lg); }
+.suggest__item { display:flex; flex-direction:column; gap:.125rem; padding:.5rem .875rem; cursor:pointer; }
+.suggest__item + .suggest__item { border-top:1px solid var(--color-secondary-200); }
+.suggest__item:hover { background:var(--color-secondary-50); }
+.suggest__item.is-active { background:var(--color-gray-600); }
+.suggest__item.is-active .suggest__title,
+.suggest__item.is-active .suggest__meta { color:var(--color-text-negative); }
+.suggest__title { font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--color-text); }
+.suggest__meta { font-size:var(--text-xs); color:var(--color-text-muted); }
+@media (max-width:639.98px){ .suggest { position:static; margin-top:.5rem; max-height:none; } }
+
+/* Schnelleinstiege — Text vor Bild: hier zählt das Ziel, nicht die Illustration. */
+/* min(20rem,100%) statt 20rem als Spalten-Minimum: unter 320px Viewport würde
+   ein festes 20rem-Minimum die Kachel breiter als den Bildschirm machen und die
+   Seite horizontal scrollen lassen. */
+.quick-tile { display:flex; gap:1rem; align-items:flex-start; padding:1.25rem;
+  background:var(--color-bg); color:inherit; text-decoration:none;
+  border-left:3px solid transparent; box-shadow:var(--shadow-lg);
+  /* Schatten-Lift im Karten-Takt (CD card.postcss:17 duration-300 ease-in-out) —
+     die beiden Lift-Komponenten der Startseite bewegen sich gleich. */
+  transition:box-shadow var(--duration-slow) var(--ease-in-out), border-color var(--duration); }
+.quick-tile:hover, .quick-tile:focus-visible { box-shadow:var(--shadow-2xl);
+  border-left-color:var(--color-primary-600); }
+.quick-tile > .icon { flex:none; color:var(--color-primary-600); margin-top:.125rem; }
+/* Der Text-Wrapper ist ein Flex-Kind: ohne min-width:0 schrumpft er nicht unter
+   seine intrinsische Mindestbreite, und lange Komposita (Datenschutzvorfall,
+   Verbrauchsmaterial) laufen aus der Kachel. */
+.quick-tile__text { min-width:0; }
+/* Die Beschriftung ist eine <h3> — Grösse und Abstände kommen von der Kachel,
+   nicht von der Überschriftenskala. */
+.quick-tile__label { margin:0; display:block; font-size:var(--text-base);
+  font-weight:var(--fw-bold); line-height:var(--lh-snug); overflow-wrap:anywhere; }
+.quick-tile:hover .quick-tile__label { color:var(--color-primary-700); }
+.quick-tile__meta { display:block; margin-top:.125rem; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
+/* Auf grauen Abschnitten heben sich die weissen Kacheln ab — auf weissen
+   Abschnitten brauchen sie eine leichte Tönung, damit sie als Fläche lesbar bleiben. */
+.section--default:not([class*="bg--"]) .quick-tile { background:var(--color-secondary-50); box-shadow:none; }
+.section--default:not([class*="bg--"]) .quick-tile:hover { background:var(--color-secondary-100); box-shadow:none; }
+/* Ohne Zeigegerät bleibt der Hover sonst nach der Berührung stehen. Muss HINTER
+   den Hover-Regeln oben stehen — gleiche Spezifität, spätere Regel gewinnt. */
+@media (hover:none){
+  .quick-tile:hover { box-shadow:var(--shadow-lg); border-left-color:transparent; }
+  .section--default:not([class*="bg--"]) .quick-tile:hover { background:var(--color-secondary-50); }
+}
+.gap-sm { gap:.5rem; }
+.py-1-5 { padding-block:var(--sp-1-5); }   /* Zeilen-Link im Aside-Kasten (services) — statt Inline-Style */
+.mt-2 { margin-top:var(--sp-2); } .mt-3 { margin-top:var(--sp-3); } .mt-4 { margin-top:var(--sp-4); } .mt-6 { margin-top:var(--sp-6); }
+.mt-8 { margin-top:var(--sp-8); }
+.mb-4 { margin-bottom:var(--sp-4); }
+.m-0 { margin:0; } .mb-0 { margin-bottom:0; } .mt-0 { margin-top:0; } .mb-3 { margin-bottom:var(--sp-3); }
+/* Kartenplatzhalter füllt seinen Rahmen — ersetzt 4× `style="height:100%"`. */
+.h-full { height:100%; }
+/* ---- Detailseiten-Layout: Inhaltsspalte + KLEBENDE Randspalte -------------
+   Bewusst NICHT das 12-Spalten-Raster des Containers: dort steht die
+   Randspalte als eigenes Rasterkind in DERSELBEN Zeile wie der erste Block der
+   Hauptspalte, kann also nur innerhalb dieser einen Zeile kleben — nach dem
+   ersten Abschnitt wäre sie weg. Hier sind es genau zwei Kinder, die Randspalte
+   spannt damit über die volle Höhe aller Abschnitte und bleibt beim Scrollen
+   stehen. Dieselbe Anatomie wie im Mieterportal-Prototyp (`.property-layout`).
+   `minmax(0,1fr)` statt `1fr`: eine breite Tabelle in der Hauptspalte würde die
+   Spur sonst über den Container hinausdrücken. */
+.detail-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap-responsive); }
+.detail-layout > * { min-width:0; }
+@media (min-width:1024px){
+  .detail-layout { grid-template-columns:minmax(0,1fr) 22rem; align-items:start; }
+  .detail-layout__aside { position:sticky; top:1rem; }
+}
+/* Abstand zwischen den Karten der Randspalte. `.box + .box` legt sie sonst mit
+   einer 1px-Naht zu EINER Fläche zusammen — das ist richtig für gestapelte
+   Kästen im Fliesstext, hier aber falsch: «Aktionen» und «Ansprechpersonen»
+   sind zwei Angebote, keine zwei Abschnitte desselben. */
+.detail-layout__aside .box + .box { margin-top:var(--sp-6); }
+
+/* Kennzahlenzeile über den Vertragsdetails: vier grosse Zahlen, kleine
+   Beschriftungen, oben und unten eine Linie. Beantwortet «wie gross, wie
+   teuer» auf einen Blick, bevor die Merkmalliste ins Detail geht. Ohne
+   Kartenrahmen — der Kontrast entsteht allein über die Schriftgrade. */
+.kpi-strip { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem;
+  margin:0 0 1.5rem; padding:1rem 0;
+  border-top:1px solid var(--color-secondary-100); border-bottom:1px solid var(--color-secondary-100); }
+@media (min-width:768px){ .kpi-strip { grid-template-columns:repeat(4,minmax(0,1fr)); gap:1.5rem; } }
+.kpi-strip__item { display:flex; flex-direction:column; gap:.125rem; }
+.kpi-strip__label { font-size:var(--text-sm); color:var(--color-text-muted); }
+/* Typografie aus dem geteilten Grossziffer-Rezept (.stat__num) — der Streifen
+   bleibt rahmenlos (dokumentierter Flächen-Entscheid). */
+.kpi-strip__value small { font-size:var(--text-sm); font-weight:var(--fw-regular); color:var(--color-text-muted); }
+
+/* Augenbrauenzeile über der Seitenüberschrift: Kennungen, die man sucht
+   (MV-Nummer, WE, EGID), aber nicht liest wie Fliesstext. */
+.eyebrow { margin:0 0 .25rem; font-size:var(--text-xs); text-transform:uppercase;
+  letter-spacing:.08em; color:var(--color-text-muted); }
+
+/* Lesebreiten-Deckel. Fünf verschiedene `style="max-width:…"` standen dafür in
+   js/ — als Klassen sind sie benannt, wiederverwendbar und im Blatt auffindbar. */
+/* measure-* = ELTERN-Deckel für Flächen AUSSERHALB des Rasters (Artikel-
+   Wrapper, Kachelzeilen); im Raster misst die Spalte selbst (C25).
+   measure-lg (50rem) ist entfallen — sein einziger Konsument (Workspace-
+   Erfolgspanel) nutzt jetzt die 46rem-Formularspalte der Geschwister. */
+.measure-sm { max-width:34rem; } .measure    { max-width:42rem; }
+.measure-xl { max-width:60rem; }
+.pill-row { display:flex; flex-wrap:wrap; gap:.5rem; }
+/* Merkmalliste (Beschriftung · Wert), u. a. der Reiter «Übersicht» aller
+   Detailansichten. Die Beschriftungsspalte ist bewusst BREITER als ihr
+   längster Eintrag: mit `max-content` klebte der Wert direkt an der längsten
+   Beschriftung («Wirtschaftseinheit (WE)»), und weil dieselbe Spur alle Zeilen
+   bestimmt, wanderte die Wertekante mit dem längsten Wort statt ruhig zu
+   stehen. 2rem mehr Spielraum trennen die beiden Spalten sichtbar; der Deckel
+   von 18rem verhindert, dass eine einzelne lange Beschriftung dem Wert die
+   Breite nimmt. */
+.kv { display:grid; grid-template-columns:fit-content(18rem) minmax(0,1fr);
+  gap:.5rem 2rem; font-size:var(--text-sm); }
+.kv dt { color:var(--color-text-muted); }
+/* Doppelpunkt aus dem Blatt, nicht aus den Zeichenketten: er gehört zur
+   Darstellung der Liste, und so tragen ihn alle neun Konsumenten gleich,
+   ohne dass jede Beschriftung im JS ihn mitschleppen muss.
+   Mit Abstand davor (Wunsch): das geschützte Leerzeichen \00A0 statt eines
+   gewöhnlichen — sonst könnte der Doppelpunkt bei einer umbrechenden
+   Beschriftung allein auf der nächsten Zeile landen. */
+.kv dt::after { content:"\00A0:"; }
+/* Einspaltig ERZWUNGEN — dieselbe Form, die die Container-Abfrage weiter unten
+   bei schmalen Kästen herstellt, nur unabhängig von der gemessenen Breite. Für
+   Werte, die auch in einer 411px-Seitenspalte nicht neben ihre Beschriftung
+   passen: eine E-Mail-Adresse bräche dort mitten im Namen um. */
+.kv--stack { grid-template-columns:minmax(0,1fr); gap:0; }
+.kv--stack dt { margin-top:1rem; }
+.kv--stack dt:first-of-type { margin-top:0; }
+/* Kein Einzug am Wert: in der Seitenspalte fluchten Beschriftung und Wert an
+   derselben Kante wie die Kartenüberschrift darüber. Ein halber Zentimeter
+   Versatz je Block liess die Spalte unruhig wirken. */
+.kv--stack dd { padding-left:0; }
+/* break-word statt anywhere: lange URLs dürfen umbrechen, normale Wörter nicht
+   mitten im Wort («Fachanwendung|en Bauten»). */
+.kv dd { margin:0; overflow-wrap:break-word; }
+.kv dd code { overflow-wrap:anywhere; }
+/* Linierte Variante — übernimmt die Zeilen-Trennlinien der früheren .data-rows
+   (Datenkatalog-Metadaten, lange Distributionslisten); eine Implementierung,
+   zwei Oberflächen (Design-Review C7). */
+.kv--ruled { row-gap:0; }
+.kv--ruled dt, .kv--ruled dd { padding:.5rem 0; border-bottom:1px solid var(--color-border); margin:0; }
+/* In der schmalen Seitenspalte reicht die Breite für zwei Spalten nicht — dort
+   steht die Beschriftung über dem Wert, statt Wörter zu zerbrechen. */
+.box { container-type:inline-size; }
+@container (max-width:22rem){
+  .kv { grid-template-columns:minmax(0,1fr); gap:0; }
+  .kv dt { margin-top:.625rem; }
+  .kv dt:first-of-type { margin-top:0; }
+}
+@media (max-width:639.98px){ .kv { grid-template-columns:minmax(0,1fr); gap:.125rem 0; } .kv dt { margin-top:.5rem; } }
+.empty { text-align:center; color:var(--color-text-muted); padding:3rem 1rem; }
+.empty__title { margin:0; font-size:var(--fs-lg); color:var(--color-text); }
+.empty__hint { margin:.5rem auto 0; max-width:44ch; font-size:var(--fs-sm); }
+/* Ausweg aus dem Leerzustand (Item 5.10): «Filter zurücksetzen» / «Alle ansehen». */
+.empty__actions { display:flex; justify-content:center; gap:.75rem; margin-top:1.25rem; flex-wrap:wrap; }
+.empty__action { margin-top:1.25rem; }
+/* «Nicht verfügbar» (Ladefehler) — vom neutralen Leer-Zustand abgesetzt (P0-4). */
+.empty--unavailable { display:flex; align-items:center; justify-content:center; gap:.5rem;
+  padding:2rem 1rem; color:var(--color-error-text); background:var(--color-error-bg);
+  border-radius:var(--radius-lg); text-align:left; }
+.empty--unavailable .icon { flex:none; }
+
+/* ============================== MOTION ============================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important; scroll-behavior:auto !important;
+  }
+}
+
+/* ============================== PRINT (print.postcss) ============================== */
+@media print {
+  html { font-size:13px !important; max-width:80% !important; margin:2rem auto !important; }
+  body { display:block; }
+  .top-bar, .desktop-menu, .desktop-menu__overlay, .mobile-menu, .burger,
+  .top-header__right, .breadcrumb, #main-footer,
+  .search--main, .skip-to-content, .demo-chip, .card__image, .card__footer,
+  /* btn--back + notification-banner: CD print.postcss:62,72 blendet beide aus —
+     fehlte hier, jede gedruckte Detailseite trug den «Zurück»-Knopf (Review C19) */
+  .btn--back, .back-link-row, .notification-banner,
+  .pf-map, video, audio, object, iframe { display:none !important; }
+  .top-header { border:0 !important; padding:0 0 1rem !important; }
+  .logo { align-items:flex-start !important; }
+  .logo__name { display:block !important; }
+  .grid, .grid--auto, .stats, .container--grid { display:block !important; }
+  p, img, ul, ol, .card, .notification, .box, table.table { position:relative; display:block; break-inside:avoid; }
+  table.table { display:table; }
+  .card { margin-bottom:2em; box-shadow:none !important; border:1px solid var(--color-border-strong); }
+  .stat, .notification, table.table { box-shadow:none !important; }
+  a { color:#000 !important; text-decoration:underline; }
+  #main-content a[href^="http"]::after { content:" (" attr(href) ")"; font-size:.85em; }
+  /* Datensatzblatt & FAQ vollständig drucken: eingeklappte Akkordeon-Panels
+     aufklappen (das globale [hidden]{display:none} unterdrückt sie sonst) und
+     die Auf-/Zu-Pfeile weglassen — sonst fehlt der Inhalt auf dem Ausdruck. */
+  .accordion__drawer[hidden] { display:block !important; }
+  .accordion__button .icon, .accordion__arrow { display:none !important; }
+}
+

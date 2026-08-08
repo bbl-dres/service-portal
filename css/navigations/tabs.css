@@ -1,0 +1,43 @@
+/* Tabs (tab.postcss:12-87) */
+.tab__controls-container { position:relative; }
+/* bottom-1 (.25rem) wie CD (tab.postcss:15-17): der Verlauf endet über der
+   Unterstrich-Zone, nicht 1px darüber. */
+.tab__controls-container::after { content:""; position:absolute; right:0; top:0; bottom:.25rem; width:2.5rem;
+  pointer-events:none; background:linear-gradient(to left, var(--color-bg) 0%, rgba(255,255,255,0) 100%); }
+@media (min-width:640px){ .tab__controls-container::after { width:5rem; } }
+.box .tab__controls-container::after { background:linear-gradient(to left, var(--color-secondary-50) 0%, rgba(240,244,247,0) 100%); }
+.box .tab__controls { border-bottom-color:var(--color-border-strong); }   /* CD tab.postcss:36-38: auf secondary-50 border-gray-300 */
+.tab__controls { display:flex; overflow-x:auto; overflow-y:hidden; white-space:nowrap;
+  border-bottom:1px solid var(--color-border); -ms-overflow-style:none; scrollbar-width:none; }
+.tab__controls::-webkit-scrollbar { display:none; }
+.tab__control { position:relative; padding:1rem; background:none; border:0; margin:0;
+  font:inherit; color:inherit; text-decoration:none; cursor:pointer; }
+.tab__control::after { content:""; display:block; height:3px; position:absolute;
+  right:1rem; bottom:0; left:1rem; background:transparent; transition:background var(--duration-fast); }
+.tab__control--active::after, .tab__control:hover::after { background:var(--color-primary-500); }
+.tab__control:hover:not(.tab__control--active) { color:var(--color-primary-600); }
+.tab__control:first-child { padding-left:0; }
+.tab__control:first-child::after { left:0; }
+/* KEIN bold auf dem aktiven Reiter: das CD markiert allein über den 3px-Balken
+   (tab.postcss:49-77); der Gewichtswechsel liess die ganze Reiterleiste beim
+   Umschalten die Breite wechseln. */
+/* EIN pt-8 trägt den ganzen Abstand Leiste↔Panel (tab.postcss:79-82) — kein
+   Leisten-Margin obendrauf. Die dichtere Dashboard-Stufe (1.25rem, unten) ist
+   der dortige Karten-Rhythmus und bleibt. */
+.tab__container { padding-top:2rem; }
+
+/* Pagination (pagination.postcss:5-31) */
+.pagination-wrap { display:flex; padding-block:1.5rem; }
+@media (min-width:1024px){ .pagination-wrap { padding-block:1.75rem; } }
+@media (min-width:1544px){ .pagination-wrap { padding-block:2rem; } }
+.pagination { display:flex; align-items:stretch; gap:.75rem; flex-wrap:wrap; list-style:none; }
+/* CD gibt dem Seitenfeld die KNOPF-Rampe (pagination.postcss:8-11 `@apply
+   btn--base` → 44/48/52) — --control-h, nicht das starre --target-min. */
+.pagination__input { width:3rem; min-height:var(--control-h); text-align:center; padding:.5rem; }
+.pagination__text { display:flex; align-items:center; white-space:nowrap; }
+.pagination_items { display:flex; align-items:center; gap:.25rem; list-style:none; flex-wrap:wrap; white-space:nowrap; height:100%; }
+@media (min-width:1024px){ .pagination_items { gap:.5rem; } }
+@media (min-width:1280px){ .pagination_items { gap:.75rem; } }
+/* CDs .pagination--right (pagination.postcss:29-31) lebt hier als
+   .pagination-wrap--right (unten) — die Polsterrampe trägt .pagination-wrap. */
+

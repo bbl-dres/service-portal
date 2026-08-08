@@ -1,0 +1,103 @@
+/* ============================== COMPONENTS ============================== */
+
+/* Buttons (btn.postcss:6-186) */
+/* CD zentriert NICHT pauschal (btn.postcss): der Text sitzt links, zentriert wird
+   nur bei btn--icon-only und btn--full-width. Pauschales Zentrieren fiel bei
+   mehrzeiligen Beschriftungen auf den Login-Gates auseinander (Item 2.21). */
+/* KEIN gap und KEIN Block-Padding auf .btn selbst (btn.postcss:6-13: nur px-4):
+   die vertikale Luft trägt allein .btn__text (py-2), den Icon-Abstand allein
+   der icon-left/right-Versatz. Vorher ergaben Basis-Padding + Wrapper-Padding
+   zwei verschiedene Knopfhöhen für dieselbe Variante, je nach Markup. */
+.btn { display:inline-flex; align-items:center;
+  min-height:var(--target-min); padding:0 var(--sp-4); border-radius:var(--radius-sm); border:1px solid transparent;
+  font:inherit; font-weight:var(--fw-regular); font-size:var(--text-base); cursor:pointer; text-decoration:none;
+  transition:background var(--duration-fast),color var(--duration-fast),border-color var(--duration-fast); line-height:1.25rem; }
+.btn--icon-only, .btn--full-width { justify-content:center; }
+.btn__text          { padding-block:var(--sp-2); text-align:left; overflow-wrap:anywhere; }
+.btn__text-centered { padding-block:.5rem; text-align:center; width:100%; overflow-wrap:anywhere; }
+.btn:hover { text-decoration:none; }
+.btn--outline { background:transparent; border-color:var(--color-primary-600); color:var(--color-primary-600); }
+.btn--outline:hover { background:transparent; border-color:var(--color-primary-700); color:var(--color-primary-700); }
+.btn--outline[disabled] { color:var(--color-secondary-300); border-color:var(--color-secondary-200); opacity:1; }
+.btn--filled { background:var(--color-secondary-500); border-color:var(--color-secondary-500); color:var(--color-text-negative); font-weight:var(--fw-bold); }
+.btn--filled:hover { background:var(--color-secondary-500); border-color:var(--color-secondary-500); color:var(--color-secondary-100); }
+.btn--filled[disabled] { background:var(--color-secondary-200); border-color:var(--color-secondary-200); color:var(--color-text-negative); opacity:1; }
+.btn--bare { background:none; border:0; color:var(--color-secondary-800); padding-left:.5rem; padding-right:.5rem; }   /* border:0 wie die übrigen randlosen Varianten (CD btn--bare kennt keinen Rand) */
+.btn--bare:hover { background:none; color:var(--color-primary-600); }
+/* Negativ-Varianten (auf dunklem Grund, z. B. Top-Bar/Footer) — CD btn.postcss:78-109 */
+.btn--outline-negative { background:var(--color-secondary-500); border-color:var(--color-text-negative); color:var(--color-text-negative); font-weight:var(--fw-bold); }
+.btn--outline-negative:hover { background:var(--color-secondary-500); border-color:var(--color-secondary-100); color:var(--color-secondary-100); }
+.btn--outline-negative[disabled] { color:var(--color-secondary-200); border-color:var(--color-secondary-300); background:transparent; }
+.btn--bare-negative { background:none; border:0; color:var(--color-text-negative); }   /* behält CDs px-4 — nur .btn--bare hat px-2 (btn.postcss:28,101-109) */
+.btn--bare-negative:hover { background:none; color:var(--color-secondary-100); }
+.btn--bare-negative[disabled] { color:var(--color-secondary-200); }
+/* Link-Varianten behalten die volle CD-Höhenrampe (btn.postcss:112-117 gilt für
+   JEDE Variante) — min-height:0 drückte das Tippziel auf ~27px. CD-Padding pr-2 pl-0. */
+.btn--link-negative { background:none; border:0; color:var(--color-text-negative); text-decoration:underline; text-underline-offset:2px; padding:0 .5rem 0 0; }
+.btn--link-negative:hover { color:var(--color-secondary-100); }
+.btn--link-negative[disabled] { color:var(--color-secondary-200); background:transparent; }
+.btn--link { background:none; border:0; color:var(--color-primary-600); padding:0 .5rem 0 0; }
+.btn--link:hover { color:var(--color-primary-700); }   /* CD btn.postcss:38-41: Hover dunkelt (600→700), unterstreicht nie */
+.btn--link[disabled], .btn--bare[disabled] { color:var(--color-secondary-300); background:transparent; }
+.btn--sm { min-height:2.125rem; font-size:var(--text-sm); line-height:1rem; }
+/* btn.postcss:171-191 — icon-left nudges the icon; btn--back floats the button
+   out of the text flow. `.back-link-row` gives that float something to clear. */
+.btn--icon-left .btn__icon { position:relative; right:.1em; margin-right:.2em; }
+.btn--icon-right { flex-direction:row-reverse; }
+.btn--icon-right .btn__icon { position:relative; left:.1em; margin-left:.2em; }
+.btn--back { float:left; margin-top:.4em; }
+@media (min-width:1024px){ .btn--back { margin-top:.25rem; } }
+.back-link-row { display:flow-root; padding-bottom:1rem; }
+.btn--lg { min-height:3rem; font-size:var(--text-lg); line-height:1.5rem; }
+/* CD-Zeilenrampe (btn.postcss:112-129): Basis leading-5 lg:leading-6, sm
+   leading-4 lg:leading-5, lg leading-6 — feste rem-Stufen, Sprung bei lg.
+   Wirkt nur auf mehrzeilige Beschriftungen; einzeilige regelt min-height. */
+@media (min-width:1024px){ .btn, .btn--base { line-height:1.5rem; } .btn--sm { line-height:1.25rem; } }
+@media (min-width:1280px){ .btn, .btn--base { min-height:3rem; } .btn--sm { min-height:2.5rem; } .btn--lg { min-height:3.25rem; } }
+@media (min-width:1920px){ .btn, .btn--base { min-height:3.25rem; } .btn--sm { min-height:2.75rem; } .btn--lg { min-height:3.5rem; } }
+/* Der CD-Kompaktknopf bleibt am feinen Desktop-Zeiger erhalten. Bis Tablet
+   und auf groben Zeigern gilt die 44-px-Zielgrösse des Portal-Auftrags. */
+@media (max-width:1023.98px), (pointer:coarse), (hover:none){
+  .btn--sm { min-height:var(--target-min); }
+}
+.btn[disabled] { cursor:not-allowed; }
+/* Symbole im Knopf wachsen mit dem Knopf — beabsichtigt und stärker (0,2,0) als
+   jede .icon--*-Grössenklasse (0,1,0). Ein `icon('X','icon--base')` INNERHALB
+   eines Knopfes bleibt darum wirkungslos; wer eine eigene Grösse braucht,
+   überschreibt sie mit einer Regel im Knopf-Kontext (siehe .btn .catbar__chev).
+   Quadratische 1.4em-Box statt CDs h-full: die Masken-Technik braucht eine
+   intrinsische Box. transition-transform wie CD (btn.postcss:147-152) — die
+   zusätzlichen Farb-Transitions auf .btn bleiben als bewusste Politur. */
+.btn .icon, .btn__icon { width:1.4em; height:1.4em; flex:none; transition:transform var(--duration); }
+/* Wie CDs Btn.vue steht das Icon bei beiden Varianten zuerst im DOM;
+   `.btn--icon-right` dreht die visuelle Reihenfolge deshalb per row-reverse. */
+/* CD w-8 für Link-Icons (btn.postcss:43-47) — grösser als die 1.4em-Basis. */
+.btn--link .btn__icon, .btn--link-negative .btn__icon { width:2rem; }
+.btn--full-width { width:100%; }
+.btn--icon-only { padding-left:.625em; padding-right:.625em; }   /* CD px-[0.625em] — skaliert mit der Schrift */
+/* Zugriff-Karte (C.accessCard): der Knopf steht oben und trägt den Abstand zum
+   erklärenden Text darunter. Volle Breite, damit die vier Zustände — öffnen,
+   anmelden, extern, ausgegraut — dieselbe Silhouette haben und der Wechsel
+   zwischen ihnen die Karte nicht springen lässt. */
+.access-card__action { margin:0 0 .75rem; }
+/* Sitzungskontext, Zugangshinweis und Schrittliste sind je ein eigener Absatz
+   mit m-0 — ohne diese Regel klebten sie aneinander und lasen sich als ein Satz. */
+.access-card p + p, .access-card p + ul { margin-top:.5rem; }
+.access-card__action > .btn { width:100%; justify-content:space-between; text-align:left; }
+.access-card__action > .btn.btn--icon-left { justify-content:flex-start; gap:.5rem; }
+
+/* Nicht verfügbare Ziele werden als <span aria-disabled> gerendert — ein span
+   nimmt kein [disabled], deshalb müssen die Selektoren beides abdecken, sonst
+   sehen tote Links wie lebende aus (docs/design-review.md P0-7).
+   EIN Disabled-Rezept wie bei [disabled]: Text secondary-300 / Rand
+   secondary-200 (CD btn.postcss:21-24 usw.) — nie opacity, nie eine eigene
+   dritte Farbstufe. */
+.btn--icon-only[aria-disabled="true"] { color:var(--color-secondary-300); border-color:var(--color-secondary-200); cursor:not-allowed; pointer-events:none; }
+.btn[aria-disabled="true"] { cursor:not-allowed; }
+.btn--link[aria-disabled="true"], .btn--bare[aria-disabled="true"] { color:var(--color-secondary-300); text-decoration:none; }
+.btn--outline[aria-disabled="true"] { color:var(--color-secondary-300); border-color:var(--color-secondary-200); }
+.btn[aria-disabled="true"]:hover { color:var(--color-secondary-300); text-decoration:none; }
+.download-item[aria-disabled="true"] { cursor:not-allowed; opacity:.65; }
+.download-item[aria-disabled="true"]:hover { background:transparent; }
+.download-item[aria-disabled="true"]:hover .download-item__title { color:inherit; text-decoration:none; }
+

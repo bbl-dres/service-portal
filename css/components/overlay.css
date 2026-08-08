@@ -1,0 +1,139 @@
+/* ---- Aktionsmenü (Kebab-Dropdown, wiederverwendbar) ------------------------
+   Eigener Namensraum `.action-menu` — `.menu`/`.menu__item` gehören der CD-
+   Navigations-Flyout-Komponente (menu.postcss) und dürfen nicht überschrieben
+   werden (sonst kippt das Drawer-Menü von Spalte auf Zeile). */
+.action-menu { position:relative; display:inline-flex; }
+/* Auf den Dashboards ist dieser Kebab der EINZIGE Weg zu Export und Vollbild
+   eines Diagramms und mass 32x32 bzw. 40x40 (28 Treffer in smallTargets). Die
+   verkleinernde .dash-header-Überschreibung entfällt; nur Rahmen/Fläche bleiben. */
+.action-menu__trigger { display:inline-flex; align-items:center; justify-content:center;
+  min-width:var(--control-h); min-height:var(--control-h);
+  padding:.25rem; border:0; border-radius:var(--radius-sm); background:none; color:var(--color-text-muted); cursor:pointer; }
+.action-menu__trigger:hover { background:var(--color-secondary-100); color:var(--color-text); }
+.dash-header .action-menu__trigger { border:1px solid var(--color-secondary-200); background:var(--color-bg); }
+.dash-header .action-menu__trigger:hover { background:var(--color-secondary-50); }
+.action-menu__popup { position:absolute; top:calc(100% + .35rem); min-width:13rem; z-index:var(--z-nav);
+  background:var(--color-bg); border:1px solid var(--color-secondary-200); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg); padding:.375rem; }
+/* min-width:13rem sitzt auf .action-menu__popup: bei 320 öffnete das Menü teils
+   ausserhalb des Bildschirms. Gegen den Viewport klemmen (Item 2.29). */
+.action-menu__popup { max-width:calc(100vw - 1.5rem); }
+@media (max-width:479.98px){ .action-menu__popup { min-width:0; width:max-content; } }
+.action-menu__popup--end { right:0; }
+.action-menu__popup--start { left:0; }
+.action-menu__item { display:flex; align-items:center; gap:.625rem; width:100%; min-height:var(--target-min); padding:.5rem .625rem; border:0;
+  border-radius:var(--radius-sm); background:none; text-align:left; cursor:pointer; color:var(--color-text);
+  font-size:var(--text-sm); font-family:inherit; }
+.action-menu__item:hover, .action-menu__item:focus-visible { background:var(--color-secondary-50); }
+.action-menu__icon { width:1.05rem; height:1.05rem; color:var(--color-text-muted); flex:none; }
+.action-menu__heading { padding:.5rem .625rem .25rem; font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--color-text-muted); }
+.action-menu__sep { height:1px; background:var(--color-secondary-100); margin:.375rem .25rem; }
+
+/* ---- Toast — CD toast-message (toast-message.postcss:5-18 + ToastMessage.vue):
+   fester Host bei bottom 10 %, innen eine normale .notification (Standard:
+   success + CheckmarkCircle), max. 500px breit. Die frühere dunkle Eigenbau-
+   Pille ist ersetzt; die Ansage für Screenreader läuft über #live (announce). */
+.toast__message { position:fixed; left:0; right:0; bottom:10%; z-index:var(--z-toast);
+  display:flex; justify-content:center; pointer-events:none;
+  opacity:0; transition:opacity var(--duration-slow); }
+.toast__message--in { opacity:1; }
+.toast__message .notification { max-width:500px; margin-inline:1.25rem; pointer-events:auto; }
+@media (prefers-reduced-motion: reduce) { .icon--spin { animation:none; } }   /* Toast-Transition deckt der Token-Killswitch (tokens.css) ab */
+
+/* ---- Chart-Vollbild (Overlay) -------------------------------------------- */
+/* Scroll-Sperre für alle Vollbild-Overlays (Diagramm, Modal, Bildergalerie).
+   `overflow:hidden` allein auf dem <body> genügt NICHT: der Dokument-Scroller
+   ist hier das <html>-Element (app.css:33 setzt dort `overflow-y:scroll`, damit
+   die Bildlaufleiste keinen Layout-Sprung verursacht). Die Seitenleiste blieb
+   deshalb hinter dem Overlay aktiv — im Fit-Zustand eine nutzlose Leiste, beim
+   Hineinzoomen zwei senkrechte nebeneinander.
+   `scrollbar-gutter:stable` hält die Rinne beim Sperren frei, sonst würde die
+   Seite darunter um die Leistenbreite springen. */
+html { scrollbar-gutter:stable; }
+html:has(> body.body--overlay-open) { overflow:hidden; }
+body.body--overlay-open { overflow:hidden; }
+/* Opaque Vollbildbetrachter müssen bis an den physischen Viewportrand reichen.
+   Mit `stable` bleibt die Wurzelrinne auch bei overflow:hidden 15 px breit;
+   fixed/inset:0 endet davor und lässt rechts einen leeren weissen Streifen.
+   Modale Dialoge behalten die stabile Rinne, damit der sichtbare Hintergrund
+   beim Öffnen nicht springt. */
+html:has(> body > .pf-lightbox),
+html:has(> body > .docviewer) { overflow:hidden; scrollbar-gutter:auto; }
+/* ---- Kanonisches Modal (CD modal.postcss BEM) ----------------------------
+   Primitive für neue Dialoge (Bestätigungen, Formulare). Die bestehenden Overlays
+   (chart-overlay, pf-lightbox, docviewer) bleiben eigenständig, teilen aber die
+   --z-*-Skala und das --overlay-scrim-Token. C.openModal() verdrahtet Fokusfalle,
+   Escape, Backdrop-Klick und Fokus-Rückgabe. */
+/* CD modal.postcss:10-35 — Dialog sitzt 10vh unter der Oberkante (nicht mittig),
+   Scrim ist text-900/70 (der hellere Bild-Scrim liess den Negativ-Fokusring
+   auf 1.82:1 fallen, WCAG 1.4.11). */
+.modal { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:flex-start; justify-content:center; padding:10vh 2rem; }
+/* Auf dem Telefon frisst 2rem+2rem Rahmen ~40 % der Breite. */
+@media (max-width:639.98px){ .modal { padding:5vh .5rem; } }
+.modal__backdrop { position:absolute; inset:0; background:var(--modal-scrim); }
+/* CD-Anatomie (modal.postcss:31-104): der INHALT ist durchsichtig, die Kopfzeile
+   steht in weisser Schrift auf dem Scrim, und der eigentliche Inhalt sitzt in
+   einer weissen .card darin. Vorher war .modal__content selbst der weisse
+   Kasten mit einer Trennlinie unter dem Titel — das gibt es im CD nicht. */
+.modal__content { position:relative; z-index:1; width:min(640px,100%); max-height:80vh;
+  display:flex; flex-direction:column; align-items:stretch; }
+/* CDs layout="xs" ist max-w-screen-xs = 480px. Mit 340px passte .share-url
+   (min-width 22rem = 352px) nicht hinein — daher die waagrechte Bildlaufleiste. */
+/* Grössenskala = CD-Screen-Token (modal.postcss:52-70 max-w-screen-*):
+   xs 480 · sm 640 · md 768 · lg 1024 · xl 1280. Vorher war sm (420) < xs (480). */
+.modal--xs .modal__content { width:min(480px,100%); }
+.modal--sm .modal__content { width:min(640px,100%); }
+.modal--md .modal__content { width:min(768px,100%); }
+.modal--lg .modal__content { width:min(1024px,100%); }
+.modal--xl .modal__content { width:min(1280px,100%); }
+/* CD Modal.vue:9-25 + modal.postcss:77-86: der Kopf existiert IMMER (justify-end,
+   der Schliessen-Knopf sitzt rechts); erst --with-title schaltet auf between. */
+.modal__header { display:flex; align-items:flex-start; justify-content:flex-end; gap:1rem;
+  width:100%; margin-bottom:.5rem; color:var(--color-text-negative); }
+.modal__header--with-title { justify-content:space-between; }
+@media (min-width:1024px){ .modal__header { margin-bottom:1rem; } }
+/* CDs Modal-Titel ist eine h4 = text--lg (Modal.vue:13, typography.postcss:121-124). */
+.modal__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--color-text-negative); }
+.modal__body { width:100%; overflow:auto; }
+/* Item 6.12 baut das Chart-Vollbild auf die .modal-Ebene um; ohne diese Regel
+   würde das Diagramm dort als gerahmte Schattenkarte erscheinen. Übernimmt die
+   Deklarationen von .chart-overlay__box .chart (unten), damit kein Zwischenstand
+   schlechter aussieht als heute. */
+.modal__body .chart { padding:0; box-shadow:none; border:0; }
+.modal__body > .card { margin:0; }
+.modal__body .card__body { padding:1.5rem; }
+.modal--xl .modal__body { overflow:visible; }   /* Endpunkt-Label des Liniencharts nicht abschneiden */
+/* CD modal.postcss:103-107: p-4 auf WEISSER Fläche mit border-t — der Fuss steht
+   als Geschwister des Rumpfs auf dem Scrim und trägt seinen weissen Grund selbst. */
+.modal__footer { display:flex; align-items:center; justify-content:flex-end; gap:.5rem;
+  padding:1rem; background:var(--color-bg); border-top:1px solid var(--color-secondary-100); }
+/* Optische Kantenbündigkeit wie CD (modal.postcss:88-97 -mr-3 -mt-1 lg:-mt-2):
+   die 44px-Box hängt über die Inhaltskante hinaus, das Icon steht bündig. */
+.modal__close { flex:none; display:inline-flex; align-items:center; justify-content:center;
+  min-width:var(--target-min); min-height:var(--target-min); padding:.375rem; margin:-.25rem -.75rem 0 0;
+  border:0; border-radius:var(--radius-sm);
+  background:none; color:var(--color-text-negative); cursor:pointer; }
+@media (min-width:1024px){ .modal__close { margin-top:-.5rem; } }
+.modal__close:hover { opacity:.5; }
+.modal__close:focus-visible { outline:2px solid var(--color-focus-ring-negative); outline-offset:2px; }
+
+.chart-overlay { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center;
+  padding:2rem; background:var(--overlay-scrim); }
+/* Auf dem Telefon frisst 2rem+2rem Rahmen ~40 % der Breite — das «Vollbild»
+   zeigte das Diagramm KLEINER als inline. */
+@media (max-width:639.98px){
+  .chart-overlay { padding:.5rem; }
+  .chart-overlay__box { padding:1rem; }
+}
+.chart-overlay__box { position:relative; width:min(1100px,100%); max-height:90vh; overflow:auto;
+  background:var(--color-bg); border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); padding:1.75rem 2rem; }
+.chart-overlay__box .chart { padding:0; box-shadow:none; border:0; }
+.chart-overlay__close { position:absolute; top:.9rem; right:.9rem; z-index:1; display:inline-flex;
+  align-items:center; justify-content:center; min-width:var(--target-min); min-height:var(--target-min); padding:.375rem;
+  border:1px solid var(--color-secondary-200); border-radius:var(--radius-sm); background:var(--color-bg);
+  color:var(--color-text-muted); cursor:pointer; }
+.chart-overlay__close:hover { background:var(--color-secondary-100); color:var(--color-text); }
+
+.tabs { display:block; }
+.breadcrumb-navigation { width:100%; }
+

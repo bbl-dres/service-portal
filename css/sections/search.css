@@ -1,0 +1,85 @@
+/* ===================== Suche (search.postcss «SEARCH RESULTS PAGE») ===================== */
+/* Grosses Suchfeld (search--large): fettes h-16-Feld mit Icon-Knopf rechts. */
+.search--large .search__group { display:flex; align-items:stretch; position:relative; height:4rem; max-width:52rem; }
+/* CD search.postcss:135-152: statisches text-xl (1.25rem, KEINE responsive Rampe —
+   2rem fett bei 1920 wäre sichtbar ausserhalb des CD), Input-Rahmenfarbe, kein
+   Feld-Schatten; rechts 3.5rem Luft, damit Text und natives Lösch-X nicht unter
+   den absolut gesetzten Suchknopf laufen (pr-12-Prinzip, wie die Kopfsuche). */
+.search__field { flex:1 1 auto; min-width:0; width:100%; padding:.75rem 3.5rem .75rem 1rem;
+  border:1px solid var(--color-border-input); box-shadow:none;
+  background:var(--color-bg); font-size:var(--fs-xl); font-weight:var(--fw-bold); outline:none; }
+/* war --color-secondary-300 #828e9a auf Weiss = 3.34:1 (Soll 4.5:1) auf dem
+   prominentesten Eingabefeld des Produkts; --color-placeholder = 5.65:1. */
+.search__field::placeholder { color:var(--color-placeholder); font-weight:var(--fw-regular); }
+.search--large .search__submit { position:absolute; top:0; right:0; bottom:0; z-index:2; }
+.search--page-result { padding-top:1rem; }
+@media (min-width:1544px){ .search--page-result { padding-top:2rem; } }
+
+/* Trefferliste (SearchResultsList): schlanke Zeilen mit Meta, Titel, Text.
+   Die `.search-group*`-Regeln sind mit der Umstellung auf einen Ergebnisstrom
+   mit Art-Facette entfallen (kein Konsument mehr im JS). */
+.search-results-list { list-style:none; margin:0; padding:0; }
+/* NUR unten eine Linie — wie die CD-Karte, die diese Zeilen trägt
+   (card.postcss:106-112 `.card--list`: `border-b border-secondary-200`). Vorher
+   trug jede Zeile eine Linie OBEN plus die letzte eine unten. Das erzeugte
+   direkt unter der Katalogleiste, die selbst schon `border-bottom` hat, eine
+   doppelte Trennlinie — die erste Zeile sah aus, als stünde sie in einem
+   eigenen Kasten. */
+.search-result { border-bottom:1px solid var(--color-secondary-200); }
+/* Innenabstand wie `.card--list` (py-4 lg:py-6 2xl:py-8, px-1). */
+.search-result__link { display:block; padding:1rem .25rem; color:inherit; text-decoration:none; }
+@media (min-width:1024px){ .search-result__link { padding-top:1.5rem; padding-bottom:1.5rem; } }
+@media (min-width:1544px){ .search-result__link { padding-top:2rem; padding-bottom:2rem; } }
+.search-result__link:hover .search-result__title,
+.search-result__link:focus-visible .search-result__title { color:var(--color-primary-700); }
+.search-result__meta { margin:0 0 .125rem; }
+.search-result__title { font-size:var(--text-base); font-weight:var(--fw-bold); line-height:var(--lh-snug); margin:0; }
+.search-result__desc { margin:.25rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); overflow-wrap:anywhere; }
+/* Nulltreffer-Block nach search.postcss:240-247: eigener vertikaler Innenabstand,
+   und der Abstand UNTER Überschrift und Liste wächst mit der Ansicht
+   (`mb-6 lg:mb-8 2xl:mb-10`). Vorher trug nur die h2 einen festen Wert und die
+   Liste gar keinen — Tipps und Hinweisband klebten aneinander. */
+.search-results__no-results { padding-top:2rem; padding-bottom:2rem; }
+@media (min-width:1024px){ .search-results__no-results { padding-top:3rem; padding-bottom:3rem; } }
+.search-results__no-results h2,
+.search-results__no-results ul { margin-bottom:1.5rem; }
+@media (min-width:1024px){ .search-results__no-results h2, .search-results__no-results ul { margin-bottom:2rem; } }
+@media (min-width:1544px){ .search-results__no-results h2, .search-results__no-results ul { margin-bottom:2.5rem; } }
+.search-results__no-results h3 { margin-top:2rem; }
+/* `.search-results .notification { my-16 }` (search.postcss:236-238) — das
+   Hinweisband steht bewusst frei, nicht als Anhängsel der Tippliste. */
+.search-results .notification { margin-top:4rem; margin-bottom:4rem; }
+
+/* Schematische Portfolio-Karte (der tote `.map`-Platzhalter mit fester 420px-Höhe
+   ist gelöscht — kein Emitter, und die Festhöhe widersprach der clamp()-Linie). */
+/* Feste Kartenhöhen ignorierten den Viewport: 440px/34rem/30rem galten auch auf
+   einem 844px hohen Handybildschirm. clamp() skaliert mit, behält aber die
+   Desktop-Höhe (Item 2.27). ACHTUNG: .pf-map ist zweimal deklariert — hier die
+   Basis, die zweite bei ~2127 ergänzt nur noch Radius. */
+/* Die Explorer-Karte trägt im Markup BEIDE Klassen (`pf-map dash-map`), und
+   `.dash-map` steht später im Blatt — ihre 30rem-Obergrenze hat die hiesige Höhe
+   überstimmt (gemessen 480px statt der gewünschten). Darum zusätzlich als
+   `.pf-map.dash-map` (0,2,0) festschreiben. Die Karte ist auf dieser Seite der
+   Hauptinhalt und darf höher sein als eine Dashboard-Kachel. */
+.pf-map, .pf-map.dash-map { position:relative; height:clamp(20rem, 78vw, 44rem); overflow:hidden; background:var(--color-secondary-50); }
+
+/* Active filter pills — a portal composition of CD badges. CD ships
+   badge-filter, but that is a filter *chooser*; it has no removable pill. */
+/* Abstand über der Pillenreihe: CDs Rampe (search.postcss:266-269
+   `.search__filters__tags { pt-4 sm:pt-6 2xl:pt-8 }`) — die Komponentenregel
+   trägt ihn, nicht eine mt-Utility am Call-Site (components.js verweist hierher). */
+.active-filters { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; padding-top:1rem; }
+@media (min-width:640px){ .active-filters { padding-top:1.5rem; } }
+@media (min-width:1544px){ .active-filters { padding-top:2rem; } }
+/* Entfernen-Pillen sind seit dem Umbau echte .tag-item (CDs interaktive Pille mit
+   voller 44px-Rampe, tag-item.postcss:7-42) — hier nur noch die Einfärbung der
+   Innenpille. Das Cancel-X bleibt voll deckend: CD dimmt Pillen-Icons nie
+   (badge.postcss:85-90 / tag-item.postcss:80-85). */
+.active-filter { text-decoration:none; }
+.active-filter .tag-item__inner { background:var(--color-secondary-100); }
+.active-filter:hover .tag-item__inner { background:var(--color-secondary-200); }
+
+/* Topic tile icon (Datenportal) */
+.domain-tile__icon { display:block; color:var(--color-primary-600); margin-bottom:.25rem; }
+.card--clickable:hover .domain-tile__icon { color:var(--color-primary-700); }
+

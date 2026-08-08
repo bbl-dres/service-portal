@@ -1,0 +1,28 @@
+/* ========================= WORKSPACE MANAGEMENT ===========================
+   Application 1 of the workspace suite: catalogue + process portal with the
+   shared read-only floor preview. Editor chrome and validation UI stay out. */
+.workspace-portal .pf-layout { margin-top:var(--sp-6); }
+.workspace-card .pill-row { margin-top:.75rem; }
+.workspace-card .card__description { line-height:1.45; }
+.workspace-card .card__footer { justify-content:space-between; gap:1rem; }
+.workspace-object-facts { margin:1.5rem 0 0; }
+.workspace-detail .mono { font-family:var(--font-mono); }
+
+/* ========================= ROOM BOOKING ===================================
+   One page, direct booking. A search bar sets the criteria, the result list
+   answers them, and booking happens in a dialog on the room card — there is no
+   wizard and therefore no step chrome. Room cards carry a floor code instead of
+   a photograph: no meeting room has one, and the building interior shot that
+   used to fill the slot was identical for every room in the house. */
+.booking-tabs { margin-top:var(--sp-8); }
+.booking-find, .booking-manage { min-width:0; }
+
+/* Search bar. One row on desktop, stacked below — the submit button is the only
+   cell that may not shrink, because it ends the sentence the row starts. */
+.booking-bar { padding:1.25rem; background:var(--color-secondary-50);
+  border-block:1px solid var(--color-secondary-200); }
+.booking-bar__grid { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; align-items:end; }
+.booking-bar__grid > * { min-width:0; margin:0; }
+.booking-bar__location__row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.5rem; align-items:center; }
+.booking-bar__location__row .select { min-width:0; }
+

@@ -1,0 +1,291 @@
+/* ============================== FEDERAL SHELL ============================== */
+#main-header { position:relative; z-index:var(--header-z); }
+
+/* Demo / prototype chip — deliberately NOT skin-tinted: under the intranet skin
+   `--color-primary-*` is blue, which disappeared against the blue top bar. Pinned
+   to the federal red so the "this is a prototype" marker always stands out.
+   White on #d8232a = 5.01:1.
+   Geometrie = CDs Badge (badge.postcss:5-9 py-[0.219em] px-[1em] rounded-full,
+   kein uppercase/tracking) — CDs Top-Bar hostet in diesem Slot genau eine Badge
+   (top-bar.postcss:154-166); nur die Farbe bleibt gepinnt. */
+.demo-chip { display:inline-flex; align-items:center; padding:.219em 1em; font-size:var(--text-xs);
+  font-weight:var(--fw-bold);
+  background:var(--color-federal-red); color:var(--color-text-negative); border-radius:var(--radius-full); white-space:nowrap; }
+
+/* Top bar (top-bar.postcss + top-bar-navigation.postcss) */
+.top-bar { background:var(--color-secondary-600); color:var(--color-text-negative); font-size:var(--fs-sm); }
+/* CD top-bar.postcss:7 `text-sm 2xl:text-base` — feste Stufen, keine Rampe. */
+@media (min-width:1544px){ .top-bar { font-size:var(--fs-base); } }
+.top-bar .container--flex { min-height:var(--target-min); align-items:center; gap:1rem; }
+.top-bar__btn { display:inline-flex; align-items:center; gap:.5rem; min-height:var(--target-min); min-width:var(--target-min); background:none; border:0;
+  color:var(--color-text-negative); cursor:pointer; font:inherit; padding:.25rem 0 .25rem 1rem; margin-left:-1rem; text-decoration:none;
+  transition:color var(--duration-fast); }
+/* Hover UND Fokus hellen auf (CD top-bar.postcss:130 `hover:text-text-300
+   focus:text-text-300`) — Tastaturfokus bekam sonst keinen Farbwechsel. */
+.top-bar__btn:hover, .top-bar__btn:focus { color:var(--color-gray-300); text-decoration:none; }
+/* Die Beschriftung bleibt auf JEDER Breite sichtbar — CD top-bar.postcss:136-138
+   `span { w-min sm:w-full }`: unter 640 wird sie zur min-content-Spalte und
+   bricht um, statt zu verschwinden. Die frühere sr-only-Behandlung war die
+   Reparatur eines schlimmeren Fehlers (Label UND Icon unsichtbar, WCAG 4.1.2);
+   CDs schmale umbrechende Spalte löst dasselbe Problem ohne Textverlust. */
+.top-bar__btn > span:not(.icon) { width:min-content; text-align:left; }
+@media (min-width:640px){ .top-bar__btn > span:not(.icon) { width:auto; } }
+/* align-items:stretch statt center: der Sprachwähler soll die volle 44px-Zeile
+   füllen. Mit `center` war das Elternteil auto-hoch, und ein height:100% dagegen
+   löst zu auto auf — genau der Fehler, der bei .burger schon gefunden und
+   behoben wurde (Kommentar app.css:420-421, P0-5); hier war er übersehen. */
+/* Kein flex-gap (CD top-bar.postcss:154-166 — nur `flex items-center`): den
+   Rhythmus tragen die Innenabstände der Einträge selbst (Nav-Padding,
+   Sprachwähler-Padding). Nur der portal-eigene Demo-Chip braucht einen
+   eigenen Rand (CDs Badge in diesem Slot trägt mr-2). */
+.top-bar__right { display:flex; align-items:stretch; }
+.top-bar__right > .demo-chip { align-self:center; margin-right:.5rem; }
+.top-bar-navigation { display:flex; height:100%; }
+.top-bar-navigation ul { list-style:none; display:flex; }
+.top-bar-navigation a { display:flex; align-items:center; height:100%; min-height:var(--target-min);
+  padding-inline:.25rem; color:var(--color-text-negative); text-decoration:none; transition:color var(--duration-fast); }
+.top-bar-navigation a:hover, .top-bar-navigation a:focus { color:var(--color-gray-300); text-decoration:none; }
+/* Nur das Label ist ausgeblendet (sr-only-Sammelregel), nie das Icon-<span>
+   (Item 2.4). Sichtbar erst ab 1024: CD zeigt die Beschriftungen der
+   Werkzeuglinks erst ab lg (top-bar-navigation.postcss:7-11 `hidden lg:block`),
+   dazwischen bleibt die Leiste icon-only. */
+@media (min-width:1024px){
+  .top-bar-navigation a { padding-inline:.5rem; }
+  .top-bar-navigation a > span:not(.icon) { position:static; width:auto; height:auto; margin:0;
+    overflow:visible; clip:auto; padding-left:1rem; padding-right:.5rem; }
+}
+
+/* Language switcher (language-switcher.postcss:5-59) */
+.language-switcher { display:flex; align-self:stretch; height:auto; cursor:pointer; }
+.language-switcher .form__group__select,
+.language-switcher .select { display:flex; align-items:stretch; position:relative; height:auto; }
+.language-switcher select { appearance:none; -webkit-appearance:none; height:100%; min-height:var(--control-h);
+  width:3.5em; padding:.5rem 1.5rem .5rem .25rem;
+  background:transparent; border:1px solid transparent; box-shadow:none;
+  color:var(--color-text-negative); font:inherit; font-size:var(--text-sm); cursor:pointer; transition:color var(--duration-fast); }
+@media (min-width:1024px){ .language-switcher select { width:4.5em; padding-left:1rem; } }
+.language-switcher select option { color:var(--color-text); background:var(--color-bg); }
+.language-switcher select option:disabled { color:var(--color-gray-400); }
+/* Deaktiviert (Prototyp: nur DE): CDs Disabled-Rezept ist NUR opacity-40
+   (select.postcss:28-35). Die generischen [disabled]-Feldregeln unten würden
+   sonst helles Grau-auf-Grau auf die Navy-Leiste malen und mit pointer-events:none
+   den erklärenden title-Tooltip töten. */
+.language-switcher select:disabled { color:var(--color-text-negative); opacity:.4;
+  pointer-events:auto; cursor:default; }
+.language-switcher .select__icon { position:absolute; top:0; right:0; width:1.5rem; height:100%;
+  display:flex; align-items:center; justify-content:center; border-left:0; background:transparent;
+  color:var(--color-text-negative); pointer-events:none; transition:color var(--duration-fast); }
+.language-switcher select:hover + .select__icon, .language-switcher select:focus + .select__icon { color:var(--color-gray-300); }
+
+/* Brand / title row (top-header.postcss + logo.postcss) */
+.top-header { background:var(--color-bg); border-bottom:1px solid var(--color-border); position:relative;
+  padding:.75rem 0; font-size:var(--fs-sm); }
+@media (min-width:768px){ .top-header { padding:1rem 0; } }
+@media (min-width:1024px){ .top-header { padding:1.5rem 0; } }
+@media (min-width:1280px){ .top-header { padding:2rem 0; } }
+/* CD top-header.postcss:8 `text-sm 3xl:text-base`. */
+@media (min-width:1920px){ .top-header { padding:2.5rem 0; font-size:var(--fs-base); } }
+.top-header .container--flex { min-height:0; align-items:center; gap:1rem; }
+/* Die Transition trägt BEIDE Ausblendungen (offene Suche unter lg, offenes
+   Mobilmenü) — CD logo.postcss:5-13, dort mit derselben duration-700. */
+.logo { display:flex; align-items:center; flex-wrap:nowrap; text-decoration:none;
+  transition:opacity var(--duration-slowest); }
+@media (min-width:768px){ .logo { align-items:flex-start; } }
+.body--mobile-menu-is-open .logo { opacity:0; }
+.logo__flag { flex:none; display:block; width:30px; height:33px; }
+@media (min-width:1024px){ .logo__flag { width:32px; height:34px; } }
+@media (min-width:1920px){ .logo__flag { width:40px; height:44px; } }
+.logo__name { flex:none; display:none; width:174px; height:50px; overflow:visible; }
+@media (min-width:1280px){ .logo__name { display:block; } }
+@media (min-width:1920px){ .logo__name { width:244px; height:70px; } }
+.logo__separator { flex:none; width:1px; height:2.5rem; background:var(--color-border-strong); margin-inline:.5rem; }
+@media (min-width:640px){ .logo__separator { margin-inline:1rem; } }
+@media (min-width:768px){ .logo__separator { height:3.5rem; } }
+@media (min-width:1024px){ .logo__separator { margin-inline:1.5rem; } }
+@media (min-width:1920px){ .logo__separator { height:70px; margin-inline:2rem; } }
+.logo-title__container { display:flex; flex-direction:column; min-width:0; }
+.logo__accronym { font-weight:var(--fw-bold); line-height:var(--lh-snug); color:var(--color-text); }
+@media (min-width:480px){ .logo__accronym { display:none; } }
+@media (min-width:480px){
+  /* Der negative obere Rand ist CDs optischer Ausgleich gegen die Oberkante der
+     Flagge (logo.postcss:81 `mt-[-0.160rem]`) — sichtbar ab md, wo .logo auf
+     flex-start ausrichtet. */
+  .logo__title { position:static; width:auto; height:auto; margin:-.16rem 0 0; overflow:visible; clip:auto;
+    font-size:var(--fs-xs); font-weight:var(--fw-bold); color:var(--color-text);
+    line-height:1.375; }
+}
+/* nowrap erst ab md (logo.postcss:78 `md:whitespace-nowrap`): zwischen 480 und
+   767 darf der lange Amtstitel umbrechen, statt neben Flagge + Trenner
+   überzulaufen. Der Produktname darunter ist ein Block-Kind und behält ohnehin
+   seine eigene Zeile. */
+@media (min-width:768px){ .logo__title { white-space:nowrap; } }
+@media (min-width:640px){ .logo__title { font-size:var(--fs-sm); } }
+@media (min-width:1280px){ .logo__title { font-size:var(--fs-base); } }
+@media (min-width:1920px){ .logo__title { font-size:var(--fs-lg); } }   /* logo.postcss:77 3xl:text-lg */
+.logo__title span { display:block; font-weight:var(--fw-regular); color:var(--color-text-muted); }
+/* Intranet skin stamps its own badge after the title (intranet.postcss:32-43).
+   Die Pille am TITEL reitet die Badge-Grössenrampe (badge.postcss:73-77) mit;
+   nur die Pille am Akronym (<480px) bleibt auf text-xs gepinnt (intranet.postcss:42). */
+.body--intranet .logo__title::after,
+.body--intranet .logo__accronym::after {
+  content:'Intranet'; display:block; width:fit-content; margin-top:.25rem; margin-left:-1px;
+  padding:.219em 1em; border-radius:var(--radius-full);
+  background:var(--color-info-bg); color:var(--color-info-text);
+  font-size:var(--fs-xs); font-weight:var(--fw-regular); line-height:1.25rem; }
+@media (min-width:768px){ .body--intranet .logo__title::after { font-size:var(--fs-sm); } }
+@media (min-width:1024px){ .body--intranet .logo__title::after { font-size:var(--fs-base); line-height:1.5rem; } }
+.top-header__right { display:flex; align-items:center; }
+@media (min-width:1024px){ .top-header__right { flex-direction:column; align-items:flex-end; margin-right:-.75rem; } }
+.top-header__container-flex { display:flex; align-items:center; }
+.top-header__shopping-cart-button-mobile { display:flex; align-items:center; margin-left:.625rem; margin-right:.75rem; }
+@media (min-width:1024px){ .top-header__shopping-cart-button-mobile { display:none; } }
+.top-header__shopping-cart-button-desktop { display:none; }
+@media (min-width:1024px){
+  .top-header__shopping-cart-button-desktop { display:block; margin-right:.7rem; margin-left:1rem; }
+}
+.shopping-cart__button { display:flex; align-items:center; cursor:pointer; color:var(--color-text); text-decoration:none; min-height:var(--control-h); }
+.shopping-cart__button:hover { color:var(--color-primary-600); text-decoration:none; }
+.shopping-cart__button-label { display:none; }
+@media (min-width:1024px){ .shopping-cart__button-label { display:block; margin:0 .375rem 0 0; } }
+.shopping-cart__icon-group { position:relative; display:flex; align-items:center; }
+.shopping-cart__icon { width:2.25rem; height:2.25rem; }
+@media (min-width:1024px){ .shopping-cart__icon { width:1.75rem; height:1.75rem; } }
+.shopping__cart-amount-indicator { position:absolute; top:-5px; left:20px; display:flex; align-items:center; justify-content:center;
+  width:var(--sp-5); height:var(--sp-5); border-radius:var(--radius-full); background:var(--color-error); color:var(--color-text-negative); font-size:.7rem; line-height:1; }
+@media (min-width:1024px){ .shopping__cart-amount-indicator { left:15px; } }
+
+/* Mobiler Titelstreifen (top-header.postcss:13-31, Markup TopHeader.vue:3-8).
+   Das CD verbirgt den langen Amtstitel unter 480 absichtlich (logo.postcss:76)
+   und kompensiert ihn mit diesem getönten Band unter der Top-Bar — ohne das
+   Band besteht die sichtbare Marke bei 320/390 nur aus «BBL» + Intranet-Pille. */
+.top-header__mobile-title { position:relative; top:-.75rem; overflow:hidden;
+  background:var(--color-secondary-100); color:var(--color-text-muted);
+  font-size:var(--fs-xs); line-height:1.4; transition:max-height var(--duration-slow) var(--ease-out); }
+.top-header__mobile-title .container { padding-block:.5rem; }
+@media (min-width:480px){ .top-header__mobile-title { display:none; } }
+.body--mobile-menu-is-open .top-header__mobile-title { max-height:0; }
+
+/* Meta navigation (meta-navigation.postcss:5-42) — der Anmelde-Slot lebt HIER
+   (shell.js rendert ihn in der Meta-ul); der frühere .top-header__auth-Block
+   war die tote Hülle einer aufgegebenen Markup-Struktur. */
+/* Der An-/Abmelden-Knopf — der einzige Einstieg in jeden persönlichen Ablauf —
+   mass 109x23px, weil hier gar keine Höhe gesetzt war (Item 2.5b). */
+.meta-navigation a, .meta-navigation__auth, .meta-navigation__user { min-height:var(--control-h); }
+.meta-navigation ul { list-style:none; display:flex; align-items:center; }
+.meta-navigation a { display:flex; align-items:center; padding-inline:.75rem; color:var(--color-text); text-decoration:none; }
+.meta-navigation a:hover { color:var(--color-primary-600); text-decoration:none; }
+.meta-navigation--desktop { display:none; }
+@media (min-width:1024px){ .meta-navigation--desktop { display:flex; margin-bottom:.75rem; } }
+@media (min-width:1280px){ .meta-navigation--desktop { margin-bottom:1rem; } }
+/* Anmeldestatus (AGOV / FedLogin) rechts in der Meta-Navigation. EIN Linkstil
+   für die ganze Leiste (CD meta-navigation.postcss:5-12 + MetaNavigation.vue:4-20:
+   alle Einträge uniform, kein Akzent-Variant) — die Betonung trägt das User-Icon
+   des Eintrags, nicht eine zweite Linkfarbe. Icon-Abstand .5rem wie CDs ml-2. */
+.meta-navigation__auth { display:flex; align-items:center; gap:.5rem;
+  min-height:var(--control-h);
+  background:none; border:0; font:inherit; color:var(--color-text);
+  padding-inline:.75rem; cursor:pointer; }
+.meta-navigation__auth:hover { color:var(--color-primary-600); }
+/* Die Trennlinie übernimmt .separator--vertical im Markup (Item 4.2) — eine
+   nackte Haarlinie am Zeilenanfang liest sich als Tippfehler. */
+.meta-navigation__user { display:flex; align-items:center; gap:.5rem; padding-inline:.75rem;
+  min-height:var(--control-h); border-left:0; }
+.meta-navigation__name { display:flex; align-items:center; gap:.375rem; color:var(--color-text-muted); }
+.meta-navigation__name .icon { color:var(--color-primary-600); }
+
+/* Login-Hinweis dort, wo ein Vorgang ausgelöst würde. */
+.login-gate .btn { margin-top:0; }
+.login-gate__btn { align-self:flex-start; }
+
+/* Burger (burger.postcss:5-76) */
+/* `height:100%` kollabierte im zentrierten Flex-Elternteil auf die Icon-Höhe —
+   der einzige Menüzugang unter 1024 px war 20 px hoch (P0-5). */
+.burger { display:flex; align-items:center; justify-content:center;
+  min-height:var(--target-min); min-width:var(--target-min); padding:0 1rem; margin-right:-1rem;
+  background:none; border:0; cursor:pointer; }
+@media (min-width:1024px){ .burger { display:none; } }
+.burger__icon { display:block; position:relative; width:1.75rem; height:1.25rem;
+  color:var(--color-text-500); transition:color var(--duration-fast); }   /* CD burger.postcss:10-17: Ruhefarbe text-500 */
+.burger:hover .burger__icon { color:var(--color-primary-600); }
+.burger__bar { display:block; position:absolute; width:100%; height:100%; color:inherit; transition:transform var(--duration-fast); }
+.burger__bar::after { content:""; display:block; position:absolute; width:100%; height:2px;
+  border-color:currentColor; transition:transform var(--duration-fast) var(--duration-fast); }
+.burger__bar:nth-of-type(1)::after { top:-1px; border-top:2px solid; transform-origin:top; }
+.burger__bar:nth-of-type(2) { top:50%; height:2px; background-color:currentColor; transform:translateY(-50%); }
+.burger__bar:nth-of-type(3)::after { bottom:-1px; border-bottom:2px solid; transform-origin:bottom; }
+.body--mobile-menu-is-open .burger__bar:nth-of-type(1) { transform:translateY(50%); }
+.body--mobile-menu-is-open .burger__bar:nth-of-type(1)::after { transform:rotate(45deg); }
+.body--mobile-menu-is-open .burger__bar:nth-of-type(2) { transform:scaleX(0); }
+.body--mobile-menu-is-open .burger__bar:nth-of-type(3) { transform:translateY(-50%); }
+.body--mobile-menu-is-open .burger__bar:nth-of-type(3)::after { transform:rotate(-45deg); }
+
+/* Header search (search.postcss:5-31,113-146) */
+.search--main { position:relative; display:flex; align-items:center; justify-content:flex-end; min-height:var(--target-min); z-index:var(--z-header); }
+.search__group { display:flex; align-items:stretch; justify-content:flex-end; position:relative; }
+/* CD-Polsterrampe (search.postcss:79-82 `lg:p-1 xl:p-2 2xl:py-3`, Basis p-0).
+   min-width + Zentrierung sind der portal-eigene Zusatz: min-height garantiert
+   nur die HÖHE — ohne Polster wäre der icon-only-Schalter sonst schmaler als
+   das 44px-Tippziel. */
+.search__button { display:inline-flex; align-items:center; justify-content:center; background:none; border:0; font:inherit;
+  color:var(--color-text); min-height:var(--target-min); min-width:var(--target-min); padding:0; cursor:pointer; transition:color var(--duration-fast),opacity var(--duration); }
+@media (min-width:1024px){ .search__button { padding:.25rem; } }
+@media (min-width:1280px){ .search__button { padding:.5rem; } }
+@media (min-width:1544px){ .search__button { padding-block:.75rem; } }
+.search__button:hover { color:var(--color-primary-600); }
+@media (min-width:1024px){
+  /* -mt-0.5 = CDs optischer Ausgleich der Beschriftung neben der Lupe
+     (search.postcss:84-86 `lg:pr-1.5 lg:-mt-0.5`). */
+  .search__button__title { position:static; width:auto; height:auto; margin:-.125rem 0 0; overflow:visible; clip:auto;
+    padding-right:.375rem; }
+}
+.search--main.open .search__button { opacity:0; visibility:hidden; pointer-events:none; }
+.search__form { position:absolute; right:0; top:50%; transform:translateY(-50%); display:flex; align-items:stretch;
+  width:0; opacity:0; visibility:hidden; pointer-events:none; overflow:hidden;
+  transition:width var(--duration-slow) var(--ease-in-out), opacity var(--duration) var(--ease-in-out), visibility 0s linear var(--duration-slow); }
+/* KEIN :focus-within — blosses Tabben auf den «Suche»-Schalter hätte sonst das
+   Feld aufgeklappt, während aria-expanded="false" blieb und der Schalter darunter
+   sichtbar stehenblieb: unangeforderter Kontextwechsel (WCAG 3.2.1) plus falsch
+   angesagter Zustand (4.1.2). Genau die Regression, die der JS-Kommentar in
+   shell.js zu beheben beansprucht. CD koppelt den offenen Zustand ebenfalls nur
+   an die Zustandsklasse (search.postcss:113-146). */
+.search--main.open .search__form {
+  width:18rem; max-width:60vw; opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
+.search__form input { width:100%; padding:.625rem 3rem .625rem 1rem; border:1px solid var(--color-border-input);
+  border-radius:var(--radius-xs); background:var(--color-bg); box-shadow:var(--shadow-2xl); min-height:var(--input-h); }
+/* CDs Fokusring am offenen Kopf-Suchfeld ist PURPUR (ring-2 ring-purple-500,
+   global.postcss:75-77). Der globale :focus-visible-Ring dieses Blatts liegt
+   2px AUSSERHALB des Felds — .search__form beschneidet ihn (overflow:hidden
+   trägt die Aufklapp-Animation), sichtbar blieb nur der dunkle UA-Ring
+   (Nutzerbefund 2026-08-04). Deshalb hier INSET (-2px) und auf :focus statt
+   nur :focus-visible — CD stylt das Feld ebenfalls ab Fokus (search.postcss:22). */
+.search__form input:focus { outline:2px solid var(--color-focus-ring); outline-offset:-2px; }
+/* CD search.postcss:120-123: ab lg bekommt das offene Kopffeld py-4. */
+@media (min-width:1024px){ .search__form input { padding-top:1rem; padding-bottom:1rem; } }
+.search__submit { position:absolute; right:0; top:0; bottom:0; width:3rem; background:none; border:0;
+  cursor:pointer; color:var(--color-secondary-700); display:inline-flex; align-items:center; justify-content:center; }
+.search__submit:hover { color:var(--color-primary-600); }
+/* Das offene Feld lag quer über der Bundesmarke: es überlappte das Logo um 64px
+   bei 320, 173px bei 480 und 176px bei 640. CD legt dafür eine eigene, volle
+   Zeile UNTER den Kopf (search.postcss:37-56) und blendet das Logo aus (:99-103).
+   Unser Markenblock ist breiter als CDs (Amt + Produkt + Intranet-Pille), darum
+   gilt das bis lg statt nur bis xs — ein 35vw breites Feld wäre untippbar.
+   Die Klasse .body--search-is-open setzt Item 4.5. */
+@media (max-width:1023.98px){
+  /* BEIDE Zwischenebenen entpositionieren: .search__group ist ebenfalls
+     `position:relative` und nur ~52px breit, sodass `left:0;right:0` sonst
+     gegen die Gruppe statt gegen den Kopf auflöst (gemessen: 52px statt 390px). */
+  .search--main, .search--main .search__group { position:static; }
+  .search--main.open .search__form {
+    position:absolute; left:0; right:0; top:100%; transform:none;
+    width:auto; max-width:none; margin-top:.5rem;
+    padding-inline:.875rem; z-index:var(--header-z); }   /* CD search.postcss:37-42 `.search--mobile { mt-2 px-3.5 }` */
+  .top-header { position:relative; }
+  /* KEINE eigene Transition mehr: die EINE duration-700 auf .logo (oben) trägt
+     beide Ausblendungen — Suche offen UND Mobilmenü offen (CD logo.postcss:8). */
+  .body--search-is-open .logo { opacity:0; pointer-events:none; }
+}
+/* CD search.postcss:88-92 — auf dem Handy war die einzige Suchaffordanz eine 24px-Lupe */
+.search__button .icon { width:2.25rem; height:2.25rem; }
+@media (min-width:1024px){ .search__button .icon { width:1.75rem; height:1.75rem; } }
+.search__submit .icon { width:1.5rem; height:1.5rem; }
+

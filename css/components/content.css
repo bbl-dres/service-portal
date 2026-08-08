@@ -1,0 +1,158 @@
+/* Box (box.postcss:5-11) */
+/* `.stat` war `.box` minus der 1544er-Stufe — dieselbe Fläche, zweimal
+   ausgeschrieben, und dadurch unbeabsichtigt eine Abweichung von CD
+   box.postcss. Eine Deklaration für beide; die Kennzahl-Kachel ist eine Box,
+   die Zahl und Beschriftung trägt (siehe .stat__num/.stat__label unten). */
+.box, .stat { padding:1rem; background:var(--color-secondary-50); border:0; border-radius:0; }
+@media (min-width:480px) { .box, .stat { padding:1.25rem; } }
+@media (min-width:1024px){ .box, .stat { padding:1.5rem; } }
+@media (min-width:1544px){ .box, .stat { padding:2rem; } }
+/* KEIN `.box + .box { margin-top:1px }` mehr — das war das Fossil der alten
+   1px-Naht-Idee (die :has()-Ausnahme dazu war schon länger weg, weil die Naht
+   auf hellem Grund «nicht trägt»). Die Regel schlug mit (0,2,0) aber weiter
+   den Spaltenrhythmus `.vertical-spacing > *` (0,1,0): auf der Dienstleistungs-
+   Landingpage klebten «Das brauchen Sie» und «So läuft es ab» als EIN Block
+   zusammen, während alles andere 3rem Abstand hatte (Nutzerbefund 2026-08-04).
+   Gestapelte Kästen beziehen ihren Abstand jetzt überall aus ihrem Kontext:
+   `.vertical-spacing > *` (Hauptspalte, 3/3.5rem), `.container__aside > *`
+   (1.75/2rem) bzw. `.detail-layout__aside .box + .box` (1.5rem). */
+/* h2 mitgeführt: der Kastentitel ist optisch immer derselbe, unabhängig davon,
+   auf welcher Ebene der Gliederung er steht. Die Seitenspalte der
+   Mietende-Detailansicht trägt h2, weil die Seite sonst von h1 direkt auf h3
+   springt (die Reiterpanels bringen keine Zwischenebene mit). */
+.box h2, .box h3 { font-size:var(--text-base); }
+
+/* Stat figures — expressed on .box (no CD component) */
+/* Spaltenrampe aus --gap-responsive — die private Teilkopie (1.25/2.25/2.5)
+   liess xs/xl/3xl aus und war der dritte Klon der konsolidierten Rampe
+   (Design-Review C3). */
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:var(--gap-responsive); }
+.stat { box-shadow:none; }
+/* DIE Grossziffer-Typografie des Portals: text-3xl · fw-bold · lh-tight ·
+   secondary-600 · Tabellenziffern. Drei Flächen konsumieren sie — .stat (Box),
+   .kpi (Dashboard-Karte), .kpi-strip (rahmenloser Streifen, dokumentiert) —
+   vorher mit drei Grössen, zwei Farben und zwei Beschriftungspositionen für
+   dasselbe Element (Design-Review C8). Die Flächen bleiben Modifier. */
+.stat__num, .kpi__value, .kpi-strip__value { font-size:var(--text-3xl); font-weight:var(--fw-bold);
+  line-height:var(--lh-tight); color:var(--color-secondary-600); font-variant-numeric:tabular-nums; }
+.stat__label { font-size:var(--text-sm); color:var(--color-text-muted); margin-top:.375rem; }
+
+/* Download items (download-item.postcss:5-57) */
+.download-items { list-style:none; margin:0; padding:0; }
+.download-item { display:flex; width:100%; padding:1rem 0; text-align:left;
+  border-bottom:1px solid var(--color-secondary-200); text-decoration:none; color:inherit; }
+.download-item:hover { text-decoration:none; }
+/* Auf getönten Flächen die dunklere Trennlinie (download-item.postcss:12-14
+   `.bg--secondary-50 &`) — secondary-200 wäre dort kaum sichtbar. */
+.bg--secondary-50 .download-item, .box .download-item { border-bottom-color:var(--color-secondary-300); }
+.download-item__icon { flex:none; width:1.75rem; height:1.75rem;
+  margin:-.25rem 0 -.25rem -.25rem; padding-right:.25rem; color:var(--color-primary-600); }
+@media (min-width:768px){ .download-item__icon { width:2rem; height:2rem; padding-right:.5rem; } }
+@media (min-width:1024px){ .download-item__icon { width:2.25rem; height:2.25rem; } }
+.download-item > div { min-width:0; }
+.download-item__title { margin:0; font-size:var(--text-base); font-weight:var(--fw-bold);
+  overflow-wrap:anywhere; transition:color var(--duration) var(--ease-in-out); }
+.download-item:hover .download-item__title { color:var(--color-primary-600); }
+.download-item__description { margin:0; color:var(--color-text); overflow-wrap:anywhere; }
+.download-item__meta-info { padding-top:.75rem; }
+
+/* Meta info (meta-info.postcss:5-18) */
+/* BEWUSSTE ABWEICHUNG: CD startet auf text-gray-500 und dunkelt nur in
+   .box/.bg--secondary-50 auf text-600 nach — gray-500 misst auf secondary-50
+   aber nur ~4.4:1 (unter AA), weshalb CD selbst dort wechselt. EIN Wert
+   (--color-text-muted = text-600, tokens.css) trägt beide Flächen. */
+.meta-info { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+.meta-info__item:not(:last-child)::after { content:"|"; padding:0 .5rem; }
+@media (min-width:1024px){ .meta-info__item:not(:last-child)::after { padding:0 .75rem; } }  /* CD: px-2 lg:px-3 */
+
+/* Separator (separator.postcss:5-53) */
+.separator { display:block; height:auto; border:0; margin:0; background:none; }
+.separator::before { content:""; display:block; width:100%; border-bottom:1px solid var(--color-secondary-200); }
+.box .separator::before { border-bottom-color:var(--color-secondary-300); }
+.separator--md::before, .separator--md::after { content:""; display:block; width:100%; height:.5rem; }
+@media (min-width:768px){ .separator--md::before, .separator--md::after { height:.75rem; } }
+@media (min-width:1024px){ .separator--md::before, .separator--md::after { height:1rem; } }
+
+/* Back to top — der Knopf schwebt beim Scrollen unten rechts und dockt am unteren
+   Seitenende an der oberen rechten Ecke der Fussinformationen (CD-Vorgabe). Die
+   Schiene (rail) hängt an der Footer-Oberkante (#main-footer ist position:relative)
+   und reicht als voll­breiter, unsichtbarer Streifen nach oben. Darin liegt ein
+   normaler `.container` — dieselbe zentrierte Max-Breite wie im Footer —, sodass
+   der Knopf mit der rechten Kante von `.footer-information` fluchtet (statt am
+   Viewport-Rand in der Gasse zu kleben). Angedockt sitzt die obere rechte Ecke des
+   Knopfs `--btt-margin` innerhalb der oberen rechten Ecke der Fussinformationen. */
+@media screen and (prefers-reduced-motion: no-preference){ html { scroll-behavior:smooth; } }
+/* Das angedockte weisse Kästchen im Footer ist CD-Verhalten und BLEIBT:
+   back-to-top-btn.postcss:11-13 setzt bottom:-3.5rem (−4rem lg, −5rem xl) =
+   genau eine Knopfhöhe Überstand in das folgende Band, auf einem bg-white-Knopf.
+   Zwei echte Symptome bleiben: die Schiene war 1000vh hoch und damit ab dem
+   Seitenanfang sichtbar (auf portfolio/dash-immobilien landete der Knopf auf dem
+   MapLibre-Zoomcluster), und sie richtete sich am Inhaltscontainer statt am
+   Viewport-Rand aus, sodass er bei 1440 auf dem «Öffnen» der dritten Karte lag.
+   200vh ist die CSS-Näherung an CDs top-[80vh]. */
+.back-to-top-rail { position:absolute; left:0; right:0; height:200vh; pointer-events:none; z-index:2;
+  /* Dock: Knopf-Unterkante = (Rand + Knopfhöhe) unterhalb der Footer-Oberkante,
+     also Knopf-Oberkante = Rand darunter. */
+  bottom:calc(100% - (1rem + var(--target-min))); }
+.back-to-top-track { padding-inline-end:.75rem; }
+@media (min-width:1280px){ .back-to-top-track { padding-inline-end:1rem; } }
+/* Freiraum unter der Attribution, damit der sticky «Nach oben»-Knopf (unten
+   rechts, 2.75–4rem hoch) sie nicht überdeckt. 3.5rem waren dafür grosszügig
+   gerechnet und schoben die Attribution sichtbar von der Kartenkante weg; der
+   Knopf steht bei `bottom:1.5rem`, ~1.5rem Abstand genügen. Nur auf den grossen
+   Karten im Seitenfluss — der Hero-Karte kommt der Knopf nie in die Quere. */
+.dash-map .maplibregl-ctrl-bottom-right,
+.pf-map .maplibregl-ctrl-bottom-right { padding-bottom:1.5rem; }
+@media (min-width:1024px){ .back-to-top-rail { bottom:calc(100% - (1rem + 3rem)); } }
+@media (min-width:1920px){ .back-to-top-rail { bottom:calc(100% - (1rem + 4rem)); } }
+.back-to-top-track { height:100%; display:flex; flex-direction:column;
+  justify-content:flex-end; align-items:flex-end; pointer-events:none; }
+.back-to-top-btn { position:sticky; bottom:1.5rem; pointer-events:all; margin-inline-end:0;
+  width:var(--target-min); height:var(--target-min); flex:none;
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:var(--radius-sm); box-shadow:var(--shadow-lg); background:var(--color-bg);
+  transition:box-shadow var(--duration-fast), border-color var(--duration-fast); }
+@media (min-width:1024px){ .back-to-top-btn { width:3rem; height:3rem; } }
+/* CDs xl:w-16 setzt eine Platzierung im Seitengraben voraus, die erst ab 1920
+   gilt — DORT greift sie dann auch (back-to-top-btn.postcss:27-30). */
+@media (min-width:1280px){ .back-to-top-btn { width:3rem; height:3rem; } }
+@media (min-width:1920px){ .back-to-top-btn { width:4rem; height:4rem; } }
+@media (hover:none), (max-width:767.98px){
+  .back-to-top-btn { bottom:1rem; margin-inline-end:.75rem; }
+}
+.back-to-top-btn:hover { box-shadow:var(--shadow-xl); }
+.back-to-top-btn--outline { border:1px solid var(--color-primary-600); }
+.back-to-top-btn--outline:hover { border-color:var(--color-primary-700); }
+.back-to-top-btn__icon { width:50%; height:100%; background-color:var(--color-primary-600); }   /* CD: w-1/2 h-full */
+.back-to-top-btn--outline:hover .back-to-top-btn__icon { background-color:var(--color-primary-700); }
+/* Bei offenem Mobilmenü oder Dokumentbetrachter ausblenden. */
+.body--mobile-menu-is-open .back-to-top-rail,
+body.body--overlay-open .back-to-top-rail { display:none; }
+
+/* Suchfeld mit Lupe INNERHALB des Rahmens (links); die native Löschen-X sitzt
+   rechts im Feld. Das Formular sendet weiterhin per Enter bzw. Klick auf die
+   Lupe. Die .service-controls-Hälften der früheren Gruppenselektoren sind
+   entfallen — die Dienstleistungsseite rendert seit der catbar-Migration keine
+   .service-controls mehr, nur die toten Selektorhälften blieben stehen
+   (Design-Review C9). */
+.catbar__search { position:relative; }
+.catbar__search input { width:100%; padding-left:var(--target-min); }
+.catbar__submit { position:absolute; left:0; width:var(--target-min);
+  min-height:0; padding:0; justify-content:center; color:var(--color-text-muted); }
+.catbar__submit:hover { color:var(--color-primary-600); background:none; }
+
+.view-switch { display:flex; align-items:center; gap:.25rem;
+  border-left:1px solid var(--color-secondary-300); padding-left:1rem; }
+.view-switch__btn { display:inline-flex; align-items:center; justify-content:center;
+  min-width:var(--target-min); min-height:var(--target-min); padding:0; background:none; border:0; border-radius:0;
+  color:var(--color-secondary-500); cursor:pointer; transition:color var(--duration), background var(--duration); }
+.view-switch__btn:hover { color:var(--color-primary-700); }
+/* Zustand nicht allein über Farbe (WCAG 1.4.1, P2-10) — die Fläche allein war
+   genau das; forced-colors entfernt sie ersatzlos. Der Unterstrich trägt den
+   Zustand jetzt als Form (Item 2.6). */
+.view-switch__btn[aria-pressed="true"] { color:var(--color-text); background:var(--color-secondary-100);
+  box-shadow:inset 0 -3px 0 var(--color-primary-600); }
+@media (max-width:639.98px){
+  .service-controls__filters { grid-template-columns:minmax(0,1fr); }
+}
+

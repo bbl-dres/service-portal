@@ -9,7 +9,31 @@
        ab — vorher zwei TTF à 569 KB, jetzt 35 KB gesamt. -->
   <link rel="preload" href="assets/fonts/NotoSans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/tokens.css">
-  <link rel="stylesheet" href="css/app.css">
+  <!-- Explicit cascade order. Route-specific app sheets are inserted at the
+       three named anchors and awaited by the router before app markup renders. -->
+  <link rel="stylesheet" href="css/font-face.css">
+  <link rel="stylesheet" href="css/foundations/reset.css">
+  <link rel="stylesheet" href="css/foundations/typography.css">
+  <link rel="stylesheet" href="css/foundations/elements.css">
+  <link rel="stylesheet" href="css/layouts/page.css">
+  <link rel="stylesheet" href="css/layouts/grid.css">
+  <link rel="stylesheet" href="css/navigations/header.css">
+  <link rel="stylesheet" href="css/navigations/drawer.css">
+  <link rel="stylesheet" href="css/layouts/shell.css">
+  <link rel="stylesheet" href="css/components/button.css">
+  <link rel="stylesheet" href="css/components/card.css">
+  <!-- Pure-split bridge: relative icon URLs still resolve from css/. -->
+  <link rel="stylesheet" href="css/table-form.css">
+  <link rel="stylesheet" href="css/components/feedback.css">
+  <link rel="stylesheet" href="css/navigations/tabs.css">
+  <link rel="stylesheet" href="css/components/content.css">
+  <link rel="stylesheet" href="css/sections/search.css">
+  <meta name="css-app-anchor" content="early">
+  <link rel="stylesheet" href="css/sections/catalogue.css">
+  <link rel="stylesheet" href="css/components/overlay.css">
+  <meta name="css-app-anchor" content="portfolio">
+  <link rel="stylesheet" href="css/utilities.css">
+  <meta name="css-app-anchor" content="late">
 </head>
 <body class="body--intranet">
   <header id="main-header"></header>

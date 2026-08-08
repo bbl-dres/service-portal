@@ -1,0 +1,201 @@
+/* Notifications (notification.postcss:5-58) */
+.notification { display:flex; position:relative; gap:.75rem; align-items:flex-start; padding:.5rem;
+  border:0; border-radius:var(--radius); background:var(--color-gray-50); box-shadow:var(--shadow-lg); }
+@media (min-width:480px) { .notification { padding:1rem; } }
+@media (min-width:1024px){ .notification { padding:1.5rem; } }
+@media (min-width:1544px){ .notification { padding:2rem; } }
+.notification__icon { flex:none; width:2.5rem; height:2.5rem; }
+.notification__content { min-width:0; margin-block:.625rem; }
+@media (min-width:1280px){ .notification__content { margin-block:.5rem; } }
+.notification__content > p { margin:0; overflow-wrap:anywhere; }
+.notification__content > p + p { margin-top:.25rem; }
+/* KEINE .notification__title-Regel: nichts emittiert die Klasse, und CDs
+   Titel-Anatomie ist grösser (__header + --with-title + __content-offset,
+   notification.postcss:98-112) — eine halbe Implementation wäre eine Falle.
+   Kommt vollständig, wenn eine betitelte Meldung gebraucht wird. */
+.notification--info    { background:var(--color-info-bg-subtle);    color:var(--color-info-text-subtle); }
+.notification--success { background:var(--color-success-bg-subtle); color:var(--color-success-text); }
+.notification--warning { background:var(--color-warning-bg-subtle); color:var(--color-warning-text); }
+.notification--error   { background:var(--color-error-bg-subtle);   color:var(--color-error-text); }
+.notification--hint    { background:var(--color-secondary-50);      color:var(--color-gray-700); }
+/* --alert (Lebensgefahr, notification.postcss:29-58) hat bewusst KEINEN
+   Portal-Konsumenten — die Variante bleibt als CD-Kanon stehen, weil
+   --color-alert-bg und der notification()-role-Zweig sie referenzieren;
+   löschen würde die Kette verwaisen (Design-Review, Entscheid zu C9). */
+.notification--alert   { background:var(--color-alert-bg);          color:var(--color-text-negative); }
+/* JEDES interaktive Kind einer Meldung erbt die Meldungsfarbe (currentColor) statt
+   Brand-Primary — CD notification.postcss:11-21 (text-current, hover brightness-50).
+   Deckt <a>, button.link UND .btn ab; die frühere --alert-Sonderregel ist damit
+   der Spezialfall der allgemeinen Regel. Hover pinnt die Farbe erneut, weil
+   .link:hover (0,2,0) sonst Brand-Primary zurückholte. */
+.notification a, .notification .link { color:currentColor; text-decoration:underline; text-underline-offset:2px; }
+.notification a:hover, .notification a:focus, .notification .link:hover, .notification .link:focus { color:currentColor; filter:brightness(.5); }
+.notification .btn { color:currentColor; border-color:currentColor; }
+.notification .btn:hover { color:currentColor; border-color:currentColor; filter:brightness(.5); }
+/* Schliessen-Knopf (CD notification.postcss) — 44px-Trefferfläche um das 2rem-Icon. */
+.notification--dismissible { padding-right:var(--target-min); }
+.notification__close { position:absolute; top:0; right:0; display:inline-flex; align-items:center; justify-content:center;
+  min-width:var(--target-min); min-height:var(--target-min); padding:.375rem; border:0; background:none; color:inherit; cursor:pointer; }
+.notification__close .icon { width:2rem; height:2rem; }
+.notification__close:hover { opacity:.7; }
+
+/* Step indicator (step-indicator.postcss:5-23) */
+/* row-gap kleiner als column-gap: bei 320/390 bricht die Leiste um, und die
+   engere Zeilenlücke lässt den Umbruch als absichtliche Reihe lesen. */
+.steps { display:flex; gap:1rem; row-gap:.75rem; list-style:none; margin:0 0 2rem; flex-wrap:wrap; padding:0; }
+.steps li { display:flex; align-items:center; gap:.5rem; font-size:var(--text-sm); color:var(--color-text-muted); }
+.steps li[aria-current="step"] { color:var(--color-text); font-weight:var(--fw-bold); }
+/* CD skopiert jede Step-Regel unter `.step__indicator` (step-indicator.postcss:5-24,
+   StepIndicator.vue:2-9); unser Markup lässt diesen Wrapper heute weg. Deshalb
+   UNION beider Formen: das heutige `<ol class="steps"><li><span …>` UND CDs
+   Wrapper, den Item 3.10 nachliefert. Item 7.8 löscht danach die `.steps > li >`-
+   Hälfte — CD-verbatim, ohne kaputten Zwischenzustand. Item 2.3 nutzt dieselbe
+   Union-Form. */
+/* Kontrast (Item 2.3): die CD-Vorlage selbst ist hier nicht AA-konform
+   (step-indicator.postcss:6-24 nutzt gray-400) — bewusste Abweichung nach
+   BehiG/P028, aber innerhalb von CDs Token-Vokabular. Gemessene Verhältnisse:
+     alt  #9ca3af auf Weiss und Weiss auf #9ca3af  = 2.54:1  (Soll 4.5:1)
+     alt  Weiss auf --color-success #10b981        = 2.54:1  (Soll 3:1)
+     neu  --color-text-600 auf Weiss               = 7.56:1
+     neu  Rahmen --color-secondary-400             = 5.65:1 rot / 4.58:1 intranet
+     neu  Weiss auf --color-primary-600            = 5.01:1 rot / 5.17:1 intranet
+     neu  Weiss auf --color-success-text #065f46   = 7.68:1
+   «Aktuell» ist jetzt primary-600 wie .pipeline__step--active — EINE
+   Du-bist-hier-Farbe im Produkt; vorher war der aktuelle Schritt schwächer als
+   die erledigten. Der primary-100-Ring trägt den Zustand zusätzlich zur Farbe
+   (WCAG 1.4.1). */
+/* Nur noch CDs Wrapper-Form (Item 7.8 eingelöst): stepIndicator() rendert den
+   .step__indicator-Wrapper seit Item 3.10, die `.steps > li >`-Hälften waren
+   redundant. */
+.step__indicator .step__indicator-step { display:inline-flex; align-items:center; justify-content:center;
+  width:36px; height:36px; flex:none; border-radius:var(--radius-full);
+  background:transparent; color:var(--color-text-600); border:2px solid var(--color-secondary-400);
+  font-size:var(--text-sm); font-weight:var(--fw-regular); }
+.step__indicator .step__indicator-step--active { background:var(--color-primary-600); color:var(--color-text-negative); border:0;
+  box-shadow:0 0 0 3px var(--color-primary-100); }
+.step__indicator .step__indicator-step--confirmed { background:var(--color-success-text); color:var(--color-text-negative); border:0; }
+
+/* Status pipeline / timeline (portal extension — no CD counterpart) */
+.timeline { list-style:none; border-left:2px solid var(--color-border); margin-left:.5rem; }
+.timeline li { position:relative; padding:0 0 1rem 1.25rem; }
+.timeline li::before { content:""; position:absolute; left:-.45rem; top:.2rem; width:.8rem; height:.8rem;
+  border-radius:var(--radius-full); background:var(--color-gray-400); border:2px solid var(--color-bg); }
+.timeline li.done::before { background:var(--color-success-text); }
+.timeline li.current::before { background:var(--color-gray-400); }
+.timeline .when { font-size:var(--text-xs); color:var(--color-text-muted); }
+
+/* Status-Stepper (C.pipeline) — Chevron-Segmente via clip-path, damit die Pfeile
+   ohne z-index-Tricks ineinandergreifen. Erledigt = grün, aktuell = Primärfarbe,
+   offen = grau. Auf schmalen Viewports horizontal scrollbar. */
+/* `position:relative` ist hier der P0-Fix, nicht Kosmetik: ohne einen
+   positionierten Vorfahren lösen die `<span class="sr-only">`-Marker in den
+   Schritten ihren umgebenden Block bis `#main-content{position:relative}` auf —
+   absolut positionierte Nachkommen werden NICHT vom overflow eines
+   unpositionierten Vorfahren beschnitten. Einer landete bei x=338 und trieb
+   documentElement.scrollWidth in einem 320px-Viewport auf 339, d. h. die ganze
+   case-detail-Seite scrollte seitwärts (WCAG 1.4.10). Live gemessen: 339 → 320. */
+/* UMBRUCH STATT SEITWÄRTSSCROLLEN: Abläufe mit sechs und mehr Schritten
+   («Raumbedarf-Antrag») passten nie in eine Zeile — die letzten Schritte lagen
+   hinter einem waagrechten Scrollbalken und damit faktisch unsichtbar. Ein
+   Ablauf ist aber genau die Information, die man VOLLSTÄNDIG sehen will.
+   Die Segmente brechen jetzt um; die Chevron-Optik bleibt zeilenweise erhalten.
+
+   `padding-left:var(--arrow)` gleicht den negativen Rand aus, mit dem die
+   Segmente ineinandergreifen — sonst ragte die erste Kachel JEDER Folgezeile
+   um eine Pfeilbreite nach links aus dem Container. */
+/* `--seg-gap` = sichtbarer Spalt zwischen den Segmenten. Vorher griffen die
+   Chevrons exakt ineinander (Überlappung = volle Pfeilbreite): die Kette sah
+   aus wie EIN Balken, die einzelnen Pfeilspitzen verschwanden. Ein paar Pixel
+   Luft lassen den helleren Kastenhintergrund durchscheinen und machen die
+   Pfeilform — und damit die Leserichtung — überhaupt erst sichtbar.
+   Die Überlappung wird um genau diesen Spalt verringert; das
+   `padding-left` gleicht den verbleibenden negativen Rand wieder aus, damit
+   die erste Kachel jeder Zeile bündig am Container beginnt. */
+.pipeline {
+  --arrow:.7rem;
+  --seg-gap:.25rem;
+  position:relative; display:flex; flex-wrap:wrap; list-style:none;
+  margin:0; padding:0 0 0 calc(var(--arrow) - var(--seg-gap)); row-gap:var(--seg-gap);
+}
+.pipeline-wrap { position:relative; }
+.pipeline__step {
+  /* Die Segmente füllen die Zeile aus (`1 1 auto`): die Kette bleibt ein
+     durchgehender Balken bis zum rechten Rand, statt mit einer Lücke zu enden. */
+  flex:1 1 auto; max-width:100%;
+  display:flex; align-items:center; justify-content:center; gap:.5rem;
+  min-height:var(--target-min); padding:.5rem 1rem .5rem calc(1rem + var(--arrow));
+  margin-left:calc(var(--seg-gap) - var(--arrow));
+  background:var(--color-secondary-100); color:var(--color-text-muted);
+  font-size:var(--fs-sm); font-weight:var(--fw-bold); line-height:1.2;
+  /* Kein `nowrap` mehr: ein langer Schritttitel («In Projekt überführt») darf
+     im Segment umbrechen, statt die Zeile zu sprengen. */
+  text-align:center; hyphens:auto;
+  clip-path:polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%, var(--arrow) 50%);
+}
+/* Nur das ERSTE Segment der Liste bekommt eine glatte linke Kante. Das erste
+   Segment einer Folgezeile behält die Einkerbung — sie liest sich als
+   Fortsetzung der Zeile darüber. */
+.pipeline__step:first-child {
+  clip-path:polygon(0 0, calc(100% - var(--arrow)) 0, 100% 50%, calc(100% - var(--arrow)) 100%, 0 100%); }
+.pipeline__step:last-child {
+  clip-path:polygon(0 0, 100% 0, 100% 100%, 0 100%, var(--arrow) 50%); }
+.pipeline__step--done { background:var(--color-success-text); color:var(--color-text-negative); }
+.pipeline__step--active { background:var(--color-primary-600); color:var(--color-text-negative); }
+.pipeline__glyph { flex:none; }
+
+/* Accordion (accordion.postcss:5-78) */
+.accordion { list-style:none; padding-left:0; margin:0; border:0; border-radius:0; background:transparent; }
+.accordion__item { border-top:1px solid var(--color-secondary-200); list-style:none; }
+.accordion__item:last-of-type { border-bottom:1px solid var(--color-secondary-200); }
+.accordion__button { display:flex; align-items:center; justify-content:space-between; gap:1rem; width:100%;
+  padding:.75rem .5rem; background:none; border:0; font:inherit; font-size:var(--fs-base); font-weight:var(--fw-bold);
+  text-align:left; cursor:pointer; transition:color var(--duration); }
+@media (min-width:1544px){ .accordion__button { padding:1.25rem .75rem; } }
+.accordion__button:hover { background:none; color:var(--color-primary-500); }
+/* Lange, unbrechbare Komposita (z. B. «Bauwerksdokumentationen») müssen umbrechen,
+   sonst schiebt der Text das Chevron bei 320px aus dem Viewport. */
+.accordion__button > span { min-width:0; overflow-wrap:anywhere; }
+.accordion__heading { margin:0; font-size:inherit; font-weight:inherit; }
+.accordion__title { font-size:var(--fs-base); text-align:left; padding:.25rem 1rem .25rem 0; margin:0; overflow-wrap:anywhere; }
+/* CD accordion.postcss:75-78: pr-4 → lg:pr-6 → 2xl:pr-8 */
+@media (min-width:1024px){ .accordion__title { padding-right:1.5rem; } }
+@media (min-width:1544px){ .accordion__title { padding-right:2rem; } }
+.accordion__button .icon { flex:none; transition:transform var(--duration); }
+.accordion__button[aria-expanded="true"] .icon { transform:rotate(180deg); }
+/* CD accordion.postcss:59-68: the drawer animates max-height 300ms ease-out
+   (wireAccordion drives style.maxHeight from scrollHeight); [hidden] still
+   collapses it hard for non-JS/print. The .icon rotation rule above also
+   serves .accordion__arrow. */
+.accordion__drawer { width:100%; max-height:none; overflow:hidden;
+  transition:max-height var(--duration-slow) var(--ease-out); }
+.accordion__content { width:100%; padding:1rem .5rem 2.5rem; }
+/* CD accordion.postcss:70-73 2xl:px-3 — hält den Inhalt bündig mit dem Knopf,
+   der bei 1544 ebenfalls auf .75rem Inline-Polster springt. */
+@media (min-width:1544px){ .accordion__content { padding-inline:.75rem; } }
+/* right-hand cluster in an accordion header (format badge + chevron) */
+.accordion__meta { display:flex; align-items:center; gap:.75rem; flex:none; }
+
+/* .data-rows/.data-row sind GELÖSCHT: die Parallel-Implementierung des
+   Schlüssel-Wert-Musters (nur Datenkatalog + my-cases) ist auf das EINE
+   Rezept dl.kv (+ .kv--ruled für die Trennlinien) umgezogen — die alte
+   Begründung «eine dl bräuchte ein Grid je Paar» widerlegt .kv selbst
+   (Design-Review C7). */
+
+/* Detail page section rhythm (CD vertical-spacing between content blocks) */
+/* Rhythmus aus --stack-gap: stuft bei 1544px wie CD (spacings.postcss:7-8) —
+   vorher stufte NUR diese Regel schon bei 1024px, Detailabschnitte der Apps
+   sassen zwischen 1024 und 1544 8px weiter auseinander als jede
+   .vertical-spacing-Spalte (Design-Review C2). */
+.detail-section { margin-top:var(--stack-gap); }
+/* Abstand unter dem Detail-Hero: EIN Wert für alle Geschwister. Vorher trugen
+   Dienstleistung/Anwendung/Info-Seite mt-6 (1.5rem), nur der Datensatz stand
+   auf dem 3rem-Abschnittsrhythmus — dieselbe Stelle, zwei Lufträume
+   (Design-Review, pages-Befund). Die Seiten tragen kein mt-6 mehr. */
+.hero + .container--grid, .hero + .measure-xl { margin-top:var(--stack-gap); }
+/* Der Abstand unter dem Hero liegt am Wrapper — das erste .detail-section-Kind
+   darf ihn nicht verdoppeln (6rem statt 3rem, sichtbar auf Anwendungs- und
+   Datensatzblatt). */
+.container__main > .detail-section:first-child,
+.measure-xl > .detail-section:first-child { margin-top:0; }
+.detail-section__title { margin-bottom:1rem; }
+

@@ -1,0 +1,302 @@
+/* Tables (table.postcss:5-135) */
+.table-wrapper { position:relative; overflow-x:auto; }
+/* Überlauf-Hinweis: nur sichtbar, wenn die Tabelle wirklich breiter ist als ihr
+   Kasten (Klasse von wireScrollRegions). sticky/left:0 hält ihn beim Scrollen. */
+.table-wrapper__hint { display:none; }
+.table-wrapper.is-scrollable > .table-wrapper__hint {
+  display:flex; align-items:center; gap:.5rem;
+  position:sticky; left:0; width:max-content;
+  margin:.5rem 0 0; font-size:var(--text-sm); color:var(--color-text-muted); }
+.table-wrapper.is-scrollable > .table-wrapper__hint .icon { flex:none; }
+table.table { width:100%; border-collapse:collapse; background:var(--color-bg); box-shadow:var(--shadow-md);
+  border:1px solid var(--color-border); }
+/* pre-line wie CD (table.postcss:13-15): mehrzeilige Legenden behalten ihre
+   gesetzten Umbrüche, lange Zeilen brechen weiter normal um. */
+table.table--caption caption { position:static; width:auto; height:auto; clip:auto; white-space:pre-line;
+  display:table-caption; caption-side:bottom; text-align:left; padding-top:.5rem;
+  font-size:var(--text-xs); color:var(--color-text-muted); }
+/* Kein nowrap: CDs Kopfzellen dürfen umbrechen (table.postcss:37-42 setzt
+   align-top GENAU dafür); Identifikatorspalten pinnt .text-nowrap gezielt.
+   Trennlinie unter dem Kopf in text-300 wie ALLE Zeilenlinien (table.postcss:45-50). */
+table.table thead th { background:var(--color-secondary-50); text-align:left; padding:var(--sp-4) var(--sp-6);
+  font-size:var(--text-sm); text-transform:uppercase; color:var(--color-gray-700);
+  border-bottom:1px solid var(--color-border-strong); vertical-align:top; }
+table.table td, table.table tbody th { padding:var(--sp-4) var(--sp-6); border-bottom:1px solid var(--color-border-strong);
+  vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
+/* EINE Schriftstärke in der ganzen Zeile. Das erste Feld bleibt semantisch ein
+   `<th scope="row">` — Hilfsmittel brauchen den Zeilenkopf, um beim Vorlesen
+   einer Zelle zu sagen, zu welcher Zeile sie gehört. Es wird nur nicht mehr
+   fett und nicht mehr dunkler gesetzt: der Fettdruck hat in Listenansichten
+   ganze Beschreibungstexte erfasst und liess jede Tabelle wie eine Rangliste
+   aussehen. Auszeichnung übernimmt jetzt allein die Ausrichtung — Text links,
+   Zahlen rechts. */
+table.table tbody th { text-align:left; font-weight:var(--fw-regular); color:var(--color-gray-600); }
+/* Summenzeile: das erste Feld (z. B. «Total (4)») ist ein <th> im <tfoot> und
+   fiel bisher durch beide Polster-Regeln (thead th / tbody th) — also linksbündig
+   ohne Einzug. Gleiches Zellpolster wie die übrigen Zeilen. */
+table.table tfoot th { padding:1rem 1.5rem; vertical-align:top; }
+/* Die Ausrichtungs-Utilities (.text-right/-center/-left) sind (0,1,0) und
+   verloren gegen `table.table thead th` (0,1,3) bzw. `table.table tbody th` —
+   die Kopfzeile blieb also linksbündig, während die Werte rechts standen.
+   Innerhalb der Tabelle mit passender Spezifität nachziehen, damit `align` in
+   C.table() Kopf UND Zelle gemeinsam ausrichtet. */
+table.table thead th.text-right, table.table tbody th.text-right, table.table td.text-right,
+table.table tfoot th.text-right, table.table tfoot td.text-right { text-align:right; }
+table.table thead th.text-center, table.table tbody th.text-center, table.table td.text-center,
+table.table tfoot th.text-center, table.table tfoot td.text-center { text-align:center; }
+table.table thead th.text-left, table.table tbody th.text-left, table.table td.text-left,
+table.table tfoot th.text-left, table.table tfoot td.text-left { text-align:left; }
+/* Die früheren Ausnahmen für `.small`, `.meta-info` und `<p>` im Zeilenkopf
+   sind entfallen: sie hoben den Fettdruck stellenweise wieder auf, den es
+   jetzt gar nicht mehr gibt. */
+table.table tbody tr:last-child td, table.table tbody tr:last-child th { border-bottom:0; }
+/* SPALTENBREITEN. Zahlenspalten (`align: 'right'`) schrumpfen auf ihren Inhalt
+   und brechen nicht um; die verbleibende Breite verteilt sich auf die
+   Textspalten. Damit stehen gleichartige Tabellen im ganzen Portal gleich
+   breit, ohne dass jede ihre Spalten von Hand vermessen muss. `width:1%` ist
+   dabei kein echtes Mass, sondern das übliche Signal an den Tabellensatz,
+   diese Spalte so schmal wie möglich zu halten.
+   Ziffern laufen auf Tabellenziffern, damit Beträge untereinander fluchten. */
+table.table td.text-right, table.table tbody th.text-right,
+table.table tfoot td.text-right, table.table tfoot th.text-right {
+  width:1%; white-space:nowrap; font-variant-numeric:tabular-nums; }
+table.table thead th.text-right { width:1%; }
+/* Reihenfolge ist hier die Korrektur: Zebra und Hover hatten dieselbe Spezifität
+   (0,2,3), Zebra stand zuletzt und gewann — auf den GERADEN Zeilen war Hover
+   wirkungslos. Hover kommt jetzt nach der Zebra-Regel und nutzt die nächste
+   Stufe, damit der Unterschied auch auf getönten Zeilen sichtbar ist. */
+table.table--zebra tbody tr:nth-child(even),
+table.table--zebra tfoot tr:nth-child(even) { background:var(--color-secondary-50); }
+/* … ausser die Tabelle steht SELBST auf secondary-50. Das CD kennt genau EINE
+   neutrale Fläche, und die benutzen beide: das getönte Abschnittsband
+   (.bg--secondary-50) und die Tabelle für Kopfzeile und Zebrastreifen. Liegt
+   das eine auf dem anderen, sind Streifen und Grund identisch — die Streifen
+   werden zu Löchern, durch die das Band scheint, und nur die ungeraden Zeilen
+   sehen aus wie Zeilen (Nutzerbefund 2026-08-06, Startseite «Meine offenen
+   Vorgänge»).
+   Statt eine zweite Tönung zu erfinden, gibt die Tabelle ihre eigene auf: sie
+   ist ohnehin schon eine weisse Karte mit Rahmen und Schatten, und Kopfzeile
+   wie Zeilen bleiben durch Trennlinien und den fetten Kopf unterscheidbar.
+   Gilt für JEDE Tabelle auf dem Band — der Fehler hing nur an der Verschachtelung,
+   nicht an der Seite. */
+.bg--secondary-50 table.table thead th,
+.bg--secondary-50 table.table--zebra tbody tr:nth-child(even),
+.bg--secondary-50 table.table--zebra tfoot tr:nth-child(even) { background:transparent; }
+/* Hover NUR auf klickbaren Zeilen — CDs Tabelle kennt keinen Zeilen-Hover
+   (table.postcss); eine statische Datentabelle darf keine Klickbarkeit signalisieren. */
+table.table--rows-clickable tbody tr:hover { background:var(--color-secondary-100); }
+/* Ganze Zeile klickbar (C.table `rowsClickable`): der Zeiger zeigt es an, die
+   Bedienung läuft aber weiter über den Link in der Zeile — deshalb steht hier
+   nur der Cursor und kein eigener Fokusstil. */
+table.table--rows-clickable tbody tr { cursor:pointer; }
+/* Klick-Hinweis am Zeilenende. Der Zeigefinger allein verrät die anklickbare
+   Zeile erst BEIM Überfahren — der Winkel sagt es vorher. Rein dekorativ
+   (`aria-hidden` bräuchte ein Element; ein ::after ist für AT ohnehin nicht
+   da), die Bedienung trägt weiterhin der echte Link in der ersten Zelle. */
+table.table--rows-clickable tbody td:last-child,
+table.table--rows-clickable tbody th:last-child { position:relative; padding-right:2.25rem; }
+table.table--rows-clickable tbody tr > :last-child::after {
+  content:""; position:absolute; right:.85rem; top:50%; transform:translateY(-50%);
+  width:1rem; height:1rem; background-color:var(--color-text-muted);
+  -webkit-mask:url('../assets/icons/ChevronRight.svg') no-repeat center/contain;
+  mask:url('../assets/icons/ChevronRight.svg') no-repeat center/contain; }
+table.table--rows-clickable tbody tr:hover > :last-child::after { background-color:var(--color-primary-700); }
+/* Die Summenzeile im tfoot ist keine Zeile zum Anklicken. */
+table.table--rows-clickable tfoot tr > :last-child::after { content:none; }
+@media (hover:none){
+  table.table--rows-clickable tbody tr:hover { background:inherit; }
+  /* Zebra-Streifen überlebt das Antippen: die inherit-Regel oben würde ihn
+     sonst auf getippten geraden Zeilen löschen (beide Konsumenten sind Zebra). */
+  table.table--rows-clickable.table--zebra tbody tr:nth-child(even):hover { background:var(--color-secondary-50); }
+}
+/* Dichte + Umbruch auf schmalen Viewports (Item 2.11). tfoot th steht MIT in
+   der Liste: die Summenzeile schrumpft sonst nur in den Wertzellen (td), ihr
+   Beschriftungsfeld behielte als einzige Zelle das volle Polster. */
+@media (max-width:767.98px){
+  .table-wrapper table.table thead th,
+  .table-wrapper table.table td,
+  .table-wrapper table.table tbody th,
+  .table-wrapper table.table tfoot th { padding:.5rem .75rem; font-size:var(--text-sm); }
+  table.table td:first-child a, table.table tbody th a { white-space:nowrap; }
+}
+/* table.table-Präfix: die Basisregeln tragen (0,1,1)+Element — ohne den Präfix
+   verlor --compact gegen sie und Rahmen/Schatten blieben stehen. */
+table.table--compact { border:0; box-shadow:none; }
+table.table--compact thead th, table.table--compact td, table.table--compact tbody th { padding:.5rem; font-size:var(--text-sm); }
+
+/* Forms (form.postcss + input.postcss + select.postcss) */
+.form > * + * { margin-top:1.5rem; }
+.form__group { border:0; margin:0; padding:0; min-width:0; }
+.form__group__legend { margin-bottom:.5rem; padding:0; }
+.form__group__input, .form__group__select { width:100%; display:flex; flex-direction:column; gap:.5rem; }
+/* message/hint pills hug their text rather than stretching in the column */
+.form__group__input > .badge, .form__group__select > .badge { align-self:flex-start; }
+/* .form__group__radio/__checkbox (form.postcss:19-22) exzidiert — beide ohne
+   Konsument seit Einführung (Design-Review C10). */
+.form__group__input > label, .form__group__select > label {
+  display:block; font-weight:var(--fw-regular); font-size:var(--text-base); color:var(--color-text); }
+/* Die Legende teilt Darstellung und Farbe mit den Feldbeschriftungen, aber weder
+   Gewicht noch Grösse: sie ist die Überschrift der Gruppe und steht weiter unten
+   auf --text-lg/--fw-bold. Vorher standen hier (und eine Zeile höher) zwei
+   font-weight-Angaben, die beide nie gewinnen konnten. */
+.form__group__legend { display:block; color:var(--color-text); }
+
+/* ---- Formular-Ebene für Stage 3 (Items 3.5, 3.12, 3.13, 3.14) -------------- */
+/* (a) Aktionsreihe. `.row` bricht in DOM-Reihenfolge um, also landet «Abbrechen»
+   bei 390px ÜBER «Absenden». `column-reverse` hält die Primäraktion im DOM
+   zuletzt (Tab-Reihenfolge Feld→…→Absenden) und zeigt sie auf Mobile ZUERST und
+   vollbreit — wie CDs eigene Formularaktion (newsletter.postcss:35-39,
+   btn.postcss:193-195). */
+.form__actions { display:flex; flex-direction:column-reverse; gap:.75rem; margin-top:1.5rem; }
+.form__actions .btn { width:100%; justify-content:center; }
+.form__actions .btn .btn__text { text-align:center; }
+@media (min-width:480px){
+  .form__actions { flex-direction:row; justify-content:flex-end; align-items:center; }
+  .form__actions .btn { width:auto; }
+  .form__actions--between { justify-content:space-between; }
+}
+/* (b) Fehlerübersicht. `.notification a` (unten) liefert currentColor +
+   Unterstreichung, also trägt das unter beiden Skins. */
+/* Die Übersicht steht unmittelbar über dem Formular. `.notification` bringt
+   selbst keinen Aussenabstand mit, also klebte sie am ersten Feldnamen — die
+   Meldung las sich wie dessen Beschriftung. Der Abstand gehört an die
+   Fehlerübersicht, nicht an jede Benachrichtigung. */
+.error-summary { margin-bottom:2rem; }
+.error-summary__title { font-size:var(--text-lg); font-weight:var(--fw-bold); margin:0 0 .5rem; }
+.error-summary__list  { margin:0; padding-left:1.25rem; }
+/* (c) Feldhinweis ≠ Validierungsmeldung. CDs Input.vue:24-30 nutzt die Badge NUR
+   für `message`; ein Hinweis ist Prosa und steht VOR dem Control. */
+/* margin:0 — den 0.5rem-Rhythmus liefert bereits der flex-gap der Feldgruppe
+   (CD form.postcss:12-15 space-y-2); ein Eigenrand käme oben drauf. */
+.form__group__hint { margin:0; font-size:var(--text-sm); color:var(--color-text-muted); }
+/* (d) Meldungsgrösse. `.badge--sm` startet bei 10px (CD badge.postcss:76) — das
+   ist die kleinste Schrift der App und trägt die folgenreichste Microcopy. Nur
+   dort anheben, wo die Badge Prosa ist; die globale Badge-Skala und die
+   dekorativen Zählmarken (Katalog-Formatchips, .api-rail__n) bleiben unberührt.
+   Auf der FESTEN Stufe (--fs-sm): CDs badge--sm endet bei lg:text-sm — die
+   responsive Rampe liefe bei 1920 auf 1.125rem hinaus. */
+.form__group__input > .badge--sm,
+.form__group__select > .badge--sm { font-size:var(--fs-sm); line-height:1.35rem; padding:.219em .75em; }
+/* (e) Fieldset-Gruppierung (Item 3.14) — vollständig gestaltet, bisher ohne
+   Konsumenten. */
+.form > .form__group > * + * { margin-top:1.5rem; }
+.form__group__legend { font-size:var(--text-lg); font-weight:var(--fw-bold); }
+/* Luft zwischen Feldgruppen: die Legende einer Folgegruppe («Weitere
+   Stammdaten») klebte sonst am letzten Feld der Gruppe darüber. */
+.form__group + .form__group { margin-top:2.5rem; }
+
+/* Eingabefelder auf der FELD-Rampe (--input-h, 44 → 48 erst bei 2xl/1544 und
+   Schluss — CD input.postcss:1-4,16); die Knopf-Rampe --control-h (44/48/52 bei
+   xl/3xl) gilt nur für knopfartige Bedienelemente. Die frühere Vereinheitlichung
+   (Item 2.5e) machte Felder auf 1280-1543-px-Laptops 4 px höher als das CD. */
+input, select, textarea { font:inherit; width:100%; min-height:var(--input-h); padding:.625rem 1rem; line-height:1;
+  border:1px solid var(--color-border-input); border-radius:var(--radius-xs); background:var(--color-bg);
+  color:var(--color-text); box-shadow:var(--shadow); }
+input::placeholder, textarea::placeholder { color:var(--color-placeholder); }
+textarea { min-height:6rem; resize:vertical; line-height:1.5rem; }
+.textarea--no-resize, textarea.input--no-resize { resize:none; }
+input:focus, select:focus, textarea:focus { outline:none; }
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline:2px solid var(--color-focus-ring); outline-offset:2px; }
+input[disabled], select[disabled], textarea[disabled], .input--disabled {
+  background:var(--color-gray-50); color:var(--color-gray-400); border-color:var(--color-border-strong);
+  pointer-events:none; cursor:not-allowed; }
+/* Nur-Lese-Felder tragen einen ABGELEITETEN Wert (z. B. die Objektbezeichnung
+   aus der Adresse). Sie sehen anders aus als deaktivierte Felder — der Wert ist
+   gültig und wird gespeichert, er lässt sich hier bloss nicht ändern —, bleiben
+   aber fokussierbar und damit für Hilfsmittel lesbar. */
+input[readonly], textarea[readonly] {
+  background:var(--color-secondary-50); color:var(--color-text);
+  border-style:dashed; cursor:default; }
+input[type='search']::-webkit-search-decoration { display:none; }
+/* Native Löschen-Schaltfläche (X) sichtbar lassen, im CD-Stil (Cancel-Icon) —
+   erscheint, sobald Text eingegeben ist, und leert das Feld. BEWUSSTE ABWEICHUNG
+   von CD input.postcss:165-171 (dort unterdrückt); Kollisionen mit dem
+   aufgelegten Suchknopf verhindert das reservierte padding-right der Felder.
+   WebKit-only: Firefox kennt das Pseudo-Element nicht und zeigt kein X —
+   akzeptiert; wo Löschen zum Ablauf gehört, steht ein echter, browserneutraler
+   Knopf (.map-search__clear). */
+input[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance:none; appearance:none; width:1rem; height:1rem; margin-left:.5rem; cursor:pointer;
+  background-color:var(--color-text-muted);
+  -webkit-mask:url('../assets/icons/Cancel.svg') center/contain no-repeat;
+  mask:url('../assets/icons/Cancel.svg') center/contain no-repeat; }
+input[type='search']::-webkit-search-cancel-button:hover { background-color:var(--color-primary-600); }
+/* CD-Leadings (input.postcss:21-31): sm/base leading-6, lg leading-7. Textareas
+   tragen die 1.5rem schon über die Basisregel; einzeilige sm/base-Felder wachsen
+   damit auf 46px (24+20+2) — exakt wie CDs eigenes input--base. */
+.input--sm { font-size:var(--text-sm); line-height:1.5rem; } .input--base { font-size:var(--text-base); line-height:1.5rem; } .input--lg { font-size:var(--text-lg); line-height:1.75rem; }
+.input--outline { border-color:var(--color-border-input); color:var(--color-text); }
+.input--error { color:var(--color-error-text); border-color:var(--color-error); }
+.input--error::placeholder { color:var(--color-error-400); }
+.input--negative { color:var(--color-text-negative); background:var(--color-secondary-500); border-color:var(--color-secondary-300); }
+.input--negative::placeholder { color:var(--color-secondary-50); }
+.input--negative option { background:var(--color-secondary-600); color:var(--color-text-negative); }
+/* CD-Zustandsregeln (input.postcss:55-76): Fehler-Label (Checkbox/Radio-Muster,
+   Beschriftung FOLGT dem Feld), Negativ-Hover/-Disabled, Fehler auf Negativ-
+   flächen. Fehlerrot über die dedizierten --color-error-*-Töne, damit es unter
+   .body--intranet rot bleibt. */
+.input--error + label { color:var(--color-error-text); margin-right:.75rem; }
+.input--negative:hover, .input--negative:focus { color:var(--color-text-300); }
+.input--negative:disabled, .input--negative.input--disabled { background:var(--color-secondary-300); color:var(--color-secondary-200); }
+.input--error.input--negative { color:var(--color-error-200); border-color:var(--color-error-300); }
+
+/* Select (select.postcss:1-78) */
+.select { position:relative; }
+.select select { box-sizing:border-box; -webkit-appearance:none; -moz-appearance:none; appearance:none;
+  padding-right:5rem; }
+.select select::-ms-expand { display:none; }
+.select__icon { position:absolute; top:0; right:0; width:3rem; height:100%;
+  display:flex; align-items:center; justify-content:center;
+  border-left:1px solid var(--color-border-input); pointer-events:none;
+  background:transparent; color:var(--color-text); }
+.select__icon svg { width:2rem; height:100%; fill:currentColor; display:block; }
+select:disabled, .input--disabled select { opacity:.4; }
+select:disabled + .select__icon, .input--disabled select + .select__icon { opacity:.4; }
+.input--error + .select__icon { color:var(--color-error-700); border-left-color:var(--color-error-400); }
+.input--negative + .select__icon { color:var(--color-text-negative); border-left-color:var(--color-secondary-300); background:var(--color-secondary-500); }
+.input--error.input--negative + .select__icon { color:var(--color-error-200); border-left-color:var(--color-error-300); }   /* CD select.postcss:66-72 */
+.select--bare { width:auto; display:inline-block; }
+/* Der bare Select steht in Werkzeugleisten NEBEN anderen Bedienelementen, nicht
+   als eigene Formularzeile — der Zeilenabstand von `.form > .form__group > * + *`
+   (0,2,0) darf ihn nicht treffen. Dafür stand hier ein `!important`; eine
+   Selektorstufe mehr reicht und lässt sich weiterhin überschreiben. */
+.form .select--bare { margin-top:0; }
+.select--bare select { display:inline-block; width:auto; padding-right:1.5rem;
+  box-shadow:none; border-color:transparent; background-color:transparent; }
+.select--bare .select__icon { width:1.5rem; border-left:0; }
+.select--bare .input--negative + .select__icon { background-color:transparent; }
+
+/* Checkbox / radio (input.postcss:78-152) */
+input[type='checkbox'], input[type='radio'] {
+  width:.9rem; height:.9rem; min-height:0; flex-shrink:0; margin:0 .5rem 0 0; padding:0;
+  -webkit-appearance:none; -moz-appearance:none; appearance:none;
+  background-color:var(--color-text-negative); border:1px solid var(--color-border-input); border-radius:var(--radius-xs);
+  box-shadow:var(--shadow); }
+input[type='radio'] { border-radius:var(--radius-full); }
+input[type='checkbox']:checked, input[type='radio']:checked {
+  background-color:var(--color-gray-700); background-repeat:no-repeat; background-position:center; }
+input[type='radio']:checked { background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='6' cy='6' r='3' fill='white'/%3E%3C/svg%3E"); }
+input[type='checkbox']:checked { background-image:url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 10 7' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9.2.29A1 1 0 0 1 9.2 1.7l-5 5a1 1 0 0 1-1.42 0l-2-2A1 1 0 0 1 2.2 3.29L3.5 4.59 7.79.29a1 1 0 0 1 1.41 0Z' fill='white'/%3E%3C/svg%3E"); }
+input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
+/* CD-Grössenvarianten (input.postcss:95-108): sm h-3, lg h-4; Basis .9rem oben. */
+input[type='checkbox'].input--sm, input[type='radio'].input--sm { width:.75rem; height:.75rem; }
+input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:1rem; height:1rem; }
+/* CD form.postcss:25-27 + input.postcss:82: in der Checkbox-Zeile liefert schon
+   der flex-gap die 0.5rem — das mr-2 des Feldes käme dazu (1rem statt CDs
+   0.5rem). Die RADIO-Zeile behält ihr mr-2: dort ergeben gap+Rand CDs
+   effektive 1rem. (Beide Zeilenklassen sind derzeit ohne Konsumenten.) */
+.form__group__checkbox input[type='checkbox'] { margin-right:0; }
+/* Ankreuzfelder im hohen Kontrast — muss DIREKT hinter der Basisregel stehen.
+   `appearance:none` oben und `appearance:auto` hier haben dieselbe Spezifität;
+   die spätere Regel gewinnt. Stand die Korrektur wie früher 1000 Zeilen weiter
+   oben im allgemeinen forced-colors-Block, griff sie nie.
+   Warum überhaupt: forced-colors erzwingt die Fläche auf Canvas, behält aber
+   das SVG-Häkchen in Weiss — auf hellen Themes wurde daraus ein weisses Häkchen
+   auf weissem Grund, der Zustand also unsichtbar. Native Steuerung zeichnen
+   lassen, die Systemfarben tragen den Zustand (Item 2.6). */
+@media (forced-colors: active) {
+  input[type='checkbox'], input[type='radio'] {
+    -webkit-appearance:auto; appearance:auto; background-image:none; box-shadow:none; }
+}
+

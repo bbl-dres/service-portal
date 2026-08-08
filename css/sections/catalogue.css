@@ -1,0 +1,296 @@
+/* ── Kompakte Katalogleiste (catbar) — geteilt: Portfolio, Dienstleistungen,
+   Datenbezug, Anwendungen. Eine Zeile: Suche + Trefferzahl links; hinter EINER
+   Trennlinie rechts Sortierung, Filter-Umschalter und Ansichtswechsel. Der Filter
+   öffnet ein einklappbares Panel darunter (nimmt die früheren Filter-Dropdowns auf). */
+.catbar { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; margin-top:1.25rem;
+  padding-bottom:.5rem; border-bottom:1px solid var(--color-secondary-300); font-size:var(--text-sm); }
+/* Anatomie (Lupe im Feld, absoluter Submit) oben im «In-page search»-Block;
+   hier nur die Unterschiede. */
+.catbar__search { flex:1 1 15rem; min-width:11rem; max-width:24rem; }
+/* BEWUSSTE AUSNAHME von der Feld-Rampe: die Katalogleiste ist eine kompakte
+   Werkzeugzeile — Feld, Sortier-Select, Filter- und Ansichtsknöpfe teilen die
+   feste 44px-Höhe (--target-min), damit die Zeile auf keiner Breite springt.
+   Das WEICHT vom CD ab: dort wachsen Knöpfe ab xl auf 48px (btn.postcss:112-117)
+   und Felder ab 2xl auf 48px (input.postcss:1-16) — bewusst nicht übernommen. */
+.catbar__search input { min-height:var(--target-min); }
+.catbar__submit { top:0; bottom:0; }
+.catbar__count { color:var(--color-text-muted); white-space:nowrap; }
+/* CD hält die Trefferzahl regular (search.postcss:215-217) — wie unsere eigene
+   .search-results__header-Zeile; nur die Tinte bleibt dunkler als der Suffix. */
+.catbar__count strong { font-weight:var(--fw-regular); color:var(--color-text); }
+/* Steuerungscluster rechts (bare Controls, CD-Muster): Sortierung · Filter · │ ·
+   Ansichtswechsel. Alle Controls gleich hoch (--target-min); die EINE
+   Trennlinie ist der View-Switch-Strich zwischen Filter und Ansichtswechsel. */
+/* Die Gruppe hatte kein flex-wrap und kein min-width:0, sodass bares Sort-Select
+   + nowrap-Filter + Ansichtswechsel eine unteilbare 402-520px-Zeile bildeten.
+   .container{overflow-x:clip} (CDs eigene Regel, container.postcss:8) hat den
+   Überhang dann ohne Scrollbalken abgeschnitten — bei 320 lagen BEIDE
+   Ansichtsknöpfe ausserhalb, bei 390 der zweite (WCAG 1.4.10 + 2.1.1).
+   CDs Pendant ist ausdrücklich umbrechend (search.postcss:208-211). */
+.catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem .25rem;
+  margin-left:auto; min-width:0; max-width:100%; }
+/* Ohne Suchfeld (Suchergebnisse): Trefferzahl links, Steuerung rechts — CDs
+   `.search-results__header` (flex, justify-between, ml-auto rechts). */
+.catbar--no-search .catbar__count { flex:1 1 auto; }
+.catbar__sort { position:relative; min-width:0; max-width:100%; }
+.catbar__sort select { max-width:100%; text-overflow:ellipsis; }
+/* CD richtet das Sortier-Select im Ergebniskopf RECHTS aus
+   (search.postcss:229-233 `.search-results__header__right select { text-right }`).
+   Der frühere Kommentar entschied dagegen, weil kurze Optionen dann am Rand
+   kleben — das `padding-right` für das Chevron liefert diesen Abstand aber
+   bereits. Nur dort links, wo wir das Feld auf Mobil vollbreit ziehen. */
+.catbar__sort select { text-align:right; }
+@media (max-width:767.98px){ .catbar__sort select { text-align:left; } }
+/* BEWUSSTE ABWEICHUNG vom CD: rechtsbündige Optionen klebten in der aufgeklappten
+   Liste direkt an der Kante des Popups (das CD setzt `text-right` ohne Polsterung).
+   Chromium respektiert `padding` auf <option> in der Popup-Liste, also gibt es hier
+   denselben optischen Rand wie im geschlossenen Zustand. */
+/* Optionsfarbe explizit setzen: das bare Select erbt nur `color` auf dem
+   <select>; die <option> selbst hat keine eigene Farbe und keinen deckenden
+   Hintergrund. Manche Browser vererben die Select-Farbe NICHT in die native
+   Popup-Liste und zeichnen die Optionen dann hell auf hell (unlesbar). Deshalb
+   hier — wie beim .language-switcher select — Textfarbe und weisser Grund direkt
+   an der Option. */
+.catbar__sort select option { padding-right:.75rem; color:var(--color-text); background:var(--color-bg); }
+.catbar__sort select option:disabled { color:var(--color-gray-400); }
+/* CD-Padding (px-4) links; rechts Platz für das Chevron (der zugleich den Abstand
+   für die rechtsbündige Ausrichtung oben liefert). */
+.catbar__sort select { min-height:var(--target-min); padding-left:1rem; padding-right:1.75rem; font-size:var(--text-sm); color:var(--color-text); }
+.catbar__sort .select__icon { color:var(--color-text-muted); }
+.catbar__filter { min-height:var(--target-min); white-space:nowrap; }
+.catbar__fcount { margin-left:.25rem; font-weight:var(--fw-bold); }
+/* Im Knopf-Kontext notiert, sonst gewinnt «.btn .icon» (0,2,0) und der Pfeil
+   erschiene mit 1.4em deutlich zu gross neben der Beschriftung. */
+.btn .catbar__chev, .catbar__chev { width:1em; height:1em; transition:transform var(--duration); }
+.catbar__filter[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
+.catbar .view-switch__btn { min-height:var(--target-min); }
+/* `extra`-Steckplatz der Leiste: eine Nebenaktion ganz rechts, abgesetzt wie der
+   Ansichtswechsel — sie steht auf derselben Stufe und darf nicht wie ein
+   weiterer Filter neben «Filter» kleben. */
+.catbar__aside { min-height:var(--target-min); white-space:nowrap;
+  border-left:1px solid var(--color-secondary-300); padding-left:1rem; margin-left:.75rem; }
+/* Die getönte, gerundete Karte ist eine bewusste Entscheidung und BLEIBT —
+   umgestellt wird nur die umbrechende Flex-Zeile, die bei 1440 rund 60% des
+   Panels leer liess und «Zurücksetzen» wie eine dritte Facetten-Überschrift
+   aussehen liess (Item 2.13). */
+/* Rastermetrik nach CD (search.postcss:257-264 `gap-3 lg:gap-4`): einheitliche
+   Lücke .75rem → 1rem ab lg, KEIN eigener 2rem-Spaltengraben. */
+.catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:.75rem;
+  /* Das Panel besitzt seinen Abstand nach UNTEN selbst (1.5rem = `mt-6`).
+     Ergebnisblock und C.mountDataTable schliessen ohne eigenen oberen Rand an;
+     so bleibt der Abstand für Katalogseiten und eingebettete Tabellen gleich. */
+  align-items:start; padding:1rem 1.25rem; margin:.75rem 0 1.5rem; background:var(--color-secondary-50);
+  border:1px solid var(--panel-border); border-radius:var(--radius-lg); }   /* Randton wie .filter-panel — EIN Kartenrezept */
+@media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; } }
+.catbar__panel .filter-group { margin:0; }
+.catbar__panel__actions { grid-column:1 / -1; display:flex; justify-content:flex-end;
+  padding-top:.75rem; border-top:1px solid var(--color-secondary-200); }
+/* Dasselbe für die Seitenleisten-Filter (Dashboards, Portfolio-Karte): der
+   Zurücksetzen-Knopf sass als letztes Geschwister direkt unter der letzten
+   Filtergruppe und las sich wie ein weiterer Filter statt wie die Aktion für
+   alle (Item 5.18). Eigene Zeile mit Trennlinie, hier linksbündig, weil die
+   Leiste schmal ist und ein rechtsbündiger Knopf vom Text weglaufen würde. */
+.filter-panel__actions { display:flex; margin-top:1rem; padding-top:.75rem;
+  border-top:1px solid var(--color-secondary-200); }
+/* Filter-Dropdowns der Katalogseiten (C.select) im Panel. */
+.catbar__panel .form__group__select { min-width:0; margin:0; }
+/* CD-md (767.98) statt der Sonderbreite 700 — live gegengeprüft bei 320/390 auf
+   katalog, portfolio, services und projects: alle Ansichtsknöpfe wieder im
+   Viewport, die Leiste wächst um genau eine Zeile. */
+@media (max-width:767.98px){
+  /* Die Trefferzahl bekommt KEINE eigene Zeile mehr erzwungen: `flex:0 1 auto`
+     lässt sie neben dem Suchfeld sitzen, solange sie dort hinpasst, und erst bei
+     echtem Platzmangel umbrechen. Mit `flex:1 1 100%` stand sie auch dann allein
+     in einer Zeile, wenn rechts neben der 24rem breiten Suche noch 190px frei
+     waren (gemessen bei 630px). `white-space:nowrap` oben hält sie zusammen. */
+  .catbar__count    { flex:0 1 auto; }
+  .catbar__controls { flex:1 1 100%; margin-left:0; justify-content:space-between; }
+  .catbar__sort     { flex:1 1 8rem; }
+  .catbar__sort select { width:100%; }
+  .catbar__controls .view-switch { margin-left:auto; }   /* bleibt rechts, wie am Desktop */
+}
+/* Unter 480px reicht die Breite nicht mehr für Suche UND Zahl nebeneinander:
+   das Suchfeld schrumpfte bis an seine min-width und der Platzhalter wurde
+   abgeschnitten. Dort bleibt die Zahl auf ihrer eigenen Zeile. */
+@media (max-width:479.98px){
+  .catbar__count { flex:1 1 100%; }
+}
+@media (max-width:479.98px){
+  /* der Trennstrich wirkt am Zeilenanfang falsch, wenn der Schalter allein umbricht */
+  .catbar__controls .view-switch { border-left:0; padding-left:0; }
+  .catbar__aside { border-left:0; padding-left:0; margin-left:0; }
+}
+
+/* ── Explorer-Schicht (pf-*) — GETEILT, nicht portfolio-eigen: pf-layout/
+   pf-sidebar/pf-tree/pf-main tragen Inventar, Bauprojekte, Mietende und den
+   Metadatenkatalog (Baum: js/spatial-tree.js); pf-gallery/pf-card zusätzlich
+   die Galerie-Karten (auch via C.card idLine/chips); pf-mosaic/pf-lightbox
+   liegen bei den Medien-Blöcken (js/hero-mosaic.js, js/gallery.js). Der
+   pf-Präfix ist historisch («Portfolio») und bleibt — sechs Testskripte
+   greppen ihn; ein Umbenennen wäre Churn ohne Nutzwert (Design-Review C22). ── */
+
+/* Mobile-first: unter lg steht der Baum ÜBER der Karte statt in einer 288px-Spalte,
+   die auf dem Handy die Karte auf Briefmarkengrösse quetscht (Item 2.15). */
+.pf-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:1.25rem; align-items:start; margin-top:1rem; }
+.pf-sidebar { position:static; max-height:22rem; overflow:auto; background:var(--color-bg); border:1px solid var(--panel-border); border-radius:var(--radius-lg); padding:.5rem; }
+@media (min-width:1024px){
+  .pf-layout  { grid-template-columns:minmax(15rem,18rem) minmax(0,1fr); }
+  .pf-sidebar { position:sticky; top:1rem; max-height:calc(100vh - 7rem); }
+}
+.pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.375rem .5rem .5rem; }
+.pf-sidebar__title { font-size:var(--text-lg); margin:0; }
+
+/* Tree — flat indent; the icon shows the level, the two-tone highlight the path.
+   .is-path (light grey) = an ancestor of the selection · .is-active (blue) = selected. */
+.pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; }   /* no indent — icon + grey path carry the hierarchy */
+.pf-tree__node, .pf-tree__leaf { display:flex; align-items:center; gap:.5rem; width:100%; padding:.375rem .5rem; border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
+.pf-tree__node:hover, .pf-tree__leaf:hover { background:var(--color-secondary-50); color:var(--color-text); text-decoration:none; }
+.pf-tree__node.is-path { background:var(--color-gray-100); }
+.pf-tree__node.is-active, .pf-tree__leaf.is-active { background:var(--color-primary-50); color:var(--color-primary-700); font-weight:var(--fw-bold); box-shadow:inset 3px 0 0 var(--color-primary-600); }
+.pf-tree__chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-muted); }
+.pf-tree__node[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
+.pf-tree__ico { flex:none; color:var(--color-text-muted); }
+.pf-tree__leaf > .pf-tree__ico { margin-left:1.5rem; }   /* align the leaf icon under the parent icon (past the chevron column) */
+/* Touch/ohne Zeigegerät: 44px garantieren, Desktop-Dichte behalten (Item 2.5d). */
+@media (max-width:1023.98px), (hover:none){
+  .pf-tree__node, .pf-tree__leaf { min-height:var(--target-min); padding-block:.625rem; }
+  /* Die Knöpfe des Dokumentbetrachters standen hier — 700 Zeilen VOR ihrer
+     eigenen Basisregel und damit wirkungslos (WCAG 2.5.5). Sie stehen jetzt
+     direkt hinter der Komponente. */
+}
+.pf-tree__node.is-active .pf-tree__ico, .pf-tree__leaf.is-active .pf-tree__ico { color:var(--color-primary-600); }
+.pf-tree__id { flex:none; font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--color-text-muted); }
+.pf-tree__node.is-active .pf-tree__id, .pf-tree__leaf.is-active .pf-tree__id { color:var(--color-primary-700); }
+.pf-tree__label { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pf-tree__n { flex:none; margin-left:.375rem; font-size:var(--fs-xs); color:var(--color-text-muted); }
+.pf-tree__node.is-active .pf-tree__n { color:var(--color-primary-700); }
+
+/* Variante OHNE Symbolspalte (Metadatenkatalog, js/apps/metadata-catalog.js).
+   Dort führt der Baum Datendomänen und Systeme — Begriffe, für die es kein
+   Symbol gibt, das mehr sagt als das Wort selbst; fünf verschiedene Glyphen
+   untereinander waren Rauschen. Statt des Symbols trägt hier die Einrückung
+   die Ebene. Im Inventar bleibt das Symbol: dort kodiert es die Ebene
+   (Land › Region › Stadt › WE) in einem Baum, der gar nicht einrückt.
+   Der Zweig selbst bleibt wie im Inventar ein <button> mit dem Chevron IN sich;
+   gefiltert wird über seine Blätter (das erste heisst «Alle …»). */
+.pf-tree--plain .pf-tree__leaf { padding-left:2rem; }   /* Einrückung ersetzt die Symbolspalte */
+
+.pf-main { min-width:0; }
+
+/* ---- BBL Intranetshop -----------------------------------------------------
+   Native portal implementation of the workspace-management shop, using the
+   official CD shopping component vocabulary where it maps cleanly:
+   shopping__card / shopping__cart-* / total__summary-*. */
+.shop-head { max-width:60rem; }
+.shop-layout { margin-top:var(--sp-6); }
+.shop-layout .pf-sidebar { display:none; max-height:28rem; }
+.shop-categories-filter { padding-bottom:var(--sp-5); margin-bottom:var(--sp-5);
+  border-bottom:1px solid var(--color-secondary-200); }
+.shop-categories-filter .filter-group__legend { margin-bottom:var(--sp-2); }
+@media (min-width:1024px){
+  .shop-layout .pf-sidebar { display:block; max-height:calc(100vh - 8rem); }
+  .shop-categories-filter { display:none; }
+}
+
+.shop-card .card__title a { color:inherit; text-decoration:none; }
+.shop-card .card__footer__action { position:relative; z-index:2; }
+.shop-card .card__footer__action > .btn { pointer-events:auto; position:relative; z-index:2; }
+.shop-card .card__footer__info { color:var(--color-text); }
+.shop-card__image { background:var(--color-secondary-50); }
+.shop-card__image > img { z-index:1; object-fit:contain; padding:1rem; box-sizing:border-box; }
+.shop-card__badge { position:absolute; z-index:2; top:.75rem; left:.75rem; }
+@media (max-width:767.98px){
+  .catalogue-grid .shop-card .card__image { display:block; padding-bottom:56.25%; }
+  .catalogue-grid .shop-card.card--default { box-shadow:var(--shadow-lg); border-bottom:0; }
+  .catalogue-grid .shop-card .card__body { padding:1.5rem; }
+  .catalogue-grid .shop-card .card__footer { padding:0 1.5rem 1.5rem; }
+}
+
+.shop-product-hero { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap-responsive); align-items:center; }
+@media (min-width:768px){ .shop-product-hero { grid-template-columns:minmax(16rem,24rem) minmax(0,1fr); } }
+.shop-product-hero__media { display:flex; align-items:center; justify-content:center; min-height:18rem;
+  background:var(--color-secondary-50); border:1px solid var(--panel-border); border-radius:var(--radius-lg); padding:1.5rem; }
+.shop-product-hero__media img { max-width:100%; max-height:24rem; object-fit:contain; }
+.shop-thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(7rem,1fr)); gap:.75rem; margin-top:1rem; }
+.shop-thumbs img { width:100%; aspect-ratio:4/3; object-fit:contain; background:var(--color-secondary-50); border:1px solid var(--panel-border); border-radius:var(--radius); padding:.5rem; }
+.shop-price { font-size:var(--text-2xl); font-weight:var(--fw-bold); margin-block:0 1rem; }
+
+.shopping__cart-card-list { list-style:none; margin:0; padding:0; }
+.shopping__card { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; padding:1rem 0; border-bottom:1px solid var(--color-secondary-200); }
+.shopping__card:first-child { border-top:1px solid var(--color-secondary-200); }
+@media (min-width:1024px){ .shopping__card { grid-template-columns:10.5rem minmax(0,1fr) 9.5rem 8rem; align-items:center; } }
+.shopping__card__image { position:relative; display:flex; align-items:center; justify-content:center; min-height:10.5rem; background:var(--color-secondary-50); overflow:hidden; }
+.shopping__card-image-background { position:absolute; inset:0; z-index:30; background:var(--color-secondary-50); border:2px solid var(--color-bg); opacity:.7; }
+.shopping__card__image > img { position:relative; z-index:40; max-width:90%; max-height:90%; width:auto; height:auto; object-fit:contain; }
+.shopping__card-details-container { min-width:0; }
+.shopping__card-details-container .card__title { margin-bottom:.5rem; }
+.shopping__card-action-container { display:flex; flex-direction:column; justify-content:space-between; gap:1rem; }
+.shopping__card-price, .shopping__card-price-mobile { font-weight:var(--fw-bold); margin:0; }
+@media (min-width:1024px){ .shopping__card-price { text-align:right; } .shopping__card-price-mobile { display:none; } }
+@media (max-width:1023.98px){ .shopping__card-price { display:none; } }
+.shopping__card-action { align-self:flex-start; }
+@media (min-width:1024px){ .shopping__card-action { align-self:flex-end; } }
+.shopping__card-amount-input { max-width:9.5rem; }
+.shop-qty-input { width:100%; }
+.shopping__cart-order-overview-container { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap-responsive); align-items:start; }
+@media (min-width:1024px){ .shopping__cart-order-overview-container { grid-template-columns:minmax(0,1fr) 22rem; } }
+.shopping__cart-delivery-summary { position:static; }
+@media (min-width:1024px){ .shopping__cart-delivery-summary { position:sticky; top:1rem; } }
+/* zweite .pf-map-Deklaration: behält nur noch, was sie wirklich ergänzt — die
+   Höhe steht in der Basisregel oben (sonst überschriebe eine tote 34rem-Zeile
+   das clamp()). */
+.pf-map { border-radius:var(--radius-lg); }
+/* align-items:stretch (Vorgabe) statt `start`: nur so sind alle Karten einer
+   Reihe gleich hoch und ihre Fusszeilen fluchten. */
+.pf-gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr)); gap:1.25rem 1rem; }
+/* Ab xl wird die Spaltenzahl fest auf drei begrenzt statt weiter zu füllen:
+   auto-fill ergab bei 1440–1920px vier Karten von 243–298px — für ein Bild,
+   zwei Textzeilen und eine Fusszeile zu dicht. Drei Spalten bleiben über die
+   ganze obere Bandbreite gleich (331px bei 1440 → 405px bei 1920). */
+@media (min-width:1280px){
+  .pf-gallery { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+}
+.pf-card { display:flex; flex-direction:column; overflow:hidden; }
+/* Bildkasten wie .card__image über padding-bottom (16/10 = 62.5%), nicht über
+   aspect-ratio: `.card { height:100% }` streckt die Karte auf die Rasterzeile,
+   und ein aspect-ratio-Flexkind wird dabei gestaucht — das Bild verlor seine
+   Proportion (131px statt 186px) und die Differenz stand als Leerraum über der
+   Fusszeile. Mit height:0 + padding-bottom + flex:none ist der Kasten fix. */
+/* 16:9 wie jedes Kartenbild (card.postcss:166) — 16:10 war ein drittes Medienmass. */
+.pf-card__vis { position:relative; height:0; padding-bottom:56.25%; flex:none; overflow:hidden; background:var(--color-secondary-100); }
+.pf-card__img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.pf-card__parcel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);
+  background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
+.pf-card__chips { position:absolute; top:.5rem; left:.5rem; right:.5rem; display:flex; flex-wrap:wrap; gap:.25rem; }
+/* Titelbild eines Bauprojekts: der Knopf trägt KEINE Knopfoptik — er ist nur
+   die zugängliche Hülle um das Bild, damit die Galerie auch per Tastatur
+   aufgeht. Sichtbar wird er erst im Fokus. */
+.pj-hero { margin:1rem 0 0; }
+/* Verhältnis und Radius am Bild selbst (16/10 wie Mosaik und Mediathek) —
+   projects.js gibt der C.photo-Hülle diese Klasse mit. */
+.pj-hero__photo { aspect-ratio:16/10; border-radius:var(--radius-lg); }
+.pj-hero__btn { display:block; width:100%; padding:0; border:0; background:none; cursor:zoom-in; border-radius:var(--radius-lg); }
+.pj-hero__btn:focus-visible { outline:2px solid var(--color-focus-ring); outline-offset:3px; }
+.pj-hero .legend { margin-top:.5rem; }
+.pf-card__land { background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); padding:.125rem .5rem; border-radius:var(--radius-full); }
+/* Galerie-Karte: kompaktere, stimmige Typo & Abstände. Nur die Galerie — die
+   Listenansicht nutzt das C.table-Layout und bleibt unberührt. Rhythmus:
+   Name (fett) → eng darunter die bbl_id (mono) → Adresse; der Fuss (Kategorie ·
+   Fläche) bleibt unten bündig. gap:0 + gezielte margins statt der luftigen 1rem-Lücke. */
+.pf-card .card__body { padding:1.25rem 1.5rem 1rem; gap:0; }
+.pf-card .card__title { font-size:var(--text-lg); line-height:1.3; }
+.pf-card__id { margin:.375rem 0 0; font-family:var(--font-mono); font-size:var(--text-sm);
+  font-weight:var(--fw-regular); color:var(--color-text-muted); letter-spacing:.01em; }
+.pf-card .card__description { margin:.625rem 0 0; font-size:var(--text-sm); }
+/* Karten füllen ihre Rasterzeile, der Fuss (Kategorie · Fläche) sitzt an der
+   UNTERKANTE. Vorher stand hier `align-self:start` mit Inhaltshöhe: jede Karte
+   endete dort, wo ihr Text aufhörte, und weil Bezeichnung und Adresse
+   unterschiedlich viele Zeilen brauchen, lagen die Fusszeilen einer Reihe auf
+   drei verschiedenen Höhen. `margin-top:auto` schiebt den Fuss ans Ende der
+   Spalte — der Höhenausgleich landet als Lücke ÜBER dem Fuss, nicht in ihm. */
+.pf-card { height:100%; }
+.pf-card .card__content { height:100%; justify-content:flex-start; }
+.pf-card .card__footer { margin:auto 1.5rem 0; padding:.875rem 0 1.25rem; font-size:var(--text-sm); }
+.pf-typ { display:inline-flex; color:var(--color-text-muted); }
+

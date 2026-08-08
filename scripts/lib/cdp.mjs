@@ -195,16 +195,35 @@ const DEMO_SESSION = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' 
  * beim ersten; sonst erbte eine abgemeldete Prüfung die Sitzung ihrer
  * Vorgängerin.
  */
-export async function openPage(cdp, url, { login } = {}) {
+export async function openPage(cdp, url, { login, skin } = {}) {
   const wantsLogin = login === undefined ? /#\/app\//.test(String(url)) : !!login;
+  const requestedSkin = skin || process.env.APP_SKIN || '';
+  if (requestedSkin && !['federal', 'intranet'].includes(requestedSkin)) {
+    throw new Error(`APP_SKIN must be "federal" or "intranet", got "${requestedSkin}".`);
+  }
   const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' });
   try {
   const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
   await cdp.send('Page.enable', {}, sessionId);
   await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
-    source: wantsLogin
+    source: `${wantsLogin
       ? `try { localStorage.setItem('bbl_session_v1', ${JSON.stringify(JSON.stringify(DEMO_SESSION))}); } catch (e) {}`
-      : `try { localStorage.removeItem('bbl_session_v1'); } catch (e) {}`,
+      : `try { localStorage.removeItem('bbl_session_v1'); } catch (e) {}`}
+      ${requestedSkin ? `
+      (() => {
+        const applySkin = () => {
+          if (!document.body) return false;
+          document.body.classList.toggle('body--intranet', ${JSON.stringify(requestedSkin === 'intranet')});
+          document.body.classList.remove('body--freebrand');
+          return true;
+        };
+        if (!applySkin()) {
+          const observer = new MutationObserver(() => {
+            if (applySkin()) observer.disconnect();
+          });
+          observer.observe(document, { childList: true, subtree: true });
+        }
+      })();` : ''}`,
   }, sessionId);
   const exceptions = [];
   const consoleErrors = [];

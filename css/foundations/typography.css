@@ -1,0 +1,50 @@
+/* Headings map to CD's text--* ramps (typography.postcss:106-129) */
+h1,h2,h3,h4,h5,.h1,.h2,.h3,.h4,.h5 { margin:0 0 var(--sp-4); font-weight:var(--fw-bold); }
+h1,.h1 { font-size:var(--text-3xl); line-height:var(--lh-tight); overflow-wrap:anywhere; }
+h2,.h2 { font-size:var(--text-2xl); line-height:var(--lh-tight); }
+h3,.h3 { font-size:var(--text-xl);  line-height:var(--lh-tight); }
+h4,.h4 { font-size:var(--text-lg);  line-height:var(--lh-normal); }
+h5,.h5 { font-size:var(--text-base);line-height:var(--lh-normal); }
+/* BEWUSSTE ABWEICHUNG vom CD: Tailwind-Preflight nullt p-Ränder, Rhythmus kommt
+   dort aus .vertical-spacing und den Komponenten. Diese inhaltslastige Vanilla-
+   App gibt Absätzen einen Grundrhythmus; geschlossene Flächen nullen den
+   Schlussrand lokal (.footer-information__entry p:last-child,
+   .notification__content > p). */
+p { margin:0 0 var(--sp-4); }
+
+/* CD text utilities (typography.postcss:18-98) */
+.text--xs { font-size:var(--text-xs); } .text--sm, .small { font-size:var(--text-sm); }
+.text--base { font-size:var(--text-base); } .text--lg { font-size:var(--text-lg); }
+.text--xl { font-size:var(--text-xl); line-height:var(--lh-tight); }
+.text--2xl { font-size:var(--text-2xl); line-height:var(--lh-tight); }
+.text--3xl { font-size:var(--text-3xl); line-height:var(--lh-tight); }
+.text--4xl { font-size:var(--text-4xl); line-height:var(--lh-tight); }
+/* .text--5xl fehlt BEWUSST, bis ein Hero-Konsument existiert (wie die
+   ungenutzten Listen-Varianten); die --text-5xl-Rampe in tokens.css bleibt als
+   CD-Paritäts-Buchhaltung stehen (typography.postcss:18-21). */
+.text--bold { font-weight:var(--fw-bold); }
+.text--negative { color:var(--color-text-negative); }
+.text--asterisk::after { content:'\202F*'; speak:none; }
+/* CD-Schrift/Farb-Utilities als Shims über unsere Tokens — damit CD/Storybook-Markup
+   unverändert rendert und die Benennung mit dem offiziellen CD übereinstimmt. */
+.text--regular, .font--regular { font-weight:var(--fw-regular); }
+.text--italic, .font--italic { font-style:italic; }
+.font--bold { font-weight:var(--fw-bold); }
+.text--bold-italic, .font--bold-italic { font-weight:var(--fw-bold); font-style:italic; }
+.text--default, .color--default { color:var(--color-text); }
+/* CD `.text--light` ist text-text-500 (typography.postcss:87-89) — die dunkelste
+   Stufe, die AA erreicht. --color-text-400 (#9ca3af) wären 2.54:1 auf Weiss.
+   Alias-Gruppe, damit der CD-Name nie wieder vom Wert wegdriften kann. */
+.text--light, .color--light { color:var(--color-gray-500); }
+.color--link { color:var(--color-link); }
+.color--negative { color:var(--color-text-negative); }
+.text--asterisk ~ * .text--asterisk::after { content:''; }   /* nur der erste Stern (CD) */
+/* .overtitle (typography.postcss:100-104) exzidiert — der angekündigte
+   Konsument (Item 2.25) kam nie; die Portal-Eyebrow ist .eyebrow (Design-Review C10). */
+/* Bildlegende — CD bindet `figcaption { @apply legend }` (typography.postcss:131-137);
+   ohne diese Bindung wird jede figcaption anders gestaltet. Farbe ist CDs
+   text-text-500 (4.83:1 auf Weiss), nicht text-400 (2.54:1).
+   CDs `--color-secondary-100` (#dfe4e9) wäre auf unseren weissen Flächen 1.2:1 —
+   CDs Eyebrow/Legende ist für dunkle Hero-Hintergründe entworfen. */
+.legend, figcaption { font-size:var(--text-xs); padding-top:var(--sp-2); color:var(--color-gray-500); }
+

@@ -6,6 +6,7 @@ import { core } from './core.js';
 import { engine } from './process-engine.js';
 import { session } from './session.js';
 import C from './components.js';
+import { loadAppStyles } from './css-loader.js';
 
 // Route modules may protect transient work (for example an unsaved editor
 // draft) without owning global click/history listeners. Blockers are
@@ -552,7 +553,13 @@ async function dispatch() {
       + C.loading({ label: 'Inhalt wird geladen…', hideLabel: true, size: '2xl' }) + `</div>`;
   }
   try {
-    const mod = await import(modPath);
+    // Start module and route-CSS fetches together, but do not paint app markup
+    // until both are ready. Logged-out gates use only the static component layer.
+    const appName = segs[0] === 'app' ? segs[1] : '';
+    const [mod] = await Promise.all([
+      import(modPath),
+      appName && !gated ? loadAppStyles(appName) : Promise.resolve(),
+    ]);
     if (stale()) return;
     // Anmeldesperre VOR `needs`: eine Anwendung, die niemand öffnen darf, muss
     // auch ihre Bestände nicht laden (das Inventar allein sind 66 KB).
