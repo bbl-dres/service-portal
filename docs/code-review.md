@@ -10,7 +10,7 @@
 
 The portal is now a substantially safer and easier-to-navigate vanilla-JavaScript codebase. The review found lifecycle races, weak data and storage boundaries, duplicated catalogue logic, oversized mixed-responsibility modules, and several browser-side injection surfaces. The six implementation commits listed below address the technically decidable findings without removing a route, view, interaction, brand skin, or the dependency-free runtime model.
 
-The reviewed portal refactor has no unresolved regression in its established routes, but the new Planprüfung has one explicit release gate: file intake is disabled because the evaluated `libredwg-web` 0.7.9 source predates the LibreDWG fix for CVE-2026-15520. The vulnerable generated runtime is not included. Route rendering now has cancellation and cleanup ownership; shared loaders reject malformed data and failed assets predictably; implementation identifiers and comments are English; UI, routing, core, map, search, and security responsibilities have explicit homes; duplicated collection and catalogue operations share small tested helpers; confirmed dead code is gone; and untrusted text, attributes, URLs, exports, calendar files, CDN assets, and the local server have defined trust boundaries.
+The reviewed portal refactor has no unresolved regression in its established routes. Planprüfung now accepts local binary DWG files for non-production parsing, completeness diagnostics, and technical checks with bundled `libredwg-web` 0.7.9. Selected bytes remain in browser memory and are processed by a disposable Worker; the bundled BBL plan remains a deterministic golden fixture for the test suite rather than an input restriction. Route rendering now has cancellation and cleanup ownership; shared loaders reject malformed data and failed assets predictably; implementation identifiers and comments are English; UI, routing, core, map, search, and security responsibilities have explicit homes; duplicated collection and catalogue operations share small tested helpers; confirmed dead code is gone; and untrusted text, attributes, URLs, exports, calendar files, CDN assets, and the local server have defined trust boundaries.
 
 This is still a static prototype, not a production service. Its login is a client-side demonstration gate, browser storage is the persistence layer, repository fixtures stand in for server responses, and `scripts/serve.mjs` is a local test server. Consequently, this review does **not** claim real authentication, authorization, transactional writes, server-side validation, auditability, or multi-user consistency. Those items remain deliberately tracked rather than disguised by frontend-only substitutes.
 
@@ -85,7 +85,7 @@ js/
   plan-check/                    worker parser, bounded normalization, rules,
                                  reports, accessible view and Canvas viewer
   floorplan-editor/              editor model, commands, canvas and Three adapter
-  vendor/                        third-party provenance, rejected hashes and licenses
+  vendor/                        third-party provenance, pinned artifacts and licenses
 ```
 
 The key runtime contracts are now explicit:
@@ -98,38 +98,38 @@ The key runtime contracts are now explicit:
 
 ### Planprüfung addendum
 
-The standalone `#/app/plan-check` micro-app establishes a future browser-local
-DWG inspection boundary. The route adapter validates optional building/floor
-context, while bounded normalization, 40 technical checks, report generation,
-and the Canvas viewer remain testable pure modules. The active route is
-security-closed: it exposes no file/drop/submit controls, does not construct the
-parser client, and requests no Worker, vendor runtime, WASM, or DWG bytes.
+The standalone `#/app/plan-check` micro-app establishes a browser-local DWG
+testing boundary. The route adapter validates optional building/floor context,
+while bounded normalization, 40 technical checks, report generation, and the
+Canvas viewer remain testable pure modules. A file picker and drop target feed
+the same local parser path; no remote-URL or clipboard intake is exposed.
 
-`@mlightcad/libredwg-web` 0.7.9 was evaluated because it has a tagged source
-revision, keeps the reference implementation's API, and parsed the official BBL
-fixture compatibly. It was rejected after its corresponding source was found to
-retain the vulnerable R2004 decompressor assignment removed by LibreDWG commit
-`3d0f9fc` (CVE-2026-15520 / GHSA-67vr-6jq3-273m). The generated JS/WASM files
-were removed. `js/vendor/libredwg/` retains only license, rejected fingerprints,
-provenance, decision rationale, and the exact re-enable criteria.
+The parser-client adapter accepts a `.dwg` `File` with a non-empty safe-integer
+size no greater than 50 MiB. It checks the exact post-read byte count and an
+`AC10xx` header before constructing a Worker. The Worker repeats byte-count and
+header validation before importing vendor JavaScript/WebAssembly. Each parse
+uses a fresh Worker, and result, error, cancellation, timeout, retry, or route
+cleanup terminates it. Raw file bytes are not placed in a URL, browser storage,
+or outbound request.
 
-Re-enabling intake requires a pinned browser build whose corresponding source
-contains the upstream fix, legal approval of its GPL/source-delivery model,
-updated checksums and provenance, bounded WASM maximum memory with adversarial
-decompression/peak-memory evidence, malformed-input and fresh-runtime recovery,
-the trusted golden, privacy checks, and a restored full active upload/controller/
-workbench browser E2E. The closed route and parser-only golden do not exercise
-the dormant workflow. Normalization already marks cyclic/depth-limited blocks,
-unsupported or non-renderable entities, invalid geometry, truncated rule
-metadata, and converter-reported unknown entities incomplete; every canonical
+`@mlightcad/libredwg-web` 0.7.9 has a tagged source revision, keeps the reference
+implementation's API, and parses the official BBL fixture compatibly. The exact
+generated JS/WASM artifacts are bundled locally; `js/vendor/libredwg/` records
+their hashes, corresponding source, package provenance, and GPL-3.0 license.
+The deterministic fixture remains a regression golden for the test suite.
+
+Normalization marks cyclic/depth-limited blocks, unsupported or non-renderable
+entities, invalid geometry, truncated rule metadata, and converter-reported
+unknown entities incomplete; every canonical
 rule then becomes not evaluated and the score stays null. AOID rules retain raw
 text occurrences and only evaluate alignment where the source exposes distinct
 points. Remaining domain gates are real `DIMASSOC` linkage and authoritative SIA
-area categories; the implemented in-place Worker cancellation must also be
-exercised by the restored active E2E.
-Even then the checker is not an approval or records system: it would create
-only local print/CSV/JSON evidence (not GeoJSON without a known CRS), not an
+area categories; the arbitrary-file E2E also exercises cancellation.
+The checker is not an approval or records system: it creates only local
+print/CSV/JSON evidence (not GeoJSON without a known CRS), not an
 authoritative plan version, persisted review, signature, or backend release.
+The current checker is a non-production test tool, not a legal, professional,
+plan-approval, or records-system decision.
 
 ## Findings and disposition
 
@@ -225,17 +225,19 @@ The acceptance run at `e0f7f3c` was clean. It included:
 
 These tests establish the prototype behavior represented in this repository. They are not evidence of production authentication, browser compatibility beyond the exercised environment, real service availability, penetration testing, load capacity, or legal permission to publish data and media.
 
-The Planprüfung feature adds two always-run acceptance layers for the
-security-closed implementation: pure geometry,
-normalization, rule, reporting, viewer, limit, and closed parser-client checks;
-and a browser route test covering authentication, validated context handoff,
-the persistent unavailable state, zero file/Worker/WASM requests, privacy,
-skins, reduced motion, 320 px reflow, and return cleanup. The rejected runtime
-files are asserted absent. A third, quarantined trusted-fixture probe is skipped
-by default; it can become a release gate only after a fixed parser candidate is
-supplied. The historical compatibility run recorded AC1032, 3,504 entities,
-17 layers, zero unknown entities, 3,557 render primitives, and 40 rules, but it
-is not repeated with the vulnerable 0.7.9 runtime.
+The Planprüfung feature adds three always-run acceptance layers for the local
+file contract: pure geometry, normalization, rule, reporting, viewer, resource
+limit, configuration and parser-client boundary checks; a browser route test
+covering authentication, validated context handoff, picker/drop intake,
+validation failures, the real result workbench, retry, cleanup, skins, reduced
+motion and 320 px reflow; and a self-serving parser golden. The golden verifies
+the manifest, fixture and runtime hashes, runs the exact local runtime with zero
+external requests, and pins AC1032, 3,504 entities, 17 layers, zero
+converter-reported unknown entities,
+3,557 render primitives, 30 rooms, one area and 40 rules. Two unsupported and
+ten non-renderable entities correctly make completeness `incomplete`, keep the
+score `null`, and leave the canonical rules not evaluated. That golden pins one
+known input while the browser and core suites cover the general file contract.
 
 ## Domain glossary for implementation names
 
@@ -285,7 +287,7 @@ German remains correct in the UI. The English column is the preferred implementa
 | Media licensing and redistribution | File presence and metadata do not prove copyright, model/property release, attribution, or redistribution rights. Automated deletion could also remove approved material. | Record owner, source, license, attribution, and publication approval per asset; replace or withdraw unresolved media. Decide history treatment separately. |
 | Strict CSP and complete local vendoring | Direct MapLibre, Swagger UI, and bpmn-js assets now use exact SRI, but nested fonts and dynamic map tiles/glyphs are fetched by those libraries and cannot be authenticated with SRI in the same way. Inline styles and remote endpoints also affect CSP design. | Decide whether to self-host libraries, fonts, styles, tiles, sprites, and glyphs; inventory inline style requirements; deploy CSP as an HTTP response header and test it in the target hosting environment. |
 | Map privacy and external availability | Remote tile/geocoding calls expose network metadata and can fail outside the controlled demonstration environment. The repository has no service agreement or offline tile source. | Select approved providers, privacy terms, attribution, availability targets, fallback behavior, and optionally a self-hosted map stack. |
-| Safe and authoritative plan intake, approval, and LibreDWG licensing | Planprüfung file intake is disabled and the evaluated 0.7.9 binary was removed because its source predates the CVE-2026-15520 fix. Even the prepared local checker has no backend record, version, signature, reviewer identity, retention policy, or release transaction. | Supply a pinned browser parser whose source includes `3d0f9fc`; bound WASM maximum memory and adversarial peak allocation before JS result limits; approve GPL/source delivery; pass malformed/golden/privacy/lifecycle gates; then design authenticated upload, isolation, server validation, immutable versions, roles, audit, retention, and approval/rejection workflow. |
+| Safe and authoritative plan intake, approval, and LibreDWG licensing | The browser-local checker accepts caller-selected files only for non-production testing. It has no backend record, authoritative version, signature, reviewer identity, retention policy, or release transaction. The bundled parser remains GPL-3.0 software with complete-corresponding-source obligations. | For any future production workflow, approve a parser deployment and GPL/source-delivery model; then design authenticated upload, isolation, server validation, immutable versions, roles, audit, retention, and approval/rejection workflow. |
 | Further splitting of closure-bound editor controllers | `js/floorplan-editor/controller.js`, `views.js`, and parts of `three-viewer.js` share mutable interaction, scene, history, and disposal state. A mechanical split would create hidden coupling without reducing it. | First define an explicit editor state/event boundary and add interaction/performance fixtures; then extract one state owner at a time. |
 | Review binaries and Git history | Screenshots, PDFs, historical probes, and old commits are evidence or shared history. Removal and history rewriting are destructive governance decisions outside a JavaScript refactor. | Set retention and artifact-storage policy, identify canonical evidence, obtain explicit approval, and communicate any history rewrite to every consumer. |
 

@@ -374,17 +374,9 @@ export function renderPlanCheckUploadState(C, state) {
       <span class="small muted">${value} %</span>
     </div>`;
   }
-  if (state.file) {
-    return `<div class="plan-check-file-drop__state">
-      ${C.icon('FileCheckmark', 'icon--2xl plan-check-file-drop__icon')}
-      <strong>${C.escape(state.file.name)}</strong>
-      <span class="small muted">${formatFileSize(state.file.size)} \u00b7 bereit zur Pr\u00fcfung</span>
-    </div>`;
-  }
   return `<div class="plan-check-file-drop__state">
     ${C.icon('CloudUpload', 'icon--2xl plan-check-file-drop__icon')}
-    <strong>DWG-Datei hierher ziehen</strong>
-    <span class="small muted">oder mit dem Dateifeld ausw\u00e4hlen</span>
+    <strong>DWG-Datei hierher ziehen oder mit dem Dateifeld ausw\u00e4hlen</strong>
   </div>`;
 }
 
@@ -428,16 +420,21 @@ function uploadStage(C, state, context) {
     </section>
     <section class="plan-check-section" aria-labelledby="plan-check-file-heading">
       <h3 id="plan-check-file-heading">Datei</h3>
-      <p id="plan-check-file-hint" class="form__group__hint">Zugelassen sind DWG-Dateien bis 50 MB. Die Zeichnung wird ausschliesslich in Ihrem Browser verarbeitet.</p>
+      <p id="plan-check-file-hint" class="form__group__hint">Zugelassen sind DWG-Dateien bis 50 MiB. Die Zeichnung wird ausschliesslich in Ihrem Browser verarbeitet.</p>
       <div id="plan-check-file-message" data-plan-check-file-message>${state.fileError ? C.notification(state.fileError, 'error', 'WarningCircle') : ''}</div>
       <div class="plan-check-file-drop${state.dragActive ? ' plan-check-file-drop--dragover' : ''}${state.fileError ? ' plan-check-file-drop--error' : ''}${loading ? ' plan-check-file-drop--loading' : ''}"
         data-plan-check-drop-zone>
         ${renderPlanCheckUploadState(C, state)}
         <div class="plan-check-file-field">
-          <label for="plan-check-file">DWG-Datei ausw\u00e4hlen<span class="sr-only"> Pflichtfeld</span></label>
-          <input id="plan-check-file" name="plan-check-file" type="file" accept=".dwg"${state.file ? '' : ' required'}
-            aria-required="true" aria-describedby="plan-check-file-hint plan-check-file-message"
+          <input class="sr-only plan-check-file-field__input" id="plan-check-file" name="plan-check-file" type="file"
+            accept=".dwg"${state.file ? '' : ' required'} aria-required="true"
+            aria-describedby="plan-check-file-hint plan-check-file-message plan-check-file-name"
             ${state.fileError ? 'aria-invalid="true"' : ''}${loading ? ' disabled' : ''} data-plan-check-file>
+          <label class="btn btn--outline plan-check-file-field__button" for="plan-check-file">
+            <span class="btn__text-centered" aria-hidden="true">Datei ausw\u00e4hlen</span>
+            <span class="sr-only">DWG-Datei ausw\u00e4hlen, Pflichtfeld</span>
+          </label>
+          <span class="small muted plan-check-file-field__name" id="plan-check-file-name" data-plan-check-file-name${state.file ? '' : ' hidden'}>${C.escape(state.file?.name || '')}</span>
         </div>
       </div>
       <ul class="plan-check-requirements">
@@ -450,7 +447,7 @@ function uploadStage(C, state, context) {
       <button class="btn btn--outline" type="button" data-plan-check-action="abort"${loading ? '' : ' hidden'}>
         <span class="btn__text">Prüfung abbrechen</span>
       </button>
-      ${context.returnHref ? `<button class="btn btn--outline" type="button" data-plan-check-action="cancel"><span class="btn__text">Abbrechen</span></button>` : ''}
+      ${contextualReturnButton(C, context)}
       <button class="btn btn--filled${loading ? ' btn--loading' : ''}" type="submit"
         ${!state.file || loading ? 'disabled' : ''} aria-busy="${loading}">
         ${loading ? C.icon('Spinner', 'btn__icon icon--spin') : C.icon('Search', 'btn__icon')}
@@ -636,14 +633,9 @@ function contextualReturnButton(C, context) {
 
 function unavailableStage(C, context) {
   return `<section class="plan-check-section plan-check-unavailable" aria-labelledby="plan-check-unavailable-heading">
-    <p class="eyebrow">Vorübergehend deaktiviert</p>
     <h2 id="plan-check-unavailable-heading">DWG-Prüfung derzeit nicht verfügbar</h2>
     ${context.contextWarning ? C.notification(context.contextWarning, 'warning', 'WarningCircle') : ''}
-    ${C.notification(
-      'Der Datei-Upload und die lokale Verarbeitung sind aus Sicherheitsgründen deaktiviert.',
-      'warning', 'WarningCircle',
-    )}
-    <p>Es werden keine Plandateien eingelesen, verarbeitet oder übertragen. Die Funktion wird nach einer geprüften Aktualisierung der DWG-Engine wieder bereitgestellt.</p>
+    <p>Die lokale DWG-Prüfung ist in dieser Testumgebung momentan nicht aktiviert.</p>
     <div class="plan-check-actions">${contextualReturnButton(C, context)}</div>
   </section>`;
 }
@@ -658,6 +650,10 @@ export function renderPlanCheckPage(C, state, context = {}) {
       <p class="lead">${intakeAvailable
         ? 'Pr\u00fcfen Sie eine DWG-Datei lokal auf Layerstruktur, Geometrie, Raumdaten und Fl\u00e4chenkennzahlen.'
         : 'Die lokale DWG-Pr\u00fcfung steht vor\u00fcbergehend nicht zur Verf\u00fcgung.'}</p>
+      ${intakeAvailable ? `<p class="plan-check-local-note" data-plan-check-privacy>
+        ${C.icon('InfoCircle', 'plan-check-local-note__icon')}
+        <span>Diese Testumgebung ist f\u00fcr technische DWG-Tests mit Nicht-Produktivdaten vorgesehen; Ergebnisse sind keine formelle Planfreigabe. Die ausgew\u00e4hlte Datei wird lokal im Browser verarbeitet und nicht an einen Server \u00fcbertragen.</span>
+      </p>` : ''}
     </div>
     ${intakeAvailable ? `<div class="plan-check__wizard">
       ${C.wizardHead(PLAN_CHECK_STEPS, step, {

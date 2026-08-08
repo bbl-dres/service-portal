@@ -686,9 +686,10 @@ export function normalizeDrawing(database, options = {}) {
         const et = boundedString(e.type || 'UNKNOWN');
         const handle = boundedString(e.handle || '');
         recordNonZeroZ(e, l, et, handle);
-        // MLightCAD exposes the DWG invisibility bit as `isVisible`: 0/false
-        // means visible and 1/true means invisible.
-        if (e.isVisible === true || e.isVisible === 1) {
+        // @mlightcad/libredwg-web 0.7.9 converts LibreDWG's invisibility bit to
+        // a real `isVisible` boolean, so true is visible and false is hidden.
+        // Preserve the older numeric adapter convention where 1 meant hidden.
+        if (e.isVisible === false || (typeof e.isVisible === 'number' && e.isVisible === 1)) {
             diagnostics.skippedInvisibleEntities += 1;
             return;
         }

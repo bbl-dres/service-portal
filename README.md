@@ -25,7 +25,7 @@ The BBL Kundenportal is a process-oriented prototype for the [Federal Office for
 
 - Service catalogue, guided forms, and case tracking
 - Property inventory, building documentation, media, and project views
-- Workspace planning, browser-local floor-plan editing, a security-gated DWG-checking route, room booking, and the BBL intranet shop
+- Workspace planning, browser-local floor-plan editing and DWG checking, room booking, and the BBL intranet shop
 - Application and data catalogues, dashboards, process documentation, and knowledge content
 
 ## Technical overview
@@ -36,7 +36,7 @@ The BBL Kundenportal is a process-oriented prototype for the [Federal Office for
 - UI patterns and tokens aligned with the official [`swiss/designsystem`](https://github.com/swiss/designsystem)
 - Pinned MapLibre GL JS, Swagger UI, and bpmn-js assets are loaded only when needed over HTTPS, with SHA-384 Subresource Integrity, anonymous CORS, and no-referrer policy
 - Three.js is vendored locally; route-specific CSS is also loaded lazily and awaited before a micro-app renders
-- The Plan Check route and bounded checker implementation are present, but DWG intake is disabled: the evaluated `libredwg-web` 0.7.9 runtime was removed after a known upstream decompressor vulnerability was confirmed
+- Plan Check accepts local DWG files for non-production parsing and completeness testing with bundled `libredwg-web` 0.7.9; selected files stay in the browser and are not uploaded to a service
 - Dependency-free Node/CDP browser checks documented in [`scripts/README.md`](scripts/README.md)
 
 ### JavaScript structure
@@ -50,7 +50,7 @@ js/
 ├── map/                   # map slots, building maps and cluster navigation
 ├── search/                # indexing, suggestions and local diagnostic log
 ├── floorplan-editor/      # editor model, commands, rendering and controllers
-├── plan-check/            # security-gated checker core, rules, reports and viewer
+├── plan-check/            # non-production local DWG checker, reports and viewer
 ├── apps/                  # specialist micro-app entry points
 ├── pages/                 # portal page renderers
 ├── security/              # URL/resource policies and untrusted-text boundaries
@@ -68,13 +68,18 @@ be affected by provider availability or policy changes. The app reports these
 failures, but a production deployment should review the residual risks and
 self-host where appropriate; see the [technical review](docs/code-review.md).
 
-The Planprüfung route currently explains that file checking is unavailable;
-it does not expose a file input or instantiate a parser. The implemented
-browser-local viewer, rules, and reports remain security-gated until a fixed,
-pinned LibreDWG browser build passes the documented release gate. Even then it
-would remain a feedback prototype, not an approval or records system. The
-rejected parser candidate, GPL-3.0 terms, advisory and re-enable criteria are
-recorded in [`js/vendor/libredwg/README.md`](js/vendor/libredwg/README.md) and
+The Planprüfung route accepts local binary DWG files for viewing, parser
+compatibility checks, completeness diagnostics, and the prototype's technical
+rules. Files are read into browser memory and processed in a disposable Web
+Worker; they are not sent to a server, placed in the URL, or stored in browser
+storage. The bundled BBL reference drawing remains a deterministic regression
+fixture, while users select or drop their own local DWG test files.
+The checker is a non-production test tool and does not create an authoritative
+plan version, persisted review, or professional approval.
+
+The local parser is `libredwg-web` 0.7.9. Its GPL-3.0 terms, exact artifacts,
+checksums, package provenance, and recorded corresponding source are described in
+[`js/vendor/libredwg/README.md`](js/vendor/libredwg/README.md) and
 [Third-party notices](THIRD_PARTY_NOTICES.md).
 
 ## Run locally
@@ -101,10 +106,12 @@ Architecture, requirements, data models, design reviews, and implementation note
 ## License
 
 Original portal code is licensed under the [MIT License](LICENSE). Vendored and
-adapted third-party material remains under its own terms. The rejected
-GPL-3.0 parser candidate is not included, but its provenance and license record
-remain for auditability. Review [Third-party notices](THIRD_PARTY_NOTICES.md)
-before copying or distributing the repository.
+adapted third-party material remains under its own terms. In particular, the
+bundled `libredwg-web` runtime is GPL-3.0 software and is not relicensed by
+the portal's MIT license. Anyone conveying the runtime must preserve its
+license and notices and satisfy the GPL-3.0 complete-corresponding-source
+obligations. Review [Third-party notices](THIRD_PARTY_NOTICES.md) before copying,
+deploying, or distributing the repository.
 
 ## Technology acknowledgements and attribution
 
@@ -137,4 +144,4 @@ brand elements.
 | [swisstopo / geo.admin.ch API](https://docs.geo.admin.ch/) | Managed service; API version not pinned | [Federal Spatial Data Infrastructure terms](https://www.geo.admin.ch/en/general-terms-of-use-fsdi) | Live Swiss address and geodata search used by location workflows. |
 | [GitHub Pages](https://pages.github.com/) | Managed service | [GitHub Terms of Service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service); repository content retains its own licenses | Static hosting for the public prototype demonstration. |
 | [bbl-dres/plan-check](https://github.com/bbl-dres/plan-check/tree/7320840a53dcd71859700fe4c90256cbdb6b01f3) | Commit `7320840a53dcd71859700fe4c90256cbdb6b01f3` | [MIT](js/plan-check/PLAN_CHECK_REFERENCE_LICENSE) | Reference implementation whose checker concepts and official BBL test fixture were adapted for Planprüfung. |
-| [`libredwg-web`](https://github.com/mlightcad/libredwg-web/tree/v0.7.9) | `0.7.9`, evaluated only | [GPL-3.0](js/vendor/libredwg/LICENSE) | Rejected compatibility candidate: its generated JavaScript and WASM were removed after a known decompressor vulnerability was confirmed, so no DWG parser runtime is distributed. See the [security record](js/vendor/libredwg/README.md). |
+| [`libredwg-web`](https://github.com/mlightcad/libredwg-web/tree/v0.7.9) | `0.7.9`, bundled locally | [GPL-3.0](js/vendor/libredwg/LICENSE); corresponding-source obligations apply | JavaScript/WASM DWG parser used by the non-production, browser-local viewer and checker. See the [artifact and provenance record](js/vendor/libredwg/README.md). |

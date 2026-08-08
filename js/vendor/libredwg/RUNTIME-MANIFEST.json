@@ -1,0 +1,20 @@
+{
+  "schema": "bbl-plan-check-runtime/1",
+  "package": {
+    "name": "@mlightcad/libredwg-web",
+    "version": "0.7.9",
+    "license": "GPL-3.0",
+    "releaseTag": "https://github.com/mlightcad/libredwg-web/releases/tag/v0.7.9",
+    "taggedCommit": "b70b5573a6bf2345e5fb10f2adff7fb74a8123c5",
+    "correspondingSourceUrl": "https://github.com/mlightcad/libredwg-web/tree/b70b5573a6bf2345e5fb10f2adff7fb74a8123c5",
+    "npmTarball": "https://registry.npmjs.org/@mlightcad/libredwg-web/-/libredwg-web-0.7.9.tgz",
+    "npmIntegrity": "sha512-tqjx0eCiR0CNI3TyO3LVYzl4ptuzSFm7asGn/C1YiJaEk7Vneto+lRrVUco85qw+PZDihaFLwWqdYIEse1swbA==",
+    "npmTarballSha256": "ab965aec46d03d5c8cb646a8d220a806cd1a04a9c46be1ad1993e1da35d33364"
+  },
+  "files": {
+    "dist/libredwg-web.js": "438b77262a85e8815e3928f3ff97a51ec84df06d3f3fd184c8459e798d568b81",
+    "wasm/libredwg-web.js": "62deaef11c2d6cf8fd0a0ee83d29120ca40bdabc2cdd9baa1f7911410bf9d73f",
+    "wasm/libredwg-web.wasm": "d8b78f6d5e63e6e178cf7343cfd08ebe798d75b6754c593e15d8f948b823e038",
+    "LICENSE": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+  }
+}

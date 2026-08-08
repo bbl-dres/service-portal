@@ -7,15 +7,21 @@ its copyright and permission notice are retained in
 `PLAN_CHECK_REFERENCE_LICENSE`.
 
 The portal adaptation is not a wholesale copy of the standalone application.
-The prepared, currently unreachable checker replaces its global state, router,
-translation layer, unscoped CSS and CDN exports with route-owned modules, a
-disposable Web Worker, bounded pure normalization/rules, CD Bund components,
-accessible controls and local report formats. The active route is
-security-closed: it has no file control, constructs no parser, and requests no
-Worker, vendor runtime, WASM or DWG bytes. The small local parser-client adapter
-is statically imported but remains inert. If intake is eventually approved, raw
-DWG bytes must remain in memory and must never be placed in a URL, browser
-storage or an outbound request.
+It replaces the reference application's global state, router, translation
+layer, unscoped CSS and CDN exports with route-owned modules, a disposable Web
+Worker, bounded pure normalization/rules, CD Bund components, accessible
+controls and local report formats.
+
+The active route accepts caller-selected local binary DWG files for
+non-production parser, completeness, and rule testing. A file picker and drop
+target pass the selected `File` to the parser-client `parse(file)` API. The
+client requires a `.dwg` name, a non-empty safe-integer size no greater than
+50 MiB, an exact post-read byte count, and a valid `AC10xx` header. The Worker
+repeats the byte-count and header checks before importing the locally bundled
+engine. Raw bytes remain in memory and are never placed in a URL, browser
+storage, or an outbound request. The repository-owned
+`CAD.V01-CAFM-Plan-DE.dwg` remains a deterministic test golden, not an input
+restriction or a user-facing sample action.
 
 ## Normalization limits
 
@@ -49,7 +55,7 @@ limit cannot evade the rule. The UI, CSV and JSON reports expose completeness
 instead of presenting an ordinary quality score. Hard expansion, primitive and
 vertex output limits throw `RESOURCE_LIMIT`, so no partial result is returned.
 
-## Validation limits before enablement
+## Validation and prototype limits
 
 - The source contract does not provide an authoritative SIA use-category
   mapping. Room polygon area is reported separately; HNF, NNF, VF, FF, NF, NGF
@@ -65,31 +71,33 @@ vertex output limits throw `RESOURCE_LIMIT`, so no partial result is returned.
   is evaluated only for aligned TEXT/ATTRIB sources that provide distinct
   insertion and alignment points; without that source evidence the rule is
   explicitly `not-evaluated`.
-- The dormant loading state has a visible in-place “Prüfung abbrechen” action
+- The loading state has a visible in-place “Prüfung abbrechen” action
   with or without return context. It aborts the Worker request, preserves the
-  selected file and metadata, restores the submit state, and moves focus to
-  the restored submit action. The full enabled-route E2E must prove this
-  contract with an approved runtime before intake is enabled.
+  context metadata, restores file selection, and returns focus to the upload
+  control.
 
-The prepared result panels already use a consistent heading hierarchy, the
+The active result panels use a consistent heading hierarchy, the
 viewer actions are exposed as a named group, wheel zoom does not consume normal
 page scrolling until the Canvas is focused (and never consumes Ctrl/Cmd wheel),
 and progress/status changes have one live-announcement path. These contracts
-remain covered with synthetic data while intake is closed.
+are covered by the upload browser workflow, the deterministic fixture golden,
+and synthetic core tests.
 
-The security-closed route test is not an enabled workflow test. Before changing
-`PLAN_CHECK_INTAKE_ENABLED`, restore a full file-input/drop, controller,
-progress/cancel, Worker, workbench, export, navigation-cleanup and failure-
-recovery browser E2E around an approved runtime. The parser-only trusted golden
-does not replace it.
+The route test exercises file selection and drop, validation failures, the
+result workbench, exports, retry, cleanup, skins, and reflow. The parser golden
+independently pins artifact and fixture hashes, verifies the real 0.7.9 result,
+and asserts zero external requests. `PLAN_CHECK_INTAKE_ENABLED=true` is the
+explicit contract for this browser-local testing tool.
 
-The DWG parser candidate is separately licensed GPL-3.0 software. Version
-0.7.9 was removed after a known decompressor vulnerability was confirmed in its
-corresponding source, so the shipped route cannot accept files. Its rejected
-checksums, source, license, security decision, and re-enable gate are recorded
-under `../vendor/libredwg/`. See that directory before adding any parser binary.
-Approval also requires a source build containing fix `3d0f9fc`, a pinned
-candidate manifest and checksums, GPL/source-delivery approval, and a bounded
-WASM maximum-memory configuration proven with adversarial decompression and
-peak-memory tests. JavaScript result limits run after conversion and do not
-bound decoder allocation.
+The bundled DWG parser is separately licensed GPL-3.0 software. Exact artifact
+hashes, source, license, and package provenance are recorded under
+`../vendor/libredwg/`. The portal's MIT license does not relicense those files,
+and anyone conveying them must satisfy the GPL-3.0
+complete-corresponding-source obligations.
+
+The checker remains a non-production test tool. Its browser result is not a
+legal, professional, plan-approval, or records-system decision, and JavaScript
+result limits do not turn the local workflow into an authoritative ingestion
+service. A future production design still needs authenticated upload,
+server-side validation, immutable plan/result versions, roles, audit, retention,
+and an approved parser deployment and licensing model.

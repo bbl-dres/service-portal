@@ -498,7 +498,7 @@ function detail(ctx, id) {
         { type: 'link', label: 'Grundriss im Plan-Editor bearbeiten', href: floorplanEditor(item.id),
           description: 'Eigenständige Anwendung · öffnet ein neues Fenster', newWindow: true },
         { type: 'link', label: 'Planprüfung öffnen', href: planCheck(item.id),
-          description: 'DWG-Prüfung · öffnet ein neues Fenster', newWindow: true },
+          description: 'Lokale DWG-Datei prüfen · öffnet ein neues Fenster', newWindow: true },
         { type: 'button', id: 'workspace-export', label: 'Aggregierte Planannahmen exportieren', description: 'CSV aus den Prototypdaten', icon: 'Download', disabled: !equipment.length },
         { type: 'disabled', label: 'SIA-Flächennachweis erstellen', description: 'Fachreport folgt', icon: 'Printer' },
         { type: 'link', label: 'Ersatz- oder Reparaturauftrag', href: `#/app/fault-report?${buildingQuery}`, newWindow: true },
@@ -567,7 +567,7 @@ function detail(ctx, id) {
               <span class="btn__text">Im Plan-Editor bearbeiten</span>${C.icon('External', 'btn__icon icon--base')}
             </a>
             <a class="btn btn--outline btn--sm btn--full-width btn--icon-left mt-2" id="workspace-plan-check" href="${planCheck(item.id, floor.floorId)}" target="_blank" rel="noopener noreferrer">
-              ${C.icon('CloudUpload', 'btn__icon icon--base')}<span class="btn__text">Planprüfung öffnen</span>
+              ${C.icon('Search', 'btn__icon icon--base')}<span class="btn__text">Planprüfung öffnen</span>
             </a>
           </div>
           <dl class="kv kv--tight fp-facts">

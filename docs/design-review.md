@@ -110,17 +110,20 @@ addiert.
 | Vorher `css/app.css` | 4'760 | 348'434 | 96'142 |
 | Vorher `css/tokens.css` | 414 | 23'643 | 8'706 |
 | Vorher, App + Tokens | 5'174 | 372'077 | 104'848 |
-| Nachher, statischer Erstaufruf | 3'818 | 265'672 | 89'005 |
-| Nachher, alle 32 CSS-Dateien | 5'328 | 376'677 | 112'246 |
+| Nachher, statischer Erstaufruf | 3'826 | 266'286 | 89'179 |
+| Nachher, acht lazy App-Dateien | 1'508 | 110'533 | 23'243 |
+| Nachher, alle 32 CSS-Dateien | 5'334 | 376'819 | 112'422 |
 
 Die Summe aller Dateien ist keine Erstaufrufgrösse. Normale Seiten fordern kein
 `css/apps/*.css` an; eine Micro-App lädt nur ihre deklarierte Teilmenge und der
 Browser cached bereits geladene Abhängigkeiten. Zwischen statischem Erstaufruf
-und dem theoretischen Abruf aller acht App-Dateien liegen 1'510 Zeilen,
-111'005 Rohbytes beziehungsweise 23'241 gzip-Bytes. Zudem ist eine Summe
+und dem theoretischen Abruf aller acht App-Dateien liegen 1'508 Zeilen,
+110'533 Rohbytes beziehungsweise 23'243 gzip-Bytes. `plan-check.css` macht
+davon 232 Zeilen, 18'572 Rohbytes und 3'345 gzip-Bytes aus und wird nur auf der
+Planprüfungsroute geladen. Zudem ist eine Summe
 einzeln komprimierter Dateien nicht direkt mit einem einzigen konkatenierten
 gzip-Strom vergleichbar: jede Datei trägt einen eigenen gzip-/Wörterbuch-
-Overhead. Der relevante initiale Vergleich ist daher 104'848 zu 89'005
+Overhead. Der relevante initiale Vergleich ist daher 104'848 zu 89'179
 gzip-Bytes; die Vollsumme dokumentiert Wartungsumfang und den kalten Worst Case
 über alle Micro-Apps, nicht den Transfer einer einzelnen Route.
 
@@ -146,10 +149,12 @@ Beide `review-accessibility.mjs`-Läufe endeten ebenfalls mit Status 0 und exakt
 | Federal | `routes 70 · overflow 0 · positiveTabindex 0 · brokenReferences 0 · hiddenFocusable 0 · focusIndicator 0 · mainLandmark 0 · unnamedAxControls 0` |
 | Intranet | `routes 70 · overflow 0 · positiveTabindex 0 · brokenReferences 0 · hiddenFocusable 0 · focusIndicator 0 · mainLandmark 0 · unnamedAxControls 0` |
 
-Der Planprüfungszustand in dieser Matrix ist die aktive, sicherheitsgeschlossene
-Nichtverfügbarkeitsansicht. Die vorbereitete Upload-/Workbench-Oberfläche ist
-unerreichbar und deshalb ausdrücklich nicht Teil dieser Abnahme; sie benötigt
-vor einer Freigabe eine eigene vollständige Enabled-Route-E2E.
+Der Planprüfungszustand in dieser Matrix ist die aktive, nicht-produktive
+Testoberfläche für lokale DWG-Dateien. Der dedizierte `test-plan-check.mjs`
+deckt zusätzlich Dateiauswahl und Drop, Validierungsfehler, den realen
+Workbench-/Viewer-Zustand, Wiederholen, Abbruch und Worker-Cleanup ab. Diese
+Abnahme bewertet das Browser-Testwerkzeug und ist keine Freigabe eines
+produktiven Plan- oder Genehmigungsprozesses.
 
 Zusätzlich liefen die zehn verlangten CDP-Suiten (`apidocs`, `catalogue`,
 `content`, `dashboard`, `estate`, `forms`, `login`, `portfolio`, `race`,

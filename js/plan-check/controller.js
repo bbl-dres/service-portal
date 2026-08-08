@@ -20,7 +20,7 @@ const PROGRESS_LABELS = Object.freeze({
 
 const PARSER_ERROR_MESSAGES = Object.freeze({
   INVALID_FILE_TYPE: 'Bitte w\u00e4hlen Sie eine Datei mit der Endung .dwg.',
-  FILE_TOO_LARGE: 'Die DWG-Datei ist gr\u00f6sser als 50 MB.',
+  FILE_TOO_LARGE: 'Die DWG-Datei ist gr\u00f6sser als 50 MiB.',
   INVALID_DWG_HEADER: 'Die Datei besitzt keinen lesbaren DWG-Dateikopf.',
   ENGINE_LOAD_FAILED: 'Das lokale DWG-Lesemodul konnte nicht geladen werden.',
   DWG_READ_FAILED: 'Die DWG-Datei konnte nicht gelesen werden. M\u00f6glicherweise ist sie besch\u00e4digt oder nicht unterst\u00fctzt.',
@@ -74,8 +74,8 @@ export function createPlanCheckController(ctx, options = {}) {
   const { mount, C, core, signal: routeSignal } = ctx;
   if (!mount || !C) throw new TypeError('Plan Check requires a route mount and component API');
 
-  // Do not even construct a parser client while the security gate is closed.
-  // This keeps file reads, Worker creation and WASM loading unreachable.
+  // The adapter is lightweight; file reads and the disposable parser Worker
+  // begin only after the visitor submits a locally selected DWG.
   const parser = PLAN_CHECK_INTAKE_ENABLED ? createPlanCheckParser() : null;
   const eventAbort = new AbortController();
   const { signal } = eventAbort;
@@ -318,6 +318,11 @@ export function createPlanCheckController(ctx, options = {}) {
       input.disabled = state.phase === 'loading';
       input.required = !state.file;
       input.setAttribute('aria-invalid', String(Boolean(state.fileError)));
+    }
+    const fileName = mount.querySelector('[data-plan-check-file-name]');
+    if (fileName) {
+      fileName.textContent = state.file?.name || '';
+      fileName.hidden = !state.file;
     }
     const loading = state.phase === 'loading';
     const abortButton = mount.querySelector('[data-plan-check-action="abort"]');
@@ -562,8 +567,8 @@ export function createPlanCheckController(ctx, options = {}) {
   function fileDrag(event) {
     if (!event.dataTransfer?.types?.includes('Files')) return;
     event.preventDefault();
-    // Suppress the browser's file-navigation default without accepting or
-    // announcing a file while the security gate is closed.
+    // Suppress the browser's file-navigation default. Intake is normally
+    // enabled; the flag remains a graceful operational fallback.
     if (!state.intakeAvailable) return;
     if (state.phase === 'loading') return;
     if (event.type === 'dragenter') dragDepth += 1;

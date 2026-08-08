@@ -1,12 +1,12 @@
 // Shared limits and CAD conventions for the DWG checker core.
 
-export const REJECTED_LIBREDWG_VERSION = '0.7.9';
+export const LIBREDWG_VERSION = '0.7.9';
 export const MAX_FILE_SIZE = 50 * 1024 * 1024;
 export const DWG_FILE_TYPE = 0;
 export const PARSER_TIMEOUT_MS = 120_000;
-// Security gate: keep intake disabled until the vendored LibreDWG runtime is
-// replaced by an official build that fixes CVE-2026-15520.
-export const PLAN_CHECK_INTAKE_ENABLED = false;
+// Plan Check is a local browser prototype: selected bytes are transferred only
+// to a same-origin module Worker and are never uploaded by the parser adapter.
+export const PLAN_CHECK_INTAKE_ENABLED = true;
 
 // These are defensive browser budgets, not CAD format limits. Parsing and the
 // structured clone of a result temporarily coexist in memory, so the output

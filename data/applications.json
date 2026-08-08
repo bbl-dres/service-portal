@@ -539,15 +539,16 @@
       "kind": "app",
       "href": "#/app/plan-check"
     },
-    "description": "Vorbereitete technische DWG-Prüfung; die Dateiannahme ist derzeit aus Sicherheitsgründen deaktiviert.",
+    "description": "Lokale DWG-Dateien im Browser anzeigen und auf Vollständigkeit sowie technische Auffälligkeiten prüfen.",
     "area": "logistics",
-    "long": "Die Planprüfung ist als spezialisierte Arbeitsoberfläche für eingehende CAD-Pläne vorbereitet. Die Dateiannahme bleibt deaktiviert, bis ein sicher aktualisierter und rechtlich freigegebener LibreDWG-Browser-Build verfügbar ist. Die Route erklärt diesen Status; sie liest, verarbeitet oder überträgt keine Plandatei und bildet keine fachliche Freigabe oder produktive Planversionierung ab.",
+    "long": "Die Planprüfung liest ausgewählte oder abgelegte DWG-Dateien lokal im Browser, stellt unterstützte Geometrie dar und prüft Vollständigkeit sowie technische Datenqualitätsregeln. Die Dateien werden nicht an einen Server übertragen oder im Browser gespeichert. Das Werkzeug dient ausschliesslich nicht-produktiven Tests und bildet keine fachliche Freigabe oder produktive Planversionierung ab.",
     "access": {
-      "note": "Für angemeldete Fachpersonen der CAD- und Flächendatenbewirtschaftung. Die Dateiannahme ist derzeit sicherheitsbedingt deaktiviert.",
+      "note": "Für angemeldete Fachpersonen der CAD- und Flächendatenbewirtschaftung. Lokale binäre DWG-Dateien bis 50 MiB können ausschliesslich zu nicht-produktiven Testzwecken geprüft werden.",
       "steps": [
         "Anmeldung über AGOV / FedLogin.",
-        "Optional Workspace-Objekt und Geschoss als Rücksprungkontext übernehmen.",
-        "Aktuellen Sicherheits- und Verfügbarkeitsstatus lesen."
+        "Optional Workspace-Objekt und Geschoss als illustrativen Rücksprungkontext übernehmen.",
+        "Eigene DWG-Datei auswählen oder in die Ablagefläche ziehen.",
+        "Lokale Prüfung starten und Vollständigkeit, Regeln, Layer sowie Geometrie auswerten."
       ]
     },
     "resources": [

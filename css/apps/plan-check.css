@@ -1,8 +1,11 @@
 /* Plan Check micro-app: upload context, local validation workbench and Canvas. */
 
-.plan-check { min-width:0; height:100%; overflow-x:hidden; overflow-y:auto; }
+.plan-check { min-width:0; min-height:100dvh; height:auto; overflow-x:clip; overflow-y:visible; }
 .plan-check__page-header { max-width:60rem; }
 .plan-check__page-header .lead { max-width:65ch; }
+.plan-check-local-note { display:flex; align-items:flex-start; gap:var(--sp-3); max-width:75ch; margin:var(--sp-4) 0 0;
+  color:var(--color-text-muted); font-size:var(--text-sm); }
+.plan-check-local-note__icon { flex:0 0 auto; margin-top:var(--sp-1); color:var(--color-primary-600); }
 .plan-check__wizard { margin-top:var(--sp-8); min-width:0; }
 
 .plan-check-form,
@@ -40,17 +43,12 @@
 .plan-check-file-drop__icon { color:var(--color-primary-600); }
 .plan-check-file-drop--error .plan-check-file-drop__icon { color:var(--color-error-text); }
 .plan-check-file-field { display:flex; flex-direction:column; align-items:center; gap:var(--sp-2); min-width:0; }
-.plan-check-file-field > label { font-weight:var(--fw-bold); }
-.plan-check-file-field input[type="file"] { width:100%; min-height:var(--target-min); padding:var(--sp-1); color:var(--color-text); background:var(--color-bg);
-  border:var(--stroke-1) solid var(--color-border-input); border-radius:var(--radius-sm); font:inherit; cursor:pointer; }
-.plan-check-file-field input[type="file"]::file-selector-button { min-height:var(--target-min); margin-right:var(--sp-3); padding:0 var(--sp-4);
-  color:var(--color-primary-600); background:transparent; border:var(--stroke-1) solid var(--color-primary-600);
-  border-radius:var(--radius-sm); font:inherit; cursor:pointer; transition:color var(--duration-fast), border-color var(--duration-fast), background var(--duration-fast); }
-.plan-check-file-field input[type="file"]::file-selector-button:hover { color:var(--color-primary-700); border-color:var(--color-primary-700); }
-.plan-check-file-field input[type="file"]::file-selector-button:active { color:var(--color-primary-800); background:var(--color-primary-50); }
-.plan-check-file-field input[type="file"]:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
-.plan-check-file-field input[type="file"]:disabled { cursor:not-allowed; color:var(--color-text-muted); background:var(--color-secondary-100); }
-.plan-check-file-field input[type="file"][aria-invalid="true"] { border-color:var(--color-error); }
+.plan-check-file-field__button { align-self:center; }
+.plan-check-file-field__input:focus-visible + .plan-check-file-field__button { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
+.plan-check-file-field__input:disabled + .plan-check-file-field__button { pointer-events:none; cursor:not-allowed; color:var(--color-text-muted);
+  background:var(--color-secondary-100); border-color:var(--color-secondary-300); }
+.plan-check-file-field__input[aria-invalid="true"] + .plan-check-file-field__button { border-color:var(--color-error); }
+.plan-check-file-field__name { max-width:100%; text-align:center; overflow-wrap:anywhere; }
 .plan-check-requirements { margin:var(--sp-4) 0 0; padding-left:var(--sp-5); color:var(--color-text-muted); font-size:var(--text-sm); }
 .plan-check-requirements li + li { margin-top:var(--sp-1); }
 .plan-check-progress { width:min(100%, 26rem); height:var(--sp-2); accent-color:var(--color-primary-600); }
@@ -200,7 +198,7 @@
 }
 
 @media print {
-  .plan-check { height:auto; overflow:visible; }
+  .plan-check { min-height:0; height:auto; overflow:visible; }
   .plan-check__wizard > .steps,
   .plan-check__wizard > .wizard-step__title,
   .plan-check__wizard > .small,

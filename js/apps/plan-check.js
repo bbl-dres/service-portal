@@ -6,7 +6,7 @@ import renderPlanCheck from '../plan-check/controller.js';
 
 export const needs = ['buildings', 'floors'];
 export const layout = 'standalone';
-export const loginText = 'Melden Sie sich mit AGOV / FedLogin an, um die Planprüfung und ihren aktuellen Verfügbarkeitsstatus aufzurufen.';
+export const loginText = 'Melden Sie sich mit AGOV / FedLogin an, um DWG-Dateien lokal zu prüfen.';
 
 export default async function render(ctx) {
   const { query, core } = ctx;

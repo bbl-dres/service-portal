@@ -24,19 +24,22 @@ function validateFile(file) {
   }
   const name = boundedString(file.name);
   if (!name.toLowerCase().endsWith('.dwg')) {
-    throw new PlanCheckParserError('INVALID_FILE_TYPE', 'Unterstützt werden ausschliesslich binäre DWG-Dateien.');
+    throw new PlanCheckParserError('INVALID_FILE_TYPE',
+      'Unterstützt werden ausschliesslich binäre DWG-Dateien.');
   }
   const size = Number(file.size);
   if (!Number.isSafeInteger(size) || size <= 0) {
-    throw new PlanCheckParserError('INVALID_FILE', 'Die DWG-Datei ist leer oder besitzt eine ungültige Grösse.');
+    throw new PlanCheckParserError('INVALID_FILE',
+      'Die DWG-Datei ist leer oder besitzt eine ungültige Grösse.');
   }
   if (size > MAX_FILE_SIZE) {
-    throw new PlanCheckParserError('FILE_TOO_LARGE', 'Die DWG-Datei darf höchstens 50 MiB gross sein.', {
-      actual: size,
-      limit: MAX_FILE_SIZE,
-    });
+    throw new PlanCheckParserError('FILE_TOO_LARGE',
+      'Die DWG-Datei darf höchstens 50 MiB gross sein.', {
+        actual: size,
+        limit: MAX_FILE_SIZE,
+      });
   }
-  return { name, size };
+  return Object.freeze({ name, size });
 }
 
 function parserError(value) {
@@ -45,26 +48,36 @@ function parserError(value) {
     value?.message || 'Die DWG-Datei konnte nicht verarbeitet werden.', value?.details);
 }
 
-function validateResult(result) {
+function validateResult(result, expectedFile) {
   if (!result || typeof result !== 'object') {
-    throw new PlanCheckParserError('INVALID_RESULT', 'Der DWG-Pr\u00fcfprozess lieferte kein g\u00fcltiges Ergebnis.');
+    throw new PlanCheckParserError('INVALID_RESULT',
+      'Der DWG-Prüfprozess lieferte kein gültiges Ergebnis.');
+  }
+  if (result.file?.name !== expectedFile.name || result.file?.size !== expectedFile.size) {
+    throw new PlanCheckParserError('INVALID_RESULT',
+      'Die Dateiangaben im DWG-Prüfergebnis stimmen nicht mit der ausgewählten Datei überein.');
+  }
+  if (!result.database || typeof result.database !== 'object') {
+    throw new PlanCheckParserError('INVALID_RESULT',
+      'Die Zeichnungsdaten fehlen im DWG-Prüfergebnis.');
   }
   const collections = [
     ['Layer', result.layers, LIMITS.layers],
     ['Darstellungsobjekte', result.drawing?.renderList, LIMITS.renderPrimitives],
     ['Raumergebnisse', result.validation?.rooms, LIMITS.reportedItems],
-    ['Fl\u00e4chenergebnisse', result.validation?.areas, LIMITS.reportedItems],
+    ['Flächenergebnisse', result.validation?.areas, LIMITS.reportedItems],
     ['Fehlermeldungen', result.validation?.errors, LIMITS.validationErrors],
   ];
   for (const [label, values, limit] of collections) {
     if (!Array.isArray(values)) {
-      throw new PlanCheckParserError('INVALID_RESULT', `${label} fehlen im DWG-Pr\u00fcfergebnis.`);
+      throw new PlanCheckParserError('INVALID_RESULT', `${label} fehlen im DWG-Prüfergebnis.`);
     }
     if (values.length > limit) {
-      throw new PlanCheckParserError('RESOURCE_LIMIT', `${label} \u00fcberschreiten die sichere Ergebnisgrenze.`, {
-        actual: values.length,
-        limit,
-      });
+      throw new PlanCheckParserError('RESOURCE_LIMIT',
+        `${label} überschreiten die sichere Ergebnisgrenze.`, {
+          actual: values.length,
+          limit,
+        });
     }
   }
   assertResultBudget(result);
@@ -74,15 +87,11 @@ function validateResult(result) {
 export function createPlanCheckParser({
   workerUrl = DEFAULT_WORKER_URL,
   timeoutMs = PARSER_TIMEOUT_MS,
-  // Test-only quarantine escape hatch. The application never supplies this;
-  // only the explicitly opted-in trusted-fixture regression does.
-  allowTrustedFixture = false,
 } = {}) {
   let worker = null;
   let active = null;
   let nextRequestId = 0;
   let disposed = false;
-  const intakeEnabled = PLAN_CHECK_INTAKE_ENABLED || allowTrustedFixture === true;
   const parseTimeoutMs = Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0
     ? Math.max(1, Math.trunc(Number(timeoutMs)))
     : PARSER_TIMEOUT_MS;
@@ -124,10 +133,10 @@ export function createPlanCheckParser({
     }
     if (message.type === 'result') {
       try {
-        const result = validateResult(message.result);
+        const result = validateResult(message.result, operation.file);
         endActive(operation);
-        // Treat the WASM runtime as single-use. This limits heap retention and
-        // guarantees every eventual opt-in parse starts from a clean engine.
+        // Every parse gets a fresh Worker. This releases the growable WASM
+        // heap and prevents a failed conversion from affecting the next file.
         destroyWorker();
         result.elapsedMs = Math.max(0, performance.now() - operation.startedAt);
         operation.resolve(result);
@@ -137,8 +146,6 @@ export function createPlanCheckParser({
         operation.reject(error);
       }
     } else if (message.type === 'error') {
-      // A parser/engine failure can leave WASM state inconsistent. Every parse
-      // is single-use, so a retry always starts in a fresh worker as well.
       endActive(operation);
       destroyWorker();
       operation.reject(parserError(message.error));
@@ -164,14 +171,21 @@ export function createPlanCheckParser({
   };
 
   const parse = (file, { signal, onProgress } = {}) => {
-    if (disposed) return Promise.reject(new PlanCheckParserError('DISPOSED', 'Der DWG-Parser wurde bereits freigegeben.'));
-    if (!intakeEnabled) return Promise.reject(new PlanCheckParserError('INTAKE_DISABLED',
-      'Die DWG-Verarbeitung ist aus Sicherheitsgr\u00fcnden deaktiviert.'));
+    if (disposed) {
+      return Promise.reject(new PlanCheckParserError('DISPOSED',
+        'Der DWG-Parser wurde bereits freigegeben.'));
+    }
+    if (!PLAN_CHECK_INTAKE_ENABLED) {
+      return Promise.reject(new PlanCheckParserError('INTAKE_DISABLED',
+        'Die lokale DWG-Verarbeitung ist deaktiviert.'));
+    }
     if (signal?.aborted) return Promise.reject(abortError());
 
     let fileInfo;
     try { fileInfo = validateFile(file); } catch (error) { return Promise.reject(error); }
-    if (active) rejectActive(abortError('Eine neuere DWG-Prüfung hat diese Verarbeitung ersetzt.'), true);
+    if (active) {
+      rejectActive(abortError('Eine neuere DWG-Prüfung hat diese Verarbeitung ersetzt.'), true);
+    }
     const requestId = ++nextRequestId;
 
     return new Promise((resolve, reject) => {
@@ -181,6 +195,7 @@ export function createPlanCheckParser({
         reject,
         signal,
         onProgress,
+        file: fileInfo,
         posted: false,
         startedAt: performance.now(),
         onAbort: null,
@@ -194,7 +209,7 @@ export function createPlanCheckParser({
       operation.timeoutId = setTimeout(() => {
         if (active !== operation) return;
         rejectActive(new PlanCheckParserError('PARSE_TIMEOUT',
-          'Die DWG-Pr\u00fcfung hat das sichere Zeitlimit \u00fcberschritten.', {
+          'Die DWG-Prüfung hat das Zeitlimit überschritten.', {
             limitMs: parseTimeoutMs,
           }), true);
       }, parseTimeoutMs);
@@ -203,7 +218,8 @@ export function createPlanCheckParser({
       Promise.resolve().then(() => file.arrayBuffer()).then((buffer) => {
         if (active !== operation) return;
         if (!(buffer instanceof ArrayBuffer) || buffer.byteLength !== fileInfo.size) {
-          throw new PlanCheckParserError('INVALID_FILE', 'Die DWG-Datei konnte nicht vollständig gelesen werden.');
+          throw new PlanCheckParserError('INVALID_FILE',
+            'Die DWG-Datei konnte nicht vollständig gelesen werden.');
         }
         const dwgVersion = inspectDwgHeader(buffer);
         try { onProgress?.({ stage: 'reading', value: 0.15 }); } catch { /* Observer only. */ }
@@ -221,13 +237,17 @@ export function createPlanCheckParser({
           destroyWorker();
           if (error instanceof PlanCheckParserError) throw error;
           throw new PlanCheckParserError('WORKER_MESSAGE_FAILED',
-            'Die DWG-Datei konnte nicht an den lokalen Pr\u00fcfprozess \u00fcbergeben werden.');
+            'Die DWG-Datei konnte nicht an den lokalen Prüfprozess übergeben werden.');
         }
       }).catch((error) => {
         if (active !== operation) return;
         endActive(operation);
-        reject(error instanceof PlanCheckParserError ? error : new PlanCheckParserError('FILE_READ_FAILED',
-          'Die DWG-Datei konnte nicht gelesen werden.', { cause: error?.message || String(error) }));
+        destroyWorker();
+        operation.reject(error instanceof PlanCheckParserError ? error
+          : new PlanCheckParserError('FILE_READ_FAILED',
+            'Die DWG-Datei konnte nicht gelesen werden.', {
+              cause: boundedString(error?.message || String(error)),
+            }));
       });
     });
   };

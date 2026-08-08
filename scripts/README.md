@@ -9,11 +9,12 @@ exiting non-zero on failure.
 There are currently **52 supported `test-*.mjs` suites: 33 browser suites and
 19 pure-Node suites**, plus **22 retained `check-*.mjs` diagnostics**. Browser
 suites use `APP_BASE` to select the running app and exit non-zero on failure.
-The quarantined `test-plan-check-parser.mjs` is skipped by default; after a
-fixed parser candidate has been supplied, an explicit trusted-fixture opt-in
-starts its own ephemeral loopback server. Pure-Node suites need no server. The older diagnostics are
-classified separately below because six are observation-only and deliberately
-do not act as regression gates.
+The always-run `test-plan-check-parser.mjs` starts its own ephemeral loopback
+server, verifies the exact bundled runtime and artifact provenance, and parses
+the hash-pinned BBL fixture through the same general local-file API used by the
+route. Pure-Node suites need no server. The older diagnostics are classified
+separately below because six are observation-only and deliberately do not act
+as regression gates.
 
 Paths owned by a script are resolved relative to `import.meta.url`; the scripts
 therefore do not depend on the caller's current directory or on a particular
@@ -40,8 +41,8 @@ the top.
    ```
    node scripts/serve.mjs
    ```
-   This is not needed for pure-Node suites or the normally skipped,
-   self-serving `test-plan-check-parser.mjs` quarantine probe.
+   This is not needed for pure-Node suites or the self-serving
+   `test-plan-check-parser.mjs` local-parser golden.
 2. **`APP_BASE` must match where the app is served.** The default,
    `http://127.0.0.1:8848/#`, matches `serve.mjs`. Override it when using another
    port or a server that mounts the app below a path:
@@ -86,9 +87,9 @@ inventory is `scripts/test-*.mjs`.
 | `test-floorplan-editor-three-controls.mjs` | Focused real-WebGL Three.js camera controls: click-jitter threshold, floor-plane pan direction, zoom-to-cursor, two-finger pinch, deterministic camera diagnostics, responsive aspect/fit preservation, and runtime health. |
 | `test-floorplan-editor-model.mjs` | Pure Plan-Editor model/repository/commands: all canonical floor baselines, deterministic placements, catalogue-independent baseline token, detached edits, strict command allowlists and document invariants, room collision and rotated-footprint guards, catalogue rebasing and legacy-draft migration, recoverable baseline-scoped archives, cross-tab write conflicts, immutable simulated publications, scoped removal, and bounded undo/redo. |
 | `test-floorplan-editor-rendering.mjs` | Pure Plan-Editor rendering/input seams: canonical color descriptors, reversible viewport-aspect camera sizing, continuous wheel normalization, inverse screen transforms, floor-plane Three.js pan/fit/rotation math, visible-occluder picking policy, rotation-aware footprints and clamping (including thin products), keyboard cursor SVG, CSS-pixel pointer thresholds, temporary middle-button pan policy, room drag geometry, keyboard panning, and roving-focus calculations. |
-| `test-plan-check-core.mjs` | Pure Planprüfung contracts: defensive geometry/normalisation, the exact 40-rule set, abort conditions and resource limits, report/viewer behavior, closed parser-client behavior, rejected-runtime absence and provenance without loading WASM. |
-| `test-plan-check-parser.mjs` | Quarantined trusted-fixture probe. It skips by default. With `PLAN_CHECK_TRUSTED_DWG_TEST=1`, it first requires a reviewed `APPROVED-CANDIDATE.json`, rejects the known 0.7.9 hashes, verifies all candidate/fixture hashes before Worker startup, then pins parser output, termination and zero external requests. It is parser-only; a complete enabled upload/controller/workbench E2E must be restored before intake is switched on. |
-| `test-plan-check.mjs` | End-to-end security-closed Planprüfung contract: logged-out gate, validated deep context, lazy CSS/no FOUC, persistent unavailable state, zero file controls/Worker/WASM/DWG requests, contextual return, both skins, reduced motion and 320 px reflow. |
+| `test-plan-check-core.mjs` | Pure Planprüfung contracts: defensive geometry/normalisation, the exact 40-rule set, abort conditions and resource limits, report/viewer behavior, `.dwg`/size/header file validation, `parse(file)` lifecycle, and fresh-Worker recovery. |
+| `test-plan-check-parser.mjs` | Always-run, self-serving parser golden. It verifies `RUNTIME-MANIFEST.json`, GPL/provenance metadata, runtime and fixture hashes; parses the bundled BBL fixture through the general file API; pins output and Worker termination; and asserts zero external requests. |
+| `test-plan-check.mjs` | End-to-end non-production Planprüfung contract: logged-out gate, validated deep context, picker/drop intake, invalid-file feedback, real fixture results, abort/retry/cleanup, contextual return, both skins, reduced motion and 320 px reflow. |
 | `test-room-booking.mjs` | Room Booking on the one-page, direct-booking surface (`docs/room-booking-redesign.md`): search and sort behavior, one process snapshot per redraw, action-time conflict checks, favourites, dialogs, process creation, personal bookings, the `?room=` deep link, and desktop/mobile containment. |
 | `test-building-create.mjs` | Building creation: neutral service-launch CTA/new-tab contract, stale address responses, selection invalidation, map/search state, required fields, and process creation. |
 | `test-gallery-floorplan-state.mjs` | W-09/W-11 lifecycle regression: exact and stale gallery deep links, unknown image IDs, dialog focus, and tenancy floor-plan fullscreen/selection/focus preservation. |
@@ -144,7 +145,7 @@ node scripts/test-network-resilience.mjs
 node scripts/test-security-url-sinks.mjs
 node scripts/test-plan-check.mjs
 
-# Quarantined trusted-DWG probe (skips unless explicitly opted in; requires a fixed runtime)
+# Always-run local-parser golden (self-serving; no separate dev server required)
 node scripts/test-plan-check-parser.mjs
 
 # Static source contracts

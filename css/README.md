@@ -175,15 +175,15 @@ Aktueller Messstand, UTF-8-Rohbytes und gzip Level 6:
 | Gruppe | Dateien | Zeilen | Rohbytes | gzip-6 |
 | --- | ---: | ---: | ---: | ---: |
 | vorher: `app.css` + `tokens.css` | 2 | 5'174 | 372'077 | 104'848 |
-| aktuell: statische Kaskade | 24 | 3'818 | 265'672 | 89'005 |
-| aktuell: lazy Apps allein | 8 | 1'510 | 111'005 | 23'241 |
-| aktuell: alle Blätter | 32 | 5'328 | 376'677 | 112'246 |
+| aktuell: statische Kaskade | 24 | 3'826 | 266'286 | 89'179 |
+| aktuell: lazy Apps allein | 8 | 1'508 | 110'533 | 23'243 |
+| aktuell: alle Blätter | 32 | 5'334 | 376'819 | 112'422 |
 
 Die gzip-Werte summieren jede tatsächlich getrennte HTTP-Response; sie sind
 nicht die Kompression eines künstlich zusammengefügten Bundles. Der statische
-Erstpfad liegt gegenüber dem Monolith-Baselinewert raw 28.6 % und gzip 15.1 %
-tiefer. `plan-check.css` kommt nur auf der Planprüfungsroute hinzu: 234 Zeilen,
-19'044 Rohbytes beziehungsweise 3'343 Bytes gzip-6. Die Summe aller, in einer
+Erstpfad liegt gegenüber dem Monolith-Baselinewert raw 28.4 % und gzip 14.9 %
+tiefer. `plan-check.css` kommt nur auf der Planprüfungsroute hinzu: 232 Zeilen,
+18'572 Rohbytes beziehungsweise 3'345 Bytes gzip-6. Die Summe aller, in einer
 normalen Route nie gleichzeitig neu geladenen Blätter trägt 32 eigene
 Kompressionskontexte. `scripts/css-bundle.mjs`
 ist ein optionaler, dependency-freier Verifier/Concat-Schritt und keine

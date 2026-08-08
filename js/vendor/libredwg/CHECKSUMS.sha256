@@ -1,4 +1,4 @@
-# Rejected @mlightcad/libredwg-web 0.7.9 fingerprints; runtime files are intentionally absent.
+# Vendored @mlightcad/libredwg-web 0.7.9 artifact fingerprints.
 438b77262a85e8815e3928f3ff97a51ec84df06d3f3fd184c8459e798d568b81  dist/libredwg-web.js
 62deaef11c2d6cf8fd0a0ee83d29120ca40bdabc2cdd9baa1f7911410bf9d73f  wasm/libredwg-web.js
 d8b78f6d5e63e6e178cf7343cfd08ebe798d75b6754c593e15d8f948b823e038  wasm/libredwg-web.wasm

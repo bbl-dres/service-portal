@@ -1,13 +1,14 @@
-// Security-closed Plan Check route: login gate, persistent unavailable state,
-// zero file/Worker/WASM intake, both skins, reduced motion, 320 px reflow and
-// the contextual return path. The quarantined trusted DWG pipeline has its own
-// explicitly opted-in test-plan-check-parser.mjs suite.
+// Local DWG Plan Check route: login gate, picker/drop validation, abort and
+// Worker cleanup, real fixture parsing, privacy, results, both skins, reduced
+// motion, 320 px reflow and the contextual return path.
 import assert from 'node:assert/strict';
+import { resolve } from 'node:path';
 
 import { APP_BASE, launch, openPage, sleep } from './lib/cdp.mjs';
 
 const BUILDING = '1080/6650/AA';
 const FLOOR = '1080-6650-AA-2og';
+const FIXTURE = resolve('assets', 'plan-check', 'CAD.V01-CAFM-Plan-DE.dwg');
 const route = `/app/plan-check?building=${encodeURIComponent(BUILDING)}&floor=${encodeURIComponent(FLOOR)}`;
 const appUrl = (path = '') => `${APP_BASE}${path}`;
 const browser = await launch();
@@ -38,12 +39,45 @@ try {
   await page.evaluate(`(() => {
     const NativeWorker = window.Worker;
     window.__planCheckWorkerCount = 0;
+    window.__planCheckActiveWorkerCount = 0;
     function ObservedWorker(...args) {
       window.__planCheckWorkerCount += 1;
-      return new NativeWorker(...args);
+      window.__planCheckActiveWorkerCount += 1;
+      const worker = new NativeWorker(...args);
+      const terminate = worker.terminate.bind(worker);
+      let terminated = false;
+      worker.terminate = () => {
+        if (!terminated) {
+          terminated = true;
+          window.__planCheckActiveWorkerCount -= 1;
+        }
+        return terminate();
+      };
+      return worker;
     }
     ObservedWorker.prototype = NativeWorker.prototype;
     window.Worker = ObservedWorker;
+    window.__planCheckNetworkWrites = [];
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input, init = {}) => {
+      const method = String(init.method || input?.method || 'GET').toUpperCase();
+      if (!['GET', 'HEAD'].includes(method) || init.body != null) {
+        window.__planCheckNetworkWrites.push({ kind: 'fetch', method, url: String(input?.url || input) });
+      }
+      return nativeFetch(input, init);
+    };
+    const nativeOpen = XMLHttpRequest.prototype.open;
+    const nativeSend = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+      this.__planCheckRequest = { method: String(method).toUpperCase(), url: String(url) };
+      return nativeOpen.call(this, method, url, ...rest);
+    };
+    XMLHttpRequest.prototype.send = function(body) {
+      if (body != null || !['GET', 'HEAD'].includes(this.__planCheckRequest?.method)) {
+        window.__planCheckNetworkWrites.push({ kind: 'xhr', ...this.__planCheckRequest });
+      }
+      return nativeSend.call(this, body);
+    };
     window.__planCheckFouc = [];
     const inspect = () => {
       if (!document.querySelector('.plan-check')) return;
@@ -53,71 +87,100 @@ try {
     new MutationObserver(inspect).observe(document.getElementById('main-content'), { childList: true, subtree: true });
     location.hash = ${JSON.stringify(`#${route}`)};
   })()`);
-  assert.equal(await page.waitFor(`Boolean(document.querySelector('.plan-check-unavailable'))`), true);
+  assert.equal(await page.waitFor(`Boolean(document.querySelector('[data-plan-check-file]'))`), true);
   await sleep(200);
 
-  const unavailable = await page.evaluate(`(() => {
+  const ready = await page.evaluate(`(() => {
     const resources = performance.getEntriesByType('resource').map((entry) => entry.name);
-    const section = document.querySelector('.plan-check-unavailable');
-    const labelledBy = section?.getAttribute('aria-labelledby') || '';
+    const input = document.querySelector('[data-plan-check-file]');
+    const field = document.querySelector('.plan-check-file-field');
+    const selectorButton = document.querySelector('.plan-check-file-field__button');
+    const fileName = document.querySelector('[data-plan-check-file-name]');
+    const fieldBounds = field?.getBoundingClientRect();
+    const buttonBounds = selectorButton?.getBoundingClientRect();
+    const describedBy = (input?.getAttribute('aria-describedby') || '').split(/\\s+/).filter(Boolean);
     const ids = [...document.querySelectorAll('.plan-check [id]')].map((node) => node.id);
-    const beforeDrop = document.querySelector('.plan-check')?.textContent || '';
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(new File(['AC1032'], 'must-not-be-accepted.dwg', { type: 'application/octet-stream' }));
-    const dropEvent = new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer });
-    const dispatchResult = document.querySelector('.plan-check')?.dispatchEvent(dropEvent);
-    const afterDrop = document.querySelector('.plan-check')?.textContent || '';
     return {
       h1: document.querySelector('.plan-check h1')?.textContent.trim(),
-      heading: document.querySelector('#plan-check-unavailable-heading')?.textContent.trim(),
-      message: section?.textContent.replace(/\\s+/g, ' ').trim() || '',
-      labelled: Boolean(labelledBy && document.getElementById(labelledBy)),
+      privacy: document.querySelector('[data-plan-check-privacy]')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+      vulnerabilityCopy: /CVE-|Sicherheitslücke|verwundbar/i.test(document.querySelector('.plan-check')?.textContent || ''),
       controls: {
-        file: Boolean(document.querySelector('.plan-check input[type="file"]')),
+        file: Boolean(input),
         drop: Boolean(document.querySelector('[data-plan-check-drop-zone]')),
         form: Boolean(document.querySelector('[data-plan-check-form]')),
         submit: Boolean(document.querySelector('.plan-check button[type="submit"]')),
         canvas: Boolean(document.querySelector('[data-plan-check-canvas]')),
       },
+      input: {
+        accept: input?.getAttribute('accept') || '',
+        required: Boolean(input?.required),
+        labelled: document.querySelector('label[for="plan-check-file"]')?.control === input,
+        described: describedBy.length === 3 && describedBy.every((id) => document.getElementById(id)),
+      },
+      fileLayout: {
+        instruction: document.querySelector('.plan-check-file-drop__state strong')?.textContent.trim(),
+        buttonText: selectorButton?.querySelector('[aria-hidden="true"]')?.textContent.trim(),
+        fileName: fileName?.textContent.trim(),
+        fileNameHidden: Boolean(fileName?.hidden),
+        nativeInputHidden: input?.classList.contains('sr-only'),
+        buttonCentered: Boolean(fieldBounds && buttonBounds
+          && Math.abs((fieldBounds.left + fieldBounds.right - buttonBounds.left - buttonBounds.right) / 2) < 1),
+      },
+      scrolling: {
+        documentScroller: document.scrollingElement === document.documentElement,
+        rootOverflowY: getComputedStyle(document.documentElement).overflowY,
+        rootScrollbarWidth: innerWidth - document.documentElement.clientWidth,
+        extraGutterWidth: document.documentElement.clientWidth - document.body.clientWidth,
+        rootScrollable: document.documentElement.scrollHeight > document.documentElement.clientHeight,
+        appOverflowY: getComputedStyle(document.querySelector('.plan-check')).overflowY,
+        appScrollable: document.querySelector('.plan-check').scrollHeight > document.querySelector('.plan-check').clientHeight,
+        appFillsViewport: document.querySelector('.plan-check').clientHeight >= innerHeight,
+      },
+      submitDisabled: Boolean(document.querySelector('.plan-check button[type="submit"]')?.disabled),
       back: document.querySelector('[data-plan-check-action="cancel"]')?.textContent.trim() || '',
       standalone: document.body.classList.contains('body--standalone-app'),
       cssLoaded: Boolean(document.querySelector('link[data-app-style="plan-check"]')?.sheet),
       fouc: window.__planCheckFouc,
       workers: window.__planCheckWorkerCount,
+      activeWorkers: window.__planCheckActiveWorkerCount,
       parserAssets: resources.filter((url) => /parser-worker|vendor\\/libredwg|libredwg-web|\\.wasm(?:$|[?#])/i.test(url)),
       dwgRequests: resources.filter((url) => /\\.dwg(?:$|[?#])/i.test(url)),
       duplicateIds: ids.filter((id, index) => ids.indexOf(id) !== index),
-      closedDrop: {
-        defaultPrevented: dropEvent.defaultPrevented,
-        dispatchResult,
-        unchanged: beforeDrop === afterDrop,
-        filenameVisible: afterDrop.includes('must-not-be-accepted.dwg'),
-        readyAnnounced: /zur Prüfung bereit/.test(afterDrop),
-      },
     };
   })()`);
-  assert.equal(unavailable.h1, 'Planprüfung');
-  assert.equal(unavailable.heading, 'DWG-Prüfung derzeit nicht verfügbar');
-  assert.match(unavailable.message, /Sicherheitsgründen deaktiviert/);
-  assert.match(unavailable.message, /keine Plandateien eingelesen, verarbeitet oder übertragen/);
-  assert.equal(unavailable.labelled, true);
-  assert.deepEqual(unavailable.controls, { file: false, drop: false, form: false, submit: false, canvas: false });
-  assert.match(unavailable.back, /Zurück zum Objekt/);
-  assert.equal(unavailable.standalone, true);
-  assert.equal(unavailable.cssLoaded, true);
-  assert.deepEqual(unavailable.fouc, []);
-  assert.equal(unavailable.workers, 0);
-  assert.deepEqual(unavailable.parserAssets, []);
-  assert.deepEqual(unavailable.dwgRequests, []);
-  assert.deepEqual(unavailable.duplicateIds, []);
-  assert.deepEqual(unavailable.closedDrop, {
-    defaultPrevented: true,
-    dispatchResult: false,
-    unchanged: true,
-    filenameVisible: false,
-    readyAnnounced: false,
+  assert.equal(ready.h1, 'Plan hochladen und prüfen');
+  assert.match(ready.privacy, /lokal im Browser verarbeitet/);
+  assert.match(ready.privacy, /nicht an einen Server übertragen/);
+  assert.match(ready.privacy, /Nicht-Produktivdaten/);
+  assert.equal(ready.vulnerabilityCopy, false);
+  assert.deepEqual(ready.controls, { file: true, drop: true, form: true, submit: true, canvas: false });
+  assert.deepEqual(ready.input, { accept: '.dwg', required: true, labelled: true, described: true });
+  assert.deepEqual(ready.fileLayout, {
+    instruction: 'DWG-Datei hierher ziehen oder mit dem Dateifeld ausw\u00e4hlen',
+    buttonText: 'Datei ausw\u00e4hlen',
+    fileName: '',
+    fileNameHidden: true,
+    nativeInputHidden: true,
+    buttonCentered: true,
   });
-
+  assert.equal(ready.scrolling.documentScroller, true);
+  assert.equal(ready.scrolling.rootOverflowY, 'auto');
+  assert.ok(ready.scrolling.rootScrollbarWidth >= 0);
+  assert.equal(ready.scrolling.extraGutterWidth, 0);
+  assert.equal(ready.scrolling.rootScrollable, true);
+  assert.equal(ready.scrolling.appOverflowY, 'visible');
+  assert.equal(ready.scrolling.appScrollable, false);
+  assert.equal(ready.scrolling.appFillsViewport, true);
+  assert.equal(ready.submitDisabled, true);
+  assert.match(ready.back, /Zurück zum Objekt/);
+  assert.equal(ready.standalone, true);
+  assert.equal(ready.cssLoaded, true);
+  assert.deepEqual(ready.fouc, []);
+  assert.equal(ready.workers, 0);
+  assert.equal(ready.activeWorkers, 0);
+  assert.deepEqual(ready.parserAssets, []);
+  assert.deepEqual(ready.dwgRequests, []);
+  assert.deepEqual(ready.duplicateIds, []);
   const contextCases = [
     {
       hash: '#/app/plan-check?building=missing-building',
@@ -137,19 +200,217 @@ try {
   ];
   for (const contextCase of contextCases) {
     await page.evaluate(`location.hash = ${JSON.stringify(contextCase.hash)}`);
-    assert.equal(await page.waitFor(`document.querySelector('.plan-check-unavailable')?.textContent.includes(${JSON.stringify(contextCase.warning)})`), true);
+    assert.equal(await page.waitFor(`document.querySelector('[data-plan-check-form]')?.textContent.includes(${JSON.stringify(contextCase.warning)})`), true);
     const rendered = await page.evaluate(`({
-      warning: document.querySelector('.plan-check-unavailable')?.textContent || '',
+      warning: document.querySelector('[data-plan-check-form]')?.textContent || '',
       back: document.querySelector('[data-plan-check-action="cancel"]')?.textContent.trim() || '',
     })`);
     assert.match(rendered.warning, new RegExp(contextCase.warning));
     assert.match(rendered.back, new RegExp(contextCase.back));
   }
   await page.evaluate(`location.hash = ${JSON.stringify(`#${route}`)}`);
-  assert.equal(await page.waitFor(`document.querySelector('[data-plan-check-action="cancel"]')?.textContent.includes('Zurück zum Objekt')`), true);
+  assert.equal(await page.waitFor(`document.querySelector('[data-plan-check-file]') && document.querySelector('[data-plan-check-action="cancel"]')?.textContent.includes('Zurück zum Objekt')`), true);
 
-  // The viewer remains testable without enabling quarantined DWG intake. A
-  // single CAD handle may own several render primitives (for example a HATCH
+  const dropped = await page.evaluate(`(() => {
+    const transfer = new DataTransfer();
+    transfer.items.add(new File(['AC1032-drop'], 'abgelegt.dwg', { type: 'application/octet-stream' }));
+    const zone = document.querySelector('[data-plan-check-drop-zone]');
+    const enter = new DragEvent('dragenter', { bubbles: true, cancelable: true, dataTransfer: transfer });
+    zone.dispatchEvent(enter);
+    const activeDuringDrag = zone.classList.contains('plan-check-file-drop--dragover');
+    const drop = new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: transfer });
+    const dispatchResult = zone.dispatchEvent(drop);
+    return {
+      enterPrevented: enter.defaultPrevented,
+      dropPrevented: drop.defaultPrevented,
+      dispatchResult,
+      activeDuringDrag,
+      activeAfterDrop: zone.classList.contains('plan-check-file-drop--dragover'),
+      instruction: zone.querySelector('strong')?.textContent.trim() || '',
+      fileFieldName: document.querySelector('[data-plan-check-file-name]')?.textContent.trim() || '',
+      fileFieldHidden: document.querySelector('[data-plan-check-file-name]')?.hidden,
+      submitDisabled: document.querySelector('[data-plan-check-form] button[type="submit"]')?.disabled,
+      status: document.querySelector('[data-plan-check-status]')?.textContent.trim() || '',
+    };
+  })()`);
+  assert.deepEqual(dropped, {
+    enterPrevented: true,
+    dropPrevented: true,
+    dispatchResult: false,
+    activeDuringDrag: true,
+    activeAfterDrop: false,
+    instruction: 'DWG-Datei hierher ziehen oder mit dem Dateifeld ausw\u00e4hlen',
+    fileFieldName: 'abgelegt.dwg',
+    fileFieldHidden: false,
+    submitDisabled: false,
+    status: 'abgelegt.dwg ist zur Prüfung bereit.',
+  });
+
+  const validation = await page.evaluate(`(() => {
+    const choose = (file) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      const input = document.querySelector('[data-plan-check-file]');
+      input.files = transfer.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      return {
+        message: document.querySelector('[data-plan-check-file-message]')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+        invalid: input.getAttribute('aria-invalid'),
+        submitDisabled: document.querySelector('[data-plan-check-form] button[type="submit"]')?.disabled,
+      };
+    };
+    const wrongType = choose(new File(['AC1032'], 'grundriss.txt', { type: 'text/plain' }));
+    const empty = choose(new File([], 'leer.dwg', { type: 'application/octet-stream' }));
+    const large = new File(['AC1032'], 'zu-gross.dwg', { type: 'application/octet-stream' });
+    Object.defineProperty(large, 'size', { value: 50 * 1024 * 1024 + 1 });
+    const oversize = choose(large);
+    return { wrongType, empty, oversize, workers: window.__planCheckWorkerCount };
+  })()`);
+  assert.match(validation.wrongType.message, /Endung \.dwg/);
+  assert.match(validation.empty.message, new RegExp('Datei ist leer'));
+  assert.match(validation.oversize.message, /grösser als 50 MiB/);
+  for (const outcome of [validation.wrongType, validation.empty, validation.oversize]) {
+    assert.equal(outcome.invalid, 'true');
+    assert.equal(outcome.submitDisabled, true);
+  }
+  assert.equal(validation.workers, 0);
+
+  await page.evaluate(`(() => {
+    const transfer = new DataTransfer();
+    transfer.items.add(new File(['kein-dwg'], 'falscher-dateikopf.dwg', { type: 'application/octet-stream' }));
+    const input = document.querySelector('[data-plan-check-file]');
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    document.querySelector('[data-plan-check-form]').requestSubmit();
+  })()`);
+  assert.equal(await page.waitFor(`document.querySelector('[data-plan-check-file-message]')?.textContent.includes('DWG-Dateikopf')`), true);
+  const badHeader = await page.evaluate(`({
+    message: document.querySelector('[data-plan-check-file-message]')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+    inputFocused: document.activeElement === document.querySelector('[data-plan-check-file]'),
+    workers: window.__planCheckWorkerCount,
+    activeWorkers: window.__planCheckActiveWorkerCount,
+  })`);
+  assert.match(badHeader.message, /keinen lesbaren DWG-Dateikopf/);
+  assert.equal(badHeader.inputFocused, true);
+  assert.equal(badHeader.workers, 0);
+  assert.equal(badHeader.activeWorkers, 0);
+
+  await browser.send('DOM.enable', {}, page.sessionId);
+  const { root } = await browser.send('DOM.getDocument', { depth: 1 }, page.sessionId);
+  const { nodeId: fileInputNodeId } = await browser.send('DOM.querySelector', {
+    nodeId: root.nodeId,
+    selector: '[data-plan-check-file]',
+  }, page.sessionId);
+  assert.ok(fileInputNodeId, 'the DWG file input is addressable through CDP');
+  await browser.send('DOM.setFileInputFiles', { files: [FIXTURE], nodeId: fileInputNodeId }, page.sessionId);
+  assert.equal(await page.waitFor(`document.querySelector('[data-plan-check-drop-zone]')?.textContent.includes('CAD.V01-CAFM-Plan-DE.dwg')`), true);
+
+  await page.evaluate(`document.querySelector('[data-plan-check-form]').requestSubmit()`);
+  assert.equal(await page.waitFor(`window.__planCheckActiveWorkerCount === 1`, { timeout: 30_000, interval: 10 }), true);
+  const aborted = await page.evaluate(`(() => {
+    const abort = document.querySelector('[data-plan-check-action="abort"]');
+    const focusedBefore = document.activeElement === abort;
+    abort.click();
+    return { focusedBefore };
+  })()`);
+  assert.equal(aborted.focusedBefore, true);
+  assert.equal(await page.waitFor(`window.__planCheckActiveWorkerCount === 0 && !document.querySelector('[data-plan-check-form] button[type="submit"]')?.disabled`), true);
+  const afterAbort = await page.evaluate(`({
+    selected: document.querySelector('[data-plan-check-file-name]')?.textContent.trim() || '',
+    status: document.querySelector('[data-plan-check-status]')?.textContent.trim() || '',
+    submitFocused: document.activeElement === document.querySelector('[data-plan-check-form] button[type="submit"]'),
+  })`);
+  assert.equal(afterAbort.selected, 'CAD.V01-CAFM-Plan-DE.dwg');
+  assert.match(afterAbort.status, /abgebrochen/);
+  assert.equal(afterAbort.submitFocused, true);
+
+  await page.evaluate(`document.querySelector('[data-plan-check-form]').requestSubmit()`);
+  assert.equal(await page.waitFor(`Boolean(document.querySelector('.plan-check-quality'))`, { timeout: 120_000 }), true);
+  const parsed = await page.evaluate(`(() => {
+    const resources = performance.getEntriesByType('resource').map((entry) => entry.name);
+    return {
+      filename: document.querySelector('#plan-check-file-summary-heading')?.textContent.trim() || '',
+      resultHeading: document.querySelector('#plan-check-results-heading')?.textContent.trim() || '',
+      retry: document.querySelector('[data-plan-check-action="replace-file"]')?.textContent.trim() || '',
+      facts: document.querySelector('.plan-check-file-summary__facts')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+      canvas: Boolean(document.querySelector('[data-plan-check-canvas]')),
+      emptyViewer: Boolean(document.querySelector('.plan-check-viewer__empty')),
+      tabs: document.querySelectorAll('[role="tab"]').length,
+      reports: [...document.querySelectorAll('[data-plan-check-report]')].map((button) => button.dataset.planCheckReport),
+      workers: window.__planCheckWorkerCount,
+      activeWorkers: window.__planCheckActiveWorkerCount,
+      networkWrites: window.__planCheckNetworkWrites,
+      dwgRequests: resources.filter((url) => /\\.dwg(?:$|[?#])/i.test(url)),
+      externalRequests: resources.filter((url) => new URL(url, location.href).origin !== location.origin),
+      layout: {
+        documentScroller: document.scrollingElement === document.documentElement,
+        rootScrollable: document.documentElement.scrollHeight > document.documentElement.clientHeight,
+        appOverflowY: getComputedStyle(document.querySelector('.plan-check')).overflowY,
+        appOwnScrollable: document.querySelector('.plan-check').scrollHeight > document.querySelector('.plan-check').clientHeight,
+        appFillsViewport: document.querySelector('.plan-check').clientHeight >= innerHeight,
+      },
+      vulnerabilityCopy: /CVE-|Sicherheitslücke|verwundbar/i.test(document.querySelector('.plan-check')?.textContent || ''),
+      duplicateIds: [...document.querySelectorAll('.plan-check [id]')].map((node) => node.id)
+        .filter((id, index, ids) => ids.indexOf(id) !== index),
+    };
+  })()`);
+  assert.equal(parsed.filename, 'CAD.V01-CAFM-Plan-DE.dwg');
+  assert.equal(parsed.resultHeading, 'Datenqualität im Detail');
+  assert.match(parsed.retry, /Andere Datei prüfen/);
+  assert.match(parsed.facts, /DWG-Version\s*AC1032/);
+  assert.match(parsed.facts, /Objekte\s*3.?504/);
+  assert.equal(parsed.canvas, true);
+  assert.equal(parsed.emptyViewer, false);
+  assert.equal(parsed.tabs, 6);
+  assert.deepEqual(parsed.reports, ['print', 'csv', 'json']);
+  assert.ok(parsed.workers >= 2);
+  assert.equal(parsed.activeWorkers, 0);
+  assert.deepEqual(parsed.networkWrites, []);
+  assert.deepEqual(parsed.dwgRequests, []);
+  assert.deepEqual(parsed.externalRequests, []);
+  assert.deepEqual(parsed.layout, {
+    documentScroller: true, rootScrollable: true, appOverflowY: 'visible', appOwnScrollable: false, appFillsViewport: true,
+  });
+  assert.equal(parsed.vulnerabilityCopy, false);
+  assert.deepEqual(parsed.duplicateIds, []);
+
+  const reportLifecycle = await page.evaluate(`(async () => {
+    const downloads = [];
+    const nativeClick = HTMLAnchorElement.prototype.click;
+    const nativePrint = window.print;
+    let printCalls = 0;
+    HTMLAnchorElement.prototype.click = function() {
+      downloads.push({ download: this.download, href: this.href });
+    };
+    window.print = () => { printCalls += 1; };
+    document.querySelector('[data-plan-check-report="csv"]').click();
+    document.querySelector('[data-plan-check-report="json"]').click();
+    document.querySelector('[data-plan-check-report="print"]').click();
+    const panelsDuringPrint = document.querySelectorAll('[data-plan-check-print-panels] .plan-check-print-panel').length;
+    const ids = [...document.querySelectorAll('.plan-check [id]')].map((node) => node.id);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const panelsAfterPrint = document.querySelectorAll('[data-plan-check-print-panels]').length;
+    HTMLAnchorElement.prototype.click = nativeClick;
+    window.print = nativePrint;
+    return {
+      downloads: downloads.map((item) => item.download),
+      localUrls: downloads.every((item) => item.href.startsWith('blob:')),
+      printCalls,
+      panelsDuringPrint,
+      panelsAfterPrint,
+      duplicateIds: ids.filter((id, index) => ids.indexOf(id) !== index),
+    };
+  })()`);
+  assert.equal(reportLifecycle.downloads.length, 2);
+  assert.match(reportLifecycle.downloads[0], /\.csv$/);
+  assert.match(reportLifecycle.downloads[1], /\.json$/);
+  assert.equal(reportLifecycle.localUrls, true);
+  assert.equal(reportLifecycle.printCalls, 1);
+  assert.equal(reportLifecycle.panelsDuringPrint, 6);
+  assert.equal(reportLifecycle.panelsAfterPrint, 0);
+  assert.deepEqual(reportLifecycle.duplicateIds, []);
+
+  // A single CAD handle may own several render primitives (for example a HATCH
   // boundary plus fill); selection must repaint and fit their merged bounds.
   const multiPrimitiveSelection = await page.evaluate(`(async () => {
     const { createPlanCheckViewer } = await import('/js/plan-check/viewer.js');
@@ -396,7 +657,7 @@ try {
       width: innerWidth,
       scrollWidth: document.documentElement.scrollWidth,
       target: Math.min(bounds.width, bounds.height),
-      sectionWidth: document.querySelector('.plan-check-unavailable').getBoundingClientRect().width,
+      sectionWidth: document.querySelector('.plan-check-results').getBoundingClientRect().width,
     };
   })()`);
   assert.equal(narrow.width, 320);
@@ -405,20 +666,46 @@ try {
   assert.ok(narrow.sectionWidth > 0 && narrow.sectionWidth <= 320);
   await browser.send('Emulation.clearDeviceMetricsOverride', {}, page.sessionId);
 
+  const reset = await page.evaluate(`(() => {
+    document.querySelector('[data-plan-check-action="replace-file"]').click();
+    return {
+      picker: Boolean(document.querySelector('[data-plan-check-file]')),
+      canvas: Boolean(document.querySelector('[data-plan-check-canvas]')),
+      instruction: document.querySelector('[data-plan-check-drop-zone] strong')?.textContent.trim() || '',
+      fileFieldName: document.querySelector('[data-plan-check-file-name]')?.textContent.trim() || '',
+      fileFieldHidden: document.querySelector('[data-plan-check-file-name]')?.hidden,
+      submitDisabled: document.querySelector('[data-plan-check-form] button[type="submit"]')?.disabled,
+      stepFocused: document.activeElement?.id === 'plan-check-step-heading',
+      activeWorkers: window.__planCheckActiveWorkerCount,
+    };
+  })()`);
+  assert.deepEqual(reset, {
+    picker: true,
+    canvas: false,
+    instruction: 'DWG-Datei hierher ziehen oder mit dem Dateifeld ausw\u00e4hlen',
+    fileFieldName: '',
+    fileFieldHidden: true,
+    submitDisabled: true,
+    stepFocused: true,
+    activeWorkers: 0,
+  });
+
   await page.evaluate(`document.querySelector('[data-plan-check-action="cancel"]').click()`);
   assert.equal(await page.waitFor(`location.hash.startsWith('#/app/workspace?') && !document.querySelector('.plan-check')`), true);
   const cleanup = await page.evaluate(`({
     hash: location.hash,
     workers: window.__planCheckWorkerCount,
+    activeWorkers: window.__planCheckActiveWorkerCount,
     standalone: document.body.classList.contains('body--standalone-app'),
   })`);
   assert.match(cleanup.hash, /id=1080%2F6650%2FAA/);
   assert.match(cleanup.hash, /floor=1080-6650-AA-2og/);
-  assert.equal(cleanup.workers, 0);
+  assert.ok(cleanup.workers >= 2);
+  assert.equal(cleanup.activeWorkers, 0);
   assert.equal(cleanup.standalone, false);
   assert.deepEqual(await page.problems(), []);
 
-  console.log('Plan-check security gate, skins, reflow and return path passed.');
+  console.log('Plan-check local intake, validation, parsing, cleanup, skins and reflow passed.');
 } finally {
   try { if (gatePage) await gatePage.closeTarget(); } catch { /* browser may already be closed */ }
   try { if (page) await page.closeTarget(); } catch { /* browser may already be closed */ }

@@ -12,9 +12,10 @@
 - SHA-256: `e69f34d37ed6a7c7223457a7478a534ecbfd4cac556ef693cb8060129299e0a9`
 - DWG header: `AC1032`
 
-It is retained only as the deterministic browser-parser and end-to-end test
-fixture. The production route does not expose a sample-file action, and
-uploaded user drawings are never substituted for or written to this file.
+It is retained as the deterministic browser-parser and end-to-end regression
+fixture. Its size, header, and SHA-256 pin the expected golden input. Plan Check
+users select or drop their own local binary DWG test files; those files are
+processed in browser memory and never replace or modify this repository fixture.
 
 This is the only fixture redistributed from the source project. Its second DWG,
 `2011-DM-0-A04-6A1.dwg`, has no documented origin or asset-specific permission,

@@ -73,7 +73,15 @@ body.body--standalone-app { height:100dvh; min-height:0; overflow:hidden; paddin
 .body--standalone-app > .banner-host { display:none; }
 .body--standalone-app > .site-main { min-height:0; height:100dvh; overflow:hidden; z-index:var(--z-local-content); }
 
+/* Plan Check is a document-length workflow, not a fixed workbench. Let it grow
+   with its content and use the root page scrollbar; an internal 100dvh scroll
+   frame left the app visually truncated above an otherwise blank viewport. */
+html:has(> body.body--standalone-app .plan-check) { overflow-y:auto; scrollbar-gutter:auto; }
+body.body--standalone-app:has(.plan-check) { height:auto; min-height:100dvh; overflow:visible; }
+body.body--standalone-app:has(.plan-check) > .site-main { height:auto; min-height:100dvh; overflow:visible; }
+
 @media print {
+  html:has(> body.body--standalone-app .plan-check) { overflow:visible; }
   .body--standalone-app { overflow:visible; height:auto; }
   .body--standalone-app > .site-main { height:auto; overflow:visible; }
 }

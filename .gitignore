@@ -10,6 +10,10 @@ dist/
 build/
 .cache/
 
+# Vendored Plan Check browser runtime; see js/vendor/libredwg/README.md.
+!js/vendor/libredwg/dist/
+!js/vendor/libredwg/dist/libredwg-web.js
+
 # Environment
 .env
 .env.local

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { access, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 
 import {
   CAD_COLOR_INDEX,
+  LIBREDWG_VERSION,
   LIMITS,
-  REJECTED_LIBREDWG_VERSION,
   MAX_FILE_SIZE,
   PARSER_TIMEOUT_MS,
   PLAN_CHECK_INTAKE_ENABLED,
@@ -44,19 +44,33 @@ import {
 
 const expectedHashes = new Map([
   ['../js/vendor/libredwg/LICENSE', '8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903'],
+  ['../js/vendor/libredwg/dist/libredwg-web.js', '438b77262a85e8815e3928f3ff97a51ec84df06d3f3fd184c8459e798d568b81'],
+  ['../js/vendor/libredwg/wasm/libredwg-web.js', '62deaef11c2d6cf8fd0a0ee83d29120ca40bdabc2cdd9baa1f7911410bf9d73f'],
+  ['../js/vendor/libredwg/wasm/libredwg-web.wasm', 'd8b78f6d5e63e6e178cf7343cfd08ebe798d75b6754c593e15d8f948b823e038'],
   ['../assets/plan-check/CAD.V01-CAFM-Plan-DE.dwg', 'e69f34d37ed6a7c7223457a7478a534ecbfd4cac556ef693cb8060129299e0a9'],
 ]);
 for (const [relativePath, expected] of expectedHashes) {
   const content = await readFile(new URL(relativePath, import.meta.url));
   assert.equal(createHash('sha256').update(content).digest('hex'), expected, relativePath);
 }
-for (const relativePath of [
-  '../js/vendor/libredwg/dist/libredwg-web.js',
-  '../js/vendor/libredwg/wasm/libredwg-web.js',
-  '../js/vendor/libredwg/wasm/libredwg-web.wasm',
-  '../js/vendor/libredwg/APPROVED-CANDIDATE.json',
-]) {
-  await assert.rejects(access(new URL(relativePath, import.meta.url)), undefined, relativePath);
+const runtimeManifest = JSON.parse(await readFile(
+  new URL('../js/vendor/libredwg/RUNTIME-MANIFEST.json', import.meta.url), 'utf8'));
+assert.equal(runtimeManifest.schema, 'bbl-plan-check-runtime/1');
+assert.deepEqual(runtimeManifest.package, {
+  name: '@mlightcad/libredwg-web',
+  version: '0.7.9',
+  license: 'GPL-3.0',
+  releaseTag: 'https://github.com/mlightcad/libredwg-web/releases/tag/v0.7.9',
+  taggedCommit: 'b70b5573a6bf2345e5fb10f2adff7fb74a8123c5',
+  correspondingSourceUrl: 'https://github.com/mlightcad/libredwg-web/tree/b70b5573a6bf2345e5fb10f2adff7fb74a8123c5',
+  npmTarball: 'https://registry.npmjs.org/@mlightcad/libredwg-web/-/libredwg-web-0.7.9.tgz',
+  npmIntegrity: 'sha512-tqjx0eCiR0CNI3TyO3LVYzl4ptuzSFm7asGn/C1YiJaEk7Vneto+lRrVUco85qw+PZDihaFLwWqdYIEse1swbA==',
+  npmTarballSha256: 'ab965aec46d03d5c8cb646a8d220a806cd1a04a9c46be1ad1993e1da35d33364',
+});
+for (const [relativePath, expected] of Object.entries(runtimeManifest.files)) {
+  const content = await readFile(new URL(`../js/vendor/libredwg/${relativePath}`, import.meta.url));
+  assert.equal(createHash('sha256').update(content).digest('hex'), expected,
+    `runtime manifest: ${relativePath}`);
 }
 const vendorLicense = await readFile(new URL('../js/vendor/libredwg/LICENSE', import.meta.url), 'utf8');
 assert.match(vendorLicense, /GNU GENERAL PUBLIC LICENSE\s+Version 3, 29 June 2007/);
@@ -220,9 +234,9 @@ assert.equal(drawing.renderList.find((item) => item.handle === '11').fontName, '
 const visibilityDrawing = normalizeDrawing({
   header: { $INSUNITS: 4 },
   entities: [
-    { type: 'LINE', layer: '0', handle: 'hidden', isVisible: true,
+    { type: 'LINE', layer: '0', handle: 'boolean-visible', isVisible: true,
       startPoint: { x: 0, y: 0 }, endPoint: { x: 1, y: 0 } },
-    { type: 'LINE', layer: '0', handle: 'visible', isVisible: false,
+    { type: 'LINE', layer: '0', handle: 'boolean-hidden', isVisible: false,
       startPoint: { x: 0, y: 1 }, endPoint: { x: 1, y: 1 } },
     { type: 'LINE', layer: '0', handle: 'numeric-hidden', isVisible: 1,
       startPoint: { x: 0, y: 2 }, endPoint: { x: 1, y: 2 } },
@@ -231,7 +245,7 @@ const visibilityDrawing = normalizeDrawing({
   ],
   tables: { LAYER: { entries: [{ name: '0', colorIndex: 7 }] } },
 });
-assert.deepEqual(visibilityDrawing.renderList.map((item) => item.handle), ['visible', 'unspecified']);
+assert.deepEqual(visibilityDrawing.renderList.map((item) => item.handle), ['boolean-visible', 'unspecified']);
 assert.equal(visibilityDrawing.diagnostics.skippedInvisibleEntities, 2);
 assert.equal(visibilityDrawing.completeness.status, 'incomplete');
 
@@ -856,7 +870,7 @@ const invisibleReservedDrawing = normalizeDrawing({
   header: { $INSUNITS: 4 },
   entities: [{
     type: 'LWPOLYLINE', layer: 'R_RAUMPOLYGON', handle: 'invisible-room',
-    isVisible: true, flag: 1, vertices: square,
+    isVisible: false, flag: 1, vertices: square,
   }],
   tables: { LAYER: { entries: [{ name: 'R_RAUMPOLYGON', colorIndex: 7 }] } },
 });
@@ -1283,9 +1297,9 @@ assert.equal(inspectDwgHeader(header), 'AC1032');
 assert.throws(() => inspectDwgHeader(new TextEncoder().encode('NOTDWG').buffer),
   (error) => error instanceof PlanCheckParserError && error.code === 'INVALID_DWG_HEADER');
 assert.equal(MAX_FILE_SIZE, 50 * 1024 * 1024);
-assert.equal(REJECTED_LIBREDWG_VERSION, '0.7.9');
+assert.equal(LIBREDWG_VERSION, '0.7.9');
 assert.equal(PARSER_TIMEOUT_MS, 120_000);
-assert.equal(PLAN_CHECK_INTAKE_ENABLED, false);
+assert.equal(PLAN_CHECK_INTAKE_ENABLED, true);
 const sharedBudgetNode = { value: 'shared' };
 assert.doesNotThrow(() => assertResultBudget({ first: sharedBudgetNode, second: sharedBudgetNode }));
 
@@ -1298,89 +1312,126 @@ class FakeWorker {
     this.terminated = false;
     FakeWorker.instances.push(this);
   }
-  postMessage(message) { this.messages.push(message); }
+  postMessage(message, transfer) { this.messages.push({ ...message, transfer }); }
   terminate() { this.terminated = true; }
   emit(data) { this.onmessage?.({ data }); }
 }
 
 const originalWorker = globalThis.Worker;
 globalThis.Worker = FakeWorker;
+
+async function waitForPostedWorker(previousCount) {
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    const candidate = FakeWorker.instances.at(-1);
+    if (FakeWorker.instances.length > previousCount && candidate?.messages.length) return candidate;
+    await new Promise((resolve) => setTimeout(resolve, 1));
+  }
+  assert.fail('DWG parser did not post to a Worker');
+}
+
 try {
-  const makeFile = (name = 'sample.dwg') => ({
-    name,
-    size: 6,
-    arrayBuffer: async () => new TextEncoder().encode('AC1032').buffer,
-  });
-  const makeResult = (name = 'sample.dwg') => ({
-    file: { name, size: 6 }, elapsedMs: 0,
-    database: { version: 'AC1032', layerCount: 0, entityCount: 0, unknownEntityCount: 0 },
+  const makeBytes = (version = 'AC1032', suffix = '') =>
+    new TextEncoder().encode(`${version}${suffix}`).buffer;
+  const makeFile = (name = 'sample.dwg', version = 'AC1032', suffix = '') => {
+    const buffer = makeBytes(version, suffix);
+    return {
+      name,
+      size: buffer.byteLength,
+      arrayBuffer: async () => buffer.slice(0),
+    };
+  };
+  const makeResult = (name = 'sample.dwg', size = 6, version = 'AC1032') => ({
+    file: { name, size }, elapsedMs: 0,
+    database: { version, layerCount: 0, entityCount: 0, unknownEntityCount: 0 },
     drawing: { renderList: [], bounds: { minX: 0, minY: 0, maxX: 1, maxY: 1, width: 1, height: 1 } },
     layers: [], validation: { rules: [], errors: [], rooms: [], areas: [], metrics: {}, score: 100, passedRules: 40 },
   });
-  let closedGateReads = 0;
-  const closedParser = createPlanCheckParser();
-  await assert.rejects(closedParser.parse({
-    ...makeFile('closed.dwg'),
-    arrayBuffer: async () => { closedGateReads += 1; return new TextEncoder().encode('AC1032').buffer; },
-  }), (error) => error.code === 'INTAKE_DISABLED');
-  assert.equal(closedGateReads, 0);
-  assert.equal(FakeWorker.instances.length, 0);
-  closedParser.dispose();
 
-  const parser = createPlanCheckParser({ allowTrustedFixture: true });
+  const parser = createPlanCheckParser();
+  assert.equal(typeof parser.parse, 'function');
   const progress = [];
-  const first = parser.parse(makeFile(), { onProgress: (entry) => progress.push(entry) });
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  const firstWorker = FakeWorker.instances.at(-1);
+  let previousWorkerCount = FakeWorker.instances.length;
+  const firstFile = makeFile('first.dwg', 'AC1032', '-first');
+  const first = parser.parse(firstFile, { onProgress: (entry) => progress.push(entry) });
+  const firstWorker = await waitForPostedWorker(previousWorkerCount);
   assert.equal(firstWorker.options.type, 'module');
+  assert.equal(firstWorker.options.name, 'plan-check-parser');
+  assert.equal(firstWorker.messages[0].type, 'parse');
   assert.equal(firstWorker.messages[0].dwgVersion, 'AC1032');
-  const second = parser.parse(makeFile('newer.dwg'));
+  assert.equal(firstWorker.messages[0].file.name, 'first.dwg');
+  assert.equal(firstWorker.messages[0].buffer.byteLength, firstFile.size);
+  assert.deepEqual(firstWorker.messages[0].transfer, [firstWorker.messages[0].buffer]);
+  previousWorkerCount = FakeWorker.instances.length;
+  const secondFile = makeFile('newer.dwg', 'AC1027', '-second');
+  const second = parser.parse(secondFile);
   await assert.rejects(first, (error) => error.name === 'AbortError');
   assert.equal(firstWorker.terminated, true);
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  const secondWorker = FakeWorker.instances.at(-1);
+  const secondWorker = await waitForPostedWorker(previousWorkerCount);
+  assert.equal(secondWorker.messages[0].dwgVersion, 'AC1027');
+  assert.equal(secondWorker.messages[0].file.name, 'newer.dwg');
   const requestId = secondWorker.messages[0].requestId;
   secondWorker.emit({ type: 'progress', requestId, progress: { stage: 'parsing', value: 0.4 } });
-  secondWorker.emit({ type: 'result', requestId, result: makeResult('newer.dwg') });
+  secondWorker.emit({
+    type: 'result', requestId,
+    result: makeResult('newer.dwg', secondFile.size, 'AC1027'),
+  });
   assert.equal((await second).file.name, 'newer.dwg');
   assert.equal(secondWorker.terminated, true);
   assert.equal(progress[0].stage, 'reading');
 
+  const workersBeforeInvalidFiles = FakeWorker.instances.length;
   await assert.rejects(parser.parse(makeFile('sample.dxf')),
     (error) => error.code === 'INVALID_FILE_TYPE');
+  await assert.rejects(parser.parse({ ...makeFile('empty.dwg'), size: 0 }),
+    (error) => error.code === 'INVALID_FILE');
   await assert.rejects(parser.parse({ ...makeFile('huge.dwg'), size: MAX_FILE_SIZE + 1 }),
     (error) => error.code === 'FILE_TOO_LARGE');
+  await assert.rejects(parser.parse(makeFile('renamed.dwg', 'NOTDW')),
+    (error) => error.code === 'INVALID_DWG_HEADER');
+  await assert.rejects(parser.parse({
+    ...makeFile('short-read.dwg'),
+    size: 20,
+  }), (error) => error.code === 'INVALID_FILE');
+  assert.equal(FakeWorker.instances.length, workersBeforeInvalidFiles,
+    'invalid local files must fail before Worker creation');
+
   const controller = new AbortController();
-  const pending = parser.parse(makeFile(), { signal: controller.signal });
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  previousWorkerCount = FakeWorker.instances.length;
+  const pendingFile = makeFile('cancelled.dwg');
+  const pending = parser.parse(pendingFile, { signal: controller.signal });
+  const abortedWorker = await waitForPostedWorker(previousWorkerCount);
   controller.abort();
   await assert.rejects(pending, (error) => error.name === 'AbortError');
+  assert.equal(abortedWorker.terminated, true);
   parser.dispose();
   await assert.rejects(parser.parse(makeFile()), (error) => error.code === 'DISPOSED');
 
-  const timeoutParser = createPlanCheckParser({ timeoutMs: 5, allowTrustedFixture: true });
-  const timedOut = timeoutParser.parse(makeFile('slow.dwg'));
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  const timedOutWorker = FakeWorker.instances.at(-1);
+  const timeoutParser = createPlanCheckParser({ timeoutMs: 200 });
+  previousWorkerCount = FakeWorker.instances.length;
+  const timedOutFile = makeFile('slow.dwg');
+  const timedOut = timeoutParser.parse(timedOutFile);
+  const timedOutWorker = await waitForPostedWorker(previousWorkerCount);
   await assert.rejects(timedOut, (error) => error.code === 'PARSE_TIMEOUT');
   assert.equal(timedOutWorker.terminated, true);
 
-  const afterTimeout = timeoutParser.parse(makeFile('after-timeout.dwg'));
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  const afterTimeoutWorker = FakeWorker.instances.at(-1);
+  previousWorkerCount = FakeWorker.instances.length;
+  const afterTimeoutFile = makeFile('after-timeout.dwg', 'AC1024');
+  const afterTimeout = timeoutParser.parse(afterTimeoutFile);
+  const afterTimeoutWorker = await waitForPostedWorker(previousWorkerCount);
   assert.notEqual(afterTimeoutWorker, timedOutWorker);
   afterTimeoutWorker.emit({
     type: 'result', requestId: afterTimeoutWorker.messages[0].requestId,
-    result: makeResult('after-timeout.dwg'),
+    result: makeResult('after-timeout.dwg', afterTimeoutFile.size, 'AC1024'),
   });
   assert.equal((await afterTimeout).file.name, 'after-timeout.dwg');
   assert.equal(afterTimeoutWorker.terminated, true);
   timeoutParser.dispose();
 
-  const retryParser = createPlanCheckParser({ allowTrustedFixture: true });
-  const corrupt = retryParser.parse(makeFile('corrupt.dwg'));
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  const corruptWorker = FakeWorker.instances.at(-1);
+  const retryParser = createPlanCheckParser();
+  previousWorkerCount = FakeWorker.instances.length;
+  const corruptFile = makeFile('corrupt.dwg');
+  const corrupt = retryParser.parse(corruptFile);
+  const corruptWorker = await waitForPostedWorker(previousWorkerCount);
   corruptWorker.emit({
     type: 'error', requestId: corruptWorker.messages[0].requestId,
     error: { code: 'DWG_READ_FAILED', message: 'corrupt' },
@@ -1388,21 +1439,34 @@ try {
   await assert.rejects(corrupt, (error) => error.code === 'DWG_READ_FAILED');
   assert.equal(corruptWorker.terminated, true);
 
-  const afterFailure = retryParser.parse(makeFile('after-failure.dwg'));
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  const afterFailureWorker = FakeWorker.instances.at(-1);
+  previousWorkerCount = FakeWorker.instances.length;
+  const afterFailureFile = makeFile('after-failure.dwg');
+  const afterFailure = retryParser.parse(afterFailureFile);
+  const afterFailureWorker = await waitForPostedWorker(previousWorkerCount);
   assert.notEqual(afterFailureWorker, corruptWorker);
   afterFailureWorker.emit({
     type: 'result', requestId: afterFailureWorker.messages[0].requestId,
-    result: makeResult('after-failure.dwg'),
+    result: makeResult('after-failure.dwg', afterFailureFile.size),
   });
   assert.equal((await afterFailure).file.name, 'after-failure.dwg');
   assert.equal(afterFailureWorker.terminated, true);
 
-  const oversizedResult = retryParser.parse(makeFile('oversized-result.dwg'));
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  const resultWorker = FakeWorker.instances.at(-1);
-  const result = makeResult('oversized-result.dwg');
+  previousWorkerCount = FakeWorker.instances.length;
+  const mismatchedFile = makeFile('identity-check.dwg');
+  const mismatchedResult = retryParser.parse(mismatchedFile);
+  const mismatchWorker = await waitForPostedWorker(previousWorkerCount);
+  mismatchWorker.emit({
+    type: 'result', requestId: mismatchWorker.messages[0].requestId,
+    result: makeResult('different-file.dwg', mismatchedFile.size),
+  });
+  await assert.rejects(mismatchedResult, (error) => error.code === 'INVALID_RESULT');
+  assert.equal(mismatchWorker.terminated, true);
+
+  previousWorkerCount = FakeWorker.instances.length;
+  const oversizedFile = makeFile('oversized-result.dwg');
+  const oversizedResult = retryParser.parse(oversizedFile);
+  const resultWorker = await waitForPostedWorker(previousWorkerCount);
+  const result = makeResult('oversized-result.dwg', oversizedFile.size);
   result.validation.errors = Array.from({ length: LIMITS.validationErrors + 1 }, () => ({}));
   resultWorker.emit({ type: 'result', requestId: resultWorker.messages.at(-1).requestId, result });
   await assert.rejects(oversizedResult, (error) => error.code === 'RESOURCE_LIMIT');
