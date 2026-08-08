@@ -34,13 +34,13 @@ index.html            4 mount points: #main-header · #data-status · #main-cont
    │
 js/app.js             boot: core.load() ‖ engine.load() → shell → global wiring → router
    │
-js/router.js          hash → module map (PAGES ×9, APPS ×16) → dynamic import → render(ctx)
-   │                  + legacy redirects, login gate, scroll strategy, cleanup, staleness tickets
-   ├── js/shell.js         CD-Bund header/footer/drawer, re-rendered on session change
-   ├── js/components.js    ~90 UI primitives + wire* behaviours (2'246 lines)
-   ├── js/core.js          data access: eager 2 files, deferred ~28 keys, failure register
+js/routing/router.js  hash → routes.js (PAGES ×9, APPS ×17) → dynamic import → render(ctx)
+   │                  + legacy redirects, login gate, scroll strategy, abort/cleanup ownership
+   ├── js/ui/shell/        CD-Bund header/footer/drawer, re-rendered on session change
+   ├── js/components.js    compatibility façade over grouped js/ui/components/*
+   ├── js/core/index.js    data access: eager 2 files, deferred keys, failure register
    ├── js/process-engine.js  definitions + seeded instances from JSON, user cases in localStorage
-   ├── js/session.js       mock AGOV/FedLogin, one demo user, no roles
+   ├── js/core/session.js  mock AGOV/FedLogin, one demo user, no roles
    └── js/pages/* js/apps/*  the views
 ```
 
@@ -75,7 +75,7 @@ Four things fall out of it that most prototypes never get:
 
 Ordered by how much they cost to fix later.
 
-**3.1 There is no trust boundary.** `session.js` is a client-side flag. The login gate lives in `js/router.js`. `classification: 'VERTRAULICH'` is *derived in the browser* from a regex on the building name (`core.js`, `normalizeBuilding`). Every visitor, anonymous or not, downloads the complete dataset. In production, authentication and authorization must be server-side and data must be filtered before it leaves the server; the client gate can remain, but only as UX.
+**3.1 There is no production authorization boundary.** `js/core/session.js` is a client-side flag. The login gate lives in `js/routing/router.js`. `classification: 'VERTRAULICH'` is *derived in the browser* while normalizing building data in `js/core/index.js`. Every visitor, anonymous or not, can request the static datasets. In production, authentication and authorization must be server-side and data must be filtered before it leaves the server; the client gate can remain, but only as UX.
 
 **3.2 There is no write path.** Every mutation goes to `localStorage`: cases (`bbl_vorgaenge_v1`), cart, favourites, search log. Instance ids are `Date.now() + Math.random()`. There is no concept of concurrency, versioning, conflict, retry, or partial failure. Every write in the product is currently a fiction — which is correct for a mockup and is the largest single gap to close.
 
@@ -200,7 +200,7 @@ Geodata: stop shipping GeoJSON files. Serve **vector tiles from PostGIS** (Marti
 
 - **PostgreSQL + PostGIS** as the operational data store. One database, schema per module.
 - **Ingestion**, not migration: CDC or scheduled extracts from RE-FX and ePPM into the read models. `normalizeBuilding()` is the prototype of this transform — the same mapping, moved server-side, versioned, and with rejects that are visible rather than silently dropped (`.filter(x => x[ID])` today discards bad records without a trace).
-- **Search.** `js/search-engine.js` is a pure-function fold-and-rank over ~380 entries, deliberately index-free. At production scale that becomes **OpenSearch/Elasticsearch** — or Postgres full-text with `unaccent` if the corpus stays small. Two properties must be carried over: the umlaut/`oe`-`ae`-`ue` folding on **both** query and haystack (a Swiss-keyboard reality the prototype got right), and colloquial-term mapping. Two must be added: **permission filtering inside the index**, and relevance tuning against the real search log.
+- **Search.** `js/search/search-engine.js` is a pure-function fold-and-rank over ~380 entries, deliberately index-free. At production scale that becomes **OpenSearch/Elasticsearch** — or Postgres full-text with `unaccent` if the corpus stays small. Two properties must be carried over: the umlaut/`oe`-`ae`-`ue` folding on **both** query and haystack (a Swiss-keyboard reality the prototype got right), and colloquial-term mapping. Two must be added: **permission filtering inside the index**, and relevance tuning against the real search log.
 - **DCAT-AP CH 2 catalogue.** Keep the model; it is correct and already carries `publications[]` with a real I14Y link. In production, publish the genuinely public datasets *to* I14Y rather than describing them twice.
 - **The metadata catalogue** (business objects ↔ system tables, with the attribute-level mapping and reverse index) is a lineage layer. Either feed it from the real systems, or replace it with a data-catalogue product (OpenMetadata, DataHub, Collibra) and keep the portal view as a façade over its API. Do not hand-maintain it at scale.
 

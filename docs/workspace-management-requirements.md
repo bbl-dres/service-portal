@@ -314,7 +314,7 @@ Punkte bleiben Anforderungen an Plan-Editor und Planprüfung.
 | **Keine Szenarien / Varianten.** Ein Zustand, ein Ergebnis. | WSM-C2 verlangt Planszenarien; im UAT ist genau das die schmerzhafteste Lücke der echten Lösung. |
 | **Keine formelle Planausgabe.** Die Portalvorschau kann den sichtbaren Grundriss drucken; Flächennachweis, Massstab, Beilagen und Plankopf fehlen bewusst. | WSM-H1…H8 sind vollständig spezifiziert und gehen an Dritte. |
 | **Rollen fehlen.** Eine Sicht für alle. | ILBO, Portfoliomanager, Umzugsplaner, CAD-Planung und FM brauchen unterschiedliche Einstiege. |
-| **Was trägt:** Grundriss als Inline-SVG mit Einfärbung, Legende mit Σ m², Raumauswahl, Geschosswechsel ([`js/floorplan.js`](../js/floorplan.js)). | Bleibt — der SIA-416-Modus liegt bereits vor und ist genau der Report aus WSM-H6. |
+| **Was trägt:** Grundriss als Inline-SVG mit Einfärbung, Legende mit Σ m², Raumauswahl, Geschosswechsel ([`js/ui/floorplan.js`](../js/ui/floorplan.js)). | Bleibt — der SIA-416-Modus liegt bereits vor und ist genau der Report aus WSM-H6. |
 
 ---
 
@@ -359,12 +359,12 @@ Der Entwurf ist erst brauchbar, wenn er auch die unangenehmen Fälle zeigt:
 
 Wiederverwenden statt neu erfinden — der Entwurf soll sich daran anlehnen:
 
-- [`js/floorplan.js`](../js/floorplan.js) — SVG-Grundriss, Einfärbemodi
+- [`js/ui/floorplan.js`](../js/ui/floorplan.js) — SVG-Grundriss, Einfärbemodi
   (`none · use · sia · ve · capacity`), Legende mit Σ m², Raumauswahl.
 - `C.catalogueBar` — die geteilte Katalogleiste (Suche + Anzahl | Sortieren ·
   Filtern · Ansichtswechsel), bereits auf vier Katalogansichten.
-- [`js/spatial-tree.js`](../js/spatial-tree.js) — Strukturbaum Land/Region/Stadt/Objekt.
-- [`js/dashboard-chrome.js`](../js/dashboard-chrome.js) — KPI-Kacheln, Filterpanel.
+- [`js/ui/spatial-tree.js`](../js/ui/spatial-tree.js) — Strukturbaum Land/Region/Stadt/Objekt.
+- [`js/ui/dashboard-chrome.js`](../js/ui/dashboard-chrome.js) — KPI-Kacheln, Filterpanel.
 - Daten: [`data/spaces.json`](../data/spaces.json) (728 Räume mit `sia`, `useLabel`,
   `area`, `capacity`, `occupierVe`, `bookable`, `rect`),
   [`data/floors.json`](../data/floors.json) (29 Geschosse mit `areaGross`, `areaHnf`,
@@ -394,7 +394,7 @@ muss und darum auch nicht erfunden werden sollte.
 - **Deutsch**, Ausdrücke aus dem Vokabular des Hauses (ILBO, HNF, NGF, AOID,
   Modul, Sub-Modul, Stichtag, Mengengerüst, Flächenrichtmass).
 - Prototyp bleibt **abhängigkeitsfrei** (Vanilla, Inline-SVG statt WebGL —
-  Begründung in [`js/floorplan.js`](../js/floorplan.js)).
+  Begründung in [`js/ui/floorplan.js`](../js/ui/floorplan.js)).
 
 ### 8.5 Entwurfsrichtungen zum Erkunden
 

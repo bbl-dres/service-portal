@@ -22,11 +22,11 @@ date: 2026-08-06T19:40:00Z
 
 | Screen im Projekt | Quelle im Repo |
 | --- | --- |
-| Portal-Shell (Top-Bar, Kopfzeile, Hauptnavigation, Brotkrume, Footer) | `service-portal`: `js/shell.js`, `js/router.js`, `js/crumbs.js` |
-| CD-Komponenten (btn, badge, card, table, catbar, select, steps, fp-*) | `service-portal`: `css/app.css`, `css/tokens.css`, `js/components.js` |
-| Grundriss-Zeichnung, Einfärbemodi, Legende | `service-portal`: `js/floorplan.js` |
+| Portal-Shell (Top-Bar, Kopfzeile, Hauptnavigation, Brotkrume, Footer) | `service-portal`: `js/ui/shell/`, `js/routing/router.js`, `js/crumbs.js` |
+| CD-Komponenten (btn, badge, card, table, catbar, select, steps, fp-*) | `service-portal`: `css/README.md`, `css/tokens.css`, `js/components.js` |
+| Grundriss-Zeichnung, Einfärbemodi, Legende | `service-portal`: `js/ui/floorplan.js` |
 | Gebäudedaten, Geschosse, Räume, Fotos | `service-portal`: `data/buildings.geojson`, `data/floors.json`, `data/spaces.json`, `assets/images/buildings/` |
-| Objektwahl Galerie / Karte / Objekt-Detail (2a) | `service-portal`: `js/apps/tenancies.js`, `js/spatial-tree.js` |
+| Objektwahl Galerie / Karte / Objekt-Detail (2a) | `service-portal`: `js/apps/tenancies.js`, `js/ui/spatial-tree.js` |
 | Modulkatalog und Handbuch (3a) | `service-portal`: `docs/workspace-management-requirements.md`, Kap. 5 |
 | Upload-Assistent Schritt 2 «Datenqualität» (4a-2) | `plan-check`: `locales/de.json`, `docs/pruefregeln-de.md`, `js/validation.js` |
 | Upload-Assistent Schritt 1 «Datei» (4a-1) | `plan-check`: `locales/de.json` (`upload.*`, `file.*`) |

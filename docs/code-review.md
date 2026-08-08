@@ -1,372 +1,244 @@
-# Technisches Code Review: service-portal
+# Senior JavaScript code review
 
-**Stand:** 8. August 2026
+**Review date:** 8 August 2026
 
-**Geprüfter Stand (historischer Review-Baseline):** `main`, Commit `fb9e9c2e60defc7ecdbf253e3b902446383971e3`
+**Current implementation:** through `e0f7f3c`
 
-**Review-Umfang (historisch):** Phase 0–4 auf `main`; Phase 5 und Folgepakete auf den Branches `code-review-2026-08` und `code-review-k03-k04`. Der aktuelle CSS-Refaktor ist in Abschnitt 2.4 nachgetragen.
+**Scope:** maintained JavaScript, route and UI contracts, static data boundaries, local developer server, and the tests that exercise them
 
-## 1. Zusammenfassung
+## Executive summary
 
-Das Repository ist ein statisches, öffentliches Frontend-Mockup auf GitHub Pages. Es verwendet Vanilla JavaScript mit ES Modules, hashbasiertes Routing, statische JSON-/GeoJSON-/BPMN-Daten und drei zur Laufzeit geladene CDN-Bibliotheken. Es gibt keine Build-Kette, keinen Package-Manager und kein Backend. Diese Eigenschaften sind für den Mockup kein Mangel und wurden nicht als Befund gewertet.
+The portal is now a substantially safer and easier-to-navigate vanilla-JavaScript codebase. The review found lifecycle races, weak data and storage boundaries, duplicated catalogue logic, oversized mixed-responsibility modules, and several browser-side injection surfaces. The six implementation commits listed below address the technically decidable findings without removing a route, view, interaction, brand skin, or the dependency-free runtime model.
 
-Die Architektur ist für die Grösse grundsätzlich tragfähig. Der geprüfte Baseline-Stand enthielt jedoch einen reproduzierbaren Vorführfehler: Die monatliche Immobilienentwicklung erzeugte ungültige SVG-Koordinaten und zeichnete das Diagramm nicht korrekt. Daneben lagen normale Bedienfehler in Navigation, Overlays, Gebäudeerfassung, Raumbuchung, Shop und Mietflächenansicht vor. Diese technischen Punkte wurden in Phase 5 weitgehend behoben. Der verbleibende Schwerpunkt ist organisatorisch: Das öffentliche Repository enthält interne oder eingeschränkte Ziel-URLs, real wirkende Objekt- und Kontaktdaten sowie Medien ohne nachgewiesenes Weiterverteilungsrecht.
+No release-blocking defect remains in the reviewed prototype scope. Route rendering now has cancellation and cleanup ownership; shared loaders reject malformed data and failed assets predictably; implementation identifiers and comments are English; UI, routing, core, map, search, and security responsibilities have explicit homes; duplicated collection and catalogue operations share small tested helpers; confirmed dead code is gone; and untrusted text, attributes, URLs, exports, calendar files, CDN assets, and the local server have defined trust boundaries.
 
-Produktionsanforderungen wie echte Authentisierung, Backend-Fehlerbehandlung oder Lastverhalten sind bewusst nicht hochgestuft. Sie stehen separat in Abschnitt 6. Fehlende Mock-Funktionen, Platzhalter und nicht verdrahtete Buttons sind kein Befund.
+This is still a static prototype, not a production service. Its login is a client-side demonstration gate, browser storage is the persistence layer, repository fixtures stand in for server responses, and `scripts/serve.mjs` is a local test server. Consequently, this review does **not** claim real authentication, authorization, transactional writes, server-side validation, auditability, or multi-user consistency. Those items remain deliberately tracked rather than disguised by frontend-only substitutes.
 
-| Kategorie | Anzahl | Einordnung |
-| --- | ---: | --- |
-| Blocker | 1 | Der Mockup verhält sich in einer vorhandenen Ansicht sichtbar falsch |
-| Wichtig | 22 | Reproduzierbare Bedien-, Zustands-, Daten- oder Publikationsfehler |
-| Komplexität | 10 | Duplikate, toter Code, unnötige Schichten oder messbarer Wartungsballast |
-| Produktionsrelevant | 9 | Heute im Mockup kein Problem; vor einer produktiven Nutzung zu lösen |
-| Kosmetisch | 8 | Inkonsistenzen ohne wesentliche Funktionswirkung |
-| Offene Fragen | 10 | Absicht oder Datenstatus ist aus dem Repository nicht bestimmbar |
+## Review scope and principles
 
-### 1.1 Umsetzungsstand Phase 5
+The review followed these constraints:
 
-Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04, K-05/K-06 sowie K-03/K-04 wurden auf den Review-Branches umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden, C-08, K-03 bis K-06, K-09, C-04 und C-05 sind erledigt oder durch die neue CSS-Architektur supersediert; K-07 ist teilweise erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
+- no framework, package manager, build step, or runtime dependency was introduced;
+- German interface copy, stable hashes, query values, and source-system field names remain compatibility data;
+- maintained implementation names, comments, diagnostics, files, and DOM hooks use English;
+- dynamic class stems and template-generated identifiers were treated as live until proven otherwise;
+- changes were split into independently bisectable commits and verified after each phase;
+- production-only work was separated from defects observable in the current prototype.
 
-| Status | Befunde | Commit oder Abhängigkeit |
-| --- | --- | --- |
-| Erledigt | B-01 | `2bbf343` – kategoriale Monatsachse ohne ungültige SVG-Werte |
-| Erledigt | W-03, W-04, W-05, W-10, W-14, W-20, W-22 | `89af11e` – Katalog-, Shell-, Overlay-, Kontext-, Gate-, Live-Region- und ARIA-Zustand |
-| Erledigt | W-06, W-07, W-08 | `702964c` – Adress-, Buchungs- und Persistenzvalidierung |
-| Erledigt | W-09, W-11 | `352a629` – stabiler Grundriss-Teilbaum und wiederherstellbare Galerie-Deep-Links |
-| Erledigt | W-13 | `35be434` – einheitlicher Frauenanteil von 52 Prozent |
-| Erledigt | W-15, W-16 | `75dc977` – dokumentrelative Anchor-Navigation und erhaltener Suchkontext |
-| Erledigt | W-17, W-18 | `81a7e2f` – belastbarer CDP-Lebenszyklus und standardmässig schreibgeschützte Asset-Skripte |
-| Erledigt | W-19 | `b5213ad` – expliziter Besitz von Karten, Observern, Tabellen und Listenern |
-| Erledigt | W-21 | `39c7986` – ein lokaler Kalenderstempel für Datum, Historie und Referenzjahr |
-| Erledigt | C-08 | `3d0992a` – korrekte Template-Regex und arbeitsverzeichnisunabhängiger BPMN-Test |
-| Erledigt | K-03 | `9b3b72e` – kleine, getestete ESM-/Objektoberflächen und Entfernung verwaister Helfer |
-| Erledigt | K-04 | `ae736f5` – genau ein Renderer und eine Datenform je Datenportal-Thema |
-| Erledigt | K-05 | `05ca43f` – routenabhängige und alleinige Ladeverträge für Datenunterseiten |
-| Erledigt | K-06 | `5ecaa98` – paralleles Prozessladen und ein vorbereiteter Buchungskontext pro Render |
-| Erledigt | K-09 | `538975d` – portable Skriptpfade, klassifizierte Altproben und isolierbare Review-Ausgaben |
-| Erledigt | C-04 | `b480181` – vollständige Runtime-Dokumentation und wahrheitsgetreue 58-/57-State-Artefaktmetadaten |
-| Teilweise erledigt | K-07 | `Split 73dd190` → `Tokenise fb2e9bb` → `Consolidate a4e75c0` → `Polish 69386b5` → `Document` (dieser Commit) – Monolith und bestätigter Dead Code sind beseitigt; ausführliche Warum-/Historienkommentare bleiben teilweise im ausgelieferten CSS |
-| Erledigt / supersediert | C-05 | Dieselbe CSS-Commitfolge – Token-, Komponenten-, Zustands- und Politurpass ersetzen die früheren Einzelbefunde; `Document` ist dieser Commit |
-| Offen – Publikationsentscheid | W-01, W-02 | Q-01 bis Q-04, Positivliste und Medienfreigaben fehlen; Entfernung aus der History benötigt separate ausdrückliche Genehmigung |
-| Offen – fachliche Quelle | W-12 | Q-01 ist offen; ohne kanonische Quelle darf BGF/NGF nicht technisch überschrieben werden |
+The principal runtime flow is:
 
-| Historische Verifikation nach der früheren Phase 5 | Ergebnis |
-| --- | --- |
-| Vollständige funktionale Suite | 29 von 29 `test-*.mjs` bestanden; Laufzeit 277.4 Sekunden |
-| JavaScript-Syntax | 127 von 127 `.js`-/`.mjs`-Dateien bestehen `node --check` |
-| Routen und Redirects | 37 Routen und 13 Redirects bestanden innerhalb von `test-routes.mjs` |
-| C-08-Portabilität | `test-process-docs.mjs` besteht auch mit `scripts/` statt Repository-Root als Arbeitsverzeichnis |
-| K-09-Portabilität | Sechs historische Dry-Run-/Prüfwerkzeuge und acht geänderte Browserproben liefen aus einem Unterverzeichnis; kein entwicklerspezifischer Checkout-Pfad bleibt |
-| C-04-Artefakte | Isolierter Accessibility-Lauf: 58 von 58 Zuständen, null Befunde; erhaltener Audit 57 × 3 = 171 und Screenshot-Paar 171/171 konsistent |
-| Gezielte neue Regressionen | Monatsachse, UI-State, Galerie/Grundriss, Anchor-/Suchzustand und Suchziele, Prozessdatum, API-Oberflächen, Login/Logout, eindeutige Dashboard-Renderer, exakte Datenrouten-Ladeverträge, unabhängige Prozessladefehler sowie Buchungskontext/Verfügbarkeits-Recheck bestanden |
+```text
+index.html
+  -> js/app.js
+  -> core and process-engine initialization
+  -> shell initialization
+  -> hash router dispatch
+  -> route data/CSS loading
+  -> page or micro-app render(ctx)
+  -> registered route cleanup on the next dispatch
+```
 
-### 1.2 Historischer Prüfumfang und Baseline
+## Current architecture and target boundaries
 
-Die folgenden Zahlen dokumentieren den Review-Baseline-Commit `fb9e9c2`; sie sind keine aktuellen Repository-Metriken. Alle 60 JavaScript-Module unter `js/`, alle 62 Skripte unter `scripts/`, die HTML-/CSS-Einstiegspunkte, 30 Datenquellen, 18 BPMN-Dateien, statische Assets sowie die erreichbare Git-History wurden damals geprüft. Ein abgebrochener technischer Rohreview mit 101 Hinweisen diente nur als Suchliste: 84 Hinweise waren an diesem Stand noch beobachtbar, darunter Duplikate; 8 waren bereits behoben oder veraltet; 9 waren ohne fachliche Entscheidung nicht verifizierbar. Jeder übernommene Befund wurde am damaligen `HEAD` erneut gelesen oder ausgeführt und anschliessend dedupliziert.
+The refactor established the following ownership model. It is both the current structure and the target for new work: new code should extend the owning area rather than recreate a root-level utility or enlarge the compatibility façade.
 
-| Prüfung | Rohresultat |
-| --- | --- |
-| JavaScript-Syntax | 122 von 122 `.js`-/`.mjs`-Dateien bestehen `node --check` |
-| Strukturierte Daten | 32 JSON-/GeoJSON-Dateien und 18 BPMN-XML-Dateien lassen sich parsen |
-| Reine Datentests | `test-data-integrity` und `test-search` bestehen |
-| Browser-Suiten | 19 von 21 Suiten bestehen bei Einzelaufruf; `building-create` hängt an nicht erreichbaren externen Tiles, `tenancies` wartet fest 2.5 s auf eine asynchron geladene Karte und meldet zu früh einen Fehler |
-| Routen | 37 Routen und 13 Redirects wurden durchlaufen |
-| Hauptpfade | Dashboard, Kataloge, Dokumente, Portfolio, Mietflächen, Prozesse, Metadaten, Shop, Raumbuchung und Formular-Apps wurden im Browser geprüft |
-| Linter, Typprüfung, Build, `npm audit` | Nicht konfiguriert; es gibt weder `package.json` noch Lockfile. Es wurde nichts nachgerüstet |
-| Secret-Suche | Keine bekannten AWS-, GitHub-, Slack-, OpenAI-, Google-, JWT-, PEM- oder vergleichbaren Secret-Formate im aktuellen Baum oder in den 112 erreichbaren Commits gefunden; patternbasierter Negativbefund |
+```text
+js/
+  app.js                         bootstrap only
+  components.js                  narrow compatibility re-export
+  process-engine.js              prototype case definitions and instances
+  collections.js                collection-safe shared operations
+  domain.js, format.js           domain lookup and display formatting
+  links.js, crumbs.js            stable route/link compatibility
+  export.js                      CSV/table export boundary
 
-Zwei Browserfehler sind Testwerkzeug- statt Produktfehler: Die Gebäudeerfassung benötigt externe Karten-/Adressdienste, und die Mietflächenkarte war im direkten Zeitprofil nach rund einer Sekunde vorhanden. Die festen Testannahmen stehen als W-17 im Review.
+  routing/
+    routes.js                    route, redirect, section and gate registry
+    router.js                    dispatch, cancellation, lifecycle and focus
+    css-loader.js                route-scoped stylesheet loading
 
-### 1.3 Historische Repo- und Laufzeitmetriken
+  core/
+    index.js                     data registry and public accessors
+    fetch-json.js                fetch/status/shape boundary
+    storage.js                   failure-tolerant browser storage boundary
+    session.js                   prototype session state
+    dashboard-data.js            dashboard validation and query operations
+    external-assets.js           authenticated CDN asset loader
+    favorites.js                 persisted favourites
 
-| Messgrösse | Wert am Review-Baseline-Commit |
-| --- | ---: |
-| Getrackte Dateien | 939 |
-| Arbeitsbaum | rund 184 MiB |
-| `docs/` | 135.23 MiB |
-| `docs/review-assets/` | 344 Dateien, 133.77 MiB; davon 342 PNGs |
-| `assets/` | 418 Dateien, 46.72 MiB |
-| JavaScript und MJS | 122 Dateien, 25'519 physische Zeilen |
-| `css/app.css` | 4'249 Zeilen, 301'019 Byte |
-| `css/tokens.css` | 413 Zeilen, 23'643 Byte |
-| Grösste JS-Datei | `js/components.js`, 2'146 Zeilen, rund 125 KiB |
-| Weitere grosse Module | `room-booking.js` 1'068, `tenancies.js` 970, `portfolio.js` 812, `metadata-catalog.js` 792 Zeilen |
-| Initialer statischer Pfad | rund 180 KiB Brotli für HTML, CSS, Boot-JS und die vier eager geladenen Datendateien; kein erzeugtes Bundle |
-| Runtime-Bibliotheken | MapLibre GL 4.7.1, Swagger UI 5.17.14, bpmn-js 17.11.1, jeweils lazy von `unpkg.com` |
+  security/
+    urls.js                      link, resource, asset, mail and phone policy
+    untrusted-text.js            source-specific text normalization
 
-## 2. Architekturbild
+  ui/
+    components/                  primitives, content, forms, navigation,
+                                 feedback, overlays and catalogue behavior
+    shell/                       header, footer and shell composition
+    charts.js, gallery.js,
+    floorplan.js, fullscreen.js  focused reusable UI adapters
 
-### 2.1 Einstieg und Datenfluss
+  map/                           MapLibre loading, map slots and cluster actions
+  search/                        index, suggestions and normalized search log
+  pages/                         public route renderers
+  apps/                          independently routed micro-apps
+    room-booking/                calendar and booking rules
+  floorplan-editor/              editor model, commands, canvas and Three adapter
+  vendor/                        locally retained third-party source and licenses
+```
 
-| Stufe | Verantwortung | Daten- und Zustandsfluss |
-| --- | --- | --- |
-| `index.html` | Statischer Einstieg, 24 globale Stylesheets in expliziter Kaskadenfolge und Mount-Punkte | Lädt `js/app.js` als ES Module; benannte Einfügeanker halten statische und lazy Styles in derselben Reihenfolge |
-| `js/app.js` | Bootstrapping | Lädt Core und Prozess-Engine, danach Shell und Router |
-| `js/core.js` | Datenzugriff und Domänen-Lookups | Lädt `services` und `reference-data` eager; weitere JSON-/GeoJSON-Dateien lazy |
-| `js/process-engine.js` | Mock-Prozessdefinitionen und -instanzen | Lädt Definitionen und Seed-Instanzen; verbindet sie mit lokal gespeicherten Vorgängen |
-| `js/router.js` | Hash-Routing und Lebenszyklus | Ordnet neun Seitenbereiche und 17 Apps dynamischen Imports zu; lädt sieben wiederverwendete App-Sheets routenabhängig vor dem Rendern und erstellt `ctx` mit `mount`, Query, Core, Engine, Session, Komponenten und `onUnmount` |
-| `js/shell.js` | Header, Hauptnavigation, Mobile-Menü, Session-Chrome | Reagiert auf Session und Navigation, ersetzt Teile der Shell |
-| `js/components.js` | HTML-Bausteine und `wire*`-Verhalten | Rendert Strings, bindet Events und liefert teilweise Teardown-Funktionen |
-| `js/pages/*` | Öffentliche Inhalts- und Katalogseiten | Liest Hash-/Query-Zustand, filtert Core-Daten und rendert in den Haupt-Mount |
-| `js/apps/*` | Fachliche Mock-Anwendungen | Hält lokalen Modul-/DOM-Zustand, nutzt Core, Engine, Storage, Karten und Viewer |
-| `data/*`, `assets/*` | Statische Daten und Medien | Werden über `fetch` oder direkte Asset-URLs gelesen |
-| `scripts/*` | CDP-Browsertests, Daten-/Asset-Generatoren und ältere Diagnoseproben | Liegt ausserhalb der Anwendung; keine zentrale Task- oder Build-Definition |
+The key runtime contracts are now explicit:
 
-Der normale Ablauf ist `Hash → Router → dynamischer Import → optionales, abgewartetes App-CSS → render(ctx) → DOM/Event-Bindung`. Beim nächsten Routenwechsel führt der Router registrierte `onUnmount`-Callbacks aus. Der beim historischen Baseline-Review vermessene lokale Importgraph umfasste 60 Module und 137 statisch bestimmbare Importkanten; es wurde kein Zyklus gefunden. Mehrere damalige Fehler entstanden dort, wo Timer, globale Listener, Observer, Karten oder lokale Redraws den Lebenszyklusvertrag umgingen.
+- `render(ctx)` owns only its current route. It checks `ctx.stale()` before a late DOM commit, passes `ctx.signal` to abortable work, and registers resources with `ctx.onUnmount()`.
+- Core loaders validate HTTP status and top-level shape before caching. Callers receive a rejected promise, never an error page parsed as data.
+- Browser-storage writes return success explicitly. A workflow must not display success after a failed write.
+- UI components accept text by default. Deliberate markup parameters are named `*Html`; URL and attribute contexts use the security helpers.
+- Route compatibility values may remain German, while internal identifiers remain English and are guarded by `scripts/check-english-code.mjs`.
 
-### 2.2 Zustand
+## Findings and disposition
 
-| Ort | Inhalt | Schreibende Stellen |
-| --- | --- | --- |
-| URL-Hash und Query | Route, Filter, Suche, Register, ausgewähltes Objekt oder Bild | Router, Katalogseiten, Apps, Galerie |
-| `localStorage` | Mock-Session, Vorgänge, Warenkorb, Favoriten, Suchhistorie | `session.js`, `process-engine.js`, `shop.js`, `favorites.js`, `search-log.js` |
-| `sessionStorage` | Scrollpositionen | `router.js` |
-| Modulvariablen | Karteninstanzen, Loader-Promises, Redraw-Zustand | Karten-, Viewer-, Chart- und App-Module |
-| DOM | Filterzustand, Expanded-State, aktive Tabs, Formulardaten | `components.js`, `shell.js`, einzelne Apps |
+Line references below are current representative anchors at `e0f7f3c`; a row
+may describe additional call sites covered by the same contract and tests.
 
-Es gibt drei konkurrierende Zustandsmuster: URL als Quelle der Wahrheit, lokales `state` mit Teilrender und DOM als impliziter Zustand. Jedes Muster ist für sich verständlich. Übergänge zwischen ihnen sind jedoch nicht einheitlich validiert oder abgeräumt; daraus entstehen W-03 bis W-09 und W-19.
+### Bugs
 
-### 2.3 Abgleich mit dem bisherigen Review
-
-Das bisherige Dokument vom 30. Juli 2026 war primär ein Refactoring-Tagebuch und keine aktuelle technische Bestandsaufnahme. Die darin als umgesetzt bezeichneten Bausteine `format`, `domain`, `crumbs`, `links`, `map-slot`, `renderNotFound` und `processDone` sind im aktuellen Code vorhanden. Auch der damals noch als offen bezeichnete vollständige `spatial-tree` wird inzwischen von Portfolio, Projekten und Mietflächen gemeinsam genutzt. Die früher separaten Login-Gates wurden durch das zentrale Gate in `router.js:325-340` ersetzt.
-
-Nicht übernommen wurden historische Vorher-Zustände und alte Testresultate. Insbesondere besteht `test-portfolio` aktuell, während andere aktuelle Testschwächen vorliegen. Die noch vorhandene Katalog-Duplizierung ist als K-02 neu und enger belegt. Ein separater `catalogue-page`-Baustein wurde nie eingeführt; das Fehlen einer früher vorgeschlagenen Abstraktion ist allein kein Fehler.
-
-### 2.4 CSS-Refaktor: aktueller Stand
-
-Der CSS-Quellbaum folgt nun einer expliziten Kaskade aus Tokens, Foundations, Layouts, Navigationen, Komponenten, Sections, Skins und Utilities. `index.html` lädt 24 statische Stylesheets in dieser Reihenfolge. Sieben fachlich grosse App-Sheets werden nur auf den zugehörigen Routen geladen; der Router wartet auf den Loader, bevor er rendert. Dadurch bleiben die Kaskadenanker stabil, CSS-Fehler werden wie andere Routenfehler behandelt und es entsteht kein Flash of Unstyled Content. Die Anwendung bleibt Plain CSS ohne Build-Schritt, `package.json`, Framework oder neue Abhängigkeit.
-
-Die Refaktorfolge ist `Split 73dd190` → `Tokenise fb2e9bb` → `Consolidate a4e75c0` → `Polish 69386b5` → `Document` (dieser Commit). K-07 ist hinsichtlich Monolith, Dead Code und zentraler Architekturdokumentation erledigt; die noch umfangreichen ausgelieferten Warum-/Historienkommentare halten den Payload-Teil des Befunds offen. C-05 ist durch die Token-, Komponenten- und Zustandskonsolidierung erledigt beziehungsweise durch die neue Struktur supersediert.
-
-| Aktueller ausführbarer Nachweis | Ergebnis |
-| --- | --- |
-| Anwendungsregister | 17 Apps |
-| Routenvertrag | 38 kanonische Routen und 13 Redirects in `test-routes.mjs` |
-| Review-Audit | 69 Zustände × 3 Viewports = 207 aktuelle Renderings |
-| Getrackte Review-Artefakte | Historischer Stand bleibt bei 57 Zuständen × 3 Viewports = 171 Renderings; diese Artefakte sind nicht mit dem aktuellen ausführbaren Lauf gleichzusetzen |
-
-«Vorher» bezeichnet hier den unmittelbaren Ausgangspunkt des CSS-Refaktors, nicht den älteren Review-Baseline-Commit aus Abschnitt 1.3. Die gzip-6-Zahlen sind Summen der **einzeln pro HTTP-Response** komprimierten Dateien, nicht die Grösse eines zusammengefügten gzip-Bundles.
-
-| CSS-Ladezustand | Responses | Zeilen | Raw-Bytes | gzip-6-Bytes |
-| --- | ---: | ---: | ---: | ---: |
-| Vorher: `app.css` + `tokens.css` | 2 | 5'174 | 372'077 | 104'848 |
-| Nachher: statische Kaskade | 24 | 3'878 | 274'414 | 97'397 |
-| Nachher: statische Kaskade + alle sieben lazy App-Sheets | 31 | 5'418 | 391'971 | 129'893 |
-
-| Lazy App-Sheet | Zeilen | Raw-Bytes | gzip-6-Bytes |
-| --- | ---: | ---: | ---: |
-| `dataportal.css` | 216 | 15'960 | 5'503 |
-| `portfolio.css` | 273 | 19'912 | 7'120 |
-| `archive.css` | 121 | 8'991 | 2'854 |
-| `floorplan.css` | 192 | 12'810 | 5'069 |
-| `workplace.css` | 29 | 1'888 | 916 |
-| `floorplan-editor.css` | 548 | 47'602 | 8'607 |
-| `room-booking.css` | 161 | 10'394 | 2'427 |
-
-## 3. Befundübersicht
-
-Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Commit `fb9e9c2`. Der aktuelle Umsetzungsstatus und die zugehörigen Fix-Commits stehen in Abschnitt 1.1; erledigte Befunde bleiben hier als nachvollziehbarer Review-Nachweis erhalten.
-
-| Nr. | Status | Modul | Kategorie | Kurzbeschreibung | Fundstelle |
-| --- | --- | --- | --- | --- | --- |
-| B-01 | Erledigt | Immobilien-Dashboard | Blocker | Monatsansicht erzeugt `NaN` in SVG-Koordinaten | `js/apps/estate.js:216-221`, `js/charts.js:167-169` |
-| W-01 | Entscheid offen | Daten / Repository | Wichtig | Interne URLs und real wirkende Bundes-, Objekt- und Verantwortlichkeitsdaten liegen öffentlich vor | `data/applications.json:603-645`, `data/buildings.geojson:9-80`, `data/datasets.json:32` |
-| W-02 | Entscheid offen | Medien / Lizenzierung | Wichtig | 57 von 69 Medienrecords haben kein nachgewiesenes freies Weiterverteilungsrecht | `data/media.json:37`, `scripts/adopt-pdf-images.mjs:18-80` |
-| W-03 | Erledigt | Katalogzustand | Wichtig | Debounce schreibt nach einem Routenwechsel den alten Hash zurück | `js/components.js:1897-1901`, `js/components.js:1959` |
-| W-04 | Erledigt | Mobile Shell | Wichtig | Logout bei offenem Menü lässt Seite `inert` und Body gesperrt | `js/shell.js:397-434` |
-| W-05 | Erledigt | Overlays | Wichtig | Route- und verschachtelte Dialogwechsel räumen Overlay und Scroll-Lock falsch auf | `js/gallery.js:229-297`, `js/components.js:561-565` |
-| W-06 | Erledigt | Gebäude erfassen | Wichtig | Adressauswahl bleibt nach manueller Änderung gültig; ältere Suchantworten überschreiben neuere | `js/apps/building-create.js:240-244`, `js/apps/building-create.js:338-463` |
-| W-07 | Erledigt | Raumbuchung | Wichtig | Ungültige, vergangene oder unplausible Zeitfenster und Teilnehmerzahlen werden bestätigt | `js/apps/room-booking.js:84-85`, `js/apps/room-booking.js:272-289`, `js/apps/room-booking.js:583-623` |
-| W-08 | Erledigt | Shop | Wichtig | Speicherfehler werden als Bestellung/Warenkorb-Erfolg gemeldet | `js/apps/shop.js:44-63`, `js/apps/shop.js:580-612` |
-| W-09 | Erledigt | Mietflächen | Wichtig | Teilrender zerstört Grundriss-/Fullscreen-Zustand und bindet Tabellen neu | `js/apps/tenancies.js:855-905`, `js/apps/tenancies.js:920-948` |
-| W-10 | Erledigt | Portfolio | Wichtig | Kontextlinks verwenden falsche oder zu unspezifische Query-Parameter | `js/apps/portfolio.js:446`, `js/apps/portfolio.js:652` |
-| W-11 | Erledigt | Galerie | Wichtig | Geteilte Bild-URL stellt die Bildauswahl nicht wieder her | `js/gallery.js:218-226` |
-| W-12 | Fachentscheid offen | Flächendaten | Wichtig | BGF/NGF widersprechen zwischen Messungen und GeoJSON systematisch | `data/area-measurements.json:4-36`, `data/buildings.geojson:49-55` |
-| W-13 | Erledigt | Personal-Dashboard | Wichtig | Frauenanteil ist gleichzeitig 52 und 50,4 Prozent | `data/dashboards.json:547-548`, `data/dashboards.json:2265-2266` |
-| W-14 | Erledigt | Login-Gate | Wichtig | Fünf geschützte Routen fehlen im Anwendungskatalog und erhalten ein generisches Gate | `js/router.js:101-118`, `js/router.js:325-340` |
-| W-15 | Erledigt | Anchor-Navigation | Wichtig | Scroll-Spy vergleicht mount-relative `offsetTop`- mit dokumentrelativen Scrollwerten | `js/pages/anchor-nav.js:129-131`, `css/app.css:1195` |
-| W-16 | Erledigt | Dienstleistungen | Wichtig | «Auch in»-Treffer werden gezählt, die Ziel-Links verlieren aber den Suchbegriff | `js/pages/services.js:52-53`, `js/pages/services.js:85-89` |
-| W-17 | Erledigt | Testwerkzeug | Wichtig | Suiten können falsch bestehen, zu früh scheitern und Browserprozesse hinterlassen | `scripts/lib/cdp.mjs:65-152`, `scripts/test-login.mjs:35-42` |
-| W-18 | Erledigt | Asset-Skripte | Wichtig | Alte Bildpipelines arbeiten mit überholten Annahmen und können Assets überschreiben | `scripts/build-media-registry.mjs:162-170`, `scripts/fetch-building-images.mjs:109-121`, `scripts/link-building-images.mjs:67` |
-| W-19 | Erledigt | Teardown | Wichtig | Apps ignorieren Cleanup-Rückgaben für Karten, Observer, Tabellen und Listener | `js/apps/room-booking.js:473-483`, `js/apps/portfolio.js:697-700` |
-| W-20 | Erledigt | Mietflächen | Wichtig | Karten- und Leerergebnis-Pfad überspringen die Live-Region-Ansage | `js/apps/tenancies.js:227-259` |
-| W-21 | Erledigt | Prozess-Engine | Wichtig | «Heute» wird in UTC, die Referenz aber im lokalen Jahr berechnet | `js/process-engine.js:29-34` |
-| W-22 | Erledigt | Action-Menü | Wichtig | Beim Öffnen eines zweiten Menüs bleibt der alte Trigger für Assistive Technology expanded | `js/components.js:1790-1794` |
-| K-01 | Nicht begonnen | Komponenten | Komplexität | Zentrale Komponenten- und App-Module bündeln zu viele Verantwortlichkeiten | `js/components.js:1-2146`, `js/apps/room-booking.js:1-1068` |
-| K-02 | Nicht begonnen | Katalogseiten | Komplexität | Filter-, Hash-, Sortier- und Paging-Abläufe liegen in mehreren Varianten vor | `js/pages/services.js:15-201`, `js/components.js:1460-1959` |
-| K-03 | Erledigt | Öffentliche APIs | Komplexität | Nicht verwendete Exporte und Zustands-APIs vergrössern die Oberfläche | `js/session.js`, `js/core.js`, `js/components.js`, `scripts/test-api-surface.mjs` |
-| K-04 | Erledigt | Dashboards | Komplexität | Generische Immobilien-/Hero-Konfiguration ist nicht erreichbar oder driftet | `js/apps/dataportal.js`, `data/dashboards.json`, `scripts/test-dashboard.mjs` |
-| K-05 | Erledigt | Datenrouten | Komplexität | Unterrouten laden breitere Datenbereiche als sie verwenden | `js/pages/data.js:4-31`, `js/router.js:453-461` |
-| K-06 | Erledigt | Wiederholte Arbeit | Komplexität | Prozessdateien laden seriell; Raumsuche berechnet Profile und Sortierungen mehrfach | `js/process-engine.js:22-44`, `js/apps/room-booking.js:151-347,1145-1163` |
-| K-07 | Teilweise erledigt | CSS | Komplexität | Monolith und bestätigter Dead Code sind beseitigt; ausführliche Warum-/Historienkommentare werden teilweise weiterhin ausgeliefert | `css/README.md`, `css/foundations/`, `css/layouts/`, `css/components/`, `css/apps/` |
-| K-08 | Nicht begonnen | Repository | Komplexität | Binäre Review-Screenshots dominieren Grösse und History | `docs/review-assets/audit.json:1`, `docs/review-assets/accessibility.json:1` |
-| K-09 | Erledigt | Skripte | Komplexität | Diagnoseproben enthalten lokale Windows-Pfade und überlappende Einmalwerkzeuge | `scripts/check-hero.mjs:3`, `scripts/check-services.mjs:30` |
-| K-10 | Nicht begonnen | Registries | Komplexität | Core- und Router-Metadaten werden in parallelen Tabellen über denselben Schlüsselraum geführt | `js/core.js:17-72`, `js/router.js:81-118` |
-| P-01 | Ausserhalb Runde | Supply Chain | Produktionsrelevant | CDN-Code läuft ohne SRI; eine restriktive CSP fehlt | `index.html:3-13`, `js/buildings-map.js:20-28` |
-| P-02 | Ausserhalb Runde | Web Storage | Produktionsrelevant | Storage-Zugriffe und korrupte gespeicherte Werte sind nicht durchgehend abgesichert | `js/router.js:299-311`, `js/search-log.js:23-50` |
-| P-03 | Ausserhalb Runde | Datenloader | Produktionsrelevant | Loader prüfen Schemas nur grob und bündeln parallele gleiche Requests nicht | `js/core.js:200-206`, `js/dashboard-data.js:21-47` |
-| P-04 | Ausserhalb Runde | CSV-Export | Produktionsrelevant | Zellen mit Formelpräfix werden nicht neutralisiert | `js/export.js:34` |
-| P-05 | Ausserhalb Runde | URL-Zustand | Produktionsrelevant | Vererbte Objekteigenschaften können als gültiger Störungstyp interpretiert werden | `js/apps/fault-report.js:70-114` |
-| P-06 | Ausserhalb Runde | Trust Boundaries | Produktionsrelevant | Einige Hrefs und externe Label gelangen ohne passenden Kontext-Check in Markup | `js/router.js:226-239`, `js/apps/building-create.js:32-61` |
-| P-07 | Ausserhalb Runde | Datumsformatierung | Produktionsrelevant | Reine ISO-Daten können westlich von UTC am Vortag erscheinen | `js/format.js:32-35` |
-| P-08 | Ausserhalb Runde | Bildauslieferung | Produktionsrelevant | Grosse Originalbilder werden ohne Derivate oder `srcset` ausgeliefert | `data/media.json:20,43`, `assets/images/` |
-| P-09 | Ausserhalb Runde | Diagramm-Randfall | Produktionsrelevant | Ein vollständig leerer Pie-Chart zeigt intern ein Total von 1 | `js/charts.js:317-350` |
-| C-01 | Nicht begonnen | Escaping | Kosmetisch | Bereits escapte Texte werden in Hero und Einheiten nochmals escaped | `js/hero-mosaic.js:21-27`, `js/components.js:1386` |
-| C-02 | Nicht begonnen | Router | Kosmetisch | Gate-, 404- und Fehlerpfade teilen Scroll-/Fokus-Finalisierung nicht | `js/router.js:325-342`, `js/router.js:409-494` |
-| C-03 | Nicht begonnen | URL-Verarbeitung | Kosmetisch | `URLSearchParams` wird teils nochmals decodiert; IDs werden teils roh angezeigt | `js/apps/metadata-catalog.js:75-76`, `js/pages/services.js:57-141` |
-| C-04 | Erledigt | Dokumentation | Kosmetisch | README, Review-Matrix und Kommentare beschreiben Runtime und Routenstand unvollständig oder veraltet | `README.md:31-37`, `docs/accessibility-review.md:5-16` |
-| C-05 | Erledigt / supersediert | CSS-Details | Kosmetisch | Token-, Komponenten- und Zustandskonsolidierung beseitigte beziehungsweise ersetzte die früheren Einzelabweichungen | `css/tokens.css`, `css/components/`, `css/sections/`, `css/apps/` |
-| C-06 | Nicht begonnen | Suche | Kosmetisch | Hash-Ersetzung schreibt denselben Wert ohne Wirkung erneut | `js/search-suggest.js:71` |
-| C-07 | Nicht begonnen | Datenlabels | Kosmetisch | Papier-Dashboard deklariert eine leere Recycling-Spalte; Taglabels sind technisch | `data/dashboards.json:652`, `data/catalog-labels.json:36-37` |
-| C-08 | Erledigt | Tests | Kosmetisch | Template-Regex verliert `\s`; BPMN-Test hängt vom aktuellen Arbeitsverzeichnis ab | `scripts/lib/cdp.mjs:208-210`, `scripts/test-process-docs.mjs:28-31` |
-
-## 4. Systemische Befunde
-
-| Thema | Beobachtung | Konsequenz | Zugehörige Befunde |
+| Severity | Current location | Symptom and cause | Disposition |
 | --- | --- | --- | --- |
-| Lebenszyklus ohne durchgehenden Besitz | `onUnmount` ist etabliert, aber Timer, globale Overlays, lokale Redraws, Observer und Karten umgehen ihn. Ein boolescher Body-Lock kann zudem keine verschachtelten Besitzer darstellen. | Schnelle Navigation oder wiederholtes Öffnen erzeugt stale State, gesperrte Seiten und Listener-Leaks. | W-03, W-04, W-05, W-09, W-19, W-22 |
-| URL und lokaler State konkurrieren | Kataloge und Apps schreiben teils in den Hash, teils in lokales `state`, teils nur ins DOM. Validierung geschieht nicht an einer gemeinsamen Grenze. | URL-Parameter können alte Auswahl, ungültige Werte oder falsche Kontextlinks erzeugen. | W-06, W-07, W-10, W-11, P-05 |
-| Datenherkunft ist nicht als Publikationsvertrag geführt | Datensätze mischen synthetische, generierte, offizielle und intern wirkende Angaben. Medien führen verschiedene Quellen, aber keinen belastbaren Freigabestatus. | Technische Reviews können Vertraulichkeit und Lizenzlage nicht aus dem Code entscheiden; die öffentliche History konserviert Fehlpublikationen. | W-01, W-02, W-12, W-13, Q-01 bis Q-04 |
-| Tests prüfen häufig indirekte Signale | Einige Suiten authentisieren bereits im Setup, verwenden feste Wartezeiten oder verifizieren tote IDs. CDP-Cleanup ist bei Fehlerpfaden unvollständig. | Grün und Rot sind nicht in allen Suiten belastbar; lokale Läufe hinterlassen Ressourcen. | W-17, C-08 |
-| Review-Historie liegt im Produktartefakt | Ausführliche Warum-/Historienkommentare stehen teilweise weiterhin im ausgelieferten CSS; komplette Screenshot-Matrizen liegen in Git. | Struktur, Dead Code und zentrale Dokumentation sind bereinigt, aber der Kommentar-Payload bleibt als Rest von K-07 offen. Die Clone-/History-Grösse der Screenshots bleibt K-08. | K-07, K-08, C-04, C-05 |
+| High | `js/routing/router.js:21-66,491-527`; `js/core/session.js:18-47` | Back/Forward jumps or logout could bypass unsaved-work guards and leave route/session state inconsistent. Navigation entry points did not share one permission path. | **Resolved.** Hash changes, programmatic navigation, history restoration, and logout use the same synchronous blocker contract. |
+| Medium | `js/ui/fullscreen.js:5-38`; `js/map/cluster-navigation.js:4-27` | Rejected fullscreen and asynchronous cluster actions produced unhandled promise rejections or silent failures. | **Resolved.** Both adapters catch platform failures and report actionable UI feedback. |
 
-## 5. Befunde im Detail
+### Races and lifecycle
 
-Aufwandsskala: **XS** unter 2 Stunden, **S** bis 0.5 Tag, **M** 1–2 Tage, **L** 3–5 Tage, **XL** über 5 Tage oder mit externer Freigabe. Die Schätzung umfasst Änderung und gezielte Regressionstests, nicht fachliche Entscheidungszeit.
-
-### 5.1 Blocker
-
-| Nr. | Status | Fundstelle | Ist, Auswirkung und Bedingung | Empfohlene Massnahme | Aufwand |
-| --- | --- | --- | --- | --- | ---: |
-| B-01 | Erledigt | `js/apps/estate.js:216-221`; `js/charts.js:167-169` | Die Monatsaggregation liefert Monatskeys als Strings, die Chart-Skalierung behandelt sie als numerische X-Werte. Unter `#/app/dataportal/immobilien?tab=entwicklung&gran=monat` entstehen 96 ungültige `cx`-Werte und drei SVG-Pfade mit `NaN`; die Entwicklung wird sichtbar falsch oder gar nicht gezeichnet. Im Browser reproduziert. | Monatswerte vor dem Chart in eine definierte numerische oder Datumsskala normalisieren; leere/ungültige Punkte abweisen; Monats- und Jahresansicht im Browser prüfen. | S |
-
-### 5.2 Wichtig
-
-| Nr. | Status | Fundstelle | Ist, Auswirkung und Bedingung | Empfohlene Massnahme | Aufwand |
-| --- | --- | --- | --- | --- | ---: |
-| W-01 | Entscheid offen | `data/applications.json:603-645,732,756,776,1148`; `js/knowledge-content.js:24,220`; `data/datasets.json:32`; `data/api-specs.json:7,193`; `data/buildings.geojson:9-80`; `scripts/add-research-buildings.mjs:1-2,163,206-211` | Das öffentliche Repo enthält eingeschränkte oder interne GIS-, CDE-, eGate-, Confluence-, DTI- und Archimap-Ziele sowie offizielle Kataster-/Objektkennungen, EGRID, CHF-Werte und benannte Verantwortlichkeiten. Die Werte sind in erreichbaren Commits enthalten. Die 728 Raumlayouts sind dagegen nachweislich generiert und wurden nicht als reale Räume eingestuft. | Veröffentlichung sofort fachlich und datenschutzrechtlich inventarisieren; nicht freigegebene Werte durch klar synthetische Fixtures ersetzen; für bereits publizierte Werte eine History-/Rotation-Strategie festlegen. | L–XL |
-| W-02 | Entscheid offen | `data/media.json:37`; `scripts/adopt-pdf-images.mjs:18,76,80` | 57 von 69 Records verweisen auf BBL-Mediadatenbank oder interne Dokumentquellen statt auf eine freie Lizenz; betroffen sind 41 eindeutige Dateien. Sechs Records tragen bereits `reviewNeeded`. Im öffentlichen MIT-Repo ist das Weiterverteilungsrecht nicht belegt. | Für jedes Medium Lizenz, Rechteinhaber und Freigabe dokumentieren; ungeklärte Dateien aus öffentlicher Auslieferung und History entfernen oder durch frei lizenzierte Assets ersetzen. | L–XL |
-| W-03 | Erledigt | `js/components.js:1897-1901,1959` | `wireCatalogueState` räumt seinen Debounce-Timer beim Unmount nicht auf. Reproduktion: in Mietflächen «Bern» tippen und innerhalb von 40 ms zu Dienstleistungen wechseln; danach zeigt die Seite Dienstleistungen, der Hash springt jedoch auf `#/app/tenancies?q=Bern` zurück und wirft im alten Callback. | Timer in die Teardown-Funktion aufnehmen; vor Commit zusätzlich Mount-/Routenidentität prüfen. | XS |
-| W-04 | Erledigt | `js/shell.js:397-434` | Wird bei offenem Mobile-Menü ausgeloggt, ersetzt die Shell den Header, normalisiert aber den Body-Zustand nicht. Reproduziert: neuer Burger meldet `aria-expanded=false`, während `body` die Menüklasse behält und `main`/Footer `inert` bleiben. | Vor jedem Shell-Redraw den mobilen Overlay-Zustand zentral schliessen; Body-Klasse, `inert`, Fokus und Triggerzustand gemeinsam zurücksetzen. | S |
-| W-05 | Erledigt | `js/gallery.js:229-237,265-297`; `js/doc-viewer.js:151-158,283-300`; `js/components.js:561-565` | Galerie und Dokumentbetrachter besitzen globale Listener und Body-Lock ausserhalb des Router-Teardowns. Eine Galerie bleibt nach Hash-Navigation über der neuen Seite. Galerie → Teilen → Teilen schliessen lässt die Galerie sichtbar, entsperrt aber bereits den Body, weil der Lock nur boolesch ist. Beides im Browser reproduziert. | Overlays als besitzende Instanzen mit idempotentem `close()` registrieren; Body-Lock referenzzählen oder stackbasiert führen; alle Route-Unmounts schliessen. | M |
-| W-06 | Erledigt | `js/apps/building-create.js:240-244,261-267,338-344,371-379,442-463` | Die Validierung prüft nur `state.lat`. Nach Auswahl einer Adresse kann der Text geändert werden, ohne Auswahl und Koordinaten zu invalidieren; der nächste Schritt übernimmt die alte Adresse. Eine Kartenwahl kann Koordinaten ohne gültige Adresse setzen. Langsame ältere Suchantworten dürfen zudem neuere überschreiben; nach Fehlern geht der getippte Wert teilweise verloren. Im Browser mit verzögerten Antworten reproduziert. | Adresse als zusammengehöriges Objekt mit Query-Version führen; manuelle Textänderung invalidiert die Auswahl; Requests abbrechen oder sequenzieren; Validierung verlangt sichtbare Adresse und Koordinaten derselben Auswahl. | M |
-| W-07 | Erledigt | `js/apps/room-booking.js:84-85,122-128,213-216,272-289,583-623` | Datum und Zeiten werden nur formal gelesen. `date=2020-01-01&start=99:00&end=99:30` kann als bestätigte Buchung persistiert werden. Leere, null-, negative oder nicht numerische Teilnehmerwerte werden vor der Fehlerprüfung auf 1 normalisiert. Im Browser reproduziert. | Eine gemeinsame Slot-Validierung für Query, Verfügbarkeit und Submit einführen: reales Datum, nicht vergangen, gültige Uhrzeit, Ende nach Start, Kapazität und ganzzahlige Teilnehmerzahl. | M |
-| W-08 | Erledigt | `js/apps/shop.js:44-63,580-612` | Der Shop ignoriert den Rückgabewert der Storage-Schreibvorgänge. Bei simuliertem `localStorage`-Fehler erscheint eine Erfolgsmeldung; beim Checkout kann die Bestellung als erfolgreich gelten, obwohl der Warenkorb bestehen bleibt. Im Browser reproduziert. | Persistenz atomar behandeln: erst Erfolg anzeigen und lokalen State leeren, wenn Schreiben/Entfernen bestätigt ist; bei Fehlschlag Warenkorb erhalten und Fehler melden. | S |
-| W-09 | Erledigt | `js/apps/tenancies.js:855-905,920-948` | Ein Tabellen-/Filter-Redraw mountet alle versteckten Tabellen neu und verwirft Grundriss- sowie Fullscreen-Zustand. Teardown-Rückgaben der Grundrissverdrahtung werden nicht gehalten. Normale Filter-/Ansichtswechsel können deshalb die aktuelle Arbeit zurücksetzen und Handler vervielfachen. | Nur sichtbaren Teilbaum aktualisieren oder vor Redraw alle Teil-Teardowns ausführen; Fullscreen und Auswahl als expliziten State erhalten. | M |
-| W-10 | Erledigt | `js/apps/portfolio.js:446,652`; `js/apps/media-library.js:91-105`; `js/apps/document-archive.js:52-60` | Der Medienlink schreibt `building=`, die Medienbibliothek liest für Objektkontext aber `objekt`. Der Dokumentlink verliert den vorhandenen Gebäudekontext vollständig. Nutzer landen in einer generischen oder leeren Ansicht. Statisch verifiziert. | Kontextlinks über zentrale Link-Builder mit den von den Zielrouten gelesenen Parametern erzeugen; Deep-Link-Regressionsfälle ergänzen. | XS |
-| W-11 | Erledigt | `js/gallery.js:218-226`; `js/apps/portfolio.js:702`; `js/apps/tenancies.js:876-877`; `js/apps/projects.js:487-488` | Die Galerie schreibt die Bild-URL beim Teilen, liest sie beim erneuten Laden aber nicht konsistent als Auswahl. Der geteilte Link öffnet die Seite, nicht zuverlässig das geteilte Bild. | Einen gemeinsamen Galerie-Deep-Link-Vertrag definieren und beim Mount auswerten; unbekannte Bild-IDs neutral behandeln. | S |
-| W-12 | Fachentscheid offen | `data/area-measurements.json:4-36,804-836`; `data/buildings.geojson:49-55,893-899` | Bei allen elf gemeinsam geprüften Bestandsobjekten weichen BGF und NGF zwischen Messdatei und GeoJSON ab. HNF ist für zehn dieser Objekte in beiden Quellen vorhanden und stimmt in allen zehn Vergleichen. Ansichten können je Datenpfad trotzdem andere BGF-/NGF-Werte zeigen. Kein fachlich führender Datensatz ist dokumentiert. | Eine Quelle als kanonisch festlegen und die zweite generieren oder im Integritätstest objektweise abgleichen. Vor Korrektur Q-01 klären. | M |
-| W-13 | Erledigt | `data/dashboards.json:547-548,2186,2190-2191,2265-2266` | Dasselbe Personal-Dashboard nennt den Frauenanteil als 52 und 50,4 Prozent; der Lead sagt zugleich «knapp die Hälfte». Die Vorführung widerspricht sich innerhalb einer Seite. | Kennzahl aus einer gemeinsamen Datenzelle ableiten und Text/Visualisierung darauf referenzieren. | XS |
-| W-14 | Erledigt | `js/router.js:101-118,325-340`; `data/applications.json` | `space-request`, `fault-report`, `transaction`, `api-docs` und `building-create` besitzen keinen passenden Katalogeintrag für das zentrale Login-Gate. Ausgeloggte Nutzer sehen deshalb die Überschrift «Anwendung» und einen generischen Rückweg statt Dienst-/App-Namen. Im `test-tabs`-Lauf beobachtet. | Gate-Metadaten in der Routentabelle vollständig deklarieren oder aus Service-/App-Daten auflösen; Überschrift und Rückweg je Route prüfen. | S |
-| W-15 | Erledigt | `js/pages/anchor-nav.js:129-131`; `css/app.css:1195` | Der Scroll-Spy vergleicht `section.offsetTop`, das sich auf den positionierten Haupt-Mount bezieht, mit dokumentrelativem `window.scrollY`. Der Versatz des Mounts fehlt; dadurch kann der aktive Anker beim Scrollen falsch markiert werden. | Abschnittsposition und Scrollwert im selben Koordinatensystem berechnen; aktive Sektion an Ober-/Unterkante testen. | S |
-| W-16 | Erledigt | `js/pages/services.js:52-53,85-89` | Die Seite zählt Anwendungen und Dokumente, die zum aktuellen Suchtext passen. Die erzeugten Links führen jedoch nur auf `#/applications` beziehungsweise `#/app/document-archive` und übernehmen `q` nicht. Nutzer sehen am Ziel die ungefilterte Übersicht statt der angekündigten Treffer. Statisch verifiziert. | Ziel-Hashes mit demselben normalisierten Suchbegriff erzeugen und die Trefferzahl gegen die Zielansicht prüfen. | XS |
-| W-17 | Erledigt | `scripts/lib/cdp.mjs:65-82,102-152`; `scripts/test-login.mjs:35-42`; `scripts/test-tenancies.mjs:95-102`; `scripts/check-services.mjs:30` | `openPage` authentisiert standardmässig, weshalb `test-login` den ausgeloggten Einstieg nicht wirklich prüft. Mietflächen wartet fest 2.5 s auf die CDN-Karte und scheitert, obwohl sie kurz danach vorhanden ist. Mehrere ältere Proben rufen asynchrone `problems()`-Funktionen ohne `await` auf. Fehlerpfade schliessen Edge-/Node-Helfer nicht zuverlässig; ein Review-Lauf hinterliess 91 Prozesse. | Auth-Zustand je Test explizit setzen; auf beobachtbare DOM-Bedingungen statt feste Zeit warten; Test-Entrypoints `await`en; Browserbesitz in `try/finally` schliessen und Child-Prozesse mitverfolgen. | M |
-| W-18 | Erledigt | `scripts/build-media-registry.mjs:162-170`; `scripts/fetch-building-images.mjs:109-121`; `scripts/link-building-images.mjs:67` | Drei ältere Bildpipelines teilen Dateinamen-/Pfadannahmen nicht mit dem aktuellen Medienbestand und schreiben oder benennen Dateien in produktiven Asset-/Datenverzeichnissen um. Nur die Registry bietet einen optionalen `--pruefen`-Modus; ohne Flag ist Schreiben der Standard. Ein versehentlicher Lauf kann Zuordnungen oder Dateien überschreiben. | Skripte als historisch sperren oder entfernen; verbleibende Pipeline standardmässig auf Dry-Run stellen und erst mit explizitem Schreib-Flag, Ziel und Konsistenzprüfung mutieren lassen. | M |
-| W-19 | Erledigt | `js/apps/room-booking.js:473-483,717-735`; `js/apps/dataportal.js:198-229`; `js/apps/estate.js:401-425`; `js/apps/portfolio.js:697-700`; `js/pages/my-cases.js:55`; `js/pages/home.js:209` | Karten im Buchungsdialog werden bei normalem Schliessen nicht freigegeben; Observer-, Tabellen- und Zeilen-Teardowns werden an mehreren Stellen verworfen. Nach wiederholtem Öffnen/Redraw bleiben Ressourcen und Listener aktiv. Karten-Cleanup wurde mit instrumentiertem `remove()` reproduziert. | Einheitlichen Teardown-Sammler pro Mount/Teilrender einsetzen; jede `wire*`-Funktion liefert idempotenten Cleanup; bei Dialogschluss und Redraw ausführen. | L |
-| W-20 | Erledigt | `js/apps/tenancies.js:227-259` | Sowohl die Kartenansicht bei Zeile 234 als auch der Leerergebnis-Pfad bei Zeile 244 kehren vor `announceCatalogue()` zurück. Sehende Nutzer sehen Karte oder Leerzustand, Screenreader erhalten für beide Bedingungen keine aktualisierte Trefferansage. | Statusansage vor die gemeinsamen Rücksprungpunkte ziehen oder alle Pfade über ein gemeinsames Render-Finale führen. | XS |
-| W-21 | Erledigt | `js/process-engine.js:29-34` | Das Prozessdatum verwendet `toISOString()` in UTC, die Referenznummer `getFullYear()` in Lokalzeit. In der Schweiz zwischen lokaler Mitternacht und 01:00 beziehungsweise 02:00 kann das Datum am Vortag liegen; um den Jahreswechsel können Datum und Referenzjahr auseinanderfallen. | Lokales Kalenderdatum einmal berechnen und für Datum sowie Jahr verwenden; Grenzfälle um Mitternacht/Jahreswechsel testen. | XS |
-| W-22 | Erledigt | `js/components.js:1790-1794` | Beim Öffnen eines zweiten Action-Menüs wird das erste visuell geschlossen, sein Trigger behält aber `aria-expanded="true"`. Assistive Technology meldet einen Zustand, der nicht mehr existiert. | Beim Schliessen jedes alten Menüs auch dessen Trigger normalisieren und Fokusbesitz klar halten. | XS |
-
-### 5.3 Komplexität
-
-| Nr. | Status | Fundstelle | Ist, Auswirkung und Bedingung | Konkrete Vereinfachung | Aufwand |
-| --- | --- | --- | --- | --- | ---: |
-| K-01 | Nicht begonnen | `js/components.js:1-2146`; `js/apps/room-booking.js:1-1068`; `js/apps/tenancies.js:1-970`; `js/apps/portfolio.js:1-812` | Rendering, Zustandsreduktion, Event-Bindung und Teardown liegen in denselben sehr grossen Modulen. Änderungen an Katalog- oder Overlay-Verhalten berühren weit auseinanderliegende Abschnitte. | `components.js` nach Dialog/Overlay, Katalog/Tabelle und Formularfluss schneiden; App-spezifische Reducer/Validatoren als reine Funktionen auslagern. Keine neue Runtime-Abhängigkeit. | L |
-| K-02 | Nicht begonnen | `js/pages/services.js:15-201`; `js/pages/applications.js`; `js/pages/catalog.js`; `js/pages/search.js`; `js/apps/media-library.js`; `js/components.js:1460-1959` | Die Seiten teilen denselben Ablauf Hash lesen → filtern → sortieren → paginieren → Pills → Verdrahtung, führen aber lokale Varianten und mit `wireCatalogueState` einen zweiten Commit-Pfad. Das erhöht Drift und erschwert Fixes wie W-03. | Kleine gemeinsame Zustandsreduktion und einen Commit-Adapter für Hash versus lokalen State extrahieren; Seiten behalten Card-, Facet- und Textlogik. Q-05 vor Umbau klären. | L |
-| K-03 | Erledigt | `js/session.js`; `js/links.js`; `js/crumbs.js`; `js/core.js`; `js/process-engine.js`; `js/components.js`; `js/buildings-map.js`; `scripts/test-api-surface.mjs` | Die ungenutzte Session-Subscription, Default-Exporte, Core-Komfortzugriffe, Komponenten-Aliasse und der verwaiste Kartenpfad sind entfernt oder intern. Drei passende Link-Builder werden jetzt von der Suche verwendet. Engine-/Core-Diagnostik mit konkreten Konsumenten bleibt erhalten. Ein schneller Modultest fixiert die beabsichtigten ESM- und Objektoberflächen; Browsertests bestätigen Login/Logout sowie die Suchziele. | Verwendungen mit statischer Suche/Importgraph bestätigen; ungenutzte Exporte entfernen oder intern machen; Engine-/Core-Diagnostik nur behalten, wenn ein konkreter Konsument benannt ist. | M |
-| K-04 | Erledigt | `js/apps/dataportal.js`; `js/apps/estate.js`; `data/dashboards.json`; `scripts/test-dashboard.mjs`; `scripts/test-data-integrity.mjs`; `scripts/test-route-needs.mjs` | Immobilien wird nur noch vom spezialisierten Renderer bedient. Der unerreichbare generische Immobilien-Record, seine exklusiven Datensätze, die parallele `hero`-Datenform und der generische Kartenpfad sind entfernt. Referenztests erzwingen genau einen Renderer je Thema; Kaltstarts bestätigen null Immobilien-GeoJSON für generische Seiten und genau einen Abruf je Stammdatendatei für Immobilien. | Pro Dashboard genau einen Renderer und eine Datenform festlegen; unerreichbare Konfiguration nach Routen-/Screenshotprüfung entfernen. | M |
-| K-05 | Erledigt | `js/pages/data.js:4-31`; `js/router.js:453-461`; `scripts/test-route-needs.mjs` | Jede Datenunterroute lud Anwendungen und Datensätze, auch wenn nur eine Teilansicht benötigt wurde; deklarierte `needs` waren teils unvollständig oder ohne Wirkung. Die Datenmenge ist heute klein, der Vertrag blieb aber irreführend. | `needs` ist jetzt die einzige Ladebeschreibung und deklariert pro Route nur tatsächlich verwendete Keys; kalte Seitenkontexte prüfen den Vertrag. | S |
-| K-06 | Erledigt | `js/process-engine.js:22-44`; `js/apps/room-booking.js:151-347,1145-1163`; `scripts/test-process-dates.mjs`; `scripts/test-room-booking.mjs` | Prozessdefinitionen und Instanzen luden unabhängig, aber seriell. Die Raumsuche berechnete Profil, Sortierung und `engine.instances()` wiederholt innerhalb der Raumiteration. Bei den kleinen Fixtures war das nicht spürbar, erschwerte aber die Logik. | Unabhängige Prozessdateien laden jetzt mit `Promise.allSettled`; ein Buchungskontext pro Render bündelt Räume, Profile, Favoriten und Belegungen, während Aktionen frisch nachprüfen. | S |
-| K-07 | Teilweise erledigt | `css/README.md`; `css/foundations/`; `css/layouts/`; `css/navigations/`; `css/components/`; `css/sections/`; `css/apps/`; `css/skins/` | **Historischer Baseline-Befund:** 45.3 Prozent von `app.css` und `tokens.css` waren Kommentare; die damalige gzip-Messung betrug 97'488 Byte mit und 31'198 Byte ohne Kommentare. Die Refaktorfolge etablierte die geschichtete Kaskade, entfernte bestätigten Dead Code und dokumentiert Architektur und Ausnahmen zentral. Ausführliche Warum-/Historienkommentare bleiben jedoch teilweise in den geladenen Dateien; zudem ist die Summe aller 31 einzeln komprimierten Responses grösser als die frühere Zweier-Summe. | Erledigt sind Monolith, Dead Code und zentrale Dokumentation. Offen bleibt, historische Kommentare weiter zu kürzen; ein Build-/Minifizierungsschritt wurde gemäss Projektvorgabe nicht ergänzt. | M |
-| K-08 | Nicht begonnen | `docs/review-assets/audit.json:1`; `docs/review-assets/accessibility.json:1`; `docs/review-assets/` | 342 Vorher-/Nachher-PNGs belegen 133.77 MiB und rund 72 Prozent des getrackten Baums. Zehn Hash-Duplikatgruppen sparen allein rund 1.13 MiB; die vollständige Matrix verteuert jeden Clone und die History dauerhaft. | Komplette Matrizen als CI-/Release-Artefakt speichern; in Git Manifest, Resultat-JSON und wenige repräsentative Bilder behalten. History-Bereinigung separat freigeben. | L–XL |
-| K-09 | Erledigt | `scripts/check-hero.mjs:3`; weitere `check-*`-Skripte; Daten-/Bildskripte | Neun Diagnoseproben referenzieren einen lokalen `file:///C:/.../cdp.mjs`-Pfad; weitere Generatoren enthalten einen fest codierten Repository-Pfad. Überlappende Einmalproben haben keinen gemeinsamen Entrypoint oder Status. | Benötigte Proben auf relative Imports/`import.meta.url` umstellen, Dubletten archivieren oder löschen, unterstützte Skripte im README mit Zweck und Schreibwirkung listen. | M |
-| K-10 | Nicht begonnen | `js/core.js:17-72`; `js/router.js:81-118` | `FILES`, `DEFERRED`, `AREA` und `OBJECT_FILES` beziehungsweise `PAGES`, `APPS` und Abschnittszuordnung beschreiben dieselben Schlüssel in parallelen Tabellen. Ergänzungen können eine Tabelle vergessen, wie W-14 zeigt. | Je Bereich eine deklarative Registry mit URL, Shape, eager/area beziehungsweise Route, Modul, Abschnitt und Gate-Metadaten verwenden; bestehende Accessoren daraus ableiten. | M |
-
-### 5.4 Kosmetisch
-
-| Nr. | Status | Fundstelle | Ist, Auswirkung und Bedingung | Empfohlene Massnahme | Aufwand |
-| --- | --- | --- | --- | --- | ---: |
-| C-01 | Nicht begonnen | `js/hero-mosaic.js:21-27`; `js/components.js:1386` | Alt-/Einheitstext wird vor Übergabe und im Zielbaustein escaped. Sichtbar werden bei entsprechenden Daten HTML-Entities statt Originalzeichen. Aktuelle Fixtures lösen es kaum aus. | Klartext als Komponentenvertrag festlegen und genau am HTML-Sink escapen. | XS |
-| C-02 | Nicht begonnen | `js/router.js:325-342,409-414,434,454-494` | Login-Gate, 404 und Fehlerpfad umgehen Teile des normalen Scroll-, Fokus- und Cleanup-Finales. Die Seite funktioniert, startet aber nicht immer an derselben Position oder mit demselben Fokus. | Gemeinsames Route-Finale für Erfolg, Gate, 404 und Fehler verwenden. | S |
-| C-03 | Nicht begonnen | `js/apps/metadata-catalog.js:75-76,467,633`; `js/apps/process-docs.js:157,337`; `js/pages/services.js:57,69,141` | Bereits decodierte `URLSearchParams`-Werte werden erneut decodiert; unbekannte Service-IDs erscheinen teilweise roh. Ungewöhnliche Prozentwerte können dadurch verändert oder als technische IDs gezeigt werden. | Einmaliges Decoding am Router festlegen; Anzeige unbekannter IDs über neutrale Labels führen. | XS |
-| C-04 | Erledigt | `README.md:31-37`; `docs/accessibility-review.md:5-16`; `docs/review-assets/audit.json:8-78`; `docs/review-assets/accessibility.json:5-65`; `css/app.css:517-519` | README nennt nur MapLibre, obwohl Swagger UI und bpmn-js ebenfalls zur Laufzeit vom CDN kommen. Accessibility-Dokumentation behauptet zwei gleiche 57-State-Läufe, der neue Lauf enthält 58 Routen; Room Booking fehlt in der Screenshot-Matrix. Kommentare widersprechen aktuellem Code. | README und Review-Metadaten aktualisieren; Artefaktstand und bewusst fehlende Screenshots explizit nennen; falsche CSS-Kommentare entfernen. | S |
-| C-05 | Erledigt / supersediert | `css/tokens.css`; `css/components/`; `css/sections/`; `css/apps/` | **Historischer Baseline-Befund:** Eine `max-height`-Transition war nicht animierbar, einzelne Farben drifteten von Tokens und Deklarationen waren gesplittet. Die CSS-Commitfolge `73dd190` → `fb2e9bb` → `a4e75c0` → `69386b5` → `Document` (dieser Commit) ersetzte diese punktuelle Struktur durch gemeinsame Tokens, Komponenten, Modifier und vollständige Zustände. | Umgesetzt beziehungsweise durch die konsolidierte Komponentenarchitektur supersediert; bewusst fachliche Geometrien und Paletten bleiben dokumentierte Ausnahmen. | S |
-| C-06 | Nicht begonnen | `js/search-suggest.js:71` | Der Code ersetzt den Hash durch denselben Wert. Das erzeugt keinen Zustandswechsel und erschwert die Absicht. | No-op entfernen oder die beabsichtigte History-Semantik explizit implementieren. | XS |
-| C-07 | Nicht begonnen | `data/dashboards.json:652`; `data/catalog-labels.json:36-37` | Das Papier-Dashboard deklariert eine Recycling-Spalte ohne Zeilenwerte; `tag.tag1`/`tag.tag2` werden technisch beschriftet. | Leere Spalte entfernen oder Daten ergänzen; Tags fachlich benennen. | XS |
-| C-08 | Erledigt | `scripts/lib/cdp.mjs:208-210`; `scripts/test-process-docs.mjs:28-31,155` | In Template-Strings geht `\s` in der erzeugten Regex verloren; der BPMN-Fixture-Pfad hängt vom Aufrufverzeichnis ab. Aktuelle Standardläufe funktionieren, alternative Aufrufe sind fragil. | Regex korrekt escapen; Pfad relativ zu `import.meta.url` auflösen. | XS |
-
-### 5.5 Sicherheits- und Datenprüfung
-
-| Bereich | Resultat |
-| --- | --- |
-| Secrets und Zugangsdaten | Keine bekannten Secret-Formate in aktuellem Baum oder erreichbarer History gefunden. Lokale, nicht getrackte Temp-/Browserartefakte wurden nicht als Repository-Befund behandelt und keine Werte daraus übernommen. |
-| Interne und reale Daten | W-01 ist bestätigt. Die fachliche Freigabe einzelner Miet-, Kontakt- und AdminDir-Daten bleibt offen; siehe Q-01 bis Q-04. |
-| Personenbezug | `data/building-contacts.json` enthält 47 real formatierte Mailadressen; einzelne Generatorbeispiele sind klar synthetisch, der Status der übrigen Einträge ist nicht belegt. |
-| Medienrechte | W-02 ist bestätigt; nur 12 von 69 Records tragen eine freie oder CC0-/CC-Lizenz. |
-| Screenshots | Die 342 Review-PNGs zeigen die Portal-Routenmatrix. Es wurden keine Screenshots externer Fachanwendungen und keine GPS-/Artist-/Copyright-EXIF-Felder gefunden. |
-| Markup | Kein `eval`, keine Inline-Eventhandler im Einstieg und kein allgemeiner unescaped User-HTML-Sink gefunden. Die verbleibenden Trust-Boundary-Risiken stehen als P-05 und P-06. |
-
-## 6. Produktionsrelevante Punkte
-
-Alle Punkte in diesem Abschnitt sind **heute im Frontend-Mockup kein Problem**. Sie sind ein Vorrat für den Fall, dass echte Nutzer, Daten, Backend-Antworten oder ein produktiver Sicherheitsrahmen eingeführt werden.
-
-| Nr. | Status | Fundstelle | Heute kein Problem, weil | Risiko bei Produktivierung | Empfohlene Massnahme | Aufwand |
-| --- | --- | --- | --- | --- | --- | ---: |
-| P-01 | Ausserhalb Runde | `index.html:3-13`; `js/buildings-map.js:20-28`; `js/apps/api-docs.js:39-52`; `js/apps/process-docs.js:33-54` | Die Versionen sind gepinnt und der Mockup darf extern laden. | Ausfall oder Manipulation von `unpkg.com`; eine restriktive CSP würde durch CDN- und Inline-Styles blockiert. | Bibliotheken selbst hosten oder streng allowlisten, SRI ergänzen, CSP als Header planen und Inline-Styles inventarisieren. | L |
-| P-02 | Ausserhalb Runde | `js/router.js:299-311`; `js/session.js:19-20`; `js/search-log.js:23,40-50` | Browserstorage enthält nur Mock-Zustand. | `SecurityError`, Quota oder korrupte Werte können Navigation und Suchlog abbrechen; Speichermisserfolg bleibt teilweise still. | Alle Reads/Writes über eine fehlertolerante Storage-Grenze mit Schema und explizitem Resultat führen. | M |
-| P-03 | Ausserhalb Runde | `js/core.js:200-206`; `js/dashboard-data.js:21-47` | Statische, kontrollierte Fixtures haben bekannte Form. | Echte APIs können Teilformen liefern; parallele gleiche Loads erzeugen doppelte Requests und inkonsistenten Cache. | Schema an der Datenquelle validieren, in-flight Promises pro Key teilen, Fehlerzustände typisieren. | M |
-| P-04 | Ausserhalb Runde | `js/export.js:34` | Exportiert werden kontrollierte Mock-Daten. | Werte mit `=`, `+`, `-` oder `@` können in Tabellenprogrammen als Formeln ausgeführt werden. | Gefährliche Präfixe im CSV-Modus neutralisieren und Exportfälle testen. | XS |
-| P-05 | Ausserhalb Runde | `js/apps/fault-report.js:70,96,114` | Links werden aus bekannten UI-Werten erzeugt. | `?type=toString` trifft über den Objektprototyp und führt später beim Zugriff auf Kategorien zum Fehler; manipulierte URLs genügen. | Registry mit `Map` oder `Object.create(null)` führen und `hasOwn` plus Enum-Normalisierung verwenden. | XS |
-| P-06 | Ausserhalb Runde | `js/router.js:226-239`; `js/components.js:403,1296-1297`; `js/apps/building-create.js:32-61` | Zielwerte stammen aktuell aus Repository-Fixtures oder Swisstopo. | Echte externe Daten könnten Protokolle, Attribute oder Markup einschleusen. | URL-Schemes und erlaubte Hosts validieren; Text, Attribute und URLs kontextgerecht behandeln; externe Labels als Textknoten einsetzen. | M |
-| P-07 | Ausserhalb Runde | `js/format.js:32-35` | Zielpublikum und Vorführung liegen in der Schweiz, östlich von UTC. | `new Date('YYYY-MM-DD')` ist UTC; in westlichen Zeitzonen erscheint das Datum am Vortag. | Reine Kalenderdaten ohne `Date`-UTC-Rundreise formatieren oder Zeitzone explizit festlegen. | XS |
-| P-08 | Ausserhalb Runde | `data/media.json:20,43`; `assets/images/` | Demo-Datenmenge und Zugriffe sind klein. | 178 Bilddateien belegen rund 46 MiB, Einzeldateien bis rund 2.1 MiB; Mobilgeräte laden unnötige Bytes. | AVIF/WebP-Derivate und `srcset`/`sizes` erzeugen, Abmessungen und Lazy Loading deklarieren. | M |
-| P-09 | Ausserhalb Runde | `js/charts.js:317,330-350` | Aktuelle Pie-Daten enthalten positive Werte. | Ein vollständig leerer Datensatz wird intern auf Total 1 gesetzt und kann eine irreführende Visualisierung statt «keine Daten» erzeugen. | Für Total 0 einen expliziten Leerzustand rendern. | XS |
-
-## 7. Offene Fragen
-
-| Nr. | Status | Frage | Warum sie vor einer Änderung beantwortet werden muss | Fundstelle |
-| --- | --- | --- | --- | --- |
-| Q-01 | Offen | Sind Mietflächen, Organisationseinheiten, Geschosse, Mietdaten, CHF-Beträge und Kostenstellen vollständig synthetisch oder aus echten Beständen abgeleitet? | Das Repository bezeichnet Daten teils als Sample/synthetisch, Generatoren enthalten aber real wirkende Detailkombinationen. Davon hängen W-01 und W-12 ab. | `data/tenancies.json`; `scripts/build-tenancy-data.mjs:34-64`; `docs/requirements.md`; `docs/data-model.md` |
-| Q-02 | Offen | Sind die 47 Mailadressen in `building-contacts.json` und die AdminDir-IDs erfunden, anonymisiert oder reale Verzeichniseinträge? | Format und direkte AdminDir-Links erlauben keine sichere Einordnung aus dem Code. | `data/building-contacts.json:8`; `data/datasets.json:107-115`; `js/apps/metadata-catalog.js:125-126` |
-| Q-03 | Offen | Ist die persönliche Gmail-Adresse aus den Git-Autorendaten für dieses öffentliche Bundes-Repository bewusst freigegeben? | Sie steht in 103 von 112 erreichbaren Commits einschliesslich `HEAD`; eine Änderung betrifft History und Identitätsrichtlinie. Die Adresse wird hier nicht erneut ausgeschrieben. | Git-History |
-| Q-04 | Offen | Welche der internen/restriktiven URLs und Objektkennungen sind ausdrücklich zur öffentlichen Publikation freigegeben? | Ohne Positivliste kann W-01 nicht sauber zwischen öffentlicher Referenz und Fehlpublikation trennen. | `data/applications.json`, `data/datasets.json`, `data/api-specs.json`, `js/knowledge-content.js` |
-| Q-05 | Offen | Soll `mountDataTable` bewusst eine separate submit-orientierte Verdrahtung behalten oder denselben Commit-Vertrag wie `wireCatalogueState` verwenden? | Die Antwort bestimmt, ob K-02 vereinheitlicht werden kann, ohne Bedienverhalten zu ändern. | `js/components.js:1680-1715,1877-1959` |
-| Q-06 | Offen | Ist die harte Angabe «7 Themen» bewusst redaktionell oder soll sie aus den Daten gezählt werden? | Bei Datenänderungen kann die Startseite sonst sichtbar driften. | `js/pages/data.js:41` |
-| Q-07 | Offen | Soll eine sinkende Eigentumsquote im Immobilien-Dashboard neutral oder negativ markiert werden? | Aus Code und Text ist nicht erkennbar, ob «weniger Eigentum» Ziel oder Warnsignal ist. | `js/apps/estate.js:257` |
-| Q-08 | Offen | Wie sollen ungültige Portfolio-Facetten wie `?kind=foo` erscheinen: ignoriert, leer oder als «Grundstück» normalisiert? | Aktuell können URL, Resultat und Label unterschiedliche Zustände ausdrücken; fachliche Absicht fehlt. | `js/apps/portfolio.js` |
-| Q-09 | Offen | Ist im Prozessbaum beabsichtigt, dass Ebene 1 denselben `href`- und Aktivzustand nutzt, solange nur ein Bereich existiert? | Eine technische Änderung könnte ein bewusst vorbereitetes Navigationsmuster entfernen. | `js/apps/process-docs.js` |
-| Q-10 | Offen | Soll der implementierte und aus der URL gelesene Shop-List-View später sichtbar auswählbar werden, oder ist er Altlast? | Nicht implementierte Buttons sind im Mockup kein Befund. Für eine Vereinfachung muss klar sein, ob der Code geplant oder tot ist. | `js/apps/shop.js:121-122,165-205` |
-
-## 8. Massnahmenplan
-
-Phase 5 wurde auf `code-review-2026-08` begonnen und für alle technisch entscheidbaren Punkte der empfohlenen ersten Runde abgeschlossen. Die ursprüngliche Priorisierung bleibt nachfolgend als Entscheidungs- und Review-Nachweis erhalten; der aktuelle Status steht in Abschnitt 1.1.
-
-| Priorität | Status | Paket | Befunde | Wirkung | Geschätzter Aufwand | Abhängigkeit / Abnahmekriterium |
-| ---: | --- | --- | --- | --- | ---: | --- |
-| 1 | Erledigt | Monatsdiagramm reparieren | B-01 | Beseitigt den einzigen bestätigten Vorführ-Blocker | S | Monats- und Jahresansicht enthalten keine `NaN`-/ungültigen SVG-Werte und stimmen in Tooltip/Skala |
-| 2 | Entscheid offen | Publikationsentscheid und Eindämmung | W-01, W-02, Q-01 bis Q-04 | Verhindert weitere Verteilung ungeklärter Daten und Medien | L–XL plus externe Entscheidung | Positivliste/Freigabe liegt vor; ungeklärte Inhalte sind aus öffentlichem Baum entfernt oder klar synthetisch ersetzt; History-Entscheid separat genehmigt |
-| 3 | Erledigt | Zustandsfehler in Kernpfaden | W-03, W-04, W-05, W-06, W-07, W-08 | Stabilisiert Navigation, Formulare, Buchung und Shop | L | Reproduktionsschritte jedes Befunds bestehen; keine Route oder Ansicht entfällt |
-| 4 | Erledigt | Lifecycle und Accessibility | W-09, W-19, W-20, W-22 | Verhindert stale UI, Leaks und falsche Assistive-Technology-Zustände | L | Wiederholtes Öffnen/Schliessen/Navigieren hinterlässt keine Karten, Observer, Listener oder Locks; Live-Regionen und ARIA stimmen |
-| 5 | Teilweise – W-12 offen | Daten- und Deep-Link-Korrektheit | W-10 bis W-16, W-21 | Entfernt widersprüchliche Zahlen, falsche Links und Gate-/Scroll-Zustände | M–L | Fachliche Antworten zu Q-01/Q-07/Q-08 liegen vor; relevante Deep-Links und Dashboardwerte sind konsistent |
-| 6 | Erledigt | Testwerkzeug belastbar machen | W-17, C-08 | Macht Grün/Rot verlässlich und verhindert Prozessreste | M | Login startet nachweislich ausgeloggt; Karten warten auf Bedingung; Cleanup läuft auch bei Assertion-Fehlern; alle unterstützten Suiten enden ohne verwaiste Prozesse |
-| 7 | Erledigt | Riskante und lokale Skripte bereinigen | W-18, K-09 | Senkt versehentliche Schreib- und Onboarding-Risiken | M | Unterstützte Skripte sind relativ und dokumentiert; Schreibwirkungen sind explizit, Altproben klar klassifiziert oder entfernt |
-| 8 | Teilweise – K-05/K-06 erledigt, K-07 teilweise | Gezielte Vereinfachung | K-01 bis K-07, K-10 | Reduziert Drift und Wartungskosten ohne Funktionsänderung | L–XL | Pro eng zusammenhängender Gruppe eigener Commit; vor/nach jeder Gruppe Routen- und Hauptpfadvergleich |
-| 9 | Teilweise – C-04 erledigt | Repository-Artefakte | K-08, C-04 | Reduziert Clone-/History-Grösse und aktualisiert Nachweise | L–XL | Aufbewahrungsort und History-Rewrite ausdrücklich freigegeben; aktuelle Manifest-/Review-Dokumentation bleibt erhalten |
-| 10 | Ausserhalb Runde | Produktions-Backlog | P-01 bis P-09 | Bereitet eine allfällige Produktivierung vor | nicht Teil dieser Runde | Erst aufnehmen, wenn Backend, reale Nutzer oder produktiver Betrieb beschlossen sind |
-| 11 | Teilweise – C-05 erledigt/supersediert | Kosmetik | C-01 bis C-03, C-05 bis C-07 | Kleine Konsistenzverbesserungen | S–M | Nur zusammen mit berührten Modulen; keine eigene Priorität vor wichtigen Befunden |
-
-### 8.1 Freigegebene erste Runde
-
-Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. In den anschliessenden Paketen wurden K-09/C-04, K-05/K-06 und K-03/K-04 erledigt; der CSS-Refaktor erledigt C-05 und den strukturellen Teil von K-07. Offen bleiben K-01, K-02, der Kommentar-Payload von K-07, K-08 und K-10. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
-
-Nach jeder Gruppe gelten die Guardrails des Auftrags: ein Commit pro Befund oder eng zusammenhängender Gruppe, Commit-Message mit Befundnummer, Syntax-/Datentests, relevante Browser-Suiten und manueller Hauptpfad. Wird eine Änderung grösser als geschätzt oder verlangt eine fachliche Entscheidung, wird angehalten.
-
-### 8.2 Verbleibende Entscheidungen
-
-| Befunde | Status | Benötigte Entscheidung | Nächster Schritt nach Freigabe |
+| Severity | Current location | Symptom and cause | Disposition |
 | --- | --- | --- | --- |
-| W-01 | Entscheid offen | Positivliste für interne URLs, Objektkennungen, Kontakt- und Finanzdaten; Einordnung als synthetisch, öffentlich oder nicht freigegeben | Nicht freigegebene Werte im aktuellen Baum durch klar synthetische Fixtures ersetzen; History- und Credential-/Link-Rotation separat planen |
-| W-02 | Entscheid offen | Lizenz, Rechteinhaber und Weiterverteilungsfreigabe je Medium | Ungeklärte Medien aus der Auslieferung nehmen oder durch frei lizenzierte Assets ersetzen; History-Entscheid separat genehmigen |
-| W-12 | Fachentscheid offen | Kanonische Quelle für BGF und NGF | Sekundärdatei aus der führenden Quelle erzeugen und einen objektweisen Integritätstest ergänzen |
+| High | `js/routing/router.js:260-324,330-482` | A slower earlier route could commit after a newer navigation; listeners, observers, maps, timers, or overlays could outlive their owner. Async rendering had no single cancellation and teardown contract. | **Resolved.** Dispatch tickets, `AbortController`, stale checks, idempotent cleanup, and a shared finalization path now govern every route outcome. |
+| High | `js/map/buildings-map.js:123-284`; `js/ui/gallery.js:56-270`; `js/apps/tenancies.js:63-68,688-795` | Re-rendering or leaving a route could retain maps, overlay locks, observers, tables, and global listeners. Ownership was spread across local redraw functions. | **Resolved.** Resource setup returns or registers teardown; partial redraws preserve owned subtrees and dispose replaced resources. |
+| Medium | `js/process-engine.js:97-136`; `js/apps/process-docs.js:321-529` | One failed independent resource could hide all process content; failed or stale BPMN construction could leave a partial viewer. | **Resolved.** Independent data uses `Promise.allSettled`; viewer creation and destruction are guarded and stale renders do not commit. |
 
-Ohne diese Antworten würde eine automatische Bereinigung entweder möglicherweise freigegebene Inhalte entfernen oder fachliche Flächenwerte willkürlich überschreiben. Deshalb wurde an diesen drei Befunden nicht weitergearbeitet.
+### Data and error handling
+
+| Severity | Current location | Symptom and cause | Disposition |
+| --- | --- | --- | --- |
+| High | `js/core/fetch-json.js:7-16`; `js/core/index.js:172-219`; `js/core/dashboard-data.js:19-106` | Non-2xx responses, wrong top-level shapes, duplicate dashboard identifiers, and hostile DOM identifiers could fail deep inside a renderer or corrupt cache state. Trust was deferred to consumers. | **Resolved.** Fetch and dataset boundaries validate status, shape, uniqueness, and safe identifiers before caching. |
+| High | `js/core/storage.js:11-40`; `js/process-engine.js:31-65`; `js/apps/shop.js:639-659` | Corrupt or unavailable browser storage could break startup, while failed case/cart writes could still be announced as successful. Reads and writes did not communicate failure consistently. | **Resolved.** Storage access is guarded and result-bearing; callers validate stored records and only announce persisted outcomes. |
+| Medium | `js/search/search-log.js:21-69` | A crafted `bbl.searchlog` value could inject non-numeric hit counts into a table or poison aggregation. Only the outer array was checked. | **Resolved.** Each record is normalized at the storage boundary and display remains escaped. |
+| Medium | `js/apps/room-booking/calendar.js:14-67`; `js/format.js:25-47` | Invalid calendar components, control characters, and ambiguous date conversion could create malformed ICS output or timezone-dependent display. | **Resolved.** Calendar values are range-checked, ICS text/parameters are escaped, and date-only formatting avoids an accidental UTC round trip. |
+| Medium | `js/ui/floorplan.js:88-137`; `js/apps/tenancies.js:17-44`; `js/apps/space-request.js:18-21` | `NaN`, infinite geometry, unknown booking states, or invalid sharing factors could reach SVG and calculations. Repository fixtures were assumed to be numerically sound. | **Resolved.** Values are normalized to finite domain ranges and enums before rendering or arithmetic. |
+| Medium | `js/core/fetch-json.js:7-16`; `js/routing/router.js:330-482` | Network and lazy-load failures could surface as console-only errors or leave a loading shell. | **Resolved.** Errors have stable typed boundaries and every route ends in content, a gate, not-found, or visible error feedback. |
+
+### Security
+
+| Severity | Current location | Symptom and cause | Disposition |
+| --- | --- | --- | --- |
+| High | `js/security/urls.js:35-99`; representative sinks in `js/ui/components/content.js:382-404` | Fixture, query, map, search, or storage values could reach `href`, `src`, CSS/resource, ID, class, or HTML contexts without a context-specific policy. Generic string interpolation blurred trust boundaries. | **Resolved.** Links are relative or HTTPS by policy, assets are prefix-restricted, mail/phone values have dedicated helpers, DOM tokens are normalized, and unsafe targets render inert. |
+| High | `js/ui/components/primitives.js:13-158`; `js/ui/components/content.js:45-117`; `js/ui/components/feedback.js:121-151` | Component parameters that looked like text sometimes accepted markup, making escaping dependent on every caller. | **Resolved.** Text is escaped by default; intentional markup has an explicit `*Html` contract; tag, modifier, state, size, and class inputs use allowlists. |
+| High | `js/core/external-assets.js:8-139`; consumers at `js/apps/api-docs.js:31-59` and `js/map/buildings-map.js:12-40` | Pinned CDN versions alone did not authenticate executable bytes, and a late stylesheet failure could follow script execution. | **Resolved.** Exact SHA-384 SRI, anonymous CORS, no-referrer policy, single-flight loading, timeout cleanup, retry, and style-before-script sequencing protect direct assets. |
+| High | `scripts/serve.mjs:46-151` | The local server could expose hidden files or accept unsafe path/Host/method inputs. It lacked a clearly bounded static-file policy. | **Resolved.** Decoding and containment checks, dot-path denial, loopback Host allowlisting, GET/HEAD-only handling, compression negotiation, `Vary`, and `nosniff` are tested. |
+| Medium | `js/export.js:28-66`; `js/apps/room-booking/calendar.js:14-47` | Exported cells could be interpreted as spreadsheet formulas; calendar values could inject properties through CR/LF or parameters. | **Resolved.** Formula-leading cells are neutralized and CSV/ICS encoding has adversarial regression coverage. |
+| Medium | `js/apps/process-docs.js:342-350,472-512`; `js/ui/floorplan.js:88-137`; `js/apps/shop.js:240-430` | BPMN paths, SVG properties, and product identifiers originated in data but were used as resource paths or DOM attributes. | **Resolved.** BPMN files are confined to their asset directory and extension; SVG/product fields are finite, enumerated, tokenized, and escaped. |
+
+### Architecture
+
+| Severity | Current location | Symptom and cause | Disposition |
+| --- | --- | --- | --- |
+| High | `js/components.js:1-5`; implementations in `js/ui/components/primitives.js:1-216` and sibling modules | One 2,000-plus-line file mixed HTML primitives, forms, overlays, navigation, catalogue state, and event wiring. That hid ownership and made unrelated changes collide. | **Resolved.** Concern modules now own the implementations; `js/components.js` is only a narrow compatibility façade. |
+| Medium | `js/routing/routes.js:7-188`; `js/routing/router.js:260-482`; `js/ui/shell/header.js:1-599`; `js/ui/shell/footer.js:1-81` | Route metadata, dispatch mechanics, redirects, gates, header behavior, and footer markup were interleaved. | **Resolved.** Declarative route data, lifecycle mechanics, and shell pieces are separate without changing hashes. |
+| Low | `js/core/index.js:19-75`; `js/routing/routes.js:83-135` | Data and route registries still encode separate dimensions of application capability. A single mega-registry would reduce some repetition but increase coupling between data and navigation. | **No change proposed now.** Keep the registries explicit; add a cross-registry assertion if drift becomes observable. |
+
+### Complexity and duplication
+
+| Severity | Current location | Symptom and cause | Disposition |
+| --- | --- | --- | --- |
+| Medium | `js/collections.js:8-33`; `js/ui/components/catalogue.js:418-462` | Repeated deduplication, grouping, filtering, and catalogue state code had slightly different empty/null behavior. | **Resolved.** Small shared helpers define one behavior and have focused unit plus route regression coverage. |
+| Medium | `js/apps/room-booking/rules.js:85-97`; `js/floorplan-editor/three-controls.js:20-119`; `js/floorplan-editor/three-scene.js:12-181` | Calendar rules and Three scene/control concerns were buried in large controllers. | **Partially resolved.** Stable rule, scene, and control seams were extracted. The remaining closure-bound controllers are deliberately tracked below. |
+
+### Dead code
+
+| Severity | Current location | Symptom and cause | Disposition |
+| --- | --- | --- | --- |
+| Medium | Contract evidence at `scripts/test-api-surface.mjs:1-162` and `scripts/test-data-integrity.mjs:1-238` | Unused exports, helpers, branches, imports, and obsolete application records increased the apparent API and audit surface. | **Resolved.** Only references disproved across `js/**`, `index.html`, and `data/**` were removed in `f7ab8ce`. |
+| Low | Representative dynamic API at `js/ui/components/content.js:52-117` | Static grep can misclassify generated names such as `card--${variant}` or `status--${state}` as dead. | **Retained by policy.** A matching interpolation stem is evidence of use; uncertain rules or hooks stay annotated until runtime coverage proves otherwise. |
+| Low | `scripts/README.md:154-221`; review artifacts under `docs/review-assets/` | Historical probes and binary evidence are expensive, but deleting them or rewriting history is a repository-governance action, not a safe code cleanup. | **Deferred.** See the deliberate-undone tracker. |
+
+## Commit sequence
+
+The sequence is intentionally bisectable. Step 7 is the commit containing this document; its self-referential hash is intentionally not embedded here because adding it would change that hash.
+
+| Step | Commit | Purpose |
+| ---: | --- | --- |
+| 1 | `8e4ece8` | Fix route lifecycle, storage/fetch boundaries, malformed data handling, and observable workflow failures. |
+| 2 | `82dfcd0` | Mechanically convert maintained implementation language, filenames, hooks, comments, and diagnostics to English, with no logic change and with German UI/source compatibility values preserved. |
+| 3 | `0e50a87` | Purely move and split routing, core, map, search, shell, component, room-booking, and Three responsibilities; update module paths without changing behavior. |
+| 4 | `c716005` | Consolidate collection and catalogue behavior behind shared tested helpers. |
+| 5 | `f7ab8ce` | Remove only code and obsolete data confirmed dead by repository-wide consumer, export, and dynamic-stem audits. |
+| 6 | `e0f7f3c` | Harden browser trust boundaries, external assets, exports, local storage, asynchronous platform APIs, and the local server. |
+| 7 | **This documentation commit** | Bring the developer guide and review record in line with the implemented architecture and measured verification. |
+
+## Verification evidence
+
+The acceptance run at `e0f7f3c` was clean. It included:
+
+- all ten requested CDP suites: `apidocs`, `catalogue`, `content`, `dashboard`, `estate`, `forms`, `login`, `portfolio`, `race`, and `tabs`;
+- `scripts/test-routes.mjs`: all 38 canonical routes and 13 legacy redirects, including authenticated micro-app routes;
+- lifecycle and failure coverage: router races/cleanup, route data needs, network resilience, login/logout, UI state, gallery/floorplan state, and CSS loading/layers;
+- security coverage: URL classifiers and sinks, HTML contracts, external-asset SRI/ordering/retry, CSV, ICS, fullscreen, map clusters, search-log storage, and local-server traversal/Host/method behavior;
+- data and API coverage: data integrity/resilience, search, formatting, collections, process dates/docs, and API-surface/linkage checks;
+- both brand skins and the existing responsive/accessibility route matrix remained in the browser review scope;
+- `node --check` across all maintained `.js` and `.mjs` sources, with no unresolved import, console error, CSS 404, or lazy-style ordering failure;
+- `scripts/check-english-code.mjs`, which allows German user-facing strings and compatibility keys but rejects German implementation identifiers, hooks, comments, and developer diagnostics.
+
+These tests establish the prototype behavior represented in this repository. They are not evidence of production authentication, browser compatibility beyond the exercised environment, real service availability, penetration testing, load capacity, or legal permission to publish data and media.
+
+## Domain glossary for implementation names
+
+German remains correct in the UI. The English column is the preferred implementation vocabulary; quoted route/query/source keys remain unchanged where compatibility requires them.
+
+| German domain term | Preferred implementation term | Note |
+| --- | --- | --- |
+| Vorgang | case | A workflow instance, not a generic process definition. |
+| Liegenschaft | property | Use `estate` only for the portfolio/dashboard product name. |
+| Wirtschaftseinheit (WE) | business entity | Keep `WE` only in visible labels or source data. |
+| Verwaltungseinheit (VE) | administrative unit | Keep `VE` only in visible labels or source data. |
+| Weisung | directive | A binding instruction/document. |
+| Raumbedarf | space request | The portal workflow/app; use `space requirement` for the measured need itself. |
+| Störungsmeldung | fault report | The submitted record; `report fault` is the action. |
+| Dienstleistung | service | Portal service catalogue entry. |
+| Anwendung | application | A linked application or routed micro-app. |
+| Datensatz | dataset | A catalogue dataset, not a generic row. |
+| Bauprojekt | construction project | Use `project` after the construction context is established. |
+| Objekt | property record / entity | Avoid generic `object` when the property-domain meaning is intended. |
+| Gebäude | building | A built asset. |
+| Grundstück / Parzelle | parcel | Preserve EGRID and source-specific parcel identifiers. |
+| Geschoss | floor | Use `level` only for the numeric/ordering attribute. |
+| Raum | room / space | Use `room` for a bookable/enclosed room and `space` for floor-plan geometry. |
+| Grundriss | floor plan | Two words as a noun; `floorplan` remains only in established filenames/hooks. |
+| Fläche | area | Qualify as gross, usable, rentable, or surrounding area where known. |
+| Geschossfläche (GF) | floor area (SIA GF) | Do not silently equate different SIA/DIN measures. |
+| Mietverhältnis | tenancy | The contractual occupancy record. |
+| Mietende | tenants | People or organisations renting space. |
+| Raumbuchung | room booking | The booking application/workflow. |
+| Belegung | occupancy | Use `booking` for an individual reservation. |
+| Bauwerksdokumentation | building documentation | The archive/product area. |
+| Veräusserung | disposal / transaction | Use `transaction` for the routed prototype app. |
+| Beschaffung | procurement | Procurement content and processes. |
+| Benutzerorganisation (BO) | user organisation | Preserve `BO` in quoted BBL process labels. |
+| Immobilienmanagement (IM) | property management | Preserve `IM` in quoted BBL process labels. |
+| Objektmanagement (OM) | facility/property operations | Choose the narrower term from context; preserve `OM` in source labels. |
+| Bauherrschaft | client / owner | Prefer `client` for the project role; do not assume legal ownership. |
+
+## Deliberately undone: decision and production tracker
+
+| Item | Why it was not implemented in this refactor | Required next decision or work |
+| --- | --- | --- |
+| Real eIAM/AGOV authentication, RBAC, and classification enforcement | A static client cannot establish identity, enforce authorization, or protect classified records. The current session, route gate, and browser-derived labels are explicitly demonstrative. | Select the eIAM/AGOV identity flow and backend authorization model; enforce permissions and classification before data leaves the server, at every resource and action. |
+| Backend persistence and server validation | Local JSON and browser storage have no authoritative server, schema migration, transactional boundary, or cross-device state. Frontend validation is only usability and defense in depth. | Define service contracts and schemas; validate and authorize all reads/writes server-side; give failures stable machine-readable types. |
+| Compare-and-swap, multi-user concurrency, and audit | There is no shared record version, atomic update, immutable event log, or actor identity. Pretending to add these in local storage would be misleading. | Choose version/ETag semantics, conflict UX, transaction boundaries, retention, and tamper-evident audit requirements. |
+| Publication approval for data and URLs | The repository contains realistic property, contact, organisational, and destination data. Code cannot determine whether each record is synthetic, public, internal, or approved. | Data owners provide a publication allowlist and canonical source; replace or remove anything not approved. Treat history remediation as a separate authorized operation. |
+| Media licensing and redistribution | File presence and metadata do not prove copyright, model/property release, attribution, or redistribution rights. Automated deletion could also remove approved material. | Record owner, source, license, attribution, and publication approval per asset; replace or withdraw unresolved media. Decide history treatment separately. |
+| Strict CSP and complete local vendoring | Direct MapLibre, Swagger UI, and bpmn-js assets now use exact SRI, but nested fonts and dynamic map tiles/glyphs are fetched by those libraries and cannot be authenticated with SRI in the same way. Inline styles and remote endpoints also affect CSP design. | Decide whether to self-host libraries, fonts, styles, tiles, sprites, and glyphs; inventory inline style requirements; deploy CSP as an HTTP response header and test it in the target hosting environment. |
+| Map privacy and external availability | Remote tile/geocoding calls expose network metadata and can fail outside the controlled demonstration environment. The repository has no service agreement or offline tile source. | Select approved providers, privacy terms, attribution, availability targets, fallback behavior, and optionally a self-hosted map stack. |
+| Further splitting of closure-bound editor controllers | `js/floorplan-editor/controller.js`, `views.js`, and parts of `three-viewer.js` share mutable interaction, scene, history, and disposal state. A mechanical split would create hidden coupling without reducing it. | First define an explicit editor state/event boundary and add interaction/performance fixtures; then extract one state owner at a time. |
+| Review binaries and Git history | Screenshots, PDFs, historical probes, and old commits are evidence or shared history. Removal and history rewriting are destructive governance decisions outside a JavaScript refactor. | Set retention and artifact-storage policy, identify canonical evidence, obtain explicit approval, and communicate any history rewrite to every consumer. |
+
+## Conclusion
+
+Within its declared prototype boundary, the application has a coherent module model, defensible browser-side trust boundaries, and regression evidence for its routes and principal interactions. Future feature work should preserve the route lifecycle, text-by-default component contracts, validated data/storage boundaries, and English implementation vocabulary. Production work should begin with identity, server authority, publication approval, and deployment policy—not with more client-side simulation.

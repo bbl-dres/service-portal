@@ -5,7 +5,7 @@ Konzept- und Review-Dokumente des Service-Portal-Prototyps. Leseordnung:
 **Konzept (Plan-first-Phase):**
 
 1. **[platform-vision.md](platform-vision.md)** — der Nordstern. Intranet + fünf Fach-Prototypen zu EINER prozessorientierten Plattform: Wiki + Dienstleistungskatalog, Micro-Apps, Prozess-Engine, geteilter Datenkern, interner DCAT-Datenkatalog. Vorbilder: Aargau Smart Service Portal + I14Y.
-2. **[sitemap.md](sitemap.md)** — Informationsarchitektur von Portal-Shell und Dienstleistungskatalog. *(Teilweise überholt: «Anwendungskatalog» heisst im Bau «Anwendungen», die Wissens-Abschnitte sind nach Fachgebieten gegliedert — massgebend ist js/router.js.)*
+2. **[sitemap.md](sitemap.md)** — Informationsarchitektur von Portal-Shell und Dienstleistungskatalog. *(Teilweise überholt: «Anwendungskatalog» heisst im Bau «Anwendungen», die Wissens-Abschnitte sind nach Fachgebieten gegliedert — massgebend ist `js/routing/routes.js`.)*
 3. **[requirements.md](requirements.md)** — priorisierte Anforderungen (MoSCoW).
 4. **[data-model.md](data-model.md)** — Datenkern + DCAT-Katalogmodell.
 5. **[services.md](services.md)** — der Dienstleistungskatalog fachlich.

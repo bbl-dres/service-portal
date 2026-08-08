@@ -6,12 +6,12 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently 29 supported `test-*.mjs` functional suites and 20 retained
-`check-*.mjs` diagnostics. Every browser suite uses `APP_BASE` to select the
-running app and exits non-zero on failure; the four pure-Node suites need no
-server. The older diagnostics are classified
-separately below because six are observation-only and deliberately do not act
-as regression gates.
+There are currently **49 supported `test-*.mjs` suites: 31 browser suites and
+18 pure-Node suites**, plus **22 retained `check-*.mjs` diagnostics**. Every
+browser suite uses `APP_BASE` to select the running app and exits non-zero on
+failure; the pure-Node suites need no server. The older diagnostics are
+classified separately below because six are observation-only and deliberately
+do not act as regression gates.
 
 Paths owned by a script are resolved relative to `import.meta.url`; the scripts
 therefore do not depend on the caller's current directory or on a particular
@@ -22,7 +22,7 @@ checkout location. Explicit paths supplied on the command line, such as
 STARTS with, by writing (or clearing) `bbl_session_v1` before the first
 application script runs. Left unset it is derived from the URL: routes under
 `#/app/…` start **logged in**, because the specialist applications sit behind a
-login gate (`js/router.js`). Two cases must say so explicitly:
+login gate (`js/routing/router.js`). Two cases must say so explicitly:
 
 - checking the **gate itself** → `{ login: false }` (see `test-tabs.mjs`);
 - a gated route **outside** `#/app/…`, i.e. `#/my-cases` → `{ login: true }`.
@@ -33,7 +33,8 @@ the top.
 
 ## Prerequisites
 
-1. **Dev server running.** From the repository root:
+1. **Dev server running.** From the repository root (loopback is the secure
+   default):
    ```
    node scripts/serve.mjs
    ```
@@ -44,6 +45,28 @@ the top.
    $env:APP_BASE='http://127.0.0.1:8848/#'; node scripts/test-tabs.mjs
    ```
 3. **Edge** at the default install path, or override `EDGE_PATH`.
+
+## Development server
+
+`serve.mjs` binds to `127.0.0.1:8848` by default and serves only `GET` and
+`HEAD`. It validates the request `Host`, rejects malformed encodings and path
+traversal, hides dot-prefixed repository files and directories, sends
+`X-Content-Type-Options: nosniff`, and negotiates Brotli or gzip for
+compressible responses (including `Vary: Accept-Encoding`). Unsupported
+methods return `405`; an unacceptable encoding set returns `406`.
+
+LAN access is deliberately opt-in. Bind explicitly and list every hostname or
+IP that a client may put in its `Host` header:
+
+```powershell
+$env:SERVICE_PORTAL_HOST = '0.0.0.0'
+$env:SERVICE_PORTAL_ALLOWED_HOSTS = '192.168.1.25,devbox.local'
+node scripts/serve.mjs
+```
+
+The allowlist is comma-separated; loopback names remain allowed. A wildcard
+bind does not become a wildcard Host policy. This is not a production server:
+it provides no TLS or production deployment controls.
 
 ## Functional tests
 
@@ -66,24 +89,57 @@ inventory is `scripts/test-*.mjs`.
 | `test-process-dates.mjs` | W-21/K-06 pure Node regression: local date/history/reference consistency plus concurrent process-file loading, independent failures, and successful retry. |
 | `test-api-surface.mjs` | K-03 pure Node contract: exact ESM surfaces for session/links/crumbs/core/process engine/maps/components, removed object members, retained diagnostics, encoded search-link builders, and independent external/new-window launch contracts. |
 | `test-ui-state.mjs` | W-03/W-04/W-05/W-22 state regression: catalogue debounce teardown, nested overlay ownership, route cleanup, action-menu ARIA, and mobile-shell reset. |
+| `test-router-lifecycle.mjs` | Route ownership: stale route work is aborted, cache-owned work survives, only the winning render mounts, and focus/scroll finalisation belongs to terminal views. |
+| `test-network-resilience.mjs` | Offline/deferred-data recovery: the active view remains understandable and keyboard-ready after failures, and revisiting it retries once connectivity returns. |
+| `test-routes.mjs` | Complete documented-route and legacy-redirect sweep, protecting addressability after route or parameter changes. |
 | `test-document-archive.mjs` | Bauwerksdokumentation: reduced six-column table, KBOB document types, filename extensions, plain building cells, and viewer metadata at desktop/mobile widths. |
 | `test-catalogue.mjs` | D2 catalogue triplet (`C.catalogueHash`/`C.catalogueControls`/`C.wireCatalogue`) across services · applications · katalog: deep-link round-trips (q/view/filter), search-submit / view-switch / filter interactions, active-filter pill removal, the services multi-value `topic`, detail rendering, and neutral safe new-tab launch CTAs. |
 | `test-route-needs.mjs` | K-05/K-04 route loading contract: fresh-page resource assertions prove that data routes load only their declared deferred data, generic dashboards load no estate GeoJSON, and the specialized Immobilien renderer loads each of its three master files exactly once. |
-| `test-forms.mjs` | D3 form helpers (`C.field`/`C.select`/`C.val`/`C.readForm`) + the C5 fix across the three wizards: renders, a custom validation error attaches `input--error`+`aria-invalid`+badge to the previously class-less fields (`#org`/`#cc`/`#beschreibung`/`#datum`), and a valid submit creates a Vorgang. Logs in via the stub first. |
+| `test-forms.mjs` | D3 form helpers (`C.field`/`C.select`/`C.val`/`C.readForm`) + the C5 fix across the three wizards: renders, a custom validation error attaches `input--error`+`aria-invalid`+badge to the previously class-less fields (`#org`/`#cc`/`#description`/`#booking-date`), and a valid submit creates a Vorgang. Logs in via the stub first. |
 | `test-content.mjs` | D4 download-item + contact-box unification: the pages rendering `C.downloadItem` (grundlagen, anleitungen, digitalisierung, application entries, my-cases attachments) and `C.contactBox` (application, services detail) render with the expected items / mailto links and no exceptions. |
 | `test-combobox.mjs` | Shared `createListboxController`: Arrow keys, active descendant, selection, Escape/Tab close behavior and cleanup for global suggestions and address search. |
+| `test-collections.mjs` · `test-format.mjs` · `test-fullscreen.mjs` · `test-map-cluster-navigation.mjs` | Pure helper contracts: immutable collection preparation, locale/date formatting and final-sink escaping, fullscreen success/failure feedback, and async cluster navigation errors. |
+| `test-search.mjs` · `test-search-log-security.mjs` | Pure search ranking/tokenisation plus quarantine of malformed or hostile locally stored diagnostic records. |
+| `test-data-integrity.mjs` · `test-data-resilience.mjs` | Cross-file references, strict data shapes, retry behavior, storage failures, duplicate identifiers, and safe fallback states. |
+| `test-security-urls.mjs` · `test-security-url-sinks.mjs` · `test-html-contracts.mjs` | URL/resource allowlists, inert rejected URLs at real browser sinks, text-by-default templates, explicit trusted-HTML slots, and hostile SVG/tab payloads. |
+| `test-external-assets.mjs` · `test-export-security.mjs` · `test-calendar-security.mjs` | Authenticated HTTPS asset-loader sequencing/retry, spreadsheet-formula neutralisation, and CR/LF-safe iCalendar output. |
+| `test-dev-server-security.mjs` | Pure HTTP-boundary probe for methods, Host validation, hidden/traversal/malformed paths, compression negotiation, `HEAD`, and security headers. |
 | `test-apidocs.mjs` | Swagger adapter semantics, H2 hierarchy, stable accessible names/language, target sizes and focus styling. |
 | `test-process-docs.mjs` | Process detail tabs plus the full-width BPMN viewer, vertical overlay controls, reset action and disabled/focus states. |
 | `test-shop.mjs` | Shop catalogue, product/cart/checkout flows, global top-header cart and responsive category disclosure. |
 | `test-race.mjs` | A2 router render-race: rapid navigation between an awaiting page (application detail) and another must always land on the last-requested page (the `ctx.stale()` guard drops stale renders), across several timings and both directions. |
 | `test-dashboard.mjs` | Datenportal redesign and renderer boundary: exact seven-card routing, smoke coverage for all six generic dashboards, the specialized four-tab Immobilien route, Superset-style framing, dashboard/chart menus, fullscreen, and CSV/PNG export. Saves a screenshot to `$SHOT`. |
 | `test-estate.mjs` | Immobilienportfolio record-based dashboard (`js/apps/estate.js`): the four tabs (Gebäude/Grundstücke/Bodenbedeckung/Entwicklung), KPIs, runtime-aggregated charts, the worldwide CARTO map with markers, and live filtering (Land=CH shrinks the building count). Saves a screenshot to `$SHOT`. |
+| `test-css-layers.mjs` | Static and lazy stylesheet order, route-level no-FOUC behavior, same-origin CSS availability, both brand skins, reduced motion, and 320 px reflow. |
 
 Run every functional suite in PowerShell:
 
 ```powershell
 Get-ChildItem scripts/test-*.mjs | ForEach-Object {
   node $_.FullName
+  if ($LASTEXITCODE) { exit $LASTEXITCODE }
+}
+```
+
+Useful focused gates can be run directly; pure suites do not need the server:
+
+```powershell
+# Fast pure-Node contracts
+node scripts/test-data-integrity.mjs
+node scripts/test-data-resilience.mjs
+node scripts/test-security-urls.mjs
+node scripts/test-external-assets.mjs
+
+# Browser lifecycle and offline recovery (server + Edge required)
+node scripts/test-router-lifecycle.mjs
+node scripts/test-network-resilience.mjs
+node scripts/test-security-url-sinks.mjs
+
+# Static source contracts
+node scripts/check-english-code.mjs
+node scripts/check-css-tokens.mjs
+Get-ChildItem js,scripts -Recurse -File -Include *.js,*.mjs | ForEach-Object {
+  node --check $_.FullName
   if ($LASTEXITCODE) { exit $LASTEXITCODE }
 }
 ```
@@ -98,7 +154,7 @@ authoritative regression inventory. New long-lived coverage belongs in a
 
 | Status | Scripts | Contract |
 |---|---|---|
-| Asserted diagnostic | `check-404`, `check-banner`, `check-consistency`, `check-detail-layout`, `check-done`, `check-fixes`, `check-floorplan-section`, `check-focus`, `check-kv`, `check-pfcard`, `check-ramps`, `check-services`, `check-tenancy-aside`, `check-tree` | Focused assertion; exits non-zero on a detected mismatch. |
+| Asserted diagnostic | `check-404`, `check-banner`, `check-consistency`, `check-css-tokens`, `check-detail-layout`, `check-done`, `check-english-code`, `check-fixes`, `check-floorplan-section`, `check-focus`, `check-kv`, `check-pfcard`, `check-ramps`, `check-services`, `check-tenancy-aside`, `check-tree` | Focused assertion; exits non-zero on a detected mismatch. |
 | Observation-only diagnostic | `check-layout`, `check-payload`, `check-pjcards`, `check-pj-gallery`, `check-projects`, `check-suggest` | Prints measurements or browser problems for manual interpretation; exit code is not a result. |
 | Retained one-off assertion | `probe-portfolio-images.mjs` | Historical portfolio image/default-filter probe. It overlaps `test-portfolio.mjs` and is not part of the supported suite glob. |
 
@@ -119,7 +175,7 @@ write effects are explicit here.
 
 | Script | Status and purpose | Write/network effect |
 |---|---|---|
-| `serve.mjs` | Supported local development server. | Read-only; serves the repository on port 8848 by default. |
+| `serve.mjs` | Supported loopback-first local development server; see [Development server](#development-server). | Read-only; serves the repository on port 8848 by default. LAN binding and Host allowlisting are explicit environment settings. |
 | `make-image-variants.mjs` | Supported home-hero image maintenance. | Overwrites the two generated WebP variants; requires the dev server and Edge. |
 | `fetch-application-images.mjs` | Application-card image maintenance. | Downloads from Unsplash and writes only missing JPGs. |
 | `fetch-swisstopo.mjs` | Reproducible address/cadastral research helper. | Calls public APIs; stdout-only unless `--aus <path>` is supplied. |
