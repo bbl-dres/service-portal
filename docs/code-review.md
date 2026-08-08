@@ -1,10 +1,10 @@
 # Technisches Code Review: service-portal
 
-**Stand:** 6. August 2026
+**Stand:** 8. August 2026
 
-**Geprüfter Stand:** `main`, Commit `fb9e9c2e60defc7ecdbf253e3b902446383971e3`
+**Geprüfter Stand (historischer Review-Baseline):** `main`, Commit `fb9e9c2e60defc7ecdbf253e3b902446383971e3`
 
-**Review-Umfang:** Phase 0–4 auf `main`; Phase 5 und Folgepakete auf den Branches `code-review-2026-08` und `code-review-k03-k04`
+**Review-Umfang (historisch):** Phase 0–4 auf `main`; Phase 5 und Folgepakete auf den Branches `code-review-2026-08` und `code-review-k03-k04`. Der aktuelle CSS-Refaktor ist in Abschnitt 2.4 nachgetragen.
 
 ## 1. Zusammenfassung
 
@@ -25,7 +25,7 @@ Produktionsanforderungen wie echte Authentisierung, Backend-Fehlerbehandlung ode
 
 ### 1.1 Umsetzungsstand Phase 5
 
-Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04, K-05/K-06 sowie K-03/K-04 wurden auf den Review-Branches umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden, C-08, K-03 bis K-06, K-09 und C-04 sind erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
+Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04, K-05/K-06 sowie K-03/K-04 wurden auf den Review-Branches umgesetzt. Es wurden keine Route oder Ansicht entfernt, keine Hash-Verträge geändert und keine Framework- oder Runtime-Abhängigkeit ergänzt. Der Blocker, 19 von 22 wichtigen Befunden, C-08, K-03 bis K-06, K-09, C-04 und C-05 sind erledigt oder durch die neue CSS-Architektur supersediert; K-07 ist teilweise erledigt. W-01, W-02 und W-12 bleiben bewusst offen, weil ihre Korrektur eine Publikations-, Lizenz- oder fachliche Quellenentscheidung verlangt. Die Git-History wurde nicht umgeschrieben.
 
 | Status | Befunde | Commit oder Abhängigkeit |
 | --- | --- | --- |
@@ -45,10 +45,12 @@ Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04, K-05/K-06
 | Erledigt | K-06 | `5ecaa98` – paralleles Prozessladen und ein vorbereiteter Buchungskontext pro Render |
 | Erledigt | K-09 | `538975d` – portable Skriptpfade, klassifizierte Altproben und isolierbare Review-Ausgaben |
 | Erledigt | C-04 | `b480181` – vollständige Runtime-Dokumentation und wahrheitsgetreue 58-/57-State-Artefaktmetadaten |
+| Teilweise erledigt | K-07 | `Split 73dd190` → `Tokenise fb2e9bb` → `Consolidate a4e75c0` → `Polish 69386b5` → `Document` (dieser Commit) – Monolith und bestätigter Dead Code sind beseitigt; ausführliche Warum-/Historienkommentare bleiben teilweise im ausgelieferten CSS |
+| Erledigt / supersediert | C-05 | Dieselbe CSS-Commitfolge – Token-, Komponenten-, Zustands- und Politurpass ersetzen die früheren Einzelbefunde; `Document` ist dieser Commit |
 | Offen – Publikationsentscheid | W-01, W-02 | Q-01 bis Q-04, Positivliste und Medienfreigaben fehlen; Entfernung aus der History benötigt separate ausdrückliche Genehmigung |
 | Offen – fachliche Quelle | W-12 | Q-01 ist offen; ohne kanonische Quelle darf BGF/NGF nicht technisch überschrieben werden |
 
-| Verifikation nach Phase 5 | Ergebnis |
+| Historische Verifikation nach der früheren Phase 5 | Ergebnis |
 | --- | --- |
 | Vollständige funktionale Suite | 29 von 29 `test-*.mjs` bestanden; Laufzeit 277.4 Sekunden |
 | JavaScript-Syntax | 127 von 127 `.js`-/`.mjs`-Dateien bestehen `node --check` |
@@ -58,9 +60,9 @@ Die freigegebene erste Runde und die anschliessenden Pakete K-09/C-04, K-05/K-06
 | C-04-Artefakte | Isolierter Accessibility-Lauf: 58 von 58 Zuständen, null Befunde; erhaltener Audit 57 × 3 = 171 und Screenshot-Paar 171/171 konsistent |
 | Gezielte neue Regressionen | Monatsachse, UI-State, Galerie/Grundriss, Anchor-/Suchzustand und Suchziele, Prozessdatum, API-Oberflächen, Login/Logout, eindeutige Dashboard-Renderer, exakte Datenrouten-Ladeverträge, unabhängige Prozessladefehler sowie Buchungskontext/Verfügbarkeits-Recheck bestanden |
 
-### 1.2 Prüfumfang und Baseline
+### 1.2 Historischer Prüfumfang und Baseline
 
-Alle 60 JavaScript-Module unter `js/`, alle 62 Skripte unter `scripts/`, die HTML-/CSS-Einstiegspunkte, 30 Datenquellen, 18 BPMN-Dateien, statische Assets sowie die erreichbare Git-History wurden geprüft. Ein abgebrochener technischer Rohreview mit 101 Hinweisen diente nur als Suchliste: 84 Hinweise waren am aktuellen Stand noch beobachtbar, darunter Duplikate; 8 waren bereits behoben oder veraltet; 9 waren ohne fachliche Entscheidung nicht verifizierbar. Jeder übernommene Befund wurde am aktuellen `HEAD` erneut gelesen oder ausgeführt und anschliessend dedupliziert.
+Die folgenden Zahlen dokumentieren den Review-Baseline-Commit `fb9e9c2`; sie sind keine aktuellen Repository-Metriken. Alle 60 JavaScript-Module unter `js/`, alle 62 Skripte unter `scripts/`, die HTML-/CSS-Einstiegspunkte, 30 Datenquellen, 18 BPMN-Dateien, statische Assets sowie die erreichbare Git-History wurden damals geprüft. Ein abgebrochener technischer Rohreview mit 101 Hinweisen diente nur als Suchliste: 84 Hinweise waren an diesem Stand noch beobachtbar, darunter Duplikate; 8 waren bereits behoben oder veraltet; 9 waren ohne fachliche Entscheidung nicht verifizierbar. Jeder übernommene Befund wurde am damaligen `HEAD` erneut gelesen oder ausgeführt und anschliessend dedupliziert.
 
 | Prüfung | Rohresultat |
 | --- | --- |
@@ -75,7 +77,7 @@ Alle 60 JavaScript-Module unter `js/`, alle 62 Skripte unter `scripts/`, die HTM
 
 Zwei Browserfehler sind Testwerkzeug- statt Produktfehler: Die Gebäudeerfassung benötigt externe Karten-/Adressdienste, und die Mietflächenkarte war im direkten Zeitprofil nach rund einer Sekunde vorhanden. Die festen Testannahmen stehen als W-17 im Review.
 
-### 1.3 Repo- und Laufzeitmetriken
+### 1.3 Historische Repo- und Laufzeitmetriken
 
 | Messgrösse | Wert am Review-Baseline-Commit |
 | --- | ---: |
@@ -98,11 +100,11 @@ Zwei Browserfehler sind Testwerkzeug- statt Produktfehler: Die Gebäudeerfassung
 
 | Stufe | Verantwortung | Daten- und Zustandsfluss |
 | --- | --- | --- |
-| `index.html` | Statischer Einstieg, globale Styles und Mount-Punkte | Lädt `js/app.js` als ES Module |
+| `index.html` | Statischer Einstieg, 24 globale Stylesheets in expliziter Kaskadenfolge und Mount-Punkte | Lädt `js/app.js` als ES Module; benannte Einfügeanker halten statische und lazy Styles in derselben Reihenfolge |
 | `js/app.js` | Bootstrapping | Lädt Core und Prozess-Engine, danach Shell und Router |
 | `js/core.js` | Datenzugriff und Domänen-Lookups | Lädt `services` und `reference-data` eager; weitere JSON-/GeoJSON-Dateien lazy |
 | `js/process-engine.js` | Mock-Prozessdefinitionen und -instanzen | Lädt Definitionen und Seed-Instanzen; verbindet sie mit lokal gespeicherten Vorgängen |
-| `js/router.js` | Hash-Routing und Lebenszyklus | Ordnet neun Seitenbereiche und 16 Apps dynamischen Imports zu; erstellt `ctx` mit `mount`, Query, Core, Engine, Session, Komponenten und `onUnmount` |
+| `js/router.js` | Hash-Routing und Lebenszyklus | Ordnet neun Seitenbereiche und 17 Apps dynamischen Imports zu; lädt sieben wiederverwendete App-Sheets routenabhängig vor dem Rendern und erstellt `ctx` mit `mount`, Query, Core, Engine, Session, Komponenten und `onUnmount` |
 | `js/shell.js` | Header, Hauptnavigation, Mobile-Menü, Session-Chrome | Reagiert auf Session und Navigation, ersetzt Teile der Shell |
 | `js/components.js` | HTML-Bausteine und `wire*`-Verhalten | Rendert Strings, bindet Events und liefert teilweise Teardown-Funktionen |
 | `js/pages/*` | Öffentliche Inhalts- und Katalogseiten | Liest Hash-/Query-Zustand, filtert Core-Daten und rendert in den Haupt-Mount |
@@ -110,7 +112,7 @@ Zwei Browserfehler sind Testwerkzeug- statt Produktfehler: Die Gebäudeerfassung
 | `data/*`, `assets/*` | Statische Daten und Medien | Werden über `fetch` oder direkte Asset-URLs gelesen |
 | `scripts/*` | CDP-Browsertests, Daten-/Asset-Generatoren und ältere Diagnoseproben | Liegt ausserhalb der Anwendung; keine zentrale Task- oder Build-Definition |
 
-Der normale Ablauf ist `Hash → Router → dynamischer Import → render(ctx) → DOM/Event-Bindung`. Beim nächsten Routenwechsel führt der Router registrierte `onUnmount`-Callbacks aus. Der lokale Importgraph umfasst 60 Module und 137 statisch bestimmbare Importkanten; es wurde kein Zyklus gefunden. Mehrere Fehler entstehen dort, wo Timer, globale Listener, Observer, Karten oder lokale Redraws den Lebenszyklusvertrag umgehen.
+Der normale Ablauf ist `Hash → Router → dynamischer Import → optionales, abgewartetes App-CSS → render(ctx) → DOM/Event-Bindung`. Beim nächsten Routenwechsel führt der Router registrierte `onUnmount`-Callbacks aus. Der beim historischen Baseline-Review vermessene lokale Importgraph umfasste 60 Module und 137 statisch bestimmbare Importkanten; es wurde kein Zyklus gefunden. Mehrere damalige Fehler entstanden dort, wo Timer, globale Listener, Observer, Karten oder lokale Redraws den Lebenszyklusvertrag umgingen.
 
 ### 2.2 Zustand
 
@@ -129,6 +131,37 @@ Es gibt drei konkurrierende Zustandsmuster: URL als Quelle der Wahrheit, lokales
 Das bisherige Dokument vom 30. Juli 2026 war primär ein Refactoring-Tagebuch und keine aktuelle technische Bestandsaufnahme. Die darin als umgesetzt bezeichneten Bausteine `format`, `domain`, `crumbs`, `links`, `map-slot`, `renderNotFound` und `processDone` sind im aktuellen Code vorhanden. Auch der damals noch als offen bezeichnete vollständige `spatial-tree` wird inzwischen von Portfolio, Projekten und Mietflächen gemeinsam genutzt. Die früher separaten Login-Gates wurden durch das zentrale Gate in `router.js:325-340` ersetzt.
 
 Nicht übernommen wurden historische Vorher-Zustände und alte Testresultate. Insbesondere besteht `test-portfolio` aktuell, während andere aktuelle Testschwächen vorliegen. Die noch vorhandene Katalog-Duplizierung ist als K-02 neu und enger belegt. Ein separater `catalogue-page`-Baustein wurde nie eingeführt; das Fehlen einer früher vorgeschlagenen Abstraktion ist allein kein Fehler.
+
+### 2.4 CSS-Refaktor: aktueller Stand
+
+Der CSS-Quellbaum folgt nun einer expliziten Kaskade aus Tokens, Foundations, Layouts, Navigationen, Komponenten, Sections, Skins und Utilities. `index.html` lädt 24 statische Stylesheets in dieser Reihenfolge. Sieben fachlich grosse App-Sheets werden nur auf den zugehörigen Routen geladen; der Router wartet auf den Loader, bevor er rendert. Dadurch bleiben die Kaskadenanker stabil, CSS-Fehler werden wie andere Routenfehler behandelt und es entsteht kein Flash of Unstyled Content. Die Anwendung bleibt Plain CSS ohne Build-Schritt, `package.json`, Framework oder neue Abhängigkeit.
+
+Die Refaktorfolge ist `Split 73dd190` → `Tokenise fb2e9bb` → `Consolidate a4e75c0` → `Polish 69386b5` → `Document` (dieser Commit). K-07 ist hinsichtlich Monolith, Dead Code und zentraler Architekturdokumentation erledigt; die noch umfangreichen ausgelieferten Warum-/Historienkommentare halten den Payload-Teil des Befunds offen. C-05 ist durch die Token-, Komponenten- und Zustandskonsolidierung erledigt beziehungsweise durch die neue Struktur supersediert.
+
+| Aktueller ausführbarer Nachweis | Ergebnis |
+| --- | --- |
+| Anwendungsregister | 17 Apps |
+| Routenvertrag | 38 kanonische Routen und 13 Redirects in `test-routes.mjs` |
+| Review-Audit | 69 Zustände × 3 Viewports = 207 aktuelle Renderings |
+| Getrackte Review-Artefakte | Historischer Stand bleibt bei 57 Zuständen × 3 Viewports = 171 Renderings; diese Artefakte sind nicht mit dem aktuellen ausführbaren Lauf gleichzusetzen |
+
+«Vorher» bezeichnet hier den unmittelbaren Ausgangspunkt des CSS-Refaktors, nicht den älteren Review-Baseline-Commit aus Abschnitt 1.3. Die gzip-6-Zahlen sind Summen der **einzeln pro HTTP-Response** komprimierten Dateien, nicht die Grösse eines zusammengefügten gzip-Bundles.
+
+| CSS-Ladezustand | Responses | Zeilen | Raw-Bytes | gzip-6-Bytes |
+| --- | ---: | ---: | ---: | ---: |
+| Vorher: `app.css` + `tokens.css` | 2 | 5'174 | 372'077 | 104'848 |
+| Nachher: statische Kaskade | 24 | 3'878 | 274'414 | 97'397 |
+| Nachher: statische Kaskade + alle sieben lazy App-Sheets | 31 | 5'418 | 391'971 | 129'893 |
+
+| Lazy App-Sheet | Zeilen | Raw-Bytes | gzip-6-Bytes |
+| --- | ---: | ---: | ---: |
+| `dataportal.css` | 216 | 15'960 | 5'503 |
+| `portfolio.css` | 273 | 19'912 | 7'120 |
+| `archive.css` | 121 | 8'991 | 2'854 |
+| `floorplan.css` | 192 | 12'810 | 5'069 |
+| `workplace.css` | 29 | 1'888 | 916 |
+| `floorplan-editor.css` | 548 | 47'602 | 8'607 |
+| `room-booking.css` | 161 | 10'394 | 2'427 |
 
 ## 3. Befundübersicht
 
@@ -165,7 +198,7 @@ Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Com
 | K-04 | Erledigt | Dashboards | Komplexität | Generische Immobilien-/Hero-Konfiguration ist nicht erreichbar oder driftet | `js/apps/dataportal.js`, `data/dashboards.json`, `scripts/test-dashboard.mjs` |
 | K-05 | Erledigt | Datenrouten | Komplexität | Unterrouten laden breitere Datenbereiche als sie verwenden | `js/pages/data.js:4-31`, `js/router.js:453-461` |
 | K-06 | Erledigt | Wiederholte Arbeit | Komplexität | Prozessdateien laden seriell; Raumsuche berechnet Profile und Sortierungen mehrfach | `js/process-engine.js:22-44`, `js/apps/room-booking.js:151-347,1145-1163` |
-| K-07 | Nicht begonnen | CSS | Komplexität | Stylesheets dienen zugleich als Review-Historie; Kommentare und tote Regeln werden ausgeliefert | `css/app.css:8-139`, `css/app.css:3030-3103` |
+| K-07 | Teilweise erledigt | CSS | Komplexität | Monolith und bestätigter Dead Code sind beseitigt; ausführliche Warum-/Historienkommentare werden teilweise weiterhin ausgeliefert | `css/README.md`, `css/foundations/`, `css/layouts/`, `css/components/`, `css/apps/` |
 | K-08 | Nicht begonnen | Repository | Komplexität | Binäre Review-Screenshots dominieren Grösse und History | `docs/review-assets/audit.json:1`, `docs/review-assets/accessibility.json:1` |
 | K-09 | Erledigt | Skripte | Komplexität | Diagnoseproben enthalten lokale Windows-Pfade und überlappende Einmalwerkzeuge | `scripts/check-hero.mjs:3`, `scripts/check-services.mjs:30` |
 | K-10 | Nicht begonnen | Registries | Komplexität | Core- und Router-Metadaten werden in parallelen Tabellen über denselben Schlüsselraum geführt | `js/core.js:17-72`, `js/router.js:81-118` |
@@ -182,7 +215,7 @@ Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Com
 | C-02 | Nicht begonnen | Router | Kosmetisch | Gate-, 404- und Fehlerpfade teilen Scroll-/Fokus-Finalisierung nicht | `js/router.js:325-342`, `js/router.js:409-494` |
 | C-03 | Nicht begonnen | URL-Verarbeitung | Kosmetisch | `URLSearchParams` wird teils nochmals decodiert; IDs werden teils roh angezeigt | `js/apps/metadata-catalog.js:75-76`, `js/pages/services.js:57-141` |
 | C-04 | Erledigt | Dokumentation | Kosmetisch | README, Review-Matrix und Kommentare beschreiben Runtime und Routenstand unvollständig oder veraltet | `README.md:31-37`, `docs/accessibility-review.md:5-16` |
-| C-05 | Nicht begonnen | CSS-Details | Kosmetisch | Nicht animierbare Max-Height-Regel, Farbdrift und doppelte Deklarationen bleiben | `css/app.css:697-702`, `css/app.css:2107`, `css/app.css:3810` |
+| C-05 | Erledigt / supersediert | CSS-Details | Kosmetisch | Token-, Komponenten- und Zustandskonsolidierung beseitigte beziehungsweise ersetzte die früheren Einzelabweichungen | `css/tokens.css`, `css/components/`, `css/sections/`, `css/apps/` |
 | C-06 | Nicht begonnen | Suche | Kosmetisch | Hash-Ersetzung schreibt denselben Wert ohne Wirkung erneut | `js/search-suggest.js:71` |
 | C-07 | Nicht begonnen | Datenlabels | Kosmetisch | Papier-Dashboard deklariert eine leere Recycling-Spalte; Taglabels sind technisch | `data/dashboards.json:652`, `data/catalog-labels.json:36-37` |
 | C-08 | Erledigt | Tests | Kosmetisch | Template-Regex verliert `\s`; BPMN-Test hängt vom aktuellen Arbeitsverzeichnis ab | `scripts/lib/cdp.mjs:208-210`, `scripts/test-process-docs.mjs:28-31` |
@@ -195,7 +228,7 @@ Die Fundstellen und Beschreibungen beziehen sich auf den geprüften Baseline-Com
 | URL und lokaler State konkurrieren | Kataloge und Apps schreiben teils in den Hash, teils in lokales `state`, teils nur ins DOM. Validierung geschieht nicht an einer gemeinsamen Grenze. | URL-Parameter können alte Auswahl, ungültige Werte oder falsche Kontextlinks erzeugen. | W-06, W-07, W-10, W-11, P-05 |
 | Datenherkunft ist nicht als Publikationsvertrag geführt | Datensätze mischen synthetische, generierte, offizielle und intern wirkende Angaben. Medien führen verschiedene Quellen, aber keinen belastbaren Freigabestatus. | Technische Reviews können Vertraulichkeit und Lizenzlage nicht aus dem Code entscheiden; die öffentliche History konserviert Fehlpublikationen. | W-01, W-02, W-12, W-13, Q-01 bis Q-04 |
 | Tests prüfen häufig indirekte Signale | Einige Suiten authentisieren bereits im Setup, verwenden feste Wartezeiten oder verifizieren tote IDs. CDP-Cleanup ist bei Fehlerpfaden unvollständig. | Grün und Rot sind nicht in allen Suiten belastbar; lokale Läufe hinterlassen Ressourcen. | W-17, C-08 |
-| Review-Historie liegt im Produktartefakt | Ausführliche Vorher-/Nachher-Kommentare stehen in ausgeliefertem CSS; komplette Screenshot-Matrizen liegen in Git. | Kommentare können erneut driften, CSS-Transfer und Clone-Grösse steigen. C-04 gleicht den aktuellen Dokumentationsstand ab; K-07 und K-08 bleiben offen. | K-07, K-08, C-04 |
+| Review-Historie liegt im Produktartefakt | Ausführliche Warum-/Historienkommentare stehen teilweise weiterhin im ausgelieferten CSS; komplette Screenshot-Matrizen liegen in Git. | Struktur, Dead Code und zentrale Dokumentation sind bereinigt, aber der Kommentar-Payload bleibt als Rest von K-07 offen. Die Clone-/History-Grösse der Screenshots bleibt K-08. | K-07, K-08, C-04, C-05 |
 
 ## 5. Befunde im Detail
 
@@ -244,7 +277,7 @@ Aufwandsskala: **XS** unter 2 Stunden, **S** bis 0.5 Tag, **M** 1–2 Tage, **L*
 | K-04 | Erledigt | `js/apps/dataportal.js`; `js/apps/estate.js`; `data/dashboards.json`; `scripts/test-dashboard.mjs`; `scripts/test-data-integrity.mjs`; `scripts/test-route-needs.mjs` | Immobilien wird nur noch vom spezialisierten Renderer bedient. Der unerreichbare generische Immobilien-Record, seine exklusiven Datensätze, die parallele `hero`-Datenform und der generische Kartenpfad sind entfernt. Referenztests erzwingen genau einen Renderer je Thema; Kaltstarts bestätigen null Immobilien-GeoJSON für generische Seiten und genau einen Abruf je Stammdatendatei für Immobilien. | Pro Dashboard genau einen Renderer und eine Datenform festlegen; unerreichbare Konfiguration nach Routen-/Screenshotprüfung entfernen. | M |
 | K-05 | Erledigt | `js/pages/data.js:4-31`; `js/router.js:453-461`; `scripts/test-route-needs.mjs` | Jede Datenunterroute lud Anwendungen und Datensätze, auch wenn nur eine Teilansicht benötigt wurde; deklarierte `needs` waren teils unvollständig oder ohne Wirkung. Die Datenmenge ist heute klein, der Vertrag blieb aber irreführend. | `needs` ist jetzt die einzige Ladebeschreibung und deklariert pro Route nur tatsächlich verwendete Keys; kalte Seitenkontexte prüfen den Vertrag. | S |
 | K-06 | Erledigt | `js/process-engine.js:22-44`; `js/apps/room-booking.js:151-347,1145-1163`; `scripts/test-process-dates.mjs`; `scripts/test-room-booking.mjs` | Prozessdefinitionen und Instanzen luden unabhängig, aber seriell. Die Raumsuche berechnete Profil, Sortierung und `engine.instances()` wiederholt innerhalb der Raumiteration. Bei den kleinen Fixtures war das nicht spürbar, erschwerte aber die Logik. | Unabhängige Prozessdateien laden jetzt mit `Promise.allSettled`; ein Buchungskontext pro Render bündelt Räume, Profile, Favoriten und Belegungen, während Aktionen frisch nachprüfen. | S |
-| K-07 | Nicht begonnen | `css/app.css:8-139,517-519,3030-3103`; `css/tokens.css:23-143` | 45.3 Prozent der beiden CSS-Dateien sind Kommentare. Gzip-Grösse: 97'488 Byte mit, 31'198 Byte ohne Kommentare. Mehrere Kommentare sind bereits falsch, etwa «Spinner unreferenced» trotz Nutzung; tote Chart-/Service-/Filterregeln bleiben daneben bestehen. | Kurze Warum-Kommentare im CSS behalten, Review-Chronologie in ADR/Dokument verschieben, tote Regeln entfernen und für Deployment minifiziertes CSS ausliefern. | M |
+| K-07 | Teilweise erledigt | `css/README.md`; `css/foundations/`; `css/layouts/`; `css/navigations/`; `css/components/`; `css/sections/`; `css/apps/`; `css/skins/` | **Historischer Baseline-Befund:** 45.3 Prozent von `app.css` und `tokens.css` waren Kommentare; die damalige gzip-Messung betrug 97'488 Byte mit und 31'198 Byte ohne Kommentare. Die Refaktorfolge etablierte die geschichtete Kaskade, entfernte bestätigten Dead Code und dokumentiert Architektur und Ausnahmen zentral. Ausführliche Warum-/Historienkommentare bleiben jedoch teilweise in den geladenen Dateien; zudem ist die Summe aller 31 einzeln komprimierten Responses grösser als die frühere Zweier-Summe. | Erledigt sind Monolith, Dead Code und zentrale Dokumentation. Offen bleibt, historische Kommentare weiter zu kürzen; ein Build-/Minifizierungsschritt wurde gemäss Projektvorgabe nicht ergänzt. | M |
 | K-08 | Nicht begonnen | `docs/review-assets/audit.json:1`; `docs/review-assets/accessibility.json:1`; `docs/review-assets/` | 342 Vorher-/Nachher-PNGs belegen 133.77 MiB und rund 72 Prozent des getrackten Baums. Zehn Hash-Duplikatgruppen sparen allein rund 1.13 MiB; die vollständige Matrix verteuert jeden Clone und die History dauerhaft. | Komplette Matrizen als CI-/Release-Artefakt speichern; in Git Manifest, Resultat-JSON und wenige repräsentative Bilder behalten. History-Bereinigung separat freigeben. | L–XL |
 | K-09 | Erledigt | `scripts/check-hero.mjs:3`; weitere `check-*`-Skripte; Daten-/Bildskripte | Neun Diagnoseproben referenzieren einen lokalen `file:///C:/.../cdp.mjs`-Pfad; weitere Generatoren enthalten einen fest codierten Repository-Pfad. Überlappende Einmalproben haben keinen gemeinsamen Entrypoint oder Status. | Benötigte Proben auf relative Imports/`import.meta.url` umstellen, Dubletten archivieren oder löschen, unterstützte Skripte im README mit Zweck und Schreibwirkung listen. | M |
 | K-10 | Nicht begonnen | `js/core.js:17-72`; `js/router.js:81-118` | `FILES`, `DEFERRED`, `AREA` und `OBJECT_FILES` beziehungsweise `PAGES`, `APPS` und Abschnittszuordnung beschreiben dieselben Schlüssel in parallelen Tabellen. Ergänzungen können eine Tabelle vergessen, wie W-14 zeigt. | Je Bereich eine deklarative Registry mit URL, Shape, eager/area beziehungsweise Route, Modul, Abschnitt und Gate-Metadaten verwenden; bestehende Accessoren daraus ableiten. | M |
@@ -257,7 +290,7 @@ Aufwandsskala: **XS** unter 2 Stunden, **S** bis 0.5 Tag, **M** 1–2 Tage, **L*
 | C-02 | Nicht begonnen | `js/router.js:325-342,409-414,434,454-494` | Login-Gate, 404 und Fehlerpfad umgehen Teile des normalen Scroll-, Fokus- und Cleanup-Finales. Die Seite funktioniert, startet aber nicht immer an derselben Position oder mit demselben Fokus. | Gemeinsames Route-Finale für Erfolg, Gate, 404 und Fehler verwenden. | S |
 | C-03 | Nicht begonnen | `js/apps/metadata-catalog.js:75-76,467,633`; `js/apps/process-docs.js:157,337`; `js/pages/services.js:57,69,141` | Bereits decodierte `URLSearchParams`-Werte werden erneut decodiert; unbekannte Service-IDs erscheinen teilweise roh. Ungewöhnliche Prozentwerte können dadurch verändert oder als technische IDs gezeigt werden. | Einmaliges Decoding am Router festlegen; Anzeige unbekannter IDs über neutrale Labels führen. | XS |
 | C-04 | Erledigt | `README.md:31-37`; `docs/accessibility-review.md:5-16`; `docs/review-assets/audit.json:8-78`; `docs/review-assets/accessibility.json:5-65`; `css/app.css:517-519` | README nennt nur MapLibre, obwohl Swagger UI und bpmn-js ebenfalls zur Laufzeit vom CDN kommen. Accessibility-Dokumentation behauptet zwei gleiche 57-State-Läufe, der neue Lauf enthält 58 Routen; Room Booking fehlt in der Screenshot-Matrix. Kommentare widersprechen aktuellem Code. | README und Review-Metadaten aktualisieren; Artefaktstand und bewusst fehlende Screenshots explizit nennen; falsche CSS-Kommentare entfernen. | S |
-| C-05 | Nicht begonnen | `css/app.css:697-702,2107,3810` | `max-height` kann von `none` nach `0` nicht animieren; einzelne harte Farben driften von Tokens; Deklarationen und Kommentare sind mehrfach gesplittet. Kein aktueller Funktionsbruch. | Animation auf messbare Höhe/`grid-template-rows` umstellen; vorhandene Tokens nutzen; unmittelbar benachbarte Dubletten konsolidieren. | S |
+| C-05 | Erledigt / supersediert | `css/tokens.css`; `css/components/`; `css/sections/`; `css/apps/` | **Historischer Baseline-Befund:** Eine `max-height`-Transition war nicht animierbar, einzelne Farben drifteten von Tokens und Deklarationen waren gesplittet. Die CSS-Commitfolge `73dd190` → `fb2e9bb` → `a4e75c0` → `69386b5` → `Document` (dieser Commit) ersetzte diese punktuelle Struktur durch gemeinsame Tokens, Komponenten, Modifier und vollständige Zustände. | Umgesetzt beziehungsweise durch die konsolidierte Komponentenarchitektur supersediert; bewusst fachliche Geometrien und Paletten bleiben dokumentierte Ausnahmen. | S |
 | C-06 | Nicht begonnen | `js/search-suggest.js:71` | Der Code ersetzt den Hash durch denselben Wert. Das erzeugt keinen Zustandswechsel und erschwert die Absicht. | No-op entfernen oder die beabsichtigte History-Semantik explizit implementieren. | XS |
 | C-07 | Nicht begonnen | `data/dashboards.json:652`; `data/catalog-labels.json:36-37` | Das Papier-Dashboard deklariert eine Recycling-Spalte ohne Zeilenwerte; `tag.tag1`/`tag.tag2` werden technisch beschriftet. | Leere Spalte entfernen oder Daten ergänzen; Tags fachlich benennen. | XS |
 | C-08 | Erledigt | `scripts/lib/cdp.mjs:208-210`; `scripts/test-process-docs.mjs:28-31,155` | In Template-Strings geht `\s` in der erzeugten Regex verloren; der BPMN-Fixture-Pfad hängt vom Aufrufverzeichnis ab. Aktuelle Standardläufe funktionieren, alternative Aufrufe sind fragil. | Regex korrekt escapen; Pfad relativ zu `import.meta.url` auflösen. | XS |
@@ -317,14 +350,14 @@ Phase 5 wurde auf `code-review-2026-08` begonnen und für alle technisch entsche
 | 5 | Teilweise – W-12 offen | Daten- und Deep-Link-Korrektheit | W-10 bis W-16, W-21 | Entfernt widersprüchliche Zahlen, falsche Links und Gate-/Scroll-Zustände | M–L | Fachliche Antworten zu Q-01/Q-07/Q-08 liegen vor; relevante Deep-Links und Dashboardwerte sind konsistent |
 | 6 | Erledigt | Testwerkzeug belastbar machen | W-17, C-08 | Macht Grün/Rot verlässlich und verhindert Prozessreste | M | Login startet nachweislich ausgeloggt; Karten warten auf Bedingung; Cleanup läuft auch bei Assertion-Fehlern; alle unterstützten Suiten enden ohne verwaiste Prozesse |
 | 7 | Erledigt | Riskante und lokale Skripte bereinigen | W-18, K-09 | Senkt versehentliche Schreib- und Onboarding-Risiken | M | Unterstützte Skripte sind relativ und dokumentiert; Schreibwirkungen sind explizit, Altproben klar klassifiziert oder entfernt |
-| 8 | Teilweise – K-05/K-06 erledigt | Gezielte Vereinfachung | K-01 bis K-07, K-10 | Reduziert Drift und Wartungskosten ohne Funktionsänderung | L–XL | Pro eng zusammenhängender Gruppe eigener Commit; vor/nach jeder Gruppe Routen- und Hauptpfadvergleich |
+| 8 | Teilweise – K-05/K-06 erledigt, K-07 teilweise | Gezielte Vereinfachung | K-01 bis K-07, K-10 | Reduziert Drift und Wartungskosten ohne Funktionsänderung | L–XL | Pro eng zusammenhängender Gruppe eigener Commit; vor/nach jeder Gruppe Routen- und Hauptpfadvergleich |
 | 9 | Teilweise – C-04 erledigt | Repository-Artefakte | K-08, C-04 | Reduziert Clone-/History-Grösse und aktualisiert Nachweise | L–XL | Aufbewahrungsort und History-Rewrite ausdrücklich freigegeben; aktuelle Manifest-/Review-Dokumentation bleibt erhalten |
 | 10 | Ausserhalb Runde | Produktions-Backlog | P-01 bis P-09 | Bereitet eine allfällige Produktivierung vor | nicht Teil dieser Runde | Erst aufnehmen, wenn Backend, reale Nutzer oder produktiver Betrieb beschlossen sind |
-| 11 | Nicht begonnen | Kosmetik | C-01 bis C-03, C-05 bis C-07 | Kleine Konsistenzverbesserungen | S–M | Nur zusammen mit berührten Modulen; keine eigene Priorität vor wichtigen Befunden |
+| 11 | Teilweise – C-05 erledigt/supersediert | Kosmetik | C-01 bis C-03, C-05 bis C-07 | Kleine Konsistenzverbesserungen | S–M | Nur zusammen mit berührten Modulen; keine eigene Priorität vor wichtigen Befunden |
 
 ### 8.1 Freigegebene erste Runde
 
-Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. In den anschliessenden Paketen wurden K-09/C-04, K-05/K-06 und K-03/K-04 erledigt. Offen bleiben K-01, K-02, K-07, K-08 und K-10. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
+Freigegeben waren die Empfehlungen der ersten Runde: zuerst B-01, danach Publikationsentscheid, normale Zustands-/Workflowfehler, Lifecycle/Accessibility, Daten-/Deep-Link-Korrektheit und das Testwerkzeug. Die technisch entscheidbaren Teile sind umgesetzt. W-18 wurde wegen seines direkten Schreib- und Datenverlustrisikos im selben Werkzeugpaket ebenfalls abgesichert. In den anschliessenden Paketen wurden K-09/C-04, K-05/K-06 und K-03/K-04 erledigt; der CSS-Refaktor erledigt C-05 und den strukturellen Teil von K-07. Offen bleiben K-01, K-02, der Kommentar-Payload von K-07, K-08 und K-10. Produktionspunkte bleiben ausdrücklich ausserhalb dieser Runde.
 
 Nach jeder Gruppe gelten die Guardrails des Auftrags: ein Commit pro Befund oder eng zusammenhängender Gruppe, Commit-Message mit Befundnummer, Syntax-/Datentests, relevante Browser-Suiten und manueller Hauptpfad. Wird eine Änderung grösser als geschätzt oder verlangt eine fachliche Entscheidung, wird angehalten.
 

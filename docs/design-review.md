@@ -2,9 +2,153 @@
 
 | Merkmal | Wert |
 | --- | --- |
-| Stand | 5. August 2026 |
-| Branch | `design-review-2026-08` |
+| Stand | 8. August 2026 |
+| Branch | `main` (Ausgangsreview: `design-review-2026-08`) |
 | Referenz | Schweizer Design System, lokale Version 1.0.5 |
+
+## CSS-Refactoring – Nachtrag vom 8. August 2026
+
+Dieser Nachtrag ist der aktuelle technische Abnahmestand des CSS-Refactorings.
+Die Ausgangsbefunde und die 57 Zustände beziehungsweise 171 Bilder der
+ursprünglichen visuellen Review bleiben weiter unten als historische Baseline
+erhalten. Die heute ausführbare Matrix in `scripts/review-routes.mjs` enthält
+69 Zustände. `review-audit.mjs` rendert jeden davon bei 320, 768 und 1440 px,
+also 207 Renderzustände; `review-accessibility.mjs` prüft die 69 Zustände je
+einmal. Die eingecheckten Vorher-/Nachher-Screenshot-Artefakte wurden in diesem
+Refactoring nicht von 57 auf 69 Zustände erweitert und bleiben deshalb bei 171.
+
+### Umsetzung und CD-Abgleich
+
+1. **Split (`73dd190`).** `css/app.css` wurde ohne Umbenennung, Zusammenführung,
+   Tokenisierung oder Neuformatierung in die geordnete Layerstruktur verschoben.
+   Die geprüfte Quelle hatte 4'760 Zeilen, 348'434 Bytes und SHA-256
+   `3558fec8a0ef7d7db7321b772ca0beebb5c71ba0476d70c5226a1d8e3c2f6bbd`.
+   `scripts/css-bundle.mjs --verify-legacy` bewies, dass die Konkatenation in
+   kanonischer Ladefolge bytegleich war. Der reine Split bestand aus 19 neuen
+   statischen Concern-Dateien plus dem bestehenden `tokens.css` und sieben
+   lazy App-Dateien. `index.html` lud damit 20 statische Schichten explizit; der
+   Router lud die sieben `css/apps/*.css` erst vor dem Rendern der jeweiligen
+   Micro-App. Die endgültigen 31 Dateien – 24 statisch, sieben lazy – liegen
+   über dem groben Ziel von fünfzehn, weil die geprüften
+   App-Abhängigkeitsgrenzen sonst wieder unbeteiligtes CSS in den Erstaufruf
+   ziehen würden. Innerhalb dieser Grenzen bleiben Komponenten nach Anliegen
+   gruppiert und nicht auf eine Datei pro Komponente verteilt.
+2. **Tokenisierung (`fb2e9bb`).** Referenz war die lokale Quelle von
+   `swiss/designsystem` v1.0.5 am Commit `cbedbb9`. Das CD veröffentlicht als
+   erstklassige CSS Custom Properties nur `--color-primary-50..900` und
+   `--color-secondary-50..900`; die übrigen Portal-Tokens sind deshalb klar als
+   lokale semantische Aliasse auf CD-Skalen dokumentiert und werden nicht als
+   erfundene CD-Tokennamen ausgegeben. Farben, Abstände, Kontrollen, Radien,
+   Schatten, Dauern, z-Ebenen und Breakpoints laufen über geprüfte Skalen. Der
+   statische Token-Check verhindert undefinierte Variablen und neue Literale
+   ausserhalb der dokumentierten Fachausnahmen.
+3. **Konsolidierung (`a4e75c0`).** Gemeinsame Loading-, Filter-, Listbox-,
+   Viewer- und Overlay-Regeln wurden aus lazy App-Dateien in statische
+   Komponenten verschoben; Tabelle und Formular erhielten getrennte
+   Concern-Dateien. Markup-Fabriken und alle Aufrufstellen wurden gemeinsam auf
+   BEM umgestellt, unter anderem Pagination, Booking-Bar, Catbar und Warenkorb.
+   CSS-ID-Selektoren sind entfernt, Selektoren mit `:where()` abgeflacht und
+   verbleibende `!important` auf Reset-, Druck-/Reduced-Motion-,
+   Drittanbieter- oder nachgewiesene Navigationsgrenzen kommentiert. Vor dem
+   Löschen wurden `js/**`, `index.html` und `data/**` inklusive interpolierter
+   Familien wie `card--${variant}` und `status--${s}` geprüft. Nur bestätigte
+   Altregeln – etwa alte Service-Controls, Chart-Overlay-Hüllen sowie verwaiste
+   Empty-/Form-/Lightbox-/FPE-Hooks – entfielen; dynamisch mögliche Familien
+   blieben erhalten. Der gemeinsame Zustandsvertrag deckt Default, Hover,
+   Active, `focus-visible`, Disabled, Loading, Error und Empty ab.
+4. **Politur (`69386b5`).** Karten, Tabellen und Panels verwenden nun
+   dokumentierte Surface-, Border-, Radius- und Elevation-Stufen; Formulare,
+   Tabellenfuss, responsive Innenabstände, lange Inhalte und 320-px-Shrink-
+   Grenzen sind vereinheitlicht. Icons behalten die CD-Grössenrampen, verwenden
+   aber konsistente quadratische Maskenboxen und optische Ausrichtung. Die
+   Federal bleibt die `:root`-Vorgabe, `.body--intranet` überschreibt beide
+   Markenrampen zur Laufzeit; MapLibre und SVG-Charts lesen deshalb den berechneten Wert am
+   `body` statt fälschlich nur an `html`. `#8655F6` bleibt ausschliesslich der
+   helle Fokusring; auf dunklem Chrome gilt der CD-Negativring Purple 300, mit
+   explizitem Reset auf hellen Flächen in Viewern.
+
+Die wenigen im CD selbst vorkommenden mehrstufigen Elementnamen
+(`card__footer__*`, `form__group__*`, `menu__item__*`,
+`search__button__title`, `shopping__card__image`) bleiben bewusst erhalten.
+Sie sind keine neu erfundenen Portal-Ausnahmen, sondern Quellkonventionen der
+verbindlichen Version 1.0.5.
+
+### Gesnappte Werte und bewusste Ausnahmen
+
+Alle Längen in den ersten elf Zeilen sind `rem`-Werte.
+
+| Ausgangswert | Skalenwert |
+| ---: | ---: |
+| `.2rem` | `.25rem` |
+| `.1875rem` | `.25rem` |
+| `.35rem` | `.375rem` |
+| `.45rem` | `.5rem` |
+| `.5625rem` | `.5rem` |
+| `.7rem` | `.75rem` |
+| `.8rem` | `.75rem` |
+| `.85rem` | `.875rem` |
+| `.9rem` | `.875rem` |
+| `1.05rem` | `1rem` |
+| `1.15rem` | `1.125rem` |
+| Breakpoint `399.98px` | `479.98px` |
+
+Bewusst beibehalten und am Verbraucher kommentiert sind die 1599.98-px-
+Fit-Schwelle des Plan-Editors, fachliche Media-/Container-Schwellen,
+Domänenpaletten, feste Scene-/Drafting-/Reticle-Farben, Canvas-/SVG-
+Koordinatengeometrie und komponentenlokale z-Ordnungen. Ebenfalls bewusst sind
+die strengeren 44/48/52-px-Zielgrössen, die zwei zur Laufzeit umgefärbten
+Markenrampen und die vom Skin unabhängigen Fokusfarben.
+
+### CSS-Umfang und Übertragung
+
+Die gzip-Werte wurden mit Kompressionsstufe 6 je Datei ermittelt und danach
+addiert.
+
+| Messpunkt | Zeilen | Rohbytes | gzip -6, Summe je Datei |
+| --- | ---: | ---: | ---: |
+| Vorher `css/app.css` | 4'760 | 348'434 | 96'142 |
+| Vorher `css/tokens.css` | 414 | 23'643 | 8'706 |
+| Vorher, App + Tokens | 5'174 | 372'077 | 104'848 |
+| Nachher, statischer Erstaufruf | 3'878 | 274'414 | 97'397 |
+| Nachher, alle 31 CSS-Dateien | 5'418 | 391'971 | 129'893 |
+
+Die Summe aller Dateien ist keine Erstaufrufgrösse. Normale Seiten fordern kein
+`css/apps/*.css` an; eine Micro-App lädt nur ihre deklarierte Teilmenge und der
+Browser cached bereits geladene Abhängigkeiten. Zwischen statischem Erstaufruf
+und dem theoretischen Abruf aller sieben App-Dateien liegen 1'540 Zeilen,
+117'557 Rohbytes beziehungsweise 32'496 gzip-Bytes. Zudem ist eine Summe
+einzeln komprimierter Dateien nicht direkt mit einem einzigen konkatenierten
+gzip-Strom vergleichbar: jede Datei trägt einen eigenen gzip-/Wörterbuch-
+Overhead. Der relevante initiale Vergleich ist daher 104'848 zu 97'397
+gzip-Bytes; die Vollsumme dokumentiert Wartungsumfang und den kalten Worst Case
+über alle Micro-Apps, nicht den Transfer einer einzelnen Route.
+
+### Finale Dual-Skin-Abnahme
+
+Federal und Intranet wurden jeweils gegen dieselbe aktuelle Matrix geprüft.
+Beide `review-audit.mjs`-Läufe endeten mit Status 0 und exakt:
+
+| Skin | Audit-Summe |
+| --- | --- |
+| Federal | `routes 207 · overflow 0 · h1 0 · duplicateIds 0 · labels 0 · images 0 · headings 9 · tables 0 · targets 1012 · compactTargets 418` |
+| Intranet | `routes 207 · overflow 0 · h1 0 · duplicateIds 0 · labels 0 · images 0 · headings 9 · tables 0 · targets 1012 · compactTargets 418` |
+
+`headings`, `targets` und `compactTargets` sind gezählte Review-Hinweise – unter
+anderem fachliche SVG-Flächen und bewusst kompakte Editor-Geometrie – und keine
+verschwiegenen Nullwerte. Die harten Struktur-/Reflow-Kategorien stehen separat
+in derselben Summe.
+
+Beide `review-accessibility.mjs`-Läufe endeten ebenfalls mit Status 0 und exakt:
+
+| Skin | Accessibility-Summe |
+| --- | --- |
+| Federal | `routes 69 · overflow 0 · positiveTabindex 0 · brokenReferences 0 · hiddenFocusable 0 · focusIndicator 0 · mainLandmark 0 · unnamedAxControls 0` |
+| Intranet | `routes 69 · overflow 0 · positiveTabindex 0 · brokenReferences 0 · hiddenFocusable 0 · focusIndicator 0 · mainLandmark 0 · unnamedAxControls 0` |
+
+Zusätzlich liefen die zehn verlangten CDP-Suiten (`apidocs`, `catalogue`,
+`content`, `dashboard`, `estate`, `forms`, `login`, `portfolio`, `race`,
+`tabs`), alle 38 kanonischen Routen und 13 Redirects, der CSS-Layer-/FOUC-/404-Check, der
+Token-Check, die Fokusprüfung, Reduced Motion und 320-px-Reflow ohne Regression.
 
 ## 1. Zusammenfassung
 
@@ -15,21 +159,23 @@ Tabellen, Register und Fokusdarstellung orientieren sich nachvollziehbar an
 Ausrichtungsziel. Eine Versionsabweichung liegt nicht vor.
 
 Geprüft wurden der vollständige statische SPA-Code, die lokale CD-Quelle, alle
-gemeinsamen UI-Fabriken und alle fachlichen Ansichten. Die visuelle Baseline
-umfasst 57 repräsentative Routen und Zustände in 320, 768 und 1440 px, insgesamt
-171 Full-Page-Screenshots. Nach Freigabe wurden die neun Befunde F01–F09 in
-sechs Wellen umgesetzt. Der abschliessende Render-Audit meldet in 171 Zuständen
+gemeinsamen UI-Fabriken und alle fachlichen Ansichten. Die historische visuelle
+Baseline umfasst 57 repräsentative Routen und Zustände in 320, 768 und 1440 px,
+insgesamt 171 Full-Page-Screenshots. Nach Freigabe wurden die neun Befunde
+F01–F09 in sechs Wellen umgesetzt. Die aktuelle ausführbare Matrix umfasst
+69 Zustände beziehungsweise 207 Renderzustände. Der Dual-Skin-Audit weist dort
 keine horizontalen Überläufe, fehlenden H1, doppelten IDs, unbeschrifteten
-Bedienelemente, Bilder ohne `alt`, Überschriftensprünge, fehlerhafte
-Tabellenköpfe oder Zielgrössen unter der geltenden Mindestgrösse. Alle 20
-Funktionssuiten laufen durch.
+Bedienelemente, Bilder ohne `alt` oder fehlerhaften Tabellenköpfe aus; die neun
+Heading- und die Target-Hinweise sind im CSS-Nachtrag oben ausdrücklich
+ausgewiesen. Die relevanten Funktions- und Architektursuiten laufen durch.
 
 Die Umsetzung umfasst die priorisierte Token-Bereinigung, gemeinsame
 Combobox- und Viewer-Muster, eine korrigierte Inhalts- und
 Swagger-Überschriftenstruktur, natürliche Hero-Bildformate, vollständige
 Fokus-/Disabled-Zustände, responsive Zielgrössen, mobile Shop-Kategorien und
 eine dynamische Platzreserve für den fixierten Hinweisbanner. Der ergänzende
-Accessibility-Kurztest ist in allen 57 Zuständen ohne automatisierten Befund.
+Accessibility-Kurztest ist in allen aktuellen 69 Zuständen und in beiden Skins
+in sämtlichen ausgewiesenen Fehlerkategorien ohne automatisierten Befund.
 
 Es wurden keine Produktfunktionen, Routen oder Daten entfernt oder vereinfacht.
 Die bewusst nicht umgesetzten Architekturentscheide stehen in Abschnitt 6; die
@@ -143,7 +289,7 @@ gezählt.
 | S3 | Überschriften | 20 Überschriftensprünge pro Viewport in sieben Seitenzuständen, davon 19 durch Download Items (`h2` → `h4`) und einer im Swagger UI (`h1` → `h3`). | Keine Sprünge; DownloadItem-Titel = Elternstufe + 1, gemäss CD-Dokumentation. | wesentliche Abweichung |
 | S4 | Drittanbieter-Oberflächen | Swagger UI liefert eigenes CSS, Klassen, Überschriften und Bedienelemente. Im Audit liegen dort 113 kleine Ziele bei 320 px und je 160 bei 768/1440 px. | Drittanbieter-UI bleibt funktional, wird aber in einem Portal-Adapter auf Mindestsemantik, Fokus und Zielgrössen begrenzt. | wesentliche Abweichung |
 | S5 | Abweichungsdokumentation | Gute Begründungen stehen direkt im CSS. Ein Kommentar zu `btn--icon-right` behauptet jedoch weiterhin, `row-reverse` werde nicht verwendet, obwohl die Regel unmittelbar davor aktiv ist. | Kommentare und Review-Entscheide müssen dem aktuellen Code entsprechen. | geringe Abweichung |
-| S6 | Responsive Grundqualität | 171 gerenderte Zustände ohne horizontalen Seitenüberlauf; Tabellen besitzen fokussierbare Scrollregionen, Karten und Viewer feste responsive Rahmen. | Beibehalten und nach jeder Welle erneut prüfen. | konform |
+| S6 | Responsive Grundqualität | Die historische Ausgangsbaseline zeigte 171 gerenderte Zustände ohne horizontalen Seitenüberlauf; Tabellen besitzen fokussierbare Scrollregionen, Karten und Viewer feste responsive Rahmen. | Beibehalten und nach jeder Welle erneut prüfen. | konform |
 | S7 | Gemeinsame Zustände | Loading, Error, Empty, Not Found, Disabled, Login-Gate, Formularfehler und Erfolgsabschluss sind in den gemeinsamen Fabriken vorhanden und in Tests abgedeckt. | Beibehalten. | konform |
 
 ## 5. Befunde je Komponente
@@ -186,7 +332,7 @@ Alle neun Befunde sind umgesetzt:
 | Tabellen | Caption, `th`/`scope`, Scrollregion, Ausrichtung und Mobile-Verhalten sind programmatisch vorhanden. |
 | Tabs | Roving `tabindex`, Pfeiltasten, Home/End, genau ein sichtbares Panel und Hash-Synchronisation sind getestet. |
 | Formulare | Labels, Pflichtmarkierung, `aria-invalid`, verknüpfte Meldungen, Fehlerübersicht und Fokusführung sind getestet. |
-| Responsive | Kein horizontaler Seitenüberlauf in 171 Zuständen bei 320/768/1440 px. |
+| Responsive | Kein horizontaler Seitenüberlauf in der aktuellen Matrix mit 207 Renderzuständen bei 320/768/1440 px; die historische Screenshot-Baseline umfasst 171 Bilder. |
 | Bilder | Kein gerendertes Bild ohne `alt` in der Audit-Matrix. |
 | IDs und Namen | Keine doppelten IDs und keine unbenannten gerenderten Controls in der Audit-Matrix. |
 | Reduced Motion | Bewegungsdauern laufen über Tokens und werden in `prefers-reduced-motion` auf eine minimale Dauer gesetzt. |
@@ -214,7 +360,7 @@ markierten Massnahmen wurden umgesetzt und abgenommen.
 
 | Welle | Massnahme | Wirkung | Aufwand | Status | Abnahme |
 | --- | --- | --- | --- | --- | --- |
-| 1 Tokens | Direkte Farben mit vorhandenem Rollen-Token ersetzen; `#fff` in Warenkorb/BPMN bereinigen. | mittel | klein | erledigt | CSS-Scan und 171 Screenshots |
+| 1 Tokens | Direkte Farben mit vorhandenem Rollen-Token ersetzen; `#fff` in Warenkorb/BPMN bereinigen. | mittel | klein | erledigt | CSS-Scan und historische 171 Screenshots |
 | 1 Tokens | `rem`-Literale property-basiert klassifizieren und eindeutige Spacing-/Radius-/Control-Werte auf Tokens umstellen; Ausnahmen dokumentieren. | hoch | gross | erledigt | Keine Pixelabweichung in unveränderten Komponenten |
 | 2 Namen | Veralteten `btn--icon-right`-Kommentar korrigieren; portal-eigene Viewer-Toolbar-Klassen auf ein gemeinsames BEM-Muster bringen. | mittel | klein | erledigt | Strukturtests, CSS-Suche |
 | 2 Namen | Suchvorschlag und Adress-Combobox auf einen gemeinsamen ARIA-Controller zurückführen, visuelle Modifier behalten. | mittel | mittel | erledigt | Suche- und Gebäudeerfassungs-Tests |
@@ -226,14 +372,17 @@ markierten Massnahmen wurden umgesetzt und abgenommen.
 | 5 Responsive | Shop-Kategorien mobil in eine Disclosure-/Filterfläche verschieben; alle Filter und Deep-Links erhalten. | mittel | mittel | erledigt | Shop-Test plus 320/768 Screenshots |
 | 5 Responsive | Sichtbaren Banner bei Hauptinhalt, Karten und Viewern in die verfügbare Höhe einrechnen. | mittel | mittel | erledigt | Screenshotvergleich mit offenem Banner |
 | 6 Accessibility | Swagger-Zielgrössen, Fokus, Überschriften und Namen im Adapter korrigieren, soweit die Bibliothek dies ohne Funktionsverlust erlaubt. | hoch | gross | erledigt | Audit ohne Portal-verursachte Swagger-Warnungen |
-| 6 Accessibility | Reproduzierbare Tastatur-, Fokus-, 200-%-Reflow- und AX-Tree-Prüfung der 57 Zustände; reale Sprachausgabe als Release-Check dokumentieren. | hoch | gross | erledigt | `docs/accessibility-review.md` |
+| 6 Accessibility | Reproduzierbare Tastatur-, Fokus-, 200-%-Reflow- und AX-Tree-Prüfung der aktuellen 69 Zustände; reale Sprachausgabe als Release-Check dokumentieren. | hoch | gross | erledigt | `docs/accessibility-review.md` und Dual-Skin-Läufe |
 | Entscheidung | L1-Überlauf, mobiles Menü, Tabellen-Zeilenkopf und Step-Farben nicht ändern. | vermeidet Regression | – | bewusst nicht umgesetzt | als bewusste Abweichung dokumentiert |
 
 ### Abnahme nach jeder Welle
 
 1. Alle 20 Funktionssuiten laufen.
-2. `scripts/review-audit.mjs` läuft für 57 Zustände in drei Viewports.
-3. `scripts/review-screenshots.mjs after` aktualisiert 171 Nachher-Bilder.
+2. `scripts/review-audit.mjs` läuft für 69 Zustände in drei Viewports, also
+   207 Renderzustände, separat für Federal und Intranet.
+3. Die eingecheckten historischen Vorher-/Nachher-Artefakte umfassen weiterhin
+   57 Zustände in drei Viewports, also 171 Bilder. Eine Erweiterung der
+   Screenshot-Baseline auf die aktuelle Matrix wird nicht vorgetäuscht.
 4. Beabsichtigte Änderungen werden gegen `docs/review-assets/before/` geprüft;
    andere visuelle Abweichungen gelten als Regression.
 5. Die Welle erhält einen eigenen Commit mit nachvollziehbarer Message.
@@ -244,22 +393,25 @@ markierten Massnahmen wurden umgesetzt und abgenommen.
 | --- | --- |
 | `docs/design-system-reference.md` | Tokens, Layout, Komponentenstrukturen, Zustände und Bundes-Chrome der Version 1.0.5 |
 | `docs/feature-inventory.md` | Routen, Funktionen, Interaktionen und Zustände des Portals |
-| `docs/review-assets/before/` | 171 Full-Page-Screenshots |
-| `docs/review-assets/after/` | 171 Full-Page-Screenshots nach der Umsetzung |
-| `docs/review-assets/audit.json` | Strukturierter Render-Audit über dieselbe Matrix |
-| `docs/review-assets/accessibility.json` | Reflow-, Tastatur-, ARIA- und Accessibility-Tree-Audit über 57 Zustände |
+| `docs/review-assets/before/` | Historische Baseline: 57 Zustände × 3 Viewports = 171 Full-Page-Screenshots |
+| `docs/review-assets/after/` | Historischer Nachher-Stand: 57 Zustände × 3 Viewports = 171 Full-Page-Screenshots |
+| `docs/review-assets/audit.json` | Historischer strukturierter Render-Audit über dieselben 171 Renderzustände |
+| `docs/review-assets/accessibility.json` | Eingecheckter Zwischenstand über 58 Zustände; die aktuelle Dual-Skin-Abnahme umfasst 69 |
 | `docs/accessibility-review.md` | Methode, Ergebnis und Grenze des Accessibility-Kurztests |
-| `scripts/review-routes.mjs` | Zentrale Liste der 57 Prüfzustände |
+| `scripts/review-routes.mjs` | Aktuelle zentrale Liste der 69 Prüfzustände |
 | `scripts/review-audit.mjs` | Overflow-, Semantik-, Label-, Tabellen- und Touch-Target-Prüfung |
 | `scripts/review-accessibility.mjs` | 200-%-Reflow-, Fokus-, ARIA- und Accessibility-Tree-Prüfung |
 | `scripts/review-screenshots.mjs` | Vorher-/Nachher-Aufnahme in 320/768/1440 px |
 
-Die dokumentierte Baseline umfasst die 57 Zustände und 171 Bilder des Reviews.
-Nach dessen Abschluss wurde die zentrale Matrix um die eigenständige
-Raumbuchung auf 58 Zustände erweitert.
+Die eingecheckte visuelle Baseline umfasst die historischen 57 Zustände und 171
+Bilder des Reviews. Danach wurde zuerst die Accessibility-Matrix um die
+eigenständige Raumbuchung auf 58 Zustände und inzwischen die ausführbare
+zentrale Matrix auf 69 Zustände erweitert. Die finalen 207/69-Dual-Skin-Werte
+stehen im CSS-Nachtrag; sie werden nicht mit dem älteren Bildbestand vermischt.
 
-Die freigegebenen Phasen 5 und 6 sind umgesetzt. Die Nachher-Baseline und die
-strukturierten Prüfergebnisse bilden den Abnahmestand dieser Runde.
+Die freigegebenen Phasen 5 und 6 sind umgesetzt. Die eingecheckte
+Nachher-Baseline bleibt der historische Bildstand; den aktuellen
+CSS-Abnahmestand bilden die separaten 207/69-Dual-Skin-Läufe im Nachtrag.
 
 ## 9. Vertiefungsreview Plan-Editor
 

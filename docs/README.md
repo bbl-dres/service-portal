@@ -27,7 +27,7 @@ Konzept- und Review-Dokumente des Service-Portal-Prototyps. Leseordnung:
 
 ## Status
 
-- **Phase:** lauffähiger Prototyp — 8 Seitenbereiche + 13 Micro-Apps (vanilla JS, kein Build; Start: `node scripts/serve.mjs` oder `python -m http.server`).
+- **Phase:** lauffähiger Prototyp — 8 Seitenbereiche + 17 Micro-Apps (vanilla JS, kein Build; Start: `node scripts/serve.mjs` oder `python -m http.server`).
 - Frühere Einzeldokumente der ersten Review-Wellen (prototype-plan, expert-review, cd-audit) sind in die obigen Dokumente aufgegangen und existieren nicht mehr als Dateien.
 
 ## Offene Entscheide

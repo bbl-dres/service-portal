@@ -7,8 +7,11 @@ Liste geprüft. Erstellt automatisiert aus der vollständigen Modullektüre
 
 Altlast-Weiterleitungen (js/router.js REDIRECTS) liegen in
 scripts/test-routes.mjs. Die visuelle Regressionsmatrix steht zentral in
-scripts/review-routes.mjs; Vorher-Screenshots (57 repräsentative Routen und
-Zustände × 320/768/1440 px) liegen unter docs/review-assets/before/.
+scripts/review-routes.mjs und umfasst aktuell 69 repräsentative Routen und
+Zustände × 320/768/1440 px (207 Renderings). Die erhaltenen Phase-0-
+Vorher-Screenshots decken davon 57 Zustände × drei Viewports ab und liegen unter
+docs/review-assets/before/; sie werden nicht als vollständige aktuelle Matrix
+ausgegeben.
 
 ## Routenübersicht
 
