@@ -2,6 +2,19 @@
 // same-origin CSS availability, both brand skins, reduced motion and 320px reflow.
 import { APP_BASE, launch, openPage, sleep } from './lib/cdp.mjs';
 
+const STATIC_SHEETS = [
+  'css/tokens.css', 'css/skins/intranet.css',
+  'css/foundations/reset.css', 'css/foundations/typography.css', 'css/foundations/elements.css',
+  'css/layouts/page.css', 'css/layouts/grid.css',
+  'css/navigations/header.css', 'css/navigations/drawer.css', 'css/layouts/shell.css',
+  'css/components/button.css', 'css/components/card.css', 'css/components/table.css',
+  'css/components/form.css', 'css/components/listbox.css', 'css/components/feedback.css',
+  'css/navigations/tabs.css', 'css/components/content.css',
+  'css/sections/search.css', 'css/sections/filter-panel.css',
+  'css/sections/catbar.css', 'css/sections/explorer.css',
+  'css/components/overlay.css', 'css/utilities.css',
+];
+
 const checks = [];
 let failures = 0;
 const check = (ok, label, detail = '') => {
@@ -22,12 +35,16 @@ try {
     }));
     return JSON.stringify({
       count: links.length,
+      hrefs: links.map(link => new URL(link.href).pathname.replace(/^\\//, '')),
       appLinks: links.filter(link => link.dataset.appStyle).length,
       unloaded: links.filter(link => !link.sheet).map(link => link.getAttribute('href')),
       failed: responses.filter(([, status]) => status >= 400 || status === 0),
     });
   })()`));
-  check(staticState.count === 20, '20 static stylesheets load in explicit order', String(staticState.count));
+  check(staticState.count === STATIC_SHEETS.length,
+    `${STATIC_SHEETS.length} static stylesheets load`, String(staticState.count));
+  check(staticState.hrefs.join(',') === STATIC_SHEETS.join(','),
+    'static stylesheets retain the documented cascade order', staticState.hrefs.join(','));
   check(staticState.appLinks === 0, 'ordinary pages do not fetch app CSS', String(staticState.appLinks));
   check(!staticState.unloaded.length, 'every static stylesheet is parsed', staticState.unloaded.join(', '));
   check(!staticState.failed.length, 'no static CSS request returns an error', JSON.stringify(staticState.failed));

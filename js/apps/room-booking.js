@@ -393,7 +393,7 @@ export default async function render(ctx) {
       : buildings.map(option).join('');
     return `<div class="form__group__select booking-bar__location">
       <label for="booking-location">Standort</label>
-      <div class="booking-bar__location__row">
+      <div class="booking-bar__location-row">
         ${C.selectBox(`<select id="booking-location" name="booking-location" class="input--outline input--base">${groups}</select>`)}
         ${favoriteButton('building', state.buildingId, building().name)}
       </div>
@@ -446,7 +446,7 @@ export default async function render(ctx) {
   // --- Ergebnisliste ---------------------------------------------------------
 
   function filterPanel() {
-    return `<div class="catbar__panel__grid">
+    return `<div class="catbar__panel-grid">
       ${C.filterGroup({ dim: 'equipment', legend: 'Ausstattung', selected: state.filters.equipment,
         options: EQUIPMENT_OPTIONS.map((value) => ({ value, label: value })), idPrefix: 'booking' })}
       ${C.filterGroup({ dim: 'accessible', legend: 'Barrierefreiheit', selected: state.filters.accessible,
@@ -455,12 +455,12 @@ export default async function render(ctx) {
   }
 
   function chips(room, profile) {
-    const items = profile.equipment.map((value) => `<li>${C.escape(value)}</li>`);
-    if (profile.accessible) items.push('<li>Barrierefrei</li>');
+    const items = profile.equipment.map((value) => `<li class="booking-chip">${C.escape(value)}</li>`);
+    if (profile.accessible) items.push('<li class="booking-chip">Barrierefrei</li>');
     // Der fehlende Videodienst ist die einzige Lücke, nach der in der Praxis
     // gefragt wird — sie steht deshalb als Warnung an der Karte statt nur als
     // Auslassung, die man mit den anderen Räumen vergleichen müsste.
-    if (!profile.equipment.includes('Teams')) items.push('<li class="booking-chip--warn">Kein Teams</li>');
+    if (!profile.equipment.includes('Teams')) items.push('<li class="booking-chip booking-chip--warn">Kein Teams</li>');
     return `<ul class="booking-chips" aria-label="Ausstattung von ${C.escape(profile.name)}">${items.join('')}</ul>`;
   }
 

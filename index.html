@@ -9,9 +9,9 @@
        ab — vorher zwei TTF à 569 KB, jetzt 35 KB gesamt. -->
   <link rel="preload" href="assets/fonts/NotoSans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/skins/intranet.css">
   <!-- Explicit cascade order. Route-specific app sheets are inserted at the
        three named anchors and awaited by the router before app markup renders. -->
-  <link rel="stylesheet" href="css/font-face.css">
   <link rel="stylesheet" href="css/foundations/reset.css">
   <link rel="stylesheet" href="css/foundations/typography.css">
   <link rel="stylesheet" href="css/foundations/elements.css">
@@ -22,36 +22,39 @@
   <link rel="stylesheet" href="css/layouts/shell.css">
   <link rel="stylesheet" href="css/components/button.css">
   <link rel="stylesheet" href="css/components/card.css">
-  <!-- Pure-split bridge: relative icon URLs still resolve from css/. -->
-  <link rel="stylesheet" href="css/table-form.css">
+  <link rel="stylesheet" href="css/components/table.css">
+  <link rel="stylesheet" href="css/components/form.css">
+  <link rel="stylesheet" href="css/components/listbox.css">
   <link rel="stylesheet" href="css/components/feedback.css">
   <link rel="stylesheet" href="css/navigations/tabs.css">
   <link rel="stylesheet" href="css/components/content.css">
   <link rel="stylesheet" href="css/sections/search.css">
+  <link rel="stylesheet" href="css/sections/filter-panel.css">
   <meta name="css-app-anchor" content="early">
-  <link rel="stylesheet" href="css/sections/catalogue.css">
+  <link rel="stylesheet" href="css/sections/catbar.css">
+  <link rel="stylesheet" href="css/sections/explorer.css">
   <link rel="stylesheet" href="css/components/overlay.css">
   <meta name="css-app-anchor" content="portfolio">
   <link rel="stylesheet" href="css/utilities.css">
   <meta name="css-app-anchor" content="late">
 </head>
 <body class="body--intranet">
-  <header id="main-header"></header>
+  <header id="main-header" class="site-header"></header>
   <!-- Datenausfall-Band (P0-4): von js/app.js nach dem Laden befüllt, wenn eine
        data/*.json fehlt. Persistent, weil der Router nur #main-content neu zeichnet.
        Benannte Region statt role="alert" am Container: das Band samt «Neu laden»-
        Knopf liegt sonst in KEINER Landmark und ist über die Landmark-Navigation
        unauffindbar; die einmalige Ansage beim Einfügen trägt die injizierte
        Notification selbst (role="alert" via { live:true } in js/app.js). -->
-  <div id="data-status" role="region" aria-label="Hinweis zum Datenbestand"></div>
-  <main id="main-content" tabindex="-1"></main>
+  <div id="data-status" class="data-status" role="region" aria-label="Hinweis zum Datenbestand"></div>
+  <main id="main-content" class="site-main" tabindex="-1"></main>
   <!-- Persistente Live-Region: Router/Katalogseiten schreiben hier Treffer-,
        Ansichts- und Seitenwechsel hinein (WCAG 4.1.3). Nur Text mutieren. -->
   <div id="live" role="status" aria-live="polite" class="sr-only"></div>
-  <footer id="main-footer"></footer>
+  <footer id="main-footer" class="site-footer"></footer>
   <!-- Hinweisstreifen (CD notification-banner), am Seitenende: fix positioniert,
        liegt damit in der Lesereihenfolge NACH dem Inhalt. -->
-  <div id="banner-host"></div>
+  <div id="banner-host" class="banner-host"></div>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

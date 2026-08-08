@@ -540,7 +540,7 @@ function detail(ctx, id) {
       return `<a class="tag-item${current ? ' tag-item--active' : ''}" href="${BASE}?id=${encodeURIComponent(item.id)}&floor=${encodeURIComponent(entry.floorId)}" data-floor="${C.escape(entry.floorId)}"${current ? ' aria-current="true"' : ''}><span class="tag-item__inner"><span class="tag-item__text">${C.escape(entry.label)}</span></span></a>`;
     }).join('')}</div>`;
 
-    return `<div id="fp-wrap">
+    return `<div class="fp-wrap" id="fp-wrap">
       <div class="fp-head">
         <div class="fp-head__top">
           <p class="fp-back"><a href="${BASE}?id=${encodeURIComponent(item.id)}&tab=grundrisse" id="fp-zurueck">${C.icon('ArrowLeft', 'icon--base')} Alle Geschosse</a></p>
@@ -572,7 +572,7 @@ function detail(ctx, id) {
             ${floor.lastSync ? `<dt>Letzte Synchronisation</dt><dd>${C.escape(floor.lastSync)}</dd>` : ''}
           </dl>
           ${colorMode === 'none' ? '' : `<div><h4 class="fp-side__title">Einfärbung: ${C.escape(colorLabel)}</h4>${floorplanLegend(spaces, colorMode)}</div>`}
-          <div id="fp-room">${roomPanel(selected)}</div>
+          <div class="fp-room-host" id="fp-room">${roomPanel(selected)}</div>
         </div>
       </div>
       <p class="fp-print-foot">${C.escape(item.name)} — ${C.escape(floor.label)} · ${C.escape(address(item))} · Einfärbung: ${C.escape(colorLabel)}</p>

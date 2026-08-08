@@ -42,6 +42,13 @@
 .download-item { display:flex; width:100%; padding:var(--sp-4) 0; text-align:left;
   border-bottom:var(--stroke-1) solid var(--color-secondary-200); text-decoration:none; color:inherit; }
 .download-item:hover { text-decoration:none; }
+.download-item:active { background:var(--color-secondary-50); }
+.download-item:focus-visible { position:relative; z-index:var(--z-local-content);
+  outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
+.download-item:is([aria-disabled="true"], .is-disabled) { cursor:not-allowed; opacity:.55; pointer-events:none; }
+.download-item[aria-busy="true"] { cursor:progress; opacity:.7; }
+.download-item[aria-invalid="true"] { color:var(--color-error-text); border-bottom-color:var(--color-error); }
+.download-item[data-empty="true"] { cursor:default; color:var(--color-text-muted); }
 /* Auf getönten Flächen die dunklere Trennlinie (download-item.postcss:12-14
    `.bg--secondary-50 &`) — secondary-200 wäre dort kaum sichtbar. */
 .bg--secondary-50 .download-item, .box .download-item { border-bottom-color:var(--color-secondary-300); }
@@ -129,30 +136,21 @@
 .body--mobile-menu-is-open .back-to-top-rail,
 body.body--overlay-open .back-to-top-rail { display:none; }
 
-/* Suchfeld mit Lupe INNERHALB des Rahmens (links); die native Löschen-X sitzt
-   rechts im Feld. Das Formular sendet weiterhin per Enter bzw. Klick auf die
-   Lupe. Die .service-controls-Hälften der früheren Gruppenselektoren sind
-   entfallen — die Dienstleistungsseite rendert seit der catbar-Migration keine
-   .service-controls mehr, nur die toten Selektorhälften blieben stehen
-   (Design-Review C9). */
-.catbar__search { position:relative; }
-.catbar__search input { width:100%; padding-left:var(--target-min); }
-.catbar__submit { position:absolute; left:0; width:var(--target-min);
-  min-height:0; padding:0; justify-content:center; color:var(--color-text-muted); }
-.catbar__submit:hover { color:var(--color-primary-600); background:none; }
-
 .view-switch { display:flex; align-items:center; gap:var(--sp-1);
   border-left:var(--stroke-1) solid var(--color-secondary-300); padding-left:var(--sp-4); }
 .view-switch__btn { display:inline-flex; align-items:center; justify-content:center;
   min-width:var(--target-min); min-height:var(--target-min); padding:0; background:none; border:0; border-radius:var(--radius-none);
   color:var(--color-secondary-500); cursor:pointer; transition:color var(--duration), background var(--duration); }
 .view-switch__btn:hover { color:var(--color-primary-700); }
+.view-switch__btn:active { background:var(--color-secondary-100); color:var(--color-primary-700); }
+.view-switch__btn:focus-visible { position:relative; z-index:var(--z-local-content);
+  outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
+.view-switch__btn:is(:disabled, [aria-disabled="true"]) { cursor:not-allowed; opacity:.55; }
+.view-switch__btn[aria-busy="true"] { cursor:progress; opacity:.7; }
+.view-switch__btn[aria-invalid="true"] { color:var(--color-error-text); }
+.view-switch__btn[data-empty="true"] { cursor:default; color:var(--color-text-muted); }
 /* Zustand nicht allein über Farbe (WCAG 1.4.1, P2-10) — die Fläche allein war
    genau das; forced-colors entfernt sie ersatzlos. Der Unterstrich trägt den
    Zustand jetzt als Form (Item 2.6). */
 .view-switch__btn[aria-pressed="true"] { color:var(--color-text); background:var(--color-secondary-100);
   box-shadow:var(--state-underline-primary); }
-@media (max-width:639.98px){
-  .service-controls__filters { grid-template-columns:minmax(0,1fr); }
-}
-

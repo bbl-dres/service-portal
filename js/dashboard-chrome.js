@@ -85,7 +85,7 @@ export function filterPanelShell(C, body) {
   return `<aside class="filter-panel" id="dash-filters" aria-label="Filter">
       <div class="filter-panel__head">
         <h2 class="filter-panel__title">Filter</h2>
-        <button type="button" class="filter-panel__toggle btn--bare" id="filter-toggle" aria-label="Filter einklappen" aria-expanded="true">${C.icon('ChevronLeft', 'icon--base')}</button>
+        <button type="button" class="filter-panel__toggle btn--bare interactive-control" id="filter-toggle" aria-label="Filter einklappen" aria-expanded="true">${C.icon('ChevronLeft', 'icon--base')}</button>
       </div>
       <div class="filter-panel__body" id="filter-body">${body}</div>
     </aside>`;

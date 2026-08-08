@@ -51,7 +51,7 @@ export function prototypeFooterHTML() {
 export function editorHeaderHTML(C, session, editMode = false) {
   const user = session.user();
   return `<header class="fpe-header">
-    <a class="fpe-brand" id="fpe-home" href="${BASE}" data-leave aria-label="Plan-Editor – Gebäudenavigation">
+    <a class="fpe-brand plain-link" id="fpe-home" href="${BASE}" data-leave aria-label="Plan-Editor – Gebäudenavigation">
       <img src="assets/swiss-logo-flag.svg" alt="" aria-hidden="true"><span>BBL <strong>Plan-Editor</strong></span>
     </a>
     ${editMode ? '<span class="fpe-edit-state" title="Bearbeitungsmodus"><i aria-hidden="true"></i><span class="fpe-edit-state__text">Bearbeitungsmodus</span></span>' : ''}

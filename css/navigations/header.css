@@ -1,5 +1,5 @@
 /* ============================== FEDERAL SHELL ============================== */
-#main-header { position:relative; z-index:var(--header-z); }
+.site-header { position:relative; z-index:var(--header-z); }
 
 /* Demo / prototype chip — deliberately NOT skin-tinted: under the intranet skin
    `--color-primary-*` is blue, which disappeared against the blue top bar. Pinned

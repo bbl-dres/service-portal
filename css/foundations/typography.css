@@ -1,3 +1,15 @@
+/* Self-hosted variable Noto Sans replaces four legacy TTF responses. The
+   latin subset covers the application corpus; rare symbols fall back per
+   glyph. Italic is synthesized because the former italic files were unused. */
+@font-face { font-family:'Noto Sans'; font-style:normal; font-weight:100 900; font-display:swap;
+  src:url('../../assets/fonts/NotoSans-latin.woff2') format('woff2'); }
+/* Metric-compatible fallback, aligned with CD font-face.postcss:37-44. */
+@font-face { font-family:'Fallback-font'; src:local('Verdana');
+  size-adjust:94%;
+  ascent-override:114%;
+  descent-override:31%;
+  line-gap-override:0%; }
+
 /* Headings map to CD's text--* ramps (typography.postcss:106-129) */
 h1,h2,h3,h4,h5,.h1,.h2,.h3,.h4,.h5 { margin:0 0 var(--sp-4); font-weight:var(--fw-bold); }
 h1,.h1 { font-size:var(--text-3xl); line-height:var(--lh-tight); overflow-wrap:anywhere; }

@@ -92,12 +92,6 @@
    steht der Platzhalter oben links: rein kosmetisch, kein Funktionsverlust. */
 .dash-map:has(> .loading) { display:grid; place-items:center; }
 
-/* Ladezustand (C.loading) — das EINE Muster für «lädt/verarbeitet»: das
-   CD-Spinner-Symbol (icon--spin; reduced-motion stoppt es über den Killswitch
-   unten) plus Wortlaut. Zentriert sich im gebenden Kasten; .map-spinner und
-   .dash-map liefern nur noch die Überlagerungs-Geometrie. */
-.loading { display:flex; align-items:center; justify-content:center; gap:var(--sp-3);
-  padding:var(--sp-10) var(--sp-4); color:var(--color-text-muted); font-size:var(--text-sm); }
 /* Zentrierter Ladehinweis ÜBER der Karte, bis Kacheln und Cluster stehen
    (showMapSpinner). z-index unter den MapLibre-Bedienelementen (die liegen bei 2). */
 .map-spinner { position:absolute; inset:0; z-index:var(--z-local-content); display:flex; align-items:center; justify-content:center;
@@ -181,32 +175,6 @@
 .dashboard-layout .tab__container { padding-top:var(--sp-5); }
 .chart__actions { display:flex; align-items:center; gap:var(--sp-2); flex:none; }
 .lead-hint { margin-top:var(--sp-1-5); }
-/* Multi-select-Filter (Checkbox-Gruppen) im Filterpanel */
-.filter-group { border:0; margin:0 0 var(--sp-5); padding:0; }
-/* Gleiche Stimme wie die Formular-Legende (responsives text-sm) und CDs mb-2 —
-   die beiden Fieldset-Legenden des Produkts unterscheiden sich nur im Grad. */
-.filter-group__legend { font-size:var(--text-sm); font-weight:var(--fw-bold); color:var(--color-text); margin:0 0 var(--sp-2); padding:0; }
-/* Höchste Tippdichte im Produkt und zugleich die kleinste Trefferfläche: 16x16-Box
-   in .18rem Polsterung ≈ 22-27px, 8-20 Zeilen tief. Ein Fehlgriff schaltet die
-   Nachbarfacette und stellt das ganze Dashboard still neu zusammen. Das negative
-   Aussenmass hält die Textkante an der Legende, während die Trefferfläche in die
-   Panel-Polsterung hineinwächst. Desktop-Dichte bleibt erhalten (Item 2.5c).
-   accent-color entfällt: unter appearance:none ist es wirkungslos (S3-066). */
-.filter-check { display:flex; align-items:center; gap:var(--sp-2-5); min-height:var(--target-min);
-  padding:var(--sp-1-5) var(--sp-1); margin:0 calc(-1 * var(--sp-1)); font-size:var(--text-sm);
-  color:var(--color-text); cursor:pointer; border-radius:var(--radius-xs); }
-.filter-check input { flex:none; width:var(--check-size); height:var(--check-size); margin:0; }
-.filter-check:hover { color:var(--color-primary-700); background:var(--color-secondary-100); }
-@media (min-width:1024px){ .filter-check { min-height:var(--sp-9); } }   /* Maus: dichter erlaubt */
-@media (min-width:1544px){ .filter-check { min-height:var(--sp-10); } }
-.filter-check--more { display:none; }
-.filter-group--expanded .filter-check--more { display:flex; }
-/* Seit dem C.filterGroup-Umbau ist __more ein versteckter SPAN um die
-   Rest-Checkboxen (display:contents lässt sie im Fieldset-Fluss stehen,
-   [hidden] gewinnt weiterhin); der Aufdeck-Knopf ist ein normaler btn--link. */
-.filter-group__more { display:contents; }
-.filter-group__more:hover { text-decoration:underline; }
-
 /* ── API-Dokumentation (js/apps/api-docs.js) ─────────────────────────────
    Unterhalb der detail-bar rendert das ECHTE Swagger UI (swagger-ui-dist vom
    CDN, Lademuster wie MapLibre) — der frühere CD-nachgebaute api-*-Block
@@ -225,6 +193,8 @@
 .swagger-host .swagger-ui textarea { min-height:var(--target-min); }
 .swagger-host .swagger-ui input:is([type="checkbox"],[type="radio"]) {
   width:var(--target-min); min-width:var(--target-min); height:var(--target-min); }
+/* Third-party boundary: Swagger's injected selectors cannot be reordered or
+   weakened, so the portal focus ring must explicitly win here. */
 .swagger-host .swagger-ui :is(button,input,select,textarea,[tabindex]):focus-visible {
   outline:var(--stroke-2) solid var(--color-focus-ring) !important; outline-offset:var(--stroke-2); box-shadow:none; }
 .swagger-host .swagger-ui :is(button,input,select,textarea):disabled {
@@ -237,22 +207,6 @@
 .bpmn-host { position:relative; height:34rem; border:var(--stroke-1) solid var(--panel-border); background:var(--color-bg); overflow:hidden; }
 .bpmn-canvas { height:100%; }
 .bpmn-host .loading { height:100%; }
-.viewer-toolbar { display:flex; align-items:center; }
-.viewer-toolbar--horizontal { flex-direction:row; }
-.viewer-toolbar--vertical { flex-direction:column; align-items:stretch; }
-.viewer-toolbar--light { border-radius:var(--radius-lg); box-shadow:var(--shadow-md); background:var(--color-bg); overflow:hidden; }
-.viewer-toolbar--light .viewer-toolbar__button { width:var(--target-min); height:var(--target-min); min-height:0; border-radius:0; background:var(--color-bg); }
-.viewer-toolbar--light .viewer-toolbar__button + .viewer-toolbar__button { border-top:var(--stroke-1) solid var(--color-secondary-200); }
-.viewer-toolbar--negative { gap:var(--sp-1); padding:var(--sp-1); background:var(--color-secondary-900);
-  border:var(--stroke-1) solid var(--border-negative); border-radius:var(--radius-full); box-shadow:var(--shadow-viewer); }
-.viewer-toolbar__readout { font-variant-numeric:tabular-nums; }
-.viewer-toolbar__separator { width:var(--stroke-1); align-self:stretch; background:var(--border-negative); }
-.viewer-toolbar__button:disabled { cursor:not-allowed; opacity:.55; }
-.viewer-toolbar--light .viewer-toolbar__button:focus-visible {
-  position:relative; z-index:var(--z-local-content); outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-3)); }
-.viewer-toolbar--negative .viewer-toolbar__button:focus-visible {
-  position:relative; z-index:var(--z-local-content); outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-3)); }
-
 .bpmn-toolbar { position:absolute; z-index:var(--z-local-control); top:var(--sp-3); right:var(--sp-3); }
 @media (min-width:1024px) and (pointer:fine){
   .bpmn-toolbar .viewer-toolbar__button { width:var(--sp-10); height:var(--sp-10); }

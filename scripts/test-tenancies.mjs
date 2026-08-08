@@ -27,7 +27,7 @@ let o = JSON.parse(await p.evaluate(`JSON.stringify({
   karten: document.querySelectorAll('.pf-gallery .card').length,
   zahl: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
   kachelraster: document.querySelectorAll('.grid--3').length,
-  chips: [...document.querySelectorAll('.pf-card__chips .pf-card__land')].slice(0,2).map(x => x.textContent),
+  chips: [...document.querySelectorAll('.card__chips .card__chip')].slice(0,2).map(x => x.textContent),
   veFilter: [...document.querySelectorAll('[data-fdim=ve]')].map(x => x.value),
   ansichten: [...document.querySelectorAll('.view-switch__btn')].map(x => x.dataset.view),
 })`));

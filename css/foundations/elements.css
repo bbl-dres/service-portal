@@ -15,18 +15,16 @@ a { color:var(--color-link); text-decoration:none; }
    keinen Eintrag: toast() rendert über textContent, nie Markup.
    cursor:pointer wie CD (link.postcss:8) — `.link` auf einem <button> oder
    einem Anker ohne href zeigte sonst den Text-Cursor. */
-#main-content a:not(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a),
-.modal a:not(.btn, .notification a),
+:where(.site-main, .modal) a:not(:where(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a)),
 .link {
   color:var(--color-primary-600); text-decoration:underline; text-underline-offset:var(--stroke-2); overflow-wrap:break-word; cursor:pointer;
 }
-#main-content a:not(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a):is(:hover, :focus),
-.modal a:not(.btn, .notification a):is(:hover, :focus),
+:where(.site-main, .modal) a:not(:where(.btn, .card, .card--clickable, .tag-item, .download-item, .active-filter, .plain-link, .menu__item, .badge, .card__link, .notification a)):is(:hover, :focus),
 .link:hover, .link:focus { color:var(--color-primary-800); }
 /* automatic external-link affordance (link.postcss:21-38) */
 :root { --icon-external-link:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m14.5 2.7v1.9h3.8l.6-.5.3.1-.7.6-6.4 6.4 1.4 1.4 6.4-6.4.6-.7.1.3-.5.7v3.7h1.9v-7.5z'/%3E%3Cpath d='m16.9 19.9h-12v-12.2h5.7v-1.9h-7.6v16h15.9v-7.7h-2z'/%3E%3C/svg%3E"); }
 /* .download-item und .card--clickable führen ihr Icon bereits selbst */
-#main-content a[rel~="external"]:not(.btn):not(.card--clickable):not(.card__link):not(.download-item)::after,
+:where(.site-main) a[rel~="external"]:not(:where(.btn, .card--clickable, .card__link, .download-item))::after,
 .link--external::after {
   content:""; display:inline-block; position:relative; width:1em; height:1em; top:.2em; margin:0 .125em;
   background-color:currentColor; -webkit-mask:var(--icon-external-link) no-repeat; mask:var(--icon-external-link) no-repeat;
@@ -38,9 +36,9 @@ img { max-width:100%; display:block; }
 ul,ol { margin:0; padding:0; }
 
 /* Lists (list.postcss:5-67) */
-#main-content ul:not([class]), .list--default { list-style:disc outside; padding-left:var(--sp-5); }
-#main-content ol:not([class]), .list--ordered { list-style:decimal outside; padding-left:var(--sp-5); }
-#main-content ul:not([class]) > li + li, #main-content ol:not([class]) > li + li,
+:where(.site-main) ul:not([class]), .list--default { list-style:disc outside; padding-left:var(--sp-5); }
+:where(.site-main) ol:not([class]), .list--ordered { list-style:decimal outside; padding-left:var(--sp-5); }
+:where(.site-main) ul:not([class]) > li + li, :where(.site-main) ol:not([class]) > li + li,
 .list--default > li + li, .list--ordered > li + li { margin-top:var(--sp-2); }
 .list--loose > li + li { margin-top:var(--sp-3); }
 .list--bare { list-style:none; padding-left:0; }
@@ -72,8 +70,8 @@ h1[tabindex="-1"]:focus, h1[tabindex="-1"]:focus-visible,
 h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
 h3[tabindex="-1"]:focus, h3[tabindex="-1"]:focus-visible,
 h4[tabindex="-1"]:focus, h4[tabindex="-1"]:focus-visible,
-#main-header:focus, #main-header:focus-visible,
-#main-content:focus, #main-content:focus-visible { outline:none; }
+.site-header:focus, .site-header:focus-visible,
+.site-main:focus, .site-main:focus-visible { outline:none; }
 
 /* Visuell verborgen, für Screenreader lesbar. Das Rezept stand SIEBENMAL im
    Blatt, in drei Fassungen (mal mit padding/margin/border, mal ohne) — jede
@@ -86,7 +84,7 @@ h4[tabindex="-1"]:focus, h4[tabindex="-1"]:focus-visible,
 .logo__title,
 .search__button__title,
 .btn--icon-only .btn__text,
-table.table caption { position:absolute; width:var(--stroke-1); height:var(--stroke-1); padding:0; margin:calc(-1 * var(--stroke-1)); overflow:hidden;
+.table caption { position:absolute; width:var(--stroke-1); height:var(--stroke-1); padding:0; margin:calc(-1 * var(--stroke-1)); overflow:hidden;
   clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .skip-to-content { position:absolute; left:50%; top:0; z-index:var(--z-skiplink); background:var(--color-secondary-900);
   color:var(--color-text-negative); border:var(--stroke-2) solid var(--color-bg); box-shadow:var(--shadow-md); padding:var(--sp-2) var(--sp-4); font:inherit; cursor:pointer;

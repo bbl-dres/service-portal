@@ -342,7 +342,7 @@ function footerHTML() {
        sonst die Route überschreibt (Item 4.3). -->
   <div class="back-to-top-rail">
     <div class="back-to-top-track">
-      <a class="back-to-top-btn back-to-top-btn--outline" href="#main-header" aria-label="Nach oben">
+      <a class="back-to-top-btn back-to-top-btn--outline interactive-control" href="#main-header" aria-label="Nach oben">
         ${icon('ChevronUp', 'back-to-top-btn__icon')}
       </a>
     </div>

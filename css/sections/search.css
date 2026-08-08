@@ -7,7 +7,7 @@
    den absolut gesetzten Suchknopf laufen (pr-12-Prinzip, wie die Kopfsuche). */
 .search__field { flex:1 1 auto; min-width:0; width:100%; padding:var(--sp-3) var(--sp-14) var(--sp-3) var(--sp-4);
   border:var(--stroke-1) solid var(--color-border-input); box-shadow:none;
-  background:var(--color-bg); font-size:var(--fs-xl); font-weight:var(--fw-bold); outline:none; }
+  background:var(--color-bg); font-size:var(--fs-xl); font-weight:var(--fw-bold); }
 /* war --color-secondary-300 #828e9a auf Weiss = 3.34:1 (Soll 4.5:1) auf dem
    prominentesten Eingabefeld des Produkts; --color-placeholder = 5.65:1. */
 .search__field::placeholder { color:var(--color-placeholder); font-weight:var(--fw-regular); }

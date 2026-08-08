@@ -12,6 +12,7 @@
 /* CD 12-column container grid (container.postcss:53-146) */
 .container--grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); }
 .container__full, .container__center--xs, .container__center--sm, .container__center--md,
+.container__main, .container__aside { grid-column:span 12; }
 /* DAS Lesemass des Portals sitzt an der SPALTE, nie an Textklassen
    (Nutzerentscheid 2026-08-04, Design-Review C25): .container__main misst
    60rem — dieselbe Breite wie .hero__content darüber, sodass Kopf und Spalte
@@ -21,7 +22,6 @@
    70ch-Einzeldeckel an p/ul sind entfallen. Datentabellen und Registerpanels
    stehen NICHT in container__main und laufen bewusst vollbreit. */
 .container__main { max-width:60rem; }
-.container__main, .container__aside { grid-column:span 12; }
 @media (min-width:768px){
   .container__center--xs, .container__center--sm { grid-column:2 / span 10; }
   .container__main  { grid-column:span 7; }
@@ -179,20 +179,6 @@
 .hero + .section--py:not([class*="bg--"]),
 .hero + .bg--white { padding-top:0; }
 
-/* Hinweisstreifen (notification-banner.postcss) — CDs Consent-Bauteil. Fix am
-   Fensterboden, volle Breite, Inhalt im .container. */
-/* Doppelte Klasse auch beim Innenabstand: .notification setzt padding und steht
-   später in der Datei, gewann also bei gleicher Spezifität. Das Band bekam
-   einen umlaufenden Rand statt «Xrem 0», wodurch der __wrapper (der selbst
-   padding:0 1rem mitbringt) doppelt einrückte und nicht mehr zur Seite passte. */
-.notification-banner.notification-banner { padding:var(--sp-4) 0; font-size:var(--text-sm); box-shadow:none; }
-@media (min-width:640px){ .notification-banner.notification-banner { padding:var(--sp-8) 0; } }
-@media (min-width:1024px){ .notification-banner.notification-banner { padding:var(--sp-10) 0; } }
-/* Doppelte Klasse, damit die Regel .notification (setzt position:relative und
-   steht später in der Datei) nicht gewinnt — das Band lag sonst 3600px unter
-   dem Sichtfeld im Dokumentfluss. */
-.notification-banner.notification-banner--fixed { position:fixed; z-index:var(--z-toast); right:0; bottom:0; left:0; width:100%;
-  border-top:var(--stroke-1) solid var(--color-bg); box-shadow:var(--shadow-2xl); }
 /* Der fixe Streifen erhält im Dokumentfluss exakt seine gemessene Höhe. Damit
    lassen sich Footer, Kartenunterkanten und Viewer vollständig darüber scrollen. */
 body.body--banner-visible { padding-bottom:var(--banner-offset, 0px); }

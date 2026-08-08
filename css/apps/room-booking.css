@@ -53,8 +53,8 @@
 
 .booking-chips { display:flex; flex-wrap:wrap; gap:var(--sp-1-5); margin:0; padding:0; list-style:none;
   font-size:var(--text-sm); }
-.booking-chips li { padding:var(--sp-0-5) var(--sp-2); background:var(--color-secondary-50); color:var(--color-text); }
-.booking-chips .booking-chip--warn { background:var(--color-warning-bg-subtle); color:var(--color-warning-text); }
+.booking-chip { padding:var(--sp-0-5) var(--sp-2); background:var(--color-secondary-50); color:var(--color-text); }
+.booking-chip--warn { background:var(--color-warning-bg-subtle); color:var(--color-warning-text); }
 .booking-more { margin-top:var(--sp-1); align-self:flex-start; }
 
 /* Booking dialog. The facts block is a read-only echo of the search bar; the

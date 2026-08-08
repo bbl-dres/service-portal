@@ -100,13 +100,13 @@ export function openGallery(items, start, C, opts = {}) {
         </div>
       </div>
       <div class="pf-lightbox__actions">
-        <a class="pf-lightbox__btn" data-el="download" href="#" download target="_blank" rel="noopener"
+        <a class="pf-lightbox__btn interactive-control interactive-control--negative" data-el="download" href="#" download target="_blank" rel="noopener"
            aria-label="Bild herunterladen" title="Herunterladen">${C.icon('Download', 'icon--md')}</a>
-        <button type="button" class="pf-lightbox__btn" data-act="meta" data-el="metabtn"
+        <button type="button" class="pf-lightbox__btn interactive-control interactive-control--negative" data-act="meta" data-el="metabtn"
            aria-expanded="false" aria-controls="lb-meta"
            aria-label="Metadaten anzeigen" title="Metadaten" hidden>${C.icon('InfoCircle', 'icon--md')}</button>
-        <button type="button" class="pf-lightbox__btn" data-act="share" aria-label="Bild teilen" title="Teilen">${C.icon('Share', 'icon--md')}</button>
-        <button type="button" class="pf-lightbox__btn" data-act="close" aria-label="Galerie schliessen" title="Schliessen">${C.icon('Cancel', 'icon--md')}</button>
+        <button type="button" class="pf-lightbox__btn interactive-control interactive-control--negative" data-act="share" aria-label="Bild teilen" title="Teilen">${C.icon('Share', 'icon--md')}</button>
+        <button type="button" class="pf-lightbox__btn interactive-control interactive-control--negative" data-act="close" aria-label="Galerie schliessen" title="Schliessen">${C.icon('Cancel', 'icon--md')}</button>
       </div>
     </div>
     ${/* Bühne und Metadaten teilen sich EINE Zeile innerhalb der Spalte. Vorher
@@ -116,7 +116,7 @@ export function openGallery(items, start, C, opts = {}) {
           einem 900px hohen Overlay, Bildunterkante unter dem Sichtfeld). */''}
     <div class="pf-lightbox__body">
       <div class="pf-lightbox__stage" data-el="stage">
-        ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--prev" data-act="prev" aria-label="Vorheriges Bild">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
+        ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--prev interactive-control" data-act="prev" aria-label="Vorheriges Bild">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
         ${/* Gescrollt wird NUR dieser innere Rahmen. Läge der Überlauf auf der
               Bühne, wanderten Zoomleiste und Blätterpfeile beim Scrollen mit dem
               Bild aus dem Blick — sie sind absolut in der Bühne positioniert. */''}
@@ -126,15 +126,15 @@ export function openGallery(items, start, C, opts = {}) {
             <img class="pf-lightbox__img" data-el="img" src="" alt="" decoding="async">
           </div>
         </div>
-        ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
+        ${multi ? `<button type="button" class="pf-lightbox__nav pf-lightbox__nav--next interactive-control" data-act="next" aria-label="Nächstes Bild">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
         <div class="viewer-toolbar viewer-toolbar--negative viewer-toolbar--horizontal pf-lightbox__zoom" role="group" aria-label="Zoom">
-          <button type="button" class="viewer-toolbar__button pf-lightbox__btn" data-act="zoom-out" data-el="zoomout"
+          <button type="button" class="viewer-toolbar__button pf-lightbox__btn interactive-control interactive-control--negative" data-act="zoom-out" data-el="zoomout"
             aria-label="Verkleinern" title="Verkleinern">${C.icon('Minus', 'icon--md')}</button>
           <output class="viewer-toolbar__readout pf-lightbox__zoom-val" data-el="zoomval" aria-live="off">100 %</output>
-          <button type="button" class="viewer-toolbar__button pf-lightbox__btn" data-act="zoom-in" data-el="zoomin"
+          <button type="button" class="viewer-toolbar__button pf-lightbox__btn interactive-control interactive-control--negative" data-act="zoom-in" data-el="zoomin"
             aria-label="Vergrössern" title="Vergrössern">${C.icon('Plus', 'icon--md')}</button>
           <span class="viewer-toolbar__separator pf-lightbox__zoom-sep" aria-hidden="true"></span>
-          <button type="button" class="viewer-toolbar__button pf-lightbox__btn" data-act="zoom-fit" data-el="zoomfit"
+          <button type="button" class="viewer-toolbar__button pf-lightbox__btn interactive-control interactive-control--negative" data-act="zoom-fit" data-el="zoomfit"
             aria-label="An Bildschirm anpassen" title="An Bildschirm anpassen">${C.icon('Expand', 'icon--md')}</button>
         </div>
       </div>

@@ -7,15 +7,35 @@
 @media (min-width:640px){ .tab__controls-container::after { width:var(--sp-20); } }
 .box .tab__controls-container::after { background:linear-gradient(to left, var(--color-secondary-50) 0%, var(--fade-subtle-transparent) 100%); }
 .box .tab__controls { border-bottom-color:var(--color-border-strong); }   /* CD tab.postcss:36-38: auf secondary-50 border-gray-300 */
-.tab__controls { display:flex; overflow-x:auto; overflow-y:hidden; white-space:nowrap;
+.tab__controls { position:relative; display:flex; overflow-x:auto; overflow-y:hidden; white-space:nowrap;
   border-bottom:var(--stroke-1) solid var(--color-border); -ms-overflow-style:none; scrollbar-width:none; }
 .tab__controls::-webkit-scrollbar { display:none; }
 .tab__control { position:relative; padding:var(--sp-4); background:none; border:0; margin:0;
   font:inherit; color:inherit; text-decoration:none; cursor:pointer; }
 .tab__control::after { content:""; display:block; height:var(--stroke-3); position:absolute;
   right:var(--sp-4); bottom:0; left:var(--sp-4); background:transparent; transition:background var(--duration-fast); }
-.tab__control--active::after, .tab__control:hover::after { background:var(--color-primary-500); }
-.tab__control:hover:not(.tab__control--active) { color:var(--color-primary-600); }
+.tab__control:where(.tab__control--active,[aria-selected="true"])::after,
+.tab__control:not(:where(:disabled,[aria-disabled="true"],.tab__control--disabled,.tab__control--loading,[aria-busy="true"],.tab__control--error,[aria-invalid="true"])):hover::after {
+  background:var(--color-primary-500); }
+.tab__control:not(:where(:disabled,[aria-disabled="true"],.tab__control--disabled,.tab__control--loading,[aria-busy="true"],.tab__control--error,[aria-invalid="true"],.tab__control--active,[aria-selected="true"])):hover {
+  color:var(--color-primary-600); }
+.tab__control:not(:where(:disabled,[aria-disabled="true"],.tab__control--disabled,.tab__control--loading,[aria-busy="true"],.tab__control--error,[aria-invalid="true"])):active {
+  color:var(--color-primary-700); }
+.tab__control:not(:where(:disabled,[aria-disabled="true"],.tab__control--disabled,.tab__control--loading,[aria-busy="true"],.tab__control--error,[aria-invalid="true"])):active::after {
+  background:var(--color-primary-700); }
+.tab__control:focus-visible { outline-offset:calc(-1 * var(--stroke-2)); }
+
+/* State contract. ARIA attributes carry semantics; BEM aliases cover static
+   rendering before those attributes are available. The inset focus outline is
+   not clipped by the horizontally scrolling tablist. */
+.tab__control:where(.tab__control--empty,[data-empty="true"]) { color:var(--color-text-muted); }
+.tab__control:where(.tab__control--loading,[aria-busy="true"]) { color:var(--color-text-muted); cursor:progress; pointer-events:none; }
+.tab__control:where(.tab__control--loading,[aria-busy="true"])::after { background:var(--color-primary-100); }
+.tab__control:where(.tab__control--error,[aria-invalid="true"]) { color:var(--color-error-text); }
+.tab__control:where(.tab__control--error,[aria-invalid="true"])::after { background:var(--color-error); }
+.tab__control:where(:disabled,[aria-disabled="true"],.tab__control--disabled) {
+  color:var(--color-gray-400); cursor:not-allowed; pointer-events:none; }
+.tab__control:where(:disabled,[aria-disabled="true"],.tab__control--disabled)::after { background:transparent; }
 .tab__control:first-child { padding-left:0; }
 .tab__control:first-child::after { left:0; }
 /* KEIN bold auf dem aktiven Reiter: das CD markiert allein über den 3px-Balken
@@ -35,9 +55,9 @@
    btn--base` → 44/48/52) — --control-h, nicht das starre --target-min. */
 .pagination__input { width:var(--sp-12); min-height:var(--control-h); text-align:center; padding:var(--sp-2); }
 .pagination__text { display:flex; align-items:center; white-space:nowrap; }
-.pagination_items { display:flex; align-items:center; gap:var(--sp-1); list-style:none; flex-wrap:wrap; white-space:nowrap; height:100%; }
-@media (min-width:1024px){ .pagination_items { gap:var(--sp-2); } }
-@media (min-width:1280px){ .pagination_items { gap:var(--sp-3); } }
+.pagination__items { display:flex; align-items:center; gap:var(--sp-1); list-style:none; flex-wrap:wrap; white-space:nowrap; height:100%; }
+@media (min-width:1024px){ .pagination__items { gap:var(--sp-2); } }
+@media (min-width:1280px){ .pagination__items { gap:var(--sp-3); } }
 /* CDs .pagination--right (pagination.postcss:29-31) lebt hier als
    .pagination-wrap--right (unten) — die Polsterrampe trägt .pagination-wrap. */
 

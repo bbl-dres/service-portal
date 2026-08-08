@@ -1,136 +1,11 @@
-/* Tables (table.postcss:5-135) */
-.table-wrapper { position:relative; overflow-x:auto; }
-/* Überlauf-Hinweis: nur sichtbar, wenn die Tabelle wirklich breiter ist als ihr
-   Kasten (Klasse von wireScrollRegions). sticky/left:0 hält ihn beim Scrollen. */
-.table-wrapper__hint { display:none; }
-.table-wrapper.is-scrollable > .table-wrapper__hint {
-  display:flex; align-items:center; gap:var(--sp-2);
-  position:sticky; left:0; width:max-content;
-  margin:var(--sp-2) 0 0; font-size:var(--text-sm); color:var(--color-text-muted); }
-.table-wrapper.is-scrollable > .table-wrapper__hint .icon { flex:none; }
-table.table { width:100%; border-collapse:collapse; background:var(--color-bg); box-shadow:var(--shadow-md);
-  border:var(--stroke-1) solid var(--color-border); }
-/* pre-line wie CD (table.postcss:13-15): mehrzeilige Legenden behalten ihre
-   gesetzten Umbrüche, lange Zeilen brechen weiter normal um. */
-table.table--caption caption { position:static; width:auto; height:auto; clip:auto; white-space:pre-line;
-  display:table-caption; caption-side:bottom; text-align:left; padding-top:var(--sp-2);
-  font-size:var(--text-xs); color:var(--color-text-muted); }
-/* Kein nowrap: CDs Kopfzellen dürfen umbrechen (table.postcss:37-42 setzt
-   align-top GENAU dafür); Identifikatorspalten pinnt .text-nowrap gezielt.
-   Trennlinie unter dem Kopf in text-300 wie ALLE Zeilenlinien (table.postcss:45-50). */
-table.table thead th { background:var(--color-secondary-50); text-align:left; padding:var(--sp-4) var(--sp-6);
-  font-size:var(--text-sm); text-transform:uppercase; color:var(--color-gray-700);
-  border-bottom:var(--stroke-1) solid var(--color-border-strong); vertical-align:top; }
-table.table td, table.table tbody th { padding:var(--sp-4) var(--sp-6); border-bottom:var(--stroke-1) solid var(--color-border-strong);
-  vertical-align:top; font-size:var(--text-base); color:var(--color-gray-600); }
-/* EINE Schriftstärke in der ganzen Zeile. Das erste Feld bleibt semantisch ein
-   `<th scope="row">` — Hilfsmittel brauchen den Zeilenkopf, um beim Vorlesen
-   einer Zelle zu sagen, zu welcher Zeile sie gehört. Es wird nur nicht mehr
-   fett und nicht mehr dunkler gesetzt: der Fettdruck hat in Listenansichten
-   ganze Beschreibungstexte erfasst und liess jede Tabelle wie eine Rangliste
-   aussehen. Auszeichnung übernimmt jetzt allein die Ausrichtung — Text links,
-   Zahlen rechts. */
-table.table tbody th { text-align:left; font-weight:var(--fw-regular); color:var(--color-gray-600); }
-/* Summenzeile: das erste Feld (z. B. «Total (4)») ist ein <th> im <tfoot> und
-   fiel bisher durch beide Polster-Regeln (thead th / tbody th) — also linksbündig
-   ohne Einzug. Gleiches Zellpolster wie die übrigen Zeilen. */
-table.table tfoot th { padding:var(--sp-4) var(--sp-6); vertical-align:top; }
-/* Die Ausrichtungs-Utilities (.text-right/-center/-left) sind (0,1,0) und
-   verloren gegen `table.table thead th` (0,1,3) bzw. `table.table tbody th` —
-   die Kopfzeile blieb also linksbündig, während die Werte rechts standen.
-   Innerhalb der Tabelle mit passender Spezifität nachziehen, damit `align` in
-   C.table() Kopf UND Zelle gemeinsam ausrichtet. */
-table.table thead th.text-right, table.table tbody th.text-right, table.table td.text-right,
-table.table tfoot th.text-right, table.table tfoot td.text-right { text-align:right; }
-table.table thead th.text-center, table.table tbody th.text-center, table.table td.text-center,
-table.table tfoot th.text-center, table.table tfoot td.text-center { text-align:center; }
-table.table thead th.text-left, table.table tbody th.text-left, table.table td.text-left,
-table.table tfoot th.text-left, table.table tfoot td.text-left { text-align:left; }
-/* Die früheren Ausnahmen für `.small`, `.meta-info` und `<p>` im Zeilenkopf
-   sind entfallen: sie hoben den Fettdruck stellenweise wieder auf, den es
-   jetzt gar nicht mehr gibt. */
-table.table tbody tr:last-child td, table.table tbody tr:last-child th { border-bottom:0; }
-/* SPALTENBREITEN. Zahlenspalten (`align: 'right'`) schrumpfen auf ihren Inhalt
-   und brechen nicht um; die verbleibende Breite verteilt sich auf die
-   Textspalten. Damit stehen gleichartige Tabellen im ganzen Portal gleich
-   breit, ohne dass jede ihre Spalten von Hand vermessen muss. `width:1%` ist
-   dabei kein echtes Mass, sondern das übliche Signal an den Tabellensatz,
-   diese Spalte so schmal wie möglich zu halten.
-   Ziffern laufen auf Tabellenziffern, damit Beträge untereinander fluchten. */
-table.table td.text-right, table.table tbody th.text-right,
-table.table tfoot td.text-right, table.table tfoot th.text-right {
-  width:1%; white-space:nowrap; font-variant-numeric:tabular-nums; }
-table.table thead th.text-right { width:1%; }
-/* Reihenfolge ist hier die Korrektur: Zebra und Hover hatten dieselbe Spezifität
-   (0,2,3), Zebra stand zuletzt und gewann — auf den GERADEN Zeilen war Hover
-   wirkungslos. Hover kommt jetzt nach der Zebra-Regel und nutzt die nächste
-   Stufe, damit der Unterschied auch auf getönten Zeilen sichtbar ist. */
-table.table--zebra tbody tr:nth-child(even),
-table.table--zebra tfoot tr:nth-child(even) { background:var(--color-secondary-50); }
-/* … ausser die Tabelle steht SELBST auf secondary-50. Das CD kennt genau EINE
-   neutrale Fläche, und die benutzen beide: das getönte Abschnittsband
-   (.bg--secondary-50) und die Tabelle für Kopfzeile und Zebrastreifen. Liegt
-   das eine auf dem anderen, sind Streifen und Grund identisch — die Streifen
-   werden zu Löchern, durch die das Band scheint, und nur die ungeraden Zeilen
-   sehen aus wie Zeilen (Nutzerbefund 2026-08-06, Startseite «Meine offenen
-   Vorgänge»).
-   Statt eine zweite Tönung zu erfinden, gibt die Tabelle ihre eigene auf: sie
-   ist ohnehin schon eine weisse Karte mit Rahmen und Schatten, und Kopfzeile
-   wie Zeilen bleiben durch Trennlinien und den fetten Kopf unterscheidbar.
-   Gilt für JEDE Tabelle auf dem Band — der Fehler hing nur an der Verschachtelung,
-   nicht an der Seite. */
-.bg--secondary-50 table.table thead th,
-.bg--secondary-50 table.table--zebra tbody tr:nth-child(even),
-.bg--secondary-50 table.table--zebra tfoot tr:nth-child(even) { background:transparent; }
-/* Hover NUR auf klickbaren Zeilen — CDs Tabelle kennt keinen Zeilen-Hover
-   (table.postcss); eine statische Datentabelle darf keine Klickbarkeit signalisieren. */
-table.table--rows-clickable tbody tr:hover { background:var(--color-secondary-100); }
-/* Ganze Zeile klickbar (C.table `rowsClickable`): der Zeiger zeigt es an, die
-   Bedienung läuft aber weiter über den Link in der Zeile — deshalb steht hier
-   nur der Cursor und kein eigener Fokusstil. */
-table.table--rows-clickable tbody tr { cursor:pointer; }
-/* Klick-Hinweis am Zeilenende. Der Zeigefinger allein verrät die anklickbare
-   Zeile erst BEIM Überfahren — der Winkel sagt es vorher. Rein dekorativ
-   (`aria-hidden` bräuchte ein Element; ein ::after ist für AT ohnehin nicht
-   da), die Bedienung trägt weiterhin der echte Link in der ersten Zelle. */
-table.table--rows-clickable tbody td:last-child,
-table.table--rows-clickable tbody th:last-child { position:relative; padding-right:var(--sp-9); }
-table.table--rows-clickable tbody tr > :last-child::after {
-  content:""; position:absolute; right:var(--sp-3-5); top:50%; transform:translateY(-50%);
-  width:var(--sp-4); height:var(--sp-4); background-color:var(--color-text-muted);
-  -webkit-mask:url('../assets/icons/ChevronRight.svg') no-repeat center/contain;
-  mask:url('../assets/icons/ChevronRight.svg') no-repeat center/contain; }
-table.table--rows-clickable tbody tr:hover > :last-child::after { background-color:var(--color-primary-700); }
-/* Die Summenzeile im tfoot ist keine Zeile zum Anklicken. */
-table.table--rows-clickable tfoot tr > :last-child::after { content:none; }
-@media (hover:none){
-  table.table--rows-clickable tbody tr:hover { background:inherit; }
-  /* Zebra-Streifen überlebt das Antippen: die inherit-Regel oben würde ihn
-     sonst auf getippten geraden Zeilen löschen (beide Konsumenten sind Zebra). */
-  table.table--rows-clickable.table--zebra tbody tr:nth-child(even):hover { background:var(--color-secondary-50); }
-}
-/* Dichte + Umbruch auf schmalen Viewports (Item 2.11). tfoot th steht MIT in
-   der Liste: die Summenzeile schrumpft sonst nur in den Wertzellen (td), ihr
-   Beschriftungsfeld behielte als einzige Zelle das volle Polster. */
-@media (max-width:767.98px){
-  .table-wrapper table.table thead th,
-  .table-wrapper table.table td,
-  .table-wrapper table.table tbody th,
-  .table-wrapper table.table tfoot th { padding:var(--sp-2) var(--sp-3); font-size:var(--text-sm); }
-  table.table td:first-child a, table.table tbody th a { white-space:nowrap; }
-}
-/* table.table-Präfix: die Basisregeln tragen (0,1,1)+Element — ohne den Präfix
-   verlor --compact gegen sie und Rahmen/Schatten blieben stehen. */
-table.table--compact { border:0; box-shadow:none; }
-table.table--compact thead th, table.table--compact td, table.table--compact tbody th { padding:var(--sp-2); font-size:var(--text-sm); }
-
 /* Forms (form.postcss + input.postcss + select.postcss) */
 .form > * + * { margin-top:var(--sp-6); }
 .form__group { border:0; margin:0; padding:0; min-width:0; }
 .form__group__legend { margin-bottom:var(--sp-2); padding:0; }
 .form__group__input, .form__group__select { width:100%; display:flex; flex-direction:column; gap:var(--sp-2); }
 /* message/hint pills hug their text rather than stretching in the column */
-.form__group__input > .badge, .form__group__select > .badge { align-self:flex-start; }
+.form__group__input > .badge, .form__group__select > .badge {
+  align-self:flex-start; text-align:left; }
 /* .form__group__radio/__checkbox (form.postcss:19-22) exzidiert — beide ohne
    Konsument seit Einführung (Design-Review C10). */
 .form__group__input > label, .form__group__select > label {
@@ -194,13 +69,9 @@ input, select, textarea { font:inherit; width:100%; min-height:var(--input-h); p
   color:var(--color-text); box-shadow:var(--shadow); }
 input::placeholder, textarea::placeholder { color:var(--color-placeholder); }
 textarea { min-height:var(--sp-24); resize:vertical; line-height:var(--line-6); }
-.textarea--no-resize, textarea.input--no-resize { resize:none; }
 input:focus, select:focus, textarea:focus { outline:none; }
 input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
-input[disabled], select[disabled], textarea[disabled], .input--disabled {
-  background:var(--color-gray-50); color:var(--color-gray-400); border-color:var(--color-border-strong);
-  pointer-events:none; cursor:not-allowed; }
 /* Nur-Lese-Felder tragen einen ABGELEITETEN Wert (z. B. die Objektbezeichnung
    aus der Adresse). Sie sehen anders aus als deaktivierte Felder — der Wert ist
    gültig und wird gespeichert, er lässt sich hier bloss nicht ändern —, bleiben
@@ -219,16 +90,14 @@ input[type='search']::-webkit-search-decoration { display:none; }
 input[type='search']::-webkit-search-cancel-button {
   -webkit-appearance:none; appearance:none; width:var(--sp-4); height:var(--sp-4); margin-left:var(--sp-2); cursor:pointer;
   background-color:var(--color-text-muted);
-  -webkit-mask:url('../assets/icons/Cancel.svg') center/contain no-repeat;
-  mask:url('../assets/icons/Cancel.svg') center/contain no-repeat; }
+  -webkit-mask:url('../../assets/icons/Cancel.svg') center/contain no-repeat;
+  mask:url('../../assets/icons/Cancel.svg') center/contain no-repeat; }
 input[type='search']::-webkit-search-cancel-button:hover { background-color:var(--color-primary-600); }
 /* CD-Leadings (input.postcss:21-31): sm/base leading-6, lg leading-7. Textareas
    tragen die 1.5rem schon über die Basisregel; einzeilige sm/base-Felder wachsen
    damit auf 46px (24+20+2) — exakt wie CDs eigenes input--base. */
 .input--sm { font-size:var(--text-sm); line-height:var(--line-6); } .input--base { font-size:var(--text-base); line-height:var(--line-6); } .input--lg { font-size:var(--text-lg); line-height:var(--line-7); }
 .input--outline { border-color:var(--color-border-input); color:var(--color-text); }
-.input--error { color:var(--color-error-text); border-color:var(--color-error); }
-.input--error::placeholder { color:var(--color-error-400); }
 .input--negative { color:var(--color-text-negative); background:var(--color-secondary-500); border-color:var(--color-secondary-300); }
 .input--negative::placeholder { color:var(--color-secondary-50); }
 .input--negative option { background:var(--color-secondary-600); color:var(--color-text-negative); }
@@ -236,10 +105,31 @@ input[type='search']::-webkit-search-cancel-button:hover { background-color:var(
    Beschriftung FOLGT dem Feld), Negativ-Hover/-Disabled, Fehler auf Negativ-
    flächen. Fehlerrot über die dedizierten --color-error-*-Töne, damit es unter
    .body--intranet rot bleibt. */
-.input--error + label { color:var(--color-error-text); margin-right:var(--sp-3); }
-.input--negative:hover, .input--negative:focus { color:var(--color-text-300); }
-.input--negative:disabled, .input--negative.input--disabled { background:var(--color-secondary-300); color:var(--color-secondary-200); }
-.input--error.input--negative { color:var(--color-error-200); border-color:var(--color-error-300); }
+/* Interactive state contract. Empty is opt-in because an ordinary blank field
+   is the default form state; data-empty denotes an empty data-backed control,
+   not a validation failure. Error and disabled rules follow hover/active so
+   those semantic states always win the cascade. */
+:where(input,select,textarea):not(:where(:disabled,[aria-disabled="true"],[readonly],.input--disabled,.input--loading,[aria-busy="true"],.input--error,[aria-invalid="true"])):hover {
+  border-color:var(--color-primary-600); }
+:where(input,select,textarea):not(:where(:disabled,[aria-disabled="true"],[readonly],.input--disabled,.input--loading,[aria-busy="true"],.input--error,[aria-invalid="true"])):active {
+  border-color:var(--color-primary-700); }
+:where(input,select,textarea):is(.input--empty,[data-empty="true"]) {
+  color:var(--color-text-muted); background:var(--color-bg-subtle); }
+:where(input,select,textarea):is(.input--loading,[aria-busy="true"]) {
+  cursor:progress; background:var(--color-secondary-50); box-shadow:var(--state-ring-primary-soft); }
+:where(input,select,textarea):is(.input--error,[aria-invalid="true"]) {
+  color:var(--color-error-text); border-color:var(--color-error); }
+:where(input,select,textarea):is(.input--error,[aria-invalid="true"])::placeholder {
+  color:var(--color-error-400); }
+:is(.input--error,[aria-invalid="true"]) + label { color:var(--color-error-text); margin-right:var(--sp-3); }
+.input--negative:where(:hover,:active,:focus) { color:var(--color-text-300); }
+.input--negative:focus-visible { outline-color:var(--color-focus-ring-negative); }
+.input--negative:is(.input--error,[aria-invalid="true"]) { color:var(--color-error-200); border-color:var(--color-error-300); }
+:where(input,select,textarea):is(:disabled,[aria-disabled="true"],.input--disabled) {
+  background:var(--color-gray-50); color:var(--color-gray-400); border-color:var(--color-border-strong);
+  pointer-events:none; cursor:not-allowed; }
+.input--negative:is(:disabled,[aria-disabled="true"],.input--disabled) {
+  background:var(--color-secondary-300); color:var(--color-secondary-200); }
 
 /* Select (select.postcss:1-78) */
 .select { position:relative; }
@@ -251,11 +141,14 @@ input[type='search']::-webkit-search-cancel-button:hover { background-color:var(
   border-left:var(--stroke-1) solid var(--color-border-input); pointer-events:none;
   background:transparent; color:var(--color-text); }
 .select__icon svg { width:var(--sp-8); height:100%; fill:currentColor; display:block; }
-select:disabled, .input--disabled select { opacity:.4; }
-select:disabled + .select__icon, .input--disabled select + .select__icon { opacity:.4; }
-.input--error + .select__icon { color:var(--color-error-700); border-left-color:var(--color-error-400); }
+select:where(:disabled,[aria-disabled="true"],.input--disabled), .input--disabled select { opacity:.4; }
+select:where(:disabled,[aria-disabled="true"],.input--disabled) + .select__icon,
+.input--disabled select + .select__icon { opacity:.4; }
+select:where(.input--loading,[aria-busy="true"]) + .select__icon { color:var(--color-primary-600); }
+select:where(.input--empty,[data-empty="true"]) + .select__icon { color:var(--color-text-muted); }
+select:where(.input--error,[aria-invalid="true"]) + .select__icon { color:var(--color-error-700); border-left-color:var(--color-error-400); }
 .input--negative + .select__icon { color:var(--color-text-negative); border-left-color:var(--color-secondary-300); background:var(--color-secondary-500); }
-.input--error.input--negative + .select__icon { color:var(--color-error-200); border-left-color:var(--color-error-300); }   /* CD select.postcss:66-72 */
+.input--negative:where(.input--error,[aria-invalid="true"]) + .select__icon { color:var(--color-error-200); border-left-color:var(--color-error-300); }   /* CD select.postcss:66-72 */
 .select--bare { width:auto; display:inline-block; }
 /* Der bare Select steht in Werkzeugleisten NEBEN anderen Bedienelementen, nicht
    als eigene Formularzeile — der Zeilenabstand von `.form > .form__group > * + *`
@@ -278,15 +171,24 @@ input[type='checkbox']:checked, input[type='radio']:checked {
   background-color:var(--color-gray-700); background-repeat:no-repeat; background-position:center; }
 input[type='radio']:checked { background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='6' cy='6' r='3' fill='white'/%3E%3C/svg%3E"); }
 input[type='checkbox']:checked { background-image:url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 10 7' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9.2.29A1 1 0 0 1 9.2 1.7l-5 5a1 1 0 0 1-1.42 0l-2-2A1 1 0 0 1 2.2 3.29L3.5 4.59 7.79.29a1 1 0 0 1 1.41 0Z' fill='white'/%3E%3C/svg%3E"); }
-input[type='checkbox']:disabled, input[type='radio']:disabled { opacity:.4; }
+input:is([type='checkbox'],[type='radio']):is(:disabled,[aria-disabled="true"],.input--disabled) { opacity:.4; }
 /* CD-Grössenvarianten (input.postcss:95-108): sm h-3, lg h-4; Basis .9rem oben. */
 input[type='checkbox'].input--sm, input[type='radio'].input--sm { width:var(--sp-3); height:var(--sp-3); }
 input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:var(--sp-4); height:var(--sp-4); }
-/* CD form.postcss:25-27 + input.postcss:82: in der Checkbox-Zeile liefert schon
-   der flex-gap die 0.5rem — das mr-2 des Feldes käme dazu (1rem statt CDs
-   0.5rem). Die RADIO-Zeile behält ihr mr-2: dort ergeben gap+Rand CDs
-   effektive 1rem. (Beide Zeilenklassen sind derzeit ohne Konsumenten.) */
-.form__group__checkbox input[type='checkbox'] { margin-right:0; }
+input:is([type='checkbox'],[type='radio']):not(:where(:disabled,[aria-disabled="true"],.input--disabled,.input--loading,[aria-busy="true"],.input--error,[aria-invalid="true"])):where(:hover,:active) {
+  border-color:var(--color-primary-600); }
+input:is([type='checkbox'],[type='radio']):not(:where(:disabled,[aria-disabled="true"],.input--disabled,.input--loading,[aria-busy="true"],.input--error,[aria-invalid="true"])):active {
+  border-color:var(--color-primary-700); }
+input:is([type='checkbox'],[type='radio']):is(.input--empty,[data-empty="true"]) {
+  background-color:var(--color-bg-subtle); }
+input:is([type='checkbox'],[type='radio']):is(.input--loading,[aria-busy="true"]) {
+  cursor:progress; box-shadow:var(--state-ring-primary-soft); }
+input:is([type='checkbox'],[type='radio']):is(.input--error,[aria-invalid="true"]) {
+  border-color:var(--color-error); }
+input:is([type='checkbox'],[type='radio']):is(:disabled,[aria-disabled="true"],.input--disabled) {
+  background-color:var(--color-gray-50); border-color:var(--color-border-strong); }
+input:is([type='checkbox'],[type='radio']):checked:is(:disabled,[aria-disabled="true"],.input--disabled) {
+  background-color:var(--color-gray-700); }
 /* Ankreuzfelder im hohen Kontrast — muss DIREKT hinter der Basisregel stehen.
    `appearance:none` oben und `appearance:auto` hier haben dieselbe Spezifität;
    die spätere Regel gewinnt. Stand die Korrektur wie früher 1000 Zeilen weiter
@@ -299,4 +201,3 @@ input[type='checkbox'].input--lg, input[type='radio'].input--lg { width:var(--sp
   input[type='checkbox'], input[type='radio'] {
     -webkit-appearance:auto; appearance:auto; background-image:none; box-shadow:none; }
 }
-

@@ -399,7 +399,7 @@ function list(ctx) {
     // Navigation wird nicht unterstrichen — dieselbe Ausnahme nimmt die
     // Sprungleiste des API-Verzeichnisses (js/apps/api-docs.js).
     const leaf = (label, count, href, on) =>
-      `<li class="pf-tree__item"><a class="pf-tree__leaf plain-link${on ? ' is-active' : ''}" href="${href}"${
+      `<li class="pf-tree__item"><a class="pf-tree__leaf plain-link interactive-control${on ? ' is-active' : ''}" href="${href}"${
         on ? ' aria-current="true"' : ''}>${row(label, count)}</a></li>`;
     // Aufbau wie im Inventar: der Zweig IST der Knopf, das Chevron sitzt in ihm,
     // und ein Klick tut beides — er zeigt den ganzen Zweig und klappt ihn auf.
@@ -411,7 +411,7 @@ function list(ctx) {
     // Nutzer selbst klappt; dann gilt seine Entscheidung (OPEN, modulweit).
     const branch = (key, label, count, href, on, open, children) => `
       <li class="pf-tree__item">
-        <button type="button" class="pf-tree__node${on ? ' is-active' : ''}" data-branch="${key}"
+        <button type="button" class="pf-tree__node interactive-control${on ? ' is-active' : ''}" data-branch="${key}"
           data-href="${esc(href)}" aria-expanded="${open}" aria-controls="mc-branch-${key}">
           ${C.icon('ChevronRight', 'pf-tree__chev')}${row(label, count)}</button>
         <ul class="pf-tree__children" id="mc-branch-${key}"${open ? '' : ' hidden'}>${children}</ul>

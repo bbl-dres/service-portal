@@ -22,7 +22,7 @@
    Stacking-Context liegt über dem Inhalt (--z-content), aber unter dem
    Dokumentbetrachter (--z-viewer), damit der Knopf stets sichtbar
    ist, ohne Modale zu überdecken. */
-#main-footer { position:relative; z-index:var(--z-footer); }
+.site-footer { position:relative; z-index:var(--z-footer); }
 .footer-information { display:flex; flex-direction:column; color:var(--color-text-negative); padding-block:var(--section-py); }
 @media (min-width:1024px){ .footer-information { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-16); } }
 @media (min-width:1280px){ .footer-information { grid-template-columns:repeat(4,minmax(0,1fr)); } }
@@ -61,7 +61,7 @@
    Invertierung (grau → weiss) stand dem CD genau entgegen (nav/ft-2). */
 
 /* Page chrome */
-#main-content { min-height:50vh; flex:1 0 auto; position:relative; z-index:var(--z-content); }
+.site-main { min-height:50vh; flex:1 0 auto; position:relative; z-index:var(--z-content); }
 /* Lesbare Zeilenlänge (Item 2.18). CD erzwingt sie strukturell über
    container__center--*; .page-header und .detail-section sitzen aber nicht im
    12-Spalten-Raster, darum hier als Kappung. Gemessen bei 1440: Leads 133ch,
@@ -161,6 +161,6 @@
   aspect-ratio:16/9; object-fit:cover; }
 /* flex children must be allowed to shrink below their intrinsic width, or the
    row overflows the container (the old `.container{overflow-x:clip}` hid this) */
-.search__form input, .service-controls__search input { min-width:0; }
+.search__form input { min-width:0; }
 .row > * { min-width:0; }
 

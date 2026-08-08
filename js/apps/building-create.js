@@ -140,7 +140,7 @@ export default async function render(ctx) {
       <div class="map-picker" id="bc-picker">
         <div class="map-picker__canvas"></div>
         <div class="map-search">
-          <ul class="map-search__list" id="bc-listbox" role="listbox" aria-label="Adressvorschläge" hidden></ul>
+          <ul class="listbox listbox--map" id="bc-listbox" role="listbox" aria-label="Adressvorschläge" hidden></ul>
           <div class="map-search__field">
             ${/* sr-only-Label wie bei der CD-Suche (search.postcss): der Platz-
                   halter verschwindet beim Tippen und ist für manche Hilfsmittel
@@ -153,7 +153,7 @@ export default async function render(ctx) {
               aria-describedby="bc-address-hint${state.errors['bc-address'] ? ' bc-address-msg' : ''}"${state.errors['bc-address'] ? ' aria-invalid="true"' : ''}
               placeholder="Adresse suchen, z. B. Fellerstrasse 21 Bern"
               value="${C.escape(state.address)}">
-            <button type="button" class="map-search__clear" id="bc-clear" aria-label="Eingabe löschen"${state.address ? '' : ' hidden'}>
+            <button type="button" class="map-search__clear interactive-control" id="bc-clear" aria-label="Eingabe löschen"${state.address ? '' : ' hidden'}>
               ${C.icon('Cancel', 'icon--base')}</button>
           </div>
         </div>
@@ -344,7 +344,7 @@ export default async function render(ctx) {
     if (!box || !inp) return;
     if (!items.length) { closeList(); return; }
     box.innerHTML = items.map((it, n) =>
-      `<li class="map-search__option" role="option" id="bc-opt-${n}" aria-selected="false" data-idx="${n}">
+      `<li class="listbox__option" role="option" id="bc-opt-${n}" aria-selected="false" data-idx="${n}">
         ${C.icon('MapMarker', 'icon--sm')}<span>${C.escape(it.label)}</span></li>`).join('');
     addressCombobox.setItems(items);
   }

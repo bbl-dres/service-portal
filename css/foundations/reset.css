@@ -15,6 +15,7 @@ body {
   min-height:100vh; min-height:-webkit-fill-available;
   display:flex; flex-direction:column; transition:transform var(--duration-slowest);
 }
+/* The HTML hidden contract must win over every component display declaration. */
 [hidden] { display:none !important; }
 /* Inline-Element-Normalisierung (CD-Parität) */
 address { font-style:normal; }

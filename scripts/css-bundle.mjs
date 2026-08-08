@@ -21,9 +21,9 @@ export const LEGACY_APP_CSS = Object.freeze({
   sha256: '3558fec8a0ef7d7db7321b772ca0beebb5c71ba0476d70c5226a1d8e3c2f6bbd',
 });
 
-// These ranges are contiguous and exhaustive. Their order is the old app.css
-// cascade order, including temporary bridge files needed by relative url().
-export const CSS_SOURCE_ORDER = Object.freeze([
+// Immutable Step-1 proof manifest. These ranges are contiguous and exhaustive
+// in the retired app.css; they intentionally retain the temporary split names.
+export const LEGACY_SPLIT_ORDER = Object.freeze([
   { file: 'css/font-face.css', lines: [1, 40] },
   { file: 'css/foundations/reset.css', lines: [41, 64] },
   { file: 'css/foundations/typography.css', lines: [65, 114] },
@@ -52,14 +52,49 @@ export const CSS_SOURCE_ORDER = Object.freeze([
   { file: 'css/apps/room-booking.css', lines: [4604, Infinity], lazy: true },
 ]);
 
+// Production-free concatenation order for the current layered tree. Lazy
+// sheets sit at the same three cascade anchors used by js/css-loader.js.
+export const CSS_SOURCE_ORDER = Object.freeze([
+  'css/tokens.css',
+  'css/skins/intranet.css',
+  'css/foundations/reset.css',
+  'css/foundations/typography.css',
+  'css/foundations/elements.css',
+  'css/layouts/page.css',
+  'css/layouts/grid.css',
+  'css/navigations/header.css',
+  'css/navigations/drawer.css',
+  'css/layouts/shell.css',
+  'css/components/button.css',
+  'css/components/card.css',
+  'css/components/table.css',
+  'css/components/form.css',
+  'css/components/listbox.css',
+  'css/components/feedback.css',
+  'css/navigations/tabs.css',
+  'css/components/content.css',
+  'css/sections/search.css',
+  'css/sections/filter-panel.css',
+  'css/apps/dataportal.css',
+  'css/sections/catbar.css',
+  'css/sections/explorer.css',
+  'css/components/overlay.css',
+  'css/apps/portfolio.css',
+  'css/utilities.css',
+  'css/apps/archive.css',
+  'css/apps/floorplan.css',
+  'css/apps/workplace.css',
+  'css/apps/floorplan-editor.css',
+  'css/apps/room-booking.css',
+]);
+
 const digest = (buffer) => createHash('sha256').update(buffer).digest('hex');
 
 function concatenate() {
   const missing = CSS_SOURCE_ORDER
-    .map(({ file }) => file)
     .filter((file) => !existsSync(resolve(ROOT, file)));
   if (missing.length) throw new Error(`Missing CSS layer(s): ${missing.join(', ')}`);
-  return Buffer.concat(CSS_SOURCE_ORDER.map(({ file }) => readFileSync(resolve(ROOT, file))));
+  return Buffer.concat(CSS_SOURCE_ORDER.map((file) => readFileSync(resolve(ROOT, file))));
 }
 
 function splitLegacy() {
@@ -73,15 +108,15 @@ function splitLegacy() {
   for (let i = 0; i < source.length; i++) if (source[i] === 10) lineStarts.push(i + 1);
   const offset = (line) => Number.isFinite(line) ? (lineStarts[line - 1] ?? source.length) : source.length;
 
-  for (const { file, lines: [first, last] } of CSS_SOURCE_ORDER) {
+  for (const { file, lines: [first, last] } of LEGACY_SPLIT_ORDER) {
     const target = resolve(ROOT, file);
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, source.subarray(offset(first), offset(last + 1)));
   }
 
-  const rebuilt = concatenate();
+  const rebuilt = Buffer.concat(LEGACY_SPLIT_ORDER.map(({ file }) => readFileSync(resolve(ROOT, file))));
   if (!rebuilt.equals(source)) throw new Error('Split output does not reconstruct app.css byte-for-byte.');
-  console.log(`Split ${source.length} bytes into ${CSS_SOURCE_ORDER.length} ordered stylesheets.`);
+  console.log(`Split ${source.length} bytes into ${LEGACY_SPLIT_ORDER.length} ordered stylesheets.`);
 }
 
 const split = process.argv.includes('--split-legacy');
@@ -92,9 +127,13 @@ if (split) splitLegacy();
 
 const result = concatenate();
 const resultHash = digest(result);
-const isLegacyExact = result.length === LEGACY_APP_CSS.bytes && resultHash === LEGACY_APP_CSS.sha256;
-if (verifyLegacy && !isLegacyExact) {
-  throw new Error(`CSS concatenation differs: ${result.length} bytes, sha256 ${resultHash}`);
+if (verifyLegacy) {
+  const legacyPath = resolve(ROOT, 'css/app.css');
+  if (!existsSync(legacyPath)) throw new Error('Legacy source is absent; run this check at the Step-1 split commit.');
+  const source = readFileSync(legacyPath);
+  if (source.length !== LEGACY_APP_CSS.bytes || digest(source) !== LEGACY_APP_CSS.sha256) {
+    throw new Error('css/app.css is not the audited legacy source.');
+  }
 }
 
 if (outputArg) {
@@ -103,5 +142,5 @@ if (outputArg) {
   writeFileSync(output, result);
   console.log(`Wrote current ordered cascade to ${output}`);
 } else {
-  console.log(`CSS cascade: ${result.length} bytes, sha256 ${resultHash}${isLegacyExact ? ' (legacy exact)' : ''}`);
+  console.log(`CSS cascade: ${result.length} bytes, sha256 ${resultHash}`);
 }

@@ -56,8 +56,8 @@
 .fp-print-foot { display:none; }
 /* Der Betrachter im nativen Vollbild — er füllt dort den Schirm und braucht
    den weissen Grund, den das Element sonst vom Seitenhintergrund erbt. */
-#fp-wrap:fullscreen { background:var(--color-bg); padding:var(--sp-4) var(--sp-5); overflow:auto; }
-#fp-wrap:fullscreen .fp-viewer { height:auto; }
+.fp-wrap:fullscreen { background:var(--color-bg); padding:var(--sp-4) var(--sp-5); overflow:auto; }
+.fp-wrap:fullscreen .fp-viewer { height:auto; }
 /* Geschosswahl trägt jetzt CDs `.tag-item` — die Chip-Komponente, die auch die
    Katalogfilter verwenden. Der eigene `.fp-floors__chip` mit voller
    Markenfläche im aktiven Zustand ist entfallen: er war ein zweites Chip-
@@ -164,7 +164,7 @@
      Weg: Geschosswahl, Viewer-Aktionen, die Editor-Aktionskarte und das
      Raumdetail samt seinen Dienstleistungs-Kurzwegen — Bedienelemente drucken
      nicht mit. */
-  .fp-floors, .fp-color, .fp-head__actions, .fp-back, .fp-editor-action, #fp-room { display:none; }
+  .fp-floors, .fp-color, .fp-head__actions, .fp-back, .fp-editor-action, .fp-room-host { display:none; }
   .fp-head { position:static; }
   .fp-stage { overflow:visible; padding:0; background:none; border:0; }
   .fp-viewer { display:block; }
@@ -177,15 +177,15 @@
      im Raster, eine `:not()`-Liste auf Geschwistern träfe ihn also gar nicht.
      `visibility` vererbt sich und lässt sich am Ziel wieder einschalten — das
      Standardverfahren, um genau einen Teilbaum zu drucken. `position:absolute`
-     holt ihn an den Blattanfang (Bezug: `#main-content{position:relative}`).
+     holt ihn an den Blattanfang (Bezug: `.site-main{position:relative}`).
      Ziel ist der Rumpf des Grundriss-Reiters — die Reiterleiste selbst und
      alles andere bleiben unsichtbar. */
-  body.print--plan #main-content { visibility:hidden; }
+  body.print--plan .site-main { visibility:hidden; }
   body.print--plan .floorplan-body { visibility:visible; position:absolute; inset:0 0 auto 0; margin:0; }
   body.print--plan .floorplan-body * { visibility:visible; }
 }
 
 /* Leerzeile einer Datentabelle: mittig gesetzt, damit sie als Zustand lesbar
    ist und nicht wie ein leerer erster Datensatz. */
-table.table .table__empty { text-align:center; padding-top:var(--sp-8); padding-bottom:var(--sp-8); }
+.table .table__empty { text-align:center; padding-top:var(--sp-8); padding-bottom:var(--sp-8); }
 

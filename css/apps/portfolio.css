@@ -2,8 +2,8 @@
    Links das Hauptbild auf voller Höhe, rechts ein 2x2-Raster. Jede Kachel ist ein
    eigener Knopf und öffnet die Galerie bei genau ihrem Bild; die letzte Nebenkachel
    trägt bei mehr als fünf Bildern die Auflage «Alle Bilder anzeigen». */
-/* BEWUSSTE ABWEICHUNG (Rundung): CD-abgeleitete Medien (card__image, hero__image,
-   detail-image) bleiben ECKIG wie im CD; die PORTAL-EIGENEN Medienkompositionen —
+/* BEWUSSTE ABWEICHUNG (Rundung): CD-abgeleitete Karten- und Hero-Medien bleiben
+   ECKIG wie im CD; die PORTAL-EIGENEN Medienkompositionen —
    Mosaik, Karten (.pf-map/.dash-map/.map-picker), .med-shot — tragen durchgängig
    radius-lg, dieselbe Kartenrundung wie die Dashboard-Chrome (Superset-Muster).
    Nicht stückweise «korrigieren»: entweder alle Portal-Medien oder keines. */
@@ -119,25 +119,6 @@
   width:var(--target-min); height:var(--target-min); border:0; background:none; cursor:pointer;
   color:var(--color-text-muted); border-radius:var(--radius); }
 .map-search__clear:hover { color:var(--color-primary-600); }
-/* Liste über dem Feld: `order` dreht die optische Reihenfolge, ohne die
-   DOM-Reihenfolge zu ändern — Feld zuerst im Quelltext wäre für die
-   Combobox-Semantik falsch (aria-controls zeigt vorwärts auf die Liste). */
-.map-search__list { order:-1; margin:0; padding:var(--sp-1); list-style:none;
-  max-height:13rem; overflow-y:auto; background:var(--color-bg);
-  border:var(--stroke-1) solid var(--color-secondary-300);
-  border-radius:var(--radius); box-shadow:var(--shadow-lg); }   /* Chrome = .suggest (EIN Listbox-Rezept, C12) */
-.map-search__option { display:flex; align-items:center; gap:var(--sp-2);
-  min-height:var(--target-min); padding:var(--sp-2) var(--sp-3); border-radius:var(--radius-sm); cursor:pointer;
-  font-size:var(--text-sm); line-height:var(--lh-snug); }
-.map-search__option .icon { flex:none; color:var(--color-text-muted); }
-.map-search__option:hover { background:var(--color-secondary-50); }
-.map-search__option[aria-selected="true"] { background:var(--color-primary-100); }
-/* Tastatur-aktive Zeile im CD-Listbox-Stil (multiselect.postcss:70-71: text-600,
-   Schrift invertiert) — die Sekundärfläche war als aria-activedescendant-Cue zu
-   schwach und von Hover nicht unterscheidbar. Steht NACH aria-selected, damit
-   die Fokusposition auch auf der bereits gewählten Zeile sichtbar bleibt. */
-.map-search__option.is-active { background:var(--color-gray-600); color:var(--color-text-negative); }
-.map-search__option.is-active .icon { color:inherit; }
 /* Stecknadel: Kreis mit Spitze, in der Primärfarbe der aktiven Marke. */
 .map-pin { width:var(--sp-6); height:var(--sp-6); border-radius:50% 50% 50% 0;
   transform:rotate(-45deg); background:var(--color-primary-600);
@@ -270,23 +251,13 @@
 /* Metadaten-Panel — standardmässig eingeklappt, per Knopf in der Kopfzeile.
    Ab 768px als Spalte NEBEN der Bühne (das Bild bleibt sichtbar), darunter als
    Band darüber; auf dem Telefon wäre eine dritte Spalte nicht lesbar. */
-.pf-lightbox__meta { flex:0 0 auto; overflow-y:auto; max-height:40vh;
-  padding:calc(var(--lb-top) + var(--sp-4)) var(--sp-5) var(--sp-4); background:var(--surface-negative); color:var(--color-text-negative);
-  border-top:var(--stroke-1) solid var(--border-negative); }
-.pf-lightbox__meta-title { margin:0 0 var(--sp-2); font-size:var(--text-sm); font-weight:var(--fw-bold);
-  text-transform:none; color:var(--text-negative-muted); }
-.pf-lightbox__meta .kv { margin:0; color:var(--color-text-negative); }
-.pf-lightbox__meta .kv dt { color:var(--text-negative-muted); }
-.pf-lightbox__meta .kv dd { color:var(--color-text-negative); }
+.pf-lightbox__meta { padding:calc(var(--lb-top) + var(--sp-4)) var(--sp-5) var(--sp-4); }
 /* Der Meta-Knopf ist ein echter .btn--outline-negative (btn.postcss:87-98) —
    keine Ad-hoc-Geistervariante mit 16%-Weiss-Rand mehr (die lag unter 3:1). */
-.pf-lightbox__meta .btn { margin-top:var(--sp-3); }
 @media (min-width:768px){
   /* Bühne und Panel nebeneinander — im .pf-lightbox__body, NICHT indem das
      Overlay selbst zur Zeile wird: dann verliert die Bühne ihre feste Höhe. */
   .pf-lightbox__body { flex-direction:row; }
-  .pf-lightbox__meta { flex:0 0 20rem; max-height:none;
-    border-top:0; border-left:var(--stroke-1) solid var(--border-negative); }
 }
 .pf-lightbox__img { display:block; max-width:100%; max-height:100%; object-fit:contain; }
 /* z-index: .pf-lightbox__canvas ist positioniert und steht im Quelltext NACH
@@ -299,4 +270,3 @@
   background:var(--surface-lightbox-control); color:var(--color-text); cursor:pointer; transition:background var(--duration-fast); }
 .pf-lightbox__nav:hover { background:var(--color-bg); }
 .pf-lightbox__nav--prev { left:var(--sp-3); } .pf-lightbox__nav--next { right:var(--sp-3); }
-.pf-lightbox__count { flex:none; color:var(--color-secondary-200); font-size:var(--fs-sm); }

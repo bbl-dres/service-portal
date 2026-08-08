@@ -23,5 +23,5 @@
   border-block:var(--stroke-1) solid var(--color-secondary-200); }
 .booking-bar__grid { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-4); align-items:end; }
 .booking-bar__grid > * { min-width:0; margin:0; }
-.booking-bar__location__row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--sp-2); align-items:center; }
-.booking-bar__location__row .select { min-width:0; }
+.booking-bar__location-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--sp-2); align-items:center; }
+.booking-bar__location-row .select { min-width:0; }

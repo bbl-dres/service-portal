@@ -47,9 +47,9 @@ export function createWorkbenchViews(context) {
         <span aria-current="page">${C.escape(floor.label)}</span>
       </nav>
       <div class="fpe-context__panel-mobile" role="group" aria-label="Seitenpanels">
-        <button class="btn btn--bare btn--sm btn--icon-only${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left-mobile" type="button" data-action="toggle-left"
+        <button class="btn btn--bare btn--sm btn--icon-only fpe-panel-toggle fpe-panel-toggle--mobile${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left-mobile" type="button" data-action="toggle-left"
           aria-label="${leftPanelLabel}" title="${leftPanelLabel}" aria-pressed="${leftOpen}"${leftPanelUnavailable ? ' disabled' : ''}>${panelToggleIcon('left')}</button>
-        <button class="btn btn--bare btn--sm btn--icon-only${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right-mobile" type="button" data-action="toggle-right"
+        <button class="btn btn--bare btn--sm btn--icon-only fpe-panel-toggle fpe-panel-toggle--mobile${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right-mobile" type="button" data-action="toggle-right"
           aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" title="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
       </div>
       <span class="fpe-version">${C.escape(versionLabel)}</span>
@@ -80,9 +80,9 @@ export function createWorkbenchViews(context) {
            <button class="btn btn--outline btn--sm fpe-context__edit-action" id="fpe-end-edit" type="button" data-action="end-edit"><span class="btn__text">Beenden</span></button>`
         : `<button class="btn btn--filled btn--sm btn--icon-right fpe-context__start-edit" id="fpe-start-edit" type="button" data-action="start-edit">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Bearbeiten</span></button>`}
       <span class="fpe-header__divider" aria-hidden="true"></span>
-      <button class="btn btn--bare btn--sm btn--icon-only${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left" type="button" data-action="toggle-left"
+      <button class="btn btn--bare btn--sm btn--icon-only fpe-panel-toggle fpe-panel-toggle--desktop${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left" type="button" data-action="toggle-left"
         aria-label="${leftPanelLabel}" title="${leftPanelLabel}" aria-pressed="${leftOpen}"${leftPanelUnavailable ? ' disabled' : ''}>${panelToggleIcon('left')}</button>
-      <button class="btn btn--bare btn--sm btn--icon-only${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right" type="button" data-action="toggle-right"
+      <button class="btn btn--bare btn--sm btn--icon-only fpe-panel-toggle fpe-panel-toggle--desktop${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right" type="button" data-action="toggle-right"
         aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" title="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
     </div>`;
   }
@@ -319,11 +319,11 @@ export function createWorkbenchViews(context) {
     const keyboardAttributes = viewMode === '2d' ? ' aria-describedby="fpe-stage-help" tabindex="0"' : ' tabindex="-1"';
     return `<section class="fpe-stage${directPan ? ' is-pan-ready' : ''}" id="fpe-stage" aria-label="Plan-Arbeitsfläche"${keyboardAttributes}>
       ${viewMode === '2d' ? `<p class="sr-only" id="fpe-stage-help">${keyboardHelp}</p>` : ''}
-      <div id="fpe-toolbar-host"${viewMode === '2d' ? '' : ' class="fpe-toolbar-host--three"'}>${toolbarHTML()}</div>
-      <div id="fpe-structure-menu-host">${structureMenuHTML()}</div>
+      <div class="fpe-toolbar-host${viewMode === '2d' ? '' : ' fpe-toolbar-host--three'}" id="fpe-toolbar-host">${toolbarHTML()}</div>
+      <div class="fpe-structure-menu-host" id="fpe-structure-menu-host">${structureMenuHTML()}</div>
       <div class="fpe-scene${viewMode === '2d' ? '' : ' fpe-scene--three'}" id="fpe-scene">${sceneContentHTML()}</div>
-      <div id="fpe-view-nav-host">${viewNavigationHTML()}</div>
-      <div id="fpe-view-actions-host">${viewActionsHTML()}</div>
+      <div class="fpe-view-nav-host" id="fpe-view-nav-host">${viewNavigationHTML()}</div>
+      <div class="fpe-view-actions-host" id="fpe-view-actions-host">${viewActionsHTML()}</div>
       <div class="fpe-scale" id="fpe-scale" aria-hidden="true"${viewMode === '2d' ? '' : ' hidden'}><span></span><i></i></div>
       <div class="fpe-measure-result" role="status"${measurementLabel(measurement || {}) ? '' : ' hidden'}>${C.escape(measurementLabel(measurement || {}))}</div>
     </section>`;
@@ -426,7 +426,7 @@ export function createWorkbenchViews(context) {
         ${leftPanelHTML()}${stageHTML()}${inspectorHTML()}
         <button class="fpe-panel-backdrop" type="button" data-action="close-panels" tabindex="-1" aria-hidden="true" aria-label="Seitenpanel schliessen"></button>
       </div>
-      <div id="fpe-color-menu-host">${colorMenuHTML()}</div>
+      <div class="fpe-color-menu-host" id="fpe-color-menu-host">${colorMenuHTML()}</div>
       ${prototypeFooterHTML()}
     </div>`;
   }

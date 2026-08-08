@@ -16,8 +16,8 @@ const type = async (text) => p.evaluate(`(async () => {
     rolle: i.getAttribute('role'),
     controls: i.getAttribute('aria-controls'),
     sichtbar: l ? !l.hidden : null,
-    n: l ? l.querySelectorAll('.suggest__item').length : 0,
-    erste: l?.querySelector('.suggest__title')?.textContent,
+    n: l ? l.querySelectorAll('.listbox__option').length : 0,
+    erste: l?.querySelector('.listbox__title')?.textContent,
     listRolle: l?.getAttribute('role'),
   });
 })()`);
@@ -29,7 +29,7 @@ const key = async (k) => p.evaluate(`(async () => {
   const l = document.querySelector('#home-q-suggest');
   return JSON.stringify({
     aktiv: i.getAttribute('aria-activedescendant'),
-    markiert: l?.querySelector('.suggest__item.is-active .suggest__title')?.textContent || null,
+    markiert: l?.querySelector('.listbox__option.is-active .listbox__title')?.textContent || null,
     offen: i.getAttribute('aria-expanded'),
     hash: location.hash,
   });

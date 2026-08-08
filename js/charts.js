@@ -565,7 +565,7 @@ export function wireCharts(root) {
 
 /* -------------------------------------------------------- fullscreen ------- */
 // «Vollbild» (Item 6.12): läuft über das kanonische Modal (C.openModal, Grösse
-// xl) statt über das frühere eigene .chart-overlay — EINE Dialog-Anatomie für
+// xl) statt über das frühere chart-spezifische Overlay — EINE Dialog-Anatomie für
 // alle Dialoge; Fokusfalle, Escape, Backdrop-Klick und Fokus-Rückgabe verdrahtet
 // openModal. Der Titel wandert in den Modal-Kopf (weiss auf dem Scrim, CD-
 // Anatomie), darum verliert der Klon seinen eigenen Kopf samt Kebab-Menü.

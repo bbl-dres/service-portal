@@ -6,11 +6,11 @@ const b = await launch({ port: 9351, webgl: true });
 const p = await openPage(b, APP_BASE + '/app/projects');
 await sleep(2200);
 console.log('Übersicht:', await p.evaluate(`(() => {
-  const chips = document.querySelector('.pf-card__chips');
+  const chips = document.querySelector('.card__chips');
   return JSON.stringify({
     karten: document.querySelectorAll('.grid .card').length,
     pillRows: document.querySelectorAll('.grid .pill-row').length,
-    chips: [...(chips?.querySelectorAll('.pf-card__land') || [])].map(x => x.textContent),
+    chips: [...(chips?.querySelectorAll('.card__chip') || [])].map(x => x.textContent),
     erstesBild: !!document.querySelector('.card__image img'),
     baumLaender: [...document.querySelectorAll('.pf-tree > .pf-tree__item > .pf-tree__node .pf-tree__label')].map(x => x.textContent),
     zahl: document.querySelector('#pj-count, .catbar__count')?.textContent.replace(/\\s+/g,' ').trim(),

@@ -149,7 +149,7 @@ function overview(ctx) {
   function pjCard(o) {
     return C.card({
       title: o.name, desc: o.teaser, href: links.bauprojekt(o.id),
-      // Projektnummer als Kennzeile unter dem Titel (`idLine`, .pf-card__id) —
+      // Projektnummer als Kennzeile unter dem Titel (`idLine`, .card__identifier) —
       // wie die bbl_id im Inventar; der CD-Fuss trägt links die SIA-Phase und
       // rechts den Pfeil (footerInfo/footerAction wie Inventar und Mietende).
       idLine: o.projectNumber,
@@ -448,7 +448,7 @@ function detail(ctx, id) {
     });
     if (!galleryItems.length) return `<div class="mt-4">${bild}</div>`;
     return `<div class="pj-hero">
-      <button type="button" class="pj-hero__btn" data-gallery="0"
+      <button type="button" class="pj-hero__btn interactive-control" data-gallery="0"
         aria-label="Bildergalerie öffnen — ${galleryItems.length} Aufnahme${galleryItems.length === 1 ? '' : 'n'}">${bild}</button>
     </div>`;
   }

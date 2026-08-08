@@ -247,7 +247,7 @@ function detail(ctx, id) {
       backHref: '#/data/catalog', backLabel: 'Datenbezug und API Verzeichnis',
       title: t(d.title), lead: t(d.description),
       tags: tagPills,
-      image: img ? `<img class="hero-media--16x9" src="${img}" alt="" loading="lazy">` : '',
+      image: img ? `<img class="hero-media hero-media--16x9" src="${img}" alt="" loading="lazy">` : '',
     })}
 
     ${/* Artikel-Wrapper: das Blatt liest als EINE 60rem-Spalte (Mass am

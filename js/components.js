@@ -225,13 +225,13 @@ function pageHeader({ title, lead, leadHtml }) {
 function card(o) {
   // `chips`: kurze Merkmale ALS AUFLAGE auf dem Bild statt als Pillenzeile im
   // Kartenkörper — dasselbe Muster wie die Galerie des Liegenschaften-Inventars
-  // (`.pf-card__chips`, portfolio.js). Sinnvoll für Angaben, die man beim
+  // (`.card__chips`). Sinnvoll für Angaben, die man beim
   // Überfliegen des Rasters mitliest (Land, Status) und die im Text nur Platz
   // vor Titel und Beschreibung wegnehmen würden. `.card__image` ist bereits
   // `position:relative`, die Auflage braucht deshalb keinen eigenen Kasten.
   const chips = (o.chips || []).filter(Boolean);
   const overlay = chips.length
-    ? `<div class="pf-card__chips">${chips.map((c) => `<span class="pf-card__land">${escape(c)}</span>`).join('')}</div>`
+    ? `<div class="card__chips">${chips.map((c) => `<span class="card__chip">${escape(c)}</span>`).join('')}</div>`
     : '';
   // `media` = fertiges Medien-HTML des Aufrufers (RAW — er escaped selbst): die
   // Explorer-Galerie braucht ihren eigenen Vis-Block (16:10-Kachel, Parzellen-
@@ -274,8 +274,8 @@ function card(o) {
       <div class="card__body">
         <${tag} class="card__title">${titleInner}</${tag}>
         ${/* `idLine`: Kennungszeile in Mono direkt unter dem Titel (bbl_id,
-              Projektnummer) — Rezept der Explorer-Galerie (.pf-card__id). */''}
-        ${o.idLine ? `<p class="pf-card__id">${escape(o.idLine)}</p>` : ''}
+              Projektnummer) — gemeinsames Kartenrezept (.card__identifier). */''}
+        ${o.idLine ? `<p class="card__identifier">${escape(o.idLine)}</p>` : ''}
         ${o.badges ? `<div class="pill-row">${o.badges.join('')}</div>` : ''}
         ${o.desc ? `<p class="card__description">${escape(o.desc)}</p>` : ''}
       </div>
@@ -782,7 +782,7 @@ function detailBar({ backHref, backLabel } = {}) {
 function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt = '', w = 800, ratio = '' } = {}) {
   if (!src && !id) return '';
   const ratioClass = { '16x9': 'photo--16x9', '4x3': 'photo--4x3', '21x9': 'photo--21x9' }[ratio]
-    || 'hero-media--natural';
+    || 'hero-media hero-media--natural';
   return `<figure class="hero__figure">${photo({ src, id, color, alt, w, cls: ratioClass })}</figure>`;
 }
 
@@ -1006,7 +1006,7 @@ export function notification(text, variant = 'info', iconName = 'InfoCircle', op
   const role = opts.live ? ((variant === 'error' || variant === 'alert') ? 'alert' : 'status') : '';
   if (opts.dismissible) ensureNotificationClose();
   const close = opts.dismissible
-    ? `<button type="button" class="notification__close" aria-label="Hinweis schliessen" data-notification-close>${icon('Cancel', 'icon--md')}</button>`
+    ? `<button type="button" class="notification__close interactive-control" aria-label="Hinweis schliessen" data-notification-close>${icon('Cancel', 'icon--md')}</button>`
     : '';
   const cls = `notification notification--${variant}${opts.dismissible ? ' notification--dismissible' : ''}`;
   return `<div class="${cls}"${role ? ` role="${role}"` : ''}>${icon(iconName, 'notification__icon')}<div class="notification__content">${text}</div>${close}</div>`;
@@ -1397,7 +1397,7 @@ function pagination({ page, totalPages, href, inputId, label = 'Seitennavigation
         <input id="${inputId}" class="pagination__input input--outline input--base" type="text" inputmode="numeric"
           value="${page}" autocomplete="off">
         <div class="pagination__text">von ${totalPages} Seiten</div>
-        <ul class="pagination_items">
+        <ul class="pagination__items">
           ${control(page - 1, 'Vorherige Seite', 'ChevronLeft', page === 1, 'prev')}
           ${control(page + 1, 'Nächste Seite', 'ChevronRight', page === totalPages, 'next')}
         </ul>
@@ -1504,7 +1504,7 @@ function viewSwitch(view = 'gallery', items = [['gallery', 'Galerieansicht', 'Ap
     // Stabile id (aus den Daten, feste Reihenfolge): der Router stellt den Fokus
     // nach einem Zustandswechsel per `document.getElementById(activeId)` her —
     // ohne id war activeId '' und der Fokus fiel auf <body> (WCAG 2.4.3).
-    return `<button type="button" class="view-switch__btn" id="view-${escape(key)}" data-view="${key}"
+    return `<button type="button" class="view-switch__btn interactive-control" id="view-${escape(key)}" data-view="${key}"
       aria-pressed="${on}" aria-label="${escape(label)}" title="${escape(label)}">${icon(iconName, 'icon--md')}</button>`;
   };
   return `<div class="view-switch" role="group" aria-label="Ansicht">
@@ -1841,7 +1841,7 @@ export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', tr
   // WAS er aufklappt (menuIds sind je Seite eindeutig, s. Aufrufer).
   const popupId = `${menuId}-popup`;
   return `<div class="action-menu" data-menu="${escape(menuId)}">
-    <button type="button" class="action-menu__trigger${triggerClass ? ' ' + triggerClass : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="${escape(popupId)}" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
+    <button type="button" class="action-menu__trigger interactive-control${triggerClass ? ' ' + triggerClass : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="${escape(popupId)}" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
     <div class="action-menu__popup action-menu__popup--${align}" id="${escape(popupId)}" role="menu" aria-label="${escape(label)}" hidden>${items.map(row).join('')}</div>
   </div>`;
 }
@@ -2070,7 +2070,7 @@ function wireCatalogueState(mount, {
 // — die Pillenreihe darunter behält ihr «Alle Filter zurücksetzen» (sie räumt
 // auch Suche und Baum-Auswahl ab). `wrap:''` für Panels mit eigener Aktionszeile
 // (Dashboards: .filter-panel__actions).
-function panelReset({ href = '', id = '', label = 'Filter zurücksetzen', wrap = 'catbar__panel__actions' } = {}) {
+function panelReset({ href = '', id = '', label = 'Filter zurücksetzen', wrap = 'catbar__panel-actions' } = {}) {
   const inner = `${icon('Refresh', 'btn__icon icon--base')}<span class="btn__text">${escape(label)}</span>`;
   const ctl = href
     ? `<a class="btn btn--bare btn--sm btn--icon-left" href="${escape(href)}">${inner}</a>`

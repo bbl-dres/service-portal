@@ -51,7 +51,7 @@ function suggestIndex(core) {
 export function attachSuggest(input, form, core, C) {
   const listId = input.id + '-suggest';
   const list = document.createElement('ul');
-  list.className = 'suggest';
+  list.className = 'listbox listbox--suggest';
   list.id = listId;
   list.setAttribute('role', 'listbox');
   list.setAttribute('aria-label', 'Suchvorschläge');
@@ -59,7 +59,7 @@ export function attachSuggest(input, form, core, C) {
   // Das Feld liegt in einem Flex-Container; die Liste gehört unter das FELD,
   // nicht unter die Zeile mit dem Knopf.
   const anchor = input.parentElement;
-  anchor.classList.add('suggest-anchor');
+  anchor.classList.add('listbox-anchor');
   anchor.appendChild(list);
 
   let items = [];
@@ -77,9 +77,9 @@ export function attachSuggest(input, form, core, C) {
     items = runSearch(suggestIndex(core), q).slice(0, MAX);
     if (!items.length) return close();
     list.innerHTML = items.map((r, i) => `
-      <li class="suggest__item" role="option" id="${listId}-${i}" aria-selected="false" data-i="${i}">
-        <span class="suggest__title">${C.escape(r.title)}</span>
-        <span class="suggest__meta">${C.escape(r.art)}${r.desc ? ' · ' + C.escape(r.desc) : ''}</span>
+      <li class="listbox__option" role="option" id="${listId}-${i}" aria-selected="false" data-i="${i}">
+        <span class="listbox__title">${C.escape(r.title)}</span>
+        <span class="listbox__meta">${C.escape(r.art)}${r.desc ? ' · ' + C.escape(r.desc) : ''}</span>
       </li>`).join('');
     controller.setItems(items);
   };

@@ -53,7 +53,7 @@ console.log(`   (aus data/: ${BAUTEN.length} Gebäude + ${PARZELLEN.length} Grun
       document.querySelector('[data-view="gallery"]').click(); await s(300);
       r.galCards = document.querySelectorAll('.pf-gallery .pf-card').length;
       r.galPag = (document.querySelector('#pf-count') || {}).textContent || '';   // CD header: «N von M Objekte · Seite X von Y»
-      r.hasCdPag = !!document.querySelector('.pagination-wrap .pagination_items');
+      r.hasCdPag = !!document.querySelector('.pagination-wrap .pagination__items');
       // Sort dropdown reorders the gallery (bare CD select: 4 selectable opts + 1 disabled «Sortieren» hint)
       const firstCard = () => { const t = document.querySelector('.pf-gallery .pf-card .card__title'); return t ? t.textContent.trim() : ''; };
       r.sortOpts = document.querySelectorAll('#pf-sort option:not([disabled])').length;

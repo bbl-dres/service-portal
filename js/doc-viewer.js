@@ -223,11 +223,11 @@ export function openDocumentViewer(doc, siblings, options = {}) {
     </div>
     <div class="docviewer__body">
       <div class="docviewer__main">
-        ${many ? `<button class="docviewer__nav docviewer__nav--prev" type="button" data-act="prev" aria-label="Vorheriges Dokument" title="Vorheriges Dokument">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
+        ${many ? `<button class="docviewer__nav docviewer__nav--prev interactive-control interactive-control--negative" type="button" data-act="prev" aria-label="Vorheriges Dokument" title="Vorheriges Dokument">${C.icon('ChevronLeft', 'icon--lg')}</button>` : ''}
         <div class="docviewer__stage" tabindex="0" aria-label="Dokumentseiten">
           <div class="docviewer__pages">${pages}</div>
         </div>
-        ${many ? `<button class="docviewer__nav docviewer__nav--next" type="button" data-act="next" aria-label="Nächstes Dokument" title="Nächstes Dokument">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
+        ${many ? `<button class="docviewer__nav docviewer__nav--next interactive-control interactive-control--negative" type="button" data-act="next" aria-label="Nächstes Dokument" title="Nächstes Dokument">${C.icon('ChevronRight', 'icon--lg')}</button>` : ''}
       </div>
       <aside class="docviewer__meta" id="docviewer-meta"${showMeta ? '' : ' hidden'}>
         <h2 class="docviewer__meta-title">Metadaten</h2>
@@ -237,9 +237,9 @@ export function openDocumentViewer(doc, siblings, options = {}) {
       </aside>
     </div>
     <div class="viewer-toolbar viewer-toolbar--negative viewer-toolbar--horizontal docviewer__toolbar" role="group" aria-label="Zoom-Steuerung">
-      <button class="viewer-toolbar__button docviewer__zoom" type="button" data-act="zoom-out" aria-label="Verkleinern" title="Verkleinern">${C.icon('Minus', 'icon--sm')}</button>
-      <button class="viewer-toolbar__button viewer-toolbar__readout docviewer__zoom docviewer__zoom--reset" type="button" data-act="zoom-reset" aria-label="Zoom zurücksetzen" title="Zoom zurücksetzen"><span data-zoom-readout>100%</span></button>
-      <button class="viewer-toolbar__button docviewer__zoom" type="button" data-act="zoom-in" aria-label="Vergrössern" title="Vergrössern">${C.icon('Plus', 'icon--sm')}</button>
+      <button class="viewer-toolbar__button docviewer__zoom interactive-control interactive-control--negative" type="button" data-act="zoom-out" aria-label="Verkleinern" title="Verkleinern">${C.icon('Minus', 'icon--sm')}</button>
+      <button class="viewer-toolbar__button viewer-toolbar__readout docviewer__zoom docviewer__zoom--reset interactive-control interactive-control--negative" type="button" data-act="zoom-reset" aria-label="Zoom zurücksetzen" title="Zoom zurücksetzen"><span data-zoom-readout>100%</span></button>
+      <button class="viewer-toolbar__button docviewer__zoom interactive-control interactive-control--negative" type="button" data-act="zoom-in" aria-label="Vergrössern" title="Vergrössern">${C.icon('Plus', 'icon--sm')}</button>
     </div>`;
 
     stage = backdrop.querySelector('.docviewer__stage');

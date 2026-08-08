@@ -161,7 +161,7 @@ export default async function render(ctx) {
     const chips = [landName(o.land), o.status]
       .filter(Boolean).map((c) => `<span class="pf-card__land">${esc(c)}</span>`).join('');
     // C.card statt einer handgerollten Karte (Design-Review A11): Stretched-Link,
-    // card--default und die Kennzeile (`idLine` → .pf-card__id) kommen aus der
+    // card--default und die Kennzeile (`idLine` → .card__identifier) kommen aus der
     // einen Quelle. Eigen bleibt nur der Vis-Block (16:10-Foto bzw. Parzellen-
     // Schraffur samt Chips-Auflage), der als `media` hineingeht — die Klassen
     // .pf-card/__vis/__chips/__land/__id bleiben unverändert (test-gepinnt).

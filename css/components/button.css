@@ -15,30 +15,31 @@
 .btn--icon-only, .btn--full-width { justify-content:center; }
 .btn__text          { padding-block:var(--sp-2); text-align:left; overflow-wrap:anywhere; }
 .btn__text-centered { padding-block:var(--sp-2); text-align:center; width:100%; overflow-wrap:anywhere; }
-.btn:hover { text-decoration:none; }
+.btn:where(:hover,:active) { text-decoration:none; }
 .btn--outline { background:transparent; border-color:var(--color-primary-600); color:var(--color-primary-600); }
-.btn--outline:hover { background:transparent; border-color:var(--color-primary-700); color:var(--color-primary-700); }
-.btn--outline[disabled] { color:var(--color-secondary-300); border-color:var(--color-secondary-200); opacity:1; }
+.btn--outline:where(:hover,:active) { border-color:var(--color-primary-700); color:var(--color-primary-700); }
+.btn--outline:active { background:var(--color-primary-50); }
 .btn--filled { background:var(--color-secondary-500); border-color:var(--color-secondary-500); color:var(--color-text-negative); font-weight:var(--fw-bold); }
-.btn--filled:hover { background:var(--color-secondary-500); border-color:var(--color-secondary-500); color:var(--color-secondary-100); }
-.btn--filled[disabled] { background:var(--color-secondary-200); border-color:var(--color-secondary-200); color:var(--color-text-negative); opacity:1; }
+.btn--filled:hover { color:var(--color-secondary-100); }
+.btn--filled:active { background:var(--color-secondary-600); border-color:var(--color-secondary-600); color:var(--color-text-negative); }
 .btn--bare { background:none; border:0; color:var(--color-secondary-800); padding-left:var(--sp-2); padding-right:var(--sp-2); }   /* border:0 wie die übrigen randlosen Varianten (CD btn--bare kennt keinen Rand) */
-.btn--bare:hover { background:none; color:var(--color-primary-600); }
+.btn--bare:where(:hover,:active) { color:var(--color-primary-600); }
+.btn--bare:active { color:var(--color-primary-700); }
 /* Negativ-Varianten (auf dunklem Grund, z. B. Top-Bar/Footer) — CD btn.postcss:78-109 */
 .btn--outline-negative { background:var(--color-secondary-500); border-color:var(--color-text-negative); color:var(--color-text-negative); font-weight:var(--fw-bold); }
 .btn--outline-negative:hover { background:var(--color-secondary-500); border-color:var(--color-secondary-100); color:var(--color-secondary-100); }
-.btn--outline-negative[disabled] { color:var(--color-secondary-200); border-color:var(--color-secondary-300); background:transparent; }
+.btn--outline-negative:active { background:var(--color-secondary-600); border-color:var(--color-text-negative); color:var(--color-text-negative); }
 .btn--bare-negative { background:none; border:0; color:var(--color-text-negative); }   /* behält CDs px-4 — nur .btn--bare hat px-2 (btn.postcss:28,101-109) */
 .btn--bare-negative:hover { background:none; color:var(--color-secondary-100); }
-.btn--bare-negative[disabled] { color:var(--color-secondary-200); }
+.btn--bare-negative:active { color:var(--color-secondary-50); }
 /* Link-Varianten behalten die volle CD-Höhenrampe (btn.postcss:112-117 gilt für
    JEDE Variante) — min-height:0 drückte das Tippziel auf ~27px. CD-Padding pr-2 pl-0. */
 .btn--link-negative { background:none; border:0; color:var(--color-text-negative); text-decoration:underline; text-underline-offset:var(--stroke-2); padding:0 var(--sp-2) 0 0; }
 .btn--link-negative:hover { color:var(--color-secondary-100); }
-.btn--link-negative[disabled] { color:var(--color-secondary-200); background:transparent; }
+.btn--link-negative:active { color:var(--color-secondary-50); }
 .btn--link { background:none; border:0; color:var(--color-primary-600); padding:0 var(--sp-2) 0 0; }
 .btn--link:hover { color:var(--color-primary-700); }   /* CD btn.postcss:38-41: Hover dunkelt (600→700), unterstreicht nie */
-.btn--link[disabled], .btn--bare[disabled] { color:var(--color-secondary-300); background:transparent; }
+.btn--link:active { color:var(--color-primary-800); }
 .btn--sm { min-height:var(--control-size-compact); font-size:var(--text-sm); line-height:var(--line-4); }
 /* btn.postcss:171-191 — icon-left nudges the icon; btn--back floats the button
    out of the text flow. `.back-link-row` gives that float something to clear. */
@@ -60,7 +61,6 @@
 @media (max-width:1023.98px), (pointer:coarse), (hover:none){
   .btn--sm { min-height:var(--target-min); }
 }
-.btn[disabled] { cursor:not-allowed; }
 /* Symbole im Knopf wachsen mit dem Knopf — beabsichtigt und stärker (0,2,0) als
    jede .icon--*-Grössenklasse (0,1,0). Ein `icon('X','icon--base')` INNERHALB
    eines Knopfes bleibt darum wirkungslos; wer eine eigene Grösse braucht,
@@ -86,17 +86,55 @@
 .access-card__action > .btn { width:100%; justify-content:space-between; text-align:left; }
 .access-card__action > .btn.btn--icon-left { justify-content:flex-start; gap:var(--sp-2); }
 
-/* Nicht verfügbare Ziele werden als <span aria-disabled> gerendert — ein span
-   nimmt kein [disabled], deshalb müssen die Selektoren beides abdecken, sonst
-   sehen tote Links wie lebende aus (docs/design-review.md P0-7).
-   EIN Disabled-Rezept wie bei [disabled]: Text secondary-300 / Rand
-   secondary-200 (CD btn.postcss:21-24 usw.) — nie opacity, nie eine eigene
-   dritte Farbstufe. */
-.btn--icon-only[aria-disabled="true"] { color:var(--color-secondary-300); border-color:var(--color-secondary-200); cursor:not-allowed; pointer-events:none; }
-.btn[aria-disabled="true"] { cursor:not-allowed; }
-.btn--link[aria-disabled="true"], .btn--bare[aria-disabled="true"] { color:var(--color-secondary-300); text-decoration:none; }
-.btn--outline[aria-disabled="true"] { color:var(--color-secondary-300); border-color:var(--color-secondary-200); }
-.btn[aria-disabled="true"]:hover { color:var(--color-secondary-300); text-decoration:none; }
+/* State contract. Native/ARIA attributes are the preferred API; BEM aliases
+   support non-native hosts. Focus keeps CDs default colours and the global
+   purple ring, with the lighter CD ring on negative chrome. */
+.btn--outline:focus-visible { color:var(--color-primary-600); border-color:var(--color-primary-600); }
+.btn--filled:focus-visible { color:var(--color-text-negative); }
+.btn:where(.btn--outline-negative,.btn--bare-negative,.btn--link-negative):focus-visible {
+  color:var(--color-text-negative); outline-color:var(--color-focus-ring-negative); }
+.btn--outline-negative:focus-visible { border-color:var(--color-text-negative); }
+
+.btn:is(.btn--empty,[data-empty="true"]) {
+  color:var(--color-text-muted); background:var(--color-secondary-50); border-color:var(--color-secondary-200); }
+.btn:is(.btn--loading,[aria-busy="true"]) {
+  cursor:progress; pointer-events:none; box-shadow:var(--state-ring-primary-soft); }
+.btn:is(.btn--error,[aria-invalid="true"]) {
+  color:var(--color-error-text); border-color:var(--color-error); }
+.btn--filled:is(.btn--error,[aria-invalid="true"]) { background:var(--color-error-bg-subtle); }
+.btn:where(.btn--outline-negative,.btn--bare-negative,.btn--link-negative):is(.btn--error,[aria-invalid="true"]) {
+  color:var(--color-error-200); border-color:var(--color-error-300); }
+/* Nicht verfügbare Ziele werden auch als <span aria-disabled> gerendert. Das
+   gemeinsame Rezept entspricht CD btn.postcss:21-24; der native Zustand, das
+   ARIA-Attribut und der BEM-Modifier haben deshalb dieselbe Darstellung. */
+.btn:is(:disabled,[aria-disabled="true"],.btn--disabled) {
+  cursor:not-allowed; pointer-events:none; opacity:1; text-decoration:none; }
+.btn--outline:is(:disabled,[aria-disabled="true"],.btn--disabled) {
+  color:var(--color-secondary-300); border-color:var(--color-secondary-200); background:transparent; }
+.btn--filled:is(:disabled,[aria-disabled="true"],.btn--disabled) {
+  color:var(--color-text-negative); border-color:var(--color-secondary-200); background:var(--color-secondary-200); }
+.btn:where(.btn--bare,.btn--link):is(:disabled,[aria-disabled="true"],.btn--disabled) {
+  color:var(--color-secondary-300); background:transparent; }
+.btn:where(.btn--outline-negative,.btn--bare-negative,.btn--link-negative):is(:disabled,[aria-disabled="true"],.btn--disabled) {
+  color:var(--color-secondary-200); background:transparent; }
+.btn--outline-negative:is(:disabled,[aria-disabled="true"],.btn--disabled) {
+  border-color:var(--color-secondary-300); }
+
+/* State carrier for bespoke controls whose shape belongs to another block
+   (viewer arrows, tree rows, media tiles). Their component keeps default and
+   hover visuals; this one low-specificity contract supplies the shared target,
+   active, focus, disabled, loading, error and empty behavior. */
+.interactive-control { min-width:var(--target-min); min-height:var(--target-min); }
+.interactive-control:active { filter:brightness(.85); }
+.interactive-control[aria-invalid="true"] { outline:var(--stroke-2) solid var(--color-error); }
+.interactive-control:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
+.interactive-control--negative:focus-visible { outline-color:var(--color-focus-ring-negative); }
+.interactive-control:is(:disabled,[aria-disabled="true"],.interactive-control--disabled) {
+  cursor:not-allowed; opacity:.55; pointer-events:none; }
+.interactive-control:is([aria-busy="true"],.interactive-control--loading) {
+  cursor:progress; opacity:.7; pointer-events:none; }
+.interactive-control:is([data-empty="true"],.interactive-control--empty) {
+  cursor:default; opacity:.55; }
 .download-item[aria-disabled="true"] { cursor:not-allowed; opacity:.65; }
 .download-item[aria-disabled="true"]:hover { background:transparent; }
 .download-item[aria-disabled="true"]:hover .download-item__title { color:inherit; text-decoration:none; }

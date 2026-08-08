@@ -357,61 +357,6 @@
      zwischen 639 und 640 eine Lücke, in der keine von beiden griff. */
 }
 
-/* ============================================================================
-   INTRANET SKIN (css/skins/intranet.postcss)
-   Applied via <body class="body--intranet">. Primary becomes the blue ramp;
-   secondary 50-300 stay grey while 400-900 become blue. The "Intranet" badge
-   after the logo title is rendered by CD's own rule (see app.css).
-   ========================================================================== */
-.body--intranet {
-  --color-primary-50:  #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-
-  /* light secondary colors are grey */
-  --color-secondary-50:  #f0f4f7;
-  --color-secondary-100: #dfe4e9;
-  --color-secondary-200: #acb4bd;
-  --color-secondary-300: #828e9a;
-
-  /* dense secondary colors are blue */
-  --color-secondary-400: #5076b3;
-  /* Re-Deklaration nötig, damit die Kopplung wirklich greift: var() in Custom
-     Properties wird EAGER auf dem deklarierenden Element substituiert — die
-     :root-Definition friert sonst beim Default-Wert #596978 ein (gemessen).
-     #5076b3 auf Weiss = 4.58:1, AA. */
-  --color-placeholder: var(--color-secondary-400);
-  --color-secondary-500: #234dc2;
-  --color-secondary-600: #1e40af;
-  --color-secondary-700: #1e3a8a;
-  --color-secondary-800: #1c3c7d;
-  --color-secondary-900: #1c3c7d;
-}
-
-/* ============================================================================
-   FREEBRAND SKIN (css/skins/freebrand.postcss) — <body class="body--freebrand">.
-   Green primary + muted-green secondary; completes CD's three-skin architecture
-   so a co-branded tenant switches via one body class exactly as CD does.
-   ========================================================================== */
-.body--freebrand {
-  --color-primary-50:  #eaffe9; --color-primary-100: #d3ebd2; --color-primary-200: #bdd8bc;
-  --color-primary-300: #a7c4a6; --color-primary-400: #91b191; --color-primary-500: #7c9f7c;
-  --color-primary-600: #678d67; --color-primary-700: #537b54; --color-primary-800: #3e6940; --color-primary-900: #2a582e;
-  --color-secondary-50:  #efffee; --color-secondary-100: #b0beb0; --color-secondary-200: #768176;
-  --color-secondary-300: #404941; --color-secondary-400: #758874; --color-secondary-500: #6a7f69;
-  --color-secondary-600: #5f755f; --color-secondary-700: #546c55; --color-secondary-800: #49634b; --color-secondary-900: #3e5a41;
-  /* --color-placeholder folgt sonst secondary-400 — hier wäre das #758874 =
-     3.80:1 auf Weiss (unter AA). Eine dunklere Stufe: #5f755f = 5.0:1. */
-  --color-placeholder: var(--color-secondary-600);
-}
-
 /* Responsive ramps — CD steps at xs 480 / sm 640 / lg 1024 / xl 1280 / 3xl 1920
    (css/foundations/typography.postcss:18-57 und grids.postcss:25-56,
    gegen das kompilierte Bundle geprüft) */

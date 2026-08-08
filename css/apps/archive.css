@@ -9,28 +9,6 @@
 .docviewer__bar { position:relative; z-index:var(--z-local-popover); display:flex; align-items:center; flex:none;
   justify-content:space-between; gap:var(--sp-4); padding:var(--sp-3) var(--sp-4);
   background:var(--color-secondary-900); border-bottom:var(--stroke-1) solid var(--border-negative); }
-/* EIN Dunkel-Chrome-Rezept für BEIDE Vollbild-Betrachter (Dokumentvorschau +
-   Bildergalerie) — Gruppenselektoren statt der früheren Kopie im Lightbox-
-   Block, die bereits gedriftet war (Design-Review A12). Aufgelöste Drifts:
-   Kopfzeilen-Icon und Subzeile einheitlich text-negative-muted/text-xs,
-   Fokusring einheitlich INSET (-2px — die Leisten kleben an Fensterkanten,
-   ein Aussenring würde dort beschnitten). 44px-Ziel, radius-sm,
-   surface-negative-Hover; der frühere primary-600-Hover wechselte mit dem
-   Skin die Farbe — Chrome ist markenneutral. */
-.docviewer__heading, .pf-lightbox__heading { display:flex; align-items:center; gap:var(--sp-3); min-width:0; }
-.docviewer__heading-icon, .pf-lightbox__heading-icon { color:var(--text-negative-muted); flex:none; }
-.docviewer__heading-text, .pf-lightbox__heading-text { min-width:0; }   /* Titel dürfen kürzen */
-.docviewer__title, .pf-lightbox__title { margin:0; color:var(--color-text-negative); font-weight:var(--fw-bold); font-size:var(--text-base);
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.docviewer__sub, .pf-lightbox__sub { margin:0; color:var(--text-negative-muted); font-size:var(--text-xs); }
-.docviewer__docnum { white-space:nowrap; }
-.docviewer__actions, .pf-lightbox__actions { display:flex; align-items:center; gap:var(--sp-1); flex:none; }
-.docviewer__btn, .pf-lightbox__btn { display:inline-flex; align-items:center; justify-content:center;
-  width:var(--target-min); height:var(--target-min); padding:0; background:none; border:0; border-radius:var(--radius-sm);
-  color:var(--color-text-negative); cursor:pointer; transition:background var(--duration-fast); }
-.docviewer__btn:hover, .pf-lightbox__btn:hover { background:var(--surface-negative-hover); }
-.docviewer__btn.is-active { background:var(--surface-negative-active); }
-.docviewer__btn:focus-visible, .pf-lightbox__btn:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
 .docviewer__body { display:flex; flex:1 1 auto; flex-direction:column; min-height:0; }
 .docviewer__main { position:relative; flex:1 1 auto; min-width:0; min-height:0;
   overflow:auto; background:var(--color-secondary-800); }
@@ -50,20 +28,9 @@
 
 /* Metadaten folgen dem Muster des Bildbetrachters: auf kleinen Viewports als
    begrenztes Band, ab md als feste Spalte neben der Vorschau. */
-.docviewer__meta { flex:0 0 auto; overflow-y:auto; max-height:40vh; padding:var(--sp-4) var(--sp-5);
-  container-type:inline-size;
-  background:var(--surface-negative); color:var(--color-text-negative);
-  border-top:var(--stroke-1) solid var(--border-negative); }
-.docviewer__meta-title { margin:0 0 var(--sp-2); color:var(--text-negative-muted);
-  font-size:var(--text-sm); font-weight:var(--fw-bold); }
-.docviewer__meta .kv { margin:0; color:var(--color-text-negative); }
-.docviewer__meta .kv dt { color:var(--text-negative-muted); }
-.docviewer__meta .kv dd { color:var(--color-text-negative); }
-.docviewer__meta .btn { margin-top:var(--sp-3); }
+.docviewer__meta { padding:var(--sp-4) var(--sp-5); container-type:inline-size; }
 @media (min-width:768px){
   .docviewer__body { flex-direction:row; }
-  .docviewer__meta { flex:0 0 20rem; max-height:none; border-top:0;
-    border-left:var(--stroke-1) solid var(--border-negative); }
   .docviewer--meta-open .docviewer__toolbar { left:calc((100% - 20rem) / 2); }
   .docviewer--meta-open .docviewer__nav--next { right:21rem; }
 }

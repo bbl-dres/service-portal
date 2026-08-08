@@ -65,7 +65,7 @@ export default async function render(ctx) {
 
   function resultTable(rows) {
     return C.table({ zebra: true, caption: 'Bauwerksdokumentation', columns: [
-      { key: 'title', label: 'Dokument', render: r => `<button type="button" class="doc-open" data-doc="${esc(r.docId)}" aria-label="${esc(documentFileName(r))} öffnen"><span>${esc(documentFileName(r))}</span></button>` },
+      { key: 'title', label: 'Dokument', render: r => `<button type="button" class="doc-open interactive-control" data-doc="${esc(r.docId)}" aria-label="${esc(documentFileName(r))} öffnen"><span>${esc(documentFileName(r))}</span></button>` },
       { key: 'type', label: 'KBOB-Typ', render: r => esc(typeLabel(r)) },
       { key: 'building', label: 'Gebäude', render: r => { const bid = (r.linkedTo || [])[0]; const b = bid ? core.building(bid) : null; return b ? esc(b.name) : '<span class="muted">—</span>'; } },
       { key: 'year', label: 'Jahr', align: 'right', render: r => esc(r.year) },

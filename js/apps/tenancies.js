@@ -587,7 +587,7 @@ function detail(ctx, id) {
     // nur die Zeichnung dasteht.
     const farbLabel = (COLOR_MODES.find((m) => m.value === colorMode) || {}).label || '';
     return `
-      <div id="fp-wrap">
+      <div class="fp-wrap" id="fp-wrap">
         <div class="fp-head">
           <div class="fp-head__top">
             ${/* Auch der Rücksprung trägt sein echtes Ziel (wie die Geschoss-
@@ -635,7 +635,7 @@ function detail(ctx, id) {
               <h4 class="fp-side__title">Einfärbung: ${C.escape(farbLabel)}</h4>
               ${floorplanLegend(spaces, colorMode)}
             </div>`}
-            <div id="fp-room">${roomPanel(sel)}</div>
+            <div class="fp-room-host" id="fp-room">${roomPanel(sel)}</div>
           </div>
         </div>
         ${/* Nur im Druck sichtbar: das Blatt trägt sonst keinen Bezug — eine

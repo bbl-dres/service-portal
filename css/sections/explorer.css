@@ -1,127 +1,3 @@
-/* ── Kompakte Katalogleiste (catbar) — geteilt: Portfolio, Dienstleistungen,
-   Datenbezug, Anwendungen. Eine Zeile: Suche + Trefferzahl links; hinter EINER
-   Trennlinie rechts Sortierung, Filter-Umschalter und Ansichtswechsel. Der Filter
-   öffnet ein einklappbares Panel darunter (nimmt die früheren Filter-Dropdowns auf). */
-.catbar { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4); margin-top:var(--sp-5);
-  padding-bottom:var(--sp-2); border-bottom:var(--stroke-1) solid var(--color-secondary-300); font-size:var(--text-sm); }
-/* Anatomie (Lupe im Feld, absoluter Submit) oben im «In-page search»-Block;
-   hier nur die Unterschiede. */
-.catbar__search { flex:1 1 15rem; min-width:11rem; max-width:24rem; }
-/* BEWUSSTE AUSNAHME von der Feld-Rampe: die Katalogleiste ist eine kompakte
-   Werkzeugzeile — Feld, Sortier-Select, Filter- und Ansichtsknöpfe teilen die
-   feste 44px-Höhe (--target-min), damit die Zeile auf keiner Breite springt.
-   Das WEICHT vom CD ab: dort wachsen Knöpfe ab xl auf 48px (btn.postcss:112-117)
-   und Felder ab 2xl auf 48px (input.postcss:1-16) — bewusst nicht übernommen. */
-.catbar__search input { min-height:var(--target-min); }
-.catbar__submit { top:0; bottom:0; }
-.catbar__count { color:var(--color-text-muted); white-space:nowrap; }
-/* CD hält die Trefferzahl regular (search.postcss:215-217) — wie unsere eigene
-   .search-results__header-Zeile; nur die Tinte bleibt dunkler als der Suffix. */
-.catbar__count strong { font-weight:var(--fw-regular); color:var(--color-text); }
-/* Steuerungscluster rechts (bare Controls, CD-Muster): Sortierung · Filter · │ ·
-   Ansichtswechsel. Alle Controls gleich hoch (--target-min); die EINE
-   Trennlinie ist der View-Switch-Strich zwischen Filter und Ansichtswechsel. */
-/* Die Gruppe hatte kein flex-wrap und kein min-width:0, sodass bares Sort-Select
-   + nowrap-Filter + Ansichtswechsel eine unteilbare 402-520px-Zeile bildeten.
-   .container{overflow-x:clip} (CDs eigene Regel, container.postcss:8) hat den
-   Überhang dann ohne Scrollbalken abgeschnitten — bei 320 lagen BEIDE
-   Ansichtsknöpfe ausserhalb, bei 390 der zweite (WCAG 1.4.10 + 2.1.1).
-   CDs Pendant ist ausdrücklich umbrechend (search.postcss:208-211). */
-.catbar__controls { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-1);
-  margin-left:auto; min-width:0; max-width:100%; }
-/* Ohne Suchfeld (Suchergebnisse): Trefferzahl links, Steuerung rechts — CDs
-   `.search-results__header` (flex, justify-between, ml-auto rechts). */
-.catbar--no-search .catbar__count { flex:1 1 auto; }
-.catbar__sort { position:relative; min-width:0; max-width:100%; }
-.catbar__sort select { max-width:100%; text-overflow:ellipsis; }
-/* CD richtet das Sortier-Select im Ergebniskopf RECHTS aus
-   (search.postcss:229-233 `.search-results__header__right select { text-right }`).
-   Der frühere Kommentar entschied dagegen, weil kurze Optionen dann am Rand
-   kleben — das `padding-right` für das Chevron liefert diesen Abstand aber
-   bereits. Nur dort links, wo wir das Feld auf Mobil vollbreit ziehen. */
-.catbar__sort select { text-align:right; }
-@media (max-width:767.98px){ .catbar__sort select { text-align:left; } }
-/* BEWUSSTE ABWEICHUNG vom CD: rechtsbündige Optionen klebten in der aufgeklappten
-   Liste direkt an der Kante des Popups (das CD setzt `text-right` ohne Polsterung).
-   Chromium respektiert `padding` auf <option> in der Popup-Liste, also gibt es hier
-   denselben optischen Rand wie im geschlossenen Zustand. */
-/* Optionsfarbe explizit setzen: das bare Select erbt nur `color` auf dem
-   <select>; die <option> selbst hat keine eigene Farbe und keinen deckenden
-   Hintergrund. Manche Browser vererben die Select-Farbe NICHT in die native
-   Popup-Liste und zeichnen die Optionen dann hell auf hell (unlesbar). Deshalb
-   hier — wie beim .language-switcher select — Textfarbe und weisser Grund direkt
-   an der Option. */
-.catbar__sort select option { padding-right:var(--sp-3); color:var(--color-text); background:var(--color-bg); }
-.catbar__sort select option:disabled { color:var(--color-gray-400); }
-/* CD-Padding (px-4) links; rechts Platz für das Chevron (der zugleich den Abstand
-   für die rechtsbündige Ausrichtung oben liefert). */
-.catbar__sort select { min-height:var(--target-min); padding-left:var(--sp-4); padding-right:var(--sp-7); font-size:var(--text-sm); color:var(--color-text); }
-.catbar__sort .select__icon { color:var(--color-text-muted); }
-.catbar__filter { min-height:var(--target-min); white-space:nowrap; }
-.catbar__fcount { margin-left:var(--sp-1); font-weight:var(--fw-bold); }
-/* Im Knopf-Kontext notiert, sonst gewinnt «.btn .icon» (0,2,0) und der Pfeil
-   erschiene mit 1.4em deutlich zu gross neben der Beschriftung. */
-.btn .catbar__chev, .catbar__chev { width:1em; height:1em; transition:transform var(--duration); }
-.catbar__filter[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
-.catbar .view-switch__btn { min-height:var(--target-min); }
-/* `extra`-Steckplatz der Leiste: eine Nebenaktion ganz rechts, abgesetzt wie der
-   Ansichtswechsel — sie steht auf derselben Stufe und darf nicht wie ein
-   weiterer Filter neben «Filter» kleben. */
-.catbar__aside { min-height:var(--target-min); white-space:nowrap;
-  border-left:var(--stroke-1) solid var(--color-secondary-300); padding-left:var(--sp-4); margin-left:var(--sp-3); }
-/* Die getönte, gerundete Karte ist eine bewusste Entscheidung und BLEIBT —
-   umgestellt wird nur die umbrechende Flex-Zeile, die bei 1440 rund 60% des
-   Panels leer liess und «Zurücksetzen» wie eine dritte Facetten-Überschrift
-   aussehen liess (Item 2.13). */
-/* Rastermetrik nach CD (search.postcss:257-264 `gap-3 lg:gap-4`): einheitliche
-   Lücke .75rem → 1rem ab lg, KEIN eigener 2rem-Spaltengraben. */
-.catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-3);
-  /* Das Panel besitzt seinen Abstand nach UNTEN selbst (1.5rem = `mt-6`).
-     Ergebnisblock und C.mountDataTable schliessen ohne eigenen oberen Rand an;
-     so bleibt der Abstand für Katalogseiten und eingebettete Tabellen gleich. */
-  align-items:start; padding:var(--sp-4) var(--sp-5); margin:var(--sp-3) 0 var(--sp-6); background:var(--color-secondary-50);
-  border:var(--stroke-1) solid var(--panel-border); border-radius:var(--radius-lg); }   /* Randton wie .filter-panel — EIN Kartenrezept */
-@media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-4); } }
-.catbar__panel .filter-group { margin:0; }
-.catbar__panel__actions { grid-column:1 / -1; display:flex; justify-content:flex-end;
-  padding-top:var(--sp-3); border-top:var(--stroke-1) solid var(--color-secondary-200); }
-/* Dasselbe für die Seitenleisten-Filter (Dashboards, Portfolio-Karte): der
-   Zurücksetzen-Knopf sass als letztes Geschwister direkt unter der letzten
-   Filtergruppe und las sich wie ein weiterer Filter statt wie die Aktion für
-   alle (Item 5.18). Eigene Zeile mit Trennlinie, hier linksbündig, weil die
-   Leiste schmal ist und ein rechtsbündiger Knopf vom Text weglaufen würde. */
-.filter-panel__actions { display:flex; margin-top:var(--sp-4); padding-top:var(--sp-3);
-  border-top:var(--stroke-1) solid var(--color-secondary-200); }
-/* Filter-Dropdowns der Katalogseiten (C.select) im Panel. */
-.catbar__panel .form__group__select { min-width:0; margin:0; }
-/* CD-md (767.98) statt der Sonderbreite 700 — live gegengeprüft bei 320/390 auf
-   katalog, portfolio, services und projects: alle Ansichtsknöpfe wieder im
-   Viewport, die Leiste wächst um genau eine Zeile. */
-@media (max-width:767.98px){
-  /* Die Trefferzahl bekommt KEINE eigene Zeile mehr erzwungen: `flex:0 1 auto`
-     lässt sie neben dem Suchfeld sitzen, solange sie dort hinpasst, und erst bei
-     echtem Platzmangel umbrechen. Mit `flex:1 1 100%` stand sie auch dann allein
-     in einer Zeile, wenn rechts neben der 24rem breiten Suche noch 190px frei
-     waren (gemessen bei 630px). `white-space:nowrap` oben hält sie zusammen. */
-  .catbar__count    { flex:0 1 auto; }
-  .catbar__controls { flex:1 1 100%; margin-left:0; justify-content:space-between; }
-  .catbar__sort     { flex:1 1 8rem; }
-  .catbar__sort select { width:100%; }
-  .catbar__controls .view-switch { margin-left:auto; }   /* bleibt rechts, wie am Desktop */
-}
-/* Unter 480px reicht die Breite nicht mehr für Suche UND Zahl nebeneinander:
-   das Suchfeld schrumpfte bis an seine min-width und der Platzhalter wurde
-   abgeschnitten. Dort bleibt die Zahl auf ihrer eigenen Zeile. */
-@media (max-width:479.98px){
-  .catbar__count { flex:1 1 100%; }
-}
-@media (max-width:479.98px){
-  /* der Trennstrich wirkt am Zeilenanfang falsch, wenn der Schalter allein umbricht */
-  .catbar__controls .view-switch { border-left:0; padding-left:0; }
-  .catbar__aside { border-left:0; padding-left:0; margin-left:0; }
-}
-
 /* ── Explorer-Schicht (pf-*) — GETEILT, nicht portfolio-eigen: pf-layout/
    pf-sidebar/pf-tree/pf-main tragen Inventar, Bauprojekte, Mietende und den
    Metadatenkatalog (Baum: js/spatial-tree.js); pf-gallery/pf-card zusätzlich
@@ -280,8 +156,6 @@
    Fläche) bleibt unten bündig. gap:0 + gezielte margins statt der luftigen 1rem-Lücke. */
 .pf-card .card__body { padding:var(--sp-5) var(--sp-6) var(--sp-4); gap:0; }
 .pf-card .card__title { font-size:var(--text-lg); line-height:1.3; }
-.pf-card__id { margin:var(--sp-1-5) 0 0; font-family:var(--font-mono); font-size:var(--text-sm);
-  font-weight:var(--fw-regular); color:var(--color-text-muted); letter-spacing:.01em; }
 .pf-card .card__description { margin:var(--sp-2-5) 0 0; font-size:var(--text-sm); }
 /* Karten füllen ihre Rasterzeile, der Fuss (Kategorie · Fläche) sitzt an der
    UNTERKANTE. Vorher stand hier `align-self:start` mit Inhaltshöhe: jede Karte
@@ -293,4 +167,3 @@
 .pf-card .card__content { height:100%; justify-content:flex-start; }
 .pf-card .card__footer { margin:auto var(--sp-6) 0; padding:var(--sp-3-5) 0 var(--sp-5); font-size:var(--text-sm); }
 .pf-typ { display:inline-flex; color:var(--color-text-muted); }
-

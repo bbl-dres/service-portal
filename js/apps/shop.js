@@ -267,7 +267,7 @@ function categoryTree(C, categories, opts, depth = 0) {
     const path = hasChildren && flattenCategories(cat.children || []).some((child) => child.id === opts.active);
     const body = `<span class="pf-tree__label">${C.escape(cat.label)}</span><span class="pf-tree__n">${opts.count(cat.id)}</span>`;
     const row = `<li class="pf-tree__item">
-      <a class="pf-tree__leaf plain-link${active ? ' is-active' : ''}${path ? ' is-path' : ''}" href="${opts.href(cat.id)}"${active ? ' aria-current="true"' : ''}>
+      <a class="pf-tree__leaf plain-link interactive-control${active ? ' is-active' : ''}${path ? ' is-path' : ''}" href="${opts.href(cat.id)}"${active ? ' aria-current="true"' : ''}>
         ${body}
       </a>
       ${hasChildren ? categoryTree(C, cat.children, opts, depth + 1) : ''}
@@ -384,7 +384,7 @@ function cart(ctx) {
         </ul>
         <aside class="shopping__cart-delivery-summary">
           ${summaryBox(C, lines)}
-          <div class="shopping__cart__action-container">
+          <div class="shopping__cart-action-container">
             <a class="btn btn--filled btn--full-width btn--icon-right" href="#/app/shop/checkout">
               ${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Bestellung vorbereiten</span>
             </a>

@@ -1,3 +1,68 @@
+/* Shared viewer controls (BPMN, document preview and image lightbox). */
+.viewer-toolbar { display:flex; align-items:center; }
+.viewer-toolbar--horizontal { flex-direction:row; }
+.viewer-toolbar--vertical { flex-direction:column; align-items:stretch; }
+.viewer-toolbar--light { overflow:hidden; border-radius:var(--radius-lg);
+  background:var(--color-bg); box-shadow:var(--shadow-md); }
+.viewer-toolbar--light .viewer-toolbar__button { width:var(--target-min); height:var(--target-min);
+  min-height:0; border-radius:0; background:var(--color-bg); }
+.viewer-toolbar--light .viewer-toolbar__button + .viewer-toolbar__button { border-top:var(--stroke-1) solid var(--color-secondary-200); }
+.viewer-toolbar--negative { gap:var(--sp-1); padding:var(--sp-1); border:var(--stroke-1) solid var(--border-negative);
+  border-radius:var(--radius-full); background:var(--color-secondary-900); box-shadow:var(--shadow-viewer); }
+.viewer-toolbar__readout { font-variant-numeric:tabular-nums; }
+.viewer-toolbar__separator { width:var(--stroke-1); align-self:stretch; background:var(--border-negative); }
+.viewer-toolbar--light .viewer-toolbar__button:hover { background:var(--color-secondary-50); }
+.viewer-toolbar--light .viewer-toolbar__button:active { background:var(--color-secondary-100); }
+.viewer-toolbar--negative .viewer-toolbar__button:hover { background:var(--surface-negative-hover); }
+.viewer-toolbar--negative .viewer-toolbar__button:active { background:var(--surface-negative-active); }
+.viewer-toolbar__button:is(:disabled, [aria-disabled="true"]) { cursor:not-allowed; opacity:.55; }
+.viewer-toolbar__button[aria-busy="true"] { cursor:progress; opacity:.7; }
+.viewer-toolbar__button[aria-invalid="true"] { color:var(--color-error-400); }
+.viewer-toolbar__button[data-empty="true"] { cursor:default; opacity:.55; }
+.viewer-toolbar--light .viewer-toolbar__button:focus-visible { position:relative; z-index:var(--z-local-content);
+  outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-3)); }
+.viewer-toolbar--negative .viewer-toolbar__button:focus-visible { position:relative; z-index:var(--z-local-content);
+  outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-3)); }
+
+/* Shared dark chrome for the document viewer and portfolio lightbox. These
+   rules stay static because the two viewers belong to different lazy apps. */
+.docviewer__heading, .pf-lightbox__heading { display:flex; align-items:center; gap:var(--sp-3); min-width:0; }
+.docviewer__heading-icon, .pf-lightbox__heading-icon { color:var(--text-negative-muted); flex:none; }
+.docviewer__heading-text, .pf-lightbox__heading-text { min-width:0; }
+.docviewer__title, .pf-lightbox__title { margin:0; color:var(--color-text-negative); font-weight:var(--fw-bold); font-size:var(--text-base);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.docviewer__sub, .pf-lightbox__sub { margin:0; color:var(--text-negative-muted); font-size:var(--text-xs); }
+.docviewer__docnum { white-space:nowrap; }
+.docviewer__actions, .pf-lightbox__actions { display:flex; align-items:center; gap:var(--sp-1); flex:none; }
+.docviewer__btn, .pf-lightbox__btn { display:inline-flex; align-items:center; justify-content:center;
+  width:var(--target-min); height:var(--target-min); padding:0; background:none; border:0; border-radius:var(--radius-sm);
+  color:var(--color-text-negative); cursor:pointer; transition:background var(--duration-fast); }
+.docviewer__btn:hover, .pf-lightbox__btn:hover { background:var(--surface-negative-hover); }
+.docviewer__btn:active, .pf-lightbox__btn:active, .docviewer__btn.is-active { background:var(--surface-negative-active); }
+.docviewer__btn:is(:disabled, [aria-disabled="true"]),
+.pf-lightbox__btn:is(:disabled, [aria-disabled="true"]) { cursor:not-allowed; opacity:.55; }
+.docviewer__btn[aria-busy="true"], .pf-lightbox__btn[aria-busy="true"] { cursor:progress; opacity:.7; }
+.docviewer__btn[aria-invalid="true"], .pf-lightbox__btn[aria-invalid="true"] { color:var(--color-error-400); }
+.docviewer__btn[data-empty="true"], .pf-lightbox__btn[data-empty="true"] { cursor:default; opacity:.55; }
+.docviewer__btn:focus-visible, .pf-lightbox__btn:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:calc(-1 * var(--stroke-2)); }
+
+/* Shared metadata-panel chrome; app sheets retain only their distinct padding
+   and responsive viewer positioning. :where() keeps the shared recipe at zero
+   specificity so either viewer can extend it without selector escalation. */
+:where(.docviewer__meta, .pf-lightbox__meta) { flex:0 0 auto; overflow-y:auto; max-height:40vh;
+  background:var(--surface-negative); color:var(--color-text-negative);
+  border-top:var(--stroke-1) solid var(--border-negative); }
+:where(.docviewer__meta-title, .pf-lightbox__meta-title) { margin:0 0 var(--sp-2);
+  color:var(--text-negative-muted); font-size:var(--text-sm); font-weight:var(--fw-bold); text-transform:none; }
+:where(.docviewer__meta, .pf-lightbox__meta) .kv { margin:0; color:var(--color-text-negative); }
+:where(.docviewer__meta, .pf-lightbox__meta) .kv dt { color:var(--text-negative-muted); }
+:where(.docviewer__meta, .pf-lightbox__meta) .kv dd { color:var(--color-text-negative); }
+:where(.docviewer__meta, .pf-lightbox__meta) .btn { margin-top:var(--sp-3); }
+@media (min-width:768px){
+  :where(.docviewer__meta, .pf-lightbox__meta) { flex:0 0 20rem; max-height:none;
+    border-top:0; border-left:var(--stroke-1) solid var(--border-negative); }
+}
+
 /* ---- Aktionsmenü (Kebab-Dropdown, wiederverwendbar) ------------------------
    Eigener Namensraum `.action-menu` — `.menu`/`.menu__item` gehören der CD-
    Navigations-Flyout-Komponente (menu.postcss) und dürfen nicht überschrieben
@@ -10,6 +75,12 @@
   min-width:var(--control-h); min-height:var(--control-h);
   padding:var(--sp-1); border:0; border-radius:var(--radius-sm); background:none; color:var(--color-text-muted); cursor:pointer; }
 .action-menu__trigger:hover { background:var(--color-secondary-100); color:var(--color-text); }
+.action-menu__trigger:active { background:var(--color-secondary-200); color:var(--color-text); }
+.action-menu__trigger:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
+.action-menu__trigger:is(:disabled, [aria-disabled="true"]) { cursor:not-allowed; opacity:.55; }
+.action-menu__trigger[aria-busy="true"] { cursor:progress; opacity:.7; }
+.action-menu__trigger[aria-invalid="true"] { color:var(--color-error-text); }
+.action-menu__trigger[data-empty="true"] { cursor:default; color:var(--color-text-muted); }
 .dash-header .action-menu__trigger { border:var(--stroke-1) solid var(--color-secondary-200); background:var(--color-bg); }
 .dash-header .action-menu__trigger:hover { background:var(--color-secondary-50); }
 .action-menu__popup { position:absolute; top:calc(100% + var(--sp-1-5)); min-width:13rem; z-index:var(--z-nav);
@@ -25,6 +96,12 @@
   border-radius:var(--radius-sm); background:none; text-align:left; cursor:pointer; color:var(--color-text);
   font-size:var(--text-sm); font-family:inherit; }
 .action-menu__item:hover, .action-menu__item:focus-visible { background:var(--color-secondary-50); }
+.action-menu__item:active { background:var(--color-secondary-100); }
+.action-menu__item:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
+.action-menu__item:is(:disabled, [aria-disabled="true"]) { cursor:not-allowed; opacity:.55; }
+.action-menu__item[aria-busy="true"] { cursor:progress; opacity:.7; }
+.action-menu__item[aria-invalid="true"] { color:var(--color-error-text); }
+.action-menu__item[data-empty="true"] { cursor:default; color:var(--color-text-muted); }
 .action-menu__icon { width:var(--sp-4); height:var(--sp-4); color:var(--color-text-muted); flex:none; }
 .action-menu__heading { padding:var(--sp-2) var(--sp-2-5) var(--sp-1); font-size:var(--text-xs); font-weight:var(--fw-bold); color:var(--color-text-muted); }
 .action-menu__sep { height:var(--stroke-1); background:var(--color-secondary-100); margin:var(--sp-1-5) var(--sp-1); }
@@ -61,7 +138,7 @@ html:has(> body > .pf-lightbox),
 html:has(> body > .docviewer) { overflow:hidden; scrollbar-gutter:auto; }
 /* ---- Kanonisches Modal (CD modal.postcss BEM) ----------------------------
    Primitive für neue Dialoge (Bestätigungen, Formulare). Die bestehenden Overlays
-   (chart-overlay, pf-lightbox, docviewer) bleiben eigenständig, teilen aber die
+   (pf-lightbox, docviewer) bleiben eigenständig, teilen aber die
    --z-*-Skala und das --overlay-scrim-Token. C.openModal() verdrahtet Fokusfalle,
    Escape, Backdrop-Klick und Fokus-Rückgabe. */
 /* CD modal.postcss:10-35 — Dialog sitzt 10vh unter der Oberkante (nicht mittig),
@@ -95,10 +172,8 @@ html:has(> body > .docviewer) { overflow:hidden; scrollbar-gutter:auto; }
 /* CDs Modal-Titel ist eine h4 = text--lg (Modal.vue:13, typography.postcss:121-124). */
 .modal__title { margin:0; font-size:var(--text-lg); font-weight:var(--fw-bold); color:var(--color-text-negative); }
 .modal__body { width:100%; overflow:auto; }
-/* Item 6.12 baut das Chart-Vollbild auf die .modal-Ebene um; ohne diese Regel
-   würde das Diagramm dort als gerahmte Schattenkarte erscheinen. Übernimmt die
-   Deklarationen von .chart-overlay__box .chart (unten), damit kein Zwischenstand
-   schlechter aussieht als heute. */
+/* Das Chart-Vollbild nutzt die .modal-Ebene; ohne diese Regel würde das
+   Diagramm dort als gerahmte Schattenkarte erscheinen. */
 .modal__body .chart { padding:0; box-shadow:none; border:0; }
 .modal__body > .card { margin:0; }
 .modal__body .card__body { padding:var(--sp-6); }
@@ -116,23 +191,6 @@ html:has(> body > .docviewer) { overflow:hidden; scrollbar-gutter:auto; }
 @media (min-width:1024px){ .modal__close { margin-top:calc(-1 * var(--sp-2)); } }
 .modal__close:hover { opacity:.5; }
 .modal__close:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring-negative); outline-offset:var(--stroke-2); }
-
-.chart-overlay { position:fixed; inset:0; z-index:var(--z-modal); display:flex; align-items:center; justify-content:center;
-  padding:var(--sp-8); background:var(--overlay-scrim); }
-/* Auf dem Telefon frisst 2rem+2rem Rahmen ~40 % der Breite — das «Vollbild»
-   zeigte das Diagramm KLEINER als inline. */
-@media (max-width:639.98px){
-  .chart-overlay { padding:var(--sp-2); }
-  .chart-overlay__box { padding:var(--sp-4); }
-}
-.chart-overlay__box { position:relative; width:min(1100px,100%); max-height:90vh; overflow:auto;
-  background:var(--color-bg); border-radius:var(--radius-lg); box-shadow:var(--shadow-xl); padding:var(--sp-7) var(--sp-8); }
-.chart-overlay__box .chart { padding:0; box-shadow:none; border:0; }
-.chart-overlay__close { position:absolute; top:var(--sp-3-5); right:var(--sp-3-5); z-index:var(--z-local-content); display:inline-flex;
-  align-items:center; justify-content:center; min-width:var(--target-min); min-height:var(--target-min); padding:var(--sp-1-5);
-  border:var(--stroke-1) solid var(--color-secondary-200); border-radius:var(--radius-sm); background:var(--color-bg);
-  color:var(--color-text-muted); cursor:pointer; }
-.chart-overlay__close:hover { background:var(--color-secondary-100); color:var(--color-text); }
 
 .tabs { display:block; }
 .breadcrumb-navigation { width:100%; }

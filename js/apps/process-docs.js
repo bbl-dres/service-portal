@@ -237,10 +237,10 @@ function list(ctx) {
   // als gefilterte Liste rechts — ein Gruppenklick IST der Filter.
   const row = (label, count) => `<span class="pf-tree__label">${esc(label)}</span><span class="pf-tree__n">${count}</span>`;
   const leaf = (label, count, href, on) =>
-    `<li class="pf-tree__item"><a class="pf-tree__leaf plain-link${on ? ' is-active' : ''}" href="${href}"${on ? ' aria-current="true"' : ''}>${row(label, count)}</a></li>`;
+    `<li class="pf-tree__item"><a class="pf-tree__leaf plain-link interactive-control${on ? ' is-active' : ''}" href="${href}"${on ? ' aria-current="true"' : ''}>${row(label, count)}</a></li>`;
   const branch = (key, label, count, href, on, open, children) => `
     <li class="pf-tree__item">
-      <button type="button" class="pf-tree__node${on ? ' is-active' : ''}" data-branch="${key}"
+      <button type="button" class="pf-tree__node interactive-control${on ? ' is-active' : ''}" data-branch="${key}"
         data-href="${esc(href)}" aria-expanded="${open}" aria-controls="pd-branch-${key}">
         ${C.icon('ChevronRight', 'pf-tree__chev')}${row(label, count)}</button>
       <ul class="pf-tree__children" id="pd-branch-${key}"${open ? '' : ' hidden'}>${children}</ul>

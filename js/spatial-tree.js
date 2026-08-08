@@ -72,7 +72,7 @@ export function treeHTML(C, objects, { levels, leaf }) {
   const rowContent = (ic, idText, label) => `${C.icon(ic, 'pf-tree__ico')}${
     idText ? `<span class="pf-tree__id">${esc(idText)}</span>` : ''}<span class="pf-tree__label">${esc(label)}</span>`;
   const nodeHTML = (content, count, attrs, children) => `<li class="pf-tree__item">
-      <button type="button" class="pf-tree__node" ${attrs} aria-expanded="false">
+      <button type="button" class="pf-tree__node interactive-control" ${attrs} aria-expanded="false">
         ${C.icon('ChevronRight', 'pf-tree__chev')}${content}<span class="pf-tree__n">${count}</span>
       </button>
       <ul class="pf-tree__children" hidden>${children}</ul></li>`;
@@ -82,7 +82,7 @@ export function treeHTML(C, objects, { levels, leaf }) {
   const build = (items, depth, ancestors) => {
     if (depth === levels.length) {
       const sorted = leaf.sort ? items.slice().sort(leaf.sort) : items;
-      return sorted.map((o) => `<li class="pf-tree__item"><button type="button" class="pf-tree__leaf" ${
+      return sorted.map((o) => `<li class="pf-tree__item"><button type="button" class="pf-tree__leaf interactive-control" ${
         attrPairs([...ancestors, ['obj', leaf.objId(o)]])}>${
         rowContent(leaf.icon(o), leaf.idText ? leaf.idText(o) : '', leaf.label(o))}</button></li>`).join('');
     }
