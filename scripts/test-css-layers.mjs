@@ -81,6 +81,7 @@ try {
   // the old monolith order, independent of navigation history.
   for (const route of [
     '/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og',
+    '/app/plan-check',
     '/app/document-archive',
     '/app/portfolio',
   ]) {
@@ -106,6 +107,8 @@ try {
   })()`));
   check(lazyState.indices.every((value, i, all) => i === 0 || all[i - 1] < value),
     'lazy sheets retain canonical cascade order', lazyState.keys.join(','));
+  check(lazyState.keys.includes('plan-check'),
+    'Plan Check loads its dedicated lazy stylesheet', lazyState.keys.join(','));
   check(lazyState.loaded, 'every injected stylesheet is parsed before use');
   check(!lazyState.failed.length, 'no lazy CSS request returns an error', JSON.stringify(lazyState.failed));
 

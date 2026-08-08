@@ -5,6 +5,7 @@
 import { EDITOR_COLOR_MODES, measurementLabel, renderEditorSvg } from './canvas.js';
 import { createColorContext, roomColorDescriptor } from './colors.js';
 import { formatArea, formatNumber } from '../format.js';
+import { planCheck } from '../links.js';
 import { MODULE_OPTIONS, SIA_OPTIONS, USE_OPTIONS } from './model.js';
 import {
   BASE, COLOR_DESCRIPTIONS, address, clean, editorHeaderHTML,
@@ -40,7 +41,7 @@ export function createWorkbenchViews(context) {
     const leftPanelLabel = leftPanelUnavailable
       ? 'Bibliothek ist nur im 2D-Plan verfügbar'
       : `${leftPanelName} ${leftOpen ? 'schliessen' : 'öffnen'}`;
-    return `${editorHeaderHTML(C, session, editMode)}
+    return `${editorHeaderHTML(C, session, editMode, planCheck(building.bbl_id, floor.floorId))}
     <div class="fpe-context">
       <nav class="fpe-breadcrumb" aria-label="Sie sind hier">
         <a href="${BASE}" data-leave>Alle Objekte</a>${C.icon('ChevronRight', 'icon--sm')}

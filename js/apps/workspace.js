@@ -11,7 +11,7 @@ import { openGallery, restoreGalleryFromQuery } from '../ui/gallery.js';
 import { formatArea, formatNumber, formatDate } from '../format.js';
 import { countryName } from '../domain.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
-import { floorplanEditor } from '../links.js';
+import { floorplanEditor, planCheck } from '../links.js';
 import { exitFullscreen, requestFullscreen } from '../ui/fullscreen.js';
 import { download, fileSlug, rowsToCsv } from '../export.js';
 
@@ -497,7 +497,8 @@ function detail(ctx, id) {
       items: [
         { type: 'link', label: 'Grundriss im Plan-Editor bearbeiten', href: floorplanEditor(item.id),
           description: 'Eigenständige Anwendung · öffnet ein neues Fenster', newWindow: true },
-        { type: 'disabled', label: 'Plan prüfen', description: 'Separate Anwendung folgt' },
+        { type: 'link', label: 'Planprüfung öffnen', href: planCheck(item.id),
+          description: 'DWG-Prüfung · öffnet ein neues Fenster', newWindow: true },
         { type: 'button', id: 'workspace-export', label: 'Aggregierte Planannahmen exportieren', description: 'CSV aus den Prototypdaten', icon: 'Download', disabled: !equipment.length },
         { type: 'disabled', label: 'SIA-Flächennachweis erstellen', description: 'Fachreport folgt', icon: 'Printer' },
         { type: 'link', label: 'Ersatz- oder Reparaturauftrag', href: `#/app/fault-report?${buildingQuery}`, newWindow: true },
@@ -564,6 +565,9 @@ function detail(ctx, id) {
             <p class="small muted">Bearbeitung und Speicherung erfolgen im eigenständigen Plan-Editor.</p>
             <a class="btn btn--filled btn--sm btn--full-width btn--icon-right" id="workspace-plan-editor" href="${floorplanEditor(item.id, floor.floorId)}" target="_blank" rel="noopener noreferrer">
               <span class="btn__text">Im Plan-Editor bearbeiten</span>${C.icon('External', 'btn__icon icon--base')}
+            </a>
+            <a class="btn btn--outline btn--sm btn--full-width btn--icon-left mt-2" id="workspace-plan-check" href="${planCheck(item.id, floor.floorId)}" target="_blank" rel="noopener noreferrer">
+              ${C.icon('CloudUpload', 'btn__icon icon--base')}<span class="btn__text">Planprüfung öffnen</span>
             </a>
           </div>
           <dl class="kv kv--tight fp-facts">

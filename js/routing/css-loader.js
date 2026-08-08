@@ -9,6 +9,7 @@ const SHEETS = Object.freeze([
   { key: 'floorplan', href: '../../css/apps/floorplan.css', slot: 'late' },
   { key: 'workplace', href: '../../css/apps/workplace.css', slot: 'late' },
   { key: 'floorplan-editor', href: '../../css/apps/floorplan-editor.css', slot: 'late' },
+  { key: 'plan-check', href: '../../css/apps/plan-check.css', slot: 'late' },
   { key: 'room-booking', href: '../../css/apps/room-booking.css', slot: 'late' },
 ].map((sheet, index) => Object.freeze({ ...sheet, index })));
 
@@ -20,6 +21,7 @@ const APP_SHEETS = Object.freeze({
   'document-archive': ['dataportal', 'archive'],
   workspace: ['dataportal', 'portfolio', 'floorplan', 'workplace'],
   'floorplan-editor': ['floorplan-editor'],
+  'plan-check': ['plan-check'],
   'room-booking': ['dataportal', 'floorplan', 'workplace', 'room-booking'],
   transaction: [],
   dataportal: ['dataportal'],

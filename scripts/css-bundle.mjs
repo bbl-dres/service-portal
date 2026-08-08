@@ -85,6 +85,7 @@ export const CSS_SOURCE_ORDER = Object.freeze([
   'css/apps/floorplan.css',
   'css/apps/workplace.css',
   'css/apps/floorplan-editor.css',
+  'css/apps/plan-check.css',
   'css/apps/room-booking.css',
 ]);
 

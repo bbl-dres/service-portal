@@ -47,7 +47,7 @@ console.log('■ Public module surfaces');
 exactModule('session', sessionModule, ['session']);
 exactModule('links', links, [
   'application', 'caseDetails', 'constructionProject', 'dataset', 'documentSearch',
-  'floorplanEditor', 'news', 'portfolioItem', 'processDocumentation', 'service', 'shop',
+  'floorplanEditor', 'news', 'planCheck', 'portfolioItem', 'processDocumentation', 'service', 'shop',
   'shopCart', 'shopProduct', 'tenancy',
 ]);
 exactModule('crumbs', crumbs, ['APPLICATIONS', 'DATA', 'SERVICES', 'trail']);
@@ -155,7 +155,9 @@ check(links.service('a/b') === '#/services/a%2Fb'
   && links.application('a/b') === '#/applications/a%2Fb'
   && links.documentSearch('A & B') === '#/app/document-archive?q=A%20%26%20B'
   && links.floorplanEditor('1080/6650/AA', '1080-6650-AA-2og')
-    === '#/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og',
+    === '#/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og'
+  && links.planCheck('1080/6650/AA', '1080-6650-AA-2og')
+    === '#/app/plan-check?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og',
   'search targets use the central correctly encoding link contracts');
 
 console.log(failures ? `\n✗ ${failures} check(s) FAILED` : '\n✓ all API surfaces match');

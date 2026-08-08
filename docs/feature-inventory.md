@@ -7,8 +7,8 @@ Liste geprüft. Erstellt automatisiert aus der vollständigen Modullektüre
 
 Altlast-Weiterleitungen (js/router.js REDIRECTS) liegen in
 scripts/test-routes.mjs. Die visuelle Regressionsmatrix steht zentral in
-scripts/review-routes.mjs und umfasst aktuell 69 repräsentative Routen und
-Zustände × 320/768/1440 px (207 Renderings). Die erhaltenen Phase-0-
+scripts/review-routes.mjs und umfasst aktuell 70 repräsentative Routen und
+Zustände × 320/768/1440 px (210 Renderings). Die erhaltenen Phase-0-
 Vorher-Screenshots decken davon 57 Zustände × drei Viewports ab und liegen unter
 docs/review-assets/before/; sie werden nicht als vollständige aktuelle Matrix
 ausgegeben.
@@ -55,6 +55,7 @@ ausgegeben.
 | `#/app/workspace` | Workspace-Objektportal |
 | `#/app/workspace?id=<bbl_id>&floor=<floorId>&color=<mode>&space=<spaceId>` | Workspace-Grundrissvorschau (schreibgeschützt) |
 | `#/app/floorplan-editor?building=<bbl_id>&floor=<floorId>&color=<mode>&selected=<type:id>&view=<mode>&edit=1&library=<mode>` | Eigenständiger Plan-Editor / Viewer (Login-Gate; lokale Feedback-Arbeitskopie/-Publikation) |
+| `#/app/plan-check?building=<bbl_id>&floor=<floorId>` | Eigenständige Planprüfung (Login-Gate; Dateiannahme bis zu einem gefixten Parser deaktiviert) |
 | `#/app/transaction` | Veräusserung |
 | `#/app/document-archive` | Bauwerksdokumentation |
 | `#/app/media-library` | Mediathek |
@@ -241,6 +242,7 @@ Hash-Router: NAV-Definition, Seiten-/App-Registry mit dynamischem Import, Altlas
 - #/app/document-archive → apps/document-archive.js — router.js:106
 - #/app/workspace → apps/workspace.js — router.js:107
 - #/app/floorplan-editor → apps/floorplan-editor.js (Standalone-Layout) — router.js:108
+- #/app/plan-check → apps/plan-check.js (Standalone-Layout, Login-Gate) — Root oder validierter `building`-/`floor`-Kontext
 - #/app/room-booking → apps/room-booking.js — router.js:109
 - #/app/transaction → apps/transaction.js — router.js:110
 - #/app/dataportal → apps/dataportal.js — router.js:111
@@ -1674,7 +1676,7 @@ Workspace Management — Prozesseinstieg und Objektportal der Workspace-Suite. D
 - Schreibgeschützte Grundrissvorschau mit derselben einzeiligen Kopfleiste wie im Mietendenportal, Geschosswechsel, Einfärbung, SVG-Raumauswahl, Bestandsdaten, Legende, Vollbild und fokussiertem Plandruck; der Status wird nicht zusätzlich als «nur Ansicht» in der Werkzeugleiste wiederholt
 - Ausstattungsregister mit elf Multispace-Modulgruppen und Mengensumme; ehrlich als aggregierte Prototypannahmen bezeichneter CSV-Export
 - Vorbelegte Vorgänge für Reparatur/Ersatz und Raumbedarf; der noch nicht implementierte SIA-Flächennachweis ist deaktiviert
-- Expliziter Handoff: Die Objekt-Aktionskarte öffnet den eigenständigen Plan-Editor in einem neuen Fenster; in der Grundrissvorschau steht derselbe Handoff als erste Karte der Auswertungsspalte und übergibt Gebäude und aktuelles Geschoss. Die separate Planprüfung bleibt als noch nicht verfügbare, deaktivierte Folgeanwendung bezeichnet; Schreib- oder Prüflogik liegt nicht im Portal.
+- Explizite Handoffs: Die Objekt-Aktionskarten öffnen Plan-Editor und Planprüfung sicher in einem neuen Fenster. «Planprüfung öffnen» übergibt das Gebäude; in der Grundrissvorschau steht der geschossspezifische Handoff neben dem Editor-Handoff und übergibt Gebäude und aktuelles Geschoss. Die Zielroute erklärt derzeit die deaktivierte Dateiannahme; Schreib- oder Prüflogik liegt nicht im Portal.
 
 **Zustände**
 
@@ -1692,7 +1694,7 @@ Workspace Management — Prozesseinstieg und Objektportal der Workspace-Suite. D
 - Registerwechsel mit APG-Tastaturmodell und ?tab=-Synchronisation per replaceState
 - Tabelleninterne Suche/Sortierung für Grundrisse und Ausstattung; Geschosszeile/-link öffnet die Vorschau
 - Vorschau: echte Geschosslinks, Einfärben-Select, Raum im SVG auswählen/abwählen, Raumaktion mit vorbelegtem Objekt/Raum, Vollbild, Plandruck und Rücksprung zur Geschosstabelle; alle Zustandswechsel synchronisieren die Hash-Query
-- CSV-Export der aggregierten Planannahmen aus der Aktionskarte; der Plan-Editor öffnet live in einem neuen Fenster, aus der Vorschau mit Gebäude-/Geschosskontext. Planprüfung und SIA-Flächennachweis bleiben deaktivierte Folgefunktionen.
+- CSV-Export der aggregierten Planannahmen aus der Aktionskarte; Plan-Editor und die sicherheitsgeschlossene Planprüfungsroute öffnen in einem neuen Fenster, aus der Vorschau mit Gebäude-/Geschosskontext. Nur der noch nicht umgesetzte SIA-Flächennachweis bleibt als fachliche Aktion deaktiviert.
 
 ## js/apps/floorplan-editor.js
 
@@ -1717,13 +1719,49 @@ Eigenständiger, loginpflichtiger Plan-Editor / Viewer der Workspace-Suite mit `
 - Explizites Speichern schreibt pro Geschoss unter `bbl_floorplan_editor_local_v1:<floorId>` ausschliesslich eine gegen den aktuellen Ausgangsstand validierte Browser-Arbeitskopie mit Schema `bbl.floorplan-editor.draft/v1`. Struktur, IDs, Baseline-Revision, kanonische Ableitungen, Raumkollisionen, gedrehte Grenzen und Katalogreferenzen werden geprüft. Kompatible ältere Entwürfe werden auf den aktuellen Katalog abgeglichen. Müssten dabei Platzierungen entfallen, bleibt die aktive Quelle unverändert, ihr exakter Stand wird unter `bbl_floorplan_editor_archive_v1:…` gesichert und die bereinigte Fassung erst nach einem ausdrücklichen Speichern übernommen; unverträgliche Baseline-Stände werden ebenfalls wiederherstellbar archiviert. «Veröffentlichen» führt unter `bbl_floorplan_editor_history_v1:<floorId>:<baseRevision>` maximal fünf unveränderliche lokale Momentaufnahmen mit Schema `bbl.floorplan-editor.history/v1`; frühere geschossbezogene Schlüssel migrieren einmalig, andere Baseline-Stände bleiben erhalten. Kurze Browser-Locks und Read-back-Prüfung erkennen konkurrierende lokale Schreibversuche. Die Simulation wird vor der Aktion, im Status und im Verlauf als nur auf diesem Gerät sichtbar bezeichnet; der kanonische Ausgangsbestand bleibt unverändert.
 - Initiale Ausstattung ist deterministisch erzeugte, als `illustrative-prototype` gekennzeichnete Prototypannahme und kein bestätigtes Inventar. Es gibt keine Backend-Synchronisation, gemeinsame Bearbeitung, produktive Versionierung oder fachliche Rollen-/Schreibrechteprüfung.
 - Der aktuelle Browser-Datensatz bettet `rooms[]` nur für den Feedback-Prototyp ein. Das Produktionsziel sind eigenständige Raumdatensätze, referenzierende Planplatzierungen, ein authentifizierter Repository/API-Adapter, serverseitige Versions-/Konfliktprüfung und Row-Level Security; lokale Session-, Query- oder Speicherschlüssel sind keine Autorisierung.
-- `Plan hochladen` wird im Editor nicht als inaktive Aktion angeboten. DWG/DXF-Import, Regelprüfung, Befunde, Korrekturschleife und Freigabe sind ausdrücklich nicht Teil dieses Moduls, sondern bleiben Aufgabe der separaten, noch nicht implementierten Planprüfung.
+- `Planprüfung öffnen` ist ein echter Handoff in die getrennte, derzeit sicherheitsgeschlossene Planprüfung: Die Gebäudeübersicht übergibt keinen Kontext, die Geschossnavigation das Gebäude und die Arbeitsfläche Gebäude plus Geschoss. Der Editor selbst importiert weiterhin keine DWG, führt keine Regeln aus und speichert kein Prüfresultat.
 
 **Interaktionen und Barrierefreiheit**
 
 - Planentitäten und Ressourcen sind fokussierbare Bedienelemente mit Namen und Auswahlzustand; Gruppen und Räume besitzen eigene Disclosure-Schalter, Listenmarker werden explizit unterdrückt und die Seitenpanel-Schalter verwenden die im Wireframe vorgesehenen linken/rechten Pane-Glyphen. `Mehr`, Farbauswahl und Strukturmenü unterstützen Pfeiltasten, Home/End, Escape, Tab-Schliessen und Fokusrückgabe; Bibliotheks-Tabs besitzen roving tabindex und verknüpfte Tabpanels. Enter/Leertaste wählen, Escape schliesst zuerst Menü, Bibliothek oder kompakten Drawer, beendet danach das Werkzeug beziehungsweise hebt die Auswahl auf. Auf dem fokussierten 2D-Canvas verschieben Pfeiltasten Kamera oder den sichtbaren Tastatur-Planzeiger; Leertaste/Enter setzen damit Produkt, Raumecke oder Messpunkt. Pfeiltasten verschieben ausserdem ein gewähltes Objekt, `R` dreht, Delete/Backspace entfernt; `V` wählt, `H` aktiviert Pan, `F` passt den Plan ein, `+`/`-` zoomen und Ctrl/Cmd+Z, Shift+Ctrl/Cmd+Z beziehungsweise Ctrl/Cmd+Y steuern den Verlauf. Backspace entfernt beim Messen den letzten Punkt. In der Begehung bewegen WASD beziehungsweise Pfeiltasten die Kamera; Mausziehen oder Pointer Lock mit sicherem Drag-Fallback steuern den Blick.
 - Werkzeugleiste, Darstellungsumschalter und View-Aktionen sind als getrennte Gruppen ausgezeichnet. Der aktive View-Modus verwendet `aria-pressed` und roving tabindex; Pfeiltasten, Home und End wechseln Modus und Fokus. View-Ziele sind mindestens 44 px hoch. Panel-Schalter synchronisieren `aria-pressed`; kompakte Drawer sind gegenseitig ausschliessend und über Backdrop oder Escape schliessbar. Mess- und Änderungsaktionen werden über Live-Region und globale Ansage angekündigt. Pointer-Ziehen, Mausrad-Zoom und Mitteltasten-/Werkzeug-Pan ergänzen die Tastaturbedienung. Der Inspektor erhält seine Scrollposition über feldbezogene Neuzeichnungen.
 - Delegierte Klick-, Eingabe-, Pointer-, Rad-, Doppelklick- und Tastatur-Listener sowie `beforeunload` teilen einen `AbortController`; `ctx.onUnmount` baut sie, ausstehende Animation Frames und den Router-Blocker beim Routenwechsel vollständig ab. Pointer-Cancel beziehungsweise verlorene Capture rollen laufende Raum-/Objekt-/Pan-Gesten zurück. Der Three.js-Adapter rendert bedarfsgesteuert, behandelt WebGL-Kontextverlust sichtbar und beendet bei Ansichts- oder Routenwechsel Pointer Lock, `ResizeObserver`, Geometrien, Materialien, Texturen und Renderer.
+
+## js/apps/plan-check.js
+
+Eigenständige, loginpflichtige Planprüfung der Workspace-Suite mit `layout='standalone'`. `js/apps/plan-check.js` validiert ausschliesslich den Portal-Handoff und deklariert `needs=['buildings','floors']`; Controller, Worker-Client, Normalisierung, 40 Regeln, lokale Berichte, Canvas-Viewer und HTML-Darstellung liegen unter `js/plan-check/`. Die Dateiannahme ist jedoch mit `PLAN_CHECK_INTAKE_ENABLED=false` geschlossen. `@mlightcad/libredwg-web` 0.7.9 wurde als Kandidat geprüft und nach dem Nachweis von CVE-2026-15520 / GHSA-67vr-6jq3-273m in seinem korrespondierenden LibreDWG-Quellstand wieder entfernt. `js/vendor/libredwg/` enthält nur den Audit-, Lizenz- und Fingerprint-Nachweis; kein Parser-JavaScript und kein WASM.
+
+**Routen**
+
+- `#/app/plan-check` — funktioniert ohne Kontext und zeigt den Nichtverfügbarkeitszustand; die vorbereiteten Objekt-/Geschossauswahlen sind bei geschlossener Dateiannahme nicht sichtbar.
+- `#/app/plan-check?building=<bbl_id>` — validierte Objektvorbelegung aus Workspace oder editorinterner Geschossnavigation.
+- `#/app/plan-check?building=<bbl_id>&floor=<floorId>` — validierte Objekt-/Geschossvorbelegung aus Workspace-Vorschau oder Editor-Arbeitsfläche; ein Geschoss wird nur übernommen, wenn es zum Objekt gehört.
+- Unbekannte, fehlzugeordnete oder unvollständige Schlüssel ergeben einen erklärten Hinweis und keine falsche Zuordnung. Der Rücksprung verwendet nur einen intern abgeleiteten Workspace-Hash; Dateiname und Dateiinhalt sind nie URL-Parameter.
+
+**Funktionen**
+
+- **Aktiver Vertrag:** Die Route rendert einen persistenten, fokussierbaren Nichtverfügbarkeitszustand mit Rücksprung. Es existieren kein Dateifeld, keine Drop-Zone, kein Startknopf und kein Parserobjekt; damit werden keine Datei-Bytes, Worker-, WASM- oder Vendor-Ressourcen angefordert.
+- **Vorbereiteter, aber deaktivierter Vertrag:** Dateiübernahme per nativem Dateifeld oder Drag-and-drop. Nach einer Wiederfreigabe wären ausschliesslich binäre `.dwg`-Dateien bis 50 MiB zulässig; leere, umbenannte/ungültige, übergrosse und DXF-Dateien werden vor beziehungsweise beim Parserstart erklärt abgewiesen.
+- **Vorbereiteter Vertrag:** Wahl zwischen «Neuer Plan» und «Mutation eines bestehenden Plans». Änderungsgrund ist bei Mutation Pflicht; Datum und Referenz sind optional. Diese Metadaten würden nur in lokale Berichte eingehen.
+- Nach einer Freigabe würde ein route-eigener Worker LibreDWG lesen, defensive Mengen- und Rekursionsgrenzen anwenden, eine begrenzte Canvas-Renderliste erzeugen und stets denselben Satz von 40 Regeln ausführen. Harte Browserbudgets begrenzen unter anderem 150 000 Quellentitäten, 100 000 Blockauflösungen, 25 000 Canvas-Primitive, 200 000 Stützpunkte, 2 000 Meldungen und die geschätzte Ergebnisübertragung auf 64 MiB; nach 120 Sekunden beendet ein Watchdog den Worker. Diese Schutzschichten gelten zusätzlich zu einem gefixten Parser und rechtfertigen nicht die Verwendung des abgelehnten 0.7.9-Binaries.
+- **Fail-closed vorbereitet:** Zyklische oder zu tiefe `INSERT`-Ketten, unbekannte/nicht unterstützte oder nicht darstellbare Entitäten, ungültige Geometriewerte, abgeschnittene Prüfmetadaten und vom Konverter gemeldete unbekannte Objekte markieren das Resultat als unvollständig. Dann bleiben alle 40 kanonischen Regeln «nicht ausgewertet» und der Erfüllungsgrad `null`; der unterstützte Teilbefund bleibt nur als Diagnose sichtbar. AOID-Duplikat-/Zuordnungsregeln verwenden rohe Textinstanzen; `AOID_006` wird nur bei Quellobjekten mit unterscheidbarem Einfüge- und Ausrichtungspunkt ausgewertet. `DIM_002` bleibt korrekt «nicht ausgewertet», bis echte `DIMASSOC`-Objektverknüpfungen vorliegen. HNF/NNF/VF/FF/NF/NGF/KF bleiben ohne autoritative SIA-Kategorie je Raum `null`; nur die unklassifizierte Summe der Raumpolygone wird ausgewiesen.
+- **Vorbereiteter Vertrag:** Ergebnis mit Dateifakten und KPIs sowie sechs Registerkarten: Prüfregeln, Feststellungen, Layer, Räume, Flächen und Kennzahlen. Suche und Statusfilter begrenzen Listen und Hervorhebungen; Auswahl einer Feststellung, eines Layers, Raums oder einer Fläche fokussiert dieselbe Geometrie im Canvas.
+- **Vorbereiteter Vertrag:** Canvas-Viewer mit textlicher Alternativdarstellung, Schwenken, Zoomen, Einpassen, hellem/dunklem Planhintergrund, Vollbild, Koordinaten und dynamischem Massstab. Layer lassen sich einzeln oder gesammelt ein-/ausblenden.
+- **Vorbereiteter Vertrag:** Lokale Exporte als CSV und JSON; Drucken öffnet den Browserdialog für Papier/PDF. Ein GeoJSON-Export wird ohne bekannte Quell-CRS bewusst nicht angeboten.
+- Der offizielle Musterplan `assets/plan-check/CAD.V01-CAFM-Plan-DE.dwg` ist ein vertrauenswürdiges, hash-gepinntes Golden. Die zuvor gemessenen 3 504 Entitäten, 17 Layer, null unbekannten Entitäten und 40 Regeln dokumentieren Kompatibilität, werden in der normalen sicherheitsgeschlossenen Abnahme aber nicht neu geparst.
+
+**Zustände und Grenzen**
+
+- Aktiv ist nur der persistente Nichtverfügbarkeitszustand. Leere Auswahl, gültige Datei bereit, laufende Prüfung, Dateifehler, Parserfehler und Qualitätsansicht sind vorbereitete, deaktivierte Zustände.
+- Bei geschlossener Dateiannahme existieren keine DWG-Bytes und kein Worker. Der vorbereitete Lebenszyklus sieht vor, Bytes weder in Hash/Query noch in `localStorage` oder `sessionStorage` zu schreiben und Parser, Worker, Viewer und Listener bei Ersatz, Abbruch oder Navigation vollständig zu beenden.
+- Der vorbereitete Ladezustand besitzt unabhängig vom Rücksprung eine sichtbare Aktion «Prüfung abbrechen». Sie beendet die Worker-Anfrage, erhält Datei und Kontext, stellt den prüfbereiten Zustand wieder her und führt den Fokus auf die wieder verfügbare Prüfaktion. Vor Aktivierung muss die vollständige Enabled-Route-E2E diesen ruhenden Vertrag mit einer freigegebenen Runtime beweisen.
+- Das vorbereitete Resultat wäre eine flüchtige technische Rückmeldung: keine produktive Speicherung oder Version, kein serverseitiger Verlauf, keine Korrekturschleife, keine fachliche Freigabe und keine Genehmigung. Wiederfreigabe verlangt einen Browser-Build auf gefixtem LibreDWG-Quellstand, begrenztes WASM-Maximalmemory mit adversarialer Peak-Memory-/Dekompressionsmessung, aktualisierte Prüfsummen/Provenienz, GPL-/Quellcodefreigabe sowie Malformed-Input-, Golden-, Privacy-, Lifecycle- und UI-Tests. Die JS-Ergebnisbudgets greifen erst nach `convertEx()` und begrenzen die vorgelagerte Decoderallokation nicht. DXF wird nicht unterstützt.
+
+**Interaktionen und Verifikation**
+
+- Die aktive Sicherheitsansicht besitzt benannten Fokus, einen kontextuellen 44-px-Rücksprung, beide Skins, Reduced Motion und 320-px-Reflow. Die vorbereiteten Register folgen dem APG-Tastaturmodell; Viewer- und Befundinteraktionen werden rein mit synthetischen Daten geprüft, solange kein freigegebener Parser vorliegt.
+- Im vorbereiteten Workbench sind die Überschriftenstufen korrigiert, die Viewer-Aktionen als benannte Gruppe ausgezeichnet und Statusänderungen auf einen Live-Ansageweg begrenzt. Normales Mausrad-Scrollen der Seite bleibt ausserhalb des fokussierten Canvas erhalten; Ctrl/Cmd+Mausrad wird nie abgefangen.
+- `scripts/test-plan-check-core.mjs` pinnt Normalisierung, Geometrie, Regeln, Grenzen, Parser-Lebenszyklus und die Abwesenheit der verworfenen Runtime. `scripts/test-plan-check.mjs` beweist Login-Gate, Nichtverfügbarkeitszustand, null Datei-/Worker-/WASM-Anfragen, Rücksprung, Marken-Skins, Reduced Motion und 320 px. `scripts/test-plan-check-parser.mjs` ist standardmässig übersprungen und verlangt beim Opt-in zusätzlich ein geprüftes `APPROVED-CANDIDATE.json` mit korrespondierendem Quellstand/Fix, Buildrezept und von 0.7.9 verschiedenen Binärhashes. Vor Aktivierung muss ausserdem die vollständige Upload-/Controller-/Workbench-E2E-Abnahme wieder als separates Opt-in-Gate hergestellt werden; die geschlossene Route deckt diese ruhenden Interaktionen bewusst nicht ab.
 
 ## js/apps/room-booking.js
 

@@ -6,10 +6,12 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently **49 supported `test-*.mjs` suites: 31 browser suites and
-18 pure-Node suites**, plus **22 retained `check-*.mjs` diagnostics**. Every
-browser suite uses `APP_BASE` to select the running app and exits non-zero on
-failure; the pure-Node suites need no server. The older diagnostics are
+There are currently **52 supported `test-*.mjs` suites: 33 browser suites and
+19 pure-Node suites**, plus **22 retained `check-*.mjs` diagnostics**. Browser
+suites use `APP_BASE` to select the running app and exit non-zero on failure.
+The quarantined `test-plan-check-parser.mjs` is skipped by default; after a
+fixed parser candidate has been supplied, an explicit trusted-fixture opt-in
+starts its own ephemeral loopback server. Pure-Node suites need no server. The older diagnostics are
 classified separately below because six are observation-only and deliberately
 do not act as regression gates.
 
@@ -38,6 +40,8 @@ the top.
    ```
    node scripts/serve.mjs
    ```
+   This is not needed for pure-Node suites or the normally skipped,
+   self-serving `test-plan-check-parser.mjs` quarantine probe.
 2. **`APP_BASE` must match where the app is served.** The default,
    `http://127.0.0.1:8848/#`, matches `serve.mjs`. Override it when using another
    port or a server that mounts the app below a path:
@@ -77,11 +81,14 @@ inventory is `scripts/test-*.mjs`.
 |---|---|
 | `test-tabs.mjs` | D1 tab component (`C.tabBar`/`C.tabPanels`/`C.wireTabs`) across portfolio · projects · dataportal: panel toggling, `aria-selected`, roving `tabindex`, focus-follows-active, keyboard (Arrow/Home/End), hash sync. Plus the logged-out gates for the action apps. |
 | `test-login.mjs` | Opens Room Booking with an explicitly empty session, verifies login persists and replaces the gate, then verifies logout clears storage and restores both the route gate and header without a subscription API. |
-| `test-workspace.mjs` | Workspace portal: seven canonical objects, plan availability and overdue order state, shared adaptive CD hero/cards (one-image solo layout and five-image Tenancies parity), read-only floor preview URL/room/color/print/fullscreen behavior, editor/checker boundary, contextual process launches in new tabs, and desktop/mobile containment. |
+| `test-workspace.mjs` | Workspace portal: seven canonical objects, plan availability and overdue order state, shared adaptive CD hero/cards (one-image solo layout and five-image Tenancies parity), read-only floor preview URL/room/color/print/fullscreen behavior, safe Plan-Editor/Planprüfung new-window handoffs with building/floor context, contextual process launches in new tabs, and desktop/mobile containment. |
 | `test-floorplan-editor.mjs` | Standalone Plan-Editor: exact Workspace deep link, default uncolored/flat room tree and attribute-driven aggregation, independent disclosures, top-layer color menu hit-testing, CD-style menu keyboard patterns, edit-specific tool order, on-demand product/module library, structural menu and geometry lock, three-pane shell, canonical rooms and deterministic illustrative furniture, direct primary/middle-button and touch panning with tap selection, continuous canvas-only wheel zoom, two-touch pinch-to-one-touch handoff, reversible responsive 2D camera sizing, persistent touch-sized 2D/3D/walk navigation with roving keyboard focus and view-specific actions, retained Three.js orbit/walk controls with camera preservation, dirty-route blocking, focus-safe discard dialogs, selection/URL state, overlap-safe product and structural room editing, CSS-pixel edit jitter and pointer-cancel rollback, inspector scroll preservation, module assignment, undo/redo, local save/publish/history/reload, core-data isolation, mutually exclusive 320px drawers with canvas-focused edit restoration, and editor-navigation restoration. |
 | `test-floorplan-editor-three-controls.mjs` | Focused real-WebGL Three.js camera controls: click-jitter threshold, floor-plane pan direction, zoom-to-cursor, two-finger pinch, deterministic camera diagnostics, responsive aspect/fit preservation, and runtime health. |
 | `test-floorplan-editor-model.mjs` | Pure Plan-Editor model/repository/commands: all canonical floor baselines, deterministic placements, catalogue-independent baseline token, detached edits, strict command allowlists and document invariants, room collision and rotated-footprint guards, catalogue rebasing and legacy-draft migration, recoverable baseline-scoped archives, cross-tab write conflicts, immutable simulated publications, scoped removal, and bounded undo/redo. |
 | `test-floorplan-editor-rendering.mjs` | Pure Plan-Editor rendering/input seams: canonical color descriptors, reversible viewport-aspect camera sizing, continuous wheel normalization, inverse screen transforms, floor-plane Three.js pan/fit/rotation math, visible-occluder picking policy, rotation-aware footprints and clamping (including thin products), keyboard cursor SVG, CSS-pixel pointer thresholds, temporary middle-button pan policy, room drag geometry, keyboard panning, and roving-focus calculations. |
+| `test-plan-check-core.mjs` | Pure Planprüfung contracts: defensive geometry/normalisation, the exact 40-rule set, abort conditions and resource limits, report/viewer behavior, closed parser-client behavior, rejected-runtime absence and provenance without loading WASM. |
+| `test-plan-check-parser.mjs` | Quarantined trusted-fixture probe. It skips by default. With `PLAN_CHECK_TRUSTED_DWG_TEST=1`, it first requires a reviewed `APPROVED-CANDIDATE.json`, rejects the known 0.7.9 hashes, verifies all candidate/fixture hashes before Worker startup, then pins parser output, termination and zero external requests. It is parser-only; a complete enabled upload/controller/workbench E2E must be restored before intake is switched on. |
+| `test-plan-check.mjs` | End-to-end security-closed Planprüfung contract: logged-out gate, validated deep context, lazy CSS/no FOUC, persistent unavailable state, zero file controls/Worker/WASM/DWG requests, contextual return, both skins, reduced motion and 320 px reflow. |
 | `test-room-booking.mjs` | Room Booking on the one-page, direct-booking surface (`docs/room-booking-redesign.md`): search and sort behavior, one process snapshot per redraw, action-time conflict checks, favourites, dialogs, process creation, personal bookings, the `?room=` deep link, and desktop/mobile containment. |
 | `test-building-create.mjs` | Building creation: neutral service-launch CTA/new-tab contract, stale address responses, selection invalidation, map/search state, required fields, and process creation. |
 | `test-gallery-floorplan-state.mjs` | W-09/W-11 lifecycle regression: exact and stale gallery deep links, unknown image IDs, dialog focus, and tenancy floor-plan fullscreen/selection/focus preservation. |
@@ -129,11 +136,16 @@ node scripts/test-data-integrity.mjs
 node scripts/test-data-resilience.mjs
 node scripts/test-security-urls.mjs
 node scripts/test-external-assets.mjs
+node scripts/test-plan-check-core.mjs
 
-# Browser lifecycle and offline recovery (server + Edge required)
+# Browser lifecycle and offline recovery (dev server + Edge required)
 node scripts/test-router-lifecycle.mjs
 node scripts/test-network-resilience.mjs
 node scripts/test-security-url-sinks.mjs
+node scripts/test-plan-check.mjs
+
+# Quarantined trusted-DWG probe (skips unless explicitly opted in; requires a fixed runtime)
+node scripts/test-plan-check-parser.mjs
 
 # Static source contracts
 node scripts/check-english-code.mjs
@@ -212,10 +224,10 @@ its dry-run mode.
 
 | Script | What it checks | Output / write effect |
 |---|---|---|
-| `review-routes.mjs` | Shared inventory of 69 representative routes and states plus the 320/768/1440 viewport matrix. | Read-only shared inventory. |
-| `review-audit.mjs` | Overflow, H1/heading structure, IDs, names, image/table semantics and responsive target-size policy across 207 renders. | Overwrites `audit.json` in the selected review output directory. |
-| `review-accessibility.mjs` | 200% reflow proxy, keyboard focus visibility, tab-order hazards, ARIA references, landmarks and accessible control names across 69 states. | Overwrites `accessibility.json` in the selected review output directory. |
-| `review-screenshots.mjs` | Full-page screenshots for all 207 route/viewport combinations. | Requires `before`, `after`, or `current`; writes/overwrites 207 PNGs below that subdirectory. |
+| `review-routes.mjs` | Shared inventory of 70 representative routes and states plus the 320/768/1440 viewport matrix. | Read-only shared inventory. |
+| `review-audit.mjs` | Overflow, H1/heading structure, IDs, names, image/table semantics and responsive target-size policy across 210 renders. | Overwrites `audit.json` in the selected review output directory. |
+| `review-accessibility.mjs` | 200% reflow proxy, keyboard focus visibility, tab-order hazards, ARIA references, landmarks and accessible control names across 70 states. | Overwrites `accessibility.json` in the selected review output directory. |
+| `review-screenshots.mjs` | Full-page screenshots for all 210 route/viewport combinations. | Requires `before`, `after`, or `current`; writes/overwrites 210 PNGs below that subdirectory. |
 
 For an ordinary verification run, direct output to a temporary directory. The
 `current` screenshot mode is accepted only with this override, so it cannot

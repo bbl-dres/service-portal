@@ -7,6 +7,7 @@ const DATA_FILES = ['applications.json', 'datasets.json', 'catalog-labels.json']
 const ESTATE_FILES = ['buildings.geojson', 'parcels.geojson', 'landcovers.geojson'];
 const WORKSPACE_FILES = ['buildings.geojson', 'floors.json', 'spaces.json', 'workspace-planning.json'];
 const EDITOR_FILES = [...WORKSPACE_FILES, 'shop-products.json'];
+const PLAN_CHECK_FILES = EDITOR_FILES;
 const CASES = [
   { route: '/data', tracked: DATA_FILES, want: ['applications.json', 'datasets.json'] },
   { route: '/data/catalog', tracked: DATA_FILES, want: ['catalog-labels.json', 'datasets.json'] },
@@ -21,6 +22,8 @@ const CASES = [
   { route: '/app/workspace?id=1080%2F6650%2FAA', tracked: WORKSPACE_FILES, want: WORKSPACE_FILES },
   { route: '/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og',
     tracked: EDITOR_FILES, want: EDITOR_FILES },
+  { route: '/app/plan-check?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og',
+    tracked: PLAN_CHECK_FILES, want: ['buildings.geojson', 'floors.json'] },
 ];
 
 let failures = 0;

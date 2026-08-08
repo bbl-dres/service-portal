@@ -2,7 +2,7 @@
 
 **Review date:** 8 August 2026
 
-**Current implementation:** through `e0f7f3c`
+**Current implementation:** Planprüfung feature work based on `f79d72b`
 
 **Scope:** maintained JavaScript, route and UI contracts, static data boundaries, local developer server, and the tests that exercise them
 
@@ -10,7 +10,7 @@
 
 The portal is now a substantially safer and easier-to-navigate vanilla-JavaScript codebase. The review found lifecycle races, weak data and storage boundaries, duplicated catalogue logic, oversized mixed-responsibility modules, and several browser-side injection surfaces. The six implementation commits listed below address the technically decidable findings without removing a route, view, interaction, brand skin, or the dependency-free runtime model.
 
-No release-blocking defect remains in the reviewed prototype scope. Route rendering now has cancellation and cleanup ownership; shared loaders reject malformed data and failed assets predictably; implementation identifiers and comments are English; UI, routing, core, map, search, and security responsibilities have explicit homes; duplicated collection and catalogue operations share small tested helpers; confirmed dead code is gone; and untrusted text, attributes, URLs, exports, calendar files, CDN assets, and the local server have defined trust boundaries.
+The reviewed portal refactor has no unresolved regression in its established routes, but the new Planprüfung has one explicit release gate: file intake is disabled because the evaluated `libredwg-web` 0.7.9 source predates the LibreDWG fix for CVE-2026-15520. The vulnerable generated runtime is not included. Route rendering now has cancellation and cleanup ownership; shared loaders reject malformed data and failed assets predictably; implementation identifiers and comments are English; UI, routing, core, map, search, and security responsibilities have explicit homes; duplicated collection and catalogue operations share small tested helpers; confirmed dead code is gone; and untrusted text, attributes, URLs, exports, calendar files, CDN assets, and the local server have defined trust boundaries.
 
 This is still a static prototype, not a production service. Its login is a client-side demonstration gate, browser storage is the persistence layer, repository fixtures stand in for server responses, and `scripts/serve.mjs` is a local test server. Consequently, this review does **not** claim real authentication, authorization, transactional writes, server-side validation, auditability, or multi-user consistency. Those items remain deliberately tracked rather than disguised by frontend-only substitutes.
 
@@ -82,8 +82,10 @@ js/
   pages/                         public route renderers
   apps/                          independently routed micro-apps
     room-booking/                calendar and booking rules
+  plan-check/                    worker parser, bounded normalization, rules,
+                                 reports, accessible view and Canvas viewer
   floorplan-editor/              editor model, commands, canvas and Three adapter
-  vendor/                        locally retained third-party source and licenses
+  vendor/                        third-party provenance, rejected hashes and licenses
 ```
 
 The key runtime contracts are now explicit:
@@ -93,6 +95,41 @@ The key runtime contracts are now explicit:
 - Browser-storage writes return success explicitly. A workflow must not display success after a failed write.
 - UI components accept text by default. Deliberate markup parameters are named `*Html`; URL and attribute contexts use the security helpers.
 - Route compatibility values may remain German, while internal identifiers remain English and are guarded by `scripts/check-english-code.mjs`.
+
+### Planprüfung addendum
+
+The standalone `#/app/plan-check` micro-app establishes a future browser-local
+DWG inspection boundary. The route adapter validates optional building/floor
+context, while bounded normalization, 40 technical checks, report generation,
+and the Canvas viewer remain testable pure modules. The active route is
+security-closed: it exposes no file/drop/submit controls, does not construct the
+parser client, and requests no Worker, vendor runtime, WASM, or DWG bytes.
+
+`@mlightcad/libredwg-web` 0.7.9 was evaluated because it has a tagged source
+revision, keeps the reference implementation's API, and parsed the official BBL
+fixture compatibly. It was rejected after its corresponding source was found to
+retain the vulnerable R2004 decompressor assignment removed by LibreDWG commit
+`3d0f9fc` (CVE-2026-15520 / GHSA-67vr-6jq3-273m). The generated JS/WASM files
+were removed. `js/vendor/libredwg/` retains only license, rejected fingerprints,
+provenance, decision rationale, and the exact re-enable criteria.
+
+Re-enabling intake requires a pinned browser build whose corresponding source
+contains the upstream fix, legal approval of its GPL/source-delivery model,
+updated checksums and provenance, bounded WASM maximum memory with adversarial
+decompression/peak-memory evidence, malformed-input and fresh-runtime recovery,
+the trusted golden, privacy checks, and a restored full active upload/controller/
+workbench browser E2E. The closed route and parser-only golden do not exercise
+the dormant workflow. Normalization already marks cyclic/depth-limited blocks,
+unsupported or non-renderable entities, invalid geometry, truncated rule
+metadata, and converter-reported unknown entities incomplete; every canonical
+rule then becomes not evaluated and the score stays null. AOID rules retain raw
+text occurrences and only evaluate alignment where the source exposes distinct
+points. Remaining domain gates are real `DIMASSOC` linkage and authoritative SIA
+area categories; the implemented in-place Worker cancellation must also be
+exercised by the restored active E2E.
+Even then the checker is not an approval or records system: it would create
+only local print/CSV/JSON evidence (not GeoJSON without a known CRS), not an
+authoritative plan version, persisted review, signature, or backend release.
 
 ## Findings and disposition
 
@@ -178,7 +215,7 @@ The sequence is intentionally bisectable. Step 7 is the commit containing this d
 The acceptance run at `e0f7f3c` was clean. It included:
 
 - all ten requested CDP suites: `apidocs`, `catalogue`, `content`, `dashboard`, `estate`, `forms`, `login`, `portfolio`, `race`, and `tabs`;
-- `scripts/test-routes.mjs`: all 38 canonical routes and 13 legacy redirects, including authenticated micro-app routes;
+- `scripts/test-routes.mjs`: all 39 canonical routes and 13 legacy redirects, including authenticated micro-app routes;
 - lifecycle and failure coverage: router races/cleanup, route data needs, network resilience, login/logout, UI state, gallery/floorplan state, and CSS loading/layers;
 - security coverage: URL classifiers and sinks, HTML contracts, external-asset SRI/ordering/retry, CSV, ICS, fullscreen, map clusters, search-log storage, and local-server traversal/Host/method behavior;
 - data and API coverage: data integrity/resilience, search, formatting, collections, process dates/docs, and API-surface/linkage checks;
@@ -187,6 +224,18 @@ The acceptance run at `e0f7f3c` was clean. It included:
 - `scripts/check-english-code.mjs`, which allows German user-facing strings and compatibility keys but rejects German implementation identifiers, hooks, comments, and developer diagnostics.
 
 These tests establish the prototype behavior represented in this repository. They are not evidence of production authentication, browser compatibility beyond the exercised environment, real service availability, penetration testing, load capacity, or legal permission to publish data and media.
+
+The Planprüfung feature adds two always-run acceptance layers for the
+security-closed implementation: pure geometry,
+normalization, rule, reporting, viewer, limit, and closed parser-client checks;
+and a browser route test covering authentication, validated context handoff,
+the persistent unavailable state, zero file/Worker/WASM requests, privacy,
+skins, reduced motion, 320 px reflow, and return cleanup. The rejected runtime
+files are asserted absent. A third, quarantined trusted-fixture probe is skipped
+by default; it can become a release gate only after a fixed parser candidate is
+supplied. The historical compatibility run recorded AC1032, 3,504 entities,
+17 layers, zero unknown entities, 3,557 render primitives, and 40 rules, but it
+is not repeated with the vulnerable 0.7.9 runtime.
 
 ## Domain glossary for implementation names
 
@@ -236,6 +285,7 @@ German remains correct in the UI. The English column is the preferred implementa
 | Media licensing and redistribution | File presence and metadata do not prove copyright, model/property release, attribution, or redistribution rights. Automated deletion could also remove approved material. | Record owner, source, license, attribution, and publication approval per asset; replace or withdraw unresolved media. Decide history treatment separately. |
 | Strict CSP and complete local vendoring | Direct MapLibre, Swagger UI, and bpmn-js assets now use exact SRI, but nested fonts and dynamic map tiles/glyphs are fetched by those libraries and cannot be authenticated with SRI in the same way. Inline styles and remote endpoints also affect CSP design. | Decide whether to self-host libraries, fonts, styles, tiles, sprites, and glyphs; inventory inline style requirements; deploy CSP as an HTTP response header and test it in the target hosting environment. |
 | Map privacy and external availability | Remote tile/geocoding calls expose network metadata and can fail outside the controlled demonstration environment. The repository has no service agreement or offline tile source. | Select approved providers, privacy terms, attribution, availability targets, fallback behavior, and optionally a self-hosted map stack. |
+| Safe and authoritative plan intake, approval, and LibreDWG licensing | Planprüfung file intake is disabled and the evaluated 0.7.9 binary was removed because its source predates the CVE-2026-15520 fix. Even the prepared local checker has no backend record, version, signature, reviewer identity, retention policy, or release transaction. | Supply a pinned browser parser whose source includes `3d0f9fc`; bound WASM maximum memory and adversarial peak allocation before JS result limits; approve GPL/source delivery; pass malformed/golden/privacy/lifecycle gates; then design authenticated upload, isolation, server validation, immutable versions, roles, audit, retention, and approval/rejection workflow. |
 | Further splitting of closure-bound editor controllers | `js/floorplan-editor/controller.js`, `views.js`, and parts of `three-viewer.js` share mutable interaction, scene, history, and disposal state. A mechanical split would create hidden coupling without reducing it. | First define an explicit editor state/event boundary and add interaction/performance fixtures; then extract one state owner at a time. |
 | Review binaries and Git history | Screenshots, PDFs, historical probes, and old commits are evidence or shared history. Removal and history rewriting are destructive governance decisions outside a JavaScript refactor. | Set retention and artifact-storage policy, identify canonical evidence, obtain explicit approval, and communicate any history rewrite to every consumer. |
 

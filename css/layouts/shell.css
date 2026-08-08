@@ -61,6 +61,23 @@
 
 /* Page chrome */
 .site-main { min-height:50vh; flex:1 0 auto; position:relative; z-index:var(--z-content); }
+
+/* Standalone micro-app shell. The router owns this class and removes it before
+   every dispatch, so a failed or departed tool cannot strand hidden portal
+   chrome. Logged-out deep links retain the ordinary shell because the class is
+   applied only after the central login gate. */
+body.body--standalone-app { height:100dvh; min-height:0; overflow:hidden; padding-bottom:0; }
+.body--standalone-app > .site-header,
+.body--standalone-app > .data-status,
+.body--standalone-app > .site-footer,
+.body--standalone-app > .banner-host { display:none; }
+.body--standalone-app > .site-main { min-height:0; height:100dvh; overflow:hidden; z-index:var(--z-local-content); }
+
+@media print {
+  .body--standalone-app { overflow:visible; height:auto; }
+  .body--standalone-app > .site-main { height:auto; overflow:visible; }
+}
+
 /* Readable line length (Item 2.18). CD enforces it structurally through
    container__center--*, but .page-header and .detail-section do not sit in the
    12-column grid, hence this cap. Measured at 1440: leads 133ch, body copy

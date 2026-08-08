@@ -2,16 +2,6 @@
 /* Standalone floor-plan editor                                               */
 /* ========================================================================== */
 
-/* The editor is an own-window workbench from the approved wireframe. The
-   router owns this class so a failed/left route cannot strand hidden portal
-   chrome. Logged-out deep links keep the normal shell and login explanation. */
-body.body--standalone-app { height:100dvh; min-height:0; overflow:hidden; padding-bottom:0; }
-.body--standalone-app > .site-header,
-.body--standalone-app > .data-status,
-.body--standalone-app > .site-footer,
-.body--standalone-app > .banner-host { display:none; }
-.body--standalone-app > .site-main { min-height:0; height:100dvh; overflow:hidden; z-index:var(--z-local-content); }
-
 .fpe-app { --fpe-left:18.75rem; --fpe-right:23.75rem; --fpe-panel-gutter:var(--sp-5);
   --fpe-border-structural:var(--color-secondary-200); --fpe-border-control:var(--color-secondary-300);
   --fpe-z-backdrop:19; --fpe-z-panel:20; --fpe-z-edit-frame:30; --fpe-z-menu:50; --fpe-z-picker:80;
@@ -535,8 +525,7 @@ body.body--standalone-app { height:100dvh; min-height:0; overflow:hidden; paddin
 }
 
 @media print {
-  .body--standalone-app { overflow:visible; height:auto; }
-  .body--standalone-app > .site-main, .fpe-app { height:auto; overflow:visible; }
+  .fpe-app { height:auto; overflow:visible; }
   .fpe-header, .fpe-context, .fpe-left, .fpe-right, .fpe-toolbar-host,
   .fpe-color-menu-host, .fpe-structure-menu-host, .fpe-view-nav-host, .fpe-view-actions-host,
   .fpe-scale, .fpe-measure-result, .fpe-local-note { display:none; }

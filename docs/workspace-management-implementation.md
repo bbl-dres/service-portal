@@ -1,6 +1,6 @@
 # Workspace Management — Umsetzungsplan
 
-Stand: 7. August 2026
+Stand: 8. August 2026
 
 ## Anwendungsgrenzen
 
@@ -8,7 +8,7 @@ Die Wireframes beschreiben drei Anwendungen mit gemeinsamer Datenbasis, aber unt
 
 1. **Workspace Management Portal** — Objekte finden, Projekt- und Auftragskontext verstehen, Planstände und Mengengerüste einsehen, Bestandsgrundrisse schreibgeschützt als Vorschau prüfen und Prozesse starten.
 2. **Plan-Editor / Viewer** — Grundrisse in einer spezialisierten Vollbild-Arbeitsumgebung betrachten und bearbeiten, Räume und Ausstattung selektieren sowie Attribute pflegen.
-3. **Planprüfung** — DWG/DXF übernehmen, Regeln prüfen, Befunde bearbeiten und den geprüften Plan freigeben.
+3. **Planprüfung** — eine getrennte Prüfoberfläche; die implementierte lokale DWG-Pipeline bleibt bis zu einem sicher aktualisierten Parser deaktiviert.
 
 Die drei Anwendungen erhalten eigene Route-Module und eigene Lebenszyklen. Sie teilen stabile Schlüssel (`buildingId`, `floorId`, Projekt-/Auftrags-ID) und fachliche Daten, aber weder DOM noch UI-Zustand. Das Portal darf die bestehenden, auch im Mietendenportal verwendeten Grundrisskomponenten für eine schreibgeschützte Vorschau einbetten: Geschoss wechseln, einfärben, Räume auswählen, Vollbild und Drucken sind reine Leseinteraktionen. Geometrie oder Ausstattung ändern, Planversionen speichern und Regeln prüfen bleiben ausschliesslich den beiden spezialisierten Anwendungen vorbehalten.
 
@@ -20,7 +20,7 @@ Die drei Anwendungen erhalten eigene Route-Module und eigene Lebenszyklen. Sie t
 - Den geteilten Objekt-Hero aus dem Mietendenportal unverändert wiederverwenden: bei mehreren Bildern als Mosaik mit Standortkarte, bei nur einem kanonischen Bild ohne leere Galeriekacheln als breite Bild-/Kartenkomposition.
 - Register `Übersicht`, `Grundrisse` und `Ausstattung` mit Tabellen und ehrlich bezeichnetem Export der aggregierten Planannahmen bereitstellen.
 - Aus der Grundrisstabelle eine schreibgeschützte Vorschau mit teilbarem `floor`-/`color`-/`space`-Zustand, Raumdaten, Vollbild und Plandruck öffnen; dafür dieselben `floorplan.js`-Muster wie das Mietendenportal wiederverwenden. Den besonderen Bearbeitungs-Handoff als erste Aktionskarte der Auswertungsspalte führen, nicht als Teil der gemeinsamen Viewer-Kopfleiste.
-- Den Plan-Editor als eigene, in einem neuen Fenster geöffnete Folgeanwendung verlinken; die noch nicht umgesetzte Planprüfung klar bezeichnet und deaktiviert ausweisen. Schreib- oder Prüflogik wird nicht in das Portal eingebettet.
+- Plan-Editor und Planprüfung als eigene, in einem neuen Fenster geöffnete Folgeanwendungen verlinken. Die ehrliche Objektaktion «Planprüfung öffnen» übergibt das Gebäude; die Grundrissvorschau übergibt Gebäude und aktuelles Geschoss. Die Zielroute erklärt derzeit die deaktivierte Dateiannahme; Schreib- oder Prüflogik wird nicht in das Portal eingebettet.
 - Workspace-spezifische Planung als kleinen Overlay-Bestand an den bestehenden Golden Record hängen; keine Adressen, Bilder, Koordinaten oder Grundrissgeometrie duplizieren.
 
 ## Schritt 2 — Plan-Editor / Viewer (umgesetzt)
@@ -33,13 +33,17 @@ Die drei Anwendungen erhalten eigene Route-Module und eigene Lebenszyklen. Sie t
 - Die Anwendung bezieht Gebäude, Geschosse, Räume, Workspace-Planungsmetadaten und Shop-Produkte aus dem bestehenden Kernbestand. Sie erzeugt daraus ein abgelöstes Editor-Dokument; illustrative Startplatzierungen sind ausdrücklich Prototypannahmen und keine Inventardaten.
 - Speichern legt nach strikter Schema-, Schlüssel-, Revisions- und Geometrievalidierung ausschliesslich eine geschossbezogene Browser-Arbeitskopie in `localStorage` ab. «Veröffentlichen» erzeugt für den Usability-Test zusätzlich eine unveränderliche, lokal nummerierte Momentaufnahme und einen sichtbaren Versionsverlauf. Dialog, Statuszeile und Verlauf weisen ausdrücklich darauf hin, dass dies keine gemeinsame oder freigegebene Version ist. Der kanonische Bestand wird weder direkt verändert noch durch eine scheinbare Backend-Synchronisation überschrieben.
 - Autorenfunktionen verwenden mit `js/floorplan-editor/canvas.js`, der `three.js`-Fassade und `model.js` eine eigene 2D-/3D-Planfläche und ein eigenes Dokumentmodell. `colors.js` und `geometry.js` liefern rendererübergreifende Farb- und Footprint-Regeln; `interactions.js` und `dialogs.js` halten Eingabepolitik beziehungsweise CD-Aktionsdialoge aus dem Workbench-Controller heraus. `commands.js` bündelt fachliche Raum-/Platzierungsoperationen; `repository.js` kapselt als austauschbarer Adapter die einzige Browser-Persistenz. Die stabilen, schreibgeschützten `floorplan.js`-Primitiven für Workspace- und Mietendenportal bleiben davon unberührt.
-- **Explizite Prototypgrenzen:** Es gibt noch keinen Backend-Versionsdienst, keine Row-Level Security, keine fachliche Rollen-/Schreibrechteprüfung und keine gemeinsame Bearbeitung. Räume sind für diesen Feedback-Prototyp als `rooms[]` in die Arbeitskopie eingebettet; dies ist ausdrücklich nicht das Zielmodell der nächsten Iteration. Das 3D-Modell wird real aus diesen Prototypdaten erzeugt, besitzt aber noch keine CAD-Wand-/Türtopologie, Kollisionsprüfung oder importierten Produktmodelle; Ausstattungskörper bleiben geometrische Näherungen. Veröffentlichung ist weiterhin lokal simuliert. Ein Upload-Control wird im Editor nicht angeboten; DWG/DXF-Übernahme, Regelprüfung, Befundbearbeitung und Freigabe gehören weiterhin ausschliesslich zu Schritt 3.
+- **Explizite Prototypgrenzen:** Es gibt noch keinen Backend-Versionsdienst, keine Row-Level Security, keine fachliche Rollen-/Schreibrechteprüfung und keine gemeinsame Bearbeitung. Räume sind für diesen Feedback-Prototyp als `rooms[]` in die Arbeitskopie eingebettet; dies ist ausdrücklich nicht das Zielmodell der nächsten Iteration. Das 3D-Modell wird real aus diesen Prototypdaten erzeugt, besitzt aber noch keine CAD-Wand-/Türtopologie, Kollisionsprüfung oder importierten Produktmodelle; Ausstattungskörper bleiben geometrische Näherungen. Veröffentlichung ist weiterhin lokal simuliert. Ein Upload-Control wird im Editor nicht angeboten; stattdessen führen die Kopfzeilen aus Gebäude-, Geschoss- und Arbeitsfläche mit dem jeweils vorhandenen Kontext in die getrennte Planprüfung.
 
-## Schritt 3 — Planprüfung
+## Schritt 3 — Planprüfung (Oberfläche umgesetzt, Dateiannahme sicherheitsbedingt deaktiviert)
 
-- Eigenes Route-Modul für Upload, Dateiprüfung, Regelergebnisse, Korrekturschleife und Freigabe.
-- Regeltexte und Resultatmodell aus dem Plan-Check-Vertrag beziehen; keine zweite Regeldefinition im Portal pflegen.
-- Übergabe aus Portal und Editor über Objekt, Geschoss, Datei-/Planversion und Rücksprungziel.
+- Eigenes, loginpflichtiges Route-Modul `#/app/plan-check` mit Standalone-Layout. Validierte Objekt-/Geschossübergaben und der kontextuelle Rücksprung aus Workspace und Plan-Editor sind umgesetzt.
+- Die Route zeigt derzeit einen persistenten, zugänglichen Hinweis «DWG-Prüfung derzeit nicht verfügbar». Sie enthält kein Dateifeld, keine Drop-Zone und keinen Startknopf; vor allem werden weder Datei-Bytes gelesen noch ein Parserobjekt oder Worker erzeugt und keine Vendor-Runtime oder WASM-Datei geladen. Der kleine lokale Parser-Client-Adapter wird statisch importiert, bleibt aber inaktiv.
+- Die entwickelte Pipeline umfasst defensive Normalisierung, 40 strukturierte Regeln, eine begrenzte Canvas-Ansicht, sechs APG-Register und lokale Print-/CSV-/JSON-Berichte. Diese Funktionen bleiben hinter `PLAN_CHECK_INTAKE_ENABLED=false` unerreichbar, bis die Parserfreigabe erfüllt ist.
+- `@mlightcad/libredwg-web` 0.7.9 wurde gegenüber dem Referenzprototyp geprüft, aber nicht ausgeliefert: Sein korrespondierender Quellstand enthält noch nicht den LibreDWG-Fix `3d0f9fc` für CVE-2026-15520 / GHSA-67vr-6jq3-273m. Die abgeleiteten JS-/WASM-Dateien wurden entfernt; `js/vendor/libredwg/` bewahrt nur Lizenz, Fingerprints, Herkunft, Entscheid und Wiederfreigabekriterien.
+- Eine Wiederfreigabe verlangt einen fest gepinnten Browser-Build, dessen korrespondierender LibreDWG-Quellstand den Fix enthält, ein begrenztes WASM-Maximalmemory mit adversarialer Peak-Memory-/Dekompressionsmessung, eine geklärte GPL-/Quellcodebereitstellung sowie Golden-, Malformed-Input-, Privacy-, Lifecycle- und vollständige aktive Upload-/Controller-/Workbench-E2E-Abnahme. Die JavaScript-Mengenbudgets greifen erst nach der Konvertierung; Worker und 120-Sekunden-Watchdog ersetzen weder Parserfix noch Speichergrenze. Alternativ ist ein freigegebener isolierter Parsing-Dienst zu entwerfen.
+- Der offizielle Musterplan `CAD.V01-CAFM-Plan-DE.dwg` bleibt als vertrauenswürdiger, hash-gepinnter Testdatensatz enthalten. Ein realer Parser-Golden ist quarantänisiert und läuft im Normalbetrieb nicht.
+- **Explizite Prototypgrenzen:** Es findet derzeit keine Prüfung statt. Die vorbereitete Pipeline behandelt partielle Geometrie nach zyklischen/tiefen `INSERT`-Ketten, unbekannte/nicht unterstützte Entitäten, ungültige Geometriewerte und abgeschnittene Prüfmetadaten bereits fail-closed: alle kanonischen Regeln bleiben «nicht ausgewertet» und der Erfüllungsgrad `null`. AOID-Regeln verwenden rohe Textinstanzen und werten die Ausrichtung nur bei unterscheidbaren Quellpunkten aus. Vor einer Aktivierung müssen weiterhin echte `DIMASSOC`-Verknüpfungen ausgewertet und SIA-Kategorien autoritativ geliefert werden. Der vorbereitete In-place-Abbruch einer laufenden Prüfung ist implementiert, muss aber zusammen mit dem gesamten aktiven Upload-/Controller-/Workbench-Ablauf gegen eine freigegebene Runtime abgenommen werden. Auch nach einer Parserfreigabe wäre das Resultat weder gespeichert noch fachlich freigegeben; produktive Plan-/Resultatversionen, serverseitige Historie, Korrekturschleife und Genehmigungsentscheid fehlen weiterhin.
 
 ## Noch offene Verträge für den Produktionsausbau
 
@@ -47,5 +51,6 @@ Die drei Anwendungen erhalten eigene Route-Module und eigene Lebenszyklen. Sie t
 - Räume als eigenständige Entität mit stabiler `roomId`, Plan-/Geschossbezug und eigener Änderungsfassung führen; Platzierungen referenzieren Räume, statt einen eingebetteten Browser-Datensatz als API-DTO zu übernehmen.
 - Rollen, Schreibrechte und Mehrbenutzerkonflikte je Anwendung definieren. Lesen und Schreiben werden serverseitig und in der Datenbank mit Row-Level Security durchgesetzt; UI-Zustände oder lokale Schlüssel gelten nie als Berechtigungsgrenze.
 - API-Vertrag für Arbeitskopie, `plan_revision`, Raum-Patches, Platzierungen, serverseitig gesetzte Akteure und optimistische Konflikte/ETags festschreiben. `js/floorplan-editor/repository.js` wird dafür durch einen authentifizierten Adapter ersetzt.
-- Übergabe und Rücksprung zur künftigen Planprüfung um Datei-/Planversion und Prüfresultat ergänzen; Portal und Editor übergeben bereits Objekt und Geschoss.
+- Zuerst einen sicher aktualisierten, rechtlich freigegebenen Browser-Parser bereitstellen und die dokumentierte Wiederfreigabematrix erfüllen; erst danach die Dateiannahme aktivieren.
+- Übergabe und Rücksprung zur Planprüfung um eine künftige serverseitige Datei-/Planversion und ein persistiertes Prüfresultat ergänzen; Portal und Editor übergeben derzeit ausschliesslich Objekt und optional Geschoss.
 - Fehlende Backend-Operationen sichtbar als Prototypgrenze behandeln; keine Schein-Speicherung oder erfundenen Preise.

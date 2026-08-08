@@ -463,6 +463,7 @@
     ],
     "related": [
       "floorplan-editor",
+      "plan-check",
       "raumbuchung",
       "flm"
     ],
@@ -491,7 +492,7 @@
     },
     "description": "Flächen, Räume und Multispace-Ausstattung direkt im Grundriss verwalten, auswerten und planen.",
     "area": "logistics",
-    "long": "Der Plan-Editor ist die spezialisierte Arbeitsoberfläche für das Flächenmanagement. Er verbindet Gebäude, Geschosse und Räume mit Nutzungsarten, SIA-416-Flächen, Verwaltungseinheiten, Arbeitsplatzkapazitäten und Multispace-Modulen. Fachpersonen können den Flächenbestand im Grundriss suchen, vergleichen und auswerten, Raumattribute und Flächen bearbeiten sowie Ausstattungsobjekte aus dem Produktkatalog verorten. Im Feedback-Prototyp werden Entwürfe, Raumänderungen und simulierte Publikationen ausschliesslich im verwendeten Browser gespeichert. Planübernahme, DWG-/DXF-Prüfung und fachliche Freigabe gehören zur separaten Planprüfung.",
+    "long": "Der Plan-Editor ist die spezialisierte Arbeitsoberfläche für das Flächenmanagement. Er verbindet Gebäude, Geschosse und Räume mit Nutzungsarten, SIA-416-Flächen, Verwaltungseinheiten, Arbeitsplatzkapazitäten und Multispace-Modulen. Fachpersonen können den Flächenbestand im Grundriss suchen, vergleichen und auswerten, Raumattribute und Flächen bearbeiten sowie Ausstattungsobjekte aus dem Produktkatalog verorten. Im Feedback-Prototyp werden Entwürfe, Raumänderungen und simulierte Publikationen ausschliesslich im verwendeten Browser gespeichert. Planübernahme, DWG-Prüfung und fachliche Freigabe gehören zur separaten Planprüfung; DXF wird dort nicht unterstützt.",
     "access": {
       "note": "Für angemeldete Fachpersonen der Arbeitsplatz- und Raumausstattungsplanung. Der Prototyp bildet noch keine produktive Schreibberechtigung ab.",
       "steps": [
@@ -511,6 +512,7 @@
     ],
     "related": [
       "workspace",
+      "plan-check",
       "eshop",
       "flm"
     ],
@@ -523,6 +525,55 @@
       "credit": "DOAN THANH BINH — Pexels",
       "lizenz": "Pexels-Lizenz",
       "quelle": "https://www.pexels.com/photo/modern-open-office-space-with-cubicles-36631700/"
+    }
+  },
+  {
+    "appId": "plan-check",
+    "name": "Planprüfung",
+    "group": "Arbeitsplatz & Logistik",
+    "icon": "CloudUpload",
+    "audience": [
+      "staff"
+    ],
+    "link": {
+      "kind": "app",
+      "href": "#/app/plan-check"
+    },
+    "description": "Vorbereitete technische DWG-Prüfung; die Dateiannahme ist derzeit aus Sicherheitsgründen deaktiviert.",
+    "area": "logistics",
+    "long": "Die Planprüfung ist als spezialisierte Arbeitsoberfläche für eingehende CAD-Pläne vorbereitet. Die Dateiannahme bleibt deaktiviert, bis ein sicher aktualisierter und rechtlich freigegebener LibreDWG-Browser-Build verfügbar ist. Die Route erklärt diesen Status; sie liest, verarbeitet oder überträgt keine Plandatei und bildet keine fachliche Freigabe oder produktive Planversionierung ab.",
+    "access": {
+      "note": "Für angemeldete Fachpersonen der CAD- und Flächendatenbewirtschaftung. Die Dateiannahme ist derzeit sicherheitsbedingt deaktiviert.",
+      "steps": [
+        "Anmeldung über AGOV / FedLogin.",
+        "Optional Workspace-Objekt und Geschoss als Rücksprungkontext übernehmen.",
+        "Aktuellen Sicherheits- und Verfügbarkeitsstatus lesen."
+      ]
+    },
+    "resources": [
+      {
+        "label": "Workspace Management (Portal)",
+        "href": "#/applications/workspace"
+      },
+      {
+        "label": "Plan-Editor",
+        "href": "#/applications/floorplan-editor"
+      }
+    ],
+    "related": [
+      "workspace",
+      "floorplan-editor",
+      "flm"
+    ],
+    "contact": "campus",
+    "updated": "2026-08-08",
+    "bild": {
+      "src": "assets/images/applications/flm.jpg",
+      "titel": "Architekturplan auf einer Holzoberfläche neben Stift und Lineal.",
+      "fotograf": "Anete Lusina",
+      "credit": "Anete Lusina — Pexels",
+      "lizenz": "Pexels-Lizenz",
+      "quelle": "https://www.pexels.com/photo/architecture-plan-on-wooden-surface-4792483/"
     }
   },
   {
@@ -916,6 +967,7 @@
     ],
     "related": [
       "workspace",
+      "plan-check",
       "liegenschaften-inventar"
     ],
     "contact": "immobilienmanagement",

@@ -39,3 +39,15 @@ export const floorplanEditor = (buildingId, floorId = '') => {
   const query = params.toString();
   return `#/app/floorplan-editor${query ? `?${query}` : ''}`;
 };
+
+/**
+ * Standalone DWG plan check. Stable domain keys may be handed over, but the
+ * selected local CAD file deliberately never becomes URL or storage state.
+ */
+export const planCheck = (buildingId, floorId = '') => {
+  const params = new URLSearchParams();
+  if (buildingId) params.set('building', String(buildingId));
+  if (floorId) params.set('floor', String(floorId));
+  const query = params.toString();
+  return `#/app/plan-check${query ? `?${query}` : ''}`;
+};

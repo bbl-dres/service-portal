@@ -68,6 +68,7 @@ export const REVIEW_ROUTES = [
   { route: '/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og&view=walk', slug: 'app_floorplan-editor_walk', slow: true },
   { route: '/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og&edit=1', slug: 'app_floorplan-editor_edit', slow: true },
   { route: '/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og&selected=room%3A1080-6650-AA-2og-05&edit=1&library=modules', slug: 'app_floorplan-editor_room_edit', slow: true },
+  { route: '/app/plan-check', slug: 'app_plan-check', slow: true },
   { route: '/app/room-booking', slug: 'app_room-booking', slow: true },
   { route: '/app/transaction', slug: 'app_transaction' },
   { route: '/app/api-docs', slug: 'app_api-docs', slow: true },

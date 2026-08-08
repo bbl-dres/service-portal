@@ -119,6 +119,7 @@ try {
     const mosaic = document.querySelector('#workspace-mosaic');
     const disabled = [...document.querySelectorAll('.fp-svc--disabled[aria-disabled="true"]')];
     const editor = document.querySelector('.fp-svc[href^="#/app/floorplan-editor"]');
+    const checker = document.querySelector('.fp-svc[href^="#/app/plan-check"]');
     return {
       h1: document.querySelector('#main-content h1')?.textContent.trim() || '',
       eyebrow: document.querySelector('.eyebrow')?.textContent.trim() || '',
@@ -146,6 +147,9 @@ try {
       editorHref: editor?.getAttribute('href') || '',
       editorTarget: editor?.getAttribute('target') || '',
       editorRel: editor?.getAttribute('rel') || '',
+      checkerHref: checker?.getAttribute('href') || '',
+      checkerTarget: checker?.getAttribute('target') || '',
+      checkerRel: checker?.getAttribute('rel') || '',
       exportEnabled: !document.querySelector('#workspace-export')?.disabled,
       mutationControls: document.querySelectorAll('input[type="file"],[contenteditable="true"],[data-editor-action],[data-checker-action],#workspace-floorplan').length,
       ngf: [...document.querySelectorAll('.workspace-object-facts dt')]
@@ -180,10 +184,12 @@ try {
   check(/building=1080%2F6650%2FAA/i.test(detail.editorHref)
     && detail.editorTarget === '_blank' && detail.editorRel.includes('noopener'),
   'hands the selected object to the standalone editor in a new window', detail.editorHref);
-  check(detail.disabledLabels.length === 2
-    && detail.disabledLabels.some(label => /Plan prüfen/.test(label))
+  check(/building=1080%2F6650%2FAA/i.test(detail.checkerHref)
+    && detail.checkerTarget === '_blank' && detail.checkerRel.includes('noopener'),
+  'hands the selected object to the standalone plan check in a new window', detail.checkerHref);
+  check(detail.disabledLabels.length === 1
     && detail.disabledLabels.some(label => /SIA-Flächennachweis/.test(label)),
-  'keeps only the checker and specialist report as disabled hand-offs', detail.disabledLabels.join(' · '));
+  'keeps only the specialist report as a disabled hand-off', detail.disabledLabels.join(' · '));
   check(detail.mutationControls === 0,
     'does not expose upload, geometry-edit, checker, or persistence controls');
   check(detail.exportEnabled, 'offers the honestly labelled prototype aggregate export');
@@ -299,6 +305,10 @@ try {
       editorHref: document.querySelector('#workspace-plan-editor')?.getAttribute('href') || '',
       editorTarget: document.querySelector('#workspace-plan-editor')?.getAttribute('target') || '',
       editorLabel: document.querySelector('#workspace-plan-editor .btn__text')?.textContent.trim() || '',
+      checkerHref: document.querySelector('#workspace-plan-check')?.getAttribute('href') || '',
+      checkerTarget: document.querySelector('#workspace-plan-check')?.getAttribute('target') || '',
+      checkerRel: document.querySelector('#workspace-plan-check')?.getAttribute('rel') || '',
+      checkerLabel: document.querySelector('#workspace-plan-check .btn__text')?.textContent.trim() || '',
       editorCardFirst: document.querySelector('.fp-side')?.firstElementChild?.classList.contains('fp-editor-action') || false,
       headerBackFirst: header?.firstElementChild?.classList.contains('fp-back') || false,
       headerRows: [...new Set(headerChildren.map((node) => {
@@ -318,6 +328,10 @@ try {
     && prepared.editorHref.includes(`floor=${plannedFloor}`) && prepared.editorTarget === '_blank'
     && prepared.editorLabel === 'Im Plan-Editor bearbeiten' && prepared.editorCardFirst,
   'hands the exact preview floor to the standalone editor from the first sidebar card', prepared.editorHref);
+  check(/building=1080%2F6650%2FAA/i.test(prepared.checkerHref)
+    && prepared.checkerHref.includes(`floor=${plannedFloor}`) && prepared.checkerTarget === '_blank'
+    && prepared.checkerRel.includes('noopener') && prepared.checkerLabel === 'Planprüfung öffnen',
+  'hands the exact preview floor to the standalone plan check', prepared.checkerHref);
   check(prepared.headerBackFirst && prepared.headerRows === 1 && prepared.headerOverflow <= 1
     && !prepared.redundantReadonlyLabel,
   'uses one shared desktop viewer-header row without the read-only label',
@@ -487,6 +501,7 @@ try {
     const actions = document.querySelector('.fp-head__actions');
     const actionButtons = [...(actions?.querySelectorAll('.btn') || [])];
     const editor = document.querySelector('#workspace-plan-editor');
+    const checker = document.querySelector('#workspace-plan-check');
     return {
       h1: document.querySelector('#main-content h1')?.textContent.trim() || '',
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -501,6 +516,8 @@ try {
       actionsOverflow: actions ? Math.round(actions.scrollWidth - actions.clientWidth) : -1,
       editorVisible: !!editor && getComputedStyle(editor).display !== 'none',
       editorLabel: editor?.textContent.replace(/\s+/g, ' ').trim() || '',
+      checkerVisible: !!checker && getComputedStyle(checker).display !== 'none',
+      checkerLabel: checker?.textContent.replace(/\s+/g, ' ').trim() || '',
     };
   })()`);
   check(/Liebefeld/.test(mobile.h1), 'renders the floor preview on a narrow viewport', mobile.h1);
@@ -515,6 +532,8 @@ try {
     'keeps both shared viewer actions reachable on mobile', `${mobile.actionLabels.join(' · ')} · ${mobile.actionsOverflow}px overflow`);
   check(mobile.editorVisible && mobile.editorLabel === 'Im Plan-Editor bearbeiten',
     'keeps the separate Plan-Editor action reachable in the mobile sidebar', mobile.editorLabel);
+  check(mobile.checkerVisible && mobile.checkerLabel === 'Planprüfung öffnen',
+    'keeps the separate plan-check action reachable in the mobile sidebar', mobile.checkerLabel);
   const mobileAccess = await mobilePage.evaluate(ACCESSIBILITY);
   check(mobileAccess.unlabeledControls === 0, 'mobile preview controls have accessible labels');
   check(mobileAccess.duplicateIds.length === 0, 'mobile preview has no duplicate IDs', mobileAccess.duplicateIds.join(', '));

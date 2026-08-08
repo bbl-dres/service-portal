@@ -2,7 +2,7 @@
 // This is intentionally separate from the plan workbench: the two views have
 // independent state, markup and event lifecycles.
 
-import { floorplanEditor } from '../links.js';
+import { floorplanEditor, planCheck } from '../links.js';
 import {
   BASE, PLAN_STATUS, address, area, clean, editorHeaderHTML, number, prototypeFooterHTML,
 } from './shared.js';
@@ -151,7 +151,7 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
   setTitle(floorView ? `Plan-Editor — Geschosse ${object.building.name}` : 'Plan-Editor — Gebäude');
   mount.innerHTML = `<div class="fpe-app fpe-nav-app" id="fpe-navigation" data-view="${floorView ? 'floors' : 'buildings'}">
     <h1 class="sr-only" tabindex="-1">Plan-Editor — ${C.escape(title)}</h1>
-    ${editorHeaderHTML(C, session)}
+    ${editorHeaderHTML(C, session, false, floorView ? planCheck(object.building.bbl_id) : planCheck())}
     <div class="fpe-context fpe-nav-context">
       <span class="fpe-nav-context__title">${C.escape(title)} <span id="fpe-nav-count">${number(count)}</span></span>
       <span class="fpe-context__spacer"></span>

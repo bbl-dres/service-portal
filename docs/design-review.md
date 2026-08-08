@@ -12,10 +12,10 @@ Dieser Nachtrag ist der aktuelle technische Abnahmestand des CSS-Refactorings.
 Die Ausgangsbefunde und die 57 Zustände beziehungsweise 171 Bilder der
 ursprünglichen visuellen Review bleiben weiter unten als historische Baseline
 erhalten. Die heute ausführbare Matrix in `scripts/review-routes.mjs` enthält
-69 Zustände. `review-audit.mjs` rendert jeden davon bei 320, 768 und 1440 px,
-also 207 Renderzustände; `review-accessibility.mjs` prüft die 69 Zustände je
-einmal. Die eingecheckten Vorher-/Nachher-Screenshot-Artefakte wurden in diesem
-Refactoring nicht von 57 auf 69 Zustände erweitert und bleiben deshalb bei 171.
+70 Zustände. `review-audit.mjs` rendert jeden davon bei 320, 768 und 1440 px,
+also 210 Renderzustände; `review-accessibility.mjs` prüft die 70 Zustände je
+einmal. Die eingecheckten Vorher-/Nachher-Screenshot-Artefakte wurden nicht von
+57 auf die aktuelle Matrix erweitert und bleiben deshalb bei 171.
 
 ### Umsetzung und CD-Abgleich
 
@@ -27,9 +27,10 @@ Refactoring nicht von 57 auf 69 Zustände erweitert und bleiben deshalb bei 171.
    kanonischer Ladefolge bytegleich war. Der reine Split bestand aus 19 neuen
    statischen Concern-Dateien plus dem bestehenden `tokens.css` und sieben
    lazy App-Dateien. `index.html` lud damit 20 statische Schichten explizit; der
-   Router lud die sieben `css/apps/*.css` erst vor dem Rendern der jeweiligen
-   Micro-App. Die endgültigen 31 Dateien – 24 statisch, sieben lazy – liegen
-   über dem groben Ziel von fünfzehn, weil die geprüften
+   Router lud die App-Blätter erst vor dem Rendern der jeweiligen Micro-App.
+   Nach Konsolidierung und der neuen Planprüfungsgrenze umfasst die aktuelle
+   Struktur 32 Dateien – 24 statisch, acht lazy. Sie liegt über dem groben Ziel
+   von fünfzehn, weil die geprüften
    App-Abhängigkeitsgrenzen sonst wieder unbeteiligtes CSS in den Erstaufruf
    ziehen würden. Innerhalb dieser Grenzen bleiben Komponenten nach Anliegen
    gruppiert und nicht auf eine Datei pro Komponente verteilt.
@@ -109,17 +110,17 @@ addiert.
 | Vorher `css/app.css` | 4'760 | 348'434 | 96'142 |
 | Vorher `css/tokens.css` | 414 | 23'643 | 8'706 |
 | Vorher, App + Tokens | 5'174 | 372'077 | 104'848 |
-| Nachher, statischer Erstaufruf | 3'878 | 274'414 | 97'397 |
-| Nachher, alle 31 CSS-Dateien | 5'418 | 391'971 | 129'893 |
+| Nachher, statischer Erstaufruf | 3'818 | 265'672 | 89'005 |
+| Nachher, alle 32 CSS-Dateien | 5'328 | 376'677 | 112'246 |
 
 Die Summe aller Dateien ist keine Erstaufrufgrösse. Normale Seiten fordern kein
 `css/apps/*.css` an; eine Micro-App lädt nur ihre deklarierte Teilmenge und der
 Browser cached bereits geladene Abhängigkeiten. Zwischen statischem Erstaufruf
-und dem theoretischen Abruf aller sieben App-Dateien liegen 1'540 Zeilen,
-117'557 Rohbytes beziehungsweise 32'496 gzip-Bytes. Zudem ist eine Summe
+und dem theoretischen Abruf aller acht App-Dateien liegen 1'510 Zeilen,
+111'005 Rohbytes beziehungsweise 23'241 gzip-Bytes. Zudem ist eine Summe
 einzeln komprimierter Dateien nicht direkt mit einem einzigen konkatenierten
 gzip-Strom vergleichbar: jede Datei trägt einen eigenen gzip-/Wörterbuch-
-Overhead. Der relevante initiale Vergleich ist daher 104'848 zu 97'397
+Overhead. Der relevante initiale Vergleich ist daher 104'848 zu 89'005
 gzip-Bytes; die Vollsumme dokumentiert Wartungsumfang und den kalten Worst Case
 über alle Micro-Apps, nicht den Transfer einer einzelnen Route.
 
@@ -130,8 +131,8 @@ Beide `review-audit.mjs`-Läufe endeten mit Status 0 und exakt:
 
 | Skin | Audit-Summe |
 | --- | --- |
-| Federal | `routes 207 · overflow 0 · h1 0 · duplicateIds 0 · labels 0 · images 0 · headings 9 · tables 0 · targets 1012 · compactTargets 418` |
-| Intranet | `routes 207 · overflow 0 · h1 0 · duplicateIds 0 · labels 0 · images 0 · headings 9 · tables 0 · targets 1012 · compactTargets 418` |
+| Federal | `routes 210 · overflow 0 · h1 0 · duplicateIds 0 · labels 0 · images 0 · headings 9 · tables 0 · targets 1012 · compactTargets 427` |
+| Intranet | `routes 210 · overflow 0 · h1 0 · duplicateIds 0 · labels 0 · images 0 · headings 9 · tables 0 · targets 1012 · compactTargets 427` |
 
 `headings`, `targets` und `compactTargets` sind gezählte Review-Hinweise – unter
 anderem fachliche SVG-Flächen und bewusst kompakte Editor-Geometrie – und keine
@@ -142,12 +143,17 @@ Beide `review-accessibility.mjs`-Läufe endeten ebenfalls mit Status 0 und exakt
 
 | Skin | Accessibility-Summe |
 | --- | --- |
-| Federal | `routes 69 · overflow 0 · positiveTabindex 0 · brokenReferences 0 · hiddenFocusable 0 · focusIndicator 0 · mainLandmark 0 · unnamedAxControls 0` |
-| Intranet | `routes 69 · overflow 0 · positiveTabindex 0 · brokenReferences 0 · hiddenFocusable 0 · focusIndicator 0 · mainLandmark 0 · unnamedAxControls 0` |
+| Federal | `routes 70 · overflow 0 · positiveTabindex 0 · brokenReferences 0 · hiddenFocusable 0 · focusIndicator 0 · mainLandmark 0 · unnamedAxControls 0` |
+| Intranet | `routes 70 · overflow 0 · positiveTabindex 0 · brokenReferences 0 · hiddenFocusable 0 · focusIndicator 0 · mainLandmark 0 · unnamedAxControls 0` |
+
+Der Planprüfungszustand in dieser Matrix ist die aktive, sicherheitsgeschlossene
+Nichtverfügbarkeitsansicht. Die vorbereitete Upload-/Workbench-Oberfläche ist
+unerreichbar und deshalb ausdrücklich nicht Teil dieser Abnahme; sie benötigt
+vor einer Freigabe eine eigene vollständige Enabled-Route-E2E.
 
 Zusätzlich liefen die zehn verlangten CDP-Suiten (`apidocs`, `catalogue`,
 `content`, `dashboard`, `estate`, `forms`, `login`, `portfolio`, `race`,
-`tabs`), alle 38 kanonischen Routen und 13 Redirects, der CSS-Layer-/FOUC-/404-Check, der
+`tabs`), alle 39 kanonischen Routen und 13 Redirects, der CSS-Layer-/FOUC-/404-Check, der
 Token-Check, die Fokusprüfung, Reduced Motion und 320-px-Reflow ohne Regression.
 
 ## 1. Zusammenfassung
@@ -163,7 +169,7 @@ gemeinsamen UI-Fabriken und alle fachlichen Ansichten. Die historische visuelle
 Baseline umfasst 57 repräsentative Routen und Zustände in 320, 768 und 1440 px,
 insgesamt 171 Full-Page-Screenshots. Nach Freigabe wurden die neun Befunde
 F01–F09 in sechs Wellen umgesetzt. Die aktuelle ausführbare Matrix umfasst
-69 Zustände beziehungsweise 207 Renderzustände. Der Dual-Skin-Audit weist dort
+70 Zustände beziehungsweise 210 Renderzustände. Der Dual-Skin-Audit weist dort
 keine horizontalen Überläufe, fehlenden H1, doppelten IDs, unbeschrifteten
 Bedienelemente, Bilder ohne `alt` oder fehlerhaften Tabellenköpfe aus; die neun
 Heading- und die Target-Hinweise sind im CSS-Nachtrag oben ausdrücklich
@@ -174,7 +180,7 @@ Combobox- und Viewer-Muster, eine korrigierte Inhalts- und
 Swagger-Überschriftenstruktur, natürliche Hero-Bildformate, vollständige
 Fokus-/Disabled-Zustände, responsive Zielgrössen, mobile Shop-Kategorien und
 eine dynamische Platzreserve für den fixierten Hinweisbanner. Der ergänzende
-Accessibility-Kurztest ist in allen aktuellen 69 Zuständen und in beiden Skins
+Accessibility-Kurztest ist in allen aktuellen 70 Zuständen und in beiden Skins
 in sämtlichen ausgewiesenen Fehlerkategorien ohne automatisierten Befund.
 
 Es wurden keine Produktfunktionen, Routen oder Daten entfernt oder vereinfacht.
@@ -332,7 +338,7 @@ Alle neun Befunde sind umgesetzt:
 | Tabellen | Caption, `th`/`scope`, Scrollregion, Ausrichtung und Mobile-Verhalten sind programmatisch vorhanden. |
 | Tabs | Roving `tabindex`, Pfeiltasten, Home/End, genau ein sichtbares Panel und Hash-Synchronisation sind getestet. |
 | Formulare | Labels, Pflichtmarkierung, `aria-invalid`, verknüpfte Meldungen, Fehlerübersicht und Fokusführung sind getestet. |
-| Responsive | Kein horizontaler Seitenüberlauf in der aktuellen Matrix mit 207 Renderzuständen bei 320/768/1440 px; die historische Screenshot-Baseline umfasst 171 Bilder. |
+| Responsive | Kein horizontaler Seitenüberlauf in der aktuellen Matrix mit 210 Renderzuständen bei 320/768/1440 px; die historische Screenshot-Baseline umfasst 171 Bilder. |
 | Bilder | Kein gerendertes Bild ohne `alt` in der Audit-Matrix. |
 | IDs und Namen | Keine doppelten IDs und keine unbenannten gerenderten Controls in der Audit-Matrix. |
 | Reduced Motion | Bewegungsdauern laufen über Tokens und werden in `prefers-reduced-motion` auf eine minimale Dauer gesetzt. |
@@ -372,14 +378,14 @@ markierten Massnahmen wurden umgesetzt und abgenommen.
 | 5 Responsive | Shop-Kategorien mobil in eine Disclosure-/Filterfläche verschieben; alle Filter und Deep-Links erhalten. | mittel | mittel | erledigt | Shop-Test plus 320/768 Screenshots |
 | 5 Responsive | Sichtbaren Banner bei Hauptinhalt, Karten und Viewern in die verfügbare Höhe einrechnen. | mittel | mittel | erledigt | Screenshotvergleich mit offenem Banner |
 | 6 Accessibility | Swagger-Zielgrössen, Fokus, Überschriften und Namen im Adapter korrigieren, soweit die Bibliothek dies ohne Funktionsverlust erlaubt. | hoch | gross | erledigt | Audit ohne Portal-verursachte Swagger-Warnungen |
-| 6 Accessibility | Reproduzierbare Tastatur-, Fokus-, 200-%-Reflow- und AX-Tree-Prüfung der aktuellen 69 Zustände; reale Sprachausgabe als Release-Check dokumentieren. | hoch | gross | erledigt | `docs/accessibility-review.md` und Dual-Skin-Läufe |
+| 6 Accessibility | Reproduzierbare Tastatur-, Fokus-, 200-%-Reflow- und AX-Tree-Prüfung der aktuellen 70 Zustände; reale Sprachausgabe als Release-Check dokumentieren. | hoch | gross | erledigt | `docs/accessibility-review.md` und Dual-Skin-Läufe |
 | Entscheidung | L1-Überlauf, mobiles Menü, Tabellen-Zeilenkopf und Step-Farben nicht ändern. | vermeidet Regression | – | bewusst nicht umgesetzt | als bewusste Abweichung dokumentiert |
 
 ### Abnahme nach jeder Welle
 
 1. Alle 20 Funktionssuiten laufen.
-2. `scripts/review-audit.mjs` läuft für 69 Zustände in drei Viewports, also
-   207 Renderzustände, separat für Federal und Intranet.
+2. `scripts/review-audit.mjs` läuft für 70 Zustände in drei Viewports, also
+   210 Renderzustände, separat für Federal und Intranet.
 3. Die eingecheckten historischen Vorher-/Nachher-Artefakte umfassen weiterhin
    57 Zustände in drei Viewports, also 171 Bilder. Eine Erweiterung der
    Screenshot-Baseline auf die aktuelle Matrix wird nicht vorgetäuscht.
@@ -396,9 +402,9 @@ markierten Massnahmen wurden umgesetzt und abgenommen.
 | `docs/review-assets/before/` | Historische Baseline: 57 Zustände × 3 Viewports = 171 Full-Page-Screenshots |
 | `docs/review-assets/after/` | Historischer Nachher-Stand: 57 Zustände × 3 Viewports = 171 Full-Page-Screenshots |
 | `docs/review-assets/audit.json` | Historischer strukturierter Render-Audit über dieselben 171 Renderzustände |
-| `docs/review-assets/accessibility.json` | Eingecheckter Zwischenstand über 58 Zustände; die aktuelle Dual-Skin-Abnahme umfasst 69 |
+| `docs/review-assets/accessibility.json` | Eingecheckter Zwischenstand über 58 Zustände; die aktuelle Dual-Skin-Abnahme umfasst 70 |
 | `docs/accessibility-review.md` | Methode, Ergebnis und Grenze des Accessibility-Kurztests |
-| `scripts/review-routes.mjs` | Aktuelle zentrale Liste der 69 Prüfzustände |
+| `scripts/review-routes.mjs` | Aktuelle zentrale Liste der 70 Prüfzustände |
 | `scripts/review-audit.mjs` | Overflow-, Semantik-, Label-, Tabellen- und Touch-Target-Prüfung |
 | `scripts/review-accessibility.mjs` | 200-%-Reflow-, Fokus-, ARIA- und Accessibility-Tree-Prüfung |
 | `scripts/review-screenshots.mjs` | Vorher-/Nachher-Aufnahme in 320/768/1440 px |
@@ -406,12 +412,12 @@ markierten Massnahmen wurden umgesetzt und abgenommen.
 Die eingecheckte visuelle Baseline umfasst die historischen 57 Zustände und 171
 Bilder des Reviews. Danach wurde zuerst die Accessibility-Matrix um die
 eigenständige Raumbuchung auf 58 Zustände und inzwischen die ausführbare
-zentrale Matrix auf 69 Zustände erweitert. Die finalen 207/69-Dual-Skin-Werte
+zentrale Matrix auf 70 Zustände erweitert. Die finalen 210/70-Dual-Skin-Werte
 stehen im CSS-Nachtrag; sie werden nicht mit dem älteren Bildbestand vermischt.
 
 Die freigegebenen Phasen 5 und 6 sind umgesetzt. Die eingecheckte
 Nachher-Baseline bleibt der historische Bildstand; den aktuellen
-CSS-Abnahmestand bilden die separaten 207/69-Dual-Skin-Läufe im Nachtrag.
+CSS-Abnahmestand bilden die separaten 210/70-Dual-Skin-Läufe im Nachtrag.
 
 ## 9. Vertiefungsreview Plan-Editor
 
