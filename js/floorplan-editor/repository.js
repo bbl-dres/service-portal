@@ -4,7 +4,7 @@
 // A production adapter will replace these functions with authenticated API
 // calls; authorization belongs to the backend/RLS, never to this UI adapter.
 
-import { readJSON, writeJSON, remove } from '../storage.js';
+import { readJSON, writeJSON, remove } from '../core/storage.js';
 import {
   cloneDocument, rebaseEditorDocument, validateEditorDocument,
 } from './model.js';

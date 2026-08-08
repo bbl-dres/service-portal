@@ -1,10 +1,10 @@
 // Construction-project catalogue and detail views backed by the project registry.
 
-import { initEstateMap } from '../buildings-map.js';
-import { createMapSlot } from '../map-slot.js';
-import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../spatial-tree.js';
-import { openGallery, restoreGalleryFromQuery } from '../gallery.js';
-import { galleryItemsFrom } from '../hero-mosaic.js';
+import { initEstateMap } from '../map/buildings-map.js';
+import { createMapSlot } from '../map/map-slot.js';
+import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../ui/spatial-tree.js';
+import { openGallery, restoreGalleryFromQuery } from '../ui/gallery.js';
+import { galleryItemsFrom } from '../ui/hero-mosaic.js';
 import { formatCurrency } from '../format.js';
 import { countryName, businessEntityIdFromBblId, projectStatusLabel } from '../domain.js';
 import { APPLICATIONS } from '../crumbs.js';

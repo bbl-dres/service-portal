@@ -8,8 +8,8 @@
 // scripts/test-dashboard.mjs checks them, and renaming would add churn without
 // value (docs/design-review.md, C22).
 
-import { copyText, shareMail } from './export.js';
-import { formatDate } from './format.js';
+import { copyText, shareMail } from '../export.js';
+import { formatDate } from '../format.js';
 
 // Dashboard toolbar menu. Whole-dashboard PDF/image export remains simulated
 // because it would need a rasteriser; refresh and share are real.

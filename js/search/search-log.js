@@ -10,12 +10,12 @@
 //
 // Available at #/search?log=1.
 
-import { readJSON, writeJSON, remove } from './storage.js';
+import { readJSON, writeJSON, remove } from '../core/storage.js';
 
 const KEY = 'bbl.searchlog';
 const MAX = 200;
 
-// Read/write through js/storage.js, which exists specifically to handle
+// Read/write through js/core/storage.js, which exists specifically to handle
 // localStorage failures (corruption, private mode, quota) ONCE. All three paths
 // were previously repeated here by hand (design review B23).
 const read = () => readJSON(KEY, [], Array.isArray);

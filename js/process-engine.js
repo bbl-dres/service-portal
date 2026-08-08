@@ -3,14 +3,14 @@
 // (cases) live in localStorage so the service → process → My cases loop works.
 // NOTE: this is the *demo* engine — see docs/expert-review.md for the real-vs-mocked register.
 
-import { readJSON, readJSONResult, writeJSON, withStorageLock } from './storage.js';
-import { fetchJSON } from './fetch-json.js';
+import { readJSON, readJSONResult, writeJSON, withStorageLock } from './core/storage.js';
+import { fetchJSON } from './core/fetch-json.js';
 
 const LS_KEY = 'bbl_vorgaenge_v1';
 let DEFS = [];
 let SEEDED = [];
 
-// Failure register: the same principle as core.js. Without it, a 404 for
+// Failure register: the same principle as core/index.js. Without it, a 404 for
 // process-definitions.json remained invisible: DEFS = [], no message, and
 // start() invented a replacement definition (H10).
 const FAILED = new Set();

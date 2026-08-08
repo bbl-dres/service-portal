@@ -229,7 +229,7 @@ const missingBuildingMeasures = workspacePlanning.filter((planning) => {
 check(missingBuildingMeasures.length === 0,
   `net floor area and total floor count exist in the golden record for every workspace building${missingBuildingMeasures.length
     ? `; unresolved: ${missingBuildingMeasures.map((planning) => planning.buildingId).join(', ')}` : ''}`);
-const coreSource = readFileSync(join(ROOT, 'js/core.js'), 'utf8');
+const coreSource = readFileSync(join(ROOT, 'js/core/index.js'), 'utf8');
 check(/\bngf:\s*raw\[['"]garea_ngf['"]\]\s*\|\|\s*0/.test(coreSource)
   && /\btotalFloors:\s*raw\[['"]gastw['"]\]\s*\|\|\s*0/.test(coreSource),
   'core normalisation exposes net floor area and total floor count under stable field names');

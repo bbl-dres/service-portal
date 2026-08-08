@@ -9,7 +9,7 @@
 //               honest explanation of why a placeholder is shown
 //
 // The script also restores img_url to an Unsplash identifier. The historical
-// apply-research-data.mjs script put a Commons URL there, but core.js extracts
+// apply-research-data.mjs script put a Commons URL there, but core/index.js extracts
 // an Unsplash `photo-<id>` token from img_url. Commons metadata belongs in
 // img_local/img_credit instead.
 

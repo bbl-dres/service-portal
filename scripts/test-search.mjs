@@ -1,8 +1,8 @@
-// Test the search engine without a browser because js/search-engine.js exports
+// Test the search engine without a browser because js/search/search-engine.js exports
 // pure functions. These cases cover the exact failures from docs/search-review.md:
 // diacritics (B2), multi-word queries (B3), ranking (B4), word boundaries (B5),
 // inflection (B7), and colloquial terms (B8).
-import { fold, tokenize, prepare, search } from '../js/search-engine.js';
+import { fold, tokenize, prepare, search } from '../js/search/search-engine.js';
 
 let failures = 0;
 const check = (condition, label, detail = '') => {

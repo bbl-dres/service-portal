@@ -11,8 +11,8 @@
 // The module is pure: it receives spaces and a colour mode and returns HTML.
 // The caller wires events (js/apps/tenancies.js).
 
-import { escape as esc } from './components.js';
-import { formatArea } from './format.js';
+import { escape as esc } from '../components.js';
+import { formatArea } from '../format.js';
 
 // Colour modes. `none` shows the plain drawing and is the default because a
 // floor plan is first a plan and becomes an analysis only when requested.

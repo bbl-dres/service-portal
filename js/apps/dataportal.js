@@ -1,8 +1,8 @@
 // Data-portal landing page and in-memory dashboard renderer.
 
-import { dashData } from '../dashboard-data.js';
-import { chart, wireCharts, wireChartMenus, paintCharts } from '../charts.js';
-import { kpiTile, dashHeader, filterPanelShell, dashFooter, wireFilterCollapse, wireDashboardMenu } from '../dashboard-chrome.js';
+import { dashData } from '../core/dashboard-data.js';
+import { chart, wireCharts, wireChartMenus, paintCharts } from '../ui/charts.js';
+import { kpiTile, dashHeader, filterPanelShell, dashFooter, wireFilterCollapse, wireDashboardMenu } from '../ui/dashboard-chrome.js';
 import { DATA } from '../crumbs.js';
 
 const DASHBOARD_TAB_BY_LEGACY_VALUE = {

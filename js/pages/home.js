@@ -7,7 +7,7 @@
 // repeated task completion rather than first-time orientation, so this
 // deliberately does not follow the structure of public federal websites.
 
-import { attachSuggest } from '../search-suggest.js';
+import { attachSuggest } from '../search/search-suggest.js';
 import { statusLabel } from '../domain.js';
 import { formatDate } from '../format.js';
 import * as links from '../links.js';
@@ -217,7 +217,7 @@ export default async function render(ctx) {
   });
 
   // Search suggestions cover only services and knowledge/resources, both
-  // without an extra request (js/search-suggest.js explains why the full index
+  // without an extra request (js/search/search-suggest.js explains why the full index
   // is not used). Clean up through the router's unmount contract so the list
   // does not remain in the DOM after navigation.
   const detach = attachSuggest(mount.querySelector('#home-q'), searchForm, core, C);

@@ -148,7 +148,7 @@ try {
 
   const initial = await page.evaluate(`(async () => {
     const [{ core }, { createBaseline }] = await Promise.all([
-      import('./js/core.js'), import('./js/floorplan-editor/model.js'),
+      import('./js/core/index.js'), import('./js/floorplan-editor/model.js'),
     ]);
     const building = core.building(${JSON.stringify(BUILDING_ID)});
     const floor = core.floor(${JSON.stringify(FLOOR_ID)});
@@ -1078,7 +1078,7 @@ try {
       document.querySelector('#fpe-canvas')?.dispatchEvent(new PointerEvent('pointerup', init));
     }
     await pause();
-    const { core } = await import('./js/core.js');
+    const { core } = await import('./js/core/index.js');
     const canonical = () => core.spacesForFloor(${JSON.stringify(FLOOR_ID)})
       .find(room => room.spaceId === ${JSON.stringify(ROOM_ID)});
     const canonicalBefore = JSON.stringify(canonical());
@@ -1387,7 +1387,7 @@ try {
   await sleep(500);
   check(await waitFor(page, '#fpe-app'), 'reloads the editor workbench');
   const reloaded = await page.evaluate(`(async () => {
-    const { core } = await import('./js/core.js');
+    const { core } = await import('./js/core/index.js');
     const canonical = core.spacesForFloor(${JSON.stringify(FLOOR_ID)})
       .find(room => room.spaceId === ${JSON.stringify(ROOM_ID)});
     const raw = localStorage.getItem(${JSON.stringify(DRAFT_KEY)});

@@ -43,7 +43,7 @@ const check = (condition, label, detail = '') => {
 console.log('■ Core data contracts');
 queue('data/services.json', [{ serviceId: 'service-1' }]);
 queue('data/reference-data.json', { domains: [] });
-const { core } = await import('../js/core.js');
+const { core } = await import('../js/core/index.js');
 await core.load();
 check(core.services().length === 1, 'valid eager records load');
 
@@ -124,7 +124,7 @@ queue('data/dashboards.json', {
   dashboards: [{ id: 'dashboard-1', topicId: 'topic-1', charts: [], tabs: [], kpis: [] }],
   datasets: { sample: { label: 'Sample', columns: [{ name: 'value' }], rows: [[1]] } },
 });
-const { dashData } = await import('../js/dashboard-data.js');
+const { dashData } = await import('../js/core/dashboard-data.js');
 const firstDashboardLoad = dashData.load();
 const duplicateDashboardLoad = dashData.load();
 check(firstDashboardLoad === duplicateDashboardLoad, 'concurrent dashboard loads share one promise');
@@ -146,7 +146,7 @@ check(!!dashData.query({ dataset: 'sample', orderBy: {} }).error,
 
 console.log('■ Session persistence');
 const SESSION_KEY = 'bbl_session_v1';
-const { session } = await import('../js/session.js');
+const { session } = await import('../js/core/session.js');
 failSet.add(SESSION_KEY);
 check(session.login() === false && !session.isLoggedIn(),
   'failed login persistence does not mutate the in-memory session');
@@ -160,7 +160,7 @@ check(session.logout() === true && !session.isLoggedIn(), 'a persisted logout su
 
 console.log('■ Own-property favorite maps');
 values.set('bbl_favorites_v1', '{"__proto__":["proto-id"],"toString":["string-id"]}');
-const { favorites } = await import('../js/favorites.js');
+const { favorites } = await import('../js/core/favorites.js');
 check(favorites.has('__proto__', 'proto-id') && favorites.has('toString', 'string-id')
   && favorites.count('constructor') === 0,
   'favorite kinds remain data, never object prototypes');

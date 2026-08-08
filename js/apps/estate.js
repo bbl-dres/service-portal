@@ -1,11 +1,11 @@
 // Property dashboard with runtime aggregation, global filters and map output.
 
-import { fetchJSON } from '../fetch-json.js';
-import { dashData } from '../dashboard-data.js';
-import { chart, wireCharts, wireChartMenus, paintCharts } from '../charts.js';
-import { initEstateMap } from '../buildings-map.js';
-import { createMapSlot } from '../map-slot.js';
-import { kpiTile, dashHeader, filterPanelShell, dashFooter, wireFilterCollapse, wireDashboardMenu } from '../dashboard-chrome.js';
+import { fetchJSON } from '../core/fetch-json.js';
+import { dashData } from '../core/dashboard-data.js';
+import { chart, wireCharts, wireChartMenus, paintCharts } from '../ui/charts.js';
+import { initEstateMap } from '../map/buildings-map.js';
+import { createMapSlot } from '../map/map-slot.js';
+import { kpiTile, dashHeader, filterPanelShell, dashFooter, wireFilterCollapse, wireDashboardMenu } from '../ui/dashboard-chrome.js';
 import { DATA } from '../crumbs.js';
 import { formatNumber } from '../format.js';
 import { businessEntityIdFromBblId } from '../domain.js';

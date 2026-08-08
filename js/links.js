@@ -1,7 +1,7 @@
 // Portal deep links in one place.
 //
 // `#/app/portfolio?id=${encodeURIComponent(id)}` used to be assembled by hand
-// in 13 places. A comment in core.js calls this pattern a contract between the
+// in 13 places. A comment in core/index.js calls this pattern a contract between the
 // data core and map, but that contract was not represented anywhere.
 //
 // NOTE: addressing is deliberately NOT uniform. Properties and parcels are map

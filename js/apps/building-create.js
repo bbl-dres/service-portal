@@ -7,10 +7,10 @@
 // The keyless, CORS-enabled SearchServer endpoint provides address suggestions.
 // The three steps cover location, master data, and review/submission; successful
 // submission creates an entry under the German UI term: `Meine Vorgänge`.
-import { initPickerMap } from '../buildings-map.js';
+import { initPickerMap } from '../map/buildings-map.js';
 import * as links from '../links.js';
 import { SERVICES, trail } from '../crumbs.js';
-import { createListboxController } from '../combobox.js';
+import { createListboxController } from '../ui/combobox.js';
 
 // Copy shown by the router's authentication gate for this application.
 export const loginText = 'Das Erfassen eines Gebäudes wird als Vorgang unter «Meine Vorgänge» geführt. Bitte melden Sie sich mit AGOV / FedLogin an.';

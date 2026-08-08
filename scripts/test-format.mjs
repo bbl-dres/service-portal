@@ -2,8 +2,8 @@
 // must escape a value exactly once at their final markup sink.
 import { formatDate } from '../js/format.js';
 import components from '../js/components.js';
-import { heroMosaic } from '../js/hero-mosaic.js';
-import { renderSvg } from '../js/charts.js';
+import { heroMosaic } from '../js/ui/hero-mosaic.js';
+import { renderSvg } from '../js/ui/charts.js';
 
 let failures = 0;
 const check = (condition, label, actual = '') => {

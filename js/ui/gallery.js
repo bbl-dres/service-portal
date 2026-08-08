@@ -1,7 +1,7 @@
 // Fullscreen image gallery shared by the property detail view
 // (js/apps/portfolio.js) and media library (js/apps/media-library.js).
 //
-// Follows the CD overlay pattern used by document preview (js/doc-viewer.js):
+// Follows the CD overlay pattern used by document preview (js/ui/doc-viewer.js):
 // header with title and actions above the image stage. Keyboard: Escape closes,
 // left/right arrows navigate, and Tab remains trapped in the gallery.
 //

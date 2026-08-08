@@ -9,14 +9,14 @@
 //
 // SEPARATION: this file builds and renders the INDEX (what is searchable, what
 // a hit is called, and where it leads). Search itself — folding, tokenising,
-// and scoring — lives in js/search-engine.js so it can be tested without a
+// and scoring — lives in js/search/search-engine.js so it can be tested without a
 // browser (scripts/test-search.mjs).
 
-import { search as runSearch, fold, prepare as prepareRow } from '../search-engine.js';
+import { search as runSearch, fold, prepare as prepareRow } from '../search/search-engine.js';
 import { domainLabel as domainLabelShared } from '../domain.js';
 import * as links from '../links.js';
 import { knowledgeIndex } from '../knowledge-content.js';
-import { record as logQuery, summary as logSummary, clear as logClear } from '../search-log.js';
+import { record as logQuery, summary as logSummary, clear as logClear } from '../search/search-log.js';
 
 // Deferred collections for this route. The router calls core.ensure(needs)
 // BEFORE render(); without this declaration, an accessor would read the still
@@ -35,7 +35,7 @@ export default async function render(ctx) {
   setTitle(rawQ ? `Suche: ${rawQ}` : 'Suche');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Suche' }]);
 
-  // Diagnostic view instead of results (#/search?log=1); see js/search-log.js.
+  // Diagnostic view instead of results (#/search?log=1); see js/search/search-log.js.
   const showLog = query.get('log') === '1';
 
   const index = buildIndex(core);

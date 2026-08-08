@@ -3,7 +3,7 @@
 // Anatomy: one large image on the left, up to four side tiles, and the map on
 // the right. With only one image, it fills the image area without empty side
 // tiles while the location map remains beside it. Each tile opens its own image
-// in the fullscreen gallery (js/gallery.js); the last real side tile carries the
+// in the fullscreen gallery (js/ui/gallery.js); the last real side tile carries the
 // “Show all images” overlay with a count of hidden images.
 //
 // This component previously lived inside the property inventory
@@ -14,7 +14,7 @@
 
 const SIDE_SLOTS = 4;
 
-// `items` are gallery entries in the shape consumed by js/gallery.js:
+// `items` are gallery entries in the shape consumed by js/ui/gallery.js:
 //   { id, photoSrc, photo, title, meta, type, gray?, details: [[label, value]] }
 // `mapId` is the map-container ID. The caller mounts the map because only it
 // knows the applicable coordinates and zoom.

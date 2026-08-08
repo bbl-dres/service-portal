@@ -1,6 +1,6 @@
 // SVG scene for the standalone floor-plan editor.
 //
-// The shared js/floorplan.js deliberately stays a small, read-only renderer for
+// The shared js/ui/floorplan.js deliberately stays a small, read-only renderer for
 // Tenancies and Workspace. Authoring needs a camera, furniture positions and
 // measurement overlays, so it gets a separate scene without changing those
 // stable consumers. Coordinates use the portal floor convention: 100 units = 1 m.

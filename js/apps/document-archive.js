@@ -1,6 +1,6 @@
 // Searchable construction-document archive with the shared document viewer.
 
-import { documentFileName, openDocumentViewer } from '../doc-viewer.js';
+import { documentFileName, openDocumentViewer } from '../ui/doc-viewer.js';
 import { formatFileSize } from '../format.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
 

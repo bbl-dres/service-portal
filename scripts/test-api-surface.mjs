@@ -34,12 +34,12 @@ const exactModule = (name, mod, names) => check(
 const lacks = (object, names) => names.filter((name) => name in object);
 
 const [sessionModule, links, crumbs, coreModule, engineModule, maps, components] = await Promise.all([
-  load('js/session.js'),
+  load('js/core/session.js'),
   load('js/links.js'),
   load('js/crumbs.js'),
-  load('js/core.js'),
+  load('js/core/index.js'),
   load('js/process-engine.js'),
-  load('js/buildings-map.js'),
+  load('js/map/buildings-map.js'),
   load('js/components.js'),
 ]);
 

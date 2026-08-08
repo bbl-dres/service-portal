@@ -18,8 +18,8 @@
 // between marks, a legend whenever there are two or more series, and (since
 // item 6.2) the data table underneath every chart. Assign slots in order, never cycle.
 
-import C, { menu, wireMenu, toast } from './components.js';
-import { download, tableToCsv, tableToXls, svgToPng, copyText, fileSlug } from './export.js';
+import C, { menu, wireMenu, toast } from '../components.js';
+import { download, tableToCsv, tableToXls, svgToPng, copyText, fileSlug } from '../export.js';
 
 // The categorical palette and chart ink come from the token layer
 // (css/tokens.css --chart-series-* / --chart-ink*). Values are RESOLVED at

@@ -53,7 +53,7 @@ export const LEGACY_SPLIT_ORDER = Object.freeze([
 ]);
 
 // Production-free concatenation order for the current layered tree. Lazy
-// sheets sit at the same three cascade anchors used by js/css-loader.js.
+// sheets sit at the same three cascade anchors used by js/routing/css-loader.js.
 export const CSS_SOURCE_ORDER = Object.freeze([
   'css/tokens.css',
   'css/skins/intranet.css',

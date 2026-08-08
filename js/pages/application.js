@@ -98,7 +98,7 @@ export default function render(ctx, appId) {
           external: primary ? primary.kind === 'external' : false,
           newWindow: true,
           // Portal-internal domain apps (#/app/…) require login, using the same
-          // gate the router places before the app itself (js/router.js). The entry
+          // gate the router places before the app itself (js/routing/router.js). The entry
           // opens that gate in a new tab; external systems own their login.
           requiresLogin: !!primary && primary.kind !== 'external' && String(primary.href).startsWith('#/app/'),
           loggedIn: session.isLoggedIn(), user: session.user(),

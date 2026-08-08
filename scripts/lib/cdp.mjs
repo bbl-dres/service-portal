@@ -169,7 +169,7 @@ export async function launch({ port, webgl = false } = {}) {
 
 // Open a fresh page (flattened session), collect uncaught exceptions + console
 // errors. `evaluate(expr)` runs an async expression in-page and returns its value.
-// The demo session as written by js/session.js. Install it before the first app
+// The demo session as written by js/core/session.js. Install it before the first app
 // script so session.js sees it during module initialization; a later login call
 // would otherwise require an avoidable second render.
 const DEMO_SESSION = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
@@ -253,7 +253,7 @@ export async function openPage(cdp, url, { login, skin } = {}) {
   };
   const closeTarget = () => cdp.send('Target.closeTarget', { targetId });
   // Aggregate "nothing broke" check. `exceptions` alone is insufficient:
-  // js/router.js catches render failures, logs them and paints an error
+  // js/routing/router.js catches render failures, logs them and paints an error
   // notification without triggering Runtime.exceptionThrown. Return [] when
   // clean, otherwise return readable findings.
   const problems = async () => {

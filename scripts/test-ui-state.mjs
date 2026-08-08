@@ -41,8 +41,8 @@ try {
     let tries = 0;
     while (!document.querySelector('#mt-q') && tries++ < 100) await wait(50);
     const C = (await import('./js/components.js')).default;
-    const { openGallery } = await import('./js/gallery.js');
-    const { openDocumentViewer } = await import('./js/doc-viewer.js');
+    const { openGallery } = await import('./js/ui/gallery.js');
+    const { openDocumentViewer } = await import('./js/ui/doc-viewer.js');
 
     const menuHost = document.createElement('div');
     menuHost.innerHTML = C.menu({ menuId: 'probe-a', items: [{ action: 'a', label: 'A' }] })

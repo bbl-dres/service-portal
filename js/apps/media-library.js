@@ -1,8 +1,8 @@
 // Media catalogue and detail views across buildings, parcels and projects.
 
-import { initEstateMap } from '../buildings-map.js';
-import { createMapSlot } from '../map-slot.js';
-import { openGallery } from '../gallery.js';
+import { initEstateMap } from '../map/buildings-map.js';
+import { createMapSlot } from '../map/map-slot.js';
+import { openGallery } from '../ui/gallery.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
 
 export const needs = ['buildings', 'media', 'parcels', 'projects'];

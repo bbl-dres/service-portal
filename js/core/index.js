@@ -8,7 +8,7 @@ const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key
 const isRecord = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
 const safeDictionary = (value = {}) => Object.assign(Object.create(null), value);
 
-// EAGER: only what the shell needs before the router dispatches. js/shell.js
+// EAGER: only what the shell needs before the router dispatches. js/ui/shell/index.js
 // reads exactly two keys: `ref().domains` and `services()` for the service
 // drawer. Everything else belongs to a route and is loaded through `needs`.
 //

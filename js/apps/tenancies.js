@@ -1,11 +1,11 @@
 // Tenant catalogue and detail views, including the shared read-only floor plan.
 
-import { floorplanSvg, floorplanLegend, wireFloorplan, COLOR_MODES } from '../floorplan.js';
-import { initEstateMap } from '../buildings-map.js';
-import { createMapSlot } from '../map-slot.js';
-import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../spatial-tree.js';
-import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../hero-mosaic.js';
-import { openGallery, restoreGalleryFromQuery } from '../gallery.js';
+import { floorplanSvg, floorplanLegend, wireFloorplan, COLOR_MODES } from '../ui/floorplan.js';
+import { initEstateMap } from '../map/buildings-map.js';
+import { createMapSlot } from '../map/map-slot.js';
+import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../ui/spatial-tree.js';
+import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../ui/hero-mosaic.js';
+import { openGallery, restoreGalleryFromQuery } from '../ui/gallery.js';
 import { formatNumber, formatCurrency, formatArea, formatDate } from '../format.js';
 import { countryName, statusLabel } from '../domain.js';
 import { APPLICATIONS } from '../crumbs.js';

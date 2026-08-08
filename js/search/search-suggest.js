@@ -12,8 +12,8 @@
 // selection while focus remains in the input, preserving the caret position.
 
 import { search as runSearch, prepare } from './search-engine.js';
-import { knowledgeIndex } from './knowledge-content.js';
-import { createListboxController } from './combobox.js';
+import { knowledgeIndex } from '../knowledge-content.js';
+import { createListboxController } from '../ui/combobox.js';
 
 const MAX = 7;
 

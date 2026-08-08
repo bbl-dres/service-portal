@@ -94,7 +94,7 @@ export default async function render(ctx) {
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   const filterPanel = `
     ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: selectedAudiences, options: audienceOptions(core) })}
-    ${/* Derive topics from the data using the same rule as the drawer (shell.js):
+    ${/* Derive topics from the data using the same rule as the drawer (ui/shell/header.js):
           a topic appears as soon as it has a case behind it. Raw field: `thema`
           compatibility flag in reference-data.json previously decided this and
           was stale: the drawer offered «Alle anzeigen» for procurement or

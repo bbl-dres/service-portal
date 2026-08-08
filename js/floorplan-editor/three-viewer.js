@@ -3,335 +3,51 @@
 
 import * as THREE from '../vendor/three.module.min.js';
 import { createColorContext, normalizeColorMode, roomColor } from './colors.js';
+import {
+  CM_TO_M,
+  WALK_EYE_HEIGHT,
+  WALL_THICKNESS,
+  POINTER_CLICK_TOLERANCE,
+  ORBIT_TARGET_HEIGHT,
+  ORBIT_SCENE_HEIGHT,
+  ORBIT_MIN_PITCH,
+  ORBIT_MAX_PITCH,
+  WALK_LOOK_YAW_PER_PIXEL,
+  WALK_LOOK_PITCH_PER_PIXEL,
+  MAX_RENDER_PIXELS,
+  clamp,
+  normalizeRadians,
+  orbitDistanceLimits,
+  minimumOrbitDistanceForPitch,
+  perspectiveGroundPanDelta,
+  orbitRotationDelta,
+  normalizeWheelPixels,
+  touchGestureMetrics,
+  fitOrbitDistance,
+} from './three-controls.js';
+import {
+  floorSize,
+  entityData,
+  box,
+  furnitureObject,
+  roomLabel,
+  addWall,
+  nearestPickEntity,
+  startPoint,
+  fallbackViewer,
+} from './three-scene.js';
 
-const CM_TO_M = 0.01;
-const WALK_EYE_HEIGHT = 1.65;
-const WALL_THICKNESS = 0.08;
-const POINTER_CLICK_TOLERANCE = 4;
-const ORBIT_TARGET_HEIGHT = 0.2;
-const ORBIT_SCENE_HEIGHT = 2.5;
-const ORBIT_MIN_PITCH = 0.12;
-const ORBIT_MAX_PITCH = 1.46;
-const ORBIT_ROTATE_SPEED = 1;
-const WALK_LOOK_YAW_PER_PIXEL = 0.0024;
-const WALK_LOOK_PITCH_PER_PIXEL = 0.002;
-const MAX_RENDER_PIXELS = 3840 * 2160;
-
-const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-const clean = (value) => String(value || '').trim().toLocaleLowerCase('de');
-const floorSize = (floor) => ({
-  width: Math.max(1, Number(floor?.extent?.[0] || 1000) * CM_TO_M),
-  depth: Math.max(1, Number(floor?.extent?.[1] || 1000) * CM_TO_M),
-});
-
-export function normalizeRadians(value) {
-  if (!Number.isFinite(value)) return 0;
-  const turn = Math.PI * 2;
-  return ((value + Math.PI) % turn + turn) % turn - Math.PI;
-}
-
-export function orbitDistanceLimits(width, depth) {
-  const diagonal = Math.max(1, Math.hypot(Number(width) || 0, Number(depth) || 0));
-  return {
-    min: clamp(diagonal * 0.025, 1.2, 5),
-    max: clamp(diagonal * 6, 40, 600),
-  };
-}
-
-export function minimumOrbitDistanceForPitch(
-  pitch,
-  sceneHeight = ORBIT_SCENE_HEIGHT,
-  targetHeight = ORBIT_TARGET_HEIGHT,
-  clearance = 0.35,
-) {
-  return Math.max(
-    0,
-    (Number(sceneHeight) + Number(clearance) - Number(targetHeight))
-      / Math.max(0.01, Math.sin(clamp(Number(pitch) || ORBIT_MIN_PITCH, ORBIT_MIN_PITCH, ORBIT_MAX_PITCH))),
-  );
-}
-
-// Match the perspective pan scale used by Three.js MapControls/OrbitControls,
-// then project screen-up onto the floor plane. Positive pixel deltas mean
-// right/down; the returned target delta makes the grabbed model follow them.
-export function perspectiveGroundPanDelta({
-  deltaX = 0,
-  deltaY = 0,
-  distance = 1,
-  fov = 52,
-  viewportHeight = 1,
-  yaw = 0,
-  pitch = Math.PI / 4,
-} = {}) {
-  const height = Math.max(1, Number(viewportHeight) || 1);
-  const targetDistance = Math.max(0, Number(distance) || 0)
-    * Math.tan(THREE.MathUtils.degToRad(clamp(Number(fov) || 52, 1, 179)) / 2);
-  const scale = 2 * targetDistance / height;
-  const rightX = Math.cos(yaw);
-  const rightZ = -Math.sin(yaw);
-  const backwardX = Math.sin(yaw);
-  const backwardZ = Math.cos(yaw);
-  // Ground-plane motion approaches infinity at the horizon. Capping the
-  // compensation keeps the fallback stable when the pointer ray misses it.
-  const verticalScale = scale / Math.max(0.25, Math.sin(clamp(pitch, 0, Math.PI / 2)));
-  return {
-    x: -Number(deltaX || 0) * rightX * scale - Number(deltaY || 0) * backwardX * verticalScale,
-    z: -Number(deltaX || 0) * rightZ * scale - Number(deltaY || 0) * backwardZ * verticalScale,
-    scale,
-    verticalScale,
-  };
-}
-
-export function orbitRotationDelta({ deltaX = 0, deltaY = 0, viewportHeight = 1 } = {}) {
-  const radiansPerPixel = ORBIT_ROTATE_SPEED * Math.PI * 2
-    / Math.max(1, Number(viewportHeight) || 1);
-  return {
-    yaw: -Number(deltaX || 0) * radiansPerPixel,
-    pitch: Number(deltaY || 0) * radiansPerPixel,
-  };
-}
-
-export function normalizeWheelPixels({ deltaY = 0, deltaMode = 0 } = {}, viewportHeight = 1) {
-  const multiplier = deltaMode === 1 ? 16 : deltaMode === 2 ? Math.max(100, viewportHeight) : 1;
-  return Number.isFinite(deltaY) ? deltaY * multiplier : 0;
-}
-
-export function touchGestureMetrics(points = []) {
-  if (!Array.isArray(points) || points.length < 2) return null;
-  const [first, second] = points;
-  const dx = Number(second?.x) - Number(first?.x);
-  const dy = Number(second?.y) - Number(first?.y);
-  if (![dx, dy, first?.x, first?.y, second?.x, second?.y].every(Number.isFinite)) return null;
-  return {
-    x: (Number(first.x) + Number(second.x)) / 2,
-    y: (Number(first.y) + Number(second.y)) / 2,
-    distance: Math.hypot(dx, dy),
-    angle: Math.atan2(dy, dx),
-  };
-}
-
-// Fits the complete floor/wall box for the current orbit orientation. This is
-// tighter than a bounding sphere while remaining valid for any aspect ratio.
-export function fitOrbitDistance({
-  width = 1,
-  depth = 1,
-  height = ORBIT_SCENE_HEIGHT,
-  targetX = 0,
-  targetY = ORBIT_TARGET_HEIGHT,
-  targetZ = 0,
-  yaw = -0.88,
-  pitch = 0.72,
-  fov = 52,
-  aspect = 1,
-  padding = 1.08,
-} = {}) {
-  const safeWidth = Math.max(0.01, Number(width) || 1);
-  const safeDepth = Math.max(0.01, Number(depth) || 1);
-  const safeHeight = Math.max(0.01, Number(height) || ORBIT_SCENE_HEIGHT);
-  const verticalTangent = Math.tan(THREE.MathUtils.degToRad(clamp(Number(fov) || 52, 1, 179)) / 2);
-  const horizontalTangent = verticalTangent * Math.max(0.01, Number(aspect) || 1);
-  const cosineYaw = Math.cos(yaw);
-  const sineYaw = Math.sin(yaw);
-  const cosinePitch = Math.cos(pitch);
-  const sinePitch = Math.sin(pitch);
-  const right = [cosineYaw, 0, -sineYaw];
-  const backward = [sineYaw * cosinePitch, sinePitch, cosineYaw * cosinePitch];
-  const up = [-sineYaw * sinePitch, cosinePitch, -cosineYaw * sinePitch];
-  let required = 0;
-  [-safeWidth / 2 - targetX, safeWidth / 2 - targetX].forEach((x) => {
-    [-0.16 - targetY, safeHeight - targetY].forEach((y) => {
-      [-safeDepth / 2 - targetZ, safeDepth / 2 - targetZ].forEach((z) => {
-        const behind = x * backward[0] + y * backward[1] + z * backward[2];
-        const horizontal = Math.abs(x * right[0] + y * right[1] + z * right[2]);
-        const vertical = Math.abs(x * up[0] + y * up[1] + z * up[2]);
-        required = Math.max(
-          required,
-          behind + horizontal / horizontalTangent,
-          behind + vertical / verticalTangent,
-        );
-      });
-    });
-  });
-  const limits = orbitDistanceLimits(safeWidth, safeDepth);
-  return clamp(required * Math.max(1, Number(padding) || 1), limits.min, limits.max);
-}
-
-function entityData(object, type, id) {
-  object.traverse((child) => { child.userData.entity = { type, id }; });
-  return object;
-}
-
-function box(width, height, depth, material, y, geometry) {
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.scale.set(width, height, depth);
-  mesh.position.y = y ?? height / 2;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  return mesh;
-}
-
-function furnitureObject(placement, isSelected, resources) {
-  const group = new THREE.Group();
-  const width = Math.max(0.18, Number(placement.width || 60) * CM_TO_M);
-  const depth = Math.max(0.18, Number(placement.depth || 60) * CM_TO_M);
-  const suppliedHeight = Number(placement.height || 0) * CM_TO_M;
-  const name = clean(`${placement.name} ${placement.category}`);
-  const main = resources.furnitureMaterial('main', isSelected);
-  const dark = resources.furnitureMaterial('dark', isSelected);
-  const addPart = (part, role) => {
-    part.userData.materialRole = role;
-    group.add(part);
-    return part;
-  };
-
-  if (/stuhl|chair|sessel/.test(name)) {
-    const seatHeight = clamp(suppliedHeight * 0.5 || 0.45, 0.38, 0.52);
-    addPart(box(width * 0.78, 0.09, depth * 0.72, main, seatHeight, resources.unitBox), 'main');
-    const back = box(width * 0.78, 0.55, 0.08, dark, seatHeight + 0.28, resources.unitBox);
-    back.position.z = -depth * 0.32;
-    addPart(back, 'dark');
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, z]) => {
-      const leg = box(0.045, seatHeight, 0.045, dark, seatHeight / 2, resources.unitBox);
-      leg.position.x = x * width * 0.3;
-      leg.position.z = z * depth * 0.25;
-      addPart(leg, 'dark');
-    });
-  } else if (/tisch|table|desk|konferenz/.test(name)) {
-    const height = clamp(suppliedHeight || 0.74, 0.65, 1.1);
-    addPart(box(width, 0.08, depth, main, height, resources.unitBox), 'main');
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, z]) => {
-      const leg = box(0.055, height, 0.055, dark, height / 2, resources.unitBox);
-      leg.position.x = x * Math.max(0, width / 2 - 0.12);
-      leg.position.z = z * Math.max(0, depth / 2 - 0.12);
-      addPart(leg, 'dark');
-    });
-  } else if (/bildschirm|screen|monitor|display/.test(name)) {
-    const height = clamp(suppliedHeight || 0.7, 0.45, 1.8);
-    addPart(box(width, height, Math.min(depth, 0.12), dark, height / 2 + 0.65, resources.unitBox), 'dark');
-    addPart(box(0.08, 0.65, 0.08, main, 0.325, resources.unitBox), 'main');
-  } else {
-    const height = clamp(suppliedHeight || (/schrank|regal|archiv/.test(name) ? 1.8 : 0.75), 0.25, 2.4);
-    const shape = placement.shape || placement.shape2d;
-    if (shape === 'circle') {
-      const mesh = new THREE.Mesh(resources.unitCylinder, main);
-      mesh.scale.set(width, height, width);
-      mesh.position.y = height / 2;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      addPart(mesh, 'main');
-    } else {
-      addPart(box(width, height, depth, main, height / 2, resources.unitBox), 'main');
-    }
-  }
-
-  group.position.set(
-    Number(placement.x || 0) * CM_TO_M + width / 2,
-    0,
-    Number(placement.y || 0) * CM_TO_M + depth / 2,
-  );
-  group.rotation.y = -THREE.MathUtils.degToRad(Number(placement.rotation || 0));
-  return group;
-}
-
-function roomLabel(room, width, depth, resources) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 128;
-  const context = canvas.getContext('2d');
-  if (!context) return null;
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = '#162438';
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.font = '600 42px Arial, sans-serif';
-  context.fillText(String(room.roomNumber || '').replace(/^\S+\sOG\s/i, ''), 256, 42, 460);
-  context.font = '28px Arial, sans-serif';
-  context.fillText(String(room.useLabel || ''), 256, 91, 460);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 4;
-  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false });
-  resources.temporaryTextures.add(texture);
-  resources.temporaryMaterials.add(material);
-  const labelWidth = Math.max(0.7, Math.min(width * 0.78, depth * 2.5, 3.4));
-  const mesh = new THREE.Mesh(resources.unitPlane, material);
-  mesh.scale.set(labelWidth, labelWidth / 4, 1);
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.position.y = 0.075;
-  return mesh;
-}
-
-function addWall(group, x, z, width, depth, height, material, unitBox) {
-  const wall = box(
-    Math.max(width, WALL_THICKNESS),
-    height,
-    Math.max(depth, WALL_THICKNESS),
-    material,
-    height / 2,
-    unitBox,
-  );
-  wall.position.x = x;
-  wall.position.z = z;
-  group.add(wall);
-  return wall;
-}
-
-// Three.js returns ray intersections nearest-first. Only the foremost visible
-// object may own a click: an unlabelled wall therefore blocks entities behind
-// it instead of allowing selection through opaque geometry.
-export function nearestPickEntity(intersections = []) {
-  return intersections[0]?.object?.userData?.entity || null;
-}
-
-function startPoint(rooms, placements, width, depth, selectedRoomId = '') {
-  const selectedRoom = rooms.find((room) => room.spaceId === selectedRoomId && room.rect);
-  const usableRooms = rooms.filter((room) => room.rect && room.sia !== 'VF'
-    && !/korridor|verkehr|treppenhaus|wc|technik|archiv/.test(clean(`${room.useType} ${room.useLabel}`)));
-  const room = selectedRoom || [...(usableRooms.length ? usableRooms : rooms)]
-    .sort((a, b) => Number(b.area || 0) - Number(a.area || 0))[0];
-  if (!room?.rect) return { position: new THREE.Vector3(0, WALK_EYE_HEIGHT, 0), yaw: Math.PI / 2 };
-
-  const [x, z, roomWidth, roomDepth] = room.rect.map((value) => Number(value) * CM_TO_M);
-  const margin = Math.min(0.8, Math.max(0.35, Math.min(roomWidth, roomDepth) * 0.16));
-  const candidates = [
-    [x + margin, z + roomDepth - margin],
-    [x + roomWidth - margin, z + roomDepth - margin],
-    [x + roomWidth - margin, z + margin],
-    [x + margin, z + margin],
-    [x + roomWidth / 2, z + roomDepth / 2],
-  ];
-  const roomPlacements = placements.filter((placement) => placement.roomId === room.spaceId);
-  const isFree = ([candidateX, candidateZ]) => !roomPlacements.some((placement) => {
-    const placementX = Number(placement.x || 0) * CM_TO_M;
-    const placementZ = Number(placement.y || 0) * CM_TO_M;
-    const placementWidth = Math.max(0.1, Number(placement.width || 0) * CM_TO_M);
-    const placementDepth = Math.max(0.1, Number(placement.depth || 0) * CM_TO_M);
-    const clearance = 0.32;
-    return candidateX >= placementX - clearance && candidateX <= placementX + placementWidth + clearance
-      && candidateZ >= placementZ - clearance && candidateZ <= placementZ + placementDepth + clearance;
-  });
-  const [startX, startZ] = candidates.find(isFree) || candidates[candidates.length - 1];
-  const centreX = x + roomWidth / 2;
-  const centreZ = z + roomDepth / 2;
-  return {
-    position: new THREE.Vector3(startX - width / 2, WALK_EYE_HEIGHT, startZ - depth / 2),
-    // Three.js cameras look down their local -Z axis at yaw 0.
-    yaw: Math.atan2(startX - centreX, startZ - centreZ),
-  };
-}
-
-function fallbackViewer() {
-  return {
-    reset() {},
-    zoom() {},
-    updateSelection() {},
-    updateColors() {},
-    updateDocument() {},
-    getViewState() { return null; },
-    dispose() {},
-  };
-}
+export {
+  normalizeRadians,
+  orbitDistanceLimits,
+  minimumOrbitDistanceForPitch,
+  perspectiveGroundPanDelta,
+  orbitRotationDelta,
+  normalizeWheelPixels,
+  touchGestureMetrics,
+  fitOrbitDistance,
+  nearestPickEntity,
+};
 
 export function createFloorplanThreeViewer({
   host,

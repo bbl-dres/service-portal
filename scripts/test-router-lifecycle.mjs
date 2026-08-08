@@ -64,7 +64,7 @@ try {
     const notFound = await fromBottom('#/route-that-does-not-exist',
       () => document.querySelector('#main-content h1')?.textContent.includes('Seite nicht gefunden'));
 
-    const { core } = await import('./js/core.js');
+    const { core } = await import('./js/core/index.js');
     const originalEnsure = core.ensure;
     core.ensure = async () => { throw new Error('router lifecycle probe'); };
     const error = await fromBottom('#/applications?router-error=1',
@@ -166,7 +166,7 @@ try {
     };
     await until(() => document.querySelector('#main-content h1')?.textContent.includes('Dienstleistungen'));
 
-    const { core } = await import('./js/core.js');
+    const { core } = await import('./js/core/index.js');
     const originalEnsure = core.ensure;
     let releaseEnsure;
     let ensureCalls = 0;
@@ -433,7 +433,7 @@ try {
   const decodePage = await openPage(cdp, `${APP_BASE}/services`, { login: true });
   const decoded = await decodePage.evaluate(`(async () => {
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    const { core } = await import('./js/core.js');
+    const { core } = await import('./js/core/index.js');
     const originals = {
       processDoc: core.processDoc,
       businessObject: core.businessObject,

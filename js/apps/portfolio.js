@@ -1,10 +1,10 @@
 // Map-first property inventory with catalogue, building and parcel detail views.
 
-import { openGallery, restoreGalleryFromQuery } from '../gallery.js';
-import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../hero-mosaic.js';
-import { initEstateMap } from '../buildings-map.js';
-import { createMapSlot } from '../map-slot.js';
-import { treeHTML, wireTree, restoreTreeSelection, markTree, syncTreeCounts } from '../spatial-tree.js';
+import { openGallery, restoreGalleryFromQuery } from '../ui/gallery.js';
+import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../ui/hero-mosaic.js';
+import { initEstateMap } from '../map/buildings-map.js';
+import { createMapSlot } from '../map/map-slot.js';
+import { treeHTML, wireTree, restoreTreeSelection, markTree, syncTreeCounts } from '../ui/spatial-tree.js';
 import { formatNumber, formatArea, formatCurrency, formatDate, formatFileSize } from '../format.js';
 import { countryName, businessEntityIdFromBblId } from '../domain.js';
 import { APPLICATIONS } from '../crumbs.js';

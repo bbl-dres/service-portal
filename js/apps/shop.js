@@ -1,7 +1,7 @@
 // Portal-native first version of the BBL intranet shop.
 // Data and imagery come from the workspace-management prototype. The UI uses
 // the portal's CD Bund catalogue, tree, cart, wizard, and process components.
-import { readJSON, writeJSON, remove } from '../storage.js';
+import { readJSON, writeJSON, remove } from '../core/storage.js';
 import { formatCurrency } from '../format.js';
 import * as links from '../links.js';
 import { APPLICATIONS, trail } from '../crumbs.js';

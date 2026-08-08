@@ -1,9 +1,9 @@
 // Bootstrap: load the shared core + process engine, render the federal shell, start the router.
-import { core } from './core.js';
+import { core } from './core/index.js';
 import { engine } from './process-engine.js';
-import { session } from './session.js';
-import { shell } from './shell.js';
-import { initRouter, redraw, requestNavigationPermission } from './router.js';
+import { session } from './core/session.js';
+import { shell } from './ui/shell/index.js';
+import { initRouter, redraw, requestNavigationPermission } from './routing/router.js';
 import { notification, escape, announce, toast, wireShare, wireLogin, mountBanner } from './components.js';
 
 // Data-failure banner (P0-4): if a data/*.json file is missing, the affected

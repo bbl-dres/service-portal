@@ -83,7 +83,7 @@ export function anchorNavPage(ctx, { title, lead, intro, sections, back }) {
 // (docs/code-review.md §4). These are the app's most visited pages: six knowledge
 // and five digitalisation pages share this layout.
 function wireAnchorNav(mount, ctx) {
-  // One AbortController per render, matching js/shell.js. Every listener is
+  // One AbortController per render, matching js/ui/shell/header.js. Every listener is
   // registered with `signal` and removed by one `abort()`.
   const ac = new AbortController();
   const { signal } = ac;

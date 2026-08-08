@@ -6,8 +6,8 @@
 // openDocumentViewer(doc, siblings, options): doc = record from documents.json;
 // siblings = ordered list (current results) for previous/next navigation.
 
-import C from './components.js';
-import { formatFileSize } from './format.js';
+import C from '../components.js';
+import { formatFileSize } from '../format.js';
 
 export function documentFileName(doc) {
   const name = String(doc?.fileName || doc?.title || doc?.docId || 'Dokument');

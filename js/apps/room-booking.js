@@ -4,108 +4,41 @@ import { APPLICATIONS, trail } from '../crumbs.js';
 // three page changes. The current surface shows a prefilled search bar, results,
 // and a card-level booking dialog. Map and floor plan remain supporting dialogs.
 // Room cards use floor identifiers instead of repeated building placeholder photos.
-import { initEstateMap } from '../buildings-map.js';
-import { createMapSlot } from '../map-slot.js';
-import { floorplanSvg, wireFloorplan } from '../floorplan.js';
-import { download, fileSlug } from '../export.js';
-import { favorites } from '../favorites.js';
+import { initEstateMap } from '../map/buildings-map.js';
+import { createMapSlot } from '../map/map-slot.js';
+import { floorplanSvg, wireFloorplan } from '../ui/floorplan.js';
+import { favorites } from '../core/favorites.js';
 import { formatDate, formatArea, formatNumber } from '../format.js';
+import {
+  PREFERRED_BUILDING,
+  ROOM_NAMES,
+  EQUIPMENT_OPTIONS,
+  CANCELLED,
+  DAY_START,
+  DAY_END,
+  PAGE_SIZE,
+  FIELD_LABELS,
+  localDate,
+  nextWorkday,
+  minuteOfDay,
+  hhmm,
+  floorQuarter,
+  rangesOverlap,
+  roomHash,
+  participantCount,
+  slotValidation,
+  safeDate,
+  safeTime,
+  domId,
+  instanceRange,
+  isUpcoming,
+} from './room-booking/rules.js';
+import { DIRECTORY, calendarFile, parseInvitee } from './room-booking/calendar.js';
 
 export const needs = ['buildings', 'floors', 'spaces'];
 
 // Application-specific copy shown by the router's authentication gate.
 export const loginText = "Raumbuchungen sind persönliche Vorgänge. Melden Sie sich mit AGOV / FedLogin an, um einen Raum zu reservieren.";
-
-const PREFERRED_BUILDING = '1080/6650/AA';
-const ROOM_NAMES = ['Aare', 'Aletsch', 'Emme', 'Jura', 'Limmat', 'Reuss', 'Rhone', 'Saane', 'Sense', 'Säntis', 'Thur', 'Zürichsee'];
-const EQUIPMENT_OPTIONS = ['Bildschirm', 'Teams', 'Whiteboard', 'Videokonferenz'];
-const DIRECTORY = [
-  { name: 'Anna Keller', email: 'anna.keller@bafu.admin.ch' },
-  { name: 'Marco Rossi', email: 'marco.rossi@bafu.admin.ch' },
-  { name: 'Sophie Dubois', email: 'sophie.dubois@bag.admin.ch' },
-  { name: 'Luca Bernasconi', email: 'luca.bernasconi@blv.admin.ch' },
-  { name: 'Nina Meier', email: 'nina.meier@bbl.admin.ch' },
-];
-const CANCELLED = new Set(['zurueckgezogen', 'storniert']);
-// Booking-day bounds make the card's free-from/to range meaningful; without
-// them every fully free room would display an unhelpful all-day range.
-const DAY_START = 7 * 60, DAY_END = 19 * 60;
-const PAGE_SIZE = 6;
-const FIELD_LABELS = {
-  'booking-date': 'Datum',
-  'booking-start': 'Von',
-  'booking-end': 'Bis',
-  'booking-participants': 'Teilnehmende',
-};
-
-const localDate = (date) => {
-  const pad = (value) => String(value).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
-
-const nextWorkday = () => {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  while (date.getDay() === 0 || date.getDay() === 6) date.setDate(date.getDate() + 1);
-  return localDate(date);
-};
-
-const minuteOfDay = (value) => {
-  const match = /^(\d{2}):(\d{2})$/.exec(String(value || ''));
-  if (!match) return NaN;
-  const hours = Number(match[1]), minutes = Number(match[2]);
-  return hours <= 23 && minutes <= 59 ? hours * 60 + minutes : NaN;
-};
-const hhmm = (minutes) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
-// Round down or up to quarter hours because time controls use step=900.
-const floorQuarter = (minutes) => Math.floor(minutes / 15) * 15;
-
-const rangesOverlap = (startA, endA, startB, endB) => startA < endB && startB < endA;
-const roomHash = (value) => [...String(value || '')].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 7);
-const isRealDate = (value) => {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
-  if (!match) return false;
-  const year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
-  if (year < 1000 || month < 1 || month > 12 || day < 1) return false;
-  return day <= new Date(Date.UTC(year, month, 0)).getUTCDate();
-};
-const participantCount = (value) => {
-  const raw = String(value ?? '').trim();
-  if (!/^\d+$/.test(raw)) return null;
-  const count = Number(raw);
-  return Number.isSafeInteger(count) && count >= 1 && count <= 100 ? count : null;
-};
-const slotValidation = ({ date, start, end, participants }, { today, capacity = null } = {}) => {
-  const errors = {};
-  const from = minuteOfDay(start), to = minuteOfDay(end);
-  const count = participantCount(participants);
-  if (!String(date || '').trim()) errors['booking-date'] = 'Bitte ein Datum wählen';
-  else if (!isRealDate(date)) errors['booking-date'] = 'Bitte ein gültiges Datum wählen';
-  else if (today && date < today) errors['booking-date'] = 'Bitte ein heutiges oder zukünftiges Datum wählen';
-  if (!Number.isFinite(from)) errors['booking-start'] = 'Bitte eine gültige Startzeit angeben';
-  else if (from < DAY_START || from >= DAY_END || from % 15) {
-    errors['booking-start'] = 'Bitte eine Startzeit zwischen 07:00 und 18:45 in Viertelstunden angeben';
-  }
-  if (!Number.isFinite(to)) errors['booking-end'] = 'Bitte eine gültige Endzeit angeben';
-  else if (to <= DAY_START || to > DAY_END || to % 15) {
-    errors['booking-end'] = 'Bitte eine Endzeit zwischen 07:15 und 19:00 in Viertelstunden angeben';
-  } else if (Number.isFinite(from) && to <= from) {
-    errors['booking-end'] = 'Die Endzeit muss nach der Startzeit liegen';
-  }
-  if (count == null) errors['booking-participants'] = 'Bitte 1 bis 100 Teilnehmende angeben';
-  else if (Number.isFinite(capacity) && count > capacity) {
-    errors['booking-participants'] = `Dieser Raum bietet höchstens ${capacity} Plätze`;
-  }
-  return { errors, participants: count };
-};
-const safeDate = (value, fallback, min = '') => isRealDate(value) && (!min || value >= min) ? String(value) : fallback;
-const safeTime = (value, fallback) => {
-  const minutes = minuteOfDay(value);
-  return Number.isFinite(minutes) && minutes >= DAY_START && minutes <= DAY_END && minutes % 15 === 0
-    ? String(value) : fallback;
-};
-// Sanitize slash- and dot-bearing inventory IDs before using them as DOM IDs.
-const domId = (prefix, value) => `${prefix}-${String(value).replace(/[^a-z0-9_-]/gi, '-')}`;
 
 export default async function render(ctx) {
   const { mount, query, core, engine, session, C, setTitle, setCrumbs, onUnmount } = ctx;
@@ -235,12 +168,6 @@ export default async function render(ctx) {
       accessible: floorLabel(room) === 'EG' || seed % 3 !== 0,
       favorite: favoriteRoomIds.has(room.spaceId),
     };
-  }
-
-  function instanceRange(instance) {
-    const data = instance.data || {};
-    const stored = String(data['zeit'] || '').split(/\s*[–-]\s*/);
-    return { start: minuteOfDay(data.start || stored[0]), end: minuteOfDay(data['ende'] || stored[1]) };
   }
 
   // One process snapshot and profile/range index serve a draw or availability
@@ -838,14 +765,6 @@ export default async function render(ctx) {
     return instances.filter((instance) => instance.defId === 'buchung' && instance.requester === session.user().name);
   }
 
-  function isUpcoming(instance) {
-    if (CANCELLED.has(instance.status)) return false;
-    const data = instance.data || {};
-    const end = data['ende'] || String(data['zeit'] || '').split(/\s*[–-]\s*/)[1] || '23:59';
-    const stamp = new Date(`${data['datum'] || '1900-01-01'}T${end}:00`).getTime();
-    return Number.isFinite(stamp) && stamp >= Date.now();
-  }
-
   function bookingItem(instance) {
     const data = instance.data || {};
     const room = roomById(data['raumId'])
@@ -899,37 +818,6 @@ export default async function render(ctx) {
         <div class="booking-entry-list">${past.map(bookingItem).join('')}</div></section>` : ''}
       ${favouriteLocations()}
     </div>`;
-  }
-
-  // Calendar and invitees.
-  function calendarFile(instance) {
-    const data = instance.data || {};
-    const compact = (date, time) => `${String(date || '').replaceAll('-', '')}T${String(time || '').replace(':', '')}00`;
-    const escIcs = (value) => String(value || '').replaceAll('\\', '\\\\').replaceAll('\n', '\\n').replaceAll(',', '\\,').replaceAll(';', '\\;');
-    const invitees = (Array.isArray(data['eingeladene']) ? data['eingeladene'] : []).map((value) => {
-      const match = /^(.*?)\s*<([^>]+)>$/.exec(String(value));
-      return match ? `ATTENDEE;CN=${escIcs(match[1])}:mailto:${match[2]}` : '';
-    }).filter(Boolean);
-    const location = `${data['gebaeude'] || ''}, ${data['raum'] || ''}`;
-    const bookingDate = data['datum'];
-    const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-    const content = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//BBL//Raumbuchung Prototype//DE', 'BEGIN:VEVENT',
-      `UID:${escIcs(instance.reference)}@bbl.demo`, `DTSTAMP:${now}`, `DTSTART;TZID=Europe/Zurich:${compact(bookingDate, data.start)}`,
-      `DTEND;TZID=Europe/Zurich:${compact(bookingDate, data['ende'])}`, `SUMMARY:${escIcs(data['zweck'] || instance.title)}`,
-      `LOCATION:${escIcs(location)}`, `DESCRIPTION:${escIcs(`${data['teilnehmende'] || ''} Teilnehmende`)}`, ...invitees,
-      'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
-    download(content, `${fileSlug(data['zweck'] || 'raumbuchung')}.ics`, 'text/calendar;charset=utf-8');
-  }
-
-  function parseInvitee(value) {
-    const raw = String(value || '').trim();
-    if (!raw) return null;
-    const found = DIRECTORY.find((person) => person.name.toLocaleLowerCase('de-CH') === raw.toLocaleLowerCase('de-CH')
-      || person.email.toLocaleLowerCase('de-CH') === raw.toLocaleLowerCase('de-CH'));
-    if (found) return found;
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) return { name: raw.split('@')[0], email: raw };
-    if (raw.length >= 3) return { name: raw, email: '' };
-    return null;
   }
 
   function confirmCancellation(instance) {

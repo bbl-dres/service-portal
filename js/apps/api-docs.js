@@ -12,7 +12,7 @@
 //
 // The former live-data action survives as read-only response examples. Endpoints
 // covered by LIVE[...] show actual portal data in their 200 response example.
-import { fetchJSON } from '../fetch-json.js';
+import { fetchJSON } from '../core/fetch-json.js';
 import { DATA } from '../crumbs.js';
 
 // Breadcrumb prefix: this route belongs below the data-access catalogue.

@@ -5,8 +5,8 @@
 // blocked network). CARTO Positron is the calm worldwide basemap used by the
 // portfolio, project, room and location-picker views.
 
-import { escape as esc, loading } from './components.js';
-import { formatArea } from './format.js';
+import { escape as esc, loading } from '../components.js';
+import { formatArea } from '../format.js';
 
 const MAPLIBRE_VERSION = '4.7.1';
 let mapLibrePromise = null;
@@ -121,7 +121,7 @@ function showMapSpinner(container, map) {
 // closer zoom, show the bbl_id as a label. The nav control's compass resets the
 // rotation to north. `points` = [{ lat, lon, label, sub?, bblId?, href? }].
 //
-// Colours come from the token layer (as in js/charts.js). MapLibre paint specs
+// Colours come from the token layer (as in js/ui/charts.js). MapLibre paint specs
 // cannot carry `var(...)`, so tokens are RESOLVED at render time through
 // getComputedStyle. Markers and labels therefore follow the active skin
 // (red/intranet) instead of being fixed to intranet blue. Fallbacks match the

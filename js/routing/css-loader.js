@@ -3,13 +3,13 @@
 // unstyled app frame while retaining the static shell/loading presentation.
 
 const SHEETS = Object.freeze([
-  { key: 'dataportal', href: '../css/apps/dataportal.css', slot: 'early' },
-  { key: 'portfolio', href: '../css/apps/portfolio.css', slot: 'portfolio' },
-  { key: 'archive', href: '../css/apps/archive.css', slot: 'late' },
-  { key: 'floorplan', href: '../css/apps/floorplan.css', slot: 'late' },
-  { key: 'workplace', href: '../css/apps/workplace.css', slot: 'late' },
-  { key: 'floorplan-editor', href: '../css/apps/floorplan-editor.css', slot: 'late' },
-  { key: 'room-booking', href: '../css/apps/room-booking.css', slot: 'late' },
+  { key: 'dataportal', href: '../../css/apps/dataportal.css', slot: 'early' },
+  { key: 'portfolio', href: '../../css/apps/portfolio.css', slot: 'portfolio' },
+  { key: 'archive', href: '../../css/apps/archive.css', slot: 'late' },
+  { key: 'floorplan', href: '../../css/apps/floorplan.css', slot: 'late' },
+  { key: 'workplace', href: '../../css/apps/workplace.css', slot: 'late' },
+  { key: 'floorplan-editor', href: '../../css/apps/floorplan-editor.css', slot: 'late' },
+  { key: 'room-booking', href: '../../css/apps/room-booking.css', slot: 'late' },
 ].map((sheet, index) => Object.freeze({ ...sheet, index })));
 
 const APP_SHEETS = Object.freeze({
