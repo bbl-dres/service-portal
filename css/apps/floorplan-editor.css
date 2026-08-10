@@ -89,7 +89,6 @@
   background:var(--color-secondary-100); font-variant-numeric:tabular-nums; font-size:var(--text-xs); }
 .fpe-layer-tabs .tab__control--active .fpe-layer-tabs__count { background:var(--color-primary-100); color:var(--color-primary-700); }
 .fpe-layer-tabs__note { margin-left:var(--sp-1); color:var(--color-text-light); font-size:var(--text-xs); }
-.fpe-work__layer-lead { margin:var(--sp-3) 0 0; max-width:80ch; color:var(--color-text-muted); font-size:var(--text-sm); }
 .fpe-work__section { margin-top:var(--sp-6); min-width:0; }
 .fpe-work__section-head { display:flex; align-items:baseline; justify-content:space-between; gap:var(--sp-3);
   margin-bottom:var(--sp-2); }

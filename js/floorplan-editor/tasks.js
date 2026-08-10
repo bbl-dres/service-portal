@@ -13,28 +13,12 @@ const list = (value) => Array.isArray(value) ? value : [];
 const text = (value) => value == null ? '' : String(value);
 
 export const PLAN_EDITOR_LAYERS = Object.freeze([
-  {
-    id: 'usage',
-    label: 'Grundriss & Nutzung',
-    lead: 'Sie bearbeiten hier: Geometrie · Raumnummer · Nutzungsart · SIA-Kategorie.',
-    available: true,
-  },
-  {
-    id: 'workspace',
-    label: 'Arbeitsplätze & Ausstattung',
-    lead: 'Sie bearbeiten hier: Arbeitsplätze · Module · Ausstattungsstandard.',
-    available: true,
-  },
-  {
-    id: 'tenancy',
-    label: 'Mietverhältnisse',
-    lead: 'Sie bearbeiten hier: Zuordnung von Räumen und Flächen zu Mietverträgen.',
-    available: true,
-  },
+  { id: 'usage', label: 'Grundriss & Nutzung', available: true },
+  { id: 'workspace', label: 'Arbeitsplätze & Ausstattung', available: true },
+  { id: 'tenancy', label: 'Mietverhältnisse', available: true },
   {
     id: 'operations',
     label: 'Betrieb & Reinigung',
-    lead: 'Vorgesehen für Reinigungsklassen, Turnus und Unterhaltsangaben je Raum.',
     available: false,
     emptyReason: 'Für diese Ebene sind im Datenbestand noch keine Attribute erfasst. '
       + 'Sobald Reinigungs- und Unterhaltsangaben je Raum vorliegen, erscheinen sie hier.',

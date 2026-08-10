@@ -142,7 +142,6 @@ export function renderWorkView(C, {
     </div>
 
     ${layerTabsHTML(C, layer.id, counts)}
-    <p class="fpe-work__layer-lead">${C.escape(layer.lead)}</p>
 
     <section class="fpe-work__section" aria-labelledby="fpe-open-heading">
       <h2 id="fpe-open-heading" class="sr-only">Offene Arbeiten</h2>
