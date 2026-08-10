@@ -61,6 +61,9 @@ export function browseEntries(objects, core) {
         areaHnf: Number(floor.areaHnf) || 0,
         rooms: spaces.length || Number(floor.rooms) || 0,
         workplaces: spaces.reduce((sum, room) => sum + (Number(room.capacity) || 0), 0),
+        // Null rather than zero: a legacy floor has no equipment record at all,
+        // which is not the same statement as «no equipment».
+        equipmentCount: record?.equipmentCount == null ? null : Number(record.equipmentCount),
         planStatus: record?.planStatus || 'inventory',
         lastSync: record?.lastSync || '',
       };

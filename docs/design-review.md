@@ -493,6 +493,9 @@ der fünf Befunde sind Doppelspurigkeiten, nicht Geschmacksfragen.
 | 10.4 | Der Standortbaum endete beim Gebäude. Gesucht wird aber ein Geschoss; der letzte Schritt fand nur in der Liste oder im Panel statt. | `treeHTML` erhält eine optionale Ebene unterhalb des Blatts (`leaf.children`). Ein Gebäude mit Geschossen wird zum Disclosure, das weiterhin sich selbst auswählt; ein Geschoss ist ein direkter Handoff in die Arbeitsfläche. Die drei übrigen Explorer übergeben `children` nicht und bleiben unverändert. | erledigt |
 | 10.5 | Die Arbeitsliste war eine Kartenliste: vier Zeilen und ein Knopfpaar je Eintrag, ohne Suche, Sortierung oder Filter. Bei zehn Einträgen ist das eine Bildschirmhöhe für zehn Zeilen Information. | Ersetzt durch `C.mountDataTable` – dieselbe kompakte Tabelle mit `catbar`, Suche, Dringlichkeitsfilter, Sortierung, Zebra und Paginierung wie «Meine Vorgänge». Eine Aufgabe ist eine Zeile; die Zeile folgt ihrem ersten Link. | erledigt |
 
+| 10.6 | Ein Objekt hatte keine eigene Seite. Wer ein Gebäude gewählt hatte, sah nur ein Kartenpopup; Eckdaten, Ausstattung und Ansprechpersonen blieben unerreichbar, und der Gebäude-Breadcrumb der Arbeitsfläche führte auf eine Karte statt auf das Objekt. | Neues Objektdetail `?building=<bbl_id>` in der Anatomie des Liegenschaften-Inventars — Breadcrumb, Titel, Kennzahlenband, CD-Register, geteilte Datentabelle, Aktions- und Kontaktkarte — mit den drei fachlichen Registern Übersicht, Grundrisse und Ausstattungen. Vorschaubilder erscheinen nur auf Karten, nie in Tabellenzeilen; der Geschoss-Schnellzugriff liegt im Übersichtsregister, damit dieselben Miniaturen nicht zweimal auf einem Bildschirm stehen. | erledigt |
+| 10.7 | `C.actionCard` ist eine geteilte Komponente, ihre Regeln lagen aber in `css/apps/floorplan.css`. Portfolio und Shop laden dieses Blatt nicht und stellten die Karte deshalb ungestylt dar. | `.fp-svc*` nach `css/components/content.css` verschoben, also neben die Komponente und in die immer geladene Schicht. Behebt den Fehler für alle vier Aufrufer. | erledigt |
+
 ### Bewusst beibehaltene Abweichungen
 
 - **Kopfzeile, Standortbaum und Karte** bleiben portaleigene Muster. Das CD ist
@@ -508,8 +511,8 @@ der fünf Befunde sind Doppelspurigkeiten, nicht Geschmacksfragen.
 
 ### Prüfartefakte
 
-- `node scripts/test-floorplan-editor.mjs` — Portfolio als Standard, geteilte
-  `catbar`-Anatomie, Kennzahlenpanel statt Objektinspektor, Geschossebene im
+- `node scripts/test-floorplan-editor.mjs` — Portfolio als Standard, Objektdetail
+  mit seinen drei Registern, geteilte `catbar`-Anatomie, Kennzahlenpanel statt Objektinspektor, Geschossebene im
   Baum, Popup mit Detail und Aktionen, kompakte Tabellenzeile, 320-px-Zustände.
 - `node scripts/test-floorplan-editor-landing.mjs` — reines Aufgabenmodell.
 - `node scripts/test-portfolio.mjs`, `node scripts/test-tenancies.mjs` — die

@@ -2,6 +2,7 @@
 //
 //   #/app/floorplan-editor                      → «Portfolio» (default)
 //   #/app/floorplan-editor?mode=list&obj=…      → a different portfolio surface
+//   #/app/floorplan-editor?building=…&tab=…     → one object's detail registers
 //   #/app/floorplan-editor?view=work            → «Meine Arbeit»
 //   #/app/floorplan-editor?view=work&layer=…    → a different attribute layer
 //
@@ -25,6 +26,9 @@ import {
   OBJECT_STATE, browseEntries, browseMode, browsePopupHTML, browseSort, browseStatsHTML,
   browseSurfaceHTML, renderBrowseView, sortBrowseEntries,
 } from './browse-view.js';
+import {
+  floorColumns, objectTab, objectTabQuery, planView, plansPanelHTML, renderObjectView,
+} from './object-view.js';
 import { BASE, PLAN_STATUS, clean, editorHeaderHTML, number, prototypeFooterHTML } from './shared.js';
 
 const fpeMap = createMapSlot();
@@ -83,14 +87,15 @@ function mapPoints(C, entries) {
 export function renderNavigation(ctx, objects, object = null, message = '') {
   const { mount, query, core, session, engine, C, onUnmount, setTitle } = ctx;
 
-  // A building in the URL keeps the former floor drill-down reachable: the
-  // portfolio view selects it and opens its popup.
-  const view = query.get('view') === 'work' && !object ? 'work' : 'portfolio';
+  // An explicit building opens its own detail; without one the landing shows
+  // either the portfolio map or the work queue.
+  const view = object ? 'object' : query.get('view') === 'work' ? 'work' : 'portfolio';
   const layer = planEditorLayer(query.get('layer') || DEFAULT_LAYER);
 
   ctx.onUnmount(fpeMap.free);
 
-  setTitle(view === 'work' ? 'Plan-Editor — Meine Arbeit' : 'Plan-Editor — Portfolio');
+  setTitle(view === 'object' ? `Plan-Editor — ${object.building.name}`
+    : view === 'work' ? 'Plan-Editor — Meine Arbeit' : 'Plan-Editor — Portfolio');
 
   const abort = new AbortController();
   const { signal } = abort;
@@ -99,6 +104,21 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
   const header = `<div class="fpe-app fpe-landing" id="fpe-navigation" data-view="${view}">
     ${editorHeaderHTML(C, session, false, '', view)}
     ${message ? `<div class="fpe-nav-message">${C.notificationHtml(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}</div>` : ''}`;
+
+  if (view === 'object') {
+    const entry = browseEntries([object], core)[0];
+    const state = { tab: objectTab(query.get('tab')), plans: planView(query.get('plans')) };
+    const previewFor = (floor) => floorPreviewHTML(C, core, floor);
+    mount.innerHTML = `${header}
+      ${renderObjectView(C, {
+        entry, planning: object.planning, building: object.building,
+        tab: state.tab, view: state.plans, previewFor,
+      })}
+      ${prototypeFooterHTML()}
+    </div>`;
+    wireObject(ctx, { entry, state, previewFor, signal });
+    return;
+  }
 
   if (view === 'work') {
     const drafts = listWorkingCopies();
@@ -182,6 +202,67 @@ function scopeLabel(allEntries, state) {
   if (sel.region) return `Kanton ${sel.region}`;
   if (sel.country) return 'Schweiz';
   return 'Alle Objekte';
+}
+
+// --- Building detail ---------------------------------------------------------
+
+function wireObject(ctx, { entry, state, previewFor, signal }) {
+  const { mount, C, replaceRoute } = ctx;
+  const routeFor = () => {
+    const params = new URLSearchParams({ building: entry.id });
+    if (state.tab !== 'overview') params.set('tab', objectTabQuery(state.tab));
+    if (state.plans !== 'cards') params.set('plans', state.plans);
+    return `${BASE}?${params}`;
+  };
+
+  // The floor table exists only while the list surface is on screen, so it is
+  // mounted and disposed with that surface rather than once for the page.
+  let unmountTable = null;
+  const disposeTable = () => { if (unmountTable) { unmountTable(); unmountTable = null; } };
+  const mountFloorTable = () => {
+    disposeTable();
+    const host = mount.querySelector('#fpe-floors-table');
+    if (!host) return;
+    unmountTable = C.mountDataTable(host, {
+      id: 'fpe-floors', rows: entry.floors, rowsClickable: true, perPage: 12,
+      unit: { nom: 'Geschosse', dat: 'Geschossen' }, caption: `Geschosse von ${entry.name}`,
+      searchKeys: ['label'], searchLabel: 'Geschoss suchen', placeholder: 'Geschoss suchen…',
+      sorts: [
+        { value: 'level', label: 'Geschoss (oben zuerst)', cmp: (a, b) => b.level - a.level },
+        { value: 'area', label: 'HNF (grösste zuerst)', cmp: (a, b) => b.areaHnf - a.areaHnf },
+      ],
+      columns: floorColumns(C, entry),
+    });
+  };
+  const syncPlansSurface = () => {
+    if (state.tab === 'plans' && state.plans === 'list') mountFloorTable();
+    else disposeTable();
+  };
+  syncPlansSurface();
+  ctx.onUnmount(disposeTable);
+
+  C.wireTabs(mount, {
+    onSelect: (id) => {
+      state.tab = id;
+      syncPlansSurface();
+      replaceRoute(routeFor());
+    },
+  });
+
+  // The view switch exchanges only the Grundrisse panel, as the inventory
+  // exchanges only its results area.
+  mount.addEventListener('click', (event) => {
+    const button = event.target.closest?.('.fpe-plans .view-switch__btn');
+    if (!button || !button.dataset.view || button.dataset.view === state.plans) return;
+    const panel = mount.querySelector('[data-panel="plans"]');
+    if (!panel) return;
+    state.plans = button.dataset.view;
+    const heading = panel.querySelector(':scope > .sr-only');
+    panel.innerHTML = (heading ? heading.outerHTML : '')
+      + plansPanelHTML(C, { entry, view: state.plans, previewFor });
+    syncPlansSurface();
+    replaceRoute(routeFor());
+  }, { signal });
 }
 
 // --- View 2: Meine Arbeit ----------------------------------------------------
