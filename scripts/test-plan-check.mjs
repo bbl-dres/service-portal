@@ -337,6 +337,8 @@ try {
       emptyViewer: Boolean(document.querySelector('.plan-check-viewer__empty')),
       tabs: document.querySelectorAll('[role="tab"]').length,
       reports: [...document.querySelectorAll('[data-plan-check-report]')].map((button) => button.dataset.planCheckReport),
+      figures: document.querySelector('.plan-check-figures')?.textContent.replace(/[\\n\\t ]+/g, ' ').trim() || '',
+      rulesTab: document.querySelector('#plan-check-tab-rules')?.textContent.trim() || '',
       workers: window.__planCheckWorkerCount,
       activeWorkers: window.__planCheckActiveWorkerCount,
       networkWrites: window.__planCheckNetworkWrites,
@@ -362,7 +364,13 @@ try {
   assert.equal(parsed.canvas, true);
   assert.equal(parsed.emptyViewer, false);
   assert.equal(parsed.tabs, 6);
-  assert.deepEqual(parsed.reports, ['print', 'csv', 'json']);
+  assert.deepEqual(parsed.reports, ['pdf', 'excel', 'csv', 'json']);
+  // The engine must produce a real result: a drawing with a handful of
+  // unsupported entities is scored, not withheld.
+  assert.match(parsed.figures, /Erfüllungsgrad\s*9?\d %/);
+  assert.match(parsed.figures, /Räume\s*30/);
+  assert.match(parsed.figures, /NGF\s*[\d’'.]+ m²/);
+  assert.equal(parsed.rulesTab, 'Prüfregeln (35/39)');
   assert.ok(parsed.workers >= 2);
   assert.equal(parsed.activeWorkers, 0);
   assert.deepEqual(parsed.networkWrites, []);
@@ -377,25 +385,22 @@ try {
   const reportLifecycle = await page.evaluate(`(async () => {
     const downloads = [];
     const nativeClick = HTMLAnchorElement.prototype.click;
-    const nativePrint = window.print;
-    let printCalls = 0;
     HTMLAnchorElement.prototype.click = function() {
       downloads.push({ download: this.download, href: this.href });
     };
-    window.print = () => { printCalls += 1; };
     document.querySelector('[data-plan-check-report="csv"]').click();
     document.querySelector('[data-plan-check-report="json"]').click();
-    document.querySelector('[data-plan-check-report="print"]').click();
+    // The browser print path survives without a button: Ctrl+P still emits the
+    // full register set instead of the live single panel.
+    window.dispatchEvent(new Event('beforeprint'));
     const panelsDuringPrint = document.querySelectorAll('[data-plan-check-print-panels] .plan-check-print-panel').length;
     const ids = [...document.querySelectorAll('.plan-check [id]')].map((node) => node.id);
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    window.dispatchEvent(new Event('afterprint'));
     const panelsAfterPrint = document.querySelectorAll('[data-plan-check-print-panels]').length;
     HTMLAnchorElement.prototype.click = nativeClick;
-    window.print = nativePrint;
     return {
       downloads: downloads.map((item) => item.download),
       localUrls: downloads.every((item) => item.href.startsWith('blob:')),
-      printCalls,
       panelsDuringPrint,
       panelsAfterPrint,
       duplicateIds: ids.filter((id, index) => ids.indexOf(id) !== index),
@@ -405,10 +410,389 @@ try {
   assert.match(reportLifecycle.downloads[0], /\.csv$/);
   assert.match(reportLifecycle.downloads[1], /\.json$/);
   assert.equal(reportLifecycle.localUrls, true);
-  assert.equal(reportLifecycle.printCalls, 1);
   assert.equal(reportLifecycle.panelsDuringPrint, 6);
   assert.equal(reportLifecycle.panelsAfterPrint, 0);
   assert.deepEqual(reportLifecycle.duplicateIds, []);
+
+  // --- PDF and Excel check report ----------------------------------------------
+  // Both generators run for real against the parsed fixture. The libraries are
+  // fetched only now — the parse itself made no external request.
+  const richReports = await page.evaluate(`(async () => {
+    const blobs = [];
+    const nativeCreate = URL.createObjectURL;
+    URL.createObjectURL = function (blob) {
+      blobs.push({ type: blob.type, size: blob.size });
+      return nativeCreate.call(URL, blob);
+    };
+    try {
+      const pdf = await import('/js/plan-check/report-pdf.js');
+      const excel = await import('/js/plan-check/report-excel.js');
+      const state = window.__planCheck.state;
+      const snapshot = (mode) => window.__planCheck.viewer?.snapshot?.(mode) || '';
+      const doc = await pdf.buildPlanCheckPdf(state.result, { snapshot });
+      const pdfBlob = doc.output('blob');
+      const { XLSX, workbook } = await excel.buildPlanCheckWorkbook(state.result);
+      const sheetNames = workbook.SheetNames.slice();
+      const xlsxBytes = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      return {
+        pdf: { pages: doc.internal.getNumberOfPages(), size: pdfBlob.size, type: pdfBlob.type },
+        excel: { sheets: sheetNames, size: xlsxBytes.byteLength },
+        pdfName: pdf.planCheckPdfFilename(state.result),
+        excelName: excel.planCheckExcelFilename(state.result),
+        snapshotIsPng: snapshot('rooms').startsWith('data:image/png'),
+      };
+    } finally {
+      URL.createObjectURL = nativeCreate;
+    }
+  })()`, { timeout: 120_000 });
+  // Cover + table of contents + six chapters, so at least eight pages.
+  assert.ok(richReports.pdf.pages >= 8, `PDF chapters: ${richReports.pdf.pages} pages`);
+  assert.equal(richReports.pdf.type, 'application/pdf');
+  assert.ok(richReports.pdf.size > 20_000, `PDF is not empty: ${richReports.pdf.size}`);
+  // Compression plus an opaque, page-sized snapshot keeps the report mailable.
+  assert.ok(richReports.pdf.size < 2_000_000, `PDF stays compact: ${richReports.pdf.size}`);
+  assert.deepEqual(richReports.excel.sheets,
+    ['Info', 'Prüfregeln', 'Fehlermeldungen', 'Layer', 'Räume', 'Flächen', 'Kennzahlen']);
+  assert.ok(richReports.excel.size > 5_000, `workbook is not empty: ${richReports.excel.size}`);
+  assert.equal(richReports.snapshotIsPng, true);
+  assert.match(richReports.pdfName, /-pruefbericht\.pdf$/);
+  assert.match(richReports.excelName, /-pruefbericht\.xlsx$/);
+
+  // Clicking the buttons drives the same generators and returns the controls to
+  // an enabled state afterwards.
+  const buttonRun = await page.evaluate(`(async () => {
+    const nativeClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {};
+    const button = document.querySelector('[data-plan-check-report="excel"]');
+    button.click();
+    const busyDuring = button.getAttribute('aria-busy');
+    for (let attempt = 0; attempt < 200 && button.disabled; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    HTMLAnchorElement.prototype.click = nativeClick;
+    return { busyDuring, disabledAfter: button.disabled, label: button.textContent.trim() };
+  })()`, { timeout: 120_000 });
+  assert.equal(buttonRun.busyDuring, 'true');
+  assert.equal(buttonRun.disabledAfter, false);
+  assert.equal(buttonRun.label, 'Excel');
+
+  // --- Redesigned workbench -------------------------------------------------
+  // The status filter belongs to the register bar once, not to every panel, and
+  // the metrics register takes the full width instead of leaving an idle Canvas.
+  // The two-column workbench and the single-row register bar are desktop
+  // behaviour, so this block runs at a stated laptop width.
+  await browser.send('Emulation.setDeviceMetricsOverride', {
+    width: 1440, height: 900, deviceScaleFactor: 1, mobile: false,
+  }, page.sessionId);
+  await sleep(200);
+  const workbench = await page.evaluate(`(() => {
+    const bar = document.querySelector('.plan-check-board__bar');
+    const barBox = bar.getBoundingClientRect();
+    const tabsBox = bar.querySelector('.tab__controls-container').getBoundingClientRect();
+    const filterBox = bar.querySelector('.plan-check-statusfilter').getBoundingClientRect();
+    return {
+      filtersInBar: bar.querySelectorAll('[data-plan-check-filter]').length,
+      filterLabels: [...bar.querySelectorAll('[data-plan-check-filter]')].map((button) => button.textContent.trim()),
+      filterIcons: bar.querySelectorAll('[data-plan-check-filter] .icon').length,
+      reportIcons: document.querySelectorAll('[data-plan-check-report] .icon').length,
+      filtersInPanel: document.querySelectorAll('[data-plan-check-panel] [data-plan-check-filter]').length,
+      // The bar may wrap the filter onto its own row, but a register must never
+      // be clipped out of reach.
+      filterReachable: filterBox.width > 0 && filterBox.right <= barBox.right + 1,
+      tabsFit: bar.querySelector('.tab__controls').scrollWidth
+        <= bar.querySelector('.tab__controls').clientWidth,
+      barWithinBoard: barBox.width <= document.querySelector('.plan-check-board').getBoundingClientRect().width + 1,
+      groups: [...document.querySelectorAll('[data-plan-check-group]')].map((group) => group.dataset.planCheckGroup),
+      footbarActions: [...document.querySelectorAll('.plan-check-footbar [data-plan-check-action]')]
+        .map((button) => button.dataset.planCheckAction),
+      viewerToolbarInsideCanvas: Boolean(document.querySelector(
+        '[data-plan-check-canvas-wrap] .plan-check-viewer__tools [data-viewer-action="focus-selection"]')),
+      legend: document.querySelector('[data-plan-check-legend]')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+      inspectorHidden: document.querySelector('[data-plan-check-inspector]')?.hidden,
+    };
+  })()`);
+  // Three states only; unevaluated rules stay reachable through their own group.
+  assert.equal(workbench.filtersInBar, 3);
+  assert.deepEqual(workbench.filterLabels, ['Alle', 'Warnungen', 'Fehler']);
+  // No icons compete with the six register labels for the same row.
+  assert.equal(workbench.filterIcons, 0);
+  assert.equal(workbench.reportIcons, 0);
+  assert.equal(workbench.filtersInPanel, 0);
+  assert.equal(workbench.filterReachable, true);
+  assert.equal(workbench.tabsFit, true);
+  assert.equal(workbench.barWithinBoard, true);
+  assert.ok(workbench.groups.length >= 1, `rule outcome groups: ${workbench.groups}`);
+  assert.deepEqual(workbench.footbarActions, ['replace-file', 'cancel', 'continue-approval']);
+  assert.equal(workbench.viewerToolbarInsideCanvas, true);
+  assert.match(workbench.legend, /Fehler/);
+  assert.equal(workbench.inspectorHidden, true);
+
+  // Selecting a room from the list opens the attribute card at the element, with
+  // the DWG's own values rather than a restatement of the list row.
+  const inspector = await page.evaluate(`(() => {
+    document.querySelector('#plan-check-tab-rooms').click();
+    return { rooms: document.querySelectorAll('[data-select-type="room"]').length };
+  })()`);
+  assert.ok(inspector.rooms > 0, 'the fixture reports rooms');
+  await page.evaluate(`document.querySelectorAll('[data-select-type="room"]')[0].click()`);
+  assert.equal(await page.waitFor(`document.querySelector('[data-plan-check-inspector]')?.hidden === false`), true);
+  const attributes = await page.evaluate(`(() => {
+    const card = document.querySelector('[data-plan-check-inspector]');
+    const wrap = document.querySelector('[data-plan-check-canvas-wrap]');
+    const cardBox = card.getBoundingClientRect();
+    const wrapBox = wrap.getBoundingClientRect();
+    const facts = {};
+    card.querySelectorAll('dt').forEach((dt) => { facts[dt.textContent.trim()] = dt.nextElementSibling?.textContent.trim(); });
+    return {
+      facts,
+      title: card.querySelector('.plan-check-inspector__name')?.textContent.trim() || '',
+      context: document.querySelector('[data-plan-check-viewer-context]')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+      selectedRows: document.querySelectorAll('.plan-check-row[aria-pressed="true"]').length,
+      // The card stays inside the drawing area and clear of the tool strip.
+      insideCanvas: cardBox.left >= wrapBox.left - 1 && cardBox.right <= wrapBox.right + 1
+        && cardBox.top >= wrapBox.top - 1 && cardBox.bottom <= wrapBox.bottom + 1,
+      clearOfTools: cardBox.right <= document.querySelector('.plan-check-viewer__tools').getBoundingClientRect().left,
+      closes: Boolean(card.querySelector('[data-plan-check-action="clear-selection"]')),
+    };
+  })()`);
+  assert.ok(attributes.title.length > 0, 'the attribute card names the selected element');
+  assert.equal(attributes.selectedRows, 1);
+  assert.ok(attributes.context.includes(attributes.title), `context strip names the selection: ${attributes.context}`);
+  for (const label of ['AOID', 'Layer', 'Handle', 'Stützpunkte', 'Rolle']) {
+    assert.ok(label in attributes.facts, `attribute card reports ${label}: ${Object.keys(attributes.facts)}`);
+  }
+  assert.equal(attributes.facts.Layer, 'R_RAUMPOLYGON');
+  assert.equal(attributes.facts.Rolle, 'Raumpolygon (R_RAUMPOLYGON)');
+  assert.equal(attributes.insideCanvas, true);
+  assert.equal(attributes.clearOfTools, true);
+  assert.equal(attributes.closes, true);
+
+  // Escape on the Canvas dismisses the card without leaving the viewer, and the
+  // list selection is released with it.
+  await page.evaluate(`(() => {
+    const canvas = document.querySelector('[data-plan-check-canvas]');
+    canvas.focus();
+    canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  })()`);
+  assert.equal(await page.waitFor(`document.querySelector('[data-plan-check-inspector]')?.hidden === true`), true);
+  assert.equal(await page.evaluate(`document.querySelectorAll('.plan-check-row[aria-pressed="true"]').length`), 0);
+
+  // A CAD object picked in the plan itself reports its raw DWG attributes.
+  const canvasPick = await page.evaluate(`(async () => {
+    document.querySelector('#plan-check-tab-layers').click();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    document.querySelector('[data-select-type="layer"][data-select-id="R_RAUMPOLYGON"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    const card = document.querySelector('[data-plan-check-inspector]');
+    const facts = {};
+    card.querySelectorAll('dt').forEach((dt) => { facts[dt.textContent.trim()] = dt.nextElementSibling?.textContent.trim(); });
+    return { hidden: card.hidden, facts, swatch: Boolean(card.querySelector('.plan-check-inspector__swatch')) };
+  })()`);
+  assert.equal(canvasPick.hidden, false);
+  assert.equal(canvasPick.facts.Layername, 'R_RAUMPOLYGON');
+  assert.equal(canvasPick.facts.Darstellungselemente, '30');
+  assert.equal(canvasPick.swatch, true);
+
+  // Rooms carry identity labels in the plan, and the register's checkboxes hide
+  // both the overlay and its label, so list and plan never disagree. The
+  // round-trip is measured back to back so nothing else can move the camera.
+  const roomVisibility = await page.evaluate(`(async () => {
+    document.querySelector('#plan-check-tab-rooms').click();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const canvas = document.querySelector('[data-plan-check-canvas]');
+    const digest = () => {
+      const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+      let value = 2166136261;
+      for (let index = 0; index < pixels.length; index += 17) {
+        value = Math.imul(value ^ pixels[index], 16777619) >>> 0;
+      }
+      return value;
+    };
+    const settle = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const toggle = (input, checked) => {
+      input.checked = checked;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const master = document.querySelector('[data-plan-check-spatial-all="room"]');
+    const boxes = [...document.querySelectorAll('[data-plan-check-spatial="room"]')];
+    const first = boxes[0];
+    await settle();
+    const visible = digest();
+    toggle(first, false);
+    await settle();
+    const oneHidden = digest();
+    const partialMaster = { checked: master.checked, indeterminate: master.indeterminate };
+    const rowHiddenClass = first.closest('.plan-check-layer')?.classList.contains('plan-check-layer--hidden');
+    toggle(first, true);
+    await settle();
+    const restored = digest();
+    toggle(master, false);
+    await settle();
+    const allHidden = digest();
+    toggle(master, true);
+    await settle();
+    return {
+      rooms: boxes.length,
+      partialMaster,
+      rowHiddenClass,
+      hidesOne: visible !== oneHidden,
+      restoresOne: restored !== oneHidden,
+      hidesAll: allHidden !== visible,
+      hiddenAfterRestore: window.__planCheck.state.hiddenRooms.size,
+    };
+  })()`, { timeout: 60_000 });
+  assert.equal(roomVisibility.rooms, 30);
+  assert.deepEqual(roomVisibility.partialMaster, { checked: false, indeterminate: true });
+  assert.equal(roomVisibility.rowHiddenClass, true);
+  assert.equal(roomVisibility.hidesOne, true, 'hiding one room repaints the plan');
+  assert.equal(roomVisibility.restoresOne, true, 'showing it again brings the room back');
+  assert.equal(roomVisibility.hidesAll, true, 'the master checkbox clears every room from the plan');
+  assert.equal(roomVisibility.hiddenAfterRestore, 0);
+
+  // The polygon registers answer a question about polygons: the CAD drawing
+  // behind them is suppressed, and nothing behind them can be picked either.
+  // Measured on the title-block corner of the sheet, which carries CAD geometry
+  // but no room or floor polygon — it must be blank in those registers.
+  const spatialScope = await page.evaluate(`(async () => {
+    const settle = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const canvas = document.querySelector('[data-plan-check-canvas]');
+    const cornerInk = () => {
+      const width = Math.floor(canvas.width / 3);
+      const height = Math.floor(canvas.height / 3);
+      const pixels = canvas.getContext('2d')
+        .getImageData(canvas.width - width, canvas.height - height, width, height).data;
+      let marked = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index] < 245 || pixels[index + 1] < 245 || pixels[index + 2] < 245) marked += 1;
+      }
+      return marked / (pixels.length / 4);
+    };
+    const open = async (tab) => {
+      document.querySelector('#plan-check-tab-' + tab).click();
+      await settle();
+      window.__planCheck.viewer.fit(false);
+      await settle();
+    };
+    await open('layers');
+    const layersCorner = cornerInk();
+    await open('rooms');
+    const roomsCorner = cornerInk();
+    await open('areas');
+    const areasCorner = cornerInk();
+    await open('errors');
+    const errorsCorner = cornerInk();
+    await open('rooms');
+    // A pick where only CAD geometry sits must not select a hidden entity.
+    window.__planCheck.state.selection = null;
+    window.__planCheck.viewer.setSelection(null);
+    const canvasBox = canvas.getBoundingClientRect();
+    const pointer = (type, x, y) => canvas.dispatchEvent(new PointerEvent(type, {
+      button: 0, pointerId: 21, pointerType: 'mouse', clientX: x, clientY: y, bubbles: true, cancelable: true,
+    }));
+    const x = canvasBox.left + canvasBox.width * 0.88;
+    const y = canvasBox.top + canvasBox.height * 0.88;
+    pointer('pointerdown', x, y);
+    pointer('pointerup', x, y);
+    await settle();
+    return {
+      layersCorner, roomsCorner, areasCorner, errorsCorner,
+      pickedNothing: window.__planCheck.state.selection === null,
+    };
+  })()`, { timeout: 60_000 });
+  assert.ok(spatialScope.layersCorner > 0.005,
+    `the layer register draws the whole sheet: ${spatialScope.layersCorner}`);
+  assert.ok(spatialScope.errorsCorner > 0.005,
+    `the findings register keeps the drawing as context: ${spatialScope.errorsCorner}`);
+  assert.equal(spatialScope.roomsCorner, 0, 'the room register paints no CAD geometry');
+  assert.equal(spatialScope.areasCorner, 0, 'the area register paints no CAD geometry');
+  assert.equal(spatialScope.pickedNothing, true, 'a suppressed entity cannot be selected');
+
+  // The master checkbox replaces the former pair of show-all/hide-all buttons and
+  // reports a partial selection as indeterminate.
+  const layerMaster = await page.evaluate(`(() => {
+    document.querySelector('#plan-check-tab-layers').click();
+    const master = document.querySelector('[data-plan-check-layers-all]');
+    const first = document.querySelector('[data-plan-check-layer]');
+    const before = { checked: master.checked, indeterminate: master.indeterminate };
+    first.checked = false;
+    first.dispatchEvent(new Event('change', { bubbles: true }));
+    const partial = { checked: master.checked, indeterminate: master.indeterminate };
+    master.checked = false;
+    master.dispatchEvent(new Event('change', { bubbles: true }));
+    const hiddenAll = [...document.querySelectorAll('[data-plan-check-layer]')].every((input) => !input.checked);
+    master.checked = true;
+    master.dispatchEvent(new Event('change', { bubbles: true }));
+    const shownAll = [...document.querySelectorAll('[data-plan-check-layer]')].every((input) => input.checked);
+    return { before, partial, hiddenAll, shownAll };
+  })()`);
+  assert.deepEqual(layerMaster.before, { checked: true, indeterminate: false });
+  assert.deepEqual(layerMaster.partial, { checked: false, indeterminate: true });
+  assert.equal(layerMaster.hiddenAll, true);
+  assert.equal(layerMaster.shownAll, true);
+
+  // The metrics register spans the workbench; the Canvas column collapses rather
+  // than sitting empty beside a full-width table.
+  const metricsLayout = await page.evaluate(`(() => {
+    document.querySelector('#plan-check-tab-metrics').click();
+    const workbenchNode = document.querySelector('[data-plan-check-workbench]');
+    const wide = workbenchNode.classList.contains('plan-check-workbench--wide');
+    const viewerVisible = getComputedStyle(document.querySelector('.plan-check-viewer')).display !== 'none';
+    const tables = [...document.querySelectorAll('.plan-check-metric-table')];
+    return {
+      wide,
+      viewerVisible,
+      tables: tables.length,
+      overflowing: tables.filter((table) => table.scrollWidth - table.clientWidth > 1).length,
+      shareColumn: document.querySelector('.plan-check-metric__share')?.textContent.trim() || '',
+    };
+  })()`);
+  assert.equal(metricsLayout.wide, true);
+  assert.equal(metricsLayout.viewerVisible, false);
+  assert.ok(metricsLayout.tables >= 3, `metric tables: ${metricsLayout.tables}`);
+  assert.equal(metricsLayout.overflowing, 0);
+
+  // Return to the rules register so the print and viewer probes below start from
+  // the default state.
+  await page.evaluate(`(() => {
+    document.querySelector('#plan-check-tab-rules').click();
+    document.querySelector('[data-plan-check-search]').value = '';
+  })()`);
+
+  // Density must not cost the accessible contract: every control keeps a name,
+  // the heading ladder stays gapless and the desktop target policy (24px, 44px
+  // for the pointer-coarse breakpoints) still holds for the dense rows.
+  const density = await page.evaluate(`(() => {
+    const scope = document.querySelector('.plan-check');
+    const named = (el) => Boolean((el.getAttribute('aria-label') || '').trim()
+      || (el.getAttribute('aria-labelledby') || '').trim()
+      || el.textContent.trim()
+      || (el.labels && el.labels.length && [...el.labels].some((label) => label.textContent.trim())));
+    const controls = [...scope.querySelectorAll('button, [href], input, select, textarea, summary')]
+      .filter((el) => el.offsetParent !== null || el === document.activeElement);
+    const measure = (el) => {
+      const box = el.getBoundingClientRect();
+      return Math.min(Math.round(box.width), Math.round(box.height));
+    };
+    return {
+      unnamed: controls.filter((el) => !named(el)).map((el) => el.outerHTML.slice(0, 90)),
+      headings: [...scope.querySelectorAll('h1,h2,h3,h4,h5,h6')].map((h) => Number(h.tagName[1])),
+      smallRows: [...scope.querySelectorAll('.plan-check-row')].filter((el) => measure(el) < 24).length,
+      smallTools: [...scope.querySelectorAll('.plan-check-viewer__tool')].filter((el) => measure(el) < 24).length,
+      smallChecks: [...scope.querySelectorAll('.plan-check-check')].filter((el) => measure(el) < 16).length,
+      groupSummaries: [...scope.querySelectorAll('.plan-check-group__head')].every((el) => measure(el) >= 24),
+    };
+  })()`);
+  assert.deepEqual(density.unnamed, []);
+  assert.equal(density.smallRows, 0);
+  assert.equal(density.smallTools, 0);
+  assert.equal(density.smallChecks, 0);
+  assert.equal(density.groupSummaries, true);
+  assert.equal(density.headings[0], 1, `first heading is the page title: ${density.headings}`);
+  assert.ok(density.headings.every((level, index, all) => index === 0 || level <= all[index - 1] + 1),
+    `heading ladder has no gaps: ${density.headings}`);
+
+  await browser.send('Emulation.clearDeviceMetricsOverride', {}, page.sessionId);
+  await sleep(200);
 
   // A single CAD handle may own several render primitives (for example a HATCH
   // boundary plus fill); selection must repaint and fit their merged bounds.
@@ -665,6 +1049,117 @@ try {
   assert.ok(narrow.target >= 44, `return target is ${narrow.target}px`);
   assert.ok(narrow.sectionWidth > 0 && narrow.sectionWidth <= 320);
   await browser.send('Emulation.clearDeviceMetricsOverride', {}, page.sessionId);
+
+  // --- Step 3: Freigabe -------------------------------------------------------
+  // The last step restates what was entered and checked, then opens a real
+  // process instance through the portal's engine.
+  const approvalForm = await page.evaluate(`(() => {
+    document.querySelector('[data-plan-check-action="continue-approval"]').click();
+    const facts = {};
+    document.querySelectorAll('.plan-check-approval__facts dt').forEach((dt) => {
+      facts[dt.textContent.trim()] = (dt.nextElementSibling?.textContent || '').split(/\s+/).join(' ').trim();
+    });
+    // Each step carries a screen-reader prefix; compare the visible label alone.
+    const visibleLabel = (item) => {
+      if (!item) return '';
+      const copy = item.cloneNode(true);
+      copy.querySelectorAll('.sr-only, .step__indicator-step').forEach((node) => node.remove());
+      return copy.textContent.trim();
+    };
+    const steps = [...document.querySelectorAll('.steps li')].map(visibleLabel);
+    return {
+      step: window.__planCheck.state.step,
+      heading: document.querySelector('.plan-check-approval-card__title')?.textContent.trim() || '',
+      facts,
+      steps,
+      currentStep: visibleLabel(document.querySelector('.steps li[aria-current="step"]')),
+      submit: document.querySelector('[data-plan-check-action="submit-approval"]')?.textContent.trim() || '',
+      canvas: Boolean(document.querySelector('[data-plan-check-canvas]')),
+      duplicateIds: (() => {
+        const ids = [...document.querySelectorAll('.plan-check [id]')].map((node) => node.id);
+        return ids.filter((id, index) => ids.indexOf(id) !== index);
+      })(),
+    };
+  })()`);
+  assert.equal(approvalForm.step, 3);
+  assert.deepEqual(approvalForm.steps, ['Standort und Datei', 'Datenqualität', 'Freigabe']);
+  assert.equal(approvalForm.currentStep, 'Freigabe');
+  assert.equal(approvalForm.heading, 'Antrag im Überblick');
+  assert.equal(approvalForm.submit, 'Zur Freigabe einreichen');
+  // The Canvas belongs to step 2 and must not survive into the summary.
+  assert.equal(approvalForm.canvas, false);
+  assert.deepEqual(approvalForm.duplicateIds, []);
+  for (const label of ['Objekt', 'Geschoss', 'Datei', 'Art der Änderung', 'Prüfergebnis',
+    'Zuständige Stelle', 'Bearbeitungsfrist', 'Antragstellende Person']) {
+    assert.ok(label in approvalForm.facts, `summary states ${label}: ${Object.keys(approvalForm.facts)}`);
+  }
+  assert.match(approvalForm.facts['Objekt'], /1080\/6650\/AA/);
+  assert.match(approvalForm.facts['Datei'], /CAD\.V01-CAFM-Plan-DE\.dwg/);
+  assert.match(approvalForm.facts['Prüfergebnis'], /35 von 39 Regeln erfüllt/);
+
+  // The report link returns to the register it summarises.
+  assert.equal(await page.evaluate(`(() => {
+    document.querySelector('[data-plan-check-action="show-report"]').click();
+    return window.__planCheck.state.step;
+  })()`), 2);
+
+  const submitted = await page.evaluate(`(() => {
+    const before = (JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]')).length;
+    document.querySelector('[data-plan-check-action="continue-approval"]').click();
+    document.querySelector('[data-plan-check-action="submit-approval"]').click();
+    const stored = JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]');
+    const instance = window.__planCheck.state.submission;
+    return {
+      created: stored.length - before,
+      defId: instance?.defId,
+      reference: instance?.reference,
+      referenceShown: document.querySelector('.plan-check-approval')?.textContent.includes(instance?.reference),
+      status: instance?.status,
+      linkedBuilding: instance?.linkedEntities?.buildingId,
+      score: instance?.data?.score,
+      pipeline: [...document.querySelectorAll('.pipeline__step')].map((step) => step.textContent.trim()),
+      caseLink: document.querySelector('.plan-check-approval a[href="#/my-cases"]')?.textContent.trim() || '',
+      restart: Boolean(document.querySelector('#plan-check-restart')),
+      focusedHeading: document.activeElement?.tagName,
+    };
+  })()`);
+  assert.equal(submitted.created, 1, 'exactly one case is opened');
+  assert.equal(submitted.defId, 'planfreigabe');
+  assert.match(submitted.reference, /^BBL-\d{4}-\d+$/);
+  assert.equal(submitted.referenceShown, true);
+  assert.equal(submitted.status, 'eingereicht');
+  assert.equal(submitted.linkedBuilding, '1080/6650/AA');
+  assert.equal(submitted.score, 90);
+  assert.equal(submitted.pipeline.length, 4);
+  assert.match(submitted.pipeline[0], /Antrag eingereicht/);
+  assert.equal(submitted.caseLink, 'Zu meinen Vorgängen');
+  assert.equal(submitted.restart, true);
+
+  // Submitting twice must not open a second case.
+  assert.equal(await page.evaluate(`(() => {
+    const before = (JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]')).length;
+    document.querySelector('[data-plan-check-action="submit-approval"]')?.click();
+    return (JSON.parse(localStorage.getItem('bbl_vorgaenge_v1') || '[]')).length - before;
+  })()`), 0);
+
+  // The restart action returns to the picker with a clean slate.
+  assert.equal(await page.evaluate(`(() => {
+    document.querySelector('#plan-check-restart').click();
+    return JSON.stringify({
+      step: window.__planCheck.state.step,
+      submission: window.__planCheck.state.submission,
+      picker: Boolean(document.querySelector('[data-plan-check-file]')),
+    });
+  })()`), JSON.stringify({ step: 1, submission: null, picker: true }));
+
+  // Re-parse the fixture so the reset probe below starts from a result again.
+  const { root: restoreRoot } = await browser.send('DOM.getDocument', { depth: 1 }, page.sessionId);
+  const { nodeId: restoreInput } = await browser.send('DOM.querySelector', {
+    nodeId: restoreRoot.nodeId, selector: '[data-plan-check-file]',
+  }, page.sessionId);
+  await browser.send('DOM.setFileInputFiles', { files: [FIXTURE], nodeId: restoreInput }, page.sessionId);
+  await page.evaluate(`document.querySelector('[data-plan-check-form]').requestSubmit()`);
+  assert.equal(await page.waitFor(`Boolean(document.querySelector('.plan-check-quality'))`, { timeout: 120_000 }), true);
 
   const reset = await page.evaluate(`(() => {
     document.querySelector('[data-plan-check-action="replace-file"]').click();

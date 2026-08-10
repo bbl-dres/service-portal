@@ -61,23 +61,18 @@ function validateResult(result, expectedFile) {
     throw new PlanCheckParserError('INVALID_RESULT',
       'Die Zeichnungsdaten fehlen im DWG-Prüfergebnis.');
   }
+  // Shape, not size: a result must carry every collection the views read. How
+  // large those collections are is the drawing's business, not the checker's.
   const collections = [
-    ['Layer', result.layers, LIMITS.layers],
-    ['Darstellungsobjekte', result.drawing?.renderList, LIMITS.renderPrimitives],
-    ['Raumergebnisse', result.validation?.rooms, LIMITS.reportedItems],
-    ['Flächenergebnisse', result.validation?.areas, LIMITS.reportedItems],
-    ['Fehlermeldungen', result.validation?.errors, LIMITS.validationErrors],
+    ['Layer', result.layers],
+    ['Darstellungsobjekte', result.drawing?.renderList],
+    ['Raumergebnisse', result.validation?.rooms],
+    ['Flächenergebnisse', result.validation?.areas],
+    ['Fehlermeldungen', result.validation?.errors],
   ];
-  for (const [label, values, limit] of collections) {
+  for (const [label, values] of collections) {
     if (!Array.isArray(values)) {
       throw new PlanCheckParserError('INVALID_RESULT', `${label} fehlen im DWG-Prüfergebnis.`);
-    }
-    if (values.length > limit) {
-      throw new PlanCheckParserError('RESOURCE_LIMIT',
-        `${label} überschreiten die sichere Ergebnisgrenze.`, {
-          actual: values.length,
-          limit,
-        });
     }
   }
   assertResultBudget(result);

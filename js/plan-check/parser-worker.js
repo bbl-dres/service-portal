@@ -7,7 +7,6 @@ import {
   boundedString,
   finiteNumber,
   inspectDwgHeader,
-  resourceLimit,
 } from './config.js';
 import { normalizeDrawing } from './normalize.js';
 import { validateDrawing } from './rules.js';
@@ -148,12 +147,6 @@ async function parseRequest(message) {
   if (!entities.length && !tableLayers.length) {
     throw new PlanCheckParserError('DWG_READ_FAILED',
       'Die DWG-Datei enthält keine gültige Zeichnungs- und Layerstruktur.');
-  }
-  if (entities.length > LIMITS.entities) {
-    throw resourceLimit(`Die Zeichnung enthält mehr als ${LIMITS.entities} Entitäten.`, {
-      actual: entities.length,
-      limit: LIMITS.entities,
-    });
   }
 
   const unknownEntityCount = Math.min(LIMITS.entities, Math.max(

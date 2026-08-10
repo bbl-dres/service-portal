@@ -34,13 +34,24 @@ import {
   planCheckFindingSpatialTarget,
   planCheckItemBounds,
   planCheckItemDistance,
+  planCheckSelectionDetails,
 } from '../js/plan-check/viewer.js';
-import { planCheckNetArea, renderPlanCheckPage, renderPlanCheckPanel } from '../js/plan-check/view.js';
+import {
+  planCheckNetArea,
+  planCheckSelectionSummary,
+  renderPlanCheckInspector,
+  renderPlanCheckLegend,
+  renderPlanCheckPage,
+  renderPlanCheckPanel,
+} from '../js/plan-check/view.js';
 import {
   buildPlanCheckCsv,
   buildPlanCheckJson,
   planCheckReportFilename,
 } from '../js/plan-check/report.js';
+import { planCheckReportModel } from '../js/plan-check/report-model.js';
+import { planCheckExcelSheets, planCheckExcelFilename } from '../js/plan-check/report-excel.js';
+import { planCheckPdfFilename } from '../js/plan-check/report-pdf.js';
 
 const expectedHashes = new Map([
   ['../js/vendor/libredwg/LICENSE', '8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903'],
@@ -550,12 +561,17 @@ assert.equal(validation.rules.length, 40);
 assert.equal(validation.rooms.length, 1);
 assert.equal(validation.rooms[0].aoid, '1234.AA.01.001');
 assert.equal(validation.rooms[0].area, 20);
-assert.equal(validation.rooms[0].siaCategory, null);
+// Unclassified rooms follow the stated HNF convention so the area balance is
+// populated; `siaCategorySource` keeps the origin of the number visible.
+assert.equal(validation.rooms[0].siaCategory, 'HNF');
+assert.equal(validation.rooms[0].siaCategorySource, 'convention');
 assert.equal(validation.areas.length, 1);
 assert.equal(validation.metrics.roomPolygonArea, 20);
-assert.equal(validation.metrics.hnf, null);
-assert.equal(validation.metrics.ngf, null);
-assert.deepEqual(validation.metrics.categoryTotals, {});
+assert.equal(validation.metrics.hnf, 20);
+assert.equal(validation.metrics.ngf, 20);
+assert.equal(validation.metrics.nnf, 0);
+assert.equal(validation.metrics.categorySource, 'convention');
+assert.deepEqual(validation.metrics.categoryTotals, { HNF: 20, NNF: 0, VF: 0, FF: 0 });
 assert.ok(Number.isInteger(validation.score));
 assert.ok(validation.passedRules <= 40);
 assert.ok(validation.rules.every((rule) => ['passed', 'failed', 'not-evaluated'].includes(rule.status)));
@@ -763,14 +779,14 @@ assert.equal(unsupportedReservedDrawing.completeness.status, 'incomplete');
 assert.equal(unsupportedReservedDrawing.completeness.reasons.find(
   (reason) => reason.code === 'UNSUPPORTED_ENTITY',
 )?.count, 3);
-assert.equal(unsupportedReservedValidation.score, null);
+assert.ok(Number.isInteger(unsupportedReservedValidation.score), 'partial normalization still yields a score');
 assert.equal(unsupportedReservedValidation.completeness.complete, false);
-assert.equal(unsupportedReservedValidation.passedRules, 0);
-assert.ok(unsupportedReservedValidation.rules.every((rule) => (
-  rule.status === 'not-evaluated' && rule.passed === null
-)));
+// The rules that could be evaluated are evaluated; the gap is a finding of its
+// own rather than a blanket «nothing was checked».
+assert.ok(unsupportedReservedValidation.passedRules > 0);
+assert.ok(unsupportedReservedValidation.rules.some((rule) => rule.status === 'passed'));
 assert.ok(unsupportedReservedValidation.errors.some((error) => (
-  error.ruleCode === 'INCOMPLETE_001' && error.severity === 'abort'
+  error.ruleCode === 'INCOMPLETE_001' && error.severity === 'warning'
 )));
 
 const converterUnknownDrawing = normalizeDrawing(database, { unknownEntityCount: 3 });
@@ -779,9 +795,9 @@ assert.equal(converterUnknownDrawing.diagnostics.converterUnknownEntityCount, 3)
 assert.equal(converterUnknownDrawing.completeness.reasons.find(
   (reason) => reason.code === 'CONVERTER_UNKNOWN_ENTITY',
 )?.count, 3);
-assert.equal(converterUnknownValidation.score, null);
+assert.ok(Number.isInteger(converterUnknownValidation.score), 'partial normalization still yields a score');
 assert.equal(converterUnknownValidation.completeness.status, 'incomplete');
-assert.ok(converterUnknownValidation.rules.every((rule) => rule.status === 'not-evaluated'));
+assert.ok(converterUnknownValidation.rules.some((rule) => rule.status === 'passed'));
 
 const malformedReservedDrawing = normalizeDrawing({
   header: { $INSUNITS: 4 },
@@ -841,8 +857,8 @@ assert.equal(malformedOrdinaryDrawing.completeness.reasons.find(
   (reason) => reason.code === 'NON_RENDERABLE_ENTITY',
 )?.count, 1);
 const malformedOrdinaryValidation = validateDrawing(malformedOrdinaryDrawing);
-assert.equal(malformedOrdinaryValidation.score, null);
-assert.ok(malformedOrdinaryValidation.rules.every((rule) => rule.status === 'not-evaluated'));
+assert.ok(Number.isInteger(malformedOrdinaryValidation.score), 'partial normalization still yields a score');
+assert.ok(malformedOrdinaryValidation.rules.some((rule) => rule.status === 'passed'));
 
 const invalidGeometryDrawing = normalizeDrawing({
   header: { $INSUNITS: 4 },
@@ -863,8 +879,8 @@ assert.equal(invalidGeometryDrawing.completeness.reasons.find(
   (reason) => reason.code === 'INVALID_GEOMETRY_VALUE',
 )?.count, 3);
 const invalidGeometryValidation = validateDrawing(invalidGeometryDrawing);
-assert.equal(invalidGeometryValidation.score, null);
-assert.ok(invalidGeometryValidation.rules.every((rule) => rule.status === 'not-evaluated'));
+assert.ok(Number.isInteger(invalidGeometryValidation.score), 'partial normalization still yields a score');
+assert.ok(invalidGeometryValidation.rules.some((rule) => rule.status === 'passed'));
 
 const invisibleReservedDrawing = normalizeDrawing({
   header: { $INSUNITS: 4 },
@@ -879,9 +895,7 @@ assert.equal(invisibleReservedDrawing.diagnostics.skippedInvisibleEntities, 1);
 assert.equal(invisibleReservedDrawing.completeness.reasons.find(
   (reason) => reason.code === 'INVISIBLE_ENTITY_NOT_VALIDATED',
 )?.count, 1);
-assert.ok(validateDrawing(invisibleReservedDrawing).rules.every(
-  (rule) => rule.status === 'not-evaluated',
-));
+assert.ok(validateDrawing(invisibleReservedDrawing).rules.some((rule) => rule.status === 'passed'));
 
 const laterVertexZ = normalizeDrawing({
   header: { $INSUNITS: 4 },
@@ -1023,8 +1037,8 @@ for (const code of [
   assert.ok(metadataLimitedDrawing.completeness.reasons.some((reason) => reason.code === code), code);
 }
 const metadataLimitedValidation = validateDrawing(metadataLimitedDrawing);
-assert.equal(metadataLimitedValidation.score, null);
-assert.ok(metadataLimitedValidation.rules.every((rule) => rule.status === 'not-evaluated'));
+assert.ok(Number.isInteger(metadataLimitedValidation.score), 'partial normalization still yields a score');
+assert.ok(metadataLimitedValidation.rules.some((rule) => rule.status === 'passed'));
 
 const manyXrefs = normalizeDrawing({
   header: { $INSUNITS: 4 },
@@ -1050,9 +1064,10 @@ const invalidUnits = normalizeDrawing({ ...database, header: { $INSUNITS: 6 } })
 const aborted = validateDrawing(invalidUnits);
 assert.equal(aborted.aborted, true);
 assert.equal(aborted.errors[0].ruleCode, 'ABORT_002');
+// A drawing in the wrong unit is a genuine abort: no rule can be evaluated
+// against measurements that would be wrong by a factor of a thousand.
 assert.equal(aborted.score, 0);
-assert.ok(aborted.rules.every((rule) => rule.status === 'not-evaluated'));
-assert.ok(aborted.rules.every((rule) => rule.passed === null));
+assert.ok(aborted.rules.every((rule) => rule.status === 'not-evaluated' && rule.passed === null));
 
 const unknownUnits = validateDrawing(normalizeDrawing({ ...database, header: {} }));
 assert.equal(unknownUnits.aborted, false);
@@ -1116,13 +1131,26 @@ const abortedState = {
   result: { validation: aborted },
   search: '',
   selection: null,
+  hiddenLayers: new Set(),
+  collapsedGroups: new Set(),
   tab: 'rules',
 };
 const abortedRulesMarkup = renderPlanCheckPanel(fakeComponents, abortedState, 'rules');
-assert.match(abortedRulesMarkup, /data-badge="gray">Nicht gepr\u00fcft/);
-assert.doesNotMatch(abortedRulesMarkup, /data-badge="success"/);
+// Dense rows carry the outcome as a shaped status symbol plus a spelled-out
+// accessible name, never as colour alone.
+assert.match(abortedRulesMarkup, /plan-check-row__status--muted/);
+assert.doesNotMatch(abortedRulesMarkup, /plan-check-row__status--success/);
 assert.match(abortedRulesMarkup, /Pflicht-Layer fehlt: R_RAUMPOLYGON/);
 assert.match(abortedRulesMarkup, /LAYER_001 \u00b7 Layerstruktur/);
+assert.match(abortedRulesMarkup, /aria-label="LAYER_001 \u00b7 Layerstruktur \u00b7 Pflicht-Layer fehlt: R_RAUMPOLYGON \u00b7 Nicht gepr\u00fcft"/);
+// Rules are grouped by outcome; an aborted run has no passed group at all.
+assert.match(abortedRulesMarkup, /data-plan-check-group="not-evaluated"/);
+assert.doesNotMatch(abortedRulesMarkup, /data-plan-check-group="passed"/);
+const collapsedRulesMarkup = renderPlanCheckPanel(fakeComponents, {
+  ...abortedState, collapsedGroups: new Set(['not-evaluated']),
+}, 'rules');
+assert.match(collapsedRulesMarkup, /data-plan-check-group="not-evaluated">/);
+assert.doesNotMatch(collapsedRulesMarkup, /data-plan-check-group="not-evaluated" open/);
 const descriptionSearchMarkup = renderPlanCheckPanel(fakeComponents, {
   ...abortedState,
   result: { validation: unknownUnits },
@@ -1134,14 +1162,139 @@ const abortedErrorsMarkup = renderPlanCheckPanel(fakeComponents, {
   ...abortedState,
   tab: 'errors',
 }, 'errors');
-assert.match(abortedErrorsMarkup, /data-badge="error">Abgebrochen/);
+assert.match(abortedErrorsMarkup, /plan-check-row__status--error/);
+assert.match(abortedErrorsMarkup, /Abgebrochen"/);
 const unavailableMetricsMarkup = renderPlanCheckPanel(fakeComponents, {
   ...abortedState,
   result: { validation: { metrics: { ngf: null, gf: null, kf: '' } }, drawing: { entitySummary: [] } },
   tab: 'metrics',
 }, 'metrics');
-assert.match(unavailableMetricsMarkup, /Geschossfl\u00e4che \(GF\)[\s\S]*<dd>\u2013<\/dd>/);
-assert.match(unavailableMetricsMarkup, /Konstruktionsfl\u00e4che \(KF\)[\s\S]*<dd>\u2013<\/dd>/);
+// An unavailable area stays an em dash in both the value and the share column;
+// a missing SIA classification must never read as a measured zero.
+assert.match(unavailableMetricsMarkup, /Geschossfl\u00e4che<\/td>\s*<td class="plan-check-metric__value">\u2013<\/td>/);
+assert.match(unavailableMetricsMarkup, /Konstruktionsfl\u00e4che<\/td>\s*<td class="plan-check-metric__value">\u2013<\/td>/);
+assert.match(unavailableMetricsMarkup, /Ohne Raumpolygone lässt sich keine Flächenbilanz bilden/);
+// With rooms present the register states the convention behind HNF and NGF.
+assert.match(renderPlanCheckPanel(fakeComponents, {
+  ...abortedState,
+  result: {
+    validation: { metrics: { gf: 100, ngf: 90, hnf: 90, categorySource: 'convention' }, rooms: [{ area: 90 }] },
+    drawing: { entitySummary: [] },
+  },
+  tab: 'metrics',
+}, 'metrics'), /konventionsgemäss als Hauptnutzfläche gezählt/);
+assert.doesNotMatch(unavailableMetricsMarkup, /0\.0 m\u00b2/);
+// The share column reports a real proportion only when a measured base exists.
+const sharedMetricsMarkup = renderPlanCheckPanel(fakeComponents, {
+  ...abortedState,
+  result: {
+    validation: { metrics: { gf: 1000, kf: 100, ngf: 900, roomPolygonArea: 850 }, rooms: [] },
+    drawing: { entitySummary: [{ type: 'LWPOLYLINE', count: 12, layers: ['A_ARCHITEKTUR', 'R_AOID'] }] },
+  },
+  tab: 'metrics',
+}, 'metrics');
+assert.match(sharedMetricsMarkup, /Konstruktionsfl\u00e4che<\/td>\s*<td class="plan-check-metric__value">100 m\u00b2<\/td>\s*<td class="plan-check-metric__share">10 %<\/td>/);
+assert.match(sharedMetricsMarkup, /NGF \/ GF<\/th>[\s\S]*?0\.9<\/td>/);
+assert.match(sharedMetricsMarkup, /A_ARCHITEKTUR, R_AOID/);
+// --- Attribute inspection ---------------------------------------------------
+// The card next to the plan reports what the DWG carries for one element. Every
+// value is read from the normalized primitive; nothing is derived beyond plain
+// geometry, so an absent attribute stays absent.
+const inspectionResult = {
+  layers: [{ name: 'R_RAUMPOLYGON', colorHex: '#FF00FF', colorIndex: 6, count: 30 }],
+  drawing: {
+    insunits: 4,
+    renderList: [
+      { t: 'poly', l: 'R_RAUMPOLYGON', et: 'LWPOLYLINE', handle: 'A1', c: '#FF00FF', byLayer: true,
+        closed: true, verts: [{ x: 0, y: 0 }, { x: 5000, y: 0 }, { x: 5000, y: 6000 }, { x: 0, y: 6000 }] },
+      { t: 'text', l: 'R_AOID', et: 'TEXT', handle: 'B2', c: '#00FF00', byLayer: false,
+        x: 2500, y: 3000, text: '8082.MO.02.005', h: 250, rot: 0, fontName: 'ARIAL' },
+      { t: 'line', l: 'A_ARCHITEKTUR', et: 'LINE', handle: 'C3', c: '#FFFFFF', byLayer: true,
+        x1: 0, y1: 0, x2: 3000, y2: 4000 },
+    ],
+    dimensionInfo: [],
+  },
+  validation: {
+    rules: [{ code: 'AOID_002', cat: 'AOID', sev: 'error', description: 'AOID ist nicht eindeutig',
+      status: 'failed', passed: false, errorCount: 1 }],
+    errors: [{ id: 1, severity: 'error', ruleCode: 'AOID_002', category: 'AOID',
+      message: 'AOID 8082.MO.02.005 ist nicht eindeutig.', handle: 'A1', roomId: 1, layer: 'R_AOID' }],
+    rooms: [{ id: 1, aoid: '8082.MO.02.005', area: 30, layer: 'R_RAUMPOLYGON', handle: 'A1', et: 'LWPOLYLINE',
+      status: 'error', centroid: { x: 2500, y: 3000 },
+      vertices: [{ x: 0, y: 0 }, { x: 5000, y: 0 }, { x: 5000, y: 6000 }, { x: 0, y: 6000 }] }],
+    areas: [],
+    metrics: {},
+  },
+};
+// ICU emits either apostrophe for the de-CH group separator depending on the
+// runtime, so figures are compared without it.
+const plainDigits = (value) => String(value ?? '').replace(/[’']/g, '');
+const factValue = (details, label) => plainDigits(details.rows.find((row) => row.label === label)?.value);
+
+const polygonDetails = planCheckSelectionDetails({ type: 'entity', id: 'A1' }, inspectionResult);
+assert.equal(polygonDetails.kind, 'entity');
+assert.equal(polygonDetails.subtitle, 'LWPOLYLINE');
+assert.equal(factValue(polygonDetails, 'Layer'), 'R_RAUMPOLYGON');
+assert.equal(factValue(polygonDetails, 'Farbe'), '#FF00FF · VONLAYER');
+assert.equal(factValue(polygonDetails, 'Stützpunkte'), '4');
+assert.equal(factValue(polygonDetails, 'Verlauf'), 'Geschlossen');
+assert.equal(factValue(polygonDetails, 'Fläche'), '30 m²');
+assert.equal(factValue(polygonDetails, 'Länge'), '22000 mm · 22 m');
+assert.deepEqual(polygonDetails.findings.map((finding) => finding.ruleCode), ['AOID_002']);
+
+const textDetails = planCheckSelectionDetails({ type: 'entity', id: 'B2' }, inspectionResult);
+assert.equal(factValue(textDetails, 'Text'), '8082.MO.02.005');
+assert.equal(factValue(textDetails, 'Schrifthöhe'), '250 mm');
+assert.equal(factValue(textDetails, 'Schriftart'), 'ARIAL');
+// An entity that overrides its layer colour must say so; that is exactly what
+// rule STYLE_002 is about.
+assert.equal(factValue(textDetails, 'Farbe'), '#00FF00 · direkt');
+assert.deepEqual(textDetails.findings, []);
+
+const lineDetails = planCheckSelectionDetails({ type: 'entity', id: 'C3' }, inspectionResult);
+assert.equal(factValue(lineDetails, 'Länge'), '5000 mm · 5 m');
+assert.equal(factValue(lineDetails, 'Von'), 'X 0 · Y 0');
+
+const roomDetails = planCheckSelectionDetails({ type: 'room', id: '1' }, inspectionResult);
+assert.equal(roomDetails.status, 'error');
+assert.equal(factValue(roomDetails, 'AOID'), '8082.MO.02.005');
+assert.equal(factValue(roomDetails, 'Fläche'), '30 m²');
+assert.equal(factValue(roomDetails, 'Umfang'), '22000 mm · 22 m');
+assert.equal(factValue(roomDetails, 'Rolle'), 'Raumpolygon (R_RAUMPOLYGON)');
+assert.equal(roomDetails.findings.length, 1);
+
+const layerDetails = planCheckSelectionDetails({ type: 'layer', id: 'R_RAUMPOLYGON' }, inspectionResult);
+assert.equal(factValue(layerDetails, 'Darstellungselemente'), '30');
+assert.equal(factValue(layerDetails, 'ACI-Index'), '6');
+
+const ruleDetails = planCheckSelectionDetails({ type: 'rule', id: 'AOID_002' }, inspectionResult);
+assert.equal(ruleDetails.status, 'error');
+assert.equal(factValue(ruleDetails, 'Schweregrad'), 'Fehler');
+assert.equal(factValue(ruleDetails, 'Feststellungen'), '1');
+
+// A selection the drawing does not contain yields no card at all rather than an
+// empty frame that suggests an attribute-free object.
+assert.equal(planCheckSelectionDetails({ type: 'entity', id: 'UNKNOWN' }, inspectionResult), null);
+assert.equal(planCheckSelectionDetails(null, inspectionResult), null);
+assert.equal(renderPlanCheckInspector(fakeComponents, null), '');
+
+const inspectorMarkup = renderPlanCheckInspector(fakeComponents, { ...roomDetails, truncated: false });
+assert.match(inspectorMarkup, /8082\.MO\.02\.005/);
+assert.match(inspectorMarkup, /data-plan-check-action="clear-selection"/);
+assert.match(inspectorMarkup, /1 Feststellung</);
+// Empty facts are dropped instead of rendered as a blank definition row.
+assert.doesNotMatch(inspectorMarkup, /<dd[^>]*><\/dd>/);
+
+assert.deepEqual(planCheckSelectionSummary({ type: 'room', id: '1' }, inspectionResult), {
+  title: '8082.MO.02.005', subtitle: 'Raumpolygon · 30 m²', status: 'error',
+});
+assert.match(renderPlanCheckLegend(fakeComponents, {
+  tab: 'rooms', selection: null, hiddenLayers: new Set(),
+}), /ohne Befund[\s\S]*mit Warnung[\s\S]*mit Fehler/);
+assert.match(renderPlanCheckLegend(fakeComponents, {
+  tab: 'layers', selection: null, hiddenLayers: new Set(['V_BEMASSUNG']),
+}), /1 Layer ausgeblendet/);
+
 assert.equal(planCheckNetArea({ ngf: null }, [{ area: 12.5 }]), null);
 assert.equal(planCheckNetArea({ roomPolygonArea: 20, ngf: null }, [{ area: 12.5 }]), 20);
 assert.equal(planCheckNetArea({}, [{ area: null }, { area: 12.5 }]), 12.5);
@@ -1176,10 +1329,10 @@ assert.ok(cyclic.diagnostics.expandedEntityCount <= LIMITS.blockExpansionDepth +
 const cyclicValidation = validateDrawing(cyclic);
 assert.equal(cyclic.completeness.status, 'incomplete');
 assert.equal(cyclic.completeness.reasons[0].code, 'CYCLIC_BLOCK_REFERENCE');
-assert.equal(cyclicValidation.score, null);
+assert.ok(Number.isInteger(cyclicValidation.score), 'partial normalization still yields a score');
 assert.equal(cyclicValidation.completeness.complete, false);
-assert.equal(cyclicValidation.passedRules, 0);
-assert.ok(cyclicValidation.rules.every((rule) => rule.status === 'not-evaluated'));
+assert.ok(cyclicValidation.passedRules > 0);
+assert.ok(cyclicValidation.rules.some((rule) => rule.status === 'passed'));
 
 const depthBlocks = Array.from({ length: LIMITS.blockExpansionDepth + 2 }, (_, index) => ({
   name: 'DEPTH-' + index,
@@ -1199,7 +1352,7 @@ const depthLimited = normalizeDrawing({
 assert.equal(depthLimited.diagnostics.skippedDepthLimitedInserts, 1);
 assert.equal(depthLimited.diagnostics.skippedCyclicInserts, 0);
 assert.equal(depthLimited.completeness.reasons[0].code, 'BLOCK_EXPANSION_DEPTH_LIMIT');
-assert.equal(validateDrawing(depthLimited).score, null);
+assert.ok(Number.isInteger(validateDrawing(depthLimited).score));
 
 const incompleteResult = {
   file: { name: 'incomplete.dwg', size: 6 },
@@ -1210,11 +1363,13 @@ const incompleteResult = {
   validation: cyclicValidation,
 };
 const incompleteJson = JSON.parse(buildPlanCheckJson(incompleteResult));
-assert.equal(incompleteJson.validation.score, null);
+assert.ok(Number.isInteger(incompleteJson.validation.score));
 assert.equal(incompleteJson.validation.completeness.status, 'incomplete');
 assert.equal(incompleteJson.validation.completeness.reasons[0].code, 'CYCLIC_BLOCK_REFERENCE');
 assert.match(buildPlanCheckCsv(incompleteResult), /Pr\u00fcfung;Vollst\u00e4ndigkeit;unvollst\u00e4ndig/);
-assert.match(buildPlanCheckCsv(incompleteResult), /Pr\u00fcfung;Erf\u00fcllungsgrad;nicht ausgewiesen/);
+// The CSV reports the score of a partially normalised run, with completeness
+// stated on its own row rather than replacing the result.
+assert.match(buildPlanCheckCsv(incompleteResult), /Pr\u00fcfung;Erf\u00fcllungsgrad;[0-9]+ %/);
 const incompleteMarkup = renderPlanCheckPage(fakeComponents, {
   background: 'light',
   changeType: 'new',
@@ -1227,17 +1382,21 @@ const incompleteMarkup = renderPlanCheckPage(fakeComponents, {
   step: 2,
   tab: 'rules',
 });
-assert.match(incompleteMarkup, /Pr\u00fcfung ist unvollst\u00e4ndig/);
-assert.match(incompleteMarkup, /Nicht ausgewertet \u00b7 Pr\u00fcfung unvollst\u00e4ndig/);
-assert.match(incompleteMarkup, /data-plan-check-filter="not-evaluated"/);
-assert.doesNotMatch(incompleteMarkup, /Alle Pr\u00fcfregeln sind bestanden/);
+// An incomplete run still shows its score; the gap is named beside it.
+assert.match(incompleteMarkup, /Teile der Zeichnung konnten nicht normalisiert werden/);
+assert.match(incompleteMarkup, /INCOMPLETE_001/);
+assert.doesNotMatch(incompleteMarkup, /Nicht ausgewertet \u00b7 Pr\u00fcfung unvollst\u00e4ndig/);
+assert.match(incompleteMarkup, /plan-check-figure__value--score/);
 
 const complexVertices = Array.from({ length: 5_000 }, (_, index) => {
   const angle = (index / 5_000) * Math.PI * 2;
   return { x: Math.cos(angle) * 10_000, y: Math.sin(angle) * 10_000 };
 });
-const maximumVertexPolygon = Array.from({ length: LIMITS.verticesPerPrimitive }, (_, index) => {
-  const angle = (index / LIMITS.verticesPerPrimitive) * Math.PI * 2;
+// The visual-centre search degrades to a cheap interior point above this many
+// vertices; that fallback is a performance choice, not a refusal.
+const HIGH_VERTEX_COUNT = 25_000;
+const maximumVertexPolygon = Array.from({ length: HIGH_VERTEX_COUNT }, (_, index) => {
+  const angle = (index / HIGH_VERTEX_COUNT) * Math.PI * 2;
   return { x: Math.cos(angle) * 10_000, y: Math.sin(angle) * 10_000 };
 });
 let visualCenterOperations = 0;
@@ -1246,51 +1405,140 @@ const maximumVertexCenter = visualCenter(maximumVertexPolygon, {
   consume: (amount) => { visualCenterOperations += amount; },
 });
 assert.ok(Math.abs(maximumVertexCenter.x) < 1 && Math.abs(maximumVertexCenter.y) < 1);
-assert.ok(visualCenterOperations <= LIMITS.verticesPerPrimitive * 2);
+assert.ok(visualCenterOperations <= HIGH_VERTEX_COUNT * 2);
 assert.ok(performance.now() - visualCenterStartedAt < 2_000, 'high-vertex visual center must use the bounded fallback');
 
-const nearRenderLimitDatabase = {
+// --- No size ceiling ------------------------------------------------------
+// A large drawing is slower, never refused. These fixtures used to trip the
+// former RESOURCE_LIMIT guards; every one of them must now normalise and
+// validate to a real result.
+const HEAVY_PRIMITIVES = 40_000;
+const heavyDatabase = {
   header: { $INSUNITS: 4 },
-  entities: Array.from({ length: LIMITS.renderPrimitives }, (_, index) => ({
-    type: 'LINE', layer: 'A_ARCHITEKTUR', handle: `near-${index}`,
+  entities: Array.from({ length: HEAVY_PRIMITIVES }, (_, index) => ({
+    type: 'LINE', layer: 'A_ARCHITEKTUR', handle: `heavy-${index}`,
     startPoint: { x: index, y: 0 }, endPoint: { x: index, y: 1 },
   })),
   tables: { LAYER: { entries: [{ name: 'A_ARCHITEKTUR', colorIndex: 7 }] } },
 };
-const nearRenderStartedAt = performance.now();
-const nearRenderLimit = normalizeDrawing(nearRenderLimitDatabase);
-assert.equal(nearRenderLimit.renderList.length, LIMITS.renderPrimitives);
-assert.ok(performance.now() - nearRenderStartedAt < 5_000, 'near-limit normalization must remain bounded');
-assert.throws(() => normalizeDrawing({
-  ...nearRenderLimitDatabase,
-  entities: [...nearRenderLimitDatabase.entities, {
-    type: 'LINE', layer: 'A_ARCHITEKTUR', handle: 'over-limit',
-    startPoint: { x: 0, y: 0 }, endPoint: { x: 1, y: 1 },
-  }],
-}), (error) => error instanceof PlanCheckParserError && error.code === 'RESOURCE_LIMIT');
-assert.throws(() => normalizeDrawing({
+const heavyStartedAt = performance.now();
+const heavyDrawing = normalizeDrawing(heavyDatabase);
+assert.equal(heavyDrawing.renderList.length, HEAVY_PRIMITIVES);
+assert.ok(performance.now() - heavyStartedAt < 20_000, 'large normalization must still complete');
+assert.ok(Number.isInteger(validateDrawing(heavyDrawing).score));
+
+// The same volume delivered through a block reference must also expand.
+const heavyBlockDrawing = normalizeDrawing({
   header: { $INSUNITS: 4 },
-  entities: [{ type: 'INSERT', layer: 'A_ARCHITEKTUR', name: 'OUTPUT-LIMIT',
-    insertionPoint: { x: 0, y: 0 } }],
+  entities: [{ type: 'INSERT', layer: 'A_ARCHITEKTUR', name: 'HEAVY', insertionPoint: { x: 0, y: 0 } }],
   tables: {
     LAYER: { entries: [{ name: 'A_ARCHITEKTUR', colorIndex: 7 }] },
-    BLOCK_RECORD: { entries: [{
-      name: 'OUTPUT-LIMIT',
-      entities: [...nearRenderLimitDatabase.entities, {
-        type: 'LINE', layer: 'A_ARCHITEKTUR', handle: 'block-over-limit',
-        startPoint: { x: 0, y: 0 }, endPoint: { x: 1, y: 1 },
-      }],
-    }] },
+    BLOCK_RECORD: { entries: [{ name: 'HEAVY', entities: heavyDatabase.entities }] },
   },
-}), (error) => error instanceof PlanCheckParserError && error.code === 'RESOURCE_LIMIT',
-'output-limited INSERT expansion must fail closed instead of returning a partial score');
+});
+assert.equal(heavyBlockDrawing.renderList.length, HEAVY_PRIMITIVES);
+
+// A single polygon with 5'000 vertices exercises the quadratic self-intersection
+// test, which formerly threw once it passed a comparison budget.
 const complexDrawing = normalizeDrawing({
   header: { $INSUNITS: 4 },
   entities: [{ type: 'LWPOLYLINE', layer: 'R_RAUMPOLYGON', handle: 'heavy', flag: 1, vertices: complexVertices }],
   tables: { LAYER: { entries: [{ name: 'R_RAUMPOLYGON', colorIndex: 7 }] } },
 });
-assert.throws(() => validateDrawing(complexDrawing),
-  (error) => error instanceof PlanCheckParserError && error.code === 'RESOURCE_LIMIT');
+const complexValidation = validateDrawing(complexDrawing);
+assert.ok(Number.isInteger(complexValidation.score));
+assert.equal(complexValidation.rooms.length, 1);
+// Every former ceiling now reads as unlimited, so no code path can refuse a size.
+for (const key of ['entities', 'layers', 'blockRecords', 'expandedEntities', 'renderPrimitives',
+  'verticesPerPrimitive', 'totalVertices', 'validationErrors', 'validationOperations',
+  'selfIntersectionComparisons', 'resultTransferBytes', 'resultNodes']) {
+  assert.equal(LIMITS[key], Infinity, `${key} must no longer cap a drawing`);
+}
+
+// --- Report model -----------------------------------------------------------
+// PDF and Excel render the same model, so every figure is asserted once here and
+// both formats inherit it.
+const pruefberichtResult = {
+  file: { name: 'Grundriss 5.OG.dwg', size: 381_509 },
+  elapsedMs: 318,
+  database: { version: 'AC1032', layerCount: 17, entityCount: 3_504 },
+  drawing: { entitySummary: [{ type: 'LWPOLYLINE', count: 3_230, layers: ['A_ARCHITEKTUR', 'R_AOID', 'V_TEXT', 'A_ELEKTRO'] }] },
+  layers: [{ name: 'R_RAUMPOLYGON', count: 30, colorHex: '#FF00FF' }],
+  checkContext: {
+    building: { id: '1080/6650/AA', name: 'Verwaltungsgebäude' },
+    floor: { id: '1080-6650-AA-2og', label: '2. Obergeschoss' },
+    change: { type: 'mutation', reason: 'Umbau Ostflügel' },
+  },
+  validation: {
+    score: 90, passedRules: 35, aborted: false,
+    completeness: { status: 'incomplete', complete: false,
+      reasons: [{ code: 'UNSUPPORTED_ENTITY', count: 2, message: 'Nicht unterstützte CAD-Objekte.' }] },
+    rules: [
+      { cat: 'TEXT', code: 'TEXT_001', sev: 'warning', description: 'Textelement auf unzulässigem Layer', status: 'failed', passed: false, errorCount: 3 },
+      { cat: 'POLY', code: 'POLY_001', sev: 'error', description: 'Raumpolygon ist nicht geschlossen', status: 'failed', passed: false, errorCount: 1 },
+      { cat: 'LAYER', code: 'LAYER_001', sev: 'error', description: 'Pflicht-Layer fehlt: R_RAUMPOLYGON', status: 'passed', passed: true, errorCount: 0 },
+      { cat: 'AOID', code: 'AOID_006', sev: 'warning', description: 'Basispunkt ausserhalb', status: 'not-evaluated', passed: null, errorCount: 0 },
+    ],
+    errors: [
+      { id: 1, severity: 'error', ruleCode: 'POLY_001', category: 'POLY', message: 'Raumpolygon ist nicht geschlossen.' },
+      { id: 2, severity: 'warning', ruleCode: 'TEXT_001', category: 'TEXT', message: '3 Textelemente auf unzulässigem Layer.' },
+    ],
+    rooms: [{ id: 1, aoid: '8082.MO.02.005', area: 30, layer: 'R_RAUMPOLYGON', handle: 'A68', status: 'error', vertices: [{}, {}, {}, {}] }],
+    areas: [{ id: 1000, aoid: 'R_GESCHOSSPOLYGON', area: 572.32, layer: 'R_GESCHOSSPOLYGON', handle: 'B12', status: 'ok' }],
+    metrics: { gf: 572.32, kf: 55.2, ngf: 517.12, nf: 517.12, hnf: 517.12, nnf: 0, vf: 0, ff: 0,
+      categorySource: 'convention', evaluatedRules: 3 },
+  },
+};
+const pruefberichtModel = planCheckReportModel(pruefberichtResult, { generatedAt: new Date('2026-08-10T09:30:00Z') });
+assert.equal(pruefberichtModel.summary.scoreLabel, '90 %');
+assert.equal(pruefberichtModel.summary.passedRules, 1);
+assert.equal(pruefberichtModel.summary.evaluatedRules, 3);
+assert.equal(pruefberichtModel.summary.errorCount, 1);
+assert.equal(pruefberichtModel.summary.warningCount, 1);
+assert.equal(pruefberichtModel.summary.complete, false);
+// Failed rules come first, errors before warnings, so the reader meets the
+// worst finding on the first line of the chapter.
+assert.deepEqual(pruefberichtModel.rules.failed.map((row) => row[1]), ['POLY_001', 'TEXT_001']);
+assert.deepEqual(pruefberichtModel.rules.notEvaluated.map((row) => row[1]), ['AOID_006']);
+assert.deepEqual(pruefberichtModel.rules.passed.map((row) => row[1]), ['LAYER_001']);
+assert.deepEqual(pruefberichtModel.rules.failed[0].slice(0, 1), ['Fehler']);
+// Area balance: measured GF, share against GF, and the derived ratios.
+assert.deepEqual(pruefberichtModel.kpi.areas[0], ['GF', 'Geschossfläche', '572.3 m²', '100 %']);
+assert.deepEqual(pruefberichtModel.kpi.areas.find((row) => row[0] === 'NNF').slice(2), ['0 m²', '0 %']);
+assert.deepEqual(pruefberichtModel.kpi.economy[0], ['NGF / GF', 'Nettogeschossfläche / Geschossfläche', '0.9']);
+// DIN 277 has no source in the DWG contract; every row stays an em dash.
+assert.ok(pruefberichtModel.kpi.din277.every((row) => row[2] === '–' && row[3] === '–'));
+assert.equal(pruefberichtModel.kpi.entities[0][0], 'LWPOLYLINE');
+assert.match(pruefberichtModel.kpi.entities[0][1], /^3.230$/);
+assert.equal(pruefberichtModel.kpi.entities[0][2], 'A_ARCHITEKTUR, R_AOID, V_TEXT …');
+// Both the incompleteness and the classification convention are stated.
+assert.ok(pruefberichtModel.notes.some((note) => /nicht normalisiert/.test(note)));
+assert.ok(pruefberichtModel.notes.some((note) => /Hauptnutzfläche/.test(note)));
+assert.ok(pruefberichtModel.notes.some((note) => /nicht an einen Server/.test(note)));
+assert.deepEqual(pruefberichtModel.chapters.map((chapter) => chapter.key),
+  ['rules', 'errors', 'layers', 'rooms', 'areas', 'kpi']);
+assert.ok(pruefberichtModel.info.some(([label, value]) => label === 'Änderungsgrund' && value === 'Umbau Ostflügel'));
+assert.ok(pruefberichtModel.info.some(([label, value]) => label === 'Geschoss' && value === '2. Obergeschoss'));
+
+const excelSheets = planCheckExcelSheets(pruefberichtResult, { generatedAt: new Date('2026-08-10T09:30:00Z') });
+assert.deepEqual(excelSheets.map((sheet) => sheet.name),
+  ['Info', 'Prüfregeln', 'Fehlermeldungen', 'Layer', 'Räume', 'Flächen', 'Kennzahlen']);
+assert.ok(excelSheets.every((sheet) => sheet.name.length <= 31));
+assert.ok(excelSheets.every((sheet) => sheet.widths.length === sheet.rows[0].length));
+// Sheet and PDF chapters carry the same rows.
+const excelRules = excelSheets.find((sheet) => sheet.name === 'Prüfregeln');
+assert.deepEqual(excelRules.rows.slice(1).map((row) => row[1]),
+  ['POLY_001', 'TEXT_001', 'AOID_006', 'LAYER_001']);
+assert.equal(planCheckPdfFilename(pruefberichtResult), 'Grundriss-5-OG-pruefbericht.pdf');
+assert.equal(planCheckExcelFilename(pruefberichtResult), 'Grundriss-5-OG-pruefbericht.xlsx');
+
+// An empty result still produces a complete, dash-filled model rather than
+// throwing on the way to a report.
+const emptyModel = planCheckReportModel({}, { generatedAt: new Date('2026-08-10T09:30:00Z') });
+assert.equal(emptyModel.summary.rooms, 0);
+assert.equal(emptyModel.rules.failed.length, 0);
+assert.ok(emptyModel.kpi.areas.every((row) => row[2] === '–'));
+assert.equal(planCheckExcelSheets({}).length, 7);
 
 const header = new TextEncoder().encode('AC1032').buffer;
 assert.equal(inspectDwgHeader(header), 'AC1032');
@@ -1301,7 +1549,10 @@ assert.equal(LIBREDWG_VERSION, '0.7.9');
 assert.equal(PARSER_TIMEOUT_MS, 120_000);
 assert.equal(PLAN_CHECK_INTAKE_ENABLED, true);
 const sharedBudgetNode = { value: 'shared' };
-assert.doesNotThrow(() => assertResultBudget({ first: sharedBudgetNode, second: sharedBudgetNode }));
+const sharedBudget = assertResultBudget({ first: sharedBudgetNode, second: sharedBudgetNode });
+assert.ok(sharedBudget.nodes > 0 && sharedBudget.estimatedBytes > 0);
+// Measurement only: a huge result is reported, not rejected.
+assert.doesNotThrow(() => assertResultBudget(Array.from({ length: 200_000 }, (_, index) => ({ index }))));
 
 class FakeWorker {
   static instances = [];
@@ -1462,14 +1713,15 @@ try {
   await assert.rejects(mismatchedResult, (error) => error.code === 'INVALID_RESULT');
   assert.equal(mismatchWorker.terminated, true);
 
+  // A very large result is accepted: the client checks shape, not size.
   previousWorkerCount = FakeWorker.instances.length;
   const oversizedFile = makeFile('oversized-result.dwg');
   const oversizedResult = retryParser.parse(oversizedFile);
   const resultWorker = await waitForPostedWorker(previousWorkerCount);
   const result = makeResult('oversized-result.dwg', oversizedFile.size);
-  result.validation.errors = Array.from({ length: LIMITS.validationErrors + 1 }, () => ({}));
+  result.validation.errors = Array.from({ length: 5_000 }, (_, index) => ({ id: index }));
   resultWorker.emit({ type: 'result', requestId: resultWorker.messages.at(-1).requestId, result });
-  await assert.rejects(oversizedResult, (error) => error.code === 'RESOURCE_LIMIT');
+  assert.equal((await oversizedResult).validation.errors.length, 5_000);
   assert.equal(resultWorker.terminated, true);
   retryParser.dispose();
 } finally {

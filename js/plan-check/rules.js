@@ -2,7 +2,6 @@ import {
   ALL_CAFM_LAYERS,
   AOID_TEXT_LAYERS,
   LIMITS,
-  resourceLimit,
 } from './config.js';
 import {
   computeKpis,
@@ -113,37 +112,19 @@ const UNIT_NAMES = Object.freeze({
   6: 'Meter',
 });
 
+// `consume` counts geometric work so the report can state how much the run
+// cost. It no longer caps that work: a large plan takes longer, it does not
+// become unverifiable.
 function createRunContext() {
   let nextId = 1;
   let operations = 0;
   const errors = [];
-  const consume = (amount = 1) => {
-    operations += Math.max(1, Number(amount) || 1);
-    if (operations > LIMITS.validationOperations) {
-      throw resourceLimit('Die Validierung überschreitet das Rechenlimit.', {
-        limit: LIMITS.validationOperations,
-      });
-    }
-  };
+  const consume = (amount = 1) => { operations += Math.max(1, Number(amount) || 1); };
   const add = (severity, ruleCode, message, category, extra = {}) => {
-    if (errors.length >= LIMITS.validationErrors) {
-      throw resourceLimit(`Die Validierung erzeugt mehr als ${LIMITS.validationErrors} Meldungen.`, {
-        limit: LIMITS.validationErrors,
-      });
-    }
     errors.push({ id: nextId, severity, ruleCode, message, category, ...extra });
     nextId += 1;
   };
   return { errors, add, consume, get operations() { return operations; } };
-}
-
-function ensureCollectionLimit(values, label) {
-  if (values.length > LIMITS.reportedItems) {
-    throw resourceLimit(`${label} überschreitet ${LIMITS.reportedItems} Elemente.`, {
-      actual: values.length,
-      limit: LIMITS.reportedItems,
-    });
-  }
 }
 
 function extractSpaces(drawing, context) {
@@ -152,9 +133,6 @@ function extractSpaces(drawing, context) {
   const textItems = renderList.filter((item) => item.t === 'text');
   const roomPolygons = renderList.filter((item) => item.t === 'poly' && item.closed && item.l === 'R_RAUMPOLYGON');
   const areaPolygons = renderList.filter((item) => item.t === 'poly' && item.closed && item.l === 'R_GESCHOSSPOLYGON');
-  ensureCollectionLimit(identifierTexts, 'Die Anzahl der AOID-Texte');
-  ensureCollectionLimit(roomPolygons, 'Die Anzahl der Raumpolygone');
-  ensureCollectionLimit(areaPolygons, 'Die Anzahl der Geschosspolygone');
 
   const rooms = roomPolygons.map((polygon, index) => {
     const matches = [];
@@ -185,9 +163,14 @@ function extractSpaces(drawing, context) {
       aoidTextIndexes: matchIndexes,
       et: polygon.et,
       status: 'ok',
-      // The DWG contract has no authoritative SIA use-category mapping.
-      // Preserve the measured polygon area without inventing HNF/NNF/VF/FF.
-      siaCategory: null,
+      // The DWG contract carries no SIA 416 use category. Rather than leaving
+      // the whole area balance unavailable, an unclassified room counts as
+      // primary usable area (HNF) - the same convention the reference applies.
+      // `siaCategorySource` marks the value as a convention, so every consumer
+      // (Kennzahlen, PDF, Excel) can say where the number comes from instead of
+      // presenting it as a measurement.
+      siaCategory: 'HNF',
+      siaCategorySource: 'convention',
     };
   });
 
@@ -524,11 +507,22 @@ function runLayoutRules(drawing, context) {
 }
 
 function runDimensionRules(drawing, context) {
-  if (!drawing.dimensionInfo.some((item) => item.layer === 'V_BEMASSUNG')) {
+  const dimensions = Array.isArray(drawing.dimensionInfo) ? drawing.dimensionInfo : [];
+  if (!dimensions.some((item) => item.layer === 'V_BEMASSUNG')) {
     context.add('warning', 'DIM_001', 'Keine Masselemente auf V_BEMASSUNG vorhanden.', 'DIM');
   }
-  // DIM_002 remains in the authoritative inventory, but is not evaluated until
-  // normalization can resolve DIMASSOC objects instead of misreading type flags.
+  // Associativity is read from the dimension's ACAD_DIMASSOC linkage. Where the
+  // drawing carries no dictionary to resolve, `associative` stays null and the
+  // rule reports itself unevaluated rather than failing every dimension.
+  const resolved = dimensions.filter((item) => item.associative !== null);
+  if (!resolved.length) return { associativityEvaluated: false };
+  const nonAssociative = resolved.filter((item) => item.associative === false);
+  if (nonAssociative.length) {
+    context.add('warning', 'DIM_002',
+      `${nonAssociative.length} Masselement(e) sind nicht assoziativ (keine DIMASSOC-Verknüpfung).`, 'DIM',
+      { handles: nonAssociative.slice(0, LIMITS.reportedItems).map((item) => item.handle) });
+  }
+  return { associativityEvaluated: true };
 }
 
 function runHatchRules(drawing, context) {
@@ -648,30 +642,32 @@ export function validateDrawing(drawing, layers = drawing?.layerInfo || []) {
   runTextRules(drawing.renderList, context);
   runStyleRules(drawing.renderList, context);
   runLayoutRules(drawing, context);
-  runDimensionRules(drawing, context);
+  const dimensionCoverage = runDimensionRules(drawing, context);
   runHatchRules(drawing, context);
   updateStatuses(context.errors, spaces.rooms, spaces.areas);
 
+  // Partial normalization is reported as its own finding, not as a reason to
+  // discard the whole run. Nearly every production DWG contains a handful of
+  // entities the parser cannot render (proxy objects, OLE frames, unsupported
+  // types); treating that as «nothing was checked» made the checker useless on
+  // real files. The 40 rules that COULD be evaluated are evaluated and scored,
+  // and the incompleteness stays visible as a warning beside them.
   if (!completeness.complete) {
     for (const reason of completeness.reasons) {
-      context.add('abort', 'INCOMPLETE_001', `${reason.message} (${reason.count}×)`, 'SYSTEM', {
+      context.add('warning', 'INCOMPLETE_001', `${reason.message} (${reason.count}×)`, 'SYSTEM', {
         incompletenessCode: reason.code,
         count: reason.count,
       });
     }
   }
-  const notEvaluated = new Set(['DIM_002']);
+  const notEvaluated = new Set();
   if (!identifierCoverage.basePointEvaluated) notEvaluated.add('AOID_006');
   if (!hasMillimetreUnits) notEvaluated.add('POLY_004');
-  if (!completeness.complete) {
-    for (const rule of ALL_RULES) notEvaluated.add(rule.code);
-  }
+  if (!dimensionCoverage.associativityEvaluated) notEvaluated.add('DIM_002');
   const rules = ruleResults(context.errors, notEvaluated);
   const passedRules = rules.filter((rule) => rule.passed).length;
   const evaluatedRules = rules.filter((rule) => rule.status !== 'not-evaluated').length;
-  const score = completeness.complete
-    ? (evaluatedRules ? Math.round((passedRules / evaluatedRules) * 100) : 0)
-    : null;
+  const score = evaluatedRules ? Math.round((passedRules / evaluatedRules) * 100) : 0;
   const errors = context.errors.filter((error) => error.severity === 'error').length;
   const warnings = context.errors.filter((error) => error.severity === 'warning').length;
   const kpis = hasMillimetreUnits
@@ -691,6 +687,9 @@ export function validateDrawing(drawing, layers = drawing?.layerInfo || []) {
       ngf: kpis.ngf,
       evaluatedRules,
       unitStatus: hasMillimetreUnits ? 'millimetres' : 'unknown',
+      // Where the SIA split comes from: 'measured' would require a use category
+      // in the drawing, which the DWG contract does not carry today.
+      categorySource: spaces.rooms.length ? 'convention' : 'none',
       validationOperations: context.operations,
       ...kpis,
     },

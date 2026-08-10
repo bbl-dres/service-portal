@@ -4,10 +4,16 @@
 import { createPlanCheckParser } from './parser-client.js';
 import { LIMITS, MAX_FILE_SIZE, PLAN_CHECK_INTAKE_ENABLED } from './config.js';
 import { createPlanCheckViewer } from './viewer.js';
+import { engine } from '../process-engine.js';
+import { session } from '../core/session.js';
 import {
-  PLAN_CHECK_STEPS, PLAN_CHECK_TABS, renderPlanCheckPage, renderPlanCheckPanel, renderPlanCheckUploadState,
+  PLAN_CHECK_APPROVAL, PLAN_CHECK_STEPS, PLAN_CHECK_TABS, PLAN_CHECK_WIDE_TABS, planCheckSelectionSummary,
+  planCheckStatusFilters, renderPlanCheckInspector, renderPlanCheckLegend, renderPlanCheckPage,
+  renderPlanCheckPanel, renderPlanCheckUploadState, renderPlanCheckViewerContext,
 } from './view.js';
 import { downloadPlanCheckReport } from './report.js';
+import { downloadPlanCheckPdf } from './report-pdf.js';
+import { downloadPlanCheckExcel } from './report-excel.js';
 
 const PROGRESS_LABELS = Object.freeze({
   reading: 'Datei wird gelesen\u2026',
@@ -24,7 +30,8 @@ const PARSER_ERROR_MESSAGES = Object.freeze({
   INVALID_DWG_HEADER: 'Die Datei besitzt keinen lesbaren DWG-Dateikopf.',
   ENGINE_LOAD_FAILED: 'Das lokale DWG-Lesemodul konnte nicht geladen werden.',
   DWG_READ_FAILED: 'Die DWG-Datei konnte nicht gelesen werden. M\u00f6glicherweise ist sie besch\u00e4digt oder nicht unterst\u00fctzt.',
-  RESOURCE_LIMIT: 'Die Zeichnung \u00fcberschreitet die sichere Verarbeitungsgrenze des Browsers.',
+  // There is deliberately no size-based refusal: a drawing is never rejected
+  // for being large (js/plan-check/config.js).
   PARSE_TIMEOUT: 'Die DWG-Pr\u00fcfung hat zu lange gedauert und wurde zum Schutz des Browsers beendet. Versuchen Sie eine kleinere Datei.',
   DISPOSED: 'Die laufende Pr\u00fcfung wurde beendet.',
 });
@@ -113,11 +120,22 @@ export function createPlanCheckController(ctx, options = {}) {
     statusMessage: '',
     progress: { stage: '', value: 0, label: '' },
     result: null,
+    // The created Freigabe process instance, or null while step 3 is a form.
+    submission: null,
+    flow: [],
+    requester: scalar(session.user()?.name),
     tab: 'rules',
     filter: 'all',
     search: '',
     selection: null,
     hiddenLayers: new Set(),
+    // Rooms and areas switched off in their register list. The viewer reads the
+    // same sets, so the plan always shows exactly what the list shows.
+    hiddenRooms: new Set(),
+    hiddenAreas: new Set(),
+    // Result groups the visitor collapsed. Kept on state so a panel redraw after
+    // a search or filter change does not silently reopen them.
+    collapsedGroups: new Set(),
     background: 'light',
     dragActive: false,
     buildingId: buildingId(suppliedBuilding),
@@ -193,7 +211,9 @@ export function createPlanCheckController(ctx, options = {}) {
     if (!target) return null;
     printBackground = state.background;
     viewer?.setBackground('light', false, true);
-    const printState = { ...state, filter: 'all', search: '', selection: null };
+    // The print copy shows every group expanded and unfiltered: a collapsed
+    // register on paper is a silently missing chapter.
+    const printState = { ...state, filter: 'all', search: '', selection: null, collapsedGroups: new Set() };
     const container = document.createElement('div');
     container.className = 'plan-check-print-panels';
     container.setAttribute('data-plan-check-print-panels', '');
@@ -232,9 +252,59 @@ export function createPlanCheckController(ctx, options = {}) {
       const active = state.selection?.type === button.dataset.selectType
         && String(state.selection?.id) === String(button.dataset.selectId);
       button.setAttribute('aria-pressed', String(active));
-      button.classList.toggle('plan-check-result--selected', active && button.classList.contains('plan-check-result'));
+      button.classList.toggle('plan-check-row--selected', active && button.classList.contains('plan-check-row'));
       button.closest('.plan-check-layer')?.classList.toggle('plan-check-layer--selected', active);
     });
+  }
+
+  // --- Attribute card ------------------------------------------------------
+  // The card is written into the Canvas overlay whenever the selection changes;
+  // panning only moves it, so its markup is not rebuilt per frame.
+  let inspectorBox = null;
+
+  function positionInspector(anchor) {
+    const inspector = mount.querySelector('[data-plan-check-inspector]');
+    const wrap = mount.querySelector('[data-plan-check-canvas-wrap]');
+    if (!inspector || !wrap || inspector.hidden) return;
+    if (!anchor || anchor.visible === false) { inspector.classList.add('plan-check-inspector--offscreen'); return; }
+    inspector.classList.remove('plan-check-inspector--offscreen');
+    if (!inspectorBox) {
+      const box = inspector.getBoundingClientRect();
+      const tools = mount.querySelector('.plan-check-viewer__tools')?.getBoundingClientRect();
+      inspectorBox = { width: box.width, height: box.height, toolsWidth: tools ? tools.width : 0 };
+    }
+    const wrapBox = wrap.getBoundingClientRect();
+    const gap = 16;
+    // The floating tool strip owns the right edge; the card never covers it.
+    const rightBound = wrapBox.width - inspectorBox.toolsWidth - gap * 2;
+    const maxLeft = Math.max(gap, rightBound - inspectorBox.width);
+    const maxTop = Math.max(gap, wrapBox.height - inspectorBox.height - gap);
+    const preferredLeft = anchor.x + inspectorBox.width + gap > rightBound
+      ? anchor.x - inspectorBox.width - gap : anchor.x + gap;
+    const preferredTop = anchor.y + inspectorBox.height + gap * 2 > wrapBox.height
+      ? anchor.y - inspectorBox.height - gap : anchor.y + gap;
+    inspector.style.left = `${Math.min(Math.max(gap, preferredLeft), maxLeft)}px`;
+    inspector.style.top = `${Math.min(Math.max(gap, preferredTop), maxTop)}px`;
+  }
+
+  function syncInspector({ announce = false } = {}) {
+    const inspector = mount.querySelector('[data-plan-check-inspector]');
+    const context = mount.querySelector('[data-plan-check-viewer-context]');
+    const legend = mount.querySelector('[data-plan-check-legend]');
+    if (context) context.innerHTML = renderPlanCheckViewerContext(C, state);
+    if (legend) legend.innerHTML = renderPlanCheckLegend(C, state);
+    if (!inspector) return;
+    const details = viewer?.inspection?.() || null;
+    inspectorBox = null;
+    if (!details) {
+      inspector.hidden = true;
+      inspector.innerHTML = '';
+      return;
+    }
+    inspector.innerHTML = renderPlanCheckInspector(C, details);
+    inspector.hidden = false;
+    positionInspector(viewer?.getAnchor?.() || null);
+    if (announce) C.announce(`${details.title}: Attribute werden neben dem Plan angezeigt.`);
   }
 
   function createViewer() {
@@ -247,16 +317,21 @@ export function createPlanCheckController(ctx, options = {}) {
         result: state.result,
         mode: state.tab,
         hiddenLayers: state.hiddenLayers,
+        hiddenRooms: state.hiddenRooms,
+        hiddenAreas: state.hiddenAreas,
         selection: state.selection,
         filter: state.filter,
         background: state.background,
         onSelect: (selection) => {
           state.selection = selection;
           syncSelectionMarkup();
+          syncInspector();
         },
         onAnnounce: C.announce,
         onBackgroundChange: (background) => { state.background = background; },
+        onAnchor: positionInspector,
       });
+      syncInspector();
     } catch {
       root.classList.add('plan-check-viewer--error');
       const wrap = root.querySelector('[data-plan-check-canvas-wrap]');
@@ -272,6 +347,11 @@ export function createPlanCheckController(ctx, options = {}) {
     C.wireTabs(mount, {
       onSelect: (tab) => {
         state.tab = tab;
+        // The metrics register reports the whole drawing, so it takes the full
+        // width instead of leaving an idle Canvas beside it. The viewer instance
+        // survives the change; only its column collapses.
+        mount.querySelector('[data-plan-check-workbench]')
+          ?.classList.toggle('plan-check-workbench--wide', PLAN_CHECK_WIDE_TABS.includes(tab));
         refreshActivePanel({ preserveFocus: false });
         viewer?.setMode(tab);
         viewer?.setFilter(state.filter);
@@ -280,11 +360,30 @@ export function createPlanCheckController(ctx, options = {}) {
     createViewer();
   }
 
+  // The status filter lives once in the register bar rather than inside every
+  // panel, so its pressed state is refreshed on its own.
+  function refreshStatusFilter() {
+    const filters = new Set(planCheckStatusFilters().map((filter) => filter.id));
+    mount.querySelectorAll('[data-plan-check-filter]').forEach((button) => {
+      const id = button.dataset.planCheckFilter;
+      const active = state.filter === id;
+      button.setAttribute('aria-pressed', String(active));
+      button.classList.toggle('btn--filled', active);
+      button.classList.toggle('btn--outline', !active);
+      button.hidden = !filters.has(id);
+    });
+  }
+
   function draw({ preserveFocus = false } = {}) {
     const restoreFocus = preserveFocus && C.preserveFocus ? C.preserveFocus(mount) : () => false;
     disposeViewer();
     mount.innerHTML = renderPlanCheckPage(C, state, currentLocation());
-    if (state.step === 2) wireQualityView();
+    if (state.step === 2) {
+      wireQualityView();
+      syncLayerMaster();
+      syncSpatialMaster('room');
+      syncSpatialMaster('area');
+    }
     restoreFocus();
   }
 
@@ -298,6 +397,10 @@ export function createPlanCheckController(ctx, options = {}) {
     viewer?.setFilter(state.filter);
     viewer?.setHiddenLayers(state.hiddenLayers);
     syncSelectionMarkup();
+    syncLayerMaster();
+    syncSpatialMaster('room');
+    syncSpatialMaster('area');
+    syncInspector();
   }
 
   function updateUploadDom() {
@@ -406,6 +509,11 @@ export function createPlanCheckController(ctx, options = {}) {
       state.search = '';
       state.selection = null;
       state.hiddenLayers = new Set();
+      state.hiddenRooms = new Set();
+      state.hiddenAreas = new Set();
+      state.collapsedGroups = new Set();
+      state.submission = null;
+      state.flow = [];
       draw();
       C.focusWizardStep(mount, PLAN_CHECK_STEPS, 2, { headId: 'plan-check-step-heading' });
       setStatus('DWG-Pr\u00fcfung abgeschlossen. Die Ergebnisse sind verf\u00fcgbar.');
@@ -429,6 +537,11 @@ export function createPlanCheckController(ctx, options = {}) {
     state.result = null;
     state.selection = null;
     state.hiddenLayers = new Set();
+    state.hiddenRooms = new Set();
+    state.hiddenAreas = new Set();
+    state.collapsedGroups = new Set();
+    state.submission = null;
+    state.flow = [];
     state.search = '';
     state.filter = 'all';
     state.progress = { stage: '', value: 0, label: '' };
@@ -456,17 +569,83 @@ export function createPlanCheckController(ctx, options = {}) {
     else location.hash = returnHref;
   }
 
+  function clearSelection() {
+    if (!state.selection) return;
+    state.selection = null;
+    viewer?.setSelection(null);
+    syncSelectionMarkup();
+    syncInspector();
+    C.announce('Auswahl aufgehoben.');
+    mount.querySelector('[data-plan-check-canvas]')?.focus({ preventScroll: true });
+  }
+
+  // --- Step 3: Freigabe ----------------------------------------------------
+  // Submitting opens a real process instance through the portal's engine, the
+  // same path every other wizard uses, so the reference the visitor sees is the
+  // one that appears in the personal case list.
+  function goToStep(step) {
+    state.step = step;
+    state.selection = null;
+    draw();
+    C.focusWizardStep(mount, PLAN_CHECK_STEPS, step, { headId: 'plan-check-step-heading' });
+    setStatus(`Schritt ${step} von ${PLAN_CHECK_STEPS.length}: ${PLAN_CHECK_STEPS[step - 1]}.`);
+  }
+
+  function submitApproval() {
+    if (!state.result || state.submission) return;
+    if (state.result.validation?.aborted) return;
+    const location = currentLocation();
+    const change = state.result.checkContext?.change || {};
+    const instance = engine.start(PLAN_CHECK_APPROVAL.defId, {
+      title: `Planfreigabe ${scalar(state.result.file?.name) || 'DWG-Datei'}`,
+      requester: scalar(state.requester) || undefined,
+      linkedEntities: {
+        buildingId: buildingId(location.building) || undefined,
+        floorId: floorId(location.floor) || undefined,
+      },
+      data: {
+        file: scalar(state.result.file?.name),
+        fileSize: Number(state.result.file?.size) || 0,
+        changeType: scalar(change.type) || 'new',
+        changeReason: scalar(change.reason),
+        effectiveDate: scalar(change.effectiveDate),
+        reference: scalar(change.reference),
+        score: Number(state.result.validation?.score) || 0,
+        passedRules: Number(state.result.validation?.passedRules) || 0,
+        approvalOffice: PLAN_CHECK_APPROVAL.office,
+      },
+    });
+    if (!instance) {
+      C.flashError(mount, instance === null
+        ? 'Der Freigabevorgang konnte nicht eröffnet werden: die Prozessdefinition fehlt.'
+        : 'Der Freigabevorgang konnte auf diesem Gerät nicht gespeichert werden. Bitte prüfen Sie die Browser-Einstellungen.');
+      return;
+    }
+    state.submission = instance;
+    state.flow = list(engine.definition(PLAN_CHECK_APPROVAL.defId)?.steps);
+    draw();
+    C.focusProcessDone(mount, instance);
+    setStatus(`Antrag eingereicht. Ihre Referenz: ${instance.reference}.`);
+  }
+
   function handleClick(event) {
     const action = event.target.closest?.('[data-plan-check-action]');
     if (action) {
       if (action.dataset.planCheckAction === 'replace-file') resetFile();
       else if (action.dataset.planCheckAction === 'abort') abortParse();
       else if (action.dataset.planCheckAction === 'cancel') navigateBack();
+      else if (action.dataset.planCheckAction === 'clear-selection') clearSelection();
+      else if (action.dataset.planCheckAction === 'continue-approval') goToStep(3);
+      else if (action.dataset.planCheckAction === 'back-to-quality') goToStep(2);
+      else if (action.dataset.planCheckAction === 'show-report') goToStep(2);
+      else if (action.dataset.planCheckAction === 'submit-approval') submitApproval();
       return;
     }
+    if (event.target.closest?.('#plan-check-restart')) { resetFile(); return; }
     const filterButton = event.target.closest?.('[data-plan-check-filter]');
     if (filterButton) {
       state.filter = filterButton.dataset.planCheckFilter || 'all';
+      refreshStatusFilter();
       refreshActivePanel();
       return;
     }
@@ -478,33 +657,58 @@ export function createPlanCheckController(ctx, options = {}) {
       };
       syncSelectionMarkup();
       const outcome = viewer?.setSelection(state.selection, { focus: true });
-      if (!outcome?.count) C.announce('Auswahl übernommen. Im Plan ist kein zugehöriges Objekt lokalisierbar.');
-      else if (outcome.truncated) C.announce(`Die ersten ${outcome.count} zugehörigen Objekte sind im Plan hervorgehoben.`);
-      else if (outcome.count === 1) C.announce('Ein zugehöriges Objekt ist im Plan hervorgehoben.');
-      else C.announce(`${outcome.count} zugehörige Objekte sind im Plan hervorgehoben.`);
-      return;
-    }
-    const layerAction = event.target.closest?.('[data-plan-check-layers]');
-    if (layerAction) {
-      const hideAll = layerAction.dataset.planCheckLayers === 'hide-all';
-      state.hiddenLayers = hideAll
-        ? new Set(list(state.result?.layers).map((layer) => scalar(layer?.name)).filter(Boolean))
-        : new Set();
-      mount.querySelectorAll('[data-plan-check-layer]').forEach((input) => { input.checked = !hideAll; });
-      viewer?.setHiddenLayers(state.hiddenLayers);
-      C.announce(hideAll ? 'Alle Layer ausgeblendet.' : 'Alle Layer eingeblendet.');
+      syncInspector();
+      const summary = planCheckSelectionSummary(state.selection, state.result);
+      if (!outcome?.count) C.announce(`${summary.title}: im Plan ist kein zugehöriges Objekt lokalisierbar.`);
+      else if (outcome.truncated) C.announce(`${summary.title}: die ersten ${outcome.count} zugehörigen Objekte sind im Plan hervorgehoben.`);
+      else if (outcome.count === 1) C.announce(`${summary.title}: ein zugehöriges Objekt ist im Plan hervorgehoben. Attribute stehen neben dem Plan.`);
+      else C.announce(`${summary.title}: ${outcome.count} zugehörige Objekte sind im Plan hervorgehoben.`);
       return;
     }
     const reportButton = event.target.closest?.('[data-plan-check-report]');
     if (reportButton && state.result) {
       const format = reportButton.dataset.planCheckReport;
-      if (format === 'print') {
-        preparePrintPanels();
-        C.announce('Druckdialog ge\u00f6ffnet. Dort kann die Pr\u00fcfung als PDF gesichert werden.');
-        try { window.print(); } finally { setTimeout(clearPrintPanels, 0); }
-      } else {
+      if (format === 'pdf' || format === 'excel') downloadRichReport(format, reportButton);
+      else {
         const filename = downloadPlanCheckReport(state.result, format);
         C.announce(`${filename} wurde erstellt.`);
+      }
+    }
+  }
+
+  // PDF and Excel need a generator library, which is fetched on demand. The
+  // button owns the wait so a slow network cannot look like a dead control, and
+  // a failure is reported where the visitor clicked.
+  let reportInFlight = '';
+  async function downloadRichReport(format, button) {
+    if (reportInFlight) return;
+    reportInFlight = format;
+    const label = format === 'pdf' ? 'PDF' : 'Excel';
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    button.innerHTML = `${C.icon('Spinner', 'btn__icon icon--spin')}<span class="btn__text">${label}\u2026</span>`;
+    C.announce(`${label}-Pr\u00fcfbericht wird erstellt.`);
+    try {
+      const options = { snapshot: (mode) => viewer?.snapshot?.(mode) || '' };
+      const filename = format === 'pdf'
+        ? await downloadPlanCheckPdf(state.result, options)
+        : await downloadPlanCheckExcel(state.result, options);
+      if (!disposed) C.announce(`${filename} wurde erstellt.`);
+    } catch (error) {
+      console.error('[plan-check] report export failed', error);
+      if (!disposed) {
+        C.toast(`Der ${label}-Pr\u00fcfbericht konnte nicht erstellt werden. `
+          + 'Pr\u00fcfen Sie die Netzwerkverbindung; CSV und JSON stehen weiterhin lokal zur Verf\u00fcgung.',
+        'error', 'WarningCircle');
+        C.announce(`Der ${label}-Pr\u00fcfbericht konnte nicht erstellt werden.`);
+      }
+    } finally {
+      reportInFlight = '';
+      if (button.isConnected) {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.innerHTML = original;
       }
     }
   }
@@ -545,9 +749,79 @@ export function createPlanCheckController(ctx, options = {}) {
     } else if (target.matches('[data-plan-check-layer]')) {
       const name = target.dataset.planCheckLayer;
       if (target.checked) state.hiddenLayers.delete(name); else state.hiddenLayers.add(name);
+      target.closest('.plan-check-layer')?.classList.toggle('plan-check-layer--hidden', !target.checked);
       viewer?.setHiddenLayers(state.hiddenLayers);
+      syncLayerMaster();
+      syncInspector();
       C.announce(`Layer ${name} ${target.checked ? 'eingeblendet' : 'ausgeblendet'}.`);
+    } else if (target.matches('[data-plan-check-spatial]')) {
+      const type = target.dataset.planCheckSpatial;
+      const set = type === 'area' ? state.hiddenAreas : state.hiddenRooms;
+      const id = target.dataset.spatialId;
+      if (target.checked) set.delete(id); else set.add(id);
+      target.closest('.plan-check-layer')?.classList.toggle('plan-check-layer--hidden', !target.checked);
+      viewer?.setHiddenSpatial(type, set);
+      syncSpatialMaster(type);
+      C.announce(`${type === 'area' ? 'Fläche' : 'Raum'} ${id} ${target.checked ? 'eingeblendet' : 'ausgeblendet'}.`);
+    } else if (target.matches('[data-plan-check-spatial-all]')) {
+      const type = target.dataset.planCheckSpatialAll;
+      const show = target.checked;
+      const set = type === 'area' ? state.hiddenAreas : state.hiddenRooms;
+      set.clear();
+      mount.querySelectorAll(`[data-plan-check-spatial="${type}"]`).forEach((input) => {
+        input.checked = show;
+        if (!show) set.add(input.dataset.spatialId);
+        input.closest('.plan-check-layer')?.classList.toggle('plan-check-layer--hidden', !show);
+      });
+      target.indeterminate = false;
+      viewer?.setHiddenSpatial(type, set);
+      C.announce(show
+        ? `Alle ${type === 'area' ? 'Flächen' : 'Räume'} eingeblendet.`
+        : `Alle ${type === 'area' ? 'Flächen' : 'Räume'} ausgeblendet.`);
+    } else if (target.matches('[data-plan-check-layers-all]')) {
+      const show = target.checked;
+      state.hiddenLayers = show
+        ? new Set()
+        : new Set(list(state.result?.layers).map((layer) => scalar(layer?.name)).filter(Boolean));
+      mount.querySelectorAll('[data-plan-check-layer]').forEach((input) => {
+        input.checked = show;
+        input.closest('.plan-check-layer')?.classList.toggle('plan-check-layer--hidden', !show);
+      });
+      target.indeterminate = false;
+      viewer?.setHiddenLayers(state.hiddenLayers);
+      syncInspector();
+      C.announce(show ? 'Alle Layer eingeblendet.' : 'Alle Layer ausgeblendet.');
     }
+  }
+
+  // Tri-state master for a room or area register, mirroring the layer master.
+  function syncSpatialMaster(type) {
+    const master = mount.querySelector(`[data-plan-check-spatial-all="${type}"]`);
+    if (!master) return;
+    const inputs = [...mount.querySelectorAll(`[data-plan-check-spatial="${type}"]`)];
+    const hidden = inputs.filter((input) => !input.checked).length;
+    master.checked = inputs.length > 0 && hidden === 0;
+    master.indeterminate = hidden > 0 && hidden < inputs.length;
+  }
+
+  // Tri-state master: on when every layer is visible, off when none is, and
+  // indeterminate for any partial selection.
+  function syncLayerMaster() {
+    const master = mount.querySelector('[data-plan-check-layers-all]');
+    if (!master) return;
+    const total = list(state.result?.layers).length;
+    const hidden = state.hiddenLayers.size;
+    master.checked = total > 0 && hidden === 0;
+    master.indeterminate = hidden > 0 && hidden < total;
+  }
+
+  // <details> groups do not bubble their toggle event, so the panel listens in
+  // the capture phase and remembers what the visitor collapsed.
+  function handleToggle(event) {
+    const group = event.target.closest?.('[data-plan-check-group]');
+    if (!group) return;
+    const id = group.dataset.planCheckGroup;
+    if (group.open) state.collapsedGroups.delete(id); else state.collapsedGroups.add(id);
   }
 
   function handleSubmit(event) {
@@ -597,6 +871,7 @@ export function createPlanCheckController(ctx, options = {}) {
   mount.addEventListener('input', handleInput, { signal });
   mount.addEventListener('change', handleChange, { signal });
   mount.addEventListener('submit', handleSubmit, { signal });
+  mount.addEventListener('toggle', handleToggle, { capture: true, signal });
   mount.addEventListener('dragenter', fileDrag, { signal });
   mount.addEventListener('dragover', fileDrag, { signal });
   mount.addEventListener('dragleave', fileDrag, { signal });
@@ -607,6 +882,15 @@ export function createPlanCheckController(ctx, options = {}) {
   ctx.onUnmount?.(dispose);
   ctx.setTitle?.(state.intakeAvailable ? 'Plan hochladen und pr\u00fcfen' : 'Planpr\u00fcfung');
   draw();
+
+  // Test-only handle, mirroring window.__engine in js/app.js. The report
+  // generators and the Canvas snapshot are otherwise only reachable through a
+  // download, which a headless browser cannot inspect.
+  const handle = { get state() { return state; }, get viewer() { return viewer; } };
+  try { globalThis.__planCheck = handle; } catch { /* Frozen global: skip. */ }
+  ctx.onUnmount?.(() => {
+    if (globalThis.__planCheck === handle) delete globalThis.__planCheck;
+  });
 
   return { dispose, getState: () => state };
 }

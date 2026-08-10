@@ -8,8 +8,14 @@
 .plan-check-local-note__icon { flex:0 0 auto; margin-top:var(--sp-1); color:var(--color-primary-600); }
 .plan-check__wizard { margin-top:var(--sp-8); min-width:0; }
 
-.plan-check-form,
-.plan-check-quality { display:flex; flex-direction:column; gap:var(--sp-8); margin-top:var(--sp-8); }
+/* Step 2 is a working surface, not a reading page: the header shrinks so the
+   register and the plan reach the fold together. */
+.plan-check--workbench .plan-check__page-header { margin-bottom:0; }
+.plan-check--workbench .plan-check-local-note { margin-top:var(--sp-3); }
+.plan-check--workbench .plan-check__wizard { margin-top:var(--sp-6); }
+
+.plan-check-form { display:flex; flex-direction:column; gap:var(--sp-8); margin-top:var(--sp-8); }
+.plan-check-quality { display:flex; flex-direction:column; gap:var(--sp-5); margin-top:var(--sp-6); }
 .plan-check-section { min-width:0; padding:var(--sp-5); background:var(--surface-bg-muted);
   border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius); box-shadow:var(--surface-elevation); }
 .plan-check-section > :first-child { margin-top:0; }
@@ -54,147 +60,305 @@
 .plan-check-progress { width:min(100%, 26rem); height:var(--sp-2); accent-color:var(--color-primary-600); }
 
 .plan-check-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:var(--sp-3); padding-top:var(--sp-5); border-top:var(--stroke-1) solid var(--surface-border); }
-.plan-check-actions--quality { justify-content:flex-start; }
 
-.plan-check-file-summary { display:flex; flex-direction:column; gap:var(--sp-5); padding:var(--sp-5);
-  background:var(--surface-bg-muted); border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius); box-shadow:var(--surface-elevation); }
-.plan-check-file-summary h2 { margin:0; overflow-wrap:anywhere; }
-.plan-check-file-summary__facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-4); margin:0; }
-.plan-check-file-summary__facts div { min-width:0; }
-.plan-check-file-summary__facts dt { color:var(--color-text-muted); font-size:var(--text-sm); }
-.plan-check-file-summary__facts dd { margin:var(--sp-1) 0 0; font-weight:var(--fw-bold); overflow-wrap:anywhere; }
+/* --- File strip ---------------------------------------------------------- */
+/* One row instead of a card: the checked file is context for the workbench,
+   not a subject of its own. */
+.plan-check-file-summary { display:flex; align-items:center; gap:var(--sp-4); min-width:0; padding:var(--sp-3) var(--sp-4);
+  background:var(--color-bg); border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius); }
+.plan-check-file-summary__icon { flex:none; color:var(--color-text-muted); }
+.plan-check-file-summary__body { flex:1 1 auto; min-width:0; }
+.plan-check-file-summary h2 { margin:0; font-size:var(--text-base); overflow-wrap:anywhere; }
+.plan-check-file-summary > .badge { flex:none; }
+.plan-check-file-summary__facts { display:flex; flex-wrap:wrap; gap:var(--sp-1) var(--sp-4); margin:var(--sp-1) 0 0;
+  color:var(--color-text-muted); font-size:var(--text-sm); }
+.plan-check-file-summary__facts > div { display:flex; gap:var(--sp-1); min-width:0; }
+.plan-check-file-summary__facts dt { color:var(--color-text-light); }
+.plan-check-file-summary__facts dd { margin:0; color:var(--color-text); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
 
-.plan-check-kpis { margin:0; }
-.plan-check-kpis .kpi-strip__value { overflow-wrap:anywhere; }
-.plan-check-kpis .kpi-strip__item > small { color:var(--color-text-muted); }
-.plan-check-kpis__reports { min-width:0; }
+/* --- Figures band -------------------------------------------------------- */
+.plan-check-figures { display:grid; grid-template-columns:minmax(0,1fr); min-width:0;
+  background:var(--color-bg); border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius); overflow:hidden; }
+.plan-check-figure { display:flex; flex-direction:column; gap:var(--sp-1); min-width:0; padding:var(--sp-3) var(--sp-4);
+  border-top:var(--stroke-1) solid var(--surface-border); }
+.plan-check-figure:first-child { border-top:0; }
+.plan-check-figure__label { margin:0; color:var(--color-text-muted); font-size:var(--text-xs);
+  letter-spacing:.08em; text-transform:uppercase; }
+.plan-check-figure__value { font-size:var(--text-2xl); font-weight:var(--fw-regular); font-variant-numeric:tabular-nums;
+  line-height:var(--line-7); overflow-wrap:anywhere; }
+.plan-check-figure__value--score { color:var(--color-success-text); }
+.plan-check-figure > small { color:var(--color-text-muted); font-size:var(--text-xs); }
+.plan-check-figure--actions { min-width:0; }
 .plan-check-report-actions { display:flex; flex-wrap:wrap; gap:var(--sp-2); }
 
+/* --- Workbench frame ----------------------------------------------------- */
 .plan-check-results { min-width:0; }
-.plan-check-results__heading { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:var(--sp-4); margin-bottom:var(--sp-5); }
-.plan-check-results__heading h2 { margin:0; }
-.plan-check-workbench { display:grid; grid-template-columns:minmax(0,1fr); min-width:0; margin-top:var(--sp-5);
+.plan-check-results__heading { margin:0 0 var(--sp-3); font-size:var(--text-lg); }
+.plan-check-board { min-width:0; background:var(--color-bg);
   border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius); box-shadow:var(--surface-elevation); overflow:hidden; }
+.plan-check-board__bar { display:flex; flex-wrap:wrap; align-items:stretch; gap:var(--sp-2);
+  background:var(--color-bg-subtle); border-bottom:var(--stroke-1) solid var(--surface-border); }
+.plan-check-board__bar > .tab__controls-container { flex:1 1 auto; min-width:0; margin:0; border-bottom:0; }
+/* Six registers plus the status filter share one bar; the CD tab padding is
+   tightened horizontally so the last register still fits on a 1440 laptop. */
+.plan-check-board__bar .tab__control { padding:var(--sp-3-5) var(--sp-3); }
+.plan-check-statusfilter { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:var(--sp-1);
+  margin-left:auto; padding:var(--sp-2); }
+.plan-check-statusfilter__button[hidden] { display:none; }
+
+.plan-check-workbench { display:grid; grid-template-columns:minmax(0,1fr); min-width:0; }
 .plan-check-workbench__results { min-width:0; background:var(--color-bg); }
-.plan-check-workbench__results .tab__container { min-width:0; padding:var(--sp-4); }
+.plan-check-workbench__results .tab__container { min-width:0; padding:0; }
+.plan-check-workbench--wide { grid-template-columns:minmax(0,1fr); }
+.plan-check-workbench--wide .plan-check-viewer { display:none; }
 .plan-check-print-panels { display:none; }
-.plan-check-results__tools { display:flex; flex-direction:column; gap:var(--sp-3); }
-.plan-check-results__search { min-width:0; }
+
+/* --- Panels -------------------------------------------------------------- */
+.plan-check-panel__tools { display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-3);
+  border-bottom:var(--stroke-1) solid var(--surface-border); }
+.plan-check-panel__master { display:flex; align-items:center; justify-content:center; flex:none; }
+.plan-check-panel__search { flex:1 1 auto; min-width:0; margin:0; }
 .plan-check-search-control { position:relative; }
 .plan-check-search-control__icon { position:absolute; z-index:var(--z-local-control); top:50%; left:var(--sp-3); transform:translateY(-50%); color:var(--color-text-muted); pointer-events:none; }
-.plan-check-search-control input { padding-left:var(--sp-10); }
-.plan-check-filter { display:flex; flex-wrap:wrap; gap:var(--sp-2); }
-.plan-check-filter__button--active { color:var(--color-text-negative); background:var(--color-secondary-500); border-color:var(--color-secondary-500); }
-.plan-check-filter__button--active:hover { color:var(--color-secondary-100); }
-.plan-check-filter__button--active:active { color:var(--color-text-negative); background:var(--color-secondary-600); border-color:var(--color-secondary-600); }
-.plan-check-results__summary { margin:var(--sp-3) 0; }
+.plan-check-search-control input { width:100%; padding-left:var(--sp-9); }
+.plan-check-check { width:var(--check-size); height:var(--check-size); flex:none; margin:0; accent-color:var(--color-primary-600); cursor:pointer; }
+.plan-check-check:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
+.plan-check-panel__count { margin:0; padding:var(--sp-2) var(--sp-3); color:var(--color-text-muted);
+  border-bottom:var(--stroke-1) solid var(--surface-border); }
+.plan-check-workbench__results .empty { margin:var(--sp-4); }
 
-.plan-check-result-list,
-.plan-check-layer-list { margin:0; padding:0; list-style:none; }
-.plan-check-result-list { display:flex; flex-direction:column; gap:var(--sp-1); }
-.plan-check-result { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); width:100%; min-height:var(--target-min);
-  padding:var(--sp-2) var(--sp-3); text-align:left; color:var(--color-text); background:var(--color-bg);
-  border:var(--stroke-1) solid transparent; border-radius:var(--radius-sm); font:inherit; cursor:pointer; }
-.plan-check-result:hover { color:var(--color-primary-700); background:var(--color-secondary-50); }
-.plan-check-result:active { background:var(--color-secondary-100); }
-.plan-check-result:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
-.plan-check-result--selected { color:var(--color-primary-700); background:var(--color-primary-50); border-color:var(--color-primary-600); box-shadow:var(--state-bar-primary); }
-.plan-check-result:is(:disabled,[aria-disabled="true"]) { cursor:not-allowed; color:var(--color-text-muted); background:var(--color-secondary-100); }
-.plan-check-result[aria-busy="true"] { cursor:progress; box-shadow:var(--state-ring-primary-soft); }
-.plan-check-result[aria-invalid="true"] { color:var(--color-error-text); border-color:var(--color-error); }
-.plan-check-result[data-empty="true"] { cursor:default; color:var(--color-text-muted); }
-.plan-check-result__content { display:flex; flex-direction:column; min-width:0; }
-.plan-check-result__title { font-weight:var(--fw-bold); overflow-wrap:anywhere; }
-.plan-check-result__meta { margin-top:var(--sp-0-5); color:var(--color-text-muted); font-size:var(--text-sm); overflow-wrap:anywhere; }
-.plan-check-result .badge { flex:none; }
+/* Collapsible outcome groups. Their state lives in the controller so a search
+   or filter change does not silently reopen a group. */
+.plan-check-group__head { display:flex; align-items:center; gap:var(--sp-2); min-height:var(--target-min);
+  padding:var(--sp-2) var(--sp-3); color:var(--color-text-muted); background:var(--color-bg-subtle);
+  border-bottom:var(--stroke-1) solid var(--surface-border); font-size:var(--text-xs);
+  letter-spacing:.08em; text-transform:uppercase; cursor:pointer; list-style:none; }
+.plan-check-group__head::-webkit-details-marker { display:none; }
+.plan-check-group__head:hover { color:var(--color-text); background:var(--color-secondary-100); }
+.plan-check-group__head:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
+.plan-check-group__label { flex:1 1 auto; min-width:0; }
+.plan-check-group__count { flex:none; font-variant-numeric:tabular-nums; }
+.plan-check-group__chevron { flex:none; transition:transform var(--duration-fast); }
+.plan-check-group:not([open]) .plan-check-group__chevron { transform:rotate(-90deg); }
 
-.plan-check-layer-actions { display:flex; flex-wrap:wrap; gap:var(--sp-2); margin-top:var(--sp-3); }
-.plan-check-layer { display:grid; grid-template-columns:var(--target-min) minmax(0,1fr) var(--target-min); align-items:center;
-  min-width:0; border-bottom:var(--stroke-1) solid var(--surface-border); }
-.plan-check-layer--selected { background:var(--color-primary-50); box-shadow:var(--state-bar-primary); }
-.plan-check-layer__toggle { display:flex; align-items:center; justify-content:center; width:var(--target-min); min-height:var(--target-min); cursor:pointer; }
-.plan-check-layer__toggle > input { width:var(--check-size); height:var(--check-size); margin:0; accent-color:var(--color-primary-600); cursor:pointer; }
-.plan-check-layer__toggle > input:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }
-.plan-check-layer > label:not(.plan-check-layer__toggle) { display:grid; grid-template-columns:var(--sp-4) minmax(0,1fr) auto; align-items:center; gap:var(--sp-2);
-  min-width:0; min-height:var(--target-min); padding:var(--sp-2); cursor:pointer; }
-.plan-check-layer__swatch { width:var(--sp-4); height:var(--sp-4); background:var(--plan-check-swatch,var(--color-text-muted)); border:var(--stroke-1) solid var(--color-border-strong); }
-.plan-check-layer__name { min-width:0; overflow-wrap:anywhere; }
-.plan-check-layer__count { color:var(--color-text-muted); font-size:var(--text-sm); white-space:nowrap; }
-.plan-check-layer__locate { display:inline-flex; align-items:center; justify-content:center; padding:0; color:var(--color-primary-600); background:transparent; border:0; cursor:pointer; }
-.plan-check-layer__locate:hover { color:var(--color-primary-700); background:var(--color-secondary-50); }
-.plan-check-layer__locate:active { color:var(--color-primary-800); background:var(--color-secondary-100); }
-.plan-check-layer__locate[aria-pressed="true"] { color:var(--color-primary-700); background:var(--color-primary-50); }
+.plan-check-rows { margin:0; padding:0; list-style:none; }
+.plan-check-rows > li { min-width:0; border-bottom:var(--stroke-1) solid var(--surface-border); }
+.plan-check-layer { display:flex; align-items:center; gap:var(--sp-2); padding-left:var(--sp-3); }
+.plan-check-layer--hidden .plan-check-row { opacity:.55; }
+/* The selection bar is composed here rather than taken from --state-bar-primary:
+   that token is declared on :root, so its inner var() is substituted against the
+   federal ramp and would stay red under the body-scoped intranet skin. */
+.plan-check-layer--selected { background:var(--color-primary-50);
+  box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
 
-.plan-check-metrics { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-8); }
-.plan-check-metrics h4 { margin-bottom:var(--sp-4); font-size:var(--text-lg); }
+/* One dense result row. Identity, status and figure sit on a single line so a
+   register of forty rules stays scannable beside the plan. */
+.plan-check-row { display:flex; align-items:center; gap:var(--sp-2); width:100%; min-height:var(--target-min);
+  padding:var(--sp-2) var(--sp-3); text-align:left; color:var(--color-text); background:transparent;
+  border:0; font:inherit; font-size:var(--text-sm); cursor:pointer; }
+.plan-check-row:hover { color:var(--color-primary-700); background:var(--color-secondary-50); }
+.plan-check-row:active { background:var(--color-secondary-100); }
+.plan-check-row:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
+.plan-check-row--selected { color:var(--color-primary-700); background:var(--color-primary-50);
+  box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+/* Solid status marks (js/plan-check/view.js). `--plan-check-mark-knockout` is
+   the shape cut out of a filled mark, so it must follow the row background
+   rather than the mark colour. */
+.plan-check-row__status { display:inline-flex; flex:none; align-items:center;
+  --plan-check-mark-knockout:var(--color-bg); }
+.plan-check-row__status--success { color:var(--color-success-text); }
+.plan-check-row__status--warning { color:var(--color-warning); }
+.plan-check-row__status--error { color:var(--color-error); }
+.plan-check-row__status--muted { color:var(--color-text-light); }
+.plan-check-row:hover .plan-check-row__status,
+.plan-check-row--selected .plan-check-row__status { --plan-check-mark-knockout:var(--color-secondary-50); }
+.plan-check-row__swatch { width:var(--sp-3-5); height:var(--sp-3-5); flex:none;
+  background:var(--plan-check-swatch,var(--color-text-muted)); border:var(--stroke-1) solid var(--color-border-strong); }
+.plan-check-row__code { flex:none; max-width:14rem; padding:var(--sp-0-5) var(--sp-2); overflow:hidden;
+  background:var(--color-secondary-100); font:var(--text-xs)/var(--line-5) var(--font-mono);
+  text-overflow:ellipsis; white-space:nowrap; }
+.plan-check-row--selected .plan-check-row__code { background:var(--color-bg); }
+.plan-check-row__label { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.plan-check-row__value { flex:none; color:var(--color-text-muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.plan-check-row--selected .plan-check-row__value { color:inherit; }
 
-.plan-check-viewer { display:flex; flex-direction:column; min-width:0; color:var(--color-text-negative); background:var(--color-secondary-900); }
-.plan-check-viewer__header { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); min-height:var(--target-min);
-  padding-left:var(--sp-4); background:var(--color-secondary-800); border-bottom:var(--stroke-1) solid var(--border-negative); }
-.plan-check-viewer__header h3 { margin:0; color:var(--color-text-negative); font-size:var(--text-base); }
-.plan-check-viewer__toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
-.plan-check-viewer__toolbar .btn { flex:none; }
-.plan-check-viewer__toolbar [aria-pressed="true"] { background:var(--surface-negative-active); }
+/* --- Metrics register ---------------------------------------------------- */
+.plan-check-metrics { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-6); padding:var(--sp-5); }
+.plan-check-metrics__column { display:flex; flex-direction:column; gap:var(--sp-2); min-width:0; }
+.plan-check-metrics h4 { margin:var(--sp-2) 0 0; font-size:var(--text-lg); }
+.plan-check-metrics__column > h4:first-child { margin-top:0; }
+.plan-check-metrics__eyebrow { margin:var(--sp-2) 0 0; color:var(--color-text-muted); font-size:var(--text-xs);
+  letter-spacing:.08em; text-transform:uppercase; }
+.plan-check-metrics__note { margin:0; max-width:60ch; }
+.plan-check-metric-table { min-width:0; border:var(--stroke-1) solid var(--surface-border); overflow-x:auto; }
+.plan-check-metric-table table { width:100%; table-layout:auto; }
+.plan-check-metric-table th,
+.plan-check-metric-table td { padding:var(--sp-2) var(--sp-3); font-size:var(--text-sm); font-weight:var(--fw-regular);
+  vertical-align:baseline; }
+.plan-check-metric-table thead th { color:var(--color-text-muted); font-size:var(--text-xs); }
+.plan-check-metric__code { width:1%; font-family:var(--font-mono); font-size:var(--text-xs); white-space:nowrap; }
+.plan-check-metric__label { min-width:0; }
+.plan-check-metric__value,
+.plan-check-metric__share { width:1%; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.plan-check-metric__share { color:var(--color-text-muted); }
+.plan-check-metric__layers { min-width:0; max-width:0; color:var(--color-text-muted); overflow:hidden;
+  font-family:var(--font-mono); font-size:var(--text-xs); text-overflow:ellipsis; white-space:nowrap; }
+
+/* --- Viewer -------------------------------------------------------------- */
+.plan-check-viewer { display:flex; flex-direction:column; min-width:0; background:var(--color-bg);
+  border-top:var(--stroke-1) solid var(--surface-border); }
+.plan-check-viewer__context { display:flex; align-items:center; gap:var(--sp-2); min-height:var(--target-min);
+  padding:var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-3); background:var(--color-bg-subtle);
+  border-bottom:var(--stroke-1) solid var(--surface-border); font-size:var(--text-sm); }
+.plan-check-viewer__context-hint { display:inline-flex; align-items:center; gap:var(--sp-2); min-width:0;
+  color:var(--color-text-muted); }
+.plan-check-viewer__context-item { display:inline-flex; align-items:center; gap:var(--sp-2); flex:1 1 auto; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.plan-check-viewer__context-title { font-family:var(--font-mono); font-size:var(--text-xs); }
+.plan-check-viewer__context-clear { flex:none; margin-left:auto; }
 .plan-check-viewer__canvas-wrap { position:relative; min-height:clamp(20rem,55vh,48rem); overflow:hidden; background:var(--color-bg); }
 .plan-check-viewer--dark .plan-check-viewer__canvas-wrap { background:var(--color-secondary-900); }
 .plan-check-viewer__canvas { display:block; width:100%; height:100%; min-height:inherit; touch-action:none; cursor:grab; }
 .plan-check-viewer__canvas:active { cursor:grabbing; }
 .plan-check-viewer__canvas:focus-visible { outline:var(--stroke-3) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-4)); }
 .plan-check-viewer--dark .plan-check-viewer__canvas:focus-visible { outline-color:var(--color-focus-ring-negative); }
+
+/* Floating control stack inside the drawing, the way CAD viewers place it. */
+.plan-check-viewer__tools { position:absolute; top:50%; right:var(--sp-4); z-index:var(--z-local-toolbar);
+  display:flex; flex-direction:column; gap:var(--sp-0-5); padding:var(--sp-1); transform:translateY(-50%);
+  background:var(--color-bg); border:var(--stroke-1) solid var(--color-border); box-shadow:var(--shadow-sm); }
+.plan-check-viewer__tool { color:var(--color-text); }
+.plan-check-viewer__tool[aria-pressed="true"] { color:var(--color-primary-700); background:var(--color-primary-50); }
+.plan-check-viewer__tools-divider { height:var(--stroke-1); margin:var(--sp-1) var(--sp-1-5); background:var(--color-border); }
+
 .plan-check-viewer__coordinates,
-.plan-check-viewer__scale { position:absolute; bottom:var(--sp-3); z-index:var(--z-local-control); padding:var(--sp-1) var(--sp-2); color:var(--color-text);
+.plan-check-viewer__scale { position:absolute; z-index:var(--z-local-control); padding:var(--sp-1) var(--sp-2); color:var(--color-text);
   background:var(--surface-lightbox-control); border:var(--stroke-1) solid var(--color-border); border-radius:var(--radius-sm); font:var(--text-xs)/var(--line-4) var(--font-mono); pointer-events:none; }
-.plan-check-viewer__coordinates { right:var(--sp-3); }
-.plan-check-viewer__scale { left:var(--sp-3); display:flex; align-items:flex-end; gap:var(--sp-2); }
+.plan-check-viewer__coordinates { right:var(--sp-3); bottom:var(--sp-3); }
+.plan-check-viewer__scale { left:var(--sp-3); bottom:var(--sp-10); display:flex; align-items:flex-end; gap:var(--sp-2); }
 .plan-check-viewer__scale [data-plan-check-scale-line] { display:block; height:var(--sp-2); border:0 solid var(--color-text); border-width:0 var(--stroke-1) var(--stroke-1); }
 .plan-check-viewer__empty { position:absolute; inset:0; z-index:var(--z-local-content); display:flex; align-items:center; justify-content:center;
   padding:var(--sp-5); color:var(--color-text); background:var(--surface-lightbox-control); pointer-events:none; }
-.plan-check-viewer__legend { display:flex; flex-wrap:wrap; gap:var(--sp-4); margin:0; padding:var(--sp-2) var(--sp-4); list-style:none;
-  color:var(--text-negative-muted); background:var(--color-secondary-800); border-top:var(--stroke-1) solid var(--border-negative); font-size:var(--text-xs); }
+.plan-check-viewer__legend { position:absolute; left:var(--sp-3); bottom:var(--sp-3); z-index:var(--z-local-control);
+  display:flex; flex-wrap:wrap; gap:var(--sp-1) var(--sp-4); max-width:calc(100% - var(--sp-32)); margin:0;
+  padding:var(--sp-1) var(--sp-2); list-style:none; color:var(--color-text); background:var(--surface-lightbox-control);
+  border:var(--stroke-1) solid var(--color-border); border-radius:var(--radius-sm); font-size:var(--text-xs); pointer-events:none; }
+.plan-check-viewer__legend:empty { display:none; }
 .plan-check-viewer__legend li { display:inline-flex; align-items:center; gap:var(--sp-2); }
-.plan-check-viewer__legend-mark { width:var(--sp-3); height:var(--sp-3); border:var(--stroke-2) solid currentColor; }
-.plan-check-viewer__legend-mark--error { color:var(--color-error-400); }
+.plan-check-viewer__legend-mark { width:var(--sp-3); height:var(--sp-3); flex:none; border:var(--stroke-2) solid currentColor; }
+.plan-check-viewer__legend-mark--error { color:var(--color-error); }
 .plan-check-viewer__legend-mark--warning { color:var(--color-warning); }
+.plan-check-viewer__legend-mark--success { color:var(--color-success); }
 .plan-check-viewer__legend-mark--selected { color:var(--color-info); }
+.plan-check-viewer__legend-mark--hidden { color:var(--color-text-light); border-style:dashed; }
 
-.plan-check-viewer:fullscreen { width:100%; height:100%; background:var(--color-secondary-900); }
+/* --- Attribute card ------------------------------------------------------ */
+/* Anchored at the selected element by the controller; the offsets are inline
+   styles because they follow the element through pans and zooms. */
+.plan-check-inspector { position:absolute; top:var(--sp-4); left:var(--sp-4); z-index:var(--z-local-popover);
+  display:flex; flex-direction:column; gap:var(--sp-2); width:min(21rem, calc(100% - var(--sp-8))); max-height:calc(100% - var(--sp-8));
+  padding:var(--sp-3); overflow-y:auto; color:var(--color-text); background:var(--color-bg);
+  border:var(--stroke-1) solid var(--color-border-strong); border-radius:var(--surface-radius); box-shadow:var(--shadow-md);
+  font-size:var(--text-sm); }
+.plan-check-inspector[hidden] { display:none; }
+.plan-check-inspector--offscreen { opacity:.55; }
+.plan-check-inspector__head { display:flex; align-items:flex-start; gap:var(--sp-2); }
+.plan-check-inspector__title { display:flex; flex-direction:column; flex:1 1 auto; min-width:0; }
+.plan-check-inspector__name { font-weight:var(--fw-bold); overflow-wrap:anywhere; }
+.plan-check-inspector__subtitle { color:var(--color-text-muted); font-size:var(--text-xs); overflow-wrap:anywhere; }
+.plan-check-inspector__close { flex:none; margin:calc(-1 * var(--sp-1)) calc(-1 * var(--sp-1)) 0 0; }
+.plan-check-inspector__facts { display:grid; grid-template-columns:minmax(0,auto) minmax(0,1fr); gap:var(--sp-1) var(--sp-3);
+  margin:0; padding-top:var(--sp-2); border-top:var(--stroke-1) solid var(--surface-border); }
+.plan-check-inspector__facts dt { color:var(--color-text-muted); font-size:var(--text-xs); }
+.plan-check-inspector__facts dd { display:flex; align-items:center; gap:var(--sp-2); margin:0; min-width:0;
+  font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.plan-check-inspector__mono { font-family:var(--font-mono); font-size:var(--text-xs); }
+.plan-check-inspector__swatch { width:var(--sp-3); height:var(--sp-3); flex:none;
+  background:var(--plan-check-swatch,var(--color-text-muted)); border:var(--stroke-1) solid var(--color-border-strong); }
+.plan-check-inspector__findings { padding-top:var(--sp-2); border-top:var(--stroke-1) solid var(--surface-border); }
+.plan-check-inspector__findings-title { margin:0 0 var(--sp-1); color:var(--color-text-muted); font-size:var(--text-xs);
+  letter-spacing:.08em; text-transform:uppercase; }
+.plan-check-inspector__findings ul { display:flex; flex-direction:column; gap:var(--sp-1); margin:0; padding:0; list-style:none; }
+.plan-check-inspector__findings li { display:flex; align-items:flex-start; gap:var(--sp-2); min-width:0; font-size:var(--text-xs); }
+.plan-check-inspector__note { margin:0; }
+
+/* --- Step 3: Freigabe ----------------------------------------------------- */
+.plan-check-approval { display:flex; flex-direction:column; gap:var(--sp-5); margin-top:var(--sp-6); min-width:0; }
+.plan-check-approval-card { min-width:0; background:var(--color-bg);
+  border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius); }
+.plan-check-approval-card--muted { background:var(--color-bg-subtle); }
+.plan-check-approval-card__title { margin:0; padding:var(--sp-3) var(--sp-4); font-size:var(--text-base);
+  border-bottom:var(--stroke-1) solid var(--surface-border); }
+.plan-check-approval-card--muted .plan-check-approval-card__title { border-bottom:0; padding-bottom:0; }
+.plan-check-approval__facts { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-1) var(--sp-4);
+  margin:0; padding:var(--sp-4); }
+.plan-check-approval__facts dt { color:var(--color-text-muted); font-size:var(--text-sm); }
+.plan-check-approval__facts dd { margin:0 0 var(--sp-2); min-width:0; overflow-wrap:anywhere; }
+.plan-check-approval__facts dd:last-of-type { margin-bottom:0; }
+.plan-check-approval__facts dd .badge { margin-right:var(--sp-2); }
+.plan-check-approval__file { font-family:var(--font-mono); font-size:var(--text-sm); }
+.plan-check-approval__report { background:none; border:0; padding:0; font:inherit; font-size:var(--text-sm); cursor:pointer; }
+.plan-check-approval__note { margin:var(--sp-3) var(--sp-4) 0; max-width:80ch; }
+.plan-check-approval__note:last-child { margin-bottom:var(--sp-4); }
+.plan-check-approval--done .pipeline-wrap { padding:var(--sp-4); }
+.plan-check-approval--done .plan-check-footbar__back { visibility:hidden; }
+
+/* --- Sticky action bar --------------------------------------------------- */
+.plan-check-footbar { position:sticky; bottom:0; z-index:var(--z-local-chrome); display:flex; flex-wrap:wrap;
+  align-items:center; justify-content:space-between; gap:var(--sp-3); padding:var(--sp-3) var(--sp-4);
+  background:var(--color-bg-subtle); border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius); }
+.plan-check-footbar__actions { display:flex; flex-wrap:wrap; gap:var(--sp-3); }
+
+.plan-check-viewer:fullscreen { width:100%; height:100%; background:var(--color-bg); }
 .plan-check-viewer:fullscreen .plan-check-viewer__canvas-wrap { flex:1 1 auto; min-height:0; }
-.plan-check-viewer:fullscreen .plan-check-viewer__toolbar :focus-visible { outline-color:var(--color-focus-ring-negative); }
 
 @media (min-width:640px) {
+  .plan-check-approval__facts { grid-template-columns:minmax(0,12rem) minmax(0,1fr); }
+  .plan-check-approval__facts dd { margin-bottom:0; }
   .plan-check-location-fields,
   .plan-check-change-fields__row { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .plan-check-file-summary__facts { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .plan-check-figures { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .plan-check-figure { border-top:0; border-left:var(--stroke-1) solid var(--surface-border); }
+  .plan-check-figure:nth-child(2n+1) { border-left:0; }
+  .plan-check-figure:nth-child(n+3) { border-top:var(--stroke-1) solid var(--surface-border); }
 }
 
 @media (min-width:768px) {
-  .plan-check-file-summary { flex-direction:row; align-items:flex-start; justify-content:space-between; }
-  .plan-check-file-summary__facts { flex:1 1 auto; max-width:60rem; }
-  .plan-check-results__tools { flex-direction:row; align-items:flex-end; justify-content:space-between; }
-  .plan-check-results__search { flex:1 1 auto; max-width:28rem; }
+  .plan-check-figures { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .plan-check-figure:nth-child(n) { border-top:0; border-left:var(--stroke-1) solid var(--surface-border); }
+  .plan-check-figure:first-child { border-left:0; }
+  .plan-check-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-8); }
 }
 
 @media (min-width:1024px) {
-  .plan-check-section,
-  .plan-check-file-summary { padding:var(--sp-6); }
-  .plan-check-workbench { grid-template-columns:minmax(20rem,2fr) minmax(0,3fr); }
-  .plan-check-workbench__results { max-height:clamp(28rem,70vh,54rem); overflow:auto; }
-  .plan-check-viewer__canvas-wrap { min-height:clamp(28rem,70vh,54rem); }
+  .plan-check-section { padding:var(--sp-6); }
+  /* One register beside the plan; the metrics register spans both columns and
+     is declared after so it still wins inside this breakpoint. */
+  .plan-check-workbench { grid-template-columns:minmax(21rem,2fr) minmax(0,3fr); }
+  .plan-check-workbench__results { max-height:clamp(30rem,72vh,56rem); overflow:auto; }
+  .plan-check-workbench--wide { grid-template-columns:minmax(0,1fr); }
+  .plan-check-workbench--wide .plan-check-workbench__results { max-height:none; }
+  .plan-check-viewer { border-top:0; border-left:var(--stroke-1) solid var(--surface-border); }
+  .plan-check-viewer__canvas-wrap { min-height:clamp(30rem,72vh,56rem); }
+  /* Tabs and status filter share one row while both fit. When the register
+     labels grow past the available width the filter drops to its own row rather
+     than clipping a register out of reach. */
+  .plan-check-statusfilter { flex:none; border-left:var(--stroke-1) solid var(--surface-border); }
 }
 
 @media (max-width:639.98px) {
   .plan-check-section { padding:var(--sp-4); }
   .plan-check-actions .btn,
-  .plan-check-results__heading .btn { width:100%; justify-content:center; }
-  .plan-check-file-summary__facts { grid-template-columns:minmax(0,1fr); }
-  .plan-check-filter .btn { flex:1 1 auto; justify-content:center; }
-  .plan-check-layer > label:not(.plan-check-layer__toggle) { grid-template-columns:var(--sp-4) minmax(0,1fr); }
-  .plan-check-layer__count { grid-column:2; white-space:normal; }
-  .plan-check-viewer__header { align-items:flex-start; padding:var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3); }
-  .plan-check-viewer__header h3 { padding-top:var(--sp-3); }
-  .plan-check-viewer__toolbar { max-width:calc(3 * var(--target-min)); }
+  .plan-check-footbar .btn { width:100%; justify-content:center; }
+  .plan-check-footbar__actions { width:100%; }
+  .plan-check-file-summary { flex-wrap:wrap; }
+  .plan-check-statusfilter { width:100%; }
+  .plan-check-statusfilter .btn { flex:1 1 auto; justify-content:center; }
+  .plan-check-row__code { max-width:9rem; }
   .plan-check-viewer__canvas-wrap { min-height:18rem; }
   .plan-check-viewer__coordinates { display:none; }
+  .plan-check-viewer__legend { max-width:calc(100% - var(--sp-20)); }
+  .plan-check-inspector { width:calc(100% - var(--sp-8)); }
 }
 
 @media print {
@@ -203,14 +367,16 @@
   .plan-check__wizard > .wizard-step__title,
   .plan-check__wizard > .small,
   .plan-check-report-actions,
-  .plan-check-results__heading .btn,
-  .plan-check-results > .tab__controls-container,
-  .plan-check-results__tools,
-  .plan-check-layer-actions,
+  .plan-check-board__bar,
+  .plan-check-panel__tools,
+  .plan-check-footbar,
   .plan-check-actions,
-  .plan-check-viewer__toolbar { display:none; }
+  .plan-check-viewer__tools,
+  .plan-check-viewer__context-clear,
+  .plan-check-inspector { display:none; }
   .plan-check-quality { gap:var(--sp-5); margin-top:var(--sp-5); }
-  .plan-check-workbench { display:block; border:0; box-shadow:none; overflow:visible; }
+  .plan-check-board { border:0; box-shadow:none; overflow:visible; }
+  .plan-check-workbench { display:block; overflow:visible; }
   .plan-check-workbench__results { display:none; }
   .plan-check-print-panels { display:block; }
   .plan-check-print-panel { padding:var(--sp-4) 0; break-before:page; }
@@ -220,12 +386,9 @@
   .plan-check .tab__container > .sr-only:first-child { position:static; width:auto; height:auto; margin:0 0 var(--sp-4); padding:0;
     clip:auto; clip-path:none; overflow:visible; white-space:normal; font-size:var(--text-xl); font-weight:var(--fw-bold); }
   .plan-check-viewer { color:var(--color-text); background:var(--color-bg); border:var(--stroke-1) solid var(--color-border-strong); break-inside:avoid; }
-  .plan-check-viewer__header,
-  .plan-check-viewer__legend { color:var(--color-text); background:var(--color-bg); }
-  .plan-check-viewer__header h3 { color:var(--color-text); }
   .plan-check-viewer__canvas-wrap { min-height:24rem; }
-  .plan-check-result-list,
-  .plan-check-layer-list { break-inside:auto; }
-  .plan-check-result,
-  .plan-check-layer { break-inside:avoid; }
+  .plan-check-group { break-inside:auto; }
+  .plan-check-group:not([open]) > .plan-check-rows { display:block; }
+  .plan-check-rows > li { break-inside:avoid; }
+  .plan-check-metric-table { overflow:visible; }
 }

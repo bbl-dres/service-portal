@@ -30,6 +30,22 @@ The checker is intended only for local, non-production parser and data-quality
 testing. It does not create an authoritative plan version or professional
 approval and must not be treated as a production records workflow.
 
+## Report generators (jsPDF, jsPDF-AutoTable, SheetJS)
+
+The Planprüfung PDF and Excel Prüfberichte are generated in the browser by three
+libraries, loaded from `unpkg.com` only when a report is requested, over HTTPS
+with SHA-384 Subresource Integrity, anonymous CORS and a no-referrer policy:
+
+- [jsPDF](https://github.com/parallax/jsPDF/tree/v2.5.2) 2.5.2 — MIT;
+- [jsPDF-AutoTable](https://github.com/simonbengtsson/jsPDF-AutoTable/tree/v3.8.4) 3.8.4 — MIT;
+- [SheetJS Community Edition](https://github.com/SheetJS/sheetjs/tree/v0.18.5) 0.18.5 — Apache-2.0.
+
+The selected DWG is never sent to those hosts or to any other service: the file
+is parsed locally, and the generators only receive the finished check result and
+a raster snapshot of the plan that the browser has already drawn. A report can
+therefore only be produced while the browser can reach the CDN; the local CSV
+and JSON exports stay dependency-free and always available.
+
 ## Adapted plan-check implementation
 
 The Planprüfung normalisation, rule and viewer design adapts ideas from

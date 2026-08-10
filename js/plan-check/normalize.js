@@ -5,7 +5,6 @@ import {
     aciToHex,
     boundedString,
     finiteNumber,
-    resourceLimit,
 } from './config.js';
 import { normalizeVertices } from './geometry.js';
 
@@ -40,11 +39,6 @@ function normalizePrimitive(item, vertexBudget) {
     const points = (values) => {
         const normalized = normalizeVertices(values);
         vertexBudget.count += normalized.length;
-        if (vertexBudget.count > LIMITS.totalVertices) {
-            throw resourceLimit(`Die Darstellung überschreitet ${LIMITS.totalVertices} Stützpunkte.`, {
-                limit: LIMITS.totalVertices,
-            });
-        }
         return normalized;
     };
     switch (base.t) {
@@ -87,9 +81,6 @@ function normalizePrimitive(item, vertexBudget) {
             return { ...base, pts: points(item.pts) };
         case 'hatchfill': {
             const sourcePaths = Array.isArray(item.paths) ? item.paths : [];
-            if (sourcePaths.length > LIMITS.verticesPerPrimitive) {
-                throw resourceLimit('Eine Schraffur enthält zu viele Pfade.', { actual: sourcePaths.length });
-            }
             return { ...base, paths: sourcePaths.map(points), patternName: boundedString(item.patternName) };
         }
         default:
@@ -141,18 +132,6 @@ export function normalizeDrawing(database, options = {}) {
     const db = database && typeof database === 'object' ? database : {};
     const entities = Array.isArray(db.entities) ? db.entities : [];
     const layers = Array.isArray(db.tables?.LAYER?.entries) ? db.tables.LAYER.entries : [];
-    if (entities.length > LIMITS.entities) {
-        throw resourceLimit(`Die Zeichnung enthält mehr als ${LIMITS.entities} Entitäten.`, {
-            actual: entities.length,
-            limit: LIMITS.entities,
-        });
-    }
-    if (layers.length > LIMITS.layers) {
-        throw resourceLimit(`Die Zeichnung enthält mehr als ${LIMITS.layers} Layer.`, {
-            actual: layers.length,
-            limit: LIMITS.layers,
-        });
-    }
 
     const state = {
         insunits: null,
@@ -245,15 +224,30 @@ export function normalizeDrawing(database, options = {}) {
         return !trueColorToHex(e?.color) && explicitAciIndex(e?.colorIndex) == null && !isByBlock(e);
     }
 
+    // Extension dictionaries, keyed by handle. A DIMENSION is associative when
+    // its own extension dictionary holds an ACAD_DIMASSOC entry; that object is
+    // what AutoCAD writes when the dimension is attached to geometry.
+    const dictionaries = new Map();
+    for (const dictionary of Array.isArray(db.objects?.DICTIONARY) ? db.objects.DICTIONARY : []) {
+        const handle = boundedString(dictionary?.handle);
+        if (handle) dictionaries.set(handle, dictionary);
+    }
+    const hasDictionaries = dictionaries.size > 0;
+    function dimensionAssociativity(entity) {
+        // Without a dictionary table the question cannot be answered from this
+        // file; `null` keeps DIM_002 unevaluated instead of guessing "not
+        // associative" for every dimension.
+        if (!hasDictionaries) return null;
+        const ownerHandle = boundedString(entity?.ownerDictionaryHardId);
+        if (!ownerHandle || ownerHandle === '0') return false;
+        const entries = dictionaries.get(ownerHandle)?.entries;
+        if (!entries || typeof entries !== 'object') return false;
+        return Object.keys(entries).some((key) => /^ACAD_DIMASSOC$/i.test(key));
+    }
+
     const blockMap = Object.create(null);
     let blockCount = 0;
     const blockRecords = Array.isArray(db.tables?.BLOCK_RECORD?.entries) ? db.tables.BLOCK_RECORD.entries : [];
-    if (blockRecords.length > LIMITS.blockRecords) {
-        throw resourceLimit(`Die Zeichnung enthält mehr als ${LIMITS.blockRecords} Blockdefinitionen.`, {
-            actual: blockRecords.length,
-            limit: LIMITS.blockRecords,
-        });
-    }
     // Enhancement 5: XREF detection
     state.xrefBlocks = [];
     for (const br of blockRecords) {
@@ -393,21 +387,11 @@ export function normalizeDrawing(database, options = {}) {
             diagnostics.invalidTransformedPrimitives += 1;
             return;
         }
-        if (renderList.length >= LIMITS.renderPrimitives) {
-            throw resourceLimit(`Die Darstellung überschreitet ${LIMITS.renderPrimitives} Primitive.`, {
-                limit: LIMITS.renderPrimitives,
-            });
-        }
         const arrays = [];
         if (Array.isArray(item?.verts)) arrays.push(item.verts);
         if (Array.isArray(item?.pts)) arrays.push(item.pts);
         if (Array.isArray(item?.paths)) arrays.push(...item.paths);
         emittedVertexCount += arrays.reduce((sum, values) => sum + (Array.isArray(values) ? values.length : 0), 0);
-        if (emittedVertexCount > LIMITS.totalVertices) {
-            throw resourceLimit(`Die Darstellung überschreitet ${LIMITS.totalVertices} Stützpunkte.`, {
-                limit: LIMITS.totalVertices,
-            });
-        }
         renderList.push(item);
     }
     let expandedEntityCount = 0;
@@ -422,20 +406,10 @@ export function normalizeDrawing(database, options = {}) {
     }
     function appendHatchVertex(target, vertex) {
         generatedHatchVertexCount += 1;
-        if (generatedHatchVertexCount > LIMITS.totalVertices) {
-            throw resourceLimit(`Die Schraffurauflösung überschreitet ${LIMITS.totalVertices} Stützpunkte.`, {
-                limit: LIMITS.totalVertices,
-            });
-        }
         target.push(vertex);
     }
 
     function appendGeneratedVertex(target, vertex) {
-        if (target.length >= LIMITS.verticesPerPrimitive || emittedVertexCount + target.length >= LIMITS.totalVertices) {
-            throw resourceLimit('Eine transformierte Kurve überschreitet das Stützpunktbudget.', {
-                limit: Math.min(LIMITS.verticesPerPrimitive, LIMITS.totalVertices),
-            });
-        }
         target.push(vertex);
     }
 
@@ -662,25 +636,6 @@ export function normalizeDrawing(database, options = {}) {
     function addEntity(e, tf, parentLayer, parentColor = null, depth = 0, blockPath = []) {
         if (!e || typeof e !== 'object') return;
         expandedEntityCount += 1;
-        if (expandedEntityCount > LIMITS.expandedEntities) {
-            throw resourceLimit(`Die Blockauflösung überschreitet ${LIMITS.expandedEntities} Entitäten.`, {
-                limit: LIMITS.expandedEntities,
-            });
-        }
-        if (renderList.length > LIMITS.renderPrimitives) {
-            throw resourceLimit(`Die Darstellung überschreitet ${LIMITS.renderPrimitives} Primitive.`, {
-                limit: LIMITS.renderPrimitives,
-            });
-        }
-        for (const candidate of [e.vertices, e.fitPoints, e.controlPoints, e.boundaryPaths, e.attribs]) {
-            if (Array.isArray(candidate) && candidate.length > LIMITS.verticesPerPrimitive) {
-                throw resourceLimit(`Eine Entität überschreitet ${LIMITS.verticesPerPrimitive} Unterelemente.`, {
-                    type: boundedString(e.type, 'UNKNOWN'),
-                    actual: candidate.length,
-                    limit: LIMITS.verticesPerPrimitive,
-                });
-            }
-        }
         const ownLayer = boundedString(e.layer || '0');
         const l = ownLayer === '0' && parentLayer ? boundedString(parentLayer) : ownLayer;
         const et = boundedString(e.type || 'UNKNOWN');
@@ -1003,14 +958,6 @@ export function normalizeDrawing(database, options = {}) {
                 }
                 const paths = [];
                 for (const bp of boundaries) {
-                    for (const candidate of [bp?.edges, bp?.vertices]) {
-                        if (Array.isArray(candidate) && candidate.length > LIMITS.verticesPerPrimitive) {
-                            throw resourceLimit('Ein Schraffurpfad enthält zu viele Unterelemente.', {
-                                actual: candidate.length,
-                                limit: LIMITS.verticesPerPrimitive,
-                            });
-                        }
-                    }
                     if (bp.edges && bp.edges.length > 0) {
                         const verts = [];
                         for (const edge of bp.edges) {
@@ -1101,14 +1048,19 @@ export function normalizeDrawing(database, options = {}) {
 
             case 'DIMENSION': {
                 emptyResultIsRepresented = true;
-                // Enhancement 9: collect dimension info
                 if (state.dimensionInfo.length < LIMITS.reportedItems) {
                     state.dimensionInfo.push({
                         handle,
                         layer: l,
-                        // DIMENSION group-70 flags encode dimension type, not
-                        // associativity. A real value requires DIMASSOC linkage.
-                        associative: null,
+                        // Group code 70 encodes the dimension TYPE, not
+                        // associativity — bit 32 is set on every dimension that
+                        // owns an anonymous block, so testing it would report
+                        // every dimension as non-associative. Real associativity
+                        // lives in the ACAD_DIMASSOC entry of the dimension's
+                        // extension dictionary; `dimensionAssociativity` resolves
+                        // exactly that, and returns null when the drawing carries
+                        // no dictionary to read.
+                        associative: dimensionAssociativity(e),
                     });
                 } else {
                     diagnostics.truncatedDimensionDiagnostics += 1;
@@ -1298,12 +1250,6 @@ export function normalizeDrawing(database, options = {}) {
         addEntity(e, null, null, null);
     }
 
-    if (renderList.length > LIMITS.renderPrimitives) {
-        throw resourceLimit(`Die Darstellung überschreitet ${LIMITS.renderPrimitives} Primitive.`, {
-            actual: renderList.length,
-            limit: LIMITS.renderPrimitives,
-        });
-    }
     const vertexBudget = { count: 0 };
     const safeRenderList = renderList.map((item) => normalizePrimitive(item, vertexBudget)).filter(Boolean);
     const bounds = computeBounds(safeRenderList);
@@ -1382,12 +1328,6 @@ export function buildLayerInfo(entities, layers) {
     for (const layer of layers) records.set(boundedString(layer?.name, '0'), layer);
     for (const name of Object.keys(counts)) {
         if (!records.has(name)) records.set(name, { name });
-    }
-    if (records.size > LIMITS.layers) {
-        throw resourceLimit(`Die normalisierte Zeichnung enthält mehr als ${LIMITS.layers} Layer.`, {
-            actual: records.size,
-            limit: LIMITS.layers,
-        });
     }
     return [...records].map(([name, layer]) => ({
         name,

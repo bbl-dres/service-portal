@@ -34,9 +34,9 @@ The BBL Kundenportal is a process-oriented prototype for the [Federal Office for
 - Vanilla JavaScript ES modules, HTML, and layered CSS: no build step, package manager, runtime framework, or installed dependencies
 - Static JSON and GeoJSON repository fixtures shared across the portal and its micro-apps
 - UI patterns and tokens aligned with the official [`swiss/designsystem`](https://github.com/swiss/designsystem)
-- Pinned MapLibre GL JS, Swagger UI, and bpmn-js assets are loaded only when needed over HTTPS, with SHA-384 Subresource Integrity, anonymous CORS, and no-referrer policy
+- Pinned MapLibre GL JS, Swagger UI, bpmn-js, jsPDF and SheetJS assets are loaded only when needed over HTTPS, with SHA-384 Subresource Integrity, anonymous CORS, and no-referrer policy
 - Three.js is vendored locally; route-specific CSS is also loaded lazily and awaited before a micro-app renders
-- Plan Check accepts local DWG files for non-production parsing and completeness testing with bundled `libredwg-web` 0.7.9; selected files stay in the browser and are not uploaded to a service
+- Plan Check accepts local DWG files for non-production parsing and completeness testing with bundled `libredwg-web` 0.7.9; selected files stay in the browser and are not uploaded to a service. The 40 rules are evaluated and scored even when parts of a drawing cannot be normalised, and no drawing is refused for its size. PDF and Excel Prüfberichte are generated locally from the finished result
 - Dependency-free Node/CDP browser checks documented in [`scripts/README.md`](scripts/README.md)
 
 ### JavaScript structure
@@ -68,9 +68,11 @@ be affected by provider availability or policy changes. The app reports these
 failures, but a production deployment should review the residual risks and
 self-host where appropriate; see the [technical review](docs/code-review.md).
 
-The Planprüfung route accepts local binary DWG files for viewing, parser
-compatibility checks, completeness diagnostics, and the prototype's technical
-rules. Files are read into browser memory and processed in a disposable Web
+The Planprüfung route runs in three steps — Standort und Datei, Datenqualität,
+Freigabe — and accepts local binary DWG files for viewing, parser compatibility
+checks, completeness diagnostics, and the prototype's technical rules. Submitting
+for approval opens a case in browser storage only; nothing is transmitted and no
+formal plan approval is granted. Files are read into browser memory and processed in a disposable Web
 Worker; they are not sent to a server, placed in the URL, or stored in browser
 storage. The bundled BBL reference drawing remains a deterministic regression
 fixture, while users select or drop their own local DWG test files.
@@ -139,9 +141,11 @@ brand elements.
 | [iCalendar](https://www.rfc-editor.org/rfc/rfc5545) | RFC 5545 / `VERSION:2.0` | IETF document terms; not a bundled software package | Browser-generated room-booking calendar exports. |
 | [Node.js](https://nodejs.org/) | `>=22` | [MIT and bundled third-party notices](https://github.com/nodejs/node/blob/main/LICENSE) | Local development server, maintenance scripts, and dependency-free verification suites; not a browser runtime dependency. |
 | [Microsoft Edge and Chrome DevTools Protocol](https://learn.microsoft.com/en-us/microsoft-edge/devtools-protocol/) | System-installed; unpinned | Microsoft software terms; [CDP is BSD-3-Clause](https://github.com/ChromeDevTools/devtools-protocol/blob/master/LICENSE) | Headless regression, accessibility, and interaction testing without Puppeteer. |
-| [unpkg](https://unpkg.com/) | Managed service; package versions pinned above | Delivery-service terms; each delivered package retains its own license | HTTPS delivery for MapLibre GL JS, Swagger UI, and bpmn-js, with SHA-384 Subresource Integrity. |
+| [unpkg](https://unpkg.com/) | Managed service; package versions pinned above | Delivery-service terms; each delivered package retains its own license | HTTPS delivery for MapLibre GL JS, Swagger UI, bpmn-js, jsPDF and SheetJS, with SHA-384 Subresource Integrity. |
 | [CARTO Positron](https://carto.com/basemaps/), [OpenStreetMap](https://www.openstreetmap.org/copyright), and [MapLibre demo tiles](https://demotiles.maplibre.org/) | Managed services and continuously updated data | [CARTO terms](https://carto.com/legal/); OSM data under ODbL 1.0; provider terms apply | Runtime raster basemap, OpenStreetMap data, and map glyphs; rendered maps retain provider attribution. |
 | [swisstopo / geo.admin.ch API](https://docs.geo.admin.ch/) | Managed service; API version not pinned | [Federal Spatial Data Infrastructure terms](https://www.geo.admin.ch/en/general-terms-of-use-fsdi) | Live Swiss address and geodata search used by location workflows. |
 | [GitHub Pages](https://pages.github.com/) | Managed service | [GitHub Terms of Service](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service); repository content retains its own licenses | Static hosting for the public prototype demonstration. |
 | [bbl-dres/plan-check](https://github.com/bbl-dres/plan-check/tree/7320840a53dcd71859700fe4c90256cbdb6b01f3) | Commit `7320840a53dcd71859700fe4c90256cbdb6b01f3` | [MIT](js/plan-check/PLAN_CHECK_REFERENCE_LICENSE) | Reference implementation whose checker concepts and official BBL test fixture were adapted for Planprüfung. |
+| [jsPDF](https://github.com/parallax/jsPDF/tree/v2.5.2) and [jsPDF-AutoTable](https://github.com/simonbengtsson/jsPDF-AutoTable/tree/v3.8.4) | `2.5.2` / `3.8.4` | [MIT](https://github.com/parallax/jsPDF/blob/v2.5.2/LICENSE); [MIT](https://github.com/simonbengtsson/jsPDF-AutoTable/blob/v3.8.4/LICENSE) | SRI-pinned, lazily loaded generator for the Planprüfung PDF-Prüfbericht. |
+| [SheetJS Community Edition](https://github.com/SheetJS/sheetjs/tree/v0.18.5) | `0.18.5` | [Apache-2.0](https://github.com/SheetJS/sheetjs/blob/v0.18.5/LICENSE) | SRI-pinned, lazily loaded generator for the Planprüfung Excel-Prüfbericht. |
 | [`libredwg-web`](https://github.com/mlightcad/libredwg-web/tree/v0.7.9) | `0.7.9`, bundled locally | [GPL-3.0](js/vendor/libredwg/LICENSE); corresponding-source obligations apply | JavaScript/WASM DWG parser used by the non-production, browser-local viewer and checker. See the [artifact and provenance record](js/vendor/libredwg/README.md). |

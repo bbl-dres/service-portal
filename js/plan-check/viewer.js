@@ -6,6 +6,11 @@ const MAX_ZOOM = 1000000;
 const ZOOM_STEP = 1.35;
 const WHEEL_STEP = 1.14;
 const TAP_TOLERANCE = 8;
+// Registers that answer a question about validation polygons rather than about
+// the drawing. In these the Canvas shows the polygons alone: painting the full
+// CAD content behind them buries the answer under walls, furniture and the
+// title block.
+const SPATIAL_MODES = new Set(['rooms', 'areas']);
 export const PLAN_CHECK_FINDING_SELECTION_LIMIT = 128;
 const SCALE_STEPS = Object.freeze([
   1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000,
@@ -560,10 +565,290 @@ export function planCheckFindingRenderItems(finding, renderList, relatedItems = 
   return resolveFindingItems(finding, createFindingLookup(renderList, relatedItems));
 }
 
+// --- Attribute inspection ---------------------------------------------------
+// The attribute card reports what the DWG actually carries for one element.
+// Everything here reads normalized primitive fields; nothing is derived beyond
+// plain geometry, so a value that is absent stays absent instead of guessed.
+
+const NUMBER_FORMATS = new Map();
+function decimal(value, digits = 2) {
+  if (!NUMBER_FORMATS.has(digits)) {
+    NUMBER_FORMATS.set(digits, new Intl.NumberFormat('de-CH', { maximumFractionDigits: digits }));
+  }
+  return NUMBER_FORMATS.get(digits).format(value);
+}
+
+const MILLIMETRES = 4;
+const METRES = 6;
+
+function formatLength(value, insunits) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '';
+  if (Number(insunits) === MILLIMETRES) {
+    return Math.abs(number) >= 1000 ? `${decimal(number, 0)} mm · ${decimal(number / 1000, 2)} m` : `${decimal(number, 1)} mm`;
+  }
+  if (Number(insunits) === METRES) return `${decimal(number, 3)} m`;
+  return `${decimal(number, 2)} ZE`;
+}
+
+function formatSurface(value, insunits) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '';
+  if (Number(insunits) === MILLIMETRES) return `${decimal(number / 1e6, 2)} m²`;
+  if (Number(insunits) === METRES) return `${decimal(number, 2)} m²`;
+  return `${decimal(number, 2)} ZE²`;
+}
+
+function formatPoint(x, y, insunits) {
+  if (!Number.isFinite(Number(x)) || !Number.isFinite(Number(y))) return '';
+  const digits = Number(insunits) === MILLIMETRES ? 0 : 2;
+  return `X ${decimal(Number(x), digits)} · Y ${decimal(Number(y), digits)}`;
+}
+
+function polygonArea(vertices) {
+  const points = list(vertices);
+  if (points.length < 3) return 0;
+  let twice = 0;
+  for (let index = 0; index < points.length; index += 1) {
+    const next = points[(index + 1) % points.length];
+    twice += finite(points[index]?.x) * finite(next?.y) - finite(next?.x) * finite(points[index]?.y);
+  }
+  return Math.abs(twice) / 2;
+}
+
+function polylineLength(vertices, closed = false) {
+  const points = list(vertices);
+  let total = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    total += Math.hypot(finite(points[index]?.x) - finite(points[index - 1]?.x),
+      finite(points[index]?.y) - finite(points[index - 1]?.y));
+  }
+  if (closed && points.length > 2) {
+    total += Math.hypot(finite(points[0]?.x) - finite(points.at(-1)?.x),
+      finite(points[0]?.y) - finite(points.at(-1)?.y));
+  }
+  return total;
+}
+
+function fact(label, value, options = {}) {
+  return value == null || value === '' ? null : { label, value: String(value), ...options };
+}
+
+// Type-specific geometry facts for one normalized render primitive.
+function geometryFacts(item, insunits) {
+  if (item?.t === 'line') return [
+    fact('Länge', formatLength(Math.hypot(finite(item.x2) - finite(item.x1), finite(item.y2) - finite(item.y1)), insunits)),
+    fact('Von', formatPoint(item.x1, item.y1, insunits), { mono: true }),
+    fact('Bis', formatPoint(item.x2, item.y2, insunits), { mono: true }),
+  ];
+  if (item?.t === 'poly') {
+    const points = list(item.verts);
+    return [
+      fact('Stützpunkte', decimal(points.length, 0)),
+      fact('Verlauf', item.closed ? 'Geschlossen' : 'Offen'),
+      item.closed ? fact('Fläche', formatSurface(polygonArea(points), insunits)) : null,
+      fact('Länge', formatLength(polylineLength(points, Boolean(item.closed)), insunits)),
+      item.sourceHasBulges ? fact('Bogensegmente', 'Vorhanden') : null,
+      item.width != null ? fact('Breite', formatLength(item.width, insunits)) : null,
+    ];
+  }
+  if (item?.t === 'circle') return [
+    fact('Radius', formatLength(item.r, insunits)),
+    fact('Mittelpunkt', formatPoint(item.cx, item.cy, insunits), { mono: true }),
+  ];
+  if (item?.t === 'arc') return [
+    fact('Radius', formatLength(item.r, insunits)),
+    fact('Mittelpunkt', formatPoint(item.cx, item.cy, insunits), { mono: true }),
+    fact('Winkel', `${decimal((finite(item.sa) * 180) / Math.PI, 1)}° bis ${decimal((finite(item.ea) * 180) / Math.PI, 1)}°`),
+  ];
+  if (item?.t === 'ellipse') return [
+    fact('Halbachsen', `${formatLength(item.rx, insunits)} / ${formatLength(item.ry, insunits)}`),
+    fact('Mittelpunkt', formatPoint(item.cx, item.cy, insunits), { mono: true }),
+  ];
+  if (item?.t === 'text') return [
+    fact('Text', String(item.text || '')),
+    fact('Schrifthöhe', formatLength(item.h, insunits)),
+    finite(item.rot) ? fact('Drehung', `${decimal((finite(item.rot) * 180) / Math.PI, 1)}°`) : null,
+    fact('Schriftart', item.fontName),
+    fact('Einfügepunkt', formatPoint(item.x, item.y, insunits), { mono: true }),
+  ];
+  if (item?.t === 'point') return [fact('Position', formatPoint(item.x, item.y, insunits), { mono: true })];
+  if (item?.t === 'solid') return [
+    fact('Stützpunkte', decimal(list(item.pts).length, 0)),
+    fact('Fläche', formatSurface(polygonArea(item.pts), insunits)),
+  ];
+  if (item?.t === 'hatchfill') return [
+    fact('Schraffurpfade', decimal(list(item.paths).length, 0)),
+    fact('Muster', item.patternName),
+  ];
+  return [];
+}
+
+function colorFact(item) {
+  const color = selectionKey(item?.c);
+  if (!color) return null;
+  return {
+    label: 'Farbe',
+    value: item?.byLayer === false ? `${color} · direkt` : `${color} · VONLAYER`,
+    mono: true,
+    swatch: color,
+  };
+}
+
+function findingsFor(errors, predicate) {
+  const matches = [];
+  for (const error of list(errors)) {
+    if (!predicate(error)) continue;
+    matches.push({
+      severity: selectionKey(error?.severity) || 'warning',
+      ruleCode: selectionKey(error?.ruleCode),
+      message: selectionKey(error?.message),
+    });
+    if (matches.length >= PLAN_CHECK_FINDING_SELECTION_LIMIT) break;
+  }
+  return matches;
+}
+
+function errorTouchesHandle(error, handle) {
+  if (!handle) return false;
+  return selectionKey(error?.handle) === handle
+    || list(error?.handles).some((value) => selectionKey(value) === handle);
+}
+
+function spatialFacts(item, type, insunits) {
+  const points = list(item?.vertices);
+  return [
+    fact('AOID', item?.aoid, { mono: true }),
+    fact('Bezeichnung', selectionKey(item?.label) === selectionKey(item?.aoid) ? '' : item?.label),
+    fact('Fläche', item?.area == null ? '' : `${decimal(Number(item.area), 2)} m²`),
+    fact('Layer', item?.layer, { mono: true }),
+    fact('CAD-Typ', item?.et, { mono: true }),
+    fact('Handle', item?.handle, { mono: true }),
+    fact('Stützpunkte', points.length ? decimal(points.length, 0) : ''),
+    fact('Umfang', points.length ? formatLength(polylineLength(points, true), insunits) : ''),
+    fact('Schwerpunkt', item?.centroid ? formatPoint(item.centroid.x, item.centroid.y, insunits) : '', { mono: true }),
+    fact('Rolle', type === 'room' ? 'Raumpolygon (R_RAUMPOLYGON)' : 'Geschosspolygon (R_GESCHOSSPOLYGON)'),
+  ];
+}
+
+function buildSelectionDetails(selection, result, lookups) {
+  if (!selection) return null;
+  const validation = result?.validation || {};
+  const insunits = result?.drawing?.insunits;
+  const id = selectionKey(selection.id);
+  const errors = list(validation.errors);
+
+  if (selection.type === 'room' || selection.type === 'area') {
+    const item = lookups.spatial[selection.type]?.bySelection.get(String(selection.id));
+    if (!item) return null;
+    const handle = selectionKey(item.handle);
+    const key = selection.type === 'room' ? 'roomId' : 'areaId';
+    return {
+      kind: selection.type,
+      title: selectionKey(item.aoid) || id,
+      subtitle: selection.type === 'room' ? 'Raumpolygon' : 'Geschosspolygon',
+      status: normalizedSeverity(item.status),
+      rows: spatialFacts(item, selection.type, insunits).filter(Boolean),
+      findings: findingsFor(errors, (error) => (
+        selectionKey(error?.[key]) === selectionKey(item.id) || errorTouchesHandle(error, handle)
+      )),
+    };
+  }
+
+  if (selection.type === 'layer') {
+    const layer = list(result?.layers).find((entry) => selectionKey(entry?.name) === id);
+    return {
+      kind: 'layer',
+      title: id,
+      subtitle: 'Layer',
+      status: 'success',
+      rows: [
+        fact('Layername', id, { mono: true }),
+        layer?.colorHex ? { label: 'Layerfarbe', value: String(layer.colorHex), mono: true, swatch: layer.colorHex } : null,
+        fact('ACI-Index', layer?.colorIndex == null ? '' : decimal(Number(layer.colorIndex), 0), { mono: true }),
+        fact('Darstellungselemente', layer?.count == null ? '' : decimal(Number(layer.count), 0)),
+      ].filter(Boolean),
+      findings: findingsFor(errors, (error) => selectionKey(error?.layer) === id),
+    };
+  }
+
+  if (selection.type === 'rule') {
+    const rule = list(validation.rules).find((entry) => selectionKey(entry?.code) === id);
+    const status = rule?.status === 'not-evaluated' || rule?.passed === null ? 'not-evaluated'
+      : rule?.status === 'passed' || rule?.passed ? 'success' : normalizedSeverity(rule?.sev);
+    return {
+      kind: 'rule',
+      title: id,
+      subtitle: selectionKey(rule?.description) || 'Prüfregel',
+      status,
+      rows: [
+        fact('Regelcode', id, { mono: true }),
+        fact('Kategorie', rule?.cat, { mono: true }),
+        fact('Schweregrad', rule?.sev === 'error' ? 'Fehler' : rule?.sev === 'warning' ? 'Warnung' : rule?.sev),
+        fact('Feststellungen', rule?.errorCount == null ? '' : decimal(Number(rule.errorCount), 0)),
+      ].filter(Boolean),
+      findings: findingsFor(errors, (error) => selectionKey(error?.ruleCode) === id),
+    };
+  }
+
+  if (selection.type === 'error') {
+    const index = errors.findIndex((entry, position) => errorIdentity(entry, position) === id);
+    const error = index >= 0 ? errors[index] : null;
+    if (!error) return null;
+    const handles = [...new Set([error.handle, ...list(error.handles)].map(selectionKey).filter(Boolean))];
+    return {
+      kind: 'error',
+      title: selectionKey(error.ruleCode) || id,
+      subtitle: selectionKey(error.message),
+      status: normalizedSeverity(error.severity),
+      rows: [
+        fact('Regelcode', error.ruleCode, { mono: true }),
+        fact('Kategorie', error.category, { mono: true }),
+        fact('Layer', error.layer, { mono: true }),
+        fact('Betroffene Objekte', handles.length ? decimal(handles.length, 0) : ''),
+        fact('Handles', handles.slice(0, 4).join(', ') + (handles.length > 4 ? ' …' : ''), { mono: true }),
+      ].filter(Boolean),
+      findings: [],
+    };
+  }
+
+  const items = resolveFindingItems({ handle: id }, lookups.finding).items;
+  const primary = items[0];
+  if (!primary) return null;
+  return {
+    kind: 'entity',
+    title: id || 'CAD-Objekt',
+    subtitle: selectionKey(primary.et) || 'CAD-Objekt',
+    status: 'success',
+    rows: [
+      fact('Handle', id, { mono: true }),
+      fact('Objekttyp', primary.et, { mono: true }),
+      fact('Layer', primary.l, { mono: true }),
+      colorFact(primary),
+      ...geometryFacts(primary, insunits),
+      items.length > 1 ? fact('Darstellungselemente', `${decimal(items.length, 0)} unter demselben Handle`) : null,
+    ].filter(Boolean),
+    findings: findingsFor(errors, (error) => errorTouchesHandle(error, id)),
+  };
+}
+
+/**
+ * Attributes of one selected element, exactly as the DWG carries them. Pure and
+ * exported so tests and future consumers can assert the contract without a
+ * Canvas.
+ */
+export function planCheckSelectionDetails(selection, result) {
+  return buildSelectionDetails(selection, result, {
+    spatial: createSpatialLookup(result?.validation || {}),
+    finding: createFindingLookup(result?.drawing?.renderList, result?.drawing?.dimensionInfo),
+  });
+}
+
 export function createPlanCheckViewer({
-  root, result, mode = 'rules', hiddenLayers = new Set(), selection = null,
+  root, result, mode = 'rules', hiddenLayers = new Set(), hiddenRooms = new Set(),
+  hiddenAreas = new Set(), selection = null,
   filter = 'all', background = 'light', onSelect = () => {}, onAnnounce = () => {},
-  onBackgroundChange = () => {},
+  onBackgroundChange = () => {}, onAnchor = () => {},
 } = {}) {
   if (!root) throw new TypeError('Plan Check viewer root is required');
   const canvas = root.querySelector('[data-plan-check-canvas]');
@@ -579,6 +864,8 @@ export function createPlanCheckViewer({
   let activeFilter = filter;
   let activeSelection = selection;
   let hidden = hiddenLayers instanceof Set ? hiddenLayers : new Set(hiddenLayers || []);
+  let hiddenRoomIds = hiddenRooms instanceof Set ? hiddenRooms : new Set(hiddenRooms || []);
+  let hiddenAreaIds = hiddenAreas instanceof Set ? hiddenAreas : new Set(hiddenAreas || []);
   let backgroundMode = background === 'dark' ? 'dark' : 'light';
   let bounds = drawingBounds(activeResult);
   let camera = { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2, zoom: 1 };
@@ -591,6 +878,10 @@ export function createPlanCheckViewer({
   let moved = false;
   let pointerStart = null;
   let fullscreenTrigger = null;
+  // Last reported attribute-card anchor. The card follows its element through
+  // pans and zooms, so the anchor is recomputed per frame but only published
+  // when it actually moved on screen.
+  let lastAnchor = null;
 
   const validation = () => activeResult?.validation || {};
   const renderItems = () => list(activeResult?.drawing?.renderList);
@@ -616,6 +907,10 @@ export function createPlanCheckViewer({
     });
     return {
       textColor, negativeText, surface, darkSurface, ...overlay,
+      // Label pills read against both the drawing and either background.
+      labelSurface: backgroundMode === 'dark' ? withAlpha(darkSurface, 0.82) : withAlpha(surface, 0.86),
+      labelText: backgroundMode === 'dark' ? negativeText : textColor,
+      labelMuted: backgroundMode === 'dark' ? withAlpha(negativeText, 0.72) : withAlpha(textColor, 0.7),
     };
   }
 
@@ -743,6 +1038,65 @@ export function createPlanCheckViewer({
     for (const item of resolveFindingItems(error, findingLookup).items) drawItem(context, item, camera.zoom);
   }
 
+  // Rooms and areas the visitor switched off in the register list. Hiding a
+  // room hides its overlay AND its label, so the plan matches the list exactly.
+  function spatialVisible(type) {
+    const hiddenSet = type === 'room' ? hiddenRoomIds : hiddenAreaIds;
+    return (item, index) => !hiddenSet.has(spatialIdentity(item, index, type));
+  }
+
+  // Identity labels inside the polygons: AOID above, measured area below. Drawn
+  // at a fixed screen size after the fills, largest polygon first, and skipped
+  // where a label would collide with one already placed — an unreadable stack of
+  // overlapping pills is worse than a few missing labels.
+  function drawSpatialLabels(items, colors) {
+    const placed = [];
+    const ordered = [...items].sort((left, right) => (
+      (Number(right?.area) || 0) - (Number(left?.area) || 0)
+    ));
+    const fontSize = 11;
+    const worldFont = fontSize / camera.zoom;
+    context.save();
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    for (const item of ordered) {
+      const centroid = item?.centroid;
+      if (!centroid || !Number.isFinite(Number(centroid.x)) || !Number.isFinite(Number(centroid.y))) continue;
+      const identifier = String(item?.aoid || '').trim();
+      if (!identifier) continue;
+      const areaValue = finite(item?.area, NaN);
+      const areaLabel = Number.isFinite(areaValue) ? `${new Intl.NumberFormat('de-CH', { maximumFractionDigits: 1 }).format(areaValue)} m²` : '';
+      const screen = worldToScreen(finite(centroid.x), finite(centroid.y));
+      const boxWidth = identifier.length * fontSize * 0.62 + 12;
+      const boxHeight = fontSize * (areaLabel ? 2.5 : 1.7);
+      const box = { x: screen.x - boxWidth / 2, y: screen.y - boxHeight / 2, w: boxWidth, h: boxHeight };
+      if (box.x + box.w < 0 || box.y + box.h < 0 || box.x > cssWidth || box.y > cssHeight) continue;
+      const collides = placed.some((other) => box.x < other.x + other.w && box.x + box.w > other.x
+        && box.y < other.y + other.h && box.y + box.h > other.y);
+      if (collides) continue;
+      placed.push(box);
+
+      context.save();
+      context.translate(finite(centroid.x), finite(centroid.y));
+      context.scale(1, -1);
+      context.fillStyle = colors.labelSurface;
+      context.beginPath();
+      context.rect(-boxWidth / 2 / camera.zoom, -boxHeight / 2 / camera.zoom,
+        boxWidth / camera.zoom, boxHeight / camera.zoom);
+      context.fill();
+      context.fillStyle = colors.labelText;
+      context.font = `600 ${worldFont}px system-ui, sans-serif`;
+      context.fillText(identifier, 0, areaLabel ? -worldFont * 0.25 : 0);
+      if (areaLabel) {
+        context.font = `${worldFont * 0.72}px system-ui, sans-serif`;
+        context.fillStyle = colors.labelMuted;
+        context.fillText(areaLabel, 0, worldFont * 0.62);
+      }
+      context.restore();
+    }
+    context.restore();
+  }
+
   function updateScale() {
     const line = root.querySelector('[data-plan-check-scale-line]');
     const label = root.querySelector('[data-plan-check-scale-label]');
@@ -777,23 +1131,34 @@ export function createPlanCheckViewer({
     context.lineCap = 'round';
     context.lineJoin = 'round';
 
-    for (const item of renderItems()) {
-      if (hidden.has(String(item?.l || ''))) continue;
-      const layerSelected = activeSelection?.type === 'layer';
-      const onSelectedLayer = layerSelected && String(item?.l) === String(activeSelection.id);
-      context.globalAlpha = layerSelected && !onSelectedLayer ? 0.16 : 1;
-      const color = displayColor(item?.c, colors);
-      context.strokeStyle = color;
-      context.fillStyle = color;
-      context.lineWidth = (onSelectedLayer ? 3 : 1) / camera.zoom;
-      drawItem(context, item, camera.zoom);
+    // The room and area registers answer a question about polygons, not about
+    // the drawing they sit in. Painting the full CAD content behind them buries
+    // the answer under walls, furniture and the title block, so those two
+    // registers show validation geometry alone — the same rule the reference
+    // checker applies (bbl-dres/plan-check renderer.js: `drawBase`).
+    if (!SPATIAL_MODES.has(activeMode)) {
+      for (const item of renderItems()) {
+        if (hidden.has(String(item?.l || ''))) continue;
+        const layerSelected = activeSelection?.type === 'layer';
+        const onSelectedLayer = layerSelected && String(item?.l) === String(activeSelection.id);
+        context.globalAlpha = layerSelected && !onSelectedLayer ? 0.16 : 1;
+        const color = displayColor(item?.c, colors);
+        context.strokeStyle = color;
+        context.fillStyle = color;
+        context.lineWidth = (onSelectedLayer ? 3 : 1) / camera.zoom;
+        drawItem(context, item, camera.zoom);
+      }
+      context.globalAlpha = 1;
     }
-    context.globalAlpha = 1;
 
-    if (activeMode === 'rooms') {
-      spatialSource('room').filter(visibleByFilter).forEach((item) => drawSpatial(item, colors));
-    } else if (activeMode === 'areas') {
-      spatialSource('area').filter(visibleByFilter).forEach((item) => drawSpatial(item, colors));
+    if (activeMode === 'rooms' || activeMode === 'areas') {
+      const type = activeMode === 'rooms' ? 'room' : 'area';
+      // Identity is resolved against the SOURCE index so it matches the register
+      // list; filtering first would renumber the fallback identities.
+      const visible = spatialSource(type)
+        .filter((item, index) => visibleByFilter(item) && spatialVisible(type)(item, index));
+      visible.forEach((item) => drawSpatial(item, colors));
+      drawSpatialLabels(visible, colors);
     } else if (activeMode === 'errors') {
       list(validation().errors).filter(visibleByFilter).forEach((error) => drawError(error, colors));
     } else if (activeMode === 'rules' && activeSelection?.type === 'rule') {
@@ -811,6 +1176,7 @@ export function createPlanCheckViewer({
     }
     context.restore();
     updateScale();
+    publishAnchor();
   }
 
   function scheduleRender() {
@@ -856,6 +1222,34 @@ export function createPlanCheckViewer({
     )));
   }
 
+  // World anchor of the attribute card. Resolving the selection geometry is the
+  // expensive part, so it happens when the selection changes rather than in
+  // every animation frame; panning only reprojects this cached point.
+  let selectionAnchorWorld = null;
+  function refreshSelectionAnchor() {
+    const target = activeSelection ? selectionBounds() : null;
+    selectionAnchorWorld = target
+      ? { x: (target.minX + target.maxX) / 2, y: (target.minY + target.maxY) / 2 } : null;
+    lastAnchor = null;
+  }
+
+  function publishAnchor() {
+    if (!selectionAnchorWorld) {
+      if (lastAnchor !== null) { lastAnchor = null; onAnchor(null); }
+      return;
+    }
+    const point = worldToScreen(selectionAnchorWorld.x, selectionAnchorWorld.y);
+    const next = {
+      x: point.x,
+      y: point.y,
+      visible: point.x >= 0 && point.y >= 0 && point.x <= cssWidth && point.y <= cssHeight,
+    };
+    if (lastAnchor && Math.abs(lastAnchor.x - next.x) < 0.5 && Math.abs(lastAnchor.y - next.y) < 0.5
+      && lastAnchor.visible === next.visible) return;
+    lastAnchor = next;
+    onAnchor(next);
+  }
+
   function findAt(worldX, worldY) {
     if (activeMode === 'rooms' || activeMode === 'areas') {
       const type = activeMode === 'rooms' ? 'room' : 'area';
@@ -881,6 +1275,9 @@ export function createPlanCheckViewer({
           : { type: 'error', id: errorIdentity(error, index) };
       }
     }
+    // Nothing else is painted in the polygon registers, so nothing else can be
+    // picked there either — a click must never select an invisible entity.
+    if (SPATIAL_MODES.has(activeMode)) return null;
     const items = renderItems();
     const tolerance = TAP_TOLERANCE / camera.zoom;
     for (let index = items.length - 1; index >= 0; index -= 1) {
@@ -899,6 +1296,7 @@ export function createPlanCheckViewer({
     const point = screenToWorld(screenX, screenY);
     const next = findAt(point.x, point.y);
     activeSelection = next;
+    refreshSelectionAnchor();
     onSelect(next);
     scheduleRender();
     onAnnounce(next ? 'Objekt im Plan ausgew\u00e4hlt.' : 'Auswahl aufgehoben.');
@@ -984,7 +1382,15 @@ export function createPlanCheckViewer({
     else if (event.key === '-' || event.key === '_') zoomAt(1 / ZOOM_STEP, undefined, undefined, true);
     else if (event.key === 'Home' || event.key.toLowerCase() === 'f') fit(true);
     else if (event.key === 'Enter' || event.key === ' ') selectAt(cssWidth / 2, cssHeight / 2);
-    else return;
+    // Escape dismisses the attribute card without leaving the Canvas, matching
+    // the way every other dismissible surface in the portal behaves.
+    else if (event.key === 'Escape') {
+      if (!activeSelection) return;
+      activeSelection = null;
+      refreshSelectionAnchor();
+      onSelect(null);
+      onAnnounce('Auswahl aufgehoben.');
+    } else return;
     event.preventDefault();
     scheduleRender();
   }
@@ -1043,7 +1449,11 @@ export function createPlanCheckViewer({
     if (action === 'fit') fit();
     else if (action === 'zoom-in') zoomAt(ZOOM_STEP, undefined, undefined, true);
     else if (action === 'zoom-out') zoomAt(1 / ZOOM_STEP, undefined, undefined, true);
-    else if (action === 'background') setBackground(backgroundMode === 'dark' ? 'light' : 'dark');
+    else if (action === 'focus-selection') {
+      const target = selectionBounds();
+      if (target) { fit(false, target); onAnnounce('Auf die Auswahl gezoomt.'); }
+      else onAnnounce('Es ist kein Objekt ausgewählt, auf das gezoomt werden kann.');
+    } else if (action === 'background') setBackground(backgroundMode === 'dark' ? 'light' : 'dark');
     else if (action === 'fullscreen') toggleFullscreen(button);
   }
 
@@ -1062,6 +1472,7 @@ export function createPlanCheckViewer({
   } else window.addEventListener('resize', resize, { signal });
 
   setBackground(backgroundMode, false);
+  refreshSelectionAnchor();
   resize();
   startupFrame = requestAnimationFrame(() => {
     startupFrame = 0;
@@ -1087,6 +1498,15 @@ export function createPlanCheckViewer({
       if (target) fit(false, target);
     },
     getView() { return { ...camera, background: backgroundMode }; },
+    /** Last published screen anchor of the selection, or null when there is none. */
+    getAnchor() { return lastAnchor ? { ...lastAnchor } : null; },
+    /** Attributes of the current selection, plus whether highlighting was capped. */
+    inspection() {
+      const details = buildSelectionDetails(activeSelection, activeResult, {
+        spatial: spatialLookup, finding: findingLookup,
+      });
+      return details ? { ...details, truncated: selectedGeometryDetails().truncated } : null;
+    },
     setBackground,
     setData(nextResult, { preserveView = false } = {}) {
       activeResult = nextResult || {};
@@ -1094,18 +1514,77 @@ export function createPlanCheckViewer({
       findingLookup = createFindingLookup(renderItems(), activeResult?.drawing?.dimensionInfo);
       spatialLookup = createSpatialLookup(validation());
       displayColorCache.clear();
+      refreshSelectionAnchor();
       if (!preserveView) fit(false);
       else scheduleRender();
     },
     setFilter(nextFilter) { activeFilter = nextFilter || 'all'; scheduleRender(); },
     setHiddenLayers(nextHidden) {
       hidden = nextHidden instanceof Set ? nextHidden : new Set(nextHidden || []);
+      refreshSelectionAnchor();
       scheduleRender();
+    },
+    setHiddenSpatial(type, nextHidden) {
+      const next = nextHidden instanceof Set ? nextHidden : new Set(nextHidden || []);
+      if (type === 'area') hiddenAreaIds = next; else hiddenRoomIds = next;
+      scheduleRender();
+    },
+    /**
+     * PNG of the plan in one register, fitted to the drawing and rendered
+     * synchronously so the caller gets pixels back immediately. The live view
+     * (mode, camera, selection) is restored before returning, so exporting a
+     * report never disturbs what the visitor is looking at.
+     */
+    snapshot(nextMode = activeMode, { maxWidth = 1600 } = {}) {
+      if (disposed || !cssWidth || !cssHeight) return '';
+      const previous = {
+        mode: activeMode,
+        selection: activeSelection,
+        camera: { ...camera },
+      };
+      try {
+        activeMode = nextMode;
+        activeSelection = null;
+        fit(false);
+        if (frame) cancelAnimationFrame(frame);
+        frame = 0;
+        render();
+        // Flatten onto an opaque surface and cap the width. A transparent,
+        // retina-sized canvas embeds as a raw RGBA bitmap and turns a report
+        // into megabytes; an opaque, page-sized PNG of the same plan is a few
+        // hundred kilobytes at a resolution print cannot tell apart.
+        if (typeof document === 'undefined') return canvas.toDataURL('image/png');
+        const width = Math.min(canvas.width, maxWidth);
+        const flat = document.createElement('canvas');
+        flat.width = Math.max(1, Math.round(width));
+        flat.height = Math.max(1, Math.round((canvas.height / canvas.width) * width));
+        const flatContext = flat.getContext('2d');
+        if (!flatContext) return canvas.toDataURL('image/png');
+        const colors = palette();
+        flatContext.fillStyle = backgroundMode === 'dark' ? colors.darkSurface : colors.surface;
+        flatContext.fillRect(0, 0, flat.width, flat.height);
+        flatContext.imageSmoothingQuality = 'high';
+        flatContext.drawImage(canvas, 0, 0, flat.width, flat.height);
+        return flat.toDataURL('image/png');
+      } catch {
+        return '';
+      } finally {
+        activeMode = previous.mode;
+        activeSelection = previous.selection;
+        camera.x = previous.camera.x;
+        camera.y = previous.camera.y;
+        camera.zoom = previous.camera.zoom;
+        refreshSelectionAnchor();
+        if (frame) cancelAnimationFrame(frame);
+        frame = 0;
+        render();
+      }
     },
     setMode(nextMode) { activeMode = nextMode || 'rules'; scheduleRender(); },
     setSelection(nextSelection, { focus = false } = {}) {
       activeSelection = nextSelection || null;
       const details = selectedGeometryDetails();
+      refreshSelectionAnchor();
       if (focus) {
         const target = mergeBounds(details.entries.map((entry) => (
           entry.type === 'room' || entry.type === 'area' ? verticesBounds(entry.item.vertices) : planCheckItemBounds(entry.item)

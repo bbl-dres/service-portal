@@ -47,23 +47,72 @@ unresolved block branch, a non-renderable/unsupported/invisible entity, invalid
 or out-of-range geometry, truncated STYLE/LAYOUT/HATCH/DIMENSION metadata, or a
 converter-reported unknown entity produces a structured
 `completeness.status = "incomplete"` result. Findings observed in the supported
-subset remain in the diagnostic error list, but every canonical rule is
-`not-evaluated` and the overall score is `null`; a partial drawing can never
-receive a normal score. XREF validation instead preserves a sticky aggregate
-count alongside its bounded diagnostic sample, so entries after the sample
-limit cannot evade the rule. The UI, CSV and JSON reports expose completeness
-instead of presenting an ordinary quality score. Hard expansion, primitive and
-vertex output limits throw `RESOURCE_LIMIT`, so no partial result is returned.
+`completeness.status = "incomplete"` result. That state is reported as its own
+`INCOMPLETE_001` warning beside the results; it no longer suppresses them.
+Nearly every production DWG contains a few entities the parser cannot render
+(proxy objects, OLE frames, unsupported types), and treating that as "nothing
+was checked" made the checker unusable on real files. Every rule that can be
+evaluated is evaluated and scored; the UI, PDF, Excel, CSV and JSON reports
+carry the score and the completeness note together. XREF validation preserves a
+sticky aggregate count alongside its bounded diagnostic sample, so entries after
+the sample limit cannot evade the rule.
+
+There is no size ceiling. Entity, layer, block, primitive, vertex, operation and
+result-transfer limits are all `Infinity` in `config.js`, and no code path
+refuses a drawing for being large; the browser's own memory is the only bound,
+and exceeding it surfaces as an ordinary parser failure. Remaining finite bounds
+shape what a *report* shows (handle lists, metadata entries, message lengths) or
+guarantee termination (block recursion depth, coordinate sanity), and each one
+that drops something reports how much it dropped.
+
+## Registers and the Canvas
+
+Six registers share one Canvas. `rules`, `errors` and `layers` paint the whole
+drawing and put findings or a highlighted layer on top of it. `rooms` and
+`areas` paint the validation polygons **alone**: the CAD content behind them is
+suppressed, and hit testing is suppressed with it, so a click cannot select an
+entity nobody can see. Those registers answer a question about polygons, and the
+drawing behind them buries the answer under walls, furniture and the title
+block. This mirrors the reference checker's `drawBase` rule
+(`bbl-dres/plan-check`, `js/renderer.js`). `metrics` reports the whole drawing
+and takes the full workbench width instead of leaving an idle Canvas beside it.
+
+Room and floor polygons carry their identity in the plan: AOID above, measured
+area below, placed largest-polygon-first and skipped where a label would collide
+with one already placed. Their register lists carry per-polygon visibility
+checkboxes with a tri-state master, and the Canvas reads the same sets, so list
+and plan can never disagree.
+
+Status marks in the register rows are drawn in `view.js` rather than taken from
+the CD icon set: those icons are hairline outlines built for 24 px headings and
+are illegible at the 16 px of a dense row. The four marks are solid shapes with
+distinct silhouettes — circle, triangle, check, dash — so an outcome is readable
+without colour.
+
+## Step 3: Freigabe
+
+Submitting opens a real process instance through the portal's engine
+(`planfreigabe` in `data/process-definitions.json`), the same path every other
+wizard uses, so the reference shown is the one that appears in the personal case
+list. The summary restates only values the visitor entered or the checker
+measured; nothing new is introduced on the last step. In this prototype the case
+is created in browser storage only: nothing is transmitted to the
+Flächenmanagement, and the screen says so.
 
 ## Validation and prototype limits
 
-- The source contract does not provide an authoritative SIA use-category
-  mapping. Room polygon area is reported separately; HNF, NNF, VF, FF, NF, NGF
-  and KF remain unavailable until every room has an authoritative category.
-  Categories must not be inferred from layer names or defaulted to HNF.
-- `DIM_002` is deliberately `not-evaluated`. Group code 70 describes the
-  dimension type, not associativity; the check needs actual `DIMASSOC` object
-  linkage before it can pass or fail.
+- The source contract does not provide an SIA use-category mapping. An
+  unclassified room is counted as HNF by a stated convention, matching the
+  reference checker, so the area balance is populated instead of empty.
+  `metrics.categorySource === 'convention'` and `room.siaCategorySource` mark
+  the value as derived, and every surface that shows HNF/NF/NGF says so. GF and
+  KF stay measured. Categories are still never inferred from layer names.
+- `DIM_002` reads real associativity from the dimension's extension dictionary:
+  a dimension is associative when that dictionary holds an `ACAD_DIMASSOC`
+  entry. Group code 70 is not used — bit 32 is set on every dimension that owns
+  an anonymous block, so testing it would report all dimensions as
+  non-associative. Where a drawing carries no dictionary table the rule reports
+  itself `not-evaluated` rather than guessing.
 - AOID associations retain every normalized `R_AOID` text occurrence rather
   than only the room's chosen display label. `AOID_002` therefore detects one
   identifier associated with multiple distinct room polygons, while duplicate

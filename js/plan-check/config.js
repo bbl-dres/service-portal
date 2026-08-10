@@ -8,33 +8,47 @@ export const PARSER_TIMEOUT_MS = 120_000;
 // to a same-origin module Worker and are never uploaded by the parser adapter.
 export const PLAN_CHECK_INTAKE_ENABLED = true;
 
-// These are defensive browser budgets, not CAD format limits. Parsing and the
-// structured clone of a result temporarily coexist in memory, so the output
-// ceilings are intentionally much lower than LibreDWG's theoretical limits.
+// Two kinds of bound live here, and the difference matters.
+//
+// SIZE CEILINGS are `Infinity`: a drawing is never refused for being large.
+// They used to reject real production plans with a browser-safety message,
+// which turned an ordinary big file into a dead end instead of a result. That
+// refusal is gone, message included. The reference checker
+// (bbl-dres/plan-check) enforces no such ceiling either. The browser's own
+// memory remains the only real limit; exceeding it surfaces as a normal parser
+// failure rather than a rule the checker invented.
+//
+// SHAPING BOUNDS stay finite. They truncate what is *reported* (handle lists,
+// metadata entries, message lengths) or guard termination (block recursion
+// depth, coordinate sanity). None of them can refuse a drawing, and each one
+// that drops something reports how much it dropped.
+const UNLIMITED = Number.POSITIVE_INFINITY;
+
 export const LIMITS = Object.freeze({
-  entities: 150_000,
-  layers: 2_000,
-  blockRecords: 20_000,
+  // --- Size ceilings: deliberately removed ---------------------------------
+  entities: UNLIMITED,
+  layers: UNLIMITED,
+  blockRecords: UNLIMITED,
+  expandedEntities: UNLIMITED,
+  renderPrimitives: UNLIMITED,
+  verticesPerPrimitive: UNLIMITED,
+  totalVertices: UNLIMITED,
+  validationErrors: UNLIMITED,
+  validationOperations: UNLIMITED,
+  selfIntersectionComparisons: UNLIMITED,
+  resultTransferBytes: UNLIMITED,
+  resultNodes: UNLIMITED,
+
+  // --- Shaping bounds: what a report shows, and what terminates -------------
   blockExpansionDepth: 16,
-  expandedEntities: 100_000,
-  renderPrimitives: 25_000,
-  verticesPerPrimitive: 25_000,
-  totalVertices: 200_000,
   textLength: 4_096,
   changeReasonLength: 1_000,
   metadataEntries: 2_000,
   reportedItems: 2_000,
-  validationErrors: 2_000,
-  validationOperations: 8_000_000,
-  selfIntersectionComparisons: 1_000_000,
   visualCenterRefinementVertices: 512,
   visualCenterRefinementIterations: 1_000,
   visualCenterSegmentChecks: 1_000_000,
   coordinateMagnitude: 1e12,
-  // Approximate structured-clone budget. assertResultBudget counts primitive
-  // storage, keys and object overhead without allocating a JSON copy.
-  resultTransferBytes: 64 * 1024 * 1024,
-  resultNodes: 1_000_000,
   errorMessageLength: 1_024,
   errorDetailEntries: 16,
 });
@@ -130,25 +144,19 @@ export class PlanCheckParserError extends Error {
   }
 }
 
-export function resourceLimit(message, details = undefined) {
-  return new PlanCheckParserError('RESOURCE_LIMIT', message, details);
-}
-
+/**
+ * Measure the approximate structured-clone footprint of a result without
+ * allocating a JSON copy. This is a diagnostic, not a gate: it reports what the
+ * worker is about to transfer so a slow hand-off is explainable, and no size
+ * makes it refuse. Cycles terminate because each object is counted once.
+ */
 export function assertResultBudget(value) {
   const stack = [value];
   const seen = new WeakSet();
   let estimatedBytes = 0;
   let nodes = 0;
 
-  const consume = (bytes) => {
-    estimatedBytes += bytes;
-    if (estimatedBytes > LIMITS.resultTransferBytes) {
-      throw resourceLimit('Das Pr\u00fcfergebnis ist f\u00fcr die sichere Browser-\u00dcbertragung zu gross.', {
-        estimatedBytes,
-        limit: LIMITS.resultTransferBytes,
-      });
-    }
-  };
+  const consume = (bytes) => { estimatedBytes += bytes; };
 
   while (stack.length) {
     const current = stack.pop();
@@ -162,12 +170,6 @@ export function assertResultBudget(value) {
     if (seen.has(current)) continue;
     seen.add(current);
     nodes += 1;
-    if (nodes > LIMITS.resultNodes) {
-      throw resourceLimit('Das Pr\u00fcfergebnis enth\u00e4lt zu viele Datenknoten.', {
-        actual: nodes,
-        limit: LIMITS.resultNodes,
-      });
-    }
     if (current instanceof ArrayBuffer) { consume(current.byteLength); continue; }
     if (ArrayBuffer.isView(current)) { consume(current.byteLength); continue; }
     consume(Array.isArray(current) ? 24 : 32);

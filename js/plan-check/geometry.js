@@ -1,4 +1,4 @@
-import { LIMITS, finiteNumber, resourceLimit } from './config.js';
+import { LIMITS, finiteNumber } from './config.js';
 
 const point = (value) => ({
   x: finiteNumber(value?.x),
@@ -6,14 +6,8 @@ const point = (value) => ({
   ...(value?.bulge == null ? {} : { bulge: finiteNumber(value.bulge) }),
 });
 
-export function normalizeVertices(vertices, limit = LIMITS.verticesPerPrimitive) {
+export function normalizeVertices(vertices) {
   if (!Array.isArray(vertices)) return [];
-  if (vertices.length > limit) {
-    throw resourceLimit(`Eine Geometrie überschreitet ${limit} Stützpunkte.`, {
-      actual: vertices.length,
-      limit,
-    });
-  }
   return vertices.map(point);
 }
 
@@ -94,18 +88,17 @@ export function segmentsIntersect(aValue, bValue, cValue, dValue) {
 export function hasSelfIntersection(vertices, options = {}) {
   const verts = Array.isArray(vertices) ? vertices : [];
   if (verts.length < 4) return false;
-  const maximum = options.maxComparisons ?? LIMITS.selfIntersectionComparisons;
+  // `onComparison` lets a caller account for the quadratic edge test; it can no
+  // longer cancel it. A polygon with many vertices is slower to check, not
+  // uncheckable.
+  const onComparison = typeof options.onComparison === 'function' ? options.onComparison : null;
   let comparisons = 0;
   for (let first = 0; first < verts.length; first += 1) {
     const firstNext = (first + 1) % verts.length;
     for (let second = first + 2; second < verts.length; second += 1) {
       if (first === 0 && second === verts.length - 1) continue;
       comparisons += 1;
-      if (comparisons > maximum) {
-        throw resourceLimit('Die Prüfung auf Selbstüberschneidungen überschreitet das Rechenlimit.', {
-          maximum,
-        });
-      }
+      if (onComparison) onComparison(comparisons);
       const secondNext = (second + 1) % verts.length;
       if (segmentsIntersect(verts[first], verts[firstNext], verts[second], verts[secondNext])) return true;
     }

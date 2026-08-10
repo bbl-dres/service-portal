@@ -148,6 +148,12 @@ try {
         rooms: parsed.validation.rooms.length,
         areas: parsed.validation.areas.length,
         score: parsed.validation.score,
+        passedRules: parsed.validation.passedRules,
+        evaluatedRules: parsed.validation.metrics.evaluatedRules,
+        dimensions: parsed.drawing.dimensionInfo,
+        ngf: parsed.validation.metrics.ngf,
+        gf: parsed.validation.metrics.gf,
+        categorySource: parsed.validation.metrics.categorySource,
         rules: parsed.validation.rules.length,
         firedRules: [...new Set(parsed.validation.errors.map((error) => error.ruleCode))].sort(),
         findingTargets,
@@ -174,22 +180,40 @@ try {
   assert.ok(result.bounds.width > 0 && result.bounds.height > 0);
   assert.equal(result.rooms, 30);
   assert.equal(result.areas, 1);
-  assert.equal(result.score, null);
+  // Partial normalization is a finding, not a reason to withhold the result:
+  // the reference drawing has two unsupported and ten non-renderable entities
+  // and is still fully scored.
+  assert.equal(result.score, 90);
+  assert.equal(result.passedRules, 35);
+  assert.equal(result.evaluatedRules, 39);
   assert.equal(result.completeness.status, 'incomplete');
   assert.deepEqual(result.completeness.reasons.map((reason) => reason.code),
     ['UNSUPPORTED_ENTITY', 'NON_RENDERABLE_ENTITY']);
-  assert.deepEqual(result.firedRules, ['INCOMPLETE_001', 'STYLE_002', 'TEXT_001', 'TEXT_002']);
+  assert.deepEqual(result.firedRules,
+    ['DIM_002', 'INCOMPLETE_001', 'STYLE_002', 'TEXT_001', 'TEXT_002']);
+  // DIM_002 resolves through the dimension's ACAD_DIMASSOC linkage: the fixture
+  // holds one associative and one non-associative dimension.
+  assert.equal(result.dimensions.length, 2);
+  assert.deepEqual(result.dimensions.map((item) => item.associative).sort(), [false, true]);
   const expectedFindingSources = {
     INCOMPLETE_001: 'none', STYLE_002: 'handles', TEXT_001: 'handles', TEXT_002: 'handles',
+    // A DIMENSION has no own render primitive; the finding resolves to the
+    // geometry of its layer so the plan still shows where to look.
+    DIM_002: 'related-layer',
   };
   for (const finding of result.findingTargets) {
     assert.equal(finding.source, expectedFindingSources[finding.ruleCode]);
-    if (finding.source === 'handles') {
+    if (finding.source === 'handles' || finding.source === 'related-layer') {
       assert.ok(finding.count > 0, `${finding.ruleCode} must resolve to visible Canvas geometry`);
     } else {
       assert.equal(finding.count, 0);
     }
   }
+  // The area balance is now populated: GF is measured from the floor polygon,
+  // NGF follows the stated HNF convention for unclassified rooms.
+  assert.ok(result.gf > 0, `GF must be measured: ${result.gf}`);
+  assert.ok(result.ngf > 0, `NGF must follow the classification convention: ${result.ngf}`);
+  assert.equal(result.categorySource, 'convention');
   assert.deepEqual(result.externalRequests, []);
   for (const suffix of [
     '/js/vendor/libredwg/dist/libredwg-web.js',

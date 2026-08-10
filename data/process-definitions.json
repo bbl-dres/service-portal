@@ -260,5 +260,36 @@
         "kind": "auto"
       }
     ]
+  },
+  {
+    "defId": "planfreigabe",
+    "name": "Planfreigabe",
+    "audience": "internal",
+    "steps": [
+      {
+        "status": "eingereicht",
+        "label": "Antrag eingereicht",
+        "role": "Antragstellende Stelle",
+        "kind": "user"
+      },
+      {
+        "status": "in_pruefung_fm",
+        "label": "Zweitprüfung Flächenmanagement",
+        "role": "Flächenmanagement BBL",
+        "kind": "user"
+      },
+      {
+        "status": "freigegeben",
+        "label": "Freigegeben",
+        "role": "Flächenmanagement BBL",
+        "kind": "user"
+      },
+      {
+        "status": "abgeschlossen",
+        "label": "In den Geschossplan übernommen",
+        "role": "Flächenmanagement BBL",
+        "kind": "system"
+      }
+    ]
   }
 ]
