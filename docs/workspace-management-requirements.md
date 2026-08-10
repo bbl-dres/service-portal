@@ -22,7 +22,8 @@ Die folgenden Dateien liegen unter `research/Workspace Management/`.
 | Datei | Was sie beiträgt | Verlässlichkeit |
 | --- | --- | --- |
 | `Zielbild Workspacemanagement_V1.0.pdf` | **Die Anforderungsquelle.** V1.0 vom 30.10.2024, freigegeben durch Stv. Direktor Bauten und Vizedirektor Logistik. 7 gewichtete Anforderungen (Nr. 1–7), Systemgrenzen, Begriffsdefinitionen, Prozessbezüge zur Prozesslandkarte ERP IMMO. | freigegeben |
-| `20250601_Multispace Handbuch.pdf` (149 S., Stand 6.1.2025) | **Der Ausstattungsstandard.** 11 Module mit Sub-Modulen, Flächenrichtmassen, Elementlisten, Artikelnummern, Farbkonzept CD-Bund, Einrichtungsrichtlinien. Ältere Fassung: `Multispace-Handbuch-de-v8.pdf`. | verbindlich; zwei Kapitel leer (s. u.) |
+| `Multispace-Handbuch-de-v8.pdf` (103 S., Stand 31.10.2025) | **Der aktuelle Ausstattungsstandard.** 10 Module mit Sub-Modulen, Flächenrichtmassen, Elementlisten, Artikelnummern, Farbkonzept CD-Bund, Einrichtungsrichtlinien. | verbindlich; zwei Kapitel leer (s. u.) |
+| `20250601_Multispace Handbuch.pdf` (149 S., Stand 6.1.2025) | **Vorgängerausgabe** mit 11 Modulen. Der Dateiname legt Juni 2025 nahe, das Dokument stammt aber vom 6.1.2025 (PDF-Erstelldatum 06.01.2025 gegenüber 30.10.2025 bei v8). Kapitel 5 unten beschreibt noch diese Ausgabe. | überholt, für den Abgleich älterer Pläne weiterhin nützlich |
 | `SBIM-4870 _ SBIM-4873 _ Workspacemanagement Schulung_UAT.vtt` | **Der realste Beleg.** 77-Minuten-Schulung/UAT der real gebauten Lösung (Korasoft auf SAP): Klickpfad, Systemregeln, bekannte Fehler, und die ungelösten fachlichen Fragen im Originalton. | Ist-Zustand, Feb./Mrz. 2026 |
 | `PDF-Druck-Anforderungen-BBL.pdf` | Detailanforderungen an die Planausgabe «Flächennachweis SIA 416» inkl. Mockups. | Soll-Spezifikation |
 | `Handout BBL Möbelkatalog.docx` | CAD-Block-Konvention: Modul, Repräsentant, Möbel (Layer + Attribute). | verbindlich |
@@ -163,9 +164,17 @@ Regeln und Eigenheiten, die im UAT ausdrücklich fallen:
 
 ## 5 Der Ausstattungsstandard «Multispace»
 
-Der inhaltliche Kern, den die heutige App gar nicht kennt. 11 Module, jedes
+Der inhaltliche Kern, den die heutige App gar nicht kennt. Jedes Modul ist
 «eine funktionale und gestalterische Einheit»; ein Mix einzelner Modulelemente
 **wird nicht empfohlen**.
+
+> **Achtung Ausgabenstand.** Die Tabelle unten gibt die Ausgabe vom **6.1.2025**
+> mit 11 Modulen wieder. Die aktuelle Ausgabe vom **31.10.2025** führt **10**
+> Module: Modul 1 heisst «Standardarbeitsplatz», der Coffee Point ist kein
+> eigenes Modul mehr, und die früheren Module 8–11 rücken auf 7–10 auf. Der
+> Wissensbereich «Arbeitsplätze gestalten» (`js/knowledge-content.js`) folgt der
+> aktuellen Ausgabe; die Fixture-Daten in `data/workspace-planning.json` tragen
+> noch die alte Nummerierung.
 
 | Modul | Sub-Module | Flächenrichtmass |
 | --- | --- | --- |

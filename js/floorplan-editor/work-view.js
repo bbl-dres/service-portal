@@ -132,13 +132,11 @@ export function renderWorkView(C, {
   const floorCount = objects.reduce((sum, entry) => sum + entry.floors.length, 0);
 
   return `<div class="fpe-work" id="fpe-work">
+    ${/* The plan-upload action lives in the app header, so it is reachable from
+          the portfolio view as well and does not sit only here. */''}
     <div class="fpe-work__head">
-      <div>
-        <h1 class="fpe-work__title-main" tabindex="-1">Meine Arbeit</h1>
-        <p class="fpe-work__lead">${number(objects.length)} Objekte · ${number(floorCount)} Geschosse im Zugriff</p>
-      </div>
-      <a class="btn btn--filled" href="${planCheck()}" target="_blank" rel="noopener noreferrer">
-        <span class="btn__text">Plan hochladen und prüfen</span></a>
+      <h1 class="fpe-work__title-main" tabindex="-1">Meine Arbeit</h1>
+      <p class="fpe-work__lead">${number(objects.length)} Objekte · ${number(floorCount)} Geschosse im Zugriff</p>
     </div>
 
     ${layerTabsHTML(C, layer.id, counts)}

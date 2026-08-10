@@ -171,3 +171,28 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 .fp-svc__description { margin-top:var(--sp-0-5); color:var(--color-text-muted); font-size:var(--text-xs); line-height:1.4; }
 .fp-svc__go { justify-self:end; color:var(--color-text-muted); }
 .fp-svc--disabled, .fp-svc--disabled:hover { color:var(--color-text-muted); cursor:not-allowed; }
+
+/* Multispace equipment standard (#/knowledge/workspace). Three small patterns
+   the knowledge layer did not yet have: a numbered module marker, a rule list
+   and a numbered step list. Everything else on that page is a shared component. */
+.wsm-module__nr { display:inline-block; min-width:var(--sp-6); margin-right:var(--sp-2); padding:0 var(--sp-1-5);
+  background:var(--color-primary-100); color:var(--color-primary-700); border-radius:var(--radius-sm);
+  font-variant-numeric:tabular-nums; text-align:center; }
+.wsm-module__area { font-variant-numeric:tabular-nums; }
+.wsm-module__desc { display:block; margin-top:var(--sp-1); color:var(--color-text-muted);
+  font-size:var(--text-sm); font-weight:var(--fw-regular); }
+.wsm-subhead { margin:var(--sp-6) 0 var(--sp-3); font-size:var(--text-lg); }
+.wsm-subhead:first-child { margin-top:0; }
+.wsm-rules { margin:0; padding-left:var(--sp-5); }
+.wsm-rules li { margin-bottom:var(--sp-2); }
+.wsm-rules li:last-child { margin-bottom:0; }
+.wsm-steps { counter-reset:wsm-step; margin:0; padding:0; list-style:none; }
+.wsm-steps li { position:relative; min-height:var(--sp-8); padding-left:var(--sp-10); margin-bottom:var(--sp-4); }
+.wsm-steps li:last-child { margin-bottom:0; }
+.wsm-steps li::before { counter-increment:wsm-step; content:counter(wsm-step);
+  position:absolute; left:0; top:0; width:var(--sp-7); height:var(--sp-7);
+  display:flex; align-items:center; justify-content:center; border-radius:var(--radius-full);
+  background:var(--color-primary-600); color:var(--color-text-negative);
+  font-size:var(--text-sm); font-weight:var(--fw-bold); font-variant-numeric:tabular-nums; }
+.wsm-steps strong { display:block; }
+.wsm-steps .muted { display:block; font-size:var(--text-sm); }

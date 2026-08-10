@@ -68,6 +68,7 @@ export const NAV = [
       { href: '#/knowledge/it', label: 'Informatik und IKT-Beschaffung' },
       { href: '#/knowledge/procurement', label: 'Beschaffung' },
       { href: '#/knowledge/accommodation', label: 'Unterbringung und Objektbetrieb' },
+      { href: '#/knowledge/workspace', label: 'Arbeitsplätze gestalten' },
       { href: '#/knowledge/publishing', label: 'Publikationen, Druck und Versand' },
       { href: '#/knowledge/guides', label: 'Anleitungen und Schulungen' },
       { href: '#/knowledge/processes', label: 'Prozessdokumentation' },
@@ -120,6 +121,9 @@ export const APP_GATE_META = {
   'transaction': { title: 'Veräusserung von Bundesliegenschaften', back: '#/services', backLabel: 'Dienstleistungen' },
   'api-docs': { title: 'API-Dokumentation', back: '#/data/catalog', backLabel: 'Datenkatalog' },
   'building-create': { title: 'Gebäude erfassen', back: '#/services/stammdaten-mutieren', backLabel: 'Beschreibung der Dienstleistung' },
+  // The plan checker has no entry in the application catalogue; it is reached
+  // through its service, which is where its description and prerequisites live.
+  'plan-check': { title: 'Planprüfung', back: '#/services/plan-pruefen', backLabel: 'Beschreibung der Dienstleistung' },
 };
 // Top-navigation item to highlight for pages and apps that are not themselves a
 // top-level entry. Applications is no longer L1; it lives under data and

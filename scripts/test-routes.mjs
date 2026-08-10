@@ -22,6 +22,7 @@ const ROUTES = [
   ['/knowledge/it',                 'Informatik'],
   ['/knowledge/procurement',        'Beschaffung'],
   ['/knowledge/accommodation',      'Unterbringung'],
+  ['/knowledge/workspace',          'Arbeitsplätze gestalten'],
   ['/knowledge/publishing',         'Publikationen'],
   ['/knowledge/guides',             'Anleitungen und Schulungen'],
   ['/knowledge/processes',          'Prozessdokumentation'],

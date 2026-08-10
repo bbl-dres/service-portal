@@ -9,6 +9,7 @@ import { escape as esc } from '../components.js';
 import { formatArea, formatNumber } from '../format.js';
 import { EDITOR_COLOR_MODES, createColorContext, roomColor } from './colors.js';
 import { placementFootprintBounds } from './geometry.js';
+import { widgetGeometry } from './transform-widget.js';
 
 export { EDITOR_COLOR_MODES } from './colors.js';
 
@@ -67,6 +68,30 @@ function placementMarkup(placement, selected) {
     ${placementShape(placement)}
     ${selected ? `<rect class="fpe-placement__selection" x="${(Number(placement.x) || 0) - 12}" y="${(Number(placement.y) || 0) - 12}"
       width="${width + 24}" height="${depth + 24}" rx="4"></rect>` : ''}
+  </g>`;
+}
+
+/**
+ * The transform widget over the selected placement: ring, rotate handle on the
+ * ring at the object's front, move handle in the middle. Drawn outside the
+ * rotated placement group so the handles keep their own geometry, and only in
+ * edit mode — outside it there is nothing to drag.
+ *
+ * Stroke widths use `vector-effect:non-scaling-stroke` through CSS, so the
+ * widget stays the same visual weight at every zoom.
+ */
+function transformWidgetMarkup(placement) {
+  const widget = widgetGeometry(placement);
+  if (!widget) return '';
+  const { cx, cy, radius, handle, rotation } = widget;
+  return `<g class="fpe-widget" data-widget-for="${esc(placement.placementId)}" aria-hidden="true">
+    <circle class="fpe-widget__ring" cx="${cx}" cy="${cy}" r="${radius}"></circle>
+    <line class="fpe-widget__arm" x1="${cx}" y1="${cy}" x2="${handle.x}" y2="${handle.y}"></line>
+    <circle class="fpe-widget__grip fpe-widget__grip--rotate" data-widget="rotate"
+      cx="${handle.x}" cy="${handle.y}" r="${Math.max(14, radius * .12)}"></circle>
+    <circle class="fpe-widget__grip fpe-widget__grip--move" data-widget="move"
+      cx="${cx}" cy="${cy}" r="${Math.max(14, radius * .12)}"></circle>
+    <title>Ausrichtung ${rotation}°</title>
   </g>`;
 }
 
@@ -369,10 +394,14 @@ export function clampPlacement(placement, floor) {
 
 export function renderEditorSvg({ floor, rooms = [], placements = [], selected = null,
   colorMode = 'use', camera = fitCamera(floor), measurement = null,
-  editableRooms = false, roomDraft = null, placementGhost = null, keyboardCursor = null }) {
+  editableRooms = false, roomDraft = null, placementGhost = null, keyboardCursor = null,
+  transformWidget = false }) {
   const colorContext = createColorContext(rooms);
   const selectedType = selected?.type || '';
   const selectedId = selected?.id || '';
+  const widgetFor = transformWidget && selectedType === 'placement'
+    ? placements.find((placement) => placement.placementId === selectedId)
+    : null;
   return `<svg class="fpe-canvas" id="fpe-canvas" viewBox="${camera.x} ${camera.y} ${camera.width} ${camera.height}"
       preserveAspectRatio="xMidYMid meet" role="group"
       aria-label="Grundriss ${esc(floor.label)} mit ${rooms.length} Räumen und ${placements.length} Ausstattungsobjekten">
@@ -381,6 +410,7 @@ export function renderEditorSvg({ floor, rooms = [], placements = [], selected =
       selectedType === 'room' && selectedId === room.spaceId, colorMode, colorContext, editableRooms)).join('')}</g>
     <g class="fpe-canvas__placements">${placements.map((placement) => placementMarkup(placement,
       selectedType === 'placement' && selectedId === placement.placementId)).join('')}</g>
+    ${transformWidgetMarkup(widgetFor)}
     ${placementGhostMarkup(placementGhost)}
     ${roomDraftMarkup(roomDraft)}
     ${measurementMarkup(measurement)}

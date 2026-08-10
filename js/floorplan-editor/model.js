@@ -13,19 +13,24 @@ export const DRAFT_SCHEMA = 'bbl.floorplan-editor.draft/v1';
 
 const freezeOptions = (options) => Object.freeze(options.map((option) => Object.freeze(option)));
 
+// A Multispace module is a predefined furniture setup a room is planned as —
+// not the furniture itself, and not the building services inside the room.
+// `name` is the module's own designation and `label` prefixes it with the module
+// number, the form the standard cites and the editor's select lists. Deriving
+// one from the other keeps a register and a dropdown from ever disagreeing.
 export const MODULE_OPTIONS = freezeOptions([
-  { value: '1', label: '1 · Einzel Arbeitsplatz' },
-  { value: '2', label: '2 · Team Arbeitsplatz' },
-  { value: '3', label: '3 · Fokus Arbeitsplatz' },
-  { value: '4', label: '4 · Formelle Sitzungen' },
-  { value: '5', label: '5 · Telefon- / Videokonferenzbox' },
-  { value: '6', label: '6 · Informelle Sitzungen' },
-  { value: '7', label: '7 · Coffee Point' },
-  { value: '8', label: '8 · Interaktive Sitzungen' },
-  { value: '9', label: '9 · Team Ablage' },
-  { value: '10', label: '10 · Locker, Garderoben' },
-  { value: '11', label: '11 · Service Funktionen' },
-]);
+  { value: '1', name: 'Einzel Arbeitsplatz' },
+  { value: '2', name: 'Team Arbeitsplatz' },
+  { value: '3', name: 'Fokus Arbeitsplatz' },
+  { value: '4', name: 'Formelle Sitzungen' },
+  { value: '5', name: 'Telefon- / Videokonferenzbox' },
+  { value: '6', name: 'Informelle Sitzungen' },
+  { value: '7', name: 'Coffee Point' },
+  { value: '8', name: 'Interaktive Sitzungen' },
+  { value: '9', name: 'Team Ablage' },
+  { value: '10', name: 'Locker, Garderoben' },
+  { value: '11', name: 'Service Funktionen' },
+].map((option) => ({ ...option, label: `${option.value} · ${option.name}` })));
 
 export const USE_OPTIONS = freezeOptions([
   { value: 'archiv', label: 'Archiv', group: 'sonder', groupLabel: 'Sonderräume', sia: 'NNF' },
@@ -196,7 +201,10 @@ function normalisePlanningFloor(planningFloor, floorId) {
   };
 }
 
-function inferredModule(useType) {
+// The golden record carries no approved module assignment, so the editor derives
+// one from the room's use type. Exported because the building detail reports the
+// same derivation: two mappings for one question would drift apart.
+export function inferredModule(useType) {
   return ({
     'buero': '1', 'openspace': '2', 'fokusraum': '3', 'sitzung': '4', lounge: '6',
     'empfang': '6', 'teekueche': '7', 'archiv': '9', 'lager': '9', 'druckraum': '11',

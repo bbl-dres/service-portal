@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standortbaum — neun Varianten</title>
+<!--
+  Standalone prototype for the shared structure tree (.pf-tree), used by the
+  property inventory, construction projects, the tenant portal and the
+  Plan-Editor. No build step, no dependencies, no network: token values are
+  copied from css/tokens.css and css/skins/intranet.css so the variants can be
+  compared under the skin the portal actually shows.
+
+  Six variants. A is today's component for reference; B–D answer the brief
+  (indentation, entity icons, dividers, two-tone selection); E and F are wild
+  cards that question the tree itself.
+
+  Every variant renders the SAME data through the SAME markup contract, so a
+  decision here transfers to spatial-tree.js without a rewrite. Icons are inline
+  SVG with a real stroke: the portal's C.icon() paints a CSS mask, whose weight
+  cannot be changed from CSS.
+-->
+<style>
+  :root {
+    /* --- Copied from css/tokens.css + css/skins/intranet.css --------------- */
+    --color-primary-50:#eff6ff; --color-primary-100:#dbeafe; --color-primary-500:#3b82f6;
+    --color-primary-600:#2563eb; --color-primary-700:#1d4ed8;
+    --color-secondary-50:#f0f4f7; --color-secondary-100:#dfe4e9; --color-secondary-200:#acb4bd;
+    --color-secondary-300:#828e9a;
+    --color-gray-100:#f3f4f6;
+    --color-text-400:#9ca3af; --color-text-500:#6b7280; --color-text-600:#4b5563;
+    --color-text-700:#374151; --color-text-800:#1f2937; --color-text-900:#111827;
+    --color-text:var(--color-text-800); --color-text-muted:var(--color-text-600);
+    --color-text-light:var(--color-text-500);
+    --color-border:#e5e7eb; --color-border-strong:#d1d5db;
+    --color-bg:#fff; --color-bg-subtle:var(--color-secondary-50);
+    --color-focus-ring:#f2b100;
+    --font-sans:'Noto Sans','Hind',system-ui,sans-serif;
+    --font-mono:Consolas,Menlo,monospace;
+    --fs-xs:.75rem; --fs-sm:.875rem; --fs-base:1rem; --fs-lg:1.125rem;
+    --sp-0-5:.125rem; --sp-1:.25rem; --sp-1-5:.375rem; --sp-2:.5rem; --sp-2-5:.625rem;
+    --sp-3:.75rem; --sp-4:1rem; --sp-5:1.25rem; --sp-6:1.5rem; --sp-8:2rem; --sp-10:2.5rem;
+    --radius-sm:.125rem; --radius-lg:.5rem;
+    --stroke-1:1px; --stroke-2:2px; --stroke-3:3px;
+    --target-min:2.75rem;
+    --duration-fast:150ms;
+    /* --- Prototype-only ---------------------------------------------------- */
+    --tree-indent:.75rem;          /* one level, deliberately small: the column is 15rem */
+    --guide:var(--color-border);
+    /* Dividers need to stay visible on white AND on both selection tints, so
+       they use a tone darker than --color-secondary-100 (#dfe4e9) rather than
+       --color-border (#e5e7eb), which is lighter than the active row. */
+    --divider:var(--color-secondary-200);
+    /* Connectors carry structure, so they read a shade stronger than a plain
+       guide but stay quieter than a divider. */
+    --connector:var(--color-secondary-200);
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+
+  * { box-sizing:border-box; }
+  body { margin:0; padding:var(--sp-8) var(--sp-6) var(--sp-10);
+    font-family:var(--font-sans); font-size:var(--fs-base); color:var(--color-text);
+    background:var(--color-secondary-50); }
+  h1 { margin:0 0 var(--sp-2); font-size:var(--fs-lg); }
+  .intro { max-width:60rem; margin:0 0 var(--sp-6); color:var(--color-text-muted); font-size:var(--fs-sm); }
+  .intro p { margin:0 0 var(--sp-2); }
+  .intro kbd { font-family:var(--font-mono); font-size:var(--fs-xs);
+    padding:0 var(--sp-1); border:var(--stroke-1) solid var(--color-border-strong); border-radius:var(--radius-sm); }
+
+  .controls { display:flex; flex-wrap:wrap; align-items:baseline; gap:var(--sp-3) var(--sp-5);
+    margin:0 0 var(--sp-5); padding:var(--sp-3) var(--sp-4); background:var(--color-bg);
+    border:var(--stroke-1) solid var(--color-secondary-100); border-radius:var(--radius-lg); }
+  .switch { display:inline-flex; align-items:center; gap:var(--sp-2); min-height:var(--target-min);
+    font-size:var(--fs-sm); font-weight:700; cursor:pointer; }
+  .switch input { width:1.25rem; height:1.25rem; accent-color:var(--color-primary-600); cursor:pointer; }
+  .segmented { display:inline-flex; align-items:center; gap:var(--sp-3); margin:0; padding:0; border:0; }
+  .segmented legend { float:left; margin-right:var(--sp-3); padding:0; font-size:var(--fs-sm); font-weight:700; }
+  .segmented label { display:inline-flex; align-items:center; gap:var(--sp-1-5);
+    min-height:var(--target-min); font-size:var(--fs-sm); cursor:pointer; }
+  .segmented input { accent-color:var(--color-primary-600); cursor:pointer; }
+  .controls__note { flex:1 1 20rem; margin:0; font-size:var(--fs-xs); color:var(--color-text-muted); }
+
+  .searchbar { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
+    margin:0 0 var(--sp-5); padding:var(--sp-3) var(--sp-4); background:var(--color-bg);
+    border:var(--stroke-1) solid var(--color-secondary-100); border-radius:var(--radius-lg); }
+  .searchbar__field { position:relative; flex:1 1 20rem; max-width:26rem; }
+  .searchbar__field svg { position:absolute; left:var(--sp-3); top:50%; transform:translateY(-50%);
+    width:1.125rem; height:1.125rem; color:var(--color-text-light); pointer-events:none; }
+  .searchbar__field input { width:100%; min-height:var(--target-min);
+    padding:0 var(--sp-3) 0 var(--sp-10); font:inherit; font-size:var(--fs-sm);
+    border:var(--stroke-1) solid #6b7280; border-radius:var(--radius-sm); }
+  .searchbar__count { flex:none; margin:0; font-size:var(--fs-sm); color:var(--color-text-muted);
+    font-variant-numeric:tabular-nums; }
+  .searchbar__count strong { color:var(--color-text); }
+  .searchbar__note { flex:1 1 100%; margin:0; font-size:var(--fs-xs); color:var(--color-text-muted); }
+  .pf-tree__label mark, .v-f__hit mark { background:#fef3c7; color:inherit; border-radius:1px; }
+  /* While a search prunes the tree, the rows that only exist to carry a match
+     deeper down are dimmed, so the actual hits stand out from their path. */
+  .is-lead > .pf-tree__row .pf-tree__label { color:var(--color-text-muted); font-weight:400; }
+  .searchbar__warn { flex:1 1 100%; margin:0; padding:var(--sp-2) var(--sp-3);
+    background:#fef3c7; color:#92400e; border-radius:var(--radius-sm); font-size:var(--fs-xs); }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(17rem,1fr));
+    gap:var(--sp-6); align-items:start; }
+  .variant { background:var(--color-bg); border:var(--stroke-1) solid var(--color-secondary-100);
+    border-radius:var(--radius-lg); overflow:hidden; }
+  .variant__head { padding:var(--sp-4) var(--sp-4) var(--sp-3); border-bottom:var(--stroke-1) solid var(--color-border); }
+  .variant__name { margin:0; font-size:var(--fs-sm); font-weight:700; }
+  .variant__note { margin:var(--sp-1) 0 0; font-size:var(--fs-xs); color:var(--color-text-muted); }
+  .variant__body { padding:var(--sp-3); max-height:32rem; overflow:auto; }
+  .col-head { position:relative; display:flex; align-items:center; gap:var(--sp-2);
+    margin-bottom:var(--sp-2); }
+  .col-title { flex:1 1 auto; margin:0; padding:0 var(--sp-2); font-size:var(--fs-xs);
+    font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--color-text-muted); }
+  /* The hierarchy belongs to this list, so its control sits on the list's own
+     heading rather than somewhere in the page chrome. */
+  .col-menu__btn { flex:none; display:inline-flex; align-items:center; justify-content:center;
+    width:2rem; height:2rem; padding:0; border:0; border-radius:var(--radius-sm);
+    background:none; color:var(--color-text-muted); cursor:pointer; }
+  .col-menu__btn svg { width:1.125rem; height:1.125rem; }
+  .col-menu__btn:hover { background:var(--color-secondary-50); color:var(--color-text); }
+  .col-menu__btn[aria-expanded="true"] { background:var(--color-secondary-100); color:var(--color-text); }
+  .col-menu { position:absolute; right:0; top:2.25rem; z-index:10; min-width:12rem;
+    padding:var(--sp-2); background:var(--color-bg);
+    border:var(--stroke-1) solid var(--color-secondary-100); border-radius:var(--radius-lg);
+    box-shadow:0 4px 12px rgb(31 41 55 / 12%); }
+  .col-menu__item { display:flex; align-items:center; gap:var(--sp-2);
+    padding:var(--sp-1-5) var(--sp-2); border-radius:var(--radius-sm);
+    font-size:var(--fs-sm); white-space:nowrap; cursor:pointer; }
+  .col-menu__item:hover { background:var(--color-secondary-50); }
+  .col-menu__item input { flex:none; accent-color:var(--color-primary-600); }
+  /* Grouping by Nutzungsart has no Wirtschaftseinheit between category and
+     object, so the checkbox is disabled there rather than quietly ignored. */
+  .col-menu__item.is-disabled { color:var(--color-text-light); cursor:not-allowed; }
+  .col-menu__rule { margin:var(--sp-2) 0; border:0; border-top:var(--stroke-1) solid var(--color-border); }
+  .col-menu__legend { margin:0 0 var(--sp-1); padding:0 var(--sp-2); font-size:var(--fs-xs);
+    font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--color-text-muted); }
+
+  .variant__stats { margin:var(--sp-1) 0 0; font-size:var(--fs-xs); color:var(--color-text-light);
+    font-variant-numeric:tabular-nums; }
+  /* «weitere N anzeigen»: the one row that stands between a capped level and a
+     four-hundred-row flat list. */
+  .pf-tree__more { display:flex; align-items:center; width:100%; min-height:var(--target-min);
+    padding:var(--sp-1-5) var(--sp-2); border:0; background:none; font:inherit;
+    font-size:var(--fs-xs); color:var(--color-primary-600); text-align:left; cursor:pointer; }
+  .pf-tree__more:hover { background:var(--color-secondary-50); text-decoration:underline; }
+
+  /* ====================================================================== */
+  /* Shared anatomy — every variant reuses these class names                 */
+  /* ====================================================================== */
+  .pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; }
+  .pf-tree__row { display:flex; align-items:center; gap:var(--sp-2); width:100%;
+    min-height:var(--target-min); padding:var(--sp-1-5) var(--sp-2);
+    border:0; border-radius:var(--radius-sm); background:none; font:inherit;
+    font-size:var(--fs-sm); color:var(--color-text); text-align:left; cursor:pointer; }
+  .pf-tree__row:hover { background:var(--color-secondary-50); }
+  .pf-tree__row:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:-2px; }
+  .pf-tree__chev { flex:none; width:1rem; height:1rem; color:var(--color-text-light);
+    transition:transform var(--duration-fast); }
+  .pf-tree__row[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
+  .pf-tree__chev--spacer { visibility:hidden; }
+  .pf-tree__ico { flex:none; width:1.125rem; height:1.125rem; color:var(--color-text-muted); }
+  /* The label shrinks before the count does, so «(7)» stays readable next to a
+     truncated name instead of being pushed out of the row. */
+  .pf-tree__label { flex:0 1 auto; min-width:2rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pf-tree__spacer { flex:1 1 auto; }
+  /* Aligned: the count sits in its own column at the right edge, so the figures
+     of sibling rows can be compared down the column. Suffix: it travels with the
+     name and reads as part of it. */
+  .counts-aligned .pf-tree__n { min-width:1.75rem; text-align:right; }
+  .pf-tree__n { flex:none; font-size:var(--fs-xs); color:var(--color-text-light);
+    font-variant-numeric:tabular-nums; }
+  /* Measured in `ch`, not rem: every segment at a given level has the same length
+     — Gebäude are two letters, Grundstücke two digits — so reserving exactly two
+     characters lines the keys up with no slack left over. A fixed 2.5rem left
+     about 20 px of it, which read as a gap between the key and the name. The
+     four-digit Wirtschaftseinheit simply grows past the minimum; it sits on its
+     own level and has nothing to line up with. */
+  .pf-tree__id { flex:none; min-width:2ch; font-family:var(--font-mono);
+    font-size:var(--fs-xs); color:var(--color-text-light);
+    font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .ids-full .pf-tree__id { min-width:12ch; }
+  .pf-tree__row.is-active .pf-tree__id { color:var(--color-text-700); }
+  /* «Verdichtet»: the parcel that shares the folded Wirtschaftseinheit, shown as
+     a marker on the building's row instead of as a level of its own. */
+  .pf-tree__badge { flex:none; display:inline-flex; align-items:center; justify-content:center;
+    width:1.25rem; height:1.25rem; border-radius:var(--radius-sm);
+    background:var(--color-secondary-50); color:var(--color-text-light); }
+  .pf-tree__badge-ico { width:.875rem; height:.875rem; stroke-width:1.9; }
+  .is-merged > .pf-tree__row { font-weight:500; }
+  .sr-only { position:absolute; width:1px; height:1px; margin:-1px; padding:0;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+  /* ====================================================================== */
+  /* A — Today: no indentation, blue selection, icon-only hierarchy          */
+  /* ====================================================================== */
+  .v-a .pf-tree__row.is-path { background:var(--color-gray-100); }
+  .v-a .pf-tree__row.is-active { background:var(--color-primary-50); color:var(--color-primary-700);
+    font-weight:700; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-a .pf-tree__row.is-active .pf-tree__ico,
+  .v-a .pf-tree__row.is-active .pf-tree__n { color:var(--color-primary-700); }
+  .v-a .lvl-2 > .pf-tree__row > .pf-tree__ico,
+  .v-a .lvl-3 > .pf-tree__row > .pf-tree__ico { margin-left:0; }
+
+  /* ====================================================================== */
+  /* B — Recommended: indent + guides, two-tone grey, heavier icons          */
+  /* ====================================================================== */
+  /* The guide runs from the parent row down to its LAST child and stops there,
+     which is what makes it read as a bracket around the branch rather than as a
+     rule down the whole column. */
+  .v-b .pf-tree__children { position:relative; margin-left:var(--tree-indent); }
+  .v-b .pf-tree__children::before { content:""; position:absolute; left:0; top:0;
+    height:calc(100% - var(--target-min) / 2); width:var(--stroke-1); background:var(--guide); }
+  .v-b .pf-tree__row { border-radius:0; }
+  /* Ancestors of the selection: light. The selection itself: dark, plus an edge
+     bar so selection is never carried by colour alone. */
+  .v-b .pf-tree__row.is-path { background:var(--color-gray-100); }
+  .v-b .pf-tree__row.is-active { background:var(--color-secondary-100); color:var(--color-text-900);
+    font-weight:700; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-b .pf-tree__row.is-active .pf-tree__ico { color:var(--color-text-800); }
+  .v-b .pf-tree__ico { stroke-width:1.9; }
+  .v-b .pf-tree__row:hover .pf-tree__ico { color:var(--color-text-800); }
+
+  /* ====================================================================== */
+  /* C — Horizontal dividers (asked for, shown honestly)                     */
+  /* ====================================================================== */
+  .v-c .pf-tree__children { margin-left:var(--tree-indent); }
+  .v-c .pf-tree__row { border-radius:0; border-bottom:var(--stroke-1) solid var(--divider); }
+  .v-c .pf-tree__row.is-path { background:var(--color-gray-100); }
+  .v-c .pf-tree__row.is-active { background:var(--color-secondary-100); color:var(--color-text-900);
+    font-weight:700; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-c .pf-tree__ico { stroke-width:1.9; }
+
+  /* ====================================================================== */
+  /* D — Section headers: ancestors become sticky labels, leaves are the list */
+  /* ====================================================================== */
+  /* Four of the six levels become sticky captions — Land, Kanton, Ort, WE — so
+     the two levels that carry work (Objekt and Geschoss) get the full width.
+     Four stacked captions cost 8rem of height, which is this variant's price. */
+  .v-d .pf-tree__children { margin-left:0; }
+  .v-d .lvl-1 > .pf-tree__row, .v-d .lvl-2 > .pf-tree__row,
+  .v-d .lvl-3 > .pf-tree__row, .v-d .lvl-4 > .pf-tree__row {
+    position:sticky; background:var(--color-bg);
+    font-size:var(--fs-xs); font-weight:700; letter-spacing:.03em; text-transform:uppercase;
+    color:var(--color-text-muted);
+    /* A fixed height, and the rule drawn INSIDE the box: a border-bottom added a
+       pixel to the box, so consecutive captions no longer tiled at their 2rem
+       offsets and the scrolling list showed through the seam. */
+    height:2rem; min-height:2rem; padding-block:0;
+    box-shadow:inset 0 calc(-1 * var(--stroke-1)) 0 var(--color-border); }
+  .v-d .lvl-1 > .pf-tree__row { top:0; z-index:5; }
+  .v-d .lvl-2 > .pf-tree__row { top:2rem; z-index:4; padding-left:var(--sp-3); }
+  .v-d .lvl-3 > .pf-tree__row { top:4rem; z-index:3; padding-left:var(--sp-5); }
+  .v-d .lvl-4 > .pf-tree__row { top:6rem; z-index:2; padding-left:var(--sp-6); }
+  .v-d .lvl-5 > .pf-tree__row { padding-left:var(--sp-4); }
+  .v-d .lvl-6 > .pf-tree__row { padding-left:var(--sp-8); }
+  .v-d .pf-tree__row.is-active { background:var(--color-secondary-100); color:var(--color-text-900);
+    font-weight:700; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600),
+      inset 0 calc(-1 * var(--stroke-1)) 0 var(--color-border); }
+  .v-d .pf-tree__ico { stroke-width:1.9; }
+  /* The list scrolls behind four stacked captions, so the column itself must be
+     opaque all the way to its edges. */
+  .v-d .pf-tree { background:var(--color-bg); }
+
+  /* ====================================================================== */
+  /* I — Elbow connectors: a trunk per branch with a stub to every child       */
+  /* ====================================================================== */
+  /* Each child draws its own segment of the trunk plus a horizontal stub to its
+     icon, so the pair forms ├ for every child and └ for the last one — the trunk
+     stops at the last child's centre instead of running past it. That is what
+     makes the parent/child relation explicit rather than merely implied, and it
+     is why this variant needs a wider indent than B: the stub has to be long
+     enough to read as a connector. */
+  .v-i { --elbow-indent:1.125rem; --elbow-stub:.75rem; --row-h:var(--target-min); }
+  .v-i .pf-tree__children { margin-left:var(--elbow-indent); }
+  .v-i .pf-tree__children > .pf-tree__item { position:relative; }
+  .v-i .pf-tree__children > .pf-tree__item::before {
+    content:""; position:absolute; left:0; top:0; width:var(--stroke-1); height:100%;
+    background:var(--connector); }
+  .v-i .pf-tree__children > .pf-tree__item:last-child::before {
+    height:calc(var(--row-h) / 2); }
+  .v-i .pf-tree__children > .pf-tree__item::after {
+    content:""; position:absolute; left:0; top:calc(var(--row-h) / 2);
+    width:var(--elbow-stub); height:var(--stroke-1); background:var(--connector); }
+  /* The row starts after the stub, and a fixed height keeps every stub on the
+     same line as the icon it points at. */
+  .v-i .pf-tree__children > .pf-tree__item > .pf-tree__row {
+    padding-left:calc(var(--elbow-stub) + var(--sp-1)); }
+  .v-i .pf-tree__row { height:var(--row-h); border-radius:0; }
+  .v-i .pf-tree__row.is-path { background:var(--color-gray-100); }
+  .v-i .pf-tree__row.is-active { background:var(--color-secondary-100); color:var(--color-text-900);
+    font-weight:700; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-i .pf-tree__ico { stroke-width:1.9; }
+
+  /* ====================================================================== */
+  /* H — B and C combined, with the three faults of the first attempt fixed   */
+  /* ====================================================================== */
+  /* The first attempt had a notch, a staircase and an arbitrary guide position:
+     the divider began 8 px to the right of the guide, every level's divider
+     began 12 px further right than the one above it, and the guide sat at
+     whatever x the indent happened to produce.
+
+     The fix is structural rather than cosmetic. The indentation moves OFF the
+     list and ONTO the row's padding, so every row spans the full column: its
+     divider is therefore full-bleed and aligned with every other divider, and
+     the staircase disappears. The guides are then placed per level on the CENTRE
+     OF THE PARENT'S CHEVRON — the 8 px gutter plus half of the 16 px chevron —
+     which is what makes them read as intended rather than approximate. They sit
+     above the dividers, so both line systems look continuous where they meet. */
+  .v-h { --h-indent:1rem; --h-gutter:var(--sp-2); }
+  .v-h .pf-tree__children { position:relative; margin-left:0; }
+  .v-h .pf-tree__row { position:relative; border-radius:0;
+    border-bottom:var(--stroke-1) solid var(--divider); }
+  .v-h .pf-tree__row[aria-level="1"] { padding-left:var(--h-gutter); }
+  .v-h .pf-tree__row[aria-level="2"] { padding-left:calc(var(--h-gutter) + 1 * var(--h-indent)); }
+  .v-h .pf-tree__row[aria-level="3"] { padding-left:calc(var(--h-gutter) + 2 * var(--h-indent)); }
+  .v-h .pf-tree__row[aria-level="4"] { padding-left:calc(var(--h-gutter) + 3 * var(--h-indent)); }
+  .v-h .pf-tree__row[aria-level="5"] { padding-left:calc(var(--h-gutter) + 4 * var(--h-indent)); }
+  .v-h .pf-tree__row[aria-level="6"] { padding-left:calc(var(--h-gutter) + 5 * var(--h-indent)); }
+  .v-h .pf-tree__row[aria-level="7"] { padding-left:calc(var(--h-gutter) + 6 * var(--h-indent)); }
+  .v-h .pf-tree__more { padding-left:calc(var(--h-gutter) + 2 * var(--h-indent)); }
+  .v-h .pf-tree__children::before { content:""; position:absolute; top:0; z-index:1;
+    width:var(--stroke-1); height:calc(100% - var(--target-min) / 2); background:var(--guide); }
+  .v-h .pf-tree__children[data-level="2"]::before { left:calc(var(--h-gutter) + .5rem); }
+  .v-h .pf-tree__children[data-level="3"]::before { left:calc(var(--h-gutter) + .5rem + 1 * var(--h-indent)); }
+  .v-h .pf-tree__children[data-level="4"]::before { left:calc(var(--h-gutter) + .5rem + 2 * var(--h-indent)); }
+  .v-h .pf-tree__children[data-level="5"]::before { left:calc(var(--h-gutter) + .5rem + 3 * var(--h-indent)); }
+  .v-h .pf-tree__children[data-level="6"]::before { left:calc(var(--h-gutter) + .5rem + 4 * var(--h-indent)); }
+  .v-h .pf-tree__children[data-level="7"]::before { left:calc(var(--h-gutter) + .5rem + 5 * var(--h-indent)); }
+  .v-h .pf-tree__row.is-path { background:var(--color-gray-100); }
+  /* Stacking: the guide sits above the ordinary rows so the trace is unbroken
+     through the light path tint, but BELOW the selected row. The selected row is
+     where the trace arrives, not something it passes over — drawn on top, the
+     line cut straight across the highlight and read as a stray mark. Interrupted
+     by it, the eye completes the line and the selection stays the focal point. */
+  .v-h .pf-tree__row.is-active { background:var(--color-secondary-100); color:var(--color-text-900);
+    font-weight:700; z-index:2; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-h .pf-tree__ico { stroke-width:1.9; }
+
+  /* ====================================================================== */
+  /* H2 — dividers, with the guide only along the selected branch             */
+  /* ====================================================================== */
+  /* If the guide exists to answer «which parent does this belong to», it is only
+     needed on the branch being looked at. Everywhere else the dividers and the
+     indentation carry the row on their own. That gives C's calm surface with
+     H's certainty exactly where the eye already is. */
+  .v-h2 { --h-indent:1rem; --h-gutter:var(--sp-2); }
+  .v-h2 .pf-tree__children { position:relative; margin-left:0; }
+  .v-h2 .pf-tree__row { position:relative; border-radius:0;
+    border-bottom:var(--stroke-1) solid var(--divider); }
+  .v-h2 .pf-tree__row[aria-level="1"] { padding-left:var(--h-gutter); }
+  .v-h2 .pf-tree__row[aria-level="2"] { padding-left:calc(var(--h-gutter) + 1 * var(--h-indent)); }
+  .v-h2 .pf-tree__row[aria-level="3"] { padding-left:calc(var(--h-gutter) + 2 * var(--h-indent)); }
+  .v-h2 .pf-tree__row[aria-level="4"] { padding-left:calc(var(--h-gutter) + 3 * var(--h-indent)); }
+  .v-h2 .pf-tree__row[aria-level="5"] { padding-left:calc(var(--h-gutter) + 4 * var(--h-indent)); }
+  .v-h2 .pf-tree__row[aria-level="6"] { padding-left:calc(var(--h-gutter) + 5 * var(--h-indent)); }
+  .v-h2 .pf-tree__row[aria-level="7"] { padding-left:calc(var(--h-gutter) + 6 * var(--h-indent)); }
+  .v-h2 .pf-tree__more { padding-left:calc(var(--h-gutter) + 2 * var(--h-indent)); }
+  /* One hairline per level of the active path, not a stack of bars: the first
+     attempt used 2 px of accent on every ancestor list, and four of those in a
+     15 rem column read as a block rather than as a trace. */
+  /* The ancestor rails recede almost to nothing. At secondary-300 four of them
+     read as parallel rails down the whole column; at surface weight they are just
+     enough to say «the path continues here» without competing with the one line
+     that matters. The row tinting already traces the ancestry. */
+  .v-h2 .pf-tree__children:has(.is-active, .is-path)::before { content:""; position:absolute;
+    top:0; z-index:1; width:var(--stroke-1);
+    height:calc(100% - var(--target-min) / 2); background:var(--color-secondary-100); }
+  /* The innermost list — the one that actually holds the selected row — carries
+     the accent, so the trace has exactly one visible end. */
+  .v-h2 .pf-tree__children:has(> .pf-tree__item > .is-active)::before {
+    width:var(--stroke-2); background:var(--color-primary-600); }
+  .v-h2 .pf-tree__children[data-level="2"]::before { left:calc(var(--h-gutter) + .5rem); }
+  .v-h2 .pf-tree__children[data-level="3"]::before { left:calc(var(--h-gutter) + .5rem + 1 * var(--h-indent)); }
+  .v-h2 .pf-tree__children[data-level="4"]::before { left:calc(var(--h-gutter) + .5rem + 2 * var(--h-indent)); }
+  .v-h2 .pf-tree__children[data-level="5"]::before { left:calc(var(--h-gutter) + .5rem + 3 * var(--h-indent)); }
+  .v-h2 .pf-tree__children[data-level="6"]::before { left:calc(var(--h-gutter) + .5rem + 4 * var(--h-indent)); }
+  .v-h2 .pf-tree__children[data-level="7"]::before { left:calc(var(--h-gutter) + .5rem + 5 * var(--h-indent)); }
+  .v-h2 .pf-tree__row.is-path { background:var(--color-gray-100); }
+  .v-h2 .pf-tree__row.is-active { background:var(--color-secondary-100); color:var(--color-text-900);
+    font-weight:700; z-index:2; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-h2 .pf-tree__ico { stroke-width:1.9; }
+
+  /* ====================================================================== */
+  /* I — Elbow connectors: a trunk per branch with a stub to every child       */
+  /* ====================================================================== */
+  /* Each child draws its own segment of the trunk plus a horizontal stub to its
+     icon, so the pair forms ├ for every child and └ for the last one — the trunk
+     stops at the last child's centre instead of running past it. That is what
+     makes the parent/child relation explicit rather than merely implied, and it
+     is why this variant needs a wider indent than B: the stub has to be long
+     enough to read as a connector. */
+  .v-i { --elbow-indent:1.125rem; --elbow-stub:.75rem; --row-h:var(--target-min); }
+  .v-i .pf-tree__children { margin-left:var(--elbow-indent); }
+  .v-i .pf-tree__children > .pf-tree__item { position:relative; }
+  .v-i .pf-tree__children > .pf-tree__item::before {
+    content:""; position:absolute; left:0; top:0; width:var(--stroke-1); height:100%;
+    background:var(--connector); }
+  .v-i .pf-tree__children > .pf-tree__item:last-child::before {
+    height:calc(var(--row-h) / 2); }
+  .v-i .pf-tree__children > .pf-tree__item::after {
+    content:""; position:absolute; left:0; top:calc(var(--row-h) / 2);
+    width:var(--elbow-stub); height:var(--stroke-1); background:var(--connector); }
+  /* The row starts after the stub, and a fixed height keeps every stub on the
+     same line as the icon it points at. */
+  .v-i .pf-tree__children > .pf-tree__item > .pf-tree__row {
+    padding-left:calc(var(--elbow-stub) + var(--sp-1)); }
+  .v-i .pf-tree__row { height:var(--row-h); border-radius:0; }
+  .v-i .pf-tree__row.is-path { background:var(--color-gray-100); }
+  .v-i .pf-tree__row.is-active { background:var(--color-secondary-100); color:var(--color-text-900);
+    font-weight:700; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-i .pf-tree__ico { stroke-width:1.9; }
+
+  /* ====================================================================== */
+  /* H — B and C combined: guides AND dividers, which must not collide        */
+  /* ====================================================================== */
+  .v-h .pf-tree__children { position:relative; margin-left:var(--tree-indent); }
+  .v-h .pf-tree__children::before { content:""; position:absolute; left:0; top:0;
+    height:calc(100% - var(--target-min) / 2); width:var(--stroke-1); background:var(--guide); }
+  .v-h .pf-tree__row { position:relative; border-radius:0; }
+  /* The divider is a pseudo-element inset from the row's left edge, so it starts
+     AFTER the vertical guide instead of cutting across it. A plain
+     `border-bottom` would run the full width and break every guide it met. */
+  .v-h .pf-tree__row::after { content:""; position:absolute; left:var(--sp-2); right:0; bottom:0;
+    height:var(--stroke-1); background:var(--divider); }
+  .v-h .pf-tree__row.is-path { background:var(--color-gray-100); }
+  .v-h .pf-tree__row.is-active { background:var(--color-secondary-100); color:var(--color-text-900);
+    font-weight:700; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-h .pf-tree__ico { stroke-width:1.9; }
+
+  /* ====================================================================== */
+  /* G — Condensed: same anatomy as B, one level fewer                        */
+  /* ====================================================================== */
+  .v-g .pf-tree__children { position:relative; margin-left:var(--tree-indent); }
+  .v-g .pf-tree__children::before { content:""; position:absolute; left:0; top:0;
+    height:calc(100% - var(--target-min) / 2); width:var(--stroke-1); background:var(--guide); }
+  .v-g .pf-tree__row { border-radius:0; }
+  .v-g .pf-tree__row.is-path { background:var(--color-gray-100); }
+  .v-g .pf-tree__row.is-active { background:var(--color-secondary-100); color:var(--color-text-900);
+    font-weight:700; box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-g .pf-tree__ico { stroke-width:1.9; }
+
+  /* ====================================================================== */
+  /* E — Wild card: drill-down. One level at a time, path in the header       */
+  /* ====================================================================== */
+  .v-e__path { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-1);
+    padding:0 var(--sp-2) var(--sp-2); font-size:var(--fs-xs); color:var(--color-text-muted); }
+  .v-e__path button { border:0; background:none; padding:var(--sp-0-5) var(--sp-1); font:inherit;
+    color:var(--color-primary-600); cursor:pointer; border-radius:var(--radius-sm); }
+  .v-e__path button:hover { text-decoration:underline; }
+  .v-e__path span[aria-current] { color:var(--color-text); font-weight:700; }
+  .v-e__up { display:flex; align-items:center; gap:var(--sp-2); width:100%; min-height:var(--target-min);
+    padding:var(--sp-1-5) var(--sp-2); margin-bottom:var(--sp-1); border:0;
+    border-bottom:var(--stroke-1) solid var(--color-border); background:none;
+    font:inherit; font-size:var(--fs-sm); color:var(--color-text-muted); cursor:pointer; text-align:left; }
+  .v-e__up:hover { background:var(--color-secondary-50); }
+  .v-e .pf-tree__row.is-active { background:var(--color-secondary-100); font-weight:700;
+    box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-e .pf-tree__ico { stroke-width:1.9; }
+  .v-e__more { flex:none; width:1rem; height:1rem; color:var(--color-text-light); }
+
+  /* ====================================================================== */
+  /* F — Wild card: search-first flat result list with the path as a subtitle */
+  /* ====================================================================== */
+  .v-f__search { position:relative; margin:0 var(--sp-2) var(--sp-3); }
+  .v-f__search input { width:100%; min-height:var(--target-min); padding:0 var(--sp-2) 0 var(--sp-8);
+    font:inherit; font-size:var(--fs-sm); border:var(--stroke-1) solid #6b7280; border-radius:var(--radius-sm); }
+  .v-f__search svg { position:absolute; left:var(--sp-2); top:50%; transform:translateY(-50%);
+    width:1.125rem; height:1.125rem; color:var(--color-text-light); pointer-events:none; }
+  .v-f__group { margin:0 0 var(--sp-1); padding:var(--sp-2) var(--sp-2) var(--sp-1);
+    font-size:var(--fs-xs); font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--color-text-muted); }
+  .v-f__hit { display:flex; align-items:flex-start; gap:var(--sp-2); width:100%;
+    min-height:var(--target-min); padding:var(--sp-2); border:0; border-radius:var(--radius-sm);
+    background:none; font:inherit; font-size:var(--fs-sm); color:var(--color-text);
+    text-align:left; cursor:pointer; }
+  .v-f__hit:hover { background:var(--color-secondary-50); }
+  .v-f__hit.is-active { background:var(--color-secondary-100); font-weight:700;
+    box-shadow:inset var(--stroke-3) 0 0 var(--color-primary-600); }
+  .v-f__hit svg { flex:none; width:1.125rem; height:1.125rem; margin-top:.1rem;
+    color:var(--color-text-muted); stroke-width:1.9; }
+  .v-f__hit b { display:block; font-weight:inherit; }
+  .v-f__hit small { display:block; color:var(--color-text-light); font-size:var(--fs-xs); font-weight:400; }
+  .v-f__hit mark { background:#fef3c7; color:inherit; }
+  .v-f__idle { margin:0; padding:var(--sp-3) var(--sp-2); font-size:var(--fs-xs);
+    color:var(--color-text-muted); }
+
+  .legend { max-width:60rem; margin:var(--sp-8) 0 0; font-size:var(--fs-sm); color:var(--color-text-muted); }
+  .legend h2 { font-size:var(--fs-sm); color:var(--color-text); margin:0 0 var(--sp-2); }
+  .legend__after { margin-top:var(--sp-6) !important; }
+  .legend__code { margin:0 0 var(--sp-2); padding:var(--sp-3); background:var(--color-bg);
+    border:var(--stroke-1) solid var(--color-secondary-100); border-radius:var(--radius-sm);
+    font-family:var(--font-mono); font-size:var(--fs-xs); line-height:1.6;
+    color:var(--color-text); overflow-x:auto; }
+  .legend p { margin:0 0 var(--sp-2); }
+  .legend table { border-collapse:collapse; width:100%; background:var(--color-bg);
+    border:var(--stroke-1) solid var(--color-secondary-100); border-radius:var(--radius-lg); overflow:hidden; }
+  .legend th, .legend td { padding:var(--sp-2) var(--sp-3); text-align:left; font-size:var(--fs-xs);
+    border-bottom:var(--stroke-1) solid var(--color-border); vertical-align:top; }
+  .legend th { background:var(--color-secondary-50); color:var(--color-text); font-weight:700; }
+  .legend tr:last-child td { border-bottom:0; }
+</style>
+</head>
+<body>
+
+<h1>Standortbaum — neun Varianten</h1>
+<div class="intro">
+  <p>Dasselbe Datenmaterial aus <code>buildings.geojson</code> und <code>parcels.geojson</code>,
+     dieselbe Markup-Struktur, neun Gestaltungen. <strong>A</strong> ist der heutige Stand,
+     <strong>B–D</strong>, <strong>H</strong> und <strong>I</strong> beantworten den Auftrag (Einrückung, Entitäts-Icons,
+     Trennlinien, zweistufige Auswahl), <strong>G</strong> verdichtet die Wirtschaftseinheit,
+     <strong>E</strong> und <strong>F</strong> stellen den Baum selbst infrage.</p>
+  <p>Die Gliederung ist eine <strong>Einstellung, keine Vorgabe</strong>. Die Schaltfläche neben
+     «Standorte» trennt zwei Fragen: <em>gruppieren nach Region oder nach Teilportfolio</em> —
+     letzteres beantwortet «alle Botschaften» — und <em>ob die Wirtschaftseinheit eine eigene
+     Ebene ist</em>, als Ja/Nein. Beim Teilportfolio gibt es keine WE zwischen Kategorie und
+     Objekt, dort ist das Kästchen deshalb deaktiviert. Die Objektebene ist gemischt: Gebäude und
+     Grundstücke stehen nebeneinander, und nur Gebäude haben Geschosse.</p>
+  <p>Alle Baumvarianten benutzen das ARIA-Baummuster: ein einziger Tabstopp,
+     <kbd>↑</kbd><kbd>↓</kbd> bewegen, <kbd>→</kbd> öffnet, <kbd>←</kbd> schliesst oder springt
+     zur übergeordneten Ebene, <kbd>Home</kbd>/<kbd>End</kbd> an den Anfang oder das Ende.
+     Heute ist jede Zeile ein eigener Tabstopp und Pfeiltasten tun nichts.</p>
+  <p>Sie rendern ausserdem <strong>nur geöffnete Zweige</strong>, öffnen je Klick <strong>genau
+     eine Ebene</strong> und zeigen höchstens 25 Geschwister mit einer Zeile «weitere N anzeigen».
+     Deshalb meldet jede Spalte, wie viele Zeilen sie wirklich in den DOM legt — mit
+     «Last simulieren» wird daraus die Antwort auf die Frage nach 2000 Gebäuden und
+     1500 Grundstücken.</p>
+  <p>Die Suche ist keine eigene Variante, sondern eine Leiste wie in jeder Katalogleiste des
+     Portals. Interessant ist, <strong>was der Baum damit macht</strong>: stutzen und die Pfade
+     zu den Treffern öffnen, oder die Spalte gegen eine Trefferliste tauschen. Beides ist unten
+     gleichzeitig zu sehen. Gemessen: «bundeshaus» ergibt 2 Treffer und 7 Zeilen — der gestutzte
+     Baum <em>ist</em> die Antwort. «zollanlage» im simulierten Bestand ergibt 301 Treffer, und
+     dort gewinnt die Liste.</p>
+  <p>Der <strong>SAP-Schlüssel</strong> ist oben umschaltbar:
+     Buchungskreis / Wirtschaftseinheit / Objekt. Standard ist <em>Segment je Ebene</em> —
+     jede Zeile zeigt nur ihren eigenen Abschnitt (<code>4840</code>, <code>AF</code>,
+     <code>01</code>), weil der Pfad den Rest ohnehin ergibt und der Buchungskreis bei allen
+     Objekten gleich ist. <em>Vollständig</em> zeigt <code>1080/4840/AF</code> zum Kopieren.
+     In beiden Fällen steht der ganze Schlüssel im Titel der Zeile. Der Buchungskreis wird
+     auf <code>1086</code> normalisiert; die Fixtures dieses Repositories führen noch
+     <code>1080</code>.</p>
+  <p>Die Icons sind Inline-SVG mit echter Strichstärke. <code>C.icon()</code> zeichnet eine
+     CSS-Maske, deren Gewicht sich nicht beeinflussen lässt — schwerere Icons brauchen
+     deshalb zwingend eigenes SVG.</p>
+</div>
+
+<div class="controls">
+  <fieldset class="segmented">
+    <legend>Zähler</legend>
+    <label><input type="radio" name="count-style" value="suffix" checked><span>(7) als Suffix</span></label>
+    <label><input type="radio" name="count-style" value="aligned"><span>rechts ausgerichtet</span></label>
+  </fieldset>
+  <fieldset class="segmented">
+    <legend>SAP-Schlüssel</legend>
+    <label><input type="radio" name="id-mode" value="off"><span>aus</span></label>
+    <label><input type="radio" name="id-mode" value="segment" checked><span>Segment je Ebene</span></label>
+    <label><input type="radio" name="id-mode" value="full"><span>vollständig</span></label>
+  </fieldset>
+  <label class="switch">
+    <input type="checkbox" id="toggle-scale">
+    <span>Last simulieren</span>
+  </label>
+  <p class="controls__note">
+    Bestand: <strong id="scale-note"></strong>. Gliederung: <strong id="trail"></strong> —
+    umschaltbar über die Schaltfläche neben «Standorte» in jeder Spalte.
+    Jede Spalte meldet, wie viele Zeilen sie tatsächlich in den DOM legt.
+  </p>
+</div>
+
+<div class="searchbar">
+  <div class="searchbar__field">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+      stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4 4"/></svg>
+    <input type="search" id="global-q" placeholder="Objekt, ID, WE oder Ort suchen…"
+      aria-label="Objekt, ID, Wirtschaftseinheit oder Ort suchen" autocomplete="off">
+  </div>
+  <p class="searchbar__count" id="global-count" role="status"></p>
+  <p class="searchbar__note">Wie in jeder Katalogleiste des Portals. Die Frage ist nicht,
+    ob es eine Suche gibt, sondern <strong>was der Baum tut, während getippt wird</strong>:
+    A–D, G und H stutzen den Baum auf die Treffer und öffnen die Pfade dorthin;
+    F tauscht die Spalte gegen eine flache Trefferliste; E filtert die aktuelle Ebene.</p>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="legend">
+  <h2>Abwägung</h2>
+  <table>
+    <thead><tr><th>Variante</th><th>Stärke</th><th>Preis</th></tr></thead>
+    <tbody>
+      <tr><td><strong>A — heute</strong></td>
+        <td>Schmalste Spalte, kein horizontaler Verlust; Auswahl in CD-Blau erkennbar.</td>
+        <td>Tiefe ist nur am Icon zu erkennen. Ab Ebene 3 ist die Zugehörigkeit Ratearbeit.</td></tr>
+      <tr><td><strong>B — Einrückung + Führungslinien</strong></td>
+        <td>Hierarchie ohne Rätsel; die Linie führt das Auge zum übergeordneten Knoten. Zweistufiges Grau trennt Auswahl von Pfad.</td>
+        <td>12 px je Ebene, bei fünf Ebenen 48 px weniger für Namen. Lange Namen kürzen früher.</td></tr>
+      <tr><td><strong>C — Trennlinien</strong></td>
+        <td>Jede Zeile klar abgegrenzt, gut bei dichten Listen und auf kleinen Bildschirmen.</td>
+        <td>Waagrechte Linien zerschneiden die Hierarchie: der Baum liest sich als flache Liste. Genau der Effekt, der heute schon irritiert.</td></tr>
+      <tr><td><strong>I — Winkel-Verbinder</strong></td>
+        <td>Die ausdrücklichste Form: jedes Kind hängt sichtbar an seinem Stamm, und der Stamm endet beim letzten Kind. Bei sechs Ebenen die einzige Variante, in der man die Zugehörigkeit nicht ableiten muss.</td>
+        <td>Braucht 18 px je Ebene statt 12 px, also 90 px bei sechs Ebenen. Das Linienwerk wirkt technischer als eine ruhige Führungslinie — Dateimanager statt Portal.</td></tr>
+      <tr><td><strong>H — B + C kombiniert</strong></td>
+        <td>Führungslinien für die Zugehörigkeit, Trennlinien für die Zeilentrennung. Die Trennlinie setzt nach der senkrechten Linie an, sodass sich beide nicht schneiden.</td>
+        <td>Die dichteste Variante: viel Linienwerk auf wenig Raum. Bei sechs Ebenen wirkt die Spalte schnell technisch.</td></tr>
+      <tr><td><strong>D — Klebende Zwischentitel</strong></td>
+        <td>Die oberen Ebenen bleiben beim Scrollen sichtbar; volle Breite für die Objektnamen.</td>
+        <td>Vier gestapelte Beschriftungen kosten 8 rem Höhe, und vier Ebenen wirken nicht mehr wie Bedienelemente. Mit WE-Ebene wird es eng.</td></tr>
+      <tr><td><strong>G — Verdichtet</strong></td>
+        <td>Nimmt der Hierarchie eine Ebene, ohne Information zu verlieren: 20 von 21 Wirtschaftseinheiten enthalten genau ein Gebäude und ein Grundstück, das als Marke auf der Gebäudezeile erscheint.</td>
+        <td>Die WE verschwindet als anwählbare Ebene. Wer nach ihr sucht, findet sie nur noch im Tooltip oder über die Suche.</td></tr>
+      <tr><td><strong>E — Drilldown (Wildcard)</strong></td>
+        <td>Immer nur eine Ebene: keine Einrückung nötig, volle Breite, auf dem Telefon die beste Variante.</td>
+        <td>Kein Überblick über Geschwisterebenen. Zwei Objekte in verschiedenen Kantonen zu vergleichen erfordert Navigation.</td></tr>
+      <tr><td><strong>F — Trefferliste statt Baum</strong></td>
+        <td>Bei vielen Treffern die einzige lesbare Form: 301 Treffer als gestutzter Baum sind unbenutzbar, als gruppierte Liste mit Pfad sofort brauchbar.</td>
+        <td>Ohne Suchbegriff hat diese Spalte nichts zu zeigen. Sie ist kein Ersatz für den Baum, sondern der Zustand, in den er bei zu vielen Treffern wechseln sollte.</td></tr>
+    </tbody>
+  </table>
+  <h2 class="legend__after">Was die Messungen nahelegen</h2>
+  <p><strong>B als Gestaltung, F als Zustand.</strong> Die Einrückung mit Führungslinien
+     beantwortet die Hierarchie, und sie hält der Last stand: mit verzögertem Rendern legt sie
+     bei 3500 Objekten 46 Zeilen in den DOM statt der rund 13 500, die ein vollständiger Aufbau
+     bräuchte. Die Suche stutzt den Baum, solange die Treffermenge klein ist — bis etwa
+     100 Treffer ist der gestutzte Baum die beste Antwort, weil er zeigt, <em>wo</em> die Treffer
+     liegen. Darüber kippt es: dieselbe Spalte sollte dann in die Trefferliste wechseln, statt
+     einen Baum zu zeigen, dessen Pfade niemand mehr aufklappen kann.</p>
+  <h2 class="legend__after">Offen für später: Campus / Areal</h2>
+  <p>Ein <strong>Campus</strong> — auch «Standort» oder «Areal» — fasst mehrere benachbarte
+     Gebäude und Grundstücke zusammen, typischerweise für einen einzigen grossen Mieter. Er liegt
+     damit <em>zwischen Ort und Objekt</em> und umspannt mehrere Wirtschaftseinheiten. Nicht
+     umgesetzt, nur festgehalten.</p>
+  <p>Wichtig ist die strukturelle Folge: Campus ist eine <strong>zweite optionale Ebene</strong>
+     derselben Art wie die Wirtschaftseinheit. Damit ist die Gliederung langfristig keine Liste,
+     aus der man eine Variante wählt, sondern eine <strong>Achse plus zuschaltbare Ebenen</strong> —
+     genau das Modell, das das Kästchen im Menü schon vorwegnimmt und das eine Radiogruppe nicht
+     tragen könnte:</p>
+  <pre class="legend__code">GRUPPIEREN NACH
+  (•) Region
+  ( ) Teilportfolio
+  ────────────────────
+  [ ] Campus / Areal        ← neu, zwischen Ort und Objekt
+  [ ] Wirtschaftseinheit</pre>
+  <p>Die Daten führen den Campus heute nicht: <code>buildings.geojson</code> und
+     <code>parcels.geojson</code> haben kein entsprechendes Feld. Erkennbar ist er nur an
+     Bezeichnungen wie «Verwaltungszentrum Guisanplatz», «Campus BAZG» oder «Areal Meielen Nord»,
+     und aus einem Namen lässt sich keine Gruppierung ableiten. Ein Campus bräuchte also zuerst
+     einen eigenen Schlüssel im Golden Record — vermutlich mit derselben Kardinalität wie die WE,
+     aber quer dazu, weil ein Campus mehrere WE enthalten kann.</p>
+  <p>Für die Bedienung ist er wahrscheinlich <em>nützlicher</em> als die Wirtschaftseinheit:
+     «Guisanplatz» ist ein Ort, den Menschen kennen und nennen, eine vierstellige WE-Nummer
+     nicht.</p>
+
+  <p>Drei Dinge sind dafür in der Umsetzung nötig und in der Gestaltung unsichtbar:
+     nur geöffnete Zweige rendern, eine Ebene je Klick öffnen, und die Zähler in JavaScript
+     vorberechnen statt bei jedem Tastendruck den DOM abzulaufen.</p>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Data: the portfolio hierarchy the portal actually shows.
+// ---------------------------------------------------------------------------
+const ESTATE = [
+  { label:"Schweiz", kind:"country", children: [
+    { label:"BE", kind:"region", children: [
+      { label:"Bern", kind:"city", children: [
+        { label:"WE 2800", kind:"unit", unit:"2800", children: [
+          { label:"Dienstwohnungen EDA Effingerstrasse", kind:"building", id:"1080/2800/AD", cat:"Wohnliegenschaft" },
+          { label:"Effingerstrasse 29", kind:"parcel", id:"1080/2800/01", cat:"Wohnzone" }
+        ] },
+        { label:"WE 4840", kind:"unit", unit:"4840", children: [
+          { label:"Bundeshaus West", kind:"building", id:"1080/4840/AF", cat:"Verwaltungsgebäude", children: [
+            { label:"2. OG", kind:"floor" }
+          ] },
+          { label:"Bundesgasse 1", kind:"parcel", id:"1080/4840/01", cat:"Zone für öffentliche Nutzung" }
+        ] },
+        { label:"WE 4850", kind:"unit", unit:"4850", children: [
+          { label:"Verwaltungszentrum Guisanplatz", kind:"building", id:"1080/4850/AG", cat:"Verwaltungsgebäude", children: [
+            { label:"3. OG", kind:"floor" },
+            { label:"2. OG", kind:"floor" }
+          ] },
+          { label:"Guisanplatz", kind:"parcel", id:"1080/4850/01", cat:"Mischzone Wohnen/Arbeiten" }
+        ] },
+        { label:"WE 6430", kind:"unit", unit:"6430", children: [
+          { label:"Schweizerische Nationalbibliothek, Tiefmagazin West", kind:"building", id:"1080/6430/AA", cat:"Lager / Logistik", children: [
+            { label:"EG", kind:"floor" },
+            { label:"UG", kind:"floor" }
+          ] },
+          { label:"Hallwylstrasse 15", kind:"parcel", id:"1080/6430/01", cat:"Zone für öffentliche Nutzung" }
+        ] },
+        { label:"WE 6980", kind:"unit", unit:"6980", children: [
+          { label:"Bundesverwaltungsgericht Schwarztorstrasse", kind:"building", id:"1080/6980/AA", cat:"Verwaltungsgebäude", children: [
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Schwarztorstrasse 59", kind:"parcel", id:"1080/6980/01", cat:"Zone für öffentliche Nutzung" }
+        ] },
+        { label:"WE 7090", kind:"unit", unit:"7090", children: [
+          { label:"Bundeshaus Nord", kind:"building", id:"1080/7090/AA", cat:"Verwaltungsgebäude", children: [
+            { label:"3. OG", kind:"floor" }
+          ] },
+          { label:"Kochergasse 10", kind:"parcel", id:"1080/7090/01", cat:"Zone für öffentliche Nutzung" }
+        ] }
+      ] },
+      { label:"Zollikofen", kind:"city", children: [
+        { label:"WE 6540", kind:"unit", unit:"6540", children: [
+          { label:"Verwaltungsgebäude Eichenweg 5, Areal Meielen Nord", kind:"building", id:"1080/6540/AA", cat:"Verwaltungsgebäude" },
+          { label:"Eichenweg 5", kind:"parcel", id:"1080/6540/01", cat:"Zone für öffentliche Nutzung" }
+        ] }
+      ] },
+      { label:"Liebefeld", kind:"city", children: [
+        { label:"WE 6650", kind:"unit", unit:"6650", children: [
+          { label:"Verwaltungsgebäude Liebefeld (BAG / BLV)", kind:"building", id:"1080/6650/AA", cat:"Verwaltungsgebäude", children: [
+            { label:"2. OG", kind:"floor" },
+            { label:"1. OG", kind:"floor" },
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Schwarzenburgstrasse 157", kind:"parcel", id:"1080/6650/01", cat:"Zone für öffentliche Nutzung" }
+        ] }
+      ] },
+      { label:"Magglingen/Macolin", kind:"city", children: [
+        { label:"WE 6760", kind:"unit", unit:"6760", children: [
+          { label:"EHSM Magglingen, Neubau Lärchenplatz", kind:"building", id:"1080/6760/AA", cat:"Ausbildung" },
+          { label:"Alpenstrasse 18", kind:"parcel", id:"1080/6760/01", cat:"Zone für öffentliche Nutzung" }
+        ] }
+      ] },
+      { label:"Wabern", kind:"city", children: [
+        { label:"WE 6870", kind:"unit", unit:"6870", children: [
+          { label:"Bundesamt für Landestopografie swisstopo", kind:"building", id:"1080/6870/AA", cat:"Verwaltungsgebäude", children: [
+            { label:"1. OG", kind:"floor" },
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Seftigenstrasse 264", kind:"parcel", id:"1080/6870/01", cat:"Zone für öffentliche Nutzung" }
+        ] }
+      ] }
+    ] },
+    { label:"ZH", kind:"region", children: [
+      { label:"Affoltern am Albis", kind:"city", children: [
+        { label:"WE 3120", kind:"unit", unit:"3120", children: [
+          { label:"Sammlungszentrum Schweizerisches Nationalmuseum", kind:"building", id:"1080/3120/AB", cat:"Lager / Logistik" },
+          { label:"Lindenmoos", kind:"parcel", id:"1080/3120/01", cat:"Industrie- und Gewerbezone" }
+        ] }
+      ] },
+      { label:"Zürich", kind:"city", children: [
+        { label:"WE 6100", kind:"unit", unit:"6100", children: [
+          { label:"Landesmuseum Zürich", kind:"building", id:"1080/6100/AA", cat:"Kultur", children: [
+            { label:"1. OG", kind:"floor" },
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Museumstrasse 2", kind:"parcel", id:"1080/6100/01", cat:"Zone für öffentliche Nutzung" }
+        ] }
+      ] }
+    ] },
+    { label:"BL", kind:"region", children: [
+      { label:"Liestal", kind:"city", children: [
+        { label:"WE 4100", kind:"unit", unit:"4100", children: [
+          { label:"Campus BAZG (Ausbildungszentrum Liestal)", kind:"building", id:"1080/4100/AC", cat:"Ausbildung", children: [
+            { label:"1. OG", kind:"floor" },
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Kasinostrasse", kind:"parcel", id:"1080/4100/01", cat:"Mischzone Wohnen/Arbeiten" }
+        ] }
+      ] }
+    ] },
+    { label:"TG", kind:"region", children: [
+      { label:"Frauenfeld", kind:"city", children: [
+        { label:"WE 1950", kind:"unit", unit:"1950", children: [
+          { label:"Rechenzentrum CAMPUS Frauenfeld", kind:"building", id:"1080/1950/AE", cat:"Infrastruktur IT" },
+          { label:"Auenfeld", kind:"parcel", id:"1080/1950/01", cat:"Arbeitszone" }
+        ] }
+      ] },
+      { label:"Arbon", kind:"city", children: [
+        { label:"WE 6320", kind:"unit", unit:"6320", children: [
+          { label:"Bootshaus Grenzwachtposten Arbon", kind:"building", id:"1080/6320/AA", cat:"Zoll" },
+          { label:"Hafenstrasse 3", kind:"parcel", id:"1080/6320/01", cat:"Zone für öffentliche Nutzung" }
+        ] }
+      ] }
+    ] },
+    { label:"VS", kind:"region", children: [
+      { label:"Glis", kind:"city", children: [
+        { label:"WE 6210", kind:"unit", unit:"6210", children: [
+          { label:"Zollanlage Brig-Glis", kind:"building", id:"1080/6210/AA", cat:"Zoll", children: [
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Bielstrasse 1", kind:"parcel", id:"1080/6210/01", cat:"Zone für öffentliche Nutzung" }
+        ] }
+      ] }
+    ] }
+  ] },
+  { label:"Deutschland", kind:"country", children: [
+    { label:"Berlin", kind:"region", children: [
+      { label:"Berlin", kind:"city", children: [
+        { label:"WE 5210", kind:"unit", unit:"5210", children: [
+          { label:"Schweizerische Botschaft Berlin", kind:"building", id:"1080/5210/AA", cat:"Diplomatische Vertretung", children: [
+            { label:"3. OG", kind:"floor" },
+            { label:"2. OG", kind:"floor" },
+            { label:"1. OG", kind:"floor" },
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Otto-von-Bismarck-Allee", kind:"parcel", id:"1080/5210/01", cat:"Grundstück" }
+        ] }
+      ] }
+    ] }
+  ] },
+  { label:"Vereinigte Staaten", kind:"country", children: [
+    { label:"NY", kind:"region", children: [
+      { label:"New York", kind:"city", children: [
+        { label:"WE 5320", kind:"unit", unit:"5320", children: [
+          { label:"Schweizerisches Generalkonsulat New York", kind:"building", id:"1080/5320/AA", cat:"Diplomatische Vertretung", children: [
+            { label:"2. OG", kind:"floor" },
+            { label:"1. OG", kind:"floor" },
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Third Avenue Lot", kind:"parcel", id:"1080/5320/01", cat:"Grundstück" }
+        ] }
+      ] }
+    ] }
+  ] },
+  { label:"Japan", kind:"country", children: [
+    { label:"Präfektur Tokio", kind:"region", children: [
+      { label:"Tokio", kind:"city", children: [
+        { label:"WE 5410", kind:"unit", unit:"5410", children: [
+          { label:"Schweizerische Botschaft Tokio", kind:"building", id:"1080/5410/AA", cat:"Diplomatische Vertretung", children: [
+            { label:"1. OG", kind:"floor" },
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Minami-Azabu", kind:"parcel", id:"1080/5410/01", cat:"Grundstück" }
+        ] }
+      ] }
+    ] }
+  ] },
+  { label:"Brasilien", kind:"country", children: [
+    { label:"Distrito Federal", kind:"region", children: [
+      { label:"Brasília", kind:"city", children: [
+        { label:"WE 5510", kind:"unit", unit:"5510", children: [
+          { label:"Schweizerische Botschaft Brasília", kind:"building", id:"1080/5510/AA", cat:"Diplomatische Vertretung", children: [
+            { label:"1. OG", kind:"floor" },
+            { label:"EG", kind:"floor" }
+          ] },
+          { label:"Setor de Embaixadas Sul", kind:"parcel", id:"1080/5510/01", cat:"Grundstück" }
+        ] }
+      ] }
+    ] }
+  ] },
+  { label:"Australien", kind:"country", children: [
+    { label:"ACT", kind:"region", children: [
+      { label:"Canberra", kind:"city", children: [
+        { label:"WE 5620", kind:"unit", unit:"5620", children: [
+          { label:"Schweizerische Botschaft Canberra", kind:"building", id:"1080/5620/AA", cat:"Diplomatische Vertretung", children: [
+            { label:"EG", kind:"floor" }
+          ] }
+        ] }
+      ] }
+    ] }
+  ] }
+];
+
+// ---------------------------------------------------------------------------
+// Options. Two of these are design decisions to be made once (count style,
+// which variant), one is a genuine user setting (which hierarchy), and one is a
+// load simulation.
+// ---------------------------------------------------------------------------
+// Two settings, not one list of three. They answer different questions and are
+// therefore not mutually exclusive:
+//
+//   · WHICH AXIS the tree is organised along — by place, or by what a building is
+//     used for. That is a choice, so it is a pair of radio buttons.
+//   · WHETHER the Wirtschaftseinheit is a level of its own. That is a yes or no,
+//     so it is a checkbox.
+//
+// The checkbox only means anything on the region axis: grouping by Teilportfolio has
+// no Wirtschaftseinheit between the category and the object, so it is disabled
+// there rather than silently ignored.
+// One word per option, with the verb in the legend instead of repeated in every
+// label. The column is already headed «Standorte», so naming it again in each
+// option would say nothing. «Teilportfolio» is the portal's established term for
+// `bbl_port` (building-create.js, projects.js, workspace.js); Gebäudeart is a
+// different field (`bbl_gbda1`) and would be wrong here, not least because the
+// grouping also holds Grundstücke.
+const AXES = {
+  place: { label: 'Region' },
+  category: { label: 'Teilportfolio' },
+};
+
+function currentTrail() {
+  if (OPTIONS.axis === 'category') return 'Land › Teilportfolio › Objekt › Geschoss';
+  return OPTIONS.showUnit
+    ? 'Land › Kanton › Ort › WE › Objekt › Geschoss'
+    : 'Land › Kanton › Ort › Objekt › Geschoss';
+}
+
+const OPTIONS = { axis: 'place', showUnit: false, countStyle: 'suffix', scale: false, query: '', ids: 'segment' };
+
+// Three states rather than two: «aus» for people who navigate by name, «Segment»
+// for the level's own key, «vollständig» where the key has to be copied out. The
+// switch itself is static markup in the page controls; this list names the states
+// the renderer understands.
+const ID_MODES = Object.freeze(['off', 'segment', 'full']);
+
+// A pruned tree opens every path that leads to a hit. That is fine for a handful
+// of matches and ruinous for three hundred, so the auto-expansion is bounded and
+// says so instead of quietly showing part of the answer.
+const AUTO_EXPAND_LIMIT = 120;
+
+// A level shows this many siblings before it offers to reveal the rest. Without
+// a cap a city with 400 buildings is a 400-row flat list, which no indentation
+// can rescue — see the load simulation.
+const SIBLING_CAP = 25;
+
+// ---------------------------------------------------------------------------
+// Entity icons. Inline SVG with a real stroke, one shape per kind, so «what sort
+// of thing is this» is answered before the label is read. This matters more here
+// than in a uniform tree: the Objekt level is mixed, and a Gebäude and a
+// Grundstück must be distinguishable at a glance.
+// ---------------------------------------------------------------------------
+const ICONS = {
+  country: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.3 2.6 14.2 0 17M12 3.5c-2.6 2.3-2.6 14.2 0 17"/>',
+  region: '<path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path d="M9 4.5v13M15 6.5v13"/>',
+  city: '<path d="M12 21s6.5-6.2 6.5-11A6.5 6.5 0 0 0 5.5 10c0 4.8 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+  unit: '<path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2.5h8a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19.5H5a1.5 1.5 0 0 1-1.5-1.5z"/>',
+  category: '<path d="M4 5.5h7l2 2.5h7v10.5H4z"/><path d="M4 11h16"/>',  /* Teilportfolio */
+  building: '<rect x="5" y="3.5" width="14" height="17" rx="1.5"/><path d="M9 8h2M13 8h2M9 12h2M13 12h2M10 20.5v-4h4v4"/>',
+  parcel: '<path d="M3.5 8 12 4.5 20.5 8v8L12 19.5 3.5 16z" stroke-dasharray="3.2 2.2"/>'
+    + '<path d="M3.5 8v.01M20.5 8v.01M3.5 16v.01M20.5 16v.01M12 4.5v.01M12 19.5v.01" stroke-width="2.6"/>',
+  floor: '<path d="M3.5 8.5 12 4l8.5 4.5-8.5 4.5z"/><path d="m3.5 14 8.5 4.5 8.5-4.5"/>',
+};
+const KIND_WORD = {
+  country: 'Land', region: 'Kanton', city: 'Ort', unit: 'Wirtschaftseinheit',
+  category: 'Teilportfolio', building: 'Gebäude', parcel: 'Grundstück', floor: 'Geschoss',
+};
+const UNIT_WORD = {
+  country: 'Objekte', region: 'Objekte', city: 'Objekte', unit: 'Objekte',
+  category: 'Objekte', building: 'Geschosse', parcel: '', floor: '',
+};
+
+const svg = (kind, cls) => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[kind] || ICONS.building}</svg>`;
+const chevRight = (cls) => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>`;
+const chevLeft = (cls) => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>`;
+
+// ---------------------------------------------------------------------------
+// Hierarchies. The Wirtschaftseinheit is an SAP construct, not something most
+// people navigate by, and «Teilportfolio» answers a different question entirely
+// («alle Botschaften»). Which one is in force is therefore a setting on the
+// component, not a decision baked into the data.
+// ---------------------------------------------------------------------------
+const node = (label, kind, children, extra = {}) => ({ label, kind, ...extra, ...(children ? { children } : {}) });
+
+function withoutUnits(item) {
+  const kids = item.children || [];
+  if (!kids.length) return item;
+  const lifted = kids.flatMap((kid) => (kid.kind === 'unit'
+    ? (kid.children || []).map((grandkid) => ({ ...grandkid, unit: kid.unit }))
+    : [kid]));
+  return { ...item, children: lifted.map(withoutUnits) };
+}
+
+/** Every Gebäude and Grundstück with the trail that led to it. */
+function flatten(roots) {
+  const rows = [];
+  (function walk(item, trail) {
+    if (item.kind === 'building' || item.kind === 'parcel') {
+      rows.push({ ...item, trail, country: trail[0] });
+      return;
+    }
+    (item.children || []).forEach((kid) => walk(kid, [...trail, item.label]));
+  })({ kind: 'root', label: '', children: roots }, []);
+  return rows.map((row) => ({ ...row, trail: row.trail.slice(1) }));
+}
+
+function byCategory(roots) {
+  const objects = flatten(roots);
+  const countries = new Map();
+  objects.forEach((object) => {
+    const country = object.trail[0] || '—';
+    if (!countries.has(country)) countries.set(country, new Map());
+    const cats = countries.get(country);
+    const key = object.cat || 'Ohne Kategorie';
+    if (!cats.has(key)) cats.set(key, []);
+    cats.get(key).push(object);
+  });
+  return [...countries.entries()].map(([country, cats]) => node(country, 'country',
+    [...cats.entries()].sort((a, b) => a[0].localeCompare(b[0], 'de'))
+      .map(([cat, items]) => node(cat, 'category',
+        items.map((item) => node(item.label, item.kind, item.children || null,
+          { id: item.id, cat: item.cat }))))));
+}
+
+// ---------------------------------------------------------------------------
+// Load simulation: 2000 Gebäude and 1500 Grundstücke, deterministic so two
+// measurements can be compared. This is the size that decides the architecture,
+// not the design.
+// ---------------------------------------------------------------------------
+const SCALE_BUILDINGS = 2000;
+const SCALE_PARCELS = 1500;
+function scaleEstate() {
+  let seed = 20260810;
+  const rand = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  const places = [
+    ['Schweiz', ['BE', 'ZH', 'VD', 'GE', 'BS', 'BL', 'TG', 'VS', 'LU', 'SG'], 0.72],
+    ['Deutschland', ['Berlin', 'Bayern', 'Hessen'], 0.07],
+    ['Frankreich', ['Île-de-France', 'Grand Est'], 0.05],
+    ['Vereinigte Staaten', ['NY', 'DC', 'CA'], 0.06],
+    ['Italien', ['Lazio', 'Lombardia'], 0.04],
+    ['Japan', ['Präfektur Tokio'], 0.03],
+    ['Brasilien', ['Distrito Federal'], 0.03],
+  ];
+  const cats = ['Verwaltungsgebäude', 'Diplomatische Vertretung', 'Lager / Logistik',
+    'Ausbildung', 'Wohnliegenschaft', 'Infrastruktur IT', 'Kultur', 'Zoll'];
+  const towns = ['Bern', 'Zürich', 'Lausanne', 'Genf', 'Basel', 'Liestal', 'Frauenfeld',
+    'Sion', 'Luzern', 'St. Gallen', 'Thun', 'Biel', 'Chur', 'Aarau', 'Zug'];
+  const pick = (list) => list[Math.floor(rand() * list.length)];
+  const tree = new Map();
+  const put = (country, region, town, unit, item) => {
+    if (!tree.has(country)) tree.set(country, new Map());
+    const regions = tree.get(country);
+    if (!regions.has(region)) regions.set(region, new Map());
+    const cities = regions.get(region);
+    if (!cities.has(town)) cities.set(town, new Map());
+    const units = cities.get(town);
+    if (!units.has(unit)) units.set(unit, []);
+    units.get(unit).push(item);
+  };
+  const weighted = () => {
+    const roll = rand();
+    let sum = 0;
+    for (const entry of places) { sum += entry[2]; if (roll <= sum) return entry; }
+    return places[0];
+  };
+  for (let index = 0; index < SCALE_BUILDINGS; index++) {
+    const [country, regions] = weighted();
+    const region = pick(regions);
+    const town = country === 'Schweiz' ? pick(towns) : region;
+    const unit = 1000 + Math.floor(rand() * 8000);
+    const floors = 1 + Math.floor(rand() * 6);
+    put(country, region, town, `WE ${unit}`, node(
+      `${pick(['Verwaltungsgebäude', 'Bürogebäude', 'Zollanlage', 'Werkhof', 'Botschaft', 'Lagerhalle', 'Rechenzentrum'])} ${town} ${index + 1}`,
+      'building',
+      Array.from({ length: floors }, (_, level) => node(level === 0 ? 'EG' : `${level}. OG`, 'floor', null)),
+      { id: `1080/${unit}/A${String.fromCharCode(65 + (index % 26))}`, cat: pick(cats) }));
+  }
+  for (let index = 0; index < SCALE_PARCELS; index++) {
+    const [country, regions] = weighted();
+    const region = pick(regions);
+    const town = country === 'Schweiz' ? pick(towns) : region;
+    const unit = 1000 + Math.floor(rand() * 8000);
+    put(country, region, town, `WE ${unit}`, node(
+      `${pick(['Parzelle', 'Areal', 'Landreserve'])} ${town} ${index + 1}`, 'parcel', null,
+      { id: `1080/${unit}/${String(index % 90 + 10)}`, cat: 'Grundstück' }));
+  }
+  return [...tree.entries()].map(([country, regions]) => node(country, 'country',
+    [...regions.entries()].sort((a, b) => a[0].localeCompare(b[0], 'de')).map(([region, cities]) => node(region, 'region',
+      [...cities.entries()].sort((a, b) => a[0].localeCompare(b[0], 'de')).map(([town, units]) => node(town, 'city',
+        [...units.entries()].sort((a, b) => a[0].localeCompare(b[0], 'de')).map(([unit, items]) => node(unit, 'unit',
+          items, { unit: unit.replace('WE ', '') }))))))));
+}
+
+const clean = (value) => String(value || '').toLocaleLowerCase('de');
+
+/**
+ * Keep a node when it matches itself or carries a match below it. Nodes kept
+ * only for the path are marked `lead`, so the rendering can show them as the way
+ * to a hit rather than as a hit. Returns a NEW tree, which is what lets every
+ * key-based behaviour keep working untouched.
+ */
+function pruneTree(roots, term) {
+  const hit = (item) => clean(`${item.label} ${item.id || ''}`).includes(term);
+  const walk = (item) => {
+    const kids = (item.children || []).map(walk).filter(Boolean);
+    const self = hit(item);
+    if (!self && !kids.length) return null;
+    return { ...item, lead: !self, ...(kids.length ? { children: kids } : {}) };
+  };
+  return roots.map(walk).filter(Boolean);
+}
+
+function countMatches(roots, term) {
+  const hit = (item) => clean(`${item.label} ${item.id || ''}`).includes(term);
+  let total = 0;
+  (function walk(items) {
+    items.forEach((item) => {
+      if (hit(item)) total += 1;
+      walk(item.children || []);
+    });
+  })(roots);
+  return total;
+}
+
+// Every BBL key starts with the same Buchungskreis, which is exactly why it is
+// not repeated on every row. The fixtures carry 1080; the real BBL Buchungskreis
+// is 1086, so the displayed keys are normalised to it — a workshop must not show
+// a number nobody recognises, and it must not show two different ones either.
+const BOOKING_AREA = '1086';
+
+let SOURCE = ESTATE;
+// The tree after the hierarchy is applied but BEFORE a search prunes it. The
+// hit list flattens this, so its paths read in the same hierarchy the trees show
+// — flattening SOURCE showed «WE 4840» even when the WE was not a level.
+let SHAPED = ESTATE;
+let ROOTS = ESTATE;
+let MATCHES = 0;
+let COUNTS = new WeakMap();
+
+// Counts are computed ONCE per build and cached on the node. The shipped
+// component recounts by walking the DOM on every keystroke, which is the second
+// thing that stops working at this size.
+function countObjects(item) {
+  if (item.kind === 'building' || item.kind === 'parcel') return 1;
+  if (item.kind === 'floor') return 0;
+  if (COUNTS.has(item)) return COUNTS.get(item);
+  const total = (item.children || []).reduce((sum, kid) => sum + countObjects(kid), 0);
+  COUNTS.set(item, total);
+  return total;
+}
+function rowCount(item) {
+  if (item.kind === 'building') return (item.children || []).length;
+  if (item.kind === 'parcel' || item.kind === 'floor') return 0;
+  return countObjects(item);
+}
+function countHTML(item) {
+  const count = rowCount(item);
+  const word = UNIT_WORD[item.kind];
+  const spacer = OPTIONS.countStyle === 'aligned' ? '<span class="pf-tree__spacer"></span>' : '';
+  if (!count || !word) return spacer;
+  const figure = OPTIONS.countStyle === 'suffix' ? `(${count})` : String(count);
+  return `${spacer}<span class="pf-tree__n">${figure}</span><span class="sr-only"> ${count} ${word}</span>`;
+}
+
+function buildRoots() {
+  SOURCE = OPTIONS.scale ? scaleEstate() : ESTATE;
+  COUNTS = new WeakMap();
+  if (OPTIONS.axis === 'category') ROOTS = byCategory(SOURCE);
+  else if (OPTIONS.showUnit) ROOTS = SOURCE;
+  else ROOTS = SOURCE.map(withoutUnits);
+  SHAPED = ROOTS;
+  const term = clean(OPTIONS.query.trim());
+  MATCHES = term ? countMatches(ROOTS, term) : 0;
+  if (term) ROOTS = pruneTree(ROOTS, term);
+}
+
+// ---------------------------------------------------------------------------
+// SAP keys. The BBL key is Buchungskreis / Wirtschaftseinheit / Objekt —
+// «1080/4840/AF» — where the Buchungskreis is the same for every BBL object, the
+// Wirtschaftseinheit is a four-digit number, a Gebäude is two letters and a
+// Grundstück two digits.
+//
+// The design decision: a tree already encodes the hierarchy, so a row only needs
+// THE SEGMENT THAT BELONGS TO ITS OWN LEVEL. Repeating «1080/4840/» on every
+// descendant spends the column's scarcest resource on a constant. Reading up the
+// path reassembles the whole key, which is what the path is for.
+//
+// «Vollständig» exists because a key that has to be pasted into SAP has to be
+// complete, and because the Teilportfolio grouping has no Wirtschaftseinheit level
+// for the eye to walk back up. In every mode the complete key sits in the row's
+// title, so it is one hover away.
+const ID_KIND_WORD = {
+  unit: 'Wirtschaftseinheit', building: 'Objektnummer Gebäude', parcel: 'Objektnummer Grundstück',
+};
+
+/** The full SAP key of a node, or '' where the level has none. */
+function fullKey(item) {
+  if (item.id) {
+    const parts = String(item.id).split('/');
+    parts[0] = BOOKING_AREA;
+    return parts.join('/');
+  }
+  if (item.kind === 'unit' && item.unit) return `${BOOKING_AREA}/${item.unit}`;
+  return '';
+}
+
+/** Just this level's own segment: 4840 · AF · 01. */
+function idSegment(item) {
+  if (item.kind === 'unit') return item.unit || '';
+  if (item.kind === 'building' || item.kind === 'parcel') {
+    return String(item.id || '').split('/').pop() || '';
+  }
+  return '';
+}
+
+function idHTML(item) {
+  if (OPTIONS.ids === 'off') return '';
+  const text = OPTIONS.ids === 'full' ? fullKey(item) : idSegment(item);
+  if (!text) return '';
+  const word = ID_KIND_WORD[item.kind] || 'Schlüssel';
+  return `<span class="pf-tree__id mono">${text}</span><span class="sr-only">${word} ${text}, </span>`;
+}
+
+/** The matched part of a label, marked. */
+function labelHTML(item) {
+  const term = clean(OPTIONS.query.trim());
+  if (!term) return item.label;
+  const index = clean(item.label).indexOf(term);
+  if (index < 0) return item.label;
+  return `${item.label.slice(0, index)}<mark>${item.label.slice(index, index + term.length)}</mark>${
+    item.label.slice(index + term.length)}`;
+}
+
+const nodeAt = (key) => key.split('/').map(Number)
+  .reduce((item, index, depth) => (depth === 0 ? ROOTS[index] : item.children[index]), null);
+const parentKey = (key) => key.split('/').slice(0, -1).join('/');
+
+// ---------------------------------------------------------------------------
+// Tree renderer (A–D, G). Two properties matter as much as the styling:
+//
+//   · LAZY — a closed branch contributes no DOM at all. The shipped component
+//     renders every level up front and hides it with `hidden`, so 3500 objects
+//     mean tens of thousands of elements before anyone has clicked anything.
+//   · CAPPED — a level shows SIBLING_CAP children and offers the rest behind one
+//     row, so a city with 400 buildings cannot blow up the column.
+// ---------------------------------------------------------------------------
+function renderNode(item, level, state, key, options) {
+  const merged = options.condense && item.kind === 'unit' && mergeableUnit(item);
+  if (merged) return renderMergedUnit(item, level, state, key, options);
+
+  const kids = item.children || [];
+  const isOpen = state.opened.has(key);
+  const expandable = kids.length > 0;
+  return `<li class="pf-tree__item lvl-${level} kind-${item.kind}${item.lead ? ' is-lead' : ''}" role="none">
+    <button type="button" class="pf-tree__row" role="treeitem" tabindex="-1"
+      aria-level="${level}" aria-selected="false" data-key="${key}" data-kind="${item.kind}"
+      ${expandable ? `aria-expanded="${isOpen}"` : ''} title="${item.label}${
+        fullKey(item) ? ' — ' + fullKey(item) : ''}">
+      ${expandable ? chevRight('pf-tree__chev') : chevRight('pf-tree__chev pf-tree__chev--spacer')}
+      ${svg(item.kind, 'pf-tree__ico')}
+      <span class="sr-only">${KIND_WORD[item.kind]}: </span>
+      ${idHTML(item)}
+      <span class="pf-tree__label">${labelHTML(item)}</span>
+      ${countHTML(item)}
+    </button>
+    ${expandable && isOpen ? `<ul class="pf-tree__children" role="group" data-level="${level + 1}">${
+      childrenHTML(kids, level + 1, state, key, options)}</ul>` : ''}
+  </li>`;
+}
+
+function childrenHTML(kids, level, state, key, options) {
+  const shown = state.revealed.has(key) ? kids.length : Math.min(SIBLING_CAP, kids.length);
+  const rest = kids.length - shown;
+  return kids.slice(0, shown)
+    .map((kid, index) => renderNode(kid, level, state, `${key}/${index}`, options)).join('')
+    + (rest > 0 ? `<li class="pf-tree__item lvl-${level}" role="none">
+      <button type="button" class="pf-tree__more" role="treeitem" tabindex="-1"
+        aria-level="${level}" data-reveal="${key}">weitere ${rest} anzeigen</button></li>` : '');
+}
+
+const mergeableUnit = (item) => {
+  const kids = item.children || [];
+  return kids.length === 2
+    && kids.filter((kid) => kid.kind === 'building').length === 1
+    && kids.filter((kid) => kid.kind === 'parcel').length === 1;
+};
+
+function renderMergedUnit(item, level, state, key, options) {
+  const kids = item.children;
+  const buildingIndex = kids.findIndex((kid) => kid.kind === 'building');
+  const building = kids[buildingIndex];
+  const parcel = kids.find((kid) => kid.kind === 'parcel');
+  const childKey = `${key}/${buildingIndex}`;
+  const floors = building.children || [];
+  const isOpen = state.opened.has(childKey);
+  return `<li class="pf-tree__item lvl-${level} kind-building is-merged" role="none">
+    <button type="button" class="pf-tree__row" role="treeitem" tabindex="-1"
+      aria-level="${level}" aria-selected="false" data-key="${childKey}" data-kind="building"
+      ${floors.length ? `aria-expanded="${isOpen}"` : ''}
+      title="${building.label} — ${fullKey(building)} · WE ${item.unit} · mit Grundstück ${fullKey(parcel)}">
+      ${floors.length ? chevRight('pf-tree__chev') : chevRight('pf-tree__chev pf-tree__chev--spacer')}
+      ${svg('building', 'pf-tree__ico')}
+      <span class="sr-only">${KIND_WORD.building} in Wirtschaftseinheit ${item.unit}: </span>
+      ${idHTML(OPTIONS.ids === 'full' ? building : { ...building, kind: 'unit', unit: item.unit })}
+      <span class="pf-tree__label">${labelHTML(building)}</span>
+      <span class="pf-tree__badge" title="Wirtschaftseinheit ${item.unit} enthält auch ein Grundstück">
+        ${svg('parcel', 'pf-tree__badge-ico')}<span class="sr-only">und ein Grundstück</span></span>
+      ${countHTML(building)}
+    </button>
+    ${floors.length && isOpen ? `<ul class="pf-tree__children" role="group" data-level="${level + 1}">${
+      childrenHTML(floors, level + 1, state, childKey, options)}</ul>` : ''}
+  </li>`;
+}
+
+function mountTree(host, options = {}) {
+  const state = { opened: new Set(), revealed: new Set() };
+  let selected = '';
+  if (OPTIONS.query.trim() && MATCHES <= AUTO_EXPAND_LIMIT) {
+    // Pruned tree, few enough hits: open every path so the matches are on screen
+    // without a single click.
+    (function openAll(items, path) {
+      items.forEach((item, index) => {
+        const key = path ? `${path}/${index}` : String(index);
+        if ((item.children || []).length) { state.opened.add(key); openAll(item.children, key); }
+      });
+    })(ROOTS, '');
+  } else {
+    // Open the first branch down to an object so every variant starts comparable.
+    let key = '0';
+    for (let depth = 0; depth < 5; depth++) {
+      const item = nodeAt(key);
+      if (!item?.children?.length) break;
+      state.opened.add(key);
+      key = `${key}/0`;
+    }
+    selected = key;
+  }
+
+  const draw = () => {
+    const started = performance.now();
+    host.innerHTML = `<ul class="pf-tree" role="tree" aria-label="Standorte">${
+      ROOTS.map((root, index) => renderNode(root, 1, state, String(index), options)).join('')}</ul>`;
+    mark();
+    report(host, performance.now() - started);
+  };
+  const visibleRows = () => [...host.querySelectorAll('.pf-tree__row')];
+  const mark = () => {
+    host.querySelectorAll('.pf-tree__row').forEach((row) => {
+      row.classList.remove('is-active', 'is-path');
+      row.setAttribute('aria-selected', 'false');
+      row.tabIndex = -1;
+    });
+    const active = host.querySelector(`.pf-tree__row[data-key="${selected}"]`);
+    if (active) {
+      active.classList.add('is-active');
+      active.setAttribute('aria-selected', 'true');
+      let key = selected;
+      while (key.includes('/')) {
+        key = parentKey(key);
+        host.querySelector(`.pf-tree__row[data-key="${key}"]`)?.classList.add('is-path');
+      }
+    }
+    (active || visibleRows()[0])?.setAttribute('tabindex', '0');
+  };
+  // One level per click. Opening a whole branch was tried and rejected: it
+  // buries the column, and with the load simulation on, one click on «Schweiz»
+  // would unfold thousands of rows.
+  const toggleLevel = (key) => {
+    if (state.opened.has(key)) state.opened.delete(key);
+    else state.opened.add(key);
+  };
+  host.addEventListener('click', (event) => {
+    const reveal = event.target.closest('[data-reveal]');
+    if (reveal) { state.revealed.add(reveal.dataset.reveal); draw(); return; }
+    const row = event.target.closest('.pf-tree__row');
+    if (!row) return;
+    selected = row.dataset.key;
+    if (row.getAttribute('aria-expanded') !== null) toggleLevel(selected);
+    draw();
+    host.querySelector(`.pf-tree__row[data-key="${selected}"]`)?.focus();
+  });
+  host.addEventListener('keydown', (event) => {
+    const row = event.target.closest('.pf-tree__row');
+    if (!row) return;
+    const rows = visibleRows();
+    const index = rows.indexOf(row);
+    const key = row.dataset.key;
+    const expandable = row.getAttribute('aria-expanded') !== null;
+    const isOpen = row.getAttribute('aria-expanded') === 'true';
+    const focusAt = (next) => {
+      const target = rows[Math.max(0, Math.min(rows.length - 1, next))];
+      if (!target) return;
+      rows.forEach((candidate) => { candidate.tabIndex = -1; });
+      target.tabIndex = 0;
+      target.focus();
+    };
+    const redrawTo = (nextKey) => {
+      draw();
+      const target = host.querySelector(`.pf-tree__row[data-key="${nextKey}"]`);
+      if (target) { target.tabIndex = 0; target.focus(); }
+    };
+    if (event.key === 'ArrowDown') { event.preventDefault(); focusAt(index + 1); return; }
+    if (event.key === 'ArrowUp') { event.preventDefault(); focusAt(index - 1); return; }
+    if (event.key === 'Home') { event.preventDefault(); focusAt(0); return; }
+    if (event.key === 'End') { event.preventDefault(); focusAt(rows.length - 1); return; }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      if (expandable && !isOpen) { state.opened.add(key); redrawTo(key); } else focusAt(index + 1);
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      if (expandable && isOpen) { state.opened.delete(key); redrawTo(key); return; }
+      const parent = host.querySelector(`.pf-tree__row[data-key="${parentKey(key)}"]`);
+      if (parent) { rows.forEach((candidate) => { candidate.tabIndex = -1; }); parent.tabIndex = 0; parent.focus(); }
+      return;
+    }
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); row.click(); }
+  });
+  draw();
+}
+
+// ---------------------------------------------------------------------------
+// E — drill-down: one level per view. At estate scale this is the only variant
+// whose DOM never grows with the portfolio.
+// ---------------------------------------------------------------------------
+function mountDrilldown(host) {
+  let current = '0';
+  let selected = '';
+  let revealed = false;
+  const draw = () => {
+    const started = performance.now();
+    const item = current ? nodeAt(current) : null;
+    const parts = current ? current.split('/') : [];
+    const kids = item ? (item.children || []) : ROOTS;
+    const shown = revealed ? kids.length : Math.min(SIBLING_CAP, kids.length);
+    const rest = kids.length - shown;
+    const crumbs = parts.map((_, depth) => {
+      const key = parts.slice(0, depth + 1).join('/');
+      return { key, label: nodeAt(key).label, last: depth === parts.length - 1 };
+    });
+    host.innerHTML = `
+      <nav class="v-e__path" aria-label="Pfad">
+        ${current ? '<button type="button" data-go="">Alle</button><span aria-hidden="true">›</span>' : '<span aria-current="true">Alle Länder</span>'}
+        ${crumbs.map((crumb) => (crumb.last
+          ? `<span aria-current="true">${crumb.label}</span>`
+          : `<button type="button" data-go="${crumb.key}">${crumb.label}</button><span aria-hidden="true">›</span>`)).join('')}
+      </nav>
+      ${current ? `<button type="button" class="v-e__up" data-go="${parts.length > 1 ? parentKey(current) : ''}">
+        ${chevLeft('pf-tree__chev')}Eine Ebene höher</button>` : ''}
+      <ul class="pf-tree" role="list">${kids.slice(0, shown).map((kid, index) => {
+        const key = current ? `${current}/${index}` : String(index);
+        const deeper = (kid.children || []).length > 0;
+        return `<li class="pf-tree__item"><button type="button"
+          class="pf-tree__row${key === selected ? ' is-active' : ''}"
+          data-open="${deeper ? key : ''}" data-pick="${key}"
+          title="${kid.label}${fullKey(kid) ? ' — ' + fullKey(kid) : ''}">
+          ${svg(kid.kind, 'pf-tree__ico')}
+          <span class="sr-only">${KIND_WORD[kid.kind]}: </span>
+          ${idHTML(kid)}
+          <span class="pf-tree__label">${kid.label}</span>
+          ${countHTML(kid)}
+          ${deeper ? chevRight('v-e__more') : ''}
+        </button></li>`;
+      }).join('')}${rest > 0 ? `<li class="pf-tree__item">
+        <button type="button" class="pf-tree__more" data-reveal-all>weitere ${rest} anzeigen</button></li>` : ''}</ul>`;
+    report(host, performance.now() - started);
+  };
+  host.addEventListener('click', (event) => {
+    if (event.target.closest('[data-reveal-all]')) { revealed = true; draw(); return; }
+    const go = event.target.closest('[data-go]');
+    if (go) { current = go.dataset.go; selected = ''; revealed = false; draw(); return; }
+    const row = event.target.closest('[data-pick]');
+    if (!row) return;
+    selected = row.dataset.pick;
+    if (row.dataset.open) { current = row.dataset.open; selected = ''; revealed = false; }
+    draw();
+  });
+  draw();
+}
+
+// ---------------------------------------------------------------------------
+// F — search first: a flat, grouped hit list with the full path as a subtitle.
+// The one variant that gets BETTER as the portfolio grows, because the answer to
+// «where is Botschaft Tokio» stops depending on how deep it sits.
+// ---------------------------------------------------------------------------
+function mountSearch(host) {
+  let selected = '';
+  const HIT_CAP = 40;
+  const draw = () => {
+    const started = performance.now();
+    const term = clean(OPTIONS.query.trim());
+    if (!term) {
+      // No search: a flat list of 3500 objects is not an answer, so this variant
+      // says what it needs instead of pretending to be a browser.
+      host.innerHTML = `<p class="v-f__idle">Diese Spalte zeigt Treffer, keinen Baum.
+        Suchbegriff oben eingeben — ohne Begriff gibt es nichts zu listen.</p>`;
+      report(host, performance.now() - started);
+      return;
+    }
+    const rows = flatten(SHAPED).map((row) => ({
+      label: row.label, kind: row.kind, id: fullKey(row),
+      path: row.trail.join(' › '), floors: (row.children || []).length,
+      needle: clean(`${row.label} ${row.id || ''} ${row.trail.join(' ')}`),
+    })).filter((row) => row.needle.includes(term));
+    const order = ['building', 'parcel', 'floor'];
+    const groups = new Map(order.map((kind) => [kind, []]));
+    rows.forEach((row) => groups.get(row.kind)?.push(row));
+    // The term is user input, so it is escaped before it becomes a pattern.
+    const escapeRe = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const highlight = (value) => value.replace(new RegExp(`(${escapeRe(term)})`, 'gi'), '<mark>$1</mark>');
+    const label = { building: 'Gebäude', parcel: 'Grundstücke', floor: 'Geschosse' };
+    host.innerHTML = rows.length
+      ? order.filter((kind) => groups.get(kind).length).map((kind) => {
+        const bucket = groups.get(kind);
+        return `<p class="v-f__group">${label[kind]} (${bucket.length}${
+          bucket.length > HIT_CAP ? `, erste ${HIT_CAP}` : ''})</p>
+        <ul class="pf-tree" role="list">${bucket.slice(0, HIT_CAP).map((row) => {
+          const key = `${row.kind}:${row.path}:${row.label}`;
+          return `<li><button type="button" class="v-f__hit${key === selected ? ' is-active' : ''}"
+            data-pick="${key.replace(/"/g, '&quot;')}">
+            ${svg(row.kind, '')}
+            <span><b>${highlight(row.label)}</b><small>${
+              row.id ? highlight(row.id) + ' · ' : ''}${highlight(row.path)}</small></span>
+            ${row.floors ? `<span class="pf-tree__n">${
+              OPTIONS.countStyle === 'suffix' ? `(${row.floors})` : row.floors}</span>` : ''}
+          </button></li>`;
+        }).join('')}</ul>`;
+      }).join('')
+      : '<p class="v-f__group">Keine Treffer</p>';
+    report(host, performance.now() - started);
+  };
+  host.addEventListener('click', (event) => {
+    const hit = event.target.closest('[data-pick]');
+    if (!hit) return;
+    selected = hit.dataset.pick;
+    draw();
+  });
+  draw();
+}
+
+// Rendered rows and build time, so the load simulation is measured rather than
+// asserted. The figure that matters is DOM rows, not milliseconds on this laptop.
+function report(host, ms) {
+  const box = host.closest('.variant')?.querySelector('.variant__stats');
+  if (!box) return;
+  const rowNodes = host.querySelectorAll('.pf-tree__row, .v-f__hit, .pf-tree__more').length;
+  box.textContent = `${rowNodes} Zeilen im DOM · ${ms.toFixed(1)} ms`;
+}
+
+// ---------------------------------------------------------------------------
+const VARIANTS = [
+  { id: 'a', name: 'A — Heute', mount: (host) => mountTree(host),
+    note: 'Keine Einrückung. Bei fünf oder sechs Ebenen ist nicht mehr erkennbar, was zu was gehört.' },
+  { id: 'b', name: 'B — Einrückung + Führungslinien', mount: (host) => mountTree(host),
+    note: '12 px je Ebene, senkrechte Linien, dunkles Grau für die Auswahl, helles für den Pfad.' },
+  { id: 'c', name: 'C — Waagrechte Trennlinien', mount: (host) => mountTree(host),
+    note: 'Linie unter jeder Zeile, zusätzlich eingerückt.' },
+  { id: 'd', name: 'D — Klebende Zwischentitel', mount: (host) => mountTree(host),
+    note: 'Die oberen Ebenen werden zu Beschriftungen, die beim Scrollen stehen bleiben.' },
+  { id: 'i', name: 'I — Winkel-Verbinder', mount: (host) => mountTree(host),
+    note: 'Ein Stamm je Zweig mit einem Winkel zu jedem Kind, der beim letzten Kind endet. Macht die Zugehörigkeit ausdrücklich statt nur angedeutet.' },
+  { id: 'h', name: 'H — B + C kombiniert (überarbeitet)', mount: (host) => mountTree(host),
+    note: 'Trennlinien über die ganze Spaltenbreite, damit ihre linken Enden nicht treppen. Die Führungslinien sitzen auf der Achse des übergeordneten Chevrons und liegen über den Trennlinien.' },
+  { id: 'h2', name: 'H2 — Führungslinie nur im aktiven Zweig', mount: (host) => mountTree(host),
+    note: 'Wie H, aber die senkrechte Linie erscheint nur entlang des ausgewählten Zweigs — dort, wo die Frage nach der Zugehörigkeit überhaupt gestellt wird.' },
+  { id: 'g', name: 'G — Verdichtet', mount: (host) => mountTree(host, { condense: true }),
+    note: 'Nur mit WE-Ebene sichtbar: eine WE mit genau einem Gebäude und einem Grundstück entfällt als Ebene, das Grundstück wird zur Marke.' },
+  { id: 'e', name: 'E — Drilldown (Wildcard)', mount: mountDrilldown,
+    note: 'Eine Ebene je Ansicht. Der DOM wächst nicht mit dem Portfolio.' },
+  { id: 'f', name: 'F — Trefferliste statt Baum', mount: mountSearch,
+    note: 'Reagiert auf dieselbe Suchleiste, tauscht aber die Spalte gegen eine flache, nach Art gruppierte Trefferliste mit vollständigem Pfad.' },
+];
+
+const grid = document.getElementById('grid');
+
+function build() {
+  buildRoots();
+  document.body.classList.toggle('counts-aligned', OPTIONS.countStyle === 'aligned');
+  document.body.classList.toggle('ids-full', OPTIONS.ids === 'full');
+  document.getElementById('trail').textContent = currentTrail();
+  document.getElementById('scale-note').textContent = OPTIONS.scale
+    ? `${SCALE_BUILDINGS} Gebäude + ${SCALE_PARCELS} Grundstücke`
+    : `${flatten(ESTATE).length} Objekte (echter Fixture-Bestand)`;
+  const term = OPTIONS.query.trim();
+  const countBox = document.getElementById('global-count');
+  countBox.innerHTML = term ? `<strong>${MATCHES}</strong> Treffer` : '';
+  const warn = document.getElementById('global-warn');
+  if (warn) warn.remove();
+  if (term && MATCHES > AUTO_EXPAND_LIMIT) {
+    const note = document.createElement('p');
+    note.className = 'searchbar__warn';
+    note.id = 'global-warn';
+    note.textContent = `${MATCHES} Treffer: zu viele, um alle Pfade automatisch zu öffnen`
+      + ` (Grenze ${AUTO_EXPAND_LIMIT}). Der Baum ist gestutzt, aber zugeklappt — hier gewinnt`
+      + ` die Trefferliste in Spalte F, oder der Begriff muss enger werden.`;
+    document.querySelector('.searchbar').appendChild(note);
+  }
+  grid.innerHTML = VARIANTS.map((variant) => `<section class="variant v-${variant.id}">
+    <div class="variant__head">
+      <h2 class="variant__name">${variant.name}</h2>
+      <p class="variant__note">${variant.note}</p>
+      <p class="variant__stats"></p>
+    </div>
+    <div class="variant__body">
+      <div class="col-head">
+        <p class="col-title" id="col-${variant.id}">Standorte</p>
+        <button type="button" class="col-menu__btn" data-menu="${variant.id}"
+          aria-expanded="false" aria-haspopup="true" aria-label="Gliederung wählen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+            stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4"/></svg>
+        </button>
+        ${/* Only the hierarchy lives here: it is a property of THIS list. How the
+              SAP key is rendered is a decision to make once for the whole
+              product, so it sits in the page controls with the other two. */''}
+        <div class="col-menu" id="menu-${variant.id}" role="group" aria-labelledby="col-${variant.id}" hidden>
+          <p class="col-menu__legend">Gruppieren nach</p>
+          ${Object.entries(AXES).map(([key, entry]) => `<label class="col-menu__item">
+            <input type="radio" name="axis-${variant.id}" value="${key}"${key === OPTIONS.axis ? ' checked' : ''}>
+            <span>${entry.label}</span></label>`).join('')}
+          <hr class="col-menu__rule">
+          <label class="col-menu__item${OPTIONS.axis === 'category' ? ' is-disabled' : ''}">
+            <input type="checkbox" name="unit-${variant.id}"${OPTIONS.showUnit ? ' checked' : ''}${
+              OPTIONS.axis === 'category' ? ' disabled' : ''}>
+            <span>Wirtschaftseinheit</span></label>
+        </div>
+      </div>
+      <div id="host-${variant.id}"></div>
+    </div>
+  </section>`).join('');
+  VARIANTS.forEach((variant) => variant.mount(document.getElementById(`host-${variant.id}`)));
+}
+
+// The hierarchy control lives ON the column, next to its title, because it is a
+// property of this list rather than of the page.
+grid.addEventListener('click', (event) => {
+  const button = event.target.closest('.col-menu__btn');
+  if (!button) return;
+  const menu = document.getElementById(`menu-${button.dataset.menu}`);
+  const open = !menu.hidden;
+  document.querySelectorAll('.col-menu').forEach((box) => { box.hidden = true; });
+  document.querySelectorAll('.col-menu__btn').forEach((other) => other.setAttribute('aria-expanded', 'false'));
+  menu.hidden = open;
+  button.setAttribute('aria-expanded', String(!open));
+});
+grid.addEventListener('change', (event) => {
+  const control = event.target.closest('.col-menu__item input');
+  if (!control) return;
+  if (control.type === 'checkbox') OPTIONS.showUnit = control.checked;
+  else if (control.checked) OPTIONS.axis = control.value;
+  else return;
+  build();
+});
+document.getElementById('toggle-scale').addEventListener('change', (event) => {
+  OPTIONS.scale = event.target.checked;
+  build();
+});
+const globalInput = document.getElementById('global-q');
+let searchTimer = null;
+globalInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    OPTIONS.query = globalInput.value;
+    build();
+    // The field is rebuilt by nothing, so focus and caret simply stay put.
+  }, 200);
+});
+
+document.querySelectorAll('input[name="count-style"]').forEach((radio) => {
+  radio.addEventListener('change', () => {
+    if (radio.checked) { OPTIONS.countStyle = radio.value; build(); }
+  });
+});
+document.querySelectorAll('input[name="id-mode"]').forEach((radio) => {
+  radio.addEventListener('change', () => {
+    if (radio.checked) { OPTIONS.ids = radio.value; build(); }
+  });
+});
+
+build();
+</script>
+</body>
+</html>

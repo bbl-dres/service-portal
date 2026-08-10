@@ -25,7 +25,9 @@
 .fpe-breadcrumb { flex:1 1 auto; min-width:var(--sp-32); display:flex; align-items:center; gap:var(--sp-2); overflow:hidden;
   font-size:var(--text-sm); white-space:nowrap; }
 .fpe-breadcrumb a { flex:none; min-height:var(--target-min); display:inline-flex; align-items:center; color:var(--color-text-muted); text-decoration:none; }
-.fpe-breadcrumb a:nth-of-type(2) { min-width:0; max-width:24rem; overflow:hidden; text-overflow:ellipsis; }
+/* The last link is the deepest place and the longest label, so it is the one
+   that gives way first. The building detail lists four of them. */
+.fpe-breadcrumb a:last-of-type { min-width:0; max-width:24rem; overflow:hidden; text-overflow:ellipsis; }
 .fpe-breadcrumb > span { flex:none; }
 .fpe-breadcrumb > .icon { color:var(--color-secondary-400); }
 .fpe-version, .fpe-date { display:inline-flex; align-items:center; gap:var(--sp-2); min-height:var(--sp-8); padding:0 var(--sp-3);
@@ -83,8 +85,7 @@
    because the standalone layout has no portal shell to sit in. */
 .fpe-object { flex:1 1 auto; min-width:0; }
 .fpe-object__body { max-width:var(--container-max); margin:0 auto; padding:var(--sp-6) var(--sp-5) var(--sp-8); }
-.fpe-object__head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
-  gap:var(--sp-4); }
+.fpe-object__head { min-width:0; }
 .fpe-object__title { min-width:0; }
 .fpe-object__title h1 { margin:0; font-size:var(--text-2xl); overflow-wrap:anywhere; }
 .fpe-object__title .lead { margin:var(--sp-1) 0 0; }
@@ -121,10 +122,30 @@
 .fpe-floor-card__state { margin-top:var(--sp-1); }
 .fpe-floor-card__check { margin:0 var(--sp-3) var(--sp-3); justify-content:center; }
 
+/* The floor handed over from the structure tree. It is pointed at, not opened:
+   a left edge and a tinted ground, the same two-tone marking the tree itself
+   uses for the selected node. */
+.fpe-plans .is-marked > :is(th,td):first-child { box-shadow:inset var(--sp-1) 0 0 0 var(--color-primary-600); }
+.fpe-plans .is-marked > :is(th,td) { background:var(--color-primary-50); }
+.fpe-floor-card.is-marked { border-color:var(--color-primary-600); box-shadow:inset 0 0 0 var(--stroke-1) var(--color-primary-600); }
+
+/* Every register opens with the same bar, so the surface below it always starts
+   at the same distance whether it is a table or a gallery. */
+.fpe-register .table-wrapper, .fpe-plans .table-wrapper { margin-top:var(--sp-4); }
+.fpe-plans .fpe-floor-cards { margin-top:var(--sp-4); }
+.fpe-register .empty, .fpe-plans .empty { margin-top:var(--sp-4); }
+.fpe-register caption, .fpe-plans caption { color:var(--color-text-muted); font-size:var(--text-sm);
+  text-align:left; padding-bottom:var(--sp-2); }
+
+/* Module register: the module number reads as a mark, not as a measurement. */
+.fpe-module-no { display:inline-flex; align-items:center; justify-content:center;
+  min-width:var(--sp-6); min-height:var(--sp-5); margin-right:var(--sp-2); padding:0 var(--sp-1);
+  border-radius:var(--surface-radius); background:var(--color-secondary-100);
+  color:var(--color-text-muted); font-size:var(--text-xs); }
+
 /* View 1: Meine Arbeit */
 .fpe-work { flex:1 1 auto; min-width:0; padding:var(--sp-6) var(--sp-5) var(--sp-8); }
-.fpe-work__head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
-  gap:var(--sp-4); margin-bottom:var(--sp-5); }
+.fpe-work__head { margin-bottom:var(--sp-5); }
 .fpe-work__title-main { margin:0; font-size:var(--text-2xl); }
 .fpe-work__lead { margin:var(--sp-1) 0 0; color:var(--color-text-muted); font-variant-numeric:tabular-nums; }
 .fpe-layer-tabs .tab__controls { border-bottom:var(--stroke-1) solid var(--color-border); }
@@ -183,7 +204,11 @@
    surrounding chrome is local. */
 .fpe-browse__bar { flex:none; padding:var(--sp-3) var(--sp-5) var(--sp-4);
   border-bottom:var(--stroke-1) solid var(--color-border); background:var(--color-bg); }
-.fpe-browse__bar .catbar { margin-top:0; }
+/* The catalogue bar carries its own bottom rule. Inside a padded bar that rule
+   stopped short of both edges and read as a half-width divider, so it is pulled
+   out to the bar's edges while its content keeps the bar's gutter. */
+.fpe-browse__bar .catbar { margin-top:0; margin-inline:calc(-1 * var(--sp-5));
+  padding-inline:var(--sp-5); }
 .fpe-browse__bar .active-filters { padding-top:var(--sp-3); }
 
 .fpe-browse__layout { flex:1 1 auto; min-height:0; display:grid;
@@ -239,24 +264,21 @@
 .fpe-stats__kv { grid-template-columns:minmax(0,1fr) auto; font-size:var(--text-sm); }
 .fpe-stats__kv dd { text-align:right; font-variant-numeric:tabular-nums; }
 
-/* Object details and actions live in the marker popup, anchored where the
-   visitor clicked rather than a screen-width away in a side panel. */
+/* The marker popup carries the object's master data and one way onward. It is a
+   label on the map, not a second detail view. */
 .fpe-popup { min-width:0; }
 .fpe-popup__name { margin:0; font-weight:var(--fw-bold); overflow-wrap:anywhere; }
 .fpe-popup__id, .fpe-popup__address { margin:var(--sp-0-5) 0 0; color:var(--color-text-muted); font-size:var(--text-xs); }
 .fpe-popup__badge { margin:var(--sp-2) 0 0; }
+.fpe-popup__facts { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--sp-0-5) var(--sp-3);
+  margin:var(--sp-3) 0 0; padding-top:var(--sp-2); border-top:var(--stroke-1) solid var(--surface-border);
+  font-size:var(--text-sm); }
+.fpe-popup__facts dt { color:var(--color-text-muted); }
+.fpe-popup__facts dd { margin:0; text-align:right; font-variant-numeric:tabular-nums; }
 .fpe-popup__notes { margin:var(--sp-2) 0 0; padding:0; list-style:none; color:var(--color-warning-text); font-size:var(--text-xs); }
-.fpe-popup__floors { margin:var(--sp-3) 0 0; padding:0; list-style:none;
-  border-top:var(--stroke-1) solid var(--surface-border); }
-.fpe-popup__floor { display:flex; align-items:center; gap:var(--sp-2); min-height:var(--target-min);
-  padding:var(--sp-1) 0; border-bottom:var(--stroke-1) solid var(--surface-border);
-  color:var(--color-text); text-decoration:none; font-size:var(--text-sm); }
-.fpe-popup__floor:hover { color:var(--color-primary-700); }
-.fpe-popup__floor-label { font-weight:var(--fw-bold); }
-.fpe-popup__floor-facts { flex:1 1 auto; color:var(--color-text-muted); font-variant-numeric:tabular-nums; font-size:var(--text-xs); }
 .fpe-popup__actions { display:flex; flex-wrap:wrap; gap:var(--sp-2); margin-top:var(--sp-3); }
 .fpe-popup__actions .btn { flex:1 1 auto; justify-content:center; }
-/* MapLibre caps its own bubble; the editor needs room for a floor list. */
+/* MapLibre caps its own bubble narrower than the master data reads well at. */
 .fpe-browse__map .maplibregl-popup-content { max-width:none; padding:var(--sp-3); }
 .fpe-browse__map .maplibregl-popup { max-width:20rem !important; }
 
@@ -433,6 +455,22 @@
 .fpe-placement:is(:hover,.is-selected) > :first-child { fill:var(--color-info-bg); stroke:var(--color-info-text); stroke-width:2.5; }
 .fpe-placement__selection { fill:none; stroke:var(--color-info-text); stroke-width:2;
   stroke-dasharray:13 8; vector-effect:non-scaling-stroke; pointer-events:none; }
+/* Transform widget over the selected object: ring as the rotation track, a grip
+   on it at the object's front, a grip in the middle for moving. The same
+   anatomy is laid flat on the floor in the 3D view. Strokes do not scale, so the
+   widget keeps its weight at every zoom, and the grips carry a generous
+   invisible hit area through `stroke-width` on a transparent stroke. */
+.fpe-widget { pointer-events:none; }
+.fpe-widget__ring { fill:none; stroke:var(--color-secondary-500); stroke-width:1.5;
+  stroke-dasharray:6 5; vector-effect:non-scaling-stroke; }
+.fpe-widget__arm { stroke:var(--color-warning-text); stroke-width:2; vector-effect:non-scaling-stroke; }
+.fpe-widget__grip { pointer-events:auto; stroke:var(--color-bg); stroke-width:2;
+  vector-effect:non-scaling-stroke; }
+.fpe-widget__grip--rotate { fill:var(--color-warning-text); cursor:grab; }
+.fpe-widget__grip--move { fill:var(--color-info-text); cursor:move; }
+.fpe-widget__grip:hover { stroke:var(--color-focus-ring); stroke-width:3; }
+.fpe-stage.is-rotating .fpe-widget__grip--rotate { cursor:grabbing; }
+
 .fpe-placement--ghost { pointer-events:none; opacity:.72; }
 .fpe-placement--ghost.is-valid > :first-child { fill:var(--color-success-bg-subtle); stroke:var(--color-success-text); stroke-width:3; stroke-dasharray:10 7; }
 .fpe-placement--ghost.is-invalid > :first-child { fill:var(--color-error-bg-subtle); stroke:var(--color-error-700); stroke-width:3; stroke-dasharray:10 7; }
@@ -621,11 +659,11 @@
   .fpe-viewnav__item { padding:0 var(--sp-3); font-size:var(--text-xs); }
   .fpe-work { padding:var(--sp-5) var(--sp-3) var(--sp-6); }
   .fpe-work__title-main { font-size:var(--text-xl); }
-  .fpe-work__head > .btn { width:100%; justify-content:center; }
   .fpe-work__actions { width:100%; justify-content:stretch; }
   .fpe-work__actions > * { flex:1 1 7rem; justify-content:center; }
   .fpe-recent-strip { grid-template-columns:1fr 1fr; gap:var(--sp-2); }
   .fpe-browse__bar { padding:var(--sp-3); }
+  .fpe-browse__bar .catbar { margin-inline:calc(-1 * var(--sp-3)); padding-inline:var(--sp-3); }
   .fpe-browse__cards { grid-template-columns:1fr 1fr; gap:var(--sp-3); padding:var(--sp-3); }
   .fpe-browse__table { padding:var(--sp-3); }
   /* City and workplaces are the columns a phone can do without: the object, its

@@ -2,7 +2,7 @@ import { anchorNavPage } from './anchor-nav.js';
 // Since the search overhaul, content lives in js/knowledge-content.js. It has
 // two consumers (this page renders it and search indexes it), so it no longer
 // belongs in the page module.
-import { AREAS, FAQS, sectionDomId } from '../knowledge-content.js';
+import { AREAS, FAQS, MULTISPACE_MODULES, sectionDomId } from '../knowledge-content.js';
 
 // Knowledge and resources — the portal's reference layer.
 //
@@ -37,7 +37,9 @@ function overview(ctx) {
   setTitle('Wissen und Hilfsmittel');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Wissen und Hilfsmittel' }]);
 
-  const count = (k) => AREAS[k].sections.reduce((n, s) => n + s.items.length, 0);
+  // A section may carry `html` or `faq` instead of `items`; counting must not
+  // assume a document list.
+  const count = (k) => AREAS[k].sections.reduce((n, s) => n + (s.items || []).length, 0);
   const areaTiles = [
     { title: AREAS.it.title, icon: 'Desktop', href: '#/knowledge/it',
       desc: 'Vorgaben, Mustervorlagen, Werkzeugkasten und Rahmenverträge für IKT-Beschaffungen.', meta: `${count('it')} Unterlagen` },
@@ -45,6 +47,11 @@ function overview(ctx) {
       desc: 'BöB, VöB und WTO-Verfahren, Dokumente der BKB sowie Gesuche und Delegationen.', meta: `${count('procurement')} Unterlagen` },
     { title: AREAS.accommodation.title, icon: 'Building', href: '#/knowledge/accommodation',
       desc: 'Flächenstandards, Nachhaltigkeit, Preise und Formulare rund um Gebäude und Betrieb.', meta: `${count('accommodation')} Unterlagen` },
+    { title: AREAS.workspace.title, icon: 'Apps', href: '#/knowledge/workspace',
+      desc: 'Der Ausstattungsstandard Multispace: Module, Einrichtungsrichtlinien, Farbkonzept und Plandaten.',
+      // Counted from the standard itself, so the tile cannot drift from it when
+      // a new edition of the handbook changes the module set.
+      meta: `${MULTISPACE_MODULES.length} Module & Vorgaben` },
     { title: AREAS.publishing.title, icon: 'Printer', href: '#/knowledge/publishing',
       desc: 'Auftragsformulare, Preise und Merkblätter der Produktion und der Publikationen.', meta: `${count('publishing')} Unterlagen` },
     { title: AREAS.guides.title, icon: 'Book', href: '#/knowledge/guides',
@@ -87,8 +94,16 @@ function areaPage(ctx, area) {
       // this distinction (DownloadItem.vue always carries the Download symbol;
       // external destinations carry External). A generic file symbol would make
       // both look alike.
+      // `download` marks a FILE. A portal route is a link, not a download, and
+      // `safeResourceUrl` deliberately rejects hash URLs — marking one as a
+      // download rendered a working in-portal target as a disabled placeholder
+      // instead (measured on the IT page: the incident-reporting service).
+      // Placeholder resources keep `href: '#'` and stay disabled, which is the
+      // intended prototype behaviour.
       s.items ? `<ul class="download-items">${s.items.map(it => C.downloadItem({
-        href: '#', ...it, download: !it.external, wrapLi: true,
+        href: '#', ...it,
+        download: !it.external && !String(it.href || '').startsWith('#'),
+        wrapLi: true,
       })).join('')}</ul>` : '',
       s.faq ? C.accordion(FAQS.map(f => ({ title: f.q, body: `<p class="m-0">${C.escape(f.a)}</p>` })), { id: 'faq' }) : '',
     ].join(''),

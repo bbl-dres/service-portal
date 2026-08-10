@@ -22,6 +22,7 @@ import {
   MODULE_OPTIONS, createBaseline, cloneDocument, EditorHistory, validateEditorDocument,
 } from './model.js';
 import { placementFootprintBounds } from './geometry.js';
+import { rotationFromPoint, widgetGeometry } from './transform-widget.js';
 import {
   loadWorkingCopy, saveWorkingCopy, removeWorkingCopy,
   loadRevisionHistory, publishLocalRevision,
@@ -1251,6 +1252,33 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     keyboardRoomAnchor = null;
     const entity = event.target.closest('[data-entity]');
     const roomHandle = event.target.closest('[data-room-handle]');
+
+    // The transform widget is grabbed before anything else, including the
+    // direct-pan gesture below: its handles are drawn outside the placement
+    // group, so `entity` is null under them and an empty-canvas pan would
+    // otherwise swallow every drag of a grip.
+    const grip = event.target.closest?.('[data-widget]');
+    if (grip && editMode && tool === 'select' && selected?.type === 'placement') {
+      const placement = placementById().get(selected.id);
+      if (placement) {
+        event.preventDefault();
+        try { mount.setPointerCapture?.(event.pointerId); } catch { /* synthetic/ended pointer */ }
+        drag = grip.dataset.widget === 'rotate'
+          ? {
+            type: 'widget-rotate', pointerId: event.pointerId,
+            before: cloneDocument(editorDocument), moved: false,
+          }
+          : {
+            type: 'placement', pointerId: event.pointerId, start: point, x: placement.x, y: placement.y,
+            clientStart: { x: event.clientX, y: event.clientY },
+            pointerType: event.pointerType, tolerance: pointerDragTolerance(event.pointerType),
+            roomId: placement.roomId, before: cloneDocument(editorDocument), moved: false,
+          };
+        stage.classList.add(grip.dataset.widget === 'rotate' ? 'is-rotating' : 'is-panning');
+        return;
+      }
+    }
+
     const directPrimaryPan = tool === 'select' && event.button === 0 && (!editMode || !entity);
     // Middle-button pan is a temporary navigation override in every tool. It
     // must run before authoring actions so users can reposition the viewport
@@ -1387,6 +1415,17 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     }
     const point = clientToPlan(svg, event.clientX, event.clientY);
     if (!point) return;
+    if (drag.type === 'widget-rotate') {
+      const placement = selected?.type === 'placement' ? placementById().get(selected.id) : null;
+      if (!placement) return;
+      const widget = widgetGeometry(placement);
+      const next = rotationFromPoint(widget.cx, widget.cy, point.x, point.y);
+      if (next === placement.rotation) return;
+      placement.rotation = next;
+      drag.moved = true;
+      scheduleSceneDraw();
+      return;
+    }
     if (drag.type === 'room-create') {
       const rect = roomRectFromDrag(drag.start, point, floor.extent);
       if (!rect) return;
@@ -1510,11 +1549,28 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
           drawWorkArea({ focusSelected: true });
         }
       }
+    } else if (drag.type === 'widget-rotate') {
+      // Rotation snaps to a step the document model accepts, so the only way to
+      // fail validation here is a placement that no longer fits its room.
+      if (!drag.moved || cancelled) editorDocument = cloneDocument(drag.before);
+      else if (!validateEditorDocument(editorDocument, baseline)) {
+        editorDocument = cloneDocument(drag.before);
+        announce('Objekt bleibt in der bisherigen Ausrichtung: Die Drehung wäre ungültig.');
+      } else {
+        const placement = selected?.type === 'placement' ? placementById().get(selected.id) : null;
+        if (placement && placement.status !== 'new') placement.status = 'moved';
+        editHistory.push(editorDocument);
+        editorDocument = cloneDocument(editHistory.current);
+        dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
+        syncDraftChrome();
+        announce(`Objekt auf ${placement?.rotation ?? 0} Grad gedreht.`);
+      }
+      drawWorkArea({ focusSelected: true });
     } else if (drag.type === 'pan') {
       if (cancelled) set2dCamera({ ...drag.camera });
       else if (!drag.moved) tapSelection = drag.tapSelection;
     }
-    mount.querySelector('#fpe-stage')?.classList.remove('is-panning');
+    mount.querySelector('#fpe-stage')?.classList.remove('is-panning', 'is-rotating');
     twoDTouches.delete(event.pointerId);
     drag = null;
     try { mount.releasePointerCapture?.(event.pointerId); } catch { /* capture already gone */ }

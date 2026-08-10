@@ -44,7 +44,11 @@ export function createWorkbenchViews(context) {
     return `${editorHeaderHTML(C, session, editMode, planCheck(building.bbl_id, floor.floorId))}
     <div class="fpe-context">
       <nav class="fpe-breadcrumb" aria-label="Sie sind hier">
-        <a href="${BASE}" data-leave>Portfolio</a>${C.icon('ChevronRight', 'icon--sm')}
+        ${/* Same first crumbs as the building detail: one destination, one name.
+              The workbench keeps the chain short — the place hierarchy belongs
+              to the detail, which has a full-width bar for it. */''}
+        <a href="#/" data-leave>Serviceportal</a>${C.icon('ChevronRight', 'icon--sm')}
+        <a href="${BASE}" data-leave>Alle Objekte</a>${C.icon('ChevronRight', 'icon--sm')}
         <a href="${returnHref()}" data-leave>${C.escape(building.name)}</a>${C.icon('ChevronRight', 'icon--sm')}
         <span aria-current="page">${C.escape(floor.label)}</span>
       </nav>
@@ -299,7 +303,10 @@ export function createWorkbenchViews(context) {
     if (viewMode === '2d') {
       return renderEditorSvg({ floor, rooms: editorDocument.rooms, placements: editorDocument.placements,
         selected, colorMode, camera, measurement, editableRooms: editMode && structureUnlocked,
-        roomDraft, placementGhost, keyboardCursor });
+        roomDraft, placementGhost, keyboardCursor,
+        // Only in edit mode: outside it the widget offers handles for a gesture
+        // the view does not accept.
+        transformWidget: editMode && tool === 'select' });
     }
     return `<div class="fpe-three-view${viewMode === 'walk' ? ' is-walk' : ''}">
       <div class="fpe-three-host" id="fpe-three-host"><p class="fpe-three-loading">3D-Modell wird aufgebaut…</p></div>

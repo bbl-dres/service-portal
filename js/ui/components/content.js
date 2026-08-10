@@ -127,12 +127,19 @@ export function card(o) {
 // rows: object[]; caption names the table.
 // `foot` = ready <tr>…</tr> HTML for a <tfoot> row (for example, a total row);
 // the caller escapes its content.
-export function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable, emptyText }) {
+export function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable, emptyText, rowClass }) {
   // Per-column `align: 'right'|'center'|'left'` maps to the CD alignment utility on header + cell.
   const al = (c) => ALIGNMENTS.has(c.align) ? ` class="text-${c.align}"` : '';
   const head = columns.map(c => `<th scope="col"${al(c)}>${escape(c.label)}</th>`).join('');
+  // `rowClass(row)` marks individual rows — the Plan-Editor points at one floor
+  // arriving from the structure tree. A class rather than free attributes: the
+  // component escapes it, so a caller cannot inject markup into the row tag.
+  const rowAttr = (r) => {
+    const name = typeof rowClass === 'function' ? String(rowClass(r) || '') : '';
+    return name ? ` class="${escape(name)}"` : '';
+  };
   const body = (rows || []).map(r =>
-    `<tr>${columns.map((c, i) => {
+    `<tr${rowAttr(r)}>${columns.map((c, i) => {
       const cell = c.render ? c.render(r) : escape(r[c.key]);
       return i === 0 ? `<th scope="row"${al(c)}>${cell}</th>` : `<td${al(c)}>${cell}</td>`;
     }).join('')}</tr>`

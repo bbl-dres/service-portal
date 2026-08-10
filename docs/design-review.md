@@ -517,3 +517,82 @@ der fünf Befunde sind Doppelspurigkeiten, nicht Geschmacksfragen.
 - `node scripts/test-floorplan-editor-landing.mjs` — reines Aufgabenmodell.
 - `node scripts/test-portfolio.mjs`, `node scripts/test-tenancies.mjs` — die
   unveränderten Explorer nach der Erweiterung von `spatial-tree.js`.
+
+## 11. Neues Fachgebiet «Arbeitsplätze gestalten»
+
+Stand: 10. August 2026. Geprüft und entworfen wurde ein neues Fachgebiet unter
+«Wissen und Hilfsmittel», das den Ausstattungsstandard Multispace des BBL führt.
+Quellen: `research/Workspace Management` (Handbuch Multispace in zwei Ausgaben,
+Zielbild Workspacemanagement V1.0, Anforderungen PDF-Druck) sowie die bereits im
+Repository kuratierte Zusammenfassung in
+`docs/workspace-management-requirements.md`, Kapitel 5.
+
+### Entwurfsentscheid
+
+Die sechs bestehenden Fachgebiete sind Linksammlungen: Titel, Beschrieb, Format,
+Grösse. Für dieses Thema trägt das nicht. Das Handbuch umfasst rund 150 Seiten,
+und seine Module sind kein Nachschlagestoff, sondern das **Vokabular, das die
+übrigen Workspace-Oberflächen bereits sprechen** — `data/workspace-planning.json`
+führt die Ausstattung je Objekt unter denselben Modulnamen, und das Objektdetail
+des Plan-Editors weist sie im Register «Ausstattungen» aus. Ohne diese Seite
+haben die Zahlen in der Anwendung keine Definition. Das Fachgebiet führt den
+Inhalt deshalb selbst und verlinkt das Handbuch zusätzlich.
+
+Gebaut ist es vollständig aus vorhandenen Bausteinen: die Ankernavigations-Seite
+mit klebendem Inhaltsverzeichnis, `C.table` für die Modultabelle, `C.downloadItem`
+für die Unterlagen, `kv kv--ruled` für die Begriffe, `C.notification` für den
+Ausgabenhinweis. Neu sind drei kleine CSS-Muster, die die Wissensschicht noch
+nicht hatte: eine Modulnummer-Marke, eine Regelliste und eine nummerierte
+Schrittliste.
+
+### Befunde und Umsetzung
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 11.1 | Zwei Ausgaben des Handbuchs sind im Umlauf und widersprechen sich: «Stand 6.1.2025» führt elf Module mit Coffee Point als Modul 7, «Stand 31.10.2025» führt zehn — Modul 1 heisst neu «Standardarbeitsplatz», der Coffee Point ist kein eigenes Modul mehr, die früheren Module 8–11 rücken auf 7–10 auf. Der Fixture-Bestand und die Anforderungsdokumentation des Repositorys tragen noch die frühere Nummerierung. | Die Seite folgt der aktuellen Ausgabe. Die Abweichung wird als Meldung benannt statt stillschweigend geglättet, weil ältere Pläne und Ausstattungslisten die frühere Nummerierung tragen. `scripts/test-knowledge-workspace.mjs` pinnt Ausgabe, Modulzahl und die Abwesenheit des Coffee Point. | erledigt |
+| 11.2 | Die Flächenrichtmasse sind aus dem PDF nicht naiv auslesbar: Die Datei setzt Zero-Width-Spaces innerhalb mehrstelliger Zahlen, und die zweispaltige Seitenanlage lässt Modulüberschriften über Spaltengrenzen bluten. Eine einfache Extraktion liefert «2 5 m²» oder ordnet Zahlen dem falschen Modul zu. | Zahlen nur übernommen, wo zwei unabhängige Extraktionsverfahren übereinstimmen und die Zuordnung von der Modulseite selbst stammt, nicht vom laufenden Kolumnentitel. Wo die Quelle kein Richtmass nennt (Module 8–10), steht ein Gedankenstrich statt einer Schätzung. | erledigt |
+| 11.3 | Vertrauliches Material in den Quellen: Das Handbuch hält fest «Die Preise sind vertraulich zu behandeln»; das Anforderungsdokument zur PDF-Druckausgabe ist ein internes Papier mit Geschäftsnummer, Lieferantennennung und Ist/Soll-Mängeltabellen. | Preise, Kostenkennwerte, Lieferantennennungen und Mängeltabellen bleiben aussen vor. Übernommen ist nur der anwendungsbezogene Teil: die Umbenennung in «Flächennachweis SIA 416», Papierformate, Massstäbe und die Regel, dass über alle Geschosse derselbe Massstab gilt. Der Testvertrag prüft die Abwesenheit. | erledigt |
+| 11.4 | Die Rechtsgrundlagen des Handbuchs — VILB, Weisungen, Anhang I «Standards für Büroarbeitsplätze», Anhang II, Desksharing-Konzept — stehen bereits vollständig unter «Unterbringung und Objektbetrieb». | Nicht dupliziert, sondern über den `intro` des Fachgebiets verlinkt — dasselbe Muster, mit dem sich `it` und `procurement` bereits gegenseitig referenzieren. Der Test scheitert, wenn ein Titel in beiden Fachgebieten auftaucht. | erledigt |
+| 11.5 | Portalinterne Ziele in Unterlagenlisten wurden als deaktivierte Platzhalter dargestellt. `knowledge.js` markierte jeden nicht externen Eintrag als `download`, und `safeResourceUrl` verwirft Hash-URLs bewusst. Gemessen auf `#/knowledge/it`: «Sicherheits-/Datenschutzvorfall melden» war seit jeher tot. | `download` markiert nur noch Dateien; Portalrouten sind Links. Platzhalter ohne echtes Ziel bleiben deaktiviert, was das gewünschte Prototypverhalten ist. Behebt einen Bestandsfehler und ist Voraussetzung dafür, dass das neue Fachgebiet auf Plan-Editor, Planprüfung und Dienstleistungen verweisen kann. | erledigt |
+| 11.6 | Der Unterlagenzähler der Übersichtsseite rechnete ungeschützt `s.items.length` und wäre an einem Abschnitt ohne Dokumentliste gescheitert — genau die Form, die das neue Fachgebiet überwiegend verwendet. | Auf `(s.items || []).length` gehärtet. | erledigt |
+
+### Prüfartefakte
+
+- `node scripts/test-knowledge-workspace.mjs` — Ausgabe, Module, Richtmasse,
+  Vertraulichkeit, Abschnittsvertrag, Querverweis, Suchindex.
+- `node scripts/test-content.mjs`, `node scripts/test-routes.mjs`,
+  `node scripts/test-search.mjs`, `node scripts/test-anchor-search-state.mjs`.
+
+## 12. Objektdetail des Plan-Editors: Wege hinein und Register darin
+
+Stand: 10. August 2026. Ausgangspunkt war die Beobachtung, das Objektdetail
+existiere bereits, «nur die Interaktion stimmt nicht zu 100 %». Das trifft zu:
+die Seite war da, aber keiner der drei Wege dorthin führte sauber hin, und ihr
+Ausstattungsregister vermischte drei Dinge.
+
+### Befunde und Umsetzung
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 12.1 | Die Hauptaktion des Kartenpopups hiess «Im Editor öffnen» und öffnete das Objektdetail: `floorplanEditor(id)` ohne Geschoss ist die Detailroute. Das Etikett versprach die Arbeitsfläche und lieferte eine Übersichtsseite — der grösste Einzelgrund dafür, dass die Fläche als defekt empfunden wurde. | Das Popup führt Stammdaten und genau einen Weg weiter, benannt nach seinem Ziel: «Objektdetails öffnen». Die Geschossliste und der zweite Knopf entfallen; Geschosse, Module, Ausstattung und Aktionen stehen im Detail. Ein Popup, das eine Scheibe davon wiederholt, war die Stelle, an der Arbeit begann und dann in einer Sackgasse endete. | erledigt |
+| 12.2 | Karten und Tabellenzeilen waren bereits Links auf die Detailroute, aber ein zusätzlicher Klick-Handler selektierte im selben Tick das Objekt und schrieb die URL um. Ein Klick löste damit Navigation und `replaceRoute` gleichzeitig aus. | Der Handler ist entfernt: Karten und Zeilen sind reine Links. Die Karte bleibt die Fläche, auf der ein Objekt ohne Verlassen des Portfolios betrachtet wird. | erledigt |
+| 12.3 | Ein Geschoss im Standortbaum sprang direkt in die Arbeitsfläche. Der Baum beantwortet «wo ist der Plan», nicht «öffne ihn»; der Sprung nahm die zweite Entscheidung ungefragt vorweg. | Der Klick öffnet das Register «Grundrisse» des Gebäudes und markiert genau diese Zeile (`mark=<floorId>`). Ein eigener Schlüssel, weil `floor` die Arbeitsfläche öffnet. Die Markierung wird bei jedem Zeichnen der Tabelle über die neue `rowClass`-Option von `table()`/`mountDataTable()` erfragt und überlebt damit Suche, Sortierung und Blättern. | erledigt |
+| 12.4 | Das Register «Ausstattungen» führte Multispace-Modulgruppen und Möblierungszahlen in einer Tabelle. Das sind zwei verschiedene Aussagen — ein Modul ist ein vordefiniertes Möblierungssetup, die Ausstattung ist das Mobiliar darin —, und die gebäudetechnische Ausstattung als dritte fehlte ganz. | Getrennt in «Module» und «Ausstattung»; gebäudetechnische Ausstattung wird im Register benannt, aber nicht behauptet. Die Registerleiste wird aus einer Liste gebaut, weil Zonen und Gebäudetechnik folgen. | erledigt |
+| 12.5 | Ohne Planungsdatensatz war das Register schlicht leer, obwohl die Rauminformationen vorliegen: Bundeshaus West führt 14 Räume, aber `workspace-planning.json` kennt nur `planAvailability: 'legacy'`. | «Module» leitet die Zuordnung aus der Raumnutzung ab und bezeichnet das so. Verwendet wird `model.js/inferredModule()` — dieselbe Abbildung, mit der die Arbeitsfläche das Modul vorbelegt. Eine zweite Abbildung für dieselbe Frage würde auseinanderlaufen. `MODULE_OPTIONS` trägt dafür neu `name` und leitet `label` daraus ab, statt die Nummer aus einem Anzeigetext zurückzuparsen. | erledigt |
+| 12.6 | Der Breadcrumb zeigte «Portfolio › Objekt». Der Standort dazwischen — Land, Kanton, Ort — war nur im Baum sichtbar, und ein Schritt nach oben landete im ungefilterten Portfolio. | Vollständiger Pfad «Alle Objekte › Land › Kanton › Ort › Objekt»; jede Stufe führt in das auf diese Stufe eingegrenzte Portfolio. `shared.js/portfolioRoute()` erzeugt Breadcrumb- und Baum-URLs gemeinsam, sodass nicht zwei URLs für denselben Ausschnitt entstehen. Ein Ort wird als vollständiger Pfad adressiert, weil `restoreTreeSelection` Knoten auf die gesamte Ahnenreihe abgleicht. | erledigt |
+| 12.7 | Der erste Breadcrumb-Eintrag hiess in der Arbeitsfläche «Portfolio» und im Detail neu «Alle Objekte» — zwei Namen für dasselbe Ziel. | In der Arbeitsfläche angeglichen. Sie behält die kurze Kette; die Ortshierarchie gehört ins Detail, das eine Leiste über die volle Breite dafür hat. | erledigt |
+| 12.8 | Die Galerie war der Standard des Registers «Grundrisse». Ein Geschoss wird nach Fläche, Räumen und Planstand gewählt; eine Wand aus Miniaturen beantwortet keine dieser Fragen. | Liste als Standard, Galerie als zweite Fläche. Der Standardwert steht nicht in der URL. | erledigt |
+| 12.9 | Die Aktionskarte führte vier Verweise in andere Anwendungen (Planprüfung, Workspace-Portal, Liegenschaften-Inventar, Mediathek) und las sich als Menü. | Reduziert auf «Im Editor öffnen» und «Neuen Plan hochladen». Der Titelbereich verliert «Oberstes Geschoss öffnen»: einen Plan zu öffnen ist eine Aktion des Registers, das die Pläne führt. | erledigt |
+| 12.10 | Leere Register waren teils leere Tabellen. | Beide Leerzustände nutzen das Portalmuster `C.empty` mit Hinweis **und** Aktion — «Im Editor öffnen» bei fehlenden Modulen, «Neuen Plan hochladen» bei fehlender Möblierung —, statt es bei einem Ratschlag zu belassen. | erledigt |
+| 12.11 | Auf dem Objektdetail standen zwei senkrechte Rollbalken nebeneinander. Nur einer rollte: `reset.css` setzt `overflow-y:scroll` auf `<html>`, damit kurze und lange Portalseiten nicht springen, und `overlay.css` hält diese Rinne mit `scrollbar-gutter:stable` frei. Eine Anwendung mit fester Viewporthöhe rollt aber in sich selbst, sodass der Wurzelbalken nie fahren kann. | `html:has(> body.body--standalone-app)` schaltet beides ab; der Body schneidet ohnehin ab, also wird nichts unerreichbar. Die Planprüfung bleibt ausgenommen — sie rollt das Dokument und pinnt `overflow-y:auto` in ihrer eigenen Suite. Der Druckzweig gilt jetzt für alle eigenständigen Anwendungen statt nur für die Planprüfung. | erledigt |
+| 12.12 | Der Befund 12.11 liess fünf Prüfungen der Struktur-Bearbeitung kippen. Ursache war nicht die Anwendung: Die Vorrichtung zeichnete die neue Fläche mit der Kante exakt auf der Kante des verkürzten Korridors. Ein CSS-Pixel entspricht bei diesem Zoom rund sechs Planeinheiten, also kippte die bündige Kante in eine Sub-Einheit-Überschneidung, sobald die Bühne 15 px breiter wurde — und der Editor weist überschneidende Räume zu Recht ab. | Die Vorrichtung verkürzt den Korridor um 400 statt 200 Einheiten und zeichnet die 200×140-Fläche mit 100 Einheiten Abstand mitten hinein. Sie prüft damit das Werkzeug statt der Koordinatenrundung. | erledigt |
+
+### Prüfartefakte
+
+- `node scripts/test-floorplan-editor.mjs` — Breadcrumb-Pfad und Ziel-URLs je
+  Stufe, vier Register mit Zählern, Listen-Standard, Markierung aus dem Baum
+  ohne `floor`-Schlüssel, Kartensprung ins Detail, Popup-Umfang und -Beschriftung,
+  abgeleitete gegenüber abgenommener Modulherkunft, Leerzustand mit Aktion,
+  genau ein Rollbalken auf der eigenständigen Anwendung.
+- Die drei statischen Gates sowie `node scripts/test-html-contracts.mjs` und
+  `node scripts/test-portfolio.mjs` für die erweiterte `table()`-Zeilenklasse.

@@ -260,6 +260,7 @@ export function mountDataTable(host, opts = {}) {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
     sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '', rowsClickable = false,
+    rowClass,
   } = opts;
   const state = { q: '', sort: '', page: 1, open: false, sel: {} };
   facets.forEach((f) => { state.sel[f.dim] = []; });
@@ -316,7 +317,7 @@ export function mountDataTable(host, opts = {}) {
             longer see what the table represented, and filtering shifted the
             layout. Text distinguishes «no data at all» from «nothing for this
             selection». */''}
-      ${table({ columns, rows: visible, zebra: true, caption, rowsClickable,
+      ${table({ columns, rows: visible, zebra: true, caption, rowsClickable, rowClass,
         emptyText: allRows.length
           ? `Keine ${u.nom} für diese Suche oder Filterung.`
           : (emptyMsg || `Keine ${u.nom} erfasst.`),

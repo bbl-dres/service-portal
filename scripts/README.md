@@ -6,8 +6,8 @@ Protocol** from Node (using the global `WebSocket`, Node ≥ 22) — no puppetee
 Each test opens the real app, runs an in-page probe, and asserts on the result,
 exiting non-zero on failure.
 
-There are currently **53 supported `test-*.mjs` suites: 33 browser suites and
-20 pure-Node suites**, plus **22 retained `check-*.mjs` diagnostics**. Browser
+There are currently **54 supported `test-*.mjs` suites: 33 browser suites and
+21 pure-Node suites**, plus **22 retained `check-*.mjs` diagnostics**. Browser
 suites use `APP_BASE` to select the running app and exit non-zero on failure.
 The always-run `test-plan-check-parser.mjs` starts its own ephemeral loopback
 server, verifies the exact bundled runtime and artifact provenance, and parses
@@ -86,6 +86,7 @@ inventory is `scripts/test-*.mjs`.
 | `test-floorplan-editor.mjs` | Standalone Plan-Editor: the building detail (breadcrumb, key-figure strip, Übersicht/Grundrisse/Ausstattungen registers, card previews versus fact-only table, module standard and per-floor equipment, shared action and contact cards), both landing views (map-first portfolio as the default — shared catalogue bar and active-filter pills, location tree down to the floors of a building, marker popup carrying object detail and both handoffs, statistics panel scoped to the filters; work queue as the shared compact table with attribute-layer tabs, severity marks and empty-layer explanation), exact Workspace deep link, default uncolored/flat room tree and attribute-driven aggregation, independent disclosures, top-layer color menu hit-testing, CD-style menu keyboard patterns, edit-specific tool order, on-demand product/module library, structural menu and geometry lock, three-pane shell, canonical rooms and deterministic illustrative furniture, direct primary/middle-button and touch panning with tap selection, continuous canvas-only wheel zoom, two-touch pinch-to-one-touch handoff, reversible responsive 2D camera sizing, persistent touch-sized 2D/3D/walk navigation with roving keyboard focus and view-specific actions, retained Three.js orbit/walk controls with camera preservation, dirty-route blocking, focus-safe discard dialogs, selection/URL state, overlap-safe product and structural room editing, CSS-pixel edit jitter and pointer-cancel rollback, inspector scroll preservation, module assignment, undo/redo, local save/publish/history/reload, core-data isolation, mutually exclusive 320px drawers with canvas-focused edit restoration, and editor-navigation restoration. |
 | `test-floorplan-editor-three-controls.mjs` | Focused real-WebGL Three.js camera controls: click-jitter threshold, floor-plane pan direction, zoom-to-cursor, two-finger pinch, deterministic camera diagnostics, responsive aspect/fit preservation, and runtime health. |
 | `test-floorplan-editor-model.mjs` | Pure Plan-Editor model/repository/commands: all canonical floor baselines, deterministic placements, catalogue-independent baseline token, detached edits, strict command allowlists and document invariants, room collision and rotated-footprint guards, catalogue rebasing and legacy-draft migration, recoverable baseline-scoped archives, cross-tab write conflicts, immutable simulated publications, scoped removal, and bounded undo/redo. |
+| `test-knowledge-workspace.mjs` | Pure contracts of the workspace-design knowledge area: the CURRENT Multispace edition (ten modules, no Coffee Point, module 1 renamed), the area figures that are actually in the source and the dash where none is, no confidential price or supplier data, safe and unbanned section ids, no duplication of the accommodation area's legal basis, and the search rows including in-portal application targets. |
 | `test-floorplan-editor-landing.mjs` | Pure Plan-Editor landing model: the four attribute layers and their canonicalisation, task derivation per layer (unsynchronised floors, due plan orders, open local drafts, missing equipment data, expiring leases) with error/warning/info ordering, Swiss and ISO date parsing, per-layer counts, and the recently-edited floor list. |
 | `test-floorplan-editor-rendering.mjs` | Pure Plan-Editor rendering/input seams: canonical color descriptors, reversible viewport-aspect camera sizing, continuous wheel normalization, inverse screen transforms, floor-plane Three.js pan/fit/rotation math, visible-occluder picking policy, rotation-aware footprints and clamping (including thin products), keyboard cursor SVG, CSS-pixel pointer thresholds, temporary middle-button pan policy, room drag geometry, keyboard panning, and roving-focus calculations. |
 | `test-plan-check-core.mjs` | Pure Planprüfung contracts: defensive geometry/normalisation, the exact 40-rule set, abort conditions and resource limits, report/viewer behavior, `.dwg`/size/header file validation, `parse(file)` lifecycle, and fresh-Worker recovery. |
@@ -139,6 +140,7 @@ node scripts/test-data-resilience.mjs
 node scripts/test-security-urls.mjs
 node scripts/test-external-assets.mjs
 node scripts/test-floorplan-editor-landing.mjs
+node scripts/test-knowledge-workspace.mjs
 node scripts/test-plan-check-core.mjs
 
 # Browser lifecycle and offline recovery (dev server + Edge required)

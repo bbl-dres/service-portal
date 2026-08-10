@@ -1,5 +1,5 @@
-// Knowledge-and-resources content: 113 resources in 22 sections, grouped by
-// subject area (L2) and then by material type (L3).
+// Knowledge-and-resources content: 117 resources in 27 sections across seven
+// subject areas (L2), grouped by material type within each (L3).
 //
 // WHY A SEPARATE MODULE: this content now has two consumers. The page
 // (js/pages/knowledge.js) renders it, while search (js/pages/search.js) indexes
@@ -106,6 +106,58 @@ export const AREAS = {
         { title: 'Weisungen über das Beschaffungscontrolling', desc: 'Gültig ab 1. Januar 2025, mit Anhängen zu Kategorien und Vergabeverfahren.', meta: ['PDF', '453 kB', 'Weisung BBL'] },
         { title: 'Beschaffungszahlungen Bundesverwaltung', desc: 'Reporting-Set der BKB.', href: 'https://www.bkb.admin.ch', external: true, meta: ['bkb.admin.ch'] },
         { title: 'Auswertungen im Datenportal', desc: 'Verträge und Bestellungen nach Departement als Dashboard.', href: '#/app/dataportal', meta: ['Datenportal'] },
+      ] },
+    ],
+  },
+
+  // The Multispace standard is the one subject area whose SUBSTANCE, not just its
+  // document list, belongs in the portal: the handbook is 149 pages, the eleven
+  // modules are the vocabulary every other Workspace surface already speaks
+  // (data/workspace-planning.json carries the same eleven `equipmentGroups`, and
+  // the Plan-Editor reports them per object), and nobody reads a 149-page PDF to
+  // learn what «Modul 6.2» means. Figures come from the curated chapter 5 of
+  // docs/workspace-management-requirements.md, which reconciles the handbook's
+  // overview against its detail pages; prices are deliberately absent because the
+  // handbook marks them confidential.
+  workspace: {
+    title: 'Arbeitsplätze gestalten',
+    lead: 'Der Ausstattungsstandard «Multispace» des BBL — die Module für die Büroflächen der Bundesverwaltung, von der Arbeitsstilanalyse bis zur Planübernahme.',
+    intro: 'Die rechtlichen Grundlagen — VILB, Weisungen und Standards für Büroarbeitsplätze — stehen unter <a href="#/knowledge/accommodation">Unterbringung und Objektbetrieb</a>. Geplant und geprüft wird im <a href="#/app/floorplan-editor">Plan-Editor</a> und in der <a href="#/app/plan-check">Planprüfung</a>.',
+    sections: [
+      { id: 'standard', title: 'Die Multispace-Module', intro: 'Jedes Modul bildet eine funktionale und gestalterische Einheit. Module lassen sich kombinieren; ein Mix einzelner Modulelemente wird ausdrücklich nicht empfohlen. Die Flächenrichtmasse sind Planungswerte aus der Modulübersicht des Handbuchs.', html: (C) => moduleTable(C) },
+      { id: 'einrichtung', title: 'Einrichtungsrichtlinien', intro: 'Räumliche Regeln aus dem Handbuch — sie entscheiden über die Qualität einer Fläche mehr als die Möbelwahl.', html: (C) => guidelineList(C) },
+      { id: 'farbe', title: 'Farbkonzept und Materialien', html: (C) => `
+        <p>Das Farbkonzept leitet sich aus «Polychromie Architecturale» ab, dem 1931 von Le Corbusier entwickelten Farbsystem mit 43 Farben. Aus einer Serie von Volltonfarben ergeben sich abgestufte Aufhellungen; die Abstufungen der Rottöne der Schweizer Fahne dienen als Grundton der Farbwelten.</p>
+        <p><strong>Die Farben des Mobiliars sind verbindlich und standardisiert und können nicht angepasst werden.</strong> Das BBL folgt damit dem Bundesratsauftrag zur Standardisierung und ermöglicht eine nachhaltige Kreislaufwirtschaft.</p>
+        <p>Die Farben für Wände und Böden sind integraler Bestandteil der Module. Pro Modul stehen vier Wandfarben zur freien Auswahl. Weisse Wände sind ausdrücklich nicht im Sinn des Konzepts. Gibt es nachvollziehbare Gründe, vom Farbkonzept für Wände und Böden abzuweichen, ist dem BBL ein alternatives Farbkonzept zur Freigabe vorzulegen.</p>` },
+      { id: 'planungsschritte', title: 'Von der Analyse zur Belegung', intro: 'Drei Begriffe des Zielbilds, die nicht austauschbar sind, und die vier Schritte, die das Handbuch der Gestaltung einer Büroumgebung voranstellt.', html: (C) => planningSteps(C) },
+      { id: 'plandaten', title: 'Plandaten und Flächennachweis', intro: 'Was ein Grundriss enthalten muss, damit er übernommen, geprüft und massstäblich ausgegeben werden kann.', html: (C) => planDataBlock(C), items: [
+        { title: 'Grundriss im Plan-Editor bearbeiten', desc: 'Räume, Nutzungsarten und Multispace-Module direkt im Geschossplan pflegen.', href: '#/app/floorplan-editor', meta: ['Anwendung'] },
+        { title: 'DWG-Datei prüfen lassen', desc: 'Layerstruktur, Raumpolygone, Raumstempel und Bemassung lokal im Browser gegen die CAD-Vorgaben prüfen.', href: '#/app/plan-check', meta: ['Anwendung'] },
+        { title: 'Grundriss prüfen', desc: 'Die Dienstleistung mit Beschrieb, Voraussetzungen und Ablauf.', href: '#/services/plan-pruefen', meta: ['Dienstleistung'] },
+      ] },
+      { id: 'beschaffung', title: 'Beschaffung, Lieferung und Kreislauf', intro: 'Die standardisierte Raumausstattung wird in einem Kreislaufmodell bewirtschaftet. Das bestimmt, womit geplant wird und was mit ausgedientem Mobiliar geschieht.', html: (C) => `
+        <ul class="wsm-rules">
+          <li>Ausstattungen werden in erster Linie mit <strong>Occasionsmobiliar</strong> geplant.</li>
+          <li>Das Mobiliarportfolio ist auf einen Life Cycle von <strong>15 Jahren</strong> ausgerichtet.</li>
+          <li>Die Benutzerorganisationen führen keine eigenen Lager; nicht mehr benötigtes Mobiliar wird mit einem Umzugsauftrag zurückgegeben.</li>
+          <li>Für zurückgegebenes Mobiliar erfolgt keine Vergütung. Über Wiederverwendung im Kreislaufmodell oder einen Verkauf von ausgedientem Mobiliar entscheidet das BBL.</li>
+          <li>Die Zuständigkeit des BBL für Reparaturen und Rückschubaufträge beschränkt sich auf die vom BBL beschafften Artikel.</li>
+          <li>In der Region Bern übernimmt das BBL die Montage. Ausserhalb stellen die Dienststellen das Personal für Entgegennahme, Verteilung und Aufstellung.</li>
+        </ul>
+        <p class="small muted mt-4">Formulare für Transport-, Umzugs- und Rückschubaufträge stehen unter <a href="#/knowledge/accommodation?section=${sectionDomId('formulare')}">Unterbringung und Objektbetrieb</a>.</p>` },
+      { id: 'unterlagen', title: 'Handbuch und Vorlagen', intro: 'Die verbindlichen Unterlagen zum Ausstattungsstandard. Die Preise des Handbuchs sind vertraulich und deshalb nicht Teil dieser Sammlung.', items: [
+        { title: 'Handbuch Multispace — Neue Arbeitswelten (NAW)', desc: 'Der vollständige Ausstattungsstandard: Farbkonzept, Materialisierung, die Module mit Charakteristik, Umsetzungsrichtlinien, Elementlisten und Produkttabellen.', meta: ['PDF', 'Handbuch', 'Stand 31.10.2025'] },
+        { title: 'Zielbild «Serviceportal & Workspacemanagement»', desc: 'Systemgrenze, Prämissen und strategische Anforderungen des Workspace Managements. Version 1.0, freigegeben am 30.10.2024.', meta: ['PDF', 'Zielbild'] },
+        { title: 'Handout BBL Möbelkatalog', desc: 'Kurzüberblick über den Möbelkatalog und die Bestellwege der Raumausstattung BBL.', meta: ['DOCX', 'Handout'] },
+        { title: 'Anforderungen PDF-Druck «Flächennachweis SIA 416»', desc: 'Vorgaben an Papierformate, Massstäbe, Plankopf und Legende der grafischen Planausgabe.', meta: ['PDF', 'Anforderungen'] },
+      ] },
+      { id: 'anwendungen', title: 'Anwendungen und Dienstleistungen', intro: 'Wo die hier beschriebenen Vorgaben im Portal angewendet werden.', items: [
+        { title: 'Workspace Management (Portal)', desc: 'Objekte, Planstände, schreibgeschützte Grundrissvorschauen und Ausstattung der Arbeitsplatzplanung.', href: '#/app/workspace', meta: ['Anwendung'] },
+        { title: 'Plan-Editor', desc: 'Flächen, Räume und Multispace-Ausstattung direkt im Grundriss verwalten und planen.', href: '#/app/floorplan-editor', meta: ['Anwendung'] },
+        { title: 'BBL Intranetshop', desc: 'Büromaterial und Mobiliar aus dem Standardsortiment bestellen.', href: '#/app/shop', meta: ['Anwendung'] },
+        { title: 'Raumbedarf melden', desc: 'Zusätzlichen Flächenbedarf, Umnutzungen oder bauliche Anpassungen anmelden.', href: '#/services/raumbedarf-melden', meta: ['Dienstleistung'] },
+        { title: 'Umzug, Transport und Entsorgung', desc: 'Umzüge und Transporte innerhalb der gemieteten Lokalitäten beauftragen.', href: '#/services/umzug-anmelden', meta: ['Dienstleistung'] },
       ] },
     ],
   },
@@ -234,6 +286,123 @@ export const FAQS = [
 // DOM ID for a section. A prefix avoids collisions with generic page anchors
 // («preise» occurs twice in two subject areas but remains unique per page). The
 // `wi-` prefix is retained as a stable deep-link compatibility literal.
+/* ========================= Multispace equipment standard ==================
+   The modules are the shared vocabulary of the whole Workspace suite:
+   `data/workspace-planning.json` records equipment per object under module
+   names, and the Plan-Editor reports them in its Ausstattungen register. Stating
+   the standard here once means the app's numbers have a definition.
+
+   EDITION MATTERS. Two editions of the handbook are in circulation and they do
+   not agree: «Stand 6.1.2025» has ELEVEN modules with Coffee Point as module 7,
+   «Stand 31.10.2025» has TEN — Coffee Point is no longer a module of its own,
+   module 1 is renamed «Standardarbeitsplatz», and the former modules 8–11 move
+   up to 7–10. This list follows the CURRENT edition; the difference is stated on
+   the page rather than smoothed over, because the fixture data and
+   docs/workspace-management-requirements.md still carry the older numbering.
+
+   Figures were read from the handbook itself and cross-checked between two
+   independent text extractions; the PDF injects zero-width spaces inside
+   multi-digit numbers, so single-pass extraction is not trustworthy. Prices are
+   deliberately absent — the handbook marks them confidential. */
+export const MULTISPACE_EDITION = '31.10.2025';
+
+export const MULTISPACE_MODULES = Object.freeze([
+  { nr: 1, name: 'Standardarbeitsplatz', variants: '—', area: '3,0 m²',
+    desc: 'Schreibtischarbeitsplatz im offenen Raum, in Gruppen von höchstens vier Tischen. Keine zugewiesenen Plätze; der Platz wird aufgeräumt hinterlassen.' },
+  { nr: 2, name: 'Team Arbeitsplatz', variants: '6 / 8 Personen', area: '25 / 35 m²',
+    desc: 'Gruppentisch für ein Team, das eine Aufgabe gemeinsam bearbeitet. Räumlich von anderen Arbeitsbereichen separiert, mit AV-Screen und Whiteboard.' },
+  { nr: 3, name: 'Fokus Arbeitsplatz', variants: '3.1 umschlossen', area: '3,0 m²',
+    desc: 'Arbeitsplatz in ruhiger Umgebung, akustisch durch eine freistehende Umbauung geschützt. Lautes Sprechen und Telefonieren sind hier nicht erlaubt.' },
+  { nr: 4, name: 'Formelle Sitzungen', variants: '4.1 sitzend, 4.2 stehend, 4.5 / 4.6 Besprechungsbox', area: '19 / 22 / 25 m² (4 / 6 / 8 Pers.); Box 9 m² bzw. 4,5 m²',
+    desc: 'Geschlossene Sitzungsräume mit magnetischem Whiteboard und farbiger Wand, über das interne Buchungssystem reservierbar. Besprechungsboxen sind autarke Raum-in-Raum-Lösungen.' },
+  { nr: 5, name: 'Telefon- / Videokonferenzbox', variants: 'Videokonferenz- und Telefonbox 1er', area: '4,5 m² / 2,0 m²',
+    desc: 'Raum-in-Raum-Lösung für eine Person, gleichmässig auf der Fläche verteilt. Nicht reservierbar, gehört zum Gebäude und ersetzt kein gebautes Sitzungszimmer.' },
+  { nr: 6, name: 'Informelle Sitzungen', variants: '6.1 stehend, 6.2 Besprechungskoje, 6.4 / 6.5 Lounge', area: '4–23 m²',
+    desc: 'Schneller Austausch abseits des Arbeitsplatzes, ohne Raumbuchung. Auf offener Fläche, in einer Nische oder im geschlossenen Raum.' },
+  { nr: 7, name: 'Interaktive Sitzungen', variants: '7.1 Auditorium, 7.2 Kreativraum, 7.3 Werkstatt', area: '65 / 30 / 30 m²',
+    desc: 'Grosse, flexibel möblierte Räume mit multimedialer Anlage. Nach der Veranstaltung in den Ausgangszustand zurückversetzen.' },
+  { nr: 8, name: 'Team Ablage', variants: '8.1 offen, 8.2 geschlossen', area: '—',
+    desc: 'Ablage für Ordner, dekorative Elemente und Archivgut. Dient zugleich als raumbildendes Element zwischen Arbeitsplatzgruppen.' },
+  { nr: 9, name: 'Locker, Garderoben', variants: '9.1 Locker, 9.2 Garderobe', area: '—',
+    desc: 'Persönliche, abschliessbare Ablage nahe dem Eingang. Ohne zugewiesene Schreibtische werden alle persönlichen Gegenstände hier aufbewahrt.' },
+  { nr: 10, name: 'Service Funktionen', variants: '10.1 Entsorgungsstationen', area: '—',
+    desc: 'Sammelbehälter an den Arbeitsplätzen und Entsorgungsstellen auf den Etagen, damit Reststoffe getrennt in den Stoffkreislauf zurückgeführt werden.' },
+]);
+
+// Spatial rules from the handbook. They are design constraints, not decoration:
+// each one decides whether a floor plan can be approved.
+export const MULTISPACE_GUIDELINES = Object.freeze([
+  'Einzelarbeitsplätze immer entlang der Fassade und rechtwinklig zum Tageslicht, damit keine Reflexion auf dem Bildschirm entsteht.',
+  'Arbeitsplatzgruppen umfassen höchstens vier Tische; grössere Teams werden über mehrere Gruppen verteilt.',
+  'Telefon- und Besprechungsboxen gleichmässig auf der Fläche verteilen und nie in Fluchtwegen aufstellen.',
+  'Boxen dürfen sicherheitsrelevante Installationen weder verdecken noch behindern — Sprinkler, Brandmelder, Notausgänge, Fluchtwegkennzeichen, Sicherheitsbeleuchtung, Löschgeräte sowie Rauch- und Wärmeabzugsöffnungen.',
+  'Der Zugang für Wartung und Unterhalt an gebäudetechnischen Anlagen, Leitungssystemen und Wartungsöffnungen in Boden, Wand und Decke bleibt frei.',
+  'Locker und Garderoben stehen nahe beim Eingang.',
+  'Die Team Ablage ist immer vom Korridor zugänglich, nie hinter dem Arbeitsplatz.',
+  'Ein Auditorium wird nur einmal pro Gebäude eingerichtet.',
+  'Die SECO-Richtlinien zu Abständen, Verkehrsflächen und Fluchtwegen sind einzuhalten.',
+]);
+
+// The three planning terms are defined in the Zielbild and are NOT
+// interchangeable; the portal keeps them apart because each has a different
+// owner and a different system.
+export const WORKSPACE_TERMS = Object.freeze([
+  { term: 'Raumplanung', gloss: 'Strategische Planung der Raumstruktur im Gebäude.' },
+  { term: 'Unterbringungsplanung', gloss: 'Zuordnung einer Organisationseinheit zu einem Gebäude oder Gebäudeteil, auf Basis der Raumplanung.' },
+  { term: 'Belegungsplanung', gloss: 'Operative Zuweisung von Arbeitsräumen oder Arbeitsplätzen an Mitarbeitende oder Gruppen.' },
+]);
+
+// The handbook's four preparatory steps before a layout is drawn.
+export const WORKSPACE_STEPS = Object.freeze([
+  { title: 'Arbeitsstilanalyse', desc: 'Wie arbeitet die Organisationseinheit heute — allein, im Team, mobil, im Sitzungszimmer?' },
+  { title: 'Spezifische Bedürfnisse der Organisationseinheit', desc: 'Aufgaben, Arbeitsweisen und Grad der Digitalisierung unterscheiden sich stark und bestimmen den Modulmix.' },
+  { title: 'Erhebung der Multispace Module', desc: 'Welche Module in welcher Anzahl gebraucht werden, abgeleitet aus Analyse und Bedürfnissen.' },
+  { title: 'Adaption der Multispace Module auf die Fläche', desc: 'Layout und Belegung — die Module werden auf dem konkreten Geschoss platziert.' },
+]);
+
+function moduleTable(C) {
+  return `${C.table({
+    caption: 'Die Multispace-Module mit Sub-Modulen und Flächenrichtmass',
+    zebra: true,
+    columns: [
+      // The characteristic sits under the name rather than in a fourth column:
+      // four columns overflow the anchor-navigation content width, and a module
+      // is read as one thing, not as a name and a separate sentence.
+      { key: 'nr', label: 'Modul',
+        render: (m) => `<span class="wsm-module__nr">${m.nr}</span>${C.escape(m.name)}`
+          + `<span class="wsm-module__desc">${C.escape(m.desc)}</span>` },
+      { key: 'variants', label: 'Sub-Module', width: '15rem', render: (m) => C.escape(m.variants) },
+      { key: 'area', label: 'Flächenrichtmass', width: '11rem',
+        render: (m) => `<span class="wsm-module__area">${C.escape(m.area)}</span>` },
+    ],
+    rows: MULTISPACE_MODULES,
+  })}
+  <p class="small muted mt-4">Die Flächenrichtmasse sind Planungswerte aus der Modulübersicht des Handbuchs. Einzelne Detailseiten weichen davon ab; verbindlich ist das Handbuch.</p>
+  ${C.notification(`Diese Übersicht folgt der Ausgabe vom ${MULTISPACE_EDITION}. Gegenüber der Ausgabe vom 6.1.2025 heisst Modul 1 neu «Standardarbeitsplatz», der Coffee Point ist kein eigenes Modul mehr, und die früheren Module 8 bis 11 sind zu 7 bis 10 aufgerückt. Ältere Pläne und Ausstattungslisten können deshalb eine andere Nummerierung tragen.`, 'info', 'InfoCircle')}`;
+}
+
+function guidelineList(C) {
+  return `<ul class="wsm-rules">${
+    MULTISPACE_GUIDELINES.map((rule) => `<li>${C.escape(rule)}</li>`).join('')}</ul>`;
+}
+
+function planningSteps(C) {
+  return `<h3 class="wsm-subhead">Drei Planungsebenen</h3>
+    <dl class="kv kv--ruled">${WORKSPACE_TERMS.map((t) => `
+      <dt>${C.escape(t.term)}</dt><dd>${C.escape(t.gloss)}</dd>`).join('')}
+    </dl>
+    <h3 class="wsm-subhead">Vier Schritte vor dem Layout</h3>
+    <ol class="wsm-steps">${WORKSPACE_STEPS.map((s) => `
+      <li><strong>${C.escape(s.title)}</strong><span class="muted">${C.escape(s.desc)}</span></li>`).join('')}
+    </ol>
+    <p class="small muted mt-4">Für die Umsetzung empfiehlt das Handbuch die Beauftragung eines externen Changemanagements nach dem FlexWork-Change-Konzept.</p>`;
+}
+
+function planDataBlock(C) {
+  return `<p>Grundrisse werden als binäre DWG-Datei übernommen. Geprüft werden Layerstruktur, Raumpolygone, Raumstempel (AOID), Beschriftung und Bemassung — die <a href="#/app/plan-check">Planprüfung</a> führt diese Prüfung lokal im Browser aus und erstellt einen Prüfbericht.</p>
+    <p>Der grafische Report für die Flächenausgabe heisst <strong>Flächennachweis SIA 416</strong>. Er dient als Beilage zu Verkaufsdokumentationen und zu Verträgen mit Dritten und wird in den Formaten A4 und A3 quer oder hoch gedruckt, wahlweise als gesamter Grundriss oder als Ausschnitt in einem festen Massstab von 1:100 bis 1:1500. Über alle Geschosse eines Gebäudes gilt derselbe Massstab.</p>`;
+}
+
 export const sectionDomId = (id) => 'wi-' + id;
 
 // Flat search index: one row per resource, plus one for the section itself and

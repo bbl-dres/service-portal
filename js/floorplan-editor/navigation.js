@@ -27,9 +27,12 @@ import {
   browseSurfaceHTML, renderBrowseView, sortBrowseEntries,
 } from './browse-view.js';
 import {
-  floorColumns, objectTab, objectTabQuery, planView, plansPanelHTML, renderObjectView,
+  REGISTER_BARS, objectPanelHTML, objectRoute, objectTab, placeSteps, planView, renderObjectView,
 } from './object-view.js';
-import { BASE, PLAN_STATUS, clean, editorHeaderHTML, number, prototypeFooterHTML } from './shared.js';
+import {
+  BASE, PLAN_STATUS, breadcrumbBarHTML, breadcrumbStepsHTML, clean, editorHeaderHTML, number,
+  portfolioRoute, prototypeFooterHTML,
+} from './shared.js';
 
 const fpeMap = createMapSlot();
 const TREE_ATTRS = Object.freeze(['country', 'region', 'city']);
@@ -107,23 +110,42 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
 
   if (view === 'object') {
     const entry = browseEntries([object], core)[0];
-    const state = { tab: objectTab(query.get('tab')), plans: planView(query.get('plans')) };
+    // `mark` names a floor the visitor arrived at from the structure tree. It
+    // points at the row rather than opening the plan, so locating a floor and
+    // opening it stay two separate decisions.
+    const requestedMark = query.get('mark') || '';
+    const mark = entry.floors.some((floor) => floor.floorId === requestedMark) ? requestedMark : '';
+    // One search/sort pair per register: switching tabs must not carry another
+    // register's filter across, and each bar redraws only its own panel.
+    const registers = Object.fromEntries(Object.entries(REGISTER_BARS)
+      .map(([id, bar]) => [id, { q: '', sort: bar.sort }]));
+    const state = {
+      tab: objectTab(query.get('tab')), plans: planView(query.get('plans')), mark, registers,
+    };
+    const rooms = entry.floors.flatMap((floor) => core.spacesForFloor(floor.floorId) || []);
     const previewFor = (floor) => floorPreviewHTML(C, core, floor);
     mount.innerHTML = `${header}
       ${renderObjectView(C, {
-        entry, planning: object.planning, building: object.building,
-        tab: state.tab, view: state.plans, previewFor,
+        entry, planning: object.planning, building: object.building, rooms,
+        tab: state.tab, view: state.plans, previewFor, mark, registers,
       })}
       ${prototypeFooterHTML()}
     </div>`;
-    wireObject(ctx, { entry, state, previewFor, signal });
+    wireObject(ctx, {
+      entry, planning: object.planning, building: object.building, rooms,
+      state, previewFor,
+    });
     return;
   }
 
   if (view === 'work') {
     const drafts = listWorkingCopies();
     const options = { layer: layer.id, tenancies: core.tenancies?.() || [], drafts };
+    // A single, honest crumb: the work queue is a peer of the portfolio, chosen
+    // through the header switch, not a place inside it. The bar is still drawn
+    // so the page does not jump by its height when the view changes.
     mount.innerHTML = `${header}
+      ${breadcrumbBarHTML(C, [{ label: 'Meine Arbeit' }])}
       ${renderWorkView(C, {
         objects,
         layerId: layer.id,
@@ -144,18 +166,24 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
 
   const allEntries = browseEntries(objects, core);
   const selectedId = object?.building.bbl_id || query.get('obj') || '';
+  // A place arrives as its full path, because that is what the tree matches its
+  // nodes on. This is how a breadcrumb of the building detail returns: «Bern»
+  // reopens the portfolio showing Bern, not the whole portfolio.
+  const place = {};
+  for (const key of TREE_ATTRS) if (query.get(key)) place[key] = query.get(key);
   // `view` here is the surface inside the portfolio (map · cards · list); the
   // shared catalogue wiring writes the view switch into exactly this field.
   const state = {
     q: '',
     sort: browseSort(query.get('sort')),
     filters: { state: [] },
-    sel: selectedId ? { id: selectedId } : {},
+    sel: selectedId ? { id: selectedId } : place,
     view: browseMode(query.get('mode')),
     page: 1,
   };
 
   mount.innerHTML = `${header}
+    ${breadcrumbBarHTML(C, portfolioCrumbs(allEntries, state), { id: 'fpe-landing-crumbs' })}
     ${renderBrowseView(C, {
       entries: visibleEntries(allEntries, state),
       allEntries,
@@ -168,7 +196,7 @@ export function renderNavigation(ctx, objects, object = null, message = '') {
     ${prototypeFooterHTML()}
   </div>`;
 
-  wireBrowse(ctx, { allEntries, state, signal });
+  wireBrowse(ctx, { allEntries, state });
 }
 
 // --- Shared filtering --------------------------------------------------------
@@ -192,6 +220,20 @@ function visibleEntries(allEntries, state) {
   )), state.sort);
 }
 
+/**
+ * The portfolio's own trail. It reports what the view is currently scoped to, so
+ * a scope picked in the structure tree gains the «one level up» affordance a
+ * removable filter pill cannot express. An unscoped portfolio carries one crumb
+ * for the whole estate, which keeps the bar — and the page height — stable.
+ */
+function portfolioCrumbs(allEntries, state) {
+  const sel = state.sel || {};
+  const entry = sel.id ? allEntries.find((item) => item.id === sel.id) : null;
+  if (entry) return [...placeSteps(entry), { label: entry.name }];
+  // The deepest place is the current surface; the renderer drops its link.
+  return placeSteps(sel);
+}
+
 function scopeLabel(allEntries, state) {
   const sel = state.sel || {};
   if (sel.id) {
@@ -206,63 +248,87 @@ function scopeLabel(allEntries, state) {
 
 // --- Building detail ---------------------------------------------------------
 
-function wireObject(ctx, { entry, state, previewFor, signal }) {
+function wireObject(ctx, { entry, planning, building, rooms, state, previewFor }) {
   const { mount, C, replaceRoute } = ctx;
-  const routeFor = () => {
-    const params = new URLSearchParams({ building: entry.id });
-    if (state.tab !== 'overview') params.set('tab', objectTabQuery(state.tab));
-    if (state.plans !== 'cards') params.set('plans', state.plans);
-    return `${BASE}?${params}`;
+  const routeFor = () => objectRoute(entry.id, {
+    tab: state.tab, plans: state.plans, mark: state.mark,
+  });
+
+  // The marked floor may sit below the fold on a tall object. Scrolling is a
+  // courtesy, never a jump: focus stays where the visitor put it.
+  const revealMark = () => {
+    if (!state.mark) return;
+    const row = mount.querySelector('.fpe-plans .is-marked');
+    if (row?.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
   };
 
-  // The floor table exists only while the list surface is on screen, so it is
-  // mounted and disposed with that surface rather than once for the page.
-  let unmountTable = null;
-  const disposeTable = () => { if (unmountTable) { unmountTable(); unmountTable = null; } };
-  const mountFloorTable = () => {
-    disposeTable();
-    const host = mount.querySelector('#fpe-floors-table');
-    if (!host) return;
-    unmountTable = C.mountDataTable(host, {
-      id: 'fpe-floors', rows: entry.floors, rowsClickable: true, perPage: 12,
-      unit: { nom: 'Geschosse', dat: 'Geschossen' }, caption: `Geschosse von ${entry.name}`,
-      searchKeys: ['label'], searchLabel: 'Geschoss suchen', placeholder: 'Geschoss suchen…',
-      sorts: [
-        { value: 'level', label: 'Geschoss (oben zuerst)', cmp: (a, b) => b.level - a.level },
-        { value: 'area', label: 'HNF (grösste zuerst)', cmp: (a, b) => b.areaHnf - a.areaHnf },
-      ],
-      columns: floorColumns(C, entry),
+  // Each register redraws only its own panel body, so the bar of one register
+  // never resets another. `wireCatalogueState` is re-attached afterwards because
+  // the bar it listened to has just been replaced.
+  let detachBar = null;
+  let detachTable = null;
+  // Rendering `C.table` directly rather than through `mountDataTable` means this
+  // view owns the two wirings the data table would otherwise attach itself.
+  const wireTable = () => {
+    if (detachTable) { detachTable(); detachTable = null; }
+    const rows = C.wireTableRows(mount);
+    const scroll = C.wireScrollRegions(mount);
+    detachTable = () => { rows(); scroll?.(); };
+  };
+  const drawPanel = (id) => {
+    const panel = mount.querySelector(`[data-panel="${id}"]`);
+    if (!panel) return;
+    const register = state.registers[id];
+    const heading = panel.querySelector(':scope > .sr-only');
+    panel.innerHTML = (heading ? heading.outerHTML : '') + objectPanelHTML(C, id, {
+      entry, planning, building, rooms, previewFor,
+      view: state.plans, mark: state.mark,
+      q: register?.q || '', sort: register?.sort || '',
     });
+    wireBar(id);
+    wireTable();
+    if (id === 'plans') revealMark();
   };
-  const syncPlansSurface = () => {
-    if (state.tab === 'plans' && state.plans === 'list') mountFloorTable();
-    else disposeTable();
-  };
-  syncPlansSurface();
-  ctx.onUnmount(disposeTable);
+
+  function wireBar(id) {
+    if (detachBar) { detachBar(); detachBar = null; }
+    const bar = REGISTER_BARS[id];
+    if (!bar || !state.registers[id]) return;
+    // The register's own search/sort pair is the state this wiring owns; the
+    // view switch writes `state.view`, which only the floor register offers.
+    const local = state.registers[id];
+    const proxy = {
+      get q() { return local.q; }, set q(value) { local.q = value; },
+      get sort() { return local.sort; }, set sort(value) { local.sort = value; },
+      get view() { return state.plans; },
+      set view(value) { state.plans = value; replaceRoute(routeFor()); },
+      filters: {}, page: 1,
+    };
+    const wiring = C.wireCatalogueState(mount, {
+      formId: `${bar.id}-search`, inputId: `${bar.id}-q`, sortId: `${bar.id}-sort`,
+      state: proxy,
+      onChange: () => drawPanel(id),
+    });
+    detachBar = wiring.destroy;
+  }
+
+  wireBar(state.tab);
+  wireTable();
+  revealMark();
+  ctx.onUnmount(() => {
+    if (detachBar) detachBar();
+    if (detachTable) detachTable();
+  });
 
   C.wireTabs(mount, {
     onSelect: (id) => {
       state.tab = id;
-      syncPlansSurface();
+      wireBar(id);
+      if (id === 'plans') revealMark();
       replaceRoute(routeFor());
     },
   });
 
-  // The view switch exchanges only the Grundrisse panel, as the inventory
-  // exchanges only its results area.
-  mount.addEventListener('click', (event) => {
-    const button = event.target.closest?.('.fpe-plans .view-switch__btn');
-    if (!button || !button.dataset.view || button.dataset.view === state.plans) return;
-    const panel = mount.querySelector('[data-panel="plans"]');
-    if (!panel) return;
-    state.plans = button.dataset.view;
-    const heading = panel.querySelector(':scope > .sr-only');
-    panel.innerHTML = (heading ? heading.outerHTML : '')
-      + plansPanelHTML(C, { entry, view: state.plans, previewFor });
-    syncPlansSurface();
-    replaceRoute(routeFor());
-  }, { signal });
 }
 
 // --- View 2: Meine Arbeit ----------------------------------------------------
@@ -313,9 +379,10 @@ const severityRank = (task) => ({ error: 0, warning: 1, info: 2 }[task.severity]
 
 // --- View 1: Portfolio -------------------------------------------------------
 
-function wireBrowse(ctx, { allEntries, state, signal }) {
+function wireBrowse(ctx, { allEntries, state }) {
   const { mount, C, replaceRoute, navigate } = ctx;
   const tree = mount.querySelector('.fpe-browse__tree');
+  const crumbs = mount.querySelector('#fpe-landing-crumbs');
   const stats = mount.querySelector('#fpe-browse-stats');
   const surface = mount.querySelector('#fpe-browse-surface');
   const countNode = mount.querySelector('#fpe-browse-count');
@@ -377,6 +444,9 @@ function wireBrowse(ctx, { allEntries, state, signal }) {
           && (!states.length || states.includes(entry.planState))
       )), levelsOf, (entry) => entry.id);
     }
+    // The trail follows the scope, so «wo bin ich» is answered in one place
+    // whether the scope came from the tree, a pill or a shared link.
+    if (crumbs) crumbs.innerHTML = breadcrumbStepsHTML(C, portfolioCrumbs(allEntries, state));
     renderPills();
     C.announceCatalogue(shown.length, allEntries.length, 'Objekte');
   };
@@ -384,16 +454,6 @@ function wireBrowse(ctx, { allEntries, state, signal }) {
   const clearSelection = () => {
     state.sel = {};
     markTree(tree, null);
-    replaceRoute(routeFor(state));
-    render();
-  };
-
-  const selectObject = (id) => {
-    state.sel = { id };
-    if (tree) {
-      const restored = restoreTreeSelection(tree, { id }, { attrs: TREE_ATTRS });
-      if (restored) markTree(tree, restored);
-    }
     replaceRoute(routeFor(state));
     render();
   };
@@ -416,21 +476,23 @@ function wireBrowse(ctx, { allEntries, state, signal }) {
     wireTree(tree, {
       attrs: TREE_ATTRS,
       onSelect: (selection) => {
-        // A floor picked in the tree is a direct handoff into the workbench; the
-        // building itself only scopes the view.
+        // A floor picked in the tree opens its building's floor register with
+        // that row marked. Locating a plan and opening it are two decisions, and
+        // dropping straight into the workbench took the second one uninvited.
         if (selection.sub && selection.id) {
-          navigate(floorplanEditor(selection.id, selection.sub));
+          navigate(objectRoute(selection.id, { tab: 'plans', mark: selection.sub }));
           return;
         }
-        state.sel = selection.id
-          ? { id: selection.id }
-          : { country: selection.country, region: selection.region, city: selection.city };
+        state.sel = selection.id ? { id: selection.id } : place(selection);
         replaceRoute(routeFor(state));
         render();
       },
     });
-    const restored = state.sel.id
-      ? restoreTreeSelection(tree, { id: state.sel.id }, { attrs: TREE_ATTRS })
+    // A place restores as well as an object: arriving through a breadcrumb of
+    // the building detail, the tree has to show which branch is being looked at,
+    // or the pill above claims a scope nothing on screen confirms.
+    const restored = Object.keys(state.sel).length
+      ? restoreTreeSelection(tree, state.sel, { attrs: TREE_ATTRS })
       : null;
     if (restored) markTree(tree, restored);
     else {
@@ -444,27 +506,30 @@ function wireBrowse(ctx, { allEntries, state, signal }) {
     }
   }
 
-  // A click on a card or a table row selects that object, so the statistics and
-  // the tree follow whichever surface the visitor is using.
-  mount.addEventListener('click', (event) => {
-    const holder = event.target.closest?.('[data-browse-row]');
-    if (!holder || !holder.dataset.obj || holder.dataset.obj === state.sel.id) return;
-    selectObject(holder.dataset.obj);
-  }, { signal });
-
+  // Cards and rows are plain links into the object's detail view. They used to
+  // also select the object on the way out, so one click rewrote the URL and
+  // navigated away from it in the same tick. The map is the surface for looking
+  // at an object without leaving the portfolio.
   render();
+}
+
+// A selection reduced to the place keys it actually carries: `wireTree` reports
+// only the levels of the node that was clicked, and writing the missing ones as
+// `undefined` made an empty selection look like three active filters.
+function place(selection) {
+  const scope = {};
+  for (const key of TREE_ATTRS) if (selection[key]) scope[key] = selection[key];
+  return scope;
 }
 
 // The shareable state of the portfolio view. Search text and facet selections
 // stay client-side, as they do in the inventory; surface, sorting and the chosen
-// object are what another person needs to see the same screen.
+// scope are what another person needs to see the same screen.
 function routeFor(state) {
-  const params = new URLSearchParams();
-  if (state.view !== 'map') params.set('mode', state.view);
-  if (state.sort !== 'name') params.set('sort', state.sort);
-  if (state.sel.id) params.set('obj', state.sel.id);
-  const search = params.toString();
-  return search ? `${BASE}?${search}` : BASE;
+  return portfolioRoute({
+    mode: state.view, sort: state.sort, obj: state.sel.id || '',
+    country: state.sel.country || '', region: state.sel.region || '', city: state.sel.city || '',
+  });
 }
 
 export { PLAN_STATUS };

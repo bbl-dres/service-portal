@@ -157,6 +157,9 @@ export function wireTree(sidebar, { attrs = ['country', 'region', 'city', 'busin
     for (const key of attrs) if (button.dataset[key]) selection[key] = button.dataset[key];
     return selection;
   };
+  // One level per click: a country opens its regions and nothing deeper. Opening
+  // a whole branch was tried and rejected — it buries the column, and at estate
+  // scale a single click would unfold thousands of rows.
   const toggle = (button) => {
     const children = button.closest('.pf-tree__item').querySelector(':scope > .pf-tree__children');
     const expanded = button.getAttribute('aria-expanded') === 'true';

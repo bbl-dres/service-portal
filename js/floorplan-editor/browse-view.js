@@ -16,9 +16,9 @@
 // search field, hit count and view switch this view used to carry.
 
 import { treeHTML } from '../ui/spatial-tree.js';
-import { floorplanEditor, planCheck } from '../links.js';
+import { floorplanEditor } from '../links.js';
 import { countryName } from '../domain.js';
-import { PLAN_STATUS, address, area, clean, number } from './shared.js';
+import { address, area, clean, number } from './shared.js';
 
 const list = (value) => Array.isArray(value) ? value : [];
 
@@ -175,9 +175,14 @@ function listHTML(C, entries) {
 }
 
 /**
- * Body of the map popup: the object's facts, its floors and its actions, anchored
- * on the marker the visitor clicked. This is the object's detail surface — the
- * right-hand panel reports statistics and stays put.
+ * Body of the map popup: the object's master data, anchored on the marker the
+ * visitor clicked, and one way onward. It is a label on the map, not a second
+ * detail view — the floors, the module standard, the furniture and the actions
+ * all live in the object's own detail, and repeating a slice of them here made
+ * the popup the place where work started and then dead-ended.
+ *
+ * The button says where it leads. Its predecessor promised the editor and opened
+ * the detail view instead, which is most of why this surface felt broken.
  */
 export function browsePopupHTML(C, entry) {
   if (!entry) return '';
@@ -191,19 +196,16 @@ export function browsePopupHTML(C, entry) {
     <p class="mono fpe-popup__id">${C.escape(entry.id)}</p>
     <p class="fpe-popup__address">${C.escape(entry.address)}</p>
     <p class="fpe-popup__badge">${C.badge(state.label, state.variant, 'sm')}</p>
+    <dl class="fpe-popup__facts">
+      <dt>Geschosse</dt><dd>${number(entry.floors.length)}</dd>
+      <dt>Räume</dt><dd>${number(entry.rooms)}</dd>
+      <dt>Hauptnutzfläche</dt><dd>${area(entry.areaHnf)}</dd>
+      <dt>Arbeitsplätze</dt><dd>${number(entry.workplaces)}</dd>
+    </dl>
     ${notes.length ? `<ul class="fpe-popup__notes">${notes.map((note) => (
       `<li>${C.escape(note)}</li>`)).join('')}</ul>` : ''}
-    <ul class="fpe-popup__floors">${entry.floors.map((floor) => {
-      const status = PLAN_STATUS[floor.planStatus] || PLAN_STATUS.inventory;
-      return `<li><a class="fpe-popup__floor" href="${floorplanEditor(entry.id, floor.floorId)}">
-        <span class="fpe-popup__floor-label">${C.escape(floor.label)}</span>
-        <span class="fpe-popup__floor-facts">${area(floor.areaHnf)}</span>
-        ${C.badge(status.label, status.variant, 'sm')}
-      </a></li>`;
-    }).join('')}</ul>
     <div class="fpe-popup__actions">
-      <a class="btn btn--filled btn--sm" href="${floorplanEditor(entry.id)}"><span class="btn__text">Im Editor öffnen</span></a>
-      <a class="btn btn--outline btn--sm" href="${C.escape(planCheck(entry.id))}" target="_blank" rel="noopener noreferrer"><span class="btn__text">Planprüfung</span></a>
+      <a class="btn btn--filled btn--sm" href="${floorplanEditor(entry.id)}"><span class="btn__text">Objektdetails öffnen</span></a>
     </div>
   </div>`;
 }
