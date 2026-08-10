@@ -364,7 +364,8 @@ try {
   assert.equal(parsed.canvas, true);
   assert.equal(parsed.emptyViewer, false);
   assert.equal(parsed.tabs, 6);
-  assert.deepEqual(parsed.reports, ['pdf', 'excel', 'csv', 'json']);
+  // Only the two formats an occupancy planner recognises are offered.
+  assert.deepEqual(parsed.reports, ['pdf', 'excel']);
   // The engine must produce a real result: a drawing with a handful of
   // unsupported entities is scored, not withheld.
   assert.match(parsed.figures, /Erfüllungsgrad\s*9?\d %/);
@@ -382,37 +383,22 @@ try {
   assert.equal(parsed.vulnerabilityCopy, false);
   assert.deepEqual(parsed.duplicateIds, []);
 
-  const reportLifecycle = await page.evaluate(`(async () => {
-    const downloads = [];
-    const nativeClick = HTMLAnchorElement.prototype.click;
-    HTMLAnchorElement.prototype.click = function() {
-      downloads.push({ download: this.download, href: this.href });
-    };
-    document.querySelector('[data-plan-check-report="csv"]').click();
-    document.querySelector('[data-plan-check-report="json"]').click();
-    // The browser print path survives without a button: Ctrl+P still emits the
-    // full register set instead of the live single panel.
+  // Ctrl+P survives without a button: printing emits the full register set
+  // instead of the live single panel.
+  const printLifecycle = await page.evaluate(`(() => {
     window.dispatchEvent(new Event('beforeprint'));
     const panelsDuringPrint = document.querySelectorAll('[data-plan-check-print-panels] .plan-check-print-panel').length;
     const ids = [...document.querySelectorAll('.plan-check [id]')].map((node) => node.id);
     window.dispatchEvent(new Event('afterprint'));
-    const panelsAfterPrint = document.querySelectorAll('[data-plan-check-print-panels]').length;
-    HTMLAnchorElement.prototype.click = nativeClick;
     return {
-      downloads: downloads.map((item) => item.download),
-      localUrls: downloads.every((item) => item.href.startsWith('blob:')),
       panelsDuringPrint,
-      panelsAfterPrint,
+      panelsAfterPrint: document.querySelectorAll('[data-plan-check-print-panels]').length,
       duplicateIds: ids.filter((id, index) => ids.indexOf(id) !== index),
     };
   })()`);
-  assert.equal(reportLifecycle.downloads.length, 2);
-  assert.match(reportLifecycle.downloads[0], /\.csv$/);
-  assert.match(reportLifecycle.downloads[1], /\.json$/);
-  assert.equal(reportLifecycle.localUrls, true);
-  assert.equal(reportLifecycle.panelsDuringPrint, 6);
-  assert.equal(reportLifecycle.panelsAfterPrint, 0);
-  assert.deepEqual(reportLifecycle.duplicateIds, []);
+  assert.equal(printLifecycle.panelsDuringPrint, 6);
+  assert.equal(printLifecycle.panelsAfterPrint, 0);
+  assert.deepEqual(printLifecycle.duplicateIds, []);
 
   // --- PDF and Excel check report ----------------------------------------------
   // Both generators run for real against the parsed fixture. The libraries are
@@ -503,6 +489,34 @@ try {
         <= bar.querySelector('.tab__controls').clientWidth,
       barWithinBoard: barBox.width <= document.querySelector('.plan-check-board').getBoundingClientRect().width + 1,
       groups: [...document.querySelectorAll('[data-plan-check-group]')].map((group) => group.dataset.planCheckGroup),
+      openGroups: [...document.querySelectorAll('[data-plan-check-group][open]')].map((group) => group.dataset.planCheckGroup),
+      // A finished check states its outcome through the score, the badge and the
+      // register counts; no page-wide coloured block repeats it.
+      resultBanners: document.querySelectorAll('.plan-check-quality > .notification').length,
+      // Removing the banner must not remove the outcome from assistive output.
+      status: document.querySelector('[data-plan-check-status]')?.textContent.replace(/[\\n\\t ]+/g, ' ').trim() || '',
+      partialNote: document.querySelector('.plan-check-file-summary__note')?.textContent.replace(/[\\n\\t ]+/g, ' ').trim() || '',
+      readability: document.querySelector('.plan-check-file-summary > .badge')?.textContent.trim() || '',
+      // Both workbench columns are bounded by one row, so neither outgrows the
+      // other and the plan never pushes the page open.
+      geometry: (() => {
+        const round = (node) => Math.round(node.getBoundingClientRect().height);
+        const results = document.querySelector('.plan-check-workbench__results');
+        return {
+          workbench: round(document.querySelector('[data-plan-check-workbench]')),
+          results: round(results),
+          viewer: round(document.querySelector('.plan-check-viewer')),
+          resultsOverflowY: getComputedStyle(results).overflowY,
+          resultsClipped: results.scrollHeight >= results.clientHeight,
+        };
+      })(),
+      toolIcons: [...document.querySelectorAll('.plan-check-viewer__tool')].map((button) => ({
+        action: button.dataset.viewerAction,
+        svg: button.querySelectorAll('.plan-check-viewer__tool-icon').length,
+        maskIcon: button.querySelectorAll('.icon').length,
+        stroke: Number(button.querySelector('svg')?.getAttribute('stroke-width') || 0),
+        size: Math.round(button.querySelector('svg')?.getBoundingClientRect().width || 0),
+      })),
       footbarActions: [...document.querySelectorAll('.plan-check-footbar [data-plan-check-action]')]
         .map((button) => button.dataset.planCheckAction),
       viewerToolbarInsideCanvas: Boolean(document.querySelector(
@@ -521,7 +535,30 @@ try {
   assert.equal(workbench.filterReachable, true);
   assert.equal(workbench.tabsFit, true);
   assert.equal(workbench.barWithinBoard, true);
-  assert.ok(workbench.groups.length >= 1, `rule outcome groups: ${workbench.groups}`);
+  assert.deepEqual(workbench.groups, ['failed', 'not-evaluated', 'passed']);
+  // Findings are open on arrival; the two groups that carry no action are not.
+  assert.deepEqual(workbench.openGroups, ['failed']);
+  assert.equal(workbench.resultBanners, 0);
+  assert.match(workbench.status, /Erfüllungsgrad \d+ Prozent\./);
+  assert.match(workbench.status, /Warnungen gefunden\./);
+  assert.equal(workbench.readability, 'Teilweise lesbar');
+  assert.match(workbench.partialNote, /INCOMPLETE_001/);
+  // One bounded row: the two columns match exactly and stay within the cap.
+  assert.equal(workbench.geometry.results, workbench.geometry.viewer);
+  assert.equal(workbench.geometry.workbench, workbench.geometry.viewer);
+  assert.ok(workbench.geometry.workbench <= Math.round(900 * 0.62) + 1,
+    `workbench is capped: ${workbench.geometry.workbench}px of a 900px viewport`);
+  // The long list scrolls inside its own column instead of stretching the row.
+  assert.equal(workbench.geometry.resultsOverflowY, 'auto');
+  assert.equal(workbench.geometry.resultsClipped, true);
+  // Purpose-built glyphs: every tool draws its own SVG at a visible weight, and
+  // none falls back to a hairline mask icon from the shared set.
+  assert.deepEqual(workbench.toolIcons.map((tool) => tool.action),
+    ['fit', 'zoom-in', 'zoom-out', 'focus-selection', 'background', 'fullscreen']);
+  assert.ok(workbench.toolIcons.every((tool) => tool.svg === 1 && tool.maskIcon === 0),
+    `every viewer tool draws its own glyph: ${JSON.stringify(workbench.toolIcons)}`);
+  assert.ok(workbench.toolIcons.every((tool) => tool.stroke >= 1.5 && tool.size >= 18),
+    `viewer glyphs stay legible over a drawing: ${JSON.stringify(workbench.toolIcons)}`);
   assert.deepEqual(workbench.footbarActions, ['replace-file', 'cancel', 'continue-approval']);
   assert.equal(workbench.viewerToolbarInsideCanvas, true);
   assert.match(workbench.legend, /Fehler/);
@@ -546,7 +583,6 @@ try {
     return {
       facts,
       title: card.querySelector('.plan-check-inspector__name')?.textContent.trim() || '',
-      context: document.querySelector('[data-plan-check-viewer-context]')?.textContent.replace(/\\s+/g, ' ').trim() || '',
       selectedRows: document.querySelectorAll('.plan-check-row[aria-pressed="true"]').length,
       // The card stays inside the drawing area and clear of the tool strip.
       insideCanvas: cardBox.left >= wrapBox.left - 1 && cardBox.right <= wrapBox.right + 1
@@ -557,7 +593,6 @@ try {
   })()`);
   assert.ok(attributes.title.length > 0, 'the attribute card names the selected element');
   assert.equal(attributes.selectedRows, 1);
-  assert.ok(attributes.context.includes(attributes.title), `context strip names the selection: ${attributes.context}`);
   for (const label of ['AOID', 'Layer', 'Handle', 'Stützpunkte', 'Rolle']) {
     assert.ok(label in attributes.facts, `attribute card reports ${label}: ${Object.keys(attributes.facts)}`);
   }

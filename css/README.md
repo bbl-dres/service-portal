@@ -63,7 +63,7 @@ Die acht lazy Blätter besitzen unabhängig von der Reihenfolge der besuchten Ro
 | `projects` | `dataportal`, `portfolio` |
 | `document-archive` | `dataportal`, `archive` |
 | `workspace` | `dataportal`, `portfolio`, `floorplan`, `workplace` |
-| `floorplan-editor` | `floorplan-editor` |
+| `floorplan-editor` | `dataportal`, `portfolio`, `floorplan-editor` |
 | `plan-check` | `plan-check` |
 | `room-booking` | `dataportal`, `floorplan`, `workplace`, `room-booking` |
 | `transaction` | — |

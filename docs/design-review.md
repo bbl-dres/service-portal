@@ -467,3 +467,50 @@ Button-Anatomie, Fokus, Formulare und Interaktionszustände hergestellt.
 Raumfarben und Three.js-Materialien bleiben bewusst fachliche Datenfarben.
 Sie werden nicht auf Marken- oder Statusfarben reduziert; CD-Tokens gelten für
 das umgebende Chrome, Auswahl, Fokus und Zustände.
+
+## 10. Vertiefungsreview Plan-Editor Startseite
+
+Stand: 10. August 2026. Geprüft wurde ausschliesslich die Startseite des
+eigenständigen Plan-Editors (`js/floorplan-editor/navigation.js`,
+`browse-view.js`, `work-view.js`) gegen die lokalen CD-Quellen 1.0.5 und gegen
+die bereits etablierten Portalmuster. Referenzzustände wurden bei 320, 768 und
+1440 px gerendert.
+
+### Ausgangslage
+
+Die Startseite war neu und hatte deshalb Muster erfunden, die das Portal bereits
+besitzt. Das ist der teuerste Fehler in einem Designsystem: nicht die Abweichung
+vom CD, sondern die Abweichung von der eigenen, bereits geprüften Lösung. Vier
+der fünf Befunde sind Doppelspurigkeiten, nicht Geschmacksfragen.
+
+### Befunde und Umsetzung
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 10.1 | Die Standardansicht war «Meine Arbeit». Wer den Editor öffnet, kennt aber in der Regel ein Gebäude und keine Aufgabe; die Frage «ist das das richtige Objekt» geht jeder Aufgabe voraus und lässt sich nur auf der Karte beantworten. | «Portfolio» ist die Standardroute und steht im Umschalter links; `?view=work` führt in die Arbeitsliste. Die Marke und der Breadcrumb-Stamm der Arbeitsfläche führen ebenfalls dorthin. | erledigt |
+| 10.2 | Eigene Suchleiste, eigener Trefferzähler und eigener Darstellungsumschalter (`.fpe-browse__search`, `.fpe-browse__count`, `.fpe-browse__modes`) – drei Nachbauten von `catbar`. | Ersetzt durch `C.catalogueBar` mit Suche, Zähler, Sortierung, Filterpanel und `view-switch`, verdrahtet über `C.wireCatalogueState` – dieselbe Anatomie wie im Liegenschaften-Inventar. Darunter `C.activeFilters` als Pillenzeile für Suche, Auswahl und Planstandfilter. | erledigt |
+| 10.3 | Das rechte Panel war ein zweites Objektdetail: bei leerer Auswahl leer, bei Auswahl sprunghaft, und es wiederholte, was die Liste bereits zeigte. Gleichzeitig lag eine Zählung als Overlay auf der Karte (`.fpe-browse__summary`). | Arbeitsteilung statt Wiederholung: Objektdetails, Geschossliste und beide Handoffs liegen im Marker-Popup (`.maplibregl-popup-content`), verankert dort, wo geklickt wurde. Das rechte Panel ist ein kompaktes Kennzahlen-Dashboard für die aktuelle Filtermenge (Objekte, Geschosse, Räume, Arbeitsplätze, Planstandverteilung, HNF) und bleibt dadurch immer gefüllt und ruhig. Das Karten-Overlay entfällt ersatzlos. | erledigt |
+| 10.4 | Der Standortbaum endete beim Gebäude. Gesucht wird aber ein Geschoss; der letzte Schritt fand nur in der Liste oder im Panel statt. | `treeHTML` erhält eine optionale Ebene unterhalb des Blatts (`leaf.children`). Ein Gebäude mit Geschossen wird zum Disclosure, das weiterhin sich selbst auswählt; ein Geschoss ist ein direkter Handoff in die Arbeitsfläche. Die drei übrigen Explorer übergeben `children` nicht und bleiben unverändert. | erledigt |
+| 10.5 | Die Arbeitsliste war eine Kartenliste: vier Zeilen und ein Knopfpaar je Eintrag, ohne Suche, Sortierung oder Filter. Bei zehn Einträgen ist das eine Bildschirmhöhe für zehn Zeilen Information. | Ersetzt durch `C.mountDataTable` – dieselbe kompakte Tabelle mit `catbar`, Suche, Dringlichkeitsfilter, Sortierung, Zebra und Paginierung wie «Meine Vorgänge». Eine Aufgabe ist eine Zeile; die Zeile folgt ihrem ersten Link. | erledigt |
+
+### Bewusst beibehaltene Abweichungen
+
+- **Kopfzeile, Standortbaum und Karte** bleiben portaleigene Muster. Das CD ist
+  ein Website-System und liefert weder App-Shell noch Explorer noch Karte; die
+  Startseite fügt diesen drei bestehenden Abweichungen keine vierte hinzu.
+- **Severity-Marken** in der Arbeitsliste bleiben eigene Vollflächen-Glyphen.
+  Die CD-Iconstärke ist bei 16 px in einer dichten Tabellenzeile nicht lesbar,
+  und die Dringlichkeit ist die eine Information, die eine Warteschlange
+  unübersehbar machen muss. Formen unterscheiden sich, damit die Bedeutung ohne
+  Farbe trägt.
+- **Attributebenen als Tabs.** Das CD kennt keine Aktivitätsleiste; `tab` ist die
+  Komponente, die es für genau diese Aufgabe liefert.
+
+### Prüfartefakte
+
+- `node scripts/test-floorplan-editor.mjs` — Portfolio als Standard, geteilte
+  `catbar`-Anatomie, Kennzahlenpanel statt Objektinspektor, Geschossebene im
+  Baum, Popup mit Detail und Aktionen, kompakte Tabellenzeile, 320-px-Zustände.
+- `node scripts/test-floorplan-editor-landing.mjs` — reines Aufgabenmodell.
+- `node scripts/test-portfolio.mjs`, `node scripts/test-tenancies.mjs` — die
+  unveränderten Explorer nach der Erweiterung von `spatial-tree.js`.

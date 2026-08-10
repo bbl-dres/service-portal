@@ -57,6 +57,10 @@ const IMAGES = [
     title: 'Two people reviewing and signing documents at a table',
     photographer: 'Gabrielle Henderson',
     source: 'https://unsplash.com/photos/woman-signing-on-white-printer-paper-beside-woman-about-to-touch-the-documents-HJckKnwCXxQ' },
+  { appId: 'floorplan-editor', photo: 'photo-1503387762-592deb58ef4e',
+    title: 'An architect working on a draft with a pencil and ruler',
+    photographer: 'Daniel McCullough',
+    source: 'https://unsplash.com/photos/an-architect-working-on-a-draft-with-a-pencil-and-ruler-HtBlQdxfG9k' },
 ];
 
 mkdirSync(TARGET, { recursive: true });

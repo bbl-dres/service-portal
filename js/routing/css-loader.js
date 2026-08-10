@@ -20,7 +20,9 @@ const APP_SHEETS = Object.freeze({
   projects: ['dataportal', 'portfolio'],
   'document-archive': ['dataportal', 'archive'],
   workspace: ['dataportal', 'portfolio', 'floorplan', 'workplace'],
-  'floorplan-editor': ['floorplan-editor'],
+  // The landing page's portfolio view is map-first and reuses the estate map
+  // and explorer surfaces, so it needs their sheets too.
+  'floorplan-editor': ['dataportal', 'portfolio', 'floorplan-editor'],
   'plan-check': ['plan-check'],
   'room-booking': ['dataportal', 'floorplan', 'workplace', 'room-booking'],
   transaction: [],

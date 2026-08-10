@@ -25,12 +25,14 @@ const XLSX_ASSETS = {
 // Excel treats a leading =, +, - or @ as a formula. Every cell written here
 // comes from a parsed CAD file, so each one is neutralised before it lands in a
 // workbook — the same rule js/export.js applies to CSV.
-function safeCell(value) {
+// Exported so the neutralisation itself is assertable: it is a security control,
+// and the workbook it protects can only be produced with the CDN engine loaded.
+export function planCheckSafeCell(value) {
   const text = value == null ? '' : String(value);
   return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
 }
 
-const sheetRows = (rows) => rows.map((row) => row.map(safeCell));
+export const planCheckSheetRows = (rows) => rows.map((row) => row.map(planCheckSafeCell));
 
 export async function loadExcelEngine() {
   const engine = await loadExternalAssets(XLSX_ASSETS);
@@ -113,7 +115,7 @@ export async function buildPlanCheckWorkbook(result, options = {}) {
   const XLSX = await loadExcelEngine();
   const workbook = XLSX.utils.book_new();
   for (const sheet of planCheckExcelSheets(result, options)) {
-    const worksheet = XLSX.utils.aoa_to_sheet(sheetRows(sheet.rows));
+    const worksheet = XLSX.utils.aoa_to_sheet(planCheckSheetRows(sheet.rows));
     worksheet['!cols'] = sheet.widths.map((width) => ({ wch: width }));
     // Sheet names are fixed identifiers, but Excel still rejects >31 characters.
     XLSX.utils.book_append_sheet(workbook, worksheet, sheet.name.slice(0, 31));

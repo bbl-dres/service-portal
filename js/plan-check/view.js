@@ -26,6 +26,11 @@ export const PLAN_CHECK_TABS = Object.freeze([
 // it takes the full workbench width instead of leaving an idle Canvas beside it.
 export const PLAN_CHECK_WIDE_TABS = Object.freeze(['metrics']);
 
+// Only findings are open on arrival. The passed group is by far the largest and
+// says nothing actionable; the not-evaluated group is rarer still. Both stay one
+// click away, and the controller keeps whatever the visitor opens.
+export const PLAN_CHECK_COLLAPSED_GROUPS = Object.freeze(['not-evaluated', 'passed']);
+
 const CATEGORY_LABELS = Object.freeze({
   LAYER: 'Layerstruktur',
   POLY: 'Raumpolygone',
@@ -490,27 +495,7 @@ export function renderPlanCheckPanel(C, state, tab = state.tab) {
 
 // --- Viewer chrome ----------------------------------------------------------
 
-// The strip above the Canvas names what the plan currently shows. Without it,
-// a highlighted polygon carries no identity once the list scrolls out of view.
-export function renderPlanCheckViewerContext(C, state) {
-  const validation = validationOf(state);
-  const selection = state.selection;
-  if (!selection) {
-    return `<span class="plan-check-viewer__context-hint">${C.icon('InfoCircle', 'icon--sm')}
-      <span>Wählen Sie ein Objekt im Plan oder in der Liste, um seine Attribute zu sehen.</span></span>`;
-  }
-  const detail = planCheckSelectionSummary(selection, state.result);
-  const descriptor = statusDescriptor(detail.status);
-  return `<span class="plan-check-viewer__context-item">
-    ${statusIcon(C, descriptor)}
-    <span class="plan-check-viewer__context-title">${C.escape(detail.title)}</span>
-    ${detail.subtitle ? `<span class="muted">— ${C.escape(detail.subtitle)}</span>` : ''}
-  </span>
-  <button class="btn btn--bare btn--sm plan-check-viewer__context-clear" type="button"
-    data-plan-check-action="clear-selection"><span class="btn__text">Auswahl aufheben</span></button>`;
-}
-
-// Short identity of a selection, shared by the context strip and the announcer.
+// Short identity of a selection, used by the inspector and the announcer.
 // The full attribute set is produced by the viewer, which owns the geometry.
 export function planCheckSelectionSummary(selection, result) {
   const validation = result?.validation || {};
@@ -757,30 +742,17 @@ function tabItems(state) {
   }));
 }
 
+// A finished check needs no banner: the score, the readability badge, the
+// register counts and the status filter already state the outcome, and a
+// full-width coloured block on every result reads as an alarm even when nothing
+// is wrong. Only an ABORTED check keeps one, because there the score shows «–»
+// and nothing else on the page explains why.
 function qualitySummary(C, state) {
-  const validation = validationOf(state);
-  const errors = list(validation.errors);
-  const errorCount = errors.filter((item) => normalizedSeverity(item?.severity) === 'error').length;
-  const warningCount = errors.filter((item) => normalizedSeverity(item?.severity) === 'warning').length;
-  if (validation.aborted) return C.notification(
+  if (!validationOf(state).aborted) return '';
+  return C.notification(
     'Die fachliche Prüfung wurde sicher beendet. Zeichnungseinheit oder Grundvoraussetzungen erlauben keine verlässliche Flächenauswertung.',
     'error', 'WarningCircle',
   );
-  // Partial normalization no longer suppresses the result: the rules that could
-  // be evaluated are evaluated, and the gap is named in the same sentence.
-  const partial = validationIncomplete(validation)
-    ? ' Teile der Zeichnung konnten nicht normalisiert werden; die betroffenen Objekte sind unter «Fehlermeldungen» als INCOMPLETE_001 aufgeführt.'
-    : '';
-  if (errorCount) return C.notification(
-    `${errorCount} Fehler und ${warningCount} Warnungen gefunden. Die Listen und der Plan zeigen dieselben Feststellungen.${partial}`,
-    'error', 'WarningCircle',
-  );
-  if (warningCount) return C.notification(
-    `Keine Fehler und ${warningCount} Warnungen gefunden. Prüfen Sie die Hinweise vor einer weiteren Verwendung.${partial}`,
-    'warning', 'WarningCircle',
-  );
-  return C.notification(`Alle Prüfregeln sind bestanden.${partial}`,
-    partial ? 'warning' : 'success', partial ? 'WarningCircle' : 'CheckmarkCircle');
 }
 
 // Readability of the source file as the parser found it — a fact about the
@@ -811,6 +783,9 @@ function fileBar(C, state) {
       <dl class="plan-check-file-summary__facts">
         ${facts.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}
       </dl>
+      ${validationIncomplete(validationOf(state)) ? `<p class="plan-check-file-summary__note">
+        Teile der Zeichnung konnten nicht normalisiert werden — die betroffenen Objekte stehen
+        unter «Fehlermeldungen» als INCOMPLETE_001.</p>` : ''}
     </div>
     ${readabilityBadge(C, state)}
   </section>`;
@@ -839,24 +814,53 @@ function figuresBand(C, state) {
       <div class="plan-check-report-actions">
         <button class="btn btn--outline btn--sm" type="button" data-plan-check-report="pdf"><span class="btn__text">PDF</span></button>
         <button class="btn btn--outline btn--sm" type="button" data-plan-check-report="excel"><span class="btn__text">Excel</span></button>
-        <button class="btn btn--outline btn--sm" type="button" data-plan-check-report="csv"><span class="btn__text">CSV</span></button>
-        <button class="btn btn--outline btn--sm" type="button" data-plan-check-report="json"><span class="btn__text">JSON</span></button>
       </div>
     </div>
   </div>`;
 }
 
-function viewerTool(C, { action, icon, label, pressed = null }) {
+// Purpose-built glyphs rather than the design system's icon set. Two reasons:
+// the set has no mark for «fit», «zoom to selection», «dark background» or
+// «fullscreen», so those buttons previously borrowed a magnifier, an eyedropper
+// and a monitor — none of which say what they do; and its hairline weight
+// disappears against a drawing, which is exactly what this strip floats over.
+const VIEWER_TOOL_SHAPES = Object.freeze({
+  // The whole drawing sitting inside the view: two nested frames. Arrowheads
+  // were tried first and blob together — at 20 px a head is shorter than the
+  // stroke that draws it.
+  fit: '<rect x="2" y="3.6" width="16" height="12.8" rx="1"/>'
+    + '<rect x="6.8" y="7.6" width="6.4" height="4.8" rx=".6"/>',
+  // Magnifier with a plus.
+  'zoom-in': '<circle cx="8.6" cy="8.6" r="5.1"/><path d="m12.4 12.4 4.1 4.1"/><path d="M8.6 6.4v4.4M6.4 8.6h4.4"/>',
+  'zoom-out': '<circle cx="8.6" cy="8.6" r="5.1"/><path d="m12.4 12.4 4.1 4.1"/><path d="M6.4 8.6h4.4"/>',
+  // Crosshair closing on one marked object: this zooms to the selection.
+  'focus-selection': '<rect x="7.2" y="7.2" width="5.6" height="5.6" rx=".8"/>'
+    + '<path d="M10 1.9v2.6M10 15.5v2.6M1.9 10h2.6M15.5 10h2.6"/>',
+  // Half-filled disc: the standard contrast mark, here for the dark plan ground.
+  background: '<circle cx="10" cy="10" r="7.1"/>'
+    + '<path d="M10 2.9a7.1 7.1 0 0 1 0 14.2Z" fill="currentColor" stroke="none"/>',
+  // Corner brackets pointing out.
+  fullscreen: '<path d="M3.4 7.6V3.4h4.2M16.6 7.6V3.4h-4.2M3.4 12.4v4.2h4.2M16.6 12.4v4.2h-4.2"/>',
+});
+
+function viewerToolIcon(action) {
+  const shape = VIEWER_TOOL_SHAPES[action];
+  if (!shape) return '';
+  return `<svg class="plan-check-viewer__tool-icon" viewBox="0 0 20 20" width="20" height="20"
+    fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
+    focusable="false" aria-hidden="true">${shape}</svg>`;
+}
+
+function viewerTool(C, { action, label, pressed = null }) {
   return `<button class="btn btn--bare btn--sm btn--icon-only plan-check-viewer__tool" type="button"
     data-viewer-action="${action}" aria-label="${C.escape(label)}" title="${C.escape(label)}"${
-    pressed === null ? '' : ` aria-pressed="${pressed}"`}>${C.icon(icon, 'btn__icon')}</button>`;
+    pressed === null ? '' : ` aria-pressed="${pressed}"`}>${viewerToolIcon(action)}</button>`;
 }
 
 function viewerMarkup(C, state) {
   const drawingEmpty = !list(state.result?.drawing?.renderList).length;
   return `<section class="plan-check-viewer" data-plan-check-viewer aria-labelledby="plan-check-viewer-heading">
     <h3 id="plan-check-viewer-heading" class="sr-only">Planansicht</h3>
-    <div class="plan-check-viewer__context" data-plan-check-viewer-context>${renderPlanCheckViewerContext(C, state)}</div>
     <p class="sr-only" id="plan-check-canvas-help">Pfeiltasten verschieben den Plan. Plus und Minus zoomen. Pos1 oder F passt den Plan ein. Eingabe wählt das Objekt in der Planmitte. Escape hebt die Auswahl auf.</p>
     <div class="plan-check-viewer__canvas-wrap" data-plan-check-canvas-wrap>
       <canvas class="plan-check-viewer__canvas" data-plan-check-canvas tabindex="0"
@@ -867,13 +871,13 @@ function viewerMarkup(C, state) {
         hint: 'Die Textlisten bleiben für die Diagnose verfügbar.',
       })}</div>` : ''}
       <div class="plan-check-viewer__tools" role="group" aria-label="Planansicht steuern">
-        ${viewerTool(C, { action: 'fit', icon: 'Expand', label: 'Gesamten Plan einpassen' })}
-        ${viewerTool(C, { action: 'zoom-in', icon: 'Plus', label: 'Plan vergrössern' })}
-        ${viewerTool(C, { action: 'zoom-out', icon: 'Minus', label: 'Plan verkleinern' })}
+        ${viewerTool(C, { action: 'fit', label: 'Gesamten Plan einpassen' })}
+        ${viewerTool(C, { action: 'zoom-in', label: 'Plan vergrössern' })}
+        ${viewerTool(C, { action: 'zoom-out', label: 'Plan verkleinern' })}
         <span class="plan-check-viewer__tools-divider" aria-hidden="true"></span>
-        ${viewerTool(C, { action: 'focus-selection', icon: 'Search', label: 'Auf Auswahl zoomen' })}
-        ${viewerTool(C, { action: 'background', icon: 'Eyedropper', label: 'Dunklen Hintergrund umschalten', pressed: state.background === 'dark' })}
-        ${viewerTool(C, { action: 'fullscreen', icon: 'Desktop', label: 'Plan im Vollbild anzeigen', pressed: false })}
+        ${viewerTool(C, { action: 'focus-selection', label: 'Auf Auswahl zoomen' })}
+        ${viewerTool(C, { action: 'background', label: 'Dunklen Hintergrund umschalten', pressed: state.background === 'dark' })}
+        ${viewerTool(C, { action: 'fullscreen', label: 'Plan im Vollbild anzeigen', pressed: false })}
       </div>
       <aside class="plan-check-inspector" data-plan-check-inspector aria-label="Attribute des gewählten Objekts" hidden></aside>
       <ul class="plan-check-viewer__legend" data-plan-check-legend aria-label="Legende"></ul>

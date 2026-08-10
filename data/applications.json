@@ -481,7 +481,7 @@
   {
     "appId": "floorplan-editor",
     "name": "Plan-Editor",
-    "group": "Arbeitsplatz & Logistik",
+    "group": "Immobilien & Bau",
     "icon": "Apps",
     "audience": [
       "staff"
@@ -491,7 +491,7 @@
       "href": "#/app/floorplan-editor"
     },
     "description": "Flächen, Räume und Multispace-Ausstattung direkt im Grundriss verwalten, auswerten und planen.",
-    "area": "logistics",
+    "area": "buildings",
     "long": "Der Plan-Editor ist die spezialisierte Arbeitsoberfläche für das Flächenmanagement. Er verbindet Gebäude, Geschosse und Räume mit Nutzungsarten, SIA-416-Flächen, Verwaltungseinheiten, Arbeitsplatzkapazitäten und Multispace-Modulen. Fachpersonen können den Flächenbestand im Grundriss suchen, vergleichen und auswerten, Raumattribute und Flächen bearbeiten sowie Ausstattungsobjekte aus dem Produktkatalog verorten. Im Feedback-Prototyp werden Entwürfe, Raumänderungen und simulierte Publikationen ausschliesslich im verwendeten Browser gespeichert. Planübernahme, DWG-Prüfung und fachliche Freigabe gehören zur separaten Planprüfung; DXF wird dort nicht unterstützt.",
     "access": {
       "note": "Für angemeldete Fachpersonen der Arbeitsplatz- und Raumausstattungsplanung. Der Prototyp bildet noch keine produktive Schreibberechtigung ab.",
@@ -519,12 +519,12 @@
     "contact": "campus",
     "updated": "2026-08-07",
     "bild": {
-      "src": "assets/images/applications/workspace.jpg",
-      "titel": "Moderner offener Büroraum mit Arbeitsplätzen und Ausstattung.",
-      "fotograf": "DOAN THANH BINH",
-      "credit": "DOAN THANH BINH — Pexels",
-      "lizenz": "Pexels-Lizenz",
-      "quelle": "https://www.pexels.com/photo/modern-open-office-space-with-cubicles-36631700/"
+      "src": "assets/images/applications/floorplan-editor.jpg",
+      "titel": "Fachperson zeichnet einen Bauplan mit Stift und Massstab.",
+      "fotograf": "Daniel McCullough",
+      "credit": "Daniel McCullough — Unsplash",
+      "lizenz": "Unsplash-Lizenz",
+      "quelle": "https://unsplash.com/photos/an-architect-working-on-a-draft-with-a-pencil-and-ruler-HtBlQdxfG9k"
     }
   },
   {

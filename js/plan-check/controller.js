@@ -7,11 +7,10 @@ import { createPlanCheckViewer } from './viewer.js';
 import { engine } from '../process-engine.js';
 import { session } from '../core/session.js';
 import {
-  PLAN_CHECK_APPROVAL, PLAN_CHECK_STEPS, PLAN_CHECK_TABS, PLAN_CHECK_WIDE_TABS, planCheckSelectionSummary,
-  planCheckStatusFilters, renderPlanCheckInspector, renderPlanCheckLegend, renderPlanCheckPage,
-  renderPlanCheckPanel, renderPlanCheckUploadState, renderPlanCheckViewerContext,
+  PLAN_CHECK_APPROVAL, PLAN_CHECK_COLLAPSED_GROUPS, PLAN_CHECK_STEPS, PLAN_CHECK_TABS, PLAN_CHECK_WIDE_TABS,
+  planCheckSelectionSummary, planCheckStatusFilters, renderPlanCheckInspector, renderPlanCheckLegend,
+  renderPlanCheckPage, renderPlanCheckPanel, renderPlanCheckUploadState,
 } from './view.js';
-import { downloadPlanCheckReport } from './report.js';
 import { downloadPlanCheckPdf } from './report-pdf.js';
 import { downloadPlanCheckExcel } from './report-excel.js';
 
@@ -134,8 +133,9 @@ export function createPlanCheckController(ctx, options = {}) {
     hiddenRooms: new Set(),
     hiddenAreas: new Set(),
     // Result groups the visitor collapsed. Kept on state so a panel redraw after
-    // a search or filter change does not silently reopen them.
-    collapsedGroups: new Set(),
+    // a search or filter change does not silently reopen them. Findings start
+    // open; the passed and not-evaluated groups start closed.
+    collapsedGroups: new Set(PLAN_CHECK_COLLAPSED_GROUPS),
     background: 'light',
     dragActive: false,
     buildingId: buildingId(suppliedBuilding),
@@ -189,6 +189,23 @@ export function createPlanCheckController(ctx, options = {}) {
     state.statusMessage = message;
     const status = mount.querySelector('[data-plan-check-status]');
     if (status) status.textContent = message;
+  }
+
+  // What the removed result banner used to say, spoken once when the check ends.
+  function resultAnnouncement(result) {
+    const validation = result?.validation || {};
+    if (validation.aborted) {
+      return 'Die fachliche Prüfung wurde sicher beendet; es liegt kein Erfüllungsgrad vor.';
+    }
+    const errors = Array.isArray(validation.errors) ? validation.errors : [];
+    const count = (severity) => errors.filter((item) => String(item?.severity || '')
+      .toLowerCase() === severity).length;
+    const errorCount = count('error');
+    const warningCount = count('warning');
+    const findings = errorCount || warningCount
+      ? `${errorCount} Fehler und ${warningCount} ${warningCount === 1 ? 'Warnung' : 'Warnungen'} gefunden.`
+      : 'Keine Fehler und keine Warnungen gefunden.';
+    return `Erfüllungsgrad ${validation.score ?? 0} Prozent. ${findings}`;
   }
 
   function disposeViewer() {
@@ -289,9 +306,7 @@ export function createPlanCheckController(ctx, options = {}) {
 
   function syncInspector({ announce = false } = {}) {
     const inspector = mount.querySelector('[data-plan-check-inspector]');
-    const context = mount.querySelector('[data-plan-check-viewer-context]');
     const legend = mount.querySelector('[data-plan-check-legend]');
-    if (context) context.innerHTML = renderPlanCheckViewerContext(C, state);
     if (legend) legend.innerHTML = renderPlanCheckLegend(C, state);
     if (!inspector) return;
     const details = viewer?.inspection?.() || null;
@@ -511,12 +526,14 @@ export function createPlanCheckController(ctx, options = {}) {
       state.hiddenLayers = new Set();
       state.hiddenRooms = new Set();
       state.hiddenAreas = new Set();
-      state.collapsedGroups = new Set();
+      state.collapsedGroups = new Set(PLAN_CHECK_COLLAPSED_GROUPS);
       state.submission = null;
       state.flow = [];
       draw();
       C.focusWizardStep(mount, PLAN_CHECK_STEPS, 2, { headId: 'plan-check-step-heading' });
-      setStatus('DWG-Pr\u00fcfung abgeschlossen. Die Ergebnisse sind verf\u00fcgbar.');
+      // The outcome is read out here because the page states it visually through
+      // the score, the badge and the register counts rather than a banner.
+      setStatus(`DWG-Pr\u00fcfung abgeschlossen. ${resultAnnouncement(state.result)}`);
     } catch (parseError) {
       if (parseError?.name === 'AbortError' || disposed || sequence !== parseSequence) return;
       state.phase = 'error';
@@ -539,7 +556,7 @@ export function createPlanCheckController(ctx, options = {}) {
     state.hiddenLayers = new Set();
     state.hiddenRooms = new Set();
     state.hiddenAreas = new Set();
-    state.collapsedGroups = new Set();
+    state.collapsedGroups = new Set(PLAN_CHECK_COLLAPSED_GROUPS);
     state.submission = null;
     state.flow = [];
     state.search = '';
@@ -666,14 +683,7 @@ export function createPlanCheckController(ctx, options = {}) {
       return;
     }
     const reportButton = event.target.closest?.('[data-plan-check-report]');
-    if (reportButton && state.result) {
-      const format = reportButton.dataset.planCheckReport;
-      if (format === 'pdf' || format === 'excel') downloadRichReport(format, reportButton);
-      else {
-        const filename = downloadPlanCheckReport(state.result, format);
-        C.announce(`${filename} wurde erstellt.`);
-      }
-    }
+    if (reportButton && state.result) downloadRichReport(reportButton.dataset.planCheckReport, reportButton);
   }
 
   // PDF and Excel need a generator library, which is fetched on demand. The
@@ -699,7 +709,8 @@ export function createPlanCheckController(ctx, options = {}) {
       console.error('[plan-check] report export failed', error);
       if (!disposed) {
         C.toast(`Der ${label}-Pr\u00fcfbericht konnte nicht erstellt werden. `
-          + 'Pr\u00fcfen Sie die Netzwerkverbindung; CSV und JSON stehen weiterhin lokal zur Verf\u00fcgung.',
+          + 'Pr\u00fcfen Sie die Netzwerkverbindung und versuchen Sie es erneut; '
+          + 'die Ergebnisse auf dieser Seite bleiben unver\u00e4ndert.',
         'error', 'WarningCircle');
         C.announce(`Der ${label}-Pr\u00fcfbericht konnte nicht erstellt werden.`);
       }

@@ -163,6 +163,59 @@ function migrateLegacyHistory(floorId) {
   return raw;
 }
 
+// --- Landing-page inventory --------------------------------------------------
+// The landing page needs to know what the visitor left behind without opening
+// every plan. Both readers below are tolerant: a corrupt or foreign entry is
+// skipped, never thrown, because a broken recent entry must not cost the whole
+// page.
+
+export const VISITS_KEY = 'bbl_floorplan_editor_visits_v1';
+const MAX_VISITS = 12;
+
+/** Floor IDs with an unpublished local working copy, newest write first. */
+export function listWorkingCopies() {
+  const drafts = [];
+  let storage = null;
+  try { storage = globalThis.localStorage; } catch { return drafts; }
+  if (!storage) return drafts;
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index);
+    if (!key || !key.startsWith(DRAFT_PREFIX)) continue;
+    let floorId = '';
+    try { floorId = decodeURIComponent(key.slice(DRAFT_PREFIX.length)); } catch { continue; }
+    if (!identifier(floorId)) continue;
+    const document = readJSON(key, null);
+    if (!plainObject(document)) continue;
+    drafts.push({
+      floorId,
+      // The document carries no change counter; the placement count is the
+      // honest stand-in for «how much is in here».
+      changeCount: Array.isArray(document.placements) ? document.placements.length : 0,
+      savedAt: isoTimestamp(document.updatedAt) ? Date.parse(document.updatedAt) : 0,
+    });
+  }
+  return drafts.sort((left, right) => right.savedAt - left.savedAt);
+}
+
+/** Remember that a floor was opened, so the landing page can offer it again. */
+export function rememberVisit(floorId, at = Date.now()) {
+  const requestedFloorId = String(floorId || '');
+  if (!identifier(requestedFloorId)) return false;
+  const visits = listVisits().filter((visit) => visit.floorId !== requestedFloorId);
+  visits.unshift({ floorId: requestedFloorId, at: Number(at) || Date.now() });
+  return writeJSON(VISITS_KEY, visits.slice(0, MAX_VISITS));
+}
+
+/** Recently opened floors, newest first. */
+export function listVisits() {
+  const stored = readJSON(VISITS_KEY, []);
+  if (!Array.isArray(stored)) return [];
+  return stored
+    .filter((visit) => plainObject(visit) && identifier(visit.floorId) && Number.isFinite(Number(visit.at)))
+    .map((visit) => ({ floorId: visit.floorId, at: Number(visit.at) }))
+    .slice(0, MAX_VISITS);
+}
+
 /** Load and, when needed, rebase a compatible working copy onto current reference data. */
 export function loadWorkingCopy(floorId, baseline) {
   const requestedFloorId = String(floorId || '');

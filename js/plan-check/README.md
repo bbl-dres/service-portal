@@ -52,7 +52,7 @@ converter-reported unknown entity produces a structured
 Nearly every production DWG contains a few entities the parser cannot render
 (proxy objects, OLE frames, unsupported types), and treating that as "nothing
 was checked" made the checker unusable on real files. Every rule that can be
-evaluated is evaluated and scored; the UI, PDF, Excel, CSV and JSON reports
+evaluated is evaluated and scored; the UI, PDF and Excel reports
 carry the score and the completeness note together. XREF validation preserves a
 sticky aggregate count alongside its bounded diagnostic sample, so entries after
 the sample limit cannot evade the rule.

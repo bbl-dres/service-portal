@@ -44,13 +44,10 @@ import {
   renderPlanCheckPage,
   renderPlanCheckPanel,
 } from '../js/plan-check/view.js';
-import {
-  buildPlanCheckCsv,
-  buildPlanCheckJson,
-  planCheckReportFilename,
-} from '../js/plan-check/report.js';
 import { planCheckReportModel } from '../js/plan-check/report-model.js';
-import { planCheckExcelSheets, planCheckExcelFilename } from '../js/plan-check/report-excel.js';
+import {
+  planCheckExcelFilename, planCheckExcelSheets, planCheckSafeCell, planCheckSheetRows,
+} from '../js/plan-check/report-excel.js';
 import { planCheckPdfFilename } from '../js/plan-check/report-pdf.js';
 
 const expectedHashes = new Map([
@@ -940,17 +937,21 @@ const reportResult = {
     change: { type: 'mutation', reason: '=CMD()', effectiveDate: '2026-08-08', reference: '@ref' },
   },
 };
-const reportCsv = buildPlanCheckCsv(reportResult);
-assert.match(reportCsv, /'=CMD\(\)/);
-assert.match(reportCsv, /'\+SUM\(1,1\)/);
-assert.match(reportCsv, /'@ref/);
-const reportJson = JSON.parse(buildPlanCheckJson(reportResult));
-assert.equal(reportJson.schema, 'bbl-plan-check/1');
-assert.equal(reportJson.context.change.reason, '=CMD()');
-assert.equal(reportJson.validation.rules.length, 40);
-assert.equal(reportJson.validation.rules[0].description, 'Pflicht-Layer fehlt: R_RAUMPOLYGON');
-assert.deepEqual(reportJson.validation.errors.at(-1).handles, ['B', 'C']);
-assert.equal(reportJson.validation.errors.at(-1).layer, 'V_TEXT');
+// Spreadsheet cells starting with a formula trigger are neutralised before they
+// reach a workbook, so a change reason cannot execute in Excel.
+const unsafeSheets = planCheckExcelSheets(reportResult);
+const unsafeInfo = unsafeSheets.find((sheet) => sheet.name === 'Info');
+assert.equal(unsafeInfo.rows.find((row) => row[0] === '\u00c4nderungsgrund')[1], '=CMD()');
+assert.equal(planCheckSafeCell('=CMD()'), "'=CMD()");
+assert.equal(planCheckSafeCell('@ref'), "'@ref");
+assert.equal(planCheckSafeCell('+SUM(1,1)'), "'+SUM(1,1)");
+assert.equal(planCheckSafeCell('Grundriss'), 'Grundriss');
+assert.equal(planCheckSafeCell(null), '');
+// Nothing reaches a worksheet with a leading formula trigger.
+assert.ok(unsafeSheets.every((sheet) => planCheckSheetRows(sheet.rows).every((row) => row.every((cell) => (
+  !/^[=+\-@\t\r]/.test(String(cell ?? ''))
+)))));
+// The report model bounds a hostile change reason before any renderer sees it.
 const oversizedReason = 'R'.repeat(LIMITS.changeReasonLength + 25);
 const boundedReasonResult = {
   ...reportResult,
@@ -959,14 +960,10 @@ const boundedReasonResult = {
     change: { ...reportResult.checkContext.change, reason: oversizedReason },
   },
 };
-const boundedReasonJson = JSON.parse(buildPlanCheckJson(boundedReasonResult));
-assert.equal(boundedReasonJson.context.change.reason.length, LIMITS.changeReasonLength);
-const boundedReasonCsv = buildPlanCheckCsv(boundedReasonResult);
-assert.ok(boundedReasonCsv.includes('R'.repeat(LIMITS.changeReasonLength)));
-assert.equal(boundedReasonCsv.includes(oversizedReason), false);
-assert.equal(planCheckReportFilename(reportResult, 'csv'), 'unsafe-plan-pruefergebnis.csv');
-assert.throws(() => planCheckReportFilename(reportResult, 'pdf'), /Unsupported plan-check report format/);
-assert.throws(() => planCheckReportFilename(reportResult, 'geojson'), /Unsupported plan-check report format/);
+const boundedReason = planCheckReportModel(boundedReasonResult)
+  .info.find(([label]) => label === '\u00c4nderungsgrund');
+assert.equal(boundedReason[1].length, LIMITS.changeReasonLength);
+assert.equal(planCheckExcelFilename(reportResult), 'unsafe-plan-pruefbericht.xlsx');
 
 const patternedHatch = normalizeDrawing({
   ...database,
@@ -1080,26 +1077,20 @@ assert.equal(unknownUnits.areas[0].area, null);
 assert.equal(unknownUnits.metrics.ngf, null);
 assert.equal(unknownUnits.rules.find((rule) => rule.code === 'POLY_004').status, 'not-evaluated');
 assert.equal(unknownUnits.rules.find((rule) => rule.code === 'LAYER_001').status, 'passed');
-const unknownUnitsCsv = buildPlanCheckCsv({
+// An unmeasurable drawing must not invent areas anywhere downstream: the report
+// model dashes every figure instead of printing a bare number without a unit.
+const unknownUnitsModel = planCheckReportModel({
   file: { name: 'unknown-units.dwg', size: 6 },
   database: { version: 'AC1032' },
   layers: drawing.layerInfo,
   validation: unknownUnits,
-});
-assert.equal(unknownUnitsCsv.split(/\r?\n/).find((row) => row.startsWith('Raum;')).split(';').at(-1), '');
-assert.equal(unknownUnitsCsv.split(/\r?\n/).find((row) => row.startsWith('Fläche;')).split(';').at(-1), '');
-
-const unknownUnitsJson = JSON.parse(buildPlanCheckJson({
-  file: { name: 'unknown-units.dwg', size: 6 },
-  database: { version: 'AC1032' },
-  layers: drawing.layerInfo,
-  validation: unknownUnits,
-}));
-assert.equal(unknownUnitsJson.validation.rooms[0].area, null);
-assert.equal(unknownUnitsJson.validation.areas[0].area, null);
-for (const key of ['hnf', 'nnf', 'vf', 'ff', 'nf', 'ngf', 'gf', 'kf']) {
-  assert.equal(unknownUnitsJson.validation.metrics[key], null, `${key} must remain explicitly unavailable`);
-}
+}, { generatedAt: new Date('2026-08-10T09:30:00Z') });
+assert.equal(unknownUnitsModel.rooms.rows[0][3], '–');
+assert.equal(unknownUnitsModel.areas.rows[0][3], '–');
+assert.equal(unknownUnitsModel.summary.ngfLabel, '–');
+assert.equal(unknownUnitsModel.summary.gfLabel, '–');
+assert.ok(unknownUnitsModel.kpi.areas.every((row) => row[2] === '–'),
+  'every area KPI must remain explicitly unavailable');
 
 const fakeComponents = {
   badge: (label, variant) => `<span data-badge="${variant}">${label}</span>`,
@@ -1306,13 +1297,14 @@ const abortedReportResult = {
   layers: invalidUnits.layerInfo,
   validation: aborted,
 };
-const abortedReportCsv = buildPlanCheckCsv(abortedReportResult);
-assert.match(abortedReportCsv, /Pr\u00fcfregel;LAYER_001;nicht gepr\u00fcft/);
-const abortedReportJson = JSON.parse(buildPlanCheckJson(abortedReportResult));
-assert.equal(abortedReportJson.validation.aborted, true);
-assert.equal(abortedReportJson.validation.rules[0].status, 'not-evaluated');
-assert.equal('passed' in abortedReportJson.validation.rules[0], false);
-assert.equal(abortedReportJson.validation.metrics.ngf, null);
+// An aborted check must report itself as unevaluated rather than as a clean run.
+const abortedReportModel = planCheckReportModel(abortedReportResult,
+  { generatedAt: new Date('2026-08-10T09:30:00Z') });
+assert.equal(abortedReportModel.summary.scoreLabel, '\u2013');
+assert.equal(abortedReportModel.summary.evaluatedRules, 0);
+assert.equal(abortedReportModel.rules.failed.length, 0);
+assert.deepEqual(abortedReportModel.rules.notEvaluated[0].slice(0, 2), ['Nicht gepr\u00fcft', 'LAYER_001']);
+assert.equal(abortedReportModel.summary.ngfLabel, '\u2013');
 
 const cyclic = normalizeDrawing({
   header: { $INSUNITS: 4 },
@@ -1362,14 +1354,14 @@ const incompleteResult = {
   layers: cyclic.layerInfo,
   validation: cyclicValidation,
 };
-const incompleteJson = JSON.parse(buildPlanCheckJson(incompleteResult));
-assert.ok(Number.isInteger(incompleteJson.validation.score));
-assert.equal(incompleteJson.validation.completeness.status, 'incomplete');
-assert.equal(incompleteJson.validation.completeness.reasons[0].code, 'CYCLIC_BLOCK_REFERENCE');
-assert.match(buildPlanCheckCsv(incompleteResult), /Pr\u00fcfung;Vollst\u00e4ndigkeit;unvollst\u00e4ndig/);
-// The CSV reports the score of a partially normalised run, with completeness
-// stated on its own row rather than replacing the result.
-assert.match(buildPlanCheckCsv(incompleteResult), /Pr\u00fcfung;Erf\u00fcllungsgrad;[0-9]+ %/);
+// A partially normalised run still reports its score; the gap is stated beside
+// it as a note rather than replacing the result.
+const incompleteModel = planCheckReportModel(incompleteResult,
+  { generatedAt: new Date('2026-08-10T09:30:00Z') });
+assert.match(incompleteModel.summary.scoreLabel, /^[0-9]+ %$/);
+assert.equal(incompleteModel.summary.complete, false);
+assert.equal(incompleteModel.summary.incompleteReasons[0].code, 'CYCLIC_BLOCK_REFERENCE');
+assert.ok(incompleteModel.notes.some((note) => /nicht normalisiert/.test(note)));
 const incompleteMarkup = renderPlanCheckPage(fakeComponents, {
   background: 'light',
   changeType: 'new',

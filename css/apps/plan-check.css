@@ -75,6 +75,10 @@
 .plan-check-file-summary__facts > div { display:flex; gap:var(--sp-1); min-width:0; }
 .plan-check-file-summary__facts dt { color:var(--color-text-light); }
 .plan-check-file-summary__facts dd { margin:0; color:var(--color-text); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+/* The one caveat a finished check still has to state, next to the readability
+   badge it qualifies — a quiet line rather than a page-wide coloured block. */
+.plan-check-file-summary__note { margin:var(--sp-1-5) 0 0; max-width:80ch; color:var(--color-warning-text);
+  font-size:var(--text-sm); }
 
 /* --- Figures band -------------------------------------------------------- */
 .plan-check-figures { display:grid; grid-template-columns:minmax(0,1fr); min-width:0;
@@ -207,16 +211,8 @@
 /* --- Viewer -------------------------------------------------------------- */
 .plan-check-viewer { display:flex; flex-direction:column; min-width:0; background:var(--color-bg);
   border-top:var(--stroke-1) solid var(--surface-border); }
-.plan-check-viewer__context { display:flex; align-items:center; gap:var(--sp-2); min-height:var(--target-min);
-  padding:var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-3); background:var(--color-bg-subtle);
-  border-bottom:var(--stroke-1) solid var(--surface-border); font-size:var(--text-sm); }
-.plan-check-viewer__context-hint { display:inline-flex; align-items:center; gap:var(--sp-2); min-width:0;
-  color:var(--color-text-muted); }
-.plan-check-viewer__context-item { display:inline-flex; align-items:center; gap:var(--sp-2); flex:1 1 auto; min-width:0;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.plan-check-viewer__context-title { font-family:var(--font-mono); font-size:var(--text-xs); }
-.plan-check-viewer__context-clear { flex:none; margin-left:auto; }
-.plan-check-viewer__canvas-wrap { position:relative; min-height:clamp(20rem,55vh,48rem); overflow:hidden; background:var(--color-bg); }
+.plan-check-viewer__canvas-wrap { position:relative; flex:1 1 auto; min-height:clamp(20rem,55vh,48rem);
+  overflow:hidden; background:var(--color-bg); }
 .plan-check-viewer--dark .plan-check-viewer__canvas-wrap { background:var(--color-secondary-900); }
 .plan-check-viewer__canvas { display:block; width:100%; height:100%; min-height:inherit; touch-action:none; cursor:grab; }
 .plan-check-viewer__canvas:active { cursor:grabbing; }
@@ -229,6 +225,7 @@
   background:var(--color-bg); border:var(--stroke-1) solid var(--color-border); box-shadow:var(--shadow-sm); }
 .plan-check-viewer__tool { color:var(--color-text); }
 .plan-check-viewer__tool[aria-pressed="true"] { color:var(--color-primary-700); background:var(--color-primary-50); }
+.plan-check-viewer__tool-icon { display:block; width:var(--sp-5); height:var(--sp-5); }
 .plan-check-viewer__tools-divider { height:var(--stroke-1); margin:var(--sp-1) var(--sp-1-5); background:var(--color-border); }
 
 .plan-check-viewer__coordinates,
@@ -334,12 +331,19 @@
   .plan-check-section { padding:var(--sp-6); }
   /* One register beside the plan; the metrics register spans both columns and
      is declared after so it still wins inside this breakpoint. */
-  .plan-check-workbench { grid-template-columns:minmax(21rem,2fr) minmax(0,3fr); }
-  .plan-check-workbench__results { max-height:clamp(30rem,72vh,56rem); overflow:auto; }
-  .plan-check-workbench--wide { grid-template-columns:minmax(0,1fr); }
-  .plan-check-workbench--wide .plan-check-workbench__results { max-height:none; }
-  .plan-check-viewer { border-top:0; border-left:var(--stroke-1) solid var(--surface-border); }
-  .plan-check-viewer__canvas-wrap { min-height:clamp(30rem,72vh,56rem); }
+  /* One bounded row instead of two independently clamped columns: the cap sits
+     on the workbench, `minmax(0,1fr)` lets the row shrink below its content, and
+     both columns then stretch to exactly the same height. The list scrolls
+     inside itself; the plan fills whatever is left. */
+  .plan-check-workbench { grid-template-columns:minmax(21rem,2fr) minmax(0,3fr);
+    grid-template-rows:minmax(0,1fr);
+    min-height:clamp(24rem,52vh,38rem); max-height:clamp(28rem,62vh,46rem); }
+  .plan-check-workbench__results { min-height:0; overflow:auto; }
+  .plan-check-workbench--wide { grid-template-columns:minmax(0,1fr); grid-template-rows:auto;
+    min-height:0; max-height:none; }
+  .plan-check-workbench--wide .plan-check-workbench__results { overflow:visible; }
+  .plan-check-viewer { min-height:0; border-top:0; border-left:var(--stroke-1) solid var(--surface-border); }
+  .plan-check-viewer__canvas-wrap { min-height:0; }
   /* Tabs and status filter share one row while both fit. When the register
      labels grow past the available width the filter drops to its own row rather
      than clipping a register out of reach. */
@@ -372,11 +376,10 @@
   .plan-check-footbar,
   .plan-check-actions,
   .plan-check-viewer__tools,
-  .plan-check-viewer__context-clear,
   .plan-check-inspector { display:none; }
   .plan-check-quality { gap:var(--sp-5); margin-top:var(--sp-5); }
   .plan-check-board { border:0; box-shadow:none; overflow:visible; }
-  .plan-check-workbench { display:block; overflow:visible; }
+  .plan-check-workbench { display:block; max-height:none; overflow:visible; }
   .plan-check-workbench__results { display:none; }
   .plan-check-print-panels { display:block; }
   .plan-check-print-panel { padding:var(--sp-4) 0; break-before:page; }

@@ -1,7 +1,8 @@
-// Standalone floor-plan editor regression: internal building/floor navigation,
-// direct deep links, portal-shell isolation, selection/inspector state,
-// browser-local editing, and responsive panel lifecycle. The editor remains a
-// separate micro-app from the read-only Workspace portal and future checker.
+// Standalone floor-plan editor regression: the two landing views (work queue
+// and map-first portfolio), direct deep links, portal-shell isolation,
+// selection/inspector state, browser-local editing, and responsive panel
+// lifecycle. The editor remains a separate micro-app from the read-only
+// Workspace portal and the plan checker.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 let failures = 0;
@@ -55,69 +56,226 @@ try {
   await checkProblems(gatePage, 'login gate has no runtime problems');
   await gatePage.closeTarget();
 
-  console.log('\n■ Editor building and floor navigation');
+  console.log('\n■ Plan-Editor landing: map-first Portfolio');
   page = await openPage(cdp, `${APP_BASE}/`, { login: true });
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, page.sessionId);
   await cdp.send('Page.navigate', { url: `${APP_BASE}/app/floorplan-editor` }, page.sessionId);
-  await sleep(450);
-  check(await waitFor(page, '#fpe-navigation[data-view="buildings"]'), 'opens the editor building navigation without route parameters');
-  const buildingNav = await page.evaluate(`(() => ({
-    hash: location.hash,
-    standalone: document.body.classList.contains('body--standalone-app'),
-    rows: document.querySelectorAll('[data-nav-row]').length,
-    activeRail: document.querySelector('.fpe-nav-rail__item[aria-current="page"]')?.textContent.replace(/\\s+/g, ' ').trim() || '',
-    selected: document.querySelector('.fpe-nav-row.is-selected a')?.textContent.replace(/\\s+/g, ' ').trim() || '',
-    openHref: document.querySelector('#fpe-open-building')?.getAttribute('href') || '',
-    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    duplicateIds: [...document.querySelectorAll('[id]')].map(node => node.id).filter((id, index, ids) => ids.indexOf(id) !== index),
-    unlabeledControls: [...document.querySelectorAll('input,select,button')].filter(node => !node.disabled
-      && !node.getAttribute('aria-label') && !node.getAttribute('title') && !node.labels?.length && !node.textContent.trim()).length,
-    caption: document.querySelector('.fpe-nav-table caption')?.textContent.trim() || '',
-  }))()`);
-  check(buildingNav.hash === '#/app/floorplan-editor' && buildingNav.standalone && buildingNav.rows === 7,
-    'keeps the building navigator as a stable standalone root route', `${buildingNav.hash} · ${buildingNav.rows} buildings`);
-  check(/Gebäude/.test(buildingNav.activeRail) && /Liebefeld/.test(buildingNav.selected)
-    && /building=1080%2F6650%2FAA/i.test(buildingNav.openHref),
-  'selects the planned building and offers its floor navigation', `${buildingNav.activeRail} · ${buildingNav.selected}`);
-  check(buildingNav.overflow <= 1, 'building navigation has no document overflow', `${buildingNav.overflow}px`);
-  check(buildingNav.duplicateIds.length === 0 && buildingNav.unlabeledControls === 0 && /Gebäude/.test(buildingNav.caption),
-    'building navigation is structurally accessible', `${buildingNav.duplicateIds.length} duplicate IDs · ${buildingNav.unlabeledControls} unnamed controls`);
+  await sleep(700);
+  check(await waitFor(page, '#fpe-navigation[data-view="portfolio"]'),
+    'opens the map-first portfolio as the landing route');
+  const browse = await page.evaluate(`(async () => {
+    const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
+    const deadline = performance.now() + 6000;
+    while (!document.querySelector('#fpe-browse-map canvas') && performance.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    const map = document.querySelector('#fpe-browse-map');
+    const rect = map?.getBoundingClientRect() || { width: 0, height: 0 };
+    return {
+      hash: location.hash,
+      standalone: document.body.classList.contains('body--standalone-app'),
+      views: [...document.querySelectorAll('.fpe-viewnav__item')].map(text),
+      activeView: text(document.querySelector('.fpe-viewnav__item.is-active')),
+      // The bar is the portal's shared catalogue bar, not a local reimplementation.
+      catbar: {
+        present: !!document.querySelector('.fpe-browse__bar .catbar'),
+        search: !!document.querySelector('#fpe-browse-q'),
+        sort: [...document.querySelectorAll('#fpe-browse-sort option')].length,
+        filter: !!document.querySelector('#fpe-browse-filter-btn'),
+        views: [...document.querySelectorAll('.fpe-browse__bar .view-switch__btn')].map(b => b.dataset.view),
+        count: text(document.querySelector('#fpe-browse-count')),
+        localSearchField: document.querySelectorAll('.fpe-browse__search').length,
+      },
+      mapCanvas: !!map?.querySelector('canvas'),
+      mapWidth: Math.round(rect.width), mapHeight: Math.round(rect.height),
+      // No overlay legend floating on the drawing any more.
+      overlaySummary: document.querySelectorAll('.fpe-browse__summary, .fpe-browse__legend').length,
+      // The right column is a statistics dashboard, not an object inspector.
+      stats: {
+        figures: [...document.querySelectorAll('#fpe-browse-stats .kpi-strip__label')].map(text),
+        scope: text(document.querySelector('#fpe-browse-stats .fpe-overline')),
+        states: [...document.querySelectorAll('#fpe-browse-stats .fpe-stats__state-count')].map(text),
+        detailPanel: document.querySelectorAll('.fpe-browse__detail').length,
+      },
+      tree: {
+        objects: document.querySelectorAll('.fpe-browse__tree .pf-tree__leaf').length,
+        floors: document.querySelectorAll('.fpe-browse__tree .pf-tree__sub').length,
+        expandable: document.querySelectorAll('.fpe-browse__tree .pf-tree__leaf--parent').length,
+      },
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      duplicateIds: [...document.querySelectorAll('[id]')].map(node => node.id).filter((id, index, ids) => ids.indexOf(id) !== index),
+      unlabeledControls: [...document.querySelectorAll('input,select,button')].filter(node => !node.disabled
+        && !node.getAttribute('aria-label') && !node.getAttribute('title') && !node.labels?.length && !node.textContent.trim()).length,
+    };
+  })()`);
+  check(browse.hash === '#/app/floorplan-editor' && browse.standalone
+    && browse.activeView === 'Portfolio' && browse.views[0] === 'Portfolio' && browse.views[1] === 'Meine Arbeit',
+  'makes the portfolio the default view and offers the work queue as its peer', browse.views.join(' | '));
+  check(browse.catbar.present && browse.catbar.search && browse.catbar.filter
+    && browse.catbar.sort >= 4 && browse.catbar.localSearchField === 0
+    && browse.catbar.views.join(',') === 'map,cards,list' && /7 von 7 Objekten/.test(browse.catbar.count),
+  'reuses the portal catalogue bar instead of a local search and mode switch',
+  `${browse.catbar.views.join(',')} · ${browse.catbar.count}`);
+  check(browse.mapCanvas && browse.mapWidth > 400 && browse.mapHeight > 300 && browse.overlaySummary === 0,
+    'defaults to the map and keeps no summary overlay on the drawing',
+    `${browse.mapWidth}×${browse.mapHeight}px · ${browse.overlaySummary} overlays`);
+  check(browse.stats.figures.join(',') === 'Objekte,Geschosse,Räume,Arbeitsplätze'
+    && browse.stats.scope === 'Alle Objekte' && browse.stats.states.join(',') === '6,1,0'
+    && browse.stats.detailPanel === 0,
+  'uses the right column as a statistics dashboard rather than an object inspector',
+  `${browse.stats.scope} · ${browse.stats.states.join('/')}`);
+  check(browse.tree.objects === 7 && browse.tree.expandable === 7 && browse.tree.floors === 13,
+    'adds the floors of a building as their own level in the location tree',
+    `${browse.tree.objects} objects · ${browse.tree.floors} floors`);
+  check(browse.overflow <= 1 && browse.duplicateIds.length === 0 && browse.unlabeledControls === 0,
+    'renders the landing without overflow or unlabelled controls',
+    `${browse.overflow}px · ${browse.duplicateIds.length} duplicate IDs · ${browse.unlabeledControls} unnamed controls`);
+
+  const treePick = await page.evaluate(`(async () => {
+    const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
+    document.querySelector('.fpe-browse__tree [data-obj="1080/6650/AA"]')?.click();
+    const deadline = performance.now() + 5000;
+    while (!document.querySelector('.maplibregl-popup-content .fpe-popup') && performance.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    const popup = document.querySelector('.maplibregl-popup-content .fpe-popup');
+    return {
+      hash: location.hash,
+      // Object details and actions live in the marker popup.
+      popupName: text(popup?.querySelector('.fpe-popup__name')),
+      popupFloors: popup ? popup.querySelectorAll('.fpe-popup__floor').length : 0,
+      popupOpen: popup?.querySelector('.fpe-popup__actions .btn--filled')?.getAttribute('href') || '',
+      popupCheck: popup?.querySelector('.fpe-popup__actions .btn--outline')?.getAttribute('href') || '',
+      popupNotes: popup ? [...popup.querySelectorAll('.fpe-popup__notes li')].map(text) : [],
+      // The statistics follow the selection instead of being replaced by it.
+      statsScope: text(document.querySelector('#fpe-browse-stats .fpe-overline')),
+      statsObjects: text(document.querySelector('#fpe-browse-stats .kpi-strip__value')),
+      pills: [...document.querySelectorAll('#fpe-browse-activefilters .active-filter')].map(text),
+      reset: !!document.querySelector('#fpe-browse-activefilters [data-reset]'),
+    };
+  })()`);
+  check(/Liebefeld/.test(treePick.popupName) && treePick.popupFloors === 3
+    && /building=1080%2F6650%2FAA/i.test(treePick.popupOpen)
+    && /plan-check\?building=1080%2F6650%2FAA/i.test(treePick.popupCheck)
+    && treePick.popupNotes.length > 0,
+  'puts the object detail, its floors and both handoffs into the marker popup',
+  `${treePick.popupName} · ${treePick.popupFloors} floors · ${treePick.popupNotes.join(' | ')}`);
+  check(/obj=1080%2F6650%2FAA/i.test(treePick.hash) && /Liebefeld/.test(treePick.statsScope)
+    && treePick.statsObjects === '1' && treePick.pills.length === 1 && treePick.reset,
+  'scopes the statistics to the selection and reports it as a removable filter pill',
+  `${treePick.statsScope} · ${treePick.pills.join(' | ')}`);
+
+  const floorPick = await page.evaluate(`(() => {
+    const item = document.querySelector('.fpe-browse__tree [data-obj="1080/6650/AA"]')?.closest('.pf-tree__item');
+    const subs = [...(item?.querySelectorAll('.pf-tree__sub') || [])];
+    return {
+      labels: subs.map(node => node.textContent.trim()),
+      floors: subs.map(node => node.dataset.sub),
+      visible: subs.filter(node => node.closest('.pf-tree__children')?.hidden === false).length,
+    };
+  })()`);
+  check(floorPick.labels.join(',') === '2. OG,1. OG,EG' && floorPick.visible === 3
+    && floorPick.floors.every(id => id.startsWith('1080-6650-AA')),
+  'offers the floors of the selected building directly in the tree, top floor first',
+  `${floorPick.labels.join(' · ')}`);
+
+  await cdp.send('Page.navigate', { url: `${APP_BASE}/app/floorplan-editor?mode=list` }, page.sessionId);
+  await sleep(500);
+  const listMode = await page.evaluate(`(async () => {
+    const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
+    const search = document.querySelector('#fpe-browse-q');
+    search.value = 'Liebefeld';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 400));
+    const filtered = document.querySelectorAll('[data-browse-row]').length;
+    const count = text(document.querySelector('#fpe-browse-count'));
+    const pills = [...document.querySelectorAll('#fpe-browse-activefilters .active-filter')].map(text);
+    document.querySelector('#fpe-browse-activefilters [data-reset]')?.click();
+    await new Promise(resolve => setTimeout(resolve, 400));
+    return {
+      filtered, count, pills,
+      restored: document.querySelectorAll('[data-browse-row]').length,
+      caption: text(document.querySelector('.fpe-browse__table caption')),
+      mapMounted: !!document.querySelector('#fpe-browse-map'),
+    };
+  })()`);
+  check(listMode.filtered === 1 && listMode.restored === 7 && /1 von 7 Objekten/.test(listMode.count)
+    && listMode.pills.length === 1 && !listMode.mapMounted,
+  'filters the list through the shared search and clears it through the pill row',
+  `${listMode.filtered}/7 · ${listMode.count} · ${listMode.pills.join(' | ')}`);
+  check(/Objekte/.test(listMode.caption), 'labels the object table for assistive technology', listMode.caption);
 
   await cdp.send('Page.navigate', {
     url: `${APP_BASE}/app/floorplan-editor?building=${encodeURIComponent(BUILDING_ID)}`,
   }, page.sessionId);
-  await sleep(450);
-  check(await waitFor(page, '#fpe-navigation[data-view="floors"]'), 'opens the selected building floor navigation');
-  const floorNav = await page.evaluate(`(async () => {
-    const search = document.querySelector('#fpe-nav-search');
-    search.value = '1. OG';
-    search.dispatchEvent(new Event('input', { bubbles: true }));
-    await new Promise(resolve => setTimeout(resolve, 60));
-    const filtered = [...document.querySelectorAll('[data-nav-row]')].filter(row => !row.hidden).length;
-    search.value = '';
-    search.dispatchEvent(new Event('input', { bubbles: true }));
+  await sleep(700);
+  check(await waitFor(page, '#fpe-navigation[data-view="portfolio"]'),
+    'resolves a building deep link into the portfolio view');
+  const deepLink = await page.evaluate(`(() => ({
+    scope: (document.querySelector('#fpe-browse-stats .fpe-overline')?.textContent || '').trim(),
+    treeActive: (document.querySelector('.fpe-browse__tree .is-active')?.textContent || '').trim(),
+  }))()`);
+  check(/Liebefeld/.test(deepLink.scope) && /Verwaltungsge/.test(deepLink.treeActive),
+    'preselects the deep-linked object in tree and statistics', `${deepLink.scope}`);
+
+  console.log('\n■ Plan-Editor landing: Meine Arbeit');
+  await cdp.send('Page.navigate', { url: `${APP_BASE}/app/floorplan-editor?view=work` }, page.sessionId);
+  await sleep(600);
+  check(await waitFor(page, '#fpe-navigation[data-view="work"]'), 'opens the work queue through the view switch');
+  const work = await page.evaluate(`(() => {
+    const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
+    const row = document.querySelector('#fpe-work-table tbody tr');
     return {
-      hash: location.hash,
-      rows: document.querySelectorAll('[data-nav-row]').length,
-      filtered,
-      selected: document.querySelector('.fpe-nav-row.is-selected a')?.textContent.replace(/\\s+/g, ' ').trim() || '',
-      inspector: document.querySelector('.fpe-nav-inspector')?.textContent.replace(/\\s+/g, ' ').trim() || '',
-      openHref: document.querySelector('#fpe-open-floor')?.getAttribute('href') || '',
-      buildingHref: [...document.querySelectorAll('.fpe-nav-rail__item')]
-        .find(node => /Gebäude/.test(node.textContent))?.getAttribute('href') || '',
-      caption: document.querySelector('.fpe-nav-table caption')?.textContent.trim() || '',
-      scrollRegion: document.querySelector('.fpe-nav-main')?.getAttribute('aria-label') || '',
+      h1: text(document.querySelector('#fpe-work h1')),
+      tabs: [...document.querySelectorAll('.fpe-layer-tabs .tab__control')].map(text),
+      activeTab: text(document.querySelector('.fpe-layer-tabs .tab__control--active')),
+      // The queue is the shared data table, not a bespoke card list.
+      table: {
+        catbar: !!document.querySelector('#fpe-work-table .catbar'),
+        search: !!document.querySelector('#fpe-tasks-q'),
+        filter: !!document.querySelector('#fpe-tasks-filter'),
+        headers: [...document.querySelectorAll('#fpe-work-table thead th')].map(text),
+        rows: document.querySelectorAll('#fpe-work-table tbody tr').length,
+        cardList: document.querySelectorAll('.fpe-work__list').length,
+      },
+      rowHeight: row ? Math.round(row.getBoundingClientRect().height) : 0,
+      markPainted: (() => {
+        const svg = document.querySelector('.fpe-work__mark svg');
+        return svg ? Math.round(svg.getBoundingClientRect().width) : 0;
+      })(),
+      recents: document.querySelectorAll('.fpe-recent-strip .fpe-recent').length,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      duplicateIds: [...document.querySelectorAll('[id]')].map(node => node.id).filter((id, index, ids) => ids.indexOf(id) !== index),
     };
   })()`);
-  check(floorNav.rows === 3 && floorNav.filtered === 1 && /2\. OG/.test(floorNav.selected),
-    'lists all active floors, selects the preferred floor, and filters locally', `${floorNav.rows} · ${floorNav.filtered} filtered · ${floorNav.selected}`);
-  check(/Kennzahlen des Geschosses/.test(floorNav.inspector)
-    && /building=1080%2F6650%2FAA/i.test(floorNav.openHref) && floorNav.openHref.includes(`floor=${FLOOR_ID}`)
-    && floorNav.buildingHref === '#/app/floorplan-editor' && /Aktive Geschosse/.test(floorNav.caption)
-    && floorNav.scrollRegion === 'Aktive Geschosse',
-  'provides the wireframe inspector, exact editor handoff, and building-list navigation', floorNav.openHref);
-  await checkProblems(page, 'editor navigation has no runtime problems');
+  check(/Meine Arbeit/.test(work.h1) && work.tabs.length === 4 && /Nutzung/.test(work.activeTab)
+    && work.tabs.some(label => /noch keine Daten/.test(label)),
+  'shows the four attribute layers as tabs and marks the empty ones', work.tabs.join(' | '));
+  check(work.table.catbar && work.table.search && work.table.filter && work.table.cardList === 0
+    && work.table.headers.join(',') === 'Aufgabe,Befund,Status,Aktion' && work.table.rows > 0,
+  'renders the queue as the shared compact table with its own catalogue bar',
+  `${work.table.headers.join(',')} · ${work.table.rows} rows`);
+  check(work.rowHeight > 0 && work.rowHeight <= 110 && work.markPainted >= 12,
+    'keeps a work item to one compact row with a legible severity mark',
+    `${work.rowHeight}px · mark ${work.markPainted}px`);
+  check(work.recents > 0 && work.overflow <= 1 && work.duplicateIds.length === 0,
+    'keeps the recent-plan strip and renders without overflow or duplicate ids',
+    `${work.recents} recents · ${work.overflow}px`);
+
+  await cdp.send('Page.navigate', { url: `${APP_BASE}/app/floorplan-editor?view=work&layer=operations` }, page.sessionId);
+  await sleep(450);
+  const emptyLayer = await page.evaluate(`(() => {
+    const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
+    return {
+      activeTab: text(document.querySelector('.fpe-layer-tabs .tab__control--active')),
+      empty: text(document.querySelector('.fpe-work__empty')),
+      table: document.querySelectorAll('#fpe-work-table').length,
+    };
+  })()`);
+  check(/Betrieb/.test(emptyLayer.activeTab) && /noch nicht mit Daten/.test(emptyLayer.empty) && emptyLayer.table === 0,
+    'explains an attribute layer that carries no data yet instead of showing an empty table', emptyLayer.empty.slice(0, 90));
+  await checkProblems(page, 'editor landing has no runtime problems');
 
   console.log('\n■ Floor-plan editor deep link and standalone shell');
   // Each run starts from the canonical baseline. The same test later proves
@@ -300,7 +458,7 @@ try {
   `${initial.headerDisplay}/${initial.footerDisplay}/${initial.bannerDisplay}`);
   check(/Plan-Editor/.test(initial.h1) && /2\. OG/.test(initial.h1) && /Liebefeld/.test(initial.h1),
     'identifies the requested building and floor in the editor H1', initial.h1);
-  check(initial.breadcrumb.length === 3 && initial.breadcrumb[0] === 'Alle Objekte'
+  check(initial.breadcrumb.length === 3 && initial.breadcrumb[0] === 'Portfolio'
     && /Liebefeld/.test(initial.breadcrumb[1]) && initial.breadcrumb[2] === '2. OG'
     && /building=1080%2F6650%2FAA/i.test(initial.hash) && initial.hash.includes(`floor=${FLOOR_ID}`)
     && !initial.contextBack,
@@ -1565,7 +1723,8 @@ try {
     'returns to compact mode with both drawers closed');
 
   await page.evaluate(`document.querySelector('.fpe-breadcrumb a:nth-of-type(2)')?.click()`);
-  check(await waitFor(page, '#fpe-navigation[data-view="floors"]'), 'returns from the canvas to the editor floor navigation through the building breadcrumb');
+  check(await waitFor(page, '#fpe-navigation[data-view="portfolio"]'),
+    'returns from the canvas to the portfolio view through the building breadcrumb');
   const returnedNavigation = await page.evaluate(`(() => {
     const visible = selector => {
       const node = document.querySelector(selector);
@@ -1575,39 +1734,67 @@ try {
       standalone: document.body.classList.contains('body--standalone-app'),
       canvas: !!document.querySelector('#fpe-canvas'), navigation: !!document.querySelector('#fpe-navigation'),
       portalHeader: visible('#main-header'), portalFooter: visible('#main-footer'),
-      h1: document.querySelector('#main-content h1')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+      h1: document.querySelector('#fpe-navigation h1')?.textContent.replace(/\\s+/g, ' ').trim() || '',
       hash: location.hash,
-      rows: document.querySelectorAll('[data-nav-row]').length,
+      scope: (document.querySelector('#fpe-browse-stats .fpe-overline')?.textContent || '').trim(),
+      statsObjects: (document.querySelector('#fpe-browse-stats .kpi-strip__value')?.textContent || '').trim(),
       homeHref: document.querySelector('#fpe-home')?.getAttribute('href') || '',
     };
   })()`);
   check(returnedNavigation.standalone && returnedNavigation.navigation && !returnedNavigation.canvas
     && !returnedNavigation.portalHeader && !returnedNavigation.portalFooter,
   'keeps the user inside the standalone Plan-Editor application', returnedNavigation.hash);
-  check(/Geschosse/.test(returnedNavigation.h1) && returnedNavigation.rows === 3
+  check(/Portfolio/.test(returnedNavigation.h1) && /Liebefeld/.test(returnedNavigation.scope)
+    && returnedNavigation.statsObjects === '1'
     && /building=1080%2F6650%2FAA/i.test(returnedNavigation.hash) && !returnedNavigation.hash.includes('floor=')
     && returnedNavigation.homeHref === '#/app/floorplan-editor',
-  'returns to the matching building floor list with a stable app-home breadcrumb', `${returnedNavigation.h1} · ${returnedNavigation.hash}`);
-
-  await page.evaluate(`document.querySelector('#fpe-home')?.click()`);
-  check(await waitFor(page, '#fpe-navigation[data-view="buildings"]'), 'brand link opens the editor building navigation');
-  const home = await page.evaluate(`(() => {
-    const main = document.querySelector('.fpe-nav-main');
+  'preselects the matching object and scopes the statistics to it', `${returnedNavigation.scope} · ${returnedNavigation.hash}`);
+  const compactBrowse = await page.evaluate(`(() => {
+    const tree = document.querySelector('.fpe-browse__tree');
+    const stats = document.querySelector('#fpe-browse-stats');
     return {
-      hash: location.hash, rows: document.querySelectorAll('[data-nav-row]').length,
+      treeDisplay: tree ? getComputedStyle(tree).display : 'missing',
+      statsWidth: stats ? Math.round(stats.getBoundingClientRect().width) : 0,
+      barWraps: !!document.querySelector('.fpe-browse__bar .catbar'),
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      tableScrolls: !!main && main.scrollWidth > main.clientWidth,
-      tableHeaderHeight: document.querySelector('.fpe-nav-table thead')?.getBoundingClientRect().height || 0,
-      tabindex: main?.getAttribute('tabindex') || '', role: main?.getAttribute('role') || '',
     };
   })()`);
-  check(home.hash === '#/app/floorplan-editor' && home.rows === 7 && home.overflow <= 1,
-    'keeps the Plan-Editor root deterministic on mobile', `${home.hash} · ${home.rows} buildings · ${home.overflow}px overflow`);
-  check(!home.tableScrolls && !home.tabindex && !home.role,
-    'condenses the mobile building table instead of requiring horizontal scrolling',
-    `scrolls=${home.tableScrolls} · tabindex=${home.tabindex || 'none'}`);
-  check(home.tableHeaderHeight <= 1,
-    'uses labelled compact rows instead of a cramped visible mobile table header', `${Math.round(home.tableHeaderHeight)}px`);
+  check(compactBrowse.treeDisplay === 'none' && compactBrowse.statsWidth > 280
+    && compactBrowse.barWraps && compactBrowse.overflow <= 1,
+  'stacks the portfolio browser on a phone instead of squeezing three columns',
+  `tree=${compactBrowse.treeDisplay} · stats=${compactBrowse.statsWidth}px · ${compactBrowse.overflow}px overflow`);
+
+  await page.evaluate(`document.querySelector('#fpe-home')?.click()`);
+  check(await waitFor(page, '#fpe-navigation[data-view="portfolio"]'), 'brand link opens the portfolio root');
+  const home = await page.evaluate(`(() => ({
+    hash: location.hash,
+    objects: document.querySelectorAll('.fpe-browse__tree .pf-tree__leaf').length,
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    barOverflows: (() => {
+      const bar = document.querySelector('.fpe-browse__bar');
+      return !!bar && bar.scrollWidth > bar.clientWidth + 1;
+    })(),
+  }))()`);
+  check(home.hash === '#/app/floorplan-editor' && home.objects === 7 && home.overflow <= 1 && !home.barOverflows,
+    'keeps the Plan-Editor root deterministic on mobile', `${home.hash} · ${home.objects} objects · ${home.overflow}px overflow`);
+
+  await cdp.send('Page.navigate', { url: `${APP_BASE}/app/floorplan-editor?view=work` }, page.sessionId);
+  await sleep(500);
+  const compactWork = await page.evaluate(`(() => {
+    const row = document.querySelector('#fpe-work-table tbody tr');
+    const table = document.querySelector('#fpe-work-table [data-scroll-region], #fpe-work-table .table-scroll');
+    return {
+      rows: document.querySelectorAll('#fpe-work-table tbody tr').length,
+      tabs: document.querySelectorAll('.fpe-layer-tabs .tab__control').length,
+      actionHeight: row ? Math.round(row.querySelector('.fpe-work__actions .btn')?.getBoundingClientRect().height || 0) : 0,
+      documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      tableScrolls: !!table,
+    };
+  })()`);
+  check(compactWork.rows > 0 && compactWork.tabs === 4 && compactWork.actionHeight >= 32
+    && compactWork.documentOverflow <= 1,
+  'keeps the work queue usable at 320 px without opening the document',
+  `${compactWork.rows} rows · action ${compactWork.actionHeight}px · ${compactWork.documentOverflow}px overflow`);
 
   console.log('\n■ Dirty history jumps and logout');
   const guardedHistory = await page.evaluate(`(async () => {

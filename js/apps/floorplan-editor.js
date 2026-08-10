@@ -6,9 +6,10 @@ import {
   planningFloor, planningObjects, renderNavigation,
 } from '../floorplan-editor/navigation.js';
 import renderWorkbench from '../floorplan-editor/controller.js';
+import { rememberVisit } from '../floorplan-editor/repository.js';
 import { BASE } from '../floorplan-editor/shared.js';
 
-export const needs = ['buildings', 'floors', 'spaces', 'workspacePlanning', 'shopProducts'];
+export const needs = ['buildings', 'floors', 'spaces', 'tenancies', 'workspacePlanning', 'shopProducts'];
 export const layout = 'standalone';
 export const loginText = 'Der Plan-Editor enthält Arbeitsplatz- und Ausstattungsdaten. Melden Sie sich mit AGOV / FedLogin an, um einen Plan zu öffnen.';
 
@@ -28,6 +29,8 @@ export default async function render(ctx) {
   const objects = planningObjects(core);
   if (!objects.length) return renderNoPlan(ctx, 'Es sind keine Gebäude mit einem bearbeitbaren Grundriss verfügbar.');
 
+  // The landing page owns both of its views; only an explicit building AND
+  // floor open the workbench.
   const requestedBuilding = query.get('building') || '';
   if (!requestedBuilding) return renderNavigation(ctx, objects);
   const object = objects.find((entry) => entry.building.bbl_id === requestedBuilding);
@@ -41,6 +44,10 @@ export default async function render(ctx) {
 
   const canonicalRooms = core.spacesForFloor(floor.floorId);
   if (!canonicalRooms.length) return renderNoPlan(ctx, 'Für das gewählte Geschoss ist keine Raumgeometrie hinterlegt.');
+
+  // Recorded here rather than in the workbench: this is the single point every
+  // plan opens through, and a failing local store must never block the editor.
+  rememberVisit(floor.floorId);
 
   return renderWorkbench(ctx, {
     object,

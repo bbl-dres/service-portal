@@ -264,6 +264,7 @@
   {
     "defId": "planfreigabe",
     "name": "Planfreigabe",
+    "serviceId": "plan-pruefen",
     "audience": "internal",
     "steps": [
       {

@@ -76,12 +76,33 @@ export function treeHTML(C, objects, { levels, leaf }) {
 
   const attrPairs = (pairs) => pairs.map(([attribute, value]) => `data-${attribute}="${esc(value)}"`).join(' ');
 
+  // Optional level BELOW the leaf: `leaf.children(object)` returns
+  // `[{ id, label, icon, idText }]`. The Plan-Editor needs it for the floors of a
+  // building — the one place where the thing being chosen sits inside the object
+  // rather than beside it. A leaf with children becomes a disclosure that still
+  // selects its own object, exactly like a grouping node; every other explorer
+  // omits `children` and renders the flat leaf unchanged.
+  const subHTML = (object, pairs) => {
+    const children = leaf.children ? leaf.children(object) : null;
+    if (!Array.isArray(children) || !children.length) return '';
+    return `<ul class="pf-tree__children" hidden>${children.map((child) => (
+      `<li class="pf-tree__item"><button type="button" class="pf-tree__sub interactive-control" ${
+        attrPairs([...pairs, ['sub', child.id]])}>${
+        rowContent(child.icon || 'Stack', child.idText || '', child.label)}</button></li>`
+    )).join('')}</ul>`;
+  };
+
   const build = (items, depth, ancestors) => {
     if (depth === levels.length) {
       const sorted = leaf.sort ? items.slice().sort(leaf.sort) : items;
-      return sorted.map((object) => `<li class="pf-tree__item"><button type="button" class="pf-tree__leaf interactive-control" ${
-        attrPairs([...ancestors, ['obj', leaf.objId(object)]])}>${
-        rowContent(leaf.icon(object), leaf.idText ? leaf.idText(object) : '', leaf.label(object))}</button></li>`).join('');
+      return sorted.map((object) => {
+        const pairs = [...ancestors, ['obj', leaf.objId(object)]];
+        const children = subHTML(object, pairs);
+        return `<li class="pf-tree__item"><button type="button" class="pf-tree__leaf interactive-control${
+          children ? ' pf-tree__leaf--parent' : ''}" ${attrPairs(pairs)}${children ? ' aria-expanded="false"' : ''}>${
+          children ? C.icon('ChevronRight', 'pf-tree__chev') : ''}${
+          rowContent(leaf.icon(object), leaf.idText ? leaf.idText(object) : '', leaf.label(object))}</button>${children}</li>`;
+      }).join('');
     }
     const level = levels[depth];
     const attribute = level.attr || level.key;
@@ -107,14 +128,15 @@ export function treeHTML(C, objects, { levels, leaf }) {
 // ancestor path (country › region › city › business entity) uses light grey.
 // This keeps the drill-down chain visible despite shallow indentation.
 export function markTree(sidebar, activeNode) {
-  sidebar.querySelectorAll('.pf-tree__node, .pf-tree__leaf').forEach((node) => node.classList.remove('is-active', 'is-path'));
+  sidebar.querySelectorAll('.pf-tree__node, .pf-tree__leaf, .pf-tree__sub')
+    .forEach((node) => node.classList.remove('is-active', 'is-path'));
   if (!activeNode) return;
   activeNode.classList.add('is-active');
   let item = activeNode.closest('.pf-tree__item');
   while (item) {
     const list = item.parentElement;
     if (!list || !list.classList.contains('pf-tree__children')) break; // Reached the top-level list.
-    const parentNode = list.parentElement.querySelector(':scope > .pf-tree__node');
+    const parentNode = list.parentElement.querySelector(':scope > .pf-tree__node, :scope > .pf-tree__leaf');
     if (parentNode) parentNode.classList.add('is-path');
     item = list.parentElement;
   }
@@ -130,21 +152,38 @@ export function wireTree(sidebar, { attrs = ['country', 'region', 'city', 'busin
     if (clearBtn) clearBtn.hidden = !Object.keys(selection).length;
     onSelect(selection, node);
   };
+  const ancestry = (button) => {
+    const selection = {};
+    for (const key of attrs) if (button.dataset[key]) selection[key] = button.dataset[key];
+    return selection;
+  };
+  const toggle = (button) => {
+    const children = button.closest('.pf-tree__item').querySelector(':scope > .pf-tree__children');
+    const expanded = button.getAttribute('aria-expanded') === 'true';
+    button.setAttribute('aria-expanded', String(!expanded));
+    if (children) children.hidden = expanded;
+  };
   sidebar.addEventListener('click', (event) => {
+    // Sub-leaf (a floor inside its building): selects object plus sub-key.
+    const subButton = event.target.closest('.pf-tree__sub');
+    if (subButton) {
+      const selection = ancestry(subButton);
+      selection.id = subButton.dataset.obj;
+      selection.sub = subButton.dataset.sub;
+      select(selection, subButton);
+      return;
+    }
     const leafButton = event.target.closest('.pf-tree__leaf');
     if (leafButton) { // Leaf: filter to the object (+ optional map popup), not a detail jump.
-      const selection = {};
-      for (const key of attrs) if (leafButton.dataset[key]) selection[key] = leafButton.dataset[key];
+      // A leaf with its own children behaves like a node: it opens AND selects.
+      if (leafButton.classList.contains('pf-tree__leaf--parent')) toggle(leafButton);
+      const selection = ancestry(leafButton);
       selection.id = leafButton.dataset.obj;
       select(selection, leafButton);
       return;
     }
     const node = event.target.closest('.pf-tree__node'); if (!node) return;
-    const item = node.closest('.pf-tree__item');
-    const children = item.querySelector(':scope > .pf-tree__children');
-    const expanded = node.getAttribute('aria-expanded') === 'true';
-    node.setAttribute('aria-expanded', String(!expanded));
-    if (children) children.hidden = expanded;
+    toggle(node);
     const selection = {};
     for (const key of attrs) if (node.dataset[key] != null) selection[key] = node.dataset[key];
     select(selection, node);
@@ -158,6 +197,8 @@ export function wireTree(sidebar, { attrs = ['country', 'region', 'city', 'busin
 // IDs contain «/».
 export function restoreTreeSelection(sidebar, selection, { attrs = ['country', 'region', 'city', 'businessEntity'], clearBtn } = {}) {
   if (!selection || !Object.keys(selection).length) return null;
+  // A sub-leaf is a handoff, never a stored selection, so only nodes and leaves
+  // are restored here.
   const button = selection.id
     ? [...sidebar.querySelectorAll('.pf-tree__leaf')].find((node) => node.dataset.obj === selection.id)
     : [...sidebar.querySelectorAll('.pf-tree__node')].find((n) =>
@@ -168,12 +209,12 @@ export function restoreTreeSelection(sidebar, selection, { attrs = ['country', '
     const list = item.parentElement;
     if (!list || !list.classList.contains('pf-tree__children')) break;
     list.hidden = false;
-    const parentNode = list.parentElement.querySelector(':scope > .pf-tree__node');
+    const parentNode = list.parentElement.querySelector(':scope > .pf-tree__node, :scope > .pf-tree__leaf');
     if (parentNode) parentNode.setAttribute('aria-expanded', 'true');
     item = list.parentElement;
   }
   // As on click, a restored node also reveals its children.
-  if (button.classList.contains('pf-tree__node')) {
+  if (button.classList.contains('pf-tree__node') || button.classList.contains('pf-tree__leaf--parent')) {
     const children = button.closest('.pf-tree__item').querySelector(':scope > .pf-tree__children');
     button.setAttribute('aria-expanded', 'true');
     if (children) children.hidden = false;

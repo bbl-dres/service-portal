@@ -403,6 +403,30 @@
     ]
   },
   {
+    "serviceId": "plan-pruefen",
+    "title": "Grundriss prüfen",
+    "domain": "B",
+    "audience": [
+      "staff"
+    ],
+    "type": "action",
+    "icon": "FileCheckmark",
+    "target": {
+      "kind": "app",
+      "href": "#/app/plan-check"
+    },
+    "contact": "campus",
+    "short": "Eine DWG-Datei lokal im Browser auf die CAD-Vorgaben des BBL prüfen.",
+    "description": "Prüfen Sie einen Geschossgrundriss vor der Übernahme in den Stammdatenbestand. Die gewählte DWG-Datei wird ausschliesslich lokal im Browser gelesen und nicht an einen Server übertragen. Geprüft werden Layerstruktur, Raumpolygone, Raumstempel, Beschriftung und Bemassung; das Ergebnis steht als Prüfbericht im PDF- und Excel-Format bereit und kann anschliessend zur Zweitprüfung durch das Flächenmanagement BBL eingereicht werden. Der Prototyp bildet keine produktive Planversionierung ab.",
+    "voraussetzungen": [
+      "Anmeldung über AGOV / FedLogin",
+      "Binäre DWG-Datei des Geschosses (kein DXF)",
+      "Objekt und Geschoss der Zeichnung",
+      "Angabe, ob es sich um einen neuen Plan oder eine Mutation handelt"
+    ],
+    "processDefId": "planfreigabe"
+  },
+  {
     "serviceId": "geschaeftspartner-anlegen",
     "title": "Neuen Geschäftspartner anlegen",
     "domain": "B",

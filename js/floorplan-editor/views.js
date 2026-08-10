@@ -44,7 +44,7 @@ export function createWorkbenchViews(context) {
     return `${editorHeaderHTML(C, session, editMode, planCheck(building.bbl_id, floor.floorId))}
     <div class="fpe-context">
       <nav class="fpe-breadcrumb" aria-label="Sie sind hier">
-        <a href="${BASE}" data-leave>Alle Objekte</a>${C.icon('ChevronRight', 'icon--sm')}
+        <a href="${BASE}" data-leave>Portfolio</a>${C.icon('ChevronRight', 'icon--sm')}
         <a href="${returnHref()}" data-leave>${C.escape(building.name)}</a>${C.icon('ChevronRight', 'icon--sm')}
         <span aria-current="page">${C.escape(floor.label)}</span>
       </nav>

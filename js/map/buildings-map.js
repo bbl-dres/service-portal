@@ -40,6 +40,15 @@ function popupLink(href) {
   return safeHref ? `<br><a class="link" href="${esc(safeHref)}">Objekt ansehen →</a>` : '';
 }
 
+// Body of a building popup. `popup_html` is the caller's own composition and is
+// used verbatim; without it the map builds the same three-line summary as before.
+function pointPopupHTML(p) {
+  if (p && typeof p.popup_html === 'string' && p.popup_html) return p.popup_html;
+  return `<strong>${esc(p.label)}</strong>${p.sub ? `<br><span class="small muted">${esc(p.sub)}</span>` : ''}`
+    + `${p.bbl_id ? `<br><span class="small muted">${esc(p.bbl_id)}</span>` : ''}`
+    + popupLink(p.href);
+}
+
 // `esc` / `formatArea` come from shared modules (imports above), replacing the
 // former local escape reimplementation and handwritten de-CH formatter (design
 // review B23). components.js and format.js have no imports themselves, so the
@@ -148,7 +157,12 @@ export async function initEstateMap(container, points, parcels, focus, options =
     features: c.map((p) => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
-      properties: { label: p.label || '', sub: p.sub || '', bbl_id: p.bblId || '', href: p.href || '' },
+      properties: { label: p.label || '', sub: p.sub || '', bbl_id: p.bblId || '', href: p.href || '',
+        // Optional ready-made popup body. A caller that has richer facts and
+        // actions for an object (the Plan-Editor lists its floors here) passes
+        // sanitised HTML instead of leaving the map to guess a summary from
+        // three strings. Callers that omit it keep the default composition.
+        popup_html: typeof p.popupHtml === 'string' ? p.popupHtml : '' },
     })),
   };
 
@@ -204,11 +218,9 @@ export async function initEstateMap(container, points, parcels, focus, options =
       const bp = c.find((p) => p.bblId === focus);
       if (bp) {
         map.easeTo({ center: [bp.lon, bp.lat], zoom: 15 });
-        if (focusPopup) popup.setLngLat([bp.lon, bp.lat]).setHTML(
-          `<strong>${esc(bp.label)}</strong>${bp.sub ? `<br><span class="small muted">${esc(bp.sub)}</span>` : ''}`
-          + `${bp.bblId ? `<br><span class="small muted">${esc(bp.bblId)}</span>` : ''}`
-          + popupLink(bp.href),
-        ).addTo(map);
+        if (focusPopup) popup.setLngLat([bp.lon, bp.lat]).setHTML(pointPopupHTML({
+          label: bp.label, sub: bp.sub, bbl_id: bp.bblId, href: bp.href, popup_html: bp.popupHtml,
+        })).addTo(map);
       } else {
         const pf = ((parcels && parcels.features) || []).find((f) => f.properties && f.properties.id === focus);
         const ring = pf && pf.geometry && pf.geometry.coordinates && pf.geometry.coordinates[0];
@@ -248,11 +260,7 @@ export async function initEstateMap(container, points, parcels, focus, options =
   });
   map.on('click', 'points', (e) => {
     const p = e.features[0].properties;
-    popup.setLngLat(e.features[0].geometry.coordinates).setHTML(
-      `<strong>${esc(p.label)}</strong>${p.sub ? `<br><span class="small muted">${esc(p.sub)}</span>` : ''}`
-      + `${p.bbl_id ? `<br><span class="small muted">${esc(p.bbl_id)}</span>` : ''}`
-      + popupLink(p.href),
-    ).addTo(map);
+    popup.setLngLat(e.features[0].geometry.coordinates).setHTML(pointPopupHTML(p)).addTo(map);
   });
   // Parcel polygon → same basic popup as a building, with the inventory deep-link.
   map.on('click', 'parcels-fill', (e) => {

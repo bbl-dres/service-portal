@@ -17,23 +17,30 @@
 
 /* Flat tree hierarchy. Icons convey level; path and active colours convey selection. */
 .pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; } /* Icons and path state carry hierarchy without indentation. */
-.pf-tree__node, .pf-tree__leaf { display:flex; align-items:center; gap:var(--sp-2); width:100%; padding:var(--sp-1-5) var(--sp-2); border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
-.pf-tree__node:hover, .pf-tree__leaf:hover { background:var(--color-secondary-50); color:var(--color-text); text-decoration:none; }
-.pf-tree__node.is-path { background:var(--color-gray-100); }
-.pf-tree__node.is-active, .pf-tree__leaf.is-active { background:var(--color-primary-50); color:var(--color-primary-700); font-weight:var(--fw-bold); box-shadow:var(--state-bar-primary); }
+.pf-tree__node, .pf-tree__leaf, .pf-tree__sub { display:flex; align-items:center; gap:var(--sp-2); width:100%; padding:var(--sp-1-5) var(--sp-2); border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
+.pf-tree__node:hover, .pf-tree__leaf:hover, .pf-tree__sub:hover { background:var(--color-secondary-50); color:var(--color-text); text-decoration:none; }
+.pf-tree__node.is-path, .pf-tree__leaf.is-path { background:var(--color-gray-100); }
+.pf-tree__node.is-active, .pf-tree__leaf.is-active, .pf-tree__sub.is-active { background:var(--color-primary-50); color:var(--color-primary-700); font-weight:var(--fw-bold); box-shadow:var(--state-bar-primary); }
 .pf-tree__chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-muted); }
-.pf-tree__node[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
+.pf-tree__node[aria-expanded="true"] > .pf-tree__chev,
+.pf-tree__leaf[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
 .pf-tree__ico { flex:none; color:var(--color-text-muted); }
 .pf-tree__leaf > .pf-tree__ico { margin-left:var(--sp-6); } /* Align leaf icons with parent icons past the chevron. */
+/* A leaf that owns a sub-level (floors inside a building) carries its own
+   chevron, so it starts at the parent column like a grouping node. */
+.pf-tree__leaf--parent > .pf-tree__ico { margin-left:0; }
+.pf-tree__sub > .pf-tree__ico { margin-left:var(--sp-12); }
 /* Guarantee 44 px targets on touch devices while preserving desktop density. */
 @media (max-width:1023.98px), (hover:none){
-  .pf-tree__node, .pf-tree__leaf { min-height:var(--target-min); padding-block:var(--sp-2-5); }
+  .pf-tree__node, .pf-tree__leaf, .pf-tree__sub { min-height:var(--target-min); padding-block:var(--sp-2-5); }
   /* Document-viewer controls now follow their component base rule so cascade order
      cannot make their target sizing ineffective. */
 }
-.pf-tree__node.is-active .pf-tree__ico, .pf-tree__leaf.is-active .pf-tree__ico { color:var(--color-primary-600); }
+.pf-tree__node.is-active .pf-tree__ico, .pf-tree__leaf.is-active .pf-tree__ico,
+.pf-tree__sub.is-active .pf-tree__ico { color:var(--color-primary-600); }
 .pf-tree__id { flex:none; font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--color-text-muted); }
-.pf-tree__node.is-active .pf-tree__id, .pf-tree__leaf.is-active .pf-tree__id { color:var(--color-primary-700); }
+.pf-tree__node.is-active .pf-tree__id, .pf-tree__leaf.is-active .pf-tree__id,
+.pf-tree__sub.is-active .pf-tree__id { color:var(--color-primary-700); }
 .pf-tree__label { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .pf-tree__n { flex:none; margin-left:var(--sp-1-5); font-size:var(--fs-xs); color:var(--color-text-muted); }
 .pf-tree__node.is-active .pf-tree__n { color:var(--color-primary-700); }

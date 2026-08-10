@@ -51,15 +51,33 @@ export function prototypeFooterHTML() {
   </footer>`;
 }
 
-export function editorHeaderHTML(C, session, editMode = false, planCheckHref = '') {
+// The two landing views are peers, so the switch belongs in the persistent
+// header rather than inside one of them. The design system has no application
+// shell to borrow here; this mirrors its own `top-bar-navigation` anatomy —
+// horizontal links with an `aria-current` active state.
+function viewSwitchHTML(C, view) {
+  const item = (id, label, href) => `<a class="fpe-viewnav__item${view === id ? ' is-active' : ''}"
+    href="${C.escape(href)}"${view === id ? ' aria-current="page"' : ''}>${C.escape(label)}</a>`;
+  return `<nav class="fpe-viewnav" aria-label="Ansicht">
+    ${item('portfolio', 'Portfolio', BASE)}
+    ${item('work', 'Meine Arbeit', `${BASE}?view=work`)}
+  </nav>`;
+}
+
+// `view` is empty in the workbench and names the landing view otherwise. The work
+// queue carries its own search inside the catalogue bar and its own upload
+// action, so the header shows neither control rather than offering a duplicate.
+export function editorHeaderHTML(C, session, editMode = false, planCheckHref = '', view = '') {
   const user = session.user();
+  const search = !view;
   return `<header class="fpe-header">
-    <a class="fpe-brand plain-link" id="fpe-home" href="${BASE}" data-leave aria-label="Plan-Editor – Gebäudenavigation">
+    <a class="fpe-brand plain-link" id="fpe-home" href="${BASE}" data-leave aria-label="Plan-Editor – Startseite">
       <img src="assets/swiss-logo-flag.svg" alt="" aria-hidden="true"><span>BBL <strong>Plan-Editor</strong></span>
     </a>
+    ${view ? viewSwitchHTML(C, view) : ''}
     ${editMode ? '<span class="fpe-edit-state" title="Bearbeitungsmodus"><i aria-hidden="true"></i><span class="fpe-edit-state__text">Bearbeitungsmodus</span></span>' : ''}
     <span class="fpe-header__spacer"></span>
-    <button class="btn btn--bare btn--sm btn--icon-left fpe-search-jump" id="fpe-search-jump" type="button" data-action="focus-search">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suche</span></button>
+    ${search ? `<button class="btn btn--bare btn--sm btn--icon-left fpe-search-jump" id="fpe-search-jump" type="button" data-action="focus-search">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suche</span></button>` : ''}
     ${planCheckHref ? `<a class="btn btn--outline btn--sm btn--icon-left" id="fpe-plan-check" href="${C.escape(planCheckHref)}" target="_blank" rel="noopener noreferrer">${C.icon('Search', 'btn__icon')}<span class="btn__text">Planprüfung öffnen</span></a>` : ''}
     <span class="fpe-header__divider" aria-hidden="true"></span>
     <span class="fpe-user" title="${C.escape(user?.name || '')}"><span>${C.escape(initials(user?.name))}</span><span class="sr-only">Angemeldet als ${C.escape(user?.name || '')}</span></span>

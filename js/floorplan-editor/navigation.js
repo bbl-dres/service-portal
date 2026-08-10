@@ -1,11 +1,34 @@
-// Building and floor navigation for the standalone editor.
-// This is intentionally separate from the plan workbench: the two views have
-// independent state, markup and event lifecycles.
+// Landing page of the standalone Plan-Editor: two peer views behind one header.
+//
+//   #/app/floorplan-editor                      → «Portfolio» (default)
+//   #/app/floorplan-editor?mode=list&obj=…      → a different portfolio surface
+//   #/app/floorplan-editor?view=work            → «Meine Arbeit»
+//   #/app/floorplan-editor?view=work&layer=…    → a different attribute layer
+//
+// Portfolio is first because the visitor arrives knowing a building, not a task:
+// the map answers «is this the right object» before anything else can be asked.
+//
+// Deliberately separate from the plan workbench: the two have independent state,
+// markup and event lifecycles. Rendering stays in work-view.js / browse-view.js;
+// this module owns routing, data assembly and event wiring.
 
-import { floorplanEditor, planCheck } from '../links.js';
+import { createMapSlot } from '../map/map-slot.js';
+import { initEstateMap } from '../map/buildings-map.js';
+import { markTree, restoreTreeSelection, syncTreeCounts, wireTree } from '../ui/spatial-tree.js';
+import { floorplanEditor } from '../links.js';
+import { listVisits, listWorkingCopies, removeWorkingCopy } from './repository.js';
 import {
-  BASE, PLAN_STATUS, address, area, clean, editorHeaderHTML, number, prototypeFooterHTML,
-} from './shared.js';
+  DEFAULT_LAYER, planEditorLayer, planEditorRecentFloors, planEditorTaskCounts, planEditorTasks,
+} from './tasks.js';
+import { planEditorCases, renderWorkView, workColumns } from './work-view.js';
+import {
+  OBJECT_STATE, browseEntries, browseMode, browsePopupHTML, browseSort, browseStatsHTML,
+  browseSurfaceHTML, renderBrowseView, sortBrowseEntries,
+} from './browse-view.js';
+import { BASE, PLAN_STATUS, clean, editorHeaderHTML, number, prototypeFooterHTML } from './shared.js';
+
+const fpeMap = createMapSlot();
+const TREE_ATTRS = Object.freeze(['country', 'region', 'city']);
 
 export function planningObjects(core) {
   return (core.data.workspacePlanning || []).map((planning) => {
@@ -24,174 +47,343 @@ export function planningFloor(planning, floorId) {
   };
 }
 
-function floorNavigationFacts(core, object, floor) {
-  const spaces = core.spacesForFloor(floor.floorId);
-  const plan = planningFloor(object.planning, floor.floorId);
-  return {
-    spaces,
-    plan,
-    workplaces: spaces.reduce((sum, room) => sum + (Number(room.capacity) || 0), 0),
-    traffic: spaces.filter((room) => room.sia === 'VF').reduce((sum, room) => sum + (Number(room.area) || 0), 0),
-  };
-}
-
-function planBadgeHTML(C, plan) {
-  const status = PLAN_STATUS[plan.planStatus] || PLAN_STATUS.inventory;
-  return C.badge(status.label, status.variant, 'sm');
-}
-
-function floorPreviewHTML(C, floor, spaces) {
-  const rects = spaces.map((room) => room.rect).filter((rect) => Array.isArray(rect) && rect.length === 4);
-  if (!rects.length) return '<div class="fpe-nav-preview fpe-nav-preview--empty">Keine Geometrie</div>';
+// The mini floor plan reused from the former inspector: rooms as plain rects,
+// scaled to their own extent. Cheap enough to render for every recent card.
+function floorPreviewHTML(C, core, entry) {
+  const rects = (core.spacesForFloor(entry.floorId) || [])
+    .map((room) => room.rect).filter((rect) => Array.isArray(rect) && rect.length === 4);
+  if (!rects.length) return '<span class="fpe-recent__preview fpe-recent__preview--empty" aria-hidden="true"></span>';
   const minX = Math.min(...rects.map(([x]) => Number(x)));
   const minY = Math.min(...rects.map(([, y]) => Number(y)));
   const maxX = Math.max(...rects.map(([x, , width]) => Number(x) + Number(width)));
   const maxY = Math.max(...rects.map(([, y, , height]) => Number(y) + Number(height)));
-  const pad = Math.max(30, Math.round(Math.max(maxX - minX, maxY - minY) * .025));
-  return `<div class="fpe-nav-preview"><svg viewBox="${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}" role="img" aria-label="Vorschau ${C.escape(floor.label)}">
+  const pad = Math.max(30, Math.round(Math.max(maxX - minX, maxY - minY) * 0.025));
+  return `<span class="fpe-recent__preview"><svg viewBox="${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}"
+    role="img" aria-label="Vorschau ${C.escape(entry.label)}">
     ${rects.map(([x, y, width, height]) => `<rect x="${Number(x)}" y="${Number(y)}" width="${Number(width)}" height="${Number(height)}"></rect>`).join('')}
-  </svg></div>`;
+  </svg></span>`;
+}
+
+function mapPoints(C, entries) {
+  return entries
+    .filter((entry) => Number.isFinite(entry.lat) && Number.isFinite(entry.lon))
+    .map((entry) => ({
+      lat: entry.lat,
+      lon: entry.lon,
+      label: entry.name,
+      sub: `${entry.floors.length} Geschosse · ${OBJECT_STATE[entry.planState].label}`,
+      bblId: entry.id,
+      href: floorplanEditor(entry.id),
+      // The marker carries the object's own detail surface: facts, floors and
+      // both handoffs, anchored where the visitor clicked.
+      popupHtml: browsePopupHTML(C, entry),
+    }));
 }
 
 export function renderNavigation(ctx, objects, object = null, message = '') {
-  const { mount, query, core, session, C, onUnmount, setTitle } = ctx;
-  const floorView = !!object;
-  const defaultObject = objects.find((entry) => entry.planning.planAvailability === 'planned') || objects[0];
-  const inspectedObject = object || defaultObject;
-  const requestedPick = query.get('pick') || '';
-  const pickedFloor = floorView
-    ? object.floors.find((entry) => entry.floorId === requestedPick)
-      || object.floors.find((entry) => entry.key === '2og') || object.floors[0]
-    : null;
-  const pickedFacts = pickedFloor ? floorNavigationFacts(core, object, pickedFloor) : null;
-  const allFloorCount = objects.reduce((sum, entry) => sum + entry.floors.length, 0);
-  const routeForPick = (floorId) => `${floorplanEditor(object.building.bbl_id)}&pick=${encodeURIComponent(floorId)}`;
-  const targetDate = object?.planning.targetDate
-    ? object.planning.targetDate.split('-').reverse().join('.') : '';
+  const { mount, query, core, session, engine, C, onUnmount, setTitle } = ctx;
 
-  const railLink = ({ label, count, href, active = false }) => {
-    const content = `<span>${C.escape(label)}</span><span class="fpe-nav-rail__count">${number(count)}</span>`;
-    return `<a class="fpe-nav-rail__item${active ? ' is-active' : ''}" href="${href}"${active ? ' aria-current="page"' : ''}>${content}</a>`;
-  };
+  // A building in the URL keeps the former floor drill-down reachable: the
+  // portfolio view selects it and opens its popup.
+  const view = query.get('view') === 'work' && !object ? 'work' : 'portfolio';
+  const layer = planEditorLayer(query.get('layer') || DEFAULT_LAYER);
 
-  const rail = `<nav class="fpe-nav-rail" aria-label="Bereiche">
-    ${railLink({ label: 'Aktive Geschosse', count: floorView ? object.floors.length : allFloorCount,
-      href: floorplanEditor(inspectedObject.building.bbl_id), active: floorView })}
-    ${railLink({ label: 'Gebäude', count: objects.length, href: BASE, active: !floorView })}
-    ${floorView ? `<div class="fpe-nav-order"><p class="fpe-overline">Auftrag</p>
-      <p class="mono">${C.escape(object.planning.inventoryOrder || 'Nicht zugeordnet')}</p>
-      ${object.planning.planAvailability === 'planned' ? C.badge('CAD-Planung in Arbeit', 'warning', 'sm') : C.badge('Bestandsgrundriss', 'gray', 'sm')}
-    </div>` : ''}
-  </nav>`;
+  ctx.onUnmount(fpeMap.free);
 
-  let rows = '';
-  let inspector = '';
-  if (floorView) {
-    rows = object.floors.map((floor) => {
-      const facts = floorNavigationFacts(core, object, floor);
-      const selected = floor.floorId === pickedFloor.floorId;
-      const status = PLAN_STATUS[facts.plan.planStatus] || PLAN_STATUS.inventory;
-      return `<tr role="row" class="fpe-nav-row${selected ? ' is-selected' : ''}" data-nav-row data-nav-href="${routeForPick(floor.floorId)}"
-        data-search="${C.escape(clean(`${floor.label} ${floor.floorId} ${status.label} ${facts.plan.lastSync}`))}"
-        data-sort-name="${C.escape(String(floor.level).padStart(4, '0'))}" data-sort-status="${C.escape(status.label)}" aria-selected="${selected}">
-        <th scope="row" role="rowheader"><a href="${routeForPick(floor.floorId)}"><span class="mono">${C.escape(floor.floorId)}</span><strong>${C.escape(floor.label)}</strong></a></th>
-        <td role="cell">${C.escape(facts.plan.lastSync || '—')}</td><td role="cell" class="text-right"><span class="fpe-nav-mobile-label" aria-hidden="true">HNF: </span>${area(floor.areaHnf)}</td>
-        <td role="cell" class="text-right">${number(facts.workplaces)}</td><td role="cell" class="text-right">${facts.plan.equipmentCount == null ? '—' : number(facts.plan.equipmentCount)}</td>
-        <td role="cell">${planBadgeHTML(C, facts.plan)}</td>
-      </tr>`;
-    }).join('');
-    inspector = `<aside class="fpe-nav-inspector" aria-label="Inspektor">
-      <div class="fpe-nav-inspector__title"><p>${C.escape(pickedFloor.label)} · ${C.escape(pickedFloor.floorId)}</p><small>${C.escape(object.building.name)}</small></div>
-      ${floorPreviewHTML(C, pickedFloor, pickedFacts.spaces)}
-      <section class="fpe-inspector-section"><h2>Kennzahlen des Geschosses</h2><div class="fpe-kpis">
-        <div><small>Geschossfläche</small><strong>${area(pickedFloor.areaGross)}</strong></div><div><small>Hauptnutzfläche</small><strong>${area(pickedFloor.areaHnf)}</strong></div>
-        <div><small>Arbeitsplätze</small><strong>${number(pickedFacts.workplaces)}</strong></div><div><small>Ausstattung</small><strong>${pickedFacts.plan.equipmentCount == null ? '—' : number(pickedFacts.plan.equipmentCount)}</strong></div>
-        <div><small>Räume</small><strong>${number(pickedFacts.spaces.length)}</strong></div><div><small>Verkehrsfläche</small><strong>${area(pickedFacts.traffic)}</strong></div>
-      </div></section>
-      <section class="fpe-inspector-section"><h2>Attribute</h2><dl class="fpe-kv">
-        <dt>Geschoss-ID</dt><dd class="mono">${C.escape(pickedFloor.floorId)}</dd><dt>Gebäude</dt><dd class="mono">${C.escape(object.building.bbl_id)}</dd>
-        <dt>Adresse</dt><dd>${C.escape(address(object.building))}</dd>${targetDate ? `<dt>Stichtag</dt><dd>${C.escape(targetDate)}</dd>` : ''}
-        <dt>Synchronisation</dt><dd>${C.escape(pickedFacts.plan.lastSync || 'nicht erfasst')}</dd><dt>Status</dt><dd>${planBadgeHTML(C, pickedFacts.plan)}</dd>
-      </dl><a class="btn btn--filled btn--sm btn--icon-right" id="fpe-open-floor" href="${floorplanEditor(object.building.bbl_id, pickedFloor.floorId)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Im Editor öffnen</span></a></section>
-    </aside>`;
-  } else {
-    rows = objects.map((entry) => {
-      const floorSpaces = entry.floors.flatMap((floor) => core.spacesForFloor(floor.floorId));
-      const hnf = entry.floors.reduce((sum, floor) => sum + Number(floor.areaHnf || 0), 0);
-      const workplaces = floorSpaces.reduce((sum, room) => sum + (Number(room.capacity) || 0), 0);
-      const href = floorplanEditor(entry.building.bbl_id);
-      const selected = entry === inspectedObject;
-      return `<tr role="row" class="fpe-nav-row${selected ? ' is-selected' : ''}" data-nav-row data-nav-href="${href}"
-        data-search="${C.escape(clean(`${entry.building.name} ${entry.building.bbl_id} ${address(entry.building)} ${entry.building.occupants || ''}`))}"
-        data-sort-name="${C.escape(clean(entry.building.name))}" data-sort-status="${C.escape(entry.planning.planAvailability)}" aria-selected="${selected}">
-        <th scope="row" role="rowheader"><a href="${href}"><strong>${C.escape(entry.building.name)}</strong><span class="mono">${C.escape(entry.building.bbl_id)}</span></a></th>
-        <td role="cell">${C.escape(entry.building.city || '—')}</td><td role="cell" class="text-right"><span class="fpe-nav-mobile-label" aria-hidden="true">Geschosse: </span>${number(entry.floors.length)}</td><td role="cell" class="text-right">${area(hnf)}</td>
-        <td role="cell" class="text-right">${number(workplaces)}</td><td role="cell">${entry.planning.planAvailability === 'planned' ? C.badge('Multispace geplant', 'success', 'sm') : C.badge('Bestand', 'gray', 'sm')}</td>
-      </tr>`;
-    }).join('');
-    const inspectedFloors = inspectedObject.floors;
-    const inspectedHnf = inspectedFloors.reduce((sum, floor) => sum + Number(floor.areaHnf || 0), 0);
-    inspector = `<aside class="fpe-nav-inspector" aria-label="Inspektor">
-      <div class="fpe-nav-inspector__title"><p>${C.escape(inspectedObject.building.name)}</p><small class="mono">${C.escape(inspectedObject.building.bbl_id)}</small></div>
-      <section class="fpe-inspector-section"><h2>Gebäudekennzahlen</h2><div class="fpe-kpis">
-        <div><small>Aktive Geschosse</small><strong>${number(inspectedFloors.length)}</strong></div><div><small>Hauptnutzfläche</small><strong>${area(inspectedHnf)}</strong></div>
-      </div></section>
-      <section class="fpe-inspector-section"><h2>Attribute</h2><dl class="fpe-kv"><dt>Gebäude-ID</dt><dd class="mono">${C.escape(inspectedObject.building.bbl_id)}</dd>
-        <dt>Adresse</dt><dd>${C.escape(address(inspectedObject.building))}</dd><dt>Nutzende</dt><dd>${C.escape(inspectedObject.building.occupants || 'nicht erfasst')}</dd>
-      </dl><a class="btn btn--filled btn--sm btn--icon-right" id="fpe-open-building" href="${floorplanEditor(inspectedObject.building.bbl_id)}">${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Geschosse öffnen</span></a></section>
-    </aside>`;
+  setTitle(view === 'work' ? 'Plan-Editor — Meine Arbeit' : 'Plan-Editor — Portfolio');
+
+  const abort = new AbortController();
+  const { signal } = abort;
+  onUnmount(() => abort.abort());
+
+  const header = `<div class="fpe-app fpe-landing" id="fpe-navigation" data-view="${view}">
+    ${editorHeaderHTML(C, session, false, '', view)}
+    ${message ? `<div class="fpe-nav-message">${C.notificationHtml(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}</div>` : ''}`;
+
+  if (view === 'work') {
+    const drafts = listWorkingCopies();
+    const options = { layer: layer.id, tenancies: core.tenancies?.() || [], drafts };
+    mount.innerHTML = `${header}
+      ${renderWorkView(C, {
+        objects,
+        layerId: layer.id,
+        counts: planEditorTaskCounts(objects, { tenancies: options.tenancies, drafts }),
+        recents: planEditorRecentFloors(objects, { visits: listVisits(), drafts }),
+        cases: planEditorCases(engine),
+        previewFor: (entry) => floorPreviewHTML(C, core, entry),
+      })}
+      ${prototypeFooterHTML()}
+    </div>`;
+    wireWork(ctx, {
+      signal,
+      tasks: layer.available ? planEditorTasks(objects, options) : [],
+      rerender: () => renderNavigation(ctx, objects, object, message),
+    });
+    return;
   }
 
-  const title = floorView ? `Geschosse — ${object.building.name}` : 'Alle Objekte';
-  const count = floorView ? object.floors.length : objects.length;
-  const columns = floorView
-    ? '<th scope="col" role="columnheader">Geschoss</th><th scope="col" role="columnheader">Letzte Änderung</th><th scope="col" role="columnheader" class="text-right">HNF</th><th scope="col" role="columnheader" class="text-right">Arbeitsplätze</th><th scope="col" role="columnheader" class="text-right">Ausstattung</th><th scope="col" role="columnheader">Planstand</th>'
-    : '<th scope="col" role="columnheader">Gebäude</th><th scope="col" role="columnheader">Ort</th><th scope="col" role="columnheader" class="text-right">Geschosse</th><th scope="col" role="columnheader" class="text-right">HNF</th><th scope="col" role="columnheader" class="text-right">Arbeitsplätze</th><th scope="col" role="columnheader">Planung</th>';
+  const allEntries = browseEntries(objects, core);
+  const selectedId = object?.building.bbl_id || query.get('obj') || '';
+  // `view` here is the surface inside the portfolio (map · cards · list); the
+  // shared catalogue wiring writes the view switch into exactly this field.
+  const state = {
+    q: '',
+    sort: browseSort(query.get('sort')),
+    filters: { state: [] },
+    sel: selectedId ? { id: selectedId } : {},
+    view: browseMode(query.get('mode')),
+    page: 1,
+  };
 
-  setTitle(floorView ? `Plan-Editor — Geschosse ${object.building.name}` : 'Plan-Editor — Gebäude');
-  mount.innerHTML = `<div class="fpe-app fpe-nav-app" id="fpe-navigation" data-view="${floorView ? 'floors' : 'buildings'}">
-    <h1 class="sr-only" tabindex="-1">Plan-Editor — ${C.escape(title)}</h1>
-    ${editorHeaderHTML(C, session, false, floorView ? planCheck(object.building.bbl_id) : planCheck())}
-    <div class="fpe-context fpe-nav-context">
-      <span class="fpe-nav-context__title">${C.escape(title)} <span id="fpe-nav-count">${number(count)}</span></span>
-      <span class="fpe-context__spacer"></span>
-      <label class="fpe-nav-search"><span class="sr-only">${floorView ? 'Geschosse' : 'Gebäude'} durchsuchen</span>${C.icon('Search', 'icon--base')}<input id="fpe-nav-search" type="search" placeholder="Suchen…"></label>
-      <label class="fpe-nav-sort"><span class="sr-only">Sortieren</span><select id="fpe-nav-sort" class="input--outline input--sm"><option value="name">Sortieren: Name</option><option value="status">Sortieren: Status</option></select></label>
-    </div>
-    ${message ? `<div class="fpe-nav-message">${C.notificationHtml(`<p class="m-0">${C.escape(message)}</p>`, 'warning', 'WarningCircle')}</div>` : ''}
-    <div class="fpe-nav-layout">${rail}<main class="fpe-nav-main" data-scroll-region aria-label="${floorView ? 'Aktive Geschosse' : 'Gebäude'}">
-      <div class="fpe-nav-table"><table class="table" role="table"><caption class="sr-only">${floorView ? `Aktive Geschosse von ${C.escape(object.building.name)}` : 'Gebäude im Plan-Editor'}</caption><thead role="rowgroup"><tr role="row">${columns}</tr></thead><tbody id="fpe-nav-rows" role="rowgroup">${rows}</tbody></table></div>
-      <p class="fpe-panel-empty" id="fpe-nav-empty" hidden>Keine passenden ${floorView ? 'Geschosse' : 'Gebäude'} gefunden.</p>
-    </main>${inspector}</div>
+  mount.innerHTML = `${header}
+    ${renderBrowseView(C, {
+      entries: visibleEntries(allEntries, state),
+      allEntries,
+      mode: state.view,
+      sort: state.sort,
+      query: state.q,
+      filters: state.filters,
+      scopeLabel: scopeLabel(allEntries, state),
+    })}
     ${prototypeFooterHTML()}
   </div>`;
 
-  const filterRows = () => {
-    const term = clean(mount.querySelector('#fpe-nav-search')?.value);
-    const rows = [...mount.querySelectorAll('[data-nav-row]')];
-    let visible = 0;
-    rows.forEach((row) => { row.hidden = !!term && !row.dataset.search.includes(term); if (!row.hidden) visible++; });
-    const countNode = mount.querySelector('#fpe-nav-count');
-    if (countNode) countNode.textContent = number(visible);
-    const empty = mount.querySelector('#fpe-nav-empty');
-    if (empty) empty.hidden = visible > 0;
-  };
-  const sortRows = () => {
-    const key = mount.querySelector('#fpe-nav-sort')?.value === 'status' ? 'sortStatus' : 'sortName';
-    const body = mount.querySelector('#fpe-nav-rows');
-    if (!body) return;
-    [...body.querySelectorAll('[data-nav-row]')]
-      .sort((left, right) => left.dataset[key].localeCompare(right.dataset[key], 'de', { numeric: true }))
-      .forEach((row) => body.append(row));
-  };
-  const abort = new AbortController();
-  const { signal } = abort;
-  mount.addEventListener('click', (event) => {
-    if (event.target.closest('[data-action="focus-search"]')) mount.querySelector('#fpe-nav-search')?.focus();
-    const row = event.target.closest('[data-nav-href]');
-    if (row && !event.target.closest('a,button,input,select')) location.hash = row.dataset.navHref;
-  }, { signal });
-  mount.addEventListener('input', (event) => { if (event.target.id === 'fpe-nav-search') filterRows(); }, { signal });
-  mount.addEventListener('change', (event) => { if (event.target.id === 'fpe-nav-sort') sortRows(); }, { signal });
-  onUnmount(() => abort.abort());
+  wireBrowse(ctx, { allEntries, state, signal });
 }
+
+// --- Shared filtering --------------------------------------------------------
+
+function matchesSelection(entry, sel) {
+  if (!sel || !Object.keys(sel).length) return true;
+  if (sel.id) return entry.id === sel.id;
+  if (sel.city) return entry.city === sel.city;
+  if (sel.region) return entry.region === sel.region;
+  if (sel.country) return entry.country === sel.country;
+  return true;
+}
+
+function visibleEntries(allEntries, state) {
+  const term = clean(state.q);
+  const states = state.filters.state || [];
+  return sortBrowseEntries(allEntries.filter((entry) => (
+    (!term || entry.search.includes(term))
+      && (!states.length || states.includes(entry.planState))
+      && matchesSelection(entry, state.sel)
+  )), state.sort);
+}
+
+function scopeLabel(allEntries, state) {
+  const sel = state.sel || {};
+  if (sel.id) {
+    const entry = allEntries.find((item) => item.id === sel.id);
+    return entry ? entry.name : 'Gewähltes Objekt';
+  }
+  if (sel.city) return sel.city;
+  if (sel.region) return `Kanton ${sel.region}`;
+  if (sel.country) return 'Schweiz';
+  return 'Alle Objekte';
+}
+
+// --- View 2: Meine Arbeit ----------------------------------------------------
+
+function wireWork(ctx, { signal, tasks, rerender }) {
+  const { mount, C } = ctx;
+  const host = mount.querySelector('#fpe-work-table');
+  if (host) {
+    // Same building block as the personal case list: catbar, search, status
+    // filter, zebra table and pagination, the row following its first link.
+    const unmount = C.mountDataTable(host, {
+      id: 'fpe-tasks', rows: tasks, rowsClickable: true, perPage: 8,
+      unit: { nom: 'Einträge', dat: 'Einträgen' }, caption: 'Offene Arbeiten dieser Ebene',
+      searchKeys: ['title', 'detail', 'state'],
+      searchLabel: 'Aufgabe suchen', placeholder: 'Objekt, Geschoss oder Befund suchen…',
+      emptyMsg: 'Für diese Ebene ist nichts offen.',
+      sorts: [
+        { value: 'severity', label: 'Dringlichkeit', cmp: (a, b) => severityRank(a) - severityRank(b) || a.title.localeCompare(b.title, 'de') },
+        { value: 'title', label: 'Objekt (A–Z)', cmp: (a, b) => a.title.localeCompare(b.title, 'de') },
+      ],
+      facets: [{
+        dim: 'severity', legend: 'Dringlichkeit',
+        options: [{ value: 'error', label: 'Dringend' }, { value: 'warning', label: 'Offen' }, { value: 'info', label: 'Hinweis' }],
+        match: (row, values) => values.includes(row.severity),
+      }],
+      columns: workColumns(C),
+    });
+    ctx.onUnmount(unmount);
+  }
+  // Discarding a draft changes derived counts everywhere on the page, so the
+  // view is rebuilt rather than patched. The hash does not change, so this
+  // cannot go through the router.
+  mount.addEventListener('click', (event) => {
+    const discard = event.target.closest?.('[data-action="discard-draft"]');
+    if (!discard) return;
+    const floorId = discard.dataset.floor || '';
+    if (!floorId) return;
+    if (removeWorkingCopy(floorId)) {
+      C.announce('Entwurf verworfen.');
+      rerender();
+    } else {
+      C.toast('Der Entwurf konnte auf diesem Gerät nicht entfernt werden.', 'error', 'WarningCircle');
+    }
+  }, { signal });
+}
+
+const severityRank = (task) => ({ error: 0, warning: 1, info: 2 }[task.severity] ?? 3);
+
+// --- View 1: Portfolio -------------------------------------------------------
+
+function wireBrowse(ctx, { allEntries, state, signal }) {
+  const { mount, C, replaceRoute, navigate } = ctx;
+  const tree = mount.querySelector('.fpe-browse__tree');
+  const stats = mount.querySelector('#fpe-browse-stats');
+  const surface = mount.querySelector('#fpe-browse-surface');
+  const countNode = mount.querySelector('#fpe-browse-count');
+  const pillBox = mount.querySelector('#fpe-browse-activefilters');
+  const levelsOf = (entry) => [entry.country, entry.region, entry.city];
+  let renderedView = state.view;
+
+  let mapSignature = '';
+  const updateMap = (shown, focusId) => {
+    const host = mount.querySelector('[data-map-slot]');
+    if (!host) return;
+    const points = mapPoints(C, shown);
+    const signature = `${points.map((point) => point.bblId).join('|')}#${focusId || ''}`;
+    if (signature === mapSignature) return;
+    mapSignature = signature;
+    // `focus` is the object id: the shared map zooms to it and opens its popup,
+    // which is where this view keeps the object's facts and actions.
+    const focus = shown.some((entry) => entry.id === focusId) ? focusId : null;
+    fpeMap.mount(host, (element) => initEstateMap(element, points, [], focus, { focusPopup: Boolean(focus) }));
+  };
+
+  const renderPills = () => {
+    if (!pillBox) return;
+    const pills = [];
+    if (state.q.trim()) pills.push({ label: `Suche: «${state.q.trim()}»`, remove: 'q' });
+    if (Object.keys(state.sel).length) {
+      pills.push({ label: `Auswahl: ${scopeLabel(allEntries, state)}`, remove: 'sel' });
+    }
+    for (const value of state.filters.state || []) {
+      pills.push({ label: OBJECT_STATE[value]?.label || value, remove: `state:${value}` });
+    }
+    pillBox.innerHTML = C.activeFilters({ filters: pills });
+  };
+
+  const render = () => {
+    const shown = visibleEntries(allEntries, state);
+    // A view switch exchanges only the middle region, exactly as the inventory
+    // rebuilds its results area; bar, tree and statistics keep their state.
+    if (surface && state.view !== renderedView) {
+      renderedView = state.view;
+      mapSignature = '';
+      fpeMap.free();
+      surface.innerHTML = browseSurfaceHTML(C, shown, state.view);
+      replaceRoute(routeFor(state));
+    }
+    if (countNode) {
+      countNode.innerHTML = `<strong>${number(shown.length)}</strong> von ${number(allEntries.length)} Objekten`;
+    }
+    if (stats) stats.innerHTML = browseStatsHTML(C, shown, { scope: scopeLabel(allEntries, state) });
+    if (state.view === 'map') updateMap(shown, state.sel.id || '');
+    else if (surface) surface.innerHTML = browseSurfaceHTML(C, shown, state.view);
+    // Counts ignore the tree selection itself, or one click would leave a single
+    // branch showing «1» and turn navigation into a dead end.
+    if (tree) {
+      const term = clean(state.q);
+      const states = state.filters.state || [];
+      syncTreeCounts(tree, allEntries.filter((entry) => (
+        (!term || entry.search.includes(term))
+          && (!states.length || states.includes(entry.planState))
+      )), levelsOf, (entry) => entry.id);
+    }
+    renderPills();
+    C.announceCatalogue(shown.length, allEntries.length, 'Objekte');
+  };
+
+  const clearSelection = () => {
+    state.sel = {};
+    markTree(tree, null);
+    replaceRoute(routeFor(state));
+    render();
+  };
+
+  const selectObject = (id) => {
+    state.sel = { id };
+    if (tree) {
+      const restored = restoreTreeSelection(tree, { id }, { attrs: TREE_ATTRS });
+      if (restored) markTree(tree, restored);
+    }
+    replaceRoute(routeFor(state));
+    render();
+  };
+
+  // The shared catalogue wiring: debounced search, sort select, filter panel,
+  // view switch, panel reset and the active-filter pills — the same contract the
+  // Liegenschaften inventory uses.
+  const cat = C.wireCatalogueState(mount, {
+    formId: 'fpe-browse-search', inputId: 'fpe-browse-q', sortId: 'fpe-browse-sort',
+    filterToggleId: 'fpe-browse-filter-btn', panelId: 'fpe-browse-filters', resetId: 'fpe-browse-freset',
+    activeFiltersId: 'fpe-browse-activefilters',
+    state,
+    onChange: render,
+    onRemove: (token) => { if (token === 'sel') clearSelection(); },
+    onReset: clearSelection,
+  });
+  ctx.onUnmount(cat.destroy);
+
+  if (tree) {
+    wireTree(tree, {
+      attrs: TREE_ATTRS,
+      onSelect: (selection) => {
+        // A floor picked in the tree is a direct handoff into the workbench; the
+        // building itself only scopes the view.
+        if (selection.sub && selection.id) {
+          navigate(floorplanEditor(selection.id, selection.sub));
+          return;
+        }
+        state.sel = selection.id
+          ? { id: selection.id }
+          : { country: selection.country, region: selection.region, city: selection.city };
+        replaceRoute(routeFor(state));
+        render();
+      },
+    });
+    const restored = state.sel.id
+      ? restoreTreeSelection(tree, { id: state.sel.id }, { attrs: TREE_ATTRS })
+      : null;
+    if (restored) markTree(tree, restored);
+    else {
+      // Without a restored path the tree arrives as a single closed «Schweiz»
+      // node, which hides the whole portfolio. Only the outermost level opens.
+      tree.querySelectorAll(':scope > .pf-tree > .pf-tree__item > .pf-tree__node').forEach((node) => {
+        node.setAttribute('aria-expanded', 'true');
+        const children = node.nextElementSibling;
+        if (children) children.hidden = false;
+      });
+    }
+  }
+
+  // A click on a card or a table row selects that object, so the statistics and
+  // the tree follow whichever surface the visitor is using.
+  mount.addEventListener('click', (event) => {
+    const holder = event.target.closest?.('[data-browse-row]');
+    if (!holder || !holder.dataset.obj || holder.dataset.obj === state.sel.id) return;
+    selectObject(holder.dataset.obj);
+  }, { signal });
+
+  render();
+}
+
+// The shareable state of the portfolio view. Search text and facet selections
+// stay client-side, as they do in the inventory; surface, sorting and the chosen
+// object are what another person needs to see the same screen.
+function routeFor(state) {
+  const params = new URLSearchParams();
+  if (state.view !== 'map') params.set('mode', state.view);
+  if (state.sort !== 'name') params.set('sort', state.sort);
+  if (state.sel.id) params.set('obj', state.sel.id);
+  const search = params.toString();
+  return search ? `${BASE}?${search}` : BASE;
+}
+
+export { PLAN_STATUS };
