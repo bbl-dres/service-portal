@@ -92,6 +92,30 @@ export function swatchCss(token) {
   return SWATCH_CSS[String(token || '')] || FLOORPLAN_COLORS.unassigned.css;
 }
 
+/**
+ * The same colour as a literal hex.
+ *
+ * `swatchCss` yields `var(--fpe-module-1)`, which only resolves where the plan editor's
+ * stylesheet is loaded. A knowledge page would get an undefined variable — the exact
+ * shape of the bug that once painted every room black. Consumers outside the editor take
+ * the hex.
+ */
+export const SWATCH_HEX = Object.freeze((() => {
+  const entries = [];
+  const collect = (value) => {
+    if (!value) return;
+    if (Array.isArray(value)) { value.forEach(collect); return; }
+    if (value.swatch && value.hex) { entries.push([value.swatch, value.hex]); return; }
+    Object.values(value).forEach(collect);
+  };
+  collect(FLOORPLAN_COLORS);
+  return Object.fromEntries(entries);
+})());
+
+export function swatchHex(token) {
+  return SWATCH_HEX[String(token || '')] || FLOORPLAN_COLORS.unassigned.hex;
+}
+
 const USE_FALLBACK = FLOORPLAN_COLORS.use.infra;
 const SIA_FALLBACK = FLOORPLAN_COLORS.sia.NNF;
 

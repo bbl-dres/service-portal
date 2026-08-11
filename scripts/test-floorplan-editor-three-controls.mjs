@@ -16,12 +16,17 @@ try {
   page = await openPage(cdp, ROUTE, { login: true });
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, page.sessionId);
-  await sleep(350);
+  // Wait for the control, then for the canvas — both on conditions rather than on the
+  // clock. A fixed 350 ms could click before the toolbar existed, and building a WebGL
+  // context takes longer than two seconds on a loaded machine, so the drag below ran
+  // against a canvas that was not there yet.
+  await page.waitFor(`Boolean(document.querySelector('[data-action="view-3d"]'))`, { timeout: 15000 });
   const controls = await page.evaluate(`(async () => {
     const pause = (duration = 90) => new Promise(resolve => setTimeout(resolve, duration));
     document.querySelector('[data-action="view-3d"]')?.click();
-    for (let i = 0; i < 50 && !document.querySelector('.fpe-three-canvas'); i++) await pause(40);
+    for (let i = 0; i < 200 && !document.querySelector('.fpe-three-canvas'); i++) await pause(40);
     const canvas = document.querySelector('.fpe-three-canvas');
+    if (!canvas) return { error: 'the 3D canvas never appeared' };
     const host = document.querySelector('#fpe-three-host');
     const vector = value => String(value || '').split(',').map(Number);
     const state = () => ({
@@ -110,6 +115,10 @@ try {
     };
   })()`);
 
+  // Say it plainly when the viewer never appeared, rather than letting a dozen checks
+  // fail on undefined fields and blame the controls.
+  check(!controls.error, 'the 3D viewer is ready before the control probes run',
+    controls.error || 'ready');
   check(controls.jitterStable, 'does not pan during click-tolerance jitter');
   check(controls.verticalMoved && controls.verticalDot < 0,
     'keeps a downward left drag attached to the floor-plane pointer direction',

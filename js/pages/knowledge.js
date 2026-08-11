@@ -2,6 +2,7 @@ import { anchorNavPage } from './anchor-nav.js';
 // Since the search overhaul, content lives in js/knowledge-content.js. It has
 // two consumers (this page renders it and search indexes it), so it no longer
 // belongs in the page module.
+import { swatchHex } from '../floorplan-editor/colors.js';
 import {
   AREAS, FAQS, MULTISPACE_MODULES, WORKSPACE_BRANCHES, WORKSPACE_DOWNLOAD_GROUPS, sectionDomId,
 } from '../knowledge-content.js';
@@ -61,6 +62,9 @@ export default async function render(ctx) {
     // and a short gallery of realised spaces. An anchor-navigation page with a table of
     // contents suited the eight-section version of this area and suits it no longer.
     if (slug === 'multispace') return handbookPage(ctx, branch);
+    if (slug === 'inspiration') {
+      return ctx.params[2] ? examplePage(ctx, ctx.params[2]) : examplesPage(ctx, branch);
+    }
     // The branch overview is a hub: cards to the four sibling pages and nothing else. No
     // table of contents either — there is one section to contend with, and a contents
     // list over a single grid is chrome.
@@ -310,7 +314,10 @@ function modulePage(ctx, slug) {
 
   const sections = [
     { id: sectionDomId('submodule'), title: 'Sub-Module und Flächenrichtmass',
-      html: `${module.figuresVerified === false
+      // The same picture the card carries, so the two surfaces agree on what the module
+      // looks like. Falls back to the module's own colour when the file is absent.
+      html: `${C.photo({ src: module.image || '', color: swatchHex(module.swatch), alt: '',
+        w: 1280, h: 480, cls: 'wsm-module-detail__photo' })}${module.figuresVerified === false
         ? `<p class="notification notification--warning">${C.escape(module.figuresNote || '')}</p>` : ''}${subModules}` },
     { id: sectionDomId('elemente'), title: 'Ausstattung',
       html: `${elements}<p class="small muted">${C.escape(fixture.confidentiality || '')}</p>` },
@@ -355,6 +362,8 @@ function moduleCard(C, module) {
     : unique.length === 1 ? `Richtmass ${unique[0]} m²` : 'Richtmass je Sub-Modul';
   const count = module.subModules.length;
   return `<div class="card card--default card--clickable wsm-module-card">
+    ${C.photo({ src: module.image || '', color: swatchHex(module.swatch), alt: '',
+      w: 640, h: 360, cls: 'wsm-module-card__photo' })}
     <div class="card__content"><div class="card__body">
       <span class="wsm-module-card__nr">${C.escape(String(module.nr))}</span>
       <h3 class="card__title"><a class="card__link" href="${MODULE_ROUTE}/modul-${module.nr}">${C.escape(module.name)}</a></h3>
@@ -443,6 +452,155 @@ function handbookPage(ctx, branch) {
         typeof section.html === 'function' ? section.html(C) : (section.html || '')}`,
     })).join('')}
   `;
+}
+
+/* =========================== PLANUNGSBEISPIELE ========================== */
+
+/**
+ * One example as a card.
+ *
+ * An example is a PLACE — a floor, a zone within one, or a single room — so the scope is
+ * stated before the building. The building is only where the place is.
+ */
+function exampleCard(C, core, example) {
+  const cover = example.coverMediaId
+    ? (core.media() || []).find((item) => item.mediaId === example.coverMediaId)
+    : null;
+  const facts = [
+    `${example.areaSqm} m²`,
+    example.workplaces ? `${example.workplaces} Arbeitsplätze` : 'ohne Arbeitsplätze',
+    example.completed,
+  ].join(' · ');
+  return `<div class="card card--default card--clickable">
+    ${C.photo({ src: cover?.file || '', color: cover?.color || '', alt: '', w: 640, h: 360,
+      cls: 'wsm-example__photo' })}
+    <div class="card__content"><div class="card__body">
+      <p class="wsm-example__scope">${C.badge(example.scope, 'info')}</p>
+      <h3 class="card__title"><a class="card__link" href="${INSPIRATION_ROUTE}/${C.escape(example.slug)}">${
+        C.escape(example.title)}</a></h3>
+      <p class="card__text small muted">${C.escape(`${example.buildingName} · ${facts}`)}</p>
+      <p class="card__text">${C.escape(example.summary)}</p>
+    </div></div>
+  </div>`;
+}
+
+/** The gallery: every realised place, newest first. */
+function examplesPage(ctx, branch) {
+  const { mount, C, core, setTitle, setCrumbs } = ctx;
+  const examples = [...(core.workspaceExamples() || [])]
+    .sort((left, right) => String(right.completed).localeCompare(String(left.completed)));
+  setTitle(branch.label);
+  setCrumbs([
+    { label: 'Startseite', href: '#/' },
+    { label: 'Wissen und Hilfsmittel', href: '#/knowledge' },
+    { label: 'Arbeitsplätze gestalten', href: '#/knowledge/workspace' },
+    { label: branch.label },
+  ]);
+  // No filter bar. Four examples fit on one screen; a search field and three facet groups
+  // over four cards is chrome. The catalogue bar belongs here once the set outgrows a
+  // single view, and the pattern is already shared by five other collections.
+  mount.innerHTML = `
+    ${C.pageSection({ body: C.pageHeader({ title: branch.label, lead: branch.lead }) })}
+    ${C.pageSection({
+      title: `${examples.length} Beispiele`,
+      alt: true,
+      body: examples.length
+        ? `<div class="grid grid--responsive-cols-3">${examples
+            .map((example) => exampleCard(C, core, example)).join('')}</div>`
+        : C.empty('Noch keine Planungsbeispiele erfasst'),
+    })}`;
+}
+
+/**
+ * One example in full: what it looks like, what it is made of, and where it is.
+ *
+ * Images stay REFERENCES into the media library, so licence, photographer and source are
+ * read from the asset rather than restated here — several of these are marked as not
+ * freely licensed and have to keep saying so.
+ */
+function examplePage(ctx, slug) {
+  const { C, core, setTitle, setCrumbs } = ctx;
+  const example = core.workspaceExample(slug);
+  if (!example) return notFound(ctx);
+
+  const media = core.media() || [];
+  const shots = (example.mediaIds || [])
+    .map((id) => media.find((item) => item.mediaId === id))
+    .filter(Boolean);
+  const modules = core.multispaceModules()?.modules || [];
+  const byNr = new Map(modules.map((module) => [module.nr, module]));
+  const products = core.shopProducts() || [];
+
+  setTitle(example.title);
+  setCrumbs([
+    { label: 'Startseite', href: '#/' },
+    { label: 'Wissen und Hilfsmittel', href: '#/knowledge' },
+    { label: 'Arbeitsplätze gestalten', href: '#/knowledge/workspace' },
+    { label: 'Planungsbeispiele', href: INSPIRATION_ROUTE },
+    { label: example.title },
+  ]);
+
+  const gallery = shots.length
+    ? `<div class="grid grid--responsive-cols-2">${shots.map((shot) => `<figure class="wsm-example__figure">
+        ${C.photo({ src: shot.file || '', color: shot.color || '', alt: '', w: 800, h: 450 })}
+        <figcaption class="small muted">${C.escape(shot.title)}${
+          shot.photographer ? ` · ${C.escape(shot.photographer)}` : ''}<br>${C.escape(shot.license || '')}</figcaption>
+      </figure>`).join('')}</div>`
+    : C.empty('Für dieses Beispiel liegen noch keine Aufnahmen vor');
+
+  const plans = (example.plans || []).length
+    ? `<ul class="download-items">${example.plans.map((plan) => C.downloadItem({
+        href: '#', title: plan.title, desc: `${plan.format} · ${plan.sheet}`,
+        meta: [plan.format, plan.sheet], download: false, wrapLi: true,
+      })).join('')}</ul>`
+    : C.empty('Für dieses Beispiel ist kein Grundriss hinterlegt');
+
+  const furniture = (example.furniture || [])
+    .map((id) => products.find((product) => Number(product.id) === Number(id)))
+    .filter(Boolean);
+
+  const sections = [
+    { id: sectionDomId('bilder'), title: 'Aufnahmen', html: gallery },
+    { id: sectionDomId('module'), title: 'Eingesetzte Module',
+      html: `<ul class="wsm-references">${(example.modules || []).map((nr) => {
+        const module = byNr.get(nr);
+        if (!module) return '';
+        return `<li><strong><a href="${MODULE_ROUTE}/modul-${nr}">${
+          C.escape(`${nr} · ${module.name}`)}</a></strong>
+          <span class="small muted">${C.escape(module.summary || '')}</span></li>`;
+      }).join('')}</ul>` },
+    { id: sectionDomId('grundriss'), title: 'Grundriss', html: plans },
+    { id: sectionDomId('moebel'), title: 'Verwendete Möbel',
+      html: furniture.length
+        ? C.table({
+          caption: 'Möbel dieses Beispiels', showCaption: false,
+          columns: [
+            { key: 'name', label: 'Produkt' },
+            { key: 'brand', label: 'Marke' },
+            { key: 'id', label: 'Katalog-ID', align: 'right' },
+          ],
+          rows: furniture,
+        })
+        : C.empty('Für dieses Beispiel sind keine Möbel erfasst') },
+    { id: sectionDomId('ort'), title: 'Ort',
+      // The ruled definition list the metadata catalogue uses; there is no `kv`
+      // component, callers write this markup.
+      html: `<dl class="kv kv--ruled">${[
+        ['Umfang', example.scope],
+        ['Gebäude', example.buildingName],
+        ['Adresse', example.address || 'nicht erfasst'],
+        ['Fläche', `${example.areaSqm} m²`],
+        ['Arbeitsplätze', String(example.workplaces)],
+        ['Fertigstellung', example.completed],
+      ].map(([term, value]) => `<dt>${C.escape(term)}</dt><dd>${C.escape(value)}</dd>`).join('')}</dl>` },
+  ];
+
+  anchorNavPage(ctx, {
+    title: example.title,
+    lead: example.summary,
+    sections,
+    back: { href: INSPIRATION_ROUTE, label: 'Planungsbeispiele' },
+  });
 }
 
 function notFound(ctx) {

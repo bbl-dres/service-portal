@@ -190,6 +190,10 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 /* A module as a card: the number reads as an identifier, so it gets a boxed figure the
    way the plan editor's own module chips do. The footer carries what the module is made
    of, which is the question that decides whether to open it. */
+/* The card's picture. A missing file leaves the coloured block underneath, which carries
+   the module's own colour — the one the plan editor paints its rooms with. */
+.wsm-module-card__photo { aspect-ratio:16 / 9; }
+.wsm-module-detail__photo { aspect-ratio:21 / 9; margin-bottom:var(--sp-4); }
 .wsm-module-card__nr { display:inline-flex; align-items:center; justify-content:center; min-width:var(--sp-8); min-height:var(--sp-8);
   margin-bottom:var(--sp-3); border:var(--stroke-1) solid var(--color-secondary-200);
   background:var(--color-secondary-50); font-variant-numeric:tabular-nums; }
@@ -213,6 +217,10 @@ body.body--overlay-open .back-to-top-rail { display:none; }
 .wsm-catalogue__count { color:var(--color-text-muted); font-size:var(--text-xs); font-variant-numeric:tabular-nums; }
 .wsm-catalogue__count::before { content:"("; }
 .wsm-catalogue__count::after { content:")"; }
+/* Planungsbeispiele: a place, its scope, and what it was built from. */
+.wsm-example__photo { aspect-ratio:16 / 9; }
+.wsm-example__scope { margin:0 0 var(--sp-2); }
+.wsm-example__figure { margin:0; display:grid; gap:var(--sp-2); }
 .wsm-references { margin:0; padding:0; list-style:none; }
 .wsm-references li { display:grid; gap:var(--sp-1); padding:var(--sp-3) 0; border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
 .wsm-references li:first-child { border-top:var(--stroke-1) solid var(--color-secondary-200); }

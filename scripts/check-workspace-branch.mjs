@@ -172,6 +172,88 @@ check(examples.unused.hasSection && examples.unused.rows === 0
 check(!examples.used.objectObject && !examples.unused.objectObject,
   'no component is called with the wrong argument shape');
 
+// Each module card leads with a picture. Until real photography is dropped into
+// assets/images/multispace-modules/, the slot shows the module's own colour — the one the
+// plan editor paints its rooms with — so a card still identifies its module instead of
+// showing a broken frame.
+const pictures = await page.evaluate(`(async () => {
+  const pause = (ms = 850) => new Promise(resolve => setTimeout(resolve, ms));
+  location.hash = '#/knowledge/workspace/multispace';
+  await pause();
+  const blocks = [...document.querySelectorAll('#main-content .wsm-module-card__photo')];
+  const colours = blocks.map((node) => getComputedStyle(node).backgroundColor);
+  const heights = blocks.map((node) => Math.round(node.getBoundingClientRect().height));
+  location.hash = '#/knowledge/workspace/multispace/modul-4';
+  await pause();
+  const detail = document.querySelector('#main-content .wsm-module-detail__photo');
+  return {
+    blocks: blocks.length,
+    distinct: [...new Set(colours)].length,
+    collapsed: heights.filter((value) => value === 0).length,
+    detail: !!detail,
+    detailColour: detail ? getComputedStyle(detail).backgroundColor : '',
+    cardColour: colours[3] || '',
+  };
+})()`);
+check(pictures.blocks === 11 && pictures.collapsed === 0,
+  'every module card leads with a picture slot that occupies space',
+  `${pictures.blocks} slots · ${pictures.collapsed} collapsed`);
+check(pictures.distinct === 11,
+  'the fallback gives each module its own colour rather than one neutral grey',
+  `${pictures.distinct} distinct`);
+check(pictures.detail && pictures.detailColour === pictures.cardColour,
+  'the module detail page shows the same picture as its card',
+  `${pictures.cardColour} vs ${pictures.detailColour}`);
+
+// Planungsbeispiele: a gallery of realised places and one page each. The licence check is
+// the point of substance — several referenced photographs are marked as not freely
+// licensed, so an image must never appear without its licence line.
+const examplePages = await page.evaluate(`(async () => {
+  const pause = (ms = 900) => new Promise(resolve => setTimeout(resolve, ms));
+  const main = () => document.querySelector('#main-content');
+  location.hash = '#/knowledge/workspace/inspiration';
+  await pause();
+  const cards = main().querySelectorAll('.card').length;
+  const photos = main().querySelectorAll('.wsm-example__photo').length;
+  const scopes = [...main().querySelectorAll('.wsm-example__scope')].map((n) => n.textContent.trim());
+  const first = main().querySelector('.card__link');
+  const href = first ? first.getAttribute('href') : '';
+  location.hash = href.replace(/^#/, '');
+  await pause();
+  const figures = [...main().querySelectorAll('.wsm-example__figure')];
+  const captioned = figures.filter((figure) => {
+    const caption = (figure.querySelector('figcaption') || {}).textContent || '';
+    return caption.trim().length > 0;
+  }).length;
+  const detail = {
+    sections: [...main().querySelectorAll('h2')].map((n) => n.textContent.trim()),
+    figures: figures.length,
+    captioned,
+    downloads: main().querySelectorAll('.download-items li').length,
+    facts: main().querySelectorAll('.kv dt').length,
+    objectObject: (main().textContent || '').includes('[object Object]'),
+  };
+  location.hash = '#/knowledge/workspace/inspiration/gibt-es-nicht';
+  await pause();
+  const missing = (main().querySelector('h1') || {}).textContent.trim();
+  return { cards, photos, scopes, detail, missing };
+})()`);
+check(examplePages.cards === 4 && examplePages.photos === 4,
+  'the gallery shows every realised place with a picture',
+  `${examplePages.cards} cards · ${examplePages.photos} photos`);
+check(examplePages.scopes.every((scope) => ['Geschoss', 'Zone', 'Raum'].includes(scope)),
+  'each card states its scope, because an example is a place and not a building',
+  examplePages.scopes.join(', '));
+check(examplePages.detail.figures > 0 && examplePages.detail.captioned === examplePages.detail.figures,
+  'no photograph appears without its caption and licence',
+  `${examplePages.detail.captioned} of ${examplePages.detail.figures}`);
+check(examplePages.detail.downloads > 0 && examplePages.detail.facts > 0
+  && !examplePages.detail.objectObject,
+  'the example page carries its floor plan and its location facts',
+  `${examplePages.detail.downloads} plan(s) · ${examplePages.detail.facts} facts`);
+check(/nicht gefunden/i.test(examplePages.missing),
+  'an unknown example is a not-found page', examplePages.missing);
+
 const problems = await page.problems();
 check(problems.length === 0, 'the branch produces no runtime problems', problems.join(' | '));
 

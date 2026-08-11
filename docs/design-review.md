@@ -755,3 +755,75 @@ Portfoliobaum nichts weiss. Übernommen ist alles, was ein Lesender sieht.
   Prüffehler, die die Trennung sichtbar gemacht hat: die Berührungsziel-Prüfung bei
   320 px mass Bedienelemente in einer geschlossenen Schublade und in eingeklappten
   Baumgruppen, die beide null melden.
+
+## 15. «Arbeitsplätze gestalten»: vom Dokument zum Katalog
+
+Stand: 11. August 2026. Ein Wissensgebiet trug acht Abschnitte, einen Modulkatalog und
+eine Dokumentensammlung auf einer Seite. Es ist jetzt ein aufklappbarer Zweig mit fünf
+Unterseiten, und die Modulliste existiert nur noch einmal.
+
+### 15.1 Eine Liste, nicht zwei
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 15.1 | **Das Portal nannte zwei verschiedene Modulvokabulare.** Die Wissensseite beschrieb zehn Module nach «Stand 31.10.2025», das Raumattribut des Plan-Editors bot elf nach «Stand 6.1.2025» an. «Modul 7» hiess damit auf der einen Seite Interaktive Sitzungen und im Editor Coffee Point — und der Editor ist die Stelle, an der die Zahl in einen gespeicherten Plan geschrieben wird. | `data/multispace-modules.json` ist die Quelle; Editor und Wissensseite leiten daraus ab. Publiziert wird die Ausgabe 6.1.2025, weil genau sie der Editor immer schon geschrieben hat: keine Umnummerierung, keine Migration, kein gespeicherter Plan ändert seine Bedeutung. | erledigt |
+| 15.2 | Zwei handgepflegte Kopien können wieder auseinanderlaufen, und das Repository hat keinen Build-Schritt, der das verhindern würde. | `scripts/check-multispace-modules.mjs` beweist, dass Fixture, `MODULE_OPTIONS` und die Seitenliste übereinstimmen. Das ersetzt hier den Compiler. | erledigt |
+| 15.3 | Die neuere Ausgabe darf nicht verloren gehen, aber eine zweite Modulliste wäre wieder eine Kopie. | Sie steht als **Delta**: drei Änderungen und eine Umnummerierungstabelle (`7 → null`, `8–11 → 7–10`). Der Wechsel ist ein Feld plus eine Draft-Migration — und die Migration ist der Grund, warum er bewusst getroffen werden muss. | offen, bewusst |
+
+### 15.2 Der Zweig
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 15.4 | Eine Seite mit acht Abschnitten, elf Modulen und einer Dokumentensammlung ist in einer Sitzung nicht lesbar. | Aufklappbarer Zweig wie «Digitalisierung»: Übersicht, Multispace-Handbuch, Planungsbeispiele, Kreislaufwirtschaft, Downloads. | erledigt |
+| 15.5 | `js/pages/knowledge.js` begründete ausdrücklich das Gegenteil: «Separate Routen ergäben Seiten mit drei Dokumenten.» | Die Regel gilt weiter — für die anderen sechs Gebiete. Dieses eine trägt einen Katalog mit einer Seite je Modul, und der Kommentar sagt das jetzt, statt dem Code zu widersprechen. | erledigt |
+| 15.6 | Fünf Unterseiten könnten fünf Inhaltslisten bedeuten, die auseinanderlaufen. | Die Abschnitte deklarieren ihren Zweig; jede Seite filtert **eine** Liste. | erledigt |
+| 15.7 | Das Handbuch war eine Dokumentseite mit Inhaltsverzeichnis, obwohl der Inhalt ein Katalog ist. | Volle Breite, Module als Karten, darunter die Planungsbeispiele — die Vorlage aus `docs/wireframes/260806 - Workspace Management.html`. | erledigt |
+| 15.8 | Die Übersicht war eine Dokumentseite mit Inhaltsverzeichnis über einer einzigen Kartenreihe. | Nur Karten, im Muster der Digitalisierungsübersicht: `page-header`, dann `section section--default bg--secondary-50`, drei Spalten. Die Klassen wurden gegen jene Seite gemessen, nicht angenommen. | erledigt |
+| 15.9 | Der «alles anzeigen»-Link stand links, weil er von Hand in den Abschnittsinhalt geschrieben war. | Über den `more`-Slot von `pageSection`, denselben, den das News-Band der Startseite benutzt. Gemessen: rechter Abstand 0 px auf allen drei Bändern. | erledigt |
+
+### 15.3 Planungsbeispiele
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 15.10 | «Realisierte Flächen als Inspiration» braucht einen Moment zum Verstehen. | **Planungsbeispiele**. | erledigt |
+| 15.11 | Ein Beispiel ist kein Gebäude. Es ist ein Geschoss, eine Zone darin oder ein einzelner Raum. | `scope` gehört zum Datensatz und steht auf jeder Karte; das Gebäude ist nur, wo der Ort liegt. | erledigt |
+| 15.12 | Bilder mit dem Beispiel zu kopieren, hätte Lizenz, Fotograf:in und Quelle abgeschnitten — ein Teil der Aufnahmen ist als «BBL-Mediendatenbank, nicht frei lizenziert» geführt. | `mediaIds` verweisen in `data/media.json`. Die Detailseite zeigt zu jeder Aufnahme Titel, Urheberschaft und Lizenz, und der Gate prüft, dass keine Aufnahme ohne Bildunterschrift erscheint. | erledigt |
+| 15.13 | Die Modul-Detailseite trug einen Abschnitt «Weitere Module» — eine Navigation, wo eine Aussage hingehört. | «Planungsbeispiele», **abgeleitet** aus den Beispielen, die ihre Module ohnehin deklarieren. Eine Linkliste im Modulrecord wäre die Kopie aus 15.1 gewesen. Module ohne Beispiel sagen das; drei der elf trifft das. | erledigt |
+| 15.14 | Ein Filterbalken über vier Beispiele. | Nicht gebaut. Das Muster teilen fünf andere Sammlungen und gehört hierher, sobald die Menge einen Bildschirm überschreitet. | offen, bewusst |
+
+### 15.4 Bilder ohne Bilder
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 15.15 | Modulkarten ohne Bild; echte Aufnahmen gibt es noch nicht. | Ordner, Namensschema und Lizenztabelle stehen (`assets/images/multispace-modules/`, `modul-<nr>.jpg`); der Modulrecord trägt `image`. Eine Datei wirkt, sobald sie da ist — ohne Codeänderung. | erledigt |
+| 15.16 | Ein fehlendes Bild darf keinen kaputten Rahmen zeigen. | Ersatzfläche in der **Modulfarbe** aus `colors.js` — derselben, mit der der Plan-Editor Räume dieses Moduls einfärbt. Gemessen: elf Karten, elf verschiedene Farben, Detailseite gleich der Karte. | erledigt |
+| 15.17 | `swatchCss()` liefert `var(--fpe-module-4)`, und dieses Blatt lädt auf einer Wissensseite nicht — genau die Form des Fehlers, der einmal alle Räume schwarz gemalt hat. | `swatchHex()` für Verbraucher ausserhalb des Editors. | erledigt |
+
+### 15.5 Zwei Ursachen, nicht eine
+
+Vier Suiten fielen in Gesamtläufen aus und liefen einzeln durch. Die erste Erklärung —
+feste Wartezeiten — war für mindestens eine davon falsch: `test-format.mjs` enthält keine
+einzige, und ihr Fehlschlag brachte **gar keine Ausgabe**. Das ist ein Absturz, keine
+fehlgeschlagene Prüfung.
+
+- **Abstürze** nach rund fünfzig Browserstarts hintereinander. Der Läufer wiederholt einen
+  stillen Fehlschlag einmal und meldet den Neustart, damit Absturz und echter Fehler
+  unterscheidbar bleiben.
+- **Eine echte Wartezeit-Schwäche**, in `test-floorplan-editor-three-controls.mjs`: Klick
+  auf die 3D-Ansicht nach festen 350 ms, dann zwei Sekunden auf einen WebGL-Kontext. Beides
+  wartet jetzt auf Bedingungen, und wenn der Viewer ausbleibt, sagt die Prüfung das, statt
+  ein Dutzend Prüfungen an `undefined` scheitern zu lassen.
+
+Dass der Unterschied überhaupt sichtbar wurde, geht auf die Harness-Korrektur aus Abschnitt
+14 zurück: der Fehler kam als «Cannot read properties of null (reading
+'getBoundingClientRect') at drag» an statt als leere Zusicherung unter fremdem Namen.
+
+### Prüfartefakte
+
+- `node scripts/check-multispace-modules.mjs` — eine Modulliste, drei Verbraucher, keine
+  vertraulichen Zahlen im Fixture.
+- `node scripts/check-workspace-branch.mjs` — fünf Unterseiten, elf Modulseiten, die
+  Kartenbilder mit Farbrückfall, die Galerie und die Beispieldetailseite, und die Regel,
+  dass keine Aufnahme ohne Lizenzangabe erscheint.
+- `node scripts/test-knowledge-workspace.mjs`, `node scripts/test-content.mjs` — die
+  Bestandsprüfungen des Gebiets, angepasst an den Zweig statt an die eine Seite.

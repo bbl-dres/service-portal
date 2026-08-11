@@ -136,13 +136,6 @@ export const AREAS = {
         { title: 'DWG-Datei prüfen lassen', desc: 'Layerstruktur, Raumpolygone, Raumstempel und Bemassung lokal im Browser gegen die CAD-Vorgaben prüfen.', href: '#/app/plan-check', meta: ['Anwendung'] },
         { title: 'Grundriss prüfen', desc: 'Die Dienstleistung mit Beschrieb, Voraussetzungen und Ablauf.', href: '#/services/plan-pruefen', meta: ['Dienstleistung'] },
       ] },
-      { id: 'referenzen', branch: 'inspiration', title: 'Umgesetzte Flächen', intro: 'Realisierte Büroflächen der Bundesverwaltung und die Module, aus denen sie bestehen. Die Bilder stammen aus der Medienbibliothek des Portals; die Modulangaben aus der Ausstattungsplanung des jeweiligen Geschosses.', html: (C) => referenceSpaces(C) },
-      { id: 'inspiration-nutzen', branch: 'inspiration', title: 'Was sich davon übernehmen lässt', intro: 'Eine realisierte Fläche ist kein Vorlagegrundriss. Diese drei Fragen entscheiden, ob ein Beispiel auf die eigene Fläche passt.', html: () => `
-        <ul class="wsm-rules">
-          <li><strong>Modulmix statt Möbelliste.</strong> Übernommen wird die Kombination von Modulen, nicht die Einrichtung eines einzelnen Raums.</li>
-          <li><strong>Geschosstiefe und Fassade.</strong> Einzelarbeitsplätze stehen entlang der Fassade; eine tiefe Fläche trägt andere Module als eine schmale.</li>
-          <li><strong>Zahl der Anwesenden, nicht der Angestellten.</strong> Die Belegung folgt der tatsächlichen Präsenz, sonst entstehen Flächen, die nie gefüllt sind.</li>
-        </ul>` },
       { id: 'beschaffung', branch: 'kreislauf', title: 'Beschaffung, Lieferung und Kreislauf', intro: 'Die standardisierte Raumausstattung wird in einem Kreislaufmodell bewirtschaftet. Das bestimmt, womit geplant wird und was mit ausgedientem Mobiliar geschieht.', html: (C) => `
         <ul class="wsm-rules">
           <li>Ausstattungen werden in erster Linie mit <strong>Occasionsmobiliar</strong> geplant.</li>
@@ -391,32 +384,6 @@ export const WORKSPACE_STEPS = Object.freeze([
 ]);
 
 /**
- * Realised spaces, as a starting point for the inspiration page.
- *
- * The module names come from MULTISPACE_MODULES, so an example cannot cite a module the
- * handbook does not carry. No photographs: the portal's media library holds real
- * imagery, and inventing pictures of federal offices for a prototype would be worse
- * than a stated gap.
- */
-function referenceSpaces(C) {
-  const examples = [
-    { object: 'Bundeshaus West, 2. OG', profile: 'Stabsstelle, 23 Arbeitsplätze auf 410 m²', modules: [1, 2, 4, 6, 9] },
-    { object: 'Fellerstrasse 15, 4. OG', profile: 'Fachbereich mit hohem Besprechungsanteil', modules: [1, 3, 4, 5, 7] },
-    { object: 'Holzikofenweg 36, 1. OG', profile: 'Grossraum mit ruhigen Rückzugsbereichen', modules: [1, 3, 5, 6, 10] },
-  ];
-  const byNr = new Map(MULTISPACE_MODULES.map((module) => [module.nr, module]));
-  return `<ul class="wsm-references">${examples.map((example) => `<li>
-    <strong>${C.escape(example.object)}</strong>
-    <span class="small muted">${C.escape(example.profile)}</span>
-    <span class="wsm-references__modules">${example.modules
-      .map((nr) => byNr.get(nr))
-      .filter(Boolean)
-      .map((module) => `<span class="badge badge--gray">${C.escape(`${module.nr} · ${module.name}`)}</span>`)
-      .join('')}</span>
-  </li>`).join('')}</ul>
-  <p class="small muted">Bildmaterial folgt aus der Medienbibliothek; die Beispiele nennen bewusst nur Objekt, Profil und Modulmix.</p>`;
-}
-
 /**
  * The modules as a navigable list, followed by the summary table.
  *
