@@ -1,21 +1,18 @@
 // Verify the shared C.processDone completion page: success notification with a
 // reference, heading, explanatory text, and action row across all form apps.
-import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
+import { launch, openPage, APP_BASE } from './lib/cdp.mjs';
 
 const cdp = await launch();
 // Forms are behind the login gate.
-const page = await openPage(cdp, `${APP_BASE}/`);
-await sleep(700);
-await page.evaluate(`(async () => {
-  const b = document.querySelector('[data-login], .meta-navigation__auth');
-  if (b) b.click();
-  await new Promise(r => setTimeout(r, 600));
-})()`);
+// `openPage`'s own login, as every other suite uses. Hand-clicking the auth control
+// after a fixed 700 ms sleep was the flake: on a busy machine the shell had not painted
+// it yet, so the click hit nothing, the route stayed behind the gate, and every value
+// came back empty under a name that blamed the completion page.
+const page = await openPage(cdp, `${APP_BASE}/app/fault-report`, { login: true });
+await page.waitFor(`Boolean(document.querySelector('#main-content form'))`, { timeout: 10000 });
 
 // Fill and submit the shortest form, the fault report.
 const r = await page.evaluate(`(async () => {
-  location.hash = '#/app/fault-report';
-  await new Promise(r => setTimeout(r, 900));
   const setValue = (selector, value) => { const el = document.querySelector(selector); if (!el) return false;
     el.value = value; el.dispatchEvent(new Event('change', { bubbles: true })); return true; };
   const fields = [...document.querySelectorAll('#main-content select, #main-content textarea, #main-content input')];
@@ -26,7 +23,11 @@ const r = await page.evaluate(`(async () => {
   }
   const form = document.querySelector('#main-content form');
   if (form) form.requestSubmit ? form.requestSubmit() : form.submit();
-  await new Promise(r => setTimeout(r, 900));
+  const settled = Date.now() + 9000;
+  while (Date.now() < settled
+    && !document.querySelector('#main-content .notification--success')) {
+    await new Promise(r => setTimeout(r, 50));
+  }
   const mc = document.querySelector('#main-content');
   const notification = mc.querySelector('.notification--success');
   const h1 = mc.querySelector('h1');

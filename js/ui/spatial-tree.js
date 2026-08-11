@@ -50,6 +50,14 @@ export function syncTreeCounts(root, visible, levelsOf, idOf) {
   root.querySelectorAll('.pf-tree__leaf').forEach((button) => {
     button.closest('.pf-tree__item').hidden = !ids.has(button.dataset.obj);
   });
+  // Filtering can hide the row that currently holds the tree's single tab stop,
+  // which would leave the whole tree unreachable by keyboard. Put it back on a
+  // visible row — the selected one if it survived the filter, else the first.
+  const reachable = [...root.querySelectorAll('.pf-tree__node, .pf-tree__leaf, .pf-tree__sub')]
+    .filter((button) => button.offsetParent !== null);
+  if (!reachable.length) return;
+  reachable.forEach((button) => { button.tabIndex = -1; });
+  (reachable.find((button) => button.classList.contains('is-active')) || reachable[0]).tabIndex = 0;
 }
 
 // --- Construction ------------------------------------------------------------
@@ -64,15 +72,22 @@ export function syncTreeCounts(root, visible, levelsOf, idOf) {
 // `data-obj`, exactly the shape read by syncTreeCounts/wireTree/restore.
 const compareGerman = (a, b) => String(a).localeCompare(String(b), 'de');
 
-export function treeHTML(C, objects, { levels, leaf }) {
+export function treeHTML(C, objects, { levels, leaf, ariaLabel = 'Struktur' }) {
   const esc = C.escape;
-  const rowContent = (icon, idText, label) => `${C.icon(icon, 'pf-tree__ico')}${
+  // The count is a bare number in the DOM — the parentheses are drawn by CSS, so
+  // scripts and assertions keep reading a number — and it gains a named figure
+  // for assistive technology, which would otherwise hear «Schweiz 7».
+  const countHTML = (count, unit) => `<span class="pf-tree__n">${count}</span>${
+    unit ? `<span class="sr-only"> ${esc(unit)}</span>` : ''}`;
+  const rowContent = (icon, idText, label, kindWord) => `${C.icon(icon, 'pf-tree__ico')}${
+    kindWord ? `<span class="sr-only">${esc(kindWord)}: </span>` : ''}${
     idText ? `<span class="pf-tree__id">${esc(idText)}</span>` : ''}<span class="pf-tree__label">${esc(label)}</span>`;
-  const nodeHTML = (content, count, attrs, children) => `<li class="pf-tree__item">
-      <button type="button" class="pf-tree__node interactive-control" ${attrs} aria-expanded="false">
-        ${C.icon('ChevronRight', 'pf-tree__chev')}${content}<span class="pf-tree__n">${count}</span>
+  const nodeHTML = (content, count, unit, attrs, children, level) => `<li class="pf-tree__item" role="none">
+      <button type="button" class="pf-tree__node interactive-control" role="treeitem" tabindex="-1"
+        aria-level="${level}" aria-selected="false" aria-expanded="false" ${attrs}>
+        ${C.icon('ChevronRight', 'pf-tree__chev')}${content}${countHTML(count, unit)}
       </button>
-      <ul class="pf-tree__children" hidden>${children}</ul></li>`;
+      <ul class="pf-tree__children" role="group" hidden>${children}</ul></li>`;
 
   const attrPairs = (pairs) => pairs.map(([attribute, value]) => `data-${attribute}="${esc(value)}"`).join(' ');
 
@@ -82,46 +97,56 @@ export function treeHTML(C, objects, { levels, leaf }) {
   // rather than beside it. A leaf with children becomes a disclosure that still
   // selects its own object, exactly like a grouping node; every other explorer
   // omits `children` and renders the flat leaf unchanged.
-  const subHTML = (object, pairs) => {
+  const subHTML = (object, pairs, level) => {
     const children = leaf.children ? leaf.children(object) : null;
     if (!Array.isArray(children) || !children.length) return '';
-    return `<ul class="pf-tree__children" hidden>${children.map((child) => (
-      `<li class="pf-tree__item"><button type="button" class="pf-tree__sub interactive-control" ${
+    return `<ul class="pf-tree__children" role="group" hidden>${children.map((child) => (
+      `<li class="pf-tree__item" role="none"><button type="button" class="pf-tree__sub interactive-control"
+        role="treeitem" tabindex="-1" aria-level="${level}" aria-selected="false" ${
         attrPairs([...pairs, ['sub', child.id]])}>${
-        rowContent(child.icon || 'Stack', child.idText || '', child.label)}</button></li>`
+        rowContent(child.icon || 'Stack', child.idText || '', child.label, leaf.subWord)}</button></li>`
     )).join('')}</ul>`;
   };
 
   const build = (items, depth, ancestors) => {
+    const level = depth + 1;
     if (depth === levels.length) {
       const sorted = leaf.sort ? items.slice().sort(leaf.sort) : items;
       return sorted.map((object) => {
         const pairs = [...ancestors, ['obj', leaf.objId(object)]];
-        const children = subHTML(object, pairs);
-        return `<li class="pf-tree__item"><button type="button" class="pf-tree__leaf interactive-control${
-          children ? ' pf-tree__leaf--parent' : ''}" ${attrPairs(pairs)}${children ? ' aria-expanded="false"' : ''}>${
+        const children = subHTML(object, pairs, level + 1);
+        const count = leaf.count ? leaf.count(object) : null;
+        return `<li class="pf-tree__item" role="none"><button type="button" class="pf-tree__leaf interactive-control${
+          children ? ' pf-tree__leaf--parent' : ''}" role="treeitem" tabindex="-1"
+          aria-level="${level}" aria-selected="false" ${attrPairs(pairs)}${
+          children ? ' aria-expanded="false"' : ''}>${
           children ? C.icon('ChevronRight', 'pf-tree__chev') : ''}${
-          rowContent(leaf.icon(object), leaf.idText ? leaf.idText(object) : '', leaf.label(object))}</button>${children}</li>`;
+          rowContent(leaf.icon(object), leaf.idText ? leaf.idText(object) : '', leaf.label(object), leaf.word)}${
+          count == null ? '' : countHTML(count, leaf.countWord)}</button>${children}</li>`;
       }).join('');
     }
-    const level = levels[depth];
-    const attribute = level.attr || level.key;
+    const levelDef = levels[depth];
+    const attribute = levelDef.attr || levelDef.key;
     const groups = new Map();
     for (const object of items) {
-      const key = object[level.key];
+      const key = object[levelDef.key];
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(object);
     }
-    const label = (key, entries) => (level.label ? level.label(key, entries) : key);
-    const keys = [...groups.keys()].sort(level.sort || ((a, b) => compareGerman(label(a, groups.get(a)), label(b, groups.get(b)))));
+    const label = (key, entries) => (levelDef.label ? levelDef.label(key, entries) : key);
+    const keys = [...groups.keys()].sort(levelDef.sort
+      || ((a, b) => compareGerman(label(a, groups.get(a)), label(b, groups.get(b)))));
     return keys.map((key) => {
       const entries = groups.get(key);
       const pairs = [...ancestors, [attribute, key]];
-      return nodeHTML(rowContent(level.icon, level.idText ? level.idText(key, entries) : '', label(key, entries)), entries.length,
-        attrPairs(pairs), build(entries, depth + 1, pairs));
+      return nodeHTML(
+        rowContent(levelDef.icon, levelDef.idText ? levelDef.idText(key, entries) : '',
+          label(key, entries), levelDef.word),
+        entries.length, levelDef.countWord || 'Objekte', attrPairs(pairs),
+        build(entries, depth + 1, pairs), level);
     }).join('');
   };
-  return `<ul class="pf-tree">${build(objects, 0, [])}</ul>`;
+  return `<ul class="pf-tree" role="tree" aria-label="${esc(ariaLabel)}">${build(objects, 0, [])}</ul>`;
 }
 
 // Two-tone marking: the selected node is active (blue inner edge), while its
@@ -129,9 +154,13 @@ export function treeHTML(C, objects, { levels, leaf }) {
 // This keeps the drill-down chain visible despite shallow indentation.
 export function markTree(sidebar, activeNode) {
   sidebar.querySelectorAll('.pf-tree__node, .pf-tree__leaf, .pf-tree__sub')
-    .forEach((node) => node.classList.remove('is-active', 'is-path'));
+    .forEach((node) => {
+      node.classList.remove('is-active', 'is-path');
+      if (node.hasAttribute('aria-selected')) node.setAttribute('aria-selected', 'false');
+    });
   if (!activeNode) return;
   activeNode.classList.add('is-active');
+  if (activeNode.hasAttribute('aria-selected')) activeNode.setAttribute('aria-selected', 'true');
   let item = activeNode.closest('.pf-tree__item');
   while (item) {
     const list = item.parentElement;
@@ -192,6 +221,59 @@ export function wireTree(sidebar, { attrs = ['country', 'region', 'city', 'busin
     select(selection, node);
   });
   if (clearBtn) clearBtn.addEventListener('click', () => select({}, null));
+
+  // --- Keyboard: the ARIA tree pattern ---------------------------------------
+  // The whole tree is ONE tab stop with a roving tabindex. Before this, every row
+  // was its own stop: reaching the map past the property inventory meant pressing
+  // Tab through more than a hundred buttons, and the arrow keys did nothing.
+  const rows = () => [...sidebar.querySelectorAll('.pf-tree__node, .pf-tree__leaf, .pf-tree__sub')]
+    .filter((row) => row.offsetParent !== null);
+  const focusRow = (row) => {
+    if (!row) return;
+    rows().forEach((candidate) => { candidate.tabIndex = -1; });
+    row.tabIndex = 0;
+    row.focus();
+  };
+  // Exactly one row is reachable by Tab: the selected one if it is on screen, the
+  // first otherwise. Re-run whenever the visible set changes.
+  const syncTabStop = () => {
+    const visible = rows();
+    if (!visible.length) return;
+    visible.forEach((row) => { row.tabIndex = -1; });
+    (visible.find((row) => row.classList.contains('is-active')) || visible[0]).tabIndex = 0;
+  };
+  sidebar.addEventListener('keydown', (event) => {
+    const row = event.target.closest('.pf-tree__node, .pf-tree__leaf, .pf-tree__sub');
+    if (!row || event.ctrlKey || event.metaKey || event.altKey) return;
+    const visible = rows();
+    const index = visible.indexOf(row);
+    const expandable = row.hasAttribute('aria-expanded');
+    const open = row.getAttribute('aria-expanded') === 'true';
+    const step = (offset) => { event.preventDefault(); focusRow(visible[Math.max(0, Math.min(visible.length - 1, index + offset))]); };
+    if (event.key === 'ArrowDown') return step(1);
+    if (event.key === 'ArrowUp') return step(-1);
+    if (event.key === 'Home') { event.preventDefault(); return focusRow(visible[0]); }
+    if (event.key === 'End') { event.preventDefault(); return focusRow(visible[visible.length - 1]); }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      if (expandable && !open) { toggle(row); syncTabStop(); focusRow(row); } else step(1);
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      if (expandable && open) { toggle(row); syncTabStop(); focusRow(row); return; }
+      // Otherwise move to the parent row, which is the level above this list.
+      const list = row.closest('.pf-tree__item')?.parentElement;
+      const parent = list?.classList.contains('pf-tree__children')
+        ? list.parentElement.querySelector(':scope > .pf-tree__node, :scope > .pf-tree__leaf')
+        : null;
+      focusRow(parent);
+    }
+  });
+  // Clicking also moves the tab stop, so Tab and the pointer never disagree.
+  sidebar.addEventListener('click', () => syncTabStop());
+  syncTabStop();
+  return { syncTabStop };
 }
 
 // Restore tree selection from the URL: find its node, expand the path and mark

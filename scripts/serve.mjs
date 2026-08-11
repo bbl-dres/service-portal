@@ -9,7 +9,7 @@
 //   SERVICE_PORTAL_HOST=0.0.0.0 SERVICE_PORTAL_ALLOWED_HOSTS=192.0.2.10 ...
 //                                           explicit LAN bind + Host allowlist
 import { createServer } from 'node:http';
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream, realpathSync, statSync } from 'node:fs';
 import { createGzip, createBrotliCompress, constants as z } from 'node:zlib';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,6 +44,12 @@ const MIME = {
 // Compress text only; fonts, images and PDFs are already compressed.
 const COMPRESSIBLE = /^(text\/|application\/(json|javascript|xml)|image\/svg)/;
 
+/** Any dot-prefixed path segment: VCS and editor metadata, and .env-style files. */
+function hiddenSegment(value) {
+  return String(value).split(/[\\/]+/)
+    .some((segment) => segment.startsWith('.') && segment !== '.' && segment !== '..');
+}
+
 export function resolveRequestFile(rawUrl, root = ROOT) {
   let path;
   try {
@@ -58,9 +64,36 @@ export function resolveRequestFile(rawUrl, root = ROOT) {
   if (!file.startsWith(root + sep) && file !== root) return { status: 403, message: 'forbidden' };
   // The repository is the document root during development, but VCS/editor
   // metadata and future .env-style files are never runtime assets.
-  if (path.split(/[\\/]+/).some((segment) => segment.startsWith('.') && segment !== '.' && segment !== '..')) {
-    return { status: 404, message: 'not found' };
+  if (hiddenSegment(path)) return { status: 404, message: 'not found' };
+
+  // Then decide again on the REAL path.
+  //
+  // Refusing dotted segments in the requested spelling is not enough on Windows:
+  // NTFS keeps 8.3 aliases that contain no dot, so `/GIT~1/config` reached
+  // `.git/config` while `/.git/config` was refused — confirmed on this machine,
+  // 1038 bytes including remote URLs, and reachable by any peer in the documented
+  // LAN bind mode. The same hole admits an in-root symlink pointing at hidden
+  // metadata. `realpathSync.native` resolves the alias back to its long name and
+  // follows links, so one check closes both spellings.
+  let realRoot;
+  try {
+    realRoot = realpathSync.native(root);
+  } catch {
+    realRoot = root;
   }
+  let realFile;
+  try {
+    realFile = realpathSync.native(file);
+  } catch (error) {
+    // A path that does not exist cannot disclose anything.
+    return error?.code === 'ENOENT'
+      ? { status: 404, message: 'not found' }
+      : { status: 403, message: 'forbidden' };
+  }
+  if (realFile !== realRoot && !realFile.startsWith(realRoot + sep)) {
+    return { status: 403, message: 'forbidden' };
+  }
+  if (hiddenSegment(realFile.slice(realRoot.length))) return { status: 404, message: 'not found' };
   return { status: 200, file };
 }
 

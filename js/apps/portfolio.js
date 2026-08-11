@@ -366,7 +366,7 @@ function buildingDetail(ctx, b) {
       { icon: 'Image', label: 'Aufnahmen in der Mediathek', href: `#/app/media-library?objekt=${encodeURIComponent(b.bbl_id)}`, newWindow: true },
     ].filter(Boolean);
     return `<aside class="detail-layout__aside" aria-label="Aktionen und Ansprechpersonen">
-      ${C.actionCard({ lead: 'Für dieses Objekt vorbelegt.', links: actions })}
+      ${C.actionCard({ links: actions })}
       ${C.contactCard({ contacts: contacts.slice()
         .sort((x, y) => (y.isPrimary ? 1 : 0) - (x.isPrimary ? 1 : 0))
         .slice(0, 4)
@@ -383,7 +383,7 @@ function buildingDetail(ctx, b) {
         <dt>EGID</dt><dd>${C.escape(b.egid || '—')}</dd>
         <dt>Adresse</dt><dd>${C.escape(b.street)}, ${C.escape(b.zip)} ${C.escape(b.city)}</dd>
         <dt>Land / Region</dt><dd>${C.escape(regionLabel)}</dd>
-        <dt>Portfolio-Kategorie</dt><dd>${C.escape(b.portfolioCategory)}</dd>
+        <dt>Teilportfolio</dt><dd>${C.escape(b.portfolioCategory)}</dd>
         <dt>Gebäudetyp</dt><dd>${C.escape(b.buildingType || '—')}</dd>
         <dt>Eigentumsverhältnis</dt><dd>${C.escape(b.ownership)}</dd>
         <dt>Baujahr</dt><dd>${C.escape(String(b.buildYear || '—'))}${

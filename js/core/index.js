@@ -56,6 +56,13 @@ const DEFERRED = {
   // image, coordinates, floors and spaces remain in their Golden Record
   // datasets and are not duplicated in this file.
   workspacePlanning:'data/workspace-planning.json',
+  // The Multispace equipment standard as data rather than as prose. It is the
+  // shared vocabulary of the whole Workspace suite — the Plan-Editor tags rooms
+  // with module numbers and reports them per floor — so stating it once means the
+  // numbers have a definition, and a new handbook edition is a data change. The
+  // file carries the edition it encodes, and NO prices: the handbook marks them
+  // confidential.
+  multispaceModules:'data/multispace-modules.json',
   // Metadata catalogue (#/app/metadata-catalog): the two layers BELOW the DCAT
   // catalogue. `businessObjects` is technology-neutral (a business object with
   // attributes per data domain), while `systemTables` is system-specific (a
@@ -91,13 +98,17 @@ const DATA_AREA_LABELS = {
   buildingContacts: 'Objektkontakte', landcovers: 'Bodenbedeckung',
   tenancies: 'Mietverhältnisse', floors: 'Geschosse', spaces: 'Räume',
   workspacePlanning: 'Workspace-Planungsstände',
+  multispaceModules: 'Multispace-Module',
   businessObjects: 'Geschäftsobjekte', systemTables: 'Systemtabellen',
   processes: 'Prozesse',
   shopProducts: 'Shop-Produkte', shopCategories: 'Shop-Kategorien',
 };
 
 // Object files (key-value maps) versus lists; determines fallback and validation.
-const OBJECT_FILES = new Set(['reference', 'catalogLabels']);
+// `multispaceModules` is one document, not a collection of records: it carries the
+// handbook edition it encodes alongside the module list, so the edition and the modules
+// can never be read apart.
+const OBJECT_FILES = new Set(['reference', 'catalogLabels', 'multispaceModules']);
 const RECORD_IDS = {
   services: 'serviceId', applications: 'appId', news: 'id', contacts: 'contactId',
   documents: 'docId', projects: 'projectId', media: 'mediaId', datasets: 'id',

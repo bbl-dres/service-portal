@@ -21,8 +21,12 @@ const APP_SHEETS = Object.freeze({
   'document-archive': ['dataportal', 'archive'],
   workspace: ['dataportal', 'portfolio', 'floorplan', 'workplace'],
   // The landing page's portfolio view is map-first and reuses the estate map
-  // and explorer surfaces, so it needs their sheets too.
-  'floorplan-editor': ['dataportal', 'portfolio', 'floorplan-editor'],
+  // and explorer surfaces, so it needs their sheets too. `floorplan` is required
+  // for a less obvious reason: it defines every `--fp-*` room colour on :root,
+  // and colors.js emits those as `var(--fp-use-work)` into the SVG `fill`. Without
+  // the sheet the variable is undefined, the fill is invalid, and SVG falls back
+  // to its default — black rooms in every colour mode.
+  'floorplan-editor': ['dataportal', 'portfolio', 'floorplan', 'floorplan-editor'],
   'plan-check': ['plan-check'],
   'room-booking': ['dataportal', 'floorplan', 'workplace', 'room-booking'],
   transaction: [],

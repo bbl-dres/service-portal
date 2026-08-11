@@ -280,6 +280,11 @@ function wireObject(ctx, { entry, planning, building, rooms, state, previewFor }
     if (!panel) return;
     const register = state.registers[id];
     const heading = panel.querySelector(':scope > .sr-only');
+    // The same guard `mountDataTable` applies before it replaces its host. Rendering
+    // `C.table` directly meant this view had to bring it along, and it did not: the
+    // register's search field is inside the replaced markup, so every keystroke
+    // destroyed the input and dropped focus to the document.
+    const restore = C.preserveFocus(panel);
     panel.innerHTML = (heading ? heading.outerHTML : '') + objectPanelHTML(C, id, {
       entry, planning, building, rooms, previewFor,
       view: state.plans, mark: state.mark,
@@ -287,6 +292,7 @@ function wireObject(ctx, { entry, planning, building, rooms, state, previewFor }
     });
     wireBar(id);
     wireTable();
+    restore();
     if (id === 'plans') revealMark();
   };
 
@@ -444,11 +450,23 @@ function wireBrowse(ctx, { allEntries, state }) {
           && (!states.length || states.includes(entry.planState))
       )), levelsOf, (entry) => entry.id);
     }
+    // The view switch lives in the bar, which a surface swap does not rebuild, so
+    // its pressed state has to be synchronised here. Without this the buttons
+    // kept whatever the first render set and the switch looked stuck on «Karte»
+    // while the surface below it had already changed.
+    mount.querySelectorAll('.fpe-browse__bar .view-switch__btn').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.view === state.view));
+    });
     // The trail follows the scope, so «wo bin ich» is answered in one place
     // whether the scope came from the tree, a pill or a shared link.
     if (crumbs) crumbs.innerHTML = breadcrumbStepsHTML(C, portfolioCrumbs(allEntries, state));
     renderPills();
-    C.announceCatalogue(shown.length, allEntries.length, 'Objekte');
+    // One options object, not three positional arguments. Called positionally every
+    // parameter was undefined, so each filter change announced «undefined von
+    // undefined undefined» to a screen reader.
+    C.announceCatalogue({
+      count: shown.length, total: allEntries.length, unit: 'Objekte', view: state.view,
+    });
   };
 
   const clearSelection = () => {

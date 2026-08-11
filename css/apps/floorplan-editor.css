@@ -4,7 +4,13 @@
 
 .fpe-app { --fpe-left:18.75rem; --fpe-right:23.75rem; --fpe-panel-gutter:var(--sp-5);
   --fpe-border-structural:var(--color-secondary-200); --fpe-border-control:var(--color-secondary-300);
-  --fpe-z-backdrop:19; --fpe-z-panel:20; --fpe-z-edit-frame:30; --fpe-z-menu:50; --fpe-z-picker:80;
+  /* Layering from the documented local rungs, not a private 19/20/30/50/80 scale.
+     `isolation:isolate` below makes this element its own stacking context, so only the
+     ORDER of these five ever mattered — and a raw scale declared as custom properties
+     was the one shape the token gate did not inspect. */
+  --fpe-z-backdrop:var(--z-local-content); --fpe-z-panel:var(--z-local-control);
+  --fpe-z-edit-frame:var(--z-local-chrome); --fpe-z-menu:var(--z-local-toolbar-menu);
+  --fpe-z-picker:var(--z-local-toolbar-menu);
   width:100%; height:100dvh; min-width:0;
   display:flex; flex-direction:column; overflow:hidden; isolation:isolate; background:var(--color-bg); color:var(--color-text); }
 .fpe-header, .fpe-context { flex:none; display:flex; align-items:center; min-width:0; background:var(--color-bg);
@@ -286,8 +292,22 @@
 .fpe-panel-title-row { min-height:var(--sp-8); display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); }
 .fpe-panel-title-row > .btn { margin:calc(-1 * var(--sp-1-5)) calc(-1 * var(--sp-2)) calc(-1 * var(--sp-1-5)) 0; }
 .fpe-panel-title { margin:0; font-size:var(--text-base); line-height:var(--lh-normal); }
-.fpe-drawer-close { display:none; }
-.fpe-drawer-close.fpe-library-close { display:inline-flex; }
+/* Shown on every viewport. It was compact-only, so on a desktop the inspector had no
+   close control of its own — the panel could only be collapsed from the header toggle
+   two metres away from the thing being closed. */
+.fpe-drawer-close { display:inline-flex; }
+/* The library is a dialog now, so it closes with the design system's own modal
+   cross rather than with the rail's drawer control. Its body is a fixed-height
+   column: the picker scrolls, the tabs and search above it do not. */
+.fpe-library .modal__body { display:flex; min-height:0; }
+.fpe-library .card { width:100%; margin:0; }
+.fpe-library .fpe-panel-scroll { flex:1 1 auto; min-height:var(--sp-32); max-height:52vh; overflow-y:auto; }
+/* Full-bleed tabs, against the card's padding — which is where the dialog's padding
+   actually lives (`.modal__body .card__body`). An earlier version bled against
+   `.modal__body`, which has none, so the strip escaped the box by the bleed amount. */
+.fpe-library .card__body { display:flex; flex-direction:column; gap:var(--sp-3); min-height:0; }
+.fpe-library .fpe-library-tabs { margin:0 calc(-1 * var(--sp-6)); }
+.fpe-library .form__group__select { margin:0; }
 .fpe-overline { margin:0; color:var(--color-text-muted); font-size:var(--text-xs); letter-spacing:.08em; text-transform:uppercase; }
 .fpe-panel-search { display:flex; align-items:center; gap:var(--sp-2); min-height:var(--sp-10); padding:0 var(--sp-2-5);
   border:var(--stroke-1) solid var(--color-border-input); background:var(--color-bg); }
@@ -316,65 +336,100 @@
 .fpe-color-menu [aria-checked="true"] .fpe-color-radio { border-color:var(--color-primary-600); }
 .fpe-color-menu [aria-checked="true"] .fpe-color-radio i { width:var(--sp-2); height:var(--sp-2); border-radius:50%; background:var(--color-primary-600); }
 
-.fpe-resource-tree, .fpe-resource-group, .fpe-resource-group h3 { margin:0; padding:0; }
+/* The resource tree speaks the portal's tree language (.pf-tree, variant H2). The
+   markup stays its own — a row here is a disclosure AND a selection, and it carries
+   figures on the right — but the tokens, the indentation model, the divider weight,
+   the guide line and the two-tone selection are shared, so the two trees read as one
+   component. Indentation is ROW PADDING, never a list margin: that is what lets every
+   divider reach both edges instead of stepping inwards with each level. */
+.fpe-resource-tree {
+  --tree-indent:1rem;            /* one level */
+  /* The panel's own left margin, not the portfolio tree's 8px: the head, the search
+     field and the tree share one left edge, and a tree that started 12px further in
+     than the field above it would read as a mistake. The INDENT scale is the shared
+     part; where level 0 begins belongs to the surface. */
+  --tree-gutter:var(--fpe-panel-gutter);
+  --tree-axis:.5rem;             /* half a chevron: the guide's axis */
+  --tree-divider:var(--color-secondary-200);
+  margin:0; padding:0;
+}
+.fpe-resource-group, .fpe-resource-group h3 { margin:0; padding:0; }
 .fpe-resource-tree--flat { list-style:none; }
 .fpe-resource-tree--flat > li { display:block; margin:0; padding:0; list-style:none; }
 .fpe-resource-tree--flat > li::marker { content:""; }
-.fpe-resource-group__head { width:100%; min-height:var(--sp-10); display:grid; grid-template-columns:1rem .75rem minmax(0,1fr) auto 4rem;
-  align-items:center; gap:var(--sp-2); padding:var(--sp-2) var(--fpe-panel-gutter); border:0; border-bottom:var(--stroke-1) solid var(--fpe-border-structural);
+/* Level 0. A flex row rather than a grid: the label takes what is left, the count and
+   the figure take what they need, and nothing wraps to a second line — which is what
+   the five-column grid did as soon as a label ran the width of the panel. */
+.fpe-resource-group__head { position:relative; width:100%; min-height:var(--sp-10); display:flex; align-items:center;
+  gap:var(--sp-2); padding:var(--sp-2) var(--fpe-panel-gutter) var(--sp-2) var(--tree-gutter); border:0;
+  border-bottom:var(--stroke-1) solid var(--tree-divider);
   background:var(--color-secondary-50); color:var(--color-text); font:inherit; font-size:var(--text-sm); font-weight:var(--fw-regular); text-align:left; cursor:pointer; }
 .fpe-resource-group__head:hover { background:var(--color-secondary-100); }
-.fpe-resource-group__head > :nth-last-child(-n+2) { color:var(--color-text-muted); font-size:var(--text-xs); font-variant-numeric:tabular-nums; }
-.fpe-resource-group__head > :last-child { text-align:right; }
-.fpe-swatch { width:var(--sp-3); height:var(--sp-3); display:inline-block; flex:none; border:var(--stroke-1) solid var(--color-secondary-400); background:var(--fp-use-work); }
-.fpe-swatch--work { background:var(--fp-use-work); }
-.fpe-swatch--collab { background:var(--fp-use-collab); }
-.fpe-swatch--infra { background:var(--fp-use-infra); }
-.fpe-swatch--special { background:var(--fp-use-special); }
-.fpe-swatch--none, .fpe-swatch--unassigned { background:var(--fp-unassigned); }
-.fpe-swatch--sia-hnf { background:var(--fp-sia-hnf); }
-.fpe-swatch--sia-nnf { background:var(--fp-sia-nnf); }
-.fpe-swatch--sia-vf { background:var(--fp-sia-vf); }
-.fpe-swatch--sia-ff { background:var(--fp-sia-ff); }
-.fpe-swatch--sia-tf { background:var(--fp-sia-tf); }
-.fpe-swatch--administrative-unit-a { background:var(--fp-administrative-unit-a); }
-.fpe-swatch--administrative-unit-b { background:var(--fp-administrative-unit-b); }
-.fpe-swatch--administrative-unit-c { background:var(--fp-administrative-unit-c); }
-.fpe-swatch--administrative-unit-d { background:var(--fp-administrative-unit-d); }
-.fpe-swatch--administrative-unit-e { background:var(--fp-administrative-unit-e); }
-.fpe-swatch--administrative-unit-f { background:var(--fp-administrative-unit-f); }
-.fpe-swatch--module-1 { background:var(--fpe-module-1); }
-.fpe-swatch--module-2 { background:var(--fpe-module-2); }
-.fpe-swatch--module-3 { background:var(--fpe-module-3); }
-.fpe-swatch--module-4 { background:var(--fpe-module-4); }
-.fpe-swatch--module-5 { background:var(--fpe-module-5); }
-.fpe-swatch--module-6 { background:var(--fpe-module-6); }
-.fpe-swatch--module-7 { background:var(--fpe-module-7); }
-.fpe-swatch--module-8 { background:var(--fpe-module-8); }
-.fpe-swatch--module-9 { background:var(--fpe-module-9); }
-.fpe-swatch--module-10 { background:var(--fpe-module-10); }
-.fpe-swatch--module-11 { background:var(--fpe-module-11); }
+/* The fill arrives as an inline style from colors.js, which owns every semantic colour
+   in this application and already carries the CSS value for each swatch token. There
+   were 27 modifier rules here restating that table, plus a base fill that painted an
+   unrecognised token in the «Arbeit» blue — a wrong answer rather than a visible one. */
+.fpe-swatch { width:var(--sp-3); height:var(--sp-3); display:inline-block; flex:none; border:var(--stroke-1) solid var(--color-secondary-400); background:var(--fp-unassigned); }
 .fpe-resource-group ul, .fpe-resource-assets, .fpe-inspector-list, .fpe-breakdown { list-style:none; margin:0; padding:0; }
 .fpe-resource-group li { display:block; margin:0; padding:0; list-style:none; }
 .fpe-resource-group li::marker { content:""; }
-.fpe-resource-room-line { min-height:var(--sp-9); display:grid; grid-template-columns:1.5rem minmax(0,1fr); align-items:stretch;
-  gap:var(--sp-2); padding-left:var(--fpe-panel-gutter); border-bottom:var(--stroke-1) solid var(--color-secondary-100); background:var(--color-bg); }
-.fpe-resource-room-line:is(:hover,.is-selected) { background:var(--color-secondary-50); }
-.fpe-resource-room-line.is-selected { box-shadow:var(--state-bar-primary); }
-.fpe-resource-room-toggle { width:var(--sp-6); min-height:var(--sp-9); display:flex; align-items:center; justify-content:center; padding:0;
-  border:0; background:none; color:var(--color-text-muted); cursor:pointer; }
+/* The two nested lists position the guide. */
+.fpe-resource-rooms, .fpe-resource-assets { position:relative; }
+/* Level 1 grouped, level 0 flat: the indent comes from the tree scale, not from an
+   arbitrary gutter, so the room rows line up with the group chevron above them. */
+.fpe-resource-room-line { position:relative; min-height:var(--sp-9); display:flex; align-items:stretch;
+  gap:var(--sp-2); padding-left:calc(var(--tree-gutter) + var(--tree-indent));
+  border-bottom:var(--stroke-1) solid var(--tree-divider); background:var(--color-bg); }
+.fpe-resource-tree--flat .fpe-resource-room-line { padding-left:var(--tree-gutter); }
+.fpe-resource-room-line:hover { background:var(--color-secondary-50); }
+/* Two-tone selection, as in the portfolio tree: an ancestor of the selection is
+   light, the selection itself dark with a primary edge bar, so it never rests on
+   colour alone. z-index lifts it above the guide, because the selected row is the
+   guide's destination and not something the guide passes through. */
+/* Ancestors of the selection, one tone lighter — on the group head as well as the
+   room line. `is-path` was being emitted on the head with no rule to render it, so a
+   selected object lit its room but not the group above it. */
+.fpe-resource-group__head.is-path,
+.fpe-resource-room-line.is-path { background:var(--color-gray-100); }
+.fpe-resource-room-line.is-selected { z-index:var(--z-local-control); background:var(--color-secondary-100);
+  color:var(--color-text-900); box-shadow:var(--state-bar-primary); }
+.fpe-resource-room-toggle { flex:none; width:var(--sp-6); min-height:var(--sp-9); display:flex; align-items:center; justify-content:center; padding:0;
+  border:0; background:none; color:var(--color-text-light); cursor:pointer; }
 .fpe-resource-room-toggle:disabled { visibility:hidden; }
-.fpe-resource-row { width:100%; min-height:var(--sp-9); display:grid; grid-template-columns:minmax(0,1fr) 4rem;
-  align-items:center; gap:var(--sp-2); padding:var(--sp-1) var(--fpe-panel-gutter) var(--sp-1) 0; border:0;
-  background:var(--color-bg); color:var(--color-text); font:inherit; font-size:var(--text-xs); text-align:left; cursor:pointer; }
-.fpe-resource-row > :first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.fpe-resource-row > :last-child { text-align:right; font-variant-numeric:tabular-nums; }
+.fpe-resource-row { flex:1 1 auto; width:100%; min-width:0; min-height:var(--sp-9); display:flex; align-items:center;
+  gap:var(--sp-2); padding:var(--sp-1) var(--fpe-panel-gutter) var(--sp-1) 0; border:0;
+  background:var(--color-bg); color:inherit; font:inherit; font-size:var(--text-xs); text-align:left; cursor:pointer; }
+.fpe-resource-row__label { flex:1 1 auto; min-width:0; overflow:hidden; text-align:left; text-overflow:ellipsis; white-space:nowrap; }
+.fpe-resource-row__figure { flex:none; color:var(--color-text-muted); font-size:var(--text-xs); font-variant-numeric:tabular-nums; text-align:right; }
+/* The count reads as (7). The parentheses are pseudo-elements, so the text content
+   stays a bare number for anything that parses it. */
+.fpe-resource-n { flex:none; color:var(--color-text-muted); font-size:var(--text-xs); font-variant-numeric:tabular-nums; }
+.fpe-resource-n::before { content:"("; }
+.fpe-resource-n::after { content:")"; }
 .fpe-resource-room-line .fpe-resource-row { background:transparent; }
 .fpe-resource-row.is-selected { font-weight:var(--fw-bold); }
-.fpe-resource-row--asset { grid-template-columns:minmax(0,1fr); padding:var(--sp-1) var(--fpe-panel-gutter) var(--sp-1) calc(var(--fpe-panel-gutter) + var(--sp-10));
-  border-bottom:var(--stroke-1) solid var(--color-secondary-100); background:var(--color-secondary-50); }
-.fpe-resource-row--asset:is(:hover,.is-selected) { background:var(--color-secondary-100); }
-.fpe-resource-row--asset > :first-child { overflow:hidden; text-align:left; text-overflow:ellipsis; white-space:nowrap; }
+/* Level 2 grouped, level 1 flat. The object rows sat at the same indent as their room
+   and read as siblings of it. */
+.fpe-resource-row--asset { position:relative; padding:var(--sp-1) var(--fpe-panel-gutter) var(--sp-1) calc(var(--tree-gutter) + 2 * var(--tree-indent) + var(--sp-6));
+  border-bottom:var(--stroke-1) solid var(--tree-divider); background:var(--color-bg); }
+.fpe-resource-tree--flat .fpe-resource-row--asset { padding-left:calc(var(--tree-gutter) + var(--tree-indent) + var(--sp-6)); }
+.fpe-resource-row--asset:hover { background:var(--color-secondary-50); }
+.fpe-resource-row--asset.is-selected { z-index:var(--z-local-control); background:var(--color-secondary-100);
+  color:var(--color-text-900); box-shadow:var(--state-bar-primary); }
+
+/* The guide, drawn only on a list that holds the selection or its path — line work
+   where the question of belonging is actually being asked, and nowhere else. It sits
+   on the axis of the parent chevron and stops half a row short of the bottom, so it
+   ends at the last child instead of running past it. The innermost list carries the
+   accent, so the trace has exactly one visible end. */
+.fpe-resource-rooms:has(.is-selected, .is-path)::before,
+.fpe-resource-assets:has(.is-selected)::before { content:""; position:absolute; top:0; z-index:var(--z-local-content);
+  width:var(--stroke-1); height:calc(100% - var(--target-min) / 2); background:var(--color-secondary-100); }
+.fpe-resource-rooms:has(> li > .fpe-resource-room-line.is-selected)::before,
+.fpe-resource-assets:has(> li > .is-selected)::before { width:var(--stroke-2); background:var(--color-primary-600); }
+.fpe-resource-rooms::before { left:calc(var(--tree-gutter) + var(--tree-axis)); }
+.fpe-resource-assets::before { left:calc(var(--tree-gutter) + var(--tree-axis) + var(--tree-indent)); }
+.fpe-resource-tree--flat .fpe-resource-assets::before { left:calc(var(--tree-gutter) + var(--tree-axis)); }
 
 .fpe-product-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-3); padding:var(--sp-4); }
 .fpe-product { min-width:0; padding:0; border:var(--stroke-1) solid var(--fpe-border-control); background:var(--color-bg); color:var(--color-text);
@@ -407,7 +462,11 @@
 .fpe-app.is-editing .fpe-stage::after { content:""; position:absolute; inset:0; z-index:var(--fpe-z-edit-frame); pointer-events:none;
   box-shadow:var(--state-ring-warning); }
 .fpe-toolbar-host { position:absolute; top:var(--sp-4); left:50%; z-index:var(--z-local-toolbar); transform:translateX(-50%); max-width:calc(100% - var(--sp-8)); }
-.fpe-toolbar-host--three { left:auto; right:var(--sp-4); transform:none; max-width:none; }
+/* No positional override for the model. The toolbar carries the same tools in every
+   view now, so it sits in the same place: horizontally centred at the top of the stage.
+   It used to be pinned to the top-right corner in 3D, from when that view had a smaller,
+   different bar — which left the one piece of chrome common to both views moving when a
+   visitor switched. */
 .fpe-toolbar { display:flex; align-items:center; gap:var(--sp-1); width:max-content; max-width:100%; overflow-x:auto; padding:var(--sp-1-5);
   border:var(--stroke-1) solid var(--fpe-border-control); background:var(--color-bg); box-shadow:var(--shadow-md); scrollbar-width:thin; }
 .fpe-tool { flex:none; }
@@ -431,6 +490,16 @@
 .fpe-structure-menu strong { font-weight:var(--fw-regular); }
 .fpe-structure-menu small { margin-top:var(--sp-1); color:var(--color-text-muted); font-size:var(--text-xs); }
 .fpe-structure-menu__separator { display:block; height:var(--stroke-1); margin:var(--sp-1-5) 0; background:var(--fpe-border-structural); }
+/* «in Vorbereitung» rides in the overline rather than repeating on every row: twelve
+   copies of the same caveat is noise, one is a heading. */
+.fpe-structure-menu__soon { color:var(--color-text-muted); font-weight:var(--fw-regular); text-transform:none; letter-spacing:normal; }
+/* The element rows are a shorter measure than the tools above them — they are one
+   word each, and a tool-sized row makes twelve of them a very tall menu. */
+.fpe-structure-menu__element { min-height:var(--sp-8); }
+/* The plan-view glyphs are inline SVG, because the design system's icon set carries
+   no architectural symbols. They inherit the row's disabled colour through
+   currentColor rather than needing a rule of their own. */
+.fpe-element-icon { flex:none; width:var(--sp-5); height:var(--sp-5); }
 .fpe-scene { position:absolute; inset:0; padding:5.25rem var(--sp-6) 3.75rem; touch-action:none; }
 .fpe-canvas { display:block; width:100%; height:100%; overflow:visible; touch-action:none; user-select:none; }
 .fpe-canvas__sheet { fill:var(--color-bg); stroke:var(--color-secondary-300); stroke-width:8; }
@@ -471,9 +540,12 @@
 .fpe-widget__grip:hover { stroke:var(--color-focus-ring); stroke-width:3; }
 .fpe-stage.is-rotating .fpe-widget__grip--rotate { cursor:grabbing; }
 
-.fpe-placement--ghost { pointer-events:none; opacity:.72; }
-.fpe-placement--ghost.is-valid > :first-child { fill:var(--color-success-bg-subtle); stroke:var(--color-success-text); stroke-width:3; stroke-dasharray:10 7; }
-.fpe-placement--ghost.is-invalid > :first-child { fill:var(--color-error-bg-subtle); stroke:var(--color-error-700); stroke-width:3; stroke-dasharray:10 7; }
+/* The placement preview. It carries its own class rather than `.fpe-placement`, which
+   it used to share — and which made every count of placements in the DOM one too many
+   whenever a preview was on screen. */
+.fpe-ghost { pointer-events:none; opacity:.72; }
+.fpe-ghost.is-valid > :first-child { fill:var(--color-success-bg-subtle); stroke:var(--color-success-text); stroke-width:3; stroke-dasharray:10 7; }
+.fpe-ghost.is-invalid > :first-child { fill:var(--color-error-bg-subtle); stroke:var(--color-error-700); stroke-width:3; stroke-dasharray:10 7; }
 .fpe-room-draft { pointer-events:none; }
 .fpe-room-draft rect { fill:var(--color-success-bg-subtle); fill-opacity:.72; stroke:var(--color-success-text); stroke-width:4;
   stroke-dasharray:18 12; vector-effect:non-scaling-stroke; }
@@ -536,8 +608,27 @@
 .fpe-inspector-title > span { flex:1 1 auto; min-width:0; }
 .fpe-inspector-title span small { display:block; margin-bottom:var(--sp-1); color:var(--color-text-muted); font-size:var(--text-xs); }
 .fpe-inspector-title > small { margin-left:auto; color:var(--color-text-muted); font-size:var(--text-xs); }
-.fpe-inspector-section { margin:0; padding:var(--sp-4) var(--fpe-panel-gutter); border:0; border-bottom:var(--stroke-1) solid var(--fpe-border-structural); }
+/* Separated by a line ABOVE, not below: a border-bottom on every section drew a
+   rule under the last one that closed nothing off and read as a cut-off panel.
+   The title already carries its own bottom border, so the first section skips. */
+.fpe-inspector-section { margin:0; padding:var(--sp-4) var(--fpe-panel-gutter); border:0; border-top:var(--stroke-1) solid var(--fpe-border-structural); }
+.fpe-inspector-title + .fpe-inspector-section { border-top:0; }
 .fpe-inspector-section h3 { display:flex; justify-content:space-between; gap:var(--sp-2); margin:0 0 var(--sp-3); font-size:var(--text-base); }
+/* The heading is a disclosure, built like `.fpe-resource-group__head` rather than
+   as a second kind of toggle: a real button inside the heading so the collapsed
+   state is announced and reachable by keyboard, not merely drawn. */
+/* Label first and left-aligned, chevron last on the right: the heading reads as a
+   heading, and the disclosure sits where a disclosure is looked for. It used to lead
+   with the chevron, which pushed every title in off the panel's left edge. */
+.fpe-inspector-section__head { display:flex; align-items:center; gap:var(--sp-2); width:100%; margin:0; padding:0; border:0; background:none; font:inherit; color:inherit; text-align:left; cursor:pointer; }
+.fpe-inspector-section__head > .fpe-inspector-section__label { flex:1 1 auto; min-width:0; }
+.fpe-inspector-section__head .icon { flex:none; order:2; margin-left:var(--sp-2); color:var(--color-text-muted); }
+.fpe-inspector-section__head span:not(.fpe-inspector-section__label) { color:var(--color-text-muted); font-weight:var(--fw-regular); }
+.fpe-inspector-section__head:hover { color:var(--color-primary-700); }
+.fpe-inspector-section__head:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-1); }
+/* Nothing follows a collapsed heading, so its bottom margin would read as padding
+   the panel cannot account for. */
+.fpe-inspector-section.is-collapsed h3 { margin-bottom:0; }
 .fpe-inspector-section h3 span { color:var(--color-text-muted); font-weight:var(--fw-regular); }
 .fpe-kpis { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--sp-4); }
 .fpe-kpis small, .fpe-kpis strong { display:block; }
@@ -615,7 +706,6 @@
   .fpe-more-menu > .fpe-menu-compact-only { display:flex; }
   .fpe-more-menu > .fpe-more-menu__separator.fpe-menu-compact-only { display:block; }
   .fpe-panel-toggle--desktop { display:none; }
-  .fpe-drawer-close { display:inline-flex; }
   .fpe-version { display:none; }
   .fpe-app.is-editing .fpe-search-jump { display:none; }
   /* The portfolio browser stacks. The tree goes: search and the map already
@@ -639,9 +729,9 @@
   .fpe-resource-group__head, .fpe-resource-room-line, .fpe-resource-row,
   .fpe-library-tabs button, .fpe-structure-menu > button, .fpe-more-menu > button,
   .fpe-inspector-list button { min-height:var(--target-min); }
-  .fpe-resource-room-line { grid-template-columns:var(--target-min) minmax(0,1fr); gap:0; padding-left:var(--sp-2); }
+  .fpe-resource-room-line { gap:0; padding-left:var(--tree-gutter); }
   .fpe-resource-room-toggle { width:var(--target-min); min-height:var(--target-min); }
-  .fpe-resource-row--asset { padding-left:calc(var(--fpe-panel-gutter) + var(--target-min)); }
+  .fpe-resource-row--asset { padding-left:calc(var(--tree-gutter) + var(--tree-indent) + var(--target-min)); }
 }
 
 @media (max-width:639.98px) {
@@ -680,8 +770,7 @@
   .fpe-toolbar :is(.fpe-tool--labelled,.fpe-structure-trigger) .btn__text,
   .fpe-toolbar .fpe-structure-trigger .btn__icon:last-child,
   .fpe-toolbar__history-action { display:none; }
-  .fpe-toolbar-host--three { left:auto; right:var(--sp-2); }
-  .fpe-toolbar-host--three .fpe-toolbar { width:max-content; }
+  /* Compact keeps the full-width bar in both views for the same reason. */
   .fpe-view-nav-host { left:max(var(--sp-2),env(safe-area-inset-left)); bottom:max(var(--sp-2),env(safe-area-inset-bottom)); max-width:calc(100% - var(--sp-4)); }
   .fpe-view-actions-host { right:max(var(--sp-2),env(safe-area-inset-right)); }
   .fpe-view-nav__mode { width:var(--target-min); min-width:var(--target-min); padding:0; }

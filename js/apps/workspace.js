@@ -493,7 +493,6 @@ function detail(ctx, id) {
   function actionPanel() {
     const buildingQuery = `building=${encodeURIComponent(item.id)}`;
     return C.actionCard({
-      lead: 'Für dieses Objekt vorbelegt.',
       items: [
         { type: 'link', label: 'Grundriss im Plan-Editor bearbeiten', href: floorplanEditor(item.id),
           description: 'Eigenständige Anwendung · öffnet ein neues Fenster', newWindow: true },

@@ -596,3 +596,162 @@ Ausstattungsregister vermischte drei Dinge.
   genau ein Rollbalken auf der eigenständigen Anwendung.
 - Die drei statischen Gates sowie `node scripts/test-html-contracts.mjs` und
   `node scripts/test-portfolio.mjs` für die erweiterte `table()`-Zeilenklasse.
+
+## 13. Standortbaum als wiederverwendbares Bauteil, Autorenschaft in 3D
+
+Stand: 10. August 2026. Zwei Blöcke: der Standortbaum wurde nach einer
+Gestaltungsstudie auf eine Variante festgelegt und portiert, und die
+Plan-Arbeitsfläche kann Möblierung jetzt auch im 3D-Modell bearbeiten.
+
+### 13.1 Gestaltungsstudie und Portierung des Baums
+
+Grundlage ist `docs/wireframes/260810 - Standortbaum.html` — ein eigenständiges
+Einzeldatei-Prototyp mit zehn Behandlungen desselben echten Bestands aus
+`buildings.geojson` und `parcels.geojson`, inklusive Lastsimulation über 2000
+Gebäude und 1500 Grundstücke. Gewählt wurde Variante **H2**.
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 13.1 | Der Baum trug die Hierarchie nur über Icons; `explorer.css` hielt das ausdrücklich fest («Icons and path state carry hierarchy without indentation»). Bei der echten Tiefe — Land › Kanton › Ort › WE › Objekt › Geschoss — ist ab Ebene 3 nicht mehr erkennbar, was zu was gehört. | Einrückung von 16 px je Ebene, als **Zeilen-Innenabstand** statt als Rand der Liste. Damit spannt jede Zeile die ganze Spalte, ihre Trennlinie reicht an beide Kanten, und die linken Enden treppen nicht. | erledigt |
+| 13.2 | Trennlinien und Führungslinien schnitten sich. Ein erster Versuch (Variante H) hatte drei Fehler: die Trennlinie begann 8 px rechts der Führungslinie (Kerbe), jede Ebene begann 12 px weiter rechts (Treppe), und die Führungslinie sass auf keiner sinnvollen Achse. | Trennlinien über die volle Breite; Führungslinien je Ebene auf der **Achse des übergeordneten Chevrons** (Gutter plus halbes Chevron). Das ist es, was sie beabsichtigt statt ungefähr wirken lässt. | erledigt |
+| 13.3 | Eine Führungslinie je Ebene über die ganze Spalte ist Linienwerk ohne Anlass. | Die Linie erscheint **nur entlang des ausgewählten Zweigs**, wo die Frage nach der Zugehörigkeit gestellt wird. Der innerste Zweig trägt den Akzent, die Vorfahren eine Haarlinie in Flächenstärke. | erledigt |
+| 13.4 | Die Linie lief über die ausgewählte Zeile hinweg und las sich dort als versehentlicher Strich. | Die ausgewählte Zeile liegt mit `z-index` **über** der Linie: sie ist das Ziel der Spur, nicht etwas, das die Spur durchquert. | erledigt |
+| 13.5 | Die Auswahl war blau, der Pfad hellgrau. Gewünscht war ein zweistufiges Grau. | Auswahl dunkelgrau plus **Primärbalken an der Kante**, Vorfahren hellgrau. Auswahl ruht damit nicht auf Farbe allein. | erledigt |
+| 13.6 | Der Zähler war eine nackte Zahl am Zeilenende. | Er liest sich als `(7)`. Die Klammern sind **CSS-Pseudoelemente**: der Textinhalt bleibt die Zahl, die `scripts/check-tree.mjs` und die App-Suiten mit `Number()` auswerten. Eine Klammer im Markup hätte drei Prüfungen stillschweigend gebrochen. | erledigt |
+| 13.7 | Der Baum hatte **keine einzige ARIA-Rolle**. Er war eine Liste von Schaltflächen: jede Zeile ein eigener Tabstopp — im Liegenschaften-Inventar über hundert vor der Karte — und die Pfeiltasten taten nichts. | Vollständiges ARIA-Baummuster: `role="tree"`/`treeitem"`/`group"`, `aria-level`, `aria-selected`, ein einziger Tabstopp mit wanderndem `tabindex`, `↑↓` bewegen, `→` öffnet, `←` schliesst oder springt zur übergeordneten Ebene, `Home`/`End` an die Enden. Der Zähler erhält eine benannte Einheit, sonst hört eine Vorleseanwendung «Schweiz 7». | erledigt |
+| 13.8 | Filtern kann die Zeile verbergen, die den einzigen Tabstopp trägt — der Baum wäre dann per Tastatur unerreichbar. | `syncTreeCounts` setzt den Tabstopp danach auf eine sichtbare Zeile zurück. | erledigt |
+| 13.9 | Drei weitere Oberflächen bauen dieselben Klassen von Hand: Metadaten-Katalog, Prozessdokumentation und die mobile Shop-Navigation. Sie führen kein `aria-level`. | Die Tiefe wird über **verschachtelte `.pf-tree__children`-Selektoren** ausgedrückt, nicht über `aria-level`. Damit erben die handgebauten Listen Einrückung und Trennlinien unverändert und bleiben, was sie sind: Navigationslisten aus Links, keine Baum-Widgets. | erledigt |
+| 13.10 | «Beim Klick den ganzen Zweig aufklappen» wurde eingebaut und wieder verworfen. | Eine Ebene je Klick. Das ist auch die Voraussetzung dafür, dass verzögertes Rendern später trägt: ein Klick kann höchstens eine Ebene hinzufügen. | erledigt |
+
+Offen und bewusst nicht umgesetzt: **verzögertes Rendern**. Der Prototyp zeigt
+gemessen, dass es die Architekturfrage ist — bei 3500 Objekten legt H2 mit
+verzögertem Rendern 46 Zeilen in den DOM, ein vollständiger Aufbau bräuchte rund
+13 500 Zeilen (≈ 108 000 Elemente). Ebenfalls offen: eigene Entitäts-Icons mit
+echter Strichstärke. `C.icon()` zeichnet eine CSS-Maske, deren Gewicht sich nicht
+beeinflussen lässt; schwerere Icons brauchen zwingend eigenes Inline-SVG und
+damit eine Änderung der Aufrufer-Schnittstelle in fünf Apps.
+
+`scripts/test-spatial-tree.mjs` prüft den Vertrag an einer Stelle für alle sieben
+Oberflächen statt siebenmal einzeln.
+
+### 13.2 Autorenschaft im 3D-Modell
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 13.11 | `toolbarHTML()` gab ausserhalb des 2D-Plans einen leeren String zurück: im 3D-Modell verschwand die Werkzeugleiste vollständig und die Ansicht wirkte defekt, nicht eingeschränkt. | Die Leiste erscheint in **jeder** Ansicht. Was sich unterscheidet, ist, welche Werkzeuge ein Renderer ausführen kann: Auswahl und Bibliothek bleiben aktiv, Messen und Strukturbearbeitung sind deaktiviert **und benannt** («… — nur im 2D-Plan»). | erledigt |
+| 13.12 | Die Produktbibliothek war auf den 2D-Plan beschränkt, obwohl Platzieren im 3D-Modell mit der Wahl eines Produkts beginnt. | Bibliothek in allen Ansichten verfügbar; ihr URL-Zustand folgt. | erledigt |
+| 13.13 | Möblierung liess sich nur im Plan bewegen und nur über ein Auswahlfeld drehen. | Dasselbe Transformationswerkzeug wie im Plan, flach auf den Boden gelegt: Ring als Drehbahn, ein Griff darauf an der Vorderseite des Objekts, ein Griff in der Mitte zum Verschieben. Die Geometrie kommt aus `transform-widget.js` in **Planeinheiten**, sodass die beiden Ansichten nicht auseinanderlaufen können; nur die Umrechnung in Meter passiert im Viewer. | erledigt |
+| 13.14 | Das Werkzeug hing zuerst an `dynamicRoot` und lag damit eine halbe Geschossbreite neben dem Objekt. | Es hängt an derselben Gruppe wie die Möbel — der einzigen, die den Versatz um die halbe Ausdehnung trägt. | erledigt |
+| 13.15 | Ein Griff ist ein kleines Ziel auf einer 59 m breiten Fläche; ihn aus einem Test zu treffen hiess, die Fläche abzurastern und zu hoffen. | Der Viewer veröffentlicht die Bildschirmposition der Griffe in `host.dataset.widgetGrips`, wie er seine Kamera schon in `orbitTarget` und `orbitFitRatio` veröffentlicht. | erledigt |
+| 13.16 | Ein Ansichtswechsel setzte die Kamera zurück. | Beide Ansichten drücken den Zoom als Verhältnis zu «alles passt» aus, und das ist einheitenfrei. Mittelpunkt und Zoom werden in beide Richtungen übertragen. Exakte Gleichheit ist nicht erreichbar — ein flacher `viewBox` und ein perspektivischer Frustum bei anderem Seitenverhältnis definieren «alles passt» unterschiedlich, und `updateOrbitCamera` begrenzt die Distanz zusätzlich; gemessen 0.64 gegen 0.58. | erledigt |
+| 13.17 | Die Kameraübernahme rief `set2dCamera` **während** des Viewer-Abbaus auf. Das zeichnete eine Szene, die unmittelbar danach ersetzt wurde, und liess die 2D-Fläche ganz verschwinden — sichtbar an sechzehn kippenden Prüfungen. | Die Übernahme setzt `camera` direkt; das Rendern nach dem Abbau übernimmt den Wert von selbst. | erledigt |
+
+### 13.3 Ein Bestandsfehler, gefunden beim Prüfen
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 13.18 | **Alle Räume waren in jedem Farbmodus schwarz.** `js/routing/css-loader.js` lud für den Plan-Editor `['dataportal', 'portfolio', 'floorplan-editor']` — aber nicht `floorplan`, und genau dieses Blatt definiert alle `--fp-*`-Raumfarben auf `:root`. `colors.js` gibt sie als `var(--fp-use-work)` in das SVG-`fill`; ohne das Blatt ist die Variable undefiniert, die Deklaration ungültig und SVG fällt auf seinen Vorgabewert zurück — Schwarz. Kein CSS-Gate konnte das sehen, weil die Variable aus JavaScript referenziert wird. | `floorplan` in die Blattliste des Plan-Editors aufgenommen. Gemessen über alle fünf Farbmodi: keine schwarze Fläche mehr. | erledigt |
+
+### Prüfartefakte
+
+- `node scripts/test-spatial-tree.mjs` — ARIA-Muster, ein Tabstopp, Pfeiltasten,
+  Einrückung je Ebene, Trennlinien, Führungslinie nur im aktiven Zweig,
+  Stapelung der Auswahl, maschinenlesbare Zähler; über alle sieben Oberflächen.
+- `node scripts/check-tree.mjs`, `node scripts/check-projects.mjs` und die Suiten
+  der fünf Explorer — der Zähler bleibt trotz Klammern auswertbar.
+- `node scripts/test-floorplan-editor.mjs` — Werkzeugleiste in 3D mit benannten
+  Sperrungen, Transformationswerkzeug auf der Bodenebene, Drehen und Verschieben
+  per Griff im Modell, Kamerabrücke, reduziertes Übersichtsregister.
+
+## 14. Plan-Editor: Panels, Messen, Autorenschaft in 3D, Ressourcenbaum
+
+Stand: 10. August 2026. Eine Reihe kleinerer Anliegen, die sich als ein Thema
+erwiesen haben: das linke Panel diente zwei Zwecken, und daran hing mehr als
+erwartet.
+
+### 14.1 Ein Panel, zwei Aufgaben
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 14.1 | Im Bearbeitungsmodus verschwand der Standortbaum — in 2D genauso wie im 3D-Modell. Ursache war keine Renderer-Eigenheit, sondern `controller.js`: `leftOpen = assetLibraryOpen \|\| (!compactLayout && !editMode)`. Die Schiene war im Bearbeitungsmodus geschlossen, damit nicht ungefragt eine Produktauswahl aufgeht — und weil die Auswahl DIE Schiene war, ging der Baum mit. | `leftOpen = !compactLayout`. Die Schiene führt in jedem Modus den Ressourcenbaum. | erledigt |
+| 14.2 | `leftPanelHTML()` war im Lesemodus der Baum und im Bearbeitungsmodus die Bibliothek: eine Fläche, zwei Identitäten, zwei Namen, zwei Schliessaktionen. | Die Bibliothek ist ein Dialog (`libraryHTML`) in der Anatomie des Designsystems: `aria-modal` am Rahmen, `role="dialog"` am Inhalt, schliessender Hintergrund, dasselbe Kreuz wie jedes andere Overlay im Portal. Sie zeichnet aus `assetLibraryOpen` innerhalb von `shellHTML()` statt über `openModal()`, weil der Editor diesen Zustand in die URL schreibt und ein imperativ angehängtes Overlay ausserhalb der Zustandsmaschine läge. | erledigt |
+| 14.3 | Sechs Stellen setzten `assetLibraryOpen = false; leftOpen = false;` gemeinsam. Das Schliessen der Auswahl nahm den Baum mit. | Nur noch die Bibliothek. Escape schliesst den Dialog, bevor irgendetwas dahinter reagiert. | erledigt |
+| 14.4 | `#fpe-left-list` hätte es zweimal gegeben — Baum und Auswahl. | Der Dialog führt `#fpe-library-list` und `#fpe-library-search`; `drawLeft()` versorgt beide Hosts getrennt. Die Schiene filtert Ressourcen, der Dialog den Katalog. | erledigt |
+| 14.5 | **In 3D liess sich keine Möblierung platzieren.** «Hinzufügen» war nicht deaktiviert, tat aber nichts: `openAssetLibrary()` trug `if (viewMode !== '2d') { announce('… nur im 2D-Plan verfügbar.'); return; }`. Die Sperre hatte ihren Grund überlebt — Werkzeugleiste, `placeFromThree` und das Transformationswerkzeug arbeiten längst im Modell. Sichtbar war eine Schaltfläche, die lebendig aussah, nichts änderte und sich nur einer Vorleseanwendung erklärte. | Sperre entfernt. Gemessen vor der Änderung: Dialog öffnete nie, Platzierungen blieben bei 94. Danach: Dialog mit 54 Produkten, Bodenklick 94 → 95. | erledigt |
+
+### 14.2 Ein Messwerkzeug statt zwei
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 14.6 | Zwei Werkzeuge, «Strecke messen» und «Fläche messen», verlangten die Entscheidung, was gemessen wird, bevor der erste Punkt gesetzt war. | Ein Werkzeug. `measurement` ist `{ points, closed }` ohne `kind`: was gemessen wird, folgt aus der Geometrie. Zwei Punkte ergeben eine Länge, ein geschlossener Ring eine Fläche. | erledigt |
+| 14.7 | Ein Klick auf einen gesetzten Punkt sollte ihn entfernen — und ein Klick auf den ersten Punkt einen Ring schliessen. Beides zugleich ist widersprüchlich. | Rangfolge: auf dem ERSTEN Punkt bei mindestens drei gesetzten schliesst der Ring, auf jedem anderen entfernt der Klick. Rang eins gewinnt bewusst, sonst bräuchte das Schliessen ein zweites Bedienelement. Ein Klick in einen geschlossenen Ring öffnet ihn wieder, denn ein Ring ohne Ecke ist nicht mehr derselbe Ring. | erledigt |
+| 14.8 | Ein geschlossener Ring beantwortete nur eine Frage. | Er nennt Fläche UND Umfang. Wer einen Raum misst, will die Fläche; wer einen Wandzug misst, die Länge; dieselbe Figur beantwortet beides, ohne zweimal gezeichnet zu werden. | erledigt |
+| 14.9 | Der Trefferradius in Bildschirmpunkten hätte bedeutet, dass ein Zoom zwischen zwei Klicks die Bedeutung einer Messung ändern kann. | `MEASURE_CLOSE_UNITS = 40` in Planeinheiten. Derselbe Klick löst immer auf denselben Punkt auf. | erledigt |
+| 14.10 | Die Anzeige war eine nackte Statuszeile ohne Weg, sie wegzulegen: Messung löschen hiess Werkzeug verlassen. | Eine Karte mit Kreuz, das die Messung löscht und das Werkzeug behält. Escape tut dasselbe, vor dem Werkzeugwechsel. `drawScene` zeichnet die Karte neu statt `textContent` zu setzen — das hätte das Kreuz bei jedem Neuzeichnen gelöscht. | erledigt |
+
+### 14.3 Inspektor und Kamerabedienung
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 14.11 | Der Inspektor schloss mit einem Fenster-Piktogramm, das «Layout ändern» liest, nicht «das hier schliessen» — und trug gar kein Kreuz. | Das `Cancel`-Kreuz des Portals, dasselbe wie in Modal, Hinweis, Dokumentvorschau und Galerie. Auswahl aufheben ist etwas anderes als schliessen und behält mit `CancelCircle` ein eigenes Zeichen, damit nicht zwei Bedienelemente nebeneinander dasselbe Symbol tragen. | erledigt |
+| 14.12 | Jeder Abschnitt trug eine Linie unten, auch der letzte — dort schloss sie nichts ab und las sich als abgeschnittenes Panel. | Linien an der OBERkante; der erste Abschnitt verzichtet, weil der Titel schon eine trägt. | erledigt |
+| 14.13 | Lange Attributlisten liessen sich nicht wegklappen. | Acht Abschnitte klappen aus ihrer Überschrift, gebaut wie `.fpe-resource-group__head`: echte Schaltfläche, `aria-expanded`, `aria-controls`, Fokus bleibt am Bedienelement. Formulare bleiben bewusst offen — Felder zu verbergen, die jemand ausfüllt, ist kein Dienst. | erledigt |
+| 14.14 | Zoom − stand über Zoom +. | Zoom + oben, wie im übrigen Portal: der Stapel liest sich als Skala mit «mehr» oben. Geprüft wird die Reihenfolge, nicht die Anzahl. | erledigt |
+| 14.15 | Die Brotkrume nannte die übergeordnete Anwendung «Serviceportal». | «Kundenportal». Der dritte Treffer in `knowledge-content.js` ist ein Dokumenttitel und bleibt. | erledigt |
+| 14.16 | Nach einer Platzierung war das Produkt entwaffnet: eine Reihe gleicher Stühle hiess jedes Mal zurück in die Bibliothek. | Das Produkt bleibt geladen. Escape und jedes andere Werkzeug entwaffnen von selbst, weil `chooseTool` `placementProduct` für jedes Werkzeug ausser «place» leert. Der Pfad, der direkt in einen ausgewählten Raum platziert, hatte nie geladen — dort wird jetzt ausdrücklich geladen. | erledigt |
+
+### 14.4 Ressourcenbaum in der Baumsprache des Portals
+
+Der Baum behält bewusst eigenes Markup: eine Zeile ist hier ZWEI Bedienelemente —
+eine Aufklappung und eine Auswahl — und sie trägt Zahlen rechts, wovon der
+Portfoliobaum nichts weiss. Übernommen ist alles, was ein Lesender sieht.
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 14.17 | Ausstattungszeilen standen auf derselben Einrückung wie ihr Raum und lasen sich als seine Geschwister. | Einrückung als Zeilen-Innenabstand, ein Schritt von 16 px je Ebene. Gemessen 20 / 36 / 76 px — Gruppe, Raum, Objekt, wobei die Objektzeile zusätzlich die Aufklappspalte des Raums freihält. | erledigt |
+| 14.18 | `--tree-gutter` des Portfoliobaums sind 8 px, der Panelrand 20 px. | Der Baum übernimmt die SKALA, nicht den Startpunkt: `--tree-gutter:var(--fpe-panel-gutter)`, damit Kopf, Suchfeld und Baum eine linke Kante teilen. Ein Baum, der 12 px weiter innen beginnt als das Feld darüber, liest sich als Fehler. | erledigt |
+| 14.19 | Räume trugen ein helleres Grau als Gruppen. | Eine Trennlinienstärke und -farbe über alle drei Ebenen. | erledigt |
+| 14.20 | Der fünfspaltige Raster der Gruppenzeile brach «HNF · Hauptnutzfläche» auf zwei Zeilen. | Flex-Zeile; das Beschriftungsfeld kürzt mit Auslassung. | erledigt |
+| 14.21 | Auswahl war einstufig. | Zweistufig wie im Portfoliobaum: `is-path` am Raum, der ein ausgewähltes Objekt hält, und an der Gruppe darüber — im Markup gesetzt, weil CSS das nicht herleiten kann. Führungslinie nur entlang des ausgewählten Zweigs, Akzent auf der innersten Liste. | erledigt |
+| 14.22 | Der Zähler war eine nackte Zahl. | Er liest sich als `(23)`, die Klammern als Pseudoelemente, damit `textContent` eine Zahl bleibt. | erledigt |
+
+### 14.5 Strukturbearbeitung: der Umfang hinter dem Schloss
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 14.23 | Entsperrt bot das Menü ein einziges Werkzeug an. Damit sah Strukturbearbeitung wie ein fertiges, sehr kleines Merkmal aus statt wie der Anfang von Flächenmanagement. | Zwölf Bauteile als deaktivierte Menüeinträge: Wand, Umfassungswand, Raumteiler, Tür, Fenster, Öffnung, Stütze, Einbaumöbel, Küche, Geländer, Treppe, generisches Bauteil. Gesperrt bleibt die Liste verborgen, damit das Menü nicht auf eine Wand unbedienbarer Einträge aufgeht. | erledigt |
+| 14.24 | Die Vorlage zeigt Tastenkürzel je Zeile. | **Nicht übernommen.** Ein Kürzel neben einem Bedienelement, das nicht laufen kann, ist ein Versprechen, das die Anwendung beim ersten Versuch bricht. Der Vorbehalt steht einmal in der Überschrift — «Bauteile · in Vorbereitung» — statt zwölfmal in den Zeilen. | erledigt |
+| 14.25 | Der Icon-Satz des Designsystems führt **kein einziges** Bausymbol. Geprüft: wall, door, window, stair, column, railing, kitchen — kein Treffer. | Eigene Inline-SVG in `js/floorplan-editor/structure-elements.js`, gezeichnet als Planzeichen von oben: eine Wand ist ein gefülltes Band, eine Tür ein Blatt mit Schwenkbogen, ein Fenster ein Band mit Glaslinie, ein Raumteiler gestrichelt, weil er nicht trägt. Das ist die Zeichensprache, die im Plan daneben schon steht, also braucht das Menü keine Legende. Damit ist auch die Frage nach besseren Menü-Icons beantwortet: was gewünscht ist, existiert im Satz nicht und braucht denselben Weg. | erledigt |
+
+### 14.6 Platzierungsvorschau im Modell
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 14.26 | Der 2D-Plan zeigt unter dem Zeiger eine durchscheinende Grundfläche, getönt danach, ob sie in einem Raum landet. Das Modell zeigte nichts: Platzieren in 3D war ein Blindklick. | Dieselbe Vorschau im Modell — Grundfläche auf dem Boden, durchscheinendes Volumen darüber, Kanten. Die Farbwerte liegen als `PLACEMENT_PREVIEW` in `colors.js`, dem bestehenden Ort für Farben, die sowohl ein SVG als auch einen Three.js-Verbraucher bedienen müssen. Die Vorschau ist kein Pickziel, damit ein Klick durch sie hindurch den Boden erreicht. | erledigt |
+| 14.27 | Drei Stellen bauten dasselbe Vorschauobjekt: der 2D-Zeiger, der 2D-Tastaturzeiger und nun 3D. Zwei davon waren schon Kopien. | Eine Funktion `ghostAt(point)` für alle drei. Gültigkeit ist derselbe `containingRoom`-Test, den die Platzierung selbst durchführt — eine grüne Fläche kann sich also nicht in eine Ablehnung verwandeln. | erledigt |
+| 14.28 | Der 3D-Bodentest trifft die UNENDLICHE Ebene y = 0. Zielt jemand Richtung Horizont, entsteht ein Punkt zehner Meter jenseits des Gebäudes — gemessen `9684,-4883`. | `ghostAt` verwirft Punkte ausserhalb von `floor.extent`. Das ändert 2D geringfügig mit: im gepolsterten Rand um den Plan erscheint keine Vorschau mehr, was richtig ist. | erledigt |
+| 14.29 | **Die 2D-Vorschau trug `class="fpe-placement fpe-placement--ghost"`.** Damit zählte JEDE Zählung von Platzierungen im DOM die Vorschau mit. Sichtbar geworden ist es daran, dass eine Prüfung 96 statt 95 Objekte fand, solange eine Vorschau auf dem Schirm war. | Eigene Klasse `.fpe-ghost`. Eine Vorschau ist kein Objekt im Dokument, und kein künftiger Selektor kann sie mehr dafür halten. | erledigt |
+| 14.30 | Für keine der beiden Ansichten gab es Prüfungen der Vorschau. | Beide geprüft: Tönung nach Gültigkeit im Plan, Vorschau auf dem Boden im Modell, kein Rest ausserhalb des Plans, keiner nach dem Entwaffnen. Der Viewer veröffentlicht `dataset.ghost` wie schon die Griffe des Transformationswerkzeugs, damit das ohne Pixelvergleich prüfbar ist. | erledigt |
+
+### 14.7 Zwei Fallen beim Prüfen, notiert für das nächste Mal
+
+| Nr. | Befund | Entscheid / Umsetzung | Status |
+| --- | --- | --- | --- |
+| 14.31 | Ein Elementverweis, der über ein Neuzeichnen hinweg gehalten wird, ist abgehängt: `drawScene` ersetzt `#fpe-canvas`, ein vollständiges Neuzeichnen die 3D-Fläche. Ein abgehängtes SVG meldet eine EINHEITSMATRIX als Bildschirmabbildung — die Sonde bildete Planpunkt (-60,-60) auf Clientpunkt (-60,-60) ab, sendete ins Leere und las eine alte Vorschau. Sie wäre aus dem falschen Grund grün geworden. | Beide Sonden fragen den Knoten bei jedem Zugriff neu ab. | erledigt |
+| 14.32 | Der erste Versuch skalierte den `viewBox` gegen die Elementbox. `preserveAspectRatio` setzt die Zeichnung mit Rand in das Element, sodass eine lineare Abbildung auf den falschen Planpunkt zeigt. | `getScreenCTM()` und `createSVGPoint()` — die Abbildung des Browsers selbst, dieselbe, die `clientToPlan` invertiert. | erledigt |
+
+### Prüfartefakte
+
+- `node scripts/test-floorplan-editor.mjs` — Bibliothek als Dialog mit Baum in
+  Schiene und Modell, Platzieren im 3D-Modell Ende zu Ende, ein Messwerkzeug mit
+  Länge, Fläche, Umfang, Punktentfernung und verwerfbarer Anzeige, klappbare
+  Inspektorabschnitte, Reihenfolge der Kamerabedienung, Baumsprache des
+  Ressourcenbaums, zwölf inerte Bauteile mit Planzeichen.
+- `node scripts/test-spatial-tree.mjs`, `node scripts/check-tree.mjs` — der
+  Portfoliobaum bleibt unberührt.
+- Sechs Prüfungen mussten neu geschrieben statt geflickt werden: vier lasen
+  `has-left` als Stellvertreter für «Bibliothek offen», was jetzt «Baum offen»
+  heisst, und eine forderte ausdrücklich `leftWidth <= 1`. Zwei waren echte
+  Prüffehler, die die Trennung sichtbar gemacht hat: die Berührungsziel-Prüfung bei
+  320 px mass Bedienelemente in einer geschlossenen Schublade und in eingeklappten
+  Baumgruppen, die beide null melden.

@@ -101,7 +101,10 @@ function placementGhostMarkup(ghost) {
   const depth = Math.max(18, Number(ghost.depth) || 60);
   const cx = (Number(ghost.x) || 0) + width / 2;
   const cy = (Number(ghost.y) || 0) + depth / 2;
-  return `<g class="fpe-placement fpe-placement--ghost ${ghost.valid ? 'is-valid' : 'is-invalid'}"
+  // Deliberately NOT `.fpe-placement`: the preview used to share that class, so every
+  // selector that counted placements in the DOM counted the ghost as one of them. A
+  // preview is not an object in the document.
+  return `<g class="fpe-ghost ${ghost.valid ? 'is-valid' : 'is-invalid'}"
       aria-hidden="true" transform="rotate(${Number(ghost.rotation) || 0} ${cx} ${cy})">
     ${placementShape(ghost)}
   </g>`;
@@ -130,19 +133,56 @@ function keyboardCursorMarkup(cursor) {
   </g>`;
 }
 
+/**
+ * One measurement, drawn from its points.
+ *
+ * There is a single measuring tool rather than a distance tool and an area tool:
+ * what is being measured follows from the geometry. Two or more points make a
+ * length; closing the ring makes an area with its perimeter. Splitting that into
+ * two tools asked people to decide up front what they would only know once they
+ * had clicked.
+ *
+ * The first point is marked while the ring can still be closed, because clicking
+ * it is the gesture that closes it — see `MEASURE_CLOSE_UNITS`.
+ */
 function measurementMarkup(measurement = {}) {
   const points = Array.isArray(measurement?.points) ? measurement.points : [];
   if (!points.length) return '';
   const coords = points.map((point) => `${point.x},${point.y}`).join(' ');
-  const closed = measurement?.kind === 'area' && measurement.complete && points.length >= 3;
+  const closed = Boolean(measurement?.closed) && points.length >= 3;
   const shape = closed
     ? `<polygon points="${coords}" class="fpe-measure__area"></polygon>`
     : `<polyline points="${coords}" class="fpe-measure__line"></polyline>`;
-  const dots = points.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="16"></circle>`).join('');
+  const closable = !closed && points.length >= 3;
+  const dots = points.map((point, index) => `<circle cx="${point.x}" cy="${point.y}" r="16"${
+    closable && index === 0 ? ' class="fpe-measure__close-target"' : ''}></circle>`).join('');
   const last = points[points.length - 1];
   const value = measurementLabel(measurement);
   return `<g class="fpe-measure" aria-hidden="true">${shape}${dots}${value
     ? `<text x="${last.x + 30}" y="${last.y - 30}">${esc(value)}</text>` : ''}</g>`;
+}
+
+/**
+ * How near a click has to land on an existing point to mean that point.
+ *
+ * In plan units, so it is independent of zoom — which is the wrong trade in one
+ * direction (a far-out view makes the target small on screen) and the right one in
+ * the other: the same click always resolves to the same point, so a measurement
+ * cannot change meaning because someone zoomed between clicks.
+ */
+export const MEASURE_CLOSE_UNITS = 40;
+
+/** The index of the existing measurement point a click lands on, or -1. */
+export function measurePointAt(measurement, point) {
+  const points = Array.isArray(measurement?.points) ? measurement.points : [];
+  if (!point) return -1;
+  let best = -1;
+  let bestDistance = MEASURE_CLOSE_UNITS;
+  points.forEach((candidate, index) => {
+    const distance = Math.hypot(candidate.x - point.x, candidate.y - point.y);
+    if (distance <= bestDistance) { best = index; bestDistance = distance; }
+  });
+  return best;
 }
 
 function distanceMetres(points = []) {
@@ -163,10 +203,20 @@ function areaSquareMetres(points = []) {
   return Math.abs(twiceArea) / 2 / 10000;
 }
 
+/**
+ * What the measurement reads.
+ *
+ * A closed ring reports BOTH its area and its perimeter: someone measuring a room
+ * wants the area, someone measuring a run of wall wants the length, and the same
+ * closed shape answers both questions without being drawn twice.
+ */
 export function measurementLabel(measurement = {}) {
   const points = measurement?.points || [];
-  if (measurement?.kind === 'area' && measurement.complete) {
-    return formatArea(areaSquareMetres(points), { maximumFractionDigits: 1 });
+  const closed = Boolean(measurement?.closed) && points.length >= 3;
+  if (closed) {
+    const ring = [...points, points[0]];
+    return `${formatArea(areaSquareMetres(points), { maximumFractionDigits: 1 })} · ${
+      formatNumber(distanceMetres(ring), { maximumFractionDigits: 2 })} m Umfang`;
   }
   if (points.length >= 2) {
     return `${formatNumber(distanceMetres(points), { maximumFractionDigits: 2 })} m`;

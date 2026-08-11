@@ -15,39 +15,108 @@
 .pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); padding:var(--sp-1-5) var(--sp-2) var(--sp-2); }
 .pf-sidebar__title { font-size:var(--text-lg); margin:0; }
 
-/* Flat tree hierarchy. Icons convey level; path and active colours convey selection. */
-.pf-tree, .pf-tree__children { list-style:none; margin:0; padding:0; } /* Icons and path state carry hierarchy without indentation. */
-.pf-tree__node, .pf-tree__leaf, .pf-tree__sub { display:flex; align-items:center; gap:var(--sp-2); width:100%; padding:var(--sp-1-5) var(--sp-2); border-radius:var(--radius-sm); font-size:var(--fs-sm); color:var(--color-text); text-align:left; text-decoration:none; background:none; border:0; cursor:pointer; font:inherit; }
-.pf-tree__node:hover, .pf-tree__leaf:hover, .pf-tree__sub:hover { background:var(--color-secondary-50); color:var(--color-text); text-decoration:none; }
+/* Structure tree. One reusable component behind five explorers (property
+   inventory, construction projects, tenancies, workspace, Plan-Editor) plus three
+   surfaces that hand-roll the same markup as a navigation list (metadata
+   catalogue, process documentation, shop mobile navigation).
+
+   The design is variant H2 of docs/wireframes/260810 - Standortbaum.html, chosen
+   after comparing ten treatments against the real six-level hierarchy:
+
+     · INDENTATION carries affiliation, one step per level. It is applied as row
+       padding rather than as a margin on the list, so every row spans the full
+       column and its divider therefore reaches both edges. Indenting the list
+       instead made each level's divider start further right, and the ragged left
+       ends read as broken rather than as hierarchy.
+     · DIVIDERS separate rows. They are what makes the column scannable — the eye
+       gets a band per row and can compare counts down the column.
+     · A VERTICAL GUIDE appears only along the SELECTED branch, where the question
+       «which parent does this belong to» is actually being asked. Everywhere else
+       indentation and dividers carry the row on their own, so the column stays
+       quiet. The guide sits on the axis of the parent's disclosure chevron, which
+       is what makes it read as intended rather than approximate.
+     · The guide passes BEHIND the selected row: that row is where the trace
+       arrives, not something it crosses.
+
+   Depth is expressed through nested .pf-tree__children selectors rather than
+   aria-level, because the three hand-rolled surfaces nest the same way but carry
+   no level attributes. */
+.pf-tree {
+  --tree-indent:1rem;            /* one level */
+  --tree-gutter:var(--sp-2);     /* space before the first level */
+  --tree-axis:.5rem;             /* half a chevron: the guide's axis */
+  --tree-divider:var(--color-secondary-200);
+  list-style:none; margin:0; padding:0;
+}
+.pf-tree__children { position:relative; list-style:none; margin:0; padding:0; }
+:is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { position:relative; display:flex; align-items:center; gap:var(--sp-2); width:100%;
+  padding:var(--sp-1-5) var(--sp-2); border:0; border-bottom:var(--stroke-1) solid var(--tree-divider);
+  border-radius:0; background:none; font:inherit; font-size:var(--fs-sm);
+  color:var(--color-text); text-align:left; text-decoration:none; cursor:pointer; }
+.pf-tree .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + 1 * var(--tree-indent)); }
+.pf-tree .pf-tree__children .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + 2 * var(--tree-indent)); }
+.pf-tree .pf-tree__children .pf-tree__children .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + 3 * var(--tree-indent)); }
+.pf-tree .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + 4 * var(--tree-indent)); }
+.pf-tree .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + 5 * var(--tree-indent)); }
+.pf-tree .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + 6 * var(--tree-indent)); }
+:is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub):hover { background:var(--color-secondary-50); color:var(--color-text); text-decoration:none; }
+
+/* Two-tone selection: the ancestors of the selection are light, the selection
+   itself dark plus a primary edge bar, so selection never rests on colour alone.
+   z-index lifts it above the guide. */
 .pf-tree__node.is-path, .pf-tree__leaf.is-path { background:var(--color-gray-100); }
-.pf-tree__node.is-active, .pf-tree__leaf.is-active, .pf-tree__sub.is-active { background:var(--color-primary-50); color:var(--color-primary-700); font-weight:var(--fw-bold); box-shadow:var(--state-bar-primary); }
-.pf-tree__chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-muted); }
+:is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub).is-active { z-index:var(--z-local-control); background:var(--color-secondary-100);
+  color:var(--color-text-900); font-weight:var(--fw-bold); box-shadow:var(--state-bar-primary); }
+
+/* The guide, drawn only on a list that holds the selection or its path. It stops
+   half a row short of the bottom so it ends at the last child rather than
+   running past it. */
+.pf-tree__children:has(.is-active, .is-path)::before { content:""; position:absolute; top:0; z-index:var(--z-local-content);
+  width:var(--stroke-1); height:calc(100% - var(--target-min) / 2);
+  background:var(--color-secondary-100); }
+/* The innermost list — the one that actually holds the selected row — carries the
+   accent, so the trace has exactly one visible end. */
+.pf-tree__children:has(> .pf-tree__item > .is-active)::before {
+  width:var(--stroke-2); background:var(--color-primary-600); }
+.pf-tree .pf-tree__children::before { left:calc(var(--tree-gutter) + var(--tree-axis)); }
+.pf-tree .pf-tree__children .pf-tree__children::before { left:calc(var(--tree-gutter) + var(--tree-axis) + 1 * var(--tree-indent)); }
+.pf-tree .pf-tree__children .pf-tree__children .pf-tree__children::before { left:calc(var(--tree-gutter) + var(--tree-axis) + 2 * var(--tree-indent)); }
+.pf-tree .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children::before { left:calc(var(--tree-gutter) + var(--tree-axis) + 3 * var(--tree-indent)); }
+.pf-tree .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children::before { left:calc(var(--tree-gutter) + var(--tree-axis) + 4 * var(--tree-indent)); }
+.pf-tree .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children::before { left:calc(var(--tree-gutter) + var(--tree-axis) + 5 * var(--tree-indent)); }
+
+.pf-tree__chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-light); }
 .pf-tree__node[aria-expanded="true"] > .pf-tree__chev,
 .pf-tree__leaf[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
 .pf-tree__ico { flex:none; color:var(--color-text-muted); }
-.pf-tree__leaf > .pf-tree__ico { margin-left:var(--sp-6); } /* Align leaf icons with parent icons past the chevron. */
-/* A leaf that owns a sub-level (floors inside a building) carries its own
-   chevron, so it starts at the parent column like a grouping node. */
-.pf-tree__leaf--parent > .pf-tree__ico { margin-left:0; }
-.pf-tree__sub > .pf-tree__ico { margin-left:var(--sp-12); }
+:is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub).is-active .pf-tree__ico { color:var(--color-text-800); }
 /* Guarantee 44 px targets on touch devices while preserving desktop density. */
 @media (max-width:1023.98px), (hover:none){
-  .pf-tree__node, .pf-tree__leaf, .pf-tree__sub { min-height:var(--target-min); padding-block:var(--sp-2-5); }
-  /* Document-viewer controls now follow their component base rule so cascade order
-     cannot make their target sizing ineffective. */
+  :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { min-height:var(--target-min); padding-block:var(--sp-2-5); }
 }
-.pf-tree__node.is-active .pf-tree__ico, .pf-tree__leaf.is-active .pf-tree__ico,
-.pf-tree__sub.is-active .pf-tree__ico { color:var(--color-primary-600); }
-.pf-tree__id { flex:none; font-family:var(--font-mono); font-size:var(--fs-xs); color:var(--color-text-muted); }
-.pf-tree__node.is-active .pf-tree__id, .pf-tree__leaf.is-active .pf-tree__id,
-.pf-tree__sub.is-active .pf-tree__id { color:var(--color-primary-700); }
-.pf-tree__label { flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pf-tree__n { flex:none; margin-left:var(--sp-1-5); font-size:var(--fs-xs); color:var(--color-text-muted); }
-.pf-tree__node.is-active .pf-tree__n { color:var(--color-primary-700); }
+/* The key column: monospace, tabular, measured in `ch` so the segments of one
+   level line up exactly and the labels all start at the same x. A width in rem
+   left slack that read as a gap between the key and the name. */
+.pf-tree__id { flex:none; min-width:2ch; font-family:var(--font-mono); font-size:var(--fs-xs);
+  color:var(--color-text-light); font-variant-numeric:tabular-nums; }
+:is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub).is-active .pf-tree__id { color:var(--color-text-700); }
+.pf-tree__label { flex:0 1 auto; min-width:4ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* The count reads as «(7)». The parentheses are presentation, added here rather
+   than in the markup, so the element's text stays the bare number that
+   scripts/check-tree.mjs and the app suites parse. */
+.pf-tree__n { flex:none; margin-left:var(--sp-1); font-size:var(--fs-xs);
+  color:var(--color-text-light); font-variant-numeric:tabular-nums; }
+.pf-tree__n::before { content:"("; }
+.pf-tree__n::after { content:")"; }
+:is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub).is-active .pf-tree__n { color:var(--color-text-700); }
+:is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub):focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:calc(-1 * var(--stroke-2)); }
 
-/* Plain tree variant for concepts without meaningful icons. Indentation conveys
-   its two levels; inventory keeps icons where they encode geographic hierarchy. */
-.pf-tree--plain .pf-tree__leaf { padding-left:var(--sp-8); } /* Indentation replaces the icon column. */
+/* Plain variant for surfaces without meaningful entity icons. Indentation now
+   comes from the shared depth rules, so the variant only has to close the gap
+   the missing icon column leaves. */
+.pf-tree--plain :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + var(--sp-4)); }
+.pf-tree--plain .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) {
+  padding-left:calc(var(--tree-gutter) + var(--sp-4) + var(--tree-indent)); }
 
 .pf-main { min-width:0; }
 
@@ -91,9 +160,12 @@
 .shopping__card { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-4); padding:var(--sp-4) 0; border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
 .shopping__card:first-child { border-top:var(--stroke-1) solid var(--color-secondary-200); }
 @media (min-width:1024px){ .shopping__card { grid-template-columns:10.5rem minmax(0,1fr) 9.5rem 8rem; align-items:center; } }
-.shopping__card__image { --shopping-z-overlay:30; --shopping-z-image:40; position:relative; display:flex; align-items:center; justify-content:center; min-height:10.5rem; background:var(--color-secondary-50); overflow:hidden; }
-.shopping__card-image-background { position:absolute; inset:0; z-index:var(--shopping-z-overlay); background:var(--color-secondary-50); border:var(--stroke-2) solid var(--color-bg); opacity:.7; }
-.shopping__card__image > img { position:relative; z-index:var(--shopping-z-image); max-width:90%; max-height:90%; width:auto; height:auto; object-fit:contain; }
+/* The two layers inside a card come from the documented local rungs. They used to be a
+   private 30/40 scale declared as custom properties, which the token gate skipped
+   because it exempted `--*` declarations — the one place a raw scale could hide. */
+.shopping__card__image { position:relative; display:flex; align-items:center; justify-content:center; min-height:10.5rem; background:var(--color-secondary-50); overflow:hidden; }
+.shopping__card-image-background { position:absolute; inset:0; z-index:var(--z-local-content); background:var(--color-secondary-50); border:var(--stroke-2) solid var(--color-bg); opacity:.7; }
+.shopping__card__image > img { position:relative; z-index:var(--z-local-control); max-width:90%; max-height:90%; width:auto; height:auto; object-fit:contain; }
 .shopping__card-details-container { min-width:0; }
 .shopping__card-details-container .card__title { margin-bottom:var(--sp-2); }
 .shopping__card-action-container { display:flex; flex-direction:column; justify-content:space-between; gap:var(--sp-4); }

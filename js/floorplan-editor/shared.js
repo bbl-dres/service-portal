@@ -84,7 +84,7 @@ export function breadcrumbStepsHTML(C, steps) {
   // portal shell, so without this crumb the only ways back were the browser's
   // Back button and the address bar. It is a link like any other, which means it
   // passes through the router's unsaved-work guard.
-  const items = [{ label: 'Serviceportal', href: '#/' }, ...(Array.isArray(steps) ? steps : [])]
+  const items = [{ label: 'Kundenportal', href: '#/' }, ...(Array.isArray(steps) ? steps : [])]
     .filter(Boolean);
   return items.map((step, index) => (index === items.length - 1
     ? `<span aria-current="page">${C.escape(step.label)}</span>`

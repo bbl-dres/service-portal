@@ -40,6 +40,20 @@ for (const entry of sources) {
 }
 
 const tokenFile = (entry) => entry.name === 'css/tokens.css';
+/**
+ * Sheets that are allowed to DEFINE colours in custom properties.
+ *
+ * `css/tokens.css` owns the design-system scale; the skins override the two CD ramps by
+ * body class; and the floor-plan sheets own a domain palette (room-use groups, SIA area
+ * types, module standards) that has no design-system equivalent and is mirrored value
+ * for value in js/floorplan-editor/colors.js. Everywhere else, a colour hidden inside a
+ * custom property is exactly what this gate exists to catch — it used to pass, because
+ * `--*` declarations were skipped entirely.
+ */
+const paletteOwner = (entry) => tokenFile(entry)
+  || entry.name.startsWith('css/skins/')
+  || entry.name === 'css/apps/floorplan.css'
+  || entry.name === 'css/apps/floorplan-editor.css';
 const colorLiteral = /#[\da-f]{3,8}\b|(?:rgb|hsl)a?\(/i;
 const durationLiteral = /(?<![\w.-])(?:\d*\.\d+|\d+)(?:ms|s)\b/g;
 const snappedLiteral = /(?<![\w.-])(?:\.2|\.35|\.45|\.5625|\.7|\.8|\.85|\.9|1\.05|1\.15)rem\b/;
@@ -50,8 +64,14 @@ for (const item of declarations) {
   const { entry, offset, property, value } = item;
   if (tokenFile(entry)) continue;
 
-  if (!property.startsWith('--') && !value.includes('data:image') && colorLiteral.test(value)) {
-    report(entry, offset, `${property} contains a hardcoded color`);
+  // Custom properties are checked too, outside css/tokens.css. Exempting them left the
+  // gate blind to exactly what it exists to forbid: a raw palette declared as
+  // `--fpe-something: #1c7d4d` passed, while the identical value on `color:` failed.
+  const definesPalette = property.startsWith('--') && paletteOwner(entry);
+  if (!definesPalette && !value.includes('data:image') && colorLiteral.test(value)) {
+    report(entry, offset, property.startsWith('--')
+      ? `${property} defines a hardcoded color; declare it in css/tokens.css`
+      : `${property} contains a hardcoded color`);
   }
   colorLiteral.lastIndex = 0;
 
@@ -59,7 +79,12 @@ for (const item of declarations) {
   const invalidDurations = durations.filter((duration) => duration !== '0s' && !(duration === '.01ms' && entry.name === 'css/utilities.css'));
   if (invalidDurations.length) report(entry, offset, `${property} contains duration ${invalidDurations.join(', ')}`);
 
-  if (property === 'z-index' && /^-?\d+$/.test(value)) report(entry, offset, `raw z-index ${value}`);
+  // Same blind spot on layering: a private `--fpe-z-menu: 40` scale sat beside the
+  // documented `--z-local-*` rungs and never had to justify itself.
+  const layerProperty = property === 'z-index'
+    || (property.startsWith('--') && /(?:^|-)z(?:-index)?(?:-|$)/.test(property.slice(2)));
+  if (layerProperty
+    && /^-?\d+$/.test(value)) report(entry, offset, `raw z-index ${value}`);
   if (property === 'border-radius' && /(?:px|rem)\b/.test(value)) report(entry, offset, `raw radius ${value}`);
   if (property === 'box-shadow' && value !== 'none' && /-?(?:\d*\.\d+|\d+)(?:px|rem)\b/.test(value)) {
     report(entry, offset, 'raw component-state shadow/elevation');

@@ -18,7 +18,13 @@ for (const id of ['PRJ-04', 'PRJ-02']) {
       document.querySelector('.pj-hero__btn').click();
       await new Promise((resolve) => setTimeout(resolve, 500));
       const overlay = document.querySelector('.pf-lightbox');
-      const count = document.body.textContent.match(/(\\d+)\\s*\/\\s*(\\d+)/);
+      // Read the counter out of the OVERLAY, whose caption carries the image index. A
+      // number-slash-number search over document.body matched the object's SAP key
+      // instead. It matched nothing at all until now: the pattern carried a
+      // single-escaped slash, which in a template literal emits a bare slash that
+      // closes the regex early, so the probe threw an invalid-flags error and the
+      // harness returned undefined without failing.
+      const count = (overlay?.textContent || '').match(/Bild\\s+(\\d+)\\s+von\\s+(\\d+)/);
       return JSON.stringify({ overlay: !!overlay, count, hash: location.hash });
     })()`);
     console.log('   Gallery opened:', gallery);

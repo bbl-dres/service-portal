@@ -59,8 +59,55 @@ const FLOORPLAN_COLORS = Object.freeze({
   ]),
 });
 
+/**
+ * Every swatch token to the CSS value that paints it.
+ *
+ * The editor's stylesheet carried 27 `.fpe-swatch--*` rules that restated exactly what
+ * this table already holds in each colour's `css` field — a standing obligation to keep
+ * two lists in step, with a base rule that painted an unrecognised key in the «Arbeit»
+ * blue rather than showing nothing was resolved. Derived here instead, so a new colour
+ * needs no stylesheet edit and cannot silently render as the wrong one.
+ *
+ * The four short `use` spellings are aliases: `useSwatch()` returns «work» where the
+ * canonical token is «use-work», and both appear in call sites.
+ */
+export const SWATCH_CSS = Object.freeze((() => {
+  const entries = [];
+  const collect = (value) => {
+    if (!value) return;
+    if (Array.isArray(value)) { value.forEach(collect); return; }
+    if (value.swatch && value.css) { entries.push([value.swatch, value.css]); return; }
+    Object.values(value).forEach(collect);
+  };
+  collect(FLOORPLAN_COLORS);
+  const map = Object.fromEntries(entries);
+  ['work', 'collab', 'infra', 'special'].forEach((short) => {
+    if (map[`use-${short}`]) map[short] = map[`use-${short}`];
+  });
+  return map;
+})());
+
+/** The CSS value for a swatch token, or the neutral unassigned fill. */
+export function swatchCss(token) {
+  return SWATCH_CSS[String(token || '')] || FLOORPLAN_COLORS.unassigned.css;
+}
+
 const USE_FALLBACK = FLOORPLAN_COLORS.use.infra;
 const SIA_FALLBACK = FLOORPLAN_COLORS.sia.NNF;
+
+/**
+ * The placement preview, in both output forms.
+ *
+ * The 2D plan tints its ghost through `.fpe-ghost.is-valid/.is-invalid`
+ * in css/apps/floorplan-editor.css, which resolve to the success and error tokens.
+ * WebGL cannot read those, so the numeric equivalents live here beside every other
+ * colour that has to serve both an SVG and a Three.js consumer. Keep the hex values
+ * in step with those two CSS rules.
+ */
+export const PLACEMENT_PREVIEW = Object.freeze({
+  valid: color('preview-valid', '#1c7d4d'),
+  invalid: color('preview-invalid', '#b8232f'),
+});
 
 export function normalizeColorMode(value) {
   return EDITOR_COLOR_MODES.some((mode) => mode.value === value) ? value : 'use';

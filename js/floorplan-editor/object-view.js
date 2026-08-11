@@ -139,7 +139,7 @@ function planStateBadge(C, entry) {
 
 // --- Overview register -------------------------------------------------------
 
-function overviewPanel(C, { entry, planning, building, previewFor }) {
+function overviewPanel(C, { entry, planning, building }) {
   const availability = {
     planned: 'CAD-Planung in Arbeit',
     legacy: 'Bestandsgrundriss',
@@ -147,28 +147,27 @@ function overviewPanel(C, { entry, planning, building, previewFor }) {
   const contacts = list(planning?.contacts)
     .map((contact) => ({ label: contact.label, email: contact.email }));
 
-  // Two actions only. Everything else this object can be looked at through — the
-  // inventory, the workspace portal, the media library — is a different app's
-  // answer to a different question, and a list of six links reads as a menu
-  // rather than as the two things there are to do here.
-  const topFloor = entry.floors[0]?.floorId || '';
+  // One action. An «open in the editor» link sat here too, but an editor session
+  // is always a session on ONE floor: opening the building meant silently picking
+  // its top floor, and that is a choice the plan register should be offering.
+  // `items` rather than `links`, because one of the two rows has no target yet:
+  // the action card's `disabled` type renders it with a lock and a reason instead
+  // of a dead link, which is how the rest of the portal shows a planned action.
   const actions = [
-    { label: 'Im Editor öffnen', href: floorplanEditor(entry.id, topFloor) },
-    { label: 'Neuen Plan hochladen', href: planCheck(entry.id), newWindow: true },
+    { type: 'link', label: 'Neuen Plan hochladen', href: planCheck(entry.id), newWindow: true },
+    {
+      type: 'disabled',
+      label: 'Bestehenden Plan mutieren',
+      description: 'Oberfläche noch nicht umgesetzt',
+    },
   ];
 
+  // A floor thumbnail strip and a plan-handover block stood here. The first
+  // repeated the plan register one tab away; the second is order bookkeeping
+  // rather than something this overview is read for. Both are gone, and the
+  // register plus the key figures carry the object on their own.
   return `<div class="detail-layout"><div>
-    ${/* Quick jump into any floor. It lives in this register rather than above
-          the tabs, so it never stands beside the floor-plan gallery showing the
-          same thumbnails twice. */''}
-    <h3 class="detail-section__title">Geschosse</h3>
-    <nav class="fpe-object__strip" aria-label="Geschosse dieses Objekts">
-      ${entry.floors.map((floor) => `<a class="fpe-object__strip-item" href="${floorplanEditor(entry.id, floor.floorId)}">
-        ${previewFor(floor)}<span class="fpe-object__strip-label">${C.escape(floor.label)}</span>
-      </a>`).join('')}
-    </nav>
-
-    <h3 class="detail-section__title mt-6">Eckdaten</h3>
+    <h3 class="detail-section__title">Eckdaten</h3>
     <dl class="kv">
       <dt>BBL-ID</dt><dd class="mono">${C.escape(entry.id)}</dd>
       <dt>Wirtschaftseinheit (WE)</dt><dd>${C.escape(building?.businessEntityId || '—')}</dd>
@@ -182,20 +181,9 @@ function overviewPanel(C, { entry, planning, building, previewFor }) {
       <dt>Planstand</dt><dd>${planStateBadge(C, entry)}</dd>
     </dl>
 
-    <h3 class="detail-section__title mt-6">Planübernahme</h3>
-    <dl class="kv">
-      <dt>Auftrag</dt><dd>${planning?.inventoryOrder
-        ? `<span class="mono">${C.escape(planning.inventoryOrder)}</span>` : 'kein offener Auftrag'}</dd>
-      ${planning?.projectId ? `<dt>Projekt</dt><dd class="mono">${C.escape(planning.projectId)}</dd>` : ''}
-      <dt>Stichtag</dt><dd>${entry.targetDate
-        ? C.escape(entry.targetDate.split('-').reverse().join('.')) : '—'}</dd>
-      <dt>Nicht synchronisiert</dt><dd>${entry.stale
-        ? `${number(entry.stale)} von ${number(entry.floors.length)} Geschossen`
-        : 'keine Abweichung'}</dd>
-    </dl>
   </div>
   <aside class="detail-layout__aside" aria-label="Aktionen und Ansprechpersonen">
-    ${C.actionCard({ lead: 'Für dieses Objekt vorbelegt.', links: actions })}
+    ${C.actionCard({ items: actions })}
     ${C.contactCard({ contacts })}
   </aside></div>`;
 }

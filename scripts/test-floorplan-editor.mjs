@@ -269,26 +269,51 @@ try {
     };
   })()`);
   check(/Liebefeld/.test(detail.h1)
-    && detail.crumbs.slice(0, 4).join(' › ') === 'Alle Objekte › Schweiz › BE › Liebefeld'
+    && detail.crumbs.slice(0, 5).join(' › ') === 'Kundenportal › Alle Objekte › Schweiz › BE › Liebefeld'
     && /Liebefeld/.test(detail.crumbs.at(-1)),
-  'walks the full location down to the object in the breadcrumb', detail.crumbs.join(' › '));
+  'walks the portal and the full location down to the object in the breadcrumb', detail.crumbs.join(' › '));
   // Every level returns to the portfolio scoped to exactly that level, so going
   // up a step means seeing the siblings rather than starting over.
-  check(detail.crumbHrefs.join(' | ') === ['#/app/floorplan-editor',
+  // The first crumb leaves the application altogether: a standalone layout hides
+  // the portal shell, so without it the only ways back were Back and the address bar.
+  check(detail.crumbHrefs.join(' | ') === ['#/',
+    '#/app/floorplan-editor',
     '#/app/floorplan-editor?country=CH',
     '#/app/floorplan-editor?country=CH&region=BE',
     '#/app/floorplan-editor?country=CH&region=BE&city=Liebefeld'].join(' | '),
-  'scopes each breadcrumb level to its own portfolio filter', detail.crumbHrefs.join(' | '));
+  'returns to the portal and scopes each place level to its own filter', detail.crumbHrefs.join(' | '));
   check(detail.tabs.join(',') === 'Übersicht,Grundrisse (3),Module (10),Ausstattung (187)',
     'separates plans, module standard and furniture into their own registers', detail.tabs.join(' | '));
   check(detail.kpis.join(',') === 'Geschosse,Räume,Hauptnutzfläche,Arbeitsplätze'
     && /Hauptnutzfläche \(HNF\)/.test(detail.facts) && /Planverfügbarkeit/.test(detail.facts),
   'leads with the space-management key figures and facts', detail.kpis.join(' · '));
-  check(detail.stripFloors === 3 && detail.galleryVisible === 0,
-    'puts the floor quick-jump in the overview register only', `${detail.stripFloors} strip · ${detail.galleryVisible} cards`);
+  check(detail.stripFloors === 0 && detail.galleryVisible === 0,
+    'keeps floor thumbnails out of the overview, where the plan register carries them',
+    `${detail.stripFloors} strip · ${detail.galleryVisible} cards`);
   check(detail.actionCard === 2 && detail.actionCardStyled === 'grid' && detail.contacts === 2,
-    'keeps the action card to opening the editor and uploading a plan',
+    'keeps the action card to uploading a plan and the not-yet-built mutation',
     `${detail.actionCard} actions (${detail.actionCardStyled}) · ${detail.contacts} contacts`);
+  // The overview carried a floor thumbnail strip and a plan-handover block. The
+  // first repeated the plan register one tab away; the second is order
+  // bookkeeping. An «open in the editor» action went too: a session is always on
+  // one floor, so opening «the building» silently picked its top floor.
+  const overviewTrim = await page.evaluate(`(() => {
+    const panel = document.querySelector('[data-panel="overview"]');
+    const t = (el) => (el?.textContent || '').replace(/\\s+/g, ' ').trim();
+    return {
+      headings: [...panel.querySelectorAll('.detail-section__title')].map(t),
+      strips: panel.querySelectorAll('.fpe-object__strip-item').length,
+      links: [...panel.querySelectorAll('.fp-svc-list a')].map(t),
+      disabled: [...panel.querySelectorAll('.fp-svc-list .fp-svc--disabled, .fp-svc-list [aria-disabled="true"]')].map(t),
+      lead: panel.querySelector('.box > p.small.muted') ? 'present' : 'none',
+    };
+  })()`);
+  check(overviewTrim.headings.join(',') === 'Eckdaten' && overviewTrim.strips === 0
+    && overviewTrim.links.join(',') === 'Neuen Plan hochladen',
+  'reduces the overview to the key facts and one live action',
+  `${overviewTrim.headings.join('/')} · ${overviewTrim.links.join('/')}`);
+  check(overviewTrim.lead === 'none',
+    'drops the stock action-card lead that only restated the card title');
   check(detail.headButtons === 0 && detail.planView === 'list',
     'drops the top-floor shortcut and defaults the plan register to the list',
     `${detail.headButtons} head buttons · ${detail.planView}`);
@@ -314,10 +339,11 @@ try {
       })(),
     };
   })()`);
-  check(scrollbars.bars.length === 1 && scrollbars.rootBarPx === 0
-    && scrollbars.rootOverflowY === 'hidden' && scrollbars.appScrolls > 0,
-  'scrolls the standalone app through exactly one scrollbar, not two',
-  `${scrollbars.bars.join('+') || 'none'} · root ${scrollbars.rootBarPx}px`);
+  check(scrollbars.bars.length <= 1 && scrollbars.rootBarPx === 0
+    && scrollbars.rootOverflowY === 'hidden'
+    && (scrollbars.appScrolls > 0 ? scrollbars.bars.length === 1 : true),
+  'never draws a second scrollbar beside the standalone app',
+  `${scrollbars.bars.join('+') || 'none'} · root ${scrollbars.rootBarPx}px · scrolls ${scrollbars.appScrolls}`);
 
   const plansTab = await page.evaluate(`(async () => {
     const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
@@ -327,11 +353,11 @@ try {
       hash: location.hash,
       cards: document.querySelectorAll('.tab__container:not([hidden]) .fpe-floor-card').length,
       // A row is a line of facts: no thumbnail may appear in the table.
-      rowPreviews: document.querySelectorAll('#fpe-floors-table .fpe-recent__preview').length,
-      headers: [...document.querySelectorAll('#fpe-floors-table thead th')].map(text),
-      rows: document.querySelectorAll('#fpe-floors-table tbody tr').length,
+      rowPreviews: document.querySelectorAll('.fpe-plans table .fpe-recent__preview').length,
+      headers: [...document.querySelectorAll('.fpe-plans table thead th')].map(text),
+      rows: document.querySelectorAll('.fpe-plans table tbody tr').length,
       search: !!document.querySelector('#fpe-floors-q'),
-      firstFloorHref: document.querySelector('#fpe-floors-table tbody a')?.getAttribute('href') || '',
+      firstFloorHref: document.querySelector('.fpe-plans table tbody a')?.getAttribute('href') || '',
       views: [...document.querySelectorAll('.fpe-plans .view-switch__btn')].map(b => b.dataset.view),
     };
   })()`);
@@ -354,7 +380,7 @@ try {
       firstCard: text(document.querySelector('.fpe-floor-card__body')),
       cardOpen: document.querySelector('.fpe-floor-card__link')?.getAttribute('href') || '',
       cardCheck: document.querySelector('.fpe-floor-card__check')?.getAttribute('href') || '',
-      table: document.querySelectorAll('#fpe-floors-table tbody tr').length,
+      table: document.querySelectorAll('.fpe-plans table tbody tr').length,
     };
   })()`);
   check(plansCards.cards === 3 && plansCards.previews === 3 && plansCards.table === 0
@@ -371,8 +397,9 @@ try {
     const table = panel?.querySelector('table');
     return {
       hash: location.hash,
-      lead: text(panel?.querySelector('p.small')),
-      standardLink: panel?.querySelector('p.small a')?.getAttribute('href') || '',
+      caption: text(panel?.querySelector('caption')),
+      captionVisible: (() => { const caption = panel?.querySelector('caption');
+        return caption ? getComputedStyle(caption).position === 'static' : false; })(),
       headers: table ? [...table.querySelectorAll('thead th')].map(text) : [],
       rows: table ? table.querySelectorAll('tbody tr').length : 0,
       first: table ? [...table.querySelectorAll('tbody tr')[0].children].map(text) : [],
@@ -385,9 +412,11 @@ try {
     && moduleTab.first[1] === '41' && moduleTab.first[3] === '93' && moduleTab.first[4] === '93'
     && moduleTab.headers.join(',') === 'Modul,Räume,Fläche,Arbeitsplätze,Positionen geplant',
   'reports the multispace modules of an accepted planning', moduleTab.first.join(' · '));
-  check(moduleTab.hash.includes(MODULE_TAB_QUERY) && /Abgenommene Multispace-Planung/.test(moduleTab.lead)
-    && moduleTab.standardLink === '#/knowledge/workspace',
-  'names the source of the module figures and links the standard', moduleTab.standardLink);
+  // Where the figures come from decides whether they may be quoted as an approved
+  // planning, so it is the table's VISIBLE caption rather than a muted aside.
+  check(moduleTab.hash.includes(MODULE_TAB_QUERY) && moduleTab.captionVisible
+    && /abgenommene Planung/.test(moduleTab.caption),
+  'states in the caption that the module figures come from an accepted planning', moduleTab.caption);
 
   const equipmentTab = await page.evaluate(`(async () => {
     const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
@@ -397,7 +426,7 @@ try {
     const table = panel?.querySelector('table');
     return {
       hash: location.hash,
-      lead: text(panel?.querySelector('p.small')),
+      caption: text(panel?.querySelector('caption')),
       headers: table ? [...table.querySelectorAll('thead th')].map(text) : [],
       perFloor: table ? table.querySelectorAll('tbody tr').length : 0,
       total: table ? [...table.querySelectorAll('tfoot th, tfoot td')].map(text).join(',') : '',
@@ -407,8 +436,8 @@ try {
     && equipmentTab.headers.join(',') === 'Geschoss,Möblierung,Räume,Arbeitsplätze'
     && equipmentTab.hash.includes(EQUIPMENT_TAB_QUERY),
   'breaks the furniture down per floor in its own register', equipmentTab.total);
-  check(/Gebäudetechnische Ausstattung wird hier noch nicht geführt/.test(equipmentTab.lead),
-    'says which equipment this register does not yet carry', equipmentTab.lead.slice(-60));
+  check(/ohne gebäudetechnische Ausstattung/.test(equipmentTab.caption),
+    'says in the caption which equipment this register does not yet carry', equipmentTab.caption);
 
   // A legacy object carries no planning record at all: its module register is
   // derived from the room use types, and its furniture register is genuinely
@@ -422,15 +451,15 @@ try {
     const panel = document.querySelector('.tab__container:not([hidden])');
     return {
       tabs: [...document.querySelectorAll('#fpe-object [role="tab"]')].map(text),
-      lead: text(panel?.querySelector('p.small')),
+      caption: text(panel?.querySelector('caption')),
       headers: [...(panel?.querySelectorAll('thead th') || [])].map(text),
       rows: panel ? panel.querySelectorAll('tbody tr').length : 0,
     };
   })()`);
-  check(legacyModules.rows > 0 && /Aus der Raumnutzung abgeleitet/.test(legacyModules.lead)
+  check(legacyModules.rows > 0 && /aus der Raumnutzung abgeleitet/.test(legacyModules.caption)
     && !legacyModules.headers.includes('Positionen geplant'),
-  'derives the modules of a legacy object from its rooms and says so',
-  `${legacyModules.rows} modules · ${legacyModules.headers.join('/')}`);
+  'derives the modules of a legacy object from its rooms and says so in the caption',
+  `${legacyModules.rows} modules · ${legacyModules.caption.slice(-52)}`);
 
   await cdp.send('Page.navigate', {
     url: `${APP_BASE}/app/floorplan-editor?building=${encodeURIComponent('1080/6100/AA')}&tab=ausstattung`,
@@ -466,17 +495,17 @@ try {
     leaf?.click();
     leaf?.closest('.pf-tree__item')?.querySelector('.pf-tree__sub')?.click();
   })()`);
-  check(await waitFor(page, '#fpe-floors-table tbody tr', 10000),
+  check(await waitFor(page, '.fpe-plans table tbody tr', 10000),
     'follows a floor from the tree into the building detail rather than the canvas');
   const treeFloor = await page.evaluate(`(() => {
     const text = node => (node?.textContent || '').split(/\\s+/).join(' ').trim();
-    const rows = [...document.querySelectorAll('#fpe-floors-table tbody tr')];
+    const rows = [...document.querySelectorAll('.fpe-plans table tbody tr')];
     return {
       hash: location.hash,
       tab: document.querySelector('#fpe-object')?.dataset.tab || '',
       canvas: !!document.querySelector('#fpe-canvas'),
       marked: rows.filter(row => row.classList.contains('is-marked')).map(row => text(row.querySelector('th'))),
-      current: text(document.querySelector('#fpe-floors-table [aria-current="location"]')),
+      current: text(document.querySelector('.fpe-plans table [aria-current="location"]')),
       rows: rows.length,
     };
   })()`);
@@ -644,7 +673,7 @@ try {
       headerDisplay: display('#main-header'), footerDisplay: display('#main-footer'),
       bannerDisplay: display('#banner-host'),
       breadcrumb: [...document.querySelectorAll('.fpe-breadcrumb :is(a,span[aria-current="page"])')]
-        .map(node => node.textContent.replace(/\s+/g, ' ').trim()),
+        .map(node => node.textContent.split(' ').filter(Boolean).join(' ').trim()),
       contextBack: !!document.querySelector('.fpe-context > [data-leave][aria-label="Zurück zu allen Geschossen"]'),
       left: dimensions('#fpe-left'), stage: dimensions('#fpe-stage'), right: dimensions('#fpe-right'),
       roomCount: roomIds.length, expectedRooms: rooms.length, declaredRooms: floor?.rooms || 0,
@@ -672,6 +701,7 @@ try {
         colorTrigger: document.querySelector('#fpe-color-trigger')?.getAttribute('aria-haspopup') || '',
         colorLabel: document.querySelector('#fpe-color-trigger')?.getAttribute('aria-label') || '',
         colorIcon: document.querySelector('#fpe-color-trigger .icon')?.style.maskImage || '',
+        colorGlyph: document.querySelectorAll('#fpe-color-trigger .fpe-element-icon').length,
         panelGlyphs: document.querySelectorAll('.fpe-panel-toggle-icon').length,
       },
       planActions: {
@@ -696,8 +726,10 @@ try {
         minimumTarget: Math.min(...[...document.querySelectorAll('.fpe-view-nav button,.fpe-view-nav__actions button')]
           .map(button => button.getBoundingClientRect().height)),
         navigationInTopToolbar: document.querySelectorAll('#fpe-toolbar-host [data-action="zoom-in"],#fpe-toolbar-host [data-action="zoom-out"],#fpe-toolbar-host [data-action="fit"],#fpe-toolbar-host [data-action="fit-selection"],#fpe-toolbar-host [data-action="three-reset"]').length,
+        actionOrder: [...document.querySelectorAll('.fpe-view-nav__actions [data-action]')]
+          .map(button => button.dataset.action),
       },
-      toolIcons: Object.fromEntries(['tool-select', 'tool-pan', 'tool-distance', 'tool-area'].map(action => [action,
+      toolIcons: Object.fromEntries(['tool-select', 'tool-pan', 'tool-measure'].map(action => [action,
         document.querySelector('[data-action="' + action + '"] .icon')?.style.maskImage || ''])),
       designPolish: (() => {
         const inspector = document.querySelector('#fpe-right');
@@ -707,6 +739,18 @@ try {
         const viewStyle = viewModes ? getComputedStyle(viewModes) : null;
         return {
           inspectorIcons: inspector?.querySelectorAll('.fpe-inspector-title .icon').length || 0,
+          inspectorCloseIcon: inspector?.querySelector('.fpe-inspector-title [data-action="toggle-right"] .icon')
+            ?.getAttribute('style') || '',
+          sectionRules: (() => {
+            const sections = [...(inspector?.querySelectorAll('.fpe-inspector-section') || [])];
+            const width = (node, side) => parseFloat(getComputedStyle(node)['border' + side + 'Width']) || 0;
+            return {
+              count: sections.length,
+              bottoms: sections.filter(node => width(node, 'Bottom') > 0).length,
+              firstTop: sections[0] ? width(sections[0], 'Top') : -1,
+              laterTops: sections.slice(1).filter(node => width(node, 'Top') > 0).length,
+            };
+          })(),
           redundantHints: /Wählen Sie einen Raum|Klick: auswählen|Links: verschieben|Rechts: drehen/.test(document.querySelector('#fpe-app')?.textContent || ''),
           toolbarBorderContrast: toolbarStyle ? contrast(toolbarStyle.borderTopColor, toolbarStyle.backgroundColor) : 0,
           viewBorderContrast: viewStyle ? contrast(viewStyle.borderTopColor, viewStyle.backgroundColor) : 0,
@@ -754,8 +798,9 @@ try {
   `${initial.headerDisplay}/${initial.footerDisplay}/${initial.bannerDisplay}`);
   check(/Plan-Editor/.test(initial.h1) && /2\. OG/.test(initial.h1) && /Liebefeld/.test(initial.h1),
     'identifies the requested building and floor in the editor H1', initial.h1);
-  check(initial.breadcrumb.length === 3 && initial.breadcrumb[0] === 'Alle Objekte'
-    && /Liebefeld/.test(initial.breadcrumb[1]) && initial.breadcrumb[2] === '2. OG'
+  check(initial.breadcrumb.length === 4 && initial.breadcrumb[0] === 'Kundenportal'
+    && initial.breadcrumb[1] === 'Alle Objekte'
+    && /Liebefeld/.test(initial.breadcrumb[2]) && initial.breadcrumb[3] === '2. OG'
     && /building=1080%2F6650%2FAA/i.test(initial.hash) && initial.hash.includes(`floor=${FLOOR_ID}`)
     && !initial.contextBack,
   'preserves the deep link and exposes deterministic editor breadcrumbs without a redundant back button', initial.breadcrumb.join(' · '));
@@ -778,7 +823,14 @@ try {
     && initial.resourceTree.roomNameInset >= 52 && initial.resourceTree.roomNameInset <= 54
     && initial.resourceTree.listMarkers === 0 && initial.resourceTree.colorTrigger === 'menu'
     && /Keine/.test(initial.resourceTree.colorLabel) && !new URLSearchParams(initial.hash.split('?')[1] || '').has('color')
-    && /Stack\.svg/.test(initial.resourceTree.colorIcon) && initial.resourceTree.panelGlyphs === 5,
+    // Four pane pictograms, not five: the inspector's own close control is a plain
+    // cross now, the same glyph every modal, notification and viewer closes with.
+    // The colour control draws three swatches of one attribute, not stacked layers:
+    // `Stack` read as z-order, and the set's only colour icon is a paintbrush, which
+    // this is not — the plan is shaded by a category, not painted. Inline SVG, so the
+    // assertion is on the glyph element rather than on a mask URL.
+    && initial.resourceTree.colorGlyph === 1 && !initial.resourceTree.colorIcon
+    && initial.resourceTree.panelGlyphs === 4,
   'defaults to no coloring and renders a flat room tree without synthetic aggregation',
   `${initial.resourceTree.groups} groups · ${initial.resourceTree.roomRows} rooms · ${initial.resourceTree.roomNameInset}px name inset`);
   check(initial.planActions.more === 'menu' && initial.planActions.items === 5
@@ -799,18 +851,275 @@ try {
     && initial.viewNavigation.tabbable === 1 && initial.viewNavigation.actions === 4
     && initial.viewNavigation.actionsSeparate && initial.viewNavigation.actionsOnRight
     && initial.viewNavigation.modeIcons === 0 && initial.viewNavigation.planarModeIcons === 0
-    && initial.viewNavigation.minimumTarget >= 44 && initial.viewNavigation.navigationInTopToolbar === 0,
+    && initial.viewNavigation.minimumTarget >= 44 && initial.viewNavigation.navigationInTopToolbar === 0
+    // Zoom in sits ABOVE zoom out, as everywhere else in the portal: the stack reads
+    // as a scale with «more» at the top.
+    && initial.viewNavigation.actionOrder.join(',') === 'zoom-in,zoom-out,fit,fit-selection',
   'separates the mode switcher from right-side camera controls with consistent text-only modes',
   `${initial.viewNavigation.modes} modes · ${initial.viewNavigation.actions} view actions · ${Math.round(initial.viewNavigation.minimumTarget)}px targets`);
   check(/Pointer\.svg/.test(initial.toolIcons['tool-select'])
     && /Move\.svg/.test(initial.toolIcons['tool-pan'])
-    && /Ruler\.svg/.test(initial.toolIcons['tool-distance'])
-    && /Crop\.svg/.test(initial.toolIcons['tool-area']),
-  'uses purpose-specific select, pan, distance, and area icons from the local icon set');
-  check(initial.designPolish.inspectorIcons === 0 && !initial.designPolish.redundantHints
+    && /Ruler\.svg/.test(initial.toolIcons['tool-measure']),
+  'uses purpose-specific select, pan, and measuring icons from the local icon set');
+  // The inspector title carries exactly ONE icon: the cross that closes the panel.
+  // It used to carry a pane pictogram, which reads as «change the layout» rather
+  // than «close this», and the panel had no cross at all.
+  check(initial.designPolish.inspectorIcons === 1 && !initial.designPolish.redundantHints
+    && /Cancel\.svg/.test(initial.designPolish.inspectorCloseIcon)
+    // Sections are separated by a line ABOVE. A border-bottom on each of them drew a
+    // rule under the last one that closed nothing off and read as a cut-off panel;
+    // the title already carries its own bottom border, so the first section skips.
+    && initial.designPolish.sectionRules.count >= 2
+    && initial.designPolish.sectionRules.bottoms === 0
+    && initial.designPolish.sectionRules.firstTop === 0
+    && initial.designPolish.sectionRules.laterTops === initial.designPolish.sectionRules.count - 1
     && initial.designPolish.toolbarBorderContrast >= 3 && initial.designPolish.viewBorderContrast >= 3,
-  'keeps inspector chrome icon-free and gives meaningful viewer boundaries non-text contrast',
+  'closes the inspector with the portal cross and keeps the rest of its chrome text-only',
   `${initial.designPolish.toolbarBorderContrast.toFixed(2)}:1 / ${initial.designPolish.viewBorderContrast.toFixed(2)}:1`);
+
+  // Two controls that the rail rework left lying about their state. The colour trigger
+  // carries aria-haspopup and aria-controls; in edit mode the menu it names was not
+  // rendered at all, so it was a dead control that also left colorMenuOpen stuck true
+  // and swallowed the next Escape.
+  const colourInEdit = await page.evaluate(`(async () => {
+    const pause = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms));
+    const trigger = () => document.querySelector('#fpe-color-trigger');
+    const controls = trigger()?.getAttribute('aria-controls') || '';
+    const target = controls ? !!document.getElementById(controls) : false;
+    trigger()?.click(); await pause(360);
+    const opened = {
+      expanded: trigger()?.getAttribute('aria-expanded') || '',
+      menuVisible: !!document.querySelector('#fpe-color-menu:not([hidden])'),
+      options: document.querySelectorAll('#fpe-color-menu [data-color-mode]').length,
+    };
+    document.querySelector('#fpe-stage')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await pause(360);
+    const afterEscape = {
+      expanded: trigger()?.getAttribute('aria-expanded') || '',
+      menuVisible: !!document.querySelector('#fpe-color-menu:not([hidden])'),
+    };
+    return { controls, target, opened, afterEscape };
+  })()`);
+  check(colourInEdit.controls === 'fpe-color-menu' && colourInEdit.target
+    && colourInEdit.opened.expanded === 'true' && colourInEdit.opened.menuVisible
+    && colourInEdit.opened.options === 5
+    && colourInEdit.afterEscape.expanded === 'false' && !colourInEdit.afterEscape.menuVisible,
+  'renders the colour menu in edit mode, so its trigger is not a control pointing at nothing',
+  `controls ${colourInEdit.controls} present ${colourInEdit.target} · ${colourInEdit.opened.options} options`);
+
+  // The resource tree in the portal's tree language. Same contract as
+  // test-spatial-tree asserts for .pf-tree: indentation as row padding so every
+  // divider reaches both edges, one divider weight, a guide only along the selected
+  // branch, two-tone selection, and counts that stay machine-readable.
+  const resourceTree = await page.evaluate(`(async () => {
+    const pause = (ms = 220) => new Promise(resolve => setTimeout(resolve, ms));
+    const inset = node => node ? parseFloat(getComputedStyle(node).paddingLeft) : -1;
+    const divider = node => node ? getComputedStyle(node).borderBottomColor : '';
+    const guide = node => {
+      if (!node) return { drawn: false, width: 0, left: 0 };
+      const style = getComputedStyle(node, '::before');
+      return { drawn: style.content !== 'none', width: parseFloat(style.width) || 0, left: parseFloat(style.left) || 0 };
+    };
+    // Grouped view: three levels, so indentation has something to express.
+    document.querySelector('#fpe-color-trigger')?.click(); await pause();
+    document.querySelector('[data-color-mode="sia"]')?.click(); await pause(320);
+    // Query fresh after every redraw: opening a group replaces the whole list, and a
+    // detached node reports no computed style at all.
+    const head = () => document.querySelector('.fpe-resource-group__head');
+    head()?.click(); await pause(320);
+    document.querySelector('.fpe-resource-rooms .fpe-resource-room-toggle:not([disabled])')?.click();
+    await pause(320);
+    const roomLine = () => document.querySelector('.fpe-resource-rooms .fpe-resource-room-line');
+    const assetRow = () => document.querySelector('.fpe-resource-row--asset');
+    const count = head()?.querySelector('.fpe-resource-n');
+    const insets = { head: inset(head()), room: inset(roomLine()), asset: inset(assetRow()) };
+    const dividers = { head: divider(head()), room: divider(roomLine()), asset: divider(assetRow()) };
+    // Select the object, which makes its room an ancestor of the selection.
+    assetRow()?.click(); await pause(360);
+    const selectedAsset = document.querySelector('.fpe-resource-row--asset.is-selected');
+    const pathRoom = document.querySelector('.fpe-resource-room-line.is-path');
+    const style = selectedAsset ? getComputedStyle(selectedAsset) : null;
+    const pathStyle = pathRoom ? getComputedStyle(pathRoom) : null;
+    const holding = document.querySelector('.fpe-resource-assets:has(.is-selected)');
+    const quiet = [...document.querySelectorAll('.fpe-resource-assets')]
+      .filter(list => !list.querySelector('.is-selected'));
+    return {
+      insets, dividers,
+      countText: count?.textContent.trim() || '',
+      countNumeric: Number.isFinite(Number(count?.textContent.trim())),
+      selectedBar: style?.boxShadow || '',
+      selectedBackground: style?.backgroundColor || '',
+      pathBackground: pathStyle?.backgroundColor || '',
+      guideOnHolder: guide(holding),
+      guidesElsewhere: quiet.filter(list => guide(list).drawn).length,
+      rooms: document.querySelectorAll('.fpe-resource-room-line').length,
+    };
+  })()`);
+  await page.evaluate(`(async () => {
+    const pause = (ms = 260) => new Promise(resolve => setTimeout(resolve, ms));
+    document.querySelector('#fpe-color-trigger')?.click(); await pause();
+    document.querySelector('[data-color-mode="none"]')?.click(); await pause(320);
+    document.querySelector('[data-action="clear-selection"]')?.click(); await pause(260);
+  })()`);
+  const indentStep = resourceTree.insets.room - resourceTree.insets.head;
+  check(indentStep === 16
+    // The object row clears its room's disclosure column as well as one level.
+    && resourceTree.insets.asset > resourceTree.insets.room
+    // One divider weight and colour across all three levels.
+    && new Set(Object.values(resourceTree.dividers)).size === 1
+    // The count renders as (n) through pseudo-elements, so the text stays a number.
+    && resourceTree.countNumeric && !/[()]/.test(resourceTree.countText)
+    // Two tones: the selection dark with a primary bar, its room light.
+    && /rgb/.test(resourceTree.selectedBar)
+    && resourceTree.selectedBackground !== resourceTree.pathBackground
+    && resourceTree.pathBackground !== 'rgba(0, 0, 0, 0)'
+    // The guide is drawn on the list that holds the selection and nowhere else.
+    && resourceTree.guideOnHolder.drawn && resourceTree.guideOnHolder.width >= 2
+    && resourceTree.guidesElsewhere === 0,
+  'draws the resource tree in the portal tree language: one indent step, one divider, guide only in the selected branch',
+  `insets ${JSON.stringify(resourceTree.insets)} · count ${resourceTree.countText} · guide ${resourceTree.guideOnHolder.width}px · strays ${resourceTree.guidesElsewhere}`);
+
+  // Every menu must cover the chrome that launched it. Asserted by HIT-TESTING the
+  // menu's own box rather than by comparing numbers: the numbers were «correct» against
+  // the documented rungs while «Mehr» opened behind its own toolbar, because the scale
+  // stopped at `toolbar` and a toolbar-anchored menu had nowhere above it to sit.
+  const menuOrder = await page.evaluate(`(async () => {
+    const pause = (ms = 340) => new Promise(resolve => setTimeout(resolve, ms));
+    const escape = () => document.querySelector('#fpe-stage')?.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    const reaches = (selector) => {
+      const node = document.querySelector(selector);
+      if (!node) return '(missing)';
+      const box = node.getBoundingClientRect();
+      if (!box.width || !box.height) return '(zero box)';
+      const hit = document.elementFromPoint(box.left + box.width / 2,
+        box.top + Math.min(24, box.height / 2));
+      if (!hit) return '(nothing)';
+      if (node.contains(hit)) return 'menu';
+      return hit.closest('.fpe-toolbar') ? 'toolbar' : 'other';
+    };
+    const toolbarZ = Number(getComputedStyle(document.querySelector('.fpe-toolbar-host')).zIndex);
+    const open = async (trigger, selector) => {
+      document.querySelector(trigger)?.click();
+      await pause(420);
+      const node = document.querySelector(selector);
+      const result = { z: node ? Number(getComputedStyle(node).zIndex) : null, reaches: reaches(selector) };
+      escape(); await pause(320);
+      return result;
+    };
+    return {
+      toolbarZ,
+      more: await open('[data-action="toggle-more-menu"]', '.fpe-more-menu'),
+      structure: await open('[data-action="toggle-structure-menu"]', '.fpe-structure-menu'),
+      colour: await open('#fpe-color-trigger', '#fpe-color-menu'),
+    };
+  })()`);
+  check(menuOrder.toolbarZ > 0
+    && menuOrder.more.reaches === 'menu' && menuOrder.more.z > menuOrder.toolbarZ
+    // The structure menu exists only in edit mode, so on this page it is absent. It
+    // draws from the same `--fpe-z-menu` rung as «Mehr», which is asserted strictly
+    // above, so the token is covered either way.
+    && ['menu', '(missing)'].includes(menuOrder.structure.reaches)
+    && menuOrder.colour.reaches === 'menu',
+  'opens every plan-editor menu above the chrome that launched it',
+  `toolbar ${menuOrder.toolbarZ} · more ${menuOrder.more.z}/${menuOrder.more.reaches} · structure ${menuOrder.structure.z}/${menuOrder.structure.reaches} · colour ${menuOrder.colour.reaches}`);
+
+  // One measuring tool, Google-Maps style: points make a length, closing the ring
+  // makes an area with its perimeter, a click on a set point removes it, and the
+  // reading can be dismissed without leaving the tool.
+  const measure = await page.evaluate(`(async () => {
+    const pause = (ms = 140) => new Promise(resolve => setTimeout(resolve, ms));
+    const stage = () => document.querySelector('#fpe-stage');
+    const key = (name, times = 1) => {
+      for (let i = 0; i < times; i++) {
+        stage()?.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+      }
+    };
+    const reading = () => {
+      const box = document.querySelector('.fpe-measure-result');
+      return { text: box?.querySelector('.fpe-measure-result__value')?.textContent.trim() || '',
+        hidden: box?.hidden ?? null, dismissible: !!box?.querySelector('[data-action="clear-measure"]') };
+    };
+    const dots = () => document.querySelectorAll('.fpe-measure circle').length;
+    document.querySelector('[data-action="tool-measure"]')?.click(); await pause(200);
+    const tools = document.querySelectorAll('[data-action="tool-distance"],[data-action="tool-area"]').length;
+    stage()?.focus();
+    key(' '); await pause();
+    const onePoint = { ...reading(), dots: dots() };
+    key('ArrowRight', 12); key(' '); await pause();
+    const twoPoints = { ...reading(), dots: dots() };
+    key('ArrowDown', 12); key(' '); await pause();
+    key('ArrowLeft', 6); key(' '); await pause();
+    const fourPoints = { ...reading(), dots: dots() };
+    key('Enter'); await pause(200);
+    const closed = { ...reading(), dots: dots(), polygon: !!document.querySelector('.fpe-measure__area'),
+      closeTarget: !!document.querySelector('.fpe-measure__close-target') };
+    // A click on a set point removes it. Take the second, so the rule for the first
+    // (which closes the ring) is not the one under test.
+    const second = document.querySelectorAll('.fpe-measure circle')[1];
+    const rect = second?.getBoundingClientRect();
+    if (rect) {
+      const target = document.querySelector('#fpe-canvas') || stage();
+      for (const type of ['pointerdown', 'pointerup']) {
+        target?.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 44,
+          pointerType: 'mouse', button: 0, buttons: type === 'pointerdown' ? 1 : 0,
+          clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 }));
+      }
+      await pause(220);
+    }
+    const removed = { ...reading(), dots: dots() };
+    document.querySelector('[data-action="clear-measure"]')?.click(); await pause(200);
+    const cleared = { ...reading(), dots: dots() };
+    document.querySelector('[data-action="tool-select"]')?.click(); await pause();
+    return { tools, onePoint, twoPoints, fourPoints, closed, removed, cleared };
+  })()`);
+  check(measure.tools === 0
+    // One point has no length yet, so the card counts instead of staying blank —
+    // an open measurement should never look like no measurement.
+    && measure.onePoint.text === '1 Punkt' && measure.onePoint.dots === 1
+    // A length, not an area. The number is locale-formatted and may carry a
+    // non-breaking space, so match the unit rather than a word boundary.
+    && measure.twoPoints.text.endsWith('m') && !/m²/.test(measure.twoPoints.text)
+    && measure.twoPoints.dots === 2
+    && measure.fourPoints.dots === 4
+    && /m²/.test(measure.closed.text) && /Umfang/.test(measure.closed.text)
+    && measure.closed.polygon && measure.closed.dots === 4
+    // Nothing left to close once it is closed.
+    && measure.closed.closeTarget === false
+    && measure.removed.dots === 3
+    && measure.cleared.dots === 0 && measure.cleared.hidden === true
+    && measure.closed.dismissible,
+  'measures with one tool: length from points, area and perimeter when closed, click to drop a point',
+  `${measure.twoPoints.text} → ${measure.closed.text} → ${measure.removed.dots} dots → cleared`);
+
+  // Inspector sections fold away. The heading is a real button with `aria-expanded`
+  // and `aria-controls`, built like the resource tree's own group disclosure rather
+  // than as a second kind of toggle.
+  const collapsible = await page.evaluate(`(async () => {
+    const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const head = () => document.querySelector('[data-inspector-section="floor-attributes"]');
+    const body = () => document.querySelector('#fpe-section-floor-attributes');
+    const first = { expanded: head()?.getAttribute('aria-expanded'), hidden: body()?.hidden,
+      controls: head()?.getAttribute('aria-controls') || '', chevron: head()?.querySelector('.icon')?.getAttribute('style') || '' };
+    head()?.click(); await pause(120);
+    const shut = { expanded: head()?.getAttribute('aria-expanded'), hidden: body()?.hidden,
+      chevron: head()?.querySelector('.icon')?.getAttribute('style') || '',
+      focused: document.activeElement === head() };
+    head()?.click(); await pause(120);
+    return { first, shut, reopened: { expanded: head()?.getAttribute('aria-expanded'), hidden: body()?.hidden },
+      heads: document.querySelectorAll('.fpe-inspector-section__head').length,
+      bareHeadings: [...document.querySelectorAll('.fpe-inspector-section > h3')]
+        .filter(node => !node.querySelector('.fpe-inspector-section__head')).length };
+  })()`);
+  check(collapsible.first.expanded === 'true' && collapsible.first.hidden === false
+    && collapsible.first.controls === 'fpe-section-floor-attributes'
+    && /ChevronDown\.svg/.test(collapsible.first.chevron)
+    && collapsible.shut.expanded === 'false' && collapsible.shut.hidden === true
+    && /ChevronRight\.svg/.test(collapsible.shut.chevron) && collapsible.shut.focused
+    && collapsible.reopened.expanded === 'true' && collapsible.reopened.hidden === false
+    && collapsible.heads >= 3 && collapsible.bareHeadings === 0,
+  'collapses inspector sections from their heading and keeps focus on the control',
+  `${collapsible.heads} disclosures · ${collapsible.bareHeadings} bare headings`);
   check(initial.overflow <= 1 && initial.duplicateIds.length === 0
     && initial.unlabeledControls === 0 && initial.unnamedButtons === 0
     && initial.headingJumps.length === 0,
@@ -1076,6 +1385,29 @@ try {
   check(threeClickPoint?.hit === 'view-3d' && pointerThreeD.active === 'true'
     && pointerThreeD.view === '3d' && pointerThreeD.host && !pointerThreeD.twoD,
   'opens the 3D view through a real hit-tested pointer click', threeClickPoint?.hit || 'missing hit target');
+
+  // Both views express zoom as a ratio of «everything fits», which is unit-free,
+  // so a switch has to land on the same place at the same zoom instead of resetting.
+  const cameraBridge = await page.evaluate(`(async () => {
+    const pause = (ms = 200) => new Promise(r => setTimeout(r, ms));
+    document.querySelector('[data-action="view-2d"]')?.click();
+    await pause(400);
+    const read = () => (document.querySelector('#fpe-canvas')?.getAttribute('viewBox') || '').split(/\\s+/).map(Number);
+    const fit = read();
+    document.querySelector('#fpe-action-zoom-in')?.click(); await pause();
+    document.querySelector('#fpe-action-zoom-in')?.click(); await pause(300);
+    const zoomed = read();
+    const planRatio = zoomed[2] / fit[2];
+    document.querySelector('#fpe-view-3d')?.click();
+    await pause(2400);
+    const host = document.querySelector('#fpe-three-host');
+    return { planRatio: planRatio.toFixed(2), threeRatio: Number(host?.dataset.orbitFitRatio || 0).toFixed(2) };
+  })()`);
+  check(Math.abs(Number(cameraBridge.planRatio) - Number(cameraBridge.threeRatio)) <= 0.12
+    && Number(cameraBridge.threeRatio) < 0.95,
+  'carries the plan zoom into the 3D view instead of resetting it',
+  `plan ${cameraBridge.planRatio} · 3D ${cameraBridge.threeRatio}`);
+
   await page.evaluate(`document.querySelector('[data-action="view-2d"]')?.click()`);
   await sleep(120);
   const views = await page.evaluate(`(async () => {
@@ -1178,6 +1510,12 @@ try {
       view: new URLSearchParams(location.hash.split('?')[1] || '').get('view') || '',
       twoDCanvas: !!document.querySelector('#fpe-canvas'),
       toolbarVisible: Boolean(document.querySelector('#fpe-toolbar-host .fpe-toolbar')?.getBoundingClientRect().height),
+      treeVisible: (() => {
+        const rail = document.querySelector('#fpe-left');
+        return Boolean(rail && getComputedStyle(rail).visibility === 'visible'
+          && rail.getAttribute('aria-label') === 'Ressourcen'
+          && rail.querySelector('#fpe-left-list')?.children.length);
+      })(),
       toolbarHints: document.querySelectorAll('#fpe-toolbar-host .fpe-toolbar__hint').length,
       toolbarPrint: !!document.querySelector('#fpe-toolbar-host [data-action="print"]'),
       zoomButtons: document.querySelectorAll('#fpe-view-actions-host :is([data-action="zoom-in"],[data-action="zoom-out"])').length,
@@ -1228,6 +1566,12 @@ try {
         && dot(displacement(walkD), right) > 0
         && dot(displacement(walkA), right) < 0,
       toolbarVisible: Boolean(document.querySelector('#fpe-toolbar-host .fpe-toolbar')?.getBoundingClientRect().height),
+      treeVisible: (() => {
+        const rail = document.querySelector('#fpe-left');
+        return Boolean(rail && getComputedStyle(rail).visibility === 'visible'
+          && rail.getAttribute('aria-label') === 'Ressourcen'
+          && rail.querySelector('#fpe-left-list')?.children.length);
+      })(),
       toolbarHints: document.querySelectorAll('#fpe-toolbar-host .fpe-toolbar__hint').length,
       toolbarPrint: !!document.querySelector('#fpe-toolbar-host [data-action="print"]'),
       reticle: !!document.querySelector('.fpe-walk-reticle'),
@@ -1253,7 +1597,11 @@ try {
     && views.threeD.placements === initial.placementCount && views.threeD.canvas.width > 0
     && views.threeD.canvas.height > 0 && views.threeD.orbitMoved && views.threeD.cameraPreserved && views.threeD.view === '3d'
     && !views.threeD.twoDCanvas && views.threeD.reset && views.threeD.resetInViewActions
-    && !views.threeD.toolbarVisible && views.threeD.toolbarHints === 0 && !views.threeD.toolbarPrint
+    // The structure tree stays in the rail in the 3D model too. It used to vanish
+    // there — not because of the renderer, but because edit mode handed the rail to
+    // the library and closed it.
+    && views.threeD.treeVisible
+    && views.threeD.toolbarVisible && views.threeD.toolbarHints === 0 && !views.threeD.toolbarPrint
     && views.threeD.zoomButtons === 2 && views.threeD.zoomButtonsWork
     && views.threeD.leftPans && views.threeD.leftPanDirection && views.threeD.clickJitterStable
     && views.threeD.cameraAspectMatches && views.threeD.normalizedPanScale && views.threeD.rightRotates
@@ -1263,7 +1611,7 @@ try {
   `${views.threeD.renderer} · ${views.threeD.rooms} rooms · ${views.threeD.placements} objects`);
   check(views.walk.active === 'true' && views.walk.classed && /^Three\.js r\d+/.test(views.walk.renderer)
     && /keyboard-walk/.test(views.walk.controls) && views.walk.moved && views.walk.directionsCorrect
-    && !views.walk.toolbarVisible && views.walk.toolbarHints === 0 && !views.walk.toolbarPrint
+    && views.walk.toolbarVisible && views.walk.toolbarHints === 0 && !views.walk.toolbarPrint
     && views.walk.reticle && views.walk.view === 'walk'
     && views.twoD && !views.finalView && views.keyboardTwoD === '2d',
   'walks through the generated floor and returns through keyboard-operable view navigation');
@@ -1347,7 +1695,8 @@ try {
     const stateRect = editState?.getBoundingClientRect();
     const headerRect = editHeader?.getBoundingClientRect();
     const entry = {
-      libraryOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
+      libraryOpen: !!document.querySelector('#fpe-library'),
+      treeOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
       libraryQuery: new URLSearchParams(location.hash.split('?')[1] || '').get('library') || '',
       toolbarActions: [...document.querySelectorAll('#fpe-toolbar-host [data-action]')].map(node => node.dataset.action),
       addPressed: document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '',
@@ -1362,9 +1711,13 @@ try {
     fire(document.querySelector('[data-action="view-2d"]')); await pause();
     fire(document.querySelector('[data-action="toggle-library"]')); await pause();
     const opened = {
-      libraryOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
+      libraryOpen: !!document.querySelector('#fpe-library'),
+      treeOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
       libraryQuery: new URLSearchParams(location.hash.split('?')[1] || '').get('library') || '',
       addPressed: document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '',
+      libraryName: document.querySelector('#fpe-library .modal__title')?.textContent.trim() || '',
+      libraryRole: document.querySelector('#fpe-library .modal__content')?.getAttribute('role') || '',
+      libraryModal: document.querySelector('#fpe-library')?.getAttribute('aria-modal') || '',
     };
     const productsTab = document.querySelector('[data-library="products"]');
     productsTab?.focus();
@@ -1379,7 +1732,8 @@ try {
     if (!stagedProduct) return { error: 'product library is empty before placement staging' };
     fire(stagedProduct); await pause();
     const staged = {
-      libraryOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
+      libraryOpen: !!document.querySelector('#fpe-library'),
+      treeOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
       libraryQuery: new URLSearchParams(location.hash.split('?')[1] || '').get('library') || '',
       addPressed: document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '',
       stageFocused: document.activeElement?.id === 'fpe-stage',
@@ -1404,8 +1758,9 @@ try {
         : Number.POSITIVE_INFINITY,
       entry, opened, staged, twoDEditBorder, threeDEditBorder,
       libraryKeyboard: modulesViaKeyboard && productsViaKeyboard,
-      library: document.querySelector('#fpe-left')?.getAttribute('aria-label') || '',
-      libraryOpenAfterPlacement: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
+      rail: document.querySelector('#fpe-left')?.getAttribute('aria-label') || '',
+      libraryOpenAfterPlacement: !!document.querySelector('#fpe-library'),
+      treeOpenAfterPlacement: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
       libraryQueryAfterPlacement: new URLSearchParams(location.hash.split('?')[1] || '').get('library') || '',
       addPressedAfterPlacement: document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '',
       before, after: document.querySelectorAll('.fpe-placement').length,
@@ -1416,18 +1771,35 @@ try {
       saveEnabled: !document.querySelector('[data-action="save"]')?.disabled,
     };
   })()`);
-  check(!added.error && added.editing && added.library === 'Produktbibliothek'
+  // The resource tree stays in the rail in edit mode, and the library is a dialog:
+  // one slot cannot be both a navigation tree and a furniture picker, and making it
+  // both is why the tree vanished the moment anyone started editing.
+  check(!added.error && added.editing && added.rail === 'Ressourcen'
+    && added.entry.treeOpen && added.opened.treeOpen && added.staged.treeOpen
+    && added.opened.libraryName === 'Bibliothek' && added.opened.libraryRole === 'dialog'
+    && added.opened.libraryModal === 'true'
     && added.editStateInHeader && !added.editStateInContext && added.editStateCenterDelta <= 1
     && /rgb/.test(added.twoDEditBorder.shadow) && added.twoDEditBorder.shadow === added.threeDEditBorder.shadow
-    && added.threeDEditBorder.zIndex === 30 && added.threeDEditBorder.pointerEvents === 'none'
+    // Above the scene, below the menus, and never intercepting a click. Asserted as an
+    // ORDER rather than as the literal 30 it used to be: that number was a private
+    // z-index scale the CSS gate forbids in source, so the test was pinning the one
+    // thing the codebase was trying to remove.
+    && added.threeDEditBorder.zIndex > 0 && added.threeDEditBorder.zIndex < 5
+    && added.threeDEditBorder.pointerEvents === 'none'
     && !added.entry.libraryOpen && !added.entry.libraryQuery && added.entry.addPressed === 'false'
-    && added.entry.toolbarActions.join(',') === 'toggle-library,tool-select,tool-distance,tool-area,toggle-structure-menu,undo,redo'
+    && added.entry.toolbarActions.join(',') === 'toggle-library,tool-select,tool-measure,toggle-structure-menu,undo,redo'
     && added.opened.libraryOpen && added.opened.libraryQuery === 'products' && added.opened.addPressed === 'true'
     && !added.staged.libraryOpen && !added.staged.libraryQuery && added.staged.addPressed === 'true' && added.staged.stageFocused
     && added.libraryKeyboard && !added.libraryOpenAfterPlacement && !added.libraryQueryAfterPlacement
-    && added.addPressedAfterPlacement === 'false',
+    // The picker shuts once a product is chosen; the tree it used to displace stays.
+    && added.treeOpenAfterPlacement
+    // The product stays ARMED after a placement so a run of the same chair is one
+    // click each instead of a trip back to the library, and the pressed Add button
+    // is what makes that state visible. The library itself stays shut: it has done
+    // its job the moment a product is chosen.
+    && added.addPressedAfterPlacement === 'true',
   'starts edit mode with the wireframe toolbar and opens the library only through Add',
-  added.error || `${added.library} · center delta ${added.editStateCenterDelta}px`);
+  added.error || `rail ${added.rail} · dialog ${added.opened.libraryName} · tree kept ${added.treeOpenAfterPlacement}`);
   check(!added.error && added.after === added.before + 1 && /^local-/.test(added.localId)
     && added.selected === added.localId && added.inspector.includes(added.localId)
     && added.undoEnabled && added.saveEnabled,
@@ -1455,6 +1827,196 @@ try {
   check(history.afterRedo === added.after && history.localAfterRedo && history.undoEnabled,
     'redo restores the same placement and enables undo', `${history.afterRedo} placements`);
 
+  // The placement preview in the plan. Neither view had any coverage for this, and
+  // the 3D one was missing altogether.
+  const ghost2d = await page.evaluate(`(async () => {
+    const pause = (ms = 200) => new Promise(resolve => setTimeout(resolve, ms));
+    // Re-query on every use. Each redraw replaces the scene's markup, so a handle held
+    // across one is detached: its screen matrix degenerates to identity and events
+    // dispatched on it reach no listener, which makes every later assertion read a
+    // stale ghost and pass or fail for the wrong reason.
+    const surface = () => document.querySelector('#fpe-canvas');
+    if (!surface()) return { error: 'no 2D canvas' };
+    const viewBox = surface().viewBox.baseVal;
+    // The element's own screen matrix, not a linear viewBox scale: preserveAspectRatio
+    // letterboxes the drawing inside the element.
+    const toClient = (planX, planY) => {
+      const svg = surface();
+      const matrix = svg?.getScreenCTM();
+      if (!matrix) return null;
+      const point = svg.createSVGPoint();
+      point.x = planX;
+      point.y = planY;
+      const screen = point.matrixTransform(matrix);
+      return { x: screen.x, y: screen.y };
+    };
+    // Room footprints straight from the drawn shapes, so the probe agrees with what
+    // is on screen rather than with a copy of the fixture.
+    const rooms = [...document.querySelectorAll('.fpe-room')].map(group => {
+      const shape = group.querySelector('rect, path, polygon');
+      if (!shape || shape.tagName.toLowerCase() !== 'rect') return null;
+      return {
+        x: Number(shape.getAttribute('x')), y: Number(shape.getAttribute('y')),
+        w: Number(shape.getAttribute('width')), h: Number(shape.getAttribute('height')),
+      };
+    }).filter(Boolean);
+    const first = rooms[0];
+    const centre = first ? { x: first.x + first.w / 2, y: first.y + first.h / 2 } : null;
+    // A point inside the drawing but in no room. Ask the browser what is under the
+    // point rather than re-deriving containment: rooms drawn as a path or a polygon
+    // are not rects, and treating them as gaps produced a false negative.
+    let gap = null;
+    for (let py = viewBox.y + 30; py < viewBox.y + viewBox.height - 30 && !gap; py += 11) {
+      for (let px = viewBox.x + 30; px < viewBox.x + viewBox.width - 30; px += 11) {
+        const client = toClient(px, py);
+        const node = document.elementFromPoint(client.x, client.y);
+        if (node && !node.closest('.fpe-room') && node.closest('#fpe-canvas')) { gap = { x: px, y: py }; break; }
+      }
+    }
+    const move = point => {
+      const client = toClient(point.x, point.y);
+      if (!client) return;
+      surface()?.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true,
+        pointerId: 12, pointerType: 'mouse', buttons: 0, clientX: client.x, clientY: client.y }));
+    };
+    const read = () => {
+      const node = document.querySelector('.fpe-ghost');
+      return node ? (node.classList.contains('is-valid') ? 'valid' : 'invalid') : 'none';
+    };
+    const before = read();
+    if (centre) { move(centre); await pause(260); }
+    const onRoom = read();
+    if (gap) { move(gap); await pause(260); }
+    const onGap = read();
+    // The fitted camera pads the viewBox beyond the floor, so a point in that margin
+    // is on the canvas but off the plan. No preview belongs there.
+    move({ x: -60, y: -60 }); await pause(320);
+    const offPlan = read();
+    // Restore the pointer to a valid spot. The keyboard cursor follows the pointer, so
+    // leaving it in a gap makes the next probe's Enter land outside every room and be
+    // refused — which is correct behaviour, and a trap for a probe that does not know it.
+    if (centre) { move(centre); await pause(260); }
+    if (centre) { move(centre); await pause(260); }
+    return { error: '', rooms: rooms.length, before, onRoom, onGap, offPlan, hasGap: Boolean(gap),
+      restored: read() };
+  })()`);
+  check(!ghost2d.error && ghost2d.rooms > 0 && ghost2d.onRoom === 'valid'
+    // Off the plan there is no preview at all. The floor ray in 3D meets an infinite
+    // plane, so without this guard a preview could sit tens of metres past the
+    // building; the plan's padded viewBox makes the same case reachable here.
+    && ghost2d.offPlan === 'none'
+    && ghost2d.restored === 'valid',
+  'previews the armed product under the pointer in the plan and tints it by validity',
+  ghost2d.error || `room ${ghost2d.onRoom} · gap ${ghost2d.onGap} · off-plan ${ghost2d.offPlan}`);
+
+  // The dialog declares aria-modal, so it has to enforce it. A container that claims
+  // modality without trapping anything is worse than one that claims nothing: a screen
+  // reader stops describing the page while Tab still walks behind it, and the editor's
+  // own shortcuts stayed live — Backspace deleted the selected object out of view.
+  const modality = await page.evaluate(`(async () => {
+    const pause = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms));
+    const fire = node => node?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const count = () => document.querySelectorAll('.fpe-placement').length;
+    const inert = selector => document.querySelector(selector)?.inert ?? null;
+    const closed = { workbench: inert('.fpe-workbench'), header: inert('.fpe-header') };
+    fire(document.querySelector('[data-action="toggle-library"]')); await pause(420);
+    const open = {
+      dialog: !!document.querySelector('#fpe-library'),
+      workbench: inert('.fpe-workbench'), header: inert('.fpe-header'),
+      surface: (() => {
+        const card = document.querySelector('#fpe-library .card');
+        return card ? getComputedStyle(card).backgroundColor : '';
+      })(),
+      contained: (() => {
+        const content = document.querySelector('#fpe-library .modal__content');
+        const tabs = document.querySelector('#fpe-library .fpe-library-tabs');
+        if (!content || !tabs) return null;
+        const a = content.getBoundingClientRect();
+        const b = tabs.getBoundingClientRect();
+        return b.left >= a.left - 1 && b.right <= a.right + 1;
+      })(),
+    };
+    // Destructive keys must not reach the document behind the dialog — from OUTSIDE it,
+    // and just as importantly from INSIDE. Product tiles are buttons, so focus normally
+    // sits on one, and guarding only on outside events left every editor shortcut live.
+    const before = count();
+    document.querySelector('#fpe-stage')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }));
+    await pause(360);
+    const afterOutside = count();
+    const tile = document.querySelector('#fpe-library .fpe-product[data-product]');
+    tile?.focus();
+    const focusedTile = document.activeElement === tile;
+    for (const key of ['Backspace', 'Delete', 'r', 'v', 'h']) {
+      tile?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+      await pause(90);
+    }
+    await pause(320);
+    const afterInside = count();
+    const survived = !!document.querySelector('#fpe-library');
+    const afterBackspace = afterInside;
+    // Escape belongs to the dialog and closes it.
+    document.querySelector('#fpe-stage')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await pause(420);
+    const after = {
+      dialog: !!document.querySelector('#fpe-library'),
+      workbench: inert('.fpe-workbench'), header: inert('.fpe-header'),
+    };
+    // Put the armed product back. Escape closed the dialog AND disarmed, and the probes
+    // below expect the run-of-the-same-object state the flow above established. Clicking
+    // a product while a placement is selected arms without placing, so this restores the
+    // tool without touching the document or the history.
+    fire(document.querySelector('[data-action="toggle-library"]')); await pause(420);
+    fire(document.querySelector('#fpe-library .fpe-product[data-product]')); await pause(420);
+    const restored = {
+      armed: document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '',
+      count: count(),
+    };
+    return { closed, open, before, afterOutside, afterInside, focusedTile, survived, afterBackspace, after, restored };
+  })()`);
+  check(modality.closed.workbench === false && modality.closed.header === false
+    && modality.open.dialog && modality.open.workbench === true && modality.open.header === true
+    && modality.open.surface === 'rgb(255, 255, 255)' && modality.open.contained === true
+    && modality.afterOutside === modality.before
+    // Focus on a tile, five destructive or tool-switching keys, nothing changed and the
+    // dialog is still standing.
+    && modality.focusedTile && modality.afterInside === modality.before && modality.survived
+    && !modality.after.dialog && modality.after.workbench === false && modality.after.header === false
+    && modality.restored.armed === 'true' && modality.restored.count === modality.before,
+  'enforces the library dialog modality: inert workbench, own surface, no destructive keys behind it',
+  `inert ${modality.open.workbench} · surface ${modality.open.surface} · outside ${modality.before}→${modality.afterOutside} · on-tile ${modality.before}→${modality.afterInside} · dialog ${modality.survived}`);
+
+  // A run of the same product: with the tool still armed, Enter on the stage stamps
+  // another copy. This is the behaviour the pressed Add button above promises, and
+  // the reason placing no longer ends after one object.
+  const serialPlacement = await page.evaluate(`(async () => {
+    const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const stage = document.querySelector('#fpe-stage');
+    const armed = document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '';
+    const before = document.querySelectorAll('.fpe-placement').length;
+    stage?.focus?.();
+    stage?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    await pause(120);
+    const after = document.querySelectorAll('.fpe-placement').length;
+    const stillArmed = document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '';
+    // Put the floor back the way the drag probe below expects to find it.
+    document.querySelector('[data-action="undo"]')?.click();
+    await pause(120);
+    return { armed, before, after, stillArmed, restored: document.querySelectorAll('.fpe-placement').length };
+  })()`);
+  check(serialPlacement.armed === 'true' && serialPlacement.after === serialPlacement.before + 1
+    && serialPlacement.stillArmed === 'true' && serialPlacement.restored === serialPlacement.before,
+  'keeps the product armed so a run of the same object is one keystroke each',
+  `${serialPlacement.before} → ${serialPlacement.after} → ${serialPlacement.restored}`);
+
+  // Escape first: the placement tool stays armed on purpose, and while it is a
+  // click on the stage stamps another copy rather than grabbing what is there.
+  // This is the same order of operations a person uses — finish the run, then adjust.
+  await page.evaluate(`(() => {
+    const stage = document.querySelector('#fpe-stage');
+    stage?.focus?.();
+    stage?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  })()`);
+  await new Promise(resolve => setTimeout(resolve, 120));
   const cancelledPlacementDrag = await page.evaluate(`(async () => {
     const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     const placementId = ${JSON.stringify(added.localId || '')};
@@ -1628,7 +2190,13 @@ try {
     document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await pause();
     const structureFocusReturned = document.activeElement?.id === 'fpe-structure-trigger';
     click('#fpe-structure-trigger'); await pause();
-    const unavailableTools = document.querySelectorAll('#fpe-structure-menu [role="menuitem"][disabled]').length;
+    // Unlocked, the menu shows the element catalogue behind the lock: every one of
+    // them disabled, none of them a working tool.
+    const unavailableTools = document.querySelectorAll('#fpe-structure-menu [role="menuitem"][disabled]:not([data-structure-element])').length;
+    const elements = document.querySelectorAll('#fpe-structure-menu [data-structure-element]').length;
+    const liveElements = document.querySelectorAll('#fpe-structure-menu [data-structure-element]:not([disabled])').length;
+    const elementGlyphs = document.querySelectorAll('#fpe-structure-menu [data-structure-element] .fpe-element-icon').length;
+    const elementHints = /Vorbereitung/.test(document.querySelector('#fpe-structure-menu')?.textContent || '');
     click('[data-action="toggle-structure-lock"]'); await pause();
     const locked = document.querySelector('#fpe-app')?.classList.contains('is-structure-locked')
       && !!document.querySelector('[data-room-geometry][disabled]')
@@ -1739,9 +2307,11 @@ try {
       inspector: document.querySelector('#fpe-right')?.textContent.replace(/\\s+/g, ' ').trim() || '',
       roomModule: document.querySelector('[data-room-field="moduleId"]')?.value || '',
       menuKeyboard, lockViaKeyboard, structureFocusReturned, unavailableTools, locked,
+      elements, liveElements, elementGlyphs, elementHints,
       middlePanDuringAuthoring, middleMoved, middleRoomStable, middleToolActive,
       middleBefore, middleAfter,
-      libraryOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
+      libraryOpen: !!document.querySelector('#fpe-library'),
+      treeOpen: document.querySelector('#fpe-app')?.classList.contains('has-left') || false,
       library: new URLSearchParams(location.hash.split('?')[1] || '').get('library') || '',
       selectedQuery: new URLSearchParams(location.hash.split('?')[1] || '').get('selected') || '',
       width: document.querySelector('[data-room-geometry="width"]')?.value || '',
@@ -1755,7 +2325,13 @@ try {
     && structure.handleHitWidth >= 32 && structure.handleVisualWidth >= 12
     && structure.middlePanDuringAuthoring
     && structure.menuKeyboard && structure.lockViaKeyboard && structure.structureFocusReturned
-    && structure.unavailableTools === 0 && structure.locked,
+    && structure.unavailableTools === 0 && structure.locked
+    // The full range of structural elements is visible but inert: showing only the
+    // room rectangle made structural editing look like a finished, very small
+    // feature. Glyphs are inline SVG because the icon set has no architectural
+    // symbols, and the caveat sits in the heading rather than on twelve rows.
+    && structure.elements === 12 && structure.liveElements === 0
+    && structure.elementGlyphs === 12 && structure.elementHints,
   'exposes the structural-edit menu, lock state, and rectangular area tool accessibly',
   structure.error || JSON.stringify({
     before: structure.before, after: structure.after, localId: structure.localId,
@@ -1774,6 +2350,8 @@ try {
     && structure.saveEnabled && !structure.prematurelyStored,
   'opens the contextual library from the inspector, assigns a module, and closes it after completion',
   `module ${structure.roomModule} · ${structure.width} cm`);
+
+
 
   const saved = await page.evaluate(`(async () => {
     document.querySelector('[data-action="save"]')
@@ -1913,11 +2491,15 @@ try {
     const criticalActionsInViewport = Boolean(moreRect && moreRect.left >= 0 && moreRect.right <= innerWidth);
     more?.click(); await pause();
     const modeLabels = [...document.querySelectorAll('[data-view-mode]')].map(button => button.textContent.trim()).join(',');
-    const minimumCustomTarget = Math.min(...[...document.querySelectorAll('.fpe-library-tabs button,.fpe-resource-row,.fpe-resource-room-toggle')]
-      .map(control => Math.min(control.getBoundingClientRect().width, control.getBoundingClientRect().height))
-      .filter(Number.isFinite));
     document.querySelector('[data-action="toggle-left"]')?.click(); await pause();
     const shown = state();
+    // Visible controls only: the resource tree keeps collapsed groups in the DOM
+    // behind the hidden attribute, and a box with no client rects has no target.
+    const minimumCustomTarget = Math.min(...[...document.querySelectorAll('.fpe-library-tabs button,.fpe-resource-row,.fpe-resource-room-toggle')]
+      .filter(control => control.getClientRects().length > 0)
+      .map(control => Math.min(control.getBoundingClientRect().width, control.getBoundingClientRect().height))
+      .filter(Number.isFinite));
+
     document.querySelector('[data-action="toggle-left"]')?.click(); await pause();
     const hidden = state();
     document.querySelector('[data-action="toggle-left"]')?.click(); await pause();
@@ -2011,10 +2593,12 @@ try {
     right: document.querySelector('#fpe-app')?.classList.contains('has-right') || false,
     leftWidth: document.querySelector('#fpe-left')?.getBoundingClientRect().width || 0,
     rightWidth: document.querySelector('#fpe-right')?.getBoundingClientRect().width || 0,
+    rail: document.querySelector('#fpe-left')?.getAttribute('aria-label') || '',
   }))()`);
-  check(!desktopPanels.left && desktopPanels.right && desktopPanels.leftWidth <= 1 && desktopPanels.rightWidth > 0,
-    'returns to the canvas-focused edit layout after leaving compact mode',
-    `${Math.round(desktopPanels.leftWidth)}/${Math.round(desktopPanels.rightWidth)}px`);
+  check(desktopPanels.left && desktopPanels.right && desktopPanels.leftWidth > 0 && desktopPanels.rightWidth > 0
+    && desktopPanels.rail === 'Ressourcen',
+    'restores both rails after leaving compact mode, the left one still the resource tree',
+    `${Math.round(desktopPanels.leftWidth)}/${Math.round(desktopPanels.rightWidth)}px · ${desktopPanels.rail}`);
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 320, height: 900, deviceScaleFactor: 1, mobile: false }, page.sessionId);
   await sleep(160);
@@ -2025,7 +2609,7 @@ try {
   check(!compactReset.left && !compactReset.right,
     'returns to compact mode with both drawers closed');
 
-  await page.evaluate(`document.querySelector('.fpe-breadcrumb a:nth-of-type(2)')?.click()`);
+  await page.evaluate(`document.querySelector('.fpe-breadcrumb a:nth-of-type(3)')?.click()`);
   check(await waitFor(page, '#fpe-object'),
     'returns from the canvas to the building detail through the breadcrumb');
   const returnedNavigation = await page.evaluate(`(() => {
@@ -2047,7 +2631,7 @@ try {
   check(returnedNavigation.standalone && returnedNavigation.navigation && !returnedNavigation.canvas
     && !returnedNavigation.portalHeader && !returnedNavigation.portalFooter,
   'keeps the user inside the standalone Plan-Editor application', returnedNavigation.hash);
-  check(/Liebefeld/.test(returnedNavigation.h1) && returnedNavigation.crumb === 'Alle Objekte'
+  check(/Liebefeld/.test(returnedNavigation.h1) && returnedNavigation.crumb === 'Kundenportal'
     && returnedNavigation.floors === '3'
     && /building=1080%2F6650%2FAA/i.test(returnedNavigation.hash) && !returnedNavigation.hash.includes('floor=')
     && returnedNavigation.homeHref === '#/app/floorplan-editor',
@@ -2096,6 +2680,274 @@ try {
     && compactWork.documentOverflow <= 1,
   'keeps the work queue usable at 320 px without opening the document',
   `${compactWork.rows} rows · action ${compactWork.actionHeight}px · ${compactWork.documentOverflow}px overflow`);
+
+
+
+  // A page of its own: every earlier flow leaves the editor in a different state,
+  // and the assertions below need edit mode, the 3D view and a selected placement
+  // together. It runs before the logout section, which clears the session for the
+  // whole origin.
+  const threePage = await openPage(cdp,
+    `${ROUTE}&edit=1&view=3d&selected=${encodeURIComponent(`placement:${FLOOR_ID}--${ROOM_ID}--demo-1-24`)}`,
+    { login: true });
+  await cdp.send('Emulation.setDeviceMetricsOverride',
+    { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, threePage.sessionId);
+  await sleep(3400);
+  console.log(`
+■ Authoring in the 3D view`);
+  // Self-contained on purpose: edit mode, the 3D view and a selected placement
+  // are requested through the URL instead of inherited, because every earlier
+  // flow leaves the editor in a different state.
+  await cdp.send('Page.navigate', { url: `${ROUTE}&edit=1&view=3d`
+    + `&selected=${encodeURIComponent(`placement:${FLOOR_ID}--${ROOM_ID}--demo-1-24`)}` }, page.sessionId);
+  await sleep(3200);
+
+  // The toolbar used to disappear entirely outside the 2D plan, which read as a
+  // broken view rather than a restricted one. It is shown everywhere now, with the
+  // tools a renderer cannot carry out disabled AND named.
+  const toolbar3d = await threePage.evaluate(`(() => {
+    const bar = document.querySelector('#fpe-toolbar-host .fpe-toolbar');
+    const btn = (id) => document.querySelector('#fpe-action-' + id);
+    return {
+      present: !!bar,
+      selectEnabled: !btn('tool-select')?.disabled,
+      libraryEnabled: !btn('toggle-library')?.disabled,
+      // Same place as in the plan. The model used to pin the bar to the top-right
+      // corner, so the one piece of chrome common to both views moved on every switch.
+      centreDelta: (() => {
+        const host = document.querySelector('#fpe-toolbar-host');
+        const stage = document.querySelector('#fpe-stage');
+        if (!host || !stage) return null;
+        const a = host.getBoundingClientRect();
+        const b = stage.getBoundingClientRect();
+        return Math.round((a.left + a.right) / 2 - (b.left + b.right) / 2);
+      })(),
+      measureDisabled: !!btn('tool-measure')?.disabled,
+      structureDisabled: !!document.querySelector('#fpe-structure-trigger')?.disabled,
+      reason: btn('tool-measure')?.getAttribute('title') || '',
+    };
+  })()`);
+  check(toolbar3d.present && toolbar3d.selectEnabled && toolbar3d.libraryEnabled
+    && Math.abs(toolbar3d.centreDelta) <= 1
+    && toolbar3d.measureDisabled
+    // The structure trigger is LIVE in the model: the lock state and the element
+    // catalogue behind it are the same there as in the plan. Only the room-rectangle
+    // item needs the flat drawing, and it disables itself inside the menu.
+    && !toolbar3d.structureDisabled
+    && /nur im 2D-Plan/.test(toolbar3d.reason),
+  'keeps the toolbar in 3D and disables the plan-only tools with a stated reason', toolbar3d.reason);
+
+  // The transform widget: the same ring as the plan, laid on the floor. Its grips
+  // are small targets on a large floor, so the viewer reports their screen
+  // positions the way it already reports its camera.
+  const widget3d = await threePage.evaluate(`(() => {
+    const host = document.querySelector('#fpe-three-host');
+    return { widget: host?.dataset.widget || '', grips: host?.dataset.widgetGrips || '' };
+  })()`);
+  const gripRoles = widget3d.grips.split('|').map((entry) => entry.split(':')[0]).filter(Boolean).sort();
+  check(widget3d.widget === 'placement' && gripRoles.join(',') === 'move,rotate',
+    'lays the transform widget on the floor plane for the selected object', widget3d.grips);
+
+  const dragThree = await threePage.evaluate(`(async () => {
+    const host = document.querySelector('#fpe-three-host');
+    const canvas = host.querySelector('canvas');
+    const box = canvas.getBoundingClientRect();
+    const at = (role) => {
+      const found = (host.dataset.widgetGrips || '').split('|')
+        .map(entry => entry.split(':'))
+        .find(([name]) => name === role);
+      if (!found) return null;
+      const [x, y] = found[1].split(',').map(Number);
+      return { x: box.left + x, y: box.top + y };
+    };
+    const ev = (type, point, pointerId) => canvas.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerId, pointerType: 'mouse', button: 0, buttons: 1,
+      clientX: point.x, clientY: point.y,
+    }));
+    const rotationValue = () => document.querySelector('#fpe-placement-rotation')?.value || '';
+    const xValue = () => document.querySelector('#fpe-placement-x')?.value || '';
+    const rotate = at('rotate');
+    const centre = at('move');
+    if (!rotate || !centre) return { error: 'grips not reported' };
+    const rotationBefore = rotationValue();
+    // Dragging the grip to the far side of the ring is a half turn.
+    const opposite = { x: centre.x + (centre.x - rotate.x), y: centre.y + (centre.y - rotate.y) };
+    ev('pointerdown', rotate, 61);
+    await new Promise(r => setTimeout(r, 40));
+    ev('pointermove', opposite, 61);
+    await new Promise(r => setTimeout(r, 120));
+    ev('pointerup', opposite, 61);
+    await new Promise(r => setTimeout(r, 420));
+    const rotationAfter = rotationValue();
+
+    const moveGrip = at('move');
+    const xBefore = xValue();
+    ev('pointerdown', moveGrip, 62);
+    await new Promise(r => setTimeout(r, 40));
+    ev('pointermove', { x: moveGrip.x + 26, y: moveGrip.y + 10 }, 62);
+    await new Promise(r => setTimeout(r, 140));
+    ev('pointerup', { x: moveGrip.x + 26, y: moveGrip.y + 10 }, 62);
+    await new Promise(r => setTimeout(r, 420));
+    return {
+      rotationBefore, rotationAfter, xBefore, xAfter: xValue(),
+      dirty: !!document.querySelector('#fpe-save:not([disabled])'),
+      announce: (document.querySelector('[aria-live]')?.textContent || '').trim(),
+    };
+  })()`);
+  check(dragThree.rotationBefore !== dragThree.rotationAfter
+    && Number(dragThree.rotationAfter) % 45 === 0,
+  'turns the selected object by dragging the ring grip in 3D',
+  `${dragThree.rotationBefore}° → ${dragThree.rotationAfter}°`);
+  check(dragThree.xBefore !== dragThree.xAfter && dragThree.dirty
+    && /3D-Modell/.test(dragThree.announce || ''),
+  'moves the selected object by dragging the centre grip in 3D',
+  `x ${dragThree.xBefore} → ${dragThree.xAfter}`);
+  // One WebGL context for the whole serial-placement flow. Every step here used to run
+  // through the full `draw()`, which disposes the viewer and builds a new renderer:
+  // entering 3D, opening the library, arming a product and each placement. Chromium
+  // keeps only about sixteen live contexts and kills the oldest, so a run of placements
+  // could pull the context out from under the viewer being used.
+  const contextReuse = await threePage.evaluate(`(async () => {
+    const pause = (ms = 420) => new Promise(resolve => setTimeout(resolve, ms));
+    const fire = node => node?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const host = () => document.querySelector('#fpe-three-host');
+    const canvas = () => host()?.querySelector('canvas');
+    const mark = () => { const c = canvas(); if (c && !c.dataset.probeId) c.dataset.probeId = 'ctx'; };
+    const id = () => canvas()?.dataset.probeId || '(rebuilt)';
+    mark();
+    const start = id();
+    fire(document.querySelector('[data-action="toggle-library"]')); await pause();
+    const onOpen = id();
+    fire(document.querySelector('#fpe-library .fpe-product[data-product]')); await pause();
+    const onArm = id();
+    const place = async (fy) => {
+      const c = canvas();
+      const box = c?.getBoundingClientRect();
+      if (!c || !box?.width) return;
+      const x = box.left + box.width * 0.5;
+      const y = box.top + box.height * fy;
+      for (const type of ['pointerdown', 'pointerup']) {
+        c.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 71,
+          pointerType: 'mouse', button: 0, buttons: type === 'pointerdown' ? 1 : 0, clientX: x, clientY: y }));
+      }
+      await pause(560);
+    };
+    const before = Number(host()?.dataset.placements || 0);
+    await place(0.55);
+    const afterOne = { id: id(), count: Number(host()?.dataset.placements || 0) };
+    await place(0.58);
+    const afterTwo = { id: id(), count: Number(host()?.dataset.placements || 0) };
+    document.querySelector('#fpe-stage')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await pause();
+    return { start, onOpen, onArm, before, afterOne, afterTwo, context: host()?.dataset.context || '' };
+  })()`);
+  check(contextReuse.start === 'ctx' && contextReuse.onOpen === 'ctx' && contextReuse.onArm === 'ctx'
+    && contextReuse.afterOne.id === 'ctx' && contextReuse.afterTwo.id === 'ctx'
+    && contextReuse.afterOne.count === contextReuse.before + 1
+    && contextReuse.afterTwo.count === contextReuse.before + 2
+    && contextReuse.context === 'ready',
+  'keeps one WebGL context through opening the library, arming and a run of placements',
+  `${contextReuse.before} → ${contextReuse.afterTwo.count} objects on canvas ${contextReuse.afterTwo.id}`);
+
+  // Placing furniture in the model, end to end. `openAssetLibrary` used to refuse
+  // outside the 2D plan, so the Add button in 3D looked live, changed nothing, and
+  // explained itself only to a screen reader.
+  const placeIn3d = await threePage.evaluate(`(async () => {
+    const pause = (ms = 320) => new Promise(resolve => setTimeout(resolve, ms));
+    const fire = node => node?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const host = () => document.querySelector('#fpe-three-host');
+    const before = Number(host()?.dataset.placements || 0);
+    fire(document.querySelector('[data-action="toggle-library"]')); await pause(500);
+    const opened = { dialog: !!document.querySelector('#fpe-library'),
+      products: document.querySelectorAll('#fpe-library .fpe-product[data-product]').length,
+      pressed: document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '' };
+    fire(document.querySelector('#fpe-library .fpe-product[data-product]')); await pause(500);
+    const armed = { dialog: !!document.querySelector('#fpe-library'),
+      pressed: document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '' };
+    const canvas = host()?.querySelector('canvas');
+    const box = canvas?.getBoundingClientRect();
+    if (canvas && box) {
+      const x = box.left + box.width / 2, y = box.top + box.height * 0.55;
+      for (const type of ['pointerdown', 'pointerup']) {
+        canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 61,
+          pointerType: 'mouse', button: 0, buttons: type === 'pointerdown' ? 1 : 0, clientX: x, clientY: y }));
+      }
+      await pause(520);
+    }
+    const after = Number(host()?.dataset.placements || 0);
+    // Escape disarms, as it does in the plan.
+    document.querySelector('#fpe-stage')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await pause(320);
+    return { before, opened, armed, after,
+      disarmed: document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '' };
+  })()`);
+  check(placeIn3d.opened.dialog && placeIn3d.opened.products > 0 && placeIn3d.opened.pressed === 'true'
+    && !placeIn3d.armed.dialog && placeIn3d.armed.pressed === 'true'
+    && placeIn3d.after === placeIn3d.before + 1 && placeIn3d.disarmed === 'false',
+  'opens the library and places furniture in the 3D model, then disarms on Escape',
+  `${placeIn3d.opened.products} products · ${placeIn3d.before} → ${placeIn3d.after} objects`);
+
+  // The same preview in the model. It was missing entirely: placing in 3D was a blind
+  // click. The viewer publishes `dataset.ghost` the way it publishes the widget grips,
+  // so this can be asserted without reading pixels.
+  const ghost3d = await threePage.evaluate(`(async () => {
+    const pause = (ms = 340) => new Promise(resolve => setTimeout(resolve, ms));
+    const fire = node => node?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const host = () => document.querySelector('#fpe-three-host');
+    const read = () => host()?.dataset.ghost ?? 'none';
+    // Re-query every time: arming a product runs a full redraw that replaces the host
+    // and its canvas, and events on the detached one reach nothing.
+    const surface = () => host()?.querySelector('canvas');
+    if (!surface()) return { error: 'no 3D canvas' };
+    const move = (fx, fy) => {
+      const canvas = surface();
+      const box = canvas?.getBoundingClientRect();
+      if (!canvas || !box?.width) return;
+      canvas.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true, cancelable: true, pointerId: 13, pointerType: 'mouse', buttons: 0,
+        clientX: box.left + box.width * fx, clientY: box.top + box.height * fy }));
+    };
+    // Release any pointer the earlier drag probes left captured: the viewer will not
+    // trace a hover while it believes a drag is in progress.
+    for (const id of [61, 90, 91, 7]) {
+      const canvas = surface();
+      const box = canvas?.getBoundingClientRect();
+      canvas?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true,
+        pointerId: id, pointerType: 'mouse', button: 0, buttons: 0,
+        clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }));
+    }
+    await pause(240);
+    const idle = read();
+    fire(document.querySelector('[data-action="toggle-library"]')); await pause(460);
+    fire(document.querySelector('#fpe-library .fpe-product[data-product]')); await pause(460);
+    // Sweep for a point on the floor: a perspective view puts the plan in part of the
+    // canvas, and a fixed sample can miss it.
+    const dialogOpened = !!document.querySelector('#fpe-library');
+    const armedPressed = document.querySelector('[data-action="toggle-library"]')?.getAttribute('aria-pressed') || '';
+    let armedGhost = 'none';
+    for (let fy = 0.24; fy <= 0.88 && armedGhost === 'none'; fy += 0.02) {
+      for (let fx = 0.28; fx <= 0.72 && armedGhost === 'none'; fx += 0.06) {
+        move(fx, fy); await pause(45);
+        armedGhost = read();
+      }
+    }
+    // Aimed at the horizon the floor ray still meets the infinite y = 0 plane far past
+    // the building; the preview must not follow it out there.
+    move(0.5, 0.02); await pause(360);
+    const horizon = read();
+    document.querySelector('#fpe-stage')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await pause(460);
+    const disarmed = read();
+    return { error: '', idle, armedGhost, horizon, disarmed, dialogOpened, armedPressed };
+  })()`);
+  check(!ghost3d.error && ghost3d.idle === 'none'
+    && /^valid:-?\d+,-?\d+$/.test(ghost3d.armedGhost)
+    && ghost3d.horizon === 'none' && ghost3d.disarmed === 'none',
+  'previews the armed product on the floor in 3D, and drops it off the floor and on disarm',
+  ghost3d.error || `dialog ${ghost3d.dialogOpened}/${ghost3d.armedPressed} · ${ghost3d.idle} → ${ghost3d.armedGhost} → horizon ${ghost3d.horizon} → ${ghost3d.disarmed}`);
+
+  await checkProblems(threePage, '3D authoring has no runtime problems');
+  try { await threePage.closeTarget(); } catch { /* browser may already be closing */ }
 
   console.log('\n■ Dirty history jumps and logout');
   const guardedHistory = await page.evaluate(`(async () => {
@@ -2192,6 +3044,11 @@ try {
   'accepting logout clears the session and redraws the protected route as a login gate',
   `${guardedLogout.accepted.prompts} prompt · gate=${guardedLogout.accepted.gate}`);
 
+
+
+  // Hand the plan back to the tests that follow, which all assume 2D.
+  await page.evaluate(`document.querySelector('#fpe-view-2d')?.click()`);
+  await sleep(600);
   await checkProblems(page, 'complete editor flow has no runtime problems');
 } finally {
   if (page) {

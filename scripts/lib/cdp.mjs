@@ -244,6 +244,21 @@ export async function openPage(cdp, url, { login, skin } = {}) {
       try {
         const r = await cdp.send('Runtime.evaluate',
           { expression, awaitPromise: true, returnByValue: true }, sessionId);
+        // A probe that throws must FAIL, not resolve to undefined. Runtime.evaluate
+        // reports in-page errors through `exceptionDetails`; it does not raise
+        // Runtime.exceptionThrown, which is what the listener above collects. Reading
+        // only `result.value` meant a typo, a null dereference or a stale node handle
+        // produced a silent `undefined`, and the assertion downstream failed with an
+        // empty detail under a misleading label. Probes here are template literals, so
+        // `node --check` cannot see any of it either.
+        if (r.exceptionDetails) {
+          const detail = r.exceptionDetails.exception?.description
+            || r.exceptionDetails.text
+            || 'probe threw';
+          const source = String(expression).replace(/\s+/g, ' ').trim().slice(0, 140);
+          throw new Error(`In-page probe failed: ${detail}
+  probe: ${source}…`);
+        }
         return r.result.value;
       } catch (e) {
         if (attempt < 1 && /context was destroyed|Cannot find context/i.test(e.message)) { await sleep(300); continue; }
@@ -266,8 +281,13 @@ export async function openPage(cdp, url, { login, skin } = {}) {
   // clean, otherwise return readable findings.
   const problems = async () => {
     const out = [];
-    if (exceptions.length) out.push(`Exception: ${exceptions[0]}`);
-    if (consoleErrors.length) out.push(`Console error: ${consoleErrors[0]}`);
+    // Drain what is reported, and report all of it. The buffers were only ever read at
+    // index 0 and never cleared, so one early console error failed every later
+    // checkProblems call as well — each quoting the same unrelated message under its
+    // own name, which is how a single landing-page warning became three mystery
+    // failures in the plan editor.
+    if (exceptions.length) out.push(...exceptions.splice(0).map((entry) => `Exception: ${entry}`));
+    if (consoleErrors.length) out.push(...consoleErrors.splice(0).map((entry) => `Console error: ${entry}`));
     try {
       // .error-summary reports invalid form input; it is not an application
       // defect. Error toasts are also excluded because headless browsers lack

@@ -36,6 +36,20 @@ check(resolveRequestFile('/.git/HEAD').status === 404
   && resolveRequestFile('/.%67it/config').status === 404
   && resolveRequestFile('/.env').status === 404,
   'hidden repository and environment paths are never runtime assets');
+// The dotted spelling was the ONLY spelling this gate ever asserted, and NTFS keeps
+// 8.3 aliases that contain no dot: /GIT~1/config served 1038 bytes of real .git/config
+// including remote URLs, on a server with a documented LAN bind mode. The decision is
+// made on the resolved real path now, so both spellings and any in-root symlink land
+// in the same place. Harmless on a filesystem without aliases — nothing resolves.
+check(resolveRequestFile('/GIT~1/config').status === 404
+  && resolveRequestFile('/GIT~1/HEAD').status === 404
+  && resolveRequestFile('/GITIGN~1').status === 404
+  && resolveRequestFile('/CLAUDE~1/settings.json').status === 404,
+  'short-name aliases cannot reach hidden metadata that the dotted spelling refuses');
+check(resolveRequestFile('/index.html').status === 200
+  && resolveRequestFile('/css/tokens.css').status === 200
+  && resolveRequestFile('/assets/icons/Cancel.svg').status === 200,
+  'real-path resolution still serves ordinary assets');
 check(resolveRequestFile('/?cache-bust=1').file?.endsWith('index.html'),
   'root requests still resolve to the app entry point');
 check(resolveServerHost({}) === '127.0.0.1', 'server defaults to the loopback interface');
@@ -68,6 +82,10 @@ try {
 
   const metadata = await request(address.port, '/.git/HEAD');
   check(metadata.status === 404, 'HTTP boundary does not expose Git metadata', String(metadata.status));
+
+  const aliased = await request(address.port, '/GIT~1/config');
+  check(aliased.status === 404,
+    'HTTP boundary does not expose Git metadata through a short-name alias', String(aliased.status));
 
   const rebound = await request(address.port, '/index.html', { headers: { Host: 'attacker.example' } });
   check(rebound.status === 421, 'HTTP boundary rejects an unapproved Host header', String(rebound.status));

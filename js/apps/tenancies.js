@@ -402,7 +402,7 @@ function detail(ctx, id) {
   }
 
   const asideHtml = () => `<aside class="detail-layout__aside" aria-label="Aktionen und Ansprechpersonen">
-    ${C.actionCard({ lead: 'Für dieses Objekt vorbelegt.', links: actionLinks() })}
+    ${C.actionCard({ links: actionLinks() })}
     ${C.contactCard({ contacts: (t.contacts || []).map((c) => ({
       label: c['rolle'], name: c.name, email: c.email, phone: c.phone })) })}
   </aside>`;

@@ -327,6 +327,11 @@
   --z-local-floating: 6;
   --z-local-status: 7;
   --z-local-toolbar: 8;
+  /* Above the toolbar, because a menu ANCHORED to a toolbar has to cover it. The
+     scale stopped at `toolbar`, so a toolbar-launched menu had nowhere to sit and
+     the plan editor's «Mehr» and «Struktur» menus opened behind their own trigger.
+     `popover` (5) is for a popover over content; this rung is for one over chrome. */
+  --z-local-toolbar-menu: 9;
 
   /* Z-index scale (instead of scattered magic numbers) governs stacking order.
      Read bottom to top, this is the page's complete order; gaps between nav

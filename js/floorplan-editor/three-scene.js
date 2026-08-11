@@ -77,10 +77,24 @@ export function furnitureObject(placement, isSelected, resources) {
     }
   }
 
+  placeFurnitureObject(group, placement, width, depth);
+  return group;
+}
+
+/**
+ * Where a furniture group stands, and which way it faces.
+ *
+ * Split out of `furnitureObject` so a drag can move an existing group instead of
+ * rebuilding one: the placement of an object is the only thing a drag changes, and
+ * rebuilding was taking every room slab and label texture with it.
+ */
+export function placeFurnitureObject(group, placement, width = null, depth = null) {
+  const w = width == null ? Math.max(0.18, Number(placement.width || 60) * CM_TO_M) : width;
+  const d = depth == null ? Math.max(0.18, Number(placement.depth || 60) * CM_TO_M) : depth;
   group.position.set(
-    Number(placement.x || 0) * CM_TO_M + width / 2,
+    Number(placement.x || 0) * CM_TO_M + w / 2,
     0,
-    Number(placement.y || 0) * CM_TO_M + depth / 2,
+    Number(placement.y || 0) * CM_TO_M + d / 2,
   );
   group.rotation.y = -THREE.MathUtils.degToRad(Number(placement.rotation || 0));
   return group;
@@ -178,6 +192,8 @@ export function fallbackViewer() {
   return {
     reset() {},
     zoom() {},
+    refreshWidget() {},
+    updateGhost() {},
     updateSelection() {},
     updateColors() {},
     updateDocument() {},

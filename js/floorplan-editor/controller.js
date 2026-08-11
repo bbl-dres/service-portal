@@ -11,6 +11,7 @@ import {
   fitCameraToRect, cameraWithViewportAspect, resizeCameraToViewport,
   scaleBar, clientToPlan, inverseScreenMatrix, panCameraFromScreenDelta,
   containingRoom, clampPlacement,
+  measurePointAt,
   measurementLabel,
 } from './canvas.js';
 import {
@@ -79,7 +80,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   const requestedLibrary = query.get('library');
   // Library placement is a 2D-only workflow. Normalise malformed/deprecated
   // deep links before deriving tools and panel state from them.
-  let assetLibraryOpen = editMode && viewMode === '2d' && ['products', 'modules'].includes(requestedLibrary);
+  let assetLibraryOpen = editMode && ['products', 'modules'].includes(requestedLibrary);
   let tool = assetLibraryOpen ? 'add' : 'select';
   let placementProduct = null;
   let libraryMode = requestedLibrary === 'modules' ? 'modules' : 'products';
@@ -97,6 +98,10 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   let structureMenuOpen = false;
   let structureUnlocked = true;
   const expandedGroups = new Set();
+  // Inspector sections start open and stay collapsed for the rest of the session
+  // once folded away. Keyed by a stable slug rather than by heading text, so
+  // renaming a heading cannot silently reopen a panel someone shut.
+  const collapsedSections = new Set();
   const expandedRooms = new Set();
   if (selected?.type === 'room') expandedRooms.add(selected.id);
   if (selected?.type === 'placement') {
@@ -104,7 +109,11 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (selectedPlacement) expandedRooms.add(selectedPlacement.roomId);
   }
   let compactLayout = window.matchMedia('(max-width: 1023.98px)').matches;
-  let leftOpen = assetLibraryOpen || (!compactLayout && !editMode);
+  // The rail holds the resource tree in every mode, so its open state depends on
+  // the viewport alone. It used to be forced shut in edit mode because the library
+  // took the slot, and that is what made the tree disappear the moment anyone
+  // started editing — in 2D as much as in 3D.
+  let leftOpen = !compactLayout;
   let rightOpen = !compactLayout;
   const desktopPanels = { left: leftOpen, right: rightOpen };
   let drag = null;
@@ -267,7 +276,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (viewMode !== '2d') params.set('view', viewMode);
     if (selected) params.set('selected', `${selected.type}:${selected.id}`);
     if (editMode) params.set('edit', '1');
-    if (editMode && viewMode === '2d' && assetLibraryOpen) params.set('library', libraryMode);
+    if (editMode && assetLibraryOpen) params.set('library', libraryMode);
     const next = `${BASE}?${params}`;
     if (location.hash !== next) {
       if (typeof replaceCurrentRoute === 'function') replaceCurrentRoute(next);
@@ -294,6 +303,46 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     syncDraftChrome();
     announce(label);
     return true;
+  }
+
+/**
+   * Finish a gesture that has already mutated `editorDocument` in place.
+   *
+   * Gestures cannot go through `commit(label, change)`: that clones the document,
+   * applies a change to the copy and validates it, whereas a drag has been mutating the
+   * live document frame by frame so the visitor can watch it move. What was left over
+   * was the same five-line epilogue — push, re-clone, recompute `dirty`, sync the draft
+   * chrome, announce — written out at four sites, plus a rollback written out at
+   * fourteen. The newest copy, the 3D transform, put the validation one line too early
+   * and silently rejected every move that crossed a room boundary.
+   *
+   * `before` is the document as it stood when the gesture began. Validation happens
+   * here and nowhere else, so a caller cannot forget it or order it wrongly.
+   */
+  function commitGesture({ before, label = '', rejected = '' }) {
+    if (!validateEditorDocument(editorDocument, baseline)) {
+      rollbackGesture({ before, message: rejected });
+      return false;
+    }
+    editHistory.push(editorDocument);
+    editorDocument = cloneDocument(editHistory.current);
+    dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
+    syncDraftChrome();
+    if (label) announce(label);
+    return true;
+  }
+
+  /**
+   * Abandon a gesture and put the document back as it was when it started.
+   *
+   * `dirty` is recomputed here too. Several of the old rollback sites restored the
+   * document and left `dirty` reading the abandoned state.
+   */
+  function rollbackGesture({ before, message = '' }) {
+    editorDocument = cloneDocument(before);
+    dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
+    syncDraftChrome();
+    if (message) announce(message);
   }
 
   function restoreHistory(direction) {
@@ -331,7 +380,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     viewMode, editMode, dirty, assetLibraryOpen, tool, placementProduct,
     libraryMode, productCategory, measurement, roomDraft, placementGhost, keyboardCursor,
     camera, resourceQuery, productQuery, colorMenuOpen, moreMenuOpen,
-    structureMenuOpen, structureUnlocked, expandedGroups, expandedRooms,
+    structureMenuOpen, structureUnlocked, expandedGroups, expandedRooms, collapsedSections,
     leftOpen, rightOpen, returnHref: returnHref(),
     versionLabel: editorVersionLabel(), publishable: canPublish(),
     planBadgeHtml: planBadge(),
@@ -405,7 +454,12 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   }
 
   function setStructureMenuOpen(open, { focusFirst = false, restoreFocus = false } = {}) {
-    structureMenuOpen = editMode && viewMode === '2d' && Boolean(open);
+    // No view gate. The menu carries the lock state and the catalogue of structural
+    // elements, which are the same in the model as in the plan; only creating a room by
+    // dragging a rectangle needs the flat drawing, and that one item disables itself
+    // with a stated reason. Gating the whole menu here left the trigger in the toolbar
+    // doing nothing at all in 3D.
+    structureMenuOpen = editMode && Boolean(open);
     const trigger = mount.querySelector('#fpe-structure-trigger');
     const menu = mount.querySelector('#fpe-structure-menu');
     trigger?.setAttribute('aria-expanded', String(structureMenuOpen));
@@ -424,34 +478,37 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     const drawerOpen = compact && (leftOpen || rightOpen);
     const stage = mount.querySelector('#fpe-stage');
     if (stage) stage.inert = drawerOpen;
+    syncLibraryModality();
+  }
+
+  /**
+   * Make the library dialog behave the way it is announced.
+   *
+   * It carries `aria-modal="true"`, and a container that claims modality without
+   * enforcing it is worse than one that claims nothing: a screen reader stops
+   * describing the rest of the page while Tab still walks into it. So the whole
+   * workbench goes inert for as long as the dialog is open — which also closes the
+   * hole where Backspace deleted the selected object behind the dialog.
+   */
+  function syncLibraryModality() {
+    const open = Boolean(assetLibraryOpen);
+    // Every sibling of the dialog inside #fpe-app, the footer included — it is a
+    // sibling too, and Tab walked into its project links under an opaque scrim.
+    ['.fpe-header', '.fpe-workbench', '.fpe-local-note', '.fpe-context'].forEach((selector) => {
+      const node = mount.querySelector(selector);
+      if (node) node.inert = open;
+    });
   }
 
   function setPanelOpen(side, open, { focusToggle = true } = {}) {
     const next = Boolean(open);
     if (side === 'left') {
-      if (editMode && viewMode !== '2d' && next) {
-        announce('Die Produktbibliothek ist nur im 2D-Plan verfügbar.');
-        return;
-      }
-      if (editMode) {
-        assetLibraryOpen = next;
-        if (next && !['add', 'place'].includes(tool)) tool = 'add';
-        if (!next && ['add', 'place'].includes(tool)) {
-          tool = 'select'; placementProduct = null; placementGhost = null; keyboardCursor = null;
-        }
-      }
       leftOpen = next;
       if (next && compactWorkbench()) rightOpen = false;
       else if (!compactWorkbench()) desktopPanels.left = next;
     } else {
       rightOpen = next;
-      if (next && compactWorkbench()) {
-        leftOpen = false;
-        if (editMode) {
-          assetLibraryOpen = false;
-          if (['add', 'place'].includes(tool)) { tool = 'select'; placementProduct = null; placementGhost = null; keyboardCursor = null; }
-        }
-      }
+      if (next && compactWorkbench()) leftOpen = false;
       else if (!compactWorkbench()) desktopPanels.right = next;
     }
     colorMenuOpen = false;
@@ -489,8 +546,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   function disposeThreeViewer() {
     const state = threeViewer?.getViewState?.();
     if (state?.mode && Object.hasOwn(threeViewStates, state.mode)) threeViewStates[state.mode] = state;
+    // Carry the 3D camera back into the plan, so the return trip lands where the
+    // model was looking rather than where the plan was left minutes ago.
+    if (state?.plan) adoptThreeCamera(state.plan);
     threeViewer?.dispose();
     threeViewer = null;
+    // A gesture cannot outlive the viewer that started it. Left set, this snapshot
+    // became the rollback target of the next viewer's first drag.
+    threeTransformBefore = null;
   }
 
   function initThreeViewer() {
@@ -507,9 +570,157 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       selected,
       colorMode,
       initialViewState: threeViewStates[viewMode],
+      // The 3D view carries the SAME camera as the plan: whatever centre and zoom
+      // the plan was showing is where the model opens, so switching views never
+      // loses the visitor's place.
+      initialCamera: cameraForThree(),
+      editable: editMode,
       onSelect: (type, id) => selectEntity(type, id, false),
+      onTransform: transformFromThree,
+      onFloorClick: placeFromThree,
+      onFloorHover: hoverFromThree,
       onAnnounce: announce,
     });
+  }
+
+  // --- Authoring from the 3D view --------------------------------------------
+  // The viewer reports plan units and never holds an authoritative document, so
+  // both callbacks look exactly like the 2D gestures: mutate, redraw, and commit
+  // once the gesture ends.
+  let threeTransformBefore = null;
+
+  function transformFromThree(placementId, patch, options = {}) {
+    // Leaving edit mode ends any gesture in flight; keeping the snapshot would hand it
+    // to the next drag as its rollback target.
+    if (!editMode) { threeTransformBefore = null; return; }
+    if (options.done) {
+      // Commit once, at the end of the drag, exactly as the 2D widget does.
+      if (!threeTransformBefore) return;
+      const before = threeTransformBefore;
+      threeTransformBefore = null;
+      // An abandoned drag restores unconditionally. Nothing is judged, because nothing
+      // was asked for: the pointer was lost or cancelled mid-gesture.
+      if (options.cancelled) {
+        rollbackGesture({ before });
+        drawWorkArea();
+        return;
+      }
+      const placement = selected?.type === 'placement' ? placementById().get(selected.id) : null;
+      const centre = placement
+        ? { x: placement.x + placement.width / 2, y: placement.y + placement.depth / 2 }
+        : null;
+      const containing = centre ? containingRoom(editorDocument.rooms, centre) : null;
+      const rejected = 'Objekt bleibt unverändert: Die neue Lage wäre ungültig.';
+      if (!placement || !containing) {
+        rollbackGesture({ before, message: rejected });
+        drawWorkArea();
+        return;
+      }
+      // Assign the room BEFORE the commit validates. `validPlacement` requires a
+      // placement's centre to lie inside the room its `roomId` names, so validating
+      // while the id still pointed at the room the object came from rejected every move
+      // that crossed a boundary.
+      placement.roomId = containing.spaceId;
+      if (placement.status !== 'new') placement.status = 'moved';
+      commitGesture({ before, label: 'Objekt im 3D-Modell angepasst.', rejected });
+      drawWorkArea();
+      return;
+    }
+    const placement = placementById().get(placementId);
+    if (!placement) return;
+    if (!threeTransformBefore) threeTransformBefore = cloneDocument(editorDocument);
+    if (Number.isFinite(patch?.x)) placement.x = patch.x;
+    if (Number.isFinite(patch?.y)) placement.y = patch.y;
+    if (Number.isFinite(patch?.rotation)) placement.rotation = patch.rotation;
+    Object.assign(placement, clampPlacement(placement, floor));
+    // The narrow update: a drag moves transforms, so only transforms are touched.
+    // `updateDocument` rebuilt the whole floor on every pointer move, including one
+    // canvas and CanvasTexture per room label.
+    threeViewer?.updatePlacements(editorDocument.placements, selected);
+  }
+
+  /**
+   * The placement preview for a point, in plan units.
+   *
+   * One function for three callers — the 2D pointer, the 2D keyboard cursor and the
+   * 3D floor hover — because the preview must agree with what `addProduct` will
+   * actually accept. Validity is the same `containingRoom` test the placement itself
+   * performs, so a green footprint cannot turn into a refusal.
+   */
+  function ghostAt(point) {
+    if (!placementProduct || !point) return null;
+    // Off the floor entirely: no preview. The 3D floor test raycasts against the
+    // INFINITE y = 0 plane, so aiming near the horizon still returns a point — one
+    // that can be tens of metres past the building. A preview stranded out there is
+    // worse than none, and a click there is refused anyway.
+    const [extentWidth, extentDepth] = floor.extent || [4000, 1440];
+    if (point.x < 0 || point.y < 0 || point.x > extentWidth || point.y > extentDepth) return null;
+    const width = Number(placementProduct.dimensions?.width) || 60;
+    const depth = Number(placementProduct.dimensions?.depth) || 60;
+    return {
+      x: point.x - width / 2, y: point.y - depth / 2, width, depth,
+      height: Number(placementProduct.dimensions?.height) || 75,
+      shape: placementProduct.shape2d || 'rect', rotation: 0,
+      valid: Boolean(containingRoom(editorDocument.rooms, point)),
+    };
+  }
+
+  /**
+   * The 3D preview. It goes straight to the viewer rather than through `drawScene`:
+   * a pointer move must not rebuild the document, and the viewer replaces only the
+   * preview group.
+   */
+  function hoverFromThree(point) {
+    if (!editMode || tool !== 'place' || !placementProduct) {
+      if (placementGhost) { placementGhost = null; threeViewer?.updateGhost(null); }
+      return;
+    }
+    placementGhost = ghostAt(point);
+    threeViewer?.updateGhost(placementGhost);
+  }
+
+  /** A floor click in 3D with a product armed places it there. */
+  function placeFromThree(point) {
+    if (!editMode || tool !== 'place' || !placementProduct || !point) return false;
+    addProduct(placementProduct, point);
+    return true;
+  }
+
+  // --- Camera bridge ---------------------------------------------------------
+  // Both views express zoom as a ratio of «everything fits», which is unit-free,
+  // and the plan's centre converts to the orbit target through the same
+  // centimetre-to-metre mapping the geometry uses. That is all the two cameras
+  // need to share for a view switch to stay in place.
+  function cameraForThree() {
+    const fit = fitCamera(floor);
+    return {
+      centre: { x: camera.x + camera.width / 2, y: camera.y + camera.height / 2 },
+      fitRatio: fit.width > 0 ? camera.width / fit.width : 1,
+    };
+  }
+
+  /**
+   * The reverse: adopt the 3D camera when returning to the plan.
+   *
+   * This assigns `camera` directly instead of going through `set2dCamera`. It
+   * runs from `disposeThreeViewer`, which is called immediately BEFORE the shell
+   * is rebuilt — and `set2dCamera` redraws, so redrawing there painted a scene
+   * that was about to be replaced and left the 2D canvas missing altogether. The
+   * render that follows the teardown picks the new value up on its own.
+   */
+  function adoptThreeCamera(state) {
+    if (!state?.centre || !Number.isFinite(state.fitRatio)) return;
+    const fit = fitCamera(floor);
+    if (!(fit.width > 0) || !(fit.height > 0)) return;
+    const width = Math.max(300, fit.width * state.fitRatio);
+    const height = width * (fit.height / fit.width);
+    const next = {
+      x: state.centre.x - width / 2,
+      y: state.centre.y - height / 2,
+      width,
+      height,
+    };
+    if (Object.values(next).every(Number.isFinite)) camera = next;
   }
 
   function syncScale() {
@@ -536,6 +747,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     mount.innerHTML = currentViews().shellHTML();
     syncCompactDrawerState();
     syncQuery();
+    syncLibraryModality();
     if (viewMode !== '2d') queueFrame(initThreeViewer);
     queueFrame(observeSceneViewport);
     queueFrame(syncScale);
@@ -565,6 +777,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       else if (viewerUpdate === 'colors') threeViewer.updateColors(colorMode, editorDocument.rooms);
       else threeViewer.updateDocument({
         floor, rooms: editorDocument.rooms, placements: editorDocument.placements, selected, colorMode,
+        ghost: tool === 'place' ? placementGhost : null,
       });
     } else {
       disposeThreeViewer();
@@ -586,9 +799,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (viewActions) viewActions.innerHTML = views.viewActionsHTML();
     const scale = mount.querySelector('#fpe-scale');
     if (scale) scale.hidden = viewMode !== '2d';
+    // Re-render rather than assign text: the reading carries a dismiss control now,
+    // and writing textContent would delete it.
     const result = mount.querySelector('.fpe-measure-result');
-    const label = measurementLabel(measurement || {});
-    if (result) { result.textContent = label; result.hidden = !label; }
+    if (result) {
+      const template = document.createElement('template');
+      template.innerHTML = views.measureResultHTML();
+      result.replaceWith(template.content.firstElementChild);
+    }
     const restored = restore();
     if (focus && selected && !restored) focusSelectedEntity();
     if (viewMode !== '2d' && !retainedThree) queueFrame(initThreeViewer);
@@ -598,10 +816,12 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   }
 
   function drawLeft(views = currentViews()) {
-    const host = mount.querySelector('#fpe-left-list');
-    if (host) host.innerHTML = editMode
-      ? (libraryMode === 'products' ? views.productListHTML() : views.moduleListHTML())
-      : views.resourceListHTML();
+    const tree = mount.querySelector('#fpe-left-list');
+    if (tree) tree.innerHTML = views.resourceListHTML();
+    const library = mount.querySelector('#fpe-library-list');
+    if (library) {
+      library.innerHTML = libraryMode === 'products' ? views.productListHTML() : views.moduleListHTML();
+    }
   }
 
   function drawLeftPanel(focusId = '') {
@@ -629,10 +849,24 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     }
   }
 
+  /**
+   * Re-render the library dialog in place.
+   *
+   * It lives in the shell, so it used to appear and disappear only through a full
+   * `draw()`. That made opening or closing it cost a WebGL context in the 3D model.
+   * Its own host means the dialog can follow `assetLibraryOpen` on its own.
+   */
+  function drawLibrary(views = currentViews()) {
+    const host = mount.querySelector('#fpe-library-host');
+    if (host) host.innerHTML = views.libraryHTML();
+    syncLibraryModality();
+  }
+
   function drawWorkArea({ preserveFocus = false, focusSelected = false, viewerUpdate = 'document' } = {}) {
     const restore = preserveFocus ? C.preserveFocus(mount) : () => false;
     const views = currentViews();
     drawScene(false, viewerUpdate, views); drawLeft(views); drawInspector(preserveFocus, views);
+    drawLibrary(views);
     const restored = restore();
     if (focusSelected && selected && !restored) focusSelectedEntity();
   }
@@ -652,29 +886,28 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
 
   function openAssetLibrary({ mode = libraryMode, focusSearch = true } = {}) {
     if (!editMode) return;
-    if (viewMode !== '2d') {
-      announce('Die Produktbibliothek ist nur im 2D-Plan verfügbar.');
-      return;
-    }
+    // No view gate. Placing furniture in the model starts by choosing a product,
+    // exactly as it does in the plan, and `placeFromThree` has handled the floor
+    // click since the transform widget arrived. This guard outlived its reason and
+    // made the Add button in 3D a control that looked live, changed nothing, and
+    // only explained itself to a screen reader.
     libraryMode = mode === 'modules' ? 'modules' : 'products';
     assetLibraryOpen = true;
-    leftOpen = true;
     tool = 'add'; placementProduct = null; placementGhost = null;
     roomDraft = null; measurement = null; keyboardCursor = null; keyboardRoomAnchor = null; structureMenuOpen = false;
-    if (compactWorkbench()) rightOpen = false;
-    else desktopPanels.left = true;
-    syncQuery(); draw();
-    if (focusSearch) queueFrame(() => mount.querySelector('#fpe-left-search')?.focus({ preventScroll: true }));
+    // The dialog and the work area, not the shell: opening a picker should not cost the
+    // 3D model its WebGL context.
+    syncQuery(); drawWorkArea();
+    if (focusSearch) queueFrame(() => mount.querySelector('#fpe-library-search')?.focus({ preventScroll: true }));
     announce('Bibliothek geöffnet. Produkt oder Modul auswählen.');
   }
 
   function closeAssetLibrary({ focusToolbar = true, announceClose = false } = {}) {
-    if (!editMode || (!assetLibraryOpen && !leftOpen)) return false;
-    assetLibraryOpen = false; leftOpen = false;
-    if (!compactWorkbench()) desktopPanels.left = false;
+    if (!editMode || !assetLibraryOpen) return false;
+    assetLibraryOpen = false;
     if (['add', 'place'].includes(tool)) tool = 'select';
     placementProduct = null; placementGhost = null; keyboardCursor = null; keyboardRoomAnchor = null;
-    syncQuery(); draw();
+    syncQuery(); drawWorkArea();
     if (focusToolbar) queueFrame(() => mount.querySelector('#fpe-action-toggle-library')?.focus({ preventScroll: true }));
     if (announceClose) announce('Bibliothek geschlossen.');
     return true;
@@ -700,13 +933,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
         valid: roomRectInsideFloor(rect, floor.extent, editorDocument.rooms),
       };
     } else if (tool === 'place' && placementProduct) {
-      const width = Number(placementProduct.dimensions?.width) || 60;
-      const depth = Number(placementProduct.dimensions?.depth) || 60;
-      placementGhost = {
-        x: cursor.x - width / 2, y: cursor.y - depth / 2, width, depth,
-        shape: placementProduct.shape2d || 'rect', rotation: 0,
-        valid: Boolean(containingRoom(editorDocument.rooms, cursor)),
-      };
+      placementGhost = ghostAt(cursor);
     }
   }
 
@@ -721,15 +948,58 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     drawScene();
   }
 
-  function addKeyboardMeasurementPoint() {
-    const point = { ...ensureKeyboardCursor() };
-    if (!measurement || measurement.complete) measurement = { kind: tool, points: [], complete: false };
+  /**
+   * One click of the measuring tool.
+   *
+   * Three outcomes, resolved in this order:
+   *
+   * 1. On the FIRST point with three or more set — close the ring. This is the
+   *    gesture people bring from every map, and it is the only way a pointer can
+   *    express «closed» at all.
+   * 2. On any other existing point — remove it, and reopen a closed ring, because
+   *    a ring missing a corner is no longer that ring.
+   * 3. Anywhere else — append.
+   *
+   * Rule 1 takes precedence over rule 2 deliberately: without it the first point
+   * would be unremovable-by-proxy, and closing would need a second control.
+   */
+  function measureAt(point) {
+    if (!point) return;
+    if (!measurement) measurement = { points: [], closed: false };
+    const hit = measurePointAt(measurement, point);
+    if (hit === 0 && !measurement.closed && measurement.points.length >= 3) {
+      measurement.closed = true;
+      drawScene();
+      announce(`Fläche geschlossen: ${measurementLabel(measurement)}.`);
+      return;
+    }
+    if (hit >= 0) {
+      measurement.points.splice(hit, 1);
+      measurement.closed = measurement.closed && measurement.points.length >= 3;
+      drawScene();
+      announce(measurement.points.length
+        ? `Messpunkt entfernt. ${measurement.points.length} verbleibend.`
+        : 'Messung gelöscht.');
+      return;
+    }
     measurement.points.push(point);
-    if (tool === 'distance' && measurement.points.length >= 2) measurement.complete = true;
+    measurement.closed = false;
     drawScene();
-    announce(measurement.complete
-      ? `Messung ${measurementLabel(measurement)}.`
+    const label = measurementLabel(measurement);
+    announce(label ? `Messpunkt ${measurement.points.length}: ${label}.`
       : `Messpunkt ${measurement.points.length} gesetzt.`);
+  }
+
+  function clearMeasurement({ announceClear = true } = {}) {
+    if (!measurement?.points.length) return false;
+    measurement = { points: [], closed: false };
+    drawScene();
+    if (announceClear) announce('Messung gelöscht.');
+    return true;
+  }
+
+  function addKeyboardMeasurementPoint() {
+    measureAt({ ...ensureKeyboardCursor() });
   }
 
   function chooseTool(next) {
@@ -743,21 +1013,19 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     placementGhost = null;
     roomDraft = null;
     keyboardRoomAnchor = null;
-    keyboardCursor = ['room', 'distance', 'area'].includes(next) ? ensureKeyboardCursor() : null;
-    measurement = ['distance', 'area'].includes(next) ? { kind: next, points: [], complete: false } : null;
+    keyboardCursor = ['room', 'measure'].includes(next) ? ensureKeyboardCursor() : null;
+    measurement = next === 'measure' ? { points: [], closed: false } : null;
     structureMenuOpen = false;
     if (closesLibrary) {
-      assetLibraryOpen = false; leftOpen = false;
-      if (!compactWorkbench()) desktopPanels.left = false;
+      assetLibraryOpen = false;
       syncQuery(); draw();
     } else {
       drawScene(); drawLeft();
     }
-    if (['room', 'distance', 'area', 'pan'].includes(next)) {
+    if (['room', 'measure', 'pan'].includes(next)) {
       queueFrame(() => mount.querySelector('#fpe-stage')?.focus({ preventScroll: true }));
     }
-    announce(next === 'distance' ? 'Streckenmessung aktiv. Klicken Sie zwei Punkte oder setzen Sie sie mit Pfeiltasten und Leertaste.'
-      : next === 'area' ? 'Flächenmessung aktiv. Setzen Sie mindestens drei Punkte und drücken Sie Enter.'
+    announce(next === 'measure' ? 'Messen aktiv. Punkte setzen ergibt eine Strecke; den ersten Punkt erneut anklicken schliesst eine Fläche. Ein Klick auf einen gesetzten Punkt entfernt ihn.'
         : next === 'room' ? 'Fläche anlegen aktiv. Ziehen Sie ein Rechteck oder setzen Sie Anfang und Ende mit Pfeiltasten und Eingabetaste.'
           : next === 'pan' ? 'Verschieben aktiv. Ziehen Sie den Plan oder verwenden Sie die Pfeiltasten.' : 'Auswahl aktiv.');
   }
@@ -775,9 +1043,10 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       keyboardCursor = null;
       keyboardRoomAnchor = null;
       updateKeyboardDrafts();
-      assetLibraryOpen = false; leftOpen = false;
-      if (!compactWorkbench()) desktopPanels.left = false;
-      syncQuery(); draw();
+      assetLibraryOpen = false;
+      // Arming a product changes the tool, not the shell. Through `draw()` this cost the
+      // 3D model its WebGL context before the visitor had placed anything at all.
+      syncQuery(); drawWorkArea();
       queueFrame(() => mount.querySelector('#fpe-stage')?.focus?.({ preventScroll: true }));
       announce(`${product.name} gewählt. Position im Plan auswählen.`);
       return;
@@ -801,10 +1070,28 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     placement.roomId = finalRoom.spaceId;
     if (!commit(`${product.name} platziert.`, (next) => { next.placements.push(placement); })) return;
     selected = { type: 'placement', id };
-    placementProduct = null; placementGhost = null; keyboardCursor = null; keyboardRoomAnchor = null; tool = 'select';
-    assetLibraryOpen = false; leftOpen = false;
-    if (!compactWorkbench()) desktopPanels.left = false;
-    syncQuery(); draw(); focusSelectedEntity();
+    // The product stays ARMED for the next click. Furnishing a floor means placing
+    // a run of the same chair or desk, and disarming after each one made that a
+    // trip back to the library every time. Arming explicitly here also covers the
+    // path that placed straight into a selected room without ever arming.
+    //
+    // Escape and every other tool disarm on their own: `chooseTool` clears
+    // `placementProduct` for any tool but «place». The keyboard cursor is kept, so
+    // arrow-then-Enter lays out a row.
+    placementProduct = product; tool = 'place';
+    placementGhost = null; keyboardRoomAnchor = null;
+    assetLibraryOpen = false;
+    syncQuery();
+    // The work area, not the whole shell. `draw()` rebuilds the markup, which in the
+    // 3D model means disposing the viewer and creating a new WebGL context for every
+    // object placed — and serial placement means placing many, against a browser cap
+    // of roughly sixteen live contexts. `drawWorkArea` refreshes the scene, the
+    // resource tree and the inspector, which is everything a placement changes.
+    drawWorkArea();
+    // Focus stays on the stage rather than moving to the new object: the next
+    // click or keypress is another placement, not an edit of the last one.
+    queueFrame(() => mount.querySelector('#fpe-stage')?.focus?.({ preventScroll: true }));
+    announce(`${product.name} platziert. Weitere platzieren oder mit Escape beenden.`);
   }
 
   function changeRoom(field, control) {
@@ -1030,7 +1317,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     keyboardCursor = null; keyboardRoomAnchor = null;
     structureMenuOpen = false;
     if (editMode && next !== '2d') {
-      assetLibraryOpen = false; leftOpen = false; placementProduct = null;
+      assetLibraryOpen = false; placementProduct = null;
       if (!compactWorkbench()) desktopPanels.left = false;
     }
     syncQuery(); draw();
@@ -1053,7 +1340,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       const room = next.rooms.find((item) => item.spaceId === selected.id);
       if (room) room.moduleId = String(option.value);
     });
-    assetLibraryOpen = false; leftOpen = false; tool = 'select';
+    assetLibraryOpen = false; tool = 'select';
     if (!compactWorkbench()) desktopPanels.left = false;
     syncQuery(); draw(); focusSelectedEntity();
   }
@@ -1070,6 +1357,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       if (expandedGroups.has(key)) expandedGroups.delete(key); else expandedGroups.add(key);
       drawLeft();
       queueFrame(() => mount.querySelector(`[data-resource-group="${CSS.escape(key)}"]`)?.focus({ preventScroll: true }));
+      return;
+    }
+    const sectionToggle = event.target.closest('[data-inspector-section]');
+    if (sectionToggle) {
+      const key = sectionToggle.dataset.inspectorSection;
+      if (collapsedSections.has(key)) collapsedSections.delete(key); else collapsedSections.add(key);
+      drawInspector(true);
+      queueFrame(() => mount.querySelector(`[data-inspector-section="${CSS.escape(key)}"]`)?.focus({ preventScroll: true }));
       return;
     }
     const roomToggle = event.target.closest('[data-resource-room]');
@@ -1148,7 +1443,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     }
     else if (action === 'start-edit') {
       setMoreMenuOpen(false);
-      editMode = true; tool = 'select'; assetLibraryOpen = false; leftOpen = false;
+      editMode = true; tool = 'select'; assetLibraryOpen = false;
       if (!compactWorkbench()) desktopPanels.left = false;
       draw();
       queueFrame(() => mount.querySelector('#fpe-action-tool-select')?.focus({ preventScroll: true }));
@@ -1161,8 +1456,11 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     else if (action === 'tool-select') chooseTool('select');
     else if (action === 'tool-pan') chooseTool('pan');
     else if (action === 'tool-room') chooseTool('room');
-    else if (action === 'tool-distance') chooseTool('distance');
-    else if (action === 'tool-area') chooseTool('area');
+    else if (action === 'tool-measure') chooseTool('measure');
+    else if (action === 'clear-measure') {
+      clearMeasurement();
+      queueFrame(() => mount.querySelector('#fpe-action-tool-measure')?.focus({ preventScroll: true }));
+    }
     else if (action === 'cancel-place') chooseTool('select');
     else if (action === 'zoom-in') {
       if (viewMode === '2d') set2dCamera(zoomCamera(camera, .8));
@@ -1203,8 +1501,9 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   }
 
   function onInput(event) {
-    if (event.target.id !== 'fpe-left-search') return;
-    if (editMode) productQuery = event.target.value; else resourceQuery = event.target.value;
+    if (event.target.id === 'fpe-left-search') resourceQuery = event.target.value;
+    else if (event.target.id === 'fpe-library-search') productQuery = event.target.value;
+    else return;
     drawLeft();
   }
 
@@ -1310,13 +1609,9 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       roomDraft = { rect: [point.x, point.y, 0, 0], valid: false };
       drawScene(); return;
     }
-    if (tool === 'distance' || tool === 'area') {
+    if (tool === 'measure') {
       event.preventDefault();
-      if (!measurement || measurement.complete) measurement = { kind: tool, points: [], complete: false };
-      measurement.points.push(point);
-      if (tool === 'distance' && measurement.points.length >= 2) measurement.complete = true;
-      drawScene();
-      if (measurement.complete) announce(`Messung ${measurementLabel(measurement)}.`);
+      measureAt(point);
       return;
     }
     if (entity?.dataset.entity === 'placement' && editMode && tool === 'select') {
@@ -1362,13 +1657,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       if (tool === 'place' && placementProduct && svg) {
         const point = clientToPlan(svg, event.clientX, event.clientY);
         if (!point) return;
-        const width = Number(placementProduct.dimensions?.width) || 60;
-        const depth = Number(placementProduct.dimensions?.depth) || 60;
-        const room = containingRoom(editorDocument.rooms, point);
-        placementGhost = {
-          x: point.x - width / 2, y: point.y - depth / 2, width, depth,
-          shape: placementProduct.shape2d || 'rect', rotation: 0, valid: Boolean(room),
-        };
+        placementGhost = ghostAt(point);
         scheduleSceneDraw();
       }
       return;
@@ -1502,21 +1791,18 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       else { chooseTool('select'); announce('Neue Fläche verworfen.'); }
     } else if (drag.type === 'room-move' || drag.type === 'room-resize') {
       const room = selected?.type === 'room' ? roomById().get(selected.id) : null;
-      const accepted = drag.moved && !cancelled && room
+      const rejected = 'Raumgeometrie bleibt unverändert: Geschossgrenze, andere Räume oder verortete Objekte verhindern die Änderung.';
+      const geometryHolds = Boolean(room)
         && roomRectInsideFloor(room.rect, floor.extent, editorDocument.rooms, room.spaceId)
-        && placementsInsideRoom(editorDocument, room)
-        && validateEditorDocument(editorDocument, baseline);
-      if (!drag.moved) {
-        editorDocument = cloneDocument(drag.before);
-      } else if (!accepted) {
-        editorDocument = cloneDocument(drag.before);
-        announce('Raumgeometrie bleibt unverändert: Geschossgrenze, andere Räume oder verortete Objekte verhindern die Änderung.');
-      } else {
-        editHistory.push(editorDocument);
-        editorDocument = cloneDocument(editHistory.current);
-        dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
-        syncDraftChrome();
-        announce(drag.type === 'room-move' ? 'Raum und Ausstattung verschoben.' : 'Raumkante verschoben.');
+        && placementsInsideRoom(editorDocument, room);
+      if (!drag.moved) rollbackGesture({ before: drag.before });
+      else if (cancelled || !geometryHolds) rollbackGesture({ before: drag.before, message: cancelled ? '' : rejected });
+      else {
+        commitGesture({
+          before: drag.before,
+          label: drag.type === 'room-move' ? 'Raum und Ausstattung verschoben.' : 'Raumkante verschoben.',
+          rejected,
+        });
       }
       drawWorkArea({ focusSelected: true });
     } else if (drag.type === 'placement') {
@@ -1526,44 +1812,45 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
         editorDocument = cloneDocument(drag.before);
       } else {
         const placement = selected?.type === 'placement' ? placementById().get(selected.id) : null;
-        if (placement) {
+        // No `else` stood here. When the selection went away mid-gesture — Escape, or a
+        // redraw that dropped it — the whole branch was skipped: the mutation the drag
+        // had already applied stayed in the document, outside history, with `dirty`
+        // never recomputed and nothing redrawn. Restoring is the only safe reading of
+        // «the thing I was dragging is gone».
+        if (!placement) {
+          rollbackGesture({ before: drag.before });
+        } else {
           const cx = placement.x + placement.width / 2, cy = placement.y + placement.depth / 2;
           const containing = containingRoom(editorDocument.rooms, { x: cx, y: cy });
           if (cancelled || !containing) {
-            editorDocument = cloneDocument(drag.before);
-            if (!cancelled) announce('Objekt bleibt am bisherigen Ort: Der Mittelpunkt muss in einem Raum liegen.');
+            rollbackGesture({
+              before: drag.before,
+              message: cancelled ? '' : 'Objekt bleibt am bisherigen Ort: Der Mittelpunkt muss in einem Raum liegen.',
+            });
           } else {
             placement.roomId = containing.spaceId;
             if (placement.status !== 'new') placement.status = 'moved';
-            if (!validateEditorDocument(editorDocument, baseline)) {
-              editorDocument = cloneDocument(drag.before);
-              announce('Objekt bleibt am bisherigen Ort: Die neue Position wäre ungültig.');
-            } else {
-              editHistory.push(editorDocument);
-              editorDocument = cloneDocument(editHistory.current);
-              dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
-              syncDraftChrome();
-              announce('Objekt verschoben.');
-            }
+            commitGesture({
+              before: drag.before,
+              label: 'Objekt verschoben.',
+              rejected: 'Objekt bleibt am bisherigen Ort: Die neue Position wäre ungültig.',
+            });
           }
-          drawWorkArea({ focusSelected: true });
         }
+        drawWorkArea({ focusSelected: true });
       }
     } else if (drag.type === 'widget-rotate') {
       // Rotation snaps to a step the document model accepts, so the only way to
       // fail validation here is a placement that no longer fits its room.
-      if (!drag.moved || cancelled) editorDocument = cloneDocument(drag.before);
-      else if (!validateEditorDocument(editorDocument, baseline)) {
-        editorDocument = cloneDocument(drag.before);
-        announce('Objekt bleibt in der bisherigen Ausrichtung: Die Drehung wäre ungültig.');
-      } else {
+      if (!drag.moved || cancelled) rollbackGesture({ before: drag.before });
+      else {
         const placement = selected?.type === 'placement' ? placementById().get(selected.id) : null;
         if (placement && placement.status !== 'new') placement.status = 'moved';
-        editHistory.push(editorDocument);
-        editorDocument = cloneDocument(editHistory.current);
-        dirty = reconciliationPending || !documentsEqual(editorDocument, lastSaved);
-        syncDraftChrome();
-        announce(`Objekt auf ${placement?.rotation ?? 0} Grad gedreht.`);
+        commitGesture({
+          before: drag.before,
+          label: `Objekt auf ${placement?.rotation ?? 0} Grad gedreht.`,
+          rejected: 'Objekt bleibt in der bisherigen Ausrichtung: Die Drehung wäre ungültig.',
+        });
       }
       drawWorkArea({ focusSelected: true });
     } else if (drag.type === 'pan') {
@@ -1588,8 +1875,9 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   }
 
   function onDoubleClick(event) {
-    if (tool === 'area' && event.target.closest('#fpe-stage') && measurement?.points.length >= 3) {
-      event.preventDefault(); measurement.complete = true; drawScene(); announce(`Fläche ${measurementLabel(measurement)}.`); return;
+    if (tool === 'measure' && event.target.closest('#fpe-stage') && measurement?.points.length >= 3) {
+      event.preventDefault(); measurement.closed = true; drawScene();
+      announce(`Fläche geschlossen: ${measurementLabel(measurement)}.`); return;
     }
     const entity = event.target.closest?.('[data-entity]');
     if (tool === 'select' && entity) {
@@ -1615,6 +1903,28 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
   }
 
   function onKeyDown(event) {
+    // A modal dialog owns the keyboard, wherever focus sits. Guarding only on events
+    // from OUTSIDE the dialog was not enough: product tiles are buttons, so with focus
+    // on a tile the editor's shortcut ladder still ran — Backspace deleted the
+    // placement behind the modal, `r` rotated it, and `v`/`h` switched tool, which
+    // tears the dialog down under the visitor's fingers. The state after a serial
+    // placement is exactly «placement selected, library reopened».
+    //
+    // Inside the dialog only its own keys apply: the tablist's arrows, typing in the
+    // search field, Tab (which the inert surroundings already confine), and Escape.
+    if (assetLibraryOpen) {
+      const insideDialog = Boolean(event.target.closest?.('#fpe-library'));
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeAssetLibrary({ announceClose: true });
+        return;
+      }
+      if (!insideDialog) return;
+      const dialogKey = event.key === 'Tab'
+        || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName)
+        || Boolean(event.target.closest?.('[role="tablist"]'));
+      if (!dialogKey) return;
+    }
     const textControl = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName);
     if (event.target.id === 'fpe-more-trigger' && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
       event.preventDefault();
@@ -1702,7 +2012,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       if (direction) {
         event.preventDefault();
         const [directionX, directionY] = direction;
-        if (['room', 'distance', 'area', 'place'].includes(tool)) {
+        if (['room', 'measure', 'place'].includes(tool)) {
           const step = event.shiftKey ? 1 : 10;
           moveKeyboardCursor(directionX * step, directionY * step);
         } else {
@@ -1730,7 +2040,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
         }
         return;
       }
-      if ((tool === 'distance' || tool === 'area') && event.key === ' ') {
+      if (tool === 'measure' && event.key === ' ') {
         event.preventDefault();
         addKeyboardMeasurementPoint();
         return;
@@ -1745,7 +2055,11 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       if (event.key === '-') { event.preventDefault(); set2dCamera(zoomCamera(camera, 1.25)); return; }
     }
     if (event.key === 'Escape') {
-      if (moreMenuOpen) { event.preventDefault(); setMoreMenuOpen(false, { restoreFocus: true }); }
+      // The library is a dialog, and a dialog closes on Escape before anything
+      // behind it reacts.
+      if (assetLibraryOpen) { event.preventDefault(); closeAssetLibrary({ announceClose: true }); }
+      else if (tool === 'measure' && measurement?.points.length) { event.preventDefault(); clearMeasurement(); }
+      else if (moreMenuOpen) { event.preventDefault(); setMoreMenuOpen(false, { restoreFocus: true }); }
       else if (structureMenuOpen) { event.preventDefault(); setStructureMenuOpen(false, { restoreFocus: true }); }
       else if (colorMenuOpen) { event.preventDefault(); closeColorMenu({ restoreFocus: true }); }
       else if (closeCompactPanels()) event.preventDefault();
@@ -1753,11 +2067,14 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       else if (selected) { event.preventDefault(); selectEntity(null, null); }
       return;
     }
-    if (stageFocused && tool === 'area' && event.key === 'Enter' && measurement?.points.length >= 3 && !measurement.complete) {
-      event.preventDefault(); measurement.complete = true; drawScene(); announce(`Fläche ${measurementLabel(measurement)}.`); return;
+    if (stageFocused && tool === 'measure' && event.key === 'Enter' && measurement?.points.length >= 3 && !measurement.closed) {
+      event.preventDefault(); measurement.closed = true; drawScene();
+      announce(`Fläche geschlossen: ${measurementLabel(measurement)}.`); return;
     }
-    if (stageFocused && (tool === 'area' || tool === 'distance') && event.key === 'Backspace' && measurement?.points.length) {
-      event.preventDefault(); measurement.points.pop(); measurement.complete = false; drawScene(); announce('Letzten Messpunkt entfernt.'); return;
+    if (stageFocused && tool === 'measure' && event.key === 'Backspace' && measurement?.points.length) {
+      event.preventDefault(); measurement.points.pop();
+      measurement.closed = measurement.closed && measurement.points.length >= 3;
+      drawScene(); announce('Letzten Messpunkt entfernt.'); return;
     }
     const entity = event.target.closest?.('[data-entity]');
     if (entity && (event.key === 'Enter' || event.key === ' ')) {
@@ -1798,10 +2115,10 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       if (compactLayout) {
         desktopPanels.left = leftOpen;
         desktopPanels.right = rightOpen;
-        leftOpen = editMode && assetLibraryOpen;
+        leftOpen = false;
         rightOpen = false;
       } else {
-        leftOpen = editMode ? assetLibraryOpen : desktopPanels.left;
+        leftOpen = desktopPanels.left;
         rightOpen = desktopPanels.right;
       }
       structureMenuOpen = false;

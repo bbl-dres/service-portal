@@ -169,7 +169,7 @@ may describe additional call sites covered by the same contract and tests.
 | High | `js/security/urls.js:35-99`; representative sinks in `js/ui/components/content.js:382-404` | Fixture, query, map, search, or storage values could reach `href`, `src`, CSS/resource, ID, class, or HTML contexts without a context-specific policy. Generic string interpolation blurred trust boundaries. | **Resolved.** Links are relative or HTTPS by policy, assets are prefix-restricted, mail/phone values have dedicated helpers, DOM tokens are normalized, and unsafe targets render inert. |
 | High | `js/ui/components/primitives.js:13-158`; `js/ui/components/content.js:45-117`; `js/ui/components/feedback.js:121-151` | Component parameters that looked like text sometimes accepted markup, making escaping dependent on every caller. | **Resolved.** Text is escaped by default; intentional markup has an explicit `*Html` contract; tag, modifier, state, size, and class inputs use allowlists. |
 | High | `js/core/external-assets.js:8-139`; consumers at `js/apps/api-docs.js:31-59` and `js/map/buildings-map.js:12-40` | Pinned CDN versions alone did not authenticate executable bytes, and a late stylesheet failure could follow script execution. | **Resolved.** Exact SHA-384 SRI, anonymous CORS, no-referrer policy, single-flight loading, timeout cleanup, retry, and style-before-script sequencing protect direct assets. |
-| High | `scripts/serve.mjs:46-151` | The local server could expose hidden files or accept unsafe path/Host/method inputs. It lacked a clearly bounded static-file policy. | **Resolved.** Decoding and containment checks, dot-path denial, loopback Host allowlisting, GET/HEAD-only handling, compression negotiation, `Vary`, and `nosniff` are tested. |
+| High | `scripts/serve.mjs:46-151` | The local server could expose hidden files or accept unsafe path/Host/method inputs. It lacked a clearly bounded static-file policy. | **Only partly resolved — see the second pass below.** Decoding and containment checks, loopback Host allowlisting, GET/HEAD-only handling, compression negotiation, `Vary`, and `nosniff` are tested. The dot-path denial, however, tested one SPELLING of a hidden name rather than the property: `/GIT~1/config` reached `.git/config` through an NTFS 8.3 alias. Closed on 11 August by deciding on the resolved real path. |
 | Medium | `js/export.js:28-66`; `js/apps/room-booking/calendar.js:14-47` | Exported cells could be interpreted as spreadsheet formulas; calendar values could inject properties through CR/LF or parameters. | **Resolved.** Formula-leading cells are neutralized and CSV/ICS encoding has adversarial regression coverage. |
 | Medium | `js/apps/process-docs.js:342-350,472-512`; `js/ui/floorplan.js:88-137`; `js/apps/shop.js:240-430` | BPMN paths, SVG properties, and product identifiers originated in data but were used as resource paths or DOM attributes. | **Resolved.** BPMN files are confined to their asset directory and extension; SVG/product fields are finite, enumerated, tokenized, and escaped. |
 
@@ -294,3 +294,152 @@ German remains correct in the UI. The English column is the preferred implementa
 ## Conclusion
 
 Within its declared prototype boundary, the application has a coherent module model, defensible browser-side trust boundaries, and regression evidence for its routes and principal interactions. Future feature work should preserve the route lifecycle, text-by-default component contracts, validated data/storage boundaries, and English implementation vocabulary. Production work should begin with identity, server authority, publication approval, and deployment policy—not with more client-side simulation.
+
+---
+
+# Senior technical review, second pass
+
+**Review date:** 11 August 2026
+
+**Method:** ten independent expert reviewers over distinct dimensions — controller
+monolith, Three.js layer, model/commands/repository, view duplication, cross-app
+duplication, editor correctness, CSS architecture, test quality, security boundaries,
+accessibility and consistency — each followed by an adversarial verifier instructed to
+refute what it could and to judge whether a real finding was worth acting on. A lead
+pass merged findings that arrived from several dimensions; a completeness critic then
+looked for what ten dimensions would miss. 22 agents, 123 findings surviving
+verification.
+
+**Scope:** the whole repository, weighted towards the plan editor, which had just taken
+a large round of changes.
+
+## What the review found that this document got wrong
+
+The first review (8 August) closed a finding titled «hidden repository and environment
+paths are never runtime assets» and recorded it as resolved and tested. It was neither.
+
+`scripts/serve.mjs` refused any path segment beginning with a dot. NTFS keeps 8.3
+aliases that contain **no dot**, so the refusal was one spelling of the name. Reproduced
+on the review machine: `/.git/config` correctly returned 404 while **`/GIT~1/config`
+returned 200 and 1038 bytes of the real file, including remote URLs**. `/GITIGN~1`
+disclosed the same way. `serve.mjs` documents a LAN bind mode, in which any peer on the
+network could read it. The gate had only ever asserted the dotted spelling, which is why
+this passed for three days of review and every run since.
+
+The decision is now taken on the resolved real path — `realpathSync.native` normalises
+the alias back to its long name and follows symlinks, so both spellings and any in-root
+link land in the same branch. The gate asserts the alias form at the resolver and at the
+HTTP boundary.
+
+The lesson generalises past this one bug: **a gate that asserts a spelling tests the
+spelling, not the property.**
+
+## The finding that had to be fixed first
+
+`scripts/lib/cdp.mjs` read only `result.value` from `Runtime.evaluate` and never
+`exceptionDetails` — and `Runtime.exceptionThrown`, which the harness does listen for,
+does not fire for `Runtime.evaluate`. A probe that threw therefore resolved to
+`undefined`, and the assertion downstream failed with an empty detail under a name that
+described something else. Since most of the editor suite is template-literal probes that
+`node --check` cannot parse, this hid an unknown amount.
+
+Fixing it surfaced exactly one silently-broken probe, in `check-pj-gallery.mjs`: a regex
+carrying a single-escaped slash, which in a template literal emits a bare slash that
+closes the regex early. The probe had never run. Its diagnostic was also wrong once it
+did run — a number-slash-number search over `document.body` matched the object's SAP key
+rather than the gallery counter.
+
+`problems()` also never drained its buffers and only ever reported index 0, so one early
+console error failed every later `checkProblems` call under its own unrelated name.
+
+## Data integrity
+
+| Nr. | Befund | Entscheid / Umsetzung |
+| --- | --- | --- |
+| R1 | **Every cross-room furniture move in the 3D model was silently rejected.** The 3D commit validated the document while `roomId` still named the room the object came from, and `validPlacement` requires a placement's centre to lie inside the room its `roomId` names. The object snapped back and blamed the new position. The 2D path always assigned first, which is why only 3D was affected. Reported independently by two reviewers. | Room assigned before validation. |
+| R2 | An interrupted 3D widget drag never told the controller: `pointercancel` and `lostpointercapture` went straight to `endInteraction`. The mutation already applied stayed in the document, outside history and outside `dirty`, and the rollback snapshot survived to become the rollback target of the NEXT drag. | Both paths report a cancelled gesture; the snapshot is cleared on viewer teardown and on leaving edit mode. |
+| R3 | The 2D placement-drag epilogue had `if (placement)` with no `else`. A selection that vanished mid-gesture skipped the whole branch: no restore, no `dirty` recompute, nothing redrawn. | The missing branch restores; the redraw is hoisted so it always runs. |
+
+## The library dialog, and what «modal» has to mean
+
+The dialog introduced in the previous round declared `aria-modal="true"` and enforced
+none of it. Three reviewers found this independently, which is a fair signal.
+
+- Tab walked into the header, the tree, the footer's project links and the stage — all
+  under an opaque scrim. A container that claims modality without enforcing it is worse
+  than one that claims nothing: a screen reader stops describing the rest of the page
+  while the keyboard still goes there.
+- The editor's shortcuts stayed live behind it. **Backspace deleted the selected object
+  out of view.** A first fix guarded only events from outside the dialog, which missed
+  the normal case: product tiles are buttons, so focus sits on one, and from there the
+  whole ladder still ran — `r` rotated, `v`/`h` switched tool and tore the dialog down
+  mid-gesture.
+- The dialog had **no surface**. Measured: content and body backgrounds both
+  transparent, title text white. The design system keeps modal content transparent with
+  white header chrome and expects the caller to supply the light box through a card; the
+  card had been omitted, so the product grid rendered on the scrim. That also explains
+  the reported overflow: a full-bleed tab strip was bleeding against padding that did
+  not exist.
+
+Every sibling of the dialog now goes `inert`, the dialog owns the keyboard wherever
+focus sits, and the body carries the card. Asserted, including five destructive keys
+pressed with focus on a tile.
+
+## WebGL lifecycle
+
+`dispose()` ended at `renderer.dispose()`, which frees Three's objects but not the GL
+context, while every rail toggle, view switch and — after the previous round — every
+armed product and every placement ran the full `draw()`, disposing the viewer and
+building a new renderer. Chromium keeps roughly sixteen live contexts and kills the
+oldest, so a run of placements could pull the context out from under the viewer in use.
+
+- `forceContextLoss()` before `dispose()`, with a `disposed` guard on the
+  `webglcontextlost` handler, which that call synthesises on the canvas being torn down.
+- A narrow `updatePlacements` that moves existing groups, replacing `updateDocument` on
+  the drag path. `updateDocument` rebuilt every room slab, outline and wall, a fresh
+  grid, and one 512×128 canvas plus a CanvasTexture per room label — on every pointer
+  move, on a floor with up to 43 spaces.
+- The library dialog moved into its own host so opening, closing and arming redraw the
+  work area instead of the shell.
+
+Measured: one WebGL context now serves entering 3D, opening the library, arming a
+product and a run of placements. Asserted by canvas identity.
+
+## Complexity
+
+| Nr. | Befund | Entscheid / Umsetzung |
+| --- | --- | --- |
+| R4 | One commit ritual — push, re-clone, recompute `dirty`, sync chrome, announce — written out at four gesture sites, with the rollback written out at fourteen. The newest copy put validation one line too early, which is R1. | `commitGesture` and `rollbackGesture`. `editHistory.push(editorDocument)` now appears exactly once, and validation lives inside the commit, so a caller cannot order it wrongly. This is the extraction a bug had already paid for. |
+| R5 | 27 `.fpe-swatch--*` rules restated what `colors.js` already holds in each colour's `css` field, plus a base rule that painted an unrecognised token in the «Arbeit» blue — a wrong answer where a neutral one belongs. | Deleted. The fill is derived through `swatchCss(token)`; the base rule falls back to the unassigned grey. Verified across all five colour modes. |
+| R6 | `check-css-tokens.mjs` skipped `--*` declarations in its colour check, so a raw palette or a private layering scale declared as a custom property passed a gate whose entire purpose is to forbid it. | The gate inspects custom properties, distinguishing palette owners (the token sheet, the skins, the two floor-plan sheets that own a domain palette mirrored in `colors.js`) from everyone else. A first version reported 51 legitimate palette definitions; a gate that noisy gets switched off. |
+| R7 | Two private z-index scales the extended gate found at once: `--shopping-z-overlay:30/--shopping-z-image:40`, and a five-rung `19/20/30/50/80` scale in the editor. A test pinned the literal `30`. | Both on the documented `--z-local-*` rungs — the editor sets `isolation:isolate`, so only ordering ever mattered. The test asserts ordering. |
+| R8 | The object registers render `C.table` directly rather than through `mountDataTable`, and had not brought its `preserveFocus` guard: every keystroke in a register search destroyed the input and dropped focus. | The guard applied. |
+| R9 | `C.announceCatalogue` called positionally against an options-object signature, so every filter change in the plan editor's portfolio announced «undefined von undefined undefined». | One options object. |
+| R10 | Left behind by the previous round: the stage's keyboard help still branched on the deleted `distance`/`area` tools, so the merged measuring tool advertised the panning keys; `colorMenuHTML()` returned nothing in edit mode, leaving the «Farbe» trigger a control pointing at an element that did not exist and `colorMenuOpen` stuck true, which swallowed the next Escape; `dataset.widget` was written once and never cleared. | All three corrected and asserted. |
+
+## Two traps recorded so they are not walked into again
+
+**Backticks in generated markup.** A backtick inside an HTML comment inside a template
+literal parses as a tagged template and throws at runtime. `node --check` passes and the
+surface silently stops rendering. This cost time three times in one session.
+
+**Escape layers.** Writing a regex word boundary through a non-raw Python string
+produced a literal 0x08 byte in `check-css-tokens.mjs`, leaving the new layering rule
+**silently inert** — it matched nothing and the gate reported success. It was caught only
+by testing the rule against known inputs rather than trusting a green run, which is the
+same discipline the harness finding above is about.
+
+## Deliberately not done
+
+- **The `--fpe-module-*` scale hand-copies values that already exist in the room-use
+  palette.** A cosmetic dedup across eleven colour values with no way to verify the
+  result visually from a headless run. Left as a note.
+- **Splitting the 2,700-line editor suite.** The seam is real, but moving it in the same
+  pass as this many behavioural fixes would make a regression hard to attribute.
+- **Shared `detailLayout` and plan-state badge helpers.** Eight and nine call sites
+  across apps that this round did not otherwise touch.
+- **Further extraction from `controller.js`.** The camera subsystem is the clean next
+  seam. The commit protocol was extracted because a defect had already been paid for by
+  its absence; the rest has not earned it yet, and the first review's deferral of exactly
+  this is what produced R1 — so the note is: extract when a bug shows the duplication is
+  load-bearing, not on line count alone.
