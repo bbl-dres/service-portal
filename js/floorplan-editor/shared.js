@@ -102,7 +102,7 @@ export function breadcrumbBarHTML(C, steps, { id = '' } = {}) {
 
 export function prototypeFooterHTML() {
   return `<footer class="fpe-local-note">
-    <strong>Feedback-Prototyp</strong>
+    <span class="fpe-local-note__label">Feedback-Prototyp</span>
     <nav aria-label="Projektlinks">
       <a href="https://github.com/bbl-dres/service-portal" target="_blank" rel="noopener noreferrer">Quellcode</a>
       <a href="https://www.admin.ch/de/rechtliches" target="_blank" rel="noopener noreferrer">Rechtliches</a>

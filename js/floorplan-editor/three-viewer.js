@@ -2,7 +2,7 @@
 // derived from the same browser-local document as the SVG editor.
 
 import * as THREE from '../vendor/three.module.min.js';
-import { PLACEMENT_PREVIEW, createColorContext, normalizeColorMode, roomColor } from './colors.js';
+import { MEASURE_COLOR, PLACEMENT_PREVIEW, createColorContext, normalizeColorMode, roomColor } from './colors.js';
 // The widget's geometry is shared with the 2D plan, so the two views cannot
 // drift: only the conversion from plan centimetres to world metres happens here.
 import { originFromCentre, rotationFromPoint, widgetGeometry } from './transform-widget.js';
@@ -103,6 +103,8 @@ export function createFloorplanThreeViewer({
     colorMode: normalizeColorMode(colorMode),
     // The placement preview, in plan units, exactly as the 2D canvas receives it.
     ghost: null,
+    // The measurement, also in plan units, and also the SAME object the plan draws.
+    measurement: null,
   };
   let dimensions = floorSize(state.floor);
   let colorContext = createColorContext(state.rooms);
@@ -497,6 +499,7 @@ export function createFloorplanThreeViewer({
     renderer.shadowMap.needsUpdate = true;
     buildWidget();
     buildGhost();
+    buildMeasurement();
     invalidate();
   }
 
@@ -634,6 +637,93 @@ export function createFloorplanThreeViewer({
     buildWidget();
     invalidate();
     return true;
+  }
+
+  // --- Measurement -----------------------------------------------------------
+  // Drawn from the same `measurement` the plan draws, in the same plan units, so a
+  // measurement cannot read differently in the two views. Only the conversion to metres
+  // happens here — as with the transform widget and the placement preview.
+  let measureGroup = null;
+
+  function clearMeasurement() {
+    if (!measureGroup) return;
+    measureGroup.traverse((child) => {
+      child.geometry?.dispose?.();
+      const material = child.material;
+      if (Array.isArray(material)) material.forEach((entry) => entry?.dispose?.());
+      else material?.dispose?.();
+    });
+    measureGroup.parent?.remove(measureGroup);
+    measureGroup = null;
+  }
+
+  function buildMeasurement() {
+    clearMeasurement();
+    const points = Array.isArray(state.measurement?.points) ? state.measurement.points : [];
+    if (viewerMode !== '3d' || !worldRoot || !points.length) {
+      delete host.dataset.measurePoints;
+      return;
+    }
+    const closed = Boolean(state.measurement.closed) && points.length >= 3;
+    const group = new THREE.Group();
+    // Just clear of the slab, like the widget ring, so the line is not swallowed by
+    // z-fighting with the floor it measures.
+    const lift = 0.02;
+    const vectors = points.map((point) => {
+      const local = planToLocal(point.x, point.y);
+      return new THREE.Vector3(local.x, lift, local.z);
+    });
+
+    const colour = MEASURE_COLOR;
+    if (vectors.length > 1) {
+      const path = closed ? [...vectors, vectors[0]] : vectors;
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(path),
+        new THREE.LineBasicMaterial({ color: colour, depthTest: false }),
+      );
+      line.renderOrder = 14;
+      group.add(line);
+    }
+    // A closed ring also shows the area it encloses.
+    if (closed) {
+      const shape = new THREE.Shape(points.map((point) => {
+        const local = planToLocal(point.x, point.y);
+        return new THREE.Vector2(local.x, local.z);
+      }));
+      const face = new THREE.Mesh(
+        new THREE.ShapeGeometry(shape),
+        new THREE.MeshBasicMaterial({ color: colour, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide }),
+      );
+      face.rotation.x = Math.PI / 2;
+      face.position.y = lift - 0.004;
+      face.renderOrder = 13;
+      group.add(face);
+    }
+    vectors.forEach((position, index) => {
+      const dot = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055, 16, 12),
+        new THREE.MeshBasicMaterial({ color: colour, depthTest: false }),
+      );
+      dot.position.copy(position);
+      dot.renderOrder = 15;
+      // The first point is the one that closes the ring, so it reads larger while that
+      // is still possible — the same affordance the plan gives it.
+      if (index === 0 && !closed && vectors.length >= 3) dot.scale.setScalar(1.5);
+      group.add(dot);
+    });
+
+    // Not a pick target: a click has to reach the floor, which is what sets the point.
+    group.traverse((child) => { child.raycast = () => {}; });
+    worldRoot.add(group);
+    measureGroup = group;
+    host.dataset.measurePoints = `${points.length}${closed ? ':closed' : ''}`;
+  }
+
+  /** Replace the measurement without rebuilding the document. */
+  function updateMeasurement(next = null) {
+    state.measurement = next && Array.isArray(next.points) && next.points.length ? next : null;
+    buildMeasurement();
+    invalidate();
   }
 
   /** Replace the placement preview without rebuilding the document. */
@@ -826,18 +916,30 @@ export function createFloorplanThreeViewer({
    * «everything fits», which is unit-free, so the ratio transfers directly and
    * the centre only needs the centimetre-to-metre mapping the geometry uses.
    */
-  function adoptPlanCamera() {
-    const centre = initialCamera?.centre;
+  /**
+   * Point the orbit camera at a place in the plan.
+   *
+   * Split out of `adoptPlanCamera` so it can be called AFTER construction: «zoom to the
+   * selection» has to work in the model, and the only way to honour it before was to
+   * switch the visitor into the 2D plan.
+   */
+  function focusPlanCamera(target) {
+    const centre = target?.centre;
     if (viewerMode !== '3d' || !centre
       || ![centre.x, centre.y].every(Number.isFinite)
-      || !Number.isFinite(initialCamera.fitRatio) || initialCamera.fitRatio <= 0) return false;
+      || !Number.isFinite(target.fitRatio) || target.fitRatio <= 0) return false;
     orbit.target.x = clamp(centre.x * CM_TO_M - dimensions.width / 2,
       -dimensions.width / 2, dimensions.width / 2);
     orbit.target.z = clamp(centre.y * CM_TO_M - dimensions.depth / 2,
       -dimensions.depth / 2, dimensions.depth / 2);
-    orbit.distance = currentFitDistance() * clamp(initialCamera.fitRatio, 0.2, 1.6);
+    orbit.distance = currentFitDistance() * clamp(target.fitRatio, 0.2, 1.6);
     updateOrbitCamera();
+    invalidate();
     return true;
+  }
+
+  function adoptPlanCamera() {
+    return focusPlanCamera(initialCamera);
   }
 
   function restoreInitialView() {
@@ -1180,6 +1282,10 @@ export function createFloorplanThreeViewer({
     // with it. Without this the viewer would rebuild the LAST ghost it was given and
     // strand a footprint on the floor with nothing armed.
     if (Object.hasOwn(next, 'ghost')) state.ghost = next.ghost || null;
+    if (Object.hasOwn(next, 'measurement')) {
+      const value = next.measurement;
+      state.measurement = value && Array.isArray(value.points) && value.points.length ? value : null;
+    }
     buildDocumentGeometry();
     if (viewerMode === 'walk') {
       walk.position.x = clamp(walk.position.x, -dimensions.width / 2 + 0.18, dimensions.width / 2 - 0.18);
@@ -1341,7 +1447,10 @@ export function createFloorplanThreeViewer({
     if (!shouldSelect) return;
     // With placing armed, a click on the floor asks for a product there; the
     // controller decides whether it is allowed. Otherwise the click selects.
-    if (editable && onFloorClick) {
+    // Routed whether or not the viewer is editable: measuring is not an edit, and the
+    // controller decides what a floor click means. Gating this on `editable` meant the
+    // measuring tool could be selected in a read-only model and then did nothing.
+    if (onFloorClick) {
       const point = pointOnFloor(event.clientX, event.clientY);
       if (point && onFloorClick(worldToPlan(point))) return;
     }
@@ -1446,8 +1555,10 @@ export function createFloorplanThreeViewer({
   return {
     reset,
     zoom,
+    focusPlanCamera,
     refreshWidget: buildWidget,
     updateGhost,
+    updateMeasurement,
     updatePlacements,
     updateSelection,
     updateColors,
@@ -1465,6 +1576,7 @@ export function createFloorplanThreeViewer({
       contextStatus = null;
       clearWidget();
       clearGhost();
+      clearMeasurement();
       clearDocumentGeometry();
       persistentMaterials.forEach((material) => material.dispose());
       persistentMaterials.clear();

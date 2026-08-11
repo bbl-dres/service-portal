@@ -757,13 +757,21 @@ try {
         };
       })(),
       prototypeFooter: {
-        label: document.querySelector('.fpe-local-note > strong')?.textContent.trim() || '',
+        label: document.querySelector('.fpe-local-note__label')?.textContent.trim() || '',
         icons: document.querySelectorAll('.fpe-local-note .icon').length,
         links: [...document.querySelectorAll('.fpe-local-note a')].map(link => ({
           label: link.textContent.trim(), href: link.href, target: link.target, rel: link.rel,
         })),
+        plainLabel: (() => {
+          const label = document.querySelector('.fpe-local-note__label');
+          if (!label) return false;
+          const weight = getComputedStyle(label).fontWeight;
+          return Number(weight) < 600 && weight !== 'bold';
+        })(),
+        underlined: [...document.querySelectorAll('.fpe-local-note a')]
+          .filter((link) => getComputedStyle(link).textDecorationLine.includes('underline')).length,
         labelLeftOfLinks: (() => {
-          const label = document.querySelector('.fpe-local-note > strong')?.getBoundingClientRect();
+          const label = document.querySelector('.fpe-local-note__label')?.getBoundingClientRect();
           const links = document.querySelector('.fpe-local-note nav')?.getBoundingClientRect();
           return Boolean(label && links && label.right <= links.left);
         })(),
@@ -833,11 +841,14 @@ try {
     && initial.resourceTree.panelGlyphs === 4,
   'defaults to no coloring and renders a flat room tree without synthetic aggregation',
   `${initial.resourceTree.groups} groups · ${initial.resourceTree.roomRows} rooms · ${initial.resourceTree.roomNameInset}px name inset`);
-  check(initial.planActions.more === 'menu' && initial.planActions.items === 5
+  check(initial.planActions.more === 'menu' && initial.planActions.items === 7
     && !initial.planActions.historyInToolbar,
   'separates plan-level actions from canvas tools', `${initial.planActions.items} actions`);
   check(initial.prototypeFooter.label === 'Feedback-Prototyp' && initial.prototypeFooter.icons === 0
     && initial.prototypeFooter.labelLeftOfLinks
+    // Quiet by design: the footer is a standing note, so no bold label and no underline
+    // at rest. The underline returns on hover and focus, which is asserted separately.
+    && initial.prototypeFooter.plainLabel && initial.prototypeFooter.underlined === 0
     && initial.prototypeFooter.links.map(link => link.label).join(',') === 'Quellcode,Rechtliches,Kontakt'
     && initial.prototypeFooter.links.map(link => link.href).join(',') === [
       'https://github.com/bbl-dres/service-portal',
@@ -1091,6 +1102,52 @@ try {
     && measure.closed.dismissible,
   'measures with one tool: length from points, area and perimeter when closed, click to drop a point',
   `${measure.twoPoints.text} → ${measure.closed.text} → ${measure.removed.dots} dots → cleared`);
+
+  // Closing the inspector is a choice, so a later selection must not reopen it — and
+  // must not vanish either. The inspector is the only place a selection is described, so
+  // a silent close swallowed the answer: the room lit up on the plan and nothing said
+  // why. The toggle carries the marker, and its accessible name says it in words.
+  const hiddenSelection = await page.evaluate(`(async () => {
+    const pause = (ms = 420) => new Promise(resolve => setTimeout(resolve, ms));
+    const toggle = () => document.querySelector('#fpe-toggle-right');
+    const snap = () => ({
+      open: document.querySelector('#fpe-app')?.classList.contains('has-right') || false,
+      pending: toggle()?.classList.contains('has-pending') || false,
+      dot: !!document.querySelector('#fpe-toggle-right .fpe-panel-toggle__dot'),
+      label: toggle()?.getAttribute('aria-label') || '',
+    });
+    // The inspector's own X, which used to be display:none outside compact viewports.
+    const closer = document.querySelector('.fpe-inspector-title .fpe-drawer-close');
+    const closerVisible = closer ? getComputedStyle(closer).display !== 'none' : false;
+    const before = snap();
+    closer?.click(); await pause();
+    const closed = snap();
+    const room = document.querySelector('.fpe-room[data-id]');
+    for (const type of ['pointerdown', 'pointerup']) {
+      room?.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 33,
+        pointerType: 'mouse', button: 0, buttons: type === 'pointerdown' ? 1 : 0 }));
+    }
+    await pause(520);
+    const selected = snap();
+    toggle()?.click(); await pause();
+    const reopened = snap();
+    // Put the floor inspector back. Selecting a room swaps the whole panel, and the
+    // section-collapse probe below addresses the floor inspector's own sections by id.
+    document.querySelector('#fpe-stage')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await pause();
+    return { closerVisible, before, closed, selected, reopened,
+      restored: !!document.querySelector('#fpe-section-floor-attributes') };
+  })()`);
+  check(hiddenSelection.closerVisible
+    && hiddenSelection.before.open && !hiddenSelection.before.pending
+    && !hiddenSelection.closed.open
+    // Selecting behind a closed inspector neither reopens it nor goes unreported.
+    && !hiddenSelection.selected.open && hiddenSelection.selected.pending
+    && hiddenSelection.selected.dot && /ausgewählt/.test(hiddenSelection.selected.label)
+    // Reopening clears the marker, because the answer is on screen again.
+    && hiddenSelection.reopened.open && !hiddenSelection.reopened.pending
+    && hiddenSelection.restored,
+  'respects a closed inspector and marks the toggle when a selection waits behind it',
+  `closer ${hiddenSelection.closerVisible} · selected-while-closed pending ${hiddenSelection.selected.pending} · ${hiddenSelection.selected.label}`);
 
   // Inspector sections fold away. The heading is a real button with `aria-expanded`
   // and `aria-controls`, built like the resource tree's own group disclosure rather
@@ -1727,7 +1784,11 @@ try {
     document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })); await pause();
     const productsViaKeyboard = document.querySelector('[data-library="products"]')?.getAttribute('aria-selected') === 'true'
       && document.activeElement?.dataset.library === 'products';
-    fire(document.querySelector('[data-action="clear-selection"]')); await pause();
+    // Select an existing OBJECT rather than deselecting. What this step needs is «no room
+    // selected», so the product click arms instead of placing into the room centre — and
+    // Escape is not a substitute here: it also closes the library, because leaving the add
+    // tool closes it by design.
+    fire(document.querySelector('.fpe-placement[data-id]')); await pause();
     const stagedProduct = document.querySelector('.fpe-product[data-product]');
     if (!stagedProduct) return { error: 'product library is empty before placement staging' };
     fire(stagedProduct); await pause();
@@ -2370,7 +2431,14 @@ try {
       containsLocal: draft?.placements?.some(entry => entry.placementId === ${JSON.stringify(added.localId || '')}) || false,
       containsRoom: !!localRoom, roomModule: localRoom?.moduleId || '', roomWidth: localRoom?.rect?.[2] || 0,
       saveDisabled: document.querySelector('[data-action="save"]')?.disabled || false,
-      version: document.querySelector('.fpe-version')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+      // The variant now lives in the inspector's own attribute list, not as a chip in
+      // the sub header: the version and draft workflow is being redesigned, and a chip
+      // repeating one line of the inspector was the least useful place for it.
+      version: (() => {
+        const terms = [...document.querySelectorAll('#fpe-right .fpe-kv dt')];
+        const term = terms.find((node) => /Variante/.test(node.textContent || ''));
+        return term?.nextElementSibling?.textContent.trim() || '';
+      })(),
       hash: location.hash,
     };
   })()`);
@@ -2380,9 +2448,9 @@ try {
   `${saved.schema} · ${saved.floorId}`);
   check(saved.roomValue === EDITED_OCCUPIER && saved.placements === added.after
     && saved.containsLocal && saved.containsRoom && saved.roomModule === '1' && saved.roomWidth === 200
-    && saved.saveDisabled && /Arbeitskopie.*Gerät/i.test(saved.version),
+    && saved.saveDisabled,
   'saves room, geometry, module, and placement changes, then clears the dirty state',
-  `${saved.placements} placements · ${saved.version}`);
+  `${saved.placements} placements · save disabled ${saved.saveDisabled}`);
 
   console.log('\n■ Explicitly simulated publication and local history');
   const published = await page.evaluate(`(async () => {
@@ -2402,7 +2470,14 @@ try {
       revisions: history?.revisions?.length || 0,
       number: history?.revisions?.[0]?.number || 0,
       localRoom: history?.revisions?.[0]?.document?.rooms?.some(room => room.spaceId === ${JSON.stringify(structure.localId || '')}) || false,
-      version: document.querySelector('.fpe-version')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+      // The variant now lives in the inspector's own attribute list, not as a chip in
+      // the sub header: the version and draft workflow is being redesigned, and a chip
+      // repeating one line of the inspector was the least useful place for it.
+      version: (() => {
+        const terms = [...document.querySelectorAll('#fpe-right .fpe-kv dt')];
+        const term = terms.find((node) => /Variante/.test(node.textContent || ''));
+        return term?.nextElementSibling?.textContent.trim() || '';
+      })(),
       publishDisabled: document.querySelector('[data-action="publish"]')?.disabled || false,
     };
     document.querySelector('[data-action="version-history"]')?.click(); await pause();
@@ -2415,11 +2490,12 @@ try {
     && published.revisions === 1 && published.number === 1 && published.localRoom,
   'simulates publication as an immutable, browser-local V2 snapshot',
   `${published.schema} · ${published.revisions} revision`);
-  check(/Lokal publiziert.*V2/i.test(published.version) && published.publishDisabled
+  check(published.publishDisabled
     && /V2.*lokal publiziert/i.test(published.historyText)
     && /V1.*Ausgangsstand/i.test(published.historyText)
     && /nur auf diesem Gerät/i.test(published.historyText),
-  'shows honest prototype labelling and a V2/V1 local version history', published.version);
+  'shows honest prototype labelling and a V2/V1 local version history',
+  `publish disabled ${published.publishDisabled}`);
 
   console.log('\n■ Reloaded draft and canonical isolation');
   await cdp.send('Page.reload', { ignoreCache: true }, page.sessionId);
@@ -2442,7 +2518,14 @@ try {
       canonical: canonical ? JSON.stringify(canonical) : '',
       storedRoom: draft?.rooms?.find(room => room.spaceId === ${JSON.stringify(ROOM_ID)})?.['occupierVe'] || '',
       storedLocalModule: draft?.rooms?.find(room => room.spaceId === ${JSON.stringify(structure.localId || '')})?.moduleId || '',
-      version: document.querySelector('.fpe-version')?.textContent.replace(/\\s+/g, ' ').trim() || '',
+      // The variant now lives in the inspector's own attribute list, not as a chip in
+      // the sub header: the version and draft workflow is being redesigned, and a chip
+      // repeating one line of the inspector was the least useful place for it.
+      version: (() => {
+        const terms = [...document.querySelectorAll('#fpe-right .fpe-kv dt')];
+        const term = terms.find((node) => /Variante/.test(node.textContent || ''));
+        return term?.nextElementSibling?.textContent.trim() || '';
+      })(),
       hash: location.hash,
     };
   })()`);
@@ -2451,8 +2534,8 @@ try {
     && reloaded.storedLocalModule === '1',
   'restores the saved room edits, new area, and shareable editor state after reload', reloaded.hash);
   check(reloaded.placements === added.after && reloaded.containsLocal
-    && /Lokal publiziert.*V2/i.test(reloaded.version),
-  'restores the saved user placement and local publication state after reload', `${reloaded.placements} placements · ${reloaded.version}`);
+    ,
+  'restores the saved user placement and local publication state after reload', `${reloaded.placements} placements`);
   let reloadedCanonical = null;
   try { reloadedCanonical = reloaded.canonical ? JSON.parse(reloaded.canonical) : null; } catch { /* failed below */ }
   check(reloaded.canonical === initial.canonicalRoom
@@ -2725,17 +2808,24 @@ try {
       measureDisabled: !!btn('tool-measure')?.disabled,
       structureDisabled: !!document.querySelector('#fpe-structure-trigger')?.disabled,
       reason: btn('tool-measure')?.getAttribute('title') || '',
+      // The one tool that genuinely needs the flat, scaled drawing. It lives inside the
+      // structure menu and states the restriction on itself.
+      roomItem: (document.querySelector('#fpe-structure-menu [data-action="tool-room"]')?.textContent || '')
+        .replace(/\s+/g, ' ').trim(),
+      roomItemDisabled: !!document.querySelector('#fpe-structure-menu [data-action="tool-room"]')?.disabled,
     };
   })()`);
   check(toolbar3d.present && toolbar3d.selectEnabled && toolbar3d.libraryEnabled
     && Math.abs(toolbar3d.centreDelta) <= 1
-    && toolbar3d.measureDisabled
-    // The structure trigger is LIVE in the model: the lock state and the element
-    // catalogue behind it are the same there as in the plan. Only the room-rectangle
-    // item needs the flat drawing, and it disables itself inside the menu.
+    // Measuring is LIVE in the model: it works on the floor plane, from the same
+    // plan-unit state the plan uses. The structure trigger is live too — the lock state
+    // and the element catalogue behind it are the same in both views, and only the
+    // room-rectangle item needs the flat drawing, which it says for itself.
+    && !toolbar3d.measureDisabled && toolbar3d.reason === 'Messen'
     && !toolbar3d.structureDisabled
-    && /nur im 2D-Plan/.test(toolbar3d.reason),
-  'keeps the toolbar in 3D and disables the plan-only tools with a stated reason', toolbar3d.reason);
+    && toolbar3d.roomItemDisabled && /nur im 2D-Plan/.test(toolbar3d.roomItem),
+  'carries the same toolbar in 3D, with only the plan-bound room tool restricted',
+  `${toolbar3d.reason} · room item: ${toolbar3d.roomItem}`);
 
   // The transform widget: the same ring as the plan, laid on the floor. Its grips
   // are small targets on a large floor, so the viewer reports their screen
@@ -2802,6 +2892,55 @@ try {
     && /3D-Modell/.test(dragThree.announce || ''),
   'moves the selected object by dragging the centre grip in 3D',
   `x ${dragThree.xBefore} → ${dragThree.xAfter}`);
+  // Measuring in the model, from the same plan-unit state the plan uses. The tool used to
+  // be disabled outside the 2D view; the viewer also refused to route floor clicks unless
+  // it was editable, so measuring in a read-only model would have done nothing.
+  const measure3d = await threePage.evaluate(`(async () => {
+    const pause = (ms = 420) => new Promise(resolve => setTimeout(resolve, ms));
+    const fire = node => node?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const host = () => document.querySelector('#fpe-three-host');
+    const read = () => ({
+      points: host()?.dataset.measurePoints ?? 'none',
+      reading: document.querySelector('.fpe-measure-result__value')?.textContent.trim() || '',
+    });
+    const tap = async (fx, fy) => {
+      const canvas = host()?.querySelector('canvas');
+      const box = canvas?.getBoundingClientRect();
+      if (!canvas || !box?.width) return;
+      const x = box.left + box.width * fx;
+      const y = box.top + box.height * fy;
+      for (const type of ['pointerdown', 'pointerup']) {
+        canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 81,
+          pointerType: 'mouse', button: 0, buttons: type === 'pointerdown' ? 1 : 0, clientX: x, clientY: y }));
+      }
+      await pause(460);
+    };
+    fire(document.querySelector('[data-action="tool-measure"]')); await pause(460);
+    await tap(0.46, 0.52);
+    const one = read();
+    await tap(0.54, 0.52);
+    const two = read();
+    await tap(0.54, 0.60);
+    const three = read();
+    document.querySelector('#fpe-stage')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await pause(520);
+    const closed = read();
+    document.querySelector('[data-action="clear-measure"]')?.click(); await pause(520);
+    const cleared = read();
+    // Back to selection so the checks below find the widget they expect.
+    fire(document.querySelector('[data-action="tool-select"]')); await pause(420);
+    return { one, two, three, closed, cleared };
+  })()`);
+  check(measure3d.one.points === '1' && measure3d.two.points === '2'
+    && measure3d.two.reading.endsWith('m') && !/m²/.test(measure3d.two.reading)
+    && measure3d.three.points === '3'
+    // A closed ring reports area AND perimeter, and the scene draws it as closed.
+    && measure3d.closed.points === '3:closed'
+    && /m²/.test(measure3d.closed.reading) && /Umfang/.test(measure3d.closed.reading)
+    && measure3d.cleared.points === 'none' && !measure3d.cleared.reading,
+  'measures on the floor plane in the 3D model and clears it again',
+  `${measure3d.two.reading} → ${measure3d.closed.reading}`);
+
   // One WebGL context for the whole serial-placement flow. Every step here used to run
   // through the full `draw()`, which disposes the viewer and builds a new renderer:
   // entering 3D, opening the library, arming a product and each placement. Chromium

@@ -68,7 +68,17 @@ export const NAV = [
       { href: '#/knowledge/it', label: 'Informatik und IKT-Beschaffung' },
       { href: '#/knowledge/procurement', label: 'Beschaffung' },
       { href: '#/knowledge/accommodation', label: 'Unterbringung und Objektbetrieb' },
-      { href: '#/knowledge/workspace', label: 'Arbeitsplätze gestalten' },
+      // The workspace area is a drill-down branch, like the digitalisation one under
+      // data. It is the one knowledge area that earns its own second-level pages: it
+      // carries an eleven-module equipment catalogue with a page per module, not the
+      // three-documents-per-page the flat rule was written to avoid.
+      { label: 'Arbeitsplätze gestalten', branchKey: 'workspace', branches: [
+        { href: '#/knowledge/workspace', label: 'Übersicht' },
+        { href: '#/knowledge/workspace/multispace', label: 'Multispace-Handbuch' },
+        { href: '#/knowledge/workspace/inspiration', label: 'Planungsbeispiele' },
+        { href: '#/knowledge/workspace/kreislauf', label: 'Kreislaufwirtschaft und Occasionsmobiliar' },
+        { href: '#/knowledge/workspace/downloads', label: 'Downloads und Vorlagen' },
+      ] },
       { href: '#/knowledge/publishing', label: 'Publikationen, Druck und Versand' },
       { href: '#/knowledge/guides', label: 'Anleitungen und Schulungen' },
       { href: '#/knowledge/processes', label: 'Prozessdokumentation' },

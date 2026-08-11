@@ -1,0 +1,162 @@
+{
+  "note": "Realisierte Multispace-Flächen als Anschauungsbeispiele. Ein Beispiel ist ein AUSGEBAUTER ORT — ein Geschoss, eine Zone darin oder ein einzelner Raum — und nicht ein Gebäude; das Gebäude ist nur, wo der Ort liegt.",
+  "assets": "Bilder sind Verweise in data/media.json, damit Lizenz, Fotograf:in und Quelle beim Asset bleiben. Grundrisse sind im Prototyp als PDF-Platzhalter geführt.",
+  "examples": [
+    {
+      "exampleId": "WSE-001",
+      "slug": "bundeshaus-west-2og-stabsstelle",
+      "title": "Stabsstelle im 2. Obergeschoss",
+      "scope": "Zone",
+      "buildingId": "1080/4840/AF",
+      "floorId": "1080-4840-AF-2og",
+      "completed": "2024",
+      "areaSqm": 410,
+      "workplaces": 23,
+      "summary": "Offene Arbeitsfläche mit vier Tischgruppen, zwei Fokusplätzen und einem Coffee Point an der Erschliessung.",
+      "modules": [
+        1,
+        2,
+        3,
+        4,
+        7
+      ],
+      "furniture": [
+        1,
+        6,
+        12
+      ],
+      "plans": [
+        {
+          "title": "Grundriss 2. OG — Möblierung",
+          "format": "PDF",
+          "sheet": "A3, 1:100"
+        }
+      ],
+      "buildingName": "Bundeshaus West",
+      "address": "Bundesgasse 1, 3011 Bern",
+      "mediaIds": [
+        "MED-001",
+        "MED-003",
+        "MED-004",
+        "MED-005"
+      ],
+      "coverMediaId": "MED-001",
+      "images": []
+    },
+    {
+      "exampleId": "WSE-002",
+      "slug": "botschaft-berlin-empfang",
+      "title": "Empfang und Wartebereich",
+      "scope": "Raum",
+      "buildingId": "1080/5210/AA",
+      "floorId": null,
+      "completed": "2023",
+      "areaSqm": 68,
+      "workplaces": 2,
+      "summary": "Zwei Arbeitsplätze am Empfang, Lounge für Wartende, Garderobe und Locker für das Personal.",
+      "modules": [
+        1,
+        6,
+        10
+      ],
+      "furniture": [
+        2,
+        9
+      ],
+      "plans": [
+        {
+          "title": "Grundriss Erdgeschoss — Empfangszone",
+          "format": "PDF",
+          "sheet": "A3, 1:50"
+        }
+      ],
+      "buildingName": "Schweizerische Botschaft Berlin",
+      "address": "Otto-von-Bismarck-Allee 4A, 10557 Berlin",
+      "mediaIds": [
+        "MED-008",
+        "MED-009",
+        "MED-010",
+        "MED-011"
+      ],
+      "coverMediaId": "MED-008",
+      "images": []
+    },
+    {
+      "exampleId": "WSE-003",
+      "slug": "zollanlage-brig-glis-empfang",
+      "title": "Empfang und Schalterhalle",
+      "scope": "Geschoss",
+      "buildingId": "1080/6210/AA",
+      "floorId": null,
+      "completed": "2022",
+      "areaSqm": 96,
+      "workplaces": 5,
+      "summary": "Schalterhalle mit drei Publikumsplätzen, Wartezone und rückwärtigem Team-Arbeitsplatz.",
+      "modules": [
+        2,
+        4,
+        6
+      ],
+      "furniture": [
+        3,
+        7
+      ],
+      "plans": [
+        {
+          "title": "Grundriss Erdgeschoss — Schalterhalle",
+          "format": "PDF",
+          "sheet": "A3, 1:100"
+        }
+      ],
+      "buildingName": "Zollanlage Brig-Glis",
+      "address": "Bielstrasse 1, 3902 Glis",
+      "mediaIds": [
+        "MED-077",
+        "MED-078",
+        "MED-079",
+        "MED-080"
+      ],
+      "coverMediaId": "MED-077",
+      "images": []
+    },
+    {
+      "exampleId": "WSE-004",
+      "slug": "botschaft-canberra-besprechung",
+      "title": "Besprechungs- und Kreativzone",
+      "scope": "Zone",
+      "buildingId": "1080/5620/AA",
+      "floorId": null,
+      "completed": "2024",
+      "areaSqm": 120,
+      "workplaces": 0,
+      "summary": "Ein formeller Sitzungsraum, eine Besprechungskoje und ein Kreativraum mit beschreibbaren Wänden.",
+      "modules": [
+        4,
+        6,
+        8
+      ],
+      "furniture": [
+        4,
+        11
+      ],
+      "plans": [
+        {
+          "title": "Grundriss — Besprechungszone",
+          "format": "PDF",
+          "sheet": "A3, 1:100"
+        }
+      ],
+      "buildingName": "Schweizerische Botschaft Canberra",
+      "address": "Melbourne Avenue 7, 2603 Canberra",
+      "mediaIds": [
+        "MED-058",
+        "MED-059",
+        "MED-060",
+        "MED-061"
+      ],
+      "coverMediaId": "MED-058",
+      "images": []
+    }
+  ],
+  "images": "Eigene Aufnahmen einer Fläche liegen in assets/images/workspace-examples/ und stehen je Beispiel unter `images`. Fehlen sie, zeigt die Seite die über `mediaIds` verwiesenen Assets der Mediendatenbank samt Lizenzangabe."
+}

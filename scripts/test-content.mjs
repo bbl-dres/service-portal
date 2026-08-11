@@ -9,7 +9,9 @@ import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 const ROUTES = [
   { name: 'knowledge/it (subject area)',        url: `${APP_BASE}/knowledge/it`,                items: 1 },
   { name: 'knowledge/guides',                   url: `${APP_BASE}/knowledge/guides`,            items: 1 },
-  { name: 'knowledge/workspace (Multispace)',   url: `${APP_BASE}/knowledge/workspace`,         items: 1 },
+  // The downloads moved to their own page when the area became a drill-down branch: the
+  // overview is a hub of cards now, and a hub carries no files.
+  { name: 'knowledge/workspace/downloads',      url: `${APP_BASE}/knowledge/workspace/downloads`, items: 1 },
   { name: 'digitalisation/strategy',            url: `${APP_BASE}/data/digitalisation/strategy`, items: 2 },
   { name: 'applications/property inventory',   url: `${APP_BASE}/applications/liegenschaften-inventar`, items: 1, mailto: true, hero: true },
   { name: 'applications/superb (SAP ERP)',     url: `${APP_BASE}/applications/superb`, items: 2, mailto: true, hero: true, expectedTitle: 'ERP SAP (Supportprozesse)' },

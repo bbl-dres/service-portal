@@ -17,25 +17,35 @@ assert.ok(area, 'the workspace subject area exists');
 assert.equal(area.title, 'Arbeitsplätze gestalten');
 
 // --- The standard itself ------------------------------------------------------
-// Current edition: ten modules. The January 2025 edition had eleven, with Coffee
-// Point as module 7; publishing that numbering today would be wrong.
-assert.equal(MULTISPACE_EDITION, '31.10.2025');
-assert.equal(MULTISPACE_MODULES.length, 10);
-assert.deepEqual(MULTISPACE_MODULES.map((m) => m.nr), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-assert.equal(MULTISPACE_MODULES[0].name, 'Standardarbeitsplatz');
-assert.equal(MULTISPACE_MODULES[6].name, 'Interaktive Sitzungen');
-assert.equal(MULTISPACE_MODULES[9].name, 'Service Funktionen');
-assert.equal(MULTISPACE_MODULES.some((m) => /Coffee/i.test(m.name)), false,
-  'Coffee Point is no longer a module of its own in the current edition');
+// The prototype publishes the «Stand 6.1.2025» handbook: ELEVEN modules with Coffee
+// Point as module 7. This reverses an earlier decision here, and the reason is worth
+// keeping. That edition is the catalogue being turned into a web version, and it is also
+// exactly what the Plan-Editor's room attribute has always written — so one list now
+// serves both and no saved plan changes meaning. The «Stand 31.10.2025» edition retires
+// the Coffee Point and renumbers 8–11 to 7–10; data/multispace-modules.json records that
+// as a delta, so adopting it is one field plus a draft migration rather than a rewrite.
+//
+// The list itself is no longer authored here. data/multispace-modules.json is the source
+// and `scripts/check-multispace-modules.mjs` proves this copy and MODULE_OPTIONS agree
+// with it — the two used to be hand-maintained and had drifted.
+assert.equal(MULTISPACE_EDITION, '6.1.2025');
+assert.equal(MULTISPACE_MODULES.length, 11);
+assert.deepEqual(MULTISPACE_MODULES.map((m) => m.nr), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+assert.equal(MULTISPACE_MODULES[0].name, 'Einzel Arbeitsplatz');
+assert.equal(MULTISPACE_MODULES[6].name, 'Coffee Point');
+assert.equal(MULTISPACE_MODULES[10].name, 'Service Funktionen');
 
-// Figures read from the handbook and cross-checked between two independent text
-// extractions. Swiss decimal comma, as the current edition writes them.
-assert.equal(MULTISPACE_MODULES.find((m) => m.nr === 1).area, '3,0 m²');
+// Figures come from the fixture's sub-modules, which hold them as NUMBERS; the page's
+// summary string is derived from those rather than transcribed, so the handbook figures
+// live in one place and are readable by the catalogue view as well as by this list.
+// Swiss decimal comma for fractional values.
+assert.equal(MULTISPACE_MODULES.find((m) => m.nr === 1).area, '3 m²');
 assert.equal(MULTISPACE_MODULES.find((m) => m.nr === 2).area, '25 / 35 m²');
-assert.equal(MULTISPACE_MODULES.find((m) => m.nr === 7).area, '65 / 30 / 30 m²');
+assert.equal(MULTISPACE_MODULES.find((m) => m.nr === 5).area, '4,5 / 2 m²');
+assert.equal(MULTISPACE_MODULES.find((m) => m.nr === 8).area, '65 / 30 m²');
 // Storage and service modules carry no area figure in the source; an invented
 // number would be worse than the dash.
-for (const nr of [8, 9, 10]) {
+for (const nr of [9, 10, 11]) {
   assert.equal(MULTISPACE_MODULES.find((m) => m.nr === nr).area, '—');
 }
 for (const m of MULTISPACE_MODULES) {

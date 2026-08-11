@@ -43,12 +43,9 @@ function overview(ctx) {
   setTitle('Digitalisierung');
   setCrumbs([{ label: 'Startseite', href: '#/' }, { label: 'Daten und Digitalisierung', href: '#/data' }, { label: 'Digitalisierung' }]);
 
-  // Four bands instead of one white field (Item 7.7). Both prose bands use the
-  // CD container grid so `container__center--xs` assigns actual columns instead
-  // of relying on the max-width safety net, and so the list uses the same measure
-  // as the paragraph above. It was fully stretched at 1309px (145 characters per
-  // line), twice as wide.
-  const prose = (html) => `<div class="container--grid"><div class="container__center--xs">${html}</div></div>`;
+  // Two bands: the page header, then the topics as cards. The two closing prose bands
+  // were removed — the cards are what this page is for, and the link lists they carried
+  // are reachable from the menu and the application catalogue.
   mount.innerHTML = `
     ${C.pageSection({
       body: C.pageHeader({
@@ -57,16 +54,7 @@ function overview(ctx) {
       }),
     })}
     ${C.pageSection({ title: 'Themen', alt: true, body: `<div class="grid grid--responsive-cols-3">${CARDS.map(C.domainTile).join('')}</div>` })}
-    ${C.pageSection({ title: 'Über uns', body: prose(`
-      <p>Die Digitalisierung wird im BBL bereichsübergreifend gesteuert: Die Fachbereiche verantworten ihre Prozesse und Daten, die Informatik BBL die Plattformen und den Betrieb. Für die digitale Weiterentwicklung des Immobilienmanagements koordiniert die Organisationseinheit Digital Real Estate und Support (DRES) Strategie und Umsetzung. Für die bundesweiten Vorhaben arbeitet das BBL mit der Bundeskanzlei (Bereich DTI), dem BIT und der Digitalen Verwaltung Schweiz zusammen.</p>`) })}
-    ${C.pageSection({ title: 'Weitere Informationen', alt: true, body: prose(`
-      <ul class="list--default">
-        <li><a href="#/data/ict-projects">IKT-Vorhaben — laufende und geplante Informatik-Vorhaben des BBL</a></li>
-        <li><a href="#/knowledge/it">Informatik und IKT-Beschaffung — Vorgaben und Mustervorlagen</a></li>
-        <li><a href="https://www.bk.admin.ch/de/digitale-bundesverwaltung" target="_blank" rel="noopener noreferrer external">Strategie Digitale Bundesverwaltung (Bundeskanzlei)</a></li>
-        <li><a href="#/app/dataportal">Datenportal — Auswertungen und Kennzahlen</a></li>
-        <li><a href="#/data/catalog">Datenbezug und API Verzeichnis — Datenkatalog nach DCAT-AP-CH</a></li>
-      </ul>`) })}`;
+  `;
 }
 
 /* ======================== STRATEGY (ANCHOR NAV) ========================= */

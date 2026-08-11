@@ -1,29 +1,60 @@
 {
-  "edition": "31.10.2025",
-  "editionLabel": "Multispace-Handbuch — Neue Arbeitswelten (NAW), Stand 31.10.2025",
-  "source": "Multispace-Handbuch-de-v8.pdf (103 Seiten)",
-  "supersedes": {
-    "edition": "6.1.2025",
-    "source": "20250601_Multispace Handbuch.pdf (149 Seiten)",
-    "note": "Vorgängerausgabe mit elf Modulen. Coffee Point war dort Modul 7, Modul 1 hiess «Einzel Arbeitsplatz», und die damaligen Module 8–11 sind heute 7–10. Der Dateiname nennt Juni 2025, das Dokument stammt vom 6.1.2025."
-  },
+  "currentEdition": "6.1.2025",
+  "editionLabel": "Multispace-Handbuch — Neue Arbeitswelten (NAW), Stand 6.1.2025",
+  "source": "20250601_Multispace Handbuch.pdf (149 Seiten)",
+  "singleSourceOf": [
+    "knowledge/workspace",
+    "floorplan-editor:MODULE_OPTIONS"
+  ],
   "confidentiality": "Die Preise des Handbuchs sind vertraulich und deshalb nicht Teil dieser Sammlung. Das Handbuch führt für die Module auch keine freigegebenen Richtwerte; das entsprechende Kapitel ist leer.",
+  "nextEdition": {
+    "edition": "31.10.2025",
+    "source": "Multispace-Handbuch-de-v8.pdf (103 Seiten)",
+    "status": "verbindlich ab Publikation; hier noch nicht als aktuelle Ausgabe gesetzt",
+    "changes": [
+      "Coffee Point ist kein eigenes Modul mehr.",
+      "Modul 1 heisst «Standardarbeitsplatz» statt «Einzel Arbeitsplatz».",
+      "Die Module 8–11 rücken auf 7–10 auf."
+    ],
+    "renumbering": {
+      "1": 1,
+      "2": 2,
+      "3": 3,
+      "4": 4,
+      "5": 5,
+      "6": 6,
+      "7": null,
+      "8": 7,
+      "9": 8,
+      "10": 9,
+      "11": 10
+    }
+  },
   "modules": [
     {
       "nr": 1,
-      "slug": "standardarbeitsplatz",
-      "name": "Standardarbeitsplatz",
+      "slug": "einzel-arbeitsplatz",
+      "name": "Einzel Arbeitsplatz",
       "summary": "Schreibtischarbeitsplatz im offenen Raum, in Gruppen von höchstens vier Tischen.",
       "description": "Schreibtischarbeitsplatz im offenen Raum, in Gruppen von höchstens vier Tischen. Keine zugewiesenen Plätze; der Platz wird aufgeräumt hinterlassen.",
       "subModules": [
-        { "nr": "1.1", "name": "Standardarbeitsplatz", "area": 3.0, "persons": 1 }
+        {
+          "nr": "1.1",
+          "name": "Einzel Arbeitsplatz",
+          "area": 3.0,
+          "persons": 1
+        }
       ],
       "guidelines": [
         "Gruppen von höchstens vier Tischen bilden; grössere Teams über mehrere Gruppen verteilen.",
         "Einzelarbeitsplätze entlang der Fassade und rechtwinklig zum Tageslicht, Drehwinkel höchstens 10 Grad.",
         "Akustikschirme zwischen gegenüberliegenden Plätzen."
       ],
-      "equipment": ["tische", "stuehle", "akustik"]
+      "equipment": [
+        "sichtschutz",
+        "stuehle",
+        "tische"
+      ]
     },
     {
       "nr": 2,
@@ -32,15 +63,30 @@
       "summary": "Gruppentisch für ein Team, das eine Aufgabe gemeinsam bearbeitet.",
       "description": "Gruppentisch für ein Team, das eine Aufgabe gemeinsam bearbeitet. Räumlich von anderen Arbeitsbereichen separiert, mit AV-Screen und Whiteboard. Ein Mix einzelner Modulelemente wird nicht empfohlen — das Modul ist eine funktionale und gestalterische Einheit.",
       "subModules": [
-        { "nr": "2.1", "name": "Team Arbeitsplatz 6 Personen", "area": 25, "persons": 6 },
-        { "nr": "2.2", "name": "Team Arbeitsplatz 8 Personen", "area": 35, "persons": 8 }
+        {
+          "nr": "2.1",
+          "name": "Team Arbeitsplatz 6 Personen",
+          "area": 25,
+          "persons": 6
+        },
+        {
+          "nr": "2.2",
+          "name": "Team Arbeitsplatz 8 Personen",
+          "area": 35,
+          "persons": 8
+        }
       ],
       "guidelines": [
         "Räumlich von anderen Arbeitsbereichen trennen, damit die Zusammenarbeit nicht in die offene Fläche strahlt.",
         "AV-Screen und magnetisches Whiteboard gehören zum Modul.",
         "SECO-Vorgaben zu Abständen, Verkehrsflächen und Fluchtwegen einhalten."
       ],
-      "equipment": ["tische", "stuehle", "akustik", "medientechnik"]
+      "equipment": [
+        "medientechnik",
+        "sichtschutz",
+        "stuehle",
+        "tische"
+      ]
     },
     {
       "nr": 3,
@@ -49,13 +95,22 @@
       "summary": "Arbeitsplatz in ruhiger Umgebung, akustisch durch eine freistehende Umbauung geschützt.",
       "description": "Arbeitsplatz in ruhiger Umgebung, akustisch durch eine freistehende Umbauung geschützt. Lautes Sprechen und Telefonieren sind hier nicht erlaubt.",
       "subModules": [
-        { "nr": "3.1", "name": "Fokus Arbeitsplatz umschlossen", "area": 3.0, "persons": 1 }
+        {
+          "nr": "3.1",
+          "name": "Fokus Arbeitsplatz umschlossen",
+          "area": 3.0,
+          "persons": 1
+        }
       ],
       "guidelines": [
         "Abseits der Verkehrswege anordnen, damit die Ruhe nicht von Durchgang gestört wird.",
         "Lautes Sprechen und Telefonieren sind in diesem Modul nicht erlaubt."
       ],
-      "equipment": ["tische", "stuehle", "akustik"]
+      "equipment": [
+        "sichtschutz",
+        "stuehle",
+        "tische"
+      ]
     },
     {
       "nr": 4,
@@ -64,19 +119,54 @@
       "summary": "Geschlossene Sitzungsräume, über das interne Buchungssystem reservierbar.",
       "description": "Geschlossene Sitzungsräume mit magnetischem Whiteboard und farbiger Wand, über das interne Buchungssystem reservierbar. Besprechungsboxen sind autarke Raum-in-Raum-Lösungen.",
       "subModules": [
-        { "nr": "4.1", "name": "Sitzungsraum sitzend, 4 Personen", "area": 19, "persons": 4 },
-        { "nr": "4.1", "name": "Sitzungsraum sitzend, 6 Personen", "area": 22, "persons": 6 },
-        { "nr": "4.1", "name": "Sitzungsraum sitzend, 8 Personen", "area": 25, "persons": 8 },
-        { "nr": "4.2", "name": "Sitzungsraum stehend", "area": 19, "persons": 4 },
-        { "nr": "4.5", "name": "Besprechungsbox gross", "area": 9, "persons": 4 },
-        { "nr": "4.6", "name": "Besprechungsbox klein", "area": 4.5, "persons": 2 }
+        {
+          "nr": "4.1",
+          "name": "Sitzungsraum sitzend, 4 Personen",
+          "area": 19,
+          "persons": 4
+        },
+        {
+          "nr": "4.1",
+          "name": "Sitzungsraum sitzend, 6 Personen",
+          "area": 22,
+          "persons": 6
+        },
+        {
+          "nr": "4.1",
+          "name": "Sitzungsraum sitzend, 8 Personen",
+          "area": 25,
+          "persons": 8
+        },
+        {
+          "nr": "4.2",
+          "name": "Sitzungsraum stehend",
+          "area": 19,
+          "persons": 4
+        },
+        {
+          "nr": "4.5",
+          "name": "Besprechungsbox gross",
+          "area": 9,
+          "persons": 4
+        },
+        {
+          "nr": "4.6",
+          "name": "Besprechungsbox klein",
+          "area": 4.5,
+          "persons": 2
+        }
       ],
       "guidelines": [
         "Magnetisches Whiteboard und eine farbige Wand gehören zum Modul.",
         "Über das interne Buchungssystem reservierbar halten.",
         "Besprechungsboxen sind autark und ersetzen kein gebautes Sitzungszimmer."
       ],
-      "equipment": ["tische", "stuehle", "medientechnik", "raum-in-raum"]
+      "equipment": [
+        "medientechnik",
+        "sichtschutz",
+        "stuehle",
+        "tische"
+      ]
     },
     {
       "nr": 5,
@@ -85,14 +175,27 @@
       "summary": "Raum-in-Raum-Lösung für eine Person, gleichmässig auf der Fläche verteilt.",
       "description": "Raum-in-Raum-Lösung für eine Person, gleichmässig auf der Fläche verteilt. Nicht reservierbar, gehört zum Gebäude und ersetzt kein gebautes Sitzungszimmer.",
       "subModules": [
-        { "nr": "5.1", "name": "Videokonferenzbox", "area": 4.5, "persons": 1 },
-        { "nr": "5.2", "name": "Telefonbox 1er", "area": 2.0, "persons": 1 }
+        {
+          "nr": "5.1",
+          "name": "Videokonferenzbox",
+          "area": 4.5,
+          "persons": 1
+        },
+        {
+          "nr": "5.2",
+          "name": "Telefonbox 1er",
+          "area": 2.0,
+          "persons": 1
+        }
       ],
       "guidelines": [
         "Gleichmässig über die Fläche verteilen, damit keine Wege entstehen.",
         "Nicht reservierbar: die Box gehört zum Gebäude, nicht zu einer Organisationseinheit."
       ],
-      "equipment": ["raum-in-raum", "medientechnik"]
+      "equipment": [
+        "medientechnik",
+        "sichtschutz"
+      ]
     },
     {
       "nr": 6,
@@ -101,80 +204,180 @@
       "summary": "Schneller Austausch abseits des Arbeitsplatzes, ohne Raumbuchung.",
       "description": "Schneller Austausch abseits des Arbeitsplatzes, ohne Raumbuchung. Auf offener Fläche, in einer Nische oder im geschlossenen Raum.",
       "subModules": [
-        { "nr": "6.1", "name": "Informelle Sitzung stehend", "area": 4, "persons": 4 },
-        { "nr": "6.2", "name": "Besprechungskoje", "area": 8, "persons": 4 },
-        { "nr": "6.4", "name": "Lounge klein", "area": 15, "persons": 4 },
-        { "nr": "6.5", "name": "Lounge gross", "area": 23, "persons": 8 }
+        {
+          "nr": "6.1",
+          "name": "Informelle Sitzung stehend",
+          "area": 4,
+          "persons": 4
+        },
+        {
+          "nr": "6.2",
+          "name": "Besprechungskoje",
+          "area": 8,
+          "persons": 4
+        },
+        {
+          "nr": "6.4",
+          "name": "Lounge klein",
+          "area": 15,
+          "persons": 4
+        },
+        {
+          "nr": "6.5",
+          "name": "Lounge gross",
+          "area": 23,
+          "persons": 8
+        }
       ],
       "guidelines": [
         "Ohne Raumbuchung nutzbar halten.",
         "Nischen so setzen, dass der Austausch die angrenzenden Arbeitsplätze nicht stört."
       ],
-      "equipment": ["stuehle", "tische", "akustik"]
+      "equipment": [
+        "sichtschutz",
+        "stuehle",
+        "tische"
+      ]
     },
     {
       "nr": 7,
+      "slug": "coffee-point",
+      "name": "Coffee Point",
+      "summary": "Gemeinsamer Treffpunkt für Pause und beiläufigen Austausch.",
+      "description": "Zentraler Treffpunkt auf der Fläche für Pausen, Kaffee und den beiläufigen Austausch, der zwischen Terminen entsteht. Die Nachfolgeausgabe des Handbuchs führt den Coffee Point nicht mehr als eigenes Modul.",
+      "subModules": [
+        {
+          "nr": "7.1",
+          "name": "Coffee Point",
+          "area": 12,
+          "persons": 6
+        }
+      ],
+      "guidelines": [
+        "Zentral auf der Fläche anordnen, in Sichtweite der Arbeitsbereiche, aber akustisch abgesetzt.",
+        "Entsorgungsstation und Wasseranschluss mitdenken."
+      ],
+      "equipment": [
+        "schraenke",
+        "stuehle",
+        "tische"
+      ],
+      "figuresVerified": false,
+      "figuresNote": "Flächenrichtmass und Personenzahl sind für die Rückmeldung gesetzt und noch nicht gegen das Handbuch geprüft."
+    },
+    {
+      "nr": 8,
       "slug": "interaktive-sitzungen",
       "name": "Interaktive Sitzungen",
       "summary": "Grosse, flexibel möblierte Räume mit multimedialer Anlage.",
       "description": "Grosse, flexibel möblierte Räume mit multimedialer Anlage. Nach der Veranstaltung in den Ausgangszustand zurückversetzen.",
       "subModules": [
-        { "nr": "7.1", "name": "Auditorium", "area": 65, "persons": 40 },
-        { "nr": "7.2", "name": "Kreativraum", "area": 30, "persons": 12 },
-        { "nr": "7.3", "name": "Werkstatt", "area": 30, "persons": 12 }
+        {
+          "nr": "8.1",
+          "name": "Auditorium",
+          "area": 65,
+          "persons": 40
+        },
+        {
+          "nr": "8.2",
+          "name": "Kreativraum",
+          "area": 30,
+          "persons": 12
+        },
+        {
+          "nr": "8.3",
+          "name": "Werkstatt",
+          "area": 30,
+          "persons": 12
+        }
       ],
       "guidelines": [
         "Möblierung flexibel halten; der Raum wird für unterschiedliche Formate genutzt.",
         "Nach der Veranstaltung in den Ausgangszustand zurückversetzen."
       ],
-      "equipment": ["tische", "stuehle", "medientechnik"]
+      "equipment": [
+        "medientechnik",
+        "stuehle",
+        "tische"
+      ]
     },
     {
-      "nr": 8,
+      "nr": 9,
       "slug": "team-ablage",
       "name": "Team Ablage",
       "summary": "Ablage für Ordner, dekorative Elemente und Archivgut; zugleich raumbildendes Element.",
       "description": "Ablage für Ordner, dekorative Elemente und Archivgut. Dient zugleich als raumbildendes Element zwischen Arbeitsplatzgruppen.",
       "subModules": [
-        { "nr": "8.1", "name": "Team Ablage offen", "area": null, "persons": null },
-        { "nr": "8.2", "name": "Team Ablage geschlossen", "area": null, "persons": null }
+        {
+          "nr": "9.1",
+          "name": "Team Ablage offen",
+          "area": null,
+          "persons": null
+        },
+        {
+          "nr": "9.2",
+          "name": "Team Ablage geschlossen",
+          "area": null,
+          "persons": null
+        }
       ],
       "guidelines": [
         "Als raumbildendes Element zwischen Arbeitsplatzgruppen einsetzen.",
         "Sichthöhe so wählen, dass der Tageslichteinfall erhalten bleibt."
       ],
-      "equipment": ["schraenke"]
+      "equipment": [
+        "schraenke"
+      ]
     },
     {
-      "nr": 9,
+      "nr": 10,
       "slug": "locker-garderoben",
       "name": "Locker, Garderoben",
       "summary": "Persönliche, abschliessbare Ablage nahe dem Eingang.",
       "description": "Persönliche, abschliessbare Ablage nahe dem Eingang. Ohne zugewiesene Schreibtische werden alle persönlichen Gegenstände hier aufbewahrt.",
       "subModules": [
-        { "nr": "9.1", "name": "Locker", "area": null, "persons": null },
-        { "nr": "9.2", "name": "Garderobe", "area": null, "persons": null }
+        {
+          "nr": "10.1",
+          "name": "Locker",
+          "area": null,
+          "persons": null
+        },
+        {
+          "nr": "10.2",
+          "name": "Garderobe",
+          "area": null,
+          "persons": null
+        }
       ],
       "guidelines": [
         "Nahe dem Eingang der Fläche anordnen.",
         "Je Person ein abschliessbares Fach vorsehen, weil keine Schreibtische zugewiesen sind."
       ],
-      "equipment": ["schraenke"]
+      "equipment": [
+        "schraenke"
+      ]
     },
     {
-      "nr": 10,
+      "nr": 11,
       "slug": "service-funktionen",
       "name": "Service Funktionen",
       "summary": "Sammelbehälter an den Arbeitsplätzen und Entsorgungsstellen auf den Etagen.",
       "description": "Sammelbehälter an den Arbeitsplätzen und Entsorgungsstellen auf den Etagen, damit Reststoffe getrennt in den Stoffkreislauf zurückgeführt werden.",
       "subModules": [
-        { "nr": "10.1", "name": "Entsorgungsstation", "area": null, "persons": null }
+        {
+          "nr": "11.1",
+          "name": "Entsorgungsstation",
+          "area": null,
+          "persons": null
+        }
       ],
       "guidelines": [
         "Entsorgungsstellen je Etage vorsehen, Sammelbehälter an den Arbeitsplätzen.",
         "Trennung so anlegen, dass Reststoffe in den Stoffkreislauf zurückgeführt werden können."
       ],
-      "equipment": ["entsorgung"]
+      "equipment": [
+        "korpus"
+      ]
     }
   ]
 }

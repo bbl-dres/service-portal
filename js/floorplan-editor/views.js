@@ -59,8 +59,6 @@ export function createWorkbenchViews(context) {
         <button class="btn btn--bare btn--sm btn--icon-only fpe-panel-toggle fpe-panel-toggle--mobile${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right-mobile" type="button" data-action="toggle-right"
           aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" title="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
       </div>
-      <span class="fpe-version">${C.escape(versionLabel)}</span>
-      <span class="fpe-context__status">${planBadge()}</span>
       ${object.planning.targetDate ? `<span class="fpe-date">${C.icon('Calendar', 'icon--sm')} Stichtag ${C.escape(object.planning.targetDate.split('-').reverse().join('.'))}</span>` : ''}
       <span class="fpe-context__spacer"></span>
       <div class="fpe-more">
@@ -77,6 +75,9 @@ export function createWorkbenchViews(context) {
               <span class="fpe-more-menu__separator fpe-menu-phone-only" role="separator"></span>`}
           <button type="button" role="menuitem" data-action="version-history">Versionsverlauf…</button>
           <button type="button" role="menuitem" data-action="print">Ansicht drucken</button>
+          <span class="fpe-more-menu__separator" role="separator"></span>
+          <button type="button" role="menuitem" disabled>DWG exportieren</button>
+          <button type="button" role="menuitem" disabled>IFC exportieren</button>
           <button type="button" role="menuitem" data-action="copy-link">Link kopieren</button>
           <button type="button" role="menuitem" data-action="copy-plan-id">Plan-ID kopieren</button>
         </div>
@@ -89,8 +90,7 @@ export function createWorkbenchViews(context) {
       <span class="fpe-header__divider" aria-hidden="true"></span>
       <button class="btn btn--bare btn--sm btn--icon-only fpe-panel-toggle fpe-panel-toggle--desktop${leftOpen ? ' is-active' : ''}" id="fpe-toggle-left" type="button" data-action="toggle-left"
         aria-label="${leftPanelLabel}" title="${leftPanelLabel}" aria-pressed="${leftOpen}"${leftPanelUnavailable ? ' disabled' : ''}>${panelToggleIcon('left')}</button>
-      <button class="btn btn--bare btn--sm btn--icon-only fpe-panel-toggle fpe-panel-toggle--desktop${rightOpen ? ' is-active' : ''}" id="fpe-toggle-right" type="button" data-action="toggle-right"
-        aria-label="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" title="${rightOpen ? 'Rechtes Panel ausblenden' : 'Rechtes Panel einblenden'}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}</button>
+      ${rightToggleHTML()}
     </div>`;
   }
 
@@ -308,6 +308,27 @@ export function createWorkbenchViews(context) {
   const SPATIAL_ONLY = '2D-Plan';
   const only2d = (label) => `${label} — nur im ${SPATIAL_ONLY}`;
 
+  /**
+   * The right-panel toggle, which also reports what is waiting behind it.
+   *
+   * Closing the inspector is a choice, so selecting something afterwards must NOT
+   * reopen it — that would make the close control pointless. But the inspector is the
+   * only place a selection is described, so a silent close swallowed the answer: the
+   * room highlighted on the plan and nothing said why. The toggle therefore carries a
+   * marker while a selection sits behind a closed panel, and its label names it.
+   */
+  function rightToggleHTML() {
+    const pending = Boolean(selected) && !rightOpen;
+    const what = selected?.type === 'room' ? 'Raum' : 'Objekt';
+    const label = rightOpen
+      ? 'Rechtes Panel ausblenden'
+      : (pending ? `Rechtes Panel einblenden — ${what} ausgewählt` : 'Rechtes Panel einblenden');
+    return `<button class="btn btn--bare btn--sm btn--icon-only fpe-panel-toggle fpe-panel-toggle--desktop${
+      rightOpen ? ' is-active' : ''}${pending ? ' has-pending' : ''}" id="fpe-toggle-right" type="button" data-action="toggle-right"
+      aria-label="${label}" title="${label}" aria-pressed="${rightOpen}">${panelToggleIcon('right')}${
+      pending ? '<span class="fpe-panel-toggle__dot" aria-hidden="true"></span>' : ''}</button>`;
+  }
+
   function toolbarHTML() {
     const flat = viewMode === '2d';
     if (editMode) {
@@ -318,8 +339,8 @@ export function createWorkbenchViews(context) {
           aria-pressed="${libraryActive}">${C.icon('Plus', 'btn__icon')}<span class="btn__text">Hinzufügen</span></button>
         <span class="fpe-tool-sep"></span>
         ${toolButton('tool-select', 'Auswählen', 'Pointer', { active: tool === 'select', pressed: tool === 'select' })}
-        ${toolButton('tool-measure', flat ? 'Messen' : only2d('Messen'), 'Ruler',
-          { active: tool === 'measure', pressed: flat ? tool === 'measure' : null, disabled: !flat })}
+        ${toolButton('tool-measure', 'Messen', 'Ruler',
+          { active: tool === 'measure', pressed: tool === 'measure' })}
         <span class="fpe-tool-sep"></span>
         <button class="btn btn--bare btn--sm fpe-tool fpe-structure-trigger${tool === 'room' ? ' is-active' : ''}" id="fpe-structure-trigger"
           type="button" data-action="toggle-structure-menu" aria-haspopup="menu" aria-expanded="${structureMenuOpen}"
@@ -335,8 +356,8 @@ export function createWorkbenchViews(context) {
       ${toolButton('tool-pan', flat ? 'Plan verschieben' : only2d('Plan verschieben'), 'Move',
         { active: tool === 'pan', pressed: flat ? tool === 'pan' : null, disabled: !flat })}
       <span class="fpe-tool-sep"></span>
-      ${toolButton('tool-measure', flat ? 'Messen' : only2d('Messen'), 'Ruler',
-        { active: tool === 'measure', pressed: flat ? tool === 'measure' : null, disabled: !flat })}
+      ${toolButton('tool-measure', 'Messen', 'Ruler',
+        { active: tool === 'measure', pressed: tool === 'measure' })}
     </div>`;
   }
 
@@ -450,7 +471,7 @@ export function createWorkbenchViews(context) {
     const keyboardAttributes = viewMode === '2d' ? ' aria-describedby="fpe-stage-help" tabindex="0"' : ' tabindex="-1"';
     return `<section class="fpe-stage${directPan ? ' is-pan-ready' : ''}" id="fpe-stage" aria-label="Plan-Arbeitsfläche"${keyboardAttributes}>
       ${viewMode === '2d' ? `<p class="sr-only" id="fpe-stage-help">${keyboardHelp}</p>` : ''}
-      <div class="fpe-toolbar-host${viewMode === '2d' ? '' : ' fpe-toolbar-host--three'}" id="fpe-toolbar-host">${toolbarHTML()}</div>
+      <div class="fpe-toolbar-host" id="fpe-toolbar-host">${toolbarHTML()}</div>
       <div class="fpe-structure-menu-host" id="fpe-structure-menu-host">${structureMenuHTML()}</div>
       <div class="fpe-scene${viewMode === '2d' ? '' : ' fpe-scene--three'}" id="fpe-scene">${sceneContentHTML()}</div>
       <div class="fpe-view-nav-host" id="fpe-view-nav-host">${viewNavigationHTML()}</div>
@@ -515,7 +536,7 @@ export function createWorkbenchViews(context) {
     const moduleValue = String(room.moduleId || '');
     const [roomX, roomY, roomWidth, roomHeight] = room.rect;
     const localRoom = room.spaceId.startsWith('local-room-');
-    return `<div class="fpe-inspector-title"><span><small>Ausgewählter Raum</small>${C.escape(room.roomNumber)}</span><button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="clear-selection" aria-label="Auswahl aufheben">${C.icon('CancelCircle', 'btn__icon')}</button><button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close" type="button" data-action="toggle-right" aria-label="Inspektor schliessen">${C.icon('Cancel', 'btn__icon')}</button></div>
+    return `<div class="fpe-inspector-title"><span><small>Ausgewählter Raum</small>${C.escape(room.roomNumber)}</span><button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="fit-selection" aria-label="Auswahl einpassen" title="Auswahl einpassen">${C.icon('Bullseye', 'btn__icon')}</button><button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close" type="button" data-action="toggle-right" aria-label="Inspektor schliessen">${C.icon('Cancel', 'btn__icon')}</button></div>
       ${inspectorSection('room-details', 'Details', `<dl class="fpe-kv"><dt>Fläche</dt><dd>${formatArea(room.area)}</dd><dt>AOID</dt><dd class="mono">${C.escape(room.spaceId)}</dd><dt>Arbeitsplätze</dt><dd>${Number(room.capacity || 0)}</dd></dl>`)}
       ${editMode ? `<form class="fpe-inspector-section fpe-form" id="fpe-room-form">
         <h3>Standard-Attribute</h3>
@@ -540,7 +561,7 @@ export function createWorkbenchViews(context) {
       ${inspectorSection('room-equipment', `Ausstattung in diesem Raum <span>${items.length}</span>`, `${items.length
         ? `<ul class="fpe-inspector-list">${items.map((placement) => `<li><button type="button" data-select-type="placement" data-select-id="${C.escape(placement.placementId)}">${C.escape(placement.name)}${C.icon('ChevronRight', 'icon--sm')}</button></li>`).join('')}</ul>`
         : '<p class="small muted">Noch keine Ausstattungsobjekte verortet.</p>'}
-        ${editMode && viewMode === '2d' ? '<button type="button" class="btn btn--outline btn--sm" data-action="focus-search"><span class="btn__text">Ausstattung hinzufügen</span></button>' : ''}`)}`;
+        ${editMode ? '<button type="button" class="btn btn--outline btn--sm" data-action="focus-search"><span class="btn__text">Ausstattung hinzufügen</span></button>' : ''}`)}`;
   }
 
   function placementInspectorHTML(placement) {
@@ -549,7 +570,7 @@ export function createWorkbenchViews(context) {
     const image = productImage(product);
     const sameRoom = editorDocument.placements.filter((item) => item.roomId === placement.roomId && item.productId === placement.productId).length;
     const sameFloor = editorDocument.placements.filter((item) => item.productId === placement.productId).length;
-    return `<div class="fpe-inspector-title"><span><small>Ausgewähltes Objekt</small>${C.escape(placement.name)}</span><small>${C.escape(room?.roomNumber || 'nicht zugeordnet')}</small><button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="clear-selection" aria-label="Auswahl aufheben">${C.icon('CancelCircle', 'btn__icon')}</button><button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close" type="button" data-action="toggle-right" aria-label="Inspektor schliessen">${C.icon('Cancel', 'btn__icon')}</button></div>
+    return `<div class="fpe-inspector-title"><span><small>Ausgewähltes Objekt</small>${C.escape(placement.name)}</span><small>${C.escape(room?.roomNumber || 'nicht zugeordnet')}</small><button class="btn btn--bare btn--sm btn--icon-only" type="button" data-action="fit-selection" aria-label="Auswahl einpassen" title="Auswahl einpassen">${C.icon('Bullseye', 'btn__icon')}</button><button class="btn btn--bare btn--sm btn--icon-only fpe-drawer-close" type="button" data-action="toggle-right" aria-label="Inspektor schliessen">${C.icon('Cancel', 'btn__icon')}</button></div>
       <div class="fpe-product-preview">${image ? `<img src="${C.escape(image)}" alt="${C.escape(placement.name)}">` : C.icon('Image', 'icon--lg')}</div>
       ${inspectorSection('placement-kpis', 'Objektkennzahlen', `<div class="fpe-kpis"><div><small>In diesem Raum</small><strong>${sameRoom}</strong></div><div><small>Auf diesem Geschoss</small><strong>${sameFloor}</strong></div></div>`)}
       ${inspectorSection('placement-standard', 'Standard-Attribute', `<dl class="fpe-kv"><dt>Objektname</dt><dd>${C.escape(placement.name)}</dd><dt>Breite</dt><dd>${placement.width / 100} m</dd><dt>Tiefe</dt><dd>${placement.depth / 100} m</dd><dt>Marke</dt><dd>${C.escape(product?.brand || 'nicht erfasst')}</dd><dt>Katalog-ID</dt><dd class="mono">${C.escape(placement.articleId || String(placement.productId))}</dd><dt>Objekt-ID</dt><dd class="mono">${C.escape(placement.placementId)}</dd></dl>`)}
@@ -587,6 +608,7 @@ export function createWorkbenchViews(context) {
 
   return {
     colorMenuHTML, inspectorHTML, leftPanelHTML, libraryHTML, measureResultHTML, moduleListHTML,
+    rightToggleHTML,
     productListHTML, resourceListHTML, sceneContentHTML, shellHTML,
     structureMenuHTML, toolbarHTML, viewActionsHTML, viewNavigationHTML,
   };

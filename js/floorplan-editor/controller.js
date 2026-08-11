@@ -577,7 +577,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       editable: editMode,
       onSelect: (type, id) => selectEntity(type, id, false),
       onTransform: transformFromThree,
-      onFloorClick: placeFromThree,
+      onFloorClick: floorClickFromThree,
       onFloorHover: hoverFromThree,
       onAnnounce: announce,
     });
@@ -679,9 +679,21 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     threeViewer?.updateGhost(placementGhost);
   }
 
-  /** A floor click in 3D with a product armed places it there. */
-  function placeFromThree(point) {
-    if (!editMode || tool !== 'place' || !placementProduct || !point) return false;
+  /**
+   * A floor click in the 3D model, routed to whichever tool asked for it.
+   *
+   * Returns true when the click was consumed, so the viewer knows not to treat it as a
+   * selection as well. Measuring comes first: the measuring tool owns every floor click
+   * while it is active, exactly as it does in the plan.
+   */
+  function floorClickFromThree(point) {
+    if (!point) return false;
+    if (tool === 'measure') {
+      measureAt(point);
+      threeViewer?.updateMeasurement(measurement);
+      return true;
+    }
+    if (!editMode || tool !== 'place' || !placementProduct) return false;
     addProduct(placementProduct, point);
     return true;
   }
@@ -778,6 +790,7 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
       else threeViewer.updateDocument({
         floor, rooms: editorDocument.rooms, placements: editorDocument.placements, selected, colorMode,
         ghost: tool === 'place' ? placementGhost : null,
+        measurement,
       });
     } else {
       disposeThreeViewer();
@@ -788,7 +801,6 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     }
     const toolbar = mount.querySelector('#fpe-toolbar-host');
     if (toolbar) {
-      toolbar.classList.toggle('fpe-toolbar-host--three', viewMode !== '2d');
       toolbar.innerHTML = views.toolbarHTML();
     }
     const structureMenu = mount.querySelector('#fpe-structure-menu-host');
@@ -801,6 +813,10 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     if (scale) scale.hidden = viewMode !== '2d';
     // Re-render rather than assign text: the reading carries a dismiss control now,
     // and writing textContent would delete it.
+    // The model draws the measurement from the same state as the plan, so it follows
+    // every change — including a cleared one, which must remove the line rather than
+    // leave it on the floor.
+    if (retainedThree) threeViewer?.updateMeasurement(measurement);
     const result = mount.querySelector('.fpe-measure-result');
     if (result) {
       const template = document.createElement('template');
@@ -856,6 +872,26 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
    * `draw()`. That made opening or closing it cost a WebGL context in the 3D model.
    * Its own host means the dialog can follow `assetLibraryOpen` on its own.
    */
+  /**
+   * Redraw just the two header panel toggles.
+   *
+   * The right one reports whether a selection is waiting behind a closed inspector, so
+   * it changes with the selection — but it sits in the header, which no work-area redraw
+   * touches. A full `draw()` here would cost the 3D model its WebGL context.
+   */
+  function drawHeaderToggles() {
+    const views = currentViews();
+    const current = mount.querySelector('#fpe-toggle-right');
+    if (!current) return;
+    const template = document.createElement('template');
+    template.innerHTML = views.rightToggleHTML();
+    const next = template.content.firstElementChild;
+    if (!next) return;
+    const hadFocus = document.activeElement === current;
+    current.replaceWith(next);
+    if (hadFocus) next.focus({ preventScroll: true });
+  }
+
   function drawLibrary(views = currentViews()) {
     const host = mount.querySelector('#fpe-library-host');
     if (host) host.innerHTML = views.libraryHTML();
@@ -880,14 +916,23 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
     }
     syncQuery();
     drawWorkArea({ viewerUpdate: 'selection' });
-    if (selected) announce(`${type === 'room' ? 'Raum' : 'Objekt'} ausgewählt.`);
+    // The header toggle carries the «something is waiting» marker, and it lives outside
+    // the work area, so it has to be redrawn when the selection changes.
+    drawHeaderToggles();
+    if (selected) {
+      // Say where the detail went. With the inspector closed the selection is real but
+      // invisible, and naming the selected thing alone described nothing.
+      announce(rightOpen
+        ? `${type === 'room' ? 'Raum' : 'Objekt'} ausgewählt.`
+        : `${type === 'room' ? 'Raum' : 'Objekt'} ausgewählt. Details im rechten Panel, derzeit ausgeblendet.`);
+    }
     if (focus && selected) focusSelectedEntity();
   }
 
   function openAssetLibrary({ mode = libraryMode, focusSearch = true } = {}) {
     if (!editMode) return;
     // No view gate. Placing furniture in the model starts by choosing a product,
-    // exactly as it does in the plan, and `placeFromThree` has handled the floor
+    // exactly as it does in the plan, and `floorClickFromThree` has handled the floor
     // click since the transform widget arrived. This guard outlived its reason and
     // made the Add button in 3D a control that looked live, changed nothing, and
     // only explained itself to a screen reader.
@@ -1304,8 +1349,24 @@ export default async function renderWorkbench(ctx, { object, floor, plan, canoni
         })();
     const next = fitCameraToRect(rect);
     if (!next) return;
+    const fitted = fit2dCamera(next);
+    // In the model, move the orbit camera instead of switching views. Forcing a visitor
+    // into the 2D plan to answer «where is this?» loses the view they were working in,
+    // and the 3D camera speaks the same plan units through the existing bridge.
+    if (viewMode !== '2d' && threeViewer) {
+      camera = fitted;
+      const plan = fitCamera(floor);
+      const focused = threeViewer.focusPlanCamera({
+        centre: { x: fitted.x + fitted.width / 2, y: fitted.y + fitted.height / 2 },
+        fitRatio: plan.width > 0 ? fitted.width / plan.width : 1,
+      });
+      if (focused) {
+        announce('Auswahl eingepasst.');
+        return;
+      }
+    }
     viewMode = '2d';
-    camera = fit2dCamera(next);
+    camera = fitted;
     syncQuery(); drawScene(true);
     announce('Auswahl eingepasst.');
   }

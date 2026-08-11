@@ -63,6 +63,11 @@ const DEFERRED = {
   // file carries the edition it encodes, and NO prices: the handbook marks them
   // confidential.
   multispaceModules:'data/multispace-modules.json',
+  // Realised Multispace spaces, as examples. A record is an ausgebauter ORT — a floor, a
+  // zone within one, or a single room — not a building; the building is only where the
+  // place is. Images are references into `media`, so licence, photographer and source
+  // stay with the asset rather than being copied per example.
+  workspaceExamples:'data/workspace-examples.json',
   // Metadata catalogue (#/app/metadata-catalog): the two layers BELOW the DCAT
   // catalogue. `businessObjects` is technology-neutral (a business object with
   // attributes per data domain), while `systemTables` is system-specific (a
@@ -99,6 +104,7 @@ const DATA_AREA_LABELS = {
   tenancies: 'Mietverhältnisse', floors: 'Geschosse', spaces: 'Räume',
   workspacePlanning: 'Workspace-Planungsstände',
   multispaceModules: 'Multispace-Module',
+  workspaceExamples: 'Multispace-Beispiele',
   businessObjects: 'Geschäftsobjekte', systemTables: 'Systemtabellen',
   processes: 'Prozesse',
   shopProducts: 'Shop-Produkte', shopCategories: 'Shop-Kategorien',
@@ -108,7 +114,7 @@ const DATA_AREA_LABELS = {
 // `multispaceModules` is one document, not a collection of records: it carries the
 // handbook edition it encodes alongside the module list, so the edition and the modules
 // can never be read apart.
-const OBJECT_FILES = new Set(['reference', 'catalogLabels', 'multispaceModules']);
+const OBJECT_FILES = new Set(['reference', 'catalogLabels', 'multispaceModules', 'workspaceExamples']);
 const RECORD_IDS = {
   services: 'serviceId', applications: 'appId', news: 'id', contacts: 'contactId',
   documents: 'docId', projects: 'projectId', media: 'mediaId', datasets: 'id',
@@ -405,6 +411,14 @@ export const core = {
   // Building process documentation: flat list, detail lookup by processId.
   processes: () => DATA.processes || [],
   processDoc: (id) => find(DATA.processes, 'processId', id),
+  // The Multispace standard: one document carrying the edition and its modules, so the
+  // two cannot be read apart. `multispaceModule` looks one up by its handbook number.
+  multispaceModules: () => DATA.multispaceModules || Object.create(null),
+  multispaceModule: (nr) => ((DATA.multispaceModules || {}).modules || [])
+    .find((module) => Number(module.nr) === Number(nr)) || null,
+  workspaceExamples: () => (DATA.workspaceExamples || {}).examples || [],
+  workspaceExample: (slug) => ((DATA.workspaceExamples || {}).examples || [])
+    .find((example) => example.slug === String(slug)) || null,
   shopProducts: () => DATA.shopProducts || [],
   shopProduct: (id) => find(DATA.shopProducts, 'id', Number(id)),
   shopCategories: () => DATA.shopCategories || [],

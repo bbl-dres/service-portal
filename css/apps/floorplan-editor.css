@@ -56,6 +56,12 @@
 .fpe-more-menu__separator { display:block; height:var(--stroke-1); margin:var(--sp-1-5) 0; background:var(--fpe-border-structural); }
 .fpe-more-menu > :is(.fpe-menu-compact-only,.fpe-menu-phone-only) { display:none; }
 .fpe-panel-toggle-icon { width:var(--sp-5); height:var(--sp-5); display:block; fill:none; stroke:currentColor; stroke-width:1.6; }
+/* A selection waiting behind a closed inspector. The dot is decoration only — the
+   toggle's accessible name says the same thing in words, because a coloured dot is not
+   information to everyone. */
+.fpe-panel-toggle.has-pending { position:relative; }
+.fpe-panel-toggle__dot { position:absolute; top:var(--sp-1); right:var(--sp-1); width:var(--sp-2); height:var(--sp-2);
+  border-radius:var(--radius-full); background:var(--color-primary-600); }
 .fpe-panel-toggle-icon__pane { fill:currentColor; stroke:none; }
 
 .fpe-workbench { position:relative; flex:1 1 auto; min-height:0; min-width:0; display:grid;
@@ -660,10 +666,14 @@
 .fpe-local-note { flex:none; min-height:var(--sp-8); display:flex; align-items:center; justify-content:space-between; gap:var(--sp-4); padding:var(--sp-1) var(--sp-4);
   border-top:var(--stroke-1) solid var(--fpe-border-structural); background:var(--color-secondary-50); color:var(--color-text-muted);
   font-size:var(--text-xs); white-space:nowrap; }
-.fpe-local-note strong { flex:none; color:var(--color-text); }
+/* No bold, no underlines. The footer is a standing note, not something to be read
+   before the plan: emphasis and rules made it compete with the work area. */
+.fpe-local-note__label { flex:none; color:var(--color-text); font-weight:var(--fw-regular); }
 .fpe-local-note nav { min-width:0; display:flex; align-items:center; justify-content:flex-end; gap:var(--sp-4); margin-left:auto; }
-.fpe-local-note a { color:var(--color-text-muted); text-underline-offset:.15em; }
-.fpe-local-note a:is(:hover,:focus-visible) { color:var(--color-primary-600); }
+.fpe-local-note a { color:var(--color-text-muted); text-decoration:none; }
+/* The underline returns on hover and on focus, so the links are still discoverable as
+   links rather than merely coloured text. */
+.fpe-local-note a:is(:hover,:focus-visible) { color:var(--color-primary-600); text-decoration:underline; text-underline-offset:.15em; }
 
 /* Eleven Multispace categories. They are categorical data hues, not status
    colors; change/new/order state remains outline/badge/text and cannot collide. */

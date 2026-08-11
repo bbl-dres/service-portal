@@ -109,6 +109,15 @@ export const PLACEMENT_PREVIEW = Object.freeze({
   invalid: color('preview-invalid', '#b8232f'),
 });
 
+/**
+ * The measurement line, for the WebGL side.
+ *
+ * The plan tints its measurement through `.fpe-measure` in the editor stylesheet. Keep
+ * this value in step with that rule; it lives here for the same reason the placement
+ * preview's does — WebGL cannot read a CSS custom property.
+ */
+export const MEASURE_COLOR = color('measure', '#1d4ed8').rgb;
+
 export function normalizeColorMode(value) {
   return EDITOR_COLOR_MODES.some((mode) => mode.value === value) ? value : 'use';
 }
