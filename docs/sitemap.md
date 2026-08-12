@@ -115,7 +115,7 @@ Also: #/search · meta-nav «Notfall & Vorfälle» → #/services/sicherheitsvor
 `data/services.json` has a `type` field. This rule makes it load-bearing:
 
 - **`type: action`** (16 entries) → stays in `#/services`.
-- **`type: info`** (4 entries) → leaves. `beschaffung-einstieg` and `leistungsverrechnung` → **Wissen und Hilfsmittel**; `portfolio-einsicht` and `bauprojekt-informationen` → **Daten und Digitalisierung**, as entry points to the apps they describe.
+- **`type: info`** (3 entries) → leaves. `beschaffung-einstieg` and `leistungsverrechnung` → **Wissen und Hilfsmittel**; `bauprojekt-informationen` → **Daten und Digitalisierung**, as an entry point to the app it describes. (`portfolio-einsicht` was removed entirely on 2026-08-12: the application's own landing page already is that entry point.)
 
 The service/information distinction becomes **structural** rather than a badge. A tag reading "this is not actually a service" is weaker than not filing it under services.
 

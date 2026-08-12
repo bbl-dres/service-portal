@@ -239,7 +239,7 @@ Drei Entscheide, die dabei gefallen sind:
 
 | Bisher | Neuer Ort | Begründung |
 |---|---|---|
-| `portfolio-einsicht` | Anwendungen (`#/app/portfolio`) | Einsicht in ein Inventar, keine Leistung mit Ergebnis |
+| ~~`portfolio-einsicht`~~ | Anwendungen (`#/app/portfolio`) | Einsicht in ein Inventar, keine Leistung mit Ergebnis — Eintrag am 2026-08-12 entfernt, die Anwendung selbst ist der Ort |
 | `beschaffung-einstieg` | News und Wissen | Einstiegs- und Vorlagenseite; die eigentliche Leistung ist SVC-E-001 |
 | `leistungsverrechnung` | News und Wissen | Preis- und Verrechnungsinformation, kein auslösbarer Vorgang |
 

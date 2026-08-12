@@ -259,24 +259,6 @@
     "voraussetzungen": []
   },
   {
-    "serviceId": "portfolio-einsicht",
-    "title": "Liegenschaften Inventar einsehen",
-    "domain": "A",
-    "audience": [
-      "staff"
-    ],
-    "type": "info",
-    "icon": "Map",
-    "target": {
-      "kind": "app",
-      "href": "#/app/portfolio"
-    },
-    "contact": "pfm",
-    "short": "Überblick über das Immobilienportfolio des Bundes (Liegenschaften Inventar).",
-    "description": "Karten-, Listen- und Detailansicht des vom BBL bewirtschafteten Immobilienportfolios.",
-    "voraussetzungen": []
-  },
-  {
     "serviceId": "beschaffung-einstieg",
     "title": "Beschaffung — Einstieg & Vorlagen",
     "domain": "E",
