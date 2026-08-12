@@ -1,4 +1,44 @@
-/* Fullscreen construction-document viewer. */
+/* Fullscreen construction-document viewer, and the archive's gallery tiles. */
+
+/* Gallery tile. The card shell is the shared one; only two things differ. The
+   control is a BUTTON, not a link — a document opens the viewer and has no route
+   of its own — so the stretched-link recipe of .card--clickable does not apply
+   and the button carries the hit area itself. And the media box holds a
+   schematic instead of a photograph (documentThumb, js/ui/doc-viewer.js). */
+/* `.card__image` sizes itself with the `height:0 + padding-bottom:56.25%` ratio
+   trick and positions its children absolutely, which is right for a photograph
+   that must crop to 16:9. A schematic has its own proportion and has to be shown
+   whole, so this box goes back to normal flow — otherwise the drawing is clipped
+   to a sliver by the parent's `overflow:hidden`. */
+.doc-card__preview { display:flex; align-items:center; justify-content:center;
+  height:auto; padding:var(--sp-5) var(--sp-4); background:var(--color-secondary-50); }
+.doc-card__preview::before { content:none; }        /* no placeholder frame behind a drawing */
+/* Scoped through .doc-card to outrank `.doc-open`, which styles the SAME button
+   as a link in the list view. In a row the filename is the link; in a tile it is
+   the card's title, and every other gallery in the portal draws a title in ink
+   and moves it to CD's hover colour on hover. Both keep the .doc-open class
+   because one delegated handler opens the viewer from either view. */
+.doc-card .doc-card__open { display:block; width:100%; padding:0; border:0; background:none;
+  font:inherit; color:var(--color-text); text-align:left; text-decoration:none;
+  overflow-wrap:anywhere; cursor:pointer; }
+.doc-card:hover .doc-card__open, .doc-card .doc-card__open:hover { color:var(--color-primary-700); }
+.doc-card:hover { box-shadow:var(--shadow-2xl); }
+.doc-card { transition:box-shadow var(--duration-slow) var(--ease-in-out); }
+@media (hover:none){ .doc-card:hover { box-shadow:var(--shadow-lg); } }
+
+/* The schematic itself: one ink colour on paper, so a plan reads as a plan and a
+   report as a report at tile size without competing with the card's own text. */
+.doc-thumb { display:block; width:100%; max-width:var(--sp-32); }
+.doc-thumb svg { display:block; width:100%; height:auto; }
+.doc-thumb__sheet { fill:var(--color-bg); stroke:var(--color-secondary-200); stroke-width:1; }
+.doc-thumb__rule, .doc-thumb__title { stroke:var(--color-secondary-300); stroke-linecap:round; }
+.doc-thumb__rule { stroke-width:3; }
+.doc-thumb__title { stroke:var(--color-secondary-400); stroke-width:5; }
+.doc-thumb__crest { fill:var(--color-federal-red); }
+.doc-thumb__wall { fill:none; stroke:var(--color-secondary-400); stroke-width:3; }
+.doc-thumb__wall-line { stroke:var(--color-secondary-300); stroke-width:2; }
+.doc-thumb__room { fill:var(--color-secondary-100); stroke:none; }
+.doc-thumb__dim { stroke:var(--color-secondary-200); stroke-width:1; }
 
 .docviewer { position:fixed; inset:0; z-index:var(--z-viewer); display:flex; flex-direction:column;
   overflow:hidden; background:var(--color-secondary-900); }

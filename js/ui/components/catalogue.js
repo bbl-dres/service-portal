@@ -585,6 +585,20 @@ export function wireCatalogueState(mount, {
   // Immediately show URL-restored filters on the button (url-state-1). Checkboxes
   // are already correct when filterGroup received `selected`.
   updateFilterBadge();
+  // The show-all disclosure on a truncated facet (filterGroup `max`). Wired HERE
+  // rather than per caller: the markup is the component's, so the behaviour that
+  // goes with it should be too — otherwise every panel that caps a long list has to
+  // re-implement the same eight lines, and the ones that forget render a button
+  // that does nothing.
+  if (fpanel) fpanel.addEventListener('click', (e) => {
+    const more = e.target.closest('[data-fmore]');
+    if (!more) return;
+    const rest = more.closest('.filter-group')?.querySelector('.filter-group__more');
+    if (!rest) return;
+    const open = rest.hidden;
+    rest.hidden = !open;
+    more.setAttribute('aria-expanded', String(open));
+  });
   if (fbtn && fpanel) fbtn.addEventListener('click', () => {
     const open = !fpanel.hidden; fpanel.hidden = open; fbtn.setAttribute('aria-expanded', String(!open));
   });

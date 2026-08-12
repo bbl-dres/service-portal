@@ -1,6 +1,6 @@
 // Searchable construction-document archive with the shared document viewer.
 
-import { documentFileName, openDocumentViewer } from '../ui/doc-viewer.js';
+import { documentFileName, documentThumb, openDocumentViewer } from '../ui/doc-viewer.js';
 import { formatFileSize } from '../format.js';
 import { APPLICATIONS, trail } from '../crumbs.js';
 import { preparePage } from '../collections.js';
@@ -21,7 +21,15 @@ const SORTS = {
   year: (a, b) => (b.year || 0) - (a.year || 0) || nameCmp(a, b),
   size: (a, b) => (b.sizeKB || 0) - (a.sizeKB || 0) || nameCmp(a, b),
 };
-const PER_PAGE = 10;
+// A row is one line, a tile is a block: the list fits ten comfortably, the
+// gallery wants a number that divides by both grid widths (2 and 3 columns).
+const PER_PAGE = { list: 10, gallery: 12 };
+const VIEWS = [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']];
+// LIST is the default here, unlike the catalogues. This archive is searched by
+// filename, KBOB type and year — text a row shows and a tile cannot — and the
+// preview is a schematic of a mock document, useful for recognising a plan from
+// a report but not for reading one.
+const DEFAULT_VIEW = 'list';
 
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
@@ -45,6 +53,8 @@ export default async function render(ctx) {
     filters: { building: parseArr('building'), type: parseArr('type'), year: parseArr('year'), class: parseArr('class') },
     q: query.get('q') || '',
     sort: SORT_OPTS.some(o => o.value === query.get('sort')) ? query.get('sort') : 'title',
+    // `view` is read and written by C.wireCatalogueState, like q/sort/page.
+    view: VIEWS.some(([v]) => v === query.get('view')) ? query.get('view') : DEFAULT_VIEW,
     page: Math.max(1, Number(query.get('page')) || 1),
   };
 
@@ -66,6 +76,33 @@ export default async function render(ctx) {
     ], rows });
   }
 
+  // A tile is the same control as a row: a button that opens the viewer, not a
+  // link — the archive has no per-document route. The card shell is the shared
+  // one so the archive looks like every other gallery in the portal.
+  function resultGallery(rows) {
+    const tile = (r) => {
+      const bid = (r.linkedTo || [])[0];
+      const b = bid ? core.building(bid) : null;
+      return `<div class="card card--default doc-card">
+        <div class="card__image doc-card__preview">${documentThumb(r)}</div>
+        <div class="card__content">
+          <div class="card__body">
+            <h3 class="card__title">
+              <button type="button" class="doc-open doc-card__open interactive-control" data-doc="${esc(r.docId)}"
+                aria-label="${esc(documentFileName(r))} öffnen">${esc(documentFileName(r))}</button>
+            </h3>
+            <p class="card__description">${esc(typeLabel(r))}${b ? ` · ${esc(b.name)}` : ''}</p>
+            <div class="pill-row">${C.badge(r.classification, tierVariant(r.classification))}</div>
+          </div>
+          <div class="card__footer">
+            <div class="card__footer__info">${esc(String(r.year || '—'))} · ${formatFileSize(r.sizeKB)}</div>
+          </div>
+        </div>
+      </div>`;
+    };
+    return `<div class="grid grid--responsive-cols-3 gap--top">${rows.map(tile).join('')}</div>`;
+  }
+
   function renderActiveFilters() {
     const box = mount.querySelector('#doc-activefilters'); if (!box) return;
     const pills = [];
@@ -85,6 +122,7 @@ export default async function render(ctx) {
     }
 
     if (state.sort !== 'title') qp.set('sort', state.sort);
+    if (state.view !== DEFAULT_VIEW) qp.set('view', state.view);
     if (state.page > 1) qp.set('page', String(state.page));
     const qs = qp.toString();
     try { history.replaceState(history.state, '', '#/app/document-archive' + (qs ? '?' + qs : '')); } catch {  }
@@ -94,7 +132,7 @@ export default async function render(ctx) {
     const { sorted: rows, visible, page, totalPages } = preparePage(filtered(), {
       compare: SORTS[state.sort] || SORTS.title,
       page: state.page,
-      perPage: PER_PAGE,
+      perPage: PER_PAGE[state.view] || PER_PAGE.list,
     });
     state.page = page;
     const cnt = mount.querySelector('#doc-count');
@@ -103,20 +141,29 @@ export default async function render(ctx) {
     const main = mount.querySelector('#doc-main');
     main.innerHTML = rows.length
 
-      ? resultTable(visible) + C.pagination({ page: state.page, totalPages, inputId: 'doc-page', label: 'Seitennavigation Bauwerksdokumentation' })
+      ? (state.view === 'gallery' ? resultGallery(visible) : resultTable(visible))
+        + C.pagination({ page: state.page, totalPages, inputId: 'doc-page', label: 'Seitennavigation Bauwerksdokumentation' })
       : C.empty('Keine Dokumente gefunden.', {
           hint: 'Passen Sie Ihre Suche oder die Filter an.',
           action: { label: 'Suche und Filter zurücksetzen', id: 'doc-empty-reset' },
         });
     if (totalPages > 1) C.wirePagination(mount, 'doc-page', state.page, totalPages, (t) => { state.page = t; renderMain(); });
+    // The switch is rendered once with the page; keep its pressed state in step
+    // with a view change that came from the hash or from the other button.
+    mount.querySelectorAll('.view-switch__btn').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.view === state.view));
+    });
     renderActiveFilters();
     syncHash();
 
-    C.announceCatalogue({ count: rows.length, total: all.length, unit: 'Dokumenten', page: state.page, totalPages, view: 'list' });
+    C.announceCatalogue({ count: rows.length, total: all.length, unit: 'Dokumenten', page: state.page, totalPages, view: state.view });
   }
 
   const filterPanel = `
-      ${C.filterGroup({ dim: 'building', legend: 'Gebäude', selected: state.filters.building, options: buildings.map(b => ({ value: b.bbl_id, label: b.name })) })}
+      ${/* Capped: 22 buildings made this facet ~900px tall, which set the height
+            of the whole panel and left the columns beside it empty. The rest sit
+            behind the show-all disclosure, wired by C.wireCatalogueState. */''}
+      ${C.filterGroup({ dim: 'building', legend: 'Gebäude', max: 8, selected: state.filters.building, options: buildings.map(b => ({ value: b.bbl_id, label: b.name })) })}
       ${C.filterGroup({ dim: 'type', legend: 'KBOB-Dokumenttyp', selected: state.filters.type, options: types })}
       ${C.filterGroup({ dim: 'year', legend: 'Jahr', selected: state.filters.year, options: years.map(y => ({ value: String(y), label: String(y) })) })}
       ${C.filterGroup({ dim: 'class', legend: 'Klassifizierung', selected: state.filters.class, options: tiers.map(t => ({ value: t.id, label: t.label })) })}
@@ -134,6 +181,7 @@ export default async function render(ctx) {
       formId: 'doc-search', inputId: 'doc-q', searchLabel: 'Dokument suchen', placeholder: 'Dateiname, KBOB-Typ oder Kategorie suchen…', q: state.q, countId: 'doc-count',
       sort: { id: 'doc-sort', value: state.sort, options: SORT_OPTS },
       filterId: 'doc-filter-btn', filterLabel: 'Filter', filterCount, panelId: 'doc-filters', panel: filterPanel,
+      view: state.view, views: VIEWS,
     })}
     <div id="doc-activefilters"></div>
     <h2 class="sr-only">Dokumente</h2>

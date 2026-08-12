@@ -21,14 +21,18 @@ function footerHTML() {
     <div class="container">
       <div class="footer-information">
         <div class="footer-information__entry">
-          <!-- Without the trailing «BBL», the heading no longer wraps to three
-               lines in the narrow first column; the acronym appears in the
-               address line below (item 4.13). -->
-          <h3>Bundesamt für Bauten und Logistik</h3>
+          <!-- «Über das BBL» names the column, so the office name can be the
+               statement rather than the heading — the same split the tenant
+               portal uses. The heading also no longer wraps to three lines in
+               this narrow first column (item 4.13). -->
+          <h3>Über das BBL</h3>
           <!-- Body text at the CD base size (FooterInformation.vue:7-13 renders
                bare <p>); no .small (review nav/ft-1). -->
-          <p>Das Kundenportal bündelt Dienstleistungen, Anwendungen, Dokumente und Daten des BBL an einem Ort. Dies ist ein <strong>Prototyp mit Demo-Daten</strong>.</p>
-          <p>BBL · Fellerstrasse 21, 3003 Bern</p>
+          <p>Bundesamt für Bauten und Logistik — nachhaltig, partnerschaftlich und vorbildlich.</p>
+          <!-- The prototype notice is a caveat, not a claim: one step smaller and
+               a shade quieter, so it reads as a footnote to the sentence above
+               instead of competing with it. -->
+          <p class="footer-information__note">Diese Anwendung ist ein Prototyp. Darstellung, Funktionalität und Inhalte dienen ausschliesslich der Demonstration; die verwendeten Daten sind fiktiv oder öffentlich zugänglich.</p>
         </div>
         <!-- «Weitere Informationen» before «Prototyp»: same column order as the
              Mieterportal variant (tenant-portal js\shell.js:620-636). -->

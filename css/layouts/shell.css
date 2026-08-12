@@ -33,6 +33,14 @@
 @media (min-width:1024px){ .footer-information__entry h3 { margin-bottom:var(--sp-10); } }
 .footer-information__entry p { margin-bottom:var(--sp-3); }   /* CD footer.postcss:54-60 mb-3 xl:mb-4 */
 @media (min-width:1280px){ .footer-information__entry p { margin-bottom:var(--sp-4); } }
+/* Footnote voice on the dark band: one step down the type ramp and a quieter
+   ink, so a caveat reads as a caveat. A named tone rather than a transparency —
+   the band's colour changes with the skin, and a fixed opacity would land on a
+   different contrast in each. secondary-100, not -200: at 16px this is body
+   text, so it needs 4.5:1, and -200 measured 4.16 on the intranet band (its
+   secondary-600 is a saturated blue, darker in effect than the default skin's,
+   where the same tone passed at 4.87). Verified in BOTH skins. */
+.footer-information__note { font-size:var(--text-sm); color:var(--color-secondary-100); }
 .footer-information__entry p:last-child { margin-bottom:0; }
 .footer__link { display:inline-flex; align-items:center; padding-block:var(--sp-2); color:var(--color-text-negative); cursor:pointer; text-decoration:none; }
 .footer__link:hover { color:var(--color-gray-300); text-decoration:none; }

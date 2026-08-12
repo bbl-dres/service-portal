@@ -72,20 +72,30 @@
 /* The tinted, rounded card is a deliberate decision and STAYS. Only the wrapping
    flex row changes: at 1440 it left roughly 60% of the panel empty and made
    “Reset” look like a third facet heading (Item 2.13). */
-/* Grid metrics follow CD (search.postcss:257-264 `gap-3 lg:gap-4`): one consistent
-   gap from .75rem to 1rem at lg, with NO separate 2rem column gutter. */
-.catbar__panel { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-3);
+/* Column metrics follow CD (search.postcss:257-264 `gap-3 lg:gap-4`): one
+   consistent gap from .75rem to 1rem at lg, with NO separate 2rem column gutter.
+   MULTICOL, NOT GRID. A grid places each group in the next cell, so the tallest
+   group dictates its whole row: the document archive has 22 buildings in the
+   first facet, which pushed «Klassifizierung» into row 2 column 1 — below the
+   fold, with two empty columns beside it (user finding, 2026-08-12). Multicol
+   FLOWS instead: a short facet follows a tall one in the same column, and the
+   panel balances. `break-inside:avoid` keeps a facet whole, and `column-span`
+   below is what lets the action row still cross all columns. */
+.catbar__panel { display:block; columns:1; column-gap:var(--sp-3);
   /* The panel owns its BOTTOM spacing (1.5rem = `mt-6`). The results block and
      C.mountDataTable follow without their own top margin, keeping spacing equal
      for catalogue pages and embedded tables. */
-  align-items:start; padding:var(--sp-4) var(--sp-5); margin:var(--sp-3) 0 var(--sp-6); background:var(--surface-bg-muted);
+  padding:var(--sp-4) var(--sp-5); margin:var(--sp-3) 0 var(--sp-6); background:var(--surface-bg-muted);
   border:var(--stroke-1) solid var(--surface-border); border-radius:var(--surface-radius);
   box-shadow:var(--surface-elevation); }
-@media (min-width:768px){ .catbar__panel { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media (min-width:1024px){ .catbar__panel { grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--sp-4); } }
-.catbar__panel .filter-group { margin:0; }
-.catbar__panel-actions { grid-column:1 / -1; display:flex; justify-content:flex-end;
-  padding-top:var(--sp-3); border-top:var(--stroke-1) solid var(--color-secondary-200); }
+@media (min-width:768px){ .catbar__panel { columns:2; } }
+@media (min-width:1024px){ .catbar__panel { columns:3; column-gap:var(--sp-4); } }
+/* The gap between facets is now a margin: multicol has no row gap. */
+.catbar__panel .filter-group { margin:0 0 var(--sp-3); break-inside:avoid; }
+@media (min-width:1024px){ .catbar__panel .filter-group { margin-bottom:var(--sp-4); } }
+.catbar__panel .filter-group:last-of-type { margin-bottom:0; }
+.catbar__panel-actions { column-span:all; display:flex; justify-content:flex-end;
+  margin-top:var(--sp-3); padding-top:var(--sp-3); border-top:var(--stroke-1) solid var(--color-secondary-200); }
 /* The same applies to sidebar filters (dashboards, portfolio map): the reset
    button sat as the last sibling directly below the final filter group and read
    like another filter instead of an action for all groups (Item 5.18). Give it

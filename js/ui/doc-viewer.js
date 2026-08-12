@@ -94,6 +94,40 @@ function pageHTML(doc, n, total) {
   return isPlan(doc) ? planPage(doc, n, total) : textPage(doc, n, total);
 }
 
+/**
+ * A small schematic of the document, for gallery tiles.
+ *
+ * It draws the SAME two shapes the viewer does — a floor plan or a text page —
+ * so the tile and the preview it opens are recognisably the same document, and
+ * the archive does not grow a second idea of what a document looks like. Derived
+ * from `docId`, so a given document always renders identically.
+ *
+ * Decorative by construction: the tile's own control carries the accessible
+ * name, and a schematic of a mock page has nothing to announce.
+ */
+export function documentThumb(doc) {
+  const h = hash(doc?.docId || '');
+  const body = isPlan(doc)
+    ? `<rect class="doc-thumb__wall" x="14" y="18" width="92" height="104"/>
+       <line class="doc-thumb__wall-line" x1="14" y1="70" x2="106" y2="70"/>
+       <line class="doc-thumb__wall-line" x1="58" y1="18" x2="58" y2="70"/>
+       <line class="doc-thumb__wall-line" x1="78" y1="70" x2="78" y2="122"/>
+       <rect class="doc-thumb__room" x="${18 + (h % 3) * 14}" y="${74 + (h % 2) * 8}" width="22" height="16"/>
+       <line class="doc-thumb__dim" x1="14" y1="134" x2="106" y2="134"/>`
+    : `<rect class="doc-thumb__crest" x="14" y="16" width="10" height="12"/>
+       <line class="doc-thumb__rule" x1="30" y1="19" x2="72" y2="19"/>
+       <line class="doc-thumb__rule" x1="30" y1="25" x2="60" y2="25"/>
+       <line class="doc-thumb__title" x1="14" y1="44" x2="${68 + (h % 5) * 6}" y2="44"/>
+       ${Array.from({ length: 8 }, (_, i) =>
+    `<line class="doc-thumb__rule" x1="14" y1="${60 + i * 9}" x2="${74 + ((h >> i) % 5) * 6}" y2="${60 + i * 9}"/>`).join('')}`;
+  return `<span class="doc-thumb${isPlan(doc) ? ' doc-thumb--plan' : ''}">
+    <svg viewBox="0 0 120 160" aria-hidden="true" focusable="false">
+      <rect class="doc-thumb__sheet" x="0.5" y="0.5" width="119" height="159"/>
+      ${body}
+    </svg>
+  </span>`;
+}
+
 export function openDocumentViewer(doc, siblings, options = {}) {
   if (!doc) return;
   const opener = document.activeElement;
@@ -209,12 +243,18 @@ export function openDocumentViewer(doc, siblings, options = {}) {
           <p class="docviewer__sub">${C.escape(kbobType(d))} · <span data-page-indicator>Seite 1 / ${total}</span>${many ? ` · <span class="docviewer__docnum">Dokument ${pos + 1} / ${list.length}</span>` : ''}</p>
         </div>
       </div>
+      ${/* Order: the two file transfers first and next to each other (down, then
+            up — they are the same kind of act in opposite directions), then the
+            view toggle, then the social actions, then close. Metadata used to
+            sit BETWEEN download and upload, splitting the pair with a control
+            that changes the view rather than the file (user finding,
+            2026-08-12). */''}
       <div class="docviewer__actions">
         <button class="docviewer__btn" type="button" data-act="download" aria-label="Herunterladen" title="Herunterladen">${C.icon('Download', 'icon--md')}</button>
+        <button class="docviewer__btn" type="button" data-act="upload" aria-label="Neue Version hochladen" title="Neue Version hochladen">${C.icon('Upload', 'icon--md')}</button>
         <button class="docviewer__btn${showMeta ? ' is-active' : ''}" type="button" data-act="meta"
           aria-expanded="${showMeta}" aria-controls="docviewer-meta"
           aria-label="${showMeta ? 'Metadaten ausblenden' : 'Metadaten anzeigen'}" title="Metadaten">${C.icon('InfoCircle', 'icon--md')}</button>
-        <button class="docviewer__btn" type="button" data-act="upload" aria-label="Neue Version hochladen" title="Neue Version hochladen">${C.icon('Upload', 'icon--md')}</button>
         <button class="docviewer__btn" type="button" data-act="share" aria-label="Dokument teilen" title="Teilen">${C.icon('Share', 'icon--md')}</button>
         <button class="docviewer__btn" type="button" data-act="comment" aria-label="Kommentieren" title="Kommentieren">${C.icon('SpeechBubble', 'icon--md')}</button>
         <button class="docviewer__btn docviewer__btn--close" type="button" data-act="close" aria-label="Vorschau schliessen" title="Schliessen">${C.icon('Cancel', 'icon--md')}</button>
