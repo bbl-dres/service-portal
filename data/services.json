@@ -609,30 +609,6 @@
     ]
   },
   {
-    "serviceId": "hbb-bedarfsmeldung",
-    "title": "IKT-Bedarf melden (HBB-Prozess)",
-    "domain": "D",
-    "audience": [
-      "staff",
-      "customers"
-    ],
-    "type": "action",
-    "icon": "Desktop",
-    "target": {
-      "kind": "external",
-      "href": "#"
-    },
-    "contact": "einkauf-it",
-    "short": "Bedarf für Hardware, Software oder IKT-Dienstleistungen beim Einkauf IT anmelden.",
-    "description": "Verwaltungseinheiten melden ihren Bedarf an Informations- und Kommunikationstechnik dem BBL, das nach Org-VöB für die IKT-Beschaffung des Bundes zuständig ist. Stellen mit aktivierter Harmonisierter Beschaffungslösung Bund (HBB) starten die Beschaffung direkt in Acta Nova; alle übrigen melden den Bedarf je nach Gegenstand als Hardware, Software oder Dienstleistung.",
-    "voraussetzungen": [
-      "Art des Bedarfs (Hardware, Software, Dienstleistung)",
-      "Beschrieb und geschätztes Volumen",
-      "Bezug zu einem Rahmenvertrag, falls vorhanden",
-      "Kostenstelle"
-    ]
-  },
-  {
     "serviceId": "delegation-beantragen",
     "title": "Beschaffungsdelegation beantragen",
     "domain": "D",

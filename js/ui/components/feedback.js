@@ -37,11 +37,24 @@ export function mountBanner(host, opts) {
     document.body.style.setProperty('--banner-offset', `${Math.ceil(banner.getBoundingClientRect().height)}px`);
     document.body.classList.add('body--banner-visible');
   };
+  // Scroll a control out from BEHIND the fixed strip when focus reaches it —
+  // for the keyboard user who tabs to something the banner covers.
+  //
+  // It applies only to things the strip can actually hide. Focus also lands on
+  // page-sized containers: clicking anywhere non-interactive inside
+  // `<main tabindex="-1">` (the skip-link target) focuses main itself, and main
+  // is as tall as the page. The overlap test below then says «yes, it reaches
+  // under the banner» — which is true of every full-page element and means
+  // nothing — and the delta became the distance to the bottom of the DOCUMENT.
+  // One click on the home hero jumped the page 3471px down to the news band
+  // (user finding, 2026-08-12). An element taller than the space the strip
+  // leaves cannot be hidden BEHIND it, so there is nothing to scroll away from.
   const keepFocusVisible = (event) => {
     const target = event.target;
     if (!banner || !(target instanceof Element) || banner.contains(target)) return;
     const targetRect = target.getBoundingClientRect();
     const bannerRect = banner.getBoundingClientRect();
+    if (targetRect.height > bannerRect.top) return;
     if (targetRect.bottom <= bannerRect.top || targetRect.top >= bannerRect.bottom) return;
     const delta = Math.ceil(targetRect.bottom - bannerRect.top + 8);
     const scroller = document.scrollingElement;

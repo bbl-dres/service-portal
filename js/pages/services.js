@@ -1,13 +1,19 @@
 // Services — service directory (catalogue) and service detail.
 import { audienceOptions, audienceLabel, audienceTags } from '../domain.js';
 import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
+import { bookmarkButton, bookmarkMark, savedFilterDimension, savedFilterGroup, savedFilterPill, savedOnly } from '../ui/bookmark.js';
+import { bookmarks } from '../core/bookmarks.js';
 const MISSING_TARGET_MESSAGE = 'Im Prototyp ist kein Zielsystem angebunden.';
 
 // Deferred collections for this route. The router calls core.ensure(needs)
 // BEFORE render(); without this declaration, an accessor would read the still
 // empty list and the view would show «no entries» instead of data
 // (docs/code-review.md §3).
-export const needs = ['applications', 'contacts', 'documents'];
+// `users` carries the bookmark seed — same contract as #/applications and
+// #/data/catalog: the catalogue marks saved services and offers the favourites
+// filter, the detail page draws the star, and neither can know what is saved
+// before the directory is loaded (js/core/bookmarks.js seedOnce).
+export const needs = ['applications', 'contacts', 'documents', 'users'];
 export default async function render(ctx) {
   const { mount, params, query, core, C, setTitle, setCrumbs } = ctx;
   if (params[0]) return detail(ctx, params[0]);
@@ -34,18 +40,20 @@ export default async function render(ctx) {
   const state = C.catalogueState(query, {
     base: '#/services', perPage: 12,
     sortOpts: SORT_OPTIONS.map((o) => o.value),
-    filters: { audience: null, topic: null },
+    filters: { audience: null, topic: null, ...savedFilterDimension() },
     trimQuery: false,
   });
   const { q: rawQ, view, sort: sortKey, hash } = state;
   const q = rawQ.toLowerCase();
   const selectedAudiences = state.selected.audience;
   const selectedTopics = state.selected.topic;
+  const savedOnlyOn = savedOnly(state.selected.bookmark);
 
   const matches = (s) => !q || (s.title + ' ' + s.short + ' ' + s.description).toLowerCase().includes(q);
   const matchesAudience = (s) => !selectedAudiences.length || selectedAudiences.some(v => (s.audience || []).includes(v));
   const matchesTopic = (s) => !selectedTopics.length || selectedTopics.includes(s.domain);
-  const filtered = all.filter(s => matches(s) && matchesAudience(s) && matchesTopic(s));
+  const matchesSaved = (s) => !savedOnlyOn || bookmarks.has('service', s.serviceId);
+  const filtered = all.filter(s => matches(s) && matchesAudience(s) && matchesTopic(s) && matchesSaved(s));
   const services = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
   const { visible: visibleServices, totalPages, page } = state.clamp(services);
 
@@ -59,6 +67,9 @@ export default async function render(ctx) {
 
   const card = (s) => C.card({
     title: s.title, desc: s.short, href: serviceHref(s.serviceId),
+    // Placed by C.card — see applications.js. A service card carries no picture,
+    // so here the pill-row copy is the only one and stays visible at every width.
+    mark: bookmarkMark({ kind: 'service', id: s.serviceId }),
     badges: [audienceTags(core, C, s.audience)],
     footerInfo: C.escape(domainLabel(domains, s.domain)), footerAction: C.cardAction(),
   });
@@ -71,6 +82,9 @@ export default async function render(ctx) {
     rowsClickable: true,
     columns: [
       { key: 'title', label: 'Dienstleistung', render: s => `<a href="${serviceHref(s.serviceId)}">${C.escape(s.title)}</a><br><span class="small muted">${C.escape(s.short)}</span>` },
+      // One column of marks straight after the name — see applications.js.
+      { key: 'bookmark', label: 'Favorit', labelHidden: true, align: 'center',
+        render: s => bookmarkMark({ kind: 'service', id: s.serviceId }) },
       { key: 'domain', label: 'Bereich', render: s => C.escape(domainLabel(domains, s.domain)) },
       { key: 'audience', label: 'Zielgruppe', render: s => audienceTags(core, C, s.audience) },
     ],
@@ -81,6 +95,7 @@ export default async function render(ctx) {
   // so removing a filter needs no JS and stays deep-linkable.
   const activeFilters = [
     ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '', page: 1 }) }] : []),
+    ...savedFilterPill(state.selected.bookmark, (patch) => hash({ ...patch, page: 1 })),
     ...selectedAudiences.map(a => ({ label: audienceLabel(core, a), href: hash({ audience: selectedAudiences.filter(x => x !== a), page: 1 }) })),
     ...selectedTopics.map(t => ({ label: domainLabel(domains, t), href: hash({ topic: selectedTopics.filter(x => x !== t), page: 1 }) })),
   ];
@@ -95,6 +110,8 @@ export default async function render(ctx) {
 
   const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   const filterPanel = `
+    ${/* Favourites first — see applications.js. */''}
+    ${savedFilterGroup(state.selected.bookmark)}
     ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: selectedAudiences, options: audienceOptions(core) })}
     ${/* Derive topics from the data using the same rule as the drawer (ui/shell/header.js):
           a topic appears as soon as it has a case behind it. Raw field: `thema`
@@ -104,7 +121,7 @@ export default async function render(ctx) {
           be set but neither seen nor deselected. The flag has been removed. */''}
     ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: selectedTopics,
       options: domains.filter(d => all.some(s => s.domain === d.key)).map(d => ({ value: d.key, label: d.label })) })}
-    ${C.panelReset({ href: hash({ audience: [], topic: [], page: 1 }) })}`;
+    ${C.panelReset({ href: hash({ audience: [], topic: [], bookmark: [], page: 1 }) })}`;
 
   mount.innerHTML = `
   <div class="container section">
@@ -113,7 +130,7 @@ export default async function render(ctx) {
       formId: 'svc-search', inputId: 'sq', searchLabel: 'Dienstleistung suchen', placeholder: 'Dienstleistung suchen…', q: rawQ,
       countId: 'svc-count', count: `<strong>${services.length}</strong> von ${all.length} Dienstleistungen${pageInfo}`,
       sort: { id: 'svc-sort', value: sortKey, options: SORT_OPTIONS },
-      filterId: 'svc-filter', filterLabel: 'Filter', filterCount: selectedAudiences.length + selectedTopics.length,
+      filterId: 'svc-filter', filterLabel: 'Filter', filterCount: selectedAudiences.length + selectedTopics.length + (savedOnlyOn ? 1 : 0),
       panelId: 'svc-filters', panel: filterPanel,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
@@ -179,6 +196,11 @@ function detail(ctx, id) {
     requiresLogin: service.type === 'action' && !isExternal,
     loggedIn: session.isLoggedIn(), user: session.user(),
     free: service.type !== 'action' ? 'Frei zugänglich — keine Anmeldung erforderlich.' : '',
+    // The second shape of the SAME control as the star on the hero image: one
+    // reads at a glance from the picture, the other is findable by name in the
+    // card people already scan for actions. wireBookmarks keeps both in step, so
+    // clicking either flips the other on the spot.
+    bookmark: bookmarkButton({ kind: 'service', id: service.serviceId, name: service.title, variant: 'link' }),
   });
 
   const ctaBlock = `<div class="row mt-4">
@@ -212,6 +234,10 @@ function detail(ctx, id) {
       title: service.title, lead: service.short,
       tags: `${audienceTags(core, C, service.audience)}${service.type === 'action' ? C.badge('Vorgang', 'info') : C.badge('Information', 'gray')}`,
       image: C.heroFigure({ src: image, ratio: '16x9' }),
+      // The same «merken» star as the dataset and application heads, in the same
+      // corner of the same picture: the three detail pages are the surfaces
+      // people arrive at from search, so one gesture has to mean one thing.
+      bookmark: bookmarkButton({ kind: 'service', id: service.serviceId, name: service.title }),
     })}
     <div class="container--grid gap--responsive">
       ${/* CD content rhythm (.vertical-spacing, 3/3.5rem), not the portal-specific

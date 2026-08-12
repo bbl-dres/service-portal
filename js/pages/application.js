@@ -9,6 +9,7 @@
 // access and contact; users need that context before opening it.
 
 import { audienceTags } from '../domain.js';
+import { bookmarkButton } from '../ui/bookmark.js';
 
 const LAUNCH_LABEL = 'Anwendung starten';
 const NO_ENTRY_POINT_MESSAGE = 'Für diese Anwendung ist im Prototyp kein Einstiegspunkt hinterlegt.';
@@ -65,6 +66,11 @@ export default function render(ctx, appId) {
       tags: `${audienceTags(core, C, a.audience)}${a.hero ? C.badge('Schlüsselanwendung', 'info') : ''}${
         external ? C.badge('Externes System', 'gray') : C.badge('Im Kundenportal', 'blue')}`,
       image: heroImage(C, a),
+      // Same star, same corner as the service and dataset heads. An application
+      // is the record people return to most often, and the access card below
+      // already carries the LAUNCH action — saving is a different verb and does
+      // not belong on the same card.
+      bookmark: bookmarkButton({ kind: 'application', id: a.appId, name: a.name }),
     })}
 
     ${''/* No mt-6: the shared .hero + .container--grid rule provides spacing
@@ -104,6 +110,9 @@ export default function render(ctx, appId) {
           loggedIn: session.isLoggedIn(), user: session.user(),
           note: page.access && page.access.note ? page.access.note : '',
           steps: (page.access && page.access.steps) || [],
+          // Same control as the star on the hero image, spelled out. See the
+          // service detail page: both stay in step through wireBookmarks.
+          bookmark: bookmarkButton({ kind: 'application', id: a.appId, name: a.name, variant: 'link' }),
         })}
 
         ${C.contactBox(contact)}

@@ -312,13 +312,17 @@ Persönliche Favoriten: EIN Speicher hinter jedem «merken»-Stern. Ein Eintrag 
 - Migration des anonymen Vorgängers `bbl_favorites_v1` beim ersten Lesen; unbekannte Arten werden verworfen statt als Daten übernommen
 - Ablage pro Person über `session.user().userId`; abgemeldet ist `toggle()` ein No-op
 - `favorites.js` ist nur noch eine dünne Sicht auf denselben Speicher, damit die Sterne der Raumbuchung nicht in einem zweiten Bestand landen
-- `bookmarkButton({ kind, id, name, variant })` — Stern (icon-only) oder beschrifteter Knopf; `aria-pressed`, Titelwechsel, sr-only-Name des Datensatzes; abgemeldet wird NICHTS gerendert
+- `bookmarkButton({ kind, id, name, variant })` — zwei Formen desselben Bedienelements: `star` (icon-only, ohne Beschriftung, mit Titel-Tooltip) und `link` (`btn--link btn--icon-left`, sichtbare Beschriftung, deshalb OHNE Tooltip); `aria-pressed`, sr-only-Name des Datensatzes; abgemeldet wird NICHTS gerendert
+- Beide sagen denselben Satz («Zu meinen Favoriten hinzufügen» / «Aus meinen Favoriten entfernen») — der Link zeigt ihn, der Stern verbirgt ihn für Screenreader
+- EIN Ort für den Stern: `C.detailHead` legt ihn oben rechts INS Bild (`.hero__image`) — gleich auf Dienstleistung, Datensatz und Anwendung, den drei Detailköpfen, auf denen man aus der Suche landet; auf Bildgrösse skaliert, auf heller Scheibe, damit er über jedem Foto denselben Kontrast hat
+- EIN Ort für den Link: `C.accessCard({ bookmark })` setzt ihn zuunterst in die «Zugriff»-Karte (Dienstleistung, Anwendung) — unter Ziel, Sitzungshinweis und Zugangsschritten, weil Merken eine spätere Frage beantwortet als «wie komme ich hier rein?»; die Karte behält den Outline-Knopf für ihre Primäraktion, damit Öffnen und Merken nicht um dasselbe Gewicht konkurrieren
 - `wireBookmarks(document)` einmal global delegiert (app.js), wie wireShare/wireLogin; aktualisiert ALLE Bedienelemente derselben Referenz und behält den Fokus
 
 **Zustände**
 
 - Gemerkt (StarFilled, aria-pressed=true) vs. nicht gemerkt (Star, false); Farbe verstärkt nur, die Füllung trägt den Zustand
 - Abgemeldet: kein Stern (die Katalogseiten bleiben öffentlich, der Zustand ist also real)
+- Kopf ohne Bild (ein Datensatz von zwanzig hat keine Vorschau): Rückfall in die Titelzeile statt Verschwinden — nie beide Plätze gleichzeitig
 - Verweis ins Leere (Fixture neu erzeugt): Eintrag verschwindet still, statt eine leere Kachel zu zeigen
 
 ## js/session.js
@@ -634,7 +638,7 @@ Startseite (Arbeitsfläche): Hero mit Portalsuche, danach abwechselnde Bänder �
 
 - Hero hero--main-image: h1 «Willkommen im BBL Kundenportal», Beschreibung, Foto Fellerstrasse 21 mit srcset (800/1400/AVIF 2048) + figcaption © BBL (home.js:175–204)
 - Portal-Suchformular im Hero (role=search, sr-only-Label) als CTA-Slot (home.js:179–183)
-- Block «Meine offenen Vorgänge»: C.table (zebra, rowsClickable) mit Spalten Referenz (Link auf Vorgangsdetail), Titel, Aktualisiert (datum), Status-Badge; max. 5 Zeilen; Mehr-Link «Alle Vorgänge anzeigen» → #/my-cases (home.js:72–91)
+- Block «Meine offenen Vorgänge (n)»: C.table (zebra, rowsClickable) mit denselben Spalten wie die Vollliste #/my-cases — Referenz (Link auf Vorgangsdetail, `nowrap`), Titel, Typ, Aktualisiert (datum), Status-Badge; KEINE festen Spaltenbreiten, die Tabelle ist eine Vorschau derselben Liste und soll auch so aussehen; max. 5 Zeilen, n im Titel ist die Gesamtzahl der offenen Vorgänge; Mehr-Link «Alle Vorgänge anzeigen» → #/my-cases (home.js:72–95)
 - Block «Häufig gebraucht»: Text-Kacheln (quick-tile mit Icon, h3-Label, Meta) der Dienstleistungen mit popular-RANG, sortiert nach Rang; Link je Kachel → #/services/<serviceId>; Mehr-Link → #/services (home.js:58–65, 100–105)
 - Block «Anwendungen, Hilfsmittel und weitere Angebote»: 5 fest verdrahtete C.card-Kacheln (Datenportal, Liegenschaften Inventar, IT/IKT-Beschaffung→#/knowledge/it, Bundespublikationen-Shop, Bauwerksdokumentation); Anwendungs-Kacheln führen auf die Landingpage #/applications/<appId>, Bild aus applications.json `bild`, nur die Wissens-Kachel aus dem heroes-Pool (home.js:124–152)
 - Block «News»: 3 neueste Meldungen als C.card (Bild/Farbe, Footer Datum · Quelle), Mehr-Link → #/news (home.js:37, 156–165)

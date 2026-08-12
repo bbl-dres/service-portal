@@ -235,6 +235,30 @@
    media renderer. */
 .card__chips { position:absolute; top:var(--sp-2); left:var(--sp-2); right:var(--sp-2);
   display:flex; flex-wrap:wrap; gap:var(--sp-1); }
+/* The «gemerkt» mark on the card picture (C.card `mark`). Same corner, same disc
+   and same edge as the star over a detail hero (css/layouts/shell.css), one step
+   smaller because it labels a tile rather than a page. `.card__image` is already
+   the positioning context. It follows .card__chips in source order so that a
+   card using both keeps the mark on top of a chip row that spans the full width. */
+/* Inset by --sp-6, the INLINE padding of .card__body below it: the mark then
+   stands on the same left edge as the title and the pill row, and reads as part
+   of the card's own margin rather than as something dropped onto the picture. */
+.card__mark { position:absolute; top:var(--sp-6); left:var(--sp-6);
+  display:flex; padding:var(--sp-1-5); border-radius:var(--radius-full);
+  background:var(--color-bg); box-shadow:var(--shadow-overlay-control); }
+/* The body twin, for the card shapes that have no corner to put a mark in.
+   `--only` is the card WITHOUT a picture (a service card): there the pill row is
+   the sole placement and is never hidden. The plain class is the fallback for a
+   card that HAS a picture in a grid that drops it — .catalogue-grid does exactly
+   that below 768px, three rules above; without this pairing the mark would
+   disappear with the image it sits on. Exactly one copy is ever displayed, so
+   exactly one is ever in the accessibility tree. */
+.card__mark-inline { display:none; }
+.card__mark-inline--only { display:inline-flex; }
+@media (max-width:767.98px){
+  .catalogue-grid .card__mark-inline { display:inline-flex; }
+  .catalogue-grid .card__mark { display:none; }
+}
 .card__chip { padding:var(--sp-0-5) var(--sp-2); border-radius:var(--radius-full);
   background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); }
 .card__identifier { margin:var(--sp-1-5) 0 0; font-family:var(--font-mono);

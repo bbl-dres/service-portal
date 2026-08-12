@@ -51,9 +51,19 @@ const live = await page.evaluate(`(() => {
   const scrollAfter = window.scrollY;
   const focusVisible = focusAfter <= bannerTop;
   focusProbe.remove();
+  // The same handler must IGNORE a page-sized element. Clicking anywhere
+  // non-interactive focuses <main tabindex="-1">, which is as tall as the page:
+  // it overlaps the strip the way everything full-height does, and treating that
+  // as «hidden behind the banner» scrolled the page to its own bottom.
+  const main = document.querySelector('main');
+  const containerBefore = window.scrollY;
+  main?.focus({ preventScroll: true });
+  const containerAfter = window.scrollY;
+  const mainHeight = main ? Math.round(main.getBoundingClientRect().height) : 0;
   button?.click();
   return {
     height, padding, buttonHeight, visible, focusVisible,
+    containerBefore, containerAfter, mainHeight,
     focusBefore, focusAfter, scrollBefore, scrollAfter, bannerTop,
     released: !document.body.classList.contains('body--banner-visible')
       && !document.body.style.getPropertyValue('--banner-offset'),
@@ -64,10 +74,14 @@ if (!reserved) failures++;
 if (!live.released) failures++;
 if (live.buttonHeight < 44) failures++;
 if (!live.focusVisible) failures++;
+const containerQuiet = live.containerBefore === live.containerAfter;
+if (!containerQuiet) failures++;
 console.log(`${reserved ? '  ok ' : 'FAIL '} live banner reserves ${live.padding}px for its ${live.height}px height`);
 console.log(`${live.buttonHeight >= 44 ? '  ok ' : 'FAIL '} banner action has a ${live.buttonHeight}px target`);
 console.log(`${live.focusVisible ? '  ok ' : 'FAIL '} obscured keyboard focus scrolls above the banner `
   + `(target ${live.focusBefore}->${live.focusAfter}, scroll ${live.scrollBefore}->${live.scrollAfter}, banner starts ${live.bannerTop})`);
+console.log(`${containerQuiet ? '  ok ' : 'FAIL '} focusing the ${live.mainHeight}px page container does NOT scroll `
+  + `(${live.containerBefore}->${live.containerAfter})`);
 console.log(`${live.released ? '  ok ' : 'FAIL '} closing releases the reserved space`);
 await cdp.close();
 console.log(failures ? `\n${failures} discrepancies` : '\nThe banner aligns with page content at every width.');

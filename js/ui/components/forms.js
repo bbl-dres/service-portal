@@ -269,10 +269,15 @@ function loginButton({ next = '', label = '', cls = 'btn btn--outline btn--icon-
 // entry. In a new tab, the start remains a real link; the target application's
 // router shows its login gate there if required. The browser click remains
 // synchronous and is not intercepted by popup blockers.
+// `bookmark` is ready HTML like the head's — the «merken» control for this
+// record (js/ui/bookmark.js), or nothing. It sits LAST, below the target, the
+// session hint and the access steps: the card answers «how do I get in here?»
+// first, and saving the page for later is the answer to a different question
+// asked by the same person in the same place.
 export function accessCard({
   title = 'Zugriff', href = '', label = 'Öffnen', loginLabel = '',
   external = false, newWindow = false, requiresLogin = false, loggedIn = false, user = null,
-  note = '', steps = [], free = '',
+  note = '', steps = [], free = '', bookmark = '',
   missing = 'Im Prototyp ist kein Zielsystem angebunden.',
 } = {}) {
   // `#` and rejected URL schemes are unavailable targets.
@@ -311,6 +316,7 @@ export function accessCard({
     ${note ? `<p class="small m-0">${escape(note)}</p>` : ''}
     ${steps.length ? `<ul class="list--default small muted mt-2">${
       steps.map((s) => `<li>${escape(s)}</li>`).join('')}</ul>` : ''}
+    ${bookmark ? `<p class="mt-2 mb-0">${bookmark}</p>` : ''}
   </div>`;
 }
 

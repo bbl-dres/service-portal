@@ -191,7 +191,13 @@ const SIGNED_OUT = 'signed-out';
  * preceding one — and because the application itself starts logged in, the
  * suite pins the session deliberately rather than following that default.
  */
-export async function openPage(cdp, url, { login, skin } = {}) {
+/**
+ * `clearStorage` wipes localStorage BEFORE the app boots, so a check can test a
+ * genuine first visit inside a profile earlier checks have already warmed. Some
+ * contracts only hold cold — a seed that lands on first read looks correct for
+ * the rest of a session no matter which page triggered it.
+ */
+export async function openPage(cdp, url, { login, skin, clearStorage = false } = {}) {
   const wantsLogin = login === undefined ? /#\/app\//.test(String(url)) : !!login;
   const requestedSkin = skin || process.env.APP_SKIN || '';
   if (requestedSkin && !['federal', 'intranet'].includes(requestedSkin)) {
@@ -202,7 +208,7 @@ export async function openPage(cdp, url, { login, skin } = {}) {
   const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
   await cdp.send('Page.enable', {}, sessionId);
   await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
-    source: `${wantsLogin
+    source: `${clearStorage ? 'try { localStorage.clear(); } catch (e) {}\n      ' : ''}${wantsLogin
       ? `try { localStorage.setItem('bbl_session_v1', ${JSON.stringify(JSON.stringify(DEMO_SESSION))}); } catch (e) {}`
       : `try { localStorage.setItem('bbl_session_v1', ${JSON.stringify(JSON.stringify(SIGNED_OUT))}); } catch (e) {}`}
       ${requestedSkin ? `

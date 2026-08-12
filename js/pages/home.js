@@ -71,18 +71,32 @@ export default async function render(ctx) {
 
   // 1 · Open cases — only when signed in and when any exist.
   if (session.isLoggedIn() && open.length) blocks.push({
-    title: 'Meine offenen Vorgänge',
+    // The count is the TOTAL, not the five rows below it: the table is a preview,
+    // and the number is what says so before the show-all link at the bottom does.
+    // It sits on the heading rather than on that link (D4 removed it there — a
+    // link labelled with a count reads as a filter, not as a destination), and
+    // the heading is where every other counted collection in the portal carries
+    // it.
+    title: `Meine offenen Vorgänge (${open.length})`,
     // Use C.table rather than hand-built markup. The home page alone had custom
     // table markup, making its padding, separators, and scroll hint differ from
     // every other view.
+    // NO fixed column widths and the same columns as the full list at #/my-cases:
+    // this is the same five rows of the same records, and it has to look like a
+    // preview of that table rather than a second design. The widths it used to
+    // carry (10/9/11rem) were narrower than their own content — a case reference
+    // and the longer status badges each broke onto a second line — while the
+    // title column absorbed everything left over. Auto layout sizes each column
+    // to what is in it; `nowrap` pins the identifier (see C.table).
     body: C.table({
       caption: 'Meine offenen Vorgänge', zebra: true, rowsClickable: true,
       columns: [
-        { key: 'reference', label: 'Referenz', width: '10rem',
+        { key: 'reference', label: 'Referenz', nowrap: true,
           render: (i) => `<a href="${links.caseDetails(i.instanceId)}">${C.escape(i.reference)}</a>` },
         { key: 'title', label: 'Titel', render: (i) => C.escape(i.title) },
-        { key: 'updatedAt', label: 'Aktualisiert', width: '9rem', render: (i) => C.escape(formatDate(i.updatedAt || i.createdAt)) },
-        { key: 'status', label: 'Status', width: '11rem', render: (i) => C.statusBadge(i.status, statusLabel(core, i.status)) },
+        { key: 'defName', label: 'Typ', render: (i) => C.escape(i.defName) },
+        { key: 'updatedAt', label: 'Aktualisiert', render: (i) => C.escape(formatDate(i.updatedAt || i.createdAt)) },
+        { key: 'status', label: 'Status', render: (i) => C.statusBadge(i.status, statusLabel(core, i.status)) },
       ],
       rows: open.slice(0, 5),
     }),

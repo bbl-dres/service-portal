@@ -12,7 +12,10 @@
       { "kind": "room", "id": "1080-6650-AA-eg-06", "addedAt": "2026-02-18" },
       { "kind": "service", "id": "stoerung-melden", "addedAt": "2026-04-02" },
       { "kind": "building", "id": "1080/4840/AF", "addedAt": "2026-06-15" },
-      { "kind": "service", "id": "umzug-anmelden", "addedAt": "2026-07-30" }
+      { "kind": "service", "id": "umzug-anmelden", "addedAt": "2026-07-30" },
+      { "kind": "application", "id": "bauprojekte-eppm", "addedAt": "2026-08-12" },
+      { "kind": "application", "id": "liegenschaften-inventar", "addedAt": "2026-08-12" },
+      { "kind": "dataset", "id": "1", "addedAt": "2026-08-12" }
     ]
   },
   {

@@ -81,7 +81,7 @@ export default async function render(ctx) {
     facets: [{ dim: 'status', legend: 'Status', options: STATUS_OPTIONS,
       match: (r, vals) => vals.includes(r.status) }],
     columns: [
-      { key: 'reference', label: 'Referenz', render: r => `<a href="${links.caseDetails(r.instanceId)}">${C.escape(r.reference)}</a>` },
+      { key: 'reference', label: 'Referenz', nowrap: true, render: r => `<a href="${links.caseDetails(r.instanceId)}">${C.escape(r.reference)}</a>` },
       { key: 'title', label: 'Titel', render: r => C.escape(r.title) },
       { key: 'defName', label: 'Typ', render: r => C.escape(r.defName) },
       { key: 'updatedAt', label: 'Aktualisiert', render: r => C.escape(formatDate(r.updatedAt || r.createdAt)) },
@@ -97,7 +97,11 @@ export default async function render(ctx) {
 //
 // Newest first: a favourites list is a shortcut bar, and the thing just saved is
 // the one most likely to be wanted again. Insertion order would bury it.
-const BOOKMARK_TILES = 6;
+//
+// ALL of them, not a first six with «n weitere gemerkt.» underneath. This band is
+// the one place the whole list exists (user decision, 2026-08-12): a count of
+// what is being withheld is not a shortcut, and there was nowhere to follow it
+// to. The grid wraps, so length costs rows rather than a truncation rule.
 
 async function renderBookmarks(ctx, host) {
   if (!host) return;
@@ -131,9 +135,7 @@ async function renderBookmarks(ctx, host) {
   host.innerHTML = C.pageSection({
     title: 'Meine Favoriten',
     alt: true,
-    body: `<div class="grid grid--responsive-cols-3">${rows.slice(0, BOOKMARK_TILES).map(tile).join('')}</div>`
-      + (rows.length > BOOKMARK_TILES
-        ? `<p class="small muted mt-4">${rows.length - BOOKMARK_TILES} weitere gemerkt.</p>` : ''),
+    body: `<div class="grid grid--responsive-cols-3">${rows.map(tile).join('')}</div>`,
   });
 }
 

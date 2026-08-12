@@ -61,6 +61,17 @@ export function card(o) {
   const overlay = chips.length
     ? `<div class="card__chips">${chips.map((c) => `<span class="card__chip">${escape(c)}</span>`).join('')}</div>`
     : '';
+  // `mark`: ready HTML stating something about the record AS A WHOLE — today the
+  // «gemerkt» star (js/ui/bookmark.js). A card has two shapes and the mark needs
+  // a home in both:
+  //   · WITH a picture it belongs ON it, top left, the same corner as the detail
+  //     hero. Over an image it reads across a whole grid at a glance;
+  //   · WITHOUT one there is no corner, so the mark joins the pill row under the
+  //     title — and that copy is also the fallback for a grid that drops card
+  //     images at some width (`.catalogue-grid` does, card.css).
+  // Both are emitted and CSS decides. `display:none` takes a copy out of the
+  // accessibility tree too, so exactly one is ever announced.
+  const markOnImage = o.mark ? `<div class="card__mark">${o.mark}</div>` : '';
   // `media` = caller-supplied, ready media HTML (RAW; caller escapes it). The
   // explorer gallery needs its own visual block (16:10 tile, parcel hatching)
   // and previously rebuilt the ENTIRE card by hand for it (portfolio pfCard,
@@ -69,10 +80,13 @@ export function card(o) {
   const media = o.media
     ? o.media
     : o.photo
-    ? `<div class="card__image">${photo({ ...o.photo, alt: o.photo.alt || '', w: 640 })}${overlay}</div>`
-    : safeResourceUrl(o.image) ? `<div class="card__image"><img src="${escape(safeResourceUrl(o.image))}" alt="${escape(o.imageAlt || '')}" loading="lazy">${overlay}</div>`
-    : o.placeholder ? `<div class="card__image"><div class="photo image__not-available">${icon('Image')}<p class="image__not-available-text">${escape(o.placeholder === true ? 'Bild folgt' : o.placeholder)}</p></div>${overlay}</div>`
+    ? `<div class="card__image">${photo({ ...o.photo, alt: o.photo.alt || '', w: 640 })}${overlay}${markOnImage}</div>`
+    : safeResourceUrl(o.image) ? `<div class="card__image"><img src="${escape(safeResourceUrl(o.image))}" alt="${escape(o.imageAlt || '')}" loading="lazy">${overlay}${markOnImage}</div>`
+    : o.placeholder ? `<div class="card__image"><div class="photo image__not-available">${icon('Image')}<p class="image__not-available-text">${escape(o.placeholder === true ? 'Bild folgt' : o.placeholder)}</p></div>${overlay}${markOnImage}</div>`
     : '';
+  // No picture, no corner: the inline copy is then the ONLY one, so it must not
+  // be the one the media query hides.
+  const markInlineCls = media ? 'card__mark-inline' : 'card__mark-inline card__mark-inline--only';
   // CD: `card--default` is the plain shadow card (with or without image);
   // `card--universal` is the variant whose image is letterboxed (object-contain),
   // so it stays opt-in via o.variant — image-less cards are default, not universal.
@@ -105,7 +119,12 @@ export function card(o) {
         ${/* `idLine`: monospace identifier row directly below the title (bbl_id,
               project number), using the shared card recipe (.card__identifier). */''}
         ${o.idLine ? `<p class="card__identifier">${escape(o.idLine)}</p>` : ''}
-        ${o.badges ? `<div class="pill-row">${o.badges.join('')}</div>` : ''}
+        ${/* The inline twin of the image mark. It leads the pill row rather than
+              forming a line of its own: on a phone every saved card would
+              otherwise gain a row of height for one symbol. */''}
+        ${o.mark || o.badges ? `<div class="pill-row">${
+          o.mark ? `<span class="${markInlineCls}">${o.mark}</span>` : ''}${
+          (o.badges || []).join('')}</div>` : ''}
         ${o.desc ? `<p class="card__description">${escape(o.desc)}</p>` : ''}
       </div>
       ${footerSlots}
@@ -119,9 +138,20 @@ export function card(o) {
 // bars. The purpose is consistency: one font weight per row, text on the left,
 // numbers on the right, and matching padding and separators.
 //
-// columns: [{ key, label, render?(row), align?, width? }]
+// columns: [{ key, label, render?(row), align?, width?, nowrap?, labelHidden? }]
+//   labelHidden: keep the header as the column's accessible name, but take it
+//          out of the layout. For a column whose cells are a single symbol, a
+//          visible header is what sets the width — «GEMERKT» in header type is
+//          four times the glyph it labels. The <th> stays: a data cell with no
+//          column header is announced without the dimension it belongs to.
 //   align: 'right' for numbers — aligns BOTH header and cell, narrows the column,
 //          and applies tabular figures (see app.css).
+//   nowrap: for IDENTIFIER columns (a case reference, a BBL id). Such a value is
+//          one token to a reader but offers the line breaker an opportunity at
+//          every hyphen, so «BBL-2026-0880» split across two lines in the very
+//          column people scan down. Under auto layout the flag also asks for the
+//          width the identifier actually needs — which is what a hand-measured
+//          `width` was standing in for, and getting wrong.
 //   width: explicit column width ('12rem', '25%') where content-based shrinking
 //          produces a poor result. Rendered in <colgroup>.
 // rows: object[]; caption names the table.
@@ -129,8 +159,13 @@ export function card(o) {
 // the caller escapes its content.
 export function table({ columns, rows, zebra, caption, showCaption, foot, rowsClickable, emptyText, rowClass }) {
   // Per-column `align: 'right'|'center'|'left'` maps to the CD alignment utility on header + cell.
-  const al = (c) => ALIGNMENTS.has(c.align) ? ` class="text-${c.align}"` : '';
-  const head = columns.map(c => `<th scope="col"${al(c)}>${escape(c.label)}</th>`).join('');
+  const al = (c) => {
+    const classes = [ALIGNMENTS.has(c.align) ? `text-${c.align}` : '', c.nowrap ? 'text-nowrap' : ''];
+    const list = classes.filter(Boolean).join(' ');
+    return list ? ` class="${list}"` : '';
+  };
+  const head = columns.map(c => `<th scope="col"${al(c)}>${
+    c.labelHidden ? `<span class="sr-only">${escape(c.label)}</span>` : escape(c.label)}</th>`).join('');
   // `rowClass(row)` marks individual rows — the Plan-Editor points at one floor
   // arriving from the structure tree. A class rather than free attributes: the
   // component escapes it, so a caller cannot inject markup into the row tag.
@@ -356,14 +391,21 @@ export function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt 
 // `bookmark` is ready HTML like `tags` and `image` — the «merken» control for
 // this record (js/ui/bookmark.js), or nothing. Passing it as markup keeps this
 // layer data-free: the head does not know what a bookmark is, only that
-// something may sit beside the title. It renders in the title ROW rather than
-// over the hero image, because two of the pages that use this head can render
-// without an image at all, and an anchor that disappears is not an anchor.
+// something belongs to the record as a whole.
+//
+// It sits in the top right corner OF THE PICTURE (.hero__image), the same place
+// on services, datasets and applications, so «merken» is one gesture across the
+// portal rather than three. The title row remains the FALLBACK, not a second
+// option: a head can render without an image (a dataset with no preview), and
+// an anchor that disappears is not an anchor. Exactly one of the two placements
+// renders, never both — two stars in one head would read as two different things
+// to save. (The labelled link in the «Zugriff» card is not a second star but the
+// same control in words; wireBookmarks keeps them in step.)
 export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '', bookmark = '' } = {}) {
   const content = `<div class="hero__content">
         <div class="hero__titlebar">
           <h1 class="hero__title" tabindex="-1">${escape(title)}</h1>
-          ${bookmark}
+          ${image ? '' : bookmark}
         </div>
         ${lead ? `<p class="hero__description">${escape(lead)}</p>` : ''}
         ${tags ? `<div class="pill-row">${tags}</div>` : ''}
@@ -371,7 +413,7 @@ export function detailHead({ backHref, backLabel, title, lead = '', tags = '', i
   // CD Hero.vue:8: the hero is a <section> band, not a plain <div>. Appearance is
   // identical (all rules use class selectors), with correct document-outline parity.
   const hero = image
-    ? `<section class="hero hero--main-image">${content}<div class="hero__image">${image}</div></section>`
+    ? `<section class="hero hero--main-image">${content}<div class="hero__image">${image}${bookmark}</div></section>`
     : `<section class="hero">${content}</section>`;
   return `${detailBar({ backHref, backLabel })}
     ${hero}`;

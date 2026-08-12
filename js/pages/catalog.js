@@ -5,7 +5,8 @@
 // come from the data catalogue prototype (data/datasets.json).
 
 import { classifyUrl, newWindowAttrs, safeLinkUrl, safeMailto, safeResourceUrl } from '../security/urls.js';
-import { bookmarkButton } from '../ui/bookmark.js';
+import { bookmarkButton, bookmarkMark, savedFilterDimension, savedFilterGroup, savedFilterPill, savedOnly } from '../ui/bookmark.js';
+import { bookmarks } from '../core/bookmarks.js';
 
 // 12, matching the sibling catalogues (B16).
 const PER_PAGE = 12;
@@ -34,11 +35,12 @@ function list(ctx) {
   const state = C.catalogueState(query, {
     base: '#/data/catalog', perPage: PER_PAGE,
     sortOpts: ['title', 'thema', 'date'],
-    filters: { topic: null, classification: null, tag: null },
+    filters: { topic: null, classification: null, tag: null, ...savedFilterDimension() },
   });
   const { q: rawQ, view, hash } = state;
   const q = rawQ.toLowerCase();
   const topics = state.selected.topic, classifications = state.selected.classification, tags = state.selected.tag;
+  const savedOnlyOn = savedOnly(state.selected.bookmark);
 
   const topicOptions = uniq(all.map(d => t(d.meta['thema']))).sort((a, b) => a.localeCompare(b, 'de'));
   const classificationOptions = uniq(all.map(d => d.meta['klassifizierung']));
@@ -59,7 +61,8 @@ function list(ctx) {
     (!q || (t(d.title) + ' ' + t(d.description) + ' ' + t(d.fullDescription)).toLowerCase().includes(q)) &&
     (!topics.length || topics.includes(t(d.meta['thema']))) &&
     (!classifications.length || classifications.includes(d.meta['klassifizierung'])) &&
-    (!tags.length || tags.every(x => (d.tags || []).includes(x)));
+    (!tags.length || tags.every(x => (d.tags || []).includes(x))) &&
+    (!savedOnlyOn || bookmarks.has('dataset', d.id));
 
   const filtered = all.filter(matches);
   const datasets = sortKey ? filtered.slice().sort(SORTS[sortKey]) : filtered;
@@ -69,6 +72,7 @@ function list(ctx) {
   // needs no JavaScript and remains deep-linkable.
   const active = [
     ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
+    ...savedFilterPill(state.selected.bookmark, hash),
     ...topics.map(x => ({ label: x, href: hash({ topic: topics.filter(y => y !== x) }) })),
     ...classifications.map(x => ({ label: classificationLabel(core, x), href: hash({ classification: classifications.filter(y => y !== x) }) })),
     ...tags.map(x => ({ label: tagLabel(core, x), href: hash({ tag: tags.filter(y => y !== x) }) })),
@@ -81,6 +85,8 @@ function list(ctx) {
     href: `#/data/catalog/${encodeURIComponent(d.id)}`,
     image: preview(C, d),
     imageAlt: '',
+    // Placed by C.card — see applications.js.
+    mark: bookmarkMark({ kind: 'dataset', id: d.id }),
     badges: [
       C.badge(t(d.meta['thema']), 'blue'),
       C.badge(classificationLabel(core, d.meta['klassifizierung']), classificationVariant(d.meta['klassifizierung'])),
@@ -100,6 +106,9 @@ function list(ctx) {
       { key: 'title', label: 'Datensatz', render: d =>
         `<a href="#/data/catalog/${encodeURIComponent(d.id)}">${C.escape(t(d.title))}</a>
          <br><span class="small muted">${C.escape(t(d.description))}</span>` },
+      // One column of marks straight after the name — see applications.js.
+      { key: 'bookmark', label: 'Favorit', labelHidden: true, align: 'center',
+        render: d => bookmarkMark({ kind: 'dataset', id: d.id }) },
       { key: 'thema', label: 'Thema', render: d => C.escape(t(d.meta['thema'])) },
       { key: 'klass', label: 'Klassifizierung', render: d =>
         C.badge(classificationLabel(core, d.meta['klassifizierung']), classificationVariant(d.meta['klassifizierung'])) },
@@ -118,13 +127,15 @@ function list(ctx) {
       formId: 'ds-search', inputId: 'dsq', searchLabel: 'Datensatz suchen', placeholder: 'Datensatz suchen…', q: rawQ,
       countId: 'ds-count', count: `<strong>${datasets.length}</strong> von ${all.length} Datensätzen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'ds-sort', value: sortKey, options: SORT_OPTIONS },
-      filterId: 'ds-filter', filterLabel: 'Filter', filterCount: topics.length + classifications.length + tags.length,
+      filterId: 'ds-filter', filterLabel: 'Filter', filterCount: topics.length + classifications.length + tags.length + (savedOnlyOn ? 1 : 0),
       panelId: 'ds-filters', panel: `
+        ${/* Favourites first — see applications.js. */''}
+        ${savedFilterGroup(state.selected.bookmark)}
         ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: topics, options: topicOptions.map(x => ({ value: x, label: x })) })}
         ${C.filterGroup({ dim: 'classification', legend: 'Klassifizierung', selected: classifications, options: classificationOptions.map(x => ({ value: x, label: classificationLabel(core, x) })) })}
         ${/* The parameter is named `classification`, not `klass`; with the
               wrong key, the filter survived its own reset. */''}
-        ${C.panelReset({ href: hash({ topic: [], classification: [], tag: [] }) })}`,
+        ${C.panelReset({ href: hash({ topic: [], classification: [], tag: [], bookmark: [] }) })}`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}
@@ -258,9 +269,11 @@ function detail(ctx, id) {
       title: t(d.title), lead: t(d.description),
       tags: tagPills,
       image: img ? `<img class="hero-media hero-media--16x9" src="${img}" alt="" loading="lazy">` : '',
-      // The dataset catalogue is the first surface to carry «merken» (user
-      // decision): it has no access card to host the control, so the star in the
-      // title row is the whole answer here rather than one of two.
+      // The dataset catalogue was the first surface to carry «merken» (user
+      // decision) and is now one of three with the same star in the same corner.
+      // It is the only one whose picture is optional — one dataset in twenty has
+      // no preview — so it is also the only one that exercises detailHead's
+      // fallback into the title row.
       bookmark: bookmarkButton({ kind: 'dataset', id: d.id, name: t(d.title) }),
     })}
 

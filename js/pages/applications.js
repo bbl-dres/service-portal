@@ -10,11 +10,18 @@
 
 
 import { APP_AREAS, audienceOptions, audienceLabel, audienceTags } from '../domain.js';
+import { bookmarkMark, savedFilterDimension, savedFilterGroup, savedFilterPill, savedOnly } from '../ui/bookmark.js';
+import { bookmarks } from '../core/bookmarks.js';
 
 // Deferred datasets for this route. The router calls core.ensure(needs) BEFORE
 // render(); without the declaration an accessor would read a still-empty list
 // and show «no entries» instead of data (docs/code-review.md §3).
-export const needs = ['applications', 'contacts'];
+// `users` carries the bookmark seed. Both views of this route read it: the
+// catalogue draws a «gemerkt» mark per card and offers the favourites filter,
+// and the landing page draws the star. Without the directory the seed cannot
+// land (js/core/bookmarks.js seedOnce), so a cold visit straight to this route
+// showed a person NONE of their own favourites and an empty favourites filter.
+export const needs = ['applications', 'contacts', 'users'];
 // 12, matching sibling catalogues: divisible by BOTH 2 and 3 grid columns (B16).
 const PER_PAGE = 12;
 
@@ -56,17 +63,20 @@ export default async function render(ctx) {
   const st = C.catalogueState(query, {
     base: '#/applications', perPage: PER_PAGE,
     sortOpts: SORT_OPTS.map(o => o.value),
-    filters: { area: AREAS.map(b => b.key), audience: audienceOptions(core).map(a => a.value) },
+    filters: { area: AREAS.map(b => b.key), audience: audienceOptions(core).map(a => a.value),
+      ...savedFilterDimension() },
   });
   const { q: rawQ, view, sort: sortKey, hash } = st;
   const q = rawQ.toLowerCase();
   const areas = st.selected.area, audiences = st.selected.audience;
+  const saved = savedOnly(st.selected.bookmark);
 
   const all = core.applications();
   const matches = (a) =>
     (!q || (a.name + ' ' + a.description + ' ' + a.group).toLowerCase().includes(q)) &&
     (!areas.length || areas.includes(a.area)) &&
-    (!audiences.length || audiences.some(v => (a.audience || []).includes(v)));
+    (!audiences.length || audiences.some(v => (a.audience || []).includes(v))) &&
+    (!saved || bookmarks.has('application', a.appId));
 
   // Default: key applications first; an explicit sort overrides this.
   const filtered = all.filter(matches);
@@ -76,6 +86,7 @@ export default async function render(ctx) {
   // Each pill links to the same view without that one value.
   const active = [
     ...(rawQ ? [{ label: `Suche: «${rawQ}»`, href: hash({ q: '' }) }] : []),
+    ...savedFilterPill(st.selected.bookmark, hash),
     ...areas.map(x => ({ label: areaLabel(x), href: hash({ area: areas.filter(y => y !== x) }) })),
     ...audiences.map(x => ({ label: audienceLabel(core, x), href: hash({ audience: audiences.filter(y => y !== x) }) })),
   ];
@@ -89,6 +100,9 @@ export default async function render(ctx) {
     // (provenance in raw field: `bild`). There is no Unsplash fallback; as with building
     // data, a missing file leaves a colour surface.
     photo: { src: a['bild'] && a['bild'].src, alt: '' },
+    // ONE mark, placed by C.card: these cards carry a picture, so it lands in its
+    // top left corner — the same corner as the star on the detail hero.
+    mark: bookmarkMark({ kind: 'application', id: a.appId }),
     badges: [
       audienceTags(core, C, a.audience),
       ...(a.hero ? [C.badge('Schlüsselanwendung', 'info')] : []),
@@ -107,6 +121,12 @@ export default async function render(ctx) {
       { key: 'name', label: 'Anwendung', render: a =>
         `<a href="#/applications/${encodeURIComponent(a.appId)}">${C.escape(a.name)}</a>
          <br><span class="small muted">${C.escape(a.description)}</span>` },
+      // Directly after the name, so the marks form ONE column to run an eye
+      // down. Inline behind each title they would land at a different x on every
+      // row, which is reading, not scanning. `Favorit` names the column and the
+      // mark names the value, so a row announces «Favorit: Gemerkt».
+      { key: 'bookmark', label: 'Favorit', labelHidden: true, align: 'center',
+        render: a => bookmarkMark({ kind: 'application', id: a.appId }) },
       { key: 'group', label: 'Bereich', render: a => C.escape(a.group) },
       { key: 'audience', label: 'Zielgruppe', render: a => audienceTags(core, C, a.audience) },
       { key: 'link', label: 'Einstieg', render: a =>
@@ -125,15 +145,18 @@ export default async function render(ctx) {
       formId: 'app-search', inputId: 'aq', searchLabel: 'Anwendung suchen', placeholder: 'Anwendung suchen…', q: rawQ,
       countId: 'app-count', count: `<strong>${apps.length}</strong> von ${all.length} Anwendungen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
       sort: { id: 'app-sort', value: sortKey, options: SORT_OPTS },
-      filterId: 'app-filter', filterLabel: 'Filter', filterCount: areas.length + audiences.length,
+      filterId: 'app-filter', filterLabel: 'Filter', filterCount: areas.length + audiences.length + (saved ? 1 : 0),
       panelId: 'app-filters', panel: `
+        ${/* Favourites first: it is the only filter about the READER rather than
+              about the catalogue, and it narrows hardest. */''}
+        ${savedFilterGroup(st.selected.bookmark)}
         ${/* Use navLabel in the filter too. Clicking «Fachanwendungen Bauten»
               previously created a pill labelled «Immobilien & Bau»: two names
               for one value in ONE interaction path (D24). `label` remains the
               group-column value. */''}
         ${C.filterGroup({ dim: 'area', legend: 'Bereich', selected: areas, options: AREAS.map(b => ({ value: b.key, label: b.navLabel })) })}
         ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: audienceOptions(core) })}
-        ${C.panelReset({ href: hash({ area: [], audience: [] }) })}`,
+        ${C.panelReset({ href: hash({ area: [], audience: [], bookmark: [] }) })}`,
       view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
     })}
     ${filterBar}

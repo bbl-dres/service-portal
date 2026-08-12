@@ -48,6 +48,12 @@
 .table tfoot th.text-center, .table tfoot td.text-center { text-align:center; }
 .table thead th.text-left, .table tbody th.text-left, .table td.text-left,
 .table tfoot th.text-left, .table tfoot td.text-left { text-align:left; }
+/* Identifier columns (C.table `nowrap`), matched inside the table for the same
+   reason as the alignment utilities above: the bare `.text-nowrap` utility
+   (0,1,0) loses to `.table thead th` (0,1,3), so the header wrapped while its
+   cells did not. */
+.table thead th.text-nowrap, .table tbody th.text-nowrap, .table td.text-nowrap,
+.table tfoot th.text-nowrap, .table tfoot td.text-nowrap { white-space:nowrap; }
 /* Former exceptions for `.small`, `.meta-info` and `<p>` in row headers are
    gone: they locally removed bold that no longer exists. */
 .table tbody tr:last-child td, .table tbody tr:last-child th { border-bottom:0; }
@@ -71,13 +77,17 @@
    table's header and zebra stripes. When nested, stripes and ground are
    identical: stripes become holes exposing the band, and only odd rows look
    like rows (user finding 2026-08-06, home page open-cases table).
-   Rather than inventing a second tint, the table gives up its own: it is already
-   a white card with border and shadow, while dividers and the bold header keep
-   header and rows distinguishable. Applies to EVERY table on the band; the bug
-   depended only on nesting, not on the page. */
-.bg--secondary-50 .table thead th,
+   The STRIPES give up their tint: the table is already a white card with border
+   and shadow, and rows are separated by dividers anyway. Applies to EVERY table
+   on the band; the bug depended only on nesting, not on the page. */
 .bg--secondary-50 .table--zebra tbody tr:nth-child(even),
 .bg--secondary-50 .table--zebra tfoot tr:nth-child(even) { background:transparent; }
+/* The HEADER does not. Dropped to transparent along with the stripes it became a
+   white row among white rows, told apart only by its divider and uppercase type,
+   and the column names read as a first entry (user finding 2026-08-12, home page
+   open cases). One step down the same neutral ramp — secondary-100 against the
+   band's secondary-50 — restores the header without inventing a second colour. */
+.bg--secondary-50 .table thead th { background:var(--color-secondary-100); }
 /* Hover ONLY on clickable rows: CD tables define no row hover (table.postcss),
    and a static data table must not signal clickability. */
 .table--rows-clickable tbody tr:hover { background:var(--color-secondary-100); }

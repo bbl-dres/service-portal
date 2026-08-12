@@ -260,6 +260,13 @@
      documented twin rule (.pf-lightbox__zoom) used shadow-lg instead
      (Design Review C16). */
   --shadow-viewer: 0 10px 40px rgba(0,0,0,.45);
+  /* Controls that float ON a photograph (the «merken» star over a detail hero).
+     The card ramp above is tuned for panels on a white page and disappears here
+     twice over: its cast is too faint against image noise, and a cast falls
+     DOWNWARD, so the top edge of a light disc on a light image — a pale site
+     plan, an overexposed sky — has nothing separating it at all. The hairline
+     ring closes the outline on every side; the denser cast does the lifting. */
+  --shadow-overlay-control: 0 0 0 var(--stroke-1) rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.18);
   /* Component-state indicators are rings/bars rather than elevations. Keeping
      them beside the elevation scale prevents one-off shadow recipes. */
   --state-bar-primary: inset var(--stroke-3) 0 0 var(--color-primary-600);

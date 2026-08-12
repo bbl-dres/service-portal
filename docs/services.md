@@ -221,7 +221,7 @@ Was dieses Register **nicht** belegen kann — jede Zeile mit Reife `abgeleitet`
 |---|---|---|---|
 | `kleinauftrag-gebaeude` | SVC-O-002 | `dekoration-bestellen` | SVC-O-012 |
 | `innenbegruenung-bestellen` | SVC-O-013 | `mobiliarschluessel-bestellen` | SVC-C-011 |
-| `intranetshop-zugang` | SVC-C-009 | `hbb-bedarfsmeldung` | SVC-D-002 |
+| `intranetshop-zugang` | SVC-C-009 | ~~`hbb-bedarfsmeldung`~~ | SVC-D-002, entfernt |
 | `delegation-beantragen` | SVC-D-003 | `beschaffung-anmelden` | SVC-E-002 |
 | `sanktionierte-anbieterin-melden` | SVC-E-008 | `sanktionsliste-abfragen` | SVC-E-009 |
 | `unbefangenheitserklaerung` | SVC-E-010 | `druckauftrag` | SVC-F-002 |
