@@ -14,13 +14,19 @@ const SUBPAGES = {
 };
 
 const OVERVIEW_NEEDS = ['applications', 'datasets'];
+// The field definitions behind a dataset's «Datenfelder» tab. Loaded ONLY for a
+// dataset's own page: the catalogue list shows titles and themes, and nobody
+// browsing it needs 275 column definitions. `needs` sees the route parameters,
+// so this is the one place that can tell the list from the detail.
+const DETAIL_NEEDS = { catalog: ['dataTables'] };
 
 // With no child route, data.js renders the overview. Known child routes read
 // their entry from the same registry as the delegate. An unknown path also
 // needs no collection before it renders the local 404 view.
 export function needs(params = []) {
   if (!params.length) return OVERVIEW_NEEDS;
-  return SUBPAGES[params[0]]?.needs || [];
+  const base = SUBPAGES[params[0]]?.needs || [];
+  return params[1] ? [...base, ...(DETAIL_NEEDS[params[0]] || [])] : base;
 }
 
 export default async function render(ctx) {
@@ -54,8 +60,8 @@ function overview(ctx) {
     // No count: this overview does not depend on the metadata collection
     // (`needs`), and a hard-coded count would drift from the file.
     { title: 'Metadaten Katalog Bauten', icon: 'Stack', href: '#/app/metadata-catalog',
-      desc: 'Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und Systemtabellen.',
-      meta: 'Geschäftsobjekte und Systemtabellen' },
+      desc: 'Fachbegriffe der Bauten und Liegenschaften und ihre Realisierung in den Führungssystemen — Geschäftsobjekte, Attribute und Datentabellen.',
+      meta: 'Geschäftsobjekte und Datentabellen' },
     // No count, for the same reason as the metadata catalogue.
     { title: 'Prozessdokumentation Bauten', icon: 'Share', href: '#/app/process-docs',
       desc: 'Die Prozesse des Immobilienmanagements mit BPMN-Diagrammen und Prozessschritten — von der Akquisition bis zur Rückgabe.',

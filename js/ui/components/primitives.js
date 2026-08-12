@@ -19,6 +19,14 @@ export function safeHeadingTag(value, fallback = 'h2') {
   return /^h[1-6]$/.test(String(value || '')) ? String(value) : fallback;
 }
 
+// An id or other DOM token from caller data. It lived privately in navigation.js
+// until content.js needed the same guard for anchor ids; a second copy of a
+// SECURITY check is the copy that gets fixed only once.
+const DOM_TOKEN = /^[A-Za-z][A-Za-z0-9_-]*$/;
+export function domToken(value, fallback = '') {
+  return DOM_TOKEN.test(String(value || '')) ? String(value) : fallback;
+}
+
 // CD's own chevron path (Select.vue:19 — identical to assets/icons/ChevronDown.svg)
 export const CHEVRON_SVG = '<svg role="presentation" aria-hidden="true" viewBox="0 0 24 24">'
   + '<path d="m5.706 10.015 6.669 3.85 6.669-3.85.375.649-7.044 4.067-7.044-4.067z"/></svg>';

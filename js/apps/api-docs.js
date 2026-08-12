@@ -15,6 +15,10 @@
 import { fetchJSON } from '../core/fetch-json.js';
 import { loadExternalAssets } from '../core/external-assets.js';
 import { DATA } from '../crumbs.js';
+// The personal resources read the same store the portal writes, so the examples
+// show this reader's own favourites rather than an invented list.
+import { bookmarks } from '../core/bookmarks.js';
+import { session } from '../core/session.js';
 
 // Breadcrumb prefix: this route belongs below the data-access catalogue.
 const CRUMBS = [...DATA, { label: 'Datenbezug und API Verzeichnis', href: '#/data/catalog' }];
@@ -26,7 +30,12 @@ export const needs = [
   'services', 'applications', 'news', 'contacts', 'documents', 'projects',
   'media', 'datasets', 'buildings', 'parcels', 'tenancies', 'floors', 'spaces',
   'assets', 'contracts', 'costs', 'areas', 'buildingContacts', 'landcovers',
-  'businessObjects', 'systemTables',
+  'businessObjects', 'dataTables',
+  // Added with their resources (2026-08-12): the API had stopped describing the
+  // whole inventory as the portal grew a shop, a process documentation, the
+  // Workspace suite and personal favourites.
+  'processes', 'shopProducts', 'shopCategories',
+  'workspacePlanning', 'multispaceModules', 'workspaceExamples', 'users',
 ];
 
 // Lazily load swagger-ui-dist from the CDN, following the MapLibre pattern.
@@ -184,11 +193,34 @@ export default async function render(ctx) {
     'datasets.one': () => { const d = core.datasets()[0]; return d ? { id: d.id, title: t(d.title), theme: t(d.meta.thema), formats: (d.distributions || []).map((x) => x.dateiformat || x.format) } : {}; },
     'business-objects.list': () => core.businessObjects().slice(0, 3).map((o) => pick(o, ['objectId', 'name', 'domain', 'status'])),
     'business-objects.one': () => { const o = core.businessObjects()[0]; return o ? { ...pick(o, ['objectId', 'name', 'domain', 'status']), attributes: (o.attributes || []).slice(0, 3).map((a) => a.name) } : {}; },
-    'system-tables.list': () => core.systemTables().slice(0, 3).map((x) => pick(x, ['tableId', 'system', 'systemName', 'name', 'type'])),
-    'system-tables.one': () => pick(core.systemTables()[0], ['tableId', 'system', 'schema', 'name', 'displayName', 'type']),
+    'data-tables.list': () => core.dataTables().slice(0, 3).map((x) => pick(x, ['tableId', 'system', 'systemName', 'name', 'type'])),
+    'data-tables.one': () => pick(core.dataTables()[0], ['tableId', 'system', 'schema', 'name', 'displayName', 'type']),
     'reference-data.list': () => ({ lists: Object.keys(core.ref()) }),
     // Return the current canonical audience reference list.
     'reference-data.one': () => ({ list: 'audiences', items: core.ref().audiences || [] }),
+    'processes.list': () => core.processes().slice(0, 3).map((p) => pick(p, ['processId', 'name', 'areaLabel', 'groupLabel', 'status'])),
+    'processes.one': () => pick(core.processes()[0], ['processId', 'name', 'areaLabel', 'groupLabel', 'description', 'version', 'updated', 'systems', 'standards']),
+    'shop-products.list': () => core.shopProducts().slice(0, 3).map((p) => pick(p, ['id', 'name', 'brand', 'category', 'price', 'currency'])),
+    'shop-products.one': () => pick(core.shopProducts()[0], ['id', 'name', 'brand', 'category', 'subcategory', 'price', 'currency', 'description']),
+    // The tree, one level deep: the full nesting would bury the shape it shows.
+    'shop-categories.list': () => core.shopCategories().slice(0, 4).map((c) => ({
+      id: c.id, label: c.label, children: (c.children || []).slice(0, 3).map((x) => pick(x, ['id', 'label'])) })),
+    // No accessor for this one — the Workspace app reads it the same way. The
+    // record carries ONLY the planning overlay; workplace and area figures live
+    // on the Golden Record and are joined at read time, so they are not echoed
+    // here as if this file held them.
+    'workspace.planning': () => (D.workspacePlanning || []).slice(0, 3).map((w) => pick(w, ['buildingId', 'planAvailability'])),
+    // `currentEdition` and its label travel WITH the modules, as in the file: the
+    // numbers only mean something against the handbook edition that defined them.
+    'workspace.modules': () => { const m = core.multispaceModules(); return {
+      currentEdition: m.currentEdition, editionLabel: m.editionLabel,
+      modules: (m.modules || []).slice(0, 4).map((x) => pick(x, ['nr', 'slug', 'name', 'summary'])) }; },
+    'workspace.examples': () => core.workspaceExamples().slice(0, 3).map((x) => pick(x, ['exampleId', 'slug', 'title', 'scope', 'buildingId', 'areaSqm', 'workplaces'])),
+    // The signed-in person, without the seed list: `bookmarks` is its own
+    // resource, and repeating it here would suggest two places to write it.
+    'users.me': () => { const u = session.user(); const r = u ? core.user(u.userId) : null;
+      return { ...pick(r || u || {}, ['userId', 'name', 'email', 'org', 'orgShort']), bookmarks: `${((r || {}).bookmarks || []).length} Einträge` }; },
+    'bookmarks.list': () => bookmarks.list().slice(0, 4).map((b) => pick(b, ['kind', 'id', 'addedAt'])),
   };
   const exampleFor = (ep) => {
     if (ep.live && LIVE[ep.live]) { try { return LIVE[ep.live](); } catch (e) { /* Fall back to the specification example. */ } }

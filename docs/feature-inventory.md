@@ -65,7 +65,7 @@ ausgegeben.
 | `#/app/api-docs` | API-Dokumentation (Swagger UI) |
 | `#/app/metadata-catalog` | Metadaten Katalog |
 | `#/app/metadata-catalog?id=<id>` | Geschäftsobjektdetail |
-| `#/app/metadata-catalog?table=<id>` | Systemtabellendetail |
+| `#/app/metadata-catalog?table=<id>` | Datentabellendetail |
 | `#/app/process-docs` | Prozessdokumentation Bauten |
 | `#/app/process-docs?id=<id>&tab=<uebersicht|diagramm|schritte>` | Prozessdetail mit BPMN- und Schrittansicht |
 | `#/app/shop` | BBL Intranetshop – Produktkatalog |
@@ -303,7 +303,7 @@ Hash-Router: NAV-Definition, Seiten-/App-Registry mit dynamischem Import, Altlas
 
 ## js/core/bookmarks.js · js/core/favorites.js · js/ui/bookmark.js
 
-Persönliche Favoriten: EIN Speicher hinter jedem «merken»-Stern. Ein Eintrag ist eine typisierte Referenz `{ kind, id, addedAt }` — nie eine Kopie; Titel und Link werden beim Rendern aus den Katalogen aufgelöst (js/ui/bookmark-kinds.js).
+Persönliche Favoriten: EIN Speicher hinter jedem «merken»-Herz. Ein Eintrag ist eine typisierte Referenz `{ kind, id, addedAt }` — nie eine Kopie; Titel und Link werden beim Rendern aus den Katalogen aufgelöst (js/ui/bookmark-kinds.js).
 
 **Funktionen**
 
@@ -311,17 +311,17 @@ Persönliche Favoriten: EIN Speicher hinter jedem «merken»-Stern. Ein Eintrag 
 - Zwei Quellen, eine Liste: data/users.json setzt den Startbestand je Demo-Person; localStorage `bbl_bookmarks_v1` (`{ userId: { seeded, items } }`) ist danach massgebend — ein entfernter Seed-Eintrag kommt beim nächsten Laden NICHT zurück
 - Migration des anonymen Vorgängers `bbl_favorites_v1` beim ersten Lesen; unbekannte Arten werden verworfen statt als Daten übernommen
 - Ablage pro Person über `session.user().userId`; abgemeldet ist `toggle()` ein No-op
-- `favorites.js` ist nur noch eine dünne Sicht auf denselben Speicher, damit die Sterne der Raumbuchung nicht in einem zweiten Bestand landen
-- `bookmarkButton({ kind, id, name, variant })` — zwei Formen desselben Bedienelements: `star` (icon-only, ohne Beschriftung, mit Titel-Tooltip) und `link` (`btn--link btn--icon-left`, sichtbare Beschriftung, deshalb OHNE Tooltip); `aria-pressed`, sr-only-Name des Datensatzes; abgemeldet wird NICHTS gerendert
-- Beide sagen denselben Satz («Zu meinen Favoriten hinzufügen» / «Aus meinen Favoriten entfernen») — der Link zeigt ihn, der Stern verbirgt ihn für Screenreader
-- EIN Ort für den Stern: `C.detailHead` legt ihn oben rechts INS Bild (`.hero__image`) — gleich auf Dienstleistung, Datensatz und Anwendung, den drei Detailköpfen, auf denen man aus der Suche landet; auf Bildgrösse skaliert, auf heller Scheibe, damit er über jedem Foto denselben Kontrast hat
+- `favorites.js` ist nur noch eine dünne Sicht auf denselben Speicher, damit die Herzen der Raumbuchung nicht in einem zweiten Bestand landen
+- `bookmarkButton({ kind, id, name, variant })` — zwei Formen desselben Bedienelements: `icon` (icon-only, ohne Beschriftung, mit Titel-Tooltip) und `link` (`btn--link btn--icon-left`, sichtbare Beschriftung, deshalb OHNE Tooltip); `aria-pressed`, sr-only-Name des Datensatzes; abgemeldet wird NICHTS gerendert
+- Beide sagen denselben Satz («Zu meinen Favoriten hinzufügen» / «Aus meinen Favoriten entfernen») — der Link zeigt ihn, das Herz verbirgt ihn für Screenreader
+- EIN Ort für das Herz: `C.detailHead` legt es oben links INS Bild (`.hero__image`) — gleich auf Dienstleistung, Datensatz und Anwendung, den drei Detailköpfen, auf denen man aus der Suche landet; auf Bildgrösse skaliert, auf heller Scheibe, damit er über jedem Foto denselben Kontrast hat
 - EIN Ort für den Link: `C.accessCard({ bookmark })` setzt ihn zuunterst in die «Zugriff»-Karte (Dienstleistung, Anwendung) — unter Ziel, Sitzungshinweis und Zugangsschritten, weil Merken eine spätere Frage beantwortet als «wie komme ich hier rein?»; die Karte behält den Outline-Knopf für ihre Primäraktion, damit Öffnen und Merken nicht um dasselbe Gewicht konkurrieren
 - `wireBookmarks(document)` einmal global delegiert (app.js), wie wireShare/wireLogin; aktualisiert ALLE Bedienelemente derselben Referenz und behält den Fokus
 
 **Zustände**
 
-- Gemerkt (StarFilled, aria-pressed=true) vs. nicht gemerkt (Star, false); Farbe verstärkt nur, die Füllung trägt den Zustand
-- Abgemeldet: kein Stern (die Katalogseiten bleiben öffentlich, der Zustand ist also real)
+- Gemerkt (HeartFilled, aria-pressed=true) vs. nicht gemerkt (Heart, false); Farbe verstärkt nur, die Füllung trägt den Zustand
+- Abgemeldet: kein Herz (die Katalogseiten bleiben öffentlich, der Zustand ist also real)
 - Kopf ohne Bild (ein Datensatz von zwanzig hat keine Vorschau): Rückfall in die Titelzeile statt Verschwinden — nie beide Plätze gleichzeitig
 - Verweis ins Leere (Fixture neu erzeugt): Eintrag verschwindet still, statt eine leere Kachel zu zeigen
 
@@ -1279,12 +1279,12 @@ Mediathek Bauten: Katalog der Fotos/Videos (Galerie/Liste/Karte) mit Vollbildgal
 
 ## js/apps/metadata-catalog.js
 
-Metadaten Katalog Bauten: Data-Governance-Katalog mit zwei Sichten (Geschäftsobjekte / Systemtabellen), Seitenbaum, Detailseiten mit je 3 Registern und der Kernfrage «welches Feld welchen Systems trägt diesen Fachbegriff» (Realisierungen in beide Richtungen via core-Rückwärtsindex).
+Metadaten Katalog Bauten: Data-Governance-Katalog mit zwei Sichten (Geschäftsobjekte / Datentabellen), Seitenbaum, Detailseiten mit je 3 Registern und der Kernfrage «welches Feld welchen Systems trägt diesen Fachbegriff» (Realisierungen in beide Richtungen via core-Rückwärtsindex).
 
 **Routen**
 
 - #/app/metadata-catalog — Bestandsansicht, Standardsicht Geschäftsobjekte, Standardansicht Liste (Z.145, 154)
-- #/app/metadata-catalog?kind=tabellen — Systemtabellen-Sicht (kind bleibt bei Standardsicht aus der Adresse, Z.203–205)
+- #/app/metadata-catalog?kind=tabellen — Datentabellen-Sicht (kind bleibt bei Standardsicht aus der Adresse, Z.203–205)
 - #/app/metadata-catalog?q=… — Suche (Objekte: Name/Definition/Bemerkung/Attributnamen; Tabellen: Name/DisplayName/Beschreibung/Schema/System/Feldnamen, Z.177–186)
 - #/app/metadata-catalog?domain=<key>,… — Domänen-Filter (nur Objekte-Sicht)
 - #/app/metadata-catalog?system=<key>,…&schema=<key>,… — System-/Schema-Filter (nur Tabellen-Sicht)
@@ -1295,7 +1295,7 @@ Metadaten Katalog Bauten: Data-Governance-Katalog mit zwei Sichten (Geschäftsob
 - #/app/metadata-catalog?page=<n> — Blättern, 12 pro Seite (Z.196–198)
 - #/app/metadata-catalog?id=<objectId> — Geschäftsobjekt-Detail (Inventar-Idiom statt Routensegment, Z.71–78)
 - #/app/metadata-catalog?id=<objectId>&tab=uebersicht|attribute|realisierung — Register-Deeplink (Z.487–497)
-- #/app/metadata-catalog?table=<tableId> — Systemtabellen-Detail (Z.76–78)
+- #/app/metadata-catalog?table=<tableId> — Datentabellen-Detail (Z.76–78)
 - #/app/metadata-catalog?table=<tableId>&tab=uebersicht|felder|realisierung — Register-Deeplink (Z.658–666)
 
 **Funktionen**
@@ -1322,8 +1322,8 @@ Metadaten Katalog Bauten: Data-Governance-Katalog mit zwei Sichten (Geschäftsob
 
 **Zustände**
 
-- needs businessObjects/systemTables/contacts (Z.35)
-- Leerzustand/Ladefehler je Sicht via catalogueResults + core.available('businessObjects'|'systemTables') (Z.346–356)
+- needs businessObjects/dataTables/contacts (Z.35)
+- Leerzustand/Ladefehler je Sicht via catalogueResults + core.available('businessObjects'|'dataTables') (Z.346–356)
 - NotFound Geschäftsobjekt bzw. Tabelle mit renderNotFound (Z.468–474, 634–640)
 - Filter aktiv: Pillenzeile + Filterzähler je Sicht (Z.311–313); Sichtwechsel nimmt Filter der anderen Sicht NICHT mit (kindHref, Z.208–212)
 - Baumzustand: Zweig offen/zu (aria-expanded/hidden), aktiver Knoten is-active + aria-current; gefilterter Zweig erzwungen offen (Z.412–418, 446–457)

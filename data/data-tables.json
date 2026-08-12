@@ -36,7 +36,8 @@
         "name": "IDENT_OBJECT_TYPE",
         "dataType": "VARCHAR(2)",
         "description": "Ident-Teil Objektart, z.B. 'IS' (Immobilienvertrag)",
-        "nullable": true
+        "nullable": true,
+        "comment": "Zweistelliger SAP-Objektartschlüssel; im Portal nicht ausgewertet."
       },
       {
         "name": "IDENT_KEY",
@@ -307,7 +308,8 @@
         "name": "IDENT_OBJECT_TYPE",
         "dataType": "VARCHAR(2)",
         "description": "Ident-Teil Objektart, z.B. 'IS' (Immobilienvertrag)",
-        "nullable": true
+        "nullable": true,
+        "comment": "Zweistelliger SAP-Objektartschlüssel; im Portal nicht ausgewertet."
       },
       {
         "name": "IDENT_KEY",
@@ -493,7 +495,8 @@
         "name": "ASSESSMENT_VALUE",
         "dataType": "DECIMAL(23,2)",
         "description": "BAPI: Einheitswert des Gebäudes",
-        "nullable": true
+        "nullable": true,
+        "comment": "Betrag in der Hauswährung des Buchungskreises; keine Umrechnung im Portal."
       },
       {
         "name": "ASSESSMENT_VALUE_YEAR",
@@ -965,7 +968,8 @@
         "dataType": "VARCHAR(50)",
         "description": "Wirtschaftseinheit, gruppiert Teilobjekte nach kaufmannischer Logik",
         "nullable": true,
-        "foreignKey": true
+        "foreignKey": true,
+        "comment": "Gruppierungsschlüssel: verbindet Gebäude, Grundstücke und Mietverhältnisse derselben Einheit."
       },
       {
         "name": "bbl_obj",
@@ -983,7 +987,13 @@
         "name": "bbl_stat",
         "dataType": "VARCHAR(50)",
         "description": "Status entsprechend SAP",
-        "nullable": true
+        "nullable": true,
+        "values": [
+          "Aktiv",
+          "Abgang",
+          "Löschvermerk"
+        ],
+        "comment": "Nur «Aktiv» erscheint in den Portalansichten; Abgang und Löschvermerk bleiben für die Historie."
       },
       {
         "name": "adr_land",
@@ -1061,7 +1071,13 @@
         "name": "bbl_eigen",
         "dataType": "VARCHAR(50)",
         "description": "Eigentum Art entsprechend SAP",
-        "nullable": true
+        "nullable": true,
+        "values": [
+          "Eigentum Bund",
+          "Miete",
+          "Verkauft"
+        ],
+        "comment": "Wird beim Laden auf «Im Eigentum» / «Anmieter» / «Sonderfall» normalisiert (js/core/index.js)."
       },
       {
         "name": "bbl_ostr",
@@ -1214,7 +1230,13 @@
         "name": "kgs_kat",
         "dataType": "VARCHAR(20)",
         "description": "KGS-Inventar Kategorie",
-        "nullable": true
+        "nullable": true,
+        "values": [
+          "A",
+          "B",
+          "C"
+        ],
+        "comment": "KGS-Inventar der Kulturgüter von nationaler (A), regionaler (B) und lokaler (C) Bedeutung."
       },
       {
         "name": "kgs_nr",
@@ -1670,7 +1692,13 @@
         "name": "bbl_stat",
         "dataType": "VARCHAR(50)",
         "description": "Status entsprechend SAP",
-        "nullable": true
+        "nullable": true,
+        "values": [
+          "Aktiv",
+          "Abgang",
+          "Löschvermerk"
+        ],
+        "comment": "Nur «Aktiv» erscheint in den Portalansichten; Abgang und Löschvermerk bleiben für die Historie."
       },
       {
         "name": "bbl_id",
@@ -1696,7 +1724,8 @@
         "dataType": "VARCHAR(50)",
         "description": "Wirtschaftseinheit",
         "nullable": true,
-        "foreignKey": true
+        "foreignKey": true,
+        "comment": "Gruppierungsschlüssel: verbindet Gebäude, Grundstücke und Mietverhältnisse derselben Einheit."
       },
       {
         "name": "adr_land",
@@ -2022,7 +2051,8 @@
         "dataType": "VARCHAR(50)",
         "description": "Wirtschaftseinheit",
         "nullable": true,
-        "foreignKey": true
+        "foreignKey": true,
+        "comment": "Gruppierungsschlüssel: verbindet Gebäude, Grundstücke und Mietverhältnisse derselben Einheit."
       },
       {
         "name": "bbl_obj",
@@ -2040,7 +2070,13 @@
         "name": "bbl_stat",
         "dataType": "VARCHAR(50)",
         "description": "Status entsprechend SAP",
-        "nullable": true
+        "nullable": true,
+        "values": [
+          "Aktiv",
+          "Abgang",
+          "Löschvermerk"
+        ],
+        "comment": "Nur «Aktiv» erscheint in den Portalansichten; Abgang und Löschvermerk bleiben für die Historie."
       },
       {
         "name": "bbl_port",
@@ -2058,7 +2094,13 @@
         "name": "bbl_eigen",
         "dataType": "VARCHAR(50)",
         "description": "Eigentum Art entsprechend SAP",
-        "nullable": true
+        "nullable": true,
+        "values": [
+          "Eigentum Bund",
+          "Miete",
+          "Verkauft"
+        ],
+        "comment": "Wird beim Laden auf «Im Eigentum» / «Anmieter» / «Sonderfall» normalisiert (js/core/index.js)."
       },
       {
         "name": "adr_land",

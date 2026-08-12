@@ -1,9 +1,7 @@
-import { escape, icon, safeClassList } from './primitives.js';
+import { domToken, escape, icon, safeClassList } from './primitives.js';
 import { safeLinkUrl } from '../../security/urls.js';
 
 const MENU_ALIGNMENTS = new Set(['start', 'end']);
-const DOM_TOKEN = /^[A-Za-z][A-Za-z0-9_-]*$/;
-const domToken = (value, fallback) => DOM_TOKEN.test(String(value || '')) ? String(value) : fallback;
 
 // CD back button. Anatomy copied from the design system's own detail pages
 // (app/pages/detailPressRelease.vue, detailPublicationCatalog.vue):
@@ -257,7 +255,11 @@ export function wirePagination(mount, inputId, page, totalPages, go) {
 // `{ heading }` (group title), or `{ separator:true }`. Behaviour comes through
 // C.wireMenu; `data-action` passes the action to the caller (no inline onclick).
 // `menuId` identifies the menu in the shared onAction handler.
-export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', triggerIcon = 'More', triggerClass = '' }) {
+// `triggerLabel` renders the trigger as an outline button with visible text and
+// a chevron instead of the bare kebab. On a dashboard card the kebab is read in
+// context; standing alone in a toolbar it is a control nobody sees, so a bar
+// that offers export gets a named button (user decision, 2026-08-12).
+export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', triggerIcon = 'More', triggerClass = '', triggerLabel = '' }) {
   const menuAlign = MENU_ALIGNMENTS.has(align) ? align : 'end';
   const triggerClasses = safeClassList(triggerClass);
   const row = (it) => {
@@ -269,8 +271,16 @@ export function menu({ menuId, items = [], label = 'Aktionen', align = 'end', tr
   // aria-controls + popup id as in CD Popover.vue:3-9. The trigger names WHAT it
   // opens (menuIds are unique per page; see callers).
   const popupId = `${menuId}-popup`;
+  // With visible text the button names ITSELF; an aria-label on top would
+  // silently replace what the reader can see (WCAG 2.5.3).
+  const trigger = triggerLabel
+    ? `<button type="button" class="action-menu__trigger action-menu__trigger--labelled btn btn--outline btn--sm${
+      triggerClasses ? ' ' + triggerClasses : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="${escape(popupId)}"><span class="btn__text">${
+      escape(triggerLabel)}</span>${icon('ChevronDown', 'catbar__chev')}</button>`
+    : `<button type="button" class="action-menu__trigger interactive-control${
+      triggerClasses ? ' ' + triggerClasses : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="${escape(popupId)}" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>`;
   return `<div class="action-menu" data-menu="${escape(menuId)}">
-    <button type="button" class="action-menu__trigger interactive-control${triggerClasses ? ' ' + triggerClasses : ''}" aria-haspopup="true" aria-expanded="false" aria-controls="${escape(popupId)}" aria-label="${escape(label)}" title="${escape(label)}">${icon(triggerIcon, 'icon--base')}</button>
+    ${trigger}
     <div class="action-menu__popup action-menu__popup--${menuAlign}" id="${escape(popupId)}" role="menu" aria-label="${escape(label)}" hidden>${items.map(row).join('')}</div>
   </div>`;
 }

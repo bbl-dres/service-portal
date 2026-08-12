@@ -26,23 +26,23 @@ const head = (title) => console.log(`\n■ ${title}`);
 // PLACEMENT is measured, not just queried. The star sits in the top right corner
 // OF THE PICTURE, so the assertion has to be geometric: a rule that moves it out
 // of the frame, or a hero whose image loses its positioning context, still
-// matches `.hero__image > .bookmark-star` while landing anywhere on the page.
+// matches `.hero__image > .bookmark-icon` while landing anywhere on the page.
 // `stars` carries the other half of the contract — one control per record, never
 // the overlay AND the title-row fallback on the same screen.
 const STAR = `(async () => {
   const w = ms => new Promise(r => setTimeout(r, ms));
   for (let i = 0; i < 100 && !document.querySelector('.hero__title'); i++) await w(50);
   await w(250);
-  const s = document.querySelector('.bookmark-star');
+  const s = document.querySelector('.bookmark-icon');
   const frame = document.querySelector('.hero__image')?.getBoundingClientRect();
   const box = s?.getBoundingClientRect();
   return {
     heading: document.querySelector('.hero__title')?.textContent.trim() || '',
     present: !!s,
-    stars: document.querySelectorAll('.bookmark-star').length,
+    stars: document.querySelectorAll('.bookmark-icon').length,
     hasImage: !!frame,
-    overImage: !!document.querySelector('.hero__image > .bookmark-star'),
-    inTitleRow: !!document.querySelector('.hero__titlebar > .bookmark-star'),
+    overImage: !!document.querySelector('.hero__image > .bookmark-icon'),
+    inTitleRow: !!document.querySelector('.hero__titlebar > .bookmark-icon'),
     // Inside the frame, in its upper half, and closer to the left edge than to
     // the right — «top left corner» without pinning an exact inset.
     topLeft: !!(box && frame && box.top >= frame.top - 1 && box.bottom <= frame.bottom + 1
@@ -54,20 +54,20 @@ const STAR = `(async () => {
     pressed: s?.getAttribute('aria-pressed') || '',
     named: (s?.querySelector('.sr-only')?.textContent || '').includes(
       document.querySelector('.hero__title')?.textContent.trim() || '\\u0000'),
-    filled: /StarFilled/.test(s?.querySelector('.icon')?.getAttribute('style') || ''),
+    filled: /HeartFilled/.test(s?.querySelector('.icon')?.getAttribute('style') || ''),
   };
 })()`;
 
 const CLICK_STAR = `(async () => {
   const w = ms => new Promise(r => setTimeout(r, ms));
-  const s = document.querySelector('.bookmark-star');
+  const s = document.querySelector('.bookmark-icon');
   s.focus();
   s.click();
   await w(250);
-  const now = document.querySelector('.bookmark-star');
+  const now = document.querySelector('.bookmark-icon');
   return {
     pressed: now.getAttribute('aria-pressed'),
-    filled: /StarFilled/.test(now.querySelector('.icon')?.getAttribute('style') || ''),
+    filled: /HeartFilled/.test(now.querySelector('.icon')?.getAttribute('style') || ''),
     keptFocus: document.activeElement === now,
     announced: document.getElementById('live')?.textContent.trim() || '',
     stored: localStorage.getItem('${KEY}') || '',
@@ -108,7 +108,7 @@ const CARD_LINK = `(async () => {
   const w = ms => new Promise(r => setTimeout(r, ms));
   for (let i = 0; i < 100 && !document.querySelector('.bookmark-link'); i++) await w(50);
   const link = document.querySelector('.bookmark-link');
-  const star = document.querySelector('.bookmark-star');
+  const star = document.querySelector('.bookmark-icon');
   const label = () => link.querySelector('.btn__text')?.textContent.trim() || '';
   const before = { pressed: link.getAttribute('aria-pressed'), label: label() };
   link.click();
@@ -124,7 +124,7 @@ const CARD_LINK = `(async () => {
     before,
     after: { pressed: link.getAttribute('aria-pressed'), label: label() },
     starPressed: star?.getAttribute('aria-pressed') || '',
-    starFilled: /StarFilled/.test(star?.querySelector('.icon')?.getAttribute('style') || ''),
+    starFilled: /HeartFilled/.test(star?.querySelector('.icon')?.getAttribute('style') || ''),
   };
 })()`;
 
@@ -388,8 +388,8 @@ try {
   page = await openPage(cdp, `${APP_BASE}/data/catalog/1`, { login: true });
   await page.evaluate(`(async () => {
     const w = ms => new Promise(r => setTimeout(r, ms));
-    for (let i = 0; i < 100 && !document.querySelector('.bookmark-star'); i++) await w(50);
-    const s = document.querySelector('.bookmark-star');
+    for (let i = 0; i < 100 && !document.querySelector('.bookmark-icon'); i++) await w(50);
+    const s = document.querySelector('.bookmark-icon');
     if (s.getAttribute('aria-pressed') === 'false') { s.click(); await w(200); }
     s.click(); await w(200);   // saved, then removed again
     return true;

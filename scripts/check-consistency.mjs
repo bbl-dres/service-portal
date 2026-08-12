@@ -129,6 +129,61 @@ const cdp = await launch();
   await p.closeTarget();
 }
 
+// Tab panels: ONE gap between the tab strip and the panel across the portal.
+// `.tab__container` has padding-top, which blocks margin collapse, so a first
+// child bringing its own margin ADDS to it — the Datenfelder tab measured 80px
+// against every sibling's 32px until tabs.css neutralised it (2026-08-12).
+{
+  const CONTENT_TABS = [
+    ['dataset', '/data/catalog/11'],
+    ['dataset fields', '/data/catalog/11?tab=fields'],
+    ['case', '/my-cases/seed-1'],
+    ['portfolio building', '/app/portfolio?id=1080%2F4840%2FAF'],
+    ['metadata table', '/app/metadata-catalog?table=sap-refx-vibdbe'],
+    ['tenancy', '/app/tenancies/MV-2026-001'],
+    ['project', '/app/projects/PRJ-01'],
+  ];
+  const probe = `(() => {
+    const strip = document.querySelector('.tab__controls');
+    const panel = [...document.querySelectorAll('.tab__container')].find((p) => !p.hidden);
+    if (!strip || !panel) return JSON.stringify({ gap: null });
+    const visibleFirst = () => [...panel.children].find((el) => {
+      const r = el.getBoundingClientRect();
+      return r.height > 0 && r.width > 0 && !el.classList.contains('sr-only');
+    });
+    const measure = () => Math.round(visibleFirst().getBoundingClientRect().top - strip.getBoundingClientRect().bottom);
+    const gap = measure();
+    // The structural property, not just today's markup: a margin-carrying first
+    // child must not move the panel. This is what actually regressed before.
+    const injected = document.createElement('section');
+    injected.className = 'detail-section';
+    injected.innerHTML = '<h3 class="detail-section__title">probe</h3>';
+    const srOnly = panel.querySelector(':scope > .sr-only');
+    panel.insertBefore(injected, srOnly ? srOnly.nextSibling : panel.firstChild);
+    const withMargin = measure();
+    injected.remove();
+    return JSON.stringify({ gap, withMargin });
+  })()`;
+  for (const [name, route] of CONTENT_TABS) {
+    const p = await openPage(cdp, APP_BASE + route, { login: true });
+    await sleep(2200);
+    const r = JSON.parse(await p.evaluate(probe));
+    ok(r.gap === 32, `tab panel gap is 32px — ${name}`, r.gap === null ? 'no tab panel found' : r.gap + 'px');
+    ok(r.withMargin === 32, `a margin-carrying first child does not move the panel — ${name}`, r.withMargin + 'px');
+    await p.closeTarget();
+  }
+  // The dashboard's denser step is deliberate (dataportal.css) — asserted so it
+  // stays a decision rather than becoming accidental drift.
+  const dash = await openPage(cdp, APP_BASE + '/app/dataportal/energie-klima', { login: true });
+  await sleep(2800);
+  const d = JSON.parse(await dash.evaluate(`(() => {
+    const panel = document.querySelector('.dashboard-layout .tab__container');
+    return JSON.stringify({ pad: panel ? Math.round(parseFloat(getComputedStyle(panel).paddingTop)) : null });
+  })()`));
+  ok(d.pad === 20, 'dashboard keeps its deliberate 20px card rhythm', d.pad + 'px');
+  await dash.closeTarget();
+}
+
 await cdp.close();
 console.log(fails ? `\n${fails} probe(s) failed` : '\nAll consistency probes passed.');
 process.exit(fails ? 1 : 0);

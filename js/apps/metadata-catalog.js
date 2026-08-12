@@ -13,8 +13,8 @@ import { escape as esc, badge } from '../components.js';
 import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 
 // contacts supplies stewardship for both layers. Load the large datasets
-// inventory only for a system-table detail that needs its title.
-export const needs = ['businessObjects', 'systemTables', 'contacts'];
+// inventory only for a data-table detail that needs its title.
+export const needs = ['businessObjects', 'dataTables', 'contacts'];
 
 const BASE = '#/app/metadata-catalog';
 // The catalogue covers the real-estate domain, not the complete office. Keep
@@ -92,7 +92,8 @@ const personsSection = (persons) => `
     </dl>` : '<p class="muted m-0">Für diesen Eintrag ist keine verantwortliche Person hinterlegt.</p>'}</div>`;
 
 const objectHref = (id) => `${BASE}?id=${encodeURIComponent(id)}`;
-const tableHref = (id) => `${BASE}?table=${encodeURIComponent(id)}`;
+// Shared with the search index, which links straight to a table (js/links.js).
+const tableHref = links.dataTable;
 
 // Inventory view.
 function list(ctx) {
@@ -101,7 +102,7 @@ function list(ctx) {
   setCrumbs(trail(APPLICATIONS, { label: TITLE }));
 
   const objects = core.businessObjects();
-  const tables = core.systemTables();
+  const tables = core.dataTables();
   const domains = core.dataDomains();
 
   // State from the hash.
@@ -227,7 +228,7 @@ function list(ctx) {
     rows,
   });
   const tblList = (rows) => C.table({
-    caption: 'Systemtabellen', zebra: true, rowsClickable: true,
+    caption: 'Datentabellen', zebra: true, rowsClickable: true,
     columns: [
       { key: 'name', label: 'Tabelle', width: '13rem', render: (t) =>
         `<a href="${tableHref(t.tableId)}">${esc(t.displayName)}</a><br><span class="small muted"><code>${esc(t.name)}</code></span>` },
@@ -268,7 +269,7 @@ function list(ctx) {
   // summaries and empty states use the correct grammar.
   const unit = kind === 'objekte'
     ? { nom: 'Geschäftsobjekte', dat: 'Geschäftsobjekten' }
-    : { nom: 'Systemtabellen', dat: 'Systemtabellen' };
+    : { nom: 'Datentabellen', dat: 'Datentabellen' };
 
   mount.innerHTML = `
   <div class="container section">
@@ -300,10 +301,10 @@ function list(ctx) {
           card: kind === 'objekte' ? objCard : tblCard,
           listView: kind === 'objekte' ? objList : tblList,
           unit, gridCls: 'grid grid--responsive-cols-2',
-          regionLabel: kind === 'objekte' ? 'Geschäftsobjekte' : 'Systemtabellen',
+          regionLabel: kind === 'objekte' ? 'Geschäftsobjekte' : 'Datentabellen',
           paginationInputId: 'mc-page', paginationLabel: `Seitennavigation ${unit.nom}`,
           paginationHref: (p) => hash({ page: p }),
-          available: core.available(kind === 'objekte' ? 'businessObjects' : 'systemTables'),
+          available: core.available(kind === 'objekte' ? 'businessObjects' : 'dataTables'),
         })}
       </div>
     </div>
@@ -503,7 +504,7 @@ function objectDetail(ctx, id) {
     id: 'mc-mp', unit: 'Realisierungen', caption: `Realisierungen von ${o.name}`, perPage: 15,
     emptyMsg: 'Für dieses Geschäftsobjekt ist keine Realisierung erfasst — entweder führt es kein angeschlossenes System, oder die Abbildung ist noch nicht dokumentiert.',
     rows: maps.map((m) => {
-      const t = core.systemTable(m.tableId) || {};
+      const t = core.dataTable(m.tableId) || {};
       return { ...m, systemName: t.systemName || '', tableName: t.displayName || m.tableId, technical: t.name || '' };
     }),
     searchKeys: ['attribute', 'field', 'tableName', 'systemName'],
@@ -522,11 +523,11 @@ function objectDetail(ctx, id) {
   }));
 }
 
-// System-table detail.
+// Data-table detail.
 async function tableDetail(ctx, id) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
   // URLSearchParams decodes query values exactly once.
-  const t = core.systemTable(id);
+  const t = core.dataTable(id);
   if (!t) {
     return C.renderNotFound(ctx, {
       thing: 'Diese Tabelle', title: 'Tabelle nicht gefunden',
@@ -608,7 +609,7 @@ async function tableDetail(ctx, id) {
     ${t.description ? `<p class="lead">${esc(t.description)}</p>` : ''}
 
     <div class="tabs mt-6">
-      ${C.tabBar({ items: tabs, active, idPrefix: 'mc-ttab', ariaLabel: 'Systemtabelle' })}
+      ${C.tabBar({ items: tabs, active, idPrefix: 'mc-ttab', ariaLabel: 'Datentabelle' })}
       ${C.tabPanels({ items: tabs, active, idPrefix: 'mc-ttab', render: panelHtml, heading: true })}
     </div>
   </div>`;

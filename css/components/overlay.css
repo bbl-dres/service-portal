@@ -75,17 +75,23 @@
 /* On dashboards this kebab is the ONLY route to chart export and full screen,
    and measured 32x32 or 40x40 (28 smallTargets hits). The shrinking
    .dash-header override is gone; only border/surface remain. */
-.action-menu__trigger { display:inline-flex; align-items:center; justify-content:center;
+/* :not(--labelled) — the bare kebab only. The labelled variant is a real .btn
+   and must keep the button's own border, padding and colours. */
+.action-menu__trigger:not(.action-menu__trigger--labelled) { display:inline-flex; align-items:center; justify-content:center;
   min-width:var(--control-h); min-height:var(--control-h);
   padding:var(--sp-1); border:0; border-radius:var(--radius-sm); background:none; color:var(--color-text-muted); cursor:pointer; }
-.action-menu__trigger:hover { background:var(--color-secondary-100); color:var(--color-text); }
-.action-menu__trigger:active { background:var(--color-secondary-200); color:var(--color-text); }
+.action-menu__trigger:not(.action-menu__trigger--labelled):hover { background:var(--color-secondary-100); color:var(--color-text); }
+.action-menu__trigger:not(.action-menu__trigger--labelled):active { background:var(--color-secondary-200); color:var(--color-text); }
 .action-menu__trigger:is(:disabled, [aria-disabled="true"]) { cursor:not-allowed; opacity:.55; }
 .action-menu__trigger[aria-busy="true"] { cursor:progress; opacity:.7; }
 .action-menu__trigger[aria-invalid="true"] { color:var(--color-error-text); }
 .action-menu__trigger[data-empty="true"] { cursor:default; color:var(--color-text-muted); }
 .dash-header .action-menu__trigger { border:var(--stroke-1) solid var(--color-secondary-200); background:var(--color-bg); }
 .dash-header .action-menu__trigger:hover { background:var(--color-secondary-50); }
+/* Labelled variant: .btn owns border, padding, colour and hover. Only the
+   chevron rotation is added here — the icon-only rules above exclude it rather
+   than being fought with overrides. */
+.action-menu__trigger--labelled[aria-expanded="true"] .catbar__chev { transform:rotate(180deg); }
 .action-menu__popup { position:absolute; top:calc(100% + var(--sp-1-5)); min-width:13rem; z-index:var(--z-nav);
   background:var(--color-bg); border:var(--stroke-1) solid var(--color-secondary-200); border-radius:var(--radius-lg);
   box-shadow:var(--shadow-lg); padding:var(--sp-1-5); }

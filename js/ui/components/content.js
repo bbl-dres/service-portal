@@ -1,4 +1,4 @@
-import { badge, breakable, escape, icon, photo, safeClassList, safeHeadingTag } from './primitives.js';
+import { badge, breakable, domToken, escape, icon, photo, safeClassList, safeHeadingTag } from './primitives.js';
 import { backLink } from './navigation.js';
 import { shareBar } from './overlays.js';
 import { classifyUrl, newWindowAttrs, safeLinkUrl, safeMailto, safeResourceUrl } from '../../security/urls.js';
@@ -427,10 +427,14 @@ export function detailHead({ backHref, backLabel, title, lead = '', tags = '', i
 // Detail-page section: title + content. `body` is ready HTML. `titleTag` works as
 // in pageSection. Inside tabs, the section sits below an h2 and needs an h3; two
 // callers previously copied all markup by hand for this (design review, pages).
-export function detailSection({ title, body = '', titleTag = 'h2' }) {
+// `id` makes the section an in-page jump target. The title takes tabindex="-1"
+// with it, so focus can follow the scroll instead of staying behind at the top
+// of the page (the anchor-nav pattern, js/pages/anchor-nav.js).
+export function detailSection({ title, body = '', titleTag = 'h2', id = '' }) {
   const titleElement = safeHeadingTag(titleTag, 'h2');
-  return `<section class="detail-section">
-      <${titleElement} class="detail-section__title">${escape(title)}</${titleElement}>
+  const anchor = id ? domToken(id, '') : '';
+  return `<section class="detail-section"${anchor ? ` id="${anchor}"` : ''}>
+      <${titleElement} class="detail-section__title"${anchor ? ' tabindex="-1"' : ''}>${escape(title)}</${titleElement}>
       ${body}
     </section>`;
 }

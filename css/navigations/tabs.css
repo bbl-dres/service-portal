@@ -45,6 +45,16 @@
    margin on top. The denser dashboard step (1.25rem below) is that context's
    card rhythm and remains. */
 .tab__container { padding-top:var(--sp-8); }
+/* …and the panel keeps that gap to itself. padding-top blocks margin collapse,
+   so a first child carrying its own top margin ADDS to it: a .detail-section
+   (--stack-gap, 3rem) opening a panel measured 80px where every sibling tab
+   measured 32px. The gap is a property of the panel, not of whatever markup a
+   caller happens to put first, so it is neutralised here rather than left to
+   each of the fourteen tabbed surfaces to remember.
+   The second selector covers `tabPanels({ heading: true })`, which puts an
+   sr-only <h2> first — clipped, so the NEXT element is the visible first. */
+.tab__container > :first-child,
+.tab__container > .sr-only:first-child + * { margin-top:0; }
 
 /* Pagination (pagination.postcss:5-31) */
 .pagination-wrap { display:flex; padding-block:var(--sp-6); }

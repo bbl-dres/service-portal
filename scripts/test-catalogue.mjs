@@ -211,6 +211,99 @@ const dec = (h) => decodeURIComponent(h);
       check((await p.problems()).length === 0, `no exceptions / console errors / error banner${(await p.problems())[0] ? ": " + (await p.problems())[0] : ""}`);
       await p.closeTarget();
     }
+
+    /* Dataset «Datenfelder» tab. A field list runs to 75 rows, so it is a
+       C.mountDataTable with search, sorting, paging and export — not a plain
+       table. The empty case is the common one and keeps its column head. */
+    console.log('\n■ Datenfelder tab');
+    const fields = await openPage(cdp, `${APP_BASE}/data/catalog/11?tab=fields`, { login: true });
+    await new Promise((r) => setTimeout(r, 2000));
+    const ft = await fields.evaluate(`(async () => {
+      const w = (ms) => new Promise((r) => setTimeout(r, ms));
+      const panel = document.querySelector('[data-panel="fields"]');
+      // Read the unfiltered state FIRST: a search down to two hits leaves one
+      // page, and pagination correctly removes itself.
+      const before = panel.querySelectorAll('tbody tr').length;
+      const paginated = !!panel.querySelector('.pagination');
+      const input = panel.querySelector('input[type=search]');
+      input.value = 'Buchungskreis';
+      panel.querySelector('form.catbar__search').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await w(350);
+      return {
+        perPage: before,
+        paginated,
+        sorts: [...panel.querySelectorAll('.catbar__sort option')].length,
+        exports: [...panel.querySelectorAll('.action-menu__item')].map((b) => b.dataset.action),
+        afterSearch: panel.querySelectorAll('tbody tr').length,
+        // The bar drops pagination once the result fits on one page.
+        paginationGoneAfterSearch: !panel.querySelector('.pagination'),
+        count: panel.querySelector('.catbar__count')?.textContent.replace(/\\s+/g, ' ').trim(),
+        // The tab owns no heading of its own (user decision, 2026-08-12).
+        headings: panel.querySelectorAll('.detail-section__title, p.muted').length,
+      };
+    })()`);
+    check(ft.perPage === 20, `field table pages at 20 rows (${ft.perPage})`);
+    check(ft.paginated, 'field table is paginated at 75 fields');
+    check(ft.paginationGoneAfterSearch, 'pagination disappears once one page is enough');
+    check(ft.sorts === 5, `four sort options plus the placeholder (${ft.sorts})`);
+    check(ft.exports.join(',') === 'csv,xls', `export menu offers CSV and Excel (${ft.exports.join(',')})`);
+    check(ft.afterSearch === 2 && /^2 von 75/.test(ft.count), `search narrows the field list (${ft.count})`);
+    check(ft.headings === 0, 'no section title or muted subtitle above the table');
+    check((await fields.problems()).length === 0, 'Datenfelder: no console errors');
+    await fields.closeTarget();
+
+    const bare = await openPage(cdp, `${APP_BASE}/data/catalog/3?tab=fields`, { login: true });
+    await new Promise((r) => setTimeout(r, 1500));
+    const bt = await bare.evaluate(`(() => {
+      const panel = document.querySelector('[data-panel="fields"]');
+      return {
+        bar: !!panel.querySelector('.catbar'),
+        cols: [...panel.querySelectorAll('thead th')].map((x) => x.textContent.trim()).join(','),
+        hint: (panel.querySelector('.table__empty')?.textContent || '').includes('keine Felddefinitionen'),
+      };
+    })()`);
+    check(!bt.bar, 'a dataset without fields shows no search bar');
+    check(bt.cols === 'Feld,Beschreibung,Format,Constraint,Kommentar', `empty state keeps its columns (${bt.cols})`);
+    check(bt.hint, 'empty state names the gap');
+    await bare.closeTarget();
+
+    /* Dataset detail aside (user decision, 2026-08-12): the page took the
+       service/application anatomy — main column plus «Zugriff» and «Kontakt» —
+       instead of carrying data-governance roles in its flow. «Daten beziehen»
+       scrolls to the distributions; in a hash-routed app that MUST NOT navigate. */
+    console.log('\n■ Dataset detail aside');
+    const ds = await openPage(cdp, `${APP_BASE}/data/catalog/7`, { login: true });
+    await new Promise((r) => setTimeout(r, 1800));
+    const aside = await ds.evaluate(`(async () => {
+      const w = (ms) => new Promise((r) => setTimeout(r, ms));
+      const side = document.querySelector('aside.container__aside');
+      const labels = [...document.querySelectorAll('.container__main dl.kv dt')].map((x) => x.textContent.trim());
+      const link = side?.querySelector('.access-card a[href="#ds-distributions"]');
+      const hashBefore = location.hash;
+      const yBefore = scrollY;
+      link?.click();
+      await w(800);
+      return {
+        grid: !!document.querySelector('.container--grid > .container__main'),
+        card: !!side?.querySelector('.box.access-card'),
+        label: link?.textContent.trim(),
+        bookmark: !!side?.querySelector('.access-card .bookmark-link, .access-card [data-bookmark]'),
+        contact: !!side?.querySelector('.box:not(.access-card)'),
+        firstMeta: labels[0],
+        hasKontaktstelle: labels.includes('Kontaktstelle'),
+        governanceSection: [...document.querySelectorAll('.detail-section__title')].some((x) => /Verantwortliche/.test(x.textContent)),
+        routeHeld: location.hash === hashBefore,
+        scrolled: scrollY - yBefore > 100,
+      };
+    })()`);
+    check(aside.grid && aside.card && aside.contact, 'main column plus access and contact cards');
+    check(aside.label === 'Daten beziehen', `access button label (${aside.label})`);
+    check(aside.bookmark, 'the favourite action sits in the access card');
+    check(aside.firstMeta === 'ID' && !aside.hasKontaktstelle, `Metadaten leads with ID, without Kontaktstelle (${aside.firstMeta})`);
+    check(!aside.governanceSection, 'no «Verantwortliche Personen» section');
+    check(aside.routeHeld && aside.scrolled, 'the jump scrolls without changing the route');
+    check((await ds.problems()).length === 0, 'dataset detail: no console errors');
+    await ds.closeTarget();
   } finally {
     cdp.close();
   }

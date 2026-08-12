@@ -1,7 +1,7 @@
 import { CHEVRON_SVG, escape, icon, preserveFocus, wireScrollRegions } from './primitives.js';
 import { activeFilters as activeFiltersBar, empty, pageHeader, table } from './content.js';
 import { announce } from './feedback.js';
-import { pagination, wirePagination } from './navigation.js';
+import { pagination, wireMenu, wirePagination } from './navigation.js';
 import { safeLinkUrl } from '../../security/urls.js';
 
 // --- Results header (search.postcss:208-234) --------------------------------
@@ -178,7 +178,7 @@ export function catalogueBar({
   formId, inputId, searchLabel, placeholder = 'Suchen…', q = '', countId = 'cat-count', count = '',
   sort = null, filterId = '', filterLabel = 'Filter', filterCount = 0,
   panelId = '', panel = '', panelHidden = true,
-  view = 'gallery', views, showSearch = true, extra = '',
+  view = 'gallery', views, showSearch = true, extra = '', flush = false,
 }) {
   // Once opened, a panel stays open until the user closes it.
   if (panelId && PANEL_OPEN.has(panelId)) panelHidden = false;
@@ -217,8 +217,11 @@ export function catalogueBar({
         <input id="${escape(inputId)}" type="search" placeholder="${escape(placeholder)}" value="${escape(q)}" autocomplete="off">
         <button class="btn btn--bare btn--icon-only catbar__submit" type="submit" title="Suchen">${icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
       </form>` : '';
+  // `flush`: the bar's top margin separates it from a page header above it. When
+  // the bar OPENS its container — a tab panel, for instance — that margin only
+  // adds a gap under the tab strip, so the caller turns it off.
   return `
-    <div class="catbar${showSearch ? '' : ' catbar--no-search'}">${searchHtml}
+    <div class="catbar${showSearch ? '' : ' catbar--no-search'}${flush ? ' catbar--flush' : ''}">${searchHtml}
       <div class="catbar__count" id="${escape(countId)}">${count}</div>
       ${/* `extra`: RAW HTML at the end of the control group for a bar-level
             secondary action that is neither sorting, filtering, nor view
@@ -253,6 +256,11 @@ export function catalogueBar({
 //   facets    [{ dim, legend, options:[{value,label}], match(row, values) }]
 //   perPage   default 10
 //   foot(visible, filtered)  optional <tfoot> row
+//   extra     RAW bar-level control HTML (C.menu, a button) at the end of the
+//             control group — the same slot catalogueBar offers its callers
+//   onAction(action, { filtered, visible, rows })  selection from a C.menu in
+//             `extra`. It receives the CURRENT result set, not just the visible
+//             page, so an export covers what the search and facets selected.
 export function mountDataTable(host, opts = {}) {
   let unwireScroll = null;
   let unwireRows = null;
@@ -260,7 +268,7 @@ export function mountDataTable(host, opts = {}) {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
     sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '', rowsClickable = false,
-    rowClass,
+    rowClass, extra = '', onAction, flush = false,
   } = opts;
   const state = { q: '', sort: '', page: 1, open: false, sel: {} };
   facets.forEach((f) => { state.sel[f.dim] = []; });
@@ -310,6 +318,7 @@ export function mountDataTable(host, opts = {}) {
         panelId: facets.length ? `${id}-panel` : '',
         panel: facets.map((f) => filterGroup({ dim: f.dim, legend: f.legend, options: f.options, selected: state.sel[f.dim], idPrefix: id })).join(''),
         panelHidden: !state.open,
+        extra, flush,
       })}
       ${note ? `<p class="muted small mt-4">${escape(note)}</p>` : ''}
       ${/* Keep the table even with NO hits, with a row explaining why. Replacing
@@ -344,6 +353,10 @@ export function mountDataTable(host, opts = {}) {
         state.page = 1; draw();
       });
     }
+    // draw() replaces host.innerHTML, so a menu in `extra` is a NEW element every
+    // time and has to be wired again. wireMenu owns one global outside-click
+    // closer, so repeating this does not accumulate document listeners.
+    if (onAction) wireMenu(host, (action) => onAction(action, { filtered: sorted, visible, rows: allRows }));
     if (rowsClickable) unwireRows = wireTableRows(host);
     // wirePagination binds BOTH the input and [data-page] buttons (review A3).
     wirePagination(host, `${id}-page`, state.page, totalPages, (target) => { state.page = target; draw(); });

@@ -28,7 +28,11 @@ import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 // «Guisanplatz» found only documents ABOUT the property, never the property
 // itself. This costs about 76KB, acceptable because other routes load both
 // collections anyway and the browser then has them cached.
-export const needs = ['applications', 'datasets', 'documents', 'news', 'contacts', 'buildings', 'projects'];
+//
+// `dataTables` follows on the same terms (61KB, 2026-08-12): both routes that
+// show a table — the metadata catalogue and a dataset's «Datenfelder» tab —
+// load it too, so a search leading there hits a warm cache.
+export const needs = ['applications', 'datasets', 'documents', 'news', 'contacts', 'buildings', 'projects', 'dataTables'];
 
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
@@ -226,11 +230,42 @@ function buildIndex(core) {
     });
   }
 
+  // `kind` is a facet, not indexed text (search-engine.js prepare()). The two
+  // data-layer kinds therefore carry their own category noun in `extra`: someone
+  // typing «Daten» is naming the category, and without this the word matched only
+  // where it happened to appear in a title. Measured on «daten»: the five data
+  // tables sat at ranks 21–41, past the first page of 20.
+  const DATASET_CATEGORY = 'Datensatz Datensätze';
+  const TABLE_CATEGORY = 'Datentabelle Datentabellen';
+
   for (const d of core.datasets()) {
     rows.push({
       kind: 'Datensätze', type: 'Datensatz', title: t(d.title), desc: t(d.description),
       href: links.dataset(d.id),
-      extra: [t(d.fullDescription), (d.tags || []).join(' '), t(d.meta && d.meta['thema'])].join(' '),
+      extra: [DATASET_CATEGORY, t(d.fullDescription), (d.tags || []).join(' '), t(d.meta && d.meta['thema'])].join(' '),
+    });
+  }
+
+  // Data tables (2026-08-12). A dataset says WHAT exists; a data table says which
+  // fields it actually has — and the field name is exactly what a developer or an
+  // analyst types into the search box. Before this the whole physical layer was
+  // reachable only by already knowing #/app/metadata-catalog existed.
+  //
+  // One row per TABLE, not per field: 325 field rows would bury every other kind
+  // of result. The field names ride along in `extra` instead, so searching a
+  // column («COMP_CODE», «Buchungskreis») finds the table that carries it.
+  for (const table of core.dataTables()) {
+    rows.push({
+      kind: 'Datentabellen', type: table.systemName ? `Datentabelle · ${table.systemName}` : 'Datentabelle',
+      title: table.displayName || table.name,
+      desc: table.description,
+      href: links.dataTable(table.tableId),
+      meta: table.systemName || '',
+      extra: [
+        TABLE_CATEGORY, table.name, table.schema, table.schemaLabel, table.systemName,
+        // Both halves of a field: the technical name and its German description.
+        (table.fields || []).map((f) => `${f.name} ${f.description || ''}`).join(' '),
+      ].filter(Boolean).join(' '),
     });
   }
 

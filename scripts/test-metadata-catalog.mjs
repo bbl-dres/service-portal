@@ -98,7 +98,7 @@ o = JSON.parse(await p.evaluate(`(async () => {
   });
 })()`));
 check(/kind=tabellen/.test(o.hash), 'kind appears in the hash', o.hash);
-check(/10 von 10 Systemtabellen/.test(o.countText || ''), 'result count is ten after excluding two invalid RE-FX tables', o.countText);
+check(/10 von 10 Datentabellen/.test(o.countText || ''), 'result count is ten after excluding two invalid RE-FX tables', o.countText);
 check(o.columns.join(',') === 'Tabelle,System,Beschreibung,Felder,Status', 'table-list columns', o.columns.join(','));
 check(o.systems.join(' | ') === 'SAP RE-FX | GIS IMMO', 'both systems appear in the tree', o.systems.join(' | '));
 check(o.chips === 0, 'domain filter does not carry across view changes', String(o.chips));
@@ -301,6 +301,46 @@ o = JSON.parse(await p.evaluate(`(async () => {
 })()`));
 check(o.tile, 'tile appears on the data overview');
 check(o.federalTile, 'federal-applications tile also appears');
+
+/* Discoverability through global search — the reason data tables were renamed
+   from «system tables» (2026-08-12). Before this the physical layer was reachable
+   only by already knowing this app existed: no search row pointed at a table. */
+
+head('Global search finds data tables');
+const searchFor = async (query) => {
+  await p.evaluate(`location.hash = '#/search?q=${encodeURIComponent(query)}'; true`);
+  await sleep(1200);
+  return JSON.parse(await p.evaluate(`JSON.stringify(
+    [...document.querySelectorAll('li.search-result')].map((r, i) => ({
+      rank: i + 1,
+      type: (r.querySelector('.meta-info__item')?.textContent || '').trim(),
+      title: (r.querySelector('.search-result__title')?.textContent || '').trim(),
+      href: r.querySelector('a')?.getAttribute('href') || '',
+    })))`));
+};
+const firstTable = (rows) => rows.find((r) => /^Datentabelle/.test(r.type));
+
+// A field's German description, then its technical column name. This is what a
+// data analyst actually types, and it is the query the old model answered worst.
+for (const [query, expected] of [['Buchungskreis', 'Wirtschaftseinheit'], ['COMP_CODE', 'Wirtschaftseinheit']]) {
+  const hit = firstTable(await searchFor(query));
+  check(hit?.title === expected, `«${query}» finds ${expected}`, hit ? `#${hit.rank} ${hit.title}` : 'no table hit');
+  check(/metadata-catalog\?table=/.test(hit?.href || ''), `«${query}» links to the table detail`, hit?.href || '—');
+}
+
+// The category noun. `kind` is a facet, not indexed text, so the rows carry it
+// in `extra`; without that, «Datentabelle» returned no table at all.
+const category = await searchFor('Datentabelle');
+check(category.length === 10, 'the category noun returns all ten tables', String(category.length));
+check(/^Datentabelle/.test(category[0]?.type || ''), 'a table ranks first for the category noun', category[0]?.type);
+
+// A table name, and the published dataset outranking its physical table — a
+// dataset is the consumable thing, the table its implementation.
+const named = await searchFor('Wirtschaftseinheit');
+check(named[0]?.type === 'Datensatz', 'the dataset outranks its table', `#1 ${named[0]?.type} ${named[0]?.title}`);
+check(firstTable(named)?.rank === 2, 'the table follows immediately', `#${firstTable(named)?.rank}`);
+
+await clean(p, 'search results');
 
 await browser.close();
 console.log(fail ? `\n✗ ${fail} check(s) failed` : '\n✓ all checks passed');

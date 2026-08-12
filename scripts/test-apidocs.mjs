@@ -68,8 +68,15 @@ const check = (cond, label) => { console.log(`   ${cond ? '✓' : '✗'} ${label
     check(D.tagHeadingLevels.every(level => level === 'H3'), 'resource titles follow as h3 headings');
     check(D.badges.some(b => /^v/.test(b)), `header includes a version badge (${JSON.stringify(D.badges)})`);
     check(!D.duplicateInfo, 'Swagger info block does not duplicate the portal header');
-    // The complete inventory currently contains 17 resources and 47 endpoints.
-    check(D.tags.length === 17, `17 resource sections render (${D.tags.length})`);
+    // Counted from the SPECIFICATION, not pinned to a number. The contract worth
+    // holding is «every declared resource renders»; a literal 17 only recorded
+    // the inventory of the day it was written, and went stale the moment the
+    // portal gained the shop, the process documentation and the favourites.
+    const declared = JSON.parse(await (await fetch(new URL('data/api-specs.json', APP_BASE.split('#')[0]))).text())
+      .kundenportal.resources.map((r) => r.tag);
+    const unrendered = declared.filter((tag) => !D.tags.includes(tag));
+    check(!unrendered.length && D.tags.length === declared.length,
+      `every declared resource renders (${D.tags.length}/${declared.length}${unrendered.length ? ', missing: ' + unrendered.join(', ') : ''})`);
     check(D.ops >= 40, `operations render (${D.ops})`);
     check(D.get > 0 && D.post > 0, `GET and POST blocks render (${D.get}/${D.post})`);
     check(/api\.bbl\.admin\.ch\/kundenportal/.test(D.server), 'server row shows the base URL');

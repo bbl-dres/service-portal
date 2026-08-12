@@ -456,18 +456,18 @@ try {
     const originals = {
       processDoc: core.processDoc,
       businessObject: core.businessObject,
-      systemTable: core.systemTable,
+      dataTable: core.dataTable,
     };
-    const captured = { processDoc: null, businessObject: null, systemTable: null };
+    const captured = { processDoc: null, businessObject: null, dataTable: null };
     core.processDoc = (id) => { captured.processDoc = id; return null; };
     core.businessObject = (id) => { captured.businessObject = id; return null; };
-    core.systemTable = (id) => { captured.systemTable = id; return null; };
+    core.dataTable = (id) => { captured.dataTable = id; return null; };
     location.hash = '#/app/process-docs?id=A%252FB';
     for (let i = 0; i < 120 && captured.processDoc === null; i++) await wait(50);
     location.hash = '#/app/metadata-catalog?id=Object%252FOne';
     for (let i = 0; i < 120 && captured.businessObject === null; i++) await wait(50);
     location.hash = '#/app/metadata-catalog?table=Schema%252FTable';
-    for (let i = 0; i < 120 && captured.systemTable === null; i++) await wait(50);
+    for (let i = 0; i < 120 && captured.dataTable === null; i++) await wait(50);
     Object.assign(core, originals);
     return captured;
   })()`);
@@ -475,8 +475,8 @@ try {
     'process document lookup receives the once-decoded query value', decoded.processDoc);
   check(decoded.businessObject === 'Object%2FOne',
     'business object lookup receives the once-decoded query value', decoded.businessObject);
-  check(decoded.systemTable === 'Schema%2FTable',
-    'system table lookup receives the once-decoded query value', decoded.systemTable);
+  check(decoded.dataTable === 'Schema%2FTable',
+    'system table lookup receives the once-decoded query value', decoded.dataTable);
   const decodeProblems = await decodePage.problems();
   check(decodeProblems.length === 0, 'decode regression emits no browser errors', decodeProblems.join(' | '));
   await decodePage.closeTarget();

@@ -4,6 +4,9 @@
    a collapsible panel below (containing the former filter dropdowns). */
 .catbar { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4); margin-top:var(--sp-5);
   padding-bottom:var(--sp-2); border-bottom:var(--stroke-1) solid var(--color-secondary-300); font-size:var(--text-sm); }
+/* The margin above separates the bar from a page header. A bar that OPENS its
+   container (a tab panel, for example) has nothing to separate from. */
+.catbar--flush { margin-top:0; }
 /* Anatomy (magnifier inside the field, absolutely positioned submit) is defined
    above in the “In-page search” block; only the differences live here. */
 .catbar__search { position:relative; flex:1 1 15rem; min-width:11rem; max-width:24rem; }

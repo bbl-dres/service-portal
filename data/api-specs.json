@@ -250,7 +250,7 @@
       {
         "tag": "business-objects",
         "label": "business-objects",
-        "description": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen.",
+        "description": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Datentabellen.",
         "endpoints": [
           { "method": "GET", "path": "/business-objects", "summary": "Geschäftsobjekte auflisten",
             "params": [{ "name": "domain", "in": "query", "type": "string", "desc": "Filter nach Datendomäne (bauwerk, miete …)" }],
@@ -261,16 +261,16 @@
         ]
       },
       {
-        "tag": "system-tables",
-        "label": "system-tables",
-        "description": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
+        "tag": "data-tables",
+        "label": "data-tables",
+        "description": "Der Metadatenkatalog: Datentabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
         "endpoints": [
-          { "method": "GET", "path": "/system-tables", "summary": "Systemtabellen auflisten",
+          { "method": "GET", "path": "/data-tables", "summary": "Datentabellen auflisten",
             "params": [{ "name": "system", "in": "query", "type": "string", "desc": "Filter nach Quellsystem (sap-refx, gis-immo …)" }],
-            "responses": { "200": "Liste von Systemtabellen" }, "live": "system-tables.list" },
-          { "method": "GET", "path": "/system-tables/{tableId}", "summary": "Eine Systemtabelle mit Feldern abrufen",
+            "responses": { "200": "Liste von Datentabellen" }, "live": "data-tables.list" },
+          { "method": "GET", "path": "/data-tables/{tableId}", "summary": "Eine Datentabelle mit Feldern abrufen",
             "params": [{ "name": "tableId", "in": "path", "type": "string", "required": true, "desc": "tableId, z. B. sap-refx-vibdkd" }],
-            "responses": { "200": "Systemtabelle", "404": "Nicht gefunden" }, "live": "system-tables.one" }
+            "responses": { "200": "Datentabelle", "404": "Nicht gefunden" }, "live": "data-tables.one" }
         ]
       },
       {
@@ -283,6 +283,90 @@
           { "method": "GET", "path": "/reference-data/{list}", "summary": "Eine Referenzliste abrufen",
             "params": [{ "name": "list", "in": "path", "type": "string", "required": true, "desc": "Listenname, z. B. audiences oder statusModel" }],
             "responses": { "200": "Referenzliste", "404": "Nicht gefunden" }, "live": "reference-data.one" }
+        ]
+      },
+      {
+        "tag": "processes",
+        "label": "processes",
+        "description": "Die Prozessdokumentation Bauten (processes.json): Immobilienprozesse mit L1–L3-Einordnung, Schritten und BPMN-Diagramm je Prozess.",
+        "endpoints": [
+          { "method": "GET", "path": "/processes", "summary": "Prozesse auflisten",
+            "params": [{ "name": "area", "in": "query", "type": "string", "desc": "Filter nach Prozessbereich (L1)" }],
+            "responses": { "200": "Liste von Prozessen" }, "live": "processes.list" },
+          { "method": "GET", "path": "/processes/{processId}", "summary": "Einen Prozess mit Schritten abrufen",
+            "params": [{ "name": "processId", "in": "path", "type": "string", "required": true, "desc": "processId, z. B. TQ.21.00.00.10" }],
+            "responses": { "200": "Prozess", "404": "Nicht gefunden" }, "live": "processes.one" },
+          { "method": "GET", "path": "/processes/{processId}/bpmn", "summary": "BPMN-Diagramm eines Prozesses abrufen",
+            "params": [{ "name": "processId", "in": "path", "type": "string", "required": true, "desc": "processId des Prozesses" }],
+            "responses": { "200": "BPMN 2.0 XML", "404": "Kein Diagramm hinterlegt" } }
+        ]
+      },
+      {
+        "tag": "bookmarks",
+        "label": "bookmarks",
+        "description": "Persönliche Favoriten der angemeldeten Person. Ein Eintrag ist eine typisierte Referenz ({ kind, id, addedAt }) auf einen Bestand des Portals, nie eine Kopie — Titel und Link werden beim Lesen aufgelöst. Einzige Ressource neben den Vorgängen, die schreibt.",
+        "endpoints": [
+          { "method": "GET", "path": "/bookmarks", "summary": "Favoriten der angemeldeten Person auflisten",
+            "params": [{ "name": "kind", "in": "query", "type": "string", "desc": "Filter nach Art (service, application, dataset, building …)" }],
+            "responses": { "200": "Liste von Favoriten", "401": "Nicht angemeldet" }, "live": "bookmarks.list" },
+          { "method": "POST", "path": "/bookmarks", "summary": "Einen Favoriten setzen",
+            "params": [{ "name": "body", "in": "body", "type": "object", "required": true, "desc": "{ kind, id } — unbekannte Arten werden abgelehnt" }],
+            "responses": { "201": "Favorit gesetzt", "400": "Unbekannte Art oder fehlende ID", "401": "Nicht angemeldet" },
+            "example": { "kind": "application", "id": "liegenschaften-inventar", "addedAt": "2026-08-12" } },
+          { "method": "DELETE", "path": "/bookmarks/{kind}/{id}", "summary": "Einen Favoriten entfernen",
+            "params": [
+              { "name": "kind", "in": "path", "type": "string", "required": true, "desc": "Art der Referenz" },
+              { "name": "id", "in": "path", "type": "string", "required": true, "desc": "ID des Datensatzes" }
+            ],
+            "responses": { "204": "Entfernt", "401": "Nicht angemeldet", "404": "Nicht gefunden" } }
+        ]
+      },
+      {
+        "tag": "shop-products",
+        "label": "shop-products",
+        "description": "Das Sortiment des BBL Intranetshops: Mobiliar, Büro- und Arbeitsplatzmaterial mit Marke, Preis und Kategorie.",
+        "endpoints": [
+          { "method": "GET", "path": "/shop-products", "summary": "Produkte auflisten",
+            "params": [
+              { "name": "category", "in": "query", "type": "string", "desc": "Filter nach Kategorie oder Unterkategorie" },
+              { "name": "brand", "in": "query", "type": "string", "desc": "Filter nach Marke" }
+            ],
+            "responses": { "200": "Liste von Produkten" }, "live": "shop-products.list" },
+          { "method": "GET", "path": "/shop-products/{id}", "summary": "Ein Produkt abrufen",
+            "params": [{ "name": "id", "in": "path", "type": "integer", "required": true, "desc": "Produkt-ID" }],
+            "responses": { "200": "Produkt", "404": "Nicht gefunden" }, "live": "shop-products.one" }
+        ]
+      },
+      {
+        "tag": "shop-categories",
+        "label": "shop-categories",
+        "description": "Der Kategoriebaum des Intranetshops — verschachtelt, wie ihn die Sortimentsnavigation liest.",
+        "endpoints": [
+          { "method": "GET", "path": "/shop-categories", "summary": "Kategoriebaum abrufen",
+            "responses": { "200": "Kategorien mit Unterkategorien" }, "live": "shop-categories.list" }
+        ]
+      },
+      {
+        "tag": "workspace",
+        "label": "workspace",
+        "description": "Workspace-Management: Planungsstände je Liegenschaft, der Multispace-Modulstandard als Daten (mit Handbuch-Ausgabe, ohne Preise) und realisierte Beispielorte.",
+        "endpoints": [
+          { "method": "GET", "path": "/workspace/planning", "summary": "Planungsstände auflisten",
+            "params": [{ "name": "buildingId", "in": "query", "type": "string", "desc": "Filter nach bbl_id" }],
+            "responses": { "200": "Liste von Planungsständen" }, "live": "workspace.planning" },
+          { "method": "GET", "path": "/workspace/modules", "summary": "Multispace-Modulstandard abrufen",
+            "responses": { "200": "Module der aktuellen Handbuch-Ausgabe" }, "live": "workspace.modules" },
+          { "method": "GET", "path": "/workspace/examples", "summary": "Realisierte Multispace-Beispiele auflisten",
+            "responses": { "200": "Liste von Beispielorten" }, "live": "workspace.examples" }
+        ]
+      },
+      {
+        "tag": "users",
+        "label": "users",
+        "description": "Verzeichnis der Demo-Personen. Im Prototyp ersetzt diese Ressource das Personenverzeichnis, das produktiv eIAM liefert; sie trägt den Startbestand der Favoriten je Person.",
+        "endpoints": [
+          { "method": "GET", "path": "/users/me", "summary": "Angemeldete Person abrufen",
+            "responses": { "200": "Person", "401": "Nicht angemeldet" }, "live": "users.me" }
         ]
       },
       {

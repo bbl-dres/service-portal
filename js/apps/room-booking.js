@@ -301,7 +301,7 @@ export default async function render(ctx) {
     return `<button type="button" class="btn btn--outline btn--icon-only booking-fav${size ? ` ${size}` : ''}"
       id="${domId(`booking-fav-${kind}`, id)}" data-fav-kind="${kind}" data-fav-id="${C.escape(id)}"
       aria-pressed="${on}" title="${on ? 'Aus meinen Favoriten entfernen' : 'Als Favorit merken'}">
-      ${C.icon(on ? 'StarFilled' : 'Star', 'btn__icon')}
+      ${C.icon(on ? 'HeartFilled' : 'Heart', 'btn__icon')}
       <span class="sr-only">${C.escape(name)} als ${what} merken</span></button>`;
   }
 
@@ -796,7 +796,7 @@ export default async function render(ctx) {
     return `<section class="booking-favs" aria-labelledby="booking-favs-title">
       <h3 id="booking-favs-title">Meine Standorte</h3>
       ${rows.length ? `<ul class="booking-favs__list">${rows.map((item) => `<li>
-          <a href="#/app/room-booking?building=${encodeURIComponent(item.bbl_id)}">${C.icon('StarFilled', 'icon--base')}<span>${C.escape(item.name)}</span></a>
+          <a href="#/app/room-booking?building=${encodeURIComponent(item.bbl_id)}">${C.icon('HeartFilled', 'icon--base')}<span>${C.escape(item.name)}</span></a>
           <span class="small muted">${formatNumber(bookableRoomCount(item.bbl_id))} Räume</span>
         </li>`).join('')}</ul>`
         : `<p class="small muted">Noch keine Standorte gemerkt. Der Stern neben dem Standortfeld merkt einen Standort für die nächste Suche.</p>`}

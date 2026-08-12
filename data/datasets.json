@@ -545,7 +545,7 @@
     "meta": {
       "kontaktstelle": "bim@bbl.admin.ch",
       "ausgabedatum": "15. Mai 2025",
-      "aktualisierungsintervall": "on_change",
+      "aktualisierungsintervall": "on_demand",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -641,7 +641,7 @@
     "meta": {
       "kontaktstelle": "gis@bbl.admin.ch",
       "ausgabedatum": "1. April 2025",
-      "aktualisierungsintervall": "weekly",
+      "aktualisierungsintervall": "monthly",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -770,7 +770,7 @@
     "meta": {
       "kontaktstelle": "gis@bbl.admin.ch",
       "ausgabedatum": "1. April 2025",
-      "aktualisierungsintervall": "quarterly",
+      "aktualisierungsintervall": "monthly",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -904,7 +904,7 @@
     "meta": {
       "kontaktstelle": "archiv@bbl.admin.ch",
       "ausgabedatum": "1. Februar 2025",
-      "aktualisierungsintervall": "on_change",
+      "aktualisierungsintervall": "on_demand",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -982,7 +982,7 @@
     "meta": {
       "kontaktstelle": "gis@bbl.admin.ch",
       "ausgabedatum": "1. April 2025",
-      "aktualisierungsintervall": "quarterly",
+      "aktualisierungsintervall": "monthly",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -1407,7 +1407,7 @@
     "meta": {
       "kontaktstelle": "stammdaten@bbl.admin.ch",
       "ausgabedatum": "1. Juni 2025",
-      "aktualisierungsintervall": "on_change",
+      "aktualisierungsintervall": "on_demand",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "personal",
@@ -1485,7 +1485,7 @@
     "meta": {
       "kontaktstelle": "archiv@bbl.admin.ch",
       "ausgabedatum": "1. Juni 2025",
-      "aktualisierungsintervall": "on_change",
+      "aktualisierungsintervall": "on_demand",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -1608,7 +1608,7 @@
     "meta": {
       "kontaktstelle": "energie@bbl.admin.ch",
       "ausgabedatum": "1. Mai 2025",
-      "aktualisierungsintervall": "monthly",
+      "aktualisierungsintervall": "on_demand",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -1682,7 +1682,7 @@
     "meta": {
       "kontaktstelle": "energie@bbl.admin.ch",
       "ausgabedatum": "1. Mai 2025",
-      "aktualisierungsintervall": "monthly",
+      "aktualisierungsintervall": "on_demand",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -1756,7 +1756,7 @@
     "meta": {
       "kontaktstelle": "energie@bbl.admin.ch",
       "ausgabedatum": "1. Mai 2025",
-      "aktualisierungsintervall": "monthly",
+      "aktualisierungsintervall": "on_demand",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -1830,7 +1830,7 @@
     "meta": {
       "kontaktstelle": "energie@bbl.admin.ch",
       "ausgabedatum": "1. Mai 2025",
-      "aktualisierungsintervall": "weekly",
+      "aktualisierungsintervall": "on_demand",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -1904,7 +1904,7 @@
     "meta": {
       "kontaktstelle": "portfolio@bbl.admin.ch",
       "ausgabedatum": "1. April 2025",
-      "aktualisierungsintervall": "quarterly",
+      "aktualisierungsintervall": "monthly",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -1991,7 +1991,7 @@
     "meta": {
       "kontaktstelle": "digitalisierung@bbl.admin.ch",
       "ausgabedatum": "25. Juli 2026",
-      "aktualisierungsintervall": "on_change",
+      "aktualisierungsintervall": "on_demand",
       "status": "published",
       "klassifizierung": "internal",
       "personenbezogen": "none",
@@ -2318,32 +2318,32 @@
         "dateiformat": "JSON",
         "lizenz": "terms_by",
         "bemerkungen": {
-          "de": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen.",
-          "fr": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen.",
-          "it": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen.",
-          "en": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Systemtabellen."
+          "de": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Datentabellen.",
+          "fr": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Datentabellen.",
+          "it": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Datentabellen.",
+          "en": "Der Metadatenkatalog: fachliche Geschäftsobjekte mit Definition, Verantwortlichen und Attribut-Abbildungen in die Datentabellen."
         }
       },
       {
         "name": {
-          "de": "system-tables API (REST)",
-          "fr": "system-tables API (REST)",
-          "it": "system-tables API (REST)",
-          "en": "system-tables API (REST)"
+          "de": "data-tables API (REST)",
+          "fr": "data-tables API (REST)",
+          "it": "data-tables API (REST)",
+          "en": "data-tables API (REST)"
         },
         "format": "REST",
         "identifikator": "564dac2b-1364-4a1f-b24a-a37eb315fef5",
-        "titel": "system-tables API (REST)",
-        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=system-tables",
+        "titel": "data-tables API (REST)",
+        "zugriffsUrl": "#/app/api-docs/kundenportal?tag=data-tables",
         "downloadUrl": "",
         "status": "published",
         "dateiformat": "JSON",
         "lizenz": "terms_by",
         "bemerkungen": {
-          "de": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
-          "fr": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
-          "it": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
-          "en": "Der Metadatenkatalog: Systemtabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste."
+          "de": "Der Metadatenkatalog: Datentabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
+          "fr": "Der Metadatenkatalog: Datentabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
+          "it": "Der Metadatenkatalog: Datentabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste.",
+          "en": "Der Metadatenkatalog: Datentabellen der Quellsysteme (SAP RE-FX, GIS IMMO …) mit Schema und Feldliste."
         }
       },
       {

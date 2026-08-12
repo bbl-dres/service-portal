@@ -70,11 +70,17 @@ const DEFERRED = {
   workspaceExamples:'data/workspace-examples.json',
   // Metadata catalogue (#/app/metadata-catalog): the two layers BELOW the DCAT
   // catalogue. `businessObjects` is technology-neutral (a business object with
-  // attributes per data domain), while `systemTables` is system-specific (a
-  // table or layer with fields per system). Attribute mappings connect them;
+  // attributes per data domain), while `dataTables` is the physical layer: a
+  // table, layer or extract with fields. Attribute mappings connect them, and
   // `datasetId` on a table continues into data/datasets.json.
+  //
+  // Named dataTables, not systemTables (2026-08-12): a record does NOT have to
+  // belong to a source system. A data product someone assembled for a purpose of
+  // their own is the same thing to a reader looking for a field definition, and
+  // the old name declared an ownership the model never required. `system` and
+  // `schema` stay OPTIONAL on the record for exactly that case.
   businessObjects:  'data/business-objects.json',
-  systemTables:     'data/system-tables.json',
+  dataTables:       'data/data-tables.json',
   // Building process documentation (#/app/process-docs): property-management
   // processes (L1–L3 denormalised on the record, BPMN path per process under
   // assets/bpmn/). The app loads each diagram on its detail page.
@@ -89,8 +95,9 @@ const DEFERRED = {
   // (js/core/session.js), never from here; only personal surfaces need the file.
   users:            'data/users.json',
 };
-// data/data-products.json remains in place (DataService and Concept entries for
-// a future metadata catalogue), but no view reads or loads it any longer.
+// A former data/data-products.json (DataService and Concept entries) was deleted
+// in e9a0f67; the comment claiming it «remains in place» outlived the file. Its
+// subject matter now lives in dataTables above.
 
 // Keys whose files could not be loaded. Without this record, failure would look
 // like a plausible zero (an empty list means «no entries»). The shell instead
@@ -110,7 +117,7 @@ const DATA_AREA_LABELS = {
   workspacePlanning: 'Workspace-Planungsstände',
   multispaceModules: 'Multispace-Module',
   workspaceExamples: 'Multispace-Beispiele',
-  businessObjects: 'Geschäftsobjekte', systemTables: 'Systemtabellen',
+  businessObjects: 'Geschäftsobjekte', dataTables: 'Datentabellen',
   processes: 'Prozesse', users: 'Benutzende',
   shopProducts: 'Shop-Produkte', shopCategories: 'Shop-Kategorien',
 };
@@ -125,7 +132,7 @@ const RECORD_IDS = {
   documents: 'docId', projects: 'projectId', media: 'mediaId', datasets: 'id',
   assets: 'assetId', contracts: 'contractId', costs: 'costId', areas: 'areaMeasurementId',
   buildingContacts: 'contactId', tenancies: 'tenancyId', floors: 'floorId', spaces: 'spaceId',
-  workspacePlanning: 'buildingId', businessObjects: 'objectId', systemTables: 'tableId',
+  workspacePlanning: 'buildingId', businessObjects: 'objectId', dataTables: 'tableId',
   processes: 'processId', shopProducts: 'id', shopCategories: 'id',
 };
 
@@ -203,7 +210,7 @@ function validateRecords(records, url, key) {
         || attribute.mappings.some((mapping) => !isRecord(mapping))));
     if (nested >= 0) throw new Error(`invalid business-object structure ${nested}: ${url}`);
   }
-  if (key === 'systemTables') {
+  if (key === 'dataTables') {
     const nested = records.findIndex((record) => !Array.isArray(record.fields)
       || record.fields.some((field) => !isRecord(field)));
     if (nested >= 0) throw new Error(`invalid table structure ${nested}: ${url}`);
@@ -411,8 +418,8 @@ export const core = {
   // a third file.
   businessObjects: () => DATA.businessObjects || [],
   businessObject: (id) => find(DATA.businessObjects, 'objectId', id),
-  systemTables: () => DATA.systemTables || [],
-  systemTable: (id) => find(DATA.systemTables, 'tableId', id),
+  dataTables: () => DATA.dataTables || [],
+  dataTable: (id) => find(DATA.dataTables, 'tableId', id),
   // Building process documentation: flat list, detail lookup by processId.
   processes: () => DATA.processes || [],
   processDoc: (id) => find(DATA.processes, 'processId', id),
