@@ -40,7 +40,15 @@
    slot carries mr-2). */
 .top-bar__right { display:flex; align-items:stretch; }
 .top-bar__right > .demo-chip { align-self:center; margin-right:var(--sp-2); }
-.top-bar-navigation { display:flex; height:100%; }
+/* Hidden below 1024, exactly as .meta-navigation--desktop is: at those widths
+   these links live in the drawer (.top-bar-navigation--mobile, built from the
+   same TOP_BAR_LINKS list), and the burger is the way to them. An icon-only copy
+   in the bar was a second, unlabelled route to a link the drawer already names,
+   and it spent the horizontal space «Alle Schweizer Bundesbehörden» needs beside
+   it (user decision, 2026-08-12). DELIBERATE DEVIATION: CD keeps its bar links
+   as icons below lg (top-bar-navigation.postcss:7-11) and treats the drawer copy
+   as an addition rather than a replacement. */
+.top-bar-navigation { display:none; height:100%; }
 .top-bar-navigation ul { list-style:none; display:flex; }
 .top-bar-navigation a { display:flex; align-items:center; height:100%; min-height:var(--target-min);
   padding-inline:var(--sp-1); color:var(--color-text-negative); text-decoration:none; transition:color var(--duration-fast); }
@@ -50,6 +58,7 @@
    (top-bar-navigation.postcss:7-11 `hidden lg:block`); between those widths the
    bar remains icon-only. */
 @media (min-width:1024px){
+  .top-bar-navigation { display:flex; }
   .top-bar-navigation a { padding-inline:var(--sp-2); }
   .top-bar-navigation a > span:not(.icon) { position:static; width:auto; height:auto; margin:0;
     overflow:visible; clip:auto; padding-left:var(--sp-4); padding-right:var(--sp-2); }
@@ -156,7 +165,15 @@
    CD intentionally hides the long office title below 480 (logo.postcss:76) and
    compensates with this tinted band under the top bar. Without it, the visible
    brand at 320/390 consists only of `BBL` + intranet pill. */
-.top-header__mobile-title { position:relative; top:calc(-1 * var(--sp-3)); overflow:hidden;
+/* NO negative offset. `top:calc(-1 * var(--sp-3))` drew this strip 12px higher
+   than its own box, i.e. INTO the bar above it — invisible while that bar was one
+   line with room to spare, but «Alle Schweizer Bundesbehörden» wraps to two lines
+   below 640 (CD's `w-min`, top-bar.postcss:136-138), and the strip then covered
+   the second line (measured: bar 0-50px, strip starting at 38px; user finding,
+   2026-08-12). It also left a 12px gap under itself, since relative offsets move
+   the paint and not the flow. In flow it sits flush under the bar at every
+   width. */
+.top-header__mobile-title { position:relative; overflow:hidden;
   background:var(--color-secondary-100); color:var(--color-text-muted);
   font-size:var(--fs-xs); line-height:1.4; transition:max-height var(--duration-slow) var(--ease-out); }
 .top-header__mobile-title .container { padding-block:var(--sp-2); }
