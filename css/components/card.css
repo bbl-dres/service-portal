@@ -68,8 +68,15 @@
 .card--clickable .card__link:focus-visible::after { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }   /* Standard offset; the card no longer clips */
 .card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):where(:hover,:focus-within) {
   box-shadow:var(--shadow-2xl); text-decoration:none; }
-.card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):where(:hover,:focus-within)::after {
-  border-color:var(--color-gray-50); }
+/* NO edge ring on hover (user decision, 2026-08-12). CD's card hover includes an
+   `::after` edge at opacity .9 (design-system-reference §Card); the portal
+   approximated it with a solid --color-gray-50 (#f9fafb). On a white page that
+   is invisible, which is why it went unnoticed — but half the card surfaces sit
+   on the tinted band (#f0f4f7, the alternating home-page sections), and there
+   the same near-white read as a stray white border on hover. Rather than pick a
+   third colour that works on both grounds, the hover state keeps the two signals
+   that carry it anyway: the shadow lifts and the title changes colour. The
+   ::after box stays for :active below. */
 .card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):where(:hover,:focus-within) .card__title {
   color:var(--color-primary-700); }
 .card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):active {
