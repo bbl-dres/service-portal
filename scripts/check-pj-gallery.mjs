@@ -1,4 +1,4 @@
-// Probe a construction project's hero image and fullscreen gallery.
+// Probe a construction project's hero mosaic, location map and fullscreen gallery.
 import { launch, openPage, APP_BASE, sleep } from './lib/cdp.mjs';
 
 const browser = await launch({ port: 9352 });
@@ -6,16 +6,18 @@ for (const id of ['PRJ-04', 'PRJ-02']) {
   const page = await openPage(browser, APP_BASE + `/app/projects/${id}`);
   await sleep(1400);
   console.log(id, await page.evaluate(`(() => {
-    const button = document.querySelector('.pj-hero__btn');
+    const tile = document.querySelector('#pj-mosaic [data-gallery]');
     return JSON.stringify({
-      button: !!button, aria: button?.getAttribute('aria-label'),
-      legend: document.querySelector('.pj-hero .legend')?.textContent.replace(/\\s+/g, ' ').trim(),
+      tile: !!tile, aria: tile?.getAttribute('aria-label'),
+      badge: document.querySelector('#pj-mosaic .pf-hero__badge')?.textContent.replace(/\\s+/g, ' ').trim(),
+      placeholder: !!document.querySelector('#pj-mosaic .pf-mosaic__cell--empty'),
+      map: !!document.querySelector('#pj-hero-map'),
       image: !!document.querySelector('.photo img'),
     });
   })()`));
   if (id === 'PRJ-04') {
     const gallery = await page.evaluate(`(async () => {
-      document.querySelector('.pj-hero__btn').click();
+      document.querySelector('#pj-mosaic [data-gallery]').click();
       await new Promise((resolve) => setTimeout(resolve, 500));
       const overlay = document.querySelector('.pf-lightbox');
       // Read the counter out of the OVERLAY, whose caption carries the image index. A

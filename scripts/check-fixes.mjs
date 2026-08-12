@@ -53,15 +53,19 @@ ok(r.buildingChecked === true, 'section 1.3 German building option matches state
 ok(r.hasIds === true, 'section 1.3 checkboxes have IDs for preserveFocus');
 await p.closeTarget();
 
-// Section 1.5: floor-plan hero focus ring.
-p = await openPage(b, APP_BASE + '/app/tenancies/MV-2026-001?tab=grundriss&floor=1080-4850-AG-2og');
+// Section 1.5: hero gallery-tile focus ring. The project hero is now the shared
+// mosaic (js/ui/hero-mosaic.js); its tiles carry .interactive-control, whose
+// focus-visible rule supplies the ring.
+p = await openPage(b, APP_BASE + '/app/projects/PRJ-01');
 await sleep(1800);
-r = await p.evaluate(`(() => {
+r = JSON.parse(await p.evaluate(`(() => {
   const s = [...document.styleSheets].flatMap(ss => { try { return [...ss.cssRules]; } catch { return []; } })
-    .find(x => x.selectorText === '.pj-hero__btn:focus-visible');
-  return s ? s.style.outline : 'no rule';
-})()`);
-ok(/--color-focus-ring/.test(r || ''), 'section 1.5 focus ring uses --color-focus-ring', r);
+    .find(x => x.selectorText === '.interactive-control:focus-visible');
+  return JSON.stringify({ outline: s ? s.style.outline : 'no rule',
+    tile: !!document.querySelector('#pj-mosaic [data-gallery].interactive-control') });
+})()`));
+ok(/--color-focus-ring/.test(r.outline || ''), 'section 1.5 focus ring uses --color-focus-ring', r.outline);
+ok(r.tile === true, 'section 1.5 hero mosaic tiles carry .interactive-control');
 await p.closeTarget();
 
 await b.close();

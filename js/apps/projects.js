@@ -4,8 +4,8 @@ import { initEstateMap } from '../map/buildings-map.js';
 import { createMapSlot } from '../map/map-slot.js';
 import { treeHTML, wireTree, restoreTreeSelection, syncTreeCounts, markTree } from '../ui/spatial-tree.js';
 import { openGallery, restoreGalleryFromQuery } from '../ui/gallery.js';
-import { galleryItemsFrom } from '../ui/hero-mosaic.js';
-import { formatCurrency } from '../format.js';
+import { heroMosaic, galleryItemsFrom, wireHeroMosaic } from '../ui/hero-mosaic.js';
+import { formatCurrency, formatNumber, formatArea } from '../format.js';
 import { countryName, businessEntityIdFromBblId, projectStatusLabel } from '../domain.js';
 import { APPLICATIONS } from '../crumbs.js';
 import * as links from '../links.js';
@@ -16,8 +16,6 @@ const pjMap = createMapSlot();
 const CRUMBS = APPLICATIONS;
 
 const PROJECT_STATUS_VARIANT = { 'geplant': 'info', 'aktiv': 'warning', 'sistiert': 'gray', 'abgeschlossen': 'success', 'abgebrochen': 'error' };
-const TRAFFIC_LIGHT_VARIANT = { 'gruen': 'success', 'gelb': 'warning', 'rot': 'error' };
-const TRAFFIC_LIGHT_LABEL = { 'gruen': 'Grün', 'gelb': 'Gelb', 'rot': 'Rot' };
 
 const nameCmp = (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de');
 const SORTS = {
@@ -41,7 +39,6 @@ export default async function render(ctx) {
 }
 
 function projectStatusBadge(C, core, status) { return C.badge(projectStatusLabel(core, status), PROJECT_STATUS_VARIANT[status] || 'gray'); }
-function trafficLightBadge(C, prefix, value) { return C.badge(`${prefix}: ${TRAFFIC_LIGHT_LABEL[value] || value}`, TRAFFIC_LIGHT_VARIANT[value] || 'gray'); }
 
 function overview(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
@@ -292,7 +289,8 @@ function detail(ctx, id) {
   if (!tabs.some(t => t.id === active)) active = 'overview';
 
   function overviewPanel() {
-    return `<h2 class="detail-section__title">Projektdaten</h2>
+    return `${p.teaser ? `<p class="lead mt-0">${C.escape(p.teaser)}</p>` : ''}
+    <h2 class="detail-section__title">Projektdaten</h2>
     <dl class="kv">
       <dt>Projektnummer</dt><dd>${C.escape(p.projectNumber)}</dd>
       <dt>Standort</dt><dd>${C.escape(p.siteName || '—')}${location ? `<br><span class="small muted">${C.escape(location)}</span>` : ''}</dd>
@@ -302,59 +300,55 @@ function detail(ctx, id) {
       <dt>Teilportfolio</dt><dd>${C.escape(p.subPortfolio || '—')}</dd>
       <dt>SIA-Phase</dt><dd>${C.escape(p.siaPhase)} · ${C.escape(p.siaPhaseLabel)}</dd>
       <dt>BIM-Level</dt><dd>${C.escape(p.bimLevel || '—')}</dd>
-      <dt>Start</dt><dd>${C.escape(p.start || '—')}</dd>
-      <dt>Ende</dt><dd>${C.escape(p.end || '—')}</dd>
-    </dl>
-    <p class="mt-6">${C.escape(p.teaser || '')}</p>`;
-  }
-  function metricsPanel() {
-    return `<div class="stats">
-      <div class="stat"><div class="stat__num">${C.escape(formatCurrency(p.plannedTotalCost))}</div><div class="stat__label">Geplante Gesamtkosten</div></div>
-      <div class="stat"><div class="stat__num">${C.escape(formatCurrency(p.bkp2))}</div><div class="stat__label">BKP 2 — Gebäude</div></div>
-    </div>
-    <dl class="kv mt-6">
-      <dt>Geplante Gesamtkosten</dt><dd>${C.escape(formatCurrency(p.plannedTotalCost))}</dd>
-      <dt>BKP 2 (Gebäude)</dt><dd>${C.escape(formatCurrency(p.bkp2))}</dd>
-      <dt>SIA-Phase</dt><dd>${C.escape(p.siaPhase)} · ${C.escape(p.siaPhaseLabel)}</dd>
       <dt>Laufzeit</dt><dd>${C.escape(p.start || '—')} – ${C.escape(p.end || '—')}</dd>
     </dl>`;
   }
-  function risksPanel() {
-    const row = (icon, prefix, value, desc) => `
-      <div class="box">
-        <div class="row gap-sm">${C.icon(icon, 'icon--lg')}<strong>${C.escape(prefix)}</strong> ${trafficLightBadge(C, prefix === 'Projektziele' ? 'Ziele' : 'Risiko', value)}</div>
-        <p class="small muted mt-2">${C.escape(desc)}</p>
-      </div>`;
-    const targetGoalDescription = {
-      'gruen': 'Projektziele (Termine, Kosten, Qualität) werden voraussichtlich erreicht.',
-      'gelb': 'Projektziele unter Beobachtung — einzelne Abweichungen möglich.',
-      'rot': 'Projektziele gefährdet — Massnahmen erforderlich.',
-    }[p['zielAmpel']] || 'Keine Bewertung verfügbar.';
-    const riskDescription = {
-      'gruen': 'Keine wesentlichen Risiken identifiziert.',
-      'gelb': 'Mittlere Risiken — werden aktiv überwacht.',
-      'rot': 'Hohe Risiken — eskaliert, Steuerung durch Projektleitung.',
-    }[p['risikoAmpel']] || 'Keine Bewertung verfügbar.';
-    return `<div class="grid grid--responsive-cols-2">
-      ${row('CheckmarkCircle', 'Projektziele', p['zielAmpel'], targetGoalDescription)}
-      ${row('WarningCircle', 'Risiken', p['risikoAmpel'], riskDescription)}
+  function metricsPanel() {
+    // Planned cost by BKP Hauptgruppe (labels from the shared reference list);
+    // the groups sum to plannedTotalCost by construction (build-project-report-data).
+    const bkpGroups = core.ref().bkpGroups || [];
+    const rows = bkpGroups
+      .map((g) => ({ id: g.id, label: g.label, cost: Number((p.bkp || {})[g.id]) || 0 }))
+      .filter((r) => r.cost > 0);
+    const total = rows.reduce((sum, r) => sum + r.cost, 0) || Number(p.plannedTotalCost) || 0;
+    const share = (cost) => `${formatNumber((cost / total) * 100, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+    const kennwert = p.gf ? Math.round((Number(p.bkp2) || 0) / p.gf) : 0;
+    const stat = (num, label) => `<div class="stat"><div class="stat__num">${C.escape(num)}</div><div class="stat__label">${C.escape(label)}</div></div>`;
+    return `<div class="stats">
+      ${stat(formatCurrency(p.plannedTotalCost), 'Geplante Gesamtkosten')}
+      ${stat(formatCurrency(p.bkp2), 'BKP 2 — Gebäude')}
+      ${p.gf ? stat(formatArea(p.gf), 'Geschossfläche GF (SIA 416)') : ''}
+      ${kennwert ? stat(formatCurrency(kennwert), 'Kennwert BKP 2 je m² GF') : ''}
     </div>
-    ${C.notificationHtml('Ampelbewertung gemäss BBL-Projektreporting (Demo-Daten): <strong>Grün</strong> = im Plan, <strong>Gelb</strong> = unter Beobachtung, <strong>Rot</strong> = kritisch.', 'info')}`;
+    ${rows.length ? `<h2 class="detail-section__title mt-6">Kosten nach BKP-Hauptgruppen</h2>
+    ${C.table({ zebra: true, caption: 'Kosten nach BKP-Hauptgruppen', columns: [
+      { key: 'id', label: 'BKP', render: (r) => `<strong>${C.escape(r.id)}</strong>` },
+      { key: 'label', label: 'Hauptgruppe' },
+      { key: 'cost', label: 'Kosten', align: 'right', render: (r) => C.escape(formatCurrency(r.cost)) },
+      { key: 'share', label: 'Anteil', align: 'right', render: (r) => C.escape(share(r.cost)) },
+    ], rows, foot: `<tr><th scope="row" colspan="2">Total geplante Gesamtkosten</th>
+      <td class="text-right"><strong>${C.escape(formatCurrency(total))}</strong></td>
+      <td class="text-right"><strong>100.0 %</strong></td></tr>` })}` : ''}`;
+  }
+  function risksPanel() {
+    const RISK_VARIANT = { 'tief': 'success', 'mittel': 'warning', 'hoch': 'error' };
+    const RISK_LABEL = { 'tief': 'Tief', 'mittel': 'Mittel', 'hoch': 'Hoch' };
+    return `<h2 class="detail-section__title">Meilensteine</h2>
+    ${C.table({ zebra: true, caption: 'Meilensteine', emptyText: 'Keine Meilensteine erfasst.', columns: [
+      { key: 'label', label: 'Meilenstein' },
+      { key: 'geplant', label: 'Termin geplant' },
+      { key: 'effektiv', label: 'Termin effektiv', render: (m) => C.escape(m.effektiv || '—') },
+      { key: 'status', label: 'Status', render: (m) => m.effektiv ? C.badge('Erledigt', 'success') : C.badge('Offen', 'gray') },
+    ], rows: p.meilensteine || [] })}
+    <h2 class="detail-section__title mt-6">Risikoübersicht</h2>
+    ${C.table({ zebra: true, caption: 'Risikoübersicht', emptyText: 'Keine Risiken erfasst.', columns: [
+      { key: 'id', label: 'Nr.' },
+      { key: 'thema', label: 'Risiko' },
+      { key: 'einstufung', label: 'Einstufung', render: (r) => C.badge(RISK_LABEL[r.einstufung] || r.einstufung, RISK_VARIANT[r.einstufung] || 'gray') },
+      { key: 'massnahme', label: 'Massnahme' },
+    ], rows: p.risiken || [] })}`;
   }
   const panels = { overview: overviewPanel, metrics: metricsPanel, risks: risksPanel };
-
-  function heroFigure() {
-    const image = C.photo({
-      src: p.photoSrc, color: 'var(--color-secondary-600)', alt: `${p.name}${p.siteName ? ' — ' + p.siteName : ''}`, w: 1600,
-
-      cls: 'pj-hero__photo',
-    });
-    if (!galleryItems.length) return `<div class="mt-4">${image}</div>`;
-    return `<div class="pj-hero">
-      <button type="button" class="pj-hero__btn interactive-control" data-gallery="0"
-        aria-label="Bildergalerie öffnen — ${galleryItems.length} Aufnahme${galleryItems.length === 1 ? '' : 'n'}">${image}</button>
-    </div>`;
-  }
 
   function draw() {
     mount.innerHTML = `
@@ -366,7 +360,8 @@ function detail(ctx, id) {
       <h1 tabindex="-1">${C.escape(p.name)}</h1>
       <p class="lead">${C.escape(p.projectNumber)}${p.siteName ? ' · ' + C.escape(p.siteName) : ''}${
         p.city ? ', ' + C.escape(p.city) : ''} · ${C.escape(projectStatusLabel(core, p.status))}</p>
-      ${heroFigure()}
+      ${heroMosaic(C, { id: 'pj-mosaic', items: galleryItems, mapId: 'pj-hero-map', lat: p.lat, lon: p.lon,
+        mapLabel: `Standort von ${p.name} auf der Karte` })}
       ${
 
 ''}
@@ -379,9 +374,17 @@ function detail(ctx, id) {
       syncHash: (tab) => history.replaceState(history.state, '', `#/app/projects/${p.projectId}${tab === 'overview' ? '' : '?tab=' + legacyValueByTab[tab]}`),
     });
 
-    mount.querySelector('.pj-hero__btn')?.addEventListener('click', () =>
-      openGallery(galleryItems, 0, C, { param: 'bild' }));
+    wireHeroMosaic(mount, openGallery, galleryItems, C);
     restoreGalleryFromQuery(query, galleryItems, C);
+
+    const mapEl = mount.querySelector('#pj-hero-map');
+    if (mapEl && Number.isFinite(p.lat) && Number.isFinite(p.lon)) {
+      pjMap.mount(mapEl, (node) => initEstateMap(node, [{ lat: p.lat, lon: p.lon, label: p.name, bblId: p.projectId,
+        sub: [p.projectNumber, location || p.siteName].filter(Boolean).join(' · ') }], null, p.projectId, { focusPopup: false }));
+    } else if (mapEl) {
+      mapEl.innerHTML = `<div class="empty empty--unavailable h-full">
+        <span>Für dieses Projekt sind keine Koordinaten erfasst.</span></div>`;
+    }
   }
   draw();
 }

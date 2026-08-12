@@ -197,14 +197,6 @@
 .pf-card__parcel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);
   background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
 .pf-card__chips { position:absolute; top:var(--sp-2); left:var(--sp-2); right:var(--sp-2); display:flex; flex-wrap:wrap; gap:var(--sp-1); }
-/* A construction-project hero image uses a visually neutral button so keyboard
-   users can open its gallery; only the focus treatment reveals the control. */
-.pj-hero { margin:var(--sp-4) 0 0; }
-/* Apply the shared mosaic/media-library ratio and radius to the image itself. */
-.pj-hero__photo { aspect-ratio:16/10; border-radius:var(--radius-lg); }
-.pj-hero__btn { display:block; width:100%; padding:0; border:0; background:none; cursor:zoom-in; border-radius:var(--radius-lg); }
-.pj-hero__btn:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-3); }
-.pj-hero .legend { margin-top:var(--sp-2); }
 .pf-card__country { background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); padding:var(--sp-0-5) var(--sp-2); border-radius:var(--radius-full); }
 /* Gallery-only compact rhythm: name, ID, address, then aligned category and area footer. */
 .pf-card .card__body { padding:var(--sp-5) var(--sp-6) var(--sp-4); gap:0; }
