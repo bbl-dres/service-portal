@@ -173,6 +173,10 @@ export async function launch({ port, webgl = false } = {}) {
 // script so session.js sees it during module initialization; a later login call
 // would otherwise require an avoidable second render.
 const DEMO_SESSION = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
+// The signed-out marker from js/core/session.js. Removing the key no longer
+// signs a page out: an untouched profile is the application's «first visit» and
+// now starts logged in, so a signed-out check must write the marker.
+const SIGNED_OUT = 'signed-out';
 
 /**
  * `login` controls the session with which the page starts:
@@ -182,9 +186,10 @@ const DEMO_SESSION = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' 
  * micro-apps are behind the router's mock sign-in gate; without a session each
  * app suite would exercise only that gate. Gate tests request `login: false`.
  *
- * The session lives in localStorage for the entire browser profile. Set or
- * remove it on every page creation so signed-out checks cannot inherit state
- * from a preceding check.
+ * The session lives in localStorage for the entire browser profile. Both
+ * branches WRITE on every page creation so no check inherits state from the
+ * preceding one — and because the application itself starts logged in, the
+ * suite pins the session deliberately rather than following that default.
  */
 export async function openPage(cdp, url, { login, skin } = {}) {
   const wantsLogin = login === undefined ? /#\/app\//.test(String(url)) : !!login;
@@ -199,7 +204,7 @@ export async function openPage(cdp, url, { login, skin } = {}) {
   await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
     source: `${wantsLogin
       ? `try { localStorage.setItem('bbl_session_v1', ${JSON.stringify(JSON.stringify(DEMO_SESSION))}); } catch (e) {}`
-      : `try { localStorage.removeItem('bbl_session_v1'); } catch (e) {}`}
+      : `try { localStorage.setItem('bbl_session_v1', ${JSON.stringify(JSON.stringify(SIGNED_OUT))}); } catch (e) {}`}
       ${requestedSkin ? `
       (() => {
         const applySkin = () => {

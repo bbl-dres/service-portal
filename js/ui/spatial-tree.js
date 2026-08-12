@@ -56,6 +56,12 @@ export function syncTreeCounts(root, visible, levelsOf, idOf) {
   const reachable = [...root.querySelectorAll('.pf-tree__node, .pf-tree__leaf, .pf-tree__sub')]
     .filter((button) => button.offsetParent !== null);
   if (!reachable.length) return;
+  // Row dividers are LEADING rules (css/sections/explorer.css), which leaves the
+  // column without a trailing line. CSS clears the rule on the first top-level
+  // row, but filtering can hide exactly that row — so mark whichever row is
+  // actually first now, otherwise a line hangs under the sidebar head.
+  root.querySelectorAll('.is-first-row').forEach((row) => row.classList.remove('is-first-row'));
+  reachable[0].classList.add('is-first-row');
   reachable.forEach((button) => { button.tabIndex = -1; });
   (reachable.find((button) => button.classList.contains('is-active')) || reachable[0]).tabIndex = 0;
 }
@@ -173,12 +179,15 @@ export function markTree(sidebar, activeNode) {
 
 // Click wiring: nodes expand/collapse and select their level, while leaves select
 // the object (`selection.id`). `onSelect(selection, node)` receives an object
-// keyed by `attrs`; this function maintains markTree and the clear-selection
-// button (`clearBtn`, hidden for an empty selection).
-export function wireTree(sidebar, { attrs = ['country', 'region', 'city', 'businessEntity'], onSelect, clearBtn } = {}) {
+// keyed by `attrs`; this function maintains markTree.
+//
+// There is deliberately no clear-selection control here any more. Each explorer
+// showed one in its sidebar head while the selection ALSO appeared as a
+// removable chip in the active-filter row — two controls for one job, in two
+// places. The chip row won: it is where every other filter is cleared.
+export function wireTree(sidebar, { attrs = ['country', 'region', 'city', 'businessEntity'], onSelect } = {}) {
   const select = (selection, node) => {
     markTree(sidebar, node);
-    if (clearBtn) clearBtn.hidden = !Object.keys(selection).length;
     onSelect(selection, node);
   };
   const ancestry = (button) => {
@@ -220,8 +229,6 @@ export function wireTree(sidebar, { attrs = ['country', 'region', 'city', 'busin
     for (const key of attrs) if (node.dataset[key] != null) selection[key] = node.dataset[key];
     select(selection, node);
   });
-  if (clearBtn) clearBtn.addEventListener('click', () => select({}, null));
-
   // --- Keyboard: the ARIA tree pattern ---------------------------------------
   // The whole tree is ONE tab stop with a roving tabindex. Before this, every row
   // was its own stop: reaching the map past the property inventory meant pressing
@@ -280,7 +287,7 @@ export function wireTree(sidebar, { attrs = ['country', 'region', 'city', 'busin
 // it. Filtering already happens through app state; this handles the visible tree
 // highlight. Compare via dataset rather than an attribute selector because SAP
 // IDs contain «/».
-export function restoreTreeSelection(sidebar, selection, { attrs = ['country', 'region', 'city', 'businessEntity'], clearBtn } = {}) {
+export function restoreTreeSelection(sidebar, selection, { attrs = ['country', 'region', 'city', 'businessEntity'] } = {}) {
   if (!selection || !Object.keys(selection).length) return null;
   // A sub-leaf is a handoff, never a stored selection, so only nodes and leaves
   // are restored here.
@@ -305,6 +312,5 @@ export function restoreTreeSelection(sidebar, selection, { attrs = ['country', '
     if (children) children.hidden = false;
   }
   markTree(sidebar, button);
-  if (clearBtn) clearBtn.hidden = false;
   return button;
 }

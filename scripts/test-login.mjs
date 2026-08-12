@@ -19,14 +19,20 @@ const LOGOUT = `(async () => {
   return 'logout-called';
 })()`;
 
+// A stored key is no longer the same as a session: logout writes the
+// «signed-out» marker there, because an ABSENT key means «first visit» and the
+// prototype starts logged in (js/core/session.js). Read the stored user.
 const CHECK_LOGGED_OUT = `(async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   let tries = 0;
   while (!document.querySelector('.login-gate__btn') && tries++ < 120) await wait(50);
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem('bbl_session_v1')); } catch (e) {}
   return {
     hasGate: !!document.querySelector('.login-gate__btn'),
     hasForm: !!document.querySelector('#booking-search'),
-    hasSession: !!localStorage.getItem('bbl_session_v1'),
+    hasUser: !!stored && typeof stored === 'object' && !!stored.name,
+    signedOutMarker: stored === 'signed-out',
     authLabel: document.querySelector('.meta-navigation--desktop .meta-navigation__auth')?.textContent.trim() || '',
   };
 })()`;
@@ -57,7 +63,7 @@ try {
   console.log('■ Room Booking [logged out → logged in]');
   page = await openPage(cdp, `${APP_BASE}/app/room-booking`, { login: false });
   const loggedOut = await page.evaluate(CHECK_LOGGED_OUT);
-  check(loggedOut.hasGate && !loggedOut.hasForm && !loggedOut.hasSession,
+  check(loggedOut.hasGate && !loggedOut.hasForm && !loggedOut.hasUser,
     'route genuinely starts logged out and shows the login gate');
 
   const login = await page.evaluate(LOGIN).catch((error) => 'login-eval-destroyed: ' + error.message);
@@ -70,8 +76,9 @@ try {
   const logout = await page.evaluate(LOGOUT).catch((error) => 'logout-eval-destroyed: ' + error.message);
   check(logout === 'logout-called', `logout fired (${logout})`);
   const loggedOutAgain = await page.evaluate(CHECK_LOGGED_OUT);
-  check(loggedOutAgain.hasGate && !loggedOutAgain.hasForm && !loggedOutAgain.hasSession,
-    'logout clears storage and restores the route gate without a listener API');
+  check(loggedOutAgain.hasGate && !loggedOutAgain.hasForm && !loggedOutAgain.hasUser
+    && loggedOutAgain.signedOutMarker,
+    'logout records the signed-out marker (so a reload cannot sign back in) and restores the route gate without a listener API');
   check(loggedOutAgain.authLabel === 'Anmelden', 'the header returns to the logged-out action');
 
   console.log('■ Cross-tab session synchronization');
@@ -83,7 +90,7 @@ try {
     .catch((error) => 'logout-eval-destroyed: ' + error.message);
   check(otherLogout === 'logout-called', `the second tab logs out (${otherLogout})`);
   const crossTabLogout = await page.evaluate(CHECK_LOGGED_OUT);
-  check(crossTabLogout.hasGate && !crossTabLogout.hasForm && !crossTabLogout.hasSession,
+  check(crossTabLogout.hasGate && !crossTabLogout.hasForm && !crossTabLogout.hasUser,
     'a logout in another tab restores the route gate');
   check(crossTabLogout.authLabel === 'Anmelden',
     'the first tab header follows the cross-tab logout');

@@ -103,7 +103,12 @@ export default async function render(ctx) {
       { key: 'region', icon: 'Map' },
       { key: 'city', icon: 'MapMarker' },
 
-      { key: 'businessEntity', attr: 'business-entity', icon: 'Folder', idText: (v) => `WE ${v}`,
+      // The number alone: the Folder icon and the level's position already say
+      // «Wirtschaftseinheit», so the «WE» prefix only cost key-column width.
+      // `word` keeps the level named for assistive technology, which would
+      // otherwise hear a bare number.
+      { key: 'businessEntity', attr: 'business-entity', icon: 'Folder',
+        idText: (v) => String(v), word: 'Wirtschaftseinheit',
         label: (v, es) => ((es.find((x) => x.kind === 'building') || es[0] || {}).name || ''),
         sort: (a, b) => (a < b ? -1 : a > b ? 1 : 0) },
     ],
@@ -266,8 +271,11 @@ export default async function render(ctx) {
     <div id="pf-activefilters"></div>
     <div class="pf-layout">
       <aside class="pf-sidebar" aria-label="Standorte">
-        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Standorte</h2>
-          <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pf-clear" hidden>${C.icon('Cancel', 'btn__icon icon--base')}<span class="btn__text">Auswahl zurücksetzen</span></button></div>
+        <!-- No «Auswahl zurücksetzen» here: the tree selection appears as a
+             removable chip in the active-filter row above the layout, which is
+             where every other filter is cleared. A second control for the same
+             job, in a different place, only split the mental model. -->
+        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Standorte</h2></div>
         ${treeMarkup}
       </aside>
       <div class="pf-main" id="pf-main"></div>
@@ -275,7 +283,6 @@ export default async function render(ctx) {
   </div>`;
 
   const sidebar = mount.querySelector('.pf-sidebar');
-  const clearBtn = mount.querySelector('#pf-clear');
 
   const setSelection = (sel, focus) => {
     state.sel = sel; state.focus = focus || null;
@@ -283,7 +290,7 @@ export default async function render(ctx) {
   };
 
   const clearSelection = () => {
-    markTree(sidebar, null); clearBtn.hidden = true;
+    markTree(sidebar, null);
     setSelection({}, null);
   };
 
@@ -305,11 +312,11 @@ export default async function render(ctx) {
   });
   ctx.onUnmount(cat.destroy);
 
-  wireTree(sidebar, { clearBtn, onSelect: (sel) => setSelection(sel, sel.id || null) });
+  wireTree(sidebar, { onSelect: (sel) => setSelection(sel, sel.id || null) });
 
   ctx.onUnmount(C.wireTableRows(mount.querySelector('#pf-main')));
 
-  restoreTreeSelection(sidebar, state.sel, { clearBtn });
+  restoreTreeSelection(sidebar, state.sel);
 
   renderMain();
 }

@@ -29,7 +29,13 @@
        instead made each level's divider start further right, and the ragged left
        ends read as broken rather than as hierarchy.
      · DIVIDERS separate rows. They are what makes the column scannable — the eye
-       gets a band per row and can compare counts down the column.
+       gets a band per row and can compare counts down the column. They are drawn
+       as a LEADING rule (border-top). Between two rows the line lands in the
+       same place either way, but the column then ends without one: a trailing
+       border under the last row read as a stray line hanging beneath the tree
+       rather than as a divider between two things. The mirror case cannot arise
+       from nesting — a parent's row always precedes its children, so only the
+       first TOP-LEVEL row can ever come first, and that one is cleared below.
      · A VERTICAL GUIDE appears only along the SELECTED branch, where the question
        «which parent does this belong to» is actually being asked. Everywhere else
        indentation and dividers carry the row on their own, so the column stays
@@ -50,9 +56,17 @@
 }
 .pf-tree__children { position:relative; list-style:none; margin:0; padding:0; }
 :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { position:relative; display:flex; align-items:center; gap:var(--sp-2); width:100%;
-  padding:var(--sp-1-5) var(--sp-2); border:0; border-bottom:var(--stroke-1) solid var(--tree-divider);
+  padding:var(--sp-1-5) var(--sp-2); border:0; border-top:var(--stroke-1) solid var(--tree-divider);
   border-radius:0; background:none; font:inherit; font-size:var(--fs-sm);
   color:var(--color-text); text-align:left; text-decoration:none; cursor:pointer; }
+/* The leading rule is kept but made invisible, so the first row stays exactly as
+   tall as every other one. `.is-first-row` is set by syncTreeCounts
+   (js/ui/spatial-tree.js): filtering can hide the first top-level branch, and
+   the row that then leads the column must not draw a line under the head either.
+   The static, unfiltered surfaces (metadata catalogue, process documentation,
+   shop navigation) carry no such class and rely on :first-child alone. */
+.pf-tree > .pf-tree__item:first-child > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub),
+.pf-tree :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub).is-first-row { border-top-color:transparent; }
 .pf-tree .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + 1 * var(--tree-indent)); }
 .pf-tree .pf-tree__children .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + 2 * var(--tree-indent)); }
 .pf-tree .pf-tree__children .pf-tree__children .pf-tree__children > .pf-tree__item > :is(.pf-tree__node,.pf-tree__leaf,.pf-tree__sub) { padding-left:calc(var(--tree-gutter) + 3 * var(--tree-indent)); }

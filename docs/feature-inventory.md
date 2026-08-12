@@ -303,18 +303,19 @@ Hash-Router: NAV-Definition, Seiten-/App-Registry mit dynamischem Import, Altlas
 
 ## js/session.js
 
-Mock-Session für AGOV/FedLogin: Demo-Nutzerin in localStorage, kein Rollen-/Rechtekonzept; Inhalte bleiben abgemeldet sichtbar, nur das Starten eines Vorgangs verlangt Anmeldung.
+Mock-Session für AGOV/FedLogin: Demo-Nutzerin in localStorage, kein Rollen-/Rechtekonzept; Inhalte bleiben abgemeldet sichtbar, nur das Starten eines Vorgangs verlangt Anmeldung. Der Prototyp startet **angemeldet** (Rückmeldung aus Tests: der abgemeldete Start wirkte wie ein defektes Portal statt wie eine Demonstration des Anmeldeflusses).
 
 **Funktionen**
 
-- Demo-User «Andrea Muster, Bundesamt für Umwelt BAFU» — session.js:11
-- Persistenz in localStorage-Schlüssel bbl_session_v1 (via storage.js readJSON/writeJSON/remove) — session.js:8-10, 19-21
-- Validierung isUser: nur Objekt mit nicht-leerem name gilt; korrupter Bestand → abgemeldet starten (M20) — session.js:13-16
+- Demo-User «Andrea Muster, Bundesamt für Umwelt BAFU» — session.js:15
+- Persistenz in localStorage-Schlüssel bbl_session_v1 (via storage.js readJSONResult/writeJSON) — session.js:12-16
+- Abmelde-Marke SIGNED_OUT ('signed-out') statt Schlüssel löschen: ohne gespeicherte Spur hiesse «nichts gespeichert» beim nächsten Laden wieder «Erstbesuch», und die Abmeldung hielte nur bis zum Neuladen — session.js:18-23
+- Validierung isUser: nur Objekt mit nicht-leerem name gilt; korrupter Bestand → vollständiger Demo-User statt halber Identität (M20) — session.js:25-40
 - API: user(), isLoggedIn(), login() (Stub ohne echten Redirect), logout()
 
 **Zustände**
 
-- Angemeldet (user gesetzt) vs. abgemeldet (null); Startzustand aus localStorage, sonst abgemeldet
+- Angemeldet (user gesetzt) vs. abgemeldet (null); Startzustand aus localStorage: gespeicherter User → dieser, Marke 'signed-out' → abgemeldet, sonst (Erstbesuch, geleertes Profil, unlesbarer Speicher) → angemeldet als Demo-User
 - Bewusst KEIN Rollen-/Berechtigungskonzept — Login zeigt nur den Flow «Vorgang starten» — session.js:1-6
 
 **Interaktionen**
@@ -1379,7 +1380,7 @@ Liegenschaften Inventar — map-first Explorer über Gebäude UND Grundstücke a
 - Kartenzustand: keine Blätterung, nur Anzahl; WebGL-Karte wird bei jedem renderMain und beim Routenverlassen abgebaut (pfMap.free, ctx.onUnmount portfolio.js:62)
 - Seitenklemme: state.page > pages wird auf die letzte Seite gesetzt (portfolio.js:257)
 - Filterpanel offen/zu mit Zähler-Badge; Checkbox-Zustand aus state.filters vorbelegt (selected, portfolio.js:302-311)
-- Baum: Zweiton-Markierung is-active/is-path, «Auswahl zurücksetzen»-Knopf hidden/sichtbar; Auswahl aus URL wird aufgeklappt+markiert (restoreTreeSelection portfolio.js:389)
+- Baum: Zweiton-Markierung is-active/is-path; Auswahl aus URL wird aufgeklappt+markiert (restoreTreeSelection portfolio.js:389)
 - Ansichtsknöpfe aria-pressed synchron zum Zustand (portfolio.js:267)
 - Nicht-gefunden-Zustand für unbekannte id mit Brotkrumen und Rückweg
 - Detail: unbekannter ?tab fällt still auf Übersicht zurück (Gebäude UND Grundstück)
@@ -1392,7 +1393,7 @@ Liegenschaften Inventar — map-first Explorer über Gebäude UND Grundstücke a
 - Suche mit Tipp-Verzögerung (C.wireCatalogueState), Formular pf-search
 - Sortier-Select, Ansichtsumschaltung Galerie/Liste/Karte
 - Filterpanel auf/zu, Checkbox-Facetten, Panel-Reset, Aktiv-Pille einzeln entfernen, «Alle Filter zurücksetzen» (räumt AUCH Baum-Auswahl ab, onReset portfolio.js:376)
-- Baum: Knoten auf-/zuklappen, Ebene/Blatt auswählen (Blatt fokussiert Karten-Popup), «Auswahl zurücksetzen»-Knopf
+- Baum: Knoten auf-/zuklappen, Ebene/Blatt auswählen (Blatt fokussiert Karten-Popup); Abwählen über die Auswahl-Pille in der Aktivfilter-Zeile, KEIN zweiter Knopf im Sidebar-Kopf
 - Leerzustands-Knopf pf-empty-reset (je Render neu gebunden, portfolio.js:252)
 - Blättern: Seitenknöpfe + Seitennummern-Eingabe (wirePagination)
 - Listenzeile klickbar (C.wireTableRows, EINMAL auf #pf-main delegiert, portfolio.js:384); Tastatur/SR über den echten Link
@@ -1520,7 +1521,7 @@ Bauprojekte / EPPM — map-first Explorer nach dem Muster des Inventars, aber ei
 **Interaktionen**
 
 - Suche mit Tipp-Verzögerung, Sortierung, Ansichtswechsel, Filter-Checkboxen, Panel-Reset, Pillen entfernen/alle zurücksetzen (Reset räumt auch Baum ab, onReset projects.js:317)
-- Baum auf/zu, Ebenen-/Blatt-Auswahl (Blatt fokussiert Karte), «Auswahl zurücksetzen»
+- Baum auf/zu, Ebenen-/Blatt-Auswahl (Blatt fokussiert Karte); Abwählen über die Auswahl-Pille in der Aktivfilter-Zeile
 - Leerzustands-Knopf pj-empty-reset (delegiert)
 - Blättern (Knöpfe + Seitenfeld pj-page)
 - Listenzeile klickbar (wireTableRows auf stabilem #pj-main, projects.js:330)
@@ -1631,7 +1632,7 @@ Mietende — Sicht der mietenden Verwaltungseinheit auf ihre Flächen; Einheit i
 **Interaktionen**
 
 - Suche mit Tipp-Verzögerung, Sortierung, Ansichtswechsel, VE-Checkboxen, Panel-Reset, Pillen entfernen/alle zurücksetzen (Reset räumt auch Baum ab)
-- Baum auf/zu, Auswahl, «Auswahl zurücksetzen»; Blätterung (Knöpfe + Seitenfeld mt-page); Listenzeilen-Klick
+- Baum auf/zu, Auswahl; Abwählen über die Auswahl-Pille in der Aktivfilter-Zeile; Blätterung (Knöpfe + Seitenfeld mt-page); Listenzeilen-Klick
 - Karten-Popups + Cluster
 - Detail: Reiterwechsel (wireTabs, ?tab per syncHash); Mosaik-Kacheln → Vollbildgalerie (?bild)
 - Geschosstabelle: Zeilen-/Link-Klick öffnet Betrachter (?floor=); eigene Suche/Sortierung

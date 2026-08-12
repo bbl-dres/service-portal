@@ -1,12 +1,12 @@
 {
-  "generated": "2026-08-06T09:44:34.876Z",
+  "generated": "2026-08-12T09:06:31.020Z",
   "artifactMetadata": {
     "status": "route-inventory-snapshot",
-    "routeStates": 58,
-    "viewportRenders": 58,
+    "routeStates": 70,
+    "viewportRenders": 70,
     "routeInventorySource": "scripts/review-routes.mjs",
     "missingRoutes": [],
-    "note": "This newer accessibility snapshot includes Room Booking; the preserved render audit and paired screenshot snapshot contain the preceding 57-state inventory."
+    "note": "Generated from the current review-routes.mjs inventory."
   },
   "method": "720 CSS px at deviceScaleFactor 2 (1440px/200% reflow proxy), keyboard Tab, Chromium accessibility tree",
   "routes": [
@@ -50,6 +50,7 @@
     "/app/projects/PRJ-01",
     "/app/tenancies",
     "/app/tenancies/MV-2026-001",
+    "/app/tenancies/MV-2026-001?tab=grundriss&floor=1080-4850-AG-2og",
     "/app/metadata-catalog",
     "/app/metadata-catalog?id=gebaeude",
     "/app/metadata-catalog?table=gis-immo-building",
@@ -65,12 +66,23 @@
     "/app/fault-report",
     "/app/building-create",
     "/app/workspace",
+    "/app/workspace?id=1080%2F6650%2FAA",
+    "/app/workspace?id=1080%2F6650%2FAA&floor=1080-6650-AA-eg",
+    "/app/workspace?id=1080%2F6210%2FAA&floor=1080-6210-AA-eg",
+    "/app/floorplan-editor",
+    "/app/floorplan-editor?building=1080%2F6650%2FAA",
+    "/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og",
+    "/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og&view=3d",
+    "/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og&view=walk",
+    "/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og&edit=1",
+    "/app/floorplan-editor?building=1080%2F6650%2FAA&floor=1080-6650-AA-2og&selected=room%3A1080-6650-AA-2og-05&edit=1&library=modules",
+    "/app/plan-check",
     "/app/room-booking",
     "/app/transaction",
     "/app/api-docs"
   ],
   "totals": {
-    "routes": 58,
+    "routes": 70,
     "overflow": 0,
     "positiveTabindex": 0,
     "brokenReferences": 0,

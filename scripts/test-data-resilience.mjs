@@ -165,16 +165,26 @@ check(!!dashData.query({ dataset: 'sample', orderBy: {} }).error,
 
 console.log('■ Session persistence');
 const SESSION_KEY = 'bbl_session_v1';
+// Import with an untouched profile: that is the application's first visit, and
+// it must produce the complete demo user rather than a logged-out shell.
+values.delete(SESSION_KEY);
 const { session } = await import('../js/core/session.js');
+check(session.isLoggedIn() && session.user()?.name === 'Andrea Muster',
+  'an untouched profile starts logged in as the demo user');
+// Logging out must leave a trace, otherwise the default above signs the user
+// back in on the next load and the logged-out state is unreachable.
+check(session.logout() === true && !session.isLoggedIn()
+  && values.get(SESSION_KEY) === JSON.stringify('signed-out'),
+  'logout records the signed-out marker instead of removing the key');
 failSet.add(SESSION_KEY);
 check(session.login() === false && !session.isLoggedIn(),
   'failed login persistence does not mutate the in-memory session');
 failSet.delete(SESSION_KEY);
 check(!!session.login() && session.isLoggedIn(), 'a persisted login succeeds');
-failRemove.add(SESSION_KEY);
+failSet.add(SESSION_KEY);
 check(session.logout() === false && session.isLoggedIn(),
   'failed logout persistence retains the in-memory user');
-failRemove.delete(SESSION_KEY);
+failSet.delete(SESSION_KEY);
 check(session.logout() === true && !session.isLoggedIn(), 'a persisted logout succeeds');
 
 console.log('■ Own-property favorite maps');

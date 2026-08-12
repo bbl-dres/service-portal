@@ -22,10 +22,18 @@ checkout location. Explicit paths supplied on the command line, such as
 `fetch-swisstopo.mjs --datei/--aus`, remain relative to the caller by design.
 
 **Sessions.** `openPage(cdp, url, { login })` decides which session the page
-STARTS with, by writing (or clearing) `bbl_session_v1` before the first
-application script runs. Left unset it is derived from the URL: routes under
-`#/app/…` start **logged in**, because the specialist applications sit behind a
-login gate (`js/routing/router.js`). Two cases must say so explicitly:
+STARTS with, by writing `bbl_session_v1` before the first application script
+runs — either the demo user or the `"signed-out"` marker. Note that CLEARING the
+key no longer signs a page out: the application treats an untouched profile as a
+first visit and starts **logged in** (`js/core/session.js`), so only the marker
+produces a signed-out page. The suite pins the session on every page rather than
+following that default, so a check never inherits the preceding one's state.
+
+Left unset, `login` is derived from the URL: routes under `#/app/…` start
+**logged in**, because the specialist applications sit behind a login gate
+(`js/routing/router.js`); everything else starts signed out, which is a
+deliberate divergence from the product default so the public pages are exercised
+in their anonymous form. Two cases must say so explicitly:
 
 - checking the **gate itself** → `{ login: false }` (see `test-tabs.mjs`);
 - a gated route **outside** `#/app/…`, i.e. `#/my-cases` → `{ login: true }`.
@@ -81,7 +89,7 @@ inventory is `scripts/test-*.mjs`.
 | Script | What it checks |
 |---|---|
 | `test-tabs.mjs` | D1 tab component (`C.tabBar`/`C.tabPanels`/`C.wireTabs`) across portfolio · projects · dataportal: panel toggling, `aria-selected`, roving `tabindex`, focus-follows-active, keyboard (Arrow/Home/End), hash sync. Plus the logged-out gates for the action apps. |
-| `test-login.mjs` | Opens Room Booking with an explicitly empty session, verifies login persists and replaces the gate, then verifies logout clears storage and restores both the route gate and header without a subscription API. |
+| `test-login.mjs` | Opens Room Booking in an explicitly signed-out session, verifies login persists and replaces the gate, then verifies logout stores the `"signed-out"` marker — so a reload cannot sign the user back in via the logged-in default — and restores both the route gate and header without a subscription API. |
 | `test-workspace.mjs` | Workspace portal: seven canonical objects, plan availability and overdue order state, shared adaptive CD hero/cards (one-image solo layout and five-image Tenancies parity), read-only floor preview URL/room/color/print/fullscreen behavior, safe Plan-Editor/Planprüfung new-window handoffs with building/floor context, contextual process launches in new tabs, and desktop/mobile containment. |
 | `test-floorplan-editor.mjs` | Standalone Plan-Editor: the building detail (breadcrumb, key-figure strip, Übersicht/Grundrisse/Ausstattungen registers, card previews versus fact-only table, module standard and per-floor equipment, shared action and contact cards), both landing views (map-first portfolio as the default — shared catalogue bar and active-filter pills, location tree down to the floors of a building, marker popup carrying object detail and both handoffs, statistics panel scoped to the filters; work queue as the shared compact table with attribute-layer tabs, severity marks and empty-layer explanation), exact Workspace deep link, default uncolored/flat room tree and attribute-driven aggregation, independent disclosures, top-layer color menu hit-testing, CD-style menu keyboard patterns, edit-specific tool order, on-demand product/module library, structural menu and geometry lock, three-pane shell, canonical rooms and deterministic illustrative furniture, direct primary/middle-button and touch panning with tap selection, continuous canvas-only wheel zoom, two-touch pinch-to-one-touch handoff, reversible responsive 2D camera sizing, persistent touch-sized 2D/3D/walk navigation with roving keyboard focus and view-specific actions, retained Three.js orbit/walk controls with camera preservation, dirty-route blocking, focus-safe discard dialogs, selection/URL state, overlap-safe product and structural room editing, CSS-pixel edit jitter and pointer-cancel rollback, inspector scroll preservation, module assignment, undo/redo, local save/publish/history/reload, core-data isolation, mutually exclusive 320px drawers with canvas-focused edit restoration, and editor-navigation restoration. |
 | `test-floorplan-editor-three-controls.mjs` | Focused real-WebGL Three.js camera controls: click-jitter threshold, floor-plane pan direction, zoom-to-cursor, two-finger pinch, deterministic camera diagnostics, responsive aspect/fit preservation, and runtime health. |

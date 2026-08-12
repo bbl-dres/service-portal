@@ -82,14 +82,19 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
       let mc2 = 0; while (!document.querySelector('.pf-map canvas') && mc2++ < 100) await s(100);
       r.countCH = count();
       r.mapCanvas2 = !!document.querySelector('.pf-map canvas');
-      r.clearShown = !document.querySelector('#pf-clear').hidden;
+      // The sidebar head carries no clear-selection control any more; the tree
+      // selection is cleared through its chip in the active-filter row.
+      r.headButtons = document.querySelectorAll('.pf-sidebar__head button').length;
+      r.selPill = [...document.querySelectorAll('#pf-activefilters .active-filter')]
+        .some(p => /^Auswahl:/.test(p.textContent.trim()));
       r.mapErrs = (window.__mapErrs || []).filter(e => /Unimplemented|glyph|type: 4/i.test(e));
       return r;
     })()`);
     console.log('■ Shell');
     console.log('   h1:', JSON.stringify(R.h1), '| countries:', R.countries, '| count:', JSON.stringify(R.count0), '| map:', R.mapCanvas);
     console.log('   Gallery cards:', R.galCards, `(${R.galPag}) | list rows:`, R.listRows, '| search "Botschaft":', R.countSearch);
-    console.log('   CH tree count:', R.chTreeCount, '| after CH click:', R.countCH, '| selection reset visible:', R.clearShown);
+    console.log('   CH tree count:', R.chTreeCount, '| after CH click:', R.countCH,
+      '| head buttons:', R.headButtons, '| selection chip:', R.selPill);
     check(/Liegenschaften Inventar/.test(R.h1 || ''), 'page header');
     check(R.countries === COUNTRY_COUNT, `${COUNTRY_COUNT} countries appear in the tree (${R.countries})`);
     check(new RegExp(`^${BUILDING_COUNT} von ${TOTAL} `).test(R.count0), `The default count contains ${BUILDING_COUNT} of ${TOTAL} records (${R.count0})`);
@@ -108,7 +113,8 @@ console.log(`   (from data/: ${BUILDINGS.length} buildings + ${PARCELS.length} p
     check(parseInt(R.countSearch, 10) < TOTAL && parseInt(R.countSearch, 10) > 0, `search filters (${R.countSearch})`);
     check(R.chTreeCount === String(CH_BUILDINGS) && new RegExp(`^${CH_BUILDINGS} `).test(R.countCH), `The CH node filters to ${CH_BUILDINGS} buildings (${R.chTreeCount} → ${R.countCH})`);
     check(R.mapCanvas2, 'map re-renders after tree filter');
-    check(R.clearShown, 'selection shows the reset control');
+    check(R.headButtons === 0 && R.selPill,
+      'the selection is cleared through its active-filter chip, not a second control in the sidebar head');
     check(R.mapErrs.length === 0, `no glyph/tile parse errors${R.mapErrs[0] ? ' — ' + R.mapErrs[0] : ''}`);
     const shot = await cdp.send('Page.captureScreenshot', { format: 'png' }, p.sessionId);
     writeFileSync(process.env.SHOT || join(tmpdir(), 'bbl-portfolio.png'), Buffer.from(shot.data, 'base64'));

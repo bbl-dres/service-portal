@@ -82,16 +82,16 @@ o = JSON.parse(await p.evaluate(`(async () => {
   await new Promise(r => setTimeout(r, 350));
   return JSON.stringify({ count: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
     chip: document.querySelector('.active-filter')?.textContent.trim(),
-    clearVisible: !document.querySelector('#mt-clear')?.hidden });
+    headButtons: document.querySelectorAll('.pf-sidebar__head button').length });
 })()`));
 check(/ von 18 /.test(o.count || '') && !/18 von 18/.test(o.count || ''), 'Canton BE narrows the result set', o.count);
 check(o.chip === 'BE', 'The tree selection appears as a chip', o.chip);
-check(o.clearVisible, 'The clear-selection control becomes visible');
+check(o.headButtons === 0, 'The sidebar head carries no second clear-selection control');
 await clean(p, 'Tree');
 
 head('Map view');
 o = JSON.parse(await p.evaluate(`(async () => {
-  document.querySelector('#mt-clear').click();
+  document.querySelector('#mt-activefilters .active-filter').click();   // clear the selection via its chip
   await new Promise(r => setTimeout(r, 250));
   document.querySelector('.view-switch__btn[data-view=map]').click();
   const deadline = performance.now() + 10000;

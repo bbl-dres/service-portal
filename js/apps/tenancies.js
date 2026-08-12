@@ -254,9 +254,11 @@ function overview(ctx) {
     <div id="mt-activefilters"></div>
     <div class="pf-layout">
       <aside class="pf-sidebar" aria-label="Struktur der Mietverhältnisse">
+        <!-- The tree selection is cleared through its chip in the active-filter
+             row above, not through a second control in the head (as in
+             portfolio.js). -->
         <div class="pf-sidebar__head">
           <h2 class="pf-sidebar__title">Standorte</h2>
-          <button type="button" class="btn btn--bare btn--sm" id="mt-clear" hidden>${C.icon('Cancel', 'icon--base')}<span class="btn__text">Auswahl zurücksetzen</span></button>
         </div>
         ${treeMarkup}
       </aside>
@@ -264,13 +266,11 @@ function overview(ctx) {
     </div>
   </div>`;
 
-  const clearBtn = mount.querySelector('#mt-clear');
   const sidebar = mount.querySelector('.pf-sidebar');
   const qEl = mount.querySelector('#mt-q');
 
   const clearSelection = () => {
     markTree(sidebar, null);
-    clearBtn.hidden = true;
     state.sel = {};
     state.page = 1;
     renderMain();
@@ -287,11 +287,11 @@ function overview(ctx) {
   onUnmount(cat.destroy);
 
   wireTree(sidebar, {
-    attrs: ['country', 'region', 'city'], clearBtn,
+    attrs: ['country', 'region', 'city'],
     onSelect: (sel) => { state.sel = sel; state.page = 1; renderMain(); },
   });
 
-  restoreTreeSelection(sidebar, state.sel, { attrs: ['country', 'region', 'city'], clearBtn });
+  restoreTreeSelection(sidebar, state.sel, { attrs: ['country', 'region', 'city'] });
 
   C.wireTableRows(mount.querySelector('#mt-main'));
 

@@ -337,8 +337,10 @@ function catalogue(ctx, objects) {
     <div id="workspace-activefilters"></div>
     <div class="pf-layout">
       <aside class="pf-sidebar workspace-sidebar" aria-label="Struktur der Workspace-Objekte">
-        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Standorte</h2>
-          <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="workspace-clear" hidden>${C.icon('Cancel', 'btn__icon icon--base')}<span class="btn__text">Auswahl zurücksetzen</span></button></div>
+        <!-- The tree selection is cleared through its chip in the active-filter
+             row above, not through a second control in the head (as in
+             portfolio.js). -->
+        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Standorte</h2></div>
         ${treeMarkup}
       </aside>
       <div class="pf-main" id="workspace-main"></div>
@@ -346,11 +348,9 @@ function catalogue(ctx, objects) {
   </div>`;
 
   const sidebar = mount.querySelector('.workspace-sidebar');
-  const clearButton = mount.querySelector('#workspace-clear');
   const searchInput = mount.querySelector('#workspace-q');
   const clearSelection = () => {
     markTree(sidebar, null);
-    clearButton.hidden = true;
     state.sel = {};
     state.page = 1;
     renderMain();
@@ -366,10 +366,10 @@ function catalogue(ctx, objects) {
   onUnmount(catalogueWire.destroy);
 
   wireTree(sidebar, {
-    attrs: ['country', 'region', 'city'], clearBtn: clearButton,
+    attrs: ['country', 'region', 'city'],
     onSelect: (selection) => { state.sel = selection; state.page = 1; renderMain(); },
   });
-  restoreTreeSelection(sidebar, state.sel, { attrs: ['country', 'region', 'city'], clearBtn: clearButton });
+  restoreTreeSelection(sidebar, state.sel, { attrs: ['country', 'region', 'city'] });
   onUnmount(C.wireTableRows(mount.querySelector('#workspace-main')));
   mount.querySelector('#workspace-main').addEventListener('click', (event) => {
     if (!event.target.closest('#workspace-empty-reset')) return;

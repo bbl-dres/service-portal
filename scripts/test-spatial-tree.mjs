@@ -51,7 +51,24 @@ const READ = `(() => {
     tabStops: rows.filter((row) => row.tabIndex === 0).length,
     rows: rows.length,
     padding: [padAt(0), padAt(1), padAt(2)],
-    divider: first ? getComputedStyle(first).borderBottomWidth : '',
+    // Dividers are LEADING rules, so a row is separated from the one above by
+    // its own border-top, the column never ends in a stray line, and the first
+    // row keeps the border for equal height but paints it transparent.
+    divider: (() => {
+      // Measured on the second row in DOM ORDER, not the second visible one: a
+      // tree that opens fully collapsed (workspace) shows a single row, and the
+      // rule belongs to the element either way.
+      const second = [...tree.querySelectorAll(ROW)][1];
+      const between = second ? getComputedStyle(second) : null;
+      const last = rows.length ? getComputedStyle(rows[rows.length - 1]) : null;
+      const head = first ? getComputedStyle(first) : null;
+      return {
+        between: between ? between.borderTopWidth : '',
+        betweenPainted: between ? between.borderTopColor !== 'rgba(0, 0, 0, 0)' : false,
+        trailing: last ? last.borderBottomWidth : '',
+        leadingPainted: head ? head.borderTopColor !== 'rgba(0, 0, 0, 0)' : false,
+      };
+    })(),
     counts,
     countsNumeric: counts.every((value) => value !== '' && Number.isFinite(Number(value))),
     parens: (() => {
@@ -84,7 +101,14 @@ try {
     const grows = steps.every((value, index) => index === 0 || value > steps[index - 1]);
     check(steps.length >= 2 && grows, 'indents each level further than its parent',
       steps.join(' → ') + 'px');
-    check(tree.divider === '1px', 'separates every row with a divider', tree.divider);
+    check(tree.divider.between === '1px' && tree.divider.betweenPainted,
+      'separates every row with a divider',
+      `${tree.divider.between}, painted: ${tree.divider.betweenPainted}`);
+    // The divider is a divider, not an underline: nothing hangs below the last
+    // row, and nothing sits above the first one under the sidebar head.
+    check(tree.divider.trailing === '0px' && !tree.divider.leadingPainted,
+      'draws no rule below the last row or above the first',
+      `trailing ${tree.divider.trailing}, leading painted: ${tree.divider.leadingPainted}`);
     // The parentheses are CSS, so the element's text stays the bare number that
     // scripts/check-tree.mjs and the app suites parse.
     check(tree.countsNumeric && /\(/.test(tree.parens) && /\)/.test(tree.parens),

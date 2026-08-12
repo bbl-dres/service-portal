@@ -89,7 +89,10 @@ function overview(ctx) {
       { key: 'country', icon: 'Globe', label: (k) => countryName(k) },
       { key: 'region', icon: 'Map' },
       { key: 'city', icon: 'MapMarker' },
-      { key: 'businessEntity', attr: 'business-entity', icon: 'Building', idText: (k) => `WE ${k}`,
+      // Bare number plus the level's own icon; «WE» stays for assistive
+      // technology through `word` (as in portfolio.js).
+      { key: 'businessEntity', attr: 'business-entity', icon: 'Building',
+        idText: (k) => String(k), word: 'Wirtschaftseinheit',
         label: (k, es) => (es[0] || {}).buildingName || '',
         sort: (a, b) => String(a).localeCompare(String(b)) },
     ],
@@ -218,8 +221,10 @@ function overview(ctx) {
     <div id="pj-activefilters"></div>
     <div class="pf-layout">
       <aside class="pf-sidebar" aria-label="Projektstruktur">
-        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Projekte</h2>
-          <button type="button" class="btn btn--bare btn--sm btn--icon-left" id="pj-clear" hidden>${C.icon('Cancel', 'btn__icon')}<span class="btn__text">Auswahl zurücksetzen</span></button></div>
+        <!-- The tree selection is cleared through its chip in the active-filter
+             row above, not through a second control in the head (as in
+             portfolio.js). -->
+        <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Projekte</h2></div>
         ${tree}
       </aside>
       <div class="pf-main" id="pj-main"></div>
@@ -227,11 +232,10 @@ function overview(ctx) {
   </div>`;
 
   const sidebar = mount.querySelector('.pf-sidebar');
-  const clearBtn = mount.querySelector('#pj-clear');
   const onTreeSelect = (sel) => { state.sel = sel; state.focus = sel.id || null; state.page = 1; renderMain(); };
-  wireTree(sidebar, { onSelect: onTreeSelect, clearBtn });
+  wireTree(sidebar, { onSelect: onTreeSelect });
 
-  const resetSelection = () => { markTree(sidebar, null); clearBtn.hidden = true; onTreeSelect({}); };
+  const resetSelection = () => { markTree(sidebar, null); onTreeSelect({}); };
 
   const qEl = mount.querySelector('#pj-q');
   const cat = C.wireCatalogueState(mount, {
@@ -253,7 +257,7 @@ function overview(ctx) {
 
   C.wireTableRows(mount.querySelector('#pj-main'));
 
-  if (Object.keys(state.sel).length && !restoreTreeSelection(sidebar, state.sel, { clearBtn })) {
+  if (Object.keys(state.sel).length && !restoreTreeSelection(sidebar, state.sel)) {
     state.sel = {}; state.focus = null;
   }
 
