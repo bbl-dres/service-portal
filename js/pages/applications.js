@@ -90,7 +90,6 @@ export default async function render(ctx) {
     ...areas.map(x => ({ label: areaLabel(x), href: hash({ area: areas.filter(y => y !== x) }) })),
     ...audiences.map(x => ({ label: audienceLabel(core, x), href: hash({ audience: audiences.filter(y => y !== x) }) })),
   ];
-  const filterBar = C.activeFilters({ filters: active, resetHref: '#/applications' });
 
   const card = (a) => C.card({
     title: a.name,
@@ -135,50 +134,34 @@ export default async function render(ctx) {
     rows,
   });
 
-  mount.innerHTML = `
-  <div class="container section">
-    ${C.pageHeader({
-      title: 'Anwendungen',
-      lead: 'Alle Anwendungen des BBL an einem Ort — von den Fachanwendungen für Bauten über Logistik bis zu den zentralen Systemen der Bundesverwaltung.',
-    })}
-    ${C.catalogueBar({
-      formId: 'app-search', inputId: 'aq', searchLabel: 'Anwendung suchen', placeholder: 'Anwendung suchen…', q: rawQ,
-      countId: 'app-count', count: `<strong>${apps.length}</strong> von ${all.length} Anwendungen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
-      sort: { id: 'app-sort', value: sortKey, options: SORT_OPTS },
-      filterId: 'app-filter', filterLabel: 'Filter', filterCount: areas.length + audiences.length + (saved ? 1 : 0),
-      panelId: 'app-filters', panel: `
-        ${/* Favourites first: it is the only filter about the READER rather than
-              about the catalogue, and it narrows hardest. */''}
-        ${savedFilterGroup(st.selected.bookmark)}
-        ${/* Use navLabel in the filter too. Clicking «Fachanwendungen Bauten»
-              previously created a pill labelled «Immobilien & Bau»: two names
-              for one value in ONE interaction path (D24). `label` remains the
-              group-column value. */''}
-        ${C.filterGroup({ dim: 'area', legend: 'Bereich', selected: areas, options: AREAS.map(b => ({ value: b.key, label: b.navLabel })) })}
-        ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: audienceOptions(core) })}
-        ${C.panelReset({ href: hash({ area: [], audience: [], bookmark: [] }) })}`,
-      view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
-    })}
-    ${filterBar}
-    ${C.catalogueResults({
-      resetHref: '#/applications',
-      visible, count: apps.length, view, page, totalPages,
-      card, listView, unit: 'Anwendungen',
-      paginationInputId: 'app-page', paginationLabel: 'Seitennavigation Anwendungen',
-      paginationHref: (p) => hash({ page: p }),
-      available: core.available('applications'),
-    })}
-  </div>`;
-
-  C.announceCatalogue({ count: apps.length, total: all.length, unit: 'Anwendungen', page, totalPages, view });
-
-  C.wireCatalogue(mount, {
-    formId: 'app-search', inputId: 'aq', pageInputId: 'app-page', page, totalPages, hash,
-    sortId: 'app-sort', filterToggleId: 'app-filter', panelId: 'app-filters',
+  // The page anatomy, its element ids and its wiring all come from C.catalogueView
+  // (js/ui/components/catalogue.js); what stays here is what actually differs
+  // between the three catalogues — wording, filters and the two renderers.
+  const catalogue = C.catalogueView({
+    prefix: 'app', hash, noun: 'Anwendung', unit: 'Anwendungen',
+    title: 'Anwendungen',
+    lead: 'Alle Anwendungen des BBL an einem Ort — von den Fachanwendungen für Bauten über Logistik bis zu den zentralen Systemen der Bundesverwaltung.',
+    q: rawQ, view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
+    page, totalPages, sort: { value: sortKey, options: SORT_OPTS },
+    count: apps.length, total: all.length,
+    filterCount: areas.length + audiences.length + (saved ? 1 : 0),
+    panel: `
+      ${/* Favourites first: it is the only filter about the READER rather than
+            about the catalogue, and it narrows hardest. */''}
+      ${savedFilterGroup(st.selected.bookmark)}
+      ${/* Use navLabel in the filter too. Clicking «Fachanwendungen Bauten»
+            previously created a pill labelled «Immobilien & Bau»: two names
+            for one value in ONE interaction path (D24). `label` remains the
+            group-column value. */''}
+      ${C.filterGroup({ dim: 'area', legend: 'Bereich', selected: areas, options: AREAS.map(b => ({ value: b.key, label: b.navLabel })) })}
+      ${C.filterGroup({ dim: 'audience', legend: 'Zielgruppe', selected: audiences, options: audienceOptions(core) })}
+      ${C.panelReset({ href: hash({ area: [], audience: [], bookmark: [] }) })}`,
+    activeFilters: active, resetHref: '#/applications',
+    visible, card, listView, available: core.available('applications'),
   });
-  // List-view row click. Dispose through onUnmount; otherwise the reused mount
-  // collects another click listener on every visit.
-  ctx.onUnmount(C.wireTableRows(mount));
+
+  mount.innerHTML = catalogue.html;
+  catalogue.wire(mount, ctx);
 }
 
 function areaLabel(key) { const b = AREAS.find(x => x.key === key); return b ? b.navLabel : key; }

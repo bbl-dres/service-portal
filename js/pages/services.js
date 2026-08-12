@@ -99,8 +99,6 @@ export default async function render(ctx) {
     ...selectedAudiences.map(a => ({ label: audienceLabel(core, a), href: hash({ audience: selectedAudiences.filter(x => x !== a), page: 1 }) })),
     ...selectedTopics.map(t => ({ label: domainLabel(domains, t), href: hash({ topic: selectedTopics.filter(x => x !== t), page: 1 }) })),
   ];
-  const filterBar = C.activeFilters({ filters: activeFilters, resetHref: '#/services' });
-
   const relatedHits = otherHits && (otherHits.apps + otherHits.docs)
     ? `Auch in: ${[
         otherHits.apps ? `<a href="#/applications?q=${encodeURIComponent(rawQ)}">${otherHits.apps} Anwendung(en)</a>` : '',
@@ -108,7 +106,6 @@ export default async function render(ctx) {
       ].filter(Boolean).join(' · ')}`
     : '';
 
-  const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
   const filterPanel = `
     ${/* Favourites first — see applications.js. */''}
     ${savedFilterGroup(state.selected.bookmark)}
@@ -123,38 +120,23 @@ export default async function render(ctx) {
       options: domains.filter(d => all.some(s => s.domain === d.key)).map(d => ({ value: d.key, label: d.label })) })}
     ${C.panelReset({ href: hash({ audience: [], topic: [], bookmark: [], page: 1 }) })}`;
 
-  mount.innerHTML = `
-  <div class="container section">
-    ${C.pageHeader({ title: 'Dienstleistungen', lead: 'Was möchten Sie tun? Als «Vorgang» gekennzeichnete Dienstleistungen starten einen Ablauf; Informationsangebote führen weiter.' })}
-    ${C.catalogueBar({
-      formId: 'svc-search', inputId: 'sq', searchLabel: 'Dienstleistung suchen', placeholder: 'Dienstleistung suchen…', q: rawQ,
-      countId: 'svc-count', count: `<strong>${services.length}</strong> von ${all.length} Dienstleistungen${pageInfo}`,
-      sort: { id: 'svc-sort', value: sortKey, options: SORT_OPTIONS },
-      filterId: 'svc-filter', filterLabel: 'Filter', filterCount: selectedAudiences.length + selectedTopics.length + (savedOnlyOn ? 1 : 0),
-      panelId: 'svc-filters', panel: filterPanel,
-      view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
-    })}
-    ${filterBar}
-    ${C.catalogueResults({
-      resetHref: '#/services',
-      visible: visibleServices, count: services.length, view, page, totalPages,
-      card, listView, unit: 'Dienstleistungen',
-      paginationInputId: 'svc-page', paginationLabel: 'Seitennavigation Dienstleistungen',
-      paginationHref: (p) => hash({ page: p }),
-      available: core.available('services'), noteHtml: relatedHits || '',
-    })}
-  </div>`;
-
-  C.announceCatalogue({ count: services.length, total: all.length, unit: 'Dienstleistungen', page, totalPages, view });
-
-  // C.wireCatalogue wires the multi-select filters (audience/topic) through the panel.
-  C.wireCatalogue(mount, {
-    formId: 'svc-search', inputId: 'sq', pageInputId: 'svc-page', page, totalPages, hash,
-    sortId: 'svc-sort', filterToggleId: 'svc-filter', panelId: 'svc-filters',
+  // Anatomy, ids and wiring from C.catalogueView — see applications.js.
+  const catalogue = C.catalogueView({
+    prefix: 'svc', hash, noun: 'Dienstleistung', unit: 'Dienstleistungen',
+    title: 'Dienstleistungen',
+    lead: 'Was möchten Sie tun? Als «Vorgang» gekennzeichnete Dienstleistungen starten einen Ablauf; Informationsangebote führen weiter.',
+    q: rawQ, view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
+    page, totalPages, sort: { value: sortKey, options: SORT_OPTIONS },
+    count: services.length, total: all.length,
+    filterCount: selectedAudiences.length + selectedTopics.length + (savedOnlyOn ? 1 : 0),
+    panel: filterPanel,
+    activeFilters, resetHref: '#/services',
+    visible: visibleServices, card, listView,
+    available: core.available('services'), noteHtml: relatedHits || '',
   });
-  // Row clicks in list view. Clean up through onUnmount so the reused mount does
-  // not accumulate another click listener on every visit.
-  ctx.onUnmount(C.wireTableRows(mount));
+
+  mount.innerHTML = catalogue.html;
+  catalogue.wire(mount, ctx);
 }
 
 function detail(ctx, id) {

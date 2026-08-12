@@ -12,7 +12,6 @@
 // selection while focus remains in the input, preserving the caret position.
 
 import { search as runSearch, prepare } from './search-engine.js';
-import { knowledgeIndex } from '../knowledge-content.js';
 import { createListboxController } from '../ui/combobox.js';
 import { classifyUrl, safeLinkUrl } from '../security/urls.js';
 
@@ -20,8 +19,20 @@ const MAX = 7;
 
 // Build and cache the index once per page load. Refolding 150 entries on every
 // keystroke would be affordable but unnecessary.
+//
+// js/knowledge-content.js is imported DYNAMICALLY, and that is the point of this
+// function being async. The paragraph above about not loading 236 KB «just in
+// case someone MIGHT type» applies to the knowledge content itself: it is 50 KB,
+// the home page is the most visited route in the portal, and a static import put
+// all of it in that route's critical path for a list that cannot appear before
+// the second typed character. Nothing else here reads the module, so deferring
+// it costs one import at the first keystroke and nothing afterwards.
 let CACHE = null;
-function suggestIndex(core) {
+async function suggestIndex(core) {
+  if (CACHE) return CACHE;
+  const { knowledgeIndex } = await import('../knowledge-content.js');
+  // Two keystrokes can race to here; the first to finish wins and the second
+  // returns the same rows rather than folding 150 entries a second time.
   if (CACHE) return CACHE;
   const domainLabel = (k) => (core.ref().domains || []).find((d) => d.key === k)?.label || k;
   const rows = [];
@@ -74,8 +85,19 @@ export function attachSuggest(input, form, core, C) {
   });
   const close = controller.close;
 
-  const open = (q) => {
-    items = runSearch(suggestIndex(core), q).slice(0, MAX);
+  // The index now arrives asynchronously on the first query, so a keystroke has
+  // to be able to lose: `version` drops the result of any query the user has
+  // already typed past, and `detached` drops one that arrives after the route
+  // changed. Without either, a slow first import could paint suggestions for a
+  // prefix that is no longer in the field, or into a list already removed.
+  let version = 0;
+  let detached = false;
+
+  const open = async (q) => {
+    const mine = ++version;
+    const index = await suggestIndex(core);
+    if (detached || mine !== version) return;
+    items = runSearch(index, q).slice(0, MAX);
     if (!items.length) return close();
     list.innerHTML = items.map((r, i) => `
       <li class="listbox__option" role="option" id="${listId}-${i}" aria-selected="false" data-i="${i}">
@@ -87,8 +109,10 @@ export function attachSuggest(input, form, core, C) {
 
   const onInput = () => {
     const q = input.value.trim();
-    if (q.length < 2) return close();
-    open(q);
+    // Deleting back below two characters must also invalidate an in-flight
+    // query, or its result would reopen the list the user just emptied.
+    if (q.length < 2) { version++; return close(); }
+    void open(q);
   };
 
   const onSubmit = () => close();
@@ -97,6 +121,7 @@ export function attachSuggest(input, form, core, C) {
   form.addEventListener('submit', onSubmit);
 
   return () => {
+    detached = true;
     input.removeEventListener('input', onInput);
     form.removeEventListener('submit', onSubmit);
     controller.destroy();

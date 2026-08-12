@@ -77,7 +77,6 @@ function list(ctx) {
     ...classifications.map(x => ({ label: classificationLabel(core, x), href: hash({ classification: classifications.filter(y => y !== x) }) })),
     ...tags.map(x => ({ label: tagLabel(core, x), href: hash({ tag: tags.filter(y => y !== x) }) })),
   ];
-  const filterBar = C.activeFilters({ filters: active, resetHref: '#/data/catalog' });
 
   const card = (d) => C.card({
     title: t(d.title),
@@ -117,49 +116,32 @@ function list(ctx) {
     rows,
   });
 
-  mount.innerHTML = `
-  <div class="container section">
-    ${C.pageHeader({
-      title: 'Datenbezug und API Verzeichnis',
-      lead: 'Die Datensätze des BBL — beschrieben nach DCAT-AP-CH, mit Bezugswegen, Klassifizierung und Datenverantwortung.',
-    })}
-    ${C.catalogueBar({
-      formId: 'ds-search', inputId: 'dsq', searchLabel: 'Datensatz suchen', placeholder: 'Datensatz suchen…', q: rawQ,
-      countId: 'ds-count', count: `<strong>${datasets.length}</strong> von ${all.length} Datensätzen${totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : ''}`,
-      sort: { id: 'ds-sort', value: sortKey, options: SORT_OPTIONS },
-      filterId: 'ds-filter', filterLabel: 'Filter', filterCount: topics.length + classifications.length + tags.length + (savedOnlyOn ? 1 : 0),
-      panelId: 'ds-filters', panel: `
-        ${/* Favourites first — see applications.js. */''}
-        ${savedFilterGroup(state.selected.bookmark)}
-        ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: topics, options: topicOptions.map(x => ({ value: x, label: x })) })}
-        ${C.filterGroup({ dim: 'classification', legend: 'Klassifizierung', selected: classifications, options: classificationOptions.map(x => ({ value: x, label: classificationLabel(core, x) })) })}
-        ${/* The parameter is named `classification`, not `klass`; with the
-              wrong key, the filter survived its own reset. */''}
-        ${C.panelReset({ href: hash({ topic: [], classification: [], tag: [], bookmark: [] }) })}`,
-      view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
-    })}
-    ${filterBar}
-    ${C.catalogueResults({
-      resetHref: '#/data/catalog',
-      visible, count: datasets.length, view, page, totalPages,
-      // unit carries both grammatical cases; the old emptyMsg/unavailableMsg
-      // overrides existed only as a grammatical workaround (A14).
-      card, listView, unit: { nom: 'Datensätze', dat: 'Datensätzen' },
-      paginationInputId: 'ds-page', paginationLabel: 'Seitennavigation Datensätze',
-      paginationHref: (p) => hash({ page: p }),
-      available: core.available('datasets'),
-    })}
-  </div>`;
-
-  C.announceCatalogue({ count: datasets.length, total: all.length, unit: { nom: 'Datensätze', dat: 'Datensätzen' }, page, totalPages, view });
-
-  C.wireCatalogue(mount, {
-    formId: 'ds-search', inputId: 'dsq', pageInputId: 'ds-page', page, totalPages, hash,
-    sortId: 'ds-sort', filterToggleId: 'ds-filter', panelId: 'ds-filters',
+  // Anatomy, ids and wiring from C.catalogueView — see applications.js.
+  const catalogue = C.catalogueView({
+    prefix: 'ds', hash, noun: 'Datensatz',
+    // unit carries both grammatical cases; the old emptyMsg/unavailableMsg
+    // overrides existed only as a grammatical workaround (A14).
+    unit: { nom: 'Datensätze', dat: 'Datensätzen' },
+    title: 'Datenbezug und API Verzeichnis',
+    lead: 'Die Datensätze des BBL — beschrieben nach DCAT-AP-CH, mit Bezugswegen, Klassifizierung und Datenverantwortung.',
+    q: rawQ, view, views: [['gallery', 'Galerieansicht', 'Apps'], ['list', 'Listenansicht', 'List']],
+    page, totalPages, sort: { value: sortKey, options: SORT_OPTIONS },
+    count: datasets.length, total: all.length,
+    filterCount: topics.length + classifications.length + tags.length + (savedOnlyOn ? 1 : 0),
+    panel: `
+      ${/* Favourites first — see applications.js. */''}
+      ${savedFilterGroup(state.selected.bookmark)}
+      ${C.filterGroup({ dim: 'topic', legend: 'Thema', selected: topics, options: topicOptions.map(x => ({ value: x, label: x })) })}
+      ${C.filterGroup({ dim: 'classification', legend: 'Klassifizierung', selected: classifications, options: classificationOptions.map(x => ({ value: x, label: classificationLabel(core, x) })) })}
+      ${/* The parameter is named `classification`, not `klass`; with the
+            wrong key, the filter survived its own reset. */''}
+      ${C.panelReset({ href: hash({ topic: [], classification: [], tag: [], bookmark: [] }) })}`,
+    activeFilters: active, resetHref: '#/data/catalog',
+    visible, card, listView, available: core.available('datasets'),
   });
-  // Row clicks in list view. Clean up through onUnmount so the reused mount does
-  // not accumulate another click listener on every visit.
-  ctx.onUnmount(C.wireTableRows(mount));
+
+  mount.innerHTML = catalogue.html;
+  catalogue.wire(mount, ctx);
 }
 
 // ============================== DETAIL =============================

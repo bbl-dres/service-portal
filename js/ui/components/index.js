@@ -1,4 +1,4 @@
-import {
+﻿import {
   badge, escape, icon, loading, markLang, photo, photoUrl, preserveFocus,
   safeDecode, statusBadge, wireScrollRegions,
 } from './primitives.js';
@@ -25,14 +25,14 @@ import {
 } from './forms.js';
 import {
   announceCatalogue, catalogueBar, catalogueHash, catalogueResults,
-  catalogueState, filterGroup, mountDataTable, panelReset, wireCatalogue,
+  catalogueState, catalogueView, filterGroup, mountDataTable, panelReset, wireCatalogue,
   wireCatalogueState, wireTableRows,
 } from './catalogue.js';
 
 export {
   accessCard, accordion, acquireOverlayLock, actionCard, activeFilters, announce,
   announceCatalogue, backLink, badge, card, cardAction, catalogueBar,
-  catalogueHash, catalogueResults, catalogueState, closeOverlays, contactBox,
+  catalogueHash, catalogueResults, catalogueState, catalogueView, closeOverlays, contactBox,
   contactCard, contextLine, detailBar, detailHead, detailSection, domainTile,
   downloadItem, downloadLink, empty, errorSummary, escape, field, filterGroup,
   flashError, focusProcessDone, focusWizardStep, heroFigure, icon, loading,
@@ -51,7 +51,7 @@ const C = {
   openModal, openShareModal, domainTile, announce, trapFocus,
   acquireOverlayLock, registerOverlay, closeOverlays,
   renderNotFound, activeFilters, detailBar, detailHead, detailSection, markLang, accordion, wireAccordion,
-  catalogueResults, announceCatalogue, catalogueHash, catalogueBar, filterGroup, wireCatalogue, pipeline,
+  catalogueResults, announceCatalogue, catalogueHash, catalogueBar, catalogueView, filterGroup, wireCatalogue, pipeline,
   catalogueState, wireCatalogueState, panelReset, wireFieldErrors, focusProcessDone, wizardHead, focusWizardStep, contextLine,
   tabBar, tabPanels, wireTabs, menu, wireMenu, toast,
   notification, notificationHtml, flashError, safeDecode, backLink, photo, photoUrl, select, selectBox, field, val, readForm, downloadItem, contactBox, downloadLink,

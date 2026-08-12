@@ -232,7 +232,10 @@ function catalogue(ctx) {
     formId: 'shop-search', inputId: 'shopq', pageInputId: 'shop-page', page, totalPages, hash,
     sortId: 'shop-sort', filterToggleId: 'shop-filter', panelId: 'shop-filters',
   });
-  if (view === 'list') C.wireTableRows(mount);
+  // Through onUnmount like the sibling catalogues: this wires `mount`, which the
+  // router reuses for the whole session, so a discarded disposer would outlive
+  // the shop entirely (wireTableRows now also refuses to stack, see catalogue.js).
+  if (view === 'list') ctx.onUnmount(C.wireTableRows(mount));
   wireAddButtons(ctx);
 }
 

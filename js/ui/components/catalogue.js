@@ -1,5 +1,5 @@
 import { CHEVRON_SVG, escape, icon, preserveFocus, wireScrollRegions } from './primitives.js';
-import { empty, table } from './content.js';
+import { activeFilters as activeFiltersBar, empty, pageHeader, table } from './content.js';
 import { announce } from './feedback.js';
 import { pagination, wirePagination } from './navigation.js';
 import { safeLinkUrl } from '../../security/urls.js';
@@ -362,9 +362,21 @@ export function mountDataTable(host, opts = {}) {
 // selected text remain untouched, or nothing in the table could be copied.
 // C.mountDataTable calls this itself. Callers rendering C.table directly invoke
 // it once on `root` after insertion.
+//
+// ONE handler per root, enforced here rather than trusted to the caller. Whether
+// a discarded disposer leaks is invisible at the call site: it depends on
+// whether the root survives the next render. A node built by this render dies
+// with its markup and takes the handler along; `mount` (#main-content) is
+// reused for the life of the page and does not. Twelve call sites across the
+// apps, three different patterns — so the safe property belongs in the function.
+// A second call on the same root replaces the first instead of adding to it.
+const TABLE_ROW_WIRING = new WeakMap();
+
 export function wireTableRows(root) {
   if (!root) return () => {};
+  TABLE_ROW_WIRING.get(root)?.abort();
   const ctrl = new AbortController();
+  TABLE_ROW_WIRING.set(root, ctrl);
   root.addEventListener('click', (e) => {
     if (e.target.closest('a, button, input, label, select')) return;
     const tr = e.target.closest('.table--rows-clickable tbody tr');
@@ -372,7 +384,84 @@ export function wireTableRows(root) {
     if (String(window.getSelection?.() || '').length) return;
     tr.querySelector('a[href]')?.click();
   }, { signal: ctrl.signal });
-  return () => ctrl.abort();
+  return () => {
+    ctrl.abort();
+    // Only drop the entry while it is still ours: a later wiring of the same
+    // root owns the slot, and an old disposer must not clear its record.
+    if (TABLE_ROW_WIRING.get(root) === ctrl) TABLE_ROW_WIRING.delete(root);
+  };
+}
+
+// --- The whole catalogue page (services / applications / datasets) -----------
+// The heavy parts were already shared (catalogueState, catalogueBar,
+// catalogueResults, wireCatalogue). What each page still repeated was the
+// SCAFFOLD around them: seven related element ids invented by hand, the same
+// header-bar-pills-results order, and the same three wiring calls afterwards.
+// Three copies of thirty lines whose only real differences are wording.
+//
+// Two things follow from collapsing it. Every id now derives from ONE prefix, so
+// `formId` and `pageInputId` cannot drift apart (the input ids had already
+// drifted into `aq`/`sq`/`dsq`, which no longer named anything). And there is a
+// single wiring site: the row-click disposer is registered here, so no page can
+// forget it — which is exactly how js/apps/shop.js had come to leak one handler
+// per dispatch onto the reused mount.
+//
+// Deliberately NOT adopted by shop.js and media-library.js: both wrap this
+// anatomy in their own layout (a category sidebar, gallery deep links). Forcing
+// three pages plus two exceptions through one function would put the exceptions
+// inside it as flags, which is the shape this replaces.
+//
+// `noun` is the singular subject and drives the search wording; `unit` is the
+// plural for counts and announcements, as a string or the {nom,dat} pair a
+// German sentence needs. German UI term: `Anwendung` / `Anwendungen`.
+export function catalogueView({
+  prefix, hash, title, lead = '', leadHtml = '', noun, unit,
+  q = '', view = 'gallery', views, page = 1, totalPages = 1,
+  sort, count = 0, total = 0, filterCount = 0, panel = '',
+  activeFilters = [], resetHref, visible = [], card, listView,
+  available = true, noteHtml = '', note = '', gridCls, regionLabel = '',
+  emptyMsg, unavailableMsg,
+} = {}) {
+  const id = (part) => `${prefix}-${part}`;
+  const plural = typeof unit === 'string' ? unit : (unit?.nom || '');
+  const pageInfo = totalPages > 1 ? ` · Seite ${page} von ${totalPages}` : '';
+  const html = `
+  <div class="container section">
+    ${pageHeader({ title, lead, leadHtml })}
+    ${catalogueBar({
+    formId: id('search'), inputId: id('q'), q,
+    searchLabel: `${noun} suchen`, placeholder: `${noun} suchen…`,
+    countId: id('count'), count: `<strong>${count}</strong> von ${total} ${escape(plural)}${pageInfo}`,
+    sort: sort ? { id: id('sort'), value: sort.value, options: sort.options } : undefined,
+    filterId: id('filter'), filterLabel: 'Filter', filterCount,
+    panelId: id('filters'), panel,
+    view, views,
+  })}
+    ${activeFilters.length || resetHref ? activeFiltersBar({ filters: activeFilters, resetHref }) : ''}
+    ${catalogueResults({
+    resetHref, visible, count, view, page, totalPages, card, listView, unit,
+    paginationInputId: id('page'), paginationLabel: `Seitennavigation ${plural}`,
+    paginationHref: (target) => hash({ page: target }),
+    available, noteHtml, note, gridCls, regionLabel, emptyMsg, unavailableMsg,
+  })}
+  </div>`;
+
+  return {
+    html,
+    /** Announce the result count, wire the bar, and own the row-click disposer. */
+    wire(mount, ctx) {
+      announceCatalogue({ count, total, unit, page, totalPages, view });
+      wireCatalogue(mount, {
+        formId: id('search'), inputId: id('q'), pageInputId: id('page'),
+        page, totalPages, hash,
+        sortId: sort ? id('sort') : undefined,
+        filterToggleId: id('filter'), panelId: id('filters'),
+      });
+      const unwire = wireTableRows(mount);
+      if (ctx?.onUnmount) ctx.onUnmount(unwire);
+      return unwire;
+    },
+  };
 }
 
 // Multi-select filter group (checkboxes), matching the portfolio panel
