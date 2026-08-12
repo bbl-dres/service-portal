@@ -12,7 +12,11 @@
 import { readJSONResult, writeJSON } from './storage.js';
 
 const LS_KEY = 'bbl_session_v1';
-const DEMO_USER = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
+// The `demoDefault` record of data/users.json, repeated here on purpose: this
+// module resolves the session during its own evaluation, synchronously, while
+// the directory is a deferred fetch. `userId` is what ties the two together —
+// personal state (js/core/bookmarks.js) is filed under it.
+const DEMO_USER = { userId: 'U.123.456', name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
 
 // logout() records this marker instead of removing the key. Without a stored
 // trace, «nothing stored» would mean «first visit» on the next load and the
@@ -23,9 +27,13 @@ const DEMO_USER = { name: 'Andrea Muster', org: 'Bundesamt für Umwelt BAFU' };
 const SIGNED_OUT = 'signed-out';
 
 // A user without a name is not a user: a partial record must never reach the
-// forms that prefill from it (M20).
+// forms that prefill from it (M20). `userId` is required for the same reason —
+// personal state is filed under it, and a session without one would silently
+// write somebody's bookmarks nowhere. Sessions stored before the id existed
+// therefore fail here and are replaced by the complete demo user below.
 const isUser = (candidate) => !!candidate && typeof candidate === 'object'
-  && typeof candidate.name === 'string' && candidate.name.trim() !== '';
+  && typeof candidate.name === 'string' && candidate.name.trim() !== ''
+  && typeof candidate.userId === 'string' && candidate.userId.trim() !== '';
 const isStored = (candidate) => candidate === SIGNED_OUT || isUser(candidate);
 
 // Three storage states, two of them meaning «logged in»: a usable user, the
@@ -49,7 +57,8 @@ if (typeof window !== 'undefined') {
     if (event.key !== LS_KEY && event.key !== null) return;
     const nextUser = storedUser();
     const unchanged = user === nextUser
-      || (user && nextUser && user.name === nextUser.name && user.org === nextUser.org);
+      || (user && nextUser && user.userId === nextUser.userId
+        && user.name === nextUser.name && user.org === nextUser.org);
     if (unchanged) return;
     user = nextUser;
     window.dispatchEvent(new CustomEvent('session:changed', { detail: { source: 'storage' } }));

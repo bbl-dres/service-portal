@@ -5,6 +5,7 @@ import { session } from './core/session.js';
 import { shell } from './ui/shell/index.js';
 import { initRouter, redraw, requestNavigationPermission } from './routing/router.js';
 import { notification, escape, announce, toast, wireShare, wireLogin, mountBanner } from './components.js';
+import { wireBookmarks } from './ui/bookmark.js';
 import { notificationHtml } from './ui/components/feedback.js';
 
 // Data-failure banner (P0-4): if a data/*.json file is missing, the affected
@@ -56,6 +57,10 @@ async function boot() {
   // login notice and access cards, and each may carry a target
   // (data-login-next).
   wireLogin(document);
+  // Same contract for the «merken» stars: delegated ONCE, so every page that
+  // renders one is wired, and every control for the same record updates together
+  // (a record can carry a star in its head and a button in its access card).
+  wireBookmarks(document);
   // Prototype notice as a CD consent strip. Once dismissed, it stays dismissed.
   mountBanner(document.getElementById('banner-host'), {
     id: 'prototyp',

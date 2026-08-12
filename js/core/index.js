@@ -83,6 +83,11 @@ const DEFERRED = {
   // management prototype. Images are mirrored under assets/images/shop/.
   shopProducts:     'data/shop-products.json',
   shopCategories:   'data/shop-categories.json',
+  // Demo people. The prototype has no user directory, so this file plays that
+  // role: it is what makes «a bookmark belongs to somebody» expressible at all.
+  // Deferred, not eager — the shell renders the signed-in name from the session
+  // (js/core/session.js), never from here; only personal surfaces need the file.
+  users:            'data/users.json',
 };
 // data/data-products.json remains in place (DataService and Concept entries for
 // a future metadata catalogue), but no view reads or loads it any longer.
@@ -106,7 +111,7 @@ const DATA_AREA_LABELS = {
   multispaceModules: 'Multispace-Module',
   workspaceExamples: 'Multispace-Beispiele',
   businessObjects: 'Geschäftsobjekte', systemTables: 'Systemtabellen',
-  processes: 'Prozesse',
+  processes: 'Prozesse', users: 'Benutzende',
   shopProducts: 'Shop-Produkte', shopCategories: 'Shop-Kategorien',
 };
 
@@ -461,6 +466,9 @@ export const core = {
   // cataloguing it (docs/sitemap.md §2.4).
   news: () => DATA.news || [],
   newsItem: (id) => find(DATA.news, 'id', id),
+  // Demo people. `user` looks one up by the id the session carries.
+  users: () => DATA.users || [],
+  user: (id) => find(DATA.users, 'userId', id),
   contacts: () => DATA.contacts || [],
   ref: () => DATA.reference || {},
   // DCAT-AP-CH datasets (Datenbezug). Strings are multilingual objects; the

@@ -188,11 +188,26 @@ failSet.delete(SESSION_KEY);
 check(session.logout() === true && !session.isLoggedIn(), 'a persisted logout succeeds');
 
 console.log('■ Own-property favorite maps');
-values.set('bbl_favorites_v1', '{"__proto__":["proto-id"],"toString":["string-id"]}');
+// The legacy anonymous store is migrated on first read (js/core/bookmarks.js).
+// Its keys were free-form, so a hostile one could name a prototype member; the
+// bookmark store admits only its own vocabulary, which drops those outright
+// rather than carrying them as data. Anything the person actually saved still
+// survives the migration.
+values.set('bbl_favorites_v1', '{"__proto__":["proto-id"],"toString":["string-id"],"building":["1080/4840/AF"]}');
+values.delete('bbl_bookmarks_v1');
+const { session: bmSession } = await import('../js/core/session.js');
+bmSession.login();
 const { favorites } = await import('../js/core/favorites.js');
-check(favorites.has('__proto__', 'proto-id') && favorites.has('toString', 'string-id')
-  && favorites.list('constructor').length === 0,
-  'favorite kinds remain data, never object prototypes');
+const migrated = favorites.list('building');
+check(!favorites.has('__proto__', 'proto-id') && !favorites.has('toString', 'string-id')
+  && favorites.list('constructor').length === 0
+  && migrated.length === 1 && migrated[0] === '1080/4840/AF',
+  'unknown legacy kinds are dropped, never carried as data or prototypes', migrated.join(','));
+check(values.get('bbl_favorites_v1') === undefined,
+  'the migrated legacy key is removed so it cannot be folded in twice');
+check(Object.getPrototypeOf(JSON.parse(values.get('bbl_bookmarks_v1'))) === Object.prototype
+  && !('proto-id' in {}),
+  'the written store carries no inherited members');
 
 console.log('■ Process storage and malformed records');
 const PROCESS_KEY = 'bbl_vorgaenge_v1';

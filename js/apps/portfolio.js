@@ -103,10 +103,10 @@ export default async function render(ctx) {
       { key: 'region', icon: 'Map' },
       { key: 'city', icon: 'MapMarker' },
 
-      // The number alone: the Folder icon and the level's position already say
-      // «Wirtschaftseinheit», so the «WE» prefix only cost key-column width.
-      // `word` keeps the level named for assistive technology, which would
-      // otherwise hear a bare number.
+      // The number alone: the Folder icon and the level's position already
+      // identify the business entity, so the «WE» prefix only cost key-column
+      // width. `word` keeps the level named for assistive technology, which
+      // would otherwise hear a bare number.
       { key: 'businessEntity', attr: 'business-entity', icon: 'Folder',
         idText: (v) => String(v), word: 'Wirtschaftseinheit',
         label: (v, es) => ((es.find((x) => x.kind === 'building') || es[0] || {}).name || ''),

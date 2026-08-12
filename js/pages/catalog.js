@@ -5,6 +5,7 @@
 // come from the data catalogue prototype (data/datasets.json).
 
 import { classifyUrl, newWindowAttrs, safeLinkUrl, safeMailto, safeResourceUrl } from '../security/urls.js';
+import { bookmarkButton } from '../ui/bookmark.js';
 
 // 12, matching the sibling catalogues (B16).
 const PER_PAGE = 12;
@@ -257,6 +258,10 @@ function detail(ctx, id) {
       title: t(d.title), lead: t(d.description),
       tags: tagPills,
       image: img ? `<img class="hero-media hero-media--16x9" src="${img}" alt="" loading="lazy">` : '',
+      // The dataset catalogue is the first surface to carry «merken» (user
+      // decision): it has no access card to host the control, so the star in the
+      // title row is the whole answer here rather than one of two.
+      bookmark: bookmarkButton({ kind: 'dataset', id: d.id, name: t(d.title) }),
     })}
 
     ${/* Article wrapper: the page reads as ONE 60rem column (measure on the

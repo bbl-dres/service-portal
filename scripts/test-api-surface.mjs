@@ -47,8 +47,8 @@ console.log('■ Public module surfaces');
 exactModule('session', sessionModule, ['session']);
 exactModule('links', links, [
   'application', 'caseDetails', 'constructionProject', 'dataset', 'documentSearch',
-  'floorplanEditor', 'news', 'planCheck', 'portfolioItem', 'processDocumentation', 'service', 'shop',
-  'shopCart', 'shopProduct', 'tenancy',
+  'floorplanEditor', 'news', 'planCheck', 'portfolioItem', 'processDocumentation', 'roomBooking',
+  'service', 'shop', 'shopCart', 'shopProduct', 'tenancy',
 ]);
 exactModule('crumbs', crumbs, ['APPLICATIONS', 'DATA', 'SERVICES', 'trail']);
 exactModule('core', coreModule, ['core']);

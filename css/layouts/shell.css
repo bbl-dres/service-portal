@@ -160,6 +160,22 @@ body.body--standalone-app:has(.plan-check) > .site-main { height:auto; min-heigh
    than every other h1 in the product. */
 .hero__title { font-size:var(--text-3xl); font-weight:var(--fw-bold); line-height:var(--lh-tight);
   overflow-wrap:anywhere; margin:0; }
+/* Title row: the heading plus whatever acts ON the record as a whole — today the
+   «merken» star (js/ui/bookmark.js). `align-items:start` keeps the star on the
+   first line of a heading that wraps to three, rather than floating beside its
+   middle. The row is part of .hero__content's flex column, so a head without a
+   star is laid out exactly as before. */
+.hero__titlebar { display:flex; align-items:flex-start; justify-content:space-between; gap:var(--sp-4); }
+.hero__titlebar > .hero__title { flex:1 1 auto; }
+/* The star is an icon-only toggle, so it needs its own hit area: .btn--bare
+   carries no padding of its own. --target-min is the touch minimum used by the
+   tree rows as well. */
+.bookmark-star { flex:none; min-width:var(--target-min); min-height:var(--target-min);
+  align-items:center; justify-content:center; color:var(--color-text-light); }
+.bookmark-star:hover, .bookmark-star:focus-visible { color:var(--color-primary-600); }
+/* Saved state is carried by the FILLED icon; the colour only reinforces it, so
+   the control never rests on colour alone. */
+.bookmark-star[aria-pressed="true"] { color:var(--color-primary-600); }
 /* DELIBERATE DEVIATION: CD leaves the hero description in default ink
    (hero.postcss:30-34, only text--lg leading-snug). The muted lead is a
    portal-wide convention: .page-header .lead and the home-page lead share the

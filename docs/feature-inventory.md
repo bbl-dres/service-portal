@@ -301,6 +301,26 @@ Hash-Router: NAV-Definition, Seiten-/App-Registry mit dynamischem Import, Altlas
 - ctx.navigate(h) als programmatischer Navigationsweg der Module — router.js:239
 - Keine eigenen sichtbaren Bedienelemente — Interaktionen liegen in Shell und Seitenmodulen
 
+## js/core/bookmarks.js · js/core/favorites.js · js/ui/bookmark.js
+
+Persönliche Favoriten: EIN Speicher hinter jedem «merken»-Stern. Ein Eintrag ist eine typisierte Referenz `{ kind, id, addedAt }` — nie eine Kopie; Titel und Link werden beim Rendern aus den Katalogen aufgelöst (js/ui/bookmark-kinds.js).
+
+**Funktionen**
+
+- Bookmarkfähige Arten (stabile ID UND Adresse in js/links.js): service, application, dataset, news, building, project, tenancy, shop-product, process, room — bookmarks.js:30-34. Dokumente und Wissensunterlagen bewusst NICHT (Titel-Suche bzw. Abschnittsanker, kein stabiler Schlüssel; Nutzerentscheid)
+- Zwei Quellen, eine Liste: data/users.json setzt den Startbestand je Demo-Person; localStorage `bbl_bookmarks_v1` (`{ userId: { seeded, items } }`) ist danach massgebend — ein entfernter Seed-Eintrag kommt beim nächsten Laden NICHT zurück
+- Migration des anonymen Vorgängers `bbl_favorites_v1` beim ersten Lesen; unbekannte Arten werden verworfen statt als Daten übernommen
+- Ablage pro Person über `session.user().userId`; abgemeldet ist `toggle()` ein No-op
+- `favorites.js` ist nur noch eine dünne Sicht auf denselben Speicher, damit die Sterne der Raumbuchung nicht in einem zweiten Bestand landen
+- `bookmarkButton({ kind, id, name, variant })` — Stern (icon-only) oder beschrifteter Knopf; `aria-pressed`, Titelwechsel, sr-only-Name des Datensatzes; abgemeldet wird NICHTS gerendert
+- `wireBookmarks(document)` einmal global delegiert (app.js), wie wireShare/wireLogin; aktualisiert ALLE Bedienelemente derselben Referenz und behält den Fokus
+
+**Zustände**
+
+- Gemerkt (StarFilled, aria-pressed=true) vs. nicht gemerkt (Star, false); Farbe verstärkt nur, die Füllung trägt den Zustand
+- Abgemeldet: kein Stern (die Katalogseiten bleiben öffentlich, der Zustand ist also real)
+- Verweis ins Leere (Fixture neu erzeugt): Eintrag verschwindet still, statt eine leere Kachel zu zeigen
+
 ## js/session.js
 
 Mock-Session für AGOV/FedLogin: Demo-Nutzerin in localStorage, kein Rollen-/Rechtekonzept; Inhalte bleiben abgemeldet sichtbar, nur das Starten eines Vorgangs verlangt Anmeldung. Der Prototyp startet **angemeldet** (Rückmeldung aus Tests: der abgemeldete Start wirkte wie ein defektes Portal statt wie eine Demonstration des Anmeldeflusses).

@@ -2,12 +2,17 @@
 import { statusLabel } from '../domain.js';
 import { formatDate } from '../format.js';
 import * as links from '../links.js';
+import { bookmarks } from '../core/bookmarks.js';
+import { bookmarkNeeds, resolveBookmarks } from '../ui/bookmark-kinds.js';
 
 // Deferred collections for this route. The router calls core.ensure(needs)
 // BEFORE render(); without this declaration, an accessor would read the still
 // empty list and the view would show «no entries» instead of data
 // (docs/code-review.md §3).
-export const needs = ['buildings', 'projects'];
+// `users` carries the bookmark seed for the favourites band below the table.
+// The band loads whatever ITS OWN entries reference on top of this, after first
+// paint (renderBookmarks).
+export const needs = ['buildings', 'projects', 'users'];
 export default async function render(ctx) {
   const { mount, params, session, core, engine, C, setTitle, setCrumbs, onUnmount } = ctx;
 
@@ -44,7 +49,17 @@ export default async function render(ctx) {
     ${/* Use id 'cases', not 'mc': the mc prefix belongs to the metadata catalogue,
           creating a collision in searches (design review, naming). */''}
     <div class="mt-6" id="cases-table"></div>
-  </div>`;
+  </div>
+  ${/* OUTSIDE the container, because the favourites band is a CD section band:
+        <section> is the outer element and carries the tint, .container sits
+        inside it (js/ui/components/content.js). Inside the container the
+        background would stop at the reading column instead of running edge to
+        edge. It also fills in AFTER first paint — favourites can span any
+        inventory, so rendering inline would make the cases table wait for
+        whichever files this person's own bookmarks happen to need. */''}
+  <div id="cases-bookmarks"></div>`;
+
+  void renderBookmarks(ctx, mount.querySelector('#cases-bookmarks'));
 
   // Personal cases was the only list surface without a toolbar: no search,
   // sorting, or pagination, making it unusable as the case count grew. This is
@@ -74,6 +89,52 @@ export default async function render(ctx) {
     ],
   });
   onUnmount(unmountTable);
+}
+
+// The personal counterpart to the home page's frequently-used band. That one
+// ranks by `popular` on the SERVICE — what the portal as a whole uses most;
+// this one lists what THIS person marked, across every inventory.
+//
+// Newest first: a favourites list is a shortcut bar, and the thing just saved is
+// the one most likely to be wanted again. Insertion order would bury it.
+const BOOKMARK_TILES = 6;
+
+async function renderBookmarks(ctx, host) {
+  if (!host) return;
+  const { core, C } = ctx;
+  const saved = bookmarks.list();
+  if (!saved.length) return;
+
+  // Load only what this person's own bookmarks need, then resolve. A failed
+  // collection simply yields no rows for its kind — core.ensure records the
+  // failure and the shell's data banner reports it, as everywhere else.
+  try { await core.ensure(bookmarkNeeds(saved)); } catch { /* reported by core */ }
+  // The route may have been left while the files were in flight.
+  if (!host.isConnected) return;
+
+  const ordered = saved.slice().sort((a, b) => String(b.addedAt).localeCompare(String(a.addedAt)));
+  const { rows } = resolveBookmarks(core, ordered);
+  if (!rows.length) return;
+
+  const tile = (row) => `
+    <a class="quick-tile plain-link" href="${C.escape(row.href)}">
+      ${C.icon(row.icon, 'icon--md')}
+      <div class="quick-tile__text">
+        <h3 class="quick-tile__label">${C.escape(row.title)}</h3>
+        <span class="quick-tile__meta">${C.escape(row.kindLabel)}</span>
+      </div>
+    </a>`;
+
+  // C.pageSection with `alt`: the CD band anatomy (section + tint outside,
+  // container inside) and its section rhythm, rather than a hand-built block
+  // that would have to restate both.
+  host.innerHTML = C.pageSection({
+    title: 'Meine Favoriten',
+    alt: true,
+    body: `<div class="grid grid--responsive-cols-3">${rows.slice(0, BOOKMARK_TILES).map(tile).join('')}</div>`
+      + (rows.length > BOOKMARK_TILES
+        ? `<p class="small muted mt-4">${rows.length - BOOKMARK_TILES} weitere gemerkt.</p>` : ''),
+  });
 }
 
 // Labels for submitted form fields (instance.data), making the case details

@@ -1,0 +1,74 @@
+[
+  {
+    "userId": "U.123.456",
+    "name": "Andrea Muster",
+    "email": "andrea.muster@uvek.admin.ch",
+    "org": "Bundesamt für Umwelt BAFU",
+    "orgShort": "BAFU",
+    "demoDefault": true,
+    "bookmarks": [
+      { "kind": "service", "id": "raumbuchung", "addedAt": "2026-02-11" },
+      { "kind": "application", "id": "raumbuchung", "addedAt": "2026-02-11" },
+      { "kind": "room", "id": "1080-6650-AA-eg-06", "addedAt": "2026-02-18" },
+      { "kind": "service", "id": "stoerung-melden", "addedAt": "2026-04-02" },
+      { "kind": "building", "id": "1080/4840/AF", "addedAt": "2026-06-15" },
+      { "kind": "service", "id": "umzug-anmelden", "addedAt": "2026-07-30" }
+    ]
+  },
+  {
+    "userId": "U.654.321",
+    "name": "Jörg Berger",
+    "email": "joerg.berger@uvek.admin.ch",
+    "org": "Generalsekretariat UVEK",
+    "orgShort": "GS UVEK",
+    "bookmarks": [
+      { "kind": "application", "id": "datenportal", "addedAt": "2026-01-20" },
+      { "kind": "dataset", "id": "3", "addedAt": "2026-01-20" },
+      { "kind": "project", "id": "PRJ-01", "addedAt": "2026-03-09" },
+      { "kind": "news", "id": "N-04", "addedAt": "2026-05-04" }
+    ]
+  },
+  {
+    "userId": "U.111.222",
+    "name": "Lars Hofmann",
+    "email": "lars.hofmann@bbl.admin.ch",
+    "org": "Bundesamt für Bauten und Logistik BBL",
+    "orgShort": "BBL",
+    "bookmarks": [
+      { "kind": "application", "id": "liegenschaften-inventar", "addedAt": "2025-11-06" },
+      { "kind": "building", "id": "1080/4840/AF", "addedAt": "2025-11-06" },
+      { "kind": "building", "id": "1080/4100/AC", "addedAt": "2026-01-14" },
+      { "kind": "project", "id": "PRJ-04", "addedAt": "2026-02-27" },
+      { "kind": "tenancy", "id": "MV-2026-001", "addedAt": "2026-04-21" },
+      { "kind": "dataset", "id": "1", "addedAt": "2026-06-02" },
+      { "kind": "application", "id": "bauprojekte-eppm", "addedAt": "2026-07-08" }
+    ]
+  },
+  {
+    "userId": "U.333.444",
+    "name": "Daniela Imbach",
+    "email": "daniela.imbach@efv.admin.ch",
+    "org": "Eidgenössische Finanzverwaltung EFV",
+    "orgShort": "EFV",
+    "bookmarks": [
+      { "kind": "application", "id": "metadaten-katalog", "addedAt": "2026-03-17" },
+      { "kind": "application", "id": "datenbezug", "addedAt": "2026-03-17" },
+      { "kind": "dataset", "id": "4", "addedAt": "2026-03-24" },
+      { "kind": "process", "id": "TQ.21.00.00.10", "addedAt": "2026-05-11" }
+    ]
+  },
+  {
+    "userId": "U.555.666",
+    "name": "Eveline Frey",
+    "email": "eveline.frey@bbl.admin.ch",
+    "org": "Bundesamt für Bauten und Logistik BBL",
+    "orgShort": "BBL",
+    "bookmarks": [
+      { "kind": "application", "id": "workspace", "addedAt": "2026-02-03" },
+      { "kind": "application", "id": "floorplan-editor", "addedAt": "2026-02-03" },
+      { "kind": "service", "id": "eshop-bestellen", "addedAt": "2026-04-28" },
+      { "kind": "shop-product", "id": "3", "addedAt": "2026-04-28" },
+      { "kind": "room", "id": "1080-6650-AA-1og-16", "addedAt": "2026-06-19" }
+    ]
+  }
+]

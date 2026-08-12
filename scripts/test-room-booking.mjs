@@ -224,7 +224,10 @@ const FAVOURITE = `(async () => {
   const now = document.querySelector('[data-fav-id="' + CSS.escape(id).replace(/\\\\/g, '\\\\') + '"]');
   const after = document.querySelector('.booking-room [data-fav-kind="room"][data-fav-id]');
   const badge = document.querySelector('.booking-room__title .badge')?.textContent.trim() || '';
-  const stored = localStorage.getItem('bbl_favorites_v1') || '';
+  // Room booking's stars write to the shared per-person bookmark store
+  // (js/core/bookmarks.js); the anonymous bbl_favorites_v1 map it used to own is
+  // migrated away on first read.
+  const stored = localStorage.getItem('bbl_bookmarks_v1') || '';
   // Restore the favourite so later assertions keep their expected ordering.
   document.querySelector('[data-fav-kind="room"][aria-pressed="true"]')?.click();
   await wait(250);

@@ -353,9 +353,18 @@ export function heroFigure({ src, id, color = 'var(--color-secondary-600)', alt 
   return `<figure class="hero__figure">${photo({ src, id, color, alt, w, cls: ratioClass })}</figure>`;
 }
 
-export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '' } = {}) {
+// `bookmark` is ready HTML like `tags` and `image` — the «merken» control for
+// this record (js/ui/bookmark.js), or nothing. Passing it as markup keeps this
+// layer data-free: the head does not know what a bookmark is, only that
+// something may sit beside the title. It renders in the title ROW rather than
+// over the hero image, because two of the pages that use this head can render
+// without an image at all, and an anchor that disappears is not an anchor.
+export function detailHead({ backHref, backLabel, title, lead = '', tags = '', image = '', bookmark = '' } = {}) {
   const content = `<div class="hero__content">
-        <h1 class="hero__title" tabindex="-1">${escape(title)}</h1>
+        <div class="hero__titlebar">
+          <h1 class="hero__title" tabindex="-1">${escape(title)}</h1>
+          ${bookmark}
+        </div>
         ${lead ? `<p class="hero__description">${escape(lead)}</p>` : ''}
         ${tags ? `<div class="pill-row">${tags}</div>` : ''}
       </div>`;

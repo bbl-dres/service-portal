@@ -5,7 +5,10 @@
 // The router calls `needs(params)` before render() reaches its first accessor,
 // so data.js loads no collections outside this contract.
 const SUBPAGES = {
-  catalog:        { modulePath: './catalog.js',        needs: ['datasets', 'catalogLabels'] },
+  // `users` carries the bookmark seed: the dataset detail page draws the
+  // «merken» star, and without the directory the star would render unfilled for
+  // a person whose favourites already contain the dataset.
+  catalog:        { modulePath: './catalog.js',        needs: ['datasets', 'catalogLabels', 'users'] },
   'ict-projects': { modulePath: './ict-projects.js',   needs: [] },
   digitalisation: { modulePath: './digitalisation.js', needs: [] },
 };
