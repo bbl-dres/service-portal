@@ -30,14 +30,8 @@ function footerHTML() {
           <p>Das Kundenportal bündelt Dienstleistungen, Anwendungen, Dokumente und Daten des BBL an einem Ort. Dies ist ein <strong>Prototyp mit Demo-Daten</strong>.</p>
           <p>BBL · Fellerstrasse 21, 3003 Bern</p>
         </div>
-        <div class="footer-information__entry">
-          <h3>Prototyp</h3>
-          <div class="footer-information__links">
-            <div class="footer-information__links-column">
-              ${fLink('https://github.com/bbl-dres/service-portal', 'Quellcode auf GitHub', true)}${fLink('#/app/api-docs', 'API-Dokumentation')}${fLink('https://www.bk.admin.ch/de/webauftritt-der-bundesverwaltung', 'Webauftritt der Bundesverwaltung', true)}${fLink('https://bbl-dres.github.io/tenant-portal/', 'Variante Mieterportal', true)}
-            </div>
-          </div>
-        </div>
+        <!-- «Weitere Informationen» before «Prototyp»: same column order as the
+             Mieterportal variant (tenant-portal js\shell.js:620-636). -->
         <div class="footer-information__entry footer-information__entry--big">
           <h3>Weitere Informationen</h3>
           <div class="footer-information__links">
@@ -46,6 +40,14 @@ function footerHTML() {
             </div>
             <div class="footer-information__links-column">
               ${fLink('#/my-cases', 'Meine Vorgänge')}${fLink('#/services/sicherheitsvorfall-melden', 'Notfall & Vorfälle')}${fLink('#/services', 'Dienstleistungen')}
+            </div>
+          </div>
+        </div>
+        <div class="footer-information__entry">
+          <h3>Prototyp</h3>
+          <div class="footer-information__links">
+            <div class="footer-information__links-column">
+              ${fLink('https://github.com/bbl-dres/service-portal', 'Quellcode auf GitHub', true)}${fLink('#/app/api-docs', 'API-Dokumentation')}${fLink('https://www.bk.admin.ch/de/webauftritt-der-bundesverwaltung', 'Webauftritt der Bundesverwaltung', true)}${fLink('https://bbl-dres.github.io/tenant-portal/', 'Variante Mieterportal', true)}
             </div>
           </div>
         </div>

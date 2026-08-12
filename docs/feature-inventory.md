@@ -350,8 +350,8 @@ CD-Bund-Shell: Top-Bar, Marken-/Logo-Zeile, Meta-Navigation mit Login, Header-Su
 - Brotkrumen-Container #breadcrumb (nav aria-label=«Sie sind hier», hidden bis setCrumbs) — shell.js:288-290
 - Footer: Back-to-top-Knopf im Seitengraben (Fokus auf #main-header, scrollTo 0, preventDefault gegen Routen-Überschreibung) — shell.js:304-310, 605-611
 - Footer-Spalte 1: Amtsbeschrieb, Prototyp-Hinweis, Adresse Fellerstrasse 21 — shell.js:314-323
-- Footer-Spalte 2 «Prototyp»: GitHub-Quellcode (extern), #/app/api-docs, Webauftritt Bundesverwaltung (extern) — shell.js:324-331
-- Footer-Spalte 3 «Weitere Informationen»: #/knowledge, #/news, #/applications, #/data, #/my-cases, #/services/sicherheitsvorfall-melden, #/services — shell.js:332-342
+- Footer-Spalte 2 «Weitere Informationen»: #/knowledge, #/news, #/applications, #/data, #/my-cases, #/services/sicherheitsvorfall-melden, #/services — shell.js:324-341
+- Footer-Spalte 3 «Prototyp»: GitHub-Quellcode (extern), #/app/api-docs, Webauftritt Bundesverwaltung (extern), Variante Mieterportal (extern) — shell.js:342-350
 - Footer-Rechtsleiste (nav «Rechtliches»): Impressum, Rechtliches, Datenschutz, Barrierefreiheit (alle extern admin.ch) — shell.js:346-354
 
 **Zustände**
