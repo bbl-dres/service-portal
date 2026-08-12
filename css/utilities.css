@@ -85,6 +85,11 @@ input[type="range"] { border:0; box-shadow:none; padding:0; }
    second row. Field and “Search” remain on one row; below 640px, the rule below
    still stacks them deliberately. */
 .home-search { display:flex; flex-wrap:nowrap; gap:var(--sp-2); align-items:stretch; max-width:40rem; }
+/* The field's own box: it takes the growing share of the row, and the suggestion
+   popup is positioned against it rather than against the row (the anchor is the
+   input's parent — js/search/search-suggest.js). A popup as wide as field plus
+   «Suchen» claimed a control it has nothing to do with. */
+.home-search__field { flex:1 1 auto; min-width:0; display:flex; }
 .home-search input { flex:1 1 auto; min-width:0; min-height:var(--input-h); font-size:var(--text-base); }
 /* The button must NOT shrink: `.btn__text` carries CD's `overflow-wrap:anywhere`
    (btn.postcss:133-137), reducing min-content width to one character. As a flex

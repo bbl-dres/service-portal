@@ -192,7 +192,14 @@ export default async function render(ctx) {
           <p class="hero__description">Dienstleistungen, Anwendungen, Dokumente und Daten des Bundesamts für Bauten und Logistik — an einem Ort.</p>
           <form class="home-search hero__cta" id="home-search" role="search">
             <label class="sr-only" for="home-q">Im Portal suchen</label>
-            <input id="home-q" type="search" placeholder="Wonach suchen Sie? z. B. Störung, Raumbedarf, Bauprojekt…" autocomplete="off">
+            ${/* The field gets a box of its own so the suggestion popup can be
+                  anchored to IT. attachSuggest appends the listbox to the input's
+                  parent (js/search/search-suggest.js), and that parent used to be
+                  this whole row — so the popup ran the width of field PLUS
+                  button, which is not what it belongs to. */''}
+            <span class="home-search__field">
+              <input id="home-q" type="search" placeholder="Wonach suchen Sie? z. B. Störung, Raumbedarf, Bauprojekt…" autocomplete="off">
+            </span>
             <button class="btn btn--filled btn--lg btn--icon-left" type="submit">${C.icon('Search', 'btn__icon')}<span class="btn__text">Suchen</span></button>
           </form>
         </div>
