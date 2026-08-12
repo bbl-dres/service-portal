@@ -159,7 +159,13 @@ function catalogue(ctx) {
     href: (id) => hash({ category: id === 'alle' ? '' : id, page: 1 }),
     count: (id) => products.filter((p) => cat.contains(p, id)).length,
   };
-  const categoryNavigation = categoryTree(C, categories, categoryOptions);
+  // The catch-all root is dropped from the TREE, not from the model — it stays
+  // the default value of `activeCat` and the identity case in `contains`.
+  // German UI term: `alle`.
+  // As a row it was a third way to do what the active-filter pill and the panel
+  // reset already do, and the only one that looked like a category while being
+  // the absence of one.
+  const categoryNavigation = categoryTree(C, categories.filter((c) => c.id !== 'alle'), categoryOptions);
 
   const card = (p) => productCard(C, p);
   const listView = (rows) => C.table({
@@ -194,10 +200,9 @@ function catalogue(ctx) {
       filterId: 'shop-filter', filterLabel: 'Filter',
       filterCount: brands.length + flags.length + (activeCat === 'alle' ? 0 : 1),
       panelId: 'shop-filters', panel: `
-        <nav class="shop-categories-filter" aria-labelledby="shop-categories-filter-title">
-          <h2 class="filter-group__legend" id="shop-categories-filter-title">Kategorien</h2>
-          ${categoryNavigation}
-        </nav>
+        ${/* No category tree in this panel: the sidebar carries it at every width
+              now (css/sections/explorer.css), and rendering it twice put two
+              `aria-current` rows in the page for one selection. */''}
         ${C.filterGroup({ dim: 'brand', legend: 'Marke', selected: brands, options: brandOpts })}
         ${C.filterGroup({ dim: 'status', legend: 'Status', selected: flags, options: [{ value: 'new', label: 'Neuheiten' }] })}
         ${C.panelReset({ href: hash({ category: '', brand: [], status: [], page: 1 }) })}`,
@@ -264,21 +269,52 @@ function productCard(C, p) {
   </div>`;
 }
 
+// The tree opens along the SELECTED path and is otherwise collapsed to its top
+// level. Every level used to be rendered expanded at once, which made a deep
+// product taxonomy a wall of ~40 rows before you had chosen anything.
+//
+// Disclosure is driven by the hash, not by a second piece of state: a category
+// row is expanded when it IS the selection or contains it. That means the row
+// needs no separate toggle — choosing a category is the same gesture as opening
+// it — and the state is shareable and survives reload like every other filter in
+// this app. The chevron is therefore an indicator, not a control, and is hidden
+// from assistive technology; `aria-expanded` on the link carries the state.
 function categoryTree(C, categories, opts, depth = 0) {
   const rows = (categories || []).map((cat) => {
     const hasChildren = Array.isArray(cat.children) && cat.children.length;
     const active = opts.active === cat.id;
     const path = hasChildren && flattenCategories(cat.children || []).some((child) => child.id === opts.active);
-    const body = `<span class="pf-tree__label">${C.escape(cat.label)}</span><span class="pf-tree__n">${opts.count(cat.id)}</span>`;
+    const open = hasChildren && (active || path);
+    // A childless row keeps an EMPTY chevron slot so every label in the column
+    // starts at the same x; without it the leaves sat a glyph-width to the left
+    // of their siblings.
+    const chevron = hasChildren
+      ? C.icon('ChevronRight', 'pf-tree__chev')
+      : '<span class="pf-tree__chev pf-tree__chev--empty" aria-hidden="true"></span>';
+    const body = `${chevron}<span class="pf-tree__label">${C.escape(cat.label)}</span><span class="pf-tree__n">${opts.count(cat.id)}</span>`;
     const row = `<li class="pf-tree__item">
-      <a class="pf-tree__leaf plain-link interactive-control${active ? ' is-active' : ''}${path ? ' is-path' : ''}" href="${opts.href(cat.id)}"${active ? ' aria-current="true"' : ''}>
+      <a class="pf-tree__leaf plain-link interactive-control${active ? ' is-active' : ''}${path ? ' is-path' : ''}" href="${opts.href(cat.id)}"${active ? ' aria-current="true"' : ''}${hasChildren ? ` aria-expanded="${open}"` : ''}>
         ${body}
       </a>
-      ${hasChildren ? categoryTree(C, cat.children, opts, depth + 1) : ''}
+      ${open ? categoryTree(C, cat.children, opts, depth + 1) : ''}
     </li>`;
     return row;
   }).join('');
-  return `<ul class="pf-tree pf-tree--plain${depth ? ' pf-tree__children' : ''}">${rows}</ul>`;
+  // Only the ROOT list is a `.pf-tree`. A nested list is `.pf-tree__children`
+  // and nothing else, because `.pf-tree > .pf-tree__item:first-child` clears the
+  // divider above the first row — a rule meant to fire ONCE, at the top of the
+  // column, so the head is not underlined twice (explorer.css:62-69). Marking
+  // every sub-list as a tree fired it per group instead, and the line above the
+  // first child of each category went missing (user finding, 2026-08-12).
+  // `--plain` also stays on the root alone: its rules are descendant selectors.
+  // NOT `pf-tree--plain`: that variant exists to close the gap a missing icon
+  // column leaves (explorer.css), and this tree now has a column — the chevron,
+  // real or an empty slot, on every row. Keeping both indented the rows twice.
+  // Without it the categories align exactly with the structure trees in the
+  // property inventory, which is the same component doing the same job.
+  return depth
+    ? `<ul class="pf-tree__children">${rows}</ul>`
+    : `<ul class="pf-tree">${rows}</ul>`;
 }
 
 function detail(ctx, id) {

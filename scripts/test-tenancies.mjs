@@ -27,7 +27,7 @@ let o = JSON.parse(await p.evaluate(`JSON.stringify({
   cards: document.querySelectorAll('.pf-gallery .card').length,
   count: document.querySelector('#mt-count')?.textContent.replace(/\\s+/g,' ').trim(),
   tileGrid: document.querySelectorAll('.grid--3').length,
-  chips: [...document.querySelectorAll('.card__chips .card__chip')].slice(0,2).map(x => x.textContent),
+  chips: [...document.querySelectorAll('.card__chips .badge')].slice(0,2).map(x => x.textContent),
   administrativeUnitFilter: [...document.querySelectorAll('[data-fdim=administrativeUnits]')].map(x => x.value),
   views: [...document.querySelectorAll('.view-switch__btn')].map(x => x.dataset.view),
 })`));

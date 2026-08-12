@@ -125,8 +125,12 @@ export default async function render(ctx) {
       ? C.photo({ src: o.photoSrc, id: o.photo, color: 'var(--color-secondary-600)', alt: `${o.name}, ${o.city}`, w: 480, cls: 'pf-card__img' })
       : `<div class="pf-card__parcel">${C.icon('Crop', 'icon--2xl')}</div>`;
 
+    // The shared badge, not a card-local chip shape: these say the same kind of
+    // thing as every other badge in the portal (a country, a status), and a
+    // second pill vocabulary for one gallery was the only thing making them
+    // different (user decision, 2026-08-12).
     const chips = [countryName(o.country), o.status]
-      .filter(Boolean).map((c) => `<span class="pf-card__country">${esc(c)}</span>`).join('');
+      .filter(Boolean).map((c) => C.badge(c, 'info')).join('');
 
     return C.card({
       cls: 'pf-card',

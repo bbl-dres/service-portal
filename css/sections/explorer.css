@@ -5,14 +5,23 @@
 /* Mobile first: below lg, place the tree above the map instead of squeezing
    content beside a fixed-width sidebar. */
 .pf-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-5); align-items:start; margin-top:var(--sp-4); }
-.pf-sidebar { position:static; max-height:22rem; overflow:auto; padding:var(--sp-2);
+/* ONE inset, on the panel. The head used to add its own inline padding on top of
+   the panel's, so its title started 16px from the edge while the row dividers —
+   which span the panel's content box — started at 8px, and the header floated
+   half a step right of the list it belongs to. The inset now lives here alone:
+   head, rows and dividers share one leading edge on every explorer that uses
+   this panel (property inventory, construction projects, tenancies, workspace,
+   shop, metadata catalogue, process documentation). */
+.pf-sidebar { position:static; max-height:22rem; overflow:auto; padding:var(--sp-4);
   background:var(--surface-bg); border:var(--stroke-1) solid var(--surface-border);
   border-radius:var(--surface-radius); box-shadow:var(--surface-elevation); }
 @media (min-width:1024px){
   .pf-layout  { grid-template-columns:minmax(15rem,18rem) minmax(0,1fr); }
   .pf-sidebar { position:sticky; top:var(--sp-4); max-height:calc(100vh - var(--sp-28)); }
 }
-.pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); padding:var(--sp-1-5) var(--sp-2) var(--sp-2); }
+/* No inline padding of its own — see .pf-sidebar. Only the gap to the first row
+   stays, so the title is not glued to it. */
+.pf-sidebar__head { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-2); padding:0 0 var(--sp-2); }
 .pf-sidebar__title { font-size:var(--text-lg); margin:0; }
 
 /* Structure tree. One reusable component behind five explorers (property
@@ -100,6 +109,10 @@
 .pf-tree .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children .pf-tree__children::before { left:calc(var(--tree-gutter) + var(--tree-axis) + 5 * var(--tree-indent)); }
 
 .pf-tree__chev { flex:none; transition:transform var(--duration-fast); color:var(--color-text-light); }
+/* Placeholder for a row with nothing to open (shop categories). It reserves the
+   glyph's width so every label in the column starts at the same x, and it is the
+   same box the icon would occupy — .icon's own size, not a guessed one. */
+.pf-tree__chev--empty { display:inline-block; width:var(--sp-4); height:var(--sp-4); }
 .pf-tree__node[aria-expanded="true"] > .pf-tree__chev,
 .pf-tree__leaf[aria-expanded="true"] > .pf-tree__chev { transform:rotate(90deg); }
 .pf-tree__ico { flex:none; color:var(--color-text-muted); }
@@ -137,14 +150,29 @@
 /* Portal-native intranet shop using the CD shopping vocabulary where applicable. */
 .shop-head { max-width:60rem; }
 .shop-layout { margin-top:var(--sp-6); }
-.shop-layout .pf-sidebar { display:none; max-height:28rem; }
-.shop-categories-filter { padding-bottom:var(--sp-5); margin-bottom:var(--sp-5);
-  border-bottom:var(--stroke-1) solid var(--color-secondary-200); }
-.shop-categories-filter .filter-group__legend { margin-bottom:var(--sp-2); }
+/* The category tree STACKS above the results below 1024, exactly as every other
+   explorer does (.pf-layout above is a single column there, sidebar first in the
+   DOM). It used to be hidden instead and duplicated into the filter panel, which
+   cost a second copy of the same tree in the page — two `aria-current` rows for
+   one selection — and left a shop without visible categories on the screens
+   where browsing by category matters most (user decision, 2026-08-12).
+   The taller cap is the only shop-specific part: this tree is a deep product
+   taxonomy, not a handful of branches. */
+.shop-layout .pf-sidebar { max-height:28rem; }
 @media (min-width:1024px){
-  .shop-layout .pf-sidebar { display:block; max-height:calc(100vh - var(--sp-32)); }
-  .shop-categories-filter { display:none; }
+  .shop-layout .pf-sidebar { max-height:calc(100vh - var(--sp-32)); }
 }
+/* CD's `gap--top` on the results grid (search.postcss:196-201) is the space
+   between the result header's rule and the first card, and it is right wherever
+   the grid IS the thing that follows that rule — every other catalogue in the
+   portal. The shop puts the grid in a column instead, beside the categories, and
+   `.shop-layout` above already carries the separation for BOTH columns. Left in,
+   the padding pushed the cards down while the category column stayed at the
+   layout top, so the two started 48px apart at 1440 and 40px at 1024 (measured,
+   user finding 2026-08-12). Suppressed here only: the grid keeps `gap--top`
+   everywhere it is not in a column. Descendant, not child: catalogueResults
+   wraps the grid in its own <section> region. */
+.shop-layout .pf-main .gap--top { padding-top:0; }
 
 .shop-card .card__title a { color:inherit; text-decoration:none; }
 .shop-card .card__footer__action { position:relative; z-index:var(--z-local-control); }
@@ -210,8 +238,11 @@
 .pf-card__img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .pf-card__parcel { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);
   background:repeating-linear-gradient(45deg, var(--color-secondary-50), var(--color-secondary-50) 10px, var(--color-secondary-100) 10px, var(--color-secondary-100) 20px); }
-.pf-card__chips { position:absolute; top:var(--sp-2); left:var(--sp-2); right:var(--sp-2); display:flex; flex-wrap:wrap; gap:var(--sp-1); }
-.pf-card__country { background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); padding:var(--sp-0-5) var(--sp-2); border-radius:var(--radius-full); }
+/* --sp-3, the ONE inset every overlay on card media uses — see the note at
+   .card__chips (css/components/card.css). `.pf-card__country` was excised with
+   it: the chips are ordinary badges now (js/apps/portfolio.js), so the gallery
+   no longer carries a second pill shape of its own. */
+.pf-card__chips { position:absolute; top:var(--sp-3); left:var(--sp-3); right:var(--sp-3); display:flex; flex-wrap:wrap; gap:var(--sp-1); }
 /* Gallery-only compact rhythm: name, ID, address, then aligned category and area footer. */
 .pf-card .card__body { padding:var(--sp-5) var(--sp-6) var(--sp-4); gap:0; }
 .pf-card .card__title { font-size:var(--text-lg); line-height:1.3; }

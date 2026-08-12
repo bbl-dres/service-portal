@@ -86,6 +86,38 @@ Portal habe mit einer Volltonfarbe genähert. Nach Einsicht in die Quelle stimmt
 das so nicht — die Farbe war richtig, nur die Deckkraft fehlte. Der Kommentar
 nennt jetzt die CD-Regel wörtlich.
 
+## Nachtrag: vier Meldungen aus der Mobilansicht, in CD nachgeschlagen
+
+**Externes Symbol in `.top-bar`** — kein Fehler. CD zeigt in der Leiste unter
+1024 NUR das Symbol (`top-bar-navigation.postcss:7-11`, `span { hidden lg:block }`)
+und im Schubfach NUR die Beschriftung (`.top-bar-navigation--mobile { svg { hidden } }`).
+Die Verdoppelung ist CDs eigenes Modell. Unverändert gelassen.
+
+**Zeilenumbruch bei «Alle Schweizer Bundesbehörden»** — ebenfalls CD:
+`top-bar.postcss:136-138` setzt `span { w-min sm:w-full }`, unter 640 also eine
+Spalte in Mindestbreite, die umbricht statt zu verschwinden. Bereits so umgesetzt.
+
+**Benutzerzeile im Schubfach** — echter Fehler, behoben. CD macht dort jeden
+Meta-Eintrag zu einer vollbreiten Zeile (`mobile-menu.postcss:126-134`), gestylt
+über `ul a`. Der angemeldete Eintrag ist ein `<li>` aus Name, Trennstrich und
+`<button>`: nur der Knopf traf einen Selektor und wurde 100 % breit, der Name
+blieb ein Inline-Cluster — beide in einer Flex-Zeile, die aus dem Schubfach lief.
+Jetzt eine Spalte aus Zeilen wie die Einträge darüber.
+
+**Nach-oben-Knopf zu spät** — echter Fehler, behoben. CD verankert seine Hülle
+bei `top: 80vh` des Inhalts und lässt sie bis zum Ende laufen
+(`back-to-top-btn.postcss:11-25`): der Knopf existiert nach vier Fünfteln eines
+Bildschirms. Die Schiene hier war 200vh hoch und am Fuss verankert. **Gemessen:
+Startseite bei 375px ist 10,2 Bildschirme hoch, der Knopf erschien erst nach 5,6
+Bildschirmen** — nach der halben Seite. Nach der Korrektur: ab dem ersten
+Bildschirm, wie im CD.
+
+**`gap--top` über dem Galerieraster** — kein Fehler, jetzt gemessen. CDs
+Suchergebnisraster trägt `gap--responsive` + `gap--top`
+(`search.postcss:196-201`), und `.catbar` ist hier CDs `.search-results__header`
+(pb-2 + `border-b border-secondary-300`). Der Abstand ist der Abstand zwischen
+Linie und erster Karte: 40/48/64px, in `check-cd-contracts.mjs` festgehalten.
+
 ## Was dieser Durchgang NICHT geprüft hat
 
 Ehrlich zum Umfang: geprüft wurden die Grundlagen und die elf meistgenutzten

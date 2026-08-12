@@ -72,6 +72,15 @@ const CHECKS = [
     expect: { borderTopLeftRadius: () => '9999px', fontSize: (w) => px(1) },
   },
   {
+    // The gallery grid follows a bordered result header, and the space between
+    // the rule and the first card is CD's, not an invention: `.catbar` is this
+    // portal's `.search-results__header` (pb-2 + border-b secondary-300) and the
+    // grid below it carries `gap--responsive` + `gap--top`, as CD does.
+    route: '/applications?view=gallery', selector: '.grid--responsive-cols-3.gap--top',
+    source: 'grids.postcss:13-15 + search.postcss:196-201  .search-results-list { gap--responsive; gap--top }',
+    expect: { paddingTop: (w) => (w >= 1920 ? px(4) : w >= 1280 ? px(3) : px(2.5)) },
+  },
+  {
     route: '/services', selector: '.btn--outline',
     source: 'btn.postcss:112-117  .btn { min-h-[44px] xl:min-h-[48px] 3xl:min-h-[52px] }',
     expect: { minHeight: (w) => (w >= 1920 ? '52px' : w >= 1280 ? '48px' : '44px') },

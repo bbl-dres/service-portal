@@ -1,4 +1,4 @@
-import { breakable, escape, icon, photo, safeClassList, safeHeadingTag } from './primitives.js';
+import { badge, breakable, escape, icon, photo, safeClassList, safeHeadingTag } from './primitives.js';
 import { backLink } from './navigation.js';
 import { shareBar } from './overlays.js';
 import { classifyUrl, newWindowAttrs, safeLinkUrl, safeMailto, safeResourceUrl } from '../../security/urls.js';
@@ -57,9 +57,14 @@ export function card(o) {
   // for details read while scanning the grid (country, status) that would only
   // consume space before title and description in the text. `.card__image` is
   // already `position:relative`, so the overlay needs no separate box.
+  // Chips are ordinary badges. They say the same kind of thing as every other
+  // badge in the portal — a country, a status, a count — and a card-local pill
+  // shape (the former `.card__chip`, a dark scrim capsule) made the same fact
+  // look like a different species depending on whether it sat on a picture or
+  // under one (user decision, 2026-08-12).
   const chips = (o.chips || []).filter(Boolean);
   const overlay = chips.length
-    ? `<div class="card__chips">${chips.map((c) => `<span class="card__chip">${escape(c)}</span>`).join('')}</div>`
+    ? `<div class="card__chips">${chips.map((c) => badge(c, 'info')).join('')}</div>`
     : '';
   // `mark`: ready HTML stating something about the record AS A WHOLE — today the
   // «gemerkt» star (js/ui/bookmark.js). A card has two shapes and the mark needs

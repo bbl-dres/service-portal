@@ -9,7 +9,7 @@ console.log('Overview:', await page.evaluate(`(() => {
   return JSON.stringify({
     cards: document.querySelectorAll('.grid .card').length,
     pillRows: document.querySelectorAll('.grid .pill-row').length,
-    chips: [...(chips?.querySelectorAll('.card__chip') || [])].map((chip) => chip.textContent),
+    chips: [...(chips?.querySelectorAll('.badge') || [])].map((chip) => chip.textContent),
     firstImage: !!document.querySelector('.card__image img'),
     treeCountries: [...document.querySelectorAll('.pf-tree > .pf-tree__item > .pf-tree__node .pf-tree__label')].map((label) => label.textContent),
     count: document.querySelector('#pj-count, .catbar__count')?.textContent.replace(/\\s+/g, ' ').trim(),

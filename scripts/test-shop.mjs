@@ -105,24 +105,31 @@ try {
     const initiallyHidden = panel?.hidden;
     toggle?.click();
     await new Promise(r => setTimeout(r, 80));
-    const mobileNav = panel?.querySelector('.shop-categories-filter');
+    const main = document.querySelector('.shop-layout .pf-main');
     return {
-      sidebarHidden: sidebar ? getComputedStyle(sidebar).display === 'none' : false,
+      // The tree is VISIBLE at 320 and stacks above the results, as in every
+      // other explorer. It used to be hidden here and copied into the filter
+      // panel, which left the shop without categories on exactly the screens
+      // where browsing by category matters most (user decision, 2026-08-12).
+      sidebarShown: sidebar ? getComputedStyle(sidebar).display !== 'none' : false,
+      sidebarAboveMain: !!(sidebar && main
+        && sidebar.getBoundingClientRect().bottom <= main.getBoundingClientRect().top + 1),
+      // …and it exists exactly once: two copies meant two aria-current rows.
+      trees: document.querySelectorAll('.shop-layout .pf-tree, #shop-filters .pf-tree').length,
+      categoryLinks: sidebar?.querySelectorAll('.pf-tree__leaf').length || 0,
       initiallyHidden,
       expanded: toggle?.getAttribute('aria-expanded'),
       panelVisible: panel ? !panel.hidden : false,
-      mobileNavVisible: mobileNav ? getComputedStyle(mobileNav).display !== 'none' : false,
-      categoryLinks: mobileNav?.querySelectorAll('.pf-tree__leaf').length || 0,
       addHeight: Math.round(document.querySelector('[data-add]')?.getBoundingClientRect().height || 0),
     };
   })()`);
-  if (!mobileCategories.sidebarHidden || !mobileCategories.initiallyHidden
-      || mobileCategories.expanded !== 'true' || !mobileCategories.panelVisible
-      || !mobileCategories.mobileNavVisible || mobileCategories.categoryLinks < 2
-      || mobileCategories.addHeight < 44) {
-    fails.push(`Mobile categories: filter disclosure is incomplete (${JSON.stringify(mobileCategories)})`);
+  if (!mobileCategories.sidebarShown || !mobileCategories.sidebarAboveMain
+      || mobileCategories.trees !== 1 || mobileCategories.categoryLinks < 2
+      || !mobileCategories.initiallyHidden || mobileCategories.expanded !== 'true'
+      || !mobileCategories.panelVisible || mobileCategories.addHeight < 44) {
+    fails.push(`Mobile categories: sidebar/filter contract is incomplete (${JSON.stringify(mobileCategories)})`);
   }
-  console.log(`  ok  mobile categories appear in the filter (${mobileCategories.categoryLinks} links)`);
+  console.log(`  ok  mobile categories stack above the results (${mobileCategories.categoryLinks} links, ${mobileCategories.trees} tree)`);
   await cdp.send('Emulation.setDeviceMetricsOverride',
     { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false }, page.sessionId);
 

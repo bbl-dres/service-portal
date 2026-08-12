@@ -224,6 +224,7 @@
 .mobile-menu .main-navigation > ul > li > button,
 .mobile-menu .meta-navigation li > a,
 .mobile-menu .meta-navigation li > button,
+.mobile-menu .meta-navigation .meta-navigation__name,
 .mobile-menu .top-bar-navigation--mobile li > a {
   display:flex; align-items:center; justify-content:space-between; width:100%; min-height:var(--target-min);
   padding:var(--sp-3) var(--sp-4); position:relative; font:inherit; font-size:var(--fs-sm); text-align:left;
@@ -269,9 +270,26 @@
 .mobile-menu .meta-navigation { display:block; }
 .mobile-menu .meta-navigation ul { display:block; }
 .mobile-menu .meta-navigation li > a,
-.mobile-menu .meta-navigation li > button { background:var(--color-secondary-50); color:var(--color-text); }
+.mobile-menu .meta-navigation li > button,
+.mobile-menu .meta-navigation .meta-navigation__name { background:var(--color-secondary-50); color:var(--color-text); }
 .mobile-menu .meta-navigation li > a:hover,
 .mobile-menu .meta-navigation li > button:hover { background:var(--color-secondary-100); }
+/* The signed-in entry is ONE <li> holding a name, a vertical rule and the
+   sign-out button. That anatomy belongs to the desktop meta bar, where the three
+   sit side by side. In the drawer CD makes every meta entry a full-width row
+   (mobile-menu.postcss:126-134), and only two of the three parts matched a
+   selector here: the button became a 100%-wide row while the name stayed an
+   inline cluster, so they fought inside one flex line and pushed the row past
+   the drawer edge. Here the same <li> is a COLUMN of rows, so name and action
+   read like the two meta rows above them. The rule is then the
+   row divider each child already draws, not a glyph between them.
+   German UI term: `Notfall & Vorfälle` / `Hilfe`. */
+.mobile-menu .meta-navigation .meta-navigation__user {
+  display:flex; flex-direction:column; align-items:stretch; gap:0; padding-inline:0; min-height:0; }
+.mobile-menu .meta-navigation .meta-navigation__user > .separator--vertical { display:none; }
+/* The name is a label, not a control: it keeps the row shape but neither the
+   pointer nor the hover surface, which would promise an action it does not have. */
+.mobile-menu .meta-navigation .meta-navigation__name { cursor:default; gap:var(--sp-2); justify-content:flex-start; }
 /* No padding-bottom: it painted an empty dark strip below the last row (user
    finding). Rows carry their own surface. */
 .mobile-menu .top-bar-navigation--mobile { background:var(--color-secondary-500); }

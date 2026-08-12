@@ -242,17 +242,23 @@
 /* Reusable media annotations and identifier line. They belong to the card
    block; portfolio's historic pf-card equivalents remain scoped to its custom
    media renderer. */
-.card__chips { position:absolute; top:var(--sp-2); left:var(--sp-2); right:var(--sp-2);
+/* ONE inset for everything that sits ON card media: --sp-3, top and left, for
+   the chip row here, the portfolio's own chip row (.pf-card__chips) and the
+   «gemerkt» mark below. They appear on the same galleries and at different
+   insets they read as three unrelated decisions rather than one rule (user
+   decision, 2026-08-12). DELIBERATE DEVIATION: CD sets top-2/left-2 on this one
+   (card.postcss:236-237) and has no equivalent for the other two, so following
+   it here would mean keeping the inconsistency to match a value CD only ever
+   applies to a third of the cases. */
+.card__chips { position:absolute; top:var(--sp-3); left:var(--sp-3); right:var(--sp-3);
   display:flex; flex-wrap:wrap; gap:var(--sp-1); }
 /* The «gemerkt» mark on the card picture (C.card `mark`). Same corner, same disc
    and same edge as the star over a detail hero (css/layouts/shell.css), one step
    smaller because it labels a tile rather than a page. `.card__image` is already
    the positioning context. It follows .card__chips in source order so that a
    card using both keeps the mark on top of a chip row that spans the full width. */
-/* Inset by --sp-6, the INLINE padding of .card__body below it: the mark then
-   stands on the same left edge as the title and the pill row, and reads as part
-   of the card's own margin rather than as something dropped onto the picture. */
-.card__mark { position:absolute; top:var(--sp-6); left:var(--sp-6);
+/* --sp-3, the shared overlay inset — see .card__chips above. */
+.card__mark { position:absolute; top:var(--sp-3); left:var(--sp-3);
   display:flex; padding:var(--sp-1-5); border-radius:var(--radius-full);
   background:var(--color-bg); box-shadow:var(--shadow-overlay-control); }
 /* The body twin, for the card shapes that have no corner to put a mark in.
@@ -268,8 +274,10 @@
   .catalogue-grid .card__mark-inline { display:inline-flex; }
   .catalogue-grid .card__mark { display:none; }
 }
-.card__chip { padding:var(--sp-0-5) var(--sp-2); border-radius:var(--radius-full);
-  background:var(--scrim-chip); color:var(--color-text-negative); font-size:var(--fs-xs); }
+/* `.card__chip` was excised with the change above: the chip row holds ordinary
+   badges now, so the dark scrim capsule had no producer left. --scrim-chip
+   itself stays — the portfolio mosaic still uses it for labels laid directly on
+   a photograph, where there is no badge surface to sit on. */
 .card__identifier { margin:var(--sp-1-5) 0 0; font-family:var(--font-mono);
   font-size:var(--text-sm); font-weight:var(--fw-regular); color:var(--color-text-muted);
   letter-spacing:.01em; }

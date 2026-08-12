@@ -90,12 +90,21 @@
 /* The docked white box in the footer is CD behavior and STAYS:
    back-to-top-btn.postcss:11-13 sets bottom:-3.5rem (−4rem lg, −5rem xl),
    exactly one button-height protrusion into the following band on a bg-white
-   button. Two real symptoms remain: the rail was 1000vh tall and therefore
-   visible from the page start (on portfolio/dash-real-estate the button landed
-   on the MapLibre zoom cluster), and it aligned to the content container rather
-   than the viewport edge, so at 1440 it covered the third card's open action.
-   200vh is the CSS approximation of CD's top-[80vh]. */
-.back-to-top-rail { position:absolute; left:0; right:0; height:200vh; pointer-events:none; z-index:var(--z-local-control);
+   button. It also aligns to the content container rather than the viewport edge,
+   so at 1440 it no longer covers the third card's open action.
+   HOW EARLY the button appears is the rail's height, and 200vh was too short.
+   CD anchors its wrapper at `top: 80vh` of the CONTENT and runs it to the end
+   (back-to-top-btn.postcss:11-25), so the button exists for all but the first
+   four fifths of a screen. Anchored to the footer instead — which is what makes
+   the docking work — the equivalent is a rail as tall as the page. Measured
+   before: on the home page at 375px (10.2 screens) the button first appeared
+   after 5.6 screens of scrolling, past half the page, exactly where a long
+   mobile page needs it most (user finding, 2026-08-12). 1000vh covers every
+   route in the portal; on a short page the surplus simply hangs above the
+   document, where an absolute, pointer-events:none strip costs nothing.
+   The MapLibre overlap this height once caused is now handled at the map
+   (.pf-map/.dash-map control padding below), not by shortening the rail. */
+.back-to-top-rail { position:absolute; left:0; right:0; height:1000vh; pointer-events:none; z-index:var(--z-local-control);
   /* Dock: button bottom = (margin + button height) below the footer top edge,
      therefore button top = margin below it. */
   bottom:calc(100% - (var(--sp-4) + var(--target-min))); }

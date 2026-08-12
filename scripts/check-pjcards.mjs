@@ -14,7 +14,8 @@ const probe = `(() => {
   return JSON.stringify({
     pillRows: document.querySelectorAll('.grid .pill-row, .pf-gallery .pill-row').length,
     chipGroups: document.querySelectorAll('.card__chips').length,
-    labels: chips ? [...chips.querySelectorAll('.card__chip')].map((chip) => chip.textContent) : [],
+    // Chips are ordinary badges since 2026-08-12 (js/ui/components/content.js).
+    labels: chips ? [...chips.querySelectorAll('.badge')].map((chip) => chip.textContent) : [],
     insideImage: !!(chipBox && imageBox && chipBox.top >= imageBox.top - 1 && chipBox.left >= imageBox.left - 1),
     position: style && style.position,
     inset: style && [style.top, style.left, style.right].join(' '),
