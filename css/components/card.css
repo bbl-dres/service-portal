@@ -68,15 +68,17 @@
 .card--clickable .card__link:focus-visible::after { outline:var(--stroke-2) solid var(--color-focus-ring); outline-offset:var(--stroke-2); }   /* Standard offset; the card no longer clips */
 .card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):where(:hover,:focus-within) {
   box-shadow:var(--shadow-2xl); text-decoration:none; }
-/* NO edge ring on hover (user decision, 2026-08-12). CD's card hover includes an
-   `::after` edge at opacity .9 (design-system-reference §Card); the portal
-   approximated it with a solid --color-gray-50 (#f9fafb). On a white page that
-   is invisible, which is why it went unnoticed — but half the card surfaces sit
-   on the tinted band (#f0f4f7, the alternating home-page sections), and there
-   the same near-white read as a stray white border on hover. Rather than pick a
-   third colour that works on both grounds, the hover state keeps the two signals
-   that carry it anyway: the shadow lifts and the title changes colour. The
-   ::after box stays for :active below. */
+/* NO edge ring on hover (user decision, 2026-08-12). CD does draw one —
+   card.postcss:20-40 puts `border-2 border-text-50 border-opacity-0` on the
+   card's link overlay and raises it to `border-opacity-90` on hover, so a
+   near-white (#f9fafb) edge at 90%. That reads as a highlight only because every
+   CD card sits on `bg-white` (card.postcss:5-9): white-on-white is a sheen.
+   Half the card surfaces here sit on the tinted band instead (#f0f4f7, the
+   alternating home-page sections), and there the same edge reads as a stray
+   white border — which is how it was reported. A ground-dependent effect cannot
+   be made correct by choosing a third colour, so the hover state keeps the two
+   signals CD gives it that DO work on any ground: shadow-2xl and the title
+   colour. The ::after box stays for :active below. */
 .card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):where(:hover,:focus-within) .card__title {
   color:var(--color-primary-700); }
 .card--clickable:not(:where(.card--disabled,.card--loading,[aria-disabled="true"],[aria-busy="true"])):active {
