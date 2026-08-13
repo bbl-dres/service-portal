@@ -69,8 +69,15 @@
 .catbar .view-switch__btn { min-height:var(--target-min); }
 /* The bar's `extra` slot: a secondary action at the far right, separated like
    the view switch. It has the same hierarchy and must not read as another
-   filter attached to “Filter”. */
-.catbar__aside { min-height:var(--target-min); white-space:nowrap;
+   filter attached to “Filter”.
+   A C.menu in the same slot gets the identical treatment — the divider belongs
+   to the SLOT, not to the kind of control filling it. The «Mehr» export menu
+   (dataset «Datenfelder») was the one bar control in the portal without it and
+   sat 4px from the sort select, so an export dropdown read as part of sorting
+   (user finding, 2026-08-13). The rule goes on the .action-menu wrapper, never
+   the trigger: on the button the border would become part of the button box. */
+.catbar__aside,
+.catbar__controls > .action-menu { min-height:var(--target-min); white-space:nowrap;
   border-left:var(--stroke-1) solid var(--color-secondary-300); padding-left:var(--sp-4); margin-left:var(--sp-3); }
 /* The tinted, rounded card is a deliberate decision and STAYS. Only the wrapping
    flex row changes: at 1440 it left roughly 60% of the panel empty and made
@@ -132,5 +139,6 @@
 @media (max-width:479.98px){
   /* The divider looks wrong at the row start when the switch wraps by itself. */
   .catbar__controls .view-switch { border-left:0; padding-left:0; }
-  .catbar__aside { border-left:0; padding-left:0; margin-left:0; }
+  .catbar__aside,
+  .catbar__controls > .action-menu { border-left:0; padding-left:0; margin-left:0; }
 }

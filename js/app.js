@@ -64,7 +64,11 @@ async function boot() {
   // Prototype notice as a CD consent strip. Once dismissed, it stays dismissed.
   mountBanner(document.getElementById('banner-host'), {
     id: 'prototyp',
-    html: 'Diese Anwendung ist ein <strong>Prototyp</strong>. Darstellung, Funktionalität und Inhalte dienen ausschliesslich der Demonstration.',
+    // Word for word the footer's note (ui/shell/footer.js). The strip is
+    // dismissible and the footer is not, so the same caveat has to survive in
+    // both places — and a reader who meets it twice should not have to work out
+    // whether the second version says something new.
+    html: 'Diese Anwendung ist ein <strong>Prototyp</strong>. Darstellung, Funktionalität und Inhalte dienen ausschliesslich der Demonstration; die verwendeten Daten sind fiktiv oder öffentlich zugänglich.',
     actionLabel: 'Verstanden',
     variant: 'info',   // CD requirement for this component (NotificationBanner.vue:51)
     label: 'Hinweis zum Prototyp',

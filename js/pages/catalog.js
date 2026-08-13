@@ -525,9 +525,12 @@ function wireFieldsPanel(C, core, dataset, mount) {
         items: [
           // The heading already says «export», so the items name only the format
           // and stay on one line inside the popup.
+          // No icons: the same download arrow on every row of a menu whose
+          // heading already says «Exportieren» distinguishes nothing, and the
+          // portal's other export menu (ui/charts.js) lists its formats plain.
           { heading: 'Exportieren' },
-          { action: 'csv', label: 'Als CSV', icon: 'Download' },
-          { action: 'xls', label: 'Für Excel', icon: 'Download' },
+          { action: 'csv', label: 'Als CSV' },
+          { action: 'xls', label: 'Für Excel' },
         ],
       }),
       onAction: (action, { filtered }) => exportFields(action, filtered, table, composite),
