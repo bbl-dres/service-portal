@@ -79,6 +79,33 @@ function enhanceSwagger(host) {
   });
 }
 
+// RFC 9457 (Problem Details). One shape for every error in the API, built from
+// the status code and the specification's own wording, so 23 resources do not
+// each invent an error body. `type` is a documentation URL per code, which is
+// what the RFC intends it for.
+const PROBLEM_TITLES = {
+  400: 'Ungültige Anfrage', 401: 'Nicht angemeldet', 403: 'Fehlende Berechtigung',
+  404: 'Nicht gefunden', 409: 'Konflikt', 412: 'Vorbedingung fehlgeschlagen',
+  422: 'Fachliche Validierung fehlgeschlagen', 428: 'Vorbedingung erforderlich',
+  429: 'Zu viele Anfragen', 500: 'Interner Fehler', 503: 'Dienst nicht verfügbar',
+};
+function problemFor(code, desc, ep) {
+  const status = Number(code);
+  const problem = {
+    type: `https://api.bbl.admin.ch/problems/${status}`,
+    title: PROBLEM_TITLES[status] || desc,
+    status,
+    detail: desc,
+    instance: ep.path,
+  };
+  // A validation failure without field-level errors cannot be shown in a form,
+  // so the one code that needs more than a sentence carries the extension.
+  if (status === 422) {
+    problem.errors = [{ field: 'flaeche_m2', code: 'out_of_range', message: 'Wert muss zwischen 1 und 5000 liegen' }];
+  }
+  return problem;
+}
+
 // Convert the maintainable shorthand in data/api-specs.json to OpenAPI 3 at
 // render time. The source file stays authoritative and exampleFor can inject
 // live examples from core.
@@ -96,10 +123,27 @@ function toOpenApi(spec, exampleFor) {
         })),
         responses: {},
       };
+      // Per-operation scopes: a write names the scope it needs, so «read» and
+      // «write» are visibly different permissions on the same resource.
+      if (ep.scopes && spec.scopes) op.security = [{ portalAuth: ep.scopes }];
       if (ep.body) op.requestBody = { required: true, content: { 'application/json': { example: ep.body } } };
       const codes = Object.entries(ep.responses || { 200: 'OK' });
       for (const [code, desc] of codes) {
         op.responses[code] = { description: desc };
+        // A write API is judged on its error bodies as much as its happy path.
+        // 4xx/5xx carry RFC 9457 problem+json, so Swagger shows the shape a
+        // client actually has to handle rather than a bare status line.
+        if (Number(code) >= 400) {
+          op.responses[code].content = { 'application/problem+json': { example: problemFor(code, desc, ep) } };
+        }
+      }
+      // `responseHeaders`: { code: { name: description } }. Location on a 201 and
+      // ETag on a read are the two halves of the optimistic-locking contract the
+      // write endpoints below rely on, and neither is expressible as a parameter.
+      for (const [code, headers] of Object.entries(ep.responseHeaders || {})) {
+        if (!op.responses[code]) continue;
+        op.responses[code].headers = Object.fromEntries(Object.entries(headers).map(([name, desc]) =>
+          [name, { description: desc, schema: { type: 'string' } }]));
       }
       // Attach a covered live example to the first successful response code.
       const okCode = codes[0] ? codes[0][0] : '200';
@@ -117,10 +161,18 @@ function toOpenApi(spec, exampleFor) {
     tags: spec.resources.map((r) => ({ name: r.label, description: r.description })),
     // Convert the specification's authentication note into a security schema.
     // Swagger then shows its standard lock and documentation-only Authorize dialog.
+    //
+    // With `spec.scopes` the scheme becomes OAuth 2 rather than a bare API key.
+    // That is what eIAM actually speaks, and it is the only way a reader can see
+    // that reading the catalogue and changing it are not the same permission —
+    // which matters now that most resources accept writes.
     components: spec.auth ? { securitySchemes: {
-      portalAuth: { type: 'apiKey', in: 'header', name: 'Authorization', description: spec.auth },
+      portalAuth: spec.scopes
+        ? { type: 'oauth2', description: spec.auth, flows: { clientCredentials: {
+            tokenUrl: spec.tokenUrl || `${spec.baseUrl}/oauth2/token`, scopes: spec.scopes } } }
+        : { type: 'apiKey', in: 'header', name: 'Authorization', description: spec.auth },
     } } : undefined,
-    security: spec.auth ? [{ portalAuth: [] }] : undefined,
+    security: spec.auth ? [{ portalAuth: spec.scopes ? [Object.keys(spec.scopes)[0]] : [] }] : undefined,
     paths,
   };
 }

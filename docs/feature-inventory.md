@@ -934,7 +934,13 @@ Dienstleistungskatalog (nur type=action) mit Suche/Filter/Sortierung/Galerie-Lis
 
 ## js/apps/api-docs.js
 
-API-Dokumentation: echtes Swagger UI (swagger-ui-dist, lazy vom CDN) über data/api-specs.json, zur Renderzeit in OpenAPI 3.0.3 übersetzt; Antwort-Beispiele mit echten Portaldaten aus dem core (LIVE-Map, ~40 Endpunkt-Schlüssel, Z.139–184); Portal-Chrome oberhalb, Standard-Swagger darunter.
+API-Dokumentation: echtes Swagger UI (swagger-ui-dist, lazy vom CDN) über data/api-specs.json, zur Renderzeit in OpenAPI 3.0.3 übersetzt; Antwort-Beispiele mit echten Portaldaten aus dem core (LIVE-Map, 51 Endpunkt-Schlüssel); Portal-Chrome oberhalb, Standard-Swagger darunter.
+
+Schreibmodell (2026-08-13): 25 Ressourcen, 146 Endpunkte — 61 GET und 85 schreibende (POST/PUT/PATCH/DELETE).
+
+Leitidee: Das Portal ist eine einheitliche Oberfläche, kein Mastersystem. Den Golden Record hält je Geschäftsobjekt das führende System (oft SAP ERP, nicht immer); das Portal bewirtschaftet über die Integrationsschicht die Daten, die ein Prozess erzeugt. Das Portalschema bleibt dabei stabil, auch wenn ein Quellsystem ausgetauscht wird — die Abbildung liegt in der Integrationsschicht, nicht in der API. Portaleigen sind nur Vorgänge (process-instances) und der Metadatenkatalog.
+
+Daraus folgen zwei Schreibpfade auf Stammdaten: `PATCH /buildings/{bblId}` bzw. `/parcels/{bblId}` schreibt durch (200 = vom führenden System übernommen, 502 = dort abgelehnt oder nicht erreichbar), und was das Zielsystem für sich reserviert, antwortet 422 und verweist auf die Mutationsmeldung `POST …/change-requests` (202 — die führende Quelle entscheidet). Querschnitt: If-Match/ETag für optimistisches Sperren (412/428), Idempotency-Key auf POST, Fehler als RFC 9457 `application/problem+json`, OAuth-2-Scopes je Operation.
 
 **Routen**
 
@@ -949,7 +955,8 @@ API-Dokumentation: echtes Swagger UI (swagger-ui-dist, lazy vom CDN) über data/
 - Übersetzung Kurzform-Spez → OpenAPI 3: Pfade, Parameter, requestBody-Beispiel, Response-Codes, Tags, Server-URL (toOpenApi, Z.65–107)
 - Live-Beispiele: 200er-Response mit echten core-Daten je Endpunkt (Schlüsselkonvention '<tag>.<endpunkt>', Z.132–184); Fallback auf ep.example aus der Spez (Z.185–188)
 - process-definitions.json wird separat geladen (kein core-Bestand) für die Beispiele der Ressource process-definitions (Z.115–118, 140–141)
-- Auth-Hinweis der Spez → apiKey-Security-Schema mit Swagger-Schloss + «Authorize»-Dialog (nur Doku, Z.98–104)
+- Auth-Hinweis der Spez → Security-Schema mit Swagger-Schloss + «Authorize»-Dialog (nur Doku): mit `spec.scopes` OAuth 2 (clientCredentials, Scopes je Operation aus `ep.scopes`), sonst apiKey
+- Schreib-Querschnitt aus der Kurzform: `ep.responseHeaders` (Location auf 201, ETag auf Lesezugriffe), 4xx/5xx automatisch als RFC-9457-`problem+json` mit Feldfehlern bei 422
 - Bewusst deaktiviert: deepLinking (Kollision mit Hash-Router), «Try it out» (supportedSubmitMethods []), Models-Block, externer Validator (Z.228–233)
 - Swaggers eigener .information-container per CSS ausgeblendet — Kopf gehört dem Portal (Z.197–200)
 - Programmatische sr-only-H2 «API-Ressourcen» benennt den Swagger-Host; `enhanceSwagger` stabilisiert nach React-Updates zugängliche Namen, englische Sprachmarkierungen sowie Fokus-/Zielgrössen der Drittanbieter-Controls

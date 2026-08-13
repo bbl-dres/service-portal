@@ -110,6 +110,61 @@ export function catalogueHash(base, { q = '', page = 1, view = '', defaultView =
 }
 
 
+// ONE search field, one behaviour. The same `.catbar__search` markup was wired
+// in three places that had drifted: `wireCatalogueState` listened for `input`,
+// the other two for `submit` alone. A field cleared WITHOUT pressing Enter —
+// the native type=search «x», Escape, or select-all + Delete — fires `input`
+// and never `submit`, so those bars kept their filtered result under an empty
+// search box, reporting «7 von 66» for a query no longer on screen (user
+// finding, 2026-08-13). Between them the two submit-wired helpers have 17 call
+// sites — every one that renders a field was affected.
+//
+//   mode 'live'   — every keystroke, debounced. For local state, where applying
+//                   a query is a redraw and costs nothing.
+//   mode 'submit' — Enter or the button only. For hash-driven bars, where a
+//                   keystroke per debounce tick would be a history entry.
+//
+// EMPTYING the field applies at once in BOTH modes. That is the one edit whose
+// intent is unambiguous — nobody clears a search box meaning to keep the
+// filter — and it costs a single navigation rather than one per character.
+//
+// `onSearch` receives the RAW value: trimming and case are the caller's
+// business, and the two existing conventions (trim here, keep there) are
+// preserved by leaving them at the call site.
+export function wireSearchField(root, { formId, inputId, mode = 'live', debounceMs = 250, onSearch, isAlive }) {
+  const form = formId ? root.querySelector('#' + formId) : null;
+  const input = inputId ? root.querySelector('#' + inputId) : null;
+  if (!form && !input) return () => {};
+  let timer = null;
+  let destroyed = false;
+  // A delayed callback belongs to the mount that scheduled it; do not let it
+  // mutate state or the hash after the router has replaced that mount.
+  const alive = () => !destroyed && root.isConnected && (!isAlive || isAlive());
+  const cancel = () => { if (timer !== null) clearTimeout(timer); timer = null; };
+  // What the result set currently reflects, so the duplicate events browsers
+  // send for one clear (Chrome fires `input` AND `search` for the «x») do not
+  // redraw twice, and an edit that lands back on the applied value does nothing.
+  let applied = input ? input.value : '';
+  const run = () => {
+    cancel();
+    if (!alive()) return;
+    applied = input ? input.value : '';
+    onSearch(applied);
+  };
+  if (form) form.addEventListener('submit', (e) => { e.preventDefault(); run(); });
+  if (input) {
+    const onEdit = () => {
+      cancel();
+      if (input.value === applied) return;
+      if (!input.value.trim()) return run();          // Cleared: apply at once.
+      if (mode === 'live') timer = setTimeout(run, debounceMs);
+    };
+    input.addEventListener('input', onEdit);
+    input.addEventListener('search', onEdit);
+  }
+  return () => { destroyed = true; cancel(); };
+}
+
 // Wire shared catalogue interactions: search form (submit → page 1), simple
 // filter dropdowns (`filters: [{id, param}]` → set value, page 1), view switching
 // (keeps page), and pagination. `hash(patch)` builds the target hash from base
@@ -117,11 +172,11 @@ export function catalogueHash(base, { q = '', page = 1, view = '', defaultView =
 // multi-value filters (for example, service topics).
 export function wireCatalogue(mount, { formId, inputId, pageInputId, page = 1, totalPages = 1, hash, filters = [],
   sortId, sortParam = 'sort', filterToggleId, panelId }) {
-  const form = mount.querySelector('#' + formId);
-  if (form) form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const input = mount.querySelector('#' + inputId);
-    location.hash = hash({ q: input ? input.value.trim() : '', page: 1 });
+  // 'submit': every navigation here writes location.hash, so live search would
+  // put one history entry per debounce tick between the reader and Back.
+  wireSearchField(mount, {
+    formId, inputId, mode: 'submit',
+    onSearch: (value) => { location.hash = hash({ q: value.trim(), page: 1 }); },
   });
   filters.forEach(({ id, param }) => {
     const el = mount.querySelector('#' + id);
@@ -264,6 +319,7 @@ export function catalogueBar({
 export function mountDataTable(host, opts = {}) {
   let unwireScroll = null;
   let unwireRows = null;
+  let unwireSearch = null;
   const {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
@@ -276,6 +332,9 @@ export function mountDataTable(host, opts = {}) {
   const unwire = () => {
     if (unwireRows) { try { unwireRows(); } catch { /* Already gone. */ } unwireRows = null; }
     if (unwireScroll) { try { unwireScroll(); } catch { /* Already gone. */ } unwireScroll = null; }
+    // Also drops a pending debounced search, so a keystroke cannot redraw a host
+    // the route has already left.
+    if (unwireSearch) { try { unwireSearch(); } catch { /* Already gone. */ } unwireSearch = null; }
   };
 
   const matchQ = (row) => {
@@ -334,11 +393,13 @@ export function mountDataTable(host, opts = {}) {
       ${pagination({ page: state.page, totalPages, inputId: `${id}-page`, label: `Seitennavigation ${u.nom}` })}`;
 
     // --- Wiring (within host only) ---
-    const form = host.querySelector(`#${id}-form`);
-    if (form) form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const input = host.querySelector(`#${id}-q`);
-      state.q = input ? input.value.trim() : ''; state.page = 1; draw();
+    // 'live': the state is local and applying it is this redraw, so there is no
+    // reason to make the reader press Enter. preserveFocus/restore below carries
+    // focus AND caret across the innerHTML replacement, which is what makes
+    // per-keystroke redrawing of the bar viable at all.
+    unwireSearch = wireSearchField(host, {
+      formId: `${id}-form`, inputId: `${id}-q`, mode: 'live',
+      onSearch: (value) => { state.q = value.trim(); state.page = 1; draw(); },
     });
     const sortEl = host.querySelector(`#${id}-sort`);
     if (sortEl) sortEl.addEventListener('change', (e) => { state.sort = e.target.value; state.page = 1; draw(); });
@@ -562,18 +623,15 @@ export function wireCatalogueState(mount, {
   activeFiltersId = '', state, onChange, onRemove, onReset, debounceMs = 250,
 } = {}) {
   const input = inputId ? mount.querySelector('#' + inputId) : null;
-  let timer = null;
   let destroyed = false;
-  const runSearch = () => {
-    timer = null;
-    // A delayed callback belongs to the mount that scheduled it. Do not let it
-    // mutate state or the hash after the router has replaced that mount.
-    if (destroyed || !mount.isConnected) return;
-    state.q = input ? (input.value || '') : ''; state.page = 1; onChange();
-  };
-  const form = formId ? mount.querySelector('#' + formId) : null;
-  if (form) form.addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); timer = null; runSearch(); });
-  if (input) input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(runSearch, debounceMs); });
+  // This was the ONE of the three search wirings that already handled a cleared
+  // field; it now shares the implementation instead of being the copy that
+  // happened to be right. No trim: these callers match on the raw value.
+  const unwireSearch = wireSearchField(mount, {
+    formId, inputId, mode: 'live', debounceMs,
+    onSearch: (value) => { state.q = value; state.page = 1; onChange(); },
+    isAlive: () => !destroyed,
+  });
 
   const vs = mount.querySelector('.view-switch');
   if (vs) vs.addEventListener('click', (e) => {
@@ -648,8 +706,7 @@ export function wireCatalogueState(mount, {
   const destroy = () => {
     if (destroyed) return;
     destroyed = true;
-    if (timer !== null) clearTimeout(timer);
-    timer = null;
+    unwireSearch();
   };
   return { clearFilters, destroy };
 }
