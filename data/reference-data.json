@@ -1,104 +1,423 @@
 {
   "domains": [
-    { "key": "A", "label": "Bauprojekte und Projektportfolio", "icon": "Building" },
-    { "key": "B", "label": "Stammdaten & Mutationen", "icon": "MapMarker" },
-    { "key": "U", "label": "Unterbringung", "icon": "Home" },
-    { "key": "O", "label": "Objektbetrieb", "icon": "UserBrush" },
-    { "key": "G", "label": "Sicherheit & Notfall", "icon": "Lock" },
-    { "key": "C", "label": "Büroausrüstung & Arbeitsplatz", "icon": "ShoppingCart" },
-    { "key": "D", "label": "Informatik & Arbeitsgeräte", "icon": "Cog" },
-    { "key": "E", "label": "Beschaffung", "icon": "Briefcase" },
-    { "key": "F", "label": "Publizieren, Drucken & Versenden", "icon": "File" },
-    { "key": "H", "label": "Personal & Arbeiten beim BBL", "icon": "Users" }
+    {
+      "key": "A",
+      "label": "Bauprojekte und Projektportfolio",
+      "icon": "Building"
+    },
+    {
+      "key": "B",
+      "label": "Stammdaten & Mutationen",
+      "icon": "MapMarker"
+    },
+    {
+      "key": "U",
+      "label": "Unterbringung",
+      "icon": "Home"
+    },
+    {
+      "key": "O",
+      "label": "Objektbetrieb",
+      "icon": "UserBrush"
+    },
+    {
+      "key": "G",
+      "label": "Sicherheit & Notfall",
+      "icon": "Lock"
+    },
+    {
+      "key": "C",
+      "label": "Büroausrüstung & Arbeitsplatz",
+      "icon": "ShoppingCart"
+    },
+    {
+      "key": "D",
+      "label": "Informatik & Arbeitsgeräte",
+      "icon": "Cog"
+    },
+    {
+      "key": "E",
+      "label": "Beschaffung",
+      "icon": "Briefcase"
+    },
+    {
+      "key": "F",
+      "label": "Publizieren, Drucken & Versenden",
+      "icon": "File"
+    },
+    {
+      "key": "H",
+      "label": "Personal & Arbeiten beim BBL",
+      "icon": "Users"
+    }
   ],
   "audiences": [
-    { "id": "staff", "label": "Mitarbeiter", "variant": "blue" },
-    { "id": "customers", "label": "Kunden", "variant": "green" }
+    {
+      "id": "staff",
+      "label": "Mitarbeiter",
+      "variant": "blue"
+    },
+    {
+      "id": "customers",
+      "label": "Kunden",
+      "variant": "green"
+    }
   ],
   "statusModel": [
-    { "id": "entwurf", "label": "Entwurf", "variant": "gray" },
-    { "id": "eingereicht", "label": "Eingereicht", "variant": "info" },
-    { "id": "in_pruefung_gs", "label": "In Prüfung (GS)", "variant": "warning" },
-    { "id": "in_pruefung_pfm", "label": "In Prüfung (PFM)", "variant": "warning" },
-    { "id": "rueckfrage", "label": "Rückfrage", "variant": "warning" },
-    { "id": "genehmigt", "label": "Genehmigt", "variant": "success" },
-    { "id": "in_projekt", "label": "In Projekt überführt", "variant": "info" },
-    { "id": "triage", "label": "Triage", "variant": "info" },
-    { "id": "in_arbeit", "label": "In Arbeit", "variant": "warning" },
-    { "id": "in_bearbeitung", "label": "In Bearbeitung", "variant": "warning" },
-    { "id": "geliefert", "label": "Geliefert", "variant": "success" },
-    { "id": "erledigt", "label": "Erledigt", "variant": "success" },
-    { "id": "abgeschlossen", "label": "Abgeschlossen", "variant": "success" },
-    { "id": "abgelehnt", "label": "Abgelehnt", "variant": "error" }
+    {
+      "id": "entwurf",
+      "label": "Entwurf",
+      "variant": "gray"
+    },
+    {
+      "id": "eingereicht",
+      "label": "Eingereicht",
+      "variant": "info"
+    },
+    {
+      "id": "in_pruefung_gs",
+      "label": "In Prüfung (GS)",
+      "variant": "warning"
+    },
+    {
+      "id": "in_pruefung_pfm",
+      "label": "In Prüfung (PFM)",
+      "variant": "warning"
+    },
+    {
+      "id": "rueckfrage",
+      "label": "Rückfrage",
+      "variant": "warning"
+    },
+    {
+      "id": "genehmigt",
+      "label": "Genehmigt",
+      "variant": "success"
+    },
+    {
+      "id": "in_projekt",
+      "label": "In Projekt überführt",
+      "variant": "info"
+    },
+    {
+      "id": "triage",
+      "label": "Triage",
+      "variant": "info"
+    },
+    {
+      "id": "in_arbeit",
+      "label": "In Arbeit",
+      "variant": "warning"
+    },
+    {
+      "id": "in_bearbeitung",
+      "label": "In Bearbeitung",
+      "variant": "warning"
+    },
+    {
+      "id": "geliefert",
+      "label": "Geliefert",
+      "variant": "success"
+    },
+    {
+      "id": "erledigt",
+      "label": "Erledigt",
+      "variant": "success"
+    },
+    {
+      "id": "abgeschlossen",
+      "label": "Abgeschlossen",
+      "variant": "success"
+    },
+    {
+      "id": "abgelehnt",
+      "label": "Abgelehnt",
+      "variant": "error"
+    }
   ],
   "projectStatuses": [
-    { "id": "geplant", "label": "Geplant" },
-    { "id": "aktiv", "label": "Aktiv" },
-    { "id": "sistiert", "label": "Sistiert" },
-    { "id": "abgeschlossen", "label": "Abgeschlossen" },
-    { "id": "abgebrochen", "label": "Abgebrochen" }
+    {
+      "id": "geplant",
+      "label": "Geplant"
+    },
+    {
+      "id": "aktiv",
+      "label": "Aktiv"
+    },
+    {
+      "id": "sistiert",
+      "label": "Sistiert"
+    },
+    {
+      "id": "abgeschlossen",
+      "label": "Abgeschlossen"
+    },
+    {
+      "id": "abgebrochen",
+      "label": "Abgebrochen"
+    }
   ],
   "buildingStatuses": [
-    { "id": "Aktiv", "label": "Aktiv" },
-    { "id": "Abgang", "label": "Abgang" },
-    { "id": "Löschvermerk", "label": "Löschvermerk" }
+    {
+      "id": "Aktiv",
+      "label": "Aktiv"
+    },
+    {
+      "id": "Abgang",
+      "label": "Abgang"
+    },
+    {
+      "id": "Löschvermerk",
+      "label": "Löschvermerk"
+    }
   ],
   "teilportfolios": [
-    { "id": "Verwaltungsgebäude", "label": "Verwaltungsgebäude" },
-    { "id": "Diplomatische Vertretung", "label": "Diplomatische Vertretung" },
-    { "id": "Lager / Logistik", "label": "Lager / Logistik" },
-    { "id": "Ausbildung", "label": "Ausbildung" },
-    { "id": "Wohnliegenschaft", "label": "Wohnliegenschaft" },
-    { "id": "Infrastruktur IT", "label": "Infrastruktur IT" }
+    {
+      "id": "Verwaltungsgebäude",
+      "label": "Verwaltungsgebäude"
+    },
+    {
+      "id": "Diplomatische Vertretung",
+      "label": "Diplomatische Vertretung"
+    },
+    {
+      "id": "Lager / Logistik",
+      "label": "Lager / Logistik"
+    },
+    {
+      "id": "Ausbildung",
+      "label": "Ausbildung"
+    },
+    {
+      "id": "Wohnliegenschaft",
+      "label": "Wohnliegenschaft"
+    },
+    {
+      "id": "Infrastruktur IT",
+      "label": "Infrastruktur IT"
+    }
   ],
   "gebaeudearten": [
-    { "id": "Verwaltung", "label": "Verwaltung" },
-    { "id": "Industrie und Gewerbe", "label": "Industrie und Gewerbe" },
-    { "id": "Bildung und Forschung", "label": "Bildung und Forschung" },
-    { "id": "Wohnen", "label": "Wohnen" }
+    {
+      "id": "Verwaltung",
+      "label": "Verwaltung"
+    },
+    {
+      "id": "Industrie und Gewerbe",
+      "label": "Industrie und Gewerbe"
+    },
+    {
+      "id": "Bildung und Forschung",
+      "label": "Bildung und Forschung"
+    },
+    {
+      "id": "Wohnen",
+      "label": "Wohnen"
+    }
   ],
   "siaPhases": [
-    { "id": "11", "label": "Strategische Planung" }, { "id": "21", "label": "Vorstudien" },
-    { "id": "31", "label": "Vorprojekt" }, { "id": "32", "label": "Bauprojekt" },
-    { "id": "33", "label": "Ausschreibung" }, { "id": "41", "label": "Ausführung" },
-    { "id": "51", "label": "Inbetriebnahme" }, { "id": "61", "label": "Betrieb" }
+    {
+      "id": "11",
+      "label": "Strategische Planung"
+    },
+    {
+      "id": "21",
+      "label": "Vorstudien"
+    },
+    {
+      "id": "31",
+      "label": "Vorprojekt"
+    },
+    {
+      "id": "32",
+      "label": "Bauprojekt"
+    },
+    {
+      "id": "33",
+      "label": "Ausschreibung"
+    },
+    {
+      "id": "41",
+      "label": "Ausführung"
+    },
+    {
+      "id": "51",
+      "label": "Inbetriebnahme"
+    },
+    {
+      "id": "61",
+      "label": "Betrieb"
+    }
   ],
   "nawClasses": [
-    { "id": "naw1", "label": "NAW 1 — Einzelarbeit / Konzentration" },
-    { "id": "naw2", "label": "NAW 2 — Standard Multispace" },
-    { "id": "naw3", "label": "NAW 3 — Kollaboration" },
-    { "id": "naw4", "label": "NAW 4 — Empfang / Publikum" },
-    { "id": "naw5", "label": "NAW 5 — Speziallabor / Technik" },
-    { "id": "naw6", "label": "NAW 6 — Lager / Archiv" }
+    {
+      "id": "naw1",
+      "label": "NAW 1 — Einzelarbeit / Konzentration"
+    },
+    {
+      "id": "naw2",
+      "label": "NAW 2 — Standard Multispace"
+    },
+    {
+      "id": "naw3",
+      "label": "NAW 3 — Kollaboration"
+    },
+    {
+      "id": "naw4",
+      "label": "NAW 4 — Empfang / Publikum"
+    },
+    {
+      "id": "naw5",
+      "label": "NAW 5 — Speziallabor / Technik"
+    },
+    {
+      "id": "naw6",
+      "label": "NAW 6 — Lager / Archiv"
+    }
   ],
   "bkpGroups": [
-    { "id": "0", "label": "Grundstück" }, { "id": "1", "label": "Vorbereitungsarbeiten" },
-    { "id": "2", "label": "Gebäude" }, { "id": "3", "label": "Betriebseinrichtungen" },
-    { "id": "4", "label": "Umgebung" }, { "id": "5", "label": "Baunebenkosten" },
-    { "id": "9", "label": "Ausstattung" }
+    {
+      "id": "0",
+      "label": "Grundstück"
+    },
+    {
+      "id": "1",
+      "label": "Vorbereitungsarbeiten"
+    },
+    {
+      "id": "2",
+      "label": "Gebäude"
+    },
+    {
+      "id": "3",
+      "label": "Betriebseinrichtungen"
+    },
+    {
+      "id": "4",
+      "label": "Umgebung"
+    },
+    {
+      "id": "5",
+      "label": "Baunebenkosten"
+    },
+    {
+      "id": "9",
+      "label": "Ausstattung"
+    }
   ],
   "classificationTiers": [
-    { "id": "INTERN", "label": "INTERN", "variant": "info" },
-    { "id": "VERTRAULICH", "label": "VERTRAULICH", "variant": "warning" },
-    { "id": "GEHEIM", "label": "GEHEIM", "variant": "error" }
+    {
+      "id": "INTERN",
+      "label": "INTERN",
+      "variant": "info"
+    },
+    {
+      "id": "VERTRAULICH",
+      "label": "VERTRAULICH",
+      "variant": "warning"
+    },
+    {
+      "id": "GEHEIM",
+      "label": "GEHEIM",
+      "variant": "error"
+    }
   ],
   "dataDomains": [
-    { "key": "bauwerk", "label": "Bauwerk und Liegenschaft", "icon": "Building" },
-    { "key": "miete", "label": "Mietverhältnisse", "icon": "Key" },
-    { "key": "energie", "label": "Energie", "icon": "Bolt" },
-    { "key": "partner", "label": "Geschäftspartner", "icon": "Users" },
-    { "key": "finanzen", "label": "Finanzen", "icon": "Calculator" }
+    {
+      "key": "bauwerk",
+      "label": "Bauwerk und Liegenschaft",
+      "icon": "Building"
+    },
+    {
+      "key": "miete",
+      "label": "Mietverhältnisse",
+      "icon": "Key"
+    },
+    {
+      "key": "energie",
+      "label": "Energie",
+      "icon": "Bolt"
+    },
+    {
+      "key": "partner",
+      "label": "Geschäftspartner",
+      "icon": "Users"
+    },
+    {
+      "key": "finanzen",
+      "label": "Finanzen",
+      "icon": "Calculator"
+    }
   ],
   "objectStatuses": [
-    { "id": "DRAFT", "label": "Entwurf", "definition": "Erfasst, noch nie freigegeben", "consequence": "Nicht sichtbar für Nutzende, keine Verwendung", "variant": "gray" },
-    { "id": "VALID", "label": "Gültig", "definition": "Freigegeben und aktiv bewirtschaftet", "consequence": "Sichtbar, nutzbar, Verantwortlichkeiten gelten", "variant": "success" },
-    { "id": "SUPERSEDED", "label": "Abgelöst", "definition": "Durch Nachfolgedatensatz ersetzt", "consequence": "Sichtbar mit Verweis auf Nachfolger, keine Neuverwendung", "variant": "warning" },
-    { "id": "ARCHIVED", "label": "Archiviert", "definition": "Keine Bewirtschaftung mehr, nur Aufbewahrung", "consequence": "Lesend bzw. auf Anfrage, kein Support", "variant": "gray" }
+    {
+      "id": "DRAFT",
+      "label": "Entwurf",
+      "definition": "Erfasst, noch nie freigegeben",
+      "consequence": "Nicht sichtbar für Nutzende, keine Verwendung",
+      "variant": "gray"
+    },
+    {
+      "id": "VALID",
+      "label": "Gültig",
+      "definition": "Freigegeben und aktiv bewirtschaftet",
+      "consequence": "Sichtbar, nutzbar, Verantwortlichkeiten gelten",
+      "variant": "success"
+    },
+    {
+      "id": "SUPERSEDED",
+      "label": "Abgelöst",
+      "definition": "Durch Nachfolgedatensatz ersetzt",
+      "consequence": "Sichtbar mit Verweis auf Nachfolger, keine Neuverwendung",
+      "variant": "warning"
+    },
+    {
+      "id": "ARCHIVED",
+      "label": "Archiviert",
+      "definition": "Keine Bewirtschaftung mehr, nur Aufbewahrung",
+      "consequence": "Lesend bzw. auf Anfrage, kein Support",
+      "variant": "gray"
+    }
   ],
   "mappingMatches": [
-    { "id": "exact", "label": "Exakt", "variant": "success" },
-    { "id": "close", "label": "Nahe", "variant": "info" },
-    { "id": "partial", "label": "Teilweise", "variant": "warning" }
+    {
+      "id": "exact",
+      "label": "Exakt",
+      "variant": "success"
+    },
+    {
+      "id": "close",
+      "label": "Nahe",
+      "variant": "info"
+    },
+    {
+      "id": "partial",
+      "label": "Teilweise",
+      "variant": "warning"
+    }
   ],
-  "deskSharingFactor": 0.8
+  "deskSharingFactor": 0.8,
+  "sourceRoles": [
+    {
+      "key": "architektur-repository",
+      "label": "Architektur-Repository",
+      "product": "Innovator / smartfacts",
+      "definition": "Führendes Modell für Prozesse und Geschäftsobjekte. Modellierung in Innovator, webbasierte Publikation über smartfacts — beide vorgegeben durch die IKT-Vorgabe A736.",
+      "icon": "Share"
+    },
+    {
+      "key": "quellsystem",
+      "label": "Quellsystem",
+      "product": "SAP RE-FX, GIS IMMO und weitere",
+      "definition": "Führendes System für die physische Realisierung: Tabellen, Felder und die darin geführten Werte.",
+      "icon": "Stack"
+    },
+    {
+      "key": "portal",
+      "label": "Kundenportal",
+      "product": "BBL Kundenportal",
+      "definition": "Im Portal selbst bewirtschaftet — heute der Datensatzkatalog nach DCAT-AP-CH.",
+      "icon": "FileDatabase"
+    }
+  ]
 }

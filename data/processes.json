@@ -37,7 +37,13 @@
     ],
     "standards": [
       "TQ.21.00.00.01 C01 Lösungsvorschläge Anmiete Kauf"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.01",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.01",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.02",
@@ -83,7 +89,13 @@
       "Masterpläne und Nutzerkonzepte der Benutzerorganisationen",
       "Anträge von Benutzerorganisationen",
       "Aufträge PFM"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.02",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.02",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.03",
@@ -126,7 +138,13 @@
     ],
     "related": [
       "TQ.21.00.00.02"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.03",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.03",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.10",
@@ -166,7 +184,13 @@
     ],
     "standards": [
       "TQ.21.00.00.10 C01 Vollzug Anmiete Pacht"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.10",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.10",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.15",
@@ -206,7 +230,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.15 C01 Verurkundung Kauf Baurecht"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.15",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.15",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.20",
@@ -243,7 +273,13 @@
       "SAP RE",
       "GEVER",
       "NotarDossier"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.20",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.20",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.30",
@@ -284,7 +320,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.30 C01 Bewirtschaftung Anmiet-, Pachtverträge, Eigene Baurechte"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.30",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.30",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.35",
@@ -325,7 +367,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.35 C01 Bewirtschaftung Eigentum, Stiftungen"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.35",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.35",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.45",
@@ -366,7 +414,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.45 C01 Bewirtschaftung von Vermietungen, Verpachtungen, Baurechtsvergaben"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.45",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.45",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.50",
@@ -405,7 +459,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.50 C01 Objektübergabe an LB Mieter"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.50",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.50",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.60",
@@ -444,7 +504,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.60 C01 Lösungsvorschläge Rückgabe Anmietobjekt, Verkauf"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.60",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.60",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.70",
@@ -483,7 +549,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.70 C01 Auflösung Anmiete Pacht"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.70",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.70",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.75",
@@ -522,7 +594,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.75 C01 Verurkundung Verkauf Baurechtrückgabe"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.75",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.75",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.80",
@@ -561,7 +639,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.80 C01 Objektrücknahme von LB, Mieter"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.80",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.80",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.90",
@@ -600,7 +684,13 @@
     ],
     "standards": [
       "Gültige Checkliste: TQ.21.00.00.90 C01 Objektrückgabe"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.90",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.90",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.96",
@@ -647,7 +737,13 @@
       "TQ.21.00.00.96 A06 Entscheidungsbaum WE GE GR Nummer",
       "TQ.21.00.00.96 A07 Wirtschaftseinheit Beispiele",
       "TQ.21.00.00.96 C01 Datenfluss Immostammdaten"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.96",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.96",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.97",
@@ -690,7 +786,13 @@
     "standards": [
       "Organisationsvorschriften BBL",
       "Weisungen über die Projekt- und Bewirtschaftungsakten"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.97",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.97",
+      "reconciled": "2026-08-04"
+    }
   },
   {
     "processId": "TQ.21.00.00.99",
@@ -733,6 +835,12 @@
     "standards": [
       "Weisungen CAD-Daten",
       "Weisungen CAFM"
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "TQ.21.00.00.99",
+      "url": "https://smartfacts.admin.ch/bbl/model/prozess/TQ.21.00.00.99",
+      "reconciled": "2026-08-04"
+    }
   }
 ]

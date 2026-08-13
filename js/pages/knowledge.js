@@ -100,9 +100,13 @@ function overview(ctx) {
       desc: 'Auftragsformulare, Preise und Merkblätter der Produktion und der Publikationen.', meta: `${count('publishing')} Unterlagen` },
     { title: AREAS.guides.title, icon: 'Book', href: '#/knowledge/guides',
       desc: 'Kurzanleitungen, Schulungsunterlagen und Lernvideos zur Nutzung des Portals.', meta: `${count('guides')} Unterlagen` },
-    { title: AREAS.processes.title, icon: 'InfoCircle', href: '#/knowledge/processes',
-      desc: 'Die Prozesslandschaft des BBL im Prozessportal Archimap sowie häufige Fragen (FAQ).',
-      meta: 'Prozessportal & FAQ' },
+    // Process documentation moved under the data section (2026-08-13), where it
+    // sits with the metadata catalogue it belongs with.
+    // The tile stays as a CROSS-REFERENCE — people who learned to look for it
+    // here should be carried across, not sent to a dead end.
+    { title: 'Prozesse und Geschäftsobjekte', icon: 'Share', href: '#/data/architecture',
+      desc: 'Die Dokumentation der Geschäftsarchitektur — Prozesse, Geschäftsobjekte und ihre Realisierung.',
+      meta: 'In Daten und Digitalisierung' },
   ].map(C.domainTile).join('');
 
   mount.innerHTML = `

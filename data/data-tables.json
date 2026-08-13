@@ -260,7 +260,13 @@
         "admindirId": "p-1YFBMPWKZ",
         "role": "Dateneigner"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "VIBD.VIBDBE",
+      "url": null,
+      "reconciled": "2026-04-20"
+    }
   },
   {
     "tableId": "sap-refx-vibdbu",
@@ -691,7 +697,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "VIBD.VIBDBU",
+      "url": null,
+      "reconciled": "2026-04-20"
+    }
   },
   {
     "tableId": "sap-refx-vibdkd",
@@ -753,7 +765,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "VIBD.VIBDKD",
+      "url": null,
+      "reconciled": "2024-10-15"
+    }
   },
   {
     "tableId": "sap-refx-vibdme",
@@ -859,7 +877,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "VIBD.VIBDME",
+      "url": null,
+      "reconciled": "2026-04-20"
+    }
   },
   {
     "tableId": "sap-refx-vibdmv",
@@ -927,7 +951,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "VIBD.VIBDMV",
+      "url": null,
+      "reconciled": "2024-10-01"
+    }
   },
   {
     "tableId": "gis-immo-building",
@@ -1433,7 +1463,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "BBL_GIS_IMMO.BUILDING",
+      "url": null,
+      "reconciled": "2026-04-20"
+    }
   },
   {
     "tableId": "gis-immo-building-envelope",
@@ -1666,7 +1702,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "BBL_GIS_IMMO.BUILDING_ENVELOPE",
+      "url": null,
+      "reconciled": "2026-04-20"
+    }
   },
   {
     "tableId": "gis-immo-construction-project",
@@ -1885,7 +1927,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "BBL_GIS_IMMO.CONSTRUCTION_PROJECT",
+      "url": null,
+      "reconciled": "2026-04-20"
+    }
   },
   {
     "tableId": "gis-immo-land-cover",
@@ -2011,7 +2059,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "BBL_GIS_IMMO.LAND_COVER",
+      "url": null,
+      "reconciled": "2026-04-20"
+    }
   },
   {
     "tableId": "gis-immo-parcel",
@@ -2324,6 +2378,12 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "quellsystem",
+      "ref": "BBL_GIS_IMMO.PARCEL",
+      "url": null,
+      "reconciled": "2026-04-20"
+    }
   }
 ]

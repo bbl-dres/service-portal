@@ -394,6 +394,10 @@ async function detail(ctx, rawId) {
           return `<li><a href="${esc(links.processDocumentation(r))}">${esc(rp ? rp.name : r)}</a></li>`;
         }).join('')}</ul>
       </div>` : ''}
+      ${/* Above the contact: «where is the original» is the question a reader of a
+            directory entry has next, and it is about the record rather than about
+            whom to ask. */''}
+      ${C.sourceBox(p.source, (core.ref().sourceRoles || []).find((r) => r.key === (p.source || {}).role))}
       ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
     </aside></div>`;
 

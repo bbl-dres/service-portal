@@ -45,10 +45,13 @@ const [sessionModule, links, crumbs, coreModule, engineModule, maps, components]
 
 console.log('■ Public module surfaces');
 exactModule('session', sessionModule, ['session']);
+// `dataTable` (2026-08-12) and `businessObject` (2026-08-13) are the metadata
+// catalogue's two deep links. Both were added without updating this list, which
+// is exactly what the check exists to catch.
 exactModule('links', links, [
-  'application', 'caseDetails', 'constructionProject', 'dataset', 'documentSearch',
-  'floorplanEditor', 'news', 'planCheck', 'portfolioItem', 'processDocumentation', 'roomBooking',
-  'service', 'shop', 'shopCart', 'shopProduct', 'tenancy',
+  'application', 'businessObject', 'caseDetails', 'constructionProject', 'dataTable', 'dataset',
+  'documentSearch', 'floorplanEditor', 'news', 'planCheck', 'portfolioItem', 'processDocumentation',
+  'roomBooking', 'service', 'shop', 'shopCart', 'shopProduct', 'tenancy',
 ]);
 exactModule('crumbs', crumbs, ['APPLICATIONS', 'DATA', 'SERVICES', 'trail']);
 exactModule('core', coreModule, ['core']);

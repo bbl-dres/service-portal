@@ -142,7 +142,10 @@ o = JSON.parse(await p.evaluate(`JSON.stringify({
   ${/* Attribute rows no longer duplicate mapping links owned by the mapping table. */''}
   attributeColumns: [...document.querySelectorAll('#mc-attrs thead th')].map(x => x.textContent.trim()),
   tableLinks: [...document.querySelectorAll('#mc-maps a[href*="table="]')].length,
-  crumbs: [...document.querySelectorAll('#breadcrumb-list li')].map(x => x.textContent.trim()),
+  // DIRECT children only: a crumb that opens a section dropdown nests a second
+  // <ul> of rows inside its own <li> (CD breadcrumb.postcss:93), so a loose
+  // descendant selector counts those rows as breadcrumb segments.
+  crumbs: [...document.querySelectorAll('#breadcrumb-list > li')].map(x => x.textContent.trim()),
   tabs: [...document.querySelectorAll('.tab__controls .tab__control')].map(x => x.textContent.trim() + ':' + x.getAttribute('aria-selected')),
   panels: [...document.querySelectorAll('[data-panel]')].map(x => x.dataset.panel + (x.hidden ? ':closed' : ':open')),
 })`));
@@ -158,11 +161,19 @@ check(o.metadataTerms.includes('Bemerkung'), 'scope, aliases, and EGID appear in
 check(o.tableLinks >= 8, 'mapping table links to source tables', String(o.tableLinks));
 check(!o.metadataTerms.includes('Beschreibung') && o.metadataTerms.includes('Datendomäne'), 'metadata list keeps domain while description becomes the lead', o.metadataTerms.join(', '));
 check(o.sections.join(' | ') === 'Verantwortliche Personen | Metadaten', 'sections follow the dataset-detail pattern', o.sections.join(' | '));
-check(o.ruledLists === 2, 'both key-value lists use the ruled variant', String(o.ruledLists));
+// Three since 2026-08-13: responsible people, metadata, and the «Original» box
+// that says which system holds the leading version.
+check(o.ruledLists === 3, 'every key-value list uses the ruled variant', String(o.ruledLists));
 check(!o.metadataTerms.includes('Attribute') && !o.metadataTerms.includes('Realisierungen'), 'counts are not duplicated outside the tabs', o.metadataTerms.join(', '));
 check(o.lead === 0, 'application header has no hero description', String(o.lead));
 check(o.definitionLead >= 1, 'definition appears as the lead under h1', String(o.definitionLead));
-check(o.asideCards.join(' | ') === 'Kontakt', 'aside contains the shared contact card', o.asideCards.join(' | '));
+// «Original» BEFORE «Kontakt»: the portal is a directory over the federal
+// architecture repository, not the master, and an entry that does not say so
+// invites the reader to treat the portal as the source. Order matters — where
+// the record lives is a question about the record; whom to ask is a question
+// about people, and comes after.
+check(o.asideCards.join(' | ') === 'Original | Kontakt',
+  'aside states the leading system before the contact card', o.asideCards.join(' | '));
 check(o.adminLinks >= 2, 'responsible people link to AdminDir', String(o.adminLinks));
 check(o.asideOutside === 0, 'no aside exists outside the tabs', String(o.asideOutside));
 check(o.pillRow === 0, 'header has no pill row', String(o.pillRow));

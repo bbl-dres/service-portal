@@ -65,7 +65,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "areal",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/areal",
+      "reconciled": "2024-06-01"
+    }
   },
   {
     "objectId": "kampus",
@@ -124,7 +130,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "kampus",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/kampus",
+      "reconciled": "2024-06-01"
+    }
   },
   {
     "objectId": "grundstueck",
@@ -232,7 +244,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "grundstueck",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/grundstueck",
+      "reconciled": "2024-06-15"
+    }
   },
   {
     "objectId": "gebaeude",
@@ -384,7 +402,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "gebaeude",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/gebaeude",
+      "reconciled": "2024-06-01"
+    }
   },
   {
     "objectId": "nutzungseinheit",
@@ -443,7 +467,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "nutzungseinheit",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/nutzungseinheit",
+      "reconciled": "2024-07-15"
+    }
   },
   {
     "objectId": "geschoss",
@@ -502,7 +532,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "geschoss",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/geschoss",
+      "reconciled": "2024-06-01"
+    }
   },
   {
     "objectId": "raum",
@@ -561,7 +597,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "raum",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/raum",
+      "reconciled": "2024-06-01"
+    }
   },
   {
     "objectId": "bemessung",
@@ -637,7 +679,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "bemessung",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/bemessung",
+      "reconciled": "2024-08-01"
+    }
   },
   {
     "objectId": "mietobjekt",
@@ -696,7 +744,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "mietobjekt",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/mietobjekt",
+      "reconciled": "2024-07-01"
+    }
   },
   {
     "objectId": "mietvertrag",
@@ -776,7 +830,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "mietvertrag",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/mietvertrag",
+      "reconciled": "2024-08-01"
+    }
   },
   {
     "objectId": "kondition",
@@ -856,7 +916,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "kondition",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/kondition",
+      "reconciled": "2024-08-15"
+    }
   },
   {
     "objectId": "heizzentrale",
@@ -915,7 +981,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "heizzentrale",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/heizzentrale",
+      "reconciled": "2024-08-01"
+    }
   },
   {
     "objectId": "stromzaehler",
@@ -974,7 +1046,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "stromzaehler",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/stromzaehler",
+      "reconciled": "2024-08-15"
+    }
   },
   {
     "objectId": "betriebsmesswert",
@@ -1042,7 +1120,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "betriebsmesswert",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/betriebsmesswert",
+      "reconciled": "2024-09-01"
+    }
   },
   {
     "objectId": "person",
@@ -1110,7 +1194,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "person",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/person",
+      "reconciled": "2024-07-01"
+    }
   },
   {
     "objectId": "kontakt",
@@ -1160,7 +1250,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "kontakt",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/kontakt",
+      "reconciled": "2024-07-15"
+    }
   },
   {
     "objectId": "unternehmen",
@@ -1228,7 +1324,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "unternehmen",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/unternehmen",
+      "reconciled": "2024-07-01"
+    }
   },
   {
     "objectId": "wirtschaftseinheit",
@@ -1310,7 +1412,13 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "wirtschaftseinheit",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/wirtschaftseinheit",
+      "reconciled": "2024-06-01"
+    }
   },
   {
     "objectId": "buchungskreis",
@@ -1385,6 +1493,12 @@
         "admindirId": "p-2560681",
         "role": "Datenverwalter"
       }
-    ]
+    ],
+    "source": {
+      "role": "architektur-repository",
+      "ref": "buchungskreis",
+      "url": "https://smartfacts.admin.ch/bbl/model/geschaeftsobjekt/buchungskreis",
+      "reconciled": "2024-06-01"
+    }
   }
 ]

@@ -35,19 +35,37 @@ export const NAV = [
         { href: '#/data/digitalisation/vision', label: 'Vision' },
         { href: '#/data/digitalisation/principles', label: 'Prinzipien' },
       ] },
+      // Business architecture (2026-08-13). The metadata catalogue used to be
+      // deliberately absent here — «a data-management tool rather than an
+      // everyday destination». That reasoning held while it was one app among
+      // many; it stopped holding once the incoming request asked where the
+      // business architecture is documented. The branch names the CONTENT
+      // rather than the two apps, which is how people ask for it.
+      // German UI term: «Prozesse und Geschäftsobjekte»
+      { label: 'Prozesse und Geschäftsobjekte', branchKey: 'architecture', branches: [
+        { href: '#/data/architecture', label: 'Übersicht' },
+        { href: '#/app/process-docs', label: 'Prozesse' },
+        { href: '#/app/metadata-catalog', label: 'Geschäftsobjekte' },
+        { href: '#/app/metadata-catalog?kind=tabellen', label: 'Datentabellen und Felder' },
+      ] },
       { href: '#/app/dataportal', label: 'Datenportal' },
       { href: '#/data/catalog', label: 'Datenbezug und API Verzeichnis' },
-      // The metadata catalogue is deliberately NOT in the menu. It is a data-
-      // management tool rather than an everyday destination, available through
-      // the application catalogue and data overview.
-      { href: '#/applications?area=buildings', label: 'Fachanwendungen Bauten' },
-      { href: '#/applications?area=logistics', label: 'Fachanwendungen Logistik' },
-      // Shared federal-administration applications: eGate, InfoPers, SAP ERP,
-      // Admin Directory and federal platforms I14Y, TERMDAT, Geoportal,
-      // geocat.ch and simap.ch. They are not owned by the BBL but are used here
-      // daily; without this entry, only people who proactively filter the
-      // application catalogue would find them.
-      { href: '#/applications?area=federal', label: 'Fachanwendungen Bundesverwaltung' },
+      // One branch instead of three sibling rows (2026-08-13). The three
+      // «Fachanwendungen …» entries differed only by filter, and the `central`
+      // area — the two portal applications — had NO menu path at all because no
+      // row carried its filter. The first row is the unfiltered catalogue and
+      // gives them one.
+      //
+      // Shared federal-administration applications (eGate, InfoPers, SAP ERP,
+      // Admin Directory, I14Y, TERMDAT, Geoportal, geocat.ch, simap.ch) are not
+      // owned by the BBL but used here daily; without a row, only people who
+      // proactively filter the catalogue would find them.
+      { label: 'Fachanwendungen', branchKey: 'applications', branches: [
+        { href: '#/applications', label: 'Übersicht' },
+        { href: '#/applications?area=buildings', label: 'Bauten' },
+        { href: '#/applications?area=logistics', label: 'Logistik' },
+        { href: '#/applications?area=federal', label: 'Bundesverwaltung' },
+      ] },
     ],
   },
   // Knowledge and resources carries the reference layer: standards, templates,
@@ -81,7 +99,9 @@ export const NAV = [
       ] },
       { href: '#/knowledge/publishing', label: 'Publikationen, Druck und Versand' },
       { href: '#/knowledge/guides', label: 'Anleitungen und Schulungen' },
-      { href: '#/knowledge/processes', label: 'Prozessdokumentation' },
+      // The process-documentation row was removed here (2026-08-13): it now
+      // lives under the data section, together with the metadata catalogue it
+      // belongs with. Leaving a row would restore the duplicate.
     ],
   },
   // News is flat: no drawer.
@@ -89,6 +109,37 @@ export const NAV = [
   // Personal cases always comes last.
   { path: '#/my-cases',     base: 'my-cases',     label: 'Meine Vorgänge',     icon: 'List' },
 ];
+
+// Breadcrumb dropdowns (CD breadcrumb.postcss:93-113, BreadcrumbNavigation.vue).
+// CD lets a breadcrumb segment open the pages that sit beside it, so a reader can
+// step sideways without going up and back down.
+//
+// The rows come from NAV and nowhere else. A hand-kept second list would be a
+// menu that drifts from the menu, and this file already had that problem once —
+// see `childrenFrom: 'topics'`, which exists precisely so the service domains
+// cannot go stale.
+//
+// A branch contributes ONE row under its own name, pointing at its overview —
+// it is NOT flattened into its children. Flattening was tried first and made the
+// list both long and ambiguous: «Fachanwendungen ▸ Bauten» became a bare
+// «Bauten» sitting three rows from «Prozesse», and neither said what it was a
+// part of. One row per branch also makes the dropdown read exactly like the
+// drawer, which is the promise the control makes.
+//
+// Sections whose children are a single overview row get nothing — a dropdown
+// listing only the page you are already on is a control that does nothing.
+export function crumbChildren(href) {
+  const section = NAV.find((item) => item.path === href);
+  if (!section) return [];
+  const rows = [];
+  for (const child of section.children || []) {
+    if (child.branchKey) {
+      const first = (child.branches || []).find((b) => b.href);
+      if (first) rows.push({ href: first.href, label: child.label });
+    } else if (child.href) rows.push(child);
+  }
+  return rows.length > 1 ? rows : [];
+}
 
 // Module paths are relative to routing/router.js, where dynamic import() executes.
 export const PAGES = {
@@ -169,7 +220,11 @@ const REDIRECTS = [
   // documentation remain distinct pages.
   [new RegExp('^#/knowledge/(grundlagen|regulations|general)(/.*)?$'), () => '#/knowledge'],
   [new RegExp('^#/knowledge/anleitungen$'),            () => '#/knowledge/guides'],
-  [new RegExp('^#/knowledge/prozesse$'),               () => '#/knowledge/processes'],
+  // Process documentation moved under the data section (2026-08-13). Two pages
+  // carried the same name in the same header — a thin guide here and the app
+  // over there — and a code comment in knowledge-content had been papering over
+  // the collision. Both spellings of the old path land on the signpost.
+  [new RegExp('^#/knowledge/(prozesse|processes)$'),   () => '#/data/architecture'],
   [/^#\/knowledge\/templates$/,                       () => '#/knowledge'],
   [new RegExp('^#/data/katalog(/.*)?$'),  (m) => `#/data/catalog${m[1] || ''}`],
   [new RegExp('^#/data/digitalisierung(/.*)?$'), (m) => `#/data/digitalisation${SUBS[(m[1] || '').slice(1)] || m[1] || ''}`],

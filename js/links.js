@@ -19,6 +19,8 @@ export const application = (appId) => `#/applications/${q(appId)}`;
 export const dataset = (id) => `#/data/catalog/${q(id)}`;
 /** A data table in the metadata catalogue — view state of that app, hence `?table=`. */
 export const dataTable = (tableId) => `#/app/metadata-catalog?table=${q(tableId)}`;
+/** A business object in the same app, addressed the same way (`?id=`). */
+export const businessObject = (objectId) => `#/app/metadata-catalog?id=${q(objectId)}`;
 export const caseDetails = (instanceId) => `#/my-cases/${q(instanceId)}`;
 export const news = (id) => `#/news/${q(id)}`;
 /** The archive filters through `?q=`; documents do not have individual routes. */

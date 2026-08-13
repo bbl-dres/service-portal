@@ -11,6 +11,10 @@ const SUBPAGES = {
   catalog:        { modulePath: './catalog.js',        needs: ['datasets', 'catalogLabels', 'users'] },
   'ict-projects': { modulePath: './ict-projects.js',   needs: [] },
   digitalisation: { modulePath: './digitalisation.js', needs: [] },
+  // The architecture signpost counts every layer it names, so it declares all
+  // four collections. They are small (~90KB together) and this is a page people
+  // pass THROUGH — the apps it points at need the same data one click later.
+  architecture:   { modulePath: './architecture.js',   needs: ['processes', 'businessObjects', 'dataTables', 'datasets'] },
 };
 
 const OVERVIEW_NEEDS = ['applications', 'datasets'];

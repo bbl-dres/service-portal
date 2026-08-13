@@ -5,7 +5,7 @@
 import {
   actionCard, activeFilters, card, cardAction, contactBox, contactCard, detailBar,
   detailHead, detailSection, domainTile, downloadItem, downloadLink, empty,
-  heroFigure, pageHeader, pageSection, renderNotFound, table,
+  heroFigure, pageHeader, pageSection, renderNotFound, sourceBox, table,
 } from './content.js';
 import {
   announce, flashError, mountBanner, notification, notificationHtml, processDone, toast,
@@ -58,6 +58,6 @@ const C = {
   actionCard, contactCard,
   pagination, wirePagination, loginGate, accessCard,
   preserveFocus, wireScrollRegions, errorSummary, wireErrorSummary, processDone,
-  mountDataTable, wireTableRows, cardAction, pageSection, heroFigure,
+  mountDataTable, wireTableRows, cardAction, pageSection, heroFigure, sourceBox,
 };
 export default C;

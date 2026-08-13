@@ -25,7 +25,8 @@ const ROUTES = [
   ['/knowledge/workspace',          'Arbeitsplätze gestalten'],
   ['/knowledge/publishing',         'Publikationen'],
   ['/knowledge/guides',             'Anleitungen und Schulungen'],
-  ['/knowledge/processes',          'Prozessdokumentation'],
+  // /knowledge/processes is no longer a page — it redirects to the architecture
+  // signpost and is asserted in the redirect table below (2026-08-13).
   ['/news',                         'News'],
   ['/my-cases',                     'Meine Vorgänge'],
   ['/search?q=bau',                 'Suche'],
@@ -55,7 +56,11 @@ const REDIRECTS = [
   ['/knowledge/grundlagen',           '#/knowledge'],
   ['/knowledge/grundlagen/W001',      '#/knowledge'],
   ['/knowledge/anleitungen',          '#/knowledge/guides'],
-  ['/knowledge/prozesse',             '#/knowledge/processes'],
+  // Process documentation moved under the data section (2026-08-13). BOTH old
+  // spellings are checked: the German path was already a shared link, and the
+  // English one was a live menu entry until that day.
+  ['/knowledge/prozesse',             '#/data/architecture'],
+  ['/knowledge/processes',            '#/data/architecture'],
   ['/data/katalog',                   '#/data/catalog'],
   ['/data/digitalisierung',           '#/data/digitalisation'],
   ['/data/digitalisierung/strategie', '#/data/digitalisation/strategy'],

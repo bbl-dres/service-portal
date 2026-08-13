@@ -494,6 +494,42 @@ export function contactBox(contact, { title = 'Kontakt', heading = 'h3' } = {}) 
     </dl></div>`;
 }
 
+// --- «Original» box ---------------------------------------------------------
+// Where the leading version of a record lives. The portal is a directory over
+// the business architecture, not its master: processes and business objects are
+// modelled in the federal architecture repository (IKT-Vorgabe A736), physical
+// tables answer to their source system, and only the DCAT catalogue is the
+// portal's own. An entry that does not say which of those it is invites the
+// reader to treat the portal as the source.
+//
+// `role` is the RESOLVED reference entry (data/reference-data.json `sourceRoles`),
+// not a product name: the caller looks it up, so replacing the repository is one
+// reference row rather than a change here (decision, 2026-08-13).
+//
+// `reconciled` is the honest half. A directory cannot claim its copy is current,
+// only when it last agreed with the source — without the date the entry ages
+// silently into a wrong one.
+export function sourceBox(source, role = {}, { title = 'Original', heading = 'h2' } = {}) {
+  if (!source) return '';
+  const titleElement = safeHeadingTag(heading, 'h2');
+  const href = safeLinkUrl(source.url);
+  const product = role.product ? `<br><span class="small muted">${escape(role.product)}</span>` : '';
+  const rows = [
+    `<dt>Führendes System</dt><dd>${escape(role.label || source.role || '—')}${product}</dd>`,
+    source.ref ? `<dt>Referenz</dt><dd><code>${escape(source.ref)}</code></dd>` : '',
+    source.reconciled ? `<dt>Abgeglichen</dt><dd>${escape(source.reconciled)}</dd>` : '',
+  ].filter(Boolean).join('');
+  // No link is the NORMAL case for a source system — a SAP table has no public
+  // URL — so the box stays useful without one rather than hiding itself.
+  const action = href
+    ? `<div class="row mt-4"><a class="btn btn--outline btn--sm btn--icon-right" href="${escape(href)}"${
+        newWindowAttrs(href, { external: classifyUrl(href) === 'external' })}>${
+        icon('External', 'btn__icon')}<span class="btn__text">Im Repository öffnen</span></a></div>`
+    : '';
+  return `<div class="box"><${titleElement}>${escape(title)}</${titleElement}>
+    <dl class="kv kv--ruled">${rows}</dl>${action}</div>`;
+}
+
 // --- Detail-view side column ------------------------------------------------
 // Two cards that serve the same purpose on every property detail page: what can
 // I start here, and whom can I ask? They live here as building blocks so the

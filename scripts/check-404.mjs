@@ -30,7 +30,9 @@ for (const [name, route, expected] of CASES) {
     await new Promise(r => setTimeout(r, 800));
     const h1 = document.querySelector('#main-content h1');
     const backLink = document.querySelector('#main-content .back-link, #main-content .back-link-row a, #main-content a[class*=back]');
-    const breadcrumbs = [...document.querySelectorAll('.breadcrumb-navigation li, .breadcrumb li')].map(li => li.textContent.trim()).filter(Boolean);
+    // Direct children: a section crumb nests its dropdown rows in a second <ul>
+    // inside its own <li>, and those are not breadcrumb segments.
+    const breadcrumbs = [...document.querySelectorAll('.breadcrumb-navigation > ul > li, .breadcrumb > nav > ul > li')].map(li => li.textContent.trim()).filter(Boolean);
     const message = document.querySelector('#main-content p.muted');
     return {
       h1: h1 ? h1.textContent.trim() : '',

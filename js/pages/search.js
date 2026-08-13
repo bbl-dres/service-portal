@@ -32,7 +32,11 @@ import { classifyUrl, newWindowAttrs, safeLinkUrl } from '../security/urls.js';
 // `dataTables` follows on the same terms (61KB, 2026-08-12): both routes that
 // show a table — the metadata catalogue and a dataset's «Datenfelder» tab —
 // load it too, so a search leading there hits a warm cache.
-export const needs = ['applications', 'datasets', 'documents', 'news', 'contacts', 'buildings', 'projects', 'dataTables'];
+// `processes` and `businessObjects` complete the architecture layers (2026-08-13).
+// Together ~90KB, and both routes that display them load them anyway, so a search
+// leading there lands on a warm cache — the same trade `dataTables` made.
+export const needs = ['applications', 'datasets', 'documents', 'news', 'contacts', 'buildings', 'projects',
+  'dataTables', 'processes', 'businessObjects'];
 
 export default async function render(ctx) {
   const { mount, query, core, C, setTitle, setCrumbs } = ctx;
@@ -194,6 +198,7 @@ function buildIndex(core) {
   // domainLabel comes from js/domain.js. The local copy was exactly the drift
   // that module was introduced to eliminate (B23).
   const domainLabel = (k) => domainLabelShared(core, k);
+  const dataDomainLabel = (k) => (core.dataDomains().find((d) => d.key === k) || {}).label || k || '';
   const contactName = (id) => (core.contacts() || []).find(c => c.contactId === id)?.name || '';
   const rows = [];
 
@@ -237,6 +242,12 @@ function buildIndex(core) {
   // tables sat at ranks 21–41, past the first page of 20.
   const DATASET_CATEGORY = 'Datensatz Datensätze';
   const TABLE_CATEGORY = 'Datentabelle Datentabellen';
+  // The same reasoning for the two architecture layers. The word the request
+  // came in under is the one nobody's title carries, so both kinds answer to it.
+  // German UI term: «Geschäftsarchitektur»
+  const ARCHITECTURE_CATEGORY = 'Geschäftsarchitektur Architektur Dokumentation';
+  const PROCESS_CATEGORY = `Prozess Prozesse Prozessdokumentation ${ARCHITECTURE_CATEGORY}`;
+  const OBJECT_CATEGORY = `Geschäftsobjekt Geschäftsobjekte Fachbegriff ${ARCHITECTURE_CATEGORY}`;
 
   for (const d of core.datasets()) {
     rows.push({
@@ -265,6 +276,47 @@ function buildIndex(core) {
         TABLE_CATEGORY, table.name, table.schema, table.schemaLabel, table.systemName,
         // Both halves of a field: the technical name and its German description.
         (table.fields || []).map((f) => `${f.name} ${f.description || ''}`).join(' '),
+      ].filter(Boolean).join(' '),
+    });
+  }
+
+  // Business architecture (2026-08-13). Two process names returned ZERO hits
+  // before this, and a business-object name found a building and a dataset but
+  // never the object itself.
+  // German UI term: «Objektübernahme» · «Lösungsvorschläge Anmiete Kauf» · «Areal»
+  // The physical layer had been indexed and the two layers above it had not, so
+  // the model was reachable only by someone who already knew the two apps
+  // existed — which is the whole complaint the directory is meant to answer.
+  for (const p of core.processes()) {
+    rows.push({
+      kind: 'Prozesse', type: p.groupLabel ? `Prozess · ${p.groupLabel}` : 'Prozess',
+      title: p.name, desc: p.description,
+      href: links.processDocumentation(p.processId),
+      meta: p.areaLabel || '',
+      extra: [
+        PROCESS_CATEGORY, p.processId, p.areaLabel, p.groupLabel,
+        (p.tags || []).join(' '), (p.systems || []).join(' '),
+        // The process number is how it is cited in a document, with and without
+        // its dots: «TQ.21.00.00.01» and «TQ 21 00 00 01» both have to find it.
+        String(p.processId).replace(/\./g, ' '),
+      ].filter(Boolean).join(' '),
+    });
+  }
+
+  // One row per OBJECT, with its attribute names riding along — the same shape
+  // as data tables above, and for the same reason: 85 attribute rows would bury
+  // everything else, but an attribute name still has to find its owning object.
+  for (const o of core.businessObjects()) {
+    rows.push({
+      kind: 'Geschäftsobjekte', type: 'Geschäftsobjekt',
+      title: o.name, desc: o.definition,
+      href: links.businessObject(o.objectId),
+      // A business object answers to `dataDomains`, NOT the service domains
+      // `domainLabel` resolves — different vocabularies, same word.
+      meta: dataDomainLabel(o.domain),
+      extra: [
+        OBJECT_CATEGORY, o.objectId, dataDomainLabel(o.domain), o.comment,
+        (o.attributes || []).map((a) => `${a.name} ${a.definition || ''}`).join(' '),
       ].filter(Boolean).join(' '),
     });
   }

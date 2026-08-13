@@ -9,7 +9,7 @@ import C from '../components.js';
 import { safeLinkUrl } from '../security/urls.js';
 import { loadAppStyles } from './css-loader.js';
 import {
-  APPS, APP_GATE_META, NAV, PAGES, SECTION_OF, legacyTarget, parseHash,
+  APPS, APP_GATE_META, NAV, PAGES, SECTION_OF, crumbChildren, legacyTarget, parseHash,
 } from './routes.js';
 
 export { NAV, legacyTarget };
@@ -140,22 +140,90 @@ function setActiveSubNav() {
 }
 
 // CD breadcrumb: <ul> rows, the chevron inside the link (breadcrumb.postcss:5-70).
+//
+// A segment that names a section also opens that section's pages
+// (breadcrumb.postcss:93-113). DELIBERATE DEVIATION from CD in two places, both
+// about the control rather than the look:
+//
+//  · CD hangs the toggle on the crumb's own <a> and calls preventDefault
+//    (BreadcrumbNav.js:22-23), so the link stops linking — the one thing a
+//    breadcrumb is for. Here the link still navigates and the CHEVRON is a real
+//    <button>, which is also what CD's own styling already implies: it draws a
+//    bordered box around just the chevron (breadcrumb.postcss:46-51).
+//  · CD's script sets no aria-expanded, has no Escape and no keyboard path at
+//    all. This portal owes WCAG 2.1 AA, so the button carries the state and
+//    wireCrumbDropdowns() below carries the rest.
 function renderCrumbs(crumbs) {
   const ul = document.getElementById('breadcrumb-list');
   const wrap = document.getElementById('breadcrumb');
   if (!ul || !wrap) return;
   if (!crumbs || !crumbs.length) { wrap.hidden = true; ul.innerHTML = ''; return; }
   wrap.hidden = false;
+  const here = location.hash || '#/';
   ul.innerHTML = crumbs.map((c, i) => {
     const last = i === crumbs.length - 1;
     const sep = i > 0 ? C.icon('ChevronRight', 'breadcrumb__include-icon') : '';
     const href = safeLinkUrl(c.href);
-    return last
-      ? `<li><span aria-current="page">${sep}${C.escape(c.label)}</span></li>`
-      : href
-        ? `<li><a href="${C.escape(href)}">${sep}<span>${C.escape(c.label)}</span></a></li>`
-        : `<li><span aria-disabled="true">${sep}${C.escape(c.label)}</span></li>`;
+    if (last) return `<li><span aria-current="page">${sep}${C.escape(c.label)}</span></li>`;
+    if (!href) return `<li><span aria-disabled="true">${sep}${C.escape(c.label)}</span></li>`;
+    const link = `<a href="${C.escape(href)}">${sep}<span>${C.escape(c.label)}</span></a>`;
+    const children = crumbChildren(c.href);
+    if (!children.length) return `<li>${link}</li>`;
+    const panelId = `crumb-menu-${i}`;
+    // The open page is marked in its own dropdown (CD `.active`, a 2px bar), so
+    // the list doubles as «where am I among these».
+    const rows = children.map((child) => {
+      const childHref = safeLinkUrl(child.href) || '#/';
+      const active = here === child.href;
+      return `<li><a class="menu__item menu__item--mini menu__item--border${active ? ' active' : ''}"
+        href="${C.escape(childHref)}"${active ? ' aria-current="page"' : ''}>${C.escape(child.label)}</a></li>`;
+    }).join('');
+    return `<li>${link}<button type="button" class="breadcrumb__dropdown" aria-expanded="false"
+        aria-controls="${panelId}" aria-label="Bereich ${C.escape(c.label)} anzeigen">${
+        C.icon('ChevronDown', 'breadcrumb__dropdown-icon')}</button>
+      <ul id="${panelId}" hidden>${rows}</ul></li>`;
   }).join('');
+}
+
+// One delegated wiring for every dropdown the breadcrumb will ever render.
+// renderCrumbs() replaces the list on each navigation, so per-button listeners
+// would have to be re-attached every time; the container outlives all of them.
+function wireCrumbDropdowns() {
+  const wrap = document.getElementById('breadcrumb');
+  if (!wrap) return;
+  const close = (button) => {
+    button.setAttribute('aria-expanded', 'false');
+    button.nextElementSibling?.setAttribute('hidden', '');
+  };
+  const closeAll = () => wrap.querySelectorAll('.breadcrumb__dropdown[aria-expanded="true"]').forEach(close);
+  wrap.addEventListener('click', (event) => {
+    const button = event.target.closest('.breadcrumb__dropdown');
+    if (!button) return;
+    const open = button.getAttribute('aria-expanded') === 'true';
+    closeAll();   // CD keeps at most one open (BreadcrumbNav.js:28-30).
+    if (open) return;
+    button.setAttribute('aria-expanded', 'true');
+    button.nextElementSibling?.removeAttribute('hidden');
+  });
+  // Escape returns focus to the control that opened the panel; without that the
+  // keyboard user is left on an element that just became hidden.
+  //
+  // Look the open button up from the CONTAINER, not from the event target. The
+  // rows are `<li>` inside the panel's `<ul>`, itself inside the segment's
+  // `<li>`, so `closest('li')` from a focused row returns the row — which has no
+  // button, and Escape silently did nothing.
+  wrap.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const button = wrap.querySelector('.breadcrumb__dropdown[aria-expanded="true"]');
+    if (!button) return;
+    close(button);
+    button.focus();
+  });
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('#breadcrumb')) closeAll();
+  });
+  // Following a row navigates, and the panel must not survive into the next page.
+  window.addEventListener('hashchange', closeAll);
 }
 
 function makeCtx(mount, params, query, stale, lifecycle, signal) {
@@ -480,6 +548,9 @@ async function dispatch() {
 }
 
 export function initRouter() {
+  // Delegated ONCE on the breadcrumb container, which outlives every list
+  // renderCrumbs() puts inside it.
+  wireCrumbDropdowns();
   // Only `#/…` is a route. Bare `#` and in-page fragments (e.g. the skip link's
   // `#main-content`) must not dispatch — that used to render a 404 over the page.
   // Bare `#` placeholder links and in-page anchors must not dispatch. An empty

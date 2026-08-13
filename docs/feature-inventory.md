@@ -35,7 +35,7 @@ ausgegeben.
 | `#/knowledge/accommodation` | Unterbringung und Objektbetrieb |
 | `#/knowledge/publishing` | Publikationen, Druck und Versand |
 | `#/knowledge/guides` | Anleitungen und Schulungen |
-| `#/knowledge/processes` | Prozessdokumentation (Wissen) |
+| `#/data/architecture` | Prozesse und Geschäftsobjekte (Wegweiser Geschäftsarchitektur) |
 | `#/news` | News-Liste |
 | `#/news/<id>` | Einzelmeldung |
 | `#/my-cases` | Meine Vorgänge (Login-Gate) |
@@ -260,7 +260,9 @@ Hash-Router: NAV-Definition, Seiten-/App-Registry mit dynamischem Import, Altlas
 - Redirect: #/knowledge/news(/*) → #/news(/*) — router.js:142
 - Redirect: #/knowledge/(grundlagen|regulations|general)(/*) → #/knowledge — router.js:147
 - Redirect: #/knowledge/anleitungen → #/knowledge/guides — router.js:148
-- Redirect: #/knowledge/prozesse → #/knowledge/processes — router.js:149
+- Redirect: #/knowledge/prozesse und #/knowledge/processes → #/data/architecture (2026-08-13)
+- #/data/architecture → pages/architecture.js — Wegweiser über die Ebenen der Geschäftsarchitektur (Prozesse, Geschäftsobjekte, Datentabellen, Datensätze) mit gerechneten Umfängen und je Ebene dem führenden System. Das Portal ist Verzeichnis, nicht Mastersystem; Prozesse und Geschäftsobjekte werden im Architektur-Repository des Bundes gepflegt (IKT-Vorgabe A736: Innovator, smartfacts)
+- Herkunft je Datensatz: `source{ role, ref, url, reconciled }` in data/processes.json, data/business-objects.json und data/data-tables.json; `role` wird über reference-data.json (`sourceRoles`) aufgelöst, damit ein Produktwechsel eine Referenzzeile ist und keine Schemaänderung. C.sourceBox rendert das in beiden Apps gleich
 - Redirect: #/knowledge/templates → #/knowledge — router.js:150
 - Redirect: #/data/katalog(/*) → #/data/catalog(/*) — router.js:151
 - Redirect: #/data/digitalisierung(/sub) → #/data/digitalisation mit SUBS-Mapping (strategie→/strategy, prinzipien→/principles, vision, superb, bim) — router.js:152, 156
@@ -575,6 +577,7 @@ Abschnitts-Übersicht «Daten und Digitalisierung» plus Delegator: lädt Unters
 
 - Zwei CD-Bänder: pageHeader-Band + getöntes Band «Angebote» mit sichtbarem section__title (data.js:81-88)
 - 11 domainTile-Kacheln: Datenportal, Datenbezug/API, Metadaten Katalog Bauten, Prozessdokumentation Bauten, Bauwerksdokumentation, Mediathek Bauten, 3× Fachanwendungen (area-Filter buildings/logistics/federal), Alle Anwendungen, Digitalisierung
+- Menü «Daten und Digitalisierung» (2026-08-13): 6 statt 7 Zeilen. Neu «Prozesse und Geschäftsobjekte» (Zweig: Übersicht, Prozesse, Geschäftsobjekte, Datentabellen und Felder); die drei Fachanwendungs-Zeilen sind zu einem Zweig zusammengefasst, dessen erste Zeile den ungefilterten Katalog öffnet — dadurch erhalten die beiden Anwendungen des Bereichs `central` erstmals einen Menüpfad
 - Live-Zähler in Kachel-Meta: Datensatzanzahl aus core.datasets(), Anwendungszahlen je area aus core.applications() (data.js:34-36); Metadaten-/Prozess-Kacheln bewusst OHNE Zahl (data.js:45-50)
 - Deep-Links mit Query in Kacheln: #/applications?area=buildings|logistics|federal
 
@@ -699,7 +702,7 @@ Wissen und Hilfsmittel: Übersicht mit 7 Fachgebiets-Kacheln plus je eine Ankern
 - #/knowledge/workspace — Arbeitsplätze gestalten (8 Abschnitte): der Ausstattungsstandard Multispace als Inhalt, nicht als Linkliste
 - #/knowledge/publishing — Publikationen, Druck und Versand (3 Abschnitte)
 - #/knowledge/guides — Anleitungen und Schulungen (2 Abschnitte)
-- #/knowledge/processes — Prozessdokumentation (Prozessportal-Abschnitt + FAQ)
+- #/knowledge/processes — entfällt (2026-08-13), leitet auf #/data/architecture um
 - #/knowledge/<area>?section=wi-<id> — Direktsprung zu einem Abschnitt (Suche/Kurzlinks; DOM-id-Präfix wi- via sectionDomId, knowledge-content.js:238)
 - #/knowledge/<unbekannt> — 404 «Dieses Fachgebiet» (knowledge.js:104)
 
@@ -710,7 +713,8 @@ Wissen und Hilfsmittel: Übersicht mit 7 Fachgebiets-Kacheln plus je eine Ankern
 - Drei Abschnittsformen: Dokumentliste (items als C.downloadItem-ul), freier HTML-Inhalt (html, ggf. als Funktion mit C), FAQ-Akkordeon (knowledge.js:76-94)
 - downloadItem wählt Icon selbst: Download für Datei, External für externes Ziel (kein icon-Override, knowledge.js:84-92); Platzhalter-Downloads href='#', download-Attribut nur für Nicht-Externe
 - Unterlagen-Metadaten je Eintrag (Format, Grösse, Quelle wie fedlex.admin.ch/bkb.admin.ch; knowledge-content.js durchgängig)
-- processes-Seite: Wegweiser-Text mit Link auf #/app/process-docs und externem CD-Button «Zum Prozessportal (Archimap)» (knowledge-content.js:210-221), FAQ-Akkordeon mit 5 Fragen (FAQS, knowledge-content.js:227-233)
+- FAQ-Akkordeon mit 5 Fragen (FAQS) jetzt unter «Anleitungen und Schulungen» — die Fragen betreffen die Nutzung des Portals, nicht die Prozessdokumentation (2026-08-13)
+- Die frühere processes-Seite nannte «Archimap» als Prozessportal. Das war falsch: die IKT-Vorgabe A736 schreibt Innovator (Modellierung) und smartfacts (webbasierte Publikation) vor. Der korrigierte Verweis steht auf #/data/architecture
 - Interne Deep-Links in Unterlagenlisten (z. B. #/services/sicherheitsvorfall-melden, #/app/dataportal; knowledge-content.js:27,108)
 
 - «Arbeitsplätze gestalten» ist das einzige Fachgebiet, das den fachlichen Inhalt selbst führt statt nur darauf zu verlinken: Das Handbuch Multispace umfasst rund 150 Seiten, und seine Module sind das Vokabular, das die übrigen Workspace-Oberflächen bereits sprechen — `data/workspace-planning.json` führt die Ausstattung je Objekt unter denselben Modulnamen, und das Objektdetail des Plan-Editors weist sie im Register «Module» aus. Die Seite führt deshalb die Modultabelle mit Flächenrichtmassen, die Einrichtungsrichtlinien, das Farbkonzept, die drei Planungsebenen des Zielbilds mit den vier Planungsschritten, die Plandaten-Vorgaben samt «Flächennachweis SIA 416» sowie Beschaffung und Kreislaufmodell.

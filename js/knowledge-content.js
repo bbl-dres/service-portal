@@ -243,31 +243,25 @@ export const AREAS = {
         { title: 'Webinar: Dienstleistungen des BBL', desc: 'Aufzeichnung des Einführungswebinars für neue Verwaltungseinheiten.', meta: ['Video', '45 Min'] },
         { title: 'Schnellstart-Kurzreferenz', desc: 'Einseitige Übersicht der häufigsten Aufgaben und Wege.', meta: ['PDF', '480 kB'] },
       ] },
-    ],
-  },
-
-  // Process documentation has its own menu entry. It is not a subject area but
-  // a description of workflows ACROSS all of them, and is searched accordingly
-  // («how does this work?»), not as a document.
-  processes: {
-    title: 'Prozessdokumentation',
-    lead: 'Die Prozesslandschaft des BBL im Prozessportal Archimap sowie häufige Fragen zur Zusammenarbeit.',
-    intro: 'Viele Anliegen können Sie direkt unter <a href="#/services">Dienstleistungen</a> als Vorgang starten.',
-    sections: [
-      { id: 'portal', title: 'Prozessportal', html: (C) => `
-        <p>Die vollständige Prozesslandschaft des BBL — Abläufe, Rollen und Zuständigkeiten — wird im Prozessportal Archimap gepflegt.</p>
-        ${/* Terminology clarification (as with two building-documentation terms):
-              this page is the guide ACROSS all processes; property-management
-              processes also have their own «Prozessdokumentation Bauten» app. */''}
-        <p>Die Prozesse des Immobilienmanagements sind zusätzlich direkt im Portal dokumentiert — mit BPMN-Diagramm und Prozessschritten je Prozess: <a href="#/app/process-docs">Prozessdokumentation Bauten</a>.</p>
-        <div class="row mt-4">
-          ${/* CD Btn.vue: icon comes first in the DOM; btn--icon-right reverses
-                order, and the label uses the .btn__text wrapper. */''}
-          <a class="btn btn--outline btn--lg btn--icon-right" href="https://prozesse-archimap.admin.ch" target="_blank" rel="noopener noreferrer external">${C.icon('External', 'btn__icon')}<span class="btn__text">Zum Prozessportal (Archimap)</span></a>
-        </div>` },
+      // The FAQ moved here from the retired «Prozessdokumentation» page
+      // (2026-08-13). Its questions were always about USING the portal — how do
+      // I report space demand, where are the templates — which is this page's
+      // subject; they sat under process documentation only because that page
+      // happened to exist.
       { id: 'faq', title: 'Häufige Fragen (FAQ)', faq: true },
     ],
   },
+
+  // The «Prozessdokumentation» area was retired on 2026-08-13. Two pages carried
+  // that name in the same header: this guide and the app it linked to. Process
+  // documentation now lives with the metadata catalogue under
+  // the architecture signpost (#/data/architecture), and the old paths redirect
+  // there (routing/routes.js).
+  //
+  // The external portal named here was ALSO wrong: the binding IKT-Vorgabe A736
+  // prescribes Innovator for modelling and smartfacts for web publication, not
+  // Archimap. The corrected reference lives on the new page, next to the
+  // directory entries it explains.
 };
 
 export const FAQS = [

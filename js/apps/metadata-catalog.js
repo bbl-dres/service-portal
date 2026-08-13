@@ -60,6 +60,11 @@ const refList = (core, key) => core.ref()[key] || [];
 const domainOf = (core, key) => core.dataDomains().find((d) => d.key === key) || {};
 const domainLabel = (core, key) => domainOf(core, key).label || key;
 const statusOf = (core, id) => refList(core, 'objectStatuses').find((s) => s.id === id) || { label: id, variant: 'gray' };
+// Both halves of this app are directory entries over something else — a business
+// object over the architecture repository, a table over its source system — so
+// both get the same box, resolved through the same reference list.
+const sourceBoxFor = (core, C, record) =>
+  C.sourceBox(record.source, refList(core, 'sourceRoles').find((r) => r.key === (record.source || {}).role));
 const matchOf = (core, id) => refList(core, 'mappingMatches').find((m) => m.id === id) || { label: id, variant: 'gray' };
 // Return a source URL's hostname, or the original malformed value so bad raw data remains visible.
 const hostOf = (url) => { try { return new URL(url).host; } catch { return String(url || ''); } };
@@ -449,7 +454,8 @@ function objectDetail(ctx, id) {
           <dt>ID</dt><dd><code>${esc(o.objectId)}</code></dd>
         </dl>
       </section></div>
-      <aside class="detail-layout__aside" aria-label="Kontakt">
+      <aside class="detail-layout__aside" aria-label="Herkunft und Kontakt">
+        ${sourceBoxFor(core, C, o)}
         ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
       </aside></div>`;
   };
@@ -594,6 +600,10 @@ async function tableDetail(ctx, id) {
           <a class="btn btn--outline btn--sm btn--icon-left" href="${esc(links.dataset(dataset.id))}">
             ${C.icon('ArrowRight', 'btn__icon')}<span class="btn__text">Datensatz ansehen</span></a>
         </div>` : ''}
+        ${/* A table's leading version is its SOURCE SYSTEM, not the architecture
+              repository — the layer table on #/data/architecture says so, and this
+              is where that claim has to hold per record. */''}
+        ${sourceBoxFor(core, C, t)}
         ${C.contactBox(contact, { title: 'Kontakt', heading: 'h2' })}
       </aside></div>`;
   };
