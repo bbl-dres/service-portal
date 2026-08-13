@@ -172,7 +172,12 @@ code{font-family:var(--m);font-size:var(--t-md);background:var(--chip);padding:1
 .tnode,.trow{position:relative;--ind:var(--tree-gutter);padding-left:var(--ind)}
 .t2{--ind:calc(var(--tree-gutter) + var(--tree-icon))}
 .trow{--ind:calc(var(--tree-gutter) + var(--tree-icon) + var(--tree-step))}
-.t4{--ind:calc(var(--tree-gutter) + var(--tree-icon) + 2 * var(--tree-step))}
+/* Level 4 steps by HALF (Nutzerentscheid, 2026-08-13). Levels 1 to 3 all carry
+   a chevron, so their gutter is occupied and the eye reads the column of
+   chevrons as the ruler. An attribute has nothing to disclose, so a full step
+   left 20px of empty gutter and the leaves looked further out than they are.
+   Half a step keeps them clearly under their record without that dead column. */
+.t4{--ind:calc(var(--tree-gutter) + var(--tree-icon) + var(--tree-step) + var(--tree-step) / 2)}
 .tnode > .chev,.trow > .tchev{position:absolute;left:calc(var(--ind) - var(--tree-gutter));
   top:0;bottom:0;width:var(--tree-gutter);margin:0;padding:0;
   display:flex;align-items:center;justify-content:center}
