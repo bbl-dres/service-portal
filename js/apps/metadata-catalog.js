@@ -112,6 +112,32 @@ const BRANCH_UNIT = {
   referenz: { nom: 'Wertelisten', dat: 'Wertelisten', kid: 'Werte', axis: 'Thema', axisPl: 'Themen' },
 };
 
+// A query narrows the scope the same way the tree does, so it belongs in the URL
+// beside it — and it applies to every tab, because it is not a property of any
+// one of them. It is deliberately NOT carried along a tree click: choosing a new
+// scope starts unfiltered, or a reader would wonder where the records went.
+const matches = (q, ...fields) => {
+  if (!q) return true;
+  const needle = q.toLowerCase();
+  return fields.some((f) => String(f == null ? '' : f).toLowerCase().includes(needle));
+};
+const scopeRows = (s) => s.rows.filter((r) => (!s.leaf || r.group === s.leaf)
+  && matches(s.q, r.name, r.def, r.group, r.steward, r.status));
+const scopeKids = (s) => (s.rec ? s.rec.kids : [])
+  .filter((k) => matches(s.q, k.name, k.def, k.type));
+
+// What the field says depends on what it would narrow, because «Suchen…» over a
+// tree of five thousand records tells a reader nothing about what they are about
+// to search.
+function searchScope(s) {
+  const u = BRANCH_UNIT[s.kind];
+  if (s.lvl === 0) return { label: 'Im ganzen Katalog suchen', dead: false };
+  if (s.lvl >= 4) return { label: 'Auf dieser Stufe gibt es nichts zu durchsuchen', dead: true };
+  if (s.lvl === 3) return { label: `${u.kid} in «${s.rec.name}» suchen`, dead: false };
+  if (s.lvl === 2) return { label: `In ${s.leaf} suchen`, dead: false };
+  return { label: `In ${BRANCH_LABEL[s.kind]} suchen`, dead: false };
+}
+
 // Grouping is a property of the PRESENTATION, and both presentations share it:
 // it draws the boxes in the landscape and the sections in the table. One choice,
 // two views, which is what makes the two comparable at a glance.
@@ -184,10 +210,11 @@ function records(core, kind) {
     const vals = refList(core, k);
     return {
       kind: 'referenz', id: k, name: REF_LABEL[k] || k, group: theme,
-      def: `Kontrollierte Werteliste; jeder Wert unten ist genau einmal vergeben.`,
-      // Verantwortung, Status und Freigabe gehören hierher. Das Datenmodell führt
-      // sie noch nicht (docs/data-model.md), deshalb bleiben die Felder sichtbar leer
-      // statt weggelassen — die Lücke soll auffallen, nicht verschwinden.
+      // Beschreibung, Verantwortung, Status und Freigabe gehören hierher. Das
+      // Datenmodell führt sie noch nicht (docs/data-model.md), deshalb bleiben die
+      // Felder sichtbar leer statt weggelassen — die Lücke soll auffallen, nicht
+      // verschwinden, und erfundener Fülltext hätte die Suche belogen.
+      def: '',
       status: '', steward: '', persons: [],
       n: vals.length, updated: '',
       raw: { key: k, values: vals }, href: `${BASE}?list=${encodeURIComponent(k)}`,
@@ -239,10 +266,11 @@ function readState(ctx) {
     : (avail.includes(DEFAULT_TAB[lvl]) ? DEFAULT_TAB[lvl] : avail[0] || '');
   // Same shape as the tab: an explicit choice wins and travels, a default only
   // holds until one is made.
+  const q = (qs.get('q') || '').trim();
   const dims = kind ? GROUP_DIMS(kind) : [];
   const groupPick = dims.some((d) => d.value === qs.get('group')) ? qs.get('group') : '';
   const group = groupPick || DEFAULT_GROUP(lvl);
-  return { kind, rows, leaf, rec, attr, lvl, tab, pick, avail, group, groupPick,
+  return { kind, rows, leaf, rec, attr, lvl, tab, pick, avail, group, groupPick, q,
     missing: !!picked && !rec };
 }
 
@@ -290,6 +318,7 @@ export default async function render(ctx) {
   <div class="container section">
     ${C.pageHeader({ title: TITLE,
     lead: 'Fachbegriffe des BBL, ihre Realisierung in den Führungssystemen, und die Wertelisten, auf die beide verweisen.' })}
+    ${searchBarHtml(ctx, s)}
     <div class="pf-layout">
       <aside class="pf-sidebar" aria-label="Katalog durchsuchen">
         <div class="pf-sidebar__head"><h2 class="pf-sidebar__title">Katalog</h2></div>
@@ -323,6 +352,26 @@ export default async function render(ctx) {
     panel.innerHTML = paneHtml(ctx, cur, unit);
     mountPane(ctx, cur, unit);
   };
+
+  // Typing rewrites the URL in place rather than pushing history: a query is a
+  // refinement of where the reader already is, not a new destination.
+  const input = mount.querySelector('#mc-q');
+  if (input) {
+    let timer = null;
+    const apply = () => {
+      const p = new URLSearchParams(location.hash.split('?')[1] || '');
+      if (input.value.trim()) p.set('q', input.value.trim()); else p.delete('q');
+      const str = p.toString();
+      history.replaceState(history.state, '', str ? `${BASE}?${str}` : BASE);
+      cur = { ...cur, q: input.value.trim() };
+      redraw();
+      const count = mount.querySelector('#mc-q-count');
+      if (count) count.innerHTML = searchCount(cur);
+    };
+    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(apply, 250); });
+    input.closest('form').addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); apply(); });
+    ctx.onUnmount(() => clearTimeout(timer));
+  }
 
   const tools = mount.querySelector('#mc-tools');
   const paintTools = () => { if (tools) tools.innerHTML = toolsHtml(ctx, cur); };
@@ -378,6 +427,33 @@ export default async function render(ctx) {
       },
     });
   }
+}
+
+// The count is the field's feedback, and it has to be there on every tab —
+// «Übersicht» lists nothing, so without it a reader typing there gets no sign
+// that anything happened at all.
+function searchCount(s) {
+  if (s.lvl >= 4 || s.lvl === 0) return '';
+  const u = s.lvl === 3 ? { nom: BRANCH_UNIT[s.kind].kid, dat: BRANCH_UNIT[s.kind].kid }
+    : BRANCH_UNIT[s.kind];
+  const all = s.lvl === 3 ? s.rec.kids : s.rows.filter((r) => !s.leaf || r.group === s.leaf);
+  const hit = s.lvl === 3 ? scopeKids(s) : scopeRows(s);
+  if (!s.q) return `${all.length} ${esc(u.nom)}`;
+  return `<strong>${hit.length}</strong> von ${all.length} ${esc(u.dat)}`;
+}
+
+function searchBarHtml(ctx, s) {
+  const { C } = ctx;
+  const scope = searchScope(s);
+  return `<form class="mc-search" role="search" aria-label="${esc(scope.label)}">
+    <label class="sr-only" for="mc-q">${esc(scope.label)}</label>
+    <div class="mc-search__field">
+      ${C.icon('Search', 'mc-search__icon')}
+      <input id="mc-q" type="search" autocomplete="off" value="${esc(s.q)}"
+        placeholder="${esc(scope.label)}${scope.dead ? '' : '…'}"${scope.dead ? ' disabled' : ''}>
+    </div>
+    <p class="mc-search__count" id="mc-q-count">${searchCount(s)}</p>
+  </form>`;
 }
 
 // Grouping belongs to the table and the landscape, not to the tree — so it sits
@@ -496,7 +572,7 @@ const personRows = (persons) => (persons || []).map((p) => [esc(p.role),
 
 function paneHtml(ctx, s, unit) {
   const { core, C } = ctx;
-  if (s.lvl === 0) return homeHtml(ctx);
+  if (s.lvl === 0) return homeHtml(ctx, s);
   if (s.tab === 'tabelle') return '<div id="mc-table"></div>';
   if (s.tab === 'diagramm') return landscapeHtml(ctx, s);
   if (s.lvl === 4) return attrOverview(core, s, unit);
@@ -567,7 +643,7 @@ function recordOverview(core, C, s, unit) {
 // Levels 1 and 2 describe a scope rather than a record, so «Definition» states
 // what the scope contains and «Metadaten» counts it.
 function scopeOverview(s, unit) {
-  const rows = s.rows.filter((r) => !s.leaf || r.group === s.leaf);
+  const rows = scopeRows(s);
   const groups = new Set(rows.map((r) => r.group));
   return section('Definition', `<p class="m-0">${esc(s.leaf
     ? `Alle ${unit.nom}, die dem ${unit.axis} «${s.leaf}» zugeordnet sind.`
@@ -592,7 +668,7 @@ function scopeOverview(s, unit) {
 // changes, only how the field is divided. The boxes come from the grouping, and
 // «keine» is one box holding everything.
 function landscapeBoxes(s) {
-  const rows = s.rows.filter((r) => !s.leaf || r.group === s.leaf);
+  const rows = scopeRows(s);
   const dim = (GROUP_DIMS(s.kind).find((d) => d.value === s.group) || {}).of;
   const tile = (r) => ({ label: r.name, href: hrefFor(s, { rec: r, attr: '', leaf: r.group }),
     on: !!(s.rec && s.rec.id === r.id) });
@@ -631,8 +707,11 @@ function landscapeHtml(ctx, s) {
 // The catalogue root has no tabs, because it is not a scope: it is the way in.
 // Three figures to say how big the thing is, then the two questions a reader
 // actually arrives with: what changed lately, and how is the estate divided.
-function homeHtml(ctx) {
+function homeHtml(ctx, s) {
   const { core, C } = ctx;
+  // A query at the root has the whole catalogue as its scope, so it answers with
+  // records from all three branches rather than with the way-in page.
+  if (s.q) return '<div id="mc-table"></div>';
 
   const cards = BRANCHES.map((kind) => {
     const rows = records(core, kind);
@@ -711,14 +790,37 @@ function mountPane(ctx, s, unit) {
   const host = mount.querySelector('#mc-table');
   if (!host) return;
 
+  if (s.lvl === 0) {
+    const hits = BRANCHES.flatMap((k) => records(core, k).map((r) => ({ ...r, kind: k })))
+      .filter((r) => matches(s.q, r.name, r.def, r.group, r.steward));
+    ctx.onUnmount(C.mountDataTable(host, {
+      id: 'mc-all', unit: { nom: 'Einträge', dat: 'Einträgen' }, perPage: 25, showSearch: false,
+      caption: `Treffer für «${s.q}» im ganzen Katalog`, rows: hits,
+      emptyMsg: `Kein Treffer für «${s.q}».`,
+      // Grouped by branch: a hit list spanning three kinds of thing is unreadable
+      // until it says which kind each row is.
+      groupBy: (r) => BRANCH_LABEL[r.kind],
+      columns: [
+        { key: 'name', label: 'Name', width: '14rem',
+          render: (r) => `<a href="${esc(r.href)}">${esc(r.name)}</a>` },
+        { key: 'group', label: 'Gruppe', width: '12rem', render: (r) => esc(r.group) },
+        { key: 'def', label: 'Beschreibung',
+          render: (r) => (r.def ? esc(truncateText(r.def, 58)) : '<span class="muted">—</span>') },
+        { key: 'n', label: 'Bestandteile', width: '9rem', render: (r) => String(r.n) },
+      ],
+    }));
+    return;
+  }
+
   if (s.lvl >= 3) {
     const r = s.rec;
     const isRef = r.kind === 'referenz';
     ctx.onUnmount(C.mountDataTable(host, {
       id: 'mc-kids', unit: { nom: unit.kid, dat: unit.kid }, perPage: 25,
-      caption: `${unit.kid} von ${r.name}`, rows: r.kids,
-      searchKeys: ['name', 'def', 'type'],
-      emptyMsg: `Für «${r.name}» ist noch nichts erfasst.`,
+      caption: `${unit.kid} von ${r.name}`, rows: scopeKids(s),
+      // One search field per page. This one already narrowed the rows above.
+      showSearch: false,
+      emptyMsg: s.q ? `Kein Treffer für «${s.q}».` : `Für «${r.name}» ist noch nichts erfasst.`,
       sorts: [
         { value: 'ord', label: 'Reihenfolge', cmp: () => 0 },
         { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
@@ -741,17 +843,17 @@ function mountPane(ctx, s, unit) {
     return;
   }
 
-  const rows = s.rows.filter((r) => !s.leaf || r.group === s.leaf);
+  const rows = scopeRows(s);
   ctx.onUnmount(C.mountDataTable(host, {
-    id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25,
+    id: 'mc-rows', unit: { nom: unit.nom, dat: unit.dat }, perPage: 25, showSearch: false,
     caption: s.leaf ? `${unit.nom} · ${s.leaf}` : `${unit.nom} · alle ${unit.axisPl}`,
     // A whole branch listed flat is a wall — nineteen business objects across
     // five domains read as nineteen unrelated rows. Sectioning by the axis is
     // the same grouping the tree draws, so the two views agree. Inside ONE group
     // there is nothing left to section by, so level 2 goes back to plain pages.
     groupBy: (GROUP_DIMS(s.kind).find((d) => d.value === s.group) || {}).of || null,
-    rows, searchKeys: ['name', 'def', 'group', 'steward'],
-    emptyMsg: 'In diesem Umfang ist kein Eintrag erfasst.',
+    rows,
+    emptyMsg: s.q ? `Kein Treffer für «${s.q}».` : 'In diesem Umfang ist kein Eintrag erfasst.',
     sorts: [
       { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
       { value: 'n', label: `${unit.kid} (meiste zuerst)`, cmp: (a, b) => b.n - a.n },

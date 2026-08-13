@@ -324,7 +324,7 @@ export function mountDataTable(host, opts = {}) {
     id = 'dt', rows: allRows = [], columns = [], unit = 'Einträge', caption,
     searchKeys = [], search, searchLabel, placeholder,
     sorts = [], facets = [], perPage = 10, foot, emptyMsg, note = '', rowsClickable = false,
-    rowClass, extra = '', onAction, flush = false, groupBy = null,
+    rowClass, extra = '', onAction, flush = false, groupBy = null, showSearch = true,
   } = opts;
   // `shut` holds the sections the reader has closed. Keyed by group value, so a
   // search or a sort that reorders the sections still remembers which ones.
@@ -410,7 +410,7 @@ export function mountDataTable(host, opts = {}) {
         panelId: facets.length ? `${id}-panel` : '',
         panel: facets.map((f) => filterGroup({ dim: f.dim, legend: f.legend, options: f.options, selected: state.sel[f.dim], idPrefix: id })).join(''),
         panelHidden: !state.open,
-        extra, flush,
+        extra, flush, showSearch,
       })}
       ${note ? `<p class="muted small mt-4">${escape(note)}</p>` : ''}
       ${/* Keep the table even with NO hits, with a row explaining why. Replacing

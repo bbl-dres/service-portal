@@ -39,6 +39,10 @@ const STATE = `JSON.stringify({
   openBoxes: document.querySelectorAll('#mc-panel .lscape__toggle[aria-expanded="true"]').length,
   tiles: document.querySelectorAll('#mc-panel .lscape__tile').length,
   allBtn: ((document.querySelector('[data-lscape-all]') || {}).textContent || '').trim(),
+  q: (document.querySelector('#mc-q') || {}).placeholder,
+  qDead: !!(document.querySelector('#mc-q') || {}).disabled,
+  qCount: ((document.querySelector('#mc-q-count') || {}).textContent || '').replace(/\\s+/g,' ').trim(),
+  tableSearch: document.querySelectorAll('#mc-panel .catbar__search').length,
   groupSel: (() => { const g = document.querySelector('#mc-group');
     return g ? g.value + ':' + [...g.options].map(o => o.value).join(',') : '(keins)'; })(),
   roots: [...document.querySelectorAll('.pf-tree > .pf-tree__item')].map(li => {
@@ -217,6 +221,41 @@ try {
   o = await go('#/app/metadata-catalog?kind=referenz&tab=diagramm');
   check(o.boxes.length === 4, 'every branch has a landscape', o.boxes.join(' | '));
   await clean(p, 'Diagramm');
+
+  head('Suche — narrows the scope, not the tab');
+  o = await go('#/app/metadata-catalog?kind=objekt');
+  check(o.q === 'In Geschäftsobjekte suchen…', 'the field names what it would narrow', o.q);
+  check(o.tableSearch === 0, 'and it is the only search field on the page', String(o.tableSearch));
+  o = await go(L2);
+  check(o.q === 'In Bauwerk und Liegenschaft suchen…', 'down a level it names the group', o.q);
+  o = await go('#/app/metadata-catalog?id=areal');
+  check(o.q === 'Attribute in «Areal» suchen…', 'on a record it narrows the parts', o.q);
+  o = await go('#/app/metadata-catalog?id=areal&attr=Areal-ID');
+  check(o.qDead && !/…$/.test(o.q), 'on an attribute it is disabled and says why', o.q);
+
+  // The query is a property of the scope, so it applies to every tab — including
+  // the one that lists nothing, where the count is the only feedback there is.
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=tabelle&q=geb');
+  // A section header is a <tr> too, so subtract them to count records.
+  check(o.rows - o.groups.length === 9, '«geb» narrows the Tabelle tab',
+    o.rows + ' Zeilen minus ' + o.groups.length + ' Abschnitte');
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm&q=geb');
+  check(o.tiles === 9, 'and the Diagramm tab to the same nine', String(o.tiles));
+  o = await go('#/app/metadata-catalog?kind=objekt&tab=uebersicht&q=geb');
+  check(/9 von 19/.test(o.qCount), 'and the count reports it even where nothing is listed', o.qCount);
+
+  // A new scope starts unfiltered: carrying the query along a tree click would
+  // leave a reader wondering where the records went.
+  const treeHref = await p.evaluate(
+    '(() => { const a = document.querySelector(".pf-tree__children a"); return a ? a.getAttribute("href") : ""; })()');
+  check(!/[?&]q=/.test(treeHref), 'a tree link does not carry the query onward', treeHref);
+
+  // At the root the scope is the whole catalogue, so the hits span all branches.
+  o = await go('#/app/metadata-catalog?q=geb');
+  check(o.cards === 0, 'a query replaces the way-in page with its answer', String(o.cards));
+  check(o.groups.length === 3, 'grouped by branch, because a hit list spans three kinds of thing',
+    o.groups.join(' | '));
+  await clean(p, 'Suche');
 
   head('Gruppieren — one choice, both views');
   o = await go('#/app/metadata-catalog?kind=objekt&tab=diagramm');

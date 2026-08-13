@@ -5,10 +5,10 @@
    how is it divided» — a question a reader answers by looking rather than by
    reading, which is why the tiles carry a name and one number and nothing else.
 
-   The structure is always one level below the current scope as BOXES and two
-   levels below as TILES. On a branch that is domains holding business objects;
-   inside a domain it is business objects holding their attributes. Consistent,
-   so the picture means the same thing wherever the reader is standing.
+   A TILE is always one record — on every level, under every grouping. The BOXES
+   come from «Gruppieren», so the same landscape is simply re-laid along whichever
+   axis is chosen, and «keine» is one box holding everything. Keeping the unit of
+   the picture fixed is what makes two landscapes comparable.
 
    There is deliberately no colour-by dimension (Nutzerentscheid, 2026-08-13):
    a legend that has to be consulted defeats the point of looking. */
@@ -42,9 +42,6 @@
 /* Pushed to the far end: it labels the box, it does not continue its name. */
 .lscape__note { margin-left:auto; font-weight:var(--fw-regular); color:var(--color-text-light); }
 
-/* Tiles wrap into as many columns as fit. auto-fill rather than auto-fit so a
-   box holding two tiles keeps them tile-sized instead of stretching them across
-   the full width, which would make a small box look like a big one. */
 /* Always two columns, so the number of ROWS is proportional to the count and
    two boxes can be compared by height alone. */
 .lscape__tiles { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr));
@@ -67,8 +64,6 @@
   box-shadow:inset 0 0 0 var(--stroke-1) var(--color-primary-600); }
 .lscape__empty { padding:var(--sp-3); margin:0; color:var(--color-text-light); font-size:var(--fs-sm); }
 
-/* Tighter on a phone: two tiles per row beats one long column, because the point
-   of the view is comparing sizes at a glance. */
 /* Below the two-column layout a fixed-width box would overflow, so it gives up
    its width and keeps its two tile columns. */
 @media (max-width:40rem) {
@@ -92,3 +87,26 @@
   width:auto; gap:var(--sp-2); margin:0; }
 .mc-bar__tools .mc-bar__group > label { margin:0; font-size:var(--fs-sm);
   color:var(--color-text-muted); white-space:nowrap; }
+
+/* --- The scope search -------------------------------------------------------
+   Above the layout, not in the tab row: it narrows WHAT IS IN SCOPE, which is
+   the tree's job, not the tabs'. So it sits over both columns and applies to
+   every tab. Its width is deliberately modest — a full-bleed field would read
+   as the page's main act rather than as a refinement of it. */
+.mc-search { display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2) var(--sp-4);
+  margin-top:var(--sp-4); }
+.mc-search__field { position:relative; flex:0 1 26rem; min-width:0; display:flex; }
+.mc-search__icon { position:absolute; left:var(--sp-3); top:50%; transform:translateY(-50%);
+  color:var(--color-text-muted); pointer-events:none; }
+.mc-search__field > input { width:100%; min-width:0; padding:var(--sp-2) var(--sp-3) var(--sp-2) var(--sp-9);
+  min-height:var(--target-min); border:var(--stroke-1) solid var(--color-border);
+  border-radius:var(--radius-sm); background:var(--surface-bg); font:inherit;
+  font-size:var(--fs-sm); color:var(--color-text); }
+.mc-search__field > input::placeholder { color:var(--color-text-muted); }
+.mc-search__field > input:focus-visible { outline:var(--stroke-2) solid var(--color-focus-ring);
+  outline-offset:var(--stroke-1); }
+/* A field that cannot do anything says so in its placeholder and takes itself
+   out of the tab order, rather than accepting keystrokes that go nowhere. */
+.mc-search__field > input:disabled { background:var(--color-secondary-50);
+  color:var(--color-text-muted); cursor:not-allowed; }
+.mc-search__count { margin:0; font-size:var(--fs-sm); color:var(--color-text-muted); }
