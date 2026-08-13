@@ -60,6 +60,10 @@ const statusOf = (core, id) => refList(core, 'objectStatuses').find((s) => s.id 
 // both get the same box, resolved through the same reference list.
 const sourceBoxFor = (core, C, record) =>
   C.sourceBox(record.source, refList(core, 'sourceRoles').find((r) => r.key === (record.source || {}).role));
+// Stewardship is stored as a contact id; every surface that shows it shows the
+// name. One resolver, so the table, the overview and the landscape agree.
+const stewardName = (core, id) =>
+  (core.contacts().find((c) => c.contactId === id) || {}).name || '';
 const matchOf = (core, id) => refList(core, 'mappingMatches').find((m) => m.id === id) || { label: id, variant: 'gray' };
 // Return a source URL's hostname, or the original malformed value so bad raw data remains visible.
 const hostOf = (url) => { try { return new URL(url).host; } catch { return String(url || ''); } };
@@ -96,6 +100,10 @@ const DEFAULT_TAB = { 1: 'uebersicht', 2: 'diagramm', 3: 'tabelle', 4: 'uebersic
 
 const BRANCHES = ['objekt', 'tabelle', 'referenz'];
 const BRANCH_LABEL = { objekt: 'Geschäftsobjekte', tabelle: 'Systeme', referenz: 'Referenzdaten' };
+// Symbols on the branch rows and nowhere else: at level 1 they distinguish three
+// things that are read as one list, further down they would only add noise to
+// rows that already sit under a labelled parent.
+const BRANCH_ICON = { objekt: 'Apps', tabelle: 'Database', referenz: 'List' };
 // nom/dat feed the data table's own counting wording; kid names the level below;
 // axis names the grouping level, which is a different thing in each branch.
 const BRANCH_UNIT = {
@@ -128,7 +136,7 @@ function records(core, kind) {
     return core.businessObjects().map((o) => ({
       kind: 'objekt', id: o.objectId, name: o.name, group: domainLabel(core, o.domain),
       def: o.definition || '', status: statusOf(core, o.status).label,
-      steward: o.steward || '', persons: o.responsiblePersons || [],
+      steward: stewardName(core, o.steward), persons: o.responsiblePersons || [],
       n: (o.attributes || []).length, raw: o, href: links.businessObject(o.objectId),
       kids: (o.attributes || []).map((a) => ({
         name: a.name, def: a.definition || '', type: VALUE_TYPE[a.type] || a.type,
@@ -140,7 +148,7 @@ function records(core, kind) {
     return core.dataTables().map((t) => ({
       kind: 'tabelle', id: t.tableId, name: t.displayName || t.name, group: t.systemName || '—',
       def: t.description || '', status: TABLE_TYPE[t.type] || t.type || '',
-      steward: t.steward || '', persons: t.responsiblePersons || [],
+      steward: stewardName(core, t.steward), persons: t.responsiblePersons || [],
       n: (t.fields || []).length, raw: t, href: links.dataTable(t.tableId),
       kids: (t.fields || []).map((f) => ({
         name: f.name, def: f.description || '', type: f.dataType || f.type || '',
@@ -370,13 +378,14 @@ function treeHtml(ctx, s) {
     return `<li class="pf-tree__item">
       <a class="pf-tree__node${open && !s.leaf ? ' is-active' : open ? ' is-path' : ''}" aria-expanded="${open}"
         href="${esc(hrefFor(s, { kind, leaf: '', rec: null, attr: '' }))}"${open && !s.leaf ? ' aria-current="true"' : ''}
-        >${CHEV}${label(BRANCH_LABEL[kind], rows.length)}</a>
+        >${CHEV}${C.icon(BRANCH_ICON[kind], 'pf-tree__ico')}${label(BRANCH_LABEL[kind], rows.length)}</a>
       <ul class="pf-tree__children"${open ? '' : ' hidden'}>${open ? kids : ''}</ul></li>`;
   }).join('');
 
   return `<ul class="pf-tree">
     <li class="pf-tree__item"><a class="pf-tree__node${s.lvl === 0 ? ' is-active' : ''}" href="${BASE}"
-      ${s.lvl === 0 ? ' aria-current="true"' : ''}>${GAP}${label('Katalog', null)}</a></li>
+      ${s.lvl === 0 ? ' aria-current="true"' : ''}>${GAP}${
+  label('Katalog', BRANCHES.reduce((a, k) => a + records(core, k).length, 0))}</a></li>
     ${branches}</ul>`;
 }
 
@@ -565,7 +574,7 @@ function homeHtml(ctx) {
     const rows = records(core, kind);
     const u = BRANCH_UNIT[kind];
     const groups = new Set(rows.map((r) => r.group)).size;
-    return `<a class="card card--clickable" href="${BASE}?kind=${kind}">
+    return `<a class="card card--default card--clickable" href="${BASE}?kind=${kind}">
       <div class="card__body">
         <h2 class="card__title">${esc(BRANCH_LABEL[kind])}</h2>
         <p class="card__text">${rows.length} ${esc(u.nom)} in ${groups} ${esc(u.axisPl)}<br>
@@ -623,7 +632,7 @@ function mountPane(ctx, s, unit) {
     // the same grouping the tree draws, so the two views agree. Inside ONE group
     // there is nothing left to section by, so level 2 goes back to plain pages.
     groupBy: s.leaf ? null : { key: 'group' },
-    rows, searchKeys: ['name', 'def', 'group'],
+    rows, searchKeys: ['name', 'def', 'group', 'steward'],
     emptyMsg: 'In diesem Umfang ist kein Eintrag erfasst.',
     sorts: [
       { value: 'name', label: 'Bezeichnung (A–Z)', cmp: (a, b) => a.name.localeCompare(b.name, 'de') },
@@ -635,13 +644,17 @@ function mountPane(ctx, s, unit) {
         .map((g) => ({ value: g, label: g })),
       match: (r, vals) => vals.includes(r.group) }],
     columns: [
-      { key: 'name', label: 'Name', width: '16rem',
+      { key: 'name', label: 'Name', width: '11rem',
         render: (r) => `<a href="${esc(hrefFor(s, { rec: r, attr: '', leaf: r.group }))}">${esc(r.name)}</a>` },
       // No axis column: at level 1 the section headers already carry it, and at
       // level 2 every row shares the one value the tree is already showing.
+      { key: 'steward', label: 'Verantwortung', width: '11rem',
+        render: (r) => (r.steward ? esc(truncateText(r.steward, 34)) : TODO) },
       { key: 'def', label: 'Beschreibung',
-        render: (r) => (r.def ? esc(truncateText(r.def)) : '<span class="muted">—</span>') },
-      { key: 'n', label: unit.kid, width: '7rem', render: (r) => String(r.n) },
+        render: (r) => (r.def ? esc(truncateText(r.def, 58)) : '<span class="muted">—</span>') },
+      { key: 'n', label: unit.kid, width: '6rem', render: (r) => String(r.n) },
+      { key: 'status', label: 'Status', width: '8rem',
+        render: (r) => (r.status ? esc(r.status) : TODO) },
     ],
   }));
 }
