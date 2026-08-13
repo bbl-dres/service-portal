@@ -137,7 +137,8 @@ function records(core, kind) {
       kind: 'objekt', id: o.objectId, name: o.name, group: domainLabel(core, o.domain),
       def: o.definition || '', status: statusOf(core, o.status).label,
       steward: stewardName(core, o.steward), persons: o.responsiblePersons || [],
-      n: (o.attributes || []).length, raw: o, href: links.businessObject(o.objectId),
+      n: (o.attributes || []).length, updated: o.updated || '',
+      raw: o, href: links.businessObject(o.objectId),
       kids: (o.attributes || []).map((a) => ({
         name: a.name, def: a.definition || '', type: VALUE_TYPE[a.type] || a.type,
         key: a.keyRole || '', required: !!a.required, std: a.standardRef || '', raw: a,
@@ -147,9 +148,10 @@ function records(core, kind) {
   if (kind === 'tabelle') {
     return core.dataTables().map((t) => ({
       kind: 'tabelle', id: t.tableId, name: t.displayName || t.name, group: t.systemName || '—',
-      def: t.description || '', status: TABLE_TYPE[t.type] || t.type || '',
+      def: t.description || '', status: t.certified ? 'Zertifiziert' : 'Nicht zertifiziert',
       steward: stewardName(core, t.steward), persons: t.responsiblePersons || [],
-      n: (t.fields || []).length, raw: t, href: links.dataTable(t.tableId),
+      n: (t.fields || []).length, updated: t.updated || '',
+      raw: t, href: links.dataTable(t.tableId),
       kids: (t.fields || []).map((f) => ({
         name: f.name, def: f.description || '', type: f.dataType || f.type || '',
         key: f.primaryKey ? 'PK' : f.foreignKey ? 'FK' : '', required: !f.nullable, std: '', raw: f,
@@ -165,7 +167,8 @@ function records(core, kind) {
       // sie noch nicht (docs/data-model.md), deshalb bleiben die Felder sichtbar leer
       // statt weggelassen — die Lücke soll auffallen, nicht verschwinden.
       status: '', steward: '', persons: [],
-      n: vals.length, raw: { key: k, values: vals }, href: `${BASE}?list=${encodeURIComponent(k)}`,
+      n: vals.length, updated: '',
+      raw: { key: k, values: vals }, href: `${BASE}?list=${encodeURIComponent(k)}`,
       kids: vals.map((v) => ({
         name: String(v.label || v.name || v.id || v.key || v),
         def: v.definition || v.description || v.consequence || '',
@@ -477,6 +480,7 @@ function recordOverview(core, C, s, unit) {
       r.kind === 'tabelle' && t.schemaLabel ? ['Schema',
         `${esc(t.schemaLabel)}<br><span class="small muted"><code>${esc(t.schema)}</code> · ${esc(SCHEMA_TYPE[t.schemaType] || t.schemaType)}</span>`] : null,
       r.kind === 'tabelle' ? ['Technischer Name', `<code>${esc(t.name)}</code>`] : null,
+      r.kind === 'tabelle' ? ['Art', esc(TABLE_TYPE[t.type] || t.type)] : null,
       ['Status', r.status ? esc(r.status) : TODO],
       r.kind === 'objekt' && t.standardRef ? ['Norm-Referenz', esc(t.standardRef)] : null,
       [unit.kid, String(r.n)],
@@ -568,19 +572,76 @@ function landscapeHtml(ctx, s, unit) {
 }
 
 // The catalogue root has no tabs, because it is not a scope: it is the way in.
+// Three figures to say how big the thing is, then the two questions a reader
+// actually arrives with: what changed lately, and how is the estate divided.
 function homeHtml(ctx) {
-  const { core } = ctx;
-  return `<div class="grid grid--responsive-cols-3">${BRANCHES.map((kind) => {
+  const { core, C } = ctx;
+
+  const cards = BRANCHES.map((kind) => {
     const rows = records(core, kind);
     const u = BRANCH_UNIT[kind];
-    const groups = new Set(rows.map((r) => r.group)).size;
+    // Tally the statuses rather than naming them: which ones exist is data, and
+    // hard-coding «Gültig · Entwurf» here would go stale the first time the
+    // reference list gains a value.
+    const tally = new Map();
+    rows.forEach((r) => { const k = r.status || 'noch nicht erfasst';
+      tally.set(k, (tally.get(k) || 0) + 1); });
+    const detail = [`${rows.reduce((a, r) => a + r.n, 0)} ${u.kid}`,
+      ...[...tally].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n} ${k}`)].join(' · ');
     return `<a class="card card--default card--clickable" href="${BASE}?kind=${kind}">
       <div class="card__body">
-        <h2 class="card__title">${esc(BRANCH_LABEL[kind])}</h2>
-        <p class="card__text">${rows.length} ${esc(u.nom)} in ${groups} ${esc(u.axisPl)}<br>
-        ${rows.reduce((a, r) => a + r.n, 0)} ${esc(u.kid)}</p>
+        <p class="stat__num">${rows.length}</p>
+        <h2 class="stat__label">${esc(BRANCH_LABEL[kind])}</h2>
+        <p class="card__text">${esc(detail)}</p>
       </div></a>`;
-  }).join('')}</div>`;
+  }).join('');
+
+  // Newest first, across all three branches — «what moved» is a question about
+  // the catalogue, not about one of its parts.
+  const recent = BRANCHES.flatMap((kind) => records(core, kind).map((r) => ({ ...r, kind })))
+    .filter((r) => r.updated)
+    .sort((a, b) => String(b.updated).localeCompare(String(a.updated)))
+    .slice(0, 8);
+
+  const domains = (() => {
+    const rows = records(core, 'objekt');
+    return [...new Set(rows.map((r) => r.group))].sort((a, b) => a.localeCompare(b, 'de'))
+      .map((g) => {
+        const mine = rows.filter((r) => r.group === g);
+        return { name: g, n: mine.length, kids: mine.reduce((a, r) => a + r.n, 0),
+          href: `${BASE}?kind=objekt&leaf=${encodeURIComponent(g)}` };
+      });
+  })();
+
+  return `<div class="stats">${cards}</div>
+
+    <section class="detail-section">
+      <h2 class="detail-section__title">Letzte Änderungen</h2>
+      ${C.table({ zebra: true, caption: 'Letzte Änderungen im Katalog', rows: recent,
+    emptyText: 'Für keinen Eintrag ist ein Änderungsdatum erfasst.',
+    columns: [
+      { key: 'name', label: 'Name', width: '14rem',
+        render: (r) => `<a href="${esc(r.href)}">${esc(r.name)}</a>` },
+      { key: 'kind', label: 'Bereich', width: '11rem', render: (r) => esc(BRANCH_LABEL[r.kind]) },
+      { key: 'group', label: 'Gruppe', width: '12rem', render: (r) => esc(r.group) },
+      { key: 'status', label: 'Status', width: '9rem', render: (r) => (r.status ? esc(r.status) : TODO) },
+      { key: 'updated', label: 'Geändert', width: '8rem', nowrap: true,
+        render: (r) => esc(formatDate(r.updated)) },
+    ] })}
+    </section>
+
+    <section class="detail-section">
+      <h2 class="detail-section__title">Domänen</h2>
+      ${C.table({ zebra: true, caption: 'Domänen der Geschäftsobjekte', rows: domains,
+    columns: [
+      { key: 'name', label: 'Domäne',
+        render: (d) => `<a href="${esc(d.href)}">${esc(d.name)}</a>` },
+      { key: 'n', label: 'Umfang', width: '14rem',
+        render: (d) => `${d.n} Geschäftsobjekte` },
+      { key: 'kids', label: 'Bestandteile', width: '14rem',
+        render: (d) => `${d.kids} Attribute` },
+    ] })}
+    </section>`;
 }
 
 // --- Tabelle tab -------------------------------------------------------------
