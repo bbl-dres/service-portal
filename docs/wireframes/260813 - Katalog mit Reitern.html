@@ -29,6 +29,8 @@ h1,h2,h3,h4{margin:0;font-weight:600;line-height:1.25}
 a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
 .ico{width:16px;height:16px;flex:none}
 .muted{color:var(--ink-3)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .doc{max-width:1240px;margin:0 auto;padding:30px 20px 60px}
 .doc h1{font-size:25px;margin-bottom:8px}
 .doc h2{font-size:18px;margin:34px 0 10px}
@@ -206,6 +208,10 @@ code{font-family:var(--m);font-size:12.5px;background:#eef0f4;padding:1px 5px;bo
 .tbl thead th button:hover{color:var(--ink)}
 .sind{opacity:.3;font-size:9px} .sind.is-on{opacity:1;color:var(--accent)}
 .tbl tbody tr[data-open]:hover,.tbl tbody tr[data-attr]:hover{background:#f6f8fc;cursor:pointer}
+/* Inherits everything; exists only so the row has a keyboard entry point. */
+.cellbtn{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.tbl tbody tr:has(.cellbtn:focus-visible){background:#f6f8fc}
+.cellbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
 .grp th{background:#fff;border-bottom:0;padding:22px 0 7px;text-transform:none;letter-spacing:0}
 /* Only the FIRST group loses its top padding. «.grp:first-child» would match
    every group row instead — each group is its own <tbody>, so every group row
@@ -277,6 +283,7 @@ Attribute dieses Datensatzes. Jede Zelle des Rasters Stufe × Reiter hat eine Be
     </div>
     <div class="count" id="count"></div>
   </div>
+  <p id="sr" role="status" aria-live="polite" class="sr-only"></p>
   <div class="layout">
     <aside class="side"><h3>Katalog</h3><ul class="tree" id="tree"></ul></aside>
     <div class="pane"><div class="tabs" id="tabs"></div><div id="fpanel"></div><div id="view"></div></div>
@@ -446,9 +453,18 @@ function readUrl(){
   // against whichever branch happened to be open, which is the one thing
   // URL-as-state exists to prevent.
   state.kind = B[p.get('kind')] ? p.get('kind') : '';
-  state.leaf = p.get('leaf') || '';
-  state.item = state.leaf ? (p.get('item') || '') : '';
-  state.attr = state.item ? (p.get('attr') || '') : '';
+  // Every part of the path is checked against the data, not just carried over.
+  // A hash naming a record that does not exist used to reach the renderer and
+  // throw on «undefined.kids»; a wireframe that anyone can link into has to
+  // treat its own URL as untrusted input.
+  const rows = B[state.kind].rows;
+  const leaf = p.get('leaf') || '';
+  state.leaf = rows.some(r => r.group === leaf) ? leaf : '';
+  const item = state.leaf ? (p.get('item') || '') : '';
+  const rec = state.leaf && item ? rows.find(r => r.name === item && r.group === state.leaf) : null;
+  state.item = rec ? item : '';
+  const attr = state.item ? (p.get('attr') || '') : '';
+  state.attr = (rec && rec.kids.some(k => k.name === attr)) ? attr : '';
   // Present in the URL means «the reader chose this»; absent means «use the
   // level's default», so a shared link reproduces exactly what was on screen.
   state.tabPick = TABS.some(t => t[0] === p.get('tab')) ? p.get('tab') : '';
@@ -494,7 +510,7 @@ function writeUrl(){
   const f = Object.entries(state.filters).filter(([, v]) => v && v.length).map(([k, v]) => k + ':' + v.join(',')).join(';');
   if (f) p.set('f', f);
   const next = '#/' + p.toString();
-  el('url').textContent = decodeURIComponent(location.origin === 'null' ? next : next);
+  el('url').textContent = decodeURIComponent(next);
   if (next === location.hash) return;
   writing = true; history.replaceState(null, '', next); writing = false;
 }
@@ -557,15 +573,22 @@ function grouped(rs){
 
 // ---- Tree -----------------------------------------------------------------
 function renderTree(){
+  // The tree is rebuilt wholesale on every render, which destroys focus and
+  // drops a keyboard user back to the top of the document after each step.
+  // Every control carries a stable key, so the equivalent row can be refocused
+  // once the new tree is in place.
+  const was = document.activeElement;
+  const key = (was && el('tree').contains(was)) ? was.dataset.key : '';
+
   const rootRow = '<li><button class="tnode' + (!state.kind ? ' is-active' : '') +
-    '" data-root="1"><span style="width:16px"></span>' + ICONS.branch +
+    '" data-root="1" data-key="root"><span style="width:16px"></span>' + ICONS.branch +
     '<span>Katalog</span><span class="tcount">' + ROOT.rows.length + '</span></button></li>' +
     '<li><div class="tsep"></div></li>';
 
   el('tree').innerHTML = rootRow + BRANCHES.map((b) => {
     const open = state.kind === b.key;
     const branchRow = '<button class="tnode' + (open && !state.leaf ? ' is-active' : open ? ' is-path' : '') +
-      '" data-branch="' + b.key + '" aria-expanded="' + open + '">' +
+      '" data-branch="' + b.key + '" data-key="b:' + b.key + '" aria-expanded="' + open + '">' +
       '<span class="chev">' + ICONS.chev + '</span>' + ICONS[b.icon] +
       '<span>' + esc(b.label) + '</span><span class="tcount">' + b.rows.length + '</span></button>';
     if (!open) return '<li>' + branchRow + '</li>';
@@ -574,7 +597,8 @@ function renderTree(){
       const here = state.leaf === g;
       const kids = B[b.key].rows.filter((r) => r.group === g);
       const groupRow = '<button class="tnode t2' + (here && !state.item ? ' is-active' : here ? ' is-path' : '') +
-        '" data-leaf="' + esc(g) + '" data-branch2="' + b.key + '" aria-expanded="' + here + '">' +
+        '" data-leaf="' + esc(g) + '" data-branch2="' + b.key + '" data-key="l:' + esc(b.key + '|' + g) +
+        '" aria-expanded="' + here + '">' +
         '<span class="chev">' + ICONS.chev + '</span><span>' + esc(g) + '</span>' +
         '<span class="tcount">' + kids.length + '</span></button>';
       if (!here) return '<li>' + groupRow + '</li>';
@@ -588,15 +612,16 @@ function renderTree(){
         const isHere = state.item === r.name;
         const openKids = isHere && (state.exp || !!state.attr);
         const rowBtn = '<button class="tnode t3" data-item="' + esc(r.name) +
-          '" data-leaf2="' + esc(g) + '" data-branch3="' + b.key + '" title="' + esc(r.name) + '">' +
+          '" data-leaf2="' + esc(g) + '" data-branch3="' + b.key + '" data-key="i:' + esc(b.key + '|' + g + '|' + r.name) +
+          '" title="' + esc(r.name) + '">' +
           '<span>' + esc(r.name) + '</span><span class="tcount">' + r.n + '</span></button>';
         const chev = '<button class="tchev" data-exp="' + esc(r.name) + '" data-expleaf="' + esc(g) +
-          '" data-expkind="' + b.key + '" aria-expanded="' + openKids +
+          '" data-expkind="' + b.key + '" data-key="c:' + esc(b.key + '|' + g + '|' + r.name) + '" aria-expanded="' + openKids +
           '" aria-label="' + esc(r.name) + ' auf- oder zuklappen" title="Auf- oder zuklappen">' +
           ICONS.chev + '</button>';
         const l4 = openKids
           ? '<ul>' + r.kids.map((k) => '<li><button class="tnode t4' +
-            (state.attr === k.name ? ' is-active' : '') + '" data-attr="' + esc(k.name) +
+            (state.attr === k.name ? ' is-active' : '') + '" data-attr="' + esc(k.name) + '" data-key="a:' + esc(b.key + '|' + g + '|' + r.name + '|' + k.name) +
             '" title="' + esc(k.name) + '"><span>' + esc(k.name) + '</span></button></li>').join('') + '</ul>'
           : '';
         return '<li><span class="trow trow--l3' + (isHere && !state.attr ? ' is-active' : isHere ? ' is-path' : '') +
@@ -608,6 +633,13 @@ function renderTree(){
 
     return '<li>' + branchRow + '<ul>' + l2 + '</ul></li>';
   }).join('');
+
+  if (key) {
+    const back = el('tree').querySelector('[data-key="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
+    // Only if the row survived: after collapsing a branch its children are gone,
+    // and focusing nothing is better than focusing something else.
+    if (back) back.focus();
+  }
 }
 
 // ---- Chrome ---------------------------------------------------------------
@@ -961,7 +993,9 @@ function vTable(lvl, rec){
     const pg = paginate(kids);
     return '<div class="wrap"><table class="tbl">' + head + '<tbody>' +
       pg.slice.map(k => '<tr data-attr="' + esc(k.name) + '">' +
-        cols.map(([c]) => '<td>' + kidCell(k, c) + '</td>').join('') + '</tr>').join('') +
+        cols.map(([c]) => '<td>' + (c === 'name'
+          ? '<button type="button" class="cellbtn">' + esc(k.name) + '</button>'
+          : kidCell(k, c)) + '</td>').join('') + '</tr>').join('') +
       '</tbody></table></div>' + pager(pg, br().kidUnit);
   }
   const rs = sortRows(scoped());
@@ -1000,6 +1034,9 @@ function paginate(rows){
   if (!state.per) return { slice: rows, total: rows.length, page: 1, pages: 1, from: rows.length ? 1 : 0, to: rows.length };
   const pages = Math.max(1, Math.ceil(rows.length / state.per));
   const page = Math.min(Math.max(1, state.page), pages);
+  // Write the clamped value back so the URL cannot promise a page that does not
+  // exist; render() calls writeUrl() after this, so it picks up the correction.
+  state.page = page;
   const from = (page - 1) * state.per;
   return { slice: rows.slice(from, from + state.per), total: rows.length, page, pages,
     from: rows.length ? from + 1 : 0, to: Math.min(from + state.per, rows.length) };
@@ -1023,9 +1060,14 @@ function pager(pg, unit){
       : '') + '</div>';
 }
 
+// The row stays clickable for the mouse — a big, forgiving target — but the
+// name is a real button so the row can be reached and opened from the keyboard.
+// It inherits font, colour and weight, so the single value style survives: the
+// only visible difference is a focus ring, and only when tabbing.
 const row = (r, cols) => '<tr data-open="' + esc(r.name) + '" data-leaf3="' + esc(r.group) + '"' +
   (r.kindKey ? ' data-kind3="' + esc(r.kindKey) + '"' : '') + '>' +
-  cols.map(([k]) => '<td>' + cell(r, k) + '</td>').join('') + '</tr>';
+  cols.map(([k]) => '<td>' + (k === 'name' ? '<button type="button" class="cellbtn">' + esc(r.name) + '</button>'
+    : cell(r, k)) + '</td>').join('') + '</tr>';
 
 function cell(r, k){
   if (k === 'def') return '<span class="trunc">' + esc(r.def || '—') + '</span>';
@@ -1049,6 +1091,7 @@ function kidCell(k, c){
 // ---- Render + events ------------------------------------------------------
 function render(){
   renderTree(); renderCrumb(); renderTabs(); renderFilterPanel(); renderCount(); renderView(); writeUrl();
+  announce();
 }
 const syncQ = () => { el('q').value = state.q; };
 window.addEventListener('hashchange', () => { if (!writing) { readUrl(); syncQ(); render(); } });
@@ -1114,8 +1157,14 @@ function goAttr(name){
   log('Stufe 4 → ' + name, 'nur Übersicht — unter einem Attribut liegt nichts mehr');
   render();
 }
-function goItem(kind, leaf, name){
-  state.kind = kind; state.leaf = leaf; state.item = name; state.attr = ''; state.q = ''; syncQ(); resetPage();
+// «expand» is a parameter rather than something goItem reads off the state,
+// because the previous version left state.exp alone: selecting a second record
+// inherited the first one's unfolded branch and dropped 33 rows into the tree
+// unasked. Folding is now decided by the caller, every time.
+function goItem(kind, leaf, name, expand){
+  state.kind = kind; state.leaf = leaf; state.item = name; state.attr = '';
+  state.exp = !!expand;
+  state.q = ''; syncQ(); resetPage();
   log('Stufe 3 → ' + name, tabWhy());
   render();
 }
@@ -1142,7 +1191,7 @@ document.addEventListener('click', (e) => {
       state.kind === fold.dataset.expkind;
     // Unfolding a record the pane is not showing would be a third state; the
     // chevron selects first, then unfolds.
-    if (!same) { state.exp = true; return goItem(fold.dataset.expkind, fold.dataset.expleaf, fold.dataset.exp); }
+    if (!same) return goItem(fold.dataset.expkind, fold.dataset.expleaf, fold.dataset.exp, true);
     const wasOpen = state.exp || !!state.attr;
     state.exp = !wasOpen;
     if (!state.exp) state.attr = '';
@@ -1215,10 +1264,46 @@ document.addEventListener('change', (e) => {
   render();
 });
 
+// The pane redraws on every keystroke — it costs well under a millisecond —
+// but the URL is written at most four times a second. Safari throttles
+// history.replaceState to roughly 100 calls per 30 seconds and throws past
+// that; a fast typist reaches it in a couple of sentences.
+let qTimer = null;
 el('q').addEventListener('input', () => {
   state.q = el('q').value.trim(); resetPage();
-  renderCount(); renderView(); writeUrl();
+  renderCount(); renderView();
+  clearTimeout(qTimer);
+  qTimer = setTimeout(writeUrl, 250);
 });
+
+// Escape closes whatever is open, innermost first. Without it a keyboard user
+// who opened the filter panel had no way to dismiss it.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const menu = document.querySelector('.pop-menu:not([hidden])');
+  if (menu) {
+    menu.hidden = true;
+    const trigger = menu.closest('.pop').querySelector('[data-pop]');
+    trigger.setAttribute('aria-expanded', 'false'); trigger.focus();
+    return;
+  }
+  if (state.fopen) {
+    state.fopen = false; render();
+    const b = document.querySelector('[data-fpanel]'); b && b.focus();
+  }
+});
+
+// Navigation replaces the pane while the tree keeps focus, so nothing tells a
+// screen reader that anything happened. A polite live region says what is now
+// in scope — rather than moving focus into the pane, which would throw the
+// reader out of the tree on every step.
+function announce(){
+  const region = el('sr');
+  const lvl = level();
+  const where = state.attr || state.item || state.leaf || (state.kind ? br().label : 'Katalog');
+  const tab = TABS_AT(lvl).length ? ' · ' + ((TABS.find(t => t[0] === effTab()) || [])[1] || '') : '';
+  region.textContent = where + tab + ' · ' + el('count').textContent.replace(/s+/g, ' ').trim();
+}
 el('qclear').addEventListener('click', () => {
   state.q = ''; syncQ(); log('Suche geleert'); render();
 });
